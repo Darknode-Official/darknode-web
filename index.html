@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sentinel</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <div id="app">
+    <header id="topbar">
+      <span class="brand">Sentinel</span>
+      <span id="user-slot"><!-- sign-in button / avatar rendered by js/auth.js --></span>
+    </header>
+    <div id="announcement" class="banner" hidden></div>
+    <main id="view"><p class="loading">Loading&hellip;</p></main>
+  </div>
+
+  <!-- App entry. Loads Firebase (js/firebase.js), resolves the signed-in
+       user's role, then renders the right view. ultraplan fills in the rest. -->
+  <script type="module" src="/js/auth.js"></script>
+</body>
+</html>

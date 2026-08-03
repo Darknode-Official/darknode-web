@@ -1,0 +1,16 @@
+# Netlify config for the static Sentinel Web frontend (drag-and-drop or CLI deploy).
+[build]
+  publish = "."
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "no-referrer"
+
+# SPA fallback: unknown routes serve index.html (existing files still served directly).
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

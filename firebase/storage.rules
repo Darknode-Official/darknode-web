@@ -1,0 +1,25 @@
+rules_version = '2';
+// Sentinel Web - Storage access enforcement for gated downloads.
+// Only whitelisted ('allowed') users and the owner can read files under /downloads;
+// only the owner can upload. Reads the user's status from Firestore.
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function signedIn() { return request.auth != null; }
+    function isOwner()  { return signedIn() && request.auth.token.email == 'cashzombs@gmail.com'; }
+    function isAllowed() {
+      return isOwner() || (signedIn() &&
+        firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.status == 'allowed');
+    }
+
+    match /downloads/{allPaths=**} {
+      allow read:  if isAllowed();
+      allow write: if isOwner();
+    }
+
+    // Everything else: locked down by default.
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

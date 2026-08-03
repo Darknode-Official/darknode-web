@@ -1,0 +1,23 @@
+/* Sentinel Web - base dark theme. Starter styles; expand in the build. */
+:root{
+  --bg:#06080f; --card:#0c111e; --line:#1a2438; --txt:#d4e2f4; --mut:#6b85a8;
+  --acc:#00d4ff; --ok:#22c55e; --bad:#ef4444; --warn:#f59e0b; --radius:8px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--txt);
+  font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+#topbar{display:flex;align-items:center;justify-content:space-between;
+  padding:12px 18px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg)}
+.brand{font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--acc)}
+.banner{margin:10px 18px;padding:10px 14px;border:1px solid var(--warn);
+  border-radius:var(--radius);background:rgba(245,158,11,.08);font-size:.85rem}
+#view{padding:18px;max-width:1100px;margin:0 auto}
+.loading,.muted{color:var(--mut)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:14px}
+.btn{background:var(--acc);color:#04121a;border:none;border-radius:6px;
+  padding:.5rem .9rem;font-weight:700;cursor:pointer;font-family:inherit}
+.btn.ghost{background:transparent;color:var(--txt);border:1px solid var(--line)}
+.btn.danger{background:var(--bad);color:#fff}
+input,textarea{background:#101827;border:1px solid var(--line);color:var(--txt);
+  border-radius:6px;padding:.5rem .7rem;font-family:inherit;width:100%}
+code,pre{font-family:ui-monospace,Menlo,Consolas,monospace}
