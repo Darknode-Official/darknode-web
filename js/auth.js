@@ -3,7 +3,7 @@
 import { auth, db, OWNER_EMAIL, googleProvider } from "/js/firebase.js";
 import {
   onAuthStateChanged, signInWithPopup, signOut
-} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+} from "https://www.gstatic.com/firebasejs/12.17.0/firebase-auth.js";
 
 // Role resolution plan (implemented in the build):
 //  1. onAuthStateChanged -> if signed out, show the "Sign in with Google" button.

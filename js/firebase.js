@@ -3,18 +3,19 @@
 // The apiKey here is NOT a secret (it only identifies the project); real protection
 // comes from the Firestore/Storage Security Rules in ../firebase/.
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { getStorage } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-app.js";
+import { getAuth, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-auth.js";
+import { getFirestore } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
+import { getStorage } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-storage.js";
 
 export const firebaseConfig = {
-  apiKey: "REPLACE_ME",
-  authDomain: "REPLACE_ME.firebaseapp.com",
-  projectId: "REPLACE_ME",
-  storageBucket: "REPLACE_ME.appspot.com",
-  messagingSenderId: "REPLACE_ME",
-  appId: "REPLACE_ME",
+  apiKey: "AIzaSyD3CJO7PLQdRvPOWDqehSlRwEeA5odCTDE",
+  authDomain: "sentinel-b4194.firebaseapp.com",
+  projectId: "sentinel-b4194",
+  storageBucket: "sentinel-b4194.firebasestorage.app",
+  messagingSenderId: "153127828172",
+  appId: "1:153127828172:web:94f864818f562c10cfa069",
+  measurementId: "G-8QR8V3DLQX",
 };
 
 // The single super-admin. Enforced in the Security Rules via request.auth.token.email.
