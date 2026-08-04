@@ -1,14 +1,19 @@
 // Marketing landing page shown to signed-out visitors.
 // actions: { onGetStarted, onSignIn }
 
-// Where the desktop-app installers live. Replace with your GitHub Releases URL once
-// you've published a build (see sentinel-app/README.md).
-const APP_RELEASES = "https://github.com/YOUR_USER/sentinel-app/releases/latest";
+// Installers are hosted on the site itself, under public/downloads/. Build each one
+// (see sentinel-app/README.md), drop it into public/downloads/ with these exact
+// names, and the buttons below download it straight from the website.
+const APP_FILES = {
+  linux: "/downloads/Sentinel-linux.AppImage",
+  windows: "/downloads/Sentinel-windows.exe",
+  mac: "/downloads/Sentinel-mac.dmg",
+};
 
 export function renderLanding(view, actions) {
   const feature = (t, d) => `<div class="feat-card"><h3>${t}</h3><p>${d}</p></div>`;
   const step = (n, t, d) => `<div class="step"><div class="step-n">${n}</div><div><h3>${t}</h3><p>${d}</p></div></div>`;
-  const osCard = (name, fmt) => `<a class="dlapp-card" href="${APP_RELEASES}" target="_blank" rel="noopener noreferrer"><div class="dlapp-os">${name}</div><div class="dlapp-fmt">${fmt}</div></a>`;
+  const osCard = (name, fmt, os) => `<a class="dlapp-card" href="${APP_FILES[os]}" download><div class="dlapp-os">${name}</div><div class="dlapp-fmt">${fmt}</div></a>`;
 
   view.innerHTML = `
     <section class="hero">
@@ -52,9 +57,9 @@ export function renderLanding(view, actions) {
         <h2 class="sec-title">Get the desktop app</h2>
         <p class="muted dlapp-sub">Far more powerful than the web version &mdash; the native app runs tools with a live terminal and talks to your local AI, right on your machine.</p>
         <div class="dlapp-grid">
-          ${osCard("Linux", "AppImage / .deb")}
-          ${osCard("Windows", ".exe installer")}
-          ${osCard("macOS", ".dmg")}
+          ${osCard("Linux", "AppImage", "linux")}
+          ${osCard("Windows", ".exe installer", "windows")}
+          ${osCard("macOS", ".dmg", "mac")}
         </div>
       </div>
     </section>
