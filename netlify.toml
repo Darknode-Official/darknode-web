@@ -1,6 +1,6 @@
 # Netlify config for the static Sentinel Web frontend (drag-and-drop or CLI deploy).
 [build]
-  publish = "."
+  publish = "public"
 
 [[headers]]
   for = "/*"
