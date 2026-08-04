@@ -1,58 +1,31 @@
 rules_version = '2';
-// Sentinel Web - Firestore access enforcement. This is the real gate (runs on
-// Google's servers). Deploy via Firebase console (Firestore -> Rules) or the
-// Firebase CLI. Owner is fixed to the email below.
+// Sentinel Web - multi-user Firestore rules. Anyone can sign up and use the site;
+// each user owns their own doc. Owner (cashzombs@gmail.com) is admin. Deploy via
+// the Firebase console (Firestore -> Rules) or the Firebase CLI.
 service cloud.firestore {
   match /databases/{database}/documents {
 
     function signedIn() { return request.auth != null; }
     function email()    { return request.auth.token.email; }
+    function verified() { return signedIn() && request.auth.token.email_verified == true; }
     function isOwner()  { return signedIn() && email() == 'cashzombs@gmail.com'; }
-    function myStatus() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status;
-    }
-    function isAllowed() { return isOwner() || (signedIn() && myStatus() == 'allowed'); }
 
-    // Users can create their OWN doc as 'pending' and read it; only the owner may
-    // change status (so nobody can self-promote to 'allowed').
+    // Each user reads/writes only their own doc; the owner can read/manage all.
     match /users/{uid} {
       allow read:   if signedIn() && (request.auth.uid == uid || isOwner());
       allow create: if signedIn() && request.auth.uid == uid
-                    && request.resource.data.email == email()
-                    && request.resource.data.status == 'pending';
-      allow update: if isOwner()
-                    || (request.auth.uid == uid
-                        && request.resource.data.status == resource.data.status);
+                    && request.resource.data.email == email();
+      allow update: if isOwner() || request.auth.uid == uid;
       allow delete: if isOwner();
     }
 
-    // Owner-managed whitelist record (drives the admin UI). Owner only.
-    match /whitelist/{docId} {
-      allow read, write: if isOwner();
-    }
-
-    // Announcements: any signed-in user reads; owner writes.
+    // Announcements + settings: any signed-in user reads; only the owner writes.
     match /announcements/{docId} {
       allow read:  if signedIn();
       allow write: if isOwner();
     }
-
-    // Settings incl. session_epoch: any signed-in user reads (to watch for forced
-    // sign-out); owner writes ("log out everyone but me" bumps session_epoch).
     match /settings/{docId} {
       allow read:  if signedIn();
-      allow write: if isOwner();
-    }
-
-    // Access requests: a signed-in user files their own; owner reviews/deletes.
-    match /access_requests/{docId} {
-      allow create: if signedIn() && request.resource.data.email == email();
-      allow read, delete: if isOwner();
-    }
-
-    // Gated content metadata (tool listings, etc.): allowed/owner read; owner writes.
-    match /content/{docId} {
-      allow read:  if isAllowed();
       allow write: if isOwner();
     }
   }

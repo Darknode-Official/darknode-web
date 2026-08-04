@@ -21,3 +21,26 @@ body{margin:0;background:var(--bg);color:var(--txt);
 input,textarea{background:#101827;border:1px solid var(--line);color:var(--txt);
   border-radius:6px;padding:.5rem .7rem;font-family:inherit;width:100%}
 code,pre{font-family:ui-monospace,Menlo,Consolas,monospace}
+/* auth */
+.auth-card{max-width:400px;margin:44px auto}
+.auth-card h1{margin:0 0 4px}
+.auth-card .btn{width:100%;margin-top:10px}
+.btn.google{background:#fff;color:#1a1a1a}
+.or{display:flex;align-items:center;gap:10px;color:var(--mut);font-size:.75rem;margin:14px 0}
+.or span{flex:1;height:1px;background:var(--line)}
+#pwform{display:flex;flex-direction:column;gap:10px}
+.auth-links{display:flex;justify-content:space-between;gap:12px;margin-top:12px}
+.auth-links a{color:var(--acc);cursor:pointer;font-size:.8rem;text-decoration:none}
+.auth-err{color:var(--bad);font-size:.82rem;margin-top:12px;min-height:1em}
+.auth-ok{color:var(--ok);font-size:.82rem;margin-top:12px;min-height:1em}
+.owner-badge{background:var(--acc);color:#04121a;font-size:.6rem;font-weight:800;padding:1px 6px;border-radius:4px;letter-spacing:.06em}
+.admin-card{border:1px solid var(--acc);border-radius:var(--radius);padding:12px;margin:12px 0;background:rgba(0,212,255,.06)}
+/* downloads */
+.dl-group{margin-bottom:16px}
+.dl-group-title{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--mut);margin:6px 0}
+.dl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+.dl-card{display:block;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:12px;text-decoration:none;color:var(--txt)}
+a.dl-card:hover{border-color:var(--acc)}
+.dl-name{font-weight:700;font-size:.88rem}
+.dl-desc{color:var(--mut);font-size:.74rem;margin-top:3px}
+.dl-cmd{display:block;margin-top:6px;background:#101827;border:1px solid var(--line);border-radius:5px;padding:4px 6px;font-size:.72rem;color:var(--acc);overflow-x:auto}
