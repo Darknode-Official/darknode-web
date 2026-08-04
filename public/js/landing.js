@@ -7,7 +7,6 @@
 const APP_FILES = {
   linux: "/downloads/Sentinel-linux.AppImage",
   windows: "/downloads/Sentinel-windows.exe",
-  mac: "/downloads/Sentinel-mac.dmg",
 };
 
 export function renderLanding(view, actions) {
@@ -59,7 +58,6 @@ export function renderLanding(view, actions) {
         <div class="dlapp-grid">
           ${osCard("Linux", "AppImage", "linux")}
           ${osCard("Windows", ".exe installer", "windows")}
-          ${osCard("macOS", ".dmg", "mac")}
         </div>
       </div>
     </section>
