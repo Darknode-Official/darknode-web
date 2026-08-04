@@ -115,6 +115,38 @@ const B = {
   ], "Unix timestamp"),
 };
 
+// ---- extra browser tools ----
+const hexToHsl = (hex) => {
+  hex = hex.replace("#", "");
+  const r = parseInt(hex.slice(0, 2), 16) / 255, g = parseInt(hex.slice(2, 4), 16) / 255, b = parseInt(hex.slice(4, 6), 16) / 255;
+  const mx = Math.max(r, g, b), mn = Math.min(r, g, b); let h = 0, s = 0, l = (mx + mn) / 2;
+  if (mx !== mn) { const d = mx - mn; s = l > .5 ? d / (2 - mx - mn) : d / (mx + mn); h = mx === r ? (g - b) / d + (g < b ? 6 : 0) : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; h /= 6; }
+  return `hsl(${Math.round(h * 360)}, ${Math.round(s * 100)}%, ${Math.round(l * 100)}%)`;
+};
+const MORSE = { A: ".-", B: "-...", C: "-.-.", D: "-..", E: ".", F: "..-.", G: "--.", H: "....", I: "..", J: ".---", K: "-.-", L: ".-..", M: "--", N: "-.", O: "---", P: ".--.", Q: "--.-", R: ".-.", S: "...", T: "-", U: "..-", V: "...-", W: ".--", X: "-..-", Y: "-.--", Z: "--..", "0": "-----", "1": ".----", "2": "..---", "3": "...--", "4": "....-", "5": ".....", "6": "-....", "7": "--...", "8": "---..", "9": "----." };
+const MORSE_R = Object.fromEntries(Object.entries(MORSE).map(([k, v]) => [v, k]));
+const B32 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+function base32enc(s) { let bits = ""; for (const b of enc.encode(s)) bits += b.toString(2).padStart(8, "0"); let out = ""; for (let i = 0; i < bits.length; i += 5) out += B32[parseInt(bits.slice(i, i + 5).padEnd(5, "0"), 2)]; while (out.length % 8) out += "="; return out; }
+function base32dec(s) { s = s.replace(/=+$/, "").toUpperCase(); let bits = ""; for (const c of s) { const v = B32.indexOf(c); if (v >= 0) bits += v.toString(2).padStart(5, "0"); } let out = ""; for (let i = 0; i + 8 <= bits.length; i += 8) out += String.fromCharCode(parseInt(bits.slice(i, i + 8), 2)); return out; }
+
+B.jsonfmt = (r) => io(r, [{ label: "Format", fn: (s) => JSON.stringify(JSON.parse(s), null, 2) }, { label: "Minify", fn: (s) => JSON.stringify(JSON.parse(s)) }], "Paste JSON");
+B.csvjson = (r) => io(r, [{ label: "CSV -> JSON", fn: (s) => { const rows = s.trim().split(/\r?\n/).map((l) => l.split(",")); const head = rows.shift().map((h) => h.trim()); return JSON.stringify(rows.map((rw) => Object.fromEntries(head.map((h, i) => [h, (rw[i] || "").trim()]))), null, 2); } }], "header row, then data rows");
+B.unicode = (r) => io(r, [{ label: "Code points", fn: (s) => [...s].map((c) => c + "  U+" + c.codePointAt(0).toString(16).toUpperCase().padStart(4, "0")).join("\n") }]);
+B.base32 = (r) => io(r, [{ label: "Encode", fn: base32enc }, { label: "Decode", fn: base32dec }]);
+B.binary = (r) => io(r, [{ label: "Text -> Binary", fn: (s) => [...enc.encode(s)].map((b) => b.toString(2).padStart(8, "0")).join(" ") }, { label: "Binary -> Text", fn: (s) => new TextDecoder().decode(new Uint8Array(s.trim().split(/\s+/).map((b) => parseInt(b, 2)))) }]);
+B.morse = (r) => io(r, [{ label: "Text -> Morse", fn: (s) => s.toUpperCase().split("").map((c) => c === " " ? "/" : (MORSE[c] || "")).join(" ").trim() }, { label: "Morse -> Text", fn: (s) => s.trim().split(" ").map((c) => c === "/" ? " " : (MORSE_R[c] || "")).join("") }]);
+B.jsescape = (r) => io(r, [{ label: "Escape", fn: (s) => JSON.stringify(s).slice(1, -1) }, { label: "Unescape", fn: (s) => JSON.parse('"' + s.replace(/"/g, '\\"') + '"') }]);
+B.caesar = (r) => { r.innerHTML = `<div class="tk-row">Shift <input class="tk-f" id="cz-n" type="number" value="3" style="max-width:90px"></div><textarea class="tk-in" id="cz-in" rows="3" placeholder="Text"></textarea><div class="tk-btns"><button class="btn sm" id="cz-go">Shift</button></div><pre class="tk-out" id="cz-out"></pre>`; r.querySelector("#cz-go").onclick = () => { const n = ((+r.querySelector("#cz-n").value % 26) + 26) % 26; r.querySelector("#cz-out").textContent = r.querySelector("#cz-in").value.replace(/[a-z]/gi, (c) => { const base = c <= "Z" ? 65 : 97; return String.fromCharCode((c.charCodeAt(0) - base + n) % 26 + base); }); }; };
+B.xor = (r) => { r.innerHTML = `<div class="tk-row">Key <input class="tk-f" id="xr-k" placeholder="key"></div><textarea class="tk-in" id="xr-in" rows="3" placeholder="Text"></textarea><div class="tk-btns"><button class="btn sm" id="xr-go">XOR -> hex</button></div><pre class="tk-out" id="xr-out"></pre>`; r.querySelector("#xr-go").onclick = () => { const kb = enc.encode(r.querySelector("#xr-k").value || " "); r.querySelector("#xr-out").textContent = [...enc.encode(r.querySelector("#xr-in").value)].map((b, i) => (b ^ kb[i % kb.length]).toString(16).padStart(2, "0")).join(""); }; };
+B.hmac = (r) => { r.innerHTML = `<div class="tk-row">Key <input class="tk-f" id="hm-k" placeholder="secret"></div><textarea class="tk-in" id="hm-in" rows="3" placeholder="Message"></textarea><div class="tk-btns"><button class="btn sm" id="hm-go">HMAC-SHA256</button></div><pre class="tk-out" id="hm-out"></pre>`; r.querySelector("#hm-go").onclick = async () => { try { const key = await crypto.subtle.importKey("raw", enc.encode(r.querySelector("#hm-k").value), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]); r.querySelector("#hm-out").textContent = hexOf(await crypto.subtle.sign("HMAC", key, enc.encode(r.querySelector("#hm-in").value))); } catch (e) { r.querySelector("#hm-out").textContent = "Error: " + e.message; } }; };
+B.entropy = (r) => io(r, [{ label: "Shannon entropy", fn: (s) => { if (!s) return "0"; const f = {}; for (const c of s) f[c] = (f[c] || 0) + 1; let e = 0; for (const k in f) { const p = f[k] / s.length; e -= p * Math.log2(p); } return e.toFixed(4) + " bits/char  (" + (e * s.length).toFixed(1) + " bits total)"; } }]);
+B.slug = (r) => io(r, [{ label: "Slugify", fn: (s) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") }]);
+B.wordcount = (r) => io(r, [{ label: "Count", fn: (s) => `Characters: ${s.length}\nWords: ${(s.trim().match(/\S+/g) || []).length}\nLines: ${s.split(/\n/).length}` }]);
+B.lorem = (r) => { const W = "lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua enim ad minim veniam quis nostrud".split(" "); r.innerHTML = `<div class="tk-row">Paragraphs <input class="tk-f" id="lo-n" type="number" value="2" min="1" max="10" style="max-width:90px"></div><div class="tk-btns"><button class="btn sm" id="lo-go">Generate</button></div><pre class="tk-out" id="lo-out"></pre>`; r.querySelector("#lo-go").onclick = () => { const n = Math.max(1, Math.min(10, +r.querySelector("#lo-n").value || 2)); const p = () => Array.from({ length: 40 }, () => W[Math.floor(Math.random() * W.length)]).join(" "); r.querySelector("#lo-out").textContent = Array.from({ length: n }, p).join("\n\n"); }; };
+B.regex = (r) => { r.innerHTML = `<div class="tk-row"><input class="tk-f" id="rx-p" placeholder="pattern e.g. \\d+"><input class="tk-f" id="rx-f" placeholder="flags" value="g" style="max-width:80px"></div><textarea class="tk-in" id="rx-in" rows="4" placeholder="Test string"></textarea><div class="tk-btns"><button class="btn sm" id="rx-go">Match</button></div><pre class="tk-out" id="rx-out"></pre>`; r.querySelector("#rx-go").onclick = () => { try { const re = new RegExp(r.querySelector("#rx-p").value, r.querySelector("#rx-f").value); const m = [...r.querySelector("#rx-in").value.matchAll(re)]; r.querySelector("#rx-out").textContent = m.length ? m.map((x, i) => `${i}: ${x[0]}`).join("\n") : "no matches"; } catch (e) { r.querySelector("#rx-out").textContent = "Error: " + e.message; } }; };
+B.color = (r) => io(r, [{ label: "Hex -> RGB", fn: (s) => { const n = parseInt(s.trim().replace("#", ""), 16); return `rgb(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255})`; } }, { label: "Hex -> HSL", fn: (s) => hexToHsl(s.trim()) }], "#00d4ff");
+B.ip2int = (r) => io(r, [{ label: "IP -> int", fn: (s) => String(s.trim().split(".").reduce((a, o) => a * 256 + (+o), 0) >>> 0) }, { label: "int -> IP", fn: (s) => { const n = (+s.trim()) >>> 0; return [24, 16, 8, 0].map((sh) => (n >>> sh) & 255).join("."); } }], "192.168.1.1");
+
 // id, name, category, kind, desc, and (browser) render / (local) install command.
 export const CATALOG = [
   // --- browser (work in-page) ---
@@ -133,6 +165,23 @@ export const CATALOG = [
   { id: "subnet", name: "Subnet calculator", cat: "Network", kind: "browser", desc: "CIDR -> network / range / hosts", render: B.subnet },
   { id: "revshell", name: "Reverse shell", cat: "Payloads", kind: "browser", desc: "Reverse-shell one-liners, 9 flavors", render: B.revshell },
   { id: "obfuscate", name: "Payload obfuscator", cat: "Payloads", kind: "browser", desc: "Base64 / hex / url / unicode", render: B.obfuscate },
+  { id: "jsonfmt", name: "JSON formatter", cat: "Data", kind: "browser", desc: "Pretty-print or minify JSON", render: B.jsonfmt },
+  { id: "csvjson", name: "CSV to JSON", cat: "Data", kind: "browser", desc: "Convert CSV into JSON", render: B.csvjson },
+  { id: "unicode", name: "Unicode inspector", cat: "Data", kind: "browser", desc: "Character code points", render: B.unicode },
+  { id: "color", name: "Color converter", cat: "Data", kind: "browser", desc: "Hex to RGB / HSL", render: B.color },
+  { id: "base32", name: "Base32", cat: "Encoding", kind: "browser", desc: "Encode / decode Base32", render: B.base32 },
+  { id: "binary", name: "Binary", cat: "Encoding", kind: "browser", desc: "Text and binary", render: B.binary },
+  { id: "morse", name: "Morse code", cat: "Encoding", kind: "browser", desc: "Text and Morse", render: B.morse },
+  { id: "jsescape", name: "JS string escape", cat: "Encoding", kind: "browser", desc: "Escape / unescape", render: B.jsescape },
+  { id: "caesar", name: "Caesar cipher", cat: "Crypto", kind: "browser", desc: "Shift cipher", render: B.caesar },
+  { id: "xor", name: "XOR cipher", cat: "Crypto", kind: "browser", desc: "XOR a key over text", render: B.xor },
+  { id: "hmac", name: "HMAC-SHA256", cat: "Crypto", kind: "browser", desc: "Keyed hash", render: B.hmac },
+  { id: "entropy", name: "Entropy", cat: "Crypto", kind: "browser", desc: "Shannon entropy of text", render: B.entropy },
+  { id: "regex", name: "Regex tester", cat: "Text", kind: "browser", desc: "Test a regular expression", render: B.regex },
+  { id: "slug", name: "Slugify", cat: "Text", kind: "browser", desc: "URL-friendly slug", render: B.slug },
+  { id: "wordcount", name: "Word counter", cat: "Text", kind: "browser", desc: "Chars / words / lines", render: B.wordcount },
+  { id: "lorem", name: "Lorem ipsum", cat: "Text", kind: "browser", desc: "Placeholder text", render: B.lorem },
+  { id: "ip2int", name: "IP and integer", cat: "Network", kind: "browser", desc: "IPv4 to integer and back", render: B.ip2int },
 
   // --- setup (install locally) ---
   { id: "vscode", name: "VS Code", cat: "Setup", kind: "local", desc: "Code editor", cmd: "sudo snap install code --classic" },
@@ -170,6 +219,26 @@ export const CATALOG = [
     ["wifite", "wifite", "Wireless", "Automated Wi-Fi attacks", "sudo apt install -y wifite"],
     ["proxychains", "proxychains", "Anonymity", "Route tools via proxy", "sudo apt install -y proxychains4"],
     ["tor", "Tor", "Anonymity", "Onion routing", "sudo apt install -y tor"],
+    ["dnsx", "dnsx", "Recon", "Fast DNS toolkit", "go install github.com/projectdiscovery/dnsx/cmd/dnsx@latest"],
+    ["assetfinder", "assetfinder", "Recon", "Find related domains", "go install github.com/tomnomnom/assetfinder@latest"],
+    ["waybackurls", "waybackurls", "Recon", "Archived URL discovery", "go install github.com/tomnomnom/waybackurls@latest"],
+    ["whatweb", "WhatWeb", "Recon", "Web tech fingerprint", "sudo apt install -y whatweb"],
+    ["dnsrecon", "dnsrecon", "Recon", "DNS enumeration", "sudo apt install -y dnsrecon"],
+    ["gitleaks", "Gitleaks", "Recon", "Find secrets in repos", "go install github.com/gitleaks/gitleaks/v8@latest"],
+    ["arjun", "Arjun", "Web", "HTTP parameter discovery", "pipx install arjun"],
+    ["dirb", "dirb", "Web", "Directory brute-forcer", "sudo apt install -y dirb"],
+    ["wfuzz", "wfuzz", "Web", "Web fuzzer", "sudo apt install -y wfuzz"],
+    ["nuclei", "nuclei", "Web", "Template-based scanner", "go install github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest"],
+    ["commix", "commix", "Web", "Command-injection exploiter", "sudo apt install -y commix"],
+    ["medusa", "medusa", "Passwords", "Parallel brute-forcer", "sudo apt install -y medusa"],
+    ["patator", "patator", "Passwords", "Multi-purpose brute-forcer", "pipx install patator"],
+    ["responder", "Responder", "Post-ex", "LLMNR/NBT-NS poisoner", "pipx install responder"],
+    ["bloodhound", "BloodHound", "Post-ex", "AD attack-path mapping", "sudo apt install -y bloodhound"],
+    ["wireshark", "Wireshark", "Sniffing", "Packet analyzer (GUI)", "sudo apt install -y wireshark"],
+    ["tcpdump", "tcpdump", "Sniffing", "CLI packet capture", "sudo apt install -y tcpdump"],
+    ["binwalk", "binwalk", "Forensics", "Firmware/file carving", "sudo apt install -y binwalk"],
+    ["volatility", "Volatility 3", "Forensics", "Memory forensics", "pipx install volatility3"],
+    ["exiftool", "ExifTool", "Forensics", "File metadata reader", "sudo apt install -y libimage-exiftool-perl"],
   ].map(([id, name, cat, desc, cmd]) => ({ id, name, cat, kind: "local", desc, cmd })),
 ];
 

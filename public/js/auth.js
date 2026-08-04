@@ -17,6 +17,7 @@ import { renderLanding } from "/js/landing.js";
 
 const userSlot = document.getElementById("user-slot");
 const view = document.getElementById("view");
+let appShow = null;   // set by renderApp so the command palette can navigate
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
@@ -148,6 +149,8 @@ function applyAccent(c) {
   try { localStorage.setItem("sw_accent", c); } catch (_) {}
 }
 (function () { let a = null; try { a = localStorage.getItem("sw_accent"); } catch (_) {} if (a) applyAccent(a); })();
+function applyTheme(m) { document.documentElement.setAttribute("data-theme", m); try { localStorage.setItem("sw_theme", m); } catch (_) {} }
+(function () { let t = "dark"; try { t = localStorage.getItem("sw_theme") || "dark"; } catch (_) {} applyTheme(t); })();
 
 // ---------- app sections ----------
 function renderHome(main, user, isOwner, show) {
@@ -201,6 +204,8 @@ function renderSettingsPage(main, user, isOwner) {
       ${row("User ID", '<span class="mono">' + esc(user.uid) + "</span>")}
     </div>
     <div class="set-card"><div class="set-lbl">Appearance</div>
+      <div class="set-row"><span class="muted">Theme</span>
+        <span class="seg" id="sw-theme"><button data-t="dark">Dark</button><button data-t="light">Light</button></span></div>
       <div class="set-row"><span class="muted">Accent color</span>
         <span class="swatches" id="sw-acc">${ACCENTS.map((c) => `<button class="swatch" style="background:${c}" data-c="${c}" title="${c}"></button>`).join("")}</span></div>
     </div>
@@ -216,6 +221,10 @@ function renderSettingsPage(main, user, isOwner) {
       <p class="muted" style="font-size:.75rem">Version 1.0</p>
     </div>`;
   main.querySelector("#sw-acc").onclick = (e) => { const b = e.target.closest(".swatch"); if (b) applyAccent(b.dataset.c); };
+  const themeSeg = main.querySelector("#sw-theme");
+  const curTheme = document.documentElement.getAttribute("data-theme") || "dark";
+  themeSeg.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b.dataset.t === curTheme));
+  themeSeg.onclick = (e) => { const b = e.target.closest("button[data-t]"); if (!b) return; applyTheme(b.dataset.t); themeSeg.querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b)); };
   main.querySelector("#set-out").onclick = () => signOut(auth);
   main.querySelector("#set-tour").onclick = () => startTour(tourSteps(isOwner));
   main.querySelector("#set-pw").onclick = async () => {
@@ -270,6 +279,7 @@ function renderApp(user) {
   view.querySelector(".side-nav").onclick = (e) => { const b = e.target.closest(".side-item"); if (b) show(b.dataset.sec); };
 
   userSlot.innerHTML = `
+    <button class="cmdk-btn" id="cmdkBtn" title="Search (Ctrl+K)"><span>Search</span><kbd>Ctrl K</kbd></button>
     <div class="tb-item">
       <button class="icon-btn" id="moreBtn" title="More" aria-label="More">&#8943;</button>
       <div class="menu" id="moreMenu" hidden>
@@ -300,10 +310,59 @@ function renderApp(user) {
     closeMenus(); if (lb) signOut(auth); else show(nb.dataset.nav);
   };
   moreMenu.onclick = (e) => { const b = e.target.closest("[data-more]"); if (!b) return; closeMenus(); show("setup", b.dataset.more); };
+  document.getElementById("cmdkBtn").onclick = openPalette;
 
+  appShow = show;
   show("home");
   if (!tourDone()) setTimeout(() => startTour(tourSteps(isOwner)), 450);
 }
+
+// ---- command palette (Ctrl/Cmd+K) ----
+function openPalette() {
+  if (document.getElementById("cmdk")) return;
+  const sections = [["home", "Home"], ["tools", "Tools"], ["setup", "Local setup"], ["settings", "Settings"], ["admin", "Admin"]];
+  const items = [
+    ...sections.map(([s, n]) => ({ type: "section", id: s, name: n, desc: "Go to " + n })),
+    ...CATALOG.map((t) => ({ type: "tool", id: t.id, name: t.name, desc: t.cat + " · " + t.desc })),
+  ];
+  const ov = document.createElement("div");
+  ov.id = "cmdk"; ov.className = "cmdk";
+  ov.innerHTML = `<div class="cmdk-box"><input class="cmdk-input" id="cmdk-in" placeholder="Search tools and sections..." autocomplete="off" spellcheck="false"><div class="cmdk-list" id="cmdk-list"></div></div>`;
+  document.body.appendChild(ov);
+  const inp = ov.querySelector("#cmdk-in"), list = ov.querySelector("#cmdk-list");
+  let sel = 0, filtered = items;
+  const close = () => ov.remove();
+  function render(q) {
+    const t = q.toLowerCase().trim();
+    filtered = (t ? items.filter((x) => (x.name + " " + x.desc).toLowerCase().includes(t)) : items).slice(0, 60);
+    if (sel >= filtered.length) sel = 0;
+    list.innerHTML = filtered.map((x, i) => `<div class="cmdk-item${i === sel ? " sel" : ""}" data-i="${i}"><span class="cmdk-name">${esc(x.name)}</span><span class="cmdk-desc">${esc(x.desc)}</span></div>`).join("") || `<div class="cmdk-empty">No results</div>`;
+    const a = list.querySelector(".cmdk-item.sel"); if (a) a.scrollIntoView({ block: "nearest" });
+  }
+  function run(i) {
+    const x = filtered[i]; if (!x) return; close();
+    if (x.type === "section") { appShow && appShow(x.id); return; }
+    appShow && appShow("tools");
+    setTimeout(() => { const it = document.querySelector(`.tk-item[data-id="${x.id}"]`); if (it) { if (!it.classList.contains("open")) it.querySelector(".tk-head").click(); it.scrollIntoView({ block: "center" }); } }, 70);
+  }
+  inp.oninput = () => { sel = 0; render(inp.value); };
+  inp.onkeydown = (e) => {
+    if (e.key === "ArrowDown") { e.preventDefault(); sel = Math.min(sel + 1, filtered.length - 1); render(inp.value); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); sel = Math.max(sel - 1, 0); render(inp.value); }
+    else if (e.key === "Enter") { e.preventDefault(); run(sel); }
+    else if (e.key === "Escape") { close(); }
+  };
+  list.onclick = (e) => { const it = e.target.closest(".cmdk-item[data-i]"); if (it) run(+it.dataset.i); };
+  ov.onclick = (e) => { if (e.target === ov) close(); };
+  render(""); inp.focus();
+}
+document.addEventListener("keydown", (e) => {
+  if ((e.metaKey || e.ctrlKey) && (e.key === "k" || e.key === "K")) {
+    if (!document.body.classList.contains("app")) return;
+    e.preventDefault();
+    const ex = document.getElementById("cmdk"); if (ex) ex.remove(); else openPalette();
+  }
+});
 
 function tourSteps(isOwner) {
   const steps = [
