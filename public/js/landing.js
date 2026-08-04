@@ -1,8 +1,14 @@
 // Marketing landing page shown to signed-out visitors.
 // actions: { onGetStarted, onSignIn }
+
+// Where the desktop-app installers live. Replace with your GitHub Releases URL once
+// you've published a build (see sentinel-app/README.md).
+const APP_RELEASES = "https://github.com/YOUR_USER/sentinel-app/releases/latest";
+
 export function renderLanding(view, actions) {
   const feature = (t, d) => `<div class="feat-card"><h3>${t}</h3><p>${d}</p></div>`;
   const step = (n, t, d) => `<div class="step"><div class="step-n">${n}</div><div><h3>${t}</h3><p>${d}</p></div></div>`;
+  const osCard = (name, fmt) => `<a class="dlapp-card" href="${APP_RELEASES}" target="_blank" rel="noopener noreferrer"><div class="dlapp-os">${name}</div><div class="dlapp-fmt">${fmt}</div></a>`;
 
   view.innerHTML = `
     <section class="hero">
@@ -37,6 +43,18 @@ export function renderLanding(view, actions) {
           ${step(1, "Create an account", "Sign in with Google, GitHub, or email in seconds.")}
           ${step(2, "Grab your tools", "Pick your OS and copy the exact install commands.")}
           ${step(3, "Track &amp; return", "Mark what's installed and jump back to any tool anytime.")}
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="get-app">
+      <div class="wrap">
+        <h2 class="sec-title">Get the desktop app</h2>
+        <p class="muted dlapp-sub">Far more powerful than the web version &mdash; the native app runs tools with a live terminal and talks to your local AI, right on your machine.</p>
+        <div class="dlapp-grid">
+          ${osCard("Linux", "AppImage / .deb")}
+          ${osCard("Windows", ".exe installer")}
+          ${osCard("macOS", ".dmg")}
         </div>
       </div>
     </section>
