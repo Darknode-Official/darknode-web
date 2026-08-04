@@ -5,3 +5,9 @@ node_modules/
 firebase-debug.log
 .firebase/
 .netlify/
+
+# built installers are placed here for upload but not committed (too large)
+public/downloads/*.AppImage
+public/downloads/*.exe
+public/downloads/*.dmg
+public/downloads/*.deb
