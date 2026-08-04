@@ -7,7 +7,6 @@ service cloud.firestore {
 
     function signedIn() { return request.auth != null; }
     function email()    { return request.auth.token.email; }
-    function verified() { return signedIn() && request.auth.token.email_verified == true; }
     function isOwner()  { return signedIn() && email() == 'cashzombs@gmail.com'; }
 
     // Each user reads/writes only their own doc; the owner can read/manage all.
