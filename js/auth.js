@@ -1,26 +1,59 @@
-// Auth + app entry. Resolves the signed-in user's role and renders the right view.
-// This is a scaffold stub - the full logic is built in the ultraplan pass.
-import { auth, db, OWNER_EMAIL, googleProvider } from "/js/firebase.js";
+// Google sign-in (works on localhost once the Google provider is enabled in the
+// Firebase console). Minimal for now: sign in, show the user, sign out.
+// Full role/whitelist/routing logic comes in the build.
+import { auth, googleProvider, OWNER_EMAIL } from "/js/firebase.js";
 import {
-  onAuthStateChanged, signInWithPopup, signOut
+  onAuthStateChanged, signInWithPopup, signOut,
+  setPersistence, browserLocalPersistence
 } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-auth.js";
 
-// Role resolution plan (implemented in the build):
-//  1. onAuthStateChanged -> if signed out, show the "Sign in with Google" button.
-//  2. On sign-in, upsert users/{uid} = { email, name, status:'pending' } (first time).
-//  3. Read users/{uid}.status: 'owner' (email == OWNER_EMAIL), 'allowed', or 'pending'.
-//  4. Subscribe to settings/session_epoch; if it advances past the client's epoch, signOut()
-//     (this is the "log out everyone but me" mechanism).
-//  5. Route: owner/allowed -> tools hub; pending -> pending-access view.
-//
-// Enforcement is NOT here - the Security Rules (../firebase) gate all reads/writes so a
-// tampered client cannot reach gated data or downloads.
+const userSlot = document.getElementById("user-slot");
+const view = document.getElementById("view");
 
-export function isOwner(user){ return !!user && user.email === OWNER_EMAIL; }
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => (
+  { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]
+));
 
+function renderSignedOut() {
+  userSlot.innerHTML = "";
+  view.innerHTML = `
+    <section class="card" style="max-width:420px;margin:48px auto;text-align:center">
+      <h1>Sentinel</h1>
+      <p class="muted">Sign in to continue.</p>
+      <button class="btn" id="signin">Sign in with Google</button>
+      <p id="err" style="color:var(--bad);margin-top:12px;font-size:.85rem"></p>
+    </section>`;
+  document.getElementById("signin").onclick = async () => {
+    const err = document.getElementById("err");
+    err.textContent = "";
+    try {
+      await signInWithPopup(auth, googleProvider);
+    } catch (e) {
+      err.textContent = `${e.code || "error"}: ${e.message || e}`;
+      // Most common on first run: auth/operation-not-allowed  -> enable the Google
+      // provider in Firebase Console -> Authentication -> Sign-in method.
+    }
+  };
+}
+
+function renderSignedIn(user) {
+  const isOwner = user.email === OWNER_EMAIL;
+  userSlot.innerHTML = `
+    <span class="muted" style="font-size:.85rem">${esc(user.email)}${isOwner ? " (owner)" : ""}</span>
+    <button class="btn ghost" id="signout" style="margin-left:10px">Sign out</button>`;
+  document.getElementById("signout").onclick = () => signOut(auth);
+  view.innerHTML = `
+    <section class="card" style="max-width:520px;margin:24px auto">
+      <h1>Signed in</h1>
+      <p>Welcome, <strong>${esc(user.displayName || user.email)}</strong>.</p>
+      <p class="muted">Email: ${esc(user.email)}</p>
+      <p class="muted">UID: ${esc(user.uid)}</p>
+      <p class="muted">Role: ${isOwner ? "owner" : "signed in (whitelist &amp; tools come later)"}</p>
+    </section>`;
+}
+
+setPersistence(auth, browserLocalPersistence).catch(() => {});
 onAuthStateChanged(auth, (user) => {
-  console.log("[sentinel] auth state:", user ? user.email : "signed out");
-  // TODO(build): render sign-in button, resolve role, load the view.
+  if (user) renderSignedIn(user);
+  else renderSignedOut();
 });
-
-export { signInWithPopup, signOut, auth, googleProvider };
