@@ -2,6 +2,7 @@ Put the built desktop-app installers here so the website can serve them directly
 The landing page's download buttons link to these exact filenames:
 
   Sentinel-linux.deb        (Linux)   built with:  npm run dist:linux   (in sentinel-app)
+  Sentinel-linux.AppImage   (Linux)   built with:  npm run dist:linux   (portable, non-Debian distros)
   Sentinel-windows.exe      (Windows) built with:  npm run dist:win     (on Windows or via Wine)
 
 How to fill this folder:

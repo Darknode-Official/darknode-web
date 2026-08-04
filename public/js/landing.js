@@ -6,6 +6,7 @@
 // names, and the buttons below download it straight from the website.
 const APP_FILES = {
   linux: "/downloads/Sentinel-linux.deb",
+  appimage: "/downloads/Sentinel-linux.AppImage",
   windows: "/downloads/Sentinel-windows.exe",
 };
 
@@ -61,7 +62,8 @@ export function renderLanding(view, actions) {
         <h2 class="sec-title">Get the desktop app</h2>
         <p class="muted dlapp-sub">Far more powerful than the web version &mdash; the native app runs tools with a live terminal and talks to your local AI, right on your machine.</p>
         <div class="dlapp-grid">
-          ${osCard("Linux", ".deb installer", "linux", "sudo apt install ./Sentinel-linux.deb", "Debian / Ubuntu / Kali. Adds Sentinel to your app menu; launch it there or run <code>sentinel</code>.")}
+          ${osCard("Linux", ".deb installer", "linux", "sudo apt install ./Sentinel-linux.deb", "Debian / Ubuntu / Kali &mdash; recommended. Adds Sentinel to your app menu; launch it there or run <code>sentinel</code>.")}
+          ${osCard("Linux", "AppImage (portable)", "appimage", "chmod +x Sentinel-linux.AppImage &amp;&amp; ./Sentinel-linux.AppImage", "Any distro (Fedora / Arch / &hellip;). Needs FUSE: <code>sudo apt install libfuse2</code>, or run it with <code>--appimage-extract-and-run</code>.")}
           ${osCard("Windows", ".exe installer", "windows", "Double-click Sentinel-windows.exe", "If SmartScreen warns, choose More info &rarr; Run anyway (the installer is unsigned).")}
         </div>
       </div>
