@@ -5,14 +5,19 @@
 // (see sentinel-app/README.md), drop it into public/downloads/ with these exact
 // names, and the buttons below download it straight from the website.
 const APP_FILES = {
-  linux: "/downloads/Sentinel-linux.AppImage",
+  linux: "/downloads/Sentinel-linux.deb",
   windows: "/downloads/Sentinel-windows.exe",
 };
 
 export function renderLanding(view, actions) {
   const feature = (t, d) => `<div class="feat-card"><h3>${t}</h3><p>${d}</p></div>`;
   const step = (n, t, d) => `<div class="step"><div class="step-n">${n}</div><div><h3>${t}</h3><p>${d}</p></div></div>`;
-  const osCard = (name, fmt, os) => `<a class="dlapp-card" href="${APP_FILES[os]}" download><div class="dlapp-os">${name}</div><div class="dlapp-fmt">${fmt}</div></a>`;
+  const osCard = (name, fmt, os, cmd, note) => `
+    <div class="dlapp-item">
+      <a class="dlapp-card" href="${APP_FILES[os]}" download><div class="dlapp-os">${name}</div><div class="dlapp-fmt">${fmt}</div></a>
+      <div class="dlapp-cmd"><span class="dlapp-cmd-l">After download</span><code>${cmd}</code></div>
+      ${note ? `<p class="dlapp-note">${note}</p>` : ""}
+    </div>`;
 
   view.innerHTML = `
     <section class="hero">
@@ -56,8 +61,8 @@ export function renderLanding(view, actions) {
         <h2 class="sec-title">Get the desktop app</h2>
         <p class="muted dlapp-sub">Far more powerful than the web version &mdash; the native app runs tools with a live terminal and talks to your local AI, right on your machine.</p>
         <div class="dlapp-grid">
-          ${osCard("Linux", "AppImage", "linux")}
-          ${osCard("Windows", ".exe installer", "windows")}
+          ${osCard("Linux", ".deb installer", "linux", "sudo apt install ./Sentinel-linux.deb", "Debian / Ubuntu / Kali. Adds Sentinel to your app menu; launch it there or run <code>sentinel</code>.")}
+          ${osCard("Windows", ".exe installer", "windows", "Double-click Sentinel-windows.exe", "If SmartScreen warns, choose More info &rarr; Run anyway (the installer is unsigned).")}
         </div>
       </div>
     </section>

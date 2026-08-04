@@ -1,20 +1,24 @@
 Put the built desktop-app installers here so the website can serve them directly.
 The landing page's download buttons link to these exact filenames:
 
-  Sentinel-linux.AppImage     (Linux)   built with:  npm run dist:linux   (in sentinel-app)
-  Sentinel-windows.exe        (Windows) built with:  npm run dist:win     (on Windows)
-  Sentinel-mac.dmg            (macOS)   built with:  npm run dist:mac     (on macOS)
+  Sentinel-linux.deb        (Linux)   built with:  npm run dist:linux   (in sentinel-app)
+  Sentinel-windows.exe      (Windows) built with:  npm run dist:win     (on Windows or via Wine)
 
 How to fill this folder:
-  1. In ~/projects/sentinel-app, build the installer for a given OS (see its README).
-     electron-builder writes the file to sentinel-app/dist/ (e.g. Sentinel-1.0.0.AppImage).
-  2. Rename it to the matching name above and copy it into this folder
-     (~/projects/sentinel-web/public/downloads/).
-  3. Re-upload the public/ folder to Netlify. The button now downloads it from the site.
+  1. In ~/projects/sentinel-app, build the installer:
+       npm run dist:linux    -> dist/sentinel-app_1.0.0_amd64.deb   (also builds an AppImage)
+       npm run dist:win       -> dist/Sentinel Setup 1.0.0.exe
+  2. Copy + rename into this folder:
+       cp dist/sentinel-app_1.0.0_amd64.deb  Sentinel-linux.deb
+       cp "dist/Sentinel Setup 1.0.0.exe"    Sentinel-windows.exe
+  3. Re-upload the public/ folder to Netlify (drag-drop, or: netlify deploy --prod --dir=public).
+
+What users run after downloading:
+  Linux    sudo apt install ./Sentinel-linux.deb      (then launch "Sentinel" from the app menu, or run: sentinel)
+  Windows  double-click Sentinel-windows.exe          (SmartScreen: More info -> Run anyway; installer is unsigned)
 
 Notes:
-  - You can only build the Windows/Mac installers on those operating systems (or via the
-    GitHub Actions workflow in sentinel-app, which builds all three).
-  - Installers are ~80-150 MB each; they count against Netlify bandwidth on every download.
-  - This README is just a placeholder so the folder exists; you can delete it once the
-    installers are in place.
+  - The .deb is preferred over the AppImage on Linux: no FUSE dependency, it sets up the
+    Chromium sandbox correctly, and it adds Sentinel to the application menu automatically.
+  - Installers are ~90-100 MB each; they count against Netlify bandwidth on every download.
+  - Installers are git-ignored, so deploy by uploading the public/ folder, not via a git build.
