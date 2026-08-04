@@ -13,6 +13,7 @@ import {
 import { renderDownloads } from "/js/downloads.js";
 import { renderTools } from "/js/tools.js";
 import { startTour, tourDone } from "/js/tour.js";
+import { renderLanding } from "/js/landing.js";
 
 const userSlot = document.getElementById("user-slot");
 const view = document.getElementById("view");
@@ -44,11 +45,24 @@ async function ensureUserDoc(user) {
 }
 
 // ---------- views ----------
+function showLanding() {
+  document.body.classList.add("landing");
+  userSlot.innerHTML = `<a class="nav-link" id="nav-signin">Sign in</a><button class="btn" id="nav-start">Get Started</button>`;
+  document.getElementById("nav-signin").onclick = () => renderAuth("signin");
+  document.getElementById("nav-start").onclick = () => renderAuth("signup");
+  renderLanding(view, {
+    onGetStarted: () => renderAuth("signup"),
+    onSignIn: () => renderAuth("signin"),
+  });
+}
+
 function renderAuth(mode = "signin") {
+  document.body.classList.remove("landing");
   userSlot.innerHTML = "";
   const isSignup = mode === "signup";
   view.innerHTML = `
     <section class="card auth-card">
+      <a class="auth-back" id="authBack">&larr; Back</a>
       <h1>Sentinel</h1>
       <p class="muted">${isSignup ? "Create an account." : "Sign in to continue."}</p>
       <button class="btn google" id="google">Continue with Google</button>
@@ -92,6 +106,7 @@ function renderAuth(mode = "signin") {
     } catch (e) { err(errText(e)); }
   };
   const on = (id, fn) => { const el = document.getElementById(id); if (el) el.onclick = fn; };
+  on("authBack", showLanding);
   on("toSignup", () => renderAuth("signup"));
   on("toSignin", () => renderAuth("signin"));
   on("forgot", async () => {
@@ -103,6 +118,7 @@ function renderAuth(mode = "signin") {
 }
 
 function renderVerify(user) {
+  document.body.classList.remove("landing");
   userSlot.innerHTML = `<button class="btn ghost" id="signout">Sign out</button>`;
   document.getElementById("signout").onclick = () => signOut(auth);
   view.innerHTML = `
@@ -125,6 +141,7 @@ function renderVerify(user) {
 }
 
 function renderApp(user) {
+  document.body.classList.remove("landing");
   const isOwner = user.email === OWNER_EMAIL;
   userSlot.innerHTML = `
     <span class="muted" style="font-size:.85rem">${esc(user.email)}${isOwner ? ' <span class="owner-badge">OWNER</span>' : ""}</span>
@@ -176,7 +193,7 @@ function tourSteps(isOwner) {
 // ---------- boot ----------
 setPersistence(auth, browserLocalPersistence).catch(() => {});
 onAuthStateChanged(auth, async (user) => {
-  if (!user) { renderAuth("signin"); return; }
+  if (!user) { showLanding(); return; }
   // Google accounts are already verified; email/password users must verify.
   const providerEmailPw = user.providerData.some((p) => p.providerId === "password");
   if (providerEmailPw && !user.emailVerified) { renderVerify(user); return; }
