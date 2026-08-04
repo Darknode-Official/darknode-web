@@ -11,7 +11,7 @@ import {
   doc, setDoc, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
 import { renderTools } from "/js/tools.js";
-import { MORE } from "/js/toolkit.js";
+import { MORE, CATALOG, CATEGORIES } from "/js/toolkit.js";
 import { startTour, tourDone } from "/js/tour.js";
 import { renderLanding } from "/js/landing.js";
 
@@ -46,6 +46,7 @@ async function ensureUserDoc(user) {
 
 // ---------- views ----------
 function showLanding() {
+  document.body.classList.remove("app");
   document.body.classList.add("landing");
   userSlot.innerHTML = `<a class="nav-link" id="nav-signin">Sign in</a><button class="btn" id="nav-start">Get Started</button>`;
   document.getElementById("nav-signin").onclick = () => renderAuth("signin");
@@ -57,7 +58,7 @@ function showLanding() {
 }
 
 function renderAuth(mode = "signin") {
-  document.body.classList.remove("landing");
+  document.body.classList.remove("landing", "app");
   userSlot.innerHTML = "";
   const isSignup = mode === "signup";
   view.innerHTML = `
@@ -118,7 +119,7 @@ function renderAuth(mode = "signin") {
 }
 
 function renderVerify(user) {
-  document.body.classList.remove("landing");
+  document.body.classList.remove("landing", "app");
   userSlot.innerHTML = `<button class="btn ghost" id="signout">Sign out</button>`;
   document.getElementById("signout").onclick = () => signOut(auth);
   view.innerHTML = `
@@ -140,50 +141,133 @@ function renderVerify(user) {
   };
 }
 
-// Simple dismissable modal overlay.
-function showModal(titleTxt, html) {
-  const ov = document.createElement("div");
-  ov.className = "tk-modal";
-  ov.innerHTML = `<div class="tk-modal-box"><div class="tk-modal-hd"><span>${esc(titleTxt)}</span>
-    <button class="btn ghost sm" data-close>Close</button></div><div class="tk-modal-body">${html}</div></div>`;
-  ov.addEventListener("click", (e) => { if (e.target === ov || e.target.closest("[data-close]")) ov.remove(); });
-  document.body.appendChild(ov);
-  return ov;
+// ---------- appearance ----------
+const ACCENTS = ["#00d4ff", "#7c5cff", "#22c55e", "#f59e0b", "#ef4444", "#ec4899"];
+function applyAccent(c) {
+  document.documentElement.style.setProperty("--acc", c);
+  try { localStorage.setItem("sw_accent", c); } catch (_) {}
 }
+(function () { let a = null; try { a = localStorage.getItem("sw_accent"); } catch (_) {} if (a) applyAccent(a); })();
 
-function openMore(m) {
-  const ov = showModal(m.name, `<p class="muted">${esc(m.desc)}</p>
-    <div class="dl-cmd-row"><code class="dl-cmd cmd-block">${esc(m.body)}</code><button class="dl-copy" data-copy>copy</button></div>`);
-  ov.querySelector("[data-copy]").onclick = (e) =>
-    navigator.clipboard?.writeText(m.body).then(() => { e.target.textContent = "copied"; setTimeout(() => (e.target.textContent = "copy"), 1200); });
-}
-
-function openSettings(user, isOwner) {
-  const providers = user.providerData.map((p) => p.providerId.replace(".com", "")).join(", ") || "password";
-  const ov = showModal("Settings", `
-    <div class="set-block"><div class="set-lbl">Account</div>
-      <div>${esc(user.email)}${isOwner ? ' <span class="owner-badge">OWNER</span>' : ""}</div>
-      <div class="muted" style="font-size:.78rem">Signed in via ${esc(providers)}</div>
+// ---------- app sections ----------
+function renderHome(main, user, isOwner, show) {
+  const name = user.displayName ? user.displayName.split(" ")[0] : "";
+  const browsers = CATALOG.filter((t) => t.kind === "browser").length;
+  const stat = (n, l) => `<div class="stat"><div class="stat-n">${n}</div><div class="stat-l">${l}</div></div>`;
+  const qa = (sec, more, title, desc) => `<button class="qa" data-sec="${sec}" data-more="${more}"><div class="qa-title">${title}</div><div class="qa-desc">${desc}</div></button>`;
+  main.innerHTML = `
+    <div class="dash-hero">
+      <div class="eyebrow">DASHBOARD</div>
+      <h1 class="pg-h1">Welcome back${name ? ", " + esc(name) : ""}</h1>
+      <p class="muted pg-sub">Your security tools, local AI, and setup guides &mdash; all in one console.</p>
     </div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">
-      <button class="btn ghost" data-s="changepw">Change password</button>
-      <button class="btn ghost" data-s="tour">Replay walkthrough</button>
-      <button class="btn danger" data-s="logout">Log out</button>
-    </div>`);
-  ov.querySelector('[data-s="logout"]').onclick = () => signOut(auth);
-  ov.querySelector('[data-s="tour"]').onclick = () => { ov.remove(); startTour(tourSteps(isOwner)); };
-  ov.querySelector('[data-s="changepw"]').onclick = async () => {
+    <div class="stat-row">${stat(CATALOG.length, "tools")}${stat(browsers, "run in-browser")}${stat(CATEGORIES.length, "categories")}</div>
+    <h2 class="pg-h2">Jump in</h2>
+    <div class="qa-grid">
+      ${qa("tools", "", "Browse tools", "Search and use the catalog &mdash; encoders, hashes, payloads and more.")}
+      ${qa("setup", "aicoding", "Local AI coding", "Run Ollama models on your machine, in the terminal or a browser UI.")}
+      ${qa("setup", "toolkit", "Prebuilt toolkit", "Install the whole CLI toolkit + SSH in one command.")}
+      ${qa("settings", "", "Settings", "Account, appearance, and security.")}
+    </div>
+    ${isOwner ? `<div class="admin-card"><strong>Owner controls</strong><p class="muted">You're the owner &mdash; admin features live under Admin in the sidebar.</p></div>` : ""}`;
+  main.querySelector(".qa-grid").onclick = (e) => { const b = e.target.closest(".qa"); if (b) show(b.dataset.sec, b.dataset.more || ""); };
+}
+
+function renderSetup(main, openTo) {
+  main.innerHTML = `
+    <h1 class="pg-h1">Local setup</h1>
+    <p class="muted pg-sub">A website can't run these &mdash; spin them up on your own machine with one copy-paste.</p>
+    ${MORE.map((m) => `<div class="card" id="setup-${m.id}"><h3>${esc(m.name)}</h3><p class="muted">${esc(m.desc)}</p>
+      <div class="dl-cmd-row"><code class="dl-cmd cmd-block">${esc(m.body)}</code><button class="dl-copy" data-copy="${m.id}">copy</button></div></div>`).join("")}`;
+  main.onclick = (e) => {
+    const b = e.target.closest("[data-copy]"); if (!b) return;
+    const m = MORE.find((x) => x.id === b.dataset.copy);
+    navigator.clipboard?.writeText(m.body).then(() => { b.textContent = "copied"; setTimeout(() => (b.textContent = "copy"), 1200); });
+  };
+  if (openTo) { const el = main.querySelector("#setup-" + openTo); if (el) el.scrollIntoView({ behavior: "smooth", block: "center" }); }
+}
+
+function renderSettingsPage(main, user, isOwner) {
+  const providers = user.providerData.map((p) => p.providerId.replace(".com", "")).join(", ") || "password";
+  const created = user.metadata?.creationTime ? new Date(user.metadata.creationTime).toLocaleDateString() : "—";
+  const row = (k, v) => `<div class="set-row"><span class="muted">${k}</span><span>${v}</span></div>`;
+  main.innerHTML = `
+    <h1 class="pg-h1">Settings</h1>
+    <div class="set-card"><div class="set-lbl">Account</div>
+      ${row("Name", esc(user.displayName || "—"))}
+      ${row("Email", esc(user.email) + (isOwner ? ' <span class="owner-badge">OWNER</span>' : ""))}
+      ${row("Signed in via", esc(providers))}
+      ${row("Member since", esc(created))}
+      ${row("User ID", '<span class="mono">' + esc(user.uid) + "</span>")}
+    </div>
+    <div class="set-card"><div class="set-lbl">Appearance</div>
+      <div class="set-row"><span class="muted">Accent color</span>
+        <span class="swatches" id="sw-acc">${ACCENTS.map((c) => `<button class="swatch" style="background:${c}" data-c="${c}" title="${c}"></button>`).join("")}</span></div>
+    </div>
+    <div class="set-card"><div class="set-lbl">Security</div>
+      <div class="set-btns">
+        <button class="btn ghost" id="set-pw">Change password</button>
+        <button class="btn ghost" id="set-tour">Replay walkthrough</button>
+        <button class="btn danger" id="set-out">Log out</button>
+      </div>
+    </div>
+    <div class="set-card"><div class="set-lbl">About</div>
+      <p class="muted">Sentinel &mdash; your security workspace. In-browser tools plus install commands for everything that runs on your machine.</p>
+      <p class="muted" style="font-size:.75rem">Version 1.0</p>
+    </div>`;
+  main.querySelector("#sw-acc").onclick = (e) => { const b = e.target.closest(".swatch"); if (b) applyAccent(b.dataset.c); };
+  main.querySelector("#set-out").onclick = () => signOut(auth);
+  main.querySelector("#set-tour").onclick = () => startTour(tourSteps(isOwner));
+  main.querySelector("#set-pw").onclick = async () => {
     try { await sendPasswordResetEmail(auth, user.email); alert("Password reset link sent to " + user.email); }
     catch (e) { alert(errText(e)); }
   };
 }
 
+function renderAdmin(main, user) {
+  main.innerHTML = `
+    <h1 class="pg-h1">Admin</h1>
+    <p class="muted pg-sub">Owner-only &mdash; ${esc(user.email)}</p>
+    <div class="card"><h3>User management</h3><p class="muted">View and manage signed-up users. Wired to your Firestore &mdash; expandable.</p></div>
+    <div class="card"><h3>Announcements</h3><p class="muted">Post a banner shown to everyone.</p></div>`;
+}
+
 function renderApp(user) {
   document.body.classList.remove("landing");
+  document.body.classList.add("app");
   const isOwner = user.email === OWNER_EMAIL;
   const avatar = user.photoURL
     ? `<img class="p-avatar" src="${esc(user.photoURL)}" alt="">`
     : `<span class="p-avatar p-initials">${esc((user.email || "?")[0].toUpperCase())}</span>`;
+  const name = user.displayName || user.email;
+
+  view.innerHTML = `
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="side-brand">Sentinel</div>
+        <nav class="side-nav">
+          <button class="side-item" data-sec="home">Home</button>
+          <button class="side-item" data-sec="tools">Tools</button>
+          <button class="side-item" data-sec="setup">Local setup</button>
+          <button class="side-item" data-sec="settings">Settings</button>
+          ${isOwner ? `<button class="side-item" data-sec="admin">Admin</button>` : ""}
+        </nav>
+        <div class="side-foot">${avatar}<div class="side-user"><div class="su-name">${esc(name)}</div><div class="su-mail muted">${esc(user.email)}</div></div></div>
+      </aside>
+      <main class="app-main" id="app-main"></main>
+    </div>`;
+
+  const main = document.getElementById("app-main");
+  function show(sec, more) {
+    view.querySelectorAll(".side-item").forEach((x) => x.classList.toggle("active", x.dataset.sec === sec));
+    if (sec === "tools") { main.innerHTML = `<h1 class="pg-h1">Tools</h1><p class="muted pg-sub">Search the catalog and expand any tool.</p><div id="tools"></div>`; renderTools(document.getElementById("tools")); }
+    else if (sec === "setup") renderSetup(main, more);
+    else if (sec === "settings") renderSettingsPage(main, user, isOwner);
+    else if (sec === "admin") renderAdmin(main, user);
+    else renderHome(main, user, isOwner, show);
+    main.scrollTop = 0;
+  }
+  view.querySelector(".side-nav").onclick = (e) => { const b = e.target.closest(".side-item"); if (b) show(b.dataset.sec); };
 
   userSlot.innerHTML = `
     <div class="tb-item">
@@ -195,42 +279,39 @@ function renderApp(user) {
     <div class="tb-item">
       <button class="profile-btn" id="profileBtn">${avatar}<span class="p-email">${esc(user.email)}</span></button>
       <div class="menu" id="profileMenu" hidden>
-        <div class="menu-hd">${esc(user.email)}${isOwner ? ' <span class="owner-badge">OWNER</span>' : ""}</div>
-        <button class="menu-item" data-a="settings">Settings</button>
+        <div class="menu-prof">${avatar}<div style="min-width:0"><div class="su-name">${esc(name)}</div><div class="su-mail muted">${esc(user.email)}${isOwner ? ' <span class="owner-badge">OWNER</span>' : ""}</div></div></div>
+        <button class="menu-item" data-nav="home">Home</button>
+        <button class="menu-item" data-nav="tools">Tools</button>
+        <button class="menu-item" data-nav="setup">Local setup</button>
+        <button class="menu-item" data-nav="settings">Settings</button>
+        ${isOwner ? `<button class="menu-item" data-nav="admin">Admin</button>` : ""}
+        <div class="menu-div"></div>
         <button class="menu-item" data-a="logout">Log out</button>
       </div>
     </div>`;
-
   const profileMenu = document.getElementById("profileMenu");
   const moreMenu = document.getElementById("moreMenu");
   const closeMenus = () => { profileMenu.hidden = true; moreMenu.hidden = true; };
   document.getElementById("profileBtn").onclick = (e) => { e.stopPropagation(); const h = profileMenu.hidden; closeMenus(); profileMenu.hidden = !h; };
   document.getElementById("moreBtn").onclick = (e) => { e.stopPropagation(); const h = moreMenu.hidden; closeMenus(); moreMenu.hidden = !h; };
   document.addEventListener("click", closeMenus);
-  profileMenu.onclick = (e) => { const b = e.target.closest("[data-a]"); if (!b) return; closeMenus(); b.dataset.a === "logout" ? signOut(auth) : openSettings(user, isOwner); };
-  moreMenu.onclick = (e) => { const b = e.target.closest("[data-more]"); if (!b) return; closeMenus(); openMore(MORE.find((m) => m.id === b.dataset.more)); };
+  profileMenu.onclick = (e) => {
+    const nb = e.target.closest("[data-nav]"), lb = e.target.closest("[data-a]"); if (!nb && !lb) return;
+    closeMenus(); if (lb) signOut(auth); else show(nb.dataset.nav);
+  };
+  moreMenu.onclick = (e) => { const b = e.target.closest("[data-more]"); if (!b) return; closeMenus(); show("setup", b.dataset.more); };
 
-  view.innerHTML = `
-    <section class="card">
-      <h1>Welcome${user.displayName ? ", " + esc(user.displayName) : ""}</h1>
-      <p class="muted">Signed in as ${esc(user.email)}.</p>
-      ${isOwner ? `<div class="admin-card"><strong>Owner controls</strong><p class="muted">Admin-only features live here (user management, announcements). Wired to your account.</p></div>` : ""}
-    </section>
-    <section class="card" id="tools-section">
-      <h2>Tools</h2>
-      <p class="muted">Search the catalog and expand any tool. Browser tools run right here; the rest show their install command.</p>
-      <div id="tools"></div>
-    </section>`;
-  renderTools(document.getElementById("tools"));
+  show("home");
   if (!tourDone()) setTimeout(() => startTour(tourSteps(isOwner)), 450);
 }
 
 function tourSteps(isOwner) {
   const steps = [
-    { title: "Welcome to Sentinel", text: "A quick tour of the place. You can skip anytime." },
-    { sel: "#tools-section", title: "Your tools", text: "Search the catalog and click a tool to expand it. Browser tools (Base64, hashes, reverse-shell, subnet calc...) run right here; server tools reveal their install command." },
-    { sel: "#moreBtn", title: "The … menu", text: "Spin up the full local toolkit + SSH, or a local AI coding setup with Ollama, from here." },
-    { sel: "#profileBtn", title: "Your profile", text: "Settings, change password, and log out live here." },
+    { title: "Welcome to Sentinel", text: "A quick tour of the console. You can skip anytime." },
+    { sel: ".side-nav", title: "Navigate", text: "Move between Home, Tools, Local setup, and Settings here." },
+    { sel: ".qa-grid", title: "Quick actions", text: "Jump straight into browsing tools or setting up local AI." },
+    { sel: "#moreBtn", title: "The … menu", text: "Spin up the full local toolkit + SSH, or a local AI coding setup with Ollama." },
+    { sel: "#profileBtn", title: "Your profile", text: "Navigation, settings, change password, and log out live here." },
   ];
   if (isOwner) steps.push({ sel: ".admin-card", title: "Owner controls", text: "Admin-only features live here — just for you." });
   steps.push({ title: "You're set", text: "That's it. Replay this anytime with the 'Replay walkthrough' button." });
