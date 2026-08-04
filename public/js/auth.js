@@ -1,6 +1,6 @@
 // Multi-user auth for Sentinel Web (Firebase). Google sign-in + email/password
 // signup with email verification + password reset. Owner (OWNER_EMAIL) is admin.
-import { auth, db, googleProvider, OWNER_EMAIL } from "/js/firebase.js";
+import { auth, db, googleProvider, githubProvider, OWNER_EMAIL } from "/js/firebase.js";
 import {
   onAuthStateChanged, signInWithPopup, signOut,
   createUserWithEmailAndPassword, signInWithEmailAndPassword,
@@ -30,6 +30,7 @@ const errText = (e) => {
     "auth/popup-closed-by-user": "Sign-in was cancelled.",
     "auth/operation-not-allowed": "This sign-in method isn't enabled in Firebase yet.",
     "auth/too-many-requests": "Too many attempts — wait a bit and retry.",
+    "auth/account-exists-with-different-credential": "That email is already registered with a different sign-in method — use that one.",
   };
   return map[e?.code] || e?.message || String(e);
 };
@@ -51,6 +52,7 @@ function renderAuth(mode = "signin") {
       <h1>Sentinel</h1>
       <p class="muted">${isSignup ? "Create an account." : "Sign in to continue."}</p>
       <button class="btn google" id="google">Continue with Google</button>
+      <button class="btn github" id="github">Continue with GitHub</button>
       <div class="or"><span></span>or<span></span></div>
       <form id="pwform" autocomplete="on">
         <input type="email" id="email" placeholder="Email" autocomplete="email" required>
@@ -69,6 +71,11 @@ function renderAuth(mode = "signin") {
   document.getElementById("google").onclick = async () => {
     err("");
     try { await signInWithPopup(auth, googleProvider); }
+    catch (e) { err(errText(e)); }
+  };
+  document.getElementById("github").onclick = async () => {
+    err("");
+    try { await signInWithPopup(auth, githubProvider); }
     catch (e) { err(errText(e)); }
   };
   document.getElementById("pwform").onsubmit = async (ev) => {

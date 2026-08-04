@@ -26,6 +26,7 @@ code,pre{font-family:ui-monospace,Menlo,Consolas,monospace}
 .auth-card h1{margin:0 0 4px}
 .auth-card .btn{width:100%;margin-top:10px}
 .btn.google{background:#fff;color:#1a1a1a}
+.btn.github{background:#24292e;color:#fff;border:1px solid #3a4048}
 .or{display:flex;align-items:center;gap:10px;color:var(--mut);font-size:.75rem;margin:14px 0}
 .or span{flex:1;height:1px;background:var(--line)}
 #pwform{display:flex;flex-direction:column;gap:10px}
