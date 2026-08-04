@@ -11,6 +11,8 @@ import {
   doc, setDoc, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
 import { renderDownloads } from "/js/downloads.js";
+import { renderTools } from "/js/tools.js";
+import { startTour, tourDone } from "/js/tour.js";
 
 const userSlot = document.getElementById("user-slot");
 const view = document.getElementById("view");
@@ -127,14 +129,41 @@ function renderApp(user) {
       <h1>Welcome${user.displayName ? ", " + esc(user.displayName) : ""}</h1>
       <p class="muted">Signed in as ${esc(user.email)}.</p>
       ${isOwner ? `<div class="admin-card"><strong>Owner controls</strong><p class="muted">Admin-only features live here (user management, announcements). Wired to your account.</p></div>` : ""}
-      <p><button class="btn ghost" id="changepw">Change password (email me a reset link)</button></p>
+      <p style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn ghost" id="changepw">Change password (email me a reset link)</button>
+        <button class="btn ghost" id="replayTour">Replay walkthrough</button>
+      </p>
     </section>
-    <section class="card"><h2>Downloads</h2><div id="downloads"></div></section>`;
+    <section class="card" id="tools-section">
+      <h2>Tools</h2>
+      <p class="muted">Click a tool to get its install command.</p>
+      <div id="tools"></div>
+    </section>
+    <section class="card" id="downloads-section">
+      <h2>Downloads</h2>
+      <p class="muted">Commands to install everything &mdash; pick your OS.</p>
+      <div id="downloads"></div>
+    </section>`;
   document.getElementById("changepw").onclick = async () => {
     try { await sendPasswordResetEmail(auth, user.email); alert("Password reset link sent to " + user.email); }
     catch (e) { alert(errText(e)); }
   };
+  document.getElementById("replayTour").onclick = () => startTour(tourSteps(isOwner));
   renderDownloads(document.getElementById("downloads"));
+  renderTools(document.getElementById("tools"));
+  if (!tourDone()) setTimeout(() => startTour(tourSteps(isOwner)), 450);
+}
+
+function tourSteps(isOwner) {
+  const steps = [
+    { title: "Welcome to Sentinel", text: "A quick tour of the place. You can skip anytime." },
+    { sel: "#tools-section", title: "Your tools", text: "Every tool you can use. Click one that isn't installed to jump straight to its command." },
+    { sel: ".os-tabs", title: "Your OS", text: "Pick Linux, macOS, or Windows and the commands update to match." },
+    { sel: "#downloads-section .dl-card", title: "Install it", text: "Copy the command, run it in your terminal, then hit 'mark installed'." },
+  ];
+  if (isOwner) steps.push({ sel: ".admin-card", title: "Owner controls", text: "Admin-only features live here — just for you." });
+  steps.push({ title: "You're set", text: "That's it. Replay this anytime with the 'Replay walkthrough' button." });
+  return steps;
 }
 
 // ---------- boot ----------
