@@ -10,8 +10,8 @@ import {
 import {
   doc, setDoc, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
-import { renderDownloads } from "/js/downloads.js";
 import { renderTools } from "/js/tools.js";
+import { MORE } from "/js/toolkit.js";
 import { startTour, tourDone } from "/js/tour.js";
 import { renderLanding } from "/js/landing.js";
 
@@ -140,40 +140,87 @@ function renderVerify(user) {
   };
 }
 
+// Simple dismissable modal overlay.
+function showModal(titleTxt, html) {
+  const ov = document.createElement("div");
+  ov.className = "tk-modal";
+  ov.innerHTML = `<div class="tk-modal-box"><div class="tk-modal-hd"><span>${esc(titleTxt)}</span>
+    <button class="btn ghost sm" data-close>Close</button></div><div class="tk-modal-body">${html}</div></div>`;
+  ov.addEventListener("click", (e) => { if (e.target === ov || e.target.closest("[data-close]")) ov.remove(); });
+  document.body.appendChild(ov);
+  return ov;
+}
+
+function openMore(m) {
+  const ov = showModal(m.name, `<p class="muted">${esc(m.desc)}</p>
+    <div class="dl-cmd-row"><code class="dl-cmd cmd-block">${esc(m.body)}</code><button class="dl-copy" data-copy>copy</button></div>`);
+  ov.querySelector("[data-copy]").onclick = (e) =>
+    navigator.clipboard?.writeText(m.body).then(() => { e.target.textContent = "copied"; setTimeout(() => (e.target.textContent = "copy"), 1200); });
+}
+
+function openSettings(user, isOwner) {
+  const providers = user.providerData.map((p) => p.providerId.replace(".com", "")).join(", ") || "password";
+  const ov = showModal("Settings", `
+    <div class="set-block"><div class="set-lbl">Account</div>
+      <div>${esc(user.email)}${isOwner ? ' <span class="owner-badge">OWNER</span>' : ""}</div>
+      <div class="muted" style="font-size:.78rem">Signed in via ${esc(providers)}</div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">
+      <button class="btn ghost" data-s="changepw">Change password</button>
+      <button class="btn ghost" data-s="tour">Replay walkthrough</button>
+      <button class="btn danger" data-s="logout">Log out</button>
+    </div>`);
+  ov.querySelector('[data-s="logout"]').onclick = () => signOut(auth);
+  ov.querySelector('[data-s="tour"]').onclick = () => { ov.remove(); startTour(tourSteps(isOwner)); };
+  ov.querySelector('[data-s="changepw"]').onclick = async () => {
+    try { await sendPasswordResetEmail(auth, user.email); alert("Password reset link sent to " + user.email); }
+    catch (e) { alert(errText(e)); }
+  };
+}
+
 function renderApp(user) {
   document.body.classList.remove("landing");
   const isOwner = user.email === OWNER_EMAIL;
+  const avatar = user.photoURL
+    ? `<img class="p-avatar" src="${esc(user.photoURL)}" alt="">`
+    : `<span class="p-avatar p-initials">${esc((user.email || "?")[0].toUpperCase())}</span>`;
+
   userSlot.innerHTML = `
-    <span class="muted" style="font-size:.85rem">${esc(user.email)}${isOwner ? ' <span class="owner-badge">OWNER</span>' : ""}</span>
-    <button class="btn ghost" id="signout" style="margin-left:10px">Sign out</button>`;
-  document.getElementById("signout").onclick = () => signOut(auth);
+    <div class="tb-item">
+      <button class="icon-btn" id="moreBtn" title="More" aria-label="More">&#8943;</button>
+      <div class="menu" id="moreMenu" hidden>
+        ${MORE.map((m) => `<button class="menu-item col" data-more="${m.id}"><strong>${esc(m.name)}</strong><span class="menu-sub">${esc(m.desc)}</span></button>`).join("")}
+      </div>
+    </div>
+    <div class="tb-item">
+      <button class="profile-btn" id="profileBtn">${avatar}<span class="p-email">${esc(user.email)}</span></button>
+      <div class="menu" id="profileMenu" hidden>
+        <div class="menu-hd">${esc(user.email)}${isOwner ? ' <span class="owner-badge">OWNER</span>' : ""}</div>
+        <button class="menu-item" data-a="settings">Settings</button>
+        <button class="menu-item" data-a="logout">Log out</button>
+      </div>
+    </div>`;
+
+  const profileMenu = document.getElementById("profileMenu");
+  const moreMenu = document.getElementById("moreMenu");
+  const closeMenus = () => { profileMenu.hidden = true; moreMenu.hidden = true; };
+  document.getElementById("profileBtn").onclick = (e) => { e.stopPropagation(); const h = profileMenu.hidden; closeMenus(); profileMenu.hidden = !h; };
+  document.getElementById("moreBtn").onclick = (e) => { e.stopPropagation(); const h = moreMenu.hidden; closeMenus(); moreMenu.hidden = !h; };
+  document.addEventListener("click", closeMenus);
+  profileMenu.onclick = (e) => { const b = e.target.closest("[data-a]"); if (!b) return; closeMenus(); b.dataset.a === "logout" ? signOut(auth) : openSettings(user, isOwner); };
+  moreMenu.onclick = (e) => { const b = e.target.closest("[data-more]"); if (!b) return; closeMenus(); openMore(MORE.find((m) => m.id === b.dataset.more)); };
 
   view.innerHTML = `
     <section class="card">
       <h1>Welcome${user.displayName ? ", " + esc(user.displayName) : ""}</h1>
       <p class="muted">Signed in as ${esc(user.email)}.</p>
       ${isOwner ? `<div class="admin-card"><strong>Owner controls</strong><p class="muted">Admin-only features live here (user management, announcements). Wired to your account.</p></div>` : ""}
-      <p style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn ghost" id="changepw">Change password (email me a reset link)</button>
-        <button class="btn ghost" id="replayTour">Replay walkthrough</button>
-      </p>
     </section>
     <section class="card" id="tools-section">
       <h2>Tools</h2>
-      <p class="muted">Search the catalog. Browser tools run right here; the rest show install commands.</p>
+      <p class="muted">Search the catalog and expand any tool. Browser tools run right here; the rest show their install command.</p>
       <div id="tools"></div>
-    </section>
-    <section class="card" id="downloads-section">
-      <h2>Downloads</h2>
-      <p class="muted">Commands to install everything &mdash; pick your OS.</p>
-      <div id="downloads"></div>
     </section>`;
-  document.getElementById("changepw").onclick = async () => {
-    try { await sendPasswordResetEmail(auth, user.email); alert("Password reset link sent to " + user.email); }
-    catch (e) { alert(errText(e)); }
-  };
-  document.getElementById("replayTour").onclick = () => startTour(tourSteps(isOwner));
-  renderDownloads(document.getElementById("downloads"));
   renderTools(document.getElementById("tools"));
   if (!tourDone()) setTimeout(() => startTour(tourSteps(isOwner)), 450);
 }
@@ -181,9 +228,9 @@ function renderApp(user) {
 function tourSteps(isOwner) {
   const steps = [
     { title: "Welcome to Sentinel", text: "A quick tour of the place. You can skip anytime." },
-    { sel: "#tools-section", title: "Your tools", text: "Search the catalog. Browser tools (Base64, hashes, reverse-shell, subnet calc...) open and run right here; server tools show their install command." },
-    { sel: ".os-tabs", title: "Your OS", text: "Pick Linux, macOS, or Windows and the commands update to match." },
-    { sel: "#downloads-section .dl-card", title: "Install it", text: "Copy the command, run it in your terminal, then hit 'mark installed'." },
+    { sel: "#tools-section", title: "Your tools", text: "Search the catalog and click a tool to expand it. Browser tools (Base64, hashes, reverse-shell, subnet calc...) run right here; server tools reveal their install command." },
+    { sel: "#moreBtn", title: "The … menu", text: "Spin up the full local toolkit + SSH, or a local AI coding setup with Ollama, from here." },
+    { sel: "#profileBtn", title: "Your profile", text: "Settings, change password, and log out live here." },
   ];
   if (isOwner) steps.push({ sel: ".admin-card", title: "Owner controls", text: "Admin-only features live here — just for you." });
   steps.push({ title: "You're set", text: "That's it. Replay this anytime with the 'Replay walkthrough' button." });

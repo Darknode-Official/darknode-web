@@ -134,6 +134,13 @@ export const CATALOG = [
   { id: "revshell", name: "Reverse shell", cat: "Payloads", kind: "browser", desc: "Reverse-shell one-liners, 9 flavors", render: B.revshell },
   { id: "obfuscate", name: "Payload obfuscator", cat: "Payloads", kind: "browser", desc: "Base64 / hex / url / unicode", render: B.obfuscate },
 
+  // --- setup (install locally) ---
+  { id: "vscode", name: "VS Code", cat: "Setup", kind: "local", desc: "Code editor", cmd: "sudo snap install code --classic" },
+  { id: "git", name: "Git", cat: "Setup", kind: "local", desc: "Version control", cmd: "sudo apt install -y git" },
+  { id: "python", name: "Python", cat: "Setup", kind: "local", desc: "Language + pip", cmd: "sudo apt install -y python3 python3-pip" },
+  { id: "node", name: "Node.js", cat: "Setup", kind: "local", desc: "JS runtime + npm", cmd: "sudo apt install -y nodejs npm" },
+  { id: "ollama", name: "Ollama", cat: "Setup", kind: "local", desc: "Local LLM runner", cmd: "curl -fsSL https://ollama.com/install.sh | sh" },
+
   // --- local (run on your machine; a website can't) ---
   ...[
     ["nmap", "Nmap", "Recon", "Port/service scanner", "sudo apt install -y nmap"],
@@ -167,3 +174,17 @@ export const CATALOG = [
 ];
 
 export const CATEGORIES = [...new Set(CATALOG.map((t) => t.cat))];
+
+// "..." menu: ways to spin up the real local environment (a website can't run tools).
+export const MORE = [
+  {
+    id: "toolkit", name: "Prebuilt local toolkit",
+    desc: "Install the full CLI toolkit + OpenSSH in one go, then use every tool (and your SSH terminal) on your own machine.",
+    body: "sudo apt update && sudo apt install -y \\\n  nmap masscan sqlmap gobuster ffuf nikto hydra john hashcat \\\n  theharvester wafw00f aircrack-ng tor proxychains4 \\\n  openssh-client openssh-server",
+  },
+  {
+    id: "aicoding", name: "Local AI coding (Ollama)",
+    desc: "Run a coding model on your machine - in the terminal, or a web UI in your browser at localhost:3000.",
+    body: "# install Ollama + a coding model\ncurl -fsSL https://ollama.com/install.sh | sh\nollama pull qwen2.5-coder\n\n# use it in the terminal:\nollama run qwen2.5-coder\n\n# or a browser UI at http://localhost:3000 :\ndocker run -d -p 3000:8080 -v open-webui:/app/backend/data \\\n  --name open-webui ghcr.io/open-webui/open-webui:main",
+  },
+];

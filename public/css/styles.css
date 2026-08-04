@@ -97,6 +97,39 @@ body.landing #view{max-width:none;padding:0;margin:0}
 .tk-out{white-space:pre-wrap;word-break:break-word;background:#101827;border:1px solid var(--line);border-radius:6px;padding:10px;font-size:.78rem;color:var(--acc);min-height:2.4em;margin:0}
 .tk-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px;font-size:.8rem;color:var(--mut)}
 .tk-f{background:#101827;border:1px solid var(--line);color:var(--txt);border-radius:6px;padding:.45rem .6rem;font-family:inherit;flex:1;min-width:0}
+/* accordion rows */
+.tk-item{border:1px solid var(--line);border-radius:9px;margin-bottom:7px;overflow:hidden;background:var(--card)}
+.tk-head{width:100%;display:flex;align-items:center;gap:10px;background:transparent;border:none;color:var(--txt);padding:11px 13px;cursor:pointer;font-family:inherit;text-align:left}
+.tk-head:hover{background:#101827}
+.tk-tri{flex:none;width:0;height:0;border-left:6px solid var(--mut);border-top:4px solid transparent;border-bottom:4px solid transparent;transition:transform .15s}
+.tk-item.open .tk-tri{transform:rotate(90deg)}
+.tk-name{font-weight:700;font-size:.88rem;flex:none}
+.tk-desc{color:var(--mut);font-size:.76rem;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tk-badge{flex:none;font-size:.52rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:1px 5px;border-radius:4px}
+.tk-badge.browser{background:color-mix(in srgb,var(--ok) 22%,transparent);color:var(--ok)}
+.tk-badge.local{background:color-mix(in srgb,var(--mut) 22%,transparent);color:var(--mut)}
+.tk-panel{padding:12px 13px 13px;border-top:1px solid var(--line)}
+.tk-panel[hidden]{display:none}
+.cmd-block{white-space:pre-wrap;word-break:break-word;display:block;line-height:1.5}
+/* topbar profile + "..." menu */
+#user-slot{display:flex;align-items:center;gap:8px}
+.tb-item{position:relative}
+.icon-btn{background:transparent;border:1px solid var(--line);color:var(--txt);border-radius:8px;width:34px;height:34px;cursor:pointer;font-size:1.1rem;line-height:1;font-family:inherit}
+.icon-btn:hover{border-color:var(--acc);color:var(--acc)}
+.profile-btn{display:flex;align-items:center;gap:8px;background:transparent;border:1px solid var(--line);border-radius:20px;padding:3px 12px 3px 3px;cursor:pointer;color:var(--txt);font-family:inherit}
+.profile-btn:hover{border-color:var(--acc)}
+.p-avatar{width:26px;height:26px;border-radius:50%;object-fit:cover;display:flex;align-items:center;justify-content:center;flex:none}
+.p-initials{background:var(--acc);color:#04121a;font-weight:800;font-size:.8rem}
+.p-email{font-size:.8rem;color:var(--mut);max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.menu{position:absolute;right:0;top:calc(100% + 6px);min-width:220px;max-width:290px;background:var(--card);border:1px solid var(--line);border-radius:10px;box-shadow:0 16px 44px rgba(0,0,0,.5);padding:6px;z-index:60}
+.menu[hidden]{display:none}
+.menu-hd{padding:8px 10px;font-size:.78rem;color:var(--mut);border-bottom:1px solid var(--line);margin-bottom:4px;overflow:hidden;text-overflow:ellipsis}
+.menu-item{display:block;width:100%;text-align:left;background:transparent;border:none;color:var(--txt);padding:8px 10px;border-radius:7px;cursor:pointer;font-family:inherit;font-size:.85rem}
+.menu-item:hover{background:#101827}
+.menu-item.col{display:flex;flex-direction:column;gap:2px}
+.menu-item.col strong{font-size:.84rem}
+.menu-sub{font-size:.72rem;color:var(--mut);white-space:normal}
+.set-block .set-lbl{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--mut);margin-bottom:4px}
 /* downloads */
 .dl-group{margin-bottom:16px}
 .dl-group-title{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--mut);margin:6px 0}
