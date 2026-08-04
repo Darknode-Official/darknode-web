@@ -160,7 +160,7 @@ function renderApp(user) {
     </section>
     <section class="card" id="tools-section">
       <h2>Tools</h2>
-      <p class="muted">Click a tool to get its install command.</p>
+      <p class="muted">Search the catalog. Browser tools run right here; the rest show install commands.</p>
       <div id="tools"></div>
     </section>
     <section class="card" id="downloads-section">
@@ -181,7 +181,7 @@ function renderApp(user) {
 function tourSteps(isOwner) {
   const steps = [
     { title: "Welcome to Sentinel", text: "A quick tour of the place. You can skip anytime." },
-    { sel: "#tools-section", title: "Your tools", text: "Every tool you can use. Click one that isn't installed to jump straight to its command." },
+    { sel: "#tools-section", title: "Your tools", text: "Search the catalog. Browser tools (Base64, hashes, reverse-shell, subnet calc...) open and run right here; server tools show their install command." },
     { sel: ".os-tabs", title: "Your OS", text: "Pick Linux, macOS, or Windows and the commands update to match." },
     { sel: "#downloads-section .dl-card", title: "Install it", text: "Copy the command, run it in your terminal, then hit 'mark installed'." },
   ];
