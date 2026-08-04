@@ -43,4 +43,7 @@ code,pre{font-family:ui-monospace,Menlo,Consolas,monospace}
 a.dl-card:hover{border-color:var(--acc)}
 .dl-name{font-weight:700;font-size:.88rem}
 .dl-desc{color:var(--mut);font-size:.74rem;margin-top:3px}
-.dl-cmd{display:block;margin-top:6px;background:#101827;border:1px solid var(--line);border-radius:5px;padding:4px 6px;font-size:.72rem;color:var(--acc);overflow-x:auto}
+.dl-cmd-row{display:flex;align-items:stretch;gap:6px;margin-top:6px}
+.dl-cmd{flex:1;min-width:0;background:#101827;border:1px solid var(--line);border-radius:5px;padding:4px 6px;font-size:.72rem;color:var(--acc);overflow-x:auto;white-space:nowrap}
+.dl-copy{flex:none;background:transparent;border:1px solid var(--line);border-radius:5px;color:var(--mut);cursor:pointer;font-size:.66rem;padding:0 8px;font-family:inherit}
+.dl-copy:hover{border-color:var(--acc);color:var(--acc)}
