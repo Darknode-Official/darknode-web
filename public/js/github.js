@@ -98,7 +98,31 @@ export function renderGitHub(main) {
           </div>
           <textarea class="tk-in" id="ci-body" rows="2" placeholder="description (optional)" style="margin-top:8px"></textarea>
           <p id="ci-msg" style="font-size:.8rem;margin:8px 0 0;min-height:1em"></p>
+        </div>
+        <div class="card" style="max-width:680px;margin-top:16px">
+          <div class="set-lbl">Comment on an issue / PR</div>
+          <div class="row" style="gap:8px;flex-wrap:wrap">
+            <input class="tk-f" id="cc-repo" placeholder="owner/repo" style="min-width:160px" value="${repos[0] ? esc(repos[0].full_name) : ""}">
+            <input class="tk-f" id="cc-num" placeholder="#" style="max-width:80px">
+            <button class="btn" id="cc-go">Comment</button>
+          </div>
+          <textarea class="tk-in" id="cc-body" rows="2" placeholder="your comment" style="margin-top:8px"></textarea>
+          <p id="cc-msg" style="font-size:.8rem;margin:8px 0 0;min-height:1em"></p>
         </div>`;
+      out.querySelector("#cc-go").onclick = async () => {
+        const t = getTok(), repo = out.querySelector("#cc-repo").value.trim(), num = out.querySelector("#cc-num").value.trim(), body = out.querySelector("#cc-body").value.trim(), msg = out.querySelector("#cc-msg");
+        const set = (m, ok) => { msg.textContent = m; msg.style.color = ok ? "var(--ok)" : "var(--bad)"; };
+        if (!t) return set("add a token to comment");
+        if (!repo.includes("/") || !num || !body) return set("need owner/repo, #, and text");
+        set("posting…", true);
+        try {
+          const r = await fetch("https://api.github.com/repos/" + repo + "/issues/" + num + "/comments", { method: "POST", headers: { Accept: "application/vnd.github+json", Authorization: "Bearer " + t, "Content-Type": "application/json" }, body: JSON.stringify({ body }) });
+          if (!r.ok) throw new Error(r.status + " " + r.statusText);
+          const d = await r.json();
+          msg.innerHTML = 'posted <a href="' + esc(d.html_url) + '" target="_blank" rel="noopener" style="color:var(--acc)">comment</a>'; msg.style.color = "var(--ok)";
+          out.querySelector("#cc-body").value = "";
+        } catch (e2) { set(e2.message); }
+      };
       const cig = out.querySelector("#ci-go");
       cig.onclick = async () => {
         const t = getTok(), repo = out.querySelector("#ci-repo").value.trim(), title = out.querySelector("#ci-title").value.trim(), msg = out.querySelector("#ci-msg");

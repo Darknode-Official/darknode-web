@@ -16,9 +16,9 @@ export function renderDownloads(main) {
 
     <h2 class="pg-h2">Desktop app</h2>
     <div class="dlapp-grid">
-      ${item("Linux", ".deb installer", "sentinel-app_1.0.0_amd64.deb", "sudo apt install ./sentinel-app_1.0.0_amd64.deb")}
-      ${item("Linux", "AppImage", "Sentinel-1.0.0.AppImage", "chmod +x Sentinel-1.0.0.AppImage && ./Sentinel-1.0.0.AppImage")}
-      ${item("Windows", ".exe installer", "Sentinel.Setup.1.0.0.exe", "double-click Sentinel.Setup.1.0.0.exe")}
+      ${item("Linux", ".deb installer", "sentinel-app_1.1.0_amd64.deb", "sudo apt install ./sentinel-app_1.1.0_amd64.deb")}
+      ${item("Linux", "AppImage", "Sentinel-1.1.0.AppImage", "chmod +x Sentinel-1.1.0.AppImage && ./Sentinel-1.1.0.AppImage")}
+      ${item("Windows", ".exe installer", "Sentinel.Setup.1.1.0.exe", "double-click Sentinel.Setup.1.1.0.exe")}
     </div>
 
     <h2 class="pg-h2">Terminal edition (CLI)</h2>
