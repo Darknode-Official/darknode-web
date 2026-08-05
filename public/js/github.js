@@ -59,6 +59,7 @@ export function renderGitHub(main) {
       const prs = ((await api("/search/issues?q=" + encodeURIComponent("author:" + user + " is:pr is:open") + "&per_page=8", token).catch(() => ({ items: [] }))).items) || [];
       const issues = ((await api("/search/issues?q=" + encodeURIComponent("author:" + user + " is:issue is:open") + "&per_page=8", token).catch(() => ({ items: [] }))).items) || [];
       const issRow = (p) => `<a class="feed-row" href="${esc(p.html_url)}" target="_blank" rel="noopener"><span class="fr-id mono">#${p.number}</span><span class="fr-name">${esc(p.title)}</span></a>`;
+      const gists = await api((user ? "/users/" + user + "/gists" : "/gists") + "?per_page=8", token).catch(() => []);
       out.innerHTML = `
         <div class="gh-profile card">
           <img class="gh-avatar" src="${esc(profile.avatar_url)}" alt="">
@@ -83,6 +84,9 @@ export function renderGitHub(main) {
             </div>
             <div class="panel"><div class="panel-h"><h2 class="pg-h2" style="margin:0">Open issues</h2></div>
               <div class="feed-list">${issues.length ? issues.map(issRow).join("") : '<p class="muted" style="font-size:.82rem">None open.</p>'}</div>
+            </div>
+            <div class="panel"><div class="panel-h"><h2 class="pg-h2" style="margin:0">Gists</h2></div>
+              <div class="feed-list">${gists.length ? gists.map((g) => `<a class="feed-row" href="${esc(g.html_url)}" target="_blank" rel="noopener"><span class="fr-name">${esc(Object.keys(g.files || {})[0] || "gist")}</span><span class="fr-tag muted">${g.public ? "public" : "secret"}</span></a>`).join("") : '<p class="muted" style="font-size:.82rem">No gists.</p>'}</div>
             </div>
             <div class="panel"><div class="panel-h"><h2 class="pg-h2" style="margin:0">Recent activity</h2></div>
               <div class="feed-list">${events.length ? events.map((e) => `<div class="feed-row"><span class="fr-name">${eventText(e)}</span><span class="fr-tag muted">${ago(e.created_at)}</span></div>`).join("") : '<p class="muted" style="font-size:.82rem">No public activity.</p>'}</div>
