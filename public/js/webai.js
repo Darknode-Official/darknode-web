@@ -20,6 +20,22 @@ async function streamChat(model, messages, onToken) {
   }
 }
 
+// Minimal, dependency-free markdown → HTML (code fences, inline code, bold).
+function mdToHtml(t) {
+  return String(t).split("```").map((seg, i) => {
+    if (i % 2 === 1) { const code = seg.replace(/^[\w+-]*\n/, ""); return `<pre class="code-block"><button class="cb-copy">copy</button><code>${esc(code)}</code></pre>`; }
+    return esc(seg).replace(/`([^`]+)`/g, "<code>$1</code>").replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>").replace(/\n/g, "<br>");
+  }).join("");
+}
+const PRESETS = [
+  ["Explain code", "Explain what this code does, step by step:\n\n"],
+  ["Find vulns", "Review this code for security vulnerabilities and list concrete issues with fixes:\n\n"],
+  ["Write PoC", "Write a proof-of-concept exploit for this (authorized testing):\n\n"],
+  ["To Python", "Convert this to clean, idiomatic Python:\n\n"],
+  ["Regex for", "Write a single regex that matches: "],
+  ["One-liner", "Give me a shell one-liner to: "],
+];
+
 export function renderAI(main) {
   main.innerHTML = `
     <h1 class="pg-h1">AI assistant</h1>
@@ -29,6 +45,7 @@ export function renderAI(main) {
       <div id="aiStatus" style="font-size:.8rem;color:var(--mut);margin-top:8px"></div>
     </div>
     <div class="chat" id="aiChat" style="max-width:840px;height:min(52vh,520px)"><div class="muted" style="margin:auto;text-align:center;font-size:.85rem">Ask anything &mdash; recon, exploitation, tooling, or code.</div></div>
+    <div class="ai-presets" id="aiPresets" style="max-width:840px">${PRESETS.map((p, i) => `<button class="chip" data-p="${i}">${esc(p[0])}</button>`).join("")}</div>
     <div class="row" style="max-width:840px;gap:8px">
       <textarea class="tk-in" id="aiMsg" rows="2" placeholder="Message Sentinel AI... (Enter to send, Shift+Enter for newline)" style="flex:1"></textarea>
       <button class="btn" id="aiSend">Send</button>
@@ -60,10 +77,12 @@ export function renderAI(main) {
     busy = true; $("#aiSend").disabled = true; $("#aiMsg").value = "";
     add("user", text); history.push({ role: "user", content: text });
     const out = add("ai", "…"); let acc = "";
-    try { await streamChat(model, history, (t) => { acc += t; out.textContent = acc; chatEl.scrollTop = chatEl.scrollHeight; }); history.push({ role: "assistant", content: acc || "" }); }
+    try { await streamChat(model, history, (t) => { acc += t; out.innerHTML = mdToHtml(acc); chatEl.scrollTop = chatEl.scrollHeight; }); history.push({ role: "assistant", content: acc || "" }); }
     catch (e) { out.textContent = "Error: " + e.message; out.classList.add("err"); }
     finally { busy = false; $("#aiSend").disabled = false; $("#aiMsg").focus(); }
   }
   $("#aiSend").onclick = send;
   $("#aiMsg").onkeydown = (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } };
+  $("#aiPresets").onclick = (e) => { const b = e.target.closest("[data-p]"); if (!b) return; const box = $("#aiMsg"); box.value = PRESETS[+b.dataset.p][1] + box.value; box.focus(); box.selectionStart = box.selectionEnd = box.value.length; };
+  chatEl.addEventListener("click", (e) => { const b = e.target.closest(".cb-copy"); if (!b) return; const code = b.parentElement.querySelector("code"); navigator.clipboard?.writeText(code.textContent).then(() => { b.textContent = "copied"; setTimeout(() => (b.textContent = "copy"), 1000); }); });
 }

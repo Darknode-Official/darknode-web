@@ -23,7 +23,7 @@ import { renderUtils } from "/js/utils.js";
 import { renderDownloads } from "/js/getapp.js";
 import { renderGitHub } from "/js/github.js";
 import { emailConfigured, sendCode, sendLoginAlert, genCode, hashCode, deviceInfo } from "/js/notify.js";
-import { renderPayloads, renderSnippets, renderApiKeys } from "/js/labs.js";
+import { renderPayloads, renderSnippets, renderApiKeys, renderRefs } from "/js/labs.js";
 import { renderAI } from "/js/webai.js";
 
 const userSlot = document.getElementById("user-slot");
@@ -353,6 +353,7 @@ function renderApp(user) {
           <button class="side-item" data-sec="cheats">Cheat sheets</button>
           <div class="side-group">Develop</div>
           <button class="side-item" data-sec="snippets">Code snippets</button>
+          <button class="side-item" data-sec="refs">References</button>
           <button class="side-item" data-sec="github">GitHub</button>
           <div class="side-group">Resources</div>
           <button class="side-item" data-sec="learn">Learn</button>
@@ -375,6 +376,7 @@ function renderApp(user) {
     else if (sec === "ai") renderAI(main);
     else if (sec === "payloads") renderPayloads(main);
     else if (sec === "snippets") renderSnippets(main);
+    else if (sec === "refs") renderRefs(main);
     else if (sec === "apikeys") renderApiKeys(main);
     else if (sec === "cheats") renderCheats(main);
     else if (sec === "threat") renderThreat(main);
@@ -436,7 +438,7 @@ function renderApp(user) {
 // ---- command palette (Ctrl/Cmd+K) ----
 function openPalette() {
   if (document.getElementById("cmdk")) return;
-  const sections = [["home", "Home"], ["ai", "AI assistant"], ["tools", "Tools"], ["utils", "Utilities"], ["payloads", "Payloads"], ["threat", "Threat intel"], ["cheats", "Cheat sheets"], ["snippets", "Code snippets"], ["github", "GitHub"], ["learn", "Learn"], ["setup", "Local setup"], ["downloads", "Get the app"], ["apikeys", "API keys"], ["settings", "Settings"], ["admin", "Admin"]];
+  const sections = [["home", "Home"], ["ai", "AI assistant"], ["tools", "Tools"], ["utils", "Utilities"], ["payloads", "Payloads"], ["threat", "Threat intel"], ["cheats", "Cheat sheets"], ["snippets", "Code snippets"], ["refs", "References"], ["github", "GitHub"], ["learn", "Learn"], ["setup", "Local setup"], ["downloads", "Get the app"], ["apikeys", "API keys"], ["settings", "Settings"], ["admin", "Admin"]];
   const items = [
     ...sections.map(([s, n]) => ({ type: "section", id: s, name: n, desc: "Go to " + n })),
     ...CATALOG.map((t) => ({ type: "tool", id: t.id, name: t.name, desc: t.cat + " · " + t.desc })),

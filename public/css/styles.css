@@ -539,3 +539,21 @@ body.app .app-main::before{content:"";position:fixed;inset:0 0 0 220px;z-index:-
 .tw-line{display:block;opacity:0;transform:translateY(2px);animation:tline .3s ease forwards}
 @keyframes tline{to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){.tw-line{opacity:1;transform:none;animation:none}}
+
+/* --- AI prompt presets + markdown code blocks --- */
+.ai-presets{display:flex;flex-wrap:wrap;gap:6px;margin:8px auto 0}
+.msg.ai .code-block{position:relative;margin:8px 0;padding:10px 12px;background:#0b0f16;border:1px solid var(--line);border-radius:8px;overflow-x:auto}
+.msg.ai .code-block code{font-family:var(--mono,ui-monospace,monospace);font-size:.82rem;white-space:pre;color:#d6e2f0}
+.msg.ai .cb-copy{position:absolute;top:6px;right:6px;padding:2px 8px;font-size:.68rem;border:1px solid var(--line);background:rgba(255,255,255,.05);color:var(--mut);border-radius:6px;cursor:pointer}
+.msg.ai .cb-copy:hover{color:var(--fg);border-color:var(--acc)}
+.msg.ai code{font-family:var(--mono,ui-monospace,monospace);font-size:.84rem;background:rgba(127,127,127,.16);padding:1px 5px;border-radius:4px}
+.msg.ai .code-block code{background:none;padding:0}
+
+/* --- References section --- */
+.ref-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+.ref-row{display:flex;align-items:center;gap:10px;padding:6px 2px;border-top:1px solid var(--line);font-size:.85rem}
+.ref-row:first-of-type{border-top:none}
+.ref-code{display:inline-block;min-width:44px;text-align:center;font-family:var(--mono,ui-monospace,monospace);font-size:.8rem;font-weight:600;padding:2px 8px;border-radius:6px;background:rgba(127,127,127,.14);color:var(--fg)}
+.ref-code.ok{background:color-mix(in srgb,#28c76f 22%,transparent);color:#7ff0b0}
+.ref-code.warn{background:color-mix(in srgb,#ffb020 22%,transparent);color:#ffd27f}
+.ref-code.bad{background:color-mix(in srgb,#ff5470 22%,transparent);color:#ff9db0}
