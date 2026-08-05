@@ -227,11 +227,23 @@ const PORTS = [
   ["1433", "MSSQL"], ["1521", "Oracle"], ["3306", "MySQL"], ["3389", "RDP"], ["5432", "PostgreSQL"],
   ["5900", "VNC"], ["6379", "Redis"], ["8080", "HTTP-alt"], ["9200", "Elasticsearch"], ["27017", "MongoDB"],
 ];
+const MIME_TYPES = [
+  [".json", "application/json"], [".js", "text/javascript"], [".html", "text/html"], [".xml", "application/xml"],
+  [".pdf", "application/pdf"], [".zip", "application/zip"], [".png", "image/png"], [".jpg", "image/jpeg"],
+  [".svg", "image/svg+xml"], [".csv", "text/csv"], [".txt", "text/plain"], [".bin", "application/octet-stream"],
+  ["form", "application/x-www-form-urlencoded"], ["multipart", "multipart/form-data"], [".wasm", "application/wasm"],
+];
+const DEFAULT_CREDS = [
+  ["Tomcat", "tomcat / tomcat"], ["MySQL", "root / (blank)"], ["PostgreSQL", "postgres / postgres"],
+  ["Jenkins", "admin / admin"], ["Grafana", "admin / admin"], ["phpMyAdmin", "root / (blank)"],
+  ["Router (common)", "admin / admin"], ["Elasticsearch", "elastic / changeme"], ["MongoDB", "(no auth by default)"],
+  ["RabbitMQ", "guest / guest"], ["Redis", "(no auth by default)"], ["WebLogic", "weblogic / welcome1"],
+];
 export function renderRefs(main) {
   const badge = (code) => { const n = +code; const cls = n < 300 ? "ok" : n < 400 ? "" : n < 500 ? "warn" : "bad"; return `<span class="ref-code ${cls}">${esc(code)}</span>`; };
   main.innerHTML = `
     <h1 class="pg-h1">References</h1>
-    <p class="muted pg-sub">Fast lookups you reach for constantly &mdash; regex patterns, HTTP status codes, and common ports.</p>
+    <p class="muted pg-sub">Fast lookups you reach for constantly &mdash; regex, HTTP status codes, ports, MIME types, and default credentials.</p>
     <div class="ref-grid">
       <div class="cs-card"><div class="cs-head"><h3>Regex patterns</h3><span class="chip">${REGEX.length}</span></div>
         ${REGEX.map(([lbl, rx]) => copyRow(lbl, rx)).join("")}</div>
@@ -239,6 +251,10 @@ export function renderRefs(main) {
         ${HTTP_STATUS.map(([c, t]) => `<div class="ref-row">${badge(c)}<span>${esc(t)}</span></div>`).join("")}</div>
       <div class="cs-card"><div class="cs-head"><h3>Common ports</h3><span class="chip">${PORTS.length}</span></div>
         ${PORTS.map(([p, s]) => `<div class="ref-row"><span class="ref-code">${esc(p)}</span><span>${esc(s)}</span></div>`).join("")}</div>
+      <div class="cs-card"><div class="cs-head"><h3>MIME types</h3><span class="chip">${MIME_TYPES.length}</span></div>
+        ${MIME_TYPES.map(([k, v]) => copyRow(k, v)).join("")}</div>
+      <div class="cs-card"><div class="cs-head"><h3>Default credentials</h3><span class="chip">${DEFAULT_CREDS.length}</span></div>
+        ${DEFAULT_CREDS.map(([svc, cr]) => `<div class="ref-row"><span class="ref-code" style="min-width:auto;padding:2px 10px">${esc(svc)}</span><span class="mono" style="font-size:.8rem">${esc(cr)}</span></div>`).join("")}</div>
     </div>`;
   wireCopy(main);
 }
