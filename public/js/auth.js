@@ -22,6 +22,7 @@ import { renderAdmin, getWhitelist } from "/js/admin.js";
 import { renderUtils } from "/js/utils.js";
 import { renderDownloads } from "/js/getapp.js";
 import { renderGitHub } from "/js/github.js";
+import { emailConfigured, sendCode, sendLoginAlert, genCode, hashCode, deviceInfo } from "/js/notify.js";
 
 const userSlot = document.getElementById("user-slot");
 const view = document.getElementById("view");
@@ -110,7 +111,14 @@ function renderAuth(mode = "signin") {
     try {
       if (isSignup) {
         const cred = await createUserWithEmailAndPassword(auth, email, pw);
-        await sendEmailVerification(cred.user);
+        if (emailConfigured()) {
+          const code = genCode();
+          await setDoc(doc(db, "users", cred.user.uid), { email, codeVerified: false, pendingCodeHash: await hashCode(code), pendingCodeExp: Date.now() + 10 * 60 * 1000 }, { merge: true });
+          const r = await sendCode(email, code, "");
+          if (!r.ok) { await sendEmailVerification(cred.user); }
+        } else {
+          await sendEmailVerification(cred.user);
+        }
       } else {
         await signInWithEmailAndPassword(auth, email, pw);
       }
@@ -149,6 +157,56 @@ function renderVerify(user) {
     try { await sendEmailVerification(user); document.getElementById("err").className = "auth-ok"; document.getElementById("err").textContent = "Sent again."; }
     catch (e) { document.getElementById("err").textContent = errText(e); }
   };
+}
+
+// Email-code verification (used when EmailJS is configured).
+function renderCodeVerify(user) {
+  document.body.classList.remove("landing", "app");
+  userSlot.innerHTML = `<button class="btn ghost" id="signout">Sign out</button>`;
+  document.getElementById("signout").onclick = () => signOut(auth);
+  view.innerHTML = `
+    <section class="card auth-card">
+      <div class="auth-logo"><img src="/favicon.svg" alt=""></div>
+      <h1>Enter your code</h1>
+      <p class="muted">We emailed a 6-digit code to <strong>${esc(user.email)}</strong>. Enter it to finish signing up.</p>
+      <input id="code" inputmode="numeric" maxlength="6" placeholder="123456" autocomplete="one-time-code" style="text-align:center;letter-spacing:.4em;font-size:1.3rem">
+      <button class="btn" id="verify">Verify</button>
+      <button class="btn ghost" id="resend">Resend code</button>
+      <p id="err" class="auth-err"></p>`;
+  const setMsg = (m, ok) => { const e = document.getElementById("err"); e.textContent = m; e.className = ok ? "auth-ok" : "auth-err"; };
+  document.getElementById("verify").onclick = async () => {
+    const code = (document.getElementById("code").value || "").trim();
+    try {
+      const snap = await getDoc(doc(db, "users", user.uid));
+      const d = snap.exists() ? snap.data() : {};
+      if (!d.pendingCodeHash || (d.pendingCodeExp && Date.now() > d.pendingCodeExp)) return setMsg("Code expired — tap Resend for a new one.");
+      if ((await hashCode(code)) !== d.pendingCodeHash) return setMsg("Incorrect code.");
+      await setDoc(doc(db, "users", user.uid), { codeVerified: true, pendingCodeHash: null, pendingCodeExp: null }, { merge: true });
+      location.reload();
+    } catch (e) { setMsg(errText(e)); }
+  };
+  document.getElementById("resend").onclick = async () => {
+    try {
+      const code = genCode();
+      await setDoc(doc(db, "users", user.uid), { pendingCodeHash: await hashCode(code), pendingCodeExp: Date.now() + 10 * 60 * 1000 }, { merge: true });
+      const r = await sendCode(user.email, code, user.displayName);
+      setMsg(r.ok ? "New code sent." : "Couldn't send: " + r.error, r.ok);
+    } catch (e) { setMsg(errText(e)); }
+  };
+}
+
+// Suspicious-login alert: email the account owner when they sign in from a new device.
+async function checkLoginDevice(user) {
+  if (!emailConfigured()) return;
+  try {
+    const dev = deviceInfo();
+    const ref = doc(db, "users", user.uid);
+    const snap = await getDoc(ref);
+    const known = (snap.exists() && snap.data().devices) || [];
+    if (known.includes(dev.id)) return;
+    await sendLoginAlert(user.email, { name: user.displayName || user.email, time: new Date().toLocaleString(), device: dev.label });
+    await setDoc(ref, { devices: [...known, dev.id] }, { merge: true });
+  } catch (_) { /* non-fatal */ }
 }
 
 // ---------- appearance ----------
@@ -449,14 +507,20 @@ async function loadAnnouncement() {
 setPersistence(auth, browserLocalPersistence).catch(() => {});
 onAuthStateChanged(auth, async (user) => {
   if (!user) { showLanding(); return; }
-  // Google accounts are already verified; email/password users must verify.
+  // Email/password users must verify — a 6-digit code when EmailJS is configured, else the Firebase link.
   const providerEmailPw = user.providerData.some((p) => p.providerId === "password");
-  if (providerEmailPw && !user.emailVerified) { renderVerify(user); return; }
+  if (providerEmailPw) {
+    if (emailConfigured()) {
+      const udoc = await getDoc(doc(db, "users", user.uid)).catch(() => null);
+      if (!(udoc && udoc.exists() && udoc.data().codeVerified)) { renderCodeVerify(user); return; }
+    } else if (!user.emailVerified) { renderVerify(user); return; }
+  }
   if (!(await accessAllowed(user))) {
     alert("Access restricted — your email isn't on the allow-list. Contact the owner.");
     await signOut(auth); return;
   }
   await ensureUserDoc(user);
+  checkLoginDevice(user);
   renderApp(user);
   loadAnnouncement();
 });
