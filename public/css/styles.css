@@ -506,6 +506,8 @@ a.dl-card:hover{border-color:var(--acc)}
 .cta-glow{position:absolute;inset:0;background:radial-gradient(600px 300px at 20% 50%,color-mix(in srgb,var(--acc) 20%,transparent),transparent 60%);pointer-events:none}
 .cta-band-inner{position:relative;z-index:1}
 .cta-band h2{font-size:1.6rem;letter-spacing:-.01em}
+.dlcli{margin-top:44px;padding-top:32px;border-top:1px solid var(--line)}
+.dlcli-h{text-align:center;font-size:1.15rem;margin:0 0 6px}
 
 /* console page headings pop */
 .pg-h1{background:linear-gradient(120deg,var(--txt),color-mix(in srgb,var(--txt) 60%,var(--acc)));-webkit-background-clip:text;background-clip:text;color:transparent;display:inline-block}

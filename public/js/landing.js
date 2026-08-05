@@ -123,6 +123,21 @@ PORT     STATE SERVICE   VERSION
           ${osCard("Linux", "AppImage (portable)", "appimage", "chmod +x Sentinel-linux.AppImage &amp;&amp; ./Sentinel-linux.AppImage", "Any distro (Fedora / Arch / &hellip;). Needs FUSE: <code>sudo apt install libfuse2</code>, or run it with <code>--appimage-extract-and-run</code>.")}
           ${osCard("Windows", ".exe installer", "windows", "Double-click Sentinel-windows.exe", "If SmartScreen warns, choose More info &rarr; Run anyway (the installer is unsigned).")}
         </div>
+
+        <div class="dlcli">
+          <h3 class="dlcli-h"><span class="mono grad-text">&gt;_</span> Prefer the terminal? Get the CLI edition</h3>
+          <p class="muted dlapp-sub">A single, dependency-free command-line console &mdash; native port scanner, reverse-shell generator, encoders, and cheat sheets. Runs anywhere, even over SSH on a headless box.</p>
+          <div class="dlapp-grid">
+            <div class="dlapp-item">
+              <a class="dlapp-card" href="${REL}/Sentinel-cli-linux" download><div class="dlapp-os">Linux</div><div class="dlapp-fmt">CLI binary</div></a>
+              <div class="dlapp-cmd"><span class="dlapp-cmd-l">After download</span><code>chmod +x Sentinel-cli-linux &amp;&amp; ./Sentinel-cli-linux</code></div>
+            </div>
+            <div class="dlapp-item">
+              <a class="dlapp-card" href="${REL}/Sentinel-cli-windows.exe" download><div class="dlapp-os">Windows</div><div class="dlapp-fmt">CLI .exe</div></a>
+              <div class="dlapp-cmd"><span class="dlapp-cmd-l">After download</span><code>.\\Sentinel-cli-windows.exe</code></div>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
