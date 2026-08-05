@@ -93,7 +93,7 @@ export async function renderAdmin(main, user) {
       alerts.sort((a, b) => (b.ts || 0) - (a.ts || 0));
       $("#loginList").innerHTML = alerts.length
         ? alerts.slice(0, 20).map((a) => `<div class="user-row"><div class="ur-main"><div class="ur-name">${esc(a.device || "device")}</div><div class="ur-mail muted">${esc(a.email || "")}</div></div><div class="ur-seen muted">${esc(fmtDate(a.ts))}</div></div>`).join("")
-        : `<p class="muted" style="font-size:.82rem">No new-device sign-ins recorded yet (requires EmailJS configured).</p>`;
+        : `<p class="muted" style="font-size:.82rem">No new-device sign-ins recorded yet.</p>`;
     } catch (e) {
       host.innerHTML = `<p class="adm-err">Couldn't load users: ${esc(e.message)}. Make sure Firestore rules are deployed.</p>`;
       $("#stUsers").textContent = "—";

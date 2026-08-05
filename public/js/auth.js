@@ -200,9 +200,8 @@ function renderCodeVerify(user) {
   };
 }
 
-// Suspicious-login alert: email the account owner when they sign in from a new device.
+// New-device sign-in: record it (for the admin log) and, if EmailJS is set up, email an alert.
 async function checkLoginDevice(user) {
-  if (!emailConfigured()) return;
   try {
     const dev = deviceInfo();
     const ref = doc(db, "users", user.uid);
@@ -210,7 +209,7 @@ async function checkLoginDevice(user) {
     const data = snap.exists() ? snap.data() : {};
     const known = data.devices || [];
     if (known.includes(dev.id)) return;
-    await sendLoginAlert(user.email, { name: user.displayName || user.email, time: new Date().toLocaleString(), device: dev.label });
+    if (emailConfigured()) await sendLoginAlert(user.email, { name: user.displayName || user.email, time: new Date().toLocaleString(), device: dev.label });
     const logins = (data.logins || []).slice(-9);
     logins.push({ device: dev.label, ts: Date.now() });
     await setDoc(ref, { devices: [...known, dev.id], logins }, { merge: true });
