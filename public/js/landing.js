@@ -2,7 +2,7 @@
 // actions: { onGetStarted, onSignIn }
 
 // Installers are hosted on GitHub Releases (too large to commit to the repo).
-const REL = "https://github.com/RonaldPulisic/sentinel-web/releases/download/sentinel";
+const REL = "https://github.com/Darknode-Official/sentinel-web/releases/download/sentinel";
 const APP_FILES = {
   linux: REL + "/sentinel-app_1.0.0_amd64.deb",
   appimage: REL + "/Sentinel-1.0.0.AppImage",
