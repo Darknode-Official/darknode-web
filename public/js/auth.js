@@ -174,6 +174,10 @@ function renderCodeVerify(user) {
       <button class="btn ghost" id="resend">Resend code</button>
       <p id="err" class="auth-err"></p>`;
   const setMsg = (m, ok) => { const e = document.getElementById("err"); e.textContent = m; e.className = ok ? "auth-ok" : "auth-err"; };
+  const resendBtn = document.getElementById("resend");
+  let cd = 0, timer = null;
+  const startCooldown = (sec) => { cd = sec; resendBtn.disabled = true; clearInterval(timer); timer = setInterval(() => { cd--; if (cd <= 0) { clearInterval(timer); resendBtn.disabled = false; resendBtn.textContent = "Resend code"; } else resendBtn.textContent = "Resend in " + cd + "s"; }, 1000); };
+  startCooldown(45); // a code was just sent at sign-up
   document.getElementById("verify").onclick = async () => {
     const code = (document.getElementById("code").value || "").trim();
     try {
@@ -185,7 +189,8 @@ function renderCodeVerify(user) {
       location.reload();
     } catch (e) { setMsg(errText(e)); }
   };
-  document.getElementById("resend").onclick = async () => {
+  resendBtn.onclick = async () => {
+    startCooldown(45);
     try {
       const code = genCode();
       await setDoc(doc(db, "users", user.uid), { pendingCodeHash: await hashCode(code), pendingCodeExp: Date.now() + 10 * 60 * 1000 }, { merge: true });
@@ -202,10 +207,13 @@ async function checkLoginDevice(user) {
     const dev = deviceInfo();
     const ref = doc(db, "users", user.uid);
     const snap = await getDoc(ref);
-    const known = (snap.exists() && snap.data().devices) || [];
+    const data = snap.exists() ? snap.data() : {};
+    const known = data.devices || [];
     if (known.includes(dev.id)) return;
     await sendLoginAlert(user.email, { name: user.displayName || user.email, time: new Date().toLocaleString(), device: dev.label });
-    await setDoc(ref, { devices: [...known, dev.id] }, { merge: true });
+    const logins = (data.logins || []).slice(-9);
+    logins.push({ device: dev.label, ts: Date.now() });
+    await setDoc(ref, { devices: [...known, dev.id], logins }, { merge: true });
   } catch (_) { /* non-fatal */ }
 }
 

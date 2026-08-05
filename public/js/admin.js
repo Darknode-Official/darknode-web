@@ -39,6 +39,10 @@ export async function renderAdmin(main, user) {
           <input class="tk-search" id="uSearch" placeholder="Search by email or name…">
           <div id="uList"><p class="muted">Loading users…</p></div>
         </div>
+        <div class="panel">
+          <div class="panel-h"><h2 class="pg-h2" style="margin:0">Recent new-device sign-ins</h2></div>
+          <div id="loginList"><p class="muted">…</p></div>
+        </div>
       </div>
       <div class="adm-side">
         <div class="panel">
@@ -84,6 +88,12 @@ export async function renderAdmin(main, user) {
       users = snap.docs.map((d) => ({ uid: d.id, ...d.data() }));
       $("#stUsers").textContent = users.length;
       drawUsers();
+      const alerts = [];
+      users.forEach((u) => (u.logins || []).forEach((l) => alerts.push({ email: u.email, device: l.device, ts: l.ts })));
+      alerts.sort((a, b) => (b.ts || 0) - (a.ts || 0));
+      $("#loginList").innerHTML = alerts.length
+        ? alerts.slice(0, 20).map((a) => `<div class="user-row"><div class="ur-main"><div class="ur-name">${esc(a.device || "device")}</div><div class="ur-mail muted">${esc(a.email || "")}</div></div><div class="ur-seen muted">${esc(fmtDate(a.ts))}</div></div>`).join("")
+        : `<p class="muted" style="font-size:.82rem">No new-device sign-ins recorded yet (requires EmailJS configured).</p>`;
     } catch (e) {
       host.innerHTML = `<p class="adm-err">Couldn't load users: ${esc(e.message)}. Make sure Firestore rules are deployed.</p>`;
       $("#stUsers").textContent = "—";
@@ -173,16 +183,22 @@ export async function renderAdmin(main, user) {
     } catch (_) { $("#stAnn").textContent = "—"; }
   }
   async function publishAnn(active) {
-    const msg = $("#annMsg");
+    const msg = $("#annMsg"), text = $("#annText").value.trim();
     try {
-      await setDoc(ANN_REF(), { text: $("#annText").value.trim(), type: annType, active, updatedBy: user.email, updatedAt: serverTimestamp() }, { merge: true });
+      await setDoc(ANN_REF(), { text, type: annType, active, updatedBy: user.email, updatedAt: serverTimestamp() }, { merge: true });
       $("#annActive").checked = active;
       $("#stAnn").textContent = active ? "live" : "off";
+      // update the live banner in this session immediately
+      const el = document.getElementById("announcement");
+      if (el) { if (active && text) { el.textContent = text; el.classList.toggle("banner-info", annType !== "warn"); el.hidden = false; } else { el.hidden = true; } }
       msg.className = "adm-msg ok"; msg.textContent = active ? "Published — visible to everyone." : "Banner cleared.";
       setTimeout(() => (msg.textContent = ""), 2500);
     } catch (e) { msg.className = "adm-msg err"; msg.textContent = "Failed: " + e.message; }
   }
-  $("#annPublish").onclick = () => publishAnn($("#annActive").checked);
+  $("#annPublish").onclick = () => {
+    if (!$("#annText").value.trim()) { const m = $("#annMsg"); m.className = "adm-msg err"; m.textContent = "write a message first"; return; }
+    $("#annActive").checked = true; publishAnn(true);
+  };
   $("#annClear").onclick = () => publishAnn(false);
 
   await Promise.all([loadWl(), loadUsers(), loadAnn()]);
