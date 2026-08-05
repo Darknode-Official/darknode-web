@@ -88,7 +88,32 @@ export function renderGitHub(main) {
               <div class="feed-list">${events.length ? events.map((e) => `<div class="feed-row"><span class="fr-name">${eventText(e)}</span><span class="fr-tag muted">${ago(e.created_at)}</span></div>`).join("") : '<p class="muted" style="font-size:.82rem">No public activity.</p>'}</div>
             </div>
           </div>
+        </div>
+        <div class="card" style="max-width:680px;margin-top:16px">
+          <div class="set-lbl">Create an issue</div>
+          <div class="row" style="gap:8px;flex-wrap:wrap">
+            <input class="tk-f" id="ci-repo" placeholder="owner/repo" style="min-width:160px" value="${repos[0] ? esc(repos[0].full_name) : ""}">
+            <input class="tk-f" id="ci-title" placeholder="title" style="min-width:180px">
+            <button class="btn" id="ci-go">Create</button>
+          </div>
+          <textarea class="tk-in" id="ci-body" rows="2" placeholder="description (optional)" style="margin-top:8px"></textarea>
+          <p id="ci-msg" style="font-size:.8rem;margin:8px 0 0;min-height:1em"></p>
         </div>`;
+      const cig = out.querySelector("#ci-go");
+      cig.onclick = async () => {
+        const t = getTok(), repo = out.querySelector("#ci-repo").value.trim(), title = out.querySelector("#ci-title").value.trim(), msg = out.querySelector("#ci-msg");
+        const set = (m, ok) => { msg.textContent = m; msg.style.color = ok ? "var(--ok)" : "var(--bad)"; };
+        if (!t) return set("add a token above to create issues");
+        if (!repo.includes("/") || !title) return set("need owner/repo and a title");
+        set("creating…", true);
+        try {
+          const r = await fetch("https://api.github.com/repos/" + repo + "/issues", { method: "POST", headers: { Accept: "application/vnd.github+json", Authorization: "Bearer " + t, "Content-Type": "application/json" }, body: JSON.stringify({ title, body: out.querySelector("#ci-body").value }) });
+          if (!r.ok) throw new Error(r.status + " " + r.statusText);
+          const d = await r.json();
+          msg.innerHTML = 'created <a href="' + esc(d.html_url) + '" target="_blank" rel="noopener" style="color:var(--acc)">#' + d.number + '</a>'; msg.style.color = "var(--ok)";
+          out.querySelector("#ci-title").value = ""; out.querySelector("#ci-body").value = "";
+        } catch (e2) { set(e2.message); }
+      };
     } catch (e) {
       out.innerHTML = `<div class="card" style="max-width:680px"><p class="bad">Couldn't load GitHub: ${esc(e.message)}.</p><p class="muted" style="font-size:.8rem">Enter a username, or add a token for private data and higher limits.</p></div>`;
     }
