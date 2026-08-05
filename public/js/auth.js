@@ -21,6 +21,7 @@ import {
 import { renderAdmin, getWhitelist } from "/js/admin.js";
 import { renderUtils } from "/js/utils.js";
 import { renderDownloads } from "/js/getapp.js";
+import { renderGitHub } from "/js/github.js";
 
 const userSlot = document.getElementById("user-slot");
 const view = document.getElementById("view");
@@ -279,6 +280,7 @@ function renderApp(user) {
           <button class="side-item" data-sec="cheats">Cheat sheets</button>
           <button class="side-item" data-sec="threat">Threat intel</button>
           <button class="side-item" data-sec="learn">Learn</button>
+          <button class="side-item" data-sec="github">GitHub</button>
           <div class="side-group">System</div>
           <button class="side-item" data-sec="downloads">Get the app</button>
           <button class="side-item" data-sec="setup">Local setup</button>
@@ -298,6 +300,7 @@ function renderApp(user) {
     else if (sec === "cheats") renderCheats(main);
     else if (sec === "threat") renderThreat(main);
     else if (sec === "learn") renderLearn(main);
+    else if (sec === "github") renderGitHub(main);
     else if (sec === "downloads") renderDownloads(main);
     else if (sec === "setup") renderSetup(main, more);
     else if (sec === "settings") renderSettingsPage(main, user, isOwner);
@@ -354,7 +357,7 @@ function renderApp(user) {
 // ---- command palette (Ctrl/Cmd+K) ----
 function openPalette() {
   if (document.getElementById("cmdk")) return;
-  const sections = [["home", "Home"], ["tools", "Tools"], ["utils", "Utilities"], ["cheats", "Cheat sheets"], ["threat", "Threat intel"], ["learn", "Learn"], ["downloads", "Get the app"], ["setup", "Local setup"], ["settings", "Settings"], ["admin", "Admin"]];
+  const sections = [["home", "Home"], ["tools", "Tools"], ["utils", "Utilities"], ["cheats", "Cheat sheets"], ["threat", "Threat intel"], ["learn", "Learn"], ["github", "GitHub"], ["downloads", "Get the app"], ["setup", "Local setup"], ["settings", "Settings"], ["admin", "Admin"]];
   const items = [
     ...sections.map(([s, n]) => ({ type: "section", id: s, name: n, desc: "Go to " + n })),
     ...CATALOG.map((t) => ({ type: "tool", id: t.id, name: t.name, desc: t.cat + " · " + t.desc })),
