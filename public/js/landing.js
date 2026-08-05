@@ -130,11 +130,11 @@ PORT     STATE SERVICE   VERSION
           <div class="dlapp-grid">
             <div class="dlapp-item">
               <a class="dlapp-card" href="${REL}/Sentinel-cli-linux" download><div class="dlapp-os">Linux</div><div class="dlapp-fmt">CLI binary</div></a>
-              <div class="dlapp-cmd"><span class="dlapp-cmd-l">After download</span><code>chmod +x Sentinel-cli-linux &amp;&amp; ./Sentinel-cli-linux</code></div>
+              <div class="dlapp-cmd"><span class="dlapp-cmd-l">Fetch &amp; run (curl)</span><code>curl -L ${REL}/Sentinel-cli-linux -o sentinel &amp;&amp; chmod +x sentinel &amp;&amp; ./sentinel</code></div>
             </div>
             <div class="dlapp-item">
               <a class="dlapp-card" href="${REL}/Sentinel-cli-windows.exe" download><div class="dlapp-os">Windows</div><div class="dlapp-fmt">CLI .exe</div></a>
-              <div class="dlapp-cmd"><span class="dlapp-cmd-l">After download</span><code>.\\Sentinel-cli-windows.exe</code></div>
+              <div class="dlapp-cmd"><span class="dlapp-cmd-l">Fetch &amp; run (PowerShell)</span><code>curl.exe -L ${REL}/Sentinel-cli-windows.exe -o sentinel.exe; .\\sentinel.exe</code></div>
             </div>
           </div>
         </div>
