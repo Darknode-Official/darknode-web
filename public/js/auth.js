@@ -14,6 +14,10 @@ import { renderTools } from "/js/tools.js";
 import { MORE, CATALOG, CATEGORIES } from "/js/toolkit.js";
 import { startTour, tourDone } from "/js/tour.js";
 import { renderLanding } from "/js/landing.js";
+import {
+  renderThreat, renderCheats, renderLearn, homeWidgetsHTML, wireHome, COUNTS,
+  CHEATS, RESOURCES,
+} from "/js/cyber.js";
 
 const userSlot = document.getElementById("user-slot");
 const view = document.getElementById("view");
@@ -156,24 +160,39 @@ function applyTheme(m) { document.documentElement.setAttribute("data-theme", m);
 function renderHome(main, user, isOwner, show) {
   const name = user.displayName ? user.displayName.split(" ")[0] : "";
   const browsers = CATALOG.filter((t) => t.kind === "browser").length;
-  const stat = (n, l) => `<div class="stat"><div class="stat-n">${n}</div><div class="stat-l">${l}</div></div>`;
+  const stat = (n, l, s) => `<div class="stat"><div class="stat-n">${n}</div><div class="stat-l">${l}</div>${s ? `<div class="stat-s">${s}</div>` : ""}</div>`;
   const qa = (sec, more, title, desc) => `<button class="qa" data-sec="${sec}" data-more="${more}"><div class="qa-title">${title}</div><div class="qa-desc">${desc}</div></button>`;
   main.innerHTML = `
     <div class="dash-hero">
-      <div class="eyebrow">DASHBOARD</div>
+      <div class="eyebrow">SECURITY CONSOLE</div>
       <h1 class="pg-h1">Welcome back${name ? ", " + esc(name) : ""}</h1>
-      <p class="muted pg-sub">Your security tools, local AI, and setup guides &mdash; all in one console.</p>
+      <p class="muted pg-sub">Tools, threat intel, cheat sheets, local AI and setup guides &mdash; your whole workflow in one place.</p>
+      <div class="hero-actions">
+        <button class="btn" data-sec="tools">Browse tools</button>
+        <button class="btn ghost" data-sec="cheats">Cheat sheets</button>
+        <button class="btn ghost" data-sec="threat">Threat intel</button>
+      </div>
     </div>
-    <div class="stat-row">${stat(CATALOG.length, "tools")}${stat(browsers, "run in-browser")}${stat(CATEGORIES.length, "categories")}</div>
+    <div class="stat-row">
+      ${stat(CATALOG.length, "tools", browsers + " run in-browser")}
+      ${stat(COUNTS.cheats, "cheat sheets")}
+      ${stat(COUNTS.cves, "tracked CVEs")}
+      ${stat(COUNTS.resources, "resources")}
+      ${stat(CATEGORIES.length, "categories")}
+    </div>
     <h2 class="pg-h2">Jump in</h2>
     <div class="qa-grid">
       ${qa("tools", "", "Browse tools", "Search and use the catalog &mdash; encoders, hashes, payloads and more.")}
+      ${qa("cheats", "", "Cheat sheets", "Copy-paste one-liners for recon, shells, privesc and cracking.")}
+      ${qa("threat", "", "Threat intel", "Notable CVEs and a common-ports attack-surface reference.")}
+      ${qa("learn", "", "Learn", "Curated hubs: HackTricks, OWASP, PayloadsAllTheThings and more.")}
       ${qa("setup", "aicoding", "Local AI coding", "Run Ollama models on your machine, in the terminal or a browser UI.")}
       ${qa("setup", "toolkit", "Prebuilt toolkit", "Install the whole CLI toolkit + SSH in one command.")}
-      ${qa("settings", "", "Settings", "Account, appearance, and security.")}
     </div>
-    ${isOwner ? `<div class="admin-card"><strong>Owner controls</strong><p class="muted">You're the owner &mdash; admin features live under Admin in the sidebar.</p></div>` : ""}`;
-  main.querySelector(".qa-grid").onclick = (e) => { const b = e.target.closest(".qa"); if (b) show(b.dataset.sec, b.dataset.more || ""); };
+    ${isOwner ? `<div class="admin-card"><strong>Owner controls</strong><p class="muted">You're the owner &mdash; admin features live under Admin in the sidebar.</p></div>` : ""}
+    ${homeWidgetsHTML()}`;
+  main.addEventListener("click", (e) => { const b = e.target.closest("[data-sec]"); if (b) show(b.dataset.sec, b.dataset.more || ""); });
+  wireHome(main, show);
 }
 
 function renderSetup(main, openTo) {
@@ -255,8 +274,14 @@ function renderApp(user) {
       <aside class="sidebar">
         <div class="side-brand">Sentinel</div>
         <nav class="side-nav">
+          <div class="side-group">Workspace</div>
           <button class="side-item" data-sec="home">Home</button>
           <button class="side-item" data-sec="tools">Tools</button>
+          <div class="side-group">Knowledge</div>
+          <button class="side-item" data-sec="cheats">Cheat sheets</button>
+          <button class="side-item" data-sec="threat">Threat intel</button>
+          <button class="side-item" data-sec="learn">Learn</button>
+          <div class="side-group">System</div>
           <button class="side-item" data-sec="setup">Local setup</button>
           <button class="side-item" data-sec="settings">Settings</button>
           ${isOwner ? `<button class="side-item" data-sec="admin">Admin</button>` : ""}
@@ -270,6 +295,9 @@ function renderApp(user) {
   function show(sec, more) {
     view.querySelectorAll(".side-item").forEach((x) => x.classList.toggle("active", x.dataset.sec === sec));
     if (sec === "tools") { main.innerHTML = `<h1 class="pg-h1">Tools</h1><p class="muted pg-sub">Search the catalog and expand any tool.</p><div id="tools"></div>`; renderTools(document.getElementById("tools")); }
+    else if (sec === "cheats") renderCheats(main);
+    else if (sec === "threat") renderThreat(main);
+    else if (sec === "learn") renderLearn(main);
     else if (sec === "setup") renderSetup(main, more);
     else if (sec === "settings") renderSettingsPage(main, user, isOwner);
     else if (sec === "admin") renderAdmin(main, user);
@@ -292,6 +320,9 @@ function renderApp(user) {
         <div class="menu-prof">${avatar}<div style="min-width:0"><div class="su-name">${esc(name)}</div><div class="su-mail muted">${esc(user.email)}${isOwner ? ' <span class="owner-badge">OWNER</span>' : ""}</div></div></div>
         <button class="menu-item" data-nav="home">Home</button>
         <button class="menu-item" data-nav="tools">Tools</button>
+        <button class="menu-item" data-nav="cheats">Cheat sheets</button>
+        <button class="menu-item" data-nav="threat">Threat intel</button>
+        <button class="menu-item" data-nav="learn">Learn</button>
         <button class="menu-item" data-nav="setup">Local setup</button>
         <button class="menu-item" data-nav="settings">Settings</button>
         ${isOwner ? `<button class="menu-item" data-nav="admin">Admin</button>` : ""}
@@ -320,10 +351,12 @@ function renderApp(user) {
 // ---- command palette (Ctrl/Cmd+K) ----
 function openPalette() {
   if (document.getElementById("cmdk")) return;
-  const sections = [["home", "Home"], ["tools", "Tools"], ["setup", "Local setup"], ["settings", "Settings"], ["admin", "Admin"]];
+  const sections = [["home", "Home"], ["tools", "Tools"], ["cheats", "Cheat sheets"], ["threat", "Threat intel"], ["learn", "Learn"], ["setup", "Local setup"], ["settings", "Settings"], ["admin", "Admin"]];
   const items = [
     ...sections.map(([s, n]) => ({ type: "section", id: s, name: n, desc: "Go to " + n })),
     ...CATALOG.map((t) => ({ type: "tool", id: t.id, name: t.name, desc: t.cat + " · " + t.desc })),
+    ...CHEATS.map((c) => ({ type: "section", id: "cheats", name: c.name + " cheat sheet", desc: "Cheat sheet · " + c.cat })),
+    ...RESOURCES.map((r) => ({ type: "link", id: r.url, name: r.name, desc: "Resource · " + r.tag })),
   ];
   const ov = document.createElement("div");
   ov.id = "cmdk"; ov.className = "cmdk";
@@ -341,6 +374,7 @@ function openPalette() {
   }
   function run(i) {
     const x = filtered[i]; if (!x) return; close();
+    if (x.type === "link") { window.open(x.id, "_blank", "noopener"); return; }
     if (x.type === "section") { appShow && appShow(x.id); return; }
     appShow && appShow("tools");
     setTimeout(() => { const it = document.querySelector(`.tk-item[data-id="${x.id}"]`); if (it) { if (!it.classList.contains("open")) it.querySelector(".tk-head").click(); it.scrollIntoView({ block: "center" }); } }, 70);
