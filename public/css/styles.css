@@ -524,3 +524,9 @@ body.app .app-main::before{content:"";position:fixed;inset:0 0 0 220px;z-index:-
   background-size:46px 46px;opacity:.15;-webkit-mask:radial-gradient(700px 400px at 70% 0%,#000,transparent 70%);mask:radial-gradient(700px 400px at 70% 0%,#000,transparent 70%)}
 .foot-owner a{color:var(--acc);text-decoration:none}
 .foot-owner a:hover{text-decoration:underline}
+/* landing demos */
+.c-bad{color:var(--bad);font-weight:700}
+.demo-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:20px;max-width:920px;margin:8px auto 0}
+.demo-term{transform:none;transition:transform .2s ease,box-shadow .2s ease}
+.demo-term:hover{transform:translateY(-4px);box-shadow:0 34px 74px -26px rgba(0,0,0,.75),0 0 0 1px color-mix(in srgb,var(--acc) 22%,transparent)}
+.demo-term .tw-body{font-size:.78rem;min-height:158px;line-height:1.7}
