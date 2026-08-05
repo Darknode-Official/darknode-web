@@ -79,14 +79,7 @@ nc -lvnp 4444`],
         <div class="hero-visual">
           <div class="term-window">
             <div class="tw-bar"><span class="tw-dot r"></span><span class="tw-dot y"></span><span class="tw-dot g"></span><span class="tw-title">sentinel — recon</span></div>
-            <pre class="tw-body"><span class="c-pl">sentinel@kali</span>:<span class="c-path">~</span>$ nmap -sV 10.10.14.7
-<span class="c-mut">Starting Nmap 7.94 · scanning…</span>
-PORT     STATE SERVICE   VERSION
-22/tcp   <span class="c-ok">open</span>  ssh       OpenSSH 8.2p1
-80/tcp   <span class="c-ok">open</span>  http      nginx 1.18.0
-443/tcp  <span class="c-ok">open</span>  ssl/http  nginx 1.18.0
-<span class="c-acc">[+]</span> 3 open ports · 2 services fingerprinted
-<span class="c-pl">sentinel@kali</span>:<span class="c-path">~</span>$ <span class="tw-cursor">▋</span></pre>
+            <pre class="tw-body"><span class="tw-line" style="animation-delay:.15s"><span class="c-pl">sentinel@kali</span>:<span class="c-path">~</span>$ nmap -sV 10.10.14.7</span><span class="tw-line" style="animation-delay:.6s"><span class="c-mut">Starting Nmap 7.94 · scanning…</span></span><span class="tw-line" style="animation-delay:1s">PORT     STATE SERVICE   VERSION</span><span class="tw-line" style="animation-delay:1.2s">22/tcp   <span class="c-ok">open</span>  ssh       OpenSSH 8.2p1</span><span class="tw-line" style="animation-delay:1.45s">80/tcp   <span class="c-ok">open</span>  http      nginx 1.18.0</span><span class="tw-line" style="animation-delay:1.7s">443/tcp  <span class="c-ok">open</span>  ssl/http  nginx 1.18.0</span><span class="tw-line" style="animation-delay:2s"><span class="c-acc">[+]</span> 3 open ports · 2 services fingerprinted</span><span class="tw-line" style="animation-delay:2.3s"><span class="c-pl">sentinel@kali</span>:<span class="c-path">~</span>$ <span class="tw-cursor">▋</span></span></pre>
           </div>
         </div>
       </div>
@@ -146,7 +139,20 @@ PORT     STATE SERVICE   VERSION
       </div>
     </section>
 
-    <section class="section alt" id="get-app">
+    <section class="section alt" id="who">
+      <div class="wrap">
+        <div class="eyebrow center">WHO IT'S FOR</div>
+        <h2 class="sec-title">Whether you're learning or leading engagements</h2>
+        <div class="feat-grid">
+          ${feature("book", "Students &amp; learners", "Cheat sheets, guided setup, and legal practice labs &mdash; start from zero and level up.")}
+          ${feature("bolt", "Pentesters &amp; red teams", "Recon, payloads, fuzzing, and a code workbench to move fast on real engagements.")}
+          ${feature("shield", "Defenders &amp; blue teams", "Track CVEs, audit security headers, and map your own attack surface.")}
+          ${feature("code", "Developers", "A private local-AI assistant, code snippets, and a full GitHub workflow built in.")}
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="get-app">
       <div class="wrap">
         <div class="eyebrow center">DESKTOP APP</div>
         <h2 class="sec-title">Serious power for experienced operators</h2>

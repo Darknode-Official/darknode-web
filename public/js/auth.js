@@ -23,6 +23,8 @@ import { renderUtils } from "/js/utils.js";
 import { renderDownloads } from "/js/getapp.js";
 import { renderGitHub } from "/js/github.js";
 import { emailConfigured, sendCode, sendLoginAlert, genCode, hashCode, deviceInfo } from "/js/notify.js";
+import { renderPayloads, renderSnippets, renderApiKeys } from "/js/labs.js";
+import { renderAI } from "/js/webai.js";
 
 const userSlot = document.getElementById("user-slot");
 const view = document.getElementById("view");
@@ -252,6 +254,9 @@ function renderHome(main, user, isOwner, show) {
     </div>
     <h2 class="pg-h2">Jump in</h2>
     <div class="qa-grid">
+      ${qa("ai", "", "AI assistant", "Chat with your local Ollama &mdash; unrestricted security &amp; coding help.")}
+      ${qa("payloads", "", "Payload library", "Copy-ready SQLi, XSS, LFI, SSTI, SSRF and more.")}
+      ${qa("snippets", "", "Code snippets", "Everyday one-liners for bash, Python, JS, git, docker, SQL.")}
       ${qa("utils", "", "Utilities", "Run tools in your browser &mdash; encode, hash, decode JWTs, gen shells.")}
       ${qa("tools", "", "Browse tools", "Search and use the catalog &mdash; encoders, hashes, payloads and more.")}
       ${qa("cheats", "", "Cheat sheets", "Copy-paste one-liners for recon, shells, privesc and cracking.")}
@@ -339,16 +344,21 @@ function renderApp(user) {
         <nav class="side-nav">
           <div class="side-group">Workspace</div>
           <button class="side-item" data-sec="home">Home</button>
+          <button class="side-item" data-sec="ai">AI assistant</button>
           <button class="side-item" data-sec="tools">Tools</button>
           <button class="side-item" data-sec="utils">Utilities</button>
-          <div class="side-group">Knowledge</div>
-          <button class="side-item" data-sec="cheats">Cheat sheets</button>
+          <div class="side-group">Offense</div>
+          <button class="side-item" data-sec="payloads">Payloads</button>
           <button class="side-item" data-sec="threat">Threat intel</button>
-          <button class="side-item" data-sec="learn">Learn</button>
+          <button class="side-item" data-sec="cheats">Cheat sheets</button>
+          <div class="side-group">Develop</div>
+          <button class="side-item" data-sec="snippets">Code snippets</button>
           <button class="side-item" data-sec="github">GitHub</button>
-          <div class="side-group">System</div>
-          <button class="side-item" data-sec="downloads">Get the app</button>
+          <div class="side-group">Resources</div>
+          <button class="side-item" data-sec="learn">Learn</button>
           <button class="side-item" data-sec="setup">Local setup</button>
+          <button class="side-item" data-sec="downloads">Get the app</button>
+          <div class="side-group">System</div>
           <button class="side-item" data-sec="settings">Settings</button>
           ${isOwner ? `<button class="side-item" data-sec="admin">Admin</button>` : ""}
         </nav>
@@ -362,6 +372,10 @@ function renderApp(user) {
     view.querySelectorAll(".side-item").forEach((x) => x.classList.toggle("active", x.dataset.sec === sec));
     if (sec === "tools") { main.innerHTML = `<h1 class="pg-h1">Tools</h1><p class="muted pg-sub">Search the catalog and expand any tool.</p><div id="tools"></div>`; renderTools(document.getElementById("tools")); }
     else if (sec === "utils") renderUtils(main);
+    else if (sec === "ai") renderAI(main);
+    else if (sec === "payloads") renderPayloads(main);
+    else if (sec === "snippets") renderSnippets(main);
+    else if (sec === "apikeys") renderApiKeys(main);
     else if (sec === "cheats") renderCheats(main);
     else if (sec === "threat") renderThreat(main);
     else if (sec === "learn") renderLearn(main);
@@ -387,16 +401,11 @@ function renderApp(user) {
       <button class="profile-btn" id="profileBtn">${avatar}<span class="p-email">${esc(user.email)}</span></button>
       <div class="menu" id="profileMenu" hidden>
         <div class="menu-prof">${avatar}<div style="min-width:0"><div class="su-name">${esc(name)}</div><div class="su-mail muted">${esc(user.email)}${isOwner ? ' <span class="owner-badge">OWNER</span>' : ""}</div></div></div>
-        <button class="menu-item" data-nav="home">Home</button>
-        <button class="menu-item" data-nav="tools">Tools</button>
-        <button class="menu-item" data-nav="utils">Utilities</button>
-        <button class="menu-item" data-nav="cheats">Cheat sheets</button>
-        <button class="menu-item" data-nav="threat">Threat intel</button>
-        <button class="menu-item" data-nav="learn">Learn</button>
-        <button class="menu-item" data-nav="downloads">Get the app</button>
-        <button class="menu-item" data-nav="setup">Local setup</button>
-        <button class="menu-item" data-nav="settings">Settings</button>
-        ${isOwner ? `<button class="menu-item" data-nav="admin">Admin</button>` : ""}
+        <button class="menu-item" data-nav="settings">Account settings</button>
+        <button class="menu-item" data-nav="apikeys">API keys</button>
+        <button class="menu-item" data-a="theme">Toggle light / dark</button>
+        <button class="menu-item" data-a="tour">Replay walkthrough</button>
+        ${isOwner ? `<div class="menu-div"></div><button class="menu-item" data-nav="admin">Admin console</button>` : ""}
         <div class="menu-div"></div>
         <button class="menu-item" data-a="logout">Log out</button>
       </div>
@@ -409,7 +418,12 @@ function renderApp(user) {
   document.addEventListener("click", closeMenus);
   profileMenu.onclick = (e) => {
     const nb = e.target.closest("[data-nav]"), lb = e.target.closest("[data-a]"); if (!nb && !lb) return;
-    closeMenus(); if (lb) signOut(auth); else show(nb.dataset.nav);
+    closeMenus();
+    if (nb) return show(nb.dataset.nav);
+    const a = lb.dataset.a;
+    if (a === "logout") signOut(auth);
+    else if (a === "theme") { const cur = document.documentElement.getAttribute("data-theme") || "dark"; applyTheme(cur === "dark" ? "light" : "dark"); }
+    else if (a === "tour") startTour(tourSteps(isOwner));
   };
   moreMenu.onclick = (e) => { const b = e.target.closest("[data-more]"); if (!b) return; closeMenus(); show("setup", b.dataset.more); };
   document.getElementById("cmdkBtn").onclick = openPalette;
@@ -422,7 +436,7 @@ function renderApp(user) {
 // ---- command palette (Ctrl/Cmd+K) ----
 function openPalette() {
   if (document.getElementById("cmdk")) return;
-  const sections = [["home", "Home"], ["tools", "Tools"], ["utils", "Utilities"], ["cheats", "Cheat sheets"], ["threat", "Threat intel"], ["learn", "Learn"], ["github", "GitHub"], ["downloads", "Get the app"], ["setup", "Local setup"], ["settings", "Settings"], ["admin", "Admin"]];
+  const sections = [["home", "Home"], ["ai", "AI assistant"], ["tools", "Tools"], ["utils", "Utilities"], ["payloads", "Payloads"], ["threat", "Threat intel"], ["cheats", "Cheat sheets"], ["snippets", "Code snippets"], ["github", "GitHub"], ["learn", "Learn"], ["setup", "Local setup"], ["downloads", "Get the app"], ["apikeys", "API keys"], ["settings", "Settings"], ["admin", "Admin"]];
   const items = [
     ...sections.map(([s, n]) => ({ type: "section", id: s, name: n, desc: "Go to " + n })),
     ...CATALOG.map((t) => ({ type: "tool", id: t.id, name: t.name, desc: t.cat + " · " + t.desc })),

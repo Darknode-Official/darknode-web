@@ -530,3 +530,12 @@ body.app .app-main::before{content:"";position:fixed;inset:0 0 0 220px;z-index:-
 .demo-term{transform:none;transition:transform .2s ease,box-shadow .2s ease}
 .demo-term:hover{transform:translateY(-4px);box-shadow:0 34px 74px -26px rgba(0,0,0,.75),0 0 0 1px color-mix(in srgb,var(--acc) 22%,transparent)}
 .demo-term .tw-body{font-size:.78rem;min-height:158px;line-height:1.7}
+/* sidebar: scroll long nav, keep footer pinned */
+.side-nav{flex:1;overflow-y:auto;min-height:0}
+.side-nav::-webkit-scrollbar{width:8px}
+.side-nav::-webkit-scrollbar-thumb{background:var(--line);border-radius:6px}
+.side-item{font-size:.86rem;padding:8px 12px}
+/* hero terminal line-by-line reveal */
+.tw-line{display:block;opacity:0;transform:translateY(2px);animation:tline .3s ease forwards}
+@keyframes tline{to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.tw-line{opacity:1;transform:none;animation:none}}
