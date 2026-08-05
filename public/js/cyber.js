@@ -142,7 +142,14 @@ function posSave(a) { try { localStorage.setItem("sw_posture", JSON.stringify(a)
 export function renderThreat(main) {
   main.innerHTML = `
     <h1 class="pg-h1">Threat intel</h1>
-    <p class="muted pg-sub">Notable and high-impact vulnerabilities every defender and tester should know. Click any card for the full NVD entry.</p>
+    <p class="muted pg-sub">Search the live NVD database, or browse notable high-impact vulnerabilities below.</p>
+    <div class="card" style="max-width:680px">
+      <div class="set-lbl">Search NVD</div>
+      <div class="row" style="gap:8px"><input class="tk-f" id="cveq" placeholder="keyword or CVE-2021-44228" style="flex:1"><button class="btn" id="cvego">Search</button></div>
+      <div id="cvestat" style="font-size:.8rem;margin-top:8px;color:var(--mut)"></div>
+    </div>
+    <div id="cveres"></div>
+    <h2 class="pg-h2">Notable &amp; high-impact</h2>
     <div class="feed-grid">
       ${CVE_FEED.map((c) => `
         <a class="feed-card" href="${cveUrl(c.id)}" target="_blank" rel="noopener">
@@ -158,6 +165,23 @@ export function renderThreat(main) {
         <tbody>${PORTS.map(([p, s, n]) => `<tr><td class="mono">${esc(p)}</td><td><strong>${esc(s)}</strong></td><td class="muted">${esc(n)}</td></tr>`).join("")}</tbody>
       </table>
     </div>`;
+  const $ = (sel) => main.querySelector(sel);
+  async function search() {
+    const q = $("#cveq").value.trim(); if (!q) return;
+    const stat = $("#cvestat"), res = $("#cveres");
+    stat.textContent = "searching NVD…"; res.innerHTML = "";
+    const isId = /^CVE-\d{4}-\d+$/i.test(q);
+    try {
+      const r = await fetch("https://services.nvd.nist.gov/rest/json/cves/2.0?" + (isId ? "cveId=" + q.toUpperCase() : "keywordSearch=" + encodeURIComponent(q)) + "&resultsPerPage=20");
+      if (!r.ok) throw new Error(r.status === 403 ? "NVD rate limit — wait a moment" : r.status + " " + r.statusText);
+      const d = await r.json();
+      const list = (d.vulnerabilities || []).map((v) => { const c = v.cve, desc = (c.descriptions.find((x) => x.lang === "en") || c.descriptions[0] || {}).value || "", m = c.metrics || {}, p = m.cvssMetricV31 || m.cvssMetricV30 || m.cvssMetricV2; return { id: c.id, desc, score: p && p[0] ? p[0].cvssData.baseScore : "", sev: p && p[0] ? (p[0].cvssData.baseSeverity || p[0].baseSeverity || "") : "", published: (c.published || "").slice(0, 10) }; });
+      stat.textContent = d.totalResults + " results" + (list.length < d.totalResults ? " (showing " + list.length + ")" : "");
+      res.innerHTML = `<div class="feed-grid">` + (list.map((c) => `<a class="feed-card" href="https://nvd.nist.gov/vuln/detail/${esc(c.id)}" target="_blank" rel="noopener"><div class="feed-top"><span class="feed-id mono">${esc(c.id)}</span>${c.sev ? `<span class="sev ${esc(String(c.sev).toLowerCase())}">${esc(c.sev)} ${esc(String(c.score))}</span>` : ""}</div><div class="feed-desc">${esc(c.desc)}</div><div class="feed-meta"><span class="muted">${esc(c.published)}</span></div></a>`).join("") || '<p class="muted">no results</p>') + `</div>`;
+    } catch (e) { stat.textContent = e.message; }
+  }
+  $("#cvego").onclick = search;
+  $("#cveq").onkeydown = (e) => { if (e.key === "Enter") search(); };
 }
 
 export function renderCheats(main) {
