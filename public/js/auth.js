@@ -8,7 +8,7 @@ import {
   setPersistence, browserLocalPersistence
 } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-auth.js";
 import {
-  doc, setDoc, serverTimestamp
+  doc, getDoc, setDoc, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
 import { renderTools } from "/js/tools.js";
 import { MORE, CATALOG, CATEGORIES } from "/js/toolkit.js";
@@ -18,6 +18,7 @@ import {
   renderThreat, renderCheats, renderLearn, homeWidgetsHTML, wireHome, COUNTS,
   CHEATS, RESOURCES,
 } from "/js/cyber.js";
+import { renderAdmin, getWhitelist } from "/js/admin.js";
 
 const userSlot = document.getElementById("user-slot");
 const view = document.getElementById("view");
@@ -252,14 +253,6 @@ function renderSettingsPage(main, user, isOwner) {
   };
 }
 
-function renderAdmin(main, user) {
-  main.innerHTML = `
-    <h1 class="pg-h1">Admin</h1>
-    <p class="muted pg-sub">Owner-only &mdash; ${esc(user.email)}</p>
-    <div class="card"><h3>User management</h3><p class="muted">View and manage signed-up users. Wired to your Firestore &mdash; expandable.</p></div>
-    <div class="card"><h3>Announcements</h3><p class="muted">Post a banner shown to everyone.</p></div>`;
-}
-
 function renderApp(user) {
   document.body.classList.remove("landing");
   document.body.classList.add("app");
@@ -411,6 +404,34 @@ function tourSteps(isOwner) {
   return steps;
 }
 
+// Whitelist enforcement: if the owner turned it on, only allow-listed emails may use the site.
+async function accessAllowed(user) {
+  if (user.email === OWNER_EMAIL) return true;
+  try {
+    const wl = await getWhitelist();
+    if (wl && wl.enforce) {
+      const list = (wl.emails || []).map((e) => e.toLowerCase());
+      return list.includes((user.email || "").toLowerCase());
+    }
+  } catch (_) { /* if we can't read, don't lock anyone out */ }
+  return true;
+}
+
+// Site-wide announcement banner (published from Admin).
+async function loadAnnouncement() {
+  const el = document.getElementById("announcement");
+  if (!el) return;
+  try {
+    const snap = await getDoc(doc(db, "announcements", "current"));
+    const d = snap.exists() ? snap.data() : null;
+    if (d && d.active && d.text) {
+      el.textContent = d.text;
+      el.classList.toggle("banner-info", d.type !== "warn");
+      el.hidden = false;
+    } else { el.hidden = true; }
+  } catch (_) { el.hidden = true; }
+}
+
 // ---------- boot ----------
 setPersistence(auth, browserLocalPersistence).catch(() => {});
 onAuthStateChanged(auth, async (user) => {
@@ -418,6 +439,11 @@ onAuthStateChanged(auth, async (user) => {
   // Google accounts are already verified; email/password users must verify.
   const providerEmailPw = user.providerData.some((p) => p.providerId === "password");
   if (providerEmailPw && !user.emailVerified) { renderVerify(user); return; }
+  if (!(await accessAllowed(user))) {
+    alert("Access restricted — your email isn't on the allow-list. Contact the owner.");
+    await signOut(auth); return;
+  }
   await ensureUserDoc(user);
   renderApp(user);
+  loadAnnouncement();
 });
