@@ -20,6 +20,7 @@ import {
 } from "/js/cyber.js";
 import { renderAdmin, getWhitelist } from "/js/admin.js";
 import { renderUtils } from "/js/utils.js";
+import { renderDownloads } from "/js/getapp.js";
 
 const userSlot = document.getElementById("user-slot");
 const view = document.getElementById("view");
@@ -279,6 +280,7 @@ function renderApp(user) {
           <button class="side-item" data-sec="threat">Threat intel</button>
           <button class="side-item" data-sec="learn">Learn</button>
           <div class="side-group">System</div>
+          <button class="side-item" data-sec="downloads">Get the app</button>
           <button class="side-item" data-sec="setup">Local setup</button>
           <button class="side-item" data-sec="settings">Settings</button>
           ${isOwner ? `<button class="side-item" data-sec="admin">Admin</button>` : ""}
@@ -296,6 +298,7 @@ function renderApp(user) {
     else if (sec === "cheats") renderCheats(main);
     else if (sec === "threat") renderThreat(main);
     else if (sec === "learn") renderLearn(main);
+    else if (sec === "downloads") renderDownloads(main);
     else if (sec === "setup") renderSetup(main, more);
     else if (sec === "settings") renderSettingsPage(main, user, isOwner);
     else if (sec === "admin") renderAdmin(main, user);
@@ -322,6 +325,7 @@ function renderApp(user) {
         <button class="menu-item" data-nav="cheats">Cheat sheets</button>
         <button class="menu-item" data-nav="threat">Threat intel</button>
         <button class="menu-item" data-nav="learn">Learn</button>
+        <button class="menu-item" data-nav="downloads">Get the app</button>
         <button class="menu-item" data-nav="setup">Local setup</button>
         <button class="menu-item" data-nav="settings">Settings</button>
         ${isOwner ? `<button class="menu-item" data-nav="admin">Admin</button>` : ""}
@@ -350,7 +354,7 @@ function renderApp(user) {
 // ---- command palette (Ctrl/Cmd+K) ----
 function openPalette() {
   if (document.getElementById("cmdk")) return;
-  const sections = [["home", "Home"], ["tools", "Tools"], ["utils", "Utilities"], ["cheats", "Cheat sheets"], ["threat", "Threat intel"], ["learn", "Learn"], ["setup", "Local setup"], ["settings", "Settings"], ["admin", "Admin"]];
+  const sections = [["home", "Home"], ["tools", "Tools"], ["utils", "Utilities"], ["cheats", "Cheat sheets"], ["threat", "Threat intel"], ["learn", "Learn"], ["downloads", "Get the app"], ["setup", "Local setup"], ["settings", "Settings"], ["admin", "Admin"]];
   const items = [
     ...sections.map(([s, n]) => ({ type: "section", id: s, name: n, desc: "Go to " + n })),
     ...CATALOG.map((t) => ({ type: "tool", id: t.id, name: t.name, desc: t.cat + " · " + t.desc })),
