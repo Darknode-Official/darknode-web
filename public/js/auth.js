@@ -70,8 +70,9 @@ function renderAuth(mode = "signin") {
   view.innerHTML = `
     <section class="card auth-card">
       <a class="auth-back" id="authBack">&larr; Back</a>
-      <h1>Sentinel</h1>
-      <p class="muted">${isSignup ? "Create an account." : "Sign in to continue."}</p>
+      <div class="auth-logo"><img src="/favicon.svg" alt=""></div>
+      <h1>${isSignup ? "Create your account" : "Welcome back"}</h1>
+      <p class="muted">${isSignup ? "Set up your Sentinel console in seconds." : "Sign in to your Sentinel console."}</p>
       <button class="btn google" id="google">Continue with Google</button>
       <button class="btn github" id="github">Continue with GitHub</button>
       <div class="or"><span></span>or<span></span></div>
