@@ -386,6 +386,24 @@ a.dl-card:hover{border-color:var(--acc)}
 .pos-text strong{font-size:.84rem;font-weight:600}
 .pos-text .muted{font-size:.74rem;line-height:1.4}
 
+/* interactive utilities */
+.util-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
+.util-card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:15px;box-shadow:var(--sh-1);display:flex;flex-direction:column;gap:8px}
+.util-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.util-head h3{margin:0;font-size:.96rem}
+.util-card .in{font-size:.82rem}
+.util-card textarea.in{resize:vertical}
+.util-row{display:flex;gap:8px;align-items:center}
+.util-row .in{flex:1;min-width:0}
+.util-btns{display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+.util-chk{display:inline-flex;align-items:center;gap:5px;font-size:.76rem;color:var(--mut)}
+.util-chk input{width:15px;height:15px;accent-color:var(--acc)}
+.util-kv{display:flex;align-items:center;gap:10px;font-size:.78rem;padding:4px 0;border-top:1px solid var(--line)}
+.util-kv:first-of-type{border-top:none}
+.util-kv span{color:var(--mut);flex:none;width:66px}
+.util-val{flex:1;min-width:0;overflow-x:auto;white-space:nowrap;background:var(--bg2);border:1px solid var(--line);border-radius:6px;padding:5px 8px;color:var(--acc);font-size:.74rem}
+.util-card .out{font-size:.75rem}
+
 /* announcement banner */
 .banner{border-radius:10px}
 .banner.banner-info{border-color:var(--acc-line);background:var(--acc-soft)}

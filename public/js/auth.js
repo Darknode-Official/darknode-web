@@ -19,6 +19,7 @@ import {
   CHEATS, RESOURCES,
 } from "/js/cyber.js";
 import { renderAdmin, getWhitelist } from "/js/admin.js";
+import { renderUtils } from "/js/utils.js";
 
 const userSlot = document.getElementById("user-slot");
 const view = document.getElementById("view");
@@ -184,6 +185,7 @@ function renderHome(main, user, isOwner, show) {
     </div>
     <h2 class="pg-h2">Jump in</h2>
     <div class="qa-grid">
+      ${qa("utils", "", "Utilities", "Run tools in your browser &mdash; encode, hash, decode JWTs, gen shells.")}
       ${qa("tools", "", "Browse tools", "Search and use the catalog &mdash; encoders, hashes, payloads and more.")}
       ${qa("cheats", "", "Cheat sheets", "Copy-paste one-liners for recon, shells, privesc and cracking.")}
       ${qa("threat", "", "Threat intel", "Notable CVEs and a common-ports attack-surface reference.")}
@@ -271,6 +273,7 @@ function renderApp(user) {
           <div class="side-group">Workspace</div>
           <button class="side-item" data-sec="home">Home</button>
           <button class="side-item" data-sec="tools">Tools</button>
+          <button class="side-item" data-sec="utils">Utilities</button>
           <div class="side-group">Knowledge</div>
           <button class="side-item" data-sec="cheats">Cheat sheets</button>
           <button class="side-item" data-sec="threat">Threat intel</button>
@@ -289,6 +292,7 @@ function renderApp(user) {
   function show(sec, more) {
     view.querySelectorAll(".side-item").forEach((x) => x.classList.toggle("active", x.dataset.sec === sec));
     if (sec === "tools") { main.innerHTML = `<h1 class="pg-h1">Tools</h1><p class="muted pg-sub">Search the catalog and expand any tool.</p><div id="tools"></div>`; renderTools(document.getElementById("tools")); }
+    else if (sec === "utils") renderUtils(main);
     else if (sec === "cheats") renderCheats(main);
     else if (sec === "threat") renderThreat(main);
     else if (sec === "learn") renderLearn(main);
@@ -314,6 +318,7 @@ function renderApp(user) {
         <div class="menu-prof">${avatar}<div style="min-width:0"><div class="su-name">${esc(name)}</div><div class="su-mail muted">${esc(user.email)}${isOwner ? ' <span class="owner-badge">OWNER</span>' : ""}</div></div></div>
         <button class="menu-item" data-nav="home">Home</button>
         <button class="menu-item" data-nav="tools">Tools</button>
+        <button class="menu-item" data-nav="utils">Utilities</button>
         <button class="menu-item" data-nav="cheats">Cheat sheets</button>
         <button class="menu-item" data-nav="threat">Threat intel</button>
         <button class="menu-item" data-nav="learn">Learn</button>
@@ -345,7 +350,7 @@ function renderApp(user) {
 // ---- command palette (Ctrl/Cmd+K) ----
 function openPalette() {
   if (document.getElementById("cmdk")) return;
-  const sections = [["home", "Home"], ["tools", "Tools"], ["cheats", "Cheat sheets"], ["threat", "Threat intel"], ["learn", "Learn"], ["setup", "Local setup"], ["settings", "Settings"], ["admin", "Admin"]];
+  const sections = [["home", "Home"], ["tools", "Tools"], ["utils", "Utilities"], ["cheats", "Cheat sheets"], ["threat", "Threat intel"], ["learn", "Learn"], ["setup", "Local setup"], ["settings", "Settings"], ["admin", "Admin"]];
   const items = [
     ...sections.map(([s, n]) => ({ type: "section", id: s, name: n, desc: "Go to " + n })),
     ...CATALOG.map((t) => ({ type: "tool", id: t.id, name: t.name, desc: t.cat + " · " + t.desc })),
