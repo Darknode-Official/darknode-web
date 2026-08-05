@@ -4,9 +4,9 @@
 // Installers are hosted on GitHub Releases (too large to commit to the repo).
 const REL = "https://github.com/Darknode-Official/sentinel-web/releases/download/sentinel";
 const APP_FILES = {
-  linux: REL + "/sentinel-app_1.3.0_amd64.deb",
-  appimage: REL + "/Sentinel-1.3.0.AppImage",
-  windows: REL + "/Sentinel.Setup.1.3.0.exe",
+  linux: REL + "/sentinel-app_1.4.0_amd64.deb",
+  appimage: REL + "/Sentinel-1.4.0.AppImage",
+  windows: REL + "/Sentinel.Setup.1.4.0.exe",
 };
 
 const ICON = {
@@ -156,10 +156,12 @@ PORT     STATE SERVICE   VERSION
       <div class="wrap foot-inner">
         <span class="brand">Sentinel</span>
         <span class="muted">Your security workspace.</span>
+        <span class="foot-owner muted">Owner &middot; <a href="mailto:cashzombs@gmail.com">cashzombs@gmail.com</a></span>
         <nav class="foot-links">
           <a href="#features">Features</a>
           <a href="#inside">Inside</a>
           <a href="#get-app">Download</a>
+          <a href="mailto:cashzombs@gmail.com">Contact</a>
           <a id="foot-signin">Sign in</a>
         </nav>
       </div>

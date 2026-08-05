@@ -522,3 +522,5 @@ body.app .app-main{position:relative}
 body.app .app-main::before{content:"";position:fixed;inset:0 0 0 220px;z-index:-1;pointer-events:none;
   background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);
   background-size:46px 46px;opacity:.15;-webkit-mask:radial-gradient(700px 400px at 70% 0%,#000,transparent 70%);mask:radial-gradient(700px 400px at 70% 0%,#000,transparent 70%)}
+.foot-owner a{color:var(--acc);text-decoration:none}
+.foot-owner a:hover{text-decoration:underline}
