@@ -1,10 +1,12 @@
 // Marketing landing page shown to signed-out visitors.
 // actions: { onGetStarted, onSignIn }
 
+// Installers are hosted on GitHub Releases (too large to commit to the repo).
+const REL = "https://github.com/RonaldPulisic/sentinel-web/releases/download/sentinel";
 const APP_FILES = {
-  linux: "/downloads/Sentinel-linux.deb",
-  appimage: "/downloads/Sentinel-linux.AppImage",
-  windows: "/downloads/Sentinel-windows.exe",
+  linux: REL + "/sentinel-app_1.0.0_amd64.deb",
+  appimage: REL + "/Sentinel-1.0.0.AppImage",
+  windows: REL + "/Sentinel.Setup.1.0.0.exe",
 };
 
 const ICON = {
