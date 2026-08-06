@@ -206,6 +206,7 @@ nc -lvnp 4444`],
           <a id="foot-signin">Sign in</a>
         </nav>
       </div>
+      <div class="wrap foot-contact">For any questions, contact <a href="mailto:cashzombs@gmail.com">cashzombs@gmail.com</a></div>
     </footer>`;
 
   const $ = (id) => view.querySelector("#" + id);

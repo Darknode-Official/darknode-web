@@ -557,3 +557,8 @@ body.app .app-main::before{content:"";position:fixed;inset:0 0 0 220px;z-index:-
 .ref-code.ok{background:color-mix(in srgb,#28c76f 22%,transparent);color:#7ff0b0}
 .ref-code.warn{background:color-mix(in srgb,#ffb020 22%,transparent);color:#ffd27f}
 .ref-code.bad{background:color-mix(in srgb,#ff5470 22%,transparent);color:#ff9db0}
+
+/* landing footer contact line */
+.foot-contact{text-align:center;padding:16px 0 4px;margin-top:14px;border-top:1px solid var(--line);font-size:.85rem;color:var(--mut)}
+.foot-contact a{color:var(--acc);text-decoration:none}
+.foot-contact a:hover{text-decoration:underline}
