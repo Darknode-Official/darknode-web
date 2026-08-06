@@ -64,7 +64,7 @@ nc -lvnp 4444`],
         <div class="hero-copy">
           <div class="eyebrow"><span class="dot-live"></span> SECURITY CONSOLE</div>
           <h1 class="hero-h1">Your entire <span class="grad-text">security toolkit</span>, in one console.</h1>
-          <p class="hero-sub">Tools, threat intel, cheat sheets, and local AI &mdash; on the web and in a powerful desktop app. Recon, exploit, and report without leaving Sentinel.</p>
+          <p class="hero-sub">Tools, threat intel, cheat sheets, and an autonomous local-AI agent &mdash; on the web and in a powerful desktop app. Recon, exploit, practice on built-in labs, and report without leaving Sentinel.</p>
           <div class="hero-cta">
             <button class="btn lg glow" id="cta-start">Get Started &rarr;</button>
             <button class="btn ghost lg" id="cta-learn">See what's inside</button>
@@ -99,6 +99,8 @@ nc -lvnp 4444`],
           ${feature("book", "Cheat sheets", "Battle-tested one-liners for recon, shells, privesc, and cracking &mdash; one click to copy.")}
           ${feature("code", "Code workbench", "The desktop app ships a real editor, file tree, run-code, and an integrated terminal.")}
           ${feature("bolt", "Payloads & handlers", "Generate reverse shells, listeners, and msfvenom payloads with live builders.")}
+          ${feature("ai", "Autonomous agent", "The desktop app runs your local model in a think-act loop across 26 tools &mdash; files, shell, HTTP, recon, and git &mdash; with approval gating.")}
+          ${feature("shield", "Practice labs", "One-click Docker launch for DVWA, Juice Shop, WebGoat and more &mdash; then point Sentinel at them, or let the agent stand them up.")}
         </div>
       </div>
     </section>

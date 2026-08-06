@@ -190,6 +190,28 @@ export function renderApiKeys(main) {
   main.querySelector("#akShow").onclick = () => main.querySelectorAll("[data-key]").forEach((i) => (i.type = i.type === "password" ? "text" : "password"));
 }
 
+// --- Practice targets: deliberately vulnerable apps (run locally with Docker) ---
+const TARGETS = [
+  { name: "DVWA", tag: "SQLi · XSS · CSRF · cmd injection · upload", cmd: "docker run --rm -it -p 4280:80 vulnerables/web-dvwa", url: "http://localhost:4280", creds: "admin / password", desc: "Damn Vulnerable Web Application — the classic PHP/MySQL training target with adjustable security levels. After login, open Setup and click Create / Reset Database." },
+  { name: "OWASP Juice Shop", tag: "OWASP Top 10 · modern JS · CTF", cmd: "docker run --rm -p 3000:3000 bkimminich/juice-shop", url: "http://localhost:3000", creds: "register your own account", desc: "A modern, intentionally insecure single-page app with challenges across the whole OWASP Top 10." },
+  { name: "OWASP WebGoat", tag: "guided lessons · Java", cmd: "docker run --rm -p 8080:8080 -p 9090:9090 webgoat/webgoat", url: "http://localhost:8080/WebGoat", creds: "register on first run", desc: "A guided, lesson-based deliberately insecure app — learn each class of bug step by step." },
+  { name: "bWAPP", tag: "100+ bugs · PHP", cmd: "docker run --rm -p 8081:80 raesene/bwapp", url: "http://localhost:8081/install.php", creds: "bee / bug", desc: "A buggy web app with over a hundred vulnerabilities. Visit /install.php once to initialize the database." },
+  { name: "Mutillidae II", tag: "OWASP Top 10 · hints", cmd: "docker run --rm -p 8082:80 citizenstig/nowasp", url: "http://localhost:8082", creds: "no login required", desc: "A free, open-source deliberately vulnerable app with built-in hints and multiple difficulty levels." },
+];
+export function renderTargets(main) {
+  main.innerHTML = `
+    <h1 class="pg-h1">Practice targets</h1>
+    <p class="muted pg-sub">Deliberately vulnerable apps to sharpen your skills &mdash; run one locally with Docker, then aim your tools at it. Use only on systems you own.</p>
+    <div class="cs-grid">
+      ${TARGETS.map((t) => `<div class="cs-card"><div class="cs-head"><h3>${esc(t.name)}</h3><span class="chip">${esc(t.tag)}</span></div>
+        <p class="muted" style="margin:6px 0 9px;font-size:.84rem">${esc(t.desc)}</p>
+        ${copyRow("docker run", t.cmd)}
+        <div class="muted" style="font-size:.78rem;margin-top:9px">URL <code>${esc(t.url)}</code> &middot; Login <code>${esc(t.creds)}</code></div></div>`).join("")}
+    </div>
+    <p class="muted" style="font-size:.78rem;margin-top:14px">Needs Docker (<code>sudo apt install docker.io</code> or Docker Desktop). The desktop app can launch these for you &mdash; and its Agent can stand them up on command.</p>`;
+  wireCopy(main);
+}
+
 // --- Reference library: regex, HTTP status codes, common ports ---
 const REGEX = [
   ["Email", "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}"],
