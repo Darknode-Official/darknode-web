@@ -4,9 +4,9 @@
 // Installers are hosted on GitHub Releases (too large to commit to the repo).
 const REL = "https://github.com/Darknode-Official/sentinel-web/releases/download/sentinel";
 const APP_FILES = {
-  linux: REL + "/sentinel-app_2.5.0_amd64.deb",
-  appimage: REL + "/Sentinel-2.5.0.AppImage",
-  windows: REL + "/Sentinel.Setup.2.5.0.exe",
+  linux: REL + "/sentinel-app_2.7.0_amd64.deb",
+  appimage: REL + "/Sentinel-2.7.0.AppImage",
+  windows: REL + "/Sentinel.Setup.2.7.0.exe",
 };
 
 const ICON = {
