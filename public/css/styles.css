@@ -595,3 +595,25 @@ body.app .app-main::before{content:"";position:fixed;inset:0 0 0 220px;z-index:-
 .gh-desc{flex:0 0 200px;font-size:.86rem;font-weight:500}
 .gh-q{flex:1;min-width:200px;font-family:var(--mono,ui-monospace,monospace);font-size:.8rem;color:var(--acc);background:color-mix(in srgb,var(--acc) 8%,transparent);border:1px solid var(--line);padding:.4rem .65rem;border-radius:7px;overflow-x:auto;white-space:nowrap}
 .gh-actions{display:flex;gap:6px;flex:none}
+
+/* Boot screen — BlackArch-style terminal splash */
+#bootscreen{position:fixed;inset:0;z-index:99999;background:radial-gradient(1200px 600px at 50% 20%,#0a0f1c,#05070d 70%);
+  display:flex;align-items:center;justify-content:center;overflow:hidden;font-family:var(--mono,ui-monospace,"JetBrains Mono",monospace);
+  animation:bootOut .55s ease 2.5s forwards}
+@keyframes bootOut{to{opacity:0;visibility:hidden;pointer-events:none}}
+.boot-grid{position:absolute;inset:0;opacity:.5;
+  background-image:linear-gradient(color-mix(in srgb,var(--acc,#00d4ff) 12%,transparent) 1px,transparent 1px),linear-gradient(90deg,color-mix(in srgb,var(--acc,#00d4ff) 12%,transparent) 1px,transparent 1px);
+  background-size:34px 34px;-webkit-mask-image:radial-gradient(60% 50% at 50% 45%,#000,transparent 80%);mask-image:radial-gradient(60% 50% at 50% 45%,#000,transparent 80%)}
+.boot-inner{position:relative;text-align:center}
+.boot-logo{font-size:clamp(2.2rem,7vw,4rem);font-weight:800;letter-spacing:.06em;
+  background:linear-gradient(135deg,var(--acc,#00d4ff),var(--acc-2,#7c5cff));-webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 0 24px color-mix(in srgb,var(--acc,#00d4ff) 55%,transparent));animation:bootPulse 2.4s ease-in-out infinite}
+@keyframes bootPulse{50%{filter:drop-shadow(0 0 40px color-mix(in srgb,var(--acc,#00d4ff) 80%,transparent))}}
+.boot-tag{color:var(--mut,#6f88ab);font-size:.72rem;letter-spacing:.35em;margin:8px 0 26px}
+.boot-lines{display:inline-block;text-align:left;font-size:.86rem;color:var(--txt-2,#aebfdd);line-height:1.8;min-width:min(430px,80vw)}
+.boot-lines>div{opacity:0;animation:bootLine .35s ease forwards;animation-delay:var(--d)}
+@keyframes bootLine{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:none}}
+.boot-lines .bok{color:var(--ok,#2ee6a6);font-weight:700}
+.boot-go{color:var(--acc,#00d4ff);margin-top:6px}
+.boot-cur{animation:bootBlink 1s steps(2) infinite}
+@keyframes bootBlink{50%{opacity:0}}

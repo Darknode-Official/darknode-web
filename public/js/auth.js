@@ -27,6 +27,7 @@ import { renderPayloads, renderSnippets, renderApiKeys, renderRefs, renderTarget
 import { renderArsenal, renderTraining } from "/js/arsenal.js";
 import { renderGHDB } from "/js/ghdb.js";
 import { renderExploitDB } from "/js/exploitdb.js";
+import { renderVMs } from "/js/vms.js";
 import { renderAI } from "/js/webai.js";
 
 const userSlot = document.getElementById("user-slot");
@@ -355,6 +356,7 @@ function renderApp(user) {
           <button class="side-item" data-sec="exploitdb">Exploit DBs</button>
           <button class="side-item" data-sec="ghdb">Google dorks</button>
           <button class="side-item" data-sec="targets">Practice targets</button>
+          <button class="side-item" data-sec="vms">Vulnerable VMs</button>
           <button class="side-item" data-sec="threat">Threat intel</button>
           <button class="side-item" data-sec="cheats">Cheat sheets</button>
           <div class="side-group">Develop</div>
@@ -386,6 +388,7 @@ function renderApp(user) {
     else if (sec === "targets") renderTargets(main);
     else if (sec === "ghdb") renderGHDB(main);
     else if (sec === "exploitdb") renderExploitDB(main);
+    else if (sec === "vms") renderVMs(main);
     else if (sec === "snippets") renderSnippets(main);
     else if (sec === "refs") renderRefs(main);
     else if (sec === "arsenal") renderArsenal(main);
@@ -452,7 +455,7 @@ function renderApp(user) {
 // ---- command palette (Ctrl/Cmd+K) ----
 function openPalette() {
   if (document.getElementById("cmdk")) return;
-  const sections = [["home", "Home"], ["ai", "AI assistant"], ["tools", "Tools"], ["utils", "Utilities"], ["payloads", "Payloads"], ["exploitdb", "Exploit & vuln databases"], ["ghdb", "Google dorks"], ["targets", "Practice targets"], ["threat", "Threat intel"], ["cheats", "Cheat sheets"], ["snippets", "Code snippets"], ["refs", "References"], ["arsenal", "Arsenal"], ["training", "Training"], ["github", "GitHub"], ["learn", "Learn"], ["setup", "Local setup"], ["downloads", "Get the app"], ["apikeys", "API keys"], ["settings", "Settings"], ["admin", "Admin"]];
+  const sections = [["home", "Home"], ["ai", "AI assistant"], ["tools", "Tools"], ["utils", "Utilities"], ["payloads", "Payloads"], ["exploitdb", "Exploit & vuln databases"], ["ghdb", "Google dorks"], ["targets", "Practice targets"], ["vms", "Vulnerable VMs"], ["threat", "Threat intel"], ["cheats", "Cheat sheets"], ["snippets", "Code snippets"], ["refs", "References"], ["arsenal", "Arsenal"], ["training", "Training"], ["github", "GitHub"], ["learn", "Learn"], ["setup", "Local setup"], ["downloads", "Get the app"], ["apikeys", "API keys"], ["settings", "Settings"], ["admin", "Admin"]];
   const items = [
     ...sections.map(([s, n]) => ({ type: "section", id: s, name: n, desc: "Go to " + n })),
     ...CATALOG.map((t) => ({ type: "tool", id: t.id, name: t.name, desc: t.cat + " · " + t.desc })),
