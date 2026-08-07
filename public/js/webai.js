@@ -9,8 +9,8 @@ const DEFAULT_SYS = "You are Sentinel AI — an expert offensive & defensive sec
 async function getModels() {
   try { const r = await fetch(OLLAMA + "/api/tags"); const d = await r.json(); return (d.models || []).map((m) => m.name); } catch (_) { return null; }
 }
-async function streamChat(model, messages, onToken) {
-  const r = await fetch(OLLAMA + "/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model, messages, stream: true }) });
+async function streamChat(model, messages, onToken, signal) {
+  const r = await fetch(OLLAMA + "/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model, messages, stream: true }), signal });
   if (!r.ok || !r.body) throw new Error("Ollama returned " + r.status);
   const reader = r.body.getReader(), dec = new TextDecoder(); let buf = "";
   for (;;) {
@@ -41,7 +41,7 @@ export function renderAI(main) {
     <h1 class="pg-h1">AI assistant</h1>
     <p class="muted pg-sub">Unrestricted chat with your <strong>local Ollama</strong> models &mdash; private, on your machine. Built for security research and coding.</p>
     <div class="card" style="max-width:840px">
-      <div class="row" style="gap:8px"><select class="tk-f" id="aiModel" style="flex:1"></select><button class="btn ghost" id="aiSys">System prompt</button></div>
+      <div class="row" style="gap:8px"><select class="tk-f" id="aiModel" style="flex:1"></select><button class="btn ghost" id="aiSys">System prompt</button><button class="btn ghost" id="aiClear">Clear</button></div>
       <div id="aiStatus" style="font-size:.8rem;color:var(--mut);margin-top:8px"></div>
     </div>
     <div class="chat" id="aiChat" style="max-width:840px;height:min(52vh,520px)"><div class="muted" style="margin:auto;text-align:center;font-size:.85rem">Ask anything &mdash; recon, exploitation, tooling, or code.</div></div>
@@ -69,19 +69,20 @@ export function renderAI(main) {
     if (v !== null) { try { localStorage.setItem(SYS_KEY, v); } catch (_) {} history[0] = { role: "system", content: v }; status.textContent = "System prompt updated."; }
   };
   const add = (role, text) => { const d = document.createElement("div"); d.className = "msg " + (role === "user" ? "you" : "ai"); d.textContent = text; if (chatEl.querySelector(".muted")) chatEl.innerHTML = ""; chatEl.appendChild(d); chatEl.scrollTop = chatEl.scrollHeight; return d; };
-  let busy = false;
+  let busy = false, ctrl = null;
   async function send() {
     if (busy) return;
     const text = $("#aiMsg").value.trim(); if (!text) return;
     const model = sel.value; if (!model || model === "offline" || model === "none") { status.textContent = "No usable model."; return; }
-    busy = true; $("#aiSend").disabled = true; $("#aiMsg").value = "";
+    busy = true; ctrl = new AbortController(); const btn = $("#aiSend"); btn.textContent = "Stop"; $("#aiMsg").value = "";
     add("user", text); history.push({ role: "user", content: text });
     const out = add("ai", "…"); let acc = "";
-    try { await streamChat(model, history, (t) => { acc += t; out.innerHTML = mdToHtml(acc); chatEl.scrollTop = chatEl.scrollHeight; }); history.push({ role: "assistant", content: acc || "" }); }
-    catch (e) { out.textContent = "Error: " + e.message; out.classList.add("err"); }
-    finally { busy = false; $("#aiSend").disabled = false; $("#aiMsg").focus(); }
+    try { await streamChat(model, history, (t) => { acc += t; out.innerHTML = mdToHtml(acc); chatEl.scrollTop = chatEl.scrollHeight; }, ctrl.signal); history.push({ role: "assistant", content: acc || "" }); }
+    catch (e) { if (e.name === "AbortError") { out.innerHTML = mdToHtml(acc) + `<div class="muted" style="font-size:.72rem;margin-top:4px">stopped</div>`; history.push({ role: "assistant", content: acc || "" }); } else { out.textContent = "Error: " + e.message; out.classList.add("err"); } }
+    finally { busy = false; ctrl = null; const b = $("#aiSend"); b.textContent = "Send"; $("#aiMsg").focus(); }
   }
-  $("#aiSend").onclick = send;
+  $("#aiSend").onclick = () => { if (busy && ctrl) ctrl.abort(); else send(); };
+  $("#aiClear").onclick = () => { if (busy && ctrl) ctrl.abort(); history.length = 1; chatEl.innerHTML = `<div class="muted" style="margin:auto;text-align:center;font-size:.85rem">Ask anything &mdash; recon, exploitation, tooling, or code.</div>`; };
   $("#aiMsg").onkeydown = (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } };
   $("#aiPresets").onclick = (e) => { const b = e.target.closest("[data-p]"); if (!b) return; const box = $("#aiMsg"); box.value = PRESETS[+b.dataset.p][1] + box.value; box.focus(); box.selectionStart = box.selectionEnd = box.value.length; };
   chatEl.addEventListener("click", (e) => { const b = e.target.closest(".cb-copy"); if (!b) return; const code = b.parentElement.querySelector("code"); navigator.clipboard?.writeText(code.textContent).then(() => { b.textContent = "copied"; setTimeout(() => (b.textContent = "copy"), 1000); }); });

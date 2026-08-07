@@ -265,10 +265,17 @@ export function renderRefs(main) {
   const badge = (code) => { const n = +code; const cls = n < 300 ? "ok" : n < 400 ? "" : n < 500 ? "warn" : "bad"; return `<span class="ref-code ${cls}">${esc(code)}</span>`; };
   main.innerHTML = `
     <h1 class="pg-h1">References</h1>
-    <p class="muted pg-sub">Fast lookups you reach for constantly &mdash; regex, HTTP status codes, ports, MIME types, and default credentials.</p>
+    <p class="muted pg-sub">Fast lookups you reach for constantly &mdash; a live regex tester, HTTP status codes, ports, MIME types, and default credentials.</p>
+    <div class="cs-card" style="margin-bottom:16px">
+      <div class="cs-head"><h3>Regex tester</h3></div>
+      <div class="row" style="gap:8px;align-items:center"><span class="mono muted">/</span><input class="tk-f" id="rxpat" placeholder="pattern" spellcheck="false" style="flex:1"><span class="mono muted">/</span><input class="tk-f" id="rxflags" value="gm" spellcheck="false" style="width:72px"></div>
+      <textarea class="tk-in" id="rxtext" rows="3" spellcheck="false" placeholder="paste sample text to match against..." style="width:100%;margin-top:8px"></textarea>
+      <div id="rxstat" class="muted" style="font-size:.78rem;margin:6px 0"></div>
+      <pre id="rxout" style="white-space:pre-wrap;word-break:break-word;background:var(--bg-2,#0b0f16);border:1px solid var(--line);border-radius:8px;padding:9px 11px;min-height:2.4em;font-family:var(--mono,ui-monospace,monospace);font-size:.82rem;margin:0"></pre>
+    </div>
     <div class="ref-grid">
       <div class="cs-card"><div class="cs-head"><h3>Regex patterns</h3><span class="chip">${REGEX.length}</span></div>
-        ${REGEX.map(([lbl, rx]) => copyRow(lbl, rx)).join("")}</div>
+        ${REGEX.map(([lbl, rx]) => `<div class="cs-line"><div class="cs-label">${esc(lbl)}</div><div class="cs-cmd"><code>${esc(rx)}</code><button class="rx-use" data-rx="${esc(rx)}" title="load into tester">use</button><button class="cs-copy">copy</button></div></div>`).join("")}</div>
       <div class="cs-card"><div class="cs-head"><h3>HTTP status codes</h3><span class="chip">${HTTP_STATUS.length}</span></div>
         ${HTTP_STATUS.map(([c, t]) => `<div class="ref-row">${badge(c)}<span>${esc(t)}</span></div>`).join("")}</div>
       <div class="cs-card"><div class="cs-head"><h3>Common ports</h3><span class="chip">${PORTS.length}</span></div>
@@ -279,4 +286,19 @@ export function renderRefs(main) {
         ${DEFAULT_CREDS.map(([svc, cr]) => `<div class="ref-row"><span class="ref-code" style="min-width:auto;padding:2px 10px">${esc(svc)}</span><span class="mono" style="font-size:.8rem">${esc(cr)}</span></div>`).join("")}</div>
     </div>`;
   wireCopy(main);
+  // live regex tester
+  const $ = (s) => main.querySelector(s);
+  const pat = $("#rxpat"), flg = $("#rxflags"), txt = $("#rxtext"), out = $("#rxout"), rst = $("#rxstat");
+  function runRx() {
+    const p = pat.value; if (!p) { out.textContent = txt.value; rst.textContent = ""; return; }
+    let flags = flg.value || "g"; if (!flags.includes("g")) flags += "g";
+    let re; try { re = new RegExp(p, flags); } catch (err) { rst.className = "c-bad"; rst.textContent = "invalid: " + err.message; out.textContent = txt.value; return; }
+    const text = txt.value; let count = 0, html = "", last = 0, m; re.lastIndex = 0;
+    while ((m = re.exec(text))) { count++; html += esc(text.slice(last, m.index)) + `<mark>${esc(m[0]) || "&#8203;"}</mark>`; last = m.index + m[0].length; if (m[0] === "") re.lastIndex++; if (count > 5000) break; }
+    html += esc(text.slice(last));
+    out.innerHTML = count ? html : `<span class="muted">no match</span>`;
+    rst.className = "muted"; rst.textContent = count + " match" + (count === 1 ? "" : "es");
+  }
+  [pat, flg, txt].forEach((i) => i.addEventListener("input", runRx));
+  main.addEventListener("click", (e) => { const b = e.target.closest("[data-rx]"); if (b) { pat.value = b.dataset.rx; runRx(); pat.scrollIntoView({ block: "nearest" }); } });
 }

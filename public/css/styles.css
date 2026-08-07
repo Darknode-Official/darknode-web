@@ -562,3 +562,8 @@ body.app .app-main::before{content:"";position:fixed;inset:0 0 0 220px;z-index:-
 .foot-contact{text-align:center;padding:16px 0 4px;margin-top:14px;border-top:1px solid var(--line);font-size:.85rem;color:var(--mut)}
 .foot-contact a{color:var(--acc);text-decoration:none}
 .foot-contact a:hover{text-decoration:underline}
+
+/* regex tester (references page) */
+.rx-use{padding:2px 8px;font-size:.68rem;border:1px solid var(--line);background:transparent;color:var(--mut);border-radius:6px;cursor:pointer}
+.rx-use:hover{color:var(--acc);border-color:var(--acc)}
+#rxout mark{background:color-mix(in srgb,var(--acc) 32%,transparent);color:var(--fg,#fff);border-radius:3px;padding:0 1px}

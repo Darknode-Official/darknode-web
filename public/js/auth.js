@@ -389,6 +389,7 @@ function renderApp(user) {
     else if (sec === "settings") renderSettingsPage(main, user, isOwner);
     else if (sec === "admin") renderAdmin(main, user);
     else renderHome(main, user, isOwner, show);
+    if (more === undefined) { try { localStorage.setItem("sw_last_sec", sec); } catch (_) {} }
     main.scrollTop = 0;
   }
   view.querySelector(".side-nav").onclick = (e) => { const b = e.target.closest(".side-item"); if (b) show(b.dataset.sec); };
@@ -433,7 +434,9 @@ function renderApp(user) {
   document.getElementById("cmdkBtn").onclick = openPalette;
 
   appShow = show;
-  show("home");
+  let lastSec; try { lastSec = localStorage.getItem("sw_last_sec"); } catch (_) {}
+  const okSec = lastSec && lastSec !== "setup" && (lastSec !== "admin" || isOwner);
+  show(okSec ? lastSec : "home");
   if (!tourDone()) setTimeout(() => startTour(tourSteps(isOwner)), 450);
 }
 
