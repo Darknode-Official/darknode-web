@@ -576,3 +576,22 @@ body.app .app-main::before{content:"";position:fixed;inset:0 0 0 220px;z-index:-
 .arse-card .ax{color:var(--acc);font-size:.8rem}
 .arse-card .ad{font-size:.78rem;color:var(--mut);margin-top:4px;line-height:1.4}
 .arse-card .au{font-size:.7rem;color:var(--acc);margin-top:7px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--mono,ui-monospace,monospace)}
+
+/* richer console backdrop — subtle depth so pages don't feel empty */
+.app-main{position:relative}
+.app-main::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:0;
+  background:
+    radial-gradient(620px 340px at 94% -4%, color-mix(in srgb,var(--acc) 8%,transparent), transparent 62%),
+    radial-gradient(520px 300px at 0% 8%, color-mix(in srgb,var(--acc-2,#7c5cff) 5%,transparent), transparent 60%),
+    linear-gradient(180deg, color-mix(in srgb,var(--acc) 2%,transparent), transparent 220px)}
+.app-main > *{position:relative;z-index:1}
+
+/* Google Hacking DB */
+.ghdb-bar{display:flex;align-items:center;gap:12px;margin:0 0 16px;max-width:720px;flex-wrap:wrap}
+.ghdb-bar .tk-f{flex:1;min-width:200px}
+.gh-cat .pg-h2{margin:20px 0 8px}
+.gh-row{display:flex;align-items:center;gap:12px;padding:9px 0;border-top:1px solid var(--line);flex-wrap:wrap}
+.gh-row:first-of-type{border-top:none}
+.gh-desc{flex:0 0 200px;font-size:.86rem;font-weight:500}
+.gh-q{flex:1;min-width:200px;font-family:var(--mono,ui-monospace,monospace);font-size:.8rem;color:var(--acc);background:color-mix(in srgb,var(--acc) 8%,transparent);border:1px solid var(--line);padding:.4rem .65rem;border-radius:7px;overflow-x:auto;white-space:nowrap}
+.gh-actions{display:flex;gap:6px;flex:none}
