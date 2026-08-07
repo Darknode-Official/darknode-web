@@ -24,6 +24,7 @@ import { renderDownloads } from "/js/getapp.js";
 import { renderGitHub } from "/js/github.js";
 import { emailConfigured, sendCode, sendLoginAlert, genCode, hashCode, deviceInfo } from "/js/notify.js";
 import { renderPayloads, renderSnippets, renderApiKeys, renderRefs, renderTargets } from "/js/labs.js";
+import { renderArsenal, renderTraining } from "/js/arsenal.js";
 import { renderAI } from "/js/webai.js";
 
 const userSlot = document.getElementById("user-slot");
@@ -355,9 +356,11 @@ function renderApp(user) {
           <div class="side-group">Develop</div>
           <button class="side-item" data-sec="snippets">Code snippets</button>
           <button class="side-item" data-sec="refs">References</button>
+          <button class="side-item" data-sec="arsenal">Arsenal</button>
           <button class="side-item" data-sec="github">GitHub</button>
           <div class="side-group">Resources</div>
           <button class="side-item" data-sec="learn">Learn</button>
+          <button class="side-item" data-sec="training">Training</button>
           <button class="side-item" data-sec="setup">Local setup</button>
           <button class="side-item" data-sec="downloads">Get the app</button>
           <div class="side-group">System</div>
@@ -379,6 +382,8 @@ function renderApp(user) {
     else if (sec === "targets") renderTargets(main);
     else if (sec === "snippets") renderSnippets(main);
     else if (sec === "refs") renderRefs(main);
+    else if (sec === "arsenal") renderArsenal(main);
+    else if (sec === "training") renderTraining(main);
     else if (sec === "apikeys") renderApiKeys(main);
     else if (sec === "cheats") renderCheats(main);
     else if (sec === "threat") renderThreat(main);
@@ -406,11 +411,9 @@ function renderApp(user) {
       <button class="profile-btn" id="profileBtn">${avatar}<span class="p-email">${esc(user.email)}</span></button>
       <div class="menu" id="profileMenu" hidden>
         <div class="menu-prof">${avatar}<div style="min-width:0"><div class="su-name">${esc(name)}</div><div class="su-mail muted">${esc(user.email)}${isOwner ? ' <span class="owner-badge">OWNER</span>' : ""}</div></div></div>
-        <button class="menu-item" data-nav="settings">Account settings</button>
         <button class="menu-item" data-nav="apikeys">API keys</button>
         <button class="menu-item" data-a="theme">Toggle light / dark</button>
         <button class="menu-item" data-a="tour">Replay walkthrough</button>
-        ${isOwner ? `<div class="menu-div"></div><button class="menu-item" data-nav="admin">Admin console</button>` : ""}
         <div class="menu-div"></div>
         <button class="menu-item" data-a="logout">Log out</button>
       </div>
@@ -443,7 +446,7 @@ function renderApp(user) {
 // ---- command palette (Ctrl/Cmd+K) ----
 function openPalette() {
   if (document.getElementById("cmdk")) return;
-  const sections = [["home", "Home"], ["ai", "AI assistant"], ["tools", "Tools"], ["utils", "Utilities"], ["payloads", "Payloads"], ["targets", "Practice targets"], ["threat", "Threat intel"], ["cheats", "Cheat sheets"], ["snippets", "Code snippets"], ["refs", "References"], ["github", "GitHub"], ["learn", "Learn"], ["setup", "Local setup"], ["downloads", "Get the app"], ["apikeys", "API keys"], ["settings", "Settings"], ["admin", "Admin"]];
+  const sections = [["home", "Home"], ["ai", "AI assistant"], ["tools", "Tools"], ["utils", "Utilities"], ["payloads", "Payloads"], ["targets", "Practice targets"], ["threat", "Threat intel"], ["cheats", "Cheat sheets"], ["snippets", "Code snippets"], ["refs", "References"], ["arsenal", "Arsenal"], ["training", "Training"], ["github", "GitHub"], ["learn", "Learn"], ["setup", "Local setup"], ["downloads", "Get the app"], ["apikeys", "API keys"], ["settings", "Settings"], ["admin", "Admin"]];
   const items = [
     ...sections.map(([s, n]) => ({ type: "section", id: s, name: n, desc: "Go to " + n })),
     ...CATALOG.map((t) => ({ type: "tool", id: t.id, name: t.name, desc: t.cat + " · " + t.desc })),

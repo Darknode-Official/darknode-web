@@ -567,3 +567,12 @@ body.app .app-main::before{content:"";position:fixed;inset:0 0 0 220px;z-index:-
 .rx-use{padding:2px 8px;font-size:.68rem;border:1px solid var(--line);background:transparent;color:var(--mut);border-radius:6px;cursor:pointer}
 .rx-use:hover{color:var(--acc);border-color:var(--acc)}
 #rxout mark{background:color-mix(in srgb,var(--acc) 32%,transparent);color:var(--fg,#fff);border-radius:3px;padding:0 1px}
+
+/* Arsenal / Training external-tool directories */
+.arse-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+.arse-card{display:block;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:color-mix(in srgb,var(--acc) 3%,transparent);text-decoration:none;color:inherit;transition:border-color .15s,transform .15s,background .15s}
+.arse-card:hover{border-color:var(--acc);transform:translateY(-2px);background:color-mix(in srgb,var(--acc) 8%,transparent)}
+.arse-card .an{font-weight:600}
+.arse-card .ax{color:var(--acc);font-size:.8rem}
+.arse-card .ad{font-size:.78rem;color:var(--mut);margin-top:4px;line-height:1.4}
+.arse-card .au{font-size:.7rem;color:var(--acc);margin-top:7px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--mono,ui-monospace,monospace)}
