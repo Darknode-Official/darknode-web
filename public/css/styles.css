@@ -617,3 +617,8 @@ body.app .app-main::before{content:"";position:fixed;inset:0 0 0 220px;z-index:-
 .boot-go{color:var(--acc,#00d4ff);margin-top:6px}
 .boot-cur{animation:bootBlink 1s steps(2) infinite}
 @keyframes bootBlink{50%{opacity:0}}
+
+/* CRT scanlines over the boot splash */
+#bootscreen::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:5;opacity:.4;
+  background:repeating-linear-gradient(0deg,transparent 0 2px,rgba(0,0,0,.22) 2px 3px)}
+.boot-inner{z-index:6}
