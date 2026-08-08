@@ -99,7 +99,7 @@ export function renderAI(main) {
     history.push(um);
     const you = add("user", ""); you.innerHTML = imgs.map((b) => `<img class="msg-img" src="data:image/png;base64,${b}">`).join("") + esc(text);
     pending = []; drawThumbs();
-    if (imgs.length) status.textContent = "reading image (needs a vision model like llama3.2-vision or llava)…";
+    if (imgs.length) status.textContent = "reading image (needs a vision model like minicpm-v or llava)…";
     const out = add("ai", "…"); let acc = "";
     try { await streamChat(model, history, (t) => { acc += t; out.innerHTML = mdToHtml(acc); chatEl.scrollTop = chatEl.scrollHeight; }, ctrl.signal); history.push({ role: "assistant", content: acc || "" }); }
     catch (e) { if (e.name === "AbortError") { out.innerHTML = mdToHtml(acc) + `<div class="muted" style="font-size:.72rem;margin-top:4px">stopped</div>`; history.push({ role: "assistant", content: acc || "" }); } else { out.textContent = "Error: " + e.message; out.classList.add("err"); } }

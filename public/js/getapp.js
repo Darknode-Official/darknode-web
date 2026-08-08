@@ -21,7 +21,7 @@ const SITE = "https://sentinel-web-2hq9.onrender.com";
 const APP_EDITIONS = [
   { name: "Netinstall", tag: "lightest · ~95 MB", desc: "Just the app. Every tool auto-configures itself the first time you launch it — nothing pre-downloaded.", steps: ["Install the .deb / AppImage / .exe from the Builds tab.", "Open any tool — Sentinel sets it up on first use."] },
   { name: "Slim", tag: "recommended", desc: "The app plus the essential toolset: recon, web, and password tools.", steps: ["Install the app from the Builds tab.", `curl -sL ${SITE}/arsenal.sh | bash -s -- recon web passwords`] },
-  { name: "Full", tag: "everything + AI", desc: "The app, the complete arsenal (all 10 categories), and local AI models.", steps: ["Install the app from the Builds tab.", `curl -sL ${SITE}/arsenal.sh | bash`, "ollama pull llama3.1 && ollama pull llama3.2-vision"] },
+  { name: "Full", tag: "everything + AI", desc: "The app, the complete arsenal (all 10 categories), and local AI models.", steps: ["Install the app from the Builds tab.", `curl -sL ${SITE}/arsenal.sh | bash`, "ollama pull llama3.1 && ollama pull minicpm-v"] },
 ];
 const CLI_EDITIONS = [
   { name: "Compact", tag: "zero dependencies", desc: "The standalone binary — no runtime, no installs. Runs anywhere on its own.", steps: ["Download the CLI binary from the Builds tab — it just runs."] },
