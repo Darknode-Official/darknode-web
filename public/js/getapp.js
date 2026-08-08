@@ -39,31 +39,22 @@ export function renderDownloads(main) {
   main.innerHTML = `
     <h1 class="pg-h1">Downloads</h1>
     <p class="muted pg-sub">The desktop app and terminal edition go far beyond the web console &mdash; a QEMU/KVM VM runner, a native port scanner, DNS/WHOIS/TLS recon, subdomain enumeration, a code workbench, live terminals, an autonomous AI agent, and auto-configuring tools.</p>
-    <div class="dl-tabs"><button class="chip on" data-tab="builds">Builds</button><button class="chip" data-tab="editions">Setup editions</button></div>
-    <div id="dlBuilds">
-      <div class="card" style="max-width:640px">
-        <div class="dl-pick">
-          <label class="pc-f" style="flex:1"><span>Choose a build</span><select class="tk-f" id="dlSelect"><option>loading releases…</option></select></label>
-        </div>
-        <div id="dlDetail" class="dl-detail"></div>
+    <h2 class="pg-h2">1 · Choose a build</h2>
+    <div class="card" style="max-width:640px">
+      <div class="dl-pick">
+        <label class="pc-f" style="flex:1"><span>Platform &amp; format</span><select class="tk-f" id="dlSelect"><option>loading releases…</option></select></label>
       </div>
+      <div id="dlDetail" class="dl-detail"></div>
     </div>
-    <div id="dlEditions" hidden>
-      <h2 class="pg-h2">Desktop app editions</h2>
-      <p class="muted" style="font-size:.85rem;margin:-6px 0 12px">Same installer, different amount of tooling. Pick how much you want set up, then run the command after installing.</p>
-      <div class="ed-grid">${APP_EDITIONS.map(edCard).join("")}</div>
-      <h2 class="pg-h2" style="margin-top:22px">Terminal edition (CLI)</h2>
-      <div class="ed-grid">${CLI_EDITIONS.map(edCard).join("")}</div>
-      <p class="muted" style="font-size:.78rem;margin-top:14px">Provisioning uses systems you own or are authorized to test. Review the script anytime at <a href="${SITE}/arsenal.sh" target="_blank" rel="noopener">/arsenal.sh</a>.</p>
-    </div>
+    <h2 class="pg-h2" style="margin-top:24px">2 · Choose a setup edition</h2>
+    <p class="muted" style="font-size:.85rem;margin:-6px 0 12px">Same installer, different amount of tooling. Pick how much you want set up, then run the command after installing.</p>
+    <h3 class="pg-h3" style="margin:0 0 8px">Desktop app</h3>
+    <div class="ed-grid">${APP_EDITIONS.map(edCard).join("")}</div>
+    <h3 class="pg-h3" style="margin:22px 0 8px">Terminal edition (CLI)</h3>
+    <div class="ed-grid">${CLI_EDITIONS.map(edCard).join("")}</div>
+    <p class="muted" style="font-size:.78rem;margin-top:14px">Provisioning uses systems you own or are authorized to test. Review the script anytime at <a href="${SITE}/arsenal.sh" target="_blank" rel="noopener">/arsenal.sh</a>.</p>
     <p class="muted" style="font-size:.8rem;margin-top:16px">All builds are MIT-licensed. &middot; <a href="${RELEASES}" target="_blank" rel="noopener">All releases →</a></p>`;
   const sel = main.querySelector("#dlSelect"), detail = main.querySelector("#dlDetail");
-  main.querySelector(".dl-tabs").onclick = (e) => {
-    const b = e.target.closest("[data-tab]"); if (!b) return;
-    main.querySelectorAll(".dl-tabs .chip").forEach((x) => x.classList.toggle("on", x === b));
-    main.querySelector("#dlBuilds").hidden = b.dataset.tab !== "builds";
-    main.querySelector("#dlEditions").hidden = b.dataset.tab !== "editions";
-  };
 
   const fallback = () => {
     sel.innerHTML = `<option>unavailable</option>`;

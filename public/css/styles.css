@@ -751,3 +751,6 @@ html.crt body::after{content:"";position:fixed;inset:0;pointer-events:none;z-ind
 /* save-frame toast */
 .toast{position:fixed;bottom:22px;left:50%;transform:translate(-50%,20px);z-index:200;background:var(--card);border:1px solid var(--acc);color:var(--fg,inherit);padding:10px 16px;border-radius:10px;font-size:.85rem;box-shadow:0 12px 40px -12px rgba(0,0,0,.5);opacity:0;transition:opacity .25s ease,transform .25s ease;max-width:90vw}
 .toast.in{opacity:1;transform:translate(-50%,0)}
+
+/* downloads sub-headings */
+.pg-h3{font-size:1rem;font-weight:600;color:var(--fg,inherit)}
