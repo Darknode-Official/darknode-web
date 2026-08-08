@@ -757,3 +757,7 @@ html.crt body::after{content:"";position:fixed;inset:0;pointer-events:none;z-ind
 
 /* boot matrix rain canvas */
 .boot-rain{position:absolute;inset:0;width:100%;height:100%;z-index:0;opacity:.55}
+
+/* landing edition command chips */
+.ed-cmd{display:block;font-family:var(--mono,ui-monospace,monospace);font-size:.76rem;color:var(--acc);background:color-mix(in srgb,var(--acc) 8%,transparent);border:1px solid var(--line);border-radius:6px;padding:6px 9px;overflow-x:auto;white-space:pre;cursor:pointer}
+.ed-cmd:hover{border-color:var(--acc)}

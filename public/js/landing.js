@@ -8,6 +8,13 @@ const APP_FILES = {
   appimage: REL + "/Sentinel-2.15.0.AppImage",
   windows: REL + "/Sentinel.Setup.2.15.0.exe",
 };
+const SITE = "https://sentinel-web-2hq9.onrender.com";
+const EDITIONS = [
+  ["Netinstall", "lightest · ~95 MB", "Just the app. Every tool auto-configures itself the first time you launch it — nothing pre-downloaded.", "Install the app above — done."],
+  ["Slim", "recommended", "The app plus the essential toolset: recon, web, and password tools.", "curl -sL " + SITE + "/arsenal.sh | bash -s -- recon web passwords"],
+  ["Full", "everything + AI", "The app, the complete arsenal (all 10 categories), and local AI models.", "curl -sL " + SITE + "/arsenal.sh | bash"],
+];
+const edCardL = (e) => `<div class="ed-card"><div class="ed-head"><h3>${e[0]}</h3><span class="chip">${e[1]}</span></div><p class="muted" style="font-size:.83rem;margin:6px 0 10px">${e[2]}</p>${/curl|sudo|bash/.test(e[3]) ? `<code class="ed-cmd">${e[3]}</code>` : `<div class="muted" style="font-size:.8rem">${e[3]}</div>`}</div>`;
 
 const ICON = {
   tools: '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>',
@@ -165,6 +172,10 @@ nc -lvnp 4444`],
           ${osCard("Windows", ".exe installer", "windows", "Double-click Sentinel-windows.exe", "If SmartScreen warns, choose More info &rarr; Run anyway (the installer is unsigned).")}
         </div>
 
+        <h3 class="dlcli-h" style="margin-top:26px">Pick a setup edition</h3>
+        <p class="muted dlapp-sub">Same installer, different amount of tooling. Install the app, then run the command to provision it.</p>
+        <div class="ed-grid">${EDITIONS.map(edCardL).join("")}</div>
+
         <div class="dlcli">
           <h3 class="dlcli-h"><span class="mono grad-text">&gt;_</span> Prefer the terminal? Get the CLI edition</h3>
           <p class="muted dlapp-sub">A single, dependency-free command-line console &mdash; native port scanner, reverse-shell generator, encoders, and cheat sheets. Runs anywhere, even over SSH on a headless box.</p>
@@ -214,4 +225,5 @@ nc -lvnp 4444`],
   $("cta-signup").onclick = actions.onGetStarted;
   $("cta-learn").onclick = () => document.getElementById("features")?.scrollIntoView({ behavior: "smooth" });
   $("foot-signin").onclick = actions.onSignIn;
+  view.addEventListener("click", (e) => { const c = e.target.closest("code.ed-cmd"); if (!c) return; navigator.clipboard?.writeText(c.textContent).then(() => { const o = c.textContent; c.textContent = "copied!"; setTimeout(() => (c.textContent = o), 900); }); });
 }
