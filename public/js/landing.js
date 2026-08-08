@@ -178,17 +178,21 @@ nc -lvnp 4444`],
 
         <div class="dlcli">
           <h3 class="dlcli-h"><span class="mono grad-text">&gt;_</span> Prefer the terminal? Get the CLI edition</h3>
-          <p class="muted dlapp-sub">A single, dependency-free command-line console &mdash; native port scanner, reverse-shell generator, encoders, and cheat sheets. Runs anywhere, even over SSH on a headless box.</p>
-          <div class="dlapp-grid">
-            <div class="dlapp-item">
-              <a class="dlapp-card" href="${REL}/Sentinel-cli-linux" download><div class="dlapp-os">Linux</div><div class="dlapp-fmt">CLI binary</div></a>
-              <div class="dlapp-cmd"><span class="dlapp-cmd-l">Fetch &amp; run (curl)</span><code>curl -L ${REL}/Sentinel-cli-linux -o sentinel &amp;&amp; chmod +x sentinel &amp;&amp; ./sentinel</code></div>
+          <p class="muted dlapp-sub">A single, dependency-free command-line console &mdash; native port scanner, reverse-shell generator, encoders, and cheat sheets. Runs anywhere, even over SSH on a headless box. Two ways to get it:</p>
+          <div class="ed-grid">
+            <div class="ed-card">
+              <div class="ed-head"><h3>git clone</h3><span class="chip">tiny · ~300 KB</span></div>
+              <p class="muted" style="font-size:.83rem;margin:6px 0 8px">Clone the source and run it with Node &mdash; no 50&nbsp;MB binary on disk, and <code>git pull</code> keeps it current. Best if you have Node 18+.</p>
+              <code class="ed-cmd">git clone https://github.com/Darknode-Official/sentinel-cli &amp;&amp; cd sentinel-cli &amp;&amp; node sentinel.js</code>
             </div>
-            <div class="dlapp-item">
-              <a class="dlapp-card" href="${REL}/Sentinel-cli-windows.exe" download><div class="dlapp-os">Windows</div><div class="dlapp-fmt">CLI .exe</div></a>
-              <div class="dlapp-cmd"><span class="dlapp-cmd-l">Fetch &amp; run (PowerShell)</span><code>curl.exe -L ${REL}/Sentinel-cli-windows.exe -o sentinel.exe; .\\sentinel.exe</code></div>
+            <div class="ed-card">
+              <div class="ed-head"><h3>Download the binary</h3><span class="chip">standalone · ~52 MB</span></div>
+              <p class="muted" style="font-size:.83rem;margin:6px 0 8px">A self-contained executable with Node bundled in &mdash; no Node needed, runs on its own. Uses more disk.</p>
+              <code class="ed-cmd">curl -L ${REL}/Sentinel-cli-linux -o sentinel &amp;&amp; chmod +x sentinel &amp;&amp; ./sentinel</code>
+              <div class="muted" style="font-size:.78rem;margin-top:6px">Windows: <code class="ed-cmd" style="display:inline-block;margin-top:4px">curl.exe -L ${REL}/Sentinel-cli-windows.exe -o sentinel.exe; .\\sentinel.exe</code></div>
             </div>
           </div>
+          <p class="muted" style="font-size:.78rem;margin-top:10px"><strong>Which?</strong> <b>git clone</b> is smallest and self-updating but needs Node installed. The <b>binary</b> is bigger but works with nothing else installed. Both are the same tool.</p>
         </div>
       </div>
     </section>

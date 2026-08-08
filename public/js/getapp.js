@@ -24,8 +24,9 @@ const APP_EDITIONS = [
   { name: "Full", tag: "everything + AI", desc: "The app, the complete arsenal (all 10 categories), and local AI models.", steps: ["Install the app from the Builds tab.", `curl -sL ${SITE}/arsenal.sh | bash`, "ollama pull llama3.1 && ollama pull minicpm-v"] },
 ];
 const CLI_EDITIONS = [
-  { name: "Compact", tag: "zero dependencies", desc: "The standalone binary — no runtime, no installs. Runs anywhere on its own.", steps: ["Download the CLI binary from the Builds tab — it just runs."] },
-  { name: "Pro", tag: "full toolset", desc: "The binary plus the complete external toolset it can drive (nmap, sqlmap, nuclei…).", steps: ["Download the CLI binary from the Builds tab.", `curl -sL ${SITE}/arsenal.sh | bash`] },
+  { name: "git clone", tag: "tiny · ~300 KB", desc: "Clone the source and run with Node — no 52 MB binary on disk, and git pull keeps it current. Needs Node 18+.", steps: ["git clone https://github.com/Darknode-Official/sentinel-cli && cd sentinel-cli && node sentinel.js"] },
+  { name: "Compact", tag: "standalone · ~52 MB", desc: "The self-contained binary — Node bundled in, no dependencies, runs on its own. Grab it from the Builds tab.", steps: ["Download the CLI binary from the Builds tab — it just runs."] },
+  { name: "Pro", tag: "full toolset", desc: "The CLI (either way above) plus the complete external toolset it can drive (nmap, sqlmap, nuclei…).", steps: [`curl -sL ${SITE}/arsenal.sh | bash`] },
 ];
 
 const edCard = (e) => `
