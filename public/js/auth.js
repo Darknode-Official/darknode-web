@@ -389,11 +389,21 @@ function renderApp(user) {
         </nav>
         <div class="side-foot">${avatar}<div class="side-user"><div class="su-name">${esc(name)}</div><div class="su-mail muted">${esc(user.email)}</div></div></div>
       </aside>
-      <main class="app-main" id="app-main"></main>
+      <main class="app-main" id="app-main"><div id="crumbs" class="crumbs"></div><div id="app-content"></div></main>
     </div>`;
 
-  const main = document.getElementById("app-main");
+  const main = document.getElementById("app-content");
+  const labelOf = (s) => { const b = view.querySelector('.side-item[data-sec="' + s + '"]'); return b ? b.textContent.trim() : s.charAt(0).toUpperCase() + s.slice(1); };
+  let trail = [], curSec = "home";
+  function renderCrumbs(sec) {
+    const i = trail.indexOf(sec);
+    if (i >= 0) trail = trail.slice(0, i + 1); else trail.push(sec);
+    if (trail.length > 5) trail = trail.slice(-5);
+    const cr = document.getElementById("crumbs"); if (!cr) return;
+    cr.innerHTML = trail.map((s, idx) => `<button class="crumb${idx === trail.length - 1 ? " cur" : ""}" data-crumb="${esc(s)}">${esc(labelOf(s))}</button>`).join('<span class="crumb-sep">›</span>');
+  }
   function show(sec, more) {
+    curSec = sec; renderCrumbs(sec);
     view.querySelectorAll(".side-item").forEach((x) => x.classList.toggle("active", x.dataset.sec === sec));
     if (sec === "tools") { main.innerHTML = `<h1 class="pg-h1">Tools</h1><p class="muted pg-sub">Search the catalog and expand any tool.</p><div id="tools"></div>`; renderTools(document.getElementById("tools")); }
     else if (sec === "utils") renderUtils(main);
@@ -464,9 +474,37 @@ function renderApp(user) {
 
   appShow = show;
   initSaved(user);
+
+  // ---- breadcrumb navigation ----
+  document.getElementById("crumbs").onclick = (e) => { const b = e.target.closest("[data-crumb]"); if (b) show(b.dataset.crumb); };
+
+  // ---- save the exact frame (Ctrl+S) so you resume where you left off ----
+  const FRAME = "sw_frame";
+  const toast = (msg, ms) => { const t = document.createElement("div"); t.className = "toast"; t.textContent = msg; document.body.appendChild(t); requestAnimationFrame(() => t.classList.add("in")); setTimeout(() => { t.classList.remove("in"); setTimeout(() => t.remove(), 300); }, ms || 2600); };
+  const editableFields = () => [...main.querySelectorAll("input,textarea,select")].filter((el) => el.id && el.type !== "password" && el.type !== "file");
+  const hasTyped = () => editableFields().some((el) => (el.tagName !== "SELECT") && el.value && el.value.trim());
+  function saveFrame() {
+    const fields = {}; editableFields().forEach((el) => { if (el.value) fields[el.id] = el.value; });
+    try { localStorage.setItem(FRAME, JSON.stringify({ sec: curSec, fields, ts: Date.now() })); } catch (_) {}
+    toast("Frame saved — you'll resume right here.");
+  }
+  document.addEventListener("keydown", (e) => {
+    if ((e.metaKey || e.ctrlKey) && (e.key === "s" || e.key === "S") && document.body.classList.contains("app")) { e.preventDefault(); saveFrame(); }
+  });
+  // gentle exit-intent hint (once per session) + native unsaved-changes guard
+  let exitHinted = false;
+  document.addEventListener("mouseout", (e) => { if (e.clientY <= 0 && !exitHinted && hasTyped()) { exitHinted = true; toast("Leaving? Press Ctrl+S to save this exact frame so you resume right here.", 5000); } });
+  window.addEventListener("beforeunload", (e) => { if (hasTyped()) { e.preventDefault(); e.returnValue = ""; } });
+
+  // ---- restore last frame (section + typed text), else last section ----
+  let frame = null; try { frame = JSON.parse(localStorage.getItem(FRAME)); } catch (_) {}
   let lastSec; try { lastSec = localStorage.getItem("sw_last_sec"); } catch (_) {}
-  const okSec = lastSec && lastSec !== "setup" && (lastSec !== "admin" || isOwner);
-  show(okSec ? lastSec : "home");
+  const startSec = (frame && frame.sec) || lastSec || "home";
+  const okSec = startSec && startSec !== "setup" && (startSec !== "admin" || isOwner);
+  show(okSec ? startSec : "home");
+  if (frame && frame.fields && frame.sec === startSec) {
+    setTimeout(() => { Object.entries(frame.fields).forEach(([id, v]) => { const el = main.querySelector("#" + (window.CSS && CSS.escape ? CSS.escape(id) : id)); if (el && v != null) { el.value = v; el.dispatchEvent(new Event("input", { bubbles: true })); el.dispatchEvent(new Event("change", { bubbles: true })); } }); }, 120);
+  }
   if (!tourDone()) setTimeout(() => startTour(tourSteps(isOwner)), 450);
 }
 

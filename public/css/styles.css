@@ -741,3 +741,13 @@ html.crt body::after{content:"";position:fixed;inset:0;pointer-events:none;z-ind
 .ai-thumb img{height:52px;width:auto;border-radius:6px;border:1px solid var(--line)}
 .ai-thumb button{position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;border:none;background:var(--bad);color:#fff;cursor:pointer;font-size:.7rem;line-height:1}
 .msg-img{display:block;max-width:260px;max-height:200px;border-radius:8px;border:1px solid var(--line);margin-bottom:6px}
+
+/* breadcrumb navigation */
+.crumbs{display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin:0 0 14px;font-size:.82rem;min-height:20px}
+.crumb{background:none;border:none;color:var(--mut);cursor:pointer;font:inherit;padding:2px 4px;border-radius:5px}
+.crumb:hover{color:var(--acc);background:color-mix(in srgb,var(--acc) 10%,transparent)}
+.crumb.cur{color:var(--fg,inherit);font-weight:600;cursor:default}
+.crumb-sep{color:var(--mut);opacity:.6}
+/* save-frame toast */
+.toast{position:fixed;bottom:22px;left:50%;transform:translate(-50%,20px);z-index:200;background:var(--card);border:1px solid var(--acc);color:var(--fg,inherit);padding:10px 16px;border-radius:10px;font-size:.85rem;box-shadow:0 12px 40px -12px rgba(0,0,0,.5);opacity:0;transition:opacity .25s ease,transform .25s ease;max-width:90vw}
+.toast.in{opacity:1;transform:translate(-50%,0)}
