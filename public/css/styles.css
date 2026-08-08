@@ -754,3 +754,6 @@ html.crt body::after{content:"";position:fixed;inset:0;pointer-events:none;z-ind
 
 /* downloads sub-headings */
 .pg-h3{font-size:1rem;font-weight:600;color:var(--fg,inherit)}
+
+/* boot matrix rain canvas */
+.boot-rain{position:absolute;inset:0;width:100%;height:100%;z-index:0;opacity:.55}

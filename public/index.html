@@ -20,6 +20,7 @@
 </head>
 <body>
   <div id="bootscreen" aria-hidden="true">
+    <canvas class="boot-rain" id="bootrain"></canvas>
     <div class="boot-grid"></div>
     <div class="boot-sweep"></div>
     <div class="boot-inner">
@@ -44,6 +45,31 @@
     <div id="announcement" class="banner" hidden></div>
     <main id="view"><p class="loading">Loading&hellip;</p></main>
   </div>
+
+  <!-- Boot splash: Matrix-style digital rain (runs until the splash fades). -->
+  <script>
+    (function () {
+      var c = document.getElementById("bootrain"); if (!c || !c.getContext) return;
+      var ctx = c.getContext("2d"), G = 15;
+      function size() { c.width = c.offsetWidth; c.height = c.offsetHeight; }
+      size(); addEventListener("resize", size);
+      var chars = "01<>[]{}#$%&*/\\|=+アカサタナハマヤラワ0123456789ABCDEF";
+      var cols = Math.floor(c.width / G), drops = [], raf;
+      for (var i = 0; i < cols; i++) drops[i] = Math.random() * -50;
+      function draw() {
+        ctx.fillStyle = "rgba(5,7,13,0.10)"; ctx.fillRect(0, 0, c.width, c.height);
+        ctx.font = G + "px monospace";
+        for (var i = 0; i < cols; i++) {
+          var ch = chars[(Math.random() * chars.length) | 0], y = drops[i] * G;
+          ctx.fillStyle = Math.random() > 0.97 ? "#dffbff" : "rgba(0,212,255,0.8)";
+          ctx.fillText(ch, i * G, y);
+          if (y > c.height && Math.random() > 0.975) drops[i] = 0; else drops[i]++;
+        }
+        raf = requestAnimationFrame(draw);
+      }
+      draw(); setTimeout(function () { cancelAnimationFrame(raf); }, 3000);
+    })();
+  </script>
 
   <!-- App entry. Loads Firebase (js/firebase.js), resolves the signed-in
        user's role, then renders the right view. ultraplan fills in the rest. -->
