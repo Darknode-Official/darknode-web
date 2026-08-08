@@ -63,6 +63,28 @@ function revshell(lang, ip, port) {
   return L[lang] || L.bash;
 }
 
+function cidrCalc(input) {
+  const m = String(input).trim().match(/^(\d{1,3}(?:\.\d{1,3}){3})\/(\d{1,2})$/);
+  if (!m) return null;
+  const ip = m[1].split(".").map(Number), bits = +m[2];
+  if (ip.some((o) => o > 255) || bits > 32) return null;
+  const ipn = (((ip[0] << 24) >>> 0) + (ip[1] << 16) + (ip[2] << 8) + ip[3]) >>> 0;
+  const mask = bits === 0 ? 0 : (0xffffffff << (32 - bits)) >>> 0;
+  const net = (ipn & mask) >>> 0, bc = (net | (~mask >>> 0)) >>> 0;
+  const toIp = (n) => [(n >>> 24) & 255, (n >>> 16) & 255, (n >>> 8) & 255, n & 255].join(".");
+  const hosts = bits >= 31 ? (bits === 32 ? 1 : 2) : (bc - net - 1);
+  return { network: toIp(net), broadcast: toIp(bc), netmask: toIp(mask), first: toIp(bits >= 31 ? net : net + 1), last: toIp(bits >= 31 ? bc : bc - 1), hosts };
+}
+function mangle(text) {
+  const out = new Set(), suff = ["", "1", "123", "!", "@", "2024", "2025", "01", "007"];
+  const leet = (w) => w.replace(/a/gi, "4").replace(/e/gi, "3").replace(/i/gi, "1").replace(/o/gi, "0").replace(/s/gi, "$");
+  text.split(/\r?\n/).map((w) => w.trim()).filter(Boolean).forEach((w) => {
+    const caps = new Set([w.toLowerCase(), w.toUpperCase(), w[0].toUpperCase() + w.slice(1).toLowerCase()]);
+    caps.forEach((c) => { suff.forEach((s) => { out.add(c + s); out.add(c + s + "!"); }); out.add(leet(c)); });
+  });
+  return [...out].slice(0, 2000);
+}
+
 // ---- render ----
 export function renderUtils(main) {
   main.innerHTML = `
@@ -99,6 +121,18 @@ export function renderUtils(main) {
       <div class="util-kv"><span>Local</span><code id="tslocal" class="util-val">—</code></div>`),
     card("Generators", "Random", `<div class="util-btns"><button class="btn sm" data-a="uuid">UUID v4</button><button class="btn sm" data-a="pw">Password</button><label class="util-chk"><input type="checkbox" id="pwsym" checked> symbols</label><button class="btn ghost sm" data-copytarget="genout">copy</button></div>
       <input class="in mono" id="genout" readonly placeholder="click a generator">`),
+    card("CIDR calculator", "Network", `<input class="in mono" id="cidrin" placeholder="192.168.1.0/24">
+      <div class="util-kv"><span>Network</span><code id="cnet" class="util-val">—</code></div>
+      <div class="util-kv"><span>Broadcast</span><code id="cbc" class="util-val">—</code></div>
+      <div class="util-kv"><span>Netmask</span><code id="cmask" class="util-val">—</code></div>
+      <div class="util-kv"><span>Usable</span><code id="crange" class="util-val">—</code></div>
+      <div class="util-kv"><span>Hosts</span><code id="chosts" class="util-val">—</code></div>`),
+    card("Password strength", "Analyze", `<input class="in mono" id="pwin" placeholder="type a password (stays in this page)">
+      <div class="util-kv"><span>Entropy</span><code id="pwbits" class="util-val">—</code></div>
+      <div class="pw-meter"><span id="pwbar"></span></div>`),
+    card("Wordlist mangler", "Generate", `<textarea class="in" id="mangin" rows="2" placeholder="base words, one per line (name, company...)"></textarea>
+      <div class="util-btns"><button class="btn sm" data-a="mangle">Generate</button><button class="btn ghost sm" data-copytarget="mangout">copy</button></div>
+      <textarea class="in mono" id="mangout" rows="4" readonly></textarea>`),
   ].join("");
 
   const $ = (id) => main.querySelector("#" + id);
@@ -132,6 +166,16 @@ export function renderUtils(main) {
     const d = new Date(n); $("tsutc").textContent = d.toUTCString(); $("tslocal").textContent = d.toLocaleString();
   };
   $("tsin").oninput = tsUpdate;
+  $("cidrin").oninput = () => {
+    const r = cidrCalc($("cidrin").value);
+    if (!r) { ["cnet", "cbc", "cmask", "crange", "chosts"].forEach((i) => ($(i).textContent = "—")); return; }
+    $("cnet").textContent = r.network; $("cbc").textContent = r.broadcast; $("cmask").textContent = r.netmask;
+    $("crange").textContent = r.first + " – " + r.last; $("chosts").textContent = r.hosts.toLocaleString();
+  };
+  $("pwin").oninput = () => {
+    const e = pwEntropy($("pwin").value); $("pwbits").textContent = $("pwin").value ? e.bits + " bits · " + e.label : "—";
+    const bar = $("pwbar"); bar.style.width = Math.min(100, e.bits) + "%"; bar.dataset.lvl = e.label.replace(" ", "-");
+  };
 
   ug.onclick = (e) => {
     const b = e.target.closest("[data-a]"); if (!b) return;
@@ -146,6 +190,7 @@ export function renderUtils(main) {
       else if (a === "tsnow") { $("tsin").value = Date.now(); tsUpdate(); }
       else if (a === "uuid") $("genout").value = uuid4();
       else if (a === "pw") $("genout").value = genPw(20, $("pwsym").checked);
+      else if (a === "mangle") $("mangout").value = mangle($("mangin").value).join("\n");
     } catch (err) {
       const outMap = { b64e: "b64out", b64d: "b64out", urle: "urlout", urld: "urlout", hexe: "hexout", hexd: "hexout" };
       if (outMap[a]) $(outMap[a]).value = "Error: " + err.message;
