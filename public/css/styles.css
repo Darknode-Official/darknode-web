@@ -700,3 +700,20 @@ html.crt body::after{content:"";position:fixed;inset:0;pointer-events:none;z-ind
 .cmdk-group{font-size:.66rem;text-transform:uppercase;letter-spacing:.08em;color:var(--mut);padding:8px 12px 4px}
 .cmdk-foot{display:flex;gap:16px;padding:9px 14px;border-top:1px solid var(--line);font-size:.72rem;color:var(--mut)}
 .cmdk-foot kbd{background:var(--card2);border:1px solid var(--line);border-radius:4px;padding:1px 5px;margin-right:3px;font-family:inherit}
+
+/* Boot screen — cooler v3 (glitch logo, sweep, flicker, progress) */
+.boot-inner{position:relative;animation:bootFlick .8s steps(2,end) 1}
+@keyframes bootFlick{0%{opacity:.15}12%{opacity:.85}22%{opacity:.3}34%{opacity:1}42%{opacity:.6}100%{opacity:1}}
+.boot-logo{position:relative}
+.glitch::before,.glitch::after{content:attr(data-text);position:absolute;left:0;top:0;width:100%;background:none;-webkit-background-clip:border-box;background-clip:border-box}
+.glitch::before{color:#38f2ff;-webkit-text-fill-color:#38f2ff;animation:glA 1.35s steps(2,end) infinite}
+.glitch::after{color:#ff3bd0;-webkit-text-fill-color:#ff3bd0;animation:glB 1.35s steps(2,end) infinite}
+@keyframes glA{0%,88%,100%{clip-path:inset(0 0 101% 0);transform:none}90%{clip-path:inset(12% 0 55% 0);transform:translate(-3px,-1px)}94%{clip-path:inset(45% 0 28% 0);transform:translate(3px,1px)}97%{clip-path:inset(70% 0 8% 0);transform:translate(-2px,0)}}
+@keyframes glB{0%,86%,100%{clip-path:inset(101% 0 0 0);transform:none}91%{clip-path:inset(58% 0 18% 0);transform:translate(3px,1px)}95%{clip-path:inset(22% 0 52% 0);transform:translate(-3px,-1px)}}
+.boot-sweep{position:absolute;left:0;right:0;top:-140px;height:140px;pointer-events:none;z-index:2;
+  background:linear-gradient(180deg,transparent,color-mix(in srgb,var(--acc,#00d4ff) 20%,transparent) 60%,color-mix(in srgb,var(--acc,#00d4ff) 45%,transparent),transparent);
+  animation:bootSweep 2.5s ease-in-out infinite}
+@keyframes bootSweep{0%{top:-140px;opacity:0}12%{opacity:1}100%{top:100%;opacity:.2}}
+.boot-bar{width:min(420px,80vw);height:3px;margin:24px auto 0;background:color-mix(in srgb,var(--acc,#00d4ff) 15%,transparent);border-radius:3px;overflow:hidden}
+.boot-bar>span{display:block;height:100%;width:0;border-radius:3px;background:linear-gradient(90deg,var(--acc,#00d4ff),var(--acc-2,#7c5cff));box-shadow:0 0 12px var(--acc,#00d4ff);animation:bootFill 2.3s cubic-bezier(.4,.8,.3,1) forwards}
+@keyframes bootFill{0%{width:0}100%{width:100%}}
