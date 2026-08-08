@@ -471,6 +471,24 @@ function renderApp(user) {
 }
 
 // ---- command palette (Ctrl/Cmd+K) ----
+// Subsequence fuzzy score: -1 if `needle` isn't a subsequence of `hay`, else a
+// score rewarding contiguous runs, word-boundary hits, and early matches.
+function fuzzyScore(hay, needle) {
+  hay = hay.toLowerCase(); needle = needle.toLowerCase();
+  if (!needle) return 0;
+  let hi = 0, score = 0, streak = 0;
+  for (const ch of needle) {
+    const idx = hay.indexOf(ch, hi);
+    if (idx < 0) return -1;
+    if (idx === 0 || /[\s·.\-\/&]/.test(hay[idx - 1] || "")) score += 4;
+    if (idx === hi) { streak++; score += streak; } else streak = 0;
+    score += 1; hi = idx + 1;
+  }
+  return score + Math.max(0, 12 - hi);
+}
+const paletteRecents = () => { try { return JSON.parse(localStorage.getItem("sw_recent")) || []; } catch (_) { return []; } };
+function pushRecent(id) { let r = paletteRecents().filter((x) => x !== id); r.unshift(id); r = r.slice(0, 6); try { localStorage.setItem("sw_recent", JSON.stringify(r)); } catch (_) {} }
+
 function openPalette() {
   if (document.getElementById("cmdk")) return;
   const sections = [["home", "Home"], ["ai", "AI assistant"], ["tools", "Tools"], ["saved", "Saved"], ["utils", "Utilities"], ["payloads", "Payloads"], ["exploitdb", "Exploit & vuln databases"], ["ghdb", "Google dorks"], ["targets", "Practice targets"], ["vms", "Vulnerable VMs"], ["threat", "Threat intel"], ["cheats", "Cheat sheets"], ["snippets", "Code snippets"], ["refs", "References"], ["arsenal", "Arsenal"], ["training", "Training"], ["github", "GitHub"], ["privatecloud", "Private Cloud Generator"], ["report", "Report generator"], ["learn", "Learn"], ["setup", "Local setup"], ["downloads", "Get the app"], ["apikeys", "API keys"], ["settings", "Settings"], ["admin", "Admin"]];
@@ -482,22 +500,34 @@ function openPalette() {
   ];
   const ov = document.createElement("div");
   ov.id = "cmdk"; ov.className = "cmdk";
-  ov.innerHTML = `<div class="cmdk-box"><input class="cmdk-input" id="cmdk-in" placeholder="Search tools and sections..." autocomplete="off" spellcheck="false"><div class="cmdk-list" id="cmdk-list"></div></div>`;
+  ov.innerHTML = `<div class="cmdk-box"><input class="cmdk-input" id="cmdk-in" placeholder="Search sections, tools, cheat sheets, resources…" autocomplete="off" spellcheck="false"><div class="cmdk-list" id="cmdk-list"></div><div class="cmdk-foot"><span><kbd>↑</kbd><kbd>↓</kbd> navigate</span><span><kbd>↵</kbd> open</span><span><kbd>esc</kbd> close</span></div></div>`;
   document.body.appendChild(ov);
   const inp = ov.querySelector("#cmdk-in"), list = ov.querySelector("#cmdk-list");
-  let sel = 0, filtered = items;
+  const BADGE = { section: "go", tool: "tool", link: "link" };
+  let sel = 0, filtered = items, recentMode = false;
   const close = () => ov.remove();
   function render(q) {
-    const t = q.toLowerCase().trim();
-    filtered = (t ? items.filter((x) => (x.name + " " + x.desc).toLowerCase().includes(t)) : items).slice(0, 60);
+    const t = q.trim();
+    if (!t) {
+      const rec = paletteRecents().map((id) => items.find((x) => x.type === "section" && x.id === id)).filter(Boolean);
+      const recIds = new Set(rec.map((x) => x.id));
+      filtered = [...rec, ...items.filter((x) => !(x.type === "section" && recIds.has(x.id)))].slice(0, 80);
+      recentMode = rec.length;
+    } else {
+      filtered = items.map((x) => ({ x, s: fuzzyScore(x.name + " " + x.desc, t) })).filter((o) => o.s >= 0).sort((a, b) => b.s - a.s).slice(0, 60).map((o) => o.x);
+      recentMode = 0;
+    }
     if (sel >= filtered.length) sel = 0;
-    list.innerHTML = filtered.map((x, i) => `<div class="cmdk-item${i === sel ? " sel" : ""}" data-i="${i}"><span class="cmdk-name">${esc(x.name)}</span><span class="cmdk-desc">${esc(x.desc)}</span></div>`).join("") || `<div class="cmdk-empty">No results</div>`;
+    list.innerHTML = filtered.map((x, i) => {
+      const hdr = (i === 0 && recentMode) ? `<div class="cmdk-group">Recent</div>` : (i === recentMode && recentMode) ? `<div class="cmdk-group">All</div>` : "";
+      return `${hdr}<div class="cmdk-item${i === sel ? " sel" : ""}" data-i="${i}"><span class="cmdk-badge ${x.type}">${BADGE[x.type]}</span><span class="cmdk-name">${esc(x.name)}</span><span class="cmdk-desc">${esc(x.desc)}</span></div>`;
+    }).join("") || `<div class="cmdk-empty">No results</div>`;
     const a = list.querySelector(".cmdk-item.sel"); if (a) a.scrollIntoView({ block: "nearest" });
   }
   function run(i) {
     const x = filtered[i]; if (!x) return; close();
     if (x.type === "link") { window.open(x.id, "_blank", "noopener"); return; }
-    if (x.type === "section") { appShow && appShow(x.id); return; }
+    if (x.type === "section") { pushRecent(x.id); appShow && appShow(x.id); return; }
     appShow && appShow("tools");
     setTimeout(() => { const it = document.querySelector(`.tk-item[data-id="${x.id}"]`); if (it) { if (!it.classList.contains("open")) it.querySelector(".tk-head").click(); it.scrollIntoView({ block: "center" }); } }, 70);
   }

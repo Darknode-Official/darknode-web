@@ -691,3 +691,12 @@ body.app .app-main::before{content:"";position:fixed;inset:0 0 0 220px;z-index:-
 /* opt-in CRT scanline overlay (Settings toggle) */
 html.crt body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:9998;opacity:.35;
   background:repeating-linear-gradient(0deg,transparent 0 2px,rgba(0,0,0,.18) 2px 3px)}
+
+/* command palette — redesign extras (badges, groups, footer) */
+.cmdk-badge{flex:none;font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:2px 6px;border-radius:5px;min-width:34px;text-align:center;color:var(--mut);background:color-mix(in srgb,var(--mut) 18%,transparent)}
+.cmdk-badge.section{color:var(--acc);background:color-mix(in srgb,var(--acc) 16%,transparent)}
+.cmdk-badge.tool{color:var(--ok);background:color-mix(in srgb,var(--ok) 16%,transparent)}
+.cmdk-badge.link{color:var(--warn);background:color-mix(in srgb,var(--warn) 16%,transparent)}
+.cmdk-group{font-size:.66rem;text-transform:uppercase;letter-spacing:.08em;color:var(--mut);padding:8px 12px 4px}
+.cmdk-foot{display:flex;gap:16px;padding:9px 14px;border-top:1px solid var(--line);font-size:.72rem;color:var(--mut)}
+.cmdk-foot kbd{background:var(--card2);border:1px solid var(--line);border-radius:4px;padding:1px 5px;margin-right:3px;font-family:inherit}
