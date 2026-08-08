@@ -774,3 +774,11 @@ html.crt body::after{content:"";position:fixed;inset:0;pointer-events:none;z-ind
 
 /* boot vignette for depth */
 #bootscreen::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:3;background:radial-gradient(ellipse at 50% 40%,transparent 42%,rgba(0,0,0,.6) 100%)}
+
+/* light polish pass (web) — kept simpler than the desktop app */
+.btn{transition:filter .15s ease,box-shadow .15s ease,transform .06s ease}
+.btn:hover{filter:brightness(1.06)}
+.btn:active{transform:translateY(1px)}
+.side-item.active{box-shadow:inset 2px 0 0 var(--acc)}
+.card,.util-card,.cs-card{transition:border-color .15s ease,box-shadow .15s ease}
+.pg-h1{letter-spacing:-.02em}
