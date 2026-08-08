@@ -29,6 +29,8 @@ import { renderGHDB } from "/js/ghdb.js";
 import { renderExploitDB } from "/js/exploitdb.js";
 import { renderVMs } from "/js/vms.js";
 import { renderPrivateCloud } from "/js/privatecloud.js";
+import { initSaved, renderSaved } from "/js/saved.js";
+import { renderReport } from "/js/report.js";
 import { renderAI } from "/js/webai.js";
 
 const userSlot = document.getElementById("user-slot");
@@ -232,6 +234,9 @@ function applyAccent(c) {
 (function () { let a = null; try { a = localStorage.getItem("sw_accent"); } catch (_) {} if (a) applyAccent(a); })();
 function applyTheme(m) { document.documentElement.setAttribute("data-theme", m); try { localStorage.setItem("sw_theme", m); } catch (_) {} }
 (function () { let t = "dark"; try { t = localStorage.getItem("sw_theme") || "dark"; } catch (_) {} applyTheme(t); })();
+function crtOn() { try { return localStorage.getItem("sw_crt") === "1"; } catch (_) { return false; } }
+function applyCrt(on) { document.documentElement.classList.toggle("crt", on); try { localStorage.setItem("sw_crt", on ? "1" : "0"); } catch (_) {} }
+applyCrt(crtOn());
 
 // ---------- app sections ----------
 function renderHome(main, user, isOwner, show) {
@@ -308,6 +313,8 @@ function renderSettingsPage(main, user, isOwner) {
         <span class="seg" id="sw-theme"><button data-t="dark">Dark</button><button data-t="light">Light</button></span></div>
       <div class="set-row"><span class="muted">Accent color</span>
         <span class="swatches" id="sw-acc">${ACCENTS.map((c) => `<button class="swatch" style="background:${c}" data-c="${c}" title="${c}"></button>`).join("")}</span></div>
+      <div class="set-row"><span class="muted">CRT scanlines</span>
+        <span class="seg" id="sw-crt"><button data-crt="1">On</button><button data-crt="0">Off</button></span></div>
     </div>
     <div class="set-card"><div class="set-lbl">Security</div>
       <div class="set-btns">
@@ -325,6 +332,9 @@ function renderSettingsPage(main, user, isOwner) {
   const curTheme = document.documentElement.getAttribute("data-theme") || "dark";
   themeSeg.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b.dataset.t === curTheme));
   themeSeg.onclick = (e) => { const b = e.target.closest("button[data-t]"); if (!b) return; applyTheme(b.dataset.t); themeSeg.querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b)); };
+  const crtSeg = main.querySelector("#sw-crt");
+  crtSeg.querySelectorAll("button").forEach((b) => b.classList.toggle("on", (b.dataset.crt === "1") === crtOn()));
+  crtSeg.onclick = (e) => { const b = e.target.closest("button[data-crt]"); if (!b) return; applyCrt(b.dataset.crt === "1"); crtSeg.querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b)); };
   main.querySelector("#set-out").onclick = () => signOut(auth);
   main.querySelector("#set-tour").onclick = () => startTour(tourSteps(isOwner));
   main.querySelector("#set-pw").onclick = async () => {
@@ -351,6 +361,7 @@ function renderApp(user) {
           <button class="side-item" data-sec="home">Home</button>
           <button class="side-item" data-sec="ai">AI assistant</button>
           <button class="side-item" data-sec="tools">Tools</button>
+          <button class="side-item" data-sec="saved">Saved</button>
           <button class="side-item" data-sec="utils">Utilities</button>
           <div class="side-group">Offense</div>
           <button class="side-item" data-sec="payloads">Payloads</button>
@@ -367,6 +378,7 @@ function renderApp(user) {
           <button class="side-item" data-sec="github">GitHub</button>
           <div class="side-group">Resources</div>
           <button class="side-item" data-sec="privatecloud">Private cloud</button>
+          <button class="side-item" data-sec="report">Report generator</button>
           <button class="side-item" data-sec="learn">Learn</button>
           <button class="side-item" data-sec="training">Training</button>
           <button class="side-item" data-sec="setup">Local setup</button>
@@ -392,6 +404,8 @@ function renderApp(user) {
     else if (sec === "exploitdb") renderExploitDB(main);
     else if (sec === "vms") renderVMs(main);
     else if (sec === "privatecloud") renderPrivateCloud(main);
+    else if (sec === "saved") renderSaved(main, show);
+    else if (sec === "report") renderReport(main);
     else if (sec === "snippets") renderSnippets(main);
     else if (sec === "refs") renderRefs(main);
     else if (sec === "arsenal") renderArsenal(main);
@@ -449,6 +463,7 @@ function renderApp(user) {
   document.getElementById("cmdkBtn").onclick = openPalette;
 
   appShow = show;
+  initSaved(user);
   let lastSec; try { lastSec = localStorage.getItem("sw_last_sec"); } catch (_) {}
   const okSec = lastSec && lastSec !== "setup" && (lastSec !== "admin" || isOwner);
   show(okSec ? lastSec : "home");
@@ -458,7 +473,7 @@ function renderApp(user) {
 // ---- command palette (Ctrl/Cmd+K) ----
 function openPalette() {
   if (document.getElementById("cmdk")) return;
-  const sections = [["home", "Home"], ["ai", "AI assistant"], ["tools", "Tools"], ["utils", "Utilities"], ["payloads", "Payloads"], ["exploitdb", "Exploit & vuln databases"], ["ghdb", "Google dorks"], ["targets", "Practice targets"], ["vms", "Vulnerable VMs"], ["threat", "Threat intel"], ["cheats", "Cheat sheets"], ["snippets", "Code snippets"], ["refs", "References"], ["arsenal", "Arsenal"], ["training", "Training"], ["github", "GitHub"], ["privatecloud", "Private Cloud Generator"], ["learn", "Learn"], ["setup", "Local setup"], ["downloads", "Get the app"], ["apikeys", "API keys"], ["settings", "Settings"], ["admin", "Admin"]];
+  const sections = [["home", "Home"], ["ai", "AI assistant"], ["tools", "Tools"], ["saved", "Saved"], ["utils", "Utilities"], ["payloads", "Payloads"], ["exploitdb", "Exploit & vuln databases"], ["ghdb", "Google dorks"], ["targets", "Practice targets"], ["vms", "Vulnerable VMs"], ["threat", "Threat intel"], ["cheats", "Cheat sheets"], ["snippets", "Code snippets"], ["refs", "References"], ["arsenal", "Arsenal"], ["training", "Training"], ["github", "GitHub"], ["privatecloud", "Private Cloud Generator"], ["report", "Report generator"], ["learn", "Learn"], ["setup", "Local setup"], ["downloads", "Get the app"], ["apikeys", "API keys"], ["settings", "Settings"], ["admin", "Admin"]];
   const items = [
     ...sections.map(([s, n]) => ({ type: "section", id: s, name: n, desc: "Go to " + n })),
     ...CATALOG.map((t) => ({ type: "tool", id: t.id, name: t.name, desc: t.cat + " · " + t.desc })),

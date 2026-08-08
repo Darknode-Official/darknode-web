@@ -31,10 +31,16 @@ const PRESETS = [
   ["Explain code", "Explain what this code does, step by step:\n\n"],
   ["Find vulns", "Review this code for security vulnerabilities and list concrete issues with fixes:\n\n"],
   ["Write PoC", "Write a proof-of-concept exploit for this (authorized testing):\n\n"],
+  ["Explain this CVE", "Explain this CVE in depth — impact, affected versions, exploitation, and remediation:\n\n"],
+  ["Nuclei template", "Write a nuclei YAML template that detects this vulnerability:\n\n"],
+  ["Engagement report", "Draft a professional penetration-test report section for this finding (summary, risk rating, evidence, remediation):\n\n"],
   ["To Python", "Convert this to clean, idiomatic Python:\n\n"],
   ["Regex for", "Write a single regex that matches: "],
   ["One-liner", "Give me a shell one-liner to: "],
 ];
+const PROMPTS_KEY = "sw_ai_prompts";
+const loadPrompts = () => { try { return JSON.parse(localStorage.getItem(PROMPTS_KEY)) || []; } catch (_) { return []; } };
+const savePrompts = (a) => { try { localStorage.setItem(PROMPTS_KEY, JSON.stringify(a)); } catch (_) {} };
 
 export function renderAI(main) {
   main.innerHTML = `
@@ -45,7 +51,7 @@ export function renderAI(main) {
       <div id="aiStatus" style="font-size:.8rem;color:var(--mut);margin-top:8px"></div>
     </div>
     <div class="chat" id="aiChat" style="max-width:840px;height:min(52vh,520px)"><div class="muted" style="margin:auto;text-align:center;font-size:.85rem">Ask anything &mdash; recon, exploitation, tooling, or code.</div></div>
-    <div class="ai-presets" id="aiPresets" style="max-width:840px">${PRESETS.map((p, i) => `<button class="chip" data-p="${i}">${esc(p[0])}</button>`).join("")}</div>
+    <div class="ai-presets" id="aiPresets" style="max-width:840px"></div>
     <div class="row" style="max-width:840px;gap:8px">
       <textarea class="tk-in" id="aiMsg" rows="2" placeholder="Message Sentinel AI... (Enter to send, Shift+Enter for newline)" style="flex:1"></textarea>
       <button class="btn" id="aiSend">Send</button>
@@ -84,6 +90,22 @@ export function renderAI(main) {
   $("#aiSend").onclick = () => { if (busy && ctrl) ctrl.abort(); else send(); };
   $("#aiClear").onclick = () => { if (busy && ctrl) ctrl.abort(); history.length = 1; chatEl.innerHTML = `<div class="muted" style="margin:auto;text-align:center;font-size:.85rem">Ask anything &mdash; recon, exploitation, tooling, or code.</div>`; };
   $("#aiMsg").onkeydown = (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } };
-  $("#aiPresets").onclick = (e) => { const b = e.target.closest("[data-p]"); if (!b) return; const box = $("#aiMsg"); box.value = PRESETS[+b.dataset.p][1] + box.value; box.focus(); box.selectionStart = box.selectionEnd = box.value.length; };
+  let userPrompts = loadPrompts();
+  const drawPresets = () => {
+    $("#aiPresets").innerHTML =
+      PRESETS.map((p, i) => `<button class="chip" data-p="${i}">${esc(p[0])}</button>`).join("") +
+      userPrompts.map((p, i) => `<button class="chip chip-user" data-u="${i}">${esc(p[0])}<span class="chip-x" data-del="${i}" title="remove">&times;</span></button>`).join("") +
+      `<button class="chip chip-add" data-add="1">+ Save prompt</button>`;
+  };
+  drawPresets();
+  const insert = (text) => { const box = $("#aiMsg"); box.value = text + box.value; box.focus(); box.selectionStart = box.selectionEnd = box.value.length; };
+  $("#aiPresets").onclick = (e) => {
+    const del = e.target.closest("[data-del]");
+    if (del) { e.stopPropagation(); userPrompts.splice(+del.dataset.del, 1); savePrompts(userPrompts); drawPresets(); return; }
+    const add = e.target.closest("[data-add]");
+    if (add) { const label = prompt("Preset name:"); if (!label) return; const text = prompt("Prompt text (inserted before your message):"); if (text == null) return; userPrompts.push([label.trim(), text]); savePrompts(userPrompts); drawPresets(); return; }
+    const u = e.target.closest("[data-u]"); if (u) return insert(userPrompts[+u.dataset.u][1]);
+    const b = e.target.closest("[data-p]"); if (b) insert(PRESETS[+b.dataset.p][1]);
+  };
   chatEl.addEventListener("click", (e) => { const b = e.target.closest(".cb-copy"); if (!b) return; const code = b.parentElement.querySelector("code"); navigator.clipboard?.writeText(code.textContent).then(() => { b.textContent = "copied"; setTimeout(() => (b.textContent = "copy"), 1000); }); });
 }

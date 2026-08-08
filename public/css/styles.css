@@ -668,3 +668,26 @@ body.app .app-main::before{content:"";position:fixed;inset:0 0 0 220px;z-index:-
 .daily-item:first-child{border-top:none}
 .di-label{font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;color:var(--mut);margin-bottom:4px}
 .di-code{display:block;font-family:var(--mono,ui-monospace,monospace);font-size:.78rem;color:var(--acc);background:color-mix(in srgb,var(--acc) 8%,transparent);border:1px solid var(--line);border-radius:6px;padding:5px 8px;margin-bottom:5px;overflow-x:auto;white-space:nowrap}
+
+/* saved workspace (P5) */
+.tk-star{margin-left:8px;font-size:1rem;line-height:1;color:var(--mut);cursor:pointer;flex:none;transition:color .14s ease,transform .14s ease}
+.tk-star:hover{transform:scale(1.2)}
+.tk-star.on{color:var(--warn)}
+.saved-list{display:flex;flex-direction:column;gap:2px}
+.saved-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)}
+.saved-row:first-child{border-top:none}
+.saved-go{flex:1;text-align:left;background:none;border:none;color:var(--fg,inherit);font:inherit;cursor:pointer;padding:0}
+.saved-go:hover{color:var(--acc)}
+.saved-x{background:none;border:none;color:var(--mut);font-size:1.1rem;cursor:pointer;line-height:1}
+.saved-x:hover{color:var(--bad)}
+
+/* AI prompt library chips (P6) */
+.chip-user{padding-right:6px}
+.chip-x{margin-left:6px;opacity:.6;cursor:pointer}
+.chip-x:hover{opacity:1;color:var(--bad)}
+.chip-add{border-style:dashed;opacity:.85}
+.chip-add:hover{opacity:1;border-color:var(--acc);color:var(--acc)}
+
+/* opt-in CRT scanline overlay (Settings toggle) */
+html.crt body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:9998;opacity:.35;
+  background:repeating-linear-gradient(0deg,transparent 0 2px,rgba(0,0,0,.18) 2px 3px)}
