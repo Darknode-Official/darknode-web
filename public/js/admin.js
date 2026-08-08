@@ -27,6 +27,8 @@ export async function renderAdmin(main, user) {
 
     <div class="stat-row" id="admStats">
       <div class="stat"><div class="stat-n" id="stUsers">…</div><div class="stat-l">users</div></div>
+      <div class="stat"><div class="stat-n" id="stNew">…</div><div class="stat-l">new this week</div></div>
+      <div class="stat"><div class="stat-n" id="stActive">…</div><div class="stat-l">active today</div></div>
       <div class="stat"><div class="stat-n" id="stWl">…</div><div class="stat-l">allow-listed</div></div>
       <div class="stat"><div class="stat-n" id="stAnn">…</div><div class="stat-l">announcement</div></div>
     </div>
@@ -42,6 +44,16 @@ export async function renderAdmin(main, user) {
         <div class="panel">
           <div class="panel-h"><h2 class="pg-h2" style="margin:0">Recent new-device sign-ins</h2></div>
           <div id="loginList"><p class="muted">…</p></div>
+        </div>
+        <div class="panel">
+          <div class="panel-h"><h2 class="pg-h2" style="margin:0">Data &amp; outreach</h2></div>
+          <p class="muted" style="font-size:.82rem;margin:0 0 10px">Export the user base or grab every email for an announcement mailout.</p>
+          <div class="set-btns">
+            <button class="btn sm" id="expCsv">Export users (CSV)</button>
+            <button class="btn ghost sm" id="copyEmails">Copy all emails</button>
+            <button class="btn ghost sm" id="copyOwnerless">Copy non-owner emails</button>
+          </div>
+          <p class="adm-msg" id="dataMsg"></p>
         </div>
       </div>
       <div class="adm-side">
@@ -61,6 +73,11 @@ export async function renderAdmin(main, user) {
 
         <div class="panel">
           <div class="panel-h"><h2 class="pg-h2" style="margin:0">Announcement</h2></div>
+          <div class="row" id="annPresets" style="gap:6px;flex-wrap:wrap;margin-bottom:8px">
+            <button class="btn ghost sm" data-preset="maint">Maintenance</button>
+            <button class="btn ghost sm" data-preset="release">New release</button>
+            <button class="btn ghost sm" data-preset="security">Security notice</button>
+          </div>
           <textarea class="tk-in" id="annText" rows="3" placeholder="Message shown to everyone at the top of the site…"></textarea>
           <div class="row" style="margin:8px 0">
             <span class="seg" id="annType"><button data-v="info" class="on">Info</button><button data-v="warn">Warning</button></span>
@@ -87,6 +104,10 @@ export async function renderAdmin(main, user) {
       const snap = await getDocs(collection(db, "users"));
       users = snap.docs.map((d) => ({ uid: d.id, ...d.data() }));
       $("#stUsers").textContent = users.length;
+      const toMs = (ts) => ts && ts.toMillis ? ts.toMillis() : (ts && ts.toDate ? ts.toDate().getTime() : (typeof ts === "number" ? (ts < 1e12 ? ts * 1000 : ts) : 0));
+      const now = Date.now(), day = 864e5, midnight = new Date(); midnight.setHours(0, 0, 0, 0);
+      $("#stNew").textContent = users.filter((u) => { const c = toMs(u.created || u.createdAt); return c && now - c < 7 * day; }).length || "—";
+      $("#stActive").textContent = users.filter((u) => toMs(u.lastSeen) >= midnight.getTime()).length;
       drawUsers();
       const alerts = [];
       users.forEach((u) => (u.logins || []).forEach((l) => alerts.push({ email: u.email, device: l.device, ts: l.ts })));
@@ -200,6 +221,28 @@ export async function renderAdmin(main, user) {
     $("#annActive").checked = true; publishAnn(true);
   };
   $("#annClear").onclick = () => publishAnn(false);
+
+  // ---- announcement presets ----
+  const PRESETS = {
+    maint: "Scheduled maintenance is underway — some features may be briefly unavailable. Thanks for your patience.",
+    release: "New release is live! Update the desktop app and CLI from the Downloads page to get the latest tools and fixes.",
+    security: "Security notice: rotate any credentials you've stored and review recent sign-ins. Contact the owner with questions.",
+  };
+  $("#annPresets").onclick = (e) => { const b = e.target.closest("[data-preset]"); if (!b) return; $("#annText").value = PRESETS[b.dataset.preset] || ""; annType = b.dataset.preset === "security" ? "warn" : "info"; $("#annType").querySelectorAll("button").forEach((x) => x.classList.toggle("on", x.dataset.v === annType)); };
+
+  // ---- data & outreach ----
+  const dmsg = (t) => { const m = $("#dataMsg"); m.className = "adm-msg ok"; m.textContent = t; setTimeout(() => (m.textContent = ""), 2000); };
+  const emailsOf = (list) => list.map((u) => u.email).filter(Boolean).join(", ");
+  $("#copyEmails").onclick = () => { navigator.clipboard?.writeText(emailsOf(users)); dmsg(users.filter((u) => u.email).length + " emails copied"); };
+  $("#copyOwnerless").onclick = () => { const l = users.filter((u) => u.email !== OWNER_EMAIL); navigator.clipboard?.writeText(emailsOf(l)); dmsg(l.filter((u) => u.email).length + " emails copied"); };
+  $("#expCsv").onclick = () => {
+    const esc2 = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+    const rows = [["email", "name", "uid", "lastSeen", "allow-listed"]].concat(users.map((u) => [u.email, u.name, u.uid, fmtDate(u.lastSeen), wl.emails.includes((u.email || "").toLowerCase()) ? "yes" : "no"]));
+    const csv = rows.map((r) => r.map(esc2).join(",")).join("\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+    const a = document.createElement("a"); a.href = url; a.download = "sentinel-users.csv"; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+    dmsg("exported " + users.length + " users");
+  };
 
   await Promise.all([loadWl(), loadUsers(), loadAnn()]);
 }

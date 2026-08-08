@@ -24,6 +24,7 @@
     <div class="boot-grid"></div>
     <div class="boot-sweep"></div>
     <div class="boot-inner">
+      <div class="boot-ring"></div><div class="boot-ring r2"></div>
       <div class="boot-logo glitch" data-text="&gt;_ SENTINEL">&gt;_ SENTINEL</div>
       <div class="boot-tag">S E C U R I T Y &nbsp; C O N S O L E</div>
       <div class="boot-lines">
@@ -34,7 +35,7 @@
         <div style="--d:1.25s">[<span class="bok">OK</span>] establishing secure console</div>
         <div style="--d:1.55s" class="boot-go">sentinel@web:~$ <span class="boot-cur">&#9608;</span></div>
       </div>
-      <div class="boot-bar"><span></span></div>
+      <div class="boot-barwrap"><div class="boot-bar"><span></span></div><span class="boot-pct" id="bootpct">0%</span></div>
     </div>
   </div>
   <div id="app">
@@ -68,6 +69,8 @@
         raf = requestAnimationFrame(draw);
       }
       draw(); setTimeout(function () { cancelAnimationFrame(raf); }, 3000);
+      var pct = document.getElementById("bootpct");
+      if (pct) { var t0 = performance.now(); (function tick() { var p = Math.min(100, Math.round(((performance.now() - t0) / 2300) * 100)); pct.textContent = p + "%"; if (p < 100) requestAnimationFrame(tick); })(); }
     })();
   </script>
 
