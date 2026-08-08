@@ -1,7 +1,18 @@
 // Cybersecurity content for the Sentinel console: notable CVEs, cheat sheets,
 // a common-ports reference, learning resources, and a security-posture checklist.
+import { getTarget, setTarget } from "/js/target.js";
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+// "of the day" rotations — seeded by date so they're stable within a day.
+const DAILY_DORKS = [
+  "intitle:\"index of\" \"parent directory\"", "filetype:env DB_PASSWORD", "inurl:wp-config.php",
+  "intitle:\"index of\" \"id_rsa\"", "inurl:/.git -github", "site:s3.amazonaws.com", "intext:\"sql syntax near\"",
+];
+const DAILY_PAYLOADS = [
+  "' OR '1'='1", "<script>alert(document.domain)</script>", "../../../../etc/passwd", "{{7*7}}", "; id", "${jndi:ldap://x}",
+];
+const daySeed = () => { const d = new Date(); return Math.floor((d - new Date(d.getFullYear(), 0, 0)) / 864e5); };
 
 // ---------- data ----------
 export const CVE_FEED = [
@@ -229,7 +240,15 @@ export function homeWidgetsHTML() {
   const topCves = CVE_FEED.slice(0, 5);
   const featCheats = CHEATS.slice(0, 4);
   const featRes = RESOURCES.slice(0, 6);
+  const seed = daySeed();
+  const dork = DAILY_DORKS[seed % DAILY_DORKS.length], payload = DAILY_PAYLOADS[seed % DAILY_PAYLOADS.length];
   return `
+    <div class="target-bar">
+      <span class="tb-label">TARGET</span>
+      <input class="tk-f" id="homeTarget" placeholder="set a domain or IP — dorks & exploit DBs use it" spellcheck="false" value="${esc(getTarget())}">
+      <button class="btn ghost sm" data-go="ghdb">Dorks →</button>
+      <button class="btn ghost sm" data-go="exploitdb">Exploit DBs →</button>
+    </div>
     <div class="home-cols">
       <div class="hc-main">
         <div class="panel">
@@ -256,6 +275,15 @@ export function homeWidgetsHTML() {
           </div>
         </div>
         <div class="panel">
+          <div class="panel-h"><h2 class="pg-h2" style="margin:0">Your network</h2></div>
+          <div class="ip-widget" id="ipWidget"><span class="muted">looking up public IP…</span></div>
+        </div>
+        <div class="panel">
+          <div class="panel-h"><h2 class="pg-h2" style="margin:0">Today's picks</h2></div>
+          <div class="daily-item"><div class="di-label">Dork of the day</div><code class="di-code">${esc(dork)}</code><button class="link-btn" data-dork="${esc(dork)}">Search →</button></div>
+          <div class="daily-item"><div class="di-label">Payload of the day</div><code class="di-code">${esc(payload)}</code><button class="link-btn" data-copyv="${esc(payload)}">copy</button></div>
+        </div>
+        <div class="panel">
           <div class="panel-h"><h2 class="pg-h2" style="margin:0">Resources</h2><button class="link-btn" data-go="learn">Explore →</button></div>
           <div class="res-chips">
             ${featRes.map((r) => `<a class="res-chip" href="${r.url}" target="_blank" rel="noopener">${esc(r.name)}</a>`).join("")}
@@ -268,6 +296,21 @@ export function homeWidgetsHTML() {
 export function wireHome(main, show) {
   wireCopy(main);
   main.querySelectorAll("[data-go]").forEach((b) => (b.onclick = () => show(b.dataset.go)));
+  // shared target bar
+  const tin = main.querySelector("#homeTarget");
+  if (tin) tin.oninput = () => setTarget(tin.value);
+  // daily picks
+  main.querySelectorAll("[data-dork]").forEach((b) => (b.onclick = () => window.open("https://www.google.com/search?q=" + encodeURIComponent(b.dataset.dork), "_blank", "noopener")));
+  main.querySelectorAll("[data-copyv]").forEach((b) => (b.onclick = () => { navigator.clipboard?.writeText(b.dataset.copyv); const o = b.textContent; b.textContent = "copied"; setTimeout(() => (b.textContent = o), 1000); }));
+  // public IP + geo (graceful offline)
+  const ipw = main.querySelector("#ipWidget");
+  if (ipw) {
+    const ctrl = new AbortController(); setTimeout(() => ctrl.abort(), 6000);
+    fetch("https://ipapi.co/json/", { signal: ctrl.signal })
+      .then((r) => r.json())
+      .then((d) => { if (!d || !d.ip) throw 0; ipw.innerHTML = `<div class="ip-row"><span class="muted">IP</span><code>${esc(d.ip)}</code></div><div class="ip-row"><span class="muted">Location</span><span>${esc([d.city, d.region, d.country_name].filter(Boolean).join(", ") || "—")}</span></div><div class="ip-row"><span class="muted">ISP</span><span>${esc(d.org || "—")}</span></div>`; })
+      .catch(() => { ipw.innerHTML = `<span class="muted">Couldn't look up your IP (offline or blocked).</span>`; });
+  }
   const list = main.querySelector("#posList");
   if (list) list.addEventListener("change", (e) => {
     const cb = e.target.closest("input[data-pid]"); if (!cb) return;

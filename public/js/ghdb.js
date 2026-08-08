@@ -1,5 +1,6 @@
 // Google Hacking Database — curated dorks for OSINT/recon. Runs the query on
 // Google (optionally scoped to a target domain). For authorized testing only.
+import { getTarget, setTarget } from "/js/target.js";
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
@@ -71,8 +72,11 @@ export function renderGHDB(main) {
     </div>`;
   const $ = (s) => main.querySelector(s);
   const dom = $("#ghDomain"), scope = $("#ghScope");
+  dom.value = getTarget();
   const build = (q) => { const d = dom.value.trim(); return d ? `site:${d} ${q}` : q; };
-  dom.oninput = () => { const d = dom.value.trim(); scope.textContent = d ? `scoped to ${d}` : "searching all of Google"; };
+  const syncScope = () => { const d = dom.value.trim(); scope.textContent = d ? `scoped to ${d}` : "searching all of Google"; };
+  dom.oninput = () => { syncScope(); setTarget(dom.value); };
+  syncScope();
   $("#ghFilter").onclick = (e) => {
     const b = e.target.closest(".chip"); if (!b) return;
     main.querySelectorAll("#ghFilter .chip").forEach((x) => x.classList.toggle("on", x === b));

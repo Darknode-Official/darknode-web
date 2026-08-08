@@ -85,6 +85,19 @@ function mangle(text) {
   return [...out].slice(0, 2000);
 }
 
+// JWT tampering: re-sign HS256 with a chosen secret, or forge alg:none.
+const b64urlStr = (s) => btoa(unescape(encodeURIComponent(s))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+const b64urlBytes = (bytes) => { let s = ""; bytes.forEach((b) => (s += String.fromCharCode(b))); return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, ""); };
+async function hmac256(secret, data) {
+  const key = await crypto.subtle.importKey("raw", enc.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  return b64urlBytes(new Uint8Array(await crypto.subtle.sign("HMAC", key, enc.encode(data))));
+}
+async function jwtSign(hdr, payload, secret) { const h = b64urlStr(JSON.stringify(hdr)), p = b64urlStr(JSON.stringify(payload)); return `${h}.${p}.${await hmac256(secret, h + "." + p)}`; }
+function jwtNone(hdr, payload) { return `${b64urlStr(JSON.stringify({ ...hdr, alg: "none" }))}.${b64urlStr(JSON.stringify(payload))}.`; }
+
+// Encoding chain — stack transforms in order.
+const rot13 = (s) => s.replace(/[a-z]/gi, (c) => { const d = c.charCodeAt(0) + 13; return String.fromCharCode((c <= "Z" ? 90 : 122) >= d ? d : d - 26); });
+
 // ---- render ----
 export function renderUtils(main) {
   main.innerHTML = `
@@ -133,6 +146,17 @@ export function renderUtils(main) {
     card("Wordlist mangler", "Generate", `<textarea class="in" id="mangin" rows="2" placeholder="base words, one per line (name, company...)"></textarea>
       <div class="util-btns"><button class="btn sm" data-a="mangle">Generate</button><button class="btn ghost sm" data-copytarget="mangout">copy</button></div>
       <textarea class="in mono" id="mangout" rows="4" readonly></textarea>`),
+    card("JWT tamper lab", "Attack", `<textarea class="in mono" id="jtin" rows="2" placeholder="paste a JWT to load, or edit the claims below"></textarea>
+      <div class="util-btns"><button class="btn ghost sm" data-a="jtload">Load</button></div>
+      <textarea class="in mono" id="jthdr" rows="2" placeholder='{"alg":"HS256","typ":"JWT"}'></textarea>
+      <textarea class="in mono" id="jtpay" rows="2" placeholder='{"sub":"admin"}'></textarea>
+      <div class="util-row"><input class="in mono" id="jtsecret" placeholder="HS256 secret"><button class="btn sm" data-a="jtsign">Re-sign</button><button class="btn ghost sm" data-a="jtnone">alg:none</button></div>
+      <textarea class="in mono" id="jtout" rows="2" readonly></textarea>
+      <div class="util-btns"><button class="btn ghost sm" data-copytarget="jtout">copy</button></div>`),
+    card("Encoding chain", "Stack", `<textarea class="in" id="chin" rows="2" placeholder="input text"></textarea>
+      <div class="util-btns"><button class="btn ghost sm" data-a="ch-b64">+base64</button><button class="btn ghost sm" data-a="ch-hex">+hex</button><button class="btn ghost sm" data-a="ch-url">+url</button><button class="btn ghost sm" data-a="ch-rot13">+rot13</button><button class="btn ghost sm" data-a="ch-clear">clear</button><button class="btn ghost sm" data-copytarget="chout">copy</button></div>
+      <div class="util-kv"><span>Chain</span><code id="chsteps" class="util-val">—</code></div>
+      <textarea class="in mono" id="chout" rows="2" readonly></textarea>`),
   ].join("");
 
   const $ = (id) => main.querySelector("#" + id);
@@ -177,10 +201,29 @@ export function renderUtils(main) {
     const bar = $("pwbar"); bar.style.width = Math.min(100, e.bits) + "%"; bar.dataset.lvl = e.label.replace(" ", "-");
   };
 
-  ug.onclick = (e) => {
+  // encoding chain state
+  const chain = [];
+  const chainOps = { b64: b64e, hex: (s) => [...enc.encode(s)].map((x) => x.toString(16).padStart(2, "0")).join(""), url: encodeURIComponent, rot13 };
+  const chainApply = () => {
+    let v = $("chin").value;
+    try { for (const op of chain) v = chainOps[op](v); $("chout").value = v; }
+    catch (err) { $("chout").value = "Error: " + err.message; }
+    $("chsteps").textContent = chain.length ? chain.join(" → ") : "—";
+  };
+  $("chin").oninput = chainApply;
+
+  ug.onclick = async (e) => {
     const b = e.target.closest("[data-a]"); if (!b) return;
     const a = b.dataset.a;
     try {
+      if (a === "jtload") {
+        const p = $("jtin").value.trim().split("."); if (p.length < 2) throw new Error("not a JWT");
+        const d = (x) => JSON.stringify(JSON.parse(b64d(x.replace(/-/g, "+").replace(/_/g, "/"))), null, 0);
+        $("jthdr").value = d(p[0]); $("jtpay").value = d(p[1]); return;
+      }
+      if (a === "jtsign") { $("jtout").value = await jwtSign(JSON.parse($("jthdr").value || "{}"), JSON.parse($("jtpay").value || "{}"), $("jtsecret").value); return; }
+      if (a === "jtnone") { $("jtout").value = jwtNone(JSON.parse($("jthdr").value || "{}"), JSON.parse($("jtpay").value || "{}")); return; }
+      if (a.startsWith("ch-")) { const op = a.slice(3); if (op === "clear") chain.length = 0; else chain.push(op); chainApply(); return; }
       if (a === "b64e") $("b64out").value = b64e($("b64in").value);
       else if (a === "b64d") $("b64out").value = b64d($("b64in").value);
       else if (a === "urle") $("urlout").value = encodeURIComponent($("urlin").value);
