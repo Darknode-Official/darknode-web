@@ -52,10 +52,13 @@ export function renderAI(main) {
     </div>
     <div class="chat" id="aiChat" style="max-width:840px;height:min(52vh,520px)"><div class="muted" style="margin:auto;text-align:center;font-size:.85rem">Ask anything &mdash; recon, exploitation, tooling, or code.</div></div>
     <div class="ai-presets" id="aiPresets" style="max-width:840px"></div>
+    <div id="aiThumbs" class="ai-thumbs" style="max-width:840px"></div>
     <div class="row" style="max-width:840px;gap:8px">
-      <textarea class="tk-in" id="aiMsg" rows="2" placeholder="Message Sentinel AI... (Enter to send, Shift+Enter for newline)" style="flex:1"></textarea>
+      <textarea class="tk-in" id="aiMsg" rows="2" placeholder="Message Sentinel AI, or attach/paste a screenshot to read its text..." style="flex:1"></textarea>
+      <button class="btn ghost" id="aiImg" title="Attach image">Image</button>
       <button class="btn" id="aiSend">Send</button>
-    </div>`;
+    </div>
+    <input type="file" id="aiFile" accept="image/*" hidden>`;
   const $ = (s) => main.querySelector(s);
   const chatEl = $("#aiChat"), sel = $("#aiModel"), status = $("#aiStatus");
   const history = [{ role: "system", content: localStorage.getItem(SYS_KEY) || DEFAULT_SYS }];
@@ -75,17 +78,32 @@ export function renderAI(main) {
     if (v !== null) { try { localStorage.setItem(SYS_KEY, v); } catch (_) {} history[0] = { role: "system", content: v }; status.textContent = "System prompt updated."; }
   };
   const add = (role, text) => { const d = document.createElement("div"); d.className = "msg " + (role === "user" ? "you" : "ai"); d.textContent = text; if (chatEl.querySelector(".muted")) chatEl.innerHTML = ""; chatEl.appendChild(d); chatEl.scrollTop = chatEl.scrollHeight; return d; };
+
+  // image attach / paste (vision)
+  let pending = [];
+  const drawThumbs = () => { $("#aiThumbs").innerHTML = pending.map((b, i) => `<span class="ai-thumb"><img src="data:image/png;base64,${b}"><button data-rm="${i}" title="remove">&times;</button></span>`).join(""); };
+  const addImage = (file) => { if (!file || !file.type.startsWith("image/")) return; const rd = new FileReader(); rd.onload = () => { pending.push(String(rd.result).split(",")[1]); drawThumbs(); }; rd.readAsDataURL(file); };
+  $("#aiImg").onclick = () => $("#aiFile").click();
+  $("#aiFile").onchange = (e) => { [...e.target.files].forEach(addImage); e.target.value = ""; };
+  $("#aiThumbs").onclick = (e) => { const b = e.target.closest("[data-rm]"); if (b) { pending.splice(+b.dataset.rm, 1); drawThumbs(); } };
+  $("#aiMsg").addEventListener("paste", (e) => { for (const it of e.clipboardData.items) if (it.type.startsWith("image/")) addImage(it.getAsFile()); });
+
   let busy = false, ctrl = null;
   async function send() {
     if (busy) return;
-    const text = $("#aiMsg").value.trim(); if (!text) return;
+    const text = $("#aiMsg").value.trim(); const imgs = pending.slice(); if (!text && !imgs.length) return;
     const model = sel.value; if (!model || model === "offline" || model === "none") { status.textContent = "No usable model."; return; }
     busy = true; ctrl = new AbortController(); const btn = $("#aiSend"); btn.textContent = "Stop"; $("#aiMsg").value = "";
-    add("user", text); history.push({ role: "user", content: text });
+    const um = { role: "user", content: text || "Read and transcribe any text in this image, then help with it." };
+    if (imgs.length) um.images = imgs;
+    history.push(um);
+    const you = add("user", ""); you.innerHTML = imgs.map((b) => `<img class="msg-img" src="data:image/png;base64,${b}">`).join("") + esc(text);
+    pending = []; drawThumbs();
+    if (imgs.length) status.textContent = "reading image (needs a vision model like llama3.2-vision or llava)…";
     const out = add("ai", "…"); let acc = "";
     try { await streamChat(model, history, (t) => { acc += t; out.innerHTML = mdToHtml(acc); chatEl.scrollTop = chatEl.scrollHeight; }, ctrl.signal); history.push({ role: "assistant", content: acc || "" }); }
     catch (e) { if (e.name === "AbortError") { out.innerHTML = mdToHtml(acc) + `<div class="muted" style="font-size:.72rem;margin-top:4px">stopped</div>`; history.push({ role: "assistant", content: acc || "" }); } else { out.textContent = "Error: " + e.message; out.classList.add("err"); } }
-    finally { busy = false; ctrl = null; const b = $("#aiSend"); b.textContent = "Send"; $("#aiMsg").focus(); }
+    finally { busy = false; ctrl = null; const b = $("#aiSend"); b.textContent = "Send"; if (status.textContent.startsWith("reading image")) status.textContent = ""; $("#aiMsg").focus(); }
   }
   $("#aiSend").onclick = () => { if (busy && ctrl) ctrl.abort(); else send(); };
   $("#aiClear").onclick = () => { if (busy && ctrl) ctrl.abort(); history.length = 1; chatEl.innerHTML = `<div class="muted" style="margin:auto;text-align:center;font-size:.85rem">Ask anything &mdash; recon, exploitation, tooling, or code.</div>`; };

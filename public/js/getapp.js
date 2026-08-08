@@ -17,18 +17,53 @@ const META = [
 const fmtSize = (n) => n > 1e9 ? (n / 1e9).toFixed(2) + " GB" : n > 1e6 ? (n / 1e6).toFixed(1) + " MB" : (n / 1e3).toFixed(0) + " KB";
 const verOf = (name) => (name.match(/(\d+\.\d+\.\d+)/) || [])[1] || "";
 
+const SITE = "https://sentinel-web-2hq9.onrender.com";
+const APP_EDITIONS = [
+  { name: "Netinstall", tag: "lightest · ~95 MB", desc: "Just the app. Every tool auto-configures itself the first time you launch it — nothing pre-downloaded.", steps: ["Install the .deb / AppImage / .exe from the Builds tab.", "Open any tool — Sentinel sets it up on first use."] },
+  { name: "Slim", tag: "recommended", desc: "The app plus the essential toolset: recon, web, and password tools.", steps: ["Install the app from the Builds tab.", `curl -sL ${SITE}/arsenal.sh | bash -s -- recon web passwords`] },
+  { name: "Full", tag: "everything + AI", desc: "The app, the complete arsenal (all 10 categories), and local AI models.", steps: ["Install the app from the Builds tab.", `curl -sL ${SITE}/arsenal.sh | bash`, "ollama pull llama3.1 && ollama pull llama3.2-vision"] },
+];
+const CLI_EDITIONS = [
+  { name: "Compact", tag: "zero dependencies", desc: "The standalone binary — no runtime, no installs. Runs anywhere on its own.", steps: ["Download the CLI binary from the Builds tab — it just runs."] },
+  { name: "Pro", tag: "full toolset", desc: "The binary plus the complete external toolset it can drive (nmap, sqlmap, nuclei…).", steps: ["Download the CLI binary from the Builds tab.", `curl -sL ${SITE}/arsenal.sh | bash`] },
+];
+
+const edCard = (e) => `
+  <div class="ed-card">
+    <div class="ed-head"><h3>${esc(e.name)}</h3><span class="chip">${esc(e.tag)}</span></div>
+    <p class="muted" style="font-size:.83rem;margin:6px 0 10px">${esc(e.desc)}</p>
+    <ol class="ed-steps">${e.steps.map((s) => /^[a-z]+ |curl|ollama|sudo/.test(s) && !/ from the /.test(s) ? `<li><code data-cmd>${esc(s)}</code></li>` : `<li>${esc(s)}</li>`).join("")}</ol>
+  </div>`;
+
 export function renderDownloads(main) {
   main.innerHTML = `
     <h1 class="pg-h1">Downloads</h1>
     <p class="muted pg-sub">The desktop app and terminal edition go far beyond the web console &mdash; a QEMU/KVM VM runner, a native port scanner, DNS/WHOIS/TLS recon, subdomain enumeration, a code workbench, live terminals, an autonomous AI agent, and auto-configuring tools.</p>
-    <div class="card" style="max-width:640px">
-      <div class="dl-pick">
-        <label class="pc-f" style="flex:1"><span>Choose a build</span><select class="tk-f" id="dlSelect"><option>loading releases…</option></select></label>
+    <div class="dl-tabs"><button class="chip on" data-tab="builds">Builds</button><button class="chip" data-tab="editions">Setup editions</button></div>
+    <div id="dlBuilds">
+      <div class="card" style="max-width:640px">
+        <div class="dl-pick">
+          <label class="pc-f" style="flex:1"><span>Choose a build</span><select class="tk-f" id="dlSelect"><option>loading releases…</option></select></label>
+        </div>
+        <div id="dlDetail" class="dl-detail"></div>
       </div>
-      <div id="dlDetail" class="dl-detail"></div>
     </div>
-    <p class="muted" style="font-size:.8rem;margin-top:16px">All builds are MIT-licensed and run only tools you invoke on systems you're authorized to test. &middot; <a href="${RELEASES}" target="_blank" rel="noopener">All releases →</a></p>`;
+    <div id="dlEditions" hidden>
+      <h2 class="pg-h2">Desktop app editions</h2>
+      <p class="muted" style="font-size:.85rem;margin:-6px 0 12px">Same installer, different amount of tooling. Pick how much you want set up, then run the command after installing.</p>
+      <div class="ed-grid">${APP_EDITIONS.map(edCard).join("")}</div>
+      <h2 class="pg-h2" style="margin-top:22px">Terminal edition (CLI)</h2>
+      <div class="ed-grid">${CLI_EDITIONS.map(edCard).join("")}</div>
+      <p class="muted" style="font-size:.78rem;margin-top:14px">Provisioning uses systems you own or are authorized to test. Review the script anytime at <a href="${SITE}/arsenal.sh" target="_blank" rel="noopener">/arsenal.sh</a>.</p>
+    </div>
+    <p class="muted" style="font-size:.8rem;margin-top:16px">All builds are MIT-licensed. &middot; <a href="${RELEASES}" target="_blank" rel="noopener">All releases →</a></p>`;
   const sel = main.querySelector("#dlSelect"), detail = main.querySelector("#dlDetail");
+  main.querySelector(".dl-tabs").onclick = (e) => {
+    const b = e.target.closest("[data-tab]"); if (!b) return;
+    main.querySelectorAll(".dl-tabs .chip").forEach((x) => x.classList.toggle("on", x === b));
+    main.querySelector("#dlBuilds").hidden = b.dataset.tab !== "builds";
+    main.querySelector("#dlEditions").hidden = b.dataset.tab !== "editions";
+  };
 
   const fallback = () => {
     sel.innerHTML = `<option>unavailable</option>`;
