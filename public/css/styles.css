@@ -63,6 +63,9 @@ body.landing #view{max-width:none;padding:0;margin:0}
 .cta-band-inner{display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap}
 .cta-band h2{margin:0 0 4px;font-size:1.5rem}
 .dlapp-sub{text-align:center;max-width:560px;margin:-24px auto 30px}
+/* When the subtitle follows a section heading (not a page title), the -24px pull would overlap it. */
+.dlcli-h + .dlapp-sub{margin-top:8px}
+.ed-cmd{max-width:100%}
 .dlapp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px;max-width:720px;margin:0 auto}
 .dlapp-item{display:flex;flex-direction:column;gap:10px}
 .dlapp-cmd{display:flex;flex-direction:column;gap:4px}
@@ -728,7 +731,7 @@ html.crt body::after{content:"";position:fixed;inset:0;pointer-events:none;z-ind
 /* downloads: edition cards + tabs */
 .dl-tabs{display:flex;gap:8px;margin:0 0 16px}
 .ed-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
-.ed-card{border:1px solid var(--line);border-radius:var(--radius,10px);padding:14px 16px;background:var(--card);transition:border-color .15s ease,box-shadow .15s ease}
+.ed-card{border:1px solid var(--line);border-radius:var(--radius,10px);padding:14px 16px;background:var(--card);transition:border-color .15s ease,box-shadow .15s ease;min-width:0}
 .ed-card:hover{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc-soft)}
 .ed-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .ed-head h3{margin:0;font-size:1.05rem}

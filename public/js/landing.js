@@ -189,7 +189,7 @@ nc -lvnp 4444`],
               <div class="ed-head"><h3>Download the binary</h3><span class="chip">standalone · ~52 MB</span></div>
               <p class="muted" style="font-size:.83rem;margin:6px 0 8px">A self-contained executable with Node bundled in &mdash; no Node needed, runs on its own. Uses more disk.</p>
               <code class="ed-cmd">curl -L ${REL}/Sentinel-cli-linux -o sentinel &amp;&amp; chmod +x sentinel &amp;&amp; ./sentinel</code>
-              <div class="muted" style="font-size:.78rem;margin-top:6px">Windows: <code class="ed-cmd" style="display:inline-block;margin-top:4px">curl.exe -L ${REL}/Sentinel-cli-windows.exe -o sentinel.exe; .\\sentinel.exe</code></div>
+              <div class="muted" style="font-size:.78rem;margin-top:6px">Windows:<code class="ed-cmd" style="margin-top:4px">curl.exe -L ${REL}/Sentinel-cli-windows.exe -o sentinel.exe; .\\sentinel.exe</code></div>
             </div>
           </div>
           <p class="muted" style="font-size:.78rem;margin-top:10px"><strong>Which?</strong> <b>git clone</b> is smallest and self-updating but needs Node installed. The <b>binary</b> is bigger but works with nothing else installed. Both are the same tool.</p>
