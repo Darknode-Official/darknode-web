@@ -71,6 +71,9 @@
       draw(); setTimeout(function () { cancelAnimationFrame(raf); }, 3000);
       var pct = document.getElementById("bootpct");
       if (pct) { var t0 = performance.now(); (function tick() { var p = Math.min(100, Math.round(((performance.now() - t0) / 2300) * 100)); pct.textContent = p + "%"; if (p < 100) requestAnimationFrame(tick); })(); }
+      var logo = document.querySelector(".boot-logo");
+      if (logo) { var target = ">_ SENTINEL", pool = "!<>-_\\/[]{}=+*^?#01ABCDEF", total = 38, frame = 0;
+        var id = setInterval(function () { frame++; var o = ""; for (var i = 0; i < target.length; i++) { if (target[i] === " ") { o += " "; continue; } o += (i < (frame / total) * target.length) ? target[i] : pool[(Math.random() * pool.length) | 0]; } logo.textContent = o; if (frame >= total) { clearInterval(id); logo.textContent = target; } }, 26); }
     })();
   </script>
 
