@@ -66,6 +66,12 @@ body.landing #view{max-width:none;padding:0;margin:0}
 /* When the subtitle follows a section heading (not a page title), the -24px pull would overlap it. */
 .dlcli-h + .dlapp-sub{margin-top:8px}
 .ed-cmd{max-width:100%}
+/* Web AI page: friendly "connect a model / get the app" panel that fills the empty chat area */
+.ai-offline{margin:auto;max-width:560px;text-align:center;padding:22px 20px}
+.ai-offline-h{font-size:1.05rem;font-weight:600;margin-bottom:10px}
+.ai-offline-b{color:var(--mut);font-size:.86rem;line-height:1.6;text-align:left}
+.ai-offline-b code{background:var(--card2,#101827);border:1px solid var(--line);border-radius:6px;padding:2px 6px;font-size:.8rem;color:var(--acc);word-break:break-all}
+.ai-offline-cta{margin-top:16px}
 .dlapp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px;max-width:720px;margin:0 auto}
 .dlapp-item{display:flex;flex-direction:column;gap:10px}
 .dlapp-cmd{display:flex;flex-direction:column;gap:4px}

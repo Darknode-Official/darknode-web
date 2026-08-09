@@ -45,7 +45,7 @@ const savePrompts = (a) => { try { localStorage.setItem(PROMPTS_KEY, JSON.string
 export function renderAI(main) {
   main.innerHTML = `
     <h1 class="pg-h1">AI assistant</h1>
-    <p class="muted pg-sub">Unrestricted chat with your <strong>local Ollama</strong> models &mdash; private, on your machine. Built for security research and coding.</p>
+    <p class="muted pg-sub">Chat with <strong>Ollama models running on your own machine</strong> &mdash; private, in the browser. For a fully autonomous agent that runs tools, recon, and exploits for you, get the <strong>desktop app</strong>.</p>
     <div class="card" style="max-width:840px">
       <div class="row" style="gap:8px"><select class="tk-f" id="aiModel" style="flex:1"></select><button class="btn ghost" id="aiSys">System prompt</button><button class="btn ghost" id="aiClear">Clear</button></div>
       <div id="aiStatus" style="font-size:.8rem;color:var(--mut);margin-top:8px"></div>
@@ -63,10 +63,27 @@ export function renderAI(main) {
   const chatEl = $("#aiChat"), sel = $("#aiModel"), status = $("#aiStatus");
   const history = [{ role: "system", content: localStorage.getItem(SYS_KEY) || DEFAULT_SYS }];
 
+  // Fill the chat area with a friendly explanation when there's no local model to talk to.
+  const showInfo = (title, bodyHtml) => {
+    chatEl.innerHTML = `<div class="ai-offline">
+      <div class="ai-offline-h">${title}</div>
+      <div class="ai-offline-b">${bodyHtml}</div>
+      <div class="ai-offline-cta"><button class="btn" data-sec="downloads">Get the desktop app</button></div>
+    </div>`;
+  };
+
   (async () => {
     const ms = await getModels();
-    if (ms === null) { status.innerHTML = `Can't reach Ollama. Start it so this site is allowed: <code>OLLAMA_ORIGINS=* ollama serve</code>`; sel.innerHTML = `<option>offline</option>`; return; }
-    if (!ms.length) { status.innerHTML = `Ollama is running but has no models. Run: <code>ollama pull llama3.1</code>`; sel.innerHTML = `<option>none</option>`; return; }
+    if (ms === null) {
+      sel.innerHTML = `<option>offline</option>`; status.textContent = "";
+      showInfo("No local model to connect to", `This in-browser chat talks to <strong>Ollama running on your own computer</strong>. A hosted web page can't reach it, so there's nothing to connect to from here &mdash; that's expected, not a bug.<br><br><strong>Two ways to actually use the AI:</strong><br>&bull; <strong>Get the Sentinel desktop app</strong> &mdash; it ships a fully autonomous assistant that plans and runs tools, recon, and exploits for you, with nothing to configure.<br>&bull; Or run this site locally and start Ollama so the page is allowed: <code>OLLAMA_ORIGINS=* ollama serve</code>, then <code>ollama pull hermes3</code>.`);
+      return;
+    }
+    if (!ms.length) {
+      sel.innerHTML = `<option>none</option>`; status.textContent = "";
+      showInfo("Ollama is running, but has no models", `Pull one to get started: <code>ollama pull hermes3</code> (best for agentic/security) or <code>ollama pull llama3.1</code> (general). Then reopen this page.`);
+      return;
+    }
     sel.innerHTML = ms.map((m) => `<option>${esc(m)}</option>`).join("");
     const saved = localStorage.getItem(MODEL_KEY); if (saved && ms.includes(saved)) sel.value = saved;
     status.textContent = "Connected to your local Ollama.";
@@ -92,7 +109,7 @@ export function renderAI(main) {
   async function send() {
     if (busy) return;
     const text = $("#aiMsg").value.trim(); const imgs = pending.slice(); if (!text && !imgs.length) return;
-    const model = sel.value; if (!model || model === "offline" || model === "none") { status.textContent = "No usable model."; return; }
+    const model = sel.value; if (!model || model === "offline" || model === "none") { status.textContent = "No local model connected — get the desktop app, or run Ollama locally (see above)."; return; }
     busy = true; ctrl = new AbortController(); const btn = $("#aiSend"); btn.textContent = "Stop"; $("#aiMsg").value = "";
     const um = { role: "user", content: text || "Read and transcribe any text in this image, then help with it." };
     if (imgs.length) um.images = imgs;
