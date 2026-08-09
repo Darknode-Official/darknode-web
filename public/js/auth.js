@@ -32,6 +32,7 @@ import { renderPrivateCloud } from "/js/privatecloud.js";
 import { initSaved, renderSaved } from "/js/saved.js";
 import { renderReport } from "/js/report.js";
 import { renderAI } from "/js/webai.js";
+import { renderCliCoder } from "/js/coder.js";
 
 const userSlot = document.getElementById("user-slot");
 const view = document.getElementById("view");
@@ -382,6 +383,7 @@ function renderApp(user) {
           <button class="side-item" data-sec="learn">Learn</button>
           <button class="side-item" data-sec="training">Training</button>
           <button class="side-item" data-sec="setup">Local setup</button>
+          <button class="side-item" data-sec="coder">CLI AI coder</button>
           <button class="side-item" data-sec="downloads">Get the app</button>
           <div class="side-group">System</div>
           <button class="side-item" data-sec="settings">Settings</button>
@@ -425,6 +427,7 @@ function renderApp(user) {
     else if (sec === "threat") renderThreat(main);
     else if (sec === "learn") renderLearn(main);
     else if (sec === "github") renderGitHub(main);
+    else if (sec === "coder") renderCliCoder(main);
     else if (sec === "downloads") renderDownloads(main);
     else if (sec === "setup") renderSetup(main, more);
     else if (sec === "settings") renderSettingsPage(main, user, isOwner);
@@ -529,7 +532,7 @@ function pushRecent(id) { let r = paletteRecents().filter((x) => x !== id); r.un
 
 function openPalette() {
   if (document.getElementById("cmdk")) return;
-  const sections = [["home", "Home"], ["ai", "AI assistant"], ["tools", "Tools"], ["saved", "Saved"], ["utils", "Utilities"], ["payloads", "Payloads"], ["exploitdb", "Exploit & vuln databases"], ["ghdb", "Google dorks"], ["targets", "Practice targets"], ["vms", "Vulnerable VMs"], ["threat", "Threat intel"], ["cheats", "Cheat sheets"], ["snippets", "Code snippets"], ["refs", "References"], ["arsenal", "Arsenal"], ["training", "Training"], ["github", "GitHub"], ["privatecloud", "Private Cloud Generator"], ["report", "Report generator"], ["learn", "Learn"], ["setup", "Local setup"], ["downloads", "Get the app"], ["apikeys", "API keys"], ["settings", "Settings"], ["admin", "Admin"]];
+  const sections = [["home", "Home"], ["ai", "AI assistant"], ["tools", "Tools"], ["saved", "Saved"], ["utils", "Utilities"], ["payloads", "Payloads"], ["exploitdb", "Exploit & vuln databases"], ["ghdb", "Google dorks"], ["targets", "Practice targets"], ["vms", "Vulnerable VMs"], ["threat", "Threat intel"], ["cheats", "Cheat sheets"], ["snippets", "Code snippets"], ["refs", "References"], ["arsenal", "Arsenal"], ["training", "Training"], ["github", "GitHub"], ["privatecloud", "Private Cloud Generator"], ["report", "Report generator"], ["learn", "Learn"], ["setup", "Local setup"], ["coder", "CLI AI coder"], ["downloads", "Get the app"], ["apikeys", "API keys"], ["settings", "Settings"], ["admin", "Admin"]];
   const items = [
     ...sections.map(([s, n]) => ({ type: "section", id: s, name: n, desc: "Go to " + n })),
     ...CATALOG.map((t) => ({ type: "tool", id: t.id, name: t.name, desc: t.cat + " · " + t.desc })),

@@ -1,7 +1,11 @@
 # Sentinel Web
 
-Google-login hacking-tools portal. **Static frontend on Netlify + Firebase backend**
-(Auth, Firestore, Storage, Security Rules). No server code to deploy.
+Google-login security-tools portal for **authorized** security testing and learning.
+**Static frontend on Netlify + Firebase backend** (Auth, Firestore, Storage, Security
+Rules). No server code to deploy.
+
+> **Authorized use only.** Sentinel is for security testing, learning, and defensive
+> work on systems you own or are permitted to test. See [SECURITY.md](SECURITY.md).
 
 Owner / super-admin: `cashzombs@gmail.com` (fixed in `js/firebase.js` and both `.rules` files).
 
