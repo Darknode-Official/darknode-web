@@ -1,6 +1,7 @@
 // Multi-user auth for Sentinel Web (Firebase). Google sign-in + email/password
 // signup with email verification + password reset. Owner (OWNER_EMAIL) is admin.
 import { auth, db, googleProvider, githubProvider, OWNER_EMAIL } from "/js/firebase.js";
+import { collection as fbCollection, addDoc as fbAddDoc, serverTimestamp as fbServerTimestamp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
 import {
   onAuthStateChanged, signInWithPopup, signOut,
   createUserWithEmailAndPassword, signInWithEmailAndPassword,
@@ -65,6 +66,45 @@ async function ensureUserDoc(user) {
 }
 
 // ---------- views ----------
+function openFeedback(user) {
+  const old = document.getElementById("fbModal"); if (old) old.remove();
+  const wrap = document.createElement("div");
+  wrap.id = "fbModal"; wrap.className = "fb-modal";
+  wrap.innerHTML = `
+    <div class="fb-box">
+      <div class="fb-h">Send feedback / report a bug</div>
+      <div class="fb-types" id="fbTypes">
+        <button class="fb-type on" data-t="bug">🐞 Bug</button>
+        <button class="fb-type" data-t="feedback">💬 Feedback</button>
+        <button class="fb-type" data-t="idea">💡 Idea</button>
+      </div>
+      <textarea id="fbMsg" class="tk-in" rows="5" placeholder="What happened, or what would you like to see? The more detail the better."></textarea>
+      <div class="fb-foot"><span class="fb-status" id="fbStatus"></span><span style="flex:1"></span><button class="btn ghost" id="fbCancel">Cancel</button><button class="btn" id="fbSend">Send</button></div>
+    </div>`;
+  document.body.appendChild(wrap);
+  const q = (s) => wrap.querySelector(s);
+  let type = "bug";
+  q("#fbTypes").onclick = (e) => { const b = e.target.closest("[data-t]"); if (!b) return; type = b.dataset.t; q("#fbTypes").querySelectorAll(".fb-type").forEach((x) => x.classList.toggle("on", x === b)); };
+  const close = () => wrap.remove();
+  q("#fbCancel").onclick = close;
+  wrap.onclick = (e) => { if (e.target === wrap) close(); };
+  q("#fbSend").onclick = async () => {
+    const msg = q("#fbMsg").value.trim();
+    if (!msg) { q("#fbStatus").textContent = "please write a message first"; return; }
+    q("#fbSend").disabled = true; q("#fbStatus").textContent = "sending…";
+    try {
+      await fbAddDoc(fbCollection(db, "feedback"), {
+        type, message: msg.slice(0, 4000),
+        email: (user && user.email) || "anonymous", uid: (user && user.uid) || "",
+        ts: fbServerTimestamp(), userAgent: navigator.userAgent, url: location.href, resolved: false,
+      });
+      q("#fbStatus").textContent = "✓ sent — thank you!";
+      setTimeout(close, 900);
+    } catch (err) { q("#fbSend").disabled = false; q("#fbStatus").textContent = "failed: " + err.message; }
+  };
+  q("#fbMsg").focus();
+}
+
 function showLanding() {
   document.body.classList.remove("app");
   document.body.classList.add("landing");
@@ -453,6 +493,7 @@ function renderApp(user) {
         <button class="menu-item" data-nav="apikeys">API keys</button>
         <button class="menu-item" data-a="theme">Toggle light / dark</button>
         <button class="menu-item" data-a="tour">Replay walkthrough</button>
+        <button class="menu-item" data-a="feedback">Send feedback / report a bug</button>
         <div class="menu-div"></div>
         <button class="menu-item" data-a="logout">Log out</button>
       </div>
@@ -471,6 +512,7 @@ function renderApp(user) {
     if (a === "logout") signOut(auth);
     else if (a === "theme") { const cur = document.documentElement.getAttribute("data-theme") || "dark"; applyTheme(cur === "dark" ? "light" : "dark"); }
     else if (a === "tour") startTour(tourSteps(isOwner));
+    else if (a === "feedback") openFeedback(user);
   };
   moreMenu.onclick = (e) => { const b = e.target.closest("[data-more]"); if (!b) return; closeMenus(); show("setup", b.dataset.more); };
   document.getElementById("cmdkBtn").onclick = openPalette;

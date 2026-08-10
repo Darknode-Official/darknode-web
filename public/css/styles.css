@@ -807,3 +807,17 @@ html.crt body::after{content:"";position:fixed;inset:0;pointer-events:none;z-ind
 .util-card:hover,.cs-card:hover,.arse-card:hover,.ed-card:hover{border-color:var(--acc)}
 .tk-f:focus,.tk-in:focus,.tk-search:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 22%,transparent)}
 .pg-h2{letter-spacing:-.01em}
+
+/* Feedback / bug-report modal + admin rows */
+.fb-modal{position:fixed;inset:0;z-index:9999;background:rgba(3,6,12,.62);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:20px}
+.fb-box{width:min(520px,94vw);background:var(--card,#0f1420);border:1px solid var(--line,#26304a);border-radius:14px;padding:18px;box-shadow:0 24px 60px -20px #000}
+.fb-h{font-weight:700;font-size:1.05rem;margin-bottom:12px}
+.fb-types{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.fb-type{border:1px solid var(--line,#26304a);background:transparent;color:var(--txt-2,#aeb9d0);border-radius:20px;padding:5px 12px;cursor:pointer;font:inherit;font-size:.85rem}
+.fb-type.on{border-color:var(--acc);color:var(--txt);background:color-mix(in srgb,var(--acc) 16%,transparent)}
+.fb-foot{display:flex;align-items:center;gap:8px;margin-top:12px}
+.fb-status{font-size:.82rem;color:var(--txt-2,#aeb9d0)}
+.fb-row{border:1px solid var(--line,#26304a);border-radius:10px;padding:10px 12px;margin-bottom:8px}
+.fb-row-h{display:flex;align-items:center;gap:8px;font-size:.8rem;margin-bottom:6px}
+.fb-tag{font-weight:600}
+.fb-msg{white-space:pre-wrap;font-size:.88rem;color:var(--txt,#e6ecf7)}

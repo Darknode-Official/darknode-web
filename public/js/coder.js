@@ -22,7 +22,11 @@ ollama pull qwen2.5-coder     # or: hermes3
 
 # 2. download the Sentinel CLI, then run the coder
 sentinel nexus "add input validation to server.js and run the tests"</code></pre>
-    <div class="btns" style="margin:12px 0"><button class="btn" data-sec="downloads">Download the CLI</button></div>
+    <div class="btns" style="margin:12px 0;flex-wrap:wrap;gap:8px">
+      <a class="btn" href="https://github.com/Darknode-Official/sentinel-web/releases/download/sentinel/Sentinel-cli-linux" download>⬇ CLI · Linux</a>
+      <a class="btn" href="https://github.com/Darknode-Official/sentinel-web/releases/download/sentinel/Sentinel-cli-windows.exe" download>⬇ CLI · Windows</a>
+      <button class="btn ghost" data-sec="downloads">All builds &amp; editions</button>
+    </div>
 
     <h2 class="pg-h2">Use it</h2>
     <pre class="code-block"><button class="cb-copy">copy</button><code>sentinel nexus "refactor utils.py into smaller functions"   # one-shot task
@@ -47,5 +51,8 @@ task> Create hello.py that prints "Hello from Nexus", then run it.
   main.querySelectorAll(".cb-copy").forEach((b) => b.addEventListener("click", () => {
     const code = b.parentElement.querySelector("code");
     navigator.clipboard?.writeText(code.textContent).then(() => { b.textContent = "copied"; setTimeout(() => (b.textContent = "copy"), 1000); });
+  }));
+  main.querySelectorAll("[data-sec]").forEach((b) => b.addEventListener("click", () => {
+    const it = document.querySelector('.side-item[data-sec="' + b.dataset.sec + '"]'); if (it) it.click();
   }));
 }

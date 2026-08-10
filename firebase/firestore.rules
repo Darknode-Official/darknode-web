@@ -27,5 +27,11 @@ service cloud.firestore {
       allow read:  if signedIn();
       allow write: if isOwner();
     }
+
+    // Feedback / bug reports: any signed-in user submits; only the owner reads & manages.
+    match /feedback/{docId} {
+      allow create: if signedIn();
+      allow read, update, delete: if isOwner();
+    }
   }
 }

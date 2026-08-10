@@ -46,6 +46,11 @@ export async function renderAdmin(main, user) {
           <div id="loginList"><p class="muted">…</p></div>
         </div>
         <div class="panel">
+          <div class="panel-h"><h2 class="pg-h2" style="margin:0">Feedback &amp; bug reports</h2>
+            <button class="btn ghost sm" id="fbRefresh">Refresh</button></div>
+          <div id="fbAdminList"><p class="muted">Loading feedback…</p></div>
+        </div>
+        <div class="panel">
           <div class="panel-h"><h2 class="pg-h2" style="margin:0">Data &amp; outreach</h2></div>
           <p class="muted" style="font-size:.82rem;margin:0 0 10px">Export the user base or grab every email for an announcement mailout.</p>
           <div class="set-btns">
@@ -144,6 +149,32 @@ export async function renderAdmin(main, user) {
     }).join("");
   }
   $("#uRefresh").onclick = loadUsers;
+
+  // ---- feedback / bug reports ----
+  async function loadFeedback() {
+    const host = $("#fbAdminList"); if (!host) return;
+    try {
+      const snap = await getDocs(collection(db, "feedback"));
+      const toMs = (ts) => (ts && ts.toMillis ? ts.toMillis() : 0);
+      const items = snap.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => toMs(b.ts) - toMs(a.ts));
+      if (!items.length) { host.innerHTML = `<p class="muted">No feedback yet.</p>`; return; }
+      const icon = { bug: "🐞", feedback: "💬", idea: "💡" };
+      host.innerHTML = items.map((f) => `
+        <div class="fb-row" data-id="${esc(f.id)}">
+          <div class="fb-row-h"><span class="fb-tag">${icon[f.type] || "•"} ${esc(f.type || "note")}</span> <span class="muted">${esc(f.email || "anon")}</span><span style="flex:1"></span><span class="muted" style="font-size:.72rem">${f.ts && f.ts.toDate ? esc(fmtDate(f.ts)) : ""}</span><button class="btn ghost sm fb-del" title="Delete">✕</button></div>
+          <div class="fb-msg">${esc(f.message || "")}</div>
+          ${f.url ? `<div class="muted" style="font-size:.7rem;margin-top:4px">${esc(f.url)}</div>` : ""}
+        </div>`).join("");
+    } catch (e) { host.innerHTML = `<p class="adm-err">Couldn't load feedback: ${esc(e.message)}. Ensure Firestore rules allow the owner to read the 'feedback' collection.</p>`; }
+  }
+  $("#fbRefresh").onclick = loadFeedback;
+  $("#fbAdminList").onclick = async (e) => {
+    const del = e.target.closest(".fb-del"); if (!del) return;
+    const row = del.closest(".fb-row"); if (!row) return;
+    if (!confirm("Delete this feedback?")) return;
+    try { await deleteDoc(doc(db, "feedback", row.dataset.id)); row.remove(); } catch (err) { alert("delete failed: " + err.message); }
+  };
+  loadFeedback();
   $("#uSearch").oninput = drawUsers;
   $("#uList").onclick = async (e) => {
     const wlBtn = e.target.closest("[data-wl]"), delBtn = e.target.closest("[data-del]");
