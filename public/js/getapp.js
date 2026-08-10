@@ -3,6 +3,7 @@
 const REPO = "Darknode-Official/sentinel-web";
 const TAG = "sentinel";
 const RELEASES = "https://github.com/" + REPO + "/releases";
+const REL_DL = RELEASES + "/download/" + TAG;
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
@@ -53,6 +54,13 @@ export function renderDownloads(main) {
     <div class="ed-grid">${APP_EDITIONS.map(edCard).join("")}</div>
     <h3 class="pg-h3" style="margin:22px 0 8px">Terminal edition (CLI)</h3>
     <div class="ed-grid">${CLI_EDITIONS.map(edCard).join("")}</div>
+    <h3 class="pg-h3" style="margin:22px 0 8px">AI coding agent (Nexus)</h3>
+    <p class="muted" style="font-size:.85rem;margin:-6px 0 12px">Nexus ships inside the CLI &mdash; a terminal AI coding agent that edits files and runs commands using your local models (Ollama). Download the CLI below, then run <code data-cmd>sentinel nexus</code>.</p>
+    <div class="btns" style="flex-wrap:wrap;gap:8px;margin-bottom:4px">
+      <a class="btn" href="${REL_DL}/Sentinel-cli-linux" download>Nexus (CLI) &middot; Linux</a>
+      <a class="btn" href="${REL_DL}/Sentinel-cli-windows.exe" download>Nexus (CLI) &middot; Windows</a>
+      <button class="btn ghost" data-sec="coder">About Nexus</button>
+    </div>
     <p class="muted" style="font-size:.78rem;margin-top:14px">Provisioning uses systems you own or are authorized to test. Review the script anytime at <a href="${SITE}/arsenal.sh" target="_blank" rel="noopener">/arsenal.sh</a>.</p>
     <p class="muted" style="font-size:.8rem;margin-top:16px">All builds are MIT-licensed. &middot; <a href="${RELEASES}" target="_blank" rel="noopener">All releases →</a></p>`;
   const sel = main.querySelector("#dlSelect"), detail = main.querySelector("#dlDetail");
@@ -98,4 +106,5 @@ export function renderDownloads(main) {
     const c = e.target.closest("code[data-cmd]"); if (!c) return;
     navigator.clipboard?.writeText(c.textContent).then(() => { c.style.outline = "1px solid var(--acc)"; setTimeout(() => (c.style.outline = ""), 500); });
   });
+  main.querySelectorAll("[data-sec]").forEach((b) => b.addEventListener("click", () => { const it = document.querySelector('.side-item[data-sec="' + b.dataset.sec + '"]'); if (it) it.click(); }));
 }
