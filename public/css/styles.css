@@ -821,3 +821,11 @@ html.crt body::after{content:"";position:fixed;inset:0;pointer-events:none;z-ind
 .fb-row-h{display:flex;align-items:center;gap:8px;font-size:.8rem;margin-bottom:6px}
 .fb-tag{font-weight:600}
 .fb-msg{white-space:pre-wrap;font-size:.88rem;color:var(--txt,#e6ecf7)}
+
+/* Nexus comparison table */
+.cmp-table{width:100%;border-collapse:collapse;margin:8px 0 6px;font-size:.86rem;min-width:520px}
+.cmp-table th,.cmp-table td{text-align:left;padding:8px 12px;border-bottom:1px solid var(--line,#26304a);vertical-align:top}
+.cmp-table thead th{color:var(--txt,#e6ecf7);font-weight:700;border-bottom:2px solid var(--acc)}
+.cmp-table td:first-child{color:var(--txt-2,#aeb9d0)}
+.cmp-table td.yes{color:var(--ok,#2ee6a6);font-weight:600}
+.cmp-table tbody tr:hover{background:color-mix(in srgb,var(--acc) 7%,transparent)}

@@ -14,6 +14,25 @@ export function renderCliCoder(main) {
       <div class="card"><div class="card-h">Zero dependencies</div><p class="muted">One self-contained binary (Node builtins only). Works on Linux &amp; Windows — no npm install, no runtime.</p></div>
     </div>
 
+    <h2 class="pg-h2">Why Nexus over Claude Code or Glitch</h2>
+    <p class="muted pg-sub">Nexus can drive Claude Code under the hood &mdash; so it&rsquo;s at least as capable &mdash; but it adds what the others don&rsquo;t: a free local fallback, a hybrid mode that slashes your Claude bill, offline use, and it ships as one dependency-free binary.</p>
+    <div style="overflow-x:auto">
+    <table class="cmp-table">
+      <thead><tr><th></th><th>Nexus</th><th>Claude Code</th><th>Glitch</th></tr></thead>
+      <tbody>
+        <tr><td>Engines</td><td class="yes">Claude, local Ollama, or OpenCode</td><td>Claude only</td><td>Delegates to Claude/OpenCode</td></tr>
+        <tr><td>Works offline / free option</td><td class="yes">Yes (local models)</td><td>No</td><td>No</td></tr>
+        <tr><td>Hybrid cost-saver (local does the easy work, Claude the hard)</td><td class="yes">Yes</td><td>No</td><td>No</td></tr>
+        <tr><td>Overnight autonomous runs (plan &middot; verify &middot; resume)</td><td class="yes">Yes</td><td>Limited</td><td>Yes (paid tiers)</td></tr>
+        <tr><td>Full-screen TUI chat</td><td class="yes">Yes</td><td>Yes</td><td>Via Claude Code</td></tr>
+        <tr><td>Security toolkit (recon, exploit, VM labs)</td><td class="yes">Yes (part of Sentinel)</td><td>No</td><td>No</td></tr>
+        <tr><td>Single self-contained binary</td><td class="yes">Yes</td><td>Needs Node + npm</td><td>Needs Node + npm</td></tr>
+        <tr><td>Price</td><td class="yes">Free &amp; open (MIT)</td><td>Subscription</td><td>Free + paid tiers</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p class="muted" style="font-size:.82rem">The killer feature: <code>sentinel nexus run "&hellip;" --engine hybrid</code> plans with Claude, does the routine work on your free local model, and only escalates the hard parts to Claude &mdash; often cutting Claude usage by well over half while keeping the quality where it matters.</p>
+
     <h2 class="pg-h2">Get it</h2>
     <p class="muted">Grab the Sentinel CLI (Terminal edition) and pull a model:</p>
     <pre class="code-block"><button class="cb-copy">copy</button><code># 1. install a local model (once)
