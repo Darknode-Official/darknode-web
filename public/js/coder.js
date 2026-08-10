@@ -1,11 +1,11 @@
-// CLI AI coder — showcase/docs page for `sentinel code`, the terminal AI coding agent
+// CLI AI coder — showcase/docs page for `sentinel nexus`, the terminal AI coding agent
 // built into the Sentinel CLI. Private & local (talks to the user's own Ollama).
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
 export function renderCliCoder(main) {
   main.innerHTML = `
-    <h1 class="pg-h1">CLI AI coder <span class="pill">sentinel code</span></h1>
+    <h1 class="pg-h1">Nexus <span class="pill">sentinel nexus</span></h1>
     <p class="muted pg-sub">A terminal AI coding agent built into the Sentinel CLI — like Glitch/Claude&nbsp;Code, but a single dependency-free binary that runs on <b>your</b> machine against <b>your</b> local models. It reads &amp; writes files and runs commands to finish a task, then verifies its own work.</p>
 
     <div class="card-grid">
@@ -21,25 +21,25 @@ curl -fsSL https://ollama.com/install.sh | sh
 ollama pull qwen2.5-coder     # or: hermes3
 
 # 2. download the Sentinel CLI, then run the coder
-sentinel code "add input validation to server.js and run the tests"</code></pre>
+sentinel nexus "add input validation to server.js and run the tests"</code></pre>
     <div class="btns" style="margin:12px 0"><button class="btn" data-sec="downloads">Download the CLI</button></div>
 
     <h2 class="pg-h2">Use it</h2>
-    <pre class="code-block"><button class="cb-copy">copy</button><code>sentinel code "refactor utils.py into smaller functions"   # one-shot task
-sentinel code                                             # interactive REPL
+    <pre class="code-block"><button class="cb-copy">copy</button><code>sentinel nexus "refactor utils.py into smaller functions"   # one-shot task
+sentinel nexus                                             # interactive REPL
 sentinel                                                  # menu → [a] AI coder</code></pre>
-    <p class="muted">Override the model per run with <code>SENTINEL_MODEL=hermes3 sentinel code "…"</code>, or point at a remote Ollama with <code>OLLAMA_HOST</code> / <code>OLLAMA_PORT</code>.</p>
+    <p class="muted">Override the model per run with <code>SENTINEL_MODEL=hermes3 sentinel nexus "…"</code>, or point at a remote Ollama with <code>OLLAMA_HOST</code> / <code>OLLAMA_PORT</code>.</p>
 
     <h2 class="pg-h2">Example session</h2>
-    <pre class="code-block"><code>${esc(`▌ AI coder
+    <pre class="code-block"><code>${esc(`▌ Nexus
   model hermes3   workdir ~/app
 
-task> Create hello.py that prints "Hello from Sentinel Coder", then run it.
+task> Create hello.py that prints "Hello from Nexus", then run it.
   • I'll write the file with write_file.
   write hello.py (1 lines)
   • Now run it to verify.
   $ python3 hello.py
-    Hello from Sentinel Coder
+    Hello from Nexus
   ✓ Created and verified hello.py prints the expected message.`)}</code></pre>
 
     <p class="muted" style="margin-top:18px">Prefer a GUI? The same agent — plus recon, exploitation, and VM-lab tools — lives in the <button class="linklike" data-sec="downloads">desktop app</button>'s Assistant.</p>`;
