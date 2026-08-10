@@ -24,9 +24,9 @@ const FEATURES = [
 
 // slash-command palette
 const CMDS = [
-  "/race", "/review", "/watch", "/commit", "/diff", "/pin", "/redact", "/secrets", "/scan",
-  "/agents", "/mcp", "/hooks", "/undo", "/redo", "/rewind", "/budget", "/cost", "/context",
-  "/resume", "/export", "/copy", "/status", "/doctor", "/engine", "/model", "@file", "!cmd", "#note",
+  "/race", "/ensemble", "/review", "/watch", "/commit", "/diff", "/explain", "/test", "/pin", "/redact", "/offline",
+  "/secrets", "/scan", "/agents", "/mcp", "/hooks", "/undo", "/redo", "/rewind", "/budget", "/cost", "/context",
+  "/tree", "/theme", "/resume", "/export", "/copy", "/status", "/doctor", "/engine", "/model", "@file", "!cmd", "#note",
 ];
 
 function terminalMock() {
@@ -41,7 +41,7 @@ function terminalMock() {
       ${line("nx-g", `AI coding agent · claude · ~/app`)}
       ${line("", `<span class="nx-m">› you</span> add rate limiting to the API and run the tests`)}
       ${line("", `<span class="nx-c">● nexus</span>  <span class="nx-g">claude</span>`)}
-      ${line("nx-g", `  ✻ thinking (ctrl+o to show)`)}
+      ${line("nx-g", `  ● thinking (ctrl+o to show)`)}
       ${line("", `  <span class="nx-ok">●</span> <b>Read(server.js)</b> <span class="nx-g">0.2s</span>`)}
       ${line("", `  <span class="nx-ok">●</span> <b>Update(server.js)</b> <span class="nx-g">0.4s</span>`)}
       ${line("", `  <span class="nx-ok">●</span> <b>Bash(npm test)</b> <span class="nx-g">3.1s</span>`)}
