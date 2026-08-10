@@ -41,6 +41,15 @@ export function renderDownloads(main) {
   main.innerHTML = `
     <h1 class="pg-h1">Downloads</h1>
     <p class="muted pg-sub">The desktop app and terminal edition go far beyond the web console &mdash; a QEMU/KVM VM runner, a native port scanner, DNS/WHOIS/TLS recon, subdomain enumeration, a code workbench, live terminals, an autonomous AI agent, and auto-configuring tools.</p>
+    <div class="card" style="max-width:640px;border-color:color-mix(in srgb,var(--acc) 45%,transparent);margin-bottom:14px">
+      <h2 class="pg-h2" style="margin:0 0 6px">Nexus &mdash; AI coding agent</h2>
+      <p class="muted" style="font-size:.85rem;margin:0 0 10px">A terminal AI coder (like Glitch / Claude Code) built into the CLI: it edits files and runs commands using your own local models &mdash; private, no cloud. Download the CLI, then run <code data-cmd>sentinel nexus</code>.</p>
+      <div class="btns" style="flex-wrap:wrap;gap:8px">
+        <a class="btn" href="${REL_DL}/Sentinel-cli-linux" download>Nexus (CLI) &middot; Linux</a>
+        <a class="btn" href="${REL_DL}/Sentinel-cli-windows.exe" download>Nexus (CLI) &middot; Windows</a>
+        <button class="btn ghost" data-sec="coder">About Nexus</button>
+      </div>
+    </div>
     <h2 class="pg-h2">1 · Choose a build</h2>
     <div class="card" style="max-width:640px">
       <div class="dl-pick">
@@ -54,13 +63,6 @@ export function renderDownloads(main) {
     <div class="ed-grid">${APP_EDITIONS.map(edCard).join("")}</div>
     <h3 class="pg-h3" style="margin:22px 0 8px">Terminal edition (CLI)</h3>
     <div class="ed-grid">${CLI_EDITIONS.map(edCard).join("")}</div>
-    <h3 class="pg-h3" style="margin:22px 0 8px">AI coding agent (Nexus)</h3>
-    <p class="muted" style="font-size:.85rem;margin:-6px 0 12px">Nexus ships inside the CLI &mdash; a terminal AI coding agent that edits files and runs commands using your local models (Ollama). Download the CLI below, then run <code data-cmd>sentinel nexus</code>.</p>
-    <div class="btns" style="flex-wrap:wrap;gap:8px;margin-bottom:4px">
-      <a class="btn" href="${REL_DL}/Sentinel-cli-linux" download>Nexus (CLI) &middot; Linux</a>
-      <a class="btn" href="${REL_DL}/Sentinel-cli-windows.exe" download>Nexus (CLI) &middot; Windows</a>
-      <button class="btn ghost" data-sec="coder">About Nexus</button>
-    </div>
     <p class="muted" style="font-size:.78rem;margin-top:14px">Provisioning uses systems you own or are authorized to test. Review the script anytime at <a href="${SITE}/arsenal.sh" target="_blank" rel="noopener">/arsenal.sh</a>.</p>
     <p class="muted" style="font-size:.8rem;margin-top:16px">All builds are MIT-licensed. &middot; <a href="${RELEASES}" target="_blank" rel="noopener">All releases →</a></p>`;
   const sel = main.querySelector("#dlSelect"), detail = main.querySelector("#dlDetail");
