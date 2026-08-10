@@ -9,9 +9,9 @@ export function renderCliCoder(main) {
     <p class="muted pg-sub">A terminal AI coding agent built into the Sentinel CLI — like Glitch/Claude&nbsp;Code, but a single dependency-free binary that runs on <b>your</b> machine against <b>your</b> local models. It reads &amp; writes files and runs commands to finish a task, then verifies its own work.</p>
 
     <div class="card-grid">
-      <div class="card"><div class="card-h">🔒 Private &amp; local</div><p class="muted">Talks only to your local Ollama (<code>127.0.0.1:11434</code>). No cloud, no API keys — your code never leaves the box.</p></div>
-      <div class="card"><div class="card-h">🛠️ Agentic</div><p class="muted">Plans, then <code>read_file</code> / <code>write_file</code> / <code>edit_file</code> / <code>list_dir</code> / <code>run_command</code> in a loop until the task is done.</p></div>
-      <div class="card"><div class="card-h">📦 Zero deps</div><p class="muted">One self-contained binary (Node builtins only). Works on Linux &amp; Windows — no npm install, no runtime.</p></div>
+      <div class="card"><div class="card-h">Private &amp; local</div><p class="muted">Talks only to your local Ollama (<code>127.0.0.1:11434</code>). No cloud, no API keys — your code never leaves the box.</p></div>
+      <div class="card"><div class="card-h">Agentic</div><p class="muted">Plans, then <code>read_file</code> / <code>write_file</code> / <code>edit_file</code> / <code>list_dir</code> / <code>run_command</code> in a loop until the task is done.</p></div>
+      <div class="card"><div class="card-h">Zero dependencies</div><p class="muted">One self-contained binary (Node builtins only). Works on Linux &amp; Windows — no npm install, no runtime.</p></div>
     </div>
 
     <h2 class="pg-h2">Get it</h2>
@@ -23,8 +23,8 @@ ollama pull qwen2.5-coder     # or: hermes3
 # 2. download the Sentinel CLI, then run the coder
 sentinel nexus "add input validation to server.js and run the tests"</code></pre>
     <div class="btns" style="margin:12px 0;flex-wrap:wrap;gap:8px">
-      <a class="btn" href="https://github.com/Darknode-Official/sentinel-web/releases/download/sentinel/Sentinel-cli-linux" download>⬇ CLI · Linux</a>
-      <a class="btn" href="https://github.com/Darknode-Official/sentinel-web/releases/download/sentinel/Sentinel-cli-windows.exe" download>⬇ CLI · Windows</a>
+      <a class="btn" href="https://github.com/Darknode-Official/sentinel-web/releases/download/sentinel/Sentinel-cli-linux" download>CLI &middot; Linux</a>
+      <a class="btn" href="https://github.com/Darknode-Official/sentinel-web/releases/download/sentinel/Sentinel-cli-windows.exe" download>CLI &middot; Windows</a>
       <button class="btn ghost" data-sec="downloads">All builds &amp; editions</button>
     </div>
 

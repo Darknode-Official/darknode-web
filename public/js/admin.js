@@ -158,10 +158,9 @@ export async function renderAdmin(main, user) {
       const toMs = (ts) => (ts && ts.toMillis ? ts.toMillis() : 0);
       const items = snap.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => toMs(b.ts) - toMs(a.ts));
       if (!items.length) { host.innerHTML = `<p class="muted">No feedback yet.</p>`; return; }
-      const icon = { bug: "🐞", feedback: "💬", idea: "💡" };
       host.innerHTML = items.map((f) => `
         <div class="fb-row" data-id="${esc(f.id)}">
-          <div class="fb-row-h"><span class="fb-tag">${icon[f.type] || "•"} ${esc(f.type || "note")}</span> <span class="muted">${esc(f.email || "anon")}</span><span style="flex:1"></span><span class="muted" style="font-size:.72rem">${f.ts && f.ts.toDate ? esc(fmtDate(f.ts)) : ""}</span><button class="btn ghost sm fb-del" title="Delete">✕</button></div>
+          <div class="fb-row-h"><span class="fb-tag">${esc((f.type || "note").toUpperCase())}</span> <span class="muted">${esc(f.email || "anon")}</span><span style="flex:1"></span><span class="muted" style="font-size:.72rem">${f.ts && f.ts.toDate ? esc(fmtDate(f.ts)) : ""}</span><button class="btn ghost sm fb-del" title="Delete">✕</button></div>
           <div class="fb-msg">${esc(f.message || "")}</div>
           ${f.url ? `<div class="muted" style="font-size:.7rem;margin-top:4px">${esc(f.url)}</div>` : ""}
         </div>`).join("");

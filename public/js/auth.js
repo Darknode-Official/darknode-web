@@ -74,9 +74,9 @@ function openFeedback(user) {
     <div class="fb-box">
       <div class="fb-h">Send feedback / report a bug</div>
       <div class="fb-types" id="fbTypes">
-        <button class="fb-type on" data-t="bug">🐞 Bug</button>
-        <button class="fb-type" data-t="feedback">💬 Feedback</button>
-        <button class="fb-type" data-t="idea">💡 Idea</button>
+        <button class="fb-type on" data-t="bug">Bug</button>
+        <button class="fb-type" data-t="feedback">Feedback</button>
+        <button class="fb-type" data-t="idea">Idea</button>
       </div>
       <textarea id="fbMsg" class="tk-in" rows="5" placeholder="What happened, or what would you like to see? The more detail the better."></textarea>
       <div class="fb-foot"><span class="fb-status" id="fbStatus"></span><span style="flex:1"></span><button class="btn ghost" id="fbCancel">Cancel</button><button class="btn" id="fbSend">Send</button></div>
