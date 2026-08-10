@@ -21,7 +21,7 @@ import {
 } from "/js/cyber.js";
 import { renderAdmin, getWhitelist } from "/js/admin.js";
 import { renderUtils } from "/js/utils.js";
-import { renderDownloads } from "/js/getapp.js";
+import { renderDownloads, renderDownloadDocs } from "/js/getapp.js";
 import { renderGitHub } from "/js/github.js";
 import { emailConfigured, sendCode, sendLoginAlert, genCode, hashCode, deviceInfo } from "/js/notify.js";
 import { renderPayloads, renderSnippets, renderApiKeys, renderRefs, renderTargets } from "/js/labs.js";
@@ -425,6 +425,7 @@ function renderApp(user) {
           <button class="side-item" data-sec="setup">Local setup</button>
           <button class="side-item" data-sec="coder">Nexus</button>
           <button class="side-item" data-sec="downloads">Get the app</button>
+          <button class="side-item" data-sec="dlguide">Download guide</button>
           <div class="side-group">System</div>
           <button class="side-item" data-sec="settings">Settings</button>
           ${isOwner ? `<button class="side-item" data-sec="admin">Admin</button>` : ""}
@@ -469,6 +470,7 @@ function renderApp(user) {
     else if (sec === "github") renderGitHub(main);
     else if (sec === "coder") renderCliCoder(main);
     else if (sec === "downloads") renderDownloads(main);
+    else if (sec === "dlguide") renderDownloadDocs(main);
     else if (sec === "setup") renderSetup(main, more);
     else if (sec === "settings") renderSettingsPage(main, user, isOwner);
     else if (sec === "admin") renderAdmin(main, user);
@@ -574,7 +576,7 @@ function pushRecent(id) { let r = paletteRecents().filter((x) => x !== id); r.un
 
 function openPalette() {
   if (document.getElementById("cmdk")) return;
-  const sections = [["home", "Home"], ["ai", "AI assistant"], ["tools", "Tools"], ["saved", "Saved"], ["utils", "Utilities"], ["payloads", "Payloads"], ["exploitdb", "Exploit & vuln databases"], ["ghdb", "Google dorks"], ["targets", "Practice targets"], ["vms", "Vulnerable VMs"], ["threat", "Threat intel"], ["cheats", "Cheat sheets"], ["snippets", "Code snippets"], ["refs", "References"], ["arsenal", "Arsenal"], ["training", "Training"], ["github", "GitHub"], ["privatecloud", "Private Cloud Generator"], ["report", "Report generator"], ["learn", "Learn"], ["setup", "Local setup"], ["coder", "Nexus"], ["downloads", "Get the app"], ["apikeys", "API keys"], ["settings", "Settings"], ["admin", "Admin"]];
+  const sections = [["home", "Home"], ["ai", "AI assistant"], ["tools", "Tools"], ["saved", "Saved"], ["utils", "Utilities"], ["payloads", "Payloads"], ["exploitdb", "Exploit & vuln databases"], ["ghdb", "Google dorks"], ["targets", "Practice targets"], ["vms", "Vulnerable VMs"], ["threat", "Threat intel"], ["cheats", "Cheat sheets"], ["snippets", "Code snippets"], ["refs", "References"], ["arsenal", "Arsenal"], ["training", "Training"], ["github", "GitHub"], ["privatecloud", "Private Cloud Generator"], ["report", "Report generator"], ["learn", "Learn"], ["setup", "Local setup"], ["coder", "Nexus"], ["downloads", "Get the app"], ["dlguide", "Download guide"], ["apikeys", "API keys"], ["settings", "Settings"], ["admin", "Admin"]];
   const items = [
     ...sections.map(([s, n]) => ({ type: "section", id: s, name: n, desc: "Go to " + n })),
     ...CATALOG.map((t) => ({ type: "tool", id: t.id, name: t.name, desc: t.cat + " · " + t.desc })),
