@@ -829,3 +829,48 @@ html.crt body::after{content:"";position:fixed;inset:0;pointer-events:none;z-ind
 .cmp-table td:first-child{color:var(--txt-2,#aeb9d0)}
 .cmp-table td.yes{color:var(--ok,#2ee6a6);font-weight:600}
 .cmp-table tbody tr:hover{background:color-mix(in srgb,var(--acc) 7%,transparent)}
+
+/* ===== Nexus showcase page ===== */
+.nx-hero{position:relative;overflow:hidden;border:1px solid var(--acc-line);border-radius:16px;padding:30px 26px;margin:0 0 22px;
+  background:
+    radial-gradient(720px 320px at 78% -30%,color-mix(in srgb,var(--acc-2) 26%,transparent),transparent 62%),
+    radial-gradient(680px 340px at 12% 120%,color-mix(in srgb,var(--acc) 20%,transparent),transparent 60%),
+    linear-gradient(160deg,var(--card2),var(--card))}
+.nx-hero::after{content:"";position:absolute;inset:0;background:linear-gradient(transparent 0 1px,transparent 2px),repeating-linear-gradient(90deg,color-mix(in srgb,var(--acc) 5%,transparent) 0 1px,transparent 1px 42px);opacity:.35;pointer-events:none;mask:linear-gradient(180deg,#000,transparent 70%)}
+.nx-badge{display:inline-flex;align-items:center;gap:7px;font-size:.68rem;font-weight:800;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--acc);border:1px solid var(--acc-line);border-radius:999px;padding:5px 12px;background:var(--acc-soft)}
+.nx-badge::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--ok);box-shadow:0 0 8px var(--ok)}
+.nx-title{font-size:clamp(2.4rem,6vw,3.6rem);font-weight:850;line-height:1.02;letter-spacing:-.03em;margin:16px 0 8px;
+  background:linear-gradient(120deg,#fff,color-mix(in srgb,var(--acc) 85%,#fff) 45%,var(--acc-2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.nx-sub{color:var(--txt-2,#aeb9d0);font-size:1.02rem;max-width:60ch;margin:0 0 18px}
+.nx-cta{display:flex;flex-wrap:wrap;gap:10px;position:relative;z-index:1}
+
+/* terminal mockup */
+.nx-term{margin:20px 0 4px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#05070d;box-shadow:0 24px 60px -30px color-mix(in srgb,var(--acc) 60%,#000)}
+.nx-term-bar{display:flex;align-items:center;gap:7px;padding:9px 12px;background:linear-gradient(var(--card2),var(--card));border-bottom:1px solid var(--line)}
+.nx-dot{width:11px;height:11px;border-radius:50%;background:#3a4560}
+.nx-dot.r{background:#ff5f57}.nx-dot.y{background:#febc2e}.nx-dot.g{background:#28c840}
+.nx-term-t{margin-left:8px;font-size:.74rem;color:var(--txt-3,#8794b3);font-family:ui-monospace,Menlo,Consolas,monospace}
+.nx-term-body{padding:14px 16px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.82rem;line-height:1.55;overflow-x:auto}
+.nx-term-body .l{white-space:pre;color:#c6d0e6}
+.nx-logo{background:linear-gradient(120deg,var(--acc),var(--acc-2));-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:800}
+.nx-c{color:var(--acc)}.nx-m{color:var(--acc-2)}.nx-g{color:#6b7a99}.nx-ok{color:var(--ok)}.nx-y{color:var(--warn)}.nx-b{color:#4aa3ff}.nx-w{color:#e8edf7}
+.nx-prompt{color:var(--acc-2);font-weight:700}
+.nx-rule{color:#233049}
+
+/* feature grid */
+.nx-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px;margin:14px 0}
+.nx-feat{position:relative;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 16px 15px;transition:border-color .15s,transform .15s}
+.nx-feat:hover{border-color:var(--acc-line);transform:translateY(-2px)}
+.nx-feat::before{content:"";position:absolute;left:16px;right:16px;top:0;height:2px;border-radius:2px;background:var(--grad-acc);opacity:.85}
+.nx-feat h4{margin:6px 0 5px;font-size:.98rem;display:flex;align-items:center;gap:8px}
+.nx-feat h4 code{font-size:.8rem;background:var(--acc-soft);border:1px solid var(--acc-line);color:var(--acc);border-radius:6px;padding:1px 7px}
+.nx-feat p{margin:0;color:var(--txt-2,#aeb9d0);font-size:.85rem;line-height:1.5}
+.nx-tag{position:absolute;top:12px;right:12px;font-size:.6rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--acc-2);border:1px solid color-mix(in srgb,var(--acc-2) 45%,var(--line));border-radius:999px;padding:2px 7px}
+
+/* command chips */
+.nx-chips{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 4px}
+.nx-chip{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.78rem;color:var(--txt);background:var(--card2);border:1px solid var(--line);border-radius:7px;padding:4px 9px}
+.nx-chip b{color:var(--acc);font-weight:600}
+.nx-h2{font-size:1.35rem;margin:30px 0 4px;letter-spacing:-.01em}
+.nx-lead{color:var(--txt-2,#aeb9d0);margin:0 0 14px;font-size:.92rem}

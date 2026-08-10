@@ -1,86 +1,137 @@
-// CLI AI coder — showcase/docs page for `sentinel nexus`, the terminal AI coding agent
-// built into the Sentinel CLI. Private & local (talks to the user's own Ollama).
+// Nexus — showcase page for `sentinel nexus`, the terminal AI coding agent built
+// into the Sentinel CLI: multi-engine (Claude / local Ollama / OpenCode), private,
+// git-native, security-aware, single dependency-free binary.
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
+const REL = "https://github.com/Darknode-Official/sentinel-web/releases/download/sentinel";
+
+// features shown in the grid: [command/label, title, description, tag?]
+const FEATURES = [
+  ["/race", "Race cloud vs local", "Run the same prompt on Claude <b>and</b> your local model at once, see every answer, keep the best. No other agent does this.", "unique"],
+  ["/review", "Cross-engine second opinion", "Have a <b>different</b> model critique the last answer for bugs and security holes before you ship it.", "unique"],
+  ["hybrid", "Hybrid cost-saver", "Local model does the routine work, Claude only the hard parts — often cutting your Claude bill by well over half.", ""],
+  ["/watch", "Auto-fix loop", "Give it a test or build command; it runs, reads the failure, fixes the code, and re-runs until green.", "unique"],
+  ["/redact", "Cloud privacy layer", "Masks API keys, tokens and private keys <b>before</b> anything is sent to a cloud engine. Your local runs never leave the box.", "unique"],
+  ["/undo", "Git checkpoints", "A safe checkpoint before every turn — <b>/undo</b>, <b>/redo</b> and <b>/rewind N</b> restore your files instantly.", ""],
+  ["meter", "Live cost &amp; context meter", "Real token usage, dollar cost and context % in the status bar, plus <b>/budget</b> to hard-cap spend.", ""],
+  ["/agents", "Parallel sub-agents", "Fan independent tasks out across the engine at once — <code>/agents a ;; b ;; c</code>.", ""],
+  ["MCP", "MCP + hooks", "Connect MCP servers from <code>.nexus/mcp.json</code>; run shell hooks on prompt/tool/stop events.", ""],
+  ["tools", "Full device access", "Local agent can read/write/edit files, run any shell command, search &amp; find, fetch URLs, inspect the system and manage the filesystem.", ""],
+  ["/secrets", "Security toolkit", "Built-in secret scanner, <b>/scan</b> port scanner, plus recon &amp; exploitation in the desktop app.", ""],
+  ["overnight", "Overnight autonomy", "Plans a big goal into tasks, executes, verifies and checkpoints so it can run for hours and resume.", ""],
+];
+
+// slash-command palette
+const CMDS = [
+  "/race", "/review", "/watch", "/commit", "/diff", "/pin", "/redact", "/secrets", "/scan",
+  "/agents", "/mcp", "/hooks", "/undo", "/redo", "/rewind", "/budget", "/cost", "/context",
+  "/resume", "/export", "/copy", "/status", "/doctor", "/engine", "/model", "@file", "!cmd", "#note",
+];
+
+function terminalMock() {
+  const line = (cls, html) => `<div class="l ${cls}">${html}</div>`;
+  return `
+  <div class="nx-term">
+    <div class="nx-term-bar"><span class="nx-dot r"></span><span class="nx-dot y"></span><span class="nx-dot g"></span><span class="nx-term-t">sentinel nexus --tui</span></div>
+    <div class="nx-term-body">
+      ${line("", `<span class="nx-logo">███╗   ██╗███████╗██╗  ██╗██╗   ██╗███████╗</span>`)}
+      ${line("", `<span class="nx-logo">██╔██╗ ██║█████╗   ╚███╔╝ ██║   ██║███████╗</span>`)}
+      ${line("", `<span class="nx-logo">╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝</span>`)}
+      ${line("nx-g", `AI coding agent · claude · ~/app`)}
+      ${line("", `<span class="nx-m">› you</span> add rate limiting to the API and run the tests`)}
+      ${line("", `<span class="nx-c">● nexus</span>  <span class="nx-g">claude</span>`)}
+      ${line("nx-g", `  ✻ thinking (ctrl+o to show)`)}
+      ${line("", `  <span class="nx-ok">●</span> <b>Read(server.js)</b> <span class="nx-g">0.2s</span>`)}
+      ${line("", `  <span class="nx-ok">●</span> <b>Update(server.js)</b> <span class="nx-g">0.4s</span>`)}
+      ${line("", `  <span class="nx-ok">●</span> <b>Bash(npm test)</b> <span class="nx-g">3.1s</span>`)}
+      ${line("nx-w", `  Added a token-bucket limiter and 3 tests — all green.`)}
+      ${line("nx-g", `  1 file · 1 cmd · ↑12.4k ↓380 tok · $0.03 · 6.2s · undo #1`)}
+      ${line("nx-rule", `────────────────────────────────────────────────────────`)}
+      ${line("", `<span class="nx-c">opus-4-8</span> <span class="nx-g">· ctx</span> <span class="nx-c">6%</span> <span class="nx-g">▓░░░░░░░ · ↑12.4k ↓380 tok ·</span> <span class="nx-ok">$0.03</span> <span class="nx-g">·</span> <span class="nx-ok">auto-accept</span>`)}
+      ${line("nx-rule", `────────────────────────────────────────────────────────`)}
+      ${line("", `<span class="nx-prompt">❯</span> <span class="nx-g">/race how should I shard this table?</span>`)}
+    </div>
+  </div>`;
+}
+
 export function renderCliCoder(main) {
   main.innerHTML = `
-    <h1 class="pg-h1">Nexus <span class="pill">sentinel nexus</span></h1>
-    <p class="muted pg-sub">A terminal AI coding agent built into the Sentinel CLI — like Glitch/Claude&nbsp;Code, but a single dependency-free binary that runs on <b>your</b> machine against <b>your</b> local models. It reads &amp; writes files and runs commands to finish a task, then verifies its own work.</p>
+    <section class="nx-hero">
+      <span class="nx-badge">sentinel nexus · terminal AI agent</span>
+      <h1 class="nx-title">Code with cloud and local AI —<br>on your terms.</h1>
+      <p class="nx-sub">Nexus is a single dependency-free binary that drives <b>Claude</b>, your <b>local</b> models, or <b>OpenCode</b> from one terminal UI. It reads &amp; writes files, runs commands, checkpoints every change, shows your real cost live, and keeps your secrets off the cloud.</p>
+      <div class="nx-cta">
+        <a class="btn lg" href="${REL}/Sentinel-cli-linux" download>Download · Linux</a>
+        <a class="btn lg ghost" href="${REL}/Sentinel-cli-windows.exe" download>Download · Windows</a>
+        <button class="btn lg ghost" data-sec="downloads">All builds</button>
+      </div>
+      ${terminalMock()}
+    </section>
 
-    <div class="card-grid">
-      <div class="card"><div class="card-h">Private &amp; local</div><p class="muted">Talks only to your local Ollama (<code>127.0.0.1:11434</code>). No cloud, no API keys — your code never leaves the box.</p></div>
-      <div class="card"><div class="card-h">Agentic</div><p class="muted">Plans, then <code>read_file</code> / <code>write_file</code> / <code>edit_file</code> / <code>list_dir</code> / <code>run_command</code> in a loop until the task is done.</p></div>
-      <div class="card"><div class="card-h">Zero dependencies</div><p class="muted">One self-contained binary (Node builtins only). Works on Linux &amp; Windows — no npm install, no runtime.</p></div>
+    <h2 class="nx-h2">Why Nexus</h2>
+    <p class="nx-lead">Everything Claude Code and Glitch do — plus the things only a multi-engine, local-first, security-native agent can.</p>
+    <div class="nx-grid">
+      ${FEATURES.map((f) => `
+        <div class="nx-feat">
+          ${f[3] ? `<span class="nx-tag">${esc(f[3])}</span>` : ""}
+          <h4>${/^\/|^@|^!|^#/.test(f[0]) ? `<code>${esc(f[0])}</code>` : ""}${esc(f[1])}</h4>
+          <p>${f[2]}</p>
+        </div>`).join("")}
     </div>
 
-    <h2 class="pg-h2">Why Nexus over Claude Code or Glitch</h2>
-    <p class="muted pg-sub">Nexus can drive Claude Code under the hood &mdash; so it&rsquo;s at least as capable &mdash; but it adds what the others don&rsquo;t: a free local fallback, a hybrid mode that slashes your Claude bill, offline use, and it ships as one dependency-free binary.</p>
+    <h2 class="nx-h2">One command bar, everything at hand</h2>
+    <p class="nx-lead">Type <code>/</code> for the full menu. A few of the built-ins:</p>
+    <div class="nx-chips">
+      ${CMDS.map((c) => `<span class="nx-chip"><b>${esc(c)}</b></span>`).join("")}
+    </div>
+
+    <h2 class="nx-h2">Nexus vs Claude Code vs Glitch</h2>
     <div style="overflow-x:auto">
     <table class="cmp-table">
       <thead><tr><th></th><th>Nexus</th><th>Claude Code</th><th>Glitch</th></tr></thead>
       <tbody>
         <tr><td>Engines</td><td class="yes">Claude, local Ollama, or OpenCode</td><td>Claude only</td><td>Delegates to Claude/OpenCode</td></tr>
         <tr><td>Works offline / free option</td><td class="yes">Yes (local models)</td><td>No</td><td>No</td></tr>
-        <tr><td>Hybrid cost-saver (local does the easy work, Claude the hard)</td><td class="yes">Yes</td><td>No</td><td>No</td></tr>
-        <tr><td>Live token, context &amp; <b>real cost</b> meter (per turn + session)</td><td class="yes">Yes, always on</td><td>Partial (/cost)</td><td>No</td></tr>
-        <tr><td>Spend cap (<code>/budget</code>) that halts runaway cost</td><td class="yes">Yes</td><td>No</td><td>No</td></tr>
-        <tr><td>Instant <code>/undo</code> &mdash; git checkpoint before every turn</td><td class="yes">Yes (safe restore)</td><td>Interactive only</td><td>No</td></tr>
-        <tr><td>Interrupt &amp; steer mid-turn (Ctrl+C stops, keeps session)</td><td class="yes">Yes</td><td>Yes</td><td>Limited</td></tr>
-        <tr><td>Transparent context bar + manual compaction</td><td class="yes">Yes (no silent early compact)</td><td>Auto (often too early)</td><td>No</td></tr>
-        <tr><td>Overnight autonomous runs (plan &middot; verify &middot; resume)</td><td class="yes">Yes</td><td>Limited</td><td>Yes (paid tiers)</td></tr>
-        <tr><td>Full-screen TUI chat with tool cards</td><td class="yes">Yes</td><td>Yes</td><td>Via Claude Code</td></tr>
-        <tr><td>Security toolkit (recon, exploit, VM labs)</td><td class="yes">Yes (part of Sentinel)</td><td>No</td><td>No</td></tr>
+        <tr><td>Race cloud vs local in one keystroke</td><td class="yes">Yes (/race)</td><td>No</td><td>No</td></tr>
+        <tr><td>Cross-engine second opinion</td><td class="yes">Yes (/review)</td><td>No</td><td>No</td></tr>
+        <tr><td>Hybrid cost-saver</td><td class="yes">Yes</td><td>No</td><td>No</td></tr>
+        <tr><td>Live token, context &amp; real cost meter</td><td class="yes">Always on</td><td>Partial</td><td>No</td></tr>
+        <tr><td>Spend cap that halts runaway cost</td><td class="yes">Yes (/budget)</td><td>No</td><td>No</td></tr>
+        <tr><td>Secrets masked before cloud sends</td><td class="yes">Yes (/redact)</td><td>No</td><td>No</td></tr>
+        <tr><td>Git checkpoints · undo · redo · rewind</td><td class="yes">Yes</td><td>Interactive only</td><td>No</td></tr>
+        <tr><td>Auto test-fix loop</td><td class="yes">Yes (/watch)</td><td>Manual</td><td>Limited</td></tr>
+        <tr><td>MCP servers &amp; project hooks</td><td class="yes">Yes</td><td>Yes</td><td>Partial</td></tr>
+        <tr><td>Nexus-driven parallel sub-agents</td><td class="yes">Yes (/agents)</td><td>Its own</td><td>Yes</td></tr>
+        <tr><td>Security toolkit (scan, recon, VM labs)</td><td class="yes">Yes</td><td>No</td><td>No</td></tr>
         <tr><td>Single self-contained binary</td><td class="yes">Yes</td><td>Needs Node + npm</td><td>Needs Node + npm</td></tr>
         <tr><td>Price</td><td class="yes">Free &amp; open (MIT)</td><td>Subscription</td><td>Free + paid tiers</td></tr>
       </tbody>
     </table>
     </div>
-    <p class="muted" style="font-size:.82rem">The killer feature: <code>sentinel nexus run "&hellip;" --engine hybrid</code> plans with Claude, does the routine work on your free local model, and only escalates the hard parts to Claude &mdash; often cutting Claude usage by well over half while keeping the quality where it matters.</p>
 
-    <h2 class="pg-h2">Get it</h2>
-    <p class="muted">Grab the Sentinel CLI (Terminal edition) and pull a model:</p>
-    <pre class="code-block"><button class="cb-copy">copy</button><code># 1. install a local model (once)
+    <h2 class="nx-h2">Get started</h2>
+    <pre class="code-block"><button class="cb-copy">copy</button><code># optional: a free local model for private, offline runs
 curl -fsSL https://ollama.com/install.sh | sh
-ollama pull qwen2.5-coder     # or: hermes3
+ollama pull qwen2.5-coder        # or hermes3
 
-# 2. download the Sentinel CLI, then run the coder
-sentinel nexus "add input validation to server.js and run the tests"</code></pre>
+# download the Sentinel CLI, then:
+sentinel init                    # scaffold .nexus/ (project context Nexus reads each session)
+sentinel nexus --tui             # full-screen UI (Claude if installed, else local)
+sentinel nexus --tui -e ollama   # drive a 100% local, private agent</code></pre>
     <div class="btns" style="margin:12px 0;flex-wrap:wrap;gap:8px">
-      <a class="btn" href="https://github.com/Darknode-Official/sentinel-web/releases/download/sentinel/Sentinel-cli-linux" download>CLI &middot; Linux</a>
-      <a class="btn" href="https://github.com/Darknode-Official/sentinel-web/releases/download/sentinel/Sentinel-cli-windows.exe" download>CLI &middot; Windows</a>
-      <button class="btn ghost" data-sec="downloads">All builds &amp; editions</button>
+      <a class="btn" href="${REL}/Sentinel-cli-linux" download>CLI · Linux</a>
+      <a class="btn" href="${REL}/Sentinel-cli-windows.exe" download>CLI · Windows</a>
+      <button class="btn ghost" data-sec="dlguide">Download guide</button>
     </div>
 
-    <h2 class="pg-h2">Use it</h2>
-    <pre class="code-block"><button class="cb-copy">copy</button><code>sentinel init                                              # set up Nexus in this project (.nexus/)
-sentinel nexus                                             # chat session with a boxed UI
-sentinel nexus --tui                                       # full-screen UI (scrolling chat + fixed input box)
-sentinel nexus "refactor utils.py into smaller functions"  # one-shot task
-sentinel nexus --engine ollama                             # chat with a local model instead</code></pre>
-    <p class="muted"><code>sentinel init</code> scaffolds <code>.nexus/NEXUS.md</code> (project instructions Nexus reads every session) and a config. The chat picks its engine automatically: Claude Code if installed, else local Ollama.</p>
-    <p class="muted">Override the model per run with <code>SENTINEL_MODEL=hermes3 sentinel nexus "…"</code>, or point at a remote Ollama with <code>OLLAMA_HOST</code> / <code>OLLAMA_PORT</code>.</p>
-
-    <h2 class="pg-h2">Autonomous runs (overnight)</h2>
-    <p class="muted pg-sub">Give Nexus a big goal and it plans it into tasks, executes each one, verifies, and keeps going &mdash; checkpointing so it can run for hours and resume. Pick the engine: local <b>Ollama</b> (private, free), or delegate to <b>Claude Code</b> / <b>OpenCode</b> if you have them installed (far stronger, runs in the cloud).</p>
-    <pre class="code-block"><button class="cb-copy">copy</button><code>sentinel nexus run "build a REST API with tests" --engine claude
-sentinel nexus overnight "refactor the codebase and fix all failing tests" --until 07:00
-sentinel nexus run --resume        # continue where it left off</code></pre>
-    <p class="muted">Plan, progress and a final report live in <code>./.nexus/</code> (run.json, report.md, memory.md). Engines: <code>--engine claude</code> (default when installed) / <code>ollama</code> / <code>opencode</code>. Note: Claude/OpenCode run with full autonomy &mdash; use in a repo you trust.</p>
-
-    <h2 class="pg-h2">Example session</h2>
-    <pre class="code-block"><code>${esc(`▌ Nexus
-  model hermes3   workdir ~/app
-
-task> Create hello.py that prints "Hello from Nexus", then run it.
-  • I'll write the file with write_file.
-  write hello.py (1 lines)
-  • Now run it to verify.
-  $ python3 hello.py
-    Hello from Nexus
-  Done: created and verified hello.py prints the expected message.`)}</code></pre>
-
-    <p class="muted" style="margin-top:18px">Prefer a GUI? The same agent — plus recon, exploitation, and VM-lab tools — lives in the <button class="linklike" data-sec="downloads">desktop app</button>'s Assistant.</p>`;
+    <h2 class="nx-h2">Autonomous runs</h2>
+    <p class="nx-lead">Give Nexus a big goal; it plans, executes, verifies and checkpoints so it can run for hours and resume.</p>
+    <pre class="code-block"><button class="cb-copy">copy</button><code>sentinel nexus run "build a REST API with tests" --engine hybrid
+sentinel nexus overnight "refactor and fix all failing tests" --until 07:00
+sentinel nexus agents "add tests" "write docs" "fix lint"   # parallel
+sentinel nexus run --resume                                  # continue where it left off</code></pre>
+    <p class="muted" style="margin-top:16px">Prefer a GUI? The same agent — plus recon, exploitation and VM-lab tools — lives in the <button class="linklike" data-sec="downloads">desktop app</button>'s Assistant.</p>`;
 
   main.querySelectorAll(".cb-copy").forEach((b) => b.addEventListener("click", () => {
     const code = b.parentElement.querySelector("code");
