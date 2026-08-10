@@ -23,8 +23,13 @@ export function renderCliCoder(main) {
         <tr><td>Engines</td><td class="yes">Claude, local Ollama, or OpenCode</td><td>Claude only</td><td>Delegates to Claude/OpenCode</td></tr>
         <tr><td>Works offline / free option</td><td class="yes">Yes (local models)</td><td>No</td><td>No</td></tr>
         <tr><td>Hybrid cost-saver (local does the easy work, Claude the hard)</td><td class="yes">Yes</td><td>No</td><td>No</td></tr>
+        <tr><td>Live token, context &amp; <b>real cost</b> meter (per turn + session)</td><td class="yes">Yes, always on</td><td>Partial (/cost)</td><td>No</td></tr>
+        <tr><td>Spend cap (<code>/budget</code>) that halts runaway cost</td><td class="yes">Yes</td><td>No</td><td>No</td></tr>
+        <tr><td>Instant <code>/undo</code> &mdash; git checkpoint before every turn</td><td class="yes">Yes (safe restore)</td><td>Interactive only</td><td>No</td></tr>
+        <tr><td>Interrupt &amp; steer mid-turn (Ctrl+C stops, keeps session)</td><td class="yes">Yes</td><td>Yes</td><td>Limited</td></tr>
+        <tr><td>Transparent context bar + manual compaction</td><td class="yes">Yes (no silent early compact)</td><td>Auto (often too early)</td><td>No</td></tr>
         <tr><td>Overnight autonomous runs (plan &middot; verify &middot; resume)</td><td class="yes">Yes</td><td>Limited</td><td>Yes (paid tiers)</td></tr>
-        <tr><td>Full-screen TUI chat</td><td class="yes">Yes</td><td>Yes</td><td>Via Claude Code</td></tr>
+        <tr><td>Full-screen TUI chat with tool cards</td><td class="yes">Yes</td><td>Yes</td><td>Via Claude Code</td></tr>
         <tr><td>Security toolkit (recon, exploit, VM labs)</td><td class="yes">Yes (part of Sentinel)</td><td>No</td><td>No</td></tr>
         <tr><td>Single self-contained binary</td><td class="yes">Yes</td><td>Needs Node + npm</td><td>Needs Node + npm</td></tr>
         <tr><td>Price</td><td class="yes">Free &amp; open (MIT)</td><td>Subscription</td><td>Free + paid tiers</td></tr>
