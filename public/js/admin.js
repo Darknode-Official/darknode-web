@@ -160,7 +160,7 @@ export async function renderAdmin(main, user) {
       if (!items.length) { host.innerHTML = `<p class="muted">No feedback yet.</p>`; return; }
       host.innerHTML = items.map((f) => `
         <div class="fb-row" data-id="${esc(f.id)}">
-          <div class="fb-row-h"><span class="fb-tag">${esc((f.type || "note").toUpperCase())}</span> <span class="muted">${esc(f.email || "anon")}</span><span style="flex:1"></span><span class="muted" style="font-size:.72rem">${f.ts && f.ts.toDate ? esc(fmtDate(f.ts)) : ""}</span><button class="btn ghost sm fb-del" title="Delete">✕</button></div>
+          <div class="fb-row-h"><span class="fb-tag">${esc((f.type || "note").toUpperCase())}</span> <span class="muted">${esc(f.email || "anon")}</span><span style="flex:1"></span><span class="muted" style="font-size:.72rem">${f.ts && f.ts.toDate ? esc(fmtDate(f.ts)) : ""}</span><button class="btn ghost sm fb-del" title="Delete">Delete</button></div>
           <div class="fb-msg">${esc(f.message || "")}</div>
           ${f.url ? `<div class="muted" style="font-size:.7rem;margin-top:4px">${esc(f.url)}</div>` : ""}
         </div>`).join("");

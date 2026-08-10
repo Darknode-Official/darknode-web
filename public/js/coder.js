@@ -31,7 +31,7 @@ sentinel nexus "add input validation to server.js and run the tests"</code></pre
     <h2 class="pg-h2">Use it</h2>
     <pre class="code-block"><button class="cb-copy">copy</button><code>sentinel nexus "refactor utils.py into smaller functions"   # one-shot task
 sentinel nexus                                             # interactive REPL
-sentinel                                                  # menu → [a] AI coder</code></pre>
+sentinel                                                  # menu -> [a] Nexus</code></pre>
     <p class="muted">Override the model per run with <code>SENTINEL_MODEL=hermes3 sentinel nexus "…"</code>, or point at a remote Ollama with <code>OLLAMA_HOST</code> / <code>OLLAMA_PORT</code>.</p>
 
     <h2 class="pg-h2">Example session</h2>
@@ -44,7 +44,7 @@ task> Create hello.py that prints "Hello from Nexus", then run it.
   • Now run it to verify.
   $ python3 hello.py
     Hello from Nexus
-  ✓ Created and verified hello.py prints the expected message.`)}</code></pre>
+  Done: created and verified hello.py prints the expected message.`)}</code></pre>
 
     <p class="muted" style="margin-top:18px">Prefer a GUI? The same agent — plus recon, exploitation, and VM-lab tools — lives in the <button class="linklike" data-sec="downloads">desktop app</button>'s Assistant.</p>`;
 

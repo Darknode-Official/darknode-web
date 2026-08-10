@@ -98,7 +98,7 @@ function openFeedback(user) {
         email: (user && user.email) || "anonymous", uid: (user && user.uid) || "",
         ts: fbServerTimestamp(), userAgent: navigator.userAgent, url: location.href, resolved: false,
       });
-      q("#fbStatus").textContent = "✓ sent — thank you!";
+      q("#fbStatus").textContent = "Sent — thank you!";
       setTimeout(close, 900);
     } catch (err) { q("#fbSend").disabled = false; q("#fbStatus").textContent = "failed: " + err.message; }
   };
