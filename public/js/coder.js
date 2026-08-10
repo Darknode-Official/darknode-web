@@ -34,6 +34,13 @@ sentinel nexus                                             # interactive REPL
 sentinel                                                  # menu -> [a] Nexus</code></pre>
     <p class="muted">Override the model per run with <code>SENTINEL_MODEL=hermes3 sentinel nexus "…"</code>, or point at a remote Ollama with <code>OLLAMA_HOST</code> / <code>OLLAMA_PORT</code>.</p>
 
+    <h2 class="pg-h2">Autonomous runs (overnight)</h2>
+    <p class="muted pg-sub">Give Nexus a big goal and it plans it into tasks, executes each one, verifies, and keeps going &mdash; checkpointing so it can run for hours and resume. Pick the engine: local <b>Ollama</b> (private, free), or delegate to <b>Claude Code</b> / <b>OpenCode</b> if you have them installed (far stronger, runs in the cloud).</p>
+    <pre class="code-block"><button class="cb-copy">copy</button><code>sentinel nexus run "build a REST API with tests" --engine claude
+sentinel nexus overnight "refactor the codebase and fix all failing tests" --until 07:00
+sentinel nexus run --resume        # continue where it left off</code></pre>
+    <p class="muted">Plan, progress and a final report live in <code>./.nexus/</code> (run.json, report.md, memory.md). Engines: <code>--engine claude</code> (default when installed) / <code>ollama</code> / <code>opencode</code>. Note: Claude/OpenCode run with full autonomy &mdash; use in a repo you trust.</p>
+
     <h2 class="pg-h2">Example session</h2>
     <pre class="code-block"><code>${esc(`▌ Nexus
   model hermes3   workdir ~/app
