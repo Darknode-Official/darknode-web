@@ -29,9 +29,11 @@ sentinel nexus "add input validation to server.js and run the tests"</code></pre
     </div>
 
     <h2 class="pg-h2">Use it</h2>
-    <pre class="code-block"><button class="cb-copy">copy</button><code>sentinel nexus "refactor utils.py into smaller functions"   # one-shot task
-sentinel nexus                                             # interactive REPL
-sentinel                                                  # menu -> [a] Nexus</code></pre>
+    <pre class="code-block"><button class="cb-copy">copy</button><code>sentinel init                                              # set up Nexus in this project (.nexus/)
+sentinel nexus                                             # chat session with a boxed UI
+sentinel nexus "refactor utils.py into smaller functions"  # one-shot task
+sentinel nexus --engine ollama                             # chat with a local model instead</code></pre>
+    <p class="muted"><code>sentinel init</code> scaffolds <code>.nexus/NEXUS.md</code> (project instructions Nexus reads every session) and a config. The chat picks its engine automatically: Claude Code if installed, else local Ollama.</p>
     <p class="muted">Override the model per run with <code>SENTINEL_MODEL=hermes3 sentinel nexus "…"</code>, or point at a remote Ollama with <code>OLLAMA_HOST</code> / <code>OLLAMA_PORT</code>.</p>
 
     <h2 class="pg-h2">Autonomous runs (overnight)</h2>
