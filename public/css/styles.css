@@ -874,3 +874,32 @@ html.crt body::after{content:"";position:fixed;inset:0;pointer-events:none;z-ind
 .nx-chip b{color:var(--acc);font-weight:600}
 .nx-h2{font-size:1.35rem;margin:30px 0 4px;letter-spacing:-.01em}
 .nx-lead{color:var(--txt-2,#aeb9d0);margin:0 0 14px;font-size:.92rem}
+
+/* ===== Documentation hub ===== */
+.doc-wrap{display:grid;grid-template-columns:220px 1fr;gap:30px;align-items:start}
+.doc-toc{position:sticky;top:76px;align-self:start;border-right:1px solid var(--line);padding-right:14px}
+.doc-toc-h{font-size:.68rem;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--acc);margin:0 0 10px}
+.doc-toc-l{display:block;padding:5px 10px;margin:1px 0;border-radius:7px;color:var(--txt-2,#aeb9d0);font-size:.86rem;text-decoration:none;border-left:2px solid transparent}
+.doc-toc-l:hover{color:var(--txt);background:var(--acc-soft);border-left-color:var(--acc)}
+.doc-body{min-width:0}
+.doc-sec{scroll-margin-top:74px;padding:8px 0 20px;border-bottom:1px solid color-mix(in srgb,var(--line) 60%,transparent)}
+.doc-sec:last-child{border-bottom:none}
+.pg-h3{font-size:.98rem;margin:18px 0 8px;color:var(--txt)}
+.doc-table{width:100%;border-collapse:collapse;margin:6px 0 12px;font-size:.86rem}
+.doc-table td{padding:7px 10px;border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent);vertical-align:top}
+.doc-table td:first-child{white-space:nowrap;width:1%}
+.doc-table code{background:var(--acc-soft);border:1px solid var(--acc-line);color:var(--acc);border-radius:6px;padding:1px 7px;font-size:.82rem;white-space:nowrap}
+.doc-table tr:hover td{background:color-mix(in srgb,var(--acc) 5%,transparent)}
+.doc-ol,.doc-ul{color:var(--txt-2,#aeb9d0);font-size:.9rem;line-height:1.65;padding-left:22px;margin:8px 0}
+.doc-ol li,.doc-ul li{margin:6px 0}
+.doc-ol code,.doc-ul code,.doc-faq code{background:var(--card2);border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-size:.82rem;color:var(--acc)}
+.doc-legal{font-size:.85rem;line-height:1.6}
+.doc-faq details{border:1px solid var(--line);border-radius:9px;padding:10px 14px;margin:8px 0;background:var(--card)}
+.doc-faq summary{cursor:pointer;font-weight:600;font-size:.92rem}
+.doc-faq details[open] summary{margin-bottom:6px;color:var(--acc)}
+.doc-faq p{margin:4px 0 0}
+.doc-changelog{margin:6px 0}
+.doc-cl{display:grid;grid-template-columns:88px 1fr;gap:12px;padding:10px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent)}
+.doc-cl-v{font-family:ui-monospace,Menlo,Consolas,monospace;font-weight:700;color:var(--acc);font-size:.85rem}
+.doc-cl p{margin:0;font-size:.86rem}
+@media(max-width:820px){.doc-wrap{grid-template-columns:1fr}.doc-toc{position:static;border-right:none;border-bottom:1px solid var(--line);padding:0 0 12px;margin-bottom:12px;display:flex;flex-wrap:wrap;gap:4px}.doc-toc-l{border-left:none}}
