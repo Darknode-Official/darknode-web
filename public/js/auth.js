@@ -437,7 +437,7 @@ function renderApp(user) {
       <main class="app-main" id="app-main"><div id="crumbs" class="crumbs"></div><div id="app-content"></div>
         <footer class="app-foot">
           <div class="app-foot-row">
-            <span class="app-foot-brand">Sentinel</span>
+            <span class="app-foot-brand">Sentinel</span><span class="app-foot-ver">v2.29</span>
             <nav class="app-foot-links">
               <a data-foot="docs">Docs</a><a data-foot="terms">Terms</a><a data-foot="privacy">Privacy</a><a data-foot="aup">Acceptable Use</a><a data-foot="license">License</a><a data-foot="downloads">Downloads</a>
             </nav>

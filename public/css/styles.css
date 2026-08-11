@@ -912,3 +912,5 @@ html.crt body::after{content:"";position:fixed;inset:0;pointer-events:none;z-ind
 .app-foot-links a{color:var(--txt-2,#aeb9d0);font-size:.84rem;cursor:pointer;text-decoration:none}
 .app-foot-links a:hover{color:var(--acc)}
 .app-foot-fine{margin-top:10px;font-size:.76rem;color:var(--txt-3,#8794b3)}
+
+.app-foot-ver{font-size:.7rem;color:var(--txt-3,#8794b3);border:1px solid var(--line);border-radius:999px;padding:1px 8px}
