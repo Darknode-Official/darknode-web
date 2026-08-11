@@ -25,7 +25,7 @@ const FEATURES = [
 // slash-command palette
 const CMDS = [
   "/race", "/ensemble", "/bench", "/review", "/watch", "/commit", "/diff", "/explain", "/test", "/index", "/snippet",
-  "/pin", "/redact", "/offline", "/secrets", "/scan", "/agents", "/mcp", "/hooks", "/undo", "/redo", "/rewind",
+  "/plan", "/git", "/blame", "/pin", "/redact", "/offline", "/secrets", "/scan", "/agents", "/mcp", "/hooks", "/undo", "/redo", "/rewind",
   "/budget", "/cost", "/tree", "/theme", "/resume", "/export", "/copy", "/status", "/doctor", "/engine", "@file", "!cmd", "#note",
 ];
 
