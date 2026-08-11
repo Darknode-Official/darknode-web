@@ -434,7 +434,17 @@ function renderApp(user) {
         </nav>
         <div class="side-foot">${avatar}<div class="side-user"><div class="su-name">${esc(name)}</div><div class="su-mail muted">${esc(user.email)}</div></div></div>
       </aside>
-      <main class="app-main" id="app-main"><div id="crumbs" class="crumbs"></div><div id="app-content"></div></main>
+      <main class="app-main" id="app-main"><div id="crumbs" class="crumbs"></div><div id="app-content"></div>
+        <footer class="app-foot">
+          <div class="app-foot-row">
+            <span class="app-foot-brand">Sentinel</span>
+            <nav class="app-foot-links">
+              <a data-foot="docs">Docs</a><a data-foot="terms">Terms</a><a data-foot="privacy">Privacy</a><a data-foot="aup">Acceptable Use</a><a data-foot="license">License</a><a data-foot="downloads">Downloads</a>
+            </nav>
+          </div>
+          <div class="app-foot-fine">MIT-licensed &middot; use only on systems you own or are authorized to test.</div>
+        </footer>
+      </main>
     </div>`;
 
   const main = document.getElementById("app-content");
@@ -521,6 +531,13 @@ function renderApp(user) {
   };
   moreMenu.onclick = (e) => { const b = e.target.closest("[data-more]"); if (!b) return; closeMenus(); show("setup", b.dataset.more); };
   document.getElementById("cmdkBtn").onclick = openPalette;
+
+  view.querySelectorAll("[data-foot]").forEach((a) => a.addEventListener("click", () => {
+    const f = a.dataset.foot;
+    if (f === "downloads") return show("downloads");
+    show("docs");
+    if (f !== "docs") setTimeout(() => { const t = document.getElementById("doc-" + f); if (t) t.scrollIntoView({ behavior: "smooth", block: "start" }); }, 60);
+  }));
 
   appShow = show;
   initSaved(user);

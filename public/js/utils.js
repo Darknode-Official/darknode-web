@@ -157,6 +157,22 @@ export function renderUtils(main) {
       <div class="util-btns"><button class="btn ghost sm" data-a="ch-b64">+base64</button><button class="btn ghost sm" data-a="ch-hex">+hex</button><button class="btn ghost sm" data-a="ch-url">+url</button><button class="btn ghost sm" data-a="ch-rot13">+rot13</button><button class="btn ghost sm" data-a="ch-clear">clear</button><button class="btn ghost sm" data-copytarget="chout">copy</button></div>
       <div class="util-kv"><span>Chain</span><code id="chsteps" class="util-val">—</code></div>
       <textarea class="in mono" id="chout" rows="2" readonly></textarea>`),
+    card("JSON", "Format", `<textarea class="in mono" id="jsonin" rows="3" placeholder='{"a":1,"b":[2,3]}'></textarea>
+      <div class="util-btns"><button class="btn sm" data-a="jsonpretty">Pretty</button><button class="btn ghost sm" data-a="jsonmin">Minify</button><button class="btn ghost sm" data-copytarget="jsonout">copy</button></div>
+      <div class="util-kv"><span>Valid</span><code id="jsonvalid" class="util-val">—</code></div>
+      <textarea class="in mono" id="jsonout" rows="3" readonly></textarea>`),
+    card("Case converter", "Text", `<input class="in" id="casein" placeholder="some text or myVariableName">
+      <div class="util-kv"><span>camelCase</span><code id="ccamel" class="util-val">—</code></div>
+      <div class="util-kv"><span>snake_case</span><code id="csnake" class="util-val">—</code></div>
+      <div class="util-kv"><span>kebab-case</span><code id="ckebab" class="util-val">—</code></div>
+      <div class="util-kv"><span>CONSTANT</span><code id="cconst" class="util-val">—</code></div>
+      <div class="util-kv"><span>Title Case</span><code id="ctitle" class="util-val">—</code></div>`),
+    card("Cron explainer", "Schedule", `<input class="in mono" id="cronin" placeholder="*/5 * * * *">
+      <div class="util-kv"><span>Means</span><code id="cronout" class="util-val">—</code></div>`),
+    card("Line tools", "Text", `<textarea class="in" id="linein" rows="3" placeholder="one item per line"></textarea>
+      <div class="util-btns"><button class="btn sm" data-a="lsort">Sort</button><button class="btn ghost sm" data-a="luniq">Unique</button><button class="btn ghost sm" data-a="lrev">Reverse</button><button class="btn ghost sm" data-a="lshuf">Shuffle</button><button class="btn ghost sm" data-copytarget="lineout">copy</button></div>
+      <div class="util-kv"><span>Count</span><code id="linecount" class="util-val">—</code></div>
+      <textarea class="in mono" id="lineout" rows="3" readonly></textarea>`),
   ].join("");
 
   const $ = (id) => main.querySelector("#" + id);
@@ -212,6 +228,18 @@ export function renderUtils(main) {
   };
   $("chin").oninput = chainApply;
 
+  // JSON formatter
+  const jsonUpd = (indent) => { const raw = $("jsonin").value.trim(); if (!raw) { $("jsonvalid").textContent = "—"; $("jsonout").value = ""; return; } try { const o = JSON.parse(raw); $("jsonvalid").textContent = "yes"; if (indent !== undefined) $("jsonout").value = JSON.stringify(o, null, indent); } catch (err) { $("jsonvalid").textContent = "no — " + err.message; } };
+  $("jsonin").oninput = () => jsonUpd();
+  // case converter
+  const caseWords = (s) => (s.match(/[A-Z]{2,}(?=[A-Z][a-z])|[A-Z]?[a-z]+|[A-Z]+|[0-9]+/g) || []).map((w) => w.toLowerCase());
+  $("casein").oninput = () => { const w = caseWords($("casein").value); const ids = ["ccamel", "csnake", "ckebab", "cconst", "ctitle"]; if (!w.length) { ids.forEach((i) => ($(i).textContent = "—")); return; } const cap = (x) => x.charAt(0).toUpperCase() + x.slice(1); $("ccamel").textContent = w[0] + w.slice(1).map(cap).join(""); $("csnake").textContent = w.join("_"); $("ckebab").textContent = w.join("-"); $("cconst").textContent = w.join("_").toUpperCase(); $("ctitle").textContent = w.map(cap).join(" "); };
+  // cron explainer
+  const explainCron = (expr) => { const p = expr.trim().split(/\s+/); if (p.length !== 5) return "enter 5 fields: minute hour day month weekday"; const [mi, h, dom, mo, dow] = p; const out = []; const hm = /^\*\/(\d+)$/.exec(mi); if (mi === "*" && h === "*") out.push("every minute"); else if (hm) out.push("every " + hm[1] + " minutes"); else if (h !== "*" && !/[*\/,\-]/.test(mi) && !/[*\/,\-]/.test(h)) out.push("at " + h.padStart(2, "0") + ":" + mi.padStart(2, "0")); else out.push("minute " + mi + " of hour " + h); if (dom !== "*") out.push("on day " + dom); const MON = ["", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]; if (mo !== "*") out.push("in " + (MON[+mo] || ("month " + mo))); const DOW = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]; if (dow !== "*") out.push("on " + (DOW[+dow] !== undefined ? DOW[+dow] : ("weekday " + dow))); return out.join(", "); };
+  $("cronin").oninput = () => { $("cronout").textContent = $("cronin").value.trim() ? explainCron($("cronin").value) : "—"; };
+  // line tools
+  $("linein").oninput = () => { $("linecount").textContent = $("linein").value.split("\n").filter((x) => x.trim()).length + " lines"; };
+
   ug.onclick = async (e) => {
     const b = e.target.closest("[data-a]"); if (!b) return;
     const a = b.dataset.a;
@@ -234,6 +262,12 @@ export function renderUtils(main) {
       else if (a === "uuid") $("genout").value = uuid4();
       else if (a === "pw") $("genout").value = genPw(20, $("pwsym").checked);
       else if (a === "mangle") $("mangout").value = mangle($("mangin").value).join("\n");
+      else if (a === "jsonpretty") jsonUpd(2);
+      else if (a === "jsonmin") jsonUpd(0);
+      else if (a === "lsort") $("lineout").value = $("linein").value.split("\n").slice().sort((x, y) => x.localeCompare(y)).join("\n");
+      else if (a === "luniq") $("lineout").value = [...new Set($("linein").value.split("\n"))].join("\n");
+      else if (a === "lrev") $("lineout").value = $("linein").value.split("\n").reverse().join("\n");
+      else if (a === "lshuf") { const l = $("linein").value.split("\n"); for (let i = l.length - 1; i > 0; i--) { const j = Math.random() * (i + 1) | 0;[l[i], l[j]] = [l[j], l[i]]; } $("lineout").value = l.join("\n"); }
     } catch (err) {
       const outMap = { b64e: "b64out", b64d: "b64out", urle: "urlout", urld: "urlout", hexe: "hexout", hexd: "hexout" };
       if (outMap[a]) $(outMap[a]).value = "Error: " + err.message;

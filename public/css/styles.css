@@ -903,3 +903,12 @@ html.crt body::after{content:"";position:fixed;inset:0;pointer-events:none;z-ind
 .doc-cl-v{font-family:ui-monospace,Menlo,Consolas,monospace;font-weight:700;color:var(--acc);font-size:.85rem}
 .doc-cl p{margin:0;font-size:.86rem}
 @media(max-width:820px){.doc-wrap{grid-template-columns:1fr}.doc-toc{position:static;border-right:none;border-bottom:1px solid var(--line);padding:0 0 12px;margin-bottom:12px;display:flex;flex-wrap:wrap;gap:4px}.doc-toc-l{border-left:none}}
+
+/* ===== app footer ===== */
+.app-foot{margin:40px -4px 0;padding:20px 4px 8px;border-top:1px solid var(--line)}
+.app-foot-row{display:flex;flex-wrap:wrap;align-items:center;gap:14px}
+.app-foot-brand{font-weight:800;letter-spacing:.02em;background:var(--grad-acc);-webkit-background-clip:text;background-clip:text;color:transparent}
+.app-foot-links{display:flex;flex-wrap:wrap;gap:6px 16px;margin-left:auto}
+.app-foot-links a{color:var(--txt-2,#aeb9d0);font-size:.84rem;cursor:pointer;text-decoration:none}
+.app-foot-links a:hover{color:var(--acc)}
+.app-foot-fine{margin-top:10px;font-size:.76rem;color:var(--txt-3,#8794b3)}
