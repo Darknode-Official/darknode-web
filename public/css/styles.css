@@ -1071,3 +1071,14 @@ body.landing .marquee-wrap{animation:sxHeroUp .7s .42s cubic-bezier(.2,.7,.3,1) 
   * { text-shadow:none !important; box-shadow:none !important; animation:none !important; }
   @page { margin:1.5cm; }
 }
+
+/* ============ high-contrast mode (prefers-contrast: more) ============ */
+/* Activated by the OS "increase contrast" setting. Strengthens borders, secondary
+   text, links, and focus rings for readability. Additive; no effect otherwise. */
+@media (prefers-contrast: more) {
+  :root { --mut: var(--txt); --line: color-mix(in srgb, var(--txt) 55%, transparent); }
+  :where(.card, .set-card, .tk-card, .doc-d, .item, .cve-item, input, select, textarea, .btn.ghost) { border-width:2px !important; }
+  :where(a) { text-decoration:underline; }
+  :where(.muted) { color:var(--txt) !important; }
+  :where(a, button, input, select, textarea, [tabindex], [role="button"]):focus-visible { outline:3px solid var(--acc) !important; outline-offset:2px !important; }
+}
