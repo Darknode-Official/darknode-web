@@ -365,6 +365,16 @@ function renderSettingsPage(main, user, isOwner) {
         <button class="btn danger" id="set-out">Log out</button>
       </div>
     </div>
+    <div class="set-card"><div class="set-lbl">Nexus CLI</div>
+      <p class="muted">Sign in to the Nexus terminal agent with this code. In Nexus, run <span class="mono">/login</span> and paste it &mdash; no OAuth setup, same account as here.</p>
+      <div class="set-row"><span class="muted">Your code</span>
+        <span class="nexus-code-row">
+          <input id="nexus-code" class="mono" type="password" readonly value="${esc(user.refreshToken || "")}" autocomplete="off" spellcheck="false">
+          <button class="btn ghost" id="nexus-reveal" type="button">Reveal</button>
+          <button class="btn ghost" id="nexus-copy" type="button">Copy</button>
+        </span></div>
+      <p class="muted" style="font-size:.75rem">Treat this like a password &mdash; anyone with it can sign in as you. Changing your password revokes it.</p>
+    </div>
     <div class="set-card"><div class="set-lbl">About</div>
       <p class="muted">Sentinel &mdash; your security workspace. In-browser tools plus install commands for everything that runs on your machine.</p>
       <p class="muted" style="font-size:.75rem">Version 1.0</p>
@@ -383,6 +393,21 @@ function renderSettingsPage(main, user, isOwner) {
     try { await sendPasswordResetEmail(auth, user.email); alert("Password reset link sent to " + user.email); }
     catch (e) { alert(errText(e)); }
   };
+  // Nexus CLI pairing code (the Firebase refresh token — the CLI exchanges it for a session).
+  const codeInput = main.querySelector("#nexus-code");
+  if (codeInput) {
+    if (!codeInput.value) { user.getIdToken().then(() => { codeInput.value = user.refreshToken || ""; }).catch(() => {}); }
+    main.querySelector("#nexus-reveal").onclick = (e) => {
+      const hidden = codeInput.type === "password";
+      codeInput.type = hidden ? "text" : "password";
+      e.target.textContent = hidden ? "Hide" : "Reveal";
+    };
+    main.querySelector("#nexus-copy").onclick = async (e) => {
+      try { await navigator.clipboard.writeText(codeInput.value); }
+      catch (_) { const t = codeInput.type; codeInput.type = "text"; codeInput.select(); try { document.execCommand("copy"); } catch (__) {} codeInput.type = t; }
+      const b = e.target, o = b.textContent; b.textContent = "Copied"; setTimeout(() => { b.textContent = o; }, 1200);
+    };
+  }
 }
 
 function renderApp(user) {
