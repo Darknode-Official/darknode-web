@@ -194,6 +194,28 @@ nc -lvnp 4444`],
           </div>
           <p class="muted" style="font-size:.78rem;margin-top:10px"><strong>Which?</strong> <b>git clone</b> is smallest and self-updating but needs Node installed. The <b>binary</b> is bigger but works with nothing else installed. Both are the same tool.</p>
         </div>
+
+        <div class="dlcli">
+          <h3 class="dlcli-h"><span class="mono grad-text">&gt;_</span> The coding CLI &mdash; meet Nexus</h3>
+          <p class="muted dlapp-sub">The same binary is also <b>Nexus</b>, an AI coding agent for your terminal (think Claude Code / Glitch): it reads and edits your files and runs commands using cloud or free local models &mdash; private, nothing leaves your box. Download it, then run <code>sentinel nexus --tui</code>.</p>
+          <div class="ed-grid">
+            <div class="ed-card">
+              <div class="ed-head"><h3>Download &amp; code</h3><span class="chip">standalone · ~52 MB</span></div>
+              <p class="muted" style="font-size:.83rem;margin:6px 0 10px">Self-contained binary &mdash; Node bundled in, nothing else to install. Grab it and launch the agent.</p>
+              <div class="dlcli-btns">
+                <a class="btn" href="${REL}/Sentinel-cli-linux" download>Download &middot; Linux</a>
+                <a class="btn ghost" href="${REL}/Sentinel-cli-windows.exe" download>Download &middot; Windows</a>
+              </div>
+              <code class="ed-cmd" style="margin-top:8px">sentinel nexus --tui</code>
+            </div>
+            <div class="ed-card">
+              <div class="ed-head"><h3>Run from source</h3><span class="chip">tiny · ~300 KB</span></div>
+              <p class="muted" style="font-size:.83rem;margin:6px 0 10px">Have Node 18+? Clone and start the coder straight from source &mdash; <code>git pull</code> keeps it current.</p>
+              <code class="ed-cmd">git clone https://github.com/Darknode-Official/sentinel-cli &amp;&amp; cd sentinel-cli &amp;&amp; node sentinel.js nexus --tui</code>
+            </div>
+          </div>
+          <p class="muted" style="font-size:.78rem;margin-top:10px">Cloud engines (Claude, GPT, Gemini) or free local models via Ollama &mdash; your choice, switchable per run.</p>
+        </div>
       </div>
     </section>
 
@@ -230,4 +252,20 @@ nc -lvnp 4444`],
   $("cta-learn").onclick = () => document.getElementById("features")?.scrollIntoView({ behavior: "smooth" });
   $("foot-signin").onclick = actions.onSignIn;
   view.addEventListener("click", (e) => { const c = e.target.closest("code.ed-cmd"); if (!c) return; navigator.clipboard?.writeText(c.textContent).then(() => { const o = c.textContent; c.textContent = "copied!"; setTimeout(() => (c.textContent = o), 900); }); });
+
+  // Scroll-reveal: fade sections/cards up as they enter the viewport.
+  // Progressive enhancement only — skipped entirely when the browser lacks
+  // IntersectionObserver or the visitor prefers reduced motion, so content is
+  // always visible by default (the .reveal class is what hides it).
+  const reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if ("IntersectionObserver" in window && !reduceMotion) {
+    const targets = view.querySelectorAll(
+      "#features .sec-title, #inside .sec-title, #demos .sec-title, #how .sec-title, #who .sec-title, #get-app .sec-title, " +
+      ".feat-card, .mod-card, .demo-term, .step, .dlapp-item, .ed-card, .cta-band-inner"
+    );
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((en) => { if (en.isIntersecting) { en.target.classList.add("in"); io.unobserve(en.target); } });
+    }, { rootMargin: "0px 0px -8% 0px", threshold: 0.08 });
+    targets.forEach((el) => { el.classList.add("reveal"); io.observe(el); });
+  }
 }

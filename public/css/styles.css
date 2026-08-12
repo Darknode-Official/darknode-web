@@ -31,6 +31,15 @@ body{margin:0;background:var(--bg);color:var(--txt);
   padding:.5rem .9rem;font-weight:700;cursor:pointer;font-family:inherit}
 .btn.ghost{background:transparent;color:var(--txt);border:1px solid var(--line)}
 .btn.danger{background:var(--bad);color:#fff}
+/* inline text-link rendered from a <button> (keeps semantics, drops button chrome) */
+.linklike{background:none;border:none;padding:0;margin:0;font:inherit;color:var(--acc);
+  cursor:pointer;text-decoration:underline;text-underline-offset:2px;
+  text-decoration-color:color-mix(in srgb,var(--acc) 45%,transparent);transition:color .15s}
+.linklike:hover{color:var(--acc-2);text-decoration-color:currentColor}
+.linklike:focus-visible{outline:2px solid var(--acc);outline-offset:2px;border-radius:3px}
+/* row of download buttons in the CLI cards */
+.dlcli-btns{display:flex;flex-wrap:wrap;gap:10px;margin:2px 0 4px}
+.dlcli-btns .btn{display:inline-flex;align-items:center;text-decoration:none}
 input,textarea{background:var(--card2);border:1px solid var(--line);color:var(--txt);
   border-radius:6px;padding:.5rem .7rem;font-family:inherit;width:100%}
 code,pre{font-family:ui-monospace,Menlo,Consolas,monospace}
