@@ -98,7 +98,7 @@ export function renderAI(main) {
 
   // image attach / paste (vision)
   let pending = [];
-  const drawThumbs = () => { $("#aiThumbs").innerHTML = pending.map((b, i) => `<span class="ai-thumb"><img src="data:image/png;base64,${b}"><button data-rm="${i}" title="remove">&times;</button></span>`).join(""); };
+  const drawThumbs = () => { $("#aiThumbs").innerHTML = pending.map((b, i) => `<span class="ai-thumb"><img alt="attachment ${i + 1}" src="data:image/png;base64,${b}"><button data-rm="${i}" title="remove" aria-label="remove attachment ${i + 1}">&times;</button></span>`).join(""); };
   const addImage = (file) => { if (!file || !file.type.startsWith("image/")) return; const rd = new FileReader(); rd.onload = () => { pending.push(String(rd.result).split(",")[1]); drawThumbs(); }; rd.readAsDataURL(file); };
   $("#aiImg").onclick = () => $("#aiFile").click();
   $("#aiFile").onchange = (e) => { [...e.target.files].forEach(addImage); e.target.value = ""; };
@@ -114,7 +114,7 @@ export function renderAI(main) {
     const um = { role: "user", content: text || "Read and transcribe any text in this image, then help with it." };
     if (imgs.length) um.images = imgs;
     history.push(um);
-    const you = add("user", ""); you.innerHTML = imgs.map((b) => `<img class="msg-img" src="data:image/png;base64,${b}">`).join("") + esc(text);
+    const you = add("user", ""); you.innerHTML = imgs.map((b) => `<img class="msg-img" alt="attached image" src="data:image/png;base64,${b}">`).join("") + esc(text);
     pending = []; drawThumbs();
     if (imgs.length) status.textContent = "reading image (needs a vision model like minicpm-v or llava)…";
     const out = add("ai", "…"); let acc = "";
