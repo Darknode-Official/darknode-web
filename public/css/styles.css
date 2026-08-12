@@ -1098,3 +1098,21 @@ body.landing .marquee-wrap{animation:sxHeroUp .7s .42s cubic-bezier(.2,.7,.3,1) 
   transform:none !important;
   filter:none !important;
 }
+
+/* ============ skeleton loading placeholder ============ */
+/* Add class="skeleton" to any element to show a shimmering placeholder while its
+   content loads. New class — no effect on existing markup. Reduced-motion guarded. */
+:where(.skeleton) {
+  background:linear-gradient(90deg,
+    color-mix(in srgb, var(--txt) 8%, transparent) 25%,
+    color-mix(in srgb, var(--txt) 18%, transparent) 37%,
+    color-mix(in srgb, var(--txt) 8%, transparent) 63%);
+  background-size:400% 100%;
+  border-radius:6px;
+  color:transparent !important;
+  user-select:none;
+  animation:skeleton-shimmer 1.4s ease infinite;
+}
+:where(.skeleton) * { visibility:hidden; }
+@keyframes skeleton-shimmer { 0% { background-position:100% 0; } 100% { background-position:-100% 0; } }
+@media (prefers-reduced-motion: reduce) { :where(.skeleton) { animation:none; } }
