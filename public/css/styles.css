@@ -914,3 +914,160 @@ html.crt body::after{content:"";position:fixed;inset:0;pointer-events:none;z-ind
 .app-foot-fine{margin-top:10px;font-size:.76rem;color:var(--txt-3,#8794b3)}
 
 .app-foot-ver{font-size:.7rem;color:var(--txt-3,#8794b3);border:1px solid var(--line);border-radius:999px;padding:1px 8px}
+
+/* Nexus CLI pairing-code row (Settings) */
+.nexus-code-row{display:flex;gap:6px;align-items:center;flex-wrap:wrap;max-width:100%}
+.nexus-code-row input{flex:1;min-width:140px;max-width:340px;padding:.4rem .6rem;border:1px solid var(--line,#2a3350);border-radius:8px;background:var(--input-bg,#0b1526);color:var(--txt,#eaf0fb);font-size:.8rem;overflow:hidden;text-overflow:ellipsis}
+.nexus-code-row .btn{padding:.35rem .7rem;font-size:.78rem}
+
+/* ================= polish layer — advanced micro-interactions ================= */
+/* :where() keeps specificity 0 so existing rules always win; this only ADDS
+   transitions, focus rings, press feedback and tinted chrome. */
+:where(.btn,.side-item,.icon-btn,.nav-link,.foot-links a,.auth-links a,.tk-card,.dlapp-card,.card,.set-card,.swatch,.seg button,input,select,textarea){
+  transition:background-color .16s ease,border-color .16s ease,color .16s ease,box-shadow .18s ease,transform .12s cubic-bezier(.2,.7,.3,1);
+}
+:where(.btn):hover{filter:brightness(1.06)}
+:where(.btn,.side-item,.icon-btn,.swatch):active{transform:translateY(1px)}
+:where(.card,.set-card):hover{box-shadow:0 12px 34px -20px color-mix(in srgb,var(--acc) 60%,transparent)}
+/* accessible keyboard focus ring — visible only for keyboard users */
+:where(a,button,input,select,textarea,[tabindex]):focus-visible{
+  outline:2px solid color-mix(in srgb,var(--acc) 70%,transparent);outline-offset:2px;
+}
+:where(button,a):focus:not(:focus-visible){outline:none}
+/* accent-tinted selection + scrollbars */
+::selection{background:color-mix(in srgb,var(--acc) 32%,transparent);color:var(--txt)}
+:where(html){scrollbar-width:thin;scrollbar-color:color-mix(in srgb,var(--acc) 45%,var(--line)) transparent}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--acc) 40%,var(--line));border-radius:8px;border:2px solid transparent;background-clip:content-box}
+::-webkit-scrollbar-thumb:hover{background:color-mix(in srgb,var(--acc) 62%,var(--line));background-clip:content-box}
+/* subtle content entrance on each section render */
+@keyframes sxFadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+:where(.pg-h1,.card,.set-card){animation:sxFadeUp .22s cubic-bezier(.2,.7,.3,1) both}
+/* respect users who ask for less motion */
+@media (prefers-reduced-motion:reduce){
+  :where(*){animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important}
+  :where(.btn,.side-item,.icon-btn,.swatch):active{transform:none}
+}
+
+/* =================================================================
+   VISUAL REFRESH — type scale + premium landing motion
+   Additive, last-in-file layer. Zero-specificity :where() and equal-
+   specificity overrides only; builds on the token system + polish layer
+   above. All motion is transform/opacity and guarded for reduced-motion.
+   ================================================================= */
+:root{
+  /* font families as tokens (mirror the stacks already used in the file) */
+  --ff-sans:ui-sans-serif,system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --ff-mono:ui-monospace,Menlo,Consolas,"Liberation Mono",monospace;
+  /* modular type scale (~1.22 ratio) */
+  --fs-2xs:.68rem; --fs-xs:.75rem; --fs-sm:.84rem; --fs-base:.94rem;
+  --fs-md:1.06rem; --fs-lg:1.25rem; --fs-xl:1.55rem; --fs-2xl:1.95rem;
+  --fs-3xl:clamp(1.5rem,3vw,2.4rem); --fs-hero:clamp(2.15rem,4.7vw,3.6rem);
+  /* line-heights */
+  --lh-tight:1.06; --lh-snug:1.25; --lh-normal:1.55; --lh-relaxed:1.7;
+  /* weights */
+  --fw-regular:400; --fw-medium:500; --fw-semibold:600; --fw-bold:700; --fw-black:850;
+  /* tracking */
+  --tracking-heading:-.03em; --tracking-tight:-.02em; --tracking-normal:0;
+  --tracking-label:.12em; --tracking-eyebrow:.22em;
+  /* comfortable reading measure */
+  --measure:62ch;
+}
+/* Global text rendering — no layout impact, sharper glyphs + real ligatures. */
+body{
+  font-family:var(--ff-sans);
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+  text-rendering:optimizeLegibility;
+  font-feature-settings:"kern" 1,"liga" 1,"calt" 1;
+}
+/* Tabular, lining figures wherever numbers should align (metrics, code, mono). */
+:where(.hm-n,.mono,code,pre,.tw-body,.step-n,.app-foot-ver){font-variant-numeric:tabular-nums lining-nums}
+
+/* --- Heading hierarchy --------------------------------------------------- */
+.hero-h1{font-size:var(--fs-hero);line-height:var(--lh-tight);letter-spacing:var(--tracking-heading);font-weight:var(--fw-black);text-wrap:balance}
+.sec-title{font-size:var(--fs-3xl);line-height:var(--lh-snug);letter-spacing:var(--tracking-tight);text-wrap:balance}
+.pg-h1{line-height:var(--lh-snug);letter-spacing:var(--tracking-tight);text-wrap:balance}
+.cta-band h2,.dlcli-h{text-wrap:balance;letter-spacing:var(--tracking-tight)}
+.feat-card h3,.mod-t,.step h3{letter-spacing:var(--tracking-tight)}
+/* Eyebrows: one consistent, refined label treatment. */
+.eyebrow{font-size:var(--fs-2xs);font-weight:var(--fw-bold);letter-spacing:var(--tracking-eyebrow);text-transform:uppercase}
+/* Body copy: relaxed leading + a pretty, orphan-free wrap. */
+.hero-sub{font-size:var(--fs-md);line-height:var(--lh-relaxed);text-wrap:pretty}
+.dlapp-sub,.feat-card p,.mod-d,.step p{text-wrap:pretty}
+:where(.dlapp-sub){line-height:var(--lh-relaxed)}
+
+/* --- Anchor offset so the sticky topbar never covers a jumped-to section -- */
+:where(.hero,.section,.cta-band,[id]){scroll-margin-top:84px}
+
+/* --- Hero entrance (on load; staggered; transform/opacity only) ----------- */
+@keyframes sxHeroUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+body.landing .hero-copy > .eyebrow{animation:sxHeroUp .6s cubic-bezier(.2,.7,.3,1) both}
+body.landing .hero-h1{animation:sxHeroUp .6s .07s cubic-bezier(.2,.7,.3,1) both}
+body.landing .hero-sub{animation:sxHeroUp .6s .14s cubic-bezier(.2,.7,.3,1) both}
+body.landing .hero-cta{animation:sxHeroUp .6s .21s cubic-bezier(.2,.7,.3,1) both}
+body.landing .hero-metrics{animation:sxHeroUp .6s .28s cubic-bezier(.2,.7,.3,1) both}
+body.landing .hero-visual{animation:sxHeroUp .7s .34s cubic-bezier(.2,.7,.3,1) both}
+body.landing .marquee-wrap{animation:sxHeroUp .7s .42s cubic-bezier(.2,.7,.3,1) both}
+/* Gentle idle float on the hero terminal — keeps its perspective transform. */
+@keyframes sxTermFloat{
+  0%,100%{transform:perspective(1400px) rotateY(-6deg) rotateX(2deg) translateY(0)}
+  50%{transform:perspective(1400px) rotateY(-6deg) rotateX(2deg) translateY(-8px)}
+}
+.hero .term-window{animation:sxTermFloat 7s ease-in-out .9s infinite;will-change:transform}
+.hero .term-window:hover{animation-play-state:paused}
+
+/* --- Scroll reveal (class added by landing.js only when motion is allowed) - */
+.reveal{opacity:0;transform:translateY(22px);
+  transition:opacity .6s cubic-bezier(.2,.7,.3,1),transform .6s cubic-bezier(.2,.7,.3,1);will-change:opacity,transform}
+.reveal.in{opacity:1;transform:none}
+/* Stagger children inside the landing grids for a cascading reveal. */
+.feat-grid .reveal:nth-child(2),.mod-grid .reveal:nth-child(2),.demo-grid .reveal:nth-child(2),.steps .reveal:nth-child(2),.dlapp-grid .reveal:nth-child(2),.ed-grid .reveal:nth-child(2){transition-delay:.07s}
+.feat-grid .reveal:nth-child(3),.mod-grid .reveal:nth-child(3),.demo-grid .reveal:nth-child(3),.steps .reveal:nth-child(3),.dlapp-grid .reveal:nth-child(3),.ed-grid .reveal:nth-child(3){transition-delay:.14s}
+.feat-grid .reveal:nth-child(4),.mod-grid .reveal:nth-child(4),.demo-grid .reveal:nth-child(4){transition-delay:.21s}
+.feat-grid .reveal:nth-child(n+5),.mod-grid .reveal:nth-child(n+5){transition-delay:.28s}
+
+/* --- Micro-interactions --------------------------------------------------- */
+/* Icon tiles lift + tint with their card. */
+.feat-ico,.mod-ico{transition:transform .18s cubic-bezier(.2,.7,.3,1),background-color .18s ease,border-color .18s ease,box-shadow .18s ease}
+.feat-card:hover .feat-ico,.mod-card:hover .mod-ico{transform:translateY(-2px) scale(1.06);
+  box-shadow:0 8px 22px -10px color-mix(in srgb,var(--acc) 80%,transparent)}
+/* Primary CTAs float on hover. */
+:where(.hero-cta .btn,.cta-band .btn):hover{transform:translateY(-2px)}
+/* "Ships with" chips respond to hover. */
+.mchip{transition:transform .16s cubic-bezier(.2,.7,.3,1),border-color .16s ease,color .16s ease}
+.mchip:hover{transform:translateY(-2px);border-color:var(--acc-line);color:var(--txt)}
+/* Animated underline for text nav links (absolute, so no layout shift). */
+.nav-link,.foot-links a{position:relative}
+.nav-link::after,.foot-links a::after{content:"";position:absolute;left:0;right:0;bottom:-2px;height:1px;
+  background:var(--acc);transform:scaleX(0);transform-origin:left;transition:transform .22s cubic-bezier(.2,.7,.3,1)}
+.nav-link:hover::after,.foot-links a:hover::after{transform:scaleX(1)}
+/* Metric group: quiet separators for a more composed hero. */
+.hero-metrics .hm{padding-right:28px}
+.hero-metrics .hm:not(:last-child){border-right:1px solid var(--line)}
+.hero-metrics{gap:14px 0}
+
+/* --- Reduced-motion: land everything in its final, calm state ------------- */
+@media (prefers-reduced-motion:reduce){
+  .reveal{opacity:1;transform:none;transition:none}
+  .hero .term-window{animation:none}
+  body.landing .hero-copy > .eyebrow,body.landing .hero-h1,body.landing .hero-sub,
+  body.landing .hero-cta,body.landing .hero-metrics,body.landing .hero-visual,
+  body.landing .marquee-wrap{animation:none}
+}
+
+/* ================= print styles — clean reports / PDFs ================= */
+/* Only applies when printing, so on-screen rendering is untouched. Drops the
+   chrome (sidebar, footer, buttons), expands the content, and forces high-ink
+   light output so a generated report prints/PDFs legibly. */
+@media print {
+  :root { --bg:#fff; --card:#fff; --txt:#111; --mut:#444; --line:#c9c9c9; }
+  html, body, .app-shell, .app-main { background:#fff !important; color:#111 !important; }
+  .sidebar, .side-nav, .app-foot, .topbar, .icon-btn, .profile-btn, .btn, button, .seg, .swatches { display:none !important; }
+  .app-shell { display:block !important; }
+  .app-main { display:block !important; width:100% !important; max-width:100% !important; margin:0 !important; padding:0 !important; }
+  .card, .set-card, .tk-card, .doc-d, .cve-item, .item, table, pre { break-inside:avoid; page-break-inside:avoid; background:#fff !important; border-color:#c9c9c9 !important; box-shadow:none !important; }
+  a { color:#111 !important; text-decoration:underline; }
+  h1, h2, h3, .pg-h1, .sec-title { color:#000 !important; }
+  * { text-shadow:none !important; box-shadow:none !important; animation:none !important; }
+  @page { margin:1.5cm; }
+}
