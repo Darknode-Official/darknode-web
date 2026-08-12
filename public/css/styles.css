@@ -1082,3 +1082,19 @@ body.landing .marquee-wrap{animation:sxHeroUp .7s .42s cubic-bezier(.2,.7,.3,1) 
   :where(.muted) { color:var(--txt) !important; }
   :where(a, button, input, select, textarea, [tabindex], [role="button"]):focus-visible { outline:3px solid var(--acc) !important; outline-offset:2px !important; }
 }
+
+/* ============ consistent disabled states ============ */
+/* Disabled controls should clearly read as disabled everywhere: faded, a
+   not-allowed cursor, and no hover lift. Additive; native :disabled already
+   blocks interaction so the cursor still shows. */
+:where(button, .btn, input, select, textarea, [role="button"]):disabled,
+:where([aria-disabled="true"]) {
+  opacity:.55 !important;
+  cursor:not-allowed !important;
+  box-shadow:none !important;
+}
+:where(button, .btn, [role="button"]):disabled:hover,
+:where([aria-disabled="true"]):hover {
+  transform:none !important;
+  filter:none !important;
+}
