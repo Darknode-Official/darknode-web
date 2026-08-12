@@ -1116,3 +1116,6 @@ body.landing .marquee-wrap{animation:sxHeroUp .7s .42s cubic-bezier(.2,.7,.3,1) 
 :where(.skeleton) * { visibility:hidden; }
 @keyframes skeleton-shimmer { 0% { background-position:100% 0; } 100% { background-position:-100% 0; } }
 @media (prefers-reduced-motion: reduce) { :where(.skeleton) { animation:none; } }
+
+/* accent-tinted text caret in inputs (::selection is already accent-tinted above) */
+:where(input, textarea, [contenteditable]) { caret-color:var(--acc); }
