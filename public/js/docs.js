@@ -135,14 +135,14 @@ curl -L .../Sentinel-cli-linux -o sentinel &amp;&amp; chmod +x sentinel
             <details><summary>Do I need an API key?</summary><p class="muted">No. The Claude engine drives your logged-in Claude Code CLI; the local engine talks to your own Ollama. Nexus stores no keys.</p></details>
             <details><summary>Does my code leave my machine?</summary><p class="muted">Only if you use a cloud engine (Claude/OpenCode). The Ollama engine is fully local. <code>/redact</code> masks secrets before any cloud send; <code>/offline</code> blocks cloud entirely.</p></details>
             <details><summary>How is Nexus different from Claude Code or Glitch?</summary><p class="muted">Multiple engines (cloud + free local), a real cost-saving toolkit, git-native checkpoints, a built-in security preflight, and ~56 commands — see the <button class="linklike" data-sec="coder">Nexus page</button>.</p></details>
-            <details><summary>Is it free?</summary><p class="muted">The software is MIT-licensed and free. Cloud model usage is billed by your provider; the local engine is free.</p></details>
+            <details><summary>Is it free?</summary><p class="muted">The software is free to use. Cloud model usage is billed by your provider; the local engine is free.</p></details>
             <details><summary>Where is my project data stored?</summary><p class="muted">In <code>.nexus/</code> in your project (session, plan, index, memory) — gitignored automatically. Web-console account data is described in the Privacy Policy below.</p></details>
           </div>`)}
 
         ${sec("terms", "Terms of Service", `
           <p class="muted doc-legal">These terms govern your use of the Sentinel suite (the "Software" and "Services"). By using them you agree to them.</p>
           <ol class="doc-ol doc-legal">
-            <li><b>License to use.</b> The Software is provided under the MIT License (see License below). You may use, copy and modify it accordingly.</li>
+            <li><b>License to use.</b> The Software is provided as-is; all rights are reserved by the author.</li>
             <li><b>Authorized use only.</b> You will use the security tooling exclusively against systems you own or are explicitly authorized in writing to test. You are solely responsible for compliance with all applicable laws.</li>
             <li><b>No warranty.</b> The Software and Services are provided "as is", without warranty of any kind. Automated agents can make mistakes; review their changes.</li>
             <li><b>Limitation of liability.</b> To the maximum extent permitted by law, the authors are not liable for any damages arising from use of the Software or Services, including data loss, downtime or misuse.</li>
@@ -170,23 +170,11 @@ curl -L .../Sentinel-cli-linux -o sentinel &amp;&amp; chmod +x sentinel
           <p class="muted doc-legal">Sentinel is intended for authorized penetration testing, CTFs, security research and defense. Misuse is your responsibility.</p>`)}
 
         ${sec("license", "License", `
-          <p class="muted doc-legal">The Sentinel suite is released under the <b>MIT License</b>.</p>
-          <pre class="code-block"><code>MIT License
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.</code></pre>`)}
+          <p class="muted doc-legal">The Sentinel suite is proprietary &mdash; all rights reserved by the author. No license to use, copy, modify, or distribute is granted. The software is provided "as is", without warranty of any kind.</p>`)}
 
         ${sec("changelog", "Changelog", `
           <div class="doc-changelog">${CHANGELOG.map(([v, d]) => `<div class="doc-cl"><span class="doc-cl-v">${esc(v)}</span><p class="muted">${esc(d)}</p></div>`).join("")}</div>
-          <p class="muted" style="font-size:.8rem">MIT-licensed · use only on systems you are authorized to test.</p>`)}
+          <p class="muted" style="font-size:.8rem">Use only on systems you are authorized to test.</p>`)}
       </div>
     </div>`;
 

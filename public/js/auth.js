@@ -467,7 +467,7 @@ function renderApp(user) {
               <a data-foot="docs">Docs</a><a data-foot="terms">Terms</a><a data-foot="privacy">Privacy</a><a data-foot="aup">Acceptable Use</a><a data-foot="license">License</a><a data-foot="downloads">Downloads</a>
             </nav>
           </div>
-          <div class="app-foot-fine">MIT-licensed &middot; use only on systems you own or are authorized to test.</div>
+          <div class="app-foot-fine">Use only on systems you own or are authorized to test.</div>
         </footer>
       </main>
     </div>`;

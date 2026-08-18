@@ -105,7 +105,7 @@ export function renderCliCoder(main) {
         <tr><td>Nexus-driven parallel sub-agents</td><td class="yes">Yes (/agents)</td><td>Its own</td><td>Yes</td></tr>
         <tr><td>Security toolkit (scan, recon, VM labs)</td><td class="yes">Yes</td><td>No</td><td>No</td></tr>
         <tr><td>Single self-contained binary</td><td class="yes">Yes</td><td>Needs Node + npm</td><td>Needs Node + npm</td></tr>
-        <tr><td>Price</td><td class="yes">Free &amp; open (MIT)</td><td>Subscription</td><td>Free + paid tiers</td></tr>
+        <tr><td>Price</td><td class="yes">Free</td><td>Subscription</td><td>Free + paid tiers</td></tr>
       </tbody>
     </table>
     </div>

@@ -65,7 +65,7 @@ export function renderDownloads(main) {
     <h3 class="pg-h3" style="margin:22px 0 8px">Terminal edition (CLI)</h3>
     <div class="ed-grid">${CLI_EDITIONS.map(edCard).join("")}</div>
     <p class="muted" style="font-size:.78rem;margin-top:14px">Provisioning uses systems you own or are authorized to test. Review the script anytime at <a href="${SITE}/arsenal.sh" target="_blank" rel="noopener">/arsenal.sh</a>.</p>
-    <p class="muted" style="font-size:.8rem;margin-top:16px">All builds are MIT-licensed. &middot; <a href="${RELEASES}" target="_blank" rel="noopener">All releases →</a></p>`;
+    <p class="muted" style="font-size:.8rem;margin-top:16px">All rights reserved. &middot; <a href="${RELEASES}" target="_blank" rel="noopener">All releases →</a></p>`;
   const sel = main.querySelector("#dlSelect"), detail = main.querySelector("#dlDetail");
 
   const fallback = () => {
@@ -228,7 +228,7 @@ export function renderDownloadDocs(main) {
       <p class="muted" style="font-size:.85rem;margin:0"><b>Remove:</b> .deb &mdash; <code data-cmd>sudo apt remove sentinel-app</code>. AppImage / CLI binary &mdash; delete the file. Windows &mdash; use “Add or remove programs”.</p>
     </div>
 
-    <p class="muted" style="font-size:.8rem;margin-top:16px">All builds are MIT-licensed. &middot; <a href="${RELEASES}" target="_blank" rel="noopener">All releases &rarr;</a> &middot; <button class="linklike" data-sec="downloads">Back to downloads</button> &middot; <button class="linklike" data-sec="coder">About Nexus</button></p>`;
+    <p class="muted" style="font-size:.8rem;margin-top:16px">All rights reserved. &middot; <a href="${RELEASES}" target="_blank" rel="noopener">All releases &rarr;</a> &middot; <button class="linklike" data-sec="downloads">Back to downloads</button> &middot; <button class="linklike" data-sec="coder">About Nexus</button></p>`;
 
   main.addEventListener("click", (e) => {
     const c = e.target.closest("code[data-cmd]"); if (c) { navigator.clipboard?.writeText(c.textContent).then(() => { c.style.outline = "1px solid var(--acc)"; setTimeout(() => (c.style.outline = ""), 500); }); return; }
