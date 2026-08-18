@@ -111,11 +111,7 @@ export function renderCliCoder(main) {
     </div>
 
     <h2 class="nx-h2">Get started</h2>
-    <pre class="code-block"><button class="cb-copy">copy</button><code># optional: a free local model for private, offline runs
-curl -fsSL https://ollama.com/install.sh | sh
-ollama pull qwen2.5-coder        # or hermes3
-
-# download the Sentinel CLI, then:
+    <pre class="code-block"><button class="cb-copy">copy</button><code># download the Sentinel CLI — it installs Ollama + local models for you:
 sentinel init                    # scaffold .nexus/ (project context Nexus reads each session)
 sentinel nexus --tui             # full-screen UI (Claude if installed, else local)
 sentinel nexus --tui -e ollama   # drive a 100% local, private agent</code></pre>

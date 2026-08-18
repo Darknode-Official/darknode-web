@@ -22,7 +22,7 @@ const SITE = "https://sentinel-web-2hq9.onrender.com";
 const APP_EDITIONS = [
   { name: "Netinstall", tag: "lightest · ~95 MB", desc: "Just the app. Every tool auto-configures itself the first time you launch it — nothing pre-downloaded.", steps: ["Install the .deb / AppImage / .exe from the Builds tab.", "Open any tool — Sentinel sets it up on first use."] },
   { name: "Slim", tag: "recommended", desc: "The app plus the essential toolset: recon, web, and password tools.", steps: ["Install the app from the Builds tab.", `curl -sL ${SITE}/arsenal.sh | bash -s -- recon web passwords`] },
-  { name: "Full", tag: "everything + AI", desc: "The app, the complete arsenal (all 10 categories), and local AI models.", steps: ["Install the app from the Builds tab.", `curl -sL ${SITE}/arsenal.sh | bash`, "ollama pull llama3.1 && ollama pull minicpm-v"] },
+  { name: "Full", tag: "everything + AI", desc: "The app, the complete arsenal (all 10 categories), and local AI models.", steps: ["Install the app from the Builds tab.", `curl -sL ${SITE}/arsenal.sh | bash`, "Local AI (Ollama + models) is set up automatically on first launch."] },
 ];
 const CLI_EDITIONS = [
   { name: "git clone", tag: "tiny · ~300 KB", desc: "Clone the source and run with Node — no 52 MB binary on disk, and git pull keeps it current. Needs Node 18+.", steps: ["git clone https://github.com/Darknode-Official/sentinel-cli && cd sentinel-cli && node sentinel.js"] },
@@ -217,7 +217,7 @@ export function renderDownloadDocs(main) {
       <ol class="ed-steps">
         <li><b>Desktop app:</b> open it and pick a tool &mdash; anything not present auto-configures on first use.</li>
         <li><b>CLI:</b> scaffold a project with <code data-cmd>sentinel init</code>, then start the agent with <code data-cmd>sentinel nexus --tui</code>.</li>
-        <li><b>For free/local AI:</b> install Ollama and pull a model &mdash; <code data-cmd>ollama pull hermes3</code> &mdash; then use <code data-cmd>sentinel nexus --engine ollama</code>.</li>
+        <li><b>For free/local AI:</b> the Sentinel CLI installs Ollama + local models for you on setup &mdash; then just <code data-cmd>sentinel nexus --engine ollama</code>.</li>
         <li><b>For the strongest AI:</b> install the Claude Code CLI and log in; Nexus's default <code>claude</code> engine drives it and shows your real token cost per turn.</li>
       </ol>
     </div>

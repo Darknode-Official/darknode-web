@@ -32,11 +32,10 @@ export const DOWNLOADS = [
       linux: "sudo apt install -y nodejs npm", mac: "brew install node", windows: "winget install OpenJS.NodeJS" } },
   ]},
   { group: "Ollama + models", items: [
-    { id: "ollama", name: "Ollama", desc: "Local LLM runner - install first", cmds: {
-      linux: "curl -fsSL https://ollama.com/install.sh | sh", mac: "brew install ollama", windows: "winget install Ollama.Ollama" } },
-    { id: "m-llama", name: "llama3.1", desc: "General model", cmds: { linux: "ollama pull llama3.1", mac: "ollama pull llama3.1", windows: "ollama pull llama3.1" } },
-    { id: "m-coder", name: "qwen2.5-coder", desc: "Coding model", cmds: { linux: "ollama pull qwen2.5-coder", mac: "ollama pull qwen2.5-coder", windows: "ollama pull qwen2.5-coder" } },
-    { id: "m-embed", name: "nomic-embed-text", desc: "Embeddings", cmds: { linux: "ollama pull nomic-embed-text", mac: "ollama pull nomic-embed-text", windows: "ollama pull nomic-embed-text" } },
+    { id: "ollama", name: "Ollama", desc: "Local LLM runner — installed for you by the Sentinel CLI", cmds: {
+      linux: "sentinel setup", mac: "sentinel setup", windows: "sentinel setup" } },
+    { id: "m-coder", name: "qwen2.5-coder", desc: "Coding model — installed by Sentinel setup", cmds: { linux: "sentinel setup", mac: "sentinel setup", windows: "sentinel setup" } },
+    { id: "m-agentic", name: "hermes3", desc: "Agentic/security model — installed by Sentinel setup", cmds: { linux: "sentinel setup", mac: "sentinel setup", windows: "sentinel setup" } },
   ]},
   { group: "Security tools", items: [
     { id: "nmap", name: "Nmap", desc: "Network scanner", cmds: {

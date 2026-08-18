@@ -188,7 +188,7 @@ export const CATALOG = [
   { id: "git", name: "Git", cat: "Setup", kind: "local", desc: "Version control", cmd: "sudo apt install -y git" },
   { id: "python", name: "Python", cat: "Setup", kind: "local", desc: "Language + pip", cmd: "sudo apt install -y python3 python3-pip" },
   { id: "node", name: "Node.js", cat: "Setup", kind: "local", desc: "JS runtime + npm", cmd: "sudo apt install -y nodejs npm" },
-  { id: "ollama", name: "Ollama", cat: "Setup", kind: "local", desc: "Local LLM runner", cmd: "curl -fsSL https://ollama.com/install.sh | sh" },
+  { id: "ollama", name: "Ollama", cat: "Setup", kind: "local", desc: "Local LLM runner — installed for you by the Sentinel CLI", cmd: "sentinel setup" },
 
   // --- local (run on your machine; a website can't) ---
   ...[
@@ -254,6 +254,6 @@ export const MORE = [
   {
     id: "aicoding", name: "Local AI coding (Ollama)",
     desc: "Run a coding model on your machine - in the terminal, or a web UI in your browser at localhost:3000.",
-    body: "# install Ollama + a coding model\ncurl -fsSL https://ollama.com/install.sh | sh\nollama pull qwen2.5-coder\n\n# use it in the terminal:\nollama run qwen2.5-coder\n\n# or a browser UI at http://localhost:3000 :\ndocker run -d -p 3000:8080 -v open-webui:/app/backend/data \\\n  --name open-webui ghcr.io/open-webui/open-webui:main",
+    body: "# the Sentinel CLI installs Ollama + models for you:\nsentinel setup\n\n# use it in the terminal:\nollama run qwen2.5-coder\n\n# or a browser UI at http://localhost:3000 :\ndocker run -d -p 3000:8080 -v open-webui:/app/backend/data \\\n  --name open-webui ghcr.io/open-webui/open-webui:main",
   },
 ];
