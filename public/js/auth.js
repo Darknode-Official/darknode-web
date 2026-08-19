@@ -745,6 +745,9 @@ async function loadAnnouncement() {
 // ---------- boot ----------
 setPersistence(auth, browserLocalPersistence).catch(() => {});
 onAuthStateChanged(auth, async (user) => {
+  // Read+clear the fresh-sign-in flag up front, so it can't survive an early return
+  // (verify screen / access denial) to a LATER page load and wrongly replay the portal.
+  let fresh = false; try { fresh = sessionStorage.getItem("sw_fresh_signin") === "1"; if (fresh) sessionStorage.removeItem("sw_fresh_signin"); } catch (_) {}
   if (!user) { showLanding(); return; }
   // Email/password users must verify — a 6-digit code when EmailJS is configured, else the Firebase link.
   const providerEmailPw = user.providerData.some((p) => p.providerId === "password");
@@ -760,9 +763,8 @@ onAuthStateChanged(auth, async (user) => {
   }
   await ensureUserDoc(user);
   checkLoginDevice(user);
-  // Fresh sign-in? Play the gamer "Access Granted" portal, then reveal the app.
-  // A session-restore page load has no flag, so it boots straight in.
-  let fresh = false; try { fresh = sessionStorage.getItem("sw_fresh_signin") === "1"; if (fresh) sessionStorage.removeItem("sw_fresh_signin"); } catch (_) {}
+  // Fresh sign-in (flag captured up top)? Play the gamer "Access Granted" portal,
+  // then reveal the app. A session-restore page load has no flag → boots straight in.
   const enter = () => { renderApp(user); loadAnnouncement(); };
   if (fresh) playAccessGranted(user.displayName || ((user.email || "").split("@")[0]), enter);
   else enter();
