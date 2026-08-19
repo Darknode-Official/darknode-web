@@ -423,8 +423,8 @@ function playAccessGranted(name, cb) {
   const o = document.createElement("div");
   o.id = "xfer";
   o.innerHTML = '<div class="xgrid"></div><div class="xring"></div><div class="xring b"></div>'
-    + '<div class="xmsg"><div class="xgranted">Access Granted</div><div class="xwho">'
-    + (safe ? "Welcome, " + safe : "Console unlocked") + '</div></div><div class="xflash"></div>';
+    + '<div class="xmsg"><div class="xgranted">Welcome Operator</div><div class="xwho">'
+    + (safe ? safe : "Access Granted") + '</div></div><div class="xflash"></div>';
   document.body.appendChild(o);
   let ran = false; const go = () => { if (ran) return; ran = true; try { cb(); } catch (_) {} };
   setTimeout(go, 720);                    // build the app beneath the portal
