@@ -60,6 +60,8 @@ export function renderAI(main) {
     </div>
     <input type="file" id="aiFile" accept="image/*" hidden>`;
   const $ = (s) => main.querySelector(s);
+  // A hand-off from Gmail / GitHub ("Ask AI to edit"): drop the stashed text into the box.
+  try { const pf = sessionStorage.getItem("sw_ai_prefill"); if (pf) { sessionStorage.removeItem("sw_ai_prefill"); const box = $("#aiMsg"); box.value = pf; setTimeout(() => { box.focus(); box.selectionStart = box.selectionEnd = box.value.length; }, 0); } } catch (_) {}
   const chatEl = $("#aiChat"), sel = $("#aiModel"), status = $("#aiStatus");
   const history = [{ role: "system", content: localStorage.getItem(SYS_KEY) || DEFAULT_SYS }];
 

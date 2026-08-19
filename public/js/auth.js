@@ -24,6 +24,7 @@ import { renderUtils } from "/js/utils.js";
 import { renderDownloads, renderDownloadDocs } from "/js/getapp.js";
 import { renderDocs } from "/js/docs.js";
 import { renderGitHub } from "/js/github.js";
+import { renderGmail } from "/js/gmail.js";
 import { emailConfigured, sendCode, sendLoginAlert, genCode, hashCode, deviceInfo } from "/js/notify.js";
 import { renderPayloads, renderSnippets, renderApiKeys, renderRefs, renderTargets } from "/js/labs.js";
 import { renderArsenal, renderTraining } from "/js/arsenal.js";
@@ -464,6 +465,7 @@ function renderApp(user) {
           <button class="side-item" data-sec="refs">References</button>
           <button class="side-item" data-sec="arsenal">Arsenal</button>
           <button class="side-item" data-sec="github">GitHub</button>
+          <button class="side-item" data-sec="gmail">Gmail</button>
           <div class="side-group">Resources</div>
           <button class="side-item" data-sec="privatecloud">Private cloud</button>
           <button class="side-item" data-sec="report">Report generator</button>
@@ -526,6 +528,7 @@ function renderApp(user) {
     else if (sec === "threat") renderThreat(main);
     else if (sec === "learn") renderLearn(main);
     else if (sec === "github") renderGitHub(main);
+    else if (sec === "gmail") renderGmail(main);
     else if (sec === "coder") renderCliCoder(main);
     else if (sec === "downloads") renderDownloads(main);
     else if (sec === "dlguide") renderDownloadDocs(main);
@@ -642,7 +645,7 @@ function pushRecent(id) { let r = paletteRecents().filter((x) => x !== id); r.un
 
 function openPalette() {
   if (document.getElementById("cmdk")) return;
-  const sections = [["home", "Home"], ["ai", "AI assistant"], ["tools", "Tools"], ["saved", "Saved"], ["utils", "Utilities"], ["payloads", "Payloads"], ["exploitdb", "Exploit & vuln databases"], ["ghdb", "Google dorks"], ["targets", "Practice targets"], ["vms", "Vulnerable VMs"], ["threat", "Threat intel"], ["cheats", "Cheat sheets"], ["snippets", "Code snippets"], ["refs", "References"], ["arsenal", "Arsenal"], ["training", "Training"], ["github", "GitHub"], ["privatecloud", "Private Cloud Generator"], ["report", "Report generator"], ["learn", "Learn"], ["setup", "Local setup"], ["coder", "Nexus"], ["downloads", "Get the app"], ["dlguide", "Download guide"], ["docs", "Documentation"], ["apikeys", "API keys"], ["settings", "Settings"], ["admin", "Admin"]];
+  const sections = [["home", "Home"], ["ai", "AI assistant"], ["tools", "Tools"], ["saved", "Saved"], ["utils", "Utilities"], ["payloads", "Payloads"], ["exploitdb", "Exploit & vuln databases"], ["ghdb", "Google dorks"], ["targets", "Practice targets"], ["vms", "Vulnerable VMs"], ["threat", "Threat intel"], ["cheats", "Cheat sheets"], ["snippets", "Code snippets"], ["refs", "References"], ["arsenal", "Arsenal"], ["training", "Training"], ["github", "GitHub"], ["gmail", "Gmail"], ["privatecloud", "Private Cloud Generator"], ["report", "Report generator"], ["learn", "Learn"], ["setup", "Local setup"], ["coder", "Nexus"], ["downloads", "Get the app"], ["dlguide", "Download guide"], ["docs", "Documentation"], ["apikeys", "API keys"], ["settings", "Settings"], ["admin", "Admin"]];
   const items = [
     ...sections.map(([s, n]) => ({ type: "section", id: s, name: n, desc: "Go to " + n })),
     ...CATALOG.map((t) => ({ type: "tool", id: t.id, name: t.name, desc: t.cat + " · " + t.desc })),
