@@ -147,13 +147,13 @@ function renderAuth(mode = "signin") {
   const err = (m) => { document.getElementById("err").textContent = m; };
   document.getElementById("google").onclick = async () => {
     err("");
-    try { await signInWithPopup(auth, googleProvider); }
-    catch (e) { err(errText(e)); }
+    try { try { sessionStorage.setItem("sw_fresh_signin", "1"); } catch (_) {} await signInWithPopup(auth, googleProvider); }
+    catch (e) { try { sessionStorage.removeItem("sw_fresh_signin"); } catch (_) {} err(errText(e)); }
   };
   document.getElementById("github").onclick = async () => {
     err("");
-    try { await signInWithPopup(auth, githubProvider); }
-    catch (e) { err(errText(e)); }
+    try { try { sessionStorage.setItem("sw_fresh_signin", "1"); } catch (_) {} await signInWithPopup(auth, githubProvider); }
+    catch (e) { try { sessionStorage.removeItem("sw_fresh_signin"); } catch (_) {} err(errText(e)); }
   };
   document.getElementById("pwform").onsubmit = async (ev) => {
     ev.preventDefault(); err("");
@@ -171,9 +171,10 @@ function renderAuth(mode = "signin") {
           await sendEmailVerification(cred.user);
         }
       } else {
+        try { sessionStorage.setItem("sw_fresh_signin", "1"); } catch (_) {}
         await signInWithEmailAndPassword(auth, email, pw);
       }
-    } catch (e) { err(errText(e)); }
+    } catch (e) { try { sessionStorage.removeItem("sw_fresh_signin"); } catch (_) {} err(errText(e)); }
   };
   const on = (id, fn) => { const el = document.getElementById(id); if (el) el.onclick = fn; };
   on("authBack", showLanding);
@@ -408,6 +409,26 @@ function renderSettingsPage(main, user, isOwner) {
       const b = e.target, o = b.textContent; b.textContent = "Copied"; setTimeout(() => { b.textContent = o; }, 1200);
     };
   }
+}
+
+// Gamer "ACCESS GRANTED" neon-portal transition, played once on a FRESH sign-in
+// (never on a session-restore page load). Renders the app under the overlay
+// mid-animation so it's ready as the portal clears. Falls straight through when
+// the visitor prefers reduced motion.
+function playAccessGranted(name, cb) {
+  try {
+    if (window.matchMedia && window.matchMedia("(prefers-reduced-motion:reduce)").matches) { cb(); return; }
+  } catch (_) {}
+  const safe = String(name || "").replace(/[<>&"']/g, "").slice(0, 24);
+  const o = document.createElement("div");
+  o.id = "xfer";
+  o.innerHTML = '<div class="xgrid"></div><div class="xring"></div><div class="xring b"></div>'
+    + '<div class="xmsg"><div class="xgranted">Access Granted</div><div class="xwho">'
+    + (safe ? "Welcome, " + safe : "Console unlocked") + '</div></div><div class="xflash"></div>';
+  document.body.appendChild(o);
+  let ran = false; const go = () => { if (ran) return; ran = true; try { cb(); } catch (_) {} };
+  setTimeout(go, 720);                    // build the app beneath the portal
+  setTimeout(() => { try { o.remove(); } catch (_) {} }, 1800); // remove after it fades
 }
 
 function renderApp(user) {
@@ -739,6 +760,10 @@ onAuthStateChanged(auth, async (user) => {
   }
   await ensureUserDoc(user);
   checkLoginDevice(user);
-  renderApp(user);
-  loadAnnouncement();
+  // Fresh sign-in? Play the gamer "Access Granted" portal, then reveal the app.
+  // A session-restore page load has no flag, so it boots straight in.
+  let fresh = false; try { fresh = sessionStorage.getItem("sw_fresh_signin") === "1"; if (fresh) sessionStorage.removeItem("sw_fresh_signin"); } catch (_) {}
+  const enter = () => { renderApp(user); loadAnnouncement(); };
+  if (fresh) playAccessGranted(user.displayName || ((user.email || "").split("@")[0]), enter);
+  else enter();
 });

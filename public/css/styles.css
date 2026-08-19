@@ -620,7 +620,7 @@ body.app .app-main::before{content:"";position:fixed;inset:0 0 0 220px;z-index:-
 #bootscreen{position:fixed;inset:0;z-index:99999;background:radial-gradient(1200px 600px at 50% 20%,#0a0f1c,#05070d 70%);
   display:flex;align-items:center;justify-content:center;overflow:hidden;font-family:var(--mono,ui-monospace,"JetBrains Mono",monospace);
   animation:bootOut .55s ease 2.5s forwards}
-@keyframes bootOut{to{opacity:0;visibility:hidden;pointer-events:none}}
+@keyframes bootOut{to{opacity:0;visibility:hidden;pointer-events:none;transform:scale(1.4);filter:blur(7px)}}
 .boot-grid{position:absolute;inset:0;opacity:.5;
   background-image:linear-gradient(color-mix(in srgb,var(--acc,#00d4ff) 12%,transparent) 1px,transparent 1px),linear-gradient(90deg,color-mix(in srgb,var(--acc,#00d4ff) 12%,transparent) 1px,transparent 1px);
   background-size:34px 34px;-webkit-mask-image:radial-gradient(60% 50% at 50% 45%,#000,transparent 80%);mask-image:radial-gradient(60% 50% at 50% 45%,#000,transparent 80%)}
@@ -1161,3 +1161,30 @@ code,pre,.mono,.tw-body,.ed-cmd,.term-window .tw-body,.dlapp-cmd code{font-famil
   color:var(--mut);font-size:.82rem}
 .hero-trust span{display:inline-flex;align-items:center;gap:7px}
 .hero-trust .tk{color:var(--ok)}
+
+/* ===== gamer sign-in transition — "ACCESS GRANTED" neon portal (auth.js playAccessGranted) ===== */
+#xfer{position:fixed;inset:0;z-index:100000;display:grid;place-items:center;overflow:hidden;
+  background:radial-gradient(120% 90% at 50% 50%,#0a0f22,#05070d 72%);
+  font-family:var(--mono,ui-monospace,"JetBrains Mono",monospace);animation:xferOut .5s ease 1.2s forwards}
+@keyframes xferOut{to{opacity:0;visibility:hidden}}
+#xfer .xgrid{position:absolute;inset:0;opacity:.4;
+  background-image:linear-gradient(color-mix(in srgb,var(--acc,#00d4ff) 16%,transparent) 1px,transparent 1px),
+    linear-gradient(90deg,color-mix(in srgb,var(--acc,#00d4ff) 16%,transparent) 1px,transparent 1px);
+  background-size:32px 32px;-webkit-mask-image:radial-gradient(60% 60% at 50% 50%,#000,transparent 76%);
+  mask-image:radial-gradient(60% 60% at 50% 50%,#000,transparent 76%);animation:xferGrid 1.2s ease forwards}
+@keyframes xferGrid{from{transform:scale(1.5);opacity:.1}to{transform:scale(1);opacity:.4}}
+#xfer .xring{position:absolute;width:44px;height:44px;border-radius:50%;border:2px solid var(--acc,#00d4ff);
+  box-shadow:0 0 34px var(--acc,#00d4ff),inset 0 0 22px var(--acc,#00d4ff);animation:xferRing 1.15s cubic-bezier(.2,.7,.2,1) forwards}
+#xfer .xring.b{border-color:var(--acc-2,#7c5cff);box-shadow:0 0 34px var(--acc-2,#7c5cff),inset 0 0 22px var(--acc-2,#7c5cff);animation-delay:.14s}
+@keyframes xferRing{0%{transform:scale(.2);opacity:1}100%{transform:scale(28);opacity:0}}
+#xfer .xmsg{position:relative;text-align:center;animation:xferPop .5s cubic-bezier(.2,1.5,.4,1) .16s both}
+@keyframes xferPop{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}
+#xfer .xgranted{font-size:clamp(1.9rem,6.5vw,3.6rem);font-weight:900;letter-spacing:.09em;text-transform:uppercase;
+  background:linear-gradient(180deg,#fff,var(--ok,#2ee6a6));-webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 0 28px color-mix(in srgb,var(--ok,#2ee6a6) 72%,transparent))}
+#xfer .xwho{margin-top:12px;color:var(--acc,#00d4ff);font-size:.78rem;letter-spacing:.32em;text-transform:uppercase}
+#xfer .xflash{position:absolute;inset:0;background:#eafff8;opacity:0;pointer-events:none;animation:xferFlash 1.3s ease forwards}
+@keyframes xferFlash{0%,70%{opacity:0}78%{opacity:.8}100%{opacity:0}}
+#xfer::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:.35;z-index:5;
+  background:repeating-linear-gradient(0deg,transparent 0 2px,rgba(0,0,0,.25) 2px 3px)}
+@media (prefers-reduced-motion:reduce){#xfer{animation:xferOut .25s ease .35s forwards}#xfer *{animation-duration:.01s!important}}
