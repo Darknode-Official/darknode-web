@@ -64,13 +64,18 @@ export function renderDownloads(main) {
     <div class="ed-grid">${APP_EDITIONS.map(edCard).join("")}</div>
     <h3 class="pg-h3" style="margin:22px 0 8px">Terminal edition (CLI)</h3>
     <div class="ed-grid">${CLI_EDITIONS.map(edCard).join("")}</div>
-    <p class="muted" style="font-size:.78rem;margin-top:14px">Provisioning uses systems you own or are authorized to test. Review the script anytime at <a href="${SITE}/arsenal.sh" target="_blank" rel="noopener">/arsenal.sh</a>.</p>
-    <p class="muted" style="font-size:.8rem;margin-top:16px">All rights reserved. &middot; <a href="${RELEASES}" target="_blank" rel="noopener">All releases →</a></p>`;
+    <p class="muted" style="font-size:.78rem;margin-top:14px">Provisioning uses systems you own or are authorized to test. <a href="${SITE}/arsenal.sh" download>Download the script</a> to review it first.</p>
+    <p class="muted" style="font-size:.8rem;margin-top:16px">All rights reserved.</p>`;
   const sel = main.querySelector("#dlSelect"), detail = main.querySelector("#dlDetail");
 
   const fallback = () => {
-    sel.innerHTML = `<option>unavailable</option>`;
-    detail.innerHTML = `<p class="muted">Couldn't load release info. Browse all downloads on <a href="${RELEASES}/tag/${TAG}" target="_blank" rel="noopener">GitHub Releases</a>.</p>`;
+    sel.innerHTML = `<option>direct download</option>`;
+    detail.innerHTML = `<p class="muted" style="margin:0 0 8px">Live release info unavailable &mdash; download directly:</p>
+      <div class="btns" style="flex-wrap:wrap;gap:8px">
+        <a class="btn" href="${REL_DL}/Sentinel-cli-linux" download>CLI &middot; Linux</a>
+        <a class="btn" href="${REL_DL}/Sentinel-cli-windows.exe" download>CLI &middot; Windows</a>
+        <a class="btn ghost" href="${REL_DL}/Sentinel-2.29.0.AppImage" download>App &middot; AppImage</a>
+      </div>`;
   };
 
   const showDetail = (a) => {
@@ -139,7 +144,7 @@ const APP_DOCS = [
   { title: "Desktop app — Debian / Ubuntu installer", os: "Linux", fmt: ".deb",
     what: "The full Sentinel desktop application packaged as a native <code>.deb</code>. Installs into <code>/opt/Sentinel</code>, adds a menu entry, and wires up the AI Assistant, VM runner, recon tools and live terminals.",
     best: "you run Debian, Ubuntu, Kali, Pop!_OS or any apt-based distro and want a normal installed app with a launcher icon.",
-    req: "64-bit Linux (x86-64), apt, ~250&nbsp;MB free. Local AI features also need <a href='https://ollama.com' target='_blank' rel='noopener'>Ollama</a>.",
+    req: "64-bit Linux (x86-64), apt, ~250&nbsp;MB free. Local AI features use Ollama, which the Sentinel CLI installs for you.",
     steps: [ { t: "Download the .deb from the Builds tab, then install it (pulls in any missing system libraries):", cmd: `sudo apt install ./sentinel-app_2.29.0_amd64.deb` }, { t: "Launch it from your app menu, or from a terminal:", cmd: `sentinel-app` } ],
     note: "Updating later? Just <code>sudo apt install ./&lt;newer&gt;.deb</code> over the top — settings are preserved.",
     trouble: "If it won't open, run <code>sentinel-app</code> in a terminal to see the error. A sandbox error on some kernels is fixed by launching with <code>sentinel-app --no-sandbox</code>. Missing-AI replies mean Ollama isn't running: <code>ollama serve</code>." },
@@ -153,7 +158,7 @@ const APP_DOCS = [
   { title: "Desktop app — Windows installer", os: "Windows", fmt: ".exe",
     what: "The standard Windows installer (NSIS). Sets up the app, a Start-menu shortcut and an uninstaller.",
     best: "you're on Windows 10 or 11 and want the graphical app.",
-    req: "Windows 10/11 64-bit. Local AI features need <a href='https://ollama.com/download' target='_blank' rel='noopener'>Ollama for Windows</a>.",
+    req: "Windows 10/11 64-bit. Local AI features use Ollama, which the Sentinel CLI installs for you.",
     steps: [ { t: "Download and double-click the installer, then follow the prompts:", cmd: `Sentinel.Setup.2.29.0.exe` }, { t: "Launch “Sentinel” from the Start menu." } ],
     trouble: "SmartScreen may warn on a new unsigned build — choose “More info → Run anyway”. It's the same binary published on GitHub Releases." },
 ];
@@ -228,7 +233,7 @@ export function renderDownloadDocs(main) {
       <p class="muted" style="font-size:.85rem;margin:0"><b>Remove:</b> .deb &mdash; <code data-cmd>sudo apt remove sentinel-app</code>. AppImage / CLI binary &mdash; delete the file. Windows &mdash; use “Add or remove programs”.</p>
     </div>
 
-    <p class="muted" style="font-size:.8rem;margin-top:16px">All rights reserved. &middot; <a href="${RELEASES}" target="_blank" rel="noopener">All releases &rarr;</a> &middot; <button class="linklike" data-sec="downloads">Back to downloads</button> &middot; <button class="linklike" data-sec="coder">About Nexus</button></p>`;
+    <p class="muted" style="font-size:.8rem;margin-top:16px">All rights reserved. &middot; <button class="linklike" data-sec="downloads">Back to downloads</button> &middot; <button class="linklike" data-sec="coder">About Nexus</button></p>`;
 
   main.addEventListener("click", (e) => {
     const c = e.target.closest("code[data-cmd]"); if (c) { navigator.clipboard?.writeText(c.textContent).then(() => { c.style.outline = "1px solid var(--acc)"; setTimeout(() => (c.style.outline = ""), 500); }); return; }
