@@ -66,7 +66,7 @@ export function renderGmail(main) {
     <div class="card" style="max-width:900px">
       <div class="row" style="gap:8px;flex-wrap:wrap;align-items:center">
         ${connected
-          ? `<span class="sev low">connected</span><button class="btn ghost" id="gmDisc">Disconnect</button><button class="btn ghost" id="gmCompose">Compose</button>`
+          ? `<span class="sev low">connected</span><button class="btn ghost" id="gmDisc">Disconnect</button><button class="btn ghost" id="gmCompose">Compose</button><button class="btn ghost" id="gmCopyTok" title="Copy the access token to paste into the desktop app">Copy token for the app</button>`
           : `<button class="btn" id="gmConn">Connect Gmail</button><span class="muted" style="font-size:.82rem">requires the Gmail API + scopes on your Google OAuth consent screen</span>`}
       </div>
       ${connected ? `
@@ -82,6 +82,7 @@ export function renderGmail(main) {
 
   $("#gmDisc").onclick = () => { setTok(""); renderGmail(main); };
   $("#gmCompose").onclick = () => openCompose(main, "", "", "");
+  { const cb = $("#gmCopyTok"); if (cb) cb.onclick = async () => { try { await navigator.clipboard.writeText(getTok()); cb.textContent = "copied — paste in the app"; setTimeout(() => { cb.textContent = "Copy token for the app"; }, 2500); } catch (_) { prompt("Copy this access token into the desktop app's Gmail tab:", getTok()); } }; }
   let folder = "inbox";
   const q = () => (($("#gmSearch").value || "").trim() || (FOLDERS.find((f) => f[0] === folder) || [])[2] || "in:inbox");
 
