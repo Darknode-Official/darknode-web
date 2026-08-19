@@ -7,6 +7,8 @@
   --acc-line:color-mix(in srgb,var(--acc) 40%,var(--line));
   --grad-acc:linear-gradient(135deg,var(--acc),color-mix(in srgb,var(--acc) 45%,var(--acc-2)));
   --sh-1:0 1px 2px rgba(0,0,0,.4); --sh-2:0 8px 26px -10px rgba(0,0,0,.6);
+  --font-display:'Sora',ui-sans-serif,system-ui,Segoe UI,Roboto,sans-serif;
+  --font-mono:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;
 }
 :root[data-theme="light"]{
   --bg:#eef1f7; --bg2:#ffffff; --card:#ffffff; --card2:#f2f5fb; --line:#dbe2ee;
@@ -1128,3 +1130,34 @@ body.landing .marquee-wrap{animation:sxHeroUp .7s .42s cubic-bezier(.2,.7,.3,1) 
 
 /* accent-tinted text caret in inputs (::selection is already accent-tinted above) */
 :where(input, textarea, [contenteditable]) { caret-color:var(--acc); }
+
+/* ===== professional polish pass (2026-08-18) — typography, rhythm, interaction ===== */
+body{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility}
+h1,h2,h3,h4,.hero-h1,.sec-title,.feat-card h3,.mod-t,.brand,.ed-head h3,.dlcli-h,.hm-n{
+  font-family:var(--font-display);letter-spacing:-.02em}
+code,pre,.mono,.tw-body,.ed-cmd,.term-window .tw-body,.dlapp-cmd code{font-family:var(--font-mono)}
+.hero-h1{letter-spacing:-.032em;line-height:1.03}
+.hero-sub{font-size:1.12rem;line-height:1.62;color:var(--txt-2)}
+.eyebrow{font-size:.7rem;letter-spacing:.2em}
+.sec-title{letter-spacing:-.02em;line-height:1.15}
+.section{padding:78px 0}
+/* buttons — smoother, more premium motion */
+.btn{transition:transform .16s cubic-bezier(.2,.8,.2,1),box-shadow .2s,filter .16s,background .2s,border-color .2s}
+.btn.lg{padding:.8rem 1.5rem;border-radius:12px}
+.btn.lg.glow:hover{transform:translateY(-2px);
+  box-shadow:0 0 0 1px color-mix(in srgb,var(--acc) 42%,transparent),0 16px 50px -10px color-mix(in srgb,var(--acc) 78%,transparent)}
+.btn.ghost:hover{border-color:var(--acc-line);color:var(--txt);background:color-mix(in srgb,var(--acc) 8%,transparent)}
+/* cards — subtle lift + accent edge on hover */
+.feat-card,.mod-card,.ed-card{transition:border-color .18s,transform .18s,box-shadow .18s}
+.feat-card:hover,.mod-card:hover,.ed-card:hover{transform:translateY(-3px);border-color:var(--acc-line);
+  box-shadow:0 18px 46px -22px color-mix(in srgb,var(--acc) 45%,#000)}
+.feat-ico{transition:transform .18s}
+.feat-card:hover .feat-ico{transform:scale(1.07)}
+/* hero metrics — confident, tabular */
+.hero-metrics{gap:30px}
+.hm-n{font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+/* a hero trust line under the CTAs */
+.hero-trust{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin-top:20px;
+  color:var(--mut);font-size:.82rem}
+.hero-trust span{display:inline-flex;align-items:center;gap:7px}
+.hero-trust .tk{color:var(--ok)}

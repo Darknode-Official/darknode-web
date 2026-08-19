@@ -71,10 +71,15 @@ nc -lvnp 4444`],
         <div class="hero-copy">
           <div class="eyebrow"><span class="dot-live"></span> SECURITY CONSOLE</div>
           <h1 class="hero-h1">Your entire <span class="grad-text">security toolkit</span>, in one console.</h1>
-          <p class="hero-sub">Tools, threat intel, cheat sheets, and an autonomous local-AI agent &mdash; on the web and in a powerful desktop app. Recon, exploit, practice on built-in labs, and report without leaving Sentinel.</p>
+          <p class="hero-sub">Recon, exploitation, threat intel, cheat sheets, and a private local-AI agent &mdash; brought together in one clean workspace across web, desktop, and terminal. Everything you reach for, without the tab sprawl or the setup marathon.</p>
           <div class="hero-cta">
-            <button class="btn lg glow" id="cta-start">Get Started &rarr;</button>
+            <button class="btn lg glow" id="cta-start">Get started &mdash; free &rarr;</button>
             <button class="btn ghost lg" id="cta-learn">See what's inside</button>
+          </div>
+          <div class="hero-trust">
+            <span><span class="tk">&#10003;</span> Free to start</span>
+            <span><span class="tk">&#10003;</span> Runs on your machine</span>
+            <span><span class="tk">&#10003;</span> Your data never leaves your box</span>
           </div>
           <div class="hero-metrics">
             <div class="hm"><div class="hm-n">80+</div><div class="hm-l">tools</div></div>
