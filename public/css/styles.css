@@ -3,6 +3,7 @@
   --bg:#070a12; --bg2:#0a0e1a; --card:#0e1424; --card2:#131c2f; --line:#1e2a44;
   --line-2:#2b3b5c; --txt:#e6eefc; --txt-2:#aebfdd; --mut:#6f88ab; --placeholder:#57678c;
   --acc:#00d4ff; --acc-2:#7c5cff; --ok:#2ee6a6; --bad:#ff5c6c; --warn:#f5b041; --radius:8px;
+  --topbar-h:57px; /* real sticky-topbar height (11px pad + 34px .icon-btn + 11px + 1px border); sidebar offsets by this */
   --acc-soft:color-mix(in srgb,var(--acc) 15%,transparent);
   --acc-line:color-mix(in srgb,var(--acc) 40%,var(--line));
   --grad-acc:linear-gradient(135deg,var(--acc),color-mix(in srgb,var(--acc) 45%,var(--acc-2)));
@@ -186,8 +187,8 @@ body:not(.landing):not(.app)::before{content:"";position:fixed;inset:0;z-index:-
 .menu-div{height:1px;background:var(--line);margin:5px 4px}
 /* ===== app console shell ===== */
 body.app #view{max-width:none;padding:0;margin:0}
-.app-shell{display:flex;min-height:calc(100vh - 55px);width:100%}
-.sidebar{width:220px;flex:none;border-right:1px solid var(--line);padding:20px 14px;display:flex;flex-direction:column;position:sticky;top:55px;height:calc(100vh - 55px)}
+.app-shell{display:flex;min-height:calc(100vh - var(--topbar-h));width:100%}
+.sidebar{width:220px;flex:none;border-right:1px solid var(--line);padding:20px 14px;display:flex;flex-direction:column;position:sticky;top:var(--topbar-h);height:calc(100vh - var(--topbar-h))}
 .side-brand{font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--acc);padding:0 8px 16px;font-size:.9rem}
 .side-nav{display:flex;flex-direction:column;gap:2px}
 .side-item{text-align:left;background:transparent;border:none;color:var(--mut);padding:9px 12px;border-radius:8px;cursor:pointer;font-family:inherit;font-size:.9rem}
@@ -599,7 +600,7 @@ body.app .app-main::before{content:"";position:fixed;inset:0 0 0 220px;z-index:-
 
 /* richer console backdrop — subtle depth so pages don't feel empty */
 .app-main{position:relative}
-.app-main::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:0;
+.app-main::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:0;
   background:
     radial-gradient(620px 340px at 94% -4%, color-mix(in srgb,var(--acc) 8%,transparent), transparent 62%),
     radial-gradient(520px 300px at 0% 8%, color-mix(in srgb,var(--acc-2,#7c5cff) 5%,transparent), transparent 60%),
