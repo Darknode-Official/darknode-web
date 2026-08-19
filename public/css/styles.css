@@ -366,7 +366,7 @@ a.dl-card:hover{border-color:var(--acc)}
 .cs-filter{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:16px}
 .cs-filter .chip{cursor:pointer;color:var(--mut);background:transparent;border-color:var(--line)}
 .cs-filter .chip.on{color:var(--acc);background:var(--acc-soft);border-color:var(--acc-line)}
-.cs-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
+.cs-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(320px,100%),1fr));gap:14px}
 .cs-card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:15px;box-shadow:var(--sh-1)}
 .cs-card.compact{padding:13px}
 .cs-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
@@ -407,7 +407,7 @@ a.dl-card:hover{border-color:var(--acc)}
 .pos-text .muted{font-size:.74rem;line-height:1.4}
 
 /* interactive utilities */
-.util-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
+.util-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(320px,100%),1fr));gap:14px}
 .util-card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:15px;box-shadow:var(--sh-1);display:flex;flex-direction:column;gap:8px}
 .util-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .util-head h3{margin:0;font-size:.96rem}
@@ -546,7 +546,7 @@ body.app .app-main::before{content:"";position:fixed;inset:0 0 0 220px;z-index:-
 .foot-owner a:hover{text-decoration:underline}
 /* landing demos */
 .c-bad{color:var(--bad);font-weight:700}
-.demo-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:20px;max-width:920px;margin:8px auto 0}
+.demo-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(330px,100%),1fr));gap:20px;max-width:920px;margin:8px auto 0}
 .demo-term{transform:none;transition:transform .2s ease,box-shadow .2s ease}
 .demo-term:hover{transform:translateY(-4px);box-shadow:0 34px 74px -26px rgba(0,0,0,.75),0 0 0 1px color-mix(in srgb,var(--acc) 22%,transparent)}
 .demo-term .tw-body{font-size:.78rem;min-height:158px;line-height:1.7}
@@ -620,7 +620,10 @@ body.app .app-main::before{content:"";position:fixed;inset:0 0 0 220px;z-index:-
 #bootscreen{position:fixed;inset:0;z-index:99999;background:radial-gradient(1200px 600px at 50% 20%,#0a0f1c,#05070d 70%);
   display:flex;align-items:center;justify-content:center;overflow:hidden;font-family:var(--mono,ui-monospace,"JetBrains Mono",monospace);
   animation:bootOut .55s ease 2.5s forwards}
-@keyframes bootOut{to{opacity:0;visibility:hidden;pointer-events:none;transform:scale(1.4);filter:blur(7px)}}
+@keyframes bootOut{to{opacity:0;visibility:hidden;pointer-events:none}}
+/* warp the boot CONTENT (clipped by #bootscreen overflow:hidden) rather than the
+   full-viewport overlay itself, so the exit zoom can't flash a page scrollbar */
+@keyframes bootZoom{to{transform:scale(1.55);filter:blur(7px)}}
 .boot-grid{position:absolute;inset:0;opacity:.5;
   background-image:linear-gradient(color-mix(in srgb,var(--acc,#00d4ff) 12%,transparent) 1px,transparent 1px),linear-gradient(90deg,color-mix(in srgb,var(--acc,#00d4ff) 12%,transparent) 1px,transparent 1px);
   background-size:34px 34px;-webkit-mask-image:radial-gradient(60% 50% at 50% 45%,#000,transparent 80%);mask-image:radial-gradient(60% 50% at 50% 45%,#000,transparent 80%)}
@@ -722,7 +725,7 @@ html.crt body::after{content:"";position:fixed;inset:0;pointer-events:none;z-ind
 .cmdk-foot kbd{background:var(--card2);border:1px solid var(--line);border-radius:4px;padding:1px 5px;margin-right:3px;font-family:inherit}
 
 /* Boot screen — cooler v3 (glitch logo, sweep, flicker, progress) */
-.boot-inner{position:relative;animation:bootFlick .8s steps(2,end) 1}
+.boot-inner{position:relative;animation:bootFlick .8s steps(2,end) 1,bootZoom .55s ease 2.5s forwards}
 @keyframes bootFlick{0%{opacity:.15}12%{opacity:.85}22%{opacity:.3}34%{opacity:1}42%{opacity:.6}100%{opacity:1}}
 .boot-logo{position:relative}
 .glitch::before,.glitch::after{content:attr(data-text);position:absolute;left:0;top:0;width:100%;background:none;-webkit-background-clip:border-box;background-clip:border-box}
@@ -847,7 +850,7 @@ html.crt body::after{content:"";position:fixed;inset:0;pointer-events:none;z-ind
     radial-gradient(720px 320px at 78% -30%,color-mix(in srgb,var(--acc-2) 26%,transparent),transparent 62%),
     radial-gradient(680px 340px at 12% 120%,color-mix(in srgb,var(--acc) 20%,transparent),transparent 60%),
     linear-gradient(160deg,var(--card2),var(--card))}
-.nx-hero::after{content:"";position:absolute;inset:0;background:linear-gradient(transparent 0 1px,transparent 2px),repeating-linear-gradient(90deg,color-mix(in srgb,var(--acc) 5%,transparent) 0 1px,transparent 1px 42px);opacity:.35;pointer-events:none;mask:linear-gradient(180deg,#000,transparent 70%)}
+.nx-hero::after{content:"";position:absolute;inset:0;background:linear-gradient(transparent 0 1px,transparent 2px),repeating-linear-gradient(90deg,color-mix(in srgb,var(--acc) 5%,transparent) 0 1px,transparent 1px 42px);opacity:.35;pointer-events:none;-webkit-mask:linear-gradient(180deg,#000,transparent 70%);mask:linear-gradient(180deg,#000,transparent 70%)}
 .nx-badge{display:inline-flex;align-items:center;gap:7px;font-size:.68rem;font-weight:800;letter-spacing:.18em;text-transform:uppercase;
   color:var(--acc);border:1px solid var(--acc-line);border-radius:999px;padding:5px 12px;background:var(--acc-soft)}
 .nx-badge::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--ok);box-shadow:0 0 8px var(--ok)}
@@ -928,7 +931,7 @@ html.crt body::after{content:"";position:fixed;inset:0;pointer-events:none;z-ind
 
 /* Nexus CLI pairing-code row (Settings) */
 .nexus-code-row{display:flex;gap:6px;align-items:center;flex-wrap:wrap;max-width:100%}
-.nexus-code-row input{flex:1;min-width:140px;max-width:340px;padding:.4rem .6rem;border:1px solid var(--line,#2a3350);border-radius:8px;background:var(--input-bg,#0b1526);color:var(--txt,#eaf0fb);font-size:.8rem;overflow:hidden;text-overflow:ellipsis}
+.nexus-code-row input{flex:1;min-width:140px;max-width:340px;padding:.4rem .6rem;border:1px solid var(--line,#2a3350);border-radius:8px;background:var(--card2);color:var(--txt);font-size:.8rem;overflow:hidden;text-overflow:ellipsis}
 .nexus-code-row .btn{padding:.35rem .7rem;font-size:.78rem}
 
 /* ================= polish layer — advanced micro-interactions ================= */
@@ -1188,3 +1191,13 @@ code,pre,.mono,.tw-body,.ed-cmd,.term-window .tw-body,.dlapp-cmd code{font-famil
 #xfer::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:.35;z-index:5;
   background:repeating-linear-gradient(0deg,transparent 0 2px,rgba(0,0,0,.25) 2px 3px)}
 @media (prefers-reduced-motion:reduce){#xfer{animation:xferOut .25s ease .35s forwards}#xfer *{animation-duration:.01s!important}}
+
+/* visual-audit fix: accent-colored code/command text is ~1.7:1 on light backgrounds — darken it in light theme only */
+:root[data-theme="light"] .dlapp-cmd code,
+:root[data-theme="light"] .cs-cmd code,
+:root[data-theme="light"] .gh-q,
+:root[data-theme="light"] .di-code,
+:root[data-theme="light"] .ed-cmd,
+:root[data-theme="light"] .ai-offline-b code,
+:root[data-theme="light"] .dl-cmd,
+:root[data-theme="light"] .res-link{color:#0575a6}
