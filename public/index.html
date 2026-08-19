@@ -50,30 +50,50 @@
     <main id="view"><p class="loading">Loading&hellip;</p></main>
   </div>
 
-  <!-- Boot splash: Matrix-style digital rain (runs until the splash fades). -->
+  <!-- Boot splash: warp-speed neon hyperjump — 3D streaks + charging energy core,
+       accelerating into the splash's warp-out. -->
   <script>
     (function () {
       var c = document.getElementById("bootrain"); if (!c || !c.getContext) return;
-      var ctx = c.getContext("2d"), G = 15;
+      var ctx = c.getContext("2d");
       function size() { c.width = c.offsetWidth; c.height = c.offsetHeight; }
       size(); addEventListener("resize", size);
-      var chars = "01<>[]{}#$%&*/\\|=+アカサタナハマヤラワ0123456789ABCDEF";
-      var cols = Math.floor(c.width / G), drops = [], raf;
-      for (var i = 0; i < cols; i++) drops[i] = Math.random() * -50;
+      var reduce = false; try { reduce = matchMedia("(prefers-reduced-motion:reduce)").matches; } catch (e) {}
+      // 3D neon streak field rushing toward the camera (cyan / violet / gold).
+      var N = 340, stars = [], raf, t0 = performance.now();
+      function mk(s) { s = s || {};
+        s.x = (Math.random() - .5) * c.width; s.y = (Math.random() - .5) * c.height;
+        s.z = Math.random() * c.width; s.pz = s.z;
+        var r = Math.random(); s.col = r < .6 ? "0,234,255" : r < .85 ? "176,38,255" : "255,210,63";
+        return s; }
+      for (var i = 0; i < N; i++) stars.push(mk());
       function draw() {
-        ctx.fillStyle = "rgba(5,7,13,0.10)"; ctx.fillRect(0, 0, c.width, c.height);
-        ctx.font = G + "px monospace";
-        for (var i = 0; i < cols; i++) {
-          var ch = chars[(Math.random() * chars.length) | 0], y = drops[i] * G;
-          ctx.fillStyle = Math.random() > 0.97 ? "#dffbff" : "rgba(0,212,255,0.8)";
-          ctx.fillText(ch, i * G, y);
-          if (y > c.height && Math.random() > 0.975) drops[i] = 0; else drops[i]++;
+        var el = (performance.now() - t0) / 1000;
+        var speed = 5 + el * el * 8;                 // ramp: gentle boot → hyperjump
+        ctx.fillStyle = "rgba(5,7,13,0.30)"; ctx.fillRect(0, 0, c.width, c.height);
+        var cx = c.width / 2, cy = c.height / 2, foc = Math.min(c.width, c.height) * 0.9;
+        ctx.lineCap = "round";
+        for (var i = 0; i < N; i++) {
+          var s = stars[i]; s.pz = s.z; s.z -= speed;
+          if (s.z < 1) { mk(s); continue; }
+          var px = cx + s.x * (foc / s.pz), py = cy + s.y * (foc / s.pz);
+          var k = foc / s.z, x = cx + s.x * k, y = cy + s.y * k;
+          var a = Math.min(1, (c.width - s.z) / c.width * 1.4);
+          ctx.strokeStyle = "rgba(" + s.col + "," + a + ")";
+          ctx.lineWidth = Math.max(.4, (1 - s.z / c.width) * 3.2);
+          ctx.shadowBlur = 12; ctx.shadowColor = "rgba(" + s.col + ",.9)";
+          ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(x, y); ctx.stroke();
         }
-        raf = requestAnimationFrame(draw);
+        ctx.shadowBlur = 0;
+        var g = ctx.createRadialGradient(cx, cy, 0, cx, cy, 120 + el * 55);   // charging core
+        g.addColorStop(0, "rgba(0,234,255," + (0.10 + Math.min(.3, el * .07)) + ")");
+        g.addColorStop(1, "rgba(0,234,255,0)");
+        ctx.fillStyle = g; ctx.fillRect(0, 0, c.width, c.height);
+        if (!reduce) raf = requestAnimationFrame(draw);
       }
       draw(); setTimeout(function () { cancelAnimationFrame(raf); }, 3000);
       var pct = document.getElementById("bootpct");
-      if (pct) { var t0 = performance.now(); (function tick() { var p = Math.min(100, Math.round(((performance.now() - t0) / 2300) * 100)); pct.textContent = p + "%"; if (p < 100) requestAnimationFrame(tick); })(); }
+      if (pct) { var s0 = performance.now(); (function tick() { var p = Math.min(100, Math.round(((performance.now() - s0) / 2300) * 100)); pct.textContent = p + "%"; if (p < 100) requestAnimationFrame(tick); })(); }
       var logo = document.querySelector(".boot-logo");
       if (logo) { var target = ">_ SENTINEL", pool = "!<>-_\\/[]{}=+*^?#01ABCDEF", total = 38, frame = 0;
         var id = setInterval(function () { frame++; var o = ""; for (var i = 0; i < target.length; i++) { if (target[i] === " ") { o += " "; continue; } o += (i < (frame / total) * target.length) ? target[i] : pool[(Math.random() * pool.length) | 0]; } logo.textContent = o; if (frame >= total) { clearInterval(id); logo.textContent = target; } }, 26); }
