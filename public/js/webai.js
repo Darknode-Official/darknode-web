@@ -142,5 +142,11 @@ export function renderAI(main) {
     const u = e.target.closest("[data-u]"); if (u) return insert(userPrompts[+u.dataset.u][1]);
     const b = e.target.closest("[data-p]"); if (b) insert(PRESETS[+b.dataset.p][1]);
   };
-  chatEl.addEventListener("click", (e) => { const b = e.target.closest(".cb-copy"); if (!b) return; const code = b.parentElement.querySelector("code"); navigator.clipboard?.writeText(code.textContent).then(() => { b.textContent = "copied"; setTimeout(() => (b.textContent = "copy"), 1000); }); });
+  chatEl.addEventListener("click", (e) => {
+    // Navigate the [data-sec] buttons injected by showInfo() (e.g. "Get the desktop
+    // app"). Delegated because that card is rendered asynchronously after the Ollama
+    // check, so a one-shot querySelectorAll at render time would miss it.
+    const nav = e.target.closest("[data-sec]");
+    if (nav) { const it = document.querySelector('.side-item[data-sec="' + nav.dataset.sec + '"]'); if (it) it.click(); return; }
+    const b = e.target.closest(".cb-copy"); if (!b) return; const code = b.parentElement.querySelector("code"); navigator.clipboard?.writeText(code.textContent).then(() => { b.textContent = "copied"; setTimeout(() => (b.textContent = "copy"), 1000); }); });
 }
