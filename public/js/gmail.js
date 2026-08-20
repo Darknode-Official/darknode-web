@@ -19,7 +19,33 @@ const SCOPES = ["https://www.googleapis.com/auth/gmail.readonly", "https://www.g
 const FOLDERS = [["inbox", "Inbox", "in:inbox"], ["sent", "Sent", "in:sent"], ["spam", "Spam", "in:spam"], ["drafts", "Drafts", "in:drafts"]];
 const ago = (ms) => { const s = (Date.now() - ms) / 1000; if (isNaN(s)) return ""; if (s < 3600) return Math.max(0, Math.floor(s / 60)) + "m"; if (s < 86400) return Math.floor(s / 3600) + "h"; return Math.floor(s / 86400) + "d"; };
 
+const CID_KEY = "sw_gmail_client_id";
+const getCid = () => { try { return (localStorage.getItem(CID_KEY) || "").trim(); } catch (_) { return ""; } };
+const setCid = (v) => { try { v ? localStorage.setItem(CID_KEY, v) : localStorage.removeItem(CID_KEY); } catch (_) {} };
+
+// Load Google Identity Services once (for the bring-your-own-client token flow).
+let gisLoading = null;
+function loadGis() {
+  if (window.google && window.google.accounts && window.google.accounts.oauth2) return Promise.resolve();
+  if (gisLoading) return gisLoading;
+  gisLoading = new Promise((res, rej) => { const s = document.createElement("script"); s.src = "https://accounts.google.com/gsi/client"; s.async = true; s.onload = () => res(); s.onerror = () => rej(new Error("couldn't load Google's sign-in script")); document.head.appendChild(s); });
+  return gisLoading;
+}
+
 async function connect() {
+  const cid = getCid();
+  if (cid) {
+    // Option B: the user's own Web OAuth client (GIS token flow) — no test-user
+    // list, but the client must have this site's origin as an authorized origin.
+    await loadGis();
+    return await new Promise((resolve, reject) => {
+      try {
+        const tc = window.google.accounts.oauth2.initTokenClient({ client_id: cid, scope: SCOPES.join(" "), prompt: "consent", callback: (r) => { if (r && r.access_token) { setTok(r.access_token); resolve(r.access_token); } else reject(new Error((r && r.error_description) || (r && r.error) || "no access token returned")); } });
+        tc.requestAccessToken();
+      } catch (e) { reject(e); }
+    });
+  }
+  // Built-in: Firebase popup (works only for accounts added as test users on this site's project).
   const p = new GoogleAuthProvider();
   SCOPES.forEach((s) => p.addScope(s));
   p.setCustomParameters({ prompt: "consent" });
@@ -67,8 +93,13 @@ export function renderGmail(main) {
       <div class="row" style="gap:8px;flex-wrap:wrap;align-items:center">
         ${connected
           ? `<span class="sev low">connected</span><button class="btn ghost" id="gmDisc">Disconnect</button><button class="btn ghost" id="gmCompose">Compose</button>`
-          : `<button class="btn" id="gmConn">Connect Gmail</button><span class="muted" style="font-size:.82rem">requires the Gmail API + scopes on your Google OAuth consent screen</span>`}
+          : `<button class="btn" id="gmConn">Connect Gmail</button><span class="muted" style="font-size:.82rem">${getCid() ? "using your own Google client" : "requires the Gmail API + scopes on your Google OAuth consent screen"}</span>`}
       </div>
+      ${connected ? "" : `
+      <details style="margin-top:12px"${getCid() ? " open" : ""}><summary class="muted" style="font-size:.82rem;cursor:pointer">Use your own Google client (so anyone can connect — no test-user list)</summary>
+        <p class="muted" style="font-size:.78rem;margin:6px 0">Create a <b>Web application</b> OAuth client in your own Google Cloud project (Gmail API enabled), and add this site's URL as an <b>Authorized JavaScript origin</b>. Paste the Client ID below. No secret needed. Leave blank to use the built-in client (test users only).</p>
+        <div class="row" style="gap:8px;flex-wrap:wrap"><input class="tk-f" id="gmCid" placeholder="Your Web client ID (…apps.googleusercontent.com)" value="${esc(getCid())}" style="flex:1;min-width:240px"><button class="btn ghost" id="gmCidSave">Save</button><button class="btn ghost" id="gmCidClear">Use built-in</button></div>
+        <p class="muted" id="gmCidNote" style="font-size:.76rem;margin-top:6px"></p></details>`}
       ${connected ? `
       <div class="cs-filter" id="gmTabs" style="margin-top:12px">${FOLDERS.map((f, i) => `<button class="chip${i === 0 ? " on" : ""}" data-f="${f[0]}">${f[1]}</button>`).join("")}</div>
       <div class="row" style="gap:8px;margin:8px 0"><input class="tk-f" id="gmSearch" placeholder="search (Gmail query, e.g. from:boss is:unread)" style="flex:1;min-width:160px"><button class="btn ghost" id="gmGo">Search</button></div>
@@ -78,7 +109,12 @@ export function renderGmail(main) {
   const $ = (s) => main.querySelector(s);
   const err = (m) => { const l = $("#gmList") || main; l.innerHTML = `<p class="muted" style="color:var(--bad)">${esc(m)}</p>`; };
 
-  if (!connected) { const b = $("#gmConn"); if (b) b.onclick = async () => { b.disabled = true; b.textContent = "opening Google…"; try { await connect(); renderGmail(main); } catch (e) { b.disabled = false; b.textContent = "Connect Gmail"; alert("Gmail connect failed: " + (e && e.message || e)); } }; return; }
+  if (!connected) {
+    const b = $("#gmConn"); if (b) b.onclick = async () => { b.disabled = true; b.textContent = "opening Google…"; try { await connect(); renderGmail(main); } catch (e) { b.disabled = false; b.textContent = "Connect Gmail"; alert("Gmail connect failed: " + (e && e.message || e)); } };
+    const cs = $("#gmCidSave"); if (cs) cs.onclick = () => { setCid($("#gmCid").value.trim()); const n = $("#gmCidNote"); if (n) n.textContent = getCid() ? "saved — now click Connect Gmail." : "cleared — using the built-in client."; };
+    const cc = $("#gmCidClear"); if (cc) cc.onclick = () => { setCid(""); renderGmail(main); };
+    return;
+  }
 
   $("#gmDisc").onclick = () => { setTok(""); renderGmail(main); };
   $("#gmCompose").onclick = () => openCompose(main, "", "", "");
