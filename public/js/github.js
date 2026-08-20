@@ -9,6 +9,7 @@ const getUser = () => { try { return localStorage.getItem(U_KEY) || ""; } catch 
 const ago = (d) => { const s = (Date.now() - new Date(d)) / 1000; if (s < 3600) return Math.floor(s / 60) + "m ago"; if (s < 86400) return Math.floor(s / 3600) + "h ago"; return Math.floor(s / 86400) + "d ago"; };
 
 // Hand text to the AI assistant: stash it, then open the AI section.
+function codeFence(s) { s = String(s); let n = 3; const m = s.match(/`+/g); if (m) n = Math.max(3, Math.max.apply(null, m.map((x) => x.length)) + 1); const f = "`".repeat(n); return f + "\n" + s + "\n" + f; }
 function askAI(text) {
   try { sessionStorage.setItem("sw_ai_prefill", text); } catch (_) {}
   const it = document.querySelector('.side-item[data-sec="ai"]'); if (it) it.click();
@@ -147,10 +148,12 @@ export function renderGitHub(main) {
             const body = ghB64(data.content);
             view.innerHTML = `<div class="card" style="margin-top:10px;background:var(--card2)">
               <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><b class="mono" style="font-size:.85rem">${esc(data.path)}</b><span class="muted" style="font-size:.75rem">${(data.size / 1024).toFixed(1)} KB</span></div>
-              <pre class="mono" style="white-space:pre;overflow:auto;max-height:340px;margin:10px 0;font-size:.8rem">${esc(body).slice(0, 20000)}</pre>
+              <pre class="mono" style="white-space:pre;overflow:auto;max-height:340px;margin:10px 0;font-size:.8rem">${esc(body.slice(0, 20000))}</pre>
               <div class="row" style="gap:8px;flex-wrap:wrap"><button class="btn" id="br-ai">Edit with AI</button><button class="btn ghost" id="br-explain">Explain with AI</button><a class="btn ghost" href="${esc(data.html_url)}" target="_blank" rel="noopener">Open on GitHub</a></div></div>`;
-            view.querySelector("#br-ai").onclick = () => askAI("Here is `" + data.path + "` from the GitHub repo `" + repo + "`. Edit it as I ask and return the full updated file.\n\n```\n" + body.slice(0, 12000) + "\n```\n\nWhat I want changed: ");
-            view.querySelector("#br-explain").onclick = () => askAI("Explain what this file (`" + data.path + "` from `" + repo + "`) does, and flag any bugs or security issues.\n\n```\n" + body.slice(0, 12000) + "\n```");
+            view.querySelector("#br-ai").onclick = () => askAI("Here is `" + data.path + "` from the GitHub repo `" + repo + "`. Edit it as I ask and return the full updated file.\n\n" + codeFence(body.slice(0, 12000)) + "\n\nWhat I want changed: ");
+            view.querySelector("#br-explain").onclick = () => askAI("Explain what this file (`" + data.path + "` from `" + repo + "`) does, and flag any bugs or security issues.\n\n" + codeFence(body.slice(0, 12000)));
+          } else if (data.type === "file") {
+            view.innerHTML = `<div class="card" style="margin-top:10px;background:var(--card2)"><b class="mono">${esc(data.path)}</b><br><span class="muted">File too large to preview (${((data.size||0)/1048576).toFixed(1)} MB).</span> <a href="${esc(data.html_url||"")}" target="_blank" rel="noopener">Open on GitHub</a></div>`;
           }
         } catch (e2) { list.innerHTML = `<p class="bad">${esc(e2.message)}</p>`; }
       }

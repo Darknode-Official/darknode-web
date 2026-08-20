@@ -61,7 +61,7 @@ export function renderAI(main) {
     <input type="file" id="aiFile" accept="image/*" hidden>`;
   const $ = (s) => main.querySelector(s);
   // A hand-off from Gmail / GitHub ("Ask AI to edit"): drop the stashed text into the box.
-  try { const pf = sessionStorage.getItem("sw_ai_prefill"); if (pf) { sessionStorage.removeItem("sw_ai_prefill"); const box = $("#aiMsg"); box.value = pf; setTimeout(() => { box.focus(); box.selectionStart = box.selectionEnd = box.value.length; }, 0); } } catch (_) {}
+  try { const pf = sessionStorage.getItem("sw_ai_prefill"); if (pf) { sessionStorage.removeItem("sw_ai_prefill"); const box = $("#aiMsg"); box.value = pf + (box.value ? "\n\n" + box.value : ""); setTimeout(() => { box.focus(); box.selectionStart = box.selectionEnd = box.value.length; }, 0); } } catch (_) {}
   const chatEl = $("#aiChat"), sel = $("#aiModel"), status = $("#aiStatus");
   const history = [{ role: "system", content: localStorage.getItem(SYS_KEY) || DEFAULT_SYS }];
 
@@ -121,7 +121,7 @@ export function renderAI(main) {
     if (imgs.length) status.textContent = "reading image (needs a vision model like minicpm-v or llava)…";
     const out = add("ai", "…"); let acc = "";
     try { await streamChat(model, history, (t) => { acc += t; out.innerHTML = mdToHtml(acc); chatEl.scrollTop = chatEl.scrollHeight; }, ctrl.signal); history.push({ role: "assistant", content: acc || "" }); }
-    catch (e) { if (e.name === "AbortError") { out.innerHTML = mdToHtml(acc) + `<div class="muted" style="font-size:.72rem;margin-top:4px">stopped</div>`; history.push({ role: "assistant", content: acc || "" }); } else { out.textContent = "Error: " + e.message; out.classList.add("err"); } }
+    catch (e) { if (e.name === "AbortError") { out.innerHTML = mdToHtml(acc) + `<div class="muted" style="font-size:.72rem;margin-top:4px">stopped</div>`; history.push({ role: "assistant", content: acc || "" }); } else { out.textContent = "Error: " + e.message; out.classList.add("err"); if (history[history.length - 1] === um) history.pop(); } }
     finally { busy = false; ctrl = null; const b = $("#aiSend"); b.textContent = "Send"; if (status.textContent.startsWith("reading image")) status.textContent = ""; $("#aiMsg").focus(); }
   }
   $("#aiSend").onclick = () => { if (busy && ctrl) ctrl.abort(); else send(); };
