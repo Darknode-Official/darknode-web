@@ -70,7 +70,7 @@ export function renderCliCoder(main) {
     </section>
 
     <h2 class="nx-h2">Why Nexus</h2>
-    <p class="nx-lead">Everything Claude Code and Glitch do — plus the things only a multi-engine, local-first, security-native agent can.</p>
+    <p class="nx-lead">Everything Claude Code does — plus the things only a multi-engine, local-first, security-native agent can.</p>
     <div class="nx-grid">
       ${FEATURES.map((f) => `
         <div class="nx-feat">
@@ -86,26 +86,26 @@ export function renderCliCoder(main) {
       ${CMDS.map((c) => `<span class="nx-chip"><b>${esc(c)}</b></span>`).join("")}
     </div>
 
-    <h2 class="nx-h2">Nexus vs Claude Code vs Glitch</h2>
+    <h2 class="nx-h2">Nexus vs Claude Code</h2>
     <div style="overflow-x:auto">
     <table class="cmp-table">
-      <thead><tr><th></th><th>Nexus</th><th>Claude Code</th><th>Glitch</th></tr></thead>
+      <thead><tr><th></th><th>Nexus</th><th>Claude Code</th></tr></thead>
       <tbody>
-        <tr><td>Engines</td><td class="yes">Claude, local Ollama, or OpenCode</td><td>Claude only</td><td>Delegates to Claude/OpenCode</td></tr>
-        <tr><td>Works offline / free option</td><td class="yes">Yes (local models)</td><td>No</td><td>No</td></tr>
-        <tr><td>Race cloud vs local in one keystroke</td><td class="yes">Yes (/race)</td><td>No</td><td>No</td></tr>
-        <tr><td>Cross-engine second opinion</td><td class="yes">Yes (/review)</td><td>No</td><td>No</td></tr>
-        <tr><td>Hybrid cost-saver</td><td class="yes">Yes</td><td>No</td><td>No</td></tr>
-        <tr><td>Live token, context &amp; real cost meter</td><td class="yes">Always on</td><td>Partial</td><td>No</td></tr>
-        <tr><td>Spend cap that halts runaway cost</td><td class="yes">Yes (/budget)</td><td>No</td><td>No</td></tr>
-        <tr><td>Secrets masked before cloud sends</td><td class="yes">Yes (/redact)</td><td>No</td><td>No</td></tr>
-        <tr><td>Git checkpoints · undo · redo · rewind</td><td class="yes">Yes</td><td>Interactive only</td><td>No</td></tr>
-        <tr><td>Auto test-fix loop</td><td class="yes">Yes (/watch)</td><td>Manual</td><td>Limited</td></tr>
-        <tr><td>MCP servers &amp; project hooks</td><td class="yes">Yes</td><td>Yes</td><td>Partial</td></tr>
-        <tr><td>Nexus-driven parallel sub-agents</td><td class="yes">Yes (/agents)</td><td>Its own</td><td>Yes</td></tr>
-        <tr><td>Security toolkit (scan, recon, VM labs)</td><td class="yes">Yes</td><td>No</td><td>No</td></tr>
-        <tr><td>Single self-contained binary</td><td class="yes">Yes</td><td>Needs Node + npm</td><td>Needs Node + npm</td></tr>
-        <tr><td>Price</td><td class="yes">Free</td><td>Subscription</td><td>Free + paid tiers</td></tr>
+        <tr><td>Engines</td><td class="yes">Claude, local Ollama, or OpenCode</td><td>Claude only</td></tr>
+        <tr><td>Works offline / free option</td><td class="yes">Yes (local models)</td><td>No</td></tr>
+        <tr><td>Race cloud vs local in one keystroke</td><td class="yes">Yes (/race)</td><td>No</td></tr>
+        <tr><td>Cross-engine second opinion</td><td class="yes">Yes (/review)</td><td>No</td></tr>
+        <tr><td>Hybrid cost-saver</td><td class="yes">Yes</td><td>No</td></tr>
+        <tr><td>Live token, context &amp; real cost meter</td><td class="yes">Always on</td><td>Partial</td></tr>
+        <tr><td>Spend cap that halts runaway cost</td><td class="yes">Yes (/budget)</td><td>No</td></tr>
+        <tr><td>Secrets masked before cloud sends</td><td class="yes">Yes (/redact)</td><td>No</td></tr>
+        <tr><td>Git checkpoints · undo · redo · rewind</td><td class="yes">Yes</td><td>Interactive only</td></tr>
+        <tr><td>Auto test-fix loop</td><td class="yes">Yes (/watch)</td><td>Manual</td></tr>
+        <tr><td>MCP servers &amp; project hooks</td><td class="yes">Yes</td><td>Yes</td></tr>
+        <tr><td>Nexus-driven parallel sub-agents</td><td class="yes">Yes (/agents)</td><td>Its own</td></tr>
+        <tr><td>Security toolkit (scan, recon, VM labs)</td><td class="yes">Yes</td><td>No</td></tr>
+        <tr><td>Single self-contained binary</td><td class="yes">Yes</td><td>Needs Node + npm</td></tr>
+        <tr><td>Price</td><td class="yes">Free</td><td>Subscription</td></tr>
       </tbody>
     </table>
     </div>

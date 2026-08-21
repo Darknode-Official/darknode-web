@@ -134,7 +134,7 @@ curl -L .../Sentinel-cli-linux -o sentinel &amp;&amp; chmod +x sentinel
           <div class="doc-faq">
             <details><summary>Do I need an API key?</summary><p class="muted">No. The Claude engine drives your logged-in Claude Code CLI; the local engine talks to your own Ollama. Nexus stores no keys.</p></details>
             <details><summary>Does my code leave my machine?</summary><p class="muted">Only if you use a cloud engine (Claude/OpenCode). The Ollama engine is fully local. <code>/redact</code> masks secrets before any cloud send; <code>/offline</code> blocks cloud entirely.</p></details>
-            <details><summary>How is Nexus different from Claude Code or Glitch?</summary><p class="muted">Multiple engines (cloud + free local), a real cost-saving toolkit, git-native checkpoints, a built-in security preflight, and ~56 commands — see the <button class="linklike" data-sec="coder">Nexus page</button>.</p></details>
+            <details><summary>How is Nexus different from Claude Code?</summary><p class="muted">Multiple engines (cloud + free local), a real cost-saving toolkit, git-native checkpoints, a built-in security preflight, and ~56 commands — see the <button class="linklike" data-sec="coder">Nexus page</button>.</p></details>
             <details><summary>Is it free?</summary><p class="muted">The software is free to use. Cloud model usage is billed by your provider; the local engine is free.</p></details>
             <details><summary>Where is my project data stored?</summary><p class="muted">In <code>.nexus/</code> in your project (session, plan, index, memory) — gitignored automatically. Web-console account data is described in the Privacy Policy below.</p></details>
           </div>`)}

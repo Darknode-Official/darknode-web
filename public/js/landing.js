@@ -202,7 +202,7 @@ nc -lvnp 4444`],
 
         <div class="dlcli">
           <h3 class="dlcli-h"><span class="mono grad-text">&gt;_</span> The coding CLI &mdash; meet Nexus</h3>
-          <p class="muted dlapp-sub">The same binary is also <b>Nexus</b>, an AI coding agent for your terminal (think Claude Code / Glitch): it reads and edits your files and runs commands using cloud or free local models &mdash; private, nothing leaves your box. Download it, then run <code>sentinel nexus --tui</code>.</p>
+          <p class="muted dlapp-sub">The same binary is also <b>Nexus</b>, an AI coding agent for your terminal (think Claude Code): it reads and edits your files and runs commands using cloud or free local models &mdash; private, nothing leaves your box. Download it, then run <code>sentinel nexus --tui</code>.</p>
           <div class="ed-grid">
             <div class="ed-card">
               <div class="ed-head"><h3>Download &amp; code</h3><span class="chip">standalone · ~52 MB</span></div>

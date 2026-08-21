@@ -44,7 +44,7 @@ export function renderDownloads(main) {
     <p style="margin:-6px 0 14px"><button class="btn ghost" data-sec="dlguide">Not sure which to download? Read the full guide &rarr;</button></p>
     <div class="card" style="max-width:640px;border-color:color-mix(in srgb,var(--acc) 45%,transparent);margin-bottom:14px">
       <h2 class="pg-h2" style="margin:0 0 6px">Nexus &mdash; AI coding agent</h2>
-      <p class="muted" style="font-size:.85rem;margin:0 0 10px">A terminal AI coder (like Glitch / Claude Code) built into the CLI: it edits files and runs commands using your own local models &mdash; private, no cloud. Download the CLI, then run <code data-cmd>sentinel nexus</code>.</p>
+      <p class="muted" style="font-size:.85rem;margin:0 0 10px">A terminal AI coder (like Claude Code) built into the CLI: it edits files and runs commands using your own local models &mdash; private, no cloud. Download the CLI, then run <code data-cmd>sentinel nexus</code>.</p>
       <div class="btns" style="flex-wrap:wrap;gap:8px">
         <a class="btn" href="${REL_DL}/Sentinel-cli-linux" download>Nexus (CLI) &middot; Linux</a>
         <a class="btn" href="${REL_DL}/Sentinel-cli-windows.exe" download>Nexus (CLI) &middot; Windows</a>
