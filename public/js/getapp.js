@@ -19,6 +19,7 @@ const fmtSize = (n) => n > 1e9 ? (n / 1e9).toFixed(2) + " GB" : n > 1e6 ? (n / 1
 const verOf = (name) => (name.match(/(\d+\.\d+\.\d+)/) || [])[1] || "";
 
 const SITE = "https://sentinel-web-2hq9.onrender.com";
+const OS_REPO = "https://github.com/Darknode-Official/sentinel-os";
 const APP_EDITIONS = [
   { name: "Netinstall", tag: "lightest · ~95 MB", desc: "Just the app. Every tool auto-configures itself the first time you launch it — nothing pre-downloaded.", steps: ["Install the .deb / AppImage / .exe from the Builds tab.", "Open any tool — Sentinel sets it up on first use."] },
   { name: "Slim", tag: "recommended", desc: "The app plus the essential toolset: recon, web, and password tools.", steps: ["Install the app from the Builds tab.", `curl -sL ${SITE}/arsenal.sh | bash -s -- recon web passwords`] },
@@ -40,7 +41,7 @@ const edCard = (e) => `
 export function renderDownloads(main) {
   main.innerHTML = `
     <h1 class="pg-h1">Downloads</h1>
-    <p class="muted pg-sub">The desktop app and terminal edition go far beyond the web console &mdash; a QEMU/KVM VM runner, a native port scanner, DNS/WHOIS/TLS recon, subdomain enumeration, a code workbench, live terminals, an autonomous AI agent, and auto-configuring tools.</p>
+    <p class="muted pg-sub">The desktop app, terminal edition, and the full Sentinel OS VM go far beyond the web console &mdash; a native port scanner, DNS/WHOIS/TLS recon, subdomain enumeration, a code workbench, live terminals, an autonomous AI agent, and auto-configuring tools.</p>
     <p style="margin:-6px 0 14px"><button class="btn ghost" data-sec="dlguide">Not sure which to download? Read the full guide &rarr;</button></p>
     <div class="card" style="max-width:640px;border-color:color-mix(in srgb,var(--acc) 45%,transparent);margin-bottom:14px">
       <h2 class="pg-h2" style="margin:0 0 6px">Nexus &mdash; AI coding agent</h2>
@@ -51,7 +52,19 @@ export function renderDownloads(main) {
         <button class="btn ghost" data-sec="coder">About Nexus</button>
       </div>
     </div>
+    <div class="card" style="max-width:640px;border-color:color-mix(in srgb,var(--acc) 45%,transparent);margin-bottom:14px">
+      <h2 class="pg-h2" style="margin:0 0 6px">Sentinel OS &mdash; the full security VM</h2>
+      <p class="muted" style="font-size:.85rem;margin:0 0 10px">A complete self-provisioning Linux workstation &mdash; a Kali / BlackArch alternative. A branded XFCE desktop, 80+ pentest tools, autonomous AI recon, a built-in honeypot, and the Sentinel app + Nexus CLI, all pre-installed. Boots in VirtualBox or QEMU/KVM and self-configures on first launch.</p>
+      <div class="btns" style="flex-wrap:wrap;gap:8px">
+        <a class="btn" href="${OS_REPO}" target="_blank" rel="noopener">Get Sentinel OS &middot; GitHub</a>
+        <a class="btn ghost" href="${OS_REPO}#readme" target="_blank" rel="noopener">Build &amp; boot guide</a>
+      </div>
+      <div class="dlapp-cmd" style="margin-top:10px"><span class="dlapp-cmd-l">VirtualBox &mdash; build &amp; import</span><code data-cmd>git clone ${OS_REPO} &amp;&amp; cd sentinel-os &amp;&amp; ./build.sh &amp;&amp; ./export-vbox.sh</code></div>
+      <div class="dlapp-cmd" style="margin-top:8px"><span class="dlapp-cmd-l">QEMU / KVM</span><code data-cmd>./build.sh &amp;&amp; ./launch.sh</code></div>
+      <p class="muted" style="font-size:.78rem;margin:10px 0 0">The image builds from Debian + a cloud-init recipe on your own machine (nothing to host) &mdash; ~15&nbsp;GB provisioned, first boot sets everything up automatically.</p>
+    </div>
     <h2 class="pg-h2">1 · Choose a build</h2>
+    <p class="muted" style="font-size:.85rem;margin:-6px 0 12px">Prefer just the app or the terminal edition? Grab a build below.</p>
     <div class="card" style="max-width:640px">
       <div class="dl-pick">
         <label class="pc-f" style="flex:1"><span>Platform &amp; format</span><select class="tk-f" id="dlSelect"><option>loading releases…</option></select></label>
