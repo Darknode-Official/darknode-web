@@ -14,6 +14,9 @@ const META = [
   { re: /Setup.*\.exe$/i, group: "Desktop app", os: "Windows", fmt: ".exe installer", cmd: (f) => `double-click ${f}` },
   { re: /cli-linux$/, group: "Terminal edition (CLI)", os: "Linux", fmt: "CLI binary", cmd: (f, u) => `curl -L ${u} -o sentinel && chmod +x sentinel && ./sentinel` },
   { re: /cli-windows\.exe$/i, group: "Terminal edition (CLI)", os: "Windows", fmt: "CLI .exe", cmd: (f, u) => `curl.exe -L ${u} -o sentinel.exe; .\\sentinel.exe` },
+  { re: /\.dmg$/, group: "Desktop app", os: "macOS", fmt: ".dmg (Apple Silicon + Intel)", cmd: (f) => `open ${f}   # then drag Sentinel to Applications` },
+  { re: /-macos-arm64$/, group: "Terminal edition (CLI)", os: "macOS · Apple Silicon", fmt: "CLI binary", cmd: (f, u) => `curl -L ${u} -o sentinel && chmod +x sentinel && codesign --sign - sentinel && ./sentinel` },
+  { re: /-macos-x64$/, group: "Terminal edition (CLI)", os: "macOS · Intel", fmt: "CLI binary", cmd: (f, u) => `curl -L ${u} -o sentinel && chmod +x sentinel && codesign --sign - sentinel && ./sentinel` },
 ];
 const fmtSize = (n) => n > 1e9 ? (n / 1e9).toFixed(2) + " GB" : n > 1e6 ? (n / 1e6).toFixed(1) + " MB" : (n / 1e3).toFixed(0) + " KB";
 const verOf = (name) => (name.match(/(\d+\.\d+\.\d+)/) || [])[1] || "";
@@ -62,7 +65,8 @@ export function renderDownloads(main) {
         <a class="btn ghost" href="${OS_REPO}#readme" target="_blank" rel="noopener">Build &amp; boot guide</a>
       </div>
       <div class="dlapp-cmd" style="margin-top:10px"><span class="dlapp-cmd-l">VirtualBox &mdash; build &amp; import</span><code data-cmd>git clone ${OS_REPO} &amp;&amp; cd sentinel-os &amp;&amp; ./build.sh &amp;&amp; ./export-vbox.sh</code></div>
-      <div class="dlapp-cmd" style="margin-top:8px"><span class="dlapp-cmd-l">QEMU / KVM</span><code data-cmd>./build.sh &amp;&amp; ./launch.sh</code></div>
+      <div class="dlapp-cmd" style="margin-top:8px"><span class="dlapp-cmd-l">QEMU / KVM &middot; Linux &amp; macOS</span><code data-cmd>./build.sh &amp;&amp; ./launch.sh</code></div>
+      <p class="muted" style="font-size:.78rem;margin:6px 0 0">On macOS: <code>brew install qemu</code> then <code>./build.sh &amp;&amp; ./launch.sh</code>, or import the built <code>sentinel-os.qcow2</code> into UTM / VirtualBox.</p>
       <p class="muted" style="font-size:.78rem;margin:10px 0 0">The image builds from Debian + a cloud-init recipe on your own machine (nothing to host) &mdash; ~15&nbsp;GB provisioned, first boot sets everything up automatically.</p>
     </div>
     <h2 class="pg-h2">1 · Choose a build</h2>
@@ -176,6 +180,13 @@ const APP_DOCS = [
     req: "Windows 10/11 64-bit. Local AI features use Ollama, which the Sentinel CLI installs for you.",
     steps: [ { t: "Download and double-click the installer, then follow the prompts:", cmd: `Sentinel.Setup.2.29.0.exe` }, { t: "Launch “Sentinel” from the Start menu." } ],
     trouble: "SmartScreen may warn on a new unsigned build — choose “More info → Run anyway”. It's the same binary published on GitHub Releases." },
+  { title: "Desktop app — macOS (.dmg)", os: "macOS", fmt: ".dmg · Apple Silicon + Intel",
+    what: "The Sentinel desktop app as a native macOS <code>.dmg</code> (universal — Apple Silicon and Intel). Same AI Assistant, VM runner, recon tools and live terminals as every other platform.",
+    best: "you're on macOS 12+ and want the graphical app.",
+    req: "macOS 12 (Monterey) or newer, ~300&nbsp;MB free. Local AI uses Ollama (<code>brew install ollama</code>).",
+    steps: [ { t: "Download the .dmg from the Builds tab, open it, and drag Sentinel to Applications:", cmd: `open Sentinel-*.dmg` }, { t: "First launch: right-click the app → Open (unsigned build) to clear Gatekeeper once." } ],
+    note: "Built with <code>npm run dist:mac</code> from source on a Mac if a signed release isn't posted yet.",
+    trouble: "\"App is damaged / can't be opened\" (Gatekeeper on an unsigned build): <code>xattr -dr com.apple.quarantine /Applications/Sentinel.app</code>, then open it." },
 ];
 
 const CLI_DOCS = [
@@ -192,6 +203,13 @@ const CLI_DOCS = [
     req: "Windows 10/11 64-bit. Use Windows Terminal / PowerShell for the best rendering.",
     steps: [ { t: "Download it, then run from PowerShell:", cmd: `curl.exe -L ${REL_DL}/Sentinel-cli-windows.exe -o sentinel.exe; .\\sentinel.exe nexus --tui` } ],
     trouble: "If box-drawing looks off, use Windows Terminal (not the legacy console)." },
+  { title: "Nexus / CLI — macOS binary", os: "macOS", fmt: "Apple Silicon + Intel",
+    what: "The terminal edition + Nexus AI agent as a standalone macOS binary. Pick <code>Sentinel-cli-macos-arm64</code> (Apple Silicon) or <code>-x64</code> (Intel).",
+    best: "you want the CLI on a Mac without installing Node.",
+    req: "macOS 12+. The free <code>ollama</code> engine (default) needs Ollama (<code>brew install ollama</code>) — no API key, no cost.",
+    steps: [ { t: "Download, make executable, ad-hoc sign (Apple Silicon requires it), then run:", cmd: `curl -L ${REL_DL}/Sentinel-cli-macos-arm64 -o sentinel && chmod +x sentinel && codesign --sign - sentinel && ./sentinel nexus --tui` } ],
+    note: "Prefer no binary? <code>git clone</code> below runs on macOS with Node — nothing to sign.",
+    trouble: "\"killed\" / \"cannot be opened\": it needs the ad-hoc signature above (<code>codesign --sign - sentinel</code>), then <code>xattr -d com.apple.quarantine sentinel</code> if downloaded via a browser." },
   { title: "Nexus / CLI — from source (git clone)", os: "Any", fmt: "~300 KB + Node",
     what: "Run the CLI straight from source with Node. Tiny footprint, and <code>git pull</code> keeps it current.",
     best: "you already have Node 18+ and want the smallest download or plan to tweak the code.",
