@@ -58,16 +58,30 @@ export function renderDownloads(main) {
       </div>
     </div>
     <div class="card" style="max-width:640px;border-color:color-mix(in srgb,var(--acc) 45%,transparent);margin-bottom:14px">
-      <h2 class="pg-h2" style="margin:0 0 6px">Sentinel OS &mdash; the full security VM</h2>
-      <p class="muted" style="font-size:.85rem;margin:0 0 10px">A complete self-provisioning Linux workstation &mdash; a Kali / BlackArch alternative. A branded XFCE desktop, 80+ pentest tools, autonomous AI recon, a built-in honeypot, and the Sentinel app + Nexus CLI, all pre-installed. Boots in VirtualBox or QEMU/KVM and self-configures on first launch.</p>
-      <div class="btns" style="flex-wrap:wrap;gap:8px">
+      <h2 class="pg-h2" style="margin:0 0 6px">Sentinel OS &mdash; the security VM</h2>
+      <p class="muted" style="font-size:.85rem;margin:0 0 10px">A self-provisioning Linux workstation &mdash; a Kali / BlackArch alternative. Pick the edition that fits: a bare terminal, a lean desktop, or the everything build. Each boots in VirtualBox or QEMU/KVM and self-configures on first launch.</p>
+      <div class="btns" style="flex-wrap:wrap;gap:8px;margin-bottom:12px">
         <a class="btn" href="${OS_REPO}" target="_blank" rel="noopener">Get Sentinel OS &middot; GitHub</a>
         <a class="btn ghost" href="${OS_REPO}#readme" target="_blank" rel="noopener">Build &amp; boot guide</a>
       </div>
-      <div class="dlapp-cmd" style="margin-top:10px"><span class="dlapp-cmd-l">VirtualBox &mdash; build &amp; import</span><code data-cmd>git clone ${OS_REPO} &amp;&amp; cd sentinel-os &amp;&amp; ./build.sh &amp;&amp; ./export-vbox.sh</code></div>
-      <div class="dlapp-cmd" style="margin-top:8px"><span class="dlapp-cmd-l">QEMU / KVM &middot; Linux &amp; macOS</span><code data-cmd>./build.sh &amp;&amp; ./launch.sh</code></div>
-      <p class="muted" style="font-size:.78rem;margin:6px 0 0">On macOS: <code>brew install qemu</code> then <code>./build.sh &amp;&amp; ./launch.sh</code>, or import the built <code>sentinel-os.qcow2</code> into UTM / VirtualBox.</p>
-      <p class="muted" style="font-size:.78rem;margin:10px 0 0">The image builds from Debian + a cloud-init recipe on your own machine (nothing to host) &mdash; ~15&nbsp;GB provisioned, first boot sets everything up automatically.</p>
+      <div class="os-editions">
+        <div class="os-ed">
+          <div class="os-ed-h"><b>netinstall</b><span class="os-ed-sz">~12&nbsp;GB</span></div>
+          <p class="muted os-ed-d">Just a terminal &mdash; no desktop, no UI. Core CLI security stack + Nexus AI agent + local models. Boots straight to a console. Smallest &amp; fastest.</p>
+          <div class="dlapp-cmd"><code data-cmd>./build.sh debian netinstall &amp;&amp; ./launch.sh netinstall</code></div>
+        </div>
+        <div class="os-ed">
+          <div class="os-ed-h"><b>slim</b><span class="os-ed-sz">~20&nbsp;GB</span></div>
+          <p class="muted os-ed-d">Full branded XFCE desktop + Nexus + the CLI toolset &mdash; minus Metasploit, SecLists, Docker and the cockpit app. A lean graphical workstation.</p>
+          <div class="dlapp-cmd"><code data-cmd>./build.sh debian slim &amp;&amp; ./export-vbox.sh slim</code></div>
+        </div>
+        <div class="os-ed os-ed-full">
+          <div class="os-ed-h"><b>full</b><span class="os-ed-sz">~30&nbsp;GB</span><span class="os-ed-tag">everything</span></div>
+          <p class="muted os-ed-d">The complete workstation: desktop, cockpit app, Metasploit, SecLists, Exploit-DB, Docker, autonomous AI recon, honeypot &mdash; 80+ tools, all pre-installed.</p>
+          <div class="dlapp-cmd"><code data-cmd>./build.sh debian full &amp;&amp; ./export-vbox.sh full</code></div>
+        </div>
+      </div>
+      <p class="muted" style="font-size:.78rem;margin:10px 0 0">First <code>git clone ${OS_REPO} &amp;&amp; cd sentinel-os</code>. The image builds from Debian + a cloud-init recipe on your own machine (nothing to host); first boot sets everything up. On macOS: <code>brew install qemu</code>, then <code>./launch.sh &lt;edition&gt;</code> or import the built <code>sentinel-os-&lt;edition&gt;.qcow2</code> into UTM / VirtualBox.</p>
     </div>
     <h2 class="pg-h2">1 · Choose a build</h2>
     <p class="muted" style="font-size:.85rem;margin:-6px 0 12px">Prefer just the app or the terminal edition? Grab a build below.</p>

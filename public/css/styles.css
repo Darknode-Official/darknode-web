@@ -91,6 +91,17 @@ body.landing #view{max-width:none;padding:0;margin:0}
 .dlapp-cmd code{display:block;background:var(--card2,#101827);border:1px solid var(--line);border-radius:8px;padding:9px 11px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.78rem;color:var(--acc);word-break:break-all}
 .dlapp-note{color:var(--mut);font-size:.74rem;margin:0;line-height:1.5}
 .dlapp-note code{background:none;border:none;padding:0;color:var(--txt);font-size:.74rem}
+/* Sentinel OS edition picker (netinstall / slim / full) */
+.os-editions{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+@media(max-width:640px){.os-editions{grid-template-columns:1fr}}
+.os-ed{display:flex;flex-direction:column;gap:7px;background:var(--card2,#101827);border:1px solid var(--line);border-radius:10px;padding:12px}
+.os-ed-full{border-color:var(--acc-line);box-shadow:inset 0 0 0 1px var(--acc-soft)}
+.os-ed-h{display:flex;align-items:center;gap:8px}
+.os-ed-h b{font-size:.95rem;letter-spacing:.02em;color:var(--txt,#e8eefb)}
+.os-ed-sz{margin-left:auto;font-size:.66rem;font-weight:700;letter-spacing:.06em;color:var(--mut);font-variant-numeric:tabular-nums}
+.os-ed-tag{font-size:.56rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--bg);background:var(--acc);border-radius:999px;padding:2px 7px}
+.os-ed-d{font-size:.76rem;line-height:1.5;margin:0;flex:1}
+.os-ed .dlapp-cmd code{font-size:.68rem;padding:7px 8px}
 .dlapp-card{display:block;text-align:center;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:22px 16px;text-decoration:none;color:var(--txt)}
 .dlapp-card:hover{border-color:var(--acc);transform:translateY(-2px)}
 .dlapp-os{font-weight:800;font-size:1.05rem}
