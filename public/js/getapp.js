@@ -163,7 +163,7 @@ const dlDoc = (d) => `
     <p class="muted" style="font-size:.86rem;margin:8px 0 4px"><b>What it is.</b> ${d.what}</p>
     <p class="muted" style="font-size:.86rem;margin:4px 0"><b>Best if.</b> ${d.best}</p>
     <p class="muted" style="font-size:.86rem;margin:4px 0"><b>Requirements.</b> ${d.req}</p>
-    <div style="margin:10px 0 2px;font-size:.8rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">Install &amp; run</div>
+    <div style="margin:10px 0 2px;font-size:.8rem;color:var(--mut);text-transform:uppercase;letter-spacing:.05em">Install &amp; run</div>
     <ol class="ed-steps">${d.steps.map((s) => s.cmd ? `<li>${s.t ? esc(s.t) + "<br>" : ""}<code data-cmd>${esc(s.cmd)}</code></li>` : `<li>${s.t}</li>`).join("")}</ol>
     ${d.note ? `<p class="muted" style="font-size:.8rem;margin:8px 0 0"><b>Note.</b> ${d.note}</p>` : ""}
     ${d.trouble ? `<details style="margin-top:8px"><summary class="muted" style="cursor:pointer;font-size:.82rem">Troubleshooting</summary><p class="muted" style="font-size:.82rem;margin:6px 0 0">${d.trouble}</p></details>` : ""}
