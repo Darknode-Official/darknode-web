@@ -156,7 +156,7 @@ body:not(.landing):not(.app)::before{content:"";position:fixed;inset:0;z-index:-
 .tk-head:hover{background:var(--card2)}
 .tk-tri{flex:none;width:0;height:0;border-left:6px solid var(--mut);border-top:4px solid transparent;border-bottom:4px solid transparent;transition:transform .15s}
 .tk-item.open .tk-tri{transform:rotate(90deg)}
-.tk-name{font-weight:700;font-size:.88rem;flex:none}
+.tk-name{font-weight:700;font-size:.88rem;flex:none;padding-right:44px}
 .tk-desc{color:var(--mut);font-size:.76rem;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tk-badge{flex:none;font-size:.52rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:1px 5px;border-radius:4px}
 .tk-badge.browser{background:color-mix(in srgb,var(--ok) 22%,transparent);color:var(--ok)}
@@ -880,7 +880,7 @@ html.crt body::after{content:"";position:fixed;inset:0;pointer-events:none;z-ind
 .nx-feat{position:relative;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 16px 15px;transition:border-color .15s,transform .15s}
 .nx-feat:hover{border-color:var(--acc-line);transform:translateY(-2px)}
 .nx-feat::before{content:"";position:absolute;left:16px;right:16px;top:0;height:2px;border-radius:2px;background:var(--grad-acc);opacity:.85}
-.nx-feat h4{margin:6px 0 5px;font-size:.98rem;display:flex;align-items:center;gap:8px}
+.nx-feat h4{margin:6px 0 5px;font-size:.98rem;display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding-right:62px}
 .nx-feat h4 code{font-size:.8rem;background:var(--acc-soft);border:1px solid var(--acc-line);color:var(--acc);border-radius:6px;padding:1px 7px}
 .nx-feat p{margin:0;color:var(--txt-2,#aeb9d0);font-size:.85rem;line-height:1.5}
 .nx-tag{position:absolute;top:12px;right:12px;font-size:.6rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--acc-2);border:1px solid color-mix(in srgb,var(--acc-2) 45%,var(--line));border-radius:999px;padding:2px 7px}
