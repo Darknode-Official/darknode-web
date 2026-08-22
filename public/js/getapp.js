@@ -20,6 +20,7 @@ const verOf = (name) => (name.match(/(\d+\.\d+\.\d+)/) || [])[1] || "";
 
 const SITE = "https://sentinel-web-2hq9.onrender.com";
 const OS_REPO = "https://github.com/Darknode-Official/sentinel-os";
+const NEXUS_REPO = "https://github.com/Darknode-Official/nexus";
 const APP_EDITIONS = [
   { name: "Netinstall", tag: "lightest · ~95 MB", desc: "Just the app. Every tool auto-configures itself the first time you launch it — nothing pre-downloaded.", steps: ["Install the .deb / AppImage / .exe from the Builds tab.", "Open any tool — Sentinel sets it up on first use."] },
   { name: "Slim", tag: "recommended", desc: "The app plus the essential toolset: recon, web, and password tools.", steps: ["Install the app from the Builds tab.", `curl -sL ${SITE}/arsenal.sh | bash -s -- recon web passwords`] },
@@ -50,6 +51,7 @@ export function renderDownloads(main) {
         <a class="btn" href="${REL_DL}/Sentinel-cli-linux" download>Nexus (CLI) &middot; Linux</a>
         <a class="btn" href="${REL_DL}/Sentinel-cli-windows.exe" download>Nexus (CLI) &middot; Windows</a>
         <button class="btn ghost" data-sec="coder">About Nexus</button>
+        <a class="btn ghost" href="${NEXUS_REPO}" target="_blank" rel="noopener">Nexus source &middot; GitHub</a>
       </div>
     </div>
     <div class="card" style="max-width:640px;border-color:color-mix(in srgb,var(--acc) 45%,transparent);margin-bottom:14px">
