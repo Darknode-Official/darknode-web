@@ -14,7 +14,7 @@ const FEATURES = [
   ["/watch", "Auto-fix loop", "Give it a test or build command; it runs, reads the failure, fixes the code, and re-runs until green.", "unique"],
   ["/redact", "Cloud privacy layer", "Masks API keys, tokens and private keys <b>before</b> anything is sent to a cloud engine. Your local runs never leave the box.", "unique"],
   ["/undo", "Git checkpoints", "A safe checkpoint before every turn — <b>/undo</b>, <b>/redo</b> and <b>/rewind N</b> restore your files instantly.", ""],
-  ["meter", "Live cost &amp; context meter", "Real token usage, dollar cost and context % in the status bar, plus <b>/budget</b> to hard-cap spend.", ""],
+  ["meter", "Live cost & context meter", "Real token usage, dollar cost and context % in the status bar, plus <b>/budget</b> to hard-cap spend.", ""],
   ["/agents", "Parallel sub-agents", "Fan independent tasks out across the engine at once — <code>/agents a ;; b ;; c</code>.", ""],
   ["MCP", "MCP + hooks", "Connect MCP servers from <code>.nexus/mcp.json</code>; run shell hooks on prompt/tool/stop events.", ""],
   ["tools", "Full device access", "Local agent can read/write/edit files, run any shell command, search &amp; find, fetch URLs, inspect the system and manage the filesystem.", ""],
