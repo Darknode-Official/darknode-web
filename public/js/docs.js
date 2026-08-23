@@ -119,7 +119,7 @@ curl -L .../Sentinel-cli-linux -o sentinel &amp;&amp; chmod +x sentinel
           </ol>
           <p class="muted"><code>/cheap</code> turns on lean + low effort in one command.</p>`)}
 
-        ${sec("security", "Security &amp; privacy", `
+        ${sec("security", "Security & privacy", `
           <p class="muted">Sentinel is a security tool, so it defaults to safe:</p>
           <ul class="doc-ul">
             <li><b>Destructive-command preflight.</b> The local agent's shell commands are screened (<code>rm</code> on system paths, <code>git reset --hard</code>, <code>dd</code>, pipe-to-shell, fork bombs…) and blocked by default (<code>/guard</code>).</li>
