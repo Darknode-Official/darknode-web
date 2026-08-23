@@ -4,8 +4,8 @@
 // Installers are hosted on GitHub Releases (too large to commit to the repo).
 const REL = "https://github.com/SpartanKing18/sentinel-web/releases/download/sentinel";
 const APP_FILES = {
-  linux: REL + "/sentinel-app_2.29.0_amd64.deb",
-  appimage: REL + "/Sentinel-2.29.0.AppImage",
+  linux: REL + "/sentinel-app_2.40.0_amd64.deb",
+  appimage: REL + "/Sentinel-2.40.0.AppImage",
   windows: REL + "/Sentinel.Setup.2.29.0.exe",
   macos: REL + "/Sentinel-2.40.0-arm64.dmg",
   macos_intel: REL + "/Sentinel-2.40.0.dmg",
