@@ -7,7 +7,15 @@ const APP_FILES = {
   linux: REL + "/sentinel-app_2.29.0_amd64.deb",
   appimage: REL + "/Sentinel-2.29.0.AppImage",
   windows: REL + "/Sentinel.Setup.2.29.0.exe",
+  macos: REL + "/Sentinel-2.40.0-arm64.dmg",
+  macos_intel: REL + "/Sentinel-2.40.0.dmg",
 };
+// Sentinel OS VM editions: [name, size, description, build command]
+const OS_EDITIONS = [
+  ["netinstall", "~12 GB", "Just a terminal — no desktop. Core CLI security stack + Nexus AI + local models. Boots to a console. Smallest.", "./build.sh debian netinstall &amp;&amp; ./launch.sh netinstall"],
+  ["slim", "~20 GB", "Full XFCE desktop + Nexus + the CLI toolset — minus Metasploit, SecLists, Docker and the cockpit app.", "./build.sh debian slim &amp;&amp; ./export-vbox.sh slim"],
+  ["full", "~30 GB", "The complete workstation: desktop, cockpit app, Metasploit, SecLists, Exploit-DB, Docker — 80+ tools.", "./build.sh debian full &amp;&amp; ./export-vbox.sh full"],
+];
 const SITE = "https://sentinel-web-2hq9.onrender.com";
 const EDITIONS = [
   ["Netinstall", "lightest · ~95 MB", "Just the app. Every tool auto-configures itself the first time you launch it — nothing pre-downloaded.", "Install the app above — done."],
@@ -175,6 +183,19 @@ nc -lvnp 4444`],
           ${osCard("Linux", ".deb installer", "linux", "sudo apt install ./Sentinel-linux.deb", "Debian / Ubuntu / Kali &mdash; recommended. Adds Sentinel to your app menu; launch it there or run <code>sentinel</code>.")}
           ${osCard("Linux", "AppImage (portable)", "appimage", "chmod +x Sentinel-linux.AppImage &amp;&amp; ./Sentinel-linux.AppImage", "Any distro (Fedora / Arch / &hellip;). Needs FUSE: <code>sudo apt install libfuse2</code>, or run it with <code>--appimage-extract-and-run</code>.")}
           ${osCard("Windows", ".exe installer", "windows", "Double-click Sentinel-windows.exe", "If SmartScreen warns, choose More info &rarr; Run anyway (the installer is unsigned).")}
+          ${osCard("macOS", ".dmg &middot; Apple Silicon", "macos", "open the .dmg, drag Sentinel to Applications", "Apple Silicon. Intel Mac: <a href=\"" + APP_FILES.macos_intel + "\" download>Intel .dmg</a>. Unsigned &mdash; first launch: right-click &rarr; Open.")}
+        </div>
+
+        <div class="dlcli">
+          <h3 class="dlcli-h"><span class="mono grad-text">&gt;_</span> Or the whole OS &mdash; Sentinel OS security VM</h3>
+          <p class="muted dlapp-sub">A self-provisioning Linux workstation &mdash; a Kali / BlackArch alternative. Pick an edition; each boots in VirtualBox or QEMU/KVM and self-configures on first launch.</p>
+          <div class="os-editions">
+            ${OS_EDITIONS.map((e) => `<div class="os-ed${e[0] === "full" ? " os-ed-full" : ""}">
+              <div class="os-ed-h"><b>${e[0]}</b><span class="os-ed-sz">${e[1]}</span>${e[0] === "full" ? '<span class="os-ed-tag">everything</span>' : ""}</div>
+              <p class="muted os-ed-d">${e[2]}</p>
+              <code class="ed-cmd">${e[3]}</code></div>`).join("")}
+          </div>
+          <p class="muted" style="font-size:.78rem;margin-top:10px">First <code>git clone https://github.com/SpartanKing18/sentinel-os &amp;&amp; cd sentinel-os</code>, then run the command. <a href="https://github.com/SpartanKing18/sentinel-os" target="_blank" rel="noopener">Sentinel OS on GitHub &rarr;</a></p>
         </div>
 
         <h3 class="dlcli-h" style="margin-top:26px">Pick a setup edition</h3>

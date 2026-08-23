@@ -589,6 +589,12 @@ body.app .app-main::before{content:"";position:fixed;inset:0 0 0 220px;z-index:-
 .msg.ai .cb-copy:hover{color:var(--fg);border-color:var(--acc)}
 .msg.ai code{font-family:var(--mono,ui-monospace,monospace);font-size:.84rem;background:rgba(127,127,127,.16);padding:1px 5px;border-radius:4px}
 .msg.ai .code-block code{background:none;padding:0}
+/* standalone code blocks (Nexus, Docs, Get-the-app…) — copy button pinned top-right,
+   not rendered inline where it overlapped the first line of code. */
+.code-block{position:relative;margin:10px 0;padding:12px 14px;background:#0b0f16;border:1px solid var(--line);border-radius:8px;overflow-x:auto}
+.code-block code{font-family:var(--mono,ui-monospace,monospace);font-size:.82rem;white-space:pre;color:#d6e2f0;display:block}
+.code-block .cb-copy{position:absolute;top:8px;right:8px;padding:2px 9px;font-size:.62rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;border:1px solid var(--line);background:color-mix(in srgb,var(--card2,#101827) 92%,transparent);color:var(--mut);border-radius:6px;cursor:pointer;font-family:inherit;z-index:2}
+.code-block .cb-copy:hover{color:var(--acc);border-color:var(--acc)}
 
 /* --- References section --- */
 .ref-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
