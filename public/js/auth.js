@@ -36,6 +36,8 @@ import { initSaved, renderSaved } from "/js/saved.js";
 import { renderReport } from "/js/report.js";
 import { renderAI } from "/js/webai.js";
 import { renderCliCoder } from "/js/coder.js";
+import { renderWebshell } from "/js/webshell.js";
+import { renderVMLab } from "/js/vmlab.js";
 
 const userSlot = document.getElementById("user-slot");
 const view = document.getElementById("view");
@@ -456,6 +458,8 @@ function renderApp(user) {
           <button class="side-item" data-sec="payloads">Payloads</button>
           <button class="side-item" data-sec="exploitdb">Exploit DBs</button>
           <button class="side-item" data-sec="ghdb">Google dorks</button>
+          <button class="side-item" data-sec="webshell">Web Shell</button>
+          <button class="side-item" data-sec="vmlab">VM Lab</button>
           <button class="side-item" data-sec="targets">Practice targets</button>
           <button class="side-item" data-sec="vms">Vulnerable VMs</button>
           <button class="side-item" data-sec="threat">Threat intel</button>
@@ -516,6 +520,8 @@ function renderApp(user) {
     else if (sec === "ghdb") renderGHDB(main);
     else if (sec === "exploitdb") renderExploitDB(main);
     else if (sec === "vms") renderVMs(main);
+    else if (sec === "webshell") renderWebshell(main);
+    else if (sec === "vmlab") renderVMLab(main);
     else if (sec === "privatecloud") renderPrivateCloud(main);
     else if (sec === "saved") renderSaved(main, show);
     else if (sec === "report") renderReport(main);
