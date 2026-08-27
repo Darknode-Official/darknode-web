@@ -174,7 +174,7 @@ function openCompose(main, to, subject, quoted) {
     const to = $("#gmTo").value.trim(), subj = $("#gmSubj").value.trim(), body = $("#gmBody").value;
     if (!to) { $("#gmMsg").textContent = "add a recipient"; return; }
     $("#gmMsg").textContent = "saving…";
-    try { await gapi("/drafts", { method: "POST", body: JSON.stringify({ message: { raw: rawMessage(to, subj, body) } }) }); $("#gmMsg").textContent = "saved to Gmail drafts ✓"; }
+    try { await gapi("/drafts", { method: "POST", body: JSON.stringify({ message: { raw: rawMessage(to, subj, body) } }) }); $("#gmMsg").textContent = "saved to Gmail drafts"; }
     catch (e) { $("#gmMsg").textContent = "save failed: " + (e && e.message || e); }
   };
 }

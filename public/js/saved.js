@@ -46,7 +46,7 @@ export function renderSaved(main, show) {
           <div class="panel">
             <div class="panel-h"><h2 class="pg-h2" style="margin:0">Bookmarks</h2><span class="chip">${bm.length}</span></div>
             ${bm.length ? `<div class="saved-list">${bm.map((b) => `<div class="saved-row"><button class="saved-go" data-go="${esc(b.sec)}">${esc(b.label)}</button><span class="muted" style="font-size:.74rem">${esc(b.sec)}</span><button class="saved-x" data-rm="${esc(b.id)}" title="remove">&times;</button></div>`).join("")}</div>`
-              : `<p class="muted" style="font-size:.85rem">No bookmarks yet. Tap the ★ on any tool to save it here.</p>`}
+              : `<p class="muted" style="font-size:.85rem">No bookmarks yet. Tap the * on any tool to save it here.</p>`}
           </div>
         </div>
         <div class="hc-side">

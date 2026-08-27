@@ -50,7 +50,7 @@ function terminalMock() {
       ${line("nx-rule", `────────────────────────────────────────────────────────`)}
       ${line("", `<span class="nx-c">opus-4-8</span> <span class="nx-g">· ctx</span> <span class="nx-c">6%</span> <span class="nx-g">▓░░░░░░░ · ↑12.4k ↓380 tok ·</span> <span class="nx-ok">$0.03</span> <span class="nx-g">·</span> <span class="nx-ok">auto-accept</span>`)}
       ${line("nx-rule", `────────────────────────────────────────────────────────`)}
-      ${line("", `<span class="nx-prompt">❯</span> <span class="nx-g">/race how should I shard this table?</span>`)}
+      ${line("", `<span class="nx-prompt">></span> <span class="nx-g">/race how should I shard this table?</span>`)}
     </div>
   </div>`;
 }

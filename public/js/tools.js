@@ -21,7 +21,7 @@ export function renderTools(el) {
         <span class="tk-name">${esc(t.name)}</span>
         <span class="tk-desc">${esc(t.desc)}</span>
         <span class="tk-badge ${t.kind}">${t.kind === "browser" ? "web" : "local"}</span>
-        <span class="tk-star${isBookmarked(t.id) ? " on" : ""}" data-star="${esc(t.id)}" data-label="${esc(t.name)}" title="Bookmark">${isBookmarked(t.id) ? "★" : "☆"}</span>
+        <span class="tk-star${isBookmarked(t.id) ? " on" : ""}" data-star="${esc(t.id)}" data-label="${esc(t.name)}" title="Bookmark">${isBookmarked(t.id) ? "*" : "-"}</span>
       </button>
       <div class="tk-panel" hidden></div>
     </div>`;
@@ -51,7 +51,7 @@ export function renderTools(el) {
 
   cats.onclick = (e) => {
     const star = e.target.closest(".tk-star");
-    if (star) { e.stopPropagation(); toggleBookmark({ id: star.dataset.star, label: star.dataset.label, sec: "tools" }); const on = isBookmarked(star.dataset.star); star.classList.toggle("on", on); star.textContent = on ? "★" : "☆"; return; }
+    if (star) { e.stopPropagation(); toggleBookmark({ id: star.dataset.star, label: star.dataset.label, sec: "tools" }); const on = isBookmarked(star.dataset.star); star.classList.toggle("on", on); star.textContent = on ? "*" : "-"; return; }
     const head = e.target.closest(".tk-head"); if (!head) return;
     const item = head.closest(".tk-item");
     const t = CATALOG.find((x) => x.id === item.dataset.id);
