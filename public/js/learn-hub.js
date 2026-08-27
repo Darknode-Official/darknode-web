@@ -6,6 +6,14 @@ const RANKS=[[0,'Noob'],[500,'Script Kiddie'],[2000,'Hacker'],[5000,'Elite'],[10
 const DIFF_LABEL={1:'Beginner',2:'Intermediate',3:'Advanced'};
 const DIFF_COLOR={1:'#3fb950',2:'#d29922',3:'#f85149'};
 const SK='sw_learn_progress';
+const BADGES=[
+{id:'first-blood',title:'First Blood',desc:'Complete your first topic',icon:'\ud83e\ude78',check:p=>p.completedTopics.length>=1},
+{id:'ten-down',title:'Ten Down',desc:'Complete 10 topics',icon:'\ud83d\udd1f',check:p=>p.completedTopics.length>=10},
+{id:'fifty',title:'Half Century',desc:'Complete 50 topics',icon:'\ud83c\udfc6',check:p=>p.completedTopics.length>=50},
+{id:'century',title:'Century',desc:'Complete 100 topics',icon:'\ud83d\udcaf',check:p=>p.completedTopics.length>=100},
+{id:'scholar',title:'Scholar',desc:'Earn 10000 XP',icon:'\ud83d\udcda',check:p=>p.xp>=10000},
+{id:'legend',title:'Legend',desc:'Earn 40000 XP',icon:'\ud83d\udc51',check:p=>p.xp>=40000},
+];
 function loadP(){try{return JSON.parse(localStorage.getItem(SK))||{completedTopics:[],xp:0};}catch(_){return {completedTopics:[],xp:0};}}
 function saveP(p){try{localStorage.setItem(SK,JSON.stringify(p));}catch(_){}}
 function getRank(xp){let r=RANKS[0];for(const[t,n]of RANKS)if(xp>=t)r=[t,n];return r[1];}
@@ -77,6 +85,7 @@ main.innerHTML=`<style>
 <div class="lh-st"><h3>XP</h3><div class="v" style="color:#3fb950">${prog.xp.toLocaleString()}</div><div style="font-size:.68rem;color:var(--mut)">${Math.round((prog.xp/TOTAL_XP)*100)}% of ${TOTAL_XP.toLocaleString()}</div></div>
 <div class="lh-st"><h3>Completed</h3><div class="v">${prog.completedTopics.length}</div><div style="font-size:.68rem;color:var(--mut)">of ${TOPICS.length}</div></div>
 </div>
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0">${BADGES.map(b=>{const earned=b.check(prog);return '<div style="padding:6px 10px;border-radius:6px;font-size:.78rem;background:'+(earned?'var(--card,#161b22)':'transparent')+';border:1px solid '+(earned?'#3fb950':'var(--line,#30363d)')+';opacity:'+(earned?'1':'.4')+'" title="'+esc(b.desc)+'">'+(b.icon||'')+' '+esc(b.title)+'</div>';}).join('')}</div>
 <div style="margin:16px 0">${CATS.map(c=>{const d=cc[c],p=d.total?Math.round((d.done/d.total)*100):0;return`<div class="lh-cb"><span class="nm">${CAT_EMOJI[c]||''} ${esc(c)}</span><div class="br"><div style="width:${p}%"></div></div><span class="pc">${d.done}/${d.total}</span></div>`;}).join('')}</div>
 <input class="lh-inp" id="lhS" placeholder="Search ${TOPICS.length} topics..." value="${esc(search)}">
 <div class="lh-chips">
