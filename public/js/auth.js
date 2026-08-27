@@ -19,6 +19,7 @@ import {
   renderThreat, renderCheats, renderLearn, homeWidgetsHTML, wireHome, COUNTS,
   CHEATS, RESOURCES,
 } from "/js/cyber.js";
+import { renderLearnHub } from "/js/learn-hub.js";
 import { renderAdmin, getWhitelist } from "/js/admin.js";
 import { renderUtils } from "/js/utils.js";
 import { renderDownloads, renderDownloadDocs } from "/js/getapp.js";
@@ -473,7 +474,7 @@ function renderApp(user) {
           <div class="side-group">Resources</div>
           <button class="side-item" data-sec="privatecloud">Private cloud</button>
           <button class="side-item" data-sec="report">Report generator</button>
-          <button class="side-item" data-sec="learn">Learn</button>
+          <button class="side-item" data-sec="learn">Learn Hub</button>
           <button class="side-item" data-sec="training">Training</button>
           <button class="side-item" data-sec="setup">Local setup</button>
           <button class="side-item" data-sec="coder">Nexus</button>
@@ -532,7 +533,7 @@ function renderApp(user) {
     else if (sec === "apikeys") renderApiKeys(main);
     else if (sec === "cheats") renderCheats(main);
     else if (sec === "threat") renderThreat(main);
-    else if (sec === "learn") renderLearn(main);
+    else if (sec === "learn") renderLearnHub(main);
     else if (sec === "github") renderGitHub(main);
     else if (sec === "gmail") renderGmail(main);
     else if (sec === "coder") renderCliCoder(main);
