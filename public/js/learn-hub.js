@@ -76,7 +76,7 @@ main.innerHTML=`<style>
 .lh-qo button{padding:10px 14px;border:1px solid var(--line,#30363d);border-radius:6px;cursor:pointer;background:var(--card,#161b22);text-align:left;color:inherit;font-size:.84rem;transition:all .15s}
 .lh-qo button:hover:not(.ok):not(.no){border-color:var(--accent,#58a6ff)}
 .lh-qo .ok{background:#3fb95020;border-color:#3fb950;color:#3fb950;font-weight:600}
-.lh-qo .ok::after{content:' ✓ Correct!';font-size:.75rem}
+.lh-qo .ok::after{content:' -- Correct!';font-size:.75rem}
 .lh-qo .no{background:#f8514920;border-color:#f85149;color:#f85149;text-decoration:line-through;opacity:.6}
 .lh-done{width:100%;padding:14px;border-radius:8px;border:none;background:linear-gradient(135deg,var(--accent,#58a6ff),#3fb950);color:#fff;font-size:.95rem;font-weight:700;cursor:pointer;margin:16px 0;letter-spacing:.3px;transition:transform .15s,box-shadow .15s}
 .lh-done:hover{transform:scale(1.02);box-shadow:0 4px 20px rgba(63,185,80,.3)}

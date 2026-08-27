@@ -47,7 +47,7 @@ export function renderGitHub(main) {
     return `<a class="feed-card" href="${esc(r.html_url)}" target="_blank" rel="noopener">
       <div class="feed-top"><span class="feed-name">${esc(r.name)}</span>${r.private ? '<span class="chip">private</span>' : ""}</div>
       <div class="feed-desc">${esc(r.description || "No description")}</div>
-      <div class="feed-meta"><span class="muted">${r.language ? esc(r.language) + " · " : ""}★ ${r.stargazers_count} · ⑂ ${r.forks_count}</span><span class="muted">${ago(r.updated_at)}</span></div>
+      <div class="feed-meta"><span class="muted">${r.language ? esc(r.language) + " · " : ""}* ${r.stargazers_count} · ⑂ ${r.forks_count}</span><span class="muted">${ago(r.updated_at)}</span></div>
     </a>`;
   }
   const eventText = (e) => {
@@ -141,9 +141,9 @@ export function renderGitHub(main) {
         try {
           const data = await api("/repos/" + repo + "/contents/" + encodeURIComponent(path || "").replace(/%2F/g, "/"), getTok());
           if (Array.isArray(data)) {
-            const up = path ? `<div class="gh-row br-item" data-dir="${esc(path.split("/").slice(0, -1).join("/"))}" style="cursor:pointer"><span class="fr-name">📁 ..</span></div>` : "";
+            const up = path ? `<div class="gh-row br-item" data-dir="${esc(path.split("/").slice(0, -1).join("/"))}" style="cursor:pointer"><span class="fr-name">[D] ..</span></div>` : "";
             const items = data.sort((a, b) => (a.type === b.type ? a.name.localeCompare(b.name) : a.type === "dir" ? -1 : 1));
-            list.innerHTML = up + items.map((f) => `<div class="gh-row br-item" data-${f.type === "dir" ? "dir" : "file"}="${esc(f.path)}" style="cursor:pointer"><span class="fr-name">${f.type === "dir" ? "📁" : "📄"} ${esc(f.name)}</span></div>`).join("");
+            list.innerHTML = up + items.map((f) => `<div class="gh-row br-item" data-${f.type === "dir" ? "dir" : "file"}="${esc(f.path)}" style="cursor:pointer"><span class="fr-name">${f.type === "dir" ? "[D]" : "[F]"} ${esc(f.name)}</span></div>`).join("");
           } else if (data.content) {
             const body = ghB64(data.content);
             view.innerHTML = `<div class="card" style="margin-top:10px;background:var(--card2)">
