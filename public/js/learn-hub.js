@@ -21,18 +21,7 @@ const TOPICS=[{"id": "passive-recon", "cat": "Reconnaissance", "title": "Passive
 
 const TOTAL_XP=TOPICS.reduce((s,t)=>s+t.xp,0);
 export function renderLearnHub(main){
-const prog=loadP();
-let fCat='',fDiff=0,search='';
-function renderMain(){
-const fl=TOPICS.filter(t=>{
-if(fCat&&t.cat!==fCat)return false;
-if(fDiff&&t.diff!==fDiff)return false;
-if(search&&!t.title.toLowerCase().includes(search.toLowerCase())&&!t.cat.toLowerCase().includes(search.toLowerCase()))return false;
-return true;});
-const cc={};CATS.forEach(c=>{cc[c]={total:0,done:0};});
-TOPICS.forEach(t=>{cc[t.cat].total++;if(prog.completedTopics.includes(t.id))cc[t.cat].done++;});
-const rank=getRank(prog.xp),nr=RANKS.find(r=>r[0]>prog.xp);
-main.innerHTML=`<style>
+if(!document.getElementById('lh-styles')){const s=document.createElement('style');s.id='lh-styles';s.textContent=`
 .lh{max-width:1100px;margin:0 auto}
 .lh-stats{display:flex;gap:16px;flex-wrap:wrap;margin:12px 0}
 .lh-st{background:var(--card,#161b22);border-radius:8px;padding:12px 16px;flex:1;min-width:140px}
@@ -96,8 +85,19 @@ main.innerHTML=`<style>
 .lh-sec:nth-child(3){animation-delay:.1s}
 .lh-sec:nth-child(4){animation-delay:.15s}
 .lh-sec:nth-child(5){animation-delay:.2s}
-</style>
-<div class="lh">
+`;document.head.appendChild(s);}
+const prog=loadP();
+let fCat='',fDiff=0,search='';
+function renderMain(){
+const fl=TOPICS.filter(t=>{
+if(fCat&&t.cat!==fCat)return false;
+if(fDiff&&t.diff!==fDiff)return false;
+if(search&&!t.title.toLowerCase().includes(search.toLowerCase())&&!t.cat.toLowerCase().includes(search.toLowerCase()))return false;
+return true;});
+const cc={};CATS.forEach(c=>{cc[c]={total:0,done:0};});
+TOPICS.forEach(t=>{cc[t.cat].total++;if(prog.completedTopics.includes(t.id))cc[t.cat].done++;});
+const rank=getRank(prog.xp),nr=RANKS.find(r=>r[0]>prog.xp);
+main.innerHTML=`<div class="lh">
 <h1 class="pg-h1">Learn Hub</h1>
 <p class="muted pg-sub">${TOPICS.length} hands-on hacking topics · real tools, real techniques, real scenarios · ${prog.completedTopics.length > 0 ? 'keep going, ' + rank + '!' : 'start your journey'}</p>
 <div class="lh-stats">
