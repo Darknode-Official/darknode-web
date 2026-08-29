@@ -1297,3 +1297,13 @@ code,pre,.mono,.tw-body,.ed-cmd,.term-window .tw-body,.dlapp-cmd code{font-famil
 .lh-sec:nth-child(4){animation-delay:.15s}
 .lh-sec:nth-child(5){animation-delay:.2s}
 
+
+/* Learn Hub educational improvements */
+.lh-sec p{font-size:.9rem;line-height:1.8}
+.lh-code code{line-height:1.7;letter-spacing:.3px}
+.lh-qo button{transition:all .2s;font-size:.88rem;line-height:1.5}
+.lh-qo button:hover:not(.ok):not(.no){background:var(--accent,#58a6ff)10;transform:translateX(4px)}
+.lh-done:active{transform:scale(.98)}
+.lh-c h4{line-height:1.4}
+.lh-c .intro{line-height:1.5}
+.lh-tp h1{line-height:1.3}
