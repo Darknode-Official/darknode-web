@@ -35,7 +35,7 @@ TOPICS.forEach(t=>{cc[t.cat].total++;if(prog.completedTopics.includes(t.id))cc[t
 const rank=getRank(prog.xp),nr=RANKS.find(r=>r[0]>prog.xp);
 main.innerHTML=`<div class="lh">
 <h1 class="pg-h1">Learn Hub</h1>
-<p class="muted pg-sub">${TOPICS.length} hands-on hacking topics · real tools, real techniques, real scenarios · ${prog.completedTopics.length > 0 ? 'keep going, ' + rank + '!' : 'start your journey'}</p>
+<p class="muted pg-sub">${TOPICS.length} hands-on topics covering reconnaissance, exploitation, privilege escalation, post-exploitation, cryptography, forensics, cloud security, and defense. Each topic teaches a real technique with code you can run, then tests your understanding.</p>
 <div class="lh-stats">
 <div class="lh-st"><h3>Rank</h3><div class="v" style="color:var(--accent)">${esc(rank)}</div>${nr?`<div class="lh-bar"><div style="width:${Math.round((prog.xp/nr[0])*100)}%"></div></div><div style="font-size:.68rem;color:var(--mut)">${prog.xp}/${nr[0]} XP to ${nr[1]}</div>`:'<div style="font-size:.72rem;color:#3fb950">Max rank!</div>'}</div>
 <div class="lh-st"><h3>XP</h3><div class="v" style="color:#3fb950">${prog.xp.toLocaleString()}</div><div style="font-size:.68rem;color:var(--mut)">${Math.round((prog.xp/TOTAL_XP)*100)}% of ${TOTAL_XP.toLocaleString()}</div></div>
@@ -79,13 +79,20 @@ main.innerHTML=`<div class="lh-tp">
 <div><span class="cat" style="font-size:.75rem">${CAT_EMOJI[t.cat]||''} ${esc(t.cat)}</span><h1 style="margin:4px 0;font-size:1.3rem">${esc(t.title)}</h1></div>
 <div><span class="lh-df" style="color:${DIFF_COLOR[t.diff]};border:1px solid ${DIFF_COLOR[t.diff]}30">${DIFF_LABEL[t.diff]}</span><span class="lh-xp" style="margin-left:8px">${t.xp} XP</span>${d?' [done]':''}</div>
 </div>
-<p style="color:var(--mut);font-size:.9rem;line-height:1.6;border-left:2px solid var(--accent);padding-left:12px;margin:12px 0">${esc(t.intro)}</p>
-${t.wild?`<div class="lh-wild">${esc(t.wild)}</div>`:''}
-<div style="font-size:.72rem;color:var(--mut);margin:12px 0">${t.sections.length} sections · ${t.sections.filter(s=>s.type==='quiz').length} quiz${t.sections.filter(s=>s.type==='quiz').length!==1?'es':''} · ${t.sections.filter(s=>s.type==='task').length} challenge${t.sections.filter(s=>s.type==='task').length!==1?'s':''}</div>
+<div style="background:var(--card,#161b22);border:1px solid var(--line,#30363d);border-radius:8px;padding:16px;margin:16px 0">
+<div style="font-size:.68rem;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Overview</div>
+<p style="margin:0;font-size:.92rem;line-height:1.8;color:var(--fg,#e6edf3)">${esc(t.intro)}</p>
+${t.wild?`<div class="lh-wild" style="margin-top:12px">${esc(t.wild)}</div>`:''}
+<div style="display:flex;gap:16px;margin-top:12px;font-size:.78rem;color:var(--mut)">
+<span>${t.sections.filter(s=>s.type==='text').length} concept${t.sections.filter(s=>s.type==='text').length!==1?'s':''}</span>
+<span>${t.sections.filter(s=>s.type==='code').length} code example${t.sections.filter(s=>s.type==='code').length!==1?'s':''}</span>
+<span>${t.sections.filter(s=>s.type==='quiz').length} knowledge check${t.sections.filter(s=>s.type==='quiz').length!==1?'s':''}</span>
+</div>
+</div>
 ${t.sections.map((s,i)=>rSec(s,i)).join('')}
 ${d?'<div style="text-align:center;padding:16px;font-size:1.1rem;color:#3fb950">Completed · +'+t.xp+' XP earned</div>':`<button class="lh-done" id="lhD">Complete & earn ${t.xp} XP</button>`}
 </div>`;
-main.querySelector('#lhB').onclick=()=>renderMain();
+const _b=main.querySelector('#lhB');if(_b)_b.onclick=()=>renderMain();
 main.querySelectorAll('.lh-qo button').forEach(o=>{o.onclick=()=>{
 const qi=o.dataset.qi;if(qs[qi])return;
 if(+o.dataset.idx===+o.dataset.ans){o.classList.add('ok');qs[qi]=true;}
@@ -96,12 +103,12 @@ const db=main.querySelector('#lhD');
 if(db)db.onclick=()=>{if(!prog.completedTopics.includes(t.id)){prog.completedTopics.push(t.id);prog.xp+=t.xp;saveP(prog);}db.textContent=`+${t.xp} XP earned!`;db.disabled=true;db.classList.add('lhp');setTimeout(()=>renderMain(),1200);};
 }
 function rSec(s,i){
-if(s.type==='text')return`<div class="lh-sec"><p style="margin:0;font-size:.88rem;line-height:1.7">${esc(s.content)}</p></div>`;
-if(s.type==='code')return`<div class="lh-sec"><div class="lh-code"><button class="lh-cp">copy</button><code>${esc(s.content)}</code></div></div>`;
-if(s.type==='quiz')return`<div class="lh-sec"><p style="margin:0 0 10px;font-weight:700;font-size:.9rem;color:var(--accent)">Q: ${esc(s.q)}</p><div class="lh-qo">${s.opts.map((o,j)=>`<button data-qi="${i}" data-idx="${j}" data-ans="${s.ans}">${String.fromCharCode(65+j)}) ${esc(o)}</button>`).join('')}</div></div>`;
-if(s.type==='task')return`<div class="lh-sec task"><p style="margin:0;font-size:.88rem;line-height:1.6"><strong>HANDS-ON CHALLENGE</strong></p><p style="margin:8px 0 0;font-size:.88rem;line-height:1.6">${esc(s.content)}</p></div>`;
-if(s.type==='tip')return`<div class="lh-sec tip"><p style="margin:0;font-size:.85rem;line-height:1.6">${esc(s.content)}</p></div>`;
-if(s.type==='warning')return`<div class="lh-sec warning"><p style="margin:0;font-size:.85rem;line-height:1.6">${esc(s.content)}</p></div>`;
+if(s.type==='text')return`<div class="lh-sec"><div style="font-size:.68rem;font-weight:600;color:var(--mut);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Concept</div><p style="margin:0;font-size:.9rem;line-height:1.8">${esc(s.content)}</p></div>`;
+if(s.type==='code')return`<div class="lh-sec"><div style="font-size:.68rem;font-weight:600;color:var(--mut);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">${esc(s.lang||'code')} - try this in your terminal</div><div class="lh-code"><button class="lh-cp">copy</button><code>${esc(s.content)}</code></div></div>`;
+if(s.type==='quiz')return`<div class="lh-sec"><div style="font-size:.68rem;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Knowledge Check</div><p style="margin:0 0 12px;font-weight:600;font-size:.92rem">${esc(s.q)}</p><div class="lh-qo">${s.opts.map((o,j)=>`<button data-qi="${i}" data-idx="${j}" data-ans="${s.ans}">${String.fromCharCode(65+j)}) ${esc(o)}</button>`).join('')}</div></div>`;
+if(s.type==='task')return`<div class="lh-sec task"><div style="font-size:.68rem;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Hands-on Challenge</div><p style="margin:0;font-size:.9rem;line-height:1.7">${esc(s.content)}</p></div>`;
+if(s.type==='tip')return`<div class="lh-sec tip"><div style="font-size:.68rem;font-weight:600;color:#3fb950;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Pro Tip</div><p style="margin:0;font-size:.88rem;line-height:1.7">${esc(s.content)}</p></div>`;
+if(s.type==='warning')return`<div class="lh-sec warning"><div style="font-size:.68rem;font-weight:600;color:#f85149;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Warning</div><p style="margin:0;font-size:.88rem;line-height:1.7">${esc(s.content)}</p></div>`;
 return'';
 }
 renderMain();
