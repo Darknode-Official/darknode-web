@@ -20,6 +20,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap">
   <link rel="stylesheet" href="/css/styles.css">
+  <link rel="modulepreload" href="/js/auth.js">
+  <link rel="prefetch" href="/js/learn-hub.js" as="script">
 </head>
 <body>
   <div id="bootscreen" aria-hidden="true">
@@ -92,6 +94,8 @@
         if (!reduce) raf = requestAnimationFrame(draw);
       }
       draw(); setTimeout(function () { cancelAnimationFrame(raf); }, 3000);
+      // Preload heavy modules during boot animation
+      fetch("/js/learn-hub.js").catch(function(){});
       var pct = document.getElementById("bootpct");
       if (pct) { var s0 = performance.now(); (function tick() { var p = Math.min(100, Math.round(((performance.now() - s0) / 2300) * 100)); pct.textContent = p + "%"; if (p < 100) requestAnimationFrame(tick); })(); }
       var logo = document.querySelector(".boot-logo");

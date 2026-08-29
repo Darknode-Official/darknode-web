@@ -19,7 +19,8 @@ import {
   renderThreat, renderCheats, renderLearn, homeWidgetsHTML, wireHome, COUNTS,
   CHEATS, RESOURCES,
 } from "/js/cyber.js";
-import { renderLearnHub } from "/js/learn-hub.js";
+let _learnHub = null;
+async function loadLearnHub() { if (!_learnHub) { _learnHub = await import("/js/learn-hub.js"); } return _learnHub; }
 import { renderAdmin, getWhitelist } from "/js/admin.js";
 import { renderUtils } from "/js/utils.js";
 import { renderDownloads, renderDownloadDocs } from "/js/getapp.js";
@@ -533,7 +534,7 @@ function renderApp(user) {
     else if (sec === "apikeys") renderApiKeys(main);
     else if (sec === "cheats") renderCheats(main);
     else if (sec === "threat") renderThreat(main);
-    else if (sec === "learn") renderLearnHub(main);
+    else if (sec === "learn") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Learn Hub...</p>"; loadLearnHub().then(m => m.renderLearnHub(main)); }
     else if (sec === "github") renderGitHub(main);
     else if (sec === "gmail") renderGmail(main);
     else if (sec === "coder") renderCliCoder(main);
