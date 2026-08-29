@@ -1307,3 +1307,11 @@ code,pre,.mono,.tw-body,.ed-cmd,.term-window .tw-body,.dlapp-cmd code{font-famil
 .lh-c h4{line-height:1.4}
 .lh-c .intro{line-height:1.5}
 .lh-tp h1{line-height:1.3}
+
+/* Learn Hub quiz select-then-submit */
+.lh-qsel.sel{border-color:var(--accent,#58a6ff);background:var(--accent,#58a6ff)10;font-weight:600}
+.lh-qsub{width:100%;padding:10px;margin-top:8px;border:none;border-radius:6px;background:var(--accent,#58a6ff);color:#fff;font-size:.88rem;font-weight:600;cursor:pointer;transition:all .2s}
+.lh-qsub:disabled{background:var(--line,#30363d);color:var(--mut,#8b949e);cursor:not-allowed}
+.lh-qsub:hover:not(:disabled){opacity:.9}
+.lh-qsub-ok{background:#3fb950!important;color:#fff!important}
+.lh-qsub-no{background:#f85149!important;color:#fff!important}

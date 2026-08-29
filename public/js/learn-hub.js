@@ -93,10 +93,20 @@ ${t.sections.map((s,i)=>rSec(s,i)).join('')}
 ${d?'<div style="text-align:center;padding:16px;font-size:1.1rem;color:#3fb950">Completed · +'+t.xp+' XP earned</div>':`<button class="lh-done" id="lhD">Complete & earn ${t.xp} XP</button>`}
 </div>`;
 const _b=main.querySelector('#lhB');if(_b)_b.onclick=()=>renderMain();
-main.querySelectorAll('.lh-qo button').forEach(o=>{o.onclick=()=>{
+main.querySelectorAll('.lh-qsel').forEach(o=>{o.onclick=()=>{
 const qi=o.dataset.qi;if(qs[qi])return;
-if(+o.dataset.idx===+o.dataset.ans){o.classList.add('ok');qs[qi]=true;}
-else{o.classList.add('no');main.querySelectorAll(`.lh-qo button[data-qi="${qi}"][data-idx="${o.dataset.ans}"]`).forEach(c=>c.classList.add('ok'));qs[qi]=true;}
+main.querySelectorAll(`.lh-qsel[data-qi="${qi}"]`).forEach(b=>b.classList.remove('sel'));
+o.classList.add('sel');
+const sub=main.querySelector(`.lh-qsub[data-qi="${qi}"]`);
+if(sub){sub.disabled=false;sub.dataset.pick=o.dataset.idx;}
+};});
+main.querySelectorAll('.lh-qsub').forEach(sub=>{sub.onclick=()=>{
+const qi=sub.dataset.qi;if(qs[qi]||sub.disabled)return;
+const pick=+sub.dataset.pick;const ans=+sub.dataset.ans;
+const picked=main.querySelector(`.lh-qsel[data-qi="${qi}"][data-idx="${pick}"]`);
+if(pick===ans){picked.classList.add('ok');sub.textContent='Correct!';sub.classList.add('lh-qsub-ok');}
+else{picked.classList.add('no');main.querySelectorAll(`.lh-qsel[data-qi="${qi}"][data-idx="${ans}"]`).forEach(c=>c.classList.add('ok'));sub.textContent='Incorrect - see the correct answer above';sub.classList.add('lh-qsub-no');}
+qs[qi]=true;sub.disabled=true;
 };});
 main.querySelectorAll('.lh-cp').forEach(b=>{b.onclick=e=>{e.stopPropagation();const c=b.parentElement.querySelector('code');navigator.clipboard?.writeText(c.textContent);b.textContent='copied!';setTimeout(()=>b.textContent='copy',1000);};});
 const db=main.querySelector('#lhD');
@@ -105,7 +115,7 @@ if(db)db.onclick=()=>{if(!prog.completedTopics.includes(t.id)){prog.completedTop
 function rSec(s,i){
 if(s.type==='text')return`<div class="lh-sec"><div style="font-size:.68rem;font-weight:600;color:var(--mut);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Concept</div><p style="margin:0;font-size:.9rem;line-height:1.8">${esc(s.content)}</p></div>`;
 if(s.type==='code')return`<div class="lh-sec"><div style="font-size:.68rem;font-weight:600;color:var(--mut);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">${esc(s.lang||'code')} - try this in your terminal</div><div class="lh-code"><button class="lh-cp">copy</button><code>${esc(s.content)}</code></div></div>`;
-if(s.type==='quiz')return`<div class="lh-sec"><div style="font-size:.68rem;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Knowledge Check</div><p style="margin:0 0 12px;font-weight:600;font-size:.92rem">${esc(s.q)}</p><div class="lh-qo">${s.opts.map((o,j)=>`<button data-qi="${i}" data-idx="${j}" data-ans="${s.ans}">${String.fromCharCode(65+j)}) ${esc(o)}</button>`).join('')}</div></div>`;
+if(s.type==='quiz')return`<div class="lh-sec"><div style="font-size:.68rem;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Knowledge Check</div><p style="margin:0 0 12px;font-weight:600;font-size:.92rem">${esc(s.q)}</p><div class="lh-qo">${s.opts.map((o,j)=>`<button class="lh-qsel" data-qi="${i}" data-idx="${j}" data-ans="${s.ans}">${String.fromCharCode(65+j)}) ${esc(o)}</button>`).join('')}</div><button class="lh-qsub" data-qi="${i}" data-ans="${s.ans}" disabled>Submit Answer</button></div>`;
 if(s.type==='task')return`<div class="lh-sec task"><div style="font-size:.68rem;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Hands-on Challenge</div><p style="margin:0;font-size:.9rem;line-height:1.7">${esc(s.content)}</p></div>`;
 if(s.type==='tip')return`<div class="lh-sec tip"><div style="font-size:.68rem;font-weight:600;color:#3fb950;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Pro Tip</div><p style="margin:0;font-size:.88rem;line-height:1.7">${esc(s.content)}</p></div>`;
 if(s.type==='warning')return`<div class="lh-sec warning"><div style="font-size:.68rem;font-weight:600;color:#f85149;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Warning</div><p style="margin:0;font-size:.88rem;line-height:1.7">${esc(s.content)}</p></div>`;
