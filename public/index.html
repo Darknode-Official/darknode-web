@@ -16,10 +16,25 @@
   <meta name="twitter:title" content="Sentinel — Security Console">
   <meta name="twitter:description" content="Tools, threat intel, cheat sheets & local AI — on the web and desktop.">
   <meta name="twitter:image" content="https://raw.githubusercontent.com/SpartanKing18/sentinel-web/main/public/og.png">
+  <link rel="dns-prefetch" href="https://www.gstatic.com">
+  <link rel="dns-prefetch" href="https://apis.google.com">
+  <link rel="dns-prefetch" href="https://firebaseinstallations.googleapis.com">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap">
-  <link rel="stylesheet" href="/css/styles.css">
+  <style>body{margin:0;background:var(--bg);color:var(--txt);
+  font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+#bootscreen{position:fixed;inset:0;z-index:99999;background:radial-gradient(1200px 600px at 50% 20%,#0a0f1c,#05070d 70%);
+  display:flex;align-items:center;justify-content:center;overflow:hidden;font-family:var(--mono,ui-monospace,"JetBrains Mono",monospace);
+  animation:bootOut .55s ease 2.5s forwards}
+.boot-grid{position:absolute;inset:0;opacity:.5;
+  background-image:linear-gradient(color-mix(in srgb,var(--acc,#00d4ff) 12%,transparent) 1px,transparent 1px),linear-gradient(90deg,color-mix(in srgb,var(--acc,#00d4ff) 12%,transparent) 1px,transparent 1px);
+  background-size:34px 34px;-webkit-mask-image:radial-gradient(60% 50% at 50% 45%,#000,transparent 80%);mask-image:radial-gradient(60% 50% at 50% 45%,#000,transparent 80%)}
+.boot-inner{position:relative;text-align:center}
+.boot-logo{font-size:clamp(2.2rem,7vw,4rem);font-weight:800;letter-spacing:.06em;
+  background:linear-gradient(135deg,var(--acc,#00d4ff),var(--acc-2,#7c5cff));-webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 0 24px color-mix(in srgb,var(--acc,#00d4ff) 55%,transparent));animation:bootPulse 2.4s ease-in-out infinite}</style>
+  <link rel="stylesheet" href="/css/styles.css" media="all">
   <link rel="modulepreload" href="/js/auth.js">
   <link rel="prefetch" href="/js/learn-hub.js" as="script">
 </head>
