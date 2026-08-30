@@ -117,13 +117,13 @@ websockify 6080 localhost:5900
   const hostInput = main.querySelector("#vl-host");
   const portInput = main.querySelector("#vl-port");
 
-  main.querySelector("#vl-open").onclick = () => {
+  const _vlo=main.querySelector("#vl-open");if(_vlo)_vlo.onclick = () => {
     const h = hostInput.value.trim() || "localhost";
     const p = portInput.value.trim() || "6080";
     window.open(`http://${esc(h)}:${esc(p)}/vnc.html?autoconnect=true`, "_blank");
   };
 
-  main.querySelector("#vl-vnc").onclick = () => {
+  const _vlv=main.querySelector("#vl-vnc");if(_vlv)_vlv.onclick = () => {
     const h = hostInput.value.trim() || "localhost";
     const p = portInput.value.trim() || "6080";
     window.open(`http://${esc(h)}:${esc(p)}`, "_blank");
