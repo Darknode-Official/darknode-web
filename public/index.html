@@ -36,7 +36,7 @@
   filter:drop-shadow(0 0 24px color-mix(in srgb,var(--acc,#00d4ff) 55%,transparent));animation:bootPulse 2.4s ease-in-out infinite}</style>
   <link rel="stylesheet" href="/css/styles.css" media="all">
   <link rel="modulepreload" href="/js/auth.js">
-  <link rel="prefetch" href="/js/learn-hub.js" as="script">
+  <link rel="prefetch" href="/data/topics.json">
 </head>
 <body>
   <div id="bootscreen" aria-hidden="true">
@@ -110,7 +110,7 @@
       }
       draw(); setTimeout(function () { cancelAnimationFrame(raf); }, 3000);
       // Preload heavy modules during boot animation
-      fetch("/js/learn-hub.js").catch(function(){});
+      fetch("/data/topics.json").catch(function(){});
       var pct = document.getElementById("bootpct");
       if (pct) { var s0 = performance.now(); (function tick() { var p = Math.min(100, Math.round(((performance.now() - s0) / 2300) * 100)); pct.textContent = p + "%"; if (p < 100) requestAnimationFrame(tick); })(); }
       var logo = document.querySelector(".boot-logo");
