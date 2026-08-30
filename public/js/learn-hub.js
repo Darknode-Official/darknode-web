@@ -1442,6 +1442,7 @@ const TOPICS=[
 {"type": "code", "lang": "bash", "content": "# Unicode bypass examples\n# < encoded as fullwidth: \uff1c\n# / encoded as division slash: \u2215\n# admin with Cyrillic a: \u0430dmin\n# Example: WAF blocks '../' but allows '..\u2215' which normalizes to '../'"},
 {"type": "quiz", "q": "Unicode normalization attacks bypass...", "opts": ["Encryption", "Filters that check ASCII but the backend normalizes Unicode to ASCII", "Authentication", "Rate limiting"], "ans": 1}
 ];
+const TOTAL_XP=TOPICS.reduce((s,t)=>s+t.xp,0);
 export function renderLearnHub(main){
 
 const prog=loadP();
