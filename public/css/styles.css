@@ -1266,7 +1266,7 @@ code,pre,.mono,.tw-body,.ed-cmd,.term-window .tw-body,.dlapp-cmd code{font-famil
 .lh-cnt{font-size:.78rem;color:var(--mut,#8b949e);margin:8px 0}
 .lh-tp{max-width:800px;margin:0 auto}
 .lh-bk{background:none;border:none;color:var(--accent,#58a6ff);cursor:pointer;font-size:.85rem;padding:8px 0}
-.lh-sec{margin:16px 0;padding:16px;background:var(--card,#161b22);border-radius:8px;border:1px solid var(--line,#30363d)}
+
 .lh-sec.tip{border-left:3px solid #3fb950}.lh-sec.warning{border-left:3px solid #f85149}.lh-sec.task{border-left:3px solid var(--accent,#58a6ff)}
 .lh-code{background:#0d1117;padding:12px;border-radius:6px;overflow-x:auto;font-family:'Courier New',monospace;font-size:.82rem;position:relative;white-space:pre-wrap;word-break:break-all;border:1px solid #21262d;line-height:1.6}
 .lh-code::before{content:'terminal';position:absolute;top:0;left:0;right:0;padding:4px 12px;font-size:.65rem;color:#8b949e;background:#161b22;border-bottom:1px solid #21262d;border-radius:6px 6px 0 0;letter-spacing:.5px;text-transform:uppercase}
