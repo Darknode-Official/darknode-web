@@ -1453,7 +1453,7 @@ if(fDiff&&t.diff!==fDiff)return false;
 if(search&&!t.title.toLowerCase().includes(search.toLowerCase())&&!t.cat.toLowerCase().includes(search.toLowerCase()))return false;
 return true;});
 const cc={};CATS.forEach(c=>{cc[c]={total:0,done:0};});
-TOPICS.forEach(t=>{cc[t.cat].total++;if(prog.completedTopics.includes(t.id))cc[t.cat].done++;});
+TOPICS.forEach(t=>{if(!cc[t.cat])cc[t.cat]={total:0,done:0};cc[t.cat].total++;if(prog.completedTopics.includes(t.id))cc[t.cat].done++;});
 const rank=getRank(prog.xp),nr=RANKS.find(r=>r[0]>prog.xp);
 main.innerHTML=`<div class="lh">
 <h1 class="pg-h1">Learn Hub</h1>
