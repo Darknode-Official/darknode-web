@@ -13,9 +13,34 @@ const BADGES=[
 {id:'century',title:'Century',desc:'Complete 100 topics',icon:'100',check:p=>p.completedTopics.length>=100},
 {id:'scholar',title:'Scholar',desc:'Earn 10000 XP',icon:'S',check:p=>p.xp>=10000},
 {id:'legend',title:'Legend',desc:'Earn 40000 XP',icon:'L',check:p=>p.xp>=40000}];
-function loadP(){try{return JSON.parse(localStorage.getItem(SK))||{completedTopics:[],xp:0};}catch(_){return {completedTopics:[],xp:0};}}
+const PATHS=[
+  {id:'web-hacker',name:'Web Hacker',desc:'Master web application attacks from SQLi to SSRF',cats:['Web Application'],icon:'[W]'},
+  {id:'network-ninja',name:'Network Ninja',desc:'Own the network: scanning, MITM, pivoting',cats:['Network Attacks','Reconnaissance'],icon:'[N]'},
+  {id:'privesc-pro',name:'Privilege Escalation Pro',desc:'From shell to root on any system',cats:['Privilege Escalation'],icon:'[PE]'},
+  {id:'red-team',name:'Red Team Operator',desc:'Full attack chain: recon to domain admin',cats:['Exploitation','Post-Exploitation'],icon:'[EX]'},
+  {id:'blue-defender',name:'Blue Team Defender',desc:'Detect, respond, and harden',cats:['Defense & Blue Team','Forensics & IR'],icon:'[DF]'},
+  {id:'cloud-hunter',name:'Cloud Hunter',desc:'Exploit AWS, Azure, GCP, and containers',cats:['Cloud & Container'],icon:'[CL]'},
+  {id:'crypto-breaker',name:'Crypto Breaker',desc:'Break ciphers and crack hashes',cats:['Cryptography'],icon:'[CR]'},
+];
+function loadP(){
+  try{
+    const d=JSON.parse(localStorage.getItem(SK))||{};
+    return {completedTopics:d.completedTopics||[],xp:d.xp||0,streak:d.streak||0,lastActive:d.lastActive||'',totalQuizCorrect:d.totalQuizCorrect||0,totalQuizAttempted:d.totalQuizAttempted||0};
+  }catch(_){return {completedTopics:[],xp:0,streak:0,lastActive:'',totalQuizCorrect:0,totalQuizAttempted:0};}
+}
 function saveP(p){try{localStorage.setItem(SK,JSON.stringify(p));}catch(_){}}
+function updateStreak(p){
+  const today=new Date().toISOString().slice(0,10);
+  if(p.lastActive===today)return;
+  const yesterday=new Date(Date.now()-86400000).toISOString().slice(0,10);
+  if(p.lastActive===yesterday){p.streak=(p.streak||0)+1;}
+  else if(p.lastActive&&p.lastActive!==today){p.streak=1;}
+  else{p.streak=1;}
+  p.lastActive=today;
+  saveP(p);
+}
 function getRank(xp){let r=RANKS[0];for(const[t,n]of RANKS)if(xp>=t)r=[t,n];return r[1];}
+function getRankClass(xp){const r=getRank(xp).toLowerCase().replace(/\s/g,'');return 'lh-rank-'+r;}
 let TOPICS=[];
 async function _loadTopics(){
   if(TOPICS.length)return;
@@ -40,12 +65,24 @@ TOPICS.forEach(t=>{if(!cc[t.cat])cc[t.cat]={total:0,done:0};cc[t.cat].total++;if
 const rank=getRank(prog.xp),nr=RANKS.find(r=>r[0]>prog.xp);
 main.innerHTML=`<div class="lh">
 <h1 class="pg-h1">Learn Hub</h1>
-<p class="muted pg-sub">${TOPICS.length} hands-on topics covering reconnaissance, exploitation, privilege escalation, post-exploitation, cryptography, forensics, cloud security, and defense. Each topic teaches a real technique with code you can run, then tests your understanding.</p>
+<p class="muted pg-sub">Master hacking through ${TOPICS.length} hands-on challenges. Learn real techniques, practice with code, and prove your knowledge.</p>
 <div class="lh-stats">
 <div class="lh-st"><h3>Rank</h3><div class="v" style="color:var(--accent)">${esc(rank)}</div>${nr?`<div class="lh-bar"><div style="width:${Math.round((prog.xp/nr[0])*100)}%"></div></div><div style="font-size:.68rem;color:var(--mut)">${prog.xp}/${nr[0]} XP to ${nr[1]}</div>`:'<div style="font-size:.72rem;color:#3fb950">Max rank!</div>'}</div>
 <div class="lh-st"><h3>XP</h3><div class="v" style="color:#3fb950">${prog.xp.toLocaleString()}</div><div style="font-size:.68rem;color:var(--mut)">${Math.round((prog.xp/TOTAL_XP)*100)}% of ${TOTAL_XP.toLocaleString()}</div></div>
 <div class="lh-st"><h3>Completed</h3><div class="v">${prog.completedTopics.length}</div><div style="font-size:.68rem;color:var(--mut)">of ${TOPICS.length}</div></div>
+<div class="lh-st"><h3>Streak</h3><div class="v ${prog.streak>=3?'streak-active':''}">${prog.streak||0} day${prog.streak!==1?'s':''}</div><div style="font-size:.68rem;color:var(--mut)">${prog.streak>=7?'On fire!':prog.streak>=3?'Keep going!':'Start learning daily'}</div></div>
+<div class="lh-st"><h3>Accuracy</h3><div class="v">${prog.totalQuizAttempted?Math.round((prog.totalQuizCorrect/prog.totalQuizAttempted)*100):0}%</div><div style="font-size:.68rem;color:var(--mut)">${prog.totalQuizCorrect}/${prog.totalQuizAttempted} correct</div></div>
 </div>
+<div style="margin:16px 0">
+<div style="font-size:.82rem;font-weight:600;margin-bottom:10px">Learning Paths</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px">
+${PATHS.map(path=>{
+  const pathTopics=TOPICS.filter(t=>path.cats.includes(t.cat));
+  const done=pathTopics.filter(t=>prog.completedTopics.includes(t.id)).length;
+  const pct=pathTopics.length?Math.round((done/pathTopics.length)*100):0;
+  return '<div class="lh-path" data-pathcat="'+esc(path.cats[0])+'"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-weight:600;font-size:.85rem">'+esc(path.icon)+' '+esc(path.name)+'</span><span style="font-size:.7rem;color:var(--mut)">'+done+'/'+pathTopics.length+'</span></div><div style="font-size:.72rem;color:var(--mut);margin-top:4px">'+esc(path.desc)+'</div><div class="lh-path-progress"><div style="width:'+pct+'%"></div></div></div>';
+}).join('')}
+</div></div>
 <div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0">${BADGES.map(b=>{const earned=b.check(prog);return '<div style="padding:6px 10px;border-radius:6px;font-size:.78rem;background:'+(earned?'var(--card,#161b22)':'transparent')+';border:1px solid '+(earned?'#3fb950':'var(--line,#30363d)')+';opacity:'+(earned?'1':'.4')+'" title="'+esc(b.desc)+'">'+(b.icon||'')+' '+esc(b.title)+'</div>';}).join('')}</div>
 <div style="margin:16px 0">${CATS.map(c=>{const d=cc[c],p=d.total?Math.round((d.done/d.total)*100):0;return`<div class="lh-cb"><span class="nm">${CAT_EMOJI[c]||''} ${esc(c)}</span><div class="br"><div style="width:${p}%"></div></div><span class="pc">${d.done}/${d.total}</span></div>`;}).join('')}</div>
 <input class="lh-inp" id="lhS" placeholder="Search ${TOPICS.length} topics..." value="${esc(search)}">
@@ -73,6 +110,7 @@ ${d?'<span class="lh-ck" style="color:#3fb950">done</span>':''}
 </div></div>`;
 const _s=main.querySelector('#lhS');if(_s)_s.oninput=e=>{search=e.target.value;renderMain();};
 main.querySelectorAll('[data-cat]').forEach(b=>b.onclick=()=>{fCat=b.dataset.cat;renderMain();});
+main.querySelectorAll('[data-pathcat]').forEach(b=>b.onclick=()=>{fCat=b.dataset.pathcat;renderMain();});
 main.querySelectorAll('[data-diff]').forEach(b=>b.onclick=()=>{fDiff=+b.dataset.diff;renderMain();});
 main.querySelectorAll('[data-tid]').forEach(c=>c.onclick=()=>openTopic(c.dataset.tid));
 }
@@ -111,13 +149,14 @@ main.querySelectorAll('.lh-qsub').forEach(sub=>{sub.onclick=()=>{
 const qi=sub.dataset.qi;if(qs[qi]||sub.disabled)return;
 const pick=+sub.dataset.pick;const ans=+sub.dataset.ans;
 const picked=main.querySelector(`.lh-qsel[data-qi="${qi}"][data-idx="${pick}"]`);
-if(pick===ans){picked.classList.add('ok');sub.textContent='Correct!';sub.classList.add('lh-qsub-ok');}
+prog.totalQuizAttempted=(prog.totalQuizAttempted||0)+1;
+if(pick===ans){picked.classList.add('ok');sub.textContent='Correct!';sub.classList.add('lh-qsub-ok');prog.totalQuizCorrect=(prog.totalQuizCorrect||0)+1;}
 else{picked.classList.add('no');main.querySelectorAll(`.lh-qsel[data-qi="${qi}"][data-idx="${ans}"]`).forEach(c=>c.classList.add('ok'));sub.textContent='Incorrect - see the correct answer above';sub.classList.add('lh-qsub-no');}
-qs[qi]=true;sub.disabled=true;
+qs[qi]=true;sub.disabled=true;saveP(prog);
 };});
 main.querySelectorAll('.lh-cp').forEach(b=>{b.onclick=e=>{e.stopPropagation();const c=b.parentElement.querySelector('code');navigator.clipboard?.writeText(c.textContent);b.textContent='copied!';setTimeout(()=>b.textContent='copy',1000);};});
 const db=main.querySelector('#lhD');
-if(db)db.onclick=()=>{const totalQ=t.sections.filter(s=>s.type==='quiz').length;const answered=Object.keys(qs).length;if(totalQ>0&&answered<totalQ){db.textContent='Answer all knowledge checks first';db.classList.add('lh-qsub-no');setTimeout(()=>{db.textContent=`Complete & earn ${t.xp} XP`;db.classList.remove('lh-qsub-no');},1500);return;}if(!prog.completedTopics.includes(t.id)){prog.completedTopics.push(t.id);prog.xp+=t.xp;saveP(prog);}db.textContent=`+${t.xp} XP earned!`;db.disabled=true;db.classList.add('lhp');setTimeout(()=>renderMain(),1200);};
+if(db)db.onclick=()=>{const totalQ=t.sections.filter(s=>s.type==='quiz').length;const answered=Object.keys(qs).length;if(totalQ>0&&answered<totalQ){db.textContent='Answer all knowledge checks first';db.classList.add('lh-qsub-no');setTimeout(()=>{db.textContent=`Complete & earn ${t.xp} XP`;db.classList.remove('lh-qsub-no');},1500);return;}if(!prog.completedTopics.includes(t.id)){prog.completedTopics.push(t.id);prog.xp+=t.xp;updateStreak(prog);saveP(prog);}db.textContent=`+${t.xp} XP earned!`;db.disabled=true;db.classList.add('lhp');db.classList.add('xp-earned');setTimeout(()=>renderMain(),1200);};
 }
 function rSec(s,i){
 if(s.type==='text')return`<div class="lh-sec"><div style="font-size:.68rem;font-weight:600;color:var(--mut);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Concept</div><p style="margin:0;font-size:.9rem;line-height:1.8">${esc(s.content)}</p></div>`;
