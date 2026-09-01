@@ -96,6 +96,86 @@ export async function renderAdmin(main, user) {
           <p class="adm-msg" id="annMsg"></p>
         </div>
       </div>
+    </div>
+
+    <div class="panel" style="margin-top:16px">
+      <div class="panel-h"><h2 class="pg-h2" style="margin:0">Site Analytics</h2>
+        <button class="btn ghost sm" id="anaRefresh">Refresh</button></div>
+      <div class="stat-row" id="anaStats">
+        <div class="stat"><div class="stat-n" id="anaTotalTopics">--</div><div class="stat-l">Learn Hub topics</div></div>
+        <div class="stat"><div class="stat-n" id="anaTopLearner">--</div><div class="stat-l">top learner</div></div>
+        <div class="stat"><div class="stat-n" id="anaAvgXP">--</div><div class="stat-l">avg XP/user</div></div>
+        <div class="stat"><div class="stat-n" id="anaCompletions">--</div><div class="stat-l">total completions</div></div>
+      </div>
+      <div id="anaChart" style="margin-top:12px"></div>
+    </div>
+
+    <div class="adm-cols" style="margin-top:16px">
+      <div class="adm-main">
+        <div class="panel">
+          <div class="panel-h"><h2 class="pg-h2" style="margin:0">User Activity Log</h2></div>
+          <p class="muted" style="font-size:.82rem;margin:0 0 8px">Recent user actions — sign-ins, page views, and tool usage.</p>
+          <div id="actLog"><p class="muted">Loading activity...</p></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-h"><h2 class="pg-h2" style="margin:0">Maintenance</h2></div>
+          <p class="muted" style="font-size:.82rem;margin:0 0 10px">System health and maintenance actions.</p>
+          <div class="set-btns" style="flex-wrap:wrap">
+            <button class="btn sm" id="admClearInactive">Remove inactive users (90d+)</button>
+            <button class="btn ghost sm" id="admExportFeedback">Export feedback (JSON)</button>
+            <button class="btn ghost sm" id="admResetStats">Reset analytics cache</button>
+          </div>
+          <p class="adm-msg" id="maintMsg"></p>
+        </div>
+
+        <div class="panel">
+          <div class="panel-h"><h2 class="pg-h2" style="margin:0">Feature Flags</h2></div>
+          <p class="muted" style="font-size:.82rem;margin:0 0 10px">Toggle site features on/off without redeploying.</p>
+          <div id="featureFlags">
+            <label class="set-row"><span>Learn Hub</span><input type="checkbox" id="ffLearn" checked style="width:18px;height:18px;accent-color:var(--acc)"></label>
+            <label class="set-row"><span>Web Shell</span><input type="checkbox" id="ffWebshell" checked style="width:18px;height:18px;accent-color:var(--acc)"></label>
+            <label class="set-row"><span>VM Lab</span><input type="checkbox" id="ffVmlab" checked style="width:18px;height:18px;accent-color:var(--acc)"></label>
+            <label class="set-row"><span>AI Assistant</span><input type="checkbox" id="ffAI" checked style="width:18px;height:18px;accent-color:var(--acc)"></label>
+            <label class="set-row"><span>Gmail Integration</span><input type="checkbox" id="ffGmail" checked style="width:18px;height:18px;accent-color:var(--acc)"></label>
+            <label class="set-row"><span>GitHub Integration</span><input type="checkbox" id="ffGithub" checked style="width:18px;height:18px;accent-color:var(--acc)"></label>
+          </div>
+          <button class="btn sm" id="ffSave" style="margin-top:8px">Save flags</button>
+          <p class="adm-msg" id="ffMsg"></p>
+        </div>
+      </div>
+
+      <div class="adm-side">
+        <div class="panel">
+          <div class="panel-h"><h2 class="pg-h2" style="margin:0">Quick Actions</h2></div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <button class="btn sm" id="admMsgAll">Message all users</button>
+            <button class="btn ghost sm" id="admBackup">Backup all data (JSON)</button>
+            <button class="btn ghost sm" id="admViewLogs">View error log</button>
+            <button class="btn ghost sm" id="admTestEmail">Send test announcement</button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-h"><h2 class="pg-h2" style="margin:0">System Status</h2></div>
+          <div id="sysStatus">
+            <div class="set-row"><span class="muted">Firebase</span><span id="sysFb" style="color:#3fb950">connected</span></div>
+            <div class="set-row"><span class="muted">Firestore</span><span id="sysFs" style="color:#3fb950">connected</span></div>
+            <div class="set-row"><span class="muted">Learn Hub</span><span id="sysLh">--</span></div>
+            <div class="set-row"><span class="muted">Render deploy</span><span id="sysDeploy">--</span></div>
+            <div class="set-row"><span class="muted">JS bundle</span><span id="sysBundle">--</span></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-h"><h2 class="pg-h2" style="margin:0">Danger Zone</h2></div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <button class="btn danger sm" id="admPurgeData">Purge all user data</button>
+            <button class="btn danger sm" id="admRevokeAll">Revoke all sessions</button>
+          </div>
+          <p class="adm-msg" id="dangerMsg" style="color:var(--bad)"></p>
+        </div>
+      </div>
     </div>`;
 
   const $ = (id) => main.querySelector(id);
@@ -275,4 +355,212 @@ export async function renderAdmin(main, user) {
   };
 
   await Promise.all([loadWl(), loadUsers(), loadAnn()]);
+
+  // ---- Analytics ----
+  async function loadAnalytics() {
+    try {
+      let totalXP = 0, totalCompletions = 0, topUser = { email: '-', xp: 0 };
+      users.forEach(u => {
+        const xp = u.learnXP || 0;
+        const completed = (u.learnCompleted || []).length;
+        totalXP += xp;
+        totalCompletions += completed;
+        if (xp > topUser.xp) topUser = { email: u.email || '?', xp };
+      });
+      const avgXP = users.length ? Math.round(totalXP / users.length) : 0;
+      const anaTotalTopics = $("#anaTotalTopics");
+      if (anaTotalTopics) {
+        try {
+          const r = await fetch('/data/topics.json');
+          const topics = await r.json();
+          anaTotalTopics.textContent = topics.length;
+        } catch(_) { anaTotalTopics.textContent = '?'; }
+      }
+      const anaTopLearner = $("#anaTopLearner");
+      if (anaTopLearner) anaTopLearner.textContent = topUser.email ? topUser.email.split('@')[0] : '-';
+      const anaAvgXP = $("#anaAvgXP");
+      if (anaAvgXP) anaAvgXP.textContent = avgXP;
+      const anaCompletions = $("#anaCompletions");
+      if (anaCompletions) anaCompletions.textContent = totalCompletions;
+
+      // Registration chart (last 7 days)
+      const chart = $("#anaChart");
+      if (chart) {
+        const days = [];
+        for (let i = 6; i >= 0; i--) {
+          const d = new Date(Date.now() - i * 864e5);
+          const label = d.toLocaleDateString('en', { weekday: 'short' });
+          const dayStart = new Date(d); dayStart.setHours(0,0,0,0);
+          const dayEnd = new Date(d); dayEnd.setHours(23,59,59,999);
+          const toMs = (ts) => ts && ts.toMillis ? ts.toMillis() : (ts && ts.toDate ? ts.toDate().getTime() : 0);
+          const count = users.filter(u => { const c = toMs(u.created || u.createdAt); return c >= dayStart.getTime() && c <= dayEnd.getTime(); }).length;
+          days.push({ label, count });
+        }
+        const max = Math.max(...days.map(d => d.count), 1);
+        chart.innerHTML = '<div style="font-size:.75rem;color:var(--mut);margin-bottom:8px">New users (last 7 days)</div>' +
+          '<div style="display:flex;align-items:flex-end;gap:6px;height:80px">' +
+          days.map(d => `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px"><div style="width:100%;background:var(--accent,#58a6ff);border-radius:3px;height:${Math.max(4, (d.count/max)*60)}px;transition:height .3s"></div><span style="font-size:.65rem;color:var(--mut)">${d.label}</span></div>`).join('') +
+          '</div>';
+      }
+    } catch(e) { console.error('Analytics error:', e); }
+  }
+  const anaRefresh = $("#anaRefresh");
+  if (anaRefresh) anaRefresh.onclick = loadAnalytics;
+
+  // ---- Activity log ----
+  async function loadActivityLog() {
+    const log = $("#actLog");
+    if (!log) return;
+    try {
+      const activities = [];
+      users.forEach(u => {
+        if (u.lastSeen) activities.push({ email: u.email, action: 'active', ts: u.lastSeen });
+        (u.logins || []).forEach(l => activities.push({ email: u.email, action: 'login from ' + (l.device || 'unknown'), ts: l.ts }));
+      });
+      activities.sort((a, b) => {
+        const ta = a.ts && a.ts.toMillis ? a.ts.toMillis() : (a.ts || 0);
+        const tb = b.ts && b.ts.toMillis ? b.ts.toMillis() : (b.ts || 0);
+        return tb - ta;
+      });
+      log.innerHTML = activities.length
+        ? activities.slice(0, 30).map(a => `<div class="user-row" style="padding:6px 0"><div class="ur-main"><div class="ur-name" style="font-size:.82rem">${esc(a.email || '?')}</div><div class="ur-mail muted" style="font-size:.72rem">${esc(a.action)}</div></div><div class="ur-seen muted" style="font-size:.72rem">${fmtDate(a.ts)}</div></div>`).join('')
+        : '<p class="muted" style="font-size:.82rem">No activity recorded.</p>';
+    } catch(e) { log.innerHTML = '<p class="muted">Could not load activity log.</p>'; }
+  }
+
+  // ---- Maintenance ----
+  const clearInactive = $("#admClearInactive");
+  if (clearInactive) clearInactive.onclick = async () => {
+    const msg = $("#maintMsg");
+    const cutoff = Date.now() - 90 * 864e5;
+    const toMs = (ts) => ts && ts.toMillis ? ts.toMillis() : (ts && ts.toDate ? ts.toDate().getTime() : 0);
+    const inactive = users.filter(u => {
+      const last = toMs(u.lastSeen) || toMs(u.created || u.createdAt);
+      return last && last < cutoff && u.email !== (OWNER_EMAIL || '');
+    });
+    if (!inactive.length) { if (msg) msg.textContent = 'No inactive users found.'; return; }
+    if (!confirm('Remove ' + inactive.length + ' users inactive for 90+ days?')) return;
+    let removed = 0;
+    for (const u of inactive) {
+      try { await deleteDoc(doc(db, "users", u.uid)); removed++; } catch(_) {}
+    }
+    if (msg) msg.textContent = 'Removed ' + removed + ' inactive users.';
+    loadUsers();
+  };
+
+  const exportFeedback = $("#admExportFeedback");
+  if (exportFeedback) exportFeedback.onclick = async () => {
+    try {
+      const snap = await getDocs(collection(db, "feedback"));
+      const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = 'feedback-export.json'; a.click();
+      URL.revokeObjectURL(url);
+    } catch(e) { const msg = $("#maintMsg"); if (msg) msg.textContent = 'Export failed: ' + e.message; }
+  };
+
+  // ---- Feature flags ----
+  const ffSave = $("#ffSave");
+  if (ffSave) ffSave.onclick = async () => {
+    const flags = {};
+    ['ffLearn','ffWebshell','ffVmlab','ffAI','ffGmail','ffGithub'].forEach(id => {
+      const el = $('#' + id);
+      if (el) flags[id.replace('ff','')] = el.checked;
+    });
+    try {
+      await setDoc(doc(db, "settings", "features"), { ...flags, updatedBy: user.email, updatedAt: serverTimestamp() }, { merge: true });
+      const msg = $("#ffMsg"); if (msg) msg.textContent = 'Flags saved.';
+    } catch(e) { const msg = $("#ffMsg"); if (msg) msg.textContent = 'Save failed: ' + e.message; }
+  };
+  // Load saved flags
+  try {
+    const flagDoc = await getDoc(doc(db, "settings", "features"));
+    if (flagDoc.exists()) {
+      const d = flagDoc.data();
+      ['Learn','Webshell','Vmlab','AI','Gmail','Github'].forEach(f => {
+        const el = $('#ff' + f);
+        if (el && d[f] !== undefined) el.checked = d[f];
+      });
+    }
+  } catch(_) {}
+
+  // ---- System status ----
+  const sysLh = $("#sysLh");
+  if (sysLh) {
+    try {
+      const r = await fetch('/data/topics.json', { method: 'HEAD' });
+      sysLh.textContent = r.ok ? 'OK' : 'error';
+      sysLh.style.color = r.ok ? '#3fb950' : '#f85149';
+    } catch(_) { sysLh.textContent = 'unreachable'; sysLh.style.color = '#f85149'; }
+  }
+  const sysBundle = $("#sysBundle");
+  if (sysBundle) {
+    const scripts = document.querySelectorAll('script[src]');
+    sysBundle.textContent = scripts.length + ' scripts loaded';
+  }
+  const sysDeploy = $("#sysDeploy");
+  if (sysDeploy) {
+    try {
+      const r = await fetch('/js/auth.js', { method: 'HEAD' });
+      const lm = r.headers.get('last-modified');
+      sysDeploy.textContent = lm ? new Date(lm).toLocaleDateString() : 'unknown';
+    } catch(_) { sysDeploy.textContent = 'unknown'; }
+  }
+
+  // ---- Quick actions ----
+  const admBackup = $("#admBackup");
+  if (admBackup) admBackup.onclick = async () => {
+    try {
+      const [usersSnap, wlSnap, annSnap] = await Promise.all([
+        getDocs(collection(db, "users")),
+        getDoc(WL_REF()),
+        getDoc(ANN_REF()),
+      ]);
+      const backup = {
+        exportedAt: new Date().toISOString(),
+        users: usersSnap.docs.map(d => ({ id: d.id, ...d.data() })),
+        whitelist: wlSnap.exists() ? wlSnap.data() : {},
+        announcement: annSnap.exists() ? annSnap.data() : {},
+      };
+      const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = 'sentinel-backup-' + new Date().toISOString().slice(0,10) + '.json'; a.click();
+      URL.revokeObjectURL(url);
+    } catch(e) { alert('Backup failed: ' + e.message); }
+  };
+
+  const admMsgAll = $("#admMsgAll");
+  if (admMsgAll) admMsgAll.onclick = () => {
+    const msg = prompt('Message to all users (shown as announcement):');
+    if (!msg) return;
+    const annText = $("#annText");
+    if (annText) { annText.value = msg; }
+    alert('Set the announcement text. Click Publish to send it.');
+  };
+
+  // ---- Danger zone ----
+  const admPurge = $("#admPurgeData");
+  if (admPurge) admPurge.onclick = async () => {
+    const msg = $("#dangerMsg");
+    if (!confirm('DANGER: This permanently deletes ALL user data. Are you absolutely sure?')) return;
+    if (prompt('Type DELETE to confirm:') !== 'DELETE') return;
+    let count = 0;
+    for (const u of users) {
+      if (u.email === OWNER_EMAIL) continue;
+      try { await deleteDoc(doc(db, "users", u.uid)); count++; } catch(_) {}
+    }
+    if (msg) msg.textContent = 'Purged ' + count + ' users.';
+    loadUsers();
+  };
+
+  const admRevoke = $("#admRevokeAll");
+  if (admRevoke) admRevoke.onclick = () => {
+    const msg = $("#dangerMsg");
+    if (msg) msg.textContent = 'Session revocation requires Firebase Admin SDK (server-side). Use the Firebase Console to revoke refresh tokens.';
+  };
+
+  // Load analytics + activity
+  loadAnalytics();
+  loadActivityLog();
 }
