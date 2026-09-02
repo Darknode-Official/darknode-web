@@ -1861,3 +1861,82 @@ tr:hover td {
   backdrop-filter: blur(8px);
 }
 
+/* ================================================================
+   API DASHBOARD
+   ================================================================ */
+
+.api-key-section .panel { max-width: 640px; }
+.api-key-row { display: flex; gap: 8px; align-items: center; }
+.api-key-input {
+  flex: 1; background: var(--bg2, #111); border: 1px solid var(--brd, #333);
+  color: var(--fg, #eee); padding: 10px 14px; border-radius: 6px; font-size: .88rem;
+  letter-spacing: .5px;
+}
+.api-meter {
+  height: 6px; background: var(--bg2, #111); border-radius: 3px; margin-top: 6px; overflow: hidden;
+}
+.api-meter > div {
+  height: 100%; background: var(--acc, #0ff); border-radius: 3px; transition: width .4s ease;
+}
+.api-endpoint {
+  border: 1px solid var(--brd, #333); border-radius: 8px; margin-bottom: 10px;
+  overflow: hidden; transition: border-color .2s;
+}
+.api-endpoint:hover { border-color: var(--acc, #0ff); }
+.api-ep-header {
+  display: flex; align-items: center; gap: 10px; padding: 12px 16px; cursor: pointer;
+  background: var(--bg2, #111);
+}
+.api-method {
+  font-size: .72rem; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+  text-transform: uppercase; letter-spacing: .5px; flex-shrink: 0;
+}
+.api-method-post { background: rgba(0,200,150,.15); color: #0c8; }
+.api-method-get  { background: rgba(100,180,255,.15); color: #6bf; }
+.api-path { font-size: .85rem; color: var(--fg, #eee); }
+.api-ep-desc { font-size: .8rem; margin-left: auto; }
+.api-ep-toggle { font-size: 1.1rem; color: var(--dim, #888); font-weight: 700; margin-left: 8px; }
+.api-ep-body { padding: 16px; border-top: 1px solid var(--brd, #333); }
+.api-ep-section { margin-bottom: 14px; }
+.api-ep-section:last-child { margin-bottom: 0; }
+.api-ep-label { font-size: .78rem; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: var(--dim, #888); margin-bottom: 6px; }
+.api-code-block {
+  position: relative; background: var(--bg2, #0a0a0a); border: 1px solid var(--brd, #333);
+  border-radius: 6px; overflow: hidden;
+}
+.api-code-block pre {
+  margin: 0; padding: 14px 16px; overflow-x: auto; font-size: .82rem; line-height: 1.6;
+}
+.api-code-block code { color: var(--fg, #eee); }
+.api-code-header {
+  font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .5px;
+  padding: 6px 16px; color: var(--dim, #888); border-bottom: 1px solid var(--brd, #333);
+}
+.api-code-copy {
+  position: absolute; top: 6px; right: 8px; font-size: .72rem; padding: 3px 10px;
+  border-radius: 4px; background: var(--bg2, #111); color: var(--dim, #888);
+  border: 1px solid var(--brd, #333); cursor: pointer; transition: color .2s, border-color .2s;
+}
+.api-code-copy:hover { color: var(--acc, #0ff); border-color: var(--acc, #0ff); }
+.api-code-tabs { display: flex; gap: 0; margin-bottom: -1px; }
+.api-tab {
+  padding: 8px 18px; font-size: .82rem; background: transparent; color: var(--dim, #888);
+  border: 1px solid transparent; border-bottom: none; border-radius: 6px 6px 0 0;
+  cursor: pointer; transition: color .2s, background .2s;
+}
+.api-tab.on { background: var(--bg2, #0a0a0a); color: var(--fg, #eee); border-color: var(--brd, #333); }
+.api-tab:hover { color: var(--fg, #eee); }
+.api-tiers { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; }
+.api-tier {
+  border: 1px solid var(--brd, #333); border-radius: 10px; padding: 24px 20px;
+  text-align: center; transition: border-color .3s, transform .2s;
+}
+.api-tier:hover { border-color: var(--acc, #0ff); transform: translateY(-2px); }
+.api-tier-highlight { border-color: var(--acc, #0ff); box-shadow: 0 0 20px rgba(0,255,255,.06); }
+.api-tier h3 { margin: 0 0 8px; font-size: 1.1rem; }
+.api-tier-price { font-size: 1.6rem; font-weight: 700; color: var(--acc, #0ff); margin-bottom: 4px; }
+.api-tier-calls { font-size: .82rem; color: var(--dim, #888); margin-bottom: 14px; }
+.api-tier ul { list-style: none; padding: 0; margin: 0; text-align: left; }
+.api-tier li { font-size: .82rem; padding: 4px 0; color: var(--fg, #eee); }
+.api-tier li::before { content: ""; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--acc, #0ff); margin-right: 8px; vertical-align: middle; }
+
