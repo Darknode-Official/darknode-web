@@ -98,6 +98,84 @@ function jwtNone(hdr, payload) { return `${b64urlStr(JSON.stringify({ ...hdr, al
 // Encoding chain — stack transforms in order.
 const rot13 = (s) => s.replace(/[a-z]/gi, (c) => { const d = c.charCodeAt(0) + 13; return String.fromCharCode((c <= "Z" ? 90 : 122) >= d ? d : d - 26); });
 
+// Base58 (Bitcoin alphabet) — mirrors lib/toolkit/base58.js so the web toolkit
+// stays in parity with the CLI. Encodes a utf8 string.
+const B58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+function b58encode(str) {
+  const bytes = [...enc.encode(str)];
+  if (!bytes.length) return "";
+  let zeros = 0; while (zeros < bytes.length && bytes[zeros] === 0) zeros++;
+  const digits = [0];
+  for (let i = zeros; i < bytes.length; i++) {
+    let carry = bytes[i];
+    for (let j = 0; j < digits.length; j++) { carry += digits[j] << 8; digits[j] = carry % 58; carry = (carry / 58) | 0; }
+    while (carry > 0) { digits.push(carry % 58); carry = (carry / 58) | 0; }
+  }
+  return "1".repeat(zeros) + digits.reverse().map((d) => B58[d]).join("");
+}
+
+// Canonical hex dump (mirrors lib/toolkit/hexdump.js).
+function hexdump(str) {
+  const buf = enc.encode(str); const rows = [];
+  for (let off = 0; off < buf.length; off += 16) {
+    const slice = buf.subarray(off, off + 16); let hex = "", ascii = "";
+    for (let i = 0; i < 16; i++) { hex += i < slice.length ? slice[i].toString(16).padStart(2, "0") + " " : "   "; if (i % 8 === 7) hex += " "; }
+    for (const b of slice) ascii += b >= 0x20 && b <= 0x7e ? String.fromCharCode(b) : ".";
+    rows.push(off.toString(16).padStart(8, "0") + "  " + hex + "|" + ascii + "|");
+  }
+  if (!buf.length) return "(empty)";
+  rows.push(buf.length.toString(16).padStart(8, "0")); // trailing total-length offset, like `hexdump -C`
+  return rows.join("\n");
+}
+
+// Repeating-key XOR (mirrors lib/toolkit/xorcipher.js). Encrypt text -> hex; decrypt
+// hex -> text. Self-inverse.
+function xorEncryptHex(key, data) {
+  const k = enc.encode(key), d = enc.encode(data); if (!k.length) return [...d].map((x) => x.toString(16).padStart(2, "0")).join("");
+  return [...d].map((b, i) => (b ^ k[i % k.length]).toString(16).padStart(2, "0")).join("");
+}
+function xorDecryptHex(key, hex) {
+  const clean = hex.replace(/\s+/g, ""); if (clean.length % 2 || !/^[0-9a-fA-F]*$/.test(clean)) return null;
+  const k = enc.encode(key), d = clean.match(/.{2}/g) || [];
+  return new TextDecoder().decode(new Uint8Array(d.map((h, i) => parseInt(h, 16) ^ (k.length ? k[i % k.length] : 0))));
+}
+
+// Luhn / mod-10 (mirrors lib/toolkit/luhn.js).
+function luhnSum(dig) { let s = 0, alt = false; for (let i = dig.length - 1; i >= 0; i--) { let d = dig.charCodeAt(i) - 48; if (alt) { d *= 2; if (d > 9) d -= 9; } s += d; alt = !alt; } return s; }
+function luhnValid(num) { const d = String(num).replace(/[\s-]/g, ""); return /^\d+$/.test(d) && luhnSum(d) % 10 === 0; }
+function luhnCheckDigit(partial) { const d = String(partial).replace(/[\s-]/g, ""); if (!/^\d+$/.test(d)) return null; return (10 - (luhnSum(d + "0") % 10)) % 10; }
+
+// IP scope classifier (mirrors lib/toolkit/ipclass.js) — offline, no lookups.
+function classifyIp(ip) {
+  const m = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(String(ip).trim());
+  if (m) {
+    const o = m.slice(1).map(Number); if (o.some((n) => n > 255)) return null;
+    const [a, b] = o; let scope = "global", routable = true, note = "";
+    if (a === 0) { scope = "this-network"; routable = false; note = "RFC 1122"; }
+    else if (a === 10 || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168)) { scope = "private"; routable = false; note = "RFC 1918"; }
+    else if (a === 127) { scope = "loopback"; routable = false; note = "RFC 1122"; }
+    else if (a === 169 && b === 254) { scope = "link-local"; routable = false; note = "RFC 3927 APIPA"; }
+    else if (a === 100 && b >= 64 && b <= 127) { scope = "cgnat"; routable = false; note = "RFC 6598"; }
+    else if ((a === 192 && b === 0 && o[2] === 2) || (a === 198 && b === 51 && o[2] === 100) || (a === 203 && b === 0 && o[2] === 113)) { scope = "documentation"; routable = false; note = "RFC 5737 TEST-NET"; }
+    else if (a === 198 && (b === 18 || b === 19)) { scope = "benchmarking"; routable = false; note = "RFC 2544"; }
+    else if (o.join(".") === "255.255.255.255") { scope = "broadcast"; routable = false; note = "limited broadcast"; }
+    else if (a >= 224 && a <= 239) { scope = "multicast"; routable = false; note = "class D"; }
+    else if (a >= 240) { scope = "reserved"; routable = false; note = "class E"; }
+    const klass = a < 128 ? "A" : a < 192 ? "B" : a < 224 ? "C" : a < 240 ? "D" : "E";
+    return { version: 4, scope, routable, note, klass, ptr: o.slice().reverse().join(".") + ".in-addr.arpa" };
+  }
+  const s = String(ip).trim().toLowerCase();
+  if (!/^[0-9a-f:]+$/.test(s) || s.indexOf(":") < 0) return null;
+  let scope = "global", routable = true, note = "";
+  if (s === "::1") { scope = "loopback"; routable = false; note = "RFC 4291"; }
+  else if (s === "::") { scope = "unspecified"; routable = false; }
+  else if (/^fe[89ab]/.test(s)) { scope = "link-local"; routable = false; note = "RFC 4291"; }
+  else if (/^f[cd]/.test(s)) { scope = "unique-local"; routable = false; note = "RFC 4193 ULA"; }
+  else if (s.startsWith("ff")) { scope = "multicast"; routable = false; }
+  else if (s.startsWith("2001:db8")) { scope = "documentation"; routable = false; note = "RFC 3849"; }
+  return { version: 6, scope, routable, note, klass: "-", ptr: "-" };
+}
+
 // ---- render ----
 export function renderUtils(main) {
   main.innerHTML = `
@@ -154,7 +232,7 @@ export function renderUtils(main) {
       <textarea class="in mono" id="jtout" rows="2" readonly></textarea>
       <div class="util-btns"><button class="btn ghost sm" data-copytarget="jtout">copy</button></div>`),
     card("Encoding chain", "Stack", `<textarea class="in" id="chin" rows="2" placeholder="input text"></textarea>
-      <div class="util-btns"><button class="btn ghost sm" data-a="ch-b64">+base64</button><button class="btn ghost sm" data-a="ch-hex">+hex</button><button class="btn ghost sm" data-a="ch-url">+url</button><button class="btn ghost sm" data-a="ch-rot13">+rot13</button><button class="btn ghost sm" data-a="ch-clear">clear</button><button class="btn ghost sm" data-copytarget="chout">copy</button></div>
+      <div class="util-btns"><button class="btn ghost sm" data-a="ch-b64">+base64</button><button class="btn ghost sm" data-a="ch-hex">+hex</button><button class="btn ghost sm" data-a="ch-url">+url</button><button class="btn ghost sm" data-a="ch-base58">+base58</button><button class="btn ghost sm" data-a="ch-rot13">+rot13</button><button class="btn ghost sm" data-a="ch-clear">clear</button><button class="btn ghost sm" data-copytarget="chout">copy</button></div>
       <div class="util-kv"><span>Chain</span><code id="chsteps" class="util-val">—</code></div>
       <textarea class="in mono" id="chout" rows="2" readonly></textarea>`),
     card("JSON", "Format", `<textarea class="in mono" id="jsonin" rows="3" placeholder='{"a":1,"b":[2,3]}'></textarea>
@@ -173,6 +251,18 @@ export function renderUtils(main) {
       <div class="util-btns"><button class="btn sm" data-a="lsort">Sort</button><button class="btn ghost sm" data-a="luniq">Unique</button><button class="btn ghost sm" data-a="lrev">Reverse</button><button class="btn ghost sm" data-a="lshuf">Shuffle</button><button class="btn ghost sm" data-copytarget="lineout">copy</button></div>
       <div class="util-kv"><span>Count</span><code id="linecount" class="util-val">—</code></div>
       <textarea class="in mono" id="lineout" rows="3" readonly></textarea>`),
+    card("IP scope", "Network", `<input class="in mono" id="ipcin" placeholder="10.0.0.5  ·  8.8.8.8  ·  fe80::1">
+      <div class="util-kv"><span>Scope</span><code id="ipcscope" class="util-val">—</code></div>
+      <div class="util-kv"><span>Routable</span><code id="ipcrout" class="util-val">—</code></div>
+      <div class="util-kv"><span>Reverse</span><code id="ipcptr" class="util-val">—</code></div>`),
+    card("Luhn checksum", "Validate", `<input class="in mono" id="luhnin" placeholder="4539 1488 0343 6467  ·  end with ? for check digit">
+      <div class="util-kv"><span>Result</span><code id="luhnout" class="util-val">—</code></div>`),
+    card("XOR cipher", "Crypto", `<input class="in mono" id="xorkey" placeholder="key">
+      <textarea class="in mono" id="xorin" rows="2" placeholder="text to encrypt, or hex to decrypt"></textarea>
+      <div class="util-btns"><button class="btn sm" data-a="xore">Encrypt → hex</button><button class="btn ghost sm" data-a="xord">Decrypt hex</button><button class="btn ghost sm" data-copytarget="xorout">copy</button></div>
+      <textarea class="in mono" id="xorout" rows="2" readonly></textarea>`),
+    card("Hex dump", "Inspect", `<textarea class="in" id="hdin" rows="2" placeholder="text to dump"></textarea>
+      <pre class="out" id="hdout" style="margin-top:8px;font-size:11px;line-height:1.35">canonical hex + ASCII appears here</pre>`),
   ].join("");
 
   const $ = (id) => main.querySelector("#" + id);
@@ -219,7 +309,7 @@ export function renderUtils(main) {
 
   // encoding chain state
   const chain = [];
-  const chainOps = { b64: b64e, hex: (s) => [...enc.encode(s)].map((x) => x.toString(16).padStart(2, "0")).join(""), url: encodeURIComponent, rot13 };
+  const chainOps = { b64: b64e, hex: (s) => [...enc.encode(s)].map((x) => x.toString(16).padStart(2, "0")).join(""), url: encodeURIComponent, base58: b58encode, rot13 };
   const chainApply = () => {
     let v = $("chin").value;
     try { for (const op of chain) v = chainOps[op](v); $("chout").value = v; }
@@ -239,6 +329,23 @@ export function renderUtils(main) {
   $("cronin").oninput = () => { $("cronout").textContent = $("cronin").value.trim() ? explainCron($("cronin").value) : "—"; };
   // line tools
   $("linein").oninput = () => { $("linecount").textContent = $("linein").value.split("\n").filter((x) => x.trim()).length + " lines"; };
+  // IP scope classifier
+  $("ipcin").oninput = () => {
+    const r = classifyIp($("ipcin").value);
+    if (!r) { $("ipcscope").textContent = $("ipcrout").textContent = $("ipcptr").textContent = "—"; return; }
+    $("ipcscope").textContent = r.scope + (r.note ? "  (" + r.note + ")" : "");
+    $("ipcrout").textContent = r.routable ? "yes — public internet" : "no — not globally routable";
+    $("ipcptr").textContent = r.ptr;
+  };
+  // Luhn
+  $("luhnin").oninput = () => {
+    const v = $("luhnin").value.trim();
+    if (!v) { $("luhnout").textContent = "—"; return; }
+    if (v.endsWith("?")) { const cd = luhnCheckDigit(v.slice(0, -1)); $("luhnout").textContent = cd === null ? "not a number" : "check digit " + cd + "  (full: " + v.slice(0, -1).replace(/[\s-]/g, "") + cd + ")"; return; }
+    $("luhnout").textContent = luhnValid(v) ? "valid — passes Luhn" : "invalid — fails Luhn";
+  };
+  // Hex dump (live)
+  $("hdin").oninput = () => { $("hdout").textContent = $("hdin").value ? hexdump($("hdin").value) : "canonical hex + ASCII appears here"; };
 
   ug.onclick = async (e) => {
     const b = e.target.closest("[data-a]"); if (!b) return;
@@ -259,6 +366,8 @@ export function renderUtils(main) {
       else if (a === "hexe") $("hexout").value = [...enc.encode($("hexin").value)].map((x) => x.toString(16).padStart(2, "0")).join("");
       else if (a === "hexd") $("hexout").value = new TextDecoder().decode(new Uint8Array($("hexin").value.trim().replace(/\s+/g, "").match(/.{1,2}/g).map((h) => parseInt(h, 16))));
       else if (a === "tsnow") { $("tsin").value = Date.now(); tsUpdate(); }
+      else if (a === "xore") $("xorout").value = xorEncryptHex($("xorkey").value, $("xorin").value);
+      else if (a === "xord") { const r = xorDecryptHex($("xorkey").value, $("xorin").value); $("xorout").value = r == null ? "Error: input is not valid hex" : r; }
       else if (a === "uuid") $("genout").value = uuid4();
       else if (a === "pw") $("genout").value = genPw(20, $("pwsym").checked);
       else if (a === "mangle") $("mangout").value = mangle($("mangin").value).join("\n");
