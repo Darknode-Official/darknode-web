@@ -21,7 +21,8 @@
   <link rel="dns-prefetch" href="https://firebaseinstallations.googleapis.com">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" media="print" onload="this.media='all'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap"></noscript>
   <style>body{margin:0;background:var(--bg);color:var(--txt);
   font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
 #bootscreen{position:fixed;inset:0;z-index:99999;background:radial-gradient(1200px 600px at 50% 20%,#0a0f1c,#05070d 70%);
@@ -39,7 +40,9 @@
   <link rel="prefetch" href="/data/topics.json">
 </head>
 <body>
-  <div id="bootscreen" aria-hidden="true">
+  <script>!function(){var a=["darknode.ai","www.darknode.ai","localhost","127.0.0.1"],h=location.hostname;if(!a.some(function(d){return h===d||h.endsWith("."+d)})){document.documentElement.innerHTML="<body style='background:#0a0e16;color:#f44;font:600 1.2rem/2 system-ui;display:flex;align-items:center;justify-content:center;height:100vh;text-align:center;padding:2rem'><div><h1>Unauthorized</h1><p>This software is licensed exclusively to <b>darknode.ai</b>.<br>Redistribution and rehosting are prohibited.<br><br><a href=\x22https://darknode.ai\x22 style=\x22color:#00d4ff\x22>Visit the official site</a></p></div></body>";throw new Error("Unauthorized domain")}}()</script>
+  <a class="skip-link" href="#view">Skip to content</a>
+  <div id="bootscreen" aria-hidden="true" role="presentation">
     <canvas class="boot-rain" id="bootrain"></canvas>
     <div class="boot-grid"></div>
     <div class="boot-sweep"></div>
@@ -47,11 +50,11 @@
       <div class="boot-ring"></div><div class="boot-ring r2"></div>
       <div class="boot-logo glitch" data-text="&gt;_ DARKNODE">&gt;_ DARKNODE</div>
       <div class="boot-tag">C Y B E R S E C U R I T Y &nbsp; L E A R N I N G &nbsp; P L A T F O R M</div>
-      <div class="boot-ver">v2.1.0 &middot; 56 modules &middot; 10,107 lines</div>
+      <div class="boot-ver">v2.45.0 &middot; 59 modules &middot; 10,586 lines</div>
       <div class="boot-lines">
-        <div style="--d:.15s"><span class="boot-dim">darknode kernel 2.1.0 (darknode.ai)</span></div>
+        <div style="--d:.15s"><span class="boot-dim">darknode kernel 2.45.0 (darknode.ai)</span></div>
         <div style="--d:.30s">[<span class="bok">OK</span>] loading 80+ security tools</div>
-        <div style="--d:.45s">[<span class="bok">OK</span>] initializing Nexus AI engine (56 modules)</div>
+        <div style="--d:.45s">[<span class="bok">OK</span>] initializing Nexus AI engine (59 modules)</div>
         <div style="--d:.60s">[<span class="bok">OK</span>] connecting 8 AI backends</div>
         <div style="--d:.75s">[<span class="bok">OK</span>] arming Ghost Agents &amp; Thought Stream</div>
         <div style="--d:.90s">[<span class="bok">OK</span>] loading threat intelligence databases</div>
@@ -65,12 +68,17 @@
     </div>
   </div>
   <div id="app">
-    <header id="topbar">
-      <a class="brand" href="/"><img class="brand-mark" src="/favicon.svg" alt=""><span>Darknode</span></a>
-      <span id="user-slot"><!-- sign-in button / avatar rendered by js/auth.js --></span>
+    <header id="topbar" role="banner">
+      <a class="brand" href="/" aria-label="Darknode home"><img class="brand-mark" src="/favicon.svg" alt="Darknode logo" width="24" height="24"><span>Darknode</span></a>
+      <button class="hamburger" id="hamburger" aria-label="Toggle navigation menu" aria-expanded="false" hidden>
+        <span class="hamburger-line"></span>
+        <span class="hamburger-line"></span>
+        <span class="hamburger-line"></span>
+      </button>
+      <span id="user-slot" role="navigation" aria-label="User actions"><!-- sign-in button / avatar rendered by js/auth.js --></span>
     </header>
-    <div id="announcement" class="banner" hidden></div>
-    <main id="view"><p class="loading">Loading&hellip;</p></main>
+    <div id="announcement" class="banner" role="alert" hidden></div>
+    <main id="view" role="main"><p class="loading" aria-live="polite">Loading&hellip;</p></main>
   </div>
 
   <!-- Boot splash: warp-speed neon hyperjump — 3D streaks + charging energy core,
