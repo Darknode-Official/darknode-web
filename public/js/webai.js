@@ -131,35 +131,33 @@ export function renderAI(main) {
   const engine = getEngine();
   const hasKey = !!getClaudeKey();
   main.innerHTML = `
-    <h1 class="pg-h1">AI assistant</h1>
-    <p class="muted pg-sub">Chat with <strong>GPT-OSS 120B</strong> (local, private, free) or <strong>Claude</strong> (Anthropic API). For a fully autonomous agent, get the <strong>desktop app</strong>.</p>
-    <div class="card" style="max-width:840px">
-      <div class="row" style="gap:8px;flex-wrap:wrap;align-items:center">
-        <select class="tk-f" id="aiEngine" style="width:auto;min-width:160px">
-          <option value="ollama"${engine === "ollama" || (engine === "auto" && !hasKey) ? " selected" : ""}>GPT-OSS 120B (local)</option>
-          <option value="claude"${engine === "claude" || (engine === "auto" && hasKey) ? " selected" : ""}>Claude (API key)</option>
-        </select>
-        <select class="tk-f" id="aiModel" style="flex:1"></select>
-        <button class="btn ghost" id="aiSys">System prompt</button>
-        <button class="btn ghost" id="aiClear">Clear</button>
-      </div>
-      <div id="aiKeyRow" style="margin-top:8px;${engine === "ollama" ? "display:none" : ""}">
-        <div class="row" style="gap:8px;align-items:center">
-          <input class="tk-f" id="aiKey" type="password" placeholder="Anthropic API key (sk-ant-...)" value="${hasKey ? "••••••••" : ""}" style="flex:1;min-width:200px">
-          <button class="btn ghost" id="aiKeySave">${hasKey ? "Update" : "Save"}</button>
-          ${hasKey ? `<button class="btn ghost" id="aiKeyDel">Remove</button>` : ""}
+    <div class="ai-wrap">
+      <div class="ai-header">
+        <h1 class="ai-title">AI assistant</h1>
+        <div class="ai-controls">
+          <select class="ai-sel" id="aiEngine">
+            <option value="ollama"${engine === "ollama" || (engine === "auto" && !hasKey) ? " selected" : ""}>GPT-OSS 120B (local)</option>
+            <option value="claude"${engine === "claude" || (engine === "auto" && hasKey) ? " selected" : ""}>Claude (API key)</option>
+          </select>
+          <select class="ai-sel" id="aiModel"></select>
+          <button class="btn ghost sm" id="aiSys">System</button>
+          <button class="btn ghost sm" id="aiClear">Clear</button>
         </div>
-        <p class="muted" style="font-size:.76rem;margin:4px 0">Your key is stored only in this browser. Get one at <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>.</p>
       </div>
-      <div id="aiStatus" style="font-size:.8rem;color:var(--mut);margin-top:8px"></div>
-    </div>
-    <div class="chat" id="aiChat" style="max-width:840px;height:min(52vh,520px)"><div class="muted" style="margin:auto;text-align:center;font-size:.85rem">Ask anything &mdash; recon, exploitation, tooling, or code.</div></div>
-    <div class="ai-presets" id="aiPresets" style="max-width:840px"></div>
-    <div id="aiThumbs" class="ai-thumbs" style="max-width:840px"></div>
-    <div class="row" style="max-width:840px;gap:8px">
-      <textarea class="tk-in" id="aiMsg" rows="2" placeholder="Message Darknode AI, or attach/paste a screenshot to read its text..." style="flex:1"></textarea>
-      <button class="btn ghost" id="aiImg" title="Attach image">Image</button>
-      <button class="btn" id="aiSend">Send</button>
+      <div id="aiKeyRow" class="ai-key-row" style="${engine === "ollama" ? "display:none" : ""}">
+        <input class="ai-key-input" id="aiKey" type="password" placeholder="Anthropic API key (sk-ant-...)" value="${hasKey ? "••••••••" : ""}">
+        <button class="btn ghost sm" id="aiKeySave">${hasKey ? "Update" : "Save"}</button>
+        ${hasKey ? `<button class="btn ghost sm" id="aiKeyDel">Remove</button>` : ""}
+      </div>
+      <div id="aiStatus" class="ai-status"></div>
+      <div class="ai-chat" id="aiChat"><div class="ai-empty">Ask anything -- recon, exploitation, tooling, or code.</div></div>
+      <div class="ai-presets" id="aiPresets"></div>
+      <div id="aiThumbs" class="ai-thumbs"></div>
+      <div class="ai-input-row">
+        <textarea class="ai-input" id="aiMsg" rows="1" placeholder="Message Darknode AI..."></textarea>
+        <button class="btn ghost sm" id="aiImg" title="Attach image">Image</button>
+        <button class="btn sm" id="aiSend">Send</button>
+      </div>
     </div>
     <input type="file" id="aiFile" accept="image/*" hidden>`;
   const $ = (s) => main.querySelector(s);
@@ -228,7 +226,7 @@ export function renderAI(main) {
     const v = prompt("System prompt — controls how the AI behaves:", localStorage.getItem(SYS_KEY) || DEFAULT_SYS);
     if (v !== null) { try { localStorage.setItem(SYS_KEY, v); } catch (_) {} history[0] = { role: "system", content: v }; status.textContent = "System prompt updated."; }
   };
-  const add = (role, text) => { const d = document.createElement("div"); d.className = "msg " + (role === "user" ? "you" : "ai"); d.textContent = text; if (chatEl.querySelector(".muted")) chatEl.innerHTML = ""; chatEl.appendChild(d); chatEl.scrollTop = chatEl.scrollHeight; return d; };
+  const add = (role, text) => { const d = document.createElement("div"); d.className = "msg " + (role === "user" ? "you" : "ai"); d.textContent = text; const empty = chatEl.querySelector(".ai-empty"); if (empty) empty.remove(); chatEl.appendChild(d); chatEl.scrollTop = chatEl.scrollHeight; return d; };
 
   let pending = [];
   const drawThumbs = () => { $("#aiThumbs").innerHTML = pending.map((b, i) => `<span class="ai-thumb"><img alt="attachment ${i + 1}" src="data:image/png;base64,${b}"><button data-rm="${i}" title="remove" aria-label="remove attachment ${i + 1}">&times;</button></span>`).join(""); };
@@ -245,14 +243,25 @@ export function renderAI(main) {
     const model = sel.value;
     const eng = curEngine();
     if (eng === "ollama" && (!model || model === "offline" || model === "none")) {
-      status.textContent = "Pulling GPT-OSS 120B — this may take a few minutes on first run...";
+      status.textContent = "Downloading GPT-OSS 120B -- this only happens once...";
+      const pullMsg = add("ai", ""); pullMsg.innerHTML = "Pulling <strong>gpt-oss:120b</strong> from Ollama. This may take a few minutes on first run...";
       try {
-        const pr = await fetch("http://127.0.0.1:11434/api/pull", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: "gpt-oss:120b", stream: false }) });
-        if (!pr.ok) throw new Error("pull failed");
-        status.textContent = "GPT-OSS 120B ready.";
+        const pr = await fetch("http://127.0.0.1:11434/api/pull", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: "gpt-oss:120b", stream: true }) });
+        if (!pr.ok) throw new Error("pull failed (" + pr.status + ")");
+        const reader = pr.body.getReader(), dec = new TextDecoder(); let buf = "";
+        for (;;) {
+          const { done, value } = await reader.read(); if (done) break;
+          buf += dec.decode(value, { stream: true });
+          let nl; while ((nl = buf.indexOf("\n")) >= 0) {
+            const line = buf.slice(0, nl).trim(); buf = buf.slice(nl + 1);
+            if (!line) continue;
+            try { const j = JSON.parse(line); if (j.completed && j.total) { const pct = Math.round(j.completed / j.total * 100); pullMsg.innerHTML = "Pulling <strong>gpt-oss:120b</strong>: " + pct + "%"; } else if (j.status) { pullMsg.innerHTML = "Pulling <strong>gpt-oss:120b</strong>: " + esc(j.status); } } catch (_) {}
+          }
+        }
+        pullMsg.innerHTML = "<strong>gpt-oss:120b</strong> ready. Send your message again.";
+        status.textContent = "GPT-OSS 120B installed.";
         populateModels();
-        const ms = await getOllamaModels(); if (ms && ms.length) { sel.value = ms.find(m => m.startsWith("gpt-oss")) || ms[0]; }
-      } catch (_) { status.textContent = "Ollama not reachable. Start it: OLLAMA_ORIGINS=* ollama serve"; return; }
+      } catch (_) { pullMsg.innerHTML = "Could not reach Ollama. Start it first: <code>OLLAMA_ORIGINS=* ollama serve</code>"; status.textContent = ""; }
       return;
     }
     if (eng === "claude" && !getClaudeKey()) { status.textContent = "Add your Anthropic API key first."; return; }
@@ -273,7 +282,7 @@ export function renderAI(main) {
     finally { busy = false; ctrl = null; const b = $("#aiSend"); b.textContent = "Send"; if (status.textContent.startsWith("reading image")) status.textContent = ""; $("#aiMsg").focus(); }
   }
   $("#aiSend").onclick = () => { if (busy && ctrl) ctrl.abort(); else send(); };
-  $("#aiClear").onclick = () => { if (busy && ctrl) ctrl.abort(); history.length = 1; chatEl.innerHTML = `<div class="muted" style="margin:auto;text-align:center;font-size:.85rem">Ask anything &mdash; recon, exploitation, tooling, or code.</div>`; };
+  $("#aiClear").onclick = () => { if (busy && ctrl) ctrl.abort(); history.length = 1; chatEl.innerHTML = `<div class="ai-empty">Ask anything -- recon, exploitation, tooling, or code.</div>`; };
   $("#aiMsg").onkeydown = (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } };
   let userPrompts = loadPrompts();
   const drawPresets = () => {
