@@ -2052,3 +2052,140 @@ tr:hover td {
   .feat-grid,.product-grid,.steps{grid-template-columns:1fr}
   .cta-band-inner{flex-direction:column;text-align:center}
 }
+
+/* ===== Anthropic-grade landing redesign ===== */
+
+/* Hero — mesh gradient background */
+.hero{padding:120px 0 80px;position:relative;overflow:hidden;border-bottom:1px solid var(--line)}
+.hero-mesh{position:absolute;inset:0;
+  background:radial-gradient(800px 400px at 20% 20%,color-mix(in srgb,var(--acc) 14%,transparent),transparent),
+             radial-gradient(600px 600px at 80% 60%,color-mix(in srgb,var(--acc-2) 10%,transparent),transparent),
+             radial-gradient(400px 400px at 50% 0%,color-mix(in srgb,var(--acc) 8%,transparent),transparent)}
+.hero-grain{position:absolute;inset:0;opacity:.03;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E");
+  background-repeat:repeat;background-size:256px}
+.hero-inner{text-align:center;position:relative}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;padding:6px 16px;border-radius:100px;
+  border:1px solid var(--line);font-size:.76rem;font-weight:600;color:var(--txt-2);margin-bottom:28px;
+  background:color-mix(in srgb,var(--card) 60%,transparent);backdrop-filter:blur(8px)}
+.badge-dot{width:6px;height:6px;border-radius:50%;background:var(--ok);animation:dotPulse 2s ease infinite}
+@keyframes dotPulse{0%,100%{opacity:1}50%{opacity:.4}}
+.hero-h1{font-family:var(--font-display);font-size:clamp(2.4rem,5.5vw,4rem);font-weight:800;
+  line-height:1.08;letter-spacing:-.03em;margin:0 0 20px}
+.hero-rotate-wrap{display:inline-block;position:relative}
+.hero-rotate{display:inline-block;transition:opacity .25s,transform .25s;color:var(--acc)}
+.hero-sub{color:var(--mut);font-size:1.1rem;line-height:1.65;max-width:560px;margin:0 auto 32px}
+.hero-cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.hero-cta .ghost{display:inline-flex;align-items:center}
+
+/* Hero stats */
+.hero-trust{display:flex;align-items:center;justify-content:center;gap:0;margin-top:48px;
+  padding:16px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.trust-item{text-align:center;padding:0 32px}
+.trust-sep{width:1px;height:36px;background:var(--line)}
+.trust-n{font-family:var(--font-display);font-size:1.8rem;font-weight:800;color:var(--txt);letter-spacing:-.02em}
+.trust-l{display:block;font-size:.72rem;color:var(--mut);text-transform:uppercase;letter-spacing:.1em;margin-top:2px}
+@media(max-width:600px){.trust-item{padding:0 16px}.trust-n{font-size:1.3rem}}
+
+/* Section labels (like Anthropic's eyebrow text) */
+.sec-label{font-size:.7rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--acc);text-align:center;margin-bottom:10px}
+.sec-sub{text-align:center;color:var(--mut);font-size:.95rem;max-width:520px;margin:0 auto 40px;line-height:1.6}
+
+/* Bento grid (like Linear/Vercel) */
+.bento{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.bento-lg{grid-column:1/-1}
+.bento-card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:32px;
+  transition:border-color .3s,transform .2s,box-shadow .3s}
+.bento-card:hover{border-color:var(--acc-line);transform:translateY(-2px);
+  box-shadow:0 12px 40px -16px color-mix(in srgb,var(--acc) 18%,transparent)}
+.bento-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+  background:color-mix(in srgb,var(--acc) 10%,transparent);margin-bottom:16px}
+.bento-icon svg{width:22px;height:22px;color:var(--acc)}
+.bento-card h3{font-size:1.2rem;margin:0 0 8px;font-weight:700}
+.bento-card p{color:var(--mut);font-size:.88rem;line-height:1.6;margin:0 0 16px}
+.bento-tag{display:inline-block;font-size:.7rem;font-weight:600;color:var(--acc);padding:4px 12px;
+  border-radius:100px;border:1px solid color-mix(in srgb,var(--acc) 25%,transparent);
+  background:color-mix(in srgb,var(--acc) 6%,transparent)}
+@media(max-width:600px){.bento{grid-template-columns:1fr}}
+
+/* Feature rows (alternating text + visual) */
+.feature-rows{display:flex;flex-direction:column;gap:72px}
+.feature-row{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center}
+.feature-row.reverse{direction:rtl}.feature-row.reverse>*{direction:ltr}
+.feature-text h3{font-size:1.35rem;font-weight:700;margin:0 0 12px;font-family:var(--font-display)}
+.feature-text p{color:var(--mut);font-size:.92rem;line-height:1.65;margin:0}
+.feature-visual{position:relative}
+.feature-visual .term-window{box-shadow:0 0 60px -15px color-mix(in srgb,var(--acc) 25%,transparent),var(--sh-2)}
+@media(max-width:768px){.feature-row,.feature-row.reverse{grid-template-columns:1fr;direction:ltr}.feature-row.reverse>*{direction:ltr}}
+
+/* Lab cards */
+.lab-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.lab-card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px;
+  display:flex;align-items:center;gap:10px;font-size:.85rem;font-family:var(--font-mono)}
+.lab-status{width:8px;height:8px;border-radius:50%}
+.lab-status.on{background:var(--ok);box-shadow:0 0 8px var(--ok)}
+.lab-status.off{background:var(--line)}
+.lab-port{margin-left:auto;color:var(--mut);font-size:.75rem}
+
+/* Nexus stats grid */
+.nexus-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:24px}
+.nx-card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px;text-align:center;
+  transition:border-color .3s,transform .2s}
+.nx-card:hover{border-color:var(--acc-line);transform:translateY(-2px)}
+.nx-n{font-family:var(--font-display);font-size:1.6rem;font-weight:800;color:var(--acc)}
+.nx-l{font-size:.72rem;color:var(--mut);text-transform:uppercase;letter-spacing:.08em;margin-top:4px}
+.nx-details{margin-top:16px}
+.nx-details summary{cursor:pointer;color:var(--acc);font-size:.85rem;font-weight:600;text-align:center;padding:12px;
+  border:1px solid var(--line);border-radius:10px;background:var(--card);list-style:none}
+.nx-details summary::-webkit-details-marker{display:none}
+.nx-details[open] summary{border-bottom-left-radius:0;border-bottom-right-radius:0;border-bottom:none}
+.nx-modules{border:1px solid var(--line);border-top:none;border-radius:0 0 10px 10px;padding:20px;
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px;background:var(--card)}
+.nx-group h4{font-size:.75rem;text-transform:uppercase;letter-spacing:.12em;color:var(--acc);margin:0 0 8px}
+.nx-group span{display:block;font-size:.82rem;color:var(--txt-2);padding:3px 0}
+
+/* Timeline get-started */
+.timeline{max-width:480px;margin:0 auto;position:relative;padding-left:40px}
+.timeline::before{content:"";position:absolute;left:15px;top:8px;bottom:8px;width:1px;background:var(--line)}
+.tl-step{position:relative;padding-bottom:32px}
+.tl-step:last-child{padding-bottom:0}
+.tl-dot{position:absolute;left:-40px;width:30px;height:30px;border-radius:50%;
+  background:var(--acc);color:#04121a;font-weight:800;font-size:.82rem;
+  display:flex;align-items:center;justify-content:center;z-index:1}
+.tl-content h3{margin:0 0 4px;font-size:1rem;font-weight:700}
+.tl-content p{margin:0;color:var(--mut);font-size:.88rem;line-height:1.5}
+
+/* GitHub cards */
+.gh-cards{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:28px}
+.gh-card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px 24px;
+  text-decoration:none;min-width:220px;text-align:left;transition:border-color .3s,transform .2s}
+.gh-card:hover{border-color:var(--acc-line);transform:translateY(-2px)}
+.gh-name{display:block;font-weight:700;font-size:.95rem;color:var(--txt);margin-bottom:4px;font-family:var(--font-mono)}
+.gh-desc{display:block;font-size:.78rem;color:var(--mut)}
+
+/* Final CTA */
+.cta-final{padding:80px 0;position:relative;overflow:hidden;border-top:1px solid var(--line)}
+.cta-mesh{position:absolute;inset:0;
+  background:radial-gradient(600px 300px at 50% 50%,color-mix(in srgb,var(--acc) 12%,transparent),transparent)}
+.cta-final h2{font-family:var(--font-display);font-size:clamp(1.6rem,4vw,2.4rem);font-weight:800;margin:0 0 8px}
+.cta-sub{color:var(--mut);font-size:1rem;margin:0}
+
+/* Footer — 4-column like Anthropic */
+.foot{padding:48px 0 24px;border-top:1px solid var(--line)}
+.foot-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:32px;margin-bottom:32px}
+@media(max-width:768px){.foot-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:480px){.foot-grid{grid-template-columns:1fr}}
+.foot-brand{display:flex;flex-direction:column;gap:6px}
+.brand-name{font-weight:800;font-size:1.1rem;font-family:var(--font-display)}
+.foot-tagline{color:var(--mut);font-size:.82rem}
+.foot-col h4{font-size:.7rem;text-transform:uppercase;letter-spacing:.15em;color:var(--mut);margin:0 0 12px}
+.foot-col a{display:block;color:var(--txt-2);font-size:.85rem;text-decoration:none;padding:3px 0}
+.foot-col a:hover{color:var(--acc)}
+.foot-bottom{display:flex;justify-content:space-between;align-items:center;padding-top:20px;border-top:1px solid var(--line);flex-wrap:wrap;gap:8px}
+.foot-copy,.foot-note{font-size:.72rem;color:var(--mut)}
+
+/* Scroll reveal */
+.sec-title,.bento-card,.feature-row,.tl-step,.nx-card,.gh-card,.cta-final{
+  opacity:0;transform:translateY(24px);transition:opacity .6s ease,transform .6s ease}
+.revealed{opacity:1;transform:translateY(0)}
