@@ -79,12 +79,33 @@ body.landing #view{max-width:none;padding:0;margin:0}
 /* When the subtitle follows a section heading (not a page title), the -24px pull would overlap it. */
 .dlcli-h + .dlapp-sub{margin-top:8px}
 .ed-cmd{max-width:100%}
-/* Web AI page: friendly "connect a model / get the app" panel that fills the empty chat area */
+/* AI assistant */
+.ai-wrap{display:flex;flex-direction:column;height:calc(100vh - var(--topbar-h) - 80px);min-height:400px;max-width:900px}
+.ai-header{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:12px}
+.ai-title{font-size:1.4rem;font-weight:800;margin:0;letter-spacing:-.02em}
+.ai-controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-left:auto}
+.ai-sel{background:var(--card);border:1px solid var(--line);color:var(--txt);padding:6px 12px;border-radius:8px;font-size:.82rem;cursor:pointer}
+.ai-sel:focus{outline:none;border-color:var(--acc)}
+.ai-key-row{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+.ai-key-input{flex:1;background:var(--card);border:1px solid var(--line);color:var(--txt);padding:6px 12px;border-radius:8px;font-family:var(--font-mono);font-size:.8rem}
+.ai-key-input:focus{outline:none;border-color:var(--acc)}
+.ai-status{font-size:.78rem;color:var(--mut);margin-bottom:8px;min-height:1.2em}
+.ai-chat{flex:1;overflow-y:auto;border:1px solid var(--line);border-radius:12px;background:var(--bg);padding:16px;display:flex;flex-direction:column;gap:12px}
+.ai-chat::-webkit-scrollbar{width:6px}.ai-chat::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px}
+.ai-empty{margin:auto;color:var(--mut);font-size:.88rem;text-align:center}
+.msg{padding:10px 14px;border-radius:12px;font-size:.88rem;line-height:1.65;max-width:85%;word-wrap:break-word}
+.msg.you{background:color-mix(in srgb,var(--acc) 14%,transparent);border:1px solid color-mix(in srgb,var(--acc) 20%,transparent);align-self:flex-end;color:var(--txt)}
+.msg.ai{background:var(--card);border:1px solid var(--line);align-self:flex-start;color:var(--txt)}
+.ai-input-row{display:flex;gap:8px;align-items:flex-end;margin-top:10px}
+.ai-input{flex:1;background:var(--card);border:1px solid var(--line);color:var(--txt);padding:10px 14px;border-radius:12px;font-size:.88rem;font-family:inherit;resize:none;min-height:20px;max-height:120px}
+.ai-input:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 15%,transparent)}
+.btn.sm{padding:6px 14px;font-size:.78rem}
 .ai-offline{margin:auto;max-width:560px;text-align:center;padding:22px 20px}
 .ai-offline-h{font-size:1.05rem;font-weight:600;margin-bottom:10px}
 .ai-offline-b{color:var(--mut);font-size:.86rem;line-height:1.6;text-align:left}
 .ai-offline-b code{background:var(--card2,#101827);border:1px solid var(--line);border-radius:6px;padding:2px 6px;font-size:.8rem;color:var(--acc);word-break:break-all}
 .ai-offline-cta{margin-top:16px}
+@media(max-width:720px){.ai-header{flex-direction:column;align-items:flex-start}.ai-controls{margin-left:0}.msg{max-width:95%}}
 .dlapp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px;max-width:720px;margin:0 auto}
 .dlapp-item{display:flex;flex-direction:column;gap:10px}
 .dlapp-cmd{display:flex;flex-direction:column;gap:4px}
@@ -598,7 +619,7 @@ body.app .app-main::before{content:"";position:fixed;inset:0 0 0 220px;z-index:-
 @media (prefers-reduced-motion:reduce){.tw-line{opacity:1;transform:none;animation:none}}
 
 /* --- AI prompt presets + markdown code blocks --- */
-.ai-presets{display:flex;flex-wrap:wrap;gap:6px;margin:8px auto 0}
+.ai-presets{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 0}
 .msg.ai .code-block{position:relative;margin:8px 0;padding:10px 12px;background:#0b0f16;border:1px solid var(--line);border-radius:8px;overflow-x:auto}
 .msg.ai .code-block code{font-family:var(--mono,ui-monospace,monospace);font-size:.82rem;white-space:pre;color:#d6e2f0}
 .msg.ai .cb-copy{position:absolute;top:6px;right:6px;padding:2px 8px;font-size:.68rem;border:1px solid var(--line);background:rgba(255,255,255,.05);color:var(--mut);border-radius:6px;cursor:pointer}
