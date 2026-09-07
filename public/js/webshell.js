@@ -9,24 +9,21 @@ const DEMO_FS = {
 };
 
 const DEMO_CMDS = {
-  help: `Available commands (demo mode):
-  help        Show this message
-  whoami      Current user
-  id          User identity
-  pwd         Working directory
-  ls [dir]    List files
-  cd <dir>    Change directory
-  cat <file>  Read a file
-  uname -a    System info
-  hostname    Machine name
-  uptime      System uptime
-  clear       Clear the terminal
-  ifconfig    Network interfaces
-  ps aux      Running processes
-  date        Current date
-  echo <msg>  Print a message
+  help: `Available commands:
+  help                      Show this message
+  ollama list               List installed models
+  ollama pull <model>       Download a model (e.g. gpt-oss:120b)
+  ollama run <model> <msg>  Chat with a model
+  whoami / id / pwd         Identity & location
+  ls [dir] / cd <dir>       Navigate (demo filesystem)
+  cat <file>                Read a file
+  uname -a / hostname       System info
+  ifconfig / ps aux         Network & processes
+  uptime / date             Timing
+  clear / echo <msg>        Utilities
 
-Connect to a live Darknode OS instance for full shell access.`,
+Recommended: ollama pull gpt-oss:120b
+Requires Ollama running locally: OLLAMA_ORIGINS=* ollama serve`,
   whoami: "darknode",
   hostname: "darknode-os",
   id: "uid=1000(darknode) gid=1000(darknode) groups=1000(darknode),27(sudo),100(users)",
@@ -60,7 +57,53 @@ export function renderWebshell(main) {
     if (lines.length > MAX_LINES) lines = lines.slice(-MAX_LINES);
   }
 
-  function demoExec(cmd) {
+  const OLLAMA = "http://127.0.0.1:11434";
+
+  async function ollamaList() {
+    try { const r = await fetch(OLLAMA + "/api/tags"); const d = await r.json(); return (d.models || []).map((m) => m.name); }
+    catch (_) { return null; }
+  }
+
+  async function ollamaPull(model) {
+    addLine(`pulling ${model}...`, "sys"); paint();
+    try {
+      const r = await fetch(OLLAMA + "/api/pull", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: model, stream: true }) });
+      if (!r.ok || !r.body) throw new Error("status " + r.status);
+      const reader = r.body.getReader(), dec = new TextDecoder(); let buf = "", lastPct = "";
+      for (;;) {
+        const { done, value } = await reader.read(); if (done) break;
+        buf += dec.decode(value, { stream: true });
+        let nl; while ((nl = buf.indexOf("\n")) >= 0) {
+          const line = buf.slice(0, nl).trim(); buf = buf.slice(nl + 1);
+          if (!line) continue;
+          try { const j = JSON.parse(line); const pct = j.completed && j.total ? Math.round(j.completed / j.total * 100) + "%" : ""; if (pct && pct !== lastPct) { lastPct = pct; addLine(`  ${j.status || "downloading"} ${pct}`, "sys"); paint(); } else if (j.status && !j.completed) { addLine(`  ${j.status}`, "sys"); paint(); } } catch (_) {}
+        }
+      }
+      addLine(`${model} pulled successfully`, "sys");
+    } catch (e) { addLine(`pull failed: ${e.message}. Is Ollama running? (OLLAMA_ORIGINS=* ollama serve)`, "err"); }
+  }
+
+  async function ollamaRun(model, prompt) {
+    if (!prompt) { addLine("usage: ollama run <model> <prompt>", "err"); return; }
+    addLine(`[${model}] thinking...`, "sys"); paint();
+    try {
+      const r = await fetch(OLLAMA + "/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model, messages: [{ role: "user", content: prompt }], stream: true }) });
+      if (!r.ok || !r.body) throw new Error("status " + r.status);
+      const reader = r.body.getReader(), dec = new TextDecoder(); let buf = "", out = "";
+      for (;;) {
+        const { done, value } = await reader.read(); if (done) break;
+        buf += dec.decode(value, { stream: true });
+        let nl; while ((nl = buf.indexOf("\n")) >= 0) {
+          const line = buf.slice(0, nl).trim(); buf = buf.slice(nl + 1);
+          if (!line) continue;
+          try { const j = JSON.parse(line); if (j.message && j.message.content) out += j.message.content; } catch (_) {}
+        }
+      }
+      addLine(out || "(empty response)");
+    } catch (e) { addLine(`error: ${e.message}. Is Ollama running? (OLLAMA_ORIGINS=* ollama serve)`, "err"); }
+  }
+
+  async function demoExec(cmd) {
     const parts = cmd.trim().split(/\s+/);
     const base = parts[0];
     if (!base) return;
@@ -93,6 +136,22 @@ export function renderWebshell(main) {
       }
       return;
     }
+    if (base === "ollama") {
+      const sub = parts[1] || "";
+      if (sub === "list" || sub === "ls") {
+        const ms = await ollamaList();
+        if (ms === null) addLine("Ollama not reachable. Start it: OLLAMA_ORIGINS=* ollama serve", "err");
+        else if (!ms.length) addLine("No models installed. Try: ollama pull gpt-oss:120b");
+        else addLine("NAME\n" + ms.join("\n"));
+      } else if (sub === "pull" && parts[2]) {
+        await ollamaPull(parts[2]);
+      } else if (sub === "run" && parts[2]) {
+        await ollamaRun(parts[2], parts.slice(3).join(" "));
+      } else {
+        addLine("usage:\n  ollama list              list installed models\n  ollama pull <model>      download a model (e.g. gpt-oss:120b)\n  ollama run <model> <msg> chat with a model\n\nRecommended: ollama pull gpt-oss:120b");
+      }
+      return;
+    }
     const full = cmd.trim();
     const entry = DEMO_CMDS[full] || DEMO_CMDS[base];
     if (entry !== undefined) {
@@ -118,7 +177,7 @@ export function renderWebshell(main) {
     }
   }
 
-  function send(cmd) {
+  async function send(cmd) {
     if (ws && ws.readyState === 1) {
       addLine(`darknode@darknode-os:${cwd}$ ${cmd}`, "prompt");
       ws.send(cmd);
@@ -126,7 +185,7 @@ export function renderWebshell(main) {
       histIdx = -1;
     } else {
       addLine(`darknode@darknode-os:${cwd}$ ${cmd}`, "prompt");
-      demoExec(cmd);
+      await demoExec(cmd);
       histBuf.unshift(cmd);
       histIdx = -1;
     }
