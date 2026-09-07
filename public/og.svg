@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="630" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#070a12"/>
+      <stop offset="1" stop-color="#0a0e1a"/>
+    </linearGradient>
+    <linearGradient id="glow" x1="300" y1="200" x2="900" y2="400" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#00d4ff"/>
+      <stop offset="1" stop-color="#7c5cff"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <!-- Grid -->
+  <g opacity="0.05" stroke="#00d4ff" stroke-width="0.5">
+    <line x1="0" y1="0" x2="0" y2="630"/><line x1="60" y1="0" x2="60" y2="630"/>
+    <line x1="120" y1="0" x2="120" y2="630"/><line x1="180" y1="0" x2="180" y2="630"/>
+    <line x1="0" y1="0" x2="1200" y2="0"/><line x1="0" y1="60" x2="1200" y2="60"/>
+    <line x1="0" y1="120" x2="1200" y2="120"/>
+  </g>
+  <!-- Glow -->
+  <circle cx="600" cy="315" r="300" fill="url(#glow)" opacity="0.08"/>
+  <!-- Logo text -->
+  <text x="600" y="260" text-anchor="middle" font-family="system-ui,sans-serif" font-weight="800" font-size="72" fill="white" letter-spacing="-2">
+    <tspan fill="url(#glow)">&gt;_</tspan> DARKNODE
+  </text>
+  <!-- Tagline -->
+  <text x="600" y="330" text-anchor="middle" font-family="system-ui,sans-serif" font-weight="400" font-size="28" fill="#8892b0">
+    Learn cybersecurity by doing it.
+  </text>
+  <!-- Stats bar -->
+  <text x="600" y="420" text-anchor="middle" font-family="monospace" font-size="18" fill="#00d4ff" letter-spacing="2">
+    80+ TOOLS · NEXUS AI · PRACTICE LABS · 100% LOCAL
+  </text>
+  <!-- URL -->
+  <text x="600" y="560" text-anchor="middle" font-family="monospace" font-size="20" fill="#6f88ab">
+    darknode.ai
+  </text>
+</svg>
