@@ -225,7 +225,7 @@ body.app #view{max-width:none;padding:0;margin:0}
 .pg-sub{margin:0 0 22px;font-size:.95rem}
 .dash-hero{padding:26px 28px;border:1px solid var(--line);border-radius:14px;margin-bottom:20px;background:radial-gradient(600px 220px at 90% -30%,color-mix(in srgb,var(--acc) 18%,transparent),transparent)}
 .dash-hero .eyebrow{margin-bottom:8px}
-.stat-row{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:6px}
+.stat-row{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:20px}
 .stat{flex:1;min-width:130px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
 .stat-n{font-size:1.7rem;font-weight:800;color:var(--acc)}
 .stat-l{color:var(--mut);font-size:.8rem}
@@ -251,7 +251,7 @@ body.app #view{max-width:none;padding:0;margin:0}
 .set-nav{display:flex;flex-direction:column;gap:2px;min-width:180px;flex:none;border-right:1px solid var(--line);padding-right:24px}
 .set-tab{text-align:left;background:transparent;border:none;color:var(--mut);padding:8px 14px;border-radius:8px;cursor:pointer;font-family:inherit;font-size:.88rem}
 .set-tab:hover{background:var(--card2);color:var(--txt)}
-.set-tab.active{background:color-mix(in srgb,var(--acc) 16%,transparent);color:var(--acc);font-weight:600}
+.set-tab.active{background:color-mix(in srgb,var(--acc) 16%,transparent);color:var(--acc);font-weight:600;border-left:3px solid var(--acc);padding-left:11px}
 .set-panel{flex:1;min-width:0}
 .set-panel-h{font-size:1.3rem;font-weight:700;margin:0 0 16px;padding-bottom:12px;border-bottom:1px solid var(--line)}
 @media(max-width:720px){.set-layout{flex-direction:column;gap:16px}.set-nav{flex-direction:row;flex-wrap:wrap;min-width:0;border-right:none;border-bottom:1px solid var(--line);padding-right:0;padding-bottom:12px}}
@@ -964,7 +964,7 @@ html.crt body::after{content:"";position:fixed;inset:0;pointer-events:none;z-ind
 @media(max-width:820px){.doc-wrap{grid-template-columns:1fr}.doc-toc{position:static;border-right:none;border-bottom:1px solid var(--line);padding:0 0 12px;margin-bottom:12px;display:flex;flex-wrap:wrap;gap:4px}.doc-toc-l{border-left:none}}
 
 /* ===== app footer ===== */
-.app-foot{margin:40px -4px 0;padding:20px 4px 8px;border-top:1px solid var(--line)}
+.app-foot{margin:40px -4px 0;padding:20px 4px 20px;border-top:1px solid var(--line)}
 .app-foot-row{display:flex;flex-wrap:wrap;align-items:center;gap:14px}
 .app-foot-brand{font-weight:800;letter-spacing:.02em;background:var(--grad-acc);-webkit-background-clip:text;background-clip:text;color:transparent}
 .app-foot-links{display:flex;flex-wrap:wrap;gap:6px 16px;margin-left:auto}
@@ -2506,6 +2506,33 @@ html{scroll-behavior:smooth}
 
 /* ARIA live region for dynamic content updates */
 [aria-live]{transition:opacity .15s ease}
+
+/* ================================================================
+   Dashboard UI polish (2026-09-07)
+   ================================================================ */
+
+/* 1. Sidebar active indicator -- remove redundant ::before bar and
+      inset box-shadow; keep only the clean border-left approach */
+.side-item.active::before{display:none}
+.side-item.active{box-shadow:none}
+
+/* 2. Breadcrumbs -- highlight the current crumb with a tinted pill so
+      it stands out from clickable ancestors */
+.crumbs{gap:6px;margin-bottom:18px}
+.crumb.cur{background:color-mix(in srgb,var(--acc) 10%,transparent);
+  padding:3px 10px;border-radius:6px;color:var(--acc)}
+.crumb-sep{font-size:.72rem;margin:0 2px}
+
+/* 3. Stat row -- more breathing room before the quick-action grid */
+.stat-row{margin-bottom:20px}
+
+/* 4. Settings tabs -- left accent border on the active tab to match
+      the sidebar navigation pattern */
+.set-tab{border-left:3px solid transparent}
+.set-tab.active{border-left-color:var(--acc)}
+
+/* 5. App footer -- increase bottom padding so the legal text has room */
+.app-foot{padding-bottom:22px}
 
 /* Print improvements -- do not show boot or interactive elements */
 @media print{
