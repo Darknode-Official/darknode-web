@@ -1969,3 +1969,86 @@ tr:hover td {
 .product-card p{color:var(--muted,#8892b0);font-size:.85rem;margin:0 0 16px;line-height:1.5}
 .product-link{color:var(--acc,#00d4ff);font-size:.85rem;font-weight:600;text-decoration:none}
 .product-link:hover{text-decoration:underline}
+
+/* ===== Premium .ai polish ===== */
+
+/* Hero — bigger, more breathing room, subtle gradient glow */
+.hero{padding:100px 0 80px;position:relative;overflow:hidden}
+.hero-grid-bg{position:absolute;inset:0;opacity:.3;
+  background-image:linear-gradient(color-mix(in srgb,var(--acc) 8%,transparent) 1px,transparent 1px),linear-gradient(90deg,color-mix(in srgb,var(--acc) 8%,transparent) 1px,transparent 1px);
+  background-size:60px 60px;
+  -webkit-mask-image:radial-gradient(ellipse 70% 50% at 50% 40%,#000 20%,transparent 70%);
+  mask-image:radial-gradient(ellipse 70% 50% at 50% 40%,#000 20%,transparent 70%)}
+.hero-inner{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center;text-align:left}
+@media(max-width:768px){.hero-inner{grid-template-columns:1fr;text-align:center}}
+.hero-h1{max-width:none;font-family:var(--font-display)}
+.grad-text{background:var(--grad-acc);-webkit-background-clip:text;background-clip:text;color:transparent}
+
+/* Hero trust badges */
+.hero-trust{display:flex;gap:20px;font-size:.82rem;color:var(--mut);margin-top:20px;flex-wrap:wrap}
+@media(max-width:768px){.hero-trust{justify-content:center}}
+.tk{color:var(--ok);font-weight:700;margin-right:4px}
+
+/* Terminal window in hero — glow effect */
+.hero-visual .term-window{box-shadow:0 0 60px -15px color-mix(in srgb,var(--acc) 30%,transparent),var(--sh-2)}
+
+/* Feature cards — hover glow */
+.feat-ico{width:40px;height:40px;display:flex;align-items:center;justify-content:center;
+  border-radius:10px;background:color-mix(in srgb,var(--acc) 10%,transparent);margin-bottom:14px}
+.feat-ico .ico{width:20px;height:20px;stroke:var(--acc);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.feat-card{transition:transform .2s ease,border-color .25s,box-shadow .25s}
+.feat-card:hover{transform:translateY(-3px);border-color:var(--acc-line);box-shadow:0 8px 30px -12px color-mix(in srgb,var(--acc) 20%,transparent)}
+
+/* Section subtitles */
+.sec-sub{text-align:center;color:var(--mut);line-height:1.6;font-size:.95rem}
+
+/* Steps — connect with a line */
+.steps{position:relative}
+.step{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px}
+
+/* CTA band — stronger glow */
+.cta-band{position:relative;overflow:hidden}
+.cta-glow{position:absolute;top:-50%;left:30%;width:40%;height:200%;border-radius:50%;
+  background:radial-gradient(ellipse,color-mix(in srgb,var(--acc) 12%,transparent),transparent 70%);pointer-events:none}
+
+/* Glow button */
+.btn.glow{position:relative;overflow:hidden;
+  box-shadow:0 0 20px -5px color-mix(in srgb,var(--acc) 50%,transparent)}
+.btn.glow:hover{box-shadow:0 0 30px -5px color-mix(in srgb,var(--acc) 70%,transparent)}
+
+/* Scroll reveal animations */
+.sec-title,.feat-card,.product-card,.step,.cta-band-inner{opacity:0;transform:translateY(20px);transition:opacity .5s ease,transform .5s ease}
+.sec-title.revealed,.feat-card.revealed,.product-card.revealed,.step.revealed,.cta-band-inner.revealed{opacity:1;transform:translateY(0)}
+
+/* Footer — cleaner */
+.site-foot{padding:40px 0 32px;border-top:1px solid var(--line)}
+.foot-inner{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.foot-inner .brand{font-weight:800;font-size:1rem}
+.foot-links{margin-left:auto;display:flex;gap:18px}
+.foot-links a{color:var(--mut);font-size:.82rem;text-decoration:none;cursor:pointer}
+.foot-links a:hover{color:var(--acc)}
+
+/* Product cards — match feat cards but bigger */
+.product-card{transition:transform .2s ease,border-color .25s,box-shadow .25s}
+.product-card:hover{box-shadow:0 8px 30px -12px color-mix(in srgb,var(--acc) 20%,transparent)}
+
+/* Term window polish */
+.term-window{background:var(--bg2);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.tw-bar{display:flex;align-items:center;gap:7px;padding:10px 14px;border-bottom:1px solid var(--line);background:color-mix(in srgb,var(--bg) 60%,var(--card))}
+.tw-dot{width:11px;height:11px;border-radius:50%}
+.tw-dot.r{background:#ff5f56}.tw-dot.y{background:#ffbd2e}.tw-dot.g{background:#27c93f}
+.tw-title{font-size:.72rem;color:var(--mut);margin-left:4px;font-family:var(--font-mono)}
+.tw-body{margin:0;padding:14px 16px;font-family:var(--font-mono);font-size:.82rem;line-height:1.7;overflow-x:auto}
+.tw-line{display:block;opacity:0;animation:lineIn .3s ease forwards}
+@keyframes lineIn{to{opacity:1}}
+.tw-cursor{animation:blink 1s step-end infinite}
+@keyframes blink{50%{opacity:0}}
+.c-pl{color:var(--ok)}.c-path{color:var(--acc)}.c-mut{color:var(--mut)}.c-ok{color:var(--ok)}.c-acc{color:var(--acc)}.c-bad{color:var(--bad)}
+
+/* Mobile responsive */
+@media(max-width:600px){
+  .hero{padding:60px 0 50px}
+  .hero-h1{font-size:1.8rem}
+  .feat-grid,.product-grid,.steps{grid-template-columns:1fr}
+  .cta-band-inner{flex-direction:column;text-align:center}
+}
