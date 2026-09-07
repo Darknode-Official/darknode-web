@@ -227,12 +227,14 @@ export function renderLanding(view, actions) {
             <ul class="price-features">
               <li>GPT-OSS 120B local AI (runs on your device, free)</li>
               <li>BYOK &mdash; bring your own Claude, GPT, or Gemini API key</li>
-              <li>80+ security tools</li>
-              <li>Practice labs (DVWA, Juice Shop)</li>
-              <li>Learning hub &amp; cheat sheets</li>
-              <li>Nexus AI &mdash; core agent</li>
-              <li>Security RAG &mdash; AI with built-in OWASP, CVEs, attack patterns</li>
+              <li>80+ security tools &amp; cheat sheets</li>
+              <li>Practice labs (DVWA, Juice Shop, WebGoat)</li>
+              <li>Nexus AI agent &mdash; core features</li>
+              <li>Security RAG &mdash; built-in OWASP, CVEs, attack patterns</li>
+              <li>Web shell with Ollama integration</li>
+              <li>CLI &amp; desktop app (free forever)</li>
               <li>5 MCP server integrations</li>
+              <li>Community support</li>
             </ul>
             <button class="btn lg" id="price-free">Get started free</button>
           </div>
@@ -240,20 +242,25 @@ export function renderLanding(view, actions) {
             <div class="price-badge">Recommended</div>
             <div class="price-tier">Pro</div>
             <div class="price-amount">$12<span class="price-period">/month</span></div>
-            <p class="price-desc">Advanced AI features for serious learners.</p>
+            <p class="price-desc">Advanced platform features for serious learners.</p>
             <ul class="price-features">
               <li>Everything in Free, plus:</li>
+              <li class="feat-section">Platform features (darknode.ai)</li>
               <li>Multi-agent pipelines (8 roles)</li>
               <li>Ghost Agents &mdash; background monitoring</li>
-              <li>Thought Stream &mdash; visible reasoning</li>
+              <li>Thought Stream &mdash; visible AI reasoning</li>
+              <li>Attack Planner &mdash; AI pentest methodology</li>
+              <li>CTF Assistant &mdash; guided challenge solving</li>
+              <li>Threat Modeler &mdash; STRIDE analysis</li>
+              <li>Vulnerability Scanner &mdash; security headers &amp; misconfigs</li>
+              <li>Code Radar &mdash; codebase security analysis</li>
               <li>Smart Test Generator</li>
-              <li>Attack Planner — AI pentest methodology</li>
-              <li>CTF Assistant — guided challenge solving</li>
-              <li>Threat Modeler — STRIDE analysis</li>
-              <li>Vulnerability Scanner — security headers</li>
-              <li>Code Radar &mdash; codebase analysis</li>
+              <li class="feat-section">Downloadable extras</li>
+              <li>Darknode OS &mdash; pre-built security VM (VirtualBox/QEMU)</li>
+              <li>Premium wordlists &amp; payload collections</li>
+              <li>Pre-configured Nuclei &amp; Nmap scan profiles</li>
               <li>25 MCP server integrations</li>
-              <li>Priority support</li>
+              <li>Priority support &amp; Discord access</li>
             </ul>
             <button class="btn lg glow" id="price-pro" disabled>Coming soon</button>
           </div>
@@ -263,17 +270,21 @@ export function renderLanding(view, actions) {
             <p class="price-desc">Collaborate, compete, and train together.</p>
             <ul class="price-features">
               <li>Everything in Pro, plus:</li>
+              <li class="feat-section">Platform features (darknode.ai)</li>
               <li>Skill Forge &mdash; AI creates its own tools</li>
               <li>World Model &mdash; simulate before acting</li>
-              <li>Deep Memory (3-tier cognitive)</li>
-              <li>Time Travel &mdash; undo any action</li>
+              <li>Deep Memory &mdash; 3-tier cognitive architecture</li>
+              <li>Time Travel &mdash; undo any action, any time</li>
               <li>Team workspace &amp; shared labs</li>
-              <li>Custom training scenarios</li>
-              <li>Report Generator — professional pentest reports</li>
-              <li>OWASP Top 10 compliance checker</li>
-              <li>Full STRIDE threat modeling</li>
-              <li>White-label report branding</li>
-              <li>Plugin system &amp; extensions</li>
+              <li>Custom training scenarios &amp; CTF builder</li>
+              <li>Report Generator &mdash; professional pentest reports</li>
+              <li>Full STRIDE threat modeling &amp; OWASP compliance</li>
+              <li class="feat-section">Downloadable extras</li>
+              <li>White-label report templates (.docx, .pdf)</li>
+              <li>Custom Darknode OS builds with team tools</li>
+              <li>Plugin system &amp; extension SDK</li>
+              <li>Unlimited MCP integrations</li>
+              <li>Team management dashboard</li>
             </ul>
             <button class="btn lg" id="price-team" disabled>Coming soon</button>
           </div>
@@ -283,21 +294,23 @@ export function renderLanding(view, actions) {
             <p class="price-desc">Tailored security training for your organization.</p>
             <ul class="price-features">
               <li>Everything in Team, plus:</li>
+              <li class="feat-section">Enterprise platform</li>
               <li>SSO &amp; SAML authentication</li>
               <li>Dedicated instance &amp; data isolation</li>
               <li>Custom compliance frameworks</li>
               <li>Admin dashboard &amp; usage analytics</li>
               <li>Role-based access control</li>
-              <li>SLA &amp; dedicated support</li>
-              <li>Custom AI model deployment</li>
-              <li>Unlimited MCP integrations</li>
+              <li class="feat-section">Downloadable extras</li>
+              <li>Custom Darknode OS with org branding</li>
+              <li>Custom AI model deployment &amp; fine-tuning</li>
               <li>On-prem or private cloud hosting</li>
               <li>Audit logging &amp; SOC 2 reporting</li>
+              <li>SLA &amp; dedicated support engineer</li>
             </ul>
             <button class="btn lg" id="price-enterprise" disabled>Coming soon</button>
           </div>
         </div>
-        <p class="pricing-note">All plans include BYOK &mdash; bring your own Claude, GPT, or Gemini key. Paid plans unlock <strong>platform features</strong>, not AI access. You never pay us for AI tokens.</p>
+        <p class="pricing-note">All plans include BYOK &mdash; bring your own Claude, GPT, or Gemini API key. The CLI and desktop app are <strong>free forever</strong>. Paid plans unlock <strong>platform features on darknode.ai</strong> + downloadable extras. You never pay us for AI tokens.</p>
       </div>
     </section>
 
