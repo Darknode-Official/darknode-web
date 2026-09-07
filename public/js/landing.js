@@ -315,7 +315,7 @@ export function renderLanding(view, actions) {
     <footer class="foot" role="contentinfo">
       <div class="wrap foot-grid">
         <div class="foot-brand">
-          <span class="brand-name">Darknode</span>
+          <img class="brand-wordmark" src="/wordmark.svg" alt="Darknode" height="14" style="opacity:.85">
           <span class="foot-tagline">Learn cybersecurity by doing it.</span>
         </div>
         <div class="foot-col">
