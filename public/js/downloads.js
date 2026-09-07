@@ -1,5 +1,5 @@
 // Install commands with per-OS variants + local "installed" tracking.
-// Netlify can't host the tools/models, so the "download" is the command you run.
+// The web app can't host tools/models, so the "download" is the command you run.
 // Installed state is per-browser (localStorage) since a website can't see your machine.
 
 const OS_LABELS = { linux: "Linux", mac: "macOS", windows: "Windows" };

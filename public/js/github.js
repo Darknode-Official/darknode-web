@@ -184,7 +184,7 @@ export function renderGitHub(main) {
           const r = await fetch("https://api.github.com/repos/" + repo + "/issues", { method: "POST", headers: { Accept: "application/vnd.github+json", Authorization: "Bearer " + t, "Content-Type": "application/json" }, body: JSON.stringify({ title, body: out.querySelector("#ci-body").value }) });
           if (!r.ok) throw new Error(r.status + " " + r.statusText);
           const d = await r.json();
-          msg.innerHTML = 'created <a href="' + esc(d.html_url) + '" target="_blank" rel="noopener" style="color:var(--acc)">#' + d.number + '</a>'; msg.style.color = "var(--ok)";
+          msg.innerHTML = 'created <a href="' + esc(d.html_url) + '" target="_blank" rel="noopener" style="color:var(--acc)">#' + esc(String(d.number)) + '</a>'; msg.style.color = "var(--ok)";
           out.querySelector("#ci-title").value = ""; out.querySelector("#ci-body").value = "";
         } catch (e2) { set(e2.message); }
       };

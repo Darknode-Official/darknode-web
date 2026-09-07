@@ -21,7 +21,7 @@ const META = [
 const fmtSize = (n) => n > 1e9 ? (n / 1e9).toFixed(2) + " GB" : n > 1e6 ? (n / 1e6).toFixed(1) + " MB" : (n / 1e3).toFixed(0) + " KB";
 const verOf = (name) => (name.match(/(\d+\.\d+\.\d+)/) || [])[1] || "";
 
-const SITE = "https://darknode-web-2hq9.onrender.com";
+const SITE = "https://darknode.ai";
 const OS_REPO = "https://github.com/SpartanKing18/darknode-os";
 const NEXUS_REPO = "https://github.com/SpartanKing18/nexus";
 const APP_EDITIONS = [
@@ -158,30 +158,30 @@ const dlDoc = (d) => `
     ${d.trouble ? `<details style="margin-top:8px"><summary class="muted" style="cursor:pointer;font-size:.82rem">Troubleshooting</summary><p class="muted" style="font-size:.82rem;margin:6px 0 0">${d.trouble}</p></details>` : ""}
   </div>`;
 
-const DL_LINUX_DEB = `${REL_DL}/darknode-app_2.29.0_amd64.deb`;
-const DL_APPIMG = `${REL_DL}/Darknode-2.29.0.AppImage`;
-const DL_WIN = `${REL_DL}/Darknode.Setup.2.29.0.exe`;
+const DL_LINUX_DEB = `${REL_DL}/darknode-app_2.45.0_amd64.deb`;
+const DL_APPIMG = `${REL_DL}/Darknode-2.45.0.AppImage`;
+const DL_WIN = `${REL_DL}/Darknode.Setup.2.45.0.exe`;
 
 const APP_DOCS = [
   { title: "Desktop app — Debian / Ubuntu installer", os: "Linux", fmt: ".deb",
     what: "The full Darknode desktop application packaged as a native <code>.deb</code>. Installs into <code>/opt/Darknode</code>, adds a menu entry, and wires up the AI Assistant, VM runner, recon tools and live terminals.",
     best: "you run Debian, Ubuntu, Kali, Pop!_OS or any apt-based distro and want a normal installed app with a launcher icon.",
     req: "64-bit Linux (x86-64), apt, ~250&nbsp;MB free. Local AI features use Ollama, which the Darknode CLI installs for you.",
-    steps: [ { t: "Download the .deb from the Builds tab, then install it (pulls in any missing system libraries):", cmd: `sudo apt install ./darknode-app_2.29.0_amd64.deb` }, { t: "Launch it from your app menu, or from a terminal:", cmd: `darknode-app` } ],
+    steps: [ { t: "Download the .deb from the Builds tab, then install it (pulls in any missing system libraries):", cmd: `sudo apt install ./darknode-app_2.45.0_amd64.deb` }, { t: "Launch it from your app menu, or from a terminal:", cmd: `darknode-app` } ],
     note: "Updating later? Just <code>sudo apt install ./&lt;newer&gt;.deb</code> over the top — settings are preserved.",
     trouble: "If it won't open, run <code>darknode-app</code> in a terminal to see the error. A sandbox error on some kernels is fixed by launching with <code>darknode-app --no-sandbox</code>. Missing-AI replies mean Ollama isn't running: <code>ollama serve</code>." },
   { title: "Desktop app — AppImage (portable)", os: "Linux", fmt: "AppImage",
     what: "A single self-contained file that runs the desktop app without installing anything. Nothing is written to system directories — delete the file and it's gone.",
     best: "you can't or don't want to use apt (non-Debian distro, no root, a USB stick, or just trying it out).",
     req: "64-bit Linux with FUSE (present on most desktops), ~250&nbsp;MB free.",
-    steps: [ { t: "Download the AppImage, make it executable, then run it:", cmd: `chmod +x Darknode-2.29.0.AppImage && ./Darknode-2.29.0.AppImage` } ],
+    steps: [ { t: "Download the AppImage, make it executable, then run it:", cmd: `chmod +x Darknode-2.45.0.AppImage && ./Darknode-2.45.0.AppImage` } ],
     note: "It does not auto-update — grab a newer AppImage when you want the latest.",
-    trouble: "\"FUSE\" error? Install it (<code>sudo apt install libfuse2</code>) or extract-and-run with <code>./Darknode-2.29.0.AppImage --appimage-extract-and-run</code>." },
+    trouble: "\"FUSE\" error? Install it (<code>sudo apt install libfuse2</code>) or extract-and-run with <code>./Darknode-2.45.0.AppImage --appimage-extract-and-run</code>." },
   { title: "Desktop app — Windows installer", os: "Windows", fmt: ".exe",
     what: "The standard Windows installer (NSIS). Sets up the app, a Start-menu shortcut and an uninstaller.",
     best: "you're on Windows 10 or 11 and want the graphical app.",
     req: "Windows 10/11 64-bit. Local AI features use Ollama, which the Darknode CLI installs for you.",
-    steps: [ { t: "Download and double-click the installer, then follow the prompts:", cmd: `Darknode.Setup.2.29.0.exe` }, { t: "Launch “Darknode” from the Start menu." } ],
+    steps: [ { t: "Download and double-click the installer, then follow the prompts:", cmd: `Darknode.Setup.2.45.0.exe` }, { t: "Launch “Darknode” from the Start menu." } ],
     trouble: "SmartScreen may warn on a new unsigned build — choose “More info → Run anyway”. It's the same binary published on GitHub Releases." },
   { title: "Desktop app — macOS (.dmg)", os: "macOS", fmt: ".dmg · Apple Silicon + Intel",
     what: "The Darknode desktop app as a native macOS <code>.dmg</code> (universal — Apple Silicon and Intel). Same AI Assistant, VM runner, recon tools and live terminals as every other platform.",

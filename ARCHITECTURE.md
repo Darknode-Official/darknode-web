@@ -18,13 +18,14 @@ There is **no build step**: `public/index.html` loads a single ES-module entry
 
 ## Hosting & backend
 
-- **Static hosting.** `netlify.toml` publishes `public/` with security headers
-  (`X-Frame-Options: DENY`, `nosniff`, `no-referrer`) and an SPA fallback (all
-  routes → `/index.html`). Large installers are **not** committed — they live on
-  **GitHub Releases** (`SpartanKing18/sentinel-web`, tag `sentinel`);
+- **Firebase Hosting.** `firebase.json` publishes `public/` to Firebase Hosting
+  with security headers (`X-Frame-Options: DENY`, `nosniff`, `no-referrer`) and
+  an SPA fallback (all routes → `/index.html`). Domain: darknode.ai (Porkbun).
+  Large installers are **not** committed — they live on **GitHub Releases**
+  (`SpartanKing18/sentinel-web`, tag `sentinel`);
   `public/downloads/` is a git-ignored placeholder.
-- **Firebase.** `.firebaserc` pins project `sentinel-b4194`; `firebase.json`
-  deploys **only** Firestore + Storage rules/indexes (no `hosting` block).
+- **Firebase backend.** `.firebaserc` pins project `sentinel-b4194`; `firebase.json`
+  deploys hosting, Firestore rules, and Storage rules.
   Auth = Google + GitHub OAuth + email/password with verification. The single
   super-admin (`OWNER_EMAIL = cashzombs@gmail.com`) is hard-coded in the rules and
   in `js/firebase.js`; owner status is evaluated client-side but **enforced
@@ -79,9 +80,8 @@ firebase/
                         announcements; feedback create-any / read-owner
   storage.rules         /downloads/** gated to owner + status=='allowed'; else deny
   firestore.indexes.json  empty (no composite indexes)
-firebase.json           deploys Firestore + Storage rules (no hosting block)
+firebase.json           Firebase Hosting + Firestore + Storage rules config
 .firebaserc             default Firebase project sentinel-b4194
-netlify.toml            publishes public/, security headers, SPA redirect
 ```
 
 ## App & data flow
