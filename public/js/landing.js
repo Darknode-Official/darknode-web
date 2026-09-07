@@ -213,6 +213,66 @@ export function renderLanding(view, actions) {
       </div>
     </section>
 
+    <!-- ====== PRICING ====== -->
+    <section class="section alt" id="pricing">
+      <div class="wrap">
+        <div class="sec-label">Pricing</div>
+        <h2 class="sec-title">Free to start. Upgrade when you're ready.</h2>
+        <p class="sec-sub">Bring your own AI key on any plan. Paid plans unlock platform features, not AI access.</p>
+        <div class="pricing-grid">
+          <div class="price-card">
+            <div class="price-tier">Free</div>
+            <div class="price-amount">$0<span class="price-period">/forever</span></div>
+            <p class="price-desc">Everything you need to start learning.</p>
+            <ul class="price-features">
+              <li>GPT-OSS 120B local AI (built in, free)</li>
+              <li>BYOK &mdash; bring any API key</li>
+              <li>80+ security tools</li>
+              <li>Practice labs (DVWA, Juice Shop)</li>
+              <li>Learning hub &amp; cheat sheets</li>
+              <li>Nexus AI &mdash; core agent</li>
+              <li>5 MCP server integrations</li>
+            </ul>
+            <button class="btn lg" id="price-free">Get started free</button>
+          </div>
+          <div class="price-card featured">
+            <div class="price-badge">Recommended</div>
+            <div class="price-tier">Pro</div>
+            <div class="price-amount">$12<span class="price-period">/month</span></div>
+            <p class="price-desc">Advanced AI features for serious learners.</p>
+            <ul class="price-features">
+              <li>Everything in Free, plus:</li>
+              <li>Multi-agent pipelines (8 roles)</li>
+              <li>Ghost Agents &mdash; background monitoring</li>
+              <li>Thought Stream &mdash; visible reasoning</li>
+              <li>Smart Test Generator</li>
+              <li>Code Radar &mdash; codebase analysis</li>
+              <li>25 MCP server integrations</li>
+              <li>Priority support</li>
+            </ul>
+            <button class="btn lg glow" id="price-pro">Start Pro</button>
+          </div>
+          <div class="price-card">
+            <div class="price-tier">Team</div>
+            <div class="price-amount">$25<span class="price-period">/month</span></div>
+            <p class="price-desc">Collaborate, compete, and train together.</p>
+            <ul class="price-features">
+              <li>Everything in Pro, plus:</li>
+              <li>Skill Forge &mdash; AI creates its own tools</li>
+              <li>World Model &mdash; simulate before acting</li>
+              <li>Deep Memory (3-tier cognitive)</li>
+              <li>Time Travel &mdash; undo any action</li>
+              <li>Team workspace &amp; shared labs</li>
+              <li>Custom training scenarios</li>
+              <li>Plugin system &amp; extensions</li>
+            </ul>
+            <button class="btn lg" id="price-team">Start Team</button>
+          </div>
+        </div>
+        <p class="pricing-note">All plans include BYOK &mdash; bring your own Claude, GPT, or Gemini key. Paid plans unlock <strong>platform features</strong>, not AI access. You never pay us for AI tokens.</p>
+      </div>
+    </section>
+
     <!-- ====== CTA ====== -->
     <section class="cta-final">
       <div class="cta-mesh"></div>
@@ -240,6 +300,7 @@ export function renderLanding(view, actions) {
         <div class="foot-col">
           <h4>Resources</h4>
           <a href="#features">Features</a>
+          <a href="#pricing">Pricing</a>
           <a href="#how">Get started</a>
           <a href="${GITHUB}">GitHub</a>
         </div>
@@ -259,6 +320,9 @@ export function renderLanding(view, actions) {
   const $ = (id) => view.querySelector("#" + id);
   $("cta-start").onclick = actions.onGetStarted;
   $("cta-signup").onclick = actions.onGetStarted;
+  if ($("price-free")) $("price-free").onclick = actions.onGetStarted;
+  if ($("price-pro")) $("price-pro").onclick = actions.onGetStarted;
+  if ($("price-team")) $("price-team").onclick = actions.onGetStarted;
 
   // Animated counter for hero stats
   view.querySelectorAll("[data-count]").forEach(el => {
@@ -296,7 +360,7 @@ export function renderLanding(view, actions) {
       const io = new IntersectionObserver((entries) => {
         entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add("revealed"); io.unobserve(e.target); } });
       }, { threshold: 0.1 });
-      view.querySelectorAll(".sec-title, .bento-card, .feature-row, .tl-step, .nx-card, .gh-card, .cta-final").forEach(el => io.observe(el));
+      view.querySelectorAll(".sec-title, .bento-card, .price-card, .feature-row, .tl-step, .nx-card, .gh-card, .cta-final").forEach(el => io.observe(el));
     }
   }
 }
