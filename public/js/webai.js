@@ -132,12 +132,12 @@ export function renderAI(main) {
   const hasKey = !!getClaudeKey();
   main.innerHTML = `
     <h1 class="pg-h1">AI assistant</h1>
-    <p class="muted pg-sub">Chat with <strong>Claude</strong> (Anthropic API) or <strong>Ollama</strong> (local, private). For a fully autonomous agent, get the <strong>desktop app</strong>.</p>
+    <p class="muted pg-sub">Chat with <strong>GPT-OSS 120B</strong> (local, private, free) or <strong>Claude</strong> (Anthropic API). For a fully autonomous agent, get the <strong>desktop app</strong>.</p>
     <div class="card" style="max-width:840px">
       <div class="row" style="gap:8px;flex-wrap:wrap;align-items:center">
-        <select class="tk-f" id="aiEngine" style="width:auto;min-width:120px">
-          <option value="claude"${engine === "claude" || (engine === "auto" && hasKey) ? " selected" : ""}>Claude</option>
-          <option value="ollama"${engine === "ollama" || (engine === "auto" && !hasKey) ? " selected" : ""}>Ollama (local)</option>
+        <select class="tk-f" id="aiEngine" style="width:auto;min-width:160px">
+          <option value="ollama"${engine === "ollama" || (engine === "auto" && !hasKey) ? " selected" : ""}>GPT-OSS 120B (local)</option>
+          <option value="claude"${engine === "claude" || (engine === "auto" && hasKey) ? " selected" : ""}>Claude (API key)</option>
         </select>
         <select class="tk-f" id="aiModel" style="flex:1"></select>
         <button class="btn ghost" id="aiSys">System prompt</button>
@@ -244,7 +244,17 @@ export function renderAI(main) {
     const text = $("#aiMsg").value.trim(); const imgs = pending.slice(); if (!text && !imgs.length) return;
     const model = sel.value;
     const eng = curEngine();
-    if (eng === "ollama" && (!model || model === "offline" || model === "none")) { status.textContent = "No local model connected — switch to Claude or run Ollama."; return; }
+    if (eng === "ollama" && (!model || model === "offline" || model === "none")) {
+      status.textContent = "Pulling GPT-OSS 120B — this may take a few minutes on first run...";
+      try {
+        const pr = await fetch("http://127.0.0.1:11434/api/pull", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: "gpt-oss:120b", stream: false }) });
+        if (!pr.ok) throw new Error("pull failed");
+        status.textContent = "GPT-OSS 120B ready.";
+        populateModels();
+        const ms = await getOllamaModels(); if (ms && ms.length) { sel.value = ms.find(m => m.startsWith("gpt-oss")) || ms[0]; }
+      } catch (_) { status.textContent = "Ollama not reachable. Start it: OLLAMA_ORIGINS=* ollama serve"; return; }
+      return;
+    }
     if (eng === "claude" && !getClaudeKey()) { status.textContent = "Add your Anthropic API key first."; return; }
     busy = true; ctrl = new AbortController(); const btn = $("#aiSend"); btn.textContent = "Stop"; $("#aiMsg").value = "";
     const um = { role: "user", content: text || "Read and transcribe any text in this image, then help with it." };
