@@ -8,7 +8,7 @@ export function renderLanding(view, actions) {
   view.innerHTML = `
 
     <!-- ====== HERO ====== -->
-    <section class="hero">
+    <section class="hero" aria-label="Hero">
       <div class="hero-mesh"></div>
       <div class="hero-grain"></div>
       <div class="wrap hero-inner">
@@ -35,10 +35,10 @@ export function renderLanding(view, actions) {
     </section>
 
     <!-- ====== PRODUCT BENTO ====== -->
-    <section class="section" id="products">
+    <section class="section" id="products" aria-labelledby="products-title">
       <div class="wrap">
         <div class="sec-label">Products</div>
-        <h2 class="sec-title">Three ways to use Darknode</h2>
+        <h2 class="sec-title" id="products-title">Three ways to use Darknode</h2>
         <p class="sec-sub">Choose what fits. All free. All run on your machine.</p>
         <div class="bento">
           <div class="bento-card bento-lg">
@@ -70,10 +70,10 @@ export function renderLanding(view, actions) {
     </section>
 
     <!-- ====== FEATURES ====== -->
-    <section class="section alt" id="features">
+    <section class="section alt" id="features" aria-labelledby="features-title">
       <div class="wrap">
         <div class="sec-label">Capabilities</div>
-        <h2 class="sec-title">Everything you need to learn security</h2>
+        <h2 class="sec-title" id="features-title">Everything you need to learn security</h2>
         <div class="feature-rows">
           <div class="feature-row">
             <div class="feature-text">
@@ -118,10 +118,10 @@ export function renderLanding(view, actions) {
     </section>
 
     <!-- ====== NEXUS ENGINE ====== -->
-    <section class="section" id="nexus">
+    <section class="section" id="nexus" aria-labelledby="nexus-title">
       <div class="wrap">
         <div class="sec-label">AI Engine</div>
-        <h2 class="sec-title">Nexus — 9,600 lines of AI infrastructure</h2>
+        <h2 class="sec-title" id="nexus-title">Nexus — 9,600 lines of AI infrastructure</h2>
         <p class="sec-sub">Not a wrapper around ChatGPT. A full agentic platform with planning, multi-agent orchestration, self-evaluation, and 8 AI backends.</p>
         <div class="nexus-grid">
           <div class="nx-card"><div class="nx-n">59</div><div class="nx-l">modules</div></div>
@@ -214,10 +214,10 @@ export function renderLanding(view, actions) {
     </section>
 
     <!-- ====== PRICING ====== -->
-    <section class="section alt" id="pricing">
+    <section class="section alt" id="pricing" aria-labelledby="pricing-title">
       <div class="wrap">
         <div class="sec-label">Pricing</div>
-        <h2 class="sec-title">Free to start. Upgrade when you're ready.</h2>
+        <h2 class="sec-title" id="pricing-title">Free to start. Upgrade when you're ready.</h2>
         <p class="sec-sub">Bring your own AI key on any plan. Paid plans unlock platform features, not AI access.</p>
         <div class="pricing-grid">
           <div class="price-card">
@@ -225,13 +225,13 @@ export function renderLanding(view, actions) {
             <div class="price-amount">$0<span class="price-period">/forever</span></div>
             <p class="price-desc">Everything you need to start learning.</p>
             <ul class="price-features">
-              <li>GPT-OSS 120B local AI (built in, free)</li>
-              <li>BYOK &mdash; bring any API key</li>
+              <li>GPT-OSS 120B local AI (runs on your device, free)</li>
+              <li>BYOK &mdash; bring your own Claude, GPT, or Gemini API key</li>
               <li>80+ security tools</li>
               <li>Practice labs (DVWA, Juice Shop)</li>
               <li>Learning hub &amp; cheat sheets</li>
               <li>Nexus AI &mdash; core agent</li>
-              <li>Security RAG <li>5 MCP server integrations</li>mdash; AI with built-in OWASP, CVEs, attack patterns</li>
+              <li>Security RAG &mdash; AI with built-in OWASP, CVEs, attack patterns</li>
               <li>5 MCP server integrations</li>
             </ul>
             <button class="btn lg" id="price-free">Get started free</button>
@@ -277,6 +277,25 @@ export function renderLanding(view, actions) {
             </ul>
             <button class="btn lg" id="price-team" disabled style="opacity:.6;cursor:default">Coming soon</button>
           </div>
+          <div class="price-card">
+            <div class="price-tier">Enterprise</div>
+            <div class="price-amount">Custom</div>
+            <p class="price-desc">Tailored security training for your organization.</p>
+            <ul class="price-features">
+              <li>Everything in Team, plus:</li>
+              <li>SSO &amp; SAML authentication</li>
+              <li>Dedicated instance &amp; data isolation</li>
+              <li>Custom compliance frameworks</li>
+              <li>Admin dashboard &amp; usage analytics</li>
+              <li>Role-based access control</li>
+              <li>SLA &amp; dedicated support</li>
+              <li>Custom AI model deployment</li>
+              <li>Unlimited MCP integrations</li>
+              <li>On-prem or private cloud hosting</li>
+              <li>Audit logging &amp; SOC 2 reporting</li>
+            </ul>
+            <button class="btn lg" id="price-enterprise" disabled style="opacity:.6;cursor:default">Coming soon</button>
+          </div>
         </div>
         <p class="pricing-note">All plans include BYOK &mdash; bring your own Claude, GPT, or Gemini key. Paid plans unlock <strong>platform features</strong>, not AI access. You never pay us for AI tokens.</p>
       </div>
@@ -293,7 +312,7 @@ export function renderLanding(view, actions) {
     </section>
 
     <!-- ====== FOOTER ====== -->
-    <footer class="foot">
+    <footer class="foot" role="contentinfo">
       <div class="wrap foot-grid">
         <div class="foot-brand">
           <span class="brand-name">Darknode</span>
@@ -350,14 +369,27 @@ export function renderLanding(view, actions) {
   let wordIdx = 0;
   const rotateEl = $("hero-rotate");
   if (rotateEl) {
+    const wrap = rotateEl.parentElement;
+    if (wrap) {
+      let maxW = 0;
+      const orig = rotateEl.textContent;
+      for (const w of words) { rotateEl.textContent = w; maxW = Math.max(maxW, rotateEl.offsetWidth); }
+      rotateEl.textContent = orig;
+      wrap.style.minWidth = maxW + "px";
+    }
     setInterval(() => {
       wordIdx = (wordIdx + 1) % words.length;
       rotateEl.style.opacity = "0";
-      rotateEl.style.transform = "translateY(8px)";
+      rotateEl.style.transform = "translateY(-8px)";
       setTimeout(() => {
+        rotateEl.style.transition = "none";
+        rotateEl.style.transform = "translateY(8px)";
         rotateEl.textContent = words[wordIdx];
-        rotateEl.style.opacity = "1";
-        rotateEl.style.transform = "translateY(0)";
+        requestAnimationFrame(() => {
+          rotateEl.style.transition = "opacity .25s,transform .25s";
+          rotateEl.style.opacity = "1";
+          rotateEl.style.transform = "translateY(0)";
+        });
       }, 250);
     }, 3000);
   }
@@ -368,8 +400,29 @@ export function renderLanding(view, actions) {
     if (!reduce) {
       const io = new IntersectionObserver((entries) => {
         entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add("revealed"); io.unobserve(e.target); } });
-      }, { threshold: 0.1 });
-      view.querySelectorAll(".sec-title, .bento-card, .price-card, .feature-row, .tl-step, .nx-card, .gh-card, .cta-final").forEach(el => io.observe(el));
+      }, { threshold: 0.08, rootMargin: "0px 0px -40px 0px" });
+      view.querySelectorAll(".sec-title, .bento-card, .price-card, .feature-row, .tl-step, .nx-card, .gh-card, .cta-final, .sec-label, .sec-sub, .pricing-note, .nx-details, .hero-trust").forEach(el => io.observe(el));
+    } else {
+      // If reduced motion preferred, make everything visible immediately
+      view.querySelectorAll(".sec-title, .bento-card, .price-card, .feature-row, .tl-step, .nx-card, .gh-card, .cta-final, .sec-label, .sec-sub").forEach(el => el.classList.add("revealed"));
     }
   }
+
+  // Smooth scroll for anchor links within the landing page
+  view.querySelectorAll('a[href^="#"]').forEach(link => {
+    link.addEventListener("click", (e) => {
+      const target = view.querySelector(link.getAttribute("href"));
+      if (target) {
+        e.preventDefault();
+        target.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    });
+  });
+
+  // Keyboard accessibility: make pricing cards focusable
+  view.querySelectorAll(".bento-card, .nx-card, .gh-card").forEach(el => {
+    if (!el.getAttribute("tabindex") && !el.closest("a")) {
+      el.setAttribute("tabindex", "0");
+    }
+  });
 }
