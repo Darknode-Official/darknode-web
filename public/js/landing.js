@@ -365,7 +365,7 @@ export function renderLanding(view, actions) {
   });
 
   // Hero text rotation
-  const words = ["cybersecurity", "ethical hacking", "penetration testing", "threat analysis", "red teaming"];
+  const words = ["cybersecurity", "ethical hacking", "pentesting", "threat analysis", "red teaming"];
   let wordIdx = 0;
   const rotateEl = $("hero-rotate");
   if (rotateEl) {
