@@ -11,3 +11,6 @@ public/downloads/*.AppImage
 public/downloads/*.exe
 public/downloads/*.dmg
 public/downloads/*.deb
+downloads-backup/
+*.AppImage
+*.deb

@@ -1,0 +1,22 @@
+NOTICE — Darknode.ai
+
+This repository is the source code for https://darknode.ai
+
+It is PUBLIC for transparency and learning. It is NOT open source.
+You may NOT copy, fork, redistribute, or deploy this code.
+See LICENSE for the full terms.
+
+If you find an unauthorized copy of this code:
+1. Report it to GitHub: https://support.github.com/contact/dmca
+2. Or contact the author: jawahar6k@gmail.com
+
+Technical protections:
+- Domain-locked: the application refuses to run on unauthorized domains.
+- Integrity checks: multiple independent verification points throughout
+  the codebase detect tampering and unauthorized deployment.
+- Copyright headers: all source files contain attribution that must not
+  be removed.
+- Firebase security rules: the backend rejects requests from
+  unauthorized origins.
+
+DMCA agent: Manav Jawahar (jawahar6k@gmail.com)

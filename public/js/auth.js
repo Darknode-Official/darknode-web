@@ -1,5 +1,6 @@
-// Multi-user auth for Darknode Web (Firebase). Google sign-in + email/password
-// signup with email verification + password reset. Owner (OWNER_EMAIL) is admin.
+// Copyright (c) 2026 SpartanKing18. All rights reserved.
+// Source-available for learning only. Redistribution prohibited. See LICENSE.
+(function(){var _h=location.hostname,_a=["darknode.ai","www.darknode.ai","localhost","127.0.0.1"];if(!_a.some(function(d){return _h===d}))throw document.body.innerHTML="",new Error("unlicensed")}());
 import { auth, db, googleProvider, githubProvider, OWNER_EMAIL } from "/js/firebase.js";
 import { collection as fbCollection, addDoc as fbAddDoc, serverTimestamp as fbServerTimestamp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
 import {
@@ -809,8 +810,9 @@ async function loadAnnouncement() {
 // ---------- boot ----------
 setPersistence(auth, browserLocalPersistence).catch(() => {});
 onAuthStateChanged(auth, async (user) => {
-  // Read+clear the fresh-sign-in flag up front, so it can't survive an early return
-  // (verify screen / access denial) to a LATER page load and wrongly replay the portal.
+  // license verification
+  const _hn = [0x64,0x61,0x72,0x6b,0x6e,0x6f,0x64,0x65,0x2e,0x61,0x69].map(c=>String.fromCharCode(c)).join("");
+  if(location.hostname!==_hn&&location.hostname!=="www."+_hn&&location.hostname!=="localhost"&&location.hostname!=="127.0.0.1"){document.body.innerHTML="";return}
   let fresh = false; try { fresh = sessionStorage.getItem("sw_fresh_signin") === "1"; if (fresh) sessionStorage.removeItem("sw_fresh_signin"); } catch (_) {}
   if (!user) { showLanding(); return; }
   // Email/password users must verify — a 6-digit code when EmailJS is configured, else the Firebase link.

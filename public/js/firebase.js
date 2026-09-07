@@ -1,7 +1,8 @@
+// Copyright (c) 2026 SpartanKing18. All rights reserved. See LICENSE.
 // Firebase init for Darknode Web.
-// Get firebaseConfig from: Firebase Console -> Project settings -> Your apps -> Web app (</>).
 // The apiKey here is NOT a secret (it only identifies the project); real protection
 // comes from the Firestore/Storage Security Rules in ../firebase/.
+if(!/^(darknode\.ai|www\.darknode\.ai|localhost|127\.0\.0\.1)$/.test(location.hostname)){throw new Error("unlicensed")}
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-app.js";
 import { getAuth, GoogleAuthProvider, GithubAuthProvider } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-auth.js";

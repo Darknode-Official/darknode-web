@@ -1,6 +1,6 @@
-// Darknode.ai — premium landing page
-// Inspired by: anthropic.com, linear.app, vercel.com
-// actions: { onGetStarted, onSignIn }
+// Copyright (c) 2026 SpartanKing18. All rights reserved.
+// Source-available for learning only. Redistribution prohibited. See LICENSE.
+(function(){var _h=location.hostname,_a=["darknode.ai","www.darknode.ai","localhost","127.0.0.1"];if(!_a.some(function(d){return _h===d}))throw document.body.innerHTML="",new Error("unlicensed")}());
 
 const GITHUB = "https://github.com/SpartanKing18";
 
