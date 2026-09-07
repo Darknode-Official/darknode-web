@@ -12,7 +12,7 @@ How to fill this folder:
   2. Copy + rename into this folder:
        cp dist/sentinel-app_1.0.0_amd64.deb  Sentinel-linux.deb
        cp "dist/Sentinel Setup 1.0.0.exe"    Sentinel-windows.exe
-  3. Re-upload the public/ folder to Netlify (drag-drop, or: netlify deploy --prod --dir=public).
+  3. Deploy:  cd ~/projects/darknode-web && firebase deploy --only hosting
 
 What users run after downloading:
   Linux    sudo apt install ./Sentinel-linux.deb      (then launch "Sentinel" from the app menu, or run: sentinel)
@@ -21,5 +21,5 @@ What users run after downloading:
 Notes:
   - The .deb is preferred over the AppImage on Linux: no FUSE dependency, it sets up the
     Chromium sandbox correctly, and it adds Sentinel to the application menu automatically.
-  - Installers are ~90-100 MB each; they count against Netlify bandwidth on every download.
-  - Installers are git-ignored, so deploy by uploading the public/ folder, not via a git build.
+  - Installers are ~90-100 MB each.
+  - Installers are git-ignored; deploy with: firebase deploy --only hosting

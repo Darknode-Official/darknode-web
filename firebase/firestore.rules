@@ -10,11 +10,14 @@ service cloud.firestore {
     function isOwner()  { return signedIn() && email() == 'cashzombs@gmail.com'; }
 
     // Each user reads/writes only their own doc; the owner can read/manage all.
+    // Users cannot escalate by changing their own email field to the owner's email.
     match /users/{uid} {
       allow read:   if signedIn() && (request.auth.uid == uid || isOwner());
       allow create: if signedIn() && request.auth.uid == uid
                     && request.resource.data.email == email();
-      allow update: if isOwner() || request.auth.uid == uid;
+      allow update: if isOwner()
+                    || (request.auth.uid == uid
+                        && request.resource.data.email == email());
       allow delete: if isOwner();
     }
 

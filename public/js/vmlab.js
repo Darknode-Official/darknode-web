@@ -2,9 +2,9 @@ const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
 const EDITIONS = [
-  { id: "full", name: "Full", size: "~30 GB", desc: "XFCE desktop, Darknode app, Nexus CLI, all tools", icon: "⭐" },
-  { id: "slim", name: "Slim", size: "~20 GB", desc: "XFCE desktop, core tools, no heavy packages", icon: ">" },
-  { id: "netinstall", name: "Netinstall", size: "~12 GB", desc: "Terminal only, minimal footprint", icon: "⌘" },
+  { id: "full", name: "Full", size: "~30 GB", desc: "XFCE desktop, Darknode app, Nexus CLI, all tools", icon: "[*]" },
+  { id: "slim", name: "Slim", size: "~20 GB", desc: "XFCE desktop, core tools, no heavy packages", icon: "[>]" },
+  { id: "netinstall", name: "Netinstall", size: "~12 GB", desc: "Terminal only, minimal footprint", icon: "[$]" },
 ];
 
 const FEATURES = [
