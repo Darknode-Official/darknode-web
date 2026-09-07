@@ -5,7 +5,7 @@ export function getTarget() { try { return localStorage.getItem(KEY) || ""; } ca
 export function setTarget(v) {
   v = (v || "").trim();
   try { localStorage.setItem(KEY, v); } catch (_) {}
-  try { document.dispatchEvent(new CustomEvent("sentinel:target", { detail: v })); } catch (_) {}
+  try { document.dispatchEvent(new CustomEvent("darknode:target", { detail: v })); } catch (_) {}
   return v;
 }
-export function onTarget(cb) { document.addEventListener("sentinel:target", (e) => cb(e.detail)); }
+export function onTarget(cb) { document.addEventListener("darknode:target", (e) => cb(e.detail)); }

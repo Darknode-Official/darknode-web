@@ -1,4 +1,4 @@
-// Multi-user auth for Sentinel Web (Firebase). Google sign-in + email/password
+// Multi-user auth for Darknode Web (Firebase). Google sign-in + email/password
 // signup with email verification + password reset. Owner (OWNER_EMAIL) is admin.
 import { auth, db, googleProvider, githubProvider, OWNER_EMAIL } from "/js/firebase.js";
 import { collection as fbCollection, addDoc as fbAddDoc, serverTimestamp as fbServerTimestamp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
@@ -133,7 +133,7 @@ function renderAuth(mode = "signin") {
       <a class="auth-back" id="authBack">&larr; Back</a>
       <div class="auth-logo"><img src="/favicon.svg" alt=""></div>
       <h1>${isSignup ? "Create your account" : "Welcome back"}</h1>
-      <p class="muted">${isSignup ? "Set up your Sentinel console in seconds." : "Sign in to your Sentinel console."}</p>
+      <p class="muted">${isSignup ? "Set up your Darknode console in seconds." : "Sign in to your Darknode console."}</p>
       <button class="btn google" id="google">Continue with Google</button>
       <button class="btn github" id="github">Continue with GitHub</button>
       <div class="or"><span></span>or<span></span></div>
@@ -383,7 +383,7 @@ function renderSettingsPage(main, user, isOwner) {
       <p class="muted" style="font-size:.75rem">Treat this like a password &mdash; anyone with it can sign in as you. Changing your password revokes it.</p>
     </div>
     <div class="set-card"><div class="set-lbl">About</div>
-      <p class="muted">Sentinel &mdash; your security workspace. In-browser tools plus install commands for everything that runs on your machine.</p>
+      <p class="muted">Darknode &mdash; your security workspace. In-browser tools plus install commands for everything that runs on your machine.</p>
       <p class="muted" style="font-size:.75rem">Version 1.0</p>
     </div>`;
   main.querySelector("#sw-acc").onclick = (e) => { const b = e.target.closest(".swatch"); if (b) applyAccent(b.dataset.c); };
@@ -449,7 +449,7 @@ function renderApp(user) {
   view.innerHTML = `
     <div class="app-shell">
       <aside class="sidebar">
-        <div class="side-brand">Sentinel</div>
+        <div class="side-brand">Darknode</div>
         <nav class="side-nav">
           <div class="side-group">Workspace</div>
           <button class="side-item" data-sec="home">Home</button>
@@ -493,7 +493,7 @@ function renderApp(user) {
       <main class="app-main" id="app-main"><div id="crumbs" class="crumbs"></div><div id="app-content"></div>
         <footer class="app-foot">
           <div class="app-foot-row">
-            <span class="app-foot-brand">Sentinel</span><span class="app-foot-ver">v2.29</span>
+            <span class="app-foot-brand">Darknode</span><span class="app-foot-ver">v2.29</span>
             <nav class="app-foot-links">
               <a data-foot="docs">Docs</a><a data-foot="terms">Terms</a><a data-foot="privacy">Privacy</a><a data-foot="aup">Acceptable Use</a><a data-foot="license">License</a><a data-foot="downloads">Downloads</a>
             </nav>
@@ -717,7 +717,7 @@ document.addEventListener("keydown", (e) => {
 
 function tourSteps(isOwner) {
   const steps = [
-    { title: "Welcome to Sentinel", text: "A quick tour of the console. You can skip anytime." },
+    { title: "Welcome to Darknode", text: "A quick tour of the console. You can skip anytime." },
     { sel: ".side-nav", title: "Navigate", text: "Move between Home, Tools, Local setup, and Settings here." },
     { sel: ".qa-grid", title: "Quick actions", text: "Jump straight into browsing tools or setting up local AI." },
     { sel: "#moreBtn", title: "The … menu", text: "Spin up the full local toolkit + SSH, or a local AI coding setup with Ollama." },

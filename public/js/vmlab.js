@@ -2,7 +2,7 @@ const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
 const EDITIONS = [
-  { id: "full", name: "Full", size: "~30 GB", desc: "XFCE desktop, Sentinel app, Nexus CLI, all tools", icon: "⭐" },
+  { id: "full", name: "Full", size: "~30 GB", desc: "XFCE desktop, Darknode app, Nexus CLI, all tools", icon: "⭐" },
   { id: "slim", name: "Slim", size: "~20 GB", desc: "XFCE desktop, core tools, no heavy packages", icon: ">" },
   { id: "netinstall", name: "Netinstall", size: "~12 GB", desc: "Terminal only, minimal footprint", icon: "⌘" },
 ];
@@ -11,7 +11,7 @@ const FEATURES = [
   ["Pre-installed tools", "nmap, Hydra, Metasploit, Burp, SQLmap, and 40+ more"],
   ["XFCE desktop", "Lightweight themed desktop (Slim & Full editions)"],
   ["Nexus CLI", "AI-powered coding agent built in"],
-  ["Sentinel app", "Full GUI toolkit launcher (Full edition)"],
+  ["Darknode app", "Full GUI toolkit launcher (Full edition)"],
   ["Cloud-init ready", "Customize on first boot via user-data"],
   ["VNC support", "Access the desktop from your browser"],
 ];
@@ -51,7 +51,7 @@ export function renderVMLab(main) {
       .vl-creds{display:inline-block;background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:3px 10px;font-family:var(--font-mono);font-size:.78rem;color:var(--ok);margin:4px 0}
     </style>
     <h1 class="pg-h1">VM Lab</h1>
-    <p class="muted pg-sub">Launch and access your Sentinel OS virtual machine from the browser.</p>
+    <p class="muted pg-sub">Launch and access your Darknode OS virtual machine from the browser.</p>
 
     <div class="vl-conn">
       <span id="vl-status" class="vl-badge off">disconnected</span>
@@ -64,13 +64,13 @@ export function renderVMLab(main) {
     </div>
 
     <div class="vl-viewer" id="vl-viewer">
-      <div class="vl-logo">██ SENTINEL OS</div>
+      <div class="vl-logo">██ DARKNODE OS</div>
       <div class="vl-placeholder">
         Start your VM with VNC enabled, then connect.<br>
         The viewer opens in a new tab via noVNC / websockify.
       </div>
       <div class="vl-placeholder" style="font-size:.75rem">
-        Default credentials: <span class="vl-creds">sentinel / sentinel</span>
+        Default credentials: <span class="vl-creds">darknode / darknode</span>
       </div>
     </div>
 
@@ -82,7 +82,7 @@ export function renderVMLab(main) {
 <span class="vl-comment"># Or with QEMU directly</span>
 qemu-system-x86_64 \\
   -m 4096 -smp 2 \\
-  -drive file=sentinel-os.qcow2,format=qcow2 \\
+  -drive file=darknode-os.qcow2,format=qcow2 \\
   -vnc :0 -display none \\
   -net nic -net user,hostfwd=tcp::2222-:22
 

@@ -1,4 +1,4 @@
-# Netlify config for the static Sentinel Web frontend (drag-and-drop or CLI deploy).
+# Netlify config for the static Darknode Web frontend (drag-and-drop or CLI deploy).
 [build]
   publish = "public"
 

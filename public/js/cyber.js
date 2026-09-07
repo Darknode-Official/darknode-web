@@ -1,4 +1,4 @@
-// Cybersecurity content for the Sentinel console: notable CVEs, cheat sheets,
+// Cybersecurity content for the Darknode console: notable CVEs, cheat sheets,
 // a common-ports reference, learning resources, and a security-posture checklist.
 import { getTarget, setTarget } from "/js/target.js";
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>

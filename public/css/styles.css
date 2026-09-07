@@ -1,4 +1,4 @@
-/* Sentinel Web - base dark theme. Starter styles; expand in the build. */
+/* Darknode Web - base dark theme. Starter styles; expand in the build. */
 :root{
   --bg:#070a12; --bg2:#0a0e1a; --card:#0e1424; --card2:#131c2f; --line:#1e2a44;
   --line-2:#2b3b5c; --txt:#e6eefc; --txt-2:#aebfdd; --mut:#6f88ab; --placeholder:#57678c;
@@ -100,7 +100,7 @@ body.landing #view{max-width:none;padding:0;margin:0}
 .dl-osbtn:hover{border-color:var(--acc-line);transform:translateY(-2px);box-shadow:0 10px 24px -18px var(--acc)}
 .dl-osbtn .dl-os{font-weight:700;color:var(--txt,#e8eefb);font-size:.9rem}
 .dl-osbtn .dl-fmt{font-size:.72rem;color:var(--mut);font-variant-numeric:tabular-nums}
-/* Sentinel OS edition picker (netinstall / slim / full) */
+/* Darknode OS edition picker (netinstall / slim / full) */
 .os-editions{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 @media(max-width:640px){.os-editions{grid-template-columns:1fr}}
 .os-ed{display:flex;flex-direction:column;gap:7px;background:var(--card2,#101827);border:1px solid var(--line);border-radius:10px;padding:12px;min-width:0}

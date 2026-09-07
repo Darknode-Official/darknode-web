@@ -1,4 +1,4 @@
-// Interactive in-browser utilities for the Sentinel console. Everything here
+// Interactive in-browser utilities for the Darknode console. Everything here
 // runs client-side — nothing is sent anywhere.
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));

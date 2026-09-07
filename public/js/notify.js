@@ -1,4 +1,4 @@
-// Email notifications for Sentinel — sent client-side via EmailJS (emailjs.com),
+// Email notifications for Darknode — sent client-side via EmailJS (emailjs.com),
 // the only way a static site can send email with no backend.
 //
 // SETUP (≈5 min, free tier):
@@ -6,7 +6,7 @@
 //      (connect your Gmail). Copy the Service ID.
 //   2. Create TWO email templates and copy each Template ID:
 //        • Code template   — set the template's "To email" to {{to_email}}.
-//          Use variables: {{name}}, {{code}}.  e.g. body: "Your Sentinel code is {{code}}".
+//          Use variables: {{name}}, {{code}}.  e.g. body: "Your Darknode code is {{code}}".
 //        • Alert template  — "To email" = {{to_email}}.
 //          Variables: {{name}}, {{time}}, {{device}}.
 //   3. Account → General → copy your Public Key.
@@ -52,7 +52,7 @@ export async function sendLoginAlert(toEmail, info) {
 export function genCode() { return String(Math.floor(100000 + Math.random() * 900000)); }
 
 export async function hashCode(code) {
-  const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode("sentinel:" + code));
+  const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode("darknode:" + code));
   return [...new Uint8Array(b)].map((x) => x.toString(16).padStart(2, "0")).join("");
 }
 
