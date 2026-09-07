@@ -26,7 +26,7 @@
   font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
 #bootscreen{position:fixed;inset:0;z-index:99999;background:radial-gradient(1200px 600px at 50% 20%,#0a0f1c,#05070d 70%);
   display:flex;align-items:center;justify-content:center;overflow:hidden;font-family:var(--mono,ui-monospace,"JetBrains Mono",monospace);
-  animation:bootOut .55s ease 2.5s forwards}
+  animation:bootOut .55s ease 3.2s forwards}
 .boot-grid{position:absolute;inset:0;opacity:.5;
   background-image:linear-gradient(color-mix(in srgb,var(--acc,#00d4ff) 12%,transparent) 1px,transparent 1px),linear-gradient(90deg,color-mix(in srgb,var(--acc,#00d4ff) 12%,transparent) 1px,transparent 1px);
   background-size:34px 34px;-webkit-mask-image:radial-gradient(60% 50% at 50% 45%,#000,transparent 80%);mask-image:radial-gradient(60% 50% at 50% 45%,#000,transparent 80%)}
@@ -47,13 +47,19 @@
       <div class="boot-ring"></div><div class="boot-ring r2"></div>
       <div class="boot-logo glitch" data-text="&gt;_ DARKNODE">&gt;_ DARKNODE</div>
       <div class="boot-tag">C Y B E R S E C U R I T Y &nbsp; L E A R N I N G &nbsp; P L A T F O R M</div>
+      <div class="boot-ver">v2.1.0 &middot; 56 modules &middot; 10,107 lines</div>
       <div class="boot-lines">
-        <div style="--d:.25s">[<span class="bok">OK</span>] initializing AI security engine</div>
-        <div style="--d:.50s">[<span class="bok">OK</span>] loading threat intelligence &amp; exploit databases</div>
-        <div style="--d:.75s">[<span class="bok">OK</span>] connecting autonomous agents</div>
-        <div style="--d:1.00s">[<span class="bok">OK</span>] arming Nexus AI engine</div>
-        <div style="--d:1.25s">[<span class="bok">OK</span>] darknode.ai online</div>
-        <div style="--d:1.55s" class="boot-go">darknode@ai:~$ <span class="boot-cur">&#9608;</span></div>
+        <div style="--d:.15s"><span class="boot-dim">darknode kernel 2.1.0 (darknode.ai)</span></div>
+        <div style="--d:.30s">[<span class="bok">OK</span>] loading 80+ security tools</div>
+        <div style="--d:.45s">[<span class="bok">OK</span>] initializing Nexus AI engine (56 modules)</div>
+        <div style="--d:.60s">[<span class="bok">OK</span>] connecting 8 AI backends</div>
+        <div style="--d:.75s">[<span class="bok">OK</span>] arming Ghost Agents &amp; Thought Stream</div>
+        <div style="--d:.90s">[<span class="bok">OK</span>] loading threat intelligence databases</div>
+        <div style="--d:1.05s">[<span class="bok">OK</span>] mounting knowledge graph &amp; deep memory</div>
+        <div style="--d:1.20s">[<span class="bok">OK</span>] attack planner &amp; CTF assistant ready</div>
+        <div style="--d:1.35s">[<span class="bok">OK</span>] verification engine armed</div>
+        <div style="--d:1.55s">[<span class="bok" style="color:#00d4ff">ONLINE</span>] <span style="color:#00d4ff">darknode.ai</span></div>
+        <div style="--d:1.75s" class="boot-go">darknode@ai:~$ <span class="boot-cur">&#9608;</span></div>
       </div>
       <div class="boot-barwrap"><div class="boot-bar"><span></span></div><span class="boot-pct" id="bootpct">0%</span></div>
     </div>
@@ -108,11 +114,11 @@
         ctx.fillStyle = g; ctx.fillRect(0, 0, c.width, c.height);
         if (!reduce) raf = requestAnimationFrame(draw);
       }
-      draw(); setTimeout(function () { cancelAnimationFrame(raf); }, 3000);
+      draw(); setTimeout(function () { cancelAnimationFrame(raf); }, 3800);
       // Preload heavy modules during boot animation
       fetch("/data/topics.json").catch(function(){});
       var pct = document.getElementById("bootpct");
-      if (pct) { var s0 = performance.now(); (function tick() { var p = Math.min(100, Math.round(((performance.now() - s0) / 2300) * 100)); pct.textContent = p + "%"; if (p < 100) requestAnimationFrame(tick); })(); }
+      if (pct) { var s0 = performance.now(); (function tick() { var p = Math.min(100, Math.round(((performance.now() - s0) / 3000) * 100)); pct.textContent = p + "%"; if (p < 100) requestAnimationFrame(tick); })(); }
       var logo = document.querySelector(".boot-logo");
       if (logo) { var target = ">_ DARKNODE", pool = "!<>-_\\/[]{}=+*^?#01ABCDEF", total = 38, frame = 0;
         var id = setInterval(function () { frame++; var o = ""; for (var i = 0; i < target.length; i++) { if (target[i] === " ") { o += " "; continue; } o += (i < (frame / total) * target.length) ? target[i] : pool[(Math.random() * pool.length) | 0]; } logo.textContent = o; if (frame >= total) { clearInterval(id); logo.textContent = target; } }, 26); }
