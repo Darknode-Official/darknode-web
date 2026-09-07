@@ -1943,3 +1943,18 @@ tr:hover td {
 .api-tier li { font-size: .82rem; padding: 4px 0; color: var(--fg, #eee); }
 .api-tier li::before { content: ""; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--acc, #0ff); margin-right: 8px; vertical-align: middle; }
 
+
+/* ---- Pricing Section ---- */
+.pricing-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px;max-width:960px;margin:32px auto 0;padding:0 16px}
+.price-card{background:var(--card,rgba(255,255,255,.04));border:1px solid var(--border,rgba(255,255,255,.08));border-radius:16px;padding:32px 28px;position:relative;transition:transform .2s,border-color .3s}
+.price-card:hover{transform:translateY(-4px);border-color:var(--acc,#00d4ff)}
+.price-card.featured{border-color:var(--acc,#00d4ff);background:linear-gradient(160deg,rgba(0,212,255,.06),rgba(124,92,255,.04))}
+.price-badge{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--acc,#00d4ff);color:#000;font-size:.72rem;font-weight:700;padding:3px 14px;border-radius:20px;letter-spacing:.04em;text-transform:uppercase}
+.price-tier{font-size:1.3rem;font-weight:700;margin-bottom:4px}
+.price-amount{font-size:2.8rem;font-weight:800;letter-spacing:-.02em;margin:8px 0}
+.price-amount .price-period{font-size:.85rem;font-weight:400;color:var(--muted,#8892b0);margin-left:2px}
+.price-desc{color:var(--muted,#8892b0);font-size:.85rem;margin:8px 0 20px}
+.price-features{list-style:none;padding:0;margin:0 0 24px}
+.price-features li{padding:6px 0;font-size:.85rem;color:var(--txt-2,#b4bcd0);border-bottom:1px solid var(--border,rgba(255,255,255,.06))}
+.price-features li::before{content:"✓ ";color:var(--acc,#00d4ff);font-weight:700}
+.price-features li:last-child{border-bottom:none}
