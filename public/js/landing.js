@@ -25,7 +25,7 @@ export function renderLanding(view, actions) {
         <div class="hero-trust">
           <div class="trust-item"><span class="trust-n" data-count="80">0</span><span class="trust-l">Security tools</span></div>
           <div class="trust-sep"></div>
-          <div class="trust-item"><span class="trust-n" data-count="49">0</span><span class="trust-l">AI modules</span></div>
+          <div class="trust-item"><span class="trust-n" data-count="59">0</span><span class="trust-l">AI modules</span></div>
           <div class="trust-sep"></div>
           <div class="trust-item"><span class="trust-n" data-count="8">0</span><span class="trust-l">AI engines</span></div>
           <div class="trust-sep"></div>
@@ -90,7 +90,7 @@ export function renderLanding(view, actions) {
           <div class="feature-row reverse">
             <div class="feature-text">
               <h3>AI that runs on your machine</h3>
-              <p>Nexus is a 52-module AI agent engine. It reads your code, runs commands, explains vulnerabilities, and writes scripts. Use free local models or bring your own API key. We never see your data.</p>
+              <p>Nexus is a 59-module AI agent engine. It reads your code, runs commands, explains vulnerabilities, and writes scripts. Use free local models or bring your own API key. We never see your data.</p>
             </div>
             <div class="feature-visual">
               <div class="term-window">
@@ -124,8 +124,8 @@ export function renderLanding(view, actions) {
         <h2 class="sec-title">Nexus — 9,600 lines of AI infrastructure</h2>
         <p class="sec-sub">Not a wrapper around ChatGPT. A full agentic platform with planning, multi-agent orchestration, self-evaluation, and 8 AI backends.</p>
         <div class="nexus-grid">
-          <div class="nx-card"><div class="nx-n">52</div><div class="nx-l">modules</div></div>
-          <div class="nx-card"><div class="nx-n">9,627</div><div class="nx-l">lines of code</div></div>
+          <div class="nx-card"><div class="nx-n">59</div><div class="nx-l">modules</div></div>
+          <div class="nx-card"><div class="nx-n">10,586</div><div class="nx-l">lines of code</div></div>
           <div class="nx-card"><div class="nx-n">93</div><div class="nx-l">tests passing</div></div>
           <div class="nx-card"><div class="nx-n">8</div><div class="nx-l">AI engines</div></div>
           <div class="nx-card"><div class="nx-n">0</div><div class="nx-l">dependencies</div></div>
@@ -231,6 +231,7 @@ export function renderLanding(view, actions) {
               <li>Practice labs (DVWA, Juice Shop)</li>
               <li>Learning hub &amp; cheat sheets</li>
               <li>Nexus AI &mdash; core agent</li>
+              <li>Security RAG <li>5 MCP server integrations</li>mdash; AI with built-in OWASP, CVEs, attack patterns</li>
               <li>5 MCP server integrations</li>
             </ul>
             <button class="btn lg" id="price-free">Get started free</button>
