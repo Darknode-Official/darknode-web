@@ -24,7 +24,7 @@ body{margin:0;background:var(--bg);color:var(--txt);
   background:color-mix(in srgb,var(--bg) 78%,transparent);backdrop-filter:blur(12px)}
 .brand{display:inline-flex;align-items:center;gap:9px;font-weight:800;letter-spacing:-.01em;color:var(--txt);text-decoration:none;font-size:1.05rem}
 .brand:hover{color:var(--acc)}
-.brand-mark{width:24px;height:24px;border-radius:6px;box-shadow:0 0 0 1px var(--line),0 4px 14px -5px color-mix(in srgb,var(--acc) 70%,transparent)}
+.brand-mark{width:24px;height:24px;border-radius:4px}
 .banner{margin:10px 18px;padding:10px 14px;border:1px solid var(--warn);
   border-radius:var(--radius);background:rgba(245,158,11,.08);font-size:.85rem}
 #view{padding:18px;max-width:1100px;margin:0 auto}
@@ -242,6 +242,10 @@ body.app #view{max-width:none;padding:0;margin:0}
 .swatches{display:flex;gap:8px}
 .swatch{width:24px;height:24px;border-radius:50%;border:2px solid var(--line);cursor:pointer;padding:0}
 .swatch:hover{border-color:var(--txt)}
+.logo-picks{display:flex;gap:8px;flex-wrap:wrap}
+.logo-pick{width:40px;height:40px;padding:4px;border-radius:8px;border:2px solid var(--line);background:var(--bg);cursor:pointer;display:flex;align-items:center;justify-content:center}
+.logo-pick:hover{border-color:var(--txt)}
+.logo-pick.on{border-color:var(--acc);box-shadow:0 0 8px -2px var(--acc)}
 @media(max-width:720px){
   .app-shell{flex-direction:column;min-height:0}
   .sidebar{width:auto;position:static;height:auto;flex-direction:row;flex-wrap:wrap;align-items:center;border-right:none;border-bottom:1px solid var(--line);padding:10px}
@@ -1945,7 +1949,7 @@ tr:hover td {
 
 
 /* ---- Pricing Section ---- */
-.pricing-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px;max-width:960px;margin:32px auto 0;padding:0 16px}
+.pricing-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:24px;max-width:1200px;margin:32px auto 0;padding:0 16px}
 .price-card{background:var(--card,rgba(255,255,255,.04));border:1px solid var(--border,rgba(255,255,255,.08));border-radius:16px;padding:32px 28px;position:relative;transition:transform .2s,border-color .3s}
 .price-card:hover{transform:translateY(-4px);border-color:var(--acc,#00d4ff)}
 .price-card.featured{border-color:var(--acc,#00d4ff);background:linear-gradient(160deg,rgba(0,212,255,.06),rgba(124,92,255,.04))}
@@ -2072,7 +2076,7 @@ tr:hover td {
 @keyframes dotPulse{0%,100%{opacity:1}50%{opacity:.4}}
 .hero-h1{font-family:var(--font-display);font-size:clamp(2.4rem,5.5vw,4rem);font-weight:800;
   line-height:1.08;letter-spacing:-.03em;margin:0 0 20px}
-.hero-rotate-wrap{display:inline-block;position:relative}
+.hero-rotate-wrap{display:inline-flex;align-items:flex-end;position:relative;vertical-align:bottom;text-align:left;overflow:hidden;height:2.16em}
 .hero-rotate{display:inline-block;transition:opacity .25s,transform .25s;color:var(--acc)}
 .hero-sub{color:var(--mut);font-size:1.1rem;line-height:1.65;max-width:560px;margin:0 auto 32px}
 .hero-cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
@@ -2186,12 +2190,27 @@ tr:hover td {
 .foot-copy,.foot-note{font-size:.72rem;color:var(--mut)}
 
 /* Scroll reveal */
-.sec-title,.bento-card,.feature-row,.tl-step,.nx-card,.gh-card,.cta-final{
-  opacity:0;transform:translateY(24px);transition:opacity .6s ease,transform .6s ease}
+.sec-title,.bento-card,.feature-row,.tl-step,.nx-card,.gh-card,.cta-final,
+.sec-label,.sec-sub,.pricing-note,.nx-details,.hero-trust,.price-card{
+  opacity:0;transform:translateY(24px);transition:opacity .6s cubic-bezier(.2,.7,.3,1),transform .6s cubic-bezier(.2,.7,.3,1)}
 .revealed{opacity:1;transform:translateY(0)}
+/* Stagger children for cascade effect */
+.bento-card:nth-child(2){transition-delay:.08s}
+.bento-card:nth-child(3){transition-delay:.16s}
+.price-card:nth-child(2){transition-delay:.1s}
+.price-card:nth-child(3){transition-delay:.2s}
+.nx-card:nth-child(2){transition-delay:.04s}
+.nx-card:nth-child(3){transition-delay:.08s}
+.nx-card:nth-child(4){transition-delay:.12s}
+.nx-card:nth-child(5){transition-delay:.16s}
+.nx-card:nth-child(6){transition-delay:.2s}
+.tl-step:nth-child(2){transition-delay:.1s}
+.tl-step:nth-child(3){transition-delay:.2s}
+.gh-card:nth-child(2){transition-delay:.08s}
+.gh-card:nth-child(3){transition-delay:.16s}
 
 /* ===== Pricing ===== */
-.pricing-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px;max-width:900px;margin:0 auto}
+.pricing-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px;max-width:1200px;margin:0 auto}
 .price-card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:32px 24px;position:relative;
   transition:transform .2s,border-color .3s,box-shadow .3s;display:flex;flex-direction:column}
 .price-card:hover{transform:translateY(-3px);border-color:var(--acc-line);box-shadow:0 12px 40px -16px color-mix(in srgb,var(--acc) 15%,transparent)}
@@ -2211,6 +2230,275 @@ tr:hover td {
 .pricing-note{text-align:center;font-size:.78rem;color:var(--mut);max-width:560px;margin:24px auto 0;line-height:1.6}
 .pricing-note strong{color:var(--txt-2)}
 
-/* Boot screen — enhanced */
+/* Boot screen -- enhanced */
 .boot-ver{font-size:.65rem;color:var(--acc,#00d4ff);opacity:.5;letter-spacing:.15em;margin-bottom:20px;font-family:var(--font-mono,monospace)}
 .boot-dim{color:var(--mut,#6f88ab);opacity:.6;font-size:.78rem}
+
+/* ================================================================
+   UI IMPROVEMENTS -- accessibility, mobile nav, visual polish
+   ================================================================ */
+
+/* Skip-to-content link for keyboard navigation */
+.skip-link{
+  position:fixed;top:-100%;left:50%;transform:translateX(-50%);z-index:100001;
+  background:var(--acc);color:#04121a;padding:12px 24px;border-radius:0 0 8px 8px;
+  font-weight:700;font-size:.9rem;text-decoration:none;
+  transition:top .2s ease;
+  box-shadow:0 4px 16px rgba(0,0,0,.4);
+}
+.skip-link:focus{top:0}
+
+/* Hamburger menu button for mobile sidebar */
+.hamburger{
+  display:none;background:transparent;border:1px solid var(--line);
+  border-radius:6px;width:38px;height:38px;cursor:pointer;
+  flex-direction:column;align-items:center;justify-content:center;gap:5px;
+  padding:8px 7px;margin-right:auto;margin-left:8px;
+  transition:border-color .15s ease;
+}
+.hamburger:hover{border-color:var(--acc)}
+.hamburger-line{
+  display:block;width:18px;height:2px;background:var(--txt);border-radius:2px;
+  transition:transform .25s ease,opacity .2s ease;
+}
+.hamburger.active .hamburger-line:nth-child(1){transform:translateY(7px) rotate(45deg)}
+.hamburger.active .hamburger-line:nth-child(2){opacity:0}
+.hamburger.active .hamburger-line:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+
+/* Mobile: show hamburger, collapse sidebar */
+@media(max-width:720px){
+  .hamburger{display:flex}
+  body.app .sidebar{
+    position:fixed;top:var(--topbar-h);left:0;bottom:0;width:260px;z-index:55;
+    transform:translateX(-100%);transition:transform .3s cubic-bezier(.2,.8,.2,1),
+    box-shadow .3s ease;
+    background:var(--bg);border-right:1px solid var(--line);
+    flex-direction:column;height:calc(100vh - var(--topbar-h));
+  }
+  body.app .sidebar.open{
+    transform:translateX(0);
+    box-shadow:8px 0 30px rgba(0,0,0,.5);
+  }
+  body.app .sidebar .side-brand{display:block;padding:16px 14px 14px}
+  body.app .sidebar .side-nav{flex-direction:column;flex-wrap:nowrap;overflow-y:auto}
+  body.app .sidebar .side-foot{display:flex}
+  body.app .sidebar .side-group{display:block}
+  /* Overlay behind sidebar when open */
+  body.app .sidebar.open::after{
+    content:"";position:fixed;top:0;left:260px;right:0;bottom:0;
+    background:rgba(4,8,15,.5);z-index:-1;
+  }
+}
+
+/* Improved topbar layout for all screens */
+#topbar{gap:8px}
+@media(max-width:720px){
+  #topbar .brand{font-size:.95rem}
+  #topbar .brand-mark{width:22px;height:22px}
+}
+
+/* Smooth page section transitions */
+.app-main > #app-content{
+  animation:contentFadeIn .25s cubic-bezier(.2,.7,.3,1) both;
+}
+@keyframes contentFadeIn{
+  from{opacity:0;transform:translateY(4px)}
+  to{opacity:1;transform:none}
+}
+
+/* Improved card interactions -- gradient border on hover */
+.qa::after{
+  content:"";position:absolute;inset:-1px;border-radius:inherit;
+  background:var(--grad-acc);z-index:-1;opacity:0;
+  transition:opacity .2s ease;
+}
+.qa:hover::after{opacity:1}
+.qa{background:var(--card);z-index:0}
+
+/* Sidebar tooltip on hover (desktop only) */
+@media(min-width:721px){
+  .side-item{position:relative}
+  .side-item::after{
+    content:attr(data-sec);position:absolute;left:100%;top:50%;
+    transform:translateY(-50%) translateX(6px);pointer-events:none;
+    background:var(--card2);border:1px solid var(--line);border-radius:6px;
+    padding:4px 8px;font-size:.7rem;color:var(--mut);white-space:nowrap;
+    opacity:0;transition:opacity .15s ease;z-index:60;
+    display:none;
+  }
+}
+
+/* Improved stat card interactions */
+.stat{position:relative;overflow:hidden;cursor:default}
+.stat::before{
+  content:"";position:absolute;inset:0;
+  background:radial-gradient(circle at 80% 0%,color-mix(in srgb,var(--acc) 8%,transparent),transparent 70%);
+  opacity:0;transition:opacity .2s ease;
+}
+.stat:hover::before{opacity:1}
+
+/* Better mobile stat layout */
+@media(max-width:560px){
+  .stat-row{flex-direction:column}
+  .stat{min-width:0;flex:none}
+}
+
+/* Improved pricing card touch targets */
+@media(max-width:600px){
+  .price-card{padding:24px 18px}
+  .price-amount{font-size:2.2rem}
+  .pricing-grid{gap:16px;padding:0 8px}
+}
+
+/* Better mobile hero layout */
+@media(max-width:480px){
+  .hero{padding:80px 0 50px}
+  .hero-h1{font-size:clamp(1.8rem,6vw,2.4rem);margin-bottom:14px}
+  .hero-sub{font-size:.95rem;margin-bottom:24px}
+  .hero-cta{gap:8px;flex-direction:column;align-items:center}
+  .hero-cta .btn.lg{width:100%;max-width:300px;justify-content:center}
+  .trust-item{padding:0 12px}
+  .trust-n{font-size:1.1rem}
+  .trust-l{font-size:.62rem}
+}
+
+/* Improved feature row visual terminals on mobile */
+@media(max-width:768px){
+  .feature-visual .term-window{margin-top:20px}
+  .lab-grid{grid-template-columns:1fr}
+}
+
+/* Better timeline on small screens */
+@media(max-width:480px){
+  .timeline{padding-left:32px}
+  .tl-dot{left:-32px;width:26px;height:26px;font-size:.75rem}
+}
+
+/* Smooth scroll behavior */
+html{scroll-behavior:smooth}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+
+/* Improved link underline animation for footer columns */
+.foot-col a{position:relative;display:inline-block}
+.foot-col a::after{
+  content:"";position:absolute;left:0;bottom:0;width:0;height:1px;
+  background:var(--acc);transition:width .2s ease;
+}
+.foot-col a:hover::after{width:100%}
+
+/* Bento card icon lift on hover */
+.bento-card:hover .bento-icon{
+  transform:translateY(-2px) scale(1.05);
+  box-shadow:0 6px 18px -8px color-mix(in srgb,var(--acc) 60%,transparent);
+}
+.bento-icon{transition:transform .2s ease,box-shadow .2s ease}
+
+/* Nexus stat card number count animation */
+.nx-card .nx-n{transition:color .2s ease}
+.nx-card:hover .nx-n{
+  text-shadow:0 0 20px color-mix(in srgb,var(--acc) 50%,transparent);
+}
+
+/* GitHub cards -- lift effect */
+.gh-card{box-shadow:var(--sh-1);transition:border-color .2s,transform .2s,box-shadow .2s}
+.gh-card:hover{box-shadow:0 12px 36px -16px color-mix(in srgb,var(--acc) 20%,transparent)}
+
+/* Improved dark/light theme toggle appearance */
+.seg button{transition:background .15s ease,color .15s ease,box-shadow .15s ease}
+.seg button.on{box-shadow:0 2px 8px color-mix(in srgb,var(--acc) 30%,transparent)}
+
+/* Auth card improvements */
+.auth-card{
+  border:1px solid var(--line);border-radius:16px;
+  box-shadow:0 20px 60px -20px rgba(0,0,0,.5),0 0 0 1px color-mix(in srgb,var(--acc) 5%,transparent);
+}
+.auth-card h1{font-family:var(--font-display);letter-spacing:-.02em}
+.auth-card .btn.google,.auth-card .btn.github{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  transition:transform .15s ease,box-shadow .15s ease;
+}
+.auth-card .btn.google:hover,.auth-card .btn.github:hover{
+  transform:translateY(-1px);
+  box-shadow:0 4px 14px rgba(0,0,0,.25);
+}
+
+/* Command palette -- backdrop blur */
+.cmdk{backdrop-filter:blur(4px)}
+.cmdk-box{
+  animation:cmdkIn .15s cubic-bezier(.2,.7,.3,1);
+}
+@keyframes cmdkIn{
+  from{opacity:0;transform:scale(.97) translateY(-8px)}
+  to{opacity:1;transform:none}
+}
+.cmdk-item{transition:background .1s ease}
+
+/* Feedback modal animation */
+.fb-modal .fb-box{
+  animation:modalIn .2s cubic-bezier(.2,.7,.3,1);
+}
+@keyframes modalIn{
+  from{opacity:0;transform:scale(.95) translateY(12px)}
+  to{opacity:1;transform:none}
+}
+
+/* Toast notification improvements */
+.toast{
+  font-family:var(--font-mono);
+  backdrop-filter:blur(12px);
+  background:color-mix(in srgb,var(--card) 88%,transparent);
+}
+
+/* Improved tabindex and focus for tool cards */
+.tk-card:focus-visible,.qa:focus-visible,.bento-card:focus-visible,
+.feat-card:focus-visible,.gh-card:focus-visible,.price-card:focus-visible{
+  outline:2px solid var(--acc);outline-offset:2px;
+}
+
+/* Better disabled state for coming-soon buttons */
+.price-card .btn:disabled{
+  background:var(--card2);color:var(--mut);border:1px solid var(--line);
+  box-shadow:none;filter:none;
+}
+
+/* Improved scrollbar track on sidebar */
+.side-nav::-webkit-scrollbar{width:6px}
+.side-nav::-webkit-scrollbar-track{background:transparent}
+.side-nav::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px}
+.side-nav::-webkit-scrollbar-thumb:hover{background:var(--line-2)}
+
+/* Landing page section spacing consistency */
+.section{padding:80px 0}
+.section.alt{padding:80px 0}
+@media(max-width:768px){.section,.section.alt{padding:50px 0}}
+@media(max-width:480px){.section,.section.alt{padding:36px 0}}
+
+/* Improved topbar glass effect */
+#topbar{
+  background:color-mix(in srgb,var(--bg) 82%,transparent);
+  backdrop-filter:blur(16px) saturate(1.4);
+  -webkit-backdrop-filter:blur(16px) saturate(1.4);
+}
+
+/* Better text contrast in light mode */
+:root[data-theme="light"] .hero-h1{color:#0a0e1a}
+:root[data-theme="light"] .sec-title{color:#0a0e1a}
+:root[data-theme="light"] .pg-h1{color:#0a0e1a;background:none;-webkit-background-clip:unset;background-clip:unset}
+:root[data-theme="light"] .bento-card{background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.04)}
+:root[data-theme="light"] .feat-card{background:#fff}
+:root[data-theme="light"] .price-card{background:#fff}
+:root[data-theme="light"] .gh-card{background:#fff}
+:root[data-theme="light"] .nx-card{background:#fff}
+:root[data-theme="light"] .lab-card{background:#fff}
+:root[data-theme="light"] .auth-card{background:#fff;box-shadow:0 4px 24px rgba(0,0,0,.08)}
+:root[data-theme="light"] .term-window{background:#f8f9fc;border-color:#dbe2ee}
+:root[data-theme="light"] .tw-body{color:#2d3748}
+:root[data-theme="light"] #topbar{background:color-mix(in srgb,#eef1f7 88%,transparent)}
+
+/* ARIA live region for dynamic content updates */
+[aria-live]{transition:opacity .15s ease}
+
+/* Print improvements -- do not show boot or interactive elements */
+@media print{
+  #bootscreen,.hamburger,.cmdk,.fb-modal,.tour-overlay,.toast{display:none!important}
+}

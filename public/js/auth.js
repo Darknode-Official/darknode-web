@@ -287,6 +287,40 @@ function crtOn() { try { return localStorage.getItem("sw_crt") === "1"; } catch 
 function applyCrt(on) { document.documentElement.classList.toggle("crt", on); try { localStorage.setItem("sw_crt", on ? "1" : "0"); } catch (_) {} }
 applyCrt(crtOn());
 
+const LOGO_VARIANTS = {
+  "outer-radius": {
+    label: "Outer radius",
+    svg: '<path d="M10,22 A12,12 0 0 1 22,10 H42 V42 H10 Z" fill="none" stroke="currentColor" stroke-width="6" stroke-linejoin="miter"/><path d="M58,10 H78 A12,12 0 0 1 90,22 V42 H58 Z" fill="none" stroke="currentColor" stroke-width="6" stroke-linejoin="miter"/><path d="M10,58 H42 V90 H22 A12,12 0 0 1 10,78 Z" fill="none" stroke="currentColor" stroke-width="6" stroke-linejoin="miter"/><path d="M58,58 H90 V78 A12,12 0 0 1 78,90 H58 Z" fill="#E09A2B"/>',
+  },
+  "nested-accent": {
+    label: "Nested accent",
+    svg: '<rect x="10" y="10" width="32" height="32" rx="7" fill="none" stroke="currentColor" stroke-width="6"/><rect x="58" y="10" width="32" height="32" rx="7" fill="none" stroke="currentColor" stroke-width="6"/><rect x="10" y="58" width="32" height="32" rx="7" fill="none" stroke="currentColor" stroke-width="6"/><rect x="58" y="58" width="32" height="32" rx="7" fill="none" stroke="currentColor" stroke-width="6"/><rect x="66.96" y="66.96" width="14.08" height="14.08" rx="3.5" fill="#E09A2B"/>',
+  },
+  "thin": {
+    label: "Thin",
+    svg: '<rect x="10" y="10" width="32" height="32" rx="7" fill="none" stroke="currentColor" stroke-width="6"/><rect x="58" y="10" width="32" height="32" rx="7" fill="none" stroke="currentColor" stroke-width="6"/><rect x="10" y="58" width="32" height="32" rx="7" fill="none" stroke="currentColor" stroke-width="6"/><rect x="58" y="58" width="32" height="32" rx="7" fill="#E09A2B"/>',
+  },
+  "solid": {
+    label: "Solid",
+    svg: '<rect x="9" y="9" width="36" height="36" rx="8" fill="currentColor"/><rect x="55" y="9" width="36" height="36" rx="8" fill="currentColor"/><rect x="9" y="55" width="36" height="36" rx="8" fill="currentColor"/><rect x="55" y="55" width="36" height="36" rx="8" fill="#E09A2B"/>',
+  },
+  "missing": {
+    label: "Missing cell",
+    svg: '<rect x="10" y="10" width="32" height="32" rx="7" fill="none" stroke="currentColor" stroke-width="6"/><rect x="58" y="10" width="32" height="32" rx="7" fill="none" stroke="currentColor" stroke-width="6"/><rect x="10" y="58" width="32" height="32" rx="7" fill="none" stroke="currentColor" stroke-width="6"/>',
+  },
+};
+function logoSvg(key) { const v = LOGO_VARIANTS[key]; if (!v) return ""; return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">${v.svg}</svg>`; }
+function applyLogo(key) {
+  if (!LOGO_VARIANTS[key]) return;
+  try { localStorage.setItem("sw_logo", key); } catch (_) {}
+  const mark = document.querySelector(".brand-mark");
+  if (mark) { mark.src = "data:image/svg+xml," + encodeURIComponent(logoSvg(key).replace(/currentColor/g, "#F2F5F9")); }
+  let fav = document.querySelector('link[rel="icon"]');
+  if (!fav) { fav = document.createElement("link"); fav.rel = "icon"; document.head.appendChild(fav); }
+  fav.href = "data:image/svg+xml," + encodeURIComponent(logoSvg(key).replace(/currentColor/g, "#F2F5F9"));
+}
+(function () { let l = null; try { l = localStorage.getItem("sw_logo"); } catch (_) {} if (l && LOGO_VARIANTS[l]) applyLogo(l); })();
+
 // ---------- app sections ----------
 function renderHome(main, user, isOwner, show) {
   const name = user.displayName ? user.displayName.split(" ")[0] : "";
@@ -362,6 +396,8 @@ function renderSettingsPage(main, user, isOwner) {
         <span class="seg" id="sw-theme"><button data-t="dark">Dark</button><button data-t="light">Light</button></span></div>
       <div class="set-row"><span class="muted">Accent color</span>
         <span class="swatches" id="sw-acc">${ACCENTS.map((c) => `<button class="swatch" style="background:${c}" data-c="${c}" title="${c}"></button>`).join("")}</span></div>
+      <div class="set-row"><span class="muted">Logo</span>
+        <span class="logo-picks" id="sw-logo">${Object.entries(LOGO_VARIANTS).map(([k, v]) => `<button class="logo-pick${k === ((() => { try { return localStorage.getItem("sw_logo") || "nested-accent"; } catch (_) { return "outer-radius"; } })()) ? " on" : ""}" data-logo="${k}" title="${v.label}"><svg viewBox="0 0 100 100" width="28" height="28">${v.svg.replace(/currentColor/g, "#F2F5F9")}</svg></button>`).join("")}</span></div>
       <div class="set-row"><span class="muted">CRT scanlines</span>
         <span class="seg" id="sw-crt"><button data-crt="1">On</button><button data-crt="0">Off</button></span></div>
     </div>
@@ -387,6 +423,8 @@ function renderSettingsPage(main, user, isOwner) {
       <p class="muted" style="font-size:.75rem">Version 1.0</p>
     </div>`;
   main.querySelector("#sw-acc").onclick = (e) => { const b = e.target.closest(".swatch"); if (b) applyAccent(b.dataset.c); };
+  const logoSeg = main.querySelector("#sw-logo");
+  logoSeg.onclick = (e) => { const b = e.target.closest(".logo-pick"); if (!b) return; applyLogo(b.dataset.logo); logoSeg.querySelectorAll(".logo-pick").forEach((x) => x.classList.toggle("on", x === b)); };
   const themeSeg = main.querySelector("#sw-theme");
   const curTheme = document.documentElement.getAttribute("data-theme") || "dark";
   themeSeg.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b.dataset.t === curTheme));
@@ -448,9 +486,9 @@ function renderApp(user) {
 
   view.innerHTML = `
     <div class="app-shell">
-      <aside class="sidebar">
+      <aside class="sidebar" id="sidebar" role="complementary" aria-label="Main navigation">
         <div class="side-brand">Darknode</div>
-        <nav class="side-nav">
+        <nav class="side-nav" role="navigation" aria-label="Application sections">
           <div class="side-group">Workspace</div>
           <button class="side-item" data-sec="home">Home</button>
           <button class="side-item" data-sec="ai">AI assistant</button>
@@ -490,7 +528,7 @@ function renderApp(user) {
         </nav>
         <div class="side-foot">${avatar}<div class="side-user"><div class="su-name">${esc(name)}</div><div class="su-mail muted">${esc(user.email)}</div></div></div>
       </aside>
-      <main class="app-main" id="app-main"><div id="crumbs" class="crumbs"></div><div id="app-content"></div>
+      <main class="app-main" id="app-main" role="main"><div id="crumbs" class="crumbs" aria-label="Breadcrumb" role="navigation"></div><div id="app-content"></div>
         <footer class="app-foot">
           <div class="app-foot-row">
             <span class="app-foot-brand">Darknode</span><span class="app-foot-ver">v2.29</span>
@@ -551,7 +589,19 @@ function renderApp(user) {
     if (more === undefined) { try { localStorage.setItem("sw_last_sec", sec); } catch (_) {} }
     main.scrollTop = 0;
   }
-  view.querySelector(".side-nav").onclick = (e) => { const b = e.target.closest(".side-item"); if (b) show(b.dataset.sec); };
+  view.querySelector(".side-nav").onclick = (e) => { const b = e.target.closest(".side-item"); if (b) { show(b.dataset.sec); closeSidebar(); } };
+  // Hamburger toggle for mobile sidebar
+  const hamburger = document.getElementById("hamburger");
+  const sidebar = document.getElementById("sidebar");
+  if (hamburger) {
+    hamburger.hidden = false;
+    hamburger.onclick = () => {
+      const open = sidebar.classList.toggle("open");
+      hamburger.classList.toggle("active", open);
+      hamburger.setAttribute("aria-expanded", String(open));
+    };
+  }
+  function closeSidebar() { if (sidebar) { sidebar.classList.remove("open"); if (hamburger) { hamburger.classList.remove("active"); hamburger.setAttribute("aria-expanded", "false"); } } }
 
   userSlot.innerHTML = `
     <button class="cmdk-btn" id="cmdkBtn" title="Search (Ctrl+K)"><span>Search</span><kbd>Ctrl K</kbd></button>
