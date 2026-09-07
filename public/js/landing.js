@@ -12,7 +12,7 @@ export function renderLanding(view, actions) {
       <div class="hero-mesh"></div>
       <div class="hero-grain"></div>
       <div class="wrap hero-inner">
-        <div class="hero-badge"><span class="badge-dot"></span> Open source &middot; Free forever</div>
+        <div class="hero-badge"><span class="badge-dot"></span> Source available &middot; Free forever</div>
         <h1 class="hero-h1">The AI-powered platform<br>for <span class="hero-rotate-wrap"><span class="hero-rotate" id="hero-rotate">cybersecurity</span></span></h1>
         <p class="hero-sub">Tools, labs, and an AI agent to learn ethical hacking — running entirely on your machine. No cloud. No subscriptions. No data leaves your computer.</p>
         <div class="hero-cta">
@@ -190,12 +190,12 @@ export function renderLanding(view, actions) {
       </div>
     </section>
 
-    <!-- ====== OPEN SOURCE ====== -->
+    <!-- ====== SOURCE AVAILABLE ====== -->
     <section class="section" id="open-source">
       <div class="wrap" style="text-align:center">
-        <div class="sec-label">Open source</div>
+        <div class="sec-label">Source available</div>
         <h2 class="sec-title">Built in the open</h2>
-        <p class="sec-sub">Every line of code is on GitHub. Audit it, fork it, contribute to it.</p>
+        <p class="sec-sub">Every line of code is on GitHub. Read it, study it, learn from it.</p>
         <div class="gh-cards">
           <a class="gh-card" href="${GITHUB}/darknode-cli" target="_blank" rel="noopener">
             <span class="gh-name">darknode-cli</span>
@@ -319,7 +319,7 @@ export function renderLanding(view, actions) {
       <div class="cta-mesh"></div>
       <div class="wrap" style="position:relative;text-align:center">
         <h2>Start learning security today.</h2>
-        <p class="cta-sub">Free. Open source. Private. No catch.</p>
+        <p class="cta-sub">Free. Private. Runs on your machine. No catch.</p>
         <button class="btn lg glow" id="cta-signup">Get started &rarr;</button>
       </div>
     </section>
