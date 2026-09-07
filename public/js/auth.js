@@ -311,6 +311,11 @@ const LOGO_VARIANTS = {
   },
 };
 function logoSvg(key) { const v = LOGO_VARIANTS[key]; if (!v) return ""; return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">${v.svg}</svg>`; }
+function logoFavSvg(key) {
+  const v = LOGO_VARIANTS[key]; if (!v) return "";
+  const style = '<style>*{--c:#101722}@media(prefers-color-scheme:dark){*{--c:#F2F5F9}}</style>';
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">${style}${v.svg.replace(/currentColor/g, "var(--c)")}</svg>`;
+}
 function applyLogo(key) {
   if (!LOGO_VARIANTS[key]) return;
   try { localStorage.setItem("sw_logo", key); } catch (_) {}
@@ -318,7 +323,7 @@ function applyLogo(key) {
   if (mark) { mark.src = "data:image/svg+xml," + encodeURIComponent(logoSvg(key).replace(/currentColor/g, "#F2F5F9")); }
   let fav = document.querySelector('link[rel="icon"]');
   if (!fav) { fav = document.createElement("link"); fav.rel = "icon"; document.head.appendChild(fav); }
-  fav.href = "data:image/svg+xml," + encodeURIComponent(logoSvg(key).replace(/currentColor/g, "#F2F5F9"));
+  fav.href = "data:image/svg+xml," + encodeURIComponent(logoFavSvg(key));
 }
 (function () { let l = null; try { l = localStorage.getItem("sw_logo"); } catch (_) {} if (l && LOGO_VARIANTS[l]) applyLogo(l); })();
 
