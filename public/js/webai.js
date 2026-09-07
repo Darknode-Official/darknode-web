@@ -181,18 +181,18 @@ export function renderAI(main) {
       (async () => {
         const ms = await getOllamaModels();
         if (ms === null) {
-          sel.innerHTML = `<option>offline</option>`; status.textContent = "";
-          showInfo("No local Ollama to connect to", `Install Ollama and pull the recommended model:<br><br><code>curl -fsSL https://ollama.com/install.sh | sh</code><br><code>OLLAMA_ORIGINS=* ollama serve</code><br><code>ollama pull gpt-oss:120b</code><br><br>Or switch to <strong>Claude</strong> above (needs an API key).`);
+          sel.innerHTML = `<option value="auto-pull">gpt-oss:120b</option>`;
+          status.textContent = "Ollama not detected -- will auto-install GPT-OSS 120B when you send your first message.";
         } else if (!ms.length) {
-          sel.innerHTML = `<option>none</option>`;
-          showInfo("Ollama is running, but has no models", `Pull the recommended model (GPT-OSS 120B — free, private, strong reasoning):<br><br><code>ollama pull gpt-oss:120b</code><br><br>Smaller/faster alternative: <code>ollama pull gpt-oss:20b</code>`);
+          sel.innerHTML = `<option value="auto-pull">gpt-oss:120b</option>`;
+          status.textContent = "Ollama connected -- GPT-OSS 120B will auto-install when you send your first message.";
         } else {
           const pri = ["gpt-oss:120b", "gpt-oss:20b", "gpt-oss"];
           const sorted = [...ms].sort((a, b) => { const ai = pri.findIndex(p => a.startsWith(p)), bi = pri.findIndex(p => b.startsWith(p)); if (ai >= 0 && bi < 0) return -1; if (bi >= 0 && ai < 0) return 1; if (ai >= 0 && bi >= 0) return ai - bi; return 0; });
           sel.innerHTML = sorted.map((m) => `<option>${esc(m)}</option>`).join("");
           const saved = localStorage.getItem(MODEL_KEY); if (saved && ms.includes(saved)) sel.value = saved;
           const hasGptOss = ms.some(m => m.startsWith("gpt-oss"));
-          status.textContent = "Connected to your local Ollama." + (hasGptOss ? "" : " Tip: ollama pull gpt-oss:120b for the best local model.");
+          status.textContent = "Connected." + (hasGptOss ? "" : " Tip: ollama pull gpt-oss:120b for the best local model.");
         }
       })();
     }
@@ -242,11 +242,12 @@ export function renderAI(main) {
     const text = $("#aiMsg").value.trim(); const imgs = pending.slice(); if (!text && !imgs.length) return;
     const model = sel.value;
     const eng = curEngine();
-    if (eng === "ollama" && (!model || model === "offline" || model === "none")) {
-      status.textContent = "Downloading GPT-OSS 120B -- this only happens once...";
-      const pullMsg = add("ai", ""); pullMsg.innerHTML = "Pulling <strong>gpt-oss:120b</strong> from Ollama. This may take a few minutes on first run...";
+    if (eng === "ollama" && (!model || model === "auto-pull" || model === "offline" || model === "none")) {
+      const savedText = text; const savedImgs = imgs.slice();
+      status.textContent = "Installing GPT-OSS 120B -- this only happens once...";
+      const pullMsg = add("ai", ""); pullMsg.innerHTML = "Installing <strong>gpt-oss:120b</strong>. This only happens once...";
       try {
-        const pr = await fetch("http://127.0.0.1:11434/api/pull", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: "gpt-oss:120b", stream: true }) });
+        const pr = await fetch(OLLAMA + "/api/pull", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: "gpt-oss:120b", stream: true }) });
         if (!pr.ok) throw new Error("pull failed (" + pr.status + ")");
         const reader = pr.body.getReader(), dec = new TextDecoder(); let buf = "";
         for (;;) {
@@ -255,13 +256,20 @@ export function renderAI(main) {
           let nl; while ((nl = buf.indexOf("\n")) >= 0) {
             const line = buf.slice(0, nl).trim(); buf = buf.slice(nl + 1);
             if (!line) continue;
-            try { const j = JSON.parse(line); if (j.completed && j.total) { const pct = Math.round(j.completed / j.total * 100); pullMsg.innerHTML = "Pulling <strong>gpt-oss:120b</strong>: " + pct + "%"; } else if (j.status) { pullMsg.innerHTML = "Pulling <strong>gpt-oss:120b</strong>: " + esc(j.status); } } catch (_) {}
+            try { const j = JSON.parse(line); if (j.completed && j.total) { const pct = Math.round(j.completed / j.total * 100); pullMsg.innerHTML = "Installing <strong>gpt-oss:120b</strong>: " + pct + "%"; } else if (j.status) { pullMsg.innerHTML = esc(j.status); } } catch (_) {}
           }
         }
-        pullMsg.innerHTML = "<strong>gpt-oss:120b</strong> ready. Send your message again.";
-        status.textContent = "GPT-OSS 120B installed.";
+        pullMsg.remove();
+        status.textContent = "GPT-OSS 120B ready.";
         populateModels();
-      } catch (_) { pullMsg.innerHTML = "Could not reach Ollama. Start it first: <code>OLLAMA_ORIGINS=* ollama serve</code>"; status.textContent = ""; }
+        await new Promise(r => setTimeout(r, 300));
+        const ms = await getOllamaModels();
+        if (ms && ms.length) { sel.innerHTML = ms.map(m => `<option>${esc(m)}</option>`).join(""); sel.value = ms.find(m => m.startsWith("gpt-oss")) || ms[0]; }
+        $("#aiMsg").value = savedText; pending = savedImgs; send();
+      } catch (_) {
+        pullMsg.innerHTML = "Ollama is not running. Open a terminal and run:<br><br><code>curl -fsSL https://ollama.com/install.sh | sh</code><br><code>OLLAMA_ORIGINS=* ollama serve</code><br><br>Then send your message again.";
+        status.textContent = "";
+      }
       return;
     }
     if (eng === "claude" && !getClaudeKey()) { status.textContent = "Add your Anthropic API key first."; return; }
