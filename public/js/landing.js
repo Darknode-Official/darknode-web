@@ -248,6 +248,8 @@ export function renderLanding(view, actions) {
               <li>Smart Test Generator</li>
               <li>Attack Planner — AI pentest methodology</li>
               <li>CTF Assistant — guided challenge solving</li>
+              <li>Threat Modeler — STRIDE analysis</li>
+              <li>Vulnerability Scanner — security headers</li>
               <li>Code Radar &mdash; codebase analysis</li>
               <li>25 MCP server integrations</li>
               <li>Priority support</li>
@@ -268,6 +270,8 @@ export function renderLanding(view, actions) {
               <li>Custom training scenarios</li>
               <li>Report Generator — professional pentest reports</li>
               <li>OWASP Top 10 compliance checker</li>
+              <li>Full STRIDE threat modeling</li>
+              <li>White-label report branding</li>
               <li>Plugin system &amp; extensions</li>
             </ul>
             <button class="btn lg" id="price-team" disabled style="opacity:.6;cursor:default">Coming soon</button>

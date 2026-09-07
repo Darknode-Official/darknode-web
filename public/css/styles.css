@@ -2210,3 +2210,7 @@ tr:hover td {
 .price-features li:last-child{border-bottom:none}
 .pricing-note{text-align:center;font-size:.78rem;color:var(--mut);max-width:560px;margin:24px auto 0;line-height:1.6}
 .pricing-note strong{color:var(--txt-2)}
+
+/* Boot screen — enhanced */
+.boot-ver{font-size:.65rem;color:var(--acc,#00d4ff);opacity:.5;letter-spacing:.15em;margin-bottom:20px;font-family:var(--font-mono,monospace)}
+.boot-dim{color:var(--mut,#6f88ab);opacity:.6;font-size:.78rem}
