@@ -1,138 +1,302 @@
-// Marketing landing page — clean, focused, one clear product offering.
+// Darknode.ai — premium landing page
+// Inspired by: anthropic.com, linear.app, vercel.com
 // actions: { onGetStarted, onSignIn }
 
-const SITE = "https://darknode.ai";
 const GITHUB = "https://github.com/SpartanKing18";
 
-const ICON = {
-  terminal: '<polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/>',
-  shield:   '<path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/>',
-  ai:       '<rect x="6" y="6" width="12" height="12" rx="2"/><path d="M9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3"/>',
-  book:     '<path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M19 3v18"/>',
-  download: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>',
-  code:     '<polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>',
-};
-const svg = (k) => `<svg class="ico" viewBox="0 0 24 24">${ICON[k]}</svg>`;
-
 export function renderLanding(view, actions) {
-  const feature = (icon, t, d) => `<div class="feat-card"><div class="feat-ico">${svg(icon)}</div><h3>${t}</h3><p>${d}</p></div>`;
-  const product = (icon, name, desc, link, linkText) => `<div class="product-card"><div class="product-ico">${svg(icon)}</div><h3>${name}</h3><p>${desc}</p><a class="product-link" href="${link}">${linkText} &rarr;</a></div>`;
-
   view.innerHTML = `
+
+    <!-- ====== HERO ====== -->
     <section class="hero">
-      <div class="hero-grid-bg"></div>
+      <div class="hero-mesh"></div>
+      <div class="hero-grain"></div>
       <div class="wrap hero-inner">
-        <div class="hero-copy">
-          <h1 class="hero-h1">Learn cybersecurity by <span class="grad-text">doing it.</span></h1>
-          <p class="hero-sub">Darknode gives you the tools, labs, and AI to practice ethical hacking — all running on your own machine. Nothing to configure. Nothing leaves your computer.</p>
-          <div class="hero-cta">
-            <button class="btn lg glow" id="cta-start">Get started free &rarr;</button>
-          </div>
-          <div class="hero-trust">
-            <span><span class="tk">&#10003;</span> 100% free</span>
-            <span><span class="tk">&#10003;</span> Runs locally</span>
-            <span><span class="tk">&#10003;</span> No data collection</span>
-          </div>
+        <div class="hero-badge"><span class="badge-dot"></span> Open source &middot; Free forever</div>
+        <h1 class="hero-h1">The AI-powered platform<br>for <span class="hero-rotate-wrap"><span class="hero-rotate" id="hero-rotate">cybersecurity</span></span></h1>
+        <p class="hero-sub">Tools, labs, and an AI agent to learn ethical hacking — running entirely on your machine. No cloud. No subscriptions. No data leaves your computer.</p>
+        <div class="hero-cta">
+          <button class="btn lg glow" id="cta-start">Get started &mdash; free</button>
+          <a class="btn lg ghost" href="${GITHUB}/darknode-cli" target="_blank" rel="noopener">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="margin-right:8px"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.44 9.8 8.2 11.39.6.11.82-.26.82-.58v-2.23c-3.34.73-4.04-1.42-4.04-1.42-.55-1.39-1.34-1.76-1.34-1.76-1.08-.74.08-.73.08-.73 1.2.08 1.84 1.23 1.84 1.23 1.07 1.83 2.81 1.3 3.5 1 .1-.78.42-1.3.76-1.6-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.14-.3-.54-1.52.1-3.18 0 0 1-.32 3.3 1.23a11.5 11.5 0 016.02 0c2.28-1.55 3.29-1.23 3.29-1.23.64 1.66.24 2.88.12 3.18.77.84 1.23 1.91 1.23 3.22 0 4.61-2.8 5.63-5.48 5.92.42.37.81 1.1.81 2.22v3.29c0 .32.22.7.82.58A12.01 12.01 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+            Star on GitHub
+          </a>
         </div>
-        <div class="hero-visual">
-          <div class="term-window">
-            <div class="tw-bar"><span class="tw-dot r"></span><span class="tw-dot y"></span><span class="tw-dot g"></span><span class="tw-title">darknode</span></div>
-            <pre class="tw-body"><span class="tw-line" style="animation-delay:.15s"><span class="c-pl">darknode@ai</span>:<span class="c-path">~</span>$ darknode scan 10.10.14.7</span><span class="tw-line" style="animation-delay:.6s"><span class="c-mut">Scanning...</span></span><span class="tw-line" style="animation-delay:1s">PORT     STATE SERVICE</span><span class="tw-line" style="animation-delay:1.2s">22/tcp   <span class="c-ok">open</span>  ssh</span><span class="tw-line" style="animation-delay:1.45s">80/tcp   <span class="c-ok">open</span>  http</span><span class="tw-line" style="animation-delay:1.7s">443/tcp  <span class="c-ok">open</span>  https</span><span class="tw-line" style="animation-delay:2s"><span class="c-acc">[+]</span> 3 open ports found</span><span class="tw-line" style="animation-delay:2.3s"><span class="c-pl">darknode@ai</span>:<span class="c-path">~</span>$ <span class="tw-cursor">&#9619;</span></span></pre>
-          </div>
+        <div class="hero-trust">
+          <div class="trust-item"><span class="trust-n" data-count="80">0</span><span class="trust-l">Security tools</span></div>
+          <div class="trust-sep"></div>
+          <div class="trust-item"><span class="trust-n" data-count="49">0</span><span class="trust-l">AI modules</span></div>
+          <div class="trust-sep"></div>
+          <div class="trust-item"><span class="trust-n" data-count="8">0</span><span class="trust-l">AI engines</span></div>
+          <div class="trust-sep"></div>
+          <div class="trust-item"><span class="trust-n">100%</span><span class="trust-l">Local &amp; private</span></div>
         </div>
       </div>
     </section>
 
-    <section class="section" id="what">
+    <!-- ====== PRODUCT BENTO ====== -->
+    <section class="section" id="products">
       <div class="wrap">
-        <h2 class="sec-title">What is Darknode?</h2>
-        <p class="sec-sub muted" style="max-width:640px;margin:0 auto 32px;text-align:center">Darknode is a cybersecurity learning platform &mdash; like TryHackMe or HackTheBox, but everything runs on your own computer. No subscriptions. No cloud dependency. You own your environment.</p>
-        <div class="feat-grid">
-          ${feature("terminal", "Security tools", "80+ pre-configured tools for scanning, recon, and testing &mdash; with one-command install.")}
-          ${feature("ai", "Built-in AI", "An AI coding agent that helps you learn, explains vulnerabilities, and writes scripts. Bring your own API key or use free local models.")}
-          ${feature("shield", "Practice labs", "Launch vulnerable apps (DVWA, Juice Shop) locally with one click. Safe, legal, on your machine.")}
-          ${feature("book", "Learning hub", "Cheat sheets, study paths, quizzes, and walkthroughs organized by topic.")}
+        <div class="sec-label">Products</div>
+        <h2 class="sec-title">Three ways to use Darknode</h2>
+        <p class="sec-sub">Choose what fits. All free. All run on your machine.</p>
+        <div class="bento">
+          <div class="bento-card bento-lg">
+            <div class="bento-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M7 8h10M7 12h6M7 16h8"/></svg>
+            </div>
+            <h3>Web App</h3>
+            <p>Open darknode.ai in your browser. Tools, cheat sheets, CVE lookup, practice labs, and the learning hub — zero install.</p>
+            <span class="bento-tag">No install needed</span>
+          </div>
+          <div class="bento-card">
+            <div class="bento-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+            </div>
+            <h3>CLI</h3>
+            <p>One command: <code>npm i -g darknode-cli</code>. 80+ tools, AI agent, and the Nexus engine in your terminal.</p>
+            <span class="bento-tag">npm install</span>
+          </div>
+          <div class="bento-card">
+            <div class="bento-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 8h20"/><circle cx="5" cy="6" r=".5" fill="currentColor"/><circle cx="7.5" cy="6" r=".5" fill="currentColor"/></svg>
+            </div>
+            <h3>Linux VM</h3>
+            <p>A full security workstation. Like Kali, but with Darknode and Nexus AI built in. Runs in VirtualBox or QEMU.</p>
+            <span class="bento-tag">VirtualBox image</span>
+          </div>
         </div>
       </div>
     </section>
 
-    <section class="section alt" id="products">
+    <!-- ====== FEATURES ====== -->
+    <section class="section alt" id="features">
       <div class="wrap">
-        <h2 class="sec-title">Pick how you want to use it</h2>
-        <p class="sec-sub muted" style="max-width:580px;margin:0 auto 32px;text-align:center">Three ways to use Darknode. All free. All run on your machine.</p>
-        <div class="product-grid">
-          ${product("code", "Web App", "Use Darknode right in your browser. Tools, cheat sheets, CVE lookup, and the learning hub &mdash; no install needed.", "#", "Open web app")}
-          ${product("terminal", "CLI", "A terminal command with 80+ security tools built in. Install with npm and you're ready.", GITHUB + "/darknode-cli", "View on GitHub")}
-          ${product("download", "Linux VM", "A full security workstation &mdash; like Kali Linux but with Darknode and AI built in. Runs in VirtualBox.", GITHUB + "/darknode-os", "View on GitHub")}
+        <div class="sec-label">Capabilities</div>
+        <h2 class="sec-title">Everything you need to learn security</h2>
+        <div class="feature-rows">
+          <div class="feature-row">
+            <div class="feature-text">
+              <h3>80+ security tools, one command away</h3>
+              <p>Nmap, SQLMap, Hydra, Nuclei, Gobuster, Metasploit — pre-configured with copy-paste install commands. Search, filter, and launch from the web or CLI.</p>
+            </div>
+            <div class="feature-visual">
+              <div class="term-window">
+                <div class="tw-bar"><span class="tw-dot r"></span><span class="tw-dot y"></span><span class="tw-dot g"></span><span class="tw-title">darknode</span></div>
+                <pre class="tw-body"><span class="c-pl">$</span> darknode scan 10.10.14.7\n<span class="c-ok">22</span>  ssh    OpenSSH 9.6\n<span class="c-ok">80</span>  http   nginx 1.24\n<span class="c-ok">443</span> https\n<span class="c-acc">[+]</span> 3 open ports</pre>
+              </div>
+            </div>
+          </div>
+          <div class="feature-row reverse">
+            <div class="feature-text">
+              <h3>AI that runs on your machine</h3>
+              <p>Nexus is a 52-module AI agent engine. It reads your code, runs commands, explains vulnerabilities, and writes scripts. Use free local models or bring your own API key. We never see your data.</p>
+            </div>
+            <div class="feature-visual">
+              <div class="term-window">
+                <div class="tw-bar"><span class="tw-dot r"></span><span class="tw-dot y"></span><span class="tw-dot g"></span><span class="tw-title">nexus</span></div>
+                <pre class="tw-body"><span class="c-pl">$</span> darknode nexus "explain CVE-2021-44228"\n\n<span class="c-acc">Nexus:</span> Log4Shell is a critical RCE\nin Apache Log4j. An attacker sends\na crafted JNDI lookup string...\n\n<span class="c-mut">engine: ollama (local, free)</span></pre>
+              </div>
+            </div>
+          </div>
+          <div class="feature-row">
+            <div class="feature-text">
+              <h3>Practice labs you can break</h3>
+              <p>Launch DVWA, Juice Shop, WebGoat, and more with one click. They run locally in Docker — legal, safe, isolated. Break them, learn from them, reset them.</p>
+            </div>
+            <div class="feature-visual">
+              <div class="lab-grid">
+                <div class="lab-card"><span class="lab-status on"></span>DVWA<span class="lab-port">:8080</span></div>
+                <div class="lab-card"><span class="lab-status on"></span>Juice Shop<span class="lab-port">:3000</span></div>
+                <div class="lab-card"><span class="lab-status off"></span>WebGoat<span class="lab-port">:8081</span></div>
+                <div class="lab-card"><span class="lab-status off"></span>Metasploitable<span class="lab-port">:—</span></div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </section>
 
-    <section class="section" id="ai">
+    <!-- ====== NEXUS ENGINE ====== -->
+    <section class="section" id="nexus">
       <div class="wrap">
-        <h2 class="sec-title">AI that runs on your machine</h2>
-        <p class="sec-sub muted" style="max-width:620px;margin:0 auto 32px;text-align:center">Darknode includes Nexus &mdash; an AI agent engine. It reads your code, runs commands, and explains security concepts. Use free local models (Ollama) or bring your own API key for Claude, GPT, or Gemini.</p>
-        <div class="feat-grid">
-          ${feature("ai", "Your key, your models", "Bring your own API key for Claude, GPT, or Gemini. Or use 100% free local models via Ollama. We never see your key or your data.")}
-          ${feature("terminal", "Runs locally", "The AI runs on YOUR computer. Your prompts, your code, your data &mdash; nothing is sent to our servers. Ever.")}
-          ${feature("shield", "No restrictions", "No token limits. No tier gates. No credits to manage. Use whatever model you want, as much as you want.")}
-          ${feature("code", "Built for security", "Nexus understands security tools, CVEs, and pentesting workflows. It's not a generic chatbot &mdash; it's built for this.")}
+        <div class="sec-label">AI Engine</div>
+        <h2 class="sec-title">Nexus — 9,600 lines of AI infrastructure</h2>
+        <p class="sec-sub">Not a wrapper around ChatGPT. A full agentic platform with planning, multi-agent orchestration, self-evaluation, and 8 AI backends.</p>
+        <div class="nexus-grid">
+          <div class="nx-card"><div class="nx-n">52</div><div class="nx-l">modules</div></div>
+          <div class="nx-card"><div class="nx-n">9,627</div><div class="nx-l">lines of code</div></div>
+          <div class="nx-card"><div class="nx-n">93</div><div class="nx-l">tests passing</div></div>
+          <div class="nx-card"><div class="nx-n">8</div><div class="nx-l">AI engines</div></div>
+          <div class="nx-card"><div class="nx-n">0</div><div class="nx-l">dependencies</div></div>
+          <div class="nx-card"><div class="nx-n">30+</div><div class="nx-l">research papers</div></div>
         </div>
+        <details class="nx-details">
+          <summary>See all 52 modules &darr;</summary>
+          <div class="nx-modules">
+            <div class="nx-group">
+              <h4>Intelligence</h4>
+              <span>Intent Router</span><span>Reasoning Engine</span><span>Prompt Engine</span><span>Metacognition</span><span>Knowledge Graph</span><span>Workspace Intel</span><span>Adaptive Learner</span>
+            </div>
+            <div class="nx-group">
+              <h4>Execution</h4>
+              <span>Agentic Planner</span><span>Multi-Agent</span><span>Pipelines</span><span>Skill Forge</span><span>World Model</span><span>Codemod</span><span>Sandbox</span><span>NXP Protocol</span>
+            </div>
+            <div class="nx-group">
+              <h4>Memory</h4>
+              <span>Deep Memory (3-tier)</span><span>Sessions</span><span>Context Engine</span><span>Thought Stream</span><span>Time Travel</span>
+            </div>
+            <div class="nx-group">
+              <h4>Quality</h4>
+              <span>Verification Engine</span><span>Self-Evaluation</span><span>Ghost Agents</span><span>Code Review</span><span>Code Radar</span><span>Smart Tests</span><span>Error Recovery</span>
+            </div>
+            <div class="nx-group">
+              <h4>Infrastructure</h4>
+              <span>MCP Bridge</span><span>3D Modeler</span><span>Telemetry</span><span>Plugins</span><span>Git Intelligence</span><span>8 AI Engines</span>
+            </div>
+          </div>
+        </details>
       </div>
     </section>
 
+    <!-- ====== HOW IT WORKS ====== -->
     <section class="section alt" id="how">
       <div class="wrap">
-        <h2 class="sec-title">Get started in 60 seconds</h2>
-        <div class="steps">
-          <div class="step"><div class="step-n">1</div><div><h3>Create an account</h3><p>Sign in with Google or GitHub. Takes 5 seconds.</p></div></div>
-          <div class="step"><div class="step-n">2</div><div><h3>Choose your setup</h3><p>Web app (no install), CLI (<code>npm i -g darknode-cli</code>), or the full Linux VM.</p></div></div>
-          <div class="step"><div class="step-n">3</div><div><h3>Start learning</h3><p>Launch a practice lab, scan it with Darknode, and learn by doing.</p></div></div>
+        <div class="sec-label">Get started</div>
+        <h2 class="sec-title">Up and running in 60 seconds</h2>
+        <div class="timeline">
+          <div class="tl-step">
+            <div class="tl-dot">1</div>
+            <div class="tl-content">
+              <h3>Create a free account</h3>
+              <p>Sign in with Google or GitHub. No credit card.</p>
+            </div>
+          </div>
+          <div class="tl-step">
+            <div class="tl-dot">2</div>
+            <div class="tl-content">
+              <h3>Choose your setup</h3>
+              <p>Web app (instant), CLI (<code>npm i -g darknode-cli</code>), or the full Linux VM.</p>
+            </div>
+          </div>
+          <div class="tl-step">
+            <div class="tl-dot">3</div>
+            <div class="tl-content">
+              <h3>Learn by doing</h3>
+              <p>Launch a lab, scan it, find vulnerabilities, and let Nexus AI guide you.</p>
+            </div>
+          </div>
         </div>
       </div>
     </section>
 
-    <section class="cta-band">
-      <div class="cta-glow"></div>
-      <div class="wrap cta-band-inner">
-        <div>
-          <h2>Ready to start?</h2>
-          <p class="muted">Free forever. No credit card. No catch.</p>
+    <!-- ====== OPEN SOURCE ====== -->
+    <section class="section" id="open-source">
+      <div class="wrap" style="text-align:center">
+        <div class="sec-label">Open source</div>
+        <h2 class="sec-title">Built in the open</h2>
+        <p class="sec-sub">Every line of code is on GitHub. Audit it, fork it, contribute to it.</p>
+        <div class="gh-cards">
+          <a class="gh-card" href="${GITHUB}/darknode-cli" target="_blank" rel="noopener">
+            <span class="gh-name">darknode-cli</span>
+            <span class="gh-desc">Terminal security toolkit + Nexus AI</span>
+          </a>
+          <a class="gh-card" href="${GITHUB}/darknode-os" target="_blank" rel="noopener">
+            <span class="gh-name">darknode-os</span>
+            <span class="gh-desc">Custom Linux security workstation</span>
+          </a>
+          <a class="gh-card" href="${GITHUB}/nexus" target="_blank" rel="noopener">
+            <span class="gh-name">nexus</span>
+            <span class="gh-desc">AI agent engine — 52 modules</span>
+          </a>
         </div>
-        <button class="btn lg glow" id="cta-signup">Get started free &rarr;</button>
       </div>
     </section>
 
-    <footer class="site-foot">
-      <div class="wrap foot-inner">
-        <span class="brand">Darknode</span>
-        <span class="muted">Learn cybersecurity by doing it.</span>
-        <nav class="foot-links">
-          <a href="#what">What is it</a>
-          <a href="#products">Products</a>
-          <a href="#ai">AI</a>
+    <!-- ====== CTA ====== -->
+    <section class="cta-final">
+      <div class="cta-mesh"></div>
+      <div class="wrap" style="position:relative;text-align:center">
+        <h2>Start learning security today.</h2>
+        <p class="cta-sub">Free. Open source. Private. No catch.</p>
+        <button class="btn lg glow" id="cta-signup" style="margin-top:20px">Get started &rarr;</button>
+      </div>
+    </section>
+
+    <!-- ====== FOOTER ====== -->
+    <footer class="foot">
+      <div class="wrap foot-grid">
+        <div class="foot-brand">
+          <span class="brand-name">Darknode</span>
+          <span class="foot-tagline">Learn cybersecurity by doing it.</span>
+        </div>
+        <div class="foot-col">
+          <h4>Product</h4>
+          <a href="#products">Web App</a>
+          <a href="${GITHUB}/darknode-cli">CLI</a>
+          <a href="${GITHUB}/darknode-os">Linux VM</a>
+          <a href="#nexus">Nexus AI</a>
+        </div>
+        <div class="foot-col">
+          <h4>Resources</h4>
+          <a href="#features">Features</a>
+          <a href="#how">Get started</a>
           <a href="${GITHUB}">GitHub</a>
-          <a id="foot-signin">Sign in</a>
-        </nav>
+        </div>
+        <div class="foot-col">
+          <h4>Legal</h4>
+          <a href="#">Terms</a>
+          <a href="#">Privacy</a>
+          <a href="#">Acceptable Use</a>
+        </div>
+      </div>
+      <div class="wrap foot-bottom">
+        <span class="foot-copy">&copy; 2026 Darknode. All rights reserved.</span>
+        <span class="foot-note">All tools run locally. We never collect your data.</span>
       </div>
     </footer>`;
 
   const $ = (id) => view.querySelector("#" + id);
   $("cta-start").onclick = actions.onGetStarted;
   $("cta-signup").onclick = actions.onGetStarted;
-  $("foot-signin").onclick = actions.onSignIn;
 
-  // Scroll-reveal
+  // Animated counter for hero stats
+  view.querySelectorAll("[data-count]").forEach(el => {
+    const target = parseInt(el.dataset.count);
+    let current = 0;
+    const step = Math.max(1, Math.floor(target / 30));
+    const timer = setInterval(() => {
+      current += step;
+      if (current >= target) { current = target; clearInterval(timer); }
+      el.textContent = current;
+    }, 40);
+  });
+
+  // Hero text rotation
+  const words = ["cybersecurity", "ethical hacking", "penetration testing", "threat analysis", "red teaming"];
+  let wordIdx = 0;
+  const rotateEl = $("hero-rotate");
+  if (rotateEl) {
+    setInterval(() => {
+      wordIdx = (wordIdx + 1) % words.length;
+      rotateEl.style.opacity = "0";
+      rotateEl.style.transform = "translateY(8px)";
+      setTimeout(() => {
+        rotateEl.textContent = words[wordIdx];
+        rotateEl.style.opacity = "1";
+        rotateEl.style.transform = "translateY(0)";
+      }, 250);
+    }, 3000);
+  }
+
+  // Scroll reveal
   if ("IntersectionObserver" in window) {
-    let reduceMotion = false; try { reduceMotion = matchMedia("(prefers-reduced-motion:reduce)").matches; } catch (_) {}
-    if (!reduceMotion) {
-      const targets = view.querySelectorAll(
-        ".sec-title, .feat-card, .product-card, .step, .cta-band-inner"
-      );
+    let reduce = false; try { reduce = matchMedia("(prefers-reduced-motion:reduce)").matches; } catch (_) {}
+    if (!reduce) {
       const io = new IntersectionObserver((entries) => {
-        entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("revealed"); io.unobserve(e.target); } });
-      }, { threshold: 0.12 });
-      targets.forEach((el) => io.observe(el));
+        entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add("revealed"); io.unobserve(e.target); } });
+      }, { threshold: 0.1 });
+      view.querySelectorAll(".sec-title, .bento-card, .feature-row, .tl-step, .nx-card, .gh-card, .cta-final").forEach(el => io.observe(el));
     }
   }
 }
