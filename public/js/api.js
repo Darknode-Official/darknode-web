@@ -1,4 +1,4 @@
-// Sentinel API dashboard — key management, interactive docs, usage stats, code examples.
+// Darknode API dashboard — key management, interactive docs, usage stats, code examples.
 import { db } from "/js/firebase.js";
 import { doc, getDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
 
@@ -6,7 +6,7 @@ const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "
 
 function genKey() {
   const hex = Array.from(crypto.getRandomValues(new Uint8Array(16))).map(b => b.toString(16).padStart(2, "0")).join("");
-  return "sk-sentinel-" + hex;
+  return "sk-darknode-" + hex;
 }
 
 const ENDPOINTS = [
@@ -39,7 +39,7 @@ const ENDPOINTS = [
 const TIERS = [
   { name: "Free", price: "$0", calls: "100 / month", features: ["All endpoints", "Community support", "Rate limited"] },
   { name: "Pro", price: "$29", calls: "10,000 / month", features: ["All endpoints", "Priority support", "Higher rate limits", "Webhook notifications"] },
-  { name: "Self-hosted", price: "Free", calls: "Unlimited", features: ["Run on your machine", "No rate limits", "Full privacy", "sentinel api start"] },
+  { name: "Self-hosted", price: "Free", calls: "Unlimited", features: ["Run on your machine", "No rate limits", "Full privacy", "darknode api start"] },
 ];
 
 export async function renderAPI(main, user) {
@@ -58,7 +58,7 @@ export async function renderAPI(main, user) {
   const masked = apiKey ? apiKey.slice(0, 14) + "*".repeat(20) : "";
 
   main.innerHTML = `
-    <h1 class="pg-h1">Sentinel API</h1>
+    <h1 class="pg-h1">Darknode API</h1>
     <p class="muted pg-sub">Integrate security scanning, OSINT, and AI into your workflow. Authenticate with your API key.</p>
 
     <div class="api-key-section">
@@ -77,7 +77,7 @@ export async function renderAPI(main, user) {
           </div>
           <button class="btn danger sm" id="apiKeyRegen" style="margin-top:10px">Regenerate key</button>
         ` : `
-          <p class="muted" style="font-size:.85rem">Generate an API key to start using the Sentinel API.</p>
+          <p class="muted" style="font-size:.85rem">Generate an API key to start using the Darknode API.</p>
           <button class="btn" id="apiKeyGen">Generate API Key</button>
         `}
         <p class="adm-msg" id="apiKeyMsg" style="margin-top:8px"></p>
@@ -89,7 +89,7 @@ export async function renderAPI(main, user) {
       <div class="api-code-block">
         <div class="api-code-header">curl</div>
         <button class="api-code-copy" data-copy="quickstart">Copy</button>
-        <pre><code>curl -X POST https://sentinel-api.onrender.com/api/v1/scan/url \\
+        <pre><code>curl -X POST https://darknode-api.onrender.com/api/v1/scan/url \\
   -H "Content-Type: application/json" \\
   -H "X-API-Key: ${esc(apiKey || "YOUR_API_KEY")}" \\
   -d '{"url": "https://target.com"}'</code></pre>
@@ -127,7 +127,7 @@ export async function renderAPI(main, user) {
                 <div class="api-ep-label">curl</div>
                 <div class="api-code-block">
                   <button class="api-code-copy" data-copy="curl-${i}">Copy</button>
-                  <pre><code id="curl-${i}">curl -X POST https://sentinel-api.onrender.com${esc(ep.path)} \\
+                  <pre><code id="curl-${i}">curl -X POST https://darknode-api.onrender.com${esc(ep.path)} \\
   -H "Content-Type: application/json" \\
   -H "X-API-Key: ${esc(apiKey || "YOUR_API_KEY")}" \\
   -d '${JSON.stringify(ep.reqBody)}'</code></pre>
@@ -149,7 +149,7 @@ export async function renderAPI(main, user) {
       </div>
       <div class="api-code-block" id="codeExampleBlock">
         <button class="api-code-copy" data-copy="codeExample">Copy</button>
-        <pre><code id="codeExample">${esc(`curl -X POST https://sentinel-api.onrender.com/api/v1/scan/url \\
+        <pre><code id="codeExample">${esc(`curl -X POST https://darknode-api.onrender.com/api/v1/scan/url \\
   -H "Content-Type: application/json" \\
   -H "X-API-Key: ${apiKey || "YOUR_API_KEY"}" \\
   -d '{"url": "https://target.com"}'`)}</code></pre>
@@ -174,7 +174,7 @@ export async function renderAPI(main, user) {
       <div class="panel-h"><h2 class="pg-h2" style="margin:0">Authentication</h2></div>
       <p style="font-size:.88rem;line-height:1.7">Include your API key in every request as an <code>X-API-Key</code> header:</p>
       <div class="api-code-block">
-        <pre><code>X-API-Key: ${esc(apiKey || "sk-sentinel-your-key-here")}</code></pre>
+        <pre><code>X-API-Key: ${esc(apiKey || "sk-darknode-your-key-here")}</code></pre>
       </div>
       <p style="font-size:.85rem;line-height:1.7;margin-top:10px">
         Requests without a valid key return <code>401 Unauthorized</code>.
@@ -188,11 +188,11 @@ export async function renderAPI(main, user) {
       <p style="font-size:.88rem;line-height:1.7">Run the API on your own machine for unlimited, private access. No data leaves your network.</p>
       <div class="api-code-block">
         <div class="api-code-header">bash</div>
-        <pre><code># Install the Sentinel CLI
-curl -fsSL https://sentinel.sh/install | sh
+        <pre><code># Install the Darknode CLI
+curl -fsSL https://darknode.sh/install | sh
 
 # Start the API server locally
-sentinel api start --port 8080
+darknode api start --port 8080
 
 # Now use localhost instead of the cloud endpoint
 curl -X POST http://localhost:8080/api/v1/scan/url \\
@@ -271,7 +271,7 @@ curl -X POST http://localhost:8080/api/v1/scan/url \\
 
   // Language tabs
   const CODE_EXAMPLES = {
-    curl: `curl -X POST https://sentinel-api.onrender.com/api/v1/scan/url \\
+    curl: `curl -X POST https://darknode-api.onrender.com/api/v1/scan/url \\
   -H "Content-Type: application/json" \\
   -H "X-API-Key: ${apiKey || "YOUR_API_KEY"}" \\
   -d '{"url": "https://target.com"}'`,
@@ -279,7 +279,7 @@ curl -X POST http://localhost:8080/api/v1/scan/url \\
     python: `import requests
 
 response = requests.post(
-    "https://sentinel-api.onrender.com/api/v1/scan/url",
+    "https://darknode-api.onrender.com/api/v1/scan/url",
     headers={
         "Content-Type": "application/json",
         "X-API-Key": "${apiKey || "YOUR_API_KEY"}"
@@ -292,7 +292,7 @@ for f in findings:
     print(f"{f['severity']}: {f['title']} - {f['detail']}")`,
 
     javascript: `const response = await fetch(
-  "https://sentinel-api.onrender.com/api/v1/scan/url",
+  "https://darknode-api.onrender.com/api/v1/scan/url",
   {
     method: "POST",
     headers: {
@@ -320,7 +320,7 @@ import (
 func main() {
     body, _ := json.Marshal(map[string]string{"url": "https://target.com"})
     req, _ := http.NewRequest("POST",
-        "https://sentinel-api.onrender.com/api/v1/scan/url",
+        "https://darknode-api.onrender.com/api/v1/scan/url",
         bytes.NewBuffer(body))
     req.Header.Set("Content-Type", "application/json")
     req.Header.Set("X-API-Key", "${apiKey || "YOUR_API_KEY"}")

@@ -1,4 +1,4 @@
-// Firebase init for Sentinel Web.
+// Firebase init for Darknode Web.
 // Get firebaseConfig from: Firebase Console -> Project settings -> Your apps -> Web app (</>).
 // The apiKey here is NOT a secret (it only identifies the project); real protection
 // comes from the Firestore/Storage Security Rules in ../firebase/.
@@ -10,9 +10,9 @@ import { getStorage } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-
 
 export const firebaseConfig = {
   apiKey: "AIzaSyD3CJO7PLQdRvPOWDqehSlRwEeA5odCTDE",
-  authDomain: "sentinel-b4194.firebaseapp.com",
-  projectId: "sentinel-b4194",
-  storageBucket: "sentinel-b4194.firebasestorage.app",
+  authDomain: "darknode-b4194.firebaseapp.com",
+  projectId: "darknode-b4194",
+  storageBucket: "darknode-b4194.firebasestorage.app",
   messagingSenderId: "153127828172",
   appId: "1:153127828172:web:94f864818f562c10cfa069",
   measurementId: "G-8QR8V3DLQX",

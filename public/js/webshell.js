@@ -2,9 +2,9 @@ const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
 const DEMO_FS = {
-  "/home/sentinel": ["Desktop", "Documents", "Downloads", "tools", ".bashrc", ".ssh"],
-  "/home/sentinel/tools": ["nmap-scan.sh", "recon.py", "wordlists"],
-  "/home/sentinel/Documents": ["notes.txt", "targets.csv"],
+  "/home/darknode": ["Desktop", "Documents", "Downloads", "tools", ".bashrc", ".ssh"],
+  "/home/darknode/tools": ["nmap-scan.sh", "recon.py", "wordlists"],
+  "/home/darknode/Documents": ["notes.txt", "targets.csv"],
   "/": ["bin", "etc", "home", "root", "tmp", "usr", "var"],
 };
 
@@ -26,12 +26,12 @@ const DEMO_CMDS = {
   date        Current date
   echo <msg>  Print a message
 
-Connect to a live Sentinel OS instance for full shell access.`,
-  whoami: "sentinel",
-  hostname: "sentinel-os",
-  id: "uid=1000(sentinel) gid=1000(sentinel) groups=1000(sentinel),27(sudo),100(users)",
-  "uname -a": "Linux sentinel-os 6.1.0-sentinel #1 SMP x86_64 GNU/Linux",
-  "uname -r": "6.1.0-sentinel",
+Connect to a live Darknode OS instance for full shell access.`,
+  whoami: "darknode",
+  hostname: "darknode-os",
+  id: "uid=1000(darknode) gid=1000(darknode) groups=1000(darknode),27(sudo),100(users)",
+  "uname -a": "Linux darknode-os 6.1.0-darknode #1 SMP x86_64 GNU/Linux",
+  "uname -r": "6.1.0-darknode",
   uptime: () => ` ${new Date().toLocaleTimeString()} up 4:32, 1 user, load average: 0.12, 0.08, 0.05`,
   date: () => new Date().toString(),
   ifconfig: `eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
@@ -42,13 +42,13 @@ Connect to a live Sentinel OS instance for full shell access.`,
   "ps aux": `USER       PID %CPU %MEM    VSZ   RSS TTY   STAT START   TIME COMMAND
 root         1  0.0  0.1  16984  4420 ?     Ss   08:00   0:01 /sbin/init
 root        42  0.0  0.1  24684  5120 ?     Ss   08:00   0:00 /usr/sbin/sshd
-sentinel   301  0.0  0.0   8212  3984 pts/0 Ss   08:15   0:00 -bash
-sentinel   412  0.0  0.0   9440  3124 pts/0 R+   12:47   0:00 ps aux`,
+darknode   301  0.0  0.0   8212  3984 pts/0 Ss   08:15   0:00 -bash
+darknode   412  0.0  0.0   9440  3124 pts/0 R+   12:47   0:00 ps aux`,
 };
 
 export function renderWebshell(main) {
   let ws = null;
-  let cwd = "/home/sentinel";
+  let cwd = "/home/darknode";
   let lines = [];
   let histBuf = [];
   let histIdx = -1;
@@ -67,8 +67,8 @@ export function renderWebshell(main) {
     if (base === "clear") { lines = []; return; }
     if (base === "echo") { addLine(parts.slice(1).join(" ")); return; }
     if (base === "cd") {
-      const target = parts[1] || "/home/sentinel";
-      if (target === "~") { cwd = "/home/sentinel"; }
+      const target = parts[1] || "/home/darknode";
+      if (target === "~") { cwd = "/home/darknode"; }
       else if (target === "..") { cwd = cwd.split("/").slice(0, -1).join("/") || "/"; }
       else if (target.startsWith("/")) { cwd = target; }
       else { cwd = cwd === "/" ? "/" + target : cwd + "/" + target; }
@@ -84,8 +84,8 @@ export function renderWebshell(main) {
     }
     if (base === "cat") {
       if (!parts[1]) { addLine("cat: missing operand", "err"); return; }
-      if (parts[1] === ".bashrc" || parts[1] === "/home/sentinel/.bashrc") {
-        addLine("# ~/.bashrc\nexport PS1='\\[\\e[32m\\]sentinel@sentinel-os\\[\\e[0m\\]:\\[\\e[34m\\]\\w\\[\\e[0m\\]\\$ '\nalias ll='ls -la'\nalias tools='cd ~/tools'");
+      if (parts[1] === ".bashrc" || parts[1] === "/home/darknode/.bashrc") {
+        addLine("# ~/.bashrc\nexport PS1='\\[\\e[32m\\]darknode@darknode-os\\[\\e[0m\\]:\\[\\e[34m\\]\\w\\[\\e[0m\\]\\$ '\nalias ll='ls -la'\nalias tools='cd ~/tools'");
       } else if (parts[1] === "notes.txt" || parts[1].endsWith("/notes.txt")) {
         addLine("# Engagement notes\n- Target: 10.10.10.x\n- Scope: full pentest\n- Status: recon phase");
       } else {
@@ -120,12 +120,12 @@ export function renderWebshell(main) {
 
   function send(cmd) {
     if (ws && ws.readyState === 1) {
-      addLine(`sentinel@sentinel-os:${cwd}$ ${cmd}`, "prompt");
+      addLine(`darknode@darknode-os:${cwd}$ ${cmd}`, "prompt");
       ws.send(cmd);
       histBuf.unshift(cmd);
       histIdx = -1;
     } else {
-      addLine(`sentinel@sentinel-os:${cwd}$ ${cmd}`, "prompt");
+      addLine(`darknode@darknode-os:${cwd}$ ${cmd}`, "prompt");
       demoExec(cmd);
       histBuf.unshift(cmd);
       histIdx = -1;
@@ -177,7 +177,7 @@ export function renderWebshell(main) {
       .ws-glow{text-shadow:0 0 6px rgba(46,230,166,.25)}
     </style>
     <h1 class="pg-h1">Web Shell</h1>
-    <p class="muted pg-sub">Connect to your Sentinel OS instance or use demo mode to explore.</p>
+    <p class="muted pg-sub">Connect to your Darknode OS instance or use demo mode to explore.</p>
     <div class="ws-wrap">
       <div class="ws-bar">
         <span id="ws-status" class="ws-badge demo">demo mode</span>
@@ -188,14 +188,14 @@ export function renderWebshell(main) {
       <div class="ws-term">
         <div id="ws-output" class="ws-glow"></div>
         <div class="ws-input-row">
-          <span class="ws-prompt-label ws-glow">sentinel@sentinel-os:~$&nbsp;</span>
+          <span class="ws-prompt-label ws-glow">darknode@darknode-os:~$&nbsp;</span>
           <input id="ws-input" spellcheck="false" autocomplete="off" autofocus placeholder="type a command...">
         </div>
       </div>
       <div class="ws-foot">Tab for history &middot; Enter to send &middot; Connect to a live instance for full access &middot; Demo mode supports basic commands</div>
     </div>`;
 
-  addLine("SENTINEL OS Web Shell v1.0", "sys");
+  addLine("DARKNODE OS Web Shell v1.0", "sys");
   addLine('Type "help" for available commands. Connect to a live instance for full shell access.', "sys");
   addLine("", "");
   paint();
@@ -208,7 +208,7 @@ export function renderWebshell(main) {
   inp.addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
       const v = inp.value; inp.value = ""; send(v);
-      main.querySelector(".ws-prompt-label").innerHTML = `<span class="ws-glow">sentinel@sentinel-os:${esc(cwd)}$&nbsp;</span>`;
+      main.querySelector(".ws-prompt-label").innerHTML = `<span class="ws-glow">darknode@darknode-os:${esc(cwd)}$&nbsp;</span>`;
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
       if (histBuf.length) { histIdx = Math.min(histIdx + 1, histBuf.length - 1); inp.value = histBuf[histIdx] || ""; }

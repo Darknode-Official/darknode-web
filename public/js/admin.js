@@ -350,7 +350,7 @@ export async function renderAdmin(main, user) {
     const rows = [["email", "name", "uid", "lastSeen", "allow-listed"]].concat(users.map((u) => [u.email, u.name, u.uid, fmtDate(u.lastSeen), wl.emails.includes((u.email || "").toLowerCase()) ? "yes" : "no"]));
     const csv = rows.map((r) => r.map(esc2).join(",")).join("\n");
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
-    const a = document.createElement("a"); a.href = url; a.download = "sentinel-users.csv"; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+    const a = document.createElement("a"); a.href = url; a.download = "darknode-users.csv"; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);
     dmsg("exported " + users.length + " users");
   };
 
@@ -525,7 +525,7 @@ export async function renderAdmin(main, user) {
       };
       const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a'); a.href = url; a.download = 'sentinel-backup-' + new Date().toISOString().slice(0,10) + '.json'; a.click();
+      const a = document.createElement('a'); a.href = url; a.download = 'darknode-backup-' + new Date().toISOString().slice(0,10) + '.json'; a.click();
       URL.revokeObjectURL(url);
     } catch(e) { alert('Backup failed: ' + e.message); }
   };

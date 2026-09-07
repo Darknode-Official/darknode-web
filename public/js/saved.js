@@ -12,7 +12,7 @@ let uid = null, noteTimer = null;
 
 const lsLoad = () => { try { return JSON.parse(localStorage.getItem(LS)) || { bookmarks: [], notes: "" }; } catch (_) { return { bookmarks: [], notes: "" }; } };
 const lsSave = () => { try { localStorage.setItem(LS, JSON.stringify(state)); } catch (_) {} };
-const emit = () => { try { document.dispatchEvent(new CustomEvent("sentinel:saved")); } catch (_) {} };
+const emit = () => { try { document.dispatchEvent(new CustomEvent("darknode:saved")); } catch (_) {} };
 
 export async function initSaved(user) {
   uid = user ? user.uid : null;
@@ -33,7 +33,7 @@ export function toggleBookmark(item) {
   persist(); emit(); return isBookmarked(item.id);
 }
 export function getBookmarks() { return state.bookmarks.slice(); }
-export function onSaved(cb) { document.addEventListener("sentinel:saved", cb); }
+export function onSaved(cb) { document.addEventListener("darknode:saved", cb); }
 
 export function renderSaved(main, show) {
   const draw = () => {

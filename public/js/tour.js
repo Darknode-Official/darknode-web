@@ -1,6 +1,6 @@
 // Game-style guided walkthrough: dims the whole page, spotlights one element at a
 // time with a callout, and a Skip button. Blocks page interaction while active.
-const DONE_KEY = "sentinel_tour_done";
+const DONE_KEY = "darknode_tour_done";
 export function tourDone() { return localStorage.getItem(DONE_KEY) === "1"; }
 
 export function startTour(steps) {

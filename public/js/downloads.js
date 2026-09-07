@@ -10,7 +10,7 @@ export function detectOS() {
   return "linux";
 }
 
-const INST_KEY = "sentinel_installed";
+const INST_KEY = "darknode_installed";
 export function getInstalled() {
   try { return new Set(JSON.parse(localStorage.getItem(INST_KEY) || "[]")); } catch { return new Set(); }
 }
@@ -32,10 +32,10 @@ export const DOWNLOADS = [
       linux: "sudo apt install -y nodejs npm", mac: "brew install node", windows: "winget install OpenJS.NodeJS" } },
   ]},
   { group: "Ollama + models", items: [
-    { id: "ollama", name: "Ollama", desc: "Local LLM runner — installed for you by the Sentinel CLI", cmds: {
-      linux: "sentinel setup", mac: "sentinel setup", windows: "sentinel setup" } },
-    { id: "m-coder", name: "qwen2.5-coder", desc: "Coding model — installed by Sentinel setup", cmds: { linux: "sentinel setup", mac: "sentinel setup", windows: "sentinel setup" } },
-    { id: "m-agentic", name: "hermes3", desc: "Agentic/security model — installed by Sentinel setup", cmds: { linux: "sentinel setup", mac: "sentinel setup", windows: "sentinel setup" } },
+    { id: "ollama", name: "Ollama", desc: "Local LLM runner — installed for you by the Darknode CLI", cmds: {
+      linux: "darknode setup", mac: "darknode setup", windows: "darknode setup" } },
+    { id: "m-coder", name: "qwen2.5-coder", desc: "Coding model — installed by Darknode setup", cmds: { linux: "darknode setup", mac: "darknode setup", windows: "darknode setup" } },
+    { id: "m-agentic", name: "hermes3", desc: "Agentic/security model — installed by Darknode setup", cmds: { linux: "darknode setup", mac: "darknode setup", windows: "darknode setup" } },
   ]},
   { group: "Security tools", items: [
     { id: "nmap", name: "Nmap", desc: "Network scanner", cmds: {
@@ -97,7 +97,7 @@ function onClick(ev) {
     if (act === "install") s.add(b.dataset.id); else s.delete(b.dataset.id);
     saveInstalled(s);
     renderDownloads(_el);
-    document.dispatchEvent(new CustomEvent("sentinel:installed-changed"));
+    document.dispatchEvent(new CustomEvent("darknode:installed-changed"));
   }
 }
 

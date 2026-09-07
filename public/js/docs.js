@@ -86,20 +86,20 @@ export function renderDocs(main) {
         ${TOC.map(([id, t]) => `<a href="#doc-${id}" class="doc-toc-l" data-doc="${id}">${esc(t)}</a>`).join("")}
       </aside>
       <div class="doc-body">
-        <h1 class="pg-h1">Sentinel documentation</h1>
-        <p class="muted pg-sub">Everything for the Sentinel suite — the web console, the desktop app, the terminal edition (CLI), and <b>Nexus</b>, its AI coding agent. Last updated ${UPDATED}.</p>
+        <h1 class="pg-h1">Darknode documentation</h1>
+        <p class="muted pg-sub">Everything for the Darknode suite — the web console, the desktop app, the terminal edition (CLI), and <b>Nexus</b>, its AI coding agent. Last updated ${UPDATED}.</p>
 
         ${sec("getting-started", "Getting started", `
-          <p class="muted">Sentinel ships in three editions that share one toolkit:</p>
+          <p class="muted">Darknode ships in three editions that share one toolkit:</p>
           <div class="card-grid">
             <div class="card"><div class="card-h">Web console</div><p class="muted">Recon, payloads, threat intel and the AI assistant in your browser. Nothing to install.</p></div>
             <div class="card"><div class="card-h">Desktop app</div><p class="muted">The console plus a VM lab runner, native scanners, live terminals and the autonomous Assistant.</p></div>
             <div class="card"><div class="card-h">Terminal (CLI + Nexus)</div><p class="muted">A single dependency-free binary: the toolkit plus the Nexus coding agent. Runs anywhere.</p></div>
           </div>
           <pre class="code-block"><button class="cb-copy">copy</button><code># terminal edition
-curl -L .../Sentinel-cli-linux -o sentinel &amp;&amp; chmod +x sentinel
-./sentinel init          # scaffold .nexus/ project context
-./sentinel nexus --tui   # launch the AI coding agent</code></pre>
+curl -L .../Darknode-cli-linux -o darknode &amp;&amp; chmod +x darknode
+./darknode init          # scaffold .nexus/ project context
+./darknode nexus --tui   # launch the AI coding agent</code></pre>
           <p class="muted">The desktop app and CLI use only systems you own or are authorized to test. See the <button class="linklike" data-sec="dlguide">Download guide</button> for every install option.</p>`)}
 
         ${sec("nexus", "Nexus command reference", `
@@ -120,7 +120,7 @@ curl -L .../Sentinel-cli-linux -o sentinel &amp;&amp; chmod +x sentinel
           <p class="muted"><code>/cheap</code> turns on lean + low effort in one command.</p>`)}
 
         ${sec("security", "Security & privacy", `
-          <p class="muted">Sentinel is a security tool, so it defaults to safe:</p>
+          <p class="muted">Darknode is a security tool, so it defaults to safe:</p>
           <ul class="doc-ul">
             <li><b>Destructive-command preflight.</b> The local agent's shell commands are screened (<code>rm</code> on system paths, <code>git reset --hard</code>, <code>dd</code>, pipe-to-shell, fork bombs…) and blocked by default (<code>/guard</code>).</li>
             <li><b>Secret redaction.</b> <code>/redact</code> masks API keys, tokens and private keys <em>before</em> anything is sent to a cloud engine. <code>/offline</code> forces a local-only, nothing-leaves-the-box mode.</li>
@@ -140,7 +140,7 @@ curl -L .../Sentinel-cli-linux -o sentinel &amp;&amp; chmod +x sentinel
           </div>`)}
 
         ${sec("terms", "Terms of Service", `
-          <p class="muted doc-legal">These terms govern your use of the Sentinel suite (the "Software" and "Services"). By using them you agree to them.</p>
+          <p class="muted doc-legal">These terms govern your use of the Darknode suite (the "Software" and "Services"). By using them you agree to them.</p>
           <ol class="doc-ol doc-legal">
             <li><b>License to use.</b> The Software is provided as-is; all rights are reserved by the author.</li>
             <li><b>Authorized use only.</b> You will use the security tooling exclusively against systems you own or are explicitly authorized in writing to test. You are solely responsible for compliance with all applicable laws.</li>
@@ -161,16 +161,16 @@ curl -L .../Sentinel-cli-linux -o sentinel &amp;&amp; chmod +x sentinel
           </ul>`)}
 
         ${sec("aup", "Acceptable Use Policy", `
-          <p class="muted doc-legal">You agree <b>not</b> to use Sentinel to:</p>
+          <p class="muted doc-legal">You agree <b>not</b> to use Darknode to:</p>
           <ul class="doc-ul doc-legal">
             <li>Access, scan, exploit or disrupt systems you do not own or lack written authorization to test.</li>
             <li>Develop or distribute malware for malicious use, conduct denial-of-service attacks, or target individuals.</li>
             <li>Exfiltrate data, evade detection for unlawful purposes, or violate any law or third-party rights.</li>
           </ul>
-          <p class="muted doc-legal">Sentinel is intended for authorized penetration testing, CTFs, security research and defense. Misuse is your responsibility.</p>`)}
+          <p class="muted doc-legal">Darknode is intended for authorized penetration testing, CTFs, security research and defense. Misuse is your responsibility.</p>`)}
 
         ${sec("license", "License", `
-          <p class="muted doc-legal">The Sentinel suite is proprietary &mdash; all rights reserved by the author. No license to use, copy, modify, or distribute is granted. The software is provided "as is", without warranty of any kind.</p>`)}
+          <p class="muted doc-legal">The Darknode suite is proprietary &mdash; all rights reserved by the author. No license to use, copy, modify, or distribute is granted. The software is provided "as is", without warranty of any kind.</p>`)}
 
         ${sec("changelog", "Changelog", `
           <div class="doc-changelog">${CHANGELOG.map(([v, d]) => `<div class="doc-cl"><span class="doc-cl-v">${esc(v)}</span><p class="muted">${esc(d)}</p></div>`).join("")}</div>
