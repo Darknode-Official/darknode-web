@@ -2234,15 +2234,17 @@ tr:hover td {
 .cta-sub{color:var(--mut);font-size:1rem;margin:0 0 24px}
 
 /* Footer — 4-column like Anthropic */
-.foot{padding:48px 0 24px;border-top:1px solid var(--line)}
-.foot-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:32px;margin-bottom:32px}
-@media(max-width:768px){.foot-grid{grid-template-columns:1fr 1fr}}
-@media(max-width:480px){.foot-grid{grid-template-columns:1fr}}
+.foot{padding:56px 0 32px;border-top:1px solid var(--line)}
+.foot-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:40px;margin-bottom:40px}
+.foot-brand{display:flex;flex-direction:column;gap:8px}
+@media(max-width:768px){.foot-grid{grid-template-columns:1fr 1fr;gap:32px}}
+@media(max-width:480px){.foot-grid{grid-template-columns:1fr;gap:24px}}
 .foot-brand{display:flex;flex-direction:column;gap:6px}
 .brand-name{font-weight:800;font-size:1.1rem;font-family:var(--font-display)}
 .foot-tagline{color:var(--mut);font-size:.82rem}
-.foot-col h4{font-size:.7rem;text-transform:uppercase;letter-spacing:.15em;color:var(--mut);margin:0 0 12px}
-.foot-col a{display:block;color:var(--txt-2);font-size:.85rem;text-decoration:none;padding:3px 0}
+.foot-col{display:flex;flex-direction:column;gap:0}
+.foot-col h4{font-size:.7rem;text-transform:uppercase;letter-spacing:.15em;color:var(--mut);margin:0 0 14px}
+.foot-col a{display:block;color:var(--txt-2);font-size:.85rem;text-decoration:none;padding:5px 0;line-height:1.4}
 .foot-col a:hover{color:var(--acc)}
 .foot-bottom{display:flex;justify-content:space-between;align-items:center;padding-top:24px;border-top:1px solid var(--line);flex-wrap:wrap;gap:12px}
 .foot-copy,.foot-note{font-size:.72rem;color:var(--mut)}
@@ -2443,7 +2445,7 @@ html{scroll-behavior:smooth}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
 
 /* Improved link underline animation for footer columns */
-.foot-col a{position:relative;display:inline-block}
+.foot-col a{position:relative;display:block}
 .foot-col a::after{
   content:"";position:absolute;left:0;bottom:0;width:0;height:1px;
   background:var(--acc);transition:width .2s ease;
