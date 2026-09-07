@@ -255,7 +255,7 @@ export function renderLanding(view, actions) {
               <li>25 MCP server integrations</li>
               <li>Priority support</li>
             </ul>
-            <button class="btn lg glow" id="price-pro" disabled style="opacity:.6;cursor:default">Coming soon</button>
+            <button class="btn lg glow" id="price-pro" disabled>Coming soon</button>
           </div>
           <div class="price-card">
             <div class="price-tier">Team</div>
@@ -275,7 +275,7 @@ export function renderLanding(view, actions) {
               <li>White-label report branding</li>
               <li>Plugin system &amp; extensions</li>
             </ul>
-            <button class="btn lg" id="price-team" disabled style="opacity:.6;cursor:default">Coming soon</button>
+            <button class="btn lg" id="price-team" disabled>Coming soon</button>
           </div>
           <div class="price-card">
             <div class="price-tier">Enterprise</div>
@@ -294,7 +294,7 @@ export function renderLanding(view, actions) {
               <li>On-prem or private cloud hosting</li>
               <li>Audit logging &amp; SOC 2 reporting</li>
             </ul>
-            <button class="btn lg" id="price-enterprise" disabled style="opacity:.6;cursor:default">Coming soon</button>
+            <button class="btn lg" id="price-enterprise" disabled>Coming soon</button>
           </div>
         </div>
         <p class="pricing-note">All plans include BYOK &mdash; bring your own Claude, GPT, or Gemini key. Paid plans unlock <strong>platform features</strong>, not AI access. You never pay us for AI tokens.</p>
@@ -307,7 +307,7 @@ export function renderLanding(view, actions) {
       <div class="wrap" style="position:relative;text-align:center">
         <h2>Start learning security today.</h2>
         <p class="cta-sub">Free. Open source. Private. No catch.</p>
-        <button class="btn lg glow" id="cta-signup" style="margin-top:20px">Get started &rarr;</button>
+        <button class="btn lg glow" id="cta-signup">Get started &rarr;</button>
       </div>
     </section>
 

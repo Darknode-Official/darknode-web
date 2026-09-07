@@ -36,7 +36,7 @@ function pwEntropy(p) {
   if (/[^a-zA-Z0-9]/.test(p)) pool += 33;
   const bits = Math.round(p.length * Math.log2(pool || 1));
   const label = bits < 40 ? "weak" : bits < 60 ? "fair" : bits < 80 ? "strong" : "very strong";
-  return { bits, label };
+  return { bits, label, pool };
 }
 function uuid4() {
   const b = crypto.getRandomValues(new Uint8Array(16));
