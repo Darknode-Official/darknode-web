@@ -252,15 +252,15 @@ export function renderLanding(view, actions) {
               <li>Attack Planner &mdash; AI pentest methodology</li>
               <li>CTF Assistant &mdash; guided challenge solving</li>
               <li>Threat Modeler &mdash; STRIDE analysis</li>
-              <li>Vulnerability Scanner &mdash; security headers &amp; misconfigs</li>
+              <li>Vulnerability Scanner &mdash; headers &amp; misconfigs</li>
               <li>Code Radar &mdash; codebase security analysis</li>
               <li>Smart Test Generator</li>
               <li class="feat-section">Downloadable extras</li>
-              <li>Darknode OS &mdash; pre-built security VM (VirtualBox/QEMU)</li>
+              <li>Darknode OS &mdash; pre-built security VM</li>
               <li>Premium wordlists &amp; payload collections</li>
               <li>Pre-configured Nuclei &amp; Nmap scan profiles</li>
               <li>25 MCP server integrations</li>
-              <li>Priority support &amp; Discord access</li>
+              <li>Early access to new features</li>
             </ul>
             <button class="btn lg glow" id="price-pro" disabled>Coming soon</button>
           </div>
@@ -275,37 +275,37 @@ export function renderLanding(view, actions) {
               <li>World Model &mdash; simulate before acting</li>
               <li>Deep Memory &mdash; 3-tier cognitive architecture</li>
               <li>Time Travel &mdash; undo any action, any time</li>
-              <li>Team workspace &amp; shared labs</li>
+              <li>Shared workspace &amp; team labs</li>
               <li>Custom training scenarios &amp; CTF builder</li>
               <li>Report Generator &mdash; professional pentest reports</li>
               <li>Full STRIDE threat modeling &amp; OWASP compliance</li>
               <li class="feat-section">Downloadable extras</li>
-              <li>White-label report templates (.docx, .pdf)</li>
-              <li>Custom Darknode OS builds with team tools</li>
+              <li>Report templates (.docx, .pdf) with your branding</li>
+              <li>Extended Darknode OS with team tools</li>
               <li>Plugin system &amp; extension SDK</li>
               <li>Unlimited MCP integrations</li>
-              <li>Team management dashboard</li>
+              <li>Shared saved scans &amp; findings across team</li>
             </ul>
             <button class="btn lg" id="price-team" disabled>Coming soon</button>
           </div>
           <div class="price-card">
             <div class="price-tier">Enterprise</div>
             <div class="price-amount">Custom</div>
-            <p class="price-desc">Tailored security training for your organization.</p>
+            <p class="price-desc">For organizations that need control and compliance.</p>
             <ul class="price-features">
               <li>Everything in Team, plus:</li>
               <li class="feat-section">Enterprise platform</li>
               <li>SSO &amp; SAML authentication</li>
-              <li>Dedicated instance &amp; data isolation</li>
+              <li>Data isolation &amp; tenant separation</li>
               <li>Custom compliance frameworks</li>
               <li>Admin dashboard &amp; usage analytics</li>
               <li>Role-based access control</li>
               <li class="feat-section">Downloadable extras</li>
-              <li>Custom Darknode OS with org branding</li>
-              <li>Custom AI model deployment &amp; fine-tuning</li>
-              <li>On-prem or private cloud hosting</li>
-              <li>Audit logging &amp; SOC 2 reporting</li>
-              <li>SLA &amp; dedicated support engineer</li>
+              <li>Org-branded Darknode OS builds</li>
+              <li>Custom AI model profiles &amp; fine-tuning</li>
+              <li>Self-hosted deployment option</li>
+              <li>Audit logging &amp; compliance exports</li>
+              <li>Volume licensing</li>
             </ul>
             <button class="btn lg" id="price-enterprise" disabled>Coming soon</button>
           </div>
