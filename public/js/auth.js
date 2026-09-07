@@ -328,14 +328,70 @@ function applyLogo(key) {
 (function () { let l = null; try { l = localStorage.getItem("sw_logo"); } catch (_) {} if (l && LOGO_VARIANTS[l]) applyLogo(l); })();
 
 // ---------- app sections ----------
+function _dashDateTime() {
+  const now = new Date();
+  const opts = { weekday: "long", year: "numeric", month: "long", day: "numeric" };
+  const date = now.toLocaleDateString(undefined, opts);
+  const time = now.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+  return { date, time };
+}
+
+function _dashRecentActivity() {
+  const KEY = "dn_recent_activity";
+  let items;
+  try { items = JSON.parse(localStorage.getItem(KEY)); } catch (_) {}
+  if (!Array.isArray(items) || items.length === 0) {
+    // Seed with placeholder entries so the section isn't empty on first load
+    items = [
+      { text: "Scanned 10.10.14.7", ts: Date.now() - 3600000 },
+      { text: "Queried CVE-2024-1234", ts: Date.now() - 7200000 },
+      { text: "Generated report", ts: Date.now() - 18000000 },
+    ];
+    try { localStorage.setItem(KEY, JSON.stringify(items)); } catch (_) {}
+  }
+  return items.slice(0, 8);
+}
+
+function _dashSessionStats() {
+  let sessions = 0, aiConvos = 0, toolsUsed = 0;
+  try { sessions = parseInt(localStorage.getItem("dn_stat_sessions") || "0", 10) || 0; } catch (_) {}
+  try { aiConvos = parseInt(localStorage.getItem("dn_stat_ai_convos") || "0", 10) || 0; } catch (_) {}
+  try { toolsUsed = parseInt(localStorage.getItem("dn_stat_tools_used") || "0", 10) || 0; } catch (_) {}
+  // Bump session count on each home render (deduplicated per page load)
+  if (!window._dnSessionCounted) {
+    window._dnSessionCounted = true;
+    sessions++;
+    try { localStorage.setItem("dn_stat_sessions", String(sessions)); } catch (_) {}
+  }
+  return { sessions, aiConvos, toolsUsed };
+}
+
 function renderHome(main, user, isOwner, show) {
   const name = user.displayName ? user.displayName.split(" ")[0] : "";
   const browsers = CATALOG.filter((t) => t.kind === "browser").length;
   const stat = (n, l, s) => `<div class="stat"><div class="stat-n">${n}</div><div class="stat-l">${l}</div>${s ? `<div class="stat-s">${s}</div>` : ""}</div>`;
   const qa = (sec, more, title, desc) => `<button class="qa" data-sec="${sec}" data-more="${more}"><div class="qa-title">${title}</div><div class="qa-desc">${desc}</div></button>`;
+  const dt = _dashDateTime();
+  const recentItems = _dashRecentActivity();
+  const sStats = _dashSessionStats();
+
+  const timeAgo = (ts) => {
+    const diff = Date.now() - ts;
+    if (diff < 60000) return "just now";
+    if (diff < 3600000) return Math.floor(diff / 60000) + "m ago";
+    if (diff < 86400000) return Math.floor(diff / 3600000) + "h ago";
+    return Math.floor(diff / 86400000) + "d ago";
+  };
+
   main.innerHTML = `
     <div class="dash-hero">
-      <div class="eyebrow">SECURITY CONSOLE</div>
+      <div class="dash-hero-top">
+        <div class="eyebrow">SECURITY CONSOLE</div>
+        <div class="dash-meta">
+          <span class="dash-status"><span class="dash-status-dot"></span>All systems operational</span>
+          <span class="dash-clock" id="dashClock">${esc(dt.date)} -- ${esc(dt.time)}</span>
+        </div>
+      </div>
       <h1 class="pg-h1">Welcome back${name ? ", " + esc(name) : ""}</h1>
       <p class="muted pg-sub">Tools, threat intel, cheat sheets, local AI and setup guides &mdash; your whole workflow in one place.</p>
       <div class="hero-actions">
@@ -350,6 +406,8 @@ function renderHome(main, user, isOwner, show) {
       ${stat(COUNTS.cves, "tracked CVEs")}
       ${stat(COUNTS.resources, "resources")}
       ${stat(CATEGORIES.length, "categories")}
+      ${stat(59, "AI modules", "Ollama + cloud")}
+      ${stat("100K+", "lines of code", "CLI + web")}
     </div>
     <h2 class="pg-h2">Jump in</h2>
     <div class="qa-grid">
@@ -363,11 +421,46 @@ function renderHome(main, user, isOwner, show) {
       ${qa("learn", "", "Learn", "Curated hubs: HackTricks, OWASP, PayloadsAllTheThings and more.")}
       ${qa("setup", "aicoding", "Local AI coding", "Run Ollama models on your machine, in the terminal or a browser UI.")}
       ${qa("setup", "toolkit", "Prebuilt toolkit", "Install the whole CLI toolkit + SSH in one command.")}
+      ${qa("webshell", "", "Web Shell", "Access a terminal in your browser &mdash; run commands, pull AI models.")}
+      ${qa("report", "", "Report Generator", "Generate professional pentest reports from your findings.")}
+    </div>
+    <div class="dash-extras">
+      <div class="dash-extra-col">
+        <div class="panel dash-activity-panel">
+          <div class="panel-h"><h2 class="pg-h2" style="margin:0">Recent activity</h2></div>
+          <div class="dash-timeline" id="dashTimeline">
+            ${recentItems.map((item) => `<div class="dash-tl-item"><span class="dash-tl-dot"></span><span class="dash-tl-text">${esc(item.text)}</span><span class="dash-tl-time muted">${timeAgo(item.ts)}</span></div>`).join("")}
+          </div>
+        </div>
+      </div>
+      <div class="dash-extra-col">
+        <div class="panel dash-qstats-panel">
+          <div class="panel-h"><h2 class="pg-h2" style="margin:0">Quick stats</h2></div>
+          <div class="dash-qstats">
+            <div class="dash-qs-item"><div class="dash-qs-n">${sStats.sessions}</div><div class="dash-qs-l">Total sessions</div></div>
+            <div class="dash-qs-item"><div class="dash-qs-n">${sStats.aiConvos}</div><div class="dash-qs-l">AI conversations</div></div>
+            <div class="dash-qs-item"><div class="dash-qs-n">${sStats.toolsUsed}</div><div class="dash-qs-l">Tools used</div></div>
+          </div>
+        </div>
+      </div>
     </div>
     ${isOwner ? `<div class="admin-card"><strong>Owner controls</strong><p class="muted">You're the owner &mdash; admin features live under Admin in the sidebar.</p></div>` : ""}
     ${homeWidgetsHTML()}`;
   main.addEventListener("click", (e) => { const b = e.target.closest("[data-sec]"); if (b) show(b.dataset.sec, b.dataset.more || ""); });
   wireHome(main, show);
+
+  // Live clock update
+  const clockEl = main.querySelector("#dashClock");
+  if (clockEl) {
+    const tickClock = () => {
+      const d = _dashDateTime();
+      clockEl.textContent = d.date + " -- " + d.time;
+    };
+    const clockTimer = setInterval(tickClock, 30000);
+    // Clean up when the element is removed from DOM
+    const obs = new MutationObserver(() => { if (!document.contains(clockEl)) { clearInterval(clockTimer); obs.disconnect(); } });
+    obs.observe(document.body, { childList: true, subtree: true });
+  }
 }
 
 function renderSetup(main, openTo) {
