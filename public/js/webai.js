@@ -184,14 +184,17 @@ export function renderAI(main) {
         const ms = await getOllamaModels();
         if (ms === null) {
           sel.innerHTML = `<option>offline</option>`; status.textContent = "";
-          showInfo("No local Ollama to connect to", `Switch to <strong>Claude</strong> above (needs an API key), or run Ollama locally: <code>OLLAMA_ORIGINS=* ollama serve</code>, then <code>ollama pull hermes3</code>.`);
+          showInfo("No local Ollama to connect to", `Install Ollama and pull the recommended model:<br><br><code>curl -fsSL https://ollama.com/install.sh | sh</code><br><code>OLLAMA_ORIGINS=* ollama serve</code><br><code>ollama pull gpt-oss:120b</code><br><br>Or switch to <strong>Claude</strong> above (needs an API key).`);
         } else if (!ms.length) {
           sel.innerHTML = `<option>none</option>`;
-          showInfo("Ollama is running, but has no models", `Pull one: <code>ollama pull hermes3</code> or <code>ollama pull llama3.1</code>.`);
+          showInfo("Ollama is running, but has no models", `Pull the recommended model (GPT-OSS 120B — free, private, strong reasoning):<br><br><code>ollama pull gpt-oss:120b</code><br><br>Smaller/faster alternative: <code>ollama pull gpt-oss:20b</code>`);
         } else {
-          sel.innerHTML = ms.map((m) => `<option>${esc(m)}</option>`).join("");
+          const pri = ["gpt-oss:120b", "gpt-oss:20b", "gpt-oss"];
+          const sorted = [...ms].sort((a, b) => { const ai = pri.findIndex(p => a.startsWith(p)), bi = pri.findIndex(p => b.startsWith(p)); if (ai >= 0 && bi < 0) return -1; if (bi >= 0 && ai < 0) return 1; if (ai >= 0 && bi >= 0) return ai - bi; return 0; });
+          sel.innerHTML = sorted.map((m) => `<option>${esc(m)}</option>`).join("");
           const saved = localStorage.getItem(MODEL_KEY); if (saved && ms.includes(saved)) sel.value = saved;
-          status.textContent = "Connected to your local Ollama.";
+          const hasGptOss = ms.some(m => m.startsWith("gpt-oss"));
+          status.textContent = "Connected to your local Ollama." + (hasGptOss ? "" : " Tip: ollama pull gpt-oss:120b for the best local model.");
         }
       })();
     }
