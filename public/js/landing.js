@@ -245,6 +245,58 @@ nc -lvnp 4444`],
       </div>
     </section>
 
+    <section class="section" id="pricing">
+      <h2 class="sec-title">Pricing</h2>
+      <p class="sec-sub muted">Free forever with local AI. Upgrade for cloud models.</p>
+      <div class="pricing-grid">
+        <div class="price-card">
+          <div class="price-tier">Free</div>
+          <div class="price-amount">$0<span class="price-period">/forever</span></div>
+          <p class="price-desc">Local AI — runs on your machine, unlimited, private.</p>
+          <ul class="price-features">
+            <li>GPT-OSS 120B (local, free)</li>
+            <li>Qwen, DeepSeek, Hermes, LLaMA</li>
+            <li>Nexus AI engine (all 49 modules)</li>
+            <li>Full CLI toolkit</li>
+            <li>MCP server integration</li>
+            <li>Plugin system</li>
+            <li>Unlimited usage</li>
+          </ul>
+          <button class="btn lg" id="price-free">Get started free &rarr;</button>
+        </div>
+        <div class="price-card featured">
+          <div class="price-badge">Most popular</div>
+          <div class="price-tier">Pro</div>
+          <div class="price-amount">$15<span class="price-period">/month</span></div>
+          <p class="price-desc">Cloud AI — Claude Sonnet & Haiku, no API key needed.</p>
+          <ul class="price-features">
+            <li>Everything in Free, plus:</li>
+            <li>Claude Sonnet 4</li>
+            <li>Claude Haiku 4.5</li>
+            <li>GPT-4o mini</li>
+            <li>500 cloud requests/day</li>
+            <li>Priority support</li>
+          </ul>
+          <button class="btn lg glow" id="price-pro">Start Pro &rarr;</button>
+        </div>
+        <div class="price-card">
+          <div class="price-tier">Ultra</div>
+          <div class="price-amount">$30<span class="price-period">/month</span></div>
+          <p class="price-desc">Full power — Claude Opus, all models, max limits.</p>
+          <ul class="price-features">
+            <li>Everything in Pro, plus:</li>
+            <li>Claude Opus 4</li>
+            <li>GPT-4o</li>
+            <li>5,000 cloud requests/day</li>
+            <li>Multi-agent pipelines</li>
+            <li>Early access features</li>
+          </ul>
+          <button class="btn lg" id="price-ultra">Start Ultra &rarr;</button>
+        </div>
+      </div>
+      <p class="muted" style="text-align:center;font-size:.78rem;margin-top:16px">All AI runs on YOUR machine or YOUR server. We sell a license, not a service. <a href="#terms">Terms</a></p>
+    </section>
+
     <section class="cta-band">
       <div class="cta-glow"></div>
       <div class="wrap cta-band-inner">
@@ -265,6 +317,7 @@ nc -lvnp 4444`],
           <a href="#features">Features</a>
           <a href="#inside">Inside</a>
           <a href="#get-app">Download</a>
+          <a href="#pricing">Pricing</a>
           <a href="mailto:cashzombs@gmail.com">Contact</a>
           <a id="foot-signin">Sign in</a>
         </nav>
@@ -275,6 +328,9 @@ nc -lvnp 4444`],
   const $ = (id) => view.querySelector("#" + id);
   $("cta-start").onclick = actions.onGetStarted;
   $("cta-signup").onclick = actions.onGetStarted;
+  $("price-free").onclick = actions.onGetStarted;
+  $("price-pro").onclick = actions.onGetStarted;
+  $("price-ultra").onclick = actions.onGetStarted;
   $("cta-learn").onclick = () => document.getElementById("features")?.scrollIntoView({ behavior: "smooth" });
   $("foot-signin").onclick = actions.onSignIn;
   view.addEventListener("click", (e) => { const c = e.target.closest("code.ed-cmd"); if (!c) return; navigator.clipboard?.writeText(c.textContent).then(() => { const o = c.textContent; c.textContent = "copied!"; setTimeout(() => (c.textContent = o), 900); }); });
@@ -287,7 +343,7 @@ nc -lvnp 4444`],
   if ("IntersectionObserver" in window && !reduceMotion) {
     const targets = view.querySelectorAll(
       "#features .sec-title, #inside .sec-title, #demos .sec-title, #how .sec-title, #who .sec-title, #get-app .sec-title, " +
-      ".feat-card, .mod-card, .demo-term, .step, .dlapp-item, .ed-card, .cta-band-inner"
+      ".feat-card, .mod-card, .price-card, .demo-term, .step, .dlapp-item, .ed-card, .cta-band-inner"
     );
     const io = new IntersectionObserver((entries) => {
       entries.forEach((en) => { if (en.isIntersecting) { en.target.classList.add("in"); io.unobserve(en.target); } });
