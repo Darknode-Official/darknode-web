@@ -252,7 +252,7 @@ export function renderLanding(view, actions) {
               <li>25 MCP server integrations</li>
               <li>Priority support</li>
             </ul>
-            <button class="btn lg glow" id="price-pro">Start Pro</button>
+            <button class="btn lg glow" id="price-pro" disabled style="opacity:.6;cursor:default">Coming soon</button>
           </div>
           <div class="price-card">
             <div class="price-tier">Team</div>
@@ -270,7 +270,7 @@ export function renderLanding(view, actions) {
               <li>OWASP Top 10 compliance checker</li>
               <li>Plugin system &amp; extensions</li>
             </ul>
-            <button class="btn lg" id="price-team">Start Team</button>
+            <button class="btn lg" id="price-team" disabled style="opacity:.6;cursor:default">Coming soon</button>
           </div>
         </div>
         <p class="pricing-note">All plans include BYOK &mdash; bring your own Claude, GPT, or Gemini key. Paid plans unlock <strong>platform features</strong>, not AI access. You never pay us for AI tokens.</p>
