@@ -246,6 +246,8 @@ export function renderLanding(view, actions) {
               <li>Ghost Agents &mdash; background monitoring</li>
               <li>Thought Stream &mdash; visible reasoning</li>
               <li>Smart Test Generator</li>
+              <li>Attack Planner — AI pentest methodology</li>
+              <li>CTF Assistant — guided challenge solving</li>
               <li>Code Radar &mdash; codebase analysis</li>
               <li>25 MCP server integrations</li>
               <li>Priority support</li>
@@ -264,6 +266,8 @@ export function renderLanding(view, actions) {
               <li>Time Travel &mdash; undo any action</li>
               <li>Team workspace &amp; shared labs</li>
               <li>Custom training scenarios</li>
+              <li>Report Generator — professional pentest reports</li>
+              <li>OWASP Top 10 compliance checker</li>
               <li>Plugin system &amp; extensions</li>
             </ul>
             <button class="btn lg" id="price-team">Start Team</button>
