@@ -219,7 +219,7 @@ body.app #view{max-width:none;padding:0;margin:0}
 .side-user{min-width:0}
 .su-name{font-size:.82rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .su-mail{font-size:.72rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.app-main{flex:1;min-width:0;padding:30px 40px}
+.app-main{flex:1;min-width:0;padding:30px 48px;max-width:1100px}
 .pg-h1{font-size:1.9rem;margin:0 0 6px;letter-spacing:-.02em}
 .pg-h2{font-size:1.2rem;margin:26px 0 12px}
 .pg-sub{margin:0 0 22px;font-size:.95rem}
@@ -234,7 +234,7 @@ body.app #view{max-width:none;padding:0;margin:0}
 .qa:hover{border-color:var(--acc);transform:translateY(-2px)}
 .qa-title{font-weight:700;font-size:1rem;margin-bottom:5px}
 .qa-desc{color:var(--mut);font-size:.8rem;line-height:1.5}
-.set-card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:14px;max-width:620px}
+.set-card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px 24px;margin-bottom:14px}
 .set-lbl{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--mut);margin-bottom:12px}
 .set-row{display:flex;justify-content:space-between;gap:16px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);font-size:.86rem}
 .set-row:last-child{border-bottom:none}
@@ -247,6 +247,14 @@ body.app #view{max-width:none;padding:0;margin:0}
 .logo-pick{width:40px;height:40px;padding:4px;border-radius:8px;border:2px solid var(--line);background:var(--bg);cursor:pointer;display:flex;align-items:center;justify-content:center}
 .logo-pick:hover{border-color:var(--txt)}
 .logo-pick.on{border-color:var(--acc);box-shadow:0 0 8px -2px var(--acc)}
+.set-layout{display:flex;gap:32px}
+.set-nav{display:flex;flex-direction:column;gap:2px;min-width:180px;flex:none;border-right:1px solid var(--line);padding-right:24px}
+.set-tab{text-align:left;background:transparent;border:none;color:var(--mut);padding:8px 14px;border-radius:8px;cursor:pointer;font-family:inherit;font-size:.88rem}
+.set-tab:hover{background:var(--card2);color:var(--txt)}
+.set-tab.active{background:color-mix(in srgb,var(--acc) 16%,transparent);color:var(--acc);font-weight:600}
+.set-panel{flex:1;min-width:0}
+.set-panel-h{font-size:1.3rem;font-weight:700;margin:0 0 16px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+@media(max-width:720px){.set-layout{flex-direction:column;gap:16px}.set-nav{flex-direction:row;flex-wrap:wrap;min-width:0;border-right:none;border-bottom:1px solid var(--line);padding-right:0;padding-bottom:12px}}
 @media(max-width:720px){
   .app-shell{flex-direction:column;min-height:0}
   .sidebar{width:auto;position:static;height:auto;flex-direction:row;flex-wrap:wrap;align-items:center;border-right:none;border-bottom:1px solid var(--line);padding:10px}

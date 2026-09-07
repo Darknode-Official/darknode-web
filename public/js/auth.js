@@ -383,77 +383,79 @@ function renderSettingsPage(main, user, isOwner) {
   const providers = user.providerData.map((p) => p.providerId.replace(".com", "")).join(", ") || "password";
   const created = user.metadata?.creationTime ? new Date(user.metadata.creationTime).toLocaleDateString() : "—";
   const row = (k, v) => `<div class="set-row"><span class="muted">${k}</span><span>${v}</span></div>`;
-  main.innerHTML = `
-    <h1 class="pg-h1">Settings</h1>
-    <div class="set-card"><div class="set-lbl">Account</div>
+  const SET_TABS = [["account", "Account"], ["appearance", "Appearance"], ["security", "Security"], ["nexus", "Nexus CLI"], ["about", "About"]];
+  const curLogo = (() => { try { return localStorage.getItem("sw_logo") || "nested-accent"; } catch (_) { return "nested-accent"; } })();
+  const panels = {
+    account: `<h2 class="set-panel-h">Account</h2>
       ${row("Name", esc(user.displayName || "—"))}
       ${row("Email", esc(user.email) + (isOwner ? ' <span class="owner-badge">OWNER</span>' : ""))}
       ${row("Signed in via", esc(providers))}
       ${row("Member since", esc(created))}
-      ${row("User ID", '<span class="mono">' + esc(user.uid) + "</span>")}
-    </div>
-    <div class="set-card"><div class="set-lbl">Appearance</div>
+      ${row("User ID", '<span class="mono">' + esc(user.uid) + "</span>")}`,
+    appearance: `<h2 class="set-panel-h">Appearance</h2>
       <div class="set-row"><span class="muted">Theme</span>
         <span class="seg" id="sw-theme"><button data-t="dark">Dark</button><button data-t="light">Light</button></span></div>
       <div class="set-row"><span class="muted">Accent color</span>
         <span class="swatches" id="sw-acc">${ACCENTS.map((c) => `<button class="swatch" style="background:${c}" data-c="${c}" title="${c}"></button>`).join("")}</span></div>
       <div class="set-row"><span class="muted">Logo</span>
-        <span class="logo-picks" id="sw-logo">${Object.entries(LOGO_VARIANTS).map(([k, v]) => `<button class="logo-pick${k === ((() => { try { return localStorage.getItem("sw_logo") || "nested-accent"; } catch (_) { return "outer-radius"; } })()) ? " on" : ""}" data-logo="${k}" title="${v.label}"><svg viewBox="0 0 100 100" width="28" height="28">${v.svg.replace(/currentColor/g, "#F2F5F9")}</svg></button>`).join("")}</span></div>
+        <span class="logo-picks" id="sw-logo">${Object.entries(LOGO_VARIANTS).map(([k, v]) => `<button class="logo-pick${k === curLogo ? " on" : ""}" data-logo="${k}" title="${v.label}"><svg viewBox="0 0 100 100" width="28" height="28">${v.svg.replace(/currentColor/g, "#F2F5F9")}</svg></button>`).join("")}</span></div>
       <div class="set-row"><span class="muted">CRT scanlines</span>
-        <span class="seg" id="sw-crt"><button data-crt="1">On</button><button data-crt="0">Off</button></span></div>
-    </div>
-    <div class="set-card"><div class="set-lbl">Security</div>
-      <div class="set-btns">
+        <span class="seg" id="sw-crt"><button data-crt="1">On</button><button data-crt="0">Off</button></span></div>`,
+    security: `<h2 class="set-panel-h">Security</h2>
+      <div class="set-btns" style="margin-top:8px">
         <button class="btn ghost" id="set-pw">Change password</button>
         <button class="btn ghost" id="set-tour">Replay walkthrough</button>
         <button class="btn danger" id="set-out">Log out</button>
-      </div>
-    </div>
-    <div class="set-card"><div class="set-lbl">Nexus CLI</div>
-      <p class="muted">Sign in to the Nexus terminal agent with this code. In Nexus, run <span class="mono">/login</span> and paste it &mdash; no OAuth setup, same account as here.</p>
+      </div>`,
+    nexus: `<h2 class="set-panel-h">Nexus CLI</h2>
+      <p class="muted">Sign in to the Nexus terminal agent with this code. In Nexus, run <span class="mono">/login</span> and paste it.</p>
       <div class="set-row"><span class="muted">Your code</span>
         <span class="nexus-code-row">
           <input id="nexus-code" class="mono" type="password" readonly value="${esc(user.refreshToken || "")}" autocomplete="off" spellcheck="false">
           <button class="btn ghost" id="nexus-reveal" type="button">Reveal</button>
           <button class="btn ghost" id="nexus-copy" type="button">Copy</button>
         </span></div>
-      <p class="muted" style="font-size:.75rem">Treat this like a password &mdash; anyone with it can sign in as you. Changing your password revokes it.</p>
-    </div>
-    <div class="set-card"><div class="set-lbl">About</div>
-      <p class="muted">Darknode &mdash; your security workspace. In-browser tools plus install commands for everything that runs on your machine.</p>
-      <p class="muted" style="font-size:.75rem">Version 1.0</p>
-    </div>`;
-  main.querySelector("#sw-acc").onclick = (e) => { const b = e.target.closest(".swatch"); if (b) applyAccent(b.dataset.c); };
-  const logoSeg = main.querySelector("#sw-logo");
-  logoSeg.onclick = (e) => { const b = e.target.closest(".logo-pick"); if (!b) return; applyLogo(b.dataset.logo); logoSeg.querySelectorAll(".logo-pick").forEach((x) => x.classList.toggle("on", x === b)); };
-  const themeSeg = main.querySelector("#sw-theme");
-  const curTheme = document.documentElement.getAttribute("data-theme") || "dark";
-  themeSeg.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b.dataset.t === curTheme));
-  themeSeg.onclick = (e) => { const b = e.target.closest("button[data-t]"); if (!b) return; applyTheme(b.dataset.t); themeSeg.querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b)); };
-  const crtSeg = main.querySelector("#sw-crt");
-  crtSeg.querySelectorAll("button").forEach((b) => b.classList.toggle("on", (b.dataset.crt === "1") === crtOn()));
-  crtSeg.onclick = (e) => { const b = e.target.closest("button[data-crt]"); if (!b) return; applyCrt(b.dataset.crt === "1"); crtSeg.querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b)); };
-  main.querySelector("#set-out").onclick = () => signOut(auth);
-  main.querySelector("#set-tour").onclick = () => startTour(tourSteps(isOwner));
-  main.querySelector("#set-pw").onclick = async () => {
-    try { await sendPasswordResetEmail(auth, user.email); alert("Password reset link sent to " + user.email); }
-    catch (e) { alert(errText(e)); }
+      <p class="muted" style="font-size:.75rem">Treat this like a password. Changing your password revokes it.</p>`,
+    about: `<h2 class="set-panel-h">About</h2>
+      <p class="muted">Darknode -- your security workspace. In-browser tools plus install commands for everything that runs on your machine.</p>
+      <p class="muted" style="font-size:.75rem">Version 1.0</p>`,
   };
-  // Nexus CLI pairing code (the Firebase refresh token — the CLI exchanges it for a session).
-  const codeInput = main.querySelector("#nexus-code");
-  if (codeInput) {
-    if (!codeInput.value) { user.getIdToken().then(() => { codeInput.value = user.refreshToken || ""; }).catch(() => {}); }
-    main.querySelector("#nexus-reveal").onclick = (e) => {
-      const hidden = codeInput.type === "password";
-      codeInput.type = hidden ? "text" : "password";
-      e.target.textContent = hidden ? "Hide" : "Reveal";
-    };
-    main.querySelector("#nexus-copy").onclick = async (e) => {
-      try { await navigator.clipboard.writeText(codeInput.value); }
-      catch (_) { const t = codeInput.type; codeInput.type = "text"; codeInput.select(); try { document.execCommand("copy"); } catch (__) {} codeInput.type = t; }
-      const b = e.target, o = b.textContent; b.textContent = "Copied"; setTimeout(() => { b.textContent = o; }, 1200);
-    };
+  main.innerHTML = `
+    <h1 class="pg-h1">Settings</h1>
+    <div class="set-layout">
+      <nav class="set-nav">${SET_TABS.map(([k, l]) => `<button class="set-tab${k === "account" ? " active" : ""}" data-stab="${k}">${l}</button>`).join("")}</nav>
+      <div class="set-panel" id="set-panel">${panels.account}</div>
+    </div>`;
+  let curTab = "account";
+  function showSetTab(tab) {
+    curTab = tab;
+    const panel = main.querySelector("#set-panel"); if (!panel) return;
+    panel.innerHTML = panels[tab] || "";
+    main.querySelectorAll(".set-tab").forEach(b => b.classList.toggle("active", b.dataset.stab === tab));
+    wireSetPanel();
   }
+  function wireSetPanel() {
+    const acc = main.querySelector("#sw-acc");
+    if (acc) acc.onclick = (e) => { const b = e.target.closest(".swatch"); if (b) applyAccent(b.dataset.c); };
+    const logoSeg = main.querySelector("#sw-logo");
+    if (logoSeg) logoSeg.onclick = (e) => { const b = e.target.closest(".logo-pick"); if (!b) return; applyLogo(b.dataset.logo); logoSeg.querySelectorAll(".logo-pick").forEach((x) => x.classList.toggle("on", x === b)); };
+    const themeSeg = main.querySelector("#sw-theme");
+    if (themeSeg) { const curTheme = document.documentElement.getAttribute("data-theme") || "dark"; themeSeg.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b.dataset.t === curTheme)); themeSeg.onclick = (e) => { const b = e.target.closest("button[data-t]"); if (!b) return; applyTheme(b.dataset.t); themeSeg.querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b)); }; }
+    const crtSeg = main.querySelector("#sw-crt");
+    if (crtSeg) { crtSeg.querySelectorAll("button").forEach((b) => b.classList.toggle("on", (b.dataset.crt === "1") === crtOn())); crtSeg.onclick = (e) => { const b = e.target.closest("button[data-crt]"); if (!b) return; applyCrt(b.dataset.crt === "1"); crtSeg.querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b)); }; }
+    const out = main.querySelector("#set-out"); if (out) out.onclick = () => signOut(auth);
+    const tour = main.querySelector("#set-tour"); if (tour) tour.onclick = () => startTour(tourSteps(isOwner));
+    const pwBtn = main.querySelector("#set-pw");
+    if (pwBtn) pwBtn.onclick = async () => { try { await sendPasswordResetEmail(auth, user.email); alert("Password reset link sent to " + user.email); } catch (e) { alert(errText(e)); } };
+    const codeInput = main.querySelector("#nexus-code");
+    if (codeInput) {
+      if (!codeInput.value) { user.getIdToken().then(() => { codeInput.value = user.refreshToken || ""; }).catch(() => {}); }
+      const rev = main.querySelector("#nexus-reveal"); if (rev) rev.onclick = (e) => { const hidden = codeInput.type === "password"; codeInput.type = hidden ? "text" : "password"; e.target.textContent = hidden ? "Hide" : "Reveal"; };
+      const cp = main.querySelector("#nexus-copy"); if (cp) cp.onclick = async (e) => { try { await navigator.clipboard.writeText(codeInput.value); } catch (_) { const t = codeInput.type; codeInput.type = "text"; codeInput.select(); try { document.execCommand("copy"); } catch (__) {} codeInput.type = t; } const b = e.target, o = b.textContent; b.textContent = "Copied"; setTimeout(() => { b.textContent = o; }, 1200); };
+    }
+  }
+  main.querySelector(".set-nav").onclick = (e) => { const b = e.target.closest(".set-tab"); if (b) showSetTab(b.dataset.stab); };
+  wireSetPanel();
 }
 
 // Gamer "ACCESS GRANTED" neon-portal transition, played once on a FRESH sign-in
