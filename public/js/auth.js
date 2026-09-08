@@ -132,7 +132,7 @@ function renderAuth(mode = "signin") {
   view.innerHTML = `
     <section class="card auth-card">
       <a class="auth-back" id="authBack">&larr; Back</a>
-      <div class="auth-logo"><img src="/favicon.svg" alt=""></div>
+      <div class="auth-logo"><img src="/logo-light.svg" alt=""></div>
       <h1>${isSignup ? "Create your account" : "Welcome back"}</h1>
       <p class="muted">${isSignup ? "Set up your Darknode console in seconds." : "Sign in to your Darknode console."}</p>
       <button class="btn google" id="google">Continue with Google</button>
@@ -225,7 +225,7 @@ function renderCodeVerify(user) {
   document.getElementById("signout").onclick = () => signOut(auth);
   view.innerHTML = `
     <section class="card auth-card">
-      <div class="auth-logo"><img src="/favicon.svg" alt=""></div>
+      <div class="auth-logo"><img src="/logo-light.svg" alt=""></div>
       <h1>Enter your code</h1>
       <p class="muted">We emailed a 6-digit code to <strong>${esc(user.email)}</strong>. Enter it to finish signing up.</p>
       <input id="code" inputmode="numeric" maxlength="6" placeholder="123456" autocomplete="one-time-code" style="text-align:center;letter-spacing:.4em;font-size:1.3rem">
