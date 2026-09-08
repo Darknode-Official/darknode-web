@@ -2612,6 +2612,7 @@ tr:hover td {
 /* Scroll-reveal for tool showcase cards */
 .ts-card,.ts-tabs{opacity:0;transform:translateY(16px);
   transition:opacity .5s cubic-bezier(.2,.7,.3,1),transform .5s cubic-bezier(.2,.7,.3,1)}
+.ts-card.revealed,.ts-tabs.revealed{opacity:1;transform:translateY(0)}
 .ts-card:nth-child(2){transition-delay:.03s}
 .ts-card:nth-child(3){transition-delay:.06s}
 .ts-card:nth-child(4){transition-delay:.09s}
@@ -3723,3 +3724,17 @@ body.landing .demo-grid{margin-top:16px}
   .price-card.featured::before{animation:none;background-size:100% 100%}
   .section.alt{--px-x:0px!important;--px-y:0px!important}
 }
+
+/* Fix missing revealed states for scroll-animated elements */
+.metric-card.revealed,
+.testimonial-card.revealed,
+.plab-card.revealed,
+.plab-note.revealed,
+.tlv-step.revealed,
+.showcase-tabs.revealed,
+.showcase-term.revealed,
+.rag-card.revealed,
+.rag-tabs.revealed,
+.cmp-landing.revealed,
+.cmp-scroll.revealed,
+.reveal.revealed{opacity:1;transform:translateY(0)}
