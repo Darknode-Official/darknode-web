@@ -1,0 +1,3867 @@
+/* ============================================================================
+   effects.css -- Decorative Effects & Visual Enhancements
+   Darknode Web Portal
+   ============================================================================
+   Table of Contents:
+   1.  CSS Custom Properties (Design Tokens)
+   2.  Glassmorphism
+   3.  Neumorphism
+   4.  Gradient Borders
+   5.  Glow Effects
+   6.  Neon Effects
+   7.  Frosted Glass Cards
+   8.  Mesh Gradients
+   9.  Noise / Grain Textures
+   10. Grid Patterns
+   11. Scanline Effects
+   12. Holographic
+   13. Depth / Elevation
+   14. Blur Backgrounds
+   15. Color Overlays
+   16. Border Animations
+   17. Cursor Effects
+   18. Selection Styles
+   19. Scrollbar Styles
+   20. Focus Styles
+   21. Clip Paths
+   22. Mask Effects
+   23. Text Effects
+   24. Image Effects
+   25. Blend Modes
+   26. Aspect Ratios
+   ============================================================================ */
+
+
+/* ============================================================================
+   1. CSS Custom Properties (Design Tokens)
+   ============================================================================ */
+
+:root {
+  /* -- Brand Colors -------------------------------------------------------- */
+  --fx-cyan:        #00e5ff;
+  --fx-cyan-rgb:    0, 229, 255;
+  --fx-purple:      #b388ff;
+  --fx-purple-rgb:  179, 136, 255;
+  --fx-green:       #00e676;
+  --fx-green-rgb:   0, 230, 118;
+  --fx-red:         #ff1744;
+  --fx-red-rgb:     255, 23, 68;
+  --fx-amber:       #ffc400;
+  --fx-amber-rgb:   255, 196, 0;
+
+  /* -- Neutral Tones ------------------------------------------------------- */
+  --fx-bg-dark:     #0a0e17;
+  --fx-bg-mid:      #111827;
+  --fx-bg-light:    #1e293b;
+  --fx-surface:     #1a1f2e;
+  --fx-border:      rgba(255, 255, 255, 0.08);
+
+  /* -- Glass Tokens -------------------------------------------------------- */
+  --glass-blur:         16px;
+  --glass-bg:           rgba(255, 255, 255, 0.06);
+  --glass-bg-dark:      rgba(0, 0, 0, 0.40);
+  --glass-bg-light:     rgba(255, 255, 255, 0.12);
+  --glass-border:       rgba(255, 255, 255, 0.10);
+  --glass-border-dark:  rgba(255, 255, 255, 0.06);
+  --glass-border-light: rgba(255, 255, 255, 0.18);
+
+  /* -- Neumorphism Tokens -------------------------------------------------- */
+  --neu-bg:         #1a1f2e;
+  --neu-shadow-dark:  rgba(0, 0, 0, 0.50);
+  --neu-shadow-light: rgba(255, 255, 255, 0.05);
+
+  /* -- Elevation Tokens ---------------------------------------------------- */
+  --elevation-color: rgba(0, 0, 0, 0.6);
+
+  /* -- Transition Tokens --------------------------------------------------- */
+  --fx-duration-fast:   150ms;
+  --fx-duration-normal: 300ms;
+  --fx-duration-slow:   600ms;
+  --fx-easing:          cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+
+/* ============================================================================
+   2. Glassmorphism
+   ============================================================================ */
+
+/* -- Base Glass ------------------------------------------------------------ */
+.glass {
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+}
+
+.glass::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.08) 0%,
+    rgba(255, 255, 255, 0.00) 50%,
+    rgba(255, 255, 255, 0.04) 100%
+  );
+  pointer-events: none;
+}
+
+/* -- Dark Glass ------------------------------------------------------------ */
+.glass-dark {
+  background: var(--glass-bg-dark);
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border-dark);
+  border-radius: 12px;
+}
+
+.glass-dark::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    135deg,
+    rgba(0, 0, 0, 0.20) 0%,
+    rgba(0, 0, 0, 0.00) 50%,
+    rgba(0, 0, 0, 0.10) 100%
+  );
+  pointer-events: none;
+}
+
+/* -- Light Glass ----------------------------------------------------------- */
+.glass-light {
+  background: var(--glass-bg-light);
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border-light);
+  border-radius: 12px;
+}
+
+.glass-light::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.14) 0%,
+    rgba(255, 255, 255, 0.00) 50%,
+    rgba(255, 255, 255, 0.08) 100%
+  );
+  pointer-events: none;
+}
+
+/* -- Glass Modifiers ------------------------------------------------------- */
+.glass-blur-sm {
+  --glass-blur: 8px;
+}
+
+.glass-blur-lg {
+  --glass-blur: 24px;
+}
+
+.glass-blur-xl {
+  --glass-blur: 40px;
+}
+
+.glass-rounded-sm {
+  border-radius: 6px;
+}
+
+.glass-rounded-lg {
+  border-radius: 20px;
+}
+
+.glass-rounded-full {
+  border-radius: 9999px;
+}
+
+/* -- Glass Color Tints ----------------------------------------------------- */
+.glass-tint-cyan {
+  background: rgba(var(--fx-cyan-rgb), 0.08);
+  border-color: rgba(var(--fx-cyan-rgb), 0.15);
+}
+
+.glass-tint-purple {
+  background: rgba(var(--fx-purple-rgb), 0.08);
+  border-color: rgba(var(--fx-purple-rgb), 0.15);
+}
+
+.glass-tint-green {
+  background: rgba(var(--fx-green-rgb), 0.08);
+  border-color: rgba(var(--fx-green-rgb), 0.15);
+}
+
+.glass-tint-red {
+  background: rgba(var(--fx-red-rgb), 0.08);
+  border-color: rgba(var(--fx-red-rgb), 0.15);
+}
+
+.glass-tint-amber {
+  background: rgba(var(--fx-amber-rgb), 0.08);
+  border-color: rgba(var(--fx-amber-rgb), 0.15);
+}
+
+
+/* ============================================================================
+   3. Neumorphism (Dark Theme)
+   ============================================================================ */
+
+/* -- Raised / Convex ------------------------------------------------------- */
+.neu-raised {
+  background: var(--neu-bg);
+  border-radius: 12px;
+  box-shadow:
+    6px  6px  12px var(--neu-shadow-dark),
+   -6px -6px  12px var(--neu-shadow-light);
+  border: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.neu-raised:hover {
+  box-shadow:
+    8px  8px  16px var(--neu-shadow-dark),
+   -8px -8px  16px var(--neu-shadow-light);
+}
+
+/* -- Flat / Level ---------------------------------------------------------- */
+.neu-flat {
+  background: var(--neu-bg);
+  border-radius: 12px;
+  box-shadow:
+    4px  4px  8px var(--neu-shadow-dark),
+   -4px -4px  8px var(--neu-shadow-light);
+  border: 1px solid rgba(255, 255, 255, 0.02);
+}
+
+/* -- Pressed / Inset ------------------------------------------------------- */
+.neu-pressed {
+  background: var(--neu-bg);
+  border-radius: 12px;
+  box-shadow:
+    inset 4px  4px  8px var(--neu-shadow-dark),
+    inset -4px -4px  8px var(--neu-shadow-light);
+  border: 1px solid rgba(0, 0, 0, 0.15);
+}
+
+/* -- Neumorphic Modifiers -------------------------------------------------- */
+.neu-sm {
+  border-radius: 8px;
+}
+
+.neu-sm.neu-raised {
+  box-shadow:
+    3px  3px  6px var(--neu-shadow-dark),
+   -3px -3px  6px var(--neu-shadow-light);
+}
+
+.neu-sm.neu-pressed {
+  box-shadow:
+    inset 2px  2px  4px var(--neu-shadow-dark),
+    inset -2px -2px  4px var(--neu-shadow-light);
+}
+
+.neu-lg {
+  border-radius: 16px;
+}
+
+.neu-lg.neu-raised {
+  box-shadow:
+    10px  10px  20px var(--neu-shadow-dark),
+   -10px -10px  20px var(--neu-shadow-light);
+}
+
+.neu-lg.neu-pressed {
+  box-shadow:
+    inset 6px  6px  12px var(--neu-shadow-dark),
+    inset -6px -6px  12px var(--neu-shadow-light);
+}
+
+.neu-round {
+  border-radius: 50%;
+}
+
+/* -- Neumorphic interactive toggle ----------------------------------------- */
+.neu-toggle {
+  background: var(--neu-bg);
+  border-radius: 12px;
+  box-shadow:
+    6px  6px  12px var(--neu-shadow-dark),
+   -6px -6px  12px var(--neu-shadow-light);
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  transition: box-shadow var(--fx-duration-fast) var(--fx-easing);
+  cursor: pointer;
+}
+
+.neu-toggle:active,
+.neu-toggle.active {
+  box-shadow:
+    inset 4px  4px  8px var(--neu-shadow-dark),
+    inset -4px -4px  8px var(--neu-shadow-light);
+  border-color: rgba(0, 0, 0, 0.15);
+}
+
+
+/* ============================================================================
+   4. Gradient Borders
+   ============================================================================ */
+
+/* -- Default gradient border (cyan to purple) ------------------------------ */
+.gradient-border {
+  position: relative;
+  background: var(--fx-bg-dark);
+  border-radius: 12px;
+  padding: 1px;
+}
+
+.gradient-border::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, var(--fx-cyan), var(--fx-purple));
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* -- Gradient border width variants ---------------------------------------- */
+.gradient-border-2::before {
+  padding: 2px;
+}
+
+.gradient-border-3::before {
+  padding: 3px;
+}
+
+.gradient-border-4::before {
+  padding: 4px;
+}
+
+/* -- Gradient border color variants ---------------------------------------- */
+.gradient-border-cyan::before {
+  background: linear-gradient(135deg, var(--fx-cyan), rgba(var(--fx-cyan-rgb), 0.3));
+}
+
+.gradient-border-purple::before {
+  background: linear-gradient(135deg, var(--fx-purple), rgba(var(--fx-purple-rgb), 0.3));
+}
+
+.gradient-border-green::before {
+  background: linear-gradient(135deg, var(--fx-green), rgba(var(--fx-green-rgb), 0.3));
+}
+
+.gradient-border-red::before {
+  background: linear-gradient(135deg, var(--fx-red), rgba(var(--fx-red-rgb), 0.3));
+}
+
+.gradient-border-amber::before {
+  background: linear-gradient(135deg, var(--fx-amber), rgba(var(--fx-amber-rgb), 0.3));
+}
+
+.gradient-border-rainbow::before {
+  background: linear-gradient(
+    135deg,
+    var(--fx-red),
+    var(--fx-amber),
+    var(--fx-green),
+    var(--fx-cyan),
+    var(--fx-purple)
+  );
+}
+
+/* -- Gradient border direction variants ------------------------------------ */
+.gradient-border-top::before {
+  background: linear-gradient(to bottom, var(--fx-cyan), transparent);
+}
+
+.gradient-border-bottom::before {
+  background: linear-gradient(to top, var(--fx-cyan), transparent);
+}
+
+.gradient-border-left::before {
+  background: linear-gradient(to right, var(--fx-cyan), transparent);
+}
+
+.gradient-border-right::before {
+  background: linear-gradient(to left, var(--fx-cyan), transparent);
+}
+
+
+/* ============================================================================
+   5. Glow Effects
+   ============================================================================ */
+
+/* -- Cyan Glow ------------------------------------------------------------- */
+.glow-sm-cyan {
+  box-shadow: 0 0 4px rgba(var(--fx-cyan-rgb), 0.3),
+              0 0 8px rgba(var(--fx-cyan-rgb), 0.15);
+}
+
+.glow-md-cyan {
+  box-shadow: 0 0 8px rgba(var(--fx-cyan-rgb), 0.4),
+              0 0 16px rgba(var(--fx-cyan-rgb), 0.2),
+              0 0 24px rgba(var(--fx-cyan-rgb), 0.1);
+}
+
+.glow-lg-cyan {
+  box-shadow: 0 0 12px rgba(var(--fx-cyan-rgb), 0.5),
+              0 0 24px rgba(var(--fx-cyan-rgb), 0.3),
+              0 0 48px rgba(var(--fx-cyan-rgb), 0.15);
+}
+
+.glow-xl-cyan {
+  box-shadow: 0 0 16px rgba(var(--fx-cyan-rgb), 0.6),
+              0 0 32px rgba(var(--fx-cyan-rgb), 0.4),
+              0 0 64px rgba(var(--fx-cyan-rgb), 0.2),
+              0 0 96px rgba(var(--fx-cyan-rgb), 0.1);
+}
+
+/* -- Purple Glow ----------------------------------------------------------- */
+.glow-sm-purple {
+  box-shadow: 0 0 4px rgba(var(--fx-purple-rgb), 0.3),
+              0 0 8px rgba(var(--fx-purple-rgb), 0.15);
+}
+
+.glow-md-purple {
+  box-shadow: 0 0 8px rgba(var(--fx-purple-rgb), 0.4),
+              0 0 16px rgba(var(--fx-purple-rgb), 0.2),
+              0 0 24px rgba(var(--fx-purple-rgb), 0.1);
+}
+
+.glow-lg-purple {
+  box-shadow: 0 0 12px rgba(var(--fx-purple-rgb), 0.5),
+              0 0 24px rgba(var(--fx-purple-rgb), 0.3),
+              0 0 48px rgba(var(--fx-purple-rgb), 0.15);
+}
+
+.glow-xl-purple {
+  box-shadow: 0 0 16px rgba(var(--fx-purple-rgb), 0.6),
+              0 0 32px rgba(var(--fx-purple-rgb), 0.4),
+              0 0 64px rgba(var(--fx-purple-rgb), 0.2),
+              0 0 96px rgba(var(--fx-purple-rgb), 0.1);
+}
+
+/* -- Green Glow ------------------------------------------------------------ */
+.glow-sm-green {
+  box-shadow: 0 0 4px rgba(var(--fx-green-rgb), 0.3),
+              0 0 8px rgba(var(--fx-green-rgb), 0.15);
+}
+
+.glow-md-green {
+  box-shadow: 0 0 8px rgba(var(--fx-green-rgb), 0.4),
+              0 0 16px rgba(var(--fx-green-rgb), 0.2),
+              0 0 24px rgba(var(--fx-green-rgb), 0.1);
+}
+
+.glow-lg-green {
+  box-shadow: 0 0 12px rgba(var(--fx-green-rgb), 0.5),
+              0 0 24px rgba(var(--fx-green-rgb), 0.3),
+              0 0 48px rgba(var(--fx-green-rgb), 0.15);
+}
+
+.glow-xl-green {
+  box-shadow: 0 0 16px rgba(var(--fx-green-rgb), 0.6),
+              0 0 32px rgba(var(--fx-green-rgb), 0.4),
+              0 0 64px rgba(var(--fx-green-rgb), 0.2),
+              0 0 96px rgba(var(--fx-green-rgb), 0.1);
+}
+
+/* -- Red Glow -------------------------------------------------------------- */
+.glow-sm-red {
+  box-shadow: 0 0 4px rgba(var(--fx-red-rgb), 0.3),
+              0 0 8px rgba(var(--fx-red-rgb), 0.15);
+}
+
+.glow-md-red {
+  box-shadow: 0 0 8px rgba(var(--fx-red-rgb), 0.4),
+              0 0 16px rgba(var(--fx-red-rgb), 0.2),
+              0 0 24px rgba(var(--fx-red-rgb), 0.1);
+}
+
+.glow-lg-red {
+  box-shadow: 0 0 12px rgba(var(--fx-red-rgb), 0.5),
+              0 0 24px rgba(var(--fx-red-rgb), 0.3),
+              0 0 48px rgba(var(--fx-red-rgb), 0.15);
+}
+
+.glow-xl-red {
+  box-shadow: 0 0 16px rgba(var(--fx-red-rgb), 0.6),
+              0 0 32px rgba(var(--fx-red-rgb), 0.4),
+              0 0 64px rgba(var(--fx-red-rgb), 0.2),
+              0 0 96px rgba(var(--fx-red-rgb), 0.1);
+}
+
+/* -- Amber Glow ------------------------------------------------------------ */
+.glow-sm-amber {
+  box-shadow: 0 0 4px rgba(var(--fx-amber-rgb), 0.3),
+              0 0 8px rgba(var(--fx-amber-rgb), 0.15);
+}
+
+.glow-md-amber {
+  box-shadow: 0 0 8px rgba(var(--fx-amber-rgb), 0.4),
+              0 0 16px rgba(var(--fx-amber-rgb), 0.2),
+              0 0 24px rgba(var(--fx-amber-rgb), 0.1);
+}
+
+.glow-lg-amber {
+  box-shadow: 0 0 12px rgba(var(--fx-amber-rgb), 0.5),
+              0 0 24px rgba(var(--fx-amber-rgb), 0.3),
+              0 0 48px rgba(var(--fx-amber-rgb), 0.15);
+}
+
+.glow-xl-amber {
+  box-shadow: 0 0 16px rgba(var(--fx-amber-rgb), 0.6),
+              0 0 32px rgba(var(--fx-amber-rgb), 0.4),
+              0 0 64px rgba(var(--fx-amber-rgb), 0.2),
+              0 0 96px rgba(var(--fx-amber-rgb), 0.1);
+}
+
+/* -- Glow hover variants --------------------------------------------------- */
+.glow-hover-cyan:hover {
+  box-shadow: 0 0 12px rgba(var(--fx-cyan-rgb), 0.5),
+              0 0 24px rgba(var(--fx-cyan-rgb), 0.3),
+              0 0 48px rgba(var(--fx-cyan-rgb), 0.15);
+  transition: box-shadow var(--fx-duration-normal) var(--fx-easing);
+}
+
+.glow-hover-purple:hover {
+  box-shadow: 0 0 12px rgba(var(--fx-purple-rgb), 0.5),
+              0 0 24px rgba(var(--fx-purple-rgb), 0.3),
+              0 0 48px rgba(var(--fx-purple-rgb), 0.15);
+  transition: box-shadow var(--fx-duration-normal) var(--fx-easing);
+}
+
+.glow-hover-green:hover {
+  box-shadow: 0 0 12px rgba(var(--fx-green-rgb), 0.5),
+              0 0 24px rgba(var(--fx-green-rgb), 0.3),
+              0 0 48px rgba(var(--fx-green-rgb), 0.15);
+  transition: box-shadow var(--fx-duration-normal) var(--fx-easing);
+}
+
+.glow-hover-red:hover {
+  box-shadow: 0 0 12px rgba(var(--fx-red-rgb), 0.5),
+              0 0 24px rgba(var(--fx-red-rgb), 0.3),
+              0 0 48px rgba(var(--fx-red-rgb), 0.15);
+  transition: box-shadow var(--fx-duration-normal) var(--fx-easing);
+}
+
+.glow-hover-amber:hover {
+  box-shadow: 0 0 12px rgba(var(--fx-amber-rgb), 0.5),
+              0 0 24px rgba(var(--fx-amber-rgb), 0.3),
+              0 0 48px rgba(var(--fx-amber-rgb), 0.15);
+  transition: box-shadow var(--fx-duration-normal) var(--fx-easing);
+}
+
+/* -- Glow pulse animation -------------------------------------------------- */
+@keyframes glow-pulse-cyan {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(var(--fx-cyan-rgb), 0.4),
+                0 0 16px rgba(var(--fx-cyan-rgb), 0.2);
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(var(--fx-cyan-rgb), 0.6),
+                0 0 32px rgba(var(--fx-cyan-rgb), 0.4),
+                0 0 64px rgba(var(--fx-cyan-rgb), 0.2);
+  }
+}
+
+@keyframes glow-pulse-purple {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(var(--fx-purple-rgb), 0.4),
+                0 0 16px rgba(var(--fx-purple-rgb), 0.2);
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(var(--fx-purple-rgb), 0.6),
+                0 0 32px rgba(var(--fx-purple-rgb), 0.4),
+                0 0 64px rgba(var(--fx-purple-rgb), 0.2);
+  }
+}
+
+@keyframes glow-pulse-green {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(var(--fx-green-rgb), 0.4),
+                0 0 16px rgba(var(--fx-green-rgb), 0.2);
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(var(--fx-green-rgb), 0.6),
+                0 0 32px rgba(var(--fx-green-rgb), 0.4),
+                0 0 64px rgba(var(--fx-green-rgb), 0.2);
+  }
+}
+
+@keyframes glow-pulse-red {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(var(--fx-red-rgb), 0.4),
+                0 0 16px rgba(var(--fx-red-rgb), 0.2);
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(var(--fx-red-rgb), 0.6),
+                0 0 32px rgba(var(--fx-red-rgb), 0.4),
+                0 0 64px rgba(var(--fx-red-rgb), 0.2);
+  }
+}
+
+@keyframes glow-pulse-amber {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(var(--fx-amber-rgb), 0.4),
+                0 0 16px rgba(var(--fx-amber-rgb), 0.2);
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(var(--fx-amber-rgb), 0.6),
+                0 0 32px rgba(var(--fx-amber-rgb), 0.4),
+                0 0 64px rgba(var(--fx-amber-rgb), 0.2);
+  }
+}
+
+.glow-pulse-cyan    { animation: glow-pulse-cyan    2s ease-in-out infinite; }
+.glow-pulse-purple  { animation: glow-pulse-purple  2s ease-in-out infinite; }
+.glow-pulse-green   { animation: glow-pulse-green   2s ease-in-out infinite; }
+.glow-pulse-red     { animation: glow-pulse-red     2s ease-in-out infinite; }
+.glow-pulse-amber   { animation: glow-pulse-amber   2s ease-in-out infinite; }
+
+
+/* ============================================================================
+   6. Neon Effects
+   ============================================================================ */
+
+/* -- Neon Text ------------------------------------------------------------- */
+.neon-text-cyan {
+  color: var(--fx-cyan);
+  text-shadow:
+    0 0  4px rgba(var(--fx-cyan-rgb), 0.6),
+    0 0  8px rgba(var(--fx-cyan-rgb), 0.4),
+    0 0 16px rgba(var(--fx-cyan-rgb), 0.3),
+    0 0 32px rgba(var(--fx-cyan-rgb), 0.2),
+    0 0 64px rgba(var(--fx-cyan-rgb), 0.1);
+}
+
+.neon-text-purple {
+  color: var(--fx-purple);
+  text-shadow:
+    0 0  4px rgba(var(--fx-purple-rgb), 0.6),
+    0 0  8px rgba(var(--fx-purple-rgb), 0.4),
+    0 0 16px rgba(var(--fx-purple-rgb), 0.3),
+    0 0 32px rgba(var(--fx-purple-rgb), 0.2),
+    0 0 64px rgba(var(--fx-purple-rgb), 0.1);
+}
+
+.neon-text-green {
+  color: var(--fx-green);
+  text-shadow:
+    0 0  4px rgba(var(--fx-green-rgb), 0.6),
+    0 0  8px rgba(var(--fx-green-rgb), 0.4),
+    0 0 16px rgba(var(--fx-green-rgb), 0.3),
+    0 0 32px rgba(var(--fx-green-rgb), 0.2),
+    0 0 64px rgba(var(--fx-green-rgb), 0.1);
+}
+
+.neon-text-red {
+  color: var(--fx-red);
+  text-shadow:
+    0 0  4px rgba(var(--fx-red-rgb), 0.6),
+    0 0  8px rgba(var(--fx-red-rgb), 0.4),
+    0 0 16px rgba(var(--fx-red-rgb), 0.3),
+    0 0 32px rgba(var(--fx-red-rgb), 0.2),
+    0 0 64px rgba(var(--fx-red-rgb), 0.1);
+}
+
+.neon-text-amber {
+  color: var(--fx-amber);
+  text-shadow:
+    0 0  4px rgba(var(--fx-amber-rgb), 0.6),
+    0 0  8px rgba(var(--fx-amber-rgb), 0.4),
+    0 0 16px rgba(var(--fx-amber-rgb), 0.3),
+    0 0 32px rgba(var(--fx-amber-rgb), 0.2),
+    0 0 64px rgba(var(--fx-amber-rgb), 0.1);
+}
+
+/* -- Neon Text (shorthand alias) ------------------------------------------- */
+.neon-text {
+  color: var(--fx-cyan);
+  text-shadow:
+    0 0  4px rgba(var(--fx-cyan-rgb), 0.6),
+    0 0  8px rgba(var(--fx-cyan-rgb), 0.4),
+    0 0 16px rgba(var(--fx-cyan-rgb), 0.3),
+    0 0 32px rgba(var(--fx-cyan-rgb), 0.2),
+    0 0 64px rgba(var(--fx-cyan-rgb), 0.1);
+}
+
+/* -- Neon Border ----------------------------------------------------------- */
+.neon-border {
+  border: 1px solid var(--fx-cyan);
+  box-shadow:
+    0 0  4px rgba(var(--fx-cyan-rgb), 0.4),
+    0 0  8px rgba(var(--fx-cyan-rgb), 0.2),
+    inset 0 0  4px rgba(var(--fx-cyan-rgb), 0.1);
+}
+
+.neon-border-cyan {
+  border: 1px solid var(--fx-cyan);
+  box-shadow:
+    0 0  4px rgba(var(--fx-cyan-rgb), 0.4),
+    0 0  8px rgba(var(--fx-cyan-rgb), 0.2),
+    inset 0 0  4px rgba(var(--fx-cyan-rgb), 0.1);
+}
+
+.neon-border-purple {
+  border: 1px solid var(--fx-purple);
+  box-shadow:
+    0 0  4px rgba(var(--fx-purple-rgb), 0.4),
+    0 0  8px rgba(var(--fx-purple-rgb), 0.2),
+    inset 0 0  4px rgba(var(--fx-purple-rgb), 0.1);
+}
+
+.neon-border-green {
+  border: 1px solid var(--fx-green);
+  box-shadow:
+    0 0  4px rgba(var(--fx-green-rgb), 0.4),
+    0 0  8px rgba(var(--fx-green-rgb), 0.2),
+    inset 0 0  4px rgba(var(--fx-green-rgb), 0.1);
+}
+
+.neon-border-red {
+  border: 1px solid var(--fx-red);
+  box-shadow:
+    0 0  4px rgba(var(--fx-red-rgb), 0.4),
+    0 0  8px rgba(var(--fx-red-rgb), 0.2),
+    inset 0 0  4px rgba(var(--fx-red-rgb), 0.1);
+}
+
+.neon-border-amber {
+  border: 1px solid var(--fx-amber);
+  box-shadow:
+    0 0  4px rgba(var(--fx-amber-rgb), 0.4),
+    0 0  8px rgba(var(--fx-amber-rgb), 0.2),
+    inset 0 0  4px rgba(var(--fx-amber-rgb), 0.1);
+}
+
+/* -- Neon Shadow ----------------------------------------------------------- */
+.neon-shadow {
+  box-shadow:
+    0 0  8px rgba(var(--fx-cyan-rgb), 0.5),
+    0 0 16px rgba(var(--fx-cyan-rgb), 0.3),
+    0 0 32px rgba(var(--fx-cyan-rgb), 0.15);
+}
+
+.neon-shadow-cyan {
+  box-shadow:
+    0 0  8px rgba(var(--fx-cyan-rgb), 0.5),
+    0 0 16px rgba(var(--fx-cyan-rgb), 0.3),
+    0 0 32px rgba(var(--fx-cyan-rgb), 0.15);
+}
+
+.neon-shadow-purple {
+  box-shadow:
+    0 0  8px rgba(var(--fx-purple-rgb), 0.5),
+    0 0 16px rgba(var(--fx-purple-rgb), 0.3),
+    0 0 32px rgba(var(--fx-purple-rgb), 0.15);
+}
+
+.neon-shadow-green {
+  box-shadow:
+    0 0  8px rgba(var(--fx-green-rgb), 0.5),
+    0 0 16px rgba(var(--fx-green-rgb), 0.3),
+    0 0 32px rgba(var(--fx-green-rgb), 0.15);
+}
+
+.neon-shadow-red {
+  box-shadow:
+    0 0  8px rgba(var(--fx-red-rgb), 0.5),
+    0 0 16px rgba(var(--fx-red-rgb), 0.3),
+    0 0 32px rgba(var(--fx-red-rgb), 0.15);
+}
+
+.neon-shadow-amber {
+  box-shadow:
+    0 0  8px rgba(var(--fx-amber-rgb), 0.5),
+    0 0 16px rgba(var(--fx-amber-rgb), 0.3),
+    0 0 32px rgba(var(--fx-amber-rgb), 0.15);
+}
+
+/* -- Neon flicker animation ------------------------------------------------ */
+@keyframes neon-flicker {
+  0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% {
+    opacity: 1;
+  }
+  20%, 24%, 55% {
+    opacity: 0.6;
+  }
+}
+
+.neon-flicker {
+  animation: neon-flicker 3s linear infinite;
+}
+
+/* -- Neon sign warm-up animation ------------------------------------------- */
+@keyframes neon-warmup {
+  0% {
+    opacity: 0.1;
+    filter: brightness(0.3);
+  }
+  10% {
+    opacity: 0.8;
+    filter: brightness(0.9);
+  }
+  15% {
+    opacity: 0.2;
+    filter: brightness(0.4);
+  }
+  30% {
+    opacity: 0.9;
+    filter: brightness(1);
+  }
+  35% {
+    opacity: 0.3;
+    filter: brightness(0.5);
+  }
+  50% {
+    opacity: 1;
+    filter: brightness(1);
+  }
+  100% {
+    opacity: 1;
+    filter: brightness(1);
+  }
+}
+
+.neon-warmup {
+  animation: neon-warmup 2s ease-out forwards;
+}
+
+
+/* ============================================================================
+   7. Frosted Glass Cards
+   ============================================================================ */
+
+.frost {
+  position: relative;
+  background: rgba(255, 255, 255, 0.05);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.frost::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.10) 0%,
+    rgba(255, 255, 255, 0.02) 40%,
+    rgba(255, 255, 255, 0.00) 60%,
+    rgba(255, 255, 255, 0.06) 100%
+  );
+  pointer-events: none;
+}
+
+.frost::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.20) 30%,
+    rgba(255, 255, 255, 0.20) 70%,
+    transparent 100%
+  );
+  pointer-events: none;
+}
+
+/* -- Frost color tints ----------------------------------------------------- */
+.frost-cyan {
+  background: rgba(var(--fx-cyan-rgb), 0.06);
+  border-color: rgba(var(--fx-cyan-rgb), 0.18);
+}
+
+.frost-purple {
+  background: rgba(var(--fx-purple-rgb), 0.06);
+  border-color: rgba(var(--fx-purple-rgb), 0.18);
+}
+
+.frost-green {
+  background: rgba(var(--fx-green-rgb), 0.06);
+  border-color: rgba(var(--fx-green-rgb), 0.18);
+}
+
+.frost-red {
+  background: rgba(var(--fx-red-rgb), 0.06);
+  border-color: rgba(var(--fx-red-rgb), 0.18);
+}
+
+.frost-amber {
+  background: rgba(var(--fx-amber-rgb), 0.06);
+  border-color: rgba(var(--fx-amber-rgb), 0.18);
+}
+
+/* -- Frost intensity variants ---------------------------------------------- */
+.frost-light {
+  background: rgba(255, 255, 255, 0.08);
+  -webkit-backdrop-filter: blur(12px) saturate(150%);
+  backdrop-filter: blur(12px) saturate(150%);
+}
+
+.frost-heavy {
+  background: rgba(255, 255, 255, 0.03);
+  -webkit-backdrop-filter: blur(40px) saturate(200%);
+  backdrop-filter: blur(40px) saturate(200%);
+}
+
+/* -- Frost with no-backdrop fallback --------------------------------------- */
+@supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  .frost,
+  .frost-light,
+  .frost-heavy {
+    background: rgba(26, 31, 46, 0.92);
+  }
+}
+
+
+/* ============================================================================
+   8. Mesh Gradients
+   ============================================================================ */
+
+/* -- Mesh 01: Cyber Night -------------------------------------------------- */
+.mesh-cyber-night {
+  background:
+    radial-gradient(ellipse at 10% 20%,  rgba(var(--fx-cyan-rgb), 0.25) 0%, transparent 50%),
+    radial-gradient(ellipse at 90% 80%,  rgba(var(--fx-purple-rgb), 0.25) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 50%,  rgba(var(--fx-cyan-rgb), 0.08) 0%, transparent 70%),
+    var(--fx-bg-dark);
+}
+
+/* -- Mesh 02: Toxic Haze --------------------------------------------------- */
+.mesh-toxic-haze {
+  background:
+    radial-gradient(ellipse at 20% 80%,  rgba(var(--fx-green-rgb), 0.30) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%,  rgba(var(--fx-cyan-rgb), 0.20) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 100%, rgba(var(--fx-green-rgb), 0.10) 0%, transparent 60%),
+    var(--fx-bg-dark);
+}
+
+/* -- Mesh 03: Infrared ----------------------------------------------------- */
+.mesh-infrared {
+  background:
+    radial-gradient(ellipse at 30% 10%,  rgba(var(--fx-red-rgb), 0.30) 0%, transparent 50%),
+    radial-gradient(ellipse at 70% 90%,  rgba(var(--fx-amber-rgb), 0.25) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 50%,  rgba(var(--fx-red-rgb), 0.08) 0%, transparent 60%),
+    var(--fx-bg-dark);
+}
+
+/* -- Mesh 04: Aurora ------------------------------------------------------- */
+.mesh-aurora {
+  background:
+    radial-gradient(ellipse at 10% 50%,  rgba(var(--fx-cyan-rgb), 0.20) 0%, transparent 50%),
+    radial-gradient(ellipse at 40% 20%,  rgba(var(--fx-green-rgb), 0.25) 0%, transparent 40%),
+    radial-gradient(ellipse at 70% 70%,  rgba(var(--fx-purple-rgb), 0.20) 0%, transparent 50%),
+    radial-gradient(ellipse at 90% 30%,  rgba(var(--fx-cyan-rgb), 0.15) 0%, transparent 40%),
+    var(--fx-bg-dark);
+}
+
+/* -- Mesh 05: Sunset Protocol ---------------------------------------------- */
+.mesh-sunset-protocol {
+  background:
+    radial-gradient(ellipse at 15% 85%,  rgba(var(--fx-purple-rgb), 0.30) 0%, transparent 50%),
+    radial-gradient(ellipse at 85% 15%,  rgba(var(--fx-amber-rgb), 0.25) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 50%,  rgba(var(--fx-red-rgb), 0.12) 0%, transparent 60%),
+    var(--fx-bg-dark);
+}
+
+/* -- Mesh 06: Deep Space --------------------------------------------------- */
+.mesh-deep-space {
+  background:
+    radial-gradient(ellipse at 5% 5%,    rgba(var(--fx-purple-rgb), 0.15) 0%, transparent 50%),
+    radial-gradient(ellipse at 95% 95%,  rgba(var(--fx-purple-rgb), 0.15) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 50%,  rgba(var(--fx-cyan-rgb), 0.05) 0%, transparent 80%),
+    radial-gradient(ellipse at 30% 70%,  rgba(0, 20, 60, 0.40) 0%, transparent 50%),
+    var(--fx-bg-dark);
+}
+
+/* -- Mesh 07: Electric Field ----------------------------------------------- */
+.mesh-electric-field {
+  background:
+    radial-gradient(circle at 20% 30%,   rgba(var(--fx-cyan-rgb), 0.35) 0%, transparent 40%),
+    radial-gradient(circle at 80% 70%,   rgba(var(--fx-cyan-rgb), 0.35) 0%, transparent 40%),
+    radial-gradient(circle at 50% 50%,   rgba(var(--fx-purple-rgb), 0.10) 0%, transparent 60%),
+    var(--fx-bg-dark);
+}
+
+/* -- Mesh 08: Ember -------------------------------------------------------- */
+.mesh-ember {
+  background:
+    radial-gradient(ellipse at 25% 75%,  rgba(var(--fx-red-rgb), 0.25) 0%, transparent 50%),
+    radial-gradient(ellipse at 75% 25%,  rgba(var(--fx-amber-rgb), 0.30) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 100%, rgba(var(--fx-red-rgb), 0.15) 0%, transparent 40%),
+    radial-gradient(ellipse at 50% 0%,   rgba(var(--fx-amber-rgb), 0.10) 0%, transparent 40%),
+    var(--fx-bg-dark);
+}
+
+/* -- Mesh 09: Matrix ------------------------------------------------------- */
+.mesh-matrix {
+  background:
+    radial-gradient(ellipse at 10% 10%,  rgba(var(--fx-green-rgb), 0.20) 0%, transparent 50%),
+    radial-gradient(ellipse at 90% 90%,  rgba(var(--fx-green-rgb), 0.20) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 50%,  rgba(var(--fx-green-rgb), 0.06) 0%, transparent 70%),
+    radial-gradient(ellipse at 30% 60%,  rgba(0, 40, 20, 0.30) 0%, transparent 50%),
+    var(--fx-bg-dark);
+}
+
+/* -- Mesh 10: Midnight Spectrum -------------------------------------------- */
+.mesh-midnight-spectrum {
+  background:
+    radial-gradient(ellipse at 0% 50%,   rgba(var(--fx-red-rgb), 0.18) 0%, transparent 40%),
+    radial-gradient(ellipse at 25% 50%,  rgba(var(--fx-amber-rgb), 0.14) 0%, transparent 35%),
+    radial-gradient(ellipse at 50% 50%,  rgba(var(--fx-green-rgb), 0.14) 0%, transparent 35%),
+    radial-gradient(ellipse at 75% 50%,  rgba(var(--fx-cyan-rgb), 0.14) 0%, transparent 35%),
+    radial-gradient(ellipse at 100% 50%, rgba(var(--fx-purple-rgb), 0.18) 0%, transparent 40%),
+    var(--fx-bg-dark);
+}
+
+
+/* ============================================================================
+   9. Noise / Grain Textures
+   ============================================================================ */
+
+/* -- Inline SVG noise filter ----------------------------------------------- */
+.grain {
+  position: relative;
+  isolation: isolate;
+}
+
+.grain::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='grain'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23grain)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 300px 300px;
+  opacity: 0.06;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* -- Grain intensity variants ---------------------------------------------- */
+.grain-light::after {
+  opacity: 0.03;
+}
+
+.grain-heavy::after {
+  opacity: 0.12;
+}
+
+.grain-ultra::after {
+  opacity: 0.20;
+}
+
+/* -- Grain with animation for dynamic noise -------------------------------- */
+@keyframes grain-shift {
+  0%   { transform: translate(0, 0); }
+  10%  { transform: translate(-2%, -3%); }
+  20%  { transform: translate(3%, 1%); }
+  30%  { transform: translate(-1%, 4%); }
+  40%  { transform: translate(4%, -2%); }
+  50%  { transform: translate(-3%, 2%); }
+  60%  { transform: translate(1%, -4%); }
+  70%  { transform: translate(-4%, 3%); }
+  80%  { transform: translate(2%, -1%); }
+  90%  { transform: translate(-2%, 4%); }
+  100% { transform: translate(0, 0); }
+}
+
+.grain-animated::after {
+  animation: grain-shift 0.5s steps(8) infinite;
+  inset: -10%;
+}
+
+
+/* ============================================================================
+   10. Grid Patterns
+   ============================================================================ */
+
+/* -- Dot Grid -------------------------------------------------------------- */
+.grid-dots {
+  background-image:
+    radial-gradient(circle, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.grid-dots-sm {
+  background-image:
+    radial-gradient(circle, rgba(255, 255, 255, 0.08) 0.5px, transparent 0.5px);
+  background-size: 12px 12px;
+}
+
+.grid-dots-lg {
+  background-image:
+    radial-gradient(circle, rgba(255, 255, 255, 0.08) 1.5px, transparent 1.5px);
+  background-size: 40px 40px;
+}
+
+.grid-dots-cyan {
+  background-image:
+    radial-gradient(circle, rgba(var(--fx-cyan-rgb), 0.15) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.grid-dots-purple {
+  background-image:
+    radial-gradient(circle, rgba(var(--fx-purple-rgb), 0.15) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* -- Line Grid ------------------------------------------------------------- */
+.grid-lines {
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+.grid-lines-sm {
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+
+.grid-lines-lg {
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  background-size: 64px 64px;
+}
+
+.grid-lines-cyan {
+  background-image:
+    linear-gradient(to right, rgba(var(--fx-cyan-rgb), 0.08) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(var(--fx-cyan-rgb), 0.08) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+.grid-lines-purple {
+  background-image:
+    linear-gradient(to right, rgba(var(--fx-purple-rgb), 0.08) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(var(--fx-purple-rgb), 0.08) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+/* -- Cross Grid ------------------------------------------------------------ */
+.grid-cross {
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+  background-size: 32px 32px;
+  background-position: center center;
+}
+
+.grid-cross::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(circle, rgba(255, 255, 255, 0.10) 1px, transparent 1px);
+  background-size: 32px 32px;
+  pointer-events: none;
+}
+
+.grid-cross-sm {
+  background-size: 16px 16px;
+}
+
+.grid-cross-sm::before {
+  background-size: 16px 16px;
+}
+
+.grid-cross-lg {
+  background-size: 64px 64px;
+}
+
+.grid-cross-lg::before {
+  background-size: 64px 64px;
+}
+
+/* -- Grid with perspective (vanishing point) ------------------------------- */
+.grid-perspective {
+  background-image:
+    linear-gradient(to right, rgba(var(--fx-cyan-rgb), 0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(var(--fx-cyan-rgb), 0.06) 1px, transparent 1px);
+  background-size: 48px 48px;
+  transform: perspective(500px) rotateX(45deg);
+  transform-origin: bottom center;
+}
+
+
+/* ============================================================================
+   11. Scanline Effects
+   ============================================================================ */
+
+.scanlines {
+  position: relative;
+}
+
+.scanlines::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 1px,
+    rgba(0, 0, 0, 0.12) 1px,
+    rgba(0, 0, 0, 0.12) 2px
+  );
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* -- Scanline density variants --------------------------------------------- */
+.scanlines-dense::after {
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 0.5px,
+    rgba(0, 0, 0, 0.15) 0.5px,
+    rgba(0, 0, 0, 0.15) 1px
+  );
+}
+
+.scanlines-sparse::after {
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 3px,
+    rgba(0, 0, 0, 0.08) 3px,
+    rgba(0, 0, 0, 0.08) 4px
+  );
+}
+
+/* -- Scanline color variants ----------------------------------------------- */
+.scanlines-cyan::after {
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 1px,
+    rgba(var(--fx-cyan-rgb), 0.05) 1px,
+    rgba(var(--fx-cyan-rgb), 0.05) 2px
+  );
+}
+
+.scanlines-green::after {
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 1px,
+    rgba(var(--fx-green-rgb), 0.05) 1px,
+    rgba(var(--fx-green-rgb), 0.05) 2px
+  );
+}
+
+/* -- Animated scanline sweep ----------------------------------------------- */
+@keyframes scanline-sweep {
+  0%   { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
+}
+
+.scanlines-sweep {
+  position: relative;
+  overflow: hidden;
+}
+
+.scanlines-sweep::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 100%;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(var(--fx-cyan-rgb), 0.04) 45%,
+    rgba(var(--fx-cyan-rgb), 0.08) 50%,
+    rgba(var(--fx-cyan-rgb), 0.04) 55%,
+    transparent 100%
+  );
+  animation: scanline-sweep 4s linear infinite;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* -- CRT distortion overlay ------------------------------------------------ */
+.crt {
+  position: relative;
+}
+
+.crt::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 60%,
+    rgba(0, 0, 0, 0.30) 100%
+  );
+  pointer-events: none;
+  z-index: 3;
+}
+
+
+/* ============================================================================
+   12. Holographic
+   ============================================================================ */
+
+@keyframes holo-shimmer {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.holo {
+  background: linear-gradient(
+    135deg,
+    rgba(var(--fx-red-rgb), 0.3)    0%,
+    rgba(var(--fx-amber-rgb), 0.3)  14%,
+    rgba(var(--fx-green-rgb), 0.3)  28%,
+    rgba(var(--fx-cyan-rgb), 0.3)   42%,
+    rgba(var(--fx-purple-rgb), 0.3) 57%,
+    rgba(var(--fx-red-rgb), 0.3)    71%,
+    rgba(var(--fx-amber-rgb), 0.3)  85%,
+    rgba(var(--fx-green-rgb), 0.3)  100%
+  );
+  background-size: 300% 300%;
+  animation: holo-shimmer 6s ease-in-out infinite;
+}
+
+/* -- Holographic text ------------------------------------------------------ */
+.holo-text {
+  background: linear-gradient(
+    90deg,
+    var(--fx-red)    0%,
+    var(--fx-amber)  20%,
+    var(--fx-green)  40%,
+    var(--fx-cyan)   60%,
+    var(--fx-purple) 80%,
+    var(--fx-red)    100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: holo-shimmer 4s linear infinite;
+}
+
+/* -- Holographic border ---------------------------------------------------- */
+.holo-border {
+  position: relative;
+  border-radius: 12px;
+}
+
+.holo-border::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 2px;
+  background: linear-gradient(
+    135deg,
+    var(--fx-red)    0%,
+    var(--fx-amber)  20%,
+    var(--fx-green)  40%,
+    var(--fx-cyan)   60%,
+    var(--fx-purple) 80%,
+    var(--fx-red)    100%
+  );
+  background-size: 300% 300%;
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  animation: holo-shimmer 4s linear infinite;
+  pointer-events: none;
+}
+
+/* -- Holographic card ------------------------------------------------------ */
+.holo-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.holo-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(var(--fx-red-rgb), 0.08)    0%,
+    rgba(var(--fx-amber-rgb), 0.08)  16%,
+    rgba(var(--fx-green-rgb), 0.08)  33%,
+    rgba(var(--fx-cyan-rgb), 0.08)   50%,
+    rgba(var(--fx-purple-rgb), 0.08) 67%,
+    rgba(var(--fx-red-rgb), 0.08)    83%,
+    rgba(var(--fx-amber-rgb), 0.08)  100%
+  );
+  background-size: 400% 400%;
+  animation: holo-shimmer 8s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* -- Holographic speed variants -------------------------------------------- */
+.holo-fast {
+  animation-duration: 2s !important;
+}
+
+.holo-slow {
+  animation-duration: 12s !important;
+}
+
+
+/* ============================================================================
+   13. Depth / Elevation
+   ============================================================================ */
+
+.elevation-1 {
+  box-shadow:
+    0 1px  2px rgba(0, 0, 0, 0.30),
+    0 1px  3px rgba(0, 0, 0, 0.15);
+  transform: translateY(0);
+  transition:
+    box-shadow var(--fx-duration-normal) var(--fx-easing),
+    transform var(--fx-duration-normal) var(--fx-easing);
+}
+
+.elevation-2 {
+  box-shadow:
+    0 3px  6px rgba(0, 0, 0, 0.35),
+    0 2px  4px rgba(0, 0, 0, 0.20);
+  transform: translateY(-1px);
+  transition:
+    box-shadow var(--fx-duration-normal) var(--fx-easing),
+    transform var(--fx-duration-normal) var(--fx-easing);
+}
+
+.elevation-3 {
+  box-shadow:
+    0 6px 12px rgba(0, 0, 0, 0.40),
+    0 4px  6px rgba(0, 0, 0, 0.25);
+  transform: translateY(-2px);
+  transition:
+    box-shadow var(--fx-duration-normal) var(--fx-easing),
+    transform var(--fx-duration-normal) var(--fx-easing);
+}
+
+.elevation-4 {
+  box-shadow:
+    0 10px 20px rgba(0, 0, 0, 0.45),
+    0  6px 10px rgba(0, 0, 0, 0.30);
+  transform: translateY(-3px);
+  transition:
+    box-shadow var(--fx-duration-normal) var(--fx-easing),
+    transform var(--fx-duration-normal) var(--fx-easing);
+}
+
+.elevation-5 {
+  box-shadow:
+    0 16px 32px rgba(0, 0, 0, 0.50),
+    0  8px 16px rgba(0, 0, 0, 0.35),
+    0  4px  8px rgba(0, 0, 0, 0.20);
+  transform: translateY(-4px);
+  transition:
+    box-shadow var(--fx-duration-normal) var(--fx-easing),
+    transform var(--fx-duration-normal) var(--fx-easing);
+}
+
+/* -- Elevation hover variants ---------------------------------------------- */
+.elevation-hover-1:hover { box-shadow: 0 1px 2px rgba(0,0,0,0.30), 0 1px 3px rgba(0,0,0,0.15); transform: translateY(0); }
+.elevation-hover-2:hover { box-shadow: 0 3px 6px rgba(0,0,0,0.35), 0 2px 4px rgba(0,0,0,0.20); transform: translateY(-1px); }
+.elevation-hover-3:hover { box-shadow: 0 6px 12px rgba(0,0,0,0.40), 0 4px 6px rgba(0,0,0,0.25); transform: translateY(-2px); }
+.elevation-hover-4:hover { box-shadow: 0 10px 20px rgba(0,0,0,0.45), 0 6px 10px rgba(0,0,0,0.30); transform: translateY(-3px); }
+.elevation-hover-5:hover { box-shadow: 0 16px 32px rgba(0,0,0,0.50), 0 8px 16px rgba(0,0,0,0.35), 0 4px 8px rgba(0,0,0,0.20); transform: translateY(-4px); }
+
+/* -- Elevation with colored shadow ----------------------------------------- */
+.elevation-cyan {
+  box-shadow:
+    0 6px 12px rgba(var(--fx-cyan-rgb), 0.15),
+    0 3px  6px rgba(0, 0, 0, 0.30);
+}
+
+.elevation-purple {
+  box-shadow:
+    0 6px 12px rgba(var(--fx-purple-rgb), 0.15),
+    0 3px  6px rgba(0, 0, 0, 0.30);
+}
+
+.elevation-green {
+  box-shadow:
+    0 6px 12px rgba(var(--fx-green-rgb), 0.15),
+    0 3px  6px rgba(0, 0, 0, 0.30);
+}
+
+.elevation-red {
+  box-shadow:
+    0 6px 12px rgba(var(--fx-red-rgb), 0.15),
+    0 3px  6px rgba(0, 0, 0, 0.30);
+}
+
+.elevation-amber {
+  box-shadow:
+    0 6px 12px rgba(var(--fx-amber-rgb), 0.15),
+    0 3px  6px rgba(0, 0, 0, 0.30);
+}
+
+/* -- Elevation spread variants --------------------------------------------- */
+.elevation-tight {
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.50);
+}
+
+.elevation-wide {
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.30),
+    0 4px 16px rgba(0, 0, 0, 0.20),
+    0 2px  8px rgba(0, 0, 0, 0.15);
+}
+
+.elevation-diffuse {
+  box-shadow:
+    0 12px 48px rgba(0, 0, 0, 0.20),
+    0  4px 16px rgba(0, 0, 0, 0.10);
+}
+
+
+/* ============================================================================
+   14. Blur Backgrounds
+   ============================================================================ */
+
+.blur-sm {
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+}
+
+.blur-md {
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+
+.blur-lg {
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+}
+
+.blur-xl {
+  -webkit-backdrop-filter: blur(24px);
+  backdrop-filter: blur(24px);
+}
+
+.blur-2xl {
+  -webkit-backdrop-filter: blur(40px);
+  backdrop-filter: blur(40px);
+}
+
+.blur-3xl {
+  -webkit-backdrop-filter: blur(64px);
+  backdrop-filter: blur(64px);
+}
+
+/* -- Blur fallbacks for browsers without backdrop-filter -------------------- */
+@supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  .blur-sm  { background: rgba(10, 14, 23, 0.80); }
+  .blur-md  { background: rgba(10, 14, 23, 0.85); }
+  .blur-lg  { background: rgba(10, 14, 23, 0.88); }
+  .blur-xl  { background: rgba(10, 14, 23, 0.90); }
+  .blur-2xl { background: rgba(10, 14, 23, 0.92); }
+  .blur-3xl { background: rgba(10, 14, 23, 0.95); }
+}
+
+/* -- Element blur (not backdrop) ------------------------------------------- */
+.blur-element-sm  { filter: blur(4px); }
+.blur-element-md  { filter: blur(8px); }
+.blur-element-lg  { filter: blur(16px); }
+.blur-element-xl  { filter: blur(24px); }
+.blur-element-2xl { filter: blur(40px); }
+.blur-element-3xl { filter: blur(64px); }
+
+/* -- Blur with saturation boost -------------------------------------------- */
+.blur-saturate-sm {
+  -webkit-backdrop-filter: blur(4px) saturate(150%);
+  backdrop-filter: blur(4px) saturate(150%);
+}
+
+.blur-saturate-md {
+  -webkit-backdrop-filter: blur(8px) saturate(180%);
+  backdrop-filter: blur(8px) saturate(180%);
+}
+
+.blur-saturate-lg {
+  -webkit-backdrop-filter: blur(16px) saturate(200%);
+  backdrop-filter: blur(16px) saturate(200%);
+}
+
+
+/* ============================================================================
+   15. Color Overlays
+   ============================================================================ */
+
+.overlay-dark {
+  position: relative;
+}
+
+.overlay-dark::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: rgba(0, 0, 0, 0.50);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.overlay-light {
+  position: relative;
+}
+
+.overlay-light::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: rgba(255, 255, 255, 0.10);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.overlay-accent {
+  position: relative;
+}
+
+.overlay-accent::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: rgba(var(--fx-cyan-rgb), 0.15);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* -- Overlay opacity variants ---------------------------------------------- */
+.overlay-dark-10::after  { background: rgba(0, 0, 0, 0.10); }
+.overlay-dark-20::after  { background: rgba(0, 0, 0, 0.20); }
+.overlay-dark-30::after  { background: rgba(0, 0, 0, 0.30); }
+.overlay-dark-40::after  { background: rgba(0, 0, 0, 0.40); }
+.overlay-dark-50::after  { background: rgba(0, 0, 0, 0.50); }
+.overlay-dark-60::after  { background: rgba(0, 0, 0, 0.60); }
+.overlay-dark-70::after  { background: rgba(0, 0, 0, 0.70); }
+.overlay-dark-80::after  { background: rgba(0, 0, 0, 0.80); }
+.overlay-dark-90::after  { background: rgba(0, 0, 0, 0.90); }
+
+.overlay-light-5::after  { background: rgba(255, 255, 255, 0.05); }
+.overlay-light-10::after { background: rgba(255, 255, 255, 0.10); }
+.overlay-light-15::after { background: rgba(255, 255, 255, 0.15); }
+.overlay-light-20::after { background: rgba(255, 255, 255, 0.20); }
+.overlay-light-25::after { background: rgba(255, 255, 255, 0.25); }
+
+/* -- Overlay color variants ------------------------------------------------ */
+.overlay-cyan {
+  position: relative;
+}
+
+.overlay-cyan::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: rgba(var(--fx-cyan-rgb), 0.15);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.overlay-purple {
+  position: relative;
+}
+
+.overlay-purple::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: rgba(var(--fx-purple-rgb), 0.15);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.overlay-green {
+  position: relative;
+}
+
+.overlay-green::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: rgba(var(--fx-green-rgb), 0.15);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.overlay-red {
+  position: relative;
+}
+
+.overlay-red::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: rgba(var(--fx-red-rgb), 0.15);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.overlay-amber {
+  position: relative;
+}
+
+.overlay-amber::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: rgba(var(--fx-amber-rgb), 0.15);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* -- Gradient overlay ------------------------------------------------------ */
+.overlay-gradient-bottom {
+  position: relative;
+}
+
+.overlay-gradient-bottom::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.60) 100%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.overlay-gradient-top {
+  position: relative;
+}
+
+.overlay-gradient-top::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(to top, transparent 0%, rgba(0, 0, 0, 0.60) 100%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.overlay-gradient-radial {
+  position: relative;
+}
+
+.overlay-gradient-radial::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(ellipse at center, transparent 30%, rgba(0, 0, 0, 0.50) 100%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+
+/* ============================================================================
+   16. Border Animations
+   ============================================================================ */
+
+/* -- Border Pulse ---------------------------------------------------------- */
+@keyframes border-pulse {
+  0%, 100% {
+    border-color: rgba(var(--fx-cyan-rgb), 0.3);
+    box-shadow: 0 0 0 0 rgba(var(--fx-cyan-rgb), 0.0);
+  }
+  50% {
+    border-color: rgba(var(--fx-cyan-rgb), 0.8);
+    box-shadow: 0 0 8px 2px rgba(var(--fx-cyan-rgb), 0.2);
+  }
+}
+
+.border-pulse {
+  border: 1px solid rgba(var(--fx-cyan-rgb), 0.3);
+  animation: border-pulse 2s ease-in-out infinite;
+}
+
+.border-pulse-purple {
+  animation-name: border-pulse-purple-kf;
+}
+
+@keyframes border-pulse-purple-kf {
+  0%, 100% {
+    border-color: rgba(var(--fx-purple-rgb), 0.3);
+    box-shadow: 0 0 0 0 rgba(var(--fx-purple-rgb), 0.0);
+  }
+  50% {
+    border-color: rgba(var(--fx-purple-rgb), 0.8);
+    box-shadow: 0 0 8px 2px rgba(var(--fx-purple-rgb), 0.2);
+  }
+}
+
+.border-pulse-green {
+  animation-name: border-pulse-green-kf;
+}
+
+@keyframes border-pulse-green-kf {
+  0%, 100% {
+    border-color: rgba(var(--fx-green-rgb), 0.3);
+    box-shadow: 0 0 0 0 rgba(var(--fx-green-rgb), 0.0);
+  }
+  50% {
+    border-color: rgba(var(--fx-green-rgb), 0.8);
+    box-shadow: 0 0 8px 2px rgba(var(--fx-green-rgb), 0.2);
+  }
+}
+
+.border-pulse-red {
+  animation-name: border-pulse-red-kf;
+}
+
+@keyframes border-pulse-red-kf {
+  0%, 100% {
+    border-color: rgba(var(--fx-red-rgb), 0.3);
+    box-shadow: 0 0 0 0 rgba(var(--fx-red-rgb), 0.0);
+  }
+  50% {
+    border-color: rgba(var(--fx-red-rgb), 0.8);
+    box-shadow: 0 0 8px 2px rgba(var(--fx-red-rgb), 0.2);
+  }
+}
+
+.border-pulse-amber {
+  animation-name: border-pulse-amber-kf;
+}
+
+@keyframes border-pulse-amber-kf {
+  0%, 100% {
+    border-color: rgba(var(--fx-amber-rgb), 0.3);
+    box-shadow: 0 0 0 0 rgba(var(--fx-amber-rgb), 0.0);
+  }
+  50% {
+    border-color: rgba(var(--fx-amber-rgb), 0.8);
+    box-shadow: 0 0 8px 2px rgba(var(--fx-amber-rgb), 0.2);
+  }
+}
+
+/* -- Animated Dashed Border ------------------------------------------------ */
+@keyframes border-dash-animate {
+  0% {
+    stroke-dashoffset: 0;
+  }
+  100% {
+    stroke-dashoffset: -100;
+  }
+}
+
+.border-dash-animate {
+  border: none;
+  position: relative;
+}
+
+.border-dash-animate::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 2px dashed rgba(var(--fx-cyan-rgb), 0.5);
+  border-radius: inherit;
+  animation: border-dash-march 3s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes border-dash-march {
+  0% {
+    border-color: rgba(var(--fx-cyan-rgb), 0.3);
+  }
+  25% {
+    border-color: rgba(var(--fx-cyan-rgb), 0.6);
+  }
+  50% {
+    border-color: rgba(var(--fx-cyan-rgb), 0.3);
+  }
+  75% {
+    border-color: rgba(var(--fx-cyan-rgb), 0.6);
+  }
+  100% {
+    border-color: rgba(var(--fx-cyan-rgb), 0.3);
+  }
+}
+
+/* -- Rotating Gradient Border ---------------------------------------------- */
+@keyframes border-gradient-rotate {
+  0% {
+    --gradient-angle: 0deg;
+  }
+  100% {
+    --gradient-angle: 360deg;
+  }
+}
+
+@property --gradient-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+.border-gradient-rotate {
+  position: relative;
+  border-radius: 12px;
+  isolation: isolate;
+}
+
+.border-gradient-rotate::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 2px;
+  background: conic-gradient(
+    from var(--gradient-angle),
+    var(--fx-cyan),
+    var(--fx-purple),
+    var(--fx-green),
+    var(--fx-amber),
+    var(--fx-red),
+    var(--fx-cyan)
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  animation: border-gradient-rotate 4s linear infinite;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* -- Border gradient rotate speed variants --------------------------------- */
+.border-gradient-rotate-fast::before {
+  animation-duration: 2s;
+}
+
+.border-gradient-rotate-slow::before {
+  animation-duration: 8s;
+}
+
+/* -- Marching ants border -------------------------------------------------- */
+@keyframes marching-ants {
+  0% {
+    background-position: 0 0, 100% 0, 100% 100%, 0 100%;
+  }
+  100% {
+    background-position: 20px 0, 100% 20px, calc(100% - 20px) 100%, 0 calc(100% - 20px);
+  }
+}
+
+.border-marching-ants {
+  background-image:
+    linear-gradient(90deg,  rgba(var(--fx-cyan-rgb), 0.6) 50%, transparent 50%),
+    linear-gradient(0deg,   rgba(var(--fx-cyan-rgb), 0.6) 50%, transparent 50%),
+    linear-gradient(90deg,  rgba(var(--fx-cyan-rgb), 0.6) 50%, transparent 50%),
+    linear-gradient(0deg,   rgba(var(--fx-cyan-rgb), 0.6) 50%, transparent 50%);
+  background-size: 10px 1px, 1px 10px, 10px 1px, 1px 10px;
+  background-repeat: repeat-x, repeat-y, repeat-x, repeat-y;
+  background-position: 0 0, 100% 0, 100% 100%, 0 100%;
+  animation: marching-ants 1s linear infinite;
+}
+
+
+/* ============================================================================
+   17. Cursor Effects
+   ============================================================================ */
+
+.cursor-pointer    { cursor: pointer; }
+.cursor-crosshair  { cursor: crosshair; }
+.cursor-none       { cursor: none; }
+.cursor-grab       { cursor: grab; }
+.cursor-grabbing   { cursor: grabbing; }
+.cursor-move       { cursor: move; }
+.cursor-text       { cursor: text; }
+.cursor-wait       { cursor: wait; }
+.cursor-help       { cursor: help; }
+.cursor-not-allowed { cursor: not-allowed; }
+.cursor-zoom-in    { cursor: zoom-in; }
+.cursor-zoom-out   { cursor: zoom-out; }
+.cursor-col-resize { cursor: col-resize; }
+.cursor-row-resize { cursor: row-resize; }
+
+/* -- Interactive cursor state ---------------------------------------------- */
+.cursor-grab:active {
+  cursor: grabbing;
+}
+
+
+/* ============================================================================
+   18. Selection Styles
+   ============================================================================ */
+
+::selection {
+  background: rgba(var(--fx-cyan-rgb), 0.35);
+  color: #ffffff;
+}
+
+::-moz-selection {
+  background: rgba(var(--fx-cyan-rgb), 0.35);
+  color: #ffffff;
+}
+
+/* -- Element-scoped selection colors --------------------------------------- */
+.selection-cyan::selection       { background: rgba(var(--fx-cyan-rgb), 0.35); }
+.selection-cyan::-moz-selection  { background: rgba(var(--fx-cyan-rgb), 0.35); }
+
+.selection-purple::selection       { background: rgba(var(--fx-purple-rgb), 0.35); }
+.selection-purple::-moz-selection  { background: rgba(var(--fx-purple-rgb), 0.35); }
+
+.selection-green::selection       { background: rgba(var(--fx-green-rgb), 0.35); }
+.selection-green::-moz-selection  { background: rgba(var(--fx-green-rgb), 0.35); }
+
+.selection-red::selection       { background: rgba(var(--fx-red-rgb), 0.35); }
+.selection-red::-moz-selection  { background: rgba(var(--fx-red-rgb), 0.35); }
+
+.selection-amber::selection       { background: rgba(var(--fx-amber-rgb), 0.35); }
+.selection-amber::-moz-selection  { background: rgba(var(--fx-amber-rgb), 0.35); }
+
+/* -- No-select utility ----------------------------------------------------- */
+.select-none {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+.select-all {
+  -webkit-user-select: all;
+  -moz-user-select: all;
+  -ms-user-select: all;
+  user-select: all;
+}
+
+.select-text {
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+}
+
+
+/* ============================================================================
+   19. Scrollbar Styles
+   ============================================================================ */
+
+/* -- Webkit scrollbar (Chrome, Edge, Safari) ------------------------------- */
+.scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.scrollbar::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.20);
+  border-radius: 4px;
+}
+
+.scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+.scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+  background-clip: content-box;
+}
+
+.scrollbar::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* -- Firefox scrollbar ----------------------------------------------------- */
+.scrollbar {
+  scrollbar-width: auto;
+  scrollbar-color: rgba(255, 255, 255, 0.15) rgba(0, 0, 0, 0.20);
+}
+
+/* -- Thin scrollbar -------------------------------------------------------- */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 2px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
+}
+
+/* -- Hidden scrollbar (still scrollable) ----------------------------------- */
+.scrollbar-hidden::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+.scrollbar-hidden {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+/* -- Colored scrollbar variants -------------------------------------------- */
+.scrollbar-cyan::-webkit-scrollbar-thumb {
+  background: rgba(var(--fx-cyan-rgb), 0.30);
+}
+
+.scrollbar-cyan::-webkit-scrollbar-thumb:hover {
+  background: rgba(var(--fx-cyan-rgb), 0.50);
+}
+
+.scrollbar-cyan {
+  scrollbar-color: rgba(var(--fx-cyan-rgb), 0.30) rgba(0, 0, 0, 0.20);
+}
+
+.scrollbar-purple::-webkit-scrollbar-thumb {
+  background: rgba(var(--fx-purple-rgb), 0.30);
+}
+
+.scrollbar-purple::-webkit-scrollbar-thumb:hover {
+  background: rgba(var(--fx-purple-rgb), 0.50);
+}
+
+.scrollbar-purple {
+  scrollbar-color: rgba(var(--fx-purple-rgb), 0.30) rgba(0, 0, 0, 0.20);
+}
+
+.scrollbar-green::-webkit-scrollbar-thumb {
+  background: rgba(var(--fx-green-rgb), 0.30);
+}
+
+.scrollbar-green::-webkit-scrollbar-thumb:hover {
+  background: rgba(var(--fx-green-rgb), 0.50);
+}
+
+.scrollbar-green {
+  scrollbar-color: rgba(var(--fx-green-rgb), 0.30) rgba(0, 0, 0, 0.20);
+}
+
+/* -- Scrollbar gutter stability -------------------------------------------- */
+.scrollbar-stable {
+  scrollbar-gutter: stable;
+}
+
+.scrollbar-stable-both {
+  scrollbar-gutter: stable both-edges;
+}
+
+
+/* ============================================================================
+   20. Focus Styles
+   ============================================================================ */
+
+/* -- Focus Ring ------------------------------------------------------------ */
+.focus-ring:focus,
+.focus-ring:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--fx-bg-dark),
+    0 0 0 4px var(--fx-cyan);
+}
+
+.focus-ring-purple:focus,
+.focus-ring-purple:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--fx-bg-dark),
+    0 0 0 4px var(--fx-purple);
+}
+
+.focus-ring-green:focus,
+.focus-ring-green:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--fx-bg-dark),
+    0 0 0 4px var(--fx-green);
+}
+
+.focus-ring-red:focus,
+.focus-ring-red:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--fx-bg-dark),
+    0 0 0 4px var(--fx-red);
+}
+
+.focus-ring-amber:focus,
+.focus-ring-amber:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--fx-bg-dark),
+    0 0 0 4px var(--fx-amber);
+}
+
+/* -- Focus Glow ------------------------------------------------------------ */
+.focus-glow:focus,
+.focus-glow:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--fx-bg-dark),
+    0 0 0 4px rgba(var(--fx-cyan-rgb), 0.6),
+    0 0 16px rgba(var(--fx-cyan-rgb), 0.3),
+    0 0 32px rgba(var(--fx-cyan-rgb), 0.15);
+}
+
+.focus-glow-purple:focus,
+.focus-glow-purple:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--fx-bg-dark),
+    0 0 0 4px rgba(var(--fx-purple-rgb), 0.6),
+    0 0 16px rgba(var(--fx-purple-rgb), 0.3),
+    0 0 32px rgba(var(--fx-purple-rgb), 0.15);
+}
+
+.focus-glow-green:focus,
+.focus-glow-green:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--fx-bg-dark),
+    0 0 0 4px rgba(var(--fx-green-rgb), 0.6),
+    0 0 16px rgba(var(--fx-green-rgb), 0.3),
+    0 0 32px rgba(var(--fx-green-rgb), 0.15);
+}
+
+.focus-glow-red:focus,
+.focus-glow-red:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--fx-bg-dark),
+    0 0 0 4px rgba(var(--fx-red-rgb), 0.6),
+    0 0 16px rgba(var(--fx-red-rgb), 0.3),
+    0 0 32px rgba(var(--fx-red-rgb), 0.15);
+}
+
+.focus-glow-amber:focus,
+.focus-glow-amber:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--fx-bg-dark),
+    0 0 0 4px rgba(var(--fx-amber-rgb), 0.6),
+    0 0 16px rgba(var(--fx-amber-rgb), 0.3),
+    0 0 32px rgba(var(--fx-amber-rgb), 0.15);
+}
+
+/* -- Focus within parent --------------------------------------------------- */
+.focus-within-ring:focus-within {
+  box-shadow:
+    0 0 0 2px var(--fx-bg-dark),
+    0 0 0 4px var(--fx-cyan);
+}
+
+.focus-within-glow:focus-within {
+  box-shadow:
+    0 0 0 2px var(--fx-bg-dark),
+    0 0 0 4px rgba(var(--fx-cyan-rgb), 0.6),
+    0 0 16px rgba(var(--fx-cyan-rgb), 0.3);
+}
+
+/* -- Focus transition ------------------------------------------------------ */
+.focus-ring,
+.focus-ring-purple,
+.focus-ring-green,
+.focus-ring-red,
+.focus-ring-amber,
+.focus-glow,
+.focus-glow-purple,
+.focus-glow-green,
+.focus-glow-red,
+.focus-glow-amber {
+  transition: box-shadow var(--fx-duration-fast) var(--fx-easing);
+}
+
+/* -- Suppress default outline ---------------------------------------------- */
+.focus-none:focus,
+.focus-none:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+
+/* ============================================================================
+   21. Clip Paths
+   ============================================================================ */
+
+.clip-triangle {
+  clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+}
+
+.clip-triangle-right {
+  clip-path: polygon(0% 0%, 100% 50%, 0% 100%);
+}
+
+.clip-triangle-left {
+  clip-path: polygon(100% 0%, 0% 50%, 100% 100%);
+}
+
+.clip-triangle-up {
+  clip-path: polygon(0% 100%, 50% 0%, 100% 100%);
+}
+
+.clip-pentagon {
+  clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);
+}
+
+.clip-hexagon {
+  clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+}
+
+.clip-star {
+  clip-path: polygon(
+    50% 0%,
+    61% 35%,
+    98% 35%,
+    68% 57%,
+    79% 91%,
+    50% 70%,
+    21% 91%,
+    32% 57%,
+    2% 35%,
+    39% 35%
+  );
+}
+
+.clip-star-6 {
+  clip-path: polygon(
+    50% 0%,
+    63% 25%,
+    93% 25%,
+    75% 50%,
+    93% 75%,
+    63% 75%,
+    50% 100%,
+    37% 75%,
+    7% 75%,
+    25% 50%,
+    7% 25%,
+    37% 25%
+  );
+}
+
+.clip-wave-top {
+  clip-path: polygon(
+    0% 10%,
+    5% 8%,
+    10% 5%,
+    15% 3%,
+    20% 2%,
+    25% 3%,
+    30% 5%,
+    35% 8%,
+    40% 10%,
+    45% 8%,
+    50% 5%,
+    55% 3%,
+    60% 2%,
+    65% 3%,
+    70% 5%,
+    75% 8%,
+    80% 10%,
+    85% 8%,
+    90% 5%,
+    95% 3%,
+    100% 2%,
+    100% 100%,
+    0% 100%
+  );
+}
+
+.clip-wave-bottom {
+  clip-path: polygon(
+    0% 0%,
+    100% 0%,
+    100% 90%,
+    95% 92%,
+    90% 95%,
+    85% 97%,
+    80% 98%,
+    75% 97%,
+    70% 95%,
+    65% 92%,
+    60% 90%,
+    55% 92%,
+    50% 95%,
+    45% 97%,
+    40% 98%,
+    35% 97%,
+    30% 95%,
+    25% 92%,
+    20% 90%,
+    15% 92%,
+    10% 95%,
+    5% 97%,
+    0% 98%
+  );
+}
+
+.clip-diagonal {
+  clip-path: polygon(0% 0%, 100% 0%, 100% 85%, 0% 100%);
+}
+
+.clip-diagonal-reverse {
+  clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 85%);
+}
+
+.clip-diamond {
+  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+}
+
+.clip-circle {
+  clip-path: circle(50% at 50% 50%);
+}
+
+.clip-ellipse {
+  clip-path: ellipse(50% 40% at 50% 50%);
+}
+
+.clip-octagon {
+  clip-path: polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%);
+}
+
+.clip-chevron-up {
+  clip-path: polygon(0% 100%, 50% 0%, 100% 100%, 100% 80%, 50% 20%, 0% 80%);
+}
+
+.clip-chevron-down {
+  clip-path: polygon(0% 0%, 50% 100%, 100% 0%, 100% 20%, 50% 80%, 0% 20%);
+}
+
+/* -- Clip-path with hover reveal ------------------------------------------- */
+.clip-reveal-circle {
+  clip-path: circle(0% at 50% 50%);
+  transition: clip-path var(--fx-duration-slow) var(--fx-easing);
+}
+
+.clip-reveal-circle:hover,
+.clip-reveal-circle.active {
+  clip-path: circle(75% at 50% 50%);
+}
+
+.clip-reveal-inset {
+  clip-path: inset(50%);
+  transition: clip-path var(--fx-duration-slow) var(--fx-easing);
+}
+
+.clip-reveal-inset:hover,
+.clip-reveal-inset.active {
+  clip-path: inset(0%);
+}
+
+
+/* ============================================================================
+   22. Mask Effects
+   ============================================================================ */
+
+.mask-fade-top {
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 30%);
+  mask-image: linear-gradient(to bottom, transparent 0%, black 30%);
+}
+
+.mask-fade-bottom {
+  -webkit-mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
+  mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
+}
+
+.mask-fade-left {
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 30%);
+  mask-image: linear-gradient(to right, transparent 0%, black 30%);
+}
+
+.mask-fade-right {
+  -webkit-mask-image: linear-gradient(to right, black 70%, transparent 100%);
+  mask-image: linear-gradient(to right, black 70%, transparent 100%);
+}
+
+.mask-fade-edges {
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    black 10%,
+    black 90%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    black 10%,
+    black 90%,
+    transparent 100%
+  );
+}
+
+.mask-fade-edges-vertical {
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    black 10%,
+    black 90%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    black 10%,
+    black 90%,
+    transparent 100%
+  );
+}
+
+.mask-fade-all-edges {
+  -webkit-mask-image:
+    linear-gradient(to right, transparent, black 10%, black 90%, transparent),
+    linear-gradient(to bottom, transparent, black 10%, black 90%, transparent);
+  -webkit-mask-composite: source-in;
+  mask-image:
+    linear-gradient(to right, transparent, black 10%, black 90%, transparent),
+    linear-gradient(to bottom, transparent, black 10%, black 90%, transparent);
+  mask-composite: intersect;
+}
+
+.mask-circle {
+  -webkit-mask-image: radial-gradient(circle at center, black 50%, transparent 70%);
+  mask-image: radial-gradient(circle at center, black 50%, transparent 70%);
+}
+
+.mask-circle-sharp {
+  -webkit-mask-image: radial-gradient(circle at center, black 49%, transparent 50%);
+  mask-image: radial-gradient(circle at center, black 49%, transparent 50%);
+}
+
+.mask-vignette {
+  -webkit-mask-image: radial-gradient(
+    ellipse at center,
+    black 40%,
+    rgba(0, 0, 0, 0.6) 65%,
+    transparent 100%
+  );
+  mask-image: radial-gradient(
+    ellipse at center,
+    black 40%,
+    rgba(0, 0, 0, 0.6) 65%,
+    transparent 100%
+  );
+}
+
+.mask-vignette-strong {
+  -webkit-mask-image: radial-gradient(
+    ellipse at center,
+    black 20%,
+    rgba(0, 0, 0, 0.4) 50%,
+    transparent 80%
+  );
+  mask-image: radial-gradient(
+    ellipse at center,
+    black 20%,
+    rgba(0, 0, 0, 0.4) 50%,
+    transparent 80%
+  );
+}
+
+/* -- Diagonal mask --------------------------------------------------------- */
+.mask-diagonal {
+  -webkit-mask-image: linear-gradient(135deg, black 50%, transparent 50%);
+  mask-image: linear-gradient(135deg, black 50%, transparent 50%);
+}
+
+.mask-diagonal-reverse {
+  -webkit-mask-image: linear-gradient(135deg, transparent 50%, black 50%);
+  mask-image: linear-gradient(135deg, transparent 50%, black 50%);
+}
+
+/* -- Mask with gradient softness ------------------------------------------- */
+.mask-fade-bottom-soft {
+  -webkit-mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
+  mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
+}
+
+.mask-fade-bottom-hard {
+  -webkit-mask-image: linear-gradient(to bottom, black 85%, transparent 95%);
+  mask-image: linear-gradient(to bottom, black 85%, transparent 95%);
+}
+
+/* -- Mask using radial for spotlight --------------------------------------- */
+.mask-spotlight {
+  -webkit-mask-image: radial-gradient(circle 200px at var(--x, 50%) var(--y, 50%), black, transparent);
+  mask-image: radial-gradient(circle 200px at var(--x, 50%) var(--y, 50%), black, transparent);
+}
+
+
+/* ============================================================================
+   23. Text Effects
+   ============================================================================ */
+
+/* -- Text Stroke ----------------------------------------------------------- */
+.text-stroke {
+  -webkit-text-stroke: 1px rgba(255, 255, 255, 0.7);
+  color: transparent;
+}
+
+.text-stroke-cyan {
+  -webkit-text-stroke: 1px var(--fx-cyan);
+  color: transparent;
+}
+
+.text-stroke-purple {
+  -webkit-text-stroke: 1px var(--fx-purple);
+  color: transparent;
+}
+
+.text-stroke-green {
+  -webkit-text-stroke: 1px var(--fx-green);
+  color: transparent;
+}
+
+.text-stroke-red {
+  -webkit-text-stroke: 1px var(--fx-red);
+  color: transparent;
+}
+
+.text-stroke-amber {
+  -webkit-text-stroke: 1px var(--fx-amber);
+  color: transparent;
+}
+
+.text-stroke-thin {
+  -webkit-text-stroke-width: 0.5px;
+}
+
+.text-stroke-thick {
+  -webkit-text-stroke-width: 2px;
+}
+
+.text-stroke-fill {
+  color: inherit;
+}
+
+/* -- Text Shadow Large ----------------------------------------------------- */
+.text-shadow-lg {
+  text-shadow:
+    0 2px  4px rgba(0, 0, 0, 0.40),
+    0 4px  8px rgba(0, 0, 0, 0.30),
+    0 8px 16px rgba(0, 0, 0, 0.20);
+}
+
+.text-shadow-sm {
+  text-shadow:
+    0 1px  2px rgba(0, 0, 0, 0.50);
+}
+
+.text-shadow-md {
+  text-shadow:
+    0 2px  4px rgba(0, 0, 0, 0.40),
+    0 4px  8px rgba(0, 0, 0, 0.20);
+}
+
+.text-shadow-xl {
+  text-shadow:
+    0  4px  8px rgba(0, 0, 0, 0.50),
+    0  8px 16px rgba(0, 0, 0, 0.35),
+    0 16px 32px rgba(0, 0, 0, 0.20);
+}
+
+/* -- Text Emboss ----------------------------------------------------------- */
+.text-emboss {
+  text-shadow:
+    0  1px 0 rgba(255, 255, 255, 0.08),
+    0 -1px 0 rgba(0, 0, 0, 0.50);
+}
+
+.text-emboss-strong {
+  text-shadow:
+    0  2px 0 rgba(255, 255, 255, 0.12),
+    0 -2px 0 rgba(0, 0, 0, 0.60),
+    0  1px 3px rgba(0, 0, 0, 0.30);
+}
+
+/* -- Text 3D --------------------------------------------------------------- */
+.text-3d {
+  text-shadow:
+    0 1px 0 rgba(0, 0, 0, 0.30),
+    0 2px 0 rgba(0, 0, 0, 0.25),
+    0 3px 0 rgba(0, 0, 0, 0.20),
+    0 4px 0 rgba(0, 0, 0, 0.15),
+    0 5px 0 rgba(0, 0, 0, 0.10),
+    0 6px 8px rgba(0, 0, 0, 0.40);
+}
+
+.text-3d-cyan {
+  text-shadow:
+    0 1px 0 rgba(var(--fx-cyan-rgb), 0.30),
+    0 2px 0 rgba(var(--fx-cyan-rgb), 0.25),
+    0 3px 0 rgba(var(--fx-cyan-rgb), 0.20),
+    0 4px 0 rgba(var(--fx-cyan-rgb), 0.15),
+    0 5px 0 rgba(var(--fx-cyan-rgb), 0.10),
+    0 6px 8px rgba(0, 0, 0, 0.40);
+}
+
+.text-3d-purple {
+  text-shadow:
+    0 1px 0 rgba(var(--fx-purple-rgb), 0.30),
+    0 2px 0 rgba(var(--fx-purple-rgb), 0.25),
+    0 3px 0 rgba(var(--fx-purple-rgb), 0.20),
+    0 4px 0 rgba(var(--fx-purple-rgb), 0.15),
+    0 5px 0 rgba(var(--fx-purple-rgb), 0.10),
+    0 6px 8px rgba(0, 0, 0, 0.40);
+}
+
+/* -- Gradient text --------------------------------------------------------- */
+.text-gradient-cyan-purple {
+  background: linear-gradient(135deg, var(--fx-cyan), var(--fx-purple));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.text-gradient-green-cyan {
+  background: linear-gradient(135deg, var(--fx-green), var(--fx-cyan));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.text-gradient-red-amber {
+  background: linear-gradient(135deg, var(--fx-red), var(--fx-amber));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.text-gradient-purple-red {
+  background: linear-gradient(135deg, var(--fx-purple), var(--fx-red));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.text-gradient-rainbow {
+  background: linear-gradient(
+    90deg,
+    var(--fx-red),
+    var(--fx-amber),
+    var(--fx-green),
+    var(--fx-cyan),
+    var(--fx-purple)
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* -- Glitch text ----------------------------------------------------------- */
+@keyframes text-glitch-1 {
+  0%, 100% { clip-path: inset(0 0 85% 0); transform: translate(-2px, 2px); }
+  20%      { clip-path: inset(20% 0 60% 0); transform: translate(2px, -1px); }
+  40%      { clip-path: inset(50% 0 30% 0); transform: translate(-1px, 1px); }
+  60%      { clip-path: inset(70% 0 10% 0); transform: translate(1px, -2px); }
+  80%      { clip-path: inset(40% 0 40% 0); transform: translate(-2px, 0px); }
+}
+
+@keyframes text-glitch-2 {
+  0%, 100% { clip-path: inset(85% 0 0 0); transform: translate(2px, -2px); }
+  20%      { clip-path: inset(60% 0 20% 0); transform: translate(-2px, 1px); }
+  40%      { clip-path: inset(30% 0 50% 0); transform: translate(1px, -1px); }
+  60%      { clip-path: inset(10% 0 70% 0); transform: translate(-1px, 2px); }
+  80%      { clip-path: inset(40% 0 40% 0); transform: translate(2px, 0px); }
+}
+
+.text-glitch {
+  position: relative;
+}
+
+.text-glitch::before,
+.text-glitch::after {
+  content: attr(data-text);
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.text-glitch::before {
+  color: var(--fx-cyan);
+  animation: text-glitch-1 3s infinite linear alternate-reverse;
+}
+
+.text-glitch::after {
+  color: var(--fx-red);
+  animation: text-glitch-2 3s infinite linear alternate-reverse;
+}
+
+/* -- Typewriter cursor blink ----------------------------------------------- */
+@keyframes text-cursor-blink {
+  0%, 100% { border-color: transparent; }
+  50%      { border-color: var(--fx-cyan); }
+}
+
+.text-cursor {
+  border-right: 2px solid var(--fx-cyan);
+  animation: text-cursor-blink 1s step-end infinite;
+}
+
+
+/* ============================================================================
+   24. Image Effects
+   ============================================================================ */
+
+.img-grayscale {
+  filter: grayscale(100%);
+  transition: filter var(--fx-duration-normal) var(--fx-easing);
+}
+
+.img-grayscale-50 {
+  filter: grayscale(50%);
+  transition: filter var(--fx-duration-normal) var(--fx-easing);
+}
+
+.img-grayscale:hover {
+  filter: grayscale(0%);
+}
+
+.img-sepia {
+  filter: sepia(100%);
+  transition: filter var(--fx-duration-normal) var(--fx-easing);
+}
+
+.img-sepia-50 {
+  filter: sepia(50%);
+  transition: filter var(--fx-duration-normal) var(--fx-easing);
+}
+
+.img-sepia:hover {
+  filter: sepia(0%);
+}
+
+.img-blur {
+  filter: blur(4px);
+  transition: filter var(--fx-duration-normal) var(--fx-easing);
+}
+
+.img-blur:hover {
+  filter: blur(0);
+}
+
+.img-blur-sm  { filter: blur(2px); }
+.img-blur-md  { filter: blur(4px); }
+.img-blur-lg  { filter: blur(8px); }
+.img-blur-xl  { filter: blur(16px); }
+
+.img-brightness {
+  filter: brightness(130%);
+  transition: filter var(--fx-duration-normal) var(--fx-easing);
+}
+
+.img-brightness-50  { filter: brightness(50%); }
+.img-brightness-75  { filter: brightness(75%); }
+.img-brightness-110 { filter: brightness(110%); }
+.img-brightness-125 { filter: brightness(125%); }
+.img-brightness-150 { filter: brightness(150%); }
+.img-brightness-200 { filter: brightness(200%); }
+
+.img-contrast {
+  filter: contrast(130%);
+  transition: filter var(--fx-duration-normal) var(--fx-easing);
+}
+
+.img-contrast-50  { filter: contrast(50%); }
+.img-contrast-75  { filter: contrast(75%); }
+.img-contrast-110 { filter: contrast(110%); }
+.img-contrast-125 { filter: contrast(125%); }
+.img-contrast-150 { filter: contrast(150%); }
+.img-contrast-200 { filter: contrast(200%); }
+
+.img-saturate {
+  filter: saturate(180%);
+  transition: filter var(--fx-duration-normal) var(--fx-easing);
+}
+
+.img-saturate-0   { filter: saturate(0%); }
+.img-saturate-50  { filter: saturate(50%); }
+.img-saturate-150 { filter: saturate(150%); }
+.img-saturate-200 { filter: saturate(200%); }
+.img-saturate-300 { filter: saturate(300%); }
+
+.img-hue-rotate {
+  filter: hue-rotate(90deg);
+  transition: filter var(--fx-duration-normal) var(--fx-easing);
+}
+
+.img-hue-rotate-15  { filter: hue-rotate(15deg); }
+.img-hue-rotate-30  { filter: hue-rotate(30deg); }
+.img-hue-rotate-60  { filter: hue-rotate(60deg); }
+.img-hue-rotate-90  { filter: hue-rotate(90deg); }
+.img-hue-rotate-120 { filter: hue-rotate(120deg); }
+.img-hue-rotate-180 { filter: hue-rotate(180deg); }
+.img-hue-rotate-270 { filter: hue-rotate(270deg); }
+
+.img-invert {
+  filter: invert(100%);
+  transition: filter var(--fx-duration-normal) var(--fx-easing);
+}
+
+.img-invert-50 {
+  filter: invert(50%);
+}
+
+/* -- Compound image filters ------------------------------------------------ */
+.img-vintage {
+  filter: sepia(40%) contrast(90%) brightness(110%) saturate(80%);
+}
+
+.img-noir {
+  filter: grayscale(100%) contrast(130%) brightness(90%);
+}
+
+.img-cyberpunk {
+  filter: contrast(130%) brightness(110%) saturate(150%) hue-rotate(10deg);
+}
+
+.img-infrared {
+  filter: hue-rotate(180deg) saturate(200%) contrast(120%);
+}
+
+.img-blueprint {
+  filter: grayscale(100%) brightness(90%) sepia(30%) hue-rotate(180deg) saturate(200%);
+}
+
+/* -- Duotone effect (pair with mix-blend-mode overlay) --------------------- */
+.img-duotone-cyan {
+  position: relative;
+  filter: grayscale(100%) contrast(120%);
+}
+
+.img-duotone-cyan::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(var(--fx-cyan-rgb), 0.40);
+  mix-blend-mode: color;
+  pointer-events: none;
+}
+
+.img-duotone-purple {
+  position: relative;
+  filter: grayscale(100%) contrast(120%);
+}
+
+.img-duotone-purple::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(var(--fx-purple-rgb), 0.40);
+  mix-blend-mode: color;
+  pointer-events: none;
+}
+
+.img-duotone-green {
+  position: relative;
+  filter: grayscale(100%) contrast(120%);
+}
+
+.img-duotone-green::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(var(--fx-green-rgb), 0.40);
+  mix-blend-mode: color;
+  pointer-events: none;
+}
+
+/* -- Drop shadow on transparent images ------------------------------------- */
+.img-drop-shadow-sm {
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.50));
+}
+
+.img-drop-shadow-md {
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.40));
+}
+
+.img-drop-shadow-lg {
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.40));
+}
+
+.img-drop-shadow-xl {
+  filter: drop-shadow(0 16px 32px rgba(0, 0, 0, 0.40));
+}
+
+.img-drop-shadow-cyan {
+  filter: drop-shadow(0 4px 8px rgba(var(--fx-cyan-rgb), 0.30));
+}
+
+.img-drop-shadow-purple {
+  filter: drop-shadow(0 4px 8px rgba(var(--fx-purple-rgb), 0.30));
+}
+
+.img-drop-shadow-green {
+  filter: drop-shadow(0 4px 8px rgba(var(--fx-green-rgb), 0.30));
+}
+
+
+/* ============================================================================
+   25. Blend Modes
+   ============================================================================ */
+
+.blend-overlay    { mix-blend-mode: overlay; }
+.blend-multiply   { mix-blend-mode: multiply; }
+.blend-screen     { mix-blend-mode: screen; }
+.blend-soft-light { mix-blend-mode: soft-light; }
+.blend-hard-light { mix-blend-mode: hard-light; }
+.blend-difference { mix-blend-mode: difference; }
+.blend-exclusion  { mix-blend-mode: exclusion; }
+.blend-color-dodge { mix-blend-mode: color-dodge; }
+.blend-color-burn  { mix-blend-mode: color-burn; }
+.blend-hue         { mix-blend-mode: hue; }
+.blend-saturation  { mix-blend-mode: saturation; }
+.blend-color       { mix-blend-mode: color; }
+.blend-luminosity  { mix-blend-mode: luminosity; }
+.blend-normal      { mix-blend-mode: normal; }
+
+/* -- Background blend modes ------------------------------------------------ */
+.bg-blend-overlay    { background-blend-mode: overlay; }
+.bg-blend-multiply   { background-blend-mode: multiply; }
+.bg-blend-screen     { background-blend-mode: screen; }
+.bg-blend-soft-light { background-blend-mode: soft-light; }
+.bg-blend-hard-light { background-blend-mode: hard-light; }
+.bg-blend-difference { background-blend-mode: difference; }
+.bg-blend-exclusion  { background-blend-mode: exclusion; }
+.bg-blend-color-dodge { background-blend-mode: color-dodge; }
+.bg-blend-color-burn  { background-blend-mode: color-burn; }
+
+/* -- Isolation for stacking context ---------------------------------------- */
+.blend-isolate { isolation: isolate; }
+
+
+/* ============================================================================
+   26. Aspect Ratios
+   ============================================================================ */
+
+.aspect-square {
+  aspect-ratio: 1 / 1;
+}
+
+.aspect-video {
+  aspect-ratio: 16 / 9;
+}
+
+.aspect-4-3 {
+  aspect-ratio: 4 / 3;
+}
+
+.aspect-3-2 {
+  aspect-ratio: 3 / 2;
+}
+
+.aspect-21-9 {
+  aspect-ratio: 21 / 9;
+}
+
+.aspect-2-3 {
+  aspect-ratio: 2 / 3;
+}
+
+.aspect-3-4 {
+  aspect-ratio: 3 / 4;
+}
+
+.aspect-9-16 {
+  aspect-ratio: 9 / 16;
+}
+
+.aspect-golden {
+  aspect-ratio: 1.618 / 1;
+}
+
+/* -- Aspect ratio fallbacks for older browsers ----------------------------- */
+@supports not (aspect-ratio: 1) {
+  .aspect-square::before {
+    content: "";
+    float: left;
+    padding-top: 100%;
+  }
+  .aspect-square::after {
+    content: "";
+    display: table;
+    clear: both;
+  }
+
+  .aspect-video::before {
+    content: "";
+    float: left;
+    padding-top: 56.25%;
+  }
+  .aspect-video::after {
+    content: "";
+    display: table;
+    clear: both;
+  }
+
+  .aspect-4-3::before {
+    content: "";
+    float: left;
+    padding-top: 75%;
+  }
+  .aspect-4-3::after {
+    content: "";
+    display: table;
+    clear: both;
+  }
+
+  .aspect-3-2::before {
+    content: "";
+    float: left;
+    padding-top: 66.67%;
+  }
+  .aspect-3-2::after {
+    content: "";
+    display: table;
+    clear: both;
+  }
+
+  .aspect-21-9::before {
+    content: "";
+    float: left;
+    padding-top: 42.86%;
+  }
+  .aspect-21-9::after {
+    content: "";
+    display: table;
+    clear: both;
+  }
+}
+
+/* -- Object fit helpers (pair with aspect ratios) -------------------------- */
+.object-cover    { object-fit: cover; }
+.object-contain  { object-fit: contain; }
+.object-fill     { object-fit: fill; }
+.object-none     { object-fit: none; }
+.object-scale-down { object-fit: scale-down; }
+
+.object-top      { object-position: top; }
+.object-bottom   { object-position: bottom; }
+.object-left     { object-position: left; }
+.object-right    { object-position: right; }
+.object-center   { object-position: center; }
+
+
+/* ============================================================================
+   Utility: Reduce Motion
+   ============================================================================
+   Respects the user's OS-level "reduce motion" preference by disabling
+   all animations and transitions applied by this stylesheet.
+   ============================================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .holo,
+  .holo-text,
+  .holo-border::before,
+  .holo-card::after,
+  .border-pulse,
+  .border-pulse-purple,
+  .border-pulse-green,
+  .border-pulse-red,
+  .border-pulse-amber,
+  .border-dash-animate::before,
+  .border-gradient-rotate::before,
+  .border-marching-ants,
+  .neon-flicker,
+  .neon-warmup,
+  .scanlines-sweep::after,
+  .glow-pulse-cyan,
+  .glow-pulse-purple,
+  .glow-pulse-green,
+  .glow-pulse-red,
+  .glow-pulse-amber,
+  .grain-animated::after {
+    animation: none !important;
+  }
+
+  .elevation-1,
+  .elevation-2,
+  .elevation-3,
+  .elevation-4,
+  .elevation-5,
+  .glow-hover-cyan,
+  .glow-hover-purple,
+  .glow-hover-green,
+  .glow-hover-red,
+  .glow-hover-amber,
+  .img-grayscale,
+  .img-sepia,
+  .img-blur,
+  .img-brightness,
+  .img-contrast,
+  .img-saturate,
+  .img-hue-rotate,
+  .img-invert,
+  .clip-reveal-circle,
+  .clip-reveal-inset,
+  .focus-ring,
+  .focus-ring-purple,
+  .focus-ring-green,
+  .focus-ring-red,
+  .focus-ring-amber,
+  .focus-glow,
+  .focus-glow-purple,
+  .focus-glow-green,
+  .focus-glow-red,
+  .focus-glow-amber,
+  .neu-toggle {
+    transition: none !important;
+  }
+}
+
+
+/* ============================================================================
+   Utility: Print
+   ============================================================================
+   Strip decorative effects when printing so content is clean and legible.
+   ============================================================================ */
+
+@media print {
+  .glass,
+  .glass-dark,
+  .glass-light,
+  .frost,
+  .frost-light,
+  .frost-heavy {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background: white !important;
+    border-color: #ccc !important;
+  }
+
+  .neon-text,
+  .neon-text-cyan,
+  .neon-text-purple,
+  .neon-text-green,
+  .neon-text-red,
+  .neon-text-amber {
+    text-shadow: none !important;
+    color: inherit !important;
+  }
+
+  .glow-sm-cyan,  .glow-md-cyan,  .glow-lg-cyan,  .glow-xl-cyan,
+  .glow-sm-purple,.glow-md-purple,.glow-lg-purple,.glow-xl-purple,
+  .glow-sm-green, .glow-md-green, .glow-lg-green, .glow-xl-green,
+  .glow-sm-red,   .glow-md-red,   .glow-lg-red,   .glow-xl-red,
+  .glow-sm-amber, .glow-md-amber, .glow-lg-amber, .glow-xl-amber,
+  .neon-shadow,
+  .neon-shadow-cyan,
+  .neon-shadow-purple,
+  .neon-shadow-green,
+  .neon-shadow-red,
+  .neon-shadow-amber {
+    box-shadow: none !important;
+  }
+
+  .scanlines::after,
+  .scanlines-dense::after,
+  .scanlines-sparse::after,
+  .scanlines-sweep::after,
+  .grain::after,
+  .grain-animated::after,
+  .overlay-dark::after,
+  .overlay-light::after,
+  .overlay-accent::after,
+  .overlay-cyan::after,
+  .overlay-purple::after,
+  .overlay-green::after,
+  .overlay-red::after,
+  .overlay-amber::after,
+  .overlay-gradient-bottom::after,
+  .overlay-gradient-top::after,
+  .overlay-gradient-radial::after {
+    display: none !important;
+  }
+
+  .holo,
+  .holo-card::after {
+    background: none !important;
+    animation: none !important;
+  }
+
+  .img-grayscale,
+  .img-sepia,
+  .img-blur,
+  .img-brightness,
+  .img-contrast,
+  .img-saturate,
+  .img-hue-rotate,
+  .img-invert,
+  .img-vintage,
+  .img-noir,
+  .img-cyberpunk,
+  .img-infrared,
+  .img-blueprint {
+    filter: none !important;
+  }
+}
+
+
+/* ============================================================================
+   27. Additional Decorative Utilities
+   ============================================================================ */
+
+/* -- Shine / light sweep effect -------------------------------------------- */
+@keyframes shine-sweep {
+  0% {
+    transform: translateX(-100%) skewX(-15deg);
+  }
+  100% {
+    transform: translateX(200%) skewX(-15deg);
+  }
+}
+
+.shine {
+  position: relative;
+  overflow: hidden;
+}
+
+.shine::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -50%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.08) 40%,
+    rgba(255, 255, 255, 0.15) 50%,
+    rgba(255, 255, 255, 0.08) 60%,
+    transparent 100%
+  );
+  transform: skewX(-15deg);
+  pointer-events: none;
+}
+
+.shine:hover::after {
+  animation: shine-sweep 0.8s ease-out forwards;
+}
+
+.shine-cyan::after {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(var(--fx-cyan-rgb), 0.05) 40%,
+    rgba(var(--fx-cyan-rgb), 0.12) 50%,
+    rgba(var(--fx-cyan-rgb), 0.05) 60%,
+    transparent 100%
+  );
+}
+
+.shine-purple::after {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(var(--fx-purple-rgb), 0.05) 40%,
+    rgba(var(--fx-purple-rgb), 0.12) 50%,
+    rgba(var(--fx-purple-rgb), 0.05) 60%,
+    transparent 100%
+  );
+}
+
+.shine-auto {
+  position: relative;
+  overflow: hidden;
+}
+
+.shine-auto::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -50%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.08) 40%,
+    rgba(255, 255, 255, 0.15) 50%,
+    rgba(255, 255, 255, 0.08) 60%,
+    transparent 100%
+  );
+  transform: skewX(-15deg);
+  animation: shine-sweep 3s ease-in-out infinite;
+  animation-delay: 1s;
+  pointer-events: none;
+}
+
+/* -- Ripple effect --------------------------------------------------------- */
+@keyframes ripple-expand {
+  0% {
+    transform: scale(0);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+.ripple {
+  position: relative;
+  overflow: hidden;
+}
+
+.ripple::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100px;
+  height: 100px;
+  margin: -50px 0 0 -50px;
+  border-radius: 50%;
+  background: rgba(var(--fx-cyan-rgb), 0.25);
+  transform: scale(0);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.ripple:active::after {
+  animation: ripple-expand 0.6s ease-out;
+}
+
+.ripple-purple:active::after {
+  background: rgba(var(--fx-purple-rgb), 0.25);
+}
+
+.ripple-green:active::after {
+  background: rgba(var(--fx-green-rgb), 0.25);
+}
+
+.ripple-white:active::after {
+  background: rgba(255, 255, 255, 0.20);
+}
+
+/* -- Particle dot background ----------------------------------------------- */
+@keyframes particle-float {
+  0%, 100% { transform: translateY(0) translateX(0); }
+  25%      { transform: translateY(-10px) translateX(5px); }
+  50%      { transform: translateY(-5px) translateX(-5px); }
+  75%      { transform: translateY(-15px) translateX(3px); }
+}
+
+.particles {
+  position: relative;
+  overflow: hidden;
+}
+
+.particles::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(1px 1px at 10% 20%, rgba(var(--fx-cyan-rgb), 0.4) 50%, transparent 50%),
+    radial-gradient(1px 1px at 30% 60%, rgba(var(--fx-purple-rgb), 0.3) 50%, transparent 50%),
+    radial-gradient(1px 1px at 50% 40%, rgba(var(--fx-cyan-rgb), 0.3) 50%, transparent 50%),
+    radial-gradient(1px 1px at 70% 80%, rgba(var(--fx-green-rgb), 0.3) 50%, transparent 50%),
+    radial-gradient(1px 1px at 90% 30%, rgba(var(--fx-purple-rgb), 0.4) 50%, transparent 50%),
+    radial-gradient(1px 1px at 15% 75%, rgba(var(--fx-cyan-rgb), 0.3) 50%, transparent 50%),
+    radial-gradient(1px 1px at 45% 90%, rgba(var(--fx-green-rgb), 0.3) 50%, transparent 50%),
+    radial-gradient(1px 1px at 65% 15%, rgba(var(--fx-purple-rgb), 0.3) 50%, transparent 50%),
+    radial-gradient(1px 1px at 85% 55%, rgba(var(--fx-cyan-rgb), 0.3) 50%, transparent 50%),
+    radial-gradient(1px 1px at 25% 45%, rgba(var(--fx-green-rgb), 0.4) 50%, transparent 50%);
+  background-size: 200px 200px;
+  animation: particle-float 8s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* -- Underline effects ----------------------------------------------------- */
+.underline-gradient {
+  text-decoration: none;
+  background-image: linear-gradient(135deg, var(--fx-cyan), var(--fx-purple));
+  background-size: 100% 2px;
+  background-position: 0% 100%;
+  background-repeat: no-repeat;
+  padding-bottom: 2px;
+}
+
+.underline-gradient-grow {
+  text-decoration: none;
+  background-image: linear-gradient(135deg, var(--fx-cyan), var(--fx-purple));
+  background-size: 0% 2px;
+  background-position: 0% 100%;
+  background-repeat: no-repeat;
+  padding-bottom: 2px;
+  transition: background-size var(--fx-duration-normal) var(--fx-easing);
+}
+
+.underline-gradient-grow:hover {
+  background-size: 100% 2px;
+}
+
+.underline-glow {
+  text-decoration: none;
+  border-bottom: 1px solid var(--fx-cyan);
+  box-shadow: 0 1px 0 0 rgba(var(--fx-cyan-rgb), 0.4);
+  padding-bottom: 1px;
+}
+
+/* -- Tilt / perspective on hover ------------------------------------------- */
+.tilt-hover {
+  transition: transform var(--fx-duration-normal) var(--fx-easing);
+  transform-style: preserve-3d;
+}
+
+.tilt-hover:hover {
+  transform: perspective(800px) rotateX(2deg) rotateY(-2deg) scale(1.02);
+}
+
+.tilt-hover-reverse:hover {
+  transform: perspective(800px) rotateX(-2deg) rotateY(2deg) scale(1.02);
+}
+
+/* -- Shimmer placeholder loading effect ------------------------------------ */
+@keyframes shimmer-loading {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.03) 25%,
+    rgba(255, 255, 255, 0.08) 37%,
+    rgba(255, 255, 255, 0.03) 63%
+  );
+  background-size: 200% 100%;
+  animation: shimmer-loading 1.5s ease-in-out infinite;
+}
+
+.shimmer-dark {
+  background: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0.10) 25%,
+    rgba(0, 0, 0, 0.20) 37%,
+    rgba(0, 0, 0, 0.10) 63%
+  );
+  background-size: 200% 100%;
+  animation: shimmer-loading 1.5s ease-in-out infinite;
+}
+
+.shimmer-cyan {
+  background: linear-gradient(
+    90deg,
+    rgba(var(--fx-cyan-rgb), 0.03) 25%,
+    rgba(var(--fx-cyan-rgb), 0.10) 37%,
+    rgba(var(--fx-cyan-rgb), 0.03) 63%
+  );
+  background-size: 200% 100%;
+  animation: shimmer-loading 1.5s ease-in-out infinite;
+}
+
+/* -- Dotted separator ------------------------------------------------------ */
+.separator-dots {
+  border: none;
+  height: 1px;
+  background: none;
+  text-align: center;
+  overflow: visible;
+}
+
+.separator-dots::after {
+  content: "";
+  display: block;
+  height: 1px;
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.20) 1px, transparent 1px);
+  background-size: 8px 1px;
+  background-repeat: repeat-x;
+}
+
+/* -- Gradient line separator ----------------------------------------------- */
+.separator-gradient {
+  border: none;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(var(--fx-cyan-rgb), 0.30) 20%,
+    rgba(var(--fx-purple-rgb), 0.30) 80%,
+    transparent 100%
+  );
+}
+
+.separator-glow {
+  border: none;
+  height: 1px;
+  background: rgba(var(--fx-cyan-rgb), 0.40);
+  box-shadow: 0 0 8px rgba(var(--fx-cyan-rgb), 0.20);
+}
+
+/* -- Corner decorations ---------------------------------------------------- */
+.corner-marks {
+  position: relative;
+}
+
+.corner-marks::before,
+.corner-marks::after {
+  content: "";
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border-color: rgba(var(--fx-cyan-rgb), 0.40);
+  border-style: solid;
+  pointer-events: none;
+}
+
+.corner-marks::before {
+  top: 0;
+  left: 0;
+  border-width: 2px 0 0 2px;
+}
+
+.corner-marks::after {
+  bottom: 0;
+  right: 0;
+  border-width: 0 2px 2px 0;
+}
+
+/* -- Badge / pip indicator ------------------------------------------------- */
+.pip {
+  position: relative;
+}
+
+.pip::after {
+  content: "";
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--fx-red);
+  border: 2px solid var(--fx-bg-dark);
+}
+
+.pip-cyan::after   { background: var(--fx-cyan); }
+.pip-green::after  { background: var(--fx-green); }
+.pip-amber::after  { background: var(--fx-amber); }
+.pip-purple::after { background: var(--fx-purple); }
+
+@keyframes pip-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%      { transform: scale(1.5); opacity: 0.5; }
+}
+
+.pip-pulse::after {
+  animation: pip-pulse 1.5s ease-in-out infinite;
+}
+
+/* -- Noise overlay with color tint ----------------------------------------- */
+.grain-cyan::after {
+  mix-blend-mode: overlay;
+  background-color: rgba(var(--fx-cyan-rgb), 0.02);
+}
+
+.grain-purple::after {
+  mix-blend-mode: overlay;
+  background-color: rgba(var(--fx-purple-rgb), 0.02);
+}
+
+.grain-green::after {
+  mix-blend-mode: overlay;
+  background-color: rgba(var(--fx-green-rgb), 0.02);
+}
+
+/* -- Frosted glass with inner shadow --------------------------------------- */
+.frost-inset {
+  position: relative;
+  background: rgba(255, 255, 255, 0.04);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.06);
+}
+
+/* -- Stacked cards / depth illusion ---------------------------------------- */
+.stack-cards {
+  position: relative;
+}
+
+.stack-cards::before {
+  content: "";
+  position: absolute;
+  top: 8px;
+  left: 4px;
+  right: 4px;
+  bottom: -8px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: inherit;
+  z-index: -1;
+}
+
+.stack-cards::after {
+  content: "";
+  position: absolute;
+  top: 16px;
+  left: 8px;
+  right: 8px;
+  bottom: -16px;
+  background: rgba(255, 255, 255, 0.01);
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  border-radius: inherit;
+  z-index: -2;
+}
+
+/* -- Diagonal stripe pattern ----------------------------------------------- */
+.stripes {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 8px,
+    rgba(255, 255, 255, 0.03) 8px,
+    rgba(255, 255, 255, 0.03) 16px
+  );
+}
+
+.stripes-cyan {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 8px,
+    rgba(var(--fx-cyan-rgb), 0.05) 8px,
+    rgba(var(--fx-cyan-rgb), 0.05) 16px
+  );
+}
+
+.stripes-purple {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 8px,
+    rgba(var(--fx-purple-rgb), 0.05) 8px,
+    rgba(var(--fx-purple-rgb), 0.05) 16px
+  );
+}
+
+.stripes-warning {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 10px,
+    rgba(var(--fx-amber-rgb), 0.10) 10px,
+    rgba(var(--fx-amber-rgb), 0.10) 20px
+  );
+}
+
+.stripes-danger {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 10px,
+    rgba(var(--fx-red-rgb), 0.10) 10px,
+    rgba(var(--fx-red-rgb), 0.10) 20px
+  );
+}
+
+/* -- Ring / orbit animation ------------------------------------------------ */
+@keyframes orbit-spin {
+  0%   { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.orbit {
+  position: relative;
+}
+
+.orbit::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 120%;
+  height: 120%;
+  margin-top: -60%;
+  margin-left: -60%;
+  border: 1px solid rgba(var(--fx-cyan-rgb), 0.15);
+  border-radius: 50%;
+  border-top-color: rgba(var(--fx-cyan-rgb), 0.5);
+  animation: orbit-spin 6s linear infinite;
+  pointer-events: none;
+}
+
+.orbit-reverse::before {
+  animation-direction: reverse;
+}
+
+.orbit-fast::before {
+  animation-duration: 3s;
+}
+
+.orbit-slow::before {
+  animation-duration: 12s;
+}
