@@ -1,0 +1,6155 @@
+/* ==========================================================================
+   security-viz.css -- Security-Specific Visualization Styles
+   Darknode Web Portal
+
+   Comprehensive CSS for interactive security dashboards and data displays.
+   Covers attack surface maps, kill chains, MITRE ATT&CK grids, vuln
+   timelines, risk dashboards, network topology, threat radar, compliance
+   scorecards, incident timelines, UBA grids, vulnerability funnels,
+   posture gauges, IOC graphs, log heatmaps, port scans, password
+   analyzers, certificate chains, DNS trees, and HTTP header dashboards.
+
+   All components support:
+     - Light and dark themes via custom properties
+     - prefers-reduced-motion fallbacks
+     - Responsive breakpoints (mobile-first)
+     - Keyboard and screen-reader accessibility hooks
+   ========================================================================== */
+
+
+/* ==========================================================================
+   0. DESIGN TOKENS -- VISUALIZATION PALETTE
+   ==========================================================================
+   These extend the base security.css tokens with visualization-specific
+   values. We reference --sec-* and --sev-* where possible and define
+   new --sv-* (security-viz) tokens for unique needs.
+   ========================================================================== */
+
+:root {
+  /* ---------- Layout ---------- */
+  --sv-radius-xs: 2px;
+  --sv-radius-sm: 4px;
+  --sv-radius: 6px;
+  --sv-radius-md: 8px;
+  --sv-radius-lg: 12px;
+  --sv-radius-xl: 16px;
+  --sv-radius-full: 9999px;
+  --sv-transition: 0.25s ease;
+  --sv-transition-fast: 0.15s ease;
+  --sv-transition-slow: 0.4s ease;
+
+  /* ---------- Typography ---------- */
+  --sv-font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --sv-font-mono: "JetBrains Mono", "Fira Code", "Cascadia Code", "Source Code Pro", monospace;
+
+  /* ---------- Surfaces ---------- */
+  --sv-bg: #ffffff;
+  --sv-bg-secondary: #f5f6f8;
+  --sv-bg-tertiary: #ebedf0;
+  --sv-bg-elevated: #ffffff;
+  --sv-bg-inset: #f0f2f5;
+  --sv-bg-overlay: rgba(0, 0, 0, 0.5);
+  --sv-bg-glass: rgba(255, 255, 255, 0.85);
+  --sv-surface-hover: rgba(0, 0, 0, 0.04);
+
+  /* ---------- Borders ---------- */
+  --sv-border: #d0d4da;
+  --sv-border-light: #e2e5ea;
+  --sv-border-strong: #b0b6c0;
+
+  /* ---------- Text ---------- */
+  --sv-text: #1a1d23;
+  --sv-text-secondary: #4a5060;
+  --sv-text-muted: #7a8298;
+  --sv-text-inverse: #ffffff;
+  --sv-text-link: #3478c6;
+
+  /* ---------- Shadows ---------- */
+  --sv-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --sv-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --sv-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07), 0 2px 4px rgba(0, 0, 0, 0.06);
+  --sv-shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05);
+  --sv-shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1), 0 8px 10px rgba(0, 0, 0, 0.04);
+
+  /* ---------- Severity (references security.css when layered, standalone here) ---------- */
+  --sv-critical: #e63946;
+  --sv-critical-bg: #fce4e4;
+  --sv-critical-border: #cc2936;
+  --sv-critical-text: #7a1a1a;
+
+  --sv-high: #f77f00;
+  --sv-high-bg: #fff0e0;
+  --sv-high-border: #e06c00;
+  --sv-high-text: #8b3a00;
+
+  --sv-medium: #f0bc00;
+  --sv-medium-bg: #fffbe6;
+  --sv-medium-border: #d4a800;
+  --sv-medium-text: #7a6100;
+
+  --sv-low: #38b764;
+  --sv-low-bg: #e8f9ef;
+  --sv-low-border: #2d9f52;
+  --sv-low-text: #1a5c2e;
+
+  --sv-info: #4a90d9;
+  --sv-info-bg: #e6f0ff;
+  --sv-info-border: #3478c6;
+  --sv-info-text: #1a3d6b;
+
+  --sv-none: #94a3b8;
+  --sv-none-bg: #f1f5f9;
+
+  /* ---------- Status ---------- */
+  --sv-pass: #2d9f52;
+  --sv-pass-bg: #e8f9ef;
+  --sv-fail: #cc2936;
+  --sv-fail-bg: #fce4e4;
+  --sv-warn: #e0a000;
+  --sv-warn-bg: #fff8e0;
+  --sv-partial: #7b61d4;
+  --sv-partial-bg: #f0ebff;
+
+  /* ---------- Zone colors (attack surface, topology) ---------- */
+  --sv-zone-external: #e63946;
+  --sv-zone-external-bg: rgba(230, 57, 70, 0.08);
+  --sv-zone-external-border: rgba(230, 57, 70, 0.3);
+  --sv-zone-dmz: #f77f00;
+  --sv-zone-dmz-bg: rgba(247, 127, 0, 0.08);
+  --sv-zone-dmz-border: rgba(247, 127, 0, 0.3);
+  --sv-zone-internal: #38b764;
+  --sv-zone-internal-bg: rgba(56, 183, 100, 0.08);
+  --sv-zone-internal-border: rgba(56, 183, 100, 0.3);
+  --sv-zone-restricted: #7b61d4;
+  --sv-zone-restricted-bg: rgba(123, 97, 212, 0.08);
+  --sv-zone-restricted-border: rgba(123, 97, 212, 0.3);
+
+  /* ---------- Kill chain phase colors ---------- */
+  --sv-kc-recon: #4a90d9;
+  --sv-kc-weapon: #7b61d4;
+  --sv-kc-delivery: #e06c00;
+  --sv-kc-exploit: #cc2936;
+  --sv-kc-install: #8b3a00;
+  --sv-kc-c2: #7a1a1a;
+  --sv-kc-action: #5a0020;
+
+  /* ---------- Network topology ---------- */
+  --sv-node-server: #4a90d9;
+  --sv-node-workstation: #38b764;
+  --sv-node-firewall: #f77f00;
+  --sv-node-router: #7b61d4;
+  --sv-node-database: #d4618b;
+  --sv-node-cloud: #39d2c0;
+  --sv-node-iot: #94a3b8;
+  --sv-node-unknown: #64748b;
+
+  /* ---------- Port states ---------- */
+  --sv-port-open: #2d9f52;
+  --sv-port-open-bg: #e8f9ef;
+  --sv-port-closed: #cc2936;
+  --sv-port-closed-bg: #fce4e4;
+  --sv-port-filtered: #e0a000;
+  --sv-port-filtered-bg: #fff8e0;
+
+  /* ---------- Password strength ---------- */
+  --sv-pw-very-weak: #cc2936;
+  --sv-pw-weak: #e06c00;
+  --sv-pw-fair: #e0a000;
+  --sv-pw-strong: #2d9f52;
+  --sv-pw-very-strong: #1a5c2e;
+
+  /* ---------- Certificate validity ---------- */
+  --sv-cert-valid: #2d9f52;
+  --sv-cert-expiring: #e0a000;
+  --sv-cert-expired: #cc2936;
+  --sv-cert-revoked: #7a1a1a;
+
+  /* ---------- Compliance ---------- */
+  --sv-comp-pass: #2d9f52;
+  --sv-comp-fail: #cc2936;
+  --sv-comp-partial: #e0a000;
+  --sv-comp-na: #94a3b8;
+
+  /* ---------- Heatmap intensity (10 stops for log / activity heatmaps) ---------- */
+  --sv-heat-0: #f0f2f5;
+  --sv-heat-1: #dbeafe;
+  --sv-heat-2: #bfdbfe;
+  --sv-heat-3: #93c5fd;
+  --sv-heat-4: #60a5fa;
+  --sv-heat-5: #3b82f6;
+  --sv-heat-6: #2563eb;
+  --sv-heat-7: #1d4ed8;
+  --sv-heat-8: #1e40af;
+  --sv-heat-9: #1e3a8a;
+
+  /* ---------- Threat categories (radar) ---------- */
+  --sv-threat-malware: #e63946;
+  --sv-threat-phishing: #f77f00;
+  --sv-threat-exploit: #cc2936;
+  --sv-threat-insider: #7b61d4;
+  --sv-threat-ddos: #4a90d9;
+  --sv-threat-apt: #5a0020;
+  --sv-threat-ransomware: #8b3a00;
+  --sv-threat-supply-chain: #d4618b;
+
+  /* ---------- Animation durations ---------- */
+  --sv-anim-fast: 0.2s;
+  --sv-anim-normal: 0.4s;
+  --sv-anim-slow: 0.8s;
+  --sv-anim-very-slow: 1.5s;
+  --sv-anim-fill: 1s;
+
+  /* ---------- Gauge grades ---------- */
+  --sv-grade-a: #1a5c2e;
+  --sv-grade-b: #2d9f52;
+  --sv-grade-c: #e0a000;
+  --sv-grade-d: #e06c00;
+  --sv-grade-f: #cc2936;
+
+  /* ---------- MITRE ATT&CK tactic colors (14 tactics) ---------- */
+  --sv-mitre-recon: #4a90d9;
+  --sv-mitre-resource: #5e9fd9;
+  --sv-mitre-initial: #7b61d4;
+  --sv-mitre-execution: #e63946;
+  --sv-mitre-persist: #cc2936;
+  --sv-mitre-priv-esc: #8b3a00;
+  --sv-mitre-defense: #e06c00;
+  --sv-mitre-cred: #f77f00;
+  --sv-mitre-discovery: #d4a800;
+  --sv-mitre-lateral: #7a6100;
+  --sv-mitre-collect: #1a5c2e;
+  --sv-mitre-c2: #7a1a1a;
+  --sv-mitre-exfil: #5a0020;
+  --sv-mitre-impact: #3d1010;
+
+  /* ---------- Funnel stages ---------- */
+  --sv-funnel-discovered: #e63946;
+  --sv-funnel-triaged: #f77f00;
+  --sv-funnel-assigned: #e0a000;
+  --sv-funnel-in-progress: #4a90d9;
+  --sv-funnel-verified: #7b61d4;
+  --sv-funnel-remediated: #2d9f52;
+
+  /* ---------- IOC entity types ---------- */
+  --sv-ioc-ip: #4a90d9;
+  --sv-ioc-domain: #7b61d4;
+  --sv-ioc-hash: #e06c00;
+  --sv-ioc-email: #d4618b;
+  --sv-ioc-url: #39d2c0;
+  --sv-ioc-file: #38b764;
+  --sv-ioc-cve: #e63946;
+  --sv-ioc-actor: #5a0020;
+
+  /* ---------- DNS record types ---------- */
+  --sv-dns-a: #4a90d9;
+  --sv-dns-aaaa: #5e9fd9;
+  --sv-dns-cname: #7b61d4;
+  --sv-dns-mx: #e06c00;
+  --sv-dns-txt: #38b764;
+  --sv-dns-ns: #d4618b;
+  --sv-dns-soa: #94a3b8;
+  --sv-dns-srv: #39d2c0;
+
+  /* ---------- HTTP header scores ---------- */
+  --sv-hdr-a-plus: #1a5c2e;
+  --sv-hdr-a: #2d9f52;
+  --sv-hdr-b: #38b764;
+  --sv-hdr-c: #e0a000;
+  --sv-hdr-d: #e06c00;
+  --sv-hdr-f: #cc2936;
+}
+
+
+/* ==========================================================================
+   0b. DARK THEME TOKEN OVERRIDES
+   ========================================================================== */
+
+[data-theme="dark"],
+.dark-theme,
+.theme-dark {
+  --sv-bg: #0f1117;
+  --sv-bg-secondary: #161922;
+  --sv-bg-tertiary: #1e212c;
+  --sv-bg-elevated: #1a1d26;
+  --sv-bg-inset: #12141c;
+  --sv-bg-overlay: rgba(0, 0, 0, 0.7);
+  --sv-bg-glass: rgba(15, 17, 23, 0.85);
+  --sv-surface-hover: rgba(255, 255, 255, 0.06);
+
+  --sv-border: #2e3240;
+  --sv-border-light: #252838;
+  --sv-border-strong: #3e4458;
+
+  --sv-text: #e0e4ec;
+  --sv-text-secondary: #a0a8b8;
+  --sv-text-muted: #6a7288;
+  --sv-text-inverse: #0f1117;
+  --sv-text-link: #5ea3f0;
+
+  --sv-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
+  --sv-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
+  --sv-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.3), 0 2px 4px rgba(0, 0, 0, 0.2);
+  --sv-shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.35), 0 4px 6px rgba(0, 0, 0, 0.2);
+  --sv-shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.4), 0 8px 10px rgba(0, 0, 0, 0.3);
+
+  --sv-critical-bg: #3d1010;
+  --sv-critical-text: #ffa8a8;
+  --sv-high-bg: #3d1f00;
+  --sv-high-text: #ffcc99;
+  --sv-medium-bg: #3d3000;
+  --sv-medium-text: #ffe680;
+  --sv-low-bg: #0d2e17;
+  --sv-low-text: #80e8a0;
+  --sv-info-bg: #0d1e35;
+  --sv-info-text: #80b8ff;
+  --sv-none-bg: #1e212c;
+
+  --sv-pass-bg: #0d2e17;
+  --sv-fail-bg: #3d1010;
+  --sv-warn-bg: #3d3000;
+  --sv-partial-bg: #1e1535;
+
+  --sv-zone-external-bg: rgba(230, 57, 70, 0.12);
+  --sv-zone-dmz-bg: rgba(247, 127, 0, 0.12);
+  --sv-zone-internal-bg: rgba(56, 183, 100, 0.12);
+  --sv-zone-restricted-bg: rgba(123, 97, 212, 0.12);
+
+  --sv-heat-0: #161922;
+  --sv-heat-1: #0d1e35;
+  --sv-heat-2: #0f2847;
+  --sv-heat-3: #13365e;
+  --sv-heat-4: #1a4878;
+  --sv-heat-5: #245c96;
+  --sv-heat-6: #2d6fb3;
+  --sv-heat-7: #3882d0;
+  --sv-heat-8: #4a94e0;
+  --sv-heat-9: #5ea3f0;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --sv-bg: #0f1117;
+    --sv-bg-secondary: #161922;
+    --sv-bg-tertiary: #1e212c;
+    --sv-bg-elevated: #1a1d26;
+    --sv-bg-inset: #12141c;
+    --sv-bg-overlay: rgba(0, 0, 0, 0.7);
+    --sv-bg-glass: rgba(15, 17, 23, 0.85);
+    --sv-surface-hover: rgba(255, 255, 255, 0.06);
+
+    --sv-border: #2e3240;
+    --sv-border-light: #252838;
+    --sv-border-strong: #3e4458;
+
+    --sv-text: #e0e4ec;
+    --sv-text-secondary: #a0a8b8;
+    --sv-text-muted: #6a7288;
+    --sv-text-inverse: #0f1117;
+    --sv-text-link: #5ea3f0;
+
+    --sv-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
+    --sv-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
+    --sv-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.3), 0 2px 4px rgba(0, 0, 0, 0.2);
+    --sv-shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.35), 0 4px 6px rgba(0, 0, 0, 0.2);
+    --sv-shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.4), 0 8px 10px rgba(0, 0, 0, 0.3);
+
+    --sv-critical-bg: #3d1010;
+    --sv-critical-text: #ffa8a8;
+    --sv-high-bg: #3d1f00;
+    --sv-high-text: #ffcc99;
+    --sv-medium-bg: #3d3000;
+    --sv-medium-text: #ffe680;
+    --sv-low-bg: #0d2e17;
+    --sv-low-text: #80e8a0;
+    --sv-info-bg: #0d1e35;
+    --sv-info-text: #80b8ff;
+    --sv-none-bg: #1e212c;
+
+    --sv-pass-bg: #0d2e17;
+    --sv-fail-bg: #3d1010;
+    --sv-warn-bg: #3d3000;
+    --sv-partial-bg: #1e1535;
+
+    --sv-zone-external-bg: rgba(230, 57, 70, 0.12);
+    --sv-zone-dmz-bg: rgba(247, 127, 0, 0.12);
+    --sv-zone-internal-bg: rgba(56, 183, 100, 0.12);
+    --sv-zone-restricted-bg: rgba(123, 97, 212, 0.12);
+
+    --sv-heat-0: #161922;
+    --sv-heat-1: #0d1e35;
+    --sv-heat-2: #0f2847;
+    --sv-heat-3: #13365e;
+    --sv-heat-4: #1a4878;
+    --sv-heat-5: #245c96;
+    --sv-heat-6: #2d6fb3;
+    --sv-heat-7: #3882d0;
+    --sv-heat-8: #4a94e0;
+    --sv-heat-9: #5ea3f0;
+  }
+}
+
+
+/* ==========================================================================
+   0c. REDUCED-MOTION GLOBAL FALLBACKS
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .sv-attack-surface *,
+  .sv-kill-chain *,
+  .sv-mitre-heatmap *,
+  .sv-vuln-timeline *,
+  .sv-risk-dashboard *,
+  .sv-network-topology *,
+  .sv-threat-radar *,
+  .sv-compliance-scorecard *,
+  .sv-incident-timeline *,
+  .sv-uba-grid *,
+  .sv-vuln-funnel *,
+  .sv-posture-gauge *,
+  .sv-ioc-graph *,
+  .sv-log-heatmap *,
+  .sv-port-scan *,
+  .sv-password-strength *,
+  .sv-cert-chain *,
+  .sv-dns-tree *,
+  .sv-http-headers * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+
+/* ==========================================================================
+   0d. SHARED UTILITIES
+   ========================================================================== */
+
+/* Container wrapper shared by all viz components */
+.sv-container {
+  font-family: var(--sv-font-sans);
+  color: var(--sv-text);
+  background: var(--sv-bg);
+  border: 1px solid var(--sv-border);
+  border-radius: var(--sv-radius-md);
+  box-shadow: var(--sv-shadow);
+  overflow: hidden;
+}
+
+.sv-container__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--sv-border-light);
+  background: var(--sv-bg-secondary);
+}
+
+.sv-container__title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--sv-text);
+  letter-spacing: -0.01em;
+}
+
+.sv-container__subtitle {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--sv-text-muted);
+}
+
+.sv-container__actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.sv-container__body {
+  padding: 20px;
+}
+
+.sv-container__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  border-top: 1px solid var(--sv-border-light);
+  background: var(--sv-bg-secondary);
+  font-size: 12px;
+  color: var(--sv-text-muted);
+}
+
+/* Badge utility */
+.sv-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: var(--sv-radius-full);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.sv-badge--critical { background: var(--sv-critical-bg); color: var(--sv-critical-text); }
+.sv-badge--high     { background: var(--sv-high-bg);     color: var(--sv-high-text); }
+.sv-badge--medium   { background: var(--sv-medium-bg);   color: var(--sv-medium-text); }
+.sv-badge--low      { background: var(--sv-low-bg);      color: var(--sv-low-text); }
+.sv-badge--info     { background: var(--sv-info-bg);     color: var(--sv-info-text); }
+.sv-badge--none     { background: var(--sv-none-bg);     color: var(--sv-text-muted); }
+.sv-badge--pass     { background: var(--sv-pass-bg);     color: var(--sv-pass); }
+.sv-badge--fail     { background: var(--sv-fail-bg);     color: var(--sv-fail); }
+.sv-badge--warn     { background: var(--sv-warn-bg);     color: var(--sv-warn); }
+.sv-badge--partial  { background: var(--sv-partial-bg);  color: var(--sv-partial); }
+
+/* Count pill */
+.sv-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: var(--sv-radius-full);
+  background: var(--sv-bg-tertiary);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--sv-text-secondary);
+}
+
+/* Legend row */
+.sv-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 12px 0;
+}
+
+.sv-legend__item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--sv-text-secondary);
+}
+
+.sv-legend__swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+/* Tooltip base */
+.sv-tooltip {
+  position: absolute;
+  z-index: 1000;
+  max-width: 280px;
+  padding: 8px 12px;
+  border-radius: var(--sv-radius);
+  background: var(--sv-bg-elevated);
+  border: 1px solid var(--sv-border);
+  box-shadow: var(--sv-shadow-lg);
+  font-size: 12px;
+  color: var(--sv-text);
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity var(--sv-transition-fast), transform var(--sv-transition-fast);
+}
+
+.sv-tooltip--visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.sv-tooltip__title {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.sv-tooltip__value {
+  font-family: var(--sv-font-mono);
+  font-size: 11px;
+  color: var(--sv-text-secondary);
+}
+
+/* Screen-reader only */
+.sv-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Separator */
+.sv-separator {
+  height: 1px;
+  background: var(--sv-border-light);
+  border: none;
+  margin: 16px 0;
+}
+
+
+/* ==========================================================================
+   1. ATTACK SURFACE MAP
+   ==========================================================================
+   Visualization of hosts, services, and network zones.
+   Structure: .sv-attack-surface > .sv-asm-zone(s) > .sv-asm-node(s)
+   Edges drawn as pseudo-elements or SVG overlays.
+   ========================================================================== */
+
+.sv-attack-surface {
+  position: relative;
+  min-height: 400px;
+  background:
+    radial-gradient(circle at 20% 50%, var(--sv-zone-external-bg) 0%, transparent 50%),
+    radial-gradient(circle at 50% 50%, var(--sv-zone-dmz-bg) 0%, transparent 40%),
+    radial-gradient(circle at 80% 50%, var(--sv-zone-internal-bg) 0%, transparent 50%),
+    var(--sv-bg);
+  border-radius: var(--sv-radius-md);
+  overflow: hidden;
+  padding: 24px;
+}
+
+.sv-attack-surface__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 20px;
+  min-height: 350px;
+}
+
+/* Zone containers */
+.sv-asm-zone {
+  position: relative;
+  border: 2px dashed var(--sv-border);
+  border-radius: var(--sv-radius-lg);
+  padding: 20px 16px 16px;
+  min-height: 200px;
+  transition: border-color var(--sv-transition);
+}
+
+.sv-asm-zone:hover {
+  border-color: var(--sv-border-strong);
+}
+
+.sv-asm-zone__label {
+  position: absolute;
+  top: -10px;
+  left: 16px;
+  padding: 2px 10px;
+  border-radius: var(--sv-radius-sm);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  background: var(--sv-bg);
+}
+
+.sv-asm-zone--external {
+  border-color: var(--sv-zone-external-border);
+  background: var(--sv-zone-external-bg);
+}
+
+.sv-asm-zone--external .sv-asm-zone__label {
+  color: var(--sv-zone-external);
+  background: var(--sv-zone-external-bg);
+  border: 1px solid var(--sv-zone-external-border);
+}
+
+.sv-asm-zone--dmz {
+  border-color: var(--sv-zone-dmz-border);
+  background: var(--sv-zone-dmz-bg);
+}
+
+.sv-asm-zone--dmz .sv-asm-zone__label {
+  color: var(--sv-zone-dmz);
+  background: var(--sv-zone-dmz-bg);
+  border: 1px solid var(--sv-zone-dmz-border);
+}
+
+.sv-asm-zone--internal {
+  border-color: var(--sv-zone-internal-border);
+  background: var(--sv-zone-internal-bg);
+}
+
+.sv-asm-zone--internal .sv-asm-zone__label {
+  color: var(--sv-zone-internal);
+  background: var(--sv-zone-internal-bg);
+  border: 1px solid var(--sv-zone-internal-border);
+}
+
+.sv-asm-zone--restricted {
+  border-color: var(--sv-zone-restricted-border);
+  background: var(--sv-zone-restricted-bg);
+}
+
+.sv-asm-zone--restricted .sv-asm-zone__label {
+  color: var(--sv-zone-restricted);
+  background: var(--sv-zone-restricted-bg);
+  border: 1px solid var(--sv-zone-restricted-border);
+}
+
+/* Node elements (hosts/services) */
+.sv-asm-zone__nodes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-top: 8px;
+}
+
+.sv-asm-node {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px;
+  min-width: 80px;
+  border-radius: var(--sv-radius);
+  background: var(--sv-bg-elevated);
+  border: 1px solid var(--sv-border);
+  box-shadow: var(--sv-shadow-sm);
+  cursor: pointer;
+  transition: transform var(--sv-transition-fast), box-shadow var(--sv-transition-fast), border-color var(--sv-transition-fast);
+}
+
+.sv-asm-node:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--sv-shadow-md);
+  border-color: var(--sv-border-strong);
+}
+
+.sv-asm-node:focus-visible {
+  outline: 2px solid var(--sv-info);
+  outline-offset: 2px;
+}
+
+.sv-asm-node__icon {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--sv-radius);
+  font-size: 16px;
+  color: var(--sv-text-inverse);
+}
+
+.sv-asm-node__icon--server     { background: var(--sv-node-server); }
+.sv-asm-node__icon--workstation { background: var(--sv-node-workstation); }
+.sv-asm-node__icon--firewall   { background: var(--sv-node-firewall); }
+.sv-asm-node__icon--router     { background: var(--sv-node-router); }
+.sv-asm-node__icon--database   { background: var(--sv-node-database); }
+.sv-asm-node__icon--cloud      { background: var(--sv-node-cloud); }
+.sv-asm-node__icon--iot        { background: var(--sv-node-iot); }
+
+.sv-asm-node__name {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--sv-text);
+  text-align: center;
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sv-asm-node__ip {
+  font-family: var(--sv-font-mono);
+  font-size: 10px;
+  color: var(--sv-text-muted);
+}
+
+/* Severity indicator on node */
+.sv-asm-node__severity {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid var(--sv-bg-elevated);
+}
+
+.sv-asm-node__severity--critical { background: var(--sv-critical); }
+.sv-asm-node__severity--high     { background: var(--sv-high); }
+.sv-asm-node__severity--medium   { background: var(--sv-medium); }
+.sv-asm-node__severity--low      { background: var(--sv-low); }
+.sv-asm-node__severity--none     { background: var(--sv-none); }
+
+/* Service badges beneath node */
+.sv-asm-node__services {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  justify-content: center;
+}
+
+.sv-asm-node__service {
+  padding: 1px 5px;
+  border-radius: var(--sv-radius-xs);
+  background: var(--sv-bg-tertiary);
+  font-family: var(--sv-font-mono);
+  font-size: 9px;
+  color: var(--sv-text-muted);
+}
+
+/* Edge connections (SVG overlay) */
+.sv-asm-edges {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.sv-asm-edge {
+  fill: none;
+  stroke: var(--sv-border-strong);
+  stroke-width: 1.5;
+  stroke-dasharray: 6, 4;
+  opacity: 0.5;
+  transition: stroke var(--sv-transition), opacity var(--sv-transition);
+}
+
+.sv-asm-edge--active {
+  stroke: var(--sv-info);
+  stroke-dasharray: none;
+  opacity: 0.8;
+}
+
+.sv-asm-edge--critical {
+  stroke: var(--sv-critical);
+  stroke-width: 2;
+  opacity: 0.9;
+}
+
+/* Attack surface summary stats bar */
+.sv-asm-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+  padding: 16px 0 0;
+}
+
+.sv-asm-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px;
+  border-radius: var(--sv-radius);
+  background: var(--sv-bg-secondary);
+  border: 1px solid var(--sv-border-light);
+}
+
+.sv-asm-stat__value {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--sv-text);
+  line-height: 1.1;
+}
+
+.sv-asm-stat__label {
+  font-size: 11px;
+  color: var(--sv-text-muted);
+  margin-top: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .sv-attack-surface__grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .sv-asm-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .sv-attack-surface {
+    padding: 12px;
+  }
+
+  .sv-asm-node {
+    min-width: 64px;
+    padding: 8px;
+  }
+
+  .sv-asm-node__icon {
+    width: 24px;
+    height: 24px;
+    font-size: 12px;
+  }
+
+  .sv-asm-stats {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* ==========================================================================
+   2. KILL CHAIN VISUALIZATION
+   ==========================================================================
+   7 phases as a horizontal pipeline with progress tracking.
+   Each phase can contain multiple techniques.
+   ========================================================================== */
+
+.sv-kill-chain {
+  padding: 24px;
+}
+
+.sv-kill-chain__pipeline {
+  display: flex;
+  gap: 0;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Individual phase */
+.sv-kc-phase {
+  position: relative;
+  flex: 1;
+  min-width: 140px;
+  scroll-snap-align: start;
+}
+
+.sv-kc-phase__header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 48px;
+  background: var(--sv-bg-tertiary);
+  color: var(--sv-text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  transition: background var(--sv-transition), color var(--sv-transition);
+  /* Arrow shape via clip-path */
+  clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 50%, calc(100% - 16px) 100%, 0 100%, 16px 50%);
+  margin-left: -16px;
+  padding: 0 24px 0 28px;
+}
+
+.sv-kc-phase:first-child .sv-kc-phase__header {
+  clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 50%, calc(100% - 16px) 100%, 0 100%);
+  margin-left: 0;
+  padding-left: 16px;
+  border-radius: var(--sv-radius) 0 0 var(--sv-radius);
+}
+
+.sv-kc-phase:last-child .sv-kc-phase__header {
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, 16px 50%);
+  border-radius: 0 var(--sv-radius) var(--sv-radius) 0;
+}
+
+/* Phase color variants */
+.sv-kc-phase--recon .sv-kc-phase__header   { background: var(--sv-kc-recon);   color: var(--sv-text-inverse); }
+.sv-kc-phase--weapon .sv-kc-phase__header  { background: var(--sv-kc-weapon);  color: var(--sv-text-inverse); }
+.sv-kc-phase--delivery .sv-kc-phase__header { background: var(--sv-kc-delivery); color: var(--sv-text-inverse); }
+.sv-kc-phase--exploit .sv-kc-phase__header { background: var(--sv-kc-exploit); color: var(--sv-text-inverse); }
+.sv-kc-phase--install .sv-kc-phase__header { background: var(--sv-kc-install); color: var(--sv-text-inverse); }
+.sv-kc-phase--c2 .sv-kc-phase__header     { background: var(--sv-kc-c2);     color: var(--sv-text-inverse); }
+.sv-kc-phase--action .sv-kc-phase__header  { background: var(--sv-kc-action);  color: var(--sv-text-inverse); }
+
+/* Inactive / not-yet-reached phase */
+.sv-kc-phase--inactive .sv-kc-phase__header {
+  background: var(--sv-bg-tertiary);
+  color: var(--sv-text-muted);
+  opacity: 0.6;
+}
+
+/* Active phase indicator */
+.sv-kc-phase--active .sv-kc-phase__header::after {
+  content: "";
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid currentColor;
+}
+
+/* Phase number */
+.sv-kc-phase__number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  font-size: 10px;
+  font-weight: 700;
+  margin-right: 6px;
+  flex-shrink: 0;
+}
+
+/* Technique list beneath each phase */
+.sv-kc-phase__techniques {
+  padding: 12px 8px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 60px;
+}
+
+.sv-kc-technique {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border-radius: var(--sv-radius-sm);
+  background: var(--sv-bg-secondary);
+  border: 1px solid var(--sv-border-light);
+  font-size: 11px;
+  color: var(--sv-text-secondary);
+  cursor: pointer;
+  transition: background var(--sv-transition-fast), border-color var(--sv-transition-fast);
+}
+
+.sv-kc-technique:hover {
+  background: var(--sv-surface-hover);
+  border-color: var(--sv-border);
+}
+
+.sv-kc-technique:focus-visible {
+  outline: 2px solid var(--sv-info);
+  outline-offset: 1px;
+}
+
+.sv-kc-technique__indicator {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.sv-kc-technique__indicator--detected  { background: var(--sv-critical); }
+.sv-kc-technique__indicator--blocked   { background: var(--sv-pass); }
+.sv-kc-technique__indicator--unknown   { background: var(--sv-none); }
+
+.sv-kc-technique__name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sv-kc-technique__id {
+  font-family: var(--sv-font-mono);
+  font-size: 10px;
+  color: var(--sv-text-muted);
+  flex-shrink: 0;
+}
+
+/* Progress bar beneath pipeline */
+.sv-kc-progress {
+  margin-top: 16px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--sv-bg-tertiary);
+  overflow: hidden;
+}
+
+.sv-kc-progress__fill {
+  height: 100%;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--sv-kc-recon), var(--sv-kc-action));
+  transition: width var(--sv-anim-fill) ease;
+}
+
+/* Kill chain summary row */
+.sv-kc-summary {
+  display: flex;
+  gap: 16px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.sv-kc-summary__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--sv-text-secondary);
+}
+
+.sv-kc-summary__item strong {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--sv-text);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .sv-kill-chain__pipeline {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .sv-kc-phase {
+    min-width: auto;
+  }
+
+  .sv-kc-phase__header {
+    clip-path: none;
+    margin-left: 0;
+    padding: 0 16px;
+    border-radius: var(--sv-radius);
+  }
+
+  .sv-kc-phase:first-child .sv-kc-phase__header,
+  .sv-kc-phase:last-child .sv-kc-phase__header {
+    clip-path: none;
+    border-radius: var(--sv-radius);
+    padding-left: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .sv-kill-chain {
+    padding: 12px;
+  }
+
+  .sv-kc-phase__header {
+    height: 40px;
+    font-size: 11px;
+  }
+}
+
+
+/* ==========================================================================
+   3. MITRE ATT&CK HEATMAP
+   ==========================================================================
+   14-column tactic grid with technique coverage cells.
+   Each column = 1 tactic; cells within = techniques.
+   Intensity = coverage / detection confidence.
+   ========================================================================== */
+
+.sv-mitre-heatmap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.sv-mitre-heatmap__grid {
+  display: grid;
+  grid-template-columns: repeat(14, minmax(100px, 1fr));
+  gap: 1px;
+  background: var(--sv-border-light);
+  border: 1px solid var(--sv-border);
+  border-radius: var(--sv-radius-md);
+  overflow: hidden;
+  min-width: 1200px;
+}
+
+/* Tactic column header */
+.sv-mitre-tactic {
+  display: flex;
+  flex-direction: column;
+}
+
+.sv-mitre-tactic__header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  padding: 10px 8px;
+  text-align: center;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--sv-text-inverse);
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Tactic header colors (14 tactics) */
+.sv-mitre-tactic--recon .sv-mitre-tactic__header         { background: var(--sv-mitre-recon); }
+.sv-mitre-tactic--resource .sv-mitre-tactic__header       { background: var(--sv-mitre-resource); }
+.sv-mitre-tactic--initial .sv-mitre-tactic__header        { background: var(--sv-mitre-initial); }
+.sv-mitre-tactic--execution .sv-mitre-tactic__header      { background: var(--sv-mitre-execution); }
+.sv-mitre-tactic--persist .sv-mitre-tactic__header        { background: var(--sv-mitre-persist); }
+.sv-mitre-tactic--priv-esc .sv-mitre-tactic__header       { background: var(--sv-mitre-priv-esc); }
+.sv-mitre-tactic--defense .sv-mitre-tactic__header        { background: var(--sv-mitre-defense); }
+.sv-mitre-tactic--cred .sv-mitre-tactic__header           { background: var(--sv-mitre-cred); }
+.sv-mitre-tactic--discovery .sv-mitre-tactic__header      { background: var(--sv-mitre-discovery); }
+.sv-mitre-tactic--lateral .sv-mitre-tactic__header        { background: var(--sv-mitre-lateral); }
+.sv-mitre-tactic--collect .sv-mitre-tactic__header        { background: var(--sv-mitre-collect); }
+.sv-mitre-tactic--c2 .sv-mitre-tactic__header             { background: var(--sv-mitre-c2); }
+.sv-mitre-tactic--exfil .sv-mitre-tactic__header          { background: var(--sv-mitre-exfil); }
+.sv-mitre-tactic--impact .sv-mitre-tactic__header         { background: var(--sv-mitre-impact); }
+
+/* Tactic count badge */
+.sv-mitre-tactic__count {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 1px 6px;
+  border-radius: var(--sv-radius-full);
+  background: rgba(255, 255, 255, 0.2);
+  font-size: 9px;
+  font-weight: 600;
+}
+
+/* Technique cells within a tactic column */
+.sv-mitre-tactic__techniques {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  background: var(--sv-border-light);
+}
+
+.sv-mitre-cell {
+  position: relative;
+  padding: 8px 6px;
+  background: var(--sv-bg);
+  font-size: 10px;
+  line-height: 1.3;
+  cursor: pointer;
+  transition: background var(--sv-transition-fast);
+  min-height: 36px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sv-mitre-cell:hover {
+  background: var(--sv-surface-hover);
+}
+
+.sv-mitre-cell:focus-visible {
+  outline: 2px solid var(--sv-info);
+  outline-offset: -2px;
+}
+
+.sv-mitre-cell__id {
+  font-family: var(--sv-font-mono);
+  font-size: 9px;
+  color: var(--sv-text-muted);
+}
+
+.sv-mitre-cell__name {
+  font-weight: 500;
+  color: var(--sv-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Coverage intensity levels */
+.sv-mitre-cell--level-0 { background: var(--sv-bg); }
+.sv-mitre-cell--level-1 { background: var(--sv-heat-1); }
+.sv-mitre-cell--level-2 { background: var(--sv-heat-2); }
+.sv-mitre-cell--level-3 { background: var(--sv-heat-3); }
+.sv-mitre-cell--level-4 { background: var(--sv-heat-4); }
+.sv-mitre-cell--level-5 { background: var(--sv-heat-5); color: var(--sv-text-inverse); }
+.sv-mitre-cell--level-6 { background: var(--sv-heat-6); color: var(--sv-text-inverse); }
+.sv-mitre-cell--level-7 { background: var(--sv-heat-7); color: var(--sv-text-inverse); }
+.sv-mitre-cell--level-8 { background: var(--sv-heat-8); color: var(--sv-text-inverse); }
+.sv-mitre-cell--level-9 { background: var(--sv-heat-9); color: var(--sv-text-inverse); }
+
+.sv-mitre-cell--level-5 .sv-mitre-cell__id,
+.sv-mitre-cell--level-6 .sv-mitre-cell__id,
+.sv-mitre-cell--level-7 .sv-mitre-cell__id,
+.sv-mitre-cell--level-8 .sv-mitre-cell__id,
+.sv-mitre-cell--level-9 .sv-mitre-cell__id {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.sv-mitre-cell--level-5 .sv-mitre-cell__name,
+.sv-mitre-cell--level-6 .sv-mitre-cell__name,
+.sv-mitre-cell--level-7 .sv-mitre-cell__name,
+.sv-mitre-cell--level-8 .sv-mitre-cell__name,
+.sv-mitre-cell--level-9 .sv-mitre-cell__name {
+  color: var(--sv-text-inverse);
+}
+
+/* Detection status indicator in cell */
+.sv-mitre-cell__detection {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.sv-mitre-cell__detection--full    { background: var(--sv-pass); }
+.sv-mitre-cell__detection--partial { background: var(--sv-warn); }
+.sv-mitre-cell__detection--none    { background: var(--sv-fail); }
+
+/* Summary bar below grid */
+.sv-mitre-summary {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 16px 0;
+  flex-wrap: wrap;
+}
+
+.sv-mitre-summary__stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.sv-mitre-summary__value {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--sv-text);
+}
+
+.sv-mitre-summary__label {
+  font-size: 11px;
+  color: var(--sv-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Coverage bar */
+.sv-mitre-coverage-bar {
+  flex: 1;
+  min-width: 200px;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--sv-bg-tertiary);
+  overflow: hidden;
+}
+
+.sv-mitre-coverage-bar__fill {
+  height: 100%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--sv-heat-3), var(--sv-heat-7));
+  transition: width var(--sv-anim-fill) ease;
+}
+
+/* Responsive: horizontal scroll indicator */
+@media (max-width: 1200px) {
+  .sv-mitre-heatmap::after {
+    content: "Scroll horizontally to see all tactics";
+    display: block;
+    text-align: center;
+    padding: 8px;
+    font-size: 11px;
+    color: var(--sv-text-muted);
+    font-style: italic;
+  }
+}
+
+
+/* ==========================================================================
+   4. VULNERABILITY TIMELINE
+   ==========================================================================
+   Horizontal timeline with severity-colored markers for vulnerabilities.
+   Supports grouping by date, expandable detail cards.
+   ========================================================================== */
+
+.sv-vuln-timeline {
+  position: relative;
+  padding: 24px 0;
+}
+
+/* Main timeline axis */
+.sv-vuln-timeline__axis {
+  position: relative;
+  margin: 0 40px;
+  padding: 40px 0;
+}
+
+.sv-vuln-timeline__axis::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--sv-border);
+  transform: translateY(-50%);
+}
+
+/* Vertical timeline variant */
+.sv-vuln-timeline--vertical .sv-vuln-timeline__axis {
+  margin: 0;
+  padding: 0 0 0 40px;
+}
+
+.sv-vuln-timeline--vertical .sv-vuln-timeline__axis::before {
+  top: 0;
+  bottom: 0;
+  left: 20px;
+  right: auto;
+  width: 2px;
+  height: 100%;
+  transform: none;
+}
+
+/* Timeline markers */
+.sv-vuln-marker {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 5;
+  cursor: pointer;
+}
+
+.sv-vuln-timeline--vertical .sv-vuln-marker {
+  position: relative;
+  top: auto;
+  transform: none;
+  padding: 12px 0 12px 40px;
+}
+
+.sv-vuln-marker__dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 3px solid var(--sv-bg);
+  box-shadow: var(--sv-shadow);
+  transition: transform var(--sv-transition-fast), box-shadow var(--sv-transition-fast);
+}
+
+.sv-vuln-marker:hover .sv-vuln-marker__dot {
+  transform: scale(1.3);
+  box-shadow: var(--sv-shadow-md);
+}
+
+.sv-vuln-marker__dot--critical { background: var(--sv-critical); }
+.sv-vuln-marker__dot--high     { background: var(--sv-high); }
+.sv-vuln-marker__dot--medium   { background: var(--sv-medium); }
+.sv-vuln-marker__dot--low      { background: var(--sv-low); }
+.sv-vuln-marker__dot--info     { background: var(--sv-info); }
+
+/* Pulsing animation for critical items */
+.sv-vuln-marker__dot--critical::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--sv-critical);
+  opacity: 0;
+  transform: translate(-50%, -50%);
+  animation: sv-pulse 2s ease-in-out infinite;
+}
+
+@keyframes sv-pulse {
+  0%   { opacity: 0.4; transform: translate(-50%, -50%) scale(0.8); }
+  50%  { opacity: 0;   transform: translate(-50%, -50%) scale(1.8); }
+  100% { opacity: 0;   transform: translate(-50%, -50%) scale(1.8); }
+}
+
+/* Date label beneath marker */
+.sv-vuln-marker__date {
+  position: absolute;
+  bottom: -28px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 10px;
+  font-family: var(--sv-font-mono);
+  color: var(--sv-text-muted);
+  white-space: nowrap;
+}
+
+.sv-vuln-timeline--vertical .sv-vuln-marker__date {
+  position: static;
+  transform: none;
+  margin-bottom: 4px;
+  font-size: 11px;
+}
+
+/* Marker connector to the axis (vertical variant) */
+.sv-vuln-timeline--vertical .sv-vuln-marker::before {
+  content: "";
+  position: absolute;
+  left: 14px;
+  top: 18px;
+  width: 20px;
+  height: 2px;
+  background: var(--sv-border);
+}
+
+.sv-vuln-timeline--vertical .sv-vuln-marker .sv-vuln-marker__dot {
+  position: absolute;
+  left: -4px;
+  top: 14px;
+}
+
+/* Expandable detail card */
+.sv-vuln-marker__detail {
+  position: absolute;
+  top: -80px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 240px;
+  padding: 12px;
+  border-radius: var(--sv-radius);
+  background: var(--sv-bg-elevated);
+  border: 1px solid var(--sv-border);
+  box-shadow: var(--sv-shadow-lg);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--sv-transition-fast), transform var(--sv-transition-fast);
+  z-index: 20;
+}
+
+.sv-vuln-marker:hover .sv-vuln-marker__detail,
+.sv-vuln-marker:focus-within .sv-vuln-marker__detail {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(-4px);
+}
+
+.sv-vuln-timeline--vertical .sv-vuln-marker__detail {
+  position: static;
+  transform: none;
+  opacity: 1;
+  pointer-events: auto;
+  width: 100%;
+}
+
+.sv-vuln-detail__cve {
+  font-family: var(--sv-font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--sv-text);
+}
+
+.sv-vuln-detail__title {
+  font-size: 12px;
+  color: var(--sv-text-secondary);
+  margin-top: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sv-vuln-detail__cvss {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.sv-vuln-detail__cvss-score {
+  font-size: 14px;
+  font-weight: 700;
+  font-family: var(--sv-font-mono);
+}
+
+.sv-vuln-detail__cvss-bar {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--sv-bg-tertiary);
+  overflow: hidden;
+}
+
+.sv-vuln-detail__cvss-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width var(--sv-anim-normal) ease;
+}
+
+/* Zoom controls */
+.sv-vuln-timeline__controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 0;
+}
+
+.sv-vuln-timeline__zoom-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--sv-radius-sm);
+  border: 1px solid var(--sv-border);
+  background: var(--sv-bg);
+  color: var(--sv-text-secondary);
+  cursor: pointer;
+  font-size: 14px;
+  transition: background var(--sv-transition-fast), border-color var(--sv-transition-fast);
+}
+
+.sv-vuln-timeline__zoom-btn:hover {
+  background: var(--sv-surface-hover);
+  border-color: var(--sv-border-strong);
+}
+
+.sv-vuln-timeline__range {
+  font-size: 11px;
+  color: var(--sv-text-muted);
+  font-family: var(--sv-font-mono);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .sv-vuln-timeline__axis {
+    margin: 0 20px;
+  }
+
+  .sv-vuln-marker__detail {
+    width: 200px;
+  }
+
+  /* Switch to vertical layout on narrow screens */
+  .sv-vuln-timeline--responsive {
+    /* Same styles as vertical variant */
+  }
+
+  .sv-vuln-timeline--responsive .sv-vuln-timeline__axis {
+    padding: 0 0 0 40px;
+    margin: 0;
+  }
+
+  .sv-vuln-timeline--responsive .sv-vuln-timeline__axis::before {
+    top: 0;
+    bottom: 0;
+    left: 20px;
+    right: auto;
+    width: 2px;
+    height: 100%;
+    transform: none;
+  }
+}
+
+
+/* ==========================================================================
+   5. RISK DASHBOARD
+   ==========================================================================
+   4-quadrant risk matrix, donut chart, trend sparklines, severity
+   breakdown bar. A compact dashboard layout.
+   ========================================================================== */
+
+.sv-risk-dashboard {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto auto;
+  gap: 20px;
+  padding: 24px;
+}
+
+/* ---------- 5a. Risk Matrix (4-quadrant) ---------- */
+.sv-risk-matrix {
+  grid-column: 1;
+  grid-row: 1;
+  position: relative;
+}
+
+.sv-risk-matrix__grid {
+  display: grid;
+  grid-template-columns: auto repeat(4, 1fr);
+  grid-template-rows: repeat(4, 1fr) auto;
+  gap: 2px;
+  aspect-ratio: 1;
+  max-width: 320px;
+}
+
+/* Axis labels */
+.sv-risk-matrix__y-label {
+  grid-column: 1;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--sv-text-secondary);
+  padding-right: 8px;
+  grid-row: 1 / 5;
+}
+
+.sv-risk-matrix__x-label {
+  grid-column: 2 / 6;
+  grid-row: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--sv-text-secondary);
+  padding-top: 8px;
+}
+
+/* Matrix cells */
+.sv-risk-matrix__cell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--sv-radius-xs);
+  min-height: 60px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform var(--sv-transition-fast), box-shadow var(--sv-transition-fast);
+}
+
+.sv-risk-matrix__cell:hover {
+  transform: scale(1.05);
+  box-shadow: var(--sv-shadow-md);
+  z-index: 5;
+}
+
+.sv-risk-matrix__cell:focus-visible {
+  outline: 2px solid var(--sv-text);
+  outline-offset: 2px;
+}
+
+/* Cell severity colors (likelihood x impact) */
+.sv-risk-matrix__cell--critical {
+  background: var(--sv-critical);
+  color: var(--sv-text-inverse);
+}
+
+.sv-risk-matrix__cell--high {
+  background: var(--sv-high);
+  color: var(--sv-text-inverse);
+}
+
+.sv-risk-matrix__cell--medium {
+  background: var(--sv-medium);
+  color: var(--sv-medium-text);
+}
+
+.sv-risk-matrix__cell--low {
+  background: var(--sv-low);
+  color: var(--sv-text-inverse);
+}
+
+/* Row/column scale labels */
+.sv-risk-matrix__scale-y {
+  grid-column: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 6px;
+  font-size: 10px;
+  color: var(--sv-text-muted);
+}
+
+.sv-risk-matrix__scale-x {
+  grid-row: 5;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 4px;
+  font-size: 10px;
+  color: var(--sv-text-muted);
+}
+
+/* ---------- 5b. Donut Chart ---------- */
+.sv-risk-donut {
+  grid-column: 2;
+  grid-row: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.sv-risk-donut__chart {
+  position: relative;
+  width: 180px;
+  height: 180px;
+}
+
+.sv-risk-donut__svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.sv-risk-donut__segment {
+  fill: none;
+  stroke-width: 28;
+  stroke-linecap: butt;
+  transition: stroke-dasharray var(--sv-anim-fill) ease, opacity var(--sv-transition-fast);
+}
+
+.sv-risk-donut__segment:hover {
+  opacity: 0.8;
+}
+
+.sv-risk-donut__segment--critical { stroke: var(--sv-critical); }
+.sv-risk-donut__segment--high     { stroke: var(--sv-high); }
+.sv-risk-donut__segment--medium   { stroke: var(--sv-medium); }
+.sv-risk-donut__segment--low      { stroke: var(--sv-low); }
+.sv-risk-donut__segment--info     { stroke: var(--sv-info); }
+
+.sv-risk-donut__center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+.sv-risk-donut__total {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--sv-text);
+  line-height: 1;
+}
+
+.sv-risk-donut__label {
+  font-size: 11px;
+  color: var(--sv-text-muted);
+  margin-top: 2px;
+}
+
+.sv-risk-donut__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 16px;
+  justify-content: center;
+}
+
+.sv-risk-donut__legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--sv-text-secondary);
+}
+
+.sv-risk-donut__legend-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+
+/* ---------- 5c. Trend Sparklines ---------- */
+.sv-risk-sparklines {
+  grid-column: 1;
+  grid-row: 2;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.sv-risk-sparkline {
+  padding: 12px;
+  border-radius: var(--sv-radius);
+  background: var(--sv-bg-secondary);
+  border: 1px solid var(--sv-border-light);
+}
+
+.sv-risk-sparkline__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.sv-risk-sparkline__title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--sv-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.sv-risk-sparkline__value {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--sv-text);
+}
+
+.sv-risk-sparkline__change {
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.sv-risk-sparkline__change--up {
+  color: var(--sv-fail);
+}
+
+.sv-risk-sparkline__change--down {
+  color: var(--sv-pass);
+}
+
+.sv-risk-sparkline__chart {
+  width: 100%;
+  height: 40px;
+}
+
+.sv-risk-sparkline__line {
+  fill: none;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.sv-risk-sparkline__area {
+  opacity: 0.1;
+}
+
+/* ---------- 5d. Severity Breakdown Bar ---------- */
+.sv-risk-breakdown {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+.sv-risk-breakdown__bar {
+  display: flex;
+  height: 32px;
+  border-radius: var(--sv-radius);
+  overflow: hidden;
+  background: var(--sv-bg-tertiary);
+}
+
+.sv-risk-breakdown__segment {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--sv-text-inverse);
+  transition: flex-basis var(--sv-anim-fill) ease;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.sv-risk-breakdown__segment--critical { background: var(--sv-critical); }
+.sv-risk-breakdown__segment--high     { background: var(--sv-high); }
+.sv-risk-breakdown__segment--medium   { background: var(--sv-medium); color: var(--sv-medium-text); }
+.sv-risk-breakdown__segment--low      { background: var(--sv-low); }
+.sv-risk-breakdown__segment--info     { background: var(--sv-info); }
+
+.sv-risk-breakdown__details {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.sv-risk-breakdown__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sv-risk-breakdown__row-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.sv-risk-breakdown__row-label {
+  flex: 1;
+  font-size: 12px;
+  color: var(--sv-text-secondary);
+}
+
+.sv-risk-breakdown__row-count {
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--sv-font-mono);
+  color: var(--sv-text);
+}
+
+.sv-risk-breakdown__row-pct {
+  font-size: 11px;
+  color: var(--sv-text-muted);
+  min-width: 40px;
+  text-align: right;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .sv-risk-dashboard {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto auto;
+  }
+
+  .sv-risk-matrix { grid-column: 1; grid-row: 1; }
+  .sv-risk-donut { grid-column: 1; grid-row: 2; }
+  .sv-risk-sparklines { grid-column: 1; grid-row: 3; }
+  .sv-risk-breakdown { grid-column: 1; grid-row: 4; }
+}
+
+@media (max-width: 480px) {
+  .sv-risk-dashboard {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .sv-risk-sparklines {
+    grid-template-columns: 1fr;
+  }
+
+  .sv-risk-matrix__grid {
+    max-width: 100%;
+  }
+
+  .sv-risk-donut__chart {
+    width: 140px;
+    height: 140px;
+  }
+}
+
+
+/* ==========================================================================
+   6. NETWORK TOPOLOGY
+   ==========================================================================
+   Host nodes with status indicators, connection lines, traffic flow
+   arrows. Supports a force-directed layout (JS positions nodes; CSS
+   styles them) and a hierarchical layout.
+   ========================================================================== */
+
+.sv-network-topology {
+  position: relative;
+  min-height: 500px;
+  background:
+    radial-gradient(circle, var(--sv-bg-secondary) 1px, transparent 1px) 0 0 / 20px 20px,
+    var(--sv-bg);
+  border-radius: var(--sv-radius-md);
+  overflow: hidden;
+}
+
+.sv-network-topology__canvas {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 500px;
+}
+
+/* SVG layer for connection lines */
+.sv-net-connections {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.sv-net-connection {
+  fill: none;
+  stroke: var(--sv-border-strong);
+  stroke-width: 1.5;
+  transition: stroke var(--sv-transition), stroke-width var(--sv-transition);
+}
+
+.sv-net-connection--active {
+  stroke: var(--sv-info);
+  stroke-width: 2;
+}
+
+.sv-net-connection--alert {
+  stroke: var(--sv-critical);
+  stroke-width: 2;
+  stroke-dasharray: 8, 4;
+  animation: sv-dash-flow 1s linear infinite;
+}
+
+@keyframes sv-dash-flow {
+  to { stroke-dashoffset: -12; }
+}
+
+/* Traffic flow arrows */
+.sv-net-arrow {
+  fill: var(--sv-border-strong);
+  transition: fill var(--sv-transition);
+}
+
+.sv-net-arrow--active { fill: var(--sv-info); }
+.sv-net-arrow--alert  { fill: var(--sv-critical); }
+
+/* Traffic volume indicators on edges */
+.sv-net-traffic-label {
+  font-family: var(--sv-font-mono);
+  font-size: 9px;
+  fill: var(--sv-text-muted);
+}
+
+/* Host nodes */
+.sv-net-node {
+  position: absolute;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  cursor: grab;
+  transition: transform var(--sv-transition-fast);
+}
+
+.sv-net-node:active {
+  cursor: grabbing;
+}
+
+.sv-net-node:hover {
+  z-index: 20;
+}
+
+.sv-net-node__body {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--sv-radius-md);
+  background: var(--sv-bg-elevated);
+  border: 2px solid var(--sv-border);
+  box-shadow: var(--sv-shadow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  transition: border-color var(--sv-transition-fast), box-shadow var(--sv-transition-fast), transform var(--sv-transition-fast);
+}
+
+.sv-net-node:hover .sv-net-node__body {
+  border-color: var(--sv-border-strong);
+  box-shadow: var(--sv-shadow-md);
+  transform: scale(1.08);
+}
+
+.sv-net-node:focus-visible .sv-net-node__body {
+  outline: 2px solid var(--sv-info);
+  outline-offset: 2px;
+}
+
+/* Node type styling */
+.sv-net-node--server .sv-net-node__body    { border-color: var(--sv-node-server); }
+.sv-net-node--workstation .sv-net-node__body { border-color: var(--sv-node-workstation); }
+.sv-net-node--firewall .sv-net-node__body  { border-color: var(--sv-node-firewall); }
+.sv-net-node--router .sv-net-node__body    { border-color: var(--sv-node-router); }
+.sv-net-node--database .sv-net-node__body  { border-color: var(--sv-node-database); }
+.sv-net-node--cloud .sv-net-node__body     { border-color: var(--sv-node-cloud); }
+.sv-net-node--iot .sv-net-node__body       { border-color: var(--sv-node-iot); }
+
+/* Status indicator dot */
+.sv-net-node__status {
+  position: absolute;
+  bottom: -3px;
+  right: -3px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid var(--sv-bg-elevated);
+}
+
+.sv-net-node__status--up      { background: var(--sv-pass); }
+.sv-net-node__status--down    { background: var(--sv-fail); }
+.sv-net-node__status--warning { background: var(--sv-warn); }
+.sv-net-node__status--unknown { background: var(--sv-none); }
+
+/* Pulsing ring for alerting nodes */
+.sv-net-node__status--down::after {
+  content: "";
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid var(--sv-fail);
+  animation: sv-node-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes sv-node-pulse {
+  0%   { transform: scale(1); opacity: 1; }
+  100% { transform: scale(2); opacity: 0; }
+}
+
+/* Node labels */
+.sv-net-node__label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--sv-text);
+  text-align: center;
+  max-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sv-net-node__ip {
+  font-family: var(--sv-font-mono);
+  font-size: 9px;
+  color: var(--sv-text-muted);
+}
+
+/* Detail panel (shown on node click) */
+.sv-net-detail {
+  position: absolute;
+  right: 20px;
+  top: 20px;
+  width: 280px;
+  background: var(--sv-bg-elevated);
+  border: 1px solid var(--sv-border);
+  border-radius: var(--sv-radius-md);
+  box-shadow: var(--sv-shadow-lg);
+  z-index: 50;
+  transform: translateX(320px);
+  transition: transform var(--sv-transition);
+}
+
+.sv-net-detail--open {
+  transform: translateX(0);
+}
+
+.sv-net-detail__header {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--sv-border-light);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sv-net-detail__name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--sv-text);
+}
+
+.sv-net-detail__close {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: none;
+  color: var(--sv-text-muted);
+  cursor: pointer;
+  border-radius: var(--sv-radius-sm);
+  transition: background var(--sv-transition-fast);
+}
+
+.sv-net-detail__close:hover {
+  background: var(--sv-surface-hover);
+}
+
+.sv-net-detail__body {
+  padding: 14px 16px;
+}
+
+.sv-net-detail__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--sv-border-light);
+  font-size: 12px;
+}
+
+.sv-net-detail__row:last-child {
+  border-bottom: none;
+}
+
+.sv-net-detail__key {
+  color: var(--sv-text-muted);
+}
+
+.sv-net-detail__val {
+  font-family: var(--sv-font-mono);
+  font-weight: 500;
+  color: var(--sv-text);
+}
+
+/* Minimap */
+.sv-net-minimap {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  width: 160px;
+  height: 100px;
+  background: var(--sv-bg-secondary);
+  border: 1px solid var(--sv-border);
+  border-radius: var(--sv-radius);
+  overflow: hidden;
+  z-index: 30;
+  opacity: 0.9;
+}
+
+.sv-net-minimap__viewport {
+  position: absolute;
+  border: 1px solid var(--sv-info);
+  background: rgba(74, 144, 217, 0.1);
+  border-radius: 1px;
+}
+
+/* Topology controls */
+.sv-net-controls {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  z-index: 30;
+}
+
+.sv-net-controls__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--sv-radius-sm);
+  border: 1px solid var(--sv-border);
+  background: var(--sv-bg-elevated);
+  color: var(--sv-text-secondary);
+  cursor: pointer;
+  font-size: 14px;
+  transition: background var(--sv-transition-fast), border-color var(--sv-transition-fast);
+}
+
+.sv-net-controls__btn:hover {
+  background: var(--sv-surface-hover);
+  border-color: var(--sv-border-strong);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .sv-network-topology {
+    min-height: 350px;
+  }
+
+  .sv-net-detail {
+    right: 0;
+    top: auto;
+    bottom: 0;
+    width: 100%;
+    border-radius: var(--sv-radius-lg) var(--sv-radius-lg) 0 0;
+    transform: translateY(100%);
+  }
+
+  .sv-net-detail--open {
+    transform: translateY(0);
+  }
+
+  .sv-net-minimap {
+    display: none;
+  }
+}
+
+
+/* ==========================================================================
+   7. THREAT RADAR
+   ==========================================================================
+   Concentric circles representing distance/severity with threat category
+   sectors (pie slices). Items plotted as dots within sectors.
+   ========================================================================== */
+
+.sv-threat-radar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px;
+}
+
+.sv-threat-radar__chart {
+  position: relative;
+  width: 360px;
+  height: 360px;
+}
+
+.sv-threat-radar__svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* Concentric rings */
+.sv-threat-radar__ring {
+  fill: none;
+  stroke: var(--sv-border-light);
+  stroke-width: 1;
+}
+
+.sv-threat-radar__ring--critical {
+  fill: rgba(230, 57, 70, 0.05);
+}
+
+.sv-threat-radar__ring--high {
+  fill: rgba(247, 127, 0, 0.04);
+}
+
+.sv-threat-radar__ring--medium {
+  fill: rgba(240, 188, 0, 0.03);
+}
+
+.sv-threat-radar__ring--low {
+  fill: rgba(56, 183, 100, 0.02);
+}
+
+/* Sector dividers */
+.sv-threat-radar__sector-line {
+  stroke: var(--sv-border-light);
+  stroke-width: 1;
+  stroke-dasharray: 4, 4;
+}
+
+/* Sector labels (positioned around perimeter) */
+.sv-threat-radar__sector-label {
+  font-size: 10px;
+  font-weight: 600;
+  fill: var(--sv-text-secondary);
+  text-anchor: middle;
+}
+
+/* Ring labels */
+.sv-threat-radar__ring-label {
+  font-size: 9px;
+  fill: var(--sv-text-muted);
+  text-anchor: middle;
+}
+
+/* Threat dots */
+.sv-threat-radar__dot {
+  cursor: pointer;
+  transition: r var(--sv-transition-fast), opacity var(--sv-transition-fast);
+}
+
+.sv-threat-radar__dot:hover {
+  opacity: 0.8;
+}
+
+.sv-threat-radar__dot--malware      { fill: var(--sv-threat-malware); }
+.sv-threat-radar__dot--phishing     { fill: var(--sv-threat-phishing); }
+.sv-threat-radar__dot--exploit      { fill: var(--sv-threat-exploit); }
+.sv-threat-radar__dot--insider      { fill: var(--sv-threat-insider); }
+.sv-threat-radar__dot--ddos         { fill: var(--sv-threat-ddos); }
+.sv-threat-radar__dot--apt          { fill: var(--sv-threat-apt); }
+.sv-threat-radar__dot--ransomware   { fill: var(--sv-threat-ransomware); }
+.sv-threat-radar__dot--supply-chain { fill: var(--sv-threat-supply-chain); }
+
+/* Dot size by severity */
+.sv-threat-radar__dot--size-sm { r: 4; }
+.sv-threat-radar__dot--size-md { r: 6; }
+.sv-threat-radar__dot--size-lg { r: 8; }
+
+/* Dot pulsing for active threats */
+.sv-threat-radar__dot--active {
+  animation: sv-radar-pulse 2s ease-in-out infinite;
+}
+
+@keyframes sv-radar-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.5; }
+}
+
+/* Sweep line */
+.sv-threat-radar__sweep {
+  stroke: var(--sv-info);
+  stroke-width: 1.5;
+  opacity: 0.6;
+  transform-origin: center;
+  animation: sv-radar-sweep 8s linear infinite;
+}
+
+@keyframes sv-radar-sweep {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* Sweep trailing gradient */
+.sv-threat-radar__sweep-trail {
+  fill: url(#sv-radar-gradient);
+  opacity: 0.15;
+  transform-origin: center;
+  animation: sv-radar-sweep 8s linear infinite;
+}
+
+/* Center point */
+.sv-threat-radar__center {
+  fill: var(--sv-bg-elevated);
+  stroke: var(--sv-border);
+  stroke-width: 2;
+}
+
+/* Radar legend */
+.sv-threat-radar__legend {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 8px;
+  margin-top: 20px;
+  width: 100%;
+  max-width: 600px;
+}
+
+.sv-threat-radar__legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: var(--sv-radius-sm);
+  background: var(--sv-bg-secondary);
+  font-size: 12px;
+  color: var(--sv-text-secondary);
+}
+
+.sv-threat-radar__legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.sv-threat-radar__legend-count {
+  margin-left: auto;
+  font-family: var(--sv-font-mono);
+  font-weight: 600;
+  font-size: 11px;
+  color: var(--sv-text);
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .sv-threat-radar__chart {
+    width: 280px;
+    height: 280px;
+  }
+
+  .sv-threat-radar__legend {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 360px) {
+  .sv-threat-radar__chart {
+    width: 240px;
+    height: 240px;
+  }
+
+  .sv-threat-radar__legend {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* ==========================================================================
+   8. COMPLIANCE SCORECARD
+   ==========================================================================
+   Framework list with completion bars, pass/fail/partial indicators.
+   Supports multiple compliance frameworks (NIST, ISO, PCI, etc.).
+   ========================================================================== */
+
+.sv-compliance-scorecard {
+  padding: 0;
+}
+
+/* Scorecard summary row */
+.sv-comp-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 16px;
+  padding: 20px;
+  border-bottom: 1px solid var(--sv-border-light);
+  background: var(--sv-bg-secondary);
+}
+
+.sv-comp-summary__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.sv-comp-summary__value {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--sv-text);
+  line-height: 1.1;
+}
+
+.sv-comp-summary__label {
+  font-size: 11px;
+  color: var(--sv-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-top: 4px;
+}
+
+/* Overall score circle */
+.sv-comp-score-ring {
+  position: relative;
+  width: 80px;
+  height: 80px;
+}
+
+.sv-comp-score-ring__svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.sv-comp-score-ring__track {
+  fill: none;
+  stroke: var(--sv-bg-tertiary);
+  stroke-width: 6;
+}
+
+.sv-comp-score-ring__fill {
+  fill: none;
+  stroke-width: 6;
+  stroke-linecap: round;
+  transition: stroke-dasharray var(--sv-anim-fill) ease;
+}
+
+.sv-comp-score-ring__fill--pass    { stroke: var(--sv-pass); }
+.sv-comp-score-ring__fill--warn    { stroke: var(--sv-warn); }
+.sv-comp-score-ring__fill--fail    { stroke: var(--sv-fail); }
+
+.sv-comp-score-ring__value {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--sv-text);
+}
+
+/* Framework list */
+.sv-comp-frameworks {
+  padding: 0;
+  list-style: none;
+  margin: 0;
+}
+
+.sv-comp-framework {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--sv-border-light);
+  transition: background var(--sv-transition-fast);
+}
+
+.sv-comp-framework:last-child {
+  border-bottom: none;
+}
+
+.sv-comp-framework:hover {
+  background: var(--sv-surface-hover);
+}
+
+.sv-comp-framework__icon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--sv-radius);
+  background: var(--sv-bg-tertiary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--sv-text-secondary);
+  flex-shrink: 0;
+}
+
+.sv-comp-framework__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.sv-comp-framework__name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--sv-text);
+}
+
+.sv-comp-framework__version {
+  font-size: 11px;
+  color: var(--sv-text-muted);
+  margin-top: 2px;
+}
+
+/* Completion bar */
+.sv-comp-framework__bar-wrap {
+  flex: 0 0 200px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sv-comp-framework__bar {
+  flex: 1;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--sv-bg-tertiary);
+  overflow: hidden;
+}
+
+.sv-comp-framework__bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width var(--sv-anim-fill) ease;
+}
+
+.sv-comp-framework__bar-fill--pass { background: var(--sv-pass); }
+.sv-comp-framework__bar-fill--warn { background: var(--sv-warn); }
+.sv-comp-framework__bar-fill--fail { background: var(--sv-fail); }
+
+.sv-comp-framework__pct {
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--sv-font-mono);
+  color: var(--sv-text);
+  min-width: 40px;
+  text-align: right;
+}
+
+/* Control breakdown within a framework */
+.sv-comp-framework__controls {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.sv-comp-control-count {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.sv-comp-control-count__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.sv-comp-control-count--pass .sv-comp-control-count__dot   { background: var(--sv-comp-pass); }
+.sv-comp-control-count--fail .sv-comp-control-count__dot   { background: var(--sv-comp-fail); }
+.sv-comp-control-count--partial .sv-comp-control-count__dot { background: var(--sv-comp-partial); }
+.sv-comp-control-count--na .sv-comp-control-count__dot     { background: var(--sv-comp-na); }
+
+.sv-comp-control-count--pass   { color: var(--sv-comp-pass); }
+.sv-comp-control-count--fail   { color: var(--sv-comp-fail); }
+.sv-comp-control-count--partial { color: var(--sv-comp-partial); }
+.sv-comp-control-count--na     { color: var(--sv-comp-na); }
+
+/* Expanded control detail rows */
+.sv-comp-control-list {
+  list-style: none;
+  margin: 0;
+  padding: 0 20px 16px 72px;
+  display: grid;
+  gap: 4px;
+}
+
+.sv-comp-control {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border-radius: var(--sv-radius-sm);
+  font-size: 12px;
+  transition: background var(--sv-transition-fast);
+}
+
+.sv-comp-control:hover {
+  background: var(--sv-surface-hover);
+}
+
+.sv-comp-control__status {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: var(--sv-text-inverse);
+  flex-shrink: 0;
+}
+
+.sv-comp-control__status--pass    { background: var(--sv-comp-pass); }
+.sv-comp-control__status--fail    { background: var(--sv-comp-fail); }
+.sv-comp-control__status--partial { background: var(--sv-comp-partial); }
+.sv-comp-control__status--na      { background: var(--sv-comp-na); }
+
+.sv-comp-control__id {
+  font-family: var(--sv-font-mono);
+  font-size: 11px;
+  color: var(--sv-text-muted);
+  flex-shrink: 0;
+  min-width: 60px;
+}
+
+.sv-comp-control__name {
+  flex: 1;
+  color: var(--sv-text-secondary);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .sv-comp-framework {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .sv-comp-framework__bar-wrap {
+    flex: 1 1 100%;
+    order: 3;
+  }
+
+  .sv-comp-framework__controls {
+    order: 2;
+  }
+
+  .sv-comp-control-list {
+    padding-left: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .sv-comp-summary {
+    grid-template-columns: repeat(2, 1fr);
+    padding: 12px;
+  }
+
+  .sv-comp-framework {
+    padding: 12px;
+  }
+}
+
+
+/* ==========================================================================
+   9. INCIDENT TIMELINE
+   ==========================================================================
+   Chronological events with severity markers, expandable details,
+   filterable by severity and type.
+   ========================================================================== */
+
+.sv-incident-timeline {
+  position: relative;
+  padding: 0 20px 20px 56px;
+}
+
+/* Vertical spine */
+.sv-incident-timeline::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 36px;
+  bottom: 0;
+  width: 2px;
+  background: var(--sv-border);
+}
+
+/* Filter bar */
+.sv-incident-timeline__filters {
+  display: flex;
+  gap: 8px;
+  padding: 16px 0;
+  flex-wrap: wrap;
+  margin-left: -36px;
+  padding-left: 36px;
+}
+
+.sv-incident-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: var(--sv-radius-full);
+  border: 1px solid var(--sv-border);
+  background: var(--sv-bg);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--sv-text-secondary);
+  cursor: pointer;
+  transition: background var(--sv-transition-fast), border-color var(--sv-transition-fast), color var(--sv-transition-fast);
+}
+
+.sv-incident-filter:hover {
+  background: var(--sv-surface-hover);
+  border-color: var(--sv-border-strong);
+}
+
+.sv-incident-filter--active {
+  background: var(--sv-info-bg);
+  border-color: var(--sv-info-border);
+  color: var(--sv-info-text);
+}
+
+/* Individual event */
+.sv-incident-event {
+  position: relative;
+  padding: 16px 0;
+}
+
+/* Event marker on the spine */
+.sv-incident-event__marker {
+  position: absolute;
+  left: -28px;
+  top: 20px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 3px solid var(--sv-bg);
+  box-shadow: var(--sv-shadow-sm);
+  z-index: 5;
+}
+
+.sv-incident-event__marker--critical { background: var(--sv-critical); }
+.sv-incident-event__marker--high     { background: var(--sv-high); }
+.sv-incident-event__marker--medium   { background: var(--sv-medium); }
+.sv-incident-event__marker--low      { background: var(--sv-low); }
+.sv-incident-event__marker--info     { background: var(--sv-info); }
+
+/* Event card */
+.sv-incident-event__card {
+  border: 1px solid var(--sv-border-light);
+  border-radius: var(--sv-radius);
+  background: var(--sv-bg-elevated);
+  overflow: hidden;
+  transition: border-color var(--sv-transition-fast), box-shadow var(--sv-transition-fast);
+}
+
+.sv-incident-event__card:hover {
+  border-color: var(--sv-border);
+  box-shadow: var(--sv-shadow);
+}
+
+/* Severity stripe on left edge */
+.sv-incident-event__card--critical { border-left: 3px solid var(--sv-critical); }
+.sv-incident-event__card--high     { border-left: 3px solid var(--sv-high); }
+.sv-incident-event__card--medium   { border-left: 3px solid var(--sv-medium); }
+.sv-incident-event__card--low      { border-left: 3px solid var(--sv-low); }
+.sv-incident-event__card--info     { border-left: 3px solid var(--sv-info); }
+
+.sv-incident-event__header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  cursor: pointer;
+}
+
+.sv-incident-event__header:focus-visible {
+  outline: 2px solid var(--sv-info);
+  outline-offset: -2px;
+}
+
+.sv-incident-event__time {
+  font-family: var(--sv-font-mono);
+  font-size: 11px;
+  color: var(--sv-text-muted);
+  flex-shrink: 0;
+  min-width: 80px;
+}
+
+.sv-incident-event__title {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--sv-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sv-incident-event__type {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: var(--sv-radius-full);
+  background: var(--sv-bg-tertiary);
+  color: var(--sv-text-muted);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  flex-shrink: 0;
+}
+
+.sv-incident-event__expand-icon {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--sv-text-muted);
+  transition: transform var(--sv-transition-fast);
+  flex-shrink: 0;
+}
+
+.sv-incident-event--expanded .sv-incident-event__expand-icon {
+  transform: rotate(180deg);
+}
+
+/* Expandable detail body */
+.sv-incident-event__body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height var(--sv-transition);
+}
+
+.sv-incident-event--expanded .sv-incident-event__body {
+  max-height: 500px;
+}
+
+.sv-incident-event__detail {
+  padding: 0 16px 16px;
+  border-top: 1px solid var(--sv-border-light);
+  margin-top: 0;
+}
+
+.sv-incident-event__description {
+  font-size: 13px;
+  color: var(--sv-text-secondary);
+  line-height: 1.6;
+  margin: 12px 0;
+}
+
+/* Detail key-value pairs */
+.sv-incident-event__meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 8px;
+}
+
+.sv-incident-event__meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px;
+  border-radius: var(--sv-radius-sm);
+  background: var(--sv-bg-secondary);
+}
+
+.sv-incident-event__meta-key {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--sv-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.sv-incident-event__meta-val {
+  font-size: 12px;
+  font-family: var(--sv-font-mono);
+  color: var(--sv-text);
+  word-break: break-all;
+}
+
+/* Related IOCs inline */
+.sv-incident-event__iocs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.sv-incident-ioc-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: var(--sv-radius-sm);
+  background: var(--sv-bg-tertiary);
+  font-family: var(--sv-font-mono);
+  font-size: 10px;
+  color: var(--sv-text-secondary);
+}
+
+.sv-incident-ioc-tag__type {
+  font-weight: 700;
+  color: var(--sv-text-muted);
+  text-transform: uppercase;
+  font-size: 9px;
+}
+
+/* Day separator */
+.sv-incident-day {
+  position: relative;
+  padding: 16px 0 8px;
+  margin-left: -36px;
+}
+
+.sv-incident-day__label {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: var(--sv-radius-full);
+  background: var(--sv-bg-tertiary);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--sv-text-secondary);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .sv-incident-timeline {
+    padding-left: 40px;
+  }
+
+  .sv-incident-timeline::before {
+    left: 20px;
+  }
+
+  .sv-incident-event__marker {
+    left: -28px;
+    width: 14px;
+    height: 14px;
+  }
+
+  .sv-incident-event__header {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .sv-incident-event__time {
+    min-width: auto;
+  }
+
+  .sv-incident-event__meta {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .sv-incident-timeline {
+    padding-left: 28px;
+  }
+
+  .sv-incident-timeline::before {
+    left: 12px;
+  }
+
+  .sv-incident-event__marker {
+    left: -22px;
+    width: 12px;
+    height: 12px;
+  }
+}
+
+
+/* ==========================================================================
+   10. USER BEHAVIOR ANALYTICS (UBA) GRID
+   ==========================================================================
+   Activity grid (like GitHub contributions), anomaly highlights.
+   Rows = users or entities, columns = time periods.
+   ========================================================================== */
+
+.sv-uba-grid {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.sv-uba-grid__table {
+  border-collapse: separate;
+  border-spacing: 2px;
+  min-width: 600px;
+}
+
+/* Row labels (user/entity names) */
+.sv-uba-grid__row-label {
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--sv-text);
+  text-align: right;
+  white-space: nowrap;
+  vertical-align: middle;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Column headers (time labels) */
+.sv-uba-grid__col-label {
+  padding: 4px 0;
+  font-size: 9px;
+  font-family: var(--sv-font-mono);
+  color: var(--sv-text-muted);
+  text-align: center;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  height: 50px;
+}
+
+/* Activity cells */
+.sv-uba-cell {
+  width: 14px;
+  height: 14px;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: transform var(--sv-transition-fast), box-shadow var(--sv-transition-fast);
+  position: relative;
+}
+
+.sv-uba-cell:hover {
+  transform: scale(1.5);
+  box-shadow: var(--sv-shadow-md);
+  z-index: 10;
+}
+
+.sv-uba-cell:focus-visible {
+  outline: 2px solid var(--sv-text);
+  outline-offset: 1px;
+}
+
+/* Activity intensity levels */
+.sv-uba-cell--level-0 { background: var(--sv-heat-0); }
+.sv-uba-cell--level-1 { background: var(--sv-heat-1); }
+.sv-uba-cell--level-2 { background: var(--sv-heat-2); }
+.sv-uba-cell--level-3 { background: var(--sv-heat-3); }
+.sv-uba-cell--level-4 { background: var(--sv-heat-4); }
+.sv-uba-cell--level-5 { background: var(--sv-heat-5); }
+.sv-uba-cell--level-6 { background: var(--sv-heat-6); }
+.sv-uba-cell--level-7 { background: var(--sv-heat-7); }
+.sv-uba-cell--level-8 { background: var(--sv-heat-8); }
+.sv-uba-cell--level-9 { background: var(--sv-heat-9); }
+
+/* Anomaly highlight */
+.sv-uba-cell--anomaly {
+  box-shadow: 0 0 0 2px var(--sv-critical);
+  animation: sv-anomaly-glow 2s ease-in-out infinite;
+}
+
+@keyframes sv-anomaly-glow {
+  0%, 100% { box-shadow: 0 0 0 2px var(--sv-critical); }
+  50%      { box-shadow: 0 0 0 2px var(--sv-critical), 0 0 6px var(--sv-critical); }
+}
+
+/* Anomaly marker (dot overlay) */
+.sv-uba-cell--anomaly::after {
+  content: "";
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--sv-critical);
+  border: 1px solid var(--sv-bg);
+}
+
+/* UBA grid legend and summary */
+.sv-uba-summary {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 16px 0;
+  flex-wrap: wrap;
+}
+
+.sv-uba-summary__scale {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.sv-uba-summary__scale-label {
+  font-size: 11px;
+  color: var(--sv-text-muted);
+}
+
+.sv-uba-summary__scale-cells {
+  display: flex;
+  gap: 2px;
+}
+
+.sv-uba-summary__scale-cell {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+}
+
+.sv-uba-anomaly-count {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--sv-critical);
+}
+
+.sv-uba-anomaly-count__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--sv-critical);
+}
+
+/* User detail row */
+.sv-uba-user-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+}
+
+.sv-uba-user-row__avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--sv-bg-tertiary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--sv-text-secondary);
+  flex-shrink: 0;
+}
+
+.sv-uba-user-row__name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--sv-text);
+}
+
+.sv-uba-user-row__risk {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: var(--sv-radius-full);
+}
+
+.sv-uba-user-row__risk--high   { background: var(--sv-critical-bg); color: var(--sv-critical-text); }
+.sv-uba-user-row__risk--medium { background: var(--sv-medium-bg);   color: var(--sv-medium-text); }
+.sv-uba-user-row__risk--low    { background: var(--sv-low-bg);      color: var(--sv-low-text); }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .sv-uba-cell {
+    width: 10px;
+    height: 10px;
+  }
+
+  .sv-uba-grid__row-label {
+    font-size: 10px;
+    max-width: 80px;
+  }
+}
+
+
+/* ==========================================================================
+   11. VULNERABILITY FUNNEL
+   ==========================================================================
+   Stages from discovered to remediated, narrowing visual funnel.
+   Each stage shows count and percentage drop-off.
+   ========================================================================== */
+
+.sv-vuln-funnel {
+  padding: 24px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* Funnel container */
+.sv-vuln-funnel__stages {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Individual stage */
+.sv-vuln-funnel__stage {
+  position: relative;
+  display: flex;
+  align-items: center;
+  transition: transform var(--sv-transition-fast);
+}
+
+.sv-vuln-funnel__stage:hover {
+  transform: scale(1.02);
+}
+
+/* Funnel bar (decreasing width) */
+.sv-vuln-funnel__bar {
+  height: 48px;
+  border-radius: var(--sv-radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: width var(--sv-anim-fill) ease;
+  position: relative;
+  margin: 0 auto;
+}
+
+.sv-vuln-funnel__bar--discovered   { background: var(--sv-funnel-discovered); }
+.sv-vuln-funnel__bar--triaged      { background: var(--sv-funnel-triaged); }
+.sv-vuln-funnel__bar--assigned     { background: var(--sv-funnel-assigned); }
+.sv-vuln-funnel__bar--in-progress  { background: var(--sv-funnel-in-progress); }
+.sv-vuln-funnel__bar--verified     { background: var(--sv-funnel-verified); }
+.sv-vuln-funnel__bar--remediated   { background: var(--sv-funnel-remediated); }
+
+.sv-vuln-funnel__bar-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--sv-text-inverse);
+  text-align: center;
+  white-space: nowrap;
+  padding: 0 16px;
+}
+
+/* Stage info on the right side */
+.sv-vuln-funnel__stage-info {
+  position: absolute;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.sv-vuln-funnel__stage-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--sv-text);
+}
+
+.sv-vuln-funnel__stage-count {
+  font-size: 18px;
+  font-weight: 700;
+  font-family: var(--sv-font-mono);
+  color: var(--sv-text);
+}
+
+.sv-vuln-funnel__stage-pct {
+  font-size: 11px;
+  color: var(--sv-text-muted);
+}
+
+/* Drop-off connector between stages */
+.sv-vuln-funnel__dropoff {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 20px;
+  font-size: 10px;
+  color: var(--sv-text-muted);
+}
+
+.sv-vuln-funnel__dropoff-arrow {
+  color: var(--sv-text-muted);
+  margin: 0 6px;
+}
+
+.sv-vuln-funnel__dropoff-value {
+  font-family: var(--sv-font-mono);
+  font-weight: 600;
+}
+
+.sv-vuln-funnel__dropoff-value--high {
+  color: var(--sv-fail);
+}
+
+/* Funnel summary */
+.sv-vuln-funnel__summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 20px;
+  padding: 16px;
+  border-radius: var(--sv-radius);
+  background: var(--sv-bg-secondary);
+  border: 1px solid var(--sv-border-light);
+}
+
+.sv-vuln-funnel__summary-item {
+  text-align: center;
+}
+
+.sv-vuln-funnel__summary-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--sv-text);
+}
+
+.sv-vuln-funnel__summary-label {
+  font-size: 11px;
+  color: var(--sv-text-muted);
+  margin-top: 2px;
+}
+
+/* MTTR (Mean Time to Remediate) display */
+.sv-vuln-funnel__mttr {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 10px 16px;
+  border-radius: var(--sv-radius);
+  background: var(--sv-info-bg);
+  border: 1px solid var(--sv-info-border);
+}
+
+.sv-vuln-funnel__mttr-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--sv-info-text);
+}
+
+.sv-vuln-funnel__mttr-value {
+  font-size: 16px;
+  font-weight: 700;
+  font-family: var(--sv-font-mono);
+  color: var(--sv-info-text);
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .sv-vuln-funnel {
+    padding: 12px;
+  }
+
+  .sv-vuln-funnel__bar {
+    height: 36px;
+  }
+
+  .sv-vuln-funnel__bar-label {
+    font-size: 11px;
+  }
+
+  .sv-vuln-funnel__stage-info {
+    position: static;
+    align-items: center;
+    flex-direction: row;
+    gap: 8px;
+    padding: 4px 0;
+  }
+}
+
+
+/* ==========================================================================
+   12. SECURITY POSTURE GAUGE
+   ==========================================================================
+   Semicircle meter with grade (A through F) and numeric score.
+   ========================================================================== */
+
+.sv-posture-gauge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px;
+}
+
+.sv-posture-gauge__chart {
+  position: relative;
+  width: 280px;
+  height: 150px;
+  overflow: hidden;
+}
+
+.sv-posture-gauge__svg {
+  width: 280px;
+  height: 280px;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+/* Background arc (track) */
+.sv-posture-gauge__track {
+  fill: none;
+  stroke: var(--sv-bg-tertiary);
+  stroke-width: 24;
+  stroke-linecap: round;
+}
+
+/* Colored fill arc */
+.sv-posture-gauge__fill {
+  fill: none;
+  stroke-width: 24;
+  stroke-linecap: round;
+  transition: stroke-dasharray var(--sv-anim-fill) ease, stroke var(--sv-transition);
+}
+
+.sv-posture-gauge__fill--grade-a { stroke: var(--sv-grade-a); }
+.sv-posture-gauge__fill--grade-b { stroke: var(--sv-grade-b); }
+.sv-posture-gauge__fill--grade-c { stroke: var(--sv-grade-c); }
+.sv-posture-gauge__fill--grade-d { stroke: var(--sv-grade-d); }
+.sv-posture-gauge__fill--grade-f { stroke: var(--sv-grade-f); }
+
+/* Tick marks along the arc */
+.sv-posture-gauge__tick {
+  fill: none;
+  stroke: var(--sv-bg);
+  stroke-width: 2;
+}
+
+/* Needle */
+.sv-posture-gauge__needle {
+  fill: var(--sv-text);
+  transform-origin: 140px 140px;
+  transition: transform var(--sv-anim-fill) ease;
+}
+
+.sv-posture-gauge__needle-pin {
+  fill: var(--sv-text);
+}
+
+/* Gauge segment colors (gradient stops on arc) */
+.sv-posture-gauge__segment--f { stroke: var(--sv-grade-f); }
+.sv-posture-gauge__segment--d { stroke: var(--sv-grade-d); }
+.sv-posture-gauge__segment--c { stroke: var(--sv-grade-c); }
+.sv-posture-gauge__segment--b { stroke: var(--sv-grade-b); }
+.sv-posture-gauge__segment--a { stroke: var(--sv-grade-a); }
+
+/* Score display inside gauge */
+.sv-posture-gauge__score {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+}
+
+.sv-posture-gauge__score-value {
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--sv-text);
+  line-height: 1;
+}
+
+.sv-posture-gauge__score-max {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--sv-text-muted);
+}
+
+/* Grade letter display */
+.sv-posture-gauge__grade {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--sv-radius-md);
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--sv-text-inverse);
+  margin-top: 12px;
+}
+
+.sv-posture-gauge__grade--a { background: var(--sv-grade-a); }
+.sv-posture-gauge__grade--b { background: var(--sv-grade-b); }
+.sv-posture-gauge__grade--c { background: var(--sv-grade-c); }
+.sv-posture-gauge__grade--d { background: var(--sv-grade-d); }
+.sv-posture-gauge__grade--f { background: var(--sv-grade-f); }
+
+/* Grade description */
+.sv-posture-gauge__description {
+  font-size: 13px;
+  color: var(--sv-text-secondary);
+  margin-top: 8px;
+  text-align: center;
+  max-width: 300px;
+}
+
+/* Score breakdown */
+.sv-posture-gauge__breakdown {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+  width: 100%;
+  max-width: 600px;
+  margin-top: 20px;
+}
+
+.sv-posture-gauge__category {
+  padding: 12px;
+  border-radius: var(--sv-radius);
+  background: var(--sv-bg-secondary);
+  border: 1px solid var(--sv-border-light);
+}
+
+.sv-posture-gauge__category-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.sv-posture-gauge__category-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--sv-text-secondary);
+}
+
+.sv-posture-gauge__category-score {
+  font-size: 13px;
+  font-weight: 700;
+  font-family: var(--sv-font-mono);
+  color: var(--sv-text);
+}
+
+.sv-posture-gauge__category-bar {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--sv-bg-tertiary);
+  overflow: hidden;
+}
+
+.sv-posture-gauge__category-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width var(--sv-anim-fill) ease;
+}
+
+.sv-posture-gauge__category-fill--a { background: var(--sv-grade-a); }
+.sv-posture-gauge__category-fill--b { background: var(--sv-grade-b); }
+.sv-posture-gauge__category-fill--c { background: var(--sv-grade-c); }
+.sv-posture-gauge__category-fill--d { background: var(--sv-grade-d); }
+.sv-posture-gauge__category-fill--f { background: var(--sv-grade-f); }
+
+/* Scale labels under gauge */
+.sv-posture-gauge__scale {
+  display: flex;
+  justify-content: space-between;
+  width: 280px;
+  padding: 4px 12px 0;
+}
+
+.sv-posture-gauge__scale-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--sv-text-muted);
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .sv-posture-gauge__chart {
+    width: 220px;
+    height: 120px;
+  }
+
+  .sv-posture-gauge__svg {
+    width: 220px;
+    height: 220px;
+  }
+
+  .sv-posture-gauge__score-value {
+    font-size: 28px;
+  }
+
+  .sv-posture-gauge__breakdown {
+    grid-template-columns: 1fr;
+  }
+
+  .sv-posture-gauge__scale {
+    width: 220px;
+  }
+}
+
+
+/* ==========================================================================
+   13. IOC RELATIONSHIP GRAPH
+   ==========================================================================
+   Entity nodes (IPs, domains, hashes, etc.) with typed edges showing
+   relationships (communicates-with, resolves-to, delivers, etc.).
+   ========================================================================== */
+
+.sv-ioc-graph {
+  position: relative;
+  min-height: 400px;
+  background:
+    radial-gradient(circle at center, var(--sv-bg-secondary) 0%, var(--sv-bg) 70%);
+  border-radius: var(--sv-radius-md);
+  overflow: hidden;
+}
+
+.sv-ioc-graph__canvas {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 400px;
+}
+
+/* SVG edges layer */
+.sv-ioc-edges {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.sv-ioc-edge {
+  fill: none;
+  stroke: var(--sv-border);
+  stroke-width: 1.5;
+  transition: stroke var(--sv-transition), stroke-width var(--sv-transition);
+}
+
+.sv-ioc-edge:hover {
+  stroke: var(--sv-text-secondary);
+  stroke-width: 2;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+/* Edge type styles */
+.sv-ioc-edge--communicates { stroke-dasharray: none; }
+.sv-ioc-edge--resolves     { stroke-dasharray: 6, 3; }
+.sv-ioc-edge--delivers     { stroke-dasharray: 2, 2; stroke: var(--sv-critical); }
+.sv-ioc-edge--hosts        { stroke-dasharray: 8, 4; stroke: var(--sv-info); }
+.sv-ioc-edge--attributed   { stroke-dasharray: 12, 4; stroke: var(--sv-partial); }
+
+/* Edge labels */
+.sv-ioc-edge-label {
+  font-family: var(--sv-font-mono);
+  font-size: 9px;
+  fill: var(--sv-text-muted);
+  text-anchor: middle;
+}
+
+/* Edge arrowheads */
+.sv-ioc-edge-arrow {
+  fill: var(--sv-border);
+}
+
+.sv-ioc-edge--delivers .sv-ioc-edge-arrow { fill: var(--sv-critical); }
+.sv-ioc-edge--hosts .sv-ioc-edge-arrow    { fill: var(--sv-info); }
+.sv-ioc-edge--attributed .sv-ioc-edge-arrow { fill: var(--sv-partial); }
+
+/* IOC entity nodes */
+.sv-ioc-node {
+  position: absolute;
+  z-index: 10;
+  cursor: pointer;
+  transition: transform var(--sv-transition-fast);
+}
+
+.sv-ioc-node:hover {
+  z-index: 20;
+  transform: scale(1.1);
+}
+
+.sv-ioc-node:focus-visible {
+  outline: 2px solid var(--sv-info);
+  outline-offset: 2px;
+  border-radius: var(--sv-radius);
+}
+
+.sv-ioc-node__body {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: var(--sv-radius);
+  background: var(--sv-bg-elevated);
+  border: 2px solid var(--sv-border);
+  box-shadow: var(--sv-shadow);
+  transition: border-color var(--sv-transition-fast), box-shadow var(--sv-transition-fast);
+}
+
+.sv-ioc-node:hover .sv-ioc-node__body {
+  box-shadow: var(--sv-shadow-md);
+}
+
+/* Entity type icon */
+.sv-ioc-node__type-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--sv-text-inverse);
+  flex-shrink: 0;
+}
+
+.sv-ioc-node--ip .sv-ioc-node__type-icon      { background: var(--sv-ioc-ip); }
+.sv-ioc-node--domain .sv-ioc-node__type-icon   { background: var(--sv-ioc-domain); }
+.sv-ioc-node--hash .sv-ioc-node__type-icon     { background: var(--sv-ioc-hash); }
+.sv-ioc-node--email .sv-ioc-node__type-icon    { background: var(--sv-ioc-email); }
+.sv-ioc-node--url .sv-ioc-node__type-icon      { background: var(--sv-ioc-url); }
+.sv-ioc-node--file .sv-ioc-node__type-icon     { background: var(--sv-ioc-file); }
+.sv-ioc-node--cve .sv-ioc-node__type-icon      { background: var(--sv-ioc-cve); }
+.sv-ioc-node--actor .sv-ioc-node__type-icon    { background: var(--sv-ioc-actor); }
+
+/* Node colored border matches type */
+.sv-ioc-node--ip .sv-ioc-node__body      { border-color: var(--sv-ioc-ip); }
+.sv-ioc-node--domain .sv-ioc-node__body   { border-color: var(--sv-ioc-domain); }
+.sv-ioc-node--hash .sv-ioc-node__body     { border-color: var(--sv-ioc-hash); }
+.sv-ioc-node--email .sv-ioc-node__body    { border-color: var(--sv-ioc-email); }
+.sv-ioc-node--url .sv-ioc-node__body      { border-color: var(--sv-ioc-url); }
+.sv-ioc-node--file .sv-ioc-node__body     { border-color: var(--sv-ioc-file); }
+.sv-ioc-node--cve .sv-ioc-node__body      { border-color: var(--sv-ioc-cve); }
+.sv-ioc-node--actor .sv-ioc-node__body    { border-color: var(--sv-ioc-actor); }
+
+.sv-ioc-node__value {
+  font-family: var(--sv-font-mono);
+  font-size: 11px;
+  color: var(--sv-text);
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sv-ioc-node__type-label {
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--sv-text-muted);
+}
+
+/* Highlighted / selected node */
+.sv-ioc-node--selected .sv-ioc-node__body {
+  box-shadow: var(--sv-shadow-lg);
+}
+
+/* Faded nodes (when one is selected, others fade) */
+.sv-ioc-node--faded {
+  opacity: 0.3;
+}
+
+.sv-ioc-edge--faded {
+  opacity: 0.15;
+}
+
+/* IOC graph legend */
+.sv-ioc-graph__legend {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  padding: 10px 14px;
+  background: var(--sv-bg-glass);
+  border: 1px solid var(--sv-border);
+  border-radius: var(--sv-radius);
+  backdrop-filter: blur(8px);
+  z-index: 30;
+}
+
+.sv-ioc-graph__legend-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--sv-text-secondary);
+  margin-bottom: 8px;
+}
+
+.sv-ioc-graph__legend-section {
+  margin-bottom: 8px;
+}
+
+.sv-ioc-graph__legend-section:last-child {
+  margin-bottom: 0;
+}
+
+.sv-ioc-graph__legend-label {
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--sv-text-muted);
+  margin-bottom: 4px;
+}
+
+.sv-ioc-graph__legend-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sv-ioc-graph__legend-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: var(--sv-text-secondary);
+}
+
+.sv-ioc-graph__legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.sv-ioc-graph__legend-line {
+  width: 16px;
+  height: 2px;
+  border-radius: 1px;
+}
+
+/* Controls */
+.sv-ioc-graph__controls {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  gap: 4px;
+  z-index: 30;
+}
+
+.sv-ioc-graph__control-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--sv-radius-sm);
+  border: 1px solid var(--sv-border);
+  background: var(--sv-bg-glass);
+  backdrop-filter: blur(8px);
+  color: var(--sv-text-secondary);
+  cursor: pointer;
+  font-size: 14px;
+  transition: background var(--sv-transition-fast), border-color var(--sv-transition-fast);
+}
+
+.sv-ioc-graph__control-btn:hover {
+  background: var(--sv-surface-hover);
+  border-color: var(--sv-border-strong);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .sv-ioc-graph {
+    min-height: 300px;
+  }
+
+  .sv-ioc-node__value {
+    max-width: 100px;
+    font-size: 10px;
+  }
+
+  .sv-ioc-graph__legend {
+    position: static;
+    margin: 12px;
+    backdrop-filter: none;
+    background: var(--sv-bg-secondary);
+  }
+}
+
+
+/* ==========================================================================
+   14. LOG ACTIVITY HEATMAP
+   ==========================================================================
+   Time-of-day (24h) x day-of-week grid with intensity coloring.
+   ========================================================================== */
+
+.sv-log-heatmap {
+  padding: 20px;
+}
+
+.sv-log-heatmap__grid {
+  display: grid;
+  grid-template-columns: 60px repeat(24, 1fr);
+  grid-template-rows: auto repeat(7, 1fr);
+  gap: 2px;
+}
+
+/* Hour labels (top row) */
+.sv-log-heatmap__hour-label {
+  font-size: 9px;
+  font-family: var(--sv-font-mono);
+  color: var(--sv-text-muted);
+  text-align: center;
+  padding: 4px 0;
+}
+
+/* Day labels (left column) */
+.sv-log-heatmap__day-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--sv-text-secondary);
+  display: flex;
+  align-items: center;
+  padding-right: 8px;
+}
+
+/* Corner cell (empty) */
+.sv-log-heatmap__corner {
+  /* intentionally empty */
+}
+
+/* Heatmap cells */
+.sv-log-heatmap__cell {
+  aspect-ratio: 1;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: transform var(--sv-transition-fast), box-shadow var(--sv-transition-fast);
+  position: relative;
+  min-height: 20px;
+}
+
+.sv-log-heatmap__cell:hover {
+  transform: scale(1.3);
+  box-shadow: var(--sv-shadow-md);
+  z-index: 10;
+}
+
+.sv-log-heatmap__cell:focus-visible {
+  outline: 2px solid var(--sv-text);
+  outline-offset: 1px;
+}
+
+/* Intensity levels */
+.sv-log-heatmap__cell--level-0 { background: var(--sv-heat-0); }
+.sv-log-heatmap__cell--level-1 { background: var(--sv-heat-1); }
+.sv-log-heatmap__cell--level-2 { background: var(--sv-heat-2); }
+.sv-log-heatmap__cell--level-3 { background: var(--sv-heat-3); }
+.sv-log-heatmap__cell--level-4 { background: var(--sv-heat-4); }
+.sv-log-heatmap__cell--level-5 { background: var(--sv-heat-5); }
+.sv-log-heatmap__cell--level-6 { background: var(--sv-heat-6); }
+.sv-log-heatmap__cell--level-7 { background: var(--sv-heat-7); }
+.sv-log-heatmap__cell--level-8 { background: var(--sv-heat-8); }
+.sv-log-heatmap__cell--level-9 { background: var(--sv-heat-9); }
+
+/* Anomaly cell highlight */
+.sv-log-heatmap__cell--anomaly {
+  box-shadow: inset 0 0 0 2px var(--sv-critical);
+}
+
+.sv-log-heatmap__cell--anomaly::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--sv-critical);
+}
+
+/* Legend */
+.sv-log-heatmap__legend {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  margin-top: 12px;
+}
+
+.sv-log-heatmap__legend-label {
+  font-size: 11px;
+  color: var(--sv-text-muted);
+  margin-right: 4px;
+}
+
+.sv-log-heatmap__legend-cell {
+  width: 14px;
+  height: 14px;
+  border-radius: 2px;
+}
+
+/* Summary stats row */
+.sv-log-heatmap__stats {
+  display: flex;
+  gap: 20px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.sv-log-heatmap__stat {
+  display: flex;
+  flex-direction: column;
+}
+
+.sv-log-heatmap__stat-value {
+  font-size: 18px;
+  font-weight: 700;
+  font-family: var(--sv-font-mono);
+  color: var(--sv-text);
+}
+
+.sv-log-heatmap__stat-label {
+  font-size: 11px;
+  color: var(--sv-text-muted);
+}
+
+/* Peak hours highlight row */
+.sv-log-heatmap__peaks {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.sv-log-heatmap__peak {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: var(--sv-radius-sm);
+  background: var(--sv-bg-secondary);
+  font-size: 11px;
+  color: var(--sv-text-secondary);
+}
+
+.sv-log-heatmap__peak-time {
+  font-family: var(--sv-font-mono);
+  font-weight: 600;
+  color: var(--sv-text);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .sv-log-heatmap__grid {
+    grid-template-columns: 40px repeat(24, 1fr);
+    gap: 1px;
+  }
+
+  .sv-log-heatmap__day-label {
+    font-size: 9px;
+  }
+
+  .sv-log-heatmap__hour-label {
+    font-size: 7px;
+  }
+
+  .sv-log-heatmap__cell {
+    min-height: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .sv-log-heatmap__grid {
+    grid-template-columns: 30px repeat(24, 1fr);
+  }
+
+  .sv-log-heatmap__cell {
+    min-height: 10px;
+    border-radius: 1px;
+  }
+
+  .sv-log-heatmap__stats {
+    gap: 12px;
+  }
+}
+
+
+/* ==========================================================================
+   15. PORT SCAN VISUALIZATION
+   ==========================================================================
+   Port grid with open/closed/filtered states. Supports common port
+   ranges, service detection labels, and scan progress.
+   ========================================================================== */
+
+.sv-port-scan {
+  padding: 20px;
+}
+
+/* Scan metadata header */
+.sv-port-scan__meta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.sv-port-scan__target {
+  font-family: var(--sv-font-mono);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--sv-text);
+}
+
+.sv-port-scan__scan-type {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: var(--sv-radius-full);
+  background: var(--sv-bg-tertiary);
+  color: var(--sv-text-muted);
+}
+
+.sv-port-scan__timestamp {
+  font-family: var(--sv-font-mono);
+  font-size: 11px;
+  color: var(--sv-text-muted);
+  margin-left: auto;
+}
+
+/* Progress bar for active scans */
+.sv-port-scan__progress {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--sv-bg-tertiary);
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.sv-port-scan__progress-fill {
+  height: 100%;
+  border-radius: 2px;
+  background: var(--sv-info);
+  transition: width 0.5s linear;
+  animation: sv-scan-progress 2s ease-in-out infinite;
+}
+
+@keyframes sv-scan-progress {
+  0%   { opacity: 1; }
+  50%  { opacity: 0.7; }
+  100% { opacity: 1; }
+}
+
+/* Port grid */
+.sv-port-scan__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  gap: 6px;
+}
+
+.sv-port-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 6px;
+  border-radius: var(--sv-radius-sm);
+  border: 1px solid var(--sv-border-light);
+  background: var(--sv-bg);
+  cursor: pointer;
+  transition: transform var(--sv-transition-fast), border-color var(--sv-transition-fast), box-shadow var(--sv-transition-fast);
+}
+
+.sv-port-cell:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--sv-shadow);
+  border-color: var(--sv-border);
+}
+
+.sv-port-cell:focus-visible {
+  outline: 2px solid var(--sv-info);
+  outline-offset: 1px;
+}
+
+/* Port state variants */
+.sv-port-cell--open {
+  border-color: var(--sv-port-open);
+  background: var(--sv-port-open-bg);
+}
+
+.sv-port-cell--closed {
+  border-color: var(--sv-port-closed);
+  background: var(--sv-port-closed-bg);
+  opacity: 0.6;
+}
+
+.sv-port-cell--filtered {
+  border-color: var(--sv-port-filtered);
+  background: var(--sv-port-filtered-bg);
+}
+
+.sv-port-cell--scanning {
+  border-color: var(--sv-info);
+  animation: sv-port-scanning 1s ease-in-out infinite;
+}
+
+@keyframes sv-port-scanning {
+  0%, 100% { background: var(--sv-bg); }
+  50%      { background: var(--sv-info-bg); }
+}
+
+/* Port number */
+.sv-port-cell__number {
+  font-family: var(--sv-font-mono);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--sv-text);
+}
+
+/* Service name */
+.sv-port-cell__service {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--sv-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+/* Protocol */
+.sv-port-cell__proto {
+  font-size: 9px;
+  color: var(--sv-text-muted);
+}
+
+/* State badge */
+.sv-port-cell__state {
+  font-size: 9px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: var(--sv-radius-full);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.sv-port-cell--open .sv-port-cell__state {
+  color: var(--sv-port-open);
+  background: rgba(45, 159, 82, 0.15);
+}
+
+.sv-port-cell--closed .sv-port-cell__state {
+  color: var(--sv-port-closed);
+  background: rgba(204, 41, 54, 0.15);
+}
+
+.sv-port-cell--filtered .sv-port-cell__state {
+  color: var(--sv-port-filtered);
+  background: rgba(224, 160, 0, 0.15);
+}
+
+/* Port summary statistics */
+.sv-port-scan__summary {
+  display: flex;
+  gap: 16px;
+  margin-top: 16px;
+  padding: 12px 16px;
+  border-radius: var(--sv-radius);
+  background: var(--sv-bg-secondary);
+  border: 1px solid var(--sv-border-light);
+  flex-wrap: wrap;
+}
+
+.sv-port-scan__summary-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sv-port-scan__summary-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.sv-port-scan__summary-dot--open     { background: var(--sv-port-open); }
+.sv-port-scan__summary-dot--closed   { background: var(--sv-port-closed); }
+.sv-port-scan__summary-dot--filtered { background: var(--sv-port-filtered); }
+
+.sv-port-scan__summary-label {
+  font-size: 12px;
+  color: var(--sv-text-secondary);
+}
+
+.sv-port-scan__summary-count {
+  font-size: 14px;
+  font-weight: 700;
+  font-family: var(--sv-font-mono);
+  color: var(--sv-text);
+}
+
+/* Compact list view (alternative to grid) */
+.sv-port-scan--list .sv-port-scan__grid {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sv-port-scan--list .sv-port-cell {
+  flex-direction: row;
+  justify-content: flex-start;
+  gap: 12px;
+  padding: 6px 12px;
+}
+
+.sv-port-scan--list .sv-port-cell__number {
+  min-width: 50px;
+}
+
+.sv-port-scan--list .sv-port-cell__service {
+  min-width: 60px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .sv-port-scan__grid {
+    grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+    gap: 4px;
+  }
+
+  .sv-port-cell {
+    padding: 6px 4px;
+  }
+
+  .sv-port-cell__number {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .sv-port-scan__grid {
+    grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+  }
+
+  .sv-port-scan__meta {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .sv-port-scan__timestamp {
+    margin-left: 0;
+  }
+}
+
+
+/* ==========================================================================
+   16. PASSWORD STRENGTH ANALYZER
+   ==========================================================================
+   Segmented bar, entropy display, crack time estimate.
+   ========================================================================== */
+
+.sv-password-strength {
+  padding: 20px;
+  max-width: 480px;
+}
+
+/* Input display (masked) */
+.sv-password-strength__input-wrap {
+  position: relative;
+  margin-bottom: 16px;
+}
+
+.sv-password-strength__input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 2px solid var(--sv-border);
+  border-radius: var(--sv-radius);
+  background: var(--sv-bg);
+  font-family: var(--sv-font-mono);
+  font-size: 14px;
+  color: var(--sv-text);
+  transition: border-color var(--sv-transition-fast);
+  box-sizing: border-box;
+}
+
+.sv-password-strength__input:focus {
+  outline: none;
+  border-color: var(--sv-info);
+}
+
+.sv-password-strength__toggle {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--sv-text-muted);
+  cursor: pointer;
+  padding: 4px;
+}
+
+/* Segmented strength bar */
+.sv-password-strength__bar {
+  display: flex;
+  gap: 4px;
+  height: 8px;
+  margin-bottom: 8px;
+}
+
+.sv-password-strength__segment {
+  flex: 1;
+  border-radius: 4px;
+  background: var(--sv-bg-tertiary);
+  transition: background var(--sv-transition-fast);
+}
+
+/* Filled segments by strength level */
+.sv-password-strength--very-weak .sv-password-strength__segment:nth-child(1) {
+  background: var(--sv-pw-very-weak);
+}
+
+.sv-password-strength--weak .sv-password-strength__segment:nth-child(1),
+.sv-password-strength--weak .sv-password-strength__segment:nth-child(2) {
+  background: var(--sv-pw-weak);
+}
+
+.sv-password-strength--fair .sv-password-strength__segment:nth-child(1),
+.sv-password-strength--fair .sv-password-strength__segment:nth-child(2),
+.sv-password-strength--fair .sv-password-strength__segment:nth-child(3) {
+  background: var(--sv-pw-fair);
+}
+
+.sv-password-strength--strong .sv-password-strength__segment:nth-child(1),
+.sv-password-strength--strong .sv-password-strength__segment:nth-child(2),
+.sv-password-strength--strong .sv-password-strength__segment:nth-child(3),
+.sv-password-strength--strong .sv-password-strength__segment:nth-child(4) {
+  background: var(--sv-pw-strong);
+}
+
+.sv-password-strength--very-strong .sv-password-strength__segment {
+  background: var(--sv-pw-very-strong);
+}
+
+/* Strength label */
+.sv-password-strength__label {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+.sv-password-strength--very-weak .sv-password-strength__label   { color: var(--sv-pw-very-weak); }
+.sv-password-strength--weak .sv-password-strength__label        { color: var(--sv-pw-weak); }
+.sv-password-strength--fair .sv-password-strength__label        { color: var(--sv-pw-fair); }
+.sv-password-strength--strong .sv-password-strength__label      { color: var(--sv-pw-strong); }
+.sv-password-strength--very-strong .sv-password-strength__label { color: var(--sv-pw-very-strong); }
+
+/* Entropy display */
+.sv-password-strength__entropy {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: var(--sv-radius);
+  background: var(--sv-bg-secondary);
+  border: 1px solid var(--sv-border-light);
+  margin-bottom: 12px;
+}
+
+.sv-password-strength__entropy-value {
+  font-size: 24px;
+  font-weight: 700;
+  font-family: var(--sv-font-mono);
+  color: var(--sv-text);
+  line-height: 1;
+}
+
+.sv-password-strength__entropy-unit {
+  font-size: 12px;
+  color: var(--sv-text-muted);
+}
+
+.sv-password-strength__entropy-label {
+  font-size: 12px;
+  color: var(--sv-text-secondary);
+}
+
+/* Entropy bar */
+.sv-password-strength__entropy-bar {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--sv-bg-tertiary);
+  overflow: hidden;
+}
+
+.sv-password-strength__entropy-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width var(--sv-anim-normal) ease, background var(--sv-transition);
+}
+
+/* Crack time estimate */
+.sv-password-strength__crack-time {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.sv-password-strength__crack-scenario {
+  padding: 10px 12px;
+  border-radius: var(--sv-radius-sm);
+  background: var(--sv-bg-secondary);
+  border: 1px solid var(--sv-border-light);
+}
+
+.sv-password-strength__crack-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--sv-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.sv-password-strength__crack-value {
+  font-size: 14px;
+  font-weight: 700;
+  font-family: var(--sv-font-mono);
+  color: var(--sv-text);
+  margin-top: 4px;
+}
+
+/* Character composition breakdown */
+.sv-password-strength__composition {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+}
+
+.sv-password-composition__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: var(--sv-radius-sm);
+  background: var(--sv-bg-secondary);
+}
+
+.sv-password-composition__check {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  flex-shrink: 0;
+}
+
+.sv-password-composition__check--pass {
+  background: var(--sv-pass-bg);
+  color: var(--sv-pass);
+}
+
+.sv-password-composition__check--fail {
+  background: var(--sv-fail-bg);
+  color: var(--sv-fail);
+}
+
+.sv-password-composition__label {
+  font-size: 11px;
+  color: var(--sv-text-secondary);
+}
+
+.sv-password-composition__count {
+  margin-left: auto;
+  font-family: var(--sv-font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--sv-text);
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .sv-password-strength {
+    padding: 12px;
+  }
+
+  .sv-password-strength__crack-time {
+    grid-template-columns: 1fr;
+  }
+
+  .sv-password-strength__composition {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* ==========================================================================
+   17. CERTIFICATE CHAIN DISPLAY
+   ==========================================================================
+   Linked boxes with validity indicators, from leaf to root CA.
+   ========================================================================== */
+
+.sv-cert-chain {
+  padding: 20px;
+}
+
+.sv-cert-chain__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  position: relative;
+}
+
+/* Connecting line between certificates */
+.sv-cert-chain__list::before {
+  content: "";
+  position: absolute;
+  left: 24px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--sv-border);
+  z-index: 0;
+}
+
+/* Individual certificate card */
+.sv-cert-card {
+  position: relative;
+  margin-left: 48px;
+  padding: 16px;
+  border: 1px solid var(--sv-border-light);
+  border-radius: var(--sv-radius);
+  background: var(--sv-bg-elevated);
+  transition: border-color var(--sv-transition-fast), box-shadow var(--sv-transition-fast);
+  z-index: 1;
+}
+
+.sv-cert-card + .sv-cert-card {
+  margin-top: 12px;
+}
+
+.sv-cert-card:hover {
+  border-color: var(--sv-border);
+  box-shadow: var(--sv-shadow);
+}
+
+/* Certificate type indicator on the connecting line */
+.sv-cert-card__marker {
+  position: absolute;
+  left: -36px;
+  top: 16px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 3px solid var(--sv-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--sv-text-inverse);
+  z-index: 2;
+}
+
+.sv-cert-card__marker--valid   { background: var(--sv-cert-valid); }
+.sv-cert-card__marker--expiring { background: var(--sv-cert-expiring); }
+.sv-cert-card__marker--expired  { background: var(--sv-cert-expired); }
+.sv-cert-card__marker--revoked  { background: var(--sv-cert-revoked); }
+
+/* Certificate header */
+.sv-cert-card__header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.sv-cert-card__type {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: var(--sv-radius-full);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.sv-cert-card__type--leaf     { background: var(--sv-info-bg); color: var(--sv-info-text); }
+.sv-cert-card__type--intermediate { background: var(--sv-medium-bg); color: var(--sv-medium-text); }
+.sv-cert-card__type--root     { background: var(--sv-bg-tertiary); color: var(--sv-text-secondary); }
+
+.sv-cert-card__cn {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--sv-text);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sv-cert-card__status {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: var(--sv-radius-full);
+}
+
+.sv-cert-card__status--valid   { background: var(--sv-pass-bg); color: var(--sv-pass); }
+.sv-cert-card__status--expiring { background: var(--sv-warn-bg); color: var(--sv-warn); }
+.sv-cert-card__status--expired  { background: var(--sv-fail-bg); color: var(--sv-fail); }
+.sv-cert-card__status--revoked  { background: var(--sv-fail-bg); color: var(--sv-fail); }
+
+/* Certificate details grid */
+.sv-cert-card__details {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 8px;
+}
+
+.sv-cert-card__field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sv-cert-card__field-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--sv-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.sv-cert-card__field-value {
+  font-size: 12px;
+  font-family: var(--sv-font-mono);
+  color: var(--sv-text);
+  word-break: break-all;
+}
+
+/* Validity timeline bar */
+.sv-cert-card__validity {
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sv-cert-card__validity-bar {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--sv-bg-tertiary);
+  position: relative;
+  overflow: hidden;
+}
+
+.sv-cert-card__validity-elapsed {
+  height: 100%;
+  border-radius: 3px;
+  transition: width var(--sv-anim-fill) ease;
+}
+
+.sv-cert-card__validity-elapsed--ok   { background: var(--sv-pass); }
+.sv-cert-card__validity-elapsed--warn { background: var(--sv-warn); }
+.sv-cert-card__validity-elapsed--bad  { background: var(--sv-fail); }
+
+/* Current day marker on the bar */
+.sv-cert-card__validity-now {
+  position: absolute;
+  top: -3px;
+  width: 2px;
+  height: 12px;
+  background: var(--sv-text);
+  border-radius: 1px;
+}
+
+.sv-cert-card__validity-date {
+  font-size: 10px;
+  font-family: var(--sv-font-mono);
+  color: var(--sv-text-muted);
+  white-space: nowrap;
+}
+
+/* SANs (Subject Alternative Names) list */
+.sv-cert-card__sans {
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.sv-cert-card__san {
+  padding: 2px 8px;
+  border-radius: var(--sv-radius-sm);
+  background: var(--sv-bg-tertiary);
+  font-family: var(--sv-font-mono);
+  font-size: 10px;
+  color: var(--sv-text-secondary);
+}
+
+/* Fingerprint display */
+.sv-cert-card__fingerprint {
+  margin-top: 12px;
+  padding: 8px 12px;
+  border-radius: var(--sv-radius-sm);
+  background: var(--sv-bg-inset);
+  font-family: var(--sv-font-mono);
+  font-size: 10px;
+  color: var(--sv-text-muted);
+  word-break: break-all;
+  line-height: 1.5;
+}
+
+.sv-cert-card__fingerprint-label {
+  font-weight: 600;
+  color: var(--sv-text-secondary);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .sv-cert-card {
+    margin-left: 36px;
+  }
+
+  .sv-cert-card__marker {
+    left: -30px;
+    width: 20px;
+    height: 20px;
+    font-size: 9px;
+  }
+
+  .sv-cert-chain__list::before {
+    left: 18px;
+  }
+
+  .sv-cert-card__details {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .sv-cert-chain {
+    padding: 12px;
+  }
+
+  .sv-cert-card {
+    padding: 12px;
+    margin-left: 28px;
+  }
+
+  .sv-cert-card__header {
+    flex-wrap: wrap;
+  }
+}
+
+
+/* ==========================================================================
+   18. DNS RECORD TREE
+   ==========================================================================
+   Hierarchical record display with record types, values, TTLs.
+   ========================================================================== */
+
+.sv-dns-tree {
+  padding: 20px;
+}
+
+/* Domain header */
+.sv-dns-tree__domain {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: var(--sv-radius);
+  background: var(--sv-bg-secondary);
+  border: 1px solid var(--sv-border-light);
+  margin-bottom: 16px;
+}
+
+.sv-dns-tree__domain-name {
+  font-family: var(--sv-font-mono);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--sv-text);
+}
+
+.sv-dns-tree__domain-status {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: var(--sv-radius-full);
+}
+
+.sv-dns-tree__domain-status--resolving { background: var(--sv-info-bg); color: var(--sv-info-text); }
+.sv-dns-tree__domain-status--resolved  { background: var(--sv-pass-bg); color: var(--sv-pass); }
+.sv-dns-tree__domain-status--error     { background: var(--sv-fail-bg); color: var(--sv-fail); }
+
+/* Tree structure */
+.sv-dns-tree__branches {
+  padding-left: 0;
+  list-style: none;
+  margin: 0;
+}
+
+.sv-dns-branch {
+  position: relative;
+  margin-bottom: 8px;
+}
+
+/* Record type header (collapsible) */
+.sv-dns-branch__header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: var(--sv-radius);
+  background: var(--sv-bg);
+  border: 1px solid var(--sv-border-light);
+  cursor: pointer;
+  transition: background var(--sv-transition-fast), border-color var(--sv-transition-fast);
+}
+
+.sv-dns-branch__header:hover {
+  background: var(--sv-surface-hover);
+  border-color: var(--sv-border);
+}
+
+.sv-dns-branch__header:focus-visible {
+  outline: 2px solid var(--sv-info);
+  outline-offset: 1px;
+}
+
+.sv-dns-branch__type {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 48px;
+  padding: 2px 10px;
+  border-radius: var(--sv-radius-sm);
+  font-family: var(--sv-font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--sv-text-inverse);
+}
+
+.sv-dns-branch__type--a     { background: var(--sv-dns-a); }
+.sv-dns-branch__type--aaaa  { background: var(--sv-dns-aaaa); }
+.sv-dns-branch__type--cname { background: var(--sv-dns-cname); }
+.sv-dns-branch__type--mx    { background: var(--sv-dns-mx); }
+.sv-dns-branch__type--txt   { background: var(--sv-dns-txt); }
+.sv-dns-branch__type--ns    { background: var(--sv-dns-ns); }
+.sv-dns-branch__type--soa   { background: var(--sv-dns-soa); }
+.sv-dns-branch__type--srv   { background: var(--sv-dns-srv); }
+
+.sv-dns-branch__name {
+  font-family: var(--sv-font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--sv-text);
+  flex: 1;
+}
+
+.sv-dns-branch__count {
+  font-size: 11px;
+  color: var(--sv-text-muted);
+}
+
+.sv-dns-branch__expand-icon {
+  color: var(--sv-text-muted);
+  transition: transform var(--sv-transition-fast);
+  flex-shrink: 0;
+}
+
+.sv-dns-branch--expanded .sv-dns-branch__expand-icon {
+  transform: rotate(90deg);
+}
+
+/* Record entries */
+.sv-dns-branch__records {
+  list-style: none;
+  padding: 4px 0 4px 20px;
+  margin: 0;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height var(--sv-transition);
+}
+
+.sv-dns-branch--expanded .sv-dns-branch__records {
+  max-height: 1000px;
+}
+
+.sv-dns-record {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  margin: 2px 0;
+  border-radius: var(--sv-radius-sm);
+  border-left: 3px solid var(--sv-border);
+  background: var(--sv-bg-secondary);
+  transition: background var(--sv-transition-fast);
+}
+
+.sv-dns-record:hover {
+  background: var(--sv-surface-hover);
+}
+
+/* Record type specific left border colors */
+.sv-dns-branch__type--a + .sv-dns-branch__records .sv-dns-record,
+.sv-dns-branch--a .sv-dns-record     { border-left-color: var(--sv-dns-a); }
+.sv-dns-branch--aaaa .sv-dns-record  { border-left-color: var(--sv-dns-aaaa); }
+.sv-dns-branch--cname .sv-dns-record { border-left-color: var(--sv-dns-cname); }
+.sv-dns-branch--mx .sv-dns-record    { border-left-color: var(--sv-dns-mx); }
+.sv-dns-branch--txt .sv-dns-record   { border-left-color: var(--sv-dns-txt); }
+.sv-dns-branch--ns .sv-dns-record    { border-left-color: var(--sv-dns-ns); }
+.sv-dns-branch--soa .sv-dns-record   { border-left-color: var(--sv-dns-soa); }
+.sv-dns-branch--srv .sv-dns-record   { border-left-color: var(--sv-dns-srv); }
+
+.sv-dns-record__value {
+  flex: 1;
+  font-family: var(--sv-font-mono);
+  font-size: 12px;
+  color: var(--sv-text);
+  word-break: break-all;
+}
+
+.sv-dns-record__ttl {
+  font-family: var(--sv-font-mono);
+  font-size: 10px;
+  color: var(--sv-text-muted);
+  flex-shrink: 0;
+}
+
+.sv-dns-record__priority {
+  font-family: var(--sv-font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--sv-text-secondary);
+  flex-shrink: 0;
+  min-width: 30px;
+  text-align: right;
+}
+
+/* DNSSEC indicator */
+.sv-dns-tree__dnssec {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: var(--sv-radius);
+  margin-top: 16px;
+}
+
+.sv-dns-tree__dnssec--valid {
+  background: var(--sv-pass-bg);
+  border: 1px solid var(--sv-pass);
+}
+
+.sv-dns-tree__dnssec--invalid {
+  background: var(--sv-fail-bg);
+  border: 1px solid var(--sv-fail);
+}
+
+.sv-dns-tree__dnssec--none {
+  background: var(--sv-bg-secondary);
+  border: 1px solid var(--sv-border-light);
+}
+
+.sv-dns-tree__dnssec-label {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.sv-dns-tree__dnssec--valid .sv-dns-tree__dnssec-label   { color: var(--sv-pass); }
+.sv-dns-tree__dnssec--invalid .sv-dns-tree__dnssec-label { color: var(--sv-fail); }
+.sv-dns-tree__dnssec--none .sv-dns-tree__dnssec-label    { color: var(--sv-text-muted); }
+
+/* Subdomain hierarchy (nested trees) */
+.sv-dns-subtree {
+  margin-left: 24px;
+  padding-left: 16px;
+  border-left: 1px dashed var(--sv-border);
+}
+
+.sv-dns-subtree__label {
+  font-family: var(--sv-font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--sv-text-secondary);
+  padding: 8px 0 4px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .sv-dns-record {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .sv-dns-record__value {
+    flex-basis: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .sv-dns-tree {
+    padding: 12px;
+  }
+
+  .sv-dns-branch__header {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+}
+
+
+/* ==========================================================================
+   19. HTTP HEADER ANALYSIS DASHBOARD
+   ==========================================================================
+   Pass/fail grid with scores per header category.
+   Security headers, CSP analysis, and overall grade.
+   ========================================================================== */
+
+.sv-http-headers {
+  padding: 20px;
+}
+
+/* Overall score section */
+.sv-http-headers__score {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 20px;
+  border-radius: var(--sv-radius-md);
+  background: var(--sv-bg-secondary);
+  border: 1px solid var(--sv-border-light);
+  margin-bottom: 20px;
+}
+
+.sv-http-headers__grade {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border-radius: var(--sv-radius-lg);
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--sv-text-inverse);
+  flex-shrink: 0;
+}
+
+.sv-http-headers__grade--a-plus { background: var(--sv-hdr-a-plus); }
+.sv-http-headers__grade--a      { background: var(--sv-hdr-a); }
+.sv-http-headers__grade--b      { background: var(--sv-hdr-b); }
+.sv-http-headers__grade--c      { background: var(--sv-hdr-c); }
+.sv-http-headers__grade--d      { background: var(--sv-hdr-d); }
+.sv-http-headers__grade--f      { background: var(--sv-hdr-f); }
+
+.sv-http-headers__score-info {
+  flex: 1;
+}
+
+.sv-http-headers__score-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--sv-text);
+}
+
+.sv-http-headers__score-label {
+  font-size: 12px;
+  color: var(--sv-text-muted);
+  margin-top: 2px;
+}
+
+.sv-http-headers__score-bar {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--sv-bg-tertiary);
+  overflow: hidden;
+  margin-top: 10px;
+}
+
+.sv-http-headers__score-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width var(--sv-anim-fill) ease;
+}
+
+.sv-http-headers__score-fill--a-plus { background: var(--sv-hdr-a-plus); }
+.sv-http-headers__score-fill--a      { background: var(--sv-hdr-a); }
+.sv-http-headers__score-fill--b      { background: var(--sv-hdr-b); }
+.sv-http-headers__score-fill--c      { background: var(--sv-hdr-c); }
+.sv-http-headers__score-fill--d      { background: var(--sv-hdr-d); }
+.sv-http-headers__score-fill--f      { background: var(--sv-hdr-f); }
+
+/* Header check grid */
+.sv-http-headers__grid {
+  display: grid;
+  gap: 8px;
+}
+
+.sv-http-header-check {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: var(--sv-radius);
+  border: 1px solid var(--sv-border-light);
+  background: var(--sv-bg);
+  transition: border-color var(--sv-transition-fast), background var(--sv-transition-fast);
+}
+
+.sv-http-header-check:hover {
+  border-color: var(--sv-border);
+  background: var(--sv-surface-hover);
+}
+
+/* Status icon */
+.sv-http-header-check__status {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.sv-http-header-check__status--pass {
+  background: var(--sv-pass-bg);
+  color: var(--sv-pass);
+}
+
+.sv-http-header-check__status--fail {
+  background: var(--sv-fail-bg);
+  color: var(--sv-fail);
+}
+
+.sv-http-header-check__status--warn {
+  background: var(--sv-warn-bg);
+  color: var(--sv-warn);
+}
+
+.sv-http-header-check__status--info {
+  background: var(--sv-info-bg);
+  color: var(--sv-info);
+}
+
+/* Header name and description */
+.sv-http-header-check__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.sv-http-header-check__name {
+  font-family: var(--sv-font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--sv-text);
+}
+
+.sv-http-header-check__description {
+  font-size: 11px;
+  color: var(--sv-text-muted);
+  margin-top: 2px;
+}
+
+/* Header value display */
+.sv-http-header-check__value {
+  flex: 0 1 auto;
+  max-width: 300px;
+  font-family: var(--sv-font-mono);
+  font-size: 11px;
+  color: var(--sv-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 4px 8px;
+  border-radius: var(--sv-radius-sm);
+  background: var(--sv-bg-inset);
+}
+
+/* Expandable detail for complex headers like CSP */
+.sv-http-header-check__detail {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height var(--sv-transition);
+  margin-top: 0;
+}
+
+.sv-http-header-check--expanded .sv-http-header-check__detail {
+  max-height: 400px;
+  margin-top: 12px;
+}
+
+.sv-http-header-detail__content {
+  padding: 12px;
+  border-radius: var(--sv-radius-sm);
+  background: var(--sv-bg-secondary);
+  border: 1px solid var(--sv-border-light);
+}
+
+/* CSP directive breakdown */
+.sv-csp-directives {
+  display: grid;
+  gap: 6px;
+}
+
+.sv-csp-directive {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--sv-border-light);
+}
+
+.sv-csp-directive:last-child {
+  border-bottom: none;
+}
+
+.sv-csp-directive__name {
+  font-family: var(--sv-font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--sv-text);
+  min-width: 120px;
+  flex-shrink: 0;
+}
+
+.sv-csp-directive__values {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  flex: 1;
+}
+
+.sv-csp-directive__value {
+  padding: 1px 6px;
+  border-radius: var(--sv-radius-xs);
+  font-family: var(--sv-font-mono);
+  font-size: 10px;
+}
+
+.sv-csp-directive__value--safe {
+  background: var(--sv-pass-bg);
+  color: var(--sv-pass);
+}
+
+.sv-csp-directive__value--unsafe {
+  background: var(--sv-fail-bg);
+  color: var(--sv-fail);
+}
+
+.sv-csp-directive__value--neutral {
+  background: var(--sv-bg-tertiary);
+  color: var(--sv-text-secondary);
+}
+
+/* Category groups */
+.sv-http-headers__category {
+  margin-bottom: 20px;
+}
+
+.sv-http-headers__category-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--sv-text-secondary);
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--sv-border-light);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.sv-http-headers__category-score {
+  float: right;
+  font-family: var(--sv-font-mono);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* Summary stats */
+.sv-http-headers__summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.sv-http-headers__summary-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px;
+  border-radius: var(--sv-radius);
+  background: var(--sv-bg-secondary);
+  border: 1px solid var(--sv-border-light);
+  text-align: center;
+}
+
+.sv-http-headers__summary-value {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--sv-text);
+}
+
+.sv-http-headers__summary-label {
+  font-size: 11px;
+  color: var(--sv-text-muted);
+  margin-top: 4px;
+}
+
+/* Raw headers display */
+.sv-http-headers__raw {
+  padding: 12px 16px;
+  border-radius: var(--sv-radius);
+  background: var(--sv-bg-inset);
+  border: 1px solid var(--sv-border-light);
+  font-family: var(--sv-font-mono);
+  font-size: 11px;
+  line-height: 1.8;
+  color: var(--sv-text-secondary);
+  overflow-x: auto;
+  white-space: pre;
+}
+
+.sv-http-headers__raw-key {
+  font-weight: 700;
+  color: var(--sv-text);
+}
+
+.sv-http-headers__raw-value {
+  color: var(--sv-text-secondary);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .sv-http-headers__score {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .sv-http-header-check {
+    flex-wrap: wrap;
+  }
+
+  .sv-http-header-check__value {
+    flex-basis: 100%;
+    max-width: none;
+    order: 3;
+    margin-top: 4px;
+  }
+
+  .sv-csp-directive {
+    flex-direction: column;
+    gap: 4px;
+  }
+}
+
+@media (max-width: 480px) {
+  .sv-http-headers {
+    padding: 12px;
+  }
+
+  .sv-http-headers__summary {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .sv-http-headers__grade {
+    width: 48px;
+    height: 48px;
+    font-size: 22px;
+  }
+}
+
+
+/* ==========================================================================
+   20. SHARED ANIMATIONS
+   ==========================================================================
+   Global keyframe animations used across multiple visualizations.
+   ========================================================================== */
+
+/* Fade in from below */
+@keyframes sv-fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Fade in from left */
+@keyframes sv-fade-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Scale in */
+@keyframes sv-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Shimmer for loading states */
+@keyframes sv-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Generic fill animation for bars */
+@keyframes sv-fill-bar {
+  from { width: 0; }
+}
+
+/* Rotate (for radar sweep, spinners) */
+@keyframes sv-rotate {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* Blink for critical alerts */
+@keyframes sv-blink {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.3; }
+}
+
+/* Entrance animation classes */
+.sv-animate-in {
+  animation: sv-fade-in-up var(--sv-anim-normal) ease both;
+}
+
+.sv-animate-in-left {
+  animation: sv-fade-in-left var(--sv-anim-normal) ease both;
+}
+
+.sv-animate-scale {
+  animation: sv-scale-in var(--sv-anim-normal) ease both;
+}
+
+/* Stagger delay helpers (for lists) */
+.sv-stagger-1 { animation-delay: 0.05s; }
+.sv-stagger-2 { animation-delay: 0.10s; }
+.sv-stagger-3 { animation-delay: 0.15s; }
+.sv-stagger-4 { animation-delay: 0.20s; }
+.sv-stagger-5 { animation-delay: 0.25s; }
+.sv-stagger-6 { animation-delay: 0.30s; }
+.sv-stagger-7 { animation-delay: 0.35s; }
+.sv-stagger-8 { animation-delay: 0.40s; }
+.sv-stagger-9 { animation-delay: 0.45s; }
+.sv-stagger-10 { animation-delay: 0.50s; }
+.sv-stagger-11 { animation-delay: 0.55s; }
+.sv-stagger-12 { animation-delay: 0.60s; }
+
+/* Loading skeleton */
+.sv-skeleton {
+  background: linear-gradient(90deg, var(--sv-bg-tertiary) 25%, var(--sv-bg-secondary) 50%, var(--sv-bg-tertiary) 75%);
+  background-size: 200% 100%;
+  animation: sv-shimmer 1.5s ease-in-out infinite;
+  border-radius: var(--sv-radius-sm);
+}
+
+.sv-skeleton--text {
+  height: 14px;
+  width: 100%;
+}
+
+.sv-skeleton--circle {
+  border-radius: 50%;
+}
+
+.sv-skeleton--bar {
+  height: 8px;
+}
+
+
+/* ==========================================================================
+   21. PRINT STYLES
+   ==========================================================================
+   Ensure visualizations are legible when printed.
+   ========================================================================== */
+
+@media print {
+  .sv-container {
+    box-shadow: none;
+    border: 1px solid #ccc;
+    break-inside: avoid;
+  }
+
+  .sv-attack-surface,
+  .sv-network-topology,
+  .sv-ioc-graph {
+    background: #fff !important;
+    min-height: auto;
+  }
+
+  /* Hide interactive elements */
+  .sv-net-controls,
+  .sv-net-minimap,
+  .sv-ioc-graph__controls,
+  .sv-vuln-timeline__controls,
+  .sv-incident-timeline__filters,
+  .sv-password-strength__toggle {
+    display: none !important;
+  }
+
+  /* Remove animations */
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  /* Force light colors */
+  .sv-tooltip { display: none !important; }
+
+  /* Ensure text is black for print */
+  .sv-container__title,
+  .sv-text,
+  .sv-badge {
+    color: #000 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Expand all collapsed sections */
+  .sv-incident-event__body {
+    max-height: none !important;
+  }
+
+  .sv-dns-branch__records {
+    max-height: none !important;
+  }
+
+  .sv-http-header-check__detail {
+    max-height: none !important;
+  }
+
+  /* Preserve severity colors */
+  .sv-badge--critical,
+  .sv-badge--high,
+  .sv-badge--medium,
+  .sv-badge--low,
+  .sv-badge--info {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
+
+
+/* ==========================================================================
+   22. HIGH CONTRAST MODE
+   ==========================================================================
+   Enhance contrast for users with forced-colors/high-contrast preference.
+   ========================================================================== */
+
+@media (forced-colors: active) {
+  .sv-container {
+    border: 2px solid ButtonText;
+  }
+
+  .sv-badge {
+    border: 1px solid ButtonText;
+  }
+
+  .sv-asm-node,
+  .sv-net-node__body,
+  .sv-ioc-node__body,
+  .sv-cert-card,
+  .sv-kc-technique,
+  .sv-port-cell,
+  .sv-comp-framework,
+  .sv-incident-event__card,
+  .sv-http-header-check {
+    border: 2px solid ButtonText;
+  }
+
+  .sv-asm-node__severity,
+  .sv-net-node__status,
+  .sv-vuln-marker__dot,
+  .sv-incident-event__marker {
+    border: 2px solid ButtonText;
+    forced-color-adjust: none;
+  }
+
+  .sv-mitre-cell--level-5,
+  .sv-mitre-cell--level-6,
+  .sv-mitre-cell--level-7,
+  .sv-mitre-cell--level-8,
+  .sv-mitre-cell--level-9,
+  .sv-uba-cell--level-5,
+  .sv-uba-cell--level-6,
+  .sv-uba-cell--level-7,
+  .sv-uba-cell--level-8,
+  .sv-uba-cell--level-9 {
+    forced-color-adjust: none;
+  }
+
+  .sv-kc-phase__header {
+    forced-color-adjust: none;
+  }
+
+  .sv-posture-gauge__grade,
+  .sv-http-headers__grade {
+    forced-color-adjust: none;
+  }
+}
+
+
+/* ==========================================================================
+   23. FOCUS VISIBLE GLOBAL
+   ==========================================================================
+   Consistent focus ring for all interactive viz elements.
+   ========================================================================== */
+
+.sv-attack-surface :focus-visible,
+.sv-kill-chain :focus-visible,
+.sv-mitre-heatmap :focus-visible,
+.sv-vuln-timeline :focus-visible,
+.sv-risk-dashboard :focus-visible,
+.sv-network-topology :focus-visible,
+.sv-threat-radar :focus-visible,
+.sv-compliance-scorecard :focus-visible,
+.sv-incident-timeline :focus-visible,
+.sv-uba-grid :focus-visible,
+.sv-vuln-funnel :focus-visible,
+.sv-posture-gauge :focus-visible,
+.sv-ioc-graph :focus-visible,
+.sv-log-heatmap :focus-visible,
+.sv-port-scan :focus-visible,
+.sv-password-strength :focus-visible,
+.sv-cert-chain :focus-visible,
+.sv-dns-tree :focus-visible,
+.sv-http-headers :focus-visible {
+  outline: 2px solid var(--sv-info);
+  outline-offset: 2px;
+}
+
+/* Remove default outline for mouse users */
+.sv-attack-surface :focus:not(:focus-visible),
+.sv-kill-chain :focus:not(:focus-visible),
+.sv-mitre-heatmap :focus:not(:focus-visible),
+.sv-vuln-timeline :focus:not(:focus-visible),
+.sv-risk-dashboard :focus:not(:focus-visible),
+.sv-network-topology :focus:not(:focus-visible),
+.sv-threat-radar :focus:not(:focus-visible),
+.sv-compliance-scorecard :focus:not(:focus-visible),
+.sv-incident-timeline :focus:not(:focus-visible),
+.sv-uba-grid :focus:not(:focus-visible),
+.sv-vuln-funnel :focus:not(:focus-visible),
+.sv-posture-gauge :focus:not(:focus-visible),
+.sv-ioc-graph :focus:not(:focus-visible),
+.sv-log-heatmap :focus:not(:focus-visible),
+.sv-port-scan :focus:not(:focus-visible),
+.sv-password-strength :focus:not(:focus-visible),
+.sv-cert-chain :focus:not(:focus-visible),
+.sv-dns-tree :focus:not(:focus-visible),
+.sv-http-headers :focus:not(:focus-visible) {
+  outline: none;
+}
+
+
+/* ==========================================================================
+   24. REDUCED MOTION -- PER-COMPONENT OVERRIDES
+   ==========================================================================
+   Fine-grained motion fallbacks beyond the global section 0c.
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  /* Kill chain arrow clip-paths should still render, just no transition */
+  .sv-kc-phase__header {
+    transition: none;
+  }
+
+  .sv-kc-progress__fill {
+    transition: none;
+  }
+
+  /* Radar sweep should not rotate */
+  .sv-threat-radar__sweep,
+  .sv-threat-radar__sweep-trail {
+    animation: none;
+  }
+
+  /* No pulsing for critical markers */
+  .sv-vuln-marker__dot--critical::after {
+    animation: none;
+    display: none;
+  }
+
+  .sv-net-node__status--down::after {
+    animation: none;
+    display: none;
+  }
+
+  .sv-threat-radar__dot--active {
+    animation: none;
+  }
+
+  .sv-uba-cell--anomaly {
+    animation: none;
+    box-shadow: 0 0 0 2px var(--sv-critical);
+  }
+
+  .sv-port-cell--scanning {
+    animation: none;
+    background: var(--sv-info-bg);
+  }
+
+  .sv-port-scan__progress-fill {
+    animation: none;
+  }
+
+  /* Gauge needle should snap, not animate */
+  .sv-posture-gauge__needle {
+    transition: none;
+  }
+
+  /* Fill bars snap instead of animate */
+  .sv-comp-framework__bar-fill,
+  .sv-risk-breakdown__segment,
+  .sv-posture-gauge__category-fill,
+  .sv-mitre-coverage-bar__fill,
+  .sv-password-strength__entropy-fill,
+  .sv-cert-card__validity-elapsed,
+  .sv-http-headers__score-fill,
+  .sv-risk-donut__segment,
+  .sv-comp-score-ring__fill,
+  .sv-posture-gauge__fill,
+  .sv-vuln-funnel__bar {
+    transition: none;
+  }
+
+  /* Entrance animations removed */
+  .sv-animate-in,
+  .sv-animate-in-left,
+  .sv-animate-scale {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+
+  /* Skeleton shimmer reduced to static */
+  .sv-skeleton {
+    animation: none;
+  }
+
+  /* Dashboard connection flow animation removed */
+  .sv-net-connection--alert {
+    animation: none;
+    stroke-dasharray: 8, 4;
+  }
+
+  /* Expand/collapse should snap */
+  .sv-incident-event__body,
+  .sv-dns-branch__records,
+  .sv-http-header-check__detail {
+    transition: none;
+  }
+
+  /* Detail panel slides snap */
+  .sv-net-detail {
+    transition: none;
+  }
+
+  /* Tooltip should appear instantly */
+  .sv-tooltip {
+    transition: none;
+  }
+
+  /* Hover transforms removed */
+  .sv-asm-node:hover,
+  .sv-port-cell:hover,
+  .sv-vuln-funnel__stage:hover,
+  .sv-risk-matrix__cell:hover,
+  .sv-uba-cell:hover,
+  .sv-log-heatmap__cell:hover,
+  .sv-ioc-node:hover {
+    transform: none;
+  }
+
+  .sv-net-node:hover .sv-net-node__body,
+  .sv-vuln-marker:hover .sv-vuln-marker__dot {
+    transform: none;
+  }
+}
+
+
+/* ==========================================================================
+   25. ADDITIONAL RESPONSIVE BREAKPOINTS
+   ==========================================================================
+   Extra-large screens and intermediate breakpoints.
+   ========================================================================== */
+
+/* Extra-large screens (1440px+) */
+@media (min-width: 1440px) {
+  .sv-risk-dashboard {
+    gap: 28px;
+  }
+
+  .sv-risk-matrix__grid {
+    max-width: 400px;
+  }
+
+  .sv-risk-donut__chart {
+    width: 220px;
+    height: 220px;
+  }
+
+  .sv-threat-radar__chart {
+    width: 440px;
+    height: 440px;
+  }
+
+  .sv-posture-gauge__chart {
+    width: 340px;
+    height: 180px;
+  }
+
+  .sv-posture-gauge__svg {
+    width: 340px;
+    height: 340px;
+  }
+}
+
+/* Medium breakpoint (768px - 1024px) */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .sv-attack-surface__grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .sv-mitre-heatmap__grid {
+    grid-template-columns: repeat(14, minmax(80px, 1fr));
+    min-width: 1000px;
+  }
+
+  .sv-risk-sparklines {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Container query support for component-level responsiveness */
+@container (max-width: 400px) {
+  .sv-risk-matrix__grid {
+    max-width: 100%;
+  }
+
+  .sv-risk-donut__chart {
+    width: 120px;
+    height: 120px;
+  }
+}
+
+@container (max-width: 300px) {
+  .sv-asm-node {
+    min-width: 56px;
+    padding: 6px;
+  }
+
+  .sv-asm-node__icon {
+    width: 20px;
+    height: 20px;
+    font-size: 10px;
+  }
+
+  .sv-asm-node__name {
+    font-size: 9px;
+  }
+}
+
+
+/* ==========================================================================
+   END OF FILE
+   ========================================================================== */
