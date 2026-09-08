@@ -1345,6 +1345,9 @@ attack methodology for 10.10.14.7:
         });
       }, { threshold: 0.08, rootMargin: "0px 0px -40px 0px" });
       view.querySelectorAll(".section, .hero, .cta-final").forEach(sec => sectionIO.observe(sec));
+      // Fallback: reveal anything already visible, and reveal all after 3s max
+      setTimeout(() => { view.querySelectorAll(REVEAL_SEL).forEach(el => { if (el.getBoundingClientRect().top < window.innerHeight + 200) el.classList.add("revealed"); }); }, 300);
+      setTimeout(() => { view.querySelectorAll(REVEAL_SEL).forEach(el => el.classList.add("revealed")); }, 3000);
     } else {
       // Reduced motion: make everything visible immediately, no transitions
       view.querySelectorAll(REVEAL_SEL + ",.cta-final").forEach(el => el.classList.add("revealed"));
