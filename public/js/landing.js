@@ -26,9 +26,9 @@ export function renderLanding(view, actions) {
           </a>
         </div>
         <div class="hero-trust">
-          <div class="trust-item"><span class="trust-n" data-count="100000" data-suffix="+" data-format="comma">0</span><span class="trust-l">Lines of code</span></div>
+          <div class="trust-item"><span class="trust-n" data-count="200000" data-suffix="+" data-format="comma">0</span><span class="trust-l">Lines of code</span></div>
           <div class="trust-sep"></div>
-          <div class="trust-item"><span class="trust-n" data-count="80" data-suffix="+">0</span><span class="trust-l">Security tools</span></div>
+          <div class="trust-item"><span class="trust-n" data-count="192" data-suffix="+">0</span><span class="trust-l">Security tools</span></div>
           <div class="trust-sep"></div>
           <div class="trust-item"><span class="trust-n" data-count="59">0</span><span class="trust-l">AI modules</span></div>
           <div class="trust-sep"></div>
@@ -70,7 +70,7 @@ export function renderLanding(view, actions) {
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
             </div>
             <h3>CLI</h3>
-            <p>One command: <code>npm i -g darknode-cli</code>. 80+ tools, AI agent, and the Nexus engine in your terminal.</p>
+            <p>One command: <code>npm i -g darknode-cli</code>. 192+ tools, AI agent, and the Nexus engine in your terminal.</p>
             <span class="bento-tag">npm install</span>
           </div>
           <div class="bento-card">
@@ -169,7 +169,7 @@ export function renderLanding(view, actions) {
         <div class="feature-rows">
           <div class="feature-row">
             <div class="feature-text">
-              <h3>80+ security tools, one command away</h3>
+              <h3>192+ security tools, one command away</h3>
               <p>Nmap, SQLMap, Hydra, Nuclei, Gobuster, Metasploit — pre-configured with copy-paste install commands. Search, filter, and launch from the web or CLI.</p>
             </div>
             <div class="feature-visual">
@@ -216,13 +216,13 @@ export function renderLanding(view, actions) {
         <h2 class="sec-title" id="metrics-title">Built to be massive</h2>
         <p class="sec-sub">Every number earned, not inflated. This is what a one-person army looks like.</p>
         <div class="metrics-grid">
-          <div class="metric-card"><span class="metric-n" data-count="100000" data-suffix="+" data-format="comma">0</span><span class="metric-l">Lines of code</span></div>
-          <div class="metric-card"><span class="metric-n" data-count="80" data-suffix="+">0</span><span class="metric-l">Security tools</span></div>
+          <div class="metric-card"><span class="metric-n" data-count="200000" data-suffix="+" data-format="comma">0</span><span class="metric-l">Lines of code</span></div>
+          <div class="metric-card"><span class="metric-n" data-count="192" data-suffix="+">0</span><span class="metric-l">Security tools</span></div>
           <div class="metric-card"><span class="metric-n" data-count="59">0</span><span class="metric-l">AI modules</span></div>
           <div class="metric-card"><span class="metric-n" data-count="8">0</span><span class="metric-l">AI engine integrations</span></div>
           <div class="metric-card"><span class="metric-n" data-count="50" data-suffix="+">0</span><span class="metric-l">Slash commands</span></div>
           <div class="metric-card"><span class="metric-n" data-count="30" data-suffix="+">0</span><span class="metric-l">Cheat sheets</span></div>
-          <div class="metric-card"><span class="metric-n" data-count="200" data-suffix="+">0</span><span class="metric-l">Payloads</span></div>
+          <div class="metric-card"><span class="metric-n" data-count="502" data-suffix="+">0</span><span class="metric-l">Payloads</span></div>
           <div class="metric-card"><span class="metric-n metric-n-static">100%</span><span class="metric-l">Local &amp; private</span></div>
         </div>
       </div>
@@ -321,7 +321,7 @@ export function renderLanding(view, actions) {
     <section class="section" id="tools-showcase" aria-labelledby="tools-title">
       <div class="wrap">
         <div class="sec-label">Arsenal</div>
-        <h2 class="sec-title" id="tools-title">80+ security tools, zero configuration</h2>
+        <h2 class="sec-title" id="tools-title">192+ security tools, zero configuration</h2>
         <p class="sec-sub">From reconnaissance to exploitation to post-exploitation. Pre-configured, documented, and ready to run.</p>
         <div class="ts-tabs" role="tablist" aria-label="Tool categories">
           <button class="ts-tab on" data-cat="all" role="tab" aria-selected="true">All</button>
@@ -416,7 +416,7 @@ export function renderLanding(view, actions) {
           </div>
         </div>
         <div style="text-align:center;margin-top:32px">
-          <a class="btn lg ghost" href="#" id="ts-view-all">View all 80+ tools &rarr;</a>
+          <a class="btn lg ghost" href="#" id="ts-view-all">View all 192+ tools &rarr;</a>
         </div>
       </div>
     </section>
@@ -495,7 +495,7 @@ export function renderLanding(view, actions) {
           </div>
           <div class="nx-arch-connector"></div>
           <div class="nx-arch-layer nx-arch-l5">
-            <div class="nx-arch-footer-band">59 modules &mdash; 100,000+ lines of code</div>
+            <div class="nx-arch-footer-band">59 modules &mdash; 200,000+ lines of code</div>
           </div>
         </div>
 
@@ -1028,7 +1028,7 @@ attack methodology for 10.10.14.7:
             <ul class="price-features">
               <li>GPT-OSS 120B local AI (runs on your device, free)</li>
               <li>BYOK &mdash; bring your own Claude, GPT, or Gemini API key</li>
-              <li>80+ security tools &amp; cheat sheets</li>
+              <li>192+ security tools &amp; cheat sheets</li>
               <li>Practice labs (DVWA, Juice Shop, WebGoat)</li>
               <li>Nexus AI agent &mdash; core features</li>
               <li>Security RAG &mdash; built-in OWASP, CVEs, attack patterns</li>
@@ -1457,7 +1457,7 @@ attack methodology for 10.10.14.7:
     });
   });
 
-  // Tool showcase: "View all 80+ tools" links to the tools section in the app
+  // Tool showcase: "View all 192+ tools" links to the tools section in the app
   const tsViewAll = $("ts-view-all");
   if (tsViewAll) {
     tsViewAll.addEventListener("click", (e) => {
