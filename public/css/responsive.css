@@ -1,0 +1,4269 @@
+/* ================================================================
+   DARKNODE WEB -- RESPONSIVE DESIGN FRAMEWORK
+   ================================================================
+   Comprehensive responsive overrides for the Darknode design system.
+   Breakpoints:
+     480px  -- small phones
+     640px  -- large phones / phablets
+     768px  -- tablets portrait
+     1024px -- tablets landscape / small laptops
+     1280px -- standard desktops
+     1536px -- large / ultrawide monitors
+
+   This file is loaded AFTER styles.css and provides the full set of
+   responsive adaptations: navigation, grids, typography, spacing,
+   components, touch targets, images, forms, dark/light overrides,
+   landscape phone fixes, container queries, and safe-area insets.
+   ================================================================ */
+
+
+/* ================================================================
+   0. RESPONSIVE DESIGN TOKENS
+   Scale-aware spacing and sizing tokens that cascade through
+   all responsive rules below.
+   ================================================================ */
+:root {
+  --r-section-pad: 100px;
+  --r-wrap-pad: 24px;
+  --r-card-pad: 20px;
+  --r-grid-gap: 20px;
+  --r-stack-gap: 16px;
+}
+
+
+/* ================================================================
+   1. NAVIGATION RESPONSIVE
+   Mobile hamburger, tablet sidebar collapse, desktop full nav.
+   All transitions are smooth cubic-bezier for a premium feel.
+   ================================================================ */
+
+/* --- 1a. Desktop full nav (>1024px) --- */
+@media (min-width: 1025px) {
+  #topbar {
+    padding: 11px 28px;
+  }
+  .nav-link {
+    font-size: .88rem;
+    margin-right: 18px;
+  }
+  .sidebar {
+    width: 240px;
+  }
+  .app-main {
+    padding: 36px 56px;
+  }
+  #user-slot {
+    gap: 10px;
+  }
+  .menu {
+    min-width: 240px;
+  }
+}
+
+/* --- 1b. Tablet sidebar collapse (769px - 1024px) --- */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .sidebar {
+    width: 200px;
+    padding: 14px 10px;
+  }
+  .side-item {
+    font-size: .82rem;
+    padding: 7px 10px;
+  }
+  .side-group {
+    font-size: .56rem;
+    padding: 14px 10px 5px;
+  }
+  .side-foot {
+    padding: 10px 8px 4px;
+  }
+  .su-name {
+    max-width: 120px;
+    font-size: .78rem;
+  }
+  .su-mail {
+    max-width: 120px;
+    font-size: .66rem;
+  }
+  .app-main {
+    padding: 28px 32px;
+  }
+  #topbar {
+    padding: 10px 16px;
+  }
+  .brand {
+    font-size: .95rem;
+  }
+  .p-email {
+    max-width: 120px;
+    font-size: .74rem;
+  }
+}
+
+/* --- 1c. Mobile hamburger + drawer (<= 768px) --- */
+@media (max-width: 768px) {
+  /* Hamburger is visible */
+  .hamburger {
+    display: flex;
+  }
+
+  /* Nav links collapse into hamburger menu */
+  #topbar .nav-link {
+    display: none;
+  }
+
+  /* Topbar compact */
+  #topbar {
+    padding: 8px 12px;
+    gap: 6px;
+  }
+
+  /* Brand scales down */
+  .brand {
+    font-size: .9rem;
+    gap: 7px;
+  }
+  .brand-mark {
+    width: 22px;
+    height: 22px;
+  }
+  .brand-wordmark {
+    height: 14px;
+  }
+
+  /* Profile button: hide email text on mobile */
+  .p-email {
+    display: none;
+  }
+  .profile-btn {
+    padding: 3px 8px 3px 3px;
+  }
+}
+
+/* --- 1d. Mobile hamburger drawer transitions --- */
+@media (max-width: 720px) {
+  /* Sidebar slides in from left */
+  body.app .sidebar {
+    position: fixed;
+    top: var(--topbar-h);
+    left: 0;
+    bottom: 0;
+    width: 280px;
+    z-index: 55;
+    background: var(--bg);
+    border-right: 1px solid var(--line);
+    flex-direction: column;
+    height: calc(100vh - var(--topbar-h));
+    transform: translateX(-100%);
+    transition: transform .35s cubic-bezier(.22, .61, .36, 1),
+                box-shadow .3s ease,
+                visibility .35s;
+    visibility: hidden;
+    will-change: transform;
+  }
+
+  body.app .sidebar.open {
+    transform: translateX(0);
+    visibility: visible;
+    box-shadow: 10px 0 40px rgba(0, 0, 0, .55);
+  }
+
+  /* Overlay backdrop */
+  body.app .sidebar.open::after {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 280px;
+    right: 0;
+    bottom: 0;
+    background: rgba(4, 8, 15, .55);
+    z-index: -1;
+    animation: r-overlay-in .3s ease forwards;
+  }
+  @keyframes r-overlay-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  /* Restore sidebar contents in drawer mode */
+  body.app .sidebar .side-brand {
+    display: block;
+    padding: 12px 14px 14px;
+  }
+  body.app .sidebar .side-nav {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    overflow-y: auto;
+  }
+  body.app .sidebar .side-foot {
+    display: flex;
+  }
+  body.app .sidebar .side-group {
+    display: block;
+  }
+
+  /* Main content fills full width */
+  .app-main {
+    padding: 20px 14px;
+  }
+
+  /* App shell: single column */
+  .app-shell {
+    display: block;
+  }
+}
+
+/* --- 1e. Hamburger X animation refinement --- */
+.hamburger {
+  transition: border-color .15s ease, transform .1s ease;
+}
+.hamburger:active {
+  transform: scale(.92);
+}
+.hamburger-line {
+  transition: transform .28s cubic-bezier(.22, .61, .36, 1),
+              opacity .2s ease;
+}
+
+/* --- 1f. Landing page nav: scrolling top bar --- */
+@media (max-width: 768px) {
+  body.landing #topbar .nav-link {
+    display: none;
+  }
+  body.landing #topbar {
+    padding: 8px 14px;
+  }
+}
+
+
+/* ================================================================
+   2. GRID RESPONSIVE
+   Every grid layout adjusts column counts at each breakpoint.
+   ================================================================ */
+
+/* ----- 2a. Feature grid (.feat-grid) ----- */
+@media (max-width: 1536px) {
+  .feat-grid {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 18px;
+  }
+}
+@media (max-width: 1280px) {
+  .feat-grid {
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+  }
+}
+@media (max-width: 1024px) {
+  .feat-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+  }
+}
+@media (max-width: 768px) {
+  .feat-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+}
+@media (max-width: 640px) {
+  .feat-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+@media (max-width: 480px) {
+  .feat-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+}
+
+/* ----- 2b. Pricing grid (.pricing-grid) ----- */
+@media (max-width: 1536px) {
+  .pricing-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 22px;
+  }
+}
+@media (max-width: 1280px) {
+  .pricing-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 18px;
+  }
+}
+@media (max-width: 1024px) {
+  .pricing-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+}
+@media (max-width: 768px) {
+  .pricing-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+    padding: 0 8px;
+  }
+}
+@media (max-width: 640px) {
+  .pricing-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    padding: 0 4px;
+  }
+}
+@media (max-width: 480px) {
+  .pricing-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+    padding: 0;
+  }
+}
+
+/* ----- 2c. Tools grid (.tk-grid) ----- */
+@media (max-width: 1536px) {
+  .tk-grid {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  }
+}
+@media (max-width: 1280px) {
+  .tk-grid {
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  }
+}
+@media (max-width: 1024px) {
+  .tk-grid {
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 10px;
+  }
+}
+@media (max-width: 768px) {
+  .tk-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+}
+@media (max-width: 640px) {
+  .tk-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+}
+@media (max-width: 480px) {
+  .tk-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+}
+
+/* ----- 2d. Stats row (.stat-row) ----- */
+@media (max-width: 1280px) {
+  .stat-row {
+    gap: 14px;
+  }
+}
+@media (max-width: 1024px) {
+  .stat-row {
+    gap: 12px;
+  }
+}
+@media (max-width: 768px) {
+  .stat-row {
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .stat {
+    min-width: calc(50% - 10px);
+    flex: 1 1 calc(50% - 10px);
+  }
+}
+@media (max-width: 640px) {
+  .stat-row {
+    gap: 8px;
+  }
+  .stat {
+    min-width: calc(50% - 8px);
+  }
+}
+@media (max-width: 480px) {
+  .stat-row {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .stat {
+    min-width: 0;
+    flex: none;
+    width: 100%;
+  }
+}
+
+/* ----- 2e. Labs grid (.lab-grid) ----- */
+@media (max-width: 1024px) {
+  .lab-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+}
+@media (max-width: 768px) {
+  .lab-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+}
+@media (max-width: 480px) {
+  .lab-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+}
+
+/* ----- 2f. Practice labs grid (.plab-grid) ----- */
+@media (max-width: 1280px) {
+  .plab-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+  }
+}
+@media (max-width: 1024px) {
+  .plab-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+  }
+}
+@media (max-width: 640px) {
+  .plab-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+@media (max-width: 480px) {
+  .plab-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+}
+
+/* ----- 2g. Testimonial grid (.testimonial-grid) ----- */
+@media (max-width: 1280px) {
+  .testimonial-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+  }
+}
+@media (max-width: 1024px) {
+  .testimonial-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+}
+@media (max-width: 768px) {
+  .testimonial-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+  }
+}
+@media (max-width: 640px) {
+  .testimonial-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+}
+@media (max-width: 480px) {
+  .testimonial-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+
+/* ----- 2h. Bento grid (.bento) ----- */
+@media (max-width: 1024px) {
+  .bento {
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+}
+@media (max-width: 768px) {
+  .bento {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+  .bento-lg {
+    grid-column: auto;
+  }
+}
+@media (max-width: 480px) {
+  .bento {
+    gap: 10px;
+  }
+}
+
+/* ----- 2i. Module grid (.mod-grid) ----- */
+@media (max-width: 1280px) {
+  .mod-grid {
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 14px;
+  }
+}
+@media (max-width: 768px) {
+  .mod-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+@media (max-width: 480px) {
+  .mod-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+}
+
+/* ----- 2j. Download grid (.dl-grid, .dl-btnrow) ----- */
+@media (max-width: 768px) {
+  .dl-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+  .dl-btnrow {
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 8px;
+  }
+}
+@media (max-width: 480px) {
+  .dl-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .dl-btnrow {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ----- 2k. Cheat sheet grid (.cs-grid) ----- */
+@media (max-width: 1024px) {
+  .cs-grid {
+    grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr));
+    gap: 12px;
+  }
+}
+@media (max-width: 640px) {
+  .cs-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+}
+
+/* ----- 2l. Resource grid (.res-grid) ----- */
+@media (max-width: 1024px) {
+  .res-grid {
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 12px;
+  }
+}
+@media (max-width: 640px) {
+  .res-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+}
+
+/* ----- 2m. Utility grid (.util-grid) ----- */
+@media (max-width: 1024px) {
+  .util-grid {
+    grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr));
+    gap: 12px;
+  }
+}
+@media (max-width: 640px) {
+  .util-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+}
+
+/* ----- 2n. Feed grid (.feed-grid) ----- */
+@media (max-width: 1024px) {
+  .feed-grid {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 12px;
+  }
+}
+@media (max-width: 640px) {
+  .feed-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+}
+
+/* ----- 2o. Quick-access grid (.qa-grid) ----- */
+@media (max-width: 1024px) {
+  .qa-grid {
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 14px;
+  }
+}
+@media (max-width: 640px) {
+  .qa-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+
+/* ----- 2p. Home two-column layout (.home-cols) ----- */
+@media (max-width: 1280px) {
+  .home-cols {
+    grid-template-columns: 1fr 320px;
+    gap: 16px;
+  }
+}
+@media (max-width: 1024px) {
+  .home-cols {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+}
+
+/* ----- 2q. Admin two-column layout (.adm-cols) ----- */
+@media (max-width: 1280px) {
+  .adm-cols {
+    grid-template-columns: 1fr 340px;
+    gap: 16px;
+  }
+}
+@media (max-width: 1024px) {
+  .adm-cols {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ----- 2r. Nexus feature grid (.nx-grid) ----- */
+@media (max-width: 1024px) {
+  .nx-grid {
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+  }
+}
+@media (max-width: 640px) {
+  .nx-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+}
+
+/* ----- 2s. Arsenal grid (.arse-grid) ----- */
+@media (max-width: 1024px) {
+  .arse-grid {
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 10px;
+  }
+}
+@media (max-width: 640px) {
+  .arse-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+}
+
+/* ----- 2t. Learn hub grid (.lh-grid) ----- */
+@media (max-width: 1280px) {
+  .lh-grid {
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 12px;
+  }
+}
+@media (max-width: 768px) {
+  .lh-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+}
+@media (max-width: 640px) {
+  .lh-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+}
+
+/* ----- 2u. RAG knowledge grid (.rag-grid) ----- */
+@media (max-width: 1024px) {
+  .rag-grid {
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 14px;
+  }
+}
+@media (max-width: 640px) {
+  .rag-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+
+/* ----- 2v. API tiers (.api-tiers) ----- */
+@media (max-width: 1024px) {
+  .api-tiers {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+}
+@media (max-width: 640px) {
+  .api-tiers {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+
+/* ----- 2w. Product grid (.product-grid) ----- */
+@media (max-width: 768px) {
+  .product-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+}
+@media (max-width: 480px) {
+  .product-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+}
+
+/* ----- 2x. Edition grid (.ed-grid) ----- */
+@media (max-width: 768px) {
+  .ed-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+
+/* ----- 2y. Dashboard extras (.dash-extras) ----- */
+@media (max-width: 1024px) {
+  .dash-extras {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
+
+/* ----- 2z. Reference grid (.ref-grid) ----- */
+@media (max-width: 768px) {
+  .ref-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+}
+
+/* ----- 2aa. Download app grid (.dlapp-grid) ----- */
+@media (max-width: 768px) {
+  .dlapp-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+  }
+}
+@media (max-width: 480px) {
+  .dlapp-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+
+/* ----- 2ab. OS editions (.os-editions) ----- */
+@media (max-width: 768px) {
+  .os-editions {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+}
+@media (max-width: 480px) {
+  .os-editions {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+}
+
+/* ----- 2ac. Demo grid (.demo-grid) ----- */
+@media (max-width: 768px) {
+  .demo-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
+
+/* ----- 2ad. Private cloud wrap (.pc-wrap) ----- */
+@media (max-width: 1024px) {
+  .pc-wrap {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
+
+/* ----- 2ae. Steps grid (.steps) ----- */
+@media (max-width: 768px) {
+  .steps {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
+
+/* ----- 2af. Download meta (.dl-meta) ----- */
+@media (max-width: 480px) {
+  .dl-meta {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+}
+
+
+/* ================================================================
+   3. TYPOGRAPHY RESPONSIVE
+   Heading sizes, body text, and label sizes scale down
+   appropriately at each breakpoint.
+   ================================================================ */
+
+/* ----- 3a. 1536px breakpoint ----- */
+@media (max-width: 1536px) {
+  .hero-h1 {
+    font-size: clamp(2rem, 4.6vw, 3.4rem);
+  }
+  .sec-title {
+    font-size: clamp(1.4rem, 3vw, 2.2rem);
+  }
+  .nx-title {
+    font-size: clamp(2.2rem, 5.5vw, 3.4rem);
+  }
+}
+
+/* ----- 3b. 1280px breakpoint ----- */
+@media (max-width: 1280px) {
+  .hero-h1 {
+    font-size: clamp(1.9rem, 4.4vw, 3rem);
+  }
+  .pg-h1 {
+    font-size: 1.55rem;
+  }
+  .pg-h2 {
+    font-size: 1.1rem;
+  }
+  .cta-band h2 {
+    font-size: 1.45rem;
+  }
+  .nx-title {
+    font-size: clamp(2rem, 5vw, 3.2rem);
+  }
+  .nx-h2 {
+    font-size: 1.25rem;
+  }
+}
+
+/* ----- 3c. 1024px breakpoint ----- */
+@media (max-width: 1024px) {
+  .hero-h1 {
+    font-size: clamp(1.8rem, 4.2vw, 2.6rem);
+  }
+  .sec-title {
+    font-size: clamp(1.3rem, 2.8vw, 1.9rem);
+  }
+  .pg-h1 {
+    font-size: 1.45rem;
+  }
+  .pg-h2 {
+    font-size: 1.05rem;
+  }
+  .pg-sub {
+    font-size: .88rem;
+  }
+  .cta-band h2 {
+    font-size: 1.35rem;
+  }
+  .hero-sub {
+    font-size: 1rem;
+  }
+  .feat-card h3 {
+    font-size: .95rem;
+  }
+  .feat-card p {
+    font-size: .82rem;
+  }
+  .mod-t {
+    font-size: .92rem;
+  }
+  .mod-d {
+    font-size: .8rem;
+  }
+  .nx-title {
+    font-size: clamp(1.8rem, 4.5vw, 2.8rem);
+  }
+  .nx-sub {
+    font-size: .95rem;
+  }
+  .nx-h2 {
+    font-size: 1.15rem;
+  }
+}
+
+/* ----- 3d. 768px breakpoint ----- */
+@media (max-width: 768px) {
+  .hero-h1 {
+    font-size: clamp(1.6rem, 5vw, 2.2rem);
+    letter-spacing: -.025em;
+  }
+  .sec-title {
+    font-size: clamp(1.2rem, 3.5vw, 1.65rem);
+  }
+  .pg-h1 {
+    font-size: 1.3rem;
+  }
+  .pg-h2 {
+    font-size: 1rem;
+    margin: 18px 0 10px;
+  }
+  .pg-h3 {
+    font-size: .92rem;
+  }
+  .pg-sub {
+    font-size: .82rem;
+    margin: 0 0 16px;
+  }
+  .cta-band h2 {
+    font-size: 1.2rem;
+  }
+  .hero-sub {
+    font-size: .92rem;
+  }
+  .eyebrow {
+    font-size: .62rem;
+    letter-spacing: .18em;
+  }
+  .feat-card h3 {
+    font-size: .92rem;
+  }
+  .feat-card p {
+    font-size: .8rem;
+  }
+  .mod-t {
+    font-size: .88rem;
+  }
+  .hm-n {
+    font-size: 1.4rem;
+  }
+  .hm-l {
+    font-size: .68rem;
+  }
+  .nx-title {
+    font-size: clamp(1.6rem, 5vw, 2.4rem);
+  }
+  .nx-sub {
+    font-size: .88rem;
+  }
+  .stat-n {
+    font-size: 1.3rem;
+  }
+  .stat-l {
+    font-size: .74rem;
+  }
+  .price-tier {
+    font-size: 1.1rem;
+  }
+  .price-amount {
+    font-size: 2.2rem;
+  }
+  .price-desc {
+    font-size: .8rem;
+  }
+  .price-features li {
+    font-size: .8rem;
+  }
+  .testimonial-text {
+    font-size: .84rem;
+  }
+  .testimonial-role {
+    font-size: .82rem;
+  }
+  .testimonial-org {
+    font-size: .7rem;
+  }
+  body {
+    font-size: .92rem;
+  }
+  .dlcli-h {
+    font-size: 1rem;
+  }
+  .set-panel-h {
+    font-size: 1.1rem;
+  }
+  /* Badges and micro-text remain readable */
+  .chip {
+    font-size: .68rem;
+  }
+  .sev {
+    font-size: .6rem;
+  }
+  .owner-badge {
+    font-size: .58rem;
+  }
+}
+
+/* ----- 3e. 640px breakpoint ----- */
+@media (max-width: 640px) {
+  .hero-h1 {
+    font-size: clamp(1.5rem, 6vw, 2rem);
+  }
+  .sec-title {
+    font-size: clamp(1.15rem, 4vw, 1.5rem);
+  }
+  .pg-h1 {
+    font-size: 1.2rem;
+  }
+  .pg-h2 {
+    font-size: .95rem;
+  }
+  .cta-band h2 {
+    font-size: 1.1rem;
+  }
+  .hero-sub {
+    font-size: .88rem;
+  }
+  .nx-title {
+    font-size: clamp(1.4rem, 6vw, 2rem);
+  }
+  .price-amount {
+    font-size: 2rem;
+  }
+  .stat-n {
+    font-size: 1.15rem;
+  }
+  .hm-n {
+    font-size: 1.2rem;
+  }
+  .auth-card h1 {
+    font-size: 1.3rem;
+  }
+}
+
+/* ----- 3f. 480px breakpoint ----- */
+@media (max-width: 480px) {
+  .hero-h1 {
+    font-size: clamp(1.35rem, 7vw, 1.8rem);
+    letter-spacing: -.02em;
+  }
+  .sec-title {
+    font-size: 1.15rem;
+  }
+  .pg-h1 {
+    font-size: 1.1rem;
+  }
+  .pg-h2 {
+    font-size: .9rem;
+  }
+  .pg-sub {
+    font-size: .78rem;
+  }
+  .cta-band h2 {
+    font-size: 1rem;
+  }
+  .hero-sub {
+    font-size: .82rem;
+    margin-bottom: 20px;
+  }
+  .eyebrow {
+    font-size: .58rem;
+  }
+  .price-tier {
+    font-size: 1rem;
+  }
+  .price-amount {
+    font-size: 1.8rem;
+  }
+  .nx-title {
+    font-size: 1.3rem;
+  }
+  .hm-n {
+    font-size: 1.05rem;
+  }
+  .stat-n {
+    font-size: 1.05rem;
+  }
+  .auth-card h1 {
+    font-size: 1.15rem;
+  }
+  .brand {
+    font-size: .85rem;
+  }
+  /* Body text floor */
+  body {
+    font-size: .88rem;
+  }
+  .msg {
+    font-size: .82rem;
+  }
+  .side-item {
+    font-size: .82rem;
+  }
+  .nav-link {
+    font-size: .8rem;
+  }
+  .foot-links a {
+    font-size: .78rem;
+  }
+}
+
+
+/* ================================================================
+   4. SPACING RESPONSIVE
+   Section padding, card padding, and margins reduce on smaller
+   screens for a tight but breathable layout.
+   ================================================================ */
+
+/* ----- 4a. 1536px ----- */
+@media (max-width: 1536px) {
+  :root {
+    --r-section-pad: 90px;
+    --r-wrap-pad: 22px;
+  }
+  .section {
+    padding: 90px 0;
+  }
+  .wrap {
+    padding: 0 22px;
+  }
+}
+
+/* ----- 4b. 1280px ----- */
+@media (max-width: 1280px) {
+  :root {
+    --r-section-pad: 80px;
+    --r-wrap-pad: 20px;
+  }
+  .section {
+    padding: 80px 0;
+  }
+  .hero {
+    padding: 110px 0 80px;
+  }
+  .wrap {
+    padding: 0 20px;
+  }
+  .cta-band {
+    padding: 48px 0;
+  }
+  #view {
+    padding: 16px;
+  }
+}
+
+/* ----- 4c. 1024px ----- */
+@media (max-width: 1024px) {
+  :root {
+    --r-section-pad: 64px;
+    --r-card-pad: 18px;
+  }
+  .section {
+    padding: 68px 0;
+  }
+  .hero {
+    padding: 90px 0 64px;
+  }
+  .wrap {
+    padding: 0 18px;
+  }
+  .cta-band {
+    padding: 40px 0;
+  }
+  .card {
+    padding: 14px;
+    margin-bottom: 12px;
+  }
+  .set-card {
+    padding: 16px 20px;
+  }
+  .feat-card {
+    padding: 18px;
+  }
+  .bento-card {
+    padding: 26px;
+  }
+  .dash-hero {
+    padding: 20px;
+  }
+  #view {
+    padding: 14px;
+  }
+}
+
+/* ----- 4d. 768px ----- */
+@media (max-width: 768px) {
+  :root {
+    --r-section-pad: 56px;
+    --r-card-pad: 16px;
+    --r-grid-gap: 14px;
+  }
+  .section {
+    padding: 56px 0;
+  }
+  .section.alt {
+    padding: 56px 0;
+  }
+  .hero {
+    padding: 70px 0 50px;
+    min-height: 70vh;
+  }
+  .wrap {
+    padding: 0 16px;
+  }
+  .cta-band {
+    padding: 36px 0;
+  }
+  .card {
+    padding: 12px;
+    margin-bottom: 10px;
+  }
+  .set-card {
+    padding: 14px 16px;
+    margin-bottom: 10px;
+  }
+  .feat-card {
+    padding: 16px;
+  }
+  .mod-card {
+    padding: 14px;
+  }
+  .bento-card {
+    padding: 22px;
+  }
+  .price-card {
+    padding: 24px 20px;
+  }
+  .testimonial-card {
+    padding: 22px 18px 18px;
+  }
+  .plab-card {
+    padding: 18px 16px 14px;
+  }
+  .dash-hero {
+    padding: 18px;
+    margin-bottom: 18px;
+  }
+  .nx-hero {
+    padding: 24px 20px;
+    margin-bottom: 18px;
+  }
+  #view {
+    padding: 12px;
+  }
+  .auth-card {
+    padding: 14px;
+    margin: 4vh auto;
+  }
+  .panel {
+    padding: 14px;
+  }
+  .util-card {
+    padding: 12px;
+  }
+  .cs-card {
+    padding: 12px;
+  }
+}
+
+/* ----- 4e. 640px ----- */
+@media (max-width: 640px) {
+  :root {
+    --r-section-pad: 44px;
+    --r-card-pad: 14px;
+    --r-grid-gap: 12px;
+  }
+  .section {
+    padding: 44px 0;
+  }
+  .hero {
+    padding: 56px 0 40px;
+    min-height: auto;
+  }
+  .wrap {
+    padding: 0 14px;
+  }
+  .cta-band {
+    padding: 32px 0;
+  }
+  .feat-card {
+    padding: 14px;
+  }
+  .price-card {
+    padding: 20px 16px;
+  }
+  .bento-card {
+    padding: 18px;
+  }
+  .nx-hero {
+    padding: 20px 16px;
+  }
+  .auth-card {
+    padding: 12px;
+    margin: 3vh auto;
+    max-width: 100%;
+  }
+}
+
+/* ----- 4f. 480px ----- */
+@media (max-width: 480px) {
+  :root {
+    --r-section-pad: 36px;
+    --r-card-pad: 12px;
+    --r-grid-gap: 10px;
+    --r-wrap-pad: 12px;
+  }
+  .section {
+    padding: 36px 0;
+  }
+  .section.alt {
+    padding: 36px 0;
+  }
+  .hero {
+    padding: 48px 0 32px;
+  }
+  .wrap {
+    padding: 0 12px;
+  }
+  .cta-band {
+    padding: 28px 0;
+  }
+  .card {
+    padding: 10px;
+    border-radius: 10px;
+  }
+  .set-card {
+    padding: 12px;
+  }
+  .feat-card {
+    padding: 12px;
+    border-radius: 10px;
+  }
+  .price-card {
+    padding: 18px 14px;
+  }
+  .bento-card {
+    padding: 16px;
+    border-radius: 10px;
+  }
+  .testimonial-card {
+    padding: 18px 14px 14px;
+  }
+  .plab-card {
+    padding: 14px 12px;
+  }
+  .util-card {
+    padding: 10px;
+  }
+  .cs-card {
+    padding: 10px;
+  }
+  #view {
+    padding: 10px;
+  }
+  .dash-hero {
+    padding: 14px;
+    margin-bottom: 14px;
+  }
+  .nx-hero {
+    padding: 16px 12px;
+    border-radius: 12px;
+  }
+  .panel {
+    padding: 10px;
+  }
+  .rag-card {
+    padding: 12px;
+  }
+}
+
+
+/* ================================================================
+   5. COMPONENT RESPONSIVE
+   Comprehensive per-component responsive behavior.
+   ================================================================ */
+
+/* ----- 5a. Cards stack vertically on mobile ----- */
+@media (max-width: 640px) {
+  .card,
+  .set-card,
+  .feat-card,
+  .mod-card,
+  .bento-card,
+  .price-card,
+  .testimonial-card,
+  .plab-card,
+  .util-card,
+  .cs-card,
+  .res-card,
+  .feed-card,
+  .rag-card,
+  .qa,
+  .dl-card,
+  .dlapp-card {
+    width: 100%;
+    max-width: 100%;
+  }
+}
+
+/* ----- 5b. Tables become horizontally scrollable ----- */
+.table-scroll-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 0 -4px;
+  padding: 0 4px;
+}
+@media (max-width: 768px) {
+  .ports-card {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .ports {
+    min-width: 500px;
+  }
+  .cmp-table {
+    min-width: 500px;
+  }
+  .doc-table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  /* Comparison table scroll container */
+  .cmp-scroll {
+    margin: 0 -8px;
+    padding: 0 8px;
+    border-radius: 10px;
+  }
+}
+@media (max-width: 480px) {
+  .ports {
+    font-size: .76rem;
+  }
+  .ports th {
+    padding: 8px 10px;
+    font-size: .58rem;
+  }
+  .ports td {
+    padding: 7px 10px;
+  }
+}
+
+/* ----- 5c. Modals become full-screen on mobile ----- */
+@media (max-width: 640px) {
+  .tk-modal {
+    padding: 0;
+    align-items: stretch;
+  }
+  .tk-modal-box {
+    width: 100%;
+    max-width: 100%;
+    max-height: 100vh;
+    border-radius: 0;
+    border: none;
+  }
+  .tk-modal-hd {
+    border-radius: 0;
+  }
+
+  .fb-modal {
+    padding: 0;
+    align-items: stretch;
+  }
+  .fb-box {
+    width: 100%;
+    max-width: 100%;
+    border-radius: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Command palette full-width on mobile */
+  .cmdk {
+    padding-top: 0;
+    align-items: stretch;
+  }
+  .cmdk-box {
+    width: 100%;
+    border-radius: 0;
+    max-height: 100vh;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  .cmdk-list {
+    flex: 1;
+    max-height: none;
+  }
+}
+@media (max-width: 480px) {
+  .tk-modal-body {
+    padding: 12px;
+  }
+  .fb-box {
+    padding: 14px;
+  }
+}
+
+/* ----- 5d. Tabs become scrollable on mobile ----- */
+@media (max-width: 768px) {
+  .os-tabs,
+  .dl-tabs,
+  .pc-tabs,
+  .api-code-tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap;
+    gap: 4px;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+  }
+  .os-tabs::-webkit-scrollbar,
+  .dl-tabs::-webkit-scrollbar,
+  .pc-tabs::-webkit-scrollbar,
+  .api-code-tabs::-webkit-scrollbar {
+    display: none;
+  }
+  .os-tab,
+  .dl-tabs > *,
+  .pc-tabs > * {
+    flex: none;
+    white-space: nowrap;
+  }
+
+  /* RAG tabs: horizontal scroll */
+  .rag-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    justify-content: flex-start;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+  }
+  .rag-tabs::-webkit-scrollbar {
+    display: none;
+  }
+  .rag-tab {
+    flex: none;
+    white-space: nowrap;
+  }
+
+  /* Settings tabs: horizontal scroll when stacked */
+  .set-layout {
+    flex-direction: column;
+    gap: 16px;
+  }
+  .set-nav {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    min-width: 0;
+    border-right: none;
+    border-bottom: 1px solid var(--line);
+    padding-right: 0;
+    padding-bottom: 10px;
+    gap: 4px;
+    scrollbar-width: none;
+  }
+  .set-nav::-webkit-scrollbar {
+    display: none;
+  }
+  .set-tab {
+    flex: none;
+    white-space: nowrap;
+    border-left: none;
+    border-bottom: 3px solid transparent;
+  }
+  .set-tab.active {
+    border-left: none;
+    border-bottom-color: var(--acc);
+    padding-left: 14px;
+  }
+
+  /* Learn Hub filter chips: horizontal scroll */
+  .lh-chips {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+  }
+  .lh-chips::-webkit-scrollbar {
+    display: none;
+  }
+  .lh-ch {
+    flex: none;
+    white-space: nowrap;
+  }
+
+  /* Cheat sheet filter chips: horizontal scroll */
+  .cs-filter {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+  }
+  .cs-filter::-webkit-scrollbar {
+    display: none;
+  }
+  .cs-filter .chip {
+    flex: none;
+    white-space: nowrap;
+  }
+
+  /* Segmented control: horizontal scroll for many segments */
+  .seg {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    max-width: 100%;
+    scrollbar-width: none;
+  }
+  .seg::-webkit-scrollbar {
+    display: none;
+  }
+  .seg button {
+    flex: none;
+    white-space: nowrap;
+  }
+}
+
+/* ----- 5e. Feature rows stack (image above text) ----- */
+@media (max-width: 768px) {
+  .feature-row,
+  .feature-row.reverse {
+    grid-template-columns: 1fr;
+    gap: 20px;
+    direction: ltr;
+  }
+  .feature-row.reverse > * {
+    direction: ltr;
+  }
+  .feature-visual {
+    order: -1;
+  }
+  .feature-visual .term-window {
+    transform: none;
+    margin-top: 0;
+  }
+  .feature-row .feature-text {
+    text-align: left;
+    padding: 0;
+  }
+}
+@media (max-width: 480px) {
+  .feature-rows {
+    gap: 40px;
+  }
+  .feature-row,
+  .feature-row.reverse {
+    gap: 16px;
+  }
+}
+
+/* ----- 5f. Timeline becomes single-column ----- */
+@media (max-width: 768px) {
+  .timeline-v::before {
+    left: 22px;
+  }
+  .tlv-num {
+    left: 22px;
+    width: 38px;
+    height: 38px;
+    font-size: 1rem;
+  }
+  .tlv-body {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    padding-left: 58px;
+  }
+  .tlv-step:nth-child(odd) .tlv-text,
+  .tlv-step:nth-child(even) .tlv-text {
+    text-align: left;
+    padding: 0;
+  }
+  .tlv-step:nth-child(odd) .tlv-visual,
+  .tlv-step:nth-child(even) .tlv-visual {
+    padding: 0;
+    order: unset;
+  }
+  .tlv-step {
+    padding-bottom: 40px;
+  }
+}
+@media (max-width: 480px) {
+  .tlv-body {
+    padding-left: 48px;
+    gap: 12px;
+  }
+  .tlv-num {
+    left: 14px;
+    width: 32px;
+    height: 32px;
+    font-size: .88rem;
+  }
+  .tlv-step {
+    padding-bottom: 32px;
+  }
+  .timeline-v::before {
+    left: 14px;
+  }
+}
+
+/* Dashboard timeline responsive */
+@media (max-width: 640px) {
+  .dash-timeline {
+    padding-left: 14px;
+  }
+  .dash-tl-dot {
+    left: -14px;
+    width: 8px;
+    height: 8px;
+  }
+  .dash-tl-item {
+    font-size: .8rem;
+    padding: 7px 0;
+  }
+  .dash-tl-time {
+    font-size: .68rem;
+  }
+}
+
+/* ----- 5g. Pricing cards stack ----- */
+@media (max-width: 640px) {
+  .price-card {
+    max-width: 100%;
+  }
+  .price-badge {
+    font-size: .66rem;
+    padding: 2px 10px;
+    top: -10px;
+  }
+  .price-features li {
+    padding: 5px 0;
+  }
+  .price-card .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* ----- 5h. Stats grid reflows ----- */
+@media (max-width: 640px) {
+  .stat {
+    padding: 12px;
+  }
+  .stat::after {
+    width: 2px;
+  }
+  .lh-stats {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .lh-st {
+    min-width: 0;
+  }
+}
+
+/* ----- 5i. Hero responsive ----- */
+@media (max-width: 768px) {
+  .hero-inner {
+    grid-template-columns: 1fr;
+    gap: 24px;
+    text-align: center;
+  }
+  .hero-copy {
+    text-align: center;
+  }
+  .hero-h1 {
+    max-width: none;
+    margin: 14px auto 14px;
+  }
+  .hero-sub {
+    margin: 0 auto 20px;
+  }
+  .hero-cta {
+    justify-content: center;
+  }
+  .hero-metrics {
+    justify-content: center;
+    gap: 20px;
+  }
+  .hero-visual {
+    display: none;
+  }
+  .hero-trust {
+    gap: 0;
+    justify-content: center;
+    padding: 16px 0;
+    margin-top: 24px;
+  }
+  .trust-item {
+    padding: 0 20px;
+  }
+  .marquee-wrap {
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+    text-align: center;
+  }
+  .marquee-label {
+    padding-left: 0;
+  }
+  .marquee {
+    justify-content: center;
+  }
+}
+@media (max-width: 480px) {
+  .hero {
+    text-align: center;
+  }
+  .hero-cta {
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+  .hero-cta .btn.lg {
+    width: 100%;
+    max-width: 300px;
+    justify-content: center;
+  }
+  .hero-metrics {
+    grid-template-columns: repeat(2, auto);
+    gap: 12px;
+  }
+  .hero-trust {
+    flex-direction: column;
+    gap: 12px;
+    align-items: center;
+  }
+  .trust-item {
+    padding: 0;
+    border-right: none;
+  }
+  .hero-metrics .hm:nth-child(odd) {
+    border-right: none;
+    padding-right: 16px;
+  }
+}
+
+/* ----- 5j. CTA band responsive ----- */
+@media (max-width: 768px) {
+  .cta-band-inner {
+    flex-direction: column;
+    text-align: center;
+    gap: 16px;
+  }
+  .cta-band-inner .btn {
+    width: 100%;
+    max-width: 320px;
+    justify-content: center;
+  }
+}
+@media (max-width: 480px) {
+  .cta-band h2 {
+    font-size: .95rem;
+  }
+}
+
+/* ----- 5k. Auth card responsive ----- */
+@media (max-width: 640px) {
+  .auth-card {
+    margin: 3vh 10px;
+    max-width: 100%;
+    border-radius: 12px;
+  }
+}
+@media (max-width: 480px) {
+  .auth-card {
+    margin: 2vh 8px;
+    padding: 10px;
+  }
+  .auth-links {
+    flex-direction: column;
+    gap: 8px;
+    text-align: center;
+  }
+}
+
+/* ----- 5l. AI assistant responsive ----- */
+@media (max-width: 768px) {
+  .ai-wrap {
+    height: calc(100vh - var(--topbar-h) - 52px);
+    min-height: 300px;
+    max-width: 100%;
+  }
+  .ai-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .ai-controls {
+    margin-left: 0;
+    width: 100%;
+  }
+  .ai-sel {
+    flex: 1;
+  }
+  .msg {
+    max-width: 92%;
+  }
+  .ai-input {
+    font-size: 16px; /* prevent iOS zoom */
+  }
+}
+@media (max-width: 480px) {
+  .ai-wrap {
+    height: calc(100vh - var(--topbar-h) - 40px);
+    min-height: 260px;
+  }
+  .msg {
+    max-width: 96%;
+    padding: 8px 10px;
+    font-size: .82rem;
+  }
+  .ai-chat {
+    padding: 10px;
+    gap: 8px;
+  }
+  .ai-input-row {
+    gap: 6px;
+  }
+  .ai-presets {
+    gap: 4px;
+  }
+  .ai-presets .chip {
+    padding: 3px 8px;
+    font-size: .66rem;
+  }
+  .ai-title {
+    font-size: 1.1rem;
+  }
+  .ai-key-row {
+    flex-direction: column;
+    gap: 6px;
+  }
+}
+
+/* ----- 5m. Documentation layout responsive ----- */
+@media (max-width: 1024px) {
+  .doc-wrap {
+    grid-template-columns: 180px 1fr;
+    gap: 20px;
+  }
+}
+@media (max-width: 768px) {
+  .doc-wrap {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+  .doc-toc {
+    position: static;
+    border-right: none;
+    border-bottom: 1px solid var(--line);
+    padding: 0 0 12px;
+    margin-bottom: 14px;
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    gap: 4px;
+    scrollbar-width: none;
+  }
+  .doc-toc::-webkit-scrollbar {
+    display: none;
+  }
+  .doc-toc-l {
+    flex: none;
+    white-space: nowrap;
+    border-left: none;
+    padding: 4px 10px;
+  }
+}
+
+/* ----- 5n. Nexus showcase responsive ----- */
+@media (max-width: 768px) {
+  .nx-hero {
+    border-radius: 12px;
+  }
+  .nx-cta {
+    justify-content: center;
+  }
+  .nx-term {
+    margin: 14px 0 4px;
+  }
+  .nx-chips {
+    justify-content: center;
+  }
+  .nx-feat h4 {
+    padding-right: 0;
+    flex-wrap: wrap;
+  }
+  .nx-tag {
+    position: static;
+    display: inline-block;
+  }
+}
+@media (max-width: 480px) {
+  .nx-badge {
+    font-size: .6rem;
+    padding: 4px 10px;
+  }
+  .nx-sub {
+    font-size: .82rem;
+  }
+}
+
+/* ----- 5o. User admin rows responsive ----- */
+@media (max-width: 640px) {
+  .user-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 10px 6px;
+  }
+  .ur-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+  .ur-name {
+    font-size: .85rem;
+  }
+}
+
+/* ----- 5p. Breadcrumbs responsive ----- */
+@media (max-width: 640px) {
+  .crumbs {
+    font-size: .76rem;
+    gap: 2px;
+    margin-bottom: 10px;
+  }
+  .crumb {
+    padding: 2px 4px;
+    font-size: .76rem;
+  }
+  .crumb.cur {
+    padding: 2px 8px;
+  }
+}
+
+/* ----- 5q. Command palette responsive ----- */
+@media (max-width: 768px) {
+  .cmdk-btn span {
+    display: none;
+  }
+  .cmdk-foot {
+    gap: 10px;
+    font-size: .68rem;
+  }
+}
+
+/* ----- 5r. Toast notifications responsive ----- */
+@media (max-width: 640px) {
+  .toast {
+    left: 10px;
+    right: 10px;
+    transform: translate(0, 20px);
+    max-width: none;
+  }
+  .toast.in {
+    transform: translate(0, 0);
+  }
+}
+
+/* ----- 5s. Footer responsive ----- */
+@media (max-width: 768px) {
+  .foot-inner {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 12px;
+  }
+  .foot-links {
+    margin-left: 0;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .app-foot-row {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 10px;
+  }
+  .app-foot-links {
+    margin-left: 0;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px 14px;
+  }
+  .site-foot {
+    padding: 20px 0;
+  }
+}
+@media (max-width: 480px) {
+  .foot-links {
+    gap: 12px;
+  }
+  .foot-links a {
+    font-size: .78rem;
+  }
+  .foot-contact {
+    font-size: .78rem;
+  }
+}
+
+/* ----- 5t. GitHub profile responsive ----- */
+@media (max-width: 768px) {
+  .gh-profile {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 12px;
+  }
+  .gh-avatar {
+    width: 56px;
+    height: 56px;
+  }
+  .gh-stats {
+    justify-content: center;
+  }
+}
+
+/* ----- 5u. Walkthrough/tour responsive ----- */
+@media (max-width: 640px) {
+  .tour-callout {
+    width: 280px;
+    max-width: 88vw;
+    padding: 12px;
+  }
+  .tour-title {
+    font-size: .92rem;
+  }
+  .tour-text {
+    font-size: .78rem;
+  }
+}
+
+/* ----- 5v. Banner responsive ----- */
+@media (max-width: 640px) {
+  .banner {
+    margin: 8px 10px;
+    padding: 8px 10px;
+    font-size: .8rem;
+    border-radius: 10px;
+  }
+}
+
+/* ----- 5w. Download CLI buttons ----- */
+@media (max-width: 640px) {
+  .dlcli-btns {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .dlcli-btns .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* ----- 5x. Download OS buttons ----- */
+@media (max-width: 640px) {
+  .dl-osbtn {
+    padding: 10px;
+  }
+  .dl-osbtn .dl-os {
+    font-size: .82rem;
+  }
+  .dl-osbtn .dl-fmt {
+    font-size: .68rem;
+  }
+}
+
+/* ----- 5y. Security posture list ----- */
+@media (max-width: 640px) {
+  .pos-item {
+    padding: 6px;
+  }
+  .pos-text strong {
+    font-size: .8rem;
+  }
+  .pos-text .muted {
+    font-size: .7rem;
+  }
+}
+
+/* ----- 5z. Whitelist management ----- */
+@media (max-width: 480px) {
+  .wl-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  .wl-item .mono {
+    max-width: 100%;
+  }
+}
+
+/* ----- 5aa. API dashboard responsive ----- */
+@media (max-width: 768px) {
+  .api-ep-header {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px 12px;
+  }
+  .api-ep-desc {
+    margin-left: 0;
+    width: 100%;
+    font-size: .76rem;
+  }
+  .api-key-row {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .api-key-input {
+    width: 100%;
+  }
+}
+@media (max-width: 480px) {
+  .api-tier {
+    padding: 16px 14px;
+  }
+  .api-tier h3 {
+    font-size: .95rem;
+  }
+  .api-tier-price {
+    font-size: 1.3rem;
+  }
+}
+
+/* ----- 5ab. Learn hub topic page ----- */
+@media (max-width: 768px) {
+  .lh-tp {
+    max-width: 100%;
+  }
+  .lh-code {
+    font-size: .76rem;
+  }
+  .lh-qo button {
+    font-size: .82rem;
+    padding: 8px 12px;
+  }
+}
+@media (max-width: 480px) {
+  .lh-cb {
+    font-size: .72rem;
+    gap: 6px;
+  }
+  .lh-cb .nm {
+    width: 100px;
+  }
+}
+
+/* ----- 5ac. Nexus code pairing row ----- */
+@media (max-width: 640px) {
+  .nexus-code-row {
+    flex-direction: column;
+    gap: 6px;
+  }
+  .nexus-code-row input {
+    max-width: 100%;
+    width: 100%;
+  }
+  .nexus-code-row .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* ----- 5ad. Google Hacking DB layout ----- */
+@media (max-width: 768px) {
+  .ghdb-bar {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .ghdb-bar .tk-f {
+    min-width: 0;
+    width: 100%;
+  }
+  .gh-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    padding: 8px 0;
+  }
+  .gh-desc {
+    flex: none;
+    width: 100%;
+  }
+  .gh-q {
+    width: 100%;
+  }
+  .gh-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
+/* ----- 5ae. Boot screen responsive ----- */
+@media (max-width: 480px) {
+  .boot-logo {
+    font-size: clamp(1.8rem, 8vw, 3rem);
+  }
+  .boot-lines {
+    font-size: .76rem;
+    min-width: min(300px, 85vw);
+  }
+  .boot-tag {
+    font-size: .62rem;
+    letter-spacing: .25em;
+  }
+}
+
+/* ----- 5af. Comparison table responsive ----- */
+@media (max-width: 768px) {
+  .cmp-scroll {
+    border-radius: 10px;
+    margin: 0 -8px;
+    padding: 0 8px;
+  }
+  .cmp-landing td,
+  .cmp-landing thead th {
+    padding: 10px 12px;
+    font-size: .78rem;
+  }
+  /* Sticky first column for mobile scroll */
+  .cmp-landing td:first-child,
+  .cmp-landing thead th.cmp-feature-col {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background: var(--bg);
+    box-shadow: 2px 0 8px -4px rgba(0, 0, 0, .3);
+  }
+}
+
+/* ----- 5ag. Code blocks responsive ----- */
+@media (max-width: 640px) {
+  .code-block {
+    border-radius: 6px;
+    margin: 6px 0;
+  }
+  .code-block code {
+    font-size: .76rem;
+    padding: 10px 12px;
+  }
+  .code-block .cb-copy {
+    top: 6px;
+    right: 6px;
+    padding: 2px 6px;
+    font-size: .58rem;
+  }
+}
+
+/* ----- 5ah. Edition cards responsive ----- */
+@media (max-width: 640px) {
+  .ed-card {
+    padding: 12px;
+  }
+  .ed-head h3 {
+    font-size: .92rem;
+  }
+  .ed-steps {
+    font-size: .78rem;
+  }
+  .ed-steps code {
+    font-size: .72rem;
+  }
+}
+
+/* ----- 5ai. Target bar responsive ----- */
+@media (max-width: 768px) {
+  .target-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    padding: 10px 12px;
+  }
+  .target-bar .tk-f {
+    min-width: 0;
+    width: 100%;
+  }
+}
+
+/* ----- 5aj. AI image thumbnails ----- */
+@media (max-width: 480px) {
+  .ai-thumbs {
+    gap: 6px;
+  }
+  .ai-thumb img {
+    height: 40px;
+  }
+  .msg-img {
+    max-width: 200px;
+    max-height: 150px;
+  }
+}
+
+/* ----- 5ak. Dashboard hero meta ----- */
+@media (max-width: 640px) {
+  .dash-hero-top {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .dash-meta {
+    gap: 10px;
+    width: 100%;
+    justify-content: space-between;
+  }
+  .dash-qstats .dash-qs-item {
+    padding: 10px 2px;
+  }
+  .dash-qs-n {
+    font-size: 1.2rem;
+  }
+}
+
+/* ----- 5al. Marquee chips responsive ----- */
+@media (max-width: 640px) {
+  .marquee {
+    gap: 6px;
+  }
+  .mchip {
+    font-size: .68rem;
+    padding: 4px 10px;
+  }
+}
+
+
+/* ================================================================
+   6. TOUCH OPTIMIZATIONS
+   44px minimum touch targets (WCAG 2.5.5 / Apple HIG),
+   larger spacing between interactive elements on touch devices.
+   ================================================================ */
+
+/* Touch targets -- mobile */
+@media (max-width: 768px) {
+  /* Buttons: minimum 44px height */
+  .btn {
+    min-height: 44px;
+    padding: .5rem 1rem;
+  }
+  .btn.sm {
+    min-height: 44px;
+    min-width: 44px;
+    padding: .45rem .85rem;
+  }
+  .btn.lg {
+    min-height: 48px;
+  }
+
+  /* Icon buttons: 44px square */
+  .icon-btn {
+    width: 44px;
+    height: 44px;
+    font-size: 1.15rem;
+  }
+
+  /* Hamburger */
+  .hamburger {
+    width: 44px;
+    height: 44px;
+  }
+
+  /* Form inputs: minimum 44px height + 16px font to prevent iOS zoom */
+  input,
+  textarea,
+  select,
+  .tk-f,
+  .tk-in,
+  .tk-search,
+  .ai-input,
+  .ai-sel,
+  .ai-key-input,
+  .lh-inp {
+    min-height: 44px;
+    font-size: 16px;
+  }
+
+  /* Segmented control buttons */
+  .seg button {
+    min-height: 44px;
+    padding: .5rem 1rem;
+  }
+
+  /* Tab buttons */
+  .os-tab {
+    min-height: 44px;
+    padding: .5rem .9rem;
+  }
+  .set-tab {
+    min-height: 44px;
+    padding: 10px 14px;
+  }
+  .rag-tab {
+    min-height: 44px;
+    padding: 8px 14px;
+  }
+
+  /* Color swatches */
+  .swatch {
+    width: 44px;
+    height: 44px;
+  }
+
+  /* Copy/micro buttons */
+  .dl-copy,
+  .cs-copy,
+  .rx-use,
+  .cb-copy,
+  .dl-mark {
+    min-height: 44px;
+    min-width: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Close / delete buttons */
+  .wl-x,
+  .saved-x {
+    min-width: 44px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Feedback type chips */
+  .fb-type {
+    min-height: 44px;
+    padding: 8px 14px;
+  }
+
+  /* Command palette items */
+  .cmdk-item {
+    min-height: 44px;
+    padding: 10px 12px;
+  }
+
+  /* Learn hub filter chips */
+  .lh-ch {
+    min-height: 44px;
+    padding: 8px 14px;
+  }
+
+  /* Chip elements */
+  .chip {
+    min-height: 36px;
+    padding: 6px 12px;
+  }
+
+  /* Side nav items */
+  .side-item {
+    min-height: 44px;
+    padding: 10px 12px;
+  }
+
+  /* Quiz options */
+  .lh-qo button {
+    min-height: 44px;
+  }
+
+  /* Walkthrough buttons */
+  .tour-actions .btn {
+    min-height: 44px;
+  }
+
+  /* Tool cards */
+  .tk-card {
+    min-height: 60px;
+  }
+
+  /* Accordion headers */
+  .tk-head {
+    min-height: 48px;
+    padding: 12px 14px;
+  }
+
+  /* Menu items */
+  .menu-item {
+    min-height: 44px;
+    padding: 10px 12px;
+  }
+
+  /* Logo picks */
+  .logo-pick {
+    width: 48px;
+    height: 48px;
+  }
+
+  /* Larger gap between interactive elements */
+  .set-btns {
+    gap: 10px;
+  }
+  .hero-cta {
+    gap: 10px;
+  }
+  .tk-btns {
+    gap: 8px;
+  }
+  .util-btns {
+    gap: 8px;
+  }
+  .auth-links {
+    gap: 14px;
+  }
+}
+
+/* Touch targets -- small phones */
+@media (max-width: 480px) {
+  .btn {
+    min-height: 46px;
+  }
+  .side-item {
+    min-height: 46px;
+  }
+  .menu-item {
+    min-height: 46px;
+  }
+  .cmdk-item {
+    min-height: 46px;
+  }
+}
+
+/* Hover state removal on touch devices */
+@media (hover: none) and (pointer: coarse) {
+  /* Disable hover transforms on touch -- they stick after tap */
+  .feat-card:hover,
+  .mod-card:hover,
+  .bento-card:hover,
+  .price-card:hover,
+  .testimonial-card:hover,
+  .plab-card:hover,
+  .qa:hover,
+  .dl-card:hover,
+  .res-card:hover,
+  .feed-card:hover,
+  .rag-card:hover,
+  .nx-feat:hover,
+  .arse-card:hover,
+  .stat:hover,
+  .card:hover,
+  .panel:hover,
+  .set-card:hover,
+  .lh-c:hover,
+  .mchip:hover,
+  .chip:hover,
+  .dl-osbtn:hover,
+  .gh-card:hover {
+    transform: none;
+  }
+
+  /* Active states instead of hover */
+  .feat-card:active,
+  .mod-card:active,
+  .bento-card:active,
+  .price-card:active,
+  .qa:active,
+  .res-card:active,
+  .feed-card:active,
+  .rag-card:active {
+    transform: scale(.98);
+    transition: transform .1s ease;
+  }
+}
+
+
+/* ================================================================
+   7. IMAGE / MEDIA RESPONSIVE
+   Max-width: 100%, aspect-ratio containers, and proper scaling.
+   ================================================================ */
+
+/* Global image responsive */
+img,
+video,
+picture,
+svg,
+canvas {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Prevent layout shift on images */
+img {
+  display: block;
+}
+
+/* Aspect-ratio containers for embedded content */
+.aspect-16-9 {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+}
+.aspect-16-9 > * {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.aspect-4-3 {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+}
+.aspect-4-3 > * {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.aspect-1-1 {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+}
+.aspect-1-1 > * {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Terminal mockup responsive */
+@media (max-width: 768px) {
+  .term-window {
+    transform: none;
+    border-radius: 10px;
+  }
+  .tw-body {
+    font-size: .72rem;
+    padding: 12px 14px;
+    line-height: 1.6;
+  }
+  .tw-bar {
+    padding: 8px 10px;
+  }
+  .tw-dot {
+    width: 9px;
+    height: 9px;
+  }
+}
+@media (max-width: 480px) {
+  .term-window {
+    border-radius: 8px;
+  }
+  .tw-body {
+    font-size: .68rem;
+    padding: 10px 12px;
+  }
+  .tw-bar {
+    padding: 7px 9px;
+  }
+  .tw-dot {
+    width: 8px;
+    height: 8px;
+  }
+}
+
+/* Nexus terminal responsive */
+@media (max-width: 768px) {
+  .nx-term {
+    border-radius: 10px;
+  }
+  .nx-term-body {
+    font-size: .76rem;
+    padding: 12px 14px;
+  }
+}
+
+/* Feature-ico / bento-icon scaling */
+@media (max-width: 640px) {
+  .feat-ico {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    margin-bottom: 10px;
+  }
+  .feat-ico .ico {
+    width: 18px;
+    height: 18px;
+  }
+  .bento-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+  }
+  .bento-icon svg {
+    width: 18px;
+    height: 18px;
+  }
+}
+@media (max-width: 480px) {
+  .feat-ico {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+  }
+  .bento-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+  }
+}
+
+/* Auth logo responsive */
+@media (max-width: 480px) {
+  .auth-logo img {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+  }
+}
+
+/* Profile avatar responsive */
+@media (max-width: 768px) {
+  .p-avatar {
+    width: 24px;
+    height: 24px;
+  }
+  .gh-avatar {
+    width: 52px;
+    height: 52px;
+  }
+}
+
+/* Boot screen ring scaling */
+@media (max-width: 480px) {
+  .boot-ring {
+    width: 80px;
+    height: 80px;
+    margin: -40px 0 0 -40px;
+  }
+}
+
+
+/* ================================================================
+   8. FORM RESPONSIVE
+   Inputs go full-width, button groups stack, selects resize.
+   ================================================================ */
+
+/* --- Forms: full-width inputs on mobile --- */
+@media (max-width: 768px) {
+  input,
+  textarea,
+  select,
+  .tk-f,
+  .tk-in,
+  .tk-search,
+  .ai-input,
+  .lh-inp {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  /* Button groups stack */
+  .hero-cta,
+  .nx-cta,
+  .hero-actions,
+  .set-btns,
+  .tk-btns,
+  .util-btns,
+  .fb-foot {
+    flex-wrap: wrap;
+  }
+
+  /* Feedback modal: stacked buttons */
+  .fb-foot {
+    flex-direction: column;
+    gap: 8px;
+    align-items: stretch;
+  }
+  .fb-foot .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Auth form: full width */
+  #pwform input {
+    width: 100%;
+  }
+
+  /* Toolkit row: stack on mobile */
+  .tk-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+  }
+  .tk-row .tk-f {
+    flex: none;
+    width: 100%;
+  }
+
+  /* Utility row: stack */
+  .util-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+  }
+  .util-row .in {
+    flex: none;
+    width: 100%;
+  }
+
+  /* Download pick row: stack */
+  .dl-pick {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  /* AI key row: stack */
+  .ai-key-row {
+    flex-direction: column;
+    gap: 6px;
+  }
+  .ai-key-input {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Feedback types: smaller, wrap */
+  .fb-types {
+    gap: 6px;
+  }
+  .fb-type {
+    font-size: .78rem;
+    padding: 5px 10px;
+  }
+
+  /* Or divider: tighter */
+  .or {
+    margin: 10px 0;
+  }
+
+  /* Auth buttons: full width */
+  .btn.google,
+  .btn.github {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Textarea auto-height hint */
+@media (max-width: 768px) {
+  textarea {
+    min-height: 80px;
+  }
+  .ai-input {
+    min-height: 42px;
+    max-height: 100px;
+  }
+}
+
+
+/* ================================================================
+   9. DARK MODE + RESPONSIVE
+   Theme-specific overrides that change at breakpoints.
+   ================================================================ */
+
+/* --- Light theme mobile adjustments --- */
+@media (max-width: 768px) {
+  :root[data-theme="light"] #topbar {
+    background: color-mix(in srgb, var(--bg) 92%, transparent);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .08);
+  }
+  :root[data-theme="light"] .sidebar {
+    background: var(--bg);
+  }
+  :root[data-theme="light"] body.app .sidebar {
+    background: var(--bg);
+    box-shadow: none;
+  }
+  :root[data-theme="light"] body.app .sidebar.open {
+    box-shadow: 8px 0 30px rgba(0, 0, 0, .12);
+  }
+  :root[data-theme="light"] body.app .sidebar.open::after {
+    background: rgba(0, 0, 0, .2);
+  }
+  :root[data-theme="light"] .toast {
+    background: var(--card);
+    border-color: var(--line);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .1);
+  }
+}
+
+/* --- Dark theme: reduce glow effects on small screens for perf --- */
+@media (max-width: 640px) {
+  :root:not([data-theme="light"]) .btn.glow {
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--acc) 20%, transparent);
+  }
+  :root:not([data-theme="light"]) .btn.glow:hover:not(:disabled) {
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--acc) 35%, transparent),
+                0 8px 24px -8px color-mix(in srgb, var(--acc) 45%, transparent);
+  }
+  :root:not([data-theme="light"]) .stat::after {
+    background: var(--acc);
+  }
+  :root:not([data-theme="light"]) .hero-grid-bg {
+    opacity: .2;
+  }
+}
+
+/* --- Light theme: card shadows on mobile --- */
+@media (max-width: 768px) {
+  :root[data-theme="light"] .card,
+  :root[data-theme="light"] .set-card,
+  :root[data-theme="light"] .feat-card,
+  :root[data-theme="light"] .mod-card,
+  :root[data-theme="light"] .bento-card,
+  :root[data-theme="light"] .price-card,
+  :root[data-theme="light"] .testimonial-card,
+  :root[data-theme="light"] .plab-card,
+  :root[data-theme="light"] .rag-card,
+  :root[data-theme="light"] .util-card,
+  :root[data-theme="light"] .cs-card {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .06), 0 2px 8px rgba(0, 0, 0, .04);
+  }
+}
+
+/* --- Dark theme: auth card on mobile --- */
+@media (max-width: 640px) {
+  :root:not([data-theme="light"]) .auth-card {
+    box-shadow: 0 12px 40px -14px rgba(0, 0, 0, .5);
+  }
+}
+
+/* --- Light theme: comparison table sticky column bg --- */
+@media (max-width: 768px) {
+  :root[data-theme="light"] .cmp-landing td:first-child,
+  :root[data-theme="light"] .cmp-landing thead th.cmp-feature-col {
+    background: var(--bg);
+    box-shadow: 2px 0 8px -4px rgba(0, 0, 0, .08);
+  }
+}
+
+/* --- Light theme: modal overlays lighter --- */
+@media (max-width: 640px) {
+  :root[data-theme="light"] .tk-modal,
+  :root[data-theme="light"] .fb-modal {
+    background: rgba(0, 0, 0, .25);
+  }
+}
+
+/* --- Dark theme: reduce grid bg opacity on mobile for perf --- */
+@media (max-width: 640px) {
+  :root:not([data-theme="light"]) body.app .app-main::before {
+    opacity: .08;
+  }
+  :root:not([data-theme="light"]) body:not(.landing):not(.app)::before {
+    opacity: .08;
+  }
+  :root:not([data-theme="light"]) .hero-grid-bg {
+    opacity: .15;
+  }
+}
+
+/* --- Light theme: topbar on tablet --- */
+@media (min-width: 769px) and (max-width: 1024px) {
+  :root[data-theme="light"] #topbar {
+    background: color-mix(in srgb, var(--bg) 90%, transparent);
+  }
+}
+
+/* --- Dark theme: reduced boot screen effects on mobile --- */
+@media (max-width: 480px) {
+  :root:not([data-theme="light"]) .boot-grid {
+    opacity: .3;
+  }
+  :root:not([data-theme="light"]) #bootscreen::after {
+    opacity: .25;
+  }
+}
+
+
+/* ================================================================
+   10. LANDSCAPE PHONE
+   Special overrides for landscape orientation on small-height devices.
+   Fixes sticky headers, hero overflow, and cramped layouts.
+   ================================================================ */
+
+@media (orientation: landscape) and (max-height: 500px) {
+  /* Reduce topbar height */
+  #topbar {
+    padding: 6px 14px;
+    --topbar-h: 44px;
+  }
+  .brand-mark {
+    width: 20px;
+    height: 20px;
+  }
+  .brand {
+    font-size: .88rem;
+  }
+
+  /* Hero: compact in landscape */
+  .hero {
+    padding: 36px 0 28px;
+    min-height: auto;
+  }
+  .hero-h1 {
+    font-size: clamp(1.3rem, 4vw, 1.8rem);
+    margin-bottom: 8px;
+  }
+  .hero-sub {
+    font-size: .82rem;
+    margin-bottom: 14px;
+  }
+  .hero-cta .btn.lg {
+    padding: .5rem 1.2rem;
+    font-size: .85rem;
+  }
+
+  /* Sections: compact padding */
+  .section {
+    padding: 32px 0;
+  }
+  .section.alt {
+    padding: 32px 0;
+  }
+  .cta-band {
+    padding: 24px 0;
+  }
+
+  /* Sidebar: shorter */
+  body.app .sidebar {
+    top: 44px;
+    height: calc(100vh - 44px);
+  }
+
+  /* AI chat: maximum height */
+  .ai-wrap {
+    height: calc(100vh - 44px - 36px);
+    min-height: 200px;
+  }
+
+  /* Stats: more compact */
+  .stat {
+    padding: 8px 10px;
+  }
+  .stat-n {
+    font-size: 1.1rem;
+  }
+
+  /* Cards: tighter padding */
+  .card {
+    padding: 10px;
+    margin-bottom: 8px;
+  }
+  .set-card {
+    padding: 10px 14px;
+  }
+  .feat-card {
+    padding: 12px;
+  }
+
+  /* Modal: fill viewport in landscape */
+  .tk-modal {
+    padding: 2vh 10px;
+  }
+  .fb-modal {
+    padding: 2vh 10px;
+  }
+
+  /* Boot screen: compact */
+  .boot-logo {
+    font-size: clamp(1.4rem, 5vw, 2.2rem);
+  }
+  .boot-lines {
+    font-size: .72rem;
+  }
+
+  /* Auth card */
+  .auth-card {
+    margin: 2vh auto;
+    padding: 12px;
+  }
+
+  /* Footer: compact */
+  .site-foot {
+    padding: 14px 0;
+  }
+  .app-foot {
+    padding: 12px 4px 10px;
+  }
+
+  /* Pricing section */
+  #pricing.section,
+  #pricing.section.alt {
+    padding: 40px 0;
+  }
+
+  /* Walkthrough: position callout inside viewport */
+  .tour-callout {
+    max-width: 260px;
+    padding: 10px;
+    font-size: .82rem;
+  }
+
+  /* Reduce section vertical margins */
+  .pg-h1 {
+    margin-bottom: 4px;
+  }
+  .pg-sub {
+    margin-bottom: 10px;
+  }
+  .dash-hero {
+    padding: 14px;
+    margin-bottom: 12px;
+  }
+}
+
+/* Landscape + wide phone: 2-column grid */
+@media (orientation: landscape) and (max-height: 500px) and (min-width: 640px) {
+  .pricing-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .feat-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .stat-row {
+    flex-wrap: nowrap;
+  }
+  .stat {
+    min-width: 0;
+    flex: 1;
+  }
+}
+
+/* Landscape + short: collapse hero metrics to single row */
+@media (orientation: landscape) and (max-height: 420px) {
+  .hero-metrics {
+    grid-template-columns: repeat(4, auto);
+    gap: 10px;
+  }
+  .hero-trust {
+    padding: 10px 0;
+    margin-top: 14px;
+  }
+  .hero-visual {
+    display: none;
+  }
+}
+
+
+/* ================================================================
+   11. CONTAINER QUERIES
+   Modern @container rules for components that should adapt
+   to their own container width, not the viewport.
+   ================================================================ */
+
+/* Define containers */
+.app-main {
+  container-type: inline-size;
+  container-name: app-main;
+}
+.panel {
+  container-type: inline-size;
+  container-name: panel;
+}
+.card {
+  container-type: inline-size;
+  container-name: card;
+}
+.set-panel {
+  container-type: inline-size;
+  container-name: settings-panel;
+}
+.nx-hero {
+  container-type: inline-size;
+  container-name: nx-hero;
+}
+.dash-hero {
+  container-type: inline-size;
+  container-name: dash-hero;
+}
+.util-card {
+  container-type: inline-size;
+  container-name: util-card;
+}
+.ai-wrap {
+  container-type: inline-size;
+  container-name: ai-wrap;
+}
+
+/* --- Container: app-main --- */
+@container app-main (max-width: 800px) {
+  .home-cols {
+    grid-template-columns: 1fr;
+  }
+  .adm-cols {
+    grid-template-columns: 1fr;
+  }
+  .stat-row {
+    gap: 10px;
+  }
+}
+
+@container app-main (max-width: 600px) {
+  .qa-grid {
+    grid-template-columns: 1fr;
+  }
+  .feed-grid {
+    grid-template-columns: 1fr;
+  }
+  .stat-row {
+    flex-direction: column;
+  }
+  .stat {
+    min-width: 0;
+    flex: none;
+  }
+  .pg-h1 {
+    font-size: 1.2rem;
+  }
+  .pg-sub {
+    font-size: .82rem;
+  }
+}
+
+@container app-main (max-width: 400px) {
+  .pg-h1 {
+    font-size: 1.05rem;
+  }
+  .stat-n {
+    font-size: 1.1rem;
+  }
+  .hero-actions {
+    flex-direction: column;
+  }
+}
+
+/* --- Container: panel --- */
+@container panel (max-width: 500px) {
+  .feed-grid {
+    grid-template-columns: 1fr;
+  }
+  .panel-h {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+}
+
+@container panel (max-width: 350px) {
+  .panel-h {
+    font-size: .88rem;
+  }
+}
+
+/* --- Container: settings-panel --- */
+@container settings-panel (max-width: 500px) {
+  .set-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 10px 0;
+  }
+  .set-btns {
+    width: 100%;
+  }
+  .set-btns .btn {
+    flex: 1;
+    justify-content: center;
+  }
+}
+
+/* --- Container: nx-hero --- */
+@container nx-hero (max-width: 600px) {
+  .nx-title {
+    font-size: 1.5rem;
+  }
+  .nx-sub {
+    font-size: .85rem;
+  }
+  .nx-cta {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .nx-cta .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* --- Container: dash-hero --- */
+@container dash-hero (max-width: 500px) {
+  .dash-hero-top {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  .dash-hero .eyebrow {
+    font-size: .58rem;
+  }
+}
+
+/* --- Container: util-card --- */
+@container util-card (max-width: 320px) {
+  .util-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .util-btns {
+    flex-direction: column;
+  }
+  .util-btns .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* --- Container: ai-wrap --- */
+@container ai-wrap (max-width: 500px) {
+  .ai-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  .ai-controls {
+    margin-left: 0;
+    width: 100%;
+  }
+  .ai-sel {
+    flex: 1;
+  }
+  .msg {
+    max-width: 94%;
+  }
+}
+
+@container ai-wrap (max-width: 350px) {
+  .ai-title {
+    font-size: 1rem;
+  }
+  .msg {
+    max-width: 98%;
+    font-size: .8rem;
+  }
+}
+
+
+/* ================================================================
+   12. SAFE AREA INSETS
+   Support for notched/punched-hole devices (iPhone X+, Android
+   with display cutouts). Uses env() values with fallbacks.
+   ================================================================ */
+
+/* Topbar: respect top safe area */
+@supports (padding-top: env(safe-area-inset-top)) {
+  #topbar {
+    padding-top: calc(11px + env(safe-area-inset-top, 0px));
+    padding-left: calc(18px + env(safe-area-inset-left, 0px));
+    padding-right: calc(18px + env(safe-area-inset-right, 0px));
+  }
+}
+
+/* Sidebar: respect left safe area */
+@supports (padding-left: env(safe-area-inset-left)) {
+  .sidebar {
+    padding-left: calc(10px + env(safe-area-inset-left, 0px));
+  }
+}
+
+/* Main content: respect right safe area */
+@supports (padding-right: env(safe-area-inset-right)) {
+  .app-main {
+    padding-right: calc(48px + env(safe-area-inset-right, 0px));
+  }
+  @media (max-width: 768px) {
+    .app-main {
+      padding-right: calc(14px + env(safe-area-inset-right, 0px));
+      padding-left: calc(14px + env(safe-area-inset-left, 0px));
+    }
+  }
+}
+
+/* Footer: respect bottom safe area */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .site-foot {
+    padding-bottom: calc(26px + env(safe-area-inset-bottom, 0px));
+  }
+  .app-foot {
+    padding-bottom: calc(22px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* Modal: respect all safe areas */
+@supports (padding: env(safe-area-inset-top)) {
+  .tk-modal {
+    padding-top: calc(6vh + env(safe-area-inset-top, 0px));
+    padding-left: env(safe-area-inset-left, 16px);
+    padding-right: env(safe-area-inset-right, 16px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .fb-modal {
+    padding-top: env(safe-area-inset-top, 20px);
+    padding-left: env(safe-area-inset-left, 20px);
+    padding-right: env(safe-area-inset-right, 20px);
+    padding-bottom: env(safe-area-inset-bottom, 20px);
+  }
+  .cmdk {
+    padding-top: calc(12vh + env(safe-area-inset-top, 0px));
+  }
+}
+
+/* Full-screen modals on mobile: respect all edges */
+@media (max-width: 640px) {
+  @supports (padding: env(safe-area-inset-top)) {
+    .tk-modal-box {
+      padding-top: env(safe-area-inset-top, 0px);
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    .fb-box {
+      padding-top: calc(18px + env(safe-area-inset-top, 0px));
+      padding-bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+    }
+    .cmdk-box {
+      padding-top: env(safe-area-inset-top, 0px);
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+  }
+}
+
+/* Toast: respect bottom safe area so it clears the home indicator */
+@supports (bottom: env(safe-area-inset-bottom)) {
+  .toast {
+    bottom: calc(22px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* AI input row: respect bottom safe area for keyboard */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .ai-input-row {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+}
+
+/* Landing page wrap: respect side safe areas */
+@supports (padding-left: env(safe-area-inset-left)) {
+  .wrap {
+    padding-left: calc(24px + env(safe-area-inset-left, 0px));
+    padding-right: calc(24px + env(safe-area-inset-right, 0px));
+  }
+  @media (max-width: 768px) {
+    .wrap {
+      padding-left: calc(16px + env(safe-area-inset-left, 0px));
+      padding-right: calc(16px + env(safe-area-inset-right, 0px));
+    }
+  }
+  @media (max-width: 480px) {
+    .wrap {
+      padding-left: calc(12px + env(safe-area-inset-left, 0px));
+      padding-right: calc(12px + env(safe-area-inset-right, 0px));
+    }
+  }
+}
+
+/* Auth card: respect horizontal safe areas */
+@supports (margin-left: env(safe-area-inset-left)) {
+  .auth-card {
+    margin-left: max(auto, env(safe-area-inset-left, 0px));
+    margin-right: max(auto, env(safe-area-inset-right, 0px));
+  }
+}
+
+/* Command palette: respect top inset */
+@supports (padding-top: env(safe-area-inset-top)) {
+  @media (max-width: 640px) {
+    .cmdk {
+      padding-top: env(safe-area-inset-top, 0px);
+    }
+  }
+}
+
+/* Bottom navigation / AI bar: padding for home indicator area */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  @media (max-width: 768px) {
+    .app-foot {
+      padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+    }
+  }
+}
+
+
+/* ================================================================
+   13. PRINT RESPONSIVE
+   Print-specific responsive overrides for clean output.
+   ================================================================ */
+
+@media print {
+  /* Force single column */
+  .home-cols,
+  .adm-cols,
+  .doc-wrap,
+  .dash-extras {
+    grid-template-columns: 1fr;
+  }
+  .feature-row,
+  .feature-row.reverse {
+    grid-template-columns: 1fr;
+  }
+
+  /* Grids: more columns for print */
+  .feat-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .pricing-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .testimonial-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .plab-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* No transforms */
+  * {
+    transform: none !important;
+    animation: none !important;
+    transition: none !important;
+  }
+
+  /* Full width */
+  .wrap {
+    max-width: 100%;
+    padding: 0;
+  }
+  .app-main {
+    padding: 0;
+  }
+
+  /* Hide interactive UI */
+  .hamburger,
+  .cmdk,
+  .toast,
+  .fb-modal,
+  .tk-modal,
+  .tour-overlay,
+  .boot-ring,
+  .boot-sweep,
+  .boot-rain,
+  #bootscreen,
+  .cmdk-btn {
+    display: none !important;
+  }
+}
+
+
+/* ================================================================
+   14. REDUCED MOTION RESPONSIVE
+   Combine reduced-motion with responsive breakpoints for
+   accessible mobile experiences.
+   ================================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  /* Kill all card hover transforms */
+  .feat-card:hover,
+  .mod-card:hover,
+  .bento-card:hover,
+  .price-card:hover,
+  .testimonial-card:hover,
+  .plab-card:hover,
+  .qa:hover,
+  .stat:hover,
+  .card:hover,
+  .panel:hover,
+  .set-card:hover,
+  .lh-c:hover,
+  .rag-card:hover,
+  .nx-feat:hover,
+  .arse-card:hover,
+  .dl-osbtn:hover,
+  .gh-card:hover,
+  .res-card:hover,
+  .feed-card:hover,
+  .chip:hover,
+  .mchip:hover {
+    transform: none;
+  }
+
+  /* No sidebar slide */
+  body.app .sidebar {
+    transition: none;
+  }
+
+  /* No scroll reveal */
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .testimonial-card,
+  .plab-card,
+  .plab-note,
+  .tlv-step,
+  .rag-card,
+  .metric-card {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  /* No hero entrance */
+  body.landing .hero-copy > .eyebrow,
+  body.landing .hero-h1,
+  body.landing .hero-sub,
+  body.landing .hero-cta,
+  body.landing .hero-metrics,
+  body.landing .hero-visual,
+  body.landing .marquee-wrap,
+  body.landing .hero-trust,
+  body.landing .hero-built-with {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+
+  /* No terminal float */
+  .hero .term-window,
+  .feature-visual .term-window,
+  .demo-term {
+    animation: none;
+  }
+
+  /* No boot animations */
+  #bootscreen {
+    animation: none;
+    display: none;
+  }
+
+  /* No page entrance */
+  #view > * {
+    animation: none;
+  }
+
+  /* No shimmer on featured pricing */
+  .price-card.featured::before {
+    animation: none;
+  }
+
+  /* Disable smooth scroll */
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+
+/* ================================================================
+   15. VERY LARGE SCREENS (> 1536px)
+   Prevent over-stretching on ultrawide monitors.
+   ================================================================ */
+
+@media (min-width: 1537px) {
+  /* Max-width cap for content areas */
+  .wrap {
+    max-width: 1400px;
+  }
+  #view {
+    max-width: 1300px;
+  }
+
+  /* Hero: cap width */
+  .hero-inner {
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+  .hero-h1 {
+    font-size: 3.6rem;
+  }
+
+  /* Grids: cap columns on ultra-wide */
+  .feat-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  .pricing-grid {
+    grid-template-columns: repeat(4, 1fr);
+    max-width: 1300px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .plab-grid {
+    grid-template-columns: repeat(4, 1fr);
+    max-width: 1300px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .testimonial-grid {
+    max-width: 1200px;
+  }
+  .tk-grid {
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  }
+
+  /* Section padding: more generous */
+  .section {
+    padding: 120px 0;
+  }
+  .hero {
+    padding: 140px 0 100px;
+  }
+  .cta-band {
+    padding: 64px 0;
+  }
+
+  /* Sidebar: slightly wider */
+  .sidebar {
+    width: 260px;
+  }
+
+  /* App main: more padding */
+  .app-main {
+    padding: 40px 64px;
+  }
+
+  /* Landing grids: bigger gap */
+  .feat-grid {
+    gap: 24px;
+  }
+  .mod-grid {
+    gap: 20px;
+  }
+  .bento {
+    gap: 24px;
+  }
+}
+
+@media (min-width: 1920px) {
+  /* Ultra-wide: tighter max-widths */
+  .wrap {
+    max-width: 1600px;
+  }
+  #view {
+    max-width: 1400px;
+  }
+  .hero-inner {
+    max-width: 1600px;
+  }
+  .hero-h1 {
+    font-size: 4rem;
+  }
+  .sec-title {
+    font-size: 2.6rem;
+  }
+}
+
+
+/* ================================================================
+   16. UTILITY RESPONSIVE HELPERS
+   Show/hide utilities for responsive development.
+   ================================================================ */
+
+/* Hide on mobile */
+.r-hide-mobile {
+  display: inherit;
+}
+@media (max-width: 768px) {
+  .r-hide-mobile {
+    display: none !important;
+  }
+}
+
+/* Hide on tablet */
+.r-hide-tablet {
+  display: inherit;
+}
+@media (min-width: 769px) and (max-width: 1024px) {
+  .r-hide-tablet {
+    display: none !important;
+  }
+}
+
+/* Hide on desktop */
+.r-hide-desktop {
+  display: inherit;
+}
+@media (min-width: 1025px) {
+  .r-hide-desktop {
+    display: none !important;
+  }
+}
+
+/* Show only on mobile */
+.r-show-mobile {
+  display: none !important;
+}
+@media (max-width: 768px) {
+  .r-show-mobile {
+    display: inherit !important;
+  }
+}
+
+/* Show only on tablet */
+.r-show-tablet {
+  display: none !important;
+}
+@media (min-width: 769px) and (max-width: 1024px) {
+  .r-show-tablet {
+    display: inherit !important;
+  }
+}
+
+/* Show only on desktop */
+.r-show-desktop {
+  display: none !important;
+}
+@media (min-width: 1025px) {
+  .r-show-desktop {
+    display: inherit !important;
+  }
+}
+
+/* Stack on mobile helper */
+@media (max-width: 768px) {
+  .r-stack-mobile {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+  .r-stack-mobile > * {
+    width: 100% !important;
+    flex: none !important;
+  }
+}
+
+/* Full-width on mobile helper */
+@media (max-width: 768px) {
+  .r-full-mobile {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}
+
+/* Text-center on mobile */
+@media (max-width: 768px) {
+  .r-center-mobile {
+    text-align: center !important;
+  }
+}
+
+/* Gap reduction on mobile */
+@media (max-width: 640px) {
+  .r-gap-sm {
+    gap: 8px !important;
+  }
+}
+
+/* Padding reduction on mobile */
+@media (max-width: 640px) {
+  .r-pad-sm {
+    padding: 10px !important;
+  }
+}
+
+
+/* ================================================================
+   17. HIGH-DPI RESPONSIVE
+   Adjustments for retina and high-DPI displays.
+   ================================================================ */
+
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  /* Thinner borders on retina */
+  .card,
+  .set-card,
+  .feat-card,
+  .mod-card,
+  .bento-card,
+  .price-card,
+  .testimonial-card,
+  .plab-card,
+  .rag-card,
+  .util-card,
+  .cs-card,
+  .res-card,
+  .feed-card,
+  .dl-card,
+  .dlapp-card,
+  .qa,
+  .nx-feat,
+  .arse-card,
+  .tk-card,
+  .stat,
+  .panel {
+    border-width: 0.5px;
+  }
+
+  /* Hairline separators */
+  .side-group:not(:first-child) {
+    border-top-width: 0.5px;
+  }
+  .set-row {
+    border-bottom-width: 0.5px;
+  }
+  .ports td {
+    border-bottom-width: 0.5px;
+  }
+  #topbar {
+    border-bottom-width: 0.5px;
+  }
+  .sidebar {
+    border-right-width: 0.5px;
+  }
+}
+
+
+/* ================================================================
+   18. SCROLLBAR RESPONSIVE
+   Adjust scrollbar sizing for mobile and touch devices.
+   ================================================================ */
+
+@media (max-width: 768px) {
+  *::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  *::-webkit-scrollbar-thumb {
+    border: 1px solid transparent;
+    border-radius: 4px;
+  }
+  * {
+    scrollbar-width: thin;
+  }
+}
+
+/* Hide scrollbars on very small screens -- show only on scroll */
+@media (max-width: 480px) {
+  .side-nav::-webkit-scrollbar,
+  .ai-chat::-webkit-scrollbar,
+  .cmdk-list::-webkit-scrollbar {
+    width: 3px;
+  }
+}
+
+
+/* ================================================================
+   19. ACCESSIBILITY + FOCUS RESPONSIVE
+   Enhanced focus indicators on mobile for screen reader users.
+   ================================================================ */
+
+@media (max-width: 768px) {
+  /* Larger focus outlines on mobile */
+  :focus-visible {
+    outline-width: 3px;
+    outline-offset: 3px;
+  }
+  button:focus-visible,
+  .btn:focus-visible {
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--acc) 35%, transparent);
+  }
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--acc) 20%, transparent);
+  }
+}
+
+/* Skip link always visible on focus */
+.skip-link:focus {
+  top: env(safe-area-inset-top, 0px);
+}
+
+/* High contrast mode + mobile */
+@media (prefers-contrast: more) and (max-width: 768px) {
+  .card,
+  .set-card,
+  .feat-card,
+  .mod-card,
+  .bento-card,
+  .price-card,
+  .testimonial-card,
+  .plab-card,
+  .rag-card,
+  .util-card,
+  .cs-card,
+  input,
+  textarea,
+  select,
+  .btn.ghost {
+    border-width: 2px !important;
+  }
+  .side-item.active {
+    border-left-width: 3px !important;
+  }
+}
+
+
+/* ================================================================
+   20. OVERFLOW & LAYOUT SAFETY
+   Prevent horizontal overflow on all screen sizes.
+   ================================================================ */
+
+/* Global overflow protection */
+html {
+  overflow-x: hidden;
+}
+body {
+  overflow-x: hidden;
+  min-width: 320px;
+}
+
+/* Prevent text from breaking out of containers */
+.hero-h1,
+.sec-title,
+.pg-h1,
+.pg-h2,
+.cta-band h2,
+.nx-title,
+.dlcli-h,
+.auth-card h1 {
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  hyphens: auto;
+}
+
+/* Code blocks: always scroll, never overflow container */
+code,
+pre,
+.code-block code,
+.tw-body,
+.nx-term-body,
+.lh-code code,
+.gh-q,
+.di-code,
+.ed-cmd,
+.dlapp-cmd code,
+.os-ed .dlapp-cmd code,
+.dl-cmd,
+.util-val {
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+/* URL and long text in cards */
+.res-link,
+.arse-card .au,
+.ur-mail,
+.p-email,
+.su-mail,
+.wl-item .mono {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+/* Prevent table overflow */
+.ports-card,
+.cmp-scroll {
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+/* Image overflow protection */
+.feat-ico img,
+.bento-icon img,
+.mod-ico img,
+.auth-logo img,
+.p-avatar img,
+.gh-avatar {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Flexible embedded content */
+iframe,
+embed,
+object {
+  max-width: 100%;
+}
+
+
+/* ================================================================
+   21. FEATURE DETECTION FALLBACKS
+   Graceful degradation for older browsers that lack
+   newer CSS features used in this file.
+   ================================================================ */
+
+/* Fallback: container queries not supported */
+@supports not (container-type: inline-size) {
+  /* Use viewport-based fallbacks for container query rules */
+  @media (max-width: 800px) {
+    .home-cols {
+      grid-template-columns: 1fr;
+    }
+    .adm-cols {
+      grid-template-columns: 1fr;
+    }
+  }
+  @media (max-width: 600px) {
+    .qa-grid {
+      grid-template-columns: 1fr;
+    }
+    .feed-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+}
+
+/* Fallback: aspect-ratio not supported */
+@supports not (aspect-ratio: 16 / 9) {
+  .aspect-16-9 {
+    padding-top: 56.25%;
+  }
+  .aspect-4-3 {
+    padding-top: 75%;
+  }
+  .aspect-1-1 {
+    padding-top: 100%;
+  }
+}
+
+/* Fallback: color-mix not supported */
+@supports not (background: color-mix(in srgb, red, blue)) {
+  :root {
+    --acc-soft: rgba(0, 212, 255, .15);
+    --acc-line: rgba(0, 212, 255, .4);
+  }
+}
+
+/* Fallback: env() not supported */
+@supports not (padding: env(safe-area-inset-top)) {
+  #topbar {
+    padding-top: 11px;
+  }
+  .site-foot {
+    padding-bottom: 26px;
+  }
+  .app-foot {
+    padding-bottom: 22px;
+  }
+}
+
+/* Fallback: backdrop-filter not supported */
+@supports not (backdrop-filter: blur(1px)) {
+  #topbar {
+    background: var(--bg);
+  }
+  .cmdk {
+    background: rgba(4, 8, 15, .85);
+  }
+  .fb-modal {
+    background: rgba(4, 8, 15, .85);
+  }
+}
+
+/* Fallback: text-wrap balance not supported */
+@supports not (text-wrap: balance) {
+  .hero-h1,
+  .sec-title,
+  .pg-h1 {
+    max-width: 22ch;
+  }
+}

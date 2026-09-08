@@ -1,0 +1,4660 @@
+/* ============================================================================
+   Darknode Web -- forms.css
+   Comprehensive form and input component library.
+   Uses CSS custom properties from styles.css (--bg, --card, --line, --txt, etc.)
+   Dark + light theme compatible via :root[data-theme="light"].
+   ============================================================================ */
+
+/* ---------------------------------------------------------------------------
+   0. FORM-LEVEL CUSTOM PROPERTIES
+   --------------------------------------------------------------------------- */
+:root {
+  /* form-specific tokens (dark) */
+  --input-bg: var(--card2);
+  --input-bg-hover: color-mix(in srgb, var(--card2) 85%, var(--acc) 15%);
+  --input-border: var(--line);
+  --input-border-hover: var(--line-2);
+  --input-border-focus: var(--acc);
+  --input-text: var(--txt);
+  --input-placeholder: var(--placeholder);
+  --input-disabled-bg: color-mix(in srgb, var(--card2) 60%, var(--bg) 40%);
+  --input-disabled-text: var(--mut);
+  --input-readonly-bg: var(--card);
+  --input-radius: 6px;
+  --input-shadow-focus: 0 0 0 3px color-mix(in srgb, var(--acc) 25%, transparent);
+  --input-shadow-error: 0 0 0 3px color-mix(in srgb, var(--bad) 20%, transparent);
+  --input-shadow-valid: 0 0 0 3px color-mix(in srgb, var(--ok) 20%, transparent);
+  --input-shadow-warn: 0 0 0 3px color-mix(in srgb, var(--warn) 20%, transparent);
+  --input-transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
+  --label-color: var(--txt);
+  --label-weight: 600;
+  --helper-color: var(--mut);
+  --error-color: var(--bad);
+  --success-color: var(--ok);
+  --warning-color: var(--warn);
+  --switch-bg: var(--line-2);
+  --switch-bg-on: var(--acc);
+  --range-track: var(--line);
+  --range-fill: var(--acc);
+  --range-thumb: var(--acc);
+  --wizard-step-bg: var(--line);
+  --wizard-step-active: var(--acc);
+  --wizard-step-done: var(--ok);
+  --tag-bg: color-mix(in srgb, var(--acc) 15%, transparent);
+  --tag-text: var(--acc);
+  --tag-border: color-mix(in srgb, var(--acc) 40%, transparent);
+  --dropdown-bg: var(--card);
+  --dropdown-border: var(--line);
+  --dropdown-item-hover: color-mix(in srgb, var(--acc) 10%, var(--card));
+  --dropdown-shadow: 0 8px 24px -6px rgba(0,0,0,0.5);
+}
+
+:root[data-theme="light"] {
+  --input-bg-hover: color-mix(in srgb, var(--card2) 85%, var(--acc) 8%);
+  --input-disabled-bg: #e8ecf2;
+  --input-shadow-focus: 0 0 0 3px color-mix(in srgb, var(--acc) 18%, transparent);
+  --input-shadow-error: 0 0 0 3px color-mix(in srgb, var(--bad) 14%, transparent);
+  --input-shadow-valid: 0 0 0 3px color-mix(in srgb, var(--ok) 14%, transparent);
+  --input-shadow-warn: 0 0 0 3px color-mix(in srgb, var(--warn) 14%, transparent);
+  --switch-bg: #bbc5d6;
+  --tag-bg: color-mix(in srgb, var(--acc) 10%, transparent);
+  --dropdown-shadow: 0 8px 24px -6px rgba(20,30,60,0.18);
+}
+
+
+/* ---------------------------------------------------------------------------
+   1. TEXT INPUTS  --  .input
+   --------------------------------------------------------------------------- */
+.input {
+  display: block;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  font-family: inherit;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--input-text);
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: var(--input-radius);
+  transition: var(--input-transition);
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.input::placeholder {
+  color: var(--input-placeholder);
+  opacity: 1;
+}
+
+.input:hover:not(:disabled):not([readonly]):not(.is-invalid):not(.is-valid) {
+  background: var(--input-bg-hover);
+  border-color: var(--input-border-hover);
+}
+
+.input:focus:not(:disabled) {
+  border-color: var(--input-border-focus);
+  box-shadow: var(--input-shadow-focus);
+}
+
+.input:focus-visible:not(:disabled) {
+  border-color: var(--input-border-focus);
+  box-shadow: var(--input-shadow-focus);
+  outline: none;
+}
+
+.input.is-invalid,
+.input.is-error {
+  border-color: var(--error-color);
+}
+
+.input.is-invalid:focus,
+.input.is-error:focus {
+  border-color: var(--error-color);
+  box-shadow: var(--input-shadow-error);
+}
+
+.input.is-valid,
+.input.is-success {
+  border-color: var(--success-color);
+}
+
+.input.is-valid:focus,
+.input.is-success:focus {
+  border-color: var(--success-color);
+  box-shadow: var(--input-shadow-valid);
+}
+
+.input.is-warning {
+  border-color: var(--warning-color);
+}
+
+.input.is-warning:focus {
+  border-color: var(--warning-color);
+  box-shadow: var(--input-shadow-warn);
+}
+
+.input:disabled {
+  background: var(--input-disabled-bg);
+  color: var(--input-disabled-text);
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.input[readonly] {
+  background: var(--input-readonly-bg);
+  cursor: default;
+}
+
+/* -- sizes -- */
+.input.sm {
+  padding: 0.3rem 0.55rem;
+  font-size: 0.8rem;
+  border-radius: 4px;
+}
+
+.input.md {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9rem;
+}
+
+.input.lg {
+  padding: 0.65rem 0.95rem;
+  font-size: 1rem;
+  border-radius: 8px;
+}
+
+.input.xl {
+  padding: 0.85rem 1.15rem;
+  font-size: 1.1rem;
+  border-radius: 10px;
+}
+
+/* -- input with icon wrapper -- */
+.input-icon {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+}
+
+.input-icon .input {
+  width: 100%;
+}
+
+.input-icon .icon-left,
+.input-icon .icon-right {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  color: var(--mut);
+  pointer-events: none;
+  transition: color 0.2s;
+  font-size: 0.92em;
+}
+
+.input-icon .icon-left {
+  left: 0;
+}
+
+.input-icon .icon-right {
+  right: 0;
+}
+
+.input-icon.has-left .input {
+  padding-left: 2.25rem;
+}
+
+.input-icon.has-right .input {
+  padding-right: 2.25rem;
+}
+
+.input-icon:focus-within .icon-left,
+.input-icon:focus-within .icon-right {
+  color: var(--acc);
+}
+
+/* -- prefix / suffix text -- */
+.input-addon {
+  display: flex;
+  align-items: stretch;
+}
+
+.input-addon .addon-text {
+  display: flex;
+  align-items: center;
+  padding: 0 0.7rem;
+  background: var(--card);
+  border: 1px solid var(--input-border);
+  color: var(--mut);
+  font-size: 0.85rem;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.input-addon .addon-text:first-child {
+  border-right: none;
+  border-radius: var(--input-radius) 0 0 var(--input-radius);
+}
+
+.input-addon .addon-text:last-child {
+  border-left: none;
+  border-radius: 0 var(--input-radius) var(--input-radius) 0;
+}
+
+.input-addon .addon-text:first-child + .input {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.input-addon .input:not(:last-child) {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+/* -- clearable -- */
+.input-clearable {
+  position: relative;
+}
+
+.input-clearable .input {
+  padding-right: 2.2rem;
+}
+
+.input-clearable .clear-btn {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1.4rem;
+  height: 1.4rem;
+  border: none;
+  background: color-mix(in srgb, var(--txt) 12%, transparent);
+  color: var(--mut);
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  line-height: 1;
+  transition: background 0.15s, color 0.15s;
+  padding: 0;
+}
+
+.input-clearable .clear-btn:hover {
+  background: color-mix(in srgb, var(--txt) 20%, transparent);
+  color: var(--txt);
+}
+
+.input-clearable .clear-btn:focus-visible {
+  outline: 2px solid var(--acc);
+  outline-offset: 2px;
+}
+
+
+/* ---------------------------------------------------------------------------
+   2. TEXTAREAS  --  .textarea
+   --------------------------------------------------------------------------- */
+.textarea {
+  display: block;
+  width: 100%;
+  min-height: 5rem;
+  padding: 0.55rem 0.75rem;
+  font-family: inherit;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: var(--input-text);
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: var(--input-radius);
+  transition: var(--input-transition);
+  outline: none;
+  resize: vertical;
+  appearance: none;
+}
+
+.textarea::placeholder {
+  color: var(--input-placeholder);
+  opacity: 1;
+}
+
+.textarea:hover:not(:disabled):not([readonly]):not(.is-invalid) {
+  background: var(--input-bg-hover);
+  border-color: var(--input-border-hover);
+}
+
+.textarea:focus:not(:disabled) {
+  border-color: var(--input-border-focus);
+  box-shadow: var(--input-shadow-focus);
+}
+
+.textarea:focus-visible:not(:disabled) {
+  border-color: var(--input-border-focus);
+  box-shadow: var(--input-shadow-focus);
+  outline: none;
+}
+
+.textarea.is-invalid {
+  border-color: var(--error-color);
+}
+
+.textarea.is-invalid:focus {
+  border-color: var(--error-color);
+  box-shadow: var(--input-shadow-error);
+}
+
+.textarea.is-valid {
+  border-color: var(--success-color);
+}
+
+.textarea.is-valid:focus {
+  border-color: var(--success-color);
+  box-shadow: var(--input-shadow-valid);
+}
+
+.textarea:disabled {
+  background: var(--input-disabled-bg);
+  color: var(--input-disabled-text);
+  cursor: not-allowed;
+  opacity: 0.65;
+  resize: none;
+}
+
+.textarea[readonly] {
+  background: var(--input-readonly-bg);
+  cursor: default;
+}
+
+/* auto-resize variant: user sets rows, JS handles overflow */
+.textarea.auto-resize {
+  resize: none;
+  overflow: hidden;
+}
+
+/* max-height constrained */
+.textarea.max-h {
+  max-height: 20rem;
+  overflow-y: auto;
+}
+
+/* -- character counter wrapper -- */
+.textarea-wrap {
+  position: relative;
+}
+
+.textarea-wrap .char-counter {
+  display: block;
+  text-align: right;
+  font-size: 0.75rem;
+  color: var(--mut);
+  margin-top: 4px;
+  padding-right: 2px;
+  transition: color 0.2s;
+}
+
+.textarea-wrap .char-counter.near-limit {
+  color: var(--warn);
+}
+
+.textarea-wrap .char-counter.at-limit {
+  color: var(--error-color);
+  font-weight: 600;
+}
+
+
+/* ---------------------------------------------------------------------------
+   3. SELECT DROPDOWNS  --  .select
+   --------------------------------------------------------------------------- */
+.select {
+  display: block;
+  width: 100%;
+  padding: 0.5rem 2.2rem 0.5rem 0.75rem;
+  font-family: inherit;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--input-text);
+  background-color: var(--input-bg);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237a93b8' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 12px 8px;
+  border: 1px solid var(--input-border);
+  border-radius: var(--input-radius);
+  transition: var(--input-transition);
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  cursor: pointer;
+}
+
+.select:hover:not(:disabled) {
+  background-color: var(--input-bg-hover);
+  border-color: var(--input-border-hover);
+}
+
+.select:focus:not(:disabled) {
+  border-color: var(--input-border-focus);
+  box-shadow: var(--input-shadow-focus);
+}
+
+.select:focus-visible:not(:disabled) {
+  border-color: var(--input-border-focus);
+  box-shadow: var(--input-shadow-focus);
+  outline: none;
+}
+
+.select:disabled {
+  background-color: var(--input-disabled-bg);
+  color: var(--input-disabled-text);
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.select.is-invalid {
+  border-color: var(--error-color);
+}
+
+.select.is-invalid:focus {
+  box-shadow: var(--input-shadow-error);
+}
+
+.select.is-valid {
+  border-color: var(--success-color);
+}
+
+.select.is-valid:focus {
+  box-shadow: var(--input-shadow-valid);
+}
+
+/* sizes */
+.select.sm {
+  padding: 0.3rem 2rem 0.3rem 0.55rem;
+  font-size: 0.8rem;
+  border-radius: 4px;
+}
+
+.select.lg {
+  padding: 0.65rem 2.4rem 0.65rem 0.95rem;
+  font-size: 1rem;
+  border-radius: 8px;
+}
+
+/* -- multi-select -- */
+.select[multiple] {
+  padding: 0.4rem;
+  background-image: none;
+  min-height: 6rem;
+  overflow-y: auto;
+}
+
+.select[multiple] option {
+  padding: 0.35rem 0.6rem;
+  border-radius: 4px;
+  margin-bottom: 2px;
+}
+
+.select[multiple] option:checked {
+  background: color-mix(in srgb, var(--acc) 20%, var(--card));
+  color: var(--acc);
+}
+
+/* -- custom select wrapper (for searchable, etc.) -- */
+.select-wrap {
+  position: relative;
+}
+
+.select-wrap .select-search {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0.5rem 2.2rem 0.5rem 0.75rem;
+  background: transparent;
+  border: none;
+  font-family: inherit;
+  font-size: 0.9rem;
+  color: var(--input-text);
+  outline: none;
+}
+
+.select-wrap .select-search::placeholder {
+  color: var(--input-placeholder);
+}
+
+
+/* ---------------------------------------------------------------------------
+   4. CHECKBOXES  --  .checkbox
+   --------------------------------------------------------------------------- */
+.checkbox {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  cursor: pointer;
+  position: relative;
+  user-select: none;
+  font-size: 0.9rem;
+  color: var(--input-text);
+  line-height: 1.4;
+}
+
+.checkbox input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.checkbox .check-mark {
+  flex: none;
+  width: 1.15rem;
+  height: 1.15rem;
+  border: 1.5px solid var(--input-border);
+  border-radius: 4px;
+  background: var(--input-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+  margin-top: 0.1em;
+}
+
+.checkbox .check-mark::after {
+  content: "";
+  display: block;
+  width: 0.38rem;
+  height: 0.62rem;
+  border: solid transparent;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg) scale(0);
+  transition: transform 0.15s ease, border-color 0.15s;
+  margin-top: -2px;
+}
+
+/* hover */
+.checkbox:hover .check-mark {
+  border-color: var(--input-border-hover);
+  background: var(--input-bg-hover);
+}
+
+/* checked */
+.checkbox input:checked + .check-mark {
+  background: var(--acc);
+  border-color: var(--acc);
+}
+
+.checkbox input:checked + .check-mark::after {
+  border-color: var(--on-acc);
+  transform: rotate(45deg) scale(1);
+}
+
+/* focus-visible */
+.checkbox input:focus-visible + .check-mark {
+  box-shadow: var(--input-shadow-focus);
+  border-color: var(--acc);
+}
+
+/* indeterminate */
+.checkbox input:indeterminate + .check-mark {
+  background: var(--acc);
+  border-color: var(--acc);
+}
+
+.checkbox input:indeterminate + .check-mark::after {
+  width: 0.55rem;
+  height: 0;
+  border-width: 0 0 2px 0;
+  border-color: var(--on-acc);
+  transform: rotate(0) scale(1);
+  margin-top: 0;
+}
+
+/* disabled */
+.checkbox input:disabled + .check-mark {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.checkbox input:disabled ~ .check-label {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.checkbox.has-disabled {
+  cursor: not-allowed;
+}
+
+/* error */
+.checkbox.is-invalid .check-mark {
+  border-color: var(--error-color);
+}
+
+.checkbox.is-invalid input:focus-visible + .check-mark {
+  box-shadow: var(--input-shadow-error);
+}
+
+/* sizes */
+.checkbox.sm .check-mark {
+  width: 0.95rem;
+  height: 0.95rem;
+}
+
+.checkbox.sm .check-mark::after {
+  width: 0.3rem;
+  height: 0.5rem;
+}
+
+.checkbox.sm {
+  font-size: 0.82rem;
+}
+
+.checkbox.lg .check-mark {
+  width: 1.4rem;
+  height: 1.4rem;
+}
+
+.checkbox.lg .check-mark::after {
+  width: 0.45rem;
+  height: 0.75rem;
+}
+
+.checkbox.lg {
+  font-size: 1rem;
+}
+
+
+/* ---------------------------------------------------------------------------
+   5. RADIO BUTTONS  --  .radio
+   --------------------------------------------------------------------------- */
+.radio {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  cursor: pointer;
+  position: relative;
+  user-select: none;
+  font-size: 0.9rem;
+  color: var(--input-text);
+  line-height: 1.4;
+}
+
+.radio input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.radio .radio-mark {
+  flex: none;
+  width: 1.15rem;
+  height: 1.15rem;
+  border: 1.5px solid var(--input-border);
+  border-radius: 50%;
+  background: var(--input-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+  margin-top: 0.1em;
+}
+
+.radio .radio-mark::after {
+  content: "";
+  display: block;
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: transparent;
+  transition: background 0.15s, transform 0.15s;
+  transform: scale(0);
+}
+
+/* hover */
+.radio:hover .radio-mark {
+  border-color: var(--input-border-hover);
+  background: var(--input-bg-hover);
+}
+
+/* checked */
+.radio input:checked + .radio-mark {
+  border-color: var(--acc);
+  background: var(--input-bg);
+}
+
+.radio input:checked + .radio-mark::after {
+  background: var(--acc);
+  transform: scale(1);
+}
+
+/* focus-visible */
+.radio input:focus-visible + .radio-mark {
+  box-shadow: var(--input-shadow-focus);
+  border-color: var(--acc);
+}
+
+/* disabled */
+.radio input:disabled + .radio-mark {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.radio input:disabled ~ .radio-label {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* error */
+.radio.is-invalid .radio-mark {
+  border-color: var(--error-color);
+}
+
+.radio.is-invalid input:focus-visible + .radio-mark {
+  box-shadow: var(--input-shadow-error);
+}
+
+/* radio with description */
+.radio .radio-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.radio .radio-content .radio-desc {
+  font-size: 0.8rem;
+  color: var(--mut);
+  line-height: 1.4;
+}
+
+/* -- radio group layouts -- */
+.radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.radio-group.horizontal {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+/* card-style radio group */
+.radio-group.cards .radio {
+  border: 1px solid var(--input-border);
+  border-radius: var(--input-radius);
+  padding: 0.75rem 1rem;
+  background: var(--input-bg);
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.radio-group.cards .radio:hover {
+  border-color: var(--input-border-hover);
+  background: var(--input-bg-hover);
+}
+
+.radio-group.cards .radio:has(input:checked) {
+  border-color: var(--acc);
+  background: color-mix(in srgb, var(--acc) 8%, var(--input-bg));
+}
+
+
+/* ---------------------------------------------------------------------------
+   6. TOGGLE SWITCHES  --  .switch
+   --------------------------------------------------------------------------- */
+.switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  cursor: pointer;
+  user-select: none;
+  font-size: 0.9rem;
+  color: var(--input-text);
+}
+
+.switch input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.switch .switch-track {
+  position: relative;
+  flex: none;
+  width: 2.5rem;
+  height: 1.4rem;
+  background: var(--switch-bg);
+  border-radius: 0.7rem;
+  transition: background 0.2s, box-shadow 0.2s;
+}
+
+.switch .switch-track::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: calc(1.4rem - 4px);
+  height: calc(1.4rem - 4px);
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), background 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+}
+
+/* hover */
+.switch:hover .switch-track {
+  background: color-mix(in srgb, var(--switch-bg) 80%, var(--txt) 20%);
+}
+
+/* checked */
+.switch input:checked + .switch-track {
+  background: var(--switch-bg-on, var(--acc));
+}
+
+.switch input:checked + .switch-track::after {
+  transform: translateX(calc(2.5rem - 1.4rem));
+}
+
+.switch:hover input:checked + .switch-track {
+  background: color-mix(in srgb, var(--acc) 85%, #fff 15%);
+}
+
+/* focus-visible */
+.switch input:focus-visible + .switch-track {
+  box-shadow: var(--input-shadow-focus);
+}
+
+/* disabled */
+.switch input:disabled + .switch-track {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.switch:has(input:disabled) {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+/* loading */
+.switch.loading .switch-track::after {
+  background: transparent;
+  border: 2px solid #fff;
+  border-top-color: transparent;
+  animation: switch-spin 0.6s linear infinite;
+}
+
+@keyframes switch-spin {
+  to { transform: rotate(360deg); }
+}
+
+.switch.loading input:checked + .switch-track::after {
+  animation: switch-spin-on 0.6s linear infinite;
+}
+
+@keyframes switch-spin-on {
+  to { transform: translateX(calc(2.5rem - 1.4rem)) rotate(360deg); }
+}
+
+/* -- switch sizes -- */
+.switch.sm .switch-track {
+  width: 2rem;
+  height: 1.15rem;
+  border-radius: 0.575rem;
+}
+
+.switch.sm .switch-track::after {
+  width: calc(1.15rem - 4px);
+  height: calc(1.15rem - 4px);
+}
+
+.switch.sm input:checked + .switch-track::after {
+  transform: translateX(calc(2rem - 1.15rem));
+}
+
+.switch.sm {
+  font-size: 0.82rem;
+}
+
+.switch.lg .switch-track {
+  width: 3.2rem;
+  height: 1.7rem;
+  border-radius: 0.85rem;
+}
+
+.switch.lg .switch-track::after {
+  top: 3px;
+  left: 3px;
+  width: calc(1.7rem - 6px);
+  height: calc(1.7rem - 6px);
+}
+
+.switch.lg input:checked + .switch-track::after {
+  transform: translateX(calc(3.2rem - 1.7rem));
+}
+
+.switch.lg {
+  font-size: 1rem;
+}
+
+/* color variants */
+.switch.color-ok input:checked + .switch-track {
+  background: var(--ok);
+}
+
+.switch.color-bad input:checked + .switch-track {
+  background: var(--bad);
+}
+
+.switch.color-warn input:checked + .switch-track {
+  background: var(--warn);
+}
+
+.switch.color-purple input:checked + .switch-track {
+  background: var(--acc-2);
+}
+
+/* switch with label on both sides */
+.switch .switch-label-off,
+.switch .switch-label-on {
+  font-size: 0.82rem;
+  color: var(--mut);
+  transition: color 0.2s;
+}
+
+.switch input:checked ~ .switch-label-on {
+  color: var(--input-text);
+}
+
+.switch input:not(:checked) ~ .switch-label-off {
+  color: var(--input-text);
+}
+
+
+/* ---------------------------------------------------------------------------
+   7. RANGE SLIDERS  --  .range
+   --------------------------------------------------------------------------- */
+.range {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  background: var(--range-track);
+  border-radius: 3px;
+  outline: none;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--range-thumb);
+  border: 2px solid var(--range-thumb);
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.range::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--range-thumb);
+  border: 2px solid var(--range-thumb);
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.range:hover::-webkit-slider-thumb {
+  transform: scale(1.15);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--acc) 20%, transparent);
+}
+
+.range:hover::-moz-range-thumb {
+  transform: scale(1.15);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--acc) 20%, transparent);
+}
+
+.range:focus-visible::-webkit-slider-thumb {
+  box-shadow: var(--input-shadow-focus);
+}
+
+.range:focus-visible::-moz-range-thumb {
+  box-shadow: var(--input-shadow-focus);
+}
+
+.range:active::-webkit-slider-thumb {
+  transform: scale(1.05);
+}
+
+.range:active::-moz-range-thumb {
+  transform: scale(1.05);
+}
+
+.range:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.range:disabled::-webkit-slider-thumb {
+  cursor: not-allowed;
+}
+
+.range:disabled::-moz-range-thumb {
+  cursor: not-allowed;
+}
+
+/* -- range with value tooltip -- */
+.range-wrap {
+  position: relative;
+  padding-top: 1.6rem;
+}
+
+.range-wrap .range-tooltip {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 2px 8px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  font-size: 0.75rem;
+  color: var(--txt);
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.range-wrap:hover .range-tooltip,
+.range-wrap:focus-within .range-tooltip {
+  opacity: 1;
+}
+
+/* -- range labels (min/max) -- */
+.range-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--mut);
+  margin-top: 4px;
+}
+
+/* -- multi-handle range -- */
+.range-multi {
+  position: relative;
+  height: 6px;
+  background: var(--range-track);
+  border-radius: 3px;
+}
+
+.range-multi .range-fill {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  background: var(--range-fill);
+  border-radius: 3px;
+}
+
+.range-multi .range-handle {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--range-thumb);
+  border: 2px solid var(--range-thumb);
+  cursor: grab;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+  transition: transform 0.15s, box-shadow 0.15s;
+  z-index: 2;
+}
+
+.range-multi .range-handle:hover {
+  transform: translate(-50%, -50%) scale(1.15);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--acc) 20%, transparent);
+}
+
+.range-multi .range-handle:active {
+  cursor: grabbing;
+  transform: translate(-50%, -50%) scale(1.05);
+}
+
+.range-multi .range-handle:focus-visible {
+  box-shadow: var(--input-shadow-focus);
+  outline: none;
+}
+
+
+/* ---------------------------------------------------------------------------
+   8. FILE INPUTS  --  .file-input
+   --------------------------------------------------------------------------- */
+.file-input {
+  display: block;
+}
+
+.file-input .file-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: var(--input-radius);
+  color: var(--input-text);
+  font-family: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: var(--input-transition);
+}
+
+.file-input .file-trigger:hover {
+  background: var(--input-bg-hover);
+  border-color: var(--input-border-hover);
+}
+
+.file-input .file-trigger:focus-visible {
+  border-color: var(--acc);
+  box-shadow: var(--input-shadow-focus);
+  outline: none;
+}
+
+.file-input input[type="file"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.file-input .file-name {
+  display: inline-block;
+  margin-left: 0.75rem;
+  font-size: 0.85rem;
+  color: var(--mut);
+}
+
+/* -- drag-and-drop zone -- */
+.file-drop {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  min-height: 10rem;
+  padding: 2rem;
+  border: 2px dashed var(--input-border);
+  border-radius: var(--input-radius);
+  background: var(--input-bg);
+  color: var(--mut);
+  font-size: 0.9rem;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s, color 0.2s;
+}
+
+.file-drop:hover {
+  border-color: var(--input-border-hover);
+  background: var(--input-bg-hover);
+}
+
+.file-drop.drag-over {
+  border-color: var(--acc);
+  background: color-mix(in srgb, var(--acc) 8%, var(--input-bg));
+  color: var(--acc);
+}
+
+.file-drop.is-invalid {
+  border-color: var(--error-color);
+}
+
+.file-drop .drop-icon {
+  font-size: 2rem;
+  color: var(--mut);
+  transition: color 0.2s;
+}
+
+.file-drop.drag-over .drop-icon {
+  color: var(--acc);
+}
+
+.file-drop .drop-text {
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.file-drop .drop-text strong {
+  color: var(--acc);
+  cursor: pointer;
+}
+
+.file-drop .drop-hint {
+  font-size: 0.78rem;
+  color: var(--mut);
+}
+
+.file-drop input[type="file"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.file-drop:focus-within {
+  border-color: var(--acc);
+  box-shadow: var(--input-shadow-focus);
+}
+
+/* -- file list -- */
+.file-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-top: 0.75rem;
+}
+
+.file-list .file-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.45rem 0.65rem;
+  background: var(--card);
+  border: 1px solid var(--input-border);
+  border-radius: 4px;
+  font-size: 0.82rem;
+}
+
+.file-list .file-item .file-item-icon {
+  flex: none;
+  width: 1.4rem;
+  height: 1.4rem;
+  color: var(--mut);
+}
+
+.file-list .file-item .file-item-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--input-text);
+}
+
+.file-list .file-item .file-item-size {
+  flex: none;
+  color: var(--mut);
+  font-size: 0.75rem;
+}
+
+.file-list .file-item .file-item-remove {
+  flex: none;
+  width: 1.2rem;
+  height: 1.2rem;
+  border: none;
+  background: none;
+  color: var(--mut);
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: color 0.15s, background 0.15s;
+}
+
+.file-list .file-item .file-item-remove:hover {
+  color: var(--error-color);
+  background: color-mix(in srgb, var(--bad) 12%, transparent);
+}
+
+.file-list .file-item .file-item-remove:focus-visible {
+  outline: 2px solid var(--acc);
+  outline-offset: 2px;
+}
+
+/* file progress */
+.file-list .file-item .file-progress {
+  flex: none;
+  width: 4rem;
+  height: 4px;
+  background: var(--line);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.file-list .file-item .file-progress-bar {
+  height: 100%;
+  background: var(--acc);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.file-list .file-item.is-error .file-progress-bar {
+  background: var(--error-color);
+}
+
+.file-list .file-item.is-done .file-progress-bar {
+  background: var(--ok);
+}
+
+/* file preview thumbnail */
+.file-list .file-item .file-preview {
+  flex: none;
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 4px;
+  object-fit: cover;
+  border: 1px solid var(--line);
+}
+
+
+/* ---------------------------------------------------------------------------
+   9. COLOR PICKERS  --  .color-picker
+   --------------------------------------------------------------------------- */
+.color-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.color-picker .swatch-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(1.6rem, 1fr));
+  gap: 4px;
+}
+
+.color-picker .swatch {
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 4px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+  padding: 0;
+  outline: none;
+}
+
+.color-picker .swatch:hover {
+  transform: scale(1.15);
+  z-index: 1;
+}
+
+.color-picker .swatch.active,
+.color-picker .swatch[aria-selected="true"] {
+  border-color: var(--txt);
+  box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--txt);
+}
+
+.color-picker .swatch:focus-visible {
+  box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--acc);
+  outline: none;
+}
+
+.color-picker .swatch:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* custom color input row */
+.color-picker .color-custom {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.color-picker .color-custom input[type="color"] {
+  width: 2.2rem;
+  height: 2.2rem;
+  padding: 0;
+  border: 1px solid var(--input-border);
+  border-radius: 4px;
+  background: var(--input-bg);
+  cursor: pointer;
+}
+
+.color-picker .color-custom input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 2px;
+}
+
+.color-picker .color-custom input[type="color"]::-webkit-color-swatch {
+  border: none;
+  border-radius: 2px;
+}
+
+.color-picker .color-custom input[type="color"]::-moz-color-swatch {
+  border: none;
+  border-radius: 2px;
+}
+
+.color-picker .color-custom .color-hex {
+  width: 7rem;
+}
+
+.color-picker .color-preview {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.65rem;
+  border: 1px solid var(--input-border);
+  border-radius: var(--input-radius);
+  background: var(--input-bg);
+  font-size: 0.82rem;
+}
+
+.color-picker .color-preview .preview-swatch {
+  width: 1.2rem;
+  height: 1.2rem;
+  border-radius: 3px;
+  border: 1px solid var(--line);
+}
+
+
+/* ---------------------------------------------------------------------------
+   10. DATE/TIME INPUTS  --  .date-input
+   --------------------------------------------------------------------------- */
+.date-input {
+  display: block;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  font-family: inherit;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--input-text);
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: var(--input-radius);
+  transition: var(--input-transition);
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.date-input::-webkit-calendar-picker-indicator {
+  filter: invert(0.6);
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.15s;
+}
+
+:root[data-theme="light"] .date-input::-webkit-calendar-picker-indicator {
+  filter: none;
+  opacity: 0.5;
+}
+
+.date-input::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+.date-input:hover:not(:disabled) {
+  background: var(--input-bg-hover);
+  border-color: var(--input-border-hover);
+}
+
+.date-input:focus:not(:disabled) {
+  border-color: var(--input-border-focus);
+  box-shadow: var(--input-shadow-focus);
+}
+
+.date-input:focus-visible:not(:disabled) {
+  border-color: var(--input-border-focus);
+  box-shadow: var(--input-shadow-focus);
+  outline: none;
+}
+
+.date-input:disabled {
+  background: var(--input-disabled-bg);
+  color: var(--input-disabled-text);
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.date-input.is-invalid {
+  border-color: var(--error-color);
+}
+
+.date-input.is-invalid:focus {
+  box-shadow: var(--input-shadow-error);
+}
+
+.date-input.is-valid {
+  border-color: var(--success-color);
+}
+
+.date-input.is-valid:focus {
+  box-shadow: var(--input-shadow-valid);
+}
+
+/* sizes */
+.date-input.sm {
+  padding: 0.3rem 0.55rem;
+  font-size: 0.8rem;
+  border-radius: 4px;
+}
+
+.date-input.lg {
+  padding: 0.65rem 0.95rem;
+  font-size: 1rem;
+  border-radius: 8px;
+}
+
+/* date range pair */
+.date-range {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.date-range .date-separator {
+  color: var(--mut);
+  font-size: 0.85rem;
+  flex: none;
+}
+
+
+/* ---------------------------------------------------------------------------
+   11. NUMBER INPUTS  --  .number-input
+   --------------------------------------------------------------------------- */
+.number-input {
+  display: inline-flex;
+  align-items: stretch;
+  border: 1px solid var(--input-border);
+  border-radius: var(--input-radius);
+  overflow: hidden;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.number-input:hover {
+  border-color: var(--input-border-hover);
+}
+
+.number-input:focus-within {
+  border-color: var(--input-border-focus);
+  box-shadow: var(--input-shadow-focus);
+}
+
+.number-input input[type="number"] {
+  width: 4rem;
+  text-align: center;
+  border: none;
+  background: var(--input-bg);
+  color: var(--input-text);
+  font-family: inherit;
+  font-size: 0.9rem;
+  padding: 0.4rem 0.2rem;
+  outline: none;
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.number-input input[type="number"]::-webkit-inner-spin-button,
+.number-input input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.number-input .num-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  border: none;
+  background: var(--card);
+  color: var(--mut);
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  padding: 0;
+  transition: background 0.15s, color 0.15s;
+  user-select: none;
+}
+
+.number-input .num-btn:first-child {
+  border-right: 1px solid var(--input-border);
+}
+
+.number-input .num-btn:last-child {
+  border-left: 1px solid var(--input-border);
+}
+
+.number-input .num-btn:hover {
+  background: var(--input-bg-hover);
+  color: var(--acc);
+}
+
+.number-input .num-btn:active {
+  background: color-mix(in srgb, var(--acc) 15%, var(--card));
+}
+
+.number-input .num-btn:focus-visible {
+  outline: 2px solid var(--acc);
+  outline-offset: -2px;
+}
+
+.number-input .num-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  color: var(--mut);
+  background: var(--card);
+}
+
+.number-input.is-invalid {
+  border-color: var(--error-color);
+}
+
+.number-input.is-invalid:focus-within {
+  box-shadow: var(--input-shadow-error);
+}
+
+.number-input:has(input:disabled) {
+  opacity: 0.65;
+  pointer-events: none;
+}
+
+/* sizes */
+.number-input.sm input[type="number"] {
+  width: 3rem;
+  font-size: 0.8rem;
+  padding: 0.25rem 0.15rem;
+}
+
+.number-input.sm .num-btn {
+  width: 1.6rem;
+  font-size: 0.85rem;
+}
+
+.number-input.lg input[type="number"] {
+  width: 5rem;
+  font-size: 1rem;
+  padding: 0.55rem 0.3rem;
+}
+
+.number-input.lg .num-btn {
+  width: 2.4rem;
+  font-size: 1.1rem;
+}
+
+/* vertical variant (up/down stacked on right) */
+.number-input.vertical {
+  position: relative;
+}
+
+.number-input.vertical input[type="number"] {
+  padding-right: 2rem;
+}
+
+.number-input.vertical .num-btn-stack {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  width: 1.6rem;
+  border-left: 1px solid var(--input-border);
+}
+
+.number-input.vertical .num-btn-stack .num-btn {
+  flex: 1;
+  width: 100%;
+  font-size: 0.65rem;
+}
+
+.number-input.vertical .num-btn-stack .num-btn:first-child {
+  border-bottom: 1px solid var(--input-border);
+  border-right: none;
+}
+
+.number-input.vertical .num-btn-stack .num-btn:last-child {
+  border-left: none;
+}
+
+
+/* ---------------------------------------------------------------------------
+   12. SEARCH INPUTS  --  .search
+   --------------------------------------------------------------------------- */
+.search {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search .search-icon {
+  position: absolute;
+  left: 0.7rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1rem;
+  height: 1rem;
+  color: var(--mut);
+  pointer-events: none;
+  transition: color 0.2s;
+}
+
+.search:focus-within .search-icon {
+  color: var(--acc);
+}
+
+.search .input {
+  padding-left: 2.2rem;
+  padding-right: 2.2rem;
+}
+
+.search .search-clear {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1.3rem;
+  height: 1.3rem;
+  border: none;
+  background: color-mix(in srgb, var(--txt) 10%, transparent);
+  color: var(--mut);
+  border-radius: 50%;
+  cursor: pointer;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  padding: 0;
+  transition: background 0.15s, color 0.15s;
+}
+
+.search .search-clear.visible {
+  display: flex;
+}
+
+.search .search-clear:hover {
+  background: color-mix(in srgb, var(--txt) 18%, transparent);
+  color: var(--txt);
+}
+
+.search .search-clear:focus-visible {
+  outline: 2px solid var(--acc);
+  outline-offset: 2px;
+}
+
+/* loading spinner in search */
+.search .search-spinner {
+  position: absolute;
+  right: 0.6rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1.1rem;
+  height: 1.1rem;
+  border: 2px solid var(--line);
+  border-top-color: var(--acc);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  display: none;
+}
+
+.search.is-loading .search-spinner {
+  display: block;
+}
+
+.search.is-loading .search-clear {
+  display: none;
+}
+
+@keyframes spin {
+  to { transform: translateY(-50%) rotate(360deg); }
+}
+
+
+/* ---------------------------------------------------------------------------
+   13. PASSWORD INPUTS  --  .password
+   --------------------------------------------------------------------------- */
+.password {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password .input {
+  padding-right: 2.6rem;
+}
+
+.password .toggle-vis {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1.8rem;
+  height: 1.8rem;
+  border: none;
+  background: none;
+  color: var(--mut);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  padding: 0;
+  transition: color 0.15s, background 0.15s;
+}
+
+.password .toggle-vis:hover {
+  color: var(--txt);
+  background: color-mix(in srgb, var(--txt) 8%, transparent);
+}
+
+.password .toggle-vis:focus-visible {
+  outline: 2px solid var(--acc);
+  outline-offset: 2px;
+}
+
+/* -- strength meter -- */
+.password-strength {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-top: 0.5rem;
+}
+
+.password-strength .strength-bar {
+  display: flex;
+  gap: 3px;
+  height: 4px;
+}
+
+.password-strength .strength-bar .bar-segment {
+  flex: 1;
+  background: var(--line);
+  border-radius: 2px;
+  transition: background 0.3s;
+}
+
+/* strength levels */
+.password-strength[data-strength="1"] .bar-segment:nth-child(1) {
+  background: var(--bad);
+}
+
+.password-strength[data-strength="2"] .bar-segment:nth-child(-n+2) {
+  background: var(--warn);
+}
+
+.password-strength[data-strength="3"] .bar-segment:nth-child(-n+3) {
+  background: color-mix(in srgb, var(--warn) 50%, var(--ok));
+}
+
+.password-strength[data-strength="4"] .bar-segment:nth-child(-n+4) {
+  background: var(--ok);
+}
+
+.password-strength .strength-text {
+  font-size: 0.75rem;
+  transition: color 0.2s;
+}
+
+.password-strength[data-strength="1"] .strength-text {
+  color: var(--bad);
+}
+
+.password-strength[data-strength="2"] .strength-text {
+  color: var(--warn);
+}
+
+.password-strength[data-strength="3"] .strength-text {
+  color: color-mix(in srgb, var(--warn) 50%, var(--ok));
+}
+
+.password-strength[data-strength="4"] .strength-text {
+  color: var(--ok);
+}
+
+
+/* ---------------------------------------------------------------------------
+   14. FORM GROUPS  --  .form-group
+   --------------------------------------------------------------------------- */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 1rem;
+}
+
+.form-group:last-child {
+  margin-bottom: 0;
+}
+
+.form-group .form-label {
+  font-size: 0.85rem;
+  font-weight: var(--label-weight);
+  color: var(--label-color);
+  line-height: 1.3;
+}
+
+.form-group .form-label .required {
+  color: var(--error-color);
+  margin-left: 2px;
+}
+
+.form-group .form-label .optional {
+  color: var(--mut);
+  font-weight: 400;
+  font-size: 0.78rem;
+  margin-left: 4px;
+}
+
+.form-group .form-helper {
+  font-size: 0.78rem;
+  color: var(--helper-color);
+  line-height: 1.4;
+}
+
+.form-group .form-error {
+  font-size: 0.78rem;
+  color: var(--error-color);
+  line-height: 1.4;
+  display: none;
+}
+
+.form-group .form-success {
+  font-size: 0.78rem;
+  color: var(--success-color);
+  line-height: 1.4;
+  display: none;
+}
+
+.form-group .form-warning {
+  font-size: 0.78rem;
+  color: var(--warning-color);
+  line-height: 1.4;
+  display: none;
+}
+
+/* show error/success/warning based on validation state */
+.form-group.is-invalid .form-error {
+  display: block;
+}
+
+.form-group.is-invalid .form-helper {
+  display: none;
+}
+
+.form-group.is-valid .form-success {
+  display: block;
+}
+
+.form-group.is-warning .form-warning {
+  display: block;
+}
+
+.form-group.is-warning .form-helper {
+  display: none;
+}
+
+/* propagate state to child inputs */
+.form-group.is-invalid .input,
+.form-group.is-invalid .textarea,
+.form-group.is-invalid .select,
+.form-group.is-invalid .date-input {
+  border-color: var(--error-color);
+}
+
+.form-group.is-invalid .input:focus,
+.form-group.is-invalid .textarea:focus,
+.form-group.is-invalid .select:focus,
+.form-group.is-invalid .date-input:focus {
+  box-shadow: var(--input-shadow-error);
+}
+
+.form-group.is-valid .input,
+.form-group.is-valid .textarea,
+.form-group.is-valid .select,
+.form-group.is-valid .date-input {
+  border-color: var(--success-color);
+}
+
+.form-group.is-valid .input:focus,
+.form-group.is-valid .textarea:focus,
+.form-group.is-valid .select:focus,
+.form-group.is-valid .date-input:focus {
+  box-shadow: var(--input-shadow-valid);
+}
+
+.form-group.is-warning .input,
+.form-group.is-warning .textarea,
+.form-group.is-warning .select,
+.form-group.is-warning .date-input {
+  border-color: var(--warning-color);
+}
+
+.form-group.is-warning .input:focus,
+.form-group.is-warning .textarea:focus,
+.form-group.is-warning .select:focus,
+.form-group.is-warning .date-input:focus {
+  box-shadow: var(--input-shadow-warn);
+}
+
+/* form-group label color in error/success/warning state */
+.form-group.is-invalid .form-label {
+  color: var(--error-color);
+}
+
+.form-group.is-valid .form-label {
+  color: var(--success-color);
+}
+
+.form-group.is-warning .form-label {
+  color: var(--warning-color);
+}
+
+/* -- form-group sizes -- */
+.form-group.sm .form-label {
+  font-size: 0.78rem;
+}
+
+.form-group.sm .form-helper,
+.form-group.sm .form-error,
+.form-group.sm .form-success,
+.form-group.sm .form-warning {
+  font-size: 0.72rem;
+}
+
+.form-group.lg .form-label {
+  font-size: 0.95rem;
+}
+
+.form-group.lg .form-helper,
+.form-group.lg .form-error,
+.form-group.lg .form-success,
+.form-group.lg .form-warning {
+  font-size: 0.85rem;
+}
+
+
+/* ---------------------------------------------------------------------------
+   15. FORM LAYOUTS
+   --------------------------------------------------------------------------- */
+
+/* -- stacked (default) -- */
+.form-stacked {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.form-stacked .form-group {
+  margin-bottom: 1rem;
+}
+
+/* -- horizontal: label beside input -- */
+.form-horizontal .form-group {
+  display: grid;
+  grid-template-columns: minmax(8rem, auto) 1fr;
+  gap: 0.5rem 1rem;
+  align-items: start;
+}
+
+.form-horizontal .form-group .form-label {
+  padding-top: 0.5rem;
+  text-align: right;
+}
+
+.form-horizontal .form-group .form-helper,
+.form-horizontal .form-group .form-error,
+.form-horizontal .form-group .form-success,
+.form-horizontal .form-group .form-warning {
+  grid-column: 2;
+}
+
+@media (max-width: 640px) {
+  .form-horizontal .form-group {
+    grid-template-columns: 1fr;
+    gap: 0.35rem;
+  }
+
+  .form-horizontal .form-group .form-label {
+    padding-top: 0;
+    text-align: left;
+  }
+
+  .form-horizontal .form-group .form-helper,
+  .form-horizontal .form-group .form-error,
+  .form-horizontal .form-group .form-success,
+  .form-horizontal .form-group .form-warning {
+    grid-column: 1;
+  }
+}
+
+/* -- inline: all fields in a row -- */
+.form-inline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.75rem;
+}
+
+.form-inline .form-group {
+  margin-bottom: 0;
+  flex: 0 1 auto;
+}
+
+.form-inline .form-group .input,
+.form-inline .form-group .select,
+.form-inline .form-group .date-input {
+  width: auto;
+  min-width: 10rem;
+}
+
+@media (max-width: 480px) {
+  .form-inline {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .form-inline .form-group .input,
+  .form-inline .form-group .select,
+  .form-inline .form-group .date-input {
+    width: 100%;
+  }
+}
+
+/* -- form row utility -- */
+.form-row {
+  display: grid;
+  gap: 1rem;
+}
+
+.form-row.cols-2 { grid-template-columns: 1fr 1fr; }
+.form-row.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+.form-row.cols-4 { grid-template-columns: repeat(4, 1fr); }
+
+@media (max-width: 640px) {
+  .form-row.cols-2,
+  .form-row.cols-3,
+  .form-row.cols-4 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* form actions bar */
+.form-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding-top: 0.75rem;
+  margin-top: 0.5rem;
+  border-top: 1px solid var(--line);
+}
+
+.form-actions.right {
+  justify-content: flex-end;
+}
+
+.form-actions.center {
+  justify-content: center;
+}
+
+.form-actions.between {
+  justify-content: space-between;
+}
+
+
+/* ---------------------------------------------------------------------------
+   16. INPUT GROUPS  --  .input-group
+   --------------------------------------------------------------------------- */
+.input-group {
+  display: flex;
+  align-items: stretch;
+}
+
+.input-group > .input,
+.input-group > .select {
+  flex: 1;
+  min-width: 0;
+  border-radius: 0;
+}
+
+.input-group > .input:first-child,
+.input-group > .select:first-child {
+  border-top-left-radius: var(--input-radius);
+  border-bottom-left-radius: var(--input-radius);
+}
+
+.input-group > .input:last-child,
+.input-group > .select:last-child {
+  border-top-right-radius: var(--input-radius);
+  border-bottom-right-radius: var(--input-radius);
+}
+
+/* adjoining borders */
+.input-group > *:not(:first-child) {
+  margin-left: -1px;
+}
+
+.input-group > *:focus {
+  z-index: 2;
+}
+
+/* -- prepend / append text -- */
+.input-group .input-group-text {
+  display: flex;
+  align-items: center;
+  padding: 0 0.75rem;
+  background: var(--card);
+  border: 1px solid var(--input-border);
+  color: var(--mut);
+  font-size: 0.85rem;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.input-group .input-group-text:first-child {
+  border-top-left-radius: var(--input-radius);
+  border-bottom-left-radius: var(--input-radius);
+  border-right: none;
+}
+
+.input-group .input-group-text:last-child {
+  border-top-right-radius: var(--input-radius);
+  border-bottom-right-radius: var(--input-radius);
+  border-left: none;
+}
+
+/* -- prepend / append button -- */
+.input-group .input-group-btn {
+  display: flex;
+  align-items: center;
+  padding: 0 0.85rem;
+  border: 1px solid var(--input-border);
+  background: var(--card);
+  color: var(--input-text);
+  font-family: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.input-group .input-group-btn:first-child {
+  border-top-left-radius: var(--input-radius);
+  border-bottom-left-radius: var(--input-radius);
+  border-right: none;
+}
+
+.input-group .input-group-btn:last-child {
+  border-top-right-radius: var(--input-radius);
+  border-bottom-right-radius: var(--input-radius);
+  border-left: none;
+}
+
+.input-group .input-group-btn:hover {
+  background: var(--input-bg-hover);
+  border-color: var(--input-border-hover);
+  color: var(--acc);
+}
+
+.input-group .input-group-btn:active {
+  background: color-mix(in srgb, var(--acc) 12%, var(--card));
+}
+
+.input-group .input-group-btn:focus-visible {
+  outline: 2px solid var(--acc);
+  outline-offset: -2px;
+  z-index: 2;
+}
+
+/* accent button in input group */
+.input-group .input-group-btn.accent {
+  background: var(--acc);
+  border-color: var(--acc);
+  color: var(--on-acc);
+  font-weight: 600;
+}
+
+.input-group .input-group-btn.accent:hover {
+  background: color-mix(in srgb, var(--acc) 85%, #fff 15%);
+}
+
+/* sizes */
+.input-group.sm .input-group-text,
+.input-group.sm .input-group-btn {
+  padding: 0 0.55rem;
+  font-size: 0.78rem;
+}
+
+.input-group.lg .input-group-text,
+.input-group.lg .input-group-btn {
+  padding: 0 1rem;
+  font-size: 0.95rem;
+}
+
+
+/* ---------------------------------------------------------------------------
+   17. FLOATING LABELS  --  .float-label
+   --------------------------------------------------------------------------- */
+.float-label {
+  position: relative;
+}
+
+.float-label .input,
+.float-label .textarea,
+.float-label .select {
+  padding-top: 1.25rem;
+  padding-bottom: 0.35rem;
+}
+
+.float-label label {
+  position: absolute;
+  top: 50%;
+  left: 0.75rem;
+  transform: translateY(-50%);
+  font-size: 0.9rem;
+  color: var(--input-placeholder);
+  pointer-events: none;
+  transition: top 0.2s, transform 0.2s, font-size 0.2s, color 0.2s;
+  transform-origin: left center;
+  line-height: 1;
+}
+
+/* for textarea, label at top */
+.float-label:has(.textarea) label {
+  top: 1rem;
+  transform: translateY(0);
+}
+
+/* float up on focus or when input has content */
+.float-label .input:focus ~ label,
+.float-label .input:not(:placeholder-shown) ~ label,
+.float-label .textarea:focus ~ label,
+.float-label .textarea:not(:placeholder-shown) ~ label,
+.float-label .select:focus ~ label,
+.float-label .select:not([data-empty]) ~ label {
+  top: 0.45rem;
+  transform: translateY(0);
+  font-size: 0.7rem;
+  color: var(--acc);
+}
+
+.float-label:has(.textarea) .textarea:focus ~ label,
+.float-label:has(.textarea) .textarea:not(:placeholder-shown) ~ label {
+  top: 0.35rem;
+}
+
+/* error state float label */
+.float-label.is-invalid .input:focus ~ label,
+.float-label.is-invalid .input:not(:placeholder-shown) ~ label {
+  color: var(--error-color);
+}
+
+/* valid state float label */
+.float-label.is-valid .input:focus ~ label,
+.float-label.is-valid .input:not(:placeholder-shown) ~ label {
+  color: var(--success-color);
+}
+
+/* disabled state float label */
+.float-label:has(.input:disabled) label {
+  color: var(--input-disabled-text);
+}
+
+/* sizes */
+.float-label.sm .input {
+  padding-top: 1.05rem;
+  padding-bottom: 0.2rem;
+}
+
+.float-label.sm label {
+  font-size: 0.8rem;
+}
+
+.float-label.sm .input:focus ~ label,
+.float-label.sm .input:not(:placeholder-shown) ~ label {
+  font-size: 0.62rem;
+  top: 0.3rem;
+}
+
+.float-label.lg .input {
+  padding-top: 1.5rem;
+  padding-bottom: 0.45rem;
+}
+
+.float-label.lg label {
+  font-size: 1rem;
+}
+
+.float-label.lg .input:focus ~ label,
+.float-label.lg .input:not(:placeholder-shown) ~ label {
+  font-size: 0.75rem;
+  top: 0.45rem;
+}
+
+
+/* ---------------------------------------------------------------------------
+   18. VALIDATION STATES  --  .is-valid, .is-invalid, .is-warning
+   --------------------------------------------------------------------------- */
+
+/* validation icon containers */
+.validation-icon {
+  position: relative;
+}
+
+.validation-icon .input,
+.validation-icon .textarea,
+.validation-icon .select {
+  padding-right: 2.5rem;
+}
+
+.validation-icon::after {
+  position: absolute;
+  right: 0.7rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.85rem;
+  pointer-events: none;
+}
+
+.validation-icon.is-valid::after {
+  content: "\2713";
+  color: var(--success-color);
+}
+
+.validation-icon.is-invalid::after {
+  content: "\2717";
+  color: var(--error-color);
+}
+
+.validation-icon.is-warning::after {
+  content: "\26A0";
+  color: var(--warning-color);
+  font-size: 0.9rem;
+}
+
+/* validation message blocks */
+.valid-feedback {
+  display: none;
+  font-size: 0.78rem;
+  color: var(--success-color);
+  margin-top: 0.25rem;
+  line-height: 1.4;
+}
+
+.invalid-feedback {
+  display: none;
+  font-size: 0.78rem;
+  color: var(--error-color);
+  margin-top: 0.25rem;
+  line-height: 1.4;
+}
+
+.warning-feedback {
+  display: none;
+  font-size: 0.78rem;
+  color: var(--warning-color);
+  margin-top: 0.25rem;
+  line-height: 1.4;
+}
+
+.is-valid ~ .valid-feedback,
+.is-valid + .valid-feedback {
+  display: block;
+}
+
+.is-invalid ~ .invalid-feedback,
+.is-invalid + .invalid-feedback {
+  display: block;
+}
+
+.is-warning ~ .warning-feedback,
+.is-warning + .warning-feedback {
+  display: block;
+}
+
+/* validation icon + message with icon prefix */
+.invalid-feedback::before {
+  content: "\2717 ";
+}
+
+.valid-feedback::before {
+  content: "\2713 ";
+}
+
+.warning-feedback::before {
+  content: "\26A0 ";
+}
+
+/* global input validation via native :valid/:invalid pseudo-classes */
+.validate-native .input:required:invalid:not(:focus):not(:placeholder-shown) {
+  border-color: var(--error-color);
+}
+
+.validate-native .input:required:valid:not(:focus):not(:placeholder-shown) {
+  border-color: var(--success-color);
+}
+
+
+/* ---------------------------------------------------------------------------
+   19. FIELDSETS  --  .fieldset
+   --------------------------------------------------------------------------- */
+.fieldset {
+  border: 1px solid var(--line);
+  border-radius: var(--input-radius);
+  padding: 1.25rem;
+  margin: 0 0 1.25rem;
+  background: transparent;
+}
+
+.fieldset legend,
+.fieldset .fieldset-legend {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--label-color);
+  padding: 0 0.5rem;
+  margin-left: -0.5rem;
+  line-height: 1.3;
+}
+
+.fieldset .fieldset-desc {
+  font-size: 0.78rem;
+  color: var(--mut);
+  margin-top: 0.25rem;
+  margin-bottom: 1rem;
+  line-height: 1.5;
+}
+
+.fieldset:disabled {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.fieldset:disabled .input,
+.fieldset:disabled .textarea,
+.fieldset:disabled .select {
+  background: var(--input-disabled-bg);
+  cursor: not-allowed;
+}
+
+/* -- collapsible fieldset -- */
+.fieldset.collapsible .fieldset-legend {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  user-select: none;
+}
+
+.fieldset.collapsible .fieldset-legend::before {
+  content: "";
+  display: inline-block;
+  width: 0;
+  height: 0;
+  border-left: 5px solid var(--mut);
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  transition: transform 0.2s;
+  flex: none;
+}
+
+.fieldset.collapsible.open .fieldset-legend::before {
+  transform: rotate(90deg);
+}
+
+.fieldset.collapsible .fieldset-body {
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  transition: max-height 0.3s ease, opacity 0.2s ease, margin 0.2s ease;
+  margin-top: 0;
+}
+
+.fieldset.collapsible.open .fieldset-body {
+  max-height: 200rem;
+  opacity: 1;
+  margin-top: 1rem;
+}
+
+/* nested fieldset */
+.fieldset .fieldset {
+  background: color-mix(in srgb, var(--card2) 40%, transparent);
+  border-color: var(--line);
+}
+
+/* fieldset with accent left border */
+.fieldset.accent {
+  border-left: 3px solid var(--acc);
+}
+
+
+/* ---------------------------------------------------------------------------
+   20. FORM WIZARDS  --  .wizard
+   --------------------------------------------------------------------------- */
+.wizard {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* progress indicator (top bar) */
+.wizard .wizard-steps {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  counter-reset: wizard-step;
+}
+
+.wizard .wizard-step {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  position: relative;
+}
+
+.wizard .wizard-step .step-circle {
+  flex: none;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: var(--wizard-step-bg);
+  color: var(--mut);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.82rem;
+  font-weight: 700;
+  transition: background 0.3s, color 0.3s;
+  z-index: 1;
+  position: relative;
+}
+
+.wizard .wizard-step .step-label {
+  margin-left: 0.5rem;
+  font-size: 0.82rem;
+  color: var(--mut);
+  white-space: nowrap;
+  transition: color 0.3s;
+}
+
+/* connector line */
+.wizard .wizard-step:not(:last-child)::after {
+  content: "";
+  flex: 1;
+  height: 2px;
+  background: var(--wizard-step-bg);
+  margin: 0 0.5rem;
+  transition: background 0.3s;
+}
+
+/* active step */
+.wizard .wizard-step.active .step-circle {
+  background: var(--wizard-step-active);
+  color: var(--on-acc);
+}
+
+.wizard .wizard-step.active .step-label {
+  color: var(--txt);
+  font-weight: 600;
+}
+
+/* done step */
+.wizard .wizard-step.done .step-circle {
+  background: var(--wizard-step-done);
+  color: #fff;
+}
+
+.wizard .wizard-step.done .step-label {
+  color: var(--txt-2);
+}
+
+.wizard .wizard-step.done::after {
+  background: var(--wizard-step-done);
+}
+
+/* done checkmark */
+.wizard .wizard-step.done .step-circle::after {
+  content: "\2713";
+  font-size: 0.9rem;
+}
+
+/* error step */
+.wizard .wizard-step.error .step-circle {
+  background: var(--error-color);
+  color: #fff;
+}
+
+.wizard .wizard-step.error .step-label {
+  color: var(--error-color);
+}
+
+/* wizard panels */
+.wizard .wizard-panel {
+  display: none;
+}
+
+.wizard .wizard-panel.active {
+  display: block;
+}
+
+/* wizard footer nav */
+.wizard .wizard-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+}
+
+.wizard .wizard-nav .wizard-prev,
+.wizard .wizard-nav .wizard-next {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+/* compact progress (numbered dots) */
+.wizard.compact .wizard-steps {
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.wizard.compact .wizard-step {
+  flex: none;
+}
+
+.wizard.compact .wizard-step::after {
+  display: none;
+}
+
+.wizard.compact .wizard-step .step-circle {
+  width: 0.6rem;
+  height: 0.6rem;
+  font-size: 0;
+}
+
+.wizard.compact .wizard-step .step-label {
+  display: none;
+}
+
+/* mobile */
+@media (max-width: 640px) {
+  .wizard .wizard-step .step-label {
+    display: none;
+  }
+
+  .wizard .wizard-step .step-circle {
+    width: 1.6rem;
+    height: 1.6rem;
+    font-size: 0.75rem;
+  }
+}
+
+
+/* ---------------------------------------------------------------------------
+   21. AUTO-COMPLETE  --  .autocomplete
+   --------------------------------------------------------------------------- */
+.autocomplete {
+  position: relative;
+}
+
+.autocomplete .autocomplete-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  margin-top: 4px;
+  background: var(--dropdown-bg);
+  border: 1px solid var(--dropdown-border);
+  border-radius: var(--input-radius);
+  box-shadow: var(--dropdown-shadow);
+  max-height: 16rem;
+  overflow-y: auto;
+  display: none;
+}
+
+.autocomplete .autocomplete-dropdown.open {
+  display: block;
+}
+
+.autocomplete .autocomplete-dropdown .ac-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.88rem;
+  color: var(--input-text);
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+
+.autocomplete .autocomplete-dropdown .ac-item:first-child {
+  border-radius: var(--input-radius) var(--input-radius) 0 0;
+}
+
+.autocomplete .autocomplete-dropdown .ac-item:last-child {
+  border-radius: 0 0 var(--input-radius) var(--input-radius);
+}
+
+.autocomplete .autocomplete-dropdown .ac-item:hover,
+.autocomplete .autocomplete-dropdown .ac-item.highlighted {
+  background: var(--dropdown-item-hover);
+}
+
+.autocomplete .autocomplete-dropdown .ac-item.active,
+.autocomplete .autocomplete-dropdown .ac-item[aria-selected="true"] {
+  background: color-mix(in srgb, var(--acc) 15%, var(--card));
+  color: var(--acc);
+}
+
+.autocomplete .autocomplete-dropdown .ac-item:focus-visible {
+  outline: 2px solid var(--acc);
+  outline-offset: -2px;
+}
+
+.autocomplete .autocomplete-dropdown .ac-item .ac-icon {
+  flex: none;
+  width: 1.2rem;
+  height: 1.2rem;
+  color: var(--mut);
+}
+
+.autocomplete .autocomplete-dropdown .ac-item .ac-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.autocomplete .autocomplete-dropdown .ac-item .ac-text mark {
+  background: color-mix(in srgb, var(--acc) 25%, transparent);
+  color: inherit;
+  border-radius: 2px;
+  padding: 0 1px;
+}
+
+.autocomplete .autocomplete-dropdown .ac-item .ac-meta {
+  flex: none;
+  font-size: 0.75rem;
+  color: var(--mut);
+}
+
+.autocomplete .autocomplete-dropdown .ac-group-label {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--mut);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  user-select: none;
+}
+
+.autocomplete .autocomplete-dropdown .ac-empty {
+  padding: 1rem 0.75rem;
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--mut);
+}
+
+/* loading state */
+.autocomplete .autocomplete-dropdown .ac-loading {
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  color: var(--mut);
+  font-size: 0.85rem;
+}
+
+.autocomplete .autocomplete-dropdown .ac-loading::before {
+  content: "";
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid var(--line);
+  border-top-color: var(--acc);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+/* scrollbar styling for dropdown */
+.autocomplete .autocomplete-dropdown::-webkit-scrollbar {
+  width: 6px;
+}
+
+.autocomplete .autocomplete-dropdown::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.autocomplete .autocomplete-dropdown::-webkit-scrollbar-thumb {
+  background: var(--line-2);
+  border-radius: 3px;
+}
+
+.autocomplete .autocomplete-dropdown::-webkit-scrollbar-thumb:hover {
+  background: var(--mut);
+}
+
+
+/* ---------------------------------------------------------------------------
+   22. TAG INPUTS  --  .tag-input
+   --------------------------------------------------------------------------- */
+.tag-input {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.5rem;
+  min-height: 2.5rem;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: var(--input-radius);
+  transition: var(--input-transition);
+  cursor: text;
+}
+
+.tag-input:hover:not(.disabled) {
+  border-color: var(--input-border-hover);
+  background: var(--input-bg-hover);
+}
+
+.tag-input:focus-within:not(.disabled) {
+  border-color: var(--input-border-focus);
+  box-shadow: var(--input-shadow-focus);
+}
+
+.tag-input.is-invalid {
+  border-color: var(--error-color);
+}
+
+.tag-input.is-invalid:focus-within {
+  box-shadow: var(--input-shadow-error);
+}
+
+.tag-input.disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  background: var(--input-disabled-bg);
+}
+
+/* individual tag */
+.tag-input .tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.15rem 0.35rem 0.15rem 0.5rem;
+  background: var(--tag-bg);
+  border: 1px solid var(--tag-border);
+  border-radius: 4px;
+  color: var(--tag-text);
+  font-size: 0.8rem;
+  line-height: 1.4;
+  max-width: 12rem;
+  user-select: none;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.tag-input .tag:hover {
+  background: color-mix(in srgb, var(--acc) 22%, transparent);
+}
+
+.tag-input .tag .tag-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tag-input .tag .tag-remove {
+  flex: none;
+  width: 1rem;
+  height: 1rem;
+  border: none;
+  background: none;
+  color: var(--tag-text);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  padding: 0;
+  font-size: 0.7rem;
+  line-height: 1;
+  transition: background 0.12s, color 0.12s;
+  opacity: 0.7;
+}
+
+.tag-input .tag .tag-remove:hover {
+  opacity: 1;
+  background: color-mix(in srgb, var(--bad) 20%, transparent);
+  color: var(--bad);
+}
+
+.tag-input .tag .tag-remove:focus-visible {
+  outline: 2px solid var(--acc);
+  outline-offset: 1px;
+}
+
+/* tag input field */
+.tag-input .tag-field {
+  flex: 1;
+  min-width: 5rem;
+  border: none;
+  background: none;
+  color: var(--input-text);
+  font-family: inherit;
+  font-size: 0.85rem;
+  padding: 0.15rem 0.1rem;
+  outline: none;
+}
+
+.tag-input .tag-field::placeholder {
+  color: var(--input-placeholder);
+}
+
+/* tag suggestions dropdown */
+.tag-input-wrap {
+  position: relative;
+}
+
+.tag-input-wrap .tag-suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  margin-top: 4px;
+  background: var(--dropdown-bg);
+  border: 1px solid var(--dropdown-border);
+  border-radius: var(--input-radius);
+  box-shadow: var(--dropdown-shadow);
+  max-height: 12rem;
+  overflow-y: auto;
+  display: none;
+}
+
+.tag-input-wrap .tag-suggestions.open {
+  display: block;
+}
+
+.tag-input-wrap .tag-suggestions .tag-suggestion {
+  padding: 0.45rem 0.75rem;
+  font-size: 0.85rem;
+  color: var(--input-text);
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.tag-input-wrap .tag-suggestions .tag-suggestion:hover,
+.tag-input-wrap .tag-suggestions .tag-suggestion.highlighted {
+  background: var(--dropdown-item-hover);
+}
+
+.tag-input-wrap .tag-suggestions .tag-suggestion.used {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+/* tag color variants */
+.tag-input .tag.color-ok {
+  --tag-bg: color-mix(in srgb, var(--ok) 15%, transparent);
+  --tag-text: var(--ok);
+  --tag-border: color-mix(in srgb, var(--ok) 40%, transparent);
+}
+
+.tag-input .tag.color-bad {
+  --tag-bg: color-mix(in srgb, var(--bad) 15%, transparent);
+  --tag-text: var(--bad);
+  --tag-border: color-mix(in srgb, var(--bad) 40%, transparent);
+}
+
+.tag-input .tag.color-warn {
+  --tag-bg: color-mix(in srgb, var(--warn) 15%, transparent);
+  --tag-text: var(--warn);
+  --tag-border: color-mix(in srgb, var(--warn) 40%, transparent);
+}
+
+.tag-input .tag.color-purple {
+  --tag-bg: color-mix(in srgb, var(--acc-2) 15%, transparent);
+  --tag-text: var(--acc-2);
+  --tag-border: color-mix(in srgb, var(--acc-2) 40%, transparent);
+}
+
+
+/* ---------------------------------------------------------------------------
+   23. OTP INPUTS  --  .otp
+   --------------------------------------------------------------------------- */
+.otp {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.otp .otp-digit {
+  width: 3rem;
+  height: 3.4rem;
+  text-align: center;
+  font-family: var(--font-mono, monospace);
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  color: var(--input-text);
+  background: var(--input-bg);
+  border: 1.5px solid var(--input-border);
+  border-radius: var(--input-radius);
+  outline: none;
+  transition: var(--input-transition);
+  caret-color: var(--acc);
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.otp .otp-digit::-webkit-inner-spin-button,
+.otp .otp-digit::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.otp .otp-digit:hover:not(:disabled):not(.is-invalid) {
+  border-color: var(--input-border-hover);
+  background: var(--input-bg-hover);
+}
+
+.otp .otp-digit:focus {
+  border-color: var(--input-border-focus);
+  box-shadow: var(--input-shadow-focus);
+}
+
+.otp .otp-digit:focus-visible {
+  border-color: var(--input-border-focus);
+  box-shadow: var(--input-shadow-focus);
+  outline: none;
+}
+
+.otp .otp-digit:disabled {
+  background: var(--input-disabled-bg);
+  color: var(--input-disabled-text);
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+/* filled digit */
+.otp .otp-digit.filled {
+  border-color: var(--acc);
+  background: color-mix(in srgb, var(--acc) 6%, var(--input-bg));
+}
+
+/* error state */
+.otp.is-invalid .otp-digit {
+  border-color: var(--error-color);
+}
+
+.otp.is-invalid .otp-digit:focus {
+  box-shadow: var(--input-shadow-error);
+}
+
+/* success state */
+.otp.is-valid .otp-digit {
+  border-color: var(--success-color);
+}
+
+.otp.is-valid .otp-digit:focus {
+  box-shadow: var(--input-shadow-valid);
+}
+
+/* separator (e.g. dash between groups) */
+.otp .otp-separator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  color: var(--mut);
+  font-size: 1.1rem;
+}
+
+/* sizes */
+.otp.sm .otp-digit {
+  width: 2.2rem;
+  height: 2.6rem;
+  font-size: 1rem;
+}
+
+.otp.lg .otp-digit {
+  width: 3.6rem;
+  height: 4rem;
+  font-size: 1.8rem;
+  border-radius: 8px;
+}
+
+/* OTP loading state */
+.otp.loading {
+  position: relative;
+  pointer-events: none;
+}
+
+.otp.loading::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, var(--bg) 50%, transparent);
+  border-radius: var(--input-radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* OTP resend link */
+.otp-footer {
+  display: flex;
+  justify-content: center;
+  margin-top: 0.75rem;
+  font-size: 0.82rem;
+  color: var(--mut);
+}
+
+.otp-footer .otp-resend {
+  color: var(--acc);
+  cursor: pointer;
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: inherit;
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.otp-footer .otp-resend:hover {
+  color: var(--txt);
+}
+
+.otp-footer .otp-resend:disabled {
+  color: var(--mut);
+  cursor: not-allowed;
+  text-decoration: none;
+}
+
+
+/* ---------------------------------------------------------------------------
+   24. CREDIT CARD INPUTS  --  .cc-input
+   --------------------------------------------------------------------------- */
+.cc-input {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.cc-input .cc-number-wrap {
+  position: relative;
+}
+
+.cc-input .cc-number-wrap .input {
+  padding-left: 3rem;
+  padding-right: 3rem;
+  letter-spacing: 0.08em;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.95rem;
+}
+
+.cc-input .cc-number-wrap .cc-brand-icon {
+  position: absolute;
+  left: 0.7rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1.8rem;
+  height: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--mut);
+  pointer-events: none;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: var(--card);
+  font-size: 0.55rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0;
+  overflow: hidden;
+}
+
+/* card type labels shown inside the brand-icon slot */
+.cc-input .cc-number-wrap .cc-brand-icon[data-brand="visa"]::after {
+  content: "VISA";
+  color: #1a1f71;
+}
+
+.cc-input .cc-number-wrap .cc-brand-icon[data-brand="mastercard"]::after {
+  content: "MC";
+  color: #eb001b;
+}
+
+.cc-input .cc-number-wrap .cc-brand-icon[data-brand="amex"]::after {
+  content: "AMEX";
+  color: #2e77bc;
+  font-size: 0.48rem;
+}
+
+.cc-input .cc-number-wrap .cc-brand-icon[data-brand="discover"]::after {
+  content: "DISC";
+  color: #ff6000;
+  font-size: 0.48rem;
+}
+
+/* validity icon on right */
+.cc-input .cc-number-wrap .cc-valid-icon {
+  position: absolute;
+  right: 0.7rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.9rem;
+  pointer-events: none;
+  display: none;
+}
+
+.cc-input .cc-number-wrap.is-valid .cc-valid-icon {
+  display: block;
+  color: var(--success-color);
+}
+
+.cc-input .cc-number-wrap.is-valid .cc-valid-icon::after {
+  content: "\2713";
+}
+
+.cc-input .cc-number-wrap.is-invalid .cc-valid-icon {
+  display: block;
+  color: var(--error-color);
+}
+
+.cc-input .cc-number-wrap.is-invalid .cc-valid-icon::after {
+  content: "\2717";
+}
+
+/* row for expiry + cvv */
+.cc-input .cc-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.cc-input .cc-row .cc-expiry .input {
+  font-family: var(--font-mono, monospace);
+  letter-spacing: 0.08em;
+}
+
+.cc-input .cc-row .cc-cvv {
+  position: relative;
+}
+
+.cc-input .cc-row .cc-cvv .input {
+  font-family: var(--font-mono, monospace);
+  letter-spacing: 0.15em;
+}
+
+.cc-input .cc-row .cc-cvv .cvv-hint {
+  position: absolute;
+  right: 0.6rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1.2rem;
+  height: 1.2rem;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--mut);
+  font-size: 0.65rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: help;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.cc-input .cc-row .cc-cvv .cvv-hint:hover {
+  border-color: var(--acc);
+  color: var(--acc);
+}
+
+/* cardholder name */
+.cc-input .cc-name .input {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 0.88rem;
+}
+
+/* cc-input states */
+.cc-input .input.is-invalid {
+  border-color: var(--error-color);
+}
+
+.cc-input .input.is-invalid:focus {
+  box-shadow: var(--input-shadow-error);
+}
+
+.cc-input .input.is-valid {
+  border-color: var(--success-color);
+}
+
+.cc-input .input.is-valid:focus {
+  box-shadow: var(--input-shadow-valid);
+}
+
+.cc-input .input:disabled {
+  background: var(--input-disabled-bg);
+  color: var(--input-disabled-text);
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+
+/* ---------------------------------------------------------------------------
+   25. SHARED UTILITIES / SCROLLBAR / ANIMATIONS
+   --------------------------------------------------------------------------- */
+
+/* shared scrollbar for dropdowns, selects, etc. */
+.form-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.form-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.form-scroll::-webkit-scrollbar-thumb {
+  background: var(--line-2);
+  border-radius: 3px;
+}
+
+.form-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--mut);
+}
+
+/* focus ring utility */
+.focus-ring:focus-visible {
+  outline: 2px solid var(--acc);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* sr-only (screen reader) */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* form divider */
+.form-divider {
+  border: none;
+  border-top: 1px solid var(--line);
+  margin: 1.25rem 0;
+}
+
+/* form section heading */
+.form-section-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--txt);
+  margin: 0 0 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.form-section-desc {
+  font-size: 0.82rem;
+  color: var(--mut);
+  margin-bottom: 1rem;
+  line-height: 1.5;
+}
+
+/* full-width override for any form element */
+.full-width {
+  width: 100%;
+}
+
+/* character / word count display */
+.counter-display {
+  font-size: 0.75rem;
+  color: var(--mut);
+  text-align: right;
+  margin-top: 0.25rem;
+  transition: color 0.2s;
+}
+
+.counter-display.near-limit {
+  color: var(--warn);
+}
+
+.counter-display.at-limit {
+  color: var(--bad);
+  font-weight: 600;
+}
+
+/* shake animation for invalid inputs */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-4px); }
+  40% { transform: translateX(4px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(3px); }
+}
+
+.shake {
+  animation: shake 0.4s ease;
+}
+
+/* fade-in for dropdowns */
+@keyframes fade-in-down {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.autocomplete .autocomplete-dropdown.open,
+.tag-input-wrap .tag-suggestions.open {
+  animation: fade-in-down 0.15s ease;
+}
+
+/* highlight pulse for field that just had an error corrected */
+@keyframes pulse-ok {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--ok) 40%, transparent); }
+  70% { box-shadow: 0 0 0 6px transparent; }
+  100% { box-shadow: none; }
+}
+
+.pulse-ok {
+  animation: pulse-ok 0.6s ease;
+}
+
+/* slide-down for collapsible fieldset body */
+@keyframes slide-down {
+  from {
+    opacity: 0;
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    max-height: 200rem;
+  }
+}
+
+
+/* ---------------------------------------------------------------------------
+   26. FORM GRID SYSTEM
+   --------------------------------------------------------------------------- */
+.form-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.form-grid.g-2 { grid-template-columns: repeat(2, 1fr); }
+.form-grid.g-3 { grid-template-columns: repeat(3, 1fr); }
+.form-grid.g-4 { grid-template-columns: repeat(4, 1fr); }
+.form-grid.g-6 { grid-template-columns: repeat(6, 1fr); }
+
+.form-grid .span-2 { grid-column: span 2; }
+.form-grid .span-3 { grid-column: span 3; }
+.form-grid .span-4 { grid-column: span 4; }
+.form-grid .span-full { grid-column: 1 / -1; }
+
+@media (max-width: 768px) {
+  .form-grid.g-3,
+  .form-grid.g-4,
+  .form-grid.g-6 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .form-grid .span-3,
+  .form-grid .span-4 {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 480px) {
+  .form-grid.g-2,
+  .form-grid.g-3,
+  .form-grid.g-4,
+  .form-grid.g-6 {
+    grid-template-columns: 1fr;
+  }
+
+  .form-grid .span-2,
+  .form-grid .span-3,
+  .form-grid .span-4 {
+    grid-column: span 1;
+  }
+}
+
+
+/* ---------------------------------------------------------------------------
+   27. FORM CARD (form inside a card container)
+   --------------------------------------------------------------------------- */
+.form-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius, 12px);
+  padding: 1.5rem;
+}
+
+.form-card .form-card-header {
+  margin-bottom: 1.25rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.form-card .form-card-header .form-card-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--txt);
+  margin: 0 0 0.25rem;
+}
+
+.form-card .form-card-header .form-card-desc {
+  font-size: 0.82rem;
+  color: var(--mut);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.form-card .form-card-body {
+  /* inherits default stacking */
+}
+
+.form-card .form-card-footer {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
+
+/* ---------------------------------------------------------------------------
+   28. INLINE EDITABLE FIELD
+   --------------------------------------------------------------------------- */
+.inline-edit {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.2rem 0.4rem;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  transition: border-color 0.15s, background 0.15s;
+  cursor: pointer;
+  min-height: 1.8rem;
+}
+
+.inline-edit:hover {
+  border-color: var(--line);
+  background: var(--input-bg);
+}
+
+.inline-edit .inline-edit-value {
+  font-size: 0.9rem;
+  color: var(--txt);
+}
+
+.inline-edit .inline-edit-icon {
+  font-size: 0.7rem;
+  color: var(--mut);
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.inline-edit:hover .inline-edit-icon {
+  opacity: 1;
+}
+
+.inline-edit.editing {
+  border-color: var(--acc);
+  background: var(--input-bg);
+}
+
+.inline-edit.editing .inline-edit-icon {
+  display: none;
+}
+
+
+/* ---------------------------------------------------------------------------
+   29. CUSTOM SELECT DROPDOWN (JS-driven)
+   --------------------------------------------------------------------------- */
+.custom-select {
+  position: relative;
+}
+
+.custom-select .cs-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.75rem;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: var(--input-radius);
+  color: var(--input-text);
+  font-family: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: var(--input-transition);
+  min-height: 2.4rem;
+  outline: none;
+  width: 100%;
+}
+
+.custom-select .cs-trigger:hover:not(:disabled) {
+  background: var(--input-bg-hover);
+  border-color: var(--input-border-hover);
+}
+
+.custom-select .cs-trigger:focus-visible {
+  border-color: var(--acc);
+  box-shadow: var(--input-shadow-focus);
+}
+
+.custom-select .cs-trigger .cs-value {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.custom-select .cs-trigger .cs-placeholder {
+  color: var(--input-placeholder);
+}
+
+.custom-select .cs-trigger .cs-arrow {
+  flex: none;
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 5px solid var(--mut);
+  transition: transform 0.2s;
+  margin-left: 0.5rem;
+}
+
+.custom-select.open .cs-trigger .cs-arrow {
+  transform: rotate(180deg);
+}
+
+.custom-select .cs-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  margin-top: 4px;
+  background: var(--dropdown-bg);
+  border: 1px solid var(--dropdown-border);
+  border-radius: var(--input-radius);
+  box-shadow: var(--dropdown-shadow);
+  max-height: 16rem;
+  overflow-y: auto;
+  display: none;
+}
+
+.custom-select.open .cs-dropdown {
+  display: block;
+  animation: fade-in-down 0.15s ease;
+}
+
+.custom-select .cs-dropdown .cs-search {
+  padding: 0.5rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.custom-select .cs-dropdown .cs-search .input {
+  font-size: 0.85rem;
+  padding: 0.35rem 0.6rem;
+}
+
+.custom-select .cs-dropdown .cs-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.88rem;
+  color: var(--input-text);
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.custom-select .cs-dropdown .cs-option:hover,
+.custom-select .cs-dropdown .cs-option.highlighted {
+  background: var(--dropdown-item-hover);
+}
+
+.custom-select .cs-dropdown .cs-option.selected {
+  background: color-mix(in srgb, var(--acc) 12%, var(--card));
+  color: var(--acc);
+}
+
+.custom-select .cs-dropdown .cs-option.selected::after {
+  content: "\2713";
+  margin-left: auto;
+  font-size: 0.8rem;
+}
+
+.custom-select .cs-dropdown .cs-option:focus-visible {
+  outline: 2px solid var(--acc);
+  outline-offset: -2px;
+}
+
+.custom-select .cs-dropdown .cs-option.disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.custom-select .cs-dropdown .cs-group-label {
+  padding: 0.4rem 0.75rem 0.2rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--mut);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.custom-select .cs-dropdown .cs-empty {
+  padding: 1rem;
+  text-align: center;
+  color: var(--mut);
+  font-size: 0.85rem;
+}
+
+/* multi-select variant */
+.custom-select.multi .cs-trigger .cs-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.custom-select.multi .cs-trigger .cs-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.1rem 0.3rem;
+  background: var(--tag-bg);
+  border: 1px solid var(--tag-border);
+  border-radius: 3px;
+  color: var(--tag-text);
+  font-size: 0.75rem;
+}
+
+.custom-select.multi .cs-trigger .cs-tag .cs-tag-remove {
+  border: none;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  padding: 0;
+  font-size: 0.65rem;
+  opacity: 0.7;
+}
+
+.custom-select.multi .cs-trigger .cs-tag .cs-tag-remove:hover {
+  opacity: 1;
+}
+
+/* disabled */
+.custom-select.disabled .cs-trigger {
+  background: var(--input-disabled-bg);
+  color: var(--input-disabled-text);
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+/* validation */
+.custom-select.is-invalid .cs-trigger {
+  border-color: var(--error-color);
+}
+
+.custom-select.is-invalid .cs-trigger:focus-visible {
+  box-shadow: var(--input-shadow-error);
+}
+
+.custom-select.is-valid .cs-trigger {
+  border-color: var(--success-color);
+}
+
+
+/* ---------------------------------------------------------------------------
+   30. PIN / CODE INPUT (alternate to OTP)
+   --------------------------------------------------------------------------- */
+.pin-input {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.pin-input .pin-field {
+  width: 2.6rem;
+  height: 3rem;
+  text-align: center;
+  font-family: var(--font-mono, monospace);
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--input-text);
+  background: var(--input-bg);
+  border: 1.5px solid var(--input-border);
+  border-radius: var(--input-radius);
+  outline: none;
+  transition: var(--input-transition);
+  caret-color: var(--acc);
+}
+
+.pin-input .pin-field:hover:not(:disabled) {
+  border-color: var(--input-border-hover);
+}
+
+.pin-input .pin-field:focus {
+  border-color: var(--acc);
+  box-shadow: var(--input-shadow-focus);
+}
+
+.pin-input .pin-field:focus-visible {
+  border-color: var(--acc);
+  box-shadow: var(--input-shadow-focus);
+  outline: none;
+}
+
+.pin-input .pin-field:disabled {
+  background: var(--input-disabled-bg);
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.pin-input.is-invalid .pin-field {
+  border-color: var(--error-color);
+}
+
+.pin-input.is-valid .pin-field {
+  border-color: var(--success-color);
+}
+
+/* masked dots for PIN */
+.pin-input.masked .pin-field {
+  -webkit-text-security: disc;
+  text-security: disc;
+}
+
+
+/* ---------------------------------------------------------------------------
+   31. RATING INPUT
+   --------------------------------------------------------------------------- */
+.rating-input {
+  display: inline-flex;
+  gap: 0.2rem;
+  direction: rtl;
+}
+
+.rating-input input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.rating-input label {
+  font-size: 1.5rem;
+  color: var(--line-2);
+  cursor: pointer;
+  transition: color 0.15s, transform 0.15s;
+  line-height: 1;
+}
+
+.rating-input label::before {
+  content: "\2605";
+}
+
+.rating-input label:hover,
+.rating-input label:hover ~ label {
+  color: var(--warn);
+  transform: scale(1.1);
+}
+
+.rating-input input:checked ~ label {
+  color: var(--warn);
+}
+
+.rating-input input:focus-visible + label {
+  outline: 2px solid var(--acc);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+.rating-input:has(input:disabled) label {
+  cursor: default;
+  opacity: 0.6;
+}
+
+/* sizes */
+.rating-input.sm label { font-size: 1.1rem; }
+.rating-input.lg label { font-size: 2rem; }
+
+
+/* ---------------------------------------------------------------------------
+   32. QUANTITY SELECTOR
+   --------------------------------------------------------------------------- */
+.qty-selector {
+  display: inline-flex;
+  align-items: stretch;
+  border: 1px solid var(--input-border);
+  border-radius: var(--input-radius);
+  overflow: hidden;
+}
+
+.qty-selector .qty-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.2rem;
+  border: none;
+  background: var(--card);
+  color: var(--mut);
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  padding: 0;
+  user-select: none;
+}
+
+.qty-selector .qty-btn:hover:not(:disabled) {
+  background: var(--input-bg-hover);
+  color: var(--acc);
+}
+
+.qty-selector .qty-btn:active:not(:disabled) {
+  background: color-mix(in srgb, var(--acc) 15%, var(--card));
+}
+
+.qty-selector .qty-btn:focus-visible {
+  outline: 2px solid var(--acc);
+  outline-offset: -2px;
+  z-index: 1;
+}
+
+.qty-selector .qty-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.qty-selector .qty-value {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.8rem;
+  padding: 0.4rem 0.5rem;
+  background: var(--input-bg);
+  color: var(--input-text);
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border-left: 1px solid var(--input-border);
+  border-right: 1px solid var(--input-border);
+  text-align: center;
+}
+
+.qty-selector .qty-value input {
+  width: 2.4rem;
+  text-align: center;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  outline: none;
+  -moz-appearance: textfield;
+}
+
+.qty-selector .qty-value input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+}
+
+
+/* ---------------------------------------------------------------------------
+   33. PROGRESS / STEP INDICATOR BARS
+   --------------------------------------------------------------------------- */
+.progress-bar {
+  width: 100%;
+  height: 6px;
+  background: var(--line);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progress-bar .progress-fill {
+  height: 100%;
+  background: var(--acc);
+  border-radius: 3px;
+  transition: width 0.4s ease;
+}
+
+.progress-bar .progress-fill.ok { background: var(--ok); }
+.progress-bar .progress-fill.bad { background: var(--bad); }
+.progress-bar .progress-fill.warn { background: var(--warn); }
+
+.progress-bar.lg {
+  height: 10px;
+  border-radius: 5px;
+}
+
+.progress-bar.lg .progress-fill {
+  border-radius: 5px;
+}
+
+/* labeled progress */
+.progress-labeled {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.progress-labeled .progress-bar {
+  flex: 1;
+}
+
+.progress-labeled .progress-pct {
+  flex: none;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--txt);
+  min-width: 3rem;
+  text-align: right;
+}
+
+/* indeterminate / loading bar */
+.progress-bar.indeterminate .progress-fill {
+  width: 30%;
+  animation: indeterminate 1.5s ease-in-out infinite;
+}
+
+@keyframes indeterminate {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(400%); }
+}
+
+
+/* ---------------------------------------------------------------------------
+   34. CHIP / FILTER CHIP
+   --------------------------------------------------------------------------- */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.6rem;
+  background: var(--tag-bg);
+  border: 1px solid var(--tag-border);
+  border-radius: 99px;
+  color: var(--tag-text);
+  font-size: 0.8rem;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.chip:hover {
+  background: color-mix(in srgb, var(--acc) 22%, transparent);
+  border-color: var(--acc);
+}
+
+.chip.active,
+.chip[aria-selected="true"] {
+  background: var(--acc);
+  border-color: var(--acc);
+  color: var(--on-acc);
+}
+
+.chip:focus-visible {
+  outline: 2px solid var(--acc);
+  outline-offset: 2px;
+}
+
+.chip .chip-remove {
+  flex: none;
+  width: 0.9rem;
+  height: 0.9rem;
+  border: none;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6rem;
+  opacity: 0.7;
+  border-radius: 50%;
+  transition: opacity 0.12s, background 0.12s;
+}
+
+.chip .chip-remove:hover {
+  opacity: 1;
+  background: color-mix(in srgb, currentColor 15%, transparent);
+}
+
+/* chip group */
+.chip-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+
+/* ---------------------------------------------------------------------------
+   35. RESPONSIVE HELPERS
+   --------------------------------------------------------------------------- */
+@media (max-width: 640px) {
+  .input.xl {
+    padding: 0.65rem 0.95rem;
+    font-size: 1rem;
+  }
+
+  .cc-input .cc-row {
+    grid-template-columns: 1fr;
+  }
+
+  .otp {
+    gap: 0.3rem;
+  }
+
+  .otp .otp-digit {
+    width: 2.5rem;
+    height: 2.8rem;
+    font-size: 1.1rem;
+  }
+
+  .form-card {
+    padding: 1rem;
+  }
+
+  .form-actions {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 380px) {
+  .otp {
+    gap: 0.2rem;
+  }
+
+  .otp .otp-digit {
+    width: 2rem;
+    height: 2.4rem;
+    font-size: 0.95rem;
+    border-radius: 4px;
+  }
+
+  .wizard .wizard-step .step-circle {
+    width: 1.4rem;
+    height: 1.4rem;
+    font-size: 0.68rem;
+  }
+}
+
+
+/* ---------------------------------------------------------------------------
+   36. PRINT STYLES
+   --------------------------------------------------------------------------- */
+@media print {
+  .input,
+  .textarea,
+  .select,
+  .date-input {
+    border-color: #999;
+    background: #fff;
+    color: #000;
+    box-shadow: none;
+  }
+
+  .switch .switch-track,
+  .checkbox .check-mark,
+  .radio .radio-mark {
+    border-color: #666;
+  }
+
+  .file-drop,
+  .autocomplete .autocomplete-dropdown,
+  .tag-input-wrap .tag-suggestions,
+  .custom-select .cs-dropdown {
+    display: none;
+  }
+
+  .wizard .wizard-steps {
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 0.5rem;
+    margin-bottom: 1rem;
+  }
+}
+
+
+/* ---------------------------------------------------------------------------
+   37. REDUCED MOTION
+   --------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .input,
+  .textarea,
+  .select,
+  .date-input,
+  .switch .switch-track,
+  .switch .switch-track::after,
+  .checkbox .check-mark,
+  .checkbox .check-mark::after,
+  .radio .radio-mark,
+  .radio .radio-mark::after,
+  .range::-webkit-slider-thumb,
+  .range::-moz-range-thumb,
+  .autocomplete .autocomplete-dropdown,
+  .tag-input-wrap .tag-suggestions,
+  .custom-select .cs-dropdown,
+  .float-label label,
+  .fieldset.collapsible .fieldset-body,
+  .color-picker .swatch,
+  .chip,
+  .tag-input .tag,
+  .file-drop,
+  .progress-bar .progress-fill {
+    transition: none;
+    animation: none;
+  }
+
+  .shake { animation: none; }
+  .pulse-ok { animation: none; }
+  .switch.loading .switch-track::after { animation: none; }
+  .search .search-spinner { animation: none; }
+  .progress-bar.indeterminate .progress-fill { animation: none; }
+
+  .autocomplete .autocomplete-dropdown.open,
+  .tag-input-wrap .tag-suggestions.open,
+  .custom-select.open .cs-dropdown {
+    animation: none;
+  }
+}
+
+
+/* ---------------------------------------------------------------------------
+   38. HIGH CONTRAST MODE ADJUSTMENTS
+   --------------------------------------------------------------------------- */
+@media (forced-colors: active) {
+  .input,
+  .textarea,
+  .select,
+  .date-input {
+    border: 1px solid ButtonText;
+    background: Field;
+    color: FieldText;
+  }
+
+  .input:focus,
+  .textarea:focus,
+  .select:focus,
+  .date-input:focus {
+    outline: 2px solid Highlight;
+  }
+
+  .checkbox .check-mark,
+  .radio .radio-mark {
+    border: 2px solid ButtonText;
+    forced-color-adjust: none;
+  }
+
+  .switch .switch-track {
+    border: 2px solid ButtonText;
+    forced-color-adjust: none;
+  }
+
+  .chip,
+  .tag-input .tag {
+    border: 1px solid ButtonText;
+    forced-color-adjust: none;
+  }
+}
+
+
+/* ---------------------------------------------------------------------------
+   39. DARK THEME INPUT AUTOFILL
+   --------------------------------------------------------------------------- */
+.input:-webkit-autofill,
+.textarea:-webkit-autofill,
+.select:-webkit-autofill,
+.date-input:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0 50px var(--input-bg) inset;
+  -webkit-text-fill-color: var(--input-text);
+  caret-color: var(--input-text);
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+.input:-webkit-autofill:hover,
+.textarea:-webkit-autofill:hover {
+  -webkit-box-shadow: 0 0 0 50px var(--input-bg-hover) inset;
+}
+
+.input:-webkit-autofill:focus,
+.textarea:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 50px var(--input-bg) inset;
+  border-color: var(--input-border-focus);
+}
+
+
+/* ---------------------------------------------------------------------------
+   40. FORM LOADING / SKELETON STATES
+   --------------------------------------------------------------------------- */
+.form-loading .input,
+.form-loading .textarea,
+.form-loading .select,
+.form-loading .date-input {
+  pointer-events: none;
+  color: transparent;
+  background: linear-gradient(
+    90deg,
+    var(--input-bg) 25%,
+    var(--input-bg-hover) 50%,
+    var(--input-bg) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+}
+
+.form-loading .form-label {
+  color: transparent;
+  background: var(--line);
+  border-radius: 3px;
+  display: inline-block;
+  min-width: 5rem;
+  height: 0.85em;
+}
+
+@keyframes skeleton-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.form-loading .checkbox .check-mark,
+.form-loading .radio .radio-mark,
+.form-loading .switch .switch-track {
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+/* overlay loading state */
+.form-overlay-loading {
+  position: relative;
+}
+
+.form-overlay-loading::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, var(--bg) 60%, transparent);
+  border-radius: inherit;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.form-overlay-loading .form-spinner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 11;
+  width: 2rem;
+  height: 2rem;
+  border: 3px solid var(--line);
+  border-top-color: var(--acc);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+
+/* ---------------------------------------------------------------------------
+   41. TOOLTIP FOR FORM ELEMENTS
+   --------------------------------------------------------------------------- */
+.form-tooltip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.form-tooltip .tooltip-trigger {
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--mut);
+  font-size: 0.6rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: help;
+  margin-left: 0.35rem;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.form-tooltip .tooltip-trigger::after {
+  content: "?";
+}
+
+.form-tooltip .tooltip-trigger:hover {
+  border-color: var(--acc);
+  color: var(--acc);
+}
+
+.form-tooltip .tooltip-content {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 6px;
+  padding: 0.4rem 0.65rem;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  box-shadow: var(--dropdown-shadow);
+  font-size: 0.78rem;
+  color: var(--txt);
+  white-space: nowrap;
+  max-width: 18rem;
+  white-space: normal;
+  line-height: 1.45;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s;
+  z-index: 100;
+}
+
+.form-tooltip .tooltip-content::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: var(--line);
+}
+
+.form-tooltip:hover .tooltip-content,
+.form-tooltip .tooltip-trigger:focus + .tooltip-content {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+
+/* ---------------------------------------------------------------------------
+   42. COMBOBOX PATTERN
+   --------------------------------------------------------------------------- */
+.combobox {
+  position: relative;
+}
+
+.combobox .combobox-input {
+  width: 100%;
+}
+
+.combobox .combobox-listbox {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  margin-top: 4px;
+  background: var(--dropdown-bg);
+  border: 1px solid var(--dropdown-border);
+  border-radius: var(--input-radius);
+  box-shadow: var(--dropdown-shadow);
+  max-height: 14rem;
+  overflow-y: auto;
+  display: none;
+}
+
+.combobox .combobox-listbox[aria-expanded="true"],
+.combobox .combobox-listbox.open {
+  display: block;
+  animation: fade-in-down 0.15s ease;
+}
+
+.combobox .combobox-listbox [role="option"] {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.88rem;
+  color: var(--input-text);
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.combobox .combobox-listbox [role="option"]:hover,
+.combobox .combobox-listbox [role="option"].highlighted {
+  background: var(--dropdown-item-hover);
+}
+
+.combobox .combobox-listbox [role="option"][aria-selected="true"] {
+  background: color-mix(in srgb, var(--acc) 12%, var(--card));
+  color: var(--acc);
+}
+
+.combobox .combobox-listbox [role="option"]:focus-visible {
+  outline: 2px solid var(--acc);
+  outline-offset: -2px;
+}
+
+
+/* ---------------------------------------------------------------------------
+   END OF forms.css
+   --------------------------------------------------------------------------- */

@@ -1,0 +1,4081 @@
+/* ================================================================
+   Darknode Web -- Comprehensive Print Stylesheet
+   ================================================================
+   Optimized for printing and PDF generation. Forces light, high-
+   contrast output suitable for paper. Every component defined in
+   styles.css has a corresponding override here.
+
+   Usage: <link rel="stylesheet" href="/css/print.css" media="print">
+   ================================================================ */
+
+@media print {
+
+/* ================================================================
+   1. RESET FOR PRINT
+   Strip backgrounds, shadows, gradients, animations, fixed
+   positioning, and any dark-theme artifacts. Force a clean,
+   ink-efficient, high-contrast canvas.
+   ================================================================ */
+
+/* Override CSS custom properties to a print-friendly palette */
+:root,
+:root[data-theme="dark"],
+:root[data-theme="light"] {
+  --bg: #ffffff;
+  --bg2: #ffffff;
+  --card: #ffffff;
+  --card2: #f8f8f8;
+  --line: #cccccc;
+  --line-2: #aaaaaa;
+  --txt: #111111;
+  --txt-2: #333333;
+  --mut: #555555;
+  --placeholder: #888888;
+  --acc: #111111;
+  --acc-2: #333333;
+  --ok: #1a7a42;
+  --bad: #b91c1c;
+  --warn: #92601b;
+  --on-acc: #ffffff;
+  --code-bg: #f4f4f4;
+  --code-fg: #1a1a1a;
+  --overlay-bg: transparent;
+  --acc-soft: transparent;
+  --acc-line: #cccccc;
+  --grad-acc: none;
+  --sh-1: none;
+  --sh-2: none;
+  --radius: 0;
+  --topbar-h: 0;
+  --ctrl-radius: 0;
+  --ctrl-focus: none;
+  --font-display: Georgia, "Times New Roman", Times, serif;
+  --font-mono: "Courier New", Courier, monospace;
+  --ff-sans: Georgia, "Times New Roman", Times, serif;
+  --ff-mono: "Courier New", Courier, monospace;
+}
+
+/* Universal reset: kill shadows, animations, transitions, text-shadow */
+*,
+*::before,
+*::after {
+  box-shadow: none !important;
+  text-shadow: none !important;
+  animation: none !important;
+  animation-duration: 0s !important;
+  animation-delay: 0s !important;
+  transition: none !important;
+  transition-duration: 0s !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  filter: none !important;
+  opacity: 1 !important;
+  transform: none !important;
+  will-change: auto !important;
+}
+
+/* Force white backgrounds, remove gradients */
+html,
+body,
+.app-shell,
+.app-main,
+#app,
+#view,
+.card,
+.panel,
+.set-card,
+.util-card,
+.cs-card,
+.feat-card,
+.mod-card,
+.ed-card,
+.bento-card,
+.price-card,
+.product-card,
+.arse-card,
+.tk-card,
+.tk-item,
+.qa,
+.res-card,
+.feed-card,
+.dl-card,
+.dlapp-card,
+.gh-card,
+.nx-card,
+.nx-feat,
+.nx-hl,
+.nx-hero,
+.nx-arch-layer,
+.plab-card,
+.rag-card,
+.ts-card,
+.testimonial-card,
+.lh-c,
+.lh-path,
+.lh-st,
+.stat,
+.auth-card,
+.step,
+.term-window,
+.code-block,
+.api-code-block,
+.api-endpoint,
+.api-tier,
+.metric-card,
+.msg,
+.msg.you,
+.msg.ai,
+.ai-chat,
+.dash-hero,
+.fb-box,
+.doc-faq details,
+.pos-item,
+.dl-osbtn,
+.os-ed,
+.lab-card,
+.doc-sec,
+.set-layout,
+.set-panel {
+  background: #ffffff !important;
+  background-image: none !important;
+  border-color: #cccccc !important;
+}
+
+/* Remove decorative pseudo-elements used for gradients, glows, grids */
+body::before,
+body::after,
+body.app .app-main::before,
+body.app .app-main::after,
+.app-main::before,
+.app-main::after,
+.hero-grid-bg,
+.hero-mesh,
+.hero-grain,
+.boot-grid,
+.boot-sweep,
+.boot-rain,
+.boot-ring,
+.boot-ring.r2,
+.cta-glow,
+.cta-mesh,
+.cta-grid-bg,
+.nx-section-glow,
+.qa::before,
+.qa::after,
+.stat::after,
+.stat::before,
+.feat-card::after,
+.rag-card::before,
+.nx-feat::before,
+.nx-hl::before,
+.nx-arch-connector,
+.lh-c::before,
+.metric-card::after,
+.price-card.featured::before,
+.side-item.active::before,
+.timeline-v::before,
+.tlv-num,
+#bootscreen::before,
+#bootscreen::after,
+.section.alt,
+.hero-visual .term-window::before {
+  display: none !important;
+  background: none !important;
+}
+
+/* Remove CRT scanline overlay */
+html.crt body::after {
+  display: none !important;
+}
+
+/* Remove fixed positioning (except running page headers/footers) */
+.sidebar,
+#topbar,
+.btt,
+.toast,
+.cmdk,
+.fb-modal,
+.tk-modal,
+.tour-overlay,
+#bootscreen,
+#xfer {
+  position: static !important;
+}
+
+/* Remove scroll behavior */
+html {
+  scroll-behavior: auto !important;
+}
+
+
+/* ================================================================
+   2. TYPOGRAPHY FOR PRINT
+   Serif body font for readability on paper, proper point sizes,
+   black text on white.
+   ================================================================ */
+
+body {
+  font-family: Georgia, "Times New Roman", Times, serif !important;
+  font-size: 12pt !important;
+  line-height: 1.5 !important;
+  color: #111111 !important;
+  background: #ffffff !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  -webkit-print-color-adjust: exact !important;
+  print-color-adjust: exact !important;
+  -webkit-font-smoothing: auto !important;
+  -moz-osx-font-smoothing: auto !important;
+}
+
+/* Heading hierarchy: scaled from 12pt body */
+h1,
+.hero-h1,
+.pg-h1,
+.nx-title,
+.auth-card h1 {
+  font-family: Georgia, "Times New Roman", Times, serif !important;
+  font-size: 24pt !important;
+  font-weight: bold !important;
+  line-height: 1.2 !important;
+  letter-spacing: normal !important;
+  color: #000000 !important;
+  background: none !important;
+  -webkit-background-clip: unset !important;
+  background-clip: unset !important;
+  -webkit-text-fill-color: #000000 !important;
+  margin: 0 0 8pt !important;
+  page-break-after: avoid;
+}
+
+h2,
+.sec-title,
+.pg-h2,
+.cta-band h2,
+.dlcli-h,
+.cta-final h2,
+.nx-h2 {
+  font-family: Georgia, "Times New Roman", Times, serif !important;
+  font-size: 18pt !important;
+  font-weight: bold !important;
+  line-height: 1.25 !important;
+  letter-spacing: normal !important;
+  color: #000000 !important;
+  background: none !important;
+  -webkit-background-clip: unset !important;
+  background-clip: unset !important;
+  -webkit-text-fill-color: #000000 !important;
+  margin: 16pt 0 8pt !important;
+  page-break-after: avoid;
+}
+
+h3,
+.pg-h3,
+.feat-card h3,
+.mod-t,
+.ed-head h3,
+.bento-card h3,
+.nx-hl h3,
+.nx-feat h4,
+.feature-text h3,
+.tlv-text h3,
+.set-panel-h,
+.fb-h,
+.rag-card-head h4 {
+  font-family: Georgia, "Times New Roman", Times, serif !important;
+  font-size: 14pt !important;
+  font-weight: bold !important;
+  line-height: 1.3 !important;
+  letter-spacing: normal !important;
+  color: #000000 !important;
+  background: none !important;
+  -webkit-background-clip: unset !important;
+  background-clip: unset !important;
+  -webkit-text-fill-color: #000000 !important;
+  margin: 10pt 0 6pt !important;
+  page-break-after: avoid;
+}
+
+h4,
+.lh-c h4,
+.nx-group h4,
+.foot-col h4,
+.price-tier,
+.api-tier h3 {
+  font-family: Georgia, "Times New Roman", Times, serif !important;
+  font-size: 12pt !important;
+  font-weight: bold !important;
+  line-height: 1.35 !important;
+  color: #000000 !important;
+  background: none !important;
+  -webkit-background-clip: unset !important;
+  background-clip: unset !important;
+  -webkit-text-fill-color: #000000 !important;
+  margin: 8pt 0 4pt !important;
+  page-break-after: avoid;
+}
+
+/* Body text: ensure black, readable */
+p,
+.hero-sub,
+.feat-card p,
+.mod-d,
+.step p,
+.bento-card p,
+.nx-sub,
+.nx-lead,
+.nx-hl p,
+.rag-card p,
+.ts-desc,
+.plab-desc,
+.product-card p,
+.testimonial-text,
+.dlapp-sub,
+.sec-sub,
+.cta-sub,
+.doc-legal,
+.doc-faq p,
+.lh-sec p,
+.res-desc,
+.feed-desc,
+.tk-card-desc,
+.tk-desc,
+.arse-card .ad,
+.faq-a-inner,
+.pg-sub {
+  font-size: 11pt !important;
+  line-height: 1.5 !important;
+  color: #333333 !important;
+}
+
+/* Muted/secondary text: slightly lighter but still readable */
+.muted,
+.loading,
+.mut,
+.dash-clock,
+.dash-tl-time,
+.foot-tagline,
+.foot-copy,
+.foot-note,
+.boot-tag,
+.boot-dim,
+.dlapp-note {
+  color: #555555 !important;
+}
+
+/* Gradient text: force solid black */
+.grad-text,
+.hm-n,
+.pg-h1,
+.stat-n,
+.nx-n,
+.metric-n,
+.metric-n-static,
+.trust-n,
+.trust-n-static,
+.app-foot-brand,
+.nx-logo,
+.boot-logo,
+#xfer .xgranted,
+.dash-qs-n {
+  background: none !important;
+  -webkit-background-clip: unset !important;
+  background-clip: unset !important;
+  -webkit-text-fill-color: #000000 !important;
+  color: #000000 !important;
+}
+
+/* Monospace elements */
+code,
+pre,
+.mono,
+.tw-body,
+.ed-cmd,
+.lh-code,
+.rag-code code,
+.api-code-block code,
+.nx-term-body,
+.pc-code,
+.dlapp-cmd code,
+.cs-cmd code,
+.di-code,
+.gh-q,
+.dl-cmd,
+.util-val,
+.tk-out,
+.cmd-block,
+.api-path,
+.nx-chip,
+.nx-arch-pill {
+  font-family: "Courier New", Courier, monospace !important;
+  font-size: 9pt !important;
+  color: #1a1a1a !important;
+}
+
+/* Inline code */
+code {
+  background: #f0f0f0 !important;
+  border: 1px solid #cccccc !important;
+  border-radius: 2pt !important;
+  padding: 0 3pt !important;
+  color: #1a1a1a !important;
+}
+
+/* Remove text-wrap properties that can cause issues in print */
+.hero-h1,
+.sec-title,
+.cta-band h2,
+.dlcli-h,
+.hero-sub,
+.dlapp-sub,
+.feat-card p {
+  text-wrap: auto !important;
+}
+
+
+/* ================================================================
+   3. PAGE SETUP
+   @page rules with margins, page breaks, orphans/widows.
+   ================================================================ */
+
+@page {
+  size: A4;
+  margin: 2cm 2cm 2.5cm 2cm;
+}
+
+@page :first {
+  margin-top: 2.5cm;
+}
+
+@page :left {
+  margin-left: 2.5cm;
+  margin-right: 1.8cm;
+}
+
+@page :right {
+  margin-left: 1.8cm;
+  margin-right: 2.5cm;
+}
+
+/* Orphans and widows: avoid isolated lines at page boundaries */
+p,
+li,
+td,
+.msg,
+.faq-a-inner,
+.doc-legal,
+.testimonial-text {
+  orphans: 3;
+  widows: 3;
+}
+
+/* Prevent page breaks inside key elements */
+.card,
+.panel,
+.set-card,
+.util-card,
+.cs-card,
+.feat-card,
+.mod-card,
+.ed-card,
+.bento-card,
+.price-card,
+.product-card,
+.arse-card,
+.tk-card,
+.tk-item,
+.qa,
+.res-card,
+.feed-card,
+.dl-card,
+.gh-card,
+.nx-card,
+.nx-feat,
+.nx-hl,
+.nx-arch-layer,
+.plab-card,
+.rag-card,
+.ts-card,
+.testimonial-card,
+.lh-c,
+.stat,
+.metric-card,
+.api-tier,
+.api-endpoint,
+.pos-item,
+.step,
+.tlv-step,
+.doc-faq details,
+.dl-osbtn,
+.os-ed,
+.lab-card,
+.msg,
+.ai-thumb,
+.code-block,
+.api-code-block,
+.lh-code,
+.rag-code,
+.lh-sec,
+.lh-qo,
+blockquote,
+pre,
+figure,
+img,
+table,
+.faq-item,
+.fb-row,
+.user-row,
+.wl-item,
+.ref-row,
+.gh-row,
+.doc-cl,
+.daily-item,
+.dash-tl-item,
+.dash-qs-item,
+.saved-row,
+.feed-row {
+  page-break-inside: avoid !important;
+  break-inside: avoid !important;
+}
+
+/* Force page breaks before major sections when printing long documents */
+.section,
+.cta-band,
+.cta-final {
+  page-break-before: auto;
+}
+
+/* Keep headings with their following content */
+h1, h2, h3, h4, h5, h6,
+.pg-h1, .pg-h2, .pg-h3,
+.sec-title, .sec-label,
+.hero-h1, .dlcli-h,
+.set-panel-h,
+.nx-h2,
+.feat-card h3, .mod-t, .ed-head h3,
+.bento-card h3 {
+  page-break-after: avoid !important;
+  break-after: avoid !important;
+}
+
+
+/* ================================================================
+   4. LINK HANDLING
+   Show URLs after links, abbreviate long URLs, style external
+   vs internal differently.
+   ================================================================ */
+
+/* All links: black text, underlined */
+a {
+  color: #111111 !important;
+  text-decoration: underline !important;
+}
+
+a::after {
+  display: none !important;
+}
+
+/* Show URL after external links in body content */
+#view a[href^="http"]:not([href*="darknode.ai"])::after,
+.doc-body a[href^="http"]::after,
+.app-main a[href^="http"]:not([href*="darknode.ai"])::after,
+.lh-tp a[href^="http"]::after,
+.faq-a-inner a[href^="http"]::after {
+  content: " [" attr(href) "]" !important;
+  display: inline !important;
+  font-size: 8pt !important;
+  font-family: "Courier New", Courier, monospace !important;
+  color: #666666 !important;
+  word-break: break-all !important;
+}
+
+/* Abbreviate very long URLs (via max-width on the ::after pseudo) */
+#view a[href^="http"]::after,
+.doc-body a[href^="http"]::after {
+  max-width: 300pt !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  vertical-align: bottom !important;
+}
+
+/* Internal links: show fragment only */
+a[href^="#"]::after {
+  content: "" !important;
+  display: none !important;
+}
+
+/* Navigation links: do not show URLs */
+.nav-link::after,
+.side-item::after,
+.foot-links a::after,
+.foot-col a::after,
+.crumb::after,
+.auth-links a::after,
+.brand::after,
+.app-foot-links a::after,
+.btn::after,
+.cmdk-item::after,
+.dlapp-card::after,
+.dl-osbtn::after,
+.product-link::after {
+  content: "" !important;
+  display: none !important;
+}
+
+/* Remove animated underlines from nav links */
+.nav-link::after,
+.foot-links a::after,
+.foot-col a::after {
+  background: none !important;
+  height: 0 !important;
+}
+
+/* Resource links: show URL in monospace */
+.res-link {
+  font-size: 8pt !important;
+  color: #555555 !important;
+}
+
+/* Arsenal card URLs */
+.arse-card .au {
+  font-size: 8pt !important;
+  color: #555555 !important;
+  overflow: visible !important;
+  white-space: normal !important;
+  word-break: break-all !important;
+}
+
+
+/* ================================================================
+   5. NAVIGATION REMOVAL
+   Hide nav, sidebar, footer, hamburger, back-to-top, modals,
+   boot screen, and all purely interactive chrome.
+   ================================================================ */
+
+/* Primary navigation and chrome */
+#topbar,
+.sidebar,
+.side-nav,
+.side-brand,
+.side-foot,
+.side-group,
+.side-item,
+.hamburger {
+  display: none !important;
+}
+
+/* Footers */
+.app-foot,
+.site-foot,
+.foot,
+.foot-grid,
+.foot-meta,
+.foot-bottom,
+.foot-inner {
+  display: none !important;
+}
+
+/* Back to top, overlays, modals */
+.btt,
+.toast,
+.tour-overlay,
+.tour-hole,
+.tour-callout {
+  display: none !important;
+}
+
+/* Modal dialogs */
+.cmdk,
+.cmdk-box,
+.fb-modal,
+.fb-box,
+.tk-modal,
+.tk-modal-box {
+  display: none !important;
+}
+
+/* Boot screen and access granted transition */
+#bootscreen,
+#xfer,
+.boot-inner,
+.boot-rain,
+.boot-grid,
+.boot-sweep,
+.boot-ring {
+  display: none !important;
+}
+
+/* Skip link */
+.skip-link {
+  display: none !important;
+}
+
+/* Banner/announcements */
+.banner,
+#announcement {
+  display: none !important;
+}
+
+/* Auth background grid */
+body:not(.landing):not(.app)::before {
+  display: none !important;
+}
+
+/* CRT overlay */
+html.crt body::after {
+  display: none !important;
+}
+
+/* Scroll reveal classes: force visible */
+.reveal,
+.reveal.in,
+.revealed,
+.sec-title,
+.bento-card,
+.feature-row,
+.tlv-step,
+.nx-card,
+.gh-card,
+.cta-final,
+.sec-label,
+.sec-sub,
+.pricing-note,
+.nx-details,
+.hero-trust,
+.price-card,
+.cmp-landing,
+.ts-card,
+.ts-tabs,
+.testimonial-card,
+.metric-card,
+.plab-card,
+.plab-note,
+.faq-item,
+.showcase-tabs,
+.showcase-window,
+.showcase-hint,
+.hero-built-with,
+.nx-arch,
+.nx-arch-layer,
+.nx-hl,
+.rag-card,
+.rag-tabs,
+.lh-c,
+.lh-sec,
+.dash-tl-item {
+  opacity: 1 !important;
+  transform: none !important;
+  visibility: visible !important;
+}
+
+
+/* ================================================================
+   6. TABLE PRINTING
+   Repeat headers, avoid page breaks inside rows, borders visible.
+   ================================================================ */
+
+table {
+  width: 100% !important;
+  border-collapse: collapse !important;
+  font-size: 9pt !important;
+  page-break-inside: auto !important;
+}
+
+thead {
+  display: table-header-group !important;
+}
+
+tfoot {
+  display: table-footer-group !important;
+}
+
+tr {
+  page-break-inside: avoid !important;
+  break-inside: avoid !important;
+}
+
+th {
+  font-size: 8pt !important;
+  font-weight: bold !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  color: #000000 !important;
+  background: #f0f0f0 !important;
+  border-bottom: 2pt solid #000000 !important;
+  padding: 6pt 8pt !important;
+  text-align: left !important;
+}
+
+td {
+  border-bottom: 0.5pt solid #cccccc !important;
+  padding: 5pt 8pt !important;
+  color: #333333 !important;
+  font-size: 9pt !important;
+  background: transparent !important;
+}
+
+/* Alternating row stripes for readability on paper */
+tbody tr:nth-child(even) td {
+  background: #f8f8f8 !important;
+}
+
+/* Ports table */
+.ports {
+  font-size: 9pt !important;
+}
+
+.ports th {
+  font-size: 8pt !important;
+  background: #f0f0f0 !important;
+  border-bottom: 2pt solid #000000 !important;
+}
+
+.ports td {
+  border-bottom: 0.5pt solid #cccccc !important;
+}
+
+.ports-card {
+  overflow: visible !important;
+  max-width: none !important;
+}
+
+/* Remove hover backgrounds */
+.ports tbody tr:hover,
+.cmp-landing tbody tr:hover td,
+.doc-table tr:hover td,
+tr:hover td {
+  background: transparent !important;
+}
+
+/* Documentation table */
+.doc-table {
+  font-size: 9pt !important;
+}
+
+.doc-table td:first-child {
+  font-weight: bold !important;
+}
+
+.doc-table code {
+  background: #f0f0f0 !important;
+  border: 0.5pt solid #cccccc !important;
+  font-size: 8pt !important;
+}
+
+/* Comparison table (landing) */
+.cmp-scroll {
+  overflow: visible !important;
+  border: none !important;
+  border-radius: 0 !important;
+}
+
+.cmp-landing {
+  min-width: 0 !important;
+  font-size: 9pt !important;
+}
+
+.cmp-landing thead th {
+  font-size: 8pt !important;
+  background: #f0f0f0 !important;
+}
+
+.cmp-landing thead th.cmp-dn-col {
+  background: #e8e8e8 !important;
+  border-bottom-color: #000000 !important;
+  color: #000000 !important;
+  font-weight: bold !important;
+}
+
+.cmp-landing td.cmp-dn {
+  background: #f5f5f5 !important;
+  font-weight: bold !important;
+  color: #000000 !important;
+}
+
+.cmp-check {
+  color: #1a7a42 !important;
+  font-weight: bold !important;
+}
+
+.cmp-x {
+  color: #999999 !important;
+}
+
+.cmp-highlight {
+  background: none !important;
+  -webkit-background-clip: unset !important;
+  background-clip: unset !important;
+  -webkit-text-fill-color: #000000 !important;
+  color: #000000 !important;
+  font-weight: bold !important;
+}
+
+/* Nexus comparison table */
+.cmp-table {
+  min-width: 0 !important;
+  font-size: 9pt !important;
+}
+
+.cmp-table thead th {
+  border-bottom: 2pt solid #000000 !important;
+  color: #000000 !important;
+}
+
+.cmp-table td.yes {
+  color: #1a7a42 !important;
+  font-weight: bold !important;
+}
+
+/* Sticky columns: unstick for print */
+.cmp-landing td:first-child,
+.cmp-landing thead th.cmp-feature-col {
+  position: static !important;
+}
+
+/* API dashboard tables */
+.api-ep-body {
+  border-top: 0.5pt solid #cccccc !important;
+}
+
+
+/* ================================================================
+   7. IMAGE HANDLING
+   Max-width, avoid page breaks inside figures, grayscale option.
+   ================================================================ */
+
+img {
+  max-width: 100% !important;
+  height: auto !important;
+  page-break-inside: avoid !important;
+  break-inside: avoid !important;
+}
+
+/* Brand images */
+.brand-mark,
+.brand-wordmark {
+  display: none !important;
+}
+
+/* Auth logo */
+.auth-logo img {
+  max-width: 48pt !important;
+  border-radius: 0 !important;
+}
+
+/* Message images in AI chat */
+.msg-img {
+  max-width: 200pt !important;
+  max-height: 160pt !important;
+  border: 0.5pt solid #cccccc !important;
+}
+
+/* AI thumbnails */
+.ai-thumb img {
+  height: auto !important;
+  max-width: 60pt !important;
+  border: 0.5pt solid #cccccc !important;
+}
+
+/* Remove thumbnail close buttons */
+.ai-thumb button {
+  display: none !important;
+}
+
+/* Figures */
+figure {
+  page-break-inside: avoid !important;
+  break-inside: avoid !important;
+  margin: 8pt 0 !important;
+}
+
+figcaption {
+  font-size: 9pt !important;
+  font-style: italic !important;
+  color: #555555 !important;
+  text-align: center !important;
+}
+
+/* OG images and decorative SVGs */
+.og-fallback,
+.favicon,
+[src$=".svg"]:not(.brand-mark):not(.brand-wordmark):not(.auth-logo img):not(.ico) {
+  max-width: 180pt !important;
+}
+
+/* Grayscale utility class: apply to containers when color is not meaningful */
+.print-grayscale img,
+.print-grayscale svg {
+  filter: grayscale(100%) !important;
+}
+
+/* Hero visual (terminal mockup) -- hide in print, it is decorative */
+.hero-visual {
+  display: none !important;
+}
+
+/* Term window decorative dots */
+.tw-bar,
+.tw-dot,
+.tw-title,
+.nx-term-bar,
+.nx-dot {
+  display: none !important;
+}
+
+/* Icons: hide decorative icons, keep informational ones */
+.feat-ico,
+.mod-ico,
+.bento-icon,
+.product-ico,
+.nx-hl-icon {
+  display: none !important;
+}
+
+.ico {
+  display: none !important;
+}
+
+/* Profile avatars: hide in print */
+.p-avatar,
+.p-initials,
+.gh-avatar {
+  display: none !important;
+}
+
+
+/* ================================================================
+   8. CODE BLOCK PRINTING
+   Preserve formatting, ensure contrast, visible borders.
+   ================================================================ */
+
+pre,
+.code-block,
+.api-code-block,
+.lh-code,
+.rag-code,
+.nx-term,
+.util-card .out,
+.util-val,
+.tk-out,
+.tw-body {
+  background: #f4f4f4 !important;
+  border: 1pt solid #cccccc !important;
+  border-radius: 0 !important;
+  padding: 8pt 10pt !important;
+  font-family: "Courier New", Courier, monospace !important;
+  font-size: 8pt !important;
+  line-height: 1.4 !important;
+  color: #1a1a1a !important;
+  white-space: pre-wrap !important;
+  word-break: break-word !important;
+  overflow: visible !important;
+  page-break-inside: avoid !important;
+  break-inside: avoid !important;
+  max-height: none !important;
+}
+
+/* Code inside code blocks */
+.code-block code,
+.api-code-block code,
+.lh-code code,
+.rag-code code,
+pre code {
+  font-family: "Courier New", Courier, monospace !important;
+  font-size: 8pt !important;
+  color: #1a1a1a !important;
+  background: none !important;
+  border: none !important;
+  padding: 0 !important;
+  display: block !important;
+}
+
+/* Terminal mockup body */
+.tw-body {
+  font-size: 8pt !important;
+  padding: 8pt 10pt !important;
+}
+
+/* Terminal line coloring: neutralize for print */
+.c-pl,
+.c-path,
+.c-ok,
+.c-acc,
+.c-mut,
+.c-bad,
+.nx-c,
+.nx-m,
+.nx-g,
+.nx-ok,
+.nx-y,
+.nx-b,
+.nx-w,
+.nx-prompt,
+.nx-rule {
+  color: #1a1a1a !important;
+}
+
+/* Command prompts: make them stand out */
+.c-pl,
+.nx-prompt {
+  font-weight: bold !important;
+}
+
+/* Copy buttons: hide in print */
+.cb-copy,
+.cs-copy,
+.dl-copy,
+.lh-cp,
+.api-code-copy {
+  display: none !important;
+}
+
+/* Code block headers */
+.api-code-header {
+  font-size: 7pt !important;
+  font-weight: bold !important;
+  border-bottom: 0.5pt solid #cccccc !important;
+  padding: 4pt 10pt !important;
+  color: #555555 !important;
+  background: #e8e8e8 !important;
+}
+
+/* Learn Hub code block header */
+.lh-code::before {
+  font-size: 7pt !important;
+  background: #e8e8e8 !important;
+  color: #555555 !important;
+  border-bottom: 0.5pt solid #cccccc !important;
+}
+
+/* Utility output blocks */
+.util-card .out {
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+/* Download commands */
+.dlapp-cmd code,
+.os-ed .dlapp-cmd code,
+.ed-cmd,
+.ed-steps code,
+.di-code {
+  background: #f4f4f4 !important;
+  border: 0.5pt solid #cccccc !important;
+  color: #1a1a1a !important;
+  font-size: 8pt !important;
+  padding: 4pt 6pt !important;
+  overflow: visible !important;
+  white-space: pre-wrap !important;
+  word-break: break-all !important;
+}
+
+/* Cheat sheet commands */
+.cs-cmd code {
+  background: #f4f4f4 !important;
+  border: 0.5pt solid #cccccc !important;
+  color: #1a1a1a !important;
+  font-size: 8pt !important;
+  overflow: visible !important;
+  white-space: pre-wrap !important;
+}
+
+/* Google Hacking DB queries */
+.gh-q {
+  background: #f4f4f4 !important;
+  border: 0.5pt solid #cccccc !important;
+  color: #1a1a1a !important;
+  font-size: 8pt !important;
+  overflow: visible !important;
+  white-space: pre-wrap !important;
+  word-break: break-all !important;
+}
+
+
+/* ================================================================
+   9. CARD LAYOUTS
+   Remove hover effects, borders visible, stack for print.
+   ================================================================ */
+
+/* Universal card styling for print */
+.card,
+.panel,
+.set-card,
+.util-card,
+.cs-card,
+.feat-card,
+.mod-card,
+.ed-card,
+.bento-card,
+.price-card,
+.product-card,
+.arse-card,
+.tk-card,
+.qa,
+.res-card,
+.feed-card,
+.dl-card,
+.gh-card,
+.nx-card,
+.nx-feat,
+.nx-hl,
+.plab-card,
+.rag-card,
+.ts-card,
+.testimonial-card,
+.lh-c,
+.lh-path,
+.stat,
+.metric-card,
+.api-tier,
+.api-endpoint,
+.lab-card,
+.dl-osbtn,
+.os-ed,
+.step {
+  background: #ffffff !important;
+  border: 0.5pt solid #999999 !important;
+  border-radius: 0 !important;
+  padding: 8pt 10pt !important;
+  margin-bottom: 8pt !important;
+  page-break-inside: avoid !important;
+  break-inside: avoid !important;
+}
+
+/* Remove all hover transforms */
+.card:hover,
+.panel:hover,
+.set-card:hover,
+.util-card:hover,
+.cs-card:hover,
+.feat-card:hover,
+.mod-card:hover,
+.ed-card:hover,
+.bento-card:hover,
+.price-card:hover,
+.product-card:hover,
+.arse-card:hover,
+.tk-card:hover,
+.qa:hover,
+.res-card:hover,
+.feed-card:hover,
+.dl-card:hover,
+.gh-card:hover,
+.nx-card:hover,
+.nx-feat:hover,
+.nx-hl:hover,
+.plab-card:hover,
+.rag-card:hover,
+.ts-card:hover,
+.testimonial-card:hover,
+.lh-c:hover,
+.stat:hover,
+.metric-card:hover,
+.api-tier:hover,
+.api-endpoint:hover,
+.dl-osbtn:hover,
+.lab-card:hover {
+  border-color: #999999 !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* Feature card grid: single column for print */
+.feat-grid,
+.mod-grid,
+.util-grid,
+.cs-grid,
+.res-grid,
+.feed-grid,
+.tk-grid,
+.qa-grid,
+.arse-grid,
+.dl-grid,
+.dl-btnrow,
+.dlapp-grid,
+.ed-grid,
+.os-editions,
+.bento,
+.ref-grid,
+.nx-grid,
+.lab-grid,
+.ts-grid,
+.metrics-grid,
+.nexus-grid,
+.lh-grid,
+.plab-grid,
+.rag-grid,
+.nx-highlights,
+.testimonial-grid,
+.pricing-grid,
+.product-grid {
+  display: block !important;
+  columns: auto !important;
+}
+
+.feat-grid > *,
+.mod-grid > *,
+.util-grid > *,
+.cs-grid > *,
+.res-grid > *,
+.feed-grid > *,
+.tk-grid > *,
+.qa-grid > *,
+.arse-grid > *,
+.dl-grid > *,
+.bento > *,
+.nx-grid > *,
+.ts-grid > *,
+.metrics-grid > *,
+.lh-grid > *,
+.plab-grid > *,
+.rag-grid > *,
+.nx-highlights > *,
+.testimonial-grid > *,
+.pricing-grid > *,
+.product-grid > * {
+  margin-bottom: 8pt !important;
+}
+
+/* Two-column layouts: collapse to single column */
+.home-cols,
+.adm-cols,
+.pc-wrap,
+.doc-wrap,
+.set-layout,
+.feature-row,
+.feature-row.reverse,
+.hero-inner,
+.tlv-body,
+.dash-extras {
+  display: block !important;
+  grid-template-columns: 1fr !important;
+}
+
+/* Stat row: flexbox to block */
+.stat-row {
+  display: block !important;
+}
+
+.stat-row .stat {
+  display: block !important;
+  margin-bottom: 8pt !important;
+  min-width: 0 !important;
+}
+
+/* Steps: stack vertically */
+.steps {
+  display: block !important;
+}
+
+.step {
+  margin-bottom: 10pt !important;
+}
+
+/* Step numbers */
+.step-n {
+  background: #111111 !important;
+  color: #ffffff !important;
+  border-radius: 50% !important;
+  width: 20pt !important;
+  height: 20pt !important;
+  font-size: 10pt !important;
+}
+
+/* Dashboard hero */
+.dash-hero {
+  border: 0.5pt solid #999999 !important;
+  padding: 10pt !important;
+}
+
+
+/* ================================================================
+   10. FORM PRINTING
+   Show input values, hide interactive elements.
+   ================================================================ */
+
+/* Hide interactive form elements */
+button:not(.faq-q),
+.btn,
+.btn.lg,
+.btn.sm,
+.btn.ghost,
+.btn.glow,
+.btn.danger,
+.btn.google,
+.btn.github,
+select,
+.seg,
+.seg button,
+.swatches,
+.swatch,
+.logo-picks,
+.logo-pick,
+.fb-type,
+.cmdk-btn,
+.icon-btn,
+.profile-btn,
+.menu,
+.dl-mark,
+.rx-use,
+.lh-done,
+.lh-qsub,
+.ai-controls,
+.ai-sel,
+.ai-key-row,
+.ai-input-row,
+.ai-presets,
+.ai-offline-cta,
+.hero-cta,
+.cta-form .btn,
+.cta-email,
+.hero-actions,
+.tk-btns,
+.util-btns,
+.dl-pick,
+.dl-tabs,
+.os-tabs,
+.set-btns,
+.wl-x,
+.saved-x,
+.chip-x,
+.tk-star,
+.nav-link,
+.auth-links,
+.auth-back {
+  display: none !important;
+}
+
+/* Show text inputs and textareas as bordered boxes with their values */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="url"],
+input[type="search"],
+input[type="number"],
+textarea,
+.ai-input,
+.ai-key-input,
+.tk-f,
+.tk-in,
+.tk-search,
+.lh-inp,
+.nexus-code-row input,
+.target-bar .tk-f {
+  display: block !important;
+  background: #f8f8f8 !important;
+  border: 0.5pt solid #999999 !important;
+  border-radius: 0 !important;
+  color: #111111 !important;
+  font-size: 9pt !important;
+  padding: 4pt 6pt !important;
+  min-height: auto !important;
+  height: auto !important;
+}
+
+/* Checkboxes and radios: show as-is */
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: #111111 !important;
+  width: 10pt !important;
+  height: 10pt !important;
+}
+
+/* API key inputs: mask */
+.api-key-input {
+  color: #111111 !important;
+}
+
+/* Settings rows: visible */
+.set-row {
+  border-bottom: 0.5pt solid #cccccc !important;
+  padding: 6pt 0 !important;
+}
+
+
+/* ================================================================
+   11. CHART / VISUALIZATION PRINTING
+   Ensure visibility without color, add patterns where possible.
+   ================================================================ */
+
+/* Progress bars: force visible with a fill indicator */
+.progress,
+.pw-meter,
+.api-meter,
+.lh-bar,
+.lh-path-progress {
+  background: #e0e0e0 !important;
+  border: 0.5pt solid #999999 !important;
+  height: 8pt !important;
+  border-radius: 0 !important;
+  overflow: visible !important;
+}
+
+.progress-bar,
+.pw-meter span,
+.api-meter > div,
+.lh-bar div,
+.lh-path-progress div {
+  background: #555555 !important;
+  border-radius: 0 !important;
+  height: 100% !important;
+}
+
+/* Learning hub progress ring */
+.lh-ring {
+  background: none !important;
+  border: 2pt solid #cccccc !important;
+  border-radius: 50% !important;
+}
+
+.lh-ring::after {
+  background: #ffffff !important;
+}
+
+.lh-ring span {
+  color: #111111 !important;
+  font-weight: bold !important;
+}
+
+/* Stat numbers: ensure high contrast */
+.stat-n {
+  color: #000000 !important;
+  font-size: 18pt !important;
+  font-weight: bold !important;
+  -webkit-text-fill-color: #000000 !important;
+}
+
+.stat-l,
+.stat-s {
+  color: #555555 !important;
+  font-size: 9pt !important;
+}
+
+/* Metric cards */
+.metric-n,
+.metric-n-static {
+  color: #000000 !important;
+  font-size: 18pt !important;
+  font-weight: bold !important;
+  -webkit-text-fill-color: #000000 !important;
+}
+
+.metric-l {
+  color: #555555 !important;
+  font-size: 8pt !important;
+}
+
+/* Trust numbers (landing) */
+.trust-n,
+.trust-n-static {
+  color: #000000 !important;
+  font-size: 16pt !important;
+  font-weight: bold !important;
+}
+
+.trust-l {
+  color: #555555 !important;
+  font-size: 8pt !important;
+}
+
+/* Hero metrics */
+.hm-n {
+  color: #000000 !important;
+  font-size: 14pt !important;
+  font-weight: bold !important;
+  -webkit-text-fill-color: #000000 !important;
+}
+
+.hm-l {
+  color: #555555 !important;
+  font-size: 8pt !important;
+}
+
+/* Dashboard quick stats */
+.dash-qs-n {
+  color: #000000 !important;
+  font-size: 16pt !important;
+  font-weight: bold !important;
+  -webkit-text-fill-color: #000000 !important;
+}
+
+/* Dot indicators: replace with solid squares */
+.plab-status,
+.badge-dot,
+.dot-live,
+.dash-status-dot,
+.foot-status-dot,
+.lab-status,
+.tool-dot {
+  background: #111111 !important;
+  box-shadow: none !important;
+  width: 6pt !important;
+  height: 6pt !important;
+  border-radius: 0 !important;
+}
+
+.lab-status.off {
+  background: #cccccc !important;
+}
+
+.tool-chip.installed .tool-dot {
+  background: #111111 !important;
+}
+
+
+/* ================================================================
+   12. REPORT PRINTING
+   Proper page headers/footers using @page rules.
+   Professional report formatting.
+   ================================================================ */
+
+/* Running page headers (use strings if supported) */
+@page {
+  @top-center {
+    content: "Darknode Report";
+    font-family: Georgia, serif;
+    font-size: 8pt;
+    color: #999999;
+  }
+  @bottom-center {
+    content: counter(page) " / " counter(pages);
+    font-family: Georgia, serif;
+    font-size: 8pt;
+    color: #999999;
+  }
+  @bottom-right {
+    content: "darknode.ai";
+    font-family: Georgia, serif;
+    font-size: 7pt;
+    color: #cccccc;
+  }
+}
+
+@page :first {
+  @top-center {
+    content: none;
+  }
+}
+
+/* Section separators: replace with horizontal rules for printed sections */
+.section {
+  border-top: 1pt solid #cccccc !important;
+  padding: 16pt 0 !important;
+  margin: 0 !important;
+  background: none !important;
+}
+
+.section.alt {
+  display: block !important;
+  background: none !important;
+  border-top: 1pt solid #cccccc !important;
+  border-bottom: none !important;
+}
+
+/* Document sections */
+.doc-sec {
+  border-bottom: 0.5pt solid #cccccc !important;
+  padding: 8pt 0 !important;
+  scroll-margin-top: 0 !important;
+}
+
+/* Changelog entries */
+.doc-cl {
+  border-bottom: 0.5pt solid #cccccc !important;
+}
+
+.doc-cl-v {
+  color: #000000 !important;
+  font-weight: bold !important;
+}
+
+
+/* ================================================================
+   13. CHEAT SHEET PRINTING
+   Two-column layout optimized for paper.
+   ================================================================ */
+
+/* Filter chips: hide (they are interactive) */
+.cs-filter {
+  display: none !important;
+}
+
+/* Cheat sheet grid: two columns for compact reference */
+.cs-grid {
+  display: block !important;
+  column-count: 2 !important;
+  column-gap: 14pt !important;
+  column-rule: 0.5pt solid #cccccc !important;
+}
+
+.cs-card {
+  break-inside: avoid !important;
+  page-break-inside: avoid !important;
+  margin-bottom: 8pt !important;
+  border: 0.5pt solid #999999 !important;
+  padding: 8pt !important;
+  display: inline-block !important;
+  width: 100% !important;
+}
+
+.cs-card.compact {
+  padding: 6pt !important;
+}
+
+/* Cheat sheet card header */
+.cs-head {
+  margin-bottom: 6pt !important;
+}
+
+.cs-head h3 {
+  font-size: 10pt !important;
+  margin: 0 0 4pt !important;
+}
+
+/* Cheat sheet command labels */
+.cs-label {
+  font-size: 8pt !important;
+  color: #555555 !important;
+}
+
+/* Copy buttons: hidden (already done above) */
+.cs-copy {
+  display: none !important;
+}
+
+/* Cheat sheet commands: inline */
+.cs-cmd {
+  display: block !important;
+}
+
+
+/* ================================================================
+   14. TOOL CATALOG PRINTING
+   Compact list format for the toolkit.
+   ================================================================ */
+
+/* Search bar: hide */
+.tk-search {
+  display: none !important;
+}
+
+/* Tool grid: compact list */
+.tk-grid {
+  display: block !important;
+  column-count: 2 !important;
+  column-gap: 14pt !important;
+}
+
+.tk-card {
+  display: block !important;
+  break-inside: avoid !important;
+  page-break-inside: avoid !important;
+  cursor: default !important;
+  margin-bottom: 6pt !important;
+  padding: 6pt 8pt !important;
+}
+
+.tk-card-name {
+  font-weight: bold !important;
+  font-size: 9pt !important;
+}
+
+.tk-card-desc {
+  font-size: 8pt !important;
+  color: #555555 !important;
+}
+
+/* Tool badges */
+.tk-badge {
+  font-size: 7pt !important;
+  background: transparent !important;
+  color: #555555 !important;
+  border: 0.5pt solid #cccccc !important;
+  position: static !important;
+  display: inline !important;
+  margin-left: 4pt !important;
+}
+
+/* Accordion items: show all expanded */
+.tk-item {
+  border: 0.5pt solid #cccccc !important;
+  margin-bottom: 6pt !important;
+}
+
+.tk-head {
+  cursor: default !important;
+  padding: 6pt 8pt !important;
+}
+
+.tk-tri {
+  display: none !important;
+}
+
+.tk-panel {
+  display: block !important;
+  border-top: 0.5pt solid #cccccc !important;
+  padding: 6pt 8pt !important;
+}
+
+.tk-panel[hidden] {
+  display: block !important;
+}
+
+.tk-name {
+  font-size: 9pt !important;
+  font-weight: bold !important;
+}
+
+.tk-desc {
+  font-size: 8pt !important;
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+}
+
+/* Tool modal: hide */
+.tk-modal {
+  display: none !important;
+}
+
+/* Tool catalog categories */
+.tk-cat {
+  break-inside: avoid !important;
+  page-break-inside: avoid !important;
+  margin-bottom: 10pt !important;
+}
+
+.tk-cat-h {
+  font-size: 9pt !important;
+  font-weight: bold !important;
+  color: #000000 !important;
+  border-bottom: 1pt solid #000000 !important;
+  padding-bottom: 4pt !important;
+  margin-bottom: 6pt !important;
+}
+
+.tk-cat-n {
+  font-size: 8pt !important;
+  color: #555555 !important;
+}
+
+/* Tool output blocks */
+.tk-out {
+  background: #f4f4f4 !important;
+  border: 0.5pt solid #cccccc !important;
+  color: #1a1a1a !important;
+  font-size: 8pt !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+
+/* ================================================================
+   15. CVE REPORT PRINTING
+   Formatted vulnerability details with severity indicators.
+   ================================================================ */
+
+/* Severity badges: use text patterns instead of color */
+.sev {
+  font-size: 8pt !important;
+  font-weight: bold !important;
+  border: 1pt solid #000000 !important;
+  border-radius: 0 !important;
+  padding: 1pt 5pt !important;
+  background: transparent !important;
+  color: #000000 !important;
+  display: inline !important;
+}
+
+.sev.critical {
+  background: #000000 !important;
+  color: #ffffff !important;
+  border-color: #000000 !important;
+}
+
+.sev.high {
+  background: #e0e0e0 !important;
+  color: #000000 !important;
+  border-color: #000000 !important;
+}
+
+.sev.medium {
+  background: #f0f0f0 !important;
+  color: #000000 !important;
+  border-color: #666666 !important;
+}
+
+.sev.low {
+  background: transparent !important;
+  color: #555555 !important;
+  border-color: #999999 !important;
+}
+
+/* Threat feed cards: structured for reports */
+.feed-card {
+  border: 0.5pt solid #999999 !important;
+  padding: 8pt 10pt !important;
+  margin-bottom: 8pt !important;
+}
+
+.feed-top {
+  margin-bottom: 4pt !important;
+}
+
+.feed-id {
+  font-size: 8pt !important;
+  color: #555555 !important;
+  font-family: "Courier New", monospace !important;
+}
+
+.feed-name {
+  font-size: 10pt !important;
+  font-weight: bold !important;
+  color: #000000 !important;
+}
+
+.feed-desc {
+  font-size: 9pt !important;
+  color: #333333 !important;
+}
+
+.feed-meta {
+  font-size: 8pt !important;
+  color: #555555 !important;
+  border-top: 0.5pt solid #cccccc !important;
+  padding-top: 4pt !important;
+  margin-top: 4pt !important;
+}
+
+/* Feed list (row format) */
+.feed-list {
+  border: 0.5pt solid #cccccc !important;
+}
+
+.feed-row {
+  border-bottom: 0.5pt solid #cccccc !important;
+  padding: 4pt 6pt !important;
+}
+
+.feed-row:last-child {
+  border-bottom: none !important;
+}
+
+.fr-id {
+  font-family: "Courier New", monospace !important;
+  font-size: 8pt !important;
+}
+
+.fr-name {
+  font-size: 9pt !important;
+}
+
+.fr-tag {
+  display: inline !important;
+  font-size: 8pt !important;
+  overflow: visible !important;
+  white-space: normal !important;
+}
+
+/* Chips for tags */
+.chip {
+  font-size: 8pt !important;
+  font-weight: bold !important;
+  background: transparent !important;
+  border: 0.5pt solid #999999 !important;
+  border-radius: 0 !important;
+  padding: 1pt 4pt !important;
+  color: #333333 !important;
+}
+
+/* Owner badge */
+.owner-badge {
+  background: #111111 !important;
+  color: #ffffff !important;
+  font-size: 7pt !important;
+  border-radius: 0 !important;
+}
+
+
+/* ================================================================
+   16. PENTEST REPORT PRINTING
+   Professional layout with cover page, findings, recommendations.
+   ================================================================ */
+
+/* Cover page: use the hero section as the report cover */
+body.landing .hero {
+  min-height: auto !important;
+  padding: 60pt 0 40pt !important;
+  border-bottom: 2pt solid #000000 !important;
+  text-align: center !important;
+  page-break-after: always !important;
+}
+
+/* Section headings in reports: clear visual hierarchy */
+.section {
+  page-break-before: auto !important;
+}
+
+/* Eyebrow labels */
+.eyebrow,
+.sec-label {
+  font-size: 8pt !important;
+  font-weight: bold !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.15em !important;
+  color: #555555 !important;
+  background: none !important;
+}
+
+/* Nexus badge */
+.nx-badge {
+  background: transparent !important;
+  border: 0.5pt solid #999999 !important;
+  color: #555555 !important;
+  font-size: 7pt !important;
+}
+
+.nx-badge::before {
+  display: none !important;
+}
+
+/* Security posture section */
+.posture .pct {
+  color: #000000 !important;
+  font-weight: bold !important;
+}
+
+.pos-list {
+  border: 0.5pt solid #cccccc !important;
+}
+
+.pos-item {
+  border-bottom: 0.5pt solid #cccccc !important;
+  padding: 4pt 6pt !important;
+}
+
+.pos-item:last-child {
+  border-bottom: none !important;
+}
+
+.pos-text strong {
+  font-size: 10pt !important;
+  color: #000000 !important;
+}
+
+/* Timeline steps (report methodology) */
+.timeline-v {
+  padding-left: 0 !important;
+}
+
+.timeline-v::before {
+  display: none !important;
+}
+
+.tlv-num {
+  display: inline-flex !important;
+  background: #000000 !important;
+  color: #ffffff !important;
+  width: 18pt !important;
+  height: 18pt !important;
+  font-size: 9pt !important;
+  border-radius: 50% !important;
+  margin-right: 6pt !important;
+  position: static !important;
+  transform: none !important;
+}
+
+.tlv-body {
+  display: block !important;
+  padding-left: 0 !important;
+}
+
+.tlv-step:nth-child(odd) .tlv-text,
+.tlv-step:nth-child(even) .tlv-text {
+  text-align: left !important;
+  padding: 0 !important;
+}
+
+.tlv-step:nth-child(odd) .tlv-visual,
+.tlv-step:nth-child(even) .tlv-visual {
+  padding: 0 !important;
+  order: unset !important;
+}
+
+.tlv-text code {
+  background: #f0f0f0 !important;
+  border: 0.5pt solid #cccccc !important;
+  color: #1a1a1a !important;
+}
+
+/* FAQ items: show expanded */
+.faq-item {
+  border-bottom: 0.5pt solid #cccccc !important;
+  padding-bottom: 8pt !important;
+}
+
+.faq-q {
+  cursor: default !important;
+  font-size: 11pt !important;
+  font-weight: bold !important;
+  color: #000000 !important;
+  padding: 8pt 0 !important;
+}
+
+.faq-toggle {
+  display: none !important;
+}
+
+.faq-a {
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+.faq-a-inner {
+  padding: 0 0 8pt !important;
+  color: #333333 !important;
+  font-size: 10pt !important;
+}
+
+
+/* ================================================================
+   17. APP SHELL LAYOUT FOR PRINT
+   Remove sidebar, expand main content to full width.
+   ================================================================ */
+
+/* App shell: linearize */
+.app-shell {
+  display: block !important;
+  min-height: auto !important;
+  width: 100% !important;
+}
+
+.app-main {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  min-width: 0 !important;
+}
+
+/* View container */
+#view {
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Wrap container */
+.wrap {
+  max-width: 100% !important;
+  padding: 0 !important;
+}
+
+/* Auth card: center */
+.auth-card {
+  max-width: 100% !important;
+  margin: 0 !important;
+  box-shadow: none !important;
+  border: 0.5pt solid #cccccc !important;
+}
+
+
+/* ================================================================
+   18. AI ASSISTANT PRINTING
+   Print conversation history in a readable format.
+   ================================================================ */
+
+/* AI wrapper: fill available space */
+.ai-wrap {
+  height: auto !important;
+  min-height: auto !important;
+  max-width: 100% !important;
+}
+
+.ai-header {
+  margin-bottom: 8pt !important;
+}
+
+.ai-title {
+  font-size: 14pt !important;
+  color: #000000 !important;
+}
+
+.ai-status {
+  display: none !important;
+}
+
+/* Chat area: remove scroll constraints */
+.ai-chat {
+  flex: none !important;
+  overflow: visible !important;
+  height: auto !important;
+  max-height: none !important;
+  border: none !important;
+  padding: 0 !important;
+}
+
+/* Messages: clear user vs AI distinction */
+.msg {
+  max-width: 100% !important;
+  border: 0.5pt solid #cccccc !important;
+  padding: 6pt 8pt !important;
+  margin-bottom: 6pt !important;
+  border-radius: 0 !important;
+  font-size: 10pt !important;
+  page-break-inside: avoid !important;
+}
+
+.msg.you {
+  border-left: 3pt solid #000000 !important;
+  background: #f8f8f8 !important;
+  align-self: stretch !important;
+}
+
+.msg.ai {
+  border-left: 3pt solid #999999 !important;
+  background: #ffffff !important;
+  align-self: stretch !important;
+}
+
+/* Add labels before messages */
+.msg.you::before {
+  content: "USER: " !important;
+  font-weight: bold !important;
+  font-size: 8pt !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.08em !important;
+  display: block !important;
+  margin-bottom: 3pt !important;
+  color: #555555 !important;
+}
+
+.msg.ai::before {
+  content: "AI: " !important;
+  font-weight: bold !important;
+  font-size: 8pt !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.08em !important;
+  display: block !important;
+  margin-bottom: 3pt !important;
+  color: #555555 !important;
+}
+
+/* Code blocks inside messages */
+.msg.ai .code-block {
+  background: #f4f4f4 !important;
+  border: 0.5pt solid #cccccc !important;
+  margin: 4pt 0 !important;
+}
+
+.msg.ai .code-block code {
+  font-size: 8pt !important;
+  color: #1a1a1a !important;
+}
+
+/* Hide AI offline message */
+.ai-offline {
+  display: none !important;
+}
+
+/* Hide empty state */
+.ai-empty {
+  display: none !important;
+}
+
+
+/* ================================================================
+   19. DOWNLOAD PAGES
+   Clear presentation of download options.
+   ================================================================ */
+
+/* Download builds */
+.dl-builds {
+  display: block !important;
+}
+
+.dl-bgroup {
+  margin-bottom: 10pt !important;
+}
+
+.dl-bh {
+  font-size: 9pt !important;
+  font-weight: bold !important;
+  color: #000000 !important;
+  text-transform: uppercase !important;
+}
+
+.dl-btnrow {
+  display: block !important;
+}
+
+.dl-osbtn {
+  display: block !important;
+  margin-bottom: 4pt !important;
+  padding: 4pt 8pt !important;
+}
+
+.dl-osbtn .dl-os {
+  font-weight: bold !important;
+  font-size: 10pt !important;
+  color: #000000 !important;
+}
+
+.dl-osbtn .dl-fmt {
+  font-size: 8pt !important;
+  color: #555555 !important;
+}
+
+/* OS edition cards */
+.os-editions {
+  display: block !important;
+}
+
+.os-ed {
+  margin-bottom: 8pt !important;
+}
+
+.os-ed-full {
+  border-color: #999999 !important;
+}
+
+.os-ed-h b {
+  color: #000000 !important;
+}
+
+.os-ed-tag {
+  background: #111111 !important;
+  color: #ffffff !important;
+  font-size: 7pt !important;
+}
+
+.os-ed-sz {
+  font-size: 8pt !important;
+}
+
+.os-ed-d {
+  font-size: 9pt !important;
+}
+
+/* Download cards */
+.dl-card {
+  border: 0.5pt solid #999999 !important;
+  margin-bottom: 4pt !important;
+}
+
+.dl-name {
+  font-size: 10pt !important;
+  font-weight: bold !important;
+}
+
+.dl-desc {
+  font-size: 8pt !important;
+}
+
+.dl-cmd-row {
+  margin-top: 4pt !important;
+}
+
+.dl-cmd {
+  background: #f4f4f4 !important;
+  border: 0.5pt solid #cccccc !important;
+  color: #1a1a1a !important;
+  font-size: 8pt !important;
+  white-space: pre-wrap !important;
+}
+
+/* Installed indicator */
+.dl-card.installed {
+  opacity: 1 !important;
+}
+
+.dl-check {
+  background: transparent !important;
+  color: #1a7a42 !important;
+  border: 0.5pt solid #1a7a42 !important;
+  font-size: 7pt !important;
+}
+
+
+/* ================================================================
+   20. PRICING PRINTING
+   Clean table-like format for pricing tiers.
+   ================================================================ */
+
+/* Pricing grid: single column with clear borders */
+.pricing-grid {
+  display: block !important;
+  max-width: 100% !important;
+}
+
+.price-card {
+  margin-bottom: 12pt !important;
+  padding: 12pt !important;
+  border: 1pt solid #999999 !important;
+  page-break-inside: avoid !important;
+}
+
+.price-card.featured {
+  border: 2pt solid #000000 !important;
+}
+
+.price-badge {
+  position: static !important;
+  display: inline-block !important;
+  transform: none !important;
+  background: #000000 !important;
+  color: #ffffff !important;
+  font-size: 8pt !important;
+  border-radius: 0 !important;
+  margin-bottom: 6pt !important;
+}
+
+.price-tier {
+  font-size: 14pt !important;
+  color: #000000 !important;
+}
+
+.price-amount {
+  font-size: 20pt !important;
+  color: #000000 !important;
+  -webkit-text-fill-color: #000000 !important;
+}
+
+.price-amount .price-period {
+  font-size: 10pt !important;
+  color: #555555 !important;
+}
+
+.price-desc {
+  font-size: 9pt !important;
+  color: #555555 !important;
+}
+
+.price-features {
+  list-style: none !important;
+  padding: 0 !important;
+}
+
+.price-features li {
+  padding: 3pt 0 !important;
+  font-size: 9pt !important;
+  border-bottom: 0.5pt solid #e0e0e0 !important;
+  color: #333333 !important;
+}
+
+.price-features li::before {
+  color: #1a7a42 !important;
+}
+
+.price-features li:first-child::before {
+  content: "" !important;
+}
+
+.price-features li.feat-section {
+  color: #000000 !important;
+  font-weight: bold !important;
+  border-bottom: none !important;
+}
+
+.price-features li.feat-section::before {
+  content: "" !important;
+}
+
+.pricing-note {
+  font-size: 9pt !important;
+  color: #555555 !important;
+}
+
+/* API tiers */
+.api-tiers {
+  display: block !important;
+}
+
+.api-tier {
+  margin-bottom: 10pt !important;
+  text-align: left !important;
+}
+
+.api-tier-highlight {
+  border: 2pt solid #000000 !important;
+}
+
+.api-tier-price {
+  color: #000000 !important;
+  font-size: 14pt !important;
+}
+
+.api-tier-calls {
+  font-size: 9pt !important;
+}
+
+.api-tier li {
+  font-size: 9pt !important;
+}
+
+.api-tier li::before {
+  background: #111111 !important;
+}
+
+
+/* ================================================================
+   21. TESTIMONIALS
+   Clean quote format for printing.
+   ================================================================ */
+
+.testimonial-grid {
+  display: block !important;
+}
+
+.testimonial-card {
+  border: 0.5pt solid #cccccc !important;
+  padding: 10pt 12pt !important;
+  margin-bottom: 10pt !important;
+}
+
+.testimonial-quote {
+  font-size: 20pt !important;
+  color: #cccccc !important;
+  position: static !important;
+  display: block !important;
+  margin-bottom: -10pt !important;
+}
+
+.testimonial-text {
+  font-style: italic !important;
+  font-size: 10pt !important;
+  color: #333333 !important;
+}
+
+.testimonial-author {
+  border-top: 0.5pt solid #cccccc !important;
+  padding-top: 4pt !important;
+  margin-top: 6pt !important;
+}
+
+.testimonial-role {
+  font-weight: bold !important;
+  font-size: 9pt !important;
+  color: #000000 !important;
+}
+
+.testimonial-org {
+  font-size: 8pt !important;
+  color: #555555 !important;
+}
+
+
+/* ================================================================
+   22. DOCUMENTATION HUB
+   Full-width, readable documentation layout.
+   ================================================================ */
+
+.doc-wrap {
+  display: block !important;
+  grid-template-columns: 1fr !important;
+}
+
+/* Table of contents: print as a compact list at the top */
+.doc-toc {
+  position: static !important;
+  border-right: none !important;
+  border-bottom: 1pt solid #cccccc !important;
+  padding: 0 0 8pt !important;
+  margin-bottom: 12pt !important;
+}
+
+.doc-toc-h {
+  font-size: 9pt !important;
+  font-weight: bold !important;
+  color: #000000 !important;
+}
+
+.doc-toc-l {
+  display: inline !important;
+  font-size: 9pt !important;
+  color: #333333 !important;
+  text-decoration: none !important;
+  border-left: none !important;
+  padding: 0 !important;
+  margin-right: 8pt !important;
+}
+
+.doc-toc-l::after {
+  content: " | " !important;
+  color: #cccccc !important;
+}
+
+.doc-toc-l:last-child::after {
+  content: "" !important;
+}
+
+/* Document body */
+.doc-body {
+  min-width: 0 !important;
+  width: 100% !important;
+}
+
+/* Document lists */
+.doc-ol,
+.doc-ul {
+  font-size: 10pt !important;
+  color: #333333 !important;
+}
+
+.doc-ol code,
+.doc-ul code,
+.doc-faq code {
+  background: #f0f0f0 !important;
+  border: 0.5pt solid #cccccc !important;
+  color: #1a1a1a !important;
+  font-size: 8pt !important;
+}
+
+/* FAQ details: force open */
+.doc-faq details {
+  border: 0.5pt solid #cccccc !important;
+}
+
+.doc-faq details[open] summary {
+  color: #000000 !important;
+}
+
+.doc-faq summary {
+  font-size: 10pt !important;
+  cursor: default !important;
+}
+
+
+/* ================================================================
+   23. LEARN HUB
+   Educational content optimized for paper review.
+   ================================================================ */
+
+/* Search and filters: hide */
+.lh-inp,
+.lh-chips {
+  display: none !important;
+}
+
+/* Stats */
+.lh-stats {
+  display: block !important;
+}
+
+.lh-st {
+  display: inline-block !important;
+  margin-right: 12pt !important;
+  margin-bottom: 8pt !important;
+  border: 0.5pt solid #cccccc !important;
+  padding: 6pt 10pt !important;
+}
+
+.lh-st h3 {
+  font-size: 8pt !important;
+  color: #555555 !important;
+}
+
+.lh-st .v {
+  font-size: 12pt !important;
+  font-weight: bold !important;
+  color: #000000 !important;
+}
+
+/* Topic grid */
+.lh-grid {
+  display: block !important;
+  column-count: 2 !important;
+  column-gap: 12pt !important;
+}
+
+.lh-c {
+  break-inside: avoid !important;
+  margin-bottom: 8pt !important;
+  cursor: default !important;
+  display: inline-block !important;
+  width: 100% !important;
+  border: 0.5pt solid #cccccc !important;
+}
+
+.lh-c::before {
+  display: none !important;
+}
+
+.lh-c h4 {
+  font-size: 10pt !important;
+  color: #000000 !important;
+}
+
+.lh-c .cat {
+  font-size: 8pt !important;
+  color: #555555 !important;
+}
+
+.lh-c .intro {
+  font-size: 8pt !important;
+  color: #555555 !important;
+  -webkit-line-clamp: unset !important;
+  overflow: visible !important;
+}
+
+/* Difficulty badges */
+.lh-df {
+  font-size: 8pt !important;
+  color: #333333 !important;
+  background: transparent !important;
+  border: 0.5pt solid #cccccc !important;
+  border-radius: 0 !important;
+}
+
+/* Learn hub rank badges */
+.lh-rank {
+  border: 0.5pt solid #999999 !important;
+  background: transparent !important;
+  color: #333333 !important;
+  font-size: 8pt !important;
+}
+
+/* Topic page */
+.lh-tp {
+  max-width: 100% !important;
+}
+
+.lh-bk {
+  display: none !important;
+}
+
+/* Section boxes */
+.lh-sec {
+  border: 0.5pt solid #cccccc !important;
+  padding: 8pt 10pt !important;
+  margin-bottom: 8pt !important;
+  border-left-width: 3pt !important;
+}
+
+.lh-sec.tip {
+  border-left-color: #1a7a42 !important;
+}
+
+.lh-sec.warning {
+  border-left-color: #b91c1c !important;
+}
+
+.lh-sec.task {
+  border-left-color: #111111 !important;
+}
+
+.lh-sec.tip::before,
+.lh-sec.warning::before {
+  color: #000000 !important;
+  font-size: 9pt !important;
+}
+
+/* "In the wild" box */
+.lh-wild {
+  border: 0.5pt solid #cccccc !important;
+  background: transparent !important;
+  padding: 8pt 10pt !important;
+}
+
+.lh-wild::before {
+  color: #000000 !important;
+}
+
+/* Quiz options: show answers */
+.lh-qo {
+  border: 0.5pt solid #cccccc !important;
+  padding: 6pt !important;
+}
+
+.lh-qo button {
+  font-size: 9pt !important;
+  border: 0.5pt solid #cccccc !important;
+  padding: 4pt 8pt !important;
+  cursor: default !important;
+}
+
+.lh-qo .ok {
+  border-color: #1a7a42 !important;
+  color: #1a7a42 !important;
+  background: transparent !important;
+  text-decoration: none !important;
+}
+
+.lh-qo .no {
+  color: #999999 !important;
+  background: transparent !important;
+}
+
+/* Learning paths */
+.lh-path {
+  cursor: default !important;
+  border: 0.5pt solid #cccccc !important;
+  margin-bottom: 8pt !important;
+}
+
+/* Completion checkmark */
+.lh-ck {
+  font-size: 10pt !important;
+}
+
+
+/* ================================================================
+   24. NEXUS SHOWCASE
+   Print the Nexus AI engine showcase clearly.
+   ================================================================ */
+
+.nx-hero {
+  border: 1pt solid #999999 !important;
+  padding: 12pt !important;
+  margin-bottom: 12pt !important;
+}
+
+.nx-hero::after {
+  display: none !important;
+}
+
+.nx-title {
+  -webkit-text-fill-color: #000000 !important;
+}
+
+.nx-sub {
+  max-width: 100% !important;
+}
+
+.nx-cta {
+  display: none !important;
+}
+
+/* Terminal mockup: show content only */
+.nx-term {
+  border: 0.5pt solid #cccccc !important;
+  overflow: visible !important;
+}
+
+.nx-term-body {
+  padding: 8pt 10pt !important;
+  overflow: visible !important;
+  font-size: 8pt !important;
+}
+
+/* Feature grid */
+.nx-grid {
+  display: block !important;
+  column-count: 2 !important;
+  column-gap: 12pt !important;
+}
+
+.nx-feat {
+  break-inside: avoid !important;
+  margin-bottom: 8pt !important;
+  display: inline-block !important;
+  width: 100% !important;
+}
+
+.nx-feat::before {
+  display: none !important;
+}
+
+.nx-feat h4 {
+  padding-right: 0 !important;
+}
+
+.nx-feat h4 code {
+  background: #f0f0f0 !important;
+  border: 0.5pt solid #cccccc !important;
+  color: #1a1a1a !important;
+}
+
+.nx-tag {
+  position: static !important;
+  display: inline !important;
+  border: 0.5pt solid #cccccc !important;
+  color: #555555 !important;
+  font-size: 7pt !important;
+}
+
+/* Command chips */
+.nx-chips {
+  display: block !important;
+}
+
+.nx-chip {
+  display: inline !important;
+  background: #f4f4f4 !important;
+  border: 0.5pt solid #cccccc !important;
+  font-size: 8pt !important;
+  margin-right: 4pt !important;
+  color: #1a1a1a !important;
+}
+
+.nx-chip b {
+  color: #000000 !important;
+}
+
+/* Architecture diagram */
+.nx-arch {
+  margin-bottom: 12pt !important;
+}
+
+.nx-arch-layer {
+  border: 0.5pt solid #999999 !important;
+  margin-bottom: 4pt !important;
+  padding: 6pt 8pt !important;
+}
+
+.nx-arch-l1 { border-left: 3pt solid #000000 !important; }
+.nx-arch-l2 { border-left: 3pt solid #555555 !important; }
+.nx-arch-l3 { border-left: 3pt solid #777777 !important; }
+.nx-arch-l4 { border-left: 3pt solid #999999 !important; }
+.nx-arch-l5 { border-left: none !important; }
+
+.nx-arch-label {
+  font-weight: bold !important;
+  font-size: 9pt !important;
+}
+
+.nx-arch-tag {
+  font-size: 7pt !important;
+  color: #555555 !important;
+}
+
+.nx-arch-pills {
+  display: inline !important;
+}
+
+.nx-arch-pill {
+  display: inline !important;
+  font-size: 8pt !important;
+  background: #f4f4f4 !important;
+  border: 0.5pt solid #cccccc !important;
+  padding: 1pt 4pt !important;
+  margin-right: 3pt !important;
+}
+
+.nx-arch-connector {
+  display: none !important;
+}
+
+.nx-arch-footer-band {
+  font-size: 8pt !important;
+  color: #555555 !important;
+}
+
+/* Nexus highlights */
+.nx-highlights {
+  display: block !important;
+}
+
+.nx-hl {
+  margin-bottom: 8pt !important;
+}
+
+
+/* ================================================================
+   25. LANDING PAGE SPECIFIC
+   Clean up landing-specific sections for print.
+   ================================================================ */
+
+/* Landing body: remove special padding */
+body.landing #view {
+  max-width: 100% !important;
+  padding: 0 !important;
+}
+
+/* Marquee: convert to static list */
+.marquee-wrap {
+  padding: 8pt 0 !important;
+  border-top: 0.5pt solid #cccccc !important;
+  overflow: visible !important;
+}
+
+.marquee-label {
+  font-size: 8pt !important;
+  font-weight: bold !important;
+  color: #555555 !important;
+  padding-left: 0 !important;
+}
+
+.marquee {
+  display: inline !important;
+}
+
+.mchip {
+  display: inline !important;
+  font-size: 8pt !important;
+  border: none !important;
+  background: none !important;
+  color: #333333 !important;
+  padding: 0 !important;
+}
+
+.mchip::after {
+  content: " | " !important;
+  color: #cccccc !important;
+}
+
+.mchip:last-child::after {
+  content: "" !important;
+}
+
+/* CTA band */
+.cta-band {
+  border-top: 1pt solid #cccccc !important;
+  border-bottom: 1pt solid #cccccc !important;
+  background: none !important;
+  padding: 16pt 0 !important;
+}
+
+.cta-band-inner {
+  display: block !important;
+}
+
+/* Final CTA section */
+.cta-final {
+  padding: 20pt 0 !important;
+  border-top: 1pt solid #cccccc !important;
+}
+
+.cta-divider {
+  display: none !important;
+}
+
+.cta-notify {
+  display: none !important;
+}
+
+.cta-reassure {
+  display: none !important;
+}
+
+/* Hero rotate text: show static */
+.hero-rotate-wrap {
+  overflow: visible !important;
+}
+
+.hero-rotate {
+  color: #000000 !important;
+}
+
+/* Hero badge */
+.hero-badge {
+  border: 0.5pt solid #cccccc !important;
+  background: transparent !important;
+  font-size: 8pt !important;
+  backdrop-filter: none !important;
+}
+
+/* Built-with pills */
+.hero-built-with {
+  display: block !important;
+  margin-top: 8pt !important;
+}
+
+.built-label {
+  font-size: 8pt !important;
+  color: #555555 !important;
+}
+
+.built-pills {
+  display: inline !important;
+}
+
+.built-pill {
+  display: inline !important;
+  font-size: 8pt !important;
+  border: none !important;
+  background: none !important;
+  color: #333333 !important;
+  padding: 0 !important;
+  backdrop-filter: none !important;
+}
+
+.built-pill::after {
+  content: " | " !important;
+  color: #cccccc !important;
+}
+
+.built-pill:last-child::after {
+  content: "" !important;
+}
+
+/* Trust stats */
+.hero-trust {
+  display: block !important;
+  border: none !important;
+  padding: 8pt 0 !important;
+  margin-top: 12pt !important;
+}
+
+.trust-item {
+  display: inline-block !important;
+  padding: 0 14pt 0 0 !important;
+}
+
+.trust-sep {
+  display: none !important;
+}
+
+/* Feature rows */
+.feature-rows {
+  display: block !important;
+}
+
+.feature-row,
+.feature-row.reverse {
+  display: block !important;
+  direction: ltr !important;
+  margin-bottom: 16pt !important;
+}
+
+.feature-visual {
+  display: none !important;
+}
+
+.feature-text h3 {
+  font-size: 12pt !important;
+}
+
+.feature-text p {
+  font-size: 10pt !important;
+}
+
+/* Bento grid */
+.bento {
+  display: block !important;
+}
+
+.bento-lg {
+  grid-column: auto !important;
+}
+
+.bento-card {
+  margin-bottom: 8pt !important;
+  padding: 10pt !important;
+}
+
+.bento-tag {
+  border: 0.5pt solid #cccccc !important;
+  background: transparent !important;
+  color: #333333 !important;
+  font-size: 7pt !important;
+}
+
+/* Product cards */
+.product-grid {
+  display: block !important;
+}
+
+.product-card {
+  text-align: left !important;
+  margin-bottom: 8pt !important;
+}
+
+.product-link {
+  color: #111111 !important;
+  font-size: 9pt !important;
+}
+
+/* Practice labs */
+.plab-grid {
+  display: block !important;
+}
+
+.plab-card {
+  margin-bottom: 8pt !important;
+}
+
+.plab-status {
+  display: none !important;
+}
+
+.plab-runtime {
+  font-size: 7pt !important;
+  color: #555555 !important;
+  background: transparent !important;
+  border: 0.5pt solid #cccccc !important;
+}
+
+.plab-name {
+  font-size: 10pt !important;
+  color: #000000 !important;
+}
+
+.plab-desc {
+  font-size: 9pt !important;
+}
+
+.plab-diff {
+  font-size: 7pt !important;
+  border: 0.5pt solid #999999 !important;
+  background: transparent !important;
+  color: #333333 !important;
+}
+
+/* Showcase tabs and terminal: hide tabs, show all content */
+.showcase-tabs {
+  display: none !important;
+}
+
+.showcase-panel,
+.showcase-panel[hidden] {
+  display: block !important;
+}
+
+.showcase-hint {
+  display: none !important;
+}
+
+.showcase-dot,
+.showcase-step-dots {
+  display: none !important;
+}
+
+/* RAG knowledge base tabs: hide, show all panels */
+.rag-tabs {
+  display: none !important;
+}
+
+.rag-panel,
+.rag-panel.active {
+  display: block !important;
+}
+
+/* Tool showcase tabs */
+.ts-tabs {
+  display: none !important;
+}
+
+/* GitHub cards */
+.gh-cards {
+  display: block !important;
+}
+
+.gh-card {
+  margin-bottom: 6pt !important;
+}
+
+.gh-name {
+  color: #000000 !important;
+  font-size: 10pt !important;
+}
+
+.gh-desc {
+  font-size: 8pt !important;
+  color: #555555 !important;
+}
+
+
+/* ================================================================
+   26. ADMIN CONSOLE
+   Hide admin-only interactive controls, show data.
+   ================================================================ */
+
+.adm-cols {
+  display: block !important;
+}
+
+/* User rows */
+.user-row {
+  border-bottom: 0.5pt solid #cccccc !important;
+  padding: 6pt 0 !important;
+}
+
+.ur-name {
+  font-size: 10pt !important;
+  color: #000000 !important;
+}
+
+.ur-mail {
+  font-size: 8pt !important;
+  color: #555555 !important;
+}
+
+.ur-seen {
+  font-size: 8pt !important;
+  color: #555555 !important;
+}
+
+.ur-actions {
+  display: none !important;
+}
+
+/* Whitelist items */
+.wl-list {
+  border: 0.5pt solid #cccccc !important;
+}
+
+.wl-item {
+  border-bottom: 0.5pt solid #cccccc !important;
+  background: transparent !important;
+}
+
+.wl-item:last-child {
+  border-bottom: none !important;
+}
+
+.wl-x {
+  display: none !important;
+}
+
+/* Admin messages */
+.adm-msg {
+  font-size: 8pt !important;
+}
+
+
+/* ================================================================
+   27. SETTINGS PAGES
+   Show current values, hide interactive toggles.
+   ================================================================ */
+
+.set-layout {
+  display: block !important;
+}
+
+.set-nav {
+  display: none !important;
+}
+
+.set-card {
+  margin-bottom: 10pt !important;
+}
+
+.set-lbl {
+  font-size: 8pt !important;
+  font-weight: bold !important;
+  color: #555555 !important;
+}
+
+.set-row {
+  border-bottom: 0.5pt solid #cccccc !important;
+  padding: 4pt 0 !important;
+  font-size: 9pt !important;
+}
+
+.set-btns {
+  display: none !important;
+}
+
+
+/* ================================================================
+   28. RESOURCES AND REFERENCES
+   Clean reference grid for printing.
+   ================================================================ */
+
+.res-grid {
+  display: block !important;
+}
+
+.res-card {
+  margin-bottom: 6pt !important;
+  text-decoration: none !important;
+}
+
+.res-name {
+  font-size: 10pt !important;
+  font-weight: bold !important;
+  color: #000000 !important;
+}
+
+.res-desc {
+  font-size: 9pt !important;
+}
+
+.res-link {
+  display: block !important;
+  font-size: 8pt !important;
+  color: #555555 !important;
+  word-break: break-all !important;
+}
+
+.res-chips {
+  display: block !important;
+}
+
+.res-chip {
+  display: inline !important;
+  font-size: 8pt !important;
+  border: none !important;
+  padding: 0 !important;
+  margin-right: 6pt !important;
+  color: #333333 !important;
+}
+
+/* Reference rows (HTTP codes, etc) */
+.ref-grid {
+  display: block !important;
+}
+
+.ref-row {
+  border-top: 0.5pt solid #cccccc !important;
+  padding: 3pt 0 !important;
+  font-size: 9pt !important;
+}
+
+.ref-code {
+  background: transparent !important;
+  border: 0.5pt solid #cccccc !important;
+  color: #000000 !important;
+  font-size: 8pt !important;
+}
+
+.ref-code.ok {
+  border-color: #1a7a42 !important;
+  color: #1a7a42 !important;
+  background: transparent !important;
+}
+
+.ref-code.warn {
+  border-color: #92601b !important;
+  color: #92601b !important;
+  background: transparent !important;
+}
+
+.ref-code.bad {
+  border-color: #b91c1c !important;
+  color: #b91c1c !important;
+  background: transparent !important;
+}
+
+/* Arsenal grid */
+.arse-grid {
+  display: block !important;
+  column-count: 2 !important;
+  column-gap: 12pt !important;
+}
+
+.arse-card {
+  break-inside: avoid !important;
+  margin-bottom: 6pt !important;
+  display: inline-block !important;
+  width: 100% !important;
+}
+
+.arse-card .an {
+  font-size: 10pt !important;
+  font-weight: bold !important;
+  color: #000000 !important;
+}
+
+.arse-card .ax {
+  font-size: 8pt !important;
+  color: #555555 !important;
+}
+
+.arse-card .ad {
+  font-size: 8pt !important;
+  color: #555555 !important;
+}
+
+
+/* ================================================================
+   29. API DASHBOARD
+   Print API docs in a readable format.
+   ================================================================ */
+
+.api-key-section .panel {
+  max-width: 100% !important;
+}
+
+.api-key-row {
+  display: block !important;
+}
+
+.api-endpoint {
+  margin-bottom: 10pt !important;
+  overflow: visible !important;
+}
+
+.api-ep-header {
+  background: #f0f0f0 !important;
+  padding: 6pt 8pt !important;
+  cursor: default !important;
+}
+
+.api-method {
+  font-size: 8pt !important;
+  background: transparent !important;
+  border: 0.5pt solid #999999 !important;
+  color: #000000 !important;
+}
+
+.api-method-post {
+  background: transparent !important;
+  color: #000000 !important;
+}
+
+.api-method-get {
+  background: transparent !important;
+  color: #000000 !important;
+}
+
+.api-path {
+  font-size: 9pt !important;
+  color: #000000 !important;
+}
+
+.api-ep-desc {
+  font-size: 8pt !important;
+}
+
+.api-ep-toggle {
+  display: none !important;
+}
+
+.api-ep-body {
+  display: block !important;
+  padding: 8pt !important;
+}
+
+.api-ep-section {
+  margin-bottom: 8pt !important;
+}
+
+.api-ep-label {
+  font-size: 8pt !important;
+  font-weight: bold !important;
+  color: #555555 !important;
+}
+
+/* Code tabs: hide tabs, show all */
+.api-code-tabs {
+  display: none !important;
+}
+
+
+/* ================================================================
+   30. BREADCRUMBS
+   Show navigation path as a text trail.
+   ================================================================ */
+
+.crumbs {
+  display: block !important;
+  margin-bottom: 8pt !important;
+  font-size: 9pt !important;
+  color: #555555 !important;
+}
+
+.crumb {
+  display: inline !important;
+  color: #555555 !important;
+  cursor: default !important;
+  padding: 0 !important;
+  background: none !important;
+}
+
+.crumb.cur {
+  color: #000000 !important;
+  font-weight: bold !important;
+  background: none !important;
+}
+
+.crumb-sep {
+  color: #999999 !important;
+  margin: 0 3pt !important;
+}
+
+.crumb:hover {
+  background: none !important;
+  color: #555555 !important;
+}
+
+
+/* ================================================================
+   31. MISCELLANEOUS PRINT OVERRIDES
+   Catch-all for remaining components.
+   ================================================================ */
+
+/* Command palette button: hide */
+.cmdk-btn {
+  display: none !important;
+}
+
+/* Scrollbars: irrelevant in print */
+*::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+* {
+  scrollbar-width: none !important;
+}
+
+/* Selection highlight: remove */
+::selection {
+  background: transparent !important;
+  color: inherit !important;
+}
+
+/* Loading states: hide */
+.loading,
+.skeleton,
+.loading-dots::after {
+  display: none !important;
+}
+
+/* Walkthrough/tour: hide */
+.tour-overlay,
+.tour-hole,
+.tour-callout {
+  display: none !important;
+}
+
+/* Tool chips */
+.tool-chip {
+  display: inline !important;
+  border: 0.5pt solid #cccccc !important;
+  background: transparent !important;
+  font-size: 8pt !important;
+  padding: 1pt 4pt !important;
+  margin: 2pt 4pt 2pt 0 !important;
+  border-radius: 0 !important;
+}
+
+.tool-state {
+  border: 0.5pt solid #cccccc !important;
+  color: #555555 !important;
+  font-size: 7pt !important;
+}
+
+/* Target bar */
+.target-bar {
+  border: 0.5pt solid #cccccc !important;
+  background: transparent !important;
+  padding: 6pt 8pt !important;
+  margin-bottom: 8pt !important;
+}
+
+.target-bar .tb-label {
+  color: #000000 !important;
+  font-size: 8pt !important;
+}
+
+/* IP widget */
+.ip-widget {
+  font-size: 9pt !important;
+}
+
+.ip-row code {
+  color: #000000 !important;
+  font-size: 9pt !important;
+}
+
+/* Daily items */
+.daily-item {
+  border-top: 0.5pt solid #cccccc !important;
+}
+
+.di-label {
+  font-size: 8pt !important;
+  color: #555555 !important;
+}
+
+/* Saved workspace rows */
+.saved-list {
+  border: 0.5pt solid #cccccc !important;
+}
+
+.saved-row {
+  border-top: 0.5pt solid #cccccc !important;
+  padding: 4pt 6pt !important;
+}
+
+.saved-go {
+  cursor: default !important;
+  color: #000000 !important;
+  font-size: 9pt !important;
+}
+
+/* Dashboard timeline */
+.dash-timeline {
+  padding-left: 0 !important;
+}
+
+.dash-timeline::before {
+  display: none !important;
+}
+
+.dash-tl-dot {
+  display: none !important;
+}
+
+.dash-tl-item {
+  border-bottom: 0.5pt solid #cccccc !important;
+  padding: 4pt 0 !important;
+  font-size: 9pt !important;
+}
+
+.dash-tl-text {
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+}
+
+.dash-tl-time {
+  font-size: 8pt !important;
+  color: #555555 !important;
+}
+
+/* Dashboard status */
+.dash-status {
+  color: #000000 !important;
+  font-size: 8pt !important;
+}
+
+/* Utility KV pairs */
+.util-kv {
+  border-top: 0.5pt solid #cccccc !important;
+  font-size: 9pt !important;
+}
+
+.util-kv span {
+  color: #555555 !important;
+  font-size: 8pt !important;
+}
+
+.util-val {
+  background: #f4f4f4 !important;
+  border: 0.5pt solid #cccccc !important;
+  color: #1a1a1a !important;
+  font-size: 8pt !important;
+  white-space: pre-wrap !important;
+}
+
+/* GH profile */
+.gh-profile {
+  display: block !important;
+}
+
+.gh-avatar {
+  display: none !important;
+}
+
+.gh-name {
+  font-size: 12pt !important;
+  color: #000000 !important;
+}
+
+.gh-stats {
+  font-size: 9pt !important;
+  color: #555555 !important;
+}
+
+.gh-stats strong {
+  color: #000000 !important;
+}
+
+/* Google Hacking DB */
+.ghdb-bar {
+  display: none !important;
+}
+
+.gh-cat .pg-h2 {
+  font-size: 12pt !important;
+}
+
+.gh-row {
+  border-top: 0.5pt solid #cccccc !important;
+  padding: 4pt 0 !important;
+  font-size: 9pt !important;
+}
+
+.gh-desc {
+  font-size: 9pt !important;
+}
+
+.gh-actions {
+  display: none !important;
+}
+
+/* Home page columns */
+.home-cols {
+  display: block !important;
+}
+
+.hc-main,
+.hc-side {
+  display: block !important;
+  width: 100% !important;
+}
+
+/* Panel headings */
+.panel-h {
+  margin-bottom: 6pt !important;
+}
+
+/* Regex tester output */
+#rxout mark {
+  background: #e0e0e0 !important;
+  color: #000000 !important;
+}
+
+/* Feedback rows (admin) */
+.fb-row {
+  border: 0.5pt solid #cccccc !important;
+  margin-bottom: 6pt !important;
+  padding: 6pt 8pt !important;
+}
+
+.fb-row-h {
+  font-size: 9pt !important;
+}
+
+.fb-tag {
+  font-weight: bold !important;
+}
+
+.fb-msg {
+  font-size: 9pt !important;
+  color: #333333 !important;
+}
+
+/* Nexus code pairing row */
+.nexus-code-row {
+  display: block !important;
+}
+
+.nexus-code-row input {
+  max-width: 100% !important;
+}
+
+/* Skeleton placeholders: hide */
+.skeleton {
+  display: none !important;
+}
+
+.skeleton * {
+  visibility: visible !important;
+}
+
+/* Password meter labels */
+.pw-meter span {
+  display: block !important;
+}
+
+/* Private cloud generator */
+.pc-wrap {
+  display: block !important;
+}
+
+.pc-svcs {
+  margin-bottom: 8pt !important;
+}
+
+.pc-svc {
+  border: 0.5pt solid #cccccc !important;
+  padding: 4pt 6pt !important;
+  margin-bottom: 4pt !important;
+  cursor: default !important;
+}
+
+.pc-tabs {
+  display: none !important;
+}
+
+.pc-code {
+  font-size: 8pt !important;
+}
+
+/* Learn Hub progress bars */
+.lh-cb {
+  font-size: 8pt !important;
+}
+
+.lh-cb .nm {
+  color: #555555 !important;
+}
+
+.lh-cb .br {
+  background: #e0e0e0 !important;
+  border: 0.5pt solid #cccccc !important;
+}
+
+.lh-cb .br div {
+  background: #555555 !important;
+}
+
+.lh-cb .pc {
+  color: #555555 !important;
+}
+
+/* Command block (GHDB etc) */
+.cmd-block {
+  font-size: 8pt !important;
+  color: #1a1a1a !important;
+}
+
+/* Comparison landing: force visible */
+.cmp-landing {
+  page-break-inside: auto !important;
+}
+
+
+/* ================================================================
+   32. PRINT-SPECIFIC UTILITY CLASSES
+   Add these classes to elements for specialized print behavior.
+   ================================================================ */
+
+/* Force a page break before an element */
+.print-break-before {
+  page-break-before: always !important;
+  break-before: page !important;
+}
+
+/* Force a page break after an element */
+.print-break-after {
+  page-break-after: always !important;
+  break-after: page !important;
+}
+
+/* Hide an element in print */
+.print-hide,
+.no-print {
+  display: none !important;
+}
+
+/* Show an element only in print */
+.print-only {
+  display: block !important;
+}
+
+/* Force an element to start on a new page */
+.print-page {
+  page-break-before: always !important;
+  break-before: page !important;
+}
+
+/* Two-column print layout for dense content */
+.print-two-col {
+  column-count: 2 !important;
+  column-gap: 14pt !important;
+  column-rule: 0.5pt solid #cccccc !important;
+}
+
+/* Three-column print layout */
+.print-three-col {
+  column-count: 3 !important;
+  column-gap: 10pt !important;
+  column-rule: 0.5pt solid #cccccc !important;
+}
+
+/* Full-width in print (override any max-width) */
+.print-full {
+  max-width: 100% !important;
+  width: 100% !important;
+}
+
+/* Print-friendly table: always repeat headers, force borders */
+.print-table {
+  width: 100% !important;
+  border-collapse: collapse !important;
+  font-size: 9pt !important;
+}
+
+.print-table th {
+  background: #f0f0f0 !important;
+  border: 0.5pt solid #999999 !important;
+  font-weight: bold !important;
+}
+
+.print-table td {
+  border: 0.5pt solid #cccccc !important;
+}
+
+
+/* ================================================================
+   33. SCREEN-ONLY ELEMENTS
+   Elements that should never appear in print.
+   ================================================================ */
+
+/* All interactive-only elements */
+.ai-presets,
+.ai-controls,
+.ai-key-row,
+.ai-input-row,
+.ai-status,
+.ai-offline,
+.ai-empty,
+.hero-cta,
+.hero-actions,
+.cta-form,
+.cta-notify,
+.cta-reassure,
+.nx-cta,
+.nav-link,
+.auth-links,
+.auth-back,
+.or,
+#pwform,
+.banner,
+#announcement,
+.skip-link,
+.hamburger,
+.menu,
+.profile-btn,
+.icon-btn,
+.btt,
+.toast,
+.tour-overlay,
+.cmdk,
+.fb-modal,
+.tk-modal,
+#bootscreen,
+#xfer,
+.sidebar,
+.app-foot,
+.site-foot,
+.foot,
+.showcase-hint,
+.showcase-step-dots,
+.showcase-tabs,
+.cs-filter,
+.tk-search,
+.ghdb-bar,
+.lh-inp,
+.lh-chips,
+.lh-bk,
+.lh-done,
+.lh-qsub,
+.target-bar .btn,
+.gh-actions,
+.set-btns,
+.set-nav,
+.ur-actions,
+.wl-x,
+.saved-x,
+.chip-x,
+.tk-star,
+.tk-btns,
+.util-btns,
+.dl-pick,
+.dl-tabs,
+.os-tabs,
+.dl-mark,
+.dl-copy,
+.cs-copy,
+.cb-copy,
+.lh-cp,
+.rx-use,
+.api-code-copy,
+.api-ep-toggle,
+.api-code-tabs,
+.pc-tabs,
+.rag-tabs,
+.ts-tabs,
+.nx-cta,
+.cmdk-btn,
+.seg,
+.swatches,
+.logo-picks {
+  display: none !important;
+}
+
+
+/* ================================================================
+   END OF PRINT STYLESHEET
+   ================================================================ */
+
+} /* close @media print */

@@ -1,0 +1,4848 @@
+/* ==========================================================================
+   dataviz.css -- CSS-Only Data Visualization Styles
+   Dark-theme optimized, responsive, accessible, animated
+   No JavaScript required for static display.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   0. CUSTOM PROPERTIES / DESIGN TOKENS
+   -------------------------------------------------------------------------- */
+
+:root {
+  /* -- Base palette -- */
+  --dv-bg:              #0d1117;
+  --dv-surface:         #161b22;
+  --dv-surface-raised:  #1c2129;
+  --dv-border:          #30363d;
+  --dv-border-subtle:   #21262d;
+  --dv-text:            #e6edf3;
+  --dv-text-muted:      #8b949e;
+  --dv-text-dim:        #6e7681;
+
+  /* -- Sequential color scale (single hue -- cyan) -- */
+  --dv-seq-100:  #042f3d;
+  --dv-seq-200:  #064a63;
+  --dv-seq-300:  #08668a;
+  --dv-seq-400:  #0a82b0;
+  --dv-seq-500:  #0d9fd7;
+  --dv-seq-600:  #2fb8eb;
+  --dv-seq-700:  #5ccbf0;
+  --dv-seq-800:  #8addf5;
+  --dv-seq-900:  #b8eefa;
+
+  /* -- Diverging color scale (blue <-> red) -- */
+  --dv-div-neg4: #b91c1c;
+  --dv-div-neg3: #dc2626;
+  --dv-div-neg2: #ef4444;
+  --dv-div-neg1: #f87171;
+  --dv-div-0:    #6b7280;
+  --dv-div-pos1: #60a5fa;
+  --dv-div-pos2: #3b82f6;
+  --dv-div-pos3: #2563eb;
+  --dv-div-pos4: #1d4ed8;
+
+  /* -- Categorical palette (10 distinct hues) -- */
+  --dv-cat-1:  #58a6ff;
+  --dv-cat-2:  #3fb950;
+  --dv-cat-3:  #d29922;
+  --dv-cat-4:  #f85149;
+  --dv-cat-5:  #bc8cff;
+  --dv-cat-6:  #39d2c0;
+  --dv-cat-7:  #db61a2;
+  --dv-cat-8:  #f0883e;
+  --dv-cat-9:  #79c0ff;
+  --dv-cat-10: #7ee787;
+
+  /* -- Semantic colors -- */
+  --dv-success:  #3fb950;
+  --dv-warning:  #d29922;
+  --dv-danger:   #f85149;
+  --dv-info:     #58a6ff;
+
+  /* -- Zone colors (for gauges, meters) -- */
+  --dv-zone-green:  #238636;
+  --dv-zone-yellow: #9e6a03;
+  --dv-zone-red:    #da3633;
+
+  /* -- Typography -- */
+  --dv-font:       -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  --dv-font-mono:  "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+
+  /* -- Sizing -- */
+  --dv-radius:     6px;
+  --dv-radius-lg:  10px;
+  --dv-transition:  0.3s ease;
+
+  /* -- Animation durations -- */
+  --dv-anim-fill:    1s;
+  --dv-anim-fade:    0.5s;
+}
+
+
+/* --------------------------------------------------------------------------
+   0b. COLOR SCALE UTILITY CLASSES
+   -------------------------------------------------------------------------- */
+
+/* Sequential single-hue */
+.dv-seq-1 { background-color: var(--dv-seq-100); }
+.dv-seq-2 { background-color: var(--dv-seq-200); }
+.dv-seq-3 { background-color: var(--dv-seq-300); }
+.dv-seq-4 { background-color: var(--dv-seq-400); }
+.dv-seq-5 { background-color: var(--dv-seq-500); }
+.dv-seq-6 { background-color: var(--dv-seq-600); }
+.dv-seq-7 { background-color: var(--dv-seq-700); }
+.dv-seq-8 { background-color: var(--dv-seq-800); }
+.dv-seq-9 { background-color: var(--dv-seq-900); }
+
+/* Diverging two-hue */
+.dv-div-n4 { background-color: var(--dv-div-neg4); }
+.dv-div-n3 { background-color: var(--dv-div-neg3); }
+.dv-div-n2 { background-color: var(--dv-div-neg2); }
+.dv-div-n1 { background-color: var(--dv-div-neg1); }
+.dv-div-0  { background-color: var(--dv-div-0); }
+.dv-div-p1 { background-color: var(--dv-div-pos1); }
+.dv-div-p2 { background-color: var(--dv-div-pos2); }
+.dv-div-p3 { background-color: var(--dv-div-pos3); }
+.dv-div-p4 { background-color: var(--dv-div-pos4); }
+
+/* Categorical distinct */
+.dv-cat-1  { background-color: var(--dv-cat-1); }
+.dv-cat-2  { background-color: var(--dv-cat-2); }
+.dv-cat-3  { background-color: var(--dv-cat-3); }
+.dv-cat-4  { background-color: var(--dv-cat-4); }
+.dv-cat-5  { background-color: var(--dv-cat-5); }
+.dv-cat-6  { background-color: var(--dv-cat-6); }
+.dv-cat-7  { background-color: var(--dv-cat-7); }
+.dv-cat-8  { background-color: var(--dv-cat-8); }
+.dv-cat-9  { background-color: var(--dv-cat-9); }
+.dv-cat-10 { background-color: var(--dv-cat-10); }
+
+/* Foreground-color variants for text/icons */
+.dv-cat-1-fg  { color: var(--dv-cat-1); }
+.dv-cat-2-fg  { color: var(--dv-cat-2); }
+.dv-cat-3-fg  { color: var(--dv-cat-3); }
+.dv-cat-4-fg  { color: var(--dv-cat-4); }
+.dv-cat-5-fg  { color: var(--dv-cat-5); }
+.dv-cat-6-fg  { color: var(--dv-cat-6); }
+.dv-cat-7-fg  { color: var(--dv-cat-7); }
+.dv-cat-8-fg  { color: var(--dv-cat-8); }
+.dv-cat-9-fg  { color: var(--dv-cat-9); }
+.dv-cat-10-fg { color: var(--dv-cat-10); }
+
+
+/* --------------------------------------------------------------------------
+   0c. ANIMATION KEYFRAMES
+   -------------------------------------------------------------------------- */
+
+@keyframes dv-fill-h {
+  from { width: 0; }
+}
+
+@keyframes dv-fill-v {
+  from { height: 0; }
+}
+
+@keyframes dv-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes dv-fade-in-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes dv-scale-in {
+  from { transform: scale(0); }
+  to   { transform: scale(1); }
+}
+
+@keyframes dv-ring-fill {
+  from { --dv-ring-progress: 0; }
+}
+
+@keyframes dv-rotate {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes dv-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.6; }
+}
+
+@keyframes dv-needle-swing {
+  from { transform: rotate(-90deg); }
+}
+
+@keyframes dv-slide-right {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(0); }
+}
+
+@keyframes dv-count-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes dv-shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes dv-blink {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.3; }
+}
+
+@keyframes dv-grow-width {
+  from { max-width: 0; }
+  to   { max-width: 100%; }
+}
+
+@keyframes dv-stagger-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes dv-marquee {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+
+/* --------------------------------------------------------------------------
+   1. BAR CHARTS -- .bar-chart
+   Horizontal and vertical bar charts with labels, values, colors, animated fill.
+   -------------------------------------------------------------------------- */
+
+.bar-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  background: var(--dv-surface);
+  border: 1px solid var(--dv-border);
+  border-radius: var(--dv-radius-lg);
+  font-family: var(--dv-font);
+  color: var(--dv-text);
+}
+
+.bar-chart__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--dv-text);
+  margin: 0 0 8px 0;
+  letter-spacing: 0.01em;
+}
+
+.bar-chart__subtitle {
+  font-size: 12px;
+  color: var(--dv-text-muted);
+  margin: -4px 0 8px 0;
+}
+
+/* -- Horizontal bars (default) -- */
+.bar-chart__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 28px;
+}
+
+.bar-chart__label {
+  flex: 0 0 100px;
+  font-size: 12px;
+  color: var(--dv-text-muted);
+  text-align: right;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bar-chart__track {
+  flex: 1;
+  height: 20px;
+  background: var(--dv-border-subtle);
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+
+.bar-chart__fill {
+  height: 100%;
+  border-radius: 4px;
+  background: var(--dv-cat-1);
+  transition: width var(--dv-transition);
+  animation: dv-fill-h var(--dv-anim-fill) ease-out both;
+  position: relative;
+}
+
+.bar-chart__fill::after {
+  content: attr(data-value);
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--dv-text);
+  white-space: nowrap;
+}
+
+.bar-chart__value {
+  flex: 0 0 50px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--dv-text);
+  font-family: var(--dv-font-mono);
+  text-align: right;
+}
+
+/* Thin variant */
+.bar-chart--thin .bar-chart__track {
+  height: 8px;
+}
+
+.bar-chart--thin .bar-chart__fill::after {
+  display: none;
+}
+
+/* Striped pattern for accessibility */
+.bar-chart__fill--striped {
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 4px,
+    rgba(255, 255, 255, 0.08) 4px,
+    rgba(255, 255, 255, 0.08) 8px
+  );
+}
+
+/* Color variants for fills */
+.bar-chart__fill--1 { background-color: var(--dv-cat-1); }
+.bar-chart__fill--2 { background-color: var(--dv-cat-2); }
+.bar-chart__fill--3 { background-color: var(--dv-cat-3); }
+.bar-chart__fill--4 { background-color: var(--dv-cat-4); }
+.bar-chart__fill--5 { background-color: var(--dv-cat-5); }
+.bar-chart__fill--6 { background-color: var(--dv-cat-6); }
+.bar-chart__fill--7 { background-color: var(--dv-cat-7); }
+.bar-chart__fill--8 { background-color: var(--dv-cat-8); }
+.bar-chart__fill--9 { background-color: var(--dv-cat-9); }
+.bar-chart__fill--10 { background-color: var(--dv-cat-10); }
+
+/* Gradient fills */
+.bar-chart__fill--gradient {
+  background: linear-gradient(90deg, var(--dv-cat-1), var(--dv-cat-6));
+}
+
+.bar-chart__fill--success { background-color: var(--dv-success); }
+.bar-chart__fill--warning { background-color: var(--dv-warning); }
+.bar-chart__fill--danger  { background-color: var(--dv-danger); }
+
+/* -- Stacked horizontal bar -- */
+.bar-chart__stack {
+  display: flex;
+  height: 100%;
+}
+
+.bar-chart__stack .bar-chart__fill {
+  border-radius: 0;
+  animation: none;
+}
+
+.bar-chart__stack .bar-chart__fill:first-child {
+  border-radius: 4px 0 0 4px;
+}
+
+.bar-chart__stack .bar-chart__fill:last-child {
+  border-radius: 0 4px 4px 0;
+}
+
+/* -- Vertical bar chart -- */
+.bar-chart--vertical {
+  flex-direction: column;
+}
+
+.bar-chart--vertical .bar-chart__body {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  height: 200px;
+  padding-top: 16px;
+}
+
+.bar-chart--vertical .bar-chart__col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  height: 100%;
+  gap: 4px;
+}
+
+.bar-chart--vertical .bar-chart__col-value {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--dv-text);
+  font-family: var(--dv-font-mono);
+}
+
+.bar-chart--vertical .bar-chart__col-bar {
+  width: 100%;
+  max-width: 40px;
+  background: var(--dv-cat-1);
+  border-radius: 4px 4px 0 0;
+  animation: dv-fill-v var(--dv-anim-fill) ease-out both;
+  min-height: 2px;
+}
+
+.bar-chart--vertical .bar-chart__col-label {
+  font-size: 11px;
+  color: var(--dv-text-muted);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  margin-top: 4px;
+}
+
+.bar-chart--vertical .bar-chart__axis {
+  border-top: 1px solid var(--dv-border);
+  margin-top: 0;
+}
+
+/* Responsive: narrower label column on small screens */
+@media (max-width: 480px) {
+  .bar-chart__label {
+    flex: 0 0 60px;
+    font-size: 11px;
+  }
+  .bar-chart__value {
+    flex: 0 0 40px;
+    font-size: 11px;
+  }
+}
+
+/* Hover effect on bars */
+.bar-chart__fill:hover {
+  filter: brightness(1.15);
+}
+
+/* Grouped vertical bars */
+.bar-chart--vertical .bar-chart__col-group {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  flex: 1;
+  height: 100%;
+  justify-content: center;
+}
+
+.bar-chart--vertical .bar-chart__col-group .bar-chart__col-bar {
+  max-width: 20px;
+}
+
+/* Bar chart legend */
+.bar-chart__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--dv-border-subtle);
+}
+
+.bar-chart__legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--dv-text-muted);
+}
+
+.bar-chart__legend-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+/* Sorted / ranked styling */
+.bar-chart__row:nth-child(1) .bar-chart__fill { animation-delay: 0s; }
+.bar-chart__row:nth-child(2) .bar-chart__fill { animation-delay: 0.05s; }
+.bar-chart__row:nth-child(3) .bar-chart__fill { animation-delay: 0.1s; }
+.bar-chart__row:nth-child(4) .bar-chart__fill { animation-delay: 0.15s; }
+.bar-chart__row:nth-child(5) .bar-chart__fill { animation-delay: 0.2s; }
+.bar-chart__row:nth-child(6) .bar-chart__fill { animation-delay: 0.25s; }
+.bar-chart__row:nth-child(7) .bar-chart__fill { animation-delay: 0.3s; }
+.bar-chart__row:nth-child(8) .bar-chart__fill { animation-delay: 0.35s; }
+.bar-chart__row:nth-child(9) .bar-chart__fill { animation-delay: 0.4s; }
+.bar-chart__row:nth-child(10) .bar-chart__fill { animation-delay: 0.45s; }
+
+/* Rank badge for bars */
+.bar-chart__rank {
+  flex: 0 0 24px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--dv-text-dim);
+  background: var(--dv-border-subtle);
+  border-radius: 50%;
+}
+
+
+/* --------------------------------------------------------------------------
+   2. PROGRESS RINGS -- .ring
+   Circular progress using conic-gradient with percentage label.
+   -------------------------------------------------------------------------- */
+
+.ring {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: conic-gradient(
+    var(--dv-cat-1) calc(var(--ring-pct, 0) * 1%),
+    var(--dv-border-subtle) calc(var(--ring-pct, 0) * 1%)
+  );
+  font-family: var(--dv-font);
+  animation: dv-fade-in var(--dv-anim-fade) ease both;
+}
+
+.ring::before {
+  content: "";
+  position: absolute;
+  inset: 10px;
+  border-radius: 50%;
+  background: var(--dv-surface);
+}
+
+.ring__label {
+  position: relative;
+  z-index: 1;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--dv-text);
+  font-family: var(--dv-font-mono);
+}
+
+.ring__label::after {
+  content: "%";
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--dv-text-muted);
+}
+
+.ring__sublabel {
+  position: absolute;
+  bottom: 28px;
+  font-size: 11px;
+  color: var(--dv-text-muted);
+  z-index: 1;
+}
+
+/* Size variants */
+.ring--sm {
+  width: 64px;
+  height: 64px;
+}
+
+.ring--sm::before {
+  inset: 6px;
+}
+
+.ring--sm .ring__label {
+  font-size: 14px;
+}
+
+.ring--sm .ring__label::after {
+  font-size: 10px;
+}
+
+.ring--lg {
+  width: 180px;
+  height: 180px;
+}
+
+.ring--lg::before {
+  inset: 16px;
+}
+
+.ring--lg .ring__label {
+  font-size: 36px;
+}
+
+.ring--xl {
+  width: 240px;
+  height: 240px;
+}
+
+.ring--xl::before {
+  inset: 22px;
+}
+
+.ring--xl .ring__label {
+  font-size: 48px;
+}
+
+/* Color variants */
+.ring--success {
+  background: conic-gradient(
+    var(--dv-success) calc(var(--ring-pct, 0) * 1%),
+    var(--dv-border-subtle) calc(var(--ring-pct, 0) * 1%)
+  );
+}
+
+.ring--warning {
+  background: conic-gradient(
+    var(--dv-warning) calc(var(--ring-pct, 0) * 1%),
+    var(--dv-border-subtle) calc(var(--ring-pct, 0) * 1%)
+  );
+}
+
+.ring--danger {
+  background: conic-gradient(
+    var(--dv-danger) calc(var(--ring-pct, 0) * 1%),
+    var(--dv-border-subtle) calc(var(--ring-pct, 0) * 1%)
+  );
+}
+
+.ring--info {
+  background: conic-gradient(
+    var(--dv-info) calc(var(--ring-pct, 0) * 1%),
+    var(--dv-border-subtle) calc(var(--ring-pct, 0) * 1%)
+  );
+}
+
+/* Gradient ring */
+.ring--gradient {
+  background: conic-gradient(
+    var(--dv-cat-1) 0%,
+    var(--dv-cat-6) calc(var(--ring-pct, 0) * 1%),
+    var(--dv-border-subtle) calc(var(--ring-pct, 0) * 1%)
+  );
+}
+
+/* Ring with thicker track */
+.ring--thick::before {
+  inset: 18px;
+}
+
+/* Accessibility: textured ring */
+.ring--textured {
+  background: conic-gradient(
+    var(--dv-cat-1) calc(var(--ring-pct, 0) * 1%),
+    var(--dv-border-subtle) calc(var(--ring-pct, 0) * 1%)
+  );
+}
+
+.ring--textured::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background-image: repeating-conic-gradient(
+    transparent 0deg 5deg,
+    rgba(255,255,255,0.03) 5deg 10deg
+  );
+  pointer-events: none;
+}
+
+/* Ring group (multiple rings together) */
+.ring-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  align-items: center;
+  justify-content: center;
+}
+
+.ring-group--inline {
+  display: inline-flex;
+  gap: 16px;
+}
+
+/* Stagger animation for ring groups */
+.ring-group .ring:nth-child(1) { animation-delay: 0s; }
+.ring-group .ring:nth-child(2) { animation-delay: 0.1s; }
+.ring-group .ring:nth-child(3) { animation-delay: 0.2s; }
+.ring-group .ring:nth-child(4) { animation-delay: 0.3s; }
+.ring-group .ring:nth-child(5) { animation-delay: 0.4s; }
+
+/* Ring with label below */
+.ring-labeled {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.ring-labeled__text {
+  font-size: 13px;
+  color: var(--dv-text-muted);
+  font-family: var(--dv-font);
+  text-align: center;
+}
+
+
+/* --------------------------------------------------------------------------
+   3. DONUT CHARTS -- .donut
+   Conic-gradient donut with center label and legend.
+   -------------------------------------------------------------------------- */
+
+.donut {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  background: var(--dv-surface);
+  border: 1px solid var(--dv-border);
+  border-radius: var(--dv-radius-lg);
+  font-family: var(--dv-font);
+  color: var(--dv-text);
+}
+
+.donut__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--dv-text);
+  margin: 0;
+  align-self: flex-start;
+}
+
+.donut__chart {
+  position: relative;
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  /* Segments set via inline style --donut-segments conic-gradient */
+  background: conic-gradient(
+    var(--dv-cat-1) 0% var(--donut-s1, 25%),
+    var(--dv-cat-2) var(--donut-s1, 25%) var(--donut-s2, 50%),
+    var(--dv-cat-3) var(--donut-s2, 50%) var(--donut-s3, 75%),
+    var(--dv-cat-4) var(--donut-s3, 75%) 100%
+  );
+  animation: dv-scale-in 0.6s ease both;
+}
+
+.donut__chart::before {
+  content: "";
+  position: absolute;
+  inset: 28%;
+  border-radius: 50%;
+  background: var(--dv-surface);
+}
+
+.donut__center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+.donut__center-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--dv-text);
+  font-family: var(--dv-font-mono);
+  line-height: 1;
+}
+
+.donut__center-label {
+  font-size: 12px;
+  color: var(--dv-text-muted);
+  margin-top: 4px;
+}
+
+/* Donut with 2 segments */
+.donut__chart--2seg {
+  background: conic-gradient(
+    var(--dv-cat-1) 0% var(--donut-s1, 60%),
+    var(--dv-cat-2) var(--donut-s1, 60%) 100%
+  );
+}
+
+/* Donut with 3 segments */
+.donut__chart--3seg {
+  background: conic-gradient(
+    var(--dv-cat-1) 0% var(--donut-s1, 40%),
+    var(--dv-cat-2) var(--donut-s1, 40%) var(--donut-s2, 70%),
+    var(--dv-cat-3) var(--donut-s2, 70%) 100%
+  );
+}
+
+/* Donut with 5 segments */
+.donut__chart--5seg {
+  background: conic-gradient(
+    var(--dv-cat-1) 0% var(--donut-s1, 20%),
+    var(--dv-cat-2) var(--donut-s1, 20%) var(--donut-s2, 40%),
+    var(--dv-cat-3) var(--donut-s2, 40%) var(--donut-s3, 60%),
+    var(--dv-cat-4) var(--donut-s3, 60%) var(--donut-s4, 80%),
+    var(--dv-cat-5) var(--donut-s4, 80%) 100%
+  );
+}
+
+/* Donut with 6 segments */
+.donut__chart--6seg {
+  background: conic-gradient(
+    var(--dv-cat-1) 0% var(--donut-s1, 16.6%),
+    var(--dv-cat-2) var(--donut-s1, 16.6%) var(--donut-s2, 33.2%),
+    var(--dv-cat-3) var(--donut-s2, 33.2%) var(--donut-s3, 49.8%),
+    var(--dv-cat-4) var(--donut-s3, 49.8%) var(--donut-s4, 66.4%),
+    var(--dv-cat-5) var(--donut-s4, 66.4%) var(--donut-s5, 83%),
+    var(--dv-cat-6) var(--donut-s5, 83%) 100%
+  );
+}
+
+/* Size variants */
+.donut__chart--sm {
+  width: 120px;
+  height: 120px;
+}
+
+.donut__chart--sm .donut__center-value {
+  font-size: 20px;
+}
+
+.donut__chart--lg {
+  width: 240px;
+  height: 240px;
+}
+
+.donut__chart--lg .donut__center-value {
+  font-size: 36px;
+}
+
+/* Donut legend */
+.donut__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  justify-content: center;
+  width: 100%;
+}
+
+.donut__legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--dv-text-muted);
+}
+
+.donut__legend-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.donut__legend-value {
+  font-weight: 600;
+  color: var(--dv-text);
+  font-family: var(--dv-font-mono);
+  margin-left: 2px;
+}
+
+/* Donut with gap between segments */
+.donut__chart--gapped {
+  background: conic-gradient(
+    var(--dv-cat-1) 0% calc(var(--donut-s1, 25%) - 0.5%),
+    var(--dv-surface) calc(var(--donut-s1, 25%) - 0.5%) var(--donut-s1, 25%),
+    var(--dv-cat-2) var(--donut-s1, 25%) calc(var(--donut-s2, 50%) - 0.5%),
+    var(--dv-surface) calc(var(--donut-s2, 50%) - 0.5%) var(--donut-s2, 50%),
+    var(--dv-cat-3) var(--donut-s2, 50%) calc(var(--donut-s3, 75%) - 0.5%),
+    var(--dv-surface) calc(var(--donut-s3, 75%) - 0.5%) var(--donut-s3, 75%),
+    var(--dv-cat-4) var(--donut-s3, 75%) calc(100% - 0.5%),
+    var(--dv-surface) calc(100% - 0.5%) 100%
+  );
+}
+
+/* Accessibility: patterned donut segments */
+.donut__chart--patterned::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background-image: repeating-conic-gradient(
+    transparent 0deg 6deg,
+    rgba(255,255,255,0.04) 6deg 12deg
+  );
+  pointer-events: none;
+}
+
+/* Horizontal layout */
+.donut--horizontal {
+  flex-direction: row;
+  gap: 24px;
+}
+
+.donut--horizontal .donut__legend {
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  width: auto;
+}
+
+
+/* --------------------------------------------------------------------------
+   4. SPARKLINES -- .sparkline
+   Linear-gradient background on small elements to simulate line charts.
+   -------------------------------------------------------------------------- */
+
+.sparkline {
+  display: inline-block;
+  width: 80px;
+  height: 24px;
+  border-radius: 3px;
+  position: relative;
+  overflow: hidden;
+  vertical-align: middle;
+  font-family: var(--dv-font);
+}
+
+/* Sparkline using polygon clip-path for area chart effect */
+.sparkline__area {
+  width: 100%;
+  height: 100%;
+  /* Set --spark-points via inline style as clip-path polygon */
+  clip-path: var(--spark-clip, polygon(
+    0% 80%, 10% 60%, 20% 70%, 30% 40%, 40% 50%,
+    50% 30%, 60% 35%, 70% 20%, 80% 25%, 90% 15%, 100% 10%,
+    100% 100%, 0% 100%
+  ));
+  background: linear-gradient(180deg,
+    var(--dv-cat-1) 0%,
+    rgba(88, 166, 255, 0.15) 100%
+  );
+}
+
+/* Sparkline bar variant */
+.sparkline--bars {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 1px;
+  background: transparent;
+}
+
+.sparkline--bars .sparkline__bar {
+  flex: 1;
+  background: var(--dv-cat-1);
+  border-radius: 1px 1px 0 0;
+  min-height: 2px;
+  transition: height var(--dv-transition);
+}
+
+.sparkline--bars .sparkline__bar:hover {
+  background: var(--dv-cat-6);
+}
+
+/* Sparkline dot variant */
+.sparkline--dots {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 3px;
+  background: transparent;
+}
+
+.sparkline--dots .sparkline__dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--dv-cat-1);
+  flex-shrink: 0;
+}
+
+/* Size variants */
+.sparkline--wide {
+  width: 120px;
+}
+
+.sparkline--tall {
+  height: 36px;
+}
+
+.sparkline--xl {
+  width: 160px;
+  height: 40px;
+}
+
+/* Color variants */
+.sparkline--success .sparkline__area { background: linear-gradient(180deg, var(--dv-success), rgba(63,185,80,0.15)); }
+.sparkline--warning .sparkline__area { background: linear-gradient(180deg, var(--dv-warning), rgba(210,153,34,0.15)); }
+.sparkline--danger  .sparkline__area { background: linear-gradient(180deg, var(--dv-danger), rgba(248,81,73,0.15)); }
+
+.sparkline--success .sparkline__bar,
+.sparkline--success .sparkline__dot { background: var(--dv-success); }
+.sparkline--warning .sparkline__bar,
+.sparkline--warning .sparkline__dot { background: var(--dv-warning); }
+.sparkline--danger  .sparkline__bar,
+.sparkline--danger  .sparkline__dot { background: var(--dv-danger); }
+
+/* Inline sparkline (within text) */
+.sparkline--inline {
+  width: 60px;
+  height: 16px;
+  margin: 0 4px;
+}
+
+/* Reference line on sparkline */
+.sparkline__ref {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 1px dashed var(--dv-text-dim);
+  pointer-events: none;
+}
+
+/* Sparkline with min/max labels */
+.sparkline-labeled {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sparkline-labeled__minmax {
+  display: flex;
+  justify-content: space-between;
+  font-size: 9px;
+  color: var(--dv-text-dim);
+  font-family: var(--dv-font-mono);
+}
+
+
+/* --------------------------------------------------------------------------
+   5. HEATMAPS -- .heatmap
+   Grid of colored cells with intensity scale.
+   -------------------------------------------------------------------------- */
+
+.heatmap {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  background: var(--dv-surface);
+  border: 1px solid var(--dv-border);
+  border-radius: var(--dv-radius-lg);
+  font-family: var(--dv-font);
+  color: var(--dv-text);
+  overflow-x: auto;
+}
+
+.heatmap__title {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.heatmap__grid {
+  display: grid;
+  gap: 2px;
+  /* default: 7 columns for week view */
+  grid-template-columns: repeat(var(--heatmap-cols, 7), 1fr);
+}
+
+.heatmap__cell {
+  aspect-ratio: 1;
+  min-width: 14px;
+  border-radius: 2px;
+  background: var(--dv-border-subtle);
+  transition: background-color var(--dv-transition), transform 0.15s ease;
+  cursor: default;
+  position: relative;
+}
+
+.heatmap__cell:hover {
+  transform: scale(1.3);
+  z-index: 2;
+  outline: 2px solid var(--dv-text-muted);
+  outline-offset: 1px;
+}
+
+/* Tooltip on hover */
+.heatmap__cell[data-tooltip]:hover::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 8px;
+  background: var(--dv-bg);
+  border: 1px solid var(--dv-border);
+  border-radius: 4px;
+  font-size: 11px;
+  color: var(--dv-text);
+  white-space: nowrap;
+  z-index: 10;
+  pointer-events: none;
+}
+
+/* Intensity levels using sequential scale */
+.heatmap__cell--0  { background: var(--dv-border-subtle); }
+.heatmap__cell--1  { background: var(--dv-seq-100); }
+.heatmap__cell--2  { background: var(--dv-seq-200); }
+.heatmap__cell--3  { background: var(--dv-seq-300); }
+.heatmap__cell--4  { background: var(--dv-seq-400); }
+.heatmap__cell--5  { background: var(--dv-seq-500); }
+.heatmap__cell--6  { background: var(--dv-seq-600); }
+.heatmap__cell--7  { background: var(--dv-seq-700); }
+.heatmap__cell--8  { background: var(--dv-seq-800); }
+.heatmap__cell--9  { background: var(--dv-seq-900); }
+
+/* Diverging heatmap levels */
+.heatmap__cell--dn4 { background: var(--dv-div-neg4); }
+.heatmap__cell--dn3 { background: var(--dv-div-neg3); }
+.heatmap__cell--dn2 { background: var(--dv-div-neg2); }
+.heatmap__cell--dn1 { background: var(--dv-div-neg1); }
+.heatmap__cell--d0  { background: var(--dv-div-0); }
+.heatmap__cell--dp1 { background: var(--dv-div-pos1); }
+.heatmap__cell--dp2 { background: var(--dv-div-pos2); }
+.heatmap__cell--dp3 { background: var(--dv-div-pos3); }
+.heatmap__cell--dp4 { background: var(--dv-div-pos4); }
+
+/* Row and column labels */
+.heatmap__row-label {
+  font-size: 11px;
+  color: var(--dv-text-muted);
+  display: flex;
+  align-items: center;
+  padding-right: 8px;
+  white-space: nowrap;
+}
+
+.heatmap__col-labels {
+  display: grid;
+  gap: 2px;
+  grid-template-columns: repeat(var(--heatmap-cols, 7), 1fr);
+  margin-left: auto;
+}
+
+.heatmap__col-label {
+  font-size: 10px;
+  color: var(--dv-text-dim);
+  text-align: center;
+}
+
+/* With row labels: prepend a label column */
+.heatmap__grid--labeled {
+  grid-template-columns: auto repeat(var(--heatmap-cols, 7), 1fr);
+}
+
+/* Legend / scale bar */
+.heatmap__scale {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--dv-text-muted);
+}
+
+.heatmap__scale-label {
+  margin: 0 4px;
+}
+
+.heatmap__scale-cells {
+  display: flex;
+  gap: 2px;
+}
+
+.heatmap__scale-cell {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+}
+
+/* Accessibility: bordered cells */
+.heatmap--bordered .heatmap__cell {
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Size variants */
+.heatmap--sm .heatmap__cell { min-width: 10px; }
+.heatmap--lg .heatmap__cell { min-width: 20px; }
+
+/* Rounded cells */
+.heatmap--rounded .heatmap__cell {
+  border-radius: 50%;
+}
+
+/* Labelled cells (show value inside) */
+.heatmap__cell--labeled {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--dv-text);
+  min-width: 24px;
+  aspect-ratio: auto;
+  padding: 4px;
+}
+
+
+/* --------------------------------------------------------------------------
+   6. GAUGES -- .gauge
+   Semicircle meter with needle, color zones (green/yellow/red).
+   -------------------------------------------------------------------------- */
+
+.gauge {
+  position: relative;
+  width: 200px;
+  height: 110px;
+  overflow: hidden;
+  font-family: var(--dv-font);
+  color: var(--dv-text);
+}
+
+.gauge__track {
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 180deg,
+    var(--dv-zone-green)  0deg   60deg,
+    var(--dv-zone-yellow) 60deg  120deg,
+    var(--dv-zone-red)    120deg 180deg,
+    transparent           180deg 360deg
+  );
+  position: relative;
+}
+
+.gauge__track::before {
+  content: "";
+  position: absolute;
+  inset: 20px;
+  border-radius: 50%;
+  background: var(--dv-surface);
+}
+
+/* Needle */
+.gauge__needle {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 3px;
+  height: 74px;
+  background: var(--dv-text);
+  transform-origin: bottom center;
+  /* --gauge-deg: rotation in degrees, 0 = far left, 180 = far right */
+  transform: rotate(calc(var(--gauge-deg, 90) * 1deg - 90deg));
+  border-radius: 2px 2px 0 0;
+  transition: transform 1s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 2;
+}
+
+.gauge__needle::after {
+  content: "";
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--dv-text);
+}
+
+/* Labels */
+.gauge__value {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 24px;
+  font-weight: 700;
+  font-family: var(--dv-font-mono);
+  z-index: 1;
+}
+
+.gauge__min {
+  position: absolute;
+  bottom: 4px;
+  left: 8px;
+  font-size: 11px;
+  color: var(--dv-text-dim);
+}
+
+.gauge__max {
+  position: absolute;
+  bottom: 4px;
+  right: 8px;
+  font-size: 11px;
+  color: var(--dv-text-dim);
+}
+
+.gauge__label {
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 12px;
+  color: var(--dv-text-muted);
+  white-space: nowrap;
+}
+
+/* Size variants */
+.gauge--sm {
+  width: 120px;
+  height: 68px;
+}
+
+.gauge--sm .gauge__track {
+  width: 120px;
+  height: 120px;
+}
+
+.gauge--sm .gauge__track::before {
+  inset: 14px;
+}
+
+.gauge--sm .gauge__needle {
+  height: 42px;
+  width: 2px;
+}
+
+.gauge--sm .gauge__needle::after {
+  width: 8px;
+  height: 8px;
+}
+
+.gauge--sm .gauge__value {
+  font-size: 16px;
+}
+
+.gauge--lg {
+  width: 280px;
+  height: 155px;
+}
+
+.gauge--lg .gauge__track {
+  width: 280px;
+  height: 280px;
+}
+
+.gauge--lg .gauge__track::before {
+  inset: 30px;
+}
+
+.gauge--lg .gauge__needle {
+  height: 108px;
+}
+
+.gauge--lg .gauge__value {
+  font-size: 32px;
+}
+
+/* Custom zones via CSS variables */
+.gauge--custom .gauge__track {
+  background: conic-gradient(
+    from 180deg,
+    var(--gauge-zone1-color, var(--dv-zone-green))  0deg   var(--gauge-zone1-end, 60deg),
+    var(--gauge-zone2-color, var(--dv-zone-yellow)) var(--gauge-zone1-end, 60deg) var(--gauge-zone2-end, 120deg),
+    var(--gauge-zone3-color, var(--dv-zone-red))    var(--gauge-zone2-end, 120deg) 180deg,
+    transparent 180deg 360deg
+  );
+}
+
+/* 5-zone gauge */
+.gauge--5zone .gauge__track {
+  background: conic-gradient(
+    from 180deg,
+    var(--dv-zone-green)  0deg   36deg,
+    #2ea043               36deg  72deg,
+    var(--dv-zone-yellow) 72deg  108deg,
+    #d29922               108deg 144deg,
+    var(--dv-zone-red)    144deg 180deg,
+    transparent           180deg 360deg
+  );
+}
+
+/* Gauge with tick marks */
+.gauge__ticks {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  width: 200px;
+  height: 200px;
+}
+
+/* Animated needle entrance */
+.gauge--animated .gauge__needle {
+  animation: dv-needle-swing 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/* Gauge container card */
+.gauge-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 20px;
+  background: var(--dv-surface);
+  border: 1px solid var(--dv-border);
+  border-radius: var(--dv-radius-lg);
+}
+
+.gauge-card__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--dv-text);
+  margin: 0;
+}
+
+.gauge-card__subtitle {
+  font-size: 12px;
+  color: var(--dv-text-muted);
+}
+
+
+/* --------------------------------------------------------------------------
+   7. STAT CARDS -- .stat-card-v2
+   Number, trend arrow (up/down), sparkline, label, comparison.
+   -------------------------------------------------------------------------- */
+
+.stat-card-v2 {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 20px;
+  background: var(--dv-surface);
+  border: 1px solid var(--dv-border);
+  border-radius: var(--dv-radius-lg);
+  font-family: var(--dv-font);
+  color: var(--dv-text);
+  min-width: 180px;
+  animation: dv-fade-in-up var(--dv-anim-fade) ease both;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stat-card-v2:hover {
+  border-color: var(--dv-text-dim);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.stat-card-v2__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.stat-card-v2__label {
+  font-size: 12px;
+  color: var(--dv-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 500;
+}
+
+.stat-card-v2__icon {
+  width: 20px;
+  height: 20px;
+  color: var(--dv-text-dim);
+  flex-shrink: 0;
+}
+
+.stat-card-v2__body {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.stat-card-v2__value {
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1;
+  font-family: var(--dv-font-mono);
+  color: var(--dv-text);
+  animation: dv-count-up var(--dv-anim-fade) ease both;
+}
+
+.stat-card-v2__value--sm {
+  font-size: 24px;
+}
+
+.stat-card-v2__value--lg {
+  font-size: 40px;
+}
+
+.stat-card-v2__unit {
+  font-size: 14px;
+  color: var(--dv-text-muted);
+  font-weight: 400;
+  margin-bottom: 4px;
+}
+
+/* Trend arrow */
+.stat-card-v2__trend {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 12px;
+  line-height: 1.4;
+}
+
+.stat-card-v2__trend--up {
+  color: var(--dv-success);
+  background: rgba(63, 185, 80, 0.12);
+}
+
+.stat-card-v2__trend--up::before {
+  content: "";
+  display: inline-block;
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-bottom: 6px solid var(--dv-success);
+}
+
+.stat-card-v2__trend--down {
+  color: var(--dv-danger);
+  background: rgba(248, 81, 73, 0.12);
+}
+
+.stat-card-v2__trend--down::before {
+  content: "";
+  display: inline-block;
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 6px solid var(--dv-danger);
+}
+
+.stat-card-v2__trend--flat {
+  color: var(--dv-text-muted);
+  background: rgba(139, 148, 158, 0.12);
+}
+
+.stat-card-v2__trend--flat::before {
+  content: "";
+  display: inline-block;
+  width: 10px;
+  height: 2px;
+  background: var(--dv-text-muted);
+}
+
+/* Sparkline row */
+.stat-card-v2__sparkline {
+  margin-top: 4px;
+}
+
+/* Comparison text */
+.stat-card-v2__compare {
+  font-size: 12px;
+  color: var(--dv-text-dim);
+  margin-top: 2px;
+}
+
+.stat-card-v2__compare strong {
+  color: var(--dv-text-muted);
+  font-weight: 600;
+}
+
+/* Footer / secondary info */
+.stat-card-v2__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--dv-border-subtle);
+  margin-top: 4px;
+}
+
+.stat-card-v2__footer-text {
+  font-size: 11px;
+  color: var(--dv-text-dim);
+}
+
+/* Grid layout for multiple stat cards */
+.stat-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+/* Stagger animations */
+.stat-card-grid .stat-card-v2:nth-child(1) { animation-delay: 0s; }
+.stat-card-grid .stat-card-v2:nth-child(2) { animation-delay: 0.05s; }
+.stat-card-grid .stat-card-v2:nth-child(3) { animation-delay: 0.1s; }
+.stat-card-grid .stat-card-v2:nth-child(4) { animation-delay: 0.15s; }
+.stat-card-grid .stat-card-v2:nth-child(5) { animation-delay: 0.2s; }
+.stat-card-grid .stat-card-v2:nth-child(6) { animation-delay: 0.25s; }
+.stat-card-grid .stat-card-v2:nth-child(7) { animation-delay: 0.3s; }
+.stat-card-grid .stat-card-v2:nth-child(8) { animation-delay: 0.35s; }
+
+/* Highlighted / accent border */
+.stat-card-v2--accent {
+  border-left: 3px solid var(--dv-cat-1);
+}
+
+.stat-card-v2--accent-success { border-left: 3px solid var(--dv-success); }
+.stat-card-v2--accent-warning { border-left: 3px solid var(--dv-warning); }
+.stat-card-v2--accent-danger  { border-left: 3px solid var(--dv-danger); }
+
+/* Compact variant */
+.stat-card-v2--compact {
+  padding: 12px 16px;
+  gap: 4px;
+}
+
+.stat-card-v2--compact .stat-card-v2__value {
+  font-size: 22px;
+}
+
+.stat-card-v2--compact .stat-card-v2__label {
+  font-size: 11px;
+}
+
+
+/* --------------------------------------------------------------------------
+   8. KPI TILES -- .kpi
+   Large number, subtitle, trend badge, icon.
+   -------------------------------------------------------------------------- */
+
+.kpi {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 24px;
+  background: var(--dv-surface);
+  border: 1px solid var(--dv-border);
+  border-radius: var(--dv-radius-lg);
+  font-family: var(--dv-font);
+  color: var(--dv-text);
+  min-width: 220px;
+  animation: dv-fade-in-up var(--dv-anim-fade) ease both;
+  transition: border-color 0.2s ease, transform 0.15s ease;
+}
+
+.kpi:hover {
+  border-color: var(--dv-text-dim);
+  transform: translateY(-2px);
+}
+
+.kpi__icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--dv-radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(88, 166, 255, 0.1);
+  color: var(--dv-cat-1);
+  flex-shrink: 0;
+  font-size: 22px;
+}
+
+.kpi__icon--success { background: rgba(63, 185, 80, 0.1); color: var(--dv-success); }
+.kpi__icon--warning { background: rgba(210, 153, 34, 0.1); color: var(--dv-warning); }
+.kpi__icon--danger  { background: rgba(248, 81, 73, 0.1); color: var(--dv-danger); }
+.kpi__icon--info    { background: rgba(88, 166, 255, 0.1); color: var(--dv-info); }
+
+.kpi__icon--lg {
+  width: 56px;
+  height: 56px;
+  font-size: 26px;
+}
+
+.kpi__content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.kpi__number {
+  font-size: 36px;
+  font-weight: 700;
+  line-height: 1;
+  font-family: var(--dv-font-mono);
+  color: var(--dv-text);
+}
+
+.kpi__number--sm { font-size: 28px; }
+.kpi__number--xl { font-size: 48px; }
+
+.kpi__subtitle {
+  font-size: 13px;
+  color: var(--dv-text-muted);
+  line-height: 1.3;
+}
+
+.kpi__trend {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 10px;
+  border-radius: 12px;
+  width: fit-content;
+  margin-top: 4px;
+}
+
+.kpi__trend--up {
+  color: var(--dv-success);
+  background: rgba(63, 185, 80, 0.1);
+}
+
+.kpi__trend--up::before {
+  content: "";
+  display: inline-block;
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-bottom: 5px solid var(--dv-success);
+}
+
+.kpi__trend--down {
+  color: var(--dv-danger);
+  background: rgba(248, 81, 73, 0.1);
+}
+
+.kpi__trend--down::before {
+  content: "";
+  display: inline-block;
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 5px solid var(--dv-danger);
+}
+
+.kpi__trend--neutral {
+  color: var(--dv-text-muted);
+  background: rgba(139, 148, 158, 0.08);
+}
+
+/* KPI grid layout */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.kpi-grid .kpi:nth-child(1) { animation-delay: 0s; }
+.kpi-grid .kpi:nth-child(2) { animation-delay: 0.06s; }
+.kpi-grid .kpi:nth-child(3) { animation-delay: 0.12s; }
+.kpi-grid .kpi:nth-child(4) { animation-delay: 0.18s; }
+.kpi-grid .kpi:nth-child(5) { animation-delay: 0.24s; }
+.kpi-grid .kpi:nth-child(6) { animation-delay: 0.3s; }
+
+/* KPI row layout */
+.kpi-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.kpi-row .kpi {
+  flex: 1;
+  min-width: 200px;
+}
+
+/* Centered variant */
+.kpi--centered {
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.kpi--centered .kpi__trend {
+  align-self: center;
+}
+
+/* Mini variant */
+.kpi--mini {
+  padding: 12px 16px;
+  gap: 10px;
+}
+
+.kpi--mini .kpi__icon {
+  width: 36px;
+  height: 36px;
+  font-size: 16px;
+}
+
+.kpi--mini .kpi__number {
+  font-size: 22px;
+}
+
+.kpi--mini .kpi__subtitle {
+  font-size: 11px;
+}
+
+/* Bordered color variants */
+.kpi--border-success { border-left: 3px solid var(--dv-success); }
+.kpi--border-warning { border-left: 3px solid var(--dv-warning); }
+.kpi--border-danger  { border-left: 3px solid var(--dv-danger); }
+.kpi--border-info    { border-left: 3px solid var(--dv-info); }
+
+
+/* --------------------------------------------------------------------------
+   9. COMPARISON BARS -- .compare-bar
+   Two bars side by side with labels.
+   -------------------------------------------------------------------------- */
+
+.compare-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  background: var(--dv-surface);
+  border: 1px solid var(--dv-border);
+  border-radius: var(--dv-radius-lg);
+  font-family: var(--dv-font);
+  color: var(--dv-text);
+}
+
+.compare-bar__title {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 4px 0;
+}
+
+.compare-bar__row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.compare-bar__row-label {
+  font-size: 12px;
+  color: var(--dv-text-muted);
+  font-weight: 500;
+}
+
+.compare-bar__tracks {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.compare-bar__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.compare-bar__item-label {
+  flex: 0 0 60px;
+  font-size: 11px;
+  color: var(--dv-text-dim);
+  text-align: right;
+}
+
+.compare-bar__track {
+  flex: 1;
+  height: 16px;
+  background: var(--dv-border-subtle);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.compare-bar__fill {
+  height: 100%;
+  border-radius: 3px;
+  animation: dv-fill-h 0.8s ease-out both;
+}
+
+.compare-bar__fill--a {
+  background: var(--dv-cat-1);
+}
+
+.compare-bar__fill--b {
+  background: var(--dv-cat-4);
+}
+
+.compare-bar__item-value {
+  flex: 0 0 40px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--dv-text);
+  font-family: var(--dv-font-mono);
+}
+
+/* Side-by-side variant (bars extend from center) */
+.compare-bar--mirror .compare-bar__pair {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-bottom: 6px;
+}
+
+.compare-bar--mirror .compare-bar__left {
+  flex: 1;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.compare-bar--mirror .compare-bar__left .compare-bar__track {
+  direction: rtl;
+}
+
+.compare-bar--mirror .compare-bar__center-label {
+  flex: 0 0 80px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--dv-text-muted);
+  padding: 0 8px;
+}
+
+.compare-bar--mirror .compare-bar__right {
+  flex: 1;
+}
+
+/* Legend */
+.compare-bar__legend {
+  display: flex;
+  gap: 16px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--dv-border-subtle);
+}
+
+.compare-bar__legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--dv-text-muted);
+}
+
+.compare-bar__legend-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+
+/* Percentage difference indicator */
+.compare-bar__diff {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+  display: inline-block;
+  margin-top: 4px;
+}
+
+.compare-bar__diff--positive {
+  color: var(--dv-success);
+  background: rgba(63, 185, 80, 0.1);
+}
+
+.compare-bar__diff--negative {
+  color: var(--dv-danger);
+  background: rgba(248, 81, 73, 0.1);
+}
+
+/* Stacked comparison */
+.compare-bar__stacked {
+  display: flex;
+  height: 24px;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.compare-bar__stacked-seg {
+  height: 100%;
+  transition: width var(--dv-transition);
+}
+
+
+/* --------------------------------------------------------------------------
+   10. FUNNEL CHARTS -- .funnel
+   Descending width bars representing conversion stages.
+   -------------------------------------------------------------------------- */
+
+.funnel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 20px;
+  background: var(--dv-surface);
+  border: 1px solid var(--dv-border);
+  border-radius: var(--dv-radius-lg);
+  font-family: var(--dv-font);
+  color: var(--dv-text);
+}
+
+.funnel__title {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 12px 0;
+  align-self: flex-start;
+}
+
+.funnel__stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  border-radius: 4px;
+  position: relative;
+  transition: filter 0.2s ease;
+  animation: dv-fade-in-up 0.5s ease both;
+  /* Width set via inline style */
+}
+
+.funnel__stage:hover {
+  filter: brightness(1.15);
+}
+
+.funnel__stage--1  { background: var(--dv-cat-1); }
+.funnel__stage--2  { background: var(--dv-cat-2); }
+.funnel__stage--3  { background: var(--dv-cat-3); }
+.funnel__stage--4  { background: var(--dv-cat-4); }
+.funnel__stage--5  { background: var(--dv-cat-5); }
+.funnel__stage--6  { background: var(--dv-cat-6); }
+.funnel__stage--7  { background: var(--dv-cat-7); }
+.funnel__stage--8  { background: var(--dv-cat-8); }
+
+/* Stagger animation */
+.funnel__stage:nth-child(2) { animation-delay: 0.05s; }
+.funnel__stage:nth-child(3) { animation-delay: 0.1s; }
+.funnel__stage:nth-child(4) { animation-delay: 0.15s; }
+.funnel__stage:nth-child(5) { animation-delay: 0.2s; }
+.funnel__stage:nth-child(6) { animation-delay: 0.25s; }
+.funnel__stage:nth-child(7) { animation-delay: 0.3s; }
+.funnel__stage:nth-child(8) { animation-delay: 0.35s; }
+
+.funnel__stage-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0 12px;
+}
+
+.funnel__stage-value {
+  position: absolute;
+  right: -60px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--dv-text);
+  font-family: var(--dv-font-mono);
+  white-space: nowrap;
+}
+
+.funnel__stage-pct {
+  position: absolute;
+  left: -50px;
+  font-size: 11px;
+  color: var(--dv-text-muted);
+  white-space: nowrap;
+}
+
+/* Conversion rate connectors */
+.funnel__connector {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 20px;
+  font-size: 10px;
+  color: var(--dv-text-dim);
+}
+
+.funnel__connector::before {
+  content: "";
+  width: 1px;
+  height: 12px;
+  background: var(--dv-border);
+  margin-right: 6px;
+}
+
+/* Horizontal funnel */
+.funnel--horizontal {
+  flex-direction: row;
+  align-items: stretch;
+  gap: 2px;
+}
+
+.funnel--horizontal .funnel__stage {
+  flex: none;
+  height: auto;
+  min-height: 60px;
+  writing-mode: vertical-lr;
+  text-orientation: mixed;
+}
+
+/* Trapezoidal stages */
+.funnel--trapezoid .funnel__stage {
+  clip-path: polygon(
+    calc(50% - var(--funnel-top, 50%)) 0%,
+    calc(50% + var(--funnel-top, 50%)) 0%,
+    calc(50% + var(--funnel-bottom, 45%)) 100%,
+    calc(50% - var(--funnel-bottom, 45%)) 100%
+  );
+  padding: 0 24px;
+}
+
+/* Funnel summary */
+.funnel__summary {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  padding-top: 12px;
+  margin-top: 8px;
+  border-top: 1px solid var(--dv-border-subtle);
+  font-size: 12px;
+  color: var(--dv-text-muted);
+}
+
+.funnel__summary-value {
+  font-weight: 700;
+  color: var(--dv-text);
+  font-family: var(--dv-font-mono);
+}
+
+
+/* --------------------------------------------------------------------------
+   11. TIMELINE CHARTS -- .timeline-chart
+   Horizontal timeline with markers and labels.
+   -------------------------------------------------------------------------- */
+
+.timeline-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+  background: var(--dv-surface);
+  border: 1px solid var(--dv-border);
+  border-radius: var(--dv-radius-lg);
+  font-family: var(--dv-font);
+  color: var(--dv-text);
+  overflow-x: auto;
+}
+
+.timeline-chart__title {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.timeline-chart__track {
+  position: relative;
+  height: 60px;
+  min-width: 400px;
+}
+
+.timeline-chart__line {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--dv-border);
+  transform: translateY(-50%);
+}
+
+.timeline-chart__marker {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--dv-cat-1);
+  border: 3px solid var(--dv-surface);
+  box-shadow: 0 0 0 2px var(--dv-cat-1);
+  z-index: 1;
+  transition: transform 0.2s ease;
+  animation: dv-scale-in 0.4s ease both;
+}
+
+.timeline-chart__marker:hover {
+  transform: translate(-50%, -50%) scale(1.4);
+}
+
+/* Color variants for markers */
+.timeline-chart__marker--1 { background: var(--dv-cat-1); box-shadow: 0 0 0 2px var(--dv-cat-1); }
+.timeline-chart__marker--2 { background: var(--dv-cat-2); box-shadow: 0 0 0 2px var(--dv-cat-2); }
+.timeline-chart__marker--3 { background: var(--dv-cat-3); box-shadow: 0 0 0 2px var(--dv-cat-3); }
+.timeline-chart__marker--4 { background: var(--dv-cat-4); box-shadow: 0 0 0 2px var(--dv-cat-4); }
+.timeline-chart__marker--5 { background: var(--dv-cat-5); box-shadow: 0 0 0 2px var(--dv-cat-5); }
+
+/* Success/warning/danger markers */
+.timeline-chart__marker--success { background: var(--dv-success); box-shadow: 0 0 0 2px var(--dv-success); }
+.timeline-chart__marker--warning { background: var(--dv-warning); box-shadow: 0 0 0 2px var(--dv-warning); }
+.timeline-chart__marker--danger  { background: var(--dv-danger); box-shadow: 0 0 0 2px var(--dv-danger); }
+
+/* Stagger marker animations */
+.timeline-chart__marker:nth-child(2)  { animation-delay: 0.1s; }
+.timeline-chart__marker:nth-child(3)  { animation-delay: 0.2s; }
+.timeline-chart__marker:nth-child(4)  { animation-delay: 0.3s; }
+.timeline-chart__marker:nth-child(5)  { animation-delay: 0.4s; }
+.timeline-chart__marker:nth-child(6)  { animation-delay: 0.5s; }
+.timeline-chart__marker:nth-child(7)  { animation-delay: 0.6s; }
+.timeline-chart__marker:nth-child(8)  { animation-delay: 0.7s; }
+.timeline-chart__marker:nth-child(9)  { animation-delay: 0.8s; }
+.timeline-chart__marker:nth-child(10) { animation-delay: 0.9s; }
+
+.timeline-chart__label {
+  position: absolute;
+  white-space: nowrap;
+  font-size: 11px;
+  color: var(--dv-text-muted);
+  transform: translateX(-50%);
+}
+
+.timeline-chart__label--above {
+  bottom: calc(50% + 16px);
+}
+
+.timeline-chart__label--below {
+  top: calc(50% + 16px);
+}
+
+.timeline-chart__label--date {
+  font-family: var(--dv-font-mono);
+  font-size: 10px;
+  color: var(--dv-text-dim);
+}
+
+/* Filled segments between markers */
+.timeline-chart__segment {
+  position: absolute;
+  top: 50%;
+  height: 4px;
+  transform: translateY(-50%);
+  background: var(--dv-cat-1);
+  border-radius: 2px;
+  opacity: 0.4;
+}
+
+/* Current position indicator */
+.timeline-chart__current {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--dv-cat-1);
+  border: 3px solid var(--dv-surface);
+  box-shadow: 0 0 0 2px var(--dv-cat-1), 0 0 12px rgba(88, 166, 255, 0.4);
+  z-index: 2;
+  animation: dv-pulse 2s ease-in-out infinite;
+}
+
+/* Vertical timeline variant */
+.timeline-chart--vertical {
+  min-height: 300px;
+}
+
+.timeline-chart--vertical .timeline-chart__track {
+  width: 60px;
+  height: auto;
+  min-height: 300px;
+  min-width: 0;
+}
+
+.timeline-chart--vertical .timeline-chart__line {
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  right: auto;
+  width: 2px;
+  height: auto;
+  transform: translateX(-50%);
+}
+
+.timeline-chart--vertical .timeline-chart__marker {
+  left: 50%;
+  top: auto;
+  transform: translate(-50%, -50%);
+}
+
+.timeline-chart--vertical .timeline-chart__label--above {
+  left: calc(50% + 20px);
+  bottom: auto;
+  transform: translateY(-50%);
+}
+
+.timeline-chart--vertical .timeline-chart__label--below {
+  right: calc(50% + 20px);
+  left: auto;
+  top: auto;
+  transform: translateY(-50%);
+  text-align: right;
+}
+
+/* Timeline with ranges/durations */
+.timeline-chart__range {
+  position: absolute;
+  top: 50%;
+  height: 12px;
+  transform: translateY(-50%);
+  border-radius: 3px;
+  opacity: 0.6;
+}
+
+
+/* --------------------------------------------------------------------------
+   12. TREE MAPS -- .treemap
+   Nested rectangles with sizes and colors.
+   -------------------------------------------------------------------------- */
+
+.treemap {
+  display: grid;
+  gap: 2px;
+  padding: 2px;
+  background: var(--dv-surface);
+  border: 1px solid var(--dv-border);
+  border-radius: var(--dv-radius-lg);
+  overflow: hidden;
+  font-family: var(--dv-font);
+  min-height: 300px;
+}
+
+/* Default 12-column grid for flexible sizing */
+.treemap--auto {
+  grid-template-columns: repeat(12, 1fr);
+  grid-auto-rows: minmax(40px, auto);
+}
+
+.treemap__cell {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 8px 10px;
+  border-radius: 4px;
+  min-height: 40px;
+  overflow: hidden;
+  transition: filter 0.2s ease, transform 0.15s ease;
+  cursor: default;
+  position: relative;
+}
+
+.treemap__cell:hover {
+  filter: brightness(1.2);
+  z-index: 1;
+}
+
+/* Color variants */
+.treemap__cell--1  { background: var(--dv-cat-1); }
+.treemap__cell--2  { background: var(--dv-cat-2); }
+.treemap__cell--3  { background: var(--dv-cat-3); }
+.treemap__cell--4  { background: var(--dv-cat-4); }
+.treemap__cell--5  { background: var(--dv-cat-5); }
+.treemap__cell--6  { background: var(--dv-cat-6); }
+.treemap__cell--7  { background: var(--dv-cat-7); }
+.treemap__cell--8  { background: var(--dv-cat-8); }
+.treemap__cell--9  { background: var(--dv-cat-9); }
+.treemap__cell--10 { background: var(--dv-cat-10); }
+
+/* Semi-transparent variants (for nested cells) */
+.treemap__cell--1-light  { background: rgba(88, 166, 255, 0.2); }
+.treemap__cell--2-light  { background: rgba(63, 185, 80, 0.2); }
+.treemap__cell--3-light  { background: rgba(210, 153, 34, 0.2); }
+.treemap__cell--4-light  { background: rgba(248, 81, 73, 0.2); }
+.treemap__cell--5-light  { background: rgba(188, 140, 255, 0.2); }
+
+.treemap__cell-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.treemap__cell-value {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.7);
+  font-family: var(--dv-font-mono);
+  margin-top: 2px;
+}
+
+/* Large cell (takes more grid space) */
+.treemap__cell--lg .treemap__cell-label {
+  font-size: 16px;
+}
+
+.treemap__cell--lg .treemap__cell-value {
+  font-size: 14px;
+}
+
+/* Small cell (minimal info) */
+.treemap__cell--sm {
+  padding: 4px 6px;
+  min-height: 24px;
+}
+
+.treemap__cell--sm .treemap__cell-label {
+  font-size: 10px;
+}
+
+.treemap__cell--sm .treemap__cell-value {
+  display: none;
+}
+
+/* Nested treemap */
+.treemap__cell--nested {
+  display: grid;
+  gap: 2px;
+  padding: 2px;
+  grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+  grid-auto-rows: minmax(30px, auto);
+}
+
+/* Title bar */
+.treemap__header {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: var(--dv-surface);
+}
+
+.treemap__header-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--dv-text);
+}
+
+/* Treemap legend */
+.treemap__legend {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  padding: 8px 12px;
+  background: var(--dv-surface);
+}
+
+.treemap__legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--dv-text-muted);
+}
+
+.treemap__legend-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+
+/* Proportional sizing helpers (span columns/rows) */
+.treemap__cell--span-2  { grid-column: span 2; }
+.treemap__cell--span-3  { grid-column: span 3; }
+.treemap__cell--span-4  { grid-column: span 4; }
+.treemap__cell--span-5  { grid-column: span 5; }
+.treemap__cell--span-6  { grid-column: span 6; }
+.treemap__cell--span-8  { grid-column: span 8; }
+.treemap__cell--span-12 { grid-column: span 12; }
+
+.treemap__cell--row-2  { grid-row: span 2; }
+.treemap__cell--row-3  { grid-row: span 3; }
+.treemap__cell--row-4  { grid-row: span 4; }
+
+/* Accessibility: patterned cells */
+.treemap--patterned .treemap__cell--1 {
+  background-image: repeating-linear-gradient(45deg, transparent, transparent 4px, rgba(255,255,255,0.06) 4px, rgba(255,255,255,0.06) 8px);
+}
+.treemap--patterned .treemap__cell--2 {
+  background-image: repeating-linear-gradient(0deg, transparent, transparent 4px, rgba(255,255,255,0.06) 4px, rgba(255,255,255,0.06) 8px);
+}
+.treemap--patterned .treemap__cell--3 {
+  background-image: repeating-linear-gradient(90deg, transparent, transparent 4px, rgba(255,255,255,0.06) 4px, rgba(255,255,255,0.06) 8px);
+}
+.treemap--patterned .treemap__cell--4 {
+  background-image: repeating-linear-gradient(-45deg, transparent, transparent 4px, rgba(255,255,255,0.06) 4px, rgba(255,255,255,0.06) 8px);
+}
+
+
+/* --------------------------------------------------------------------------
+   13. RADAR / SPIDER CHARTS -- .radar
+   Using clip-path polygon for the data shape.
+   -------------------------------------------------------------------------- */
+
+.radar {
+  position: relative;
+  width: 240px;
+  height: 240px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--dv-font);
+}
+
+/* Concentric grid rings */
+.radar__grid {
+  position: absolute;
+  inset: 0;
+}
+
+.radar__ring {
+  position: absolute;
+  border: 1px solid var(--dv-border-subtle);
+  border-radius: 50%;
+}
+
+.radar__ring--1 { inset: 0; }
+.radar__ring--2 { inset: 16%; }
+.radar__ring--3 { inset: 32%; }
+.radar__ring--4 { inset: 48%; }
+
+/* Axis lines (from center to edge) */
+.radar__axis {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 50%;
+  height: 1px;
+  background: var(--dv-border-subtle);
+  transform-origin: left center;
+}
+
+/* Axis labels */
+.radar__label {
+  position: absolute;
+  font-size: 11px;
+  color: var(--dv-text-muted);
+  white-space: nowrap;
+}
+
+/* Data shape overlay */
+.radar__shape {
+  position: absolute;
+  inset: 0;
+  /* Set via --radar-clip as clip-path polygon */
+  clip-path: var(--radar-clip, polygon(
+    50% 15%,
+    85% 35%,
+    80% 75%,
+    50% 90%,
+    20% 75%,
+    15% 35%
+  ));
+  background: rgba(88, 166, 255, 0.2);
+  border: 2px solid var(--dv-cat-1);
+  animation: dv-fade-in 0.6s ease both;
+}
+
+/* Second data shape for comparison */
+.radar__shape--2 {
+  clip-path: var(--radar-clip-2, polygon(
+    50% 25%,
+    75% 30%,
+    70% 65%,
+    50% 80%,
+    30% 65%,
+    25% 30%
+  ));
+  background: rgba(63, 185, 80, 0.15);
+  border-color: var(--dv-cat-2);
+}
+
+/* Data points on vertices */
+.radar__point {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--dv-cat-1);
+  border: 2px solid var(--dv-surface);
+  transform: translate(-50%, -50%);
+  z-index: 2;
+  transition: transform 0.2s ease;
+}
+
+.radar__point:hover {
+  transform: translate(-50%, -50%) scale(1.5);
+}
+
+.radar__point--2 {
+  background: var(--dv-cat-2);
+}
+
+/* Value labels on points */
+.radar__point-value {
+  position: absolute;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--dv-text);
+  font-family: var(--dv-font-mono);
+  white-space: nowrap;
+  transform: translate(-50%, -120%);
+}
+
+/* Size variants */
+.radar--sm {
+  width: 160px;
+  height: 160px;
+}
+
+.radar--lg {
+  width: 320px;
+  height: 320px;
+}
+
+/* Radar with polygon border (using a pseudo-element for the outline) */
+.radar__outline {
+  position: absolute;
+  inset: 0;
+  clip-path: var(--radar-clip, polygon(
+    50% 15%, 85% 35%, 80% 75%, 50% 90%, 20% 75%, 15% 35%
+  ));
+  border: 2px solid var(--dv-cat-1);
+  background: transparent;
+  pointer-events: none;
+}
+
+/* Radar card wrapper */
+.radar-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 24px;
+  background: var(--dv-surface);
+  border: 1px solid var(--dv-border);
+  border-radius: var(--dv-radius-lg);
+}
+
+.radar-card__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--dv-text);
+  align-self: flex-start;
+  margin: 0;
+}
+
+.radar-card__legend {
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+  color: var(--dv-text-muted);
+}
+
+.radar-card__legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.radar-card__legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+
+/* --------------------------------------------------------------------------
+   14. BULLET CHARTS -- .bullet
+   Bar with target marker and qualitative ranges.
+   -------------------------------------------------------------------------- */
+
+.bullet {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-family: var(--dv-font);
+  color: var(--dv-text);
+}
+
+.bullet__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.bullet__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--dv-text);
+  margin: 0;
+}
+
+.bullet__value-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--dv-text);
+  font-family: var(--dv-font-mono);
+}
+
+.bullet__track {
+  position: relative;
+  height: 24px;
+  border-radius: 3px;
+  overflow: visible;
+}
+
+/* Qualitative ranges (background bands) */
+.bullet__range {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  border-radius: 3px;
+}
+
+.bullet__range--poor {
+  background: var(--dv-border-subtle);
+  width: 100%;
+}
+
+.bullet__range--satisfactory {
+  background: rgba(139, 148, 158, 0.15);
+}
+
+.bullet__range--good {
+  background: rgba(139, 148, 158, 0.25);
+}
+
+/* Actual value bar */
+.bullet__bar {
+  position: absolute;
+  top: 25%;
+  left: 0;
+  height: 50%;
+  background: var(--dv-cat-1);
+  border-radius: 2px;
+  z-index: 1;
+  animation: dv-fill-h 0.8s ease-out both;
+}
+
+/* Target marker */
+.bullet__target {
+  position: absolute;
+  top: 10%;
+  height: 80%;
+  width: 3px;
+  background: var(--dv-text);
+  z-index: 2;
+  border-radius: 1px;
+}
+
+.bullet__target::after {
+  content: attr(data-target);
+  position: absolute;
+  top: -16px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 10px;
+  color: var(--dv-text-dim);
+  font-family: var(--dv-font-mono);
+  white-space: nowrap;
+}
+
+/* Color variants */
+.bullet__bar--success { background: var(--dv-success); }
+.bullet__bar--warning { background: var(--dv-warning); }
+.bullet__bar--danger  { background: var(--dv-danger); }
+
+/* Bullet chart group */
+.bullet-group {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  background: var(--dv-surface);
+  border: 1px solid var(--dv-border);
+  border-radius: var(--dv-radius-lg);
+}
+
+.bullet-group__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--dv-text);
+  margin: 0 0 4px 0;
+}
+
+/* Compact bullet */
+.bullet--compact .bullet__track {
+  height: 16px;
+}
+
+.bullet--compact .bullet__bar {
+  top: 20%;
+  height: 60%;
+}
+
+/* Horizontal scale */
+.bullet__scale {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--dv-text-dim);
+  font-family: var(--dv-font-mono);
+  margin-top: 2px;
+}
+
+
+/* --------------------------------------------------------------------------
+   15. METER -- .meter
+   Horizontal fill bar with labels and thresholds.
+   -------------------------------------------------------------------------- */
+
+.meter {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-family: var(--dv-font);
+  color: var(--dv-text);
+}
+
+.meter__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.meter__label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--dv-text);
+}
+
+.meter__value {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--dv-text);
+  font-family: var(--dv-font-mono);
+}
+
+.meter__track {
+  position: relative;
+  height: 10px;
+  background: var(--dv-border-subtle);
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.meter__fill {
+  height: 100%;
+  border-radius: 5px;
+  background: var(--dv-cat-1);
+  transition: width var(--dv-transition);
+  animation: dv-fill-h var(--dv-anim-fill) ease-out both;
+}
+
+/* Gradient fill */
+.meter__fill--gradient {
+  background: linear-gradient(90deg,
+    var(--dv-zone-green) 0%,
+    var(--dv-zone-yellow) 60%,
+    var(--dv-zone-red) 100%
+  );
+}
+
+/* Color variants */
+.meter__fill--success { background: var(--dv-success); }
+.meter__fill--warning { background: var(--dv-warning); }
+.meter__fill--danger  { background: var(--dv-danger); }
+.meter__fill--info    { background: var(--dv-info); }
+
+/* Threshold markers */
+.meter__threshold {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  width: 2px;
+  background: var(--dv-text);
+  z-index: 1;
+  border-radius: 1px;
+}
+
+.meter__threshold--warning {
+  background: var(--dv-warning);
+}
+
+.meter__threshold--danger {
+  background: var(--dv-danger);
+}
+
+.meter__threshold-label {
+  position: absolute;
+  top: -16px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 9px;
+  color: var(--dv-text-dim);
+  font-family: var(--dv-font-mono);
+  white-space: nowrap;
+}
+
+/* Scale labels */
+.meter__scale {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--dv-text-dim);
+  font-family: var(--dv-font-mono);
+}
+
+/* Size variants */
+.meter--thin .meter__track { height: 4px; }
+.meter--thick .meter__track { height: 16px; }
+
+.meter--thick .meter__fill::after {
+  content: attr(data-value);
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--dv-text);
+}
+
+/* Striped meter (accessibility) */
+.meter__fill--striped {
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 4px,
+    rgba(255, 255, 255, 0.08) 4px,
+    rgba(255, 255, 255, 0.08) 8px
+  );
+}
+
+/* Animated shimmer effect */
+.meter__fill--shimmer {
+  background-size: 200% 100%;
+  animation: dv-shimmer 2s linear infinite;
+}
+
+/* Meter with segments (discrete steps) */
+.meter--segmented .meter__track {
+  display: flex;
+  gap: 2px;
+  background: transparent;
+  overflow: visible;
+}
+
+.meter--segmented .meter__segment {
+  flex: 1;
+  height: 10px;
+  background: var(--dv-border-subtle);
+  border-radius: 2px;
+  transition: background-color var(--dv-transition);
+}
+
+.meter--segmented .meter__segment--active {
+  background: var(--dv-cat-1);
+}
+
+.meter--segmented .meter__segment--active.meter__segment--success { background: var(--dv-success); }
+.meter--segmented .meter__segment--active.meter__segment--warning { background: var(--dv-warning); }
+.meter--segmented .meter__segment--active.meter__segment--danger  { background: var(--dv-danger); }
+
+/* Meter group */
+.meter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
+  background: var(--dv-surface);
+  border: 1px solid var(--dv-border);
+  border-radius: var(--dv-radius-lg);
+}
+
+.meter-group__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--dv-text);
+  margin: 0;
+}
+
+
+/* --------------------------------------------------------------------------
+   16. SCORE CARDS -- .score
+   Letter grade (A-F) with color, percentage ring.
+   -------------------------------------------------------------------------- */
+
+.score {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 24px;
+  background: var(--dv-surface);
+  border: 1px solid var(--dv-border);
+  border-radius: var(--dv-radius-lg);
+  font-family: var(--dv-font);
+  color: var(--dv-text);
+  min-width: 160px;
+  animation: dv-fade-in var(--dv-anim-fade) ease both;
+}
+
+.score__ring {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.score__ring::before {
+  content: "";
+  position: absolute;
+  inset: 8px;
+  border-radius: 50%;
+  background: var(--dv-surface);
+}
+
+.score__grade {
+  position: relative;
+  z-index: 1;
+  font-size: 36px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+/* Grade colors with ring */
+.score--a .score__ring {
+  background: conic-gradient(
+    var(--dv-success) calc(var(--score-pct, 95) * 1%),
+    var(--dv-border-subtle) calc(var(--score-pct, 95) * 1%)
+  );
+}
+.score--a .score__grade { color: var(--dv-success); }
+
+.score--b .score__ring {
+  background: conic-gradient(
+    #2ea043 calc(var(--score-pct, 85) * 1%),
+    var(--dv-border-subtle) calc(var(--score-pct, 85) * 1%)
+  );
+}
+.score--b .score__grade { color: #2ea043; }
+
+.score--c .score__ring {
+  background: conic-gradient(
+    var(--dv-warning) calc(var(--score-pct, 75) * 1%),
+    var(--dv-border-subtle) calc(var(--score-pct, 75) * 1%)
+  );
+}
+.score--c .score__grade { color: var(--dv-warning); }
+
+.score--d .score__ring {
+  background: conic-gradient(
+    #d29922 calc(var(--score-pct, 65) * 1%),
+    var(--dv-border-subtle) calc(var(--score-pct, 65) * 1%)
+  );
+}
+.score--d .score__grade { color: #bd8215; }
+
+.score--f .score__ring {
+  background: conic-gradient(
+    var(--dv-danger) calc(var(--score-pct, 40) * 1%),
+    var(--dv-border-subtle) calc(var(--score-pct, 40) * 1%)
+  );
+}
+.score--f .score__grade { color: var(--dv-danger); }
+
+/* Plus/minus modifiers */
+.score__modifier {
+  font-size: 20px;
+  font-weight: 700;
+  vertical-align: super;
+}
+
+/* Percentage display */
+.score__pct {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--dv-text-muted);
+  font-family: var(--dv-font-mono);
+}
+
+.score__pct::after {
+  content: "%";
+  font-size: 11px;
+  color: var(--dv-text-dim);
+}
+
+/* Title/category label */
+.score__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--dv-text);
+  text-align: center;
+}
+
+.score__subtitle {
+  font-size: 12px;
+  color: var(--dv-text-muted);
+  text-align: center;
+  margin-top: -4px;
+}
+
+/* Size variants */
+.score--sm {
+  padding: 16px;
+  min-width: 120px;
+}
+
+.score--sm .score__ring {
+  width: 68px;
+  height: 68px;
+}
+
+.score--sm .score__ring::before {
+  inset: 6px;
+}
+
+.score--sm .score__grade {
+  font-size: 24px;
+}
+
+.score--lg .score__ring {
+  width: 140px;
+  height: 140px;
+}
+
+.score--lg .score__ring::before {
+  inset: 12px;
+}
+
+.score--lg .score__grade {
+  font-size: 48px;
+}
+
+/* Score grid */
+.score-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 16px;
+}
+
+/* Inline score (horizontal) */
+.score--inline {
+  flex-direction: row;
+  gap: 16px;
+  padding: 16px 20px;
+}
+
+.score--inline .score__ring {
+  width: 56px;
+  height: 56px;
+}
+
+.score--inline .score__ring::before {
+  inset: 5px;
+}
+
+.score--inline .score__grade {
+  font-size: 20px;
+}
+
+.score--inline .score__details {
+  text-align: left;
+}
+
+/* Breakdown bars inside score card */
+.score__breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  margin-top: 4px;
+}
+
+.score__breakdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--dv-text-muted);
+}
+
+.score__breakdown-label {
+  flex: 0 0 60px;
+  text-align: right;
+}
+
+.score__breakdown-bar {
+  flex: 1;
+  height: 4px;
+  background: var(--dv-border-subtle);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.score__breakdown-fill {
+  height: 100%;
+  border-radius: 2px;
+  background: var(--dv-cat-1);
+}
+
+.score__breakdown-value {
+  flex: 0 0 28px;
+  text-align: right;
+  font-family: var(--dv-font-mono);
+  font-size: 10px;
+}
+
+
+/* --------------------------------------------------------------------------
+   17. ACTIVITY GRIDS -- .activity-grid
+   GitHub-style contribution heatmap.
+   -------------------------------------------------------------------------- */
+
+.activity-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  background: var(--dv-surface);
+  border: 1px solid var(--dv-border);
+  border-radius: var(--dv-radius-lg);
+  font-family: var(--dv-font);
+  color: var(--dv-text);
+  overflow-x: auto;
+}
+
+.activity-grid__title {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.activity-grid__subtitle {
+  font-size: 12px;
+  color: var(--dv-text-muted);
+  margin-top: -4px;
+}
+
+.activity-grid__body {
+  display: flex;
+  gap: 2px;
+}
+
+/* Day labels (Mon, Wed, Fri on the left) */
+.activity-grid__day-labels {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-right: 4px;
+}
+
+.activity-grid__day-label {
+  height: 13px;
+  font-size: 9px;
+  color: var(--dv-text-dim);
+  display: flex;
+  align-items: center;
+  line-height: 1;
+}
+
+/* Grid of cells */
+.activity-grid__weeks {
+  display: flex;
+  gap: 2px;
+}
+
+.activity-grid__week {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.activity-grid__cell {
+  width: 13px;
+  height: 13px;
+  border-radius: 2px;
+  background: var(--dv-border-subtle);
+  transition: transform 0.15s ease;
+  cursor: default;
+  position: relative;
+}
+
+.activity-grid__cell:hover {
+  transform: scale(1.5);
+  z-index: 2;
+  outline: 2px solid var(--dv-text-muted);
+  outline-offset: 1px;
+}
+
+/* Tooltip */
+.activity-grid__cell[data-tooltip]:hover::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 8px;
+  background: var(--dv-bg);
+  border: 1px solid var(--dv-border);
+  border-radius: 4px;
+  font-size: 11px;
+  color: var(--dv-text);
+  white-space: nowrap;
+  z-index: 10;
+  pointer-events: none;
+}
+
+/* Intensity levels (green scale by default) */
+.activity-grid__cell--0 { background: var(--dv-border-subtle); }
+.activity-grid__cell--1 { background: #0e4429; }
+.activity-grid__cell--2 { background: #006d32; }
+.activity-grid__cell--3 { background: #26a641; }
+.activity-grid__cell--4 { background: #39d353; }
+
+/* Alternative color schemes */
+.activity-grid--blue .activity-grid__cell--1 { background: var(--dv-seq-200); }
+.activity-grid--blue .activity-grid__cell--2 { background: var(--dv-seq-400); }
+.activity-grid--blue .activity-grid__cell--3 { background: var(--dv-seq-600); }
+.activity-grid--blue .activity-grid__cell--4 { background: var(--dv-seq-800); }
+
+.activity-grid--purple .activity-grid__cell--1 { background: #2d1b69; }
+.activity-grid--purple .activity-grid__cell--2 { background: #5b3cc4; }
+.activity-grid--purple .activity-grid__cell--3 { background: #8b6cef; }
+.activity-grid--purple .activity-grid__cell--4 { background: #bc8cff; }
+
+.activity-grid--orange .activity-grid__cell--1 { background: #3b1e00; }
+.activity-grid--orange .activity-grid__cell--2 { background: #7a3d00; }
+.activity-grid--orange .activity-grid__cell--3 { background: #c06000; }
+.activity-grid--orange .activity-grid__cell--4 { background: #f0883e; }
+
+/* Month labels along the top */
+.activity-grid__month-labels {
+  display: flex;
+  gap: 2px;
+  padding-left: 26px; /* align with grid, past day labels */
+}
+
+.activity-grid__month-label {
+  font-size: 10px;
+  color: var(--dv-text-dim);
+  white-space: nowrap;
+}
+
+/* Legend / scale */
+.activity-grid__legend {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--dv-text-muted);
+  margin-top: 4px;
+}
+
+.activity-grid__legend-label {
+  margin: 0 4px;
+}
+
+.activity-grid__legend-cells {
+  display: flex;
+  gap: 2px;
+}
+
+.activity-grid__legend-cell {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+}
+
+/* Summary stats */
+.activity-grid__stats {
+  display: flex;
+  gap: 16px;
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--dv-text-muted);
+}
+
+.activity-grid__stat-value {
+  font-weight: 700;
+  color: var(--dv-text);
+  font-family: var(--dv-font-mono);
+}
+
+/* Rounded cells variant */
+.activity-grid--rounded .activity-grid__cell {
+  border-radius: 50%;
+}
+
+/* Larger cells */
+.activity-grid--lg .activity-grid__cell {
+  width: 18px;
+  height: 18px;
+}
+
+.activity-grid--lg .activity-grid__day-label {
+  height: 18px;
+}
+
+/* Accessibility: bordered cells */
+.activity-grid--bordered .activity-grid__cell {
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+
+/* --------------------------------------------------------------------------
+   18. DISTRIBUTION -- .distribution
+   Horizontal stacked bar showing percentages.
+   -------------------------------------------------------------------------- */
+
+.distribution {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-family: var(--dv-font);
+  color: var(--dv-text);
+}
+
+.distribution__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--dv-text);
+  margin: 0;
+}
+
+.distribution__bar {
+  display: flex;
+  height: 28px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--dv-border-subtle);
+}
+
+.distribution__segment {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  white-space: nowrap;
+  overflow: hidden;
+  min-width: 0;
+  transition: flex-basis var(--dv-transition);
+}
+
+.distribution__segment:first-child {
+  border-radius: 4px 0 0 4px;
+}
+
+.distribution__segment:last-child {
+  border-radius: 0 4px 4px 0;
+}
+
+.distribution__segment:only-child {
+  border-radius: 4px;
+}
+
+/* Color variants */
+.distribution__segment--1  { background: var(--dv-cat-1); }
+.distribution__segment--2  { background: var(--dv-cat-2); }
+.distribution__segment--3  { background: var(--dv-cat-3); }
+.distribution__segment--4  { background: var(--dv-cat-4); }
+.distribution__segment--5  { background: var(--dv-cat-5); }
+.distribution__segment--6  { background: var(--dv-cat-6); }
+.distribution__segment--7  { background: var(--dv-cat-7); }
+.distribution__segment--8  { background: var(--dv-cat-8); }
+.distribution__segment--9  { background: var(--dv-cat-9); }
+.distribution__segment--10 { background: var(--dv-cat-10); }
+
+/* Thin variant */
+.distribution--thin .distribution__bar {
+  height: 8px;
+}
+
+.distribution--thin .distribution__segment {
+  font-size: 0; /* hide text in thin bars */
+}
+
+/* Thick variant with values */
+.distribution--thick .distribution__bar {
+  height: 36px;
+}
+
+/* Legend */
+.distribution__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+
+.distribution__legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--dv-text-muted);
+}
+
+.distribution__legend-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.distribution__legend-value {
+  font-weight: 600;
+  color: var(--dv-text);
+  font-family: var(--dv-font-mono);
+}
+
+/* Labels above segments */
+.distribution__labels {
+  display: flex;
+}
+
+.distribution__label {
+  font-size: 10px;
+  color: var(--dv-text-dim);
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 0 2px;
+}
+
+/* Distribution card wrapper */
+.distribution-card {
+  padding: 16px;
+  background: var(--dv-surface);
+  border: 1px solid var(--dv-border);
+  border-radius: var(--dv-radius-lg);
+}
+
+/* Multiple distributions stacked */
+.distribution-group {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  background: var(--dv-surface);
+  border: 1px solid var(--dv-border);
+  border-radius: var(--dv-radius-lg);
+}
+
+.distribution-group__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--dv-text);
+  margin: 0;
+}
+
+/* Accessibility: pattern overlay */
+.distribution--patterned .distribution__segment--1 {
+  background-image: repeating-linear-gradient(45deg, transparent, transparent 3px, rgba(255,255,255,0.08) 3px, rgba(255,255,255,0.08) 6px);
+}
+.distribution--patterned .distribution__segment--2 {
+  background-image: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(255,255,255,0.08) 3px, rgba(255,255,255,0.08) 6px);
+}
+.distribution--patterned .distribution__segment--3 {
+  background-image: repeating-linear-gradient(90deg, transparent, transparent 3px, rgba(255,255,255,0.08) 3px, rgba(255,255,255,0.08) 6px);
+}
+.distribution--patterned .distribution__segment--4 {
+  background-image: repeating-linear-gradient(-45deg, transparent, transparent 3px, rgba(255,255,255,0.08) 3px, rgba(255,255,255,0.08) 6px);
+}
+
+/* Hover highlight */
+.distribution__segment:hover {
+  filter: brightness(1.15);
+  position: relative;
+  z-index: 1;
+}
+
+
+/* --------------------------------------------------------------------------
+   19. TAG CLOUDS -- .tag-cloud
+   Varying font sizes based on weight.
+   -------------------------------------------------------------------------- */
+
+.tag-cloud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: var(--dv-surface);
+  border: 1px solid var(--dv-border);
+  border-radius: var(--dv-radius-lg);
+  font-family: var(--dv-font);
+}
+
+.tag-cloud__title {
+  width: 100%;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--dv-text);
+  margin: 0 0 8px 0;
+  text-align: left;
+}
+
+.tag-cloud__tag {
+  display: inline-block;
+  color: var(--dv-text-muted);
+  transition: color 0.2s ease, transform 0.15s ease;
+  cursor: default;
+  line-height: 1.3;
+}
+
+.tag-cloud__tag:hover {
+  color: var(--dv-text);
+  transform: scale(1.1);
+}
+
+/* Weight-based sizing (set via class or inline --tag-weight) */
+.tag-cloud__tag--1  { font-size: 11px; opacity: 0.5; }
+.tag-cloud__tag--2  { font-size: 13px; opacity: 0.55; }
+.tag-cloud__tag--3  { font-size: 15px; opacity: 0.6; }
+.tag-cloud__tag--4  { font-size: 17px; opacity: 0.65; }
+.tag-cloud__tag--5  { font-size: 20px; opacity: 0.7; }
+.tag-cloud__tag--6  { font-size: 23px; opacity: 0.75; }
+.tag-cloud__tag--7  { font-size: 27px; opacity: 0.8; }
+.tag-cloud__tag--8  { font-size: 31px; opacity: 0.85; }
+.tag-cloud__tag--9  { font-size: 36px; opacity: 0.9; }
+.tag-cloud__tag--10 { font-size: 42px; opacity: 1; font-weight: 700; }
+
+/* Colored tag cloud */
+.tag-cloud--colored .tag-cloud__tag--1  { color: var(--dv-cat-1); }
+.tag-cloud--colored .tag-cloud__tag--2  { color: var(--dv-cat-2); }
+.tag-cloud--colored .tag-cloud__tag--3  { color: var(--dv-cat-3); }
+.tag-cloud--colored .tag-cloud__tag--4  { color: var(--dv-cat-4); }
+.tag-cloud--colored .tag-cloud__tag--5  { color: var(--dv-cat-5); }
+.tag-cloud--colored .tag-cloud__tag--6  { color: var(--dv-cat-6); }
+.tag-cloud--colored .tag-cloud__tag--7  { color: var(--dv-cat-7); }
+.tag-cloud--colored .tag-cloud__tag--8  { color: var(--dv-cat-8); }
+.tag-cloud--colored .tag-cloud__tag--9  { color: var(--dv-cat-9); }
+.tag-cloud--colored .tag-cloud__tag--10 { color: var(--dv-cat-10); }
+
+/* Pill-style tags */
+.tag-cloud--pills .tag-cloud__tag {
+  padding: 4px 12px;
+  background: var(--dv-border-subtle);
+  border-radius: 20px;
+  border: 1px solid var(--dv-border);
+}
+
+.tag-cloud--pills .tag-cloud__tag:hover {
+  background: var(--dv-surface-raised);
+  border-color: var(--dv-text-dim);
+}
+
+/* With count badge */
+.tag-cloud__count {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--dv-text-dim);
+  background: var(--dv-border-subtle);
+  padding: 1px 5px;
+  border-radius: 8px;
+  margin-left: 4px;
+  font-family: var(--dv-font-mono);
+  vertical-align: middle;
+}
+
+/* Animation */
+.tag-cloud--animated .tag-cloud__tag {
+  animation: dv-fade-in-up 0.4s ease both;
+}
+
+.tag-cloud--animated .tag-cloud__tag:nth-child(2)  { animation-delay: 0.02s; }
+.tag-cloud--animated .tag-cloud__tag:nth-child(3)  { animation-delay: 0.04s; }
+.tag-cloud--animated .tag-cloud__tag:nth-child(4)  { animation-delay: 0.06s; }
+.tag-cloud--animated .tag-cloud__tag:nth-child(5)  { animation-delay: 0.08s; }
+.tag-cloud--animated .tag-cloud__tag:nth-child(6)  { animation-delay: 0.10s; }
+.tag-cloud--animated .tag-cloud__tag:nth-child(7)  { animation-delay: 0.12s; }
+.tag-cloud--animated .tag-cloud__tag:nth-child(8)  { animation-delay: 0.14s; }
+.tag-cloud--animated .tag-cloud__tag:nth-child(9)  { animation-delay: 0.16s; }
+.tag-cloud--animated .tag-cloud__tag:nth-child(10) { animation-delay: 0.18s; }
+.tag-cloud--animated .tag-cloud__tag:nth-child(11) { animation-delay: 0.20s; }
+.tag-cloud--animated .tag-cloud__tag:nth-child(12) { animation-delay: 0.22s; }
+.tag-cloud--animated .tag-cloud__tag:nth-child(13) { animation-delay: 0.24s; }
+.tag-cloud--animated .tag-cloud__tag:nth-child(14) { animation-delay: 0.26s; }
+.tag-cloud--animated .tag-cloud__tag:nth-child(15) { animation-delay: 0.28s; }
+.tag-cloud--animated .tag-cloud__tag:nth-child(16) { animation-delay: 0.30s; }
+.tag-cloud--animated .tag-cloud__tag:nth-child(17) { animation-delay: 0.32s; }
+.tag-cloud--animated .tag-cloud__tag:nth-child(18) { animation-delay: 0.34s; }
+.tag-cloud--animated .tag-cloud__tag:nth-child(19) { animation-delay: 0.36s; }
+.tag-cloud--animated .tag-cloud__tag:nth-child(20) { animation-delay: 0.38s; }
+
+/* Compact tag cloud */
+.tag-cloud--compact {
+  gap: 4px 8px;
+  padding: 12px;
+}
+
+
+/* --------------------------------------------------------------------------
+   20. STATUS BOARDS -- .status-board
+   Grid of service status indicators.
+   -------------------------------------------------------------------------- */
+
+.status-board {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+  background: var(--dv-surface);
+  border: 1px solid var(--dv-border);
+  border-radius: var(--dv-radius-lg);
+  font-family: var(--dv-font);
+  color: var(--dv-text);
+}
+
+.status-board__title {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.status-board__subtitle {
+  font-size: 12px;
+  color: var(--dv-text-muted);
+  margin-top: -8px;
+}
+
+/* Overall status banner */
+.status-board__banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: var(--dv-radius);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.status-board__banner--operational {
+  background: rgba(63, 185, 80, 0.1);
+  color: var(--dv-success);
+  border: 1px solid rgba(63, 185, 80, 0.2);
+}
+
+.status-board__banner--degraded {
+  background: rgba(210, 153, 34, 0.1);
+  color: var(--dv-warning);
+  border: 1px solid rgba(210, 153, 34, 0.2);
+}
+
+.status-board__banner--outage {
+  background: rgba(248, 81, 73, 0.1);
+  color: var(--dv-danger);
+  border: 1px solid rgba(248, 81, 73, 0.2);
+}
+
+.status-board__banner--maintenance {
+  background: rgba(88, 166, 255, 0.1);
+  color: var(--dv-info);
+  border: 1px solid rgba(88, 166, 255, 0.2);
+}
+
+/* Banner dot */
+.status-board__banner-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.status-board__banner--operational .status-board__banner-dot { background: var(--dv-success); }
+.status-board__banner--degraded .status-board__banner-dot    { background: var(--dv-warning); }
+.status-board__banner--outage .status-board__banner-dot      { background: var(--dv-danger); animation: dv-pulse 1.5s ease-in-out infinite; }
+.status-board__banner--maintenance .status-board__banner-dot { background: var(--dv-info); }
+
+/* Services grid */
+.status-board__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 8px;
+}
+
+.status-board__service {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--dv-surface-raised);
+  border: 1px solid var(--dv-border-subtle);
+  border-radius: var(--dv-radius);
+  transition: border-color 0.2s ease;
+}
+
+.status-board__service:hover {
+  border-color: var(--dv-border);
+}
+
+/* Status indicator dot */
+.status-board__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.status-board__dot--operational   { background: var(--dv-success); }
+.status-board__dot--degraded      { background: var(--dv-warning); }
+.status-board__dot--outage        { background: var(--dv-danger); animation: dv-pulse 1.5s ease-in-out infinite; }
+.status-board__dot--maintenance   { background: var(--dv-info); }
+.status-board__dot--unknown       { background: var(--dv-text-dim); }
+
+.status-board__service-name {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--dv-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.status-board__service-status {
+  font-size: 11px;
+  color: var(--dv-text-muted);
+  white-space: nowrap;
+}
+
+.status-board__service-status--operational   { color: var(--dv-success); }
+.status-board__service-status--degraded      { color: var(--dv-warning); }
+.status-board__service-status--outage        { color: var(--dv-danger); }
+.status-board__service-status--maintenance   { color: var(--dv-info); }
+
+/* List layout */
+.status-board__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border: 1px solid var(--dv-border-subtle);
+  border-radius: var(--dv-radius);
+  overflow: hidden;
+}
+
+.status-board__list .status-board__service {
+  border-radius: 0;
+  border: none;
+  border-bottom: 1px solid var(--dv-border-subtle);
+}
+
+.status-board__list .status-board__service:last-child {
+  border-bottom: none;
+}
+
+/* Uptime bar (90-day history) */
+.status-board__uptime {
+  display: flex;
+  gap: 1px;
+  margin-left: auto;
+}
+
+.status-board__uptime-day {
+  width: 3px;
+  height: 20px;
+  border-radius: 1px;
+  background: var(--dv-success);
+  transition: transform 0.1s ease;
+}
+
+.status-board__uptime-day:hover {
+  transform: scaleY(1.4);
+}
+
+.status-board__uptime-day--partial { background: var(--dv-warning); }
+.status-board__uptime-day--down    { background: var(--dv-danger); }
+.status-board__uptime-day--unknown { background: var(--dv-text-dim); }
+
+/* Uptime percentage */
+.status-board__uptime-pct {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--dv-text-muted);
+  font-family: var(--dv-font-mono);
+  margin-left: 8px;
+  white-space: nowrap;
+}
+
+/* Category / group header */
+.status-board__category {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--dv-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 8px 0 4px 0;
+  border-bottom: 1px solid var(--dv-border-subtle);
+}
+
+/* Incident log */
+.status-board__incidents {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--dv-border-subtle);
+}
+
+.status-board__incident {
+  display: flex;
+  gap: 10px;
+  padding: 8px 0;
+  font-size: 12px;
+}
+
+.status-board__incident-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  margin-top: 5px;
+  flex-shrink: 0;
+}
+
+.status-board__incident-title {
+  font-weight: 600;
+  color: var(--dv-text);
+}
+
+.status-board__incident-time {
+  color: var(--dv-text-dim);
+  font-size: 11px;
+  margin-top: 2px;
+}
+
+.status-board__incident-desc {
+  color: var(--dv-text-muted);
+  margin-top: 2px;
+  line-height: 1.4;
+}
+
+/* Compact status board */
+.status-board--compact {
+  padding: 12px;
+  gap: 8px;
+}
+
+.status-board--compact .status-board__service {
+  padding: 6px 10px;
+}
+
+
+/* ==========================================================================
+   ACCESSIBILITY: PATTERNS AND TEXTURES
+   Alternative to color-only differentiation.
+   ========================================================================== */
+
+/* Pattern fills for bar charts */
+.a11y-pattern-1 {
+  background-image: repeating-linear-gradient(
+    45deg, transparent, transparent 3px,
+    rgba(255,255,255,0.1) 3px, rgba(255,255,255,0.1) 6px
+  ) !important;
+}
+
+.a11y-pattern-2 {
+  background-image: repeating-linear-gradient(
+    0deg, transparent, transparent 3px,
+    rgba(255,255,255,0.1) 3px, rgba(255,255,255,0.1) 6px
+  ) !important;
+}
+
+.a11y-pattern-3 {
+  background-image: repeating-linear-gradient(
+    90deg, transparent, transparent 3px,
+    rgba(255,255,255,0.1) 3px, rgba(255,255,255,0.1) 6px
+  ) !important;
+}
+
+.a11y-pattern-4 {
+  background-image: repeating-linear-gradient(
+    -45deg, transparent, transparent 3px,
+    rgba(255,255,255,0.1) 3px, rgba(255,255,255,0.1) 6px
+  ) !important;
+}
+
+.a11y-pattern-5 {
+  background-image: radial-gradient(
+    circle 1.5px at 4px 4px,
+    rgba(255,255,255,0.12) 1.5px,
+    transparent 1.5px
+  ) !important;
+  background-size: 8px 8px !important;
+}
+
+.a11y-pattern-6 {
+  background-image: repeating-linear-gradient(
+    45deg, transparent, transparent 2px,
+    rgba(255,255,255,0.08) 2px, rgba(255,255,255,0.08) 4px
+  ),
+  repeating-linear-gradient(
+    -45deg, transparent, transparent 2px,
+    rgba(255,255,255,0.08) 2px, rgba(255,255,255,0.08) 4px
+  ) !important;
+}
+
+.a11y-pattern-7 {
+  background-image: repeating-linear-gradient(
+    0deg, transparent, transparent 2px,
+    rgba(255,255,255,0.06) 2px, rgba(255,255,255,0.06) 4px
+  ),
+  repeating-linear-gradient(
+    90deg, transparent, transparent 2px,
+    rgba(255,255,255,0.06) 2px, rgba(255,255,255,0.06) 4px
+  ) !important;
+}
+
+.a11y-pattern-8 {
+  background-image: linear-gradient(
+    45deg,
+    rgba(255,255,255,0.05) 25%,
+    transparent 25%,
+    transparent 50%,
+    rgba(255,255,255,0.05) 50%,
+    rgba(255,255,255,0.05) 75%,
+    transparent 75%
+  ) !important;
+  background-size: 8px 8px !important;
+}
+
+/* High contrast mode support */
+@media (forced-colors: active) {
+  .bar-chart__fill,
+  .ring,
+  .donut__chart,
+  .heatmap__cell,
+  .meter__fill,
+  .distribution__segment,
+  .activity-grid__cell,
+  .gauge__track {
+    forced-color-adjust: none;
+  }
+
+  .bar-chart__fill {
+    border: 2px solid CanvasText;
+  }
+
+  .status-board__dot {
+    border: 2px solid CanvasText;
+  }
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .bar-chart__fill,
+  .ring,
+  .donut__chart,
+  .funnel__stage,
+  .timeline-chart__marker,
+  .timeline-chart__current,
+  .stat-card-v2,
+  .kpi,
+  .tag-cloud--animated .tag-cloud__tag,
+  .gauge--animated .gauge__needle,
+  .meter__fill,
+  .meter__fill--shimmer,
+  .compare-bar__fill,
+  .bullet__bar,
+  .score {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .status-board__dot--outage,
+  .status-board__banner--outage .status-board__banner-dot {
+    animation: none !important;
+  }
+}
+
+
+/* ==========================================================================
+   LAYOUT UTILITIES
+   Common layouts for dashboards and data visualization pages.
+   ========================================================================== */
+
+/* Dashboard grid */
+.dv-dashboard {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 16px;
+  padding: 16px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.dv-col-1  { grid-column: span 1; }
+.dv-col-2  { grid-column: span 2; }
+.dv-col-3  { grid-column: span 3; }
+.dv-col-4  { grid-column: span 4; }
+.dv-col-5  { grid-column: span 5; }
+.dv-col-6  { grid-column: span 6; }
+.dv-col-7  { grid-column: span 7; }
+.dv-col-8  { grid-column: span 8; }
+.dv-col-9  { grid-column: span 9; }
+.dv-col-10 { grid-column: span 10; }
+.dv-col-11 { grid-column: span 11; }
+.dv-col-12 { grid-column: span 12; }
+
+.dv-row-2 { grid-row: span 2; }
+.dv-row-3 { grid-row: span 3; }
+
+@media (max-width: 1024px) {
+  .dv-col-3,
+  .dv-col-4  { grid-column: span 6; }
+  .dv-col-5,
+  .dv-col-6  { grid-column: span 6; }
+  .dv-col-7,
+  .dv-col-8  { grid-column: span 12; }
+  .dv-col-9,
+  .dv-col-10,
+  .dv-col-11 { grid-column: span 12; }
+}
+
+@media (max-width: 640px) {
+  .dv-dashboard {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 12px;
+  }
+
+  .dv-col-1,
+  .dv-col-2,
+  .dv-col-3,
+  .dv-col-4,
+  .dv-col-5,
+  .dv-col-6 {
+    grid-column: span 1;
+  }
+}
+
+/* Flex row utility */
+.dv-flex-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.dv-flex-row--tight {
+  gap: 8px;
+}
+
+.dv-flex-row--center {
+  align-items: center;
+  justify-content: center;
+}
+
+/* Section divider */
+.dv-divider {
+  border: none;
+  border-top: 1px solid var(--dv-border);
+  margin: 16px 0;
+}
+
+/* Section heading */
+.dv-section-title {
+  font-family: var(--dv-font);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--dv-text);
+  margin: 0 0 16px 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--dv-border-subtle);
+}
+
+.dv-section-subtitle {
+  font-family: var(--dv-font);
+  font-size: 13px;
+  color: var(--dv-text-muted);
+  margin: -12px 0 16px 0;
+}
+
+
+/* ==========================================================================
+   RESPONSIVE UTILITIES
+   ========================================================================== */
+
+/* Hide on small screens */
+@media (max-width: 640px) {
+  .dv-hide-mobile {
+    display: none !important;
+  }
+
+  .stat-card-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .kpi-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .score-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .donut--horizontal {
+    flex-direction: column;
+  }
+
+  .compare-bar--mirror .compare-bar__pair {
+    flex-direction: column;
+  }
+
+  .radar--lg {
+    width: 200px;
+    height: 200px;
+  }
+
+  .status-board__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .status-board__uptime {
+    display: none;
+  }
+
+  .tag-cloud__tag--9,
+  .tag-cloud__tag--10 {
+    font-size: clamp(20px, 5vw, 36px);
+  }
+}
+
+/* Tablet adjustments */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .dv-hide-tablet {
+    display: none !important;
+  }
+
+  .stat-card-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Show only on mobile */
+@media (min-width: 641px) {
+  .dv-show-mobile-only {
+    display: none !important;
+  }
+}
+
+
+/* ==========================================================================
+   DARK / LIGHT THEME SUPPORT
+   The default theme is dark. Light theme override follows.
+   ========================================================================== */
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --dv-bg:              #ffffff;
+    --dv-surface:         #f6f8fa;
+    --dv-surface-raised:  #ffffff;
+    --dv-border:          #d0d7de;
+    --dv-border-subtle:   #e1e4e8;
+    --dv-text:            #1f2328;
+    --dv-text-muted:      #656d76;
+    --dv-text-dim:        #8b949e;
+
+    --dv-seq-100:  #dbeafe;
+    --dv-seq-200:  #bfdbfe;
+    --dv-seq-300:  #93c5fd;
+    --dv-seq-400:  #60a5fa;
+    --dv-seq-500:  #3b82f6;
+    --dv-seq-600:  #2563eb;
+    --dv-seq-700:  #1d4ed8;
+    --dv-seq-800:  #1e40af;
+    --dv-seq-900:  #1e3a8a;
+
+    --dv-zone-green:  #2da44e;
+    --dv-zone-yellow: #bf8700;
+    --dv-zone-red:    #cf222e;
+  }
+}
+
+/* Explicit dark class override */
+.dv-theme-dark {
+  --dv-bg:              #0d1117;
+  --dv-surface:         #161b22;
+  --dv-surface-raised:  #1c2129;
+  --dv-border:          #30363d;
+  --dv-border-subtle:   #21262d;
+  --dv-text:            #e6edf3;
+  --dv-text-muted:      #8b949e;
+  --dv-text-dim:        #6e7681;
+}
+
+/* Explicit light class override */
+.dv-theme-light {
+  --dv-bg:              #ffffff;
+  --dv-surface:         #f6f8fa;
+  --dv-surface-raised:  #ffffff;
+  --dv-border:          #d0d7de;
+  --dv-border-subtle:   #e1e4e8;
+  --dv-text:            #1f2328;
+  --dv-text-muted:      #656d76;
+  --dv-text-dim:        #8b949e;
+}
+
+
+/* ==========================================================================
+   PRINT STYLES
+   Remove animations, ensure contrast, optimize for paper.
+   ========================================================================== */
+
+@media print {
+  /* Remove all animations */
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  /* Force white background, dark text */
+  .bar-chart,
+  .donut,
+  .heatmap,
+  .gauge-card,
+  .stat-card-v2,
+  .kpi,
+  .compare-bar,
+  .funnel,
+  .timeline-chart,
+  .treemap,
+  .radar-card,
+  .bullet-group,
+  .meter-group,
+  .score,
+  .activity-grid,
+  .distribution-card,
+  .distribution-group,
+  .tag-cloud,
+  .status-board {
+    background: #fff !important;
+    color: #000 !important;
+    border-color: #ccc !important;
+    box-shadow: none !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Ensure color fills print */
+  .bar-chart__fill,
+  .ring,
+  .donut__chart,
+  .heatmap__cell,
+  .gauge__track,
+  .meter__fill,
+  .bullet__bar,
+  .distribution__segment,
+  .activity-grid__cell,
+  .funnel__stage,
+  .timeline-chart__marker,
+  .treemap__cell,
+  .status-board__dot,
+  .status-board__banner-dot,
+  .status-board__uptime-day {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Text colors for print */
+  .bar-chart__label,
+  .bar-chart__value,
+  .stat-card-v2__label,
+  .stat-card-v2__value,
+  .kpi__number,
+  .kpi__subtitle,
+  .score__pct,
+  .score__title,
+  .donut__center-value,
+  .donut__center-label,
+  .ring__label,
+  .gauge__value,
+  .meter__label,
+  .meter__value,
+  .bullet__title,
+  .bullet__value-label,
+  .timeline-chart__label,
+  .tag-cloud__tag,
+  .status-board__service-name,
+  .compare-bar__row-label,
+  .distribution__legend-item,
+  .heatmap__title,
+  .activity-grid__title {
+    color: #000 !important;
+  }
+
+  .stat-card-v2__compare,
+  .donut__legend-item,
+  .bar-chart__legend-item,
+  .compare-bar__legend-item,
+  .treemap__legend-item,
+  .radar-card__legend-item,
+  .heatmap__scale-label,
+  .activity-grid__legend-label,
+  .status-board__subtitle,
+  .kpi__trend,
+  .stat-card-v2__trend {
+    color: #333 !important;
+  }
+
+  /* Background adjustments for rings and donuts */
+  .ring::before,
+  .donut__chart::before,
+  .score__ring::before {
+    background: #fff !important;
+  }
+
+  .gauge__track::before {
+    background: #fff !important;
+  }
+
+  /* Surface elements in print */
+  .status-board__service {
+    background: #f8f8f8 !important;
+    border-color: #ddd !important;
+  }
+
+  /* Hide hover-only elements */
+  .heatmap__cell[data-tooltip]:hover::after,
+  .activity-grid__cell[data-tooltip]:hover::after {
+    display: none !important;
+  }
+
+  /* Disable hover transforms */
+  .heatmap__cell:hover,
+  .activity-grid__cell:hover,
+  .bar-chart__fill:hover,
+  .kpi:hover,
+  .stat-card-v2:hover,
+  .tag-cloud__tag:hover,
+  .status-board__uptime-day:hover,
+  .treemap__cell:hover,
+  .timeline-chart__marker:hover,
+  .radar__point:hover {
+    transform: none !important;
+    filter: none !important;
+  }
+
+  /* Ensure text in fills is legible */
+  .funnel__stage-label,
+  .distribution__segment,
+  .treemap__cell-label {
+    text-shadow: none !important;
+  }
+
+  /* Page breaks */
+  .bar-chart,
+  .donut,
+  .heatmap,
+  .gauge-card,
+  .stat-card-grid,
+  .kpi-grid,
+  .compare-bar,
+  .funnel,
+  .timeline-chart,
+  .treemap,
+  .radar-card,
+  .bullet-group,
+  .meter-group,
+  .score-grid,
+  .activity-grid,
+  .distribution-group,
+  .tag-cloud,
+  .status-board {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Force borders for patterns in print */
+  .a11y-pattern-1,
+  .a11y-pattern-2,
+  .a11y-pattern-3,
+  .a11y-pattern-4,
+  .a11y-pattern-5,
+  .a11y-pattern-6,
+  .a11y-pattern-7,
+  .a11y-pattern-8 {
+    border: 1px solid #999 !important;
+  }
+
+  /* Dashboard grid: single column for print */
+  .dv-dashboard {
+    display: block;
+  }
+
+  .dv-dashboard > * {
+    margin-bottom: 16px;
+  }
+}
+
+
+/* ==========================================================================
+   LOADING / SKELETON STATES
+   Placeholder states while data loads.
+   ========================================================================== */
+
+.dv-skeleton {
+  background: var(--dv-border-subtle) !important;
+  color: transparent !important;
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+  pointer-events: none;
+  user-select: none;
+}
+
+.dv-skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.04) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: dv-shimmer 1.5s ease-in-out infinite;
+}
+
+.dv-skeleton * {
+  visibility: hidden !important;
+}
+
+/* Skeleton variants */
+.dv-skeleton--circle {
+  border-radius: 50%;
+}
+
+.dv-skeleton--text {
+  height: 14px;
+  width: 60%;
+  margin: 4px 0;
+}
+
+.dv-skeleton--text-short {
+  height: 14px;
+  width: 30%;
+}
+
+.dv-skeleton--heading {
+  height: 20px;
+  width: 40%;
+  margin: 8px 0;
+}
+
+.dv-skeleton--number {
+  height: 32px;
+  width: 80px;
+}
+
+.dv-skeleton--bar {
+  height: 20px;
+  width: 100%;
+}
+
+.dv-skeleton--ring {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+}
+
+
+/* ==========================================================================
+   EMPTY STATES
+   Display when no data is available.
+   ========================================================================== */
+
+.dv-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 40px 20px;
+  color: var(--dv-text-dim);
+  font-family: var(--dv-font);
+  text-align: center;
+}
+
+.dv-empty__icon {
+  font-size: 32px;
+  opacity: 0.4;
+  margin-bottom: 4px;
+}
+
+.dv-empty__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--dv-text-muted);
+}
+
+.dv-empty__desc {
+  font-size: 12px;
+  color: var(--dv-text-dim);
+  max-width: 280px;
+  line-height: 1.5;
+}
+
+
+/* ==========================================================================
+   TOOLTIP UTILITY
+   Reusable tooltip styling for any dataviz element.
+   ========================================================================== */
+
+[data-dv-tooltip] {
+  position: relative;
+  cursor: default;
+}
+
+[data-dv-tooltip]:hover::after {
+  content: attr(data-dv-tooltip);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 6px 10px;
+  background: var(--dv-bg);
+  border: 1px solid var(--dv-border);
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: var(--dv-font);
+  color: var(--dv-text);
+  white-space: nowrap;
+  z-index: 100;
+  pointer-events: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  animation: dv-fade-in 0.15s ease both;
+}
+
+[data-dv-tooltip]:hover::before {
+  content: "";
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  border: 4px solid transparent;
+  border-top-color: var(--dv-border);
+  z-index: 101;
+  pointer-events: none;
+}
+
+/* Tooltip positions */
+[data-dv-tooltip].dv-tip-right:hover::after {
+  bottom: auto;
+  left: calc(100% + 8px);
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+[data-dv-tooltip].dv-tip-right:hover::before {
+  bottom: auto;
+  left: calc(100% + 4px);
+  top: 50%;
+  transform: translateY(-50%);
+  border-top-color: transparent;
+  border-right-color: var(--dv-border);
+}
+
+[data-dv-tooltip].dv-tip-left:hover::after {
+  bottom: auto;
+  left: auto;
+  right: calc(100% + 8px);
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+[data-dv-tooltip].dv-tip-left:hover::before {
+  bottom: auto;
+  left: auto;
+  right: calc(100% + 4px);
+  top: 50%;
+  transform: translateY(-50%);
+  border-top-color: transparent;
+  border-left-color: var(--dv-border);
+}
+
+[data-dv-tooltip].dv-tip-bottom:hover::after {
+  bottom: auto;
+  top: calc(100% + 8px);
+}
+
+[data-dv-tooltip].dv-tip-bottom:hover::before {
+  bottom: auto;
+  top: calc(100% + 4px);
+  border-top-color: transparent;
+  border-bottom-color: var(--dv-border);
+}
+
+
+/* ==========================================================================
+   ANNOTATION UTILITIES
+   Labels, callouts, and reference lines for charts.
+   ========================================================================== */
+
+.dv-annotation {
+  position: absolute;
+  font-family: var(--dv-font);
+  font-size: 11px;
+  color: var(--dv-text-muted);
+  pointer-events: none;
+}
+
+.dv-annotation__line {
+  stroke: var(--dv-text-dim);
+  stroke-width: 1;
+  stroke-dasharray: 4 2;
+}
+
+.dv-annotation__label {
+  padding: 3px 8px;
+  background: var(--dv-surface-raised);
+  border: 1px solid var(--dv-border);
+  border-radius: 3px;
+  font-size: 11px;
+  color: var(--dv-text-muted);
+  white-space: nowrap;
+}
+
+.dv-annotation__callout {
+  padding: 6px 10px;
+  background: var(--dv-bg);
+  border: 1px solid var(--dv-border);
+  border-radius: var(--dv-radius);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.dv-annotation__callout-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--dv-text);
+}
+
+.dv-annotation__callout-value {
+  font-size: 11px;
+  color: var(--dv-text-muted);
+  font-family: var(--dv-font-mono);
+  margin-top: 2px;
+}
+
+/* Reference lines */
+.dv-ref-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 1px dashed var(--dv-text-dim);
+  pointer-events: none;
+}
+
+.dv-ref-line::after {
+  content: attr(data-label);
+  position: absolute;
+  right: 0;
+  top: -8px;
+  font-size: 10px;
+  color: var(--dv-text-dim);
+  font-family: var(--dv-font);
+  background: var(--dv-surface);
+  padding: 0 4px;
+}
+
+.dv-ref-line--avg { border-top-color: var(--dv-info); }
+.dv-ref-line--target { border-top-color: var(--dv-success); }
+.dv-ref-line--limit { border-top-color: var(--dv-danger); }
+
+
+/* ==========================================================================
+   FOCUS STYLES FOR INTERACTIVE ELEMENTS
+   ========================================================================== */
+
+.bar-chart__fill:focus-visible,
+.heatmap__cell:focus-visible,
+.activity-grid__cell:focus-visible,
+.treemap__cell:focus-visible,
+.tag-cloud__tag:focus-visible,
+.status-board__service:focus-visible,
+.donut__chart:focus-visible,
+.ring:focus-visible,
+.score:focus-visible,
+.stat-card-v2:focus-visible,
+.kpi:focus-visible,
+.funnel__stage:focus-visible,
+.timeline-chart__marker:focus-visible,
+.radar__point:focus-visible {
+  outline: 2px solid var(--dv-info);
+  outline-offset: 2px;
+}
+
+[tabindex]:focus-visible {
+  outline: 2px solid var(--dv-info);
+  outline-offset: 2px;
+}
+
+
+/* ==========================================================================
+   ARIA / SCREEN READER UTILITIES
+   ========================================================================== */
+
+.dv-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.dv-sr-only-focusable:focus,
+.dv-sr-only-focusable:active {
+  position: static;
+  width: auto;
+  height: auto;
+  padding: inherit;
+  margin: inherit;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+}
+
+
+/* ==========================================================================
+   END OF dataviz.css
+   ========================================================================== */

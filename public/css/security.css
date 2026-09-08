@@ -1,0 +1,5733 @@
+/* ==========================================================================
+   security.css -- Cybersecurity Content Display Styles
+   Darknode Web Portal
+   ==========================================================================
+   Covers: severity indicators, CVE cards, vulnerability details, port tables,
+   scan results, attack trees, kill chains, STRIDE model, risk matrices,
+   payload display, network diagrams, pentest report findings, compliance
+   checklists, threat actor cards, IOC tables, incident timelines, log viewer,
+   password strength meter, certificate info, and header analysis.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   0. CSS Custom Properties (Light Theme Defaults)
+   -------------------------------------------------------------------------- */
+:root {
+  /* Severity palette */
+  --sev-critical-bg: #7a1a1a;
+  --sev-critical-fg: #ffd6d6;
+  --sev-critical-border: #cc2936;
+  --sev-critical-accent: #e63946;
+  --sev-critical-surface: #fce4e4;
+  --sev-critical-text: #7a1a1a;
+
+  --sev-high-bg: #8b3a00;
+  --sev-high-fg: #ffe4cc;
+  --sev-high-border: #e06c00;
+  --sev-high-accent: #f77f00;
+  --sev-high-surface: #fff0e0;
+  --sev-high-text: #8b3a00;
+
+  --sev-medium-bg: #7a6100;
+  --sev-medium-fg: #fff8cc;
+  --sev-medium-border: #d4a800;
+  --sev-medium-accent: #f0bc00;
+  --sev-medium-surface: #fffbe6;
+  --sev-medium-text: #7a6100;
+
+  --sev-low-bg: #1a5c2e;
+  --sev-low-fg: #d6f5e0;
+  --sev-low-border: #2d9f52;
+  --sev-low-accent: #38b764;
+  --sev-low-surface: #e8f9ef;
+  --sev-low-text: #1a5c2e;
+
+  --sev-info-bg: #1a3d6b;
+  --sev-info-fg: #d6e8ff;
+  --sev-info-border: #3478c6;
+  --sev-info-accent: #4a90d9;
+  --sev-info-surface: #e6f0ff;
+  --sev-info-text: #1a3d6b;
+
+  /* Neutral palette */
+  --sec-bg-primary: #ffffff;
+  --sec-bg-secondary: #f5f6f8;
+  --sec-bg-tertiary: #ebedf0;
+  --sec-bg-code: #f0f2f5;
+  --sec-bg-elevated: #ffffff;
+  --sec-border: #d0d4da;
+  --sec-border-light: #e2e5ea;
+  --sec-text-primary: #1a1d23;
+  --sec-text-secondary: #4a5060;
+  --sec-text-muted: #7a8298;
+  --sec-text-inverse: #ffffff;
+  --sec-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --sec-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07), 0 2px 4px rgba(0, 0, 0, 0.06);
+  --sec-shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05);
+  --sec-radius-sm: 4px;
+  --sec-radius: 6px;
+  --sec-radius-md: 8px;
+  --sec-radius-lg: 12px;
+  --sec-transition: 0.2s ease;
+  --sec-font-mono: "JetBrains Mono", "Fira Code", "Cascadia Code", "Source Code Pro", monospace;
+  --sec-font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+  /* Status colors */
+  --sec-pass: #2d9f52;
+  --sec-pass-bg: #e8f9ef;
+  --sec-fail: #cc2936;
+  --sec-fail-bg: #fce4e4;
+  --sec-warn: #e0a000;
+  --sec-warn-bg: #fff8e0;
+  --sec-na: #7a8298;
+  --sec-na-bg: #f0f2f5;
+
+  /* Port states */
+  --port-open: #2d9f52;
+  --port-open-bg: #e8f9ef;
+  --port-closed: #cc2936;
+  --port-closed-bg: #fce4e4;
+  --port-filtered: #e0a000;
+  --port-filtered-bg: #fff8e0;
+
+  /* Kill chain */
+  --kc-recon: #4a90d9;
+  --kc-weapon: #7b61d4;
+  --kc-delivery: #e06c00;
+  --kc-exploit: #cc2936;
+  --kc-install: #8b3a00;
+  --kc-c2: #7a1a1a;
+  --kc-action: #5a0020;
+
+  /* Password strength */
+  --pw-very-weak: #cc2936;
+  --pw-weak: #e06c00;
+  --pw-fair: #e0a000;
+  --pw-strong: #2d9f52;
+  --pw-very-strong: #1a5c2e;
+
+  /* Misc */
+  --sec-link: #3478c6;
+  --sec-link-hover: #2a60a0;
+  --sec-focus-ring: 0 0 0 3px rgba(74, 144, 217, 0.35);
+  --sec-stripe-width: 4px;
+  --sec-line-height: 1.5;
+}
+
+/* --------------------------------------------------------------------------
+   0b. Dark Theme Overrides
+   -------------------------------------------------------------------------- */
+[data-theme="dark"],
+.dark-theme,
+.theme-dark,
+@media (prefers-color-scheme: dark) {
+  :root {
+    --sev-critical-surface: #3d1010;
+    --sev-critical-text: #ffa8a8;
+    --sev-high-surface: #3d1f00;
+    --sev-high-text: #ffcc99;
+    --sev-medium-surface: #3d3000;
+    --sev-medium-text: #ffe680;
+    --sev-low-surface: #0d2e17;
+    --sev-low-text: #80e8a0;
+    --sev-info-surface: #0d1e35;
+    --sev-info-text: #80b8ff;
+
+    --sec-bg-primary: #0f1117;
+    --sec-bg-secondary: #161922;
+    --sec-bg-tertiary: #1e212c;
+    --sec-bg-code: #1a1d28;
+    --sec-bg-elevated: #1a1d26;
+    --sec-border: #2e3240;
+    --sec-border-light: #252838;
+    --sec-text-primary: #e0e4ec;
+    --sec-text-secondary: #a0a8b8;
+    --sec-text-muted: #6a7288;
+    --sec-text-inverse: #0f1117;
+    --sec-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
+    --sec-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.3), 0 2px 4px rgba(0, 0, 0, 0.2);
+    --sec-shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.35), 0 4px 6px rgba(0, 0, 0, 0.2);
+
+    --sec-pass: #38b764;
+    --sec-pass-bg: #0d2e17;
+    --sec-fail: #e63946;
+    --sec-fail-bg: #3d1010;
+    --sec-warn: #f0bc00;
+    --sec-warn-bg: #3d3000;
+    --sec-na: #6a7288;
+    --sec-na-bg: #1e212c;
+
+    --port-open: #38b764;
+    --port-open-bg: #0d2e17;
+    --port-closed: #e63946;
+    --port-closed-bg: #3d1010;
+    --port-filtered: #f0bc00;
+    --port-filtered-bg: #3d3000;
+
+    --sec-link: #5ea3f0;
+    --sec-link-hover: #80b8ff;
+  }
+}
+
+/* Explicit dark theme class overrides (for JS-toggled themes) */
+[data-theme="dark"],
+.dark-theme,
+.theme-dark {
+  --sev-critical-surface: #3d1010;
+  --sev-critical-text: #ffa8a8;
+  --sev-high-surface: #3d1f00;
+  --sev-high-text: #ffcc99;
+  --sev-medium-surface: #3d3000;
+  --sev-medium-text: #ffe680;
+  --sev-low-surface: #0d2e17;
+  --sev-low-text: #80e8a0;
+  --sev-info-surface: #0d1e35;
+  --sev-info-text: #80b8ff;
+
+  --sec-bg-primary: #0f1117;
+  --sec-bg-secondary: #161922;
+  --sec-bg-tertiary: #1e212c;
+  --sec-bg-code: #1a1d28;
+  --sec-bg-elevated: #1a1d26;
+  --sec-border: #2e3240;
+  --sec-border-light: #252838;
+  --sec-text-primary: #e0e4ec;
+  --sec-text-secondary: #a0a8b8;
+  --sec-text-muted: #6a7288;
+  --sec-text-inverse: #0f1117;
+  --sec-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
+  --sec-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.3), 0 2px 4px rgba(0, 0, 0, 0.2);
+  --sec-shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.35), 0 4px 6px rgba(0, 0, 0, 0.2);
+
+  --sec-pass: #38b764;
+  --sec-pass-bg: #0d2e17;
+  --sec-fail: #e63946;
+  --sec-fail-bg: #3d1010;
+  --sec-warn: #f0bc00;
+  --sec-warn-bg: #3d3000;
+  --sec-na: #6a7288;
+  --sec-na-bg: #1e212c;
+
+  --port-open: #38b764;
+  --port-open-bg: #0d2e17;
+  --port-closed: #e63946;
+  --port-closed-bg: #3d1010;
+  --port-filtered: #f0bc00;
+  --port-filtered-bg: #3d3000;
+
+  --sec-link: #5ea3f0;
+  --sec-link-hover: #80b8ff;
+}
+
+
+/* ==========================================================================
+   1. SEVERITY INDICATORS
+   ==========================================================================
+   Classes: .severity-critical, .severity-high, .severity-medium,
+            .severity-low, .severity-info
+   Modifiers: .severity-badge, .severity-border, .severity-bg,
+              .severity-dot, .severity-pill, .severity-tag, .severity-banner
+   ========================================================================== */
+
+/* --- Base severity badge --- */
+.severity-critical,
+.severity-high,
+.severity-medium,
+.severity-low,
+.severity-info {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: var(--sec-radius-sm);
+  font-family: var(--sec-font-sans);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  line-height: 1.4;
+  white-space: nowrap;
+  transition: background-color var(--sec-transition), color var(--sec-transition);
+}
+
+.severity-critical {
+  background-color: var(--sev-critical-accent);
+  color: var(--sev-critical-fg);
+  border: 1px solid var(--sev-critical-border);
+}
+
+.severity-high {
+  background-color: var(--sev-high-accent);
+  color: var(--sev-high-fg);
+  border: 1px solid var(--sev-high-border);
+}
+
+.severity-medium {
+  background-color: var(--sev-medium-accent);
+  color: var(--sev-medium-bg);
+  border: 1px solid var(--sev-medium-border);
+}
+
+.severity-low {
+  background-color: var(--sev-low-accent);
+  color: var(--sev-low-fg);
+  border: 1px solid var(--sev-low-border);
+}
+
+.severity-info {
+  background-color: var(--sev-info-accent);
+  color: var(--sev-info-fg);
+  border: 1px solid var(--sev-info-border);
+}
+
+/* Severity with a leading dot indicator */
+.severity-critical::before,
+.severity-high::before,
+.severity-medium::before,
+.severity-low::before,
+.severity-info::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.severity-critical::before {
+  background-color: var(--sev-critical-fg);
+  box-shadow: 0 0 6px var(--sev-critical-accent);
+}
+
+.severity-high::before {
+  background-color: var(--sev-high-fg);
+  box-shadow: 0 0 6px var(--sev-high-accent);
+}
+
+.severity-medium::before {
+  background-color: var(--sev-medium-bg);
+  box-shadow: 0 0 6px var(--sev-medium-accent);
+}
+
+.severity-low::before {
+  background-color: var(--sev-low-fg);
+}
+
+.severity-info::before {
+  background-color: var(--sev-info-fg);
+}
+
+/* --- Severity badge variant (no dot) --- */
+.severity-badge.severity-critical::before,
+.severity-badge.severity-high::before,
+.severity-badge.severity-medium::before,
+.severity-badge.severity-low::before,
+.severity-badge.severity-info::before {
+  display: none;
+}
+
+.severity-badge {
+  border-radius: 100px;
+  padding: 2px 12px;
+}
+
+/* --- Severity pill variant --- */
+.severity-pill {
+  border-radius: 100px;
+  padding: 4px 14px;
+  font-size: 0.8rem;
+}
+
+/* --- Severity tag (compact) --- */
+.severity-tag {
+  padding: 1px 6px;
+  font-size: 0.65rem;
+  border-radius: 3px;
+  letter-spacing: 0.05em;
+}
+
+.severity-tag::before {
+  width: 4px;
+  height: 4px;
+}
+
+/* --- Severity border (left-border variant for containers) --- */
+.severity-border {
+  display: block;
+  padding: 12px 16px;
+  border-radius: var(--sec-radius);
+  border: 1px solid var(--sec-border);
+  background-color: var(--sec-bg-primary);
+  font-size: inherit;
+  font-weight: normal;
+  text-transform: none;
+  letter-spacing: normal;
+  white-space: normal;
+}
+
+.severity-border::before {
+  display: none;
+}
+
+.severity-border.severity-critical {
+  border-left: var(--sec-stripe-width) solid var(--sev-critical-accent);
+  background-color: var(--sev-critical-surface);
+  color: var(--sev-critical-text);
+}
+
+.severity-border.severity-high {
+  border-left: var(--sec-stripe-width) solid var(--sev-high-accent);
+  background-color: var(--sev-high-surface);
+  color: var(--sev-high-text);
+}
+
+.severity-border.severity-medium {
+  border-left: var(--sec-stripe-width) solid var(--sev-medium-accent);
+  background-color: var(--sev-medium-surface);
+  color: var(--sev-medium-text);
+}
+
+.severity-border.severity-low {
+  border-left: var(--sec-stripe-width) solid var(--sev-low-accent);
+  background-color: var(--sev-low-surface);
+  color: var(--sev-low-text);
+}
+
+.severity-border.severity-info {
+  border-left: var(--sec-stripe-width) solid var(--sev-info-accent);
+  background-color: var(--sev-info-surface);
+  color: var(--sev-info-text);
+}
+
+/* --- Severity background (full surface) --- */
+.severity-bg {
+  display: block;
+  padding: 16px;
+  border: none;
+  border-radius: var(--sec-radius);
+  font-size: inherit;
+  font-weight: normal;
+  text-transform: none;
+  letter-spacing: normal;
+  white-space: normal;
+}
+
+.severity-bg::before {
+  display: none;
+}
+
+.severity-bg.severity-critical {
+  background-color: var(--sev-critical-surface);
+  color: var(--sev-critical-text);
+}
+
+.severity-bg.severity-high {
+  background-color: var(--sev-high-surface);
+  color: var(--sev-high-text);
+}
+
+.severity-bg.severity-medium {
+  background-color: var(--sev-medium-surface);
+  color: var(--sev-medium-text);
+}
+
+.severity-bg.severity-low {
+  background-color: var(--sev-low-surface);
+  color: var(--sev-low-text);
+}
+
+.severity-bg.severity-info {
+  background-color: var(--sev-info-surface);
+  color: var(--sev-info-text);
+}
+
+/* --- Severity dot (standalone indicator) --- */
+.severity-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  padding: 0;
+  border: none;
+  font-size: 0;
+  line-height: 0;
+  vertical-align: middle;
+}
+
+.severity-dot::before {
+  display: none;
+}
+
+.severity-dot.severity-critical {
+  background-color: var(--sev-critical-accent);
+  box-shadow: 0 0 8px rgba(230, 57, 70, 0.5);
+}
+
+.severity-dot.severity-high {
+  background-color: var(--sev-high-accent);
+  box-shadow: 0 0 8px rgba(247, 127, 0, 0.4);
+}
+
+.severity-dot.severity-medium {
+  background-color: var(--sev-medium-accent);
+}
+
+.severity-dot.severity-low {
+  background-color: var(--sev-low-accent);
+}
+
+.severity-dot.severity-info {
+  background-color: var(--sev-info-accent);
+}
+
+/* Pulsing animation for critical dot */
+.severity-dot.severity-critical.pulse {
+  animation: sev-pulse-critical 2s ease-in-out infinite;
+}
+
+@keyframes sev-pulse-critical {
+  0%, 100% { box-shadow: 0 0 4px rgba(230, 57, 70, 0.4); }
+  50% { box-shadow: 0 0 16px rgba(230, 57, 70, 0.8); }
+}
+
+/* --- Severity banner (full-width alert) --- */
+.severity-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 20px;
+  border-radius: var(--sec-radius);
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: normal;
+  white-space: normal;
+}
+
+.severity-banner::before {
+  width: 8px;
+  height: 8px;
+  flex-shrink: 0;
+}
+
+.severity-banner.severity-critical {
+  background-color: var(--sev-critical-surface);
+  color: var(--sev-critical-text);
+  border: 1px solid var(--sev-critical-border);
+}
+
+.severity-banner.severity-high {
+  background-color: var(--sev-high-surface);
+  color: var(--sev-high-text);
+  border: 1px solid var(--sev-high-border);
+}
+
+.severity-banner.severity-medium {
+  background-color: var(--sev-medium-surface);
+  color: var(--sev-medium-text);
+  border: 1px solid var(--sev-medium-border);
+}
+
+.severity-banner.severity-low {
+  background-color: var(--sev-low-surface);
+  color: var(--sev-low-text);
+  border: 1px solid var(--sev-low-border);
+}
+
+.severity-banner.severity-info {
+  background-color: var(--sev-info-surface);
+  color: var(--sev-info-text);
+  border: 1px solid var(--sev-info-border);
+}
+
+
+/* ==========================================================================
+   2. CVE CARDS
+   ==========================================================================
+   Structure:
+     .cve-card
+       .cve-card__stripe       (severity color stripe)
+       .cve-card__header
+         .cve-card__id          (CVE-YYYY-NNNNN)
+         .cve-card__cvss        (CVSS score badge)
+         .cve-card__severity    (severity label)
+       .cve-card__body
+         .cve-card__description
+         .cve-card__meta
+           .cve-card__date
+           .cve-card__vendor
+           .cve-card__patch-status
+         .cve-card__software    (affected software tags)
+       .cve-card__footer
+   ========================================================================== */
+
+.cve-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--sec-bg-elevated);
+  border: 1px solid var(--sec-border);
+  border-radius: var(--sec-radius-md);
+  box-shadow: var(--sec-shadow);
+  overflow: hidden;
+  transition: box-shadow var(--sec-transition), transform var(--sec-transition);
+  font-family: var(--sec-font-sans);
+}
+
+.cve-card:hover {
+  box-shadow: var(--sec-shadow-md);
+  transform: translateY(-1px);
+}
+
+.cve-card__stripe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--sec-stripe-width);
+  height: 100%;
+}
+
+.cve-card__stripe--critical {
+  background-color: var(--sev-critical-accent);
+}
+
+.cve-card__stripe--high {
+  background-color: var(--sev-high-accent);
+}
+
+.cve-card__stripe--medium {
+  background-color: var(--sev-medium-accent);
+}
+
+.cve-card__stripe--low {
+  background-color: var(--sev-low-accent);
+}
+
+.cve-card__stripe--info {
+  background-color: var(--sev-info-accent);
+}
+
+.cve-card__header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px 10px calc(16px + var(--sec-stripe-width));
+  border-bottom: 1px solid var(--sec-border-light);
+  flex-wrap: wrap;
+}
+
+.cve-card__id {
+  font-family: var(--sec-font-mono);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--sec-text-primary);
+  letter-spacing: 0.01em;
+}
+
+.cve-card__id a {
+  color: var(--sec-link);
+  text-decoration: none;
+}
+
+.cve-card__id a:hover {
+  text-decoration: underline;
+  color: var(--sec-link-hover);
+}
+
+.cve-card__cvss {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  border-radius: 100px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  font-family: var(--sec-font-mono);
+}
+
+.cve-card__cvss--critical {
+  background-color: var(--sev-critical-accent);
+  color: var(--sev-critical-fg);
+}
+
+.cve-card__cvss--high {
+  background-color: var(--sev-high-accent);
+  color: var(--sev-high-fg);
+}
+
+.cve-card__cvss--medium {
+  background-color: var(--sev-medium-accent);
+  color: var(--sev-medium-bg);
+}
+
+.cve-card__cvss--low {
+  background-color: var(--sev-low-accent);
+  color: var(--sev-low-fg);
+}
+
+.cve-card__cvss--info {
+  background-color: var(--sev-info-accent);
+  color: var(--sev-info-fg);
+}
+
+.cve-card__cvss-label {
+  font-size: 0.65rem;
+  font-weight: 500;
+  opacity: 0.8;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.cve-card__severity {
+  margin-left: auto;
+}
+
+.cve-card__body {
+  padding: 12px 16px 12px calc(16px + var(--sec-stripe-width));
+  flex: 1;
+}
+
+.cve-card__description {
+  font-size: 0.88rem;
+  color: var(--sec-text-secondary);
+  line-height: var(--sec-line-height);
+  margin-bottom: 12px;
+}
+
+.cve-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-size: 0.8rem;
+  color: var(--sec-text-muted);
+  margin-bottom: 10px;
+}
+
+.cve-card__meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.cve-card__meta-label {
+  font-weight: 600;
+  color: var(--sec-text-secondary);
+}
+
+.cve-card__date {
+  font-family: var(--sec-font-mono);
+  font-size: 0.78rem;
+}
+
+.cve-card__vendor {
+  font-weight: 500;
+}
+
+.cve-card__patch-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 8px;
+  border-radius: 100px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.cve-card__patch-status--patched {
+  background-color: var(--sec-pass-bg);
+  color: var(--sec-pass);
+  border: 1px solid var(--sec-pass);
+}
+
+.cve-card__patch-status--unpatched {
+  background-color: var(--sec-fail-bg);
+  color: var(--sec-fail);
+  border: 1px solid var(--sec-fail);
+}
+
+.cve-card__patch-status--partial {
+  background-color: var(--sec-warn-bg);
+  color: var(--sec-warn);
+  border: 1px solid var(--sec-warn);
+}
+
+.cve-card__software {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.cve-card__software-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  background-color: var(--sec-bg-tertiary);
+  color: var(--sec-text-secondary);
+  border-radius: var(--sec-radius-sm);
+  font-size: 0.75rem;
+  font-family: var(--sec-font-mono);
+  border: 1px solid var(--sec-border-light);
+}
+
+.cve-card__software-tag--vulnerable {
+  border-color: var(--sev-high-border);
+  color: var(--sev-high-text);
+  background-color: var(--sev-high-surface);
+}
+
+.cve-card__footer {
+  padding: 10px 16px 10px calc(16px + var(--sec-stripe-width));
+  border-top: 1px solid var(--sec-border-light);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.78rem;
+}
+
+.cve-card__footer-link {
+  color: var(--sec-link);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.cve-card__footer-link:hover {
+  text-decoration: underline;
+  color: var(--sec-link-hover);
+}
+
+/* CVE card grid layout */
+.cve-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 16px;
+}
+
+/* CVE card list layout */
+.cve-card-list .cve-card {
+  margin-bottom: 12px;
+}
+
+.cve-card-list .cve-card__header {
+  flex-wrap: nowrap;
+}
+
+
+/* ==========================================================================
+   3. VULNERABILITY DETAILS
+   ==========================================================================
+   Structure:
+     .vuln-detail
+       .vuln-detail__header
+       .vuln-detail__section (repeatable)
+         .vuln-detail__section-title
+         .vuln-detail__content
+       Sections: description, impact, reproduction, poc, remediation, references
+   ========================================================================== */
+
+.vuln-detail {
+  background-color: var(--sec-bg-elevated);
+  border: 1px solid var(--sec-border);
+  border-radius: var(--sec-radius-md);
+  box-shadow: var(--sec-shadow);
+  font-family: var(--sec-font-sans);
+  overflow: hidden;
+}
+
+.vuln-detail__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--sec-border);
+  flex-wrap: wrap;
+}
+
+.vuln-detail__title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--sec-text-primary);
+  line-height: 1.3;
+  flex: 1;
+  min-width: 200px;
+}
+
+.vuln-detail__header-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.vuln-detail__section {
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--sec-border-light);
+}
+
+.vuln-detail__section:last-child {
+  border-bottom: none;
+}
+
+.vuln-detail__section-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--sec-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.vuln-detail__section-title::before {
+  content: "";
+  display: inline-block;
+  width: 3px;
+  height: 14px;
+  border-radius: 2px;
+  background-color: var(--sec-text-muted);
+  flex-shrink: 0;
+}
+
+.vuln-detail__section--description .vuln-detail__section-title::before {
+  background-color: var(--sev-info-accent);
+}
+
+.vuln-detail__section--impact .vuln-detail__section-title::before {
+  background-color: var(--sev-high-accent);
+}
+
+.vuln-detail__section--reproduction .vuln-detail__section-title::before {
+  background-color: var(--sev-medium-accent);
+}
+
+.vuln-detail__section--poc .vuln-detail__section-title::before {
+  background-color: var(--sev-critical-accent);
+}
+
+.vuln-detail__section--remediation .vuln-detail__section-title::before {
+  background-color: var(--sev-low-accent);
+}
+
+.vuln-detail__section--references .vuln-detail__section-title::before {
+  background-color: var(--sev-info-accent);
+}
+
+.vuln-detail__content {
+  font-size: 0.9rem;
+  color: var(--sec-text-secondary);
+  line-height: 1.65;
+}
+
+.vuln-detail__content p {
+  margin: 0 0 10px 0;
+}
+
+.vuln-detail__content p:last-child {
+  margin-bottom: 0;
+}
+
+.vuln-detail__content ul,
+.vuln-detail__content ol {
+  margin: 8px 0;
+  padding-left: 24px;
+}
+
+.vuln-detail__content li {
+  margin-bottom: 4px;
+}
+
+.vuln-detail__content code {
+  font-family: var(--sec-font-mono);
+  font-size: 0.85em;
+  padding: 1px 5px;
+  background-color: var(--sec-bg-code);
+  border-radius: 3px;
+  color: var(--sec-text-primary);
+}
+
+.vuln-detail__content pre {
+  background-color: var(--sec-bg-code);
+  border: 1px solid var(--sec-border-light);
+  border-radius: var(--sec-radius);
+  padding: 14px 16px;
+  overflow-x: auto;
+  font-family: var(--sec-font-mono);
+  font-size: 0.82rem;
+  line-height: 1.55;
+  margin: 10px 0;
+}
+
+.vuln-detail__content pre code {
+  padding: 0;
+  background: none;
+  border-radius: 0;
+}
+
+/* Impact rating badges inside vuln detail */
+.vuln-detail__impact-rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 4px 0;
+}
+
+.vuln-detail__impact-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--sec-text-muted);
+  min-width: 100px;
+}
+
+.vuln-detail__impact-value {
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+/* Reproduction steps */
+.vuln-detail__steps {
+  counter-reset: vuln-step;
+  list-style: none;
+  padding: 0;
+  margin: 8px 0;
+}
+
+.vuln-detail__step {
+  counter-increment: vuln-step;
+  position: relative;
+  padding-left: 40px;
+  padding-bottom: 16px;
+  border-left: 2px solid var(--sec-border-light);
+  margin-left: 14px;
+}
+
+.vuln-detail__step:last-child {
+  border-left-color: transparent;
+  padding-bottom: 0;
+}
+
+.vuln-detail__step::before {
+  content: counter(vuln-step);
+  position: absolute;
+  left: -13px;
+  top: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: var(--sec-bg-tertiary);
+  border: 2px solid var(--sec-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--sec-text-secondary);
+}
+
+/* Reference links */
+.vuln-detail__ref-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.vuln-detail__ref-item {
+  padding: 6px 0;
+  border-bottom: 1px solid var(--sec-border-light);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.vuln-detail__ref-item:last-child {
+  border-bottom: none;
+}
+
+.vuln-detail__ref-link {
+  color: var(--sec-link);
+  text-decoration: none;
+  font-size: 0.85rem;
+  word-break: break-all;
+}
+
+.vuln-detail__ref-link:hover {
+  text-decoration: underline;
+  color: var(--sec-link-hover);
+}
+
+.vuln-detail__ref-type {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background-color: var(--sec-bg-tertiary);
+  color: var(--sec-text-muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+
+/* ==========================================================================
+   4. PORT TABLE
+   ==========================================================================
+   Structure:
+     .port-table
+       thead
+         tr > th
+       tbody
+         tr.port-table__row
+           td.port-table__port
+           td.port-table__protocol
+           td.port-table__service
+           td.port-table__state
+           td.port-table__version
+   ========================================================================== */
+
+.port-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background-color: var(--sec-bg-elevated);
+  border: 1px solid var(--sec-border);
+  border-radius: var(--sec-radius-md);
+  overflow: hidden;
+  font-family: var(--sec-font-sans);
+  font-size: 0.88rem;
+}
+
+.port-table thead {
+  background-color: var(--sec-bg-secondary);
+}
+
+.port-table th {
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--sec-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 2px solid var(--sec-border);
+  white-space: nowrap;
+}
+
+.port-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--sec-border-light);
+  color: var(--sec-text-secondary);
+  vertical-align: middle;
+}
+
+.port-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.port-table tbody tr:hover {
+  background-color: var(--sec-bg-secondary);
+}
+
+.port-table__port {
+  font-family: var(--sec-font-mono);
+  font-weight: 700;
+  color: var(--sec-text-primary);
+  white-space: nowrap;
+}
+
+.port-table__protocol {
+  font-family: var(--sec-font-mono);
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  color: var(--sec-text-muted);
+}
+
+.port-table__service {
+  font-weight: 500;
+  color: var(--sec-text-primary);
+}
+
+.port-table__state {
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.port-table__state--open {
+  color: var(--port-open);
+}
+
+.port-table__state--open::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--port-open);
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+.port-table__state--closed {
+  color: var(--port-closed);
+}
+
+.port-table__state--closed::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--port-closed);
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+.port-table__state--filtered {
+  color: var(--port-filtered);
+}
+
+.port-table__state--filtered::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--port-filtered);
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+.port-table__version {
+  font-family: var(--sec-font-mono);
+  font-size: 0.8rem;
+  color: var(--sec-text-muted);
+}
+
+/* Sortable column headers */
+.port-table th[data-sort] {
+  cursor: pointer;
+  user-select: none;
+}
+
+.port-table th[data-sort]:hover {
+  color: var(--sec-text-primary);
+}
+
+.port-table th[data-sort]::after {
+  content: "";
+  display: inline-block;
+  width: 0;
+  height: 0;
+  margin-left: 6px;
+  vertical-align: middle;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 4px solid var(--sec-text-muted);
+  opacity: 0.4;
+}
+
+.port-table th[data-sort="asc"]::after {
+  border-top: none;
+  border-bottom: 4px solid var(--sec-text-primary);
+  opacity: 1;
+}
+
+.port-table th[data-sort="desc"]::after {
+  border-top: 4px solid var(--sec-text-primary);
+  opacity: 1;
+}
+
+/* Port table responsive wrapper */
+.port-table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: var(--sec-radius-md);
+}
+
+/* Compact port table variant */
+.port-table--compact th,
+.port-table--compact td {
+  padding: 6px 10px;
+  font-size: 0.82rem;
+}
+
+.port-table--compact th {
+  font-size: 0.7rem;
+}
+
+/* Striped variant */
+.port-table--striped tbody tr:nth-child(even) {
+  background-color: var(--sec-bg-secondary);
+}
+
+
+/* ==========================================================================
+   5. SCAN RESULTS
+   ==========================================================================
+   Structure:
+     .scan-result
+       .scan-result__header
+         .scan-result__target
+         .scan-result__status
+         .scan-result__timestamp
+       .scan-result__summary
+         .scan-result__stat (multiple)
+       .scan-result__body
+         .scan-result__section
+           (port-table, os detection, vuln count, timing)
+   ========================================================================== */
+
+.scan-result {
+  background-color: var(--sec-bg-elevated);
+  border: 1px solid var(--sec-border);
+  border-radius: var(--sec-radius-md);
+  box-shadow: var(--sec-shadow);
+  overflow: hidden;
+  font-family: var(--sec-font-sans);
+}
+
+.scan-result__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 20px;
+  background-color: var(--sec-bg-secondary);
+  border-bottom: 1px solid var(--sec-border);
+  flex-wrap: wrap;
+}
+
+.scan-result__target {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--sec-font-mono);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--sec-text-primary);
+}
+
+.scan-result__target-icon {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--sec-bg-tertiary);
+  border-radius: var(--sec-radius-sm);
+  font-size: 0.7rem;
+}
+
+.scan-result__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 100px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.scan-result__status--complete {
+  background-color: var(--sec-pass-bg);
+  color: var(--sec-pass);
+}
+
+.scan-result__status--running {
+  background-color: var(--sec-warn-bg);
+  color: var(--sec-warn);
+}
+
+.scan-result__status--error {
+  background-color: var(--sec-fail-bg);
+  color: var(--sec-fail);
+}
+
+.scan-result__timestamp {
+  font-size: 0.78rem;
+  color: var(--sec-text-muted);
+  font-family: var(--sec-font-mono);
+}
+
+.scan-result__summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 1px;
+  background-color: var(--sec-border-light);
+  border-bottom: 1px solid var(--sec-border);
+}
+
+.scan-result__stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 14px 12px;
+  background-color: var(--sec-bg-elevated);
+  text-align: center;
+}
+
+.scan-result__stat-value {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--sec-text-primary);
+  font-family: var(--sec-font-mono);
+  line-height: 1.2;
+}
+
+.scan-result__stat-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--sec-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 2px;
+}
+
+.scan-result__stat--critical .scan-result__stat-value {
+  color: var(--sev-critical-accent);
+}
+
+.scan-result__stat--high .scan-result__stat-value {
+  color: var(--sev-high-accent);
+}
+
+.scan-result__stat--medium .scan-result__stat-value {
+  color: var(--sev-medium-accent);
+}
+
+.scan-result__stat--low .scan-result__stat-value {
+  color: var(--sev-low-accent);
+}
+
+.scan-result__stat--open .scan-result__stat-value {
+  color: var(--port-open);
+}
+
+.scan-result__body {
+  padding: 0;
+}
+
+.scan-result__section {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--sec-border-light);
+}
+
+.scan-result__section:last-child {
+  border-bottom: none;
+}
+
+.scan-result__section-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--sec-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 12px;
+}
+
+/* OS Detection */
+.scan-result__os {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background-color: var(--sec-bg-secondary);
+  border-radius: var(--sec-radius);
+  border: 1px solid var(--sec-border-light);
+}
+
+.scan-result__os-name {
+  font-weight: 600;
+  color: var(--sec-text-primary);
+  font-size: 0.9rem;
+}
+
+.scan-result__os-accuracy {
+  font-family: var(--sec-font-mono);
+  font-size: 0.8rem;
+  color: var(--sec-text-muted);
+}
+
+.scan-result__os-accuracy-bar {
+  display: inline-block;
+  width: 60px;
+  height: 4px;
+  background-color: var(--sec-bg-tertiary);
+  border-radius: 2px;
+  overflow: hidden;
+  vertical-align: middle;
+  margin-left: 6px;
+}
+
+.scan-result__os-accuracy-fill {
+  height: 100%;
+  border-radius: 2px;
+  background-color: var(--sec-pass);
+  transition: width 0.3s ease;
+}
+
+/* Timing info */
+.scan-result__timing {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+}
+
+.scan-result__timing-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.scan-result__timing-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--sec-text-muted);
+  text-transform: uppercase;
+}
+
+.scan-result__timing-value {
+  font-family: var(--sec-font-mono);
+  font-size: 0.88rem;
+  color: var(--sec-text-primary);
+  font-weight: 500;
+}
+
+/* Scan result progress bar (for running scans) */
+.scan-result__progress {
+  width: 100%;
+  height: 3px;
+  background-color: var(--sec-bg-tertiary);
+  overflow: hidden;
+}
+
+.scan-result__progress-bar {
+  height: 100%;
+  background-color: var(--sev-info-accent);
+  transition: width 0.3s ease;
+  animation: scan-progress-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes scan-progress-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+
+/* ==========================================================================
+   6. ATTACK TREE
+   ==========================================================================
+   Hierarchical attack path visualization with AND/OR nodes.
+   Structure:
+     .attack-tree
+       .attack-tree__node
+         .attack-tree__node-content
+           .attack-tree__node-label
+           .attack-tree__node-type (AND | OR)
+         .attack-tree__children
+           .attack-tree__node (recursive)
+   ========================================================================== */
+
+.attack-tree {
+  font-family: var(--sec-font-sans);
+  padding: 20px;
+  overflow-x: auto;
+}
+
+.attack-tree__root {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.attack-tree__node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+
+.attack-tree__node-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 18px;
+  background-color: var(--sec-bg-elevated);
+  border: 2px solid var(--sec-border);
+  border-radius: var(--sec-radius-md);
+  box-shadow: var(--sec-shadow);
+  position: relative;
+  z-index: 1;
+  min-width: 120px;
+  text-align: center;
+  transition: border-color var(--sec-transition), box-shadow var(--sec-transition);
+  cursor: default;
+}
+
+.attack-tree__node-content:hover {
+  border-color: var(--sev-info-accent);
+  box-shadow: var(--sec-shadow-md);
+}
+
+.attack-tree__node-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--sec-text-primary);
+  line-height: 1.3;
+}
+
+.attack-tree__node-desc {
+  font-size: 0.75rem;
+  color: var(--sec-text-muted);
+  line-height: 1.3;
+}
+
+.attack-tree__node-type {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 20px;
+  border-radius: 10px;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+}
+
+.attack-tree__node-type--and {
+  background-color: var(--sev-critical-accent);
+  color: var(--sev-critical-fg);
+}
+
+.attack-tree__node-type--or {
+  background-color: var(--sev-info-accent);
+  color: var(--sev-info-fg);
+}
+
+/* Severity-colored nodes */
+.attack-tree__node--critical .attack-tree__node-content {
+  border-color: var(--sev-critical-accent);
+  background-color: var(--sev-critical-surface);
+}
+
+.attack-tree__node--critical .attack-tree__node-label {
+  color: var(--sev-critical-text);
+}
+
+.attack-tree__node--high .attack-tree__node-content {
+  border-color: var(--sev-high-accent);
+  background-color: var(--sev-high-surface);
+}
+
+.attack-tree__node--high .attack-tree__node-label {
+  color: var(--sev-high-text);
+}
+
+.attack-tree__node--medium .attack-tree__node-content {
+  border-color: var(--sev-medium-accent);
+  background-color: var(--sev-medium-surface);
+}
+
+.attack-tree__node--medium .attack-tree__node-label {
+  color: var(--sev-medium-text);
+}
+
+.attack-tree__node--low .attack-tree__node-content {
+  border-color: var(--sev-low-accent);
+  background-color: var(--sev-low-surface);
+}
+
+.attack-tree__node--low .attack-tree__node-label {
+  color: var(--sev-low-text);
+}
+
+/* Children container */
+.attack-tree__children {
+  display: flex;
+  gap: 24px;
+  margin-top: 32px;
+  position: relative;
+  padding-top: 20px;
+}
+
+/* Vertical connector from parent to branch point */
+.attack-tree__children::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 2px;
+  height: 20px;
+  background-color: var(--sec-border);
+  transform: translateX(-50%);
+}
+
+/* Horizontal branch line */
+.attack-tree__children::after {
+  content: "";
+  position: absolute;
+  top: 20px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: var(--sec-border);
+}
+
+/* Connector from branch to each child */
+.attack-tree__children > .attack-tree__node::before {
+  content: "";
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  width: 2px;
+  height: 12px;
+  background-color: var(--sec-border);
+  transform: translateX(-50%);
+}
+
+/* Leaf node indicator */
+.attack-tree__node--leaf .attack-tree__node-content {
+  border-style: dashed;
+}
+
+/* Completed/achieved nodes */
+.attack-tree__node--achieved .attack-tree__node-content {
+  background-color: var(--sec-fail-bg);
+  border-color: var(--sec-fail);
+}
+
+.attack-tree__node--mitigated .attack-tree__node-content {
+  opacity: 0.5;
+  text-decoration: line-through;
+}
+
+/* Attack tree in vertical layout for narrow screens */
+.attack-tree--vertical .attack-tree__children {
+  flex-direction: column;
+  gap: 16px;
+  align-items: flex-start;
+  padding-top: 0;
+  padding-left: 30px;
+  margin-top: 12px;
+}
+
+.attack-tree--vertical .attack-tree__children::before {
+  top: 0;
+  left: 15px;
+  width: 2px;
+  height: 100%;
+  transform: none;
+}
+
+.attack-tree--vertical .attack-tree__children::after {
+  display: none;
+}
+
+.attack-tree--vertical .attack-tree__children > .attack-tree__node::before {
+  top: 50%;
+  left: -15px;
+  width: 15px;
+  height: 2px;
+  transform: translateY(-50%);
+}
+
+
+/* ==========================================================================
+   7. KILL CHAIN
+   ==========================================================================
+   MITRE ATT&CK kill chain phases as horizontal pipeline.
+   Structure:
+     .kill-chain
+       .kill-chain__phase (7 phases)
+         .kill-chain__phase-number
+         .kill-chain__phase-name
+         .kill-chain__phase-desc
+         .kill-chain__phase-techniques
+   ========================================================================== */
+
+.kill-chain {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 4px;
+  font-family: var(--sec-font-sans);
+}
+
+.kill-chain__phase {
+  flex: 1;
+  min-width: 140px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  background-color: var(--sec-bg-elevated);
+  border: 1px solid var(--sec-border);
+  transition: transform var(--sec-transition), box-shadow var(--sec-transition);
+}
+
+.kill-chain__phase:first-child {
+  border-radius: var(--sec-radius-md) 0 0 var(--sec-radius-md);
+}
+
+.kill-chain__phase:last-child {
+  border-radius: 0 var(--sec-radius-md) var(--sec-radius-md) 0;
+}
+
+.kill-chain__phase + .kill-chain__phase {
+  margin-left: -1px;
+}
+
+.kill-chain__phase:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--sec-shadow-md);
+  z-index: 1;
+}
+
+/* Arrow connector between phases */
+.kill-chain__phase::after {
+  content: "";
+  position: absolute;
+  right: -8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0;
+  height: 0;
+  border-top: 10px solid transparent;
+  border-bottom: 10px solid transparent;
+  border-left: 8px solid var(--sec-border);
+  z-index: 2;
+}
+
+.kill-chain__phase:last-child::after {
+  display: none;
+}
+
+/* Phase color stripe at top */
+.kill-chain__phase-stripe {
+  height: 4px;
+  width: 100%;
+}
+
+.kill-chain__phase--recon .kill-chain__phase-stripe { background-color: var(--kc-recon); }
+.kill-chain__phase--weapon .kill-chain__phase-stripe { background-color: var(--kc-weapon); }
+.kill-chain__phase--delivery .kill-chain__phase-stripe { background-color: var(--kc-delivery); }
+.kill-chain__phase--exploit .kill-chain__phase-stripe { background-color: var(--kc-exploit); }
+.kill-chain__phase--install .kill-chain__phase-stripe { background-color: var(--kc-install); }
+.kill-chain__phase--c2 .kill-chain__phase-stripe { background-color: var(--kc-c2); }
+.kill-chain__phase--action .kill-chain__phase-stripe { background-color: var(--kc-action); }
+
+.kill-chain__phase-header {
+  padding: 12px 14px 8px;
+}
+
+.kill-chain__phase-number {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--sec-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.kill-chain__phase-name {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--sec-text-primary);
+  margin-top: 2px;
+  line-height: 1.3;
+}
+
+.kill-chain__phase-desc {
+  padding: 0 14px;
+  font-size: 0.78rem;
+  color: var(--sec-text-muted);
+  line-height: 1.4;
+}
+
+.kill-chain__phase-body {
+  padding: 8px 14px 14px;
+  flex: 1;
+}
+
+.kill-chain__phase-techniques {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.kill-chain__technique {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background-color: var(--sec-bg-secondary);
+  border-radius: var(--sec-radius-sm);
+  font-size: 0.75rem;
+  color: var(--sec-text-secondary);
+  border: 1px solid var(--sec-border-light);
+}
+
+.kill-chain__technique-id {
+  font-family: var(--sec-font-mono);
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--sec-text-muted);
+}
+
+/* Active phase indicator */
+.kill-chain__phase--active {
+  border-color: var(--sev-critical-accent);
+  background-color: var(--sev-critical-surface);
+}
+
+.kill-chain__phase--active .kill-chain__phase-name {
+  color: var(--sev-critical-text);
+}
+
+/* Completed phase */
+.kill-chain__phase--completed {
+  opacity: 0.7;
+}
+
+.kill-chain__phase--completed .kill-chain__phase-stripe {
+  background-color: var(--sec-pass);
+}
+
+/* Phase count badge */
+.kill-chain__phase-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  background-color: var(--sec-bg-tertiary);
+  color: var(--sec-text-muted);
+  margin-left: auto;
+}
+
+/* Vertical kill chain for narrow viewports */
+.kill-chain--vertical {
+  flex-direction: column;
+}
+
+.kill-chain--vertical .kill-chain__phase {
+  min-width: auto;
+  border-radius: 0;
+}
+
+.kill-chain--vertical .kill-chain__phase:first-child {
+  border-radius: var(--sec-radius-md) var(--sec-radius-md) 0 0;
+}
+
+.kill-chain--vertical .kill-chain__phase:last-child {
+  border-radius: 0 0 var(--sec-radius-md) var(--sec-radius-md);
+}
+
+.kill-chain--vertical .kill-chain__phase + .kill-chain__phase {
+  margin-left: 0;
+  margin-top: -1px;
+}
+
+.kill-chain--vertical .kill-chain__phase::after {
+  display: none;
+}
+
+.kill-chain--vertical .kill-chain__phase-stripe {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 4px;
+  height: 100%;
+}
+
+.kill-chain--vertical .kill-chain__phase-header {
+  padding-left: 18px;
+}
+
+.kill-chain--vertical .kill-chain__phase-desc {
+  padding-left: 18px;
+}
+
+.kill-chain--vertical .kill-chain__phase-body {
+  padding-left: 18px;
+}
+
+
+/* ==========================================================================
+   8. STRIDE MODEL
+   ==========================================================================
+   Threat model diagram with 6 STRIDE categories.
+   Structure:
+     .stride
+       .stride__category (6)
+         .stride__category-icon
+         .stride__category-name
+         .stride__category-desc
+         .stride__threats
+           .stride__threat
+   ========================================================================== */
+
+.stride {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  font-family: var(--sec-font-sans);
+}
+
+.stride__category {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--sec-bg-elevated);
+  border: 1px solid var(--sec-border);
+  border-radius: var(--sec-radius-md);
+  overflow: hidden;
+  box-shadow: var(--sec-shadow);
+  transition: box-shadow var(--sec-transition), transform var(--sec-transition);
+}
+
+.stride__category:hover {
+  box-shadow: var(--sec-shadow-md);
+  transform: translateY(-1px);
+}
+
+.stride__category-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--sec-border-light);
+}
+
+.stride__category-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--sec-radius);
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: var(--sec-text-inverse);
+  flex-shrink: 0;
+}
+
+.stride__category--spoofing .stride__category-icon { background-color: var(--sev-critical-accent); }
+.stride__category--tampering .stride__category-icon { background-color: var(--sev-high-accent); }
+.stride__category--repudiation .stride__category-icon { background-color: var(--sev-medium-accent); }
+.stride__category--info-disclosure .stride__category-icon { background-color: var(--sev-info-accent); }
+.stride__category--dos .stride__category-icon { background-color: #7b61d4; }
+.stride__category--elevation .stride__category-icon { background-color: #5a0020; }
+
+.stride__category-name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--sec-text-primary);
+  line-height: 1.2;
+}
+
+.stride__category-initial {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--sec-text-muted);
+  margin-top: 1px;
+}
+
+.stride__category-body {
+  padding: 12px 16px;
+  flex: 1;
+}
+
+.stride__category-desc {
+  font-size: 0.82rem;
+  color: var(--sec-text-secondary);
+  line-height: 1.5;
+  margin-bottom: 10px;
+}
+
+.stride__threats {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.stride__threat {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 10px;
+  background-color: var(--sec-bg-secondary);
+  border-radius: var(--sec-radius-sm);
+  border: 1px solid var(--sec-border-light);
+  font-size: 0.8rem;
+  color: var(--sec-text-secondary);
+  line-height: 1.4;
+}
+
+.stride__threat-bullet {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 5px;
+}
+
+.stride__category--spoofing .stride__threat-bullet { background-color: var(--sev-critical-accent); }
+.stride__category--tampering .stride__threat-bullet { background-color: var(--sev-high-accent); }
+.stride__category--repudiation .stride__threat-bullet { background-color: var(--sev-medium-accent); }
+.stride__category--info-disclosure .stride__threat-bullet { background-color: var(--sev-info-accent); }
+.stride__category--dos .stride__threat-bullet { background-color: #7b61d4; }
+.stride__category--elevation .stride__threat-bullet { background-color: #5a0020; }
+
+/* Mitigated threats */
+.stride__threat--mitigated {
+  opacity: 0.55;
+  text-decoration: line-through;
+}
+
+/* Threat count badge */
+.stride__category-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 11px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  background-color: var(--sec-bg-tertiary);
+  color: var(--sec-text-muted);
+  margin-left: auto;
+}
+
+/* STRIDE connection lines for diagram mode */
+.stride--diagram {
+  position: relative;
+}
+
+.stride--diagram::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 60%;
+  height: 60%;
+  border: 2px dashed var(--sec-border-light);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+
+/* ==========================================================================
+   9. RISK MATRIX
+   ==========================================================================
+   5x5 grid: likelihood (y-axis) vs impact (x-axis), colored cells.
+   Structure:
+     .risk-matrix
+       .risk-matrix__header-row
+       .risk-matrix__row (5)
+         .risk-matrix__label
+         .risk-matrix__cell (5)
+   ========================================================================== */
+
+.risk-matrix {
+  font-family: var(--sec-font-sans);
+  background-color: var(--sec-bg-elevated);
+  border: 1px solid var(--sec-border);
+  border-radius: var(--sec-radius-md);
+  box-shadow: var(--sec-shadow);
+  overflow: hidden;
+  padding: 20px;
+}
+
+.risk-matrix__title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--sec-text-primary);
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.risk-matrix__container {
+  display: flex;
+  gap: 0;
+}
+
+.risk-matrix__y-axis {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding-right: 12px;
+}
+
+.risk-matrix__y-label {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  transform: rotate(180deg);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--sec-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.risk-matrix__grid-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.risk-matrix__grid {
+  display: grid;
+  grid-template-columns: auto repeat(5, 1fr);
+  grid-template-rows: repeat(5, 1fr);
+  gap: 2px;
+}
+
+.risk-matrix__row-label {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 10px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--sec-text-muted);
+  text-transform: uppercase;
+  white-space: nowrap;
+  min-width: 80px;
+}
+
+.risk-matrix__cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 52px;
+  border-radius: var(--sec-radius-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: default;
+  transition: transform var(--sec-transition), box-shadow var(--sec-transition);
+  position: relative;
+}
+
+.risk-matrix__cell:hover {
+  transform: scale(1.05);
+  box-shadow: var(--sec-shadow-md);
+  z-index: 1;
+}
+
+/* Risk level colors: Critical (dark red), High (red-orange), Medium (yellow),
+   Low (light green), Very Low (green) */
+.risk-matrix__cell--critical {
+  background-color: var(--sev-critical-accent);
+  color: var(--sev-critical-fg);
+}
+
+.risk-matrix__cell--high {
+  background-color: var(--sev-high-accent);
+  color: var(--sev-high-fg);
+}
+
+.risk-matrix__cell--medium {
+  background-color: var(--sev-medium-accent);
+  color: var(--sev-medium-bg);
+}
+
+.risk-matrix__cell--low {
+  background-color: var(--sev-low-accent);
+  color: var(--sev-low-fg);
+}
+
+.risk-matrix__cell--very-low {
+  background-color: #c2e0cc;
+  color: #1a5c2e;
+}
+
+/* Cell with a count or risk items */
+.risk-matrix__cell-count {
+  font-family: var(--sec-font-mono);
+  font-weight: 800;
+  font-size: 1rem;
+}
+
+.risk-matrix__cell-tooltip {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: var(--sec-bg-primary);
+  border: 1px solid var(--sec-border);
+  border-radius: var(--sec-radius);
+  padding: 8px 12px;
+  box-shadow: var(--sec-shadow-lg);
+  white-space: nowrap;
+  font-size: 0.78rem;
+  color: var(--sec-text-primary);
+  z-index: 10;
+}
+
+.risk-matrix__cell:hover .risk-matrix__cell-tooltip {
+  display: block;
+}
+
+/* X-axis labels */
+.risk-matrix__x-labels {
+  display: grid;
+  grid-template-columns: auto repeat(5, 1fr);
+  gap: 2px;
+  margin-top: 6px;
+}
+
+.risk-matrix__x-label {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--sec-text-muted);
+  text-transform: uppercase;
+  text-align: center;
+  padding-top: 4px;
+}
+
+.risk-matrix__x-axis-title {
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--sec-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-top: 10px;
+}
+
+/* Legend */
+.risk-matrix__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--sec-border-light);
+  justify-content: center;
+}
+
+.risk-matrix__legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: var(--sec-text-muted);
+}
+
+.risk-matrix__legend-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+}
+
+
+/* ==========================================================================
+   10. PAYLOAD DISPLAY
+   ==========================================================================
+   Structure:
+     .payload
+       .payload__header
+         .payload__severity
+         .payload__category
+         .payload__copy-btn
+       .payload__body
+         .payload__code
+       .payload__footer
+   ========================================================================== */
+
+.payload {
+  background-color: var(--sec-bg-code);
+  border: 1px solid var(--sec-border);
+  border-radius: var(--sec-radius-md);
+  overflow: hidden;
+  font-family: var(--sec-font-sans);
+  box-shadow: var(--sec-shadow);
+}
+
+.payload__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background-color: var(--sec-bg-secondary);
+  border-bottom: 1px solid var(--sec-border);
+}
+
+.payload__title {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--sec-text-primary);
+  flex: 1;
+}
+
+.payload__category {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: var(--sec-radius-sm);
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background-color: var(--sec-bg-tertiary);
+  color: var(--sec-text-muted);
+  border: 1px solid var(--sec-border-light);
+}
+
+.payload__category--xss { color: var(--sev-high-text); background-color: var(--sev-high-surface); }
+.payload__category--sqli { color: var(--sev-critical-text); background-color: var(--sev-critical-surface); }
+.payload__category--rce { color: var(--sev-critical-text); background-color: var(--sev-critical-surface); }
+.payload__category--lfi { color: var(--sev-high-text); background-color: var(--sev-high-surface); }
+.payload__category--ssrf { color: var(--sev-medium-text); background-color: var(--sev-medium-surface); }
+.payload__category--xxe { color: var(--sev-high-text); background-color: var(--sev-high-surface); }
+
+.payload__copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background-color: var(--sec-bg-tertiary);
+  border: 1px solid var(--sec-border);
+  border-radius: var(--sec-radius-sm);
+  color: var(--sec-text-secondary);
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color var(--sec-transition), color var(--sec-transition);
+  font-family: var(--sec-font-sans);
+}
+
+.payload__copy-btn:hover {
+  background-color: var(--sec-bg-primary);
+  color: var(--sec-text-primary);
+}
+
+.payload__copy-btn:active {
+  transform: scale(0.97);
+}
+
+.payload__copy-btn--copied {
+  color: var(--sec-pass);
+  border-color: var(--sec-pass);
+}
+
+.payload__body {
+  padding: 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.payload__code {
+  display: block;
+  padding: 14px 16px;
+  margin: 0;
+  font-family: var(--sec-font-mono);
+  font-size: 0.82rem;
+  line-height: 1.6;
+  color: var(--sec-text-primary);
+  white-space: pre;
+  tab-size: 4;
+  -moz-tab-size: 4;
+}
+
+/* Line numbers */
+.payload__code--numbered {
+  counter-reset: payload-line;
+}
+
+.payload__code--numbered .payload__line {
+  display: block;
+  counter-increment: payload-line;
+  position: relative;
+  padding-left: 50px;
+}
+
+.payload__code--numbered .payload__line::before {
+  content: counter(payload-line);
+  position: absolute;
+  left: 0;
+  width: 36px;
+  text-align: right;
+  color: var(--sec-text-muted);
+  font-size: 0.75rem;
+  opacity: 0.6;
+  user-select: none;
+  border-right: 1px solid var(--sec-border-light);
+  padding-right: 8px;
+  margin-right: 14px;
+}
+
+/* Syntax highlighting tokens */
+.payload__token--string { color: #2d9f52; }
+.payload__token--number { color: #d4a800; }
+.payload__token--keyword { color: #7b61d4; }
+.payload__token--comment { color: var(--sec-text-muted); font-style: italic; }
+.payload__token--function { color: #4a90d9; }
+.payload__token--variable { color: #e06c00; }
+.payload__token--operator { color: var(--sec-text-secondary); }
+.payload__token--tag { color: #cc2936; }
+.payload__token--attribute { color: #d4a800; }
+.payload__token--value { color: #2d9f52; }
+.payload__token--dangerous { color: var(--sev-critical-accent); font-weight: 700; }
+
+.payload__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  border-top: 1px solid var(--sec-border-light);
+  background-color: var(--sec-bg-secondary);
+  font-size: 0.75rem;
+  color: var(--sec-text-muted);
+}
+
+.payload__language {
+  font-family: var(--sec-font-mono);
+  font-weight: 500;
+}
+
+.payload__size {
+  font-family: var(--sec-font-mono);
+}
+
+/* Payload with severity stripe */
+.payload--critical { border-left: var(--sec-stripe-width) solid var(--sev-critical-accent); }
+.payload--high { border-left: var(--sec-stripe-width) solid var(--sev-high-accent); }
+.payload--medium { border-left: var(--sec-stripe-width) solid var(--sev-medium-accent); }
+.payload--low { border-left: var(--sec-stripe-width) solid var(--sev-low-accent); }
+.payload--info { border-left: var(--sec-stripe-width) solid var(--sev-info-accent); }
+
+/* Payload grid */
+.payload-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  gap: 12px;
+}
+
+
+/* ==========================================================================
+   11. NETWORK DIAGRAM
+   ==========================================================================
+   Structure:
+     .network-diagram
+       .network-diagram__host (multiple)
+         .network-diagram__host-icon
+         .network-diagram__host-name
+         .network-diagram__host-ip
+         .network-diagram__services
+       .network-diagram__connection (lines between hosts)
+   ========================================================================== */
+
+.network-diagram {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 24px;
+  padding: 24px;
+  background-color: var(--sec-bg-secondary);
+  border: 1px solid var(--sec-border);
+  border-radius: var(--sec-radius-md);
+  font-family: var(--sec-font-sans);
+  position: relative;
+  min-height: 200px;
+}
+
+.network-diagram__host {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px;
+  background-color: var(--sec-bg-elevated);
+  border: 2px solid var(--sec-border);
+  border-radius: var(--sec-radius-md);
+  box-shadow: var(--sec-shadow);
+  transition: border-color var(--sec-transition), box-shadow var(--sec-transition);
+  position: relative;
+  z-index: 1;
+}
+
+.network-diagram__host:hover {
+  border-color: var(--sev-info-accent);
+  box-shadow: var(--sec-shadow-md);
+}
+
+.network-diagram__host--compromised {
+  border-color: var(--sev-critical-accent);
+  background-color: var(--sev-critical-surface);
+}
+
+.network-diagram__host--target {
+  border-color: var(--sev-high-accent);
+  border-style: dashed;
+}
+
+.network-diagram__host--secure {
+  border-color: var(--sev-low-accent);
+}
+
+.network-diagram__host-icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--sec-bg-tertiary);
+  border-radius: var(--sec-radius);
+  font-size: 1.2rem;
+  color: var(--sec-text-secondary);
+  border: 1px solid var(--sec-border-light);
+}
+
+.network-diagram__host-icon--server { background-color: var(--sev-info-surface); }
+.network-diagram__host-icon--workstation { background-color: var(--sev-low-surface); }
+.network-diagram__host-icon--router { background-color: var(--sev-medium-surface); }
+.network-diagram__host-icon--firewall { background-color: var(--sev-high-surface); }
+.network-diagram__host-icon--cloud { background-color: #e6e0ff; }
+.network-diagram__host-icon--database { background-color: #ffe6f0; }
+
+.network-diagram__host-name {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--sec-text-primary);
+  text-align: center;
+  line-height: 1.2;
+}
+
+.network-diagram__host-ip {
+  font-family: var(--sec-font-mono);
+  font-size: 0.75rem;
+  color: var(--sec-text-muted);
+}
+
+.network-diagram__host-os {
+  font-size: 0.72rem;
+  color: var(--sec-text-muted);
+  background-color: var(--sec-bg-tertiary);
+  padding: 1px 6px;
+  border-radius: 3px;
+}
+
+.network-diagram__services {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: center;
+  margin-top: 4px;
+}
+
+.network-diagram__service {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 6px;
+  background-color: var(--sec-bg-secondary);
+  border: 1px solid var(--sec-border-light);
+  border-radius: 3px;
+  font-size: 0.68rem;
+  font-family: var(--sec-font-mono);
+  color: var(--sec-text-muted);
+}
+
+.network-diagram__service--open {
+  border-color: var(--port-open);
+  color: var(--port-open);
+}
+
+.network-diagram__service--closed {
+  border-color: var(--port-closed);
+  color: var(--port-closed);
+  opacity: 0.6;
+}
+
+.network-diagram__service--vulnerable {
+  border-color: var(--sev-critical-accent);
+  color: var(--sev-critical-text);
+  background-color: var(--sev-critical-surface);
+}
+
+/* Network connection indicator */
+.network-diagram__connection-label {
+  position: absolute;
+  padding: 2px 8px;
+  background-color: var(--sec-bg-elevated);
+  border: 1px solid var(--sec-border);
+  border-radius: var(--sec-radius-sm);
+  font-size: 0.7rem;
+  color: var(--sec-text-muted);
+  font-family: var(--sec-font-mono);
+  z-index: 2;
+}
+
+/* Network zones */
+.network-diagram__zone {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  padding: 16px;
+  border: 2px dashed var(--sec-border);
+  border-radius: var(--sec-radius-lg);
+  position: relative;
+}
+
+.network-diagram__zone-label {
+  position: absolute;
+  top: -10px;
+  left: 16px;
+  padding: 0 8px;
+  background-color: var(--sec-bg-secondary);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--sec-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.network-diagram__zone--dmz {
+  border-color: var(--sev-medium-accent);
+}
+
+.network-diagram__zone--internal {
+  border-color: var(--sev-low-accent);
+}
+
+.network-diagram__zone--external {
+  border-color: var(--sev-high-accent);
+}
+
+
+/* ==========================================================================
+   12. PENTEST REPORT FINDINGS
+   ==========================================================================
+   Structure:
+     .finding
+       .finding__header
+         .finding__severity
+         .finding__title
+         .finding__id
+       .finding__body
+         .finding__section (description, evidence, remediation)
+       .finding__footer
+         .finding__risk-rating
+   ========================================================================== */
+
+.finding {
+  background-color: var(--sec-bg-elevated);
+  border: 1px solid var(--sec-border);
+  border-radius: var(--sec-radius-md);
+  box-shadow: var(--sec-shadow);
+  overflow: hidden;
+  font-family: var(--sec-font-sans);
+  margin-bottom: 16px;
+  transition: box-shadow var(--sec-transition);
+}
+
+.finding:hover {
+  box-shadow: var(--sec-shadow-md);
+}
+
+.finding__header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--sec-border-light);
+  flex-wrap: wrap;
+}
+
+.finding__header--critical {
+  background-color: var(--sev-critical-surface);
+  border-bottom-color: var(--sev-critical-border);
+}
+
+.finding__header--high {
+  background-color: var(--sev-high-surface);
+  border-bottom-color: var(--sev-high-border);
+}
+
+.finding__header--medium {
+  background-color: var(--sev-medium-surface);
+  border-bottom-color: var(--sev-medium-border);
+}
+
+.finding__header--low {
+  background-color: var(--sev-low-surface);
+  border-bottom-color: var(--sev-low-border);
+}
+
+.finding__header--info {
+  background-color: var(--sev-info-surface);
+  border-bottom-color: var(--sev-info-border);
+}
+
+.finding__title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--sec-text-primary);
+  flex: 1;
+  min-width: 200px;
+  line-height: 1.3;
+}
+
+.finding__header--critical .finding__title { color: var(--sev-critical-text); }
+.finding__header--high .finding__title { color: var(--sev-high-text); }
+.finding__header--medium .finding__title { color: var(--sev-medium-text); }
+.finding__header--low .finding__title { color: var(--sev-low-text); }
+.finding__header--info .finding__title { color: var(--sev-info-text); }
+
+.finding__id {
+  font-family: var(--sec-font-mono);
+  font-size: 0.78rem;
+  color: var(--sec-text-muted);
+  flex-shrink: 0;
+}
+
+.finding__body {
+  padding: 0;
+}
+
+.finding__section {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--sec-border-light);
+}
+
+.finding__section:last-child {
+  border-bottom: none;
+}
+
+.finding__section-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--sec-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 8px;
+}
+
+.finding__section-content {
+  font-size: 0.88rem;
+  color: var(--sec-text-secondary);
+  line-height: 1.6;
+}
+
+.finding__section-content p {
+  margin: 0 0 8px 0;
+}
+
+.finding__section-content p:last-child {
+  margin-bottom: 0;
+}
+
+/* Evidence section */
+.finding__evidence {
+  background-color: var(--sec-bg-code);
+  border: 1px solid var(--sec-border-light);
+  border-radius: var(--sec-radius);
+  padding: 12px 14px;
+  margin: 8px 0;
+  font-family: var(--sec-font-mono);
+  font-size: 0.8rem;
+  line-height: 1.5;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  color: var(--sec-text-primary);
+}
+
+.finding__evidence-caption {
+  font-size: 0.75rem;
+  font-style: italic;
+  color: var(--sec-text-muted);
+  margin-top: 4px;
+}
+
+/* Screenshot placeholder */
+.finding__screenshot {
+  border: 1px solid var(--sec-border);
+  border-radius: var(--sec-radius);
+  overflow: hidden;
+  margin: 8px 0;
+}
+
+.finding__screenshot img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+.finding__screenshot-caption {
+  padding: 6px 12px;
+  font-size: 0.75rem;
+  color: var(--sec-text-muted);
+  background-color: var(--sec-bg-secondary);
+  border-top: 1px solid var(--sec-border-light);
+}
+
+/* Remediation list */
+.finding__remediation-list {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0 0;
+}
+
+.finding__remediation-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--sec-border-light);
+  font-size: 0.85rem;
+  color: var(--sec-text-secondary);
+}
+
+.finding__remediation-item:last-child {
+  border-bottom: none;
+}
+
+.finding__remediation-priority {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  font-size: 0.68rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  background-color: var(--sec-bg-tertiary);
+  color: var(--sec-text-muted);
+  border: 1px solid var(--sec-border);
+}
+
+/* Finding footer / risk rating */
+.finding__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 20px;
+  border-top: 1px solid var(--sec-border);
+  background-color: var(--sec-bg-secondary);
+  flex-wrap: wrap;
+}
+
+.finding__risk-rating {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.finding__risk-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+}
+
+.finding__risk-label {
+  font-weight: 600;
+  color: var(--sec-text-muted);
+}
+
+.finding__risk-value {
+  font-weight: 700;
+  color: var(--sec-text-primary);
+}
+
+.finding__cvss {
+  font-family: var(--sec-font-mono);
+  font-weight: 800;
+}
+
+/* Finding status tags */
+.finding__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  border-radius: 100px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.finding__status--open {
+  background-color: var(--sec-fail-bg);
+  color: var(--sec-fail);
+}
+
+.finding__status--remediated {
+  background-color: var(--sec-pass-bg);
+  color: var(--sec-pass);
+}
+
+.finding__status--accepted {
+  background-color: var(--sec-warn-bg);
+  color: var(--sec-warn);
+}
+
+.finding__status--retesting {
+  background-color: var(--sev-info-surface);
+  color: var(--sev-info-accent);
+}
+
+
+/* ==========================================================================
+   13. COMPLIANCE CHECKLIST
+   ==========================================================================
+   Structure:
+     .compliance-check
+       .compliance-check__header
+       .compliance-check__list
+         .compliance-check__item
+           .compliance-check__status (pass/fail/na)
+           .compliance-check__req-id
+           .compliance-check__description
+   ========================================================================== */
+
+.compliance-check {
+  background-color: var(--sec-bg-elevated);
+  border: 1px solid var(--sec-border);
+  border-radius: var(--sec-radius-md);
+  box-shadow: var(--sec-shadow);
+  overflow: hidden;
+  font-family: var(--sec-font-sans);
+}
+
+.compliance-check__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--sec-border);
+  background-color: var(--sec-bg-secondary);
+}
+
+.compliance-check__title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--sec-text-primary);
+}
+
+.compliance-check__framework {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 2px 10px;
+  border-radius: 100px;
+  background-color: var(--sec-bg-tertiary);
+  color: var(--sec-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Summary bar */
+.compliance-check__summary {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--sec-border-light);
+  background-color: var(--sec-bg-primary);
+}
+
+.compliance-check__summary-stat {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.8rem;
+}
+
+.compliance-check__summary-count {
+  font-weight: 800;
+  font-family: var(--sec-font-mono);
+}
+
+.compliance-check__summary-label {
+  color: var(--sec-text-muted);
+  font-weight: 500;
+}
+
+.compliance-check__summary-stat--pass .compliance-check__summary-count {
+  color: var(--sec-pass);
+}
+
+.compliance-check__summary-stat--fail .compliance-check__summary-count {
+  color: var(--sec-fail);
+}
+
+.compliance-check__summary-stat--na .compliance-check__summary-count {
+  color: var(--sec-na);
+}
+
+/* Progress bar */
+.compliance-check__progress {
+  flex: 1;
+  height: 6px;
+  background-color: var(--sec-bg-tertiary);
+  border-radius: 3px;
+  overflow: hidden;
+  display: flex;
+}
+
+.compliance-check__progress-pass {
+  height: 100%;
+  background-color: var(--sec-pass);
+  transition: width 0.3s ease;
+}
+
+.compliance-check__progress-fail {
+  height: 100%;
+  background-color: var(--sec-fail);
+  transition: width 0.3s ease;
+}
+
+.compliance-check__progress-na {
+  height: 100%;
+  background-color: var(--sec-na);
+  transition: width 0.3s ease;
+}
+
+/* Checklist items */
+.compliance-check__list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.compliance-check__item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--sec-border-light);
+  transition: background-color var(--sec-transition);
+}
+
+.compliance-check__item:last-child {
+  border-bottom: none;
+}
+
+.compliance-check__item:hover {
+  background-color: var(--sec-bg-secondary);
+}
+
+.compliance-check__status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  font-size: 0.7rem;
+  font-weight: 800;
+  margin-top: 1px;
+}
+
+.compliance-check__status--pass {
+  background-color: var(--sec-pass-bg);
+  color: var(--sec-pass);
+  border: 2px solid var(--sec-pass);
+}
+
+.compliance-check__status--fail {
+  background-color: var(--sec-fail-bg);
+  color: var(--sec-fail);
+  border: 2px solid var(--sec-fail);
+}
+
+.compliance-check__status--na {
+  background-color: var(--sec-na-bg);
+  color: var(--sec-na);
+  border: 2px solid var(--sec-na);
+}
+
+.compliance-check__status--partial {
+  background-color: var(--sec-warn-bg);
+  color: var(--sec-warn);
+  border: 2px solid var(--sec-warn);
+}
+
+.compliance-check__req-id {
+  font-family: var(--sec-font-mono);
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--sec-text-muted);
+  min-width: 80px;
+  flex-shrink: 0;
+  padding-top: 3px;
+}
+
+.compliance-check__content {
+  flex: 1;
+}
+
+.compliance-check__description {
+  font-size: 0.88rem;
+  color: var(--sec-text-primary);
+  line-height: 1.5;
+  font-weight: 500;
+}
+
+.compliance-check__detail {
+  font-size: 0.8rem;
+  color: var(--sec-text-muted);
+  line-height: 1.45;
+  margin-top: 4px;
+}
+
+.compliance-check__evidence {
+  font-size: 0.78rem;
+  color: var(--sec-text-muted);
+  font-style: italic;
+  margin-top: 4px;
+}
+
+/* Section grouping */
+.compliance-check__section {
+  padding: 8px 20px;
+  background-color: var(--sec-bg-tertiary);
+  border-bottom: 1px solid var(--sec-border);
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--sec-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+
+/* ==========================================================================
+   14. THREAT ACTOR CARDS
+   ==========================================================================
+   Structure:
+     .threat-actor
+       .threat-actor__header
+         .threat-actor__avatar
+         .threat-actor__name
+         .threat-actor__aliases
+       .threat-actor__body
+         .threat-actor__origin
+         .threat-actor__motivation
+         .threat-actor__ttps
+   ========================================================================== */
+
+.threat-actor {
+  background-color: var(--sec-bg-elevated);
+  border: 1px solid var(--sec-border);
+  border-radius: var(--sec-radius-md);
+  box-shadow: var(--sec-shadow);
+  overflow: hidden;
+  font-family: var(--sec-font-sans);
+  transition: box-shadow var(--sec-transition), transform var(--sec-transition);
+}
+
+.threat-actor:hover {
+  box-shadow: var(--sec-shadow-md);
+  transform: translateY(-1px);
+}
+
+.threat-actor__header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 18px;
+  background-color: var(--sec-bg-secondary);
+  border-bottom: 1px solid var(--sec-border);
+}
+
+.threat-actor__avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--sev-critical-surface);
+  border: 2px solid var(--sev-critical-border);
+  color: var(--sev-critical-text);
+  font-size: 1.1rem;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.threat-actor__avatar--apt {
+  background-color: var(--sev-critical-surface);
+  border-color: var(--sev-critical-border);
+}
+
+.threat-actor__avatar--criminal {
+  background-color: var(--sev-high-surface);
+  border-color: var(--sev-high-border);
+}
+
+.threat-actor__avatar--hacktivist {
+  background-color: var(--sev-medium-surface);
+  border-color: var(--sev-medium-border);
+}
+
+.threat-actor__avatar--insider {
+  background-color: var(--sev-info-surface);
+  border-color: var(--sev-info-border);
+}
+
+.threat-actor__header-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.threat-actor__name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--sec-text-primary);
+  line-height: 1.3;
+}
+
+.threat-actor__aliases {
+  font-size: 0.78rem;
+  color: var(--sec-text-muted);
+  margin-top: 2px;
+  line-height: 1.3;
+}
+
+.threat-actor__aliases span {
+  font-style: italic;
+}
+
+.threat-actor__threat-level {
+  flex-shrink: 0;
+}
+
+.threat-actor__body {
+  padding: 14px 18px;
+}
+
+.threat-actor__meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.threat-actor__meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.threat-actor__meta-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--sec-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.threat-actor__meta-value {
+  font-size: 0.85rem;
+  color: var(--sec-text-primary);
+  font-weight: 500;
+}
+
+.threat-actor__origin {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.threat-actor__origin-flag {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.threat-actor__motivation {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: var(--sec-radius-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
+  background-color: var(--sec-bg-tertiary);
+  color: var(--sec-text-secondary);
+  border: 1px solid var(--sec-border-light);
+}
+
+.threat-actor__motivation--espionage { color: var(--sev-critical-text); background-color: var(--sev-critical-surface); }
+.threat-actor__motivation--financial { color: var(--sev-high-text); background-color: var(--sev-high-surface); }
+.threat-actor__motivation--disruption { color: var(--sev-medium-text); background-color: var(--sev-medium-surface); }
+.threat-actor__motivation--ideology { color: var(--sev-info-text); background-color: var(--sev-info-surface); }
+
+/* TTP tags */
+.threat-actor__ttps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 12px;
+}
+
+.threat-actor__ttps-title {
+  width: 100%;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--sec-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 2px;
+}
+
+.threat-actor__ttp {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  background-color: var(--sec-bg-secondary);
+  border: 1px solid var(--sec-border-light);
+  border-radius: var(--sec-radius-sm);
+  font-size: 0.72rem;
+  color: var(--sec-text-secondary);
+  font-family: var(--sec-font-mono);
+  transition: background-color var(--sec-transition);
+}
+
+.threat-actor__ttp:hover {
+  background-color: var(--sec-bg-tertiary);
+}
+
+.threat-actor__ttp-id {
+  font-weight: 700;
+  color: var(--sec-text-muted);
+}
+
+/* Targets section */
+.threat-actor__targets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--sec-border-light);
+}
+
+.threat-actor__targets-title {
+  width: 100%;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--sec-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 2px;
+}
+
+.threat-actor__target {
+  display: inline-flex;
+  padding: 2px 8px;
+  background-color: var(--sev-high-surface);
+  border-radius: var(--sec-radius-sm);
+  font-size: 0.72rem;
+  color: var(--sev-high-text);
+  font-weight: 500;
+}
+
+/* Threat actor grid */
+.threat-actor-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 16px;
+}
+
+
+/* ==========================================================================
+   15. IOC TABLE
+   ==========================================================================
+   Structure:
+     .ioc-table
+       thead
+       tbody
+         tr.ioc-table__row
+           td.ioc-table__type
+           td.ioc-table__value
+           td.ioc-table__first-seen
+           td.ioc-table__source
+           td.ioc-table__confidence
+   ========================================================================== */
+
+.ioc-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background-color: var(--sec-bg-elevated);
+  border: 1px solid var(--sec-border);
+  border-radius: var(--sec-radius-md);
+  overflow: hidden;
+  font-family: var(--sec-font-sans);
+  font-size: 0.85rem;
+}
+
+.ioc-table thead {
+  background-color: var(--sec-bg-secondary);
+}
+
+.ioc-table th {
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 0.73rem;
+  font-weight: 700;
+  color: var(--sec-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 2px solid var(--sec-border);
+  white-space: nowrap;
+}
+
+.ioc-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--sec-border-light);
+  color: var(--sec-text-secondary);
+  vertical-align: middle;
+}
+
+.ioc-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.ioc-table tbody tr:hover {
+  background-color: var(--sec-bg-secondary);
+}
+
+/* Type icon column */
+.ioc-table__type {
+  white-space: nowrap;
+}
+
+.ioc-table__type-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px;
+  border-radius: var(--sec-radius-sm);
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.ioc-table__type-badge--ip {
+  background-color: var(--sev-info-surface);
+  color: var(--sev-info-text);
+}
+
+.ioc-table__type-badge--domain {
+  background-color: var(--sev-medium-surface);
+  color: var(--sev-medium-text);
+}
+
+.ioc-table__type-badge--hash {
+  background-color: var(--sev-high-surface);
+  color: var(--sev-high-text);
+}
+
+.ioc-table__type-badge--url {
+  background-color: var(--sev-critical-surface);
+  color: var(--sev-critical-text);
+}
+
+.ioc-table__type-badge--email {
+  background-color: var(--sev-low-surface);
+  color: var(--sev-low-text);
+}
+
+.ioc-table__type-badge--file {
+  background-color: var(--sec-bg-tertiary);
+  color: var(--sec-text-secondary);
+}
+
+/* Value column */
+.ioc-table__value {
+  font-family: var(--sec-font-mono);
+  font-size: 0.82rem;
+  word-break: break-all;
+  color: var(--sec-text-primary);
+  max-width: 300px;
+}
+
+.ioc-table__value-copy {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: none;
+  color: var(--sec-text-muted);
+  cursor: pointer;
+  border-radius: 3px;
+  font-size: 0.72rem;
+  margin-left: 6px;
+  opacity: 0;
+  transition: opacity var(--sec-transition);
+  vertical-align: middle;
+}
+
+.ioc-table tbody tr:hover .ioc-table__value-copy {
+  opacity: 1;
+}
+
+.ioc-table__value-copy:hover {
+  background-color: var(--sec-bg-tertiary);
+  color: var(--sec-text-primary);
+}
+
+/* First seen */
+.ioc-table__first-seen {
+  font-family: var(--sec-font-mono);
+  font-size: 0.78rem;
+  color: var(--sec-text-muted);
+  white-space: nowrap;
+}
+
+/* Source */
+.ioc-table__source {
+  font-size: 0.82rem;
+}
+
+.ioc-table__source-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  background-color: var(--sec-bg-tertiary);
+  border-radius: var(--sec-radius-sm);
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--sec-text-secondary);
+  border: 1px solid var(--sec-border-light);
+}
+
+/* Confidence */
+.ioc-table__confidence {
+  white-space: nowrap;
+}
+
+.ioc-table__confidence-bar {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ioc-table__confidence-track {
+  width: 50px;
+  height: 5px;
+  background-color: var(--sec-bg-tertiary);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.ioc-table__confidence-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.ioc-table__confidence-fill--high {
+  background-color: var(--sec-pass);
+}
+
+.ioc-table__confidence-fill--medium {
+  background-color: var(--sec-warn);
+}
+
+.ioc-table__confidence-fill--low {
+  background-color: var(--sec-fail);
+}
+
+.ioc-table__confidence-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-family: var(--sec-font-mono);
+}
+
+/* IOC table responsive wrapper */
+.ioc-table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: var(--sec-radius-md);
+}
+
+/* Actions column */
+.ioc-table__actions {
+  white-space: nowrap;
+}
+
+.ioc-table__action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--sec-border-light);
+  background-color: var(--sec-bg-primary);
+  color: var(--sec-text-muted);
+  border-radius: var(--sec-radius-sm);
+  cursor: pointer;
+  font-size: 0.75rem;
+  transition: background-color var(--sec-transition), color var(--sec-transition);
+}
+
+.ioc-table__action-btn:hover {
+  background-color: var(--sec-bg-tertiary);
+  color: var(--sec-text-primary);
+}
+
+.ioc-table__action-btn + .ioc-table__action-btn {
+  margin-left: 4px;
+}
+
+
+/* ==========================================================================
+   16. INCIDENT TIMELINE
+   ==========================================================================
+   Structure:
+     .incident-timeline
+       .incident-timeline__event
+         .incident-timeline__marker
+         .incident-timeline__content
+           .incident-timeline__time
+           .incident-timeline__title
+           .incident-timeline__desc
+   ========================================================================== */
+
+.incident-timeline {
+  position: relative;
+  padding: 20px 0;
+  font-family: var(--sec-font-sans);
+}
+
+/* Vertical line */
+.incident-timeline::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 24px;
+  width: 2px;
+  background-color: var(--sec-border);
+}
+
+.incident-timeline__event {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 0 0 24px 0;
+  margin-left: 0;
+}
+
+.incident-timeline__event:last-child {
+  padding-bottom: 0;
+}
+
+/* Timeline marker */
+.incident-timeline__marker {
+  position: relative;
+  width: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  z-index: 1;
+}
+
+.incident-timeline__marker-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 3px solid var(--sec-bg-primary);
+  box-shadow: 0 0 0 2px var(--sec-border);
+}
+
+.incident-timeline__event--critical .incident-timeline__marker-dot {
+  background-color: var(--sev-critical-accent);
+  box-shadow: 0 0 0 2px var(--sev-critical-accent), 0 0 8px rgba(230, 57, 70, 0.3);
+}
+
+.incident-timeline__event--high .incident-timeline__marker-dot {
+  background-color: var(--sev-high-accent);
+  box-shadow: 0 0 0 2px var(--sev-high-accent);
+}
+
+.incident-timeline__event--medium .incident-timeline__marker-dot {
+  background-color: var(--sev-medium-accent);
+  box-shadow: 0 0 0 2px var(--sev-medium-accent);
+}
+
+.incident-timeline__event--low .incident-timeline__marker-dot {
+  background-color: var(--sev-low-accent);
+  box-shadow: 0 0 0 2px var(--sev-low-accent);
+}
+
+.incident-timeline__event--info .incident-timeline__marker-dot {
+  background-color: var(--sev-info-accent);
+  box-shadow: 0 0 0 2px var(--sev-info-accent);
+}
+
+/* Marker with larger icon */
+.incident-timeline__marker-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border: 2px solid var(--sec-bg-primary);
+}
+
+.incident-timeline__event--critical .incident-timeline__marker-icon {
+  background-color: var(--sev-critical-accent);
+  color: var(--sev-critical-fg);
+}
+
+.incident-timeline__event--high .incident-timeline__marker-icon {
+  background-color: var(--sev-high-accent);
+  color: var(--sev-high-fg);
+}
+
+.incident-timeline__event--medium .incident-timeline__marker-icon {
+  background-color: var(--sev-medium-accent);
+  color: var(--sev-medium-bg);
+}
+
+.incident-timeline__event--low .incident-timeline__marker-icon {
+  background-color: var(--sev-low-accent);
+  color: var(--sev-low-fg);
+}
+
+.incident-timeline__event--info .incident-timeline__marker-icon {
+  background-color: var(--sev-info-accent);
+  color: var(--sev-info-fg);
+}
+
+/* Event content */
+.incident-timeline__content {
+  flex: 1;
+  background-color: var(--sec-bg-elevated);
+  border: 1px solid var(--sec-border);
+  border-radius: var(--sec-radius-md);
+  padding: 12px 16px;
+  box-shadow: var(--sec-shadow);
+  transition: box-shadow var(--sec-transition);
+}
+
+.incident-timeline__content:hover {
+  box-shadow: var(--sec-shadow-md);
+}
+
+.incident-timeline__event--critical .incident-timeline__content {
+  border-left: 3px solid var(--sev-critical-accent);
+}
+
+.incident-timeline__event--high .incident-timeline__content {
+  border-left: 3px solid var(--sev-high-accent);
+}
+
+.incident-timeline__event--medium .incident-timeline__content {
+  border-left: 3px solid var(--sev-medium-accent);
+}
+
+.incident-timeline__event--low .incident-timeline__content {
+  border-left: 3px solid var(--sev-low-accent);
+}
+
+.incident-timeline__event--info .incident-timeline__content {
+  border-left: 3px solid var(--sev-info-accent);
+}
+
+.incident-timeline__time {
+  font-family: var(--sec-font-mono);
+  font-size: 0.75rem;
+  color: var(--sec-text-muted);
+  margin-bottom: 4px;
+}
+
+.incident-timeline__title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--sec-text-primary);
+  line-height: 1.3;
+  margin-bottom: 4px;
+}
+
+.incident-timeline__desc {
+  font-size: 0.82rem;
+  color: var(--sec-text-secondary);
+  line-height: 1.5;
+}
+
+.incident-timeline__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.incident-timeline__tag {
+  display: inline-flex;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  background-color: var(--sec-bg-tertiary);
+  color: var(--sec-text-muted);
+  border: 1px solid var(--sec-border-light);
+}
+
+/* Event detail expandable */
+.incident-timeline__detail {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--sec-border-light);
+  font-size: 0.8rem;
+  color: var(--sec-text-muted);
+}
+
+.incident-timeline__detail pre {
+  background-color: var(--sec-bg-code);
+  border-radius: var(--sec-radius-sm);
+  padding: 8px 10px;
+  font-family: var(--sec-font-mono);
+  font-size: 0.78rem;
+  overflow-x: auto;
+  margin: 6px 0 0 0;
+}
+
+/* Horizontal timeline variant */
+.incident-timeline--horizontal {
+  display: flex;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 0 0 20px 0;
+  gap: 0;
+}
+
+.incident-timeline--horizontal::before {
+  content: "";
+  position: absolute;
+  top: auto;
+  bottom: auto;
+  left: 0;
+  right: 0;
+  top: 16px;
+  width: 100%;
+  height: 2px;
+  background-color: var(--sec-border);
+}
+
+.incident-timeline--horizontal .incident-timeline__event {
+  flex-direction: column;
+  align-items: center;
+  min-width: 180px;
+  padding: 0 12px 0 12px;
+}
+
+.incident-timeline--horizontal .incident-timeline__marker {
+  width: auto;
+  margin-bottom: 12px;
+}
+
+.incident-timeline--horizontal .incident-timeline__content {
+  border-left: none;
+  border-top: 3px solid var(--sec-border);
+}
+
+.incident-timeline--horizontal .incident-timeline__event--critical .incident-timeline__content {
+  border-left: none;
+  border-top-color: var(--sev-critical-accent);
+}
+
+.incident-timeline--horizontal .incident-timeline__event--high .incident-timeline__content {
+  border-left: none;
+  border-top-color: var(--sev-high-accent);
+}
+
+.incident-timeline--horizontal .incident-timeline__event--medium .incident-timeline__content {
+  border-left: none;
+  border-top-color: var(--sev-medium-accent);
+}
+
+.incident-timeline--horizontal .incident-timeline__event--low .incident-timeline__content {
+  border-left: none;
+  border-top-color: var(--sev-low-accent);
+}
+
+.incident-timeline--horizontal .incident-timeline__event--info .incident-timeline__content {
+  border-left: none;
+  border-top-color: var(--sev-info-accent);
+}
+
+
+/* ==========================================================================
+   17. LOG VIEWER
+   ==========================================================================
+   Structure:
+     .log-viewer
+       .log-viewer__toolbar
+       .log-viewer__body
+         .log-viewer__line (many)
+           .log-viewer__line-number
+           .log-viewer__timestamp
+           .log-viewer__level
+           .log-viewer__message
+   ========================================================================== */
+
+.log-viewer {
+  background-color: #0c0e14;
+  border: 1px solid var(--sec-border);
+  border-radius: var(--sec-radius-md);
+  overflow: hidden;
+  font-family: var(--sec-font-mono);
+  font-size: 0.8rem;
+  box-shadow: var(--sec-shadow);
+}
+
+.log-viewer__toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  background-color: #161922;
+  border-bottom: 1px solid #2e3240;
+  flex-wrap: wrap;
+}
+
+.log-viewer__toolbar-title {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #a0a8b8;
+  font-family: var(--sec-font-sans);
+}
+
+.log-viewer__search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 200px;
+  max-width: 400px;
+}
+
+.log-viewer__search-input {
+  flex: 1;
+  padding: 4px 10px;
+  background-color: #0c0e14;
+  border: 1px solid #2e3240;
+  border-radius: var(--sec-radius-sm);
+  color: #e0e4ec;
+  font-family: var(--sec-font-mono);
+  font-size: 0.78rem;
+  outline: none;
+}
+
+.log-viewer__search-input:focus {
+  border-color: var(--sev-info-accent);
+  box-shadow: 0 0 0 2px rgba(74, 144, 217, 0.2);
+}
+
+.log-viewer__search-input::placeholder {
+  color: #4a5060;
+}
+
+.log-viewer__search-count {
+  font-size: 0.72rem;
+  color: #6a7288;
+  white-space: nowrap;
+}
+
+.log-viewer__filter-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.log-viewer__filter-btn {
+  padding: 3px 8px;
+  border: 1px solid #2e3240;
+  background-color: transparent;
+  color: #6a7288;
+  border-radius: var(--sec-radius-sm);
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: var(--sec-font-sans);
+  text-transform: uppercase;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.log-viewer__filter-btn:hover {
+  background-color: #1e212c;
+  color: #a0a8b8;
+}
+
+.log-viewer__filter-btn--active {
+  background-color: #1e212c;
+  color: #e0e4ec;
+  border-color: #4a5060;
+}
+
+.log-viewer__filter-btn--error {
+  color: var(--sev-critical-accent);
+  border-color: rgba(230, 57, 70, 0.3);
+}
+
+.log-viewer__filter-btn--warn {
+  color: var(--sev-medium-accent);
+  border-color: rgba(240, 188, 0, 0.3);
+}
+
+.log-viewer__filter-btn--info {
+  color: var(--sev-info-accent);
+  border-color: rgba(74, 144, 217, 0.3);
+}
+
+.log-viewer__filter-btn--debug {
+  color: #7b61d4;
+  border-color: rgba(123, 97, 212, 0.3);
+}
+
+/* Log body */
+.log-viewer__body {
+  max-height: 500px;
+  overflow-y: auto;
+  overflow-x: auto;
+  padding: 4px 0;
+  scrollbar-width: thin;
+  scrollbar-color: #2e3240 #0c0e14;
+}
+
+.log-viewer__body::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.log-viewer__body::-webkit-scrollbar-track {
+  background: #0c0e14;
+}
+
+.log-viewer__body::-webkit-scrollbar-thumb {
+  background-color: #2e3240;
+  border-radius: 4px;
+}
+
+/* Log lines */
+.log-viewer__line {
+  display: flex;
+  align-items: flex-start;
+  padding: 2px 14px 2px 0;
+  line-height: 1.5;
+  white-space: nowrap;
+  transition: background-color 0.1s;
+  border-left: 3px solid transparent;
+}
+
+.log-viewer__line:hover {
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+.log-viewer__line--error {
+  border-left-color: var(--sev-critical-accent);
+  background-color: rgba(230, 57, 70, 0.06);
+}
+
+.log-viewer__line--error:hover {
+  background-color: rgba(230, 57, 70, 0.1);
+}
+
+.log-viewer__line--warn {
+  border-left-color: var(--sev-medium-accent);
+  background-color: rgba(240, 188, 0, 0.04);
+}
+
+.log-viewer__line--warn:hover {
+  background-color: rgba(240, 188, 0, 0.08);
+}
+
+.log-viewer__line--info {
+  border-left-color: transparent;
+}
+
+.log-viewer__line--debug {
+  border-left-color: transparent;
+  opacity: 0.65;
+}
+
+.log-viewer__line--fatal {
+  border-left-color: var(--sev-critical-accent);
+  background-color: rgba(230, 57, 70, 0.12);
+}
+
+.log-viewer__line--highlight {
+  background-color: rgba(74, 144, 217, 0.15);
+}
+
+/* Line number */
+.log-viewer__line-number {
+  width: 44px;
+  min-width: 44px;
+  text-align: right;
+  padding-right: 10px;
+  color: #3a3e50;
+  user-select: none;
+  flex-shrink: 0;
+  padding-left: 8px;
+}
+
+/* Timestamp */
+.log-viewer__timestamp {
+  color: #5a6078;
+  margin-right: 10px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+/* Level badge */
+.log-viewer__level {
+  font-weight: 700;
+  min-width: 50px;
+  margin-right: 10px;
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.log-viewer__level--error { color: #e63946; }
+.log-viewer__level--fatal { color: #ff1a1a; }
+.log-viewer__level--warn { color: #f0bc00; }
+.log-viewer__level--info { color: #4a90d9; }
+.log-viewer__level--debug { color: #7b61d4; }
+.log-viewer__level--trace { color: #5a6078; }
+
+/* Message */
+.log-viewer__message {
+  color: #c8ccd6;
+  white-space: pre-wrap;
+  word-break: break-all;
+  flex: 1;
+}
+
+/* Search highlight within message */
+.log-viewer__highlight {
+  background-color: rgba(240, 188, 0, 0.35);
+  color: #fff;
+  border-radius: 2px;
+  padding: 0 2px;
+}
+
+.log-viewer__highlight--active {
+  background-color: rgba(240, 188, 0, 0.65);
+}
+
+/* Log viewer source tag */
+.log-viewer__source {
+  color: #4a90d9;
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+
+/* Log viewer status bar */
+.log-viewer__status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 14px;
+  border-top: 1px solid #2e3240;
+  background-color: #161922;
+  font-size: 0.72rem;
+  color: #6a7288;
+  font-family: var(--sec-font-sans);
+}
+
+.log-viewer__status-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Tail mode indicator */
+.log-viewer__tail-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--sec-pass);
+  font-weight: 600;
+}
+
+.log-viewer__tail-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--sec-pass);
+  animation: log-tail-blink 1s ease-in-out infinite;
+}
+
+@keyframes log-tail-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+
+/* ==========================================================================
+   18. PASSWORD STRENGTH METER
+   ==========================================================================
+   Structure:
+     .pw-strength
+       .pw-strength__bar
+         .pw-strength__segment (5 segments)
+       .pw-strength__label
+       .pw-strength__checklist
+         .pw-strength__check (multiple)
+   ========================================================================== */
+
+.pw-strength {
+  font-family: var(--sec-font-sans);
+  max-width: 400px;
+}
+
+.pw-strength__bar {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.pw-strength__segment {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background-color: var(--sec-bg-tertiary);
+  transition: background-color 0.3s ease;
+}
+
+/* Very Weak: 1 segment filled */
+.pw-strength--very-weak .pw-strength__segment:nth-child(1) {
+  background-color: var(--pw-very-weak);
+}
+
+/* Weak: 2 segments filled */
+.pw-strength--weak .pw-strength__segment:nth-child(1),
+.pw-strength--weak .pw-strength__segment:nth-child(2) {
+  background-color: var(--pw-weak);
+}
+
+/* Fair: 3 segments filled */
+.pw-strength--fair .pw-strength__segment:nth-child(1),
+.pw-strength--fair .pw-strength__segment:nth-child(2),
+.pw-strength--fair .pw-strength__segment:nth-child(3) {
+  background-color: var(--pw-fair);
+}
+
+/* Strong: 4 segments filled */
+.pw-strength--strong .pw-strength__segment:nth-child(1),
+.pw-strength--strong .pw-strength__segment:nth-child(2),
+.pw-strength--strong .pw-strength__segment:nth-child(3),
+.pw-strength--strong .pw-strength__segment:nth-child(4) {
+  background-color: var(--pw-strong);
+}
+
+/* Very Strong: all 5 segments filled */
+.pw-strength--very-strong .pw-strength__segment {
+  background-color: var(--pw-very-strong);
+}
+
+/* Strength label */
+.pw-strength__label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.pw-strength--very-weak .pw-strength__label { color: var(--pw-very-weak); }
+.pw-strength--weak .pw-strength__label { color: var(--pw-weak); }
+.pw-strength--fair .pw-strength__label { color: var(--pw-fair); }
+.pw-strength--strong .pw-strength__label { color: var(--pw-strong); }
+.pw-strength--very-strong .pw-strength__label { color: var(--pw-very-strong); }
+
+/* Requirements checklist */
+.pw-strength__checklist {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pw-strength__check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  color: var(--sec-text-secondary);
+  line-height: 1.4;
+}
+
+.pw-strength__check-icon {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 0.6rem;
+  font-weight: 800;
+}
+
+.pw-strength__check--pass .pw-strength__check-icon {
+  background-color: var(--sec-pass-bg);
+  color: var(--sec-pass);
+  border: 1.5px solid var(--sec-pass);
+}
+
+.pw-strength__check--fail .pw-strength__check-icon {
+  background-color: var(--sec-bg-tertiary);
+  color: var(--sec-text-muted);
+  border: 1.5px solid var(--sec-border);
+}
+
+.pw-strength__check--pass {
+  color: var(--sec-text-primary);
+}
+
+.pw-strength__check--fail {
+  color: var(--sec-text-muted);
+}
+
+/* Entropy display */
+.pw-strength__entropy {
+  font-family: var(--sec-font-mono);
+  font-size: 0.75rem;
+  color: var(--sec-text-muted);
+  margin-top: 6px;
+}
+
+.pw-strength__entropy-value {
+  font-weight: 700;
+  color: var(--sec-text-primary);
+}
+
+/* Time-to-crack estimate */
+.pw-strength__crack-time {
+  font-size: 0.78rem;
+  color: var(--sec-text-muted);
+  margin-top: 4px;
+}
+
+.pw-strength__crack-time-value {
+  font-weight: 600;
+  color: var(--sec-text-primary);
+}
+
+
+/* ==========================================================================
+   19. CERTIFICATE INFO
+   ==========================================================================
+   Structure:
+     .cert-info
+       .cert-info__header
+       .cert-info__section (issuer, subject, validity, chain, warnings)
+       .cert-info__chain
+         .cert-info__chain-link
+   ========================================================================== */
+
+.cert-info {
+  background-color: var(--sec-bg-elevated);
+  border: 1px solid var(--sec-border);
+  border-radius: var(--sec-radius-md);
+  box-shadow: var(--sec-shadow);
+  overflow: hidden;
+  font-family: var(--sec-font-sans);
+}
+
+.cert-info__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 18px;
+  background-color: var(--sec-bg-secondary);
+  border-bottom: 1px solid var(--sec-border);
+}
+
+.cert-info__header-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cert-info__lock-icon {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 0.75rem;
+}
+
+.cert-info__lock-icon--valid {
+  background-color: var(--sec-pass-bg);
+  color: var(--sec-pass);
+}
+
+.cert-info__lock-icon--expired {
+  background-color: var(--sec-fail-bg);
+  color: var(--sec-fail);
+}
+
+.cert-info__lock-icon--warning {
+  background-color: var(--sec-warn-bg);
+  color: var(--sec-warn);
+}
+
+.cert-info__domain {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--sec-text-primary);
+  font-family: var(--sec-font-mono);
+}
+
+.cert-info__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 100px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.cert-info__status--valid {
+  background-color: var(--sec-pass-bg);
+  color: var(--sec-pass);
+  border: 1px solid var(--sec-pass);
+}
+
+.cert-info__status--expired {
+  background-color: var(--sec-fail-bg);
+  color: var(--sec-fail);
+  border: 1px solid var(--sec-fail);
+}
+
+.cert-info__status--expiring {
+  background-color: var(--sec-warn-bg);
+  color: var(--sec-warn);
+  border: 1px solid var(--sec-warn);
+}
+
+.cert-info__status--revoked {
+  background-color: var(--sec-fail-bg);
+  color: var(--sec-fail);
+  border: 1px solid var(--sec-fail);
+}
+
+/* Certificate sections */
+.cert-info__section {
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--sec-border-light);
+}
+
+.cert-info__section:last-child {
+  border-bottom: none;
+}
+
+.cert-info__section-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--sec-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 8px;
+}
+
+.cert-info__field {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 4px 0;
+  font-size: 0.85rem;
+}
+
+.cert-info__field + .cert-info__field {
+  border-top: 1px solid var(--sec-border-light);
+  padding-top: 6px;
+}
+
+.cert-info__field-label {
+  min-width: 120px;
+  font-weight: 600;
+  color: var(--sec-text-muted);
+  flex-shrink: 0;
+  font-size: 0.8rem;
+}
+
+.cert-info__field-value {
+  color: var(--sec-text-primary);
+  word-break: break-all;
+  font-family: var(--sec-font-mono);
+  font-size: 0.82rem;
+}
+
+/* Validity dates */
+.cert-info__validity {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.cert-info__validity-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cert-info__validity-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--sec-text-muted);
+  text-transform: uppercase;
+}
+
+.cert-info__validity-date {
+  font-family: var(--sec-font-mono);
+  font-size: 0.85rem;
+  color: var(--sec-text-primary);
+  font-weight: 500;
+}
+
+.cert-info__validity-remaining {
+  font-size: 0.75rem;
+  margin-top: 2px;
+}
+
+.cert-info__validity-remaining--ok {
+  color: var(--sec-pass);
+}
+
+.cert-info__validity-remaining--warn {
+  color: var(--sec-warn);
+}
+
+.cert-info__validity-remaining--expired {
+  color: var(--sec-fail);
+  font-weight: 700;
+}
+
+/* Certificate chain */
+.cert-info__chain {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.cert-info__chain-link {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 12px;
+  background-color: var(--sec-bg-secondary);
+  border: 1px solid var(--sec-border-light);
+  border-radius: var(--sec-radius);
+  position: relative;
+}
+
+.cert-info__chain-link + .cert-info__chain-link {
+  margin-top: 8px;
+  margin-left: 20px;
+}
+
+/* Chain connector */
+.cert-info__chain-link + .cert-info__chain-link::before {
+  content: "";
+  position: absolute;
+  top: -8px;
+  left: -10px;
+  width: 2px;
+  height: calc(100% + 8px);
+  background-color: var(--sec-border);
+}
+
+.cert-info__chain-link + .cert-info__chain-link::after {
+  content: "";
+  position: absolute;
+  top: 16px;
+  left: -10px;
+  width: 10px;
+  height: 2px;
+  background-color: var(--sec-border);
+}
+
+.cert-info__chain-depth {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: var(--sec-bg-tertiary);
+  border: 1px solid var(--sec-border);
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--sec-text-muted);
+  flex-shrink: 0;
+}
+
+.cert-info__chain-name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--sec-text-primary);
+}
+
+.cert-info__chain-type {
+  font-size: 0.72rem;
+  color: var(--sec-text-muted);
+}
+
+/* Warnings */
+.cert-info__warnings {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cert-info__warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: var(--sec-radius);
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.cert-info__warning--error {
+  background-color: var(--sec-fail-bg);
+  color: var(--sec-fail);
+  border: 1px solid var(--sec-fail);
+}
+
+.cert-info__warning--warn {
+  background-color: var(--sec-warn-bg);
+  color: var(--sec-warn);
+  border: 1px solid var(--sec-warn);
+}
+
+.cert-info__warning--info {
+  background-color: var(--sev-info-surface);
+  color: var(--sev-info-text);
+  border: 1px solid var(--sev-info-border);
+}
+
+.cert-info__warning-icon {
+  flex-shrink: 0;
+  font-weight: 800;
+  font-size: 0.85rem;
+}
+
+/* SANs (Subject Alternative Names) */
+.cert-info__sans {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.cert-info__san {
+  display: inline-flex;
+  padding: 2px 8px;
+  background-color: var(--sec-bg-tertiary);
+  border: 1px solid var(--sec-border-light);
+  border-radius: var(--sec-radius-sm);
+  font-family: var(--sec-font-mono);
+  font-size: 0.75rem;
+  color: var(--sec-text-secondary);
+}
+
+/* Fingerprints */
+.cert-info__fingerprint {
+  font-family: var(--sec-font-mono);
+  font-size: 0.78rem;
+  color: var(--sec-text-muted);
+  word-break: break-all;
+  line-height: 1.5;
+  padding: 8px 10px;
+  background-color: var(--sec-bg-code);
+  border-radius: var(--sec-radius-sm);
+  margin-top: 4px;
+}
+
+
+/* ==========================================================================
+   20. HEADER ANALYSIS
+   ==========================================================================
+   Structure:
+     .header-analysis
+       .header-analysis__header
+       .header-analysis__list
+         .header-analysis__item
+           .header-analysis__name
+           .header-analysis__value
+           .header-analysis__status (pass/fail)
+           .header-analysis__desc
+   ========================================================================== */
+
+.header-analysis {
+  background-color: var(--sec-bg-elevated);
+  border: 1px solid var(--sec-border);
+  border-radius: var(--sec-radius-md);
+  box-shadow: var(--sec-shadow);
+  overflow: hidden;
+  font-family: var(--sec-font-sans);
+}
+
+.header-analysis__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 18px;
+  background-color: var(--sec-bg-secondary);
+  border-bottom: 1px solid var(--sec-border);
+}
+
+.header-analysis__title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--sec-text-primary);
+}
+
+.header-analysis__url {
+  font-family: var(--sec-font-mono);
+  font-size: 0.78rem;
+  color: var(--sec-text-muted);
+  word-break: break-all;
+}
+
+/* Score summary */
+.header-analysis__score {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--sec-border);
+}
+
+.header-analysis__score-ring {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+}
+
+.header-analysis__score-circle {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.header-analysis__score-bg {
+  fill: none;
+  stroke: var(--sec-bg-tertiary);
+  stroke-width: 4;
+}
+
+.header-analysis__score-fg {
+  fill: none;
+  stroke-width: 4;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.5s ease;
+}
+
+.header-analysis__score-value {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: var(--sec-font-mono);
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.header-analysis__score--good .header-analysis__score-fg { stroke: var(--sec-pass); }
+.header-analysis__score--good .header-analysis__score-value { color: var(--sec-pass); }
+
+.header-analysis__score--fair .header-analysis__score-fg { stroke: var(--sec-warn); }
+.header-analysis__score--fair .header-analysis__score-value { color: var(--sec-warn); }
+
+.header-analysis__score--poor .header-analysis__score-fg { stroke: var(--sec-fail); }
+.header-analysis__score--poor .header-analysis__score-value { color: var(--sec-fail); }
+
+.header-analysis__score-summary {
+  flex: 1;
+}
+
+.header-analysis__score-grade {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--sec-text-primary);
+}
+
+.header-analysis__score-desc {
+  font-size: 0.8rem;
+  color: var(--sec-text-muted);
+  margin-top: 2px;
+}
+
+/* Header items list */
+.header-analysis__list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.header-analysis__item {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-rows: auto auto;
+  gap: 4px 14px;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--sec-border-light);
+  transition: background-color var(--sec-transition);
+  align-items: start;
+}
+
+.header-analysis__item:last-child {
+  border-bottom: none;
+}
+
+.header-analysis__item:hover {
+  background-color: var(--sec-bg-secondary);
+}
+
+/* Status icon */
+.header-analysis__status {
+  grid-row: 1 / 3;
+  grid-column: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  font-size: 0.65rem;
+  font-weight: 800;
+  margin-top: 2px;
+}
+
+.header-analysis__status--pass {
+  background-color: var(--sec-pass-bg);
+  color: var(--sec-pass);
+  border: 2px solid var(--sec-pass);
+}
+
+.header-analysis__status--fail {
+  background-color: var(--sec-fail-bg);
+  color: var(--sec-fail);
+  border: 2px solid var(--sec-fail);
+}
+
+.header-analysis__status--warn {
+  background-color: var(--sec-warn-bg);
+  color: var(--sec-warn);
+  border: 2px solid var(--sec-warn);
+}
+
+.header-analysis__status--missing {
+  background-color: var(--sec-na-bg);
+  color: var(--sec-na);
+  border: 2px solid var(--sec-na);
+}
+
+/* Header name */
+.header-analysis__name {
+  grid-row: 1;
+  grid-column: 2;
+  font-family: var(--sec-font-mono);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--sec-text-primary);
+}
+
+/* Header value */
+.header-analysis__value {
+  grid-row: 1;
+  grid-column: 3;
+  font-family: var(--sec-font-mono);
+  font-size: 0.78rem;
+  color: var(--sec-text-muted);
+  text-align: right;
+  word-break: break-all;
+  max-width: 300px;
+}
+
+.header-analysis__value--missing {
+  font-style: italic;
+  color: var(--sec-fail);
+}
+
+/* Description */
+.header-analysis__desc {
+  grid-row: 2;
+  grid-column: 2 / 4;
+  font-size: 0.8rem;
+  color: var(--sec-text-muted);
+  line-height: 1.45;
+}
+
+/* Recommendation */
+.header-analysis__recommendation {
+  grid-row: 3;
+  grid-column: 2 / 4;
+  font-size: 0.78rem;
+  color: var(--sec-text-secondary);
+  background-color: var(--sec-bg-secondary);
+  padding: 6px 10px;
+  border-radius: var(--sec-radius-sm);
+  margin-top: 4px;
+  line-height: 1.45;
+}
+
+.header-analysis__recommendation code {
+  font-family: var(--sec-font-mono);
+  font-size: 0.75rem;
+  padding: 1px 4px;
+  background-color: var(--sec-bg-code);
+  border-radius: 3px;
+}
+
+/* Category grouping */
+.header-analysis__category {
+  padding: 8px 18px;
+  background-color: var(--sec-bg-tertiary);
+  border-bottom: 1px solid var(--sec-border);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--sec-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Important security headers highlighted */
+.header-analysis__item--important {
+  background-color: var(--sec-bg-secondary);
+}
+
+.header-analysis__item--important .header-analysis__name {
+  color: var(--sec-text-primary);
+}
+
+
+/* ==========================================================================
+   RESPONSIVE STYLES
+   ========================================================================== */
+
+/* --- Medium screens (tablets, 768px and below) --- */
+@media screen and (max-width: 768px) {
+  /* CVE cards: single column */
+  .cve-card-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cve-card__header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .cve-card__severity {
+    margin-left: 0;
+  }
+
+  /* Vuln detail */
+  .vuln-detail__header {
+    flex-direction: column;
+  }
+
+  .vuln-detail__section {
+    padding: 12px 16px;
+  }
+
+  /* Port table compact on mobile */
+  .port-table th,
+  .port-table td {
+    padding: 8px 10px;
+    font-size: 0.8rem;
+  }
+
+  .port-table th {
+    font-size: 0.68rem;
+  }
+
+  /* Scan result */
+  .scan-result__header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .scan-result__summary {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* Attack tree: force vertical */
+  .attack-tree__children {
+    flex-direction: column;
+    gap: 16px;
+    align-items: flex-start;
+    padding-top: 0;
+    padding-left: 30px;
+    margin-top: 12px;
+  }
+
+  .attack-tree__children::before {
+    top: 0;
+    left: 15px;
+    width: 2px;
+    height: 100%;
+    transform: none;
+  }
+
+  .attack-tree__children::after {
+    display: none;
+  }
+
+  .attack-tree__children > .attack-tree__node::before {
+    top: 50%;
+    left: -15px;
+    width: 15px;
+    height: 2px;
+    transform: translateY(-50%);
+  }
+
+  /* Kill chain: vertical */
+  .kill-chain {
+    flex-direction: column;
+  }
+
+  .kill-chain__phase {
+    min-width: auto;
+    border-radius: 0;
+  }
+
+  .kill-chain__phase:first-child {
+    border-radius: var(--sec-radius-md) var(--sec-radius-md) 0 0;
+  }
+
+  .kill-chain__phase:last-child {
+    border-radius: 0 0 var(--sec-radius-md) var(--sec-radius-md);
+  }
+
+  .kill-chain__phase + .kill-chain__phase {
+    margin-left: 0;
+    margin-top: -1px;
+  }
+
+  .kill-chain__phase::after {
+    display: none;
+  }
+
+  /* STRIDE: 2 columns */
+  .stride {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* Risk matrix */
+  .risk-matrix__cell {
+    min-height: 40px;
+  }
+
+  .risk-matrix__row-label {
+    font-size: 0.65rem;
+    min-width: 60px;
+  }
+
+  /* Payload grid: single column */
+  .payload-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Network diagram */
+  .network-diagram {
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 16px;
+    padding: 16px;
+  }
+
+  /* Findings */
+  .finding__header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .finding__footer {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .finding__risk-rating {
+    flex-wrap: wrap;
+  }
+
+  /* Compliance */
+  .compliance-check__item {
+    padding: 10px 14px;
+    gap: 8px;
+  }
+
+  .compliance-check__req-id {
+    min-width: auto;
+  }
+
+  .compliance-check__summary {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  /* Threat actor grid: single column */
+  .threat-actor-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .threat-actor__meta {
+    grid-template-columns: 1fr;
+  }
+
+  /* IOC table: allow horizontal scroll */
+  .ioc-table__value {
+    max-width: 180px;
+  }
+
+  /* Timeline */
+  .incident-timeline::before {
+    left: 16px;
+  }
+
+  .incident-timeline__marker {
+    width: 32px;
+  }
+
+  /* Log viewer */
+  .log-viewer__toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .log-viewer__search {
+    max-width: none;
+  }
+
+  .log-viewer__filter-group {
+    margin-left: 0;
+    flex-wrap: wrap;
+  }
+
+  .log-viewer__line-number {
+    width: 32px;
+    min-width: 32px;
+  }
+
+  /* Certificate info */
+  .cert-info__header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .cert-info__validity {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .cert-info__field {
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .cert-info__field-label {
+    min-width: auto;
+  }
+
+  /* Header analysis */
+  .header-analysis__item {
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto auto auto;
+  }
+
+  .header-analysis__value {
+    grid-row: 2;
+    grid-column: 2;
+    text-align: left;
+    max-width: none;
+  }
+
+  .header-analysis__desc {
+    grid-row: 3;
+    grid-column: 2;
+  }
+
+  .header-analysis__recommendation {
+    grid-row: 4;
+    grid-column: 1 / 3;
+  }
+
+  .header-analysis__score {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+/* --- Small screens (phones, 480px and below) --- */
+@media screen and (max-width: 480px) {
+  /* STRIDE: single column */
+  .stride {
+    grid-template-columns: 1fr;
+  }
+
+  /* Risk matrix compact */
+  .risk-matrix {
+    padding: 12px;
+  }
+
+  .risk-matrix__cell {
+    min-height: 32px;
+    font-size: 0.65rem;
+  }
+
+  .risk-matrix__row-label {
+    font-size: 0.6rem;
+    min-width: 45px;
+    padding-right: 6px;
+  }
+
+  .risk-matrix__x-label {
+    font-size: 0.6rem;
+  }
+
+  /* Scan result: single column stats */
+  .scan-result__summary {
+    grid-template-columns: 1fr;
+  }
+
+  /* Compliance: vertical layout */
+  .compliance-check__item {
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px 12px;
+  }
+
+  .compliance-check__status {
+    align-self: flex-start;
+  }
+
+  /* Threat actor */
+  .threat-actor__header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  /* Network diagram: single column */
+  .network-diagram {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 12px;
+  }
+
+  /* Log viewer: hide line numbers on very small screens */
+  .log-viewer__line-number {
+    display: none;
+  }
+
+  .log-viewer__timestamp {
+    font-size: 0.7rem;
+  }
+
+  /* Header analysis: stack everything */
+  .header-analysis__item {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+    gap: 4px;
+  }
+
+  .header-analysis__status {
+    grid-row: auto;
+    grid-column: auto;
+  }
+
+  .header-analysis__name {
+    grid-row: auto;
+    grid-column: auto;
+  }
+
+  .header-analysis__value {
+    grid-row: auto;
+    grid-column: auto;
+    text-align: left;
+  }
+
+  .header-analysis__desc {
+    grid-row: auto;
+    grid-column: auto;
+  }
+
+  .header-analysis__recommendation {
+    grid-row: auto;
+    grid-column: auto;
+  }
+
+  /* Password strength: full width */
+  .pw-strength {
+    max-width: none;
+  }
+
+  /* Finding sections compact */
+  .finding__section {
+    padding: 12px 14px;
+  }
+
+  .finding__header {
+    padding: 12px 14px;
+  }
+
+  .finding__footer {
+    padding: 10px 14px;
+  }
+
+  /* CVE card */
+  .cve-card__meta {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .cve-card__software {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  /* Incident timeline: more compact */
+  .incident-timeline::before {
+    left: 12px;
+  }
+
+  .incident-timeline__marker {
+    width: 24px;
+  }
+
+  .incident-timeline__content {
+    padding: 10px 12px;
+  }
+
+  .incident-timeline__title {
+    font-size: 0.85rem;
+  }
+
+  .incident-timeline__desc {
+    font-size: 0.78rem;
+  }
+}
+
+/* --- Large screens (1200px and above) --- */
+@media screen and (min-width: 1200px) {
+  /* CVE cards: larger grid */
+  .cve-card-grid {
+    grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+  }
+
+  /* STRIDE: could go 3x2 nicely */
+  .stride {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+
+  /* Kill chain: more room */
+  .kill-chain__phase {
+    min-width: 160px;
+  }
+
+  /* Payload grid */
+  .payload-grid {
+    grid-template-columns: repeat(auto-fill, minmax(500px, 1fr));
+  }
+
+  /* Network diagram */
+  .network-diagram {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 28px;
+  }
+
+  /* Threat actor grid */
+  .threat-actor-grid {
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  }
+}
+
+/* --- Extra large screens (1600px and above) --- */
+@media screen and (min-width: 1600px) {
+  /* Risk matrix: larger cells */
+  .risk-matrix__cell {
+    min-height: 64px;
+    font-size: 0.85rem;
+  }
+
+  /* Log viewer: more visible */
+  .log-viewer__body {
+    max-height: 700px;
+  }
+
+  /* Header analysis: wider values */
+  .header-analysis__value {
+    max-width: 500px;
+  }
+}
+
+
+/* ==========================================================================
+   PRINT STYLES
+   ========================================================================== */
+
+@media print {
+  .severity-critical,
+  .severity-high,
+  .severity-medium,
+  .severity-low,
+  .severity-info {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .log-viewer {
+    max-height: none;
+  }
+
+  .log-viewer__body {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .log-viewer__toolbar {
+    display: none;
+  }
+
+  .cve-card:hover,
+  .finding:hover,
+  .threat-actor:hover,
+  .stride__category:hover,
+  .kill-chain__phase:hover,
+  .risk-matrix__cell:hover {
+    transform: none;
+    box-shadow: none;
+  }
+
+  .payload__copy-btn {
+    display: none;
+  }
+
+  .ioc-table__value-copy {
+    display: none;
+  }
+
+  .ioc-table__action-btn {
+    display: none;
+  }
+
+  .scan-result__progress {
+    display: none;
+  }
+}
+
+
+/* ==========================================================================
+   ACCESSIBILITY: REDUCED MOTION
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .severity-dot.severity-critical.pulse {
+    animation: none;
+  }
+
+  .scan-result__progress-bar {
+    animation: none;
+  }
+
+  .log-viewer__tail-dot {
+    animation: none;
+  }
+
+  .cve-card,
+  .finding,
+  .threat-actor,
+  .stride__category,
+  .kill-chain__phase,
+  .risk-matrix__cell,
+  .network-diagram__host,
+  .incident-timeline__content {
+    transition: none;
+  }
+}
+
+
+/* ==========================================================================
+   ACCESSIBILITY: FOCUS STYLES
+   ========================================================================== */
+
+.cve-card:focus-within,
+.finding:focus-within,
+.threat-actor:focus-within,
+.compliance-check__item:focus-within,
+.header-analysis__item:focus-within {
+  outline: 2px solid var(--sev-info-accent);
+  outline-offset: 2px;
+}
+
+.payload__copy-btn:focus-visible,
+.ioc-table__value-copy:focus-visible,
+.ioc-table__action-btn:focus-visible,
+.log-viewer__filter-btn:focus-visible,
+.log-viewer__search-input:focus-visible {
+  outline: 2px solid var(--sev-info-accent);
+  outline-offset: 1px;
+}
+
+
+/* ==========================================================================
+   ACCESSIBILITY: HIGH CONTRAST MODE
+   ========================================================================== */
+
+@media (forced-colors: active) {
+  .severity-critical,
+  .severity-high,
+  .severity-medium,
+  .severity-low,
+  .severity-info {
+    border: 2px solid;
+  }
+
+  .severity-dot {
+    forced-color-adjust: none;
+  }
+
+  .risk-matrix__cell {
+    border: 1px solid;
+  }
+
+  .pw-strength__segment {
+    border: 1px solid;
+  }
+
+  .log-viewer__line--error,
+  .log-viewer__line--warn {
+    border-left-width: 4px;
+  }
+
+  .compliance-check__status,
+  .header-analysis__status {
+    border-width: 3px;
+  }
+}
+
+
+/* ==========================================================================
+   UTILITY CLASSES
+   ========================================================================== */
+
+.sec-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+.sec-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sec-mono {
+  font-family: var(--sec-font-mono);
+}
+
+.sec-sans {
+  font-family: var(--sec-font-sans);
+}
+
+.sec-nowrap {
+  white-space: nowrap;
+}
+
+.sec-break-all {
+  word-break: break-all;
+}
+
+.sec-text-muted {
+  color: var(--sec-text-muted);
+}
+
+.sec-text-primary {
+  color: var(--sec-text-primary);
+}
+
+.sec-text-secondary {
+  color: var(--sec-text-secondary);
+}
+
+.sec-gap-sm { gap: 6px; }
+.sec-gap-md { gap: 12px; }
+.sec-gap-lg { gap: 20px; }
+
+.sec-mt-sm { margin-top: 8px; }
+.sec-mt-md { margin-top: 16px; }
+.sec-mt-lg { margin-top: 24px; }
+
+.sec-mb-sm { margin-bottom: 8px; }
+.sec-mb-md { margin-bottom: 16px; }
+.sec-mb-lg { margin-bottom: 24px; }
+
+.sec-p-sm { padding: 8px; }
+.sec-p-md { padding: 16px; }
+.sec-p-lg { padding: 24px; }
