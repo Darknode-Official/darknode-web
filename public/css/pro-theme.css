@@ -1,0 +1,852 @@
+/* Professional theme — light, clean, Cognition/Devin-style */
+/* Applied when html[data-style="pro"] */
+
+[data-style=pro] {
+  --acc: #111;
+  --acc-2: #555;
+  --acc-soft: rgba(0,0,0,.06);
+  --radius: 4px;
+  --card: #fff;
+  --card2: #f7f7f7;
+  --line: #e5e5e5;
+  --bg: #fafafa;
+  --txt: #111;
+  --txt-2: #444;
+  --mut: #888;
+  --ok: #16a34a;
+  --bad: #dc2626;
+  --warn: #ca8a04;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+[data-style=pro] body {
+  background: #fafafa !important;
+  color: #111 !important;
+}
+
+/* Buttons — sharp, black primary, bordered ghost */
+[data-style=pro] .btn {
+  border-radius: 3px !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  filter: none !important;
+  background: #111 !important;
+  color: #fff !important;
+  border: 1px solid #111 !important;
+  font-weight: 600;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: 0;
+  transition: opacity .15s;
+}
+[data-style=pro] .btn:hover {
+  opacity: .85;
+  box-shadow: none !important;
+  transform: none !important;
+}
+[data-style=pro] .btn.ghost {
+  background: #fff !important;
+  color: #111 !important;
+  border: 1px solid #d4d4d4 !important;
+}
+[data-style=pro] .btn.ghost:hover {
+  border-color: #999 !important;
+  background: #f5f5f5 !important;
+}
+[data-style=pro] .btn.danger {
+  background: #dc2626 !important;
+  border-color: #dc2626 !important;
+  color: #fff !important;
+}
+[data-style=pro] .btn.google,
+[data-style=pro] .btn.github {
+  background: #fff !important;
+  color: #111 !important;
+  border: 1px solid #d4d4d4 !important;
+}
+[data-style=pro] .btn.sm {
+  font-size: .8rem;
+}
+
+/* Cards — white, subtle border, no glow */
+[data-style=pro] .card,
+[data-style=pro] .util-card,
+[data-style=pro] .feat-card,
+[data-style=pro] .cs-card,
+[data-style=pro] .arse-card,
+[data-style=pro] .panel {
+  border-radius: 6px !important;
+  border: 1px solid #e5e5e5 !important;
+  box-shadow: none !important;
+  background: #fff !important;
+  color: #111 !important;
+}
+[data-style=pro] .card:hover,
+[data-style=pro] .util-card:hover,
+[data-style=pro] .feat-card:hover {
+  border-color: #ccc !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,.06) !important;
+  transform: none !important;
+}
+
+/* Sidebar — white, clean */
+[data-style=pro] .sidebar {
+  background: #fff !important;
+  border-right: 1px solid #e5e5e5 !important;
+  box-shadow: none !important;
+}
+[data-style=pro] .side-brand {
+  color: #111 !important;
+  text-shadow: none !important;
+  filter: none !important;
+  font-weight: 700;
+  letter-spacing: .02em;
+}
+[data-style=pro] .side-item {
+  border-radius: 4px !important;
+  color: #555 !important;
+  font-weight: 400;
+}
+[data-style=pro] .side-item:hover {
+  color: #111 !important;
+  background: #f5f5f5 !important;
+  box-shadow: none !important;
+}
+[data-style=pro] .side-item.active {
+  color: #111 !important;
+  background: #f0f0f0 !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  font-weight: 600;
+}
+[data-style=pro] .side-group {
+  color: #999 !important;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  font-size: .68rem !important;
+}
+
+/* Topbar — white */
+[data-style=pro] #topbar {
+  background: #fff !important;
+  border-bottom: 1px solid #e5e5e5 !important;
+  box-shadow: none !important;
+}
+[data-style=pro] .brand-wordmark {
+  filter: invert(1) !important;
+}
+[data-style=pro] .brand-mark {
+  filter: invert(1) !important;
+}
+
+/* Inputs — clean light */
+[data-style=pro] input[type=text],
+[data-style=pro] input[type=email],
+[data-style=pro] input[type=password],
+[data-style=pro] input[type=search],
+[data-style=pro] input[type=url],
+[data-style=pro] input[type=number],
+[data-style=pro] textarea,
+[data-style=pro] select,
+[data-style=pro] .tk-in,
+[data-style=pro] .tk-f,
+[data-style=pro] .tk-search {
+  border-radius: 4px !important;
+  border: 1px solid #d4d4d4 !important;
+  background: #fff !important;
+  box-shadow: none !important;
+  color: #111 !important;
+}
+[data-style=pro] input:focus,
+[data-style=pro] textarea:focus,
+[data-style=pro] select:focus {
+  border-color: #111 !important;
+  box-shadow: 0 0 0 1px #111 !important;
+  outline: none;
+}
+[data-style=pro] input::placeholder,
+[data-style=pro] textarea::placeholder {
+  color: #aaa !important;
+}
+
+/* Segmented buttons */
+[data-style=pro] .seg button {
+  border-radius: 3px !important;
+  border: 1px solid #d4d4d4 !important;
+  background: #fff !important;
+  color: #555 !important;
+}
+[data-style=pro] .seg button.on {
+  background: #111 !important;
+  color: #fff !important;
+  border-color: #111 !important;
+}
+
+/* Badges and chips */
+[data-style=pro] .chip {
+  border-radius: 3px !important;
+  font-weight: 600;
+  background: #f0f0f0 !important;
+  color: #111 !important;
+}
+[data-style=pro] .owner-badge {
+  background: #111 !important;
+  color: #fff !important;
+  border-radius: 3px !important;
+}
+
+/* Stats */
+[data-style=pro] .stat {
+  background: #fff !important;
+  border: 1px solid #e5e5e5 !important;
+}
+[data-style=pro] .stat-n {
+  color: #111 !important;
+  text-shadow: none !important;
+}
+[data-style=pro] .stat-l {
+  color: #888 !important;
+}
+
+/* Links */
+[data-style=pro] a {
+  color: #111;
+}
+[data-style=pro] a:hover {
+  color: #000;
+}
+[data-style=pro] .nav-link {
+  color: #555 !important;
+}
+
+/* Page headings */
+[data-style=pro] .pg-h1,
+[data-style=pro] .pg-h2,
+[data-style=pro] h1, [data-style=pro] h2, [data-style=pro] h3 {
+  color: #111 !important;
+  text-shadow: none !important;
+}
+
+/* Muted text */
+[data-style=pro] .muted {
+  color: #888 !important;
+}
+[data-style=pro] .pg-sub {
+  color: #888 !important;
+}
+
+/* Remove all glow/neon effects globally */
+[data-style=pro] * {
+  text-shadow: none !important;
+}
+
+/* Command palette */
+[data-style=pro] .cmdk {
+  border-radius: 8px !important;
+  border: 1px solid #e5e5e5 !important;
+  background: #fff !important;
+  box-shadow: 0 20px 60px rgba(0,0,0,.15) !important;
+  color: #111 !important;
+}
+[data-style=pro] .cmdk-input {
+  border-bottom: 1px solid #e5e5e5 !important;
+  background: #fff !important;
+  color: #111 !important;
+}
+[data-style=pro] .cmdk-item {
+  color: #111 !important;
+}
+[data-style=pro] .cmdk-item.sel {
+  background: #f5f5f5 !important;
+  border-color: transparent !important;
+}
+[data-style=pro] .cmdk-foot {
+  border-top: 1px solid #e5e5e5 !important;
+  color: #888 !important;
+}
+
+/* Breadcrumbs */
+[data-style=pro] .crumb {
+  color: #888 !important;
+}
+[data-style=pro] .crumb:hover {
+  color: #111 !important;
+  background: #f5f5f5 !important;
+}
+[data-style=pro] .crumb.cur {
+  color: #111 !important;
+}
+
+/* Scrollbar */
+[data-style=pro] ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+[data-style=pro] ::-webkit-scrollbar-track {
+  background: #fafafa;
+}
+[data-style=pro] ::-webkit-scrollbar-thumb {
+  background: #ddd;
+  border-radius: 3px;
+}
+[data-style=pro] ::-webkit-scrollbar-thumb:hover {
+  background: #bbb;
+}
+
+/* Auth card */
+[data-style=pro] .auth-card {
+  border-radius: 8px !important;
+  border: 1px solid #e5e5e5 !important;
+  box-shadow: 0 4px 20px rgba(0,0,0,.08) !important;
+  background: #fff !important;
+}
+
+/* Footer */
+[data-style=pro] footer {
+  border-top: 1px solid #e5e5e5 !important;
+  color: #888 !important;
+  background: #fff !important;
+}
+
+/* Remove CRT effect in pro mode */
+[data-style=pro].crt::before,
+[data-style=pro].crt::after {
+  display: none !important;
+}
+
+/* App shell bg */
+[data-style=pro] #app {
+  background: #fafafa !important;
+}
+[data-style=pro] .app-shell {
+  background: #fafafa !important;
+}
+[data-style=pro] #view {
+  background: #fafafa !important;
+}
+
+/* User menu */
+[data-style=pro] .su-drop {
+  background: #fff !important;
+  border: 1px solid #e5e5e5 !important;
+  box-shadow: 0 8px 30px rgba(0,0,0,.12) !important;
+  border-radius: 6px !important;
+}
+[data-style=pro] .su-item {
+  color: #111 !important;
+}
+[data-style=pro] .su-item:hover {
+  background: #f5f5f5 !important;
+}
+[data-style=pro] .su-name {
+  color: #111 !important;
+}
+
+/* Announcement banner */
+[data-style=pro] .banner {
+  border-radius: 0 !important;
+  border: none !important;
+  border-bottom: 1px solid #e5e5e5 !important;
+  background: #fffbeb !important;
+  color: #92400e !important;
+}
+
+/* Toast */
+[data-style=pro] .toast {
+  border-radius: 6px !important;
+  border: 1px solid #e5e5e5 !important;
+  background: #fff !important;
+  color: #111 !important;
+  box-shadow: 0 8px 30px rgba(0,0,0,.12) !important;
+}
+
+/* Modal */
+[data-style=pro] .fb-box,
+[data-style=pro] .fb-modal {
+  background: rgba(0,0,0,.3) !important;
+}
+[data-style=pro] .fb-box {
+  background: #fff !important;
+  border: 1px solid #e5e5e5 !important;
+  border-radius: 8px !important;
+  color: #111 !important;
+}
+
+/* Mono/code text */
+[data-style=pro] .mono,
+[data-style=pro] code {
+  color: #111 !important;
+  background: #f5f5f5 !important;
+}
+
+/* Search bar in topbar */
+[data-style=pro] .search-btn {
+  background: #f5f5f5 !important;
+  border: 1px solid #e5e5e5 !important;
+  color: #888 !important;
+  border-radius: 4px !important;
+}
+
+/* User avatar ring */
+[data-style=pro] .p-avatar {
+  border-color: #e5e5e5 !important;
+}
+[data-style=pro] .p-initials {
+  background: #f0f0f0 !important;
+  color: #111 !important;
+}
+
+/* Hamburger */
+[data-style=pro] .hamburger-line {
+  background: #111 !important;
+}
+
+/* Admin panels */
+[data-style=pro] .panel-h {
+  border-bottom: 1px solid #e5e5e5 !important;
+}
+[data-style=pro] .user-row {
+  border-bottom: 1px solid #f0f0f0 !important;
+}
+[data-style=pro] .set-row {
+  border-bottom: 1px solid #f0f0f0 !important;
+  color: #111 !important;
+}
+
+/* Feedback rows */
+[data-style=pro] .fb-row {
+  border: 1px solid #e5e5e5 !important;
+  background: #fff !important;
+  border-radius: 4px !important;
+}
+
+/* ============================================================
+   Dark Professional theme — dark bg, sharp, no neon
+   Applied when html[data-style="dark"]
+   ============================================================ */
+
+[data-style=dark] {
+  --acc: #fff;
+  --acc-2: #999;
+  --acc-soft: rgba(255,255,255,.08);
+  --radius: 4px;
+  --card: #111;
+  --card2: #0a0a0a;
+  --line: #222;
+  --bg: #000;
+  --txt: #e5e5e5;
+  --txt-2: #999;
+  --mut: #555;
+  --ok: #22c55e;
+  --bad: #ef4444;
+  --warn: #eab308;
+}
+
+[data-style=dark] body {
+  background: #000 !important;
+  color: #e5e5e5 !important;
+}
+
+[data-style=dark] .btn {
+  border-radius: 3px !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  filter: none !important;
+  background: #fff !important;
+  color: #000 !important;
+  border: 1px solid #fff !important;
+  font-weight: 600;
+  transition: opacity .15s;
+}
+[data-style=dark] .btn:hover {
+  opacity: .85;
+  box-shadow: none !important;
+  transform: none !important;
+}
+[data-style=dark] .btn.ghost {
+  background: transparent !important;
+  color: #e5e5e5 !important;
+  border: 1px solid #333 !important;
+}
+[data-style=dark] .btn.ghost:hover {
+  border-color: #555 !important;
+  background: #111 !important;
+}
+[data-style=dark] .btn.danger {
+  background: #ef4444 !important;
+  border-color: #ef4444 !important;
+  color: #fff !important;
+}
+[data-style=dark] .btn.google,
+[data-style=dark] .btn.github {
+  background: transparent !important;
+  color: #e5e5e5 !important;
+  border: 1px solid #333 !important;
+}
+
+[data-style=dark] .card,
+[data-style=dark] .util-card,
+[data-style=dark] .feat-card,
+[data-style=dark] .cs-card,
+[data-style=dark] .panel {
+  border-radius: 4px !important;
+  border-color: #222 !important;
+  box-shadow: none !important;
+  background: #111 !important;
+}
+[data-style=dark] .card:hover,
+[data-style=dark] .util-card:hover {
+  border-color: #333 !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+[data-style=dark] .sidebar {
+  background: #000 !important;
+  border-right: 1px solid #1a1a1a !important;
+}
+[data-style=dark] .side-brand {
+  color: #fff !important;
+  text-shadow: none !important;
+  filter: none !important;
+}
+[data-style=dark] .side-item {
+  border-radius: 3px !important;
+  color: #888 !important;
+}
+[data-style=dark] .side-item:hover {
+  color: #e5e5e5 !important;
+  background: #111 !important;
+}
+[data-style=dark] .side-item.active {
+  color: #fff !important;
+  background: #1a1a1a !important;
+  box-shadow: none !important;
+}
+[data-style=dark] .side-group {
+  color: #555 !important;
+}
+
+[data-style=dark] #topbar {
+  background: #000 !important;
+  border-bottom: 1px solid #1a1a1a !important;
+  box-shadow: none !important;
+}
+
+[data-style=dark] * {
+  text-shadow: none !important;
+}
+
+[data-style=dark] input,
+[data-style=dark] textarea,
+[data-style=dark] select,
+[data-style=dark] .tk-in,
+[data-style=dark] .tk-f {
+  border-radius: 3px !important;
+  border: 1px solid #333 !important;
+  background: #0a0a0a !important;
+  color: #e5e5e5 !important;
+  box-shadow: none !important;
+}
+
+[data-style=dark] .seg button {
+  border-radius: 3px !important;
+  border: 1px solid #333 !important;
+  background: transparent !important;
+  color: #888 !important;
+}
+[data-style=dark] .seg button.on {
+  background: #fff !important;
+  color: #000 !important;
+  border-color: #fff !important;
+}
+
+[data-style=dark] .stat {
+  background: #111 !important;
+  border: 1px solid #222 !important;
+}
+[data-style=dark] .stat-n {
+  color: #fff !important;
+  text-shadow: none !important;
+}
+
+[data-style=dark] .cmdk {
+  border-radius: 6px !important;
+  border: 1px solid #222 !important;
+  background: #0a0a0a !important;
+  box-shadow: 0 20px 60px rgba(0,0,0,.8) !important;
+}
+
+[data-style=dark] .auth-card {
+  border-radius: 6px !important;
+  border: 1px solid #222 !important;
+  background: #111 !important;
+}
+
+[data-style=dark] #app,
+[data-style=dark] .app-shell,
+[data-style=dark] #view {
+  background: #000 !important;
+}
+
+[data-style=dark].crt::before,
+[data-style=dark].crt::after {
+  display: none !important;
+}
+
+[data-style=dark] ::-webkit-scrollbar { width:6px; height:6px }
+[data-style=dark] ::-webkit-scrollbar-track { background:#000 }
+[data-style=dark] ::-webkit-scrollbar-thumb { background:#222; border-radius:3px }
+
+/* ============================================================
+   Professional Landing Page overrides
+   Clean, spacious, minimal — inspired by modern SaaS design
+   ============================================================ */
+
+/* Landing body */
+[data-style=pro] body.landing {
+  background: #fff !important;
+}
+[data-style=pro] body.landing #view {
+  background: #fff !important;
+}
+
+/* Navbar — clean white bar */
+[data-style=pro] body.landing #topbar {
+  background: #fff !important;
+  border-bottom: 1px solid #eee !important;
+  box-shadow: none !important;
+}
+[data-style=pro] body.landing .nav-link {
+  color: #111 !important;
+  font-weight: 500 !important;
+  border: 1px solid #d4d4d4 !important;
+  border-radius: 3px !important;
+  padding: 6px 14px !important;
+  text-decoration: none !important;
+}
+[data-style=pro] body.landing .nav-link:hover {
+  background: #f5f5f5 !important;
+}
+[data-style=pro] body.landing #nav-start {
+  background: #111 !important;
+  color: #fff !important;
+  border-color: #111 !important;
+  border-radius: 3px !important;
+}
+
+/* Hero — centered, spacious, big type */
+[data-style=pro] .hero {
+  background: #fff !important;
+  border: none !important;
+  padding: 120px 24px 80px !important;
+  text-align: center !important;
+}
+[data-style=pro] .hero::before,
+[data-style=pro] .hero::after,
+[data-style=pro] .hero-grid-bg,
+[data-style=pro] .hero-mesh,
+[data-style=pro] .hero-grain {
+  display: none !important;
+}
+[data-style=pro] .hero-inner {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  text-align: center !important;
+  max-width: 800px !important;
+  margin: 0 auto !important;
+}
+[data-style=pro] .hero-badge {
+  background: #f5f5f5 !important;
+  color: #555 !important;
+  border: 1px solid #e5e5e5 !important;
+  border-radius: 20px !important;
+  font-size: .82rem !important;
+  padding: 5px 14px !important;
+  margin-bottom: 24px !important;
+}
+[data-style=pro] .hero-badge .badge-dot {
+  background: #22c55e !important;
+  box-shadow: none !important;
+  animation: none !important;
+}
+[data-style=pro] .hero-h1 {
+  font-size: clamp(2.4rem, 5.5vw, 4rem) !important;
+  font-weight: 700 !important;
+  letter-spacing: -.03em !important;
+  line-height: 1.08 !important;
+  color: #111 !important;
+  text-shadow: none !important;
+  background: none !important;
+  -webkit-background-clip: unset !important;
+  background-clip: unset !important;
+  -webkit-text-fill-color: #111 !important;
+  filter: none !important;
+  margin-bottom: 20px !important;
+}
+[data-style=pro] .hero-rotate-wrap,
+[data-style=pro] .hero-rotate {
+  color: #2563eb !important;
+  -webkit-text-fill-color: #2563eb !important;
+  background: none !important;
+  -webkit-background-clip: unset !important;
+}
+[data-style=pro] .hero-sub {
+  color: #666 !important;
+  font-size: 1.1rem !important;
+  line-height: 1.65 !important;
+  max-width: 560px !important;
+  margin: 0 auto 32px !important;
+}
+[data-style=pro] .hero-cta {
+  gap: 10px !important;
+}
+[data-style=pro] .hero-cta .btn {
+  padding: 10px 22px !important;
+  font-size: .9rem !important;
+  border-radius: 3px !important;
+}
+[data-style=pro] .hero-note {
+  color: #999 !important;
+}
+
+/* Feature cards on landing */
+[data-style=pro] .land-grid,
+[data-style=pro] .feat-grid {
+  gap: 16px !important;
+}
+[data-style=pro] .land-card,
+[data-style=pro] .feat-card {
+  background: #f7f7f7 !important;
+  border: 1px solid #eee !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+  padding: 28px 24px !important;
+  transition: border-color .15s !important;
+}
+[data-style=pro] .land-card:hover,
+[data-style=pro] .feat-card:hover {
+  border-color: #ccc !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+[data-style=pro] .land-card h3,
+[data-style=pro] .feat-card h3 {
+  color: #111 !important;
+  font-weight: 600 !important;
+  font-size: 1.05rem !important;
+}
+[data-style=pro] .land-card p,
+[data-style=pro] .feat-card p {
+  color: #666 !important;
+}
+
+/* Section headings on landing */
+[data-style=pro] .land-h2 {
+  color: #111 !important;
+  font-weight: 700 !important;
+  font-size: clamp(1.6rem, 3vw, 2.2rem) !important;
+  letter-spacing: -.02em !important;
+  text-shadow: none !important;
+}
+[data-style=pro] .land-sub {
+  color: #888 !important;
+}
+
+/* Landing sections — white bg, spacious */
+[data-style=pro] section {
+  border-color: #eee !important;
+}
+[data-style=pro] .wrap {
+  max-width: 1100px !important;
+}
+
+/* Stats row on landing */
+[data-style=pro] .land-stats .stat {
+  background: #f7f7f7 !important;
+  border: 1px solid #eee !important;
+  border-radius: 6px !important;
+}
+
+/* Terminal preview on landing — clean card */
+[data-style=pro] .term-window,
+[data-style=pro] .hero-terminal,
+[data-style=pro] .hero-demo {
+  background: #f7f7f7 !important;
+  border: 1px solid #e5e5e5 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 20px rgba(0,0,0,.06) !important;
+  animation: none !important;
+}
+[data-style=pro] .term-dots span {
+  background: #ccc !important;
+  box-shadow: none !important;
+}
+
+/* Footer — clean */
+[data-style=pro] body.landing footer,
+[data-style=pro] .land-footer {
+  background: #fff !important;
+  border-top: 1px solid #eee !important;
+  color: #888 !important;
+}
+[data-style=pro] .land-footer a {
+  color: #555 !important;
+  text-decoration: none !important;
+}
+[data-style=pro] .land-footer a:hover {
+  color: #111 !important;
+}
+
+/* CTA banner at bottom */
+[data-style=pro] .land-cta-section {
+  background: #f7f7f7 !important;
+  border-radius: 12px !important;
+  border: none !important;
+}
+[data-style=pro] .land-cta-section h2 {
+  color: #111 !important;
+}
+
+/* Remove any cyber effects from landing */
+[data-style=pro] .hero-orb,
+[data-style=pro] .hero-particles,
+[data-style=pro] .hero-glow,
+[data-style=pro] .land-glow,
+[data-style=pro] .land-grid-bg {
+  display: none !important;
+}
+
+/* Enterprise card */
+[data-style=pro] .enterprise-card,
+[data-style=pro] .land-enterprise {
+  background: #e8e8e8 !important;
+  border-radius: 12px !important;
+  border: none !important;
+  color: #111 !important;
+}
+
+/* Accent color for highlighted words */
+[data-style=pro] .text-accent,
+[data-style=pro] .land-accent {
+  color: #2563eb !important;
+  -webkit-text-fill-color: #2563eb !important;
+}
+
+/* Dashboard overrides for pro */
+[data-style=pro] .dash-hero {
+  background: #fff !important;
+  border: 1px solid #e5e5e5 !important;
+  border-radius: 6px !important;
+}
+[data-style=pro] .dash-hero::before {
+  display: none !important;
+}
+[data-style=pro] .home-grid .card {
+  background: #fff !important;
+  border: 1px solid #e5e5e5 !important;
+}
+[data-style=pro] .home-grid .card:hover {
+  border-color: #ccc !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,.04) !important;
+}

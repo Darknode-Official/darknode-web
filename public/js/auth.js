@@ -608,12 +608,14 @@ function renderSettingsPage(main, user, isOwner) {
       ${row("Member since", esc(created))}
       ${row("User ID", '<span class="mono">' + esc(user.uid) + "</span>")}`,
     appearance: `<h2 class="set-panel-h">Appearance</h2>
-      <div class="set-row"><span class="muted">Theme</span>
-        <span class="seg" id="sw-theme"><button data-t="dark">Dark</button><button data-t="light">Light</button></span></div>
+      <div class="set-row"><span class="muted">Style</span>
+        <span class="seg" id="sw-style"><button data-style="pro">Professional</button><button data-style="dark">Dark</button><button data-style="classic">Classic</button></span></div>
       <div class="set-row"><span class="muted">Accent color</span>
         <span class="swatches" id="sw-acc">${ACCENTS.map((c) => `<button class="swatch" style="background:${c}" data-c="${c}" title="${c}"></button>`).join("")}</span></div>
       <div class="set-row"><span class="muted">Logo</span>
         <span class="logo-picks" id="sw-logo">${Object.entries(LOGO_VARIANTS).map(([k, v]) => `<button class="logo-pick${k === curLogo ? " on" : ""}" data-logo="${k}" title="${v.label}"><svg viewBox="0 0 100 100" width="28" height="28">${v.svg.replace(/currentColor/g, "#F2F5F9")}</svg></button>`).join("")}</span></div>
+      <div class="set-row"><span class="muted">Boot screen</span>
+        <span class="seg" id="sw-boot"><button data-boot="pro">Professional</button><button data-boot="classic">Classic</button></span></div>
       <div class="set-row"><span class="muted">CRT scanlines</span>
         <span class="seg" id="sw-crt"><button data-crt="1">On</button><button data-crt="0">Off</button></span></div>
       <div class="set-row"><span class="muted">Shell mode</span>
@@ -672,6 +674,10 @@ function renderSettingsPage(main, user, isOwner) {
     if (logoSeg) logoSeg.onclick = (e) => { const b = e.target.closest(".logo-pick"); if (!b) return; applyLogo(b.dataset.logo); logoSeg.querySelectorAll(".logo-pick").forEach((x) => x.classList.toggle("on", x === b)); };
     const themeSeg = main.querySelector("#sw-theme");
     if (themeSeg) { const curTheme = document.documentElement.getAttribute("data-theme") || "dark"; themeSeg.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b.dataset.t === curTheme)); themeSeg.onclick = (e) => { const b = e.target.closest("button[data-t]"); if (!b) return; applyTheme(b.dataset.t); themeSeg.querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b)); }; }
+    const styleSeg = main.querySelector("#sw-style");
+    if (styleSeg) { let curStyle = "pro"; try { curStyle = localStorage.getItem("sw_style") || "pro"; } catch (_) {} styleSeg.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b.dataset.style === curStyle)); styleSeg.onclick = (e) => { const b = e.target.closest("button[data-style]"); if (!b) return; document.documentElement.setAttribute("data-style", b.dataset.style); try { localStorage.setItem("sw_style", b.dataset.style); } catch (_) {} styleSeg.querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b)); }; }
+    const bootSeg = main.querySelector("#sw-boot");
+    if (bootSeg) { let curBoot = "pro"; try { curBoot = localStorage.getItem("sw_boot_theme") || "pro"; } catch (_) {} bootSeg.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b.dataset.boot === curBoot)); bootSeg.onclick = (e) => { const b = e.target.closest("button[data-boot]"); if (!b) return; try { localStorage.setItem("sw_boot_theme", b.dataset.boot); } catch (_) {} bootSeg.querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b)); }; }
     const crtSeg = main.querySelector("#sw-crt");
     if (crtSeg) { crtSeg.querySelectorAll("button").forEach((b) => b.classList.toggle("on", (b.dataset.crt === "1") === crtOn())); crtSeg.onclick = (e) => { const b = e.target.closest("button[data-crt]"); if (!b) return; applyCrt(b.dataset.crt === "1"); crtSeg.querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b)); }; }
     const shellSeg = main.querySelector("#sw-shell");
