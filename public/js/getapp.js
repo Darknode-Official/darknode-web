@@ -1,7 +1,7 @@
 // Downloads section — desktop app + CLI, hosted on GitHub Releases.
 // Fetches the live release assets so file sizes and versions are always current.
-const REPO = "SpartanKing18/darknode-web";
-const TAG = "darknode";
+const REPO = "Darknode-Official/darknode-app";
+const TAG = "latest";
 const RELEASES = "https://github.com/" + REPO + "/releases";
 const REL_DL = RELEASES + "/download/" + TAG;
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
@@ -22,15 +22,15 @@ const fmtSize = (n) => n > 1e9 ? (n / 1e9).toFixed(2) + " GB" : n > 1e6 ? (n / 1
 const verOf = (name) => (name.match(/(\d+\.\d+\.\d+)/) || [])[1] || "";
 
 const SITE = "https://darknode.ai";
-const OS_REPO = "https://github.com/SpartanKing18/darknode-os";
-const NEXUS_REPO = "https://github.com/SpartanKing18/nexus";
+const OS_REPO = "https://github.com/Darknode-Official/darknode-os";
+const NEXUS_REPO = "https://github.com/Darknode-Official/darknode-cli";
 const APP_EDITIONS = [
   { name: "Netinstall", tag: "lightest · ~95 MB", desc: "Just the app. Every tool auto-configures itself the first time you launch it — nothing pre-downloaded.", steps: ["Install the .deb / AppImage / .exe from the Builds tab.", "Open any tool — Darknode sets it up on first use."] },
   { name: "Slim", tag: "recommended", desc: "The app plus the essential toolset: recon, web, and password tools.", steps: ["Install the app from the Builds tab.", `curl -sL ${SITE}/arsenal.sh | bash -s -- recon web passwords`] },
   { name: "Full", tag: "everything + AI", desc: "The app, the complete arsenal (all 10 categories), and local AI models.", steps: ["Install the app from the Builds tab.", `curl -sL ${SITE}/arsenal.sh | bash`, "Local AI (Ollama + models) is set up automatically on first launch."] },
 ];
 const CLI_EDITIONS = [
-  { name: "git clone", tag: "tiny · ~300 KB", desc: "Clone the source and run with Node — no 52 MB binary on disk, and git pull keeps it current. Needs Node 18+.", steps: ["git clone https://github.com/SpartanKing18/darknode-cli && cd darknode-cli && node darknode.js"] },
+  { name: "git clone", tag: "tiny · ~300 KB", desc: "Clone the source and run with Node — no 52 MB binary on disk, and git pull keeps it current. Needs Node 18+.", steps: ["git clone https://github.com/Darknode-Official/darknode-cli && cd darknode-cli && node darknode.js"] },
   { name: "Compact", tag: "standalone · ~52 MB", desc: "The self-contained binary — Node bundled in, no dependencies, runs on its own. Grab it from the Builds tab.", steps: ["Download the CLI binary from the Builds tab — it just runs."] },
   { name: "Pro", tag: "full toolset", desc: "The CLI (either way above) plus the complete external toolset it can drive (nmap, sqlmap, nuclei…).", steps: [`curl -sL ${SITE}/arsenal.sh | bash`] },
 ];
@@ -51,11 +51,12 @@ export function renderDownloads(main) {
       <h2 class="pg-h2" style="margin:0 0 6px">Nexus &mdash; AI coding agent</h2>
       <p class="muted" style="font-size:.85rem;margin:0 0 10px">A terminal AI coder (like Claude Code) built into the CLI: it edits files and runs commands using your own local models &mdash; private, no cloud. Download the CLI, then run <code data-cmd>darknode nexus</code>.</p>
       <div class="btns" style="flex-wrap:wrap;gap:8px">
-        <a class="btn" href="${REL_DL}/Darknode-cli-linux" download>Nexus (CLI) &middot; Linux</a>
-        <a class="btn" href="${REL_DL}/Darknode-cli-windows.exe" download>Nexus (CLI) &middot; Windows</a>
-        <button class="btn ghost" data-sec="coder">About Nexus</button>
-        <a class="btn ghost" href="${NEXUS_REPO}" target="_blank" rel="noopener">Nexus source &middot; GitHub</a>
+        <a class="btn" href="${REL_DL}/Darknode-cli-linux" download>Linux</a>
+        <a class="btn" href="${REL_DL}/Darknode-cli-windows.exe" download>Windows</a>
+        <a class="btn" href="${REL_DL}/Darknode-cli-macos-arm64" download>macOS &middot; Apple Silicon</a>
+        <a class="btn" href="${REL_DL}/Darknode-cli-macos-x64" download>macOS &middot; Intel</a>
       </div>
+      <p class="muted" style="font-size:.75rem;margin:8px 0 0">Or install via npm: <code data-cmd>npm i -g darknode-cli</code> &nbsp;|&nbsp; <a class="nav-link" href="${NEXUS_REPO}" target="_blank" rel="noopener">Source on GitHub</a></p>
     </div>
     <div class="card" style="max-width:640px;border-color:color-mix(in srgb,var(--acc) 45%,transparent);margin-bottom:14px">
       <h2 class="pg-h2" style="margin:0 0 6px">Darknode OS &mdash; the security VM</h2>
@@ -81,7 +82,28 @@ export function renderDownloads(main) {
           <div class="dlapp-cmd"><code data-cmd>./build.sh debian full &amp;&amp; ./export-vbox.sh full</code></div>
         </div>
       </div>
-      <p class="muted" style="font-size:.78rem;margin:10px 0 0">First <code>git clone ${OS_REPO} &amp;&amp; cd darknode-os</code>. The image builds from Debian + a cloud-init recipe on your own machine (nothing to host); first boot sets everything up. On macOS: <code>brew install qemu</code>, then <code>./launch.sh &lt;edition&gt;</code> or import the built <code>darknode-os-&lt;edition&gt;.qcow2</code> into UTM / VirtualBox.</p>
+      <div style="margin-top:12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;font-size:.78rem">
+        <div style="background:var(--card2);border:1px solid var(--line);border-radius:4px;padding:10px">
+          <div style="font-weight:600;margin-bottom:4px">Linux (native)</div>
+          <code data-cmd style="font-size:.7rem">git clone ${OS_REPO} &amp;&amp; cd darknode-os</code><br>
+          <code data-cmd style="font-size:.7rem">./build.sh debian full</code><br>
+          <span class="muted">Run with QEMU/KVM or import .qcow2 into VirtualBox</span>
+        </div>
+        <div style="background:var(--card2);border:1px solid var(--line);border-radius:4px;padding:10px">
+          <div style="font-weight:600;margin-bottom:4px">Windows</div>
+          <span class="muted">1. Install <a href="https://www.virtualbox.org/wiki/Downloads" target="_blank" rel="noopener">VirtualBox</a></span><br>
+          <span class="muted">2. Clone repo &amp; build, or download pre-built .ova</span><br>
+          <code data-cmd style="font-size:.7rem">./export-vbox.sh full</code><br>
+          <span class="muted">3. Import .ova into VirtualBox</span>
+        </div>
+        <div style="background:var(--card2);border:1px solid var(--line);border-radius:4px;padding:10px">
+          <div style="font-weight:600;margin-bottom:4px">macOS</div>
+          <code data-cmd style="font-size:.7rem">brew install qemu</code><br>
+          <span class="muted">Clone repo, build, then:</span><br>
+          <code data-cmd style="font-size:.7rem">./launch.sh full</code><br>
+          <span class="muted">Or import .qcow2 into UTM / VirtualBox</span>
+        </div>
+      </div>
     </div>
     <h2 class="pg-h2">1 · Choose a build</h2>
     <p class="muted" style="font-size:.85rem;margin:-6px 0 12px">Prefer just the app or the terminal edition? Grab the latest build for your platform — Linux, Windows or macOS.</p>
@@ -110,9 +132,11 @@ export function renderDownloads(main) {
         <a class="dl-osbtn" href="${REL_DL}/Darknode-cli-macos-x64" download><span class="dl-os">macOS · Intel</span><span class="dl-fmt">Nexus CLI</span></a>
       </div>`;
   };
+  if (window._dnRelCached) { fallback(); return; }
+  window._dnRelCached = true;
   const ctrl = new AbortController(); setTimeout(() => ctrl.abort(), 8000);
-  fetch("https://api.github.com/repos/" + REPO + "/releases/tags/" + TAG, { signal: ctrl.signal })
-    .then((r) => r.ok ? r.json() : Promise.reject())
+  fetch("https://api.github.com/repos/" + REPO + "/releases/" + TAG, { signal: ctrl.signal })
+    .catch(function(e){console.warn(e)}).then((r) => r.ok ? r.json() : Promise.reject("no-release"))
     .then((rel) => {
       const all = rel.assets || [];
       // one button per platform/format — the LATEST version only (by semver, then upload time)
@@ -213,11 +237,17 @@ const CLI_DOCS = [
     steps: [ { t: "Download, make executable, ad-hoc sign (Apple Silicon requires it), then run:", cmd: `curl -L ${REL_DL}/Darknode-cli-macos-arm64 -o darknode && chmod +x darknode && codesign --sign - darknode && ./darknode nexus --tui` } ],
     note: "Prefer no binary? <code>git clone</code> below runs on macOS with Node — nothing to sign.",
     trouble: "\"killed\" / \"cannot be opened\": it needs the ad-hoc signature above (<code>codesign --sign - darknode</code>), then <code>xattr -d com.apple.quarantine darknode</code> if downloaded via a browser." },
+  { title: "Nexus / CLI — npm install (any OS)", os: "Any", fmt: "npm package",
+    what: "Install the CLI globally via npm. Works on Linux, Windows, macOS — anywhere Node runs. Adds <code>darknode</code> to your PATH automatically.",
+    best: "you already have Node 18+ and want a one-command install that's easy to update.",
+    req: "Node.js 18 or newer, npm.",
+    steps: [ { t: "Install globally:", cmd: `npm install -g darknode-cli` }, { t: "Run the AI coder:", cmd: `darknode nexus --tui` }, { t: "Run HYDRA pentest engine:", cmd: `darknode /pentest <target>` } ],
+    note: "Update anytime with <code>npm update -g darknode-cli</code>." },
   { title: "Nexus / CLI — from source (git clone)", os: "Any", fmt: "~300 KB + Node",
     what: "Run the CLI straight from source with Node. Tiny footprint, and <code>git pull</code> keeps it current.",
     best: "you already have Node 18+ and want the smallest download or plan to tweak the code.",
     req: "Node.js 18 or newer, git.",
-    steps: [ { t: "Clone and run:", cmd: `git clone https://github.com/SpartanKing18/darknode-cli && cd darknode-cli && node darknode.js nexus --tui` } ],
+    steps: [ { t: "Clone and run:", cmd: `git clone https://github.com/Darknode-Official/darknode-cli && cd darknode-cli && node darknode.js nexus --tui` } ],
     note: "Update anytime with <code>git pull</code> — no re-download." },
 ];
 
@@ -229,8 +259,10 @@ export function renderDownloadDocs(main) {
     <div class="card" style="max-width:760px;margin-bottom:16px">
       <h2 class="pg-h2" style="margin:0 0 8px">Which one should I get?</h2>
       <div style="overflow-x:auto"><table class="cmp-table"><tbody>
-        <tr><td>I want a normal app with a window &amp; icon</td><td class="yes">Desktop app</td><td>.deb (Ubuntu/Kali) · AppImage (any Linux) · .exe (Windows)</td></tr>
-        <tr><td>I want the AI coding agent (Nexus) in my terminal</td><td class="yes">Terminal edition (CLI)</td><td>Linux binary · Windows .exe · or git clone</td></tr>
+        <tr><td>I want a normal app with a window &amp; icon</td><td class="yes">Desktop app</td><td>.deb (Ubuntu/Kali) · AppImage (any Linux) · .exe (Windows) · .dmg (macOS)</td></tr>
+        <tr><td>I want the AI coding agent (Nexus) in my terminal</td><td class="yes">Terminal edition (CLI)</td><td>Linux · Windows · macOS (ARM + Intel)</td></tr>
+        <tr><td>I want the quickest install on any OS</td><td class="yes">npm install</td><td><code>npm i -g darknode-cli</code> &mdash; works everywhere Node runs</td></tr>
+        <tr><td>I want a full security VM</td><td class="yes">Darknode OS</td><td>VirtualBox (all OS) · QEMU/KVM (Linux) · UTM (macOS)</td></tr>
         <tr><td>I'm on a server / headless box</td><td class="yes">CLI Linux binary</td><td>no GUI, no Node needed</td></tr>
         <tr><td>I can't use apt / want zero install</td><td class="yes">AppImage</td><td>one file, just run it</td></tr>
         <tr><td>I already have Node and want the smallest download</td><td class="yes">git clone</td><td>~300&nbsp;KB, <code>git pull</code> to update</td></tr>

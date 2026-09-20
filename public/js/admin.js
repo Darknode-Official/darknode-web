@@ -51,6 +51,13 @@ export async function renderAdmin(main, user) {
           <div id="fbAdminList"><p class="muted">Loading feedback…</p></div>
         </div>
         <div class="panel">
+          <div class="panel-h"><h2 class="pg-h2" style="margin:0">Client Error Log</h2>
+            <button class="btn ghost sm" id="errRefresh">Refresh</button>
+            <button class="btn danger sm" id="errClear">Clear all</button></div>
+          <p class="muted" style="font-size:.82rem;margin:0 0 8px">Automatic crash reports from user sessions.</p>
+          <div id="errAdminList"><p class="muted">Loading errors…</p></div>
+        </div>
+        <div class="panel">
           <div class="panel-h"><h2 class="pg-h2" style="margin:0">Data &amp; outreach</h2></div>
           <p class="muted" style="font-size:.82rem;margin:0 0 10px">Export the user base or grab every email for an announcement mailout.</p>
           <div class="set-btns">
@@ -59,6 +66,38 @@ export async function renderAdmin(main, user) {
             <button class="btn ghost sm" id="copyOwnerless">Copy non-owner emails</button>
           </div>
           <p class="adm-msg" id="dataMsg"></p>
+        </div>
+        <div class="panel">
+          <div class="panel-h"><h2 class="pg-h2" style="margin:0">Email Users</h2></div>
+          <p class="muted" style="font-size:.82rem;margin:0 0 10px">Send an email from contact@darknode.ai to one user or all registered users.</p>
+          <div style="margin-bottom:10px">
+            <label class="set-row" style="border:none;padding:4px 0;gap:12px">
+              <span class="seg" id="emailTarget">
+                <button data-v="one" class="on">One user</button>
+                <button data-v="all">All users</button>
+              </span>
+            </label>
+          </div>
+          <div id="emailOneRow" style="margin-bottom:8px">
+            <input class="tk-f" id="emailTo" placeholder="user@example.com" type="email" style="width:100%">
+          </div>
+          <input class="tk-f" id="emailSubject" placeholder="Subject" style="width:100%;margin-bottom:8px">
+          <textarea class="tk-in" id="emailBody" rows="6" placeholder="Write your message here..."></textarea>
+          <div style="display:flex;gap:8px;margin-top:8px;align-items:center">
+            <button class="btn sm" id="emailSend">Open in Gmail</button>
+            <button class="btn ghost sm" id="emailCopyDraft">Copy as text</button>
+            <span class="muted" style="font-size:.72rem;flex:1;text-align:right" id="emailCount"></span>
+          </div>
+          <p class="adm-msg" id="emailMsg"></p>
+          <div style="margin-top:10px;border-top:1px solid var(--line);padding-top:10px">
+            <p class="muted" style="font-size:.75rem;margin:0 0 6px">Quick templates:</p>
+            <div class="set-btns" style="flex-wrap:wrap">
+              <button class="btn ghost sm emailTpl" data-tpl="downtime">Downtime apology</button>
+              <button class="btn ghost sm emailTpl" data-tpl="update">New update</button>
+              <button class="btn ghost sm emailTpl" data-tpl="welcome">Welcome</button>
+              <button class="btn ghost sm emailTpl" data-tpl="security">Security notice</button>
+            </div>
+          </div>
         </div>
       </div>
       <div class="adm-side">
@@ -254,6 +293,49 @@ export async function renderAdmin(main, user) {
     try { await deleteDoc(doc(db, "feedback", row.dataset.id)); row.remove(); } catch (err) { alert("delete failed: " + err.message); }
   };
   loadFeedback();
+
+  // ---- client error log ----
+  async function loadErrors() {
+    const host = $("#errAdminList"); if (!host) return;
+    try {
+      const snap = await getDocs(collection(db, "errors"));
+      const toMs = (ts) => (ts && ts.toMillis ? ts.toMillis() : 0);
+      const items = snap.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => toMs(b.ts) - toMs(a.ts));
+      if (!items.length) { host.innerHTML = `<p class="muted">No errors logged.</p>`; return; }
+      host.innerHTML = items.slice(0, 50).map((e) => `
+        <div class="fb-row" data-id="${esc(e.id)}">
+          <div class="fb-row-h">
+            <span class="fb-tag" style="background:color-mix(in srgb,var(--bad) 18%,transparent);color:var(--bad)">ERROR</span>
+            <span class="muted">${esc(e.email || "anon")}</span>
+            <span style="flex:1"></span>
+            <span class="muted" style="font-size:.72rem">${e.ts && e.ts.toDate ? esc(fmtDate(e.ts)) : ""}</span>
+            <button class="btn ghost sm fb-del" title="Delete">Delete</button>
+          </div>
+          <div class="fb-msg" style="font-family:var(--font-mono,monospace);font-size:.78rem">${esc(e.message || "")}</div>
+          ${e.source && e.source !== "unhandledrejection" ? `<div class="muted" style="font-size:.7rem;margin-top:2px">${esc(e.source)}${e.line ? ':' + e.line : ''}${e.col ? ':' + e.col : ''}</div>` : ""}
+          ${e.stack ? `<details style="margin-top:4px"><summary class="muted" style="font-size:.72rem;cursor:pointer">Stack trace</summary><pre style="font-size:.7rem;margin:4px 0 0;white-space:pre-wrap;word-break:break-all;color:var(--mut)">${esc(e.stack)}</pre></details>` : ""}
+          ${e.url ? `<div class="muted" style="font-size:.7rem;margin-top:2px">${esc(e.url)}</div>` : ""}
+          ${e.ua ? `<div class="muted" style="font-size:.65rem;margin-top:2px">${esc(e.ua)}</div>` : ""}
+        </div>`).join("") + (items.length > 50 ? `<p class="muted" style="font-size:.78rem;margin-top:8px">Showing 50 of ${items.length} errors</p>` : "");
+    } catch (e) { host.innerHTML = `<p class="adm-err">Couldn't load errors: ${esc(e.message)}</p>`; }
+  }
+  $("#errRefresh").onclick = loadErrors;
+  $("#errAdminList").onclick = async (e) => {
+    const del = e.target.closest(".fb-del"); if (!del) return;
+    const row = del.closest(".fb-row"); if (!row) return;
+    if (!confirm("Delete this error?")) return;
+    try { await deleteDoc(doc(db, "errors", row.dataset.id)); row.remove(); } catch (err) { alert("delete failed: " + err.message); }
+  };
+  $("#errClear").onclick = async () => {
+    if (!confirm("Clear all logged errors?")) return;
+    try {
+      const snap = await getDocs(collection(db, "errors"));
+      for (const d of snap.docs) { try { await deleteDoc(doc(db, "errors", d.id)); } catch (_) {} }
+    } catch (err) { alert("clear failed: " + err.message); }
+    loadErrors();
+  };
+  loadErrors();
+
   $("#uSearch").oninput = drawUsers;
   $("#uList").onclick = async (e) => {
     const wlBtn = e.target.closest("[data-wl]"), delBtn = e.target.closest("[data-del]");
@@ -537,6 +619,94 @@ export async function renderAdmin(main, user) {
     const annText = $("#annText");
     if (annText) { annText.value = msg; }
     alert('Set the announcement text. Click Publish to send it.');
+  };
+
+  // ---- Email panel ----
+  const emailTarget = $("#emailTarget");
+  const emailOneRow = $("#emailOneRow");
+  const emailCount = $("#emailCount");
+  const emailMsg = $("#emailMsg");
+  let emailMode = "one";
+
+  if (emailTarget) {
+    emailTarget.querySelectorAll("button").forEach((b) => {
+      b.onclick = () => {
+        emailTarget.querySelectorAll("button").forEach((x) => x.classList.remove("on"));
+        b.classList.add("on");
+        emailMode = b.dataset.v;
+        if (emailOneRow) emailOneRow.style.display = emailMode === "one" ? "" : "none";
+        if (emailCount) emailCount.textContent = emailMode === "all" ? users.filter((u) => u.email).length + " recipients" : "";
+      };
+    });
+  }
+
+  // Quick templates
+  const templates = {
+    downtime: {
+      subject: "We're sorry — Darknode was briefly down",
+      body: "Hi there,\n\nWe wanted to reach out and apologize for the brief downtime on darknode.ai yesterday. We know you rely on the platform and we take uptime seriously.\n\nWhat happened: A configuration change caused the site to become temporarily unavailable. We identified and resolved the issue, and the platform is now fully operational.\n\nWhat we're doing: We've added monitoring to prevent this from happening again.\n\nThank you for your patience and for being part of the Darknode community.\n\nBest,\nThe Darknode Team\ncontact@darknode.ai"
+    },
+    update: {
+      subject: "What's new on Darknode",
+      body: "Hi there,\n\nWe've shipped some updates to Darknode:\n\n- [Feature 1]\n- [Feature 2]\n- [Bug fix]\n\nCheck it out at darknode.ai\n\nBest,\nThe Darknode Team"
+    },
+    welcome: {
+      subject: "Welcome to Darknode",
+      body: "Welcome to Darknode!\n\nThanks for signing up. Here's what you can do:\n\n- Explore 120+ security tools and cheat sheets\n- Use the Nexus AI coding agent\n- Practice in our security labs\n- Track your progress in the Learn Hub\n\nGet started at darknode.ai\n\nBest,\nThe Darknode Team\ncontact@darknode.ai"
+    },
+    security: {
+      subject: "Security Notice — Darknode",
+      body: "Hi there,\n\nThis is a security notice from Darknode.\n\n[Describe the security event]\n\nWhat you should do:\n- [Action item 1]\n- [Action item 2]\n\nIf you have questions, reply to this email.\n\nBest,\nThe Darknode Team\ncontact@darknode.ai"
+    }
+  };
+
+  main.querySelectorAll(".emailTpl").forEach((b) => {
+    b.onclick = () => {
+      const tpl = templates[b.dataset.tpl];
+      if (!tpl) return;
+      const subj = $("#emailSubject"), body = $("#emailBody");
+      if (subj) subj.value = tpl.subject;
+      if (body) body.value = tpl.body;
+      if (emailMsg) emailMsg.textContent = "Template loaded: " + b.dataset.tpl;
+    };
+  });
+
+  // Send via Gmail (mailto or Gmail compose URL)
+  const emailSend = $("#emailSend");
+  if (emailSend) emailSend.onclick = () => {
+    const subj = ($("#emailSubject")?.value || "").trim();
+    const body = ($("#emailBody")?.value || "").trim();
+    if (!subj || !body) { if (emailMsg) emailMsg.textContent = "Subject and body required."; return; }
+
+    let to;
+    if (emailMode === "one") {
+      to = ($("#emailTo")?.value || "").trim();
+      if (!to) { if (emailMsg) emailMsg.textContent = "Enter a recipient email."; return; }
+    } else {
+      const emails = users.filter((u) => u.email && u.email !== OWNER_EMAIL).map((u) => u.email);
+      if (!emails.length) { if (emailMsg) emailMsg.textContent = "No users to email."; return; }
+      to = emails.join(",");
+    }
+
+    const gmailUrl = "https://mail.google.com/mail/?view=cm"
+      + "&to=" + encodeURIComponent(to)
+      + "&su=" + encodeURIComponent(subj)
+      + "&body=" + encodeURIComponent(body)
+      + "&from=" + encodeURIComponent("contact@darknode.ai");
+    window.open(gmailUrl, "_blank", "noopener,noreferrer");
+    if (emailMsg) emailMsg.textContent = emailMode === "all"
+      ? "Opened Gmail with " + users.filter((u) => u.email && u.email !== OWNER_EMAIL).length + " recipients"
+      : "Opened Gmail draft to " + to;
+  };
+
+  // Copy as text
+  const emailCopy = $("#emailCopyDraft");
+  if (emailCopy) emailCopy.onclick = () => {
+    const subj = ($("#emailSubject")?.value || "").trim();
+    const body = ($("#emailBody")?.value || "").trim();
+    const draft = "Subject: " + subj + "\n\n" + body;
+    navigator.clipboard?.writeText(draft);
+    if (emailMsg) emailMsg.textContent = "Draft copied to clipboard.";
   };
 
   // ---- Danger zone ----

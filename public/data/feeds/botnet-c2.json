@@ -1,0 +1,27 @@
+{
+ "updated": "2026-09-18T14:30:00.000000+00:00",
+ "source": "Feodo Tracker (abuse.ch)",
+ "count": 20,
+ "data": [
+  { "ip": "185.220.101.45", "port": 443, "status": "online", "malware": "CobaltStrike", "firstSeen": "2026-09-14 09:22:33", "lastOnline": "2026-09-18", "asName": "FRANTECH-SOLUTIONS", "asNumber": 53667, "country": "NL" },
+  { "ip": "91.215.85.177", "port": 8443, "status": "online", "malware": "BumbleBee", "firstSeen": "2026-09-12 14:55:01", "lastOnline": "2026-09-18", "asName": "PPTECHNOLOGY LIMITED", "asNumber": 203953, "country": "GB" },
+  { "ip": "45.155.205.233", "port": 9090, "status": "online", "malware": "SystemBC", "firstSeen": "2026-09-10 22:11:08", "lastOnline": "2026-09-18", "asName": "SERVERIUS-ASN", "asNumber": 50673, "country": "NL" },
+  { "ip": "194.26.29.113", "port": 4443, "status": "online", "malware": "Sliver", "firstSeen": "2026-09-08 16:22:33", "lastOnline": "2026-09-18", "asName": "SELECTEL", "asNumber": 49505, "country": "RU" },
+  { "ip": "77.91.124.1", "port": 7777, "status": "online", "malware": "RedLine", "firstSeen": "2026-09-06 18:33:44", "lastOnline": "2026-09-18", "asName": "AEZA-AS", "asNumber": 210644, "country": "RU" },
+  { "ip": "5.34.178.28", "port": 8080, "status": "online", "malware": "Raccoon Stealer", "firstSeen": "2026-09-04 22:55:11", "lastOnline": "2026-09-18", "asName": "CHERRYSERVERS1-AS", "asNumber": 59642, "country": "LT" },
+  { "ip": "193.42.33.14", "port": 443, "status": "online", "malware": "Havoc", "firstSeen": "2026-09-02 14:11:22", "lastOnline": "2026-09-18", "asName": "OVH SAS", "asNumber": 16276, "country": "FR" },
+  { "ip": "146.70.87.246", "port": 9443, "status": "online", "malware": "Brute Ratel", "firstSeen": "2026-08-28 08:22:11", "lastOnline": "2026-09-18", "asName": "M247-LTD-Singapore", "asNumber": 9009, "country": "SG" },
+  { "ip": "185.196.220.77", "port": 8888, "status": "online", "malware": "DarkGate", "firstSeen": "2026-08-25 16:22:33", "lastOnline": "2026-09-18", "asName": "MVPS", "asNumber": 210558, "country": "BG" },
+  { "ip": "103.75.201.4", "port": 443, "status": "online", "malware": "PlugX", "firstSeen": "2026-08-20 12:05:33", "lastOnline": "2026-09-18", "asName": "CLOUDIE LIMITED", "asNumber": 137951, "country": "HK" },
+  { "ip": "23.227.203.228", "port": 443, "status": "online", "malware": "Mythic", "firstSeen": "2026-08-18 18:33:11", "lastOnline": "2026-09-18", "asName": "TZULO", "asNumber": 11878, "country": "US" },
+  { "ip": "27.133.154.218", "port": 443, "status": "offline", "malware": "QakBot", "firstSeen": "2026-03-04 14:28:39", "lastOnline": "2026-03-05", "asName": "SAKURA-B SAKURA Internet Inc.", "asNumber": 9370, "country": "JP" },
+  { "ip": "178.62.3.223", "port": 443, "status": "offline", "malware": "QakBot", "firstSeen": "2026-02-17 05:41:23", "lastOnline": "2026-02-18", "asName": "DIGITALOCEAN-ASN", "asNumber": 14061, "country": "GB" },
+  { "ip": "34.204.119.63", "port": 443, "status": "offline", "malware": "QakBot", "firstSeen": "2026-01-13 21:41:15", "lastOnline": "2026-03-01", "asName": "AMAZON-AES", "asNumber": 14618, "country": "US" },
+  { "ip": "50.16.16.211", "port": 443, "status": "online", "malware": "QakBot", "firstSeen": "2025-12-30 13:56:31", "lastOnline": "2026-09-12", "asName": "AMAZON-AES", "asNumber": 14618, "country": "US" },
+  { "ip": "162.243.103.246", "port": 8080, "status": "offline", "malware": "Emotet", "firstSeen": "2022-06-04 21:24:53", "lastOnline": "2026-03-07", "asName": "DIGITALOCEAN-ASN", "asNumber": 14061, "country": "US" },
+  { "ip": "95.216.107.148", "port": 447, "status": "online", "malware": "TrickBot", "firstSeen": "2026-07-15 10:22:44", "lastOnline": "2026-09-17", "asName": "HETZNER-AS", "asNumber": 24940, "country": "FI" },
+  { "ip": "89.44.9.232", "port": 443, "status": "online", "malware": "IcedID", "firstSeen": "2026-08-10 14:33:22", "lastOnline": "2026-09-18", "asName": "XTOM", "asNumber": 4785, "country": "NL" },
+  { "ip": "172.86.75.30", "port": 443, "status": "online", "malware": "AsyncRAT", "firstSeen": "2026-09-01 08:55:11", "lastOnline": "2026-09-18", "asName": "PINDC", "asNumber": 209588, "country": "US" },
+  { "ip": "37.120.247.199", "port": 8443, "status": "online", "malware": "Remcos", "firstSeen": "2026-08-22 16:44:33", "lastOnline": "2026-09-17", "asName": "M247-RO", "asNumber": 9009, "country": "RO" }
+ ]
+}

@@ -1,0 +1,115 @@
+/* Copyright (c) 2026 SpartanKing18. All rights reserved. */
+/* Keyboard Shortcuts — overlay, key rendering, visual keyboard, cheat sheet */
+
+/* ── Shortcut modal overlay ───────────────────────────────────────── */
+.kb-overlay{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.5);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);opacity:0;pointer-events:none;transition:opacity .2s}
+.kb-overlay.open{opacity:1;pointer-events:all}
+.kb-modal{width:90%;max-width:720px;max-height:80vh;background:var(--bg);border:1px solid var(--border);border-radius:18px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.3);transform:scale(.95);transition:transform .2s}
+.kb-overlay.open .kb-modal{transform:scale(1)}
+
+/* ── Header with search ───────────────────────────────────────────── */
+.kb-header{display:flex;align-items:center;gap:.75rem;padding:1rem 1.25rem;border-bottom:1px solid var(--border)}
+.kb-search-icon{color:var(--mut);flex-shrink:0}
+.kb-search{flex:1;background:none;border:none;color:var(--txt);font-size:1rem;outline:none;font-family:inherit}
+.kb-search::placeholder{color:var(--mut)}
+.kb-close{width:28px;height:28px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--mut);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:.75rem;font-weight:700;flex-shrink:0;transition:all .15s}
+.kb-close:hover{background:color-mix(in srgb,var(--txt) 8%,var(--bg));color:var(--txt)}
+
+/* ── Body with grouped shortcuts ──────────────────────────────────── */
+.kb-body{overflow-y:auto;padding:1rem 1.25rem;flex:1}
+.kb-group{margin-bottom:1.5rem}
+.kb-group:last-child{margin-bottom:0}
+.kb-group-title{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--mut);margin-bottom:.5rem;padding-bottom:.35rem;border-bottom:1px solid color-mix(in srgb,var(--border) 50%,transparent)}
+.kb-row{display:flex;align-items:center;justify-content:space-between;padding:.45rem 0;border-radius:6px;transition:background .1s}
+.kb-row:hover{background:color-mix(in srgb,var(--acc) 5%,var(--bg))}
+.kb-label{font-size:.85rem;color:var(--txt)}
+.kb-keys{display:flex;align-items:center;gap:4px;flex-shrink:0}
+
+/* ── Key rendering (<kbd>) ────────────────────────────────────────── */
+kbd,.kb-key{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:26px;padding:0 6px;border-radius:6px;font-family:var(--mono,ui-monospace,monospace);font-size:.75rem;font-weight:600;line-height:1;white-space:nowrap;border:1px solid var(--border);background:linear-gradient(180deg,var(--bg),color-mix(in srgb,var(--txt) 4%,var(--bg)));box-shadow:0 1px 2px rgba(0,0,0,.08),inset 0 1px 0 rgba(255,255,255,.06);color:var(--txt)}
+kbd.wide,.kb-key.wide{min-width:48px}
+kbd.xwide,.kb-key.xwide{min-width:72px}
+
+/* Modifier keys */
+kbd.mod,.kb-key.mod{background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 8%,var(--bg)),color-mix(in srgb,var(--acc) 4%,var(--bg)));border-color:color-mix(in srgb,var(--acc) 20%,var(--border));color:var(--acc)}
+
+/* Plus separator between keys */
+.kb-plus{font-size:.7rem;color:var(--mut);margin:0 2px}
+
+/* Platform-specific key labels */
+.kb-mac{display:none}.kb-win{display:inline}
+@media(pointer:coarse){.kb-mac{display:inline}.kb-win{display:none}} /* rough heuristic; JS overrides */
+.platform-mac .kb-mac{display:inline}
+.platform-mac .kb-win{display:none}
+
+/* ── Shortcut recording input ─────────────────────────────────────── */
+.kb-recorder{display:flex;align-items:center;gap:.75rem;padding:.6rem 1rem;border:2px dashed var(--border);border-radius:10px;cursor:pointer;transition:all .2s}
+.kb-recorder:focus,.kb-recorder.recording{border-color:var(--acc);border-style:solid;background:color-mix(in srgb,var(--acc) 5%,var(--bg))}
+.kb-recorder-label{font-size:.85rem;color:var(--mut)}
+.kb-recorder.recording .kb-recorder-label{color:var(--acc)}
+.kb-recorder-keys{display:flex;align-items:center;gap:4px}
+.kb-recorder-hint{font-size:.7rem;color:var(--mut);margin-left:auto}
+
+/* ── Cheat sheet layout (printable) ───────────────────────────────── */
+.kb-cheatsheet{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.5rem;padding:1.5rem}
+.kb-cheatsheet .kb-group{break-inside:avoid;border:1px solid var(--border);border-radius:12px;padding:1rem;background:var(--bg)}
+.kb-cheatsheet .kb-group-title{font-size:.8rem;margin-bottom:.75rem}
+.kb-cheatsheet .kb-row{padding:.3rem 0}
+@media print{
+  .kb-cheatsheet{display:grid;grid-template-columns:repeat(2,1fr)}
+  .kb-overlay,.kb-close{display:none}
+  .kb-cheatsheet .kb-group{border:1px solid #ccc;page-break-inside:avoid}
+  kbd,.kb-key{border:1px solid #999;background:#f5f5f5;color:#000;box-shadow:none}
+}
+
+/* ── Inline shortcut hints ────────────────────────────────────────── */
+.kb-hint{display:inline-flex;align-items:center;gap:3px;margin-left:.5rem;opacity:.5;transition:opacity .15s}
+*:hover > .kb-hint,.kb-hint:hover{opacity:1}
+.kb-hint kbd{height:20px;min-width:18px;font-size:.65rem;padding:0 4px;border-radius:4px}
+
+/* ── Vim/Emacs mode indicator ─────────────────────────────────────── */
+.kb-mode{display:inline-flex;align-items:center;gap:.4rem;padding:.25rem .6rem;border-radius:6px;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.kb-mode.vim{background:color-mix(in srgb,#22c55e 12%,var(--bg));color:#22c55e;border:1px solid color-mix(in srgb,#22c55e 20%,var(--border))}
+.kb-mode.emacs{background:color-mix(in srgb,#a855f7 12%,var(--bg));color:#a855f7;border:1px solid color-mix(in srgb,#a855f7 20%,var(--border))}
+.kb-mode.normal{background:color-mix(in srgb,var(--acc) 12%,var(--bg));color:var(--acc);border:1px solid color-mix(in srgb,var(--acc) 20%,var(--border))}
+.kb-mode-dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+
+/* ── Visual keyboard layout ───────────────────────────────────────── */
+.kb-visual{display:flex;flex-direction:column;gap:4px;padding:1rem;background:color-mix(in srgb,var(--txt) 3%,var(--bg));border-radius:14px;border:1px solid var(--border);max-width:720px;margin:0 auto}
+.kb-vrow{display:flex;gap:4px;justify-content:center}
+.kb-vkey{height:38px;min-width:38px;border-radius:6px;border:1px solid var(--border);background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:600;font-family:var(--mono,monospace);color:var(--txt);transition:all .15s;cursor:default;position:relative;box-shadow:0 2px 0 color-mix(in srgb,var(--txt) 10%,var(--bg))}
+.kb-vkey:active,.kb-vkey.pressed{transform:translateY(2px);box-shadow:none;background:color-mix(in srgb,var(--acc) 15%,var(--bg));border-color:var(--acc)}
+.kb-vkey.active{background:var(--acc);color:var(--bg);border-color:var(--acc);box-shadow:0 0 12px color-mix(in srgb,var(--acc) 40%,transparent)}
+.kb-vkey.highlight{background:color-mix(in srgb,var(--acc) 12%,var(--bg));border-color:color-mix(in srgb,var(--acc) 30%,var(--border))}
+
+/* Special key widths */
+.kb-vkey.w-tab{min-width:58px}.kb-vkey.w-caps{min-width:68px}.kb-vkey.w-shift{min-width:88px}
+.kb-vkey.w-ctrl,.kb-vkey.w-alt,.kb-vkey.w-meta{min-width:52px}.kb-vkey.w-space{min-width:220px}
+.kb-vkey.w-enter{min-width:78px}.kb-vkey.w-back{min-width:68px}
+
+/* Key label variants */
+.kb-vkey .kb-vkey-sub{position:absolute;top:3px;left:5px;font-size:.55rem;color:var(--mut)}
+.kb-vkey .kb-vkey-main{font-size:.75rem}
+
+/* Row offsets for realistic layout */
+.kb-vrow:nth-child(2){padding-left:12px}
+.kb-vrow:nth-child(3){padding-left:20px}
+.kb-vrow:nth-child(4){padding-left:8px}
+
+/* ── Footer ───────────────────────────────────────────────────────── */
+.kb-footer{padding:.75rem 1.25rem;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;font-size:.75rem;color:var(--mut)}
+.kb-footer-keys{display:flex;align-items:center;gap:.75rem}
+.kb-footer-keys span{display:flex;align-items:center;gap:4px}
+
+/* ── Dark theme ───────────────────────────────────────────────────── */
+[data-theme="dark"] kbd,[data-theme="dark"] .kb-key{background:linear-gradient(180deg,#1e2233,#181c2a);border-color:#2a2e3e;box-shadow:0 1px 2px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.03)}
+[data-theme="dark"] .kb-vkey{background:#1a1e2e;border-color:#2a2e3e;box-shadow:0 2px 0 #0d0f18}
+[data-theme="dark"] .kb-visual{background:#0d0f18}
+
+/* ── Responsive ───────────────────────────────────────────────────── */
+@media(max-width:640px){
+  .kb-modal{width:96%;max-height:90vh;border-radius:14px}
+  .kb-visual{display:none}
+  .kb-cheatsheet{grid-template-columns:1fr}
+  .kb-row{padding:.55rem 0}
+}

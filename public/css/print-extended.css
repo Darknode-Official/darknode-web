@@ -1,0 +1,541 @@
+/* Copyright (c) 2026 SpartanKing18. All rights reserved. */
+/* Extended print styles — supplements print.css with report formatting,
+   tool output layouts, data table pagination, and security report templates.
+   All rules are inside @media print. */
+
+@media print {
+
+  /* ======================================================================
+     PAGE SETUP
+     ====================================================================== */
+  @page { size: A4; margin: 18mm 15mm 22mm 15mm; }
+  @page :first { margin-top: 10mm; }
+  @page :left { margin-left: 18mm; margin-right: 12mm; }
+  @page :right { margin-left: 12mm; margin-right: 18mm; }
+
+  /* Page break helpers */
+  .print-break-before { break-before: page; }
+  .print-break-after { break-after: page; }
+  .print-break-avoid { break-inside: avoid; }
+  .print-break-inside-auto { break-inside: auto; }
+  .print-keep-together { break-inside: avoid; }
+
+  /* ======================================================================
+     TYPOGRAPHY FOR PRINT
+     ====================================================================== */
+  body {
+    font-family: "Georgia", "Times New Roman", Times, serif;
+    font-size: 11pt;
+    line-height: 1.5;
+    color: #000;
+    background: #fff;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    color: #111;
+    break-after: avoid;
+    orphans: 3;
+    widows: 3;
+  }
+
+  h1 { font-size: 22pt; margin: 0 0 12pt; border-bottom: 2pt solid #111; padding-bottom: 4pt; }
+  h2 { font-size: 16pt; margin: 18pt 0 8pt; border-bottom: 0.5pt solid #ccc; padding-bottom: 3pt; }
+  h3 { font-size: 13pt; margin: 14pt 0 6pt; }
+  h4 { font-size: 11pt; margin: 10pt 0 4pt; font-weight: 700; }
+
+  p { orphans: 3; widows: 3; margin: 0 0 8pt; }
+
+  /* Code in print */
+  code, pre, .code-editor, .terminal {
+    font-family: "Courier New", Courier, monospace;
+    font-size: 9pt;
+    background: #f5f5f5;
+    border: 0.5pt solid #ddd;
+    break-inside: avoid;
+  }
+  pre { padding: 8pt; border-radius: 3pt; overflow: visible; white-space: pre-wrap; word-break: break-all; }
+  code { padding: 1pt 3pt; border-radius: 2pt; }
+
+  /* Links — show URL after the text */
+  a[href]::after { content: " (" attr(href) ")"; font-size: 9pt; color: #555; font-style: italic; }
+  a[href^="#"]::after { content: none; }
+  a[href^="javascript:"]::after { content: none; }
+  a { color: #111; text-decoration: underline; }
+
+  /* ======================================================================
+     HIDE INTERACTIVE ELEMENTS
+     ====================================================================== */
+  .no-print,
+  .hamburger,
+  .toast-container,
+  .modal,
+  .modal-overlay,
+  .dropdown-menu:not(.print-show),
+  .tooltip-content,
+  button:not(.print-show),
+  input[type="button"],
+  input[type="submit"],
+  input[type="reset"],
+  .btn:not(.print-show),
+  .scroll-progress-bar,
+  .cursor-trail-dot,
+  .bootscreen,
+  #bootscreen,
+  .back-to-top,
+  .chat-widget,
+  .cookie-banner,
+  nav:not(.print-show),
+  .sidebar:not(.print-show),
+  .floating-action,
+  .tab-bar:not(.print-show),
+  video, audio, iframe,
+  .spinner-ring,
+  .loading-dots,
+  .skel,
+  .loading-shimmer { display: none !important; }
+
+  /* Stop all animations */
+  *, *::before, *::after {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+    transition-duration: 0s !important;
+    transition-delay: 0s !important;
+  }
+
+  /* ======================================================================
+     DATA TABLES FOR PRINT
+     ====================================================================== */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    break-inside: auto;
+    font-size: 9pt;
+  }
+  thead { display: table-header-group; }
+  tfoot { display: table-footer-group; }
+  tr { break-inside: avoid; break-after: auto; }
+  th, td {
+    border: 0.5pt solid #999;
+    padding: 4pt 6pt;
+    text-align: left;
+    vertical-align: top;
+  }
+  th {
+    background: #eee;
+    font-weight: 700;
+    font-size: 8pt;
+    text-transform: uppercase;
+    letter-spacing: 0.5pt;
+  }
+  tr:nth-child(even) td { background: #fafafa; }
+
+  /* Severity cells */
+  td.severity-critical { background: #fce4e4; color: #b00; font-weight: 700; }
+  td.severity-high { background: #fff3e0; color: #c65100; font-weight: 700; }
+  td.severity-medium { background: #fff8e1; color: #996a00; }
+  td.severity-low { background: #e8f5e9; color: #2e7d32; }
+  td.severity-info { background: #e3f2fd; color: #1565c0; }
+
+  /* Table caption */
+  caption {
+    font-size: 10pt;
+    font-weight: 700;
+    text-align: left;
+    margin-bottom: 4pt;
+    caption-side: top;
+  }
+
+  /* ======================================================================
+     SECURITY REPORT TEMPLATE
+     ====================================================================== */
+  .print-report-cover {
+    text-align: center;
+    padding: 80pt 0 40pt;
+    break-after: page;
+  }
+  .print-report-cover h1 {
+    font-size: 28pt;
+    border: none;
+    margin-bottom: 8pt;
+  }
+  .print-report-cover .subtitle {
+    font-size: 14pt;
+    color: #555;
+    margin-bottom: 24pt;
+  }
+  .print-report-cover .meta {
+    font-size: 10pt;
+    color: #777;
+    line-height: 1.8;
+  }
+  .print-report-cover .logo {
+    width: 80pt;
+    height: auto;
+    margin-bottom: 24pt;
+  }
+
+  /* Executive summary box */
+  .print-exec-summary {
+    border: 1pt solid #333;
+    padding: 12pt;
+    margin: 12pt 0;
+    background: #f9f9f9;
+    break-inside: avoid;
+  }
+  .print-exec-summary h3 {
+    margin: 0 0 6pt;
+    font-size: 12pt;
+    border-bottom: 0.5pt solid #ccc;
+    padding-bottom: 3pt;
+  }
+
+  /* Finding card */
+  .print-finding {
+    border: 0.5pt solid #ccc;
+    border-left: 4pt solid #999;
+    padding: 8pt 10pt;
+    margin: 10pt 0;
+    break-inside: avoid;
+  }
+  .print-finding.critical { border-left-color: #d32f2f; }
+  .print-finding.high { border-left-color: #e65100; }
+  .print-finding.medium { border-left-color: #f9a825; }
+  .print-finding.low { border-left-color: #2e7d32; }
+  .print-finding.info { border-left-color: #1565c0; }
+
+  .print-finding h4 { margin: 0 0 4pt; font-size: 11pt; }
+  .print-finding .finding-meta {
+    font-size: 8pt;
+    color: #666;
+    margin-bottom: 6pt;
+  }
+  .print-finding .finding-desc { font-size: 10pt; margin-bottom: 6pt; }
+  .print-finding .finding-remediation {
+    background: #f0f7ff;
+    border: 0.5pt solid #bee;
+    padding: 4pt 6pt;
+    border-radius: 2pt;
+    font-size: 9pt;
+  }
+
+  /* Risk matrix */
+  .print-risk-matrix {
+    width: 100%;
+    break-inside: avoid;
+  }
+  .print-risk-matrix td {
+    width: 20%;
+    height: 40pt;
+    text-align: center;
+    vertical-align: middle;
+    font-size: 9pt;
+    font-weight: 700;
+  }
+  .print-risk-matrix .rm-critical { background: #ffcdd2; }
+  .print-risk-matrix .rm-high { background: #ffe0b2; }
+  .print-risk-matrix .rm-medium { background: #fff9c4; }
+  .print-risk-matrix .rm-low { background: #c8e6c9; }
+  .print-risk-matrix .rm-none { background: #e3f2fd; }
+
+  /* Statistics summary */
+  .print-stats-row {
+    display: flex;
+    gap: 12pt;
+    margin: 12pt 0;
+    break-inside: avoid;
+  }
+  .print-stat-box {
+    flex: 1;
+    text-align: center;
+    border: 0.5pt solid #ccc;
+    padding: 8pt 4pt;
+    border-radius: 3pt;
+  }
+  .print-stat-box .stat-value { font-size: 20pt; font-weight: 700; color: #111; }
+  .print-stat-box .stat-label { font-size: 8pt; color: #666; text-transform: uppercase; letter-spacing: 0.5pt; }
+
+  /* Timeline for print */
+  .print-timeline {
+    border-left: 1pt solid #999;
+    margin-left: 20pt;
+    padding-left: 16pt;
+  }
+  .print-timeline-item {
+    margin-bottom: 10pt;
+    position: relative;
+    break-inside: avoid;
+  }
+  .print-timeline-item::before {
+    content: "";
+    position: absolute;
+    left: -20pt;
+    top: 4pt;
+    width: 8pt;
+    height: 8pt;
+    border-radius: 50%;
+    background: #555;
+    border: 1pt solid #333;
+  }
+  .print-timeline-item .time {
+    font-size: 8pt;
+    color: #888;
+    font-family: "Courier New", monospace;
+  }
+
+  /* Table of Contents */
+  .print-toc {
+    break-after: page;
+  }
+  .print-toc h2 {
+    font-size: 18pt;
+    margin-bottom: 12pt;
+  }
+  .print-toc-entry {
+    display: flex;
+    align-items: baseline;
+    margin: 3pt 0;
+    font-size: 10pt;
+  }
+  .print-toc-entry .toc-title { flex-shrink: 0; }
+  .print-toc-entry .toc-dots {
+    flex: 1;
+    border-bottom: 0.5pt dotted #999;
+    margin: 0 4pt;
+    min-width: 20pt;
+  }
+  .print-toc-entry .toc-page {
+    flex-shrink: 0;
+    font-variant-numeric: tabular-nums;
+  }
+  .print-toc-entry.level-1 { font-weight: 700; }
+  .print-toc-entry.level-2 { padding-left: 16pt; }
+  .print-toc-entry.level-3 { padding-left: 32pt; font-size: 9pt; }
+
+  /* Appendix */
+  .print-appendix { break-before: page; }
+  .print-appendix h2 { font-size: 16pt; }
+
+  /* Footer running */
+  .print-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    font-size: 8pt;
+    color: #999;
+    border-top: 0.5pt solid #ddd;
+    padding-top: 4pt;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  /* Header running */
+  .print-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    font-size: 8pt;
+    color: #999;
+    border-bottom: 0.5pt solid #ddd;
+    padding-bottom: 4pt;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  /* ======================================================================
+     TOOL OUTPUT FORMATTING
+     ====================================================================== */
+  .print-tool-output {
+    background: #f8f8f8;
+    border: 0.5pt solid #ddd;
+    padding: 8pt;
+    font-family: "Courier New", monospace;
+    font-size: 8pt;
+    line-height: 1.4;
+    white-space: pre-wrap;
+    word-break: break-all;
+    break-inside: avoid;
+    max-height: none;
+    overflow: visible;
+  }
+  .print-tool-output .line-num {
+    display: inline-block;
+    width: 30pt;
+    color: #999;
+    text-align: right;
+    padding-right: 6pt;
+    border-right: 0.5pt solid #ddd;
+    margin-right: 6pt;
+    user-select: none;
+  }
+
+  /* Scan results */
+  .print-scan-result {
+    border: 0.5pt solid #ccc;
+    margin: 8pt 0;
+    break-inside: avoid;
+  }
+  .print-scan-result .scan-header {
+    background: #eee;
+    padding: 4pt 8pt;
+    font-weight: 700;
+    font-size: 10pt;
+    border-bottom: 0.5pt solid #ccc;
+  }
+  .print-scan-result .scan-body { padding: 6pt 8pt; }
+
+  /* ======================================================================
+     IMAGES FOR PRINT
+     ====================================================================== */
+  img {
+    max-width: 100%;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  img.print-full { width: 100%; }
+  img.print-half { width: 48%; }
+  img.print-thumb { width: 80pt; }
+
+  figure {
+    break-inside: avoid;
+    margin: 8pt 0;
+  }
+  figcaption {
+    font-size: 9pt;
+    color: #666;
+    font-style: italic;
+    margin-top: 3pt;
+  }
+
+  /* ======================================================================
+     FORM DATA FOR PRINT
+     ====================================================================== */
+  input[type="text"],
+  input[type="email"],
+  input[type="url"],
+  textarea,
+  select {
+    border: 0.5pt solid #999;
+    padding: 3pt 6pt;
+    font-size: 10pt;
+    background: #fff;
+  }
+  input[type="checkbox"]::after {
+    content: "[ ]";
+    font-family: monospace;
+  }
+  input[type="checkbox"]:checked::after {
+    content: "[X]";
+    font-family: monospace;
+  }
+
+  /* ======================================================================
+     COLOR ADJUSTMENTS
+     ====================================================================== */
+  .badge, .tag, .chip, .label {
+    border: 0.5pt solid #999;
+    color: #333;
+    padding: 1pt 4pt;
+    font-size: 8pt;
+    background: #f0f0f0;
+  }
+
+  .alert, .callout, .notice {
+    border: 0.5pt solid #666;
+    padding: 6pt 8pt;
+    background: #f9f9f9;
+    color: #333;
+    break-inside: avoid;
+  }
+
+  /* Severity badges */
+  .badge-critical { background: #ffcdd2; color: #b00; border-color: #ef9a9a; }
+  .badge-high { background: #ffe0b2; color: #bf360c; border-color: #ffcc80; }
+  .badge-medium { background: #fff9c4; color: #f57f17; border-color: #fff176; }
+  .badge-low { background: #c8e6c9; color: #1b5e20; border-color: #a5d6a7; }
+  .badge-info { background: #bbdefb; color: #0d47a1; border-color: #90caf9; }
+
+  /* Progress bars static */
+  .progress-fx, .progress-bar {
+    background: #eee;
+    border: 0.5pt solid #ccc;
+    height: 10pt;
+    border-radius: 2pt;
+  }
+  .progress-fx .bar, .progress-bar .fill {
+    background: #666;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  /* ======================================================================
+     CHART / VIZ PLACEHOLDERS
+     ====================================================================== */
+  .chart-container, .viz-container {
+    border: 0.5pt solid #ccc;
+    padding: 4pt;
+    break-inside: avoid;
+    min-height: 150pt;
+  }
+  canvas { max-width: 100%; }
+  svg { max-width: 100%; height: auto; }
+
+  /* ======================================================================
+     MULTI-COLUMN LAYOUT
+     ====================================================================== */
+  .print-2col { columns: 2; column-gap: 16pt; column-rule: 0.5pt solid #ddd; }
+  .print-3col { columns: 3; column-gap: 12pt; column-rule: 0.5pt solid #ddd; }
+  .print-2col > *, .print-3col > * { break-inside: avoid; }
+
+  /* ======================================================================
+     WATERMARK
+     ====================================================================== */
+  .print-watermark::before {
+    content: attr(data-watermark);
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-45deg);
+    font-size: 60pt;
+    color: rgba(0,0,0,0.04);
+    font-weight: 900;
+    letter-spacing: 8pt;
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ======================================================================
+     UTILITIES
+     ====================================================================== */
+  .print-only { display: block !important; }
+  .screen-only { display: none !important; }
+  .print-center { text-align: center; }
+  .print-left { text-align: left; }
+  .print-right { text-align: right; }
+  .print-small { font-size: 8pt; }
+  .print-mono { font-family: "Courier New", monospace; }
+  .print-sans { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; }
+  .print-serif { font-family: Georgia, "Times New Roman", Times, serif; }
+  .print-nowrap { white-space: nowrap; }
+  .print-border { border: 0.5pt solid #ccc; }
+  .print-border-top { border-top: 0.5pt solid #ccc; }
+  .print-border-bottom { border-bottom: 0.5pt solid #ccc; }
+  .print-mt-0 { margin-top: 0; }
+  .print-mb-0 { margin-bottom: 0; }
+  .print-mt-1 { margin-top: 6pt; }
+  .print-mb-1 { margin-bottom: 6pt; }
+  .print-mt-2 { margin-top: 12pt; }
+  .print-mb-2 { margin-bottom: 12pt; }
+  .print-mt-3 { margin-top: 24pt; }
+  .print-mb-3 { margin-bottom: 24pt; }
+  .print-pt-0 { padding-top: 0; }
+  .print-pb-0 { padding-bottom: 0; }
+  .print-pt-1 { padding-top: 6pt; }
+  .print-pb-1 { padding-bottom: 6pt; }
+  .print-bg-light { background: #f8f8f8; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  .print-bg-white { background: #fff; }
+
+} /* end @media print */

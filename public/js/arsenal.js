@@ -91,7 +91,53 @@ function renderDir(main, title, sub, data) {
 
 export function renderArsenal(main) {
   const n = Object.values(ARSENAL).reduce((a, b) => a + b.length, 0);
-  renderDir(main, "Arsenal", `${n} hand-picked web tools and references from across the security and dev community — encoders, OSINT, cheat sheets, and coding utilities. Opens in a new tab.`, ARSENAL);
+  renderDir(main, "External Resources", `${n} external references and community tools — for when you need something outside the Darknode platform. Opens in a new tab.`, ARSENAL);
+}
+
+export function renderEngines(main) {
+  const engines = [
+    { name: "Threat Detection Engine", file: "threat-engine.js", desc: "IOC extraction, DGA domain detection, YARA rule matching, MITRE ATT&CK mapping, beaconing detection, malware classification", lines: 633, category: "Detection" },
+    { name: "Cryptographic Engine", file: "crypto-engine.js", desc: "MD5, SHA-1/256/512, AES-128/256, RSA math, HMAC, XOR/Caesar/Vigenere analysis, JWT decoder, X.509 parser", lines: 833, category: "Crypto" },
+    { name: "Forensic Analysis Engine", file: "forensic-engine.js", desc: "PE/ELF binary parser, hex viewer, file signature database, entropy calculator, string extractor, registry hive parser, timestamp converter", lines: 570, category: "Forensics" },
+    { name: "Network Analysis Engine", file: "network-engine.js", desc: "PCAP reader, TCP stream reassembly, TLS/DNS parsers, HTTP inspector, subnet calculator, ARP spoof detection, MAC vendor lookup", lines: 566, category: "Network" },
+    { name: "Exploit Framework", file: "exploit-framework.js", desc: "45+ reverse shells, shellcode encoder, buffer overflow tools, SQLi/XSS/SSRF/SSTI/XXE payload libraries, JWT attacks, deserialization", lines: 1567, category: "Offensive" },
+    { name: "Vulnerability Scanner Engine", file: "vuln-scanner-engine.js", desc: "CMS/tech stack detection, security header grading, CVSS v3.1 calculator, OWASP Top 10 checker, SSL/TLS analyzer, API security tester", lines: 1374, category: "Assessment" },
+    { name: "SIEM Engine", file: "siem-engine.js", desc: "6 log format parsers, 200+ detection rules, Sigma rule converter (Splunk/ELK/Sentinel), correlation engine, anomaly detection, user behavior analytics", lines: 1283, category: "Detection" },
+    { name: "IDS Rule Engine", file: "ids-engine.js", desc: "Snort/Suricata rule parser and matcher, 100+ built-in Snort rules, YARA parser, 50+ YARA rules, network flow analyzer, threat intel feed parser", lines: 668, category: "Detection" },
+    { name: "Red Team Engine", file: "redteam-engine.js", desc: "Full MITRE ATT&CK matrix (200+ techniques), kill chain mapper, AD attack paths, cloud attack patterns, social engineering playbooks, engagement scoping", lines: 1789, category: "Offensive" },
+    { name: "Blue Team Engine", file: "blueteam-engine.js", desc: "20 IR playbooks, Windows/Linux forensic artifacts, 75+ Splunk hunting queries, compliance mapper (NIST/ISO/SOC2/PCI/HIPAA/GDPR), tabletop exercises", lines: 1094, category: "Defensive" },
+    { name: "Malware Analysis Engine", file: "malware-engine.js", desc: "PE/ELF/Mach-O analyzers, API behavior classifier, 70+ packer signatures, 52 anti-analysis techniques, 80+ malware families, YARA rule generator", lines: 1346, category: "Forensics" },
+    { name: "OSINT Engine", file: "osint-engine.js", desc: "Email/domain/IP OSINT, 500+ subdomain wordlist, 200+ Google dorks, 35 social media platforms, metadata extractors, dark web patterns", lines: 969, category: "Recon" },
+    { name: "APT Defense Engine", file: "apt-defense.js", desc: "80+ real APT groups database, Diamond Model, kill chain coverage, STRIDE threat modeling, DREAD calculator, zero-day detection heuristics", lines: 1299, category: "Defense" },
+    { name: "Threat Hunting Engine", file: "threat-hunt.js", desc: "30+ hunting hypotheses with Splunk/KQL queries, Windows Event ID reference, Sysmon events, Linux audit logs, cloud log reference", lines: 724, category: "Detection" },
+    { name: "Cloud Security Engine", file: "cloud-security.js", desc: "AWS/Azure/GCP attack techniques, IAM policy analyzer, S3/security group checker, Kubernetes pod security, Terraform scanner, compliance mapper", lines: 707, category: "Cloud" },
+    { name: "IoT Security Engine", file: "iot-security.js", desc: "MQTT/CoAP/Modbus/DNP3 parsers, ICS/SCADA vulnerabilities, firmware analysis, 100+ default credentials, CAN bus parser, RF band reference", lines: 656, category: "IoT" },
+    { name: "Cyber Warfare Defense", file: "cyber-warfare.js", desc: "Nation-state threat actors, 16 critical infrastructure sectors, NIST CSF, election security, power grid/water/telecom protection, STIX/TAXII", lines: 1538, category: "Defense" },
+    { name: "Defense Operations", file: "defense-ops.js", desc: "SOC maturity model, alert triage, incident classification, STIX 2.1, vulnerability management, patch prioritization, security metrics/KPIs", lines: 897, category: "Operations" },
+  ];
+  const cats = [...new Set(engines.map(e => e.category))];
+  const totalLines = engines.reduce((a, e) => a + e.lines, 0);
+  const filterHtml = cats.map(c => '<button class="chip" data-c="' + esc(c) + '">' + esc(c) + '</button>').join("");
+  const cardsHtml = engines.map(e =>
+    '<div class="arse-card eng-card" data-cat="' + esc(e.category) + '" style="cursor:default">' +
+      '<div class="an">' + esc(e.name) + ' <span style="font-size:.7rem;color:var(--acc);font-weight:400">' + e.lines.toLocaleString() + ' lines</span></div>' +
+      '<div class="ad">' + esc(e.desc) + '</div>' +
+      '<div class="au" style="display:flex;gap:8px;align-items:center;margin-top:4px">' +
+        '<span class="chip" style="font-size:.65rem">' + esc(e.category) + '</span>' +
+        '<span style="color:var(--mut);font-size:.72rem">' + esc(e.file) + '</span>' +
+      '</div>' +
+    '</div>'
+  ).join("");
+  main.innerHTML =
+    '<h1 class="pg-h1">Security Engines</h1>' +
+    '<p class="muted pg-sub">' + engines.length + ' purpose-built engines — ' + totalLines.toLocaleString() + ' lines of security tooling running in your browser. No servers, no API calls, no data leaves your machine.</p>' +
+    '<div class="cs-filter" id="engFilter"><button class="chip on" data-c="all">All</button>' + filterHtml + '</div>' +
+    '<div class="arse-grid" id="engGrid">' + cardsHtml + '</div>';
+  main.querySelector("#engFilter").onclick = (e) => {
+    const b = e.target.closest(".chip"); if (!b) return;
+    main.querySelectorAll("#engFilter .chip").forEach(x => x.classList.toggle("on", x === b));
+    main.querySelectorAll(".eng-card").forEach(c => { c.style.display = (b.dataset.c === "all" || c.dataset.cat === b.dataset.c) ? "" : "none"; });
+  };
 }
 export function renderTraining(main) {
   const n = Object.values(TRAINING).reduce((a, b) => a + b.length, 0);

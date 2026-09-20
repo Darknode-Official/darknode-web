@@ -6477,13 +6477,13 @@ const REGEX_PATTERNS = [
     name: "Slack Token",
     pattern: "xox[bporas]-[0-9]{10,13}-[0-9]{10,13}-[a-zA-Z0-9]{24,34}",
     desc: "Match Slack API tokens (bot, user, app tokens).",
-    matches: ["xoxb-EXAMPLE-TOKEN-REDACTED"]
+    matches: ["<SLACK_BOT_TOKEN>"]
   },
   {
     name: "Generic API Key",
     pattern: "(?:api[_-]?key|apikey|api[_-]?token|access[_-]?token|API[_-]?KEY|API[_-]?TOKEN|Access[_-]?Token)\\s*[:=]\\s*['\"]?([a-zA-Z0-9_\\-]{20,})['\"]?",
     desc: "Match generic API key assignments in code and config files.",
-    matches: ["api_key=abcdef1234567890abcdef", "API_TOKEN: 'sk_live_abcdefghijklmnopqrstuv'", "apiKey=\"a1b2c3d4e5f6g7h8i9j0k1l2m3n4\""]
+    matches: ["api_key=abcdef1234567890abcdef", "API_TOKEN: '<STRIPE_SECRET_KEY>'", "apiKey=\"a1b2c3d4e5f6g7h8i9j0k1l2m3n4\""]
   },
 
   // ============================================================
@@ -6781,7 +6781,7 @@ const REGEX_PATTERNS = [
     name: "Stripe API Key",
     pattern: "(?:sk|pk)_(?:test|live)_[0-9a-zA-Z]{24,}",
     desc: "Match Stripe secret and publishable API keys.",
-    matches: ["sk_test_EXAMPLE_REDACTED", "pk_live_EXAMPLE_REDACTED"]
+    matches: ["<STRIPE_TEST_KEY>", "<STRIPE_PUB_KEY>"]
   },
   {
     name: "SendGrid API Key",

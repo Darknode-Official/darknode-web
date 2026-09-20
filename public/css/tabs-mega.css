@@ -1,0 +1,3879 @@
+/* ==========================================================================
+   TABS-MEGA.CSS -- Darknode Comprehensive Tab System
+   Dark cyberpunk-themed tab components for darknode.ai
+   ========================================================================== */
+
+/* ==========================================================================
+   1. BASE HORIZONTAL TAB BAR
+   ========================================================================== */
+
+.tabs-container {
+  position: relative;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  isolation: isolate;
+}
+
+.tab-list {
+  display: flex;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  gap: 2px;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+  align-items: stretch;
+  flex-wrap: nowrap;
+  z-index: 2;
+}
+
+.tab-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--txt-2);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  background: none;
+  white-space: nowrap;
+  position: relative;
+  user-select: none;
+  text-decoration: none;
+  letter-spacing: 0.01em;
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+  flex-shrink: 0;
+}
+
+.tab-item::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: var(--r-sm);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+
+.tab-item.active {
+  color: var(--acc);
+  font-weight: 600;
+}
+
+.tab-item:hover {
+  color: var(--txt);
+}
+
+.tab-item:hover::before {
+  background: rgba(242, 245, 249, 0.04);
+  opacity: 1;
+}
+
+.tab-item:active {
+  color: var(--txt);
+  transform: scale(0.98);
+}
+
+.tab-item:focus-visible {
+  outline: 2px solid var(--acc);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
+}
+
+.tab-panel {
+  padding: 20px 0;
+  display: none;
+  position: relative;
+  z-index: 1;
+  animation: none;
+}
+
+.tab-panel.active {
+  display: block;
+}
+
+.tab-ink-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  background: var(--acc);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 1px 1px 0 0;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.tab-ink-bar::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--acc);
+  filter: blur(4px);
+  opacity: 0.4;
+  border-radius: inherit;
+}
+
+
+/* ==========================================================================
+   2. TAB VARIANTS
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   2a. UNDERLINE VARIANT (default)
+   -------------------------------------------------------------------------- */
+
+.tabs-underline .tab-list {
+  border-bottom: 1px solid var(--border);
+  gap: 0;
+}
+
+.tabs-underline .tab-item {
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.tabs-underline .tab-item.active {
+  color: var(--acc);
+  border-bottom-color: var(--acc);
+}
+
+.tabs-underline .tab-item:hover {
+  color: var(--txt);
+  border-bottom-color: rgba(0, 212, 255, 0.3);
+}
+
+.tabs-underline .tab-item:hover::before {
+  display: none;
+}
+
+.tabs-underline .tab-item.active:hover {
+  border-bottom-color: var(--acc);
+}
+
+.tabs-underline .tab-ink-bar {
+  display: block;
+  bottom: -1px;
+}
+
+.tabs-underline .tab-ink-bar::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -2px;
+  height: 6px;
+  background: var(--acc);
+  filter: blur(6px);
+  opacity: 0.3;
+}
+
+/* --------------------------------------------------------------------------
+   2b. BOXED VARIANT
+   -------------------------------------------------------------------------- */
+
+.tabs-boxed .tab-list {
+  background: var(--bg-2);
+  border-radius: var(--r-md);
+  padding: 4px;
+  border-bottom: none;
+  gap: 2px;
+}
+
+.tabs-boxed .tab-item {
+  border-radius: var(--r-sm);
+  transition: all 0.25s ease;
+  padding: 8px 16px;
+  border-bottom: none;
+}
+
+.tabs-boxed .tab-item.active {
+  background: var(--surface);
+  color: var(--acc);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+.tabs-boxed .tab-item:hover:not(.active) {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--txt);
+}
+
+.tabs-boxed .tab-item:active:not(.active) {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.tabs-boxed .tab-ink-bar {
+  display: none;
+}
+
+.tabs-boxed .tab-item::before {
+  display: none;
+}
+
+/* --------------------------------------------------------------------------
+   2c. PILLS VARIANT
+   -------------------------------------------------------------------------- */
+
+.tabs-pills .tab-list {
+  border-bottom: none;
+  gap: 6px;
+  padding: 0;
+}
+
+.tabs-pills .tab-item {
+  border-radius: 9999px;
+  padding: 8px 18px;
+  transition: all 0.2s ease;
+  border-bottom: none;
+}
+
+.tabs-pills .tab-item.active {
+  background: var(--acc);
+  color: var(--bg);
+  font-weight: 600;
+  box-shadow: 0 0 12px rgba(0, 212, 255, 0.3);
+}
+
+.tabs-pills .tab-item:hover:not(.active) {
+  background: rgba(0, 212, 255, 0.1);
+  color: var(--txt);
+}
+
+.tabs-pills .tab-item:active:not(.active) {
+  background: rgba(0, 212, 255, 0.15);
+}
+
+.tabs-pills .tab-item.active:hover {
+  background: var(--acc);
+  box-shadow: 0 0 16px rgba(0, 212, 255, 0.4);
+}
+
+.tabs-pills .tab-ink-bar {
+  display: none;
+}
+
+.tabs-pills .tab-item::before {
+  display: none;
+}
+
+/* --------------------------------------------------------------------------
+   2d. SEGMENT VARIANT
+   -------------------------------------------------------------------------- */
+
+.tabs-segment .tab-list {
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--bg-2);
+  padding: 3px;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.tabs-segment .tab-item {
+  flex: 1;
+  justify-content: center;
+  text-align: center;
+  padding: 8px 16px;
+  border-radius: calc(var(--r-md) - 3px);
+  transition: all 0.25s ease;
+  border-bottom: none;
+  position: relative;
+  z-index: 1;
+}
+
+.tabs-segment .tab-item + .tab-item::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 25%;
+  bottom: 25%;
+  width: 1px;
+  background: var(--border);
+  transition: opacity 0.2s ease;
+}
+
+.tabs-segment .tab-item.active + .tab-item::after,
+.tabs-segment .tab-item + .tab-item.active::after {
+  opacity: 0;
+}
+
+.tabs-segment .tab-item.active {
+  background: var(--surface);
+  color: var(--acc);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+.tabs-segment .tab-item:hover:not(.active) {
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--txt);
+}
+
+.tabs-segment .tab-item:active:not(.active) {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.tabs-segment .tab-ink-bar {
+  display: none;
+}
+
+.tabs-segment .tab-item::before {
+  display: none;
+}
+
+/* --------------------------------------------------------------------------
+   2e. MINIMAL VARIANT
+   -------------------------------------------------------------------------- */
+
+.tabs-minimal .tab-list {
+  border-bottom: none;
+  gap: 4px;
+  padding: 0;
+}
+
+.tabs-minimal .tab-item {
+  background: none;
+  border: none;
+  border-bottom: none;
+  padding: 8px 12px;
+  transition: color 0.2s ease, text-shadow 0.2s ease;
+}
+
+.tabs-minimal .tab-item.active {
+  color: var(--acc);
+  text-shadow: 0 0 12px rgba(0, 212, 255, 0.3);
+  font-weight: 600;
+}
+
+.tabs-minimal .tab-item:hover:not(.active) {
+  color: var(--txt);
+}
+
+.tabs-minimal .tab-item:active:not(.active) {
+  color: var(--txt);
+  opacity: 0.8;
+}
+
+.tabs-minimal .tab-ink-bar {
+  display: none;
+}
+
+.tabs-minimal .tab-item::before {
+  display: none;
+}
+
+
+/* ==========================================================================
+   3. SIZES
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   3a. SMALL
+   -------------------------------------------------------------------------- */
+
+.tabs-sm .tab-item {
+  font-size: 12px;
+  padding: 6px 12px;
+  gap: 4px;
+  line-height: 1.4;
+}
+
+.tabs-sm .tab-icon {
+  width: 14px;
+  height: 14px;
+}
+
+.tabs-sm .tab-badge {
+  font-size: 9px;
+  min-width: 16px;
+  padding: 0 4px;
+  height: 16px;
+  line-height: 16px;
+}
+
+.tabs-sm .tab-close {
+  width: 14px;
+  height: 14px;
+}
+
+.tabs-sm .tab-step-number {
+  width: 24px;
+  height: 24px;
+  font-size: 11px;
+}
+
+.tabs-sm .tab-step-label {
+  font-size: 10px;
+}
+
+.tabs-sm .tab-step-description {
+  font-size: 9px;
+}
+
+.tabs-sm.tabs-boxed .tab-list {
+  padding: 3px;
+}
+
+.tabs-sm.tabs-boxed .tab-item {
+  padding: 5px 12px;
+}
+
+.tabs-sm.tabs-pills .tab-item {
+  padding: 5px 14px;
+}
+
+.tabs-sm.tabs-segment .tab-item {
+  padding: 5px 12px;
+}
+
+/* --------------------------------------------------------------------------
+   3b. MEDIUM (default)
+   -------------------------------------------------------------------------- */
+
+.tabs-md .tab-item {
+  font-size: 14px;
+  padding: 10px 16px;
+  gap: 6px;
+  line-height: 1.4;
+}
+
+.tabs-md .tab-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.tabs-md .tab-badge {
+  font-size: 10px;
+  min-width: 18px;
+  padding: 0 5px;
+  height: 18px;
+  line-height: 18px;
+}
+
+.tabs-md .tab-close {
+  width: 16px;
+  height: 16px;
+}
+
+.tabs-md .tab-step-number {
+  width: 32px;
+  height: 32px;
+  font-size: 14px;
+}
+
+.tabs-md .tab-step-label {
+  font-size: 12px;
+}
+
+.tabs-md .tab-step-description {
+  font-size: 11px;
+}
+
+/* --------------------------------------------------------------------------
+   3c. LARGE
+   -------------------------------------------------------------------------- */
+
+.tabs-lg .tab-item {
+  font-size: 16px;
+  padding: 12px 20px;
+  gap: 8px;
+  line-height: 1.5;
+}
+
+.tabs-lg .tab-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.tabs-lg .tab-badge {
+  font-size: 11px;
+  min-width: 20px;
+  padding: 0 6px;
+  height: 20px;
+  line-height: 20px;
+}
+
+.tabs-lg .tab-close {
+  width: 18px;
+  height: 18px;
+}
+
+.tabs-lg .tab-step-number {
+  width: 40px;
+  height: 40px;
+  font-size: 16px;
+}
+
+.tabs-lg .tab-step-label {
+  font-size: 14px;
+}
+
+.tabs-lg .tab-step-description {
+  font-size: 12px;
+}
+
+.tabs-lg.tabs-boxed .tab-list {
+  padding: 5px;
+}
+
+.tabs-lg.tabs-boxed .tab-item {
+  padding: 10px 20px;
+}
+
+.tabs-lg.tabs-pills .tab-item {
+  padding: 10px 24px;
+}
+
+.tabs-lg.tabs-segment .tab-item {
+  padding: 10px 20px;
+}
+
+.tabs-lg .tab-ink-bar {
+  height: 3px;
+}
+
+
+/* ==========================================================================
+   4. POSITIONS
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   4a. TOP (default)
+   -------------------------------------------------------------------------- */
+
+.tabs-top {
+  flex-direction: column;
+}
+
+.tabs-top .tab-list {
+  border-bottom: 1px solid var(--border);
+}
+
+.tabs-top .tab-ink-bar {
+  bottom: 0;
+  top: auto;
+}
+
+/* --------------------------------------------------------------------------
+   4b. BOTTOM
+   -------------------------------------------------------------------------- */
+
+.tabs-bottom {
+  flex-direction: column-reverse;
+}
+
+.tabs-bottom .tab-list {
+  border-bottom: none;
+  border-top: 1px solid var(--border);
+}
+
+.tabs-bottom .tab-ink-bar {
+  bottom: auto;
+  top: 0;
+  border-radius: 0 0 1px 1px;
+}
+
+.tabs-bottom .tab-panel {
+  padding: 0 0 20px 0;
+}
+
+.tabs-bottom.tabs-underline .tab-item {
+  border-bottom: none;
+  border-top: 2px solid transparent;
+  margin-bottom: 0;
+  margin-top: -1px;
+}
+
+.tabs-bottom.tabs-underline .tab-item.active {
+  border-top-color: var(--acc);
+  border-bottom-color: transparent;
+}
+
+.tabs-bottom.tabs-underline .tab-item:hover {
+  border-top-color: rgba(0, 212, 255, 0.3);
+}
+
+.tabs-bottom.tabs-underline .tab-ink-bar {
+  top: -1px;
+  bottom: auto;
+}
+
+/* --------------------------------------------------------------------------
+   4c. LEFT (vertical)
+   -------------------------------------------------------------------------- */
+
+.tabs-left {
+  flex-direction: row;
+}
+
+.tabs-left .tab-list {
+  flex-direction: column;
+  border-bottom: none;
+  border-right: 1px solid var(--border);
+  width: auto;
+  min-width: 160px;
+  max-width: 280px;
+  gap: 2px;
+  padding: 4px 0;
+  align-items: stretch;
+  flex-shrink: 0;
+}
+
+.tabs-left .tab-item {
+  width: 100%;
+  text-align: left;
+  justify-content: flex-start;
+  white-space: nowrap;
+  border-bottom: none;
+}
+
+.tabs-left .tab-ink-bar {
+  left: auto;
+  right: 0;
+  bottom: auto;
+  width: 2px;
+  height: 0;
+  border-radius: 1px 0 0 1px;
+}
+
+.tabs-left .tab-ink-bar::after {
+  left: auto;
+  right: -2px;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  height: 100%;
+}
+
+.tabs-left .tab-panel {
+  flex: 1;
+  padding: 0 0 0 20px;
+  min-width: 0;
+}
+
+.tabs-left.tabs-underline .tab-item {
+  border-bottom: none;
+  border-right: 2px solid transparent;
+  margin-bottom: 0;
+  margin-right: -1px;
+}
+
+.tabs-left.tabs-underline .tab-item.active {
+  border-right-color: var(--acc);
+  border-bottom-color: transparent;
+}
+
+.tabs-left.tabs-underline .tab-item:hover {
+  border-right-color: rgba(0, 212, 255, 0.3);
+}
+
+.tabs-left.tabs-boxed .tab-list {
+  border-right: none;
+  min-width: 140px;
+}
+
+.tabs-left.tabs-boxed .tab-item {
+  justify-content: flex-start;
+}
+
+.tabs-left.tabs-pills .tab-list {
+  border-right: none;
+  min-width: 140px;
+}
+
+.tabs-left.tabs-pills .tab-item {
+  border-radius: var(--r-md);
+  justify-content: flex-start;
+}
+
+/* --------------------------------------------------------------------------
+   4d. RIGHT (vertical)
+   -------------------------------------------------------------------------- */
+
+.tabs-right {
+  flex-direction: row-reverse;
+}
+
+.tabs-right .tab-list {
+  flex-direction: column;
+  border-bottom: none;
+  border-left: 1px solid var(--border);
+  width: auto;
+  min-width: 160px;
+  max-width: 280px;
+  gap: 2px;
+  padding: 4px 0;
+  align-items: stretch;
+  flex-shrink: 0;
+}
+
+.tabs-right .tab-item {
+  width: 100%;
+  text-align: left;
+  justify-content: flex-start;
+  white-space: nowrap;
+  border-bottom: none;
+}
+
+.tabs-right .tab-ink-bar {
+  right: auto;
+  left: 0;
+  bottom: auto;
+  width: 2px;
+  height: 0;
+  border-radius: 0 1px 1px 0;
+}
+
+.tabs-right .tab-ink-bar::after {
+  right: auto;
+  left: -2px;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  height: 100%;
+}
+
+.tabs-right .tab-panel {
+  flex: 1;
+  padding: 0 20px 0 0;
+  min-width: 0;
+}
+
+.tabs-right.tabs-underline .tab-item {
+  border-bottom: none;
+  border-left: 2px solid transparent;
+  margin-bottom: 0;
+  margin-left: -1px;
+}
+
+.tabs-right.tabs-underline .tab-item.active {
+  border-left-color: var(--acc);
+  border-bottom-color: transparent;
+}
+
+.tabs-right.tabs-underline .tab-item:hover {
+  border-left-color: rgba(0, 212, 255, 0.3);
+}
+
+.tabs-right.tabs-boxed .tab-list {
+  border-left: none;
+  min-width: 140px;
+}
+
+.tabs-right.tabs-pills .tab-list {
+  border-left: none;
+  min-width: 140px;
+}
+
+.tabs-right.tabs-pills .tab-item {
+  border-radius: var(--r-md);
+  justify-content: flex-start;
+}
+
+
+/* ==========================================================================
+   5. TABS WITH ICON / BADGE / CLOSE / DROPDOWN
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   5a. TAB ICON
+   -------------------------------------------------------------------------- */
+
+.tab-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  color: currentColor;
+  transition: color 0.2s ease;
+}
+
+.tab-icon svg {
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.tab-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 2px;
+}
+
+.tab-item.active .tab-icon {
+  color: var(--acc);
+}
+
+/* --------------------------------------------------------------------------
+   5b. TAB BADGE
+   -------------------------------------------------------------------------- */
+
+.tab-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--danger);
+  color: #ffffff;
+  border-radius: 9999px;
+  font-family: var(--sans);
+  font-size: 10px;
+  font-weight: 700;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  text-align: center;
+  margin-left: 4px;
+  line-height: 1;
+  flex-shrink: 0;
+  letter-spacing: -0.02em;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.tab-badge-sm {
+  font-size: 9px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+}
+
+.tab-badge-lg {
+  font-size: 11px;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+}
+
+.tab-badge-primary {
+  background: var(--acc);
+  color: var(--bg);
+}
+
+.tab-badge-secondary {
+  background: var(--acc-2);
+  color: #ffffff;
+}
+
+.tab-badge-success {
+  background: var(--success);
+  color: var(--bg);
+}
+
+.tab-badge-warn {
+  background: var(--warn);
+  color: var(--bg);
+}
+
+.tab-badge-dot {
+  width: 6px;
+  height: 6px;
+  min-width: 6px;
+  border-radius: 50%;
+  background: var(--danger);
+  padding: 0;
+  font-size: 0;
+  margin-left: 4px;
+  flex-shrink: 0;
+  color: transparent;
+  overflow: hidden;
+}
+
+.tab-badge-dot-success {
+  background: var(--success);
+}
+
+.tab-badge-dot-warn {
+  background: var(--warn);
+}
+
+.tab-badge-dot-primary {
+  background: var(--acc);
+}
+
+.tab-badge-pulse {
+  animation: tab-badge-pulse 2s infinite;
+}
+
+@keyframes tab-badge-pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.1);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   5c. TAB CLOSE
+   -------------------------------------------------------------------------- */
+
+.tab-close {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+  margin-left: auto;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--txt-2);
+  cursor: pointer;
+  flex-shrink: 0;
+  font-size: 12px;
+  line-height: 1;
+}
+
+.tab-item:hover .tab-close {
+  opacity: 0.6;
+}
+
+.tab-item .tab-close:hover {
+  opacity: 1;
+  background: rgba(239, 68, 68, 0.2);
+  color: var(--danger);
+}
+
+.tab-item .tab-close:active {
+  background: rgba(239, 68, 68, 0.3);
+  transform: scale(0.9);
+}
+
+.tab-close svg {
+  width: 10px;
+  height: 10px;
+  stroke: currentColor;
+  stroke-width: 2.5;
+}
+
+.tab-close::before {
+  content: "\00d7";
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1;
+}
+
+.tab-close svg + .tab-close::before {
+  display: none;
+}
+
+/* --------------------------------------------------------------------------
+   5d. TAB DROPDOWN
+   -------------------------------------------------------------------------- */
+
+.tab-dropdown {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 12px;
+  height: 12px;
+  margin-left: 2px;
+  transition: transform 0.2s ease;
+  color: currentColor;
+  flex-shrink: 0;
+}
+
+.tab-dropdown svg {
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+}
+
+.tab-dropdown::after {
+  content: "";
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 4px solid currentColor;
+  transition: transform 0.2s ease;
+}
+
+.tab-item.dropdown-open .tab-dropdown {
+  transform: rotate(180deg);
+}
+
+.tab-item.dropdown-open .tab-dropdown::after {
+  transform: rotate(180deg);
+}
+
+.tab-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+  min-width: 180px;
+  padding: 4px;
+  margin-top: 4px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px);
+  transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s ease;
+}
+
+.tab-item.dropdown-open .tab-dropdown-menu {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.tab-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  color: var(--txt-2);
+  font-size: 13px;
+  font-family: var(--sans);
+  border-radius: var(--r-sm);
+  transition: background-color 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+}
+
+.tab-dropdown-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--txt);
+}
+
+.tab-dropdown-item:active {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.tab-dropdown-item.active {
+  color: var(--acc);
+  background: rgba(0, 212, 255, 0.08);
+}
+
+.tab-dropdown-item .tab-icon {
+  width: 14px;
+  height: 14px;
+}
+
+.tab-dropdown-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 8px;
+}
+
+.tab-dropdown-header {
+  padding: 6px 12px 4px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--txt-2);
+  opacity: 0.6;
+}
+
+
+/* ==========================================================================
+   6. OVERFLOW HANDLING
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   6a. SCROLLABLE TABS
+   -------------------------------------------------------------------------- */
+
+.tabs-scrollable {
+  position: relative;
+}
+
+.tabs-scrollable .tab-list {
+  overflow: hidden;
+}
+
+.tabs-scroll-container {
+  display: flex;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  flex: 1;
+  align-items: stretch;
+}
+
+.tabs-scroll-container::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+/* --------------------------------------------------------------------------
+   6b. SCROLL BUTTONS
+   -------------------------------------------------------------------------- */
+
+.tab-scroll-btn {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  cursor: pointer;
+  opacity: 0.8;
+  transition: opacity 0.2s ease;
+  border: none;
+  padding: 0;
+  color: var(--txt-2);
+}
+
+.tab-scroll-btn:hover {
+  opacity: 1;
+  color: var(--txt);
+}
+
+.tab-scroll-btn:active {
+  opacity: 0.9;
+}
+
+.tab-scroll-btn-left {
+  left: 0;
+  background: linear-gradient(to right, var(--surface) 60%, transparent);
+}
+
+.tab-scroll-btn-right {
+  right: 0;
+  background: linear-gradient(to left, var(--surface) 60%, transparent);
+}
+
+.tab-scroll-btn.hidden {
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+}
+
+.tab-scroll-btn svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+}
+
+.tab-scroll-btn::after {
+  content: "";
+  width: 0;
+  height: 0;
+}
+
+.tab-scroll-btn-left::after {
+  border-right: 6px solid currentColor;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+}
+
+.tab-scroll-btn-right::after {
+  border-left: 6px solid currentColor;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+}
+
+/* --------------------------------------------------------------------------
+   6c. OVERFLOW DROPDOWN
+   -------------------------------------------------------------------------- */
+
+.tabs-overflow-dropdown {
+  position: relative;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tabs-overflow-dropdown.visible {
+  display: inline-flex;
+}
+
+.tabs-overflow-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--txt-2);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  padding: 0;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.tabs-overflow-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--txt);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.tabs-overflow-btn:active {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.tabs-overflow-btn::after {
+  content: "\2026";
+}
+
+.tabs-overflow-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+  min-width: 200px;
+  max-height: 320px;
+  overflow-y: auto;
+  padding: 4px;
+  margin-top: 4px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px);
+  transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s ease;
+}
+
+.tabs-overflow-menu.open {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.tabs-overflow-menu::-webkit-scrollbar {
+  width: 4px;
+}
+
+.tabs-overflow-menu::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.tabs-overflow-menu::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 2px;
+}
+
+.tabs-overflow-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  color: var(--txt-2);
+  font-size: 13px;
+  font-family: var(--sans);
+  border-radius: var(--r-sm);
+  transition: background-color 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+}
+
+.tabs-overflow-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--txt);
+}
+
+.tabs-overflow-item.active {
+  color: var(--acc);
+  background: rgba(0, 212, 255, 0.08);
+}
+
+.tabs-overflow-count {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--txt-2);
+  background: var(--bg-2);
+  border-radius: 9999px;
+  padding: 1px 6px;
+  margin-left: auto;
+}
+
+
+/* ==========================================================================
+   7. DRAG REORDER
+   ========================================================================== */
+
+.tab-item.draggable {
+  cursor: grab;
+  touch-action: none;
+}
+
+.tab-item.draggable:active {
+  cursor: grabbing;
+}
+
+.tab-item.dragging {
+  opacity: 0.5;
+  cursor: grabbing;
+  z-index: 100;
+  pointer-events: none;
+  transform: scale(0.95);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  background: var(--surface);
+  border-radius: var(--r-sm);
+}
+
+.tab-item.drag-over {
+  border-left: 2px solid var(--acc);
+  box-shadow: -2px 0 0 0 var(--acc);
+  margin-left: -2px;
+}
+
+.tab-item.drag-over-right {
+  border-right: 2px solid var(--acc);
+  box-shadow: 2px 0 0 0 var(--acc);
+  margin-right: -2px;
+}
+
+.tab-item.drag-placeholder {
+  background: rgba(0, 212, 255, 0.05);
+  border: 1px dashed rgba(0, 212, 255, 0.3);
+  border-radius: var(--r-sm);
+  opacity: 0.6;
+}
+
+.tab-drop-indicator {
+  position: absolute;
+  width: 2px;
+  height: 100%;
+  top: 0;
+  background: var(--acc);
+  transition: left 0.15s ease, opacity 0.15s ease;
+  z-index: 50;
+  pointer-events: none;
+  border-radius: 1px;
+}
+
+.tab-drop-indicator::before {
+  content: "";
+  position: absolute;
+  top: -3px;
+  left: -3px;
+  width: 8px;
+  height: 8px;
+  background: var(--acc);
+  border-radius: 50%;
+}
+
+.tab-drop-indicator::after {
+  content: "";
+  position: absolute;
+  bottom: -3px;
+  left: -3px;
+  width: 8px;
+  height: 8px;
+  background: var(--acc);
+  border-radius: 50%;
+}
+
+.tab-drag-ghost {
+  position: fixed;
+  pointer-events: none;
+  z-index: 10000;
+  opacity: 0.85;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  padding: 8px 16px;
+  font-size: 13px;
+  color: var(--txt);
+  font-family: var(--sans);
+  white-space: nowrap;
+}
+
+
+/* ==========================================================================
+   8. NESTED TABS
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Level 1 (direct nested)
+   -------------------------------------------------------------------------- */
+
+.tabs-nested {
+  margin-top: 0;
+}
+
+.tabs-nested .tab-list {
+  border-bottom-color: rgba(30, 41, 59, 0.6);
+  font-size: 13px;
+  padding-left: 12px;
+}
+
+.tabs-nested .tab-item {
+  font-size: 13px;
+  padding: 8px 14px;
+  color: var(--txt-2);
+}
+
+.tabs-nested .tab-item.active {
+  color: var(--acc-2);
+  font-weight: 600;
+}
+
+.tabs-nested .tab-item:hover {
+  color: var(--txt);
+}
+
+.tabs-nested .tab-panel {
+  padding-left: 12px;
+  padding-top: 16px;
+}
+
+.tabs-nested .tab-ink-bar {
+  background: var(--acc-2);
+  height: 2px;
+}
+
+.tabs-nested .tab-ink-bar::after {
+  background: var(--acc-2);
+}
+
+.tabs-nested.tabs-underline .tab-item.active {
+  border-bottom-color: var(--acc-2);
+}
+
+.tabs-nested.tabs-pills .tab-item.active {
+  background: var(--acc-2);
+  color: #ffffff;
+}
+
+/* --------------------------------------------------------------------------
+   Level 2 (double nested)
+   -------------------------------------------------------------------------- */
+
+.tabs-nested .tabs-nested .tab-list {
+  border-bottom-color: rgba(30, 41, 59, 0.4);
+  padding-left: 24px;
+}
+
+.tabs-nested .tabs-nested .tab-item {
+  font-size: 12px;
+  padding: 6px 12px;
+  opacity: 0.9;
+}
+
+.tabs-nested .tabs-nested .tab-item.active {
+  color: var(--txt);
+  opacity: 1;
+  font-weight: 600;
+}
+
+.tabs-nested .tabs-nested .tab-panel {
+  padding-left: 24px;
+  padding-top: 12px;
+}
+
+.tabs-nested .tabs-nested .tab-ink-bar {
+  background: var(--txt-2);
+  height: 1px;
+}
+
+.tabs-nested .tabs-nested .tab-ink-bar::after {
+  display: none;
+}
+
+.tabs-nested .tabs-nested.tabs-underline .tab-item.active {
+  border-bottom-color: var(--txt-2);
+}
+
+/* --------------------------------------------------------------------------
+   Level 3 (triple nested)
+   -------------------------------------------------------------------------- */
+
+.tabs-nested .tabs-nested .tabs-nested .tab-list {
+  border-bottom-color: rgba(30, 41, 59, 0.3);
+  padding-left: 36px;
+  gap: 0;
+}
+
+.tabs-nested .tabs-nested .tabs-nested .tab-item {
+  font-size: 11px;
+  padding: 4px 10px;
+  opacity: 0.8;
+  font-weight: 400;
+}
+
+.tabs-nested .tabs-nested .tabs-nested .tab-item.active {
+  color: var(--txt);
+  opacity: 1;
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.tabs-nested .tabs-nested .tabs-nested .tab-panel {
+  padding-left: 36px;
+  padding-top: 10px;
+}
+
+.tabs-nested .tabs-nested .tabs-nested .tab-ink-bar {
+  display: none;
+}
+
+.tabs-nested .tabs-nested .tabs-nested.tabs-underline .tab-item.active {
+  border-bottom: none;
+}
+
+
+/* ==========================================================================
+   9. PANEL TRANSITIONS
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   9a. FADE TRANSITION
+   -------------------------------------------------------------------------- */
+
+.tabs-transition-fade .tab-panel {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  display: none;
+}
+
+.tabs-transition-fade .tab-panel.transitioning {
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+}
+
+.tabs-transition-fade .tab-panel.active {
+  opacity: 1;
+  display: block;
+  position: relative;
+}
+
+.tabs-transition-fade .tab-panel.enter {
+  opacity: 0;
+}
+
+.tabs-transition-fade .tab-panel.enter-active {
+  opacity: 1;
+}
+
+.tabs-transition-fade .tab-panel.exit {
+  opacity: 1;
+}
+
+.tabs-transition-fade .tab-panel.exit-active {
+  opacity: 0;
+}
+
+/* --------------------------------------------------------------------------
+   9b. SLIDE TRANSITION
+   -------------------------------------------------------------------------- */
+
+.tabs-transition-slide .tab-panel {
+  transform: translateX(20px);
+  opacity: 0;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+  display: none;
+}
+
+.tabs-transition-slide .tab-panel.active {
+  transform: translateX(0);
+  opacity: 1;
+  display: block;
+}
+
+.tabs-transition-slide .tab-panel.exit-left {
+  transform: translateX(-20px);
+  opacity: 0;
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+}
+
+.tabs-transition-slide .tab-panel.exit-right {
+  transform: translateX(20px);
+  opacity: 0;
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+}
+
+.tabs-transition-slide .tab-panel.enter-left {
+  transform: translateX(-20px);
+  opacity: 0;
+}
+
+.tabs-transition-slide .tab-panel.enter-right {
+  transform: translateX(20px);
+  opacity: 0;
+}
+
+.tabs-transition-slide .tab-panel.enter-active {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+/* --------------------------------------------------------------------------
+   9c. SLIDE-UP TRANSITION
+   -------------------------------------------------------------------------- */
+
+.tabs-transition-slide-up .tab-panel {
+  transform: translateY(10px);
+  opacity: 0;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease;
+  display: none;
+}
+
+.tabs-transition-slide-up .tab-panel.active {
+  transform: translateY(0);
+  opacity: 1;
+  display: block;
+}
+
+.tabs-transition-slide-up .tab-panel.exit {
+  transform: translateY(-10px);
+  opacity: 0;
+}
+
+/* --------------------------------------------------------------------------
+   9d. SCALE TRANSITION
+   -------------------------------------------------------------------------- */
+
+.tabs-transition-scale .tab-panel {
+  transform: scale(0.96);
+  opacity: 0;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease;
+  display: none;
+  transform-origin: top center;
+}
+
+.tabs-transition-scale .tab-panel.active {
+  transform: scale(1);
+  opacity: 1;
+  display: block;
+}
+
+.tabs-transition-scale .tab-panel.exit {
+  transform: scale(0.96);
+  opacity: 0;
+}
+
+/* --------------------------------------------------------------------------
+   9e. NO TRANSITION
+   -------------------------------------------------------------------------- */
+
+.tabs-transition-none .tab-panel {
+  transition: none;
+  animation: none;
+}
+
+.tabs-transition-none .tab-panel.active {
+  transition: none;
+  animation: none;
+}
+
+
+/* ==========================================================================
+   10. LOADING, DISABLED, ACTIVE STATES
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   10a. LOADING
+   -------------------------------------------------------------------------- */
+
+.tab-item.loading {
+  position: relative;
+  color: transparent;
+  pointer-events: none;
+}
+
+.tab-item.loading > * {
+  visibility: hidden;
+}
+
+.tab-item.loading::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 14px;
+  height: 14px;
+  margin-top: -7px;
+  margin-left: -7px;
+  border: 2px solid rgba(148, 163, 184, 0.3);
+  border-top-color: var(--acc);
+  border-radius: 50%;
+  animation: tab-spinner 0.6s linear infinite;
+  visibility: visible;
+}
+
+@keyframes tab-spinner {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.tab-item.loading-inline {
+  color: var(--txt-2);
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+.tab-item.loading-inline::before {
+  content: "";
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 1.5px solid rgba(148, 163, 184, 0.3);
+  border-top-color: var(--acc);
+  border-radius: 50%;
+  animation: tab-spinner 0.6s linear infinite;
+  margin-right: 6px;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+/* --------------------------------------------------------------------------
+   10b. DISABLED
+   -------------------------------------------------------------------------- */
+
+.tab-item.disabled,
+.tab-item[disabled],
+.tab-item[aria-disabled="true"] {
+  opacity: 0.4;
+  pointer-events: none;
+  cursor: not-allowed;
+  user-select: none;
+}
+
+.tab-item.disabled:hover,
+.tab-item[disabled]:hover {
+  color: var(--txt-2);
+  background: none;
+  border-color: transparent;
+}
+
+.tab-item.disabled .tab-close,
+.tab-item[disabled] .tab-close {
+  display: none;
+}
+
+/* --------------------------------------------------------------------------
+   10c. MODIFIED
+   -------------------------------------------------------------------------- */
+
+.tab-item.modified {
+  position: relative;
+}
+
+.tab-item.modified::after {
+  content: "";
+  position: absolute;
+  top: 8px;
+  right: 4px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--warn);
+  flex-shrink: 0;
+}
+
+.tab-item.modified.unsaved::after {
+  background: var(--warn);
+  animation: tab-modified-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes tab-modified-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   10d. ERROR
+   -------------------------------------------------------------------------- */
+
+.tab-item.error {
+  color: var(--danger);
+}
+
+.tab-item.error.active {
+  color: var(--danger);
+}
+
+.tab-item.error::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: var(--r-sm);
+  background: rgba(239, 68, 68, 0.06);
+  opacity: 1;
+}
+
+.tab-item.error .tab-icon {
+  color: var(--danger);
+}
+
+.tab-item.error:hover {
+  color: var(--danger);
+  opacity: 0.9;
+}
+
+.tabs-underline .tab-item.error.active {
+  border-bottom-color: var(--danger);
+}
+
+.tabs-pills .tab-item.error.active {
+  background: var(--danger);
+  color: #ffffff;
+}
+
+/* --------------------------------------------------------------------------
+   10e. PINNED
+   -------------------------------------------------------------------------- */
+
+.tab-item.pinned {
+  flex-shrink: 0;
+  padding: 10px 12px;
+  min-width: unset;
+}
+
+.tab-item.pinned .tab-label {
+  display: none;
+}
+
+.tab-item.pinned .tab-icon {
+  margin: 0;
+}
+
+.tab-item.pinned .tab-close {
+  display: none;
+}
+
+.tab-item.pinned .tab-badge {
+  position: absolute;
+  top: 4px;
+  right: 2px;
+  transform: scale(0.8);
+  margin-left: 0;
+}
+
+.tab-item.pinned.active {
+  color: var(--acc);
+}
+
+/* --------------------------------------------------------------------------
+   10f. SUCCESS
+   -------------------------------------------------------------------------- */
+
+.tab-item.success {
+  color: var(--success);
+}
+
+.tab-item.success.active {
+  color: var(--success);
+}
+
+.tab-item.success .tab-icon {
+  color: var(--success);
+}
+
+.tabs-underline .tab-item.success.active {
+  border-bottom-color: var(--success);
+}
+
+/* --------------------------------------------------------------------------
+   10g. WARNING
+   -------------------------------------------------------------------------- */
+
+.tab-item.warning {
+  color: var(--warn);
+}
+
+.tab-item.warning.active {
+  color: var(--warn);
+}
+
+.tab-item.warning .tab-icon {
+  color: var(--warn);
+}
+
+.tabs-underline .tab-item.warning.active {
+  border-bottom-color: var(--warn);
+}
+
+/* --------------------------------------------------------------------------
+   10h. HIGHLIGHTED / NEW
+   -------------------------------------------------------------------------- */
+
+.tab-item.highlighted {
+  background: rgba(0, 212, 255, 0.06);
+  border-radius: var(--r-sm);
+}
+
+.tab-item.new::after {
+  content: "NEW";
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  background: var(--acc);
+  color: var(--bg);
+  border-radius: 3px;
+  padding: 1px 4px;
+  margin-left: 6px;
+  line-height: 1.4;
+  vertical-align: middle;
+}
+
+
+/* ==========================================================================
+   11. STEP / WIZARD TABS
+   ========================================================================== */
+
+.tabs-wizard .tab-list {
+  counter-reset: steps;
+  justify-content: space-between;
+  border-bottom: none;
+  gap: 0;
+  align-items: center;
+  padding: 0;
+}
+
+.tabs-wizard .tab-item {
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  text-align: center;
+  cursor: pointer;
+  counter-increment: steps;
+  flex: 0 0 auto;
+  border-bottom: none;
+}
+
+.tabs-wizard .tab-item:hover {
+  color: var(--txt);
+}
+
+.tabs-wizard .tab-item::before {
+  display: none;
+}
+
+.tab-step-number {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--sans);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--txt-2);
+  transition: all 0.3s ease;
+  background: var(--bg-2);
+  flex-shrink: 0;
+  position: relative;
+  z-index: 2;
+}
+
+.tabs-wizard .tab-item.active .tab-step-number {
+  border-color: var(--acc);
+  color: var(--acc);
+  background: rgba(0, 212, 255, 0.1);
+  box-shadow: 0 0 12px rgba(0, 212, 255, 0.2);
+}
+
+.tabs-wizard .tab-item.completed .tab-step-number {
+  background: var(--success);
+  border-color: var(--success);
+  color: #ffffff;
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.3);
+}
+
+.tabs-wizard .tab-item.completed .tab-step-number::after {
+  content: "";
+  display: block;
+  width: 10px;
+  height: 6px;
+  border-left: 2px solid #ffffff;
+  border-bottom: 2px solid #ffffff;
+  transform: rotate(-45deg);
+  margin-top: -2px;
+}
+
+.tabs-wizard .tab-item.completed .tab-step-number > * {
+  display: none;
+}
+
+.tabs-wizard .tab-item.error .tab-step-number {
+  border-color: var(--danger);
+  color: var(--danger);
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.tabs-wizard .tab-item.error .tab-step-number::after {
+  content: "!";
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--danger);
+}
+
+.tab-step-connector {
+  flex: 1;
+  height: 2px;
+  background: var(--border);
+  margin: 0 8px;
+  position: relative;
+  align-self: center;
+  min-width: 20px;
+  border-radius: 1px;
+}
+
+.tab-step-connector.completed {
+  background: var(--success);
+}
+
+.tab-step-connector.active {
+  background: linear-gradient(to right, var(--success), var(--border));
+}
+
+.tab-step-connector::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+
+.tab-step-connector.completed::after {
+  background: var(--success);
+  filter: blur(4px);
+  opacity: 0.3;
+}
+
+.tab-step-label {
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--txt-2);
+  margin-top: 4px;
+  line-height: 1.3;
+  white-space: nowrap;
+  transition: color 0.2s ease;
+}
+
+.tabs-wizard .tab-item.active .tab-step-label {
+  color: var(--acc);
+  font-weight: 600;
+}
+
+.tabs-wizard .tab-item.completed .tab-step-label {
+  color: var(--success);
+}
+
+.tab-step-description {
+  font-family: var(--sans);
+  font-size: 11px;
+  color: var(--txt-2);
+  opacity: 0.7;
+  margin-top: 2px;
+  line-height: 1.3;
+  max-width: 140px;
+  text-align: center;
+  white-space: normal;
+}
+
+.tabs-wizard .tab-item.active .tab-step-description {
+  opacity: 1;
+  color: var(--txt-2);
+}
+
+/* --------------------------------------------------------------------------
+   Wizard - Horizontal compact
+   -------------------------------------------------------------------------- */
+
+.tabs-wizard-compact .tab-list {
+  gap: 0;
+  border-bottom: none;
+}
+
+.tabs-wizard-compact .tab-item {
+  flex-direction: row;
+  gap: 10px;
+  align-items: center;
+  flex: 0 0 auto;
+}
+
+.tabs-wizard-compact .tab-step-label {
+  margin-top: 0;
+}
+
+.tabs-wizard-compact .tab-step-description {
+  display: none;
+}
+
+/* --------------------------------------------------------------------------
+   Wizard - Vertical
+   -------------------------------------------------------------------------- */
+
+.tabs-wizard-vertical .tab-list {
+  flex-direction: column;
+  border-bottom: none;
+  align-items: flex-start;
+  gap: 0;
+}
+
+.tabs-wizard-vertical .tab-item {
+  flex-direction: row;
+  gap: 12px;
+  align-items: flex-start;
+  width: 100%;
+  text-align: left;
+  padding: 16px 12px;
+}
+
+.tabs-wizard-vertical .tab-step-connector {
+  position: absolute;
+  left: 27px;
+  top: 44px;
+  bottom: -16px;
+  width: 2px;
+  height: auto;
+  margin: 0;
+  min-width: 2px;
+}
+
+.tabs-wizard-vertical .tab-step-label {
+  margin-top: 0;
+  white-space: normal;
+}
+
+.tabs-wizard-vertical .tab-step-description {
+  text-align: left;
+  max-width: none;
+}
+
+.tabs-wizard-vertical .tab-step-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* --------------------------------------------------------------------------
+   Wizard - Progress bar
+   -------------------------------------------------------------------------- */
+
+.tabs-wizard-progress {
+  position: relative;
+}
+
+.tabs-wizard-progress .tab-progress-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  background: var(--acc);
+  border-radius: 2px;
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 5;
+}
+
+.tabs-wizard-progress .tab-progress-bar::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--acc);
+  filter: blur(4px);
+  opacity: 0.4;
+  border-radius: inherit;
+}
+
+.tabs-wizard-progress .tab-progress-track {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--border);
+  border-radius: 2px;
+  z-index: 4;
+}
+
+
+/* ==========================================================================
+   12. RESPONSIVE STYLES
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   12a. Above 1200px -- Full display
+   -------------------------------------------------------------------------- */
+
+@media (min-width: 1201px) {
+  .tabs-container {
+    width: 100%;
+  }
+
+  .tab-list {
+    flex-wrap: nowrap;
+  }
+
+  .tab-panel {
+    padding: 24px 0;
+  }
+
+  .tabs-left .tab-list {
+    min-width: 180px;
+  }
+
+  .tabs-right .tab-list {
+    min-width: 180px;
+  }
+
+  .tabs-wizard .tab-item {
+    padding: 16px 24px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   12b. 768px to 1200px -- Reduced spacing
+   -------------------------------------------------------------------------- */
+
+@media (max-width: 1200px) {
+  .tab-item {
+    font-size: 13px;
+    padding: 8px 14px;
+    gap: 5px;
+  }
+
+  .tab-panel {
+    padding: 16px 0;
+  }
+
+  .tabs-lg .tab-item {
+    font-size: 15px;
+    padding: 10px 18px;
+    gap: 7px;
+  }
+
+  .tabs-left .tab-list,
+  .tabs-right .tab-list {
+    min-width: 140px;
+    max-width: 220px;
+  }
+
+  .tabs-wizard .tab-item {
+    padding: 10px 14px;
+    gap: 6px;
+  }
+
+  .tab-step-number {
+    width: 28px;
+    height: 28px;
+    font-size: 12px;
+  }
+
+  .tab-step-description {
+    display: none;
+  }
+
+  .tabs-segment .tab-item {
+    padding: 7px 12px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   12c. Below 768px -- Mobile optimizations
+   -------------------------------------------------------------------------- */
+
+@media (max-width: 768px) {
+  .tab-item {
+    font-size: 13px;
+    padding: 8px 12px;
+    gap: 4px;
+  }
+
+  .tab-panel {
+    padding: 12px 0;
+  }
+
+  .tabs-lg .tab-item {
+    font-size: 14px;
+    padding: 10px 14px;
+    gap: 6px;
+  }
+
+  /* Horizontal tabs become scrollable */
+  .tabs-top .tab-list,
+  .tabs-bottom .tab-list {
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
+  }
+
+  .tabs-top .tab-list::-webkit-scrollbar,
+  .tabs-bottom .tab-list::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tabs-top .tab-item,
+  .tabs-bottom .tab-item {
+    scroll-snap-align: start;
+    flex-shrink: 0;
+  }
+
+  /* Vertical tabs collapse to horizontal */
+  .tabs-left,
+  .tabs-right {
+    flex-direction: column;
+  }
+
+  .tabs-left .tab-list,
+  .tabs-right .tab-list {
+    flex-direction: row;
+    border-right: none;
+    border-left: none;
+    border-bottom: 1px solid var(--border);
+    min-width: unset;
+    max-width: unset;
+    width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .tabs-left .tab-list::-webkit-scrollbar,
+  .tabs-right .tab-list::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tabs-left .tab-item,
+  .tabs-right .tab-item {
+    width: auto;
+    flex-shrink: 0;
+  }
+
+  .tabs-left .tab-ink-bar,
+  .tabs-right .tab-ink-bar {
+    width: auto;
+    height: 2px;
+    bottom: 0;
+    top: auto;
+    left: 0;
+    right: auto;
+  }
+
+  .tabs-left .tab-panel,
+  .tabs-right .tab-panel {
+    padding: 12px 0 0 0;
+  }
+
+  /* Icon-only responsive mode */
+  .tabs-responsive-icons .tab-label {
+    display: none;
+  }
+
+  .tabs-responsive-icons .tab-item {
+    padding: 8px 10px;
+    justify-content: center;
+  }
+
+  .tabs-responsive-icons .tab-icon {
+    margin: 0;
+    width: 18px;
+    height: 18px;
+  }
+
+  .tabs-responsive-icons .tab-badge {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    transform: scale(0.85);
+    margin-left: 0;
+  }
+
+  /* Dropdown responsive mode */
+  .tabs-responsive-dropdown .tab-list {
+    display: none;
+  }
+
+  .tabs-responsive-dropdown .tabs-mobile-dropdown {
+    display: flex;
+  }
+
+  /* Wizard adjustments */
+  .tabs-wizard .tab-item {
+    padding: 8px 10px;
+    gap: 4px;
+  }
+
+  .tab-step-number {
+    width: 24px;
+    height: 24px;
+    font-size: 11px;
+  }
+
+  .tab-step-label {
+    font-size: 10px;
+  }
+
+  .tab-step-connector {
+    margin: 0 4px;
+    min-width: 12px;
+  }
+
+  /* Boxed and segment adjustments */
+  .tabs-boxed .tab-list {
+    padding: 3px;
+  }
+
+  .tabs-segment .tab-list {
+    padding: 2px;
+  }
+
+  /* Drag disabled on mobile */
+  .tab-item.draggable {
+    cursor: pointer;
+  }
+
+  .tab-drop-indicator {
+    display: none;
+  }
+
+  /* Nested tab adjustments */
+  .tabs-nested .tab-list {
+    padding-left: 0;
+  }
+
+  .tabs-nested .tab-panel {
+    padding-left: 0;
+  }
+
+  .tabs-nested .tabs-nested .tab-list {
+    padding-left: 8px;
+  }
+
+  .tabs-nested .tabs-nested .tab-panel {
+    padding-left: 8px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   12d. Below 480px -- Extra small
+   -------------------------------------------------------------------------- */
+
+@media (max-width: 480px) {
+  .tab-item {
+    font-size: 12px;
+    padding: 6px 10px;
+    gap: 4px;
+  }
+
+  .tab-panel {
+    padding: 10px 0;
+  }
+
+  .tabs-lg .tab-item {
+    font-size: 13px;
+    padding: 8px 12px;
+  }
+
+  /* Full-width tab items */
+  .tabs-full-width-mobile .tab-item {
+    flex: 1;
+    justify-content: center;
+    text-align: center;
+  }
+
+  /* Stack vertically */
+  .tabs-stack-mobile .tab-list {
+    flex-direction: column;
+    border-bottom: none;
+  }
+
+  .tabs-stack-mobile .tab-item {
+    border-bottom: 1px solid var(--border);
+    width: 100%;
+    padding: 10px 12px;
+    justify-content: flex-start;
+  }
+
+  .tabs-stack-mobile .tab-item.active {
+    background: rgba(0, 212, 255, 0.06);
+    border-left: 2px solid var(--acc);
+  }
+
+  .tabs-stack-mobile .tab-ink-bar {
+    display: none;
+  }
+
+  /* Wizard: show icons only */
+  .tabs-wizard .tab-step-label {
+    display: none;
+  }
+
+  .tabs-wizard .tab-step-description {
+    display: none;
+  }
+
+  .tabs-wizard .tab-item {
+    padding: 6px 6px;
+    gap: 2px;
+  }
+
+  .tab-step-connector {
+    margin: 0 2px;
+    min-width: 8px;
+  }
+
+  /* Reduce badge size */
+  .tab-badge {
+    font-size: 9px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+  }
+
+  /* Close button */
+  .tab-close {
+    width: 14px;
+    height: 14px;
+  }
+
+  /* Pill adjustments */
+  .tabs-pills .tab-item {
+    padding: 6px 12px;
+  }
+
+  /* Boxed adjustments */
+  .tabs-boxed .tab-item {
+    padding: 6px 10px;
+  }
+
+  /* Segment adjustments */
+  .tabs-segment .tab-item {
+    padding: 6px 8px;
+    font-size: 11px;
+  }
+
+  /* Scroll buttons smaller */
+  .tab-scroll-btn {
+    width: 24px;
+  }
+
+  /* Nested tabs flatten */
+  .tabs-nested .tabs-nested .tab-list {
+    padding-left: 0;
+  }
+
+  .tabs-nested .tabs-nested .tab-panel {
+    padding-left: 0;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   12e. MOBILE DROPDOWN (collapsed tab selector)
+   -------------------------------------------------------------------------- */
+
+.tabs-mobile-dropdown {
+  display: none;
+  width: 100%;
+  position: relative;
+}
+
+.tabs-mobile-dropdown-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 10px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  color: var(--txt);
+  font-family: var(--sans);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  gap: 8px;
+}
+
+.tabs-mobile-dropdown-btn:hover {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.tabs-mobile-dropdown-btn:focus-visible {
+  outline: 2px solid var(--acc);
+  outline-offset: 2px;
+}
+
+.tabs-mobile-dropdown-btn::after {
+  content: "";
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 5px solid currentColor;
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.tabs-mobile-dropdown-btn.open::after {
+  transform: rotate(180deg);
+}
+
+.tabs-mobile-dropdown-btn .tab-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.tabs-mobile-dropdown-list {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  z-index: 1000;
+  margin-top: 4px;
+  padding: 4px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px);
+  transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s ease;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.tabs-mobile-dropdown-list.open {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.tabs-mobile-dropdown-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.tabs-mobile-dropdown-list::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 2px;
+}
+
+.tabs-mobile-dropdown-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  cursor: pointer;
+  color: var(--txt-2);
+  font-size: 14px;
+  font-family: var(--sans);
+  border-radius: var(--r-sm);
+  transition: background-color 0.15s ease, color 0.15s ease;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+}
+
+.tabs-mobile-dropdown-option:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--txt);
+}
+
+.tabs-mobile-dropdown-option.active {
+  color: var(--acc);
+  background: rgba(0, 212, 255, 0.08);
+}
+
+
+/* ==========================================================================
+   13. KEYBOARD FOCUS STYLES
+   ========================================================================== */
+
+.tab-item:focus-visible {
+  outline: 2px solid var(--acc);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
+  z-index: 5;
+}
+
+.tabs-boxed .tab-item:focus-visible {
+  outline-offset: 0;
+}
+
+.tabs-pills .tab-item:focus-visible {
+  outline-offset: 2px;
+}
+
+.tabs-segment .tab-item:focus-visible {
+  outline-offset: 0;
+}
+
+[role="tablist"]:focus-within {
+  position: relative;
+  z-index: 2;
+}
+
+[role="tablist"]:focus-within::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: var(--r-md);
+  pointer-events: none;
+}
+
+/* Skip link to tab panel */
+.tab-skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  padding: 8px 16px;
+  background: var(--acc);
+  color: var(--bg);
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: var(--r-sm);
+  z-index: 100;
+  opacity: 0;
+  pointer-events: none;
+  transition: top 0.2s ease, opacity 0.2s ease;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.tab-skip-link:focus {
+  top: 4px;
+  opacity: 1;
+  pointer-events: auto;
+  outline: 2px solid var(--acc);
+  outline-offset: 2px;
+}
+
+/* Focus ring for high contrast mode */
+@media (forced-colors: active) {
+  .tab-item:focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+  }
+
+  .tab-item.active {
+    border-bottom: 2px solid Highlight;
+  }
+
+  .tab-ink-bar {
+    background: Highlight;
+  }
+
+  .tab-step-number {
+    border: 2px solid ButtonText;
+  }
+
+  .tabs-wizard .tab-item.active .tab-step-number {
+    border-color: Highlight;
+    color: Highlight;
+  }
+
+  .tabs-wizard .tab-item.completed .tab-step-number {
+    background: Highlight;
+    border-color: Highlight;
+  }
+}
+
+/* Focus indicators for keyboard navigation */
+.tab-item[tabindex="0"]:focus:not(:focus-visible) {
+  outline: none;
+}
+
+.tab-item:focus-visible .tab-icon {
+  color: var(--acc);
+}
+
+/* Reduced motion for focus animations */
+@media (prefers-reduced-motion: reduce) {
+  .tab-item:focus-visible {
+    transition: none;
+  }
+}
+
+
+/* ==========================================================================
+   14. PRINT STYLES
+   ========================================================================== */
+
+@media print {
+  /* Show all tab panels */
+  .tab-panel {
+    display: block !important;
+    padding: 12px 0;
+    page-break-inside: avoid;
+    opacity: 1 !important;
+    transform: none !important;
+    position: static !important;
+  }
+
+  /* Remove panel transitions */
+  .tabs-transition-fade .tab-panel,
+  .tabs-transition-slide .tab-panel,
+  .tabs-transition-slide-up .tab-panel,
+  .tabs-transition-scale .tab-panel {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+    display: block !important;
+  }
+
+  /* Show tab list as headings */
+  .tab-list {
+    display: block;
+    border-bottom: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .tab-item {
+    display: block;
+    padding: 8px 0 4px 0;
+    color: #000000 !important;
+    font-weight: 700;
+    font-size: 14pt;
+    border-bottom: 1px solid #cccccc;
+    cursor: default;
+    background: none !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+    margin-bottom: 4px;
+    page-break-after: avoid;
+  }
+
+  .tab-item.active {
+    color: #000000 !important;
+  }
+
+  /* Hide decorative elements */
+  .tab-ink-bar {
+    display: none !important;
+  }
+
+  .tab-close {
+    display: none !important;
+  }
+
+  .tab-scroll-btn {
+    display: none !important;
+  }
+
+  .tab-scroll-btn-left,
+  .tab-scroll-btn-right {
+    display: none !important;
+  }
+
+  .tabs-overflow-dropdown {
+    display: none !important;
+  }
+
+  .tabs-overflow-menu {
+    display: none !important;
+  }
+
+  .tabs-mobile-dropdown {
+    display: none !important;
+  }
+
+  .tab-dropdown {
+    display: none !important;
+  }
+
+  .tab-dropdown-menu {
+    display: none !important;
+  }
+
+  .tab-drop-indicator {
+    display: none !important;
+  }
+
+  .tab-drag-ghost {
+    display: none !important;
+  }
+
+  .tab-skip-link {
+    display: none !important;
+  }
+
+  /* Reset tab container layout */
+  .tabs-container {
+    display: block;
+  }
+
+  .tabs-left,
+  .tabs-right {
+    flex-direction: column;
+  }
+
+  .tabs-left .tab-list,
+  .tabs-right .tab-list {
+    flex-direction: row;
+    border-right: none;
+    border-left: none;
+    min-width: unset;
+    max-width: unset;
+  }
+
+  /* Tab badges print friendly */
+  .tab-badge {
+    border: 1px solid #999999;
+    background: #eeeeee !important;
+    color: #000000 !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .tab-badge-dot {
+    border: 1px solid #666666;
+    background: #999999 !important;
+  }
+
+  /* Step/wizard print */
+  .tab-step-number {
+    border: 2px solid #333333;
+    color: #000000 !important;
+    background: #ffffff !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .tabs-wizard .tab-item.completed .tab-step-number {
+    background: #333333 !important;
+    color: #ffffff !important;
+  }
+
+  .tab-step-connector {
+    background: #cccccc !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .tab-step-label,
+  .tab-step-description {
+    color: #333333 !important;
+  }
+
+  /* Ensure icons print */
+  .tab-icon {
+    color: #333333 !important;
+  }
+
+  /* Modified and error indicators */
+  .tab-item.modified::after {
+    background: #ff9900 !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .tab-item.error {
+    color: #cc0000 !important;
+  }
+
+  /* Remove loading spinner */
+  .tab-item.loading::after {
+    display: none !important;
+  }
+
+  .tab-item.loading {
+    color: #666666 !important;
+  }
+
+  .tab-item.loading > * {
+    visibility: visible !important;
+  }
+
+  /* Disabled tab in print */
+  .tab-item.disabled {
+    opacity: 0.5;
+    color: #999999 !important;
+  }
+
+  /* Panel borders for separation */
+  .tab-panel + .tab-panel {
+    border-top: 1px solid #dddddd;
+    margin-top: 8px;
+    padding-top: 12px;
+  }
+
+  /* Remove hover/active states */
+  .tab-item:hover,
+  .tab-item:active {
+    color: #000000 !important;
+    background: none !important;
+  }
+
+  .tab-item::before {
+    display: none !important;
+  }
+}
+
+
+/* ==========================================================================
+   EXTRA: ANIMATION UTILITIES FOR TABS
+   ========================================================================== */
+
+/* Tab entrance animations */
+@keyframes tab-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes tab-slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes tab-slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes tab-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.tabs-animate-in .tab-item {
+  animation: tab-fade-in 0.3s ease forwards;
+  opacity: 0;
+}
+
+.tabs-animate-in .tab-item:nth-child(1) { animation-delay: 0s; }
+.tabs-animate-in .tab-item:nth-child(2) { animation-delay: 0.05s; }
+.tabs-animate-in .tab-item:nth-child(3) { animation-delay: 0.1s; }
+.tabs-animate-in .tab-item:nth-child(4) { animation-delay: 0.15s; }
+.tabs-animate-in .tab-item:nth-child(5) { animation-delay: 0.2s; }
+.tabs-animate-in .tab-item:nth-child(6) { animation-delay: 0.25s; }
+.tabs-animate-in .tab-item:nth-child(7) { animation-delay: 0.3s; }
+.tabs-animate-in .tab-item:nth-child(8) { animation-delay: 0.35s; }
+.tabs-animate-in .tab-item:nth-child(9) { animation-delay: 0.4s; }
+.tabs-animate-in .tab-item:nth-child(10) { animation-delay: 0.45s; }
+
+/* Panel content entrance */
+.tab-panel-animate .tab-panel.active {
+  animation: tab-scale-in 0.3s ease forwards;
+}
+
+
+/* ==========================================================================
+   EXTRA: CYBER / GLOW TAB EFFECTS
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Glow underline
+   -------------------------------------------------------------------------- */
+
+.tabs-glow .tab-ink-bar {
+  height: 2px;
+  background: var(--acc);
+  box-shadow: 0 0 6px var(--acc), 0 0 12px rgba(0, 212, 255, 0.3);
+}
+
+.tabs-glow .tab-ink-bar::after {
+  filter: blur(8px);
+  opacity: 0.5;
+}
+
+.tabs-glow .tab-item.active {
+  color: var(--acc);
+  text-shadow: 0 0 8px rgba(0, 212, 255, 0.3);
+}
+
+/* --------------------------------------------------------------------------
+   Neon pills
+   -------------------------------------------------------------------------- */
+
+.tabs-neon.tabs-pills .tab-item.active {
+  background: var(--acc);
+  color: var(--bg);
+  box-shadow:
+    0 0 8px rgba(0, 212, 255, 0.4),
+    0 0 16px rgba(0, 212, 255, 0.2),
+    inset 0 0 8px rgba(255, 255, 255, 0.1);
+}
+
+.tabs-neon.tabs-pills .tab-item:hover:not(.active) {
+  background: rgba(0, 212, 255, 0.12);
+  box-shadow: 0 0 8px rgba(0, 212, 255, 0.1);
+}
+
+/* --------------------------------------------------------------------------
+   Cyber boxed
+   -------------------------------------------------------------------------- */
+
+.tabs-cyber.tabs-boxed .tab-list {
+  background: rgba(12, 18, 32, 0.8);
+  border: 1px solid rgba(0, 212, 255, 0.15);
+  box-shadow: 0 0 20px rgba(0, 212, 255, 0.05);
+}
+
+.tabs-cyber.tabs-boxed .tab-item.active {
+  background: rgba(0, 212, 255, 0.1);
+  border: 1px solid rgba(0, 212, 255, 0.2);
+  box-shadow:
+    0 0 8px rgba(0, 212, 255, 0.15),
+    inset 0 0 8px rgba(0, 212, 255, 0.05);
+}
+
+/* --------------------------------------------------------------------------
+   Gradient accent
+   -------------------------------------------------------------------------- */
+
+.tabs-gradient .tab-ink-bar {
+  background: linear-gradient(90deg, var(--acc), var(--acc-2));
+}
+
+.tabs-gradient .tab-ink-bar::after {
+  background: linear-gradient(90deg, var(--acc), var(--acc-2));
+  filter: blur(6px);
+  opacity: 0.4;
+}
+
+.tabs-gradient .tab-item.active {
+  background: linear-gradient(90deg, var(--acc), var(--acc-2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.tabs-gradient.tabs-pills .tab-item.active {
+  background: linear-gradient(135deg, var(--acc), var(--acc-2));
+  -webkit-background-clip: unset;
+  background-clip: unset;
+  -webkit-text-fill-color: unset;
+  color: #ffffff;
+  box-shadow: 0 0 12px rgba(0, 212, 255, 0.3);
+}
+
+.tabs-gradient.tabs-underline .tab-item.active {
+  border-image: linear-gradient(90deg, var(--acc), var(--acc-2)) 1;
+}
+
+/* --------------------------------------------------------------------------
+   Scanline effect
+   -------------------------------------------------------------------------- */
+
+.tabs-scanline .tab-item.active::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(
+    transparent,
+    transparent 1px,
+    rgba(0, 212, 255, 0.02) 1px,
+    rgba(0, 212, 255, 0.02) 2px
+  );
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+
+/* ==========================================================================
+   EXTRA: COLOR SCHEME VARIANTS
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Purple accent
+   -------------------------------------------------------------------------- */
+
+.tabs-purple .tab-item.active {
+  color: var(--acc-2);
+}
+
+.tabs-purple .tab-ink-bar {
+  background: var(--acc-2);
+}
+
+.tabs-purple .tab-ink-bar::after {
+  background: var(--acc-2);
+}
+
+.tabs-purple.tabs-underline .tab-item.active {
+  border-bottom-color: var(--acc-2);
+}
+
+.tabs-purple.tabs-pills .tab-item.active {
+  background: var(--acc-2);
+  color: #ffffff;
+  box-shadow: 0 0 12px rgba(124, 92, 255, 0.3);
+}
+
+.tabs-purple.tabs-pills .tab-item:hover:not(.active) {
+  background: rgba(124, 92, 255, 0.1);
+}
+
+.tabs-purple.tabs-boxed .tab-item.active {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(124, 92, 255, 0.1);
+}
+
+.tabs-purple.tabs-segment .tab-item.active {
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(124, 92, 255, 0.1);
+}
+
+/* --------------------------------------------------------------------------
+   Danger accent
+   -------------------------------------------------------------------------- */
+
+.tabs-danger .tab-item.active {
+  color: var(--danger);
+}
+
+.tabs-danger .tab-ink-bar {
+  background: var(--danger);
+}
+
+.tabs-danger .tab-ink-bar::after {
+  background: var(--danger);
+}
+
+.tabs-danger.tabs-underline .tab-item.active {
+  border-bottom-color: var(--danger);
+}
+
+.tabs-danger.tabs-pills .tab-item.active {
+  background: var(--danger);
+  color: #ffffff;
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.3);
+}
+
+.tabs-danger.tabs-pills .tab-item:hover:not(.active) {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+/* --------------------------------------------------------------------------
+   Success accent
+   -------------------------------------------------------------------------- */
+
+.tabs-success .tab-item.active {
+  color: var(--success);
+}
+
+.tabs-success .tab-ink-bar {
+  background: var(--success);
+}
+
+.tabs-success .tab-ink-bar::after {
+  background: var(--success);
+}
+
+.tabs-success.tabs-underline .tab-item.active {
+  border-bottom-color: var(--success);
+}
+
+.tabs-success.tabs-pills .tab-item.active {
+  background: var(--success);
+  color: var(--bg);
+  box-shadow: 0 0 12px rgba(34, 197, 94, 0.3);
+}
+
+.tabs-success.tabs-pills .tab-item:hover:not(.active) {
+  background: rgba(34, 197, 94, 0.1);
+}
+
+/* --------------------------------------------------------------------------
+   Warning accent
+   -------------------------------------------------------------------------- */
+
+.tabs-warning .tab-item.active {
+  color: var(--warn);
+}
+
+.tabs-warning .tab-ink-bar {
+  background: var(--warn);
+}
+
+.tabs-warning .tab-ink-bar::after {
+  background: var(--warn);
+}
+
+.tabs-warning.tabs-underline .tab-item.active {
+  border-bottom-color: var(--warn);
+}
+
+.tabs-warning.tabs-pills .tab-item.active {
+  background: var(--warn);
+  color: var(--bg);
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.3);
+}
+
+.tabs-warning.tabs-pills .tab-item:hover:not(.active) {
+  background: rgba(245, 158, 11, 0.1);
+}
+
+
+/* ==========================================================================
+   EXTRA: SPECIAL LAYOUTS
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Centered tabs
+   -------------------------------------------------------------------------- */
+
+.tabs-center .tab-list {
+  justify-content: center;
+}
+
+/* --------------------------------------------------------------------------
+   Right-aligned tabs
+   -------------------------------------------------------------------------- */
+
+.tabs-end .tab-list {
+  justify-content: flex-end;
+}
+
+/* --------------------------------------------------------------------------
+   Space-between tabs
+   -------------------------------------------------------------------------- */
+
+.tabs-spread .tab-list {
+  justify-content: space-between;
+}
+
+.tabs-spread .tab-item {
+  flex: 1;
+  justify-content: center;
+  text-align: center;
+}
+
+/* --------------------------------------------------------------------------
+   Full-width tabs
+   -------------------------------------------------------------------------- */
+
+.tabs-full .tab-item {
+  flex: 1;
+  justify-content: center;
+  text-align: center;
+}
+
+/* --------------------------------------------------------------------------
+   Card-style tabs
+   -------------------------------------------------------------------------- */
+
+.tabs-card .tab-list {
+  border-bottom: 1px solid var(--border);
+  gap: 2px;
+}
+
+.tabs-card .tab-item {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-bottom: none;
+  border-radius: var(--r-sm) var(--r-sm) 0 0;
+  padding: 8px 16px;
+  margin-bottom: -1px;
+  transition: all 0.2s ease;
+}
+
+.tabs-card .tab-item.active {
+  background: var(--surface);
+  border-color: var(--border);
+  border-bottom: 1px solid var(--surface);
+  color: var(--acc);
+  z-index: 1;
+}
+
+.tabs-card .tab-item:hover:not(.active) {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.tabs-card .tab-ink-bar {
+  display: none;
+}
+
+.tabs-card .tab-panel {
+  border: 1px solid var(--border);
+  border-top: none;
+  border-radius: 0 0 var(--r-sm) var(--r-sm);
+  padding: 16px;
+  background: var(--surface);
+}
+
+/* --------------------------------------------------------------------------
+   Bordered panel
+   -------------------------------------------------------------------------- */
+
+.tabs-bordered .tab-panel {
+  border: 1px solid var(--border);
+  border-top: none;
+  border-radius: 0 0 var(--r-md) var(--r-md);
+  padding: 20px;
+  background: var(--surface);
+}
+
+.tabs-bordered.tabs-bottom .tab-panel {
+  border-top: 1px solid var(--border);
+  border-bottom: none;
+  border-radius: var(--r-md) var(--r-md) 0 0;
+}
+
+/* --------------------------------------------------------------------------
+   Floating tabs
+   -------------------------------------------------------------------------- */
+
+.tabs-floating .tab-list {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 4px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  gap: 2px;
+  width: fit-content;
+}
+
+.tabs-floating .tab-item {
+  border-radius: calc(var(--r-lg) - 4px);
+  padding: 8px 18px;
+}
+
+.tabs-floating .tab-item.active {
+  background: var(--acc);
+  color: var(--bg);
+}
+
+.tabs-floating .tab-item:hover:not(.active) {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.tabs-floating .tab-ink-bar {
+  display: none;
+}
+
+/* --------------------------------------------------------------------------
+   Toolbar tabs
+   -------------------------------------------------------------------------- */
+
+.tabs-toolbar .tab-list {
+  background: var(--bg-2);
+  border-bottom: 1px solid var(--border);
+  padding: 0 8px;
+  gap: 0;
+}
+
+.tabs-toolbar .tab-item {
+  padding: 10px 14px;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.tabs-toolbar .tab-item.active {
+  border-bottom-color: var(--acc);
+  background: rgba(0, 212, 255, 0.04);
+}
+
+.tabs-toolbar .tab-item:hover:not(.active) {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.tabs-toolbar .tab-item::before {
+  display: none;
+}
+
+
+/* ==========================================================================
+   EXTRA: PREFERS-REDUCED-MOTION
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .tab-item {
+    transition: none;
+  }
+
+  .tab-ink-bar {
+    transition: none;
+  }
+
+  .tab-panel {
+    transition: none;
+    animation: none;
+  }
+
+  .tabs-transition-fade .tab-panel {
+    transition: none;
+  }
+
+  .tabs-transition-slide .tab-panel {
+    transition: none;
+  }
+
+  .tabs-transition-slide-up .tab-panel {
+    transition: none;
+  }
+
+  .tabs-transition-scale .tab-panel {
+    transition: none;
+  }
+
+  .tab-close {
+    transition: none;
+  }
+
+  .tab-dropdown-menu {
+    transition: none;
+  }
+
+  .tabs-overflow-menu {
+    transition: none;
+  }
+
+  .tabs-mobile-dropdown-list {
+    transition: none;
+  }
+
+  .tab-step-number {
+    transition: none;
+  }
+
+  .tab-badge-pulse {
+    animation: none;
+  }
+
+  .tab-item.modified.unsaved::after {
+    animation: none;
+  }
+
+  .tabs-animate-in .tab-item {
+    animation: none;
+    opacity: 1;
+  }
+
+  .tab-panel-animate .tab-panel.active {
+    animation: none;
+  }
+
+  .tab-item.dragging {
+    transition: none;
+  }
+
+  .tab-drop-indicator {
+    transition: none;
+  }
+
+  .tabs-mobile-dropdown-btn::after {
+    transition: none;
+  }
+
+  .tab-dropdown {
+    transition: none;
+  }
+
+  .tabs-scroll-container {
+    scroll-behavior: auto;
+  }
+}
+
+
+/* ==========================================================================
+   EXTRA: CONTAINER QUERY SUPPORT
+   ========================================================================== */
+
+@container tabs (max-width: 500px) {
+  .tabs-container .tab-item {
+    font-size: 12px;
+    padding: 6px 10px;
+  }
+
+  .tabs-container .tab-step-label {
+    display: none;
+  }
+
+  .tabs-container .tab-step-description {
+    display: none;
+  }
+}
+
+@container tabs (max-width: 320px) {
+  .tabs-container .tab-list {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .tabs-container .tab-list::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tabs-container .tab-item {
+    font-size: 11px;
+    padding: 5px 8px;
+  }
+}
+
+.tabs-container-query {
+  container-name: tabs;
+  container-type: inline-size;
+}
+
+
+/* ==========================================================================
+   EXTRA: DARK / LIGHT CONTEXT MODIFIERS
+   ========================================================================== */
+
+/* When tabs are placed inside a lighter surface */
+.surface-light .tab-list {
+  border-bottom-color: rgba(0, 0, 0, 0.1);
+}
+
+.surface-light .tab-item {
+  color: rgba(0, 0, 0, 0.55);
+}
+
+.surface-light .tab-item.active {
+  color: var(--acc);
+}
+
+.surface-light .tab-item:hover {
+  color: rgba(0, 0, 0, 0.8);
+}
+
+.surface-light.tabs-boxed .tab-list {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.surface-light.tabs-boxed .tab-item.active {
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.surface-light.tabs-segment .tab-list {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+.surface-light.tabs-segment .tab-item.active {
+  background: #ffffff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* When tabs are inside a card/modal overlay */
+.surface-elevated .tab-list {
+  border-bottom-color: rgba(255, 255, 255, 0.06);
+}
+
+.surface-elevated.tabs-boxed .tab-list {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.surface-elevated.tabs-boxed .tab-item.active {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+
+/* ==========================================================================
+   EXTRA: RTL SUPPORT
+   ========================================================================== */
+
+[dir="rtl"] .tab-item {
+  direction: rtl;
+}
+
+[dir="rtl"] .tab-close {
+  margin-left: 0;
+  margin-right: auto;
+}
+
+[dir="rtl"] .tab-badge {
+  margin-left: 0;
+  margin-right: 4px;
+}
+
+[dir="rtl"] .tab-dropdown-menu {
+  left: auto;
+  right: 0;
+}
+
+[dir="rtl"] .tabs-overflow-menu {
+  left: 0;
+  right: auto;
+}
+
+[dir="rtl"] .tab-scroll-btn-left {
+  left: auto;
+  right: 0;
+  background: linear-gradient(to left, var(--surface) 60%, transparent);
+}
+
+[dir="rtl"] .tab-scroll-btn-right {
+  right: auto;
+  left: 0;
+  background: linear-gradient(to right, var(--surface) 60%, transparent);
+}
+
+[dir="rtl"] .tab-item.drag-over {
+  border-left: none;
+  border-right: 2px solid var(--acc);
+  box-shadow: 2px 0 0 0 var(--acc);
+  margin-left: 0;
+  margin-right: -2px;
+}
+
+[dir="rtl"] .tab-item.drag-over-right {
+  border-right: none;
+  border-left: 2px solid var(--acc);
+  box-shadow: -2px 0 0 0 var(--acc);
+  margin-right: 0;
+  margin-left: -2px;
+}
+
+[dir="rtl"] .tabs-left {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .tabs-left .tab-list {
+  border-right: none;
+  border-left: 1px solid var(--border);
+}
+
+[dir="rtl"] .tabs-left .tab-panel {
+  padding: 0 20px 0 0;
+}
+
+[dir="rtl"] .tabs-right {
+  flex-direction: row;
+}
+
+[dir="rtl"] .tabs-right .tab-list {
+  border-left: none;
+  border-right: 1px solid var(--border);
+}
+
+[dir="rtl"] .tabs-right .tab-panel {
+  padding: 0 0 0 20px;
+}
+
+[dir="rtl"] .tab-item.modified::after {
+  right: auto;
+  left: 4px;
+}
+
+[dir="rtl"] .tabs-nested .tab-list {
+  padding-left: 0;
+  padding-right: 12px;
+}
+
+[dir="rtl"] .tabs-nested .tab-panel {
+  padding-left: 0;
+  padding-right: 12px;
+}
+
+[dir="rtl"] .tabs-nested .tabs-nested .tab-list {
+  padding-right: 24px;
+}
+
+[dir="rtl"] .tabs-nested .tabs-nested .tab-panel {
+  padding-right: 24px;
+}
+
+[dir="rtl"] .tabs-nested .tabs-nested .tabs-nested .tab-list {
+  padding-right: 36px;
+}
+
+[dir="rtl"] .tabs-nested .tabs-nested .tabs-nested .tab-panel {
+  padding-right: 36px;
+}
+
+[dir="rtl"] .tabs-stack-mobile .tab-item.active {
+  border-left: none;
+  border-right: 2px solid var(--acc);
+}
+
+[dir="rtl"] .tab-item.new::after {
+  margin-left: 0;
+  margin-right: 6px;
+}
+
+[dir="rtl"] .tabs-wizard-vertical .tab-step-connector {
+  left: auto;
+  right: 27px;
+}
+
+
+/* ==========================================================================
+   END -- tabs-mega.css
+   ========================================================================== */

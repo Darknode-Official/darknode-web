@@ -4,7 +4,7 @@
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
-const REL = "https://github.com/SpartanKing18/darknode-web/releases/download/darknode";
+const REL = "https://github.com/Darknode-Official/darknode-web/releases/download/darknode";
 
 // features shown in the grid: [command/label, title, description, tag?]
 const FEATURES = [

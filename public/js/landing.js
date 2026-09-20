@@ -1,11 +1,11 @@
-// Copyright (c) 2026 SpartanKing18. All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // Source-available for learning only. Redistribution prohibited. See LICENSE.
-(function(){var _h=location.hostname,_a=["darknode.ai","www.darknode.ai","localhost","127.0.0.1"];if(!_a.some(function(d){return _h===d}))throw document.body.innerHTML="",new Error("unlicensed")}());
+(function(){var _h=location.hostname,_a=["darknode.ai","www.darknode.ai","sentinel-b4194.web.app","sentinel-b4194-6173e.web.app","localhost","127.0.0.1"];if(!_a.some(function(d){return _h===d}))throw document.body.innerHTML="",new Error("unlicensed")}());
 
 import { db } from "/js/firebase.js";
 import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
 
-const GITHUB = "https://github.com/SpartanKing18";
+const GITHUB = "https://github.com/Darknode-Official";
 
 export function renderLanding(view, actions) {
   view.innerHTML = `
@@ -26,13 +26,13 @@ export function renderLanding(view, actions) {
           </a>
         </div>
         <div class="hero-trust">
-          <div class="trust-item"><span class="trust-n" data-count="200000" data-suffix="+" data-format="comma">0</span><span class="trust-l">Lines of code</span></div>
+          <div class="trust-item"><span class="trust-n" data-count="592000" data-suffix="+" data-format="comma">0</span><span class="trust-l">Lines of code</span></div>
           <div class="trust-sep"></div>
-          <div class="trust-item"><span class="trust-n" data-count="192" data-suffix="+">0</span><span class="trust-l">Security tools</span></div>
+          <div class="trust-item"><span class="trust-n" data-count="120" data-suffix="+">0</span><span class="trust-l">Security tools</span></div>
           <div class="trust-sep"></div>
-          <div class="trust-item"><span class="trust-n" data-count="59">0</span><span class="trust-l">AI modules</span></div>
+          <div class="trust-item"><span class="trust-n" data-count="34">0</span><span class="trust-l">AI modules</span></div>
           <div class="trust-sep"></div>
-          <div class="trust-item"><span class="trust-n" data-count="8">0</span><span class="trust-l">AI engines</span></div>
+          <div class="trust-item"><span class="trust-n" data-count="18">0</span><span class="trust-l">Security engines</span></div>
           <div class="trust-sep"></div>
           <div class="trust-item"><span class="trust-n trust-n-static">100%</span><span class="trust-l">Local &amp; private</span></div>
         </div>
@@ -80,6 +80,75 @@ export function renderLanding(view, actions) {
             <h3>Linux VM</h3>
             <p>A full security workstation. Like Kali, but with Darknode and Nexus AI built in. Runs in VirtualBox or QEMU.</p>
             <span class="bento-tag">VirtualBox image</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====== DARKNODE OS ====== -->
+    <section class="section alt" id="darknode-os" aria-labelledby="os-title">
+      <div class="wrap">
+        <div class="sec-label">Darknode OS</div>
+        <h2 class="sec-title" id="os-title">Your own security operating system</h2>
+        <p class="sec-sub">A custom-built OS for cybersecurity — two editions, both free and open source.</p>
+        <div class="os-grid">
+          <div class="os-card">
+            <div class="os-card-icon">&#x1F5A5;</div>
+            <h3 class="os-card-title">Darknode OS — Custom Kernel</h3>
+            <p class="os-card-desc">Built from scratch. No Linux, no borrowed code. A real x86 operating system with its own kernel, shell, filesystem, and full TCP/IP networking stack.</p>
+            <ul class="os-features">
+              <li>Multiboot2 boot &rarr; GRUB bootloader</li>
+              <li>VGA console, PS/2 keyboard, PIT timer</li>
+              <li>Physical memory manager + heap allocator</li>
+              <li>VFS, ramfs, devfs filesystems</li>
+              <li>Round-robin process scheduler</li>
+              <li>ATA disk + NE2000 NIC drivers</li>
+              <li>Ethernet, ARP, IPv4, ICMP, UDP, DHCP, DNS</li>
+              <li>28-command built-in shell</li>
+            </ul>
+            <div class="os-card-meta">12 MB &middot; Boots in VirtualBox &amp; QEMU</div>
+            <a href="https://github.com/cashzombs-stack/darknode-os/releases/download/v0.1.0/darknode-os.iso" class="btn lg os-dl" target="_blank" rel="noopener">Download ISO</a>
+          </div>
+          <div class="os-card">
+            <div class="os-card-icon">&#x1F427;</div>
+            <h3 class="os-card-title">Darknode OS — Linux Edition</h3>
+            <p class="os-card-desc">Full desktop environment built on Ubuntu. Pre-loaded with the entire Darknode toolkit, Nexus AI agent, and every security tool configured and ready to go.</p>
+            <ul class="os-features">
+              <li>Ubuntu-based with custom desktop</li>
+              <li>Darknode CLI + Nexus pre-installed</li>
+              <li>nmap, sqlmap, nuclei, ffuf, httpx, Burp Suite</li>
+              <li>Custom Plymouth boot theme</li>
+              <li>Wallpapers, icons, and theming</li>
+              <li>Cloud-init automated setup</li>
+              <li>All toolkit scripts ready to run</li>
+              <li>Works in VirtualBox, VMware, bare metal</li>
+            </ul>
+            <div class="os-card-meta">~18 GB &middot; Full desktop environment</div>
+            <span class="btn lg os-dl os-coming-soon">Coming Soon</span>
+          </div>
+        </div>
+        <div class="os-boot-preview">
+          <div class="term-window">
+            <div class="term-bar"><span class="term-dot"></span><span class="term-dot"></span><span class="term-dot"></span><span class="term-title">darknode-os</span></div>
+            <pre class="term-body">
+  ____             _                     _        ___  ____
+ |  _ \\  __ _ _ __| | ___ __   ___   __| | ___  / _ \\/ ___|
+ | | | |/ _\` | '__| |/ / '_ \\ / _ \\ / _\` |/ _ \\| | | \\___ \\
+ | |_| | (_| | |  |   &lt;| | | | (_) | (_| |  __/| |_| |___) |
+ |____/ \\__,_|_|  |_|\\_\\_| |_|\\___/ \\__,_|\\___| \\___/|____/
+
+ Darknode OS v0.1.0 — Custom x86 Kernel
+ Memory: 128 MB | Timer: 1000 Hz | Disk: ATA PIO
+ Network: NE2000 NIC | Stack: IPv4/ICMP/UDP/DHCP/DNS
+ Filesystems: ramfs, devfs mounted
+
+ darknode&gt; help
+ Available commands (28):
+   help ls cat mkdir touch write rm cd pwd ps mount
+   disk free mem cpuinfo time uptime echo version
+   clear reboot shutdown ifconfig ping arp dhcp dns netstat
+
+ darknode&gt; _</pre>
           </div>
         </div>
       </div>
@@ -216,13 +285,13 @@ export function renderLanding(view, actions) {
         <h2 class="sec-title" id="metrics-title">Built to be massive</h2>
         <p class="sec-sub">Every number earned, not inflated. This is what a one-person army looks like.</p>
         <div class="metrics-grid">
-          <div class="metric-card"><span class="metric-n" data-count="200000" data-suffix="+" data-format="comma">0</span><span class="metric-l">Lines of code</span></div>
-          <div class="metric-card"><span class="metric-n" data-count="192" data-suffix="+">0</span><span class="metric-l">Security tools</span></div>
-          <div class="metric-card"><span class="metric-n" data-count="59">0</span><span class="metric-l">AI modules</span></div>
-          <div class="metric-card"><span class="metric-n" data-count="8">0</span><span class="metric-l">AI engine integrations</span></div>
-          <div class="metric-card"><span class="metric-n" data-count="50" data-suffix="+">0</span><span class="metric-l">Slash commands</span></div>
-          <div class="metric-card"><span class="metric-n" data-count="30" data-suffix="+">0</span><span class="metric-l">Cheat sheets</span></div>
-          <div class="metric-card"><span class="metric-n" data-count="502" data-suffix="+">0</span><span class="metric-l">Payloads</span></div>
+          <div class="metric-card"><span class="metric-n" data-count="592000" data-suffix="+" data-format="comma">0</span><span class="metric-l">Lines of code</span></div>
+          <div class="metric-card"><span class="metric-n" data-count="120" data-suffix="+">0</span><span class="metric-l">Security tools</span></div>
+          <div class="metric-card"><span class="metric-n" data-count="34">0</span><span class="metric-l">AI modules</span></div>
+          <div class="metric-card"><span class="metric-n" data-count="18">0</span><span class="metric-l">Security engines</span></div>
+          <div class="metric-card"><span class="metric-n" data-count="133" data-suffix="+">0</span><span class="metric-l">Slash commands</span></div>
+          <div class="metric-card"><span class="metric-n" data-count="93" data-suffix="+">0</span><span class="metric-l">Cheat sheets</span></div>
+          <div class="metric-card"><span class="metric-n" data-count="79" data-suffix="+">0</span><span class="metric-l">Payloads</span></div>
           <div class="metric-card"><span class="metric-n metric-n-static">100%</span><span class="metric-l">Local &amp; private</span></div>
         </div>
       </div>
@@ -321,102 +390,120 @@ export function renderLanding(view, actions) {
     <section class="section" id="tools-showcase" aria-labelledby="tools-title">
       <div class="wrap">
         <div class="sec-label">Arsenal</div>
-        <h2 class="sec-title" id="tools-title">192+ security tools, zero configuration</h2>
-        <p class="sec-sub">From reconnaissance to exploitation to post-exploitation. Pre-configured, documented, and ready to run.</p>
+        <h2 class="sec-title" id="tools-title">80+ purpose-built security tools</h2>
+        <p class="sec-sub">Every tool built from scratch for Darknode. Not wrappers around other software — original offensive and defensive tooling.</p>
         <div class="ts-tabs" role="tablist" aria-label="Tool categories">
           <button class="ts-tab on" data-cat="all" role="tab" aria-selected="true">All</button>
           <button class="ts-tab" data-cat="recon" role="tab" aria-selected="false">Recon</button>
-          <button class="ts-tab" data-cat="exploitation" role="tab" aria-selected="false">Exploitation</button>
-          <button class="ts-tab" data-cat="web" role="tab" aria-selected="false">Web</button>
-          <button class="ts-tab" data-cat="network" role="tab" aria-selected="false">Network</button>
-          <button class="ts-tab" data-cat="forensics" role="tab" aria-selected="false">Forensics</button>
-          <button class="ts-tab" data-cat="passwords" role="tab" aria-selected="false">Passwords</button>
-          <button class="ts-tab" data-cat="wireless" role="tab" aria-selected="false">Wireless</button>
+          <button class="ts-tab" data-cat="exploit" role="tab" aria-selected="false">Exploit</button>
+          <button class="ts-tab" data-cat="defense" role="tab" aria-selected="false">Defense</button>
+          <button class="ts-tab" data-cat="post" role="tab" aria-selected="false">Post-Exploit</button>
+          <button class="ts-tab" data-cat="analysis" role="tab" aria-selected="false">Analysis</button>
         </div>
         <div class="ts-grid" id="ts-grid">
-          <div class="ts-card" data-cat="network">
-            <div class="ts-name">Nmap</div>
-            <div class="ts-desc">Network discovery and security auditing scanner</div>
-            <div class="ts-meta"><span class="ts-badge cat-network">Network</span><span class="ts-mode">CLI</span></div>
+          <div class="ts-card" data-cat="exploit">
+            <div class="ts-name">darknode-sandbox</div>
+            <div class="ts-desc">Isolated malware detonation lab — disposable containers, filesystem + network monitoring, behavior reports, sample library</div>
+            <div class="ts-meta"><span class="ts-badge cat-exploit">Exploit</span><span class="ts-mode">Heavy</span></div>
           </div>
-          <div class="ts-card" data-cat="web">
-            <div class="ts-name">SQLMap</div>
-            <div class="ts-desc">Automatic SQL injection and database takeover</div>
-            <div class="ts-meta"><span class="ts-badge cat-web">Web</span><span class="ts-mode mode-browser">In-browser</span></div>
-          </div>
-          <div class="ts-card" data-cat="passwords">
-            <div class="ts-name">Hydra</div>
-            <div class="ts-desc">Fast network login cracker supporting 50+ protocols</div>
-            <div class="ts-meta"><span class="ts-badge cat-passwords">Passwords</span><span class="ts-mode">CLI</span></div>
-          </div>
-          <div class="ts-card" data-cat="web">
-            <div class="ts-name">Gobuster</div>
-            <div class="ts-desc">Directory and DNS brute-force enumeration</div>
-            <div class="ts-meta"><span class="ts-badge cat-web">Web</span><span class="ts-mode mode-browser">In-browser</span></div>
+          <div class="ts-card" data-cat="exploit">
+            <div class="ts-name">darknode-c2</div>
+            <div class="ts-desc">Command-and-control framework — beacon management, encrypted channels, task queuing, multi-target orchestration</div>
+            <div class="ts-meta"><span class="ts-badge cat-exploit">Exploit</span><span class="ts-mode">Heavy</span></div>
           </div>
           <div class="ts-card" data-cat="recon">
-            <div class="ts-name">Nuclei</div>
-            <div class="ts-desc">Template-based vulnerability scanner with 8,000+ checks</div>
-            <div class="ts-meta"><span class="ts-badge cat-recon">Recon</span><span class="ts-mode">CLI</span></div>
+            <div class="ts-name">darknode-recon</div>
+            <div class="ts-desc">Full-scope reconnaissance — subdomain discovery, port scanning, service fingerprinting, tech stack detection, automated report generation</div>
+            <div class="ts-meta"><span class="ts-badge cat-recon">Recon</span><span class="ts-mode">Heavy</span></div>
           </div>
-          <div class="ts-card" data-cat="exploitation">
-            <div class="ts-name">Metasploit</div>
-            <div class="ts-desc">Penetration testing framework with 2,000+ exploits</div>
-            <div class="ts-meta"><span class="ts-badge cat-exploitation">Exploitation</span><span class="ts-mode">CLI</span></div>
+          <div class="ts-card" data-cat="defense">
+            <div class="ts-name">darknode-forensics</div>
+            <div class="ts-desc">Digital forensics evidence collection — disk imaging, memory dumps, timeline reconstruction, chain-of-custody logging</div>
+            <div class="ts-meta"><span class="ts-badge cat-defense">Defense</span><span class="ts-mode">Heavy</span></div>
           </div>
-          <div class="ts-card" data-cat="web">
-            <div class="ts-name">Nikto</div>
-            <div class="ts-desc">Web server scanner for dangerous files and outdated software</div>
-            <div class="ts-meta"><span class="ts-badge cat-web">Web</span><span class="ts-mode mode-browser">In-browser</span></div>
-          </div>
-          <div class="ts-card" data-cat="web">
-            <div class="ts-name">WPScan</div>
-            <div class="ts-desc">WordPress vulnerability scanner and enumeration tool</div>
-            <div class="ts-meta"><span class="ts-badge cat-web">Web</span><span class="ts-mode">CLI</span></div>
-          </div>
-          <div class="ts-card" data-cat="passwords">
-            <div class="ts-name">John the Ripper</div>
-            <div class="ts-desc">Password hash cracker with auto-detect and wordlists</div>
-            <div class="ts-meta"><span class="ts-badge cat-passwords">Passwords</span><span class="ts-mode">CLI</span></div>
-          </div>
-          <div class="ts-card" data-cat="passwords">
-            <div class="ts-name">Hashcat</div>
-            <div class="ts-desc">GPU-accelerated password recovery supporting 300+ hash types</div>
-            <div class="ts-meta"><span class="ts-badge cat-passwords">Passwords</span><span class="ts-mode">CLI</span></div>
-          </div>
-          <div class="ts-card" data-cat="forensics">
-            <div class="ts-name">Wireshark</div>
-            <div class="ts-desc">Network protocol analyzer and packet capture tool</div>
-            <div class="ts-meta"><span class="ts-badge cat-forensics">Forensics</span><span class="ts-mode">CLI</span></div>
-          </div>
-          <div class="ts-card" data-cat="wireless">
-            <div class="ts-name">Aircrack-ng</div>
-            <div class="ts-desc">WiFi network security assessment and key cracking suite</div>
-            <div class="ts-meta"><span class="ts-badge cat-wireless">Wireless</span><span class="ts-mode">CLI</span></div>
-          </div>
-          <div class="ts-card" data-cat="web">
-            <div class="ts-name">Dirb</div>
-            <div class="ts-desc">Web content scanner using dictionary-based attacks</div>
-            <div class="ts-meta"><span class="ts-badge cat-web">Web</span><span class="ts-mode mode-browser">In-browser</span></div>
+          <div class="ts-card" data-cat="exploit">
+            <div class="ts-name">darknode-brute</div>
+            <div class="ts-desc">Credential brute-force engine — multi-protocol (SSH, FTP, HTTP, SMB, RDP), smart wordlist generation, rate limiting evasion</div>
+            <div class="ts-meta"><span class="ts-badge cat-exploit">Exploit</span><span class="ts-mode">Heavy</span></div>
           </div>
           <div class="ts-card" data-cat="recon">
-            <div class="ts-name">Enum4linux</div>
-            <div class="ts-desc">SMB share and user enumeration for Windows targets</div>
-            <div class="ts-meta"><span class="ts-badge cat-recon">Recon</span><span class="ts-mode">CLI</span></div>
+            <div class="ts-name">darknode-osint</div>
+            <div class="ts-desc">Open-source intelligence gathering — email harvesting, social media profiling, domain history, leaked credential search</div>
+            <div class="ts-meta"><span class="ts-badge cat-recon">Recon</span><span class="ts-mode">Heavy</span></div>
           </div>
-          <div class="ts-card" data-cat="exploitation">
-            <div class="ts-name">LinPEAS</div>
-            <div class="ts-desc">Linux privilege escalation audit and enumeration script</div>
-            <div class="ts-meta"><span class="ts-badge cat-exploitation">Exploitation</span><span class="ts-mode">CLI</span></div>
+          <div class="ts-card" data-cat="post">
+            <div class="ts-name">darknode-pivot</div>
+            <div class="ts-desc">Network pivoting and tunneling — SSH tunnels, SOCKS proxies, port forwarding chains, multi-hop lateral movement</div>
+            <div class="ts-meta"><span class="ts-badge cat-post">Post-Exploit</span><span class="ts-mode">Heavy</span></div>
           </div>
-          <div class="ts-card" data-cat="web">
-            <div class="ts-name">ZAP Proxy</div>
-            <div class="ts-desc">Open-source web application security testing proxy</div>
-            <div class="ts-meta"><span class="ts-badge cat-web">Web</span><span class="ts-mode mode-browser">In-browser</span></div>
+          <div class="ts-card" data-cat="defense">
+            <div class="ts-name">darknode-incident</div>
+            <div class="ts-desc">Incident response playbook runner — triage workflows, containment automation, evidence preservation, stakeholder notifications</div>
+            <div class="ts-meta"><span class="ts-badge cat-defense">Defense</span><span class="ts-mode">Heavy</span></div>
+          </div>
+          <div class="ts-card" data-cat="exploit">
+            <div class="ts-name">darknode-payload</div>
+            <div class="ts-desc">Payload generation and encoding — polymorphic shellcode, multi-format output (EXE, ELF, PS1, Python), AV evasion mutations</div>
+            <div class="ts-meta"><span class="ts-badge cat-exploit">Exploit</span><span class="ts-mode">Heavy</span></div>
+          </div>
+          <div class="ts-card" data-cat="recon">
+            <div class="ts-name">darknode-attack-surface</div>
+            <div class="ts-desc">Full attack surface mapping — asset discovery, exposed services, cloud enumeration, dependency analysis, risk scoring</div>
+            <div class="ts-meta"><span class="ts-badge cat-recon">Recon</span><span class="ts-mode">Heavy</span></div>
+          </div>
+          <div class="ts-card" data-cat="analysis">
+            <div class="ts-name">darknode-re</div>
+            <div class="ts-desc">Binary reverse engineering — disassembly, decompilation, string extraction, function analysis, malware unpacking</div>
+            <div class="ts-meta"><span class="ts-badge cat-analysis">Analysis</span><span class="ts-mode">Heavy</span></div>
+          </div>
+          <div class="ts-card" data-cat="defense">
+            <div class="ts-name">darknode-monitor</div>
+            <div class="ts-desc">Real-time system monitoring — process tracking, network connections, file integrity, anomaly detection, alert triggers</div>
+            <div class="ts-meta"><span class="ts-badge cat-defense">Defense</span><span class="ts-mode">Heavy</span></div>
+          </div>
+          <div class="ts-card" data-cat="exploit">
+            <div class="ts-name">darknode-wireless</div>
+            <div class="ts-desc">Wireless security testing — WiFi deauth, handshake capture, WPA cracking, rogue AP detection, Bluetooth scanning</div>
+            <div class="ts-meta"><span class="ts-badge cat-exploit">Exploit</span><span class="ts-mode">Heavy</span></div>
+          </div>
+          <div class="ts-card" data-cat="post">
+            <div class="ts-name">darknode-exfil</div>
+            <div class="ts-desc">Data exfiltration channels — DNS tunneling, ICMP covert channels, steganography, encrypted file transfer, bandwidth throttling</div>
+            <div class="ts-meta"><span class="ts-badge cat-post">Post-Exploit</span><span class="ts-mode">Heavy</span></div>
+          </div>
+          <div class="ts-card" data-cat="defense">
+            <div class="ts-name">darknode-harden</div>
+            <div class="ts-desc">Automated system hardening — CIS benchmark checks, firewall rules, service lockdown, permission auditing, compliance scoring</div>
+            <div class="ts-meta"><span class="ts-badge cat-defense">Defense</span><span class="ts-mode">Heavy</span></div>
+          </div>
+          <div class="ts-card" data-cat="recon">
+            <div class="ts-name">darknode-intel</div>
+            <div class="ts-desc">Threat intelligence aggregation — IOC feeds, APT tracking, CVE correlation, dark web monitoring, automated enrichment</div>
+            <div class="ts-meta"><span class="ts-badge cat-recon">Recon</span><span class="ts-mode">Heavy</span></div>
+          </div>
+          <div class="ts-card" data-cat="exploit">
+            <div class="ts-name">darknode-apifuzz</div>
+            <div class="ts-desc">REST/GraphQL API fuzzer — endpoint discovery, parameter mutation, auth bypass testing, rate limit detection, schema extraction</div>
+            <div class="ts-meta"><span class="ts-badge cat-exploit">Exploit</span><span class="ts-mode">Heavy</span></div>
+          </div>
+          <div class="ts-card" data-cat="post">
+            <div class="ts-name">darknode-ad</div>
+            <div class="ts-desc">Active Directory attack toolkit — Kerberoasting, AS-REP roasting, DCSync, Golden Ticket, BloodHound-compatible enumeration</div>
+            <div class="ts-meta"><span class="ts-badge cat-post">Post-Exploit</span><span class="ts-mode">Heavy</span></div>
+          </div>
+          <div class="ts-card" data-cat="analysis">
+            <div class="ts-name">darknode-report</div>
+            <div class="ts-desc">Professional pentest report generator — findings, evidence, risk ratings, remediation steps, executive summary, PDF/HTML output</div>
+            <div class="ts-meta"><span class="ts-badge cat-analysis">Analysis</span><span class="ts-mode">Heavy</span></div>
+          </div>
+          <div class="ts-card" data-cat="defense">
+            <div class="ts-name">darknode-decoy</div>
+            <div class="ts-desc">Honeypot network deployment — fake services, credential traps, canary tokens, attacker behavior logging, alert escalation</div>
+            <div class="ts-meta"><span class="ts-badge cat-defense">Defense</span><span class="ts-mode">Heavy</span></div>
           </div>
         </div>
         <div style="text-align:center;margin-top:32px">
-          <a class="btn lg ghost" href="#" id="ts-view-all">View all 192+ tools &rarr;</a>
+          <a class="btn lg ghost" href="#" id="ts-view-all">View all 80+ tools &rarr;</a>
         </div>
       </div>
     </section>
@@ -495,7 +582,7 @@ export function renderLanding(view, actions) {
           </div>
           <div class="nx-arch-connector"></div>
           <div class="nx-arch-layer nx-arch-l5">
-            <div class="nx-arch-footer-band">59 modules &mdash; 200,000+ lines of code</div>
+            <div class="nx-arch-footer-band">59 modules &mdash; 536803 lines of code</div>
           </div>
         </div>
 
@@ -562,7 +649,7 @@ export function renderLanding(view, actions) {
         <div class="rag-tabs" role="tablist" aria-label="Knowledge categories">
           <button class="rag-tab active" role="tab" aria-selected="true" data-rag="owasp">OWASP Top 10</button>
           <button class="rag-tab" role="tab" aria-selected="false" data-rag="attacks">Attack Patterns</button>
-          <button class="rag-tab" role="tab" aria-selected="false" data-rag="tools">Tools &amp; Commands</button>
+          <button class="rag-tab" role="tab" aria-selected="false" data-rag="tools">Cheat Sheets</button>
           <button class="rag-tab" role="tab" aria-selected="false" data-rag="privesc">Privilege Escalation</button>
           <button class="rag-tab" role="tab" aria-selected="false" data-rag="recon">Network Recon</button>
         </div>
@@ -1024,17 +1111,17 @@ attack methodology for 10.10.14.7:
           <div class="price-card">
             <div class="price-tier">Free</div>
             <div class="price-amount">$0<span class="price-period">/forever</span></div>
-            <p class="price-desc">Everything you need to start learning.</p>
+            <p class="price-desc">The full platform. No limits, no trials, no paywalls.</p>
             <ul class="price-features">
-              <li>GPT-OSS 120B local AI (runs on your device, free)</li>
-              <li>BYOK &mdash; bring your own Claude, GPT, or Gemini API key</li>
-              <li>192+ security tools &amp; cheat sheets</li>
-              <li>Practice labs (DVWA, Juice Shop, WebGoat)</li>
-              <li>Nexus AI agent &mdash; core features</li>
-              <li>Security RAG &mdash; built-in OWASP, CVEs, attack patterns</li>
-              <li>Web shell with Ollama integration</li>
-              <li>CLI &amp; desktop app (free forever)</li>
-              <li>5 MCP server integrations</li>
+              <li>All 80+ security tools, command centers, and dashboards</li>
+              <li>HYDRA, AEGIS, SENTINEL EYE, PROMETHEUS &mdash; full access</li>
+              <li>Pentest Console, Address Intelligence, Cyber Range</li>
+              <li>Learn Hub &mdash; 1,400+ topics with quizzes</li>
+              <li>Nexus AI agent with BYOK (Claude, GPT, Gemini, Ollama)</li>
+              <li>Real Web Shell + shell server</li>
+              <li>Live threat feeds (NVD, ThreatFox, URLhaus)</li>
+              <li>Darknode OS VM (3 editions)</li>
+              <li>CLI &amp; desktop app</li>
               <li>Community support</li>
             </ul>
             <button class="btn lg" id="price-free">Get started free</button>
@@ -1043,75 +1130,76 @@ attack methodology for 10.10.14.7:
             <div class="price-badge">Recommended</div>
             <div class="price-tier">Pro</div>
             <div class="price-amount">$12<span class="price-period">/month</span></div>
-            <p class="price-desc">Advanced platform features for serious learners.</p>
+            <p class="price-desc">Priority features built for working professionals.</p>
             <ul class="price-features">
               <li>Everything in Free, plus:</li>
-              <li class="feat-section">Platform features (darknode.ai)</li>
-              <li>Multi-agent pipelines (8 roles)</li>
-              <li>Ghost Agents &mdash; background monitoring</li>
-              <li>Thought Stream &mdash; visible AI reasoning</li>
-              <li>Attack Planner &mdash; AI pentest methodology</li>
-              <li>CTF Assistant &mdash; guided challenge solving</li>
-              <li>Threat Modeler &mdash; STRIDE analysis</li>
-              <li>Vulnerability Scanner &mdash; headers &amp; misconfigs</li>
-              <li>Code Radar &mdash; codebase security analysis</li>
-              <li>Smart Test Generator</li>
-              <li class="feat-section">Downloadable extras</li>
-              <li>Darknode OS &mdash; pre-built security VM</li>
-              <li>Premium wordlists &amp; payload collections</li>
-              <li>Pre-configured Nuclei &amp; Nmap scan profiles</li>
-              <li>25 MCP server integrations</li>
+              <li class="feat-section">Pro-exclusive tools</li>
+              <li>Automated Pentest Scheduler &mdash; recurring scans with alerts</li>
+              <li>Vulnerability Tracker &mdash; track findings across engagements</li>
+              <li>Threat Watchlist &mdash; monitor IPs/domains/hashes continuously</li>
+              <li>Custom Wordlist Generator &mdash; AI-powered target-specific lists</li>
+              <li>Credential Leak Monitor &mdash; alert when your domains appear in breaches</li>
+              <li class="feat-section">Pro AI features</li>
+              <li>Nexus Overnight Mode &mdash; long-running autonomous tasks</li>
+              <li>AI Pentest Report Writer &mdash; generates professional .pdf reports</li>
+              <li>AI Code Auditor &mdash; automated source code security review</li>
+              <li class="feat-section">Pro extras</li>
+              <li>Priority API rate limits (5x free tier)</li>
+              <li>Custom scan profiles &amp; templates</li>
               <li>Early access to new features</li>
+              <li>Email support</li>
             </ul>
             <button class="btn lg glow" id="price-pro" disabled>Coming soon</button>
           </div>
           <div class="price-card">
             <div class="price-tier">Team</div>
-            <div class="price-amount">$25<span class="price-period">/month</span></div>
-            <p class="price-desc">Collaborate, compete, and train together.</p>
+            <div class="price-amount">$25<span class="price-period">/user/month</span></div>
+            <p class="price-desc">Collaborate, compete, and train as a team.</p>
             <ul class="price-features">
               <li>Everything in Pro, plus:</li>
-              <li class="feat-section">Platform features (darknode.ai)</li>
-              <li>Skill Forge &mdash; AI creates its own tools</li>
-              <li>World Model &mdash; simulate before acting</li>
-              <li>Deep Memory &mdash; 3-tier cognitive architecture</li>
-              <li>Time Travel &mdash; undo any action, any time</li>
-              <li>Shared workspace &amp; team labs</li>
-              <li>Custom training scenarios &amp; CTF builder</li>
-              <li>Report Generator &mdash; professional pentest reports</li>
-              <li>Full STRIDE threat modeling &amp; OWASP compliance</li>
-              <li class="feat-section">Downloadable extras</li>
-              <li>Report templates (.docx, .pdf) with your branding</li>
-              <li>Extended Darknode OS with team tools</li>
+              <li class="feat-section">Team collaboration</li>
+              <li>Shared workspace &mdash; team members see same findings</li>
+              <li>Team CTF Builder &mdash; create competitions for your team</li>
+              <li>Shared scan history &amp; asset inventory</li>
+              <li>Team activity feed &amp; leaderboard</li>
+              <li>Role management (admin, operator, viewer)</li>
+              <li class="feat-section">Team reporting</li>
+              <li>Branded pentest reports with your company logo</li>
+              <li>Engagement management &mdash; track client projects</li>
+              <li>Findings deduplication across team scans</li>
+              <li>Export to Jira, GitHub Issues, CSV</li>
+              <li class="feat-section">Team extras</li>
+              <li>10x API rate limits</li>
               <li>Plugin system &amp; extension SDK</li>
-              <li>Unlimited MCP integrations</li>
-              <li>Shared saved scans &amp; findings across team</li>
+              <li>Priority email &amp; chat support</li>
             </ul>
             <button class="btn lg" id="price-team" disabled>Coming soon</button>
           </div>
           <div class="price-card">
             <div class="price-tier">Enterprise</div>
             <div class="price-amount">Custom</div>
-            <p class="price-desc">For organizations that need control and compliance.</p>
+            <p class="price-desc">For organizations that need control, compliance, and scale.</p>
             <ul class="price-features">
               <li>Everything in Team, plus:</li>
-              <li class="feat-section">Enterprise platform</li>
+              <li class="feat-section">Enterprise security</li>
               <li>SSO &amp; SAML authentication</li>
               <li>Data isolation &amp; tenant separation</li>
-              <li>Custom compliance frameworks</li>
-              <li>Admin dashboard &amp; usage analytics</li>
-              <li>Role-based access control</li>
-              <li class="feat-section">Downloadable extras</li>
-              <li>Org-branded Darknode OS builds</li>
-              <li>Custom AI model profiles &amp; fine-tuning</li>
-              <li>Self-hosted deployment option</li>
+              <li>Role-based access control (RBAC)</li>
               <li>Audit logging &amp; compliance exports</li>
+              <li class="feat-section">Enterprise features</li>
+              <li>Self-hosted deployment option</li>
+              <li>Custom compliance frameworks (SOC2, PCI-DSS, HIPAA)</li>
+              <li>Org-branded Darknode OS builds</li>
+              <li>Admin dashboard &amp; usage analytics</li>
+              <li>User provisioning &amp; SCIM</li>
+              <li>Dedicated account manager</li>
+              <li>SLA guarantee</li>
               <li>Volume licensing</li>
             </ul>
             <button class="btn lg" id="price-enterprise" disabled>Coming soon</button>
           </div>
         </div>
-        <p class="pricing-note">All plans include BYOK &mdash; bring your own Claude, GPT, or Gemini API key. The CLI and desktop app are <strong>free forever</strong>. Paid plans unlock <strong>platform features on darknode.ai</strong> + downloadable extras. You never pay us for AI tokens.</p>
+        <p class="pricing-note">Every tool on the platform is <strong>free forever</strong> &mdash; HYDRA, AEGIS, SENTINEL EYE, PROMETHEUS, all 80+ tools, the CLI, desktop app, Darknode OS, and live threat feeds. Paid plans add <strong>new pro-exclusive features</strong> like automated scan scheduling, vulnerability tracking, AI report generation, and team collaboration. You never pay for AI tokens &mdash; bring your own key or run Ollama locally for free.</p>
       </div>
     </section>
 

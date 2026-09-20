@@ -57,6 +57,7 @@ const getEngine = () => { try { return localStorage.getItem(ENGINE_KEY) || "auto
 const setEngine = (e) => { try { localStorage.setItem(ENGINE_KEY, e); } catch (_) {} };
 
 async function getOllamaModels() {
+  if (location.hostname !== "localhost" && location.hostname !== "127.0.0.1") return null;
   try { const r = await fetch(OLLAMA + "/api/tags"); const d = await r.json(); return (d.models || []).map((m) => m.name); } catch (_) { return null; }
 }
 

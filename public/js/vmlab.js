@@ -120,13 +120,13 @@ websockify 6080 localhost:5900
   const _vlo=main.querySelector("#vl-open");if(_vlo)_vlo.onclick = () => {
     const h = hostInput.value.trim() || "localhost";
     const p = portInput.value.trim() || "6080";
-    window.open(`http://${esc(h)}:${esc(p)}/vnc.html?autoconnect=true`, "_blank");
+    window.open(`http://${esc(h)}:${esc(p)}/vnc.html?autoconnect=true`, "_blank", "noopener,noreferrer");
   };
 
   const _vlv=main.querySelector("#vl-vnc");if(_vlv)_vlv.onclick = () => {
     const h = hostInput.value.trim() || "localhost";
     const p = portInput.value.trim() || "6080";
-    window.open(`http://${esc(h)}:${esc(p)}`, "_blank");
+    window.open(`http://${esc(h)}:${esc(p)}`, "_blank", "noopener,noreferrer");
   };
 
   // Probe the websockify endpoint to show connection status
@@ -141,7 +141,6 @@ websockify 6080 localhost:5900
       setTimeout(() => { try { ws.close(); } catch (_) {} }, 3000);
     } catch (_) { badge.textContent = "disconnected"; badge.className = "vl-badge off"; }
   }
-  probe();
   hostInput.onchange = probe;
   portInput.onchange = probe;
 }

@@ -1,17 +1,19 @@
-// Copyright (c) 2026 SpartanKing18. All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 // Firebase init for Darknode Web.
 // The apiKey here is NOT a secret (it only identifies the project); real protection
 // comes from the Firestore/Storage Security Rules in ../firebase/.
-if(!/^(darknode\.ai|www\.darknode\.ai|localhost|127\.0\.0\.1)$/.test(location.hostname)){throw new Error("unlicensed")}
+if(!/^(darknode\.ai|www\.darknode\.ai|sentinel-b4194\.web\.app|sentinel-b4194-6173e\.web\.app|localhost|127\.0\.0\.1)$/.test(location.hostname)){throw new Error("unlicensed")}
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-app.js";
 import { getAuth, GoogleAuthProvider, GithubAuthProvider } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-auth.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
 import { getStorage } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-storage.js";
 
+const _authDomain = (location.hostname === "darknode.ai" || location.hostname === "www.darknode.ai")
+  ? "darknode.ai" : "sentinel-b4194.firebaseapp.com";
 export const firebaseConfig = {
   apiKey: "AIzaSyD3CJO7PLQdRvPOWDqehSlRwEeA5odCTDE",
-  authDomain: "sentinel-b4194.firebaseapp.com",
+  authDomain: _authDomain,
   projectId: "sentinel-b4194",
   storageBucket: "sentinel-b4194.firebasestorage.app",
   messagingSenderId: "153127828172",
