@@ -1,0 +1,388 @@
+/* ============================================================================
+   Global Watch / Sentinel Eye — Globe Control Panel Styles
+   Bottom control bar, layer toggles, fly-to buttons, shader selectors
+   ============================================================================ */
+
+/* -- Main wrapper -- */
+.gw-wrap {
+  background: #0a0e14;
+  color: #c8d6e5;
+  font-family: 'Courier New', 'JetBrains Mono', monospace;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* -- Header -- */
+.gw-header {
+  background: linear-gradient(180deg, #0f1a24 0%, #0a1018 100%);
+  border-bottom: 1px solid #1a3a5a;
+  padding: 12px 20px;
+  flex-shrink: 0;
+}
+
+.gw-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.gw-title {
+  font-size: 20px;
+  font-weight: bold;
+  letter-spacing: 3px;
+  color: #00ddff;
+  text-transform: uppercase;
+  text-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+}
+
+.gw-subtitle {
+  font-size: 11px;
+  color: #4a6a8a;
+  letter-spacing: 2px;
+  margin-top: 2px;
+}
+
+/* -- Layer Toggle Buttons -- */
+.gw-layers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.gw-layer-btn {
+  background: #111a24;
+  border: 1px solid #1a3050;
+  color: #4a6a8a;
+  padding: 5px 12px;
+  font-size: 11px;
+  font-family: 'Courier New', monospace;
+  cursor: pointer;
+  border-radius: 3px;
+  letter-spacing: 1px;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+}
+
+.gw-layer-btn:hover {
+  border-color: #2a5a8a;
+  color: #8ab4d4;
+  background: #152030;
+}
+
+.gw-layer-btn.gw-on {
+  background: #0a2a44;
+  border-color: #00aaff;
+  color: #00ddff;
+  box-shadow: 0 0 8px rgba(0, 170, 255, 0.25);
+}
+
+.gw-layer-btn.gw-on::before {
+  content: '\2022 ';
+  color: #00ff88;
+}
+
+/* -- Status Bar -- */
+.gw-status-bar {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  padding: 6px 20px;
+  background: #080c12;
+  border-bottom: 1px solid #0f1a24;
+  font-size: 11px;
+  color: #3a5a7a;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  overflow-x: auto;
+}
+
+.gw-status-bar span {
+  white-space: nowrap;
+}
+
+.gw-status-val {
+  color: #00aaff;
+  margin-left: 4px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* -- Globe Viewport -- */
+.gw-globe-area {
+  flex: 1;
+  position: relative;
+  min-height: 400px;
+  background: #000408;
+  overflow: hidden;
+}
+
+#gw-cesium-container {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+/* -- Bottom Controls -- */
+.gw-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 20px;
+  background: #0a0e14;
+  border-top: 1px solid #1a3a5a;
+  flex-shrink: 0;
+  align-items: center;
+}
+
+.gw-ctrl-group {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.gw-ctrl-label {
+  font-size: 10px;
+  color: #3a5a7a;
+  letter-spacing: 1px;
+  margin-right: 4px;
+  white-space: nowrap;
+}
+
+.gw-fly-btn {
+  background: #0a1a28;
+  border: 1px solid #1a3050;
+  color: #5a8aaa;
+  padding: 4px 10px;
+  font-size: 10px;
+  font-family: 'Courier New', monospace;
+  cursor: pointer;
+  border-radius: 2px;
+  letter-spacing: 1px;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.gw-fly-btn:hover {
+  border-color: #00aaff;
+  color: #00ddff;
+  background: #0a2a44;
+  box-shadow: 0 0 6px rgba(0, 170, 255, 0.2);
+}
+
+.gw-fly-btn:active {
+  transform: scale(0.97);
+}
+
+.gw-speed-ctrl {
+  background: #0a1a28;
+  border: 1px solid #1a3050;
+  color: #5a8aaa;
+  padding: 4px 8px;
+  font-size: 10px;
+  font-family: 'Courier New', monospace;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: all 0.15s ease;
+}
+
+.gw-speed-ctrl:hover {
+  border-color: #2a5a8a;
+  color: #8ab4d4;
+}
+
+.gw-speed-ctrl.active {
+  background: #0a2a44;
+  border-color: #00aaff;
+  color: #00ddff;
+}
+
+/* -- Theme Toggle -- */
+.gw-dark-toggle {
+  background: #0a1a28;
+  border: 1px solid #1a3050;
+  color: #5a8aaa;
+  padding: 4px 10px;
+  font-size: 10px;
+  font-family: 'Courier New', monospace;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: all 0.15s ease;
+}
+
+.gw-dark-toggle:hover {
+  border-color: #2a5a8a;
+}
+
+.gw-dark-toggle.gw-light {
+  background: #1a2a3a;
+  color: #aaddff;
+  border-color: #3a6a8a;
+}
+
+/* -- Info Popup -- */
+.gw-popup {
+  position: absolute;
+  background: rgba(8, 12, 20, 0.96);
+  border: 1px solid #1a4a6a;
+  border-radius: 4px;
+  padding: 14px 18px;
+  max-width: 400px;
+  min-width: 260px;
+  z-index: 1000;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.7), 0 0 1px rgba(0, 170, 255, 0.2);
+  pointer-events: auto;
+  backdrop-filter: blur(8px);
+}
+
+.gw-popup-title {
+  font-size: 14px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid #1a3a5a;
+  padding-bottom: 6px;
+}
+
+.gw-popup-row {
+  font-size: 11px;
+  color: #8ab4d4;
+  margin: 4px 0;
+  line-height: 1.4;
+}
+
+.gw-popup-label {
+  color: #4a7a9a;
+  margin-right: 6px;
+  font-weight: 500;
+}
+
+.gw-popup-close {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  color: #4a6a8a;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  transition: color 0.15s;
+}
+
+.gw-popup-close:hover {
+  color: #ff4444;
+}
+
+/* -- Entity Colors -- */
+.gw-hostile { color: #ff4444; }
+.gw-allied { color: #44aaff; }
+.gw-neutral { color: #aaaaaa; }
+.gw-tier {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 2px;
+  font-size: 10px;
+  letter-spacing: 1px;
+  font-weight: bold;
+}
+
+.gw-tier-1 { background: rgba(255, 34, 34, 0.1); color: #ff4444; border: 1px solid #ff2222; }
+.gw-tier-2 { background: rgba(255, 136, 0, 0.1); color: #ffaa44; border: 1px solid #ff8800; }
+.gw-tier-3 { background: rgba(255, 204, 0, 0.1); color: #ffdd44; border: 1px solid #ddaa00; }
+
+/* -- Legend -- */
+.gw-legend {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  background: rgba(8, 12, 20, 0.88);
+  border: 1px solid #1a3a5a;
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-size: 10px;
+  z-index: 100;
+  backdrop-filter: blur(4px);
+}
+
+.gw-legend-title {
+  color: #5a8aaa;
+  font-weight: bold;
+  margin-bottom: 4px;
+  letter-spacing: 1px;
+}
+
+.gw-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 3px 0;
+  color: #6a8aaa;
+}
+
+.gw-legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.gw-legend-line {
+  width: 16px;
+  height: 2px;
+  display: inline-block;
+  flex-shrink: 0;
+  border-radius: 1px;
+}
+
+/* -- Loading Overlay -- */
+.gw-loading-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 4, 8, 0.95);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 500;
+}
+
+.gw-loading-text {
+  color: #00aaff;
+  font-size: 14px;
+  font-family: 'Courier New', monospace;
+  letter-spacing: 2px;
+}
+
+.gw-loading-text span {
+  animation: gw-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes gw-pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+/* -- Responsive -- */
+@media (max-width: 768px) {
+  .gw-header { padding: 8px 12px; }
+  .gw-title { font-size: 16px; letter-spacing: 2px; }
+  .gw-subtitle { font-size: 9px; }
+  .gw-status-bar { padding: 4px 12px; font-size: 10px; gap: 10px; }
+  .gw-controls { padding: 6px 12px; gap: 6px; }
+  .gw-layer-btn { padding: 3px 8px; font-size: 10px; }
+  .gw-fly-btn { padding: 3px 7px; font-size: 9px; }
+  .gw-popup { max-width: 300px; min-width: 200px; padding: 10px 14px; }
+  .gw-legend { font-size: 9px; padding: 6px 10px; }
+}
+
+@media (max-width: 480px) {
+  .gw-header-row { flex-direction: column; align-items: flex-start; }
+  .gw-layers { max-width: 100%; overflow-x: auto; flex-wrap: nowrap; }
+  .gw-controls { overflow-x: auto; flex-wrap: nowrap; }
+  .gw-status-bar { gap: 8px; }
+  .gw-legend { bottom: 4px; left: 4px; }
+}

@@ -1,0 +1,3009 @@
+/* ==========================================================================
+   panels.css
+   Complete panel / card layout system
+   Design tokens: --bg, --bg-2, --surface, --border, --txt, --txt-2,
+                   --acc, --acc-2, --danger, --success, --warn,
+                   --r-sm, --r-md, --r-lg
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   0. TOKEN DEFAULTS (fallbacks when tokens.css is not loaded)
+   -------------------------------------------------------------------------- */
+:root {
+  --bg:      #070a12;
+  --bg-2:    #0c1220;
+  --surface: #111827;
+  --border:  #1e293b;
+  --txt:     #f2f5f9;
+  --txt-2:   #94a3b8;
+  --acc:     #00d4ff;
+  --acc-2:   #7c5cff;
+  --danger:  #ef4444;
+  --success: #22c55e;
+  --warn:    #f59e0b;
+  --r-sm:    6px;
+  --r-md:    10px;
+  --r-lg:    16px;
+}
+
+/* ==========================================================================
+   1. BASE PANEL
+   ========================================================================== */
+
+.panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  color: var(--txt);
+  overflow: hidden;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease,
+    opacity 0.2s ease;
+}
+
+/* --------------------------------------------------------------------------
+   1a. PANEL HEADER
+   -------------------------------------------------------------------------- */
+
+.panel__header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  min-height: 52px;
+}
+
+.panel__header-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r-sm);
+  background: rgba(0, 212, 255, 0.08);
+  color: var(--acc);
+  font-size: 0.9375rem;
+  flex-shrink: 0;
+}
+
+.panel__header-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.panel__title {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--txt);
+  letter-spacing: -0.005em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.panel__subtitle {
+  margin: 2px 0 0;
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--txt-2);
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.panel__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+/* header action button */
+.panel__header-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--r-sm);
+  color: var(--txt-2);
+  font-size: 0.875rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.panel__header-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--txt);
+  border-color: var(--border);
+}
+
+.panel__header-btn:focus-visible {
+  outline: 2px solid var(--acc);
+  outline-offset: 2px;
+}
+
+.panel__header-btn:active {
+  background: rgba(255, 255, 255, 0.1);
+  transform: scale(0.93);
+}
+
+.panel__header-btn--sm {
+  width: 28px;
+  height: 28px;
+  font-size: 0.75rem;
+}
+
+/* menu trigger (three-dot) */
+.panel__menu-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--r-sm);
+  color: var(--txt-2);
+  font-size: 1rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s ease, color 0.15s ease;
+  position: relative;
+}
+
+.panel__menu-trigger:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--txt);
+}
+
+.panel__menu-trigger:active {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* --------------------------------------------------------------------------
+   1b. PANEL BODY
+   -------------------------------------------------------------------------- */
+
+.panel__body {
+  flex: 1;
+  padding: 20px;
+  font-size: 0.875rem;
+  line-height: 1.65;
+  color: var(--txt-2);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.panel__body::-webkit-scrollbar {
+  width: 5px;
+}
+
+.panel__body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.panel__body::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+.panel__body::-webkit-scrollbar-thumb:hover {
+  background: var(--txt-2);
+}
+
+.panel__body p {
+  margin: 0 0 12px;
+}
+
+.panel__body p:last-child {
+  margin-bottom: 0;
+}
+
+/* no padding body */
+.panel__body--flush {
+  padding: 0;
+}
+
+/* padded body variant */
+.panel__body--lg {
+  padding: 24px;
+}
+
+.panel__body--sm {
+  padding: 12px;
+}
+
+/* --------------------------------------------------------------------------
+   1c. PANEL FOOTER
+   -------------------------------------------------------------------------- */
+
+.panel__footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 20px;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.panel__footer--spread {
+  justify-content: space-between;
+}
+
+.panel__footer--left {
+  justify-content: flex-start;
+}
+
+.panel__footer--center {
+  justify-content: center;
+}
+
+/* footer actions */
+.panel__footer-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 7px 14px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.4;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-2);
+  color: var(--txt);
+  cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.panel__footer-btn:hover {
+  background: var(--surface);
+  border-color: var(--txt-2);
+}
+
+.panel__footer-btn:active {
+  transform: scale(0.97);
+}
+
+.panel__footer-btn--primary {
+  background: var(--acc);
+  border-color: var(--acc);
+  color: var(--bg);
+  font-weight: 600;
+}
+
+.panel__footer-btn--primary:hover {
+  background: #33ddff;
+  border-color: #33ddff;
+  box-shadow: 0 0 12px rgba(0, 212, 255, 0.25);
+}
+
+.panel__footer-btn--danger {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #fff;
+}
+
+.panel__footer-btn--danger:hover {
+  background: #f87171;
+  border-color: #f87171;
+}
+
+.panel__footer-btn--ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--txt-2);
+}
+
+.panel__footer-btn--ghost:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--txt);
+}
+
+/* footer meta text */
+.panel__footer-meta {
+  font-size: 0.75rem;
+  color: var(--txt-2);
+}
+
+/* ==========================================================================
+   2. PANEL VARIANTS (left border color)
+   ========================================================================== */
+
+.panel--info {
+  border-left: 3px solid var(--acc);
+}
+.panel--info .panel__header-icon {
+  background: rgba(0, 212, 255, 0.1);
+  color: var(--acc);
+}
+
+.panel--success {
+  border-left: 3px solid var(--success);
+}
+.panel--success .panel__header-icon {
+  background: rgba(34, 197, 94, 0.1);
+  color: var(--success);
+}
+
+.panel--warning {
+  border-left: 3px solid var(--warn);
+}
+.panel--warning .panel__header-icon {
+  background: rgba(245, 158, 11, 0.1);
+  color: var(--warn);
+}
+
+.panel--danger {
+  border-left: 3px solid var(--danger);
+}
+.panel--danger .panel__header-icon {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--danger);
+}
+
+.panel--neutral {
+  border-left: 3px solid var(--border);
+}
+.panel--neutral .panel__header-icon {
+  background: rgba(148, 163, 184, 0.1);
+  color: var(--txt-2);
+}
+
+.panel--accent {
+  border-left: 3px solid var(--acc-2);
+}
+.panel--accent .panel__header-icon {
+  background: rgba(124, 92, 255, 0.1);
+  color: var(--acc-2);
+}
+
+/* top-border variant */
+.panel--info-top    { border-left: none; border-top: 3px solid var(--acc); }
+.panel--success-top { border-left: none; border-top: 3px solid var(--success); }
+.panel--warning-top { border-left: none; border-top: 3px solid var(--warn); }
+.panel--danger-top  { border-left: none; border-top: 3px solid var(--danger); }
+.panel--accent-top  { border-left: none; border-top: 3px solid var(--acc-2); }
+
+/* ==========================================================================
+   3. PANEL SIZES
+   ========================================================================== */
+
+.panel--compact .panel__header {
+  padding: 10px 14px;
+  min-height: 40px;
+}
+
+.panel--compact .panel__body {
+  padding: 12px 14px;
+}
+
+.panel--compact .panel__footer {
+  padding: 8px 14px;
+}
+
+.panel--compact .panel__title {
+  font-size: 0.8125rem;
+}
+
+.panel--compact .panel__header-icon {
+  width: 26px;
+  height: 26px;
+  font-size: 0.75rem;
+}
+
+.panel--large .panel__header {
+  padding: 20px 24px;
+  min-height: 60px;
+}
+
+.panel--large .panel__body {
+  padding: 24px;
+}
+
+.panel--large .panel__footer {
+  padding: 16px 24px;
+}
+
+.panel--large .panel__title {
+  font-size: 1.0625rem;
+}
+
+.panel--large .panel__header-icon {
+  width: 36px;
+  height: 36px;
+  font-size: 1rem;
+}
+
+.panel--full-width {
+  width: 100%;
+  border-radius: 0;
+  border-left: none;
+  border-right: none;
+}
+
+/* ==========================================================================
+   4. COLLAPSIBLE PANELS
+   ========================================================================== */
+
+.panel--collapsible .panel__header {
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s ease;
+}
+
+.panel--collapsible .panel__header:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.panel--collapsible .panel__header:active {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.panel__collapse-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  color: var(--txt-2);
+  transition: transform 0.25s ease, color 0.15s ease;
+}
+
+.panel__collapse-toggle::before {
+  content: "";
+  display: inline-block;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 5px 0 5px 7px;
+  border-color: transparent transparent transparent currentColor;
+  transition: transform 0.25s ease;
+}
+
+.panel--collapsible.is-open .panel__collapse-toggle::before {
+  transform: rotate(90deg);
+}
+
+.panel__collapse-body {
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  transition:
+    max-height 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.25s ease,
+    padding 0.25s ease;
+}
+
+.panel--collapsible.is-open .panel__collapse-body {
+  max-height: 2000px;
+  opacity: 1;
+}
+
+.panel--collapsible:not(.is-open) .panel__header {
+  border-bottom-color: transparent;
+}
+
+/* smooth animated collapse using CSS grid trick */
+.panel__collapse-wrapper {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.panel--collapsible.is-open .panel__collapse-wrapper {
+  grid-template-rows: 1fr;
+}
+
+.panel__collapse-wrapper > .panel__body {
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* ==========================================================================
+   5. PANEL WITH SIDEBAR
+   ========================================================================== */
+
+.panel--with-sidebar {
+  flex-direction: row;
+}
+
+.panel-sidebar {
+  width: 220px;
+  min-width: 180px;
+  border-right: 1px solid var(--border);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.panel-sidebar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.panel-sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.panel-sidebar::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 2px;
+}
+
+.panel-sidebar__header {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--txt-2);
+  flex-shrink: 0;
+}
+
+.panel-sidebar__nav {
+  padding: 6px;
+  flex: 1;
+}
+
+.panel-sidebar__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  font-size: 0.8125rem;
+  color: var(--txt-2);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+  user-select: none;
+}
+
+.panel-sidebar__item:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--txt);
+}
+
+.panel-sidebar__item.is-active {
+  background: rgba(0, 212, 255, 0.08);
+  color: var(--acc);
+}
+
+.panel-sidebar__item-icon {
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8125rem;
+  flex-shrink: 0;
+}
+
+.panel-sidebar__item-label {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.panel-sidebar__item-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  font-size: 0.625rem;
+  font-weight: 600;
+  background: var(--acc);
+  color: var(--bg);
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.panel-sidebar__divider {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 10px;
+}
+
+.panel-sidebar__footer {
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.panel-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ==========================================================================
+   6. PANEL WITH TABS
+   ========================================================================== */
+
+.panel__tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.panel__tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.panel__tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 18px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--txt-2);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  margin-bottom: -1px;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.panel__tab:hover {
+  color: var(--txt);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.panel__tab.is-active {
+  color: var(--acc);
+  border-bottom-color: var(--acc);
+}
+
+.panel__tab-icon {
+  font-size: 0.8125rem;
+}
+
+.panel__tab-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 5px;
+  font-size: 0.625rem;
+  font-weight: 600;
+  background: rgba(0, 212, 255, 0.12);
+  color: var(--acc);
+  border-radius: 8px;
+}
+
+.panel__tab.is-active .panel__tab-badge {
+  background: var(--acc);
+  color: var(--bg);
+}
+
+.panel__tab-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  font-size: 0.625rem;
+  color: var(--txt-2);
+  border-radius: 3px;
+  opacity: 0;
+  cursor: pointer;
+  transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+.panel__tab:hover .panel__tab-close {
+  opacity: 0.7;
+}
+
+.panel__tab-close:hover {
+  opacity: 1 !important;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--txt);
+}
+
+.panel__tab-content {
+  display: none;
+}
+
+.panel__tab-content.is-active {
+  display: block;
+}
+
+/* tab bar in header */
+.panel__header--tabbed {
+  flex-wrap: wrap;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.panel__header--tabbed .panel__tabs {
+  width: 100%;
+  order: 10;
+  margin-top: 8px;
+}
+
+/* ==========================================================================
+   7. PANEL WITH TOOLBAR
+   ========================================================================== */
+
+.panel__toolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  min-height: 44px;
+}
+
+.panel__toolbar-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 6px 10px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--txt-2);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+  user-select: none;
+}
+
+.panel__toolbar-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--txt);
+  border-color: var(--border);
+}
+
+.panel__toolbar-btn:active {
+  background: rgba(255, 255, 255, 0.08);
+  transform: scale(0.95);
+}
+
+.panel__toolbar-btn.is-active {
+  background: rgba(0, 212, 255, 0.08);
+  color: var(--acc);
+  border-color: rgba(0, 212, 255, 0.2);
+}
+
+.panel__toolbar-btn--icon {
+  padding: 6px;
+  width: 32px;
+  height: 32px;
+}
+
+.panel__toolbar-btn[disabled],
+.panel__toolbar-btn.is-disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.panel__toolbar-divider {
+  width: 1px;
+  height: 20px;
+  background: var(--border);
+  margin: 0 4px;
+  flex-shrink: 0;
+}
+
+.panel__toolbar-spacer {
+  flex: 1;
+}
+
+/* toolbar search */
+.panel__toolbar-search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  max-width: 200px;
+}
+
+.panel__toolbar-search-icon {
+  color: var(--txt-2);
+  font-size: 0.75rem;
+  flex-shrink: 0;
+}
+
+.panel__toolbar-search-input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--txt);
+  font-size: 0.75rem;
+  font-family: inherit;
+  width: 100%;
+  min-width: 0;
+}
+
+.panel__toolbar-search-input::placeholder {
+  color: var(--txt-2);
+  opacity: 0.5;
+}
+
+.panel__toolbar-search:focus-within {
+  border-color: var(--acc);
+  box-shadow: 0 0 0 2px rgba(0, 212, 255, 0.1);
+}
+
+/* ==========================================================================
+   8. PANEL GROUPS
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   8a. STACKED (border-collapse between panels)
+   -------------------------------------------------------------------------- */
+
+.panel-group--stacked {
+  display: flex;
+  flex-direction: column;
+}
+
+.panel-group--stacked .panel {
+  border-radius: 0;
+}
+
+.panel-group--stacked .panel:first-child {
+  border-radius: var(--r-lg) var(--r-lg) 0 0;
+}
+
+.panel-group--stacked .panel:last-child {
+  border-radius: 0 0 var(--r-lg) var(--r-lg);
+}
+
+.panel-group--stacked .panel:only-child {
+  border-radius: var(--r-lg);
+}
+
+.panel-group--stacked .panel + .panel {
+  border-top: none;
+}
+
+/* --------------------------------------------------------------------------
+   8b. TABBED PANEL GROUP
+   -------------------------------------------------------------------------- */
+
+.panel-group--tabbed {
+  display: flex;
+  flex-direction: column;
+}
+
+.panel-group__tab-bar {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-2);
+  border-radius: var(--r-lg) var(--r-lg) 0 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  flex-shrink: 0;
+}
+
+.panel-group__tab-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.panel-group__tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 20px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--txt-2);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.15s ease, border-color 0.15s ease;
+  margin-bottom: -1px;
+}
+
+.panel-group__tab:hover {
+  color: var(--txt);
+}
+
+.panel-group__tab.is-active {
+  color: var(--acc);
+  border-bottom-color: var(--acc);
+}
+
+.panel-group__panel {
+  display: none;
+  border-radius: 0 0 var(--r-lg) var(--r-lg);
+}
+
+.panel-group__panel.is-active {
+  display: flex;
+  flex-direction: column;
+}
+
+/* --------------------------------------------------------------------------
+   8c. HORIZONTAL SCROLL CAROUSEL
+   -------------------------------------------------------------------------- */
+
+.panel-group--carousel {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-padding: 16px;
+  padding: 4px 0;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+  -webkit-overflow-scrolling: touch;
+}
+
+.panel-group--carousel::-webkit-scrollbar {
+  height: 6px;
+}
+
+.panel-group--carousel::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.panel-group--carousel::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+.panel-group--carousel .panel {
+  flex: 0 0 300px;
+  scroll-snap-align: start;
+}
+
+.panel-group--carousel .panel--wide {
+  flex: 0 0 420px;
+}
+
+.panel-group--carousel .panel--narrow {
+  flex: 0 0 240px;
+}
+
+/* --------------------------------------------------------------------------
+   8d. GAP VARIANTS FOR GROUPS
+   -------------------------------------------------------------------------- */
+
+.panel-group--gap-sm { gap: 8px; }
+.panel-group--gap-md { gap: 16px; }
+.panel-group--gap-lg { gap: 24px; }
+
+/* ==========================================================================
+   9. DASHBOARD PANEL GRID
+   ========================================================================== */
+
+.panel-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.panel-grid--sm {
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.panel-grid--lg {
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 20px;
+}
+
+.panel-grid--cols-2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.panel-grid--cols-3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.panel-grid--cols-4 {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+/* span helpers */
+.panel--span-2 { grid-column: span 2; }
+.panel--span-3 { grid-column: span 3; }
+.panel--span-4 { grid-column: span 4; }
+.panel--span-full { grid-column: 1 / -1; }
+
+.panel--row-span-2 { grid-row: span 2; }
+.panel--row-span-3 { grid-row: span 3; }
+
+/* masonry-like with explicit placement */
+.panel-grid--masonry {
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-auto-rows: minmax(100px, auto);
+  grid-auto-flow: dense;
+}
+
+/* fixed dashboard layout */
+.panel-grid--dashboard {
+  grid-template-columns: repeat(12, 1fr);
+  gap: 16px;
+}
+
+.panel-grid--dashboard .panel--col-3  { grid-column: span 3; }
+.panel-grid--dashboard .panel--col-4  { grid-column: span 4; }
+.panel-grid--dashboard .panel--col-6  { grid-column: span 6; }
+.panel-grid--dashboard .panel--col-8  { grid-column: span 8; }
+.panel-grid--dashboard .panel--col-12 { grid-column: span 12; }
+
+/* ==========================================================================
+   10. PANEL STATES
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   10a. LOADING SKELETON
+   -------------------------------------------------------------------------- */
+
+.panel--loading .panel__body {
+  position: relative;
+  min-height: 120px;
+}
+
+@keyframes skeleton-shimmer {
+  from { background-position: -200% 0; }
+  to   { background-position: 200% 0; }
+}
+
+.panel-skeleton {
+  position: relative;
+}
+
+.panel-skeleton__line {
+  height: 12px;
+  background: linear-gradient(
+    90deg,
+    var(--bg-2) 25%,
+    rgba(30, 41, 59, 0.6) 50%,
+    var(--bg-2) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.8s ease-in-out infinite;
+  border-radius: 4px;
+  margin-bottom: 10px;
+}
+
+.panel-skeleton__line:last-child {
+  margin-bottom: 0;
+}
+
+.panel-skeleton__line--title {
+  height: 16px;
+  width: 60%;
+  margin-bottom: 14px;
+}
+
+.panel-skeleton__line--short { width: 40%; }
+.panel-skeleton__line--medium { width: 70%; }
+.panel-skeleton__line--long { width: 90%; }
+.panel-skeleton__line--full { width: 100%; }
+
+.panel-skeleton__circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(
+    90deg,
+    var(--bg-2) 25%,
+    rgba(30, 41, 59, 0.6) 50%,
+    var(--bg-2) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.8s ease-in-out infinite;
+}
+
+.panel-skeleton__rect {
+  width: 100%;
+  height: 80px;
+  border-radius: var(--r-sm);
+  background: linear-gradient(
+    90deg,
+    var(--bg-2) 25%,
+    rgba(30, 41, 59, 0.6) 50%,
+    var(--bg-2) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.8s ease-in-out infinite;
+}
+
+.panel-skeleton__header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.panel-skeleton__body {
+  padding: 20px;
+}
+
+/* --------------------------------------------------------------------------
+   10b. EMPTY STATE
+   -------------------------------------------------------------------------- */
+
+.panel-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+  text-align: center;
+  min-height: 160px;
+}
+
+.panel-empty__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  color: var(--txt-2);
+  font-size: 1.25rem;
+  margin-bottom: 16px;
+  opacity: 0.6;
+}
+
+.panel-empty__title {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--txt);
+  margin: 0 0 6px;
+}
+
+.panel-empty__desc {
+  font-size: 0.8125rem;
+  color: var(--txt-2);
+  margin: 0 0 16px;
+  max-width: 280px;
+  line-height: 1.5;
+}
+
+.panel-empty__action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  background: var(--acc);
+  border: none;
+  border-radius: var(--r-sm);
+  color: var(--bg);
+  cursor: pointer;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.panel-empty__action:hover {
+  background: #33ddff;
+  box-shadow: 0 0 12px rgba(0, 212, 255, 0.25);
+}
+
+/* --------------------------------------------------------------------------
+   10c. ERROR STATE
+   -------------------------------------------------------------------------- */
+
+.panel-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+  text-align: center;
+  min-height: 160px;
+}
+
+.panel-error__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  color: var(--danger);
+  font-size: 1.25rem;
+  margin-bottom: 16px;
+}
+
+.panel-error__title {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--txt);
+  margin: 0 0 6px;
+}
+
+.panel-error__desc {
+  font-size: 0.8125rem;
+  color: var(--txt-2);
+  margin: 0 0 16px;
+  max-width: 280px;
+  line-height: 1.5;
+}
+
+.panel-error__action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  background: var(--danger);
+  border: none;
+  border-radius: var(--r-sm);
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.panel-error__action:hover {
+  background: #f87171;
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.25);
+}
+
+/* ==========================================================================
+   11. SPLIT PANEL
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   11a. HORIZONTAL SPLIT
+   -------------------------------------------------------------------------- */
+
+.split-panel {
+  display: flex;
+  width: 100%;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+}
+
+.split-panel--horizontal {
+  flex-direction: row;
+}
+
+.split-panel--vertical {
+  flex-direction: column;
+}
+
+.split-panel__pane {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.split-panel__pane::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+.split-panel__pane::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.split-panel__pane::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+/* resize handle */
+.split-panel__resizer {
+  flex-shrink: 0;
+  background: var(--border);
+  transition: background 0.15s ease;
+  position: relative;
+  z-index: 10;
+}
+
+.split-panel--horizontal > .split-panel__resizer {
+  width: 4px;
+  cursor: col-resize;
+}
+
+.split-panel--vertical > .split-panel__resizer {
+  height: 4px;
+  cursor: row-resize;
+}
+
+.split-panel__resizer:hover {
+  background: var(--acc);
+}
+
+.split-panel__resizer:active {
+  background: var(--acc);
+}
+
+/* drag indicator */
+.split-panel__resizer::after {
+  content: "";
+  position: absolute;
+  border-radius: 2px;
+  background: var(--txt-2);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.split-panel--horizontal > .split-panel__resizer::after {
+  width: 2px;
+  height: 24px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.split-panel--vertical > .split-panel__resizer::after {
+  width: 24px;
+  height: 2px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.split-panel__resizer:hover::after {
+  opacity: 0.5;
+}
+
+/* pane header */
+.split-panel__pane-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--txt);
+  flex-shrink: 0;
+}
+
+.split-panel__pane-body {
+  flex: 1;
+  padding: 16px;
+  overflow: auto;
+}
+
+/* collapsed pane */
+.split-panel__pane--collapsed {
+  flex: 0 0 40px !important;
+  overflow: hidden;
+}
+
+.split-panel--horizontal .split-panel__pane--collapsed {
+  max-width: 40px;
+}
+
+.split-panel--vertical .split-panel__pane--collapsed {
+  max-height: 40px;
+}
+
+/* ==========================================================================
+   12. FLOATING / DETACHED PANEL
+   ========================================================================== */
+
+.panel--floating {
+  position: fixed;
+  z-index: 900;
+  min-width: 280px;
+  min-height: 200px;
+  max-width: 90vw;
+  max-height: 80vh;
+  box-shadow:
+    0 0 0 1px rgba(0, 212, 255, 0.05),
+    0 8px 24px rgba(0, 0, 0, 0.4),
+    0 2px 8px rgba(0, 0, 0, 0.2);
+  resize: both;
+  overflow: hidden;
+}
+
+.panel--floating .panel__header {
+  cursor: grab;
+}
+
+.panel--floating .panel__header:active {
+  cursor: grabbing;
+}
+
+.panel__drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 0;
+  cursor: grab;
+  flex-shrink: 0;
+}
+
+.panel__drag-handle:active {
+  cursor: grabbing;
+}
+
+.panel__drag-handle::after {
+  content: "";
+  width: 32px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--border);
+}
+
+/* floating panel resize handle indicator */
+.panel--floating::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 16px;
+  height: 16px;
+  cursor: nwse-resize;
+  background:
+    linear-gradient(
+      135deg,
+      transparent 50%,
+      var(--border) 50%,
+      var(--border) 60%,
+      transparent 60%,
+      transparent 70%,
+      var(--border) 70%,
+      var(--border) 80%,
+      transparent 80%
+    );
+  opacity: 0.5;
+  transition: opacity 0.15s ease;
+}
+
+.panel--floating:hover::after {
+  opacity: 1;
+}
+
+/* minimized floating panel */
+.panel--floating.is-minimized {
+  min-height: auto;
+  height: auto !important;
+  resize: none;
+}
+
+.panel--floating.is-minimized .panel__body,
+.panel--floating.is-minimized .panel__footer {
+  display: none;
+}
+
+.panel--floating.is-minimized::after {
+  display: none;
+}
+
+/* ==========================================================================
+   13. PANEL OVERLAY / MODAL
+   ========================================================================== */
+
+.panel-overlay-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 950;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.25s ease, visibility 0.25s ease;
+}
+
+.panel-overlay-bg.is-active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.panel--overlay {
+  position: fixed;
+  z-index: 960;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.95);
+  max-width: 640px;
+  width: 90vw;
+  max-height: 80vh;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 0.25s ease,
+    visibility 0.25s ease,
+    transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow:
+    0 0 0 1px rgba(0, 212, 255, 0.05),
+    0 16px 48px rgba(0, 0, 0, 0.5);
+}
+
+.panel--overlay.is-active {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+/* ==========================================================================
+   14. PANEL TRANSITIONS
+   ========================================================================== */
+
+@keyframes panel-slide-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes panel-slide-down {
+  from { opacity: 0; transform: translateY(-20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes panel-slide-left {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes panel-slide-right {
+  from { opacity: 0; transform: translateX(-20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes panel-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes panel-scale-in {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.panel--anim-slide-up   { animation: panel-slide-up 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+.panel--anim-slide-down { animation: panel-slide-down 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+.panel--anim-slide-left { animation: panel-slide-left 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+.panel--anim-slide-right { animation: panel-slide-right 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+.panel--anim-fade       { animation: panel-fade-in 0.3s ease forwards; }
+.panel--anim-scale      { animation: panel-scale-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+/* staggered panel entrance */
+.panel-grid .panel:nth-child(1)  { animation-delay: 0ms; }
+.panel-grid .panel:nth-child(2)  { animation-delay: 50ms; }
+.panel-grid .panel:nth-child(3)  { animation-delay: 100ms; }
+.panel-grid .panel:nth-child(4)  { animation-delay: 150ms; }
+.panel-grid .panel:nth-child(5)  { animation-delay: 200ms; }
+.panel-grid .panel:nth-child(6)  { animation-delay: 250ms; }
+.panel-grid .panel:nth-child(7)  { animation-delay: 300ms; }
+.panel-grid .panel:nth-child(8)  { animation-delay: 350ms; }
+.panel-grid .panel:nth-child(9)  { animation-delay: 400ms; }
+.panel-grid .panel:nth-child(10) { animation-delay: 450ms; }
+.panel-grid .panel:nth-child(11) { animation-delay: 500ms; }
+.panel-grid .panel:nth-child(12) { animation-delay: 550ms; }
+
+/* ==========================================================================
+   15. PANEL HOVER EFFECTS
+   ========================================================================== */
+
+/* lift on hover */
+.panel--hover-lift {
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.panel--hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 0 0 1px rgba(0, 212, 255, 0.05),
+    0 8px 24px rgba(0, 0, 0, 0.3),
+    0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* glow on hover */
+.panel--hover-glow {
+  transition: box-shadow 0.25s ease;
+}
+
+.panel--hover-glow:hover {
+  box-shadow:
+    0 0 0 1px rgba(0, 212, 255, 0.1),
+    0 0 20px rgba(0, 212, 255, 0.06),
+    0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* accent glow variant */
+.panel--hover-glow-accent:hover {
+  box-shadow:
+    0 0 0 1px rgba(124, 92, 255, 0.15),
+    0 0 20px rgba(124, 92, 255, 0.08),
+    0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* border highlight on hover */
+.panel--hover-border {
+  transition: border-color 0.2s ease;
+}
+
+.panel--hover-border:hover {
+  border-color: var(--acc);
+}
+
+/* border highlight variants */
+.panel--hover-border-accent:hover { border-color: var(--acc-2); }
+.panel--hover-border-success:hover { border-color: var(--success); }
+.panel--hover-border-warning:hover { border-color: var(--warn); }
+.panel--hover-border-danger:hover { border-color: var(--danger); }
+
+/* scale up on hover */
+.panel--hover-scale {
+  transition: transform 0.2s ease;
+}
+
+.panel--hover-scale:hover {
+  transform: scale(1.02);
+}
+
+/* combined hover: lift + glow */
+.panel--hover-elevated {
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+.panel--hover-elevated:hover {
+  transform: translateY(-2px);
+  border-color: rgba(0, 212, 255, 0.15);
+  box-shadow:
+    0 0 0 1px rgba(0, 212, 255, 0.08),
+    0 0 16px rgba(0, 212, 255, 0.05),
+    0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+/* clickable panel */
+.panel--clickable {
+  cursor: pointer;
+}
+
+.panel--clickable:active {
+  transform: scale(0.99);
+}
+
+/* ==========================================================================
+   16. NESTED PANELS
+   ========================================================================== */
+
+.panel .panel {
+  background: var(--bg-2);
+  border-color: rgba(30, 41, 59, 0.7);
+  border-radius: var(--r-md);
+}
+
+.panel .panel .panel__header {
+  padding: 12px 16px;
+  min-height: 40px;
+}
+
+.panel .panel .panel__body {
+  padding: 14px 16px;
+}
+
+.panel .panel .panel__footer {
+  padding: 10px 16px;
+}
+
+.panel .panel .panel__title {
+  font-size: 0.8125rem;
+}
+
+.panel .panel .panel__header-icon {
+  width: 26px;
+  height: 26px;
+  font-size: 0.75rem;
+}
+
+/* deeply nested */
+.panel .panel .panel {
+  background: var(--bg);
+}
+
+/* ==========================================================================
+   17. PANEL WITH TIMELINE CONTENT
+   ========================================================================== */
+
+.panel-timeline {
+  padding: 0 20px 20px;
+  position: relative;
+}
+
+.panel-timeline__item {
+  display: flex;
+  gap: 14px;
+  padding: 16px 0;
+  position: relative;
+}
+
+.panel-timeline__item:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  left: 11px;
+  top: 40px;
+  bottom: -16px;
+  width: 2px;
+  background: var(--border);
+}
+
+.panel-timeline__marker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  background: var(--surface);
+  flex-shrink: 0;
+  z-index: 1;
+  font-size: 0.625rem;
+  color: var(--txt-2);
+  transition: all 0.2s ease;
+}
+
+.panel-timeline__item--done .panel-timeline__marker {
+  background: var(--success);
+  border-color: var(--success);
+  color: #fff;
+}
+
+.panel-timeline__item--active .panel-timeline__marker {
+  border-color: var(--acc);
+  color: var(--acc);
+  box-shadow: 0 0 0 4px rgba(0, 212, 255, 0.1);
+}
+
+.panel-timeline__item--error .panel-timeline__marker {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #fff;
+}
+
+.panel-timeline__item--warning .panel-timeline__marker {
+  border-color: var(--warn);
+  color: var(--warn);
+}
+
+.panel-timeline__content {
+  flex: 1;
+  min-width: 0;
+  padding-top: 2px;
+}
+
+.panel-timeline__title {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--txt);
+  margin: 0 0 4px;
+}
+
+.panel-timeline__desc {
+  font-size: 0.75rem;
+  color: var(--txt-2);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.panel-timeline__time {
+  font-size: 0.6875rem;
+  color: var(--txt-2);
+  opacity: 0.7;
+  margin-top: 4px;
+}
+
+/* connecting line color variants */
+.panel-timeline__item--done:not(:last-child)::before {
+  background: var(--success);
+}
+
+.panel-timeline__item--active:not(:last-child)::before {
+  background: linear-gradient(to bottom, var(--acc), var(--border));
+}
+
+/* ==========================================================================
+   18. PANEL WITH EMBEDDED DATA TABLE
+   ========================================================================== */
+
+.panel-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+
+.panel-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.panel-table th {
+  padding: 10px 16px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--txt-2);
+  background: var(--bg-2);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+  user-select: none;
+}
+
+.panel-table th:first-child {
+  padding-left: 20px;
+}
+
+.panel-table th:last-child {
+  padding-right: 20px;
+}
+
+.panel-table td {
+  padding: 10px 16px;
+  color: var(--txt);
+  border-bottom: 1px solid rgba(30, 41, 59, 0.5);
+  vertical-align: middle;
+  line-height: 1.4;
+}
+
+.panel-table td:first-child {
+  padding-left: 20px;
+}
+
+.panel-table td:last-child {
+  padding-right: 20px;
+}
+
+.panel-table tbody tr {
+  transition: background 0.12s ease;
+}
+
+.panel-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.panel-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* sortable header */
+.panel-table th--sortable {
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.panel-table th--sortable:hover {
+  color: var(--txt);
+}
+
+.panel-table th--sortable::after {
+  content: "";
+  display: inline-block;
+  width: 0;
+  height: 0;
+  margin-left: 6px;
+  vertical-align: middle;
+  border-style: solid;
+  border-width: 4px 3px 0 3px;
+  border-color: var(--txt-2) transparent transparent transparent;
+  opacity: 0.3;
+}
+
+.panel-table th--sorted-asc::after {
+  border-width: 0 3px 4px 3px;
+  border-color: transparent transparent var(--acc) transparent;
+  opacity: 1;
+}
+
+.panel-table th--sorted-desc::after {
+  border-width: 4px 3px 0 3px;
+  border-color: var(--acc) transparent transparent transparent;
+  opacity: 1;
+}
+
+/* table cell helpers */
+.panel-table__cell--mono {
+  font-family: "JetBrains Mono", "Fira Code", monospace;
+  font-size: 0.75rem;
+}
+
+.panel-table__cell--muted {
+  color: var(--txt-2);
+}
+
+.panel-table__cell--accent {
+  color: var(--acc);
+}
+
+.panel-table__cell--danger {
+  color: var(--danger);
+}
+
+.panel-table__cell--success {
+  color: var(--success);
+}
+
+.panel-table__cell--warn {
+  color: var(--warn);
+}
+
+.panel-table__cell--right {
+  text-align: right;
+}
+
+.panel-table__cell--center {
+  text-align: center;
+}
+
+.panel-table__cell--nowrap {
+  white-space: nowrap;
+}
+
+/* table status badge */
+.panel-table__badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  border-radius: 9999px;
+  white-space: nowrap;
+}
+
+.panel-table__badge--info {
+  background: rgba(0, 212, 255, 0.1);
+  color: var(--acc);
+}
+
+.panel-table__badge--success {
+  background: rgba(34, 197, 94, 0.1);
+  color: var(--success);
+}
+
+.panel-table__badge--warning {
+  background: rgba(245, 158, 11, 0.1);
+  color: var(--warn);
+}
+
+.panel-table__badge--danger {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--danger);
+}
+
+.panel-table__badge--neutral {
+  background: rgba(148, 163, 184, 0.1);
+  color: var(--txt-2);
+}
+
+/* compact table */
+.panel-table--compact th,
+.panel-table--compact td {
+  padding: 6px 12px;
+}
+
+.panel-table--compact th:first-child,
+.panel-table--compact td:first-child {
+  padding-left: 16px;
+}
+
+.panel-table--compact th:last-child,
+.panel-table--compact td:last-child {
+  padding-right: 16px;
+}
+
+/* striped table */
+.panel-table--striped tbody tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.015);
+}
+
+/* bordered table */
+.panel-table--bordered td,
+.panel-table--bordered th {
+  border: 1px solid var(--border);
+}
+
+/* table pagination */
+.panel-table__pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 20px;
+  border-top: 1px solid var(--border);
+  font-size: 0.75rem;
+  color: var(--txt-2);
+}
+
+.panel-table__pagination-info {
+  flex-shrink: 0;
+}
+
+.panel-table__pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.panel-table__pagination-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  color: var(--txt-2);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+
+.panel-table__pagination-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--txt);
+  border-color: var(--txt-2);
+}
+
+.panel-table__pagination-btn.is-active {
+  background: rgba(0, 212, 255, 0.1);
+  border-color: var(--acc);
+  color: var(--acc);
+}
+
+.panel-table__pagination-btn[disabled] {
+  opacity: 0.3;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ==========================================================================
+   19. PANEL BADGES AND STATUS INDICATORS
+   ========================================================================== */
+
+.panel__badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  border-radius: 10px;
+  z-index: 5;
+  border: 2px solid var(--surface);
+  font-variant-numeric: tabular-nums;
+}
+
+.panel__badge--info {
+  background: var(--acc);
+  color: var(--bg);
+}
+
+.panel__badge--success {
+  background: var(--success);
+  color: var(--bg);
+}
+
+.panel__badge--warning {
+  background: var(--warn);
+  color: var(--bg);
+}
+
+.panel__badge--danger {
+  background: var(--danger);
+  color: #fff;
+}
+
+.panel__badge--accent {
+  background: var(--acc-2);
+  color: #fff;
+}
+
+/* dot badge (no number, just a colored dot) */
+.panel__badge--dot {
+  width: 10px;
+  height: 10px;
+  min-width: 10px;
+  padding: 0;
+  top: -3px;
+  right: -3px;
+}
+
+/* pulsing dot badge */
+.panel__badge--pulse {
+  animation: badge-pulse 2s ease-in-out infinite;
+}
+
+@keyframes badge-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(0, 212, 255, 0.4); }
+  50%      { box-shadow: 0 0 0 6px rgba(0, 212, 255, 0); }
+}
+
+.panel__badge--danger.panel__badge--pulse {
+  animation-name: badge-pulse-danger;
+}
+
+@keyframes badge-pulse-danger {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+  50%      { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+}
+
+.panel__badge--success.panel__badge--pulse {
+  animation-name: badge-pulse-success;
+}
+
+@keyframes badge-pulse-success {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
+  50%      { box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); }
+}
+
+/* status indicator in header */
+.panel__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  padding: 3px 8px;
+  border-radius: 9999px;
+  flex-shrink: 0;
+}
+
+.panel__status::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.panel__status--online {
+  background: rgba(34, 197, 94, 0.1);
+  color: var(--success);
+}
+.panel__status--online::before {
+  background: var(--success);
+}
+
+.panel__status--offline {
+  background: rgba(148, 163, 184, 0.1);
+  color: var(--txt-2);
+}
+.panel__status--offline::before {
+  background: var(--txt-2);
+}
+
+.panel__status--error {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--danger);
+}
+.panel__status--error::before {
+  background: var(--danger);
+}
+
+.panel__status--warning {
+  background: rgba(245, 158, 11, 0.1);
+  color: var(--warn);
+}
+.panel__status--warning::before {
+  background: var(--warn);
+}
+
+.panel__status--loading {
+  background: rgba(124, 92, 255, 0.1);
+  color: var(--acc-2);
+}
+.panel__status--loading::before {
+  background: var(--acc-2);
+  animation: status-blink 1s ease-in-out infinite;
+}
+
+@keyframes status-blink {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.3; }
+}
+
+/* ==========================================================================
+   20. PANEL CONTEXT MENU (three-dot trigger)
+   ========================================================================== */
+
+.panel-context-menu {
+  position: absolute;
+  top: 44px;
+  right: 8px;
+  z-index: 100;
+  min-width: 160px;
+  max-width: 240px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.3),
+    0 1px 4px rgba(0, 0, 0, 0.15);
+  padding: 4px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px) scale(0.97);
+  transform-origin: top right;
+  transition: opacity 0.15s ease, visibility 0.15s ease, transform 0.15s ease;
+  pointer-events: none;
+}
+
+.panel-context-menu.is-active {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+.panel-context-menu__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  font-size: 0.8125rem;
+  color: var(--txt);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: background 0.1s ease;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.panel-context-menu__item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.panel-context-menu__item--danger {
+  color: var(--danger);
+}
+
+.panel-context-menu__item--danger:hover {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.panel-context-menu__item-icon {
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  color: var(--txt-2);
+  flex-shrink: 0;
+}
+
+.panel-context-menu__item:hover .panel-context-menu__item-icon {
+  color: var(--txt);
+}
+
+.panel-context-menu__item--danger .panel-context-menu__item-icon {
+  color: var(--danger);
+}
+
+.panel-context-menu__divider {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 6px;
+}
+
+/* ==========================================================================
+   21. GLASS VARIANT
+   ========================================================================== */
+
+.panel--glass {
+  background: rgba(17, 24, 39, 0.7);
+  backdrop-filter: blur(16px) saturate(1.2);
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+.panel--glass .panel__header {
+  border-bottom-color: rgba(255, 255, 255, 0.06);
+}
+
+.panel--glass .panel__footer {
+  border-top-color: rgba(255, 255, 255, 0.06);
+}
+
+.panel--glass .panel__tabs {
+  border-bottom-color: rgba(255, 255, 255, 0.06);
+}
+
+.panel--glass .panel__toolbar {
+  border-bottom-color: rgba(255, 255, 255, 0.06);
+}
+
+/* ==========================================================================
+   22. STAT / KPI PANEL
+   ========================================================================== */
+
+.panel-stat {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.panel-stat__label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--txt-2);
+}
+
+.panel-stat__value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--txt);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.panel-stat__value--accent { color: var(--acc); }
+.panel-stat__value--success { color: var(--success); }
+.panel-stat__value--danger { color: var(--danger); }
+.panel-stat__value--warn { color: var(--warn); }
+
+.panel-stat__change {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.panel-stat__change--up {
+  color: var(--success);
+}
+
+.panel-stat__change--down {
+  color: var(--danger);
+}
+
+.panel-stat__change--neutral {
+  color: var(--txt-2);
+}
+
+.panel-stat__sparkline {
+  height: 32px;
+  width: 100%;
+  margin-top: 8px;
+}
+
+.panel-stat__icon {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--r-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+}
+
+.panel-stat__icon--accent {
+  background: rgba(0, 212, 255, 0.08);
+  color: var(--acc);
+}
+
+.panel-stat__icon--success {
+  background: rgba(34, 197, 94, 0.08);
+  color: var(--success);
+}
+
+.panel-stat__icon--danger {
+  background: rgba(239, 68, 68, 0.08);
+  color: var(--danger);
+}
+
+.panel-stat__icon--purple {
+  background: rgba(124, 92, 255, 0.08);
+  color: var(--acc-2);
+}
+
+/* row of stat panels */
+.panel-stat-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+}
+
+/* ==========================================================================
+   23. PANEL WITH PROGRESS
+   ========================================================================== */
+
+.panel__progress {
+  padding: 0 20px 16px;
+}
+
+.panel__progress-bar-wrapper {
+  width: 100%;
+  height: 6px;
+  background: var(--bg-2);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.panel__progress-bar {
+  height: 100%;
+  background: var(--acc);
+  border-radius: 3px;
+  transition: width 0.4s ease;
+  position: relative;
+}
+
+.panel__progress-bar--success { background: var(--success); }
+.panel__progress-bar--danger  { background: var(--danger); }
+.panel__progress-bar--warn    { background: var(--warn); }
+.panel__progress-bar--accent  { background: var(--acc-2); }
+
+.panel__progress-bar--striped {
+  background-image: linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.1) 25%,
+    transparent 25%,
+    transparent 50%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0.1) 75%,
+    transparent 75%,
+    transparent
+  );
+  background-size: 16px 16px;
+}
+
+.panel__progress-bar--animated {
+  animation: progress-stripe-move 1s linear infinite;
+}
+
+@keyframes progress-stripe-move {
+  from { background-position: 0 0; }
+  to   { background-position: 16px 0; }
+}
+
+.panel__progress-label {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  font-size: 0.75rem;
+  color: var(--txt-2);
+}
+
+.panel__progress-label-value {
+  font-weight: 600;
+  color: var(--txt);
+  font-variant-numeric: tabular-nums;
+}
+
+/* segmented progress */
+.panel__progress-segments {
+  display: flex;
+  gap: 3px;
+  width: 100%;
+}
+
+.panel__progress-segment {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--bg-2);
+  transition: background 0.2s ease;
+}
+
+.panel__progress-segment--filled {
+  background: var(--acc);
+}
+
+.panel__progress-segment--success { background: var(--success); }
+.panel__progress-segment--danger  { background: var(--danger); }
+.panel__progress-segment--warn    { background: var(--warn); }
+
+/* ==========================================================================
+   24. PANEL LIST (simple item list in panel body)
+   ========================================================================== */
+
+.panel-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.panel-list__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  border-bottom: 1px solid rgba(30, 41, 59, 0.5);
+  font-size: 0.8125rem;
+  color: var(--txt);
+  transition: background 0.12s ease;
+  cursor: default;
+}
+
+.panel-list__item:last-child {
+  border-bottom: none;
+}
+
+.panel-list__item:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.panel-list__item--clickable {
+  cursor: pointer;
+}
+
+.panel-list__item--clickable:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.panel-list__item--active {
+  background: rgba(0, 212, 255, 0.06);
+}
+
+.panel-list__item-icon {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+  color: var(--txt-2);
+  flex-shrink: 0;
+}
+
+.panel-list__item-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.panel-list__item-label {
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.panel-list__item-desc {
+  font-size: 0.75rem;
+  color: var(--txt-2);
+  margin-top: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.panel-list__item-meta {
+  font-size: 0.6875rem;
+  color: var(--txt-2);
+  flex-shrink: 0;
+}
+
+.panel-list__item-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: var(--r-sm);
+  color: var(--txt-2);
+  font-size: 0.75rem;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
+  flex-shrink: 0;
+}
+
+.panel-list__item:hover .panel-list__item-action {
+  opacity: 1;
+}
+
+.panel-list__item-action:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--txt);
+}
+
+/* divider in list */
+.panel-list__divider {
+  height: 1px;
+  background: var(--border);
+  margin: 0 20px;
+}
+
+/* group label */
+.panel-list__group-label {
+  padding: 8px 20px 4px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--txt-2);
+  opacity: 0.6;
+}
+
+/* ==========================================================================
+   25. PANEL UTILITY CLASSES
+   ========================================================================== */
+
+.panel--no-border       { border: none; }
+.panel--no-header-border .panel__header { border-bottom: none; }
+.panel--no-footer-border .panel__footer { border-top: none; }
+.panel--no-radius       { border-radius: 0; }
+.panel--no-shadow       { box-shadow: none; }
+.panel--no-overflow     { overflow: hidden; }
+
+.panel--bg-base { background: var(--bg); }
+.panel--bg-alt  { background: var(--bg-2); }
+
+.panel--bordered { border-width: 2px; }
+.panel--dashed   { border-style: dashed; }
+
+.panel--pad-none .panel__body  { padding: 0; }
+.panel--pad-sm   .panel__body  { padding: 12px; }
+.panel--pad-lg   .panel__body  { padding: 28px; }
+
+/* height constraints */
+.panel--h-auto   { height: auto; }
+.panel--h-full   { height: 100%; }
+.panel--h-screen { height: 100vh; }
+.panel--max-h-sm { max-height: 300px; }
+.panel--max-h-md { max-height: 500px; }
+.panel--max-h-lg { max-height: 700px; }
+
+/* min-height */
+.panel--min-h-sm { min-height: 200px; }
+.panel--min-h-md { min-height: 320px; }
+.panel--min-h-lg { min-height: 480px; }
+
+/* ==========================================================================
+   26. RESPONSIVE / MOBILE ADAPTATIONS
+   ========================================================================== */
+
+@media (max-width: 768px) {
+  .panel-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .panel-grid--cols-2,
+  .panel-grid--cols-3,
+  .panel-grid--cols-4 {
+    grid-template-columns: 1fr;
+  }
+
+  .panel-grid--dashboard {
+    grid-template-columns: 1fr;
+  }
+
+  .panel-grid--dashboard .panel--col-3,
+  .panel-grid--dashboard .panel--col-4,
+  .panel-grid--dashboard .panel--col-6,
+  .panel-grid--dashboard .panel--col-8,
+  .panel-grid--dashboard .panel--col-12 {
+    grid-column: 1 / -1;
+  }
+
+  .panel--span-2,
+  .panel--span-3,
+  .panel--span-4 {
+    grid-column: 1 / -1;
+  }
+
+  /* sidebar becomes stacked */
+  .panel--with-sidebar {
+    flex-direction: column;
+  }
+
+  .panel-sidebar {
+    width: 100%;
+    min-width: 0;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    max-height: 200px;
+  }
+
+  /* split panel becomes stacked */
+  .split-panel--horizontal {
+    flex-direction: column;
+  }
+
+  .split-panel--horizontal > .split-panel__resizer {
+    width: 100%;
+    height: 4px;
+    cursor: row-resize;
+  }
+
+  .split-panel--horizontal > .split-panel__resizer::after {
+    width: 24px;
+    height: 2px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+
+  /* floating panels become full-width */
+  .panel--floating {
+    left: 8px !important;
+    right: 8px !important;
+    width: auto !important;
+    min-width: 0;
+    max-width: none;
+  }
+
+  /* overlay panel */
+  .panel--overlay {
+    width: calc(100vw - 16px);
+    max-width: none;
+    max-height: calc(100vh - 16px);
+  }
+
+  /* panel header adjustments */
+  .panel__header {
+    padding: 12px 16px;
+  }
+
+  .panel__body {
+    padding: 16px;
+  }
+
+  .panel__footer {
+    padding: 10px 16px;
+  }
+
+  .panel__toolbar {
+    padding: 6px 8px;
+  }
+
+  .panel__toolbar-search {
+    max-width: 160px;
+  }
+
+  /* stat panels */
+  .panel-stat-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .panel-stat__value {
+    font-size: 1.375rem;
+  }
+
+  /* table responsive */
+  .panel-table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* carousel items shrink */
+  .panel-group--carousel .panel {
+    flex: 0 0 260px;
+  }
+}
+
+@media (max-width: 480px) {
+  .panel-stat-row {
+    grid-template-columns: 1fr;
+  }
+
+  .panel__header {
+    padding: 10px 14px;
+    gap: 8px;
+  }
+
+  .panel__title {
+    font-size: 0.875rem;
+  }
+
+  .panel__body {
+    padding: 14px;
+  }
+
+  .panel__footer {
+    padding: 8px 14px;
+    gap: 6px;
+  }
+
+  .panel__tabs {
+    gap: 0;
+  }
+
+  .panel__tab {
+    padding: 10px 12px;
+    font-size: 0.75rem;
+  }
+
+  .panel-list__item {
+    padding: 10px 14px;
+    gap: 8px;
+  }
+
+  .panel-table th,
+  .panel-table td {
+    padding: 8px 10px;
+    font-size: 0.75rem;
+  }
+
+  .panel-table th:first-child,
+  .panel-table td:first-child {
+    padding-left: 14px;
+  }
+
+  .panel-table th:last-child,
+  .panel-table td:last-child {
+    padding-right: 14px;
+  }
+
+  .panel-timeline__item {
+    gap: 10px;
+    padding: 12px 0;
+  }
+
+  .panel-timeline__marker {
+    width: 20px;
+    height: 20px;
+  }
+
+  .panel-timeline__item:not(:last-child)::before {
+    left: 9px;
+  }
+
+  .panel-group--carousel .panel {
+    flex: 0 0 220px;
+  }
+}
+
+/* ==========================================================================
+   27. PRINT STYLES
+   ========================================================================== */
+
+@media print {
+  .panel {
+    break-inside: avoid;
+    box-shadow: none;
+    border: 1px solid #ccc;
+  }
+
+  .panel--floating {
+    position: static;
+    box-shadow: none;
+  }
+
+  .panel--overlay {
+    position: static;
+    transform: none;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .panel-overlay-bg {
+    display: none !important;
+  }
+
+  .panel__header-btn,
+  .panel__menu-trigger,
+  .panel__header-actions,
+  .panel-context-menu,
+  .panel__toolbar-btn--icon {
+    display: none !important;
+  }
+
+  .panel--hover-lift:hover,
+  .panel--hover-glow:hover,
+  .panel--hover-scale:hover,
+  .panel--hover-elevated:hover {
+    transform: none;
+    box-shadow: none;
+  }
+}
+
+/* ==========================================================================
+   28. REDUCED MOTION
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .panel,
+  .panel--hover-lift,
+  .panel--hover-glow,
+  .panel--hover-scale,
+  .panel--hover-elevated,
+  .panel--hover-border,
+  .panel__collapse-body,
+  .panel__collapse-wrapper,
+  .panel-context-menu,
+  .panel--overlay,
+  .split-panel__resizer {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .panel-skeleton__line,
+  .panel-skeleton__circle,
+  .panel-skeleton__rect {
+    animation: none;
+    background: var(--bg-2);
+  }
+
+  .panel__progress-bar--animated {
+    animation: none;
+  }
+
+  .panel__badge--pulse {
+    animation: none;
+  }
+
+  .panel__status--loading::before {
+    animation: none;
+  }
+}
+
+/* ==========================================================================
+   END panels.css
+   ========================================================================== */

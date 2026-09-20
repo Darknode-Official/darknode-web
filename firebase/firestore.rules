@@ -36,5 +36,11 @@ service cloud.firestore {
       allow create: if signedIn();
       allow read, update, delete: if isOwner();
     }
+
+    // Client error log: any signed-in user can report; only the owner reads & manages.
+    match /errors/{docId} {
+      allow create: if signedIn();
+      allow read, update, delete: if isOwner();
+    }
   }
 }

@@ -1,0 +1,293 @@
+/* ============================================================================
+   D3.js Interactive Threat Map Styles
+   SVG world map with threat actor overlays, attack arcs, and live data
+   ============================================================================ */
+
+/* -- Map Container -- */
+.tm-container {
+  position: relative;
+  background: #0a0e14;
+  border-radius: 4px;
+  overflow: hidden;
+  cursor: grab;
+}
+
+.tm-container:active {
+  cursor: grabbing;
+}
+
+.tm-container svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* -- Country Fills -- */
+.tm-country {
+  stroke: #0a2a44;
+  stroke-width: 0.5px;
+  transition: fill 0.2s;
+}
+
+.tm-country:hover {
+  stroke: #00aaff;
+  stroke-width: 1px;
+}
+
+.tm-country--hostile {
+  fill: #1a0a0a;
+}
+
+.tm-country--allied {
+  fill: #0a0a1a;
+}
+
+.tm-country--conflict {
+  fill: #1a1200;
+}
+
+.tm-country--neutral {
+  fill: #0c1018;
+}
+
+/* -- Threat Actor Markers -- */
+.tm-actor {
+  cursor: pointer;
+}
+
+.tm-actor-dot {
+  transition: r 0.2s;
+}
+
+.tm-actor:hover .tm-actor-dot {
+  r: 8;
+}
+
+.tm-actor--hostile .tm-actor-dot {
+  fill: #ff3333;
+}
+
+.tm-actor--allied .tm-actor-dot {
+  fill: #4488ff;
+}
+
+/* -- Pulse Animation on Hostile Actors -- */
+.tm-pulse {
+  animation: tm-pulse-anim 2s ease-out infinite;
+}
+
+@keyframes tm-pulse-anim {
+  0% { r: 5; opacity: 0.6; }
+  100% { r: 20; opacity: 0; }
+}
+
+/* -- Attack Arcs -- */
+.tm-arc {
+  fill: none;
+  stroke-width: 1.5px;
+  stroke-linecap: round;
+  animation: tm-arc-dash 3s linear infinite;
+}
+
+@keyframes tm-arc-dash {
+  to { stroke-dashoffset: -40; }
+}
+
+.tm-arc--hostile {
+  stroke: rgba(255, 51, 51, 0.5);
+  stroke-dasharray: 8 12;
+}
+
+.tm-arc--allied {
+  stroke: rgba(68, 136, 255, 0.4);
+  stroke-dasharray: 6 10;
+}
+
+/* -- Infrastructure Markers -- */
+.tm-ixp {
+  fill: #00ff88;
+  opacity: 0.7;
+}
+
+.tm-dns {
+  fill: #00ddff;
+  opacity: 0.6;
+}
+
+.tm-cable-landing {
+  fill: #2a8a5a;
+  opacity: 0.5;
+}
+
+/* -- Labels -- */
+.tm-label {
+  font-family: 'Courier New', 'JetBrains Mono', monospace;
+  font-size: 8px;
+  fill: currentColor;
+  pointer-events: none;
+  text-anchor: middle;
+}
+
+.tm-label--hostile { fill: rgba(255, 68, 68, 0.7); }
+.tm-label--allied { fill: rgba(68, 136, 255, 0.6); }
+.tm-label--infra { fill: rgba(0, 221, 119, 0.5); }
+
+/* -- Tooltip -- */
+.tm-tooltip {
+  position: absolute;
+  background: rgba(8, 12, 20, 0.95);
+  border: 1px solid #1a4a6a;
+  border-radius: 4px;
+  padding: 10px 14px;
+  max-width: 300px;
+  min-width: 180px;
+  pointer-events: none;
+  z-index: 100;
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+  color: #c8d6e5;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.tm-tooltip.visible {
+  opacity: 1;
+}
+
+.tm-tooltip-title {
+  font-size: 12px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  margin-bottom: 6px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #1a3a5a;
+}
+
+.tm-tooltip-title--hostile { color: #ff4444; }
+.tm-tooltip-title--allied { color: #44aaff; }
+.tm-tooltip-title--neutral { color: #8899aa; }
+
+.tm-tooltip-row {
+  margin: 3px 0;
+  color: #8ab4d4;
+  line-height: 1.3;
+}
+
+.tm-tooltip-label {
+  color: #4a7a9a;
+  margin-right: 4px;
+}
+
+/* -- Loading Overlay -- */
+.tm-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(10, 14, 20, 0.9);
+  z-index: 50;
+}
+
+.tm-loading-text {
+  color: #00aaff;
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  letter-spacing: 2px;
+  animation: tm-loading-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes tm-loading-pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+/* -- Map Controls -- */
+.tm-controls {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  z-index: 10;
+}
+
+.tm-ctrl-btn {
+  width: 28px;
+  height: 28px;
+  background: rgba(10, 14, 20, 0.8);
+  border: 1px solid #1a3a5a;
+  color: #5a8aaa;
+  font-family: monospace;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 3px;
+  transition: all 0.15s;
+}
+
+.tm-ctrl-btn:hover {
+  border-color: #00aaff;
+  color: #00ddff;
+  background: rgba(0, 170, 255, 0.1);
+}
+
+/* -- Legend -- */
+.tm-legend {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  background: rgba(8, 12, 20, 0.85);
+  border: 1px solid #1a3a5a;
+  border-radius: 4px;
+  padding: 6px 10px;
+  font-family: 'Courier New', monospace;
+  font-size: 9px;
+  z-index: 10;
+}
+
+.tm-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 2px 0;
+  color: #6a8aaa;
+}
+
+.tm-legend-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.tm-legend-line {
+  width: 14px;
+  height: 2px;
+  flex-shrink: 0;
+  border-radius: 1px;
+}
+
+/* -- Graticule (grid lines) -- */
+.tm-graticule {
+  fill: none;
+  stroke: rgba(0, 170, 255, 0.04);
+  stroke-width: 0.5px;
+}
+
+/* -- Responsive -- */
+@media (max-width: 768px) {
+  .tm-tooltip { max-width: 220px; font-size: 10px; }
+  .tm-legend { font-size: 8px; padding: 4px 8px; }
+  .tm-label { font-size: 7px; }
+}
+
+@media (max-width: 480px) {
+  .tm-legend { display: none; }
+  .tm-controls { display: none; }
+}

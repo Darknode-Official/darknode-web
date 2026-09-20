@@ -1,5 +1,15 @@
 {
   "projects": {
     "default": "sentinel-b4194"
-  }
+  },
+  "targets": {
+    "sentinel-b4194": {
+      "hosting": {
+        "darknode-6173e": [
+          "sentinel-b4194-6173e"
+        ]
+      }
+    }
+  },
+  "etags": {}
 }

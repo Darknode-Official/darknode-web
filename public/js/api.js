@@ -37,9 +37,10 @@ const ENDPOINTS = [
 ];
 
 const TIERS = [
-  { name: "Free", price: "$0", calls: "100 / month", features: ["All endpoints", "Community support", "Rate limited"] },
-  { name: "Pro", price: "$29", calls: "10,000 / month", features: ["All endpoints", "Priority support", "Higher rate limits", "Webhook notifications"] },
-  { name: "Self-hosted", price: "Free", calls: "Unlimited", features: ["Run on your machine", "No rate limits", "Full privacy", "darknode api start"] },
+  { name: "Free", price: "$0", calls: "forever", features: ["All endpoints", "Community support", "BYOK — bring your own API key", "192+ security tools", "5 MCP server integrations"] },
+  { name: "Pro", price: "$12", calls: "/month", features: ["Everything in Free", "Multi-agent pipelines (8 roles)", "Ghost Agents — background monitoring", "Attack Planner — AI pentest methodology", "25 MCP server integrations", "Priority support"] },
+  { name: "Team", price: "$25", calls: "/month", features: ["Everything in Pro", "Shared workspace & team labs", "Report Generator — professional reports", "Custom training scenarios & CTF builder", "Unlimited MCP integrations", "Plugin system & extension SDK"] },
+  { name: "Enterprise", price: "Custom", calls: "", features: ["Everything in Team", "SSO & SAML authentication", "Data isolation & tenant separation", "Admin dashboard & usage analytics", "Self-hosted deployment option", "Volume licensing"] },
 ];
 
 export async function renderAPI(main, user) {
