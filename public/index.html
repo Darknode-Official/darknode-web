@@ -29,17 +29,27 @@
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap"></noscript>
   <style>body{margin:0;background:var(--bg);color:var(--txt);
   font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
-#bootscreen{position:fixed;inset:0;z-index:99999;background:#05070d;background:radial-gradient(1200px 600px at 50% 20%,#0a0f1c,#05070d 70%);
-  display:flex;align-items:center;justify-content:center;overflow:hidden;font-family:var(--mono,ui-monospace,"JetBrains Mono",monospace);
+#bootscreen{position:fixed;inset:0;z-index:99999;background:#05070d;
+  display:flex;align-items:center;justify-content:center;overflow:hidden;
   transition:opacity .5s ease;opacity:1}
-.boot-grid{position:absolute;inset:0;opacity:.5;
-  background-image:linear-gradient(color-mix(in srgb,var(--acc,#00d4ff) 12%,transparent) 1px,transparent 1px),linear-gradient(90deg,color-mix(in srgb,var(--acc,#00d4ff) 12%,transparent) 1px,transparent 1px);
-  background-size:34px 34px;-webkit-mask-image:radial-gradient(60% 50% at 50% 45%,#000,transparent 80%);mask-image:radial-gradient(60% 50% at 50% 45%,#000,transparent 80%)}
+[data-boot=classic] #bootscreen{background:radial-gradient(1200px 600px at 50% 20%,#0a0f1c,#05070d 70%);font-family:var(--mono,ui-monospace,"JetBrains Mono",monospace)}
+[data-boot=pro] #bootscreen{background:#fafafa;font-family:ui-sans-serif,system-ui,-apple-system,sans-serif}
+.boot-classic,.boot-pro{display:none}
+[data-boot=classic] .boot-classic{display:block}
+[data-boot=pro] .boot-pro{display:flex;flex-direction:column;align-items:center;gap:32px}
+[data-boot=pro] .boot-grid,[data-boot=pro] .boot-sweep,[data-boot=pro] .boot-ring{display:none!important}
+.boot-pro-logo{font-size:clamp(1.6rem,4vw,2.4rem);font-weight:700;letter-spacing:.04em;color:#111}
+.boot-pro-sub{font-size:.85rem;color:#999;letter-spacing:.12em;text-transform:uppercase}
+.boot-pro-bar{width:min(320px,70vw);height:2px;background:#e5e5e5;border-radius:1px;overflow:hidden}
+.boot-pro-bar>span{display:block;height:100%;width:0;background:#111;transition:width .4s ease}
+.boot-pro-pct{font-size:.75rem;color:#999;font-variant-numeric:tabular-nums}
 .boot-inner{position:relative;text-align:center}
 .boot-logo{font-size:clamp(2.2rem,7vw,4rem);font-weight:800;letter-spacing:.06em;
   background:linear-gradient(135deg,var(--acc,#00d4ff),var(--acc-2,#7c5cff));-webkit-background-clip:text;background-clip:text;color:transparent;
   filter:drop-shadow(0 0 24px color-mix(in srgb,var(--acc,#00d4ff) 55%,transparent));animation:bootPulse 2.4s ease-in-out infinite}</style>
-  <link rel="stylesheet" href="/css/styles.css?v=20260919c" media="all">
+  <script>!function(){var b='pro';try{b=localStorage.getItem('sw_boot_theme')||'pro'}catch(_){}document.documentElement.setAttribute('data-boot',b);var s='pro';try{s=localStorage.getItem('sw_style')||'pro'}catch(_){}document.documentElement.setAttribute('data-style',s)}()</script>
+  <link rel="stylesheet" href="/css/styles.css?v=20260919e" media="all">
+  <link rel="stylesheet" href="/css/pro-theme.css?v=20260919e" media="all">
 </head>
 <body>
   <script>!function(){var a=["darknode.ai","www.darknode.ai","localhost","127.0.0.1"],h=location.hostname;if(!a.some(function(d){return h===d||h.endsWith("."+d)})){document.documentElement.innerHTML="<body style='background:#0a0e16;color:#f44;font:600 1.2rem/2 system-ui;display:flex;align-items:center;justify-content:center;height:100vh;text-align:center;padding:2rem'><div><h1>Unauthorized</h1><p>This software is licensed exclusively to <b>darknode.ai</b>.<br>Redistribution and rehosting are prohibited.<br><br><a href=\x22https://darknode.ai\x22 style=\x22color:#00d4ff\x22>Visit the official site</a></p></div></body>";throw new Error("Unauthorized domain")}}()</script>
@@ -47,25 +57,35 @@
   <div id="bootscreen" aria-hidden="true" role="presentation">
     <div class="boot-grid"></div>
     <div class="boot-sweep"></div>
-    <div class="boot-inner">
-      <div class="boot-ring"></div><div class="boot-ring r2"></div>
-      <div class="boot-logo glitch" data-text="&gt;_ DARKNODE">&gt;_ DARKNODE</div>
-      <div class="boot-tag">C Y B E R S E C U R I T Y &nbsp; L E A R N I N G &nbsp; P L A T F O R M</div>
-      <div class="boot-ver">v3.0.0 &middot; 59 modules &middot; 592,000+ lines</div>
-      <div class="boot-lines">
-        <div style="--d:.15s"><span class="boot-dim">darknode kernel 3.0.0 (darknode.ai)</span></div>
-        <div style="--d:.30s">[<span class="bok">OK</span>] loading 192+ security tools</div>
-        <div style="--d:.45s">[<span class="bok">OK</span>] initializing Nexus AI engine (59 modules)</div>
-        <div style="--d:.60s">[<span class="bok">OK</span>] connecting 8 AI backends</div>
-        <div style="--d:.75s">[<span class="bok">OK</span>] arming Ghost Agents &amp; Thought Stream</div>
-        <div style="--d:.90s">[<span class="bok">OK</span>] loading threat intelligence databases</div>
-        <div style="--d:1.05s">[<span class="bok">OK</span>] mounting knowledge graph &amp; deep memory</div>
-        <div style="--d:1.20s">[<span class="bok">OK</span>] attack planner &amp; CTF assistant ready</div>
-        <div style="--d:1.35s">[<span class="bok">OK</span>] verification engine armed</div>
-        <div style="--d:1.55s">[<span class="bok" style="color:#00d4ff">ONLINE</span>] <span style="color:#00d4ff">darknode.ai</span></div>
-        <div style="--d:1.75s" class="boot-go">darknode@ai:~$ <span class="boot-cur">&#9608;</span></div>
+    <!-- Professional boot -->
+    <div class="boot-pro">
+      <div class="boot-pro-logo">Darknode</div>
+      <div class="boot-pro-sub">Cybersecurity Platform</div>
+      <div class="boot-pro-bar"><span id="bootbar-pro"></span></div>
+      <div class="boot-pro-pct" id="bootpct-pro">0%</div>
+    </div>
+    <!-- Classic cyberpunk boot -->
+    <div class="boot-classic">
+      <div class="boot-inner">
+        <div class="boot-ring"></div><div class="boot-ring r2"></div>
+        <div class="boot-logo glitch" data-text="&gt;_ DARKNODE">&gt;_ DARKNODE</div>
+        <div class="boot-tag">C Y B E R S E C U R I T Y &nbsp; L E A R N I N G &nbsp; P L A T F O R M</div>
+        <div class="boot-ver">v3.0.0 &middot; 59 modules &middot; 592,000+ lines</div>
+        <div class="boot-lines">
+          <div style="--d:.15s"><span class="boot-dim">darknode kernel 3.0.0 (darknode.ai)</span></div>
+          <div style="--d:.30s">[<span class="bok">OK</span>] loading 192+ security tools</div>
+          <div style="--d:.45s">[<span class="bok">OK</span>] initializing Nexus AI engine (59 modules)</div>
+          <div style="--d:.60s">[<span class="bok">OK</span>] connecting 8 AI backends</div>
+          <div style="--d:.75s">[<span class="bok">OK</span>] arming Ghost Agents &amp; Thought Stream</div>
+          <div style="--d:.90s">[<span class="bok">OK</span>] loading threat intelligence databases</div>
+          <div style="--d:1.05s">[<span class="bok">OK</span>] mounting knowledge graph &amp; deep memory</div>
+          <div style="--d:1.20s">[<span class="bok">OK</span>] attack planner &amp; CTF assistant ready</div>
+          <div style="--d:1.35s">[<span class="bok">OK</span>] verification engine armed</div>
+          <div style="--d:1.55s">[<span class="bok" style="color:#00d4ff">ONLINE</span>] <span style="color:#00d4ff">darknode.ai</span></div>
+          <div style="--d:1.75s" class="boot-go">darknode@ai:~$ <span class="boot-cur">&#9608;</span></div>
+        </div>
+        <div class="boot-barwrap"><div class="boot-bar"><span></span></div><span class="boot-pct" id="bootpct">0%</span></div>
       </div>
-      <div class="boot-barwrap"><div class="boot-bar"><span></span></div><span class="boot-pct" id="bootpct">0%</span></div>
     </div>
   </div>
   <div id="app">
@@ -85,7 +105,9 @@
   <script>
     (function () {
       var pct = document.getElementById("bootpct");
+      var pctPro = document.getElementById("bootpct-pro");
       var bar = document.querySelector(".boot-bar > span");
+      var barPro = document.getElementById("bootbar-pro");
       var cur = 0, target = 15, raf;
       function set(p) {
         target = Math.min(100, Math.max(cur, p));
@@ -97,7 +119,9 @@
         if (cur > target) cur = target;
         var r = Math.round(cur);
         if (pct) pct.textContent = r + "%";
+        if (pctPro) pctPro.textContent = r + "%";
         if (bar) bar.style.width = r + "%";
+        if (barPro) barPro.style.width = r + "%";
         if (cur < target) raf = requestAnimationFrame(tick);
       }
       raf = requestAnimationFrame(tick);
@@ -122,6 +146,6 @@
     })();
   </script>
 
-  <script type="module" src="/js/auth.js?v=20260919d"></script>
+  <script type="module" src="/js/auth.js?v=20260919e"></script>
 </body>
 </html>
