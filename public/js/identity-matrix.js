@@ -98,7 +98,7 @@ var _imOAuthFlows = [
 
 // ── Main Render ─────────────────────────────────────────────────────────────
 
-window.renderIdentityMatrix = function(container) {
+export function renderIdentityMatrix(container) {
   var el = typeof container === 'string' ? document.getElementById(container) : container;
   if (!el) return;
 

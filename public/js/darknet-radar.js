@@ -77,7 +77,7 @@ function _drFmtNum(n) {
 
 // ── Main Render ─────────────────────────────────────────────────────────────
 
-window.renderDarknetRadar = function(container) {
+export function renderDarknetRadar(container) {
   var el = typeof container === 'string' ? document.getElementById(container) : container;
   if (!el) return;
 

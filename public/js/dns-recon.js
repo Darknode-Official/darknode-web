@@ -40,7 +40,7 @@ var COMMON_SUBDOMAINS = [
   'map', 'maps', 'geo', 'location', 'gps', 'track', 'trace'
 ];
 
-window.renderDNSRecon = function(container) {
+export function renderDNSRecon(container) {
   if (!container) return;
   var h = '';
   h += '<div style="background:#0a0e14;color:#c8d6e5;font-family:\'Courier New\',monospace;padding:24px;min-height:80vh;">';

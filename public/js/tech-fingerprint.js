@@ -27,7 +27,7 @@ var _tfSignatures = [
   { name: 'CSP Enabled', category: 'Security', detect: function(h) { return h.has('content-security-policy'); }, color: '#00cc66' }
 ];
 
-window.renderTechFingerprint = function(container) {
+export function renderTechFingerprint(container) {
   var h = '';
   h += '<div style="background:#0a0e14;color:#c8d6e5;font-family:\'Courier New\',monospace;padding:20px;min-height:500px;">';
   h += '<h2 style="color:#00ddff;font-size:18px;letter-spacing:2px;margin:0 0 4px;">TECHNOLOGY FINGERPRINTER</h2>';

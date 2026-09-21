@@ -10824,3 +10824,948 @@ html[data-style=dark] .boot-sweep {
     border-radius: 12px !important;
   }
 }
+
+/* ============================================================
+   NEWLY WIRED TOOLS — Pro + Dark overrides
+   ============================================================ */
+
+/* === Chess === */
+[data-style="pro"] .chess-app { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; }
+[data-style="pro"] .chess-controls { background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 8px; }
+[data-style="pro"] .chess-status { color: #0f172a; }
+[data-style="pro"] .chess-engine-status { color: #64748b; }
+[data-style="pro"] .chess-moves { background: #f8fafc; border: 1px solid #e2e8f0; }
+[data-style="pro"] .chess-move-w { color: #0f172a; }
+[data-style="pro"] .chess-move-b { color: #64748b; }
+[data-style="pro"] .chess-label { color: #64748b; }
+[data-style="pro"] .chess-captured { color: #64748b; }
+[data-style="pro"] .chess-side { background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 8px; }
+[data-style="pro"] .chess-new,
+[data-style="pro"] .chess-flip,
+[data-style="pro"] .chess-resign { background: #2563EB; color: #fff; border: none; border-radius: 8px; }
+[data-style="pro"] .chess-new:hover,
+[data-style="pro"] .chess-flip:hover,
+[data-style="pro"] .chess-resign:hover { background: #1d4ed8; }
+[data-style="pro"] .chess-depth { background: #f1f5f9; border: 1px solid #e2e8f0; color: #0f172a; }
+
+[data-style="dark"] .chess-app { background: #1e293b; border: 1px solid #334155; }
+[data-style="dark"] .chess-controls { background: #0f172a; border: 1px solid #334155; }
+[data-style="dark"] .chess-status { color: #e2e8f0; }
+[data-style="dark"] .chess-engine-status { color: #94a3b8; }
+[data-style="dark"] .chess-moves { background: #0f172a; border: 1px solid #334155; }
+[data-style="dark"] .chess-move-w { color: #e2e8f0; }
+[data-style="dark"] .chess-move-b { color: #94a3b8; }
+[data-style="dark"] .chess-label { color: #94a3b8; }
+[data-style="dark"] .chess-captured { color: #94a3b8; }
+[data-style="dark"] .chess-side { background: #0f172a; border: 1px solid #334155; }
+[data-style="dark"] .chess-new,
+[data-style="dark"] .chess-flip,
+[data-style="dark"] .chess-resign { background: #3b82f6; color: #fff; }
+[data-style="dark"] .chess-new:hover,
+[data-style="dark"] .chess-flip:hover,
+[data-style="dark"] .chess-resign:hover { background: #60a5fa; }
+[data-style="dark"] .chess-depth { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; }
+
+/* === Crypto Playground === */
+[data-style="pro"] .cp-wrap { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; }
+[data-style="pro"] .cp-h1 { color: #0f172a; }
+[data-style="pro"] .cp-tabs { border-bottom: 1px solid #e2e8f0; }
+[data-style="pro"] .cp-tab { color: #64748b; }
+[data-style="pro"] .cp-tab.active { color: #2563EB; border-bottom-color: #2563EB; }
+[data-style="pro"] .cp-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; }
+[data-style="pro"] .cp-grid { gap: 16px; }
+[data-style="pro"] .cp-input { background: #f1f5f9; border: 1px solid #e2e8f0; color: #0f172a; }
+[data-style="pro"] .cp-btn { background: #2563EB; color: #fff; border: none; border-radius: 8px; }
+[data-style="pro"] .cp-btn:hover { background: #1d4ed8; }
+[data-style="pro"] .cp-label { color: #64748b; }
+[data-style="pro"] .cp-result { background: #f1f5f9; border: 1px solid #e2e8f0; color: #0f172a; }
+[data-style="pro"] .cp-val { color: #0f172a; }
+[data-style="pro"] .cp-sub { color: #64748b; }
+[data-style="pro"] .cp-table { border-collapse: collapse; }
+[data-style="pro"] .cp-table th { background: #f1f5f9; color: #0f172a; border-bottom: 2px solid #e2e8f0; }
+[data-style="pro"] .cp-table td { border-bottom: 1px solid #e2e8f0; }
+[data-style="pro"] .cp-step { background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 8px; }
+[data-style="pro"] .cp-scroll { background: #f8fafc; }
+
+[data-style="dark"] .cp-wrap { background: #1e293b; border: 1px solid #334155; }
+[data-style="dark"] .cp-h1 { color: #e2e8f0; }
+[data-style="dark"] .cp-tabs { border-bottom: 1px solid #334155; }
+[data-style="dark"] .cp-tab { color: #94a3b8; }
+[data-style="dark"] .cp-tab.active { color: #3b82f6; border-bottom-color: #3b82f6; }
+[data-style="dark"] .cp-card { background: #1e293b; border: 1px solid #334155; }
+[data-style="dark"] .cp-input { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; }
+[data-style="dark"] .cp-btn { background: #3b82f6; color: #fff; }
+[data-style="dark"] .cp-btn:hover { background: #60a5fa; }
+[data-style="dark"] .cp-label { color: #94a3b8; }
+[data-style="dark"] .cp-result { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; }
+[data-style="dark"] .cp-val { color: #e2e8f0; }
+[data-style="dark"] .cp-sub { color: #94a3b8; }
+[data-style="dark"] .cp-table th { background: #0f172a; color: #e2e8f0; border-bottom: 2px solid #334155; }
+[data-style="dark"] .cp-table td { border-bottom: 1px solid #334155; }
+[data-style="dark"] .cp-step { background: #0f172a; border: 1px solid #334155; }
+[data-style="dark"] .cp-scroll { background: #0f172a; }
+
+/* === Crypto Toolkit === */
+[data-style="pro"] .ct-content { background: #fff; }
+[data-style="pro"] .ct-h1 { color: #0f172a; }
+[data-style="pro"] .ct-h2 { color: #0f172a; }
+[data-style="pro"] [class*="ct-"][class*="-input"] { background: #f1f5f9; border: 1px solid #e2e8f0; color: #0f172a; }
+[data-style="pro"] [class*="ct-"][class*="-output"] { background: #f1f5f9; border: 1px solid #e2e8f0; color: #0f172a; }
+[data-style="pro"] [class*="ct-"][class*="-run"],
+[data-style="pro"] [class*="ct-"][class*="-btn"],
+[data-style="pro"] [class*="ct-"][class*="-calc"],
+[data-style="pro"] [class*="ct-"][class*="-genkey"] { background: #2563EB; color: #fff; border: none; border-radius: 8px; }
+
+[data-style="dark"] .ct-content { background: #1e293b; }
+[data-style="dark"] .ct-h1 { color: #e2e8f0; }
+[data-style="dark"] .ct-h2 { color: #e2e8f0; }
+[data-style="dark"] [class*="ct-"][class*="-input"] { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; }
+[data-style="dark"] [class*="ct-"][class*="-output"] { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; }
+[data-style="dark"] [class*="ct-"][class*="-run"],
+[data-style="dark"] [class*="ct-"][class*="-btn"],
+[data-style="dark"] [class*="ct-"][class*="-calc"],
+[data-style="dark"] [class*="ct-"][class*="-genkey"] { background: #3b82f6; color: #fff; }
+
+/* === CVE Timeline === */
+[data-style="pro"] .tl-layout { background: #fff; }
+[data-style="pro"] .tl-header { color: #0f172a; }
+[data-style="pro"] .tl-filters { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; }
+[data-style="pro"] .tl-chip { background: #f1f5f9; border: 1px solid #e2e8f0; color: #0f172a; }
+[data-style="pro"] .tl-chip.active { background: #2563EB; color: #fff; }
+[data-style="pro"] .tl-events { border-left: 2px solid #e2e8f0; }
+[data-style="pro"] .tl-event-title { color: #0f172a; }
+[data-style="pro"] .tl-event-date { color: #64748b; }
+[data-style="pro"] .tl-event-meta { color: #64748b; }
+[data-style="pro"] .tl-event-dot { background: #2563EB; }
+[data-style="pro"] .tl-badge { background: #dbeafe; color: #1e40af; }
+[data-style="pro"] .tl-detail { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; }
+[data-style="pro"] .tl-detail-row { border-bottom: 1px solid #e2e8f0; }
+[data-style="pro"] .tl-detail-meta { color: #64748b; }
+[data-style="pro"] .tl-count { color: #64748b; }
+[data-style="pro"] .tl-sev-dot { box-shadow: 0 0 0 2px #fff; }
+
+[data-style="dark"] .tl-layout { background: #1e293b; }
+[data-style="dark"] .tl-header { color: #e2e8f0; }
+[data-style="dark"] .tl-filters { background: #0f172a; border: 1px solid #334155; }
+[data-style="dark"] .tl-chip { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; }
+[data-style="dark"] .tl-chip.active { background: #3b82f6; color: #fff; }
+[data-style="dark"] .tl-events { border-left: 2px solid #334155; }
+[data-style="dark"] .tl-event-title { color: #e2e8f0; }
+[data-style="dark"] .tl-event-date { color: #94a3b8; }
+[data-style="dark"] .tl-event-meta { color: #94a3b8; }
+[data-style="dark"] .tl-event-dot { background: #3b82f6; }
+[data-style="dark"] .tl-badge { background: #1e3a5f; color: #93c5fd; }
+[data-style="dark"] .tl-detail { background: #0f172a; border: 1px solid #334155; }
+[data-style="dark"] .tl-detail-row { border-bottom: 1px solid #334155; }
+[data-style="dark"] .tl-detail-meta { color: #94a3b8; }
+[data-style="dark"] .tl-count { color: #94a3b8; }
+[data-style="dark"] .tl-sev-dot { box-shadow: 0 0 0 2px #1e293b; }
+
+/* === Encoding Toolkit === */
+[data-style="pro"] .enc-wrap { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; }
+[data-style="pro"] .enc-tabs { border-bottom: 1px solid #e2e8f0; }
+[data-style="pro"] .enc-btn { background: #2563EB; color: #fff; border: none; border-radius: 8px; }
+[data-style="pro"] .enc-btn:hover { background: #1d4ed8; }
+[data-style="pro"] .enc-input { background: #f1f5f9; border: 1px solid #e2e8f0; color: #0f172a; }
+[data-style="pro"] .enc-result { background: #f1f5f9; border: 1px solid #e2e8f0; color: #0f172a; }
+[data-style="pro"] .enc-label { color: #64748b; }
+[data-style="pro"] .enc-grid { gap: 16px; }
+[data-style="pro"] .enc-stat-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; }
+[data-style="pro"] .enc-stat-n { color: #0f172a; }
+[data-style="pro"] .enc-stat-l { color: #64748b; }
+[data-style="pro"] .enc-table th { background: #f1f5f9; color: #0f172a; border-bottom: 2px solid #e2e8f0; }
+[data-style="pro"] .enc-table td { border-bottom: 1px solid #e2e8f0; }
+[data-style="pro"] .enc-row { border-bottom: 1px solid #e2e8f0; }
+
+[data-style="dark"] .enc-wrap { background: #1e293b; border: 1px solid #334155; }
+[data-style="dark"] .enc-tabs { border-bottom: 1px solid #334155; }
+[data-style="dark"] .enc-btn { background: #3b82f6; color: #fff; }
+[data-style="dark"] .enc-btn:hover { background: #60a5fa; }
+[data-style="dark"] .enc-input { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; }
+[data-style="dark"] .enc-result { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; }
+[data-style="dark"] .enc-label { color: #94a3b8; }
+[data-style="dark"] .enc-stat-card { background: #0f172a; border: 1px solid #334155; }
+[data-style="dark"] .enc-stat-n { color: #e2e8f0; }
+[data-style="dark"] .enc-stat-l { color: #94a3b8; }
+[data-style="dark"] .enc-table th { background: #0f172a; color: #e2e8f0; border-bottom: 2px solid #334155; }
+[data-style="dark"] .enc-table td { border-bottom: 1px solid #334155; }
+[data-style="dark"] .enc-row { border-bottom: 1px solid #334155; }
+
+/* === Exploit DB Browser === */
+[data-style="pro"] .edb { background: #fff; }
+[data-style="pro"] .edb-bar { background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 8px; }
+[data-style="pro"] .edb-grid { gap: 16px; }
+[data-style="pro"] .edb-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; }
+[data-style="pro"] .edb-card:hover { border-color: #2563EB; }
+[data-style="pro"] .edb-card-title { color: #0f172a; }
+[data-style="pro"] .edb-card-desc { color: #64748b; }
+[data-style="pro"] .edb-card-meta { color: #64748b; }
+[data-style="pro"] .edb-card-id { color: #2563EB; }
+[data-style="pro"] .edb-card-head { border-bottom: 1px solid #e2e8f0; }
+[data-style="pro"] .edb-detail { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; }
+[data-style="pro"] .edb-detail-header { color: #0f172a; border-bottom: 1px solid #e2e8f0; }
+[data-style="pro"] .edb-detail-box { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; }
+[data-style="pro"] .edb-code-wrap { background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 8px; }
+[data-style="pro"] .edb-code { color: #0f172a; }
+[data-style="pro"] .edb-copy { background: #2563EB; color: #fff; border: none; border-radius: 6px; }
+[data-style="pro"] .edb-count { color: #64748b; }
+[data-style="pro"] .edb-info { color: #64748b; }
+[data-style="pro"] .edb-list { border: 1px solid #e2e8f0; }
+[data-style="pro"] .edb-nvd-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; }
+[data-style="pro"] .edb-nvd-header { color: #0f172a; }
+[data-style="pro"] .edb-nvd-body { color: #64748b; }
+
+[data-style="dark"] .edb { background: #1e293b; }
+[data-style="dark"] .edb-bar { background: #0f172a; border: 1px solid #334155; }
+[data-style="dark"] .edb-card { background: #1e293b; border: 1px solid #334155; }
+[data-style="dark"] .edb-card:hover { border-color: #3b82f6; }
+[data-style="dark"] .edb-card-title { color: #e2e8f0; }
+[data-style="dark"] .edb-card-desc { color: #94a3b8; }
+[data-style="dark"] .edb-card-meta { color: #94a3b8; }
+[data-style="dark"] .edb-card-id { color: #3b82f6; }
+[data-style="dark"] .edb-card-head { border-bottom: 1px solid #334155; }
+[data-style="dark"] .edb-detail { background: #0f172a; border: 1px solid #334155; }
+[data-style="dark"] .edb-detail-header { color: #e2e8f0; border-bottom: 1px solid #334155; }
+[data-style="dark"] .edb-detail-box { background: #1e293b; border: 1px solid #334155; }
+[data-style="dark"] .edb-code-wrap { background: #0f172a; border: 1px solid #334155; }
+[data-style="dark"] .edb-code { color: #e2e8f0; }
+[data-style="dark"] .edb-copy { background: #3b82f6; color: #fff; }
+[data-style="dark"] .edb-count { color: #94a3b8; }
+[data-style="dark"] .edb-info { color: #94a3b8; }
+[data-style="dark"] .edb-list { border: 1px solid #334155; }
+[data-style="dark"] .edb-nvd-card { background: #1e293b; border: 1px solid #334155; }
+[data-style="dark"] .edb-nvd-header { color: #e2e8f0; }
+[data-style="dark"] .edb-nvd-body { color: #94a3b8; }
+
+/* === Forensics Toolkit === */
+[data-style="pro"] .ft-wrap { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; }
+[data-style="pro"] .ft-h1 { color: #0f172a; }
+[data-style="pro"] .ft-tabs { border-bottom: 1px solid #e2e8f0; }
+[data-style="pro"] .ft-tab { color: #64748b; }
+[data-style="pro"] .ft-tab.active { color: #2563EB; border-bottom-color: #2563EB; }
+[data-style="pro"] .ft-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; }
+[data-style="pro"] .ft-input { background: #f1f5f9; border: 1px solid #e2e8f0; color: #0f172a; }
+[data-style="pro"] .ft-btn { background: #2563EB; color: #fff; border: none; border-radius: 8px; }
+[data-style="pro"] .ft-btn:hover { background: #1d4ed8; }
+[data-style="pro"] .ft-badge { background: #dbeafe; color: #1e40af; }
+[data-style="pro"] .ft-label { color: #64748b; }
+[data-style="pro"] .ft-sub { color: #64748b; }
+[data-style="pro"] .ft-result { background: #f1f5f9; border: 1px solid #e2e8f0; color: #0f172a; }
+[data-style="pro"] .ft-mono { font-family: 'JetBrains Mono', monospace; color: #0f172a; }
+[data-style="pro"] .ft-val { color: #0f172a; }
+[data-style="pro"] .ft-search { background: #f1f5f9; border: 1px solid #e2e8f0; color: #0f172a; }
+[data-style="pro"] .ft-scroll { background: #f8fafc; }
+[data-style="pro"] .ft-table th { background: #f1f5f9; color: #0f172a; border-bottom: 2px solid #e2e8f0; }
+[data-style="pro"] .ft-table td { border-bottom: 1px solid #e2e8f0; }
+[data-style="pro"] .ft-row { border-bottom: 1px solid #e2e8f0; }
+
+[data-style="dark"] .ft-wrap { background: #1e293b; border: 1px solid #334155; }
+[data-style="dark"] .ft-h1 { color: #e2e8f0; }
+[data-style="dark"] .ft-tabs { border-bottom: 1px solid #334155; }
+[data-style="dark"] .ft-tab { color: #94a3b8; }
+[data-style="dark"] .ft-tab.active { color: #3b82f6; border-bottom-color: #3b82f6; }
+[data-style="dark"] .ft-card { background: #1e293b; border: 1px solid #334155; }
+[data-style="dark"] .ft-input { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; }
+[data-style="dark"] .ft-btn { background: #3b82f6; color: #fff; }
+[data-style="dark"] .ft-btn:hover { background: #60a5fa; }
+[data-style="dark"] .ft-badge { background: #1e3a5f; color: #93c5fd; }
+[data-style="dark"] .ft-label { color: #94a3b8; }
+[data-style="dark"] .ft-sub { color: #94a3b8; }
+[data-style="dark"] .ft-result { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; }
+[data-style="dark"] .ft-mono { color: #e2e8f0; }
+[data-style="dark"] .ft-val { color: #e2e8f0; }
+[data-style="dark"] .ft-search { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; }
+[data-style="dark"] .ft-scroll { background: #0f172a; }
+[data-style="dark"] .ft-table th { background: #0f172a; color: #e2e8f0; border-bottom: 2px solid #334155; }
+[data-style="dark"] .ft-table td { border-bottom: 1px solid #334155; }
+[data-style="dark"] .ft-row { border-bottom: 1px solid #334155; }
+
+/* === HTTP Inspector === */
+[data-style="pro"] .hti-tabs { border-bottom: 1px solid #e2e8f0; }
+[data-style="pro"] .hti-tab { color: #64748b; }
+[data-style="pro"] .hti-tab.active { color: #2563EB; border-bottom-color: #2563EB; }
+[data-style="pro"] .hti-panel { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; }
+[data-style="pro"] .hti-input { background: #f1f5f9; border: 1px solid #e2e8f0; color: #0f172a; }
+[data-style="pro"] .hti-btn { background: #2563EB; color: #fff; border: none; border-radius: 8px; }
+[data-style="pro"] .hti-btn:hover { background: #1d4ed8; }
+[data-style="pro"] .hti-result { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; }
+[data-style="pro"] .hti-label { color: #64748b; }
+[data-style="pro"] .hti-good { color: #16a34a; }
+[data-style="pro"] .hti-bad { color: #dc2626; }
+[data-style="pro"] .hti-grade { font-weight: 700; }
+[data-style="pro"] .hti-issue { background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; color: #991b1b; }
+[data-style="pro"] .hti-table th { background: #f1f5f9; color: #0f172a; border-bottom: 2px solid #e2e8f0; }
+[data-style="pro"] .hti-table td { border-bottom: 1px solid #e2e8f0; }
+[data-style="pro"] .hti-csp-dir { background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 6px; }
+[data-style="pro"] .hti-csp-name { color: #2563EB; font-weight: 600; }
+[data-style="pro"] .hti-csp-val { color: #0f172a; }
+
+[data-style="dark"] .hti-tabs { border-bottom: 1px solid #334155; }
+[data-style="dark"] .hti-tab { color: #94a3b8; }
+[data-style="dark"] .hti-tab.active { color: #3b82f6; border-bottom-color: #3b82f6; }
+[data-style="dark"] .hti-panel { background: #1e293b; border: 1px solid #334155; }
+[data-style="dark"] .hti-input { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; }
+[data-style="dark"] .hti-btn { background: #3b82f6; color: #fff; }
+[data-style="dark"] .hti-btn:hover { background: #60a5fa; }
+[data-style="dark"] .hti-result { background: #0f172a; border: 1px solid #334155; }
+[data-style="dark"] .hti-label { color: #94a3b8; }
+[data-style="dark"] .hti-good { color: #4ade80; }
+[data-style="dark"] .hti-bad { color: #f87171; }
+[data-style="dark"] .hti-issue { background: #450a0a; border: 1px solid #7f1d1d; color: #fca5a5; }
+[data-style="dark"] .hti-table th { background: #0f172a; color: #e2e8f0; border-bottom: 2px solid #334155; }
+[data-style="dark"] .hti-table td { border-bottom: 1px solid #334155; }
+[data-style="dark"] .hti-csp-dir { background: #0f172a; border: 1px solid #334155; }
+[data-style="dark"] .hti-csp-name { color: #3b82f6; }
+[data-style="dark"] .hti-csp-val { color: #e2e8f0; }
+
+/* === IP Tools === */
+[data-style="pro"] .ip-wrap { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; }
+[data-style="pro"] .ip-title { color: #0f172a; }
+[data-style="pro"] .ip-sub { color: #64748b; }
+[data-style="pro"] .ip-tabs { border-bottom: 1px solid #e2e8f0; }
+[data-style="pro"] .ip-tab { color: #64748b; }
+[data-style="pro"] .ip-tab.active { color: #2563EB; border-bottom-color: #2563EB; }
+[data-style="pro"] .ip-panel { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; }
+[data-style="pro"] .ip-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; }
+[data-style="pro"] .ip-input { background: #f1f5f9; border: 1px solid #e2e8f0; color: #0f172a; }
+[data-style="pro"] .ip-btn { background: #2563EB; color: #fff; border: none; border-radius: 8px; }
+[data-style="pro"] .ip-btn:hover { background: #1d4ed8; }
+[data-style="pro"] .ip-label { color: #64748b; }
+[data-style="pro"] .ip-badge { background: #dbeafe; color: #1e40af; }
+[data-style="pro"] .ip-badge-orange { background: #fff7ed; color: #c2410c; }
+[data-style="pro"] .ip-row { border-bottom: 1px solid #e2e8f0; }
+[data-style="pro"] .ip-row-label { color: #64748b; }
+[data-style="pro"] .ip-row-value { color: #0f172a; }
+[data-style="pro"] .ip-grid { gap: 16px; }
+[data-style="pro"] .ip-table th { background: #f1f5f9; color: #0f172a; border-bottom: 2px solid #e2e8f0; }
+[data-style="pro"] .ip-table td { border-bottom: 1px solid #e2e8f0; }
+[data-style="pro"] .ip-port-search { background: #f1f5f9; border: 1px solid #e2e8f0; color: #0f172a; }
+
+[data-style="dark"] .ip-wrap { background: #1e293b; border: 1px solid #334155; }
+[data-style="dark"] .ip-title { color: #e2e8f0; }
+[data-style="dark"] .ip-sub { color: #94a3b8; }
+[data-style="dark"] .ip-tabs { border-bottom: 1px solid #334155; }
+[data-style="dark"] .ip-tab { color: #94a3b8; }
+[data-style="dark"] .ip-tab.active { color: #3b82f6; border-bottom-color: #3b82f6; }
+[data-style="dark"] .ip-panel { background: #1e293b; border: 1px solid #334155; }
+[data-style="dark"] .ip-card { background: #1e293b; border: 1px solid #334155; }
+[data-style="dark"] .ip-input { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; }
+[data-style="dark"] .ip-btn { background: #3b82f6; color: #fff; }
+[data-style="dark"] .ip-btn:hover { background: #60a5fa; }
+[data-style="dark"] .ip-label { color: #94a3b8; }
+[data-style="dark"] .ip-badge { background: #1e3a5f; color: #93c5fd; }
+[data-style="dark"] .ip-badge-orange { background: #431407; color: #fdba74; }
+[data-style="dark"] .ip-row { border-bottom: 1px solid #334155; }
+[data-style="dark"] .ip-row-label { color: #94a3b8; }
+[data-style="dark"] .ip-row-value { color: #e2e8f0; }
+[data-style="dark"] .ip-table th { background: #0f172a; color: #e2e8f0; border-bottom: 2px solid #334155; }
+[data-style="dark"] .ip-table td { border-bottom: 1px solid #334155; }
+[data-style="dark"] .ip-port-search { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; }
+
+/* === Log Parser === */
+[data-style="pro"] .lp-tab { color: #64748b; }
+[data-style="pro"] .lp-tab.active { color: #2563EB; border-bottom-color: #2563EB; }
+[data-style="pro"] .lp-input { background: #f1f5f9; border: 1px solid #e2e8f0; color: #0f172a; }
+[data-style="pro"] .lp-search { background: #f1f5f9; border: 1px solid #e2e8f0; color: #0f172a; }
+[data-style="pro"] .lp-sample { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; color: #64748b; cursor: pointer; }
+[data-style="pro"] .lp-sample:hover { border-color: #2563EB; }
+
+[data-style="dark"] .lp-tab { color: #94a3b8; }
+[data-style="dark"] .lp-tab.active { color: #3b82f6; border-bottom-color: #3b82f6; }
+[data-style="dark"] .lp-input { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; }
+[data-style="dark"] .lp-search { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; }
+[data-style="dark"] .lp-sample { background: #0f172a; border: 1px solid #334155; color: #94a3b8; }
+[data-style="dark"] .lp-sample:hover { border-color: #3b82f6; }
+
+/* === Packet Analyzer === */
+[data-style="pro"] .pka-split { background: #fff; }
+[data-style="pro"] .pka-input { background: #f1f5f9; border: 1px solid #e2e8f0; color: #0f172a; }
+[data-style="pro"] .pka-btn { background: #2563EB; color: #fff; border: none; border-radius: 8px; }
+[data-style="pro"] .pka-btn:hover { background: #1d4ed8; }
+[data-style="pro"] .pka-samples { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; }
+[data-style="pro"] .pka-tabs { border-bottom: 1px solid #e2e8f0; }
+[data-style="pro"] .pka-tab { color: #64748b; }
+[data-style="pro"] .pka-tab.active { color: #2563EB; border-bottom-color: #2563EB; }
+[data-style="pro"] .pka-tree { background: #f8fafc; border: 1px solid #e2e8f0; }
+[data-style="pro"] .pka-hex { background: #f1f5f9; border: 1px solid #e2e8f0; color: #0f172a; font-family: 'JetBrains Mono', monospace; }
+[data-style="pro"] .pka-stats { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; }
+[data-style="pro"] .pka-summary { color: #0f172a; }
+[data-style="pro"] .pka-error { color: #dc2626; }
+[data-style="pro"] .pk-layer { border: 1px solid #e2e8f0; border-radius: 8px; }
+[data-style="pro"] .pk-layer-head { background: #f1f5f9; color: #0f172a; }
+[data-style="pro"] .pk-fname { color: #64748b; }
+[data-style="pro"] .pk-fval { color: #0f172a; }
+[data-style="pro"] .pk-addr { color: #2563EB; }
+[data-style="pro"] .pk-dim { color: #64748b; }
+[data-style="pro"] .pk-hl { background: #dbeafe; }
+[data-style="pro"] .pk-arrow { color: #64748b; }
+[data-style="pro"] .pk-ascii { color: #64748b; }
+
+[data-style="dark"] .pka-split { background: #1e293b; }
+[data-style="dark"] .pka-input { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; }
+[data-style="dark"] .pka-btn { background: #3b82f6; color: #fff; }
+[data-style="dark"] .pka-btn:hover { background: #60a5fa; }
+[data-style="dark"] .pka-samples { background: #0f172a; border: 1px solid #334155; }
+[data-style="dark"] .pka-tabs { border-bottom: 1px solid #334155; }
+[data-style="dark"] .pka-tab { color: #94a3b8; }
+[data-style="dark"] .pka-tab.active { color: #3b82f6; border-bottom-color: #3b82f6; }
+[data-style="dark"] .pka-tree { background: #0f172a; border: 1px solid #334155; }
+[data-style="dark"] .pka-hex { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; }
+[data-style="dark"] .pka-stats { background: #0f172a; border: 1px solid #334155; }
+[data-style="dark"] .pka-summary { color: #e2e8f0; }
+[data-style="dark"] .pka-error { color: #f87171; }
+[data-style="dark"] .pk-layer { border: 1px solid #334155; }
+[data-style="dark"] .pk-layer-head { background: #0f172a; color: #e2e8f0; }
+[data-style="dark"] .pk-fname { color: #94a3b8; }
+[data-style="dark"] .pk-fval { color: #e2e8f0; }
+[data-style="dark"] .pk-addr { color: #3b82f6; }
+[data-style="dark"] .pk-dim { color: #94a3b8; }
+[data-style="dark"] .pk-hl { background: #1e3a5f; }
+[data-style="dark"] .pk-arrow { color: #94a3b8; }
+[data-style="dark"] .pk-ascii { color: #94a3b8; }
+
+/* === Password Tools === */
+[data-style="pro"] .pwt-tabs { border-bottom: 1px solid #e2e8f0; }
+[data-style="pro"] .pwt-tab { color: #64748b; }
+[data-style="pro"] .pwt-tab.active { color: #2563EB; border-bottom-color: #2563EB; }
+[data-style="pro"] .pwt-panel { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; }
+[data-style="pro"] .pwt-input { background: #f1f5f9; border: 1px solid #e2e8f0; color: #0f172a; }
+[data-style="pro"] .pwt-btn { background: #2563EB; color: #fff; border: none; border-radius: 8px; }
+[data-style="pro"] .pwt-btn:hover { background: #1d4ed8; }
+[data-style="pro"] .pwt-label { color: #64748b; }
+[data-style="pro"] .pwt-result { background: #f1f5f9; border: 1px solid #e2e8f0; color: #0f172a; }
+[data-style="pro"] .pwt-val { color: #0f172a; }
+[data-style="pro"] .pwt-grid { gap: 16px; }
+[data-style="pro"] .pwt-opt { color: #64748b; }
+[data-style="pro"] .pwt-meter { background: #e2e8f0; border-radius: 4px; }
+[data-style="pro"] .pwt-fill { border-radius: 4px; }
+[data-style="pro"] .pwt-table th { background: #f1f5f9; color: #0f172a; border-bottom: 2px solid #e2e8f0; }
+[data-style="pro"] .pwt-table td { border-bottom: 1px solid #e2e8f0; }
+
+[data-style="dark"] .pwt-tabs { border-bottom: 1px solid #334155; }
+[data-style="dark"] .pwt-tab { color: #94a3b8; }
+[data-style="dark"] .pwt-tab.active { color: #3b82f6; border-bottom-color: #3b82f6; }
+[data-style="dark"] .pwt-panel { background: #1e293b; border: 1px solid #334155; }
+[data-style="dark"] .pwt-input { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; }
+[data-style="dark"] .pwt-btn { background: #3b82f6; color: #fff; }
+[data-style="dark"] .pwt-btn:hover { background: #60a5fa; }
+[data-style="dark"] .pwt-label { color: #94a3b8; }
+[data-style="dark"] .pwt-result { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; }
+[data-style="dark"] .pwt-val { color: #e2e8f0; }
+[data-style="dark"] .pwt-opt { color: #94a3b8; }
+[data-style="dark"] .pwt-meter { background: #334155; }
+[data-style="dark"] .pwt-table th { background: #0f172a; color: #e2e8f0; border-bottom: 2px solid #334155; }
+[data-style="dark"] .pwt-table td { border-bottom: 1px solid #334155; }
+
+/* === Payload Generator === */
+[data-style="pro"] .pg-h1 { color: #0f172a; }
+[data-style="pro"] .pg-h2 { color: #0f172a; }
+[data-style="pro"] .pg-list { background: #f8fafc; border: 1px solid #e2e8f0; }
+[data-style="pro"] .pg-item { border-bottom: 1px solid #e2e8f0; }
+[data-style="pro"] .pg-item:hover { background: #f1f5f9; }
+[data-style="pro"] .pg-item-top { color: #0f172a; }
+[data-style="pro"] .pg-item-group { color: #64748b; }
+[data-style="pro"] .pg-code { background: #f1f5f9; border: 1px solid #e2e8f0; color: #0f172a; font-family: 'JetBrains Mono', monospace; border-radius: 8px; }
+[data-style="pro"] .pg-copy { background: #2563EB; color: #fff; border: none; border-radius: 6px; }
+[data-style="pro"] .pg-count-badge { background: #dbeafe; color: #1e40af; }
+[data-style="pro"] .pg-empty { color: #64748b; }
+[data-style="pro"] .pg-check-row { color: #0f172a; }
+[data-style="pro"] .pg-sub { color: #64748b; }
+
+[data-style="dark"] .pg-h1 { color: #e2e8f0; }
+[data-style="dark"] .pg-h2 { color: #e2e8f0; }
+[data-style="dark"] .pg-list { background: #0f172a; border: 1px solid #334155; }
+[data-style="dark"] .pg-item { border-bottom: 1px solid #334155; }
+[data-style="dark"] .pg-item:hover { background: #1e293b; }
+[data-style="dark"] .pg-item-top { color: #e2e8f0; }
+[data-style="dark"] .pg-item-group { color: #94a3b8; }
+[data-style="dark"] .pg-code { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; }
+[data-style="dark"] .pg-copy { background: #3b82f6; color: #fff; }
+[data-style="dark"] .pg-count-badge { background: #1e3a5f; color: #93c5fd; }
+[data-style="dark"] .pg-empty { color: #94a3b8; }
+[data-style="dark"] .pg-check-row { color: #e2e8f0; }
+[data-style="dark"] .pg-sub { color: #94a3b8; }
+
+/* === Report Builder === */
+[data-style="pro"] .tmpl-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; }
+[data-style="pro"] .tmpl-card:hover { border-color: #2563EB; box-shadow: 0 2px 8px rgba(37,99,235,.08); }
+[data-style="pro"] .gen-report { background: #2563EB; color: #fff; border: none; border-radius: 8px; }
+[data-style="pro"] .gen-report:hover { background: #1d4ed8; }
+
+[data-style="dark"] .tmpl-card { background: #1e293b; border: 1px solid #334155; }
+[data-style="dark"] .tmpl-card:hover { border-color: #3b82f6; box-shadow: 0 2px 8px rgba(59,130,246,.12); }
+[data-style="dark"] .gen-report { background: #3b82f6; color: #fff; }
+[data-style="dark"] .gen-report:hover { background: #60a5fa; }
+
+/* === Risk Calculator (CVSS) === */
+[data-style="pro"] .cvss-grid { gap: 16px; }
+[data-style="pro"] .cvss-metric { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; }
+[data-style="pro"] .cvss-metric-name { color: #0f172a; }
+[data-style="pro"] .cvss-metric-desc { color: #64748b; }
+[data-style="pro"] .cvss-btn { background: #f1f5f9; border: 1px solid #e2e8f0; color: #0f172a; border-radius: 6px; }
+[data-style="pro"] .cvss-btn.active { background: #2563EB; color: #fff; border-color: #2563EB; }
+[data-style="pro"] .cvss-btns { gap: 6px; }
+[data-style="pro"] .cvss-result { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; }
+[data-style="pro"] .cvss-result-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; }
+[data-style="pro"] .cvss-gauge { background: #e2e8f0; border-radius: 8px; }
+[data-style="pro"] .cvss-gauge-label { color: #0f172a; }
+[data-style="pro"] .cvss-vector { background: #f1f5f9; border: 1px solid #e2e8f0; color: #0f172a; font-family: 'JetBrains Mono', monospace; border-radius: 6px; }
+[data-style="pro"] .cvss-sev-badge { border-radius: 6px; }
+[data-style="pro"] .cvss-examples { gap: 16px; }
+[data-style="pro"] .cvss-ex-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; }
+[data-style="pro"] .cvss-ex-name { color: #0f172a; }
+[data-style="pro"] .cvss-ex-cve { color: #2563EB; }
+[data-style="pro"] .cvss-ex-desc { color: #64748b; }
+[data-style="pro"] .cvss-ex-info { color: #64748b; }
+[data-style="pro"] .cvss-ex-score { font-weight: 700; }
+[data-style="pro"] .cvss-ex-vec { color: #64748b; font-family: 'JetBrains Mono', monospace; }
+[data-style="pro"] .cvss-filter-btn { background: #f1f5f9; border: 1px solid #e2e8f0; color: #64748b; border-radius: 6px; }
+[data-style="pro"] .cvss-filter-btn.active { background: #2563EB; color: #fff; border-color: #2563EB; }
+
+[data-style="dark"] .cvss-metric { background: #1e293b; border: 1px solid #334155; }
+[data-style="dark"] .cvss-metric-name { color: #e2e8f0; }
+[data-style="dark"] .cvss-metric-desc { color: #94a3b8; }
+[data-style="dark"] .cvss-btn { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; }
+[data-style="dark"] .cvss-btn.active { background: #3b82f6; color: #fff; border-color: #3b82f6; }
+[data-style="dark"] .cvss-result { background: #1e293b; border: 1px solid #334155; }
+[data-style="dark"] .cvss-result-card { background: #0f172a; border: 1px solid #334155; }
+[data-style="dark"] .cvss-gauge { background: #334155; }
+[data-style="dark"] .cvss-gauge-label { color: #e2e8f0; }
+[data-style="dark"] .cvss-vector { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; }
+[data-style="dark"] .cvss-ex-card { background: #0f172a; border: 1px solid #334155; }
+[data-style="dark"] .cvss-ex-name { color: #e2e8f0; }
+[data-style="dark"] .cvss-ex-cve { color: #3b82f6; }
+[data-style="dark"] .cvss-ex-desc { color: #94a3b8; }
+[data-style="dark"] .cvss-ex-info { color: #94a3b8; }
+[data-style="dark"] .cvss-ex-vec { color: #94a3b8; }
+[data-style="dark"] .cvss-filter-btn { background: #0f172a; border: 1px solid #334155; color: #94a3b8; }
+[data-style="dark"] .cvss-filter-btn.active { background: #3b82f6; color: #fff; border-color: #3b82f6; }
+
+/* === Security Quiz === */
+[data-style="pro"] .quiz-btn { background: #2563EB; color: #fff; border: none; border-radius: 8px; }
+[data-style="pro"] .quiz-btn:hover { background: #1d4ed8; }
+[data-style="pro"] .quiz-option { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; color: #0f172a; cursor: pointer; }
+[data-style="pro"] .quiz-option:hover { border-color: #2563EB; background: #f1f5f9; }
+
+[data-style="dark"] .quiz-btn { background: #3b82f6; color: #fff; }
+[data-style="dark"] .quiz-btn:hover { background: #60a5fa; }
+[data-style="dark"] .quiz-option { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; }
+[data-style="dark"] .quiz-option:hover { border-color: #3b82f6; background: #1e293b; }
+
+/* === Security Scanner === */
+[data-style="pro"] .scan-dashboard { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; }
+
+[data-style="dark"] .scan-dashboard { background: #1e293b; border: 1px solid #334155; }
+
+/* === Subnet Visualizer === */
+[data-style="pro"] .sv-h1 { color: #0f172a; }
+[data-style="pro"] .sv-sub { color: #64748b; }
+[data-style="pro"] .sv-tabs { border-bottom: 1px solid #e2e8f0; }
+[data-style="pro"] .sv-tab { color: #64748b; }
+[data-style="pro"] .sv-tab.active { color: #2563EB; border-bottom-color: #2563EB; }
+[data-style="pro"] .sv-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; }
+[data-style="pro"] .sv-input { background: #f1f5f9; border: 1px solid #e2e8f0; color: #0f172a; }
+[data-style="pro"] .sv-btn { background: #2563EB; color: #fff; border: none; border-radius: 8px; }
+[data-style="pro"] .sv-btn:hover { background: #1d4ed8; }
+[data-style="pro"] .sv-btn-ghost { background: transparent; border: 1px solid #e2e8f0; color: #64748b; }
+[data-style="pro"] .sv-btn-ghost:hover { background: #f1f5f9; }
+[data-style="pro"] .sv-btn-sm { border-radius: 6px; }
+[data-style="pro"] .sv-btn-danger { background: #dc2626; color: #fff; }
+[data-style="pro"] .sv-label { color: #64748b; }
+[data-style="pro"] .sv-detail { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; }
+[data-style="pro"] .sv-legend { color: #64748b; }
+[data-style="pro"] .sv-legend-dot { border-radius: 50%; }
+[data-style="pro"] .sv-map { border: 1px solid #e2e8f0; border-radius: 8px; }
+[data-style="pro"] .sv-cell { border: 1px solid #e2e8f0; }
+[data-style="pro"] .sv-presets { gap: 8px; }
+[data-style="pro"] .sv-preset { background: #f1f5f9; border: 1px solid #e2e8f0; color: #0f172a; border-radius: 6px; cursor: pointer; }
+[data-style="pro"] .sv-preset:hover { border-color: #2563EB; }
+[data-style="pro"] .sv-export { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; color: #64748b; }
+[data-style="pro"] .sv-table th { background: #f1f5f9; color: #0f172a; border-bottom: 2px solid #e2e8f0; }
+[data-style="pro"] .sv-table td { border-bottom: 1px solid #e2e8f0; }
+[data-style="pro"] .sv-2col { gap: 16px; }
+[data-style="pro"] .sv-result-bar { background: #e2e8f0; border-radius: 4px; }
+
+[data-style="dark"] .sv-h1 { color: #e2e8f0; }
+[data-style="dark"] .sv-sub { color: #94a3b8; }
+[data-style="dark"] .sv-tabs { border-bottom: 1px solid #334155; }
+[data-style="dark"] .sv-tab { color: #94a3b8; }
+[data-style="dark"] .sv-tab.active { color: #3b82f6; border-bottom-color: #3b82f6; }
+[data-style="dark"] .sv-card { background: #1e293b; border: 1px solid #334155; }
+[data-style="dark"] .sv-input { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; }
+[data-style="dark"] .sv-btn { background: #3b82f6; color: #fff; }
+[data-style="dark"] .sv-btn:hover { background: #60a5fa; }
+[data-style="dark"] .sv-btn-ghost { background: transparent; border: 1px solid #334155; color: #94a3b8; }
+[data-style="dark"] .sv-btn-ghost:hover { background: #0f172a; }
+[data-style="dark"] .sv-btn-danger { background: #dc2626; }
+[data-style="dark"] .sv-label { color: #94a3b8; }
+[data-style="dark"] .sv-detail { background: #0f172a; border: 1px solid #334155; }
+[data-style="dark"] .sv-legend { color: #94a3b8; }
+[data-style="dark"] .sv-map { border: 1px solid #334155; }
+[data-style="dark"] .sv-cell { border: 1px solid #334155; }
+[data-style="dark"] .sv-preset { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; }
+[data-style="dark"] .sv-preset:hover { border-color: #3b82f6; }
+[data-style="dark"] .sv-export { background: #0f172a; border: 1px solid #334155; color: #94a3b8; }
+[data-style="dark"] .sv-table th { background: #0f172a; color: #e2e8f0; border-bottom: 2px solid #334155; }
+[data-style="dark"] .sv-table td { border-bottom: 1px solid #334155; }
+[data-style="dark"] .sv-result-bar { background: #334155; }
+
+/* === Threat Dashboard === */
+[data-style="pro"] .td-wrap { background: #fff; }
+[data-style="pro"] .td-header { color: #0f172a; }
+[data-style="pro"] .td-kpis { gap: 16px; }
+[data-style="pro"] .td-kpi { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; }
+[data-style="pro"] .td-kpi-n { color: #0f172a; }
+[data-style="pro"] .td-kpi-l { color: #64748b; }
+[data-style="pro"] .td-grid { gap: 16px; }
+[data-style="pro"] .td-panel { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; }
+[data-style="pro"] .td-panels { gap: 16px; }
+[data-style="pro"] .td-bar-row { border-bottom: 1px solid #e2e8f0; }
+[data-style="pro"] .td-bar-label { color: #0f172a; }
+[data-style="pro"] .td-bar-val { color: #64748b; }
+[data-style="pro"] .td-bar { background: #e2e8f0; border-radius: 4px; }
+[data-style="pro"] .td-live { color: #16a34a; }
+[data-style="pro"] .td-log { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; }
+[data-style="pro"] .td-log-entry { border-bottom: 1px solid #e2e8f0; }
+[data-style="pro"] .td-log-ts { color: #64748b; font-family: 'JetBrains Mono', monospace; }
+[data-style="pro"] .td-log-sev { border-radius: 4px; }
+[data-style="pro"] .td-bottom { gap: 16px; }
+[data-style="pro"] .td-map-wrap { border: 1px solid #e2e8f0; border-radius: 10px; }
+
+[data-style="dark"] .td-wrap { background: #1e293b; }
+[data-style="dark"] .td-header { color: #e2e8f0; }
+[data-style="dark"] .td-kpi { background: #0f172a; border: 1px solid #334155; }
+[data-style="dark"] .td-kpi-n { color: #e2e8f0; }
+[data-style="dark"] .td-kpi-l { color: #94a3b8; }
+[data-style="dark"] .td-panel { background: #1e293b; border: 1px solid #334155; }
+[data-style="dark"] .td-bar-row { border-bottom: 1px solid #334155; }
+[data-style="dark"] .td-bar-label { color: #e2e8f0; }
+[data-style="dark"] .td-bar-val { color: #94a3b8; }
+[data-style="dark"] .td-bar { background: #334155; }
+[data-style="dark"] .td-live { color: #4ade80; }
+[data-style="dark"] .td-log { background: #0f172a; border: 1px solid #334155; }
+[data-style="dark"] .td-log-entry { border-bottom: 1px solid #334155; }
+[data-style="dark"] .td-log-ts { color: #94a3b8; }
+[data-style="dark"] .td-map-wrap { border: 1px solid #334155; }
+
+/* === Timeline Visualization === */
+[data-style="pro"] .viz-panel { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; }
+[data-style="pro"] .viz-tab { color: #64748b; }
+[data-style="pro"] .viz-tab.active { color: #2563EB; border-bottom-color: #2563EB; }
+[data-style="pro"] .topo-canvas { border: 1px solid #e2e8f0; border-radius: 8px; }
+[data-style="pro"] .txt-dim { color: #64748b; }
+
+[data-style="dark"] .viz-panel { background: #1e293b; border: 1px solid #334155; }
+[data-style="dark"] .viz-tab { color: #94a3b8; }
+[data-style="dark"] .viz-tab.active { color: #3b82f6; border-bottom-color: #3b82f6; }
+[data-style="dark"] .topo-canvas { border: 1px solid #334155; }
+[data-style="dark"] .txt-dim { color: #94a3b8; }
+
+/* === Vulnerability Database === */
+[data-style="pro"] .vdb-row { background: #fff; border-bottom: 1px solid #e2e8f0; }
+[data-style="pro"] .vdb-row:hover { background: #f8fafc; }
+[data-style="pro"] .vdb-sev { border-radius: 6px; }
+[data-style="pro"] .vdb-sort { color: #64748b; cursor: pointer; }
+[data-style="pro"] .vdb-sort:hover { color: #2563EB; }
+
+[data-style="dark"] .vdb-row { background: #1e293b; border-bottom: 1px solid #334155; }
+[data-style="dark"] .vdb-row:hover { background: #0f172a; }
+[data-style="dark"] .vdb-sort { color: #94a3b8; }
+[data-style="dark"] .vdb-sort:hover { color: #3b82f6; }
+
+/* === Hash Suite === */
+[data-style="pro"] .hs-panel { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; }
+[data-style="pro"] .hs-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; }
+[data-style="pro"] .hs-input { background: #f1f5f9; border: 1px solid #e2e8f0; color: #0f172a; }
+[data-style="pro"] .hs-input-group { border: 1px solid #e2e8f0; border-radius: 8px; }
+[data-style="pro"] .hs-btn-primary { background: #2563EB; color: #fff; border: none; border-radius: 8px; }
+[data-style="pro"] .hs-btn-primary:hover { background: #1d4ed8; }
+[data-style="pro"] .hs-btn-ghost { background: transparent; border: 1px solid #e2e8f0; color: #64748b; border-radius: 8px; }
+[data-style="pro"] .hs-btn-ghost:hover { background: #f1f5f9; }
+[data-style="pro"] .hs-btn { background: #f1f5f9; border: 1px solid #e2e8f0; color: #0f172a; border-radius: 8px; }
+[data-style="pro"] .hs-label { color: #64748b; }
+[data-style="pro"] .hs-badge { background: #dbeafe; color: #1e40af; border-radius: 6px; }
+[data-style="pro"] .hs-badge-green { background: #dcfce7; color: #166534; }
+[data-style="pro"] .hs-badge-red { background: #fef2f2; color: #991b1b; }
+[data-style="pro"] .hs-badge-yellow { background: #fefce8; color: #854d0e; }
+[data-style="pro"] .hs-badge-blue { background: #dbeafe; color: #1e40af; }
+[data-style="pro"] .hs-output { background: #f1f5f9; border: 1px solid #e2e8f0; color: #0f172a; font-family: 'JetBrains Mono', monospace; border-radius: 8px; }
+[data-style="pro"] .hs-copy-btn { background: #2563EB; color: #fff; border: none; border-radius: 6px; }
+[data-style="pro"] .hs-match { color: #16a34a; }
+[data-style="pro"] .hs-nomatch { color: #dc2626; }
+[data-style="pro"] .hs-info-row { border-bottom: 1px solid #e2e8f0; }
+[data-style="pro"] .hs-info-label { color: #64748b; }
+[data-style="pro"] .hs-info-value { color: #0f172a; }
+[data-style="pro"] .hs-grid { gap: 16px; }
+[data-style="pro"] .hs-meter { background: #e2e8f0; border-radius: 4px; }
+[data-style="pro"] .hs-meter-fill { border-radius: 4px; }
+[data-style="pro"] .hs-file-drop { background: #f8fafc; border: 2px dashed #e2e8f0; border-radius: 10px; color: #64748b; }
+[data-style="pro"] .hs-file-drop:hover { border-color: #2563EB; }
+[data-style="pro"] .hs-progress { background: #e2e8f0; border-radius: 4px; }
+[data-style="pro"] .hs-progress-bar { border-radius: 4px; }
+[data-style="pro"] .hs-results-table th { background: #f1f5f9; color: #0f172a; border-bottom: 2px solid #e2e8f0; }
+[data-style="pro"] .hs-results-table td { border-bottom: 1px solid #e2e8f0; }
+[data-style="pro"] .hs-compare-row { border-bottom: 1px solid #e2e8f0; }
+
+[data-style="dark"] .hs-panel { background: #1e293b; border: 1px solid #334155; }
+[data-style="dark"] .hs-card { background: #1e293b; border: 1px solid #334155; }
+[data-style="dark"] .hs-input { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; }
+[data-style="dark"] .hs-input-group { border: 1px solid #334155; }
+[data-style="dark"] .hs-btn-primary { background: #3b82f6; color: #fff; }
+[data-style="dark"] .hs-btn-primary:hover { background: #60a5fa; }
+[data-style="dark"] .hs-btn-ghost { background: transparent; border: 1px solid #334155; color: #94a3b8; }
+[data-style="dark"] .hs-btn-ghost:hover { background: #0f172a; }
+[data-style="dark"] .hs-btn { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; }
+[data-style="dark"] .hs-label { color: #94a3b8; }
+[data-style="dark"] .hs-badge { background: #1e3a5f; color: #93c5fd; }
+[data-style="dark"] .hs-badge-green { background: #052e16; color: #86efac; }
+[data-style="dark"] .hs-badge-red { background: #450a0a; color: #fca5a5; }
+[data-style="dark"] .hs-badge-yellow { background: #422006; color: #fde68a; }
+[data-style="dark"] .hs-badge-blue { background: #1e3a5f; color: #93c5fd; }
+[data-style="dark"] .hs-output { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; }
+[data-style="dark"] .hs-copy-btn { background: #3b82f6; color: #fff; }
+[data-style="dark"] .hs-match { color: #4ade80; }
+[data-style="dark"] .hs-nomatch { color: #f87171; }
+[data-style="dark"] .hs-info-row { border-bottom: 1px solid #334155; }
+[data-style="dark"] .hs-info-label { color: #94a3b8; }
+[data-style="dark"] .hs-info-value { color: #e2e8f0; }
+[data-style="dark"] .hs-meter { background: #334155; }
+[data-style="dark"] .hs-file-drop { background: #0f172a; border: 2px dashed #334155; color: #94a3b8; }
+[data-style="dark"] .hs-file-drop:hover { border-color: #3b82f6; }
+[data-style="dark"] .hs-progress { background: #334155; }
+[data-style="dark"] .hs-results-table th { background: #0f172a; color: #e2e8f0; border-bottom: 2px solid #334155; }
+[data-style="dark"] .hs-results-table td { border-bottom: 1px solid #334155; }
+[data-style="dark"] .hs-compare-row { border-bottom: 1px solid #334155; }
+
+/* === CVE Search === */
+[data-style="pro"] .cve-results { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; }
+[data-style="pro"] .cve-detail { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; }
+[data-style="pro"] .cve-query { background: #f1f5f9; border: 1px solid #e2e8f0; color: #0f172a; }
+[data-style="pro"] .cve-sev-btn { background: #f1f5f9; border: 1px solid #e2e8f0; color: #0f172a; border-radius: 6px; }
+[data-style="pro"] .cve-sev-btn.active { background: #2563EB; color: #fff; border-color: #2563EB; }
+
+[data-style="dark"] .cve-results { background: #1e293b; border: 1px solid #334155; }
+[data-style="dark"] .cve-detail { background: #0f172a; border: 1px solid #334155; }
+[data-style="dark"] .cve-query { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; }
+[data-style="dark"] .cve-sev-btn { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; }
+[data-style="dark"] .cve-sev-btn.active { background: #3b82f6; color: #fff; border-color: #3b82f6; }
+
+/* === Darknet Radar === */
+[data-style="pro"] .dr-tabs { border-bottom: 1px solid #e2e8f0; }
+[data-style="pro"] .dr-tab { color: #64748b; }
+[data-style="pro"] .dr-tab.active { color: #2563EB; border-bottom-color: #2563EB; }
+[data-style="pro"] .dr-panel { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; }
+[data-style="pro"] .dr-rg-detail { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; }
+
+[data-style="dark"] .dr-tabs { border-bottom: 1px solid #334155; }
+[data-style="dark"] .dr-tab { color: #94a3b8; }
+[data-style="dark"] .dr-tab.active { color: #3b82f6; border-bottom-color: #3b82f6; }
+[data-style="dark"] .dr-panel { background: #1e293b; border: 1px solid #334155; }
+[data-style="dark"] .dr-rg-detail { background: #0f172a; border: 1px solid #334155; }
+
+/* === Email Intel === */
+[data-style="pro"] .ei-tabs { border-bottom: 1px solid #e2e8f0; }
+[data-style="pro"] .ei-tab { color: #64748b; }
+[data-style="pro"] .ei-tab-on,
+[data-style="pro"] .ei-tab.active { color: #2563EB; border-bottom-color: #2563EB; }
+[data-style="pro"] .ei-content { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; }
+[data-style="pro"] .ei-raw-headers { background: #f1f5f9; border: 1px solid #e2e8f0; color: #0f172a; font-family: 'JetBrains Mono', monospace; }
+[data-style="pro"] .ei-header-results { background: #f8fafc; }
+[data-style="pro"] .ei-spf-results { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; }
+[data-style="pro"] .ei-spf-domain { background: #f1f5f9; border: 1px solid #e2e8f0; color: #0f172a; }
+[data-style="pro"] .ei-phish-results { background: #f8fafc; }
+[data-style="pro"] .ei-phish-url { background: #f1f5f9; border: 1px solid #e2e8f0; color: #0f172a; }
+
+[data-style="dark"] .ei-tabs { border-bottom: 1px solid #334155; }
+[data-style="dark"] .ei-tab { color: #94a3b8; }
+[data-style="dark"] .ei-tab-on,
+[data-style="dark"] .ei-tab.active { color: #3b82f6; border-bottom-color: #3b82f6; }
+[data-style="dark"] .ei-content { background: #1e293b; border: 1px solid #334155; }
+[data-style="dark"] .ei-raw-headers { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; }
+[data-style="dark"] .ei-header-results { background: #0f172a; }
+[data-style="dark"] .ei-spf-results { background: #0f172a; border: 1px solid #334155; }
+[data-style="dark"] .ei-spf-domain { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; }
+[data-style="dark"] .ei-phish-results { background: #0f172a; }
+[data-style="dark"] .ei-phish-url { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; }
+
+/* === Hash Lookup === */
+[data-style="pro"] .hl-tabs { border-bottom: 1px solid #e2e8f0; }
+[data-style="pro"] .hl-tab { color: #64748b; }
+[data-style="pro"] .hl-tab-on,
+[data-style="pro"] .hl-tab.active { color: #2563EB; border-bottom-color: #2563EB; }
+[data-style="pro"] .hl-content { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; }
+[data-style="pro"] .hl-hash-input,
+[data-style="pro"] .hl-text-input { background: #f1f5f9; border: 1px solid #e2e8f0; color: #0f172a; }
+[data-style="pro"] .hl-drop-zone { background: #f8fafc; border: 2px dashed #e2e8f0; border-radius: 10px; color: #64748b; }
+[data-style="pro"] .hl-drop-zone:hover { border-color: #2563EB; }
+[data-style="pro"] .hl-id-results,
+[data-style="pro"] .hl-compute-results,
+[data-style="pro"] .hl-file-results,
+[data-style="pro"] .hl-cmp-result { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; }
+[data-style="pro"] .hl-cmp-a,
+[data-style="pro"] .hl-cmp-b { background: #f1f5f9; border: 1px solid #e2e8f0; color: #0f172a; }
+
+[data-style="dark"] .hl-tabs { border-bottom: 1px solid #334155; }
+[data-style="dark"] .hl-tab { color: #94a3b8; }
+[data-style="dark"] .hl-tab-on,
+[data-style="dark"] .hl-tab.active { color: #3b82f6; border-bottom-color: #3b82f6; }
+[data-style="dark"] .hl-content { background: #1e293b; border: 1px solid #334155; }
+[data-style="dark"] .hl-hash-input,
+[data-style="dark"] .hl-text-input { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; }
+[data-style="dark"] .hl-drop-zone { background: #0f172a; border: 2px dashed #334155; color: #94a3b8; }
+[data-style="dark"] .hl-drop-zone:hover { border-color: #3b82f6; }
+[data-style="dark"] .hl-id-results,
+[data-style="dark"] .hl-compute-results,
+[data-style="dark"] .hl-file-results,
+[data-style="dark"] .hl-cmp-result { background: #0f172a; border: 1px solid #334155; }
+[data-style="dark"] .hl-cmp-a,
+[data-style="dark"] .hl-cmp-b { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; }
+
+/* === Identity Matrix === */
+[data-style="pro"] .im-tabs { border-bottom: 1px solid #e2e8f0; }
+[data-style="pro"] .im-tab { color: #64748b; }
+[data-style="pro"] .im-tab.active { color: #2563EB; border-bottom-color: #2563EB; }
+[data-style="pro"] .im-panel { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; }
+[data-style="pro"] .im-jwt-input,
+[data-style="pro"] .im-entropy-input { background: #f1f5f9; border: 1px solid #e2e8f0; color: #0f172a; }
+[data-style="pro"] .im-jwt-result,
+[data-style="pro"] .im-entropy-result { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; }
+
+[data-style="dark"] .im-tabs { border-bottom: 1px solid #334155; }
+[data-style="dark"] .im-tab { color: #94a3b8; }
+[data-style="dark"] .im-tab.active { color: #3b82f6; border-bottom-color: #3b82f6; }
+[data-style="dark"] .im-panel { background: #1e293b; border: 1px solid #334155; }
+[data-style="dark"] .im-jwt-input,
+[data-style="dark"] .im-entropy-input { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; }
+[data-style="dark"] .im-jwt-result,
+[data-style="dark"] .im-entropy-result { background: #0f172a; border: 1px solid #334155; }
+
+/* === SSL Inspector === */
+[data-style="pro"] .ssl-tabs { border-bottom: 1px solid #e2e8f0; }
+[data-style="pro"] .ssl-tab { color: #64748b; }
+[data-style="pro"] .ssl-tab.active { color: #2563EB; border-bottom-color: #2563EB; }
+[data-style="pro"] .ssl-domain { background: #f1f5f9; border: 1px solid #e2e8f0; color: #0f172a; }
+[data-style="pro"] .ssl-results { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; }
+
+[data-style="dark"] .ssl-tabs { border-bottom: 1px solid #334155; }
+[data-style="dark"] .ssl-tab { color: #94a3b8; }
+[data-style="dark"] .ssl-tab.active { color: #3b82f6; border-bottom-color: #3b82f6; }
+[data-style="dark"] .ssl-domain { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; }
+[data-style="dark"] .ssl-results { background: #0f172a; border: 1px solid #334155; }
+
+/* === Non-prefixed tools: generic overrides by section context === */
+
+/* ASN Explorer */
+[data-style="pro"] .asn-input { background: #f1f5f9; border: 1px solid #e2e8f0; color: #0f172a; }
+[data-style="pro"] .asn-results { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; }
+[data-style="dark"] .asn-input { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; }
+[data-style="dark"] .asn-results { background: #0f172a; border: 1px solid #334155; }
+
+/* CORS Tester */
+[data-style="pro"] .cors-url { background: #f1f5f9; border: 1px solid #e2e8f0; color: #0f172a; }
+[data-style="pro"] .cors-origin { background: #f1f5f9; border: 1px solid #e2e8f0; color: #0f172a; }
+[data-style="pro"] .cors-method { background: #f1f5f9; border: 1px solid #e2e8f0; color: #0f172a; }
+[data-style="pro"] .cors-results { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; }
+[data-style="pro"] .cors-header { border-bottom: 1px solid #e2e8f0; }
+[data-style="dark"] .cors-url { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; }
+[data-style="dark"] .cors-origin { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; }
+[data-style="dark"] .cors-method { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; }
+[data-style="dark"] .cors-results { background: #0f172a; border: 1px solid #334155; }
+[data-style="dark"] .cors-header { border-bottom: 1px solid #334155; }
+
+/* DNS Recon */
+[data-style="pro"] .dns-domain { background: #f1f5f9; border: 1px solid #e2e8f0; color: #0f172a; }
+[data-style="pro"] .dns-results { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; }
+[data-style="pro"] .dns-brute-bar { background: #e2e8f0; border-radius: 4px; }
+[data-style="pro"] .dns-brute-progress { background: #2563EB; border-radius: 4px; }
+[data-style="dark"] .dns-domain { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; }
+[data-style="dark"] .dns-results { background: #0f172a; border: 1px solid #334155; }
+[data-style="dark"] .dns-brute-bar { background: #334155; }
+[data-style="dark"] .dns-brute-progress { background: #3b82f6; }
+
+/* Header Analyzer */
+[data-style="pro"] .ha-input { background: #f1f5f9; border: 1px solid #e2e8f0; color: #0f172a; }
+[data-style="pro"] .ha-results { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; }
+[data-style="pro"] .ha-raw { background: #f1f5f9; border: 1px solid #e2e8f0; color: #0f172a; font-family: 'JetBrains Mono', monospace; }
+[data-style="dark"] .ha-input { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; }
+[data-style="dark"] .ha-results { background: #0f172a; border: 1px solid #334155; }
+[data-style="dark"] .ha-raw { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; }
+
+/* HTTP Probe */
+[data-style="pro"] .hp-url { background: #f1f5f9; border: 1px solid #e2e8f0; color: #0f172a; }
+[data-style="pro"] .hp-results { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; }
+[data-style="dark"] .hp-url { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; }
+[data-style="dark"] .hp-results { background: #0f172a; border: 1px solid #334155; }
+
+/* Network Scanner */
+[data-style="pro"] .ns-target { background: #f1f5f9; border: 1px solid #e2e8f0; color: #0f172a; }
+[data-style="pro"] .ns-results { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; }
+[data-style="pro"] .ns-port-grid { gap: 8px; }
+[data-style="pro"] .ns-dns-info { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; }
+[data-style="pro"] .ns-scan-progress { background: #e2e8f0; border-radius: 4px; }
+[data-style="dark"] .ns-target { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; }
+[data-style="dark"] .ns-results { background: #0f172a; border: 1px solid #334155; }
+[data-style="dark"] .ns-dns-info { background: #0f172a; border: 1px solid #334155; }
+[data-style="dark"] .ns-scan-progress { background: #334155; }
+
+/* Tech Fingerprint */
+[data-style="pro"] .tf-url { background: #f1f5f9; border: 1px solid #e2e8f0; color: #0f172a; }
+[data-style="pro"] .tf-results { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; }
+[data-style="dark"] .tf-url { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; }
+[data-style="dark"] .tf-results { background: #0f172a; border: 1px solid #334155; }
+
+/* Threat Feed Aggregator */
+[data-style="pro"] .tf-feed { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; }
+[data-style="pro"] .tf-status { color: #64748b; }
+[data-style="pro"] .tf-total { color: #0f172a; font-weight: 600; }
+[data-style="pro"] .tf-kev,
+[data-style="pro"] .tf-ioc,
+[data-style="pro"] .tf-c2,
+[data-style="pro"] .tf-malurl,
+[data-style="pro"] .tf-ransom { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; }
+[data-style="pro"] .tf-critical { color: #dc2626; }
+[data-style="dark"] .tf-feed { background: #1e293b; border: 1px solid #334155; }
+[data-style="dark"] .tf-status { color: #94a3b8; }
+[data-style="dark"] .tf-total { color: #e2e8f0; }
+[data-style="dark"] .tf-kev,
+[data-style="dark"] .tf-ioc,
+[data-style="dark"] .tf-c2,
+[data-style="dark"] .tf-malurl,
+[data-style="dark"] .tf-ransom { background: #0f172a; border: 1px solid #334155; }
+[data-style="dark"] .tf-critical { color: #f87171; }
+
+/* Traffic Analyzer */
+[data-style="pro"] .ta-export { background: #2563EB; color: #fff; border: none; border-radius: 8px; }
+[data-style="pro"] .ta-export:hover { background: #1d4ed8; }
+[data-style="dark"] .ta-export { background: #3b82f6; color: #fff; }
+[data-style="dark"] .ta-export:hover { background: #60a5fa; }
+
+/* WebSocket Tester */
+[data-style="pro"] .ws-url { background: #f1f5f9; border: 1px solid #e2e8f0; color: #0f172a; }
+[data-style="pro"] .ws-connect-btn { background: #2563EB; color: #fff; border: none; border-radius: 8px; }
+[data-style="pro"] .ws-connect-btn:hover { background: #1d4ed8; }
+[data-style="pro"] .ws-message { background: #f1f5f9; border: 1px solid #e2e8f0; color: #0f172a; }
+[data-style="pro"] .ws-log { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; font-family: 'JetBrains Mono', monospace; }
+[data-style="pro"] .ws-status { color: #64748b; }
+[data-style="pro"] .ws-frame-count { color: #64748b; }
+[data-style="dark"] .ws-url { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; }
+[data-style="dark"] .ws-connect-btn { background: #3b82f6; color: #fff; }
+[data-style="dark"] .ws-connect-btn:hover { background: #60a5fa; }
+[data-style="dark"] .ws-message { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; }
+[data-style="dark"] .ws-log { background: #0f172a; border: 1px solid #334155; }
+[data-style="dark"] .ws-status { color: #94a3b8; }
+[data-style="dark"] .ws-frame-count { color: #94a3b8; }
+
+/* WHOIS Recon */
+[data-style="pro"] .wr-input { background: #f1f5f9; border: 1px solid #e2e8f0; color: #0f172a; }
+[data-style="pro"] .wr-results { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; }
+[data-style="pro"] .wr-history { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; }
+[data-style="dark"] .wr-input { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; }
+[data-style="dark"] .wr-results { background: #0f172a; border: 1px solid #334155; }
+[data-style="dark"] .wr-history { background: #0f172a; border: 1px solid #334155; }
+
+/* IP Geolocation */
+[data-style="pro"] .ip-badge-red { background: #fef2f2; color: #991b1b; }
+[data-style="pro"] .ip-badge-green { background: #dcfce7; color: #166534; }
+[data-style="dark"] .ip-badge-red { background: #450a0a; color: #fca5a5; }
+[data-style="dark"] .ip-badge-green { background: #052e16; color: #86efac; }

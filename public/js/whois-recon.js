@@ -236,7 +236,7 @@ function _wrRenderHistory() {
   el.innerHTML = h;
 }
 
-window.renderWhoisRecon = function(container) {
+export function renderWhoisRecon(container) {
   _wrLoadHistory();
 
   container.innerHTML =

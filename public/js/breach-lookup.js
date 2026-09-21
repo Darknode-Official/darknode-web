@@ -105,7 +105,7 @@ function _blRenderCards(breaches, container) {
   container.innerHTML = h;
 }
 
-window.renderBreachLookup = function(container) {
+export function renderBreachLookup(container) {
   var totalRecords = 0;
   var sectors = {};
   var vectors = {};

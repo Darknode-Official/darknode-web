@@ -151,7 +151,7 @@ async function _haAnalyze(url) {
   }
 }
 
-window.renderHeaderAnalyzer = function(container) {
+export function renderHeaderAnalyzer(container) {
   container.innerHTML =
     '<div style="padding:20px 24px;max-width:1000px;margin:0 auto;">' +
     '<h2 style="margin:0 0 4px;font-size:20px;color:#00aaff;font-family:monospace;letter-spacing:2px;text-transform:uppercase;">HTTP SECURITY HEADERS</h2>' +

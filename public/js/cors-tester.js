@@ -4,7 +4,7 @@
 var esc = function(s) { return String(s != null ? s : '').replace(/[&<>"']/g, function(c) {
   return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); };
 
-window.renderCorsTester = function(container) {
+export function renderCorsTester(container) {
   var h = '';
   h += '<div style="background:#0a0e14;color:#c8d6e5;font-family:\'Courier New\',monospace;padding:20px;min-height:500px;">';
   h += '<h2 style="color:#00ddff;font-size:18px;letter-spacing:2px;margin:0 0 4px;">CORS POLICY TESTER</h2>';
