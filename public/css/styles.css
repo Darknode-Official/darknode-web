@@ -3130,9 +3130,23 @@ html{scroll-behavior:smooth;scroll-padding-top:80px;overscroll-behavior-y:none}
    and generous top spacing so groups read as distinct sections. */
 .side-group{font-size:.6rem;font-weight:700;text-transform:uppercase;
   letter-spacing:.12em;color:var(--mut);padding:18px 12px 6px;margin:0;
-  line-height:1}
+  line-height:1;display:flex;align-items:center;gap:6px}
+.side-group::before{content:"";width:6px;height:6px;border-radius:50%;
+  flex-shrink:0;background:var(--group-color,var(--mut));opacity:.7}
 .side-group:first-child{padding-top:6px}
 .side-group:not(:first-child){border-top:1px solid var(--line);margin-top:6px}
+.side-group[data-color="blue"]{--group-color:#3b82f6}
+.side-group[data-color="red"]{--group-color:#ef4444}
+.side-group[data-color="cyan"]{--group-color:#06b6d4}
+.side-group[data-color="purple"]{--group-color:#a855f7}
+.side-group[data-color="green"]{--group-color:#22c55e}
+.side-group[data-color="orange"]{--group-color:#f97316}
+.side-group[data-color="teal"]{--group-color:#14b8a6}
+.side-group[data-color="yellow"]{--group-color:#eab308}
+.side-group[data-color="indigo"]{--group-color:#6366f1}
+.side-group[data-color="violet"]{--group-color:#8b5cf6}
+.side-group[data-color="emerald"]{--group-color:#10b981}
+.side-group[data-color="slate"]{--group-color:#64748b}
 
 /* Side items: compact, readable, with a clean left-border active indicator
    following the GitHub/Linear convention. */
@@ -8799,3 +8813,134 @@ body.landing section + section::before {
   .feat-card:hover, .bento-card:hover { transform: none; }
   .cta-final .btn.lg::before, .cta-band .btn.lg::before { animation: none; display: none; }
 }
+
+/* =====================================================
+   ORGANIZATION & BUTTON STRUCTURE
+   ===================================================== */
+
+/* --- Sidebar group count badge --- */
+.side-cnt{margin-left:auto;font-size:.5rem;font-weight:600;color:var(--mut);
+  background:color-mix(in srgb,var(--line) 60%,transparent);
+  padding:1px 5px;border-radius:8px;line-height:1.3;
+  font-variant-numeric:tabular-nums}
+
+/* --- Sidebar collapse/expand arrow --- */
+.side-group.side-collapse{cursor:pointer;user-select:none}
+.side-group.side-collapse::after{content:"";width:0;height:0;margin-left:auto;
+  border-left:3.5px solid transparent;border-right:3.5px solid transparent;
+  border-top:4px solid currentColor;opacity:.4;transition:transform .2s ease;flex-shrink:0}
+.side-group.side-collapse[data-open="1"]::after,
+.side-group.side-collapse.open::after{transform:rotate(180deg)}
+
+/* --- Dashboard grid improvements --- */
+.qa-grid{grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
+
+/* --- Quick action cards (qa function output) --- */
+.qa-card{display:flex;flex-direction:column;gap:6px;padding:16px;
+  border-radius:10px;border:1px solid var(--line);background:var(--card);
+  cursor:pointer;transition:border-color .15s,box-shadow .15s,transform .15s}
+.qa-card:hover{border-color:var(--acc-line);
+  box-shadow:0 4px 12px color-mix(in srgb,var(--acc) 10%,transparent);
+  transform:translateY(-2px)}
+.qa-card .qa-title{font-weight:700;font-size:.88rem;color:var(--txt)}
+.qa-card .qa-desc{font-size:.78rem;color:var(--mut);line-height:1.45}
+
+/* --- Tool page header bar --- */
+.tool-header{display:flex;align-items:center;justify-content:space-between;
+  gap:12px;padding:16px 0;margin-bottom:16px;
+  border-bottom:1px solid var(--line);flex-wrap:wrap}
+.tool-header h1,.tool-header h2{margin:0;font-size:1.1rem;font-weight:700;
+  color:var(--txt);letter-spacing:-.01em}
+.tool-header .tool-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+
+/* --- Button sizing system --- */
+.btn.xs{padding:3px 8px;font-size:.7rem;border-radius:5px;gap:4px}
+.btn.sm{padding:5px 12px;font-size:.76rem;border-radius:6px;gap:5px}
+.btn.md{padding:8px 16px;font-size:.84rem}
+.btn.lg{padding:10px 22px;font-size:.92rem}
+.btn.xl{padding:12px 28px;font-size:1rem}
+.btn.icon-only{padding:6px;aspect-ratio:1;justify-content:center}
+.btn.icon-only.sm{padding:4px}
+.btn.icon-only.lg{padding:10px}
+.btn.full{width:100%}
+
+/* --- Button group --- */
+.btn-group{display:inline-flex;gap:0}
+.btn-group .btn{border-radius:0}
+.btn-group .btn:first-child{border-radius:var(--ctrl-radius) 0 0 var(--ctrl-radius)}
+.btn-group .btn:last-child{border-radius:0 var(--ctrl-radius) var(--ctrl-radius) 0}
+.btn-group .btn+.btn{border-left:1px solid color-mix(in srgb,var(--on-acc) 20%,transparent)}
+.btn-group .btn.ghost+.btn.ghost{border-left:1px solid var(--line)}
+
+/* --- Tab bar component --- */
+.tab-bar{display:flex;gap:0;border-bottom:2px solid var(--line);margin-bottom:16px;
+  overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none}
+.tab-bar::-webkit-scrollbar{display:none}
+.tab-bar .tab{padding:10px 16px;font-size:.82rem;font-weight:600;color:var(--mut);
+  background:none;border:none;cursor:pointer;white-space:nowrap;
+  border-bottom:2px solid transparent;margin-bottom:-2px;
+  transition:color .15s,border-color .15s}
+.tab-bar .tab:hover{color:var(--txt)}
+.tab-bar .tab.active{color:var(--acc);border-bottom-color:var(--acc)}
+
+/* --- Badge system --- */
+.badge{display:inline-flex;align-items:center;gap:4px;
+  padding:2px 8px;border-radius:6px;font-size:.68rem;font-weight:700;
+  line-height:1.3;white-space:nowrap}
+.badge.critical{background:color-mix(in srgb,var(--bad) 15%,transparent);color:var(--bad)}
+.badge.high{background:color-mix(in srgb,#f97316 15%,transparent);color:#f97316}
+.badge.medium{background:color-mix(in srgb,#eab308 15%,transparent);color:#eab308}
+.badge.low{background:color-mix(in srgb,var(--ok) 15%,transparent);color:var(--ok)}
+.badge.info{background:color-mix(in srgb,var(--acc) 15%,transparent);color:var(--acc)}
+
+/* --- Input group (label + input + button in a row) --- */
+.input-group{display:flex;gap:0;align-items:stretch}
+.input-group input,.input-group select{border-radius:var(--ctrl-radius) 0 0 var(--ctrl-radius);
+  border-right:none;flex:1;min-width:0}
+.input-group .btn{border-radius:0 var(--ctrl-radius) var(--ctrl-radius) 0;
+  flex-shrink:0}
+
+/* --- Stat card grid --- */
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:20px}
+.stat-card{background:var(--card);border:1px solid var(--line);border-radius:10px;
+  padding:14px 16px;display:flex;flex-direction:column;gap:4px}
+.stat-card .stat-value{font-size:1.4rem;font-weight:800;color:var(--txt);
+  font-variant-numeric:tabular-nums;line-height:1.2}
+.stat-card .stat-label{font-size:.72rem;font-weight:600;color:var(--mut);
+  text-transform:uppercase;letter-spacing:.04em}
+
+/* --- Empty state --- */
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:48px 24px;text-align:center;gap:12px;color:var(--mut)}
+.empty-state .empty-icon{font-size:2rem;opacity:.4}
+.empty-state .empty-title{font-size:.92rem;font-weight:700;color:var(--txt)}
+.empty-state .empty-desc{font-size:.82rem;max-width:360px;line-height:1.5}
+
+/* --- Dashboard sections with category labels --- */
+.dash-section{margin-bottom:24px}
+.dash-cat-label{font-size:.68rem;font-weight:700;text-transform:uppercase;
+  letter-spacing:.1em;color:var(--mut);margin:0 0 10px;padding-left:2px}
+
+/* --- Dashboard extras layout --- */
+.dash-extras{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
+@media(max-width:768px){.dash-extras{grid-template-columns:1fr}}
+
+/* --- Data table improvements --- */
+.data-table{width:100%;border-collapse:collapse;font-size:.82rem}
+.data-table th{text-align:left;font-weight:700;font-size:.7rem;
+  text-transform:uppercase;letter-spacing:.04em;color:var(--mut);
+  padding:10px 12px;border-bottom:2px solid var(--line);
+  background:color-mix(in srgb,var(--bg) 50%,var(--card));position:sticky;top:0}
+.data-table td{padding:8px 12px;border-bottom:1px solid var(--line);
+  color:var(--txt);vertical-align:top}
+.data-table tr:hover td{background:color-mix(in srgb,var(--acc) 4%,transparent)}
+
+/* --- Scrollable code/output area --- */
+.code-output{background:var(--card2);border:1px solid var(--line);border-radius:8px;
+  padding:12px 14px;font-family:var(--mono);font-size:.78rem;line-height:1.6;
+  overflow-x:auto;max-height:400px;overflow-y:auto;white-space:pre-wrap;word-break:break-all}
+
+/* --- Responsive button row --- */
+.action-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+@media(max-width:480px){.action-row{flex-direction:column}
+  .action-row .btn{width:100%;justify-content:center}}
