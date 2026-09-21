@@ -729,7 +729,14 @@ function _vgPhase3_HostProbe() {
             return entry;
           })
           .catch(function() {
-            // Try HTTP
+            // HTTP fallback skipped on HTTPS pages (mixed content blocked by browsers)
+            if (location.protocol === 'https:') {
+              var elapsed2 = Math.round(performance.now() - startTime);
+              _vgLog('  → [DOWN] ' + host + ' — HTTPS unreachable (' + elapsed2 + 'ms)', 'muted');
+              _vgAddFinding({ severity: 'info', title: 'Host unreachable via HTTPS', description: host + ' did not respond to HTTPS probe. HTTP fallback skipped (mixed content).', phase: 'Host Probe', host: host, remediation: 'Use Darknode CLI for full HTTP/HTTPS probing' });
+              completed++;
+              return null;
+            }
             return fetch('http://' + host, { mode: 'cors', redirect: 'follow', signal: AbortSignal.timeout(5000) })
               .then(function(resp2) {
                 var elapsed2 = Math.round(performance.now() - startTime);
