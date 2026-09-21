@@ -10648,6 +10648,164 @@ html[data-style=dark] .boot-sweep {
   background: #f8fafc !important;
 }
 
+/* --- Gov Section Contrast Fix --- */
+[data-style=pro] .gov-icon {
+  color: #2563eb !important;
+}
+
+/* --- Style Toggle Button Pro Overrides --- */
+[data-style=pro] .style-toggle {
+  border-color: #e2e8f0 !important;
+  color: #64748b !important;
+}
+[data-style=pro] .style-toggle:hover {
+  border-color: #2563eb !important;
+  color: #2563eb !important;
+}
+[data-style=dark] .style-toggle {
+  border-color: #334155 !important;
+  color: #94a3b8 !important;
+}
+[data-style=dark] .style-toggle:hover {
+  border-color: #3b82f6 !important;
+  color: #3b82f6 !important;
+}
+
+/* --- Command Palette Pro Overrides --- */
+[data-style=pro] .cmdk-badge.action {
+  color: #7c3aed !important;
+  background: rgba(124, 58, 237, 0.08) !important;
+}
+[data-style=pro] .cmdk-item mark {
+  background: rgba(37, 99, 235, 0.12) !important;
+}
+[data-style=dark] .cmdk-badge.action {
+  color: #a78bfa !important;
+  background: rgba(167, 139, 250, 0.15) !important;
+}
+
+/* --- Threat Intel Feed Pro Overrides (.tf-) --- */
+[data-style=pro] .tf-wrap {
+  background: #fff !important;
+  color: #0f172a !important;
+}
+[data-style=pro] .tf-card {
+  background: #fff !important;
+  border-color: #e2e8f0 !important;
+}
+[data-style=pro] .tf-card:hover {
+  border-color: #cbd5e1 !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,.04) !important;
+}
+[data-style=pro] .tf-header h1,
+[data-style=pro] .tf-header h2 {
+  color: #0f172a !important;
+}
+[data-style=pro] .tf-filters input,
+[data-style=pro] .tf-filters select {
+  background: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+[data-style=pro] .tf-detail {
+  background: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+}
+[data-style=dark] .tf-wrap {
+  background: #0f172a !important;
+}
+[data-style=dark] .tf-card {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+[data-style=dark] .tf-filters input,
+[data-style=dark] .tf-filters select {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #e2e8f0 !important;
+}
+
+/* --- Security Checklist Pro Overrides (.sc-) --- */
+[data-style=pro] .sc-wrap {
+  background: #fff !important;
+  color: #0f172a !important;
+}
+[data-style=pro] .sc-tab {
+  background: #f1f5f9 !important;
+  color: #64748b !important;
+  border-color: #e2e8f0 !important;
+}
+[data-style=pro] .sc-tab.active {
+  background: #2563eb !important;
+  color: #fff !important;
+  border-color: #2563eb !important;
+}
+[data-style=pro] .sc-item {
+  background: #fff !important;
+  border-color: #e2e8f0 !important;
+}
+[data-style=pro] .sc-item:hover {
+  border-color: #cbd5e1 !important;
+}
+[data-style=pro] .sc-progress-bar {
+  background: #f1f5f9 !important;
+}
+[data-style=pro] .sc-evidence {
+  background: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+  color: #334155 !important;
+}
+[data-style=pro] .sc-status {
+  background: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+  color: #334155 !important;
+}
+[data-style=dark] .sc-wrap {
+  background: #0f172a !important;
+}
+[data-style=dark] .sc-tab {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #94a3b8 !important;
+}
+[data-style=dark] .sc-tab.active {
+  background: #3b82f6 !important;
+  color: #fff !important;
+}
+[data-style=dark] .sc-item {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+[data-style=dark] .sc-evidence,
+[data-style=dark] .sc-status {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #e2e8f0 !important;
+}
+
+/* --- Mobile Bottom Nav Pro Overrides (.mnav-) --- */
+[data-style=pro] .mnav-bar {
+  background: #fff !important;
+  border-top-color: #e2e8f0 !important;
+  box-shadow: 0 -2px 8px rgba(0,0,0,.04) !important;
+}
+[data-style=pro] .mnav-item {
+  color: #64748b !important;
+}
+[data-style=pro] .mnav-item.mnav-active {
+  color: #2563eb !important;
+}
+[data-style=dark] .mnav-bar {
+  background: #1e293b !important;
+  border-top-color: #334155 !important;
+}
+[data-style=dark] .mnav-item {
+  color: #94a3b8 !important;
+}
+[data-style=dark] .mnav-item.mnav-active {
+  color: #3b82f6 !important;
+}
+
 /* --- Mobile Pro Landing Improvements --- */
 @media (max-width: 768px) {
   [data-style=pro] .nav-dd-menu {

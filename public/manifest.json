@@ -20,7 +20,9 @@
     { "name": "Dashboard", "short_name": "Home", "description": "Home dashboard", "url": "/", "icons": [{ "src": "/favicon.svg", "sizes": "any" }] },
     { "name": "Tools", "short_name": "Tools", "description": "Security tools", "url": "/tools" },
     { "name": "Nexus AI", "short_name": "AI", "description": "AI security agent", "url": "/ai" },
-    { "name": "Settings", "short_name": "Settings", "description": "App settings", "url": "/settings" }
+    { "name": "Settings", "short_name": "Settings", "description": "App settings", "url": "/settings" },
+    { "name": "Threat Intel Feed", "short_name": "Threats", "description": "CVE advisory aggregator", "url": "/threatfeed" },
+    { "name": "Security Checklist", "short_name": "Checklist", "description": "Compliance checklists", "url": "/secchecklist" }
   ],
   "screenshots": []
 }

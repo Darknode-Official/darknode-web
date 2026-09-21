@@ -61,8 +61,10 @@
   background:linear-gradient(135deg,var(--acc,#00d4ff),var(--acc-2,#7c5cff));-webkit-background-clip:text;background-clip:text;color:transparent;
   filter:drop-shadow(0 0 24px color-mix(in srgb,var(--acc,#00d4ff) 55%,transparent));animation:bootPulse 2.4s ease-in-out infinite}</style>
   <script>!function(){var b='pro';try{b=localStorage.getItem('sw_boot_theme')||'pro'}catch(_){}document.documentElement.setAttribute('data-boot',b);var s='pro';try{s=localStorage.getItem('sw_style')||'pro'}catch(_){}document.documentElement.setAttribute('data-style',s)}()</script>
-  <link rel="stylesheet" href="/css/styles.css?v=20260921" media="all">
-  <link rel="stylesheet" href="/css/pro-theme.css?v=20260921" media="all">
+  <link rel="modulepreload" href="/js/auth.js?v=20260922">
+  <link rel="modulepreload" href="/js/firebase.js">
+  <link rel="stylesheet" href="/css/styles.css?v=20260922" media="all" fetchpriority="high">
+  <link rel="stylesheet" href="/css/pro-theme.css?v=20260922" media="all">
 </head>
 <body>
   <script>!function(){var a=["darknode.ai","www.darknode.ai","localhost","127.0.0.1"],h=location.hostname;if(!a.some(function(d){return h===d||h.endsWith("."+d)})){document.documentElement.innerHTML="<body style='background:#0a0e16;color:#f44;font:600 1.2rem/2 system-ui;display:flex;align-items:center;justify-content:center;height:100vh;text-align:center;padding:2rem'><div><h1>Unauthorized</h1><p>This software is licensed exclusively to <b>darknode.ai</b>.<br>Redistribution and rehosting are prohibited.<br><br><a href=\x22https://darknode.ai\x22 style=\x22color:#00d4ff\x22>Visit the official site</a></p></div></body>";throw new Error("Unauthorized domain")}}()</script>
@@ -160,7 +162,7 @@
     })();
   </script>
 
-  <script type="module" src="/js/auth.js?v=20260921"></script>
+  <script type="module" src="/js/auth.js?v=20260922"></script>
   <script>if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{})</script>
 </body>
 </html>

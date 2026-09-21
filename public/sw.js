@@ -1,8 +1,12 @@
-const CACHE = 'darknode-v4';
+const CACHE = 'darknode-v5';
 const STATIC = [
   '/',
   '/css/styles.css',
   '/css/pro-theme.css',
+  '/js/auth.js',
+  '/js/firebase.js',
+  '/js/cyber.js',
+  '/js/toolkit.js',
   '/favicon.svg',
   '/logo-light.svg',
   '/logo-dark.svg',
