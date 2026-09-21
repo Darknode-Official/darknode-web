@@ -1344,10 +1344,10 @@ export function renderHydra(main) {
     '.hy-tab{background:transparent;border:none;border-bottom:2px solid transparent;color:var(--mut);padding:10px 16px;font-size:.72rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;cursor:pointer;transition:all .2s;font-family:inherit;white-space:nowrap;flex-shrink:0}' +
     '.hy-tab:hover{color:var(--txt);background:rgba(255,255,255,.03)}' +
     '.hy-tab.active{color:var(--acc);border-bottom-color:var(--acc);text-shadow:0 0 8px color-mix(in srgb,var(--acc) 40%,transparent)}' +
-    '.hy-panel{background:var(--card);border:1px solid var(--line);border-radius:4px;overflow:hidden}' +
-    '.hy-panel-head{padding:10px 14px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px;background:rgba(0,0,0,.15);font-size:.72rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--mut)}' +
+    '.hy-panel{background:var(--card);border:1px solid var(--line);border-radius:6px;overflow:hidden}' +
+    '.hy-panel-head{padding:12px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px;background:rgba(0,0,0,.15);font-size:.72rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--mut)}' +
     '.hy-panel-head .hy-accent{color:var(--acc)}' +
-    '.hy-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;min-height:520px}' +
+    '.hy-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;min-height:520px}' +
     '.hy-controls{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:12px 0}' +
     '.hy-select{background:rgba(0,0,0,.3);color:var(--txt);border:1px solid var(--line);padding:6px 12px;border-radius:3px;font-size:.75rem;font-family:inherit}' +
     '.hy-select:focus{border-color:var(--acc);outline:none;box-shadow:0 0 0 1px var(--acc)}' +
@@ -1356,17 +1356,17 @@ export function renderHydra(main) {
     '.hy-btn:disabled{opacity:.3;cursor:default}.hy-btn:disabled:hover{background:transparent;color:var(--acc);box-shadow:none}' +
     '.hy-btn-ghost{border-color:var(--line);color:var(--mut)}.hy-btn-ghost:hover{border-color:var(--txt);color:var(--txt);background:rgba(255,255,255,.05);box-shadow:none}' +
     '.hy-stat-bar{display:flex;gap:8px;padding:8px 0;flex-wrap:wrap}' +
-    '.hy-stat{background:rgba(0,0,0,.2);border:1px solid var(--line);border-radius:4px;padding:10px 18px;min-width:110px}' +
+    '.hy-stat{background:rgba(0,0,0,.2);border:1px solid var(--line);border-radius:6px;padding:12px 20px;min-width:110px}' +
     '.hy-stat-val{font-size:1.3rem;font-weight:700;font-variant-numeric:tabular-nums}' +
     '.hy-stat-label{font-size:.65rem;color:var(--mut);letter-spacing:.04em;text-transform:uppercase;margin-top:2px}' +
-    '.hy-log-entry{margin-bottom:2px;border-left:2px solid;padding:4px 0 4px 10px;cursor:pointer;transition:background .1s;font-size:.7rem;line-height:1.5}' +
-    '.hy-log-entry:hover{background:rgba(255,255,255,.03)}' +
+    '.hy-log-entry{margin-bottom:2px;border-left:3px solid;padding:6px 10px;cursor:pointer;transition:background .15s;font-size:.7rem;line-height:1.5;border-radius:0 3px 3px 0}' +
+    '.hy-log-entry:hover{background:rgba(255,255,255,.05)}' +
     '.hy-log-detail{display:none;color:var(--mut);white-space:pre-wrap;margin-top:4px;padding:8px;background:rgba(0,0,0,.3);border-radius:3px;border:1px solid var(--line);font-size:.68rem}' +
     '.hy-agent-toggle{display:flex;align-items:center;gap:6px;font-size:.7rem;cursor:pointer;padding:4px 8px;border-radius:3px;border:1px solid transparent;transition:all .15s}' +
     '.hy-agent-toggle:hover{border-color:var(--line);background:rgba(255,255,255,.02)}' +
     '.hy-agent-name{font-weight:700;letter-spacing:.03em}' +
     '.hy-node-tooltip{position:absolute;top:8px;right:8px;background:rgba(6,8,14,0.95);border:1px solid var(--acc);border-radius:4px;padding:12px;font-size:.72rem;max-width:280px;backdrop-filter:blur(8px);box-shadow:0 4px 20px rgba(0,0,0,.5);display:none}' +
-    '.hy-comm{padding:6px 10px;margin-bottom:4px;border-radius:4px;font-size:.68rem;line-height:1.4;background:rgba(0,0,0,.2);border-left:2px solid}' +
+    '.hy-comm{padding:8px 12px;margin-bottom:4px;border-radius:4px;font-size:.68rem;line-height:1.5;background:rgba(0,0,0,.2);border-left:3px solid}' +
     '.hy-comm-from{font-weight:700;letter-spacing:.03em}' +
     '.hy-comm-arrow{color:var(--mut);margin:0 4px}' +
     '.hy-threat-gauge{position:relative;width:60px;height:60px;border-radius:50%;border:3px solid var(--line);display:flex;align-items:center;justify-content:center;flex-shrink:0}' +
@@ -1374,7 +1374,7 @@ export function renderHydra(main) {
     '.hy-threat-label{font-size:.55rem;color:var(--mut);text-transform:uppercase;letter-spacing:.04em;position:absolute;bottom:-14px;left:50%;transform:translateX(-50%);white-space:nowrap}' +
     '.hy-scanline{position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--acc),transparent);opacity:.3;animation:hy-scanline 4s linear infinite;pointer-events:none}' +
     '@keyframes hy-scanline{0%{transform:translateY(0)}100%{transform:translateY(520px)}}' +
-    '.hy-apt-card{background:var(--card);border:1px solid var(--line);border-radius:4px;padding:16px;transition:border-color .2s,box-shadow .2s;cursor:default}' +
+    '.hy-apt-card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:18px;transition:border-color .2s,box-shadow .2s;cursor:default}' +
     '.hy-apt-card:hover{border-color:var(--acc);box-shadow:0 0 16px color-mix(in srgb,var(--acc) 15%,transparent)}' +
     '.hy-apt-name{font-size:1rem;font-weight:700;color:var(--txt);margin-bottom:4px}' +
     '.hy-apt-nation{font-size:.7rem;color:var(--acc);letter-spacing:.04em;text-transform:uppercase}' +
@@ -1481,7 +1481,7 @@ export function renderHydra(main) {
       '<div class="hy-grid" id="hy-split">' +
         '<div class="hy-panel" style="position:relative">' +
           '<div class="hy-panel-head"><span class="hy-accent">Network</span> Topology</div>' +
-          '<div style="position:relative;height:480px"><canvas id="hy-canvas" style="width:100%;height:100%;display:block"></canvas><div class="hy-scanline"></div></div>' +
+          '<div style="position:relative;height:480px;background:#080c14;border-radius:0 0 6px 6px"><canvas id="hy-canvas" style="width:100%;height:100%;display:block"></canvas><div class="hy-scanline"></div></div>' +
           '<div id="hy-node-info" class="hy-node-tooltip"></div>' +
         '</div>' +
         '<div style="display:flex;flex-direction:column;gap:8px">' +

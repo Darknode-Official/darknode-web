@@ -166,7 +166,7 @@ function _vgUpdatePhase(phaseNum, status) {
     var bgColor = st === 'complete' ? '#00ff8815' : st === 'running' ? '#00aaff15' : st === 'error' ? '#ff444415' : '#0a0e14';
     var borderColor = st === 'complete' ? '#00ff88' : st === 'running' ? '#00aaff' : st === 'error' ? '#ff4444' : '#1a2a44';
     var textColor = st === 'complete' ? '#00ff88' : st === 'running' ? '#00ddff' : st === 'error' ? '#ff4444' : '#3a5a7a';
-    var icon = st === 'complete' ? '✓' : st === 'running' ? '▸' : st === 'error' ? '✗' : '○';
+    var icon = st === 'complete' ? 'Y' : st === 'running' ? '▸' : st === 'error' ? 'N' : '○';
     el.style.background = bgColor;
     el.style.borderColor = borderColor;
     el.querySelector('.vg-phase-icon').textContent = icon;
@@ -229,56 +229,81 @@ export function renderVanguard(container) {
   };
   for (var i = 0; i < 10; i++) _vgState.phaseStatus.push('pending');
 
+  var isPro = document.documentElement.getAttribute('data-style') === 'pro';
+  var c = isPro ? {
+    bg: '#fff', bg2: '#f9fafb', bg3: '#f4f4f5', fg: '#18181b', fg2: '#3f3f46', mut: '#71717a',
+    line: '#e5e5e5', line2: '#e4e4e7', acc: '#18181b', acc2: '#3b82f6', warn: '#dc2626',
+    font: "ui-sans-serif,system-ui,-apple-system,sans-serif",
+    inputBg: '#fff', inputBorder: '#e5e5e5', inputColor: '#18181b',
+    btnBg: '#18181b', btnColor: '#fff', btnBorder: '#18181b',
+    abortBg: '#fef2f2', abortColor: '#dc2626', abortBorder: '#fecaca',
+    noticeBg: '#fef2f2', noticeBorder: '#fecaca', noticeColor: '#b91c1c',
+    phaseBg: '#f4f4f5', phaseBorder: '#e4e4e7', phaseColor: '#71717a',
+    panelHeaderBg: '#f9fafb', logBg: '#fff', findingsBg: '#fff',
+    titleShadow: 'none', titleColor: '#18181b'
+  } : {
+    bg: '#0a0e14', bg2: '#080c14', bg3: '#060a10', fg: '#c8d6e5', fg2: '#c8d6e5', mut: '#6a8aaa',
+    line: '#1a3a5a', line2: '#0f1a24', acc: '#00ddff', acc2: '#00aaff', warn: '#ff6600',
+    font: "'Courier New','JetBrains Mono',monospace",
+    inputBg: '#060a10', inputBorder: '#1a3a5a', inputColor: '#00ddff',
+    btnBg: 'linear-gradient(135deg,#00aaff22,#00aaff11)', btnColor: '#00ddff', btnBorder: '#00aaff',
+    abortBg: '#ff444415', abortColor: '#ff4444', abortBorder: '#ff444444',
+    noticeBg: '#ff444408', noticeBorder: '#ff444422', noticeColor: '#ff6644',
+    phaseBg: '#0a0e14', phaseBorder: '#1a2a44', phaseColor: '#3a5a7a',
+    panelHeaderBg: '#060a10', logBg: '#040810', findingsBg: '#050a10',
+    titleShadow: '0 0 30px rgba(0,212,255,0.3)', titleColor: '#00ddff'
+  };
+
   var h = '';
-  h += '<div style="background:#0a0e14;color:#c8d6e5;font-family:\'Courier New\',\'JetBrains Mono\',monospace;padding:0;min-height:100vh;">';
+  h += '<div id="vg-root" style="background:' + c.bg + ';color:' + c.fg + ';font-family:' + c.font + ';padding:0;min-height:100vh;">';
 
   // === HEADER ===
-  h += '<div style="background:linear-gradient(135deg,#080c18,#0a1020);border-bottom:1px solid #1a3a5a;padding:20px 24px;">';
+  h += '<div style="background:' + c.bg2 + ';border-bottom:1px solid ' + c.line + ';padding:20px 24px;">';
   h += '<div style="display:flex;align-items:center;gap:16px;">';
-  h += '<div style="font-size:28px;font-weight:900;letter-spacing:4px;color:#00ddff;text-shadow:0 0 30px rgba(0,212,255,0.3);">VANGUARD</div>';
-  h += '<div style="height:28px;width:1px;background:#1a3a5a;"></div>';
+  h += '<div style="font-size:' + (isPro ? '24px' : '28px') + ';font-weight:' + (isPro ? '700' : '900') + ';letter-spacing:' + (isPro ? '.02em' : '4px') + ';color:' + c.titleColor + ';text-shadow:' + c.titleShadow + ';">' + (isPro ? 'Vanguard' : 'VANGUARD') + '</div>';
+  h += '<div style="height:28px;width:1px;background:' + c.line + ';"></div>';
   h += '<div>';
-  h += '<div style="font-size:11px;color:#6a8aaa;letter-spacing:2px;">AUTONOMOUS ATTACK SURFACE INTELLIGENCE</div>';
-  h += '<div style="font-size:9px;color:#3a5a7a;letter-spacing:1px;margin-top:2px;">FOR AUTHORIZED PENETRATION TESTING ONLY</div>';
+  h += '<div style="font-size:' + (isPro ? '13px' : '11px') + ';color:' + c.mut + ';letter-spacing:' + (isPro ? '.02em' : '2px') + ';">' + (isPro ? 'Autonomous Attack Surface Intelligence' : 'AUTONOMOUS ATTACK SURFACE INTELLIGENCE') + '</div>';
+  h += '<div style="font-size:' + (isPro ? '11px' : '9px') + ';color:' + c.phaseColor + ';letter-spacing:' + (isPro ? '.02em' : '1px') + ';margin-top:2px;">' + (isPro ? 'For authorized penetration testing only' : 'FOR AUTHORIZED PENETRATION TESTING ONLY') + '</div>';
   h += '</div>';
   h += '</div>';
   h += '</div>';
 
   // === TARGET INPUT ===
-  h += '<div style="padding:16px 24px;background:#080c14;border-bottom:1px solid #0f1a24;">';
+  h += '<div style="padding:16px 24px;background:' + c.bg2 + ';border-bottom:1px solid ' + c.line2 + ';">';
   h += '<div style="display:flex;gap:8px;align-items:center;">';
-  h += '<div style="color:#4a6a8a;font-size:11px;letter-spacing:1px;flex-shrink:0;">TARGET:</div>';
-  h += '<input id="vg-target" style="flex:1;background:#060a10;border:1px solid #1a3a5a;border-radius:4px;color:#00ddff;font-family:monospace;font-size:14px;padding:10px 14px;outline:none;" placeholder="example.com" spellcheck="false" autocomplete="off">';
-  h += '<button onclick="_vgLaunchRecon()" id="vg-launch-btn" style="background:linear-gradient(135deg,#00aaff22,#00aaff11);color:#00ddff;border:1px solid #00aaff;padding:10px 24px;font-family:monospace;font-size:12px;font-weight:bold;cursor:pointer;border-radius:4px;letter-spacing:2px;transition:all 0.2s;">LAUNCH RECON</button>';
-  h += '<button onclick="_vgAbort()" style="background:#ff444415;color:#ff4444;border:1px solid #ff444444;padding:10px 16px;font-family:monospace;font-size:11px;cursor:pointer;border-radius:4px;letter-spacing:1px;">ABORT</button>';
+  h += '<div style="color:' + c.mut + ';font-size:11px;letter-spacing:1px;flex-shrink:0;">TARGET:</div>';
+  h += '<input id="vg-target" style="flex:1;background:' + c.inputBg + ';border:1px solid ' + c.inputBorder + ';border-radius:6px;color:' + c.inputColor + ';font-family:' + c.font + ';font-size:14px;padding:10px 14px;outline:none;" placeholder="example.com" spellcheck="false" autocomplete="off">';
+  h += '<button onclick="_vgLaunchRecon()" id="vg-launch-btn" style="background:' + c.btnBg + ';color:' + c.btnColor + ';border:1px solid ' + c.btnBorder + ';padding:10px 24px;font-family:' + c.font + ';font-size:12px;font-weight:' + (isPro ? '500' : 'bold') + ';cursor:pointer;border-radius:6px;letter-spacing:' + (isPro ? '.02em' : '2px') + ';transition:all 0.2s;">' + (isPro ? 'Launch Recon' : 'LAUNCH RECON') + '</button>';
+  h += '<button onclick="_vgAbort()" style="background:' + c.abortBg + ';color:' + c.abortColor + ';border:1px solid ' + c.abortBorder + ';padding:10px 16px;font-family:' + c.font + ';font-size:11px;cursor:pointer;border-radius:6px;letter-spacing:' + (isPro ? '.02em' : '1px') + ';">' + (isPro ? 'Abort' : 'ABORT') + '</button>';
   h += '</div>';
 
   // Authorization reminder
-  h += '<div style="background:#ff444408;border:1px solid #ff444422;border-radius:4px;padding:6px 12px;margin-top:8px;font-size:9px;color:#ff6644;">';
-  h += '⚠ LEGAL NOTICE: Only scan domains you own or have explicit written authorization to test. Unauthorized scanning violates the Computer Fraud and Abuse Act (18 U.S.C. § 1030) and equivalent international laws.';
+  h += '<div style="background:' + c.noticeBg + ';border:1px solid ' + c.noticeBorder + ';border-radius:6px;padding:6px 12px;margin-top:8px;font-size:' + (isPro ? '12px' : '9px') + ';color:' + c.noticeColor + ';">';
+  h += (isPro ? 'Only scan domains you own or have explicit written authorization to test.' : 'LEGAL NOTICE: Only scan domains you own or have explicit written authorization to test. Unauthorized scanning violates the Computer Fraud and Abuse Act (18 U.S.C. § 1030) and equivalent international laws.');
   h += '</div>';
   h += '</div>';
 
   // === PROGRESS DASHBOARD ===
-  h += '<div style="padding:12px 24px;background:#060a10;border-bottom:1px solid #0f1a24;">';
+  h += '<div style="padding:12px 24px;background:' + c.bg3 + ';border-bottom:1px solid ' + c.line2 + ';">';
   h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">';
   h += '<div style="display:flex;align-items:center;gap:10px;">';
-  h += '<span style="color:#4a6a8a;font-size:10px;letter-spacing:1px;">ELAPSED:</span>';
-  h += '<span id="vg-elapsed" style="color:#00ddff;font-size:13px;font-weight:bold;">00:00.0</span>';
+  h += '<span style="color:' + c.mut + ';font-size:10px;letter-spacing:1px;">ELAPSED:</span>';
+  h += '<span id="vg-elapsed" style="color:' + c.acc + ';font-size:13px;font-weight:bold;">00:00.0</span>';
   h += '</div>';
   h += '<div style="display:flex;align-items:center;gap:10px;">';
-  h += '<span style="color:#4a6a8a;font-size:10px;letter-spacing:1px;">FINDINGS:</span>';
-  h += '<span id="vg-finding-count" style="color:#ff6600;font-size:13px;font-weight:bold;">0</span>';
+  h += '<span style="color:' + c.mut + ';font-size:10px;letter-spacing:1px;">FINDINGS:</span>';
+  h += '<span id="vg-finding-count" style="color:' + c.warn + ';font-size:13px;font-weight:bold;">0</span>';
   h += '</div>';
-  h += '<div id="vg-status" style="color:#3a5a7a;font-size:10px;letter-spacing:1px;">AWAITING TARGET</div>';
+  h += '<div id="vg-status" style="color:' + c.phaseColor + ';font-size:10px;letter-spacing:1px;">AWAITING TARGET</div>';
   h += '</div>';
 
   // Phase indicators
   h += '<div style="display:flex;gap:3px;overflow-x:auto;">';
   for (var p = 0; p < _vgPhaseNames.length; p++) {
-    h += '<div id="vg-phase-' + p + '" style="flex:1;min-width:80px;background:#0a0e14;border:1px solid #1a2a44;border-radius:3px;padding:4px 6px;text-align:center;transition:all 0.3s;">';
-    h += '<div class="vg-phase-icon" style="color:#3a5a7a;font-size:11px;">○</div>';
-    h += '<div class="vg-phase-name" style="color:#3a5a7a;font-size:7px;letter-spacing:0.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + (p + 1) + '. ' + esc(_vgPhaseNames[p].split(' ')[0]) + '</div>';
+    h += '<div id="vg-phase-' + p + '" style="flex:1;min-width:80px;background:' + c.phaseBg + ';border:1px solid ' + c.phaseBorder + ';border-radius:' + (isPro ? '6px' : '3px') + ';padding:4px 6px;text-align:center;transition:all 0.3s;">';
+    h += '<div class="vg-phase-icon" style="color:' + c.phaseColor + ';font-size:11px;">○</div>';
+    h += '<div class="vg-phase-name" style="color:' + c.phaseColor + ';font-size:7px;letter-spacing:0.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + (p + 1) + '. ' + esc(_vgPhaseNames[p].split(' ')[0]) + '</div>';
     h += '</div>';
   }
   h += '</div>';
@@ -288,21 +313,21 @@ export function renderVanguard(container) {
   h += '<div style="display:flex;gap:0;min-height:500px;">';
 
   // Live log (left)
-  h += '<div style="flex:1;border-right:1px solid #0f1a24;display:flex;flex-direction:column;">';
-  h += '<div style="padding:8px 16px;background:#060a10;border-bottom:1px solid #0f1a24;font-size:10px;color:#4a6a8a;letter-spacing:1px;flex-shrink:0;">OPERATION LOG</div>';
-  h += '<div id="vg-log" style="flex:1;padding:8px 12px;background:#040810;font-size:10px;line-height:1.6;overflow-y:auto;max-height:600px;"></div>';
+  h += '<div style="flex:1;border-right:1px solid ' + c.line2 + ';display:flex;flex-direction:column;">';
+  h += '<div style="padding:8px 16px;background:' + c.panelHeaderBg + ';border-bottom:1px solid ' + c.line2 + ';font-size:10px;color:' + c.mut + ';letter-spacing:1px;flex-shrink:0;">OPERATION LOG</div>';
+  h += '<div id="vg-log" style="flex:1;padding:8px 12px;background:' + c.logBg + ';font-size:10px;line-height:1.6;overflow-y:auto;max-height:600px;"></div>';
   h += '</div>';
 
   // Findings (right)
   h += '<div style="flex:1;display:flex;flex-direction:column;">';
-  h += '<div style="padding:8px 16px;background:#060a10;border-bottom:1px solid #0f1a24;font-size:10px;color:#4a6a8a;letter-spacing:1px;flex-shrink:0;">FINDINGS</div>';
-  h += '<div id="vg-findings" style="flex:1;padding:8px 12px;background:#050a10;overflow-y:auto;max-height:600px;"></div>';
+  h += '<div style="padding:8px 16px;background:' + c.panelHeaderBg + ';border-bottom:1px solid ' + c.line2 + ';font-size:10px;color:' + c.mut + ';letter-spacing:1px;flex-shrink:0;">FINDINGS</div>';
+  h += '<div id="vg-findings" style="flex:1;padding:8px 12px;background:' + c.findingsBg + ';overflow-y:auto;max-height:600px;"></div>';
   h += '</div>';
 
   h += '</div>';
 
   // === PHASE RESULTS (expandable sections) ===
-  h += '<div id="vg-phase-results" style="padding:0 24px 24px;"></div>';
+  h += '<div id="vg-phase-results" style="padding:0 24px 24px;background:' + c.bg + ';"></div>';
 
   h += '</div>';
 
@@ -883,7 +908,7 @@ function _vgPhase5_Security() {
 
       // Log individual header statuses
       headerChecks.forEach(function(hc) {
-        var icon = hc.grade === 'A' ? '✓' : hc.grade === 'F' ? '✗' : '~';
+        var icon = hc.grade === 'A' ? 'Y' : hc.grade === 'F' ? 'N' : '~';
         var logType = hc.grade === 'A' || hc.grade === 'B' ? 'dim' : hc.grade === 'F' ? 'warning' : 'dim';
         _vgLog('    ' + icon + ' ' + hc.name + ': ' + hc.grade + ' — ' + hc.note, logType);
       });

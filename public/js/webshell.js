@@ -501,7 +501,7 @@ export function renderWebshell(main) {
     '.ws-mode-btn{background:transparent;border:1px solid var(--line);color:var(--mut);padding:6px 16px;font-family:var(--font-mono);font-size:.78rem;cursor:pointer;font-weight:600;transition:all .2s}' +
     '.ws-mode-btn:first-child{border-radius:4px 0 0 4px}' +
     '.ws-mode-btn:last-child{border-radius:0 4px 4px 0;border-left:none}' +
-    '.ws-mode-btn.active{background:var(--acc);color:#000;border-color:var(--acc)}' +
+    '.ws-mode-btn.active{background:var(--acc);color:var(--on-acc,#fff);border-color:var(--acc)}' +
     '.ws-mode-btn:hover:not(.active){background:rgba(124,92,255,.08);color:var(--txt)}' +
     '.ws-status-area{margin-left:auto;display:flex;align-items:center;gap:10px}' +
     '.ws-conn-panel{display:flex;gap:8px;align-items:center;padding:8px 14px;background:var(--card);border-left:1px solid var(--line);border-right:1px solid var(--line);flex:none;flex-wrap:wrap}' +
@@ -509,7 +509,7 @@ export function renderWebshell(main) {
     '.ws-conn-panel input{background:var(--bg);border:1px solid var(--line);color:var(--txt);padding:5px 8px;border-radius:4px;font-family:var(--font-mono);font-size:.78rem;width:120px}' +
     '.ws-conn-panel input.port-in{width:60px}' +
     '.ws-conn-panel button{padding:5px 14px;border-radius:4px;font-weight:600;cursor:pointer;font-size:.76rem;border:none;white-space:nowrap}' +
-    '.ws-conn-btn{background:var(--acc);color:#000}' +
+    '.ws-conn-btn{background:var(--acc);color:var(--on-acc,#fff)}' +
     '.ws-conn-btn:hover{opacity:.85}' +
     '.ws-conn-btn:disabled{opacity:.5;cursor:not-allowed}' +
     '.ws-disc-btn{background:var(--bad);color:#fff}' +

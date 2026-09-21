@@ -247,23 +247,49 @@ export async function renderAdmin(main, user) {
   function drawUsers() {
     const q = ($("#uSearch").value || "").toLowerCase().trim();
     const rows = users
-      .filter((u) => !q || (u.email + " " + (u.name || "")).toLowerCase().includes(q))
+      .filter((u) => !q || (u.email + " " + (u.name || "") + " " + (u.provider || "")).toLowerCase().includes(q))
       .sort((a, b) => (a.email || "").localeCompare(b.email || ""));
     const host = $("#uList");
     if (!rows.length) { host.innerHTML = `<p class="muted">No matching users.</p>`; return; }
     host.innerHTML = rows.map((u) => {
       const isOwner = u.email === OWNER_EMAIL;
       const listed = wl.emails.includes((u.email || "").toLowerCase());
-      return `<div class="user-row">
+      const prov = u.provider || "email";
+      const provBadge = prov.includes("google") ? '<span class="ur-prov google">Google</span>'
+        : prov.includes("github") ? '<span class="ur-prov github">GitHub</span>'
+        : '<span class="ur-prov email">Email</span>';
+      const avatar = u.photoURL
+        ? `<img class="ur-avatar" src="${esc(u.photoURL)}" alt="" width="32" height="32">`
+        : `<span class="ur-avatar ur-initials">${esc((u.email || "?")[0].toUpperCase())}</span>`;
+      return `<div class="user-row" data-uid="${esc(u.uid)}">
+        ${avatar}
         <div class="ur-main">
-          <div class="ur-name">${esc(u.name || "(no name)")} ${isOwner ? '<span class="owner-badge">OWNER</span>' : ""}${listed ? '<span class="chip">allow-listed</span>' : ""}</div>
+          <div class="ur-name">${esc(u.name || "(no name)")} ${provBadge}${isOwner ? '<span class="owner-badge">OWNER</span>' : ""}${listed ? '<span class="chip">allow-listed</span>' : ""}</div>
           <div class="ur-mail muted">${esc(u.email || u.uid)}</div>
-          <div class="ur-seen muted">last seen ${esc(fmtDate(u.lastSeen))}</div>
+          <div class="ur-meta muted">last seen ${esc(fmtDate(u.lastSeen))}${u.createdAt ? " · joined " + esc(fmtDate(u.createdAt)) : ""}</div>
         </div>
         <div class="ur-actions">
+          <button class="btn ghost sm ur-detail-btn" data-detail="${esc(u.uid)}">Details</button>
           <button class="btn ghost sm" data-wl="${esc(u.email || "")}">${listed ? "Un-list" : "Allow-list"}</button>
           ${isOwner ? "" : `<button class="btn danger sm" data-del="${esc(u.uid)}" data-mail="${esc(u.email || "")}">Remove</button>`}
         </div>
+      </div>
+      <div class="ur-details" id="detail-${esc(u.uid)}" style="display:none">
+        <div class="ur-detail-grid">
+          <div class="urd-item"><span class="muted">UID</span><span class="mono">${esc(u.uid)}</span></div>
+          <div class="urd-item"><span class="muted">Email</span><span>${esc(u.email || "—")}</span></div>
+          <div class="urd-item"><span class="muted">Display name</span><span>${esc(u.name || "—")}</span></div>
+          <div class="urd-item"><span class="muted">Sign-in method</span><span>${esc(prov)}</span></div>
+          <div class="urd-item"><span class="muted">Account created</span><span>${esc(fmtDate(u.createdAt || u.created))}</span></div>
+          <div class="urd-item"><span class="muted">Last sign-in</span><span>${esc(fmtDate(u.lastLoginAt))}</span></div>
+          <div class="urd-item"><span class="muted">Last seen</span><span>${esc(fmtDate(u.lastSeen))}</span></div>
+          <div class="urd-item"><span class="muted">Known devices</span><span>${(u.devices || []).length}</span></div>
+          <div class="urd-item"><span class="muted">Learn XP</span><span>${u.learnXP || 0}</span></div>
+          <div class="urd-item"><span class="muted">Topics completed</span><span>${(u.learnCompleted || []).length}</span></div>
+          <div class="urd-item"><span class="muted">TOS accepted</span><span>${u.tosAccepted ? "Yes" : "No"}</span></div>
+          <div class="urd-item"><span class="muted">Allow-listed</span><span>${listed ? "Yes" : "No"}</span></div>
+        </div>
+        ${(u.logins || []).length ? `<div style="margin-top:8px"><span class="muted" style="font-size:.72rem">Recent sign-ins:</span><div class="urd-logins">${(u.logins || []).slice(-5).reverse().map(l => `<div class="urd-login"><span>${esc(l.device || "unknown")}</span><span class="muted">${esc(fmtDate(l.ts))}</span></div>`).join("")}</div></div>` : ""}
       </div>`;
     }).join("");
   }
@@ -338,6 +364,12 @@ export async function renderAdmin(main, user) {
 
   $("#uSearch").oninput = drawUsers;
   $("#uList").onclick = async (e) => {
+    const detailBtn = e.target.closest("[data-detail]");
+    if (detailBtn) {
+      const panel = main.querySelector("#detail-" + detailBtn.dataset.detail);
+      if (panel) { panel.style.display = panel.style.display === "none" ? "" : "none"; detailBtn.textContent = panel.style.display === "none" ? "Details" : "Hide"; }
+      return;
+    }
     const wlBtn = e.target.closest("[data-wl]"), delBtn = e.target.closest("[data-del]");
     if (wlBtn) { await toggleWl(wlBtn.dataset.wl); }
     else if (delBtn) {
@@ -505,7 +537,7 @@ export async function renderAdmin(main, user) {
         return tb - ta;
       });
       log.innerHTML = activities.length
-        ? activities.slice(0, 30).map(a => `<div class="user-row" style="padding:6px 0"><div class="ur-main"><div class="ur-name" style="font-size:.82rem">${esc(a.email || '?')}</div><div class="ur-mail muted" style="font-size:.72rem">${esc(a.action)}</div></div><div class="ur-seen muted" style="font-size:.72rem">${fmtDate(a.ts)}</div></div>`).join('')
+        ? activities.slice(0, 15).map(a => `<div class="user-row" style="padding:6px 0"><div class="ur-main"><div class="ur-name" style="font-size:.82rem">${esc(a.email || '?')}</div><div class="ur-mail muted" style="font-size:.72rem">${esc(a.action)}</div></div><div class="ur-seen muted" style="font-size:.72rem">${fmtDate(a.ts)}</div></div>`).join('')
         : '<p class="muted" style="font-size:.82rem">No activity recorded.</p>';
     } catch(e) { log.innerHTML = '<p class="muted">Could not load activity log.</p>'; }
   }

@@ -333,7 +333,7 @@ export function renderPasswordTools(container) {
       fill.style.background = colors[a.score] || "#ef4444";
       res.innerHTML = '<div class="pwt-result"><div class="pwt-grid"><div><div class="pwt-label">Strength</div><div class="pwt-val" style="color:' + colors[a.score] + '">' + esc(a.level.replace(/-/g, " ").toUpperCase()) + '</div></div><div><div class="pwt-label">Entropy</div><div class="pwt-val">' + a.entropy + ' bits</div></div><div><div class="pwt-label">Length</div><div class="pwt-val">' + (a.length || 0) + ' characters</div></div><div><div class="pwt-label">Charset Size</div><div class="pwt-val">' + (a.charsetSize || 0) + ' characters</div></div></div>' +
         '<div style="margin-top:12px"><div class="pwt-label">Feedback</div>' + a.feedback.map(f => '<div style="margin-top:4px;color:' + (f.includes("Strong") ? "#22c55e" : "#f59e0b") + '">• ' + esc(f) + '</div>').join("") +
-        (a.isCommon ? '<div style="margin-top:4px;color:#ef4444;font-weight:600">⚠ This password appears in common breach lists!</div>' : "") +
+        (a.isCommon ? '<div style="margin-top:4px;color:#ef4444;font-weight:600">This password appears in common breach lists!</div>' : "") +
         '</div></div>';
     };
   }

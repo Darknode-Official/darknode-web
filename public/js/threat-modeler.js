@@ -232,7 +232,7 @@ function renderSTRIDE(el) {
     var examples = s.examples.map(function(ex) { return '<li>' + esc(ex) + '</li>'; }).join("");
     var mits = s.mitigations.map(function(m) { return '<li>' + esc(m) + '</li>'; }).join("");
     return '<div class="arse-card" style="cursor:default;margin-bottom:12px">' +
-      '<div class="an"><span style="background:var(--acc);color:#000;padding:2px 8px;border-radius:2px;font-weight:700;margin-right:8px">' + s.id + '</span>' + esc(s.name) + '</div>' +
+      '<div class="an"><span style="background:var(--acc);color:var(--on-acc,#fff);padding:2px 8px;border-radius:2px;font-weight:700;margin-right:8px">' + s.id + '</span>' + esc(s.name) + '</div>' +
       '<div class="ad" style="margin:8px 0">' + esc(s.desc) + '</div>' +
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:.82rem">' +
         '<div><strong style="color:var(--acc)">Examples</strong><ul style="margin:4px 0;padding-left:18px;color:var(--mut)">' + examples + '</ul></div>' +
@@ -461,7 +461,7 @@ function renderThreats(el) {
       var mits = t.mitigations.map(function(m) { return '<span style="display:inline-block;padding:2px 8px;background:var(--bg);border:1px solid var(--line);border-radius:2px;font-size:.72rem;margin:2px">' + esc(m) + '</span>'; }).join("");
       return '<div class="arse-card" style="cursor:default;margin-bottom:8px">' +
         '<div class="an" style="display:flex;align-items:center;gap:8px">' +
-          '<span style="background:var(--acc);color:#000;padding:1px 6px;border-radius:2px;font-size:.72rem;font-weight:700">' + t.stride + '</span>' +
+          '<span style="background:var(--acc);color:var(--on-acc,#fff);padding:1px 6px;border-radius:2px;font-size:.72rem;font-weight:700">' + t.stride + '</span>' +
           esc(t.name) +
           '<span style="margin-left:auto;color:' + (sevColor[t.severity] || "var(--mut)") + ';font-size:.75rem;font-weight:600">' + esc(t.severity) + '</span>' +
         '</div>' +
@@ -800,7 +800,7 @@ function renderKillChain(el) {
     var examples = kc.examples.map(function(ex) { return '<span style="display:inline-block;padding:1px 6px;background:var(--bg);border:1px solid var(--line);border-radius:2px;font-size:.7rem;margin:2px">' + esc(ex) + '</span>'; }).join("");
     var mitreLinks = kc.mitre.map(function(t) { return '<span style="font-family:var(--mono,monospace);font-size:.7rem;color:var(--acc)">' + esc(t) + '</span>'; }).join(", ");
     return '<div class="arse-card" style="cursor:default;margin-bottom:8px;display:flex;gap:12px;align-items:flex-start">' +
-      '<div style="min-width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:var(--acc);color:#000;font-weight:800;border-radius:2px;font-size:.85rem">' + (i + 1) + '</div>' +
+      '<div style="min-width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:var(--acc);color:var(--on-acc,#fff);font-weight:800;border-radius:2px;font-size:.85rem">' + (i + 1) + '</div>' +
       '<div style="flex:1">' +
         '<div style="font-weight:700;font-size:.9rem;margin-bottom:4px">' + esc(kc.phase) + '</div>' +
         '<div class="muted" style="font-size:.8rem;margin-bottom:6px">' + esc(kc.desc) + '</div>' +

@@ -34,7 +34,7 @@ export function renderVMLab(main) {
       .vl-conn{display:flex;gap:8px;align-items:center;padding:10px 14px;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);margin:14px 0;flex-wrap:wrap}
       .vl-conn label{font-size:.75rem;color:var(--mut);white-space:nowrap}
       .vl-conn input{background:var(--bg);border:1px solid var(--line);color:var(--txt);padding:6px 10px;border-radius:4px;font-family:var(--font-mono);font-size:.8rem;width:140px}
-      .vl-conn button{background:var(--acc);color:#000;border:none;padding:6px 16px;border-radius:4px;font-weight:600;cursor:pointer;font-size:.78rem}
+      .vl-conn button{background:var(--acc);color:var(--on-acc,#fff);border:none;padding:6px 16px;border-radius:4px;font-weight:600;cursor:pointer;font-size:.78rem}
       .vl-conn button.sec{background:var(--card2);color:var(--txt);border:1px solid var(--line)}
       .vl-badge{font-size:.7rem;font-weight:600;padding:2px 8px;border-radius:10px}
       .vl-badge.off{background:rgba(255,92,108,.12);color:var(--bad)}

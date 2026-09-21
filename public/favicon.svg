@@ -1,11 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
   <style>
     .cell { fill: none; stroke: #101722; stroke-width: 6 }
-    @media (prefers-color-scheme: dark) { .cell { stroke: #F2F5F9 } }
+    .dot { fill: #EAB308 }
+    @media (prefers-color-scheme: dark) { .cell { stroke: #F2F5F9 } .dot { fill: #EAB308 } }
   </style>
   <rect class="cell" x="10" y="10" width="32" height="32" rx="7"/>
   <rect class="cell" x="58" y="10" width="32" height="32" rx="7"/>
   <rect class="cell" x="10" y="58" width="32" height="32" rx="7"/>
   <rect class="cell" x="58" y="58" width="32" height="32" rx="7"/>
-  <rect x="66.96" y="66.96" width="14.08" height="14.08" rx="3.5" fill="#E09A2B"/>
+  <rect class="dot" x="66.96" y="66.96" width="14.08" height="14.08" rx="3.5"/>
 </svg>

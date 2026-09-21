@@ -202,7 +202,7 @@ export function renderSecurityQuiz(container) {
         });
         const explain = document.createElement("div");
         explain.style.cssText = "margin-top:16px;padding:16px;background:var(--surface,#111827);border:1px solid var(--border,#1f2937);border-radius:8px";
-        explain.innerHTML = `<div style="font-size:.8rem;font-weight:700;color:${correct ? '#22c55e' : '#ef4444'};margin-bottom:6px">${correct ? '✓ Correct!' : '✗ Incorrect'}</div><p style="margin:0;font-size:.85rem;color:var(--mut,#d1d5db);line-height:1.6">${q.explanation}</p>`;
+        explain.innerHTML = `<div style="font-size:.8rem;font-weight:700;color:${correct ? '#22c55e' : '#ef4444'};margin-bottom:6px">${correct ? 'Correct!' : 'Incorrect'}</div><p style="margin:0;font-size:.85rem;color:var(--mut,#d1d5db);line-height:1.6">${q.explanation}</p>`;
         const next = document.createElement("button");
         next.textContent = currentIndex + 1 < currentQuestions.length ? "Next Question →" : "See Results";
         next.style.cssText = "margin-top:12px;background:var(--acc,#00d4ff);color:#000;border:none;padding:10px 20px;border-radius:6px;font-size:.9rem;font-weight:700;cursor:pointer";
