@@ -42,5 +42,15 @@ service cloud.firestore {
       allow create: if signedIn();
       allow read, update, delete: if isOwner();
     }
+
+    // Waitlist: anyone can submit their email (landing page, not signed in).
+    // Only owner can read/manage. Limit fields to prevent abuse.
+    match /waitlist/{docId} {
+      allow create: if request.resource.data.keys().hasOnly(['email', 'source', 'createdAt'])
+                    && request.resource.data.email is string
+                    && request.resource.data.email.size() > 0
+                    && request.resource.data.email.size() < 256;
+      allow read, update, delete: if isOwner();
+    }
   }
 }

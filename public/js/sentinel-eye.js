@@ -841,18 +841,18 @@ function initWorldMap(canvasId) {
 
   // Nation positions on map (normalized coordinates)
   var nationPositions = [
-    { name: 'US', x: 0.18, y: 0.28, color: '#00aaff', threat: 'allied' },
-    { name: 'RU', x: 0.62, y: 0.16, color: '#ff2244', threat: 'hostile' },
-    { name: 'CN', x: 0.76, y: 0.28, color: '#ff2244', threat: 'hostile' },
-    { name: 'NK', x: 0.80, y: 0.26, color: '#ff2244', threat: 'hostile' },
-    { name: 'IR', x: 0.58, y: 0.32, color: '#ff6432', threat: 'elevated' },
-    { name: 'IL', x: 0.54, y: 0.32, color: '#00aaff', threat: 'allied' },
-    { name: 'UK', x: 0.46, y: 0.18, color: '#00aaff', threat: 'allied' },
-    { name: 'FR', x: 0.46, y: 0.24, color: '#00aaff', threat: 'allied' },
-    { name: 'IN', x: 0.66, y: 0.36, color: '#ffaa00', threat: 'elevated' },
-    { name: 'PK', x: 0.64, y: 0.32, color: '#ffaa00', threat: 'elevated' },
-    { name: 'TR', x: 0.52, y: 0.28, color: '#ffaa00', threat: 'elevated' },
-    { name: 'VN', x: 0.76, y: 0.38, color: '#ffaa00', threat: 'elevated' }
+    { name: 'US', x: 0.18, y: 0.28, color: '#3b82f6', threat: 'allied' },
+    { name: 'RU', x: 0.62, y: 0.16, color: '#ef4444', threat: 'hostile' },
+    { name: 'CN', x: 0.76, y: 0.28, color: '#ef4444', threat: 'hostile' },
+    { name: 'NK', x: 0.80, y: 0.26, color: '#ef4444', threat: 'hostile' },
+    { name: 'IR', x: 0.58, y: 0.32, color: '#f97316', threat: 'elevated' },
+    { name: 'IL', x: 0.54, y: 0.32, color: '#3b82f6', threat: 'allied' },
+    { name: 'UK', x: 0.46, y: 0.18, color: '#3b82f6', threat: 'allied' },
+    { name: 'FR', x: 0.46, y: 0.24, color: '#3b82f6', threat: 'allied' },
+    { name: 'IN', x: 0.66, y: 0.36, color: '#eab308', threat: 'elevated' },
+    { name: 'PK', x: 0.64, y: 0.32, color: '#eab308', threat: 'elevated' },
+    { name: 'TR', x: 0.52, y: 0.28, color: '#eab308', threat: 'elevated' },
+    { name: 'VN', x: 0.76, y: 0.38, color: '#eab308', threat: 'elevated' }
   ];
 
   // Draw connection lines between adversaries and targets
@@ -891,9 +891,9 @@ function initWorldMap(canvasId) {
       var pulseSize = 8 + Math.sin(now / 500 + ni) * 3;
       ctx.beginPath();
       ctx.arc(nx, ny, pulseSize, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(255,34,68,0.15)';
+      ctx.fillStyle = 'rgba(239,68,68,0.15)';
       ctx.fill();
-      ctx.strokeStyle = 'rgba(255,34,68,0.4)';
+      ctx.strokeStyle = 'rgba(239,68,68,0.4)';
       ctx.lineWidth = 1;
       ctx.stroke();
     }
@@ -929,10 +929,10 @@ function initWorldMap(canvasId) {
   ctx.fillText('THREAT LEGEND', legendX + 8, legendY + 12);
 
   var legendItems = [
-    { color: '#ff2244', label: 'HOSTILE OPS' },
-    { color: '#ff6432', label: 'ELEVATED' },
-    { color: '#ffaa00', label: 'INCREASED' },
-    { color: '#00aaff', label: 'ALLIED' }
+    { color: '#ef4444', label: 'HOSTILE OPS' },
+    { color: '#f97316', label: 'ELEVATED' },
+    { color: '#eab308', label: 'INCREASED' },
+    { color: '#3b82f6', label: 'ALLIED' }
   ];
 
   for (var ll = 0; ll < legendItems.length; ll++) {
@@ -948,7 +948,7 @@ function initWorldMap(canvasId) {
 
   // Title
   ctx.font = 'bold 11px "Courier New", monospace';
-  ctx.fillStyle = '#00aaff';
+  ctx.fillStyle = '#3b82f6';
   ctx.textAlign = 'left';
   ctx.fillText('GLOBAL THREAT MAP — LIVE', 12, 16);
 
@@ -989,12 +989,12 @@ function initWorldMap(canvasId) {
       // Core dot
       ctx.beginPath();
       ctx.arc(ax, ay, 4, 0, Math.PI * 2);
-      ctx.fillStyle = '#ff2244';
+      ctx.fillStyle = '#ef4444';
       ctx.fill();
 
       // Label
       ctx.font = '9px "Courier New", monospace';
-      ctx.fillStyle = '#ff2244';
+      ctx.fillStyle = '#ef4444';
       ctx.textAlign = 'center';
       ctx.fillText(ap.name, ax, ay - 9);
     }
@@ -1039,10 +1039,10 @@ function initTicker() {
   ];
 
   var sevColors = {
-    critical: '#ff2244',
-    high: '#ff6432',
-    medium: '#ffaa00',
-    low: '#00aaff'
+    critical: '#ef4444',
+    high: '#f97316',
+    medium: '#eab308',
+    low: '#3b82f6'
   };
 
   var html = '';
@@ -1637,7 +1637,7 @@ function runWhatIf() {
   h += '<tbody>';
   for (var i = 0; i < scenarios.length; i++) {
     var sc = scenarios[i];
-    var probColor = sc.prob >= 70 ? '#ff2244' : (sc.prob >= 50 ? '#ffaa00' : '#00aaff');
+    var probColor = sc.prob >= 70 ? '#ef4444' : (sc.prob >= 50 ? '#eab308' : '#3b82f6');
     h += '<tr>';
     h += '<td style="color:#ff6688">' + esc(sc.actor) + '</td>';
     h += '<td>' + esc(sc.target) + '</td>';
@@ -1720,9 +1720,9 @@ function renderSituation() {
   var cyberThreatLevel = 2;
   var activeOps = 14;
   var lastIncidentHoursAgo = 37;
-  var threatColors = { 1: '#ff2244', 2: '#ff6622', 3: '#ffaa00', 4: '#44cc44', 5: '#00aaff' };
+  var threatColors = { 1: '#ef4444', 2: '#f97316', 3: '#eab308', 4: '#44cc44', 5: '#3b82f6' };
   var threatLabels = { 1: 'CRITICAL — ACTIVE CYBER WARFARE', 2: 'SEVERE — NATION-STATE OPERATIONS DETECTED', 3: 'ELEVATED — INCREASED HOSTILE ACTIVITY', 4: 'GUARDED — NORMAL POSTURE', 5: 'LOW — BASELINE OPERATIONS' };
-  var tlColor = threatColors[cyberThreatLevel] || '#ff6622';
+  var tlColor = threatColors[cyberThreatLevel] || '#f97316';
 
   var h = '';
 
@@ -1787,7 +1787,7 @@ function renderSituation() {
     }
     if (!profile) continue;
 
-    var tierColor = profile.tier === 1 ? '#ff2244' : profile.tier === 2 ? '#ff6622' : '#ffaa00';
+    var tierColor = profile.tier === 1 ? '#ef4444' : profile.tier === 2 ? '#f97316' : '#eab308';
     var tierBg = profile.tier === 1 ? 'rgba(255,34,68,0.08)' : profile.tier === 2 ? 'rgba(255,102,34,0.08)' : 'rgba(255,170,0,0.06)';
 
     h += '<div class="se-force-card" style="background:linear-gradient(135deg,' + tierBg + ' 0%,#0a0e1a 100%);border:1px solid ' + tierColor + ';border-radius:6px;padding:10px 12px;cursor:pointer;transition:border-color 0.2s;" onmouseover="this.style.borderColor=\'#00aaff\'" onmouseout="this.style.borderColor=\'' + tierColor + '\'">';
@@ -1834,7 +1834,7 @@ function renderSituation() {
 
   for (var ai = 0; ai < alertFeed.length; ai++) {
     var alert = alertFeed[ai];
-    var aColor = alert.level === 'CRITICAL' ? '#ff2244' : alert.level === 'HIGH' ? '#ff6622' : alert.level === 'WARNING' ? '#ffaa00' : '#00aaff';
+    var aColor = alert.level === 'CRITICAL' ? '#ef4444' : alert.level === 'HIGH' ? '#f97316' : alert.level === 'WARNING' ? '#eab308' : '#3b82f6';
     h += '<div style="padding:4px 0;border-bottom:1px solid #0d1525;display:flex;gap:10px;align-items:flex-start;">';
     h += '<span style="color:#4a6a8a;flex-shrink:0;">' + esc(alert.time) + '</span>';
     h += '<span style="color:' + aColor + ';font-weight:bold;flex-shrink:0;min-width:64px;">[' + esc(alert.level) + ']</span>';
@@ -1847,12 +1847,12 @@ function renderSituation() {
   // Quick stats row
   h += '<div style="display:flex;gap:12px;padding:0 24px 18px;">';
   var quickStats = [
-    { label: 'ACTIVE CAMPAIGNS', value: '23', color: '#ff2244' },
-    { label: 'TRACKED APT GROUPS', value: '38', color: '#ff6622' },
-    { label: 'IOCs PROCESSED (24H)', value: '1.2M', color: '#ffaa00' },
-    { label: 'THREAT INTEL FEEDS', value: '94', color: '#00aaff' },
+    { label: 'ACTIVE CAMPAIGNS', value: '23', color: '#ef4444' },
+    { label: 'TRACKED APT GROUPS', value: '38', color: '#f97316' },
+    { label: 'IOCs PROCESSED (24H)', value: '1.2M', color: '#eab308' },
+    { label: 'THREAT INTEL FEEDS', value: '94', color: '#3b82f6' },
     { label: 'EARLY WARNINGS', value: '7', color: '#44cc44' },
-    { label: 'DEFENDED SECTORS', value: '8', color: '#00aaff' }
+    { label: 'DEFENDED SECTORS', value: '8', color: '#3b82f6' }
   ];
   for (var qs = 0; qs < quickStats.length; qs++) {
     var stat = quickStats[qs];
@@ -1898,7 +1898,7 @@ function renderNations() {
   var tiers = ['ALL', '1', '2', '3'];
   for (var tf = 0; tf < tiers.length; tf++) {
     var tActive = filterTier === tiers[tf];
-    h += '<button class="se-filter-btn" data-action="filterNationTier" data-value="' + tiers[tf] + '" style="background:' + (tActive ? '#00aaff' : '#0c1525') + ';color:' + (tActive ? '#000' : '#6688aa') + ';border:1px solid ' + (tActive ? '#00aaff' : '#1a3a5c') + ';border-radius:4px;padding:4px 10px;font-family:monospace;font-size:10px;cursor:pointer;letter-spacing:1px;">' + (tiers[tf] === 'ALL' ? 'ALL TIERS' : 'TIER ' + tiers[tf]) + '</button>';
+    h += '<button class="se-filter-btn" data-action="filterNationTier" data-value="' + tiers[tf] + '" style="background:' + (tActive ? '#3b82f6' : '#0c1525') + ';color:' + (tActive ? '#000' : '#6688aa') + ';border:1px solid ' + (tActive ? '#3b82f6' : '#1a3a5c') + ';border-radius:4px;padding:4px 10px;font-family:monospace;font-size:10px;cursor:pointer;letter-spacing:1px;">' + (tiers[tf] === 'ALL' ? 'ALL TIERS' : 'TIER ' + tiers[tf]) + '</button>';
   }
   h += '</div>';
   h += '</div>';
@@ -1913,7 +1913,7 @@ function renderNations() {
     if (filterTier !== 'ALL' && String(ns.tier) !== filterTier) continue;
 
     var isExpanded = expandedNation === ns.id;
-    var tierColor = ns.tier === 1 ? '#ff2244' : ns.tier === 2 ? '#ff6622' : '#ffaa00';
+    var tierColor = ns.tier === 1 ? '#ef4444' : ns.tier === 2 ? '#f97316' : '#eab308';
 
     h += '<div class="se-nation-card" style="background:linear-gradient(135deg,rgba(0,170,255,0.04) 0%,#0a0e1a 100%);border:1px solid #1a3a5c;border-radius:8px;overflow:hidden;cursor:pointer;" data-action="toggleNation" data-value="' + esc(ns.id) + '">';
 
@@ -1946,9 +1946,9 @@ function renderNations() {
       // Capabilities bars
       h += '<div style="font-family:monospace;font-size:10px;color:#4a6a8a;letter-spacing:2px;margin-bottom:8px;">CAPABILITIES ASSESSMENT</div>';
       var caps = [
-        { label: 'OFFENSE', value: ns.capabilities.offense, color: '#ff2244' },
-        { label: 'DEFENSE', value: ns.capabilities.defense, color: '#00aaff' },
-        { label: 'INTEL', value: ns.capabilities.intel, color: '#ffaa00' }
+        { label: 'OFFENSE', value: ns.capabilities.offense, color: '#ef4444' },
+        { label: 'DEFENSE', value: ns.capabilities.defense, color: '#3b82f6' },
+        { label: 'INTEL', value: ns.capabilities.intel, color: '#eab308' }
       ];
       for (var ci = 0; ci < caps.length; ci++) {
         var cap = caps[ci];
@@ -2090,8 +2090,10 @@ function _seCheckOllama(callback) {
     return;
   }
   try {
-    fetch('http://127.0.0.1:11434/api/tags', {mode:'no-cors'}).catch(function(){return{ok:false,json:function(){return Promise.resolve({models:[]})}}}).then(function(r){if(!r.ok&&r.type==='opaque')throw new Error('cors');return r;})
-      .then(function(r) { return r.json(); })
+    var controller = new AbortController();
+    var timer = setTimeout(function() { controller.abort(); }, 2000);
+    fetch('http://127.0.0.1:11434/api/tags', { signal: controller.signal })
+      .then(function(r) { clearTimeout(timer); return r.json(); })
       .then(function(data) {
         _seOllamaAvailable = true;
         if (data.models && data.models.length > 0) {
@@ -2100,6 +2102,7 @@ function _seCheckOllama(callback) {
         callback(true);
       })
       .catch(function() {
+        clearTimeout(timer);
         _seOllamaAvailable = false;
         callback(false);
       });
@@ -2303,7 +2306,7 @@ function _seInitPredictTab() {
         var uh = data.urlhaus[ui];
         h += '<div style="background:#0c1020;border:1px solid #1a3a5c;border-left:3px solid #ffaa00;border-radius:4px;padding:8px 10px;margin-bottom:4px;">';
         h += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;">';
-        var statusColor = uh.status === 'online' ? '#ff2244' : '#44cc44';
+        var statusColor = uh.status === 'online' ? '#ef4444' : '#44cc44';
         h += '<span style="font-family:monospace;font-size:9px;color:' + statusColor + ';font-weight:bold;">[' + esc(uh.status.toUpperCase()) + ']</span>';
         if (uh.threat) h += '<span style="font-family:monospace;font-size:9px;color:#ffaa00;">' + esc(uh.threat) + '</span>';
         if (uh.dateAdded) h += '<span style="font-family:monospace;font-size:8px;color:#4a6a8a;">' + esc(uh.dateAdded.substring(0, 16)) + '</span>';
@@ -2395,9 +2398,9 @@ function renderEarlyWarning() {
   h += '<div style="background:linear-gradient(135deg,rgba(0,170,255,0.08),#0a0e1a);border:1px solid #00aaff40;border-radius:6px;padding:12px 14px;">';
   h += '<div style="font-family:monospace;font-size:10px;color:#00aaff;letter-spacing:2px;margin-bottom:8px;font-weight:bold;">DATA SOURCES</div>';
   var sources = [
-    { name: 'NVD (NIST)', desc: 'Critical CVEs from the National Vulnerability Database', color: '#ff2244' },
-    { name: 'ThreatFox (abuse.ch)', desc: 'Recent IOCs (indicators of compromise) from community reports', color: '#00aaff' },
-    { name: 'URLhaus (abuse.ch)', desc: 'Recently reported malware distribution URLs', color: '#ffaa00' }
+    { name: 'NVD (NIST)', desc: 'Critical CVEs from the National Vulnerability Database', color: '#ef4444' },
+    { name: 'ThreatFox (abuse.ch)', desc: 'Recent IOCs (indicators of compromise) from community reports', color: '#3b82f6' },
+    { name: 'URLhaus (abuse.ch)', desc: 'Recently reported malware distribution URLs', color: '#eab308' }
   ];
   for (var si = 0; si < sources.length; si++) {
     var src = sources[si];
@@ -2496,7 +2499,7 @@ function _seInitEarlyWarningTab() {
         h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">';
         h += '<div style="display:flex;align-items:center;gap:8px;">';
         if (uh.dateAdded) h += '<span style="font-family:monospace;font-size:9px;color:#4a6a8a;">' + esc(uh.dateAdded.substring(0, 16)) + '</span>';
-        var uStatusColor = uh.status === 'online' ? '#ff2244' : '#44cc44';
+        var uStatusColor = uh.status === 'online' ? '#ef4444' : '#44cc44';
         h += '<span style="font-family:monospace;font-size:9px;color:' + uStatusColor + ';font-weight:bold;">[' + esc(uh.status.toUpperCase()) + ']</span>';
         h += '</div>';
         h += '<span style="font-family:monospace;font-size:9px;color:#4a6a8a;">Source: URLhaus</span>';
@@ -2600,7 +2603,7 @@ function renderAptTrack() {
   var activeFilters = ['ALL', 'ACTIVE', 'INACTIVE'];
   for (var afi = 0; afi < activeFilters.length; afi++) {
     var afActive = filterActive === activeFilters[afi];
-    h += '<button class="se-filter-btn" data-action="aptFilterActive" data-value="' + activeFilters[afi] + '" style="background:' + (afActive ? '#00aaff' : '#0c1525') + ';color:' + (afActive ? '#000' : '#6688aa') + ';border:1px solid ' + (afActive ? '#00aaff' : '#1a3a5c') + ';border-radius:4px;padding:4px 8px;font-family:monospace;font-size:9px;cursor:pointer;letter-spacing:1px;">' + activeFilters[afi] + '</button>';
+    h += '<button class="se-filter-btn" data-action="aptFilterActive" data-value="' + activeFilters[afi] + '" style="background:' + (afActive ? '#3b82f6' : '#0c1525') + ';color:' + (afActive ? '#000' : '#6688aa') + ';border:1px solid ' + (afActive ? '#3b82f6' : '#1a3a5c') + ';border-radius:4px;padding:4px 8px;font-family:monospace;font-size:9px;cursor:pointer;letter-spacing:1px;">' + activeFilters[afi] + '</button>';
   }
   h += '</div>';
 
@@ -2647,7 +2650,7 @@ function renderAptTrack() {
     }
 
     var isAptExpanded = expandedApt === apt.name;
-    var aptBorder = apt.active ? '#00aaff' : '#1a3a5c';
+    var aptBorder = apt.active ? '#3b82f6' : '#1a3a5c';
 
     h += '<div class="se-apt-card" data-action="toggleApt" data-value="' + esc(apt.name) + '" style="background:linear-gradient(135deg,rgba(10,14,26,0.9),#080b12);border:1px solid ' + aptBorder + ';border-radius:6px;overflow:hidden;cursor:pointer;">';
 
@@ -2657,7 +2660,7 @@ function renderAptTrack() {
     h += '<div style="flex:1;">';
     h += '<div style="display:flex;align-items:center;gap:8px;">';
     h += '<span style="font-family:monospace;font-size:13px;color:#e0eaf0;font-weight:bold;letter-spacing:1px;">' + esc(apt.name) + '</span>';
-    h += '<span style="font-family:monospace;font-size:8px;background:' + (apt.active ? '#ff2244' : '#334455') + ';color:' + (apt.active ? '#fff' : '#6688aa') + ';padding:2px 6px;border-radius:3px;font-weight:bold;">' + (apt.active ? 'ACTIVE' : 'DORMANT') + '</span>';
+    h += '<span style="font-family:monospace;font-size:8px;background:' + (apt.active ? '#ef4444' : '#334455') + ';color:' + (apt.active ? '#fff' : '#6688aa') + ';padding:2px 6px;border-radius:3px;font-weight:bold;">' + (apt.active ? 'ACTIVE' : 'DORMANT') + '</span>';
     h += '</div>';
     h += '<div style="font-family:monospace;font-size:9px;color:#6688aa;margin-top:2px;">' + esc(apt.aliases.join(' / ')) + '</div>';
     h += '</div>';
@@ -2684,7 +2687,7 @@ function renderAptTrack() {
         var camp = apt.campaigns[cai];
         h += '<div style="background:#060a14;border:1px solid #1a3a5c;border-radius:4px;padding:8px 10px;margin-bottom:4px;">';
         h += '<div style="font-family:monospace;font-size:10px;color:#e0eaf0;font-weight:bold;">' + esc(camp.name) + '</div>';
-        h += '<div style="font-family:monospace;font-size:9px;color:#6688aa;margin-top:2px;">Target: ' + esc(camp.target) + ' | Since: ' + esc(camp.since) + ' | Status: <span style="color:' + (camp.status === 'ACTIVE' ? '#ff2244' : '#44cc44') + ';">' + esc(camp.status) + '</span></div>';
+        h += '<div style="font-family:monospace;font-size:9px;color:#6688aa;margin-top:2px;">Target: ' + esc(camp.target) + ' | Since: ' + esc(camp.since) + ' | Status: <span style="color:' + (camp.status === 'ACTIVE' ? '#ef4444' : '#44cc44') + ';">' + esc(camp.status) + '</span></div>';
         h += '</div>';
       }
 
@@ -2817,8 +2820,8 @@ function renderCounterOps() {
   h += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">';
   for (var ta = 0; ta < threatAssessments.length; ta++) {
     var threat = threatAssessments[ta];
-    var riskColor = threat.risk === 'HIGH' ? '#ff2244' : threat.risk === 'MEDIUM' ? '#ffaa00' : '#00ff88';
-    var statusColor = threat.status.indexOf('ACTIVE') >= 0 ? '#00ff88' : threat.status.indexOf('AWAITING') >= 0 ? '#ffaa00' : '#00aaff';
+    var riskColor = threat.risk === 'HIGH' ? '#ef4444' : threat.risk === 'MEDIUM' ? '#eab308' : '#00ff88';
+    var statusColor = threat.status.indexOf('ACTIVE') >= 0 ? '#00ff88' : threat.status.indexOf('AWAITING') >= 0 ? '#eab308' : '#3b82f6';
     h += '<div style="background:linear-gradient(135deg,#0a0e1a,#101828);border:1px solid ' + riskColor + '44;border-radius:6px;padding:14px;position:relative;overflow:hidden;">';
     h += '<div style="position:absolute;top:0;right:0;background:' + riskColor + ';color:#000;font-size:9px;font-family:monospace;font-weight:bold;padding:2px 10px;border-radius:0 6px 0 6px;">' + esc(threat.risk) + ' RISK</div>';
     h += '<div style="color:#fff;font-size:14px;font-weight:bold;font-family:monospace;margin-bottom:6px;">' + esc(threat.name) + '</div>';
@@ -2861,8 +2864,8 @@ function renderCounterOps() {
 
   for (var op = 0; op < opPhases.length; op++) {
     var phase = opPhases[op];
-    var phaseColor = phase.status === 'active' ? '#00aaff' : '#334';
-    var phaseBorder = phase.status === 'active' ? '#00aaff' : '#1a2a44';
+    var phaseColor = phase.status === 'active' ? '#3b82f6' : '#334';
+    var phaseBorder = phase.status === 'active' ? '#3b82f6' : '#1a2a44';
     var phaseGlow = phase.status === 'active' ? 'box-shadow:0 0 12px #00aaff22;' : '';
     h += '<div style="background:linear-gradient(135deg,#0a0e1a,#0d1225);border:1px solid ' + phaseBorder + ';border-radius:6px;padding:12px;margin-bottom:8px;' + phaseGlow + '">';
     h += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">';
@@ -2884,9 +2887,9 @@ function renderCounterOps() {
   h += '<span style="color:#ffaa00;margin-right:8px;">&#9650;</span>ESCALATION LADDER</div>';
 
   var escalationLevels = [
-    { level: 4, name: 'STRATEGIC OFFENSIVE', desc: 'Full-scale cyber operations against adversary national infrastructure', color: '#ff2244', auth: 'Presidential directive, NSC approval, Congressional notification', actions: 'Critical infrastructure disruption, strategic capability denial, combined cyber-kinetic operations', current: false },
+    { level: 4, name: 'STRATEGIC OFFENSIVE', desc: 'Full-scale cyber operations against adversary national infrastructure', color: '#ef4444', auth: 'Presidential directive, NSC approval, Congressional notification', actions: 'Critical infrastructure disruption, strategic capability denial, combined cyber-kinetic operations', current: false },
     { level: 3, name: 'OFFENSIVE CYBER OPERATIONS', desc: 'Targeted offensive actions against identified adversary systems', color: '#ff6644', auth: 'SECDEF approval, EXORD required, Title 10 authority', actions: 'C2 disruption, data destruction, infrastructure degradation, implant activation', current: false },
-    { level: 2, name: 'ACTIVE CYBER DEFENSE', desc: 'Defensive operations extending beyond own network boundaries', color: '#ffaa00', auth: 'CYBERCOM Commander approval, ROE authorization', actions: 'Threat hunting on foreign networks, adversary infrastructure mapping, counter-intrusion', current: true },
+    { level: 2, name: 'ACTIVE CYBER DEFENSE', desc: 'Defensive operations extending beyond own network boundaries', color: '#eab308', auth: 'CYBERCOM Commander approval, ROE authorization', actions: 'Threat hunting on foreign networks, adversary infrastructure mapping, counter-intrusion', current: true },
     { level: 1, name: 'DEFENSIVE OPERATIONS', desc: 'Protection and defense of own networks and systems', color: '#00ff88', auth: 'Standing ROE, commander discretion', actions: 'Network monitoring, intrusion detection, incident response, patching, hardening', current: false }
   ];
 
@@ -2938,7 +2941,7 @@ function renderCounterOps() {
     h += '</div>';
     h += '<div style="display:flex;flex-wrap:wrap;gap:6px;">';
     for (var ro = 0; ro < roe.options.length; ro++) {
-      var optColor = ro === 0 ? '#00ff88' : ro === 1 ? '#00aaff' : ro === 2 ? '#ffaa00' : '#ff2244';
+      var optColor = ro === 0 ? '#00ff88' : ro === 1 ? '#3b82f6' : ro === 2 ? '#eab308' : '#ef4444';
       var isSelected = ro === 0 ? 'background:' + optColor + '22;border-color:' + optColor + ';color:' + optColor + ';' : 'background:transparent;border-color:#334;color:#667;';
       h += '<div style="font-size:10px;font-family:monospace;padding:4px 10px;border:1px solid;border-radius:3px;cursor:pointer;' + isSelected + '">';
       h += esc(roe.options[ro]);
@@ -2979,7 +2982,7 @@ function renderCounterOps() {
   h += '</tr></thead><tbody>';
   for (var la = 0; la < legalAuthorities.length; la++) {
     var auth = legalAuthorities[la];
-    var authStatusColor = auth.status === 'ACTIVE' ? '#00ff88' : auth.status === 'SUPERSEDED' ? '#ff6644' : '#00aaff';
+    var authStatusColor = auth.status === 'ACTIVE' ? '#00ff88' : auth.status === 'SUPERSEDED' ? '#ff6644' : '#3b82f6';
     h += '<tr style="border-bottom:1px solid #111828;">';
     h += '<td style="padding:8px;color:#fff;font-weight:bold;white-space:nowrap;">' + esc(auth.authority) + '<div style="color:#556;font-size:9px;font-weight:normal;">' + esc(auth.section) + '</div></td>';
     h += '<td style="padding:8px;color:#aab;">' + esc(auth.scope) + '</td>';
@@ -3012,7 +3015,7 @@ function renderCounterOps() {
 
   for (var cd = 0; cd < cdeFactors.length; cd++) {
     var cFactor = cdeFactors[cd];
-    var cBarColor = cFactor.score < 30 ? '#00ff88' : cFactor.score < 60 ? '#ffaa00' : '#ff2244';
+    var cBarColor = cFactor.score < 30 ? '#00ff88' : cFactor.score < 60 ? '#eab308' : '#ef4444';
     h += '<div style="margin-bottom:10px;">';
     h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">';
     h += '<div style="color:#ccd;font-size:11px;font-family:monospace;">' + esc(cFactor.factor) + ' <span style="color:#556;">(weight: ' + esc(cFactor.weight) + '%)</span></div>';
@@ -3026,7 +3029,7 @@ function renderCounterOps() {
   }
 
   var cdeLevel = totalCDE < 25 ? 'LOW' : totalCDE < 50 ? 'MODERATE' : totalCDE < 75 ? 'HIGH' : 'CRITICAL';
-  var cdeLevelColor = totalCDE < 25 ? '#00ff88' : totalCDE < 50 ? '#ffaa00' : totalCDE < 75 ? '#ff6644' : '#ff2244';
+  var cdeLevelColor = totalCDE < 25 ? '#00ff88' : totalCDE < 50 ? '#eab308' : totalCDE < 75 ? '#ff6644' : '#ef4444';
   h += '<div style="margin-top:14px;background:' + cdeLevelColor + '11;border:1px solid ' + cdeLevelColor + '44;border-radius:6px;padding:12px;text-align:center;">';
   h += '<div style="color:' + cdeLevelColor + ';font-size:16px;font-family:monospace;font-weight:bold;">ESTIMATED COLLATERAL: ' + esc(cdeLevel) + '</div>';
   h += '<div style="color:#889;font-size:11px;font-family:monospace;margin-top:4px;">Composite Score: ' + Math.round(totalCDE) + '/100</div>';
@@ -3071,7 +3074,7 @@ function renderCounterOps() {
   h += '<div style="position:relative;padding-left:30px;">';
   for (var te = 0; te < timelineEvents.length; te++) {
     var tEvent = timelineEvents[te];
-    var tColor = tEvent.status === 'COMPLETE' ? '#00ff88' : tEvent.status === 'IN PROGRESS' ? '#00aaff' : '#334';
+    var tColor = tEvent.status === 'COMPLETE' ? '#00ff88' : tEvent.status === 'IN PROGRESS' ? '#3b82f6' : '#334';
     var tDotStyle = tEvent.status === 'IN PROGRESS' ? 'box-shadow:0 0 8px #00aaff;' : '';
     h += '<div style="position:relative;margin-bottom:8px;padding:8px 12px;background:#0a0e1a;border:1px solid ' + (tEvent.status !== 'PENDING' ? tColor + '44' : '#1a2a44') + ';border-radius:4px;">';
     h += '<div style="position:absolute;left:-24px;top:50%;transform:translateY(-50%);width:10px;height:10px;background:' + tColor + ';border-radius:50%;' + tDotStyle + '"></div>';
@@ -3083,7 +3086,7 @@ function renderCounterOps() {
     h += '<div style="color:' + tColor + ';font-size:11px;font-family:monospace;font-weight:bold;min-width:40px;">' + esc(tEvent.time) + '</div>';
     h += '<div style="color:' + (tEvent.status !== 'PENDING' ? '#ccd' : '#667') + ';font-size:11px;font-family:monospace;">' + esc(tEvent.event) + '</div>';
     h += '</div>';
-    var tStatusColor = tEvent.status === 'COMPLETE' ? '#00ff88' : tEvent.status === 'IN PROGRESS' ? '#00aaff' : '#445';
+    var tStatusColor = tEvent.status === 'COMPLETE' ? '#00ff88' : tEvent.status === 'IN PROGRESS' ? '#3b82f6' : '#445';
     h += '<div style="color:' + tStatusColor + ';font-size:9px;font-family:monospace;letter-spacing:1px;">' + esc(tEvent.status) + '</div>';
     h += '</div>';
     h += '</div>';
@@ -3098,9 +3101,9 @@ function renderCounterOps() {
 
   h += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px;">';
   var bdaMetrics = [
-    { label: 'TARGETS ENGAGED', value: '14', sub: 'C2 servers, relay nodes', color: '#ff2244' },
+    { label: 'TARGETS ENGAGED', value: '14', sub: 'C2 servers, relay nodes', color: '#ef4444' },
     { label: 'TARGETS DESTROYED', value: '11', sub: '78.6% effectiveness', color: '#ff6644' },
-    { label: 'TARGETS DEGRADED', value: '2', sub: 'Partial capability loss', color: '#ffaa00' },
+    { label: 'TARGETS DEGRADED', value: '2', sub: 'Partial capability loss', color: '#eab308' },
     { label: 'MISSED / FAILED', value: '1', sub: 'Migrated pre-strike', color: '#667' }
   ];
   for (var bm = 0; bm < bdaMetrics.length; bm++) {
@@ -3196,7 +3199,7 @@ function renderShield() {
     var sRecentEvents = sector.recentEvents || 'No recent events reported';
     var sDependencies = sector.dependencies || [];
     var sLastAssessment = sector.lastAssessment || 'N/A';
-    var sColor = sThreat === 'HIGH' ? '#ff2244' : sThreat === 'ELEVATED' ? '#ffaa00' : sThreat === 'CRITICAL' ? '#ff0000' : '#00ff88';
+    var sColor = sThreat === 'HIGH' ? '#ef4444' : sThreat === 'ELEVATED' ? '#eab308' : sThreat === 'CRITICAL' ? '#ff0000' : '#00ff88';
     var sBorderGlow = sThreat === 'HIGH' || sThreat === 'CRITICAL' ? 'box-shadow:0 0 15px ' + sColor + '22;' : '';
     h += '<div style="background:linear-gradient(135deg,#0c1020,#0a0e1a);border:1px solid ' + sColor + '44;border-radius:8px;padding:14px;' + sBorderGlow + '">';
 
@@ -3235,12 +3238,12 @@ function renderShield() {
     h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">';
     h += '<div>';
     h += '<div style="color:#556;font-size:9px;font-family:monospace;letter-spacing:1px;">KNOWN VULNS</div>';
-    var vulnColor = sVulns > 15 ? '#ff2244' : sVulns > 10 ? '#ffaa00' : '#00ff88';
+    var vulnColor = sVulns > 15 ? '#ef4444' : sVulns > 10 ? '#eab308' : '#00ff88';
     h += '<div style="color:' + vulnColor + ';font-size:18px;font-family:monospace;font-weight:bold;">' + esc(sVulns) + '</div>';
     h += '</div>';
     h += '<div>';
     h += '<div style="color:#556;font-size:9px;font-family:monospace;letter-spacing:1px;">PATCH COMPLIANCE</div>';
-    var patchColor = sPatchPct >= 85 ? '#00ff88' : sPatchPct >= 70 ? '#ffaa00' : '#ff2244';
+    var patchColor = sPatchPct >= 85 ? '#00ff88' : sPatchPct >= 70 ? '#eab308' : '#ef4444';
     h += '<div style="color:' + patchColor + ';font-size:18px;font-family:monospace;font-weight:bold;">' + esc(sPatchPct) + '%</div>';
     h += '</div>';
     h += '</div>';
@@ -3270,7 +3273,7 @@ function renderShield() {
   h += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">';
   for (var dm = 0; dm < sectors.length; dm++) {
     var dSector = sectors[dm];
-    var dColor = dSector.threat === 'HIGH' ? '#ff2244' : dSector.threat === 'ELEVATED' ? '#ffaa00' : '#00ff88';
+    var dColor = dSector.threat === 'HIGH' ? '#ef4444' : dSector.threat === 'ELEVATED' ? '#eab308' : '#00ff88';
     h += '<div style="background:#0a0e1a;border:1px solid ' + dColor + '33;border-radius:4px;padding:10px;">';
     h += '<div style="color:' + dColor + ';font-size:11px;font-family:monospace;font-weight:bold;margin-bottom:6px;">' + dSector.icon + ' ' + esc(dSector.name) + '</div>';
     var dDeps = dSector.dependencies || [];
@@ -3296,13 +3299,13 @@ function renderShield() {
   h += '<span style="color:#ffaa00;margin-right:8px;">&#9733;</span>RECOVERY PRIORITY MATRIX</div>';
 
   var recoveryPriorities = [
-    { priority: 1, sector: 'Power Grid', rto: '4 hours', rpo: '0 min', justification: 'All other sectors depend on electrical power', color: '#ff2244' },
+    { priority: 1, sector: 'Power Grid', rto: '4 hours', rpo: '0 min', justification: 'All other sectors depend on electrical power', color: '#ef4444' },
     { priority: 2, sector: 'Telecommunications', rto: '6 hours', rpo: '15 min', justification: 'Required for coordination and command/control', color: '#ff6644' },
-    { priority: 3, sector: 'Water Systems', rto: '12 hours', rpo: '30 min', justification: 'Public health and safety critical', color: '#ffaa00' },
-    { priority: 4, sector: 'Government', rto: '12 hours', rpo: '1 hour', justification: 'National command authority and emergency management', color: '#ffaa00' },
-    { priority: 5, sector: 'Defense Industrial Base', rto: '24 hours', rpo: '1 hour', justification: 'National security and military readiness', color: '#00aaff' },
-    { priority: 6, sector: 'Financial Services', rto: '24 hours', rpo: '0 min', justification: 'Economic stability and transaction processing', color: '#00aaff' },
-    { priority: 7, sector: 'Healthcare', rto: '24 hours', rpo: '15 min', justification: 'Patient care and public health infrastructure', color: '#00aaff' },
+    { priority: 3, sector: 'Water Systems', rto: '12 hours', rpo: '30 min', justification: 'Public health and safety critical', color: '#eab308' },
+    { priority: 4, sector: 'Government', rto: '12 hours', rpo: '1 hour', justification: 'National command authority and emergency management', color: '#eab308' },
+    { priority: 5, sector: 'Defense Industrial Base', rto: '24 hours', rpo: '1 hour', justification: 'National security and military readiness', color: '#3b82f6' },
+    { priority: 6, sector: 'Financial Services', rto: '24 hours', rpo: '0 min', justification: 'Economic stability and transaction processing', color: '#3b82f6' },
+    { priority: 7, sector: 'Healthcare', rto: '24 hours', rpo: '15 min', justification: 'Patient care and public health infrastructure', color: '#3b82f6' },
     { priority: 8, sector: 'Transportation', rto: '48 hours', rpo: '1 hour', justification: 'Supply chain and logistics', color: '#00ff88' }
   ];
 
@@ -3352,7 +3355,7 @@ function renderShield() {
 
   for (var pb = 0; pb < playbooks.length; pb++) {
     var book = playbooks[pb];
-    var pbColor = book.severity === 'CRITICAL' ? '#ff2244' : '#ffaa00';
+    var pbColor = book.severity === 'CRITICAL' ? '#ef4444' : '#eab308';
     h += '<div style="background:#0a0e1a;border:1px solid #1a2a44;border-radius:4px;padding:8px 10px;margin-bottom:4px;cursor:pointer;" onclick="this.querySelector(\'.se-pb-steps\').style.display=this.querySelector(\'.se-pb-steps\').style.display===\'none\'?\'block\':\'none\'">';
     h += '<div style="display:flex;align-items:center;gap:8px;">';
     h += '<div style="color:#445;font-size:10px;font-family:monospace;min-width:50px;">' + esc(book.id) + '</div>';
@@ -3395,7 +3398,7 @@ function renderShield() {
     h += '<div style="color:#889;font-size:10px;font-family:monospace;margin-bottom:8px;line-height:1.4;">' + esc(ex.desc) + '</div>';
     h += '<div style="display:flex;gap:4px;margin-bottom:8px;">';
     for (var st = 0; st < 5; st++) {
-      h += '<span style="color:' + (st < ex.difficulty ? '#ffaa00' : '#222') + ';font-size:12px;">&#9733;</span>';
+      h += '<span style="color:' + (st < ex.difficulty ? '#eab308' : '#222') + ';font-size:12px;">&#9733;</span>';
     }
     h += '</div>';
     h += '<div style="color:#556;font-size:9px;font-family:monospace;margin-bottom:4px;">DURATION: ' + esc(ex.duration) + '</div>';
@@ -3426,8 +3429,8 @@ function renderShield() {
 
   for (var dr = 0; dr < defRecs.length; dr++) {
     var rec2 = defRecs[dr];
-    var drColor = rec2.priority === 'IMMEDIATE' ? '#ff2244' : rec2.priority === 'HIGH' ? '#ffaa00' : '#00aaff';
-    var drStatusColor = rec2.status === 'DEPLOYED' ? '#00ff88' : rec2.status === 'IN PROGRESS' ? '#00aaff' : rec2.status === 'SCHEDULED' ? '#ffaa00' : '#667';
+    var drColor = rec2.priority === 'IMMEDIATE' ? '#ef4444' : rec2.priority === 'HIGH' ? '#eab308' : '#3b82f6';
+    var drStatusColor = rec2.status === 'DEPLOYED' ? '#00ff88' : rec2.status === 'IN PROGRESS' ? '#3b82f6' : rec2.status === 'SCHEDULED' ? '#eab308' : '#667';
     h += '<div style="display:flex;align-items:center;gap:10px;padding:8px;border-bottom:1px solid #111828;">';
     h += '<div style="background:' + drColor + '22;color:' + drColor + ';font-size:9px;font-family:monospace;font-weight:bold;padding:3px 8px;border-radius:3px;min-width:70px;text-align:center;">' + esc(rec2.priority) + '</div>';
     h += '<div style="flex:1;color:#ccd;font-size:11px;font-family:monospace;">' + esc(rec2.action) + '</div>';
@@ -3458,9 +3461,9 @@ function renderIntelFusion() {
   h += '</div>';
   h += '<div style="display:flex;gap:10px;">';
   var intelStats = [
-    { label: 'ACTIVE FEEDS', value: '47', color: '#00aaff' },
-    { label: 'CORRELATIONS', value: '12', color: '#ffaa00' },
-    { label: 'HIGH CONF ALERTS', value: '5', color: '#ff2244' }
+    { label: 'ACTIVE FEEDS', value: '47', color: '#3b82f6' },
+    { label: 'CORRELATIONS', value: '12', color: '#eab308' },
+    { label: 'HIGH CONF ALERTS', value: '5', color: '#ef4444' }
   ];
   for (var ist = 0; ist < intelStats.length; ist++) {
     var iStat = intelStats[ist];
@@ -3475,10 +3478,10 @@ function renderIntelFusion() {
 
   // Intel source tabs
   var intelTypes = [
-    { id: 'sigint', name: 'SIGINT', icon: '[T]', desc: 'Signals Intelligence', color: '#00aaff' },
+    { id: 'sigint', name: 'SIGINT', icon: '[T]', desc: 'Signals Intelligence', color: '#3b82f6' },
     { id: 'osint', name: 'OSINT', icon: '[O]', desc: 'Open Source Intelligence', color: '#00ff88' },
     { id: 'cybint', name: 'CYBINT', icon: '[C]', desc: 'Cyber Intelligence', color: '#ff6644' },
-    { id: 'humint', name: 'HUMINT', icon: '[U]', desc: 'Human Intelligence', color: '#ffaa00' },
+    { id: 'humint', name: 'HUMINT', icon: '[U]', desc: 'Human Intelligence', color: '#eab308' },
     { id: 'geoint', name: 'GEOINT', icon: '[M]', desc: 'Geospatial Intelligence', color: '#aa66ff' }
   ];
 
@@ -3518,13 +3521,13 @@ function renderIntelFusion() {
   for (var inf = 0; inf < intelFeeds.length; inf++) {
     var feed = intelFeeds[inf];
     var classColors = {
-      'TOP SECRET': '#ff2244',
+      'TOP SECRET': '#ef4444',
       'SECRET': '#ff6644',
       'UNCLASSIFIED': '#00ff88'
     };
     var classKey = feed.classification.indexOf('TOP SECRET') >= 0 ? 'TOP SECRET' : feed.classification.indexOf('SECRET') >= 0 ? 'SECRET' : 'UNCLASSIFIED';
     var classColor = classColors[classKey] || '#667';
-    var typeColors = { 'SIGINT': '#00aaff', 'OSINT': '#00ff88', 'CYBINT': '#ff6644', 'HUMINT': '#ffaa00', 'GEOINT': '#aa66ff' };
+    var typeColors = { 'SIGINT': '#3b82f6', 'OSINT': '#00ff88', 'CYBINT': '#ff6644', 'HUMINT': '#eab308', 'GEOINT': '#aa66ff' };
     var typeColor = typeColors[feed.type] || '#667';
 
     h += '<div style="background:#0a0e1a;border:1px solid #1a2a44;border-radius:6px;padding:12px;margin-bottom:8px;border-left:3px solid ' + typeColor + ';">';
@@ -3546,7 +3549,7 @@ function renderIntelFusion() {
     h += '</div>';
 
     // Confidence meter
-    var confColor = feed.confidence >= 85 ? '#00ff88' : feed.confidence >= 70 ? '#ffaa00' : '#ff6644';
+    var confColor = feed.confidence >= 85 ? '#00ff88' : feed.confidence >= 70 ? '#eab308' : '#ff6644';
     h += '<div style="display:flex;align-items:center;gap:6px;">';
     h += '<div style="color:#556;font-size:9px;font-family:monospace;">CONFIDENCE:</div>';
     h += '<div style="width:60px;background:#111828;border-radius:3px;height:6px;overflow:hidden;">';
@@ -3574,7 +3577,7 @@ function renderIntelFusion() {
 
   for (var cr = 0; cr < correlations.length; cr++) {
     var corr = correlations[cr];
-    var corrPriorityColor = corr.priority === 'FLASH' ? '#ff2244' : '#ffaa00';
+    var corrPriorityColor = corr.priority === 'FLASH' ? '#ef4444' : '#eab308';
     h += '<div style="background:#0a0e1a;border:1px solid ' + corrPriorityColor + '44;border-radius:6px;padding:14px;margin-bottom:10px;border-left:4px solid ' + corrPriorityColor + ';">';
     h += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">';
     h += '<div style="background:' + corrPriorityColor + ';color:#000;font-size:9px;font-family:monospace;font-weight:bold;padding:3px 10px;border-radius:3px;">' + esc(corr.priority) + '</div>';
@@ -3637,10 +3640,10 @@ function renderIntelFusion() {
   h += '<span style="color:#ff2244;margin-right:8px;">[P]</span>CLASSIFICATION LEVELS</div>';
 
   var classLevels = [
-    { level: 'TOP SECRET//SCI', color: '#ff2244', access: '47 personnel', desc: 'Sensitive Compartmented Information', caveats: 'SI, TK, HCS, NOFORN, ORCON' },
+    { level: 'TOP SECRET//SCI', color: '#ef4444', access: '47 personnel', desc: 'Sensitive Compartmented Information', caveats: 'SI, TK, HCS, NOFORN, ORCON' },
     { level: 'TOP SECRET', color: '#ff6644', access: '128 personnel', desc: 'Exceptionally grave damage to national security', caveats: 'NOFORN, REL FVEY, PROPIN' },
-    { level: 'SECRET', color: '#ffaa00', access: '412 personnel', desc: 'Serious damage to national security', caveats: 'NOFORN, REL FVEY, LES' },
-    { level: 'CONFIDENTIAL', color: '#00aaff', access: '1,847 personnel', desc: 'Damage to national security', caveats: 'Standard handling' },
+    { level: 'SECRET', color: '#eab308', access: '412 personnel', desc: 'Serious damage to national security', caveats: 'NOFORN, REL FVEY, LES' },
+    { level: 'CONFIDENTIAL', color: '#3b82f6', access: '1,847 personnel', desc: 'Damage to national security', caveats: 'Standard handling' },
     { level: 'UNCLASSIFIED//FOUO', color: '#00ff88', access: '8,500+ personnel', desc: 'For Official Use Only', caveats: 'CUI markings as applicable' }
   ];
 
@@ -3682,7 +3685,7 @@ function renderIntelFusion() {
     h += '<td style="padding:6px;color:#889;max-width:200px;">' + esc(diss.recipients) + '</td>';
     h += '<td style="padding:6px;color:#667;">' + esc(diss.sentAt) + '</td>';
     h += '<td style="padding:6px;color:#00ff88;">' + esc(diss.readBy) + '</td>';
-    var dissClassColor = diss.classification.indexOf('TS') >= 0 ? '#ff2244' : '#ffaa00';
+    var dissClassColor = diss.classification.indexOf('TS') >= 0 ? '#ef4444' : '#eab308';
     h += '<td style="padding:6px;"><span style="color:' + dissClassColor + ';font-size:9px;">' + esc(diss.classification) + '</span></td>';
     h += '</tr>';
   }
@@ -3820,10 +3823,10 @@ function renderWarSim() {
 
   h += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px;">';
   var simMetrics = [
-    { label: 'ELAPSED TIME', value: '02:34:17', color: '#00aaff' },
+    { label: 'ELAPSED TIME', value: '02:34:17', color: '#3b82f6' },
     { label: 'DETECTION SCORE', value: '78%', color: '#00ff88' },
-    { label: 'CONTAINMENT', value: '45%', color: '#ffaa00' },
-    { label: 'SYSTEMS AFFECTED', value: '23/47', color: '#ff2244' }
+    { label: 'CONTAINMENT', value: '45%', color: '#eab308' },
+    { label: 'SYSTEMS AFFECTED', value: '23/47', color: '#ef4444' }
   ];
   for (var sm = 0; sm < simMetrics.length; sm++) {
     var sMetric = simMetrics[sm];
@@ -3840,8 +3843,8 @@ function renderWarSim() {
   for (var pl = 0; pl < phaseLabels.length; pl++) {
     var phaseActive = pl <= 1;
     var phaseCurrent = pl === 1;
-    h += '<div style="flex:1;background:' + (phaseActive ? (phaseCurrent ? '#00aaff22' : '#00ff8822') : '#111828') + ';border:1px solid ' + (phaseCurrent ? '#00aaff' : phaseActive ? '#00ff8844' : '#1a2a44') + ';border-radius:4px;padding:6px 8px;text-align:center;">';
-    h += '<div style="color:' + (phaseCurrent ? '#00aaff' : phaseActive ? '#00ff88' : '#445') + ';font-size:10px;font-family:monospace;font-weight:bold;">' + esc(phaseLabels[pl]) + '</div>';
+    h += '<div style="flex:1;background:' + (phaseActive ? (phaseCurrent ? '#00aaff22' : '#00ff8822') : '#111828') + ';border:1px solid ' + (phaseCurrent ? '#3b82f6' : phaseActive ? '#00ff8844' : '#1a2a44') + ';border-radius:4px;padding:6px 8px;text-align:center;">';
+    h += '<div style="color:' + (phaseCurrent ? '#3b82f6' : phaseActive ? '#00ff88' : '#445') + ';font-size:10px;font-family:monospace;font-weight:bold;">' + esc(phaseLabels[pl]) + '</div>';
     h += '<div style="color:' + (phaseActive ? '#889' : '#334') + ';font-size:9px;font-family:monospace;margin-top:2px;">' + (phaseCurrent ? 'IN PROGRESS' : phaseActive ? 'COMPLETED' : 'PENDING') + '</div>';
     h += '</div>';
   }
@@ -3853,7 +3856,7 @@ function renderWarSim() {
   h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">';
   for (var cpo = 0; cpo < currentPhaseOptions.length; cpo++) {
     var isSelectedOpt = cpo === 0;
-    h += '<div style="background:' + (isSelectedOpt ? '#00aaff22' : '#0a0e1a') + ';border:1px solid ' + (isSelectedOpt ? '#00aaff' : '#1a2a44') + ';border-radius:4px;padding:8px;cursor:pointer;color:' + (isSelectedOpt ? '#00aaff' : '#889') + ';font-size:11px;font-family:monospace;">';
+    h += '<div style="background:' + (isSelectedOpt ? '#00aaff22' : '#0a0e1a') + ';border:1px solid ' + (isSelectedOpt ? '#3b82f6' : '#1a2a44') + ';border-radius:4px;padding:8px;cursor:pointer;color:' + (isSelectedOpt ? '#3b82f6' : '#889') + ';font-size:11px;font-family:monospace;">';
     h += (isSelectedOpt ? '&#9745; ' : '&#9744; ') + esc(currentPhaseOptions[cpo]);
     h += '</div>';
   }
@@ -3869,7 +3872,7 @@ function renderWarSim() {
     var scDuration = scenario.duration || scenario.estimatedDuration || 'N/A';
     var scCategory = scenario.category || 'General';
     var scPhases = scenario.phases || [];
-    var scDiffColor = scenario.difficulty >= 5 ? '#ff2244' : scenario.difficulty >= 4 ? '#ffaa00' : '#00aaff';
+    var scDiffColor = scenario.difficulty >= 5 ? '#ef4444' : scenario.difficulty >= 4 ? '#eab308' : '#3b82f6';
     var isActive = sc === 0;
     h += '<div style="background:linear-gradient(135deg,' + (isActive ? '#0c1525' : '#0c1020') + ',#0a0e1a);border:1px solid ' + (isActive ? '#00aaff44' : '#1a2a44') + ';border-radius:8px;padding:14px;cursor:pointer;' + (isActive ? 'box-shadow:0 0 15px #00aaff11;' : '') + '" onclick="this.querySelector(\'.se-scenario-phases\').style.display=this.querySelector(\'.se-scenario-phases\').style.display===\'none\'?\'block\':\'none\'">';
 
@@ -3904,7 +3907,7 @@ function renderWarSim() {
     h += '<div style="color:#445;font-size:9px;font-family:monospace;margin-bottom:8px;">' + scPhases.length + ' phases &bull; ' + esc(scAdversary) + '</div>';
 
     // Launch button
-    h += '<div style="background:' + (isActive ? '#00aaff' : '#00aaff22') + ';color:' + (isActive ? '#000' : '#00aaff') + ';font-size:10px;font-family:monospace;text-align:center;padding:6px;border-radius:4px;cursor:pointer;border:1px solid #00aaff44;font-weight:bold;">' + (isActive ? 'OPERATION IN PROGRESS' : 'LAUNCH SCENARIO') + '</div>';
+    h += '<div style="background:' + (isActive ? '#3b82f6' : '#00aaff22') + ';color:' + (isActive ? '#000' : '#3b82f6') + ';font-size:10px;font-family:monospace;text-align:center;padding:6px;border-radius:4px;cursor:pointer;border:1px solid #00aaff44;font-weight:bold;">' + (isActive ? 'OPERATION IN PROGRESS' : 'LAUNCH SCENARIO') + '</div>';
 
     // Expandable phases
     h += '<div class="se-scenario-phases" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid #1a2a44;">';
@@ -3938,10 +3941,10 @@ function renderWarSim() {
 
   var scoringCategories = [
     { category: 'Detection Speed', score: 85, max: 100, desc: 'How quickly threats were identified', color: '#00ff88' },
-    { category: 'Containment Effectiveness', score: 72, max: 100, desc: 'Ability to limit blast radius', color: '#00aaff' },
-    { category: 'Recovery Time', score: 68, max: 100, desc: 'Speed of service restoration', color: '#ffaa00' },
+    { category: 'Containment Effectiveness', score: 72, max: 100, desc: 'Ability to limit blast radius', color: '#3b82f6' },
+    { category: 'Recovery Time', score: 68, max: 100, desc: 'Speed of service restoration', color: '#eab308' },
     { category: 'Communication', score: 90, max: 100, desc: 'Coordination and reporting quality', color: '#00ff88' },
-    { category: 'Decision Quality', score: 78, max: 100, desc: 'Appropriateness of response actions', color: '#00aaff' },
+    { category: 'Decision Quality', score: 78, max: 100, desc: 'Appropriateness of response actions', color: '#3b82f6' },
     { category: 'Collateral Avoidance', score: 95, max: 100, desc: 'Minimization of unintended effects', color: '#00ff88' }
   ];
 
@@ -3953,7 +3956,7 @@ function renderWarSim() {
 
   h += '<div style="text-align:center;margin-bottom:14px;">';
   h += '<div style="color:#556;font-size:10px;font-family:monospace;letter-spacing:1px;">OVERALL SCORE</div>';
-  h += '<div style="color:' + (avgScore >= 80 ? '#00ff88' : avgScore >= 60 ? '#ffaa00' : '#ff2244') + ';font-size:42px;font-weight:bold;font-family:monospace;">' + avgScore + '<span style="font-size:18px;color:#556;">/ 100</span></div>';
+  h += '<div style="color:' + (avgScore >= 80 ? '#00ff88' : avgScore >= 60 ? '#eab308' : '#ef4444') + ';font-size:42px;font-weight:bold;font-family:monospace;">' + avgScore + '<span style="font-size:18px;color:#556;">/ 100</span></div>';
   h += '</div>';
 
   for (var scr = 0; scr < scoringCategories.length; scr++) {
@@ -3978,8 +3981,8 @@ function renderWarSim() {
 
   var aarItems = [
     { type: 'SUSTAIN', items: ['Rapid initial detection (under 15 minutes)', 'Effective cross-sector communication protocols', 'Successful manual override of OT systems', 'Strong leadership decision-making under pressure'], color: '#00ff88' },
-    { type: 'IMPROVE', items: ['Containment of lateral movement took too long', 'Backup communication channels not tested pre-exercise', 'Recovery prioritization caused delay in telecom restoration', 'Forensic evidence preservation protocols not followed consistently'], color: '#ffaa00' },
-    { type: 'CRITICAL FINDINGS', items: ['Pre-positioned LOTL techniques bypassed standard detection', 'Manual override training insufficient for water sector operators', 'No established protocol for simultaneous multi-sector incidents', 'Intelligence sharing delays between federal and state entities'], color: '#ff2244' }
+    { type: 'IMPROVE', items: ['Containment of lateral movement took too long', 'Backup communication channels not tested pre-exercise', 'Recovery prioritization caused delay in telecom restoration', 'Forensic evidence preservation protocols not followed consistently'], color: '#eab308' },
+    { type: 'CRITICAL FINDINGS', items: ['Pre-positioned LOTL techniques bypassed standard detection', 'Manual override training insufficient for water sector operators', 'No established protocol for simultaneous multi-sector incidents', 'Intelligence sharing delays between federal and state entities'], color: '#ef4444' }
   ];
 
   for (var aar = 0; aar < aarItems.length; aar++) {
@@ -4059,14 +4062,14 @@ function renderCommand() {
   h += '<div>';
   h += '<div style="color:#00aaff;font-size:11px;font-family:monospace;letter-spacing:1px;font-weight:bold;margin-bottom:8px;">CURRENT POSTURE</div>';
   var postureItems = [
-    { label: 'CYBERCOM Force Posture', value: 'ELEVATED', color: '#ffaa00' },
-    { label: 'Active Operations', value: '3 (2 defensive, 1 offensive)', color: '#00aaff' },
-    { label: 'Hunt Teams Deployed', value: '7 of 12 available', color: '#00aaff' },
-    { label: 'Critical Infrastructure Status', value: '5 NOMINAL / 2 ELEVATED / 1 HIGH', color: '#ffaa00' },
+    { label: 'CYBERCOM Force Posture', value: 'ELEVATED', color: '#eab308' },
+    { label: 'Active Operations', value: '3 (2 defensive, 1 offensive)', color: '#3b82f6' },
+    { label: 'Hunt Teams Deployed', value: '7 of 12 available', color: '#3b82f6' },
+    { label: 'Critical Infrastructure Status', value: '5 NOMINAL / 2 ELEVATED / 1 HIGH', color: '#eab308' },
     { label: 'Allied Coordination', value: 'Five Eyes: ACTIVE / NATO: ELEVATED', color: '#00ff88' },
     { label: 'Last Major Incident', value: '6 days ago (APT29 phishing campaign)', color: '#00ff88' },
-    { label: 'Pending Authorizations', value: '2 operations awaiting SECDEF approval', color: '#ffaa00' },
-    { label: 'Congressional Notifications', value: '1 pending (OP IRON VEIL)', color: '#ffaa00' }
+    { label: 'Pending Authorizations', value: '2 operations awaiting SECDEF approval', color: '#eab308' },
+    { label: 'Congressional Notifications', value: '1 pending (OP IRON VEIL)', color: '#eab308' }
   ];
   for (var pi = 0; pi < postureItems.length; pi++) {
     var pItem = postureItems[pi];
@@ -4096,7 +4099,7 @@ function renderCommand() {
 
   for (var at = 0; at < activeThreats.length; at++) {
     var aThreat = activeThreats[at];
-    var urgencyColor = aThreat.urgency === 'IMMEDIATE' ? '#ff2244' : '#ffaa00';
+    var urgencyColor = aThreat.urgency === 'IMMEDIATE' ? '#ef4444' : '#eab308';
     h += '<div style="background:#0a0e1a;border:1px solid ' + urgencyColor + '44;border-radius:6px;padding:12px;margin-bottom:8px;border-left:3px solid ' + urgencyColor + ';">';
     h += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">';
     h += '<div style="background:' + urgencyColor + ';color:#000;font-size:9px;font-family:monospace;font-weight:bold;padding:2px 8px;border-radius:3px;">' + esc(aThreat.urgency) + '</div>';
@@ -4122,10 +4125,10 @@ function renderCommand() {
 
   var alliances = [
     { name: 'Five Eyes (FVEY)', members: 'US, UK, Canada, Australia, New Zealand', status: 'ACTIVE — ELEVATED SHARING', lastSync: '2026-09-13 14:00Z', intel: 'Full intelligence sharing active. Joint Sandworm tracking operation underway.', color: '#00ff88' },
-    { name: 'NATO CCDCOE', members: '31 NATO members', status: 'CONSULTATION — Article 4', lastSync: '2026-09-13 12:00Z', intel: 'Baltic state cyber defense coordination. Pre-authorized response packages ready.', color: '#00aaff' },
+    { name: 'NATO CCDCOE', members: '31 NATO members', status: 'CONSULTATION — Article 4', lastSync: '2026-09-13 12:00Z', intel: 'Baltic state cyber defense coordination. Pre-authorized response packages ready.', color: '#3b82f6' },
     { name: 'US-Israel Bilateral', members: 'US, Israel', status: 'ACTIVE', lastSync: '2026-09-13 10:00Z', intel: 'Joint Iran threat tracking. Unit 8200 sharing SIGINT on IRGC reorganization.', color: '#00ff88' },
-    { name: 'Quad Cyber Partnership', members: 'US, Japan, Australia, India', status: 'MONITORING', lastSync: '2026-09-12 22:00Z', intel: 'Indo-Pacific maritime threat monitoring. APT40 tracking shared.', color: '#00aaff' },
-    { name: 'US-South Korea', members: 'US, South Korea', status: 'ELEVATED', lastSync: '2026-09-13 06:00Z', intel: 'Joint DPRK crypto theft tracking. Lazarus Group infrastructure intelligence shared.', color: '#ffaa00' }
+    { name: 'Quad Cyber Partnership', members: 'US, Japan, Australia, India', status: 'MONITORING', lastSync: '2026-09-12 22:00Z', intel: 'Indo-Pacific maritime threat monitoring. APT40 tracking shared.', color: '#3b82f6' },
+    { name: 'US-South Korea', members: 'US, South Korea', status: 'ELEVATED', lastSync: '2026-09-13 06:00Z', intel: 'Joint DPRK crypto theft tracking. Lazarus Group infrastructure intelligence shared.', color: '#eab308' }
   ];
 
   for (var al = 0; al < alliances.length; al++) {
@@ -4160,7 +4163,7 @@ function renderCommand() {
 
   for (var ct = 0; ct < commTemplates.length; ct++) {
     var tmpl = commTemplates[ct];
-    var tmplClassColor = tmpl.classification.indexOf('TOP SECRET') >= 0 ? '#ff2244' : '#ffaa00';
+    var tmplClassColor = tmpl.classification.indexOf('TOP SECRET') >= 0 ? '#ef4444' : '#eab308';
     h += '<div style="background:#0a0e1a;border:1px solid #1a2a44;border-radius:4px;margin-bottom:6px;overflow:hidden;" onclick="this.querySelector(\'.se-tmpl-body\').style.display=this.querySelector(\'.se-tmpl-body\').style.display===\'none\'?\'block\':\'none\'">';
     h += '<div style="padding:10px;cursor:pointer;display:flex;align-items:center;gap:8px;">';
     h += '<div style="background:#00aaff22;color:#00aaff;font-size:10px;font-family:monospace;font-weight:bold;padding:3px 8px;border-radius:3px;min-width:60px;text-align:center;">' + esc(tmpl.type) + '</div>';
@@ -4196,7 +4199,7 @@ function renderCommand() {
 
   for (var dl = 0; dl < decisionLog.length; dl++) {
     var dLog = decisionLog[dl];
-    var dlClassColor = dLog.classification.indexOf('TS') >= 0 ? '#ff2244' : '#ffaa00';
+    var dlClassColor = dLog.classification.indexOf('TS') >= 0 ? '#ef4444' : '#eab308';
     h += '<div style="padding:8px 0;border-bottom:1px solid #111828;display:flex;gap:10px;">';
     h += '<div style="color:#556;font-size:10px;font-family:monospace;min-width:130px;white-space:nowrap;">' + esc(dLog.timestamp) + '</div>';
     h += '<div style="flex:1;">';
@@ -4256,7 +4259,7 @@ function renderCommand() {
 
   for (var rs = 0; rs < resources.length; rs++) {
     var res = resources[rs];
-    var resColor = res.status === 'DEPLOYED' ? '#00aaff' : res.status === 'ACTIVE' ? '#00ff88' : '#667';
+    var resColor = res.status === 'DEPLOYED' ? '#3b82f6' : res.status === 'ACTIVE' ? '#00ff88' : '#667';
     h += '<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid #111828;font-family:monospace;font-size:10px;">';
     h += '<div style="color:' + resColor + ';width:8px;text-align:center;">&#9679;</div>';
     h += '<div style="color:#ccd;min-width:120px;font-weight:bold;">' + esc(res.team) + '</div>';
@@ -4281,7 +4284,7 @@ function renderCommand() {
 
   for (var cn = 0; cn < congressNotifications.length; cn++) {
     var cNotif = congressNotifications[cn];
-    var cnStatusColor = cNotif.status === 'PENDING SUBMISSION' ? '#ff2244' : cNotif.status === 'SUBMITTED' ? '#ffaa00' : '#00ff88';
+    var cnStatusColor = cNotif.status === 'PENDING SUBMISSION' ? '#ef4444' : cNotif.status === 'SUBMITTED' ? '#eab308' : '#00ff88';
     h += '<div style="background:#0a0e1a;border:1px solid #1a2a44;border-radius:4px;padding:10px;margin-bottom:6px;">';
     h += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">';
     h += '<div style="color:#fff;font-size:12px;font-family:monospace;font-weight:bold;">' + esc(cNotif.operation) + '</div>';
@@ -4309,9 +4312,9 @@ function renderCommand() {
   h += '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;">';
   var escalationSteps = [
     { level: 'ROUTINE', desc: 'Normal monitoring and defense', authority: 'Watch Officer', color: '#00ff88', active: false },
-    { level: 'ELEVATED', desc: 'Increased threat indicators detected', authority: 'CYBERCOM J3', color: '#ffaa00', active: true },
+    { level: 'ELEVATED', desc: 'Increased threat indicators detected', authority: 'CYBERCOM J3', color: '#eab308', active: true },
     { level: 'SUBSTANTIAL', desc: 'Active threat requiring response planning', authority: 'CYBERCOM CDR', color: '#ff6644', active: false },
-    { level: 'SEVERE', desc: 'Active attack requiring immediate response', authority: 'SECDEF', color: '#ff2244', active: false },
+    { level: 'SEVERE', desc: 'Active attack requiring immediate response', authority: 'SECDEF', color: '#ef4444', active: false },
     { level: 'CRITICAL', desc: 'Strategic-level cyber warfare', authority: 'POTUS / NSC', color: '#ff0044', active: false }
   ];
 
@@ -4947,7 +4950,7 @@ function renderOperationDetail(opId) {
   h += '</div>';
   h += '<div style="min-width:150px;">';
   h += '<div style="font-size:10px;color:#556;letter-spacing:2px;margin-bottom:4px;">CONFIDENCE</div>';
-  var confColor = op.attributionConfidence >= 90 ? '#00ff88' : op.attributionConfidence >= 70 ? '#ffaa00' : '#ff6644';
+  var confColor = op.attributionConfidence >= 90 ? '#00ff88' : op.attributionConfidence >= 70 ? '#eab308' : '#ff6644';
   h += '<div style="display:flex;align-items:center;gap:8px;">';
   h += '<div style="width:80px;height:8px;background:#1a2a3c;border-radius:4px;overflow:hidden;"><div style="width:' + op.attributionConfidence + '%;height:100%;background:' + confColor + ';border-radius:4px;"></div></div>';
   h += '<span style="color:' + confColor + ';font-size:14px;font-weight:bold;">' + op.attributionConfidence + '%</span>';
@@ -5065,8 +5068,8 @@ function renderNationDetail(nationId) {
   h += '<div style="color:#889;font-size:12px;margin-top:4px;">' + esc(nation.cyberCommand) + '</div>';
   h += '</div>';
   h += '<div style="text-align:right;">';
-  var tlColors = { 1: '#00ff88', 2: '#44cc88', 3: '#ffaa00', 4: '#ff6622', 5: '#ff2244' };
-  var tierColor = nation.tier === 1 ? '#ff2244' : nation.tier === 2 ? '#ff6622' : '#ffaa00';
+  var tlColors = { 1: '#00ff88', 2: '#44cc88', 3: '#eab308', 4: '#f97316', 5: '#ef4444' };
+  var tierColor = nation.tier === 1 ? '#ef4444' : nation.tier === 2 ? '#f97316' : '#eab308';
   h += '<div style="font-size:10px;color:#556;letter-spacing:2px;margin-bottom:4px;">CAPABILITY TIER</div>';
   h += '<div style="font-size:32px;color:' + tierColor + ';font-weight:bold;font-family:monospace;text-shadow:0 0 15px ' + tierColor + '44;">TIER ' + nation.tier + '</div>';
   h += '<div style="color:#6688aa;font-size:10px;letter-spacing:1px;margin-top:4px;">Based on public threat research</div>';
@@ -5087,7 +5090,7 @@ function renderNationDetail(nationId) {
     for (var dk in dims) {
       if (dims.hasOwnProperty(dk)) {
         var val = dims[dk];
-        var barColor = val >= 8 ? '#00ff88' : val >= 5 ? '#ffaa00' : '#ff4466';
+        var barColor = val >= 8 ? '#00ff88' : val >= 5 ? '#eab308' : '#ff4466';
         h += '<div style="background:#0a0e1a;border:1px solid #1a3a5c;border-radius:4px;padding:8px 12px;">';
         h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">';
         h += '<span style="color:#889;font-size:9px;letter-spacing:1px;">' + (dimLabels[dk] || esc(dk)) + '</span>';
@@ -5203,7 +5206,7 @@ function renderToolProfile(toolId) {
   h += '<h3 style="margin:0;font-size:22px;color:#00aaff;font-family:monospace;letter-spacing:2px;">' + esc(tool.name) + '</h3>';
   h += '<div style="color:#889;font-size:11px;margin-top:4px;">Developer: ' + esc(tool.developer) + '</div>';
   h += '</div>';
-  var typeColors = { 'C2 Framework': '#ff6644', 'Credential Harvesting': '#ffaa00', 'ICS/SCADA Malware': '#ff2244', 'RAT / Backdoor': '#ff8844', 'Supply Chain Backdoor': '#cc44ff', 'Loader / Botnet': '#44aaff', 'Mobile Spyware': '#ff44aa', 'Ransomware': '#ff2244' };
+  var typeColors = { 'C2 Framework': '#ff6644', 'Credential Harvesting': '#eab308', 'ICS/SCADA Malware': '#ef4444', 'RAT / Backdoor': '#ff8844', 'Supply Chain Backdoor': '#cc44ff', 'Loader / Botnet': '#44aaff', 'Mobile Spyware': '#ff44aa', 'Ransomware': '#ef4444' };
   var tc = typeColors[tool.type] || '#889';
   h += '<span style="background:' + tc + '22;color:' + tc + ';border:1px solid ' + tc + '44;padding:6px 14px;border-radius:4px;font-size:11px;font-family:monospace;letter-spacing:1px;">' + esc(tool.type) + '</span>';
   h += '</div>';
@@ -5376,7 +5379,7 @@ function renderMitreMatrix() {
       for (var ck = 0; ck < coverage.length; ck++) {
         if (coverage[ck] === MITRE_TACTICS[tj]) { hasTactic = true; break; }
       }
-      var cellColor = hasTactic ? '#00aaff' : 'transparent';
+      var cellColor = hasTactic ? '#3b82f6' : 'transparent';
       var cellOpacity = hasTactic ? '0.7' : '0.05';
       h += '<td style="padding:4px;text-align:center;border-bottom:1px solid #1a2a3c;">';
       h += '<div style="width:16px;height:16px;margin:0 auto;border-radius:3px;background:' + cellColor + ';opacity:' + cellOpacity + ';' + (hasTactic ? 'box-shadow:0 0 6px ' + cellColor + '44;' : '') + '"></div>';
@@ -5401,7 +5404,7 @@ function renderMitreMatrix() {
       }
     }
     var pct = Math.round((count / aptNames.length) * 100);
-    var barCol = pct >= 70 ? '#ff2244' : pct >= 40 ? '#ffaa00' : '#00ff88';
+    var barCol = pct >= 70 ? '#ef4444' : pct >= 40 ? '#eab308' : '#00ff88';
     h += '<div style="background:#0a0e1a;border:1px solid #1a3a5c;border-radius:4px;padding:8px 10px;">';
     h += '<div style="display:flex;justify-content:space-between;margin-bottom:4px;">';
     h += '<span style="color:#889;font-size:9px;letter-spacing:1px;">' + esc(tactic).toUpperCase() + '</span>';
@@ -5434,8 +5437,8 @@ function renderZeroDayMarket() {
   h += '<div style="padding:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px;">';
   for (var z = 0; z < ZERO_DAY_MARKET_INTEL.length; z++) {
     var zd = ZERO_DAY_MARKET_INTEL[z];
-    var riskColors = { 'CRITICAL': '#ff2244', 'HIGH': '#ff6622' };
-    var rc = riskColors[zd.riskLevel] || '#ffaa00';
+    var riskColors = { 'CRITICAL': '#ef4444', 'HIGH': '#f97316' };
+    var rc = riskColors[zd.riskLevel] || '#eab308';
 
     h += '<div style="background:#0c0c04;border:1px solid #ff880033;border-radius:6px;overflow:hidden;">';
 
@@ -5568,7 +5571,7 @@ function renderTabletopExercise(exerciseId) {
   h += '<div style="position:absolute;left:10px;top:0;bottom:0;width:2px;background:linear-gradient(180deg,#ffaa00,#ff224488);"></div>';
   for (var inj = 0; inj < exercise.injects.length; inj++) {
     var inject = exercise.injects[inj];
-    var injColor = inj < 3 ? '#ffaa00' : inj < 6 ? '#ff6622' : '#ff2244';
+    var injColor = inj < 3 ? '#eab308' : inj < 6 ? '#f97316' : '#ef4444';
     h += '<div style="position:relative;margin-bottom:14px;padding-left:20px;">';
     h += '<div style="position:absolute;left:-22px;top:4px;width:12px;height:12px;background:' + injColor + ';border-radius:50%;border:2px solid #060a14;"></div>';
     h += '<div style="display:flex;gap:12px;align-items:flex-start;">';
@@ -5643,7 +5646,7 @@ function renderThreatTimeline() {
   h += '<div style="position:relative;padding-left:80px;" id="se-timeline-container">';
   h += '<div style="position:absolute;left:60px;top:0;bottom:0;width:3px;background:linear-gradient(180deg,#00aaff22,#00aaff,#00aaff,#ff2244,#ff224422);border-radius:2px;"></div>';
 
-  var typeColors = { 'espionage': '#00aaff', 'destruction': '#ff2244', 'disruption': '#ff6622', 'financial': '#ffaa00', 'hybrid': '#cc44ff' };
+  var typeColors = { 'espionage': '#3b82f6', 'destruction': '#ef4444', 'disruption': '#f97316', 'financial': '#eab308', 'hybrid': '#cc44ff' };
   var typeIcons = { 'espionage': '[R]', 'destruction': '[!]', 'disruption': '&#9889;', 'financial': '[F]', 'hybrid': '&#9878;' };
 
   for (var si = 0; si < sorted.length; si++) {
@@ -5736,11 +5739,11 @@ function renderCyberKillChain(aptGroup) {
   var phases = [
     { key: 'reconnaissance', label: 'RECONNAISSANCE', icon: '[R]', color: '#44bbff' },
     { key: 'weaponization', label: 'WEAPONIZATION', icon: '&#9881;', color: '#44aaff' },
-    { key: 'delivery', label: 'DELIVERY', icon: '[>]', color: '#ffaa00' },
+    { key: 'delivery', label: 'DELIVERY', icon: '[>]', color: '#eab308' },
     { key: 'exploitation', label: 'EXPLOITATION', icon: '[!]', color: '#ff8844' },
     { key: 'installation', label: 'INSTALLATION', icon: '[D]', color: '#ff6644' },
     { key: 'c2', label: 'COMMAND & CONTROL', icon: '[T]', color: '#ff4466' },
-    { key: 'actions', label: 'ACTIONS ON OBJECTIVES', icon: '[S]', color: '#ff2244' }
+    { key: 'actions', label: 'ACTIONS ON OBJECTIVES', icon: '[S]', color: '#ef4444' }
   ];
 
   var h = '';
@@ -5827,7 +5830,7 @@ function renderCorrelationEngine() {
     }
   ];
 
-  var sourceColors = { 'SIGINT': '#00aaff', 'OSINT': '#00ff88', 'CYBINT': '#ffaa00', 'HUMINT': '#ff8844', 'GEOINT': '#cc44ff' };
+  var sourceColors = { 'SIGINT': '#3b82f6', 'OSINT': '#00ff88', 'CYBINT': '#eab308', 'HUMINT': '#ff8844', 'GEOINT': '#cc44ff' };
 
   var h = '';
   h += '<div style="padding:16px 0;">';
@@ -5836,7 +5839,7 @@ function renderCorrelationEngine() {
 
   for (var ci = 0; ci < correlations.length; ci++) {
     var corr = correlations[ci];
-    var confColor = corr.confidence >= 90 ? '#00ff88' : corr.confidence >= 80 ? '#ffaa00' : '#ff6644';
+    var confColor = corr.confidence >= 90 ? '#00ff88' : corr.confidence >= 80 ? '#eab308' : '#ff6644';
 
     h += '<div style="background:#060a14;border:2px solid ' + confColor + '44;border-radius:8px;overflow:hidden;margin-bottom:16px;">';
 
@@ -5930,9 +5933,9 @@ function renderGlobalPostureBrief() {
   var levels = [
     { num: 1, label: 'LOW', color: '#00ff88' },
     { num: 2, label: 'GUARDED', color: '#44cc88' },
-    { num: 3, label: 'ELEVATED', color: '#ffaa00' },
-    { num: 4, label: 'HIGH', color: '#ff6622' },
-    { num: 5, label: 'SEVERE', color: '#ff2244' }
+    { num: 3, label: 'ELEVATED', color: '#eab308' },
+    { num: 4, label: 'HIGH', color: '#f97316' },
+    { num: 5, label: 'SEVERE', color: '#ef4444' }
   ];
   for (var l = 0; l < levels.length; l++) {
     var isActive = levels[l].num === 4;
@@ -5951,11 +5954,11 @@ function renderGlobalPostureBrief() {
   h += '<div id="se-cmd-threats" style="font-size:12px;color:#6688aa;">Fetching live threat data...</div>';
 
   var threats = [];
-  var threatPrioColors = ['#ff2244', '#ff6622', '#ffaa00'];
+  var threatPrioColors = ['#ef4444', '#f97316', '#eab308'];
 
   for (var th = 0; th < threats.length; th++) {
     var threat = threats[th];
-    var tpc = threatPrioColors[th] || '#ffaa00';
+    var tpc = threatPrioColors[th] || '#eab308';
     h += '<div style="background:#0a0e1a;border:1px solid ' + tpc + '33;border-radius:6px;padding:14px;margin-bottom:10px;border-left:4px solid ' + tpc + ';">';
     h += '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px;">';
     h += '<div>';
@@ -6136,7 +6139,7 @@ HISTORICAL_OPERATIONS_DETAIL['op-008'] = {
 // ============================================================================
 
 function renderSeverityBadge(severity) {
-  var colors = { 'critical': '#ff2244', 'high': '#ff6622', 'medium': '#ffaa00', 'low': '#44cc88', 'info': '#00aaff' };
+  var colors = { 'critical': '#ef4444', 'high': '#f97316', 'medium': '#eab308', 'low': '#44cc88', 'info': '#3b82f6' };
   var c = colors[severity] || colors[(severity || '').toLowerCase()] || '#889';
   var h = '<span style="background:' + c + '22;color:' + c + ';padding:2px 8px;border-radius:3px;font-size:9px;';
   h += 'font-family:monospace;letter-spacing:1px;border:1px solid ' + c + '44;">';
@@ -6147,7 +6150,7 @@ function renderSeverityBadge(severity) {
 
 function renderConfidenceBar(confidence, width) {
   width = width || 100;
-  var color = confidence >= 80 ? '#00ff88' : confidence >= 60 ? '#ffaa00' : '#ff4466';
+  var color = confidence >= 80 ? '#00ff88' : confidence >= 60 ? '#eab308' : '#ff4466';
   var h = '<div style="display:inline-flex;align-items:center;gap:6px;">';
   h += '<div style="width:' + width + 'px;height:6px;background:#1a2a3c;border-radius:3px;overflow:hidden;">';
   h += '<div style="width:' + confidence + '%;height:100%;background:' + color + ';border-radius:3px;"></div>';
@@ -6166,7 +6169,7 @@ function renderClassBanner(text) {
 }
 
 function renderThreatLevelIndicator(level) {
-  var colors = { 1: '#00ff88', 2: '#44cc88', 3: '#ffaa00', 4: '#ff6622', 5: '#ff2244' };
+  var colors = { 1: '#00ff88', 2: '#44cc88', 3: '#eab308', 4: '#f97316', 5: '#ef4444' };
   var labels = { 1: 'LOW', 2: 'GUARDED', 3: 'ELEVATED', 4: 'HIGH', 5: 'SEVERE' };
   var c = colors[level] || '#889';
   var h = '<div style="display:inline-flex;align-items:center;gap:8px;">';
@@ -6182,8 +6185,8 @@ function renderThreatLevelIndicator(level) {
 function renderStatCard(label, value, color, subtitle) {
   var h = '<div style="background:#0a0e1a;border:1px solid #1a3a5c;border-radius:6px;padding:14px;text-align:center;">';
   h += '<div style="font-size:8px;color:#556;letter-spacing:2px;margin-bottom:6px;">' + esc(label) + '</div>';
-  h += '<div style="font-size:28px;color:' + (color || '#00aaff') + ';font-weight:bold;font-family:monospace;';
-  h += 'text-shadow:0 0 15px ' + (color || '#00aaff') + '33;">' + esc(value) + '</div>';
+  h += '<div style="font-size:28px;color:' + (color || '#3b82f6') + ';font-weight:bold;font-family:monospace;';
+  h += 'text-shadow:0 0 15px ' + (color || '#3b82f6') + '33;">' + esc(value) + '</div>';
   if (subtitle) {
     h += '<div style="font-size:9px;color:#556;margin-top:4px;">' + esc(subtitle) + '</div>';
   }
@@ -6319,10 +6322,10 @@ var NATION_CYBER_BUDGETS = [
 var ESCALATION_LADDER = [
   { level: 0, name: 'BASELINE', description: 'Normal peacetime cyber operations. Routine intelligence collection, vulnerability scanning, defensive monitoring.', examples: 'SIGINT collection, vulnerability research, defensive SOC operations', authorities: 'Standing DOD/IC authorities', color: '#00ff88' },
   { level: 1, name: 'ENHANCED MONITORING', description: 'Increased surveillance and detection posture. Additional sensors deployed, analyst shifts extended.', examples: 'Enhanced network monitoring, threat hunting, increased ISR', authorities: 'CYBERCOM commander authority', color: '#44cc88' },
-  { level: 2, name: 'DEFENSIVE CYBER OPERATIONS', description: 'Active defense of US networks. Block, degrade, or disrupt adversary access to defended networks.', examples: 'Blocking C2 traffic, isolating compromised systems, malware eradication', authorities: 'CYBERCOM EXORD / Standing rules of engagement', color: '#ffaa00' },
+  { level: 2, name: 'DEFENSIVE CYBER OPERATIONS', description: 'Active defense of US networks. Block, degrade, or disrupt adversary access to defended networks.', examples: 'Blocking C2 traffic, isolating compromised systems, malware eradication', authorities: 'CYBERCOM EXORD / Standing rules of engagement', color: '#eab308' },
   { level: 3, name: 'ACTIVE DEFENSE', description: 'Operations that reach beyond defended networks to detect, characterize, and counter adversary activity.', examples: 'Hunt-forward missions, beacon disruption, infrastructure mapping', authorities: 'SECDEF authorization / NSPM-13', color: '#ff8844' },
-  { level: 4, name: 'OFFENSIVE CYBER OPERATIONS', description: 'Operations to project power in cyberspace to achieve military objectives. Degrade, disrupt, or destroy adversary capabilities.', examples: 'C2 infrastructure takedown, adversary tool disruption, data denial', authorities: 'POTUS / SECDEF authorization per NSPM-13 and EXORD', color: '#ff6622' },
-  { level: 5, name: 'STRATEGIC CYBER WARFARE', description: 'Full-scale cyber operations as part of armed conflict. Target critical infrastructure, military C2, strategic capabilities.', examples: 'Grid attacks, military network destruction, strategic system disruption', authorities: 'POTUS authorization / War Powers / AUMF', color: '#ff2244' }
+  { level: 4, name: 'OFFENSIVE CYBER OPERATIONS', description: 'Operations to project power in cyberspace to achieve military objectives. Degrade, disrupt, or destroy adversary capabilities.', examples: 'C2 infrastructure takedown, adversary tool disruption, data denial', authorities: 'POTUS / SECDEF authorization per NSPM-13 and EXORD', color: '#f97316' },
+  { level: 5, name: 'STRATEGIC CYBER WARFARE', description: 'Full-scale cyber operations as part of armed conflict. Target critical infrastructure, military C2, strategic capabilities.', examples: 'Grid attacks, military network destruction, strategic system disruption', authorities: 'POTUS authorization / War Powers / AUMF', color: '#ef4444' }
 ];
 
 function renderEscalationLadder() {
@@ -6370,7 +6373,7 @@ function renderIncidentTimeline() {
   for (var ci2 = 0; ci2 < CYBER_INCIDENT_TIMELINE.length; ci2++) {
     var incident = CYBER_INCIDENT_TIMELINE[ci2];
     var progress = ci2 / CYBER_INCIDENT_TIMELINE.length;
-    var dotColor = progress < 0.3 ? '#00aaff' : progress < 0.6 ? '#ffaa00' : '#ff2244';
+    var dotColor = progress < 0.3 ? '#3b82f6' : progress < 0.6 ? '#eab308' : '#ef4444';
 
     h += '<div style="position:relative;margin-bottom:12px;">';
     h += '<div style="position:absolute;left:-76px;top:4px;color:#556;font-size:11px;font-family:monospace;letter-spacing:1px;text-align:right;width:55px;">' + incident.year + '</div>';
@@ -6398,7 +6401,7 @@ function renderBudgetComparison() {
 
   for (var b = 0; b < sorted2.length; b++) {
     var nation = sorted2[b];
-    var tierColors = { 1: '#00aaff', 2: '#ffaa00', 3: '#889' };
+    var tierColors = { 1: '#3b82f6', 2: '#eab308', 3: '#889' };
     var tc2 = tierColors[nation.tier] || '#889';
     var budgetPct = Math.round((nation.budget / maxBudget) * 100);
 
@@ -6561,10 +6564,10 @@ function renderThreatFeedDashboard() {
 
   // Summary stats
   h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:20px;">';
-  h += renderStatCard('ACTIVE FEEDS', String(THREAT_FEED_SOURCES.length), '#00aaff', 'Ingesting');
-  h += renderStatCard('TOTAL ALERTS', String(totalAlerts), '#ff6622', 'Unresolved');
-  h += renderStatCard('SIGINT', String(sourcesByType['SIGINT'] || 0), '#00aaff', 'Sources');
-  h += renderStatCard('CYBINT', String(sourcesByType['CYBINT'] || 0), '#ffaa00', 'Sources');
+  h += renderStatCard('ACTIVE FEEDS', String(THREAT_FEED_SOURCES.length), '#3b82f6', 'Ingesting');
+  h += renderStatCard('TOTAL ALERTS', String(totalAlerts), '#f97316', 'Unresolved');
+  h += renderStatCard('SIGINT', String(sourcesByType['SIGINT'] || 0), '#3b82f6', 'Sources');
+  h += renderStatCard('CYBINT', String(sourcesByType['CYBINT'] || 0), '#eab308', 'Sources');
   h += renderStatCard('OSINT', String(sourcesByType['OSINT'] || 0), '#00ff88', 'Sources');
   h += renderStatCard('HUMINT', String(sourcesByType['HUMINT'] || 0), '#ff8844', 'Sources');
   h += '</div>';
@@ -6646,7 +6649,7 @@ function renderAttackSurfaceMap() {
     h += '<div style="padding:12px 18px;">';
     for (var a = 0; a < cat.assets.length; a++) {
       var asset = cat.assets[a];
-      var riskColors2 = { 'CRITICAL': '#ff2244', 'HIGH': '#ff6622', 'MEDIUM': '#ffaa00', 'LOW': '#44cc88' };
+      var riskColors2 = { 'CRITICAL': '#ef4444', 'HIGH': '#f97316', 'MEDIUM': '#eab308', 'LOW': '#44cc88' };
       var rc2 = riskColors2[asset.riskLevel] || '#889';
       h += '<div style="display:flex;align-items:center;gap:12px;padding:8px 0;' + (a < cat.assets.length - 1 ? 'border-bottom:1px solid #1a2a3c;' : '') + '">';
       h += '<div style="flex:1;">';
@@ -6754,7 +6757,7 @@ function renderCyberWeaponsTaxonomy() {
   h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px;">';
   for (var w = 0; w < CYBER_WEAPONS_TAXONOMY.length; w++) {
     var weapon = CYBER_WEAPONS_TAXONOMY[w];
-    var dangerColor = weapon.dangerLevel >= 9 ? '#ff2244' : weapon.dangerLevel >= 7 ? '#ff6622' : '#ffaa00';
+    var dangerColor = weapon.dangerLevel >= 9 ? '#ef4444' : weapon.dangerLevel >= 7 ? '#f97316' : '#eab308';
 
     h += '<div style="background:#0a0e1a;border:1px solid #1a3a5c;border-radius:8px;overflow:hidden;">';
     h += '<div style="padding:14px 16px;border-bottom:1px solid #1a3a5c;display:flex;justify-content:space-between;align-items:center;">';
@@ -6811,9 +6814,9 @@ function renderResponseOps() {
 
   for (var r = 0; r < ACTIVE_RESPONSE_OPS.length; r++) {
     var op = ACTIVE_RESPONSE_OPS[r];
-    var statusColors = { 'ACTIVE': '#00ff88', 'PLANNING': '#ffaa00', 'STANDBY': '#00aaff', 'COMPLETE': '#556' };
+    var statusColors = { 'ACTIVE': '#00ff88', 'PLANNING': '#eab308', 'STANDBY': '#3b82f6', 'COMPLETE': '#556' };
     var sc = statusColors[op.status] || '#889';
-    var progColor = op.progress >= 70 ? '#00ff88' : op.progress >= 40 ? '#ffaa00' : '#ff6622';
+    var progColor = op.progress >= 70 ? '#00ff88' : op.progress >= 40 ? '#eab308' : '#f97316';
 
     h += '<div style="background:#0a0e1a;border:1px solid #1a3a5c;border-radius:8px;margin-bottom:12px;overflow:hidden;">';
 
@@ -6956,7 +6959,7 @@ function renderDeterrenceFramework() {
   h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;">';
   for (var d = 0; d < DETERRENCE_PILLARS.length; d++) {
     var pillar = DETERRENCE_PILLARS[d];
-    var effColor = pillar.effectiveness >= 7 ? '#00ff88' : pillar.effectiveness >= 5 ? '#ffaa00' : '#ff6622';
+    var effColor = pillar.effectiveness >= 7 ? '#00ff88' : pillar.effectiveness >= 5 ? '#eab308' : '#f97316';
 
     h += '<div style="background:#0a0e1a;border:1px solid #1a3a5c;border-radius:8px;overflow:hidden;">';
     h += '<div style="background:linear-gradient(135deg,#0a1628,#0d1f3c);padding:16px;border-bottom:1px solid #1a3a5c;text-align:center;">';
@@ -7079,7 +7082,7 @@ function renderNetworkChokepoints() {
 
   for (var n = 0; n < GLOBAL_NETWORK_CHOKEPOINTS.length; n++) {
     var node = GLOBAL_NETWORK_CHOKEPOINTS[n];
-    var impColors = { 'CRITICAL': '#ff2244', 'HIGH': '#ff6622', 'MEDIUM': '#ffaa00' };
+    var impColors = { 'CRITICAL': '#ef4444', 'HIGH': '#f97316', 'MEDIUM': '#eab308' };
     var ic = impColors[node.importance] || '#889';
 
     h += '<div style="background:#0a0e1a;border:1px solid #1a3a5c;border-radius:6px;margin-bottom:10px;padding:14px 18px;">';
@@ -7166,12 +7169,12 @@ function renderTracking() {
 
   // Sub-tabs
   var subTabs = [
-    { id: 'aircraft', label: 'Aircraft', icon: '[A]', color: '#00aaff' },
+    { id: 'aircraft', label: 'Aircraft', icon: '[A]', color: '#3b82f6' },
     { id: 'maritime', label: 'Maritime', icon: '[M]', color: '#00ff88' },
     { id: 'space', label: 'Space', icon: '[S]', color: '#aa66ff' },
     { id: 'seismic', label: 'Seismic', icon: '[E]', color: '#ff6644' },
     { id: 'cyber', label: 'Cyber Threats', icon: '[C]', color: '#ff4444' },
-    { id: 'network', label: 'Network Intel', icon: '[N]', color: '#ffaa00' }
+    { id: 'network', label: 'Network Intel', icon: '[N]', color: '#eab308' }
   ];
 
   h += '<div style="display:flex;gap:4px;padding:0 24px;margin-bottom:16px;">';
@@ -7452,8 +7455,8 @@ function _seRenderNetworkTab() {
 
   for (var bi = 0; bi < _seBgpAlerts.length; bi++) {
     var bgp = _seBgpAlerts[bi];
-    var typeColor = bgp.type === 'hijack' ? '#ff2244' : bgp.type === 'outage' ? '#ff8800' : '#ffcc00';
-    var sevColor = bgp.severity === 'critical' ? '#ff0000' : bgp.severity === 'high' ? '#ff6600' : bgp.severity === 'medium' ? '#ffaa00' : '#00cc88';
+    var typeColor = bgp.type === 'hijack' ? '#ef4444' : bgp.type === 'outage' ? '#ff8800' : '#ffcc00';
+    var sevColor = bgp.severity === 'critical' ? '#ff0000' : bgp.severity === 'high' ? '#ff6600' : bgp.severity === 'medium' ? '#eab308' : '#00cc88';
     var bgpTime = bgp.timestamp ? bgp.timestamp.replace('T', ' ').substring(0, 19) + 'Z' : '--';
     h += '<tr style="border-bottom:1px solid #111828;">';
     h += '<td style="padding:4px 6px;"><span style="color:' + typeColor + ';font-weight:bold;font-size:9px;letter-spacing:1px;">' + esc(bgp.type.toUpperCase()) + '</span></td>';
@@ -7504,7 +7507,7 @@ function _seRenderNetworkTab() {
   for (var oi = 0; oi < _seOutages.length; oi++) {
     var outage = _seOutages[oi];
     var statusColor = outage.status === 'ongoing' ? '#ff4444' : '#00ff88';
-    var pctColor = outage.pctDown >= 80 ? '#ff0000' : outage.pctDown >= 50 ? '#ff6600' : outage.pctDown >= 20 ? '#ffaa00' : '#00cc88';
+    var pctColor = outage.pctDown >= 80 ? '#ff0000' : outage.pctDown >= 50 ? '#ff6600' : outage.pctDown >= 20 ? '#eab308' : '#00cc88';
     var outTime = outage.start ? outage.start.replace('T', ' ').substring(0, 16) + 'Z' : '--';
     h += '<tr style="border-bottom:1px solid #111828;">';
     h += '<td style="padding:4px 6px;color:#ccd;font-weight:bold;">' + esc(outage.country) + '</td>';
@@ -7567,7 +7570,7 @@ function _seFetchNVD() {
           else if (m2 && m2.cvssData) { cvss = m2.cvssData.baseScore; cvssStr = String(cvss); }
         }
 
-        var scoreColor = cvss >= 9 ? '#ff0000' : cvss >= 7 ? '#ff6600' : cvss >= 4 ? '#ffaa00' : '#00cc88';
+        var scoreColor = cvss >= 9 ? '#ff0000' : cvss >= 7 ? '#ff6600' : cvss >= 4 ? '#eab308' : '#00cc88';
         var scoreBg = cvss >= 9 ? '#ff000015' : cvss >= 7 ? '#ff660015' : cvss >= 4 ? '#ffaa0010' : '#00cc8808';
         var sevLabel = cvss >= 9 ? 'CRITICAL' : cvss >= 7 ? 'HIGH' : cvss >= 4 ? 'MEDIUM' : cvss > 0 ? 'LOW' : '';
         if (cvss >= 9) critCount++;
@@ -7632,7 +7635,7 @@ function _seFetchKEV() {
         var kevDate = kev.dateAdded || '--';
         var kevRansomware = kev.knownRansomware || kev.knownRansomwareCampaignUse || 'Unknown';
         var isRansomware = kevRansomware === 'Known';
-        var cveColor = isRansomware ? '#ff2244' : '#00aaff';
+        var cveColor = isRansomware ? '#ef4444' : '#3b82f6';
         var rowBg = isRansomware ? '#ff000008' : 'transparent';
 
         h += '<div style="display:flex;align-items:flex-start;gap:10px;padding:7px 12px;margin:0 -12px;border-bottom:1px solid #111828;background:' + rowBg + ';">';
@@ -7694,10 +7697,10 @@ function _seFetchIOC() {
         var iocSeen = ioc.firstSeen || ioc.first_seen || '';
         if (iocMalware && !seenMalware[iocMalware]) { campCount++; seenMalware[iocMalware] = true; }
 
-        var typeColors = { 'ip:port': '#ff4444', 'ip': '#ff4444', 'domain': '#ffaa00', 'url': '#00aaff', 'sha256_hash': '#aa44ff', 'sha256': '#aa44ff', 'hash': '#aa44ff', 'md5': '#aa44ff', 'email': '#00cc88' };
+        var typeColors = { 'ip:port': '#ff4444', 'ip': '#ff4444', 'domain': '#eab308', 'url': '#3b82f6', 'sha256_hash': '#aa44ff', 'sha256': '#aa44ff', 'hash': '#aa44ff', 'md5': '#aa44ff', 'email': '#00cc88' };
         var typeColor = typeColors[iocType] || '#889';
 
-        var confColor = iocConf >= 90 ? '#ff2244' : iocConf >= 70 ? '#ff8800' : iocConf >= 50 ? '#ffcc00' : '#00cc88';
+        var confColor = iocConf >= 90 ? '#ef4444' : iocConf >= 70 ? '#ff8800' : iocConf >= 50 ? '#ffcc00' : '#00cc88';
         var confWidth = Math.max(5, Math.min(100, iocConf));
 
         h += '<div style="display:flex;align-items:center;gap:8px;padding:6px 12px;margin:0 -12px;border-bottom:1px solid #111828;cursor:pointer;" onclick="try{navigator.clipboard.writeText(\'' + esc(iocValue).replace(/'/g, "\\'") + '\');var _t=this;_t.style.background=\'#00ff8815\';setTimeout(function(){_t.style.background=\'\'},500)}catch(e){}" title="Click to copy IOC">';
@@ -7841,7 +7844,7 @@ function _seDrawAircraftMap(mapId, states) {
     }
     _seAircraftMarkers = [];
 
-    // Major airport hubs
+    // Major airport hubs with pulsing rings
     var hubs = [
       { code: 'JFK', lat: 40.64, lon: -73.78 }, { code: 'LAX', lat: 33.94, lon: -118.41 },
       { code: 'ORD', lat: 41.98, lon: -87.90 }, { code: 'LHR', lat: 51.47, lon: -0.46 },
@@ -7852,14 +7855,29 @@ function _seDrawAircraftMap(mapId, states) {
     ];
     for (var hi = 0; hi < hubs.length; hi++) {
       var hub = hubs[hi];
-      var hubMarker = L.circleMarker([hub.lat, hub.lon], { radius: 3, fillColor: '#1a4a6a', color: '#1a4a6a', weight: 1, opacity: 0.5, fillOpacity: 0.3 });
-      hubMarker.bindTooltip(hub.code, { permanent: true, direction: 'right', className: '', offset: [6, 0] });
-      hubMarker.addTo(_seLeafletMap);
-      _seAircraftMarkers.push(hubMarker);
+      var hubRing = L.circleMarker([hub.lat, hub.lon], { radius: 8, fillColor: 'transparent', color: '#00aaff', weight: 1, opacity: 0.3, fillOpacity: 0 });
+      hubRing.addTo(_seLeafletMap);
+      _seAircraftMarkers.push(hubRing);
+      var hubDot = L.circleMarker([hub.lat, hub.lon], { radius: 3, fillColor: '#00aaff', color: '#00aaff', weight: 1, opacity: 0.8, fillOpacity: 0.6 });
+      hubDot.bindTooltip('<span style="font-family:monospace;font-size:11px;font-weight:bold;color:#00ddff">' + hub.code + '</span>', { permanent: true, direction: 'right', className: 'se-hub-tip', offset: [10, 0] });
+      hubDot.addTo(_seLeafletMap);
+      _seAircraftMarkers.push(hubDot);
     }
 
-    // Plot aircraft with route trails
+    // Altitude color gradient
+    function altColor(alt, onGround) {
+      if (onGround) return '#eab308';
+      if (alt == null) return '#00ff88';
+      if (alt > 11000) return '#3b82f6';
+      if (alt > 9000) return '#06b6d4';
+      if (alt > 6000) return '#00ff88';
+      if (alt > 3000) return '#84cc16';
+      return '#eab308';
+    }
+
+    // Plot aircraft with callsign labels, altitude colors, flight paths
     var plotCount = Math.min(states.length, 300);
+    var acMarkers = [];
     for (var i = 0; i < plotCount; i++) {
       var s = states[i];
       var lat = s[6], lon = s[5], alt = s[7], onGround = s[8];
@@ -7867,45 +7885,82 @@ function _seDrawAircraftMap(mapId, states) {
       var origin = s[2] || 'N/A';
       if (lat == null || lon == null) continue;
 
-      var color = onGround ? '#ffaa00' : alt != null && alt > 10000 ? '#00aaff' : '#00ff88';
+      var color = altColor(alt, onGround);
       var size = onGround ? 4 : 6;
 
       var marker = L.circleMarker([lat, lon], {
         radius: size,
         fillColor: color,
         color: color,
-        weight: 1,
+        weight: 1.5,
         opacity: 0.9,
-        fillOpacity: 0.7
+        fillOpacity: 0.8
       });
 
-      var altStr = alt != null ? Math.round(alt) + 'm' : 'N/A';
-      var speedStr = s[9] != null ? Number(s[9]).toFixed(0) + ' m/s' : 'N/A';
-      var headingStr = s[10] != null ? Math.round(s[10]) + ' deg' : 'N/A';
+      // Callsign label on hover
+      marker.bindTooltip('<span style="font-family:monospace;font-size:10px;color:#fff;background:rgba(0,0,0,.8);padding:2px 6px;border-radius:3px;border:1px solid ' + color + '">' + esc(callsign) + ' ' + (alt != null ? Math.round(alt/304.8) + 'FL' : '') + '</span>', { direction: 'top', offset: [0, -8], className: 'se-ac-tip' });
+
+      var altStr = alt != null ? Math.round(alt) + 'm (' + Math.round(alt*3.281) + 'ft)' : 'N/A';
+      var speedStr = s[9] != null ? Number(s[9]).toFixed(0) + ' m/s (' + Math.round(s[9]*1.944) + 'kts)' : 'N/A';
+      var headingStr = s[10] != null ? Math.round(s[10]) + '°' : 'N/A';
       marker.bindPopup(
-        '<b style="color:#00ddff">' + esc(callsign) + '</b><br>' +
-        '<span style="color:#8ab4d4">Origin: ' + esc(origin) + '</span><br>' +
-        'Alt: ' + esc(altStr) + ' | Spd: ' + esc(speedStr) + '<br>' +
-        'Hdg: ' + esc(headingStr) + '<br>' +
-        (onGround ? '<span style="color:#ffaa00">ON GROUND</span>' : '<span style="color:#00ff88">AIRBORNE</span>')
+        '<div style="font-family:monospace;font-size:11px;min-width:180px">' +
+        '<div style="font-size:14px;font-weight:bold;color:#00ddff;margin-bottom:6px;border-bottom:1px solid #1a2a44;padding-bottom:4px">' + esc(callsign) + '</div>' +
+        '<div style="color:#8ab4d4;margin-bottom:4px">' + esc(origin) + '</div>' +
+        '<div style="display:grid;grid-template-columns:auto 1fr;gap:2px 8px">' +
+        '<span style="color:#556">ALT</span><span style="color:' + color + '">' + esc(altStr) + '</span>' +
+        '<span style="color:#556">SPD</span><span>' + esc(speedStr) + '</span>' +
+        '<span style="color:#556">HDG</span><span>' + esc(headingStr) + '</span>' +
+        '<span style="color:#556">STS</span><span style="color:' + (onGround ? '#ffaa00' : '#00ff88') + '">' + (onGround ? 'ON GROUND' : 'AIRBORNE') + '</span>' +
+        '</div></div>'
       );
 
       marker.addTo(_seLeafletMap);
       _seAircraftMarkers.push(marker);
+      acMarkers.push({ marker: marker, lat: lat, lon: lon, hdg: s[10] || 0, spd: s[9] || 0, onGround: onGround });
 
-      // Draw a faint heading line to show direction
+      // Heading trail line
       if (!onGround && s[10] != null) {
         var hdgRad = (s[10] || 0) * Math.PI / 180;
         var trailLen = 3;
         var tLat = lat + Math.cos(hdgRad) * trailLen;
         var tLon = lon + Math.sin(hdgRad) * trailLen;
-        var trail = L.polyline([[lat, lon], [tLat, tLon]], { color: color, weight: 1, opacity: 0.25, dashArray: '4 6' });
+        var trail = L.polyline([[lat, lon], [tLat, tLon]], { color: color, weight: 1.5, opacity: 0.3, dashArray: '4 6' });
         trail.addTo(_seLeafletMap);
         _seAircraftMarkers.push(trail);
       }
     }
+
+    // Animate aircraft drift along heading every 2 seconds
+    if (typeof _seAcDriftTimer !== 'undefined' && _seAcDriftTimer) clearInterval(_seAcDriftTimer);
+    _seAcDriftTimer = setInterval(function() {
+      if (!_seLeafletMap) { clearInterval(_seAcDriftTimer); return; }
+      for (var ai = 0; ai < acMarkers.length; ai++) {
+        var ac = acMarkers[ai];
+        if (ac.onGround) continue;
+        var hdgRad = ac.hdg * Math.PI / 180;
+        var step = 0.02 + Math.random() * 0.01;
+        ac.lat += Math.cos(hdgRad) * step;
+        ac.lon += Math.sin(hdgRad) * step;
+        ac.marker.setLatLng([ac.lat, ac.lon]);
+      }
+    }, 2000);
+
+    // Altitude legend
+    var legendDiv = L.DomUtil.create('div');
+    legendDiv.style.cssText = 'background:rgba(8,12,20,.9);border:1px solid #1a2a44;border-radius:6px;padding:8px 10px;font-family:monospace;font-size:9px;color:#889;line-height:1.8';
+    legendDiv.innerHTML = '<div style="color:#00aaff;font-weight:bold;margin-bottom:4px">ALTITUDE</div>' +
+      '<span style="color:#3b82f6">●</span> >FL360 (11km+)<br>' +
+      '<span style="color:#06b6d4">●</span> FL300-360<br>' +
+      '<span style="color:#00ff88">●</span> FL200-300<br>' +
+      '<span style="color:#84cc16">●</span> FL100-200<br>' +
+      '<span style="color:#eab308">●</span> <FL100 / Ground';
+    var Legend = L.Control.extend({ onAdd: function() { return legendDiv; } });
+    new Legend({ position: 'bottomright' }).addTo(_seLeafletMap);
   });
 }
+
+var _seAcDriftTimer = null;
 
 function _seRenderAircraftData(container, countEl, states) {
   var h = '';
@@ -7948,8 +8003,8 @@ function _seRenderAircraftData(container, countEl, states) {
     var speed = s[9] != null ? Number(s[9]).toFixed(1) : 'N/A';
     var heading = s[10] != null ? Math.round(Number(s[10])) + ' deg' : 'N/A';
     var onGround = s[8] ? 'YES' : 'NO';
-    var onGroundColor = s[8] ? '#ffaa00' : '#00ff88';
-    var altColor = alt !== 'N/A' && alt > 10000 ? '#00aaff' : alt !== 'N/A' && alt > 5000 ? '#00ff88' : '#ffaa00';
+    var onGroundColor = s[8] ? '#eab308' : '#00ff88';
+    var altColor = alt !== 'N/A' && alt > 10000 ? '#3b82f6' : alt !== 'N/A' && alt > 5000 ? '#00ff88' : '#eab308';
 
     h += '<tr style="border-bottom:1px solid #111828;">';
     h += '<td style="padding:5px 6px;color:#fff;font-weight:bold;">' + esc(callsign) + '</td>';
@@ -8149,7 +8204,7 @@ function _seRenderSeismicData(container, features, metadata) {
 
     // Color-code by magnitude
     var magNum = Number(mag) || 0;
-    var magColor = magNum >= 7 ? '#ff0000' : magNum >= 6 ? '#ff2244' : magNum >= 5 ? '#ff6644' : magNum >= 4 ? '#ffaa00' : '#00ff88';
+    var magColor = magNum >= 7 ? '#ff0000' : magNum >= 6 ? '#ef4444' : magNum >= 5 ? '#ff6644' : magNum >= 4 ? '#eab308' : '#00ff88';
     var magBg = magNum >= 7 ? '#ff000022' : magNum >= 6 ? '#ff224422' : magNum >= 5 ? '#ff664422' : '#111828';
 
     h += '<tr style="border-bottom:1px solid #111828;background:' + magBg + ';">';
@@ -8157,7 +8212,7 @@ function _seRenderSeismicData(container, features, metadata) {
     h += '<td style="padding:5px 6px;color:#ccd;max-width:250px;">' + esc(place) + '</td>';
     h += '<td style="padding:5px 6px;color:#889;">' + esc(depth) + '</td>';
     h += '<td style="padding:5px 6px;color:#667;">' + esc(eqTime) + '</td>';
-    h += '<td style="padding:5px 6px;color:' + (status === 'reviewed' ? '#00ff88' : '#ffaa00') + ';font-size:9px;">' + esc(status.toUpperCase()) + '</td>';
+    h += '<td style="padding:5px 6px;color:' + (status === 'reviewed' ? '#00ff88' : '#eab308') + ';font-size:9px;">' + esc(status.toUpperCase()) + '</td>';
     h += '<td style="padding:5px 6px;color:#556;font-size:9px;">' + esc(eqType) + '</td>';
     h += '</tr>';
   }
@@ -8175,7 +8230,7 @@ function _seRenderSeismicData(container, features, metadata) {
     var mx = ((mlon + 180) / 360) * 100;
     var my = ((90 - mlat) / 180) * 100;
     var msize = Math.max(4, Math.min(mmag * 2.5, 16));
-    var mcolor = mmag >= 7 ? '#ff0000' : mmag >= 6 ? '#ff2244' : mmag >= 5 ? '#ff6644' : mmag >= 4 ? '#ffaa00' : '#00ff88';
+    var mcolor = mmag >= 7 ? '#ff0000' : mmag >= 6 ? '#ef4444' : mmag >= 5 ? '#ff6644' : mmag >= 4 ? '#eab308' : '#00ff88';
     h += '<div style="position:absolute;left:' + mx + '%;top:' + my + '%;width:' + msize + 'px;height:' + msize + 'px;border-radius:50%;background:' + mcolor + ';opacity:0.7;transform:translate(-50%,-50%);box-shadow:0 0 6px ' + mcolor + '80;" title="M' + mmag.toFixed(1) + '"></div>';
   }
   h += '</div>';
@@ -8263,7 +8318,7 @@ function _seFetchMalwareURLs() {
         var isOnline = mu.status === 'online';
         var urlColor = isOnline ? '#ff4444' : '#556';
         var dotColor = isOnline ? '#ff4444' : '#444';
-        var threatColor = '#ffaa00';
+        var threatColor = '#eab308';
 
         h += '<div style="display:flex;align-items:flex-start;gap:8px;padding:6px 12px;margin:0 -12px;border-bottom:1px solid #111828;">';
         h += '<span style="flex-shrink:0;display:inline-block;width:8px;height:8px;border-radius:50%;background:' + dotColor + ';margin-top:4px;box-shadow:0 0 4px ' + dotColor + ';"></span>';
@@ -8599,35 +8654,35 @@ var GW_THREAT_ACTORS = [
 // CYBER ATTACK CAMPAIGN ARCS (known campaigns: attacker -> target)
 // ---------------------------------------------------------------------------
 var GW_CAMPAIGN_ARCS = [
-  { from: 'ru_gru', toLat: 38.9, toLon: -77.0, label: 'SolarWinds / US Gov', color: '#ff3333' },
-  { from: 'ru_gru', toLat: 52.52, toLon: 13.405, label: 'Bundestag Compromise', color: '#ff3333' },
-  { from: 'ru_gru', toLat: 50.45, toLon: 30.52, label: 'Ukraine Grid Attack', color: '#ff4444' },
-  { from: 'ru_svr', toLat: 38.9, toLon: -77.0, label: 'SUNBURST Campaign', color: '#ff2222' },
-  { from: 'ru_svr', toLat: 47.37, toLon: 8.54, label: 'SolarWinds EU Targets', color: '#ff2222' },
-  { from: 'cn_pla', toLat: 25.032, toLon: 121.565, label: 'Taiwan Defense Networks', color: '#ff6600' },
-  { from: 'cn_pla', toLat: 38.9, toLon: -77.0, label: 'US Defense Contractors', color: '#ff6600' },
-  { from: 'cn_volt', toLat: 13.4443, toLon: 144.7937, label: 'Guam Infrastructure', color: '#ff8800' },
-  { from: 'cn_volt', toLat: 37.77, toLon: -122.42, label: 'US West Coast Utilities', color: '#ff8800' },
-  { from: 'cn_mss', toLat: 35.6762, toLon: 139.6503, label: 'Japan MoD Breach', color: '#ff6600' },
-  { from: 'nk_rgb', toLat: 37.5665, toLon: 126.978, label: 'South Korea Financial', color: '#ff00ff' },
-  { from: 'nk_rgb', toLat: 34.0522, toLon: -118.2437, label: 'Sony Pictures Attack', color: '#ff00ff' },
-  { from: 'nk_rgb', toLat: 1.3521, toLon: 103.8198, label: 'Crypto Exchange Heist', color: '#ff00ff' },
-  { from: 'ir_irgc', toLat: 41.3275, toLon: 19.8187, label: 'Albania Gov Attack', color: '#cc00cc' },
-  { from: 'ir_irgc', toLat: 32.0853, toLon: 34.7818, label: 'Israel Infrastructure', color: '#cc00cc' },
-  { from: 'ir_irgc', toLat: 25.2048, toLon: 55.2708, label: 'Gulf State Oil Sector', color: '#cc00cc' },
-  { from: 'cn_volt', toLat: 39.0438, toLon: -77.4874, label: 'US East Coast Power Grid', color: '#ff8800' },
-  { from: 'cn_volt', toLat: 21.3069, toLon: -157.8583, label: 'Hawaii Military Comms', color: '#ff8800' },
-  { from: 'cn_pla', toLat: 47.64, toLon: -122.13, label: 'US Tech IP Theft', color: '#ff6600' },
-  { from: 'ru_gru', toLat: 48.86, toLon: 2.35, label: 'French Election Interference', color: '#ff3333' },
-  { from: 'ru_fsb', toLat: 59.33, toLon: 18.07, label: 'Swedish Defense Networks', color: '#ff4444' },
-  { from: 'ru_svr', toLat: 51.5, toLon: -0.13, label: 'UK Gov Cloud Compromise', color: '#ff2222' },
-  { from: 'nk_rgb', toLat: 37.39, toLon: -122.08, label: 'Silicon Valley Dev Targeting', color: '#ff00ff' },
-  { from: 'nk_rgb', toLat: 22.3, toLon: 114.17, label: 'HK Crypto Exchange Heist', color: '#ff00ff' },
-  { from: 'ir_irgc', toLat: 38.9, toLon: -77.0, label: 'US Water Infrastructure', color: '#cc00cc' },
-  { from: 'cn_mss', toLat: 39.0438, toLon: -77.4874, label: 'Salt Typhoon Telecom', color: '#ff6600' },
-  { from: 'us_nsa', toLat: 55.76, toLon: 37.62, label: 'Counter-SVR Operations', color: '#4488ff' },
-  { from: 'uk_gchq', toLat: 55.76, toLon: 37.62, label: 'GRU Disruption Ops', color: '#4488ff' },
-  { from: 'il_8200', toLat: 35.6892, toLon: 51.389, label: 'Iran Nuclear Sabotage', color: '#44aaff' }
+  { from: 'ru_gru', toLat: 38.9, toLon: -77.0, label: 'SolarWinds / US Gov', color: '#ef4444' },
+  { from: 'ru_gru', toLat: 52.52, toLon: 13.405, label: 'Bundestag Compromise', color: '#ef4444' },
+  { from: 'ru_gru', toLat: 50.45, toLon: 30.52, label: 'Ukraine Grid Attack', color: '#ef4444' },
+  { from: 'ru_svr', toLat: 38.9, toLon: -77.0, label: 'SUNBURST Campaign', color: '#ef4444' },
+  { from: 'ru_svr', toLat: 47.37, toLon: 8.54, label: 'SolarWinds EU Targets', color: '#ef4444' },
+  { from: 'cn_pla', toLat: 25.032, toLon: 121.565, label: 'Taiwan Defense Networks', color: '#f97316' },
+  { from: 'cn_pla', toLat: 38.9, toLon: -77.0, label: 'US Defense Contractors', color: '#f97316' },
+  { from: 'cn_volt', toLat: 13.4443, toLon: 144.7937, label: 'Guam Infrastructure', color: '#f97316' },
+  { from: 'cn_volt', toLat: 37.77, toLon: -122.42, label: 'US West Coast Utilities', color: '#f97316' },
+  { from: 'cn_mss', toLat: 35.6762, toLon: 139.6503, label: 'Japan MoD Breach', color: '#f97316' },
+  { from: 'nk_rgb', toLat: 37.5665, toLon: 126.978, label: 'South Korea Financial', color: '#ef4444' },
+  { from: 'nk_rgb', toLat: 34.0522, toLon: -118.2437, label: 'Sony Pictures Attack', color: '#ef4444' },
+  { from: 'nk_rgb', toLat: 1.3521, toLon: 103.8198, label: 'Crypto Exchange Heist', color: '#ef4444' },
+  { from: 'ir_irgc', toLat: 41.3275, toLon: 19.8187, label: 'Albania Gov Attack', color: '#f97316' },
+  { from: 'ir_irgc', toLat: 32.0853, toLon: 34.7818, label: 'Israel Infrastructure', color: '#f97316' },
+  { from: 'ir_irgc', toLat: 25.2048, toLon: 55.2708, label: 'Gulf State Oil Sector', color: '#f97316' },
+  { from: 'cn_volt', toLat: 39.0438, toLon: -77.4874, label: 'US East Coast Power Grid', color: '#f97316' },
+  { from: 'cn_volt', toLat: 21.3069, toLon: -157.8583, label: 'Hawaii Military Comms', color: '#f97316' },
+  { from: 'cn_pla', toLat: 47.64, toLon: -122.13, label: 'US Tech IP Theft', color: '#f97316' },
+  { from: 'ru_gru', toLat: 48.86, toLon: 2.35, label: 'French Election Interference', color: '#ef4444' },
+  { from: 'ru_fsb', toLat: 59.33, toLon: 18.07, label: 'Swedish Defense Networks', color: '#ef4444' },
+  { from: 'ru_svr', toLat: 51.5, toLon: -0.13, label: 'UK Gov Cloud Compromise', color: '#ef4444' },
+  { from: 'nk_rgb', toLat: 37.39, toLon: -122.08, label: 'Silicon Valley Dev Targeting', color: '#ef4444' },
+  { from: 'nk_rgb', toLat: 22.3, toLon: 114.17, label: 'HK Crypto Exchange Heist', color: '#ef4444' },
+  { from: 'ir_irgc', toLat: 38.9, toLon: -77.0, label: 'US Water Infrastructure', color: '#f97316' },
+  { from: 'cn_mss', toLat: 39.0438, toLon: -77.4874, label: 'Salt Typhoon Telecom', color: '#f97316' },
+  { from: 'us_nsa', toLat: 55.76, toLon: 37.62, label: 'Counter-SVR Operations', color: '#3b82f6' },
+  { from: 'uk_gchq', toLat: 55.76, toLon: 37.62, label: 'GRU Disruption Ops', color: '#3b82f6' },
+  { from: 'il_8200', toLat: 35.6892, toLon: 51.389, label: 'Iran Nuclear Sabotage', color: '#3b82f6' }
 ];
 
 // ---------------------------------------------------------------------------
@@ -8971,9 +9026,9 @@ function renderSigint() {
 
   // ---- Stat cards ----
   var stats = [
-    { label: 'Active Intercepts', value: '847', color: '#00aaff' },
+    { label: 'Active Intercepts', value: '847', color: '#3b82f6' },
     { label: 'COMINT Targets', value: '142', color: '#00ff88' },
-    { label: 'ELINT Emitters', value: '38', color: '#ffaa00' },
+    { label: 'ELINT Emitters', value: '38', color: '#eab308' },
     { label: 'Decrypted Streams', value: '12', color: '#aa66ff' },
     { label: 'Priority Signals', value: '5', color: '#ff4444' }
   ];
@@ -9007,7 +9062,7 @@ function renderSigint() {
 
   for (var sb = 0; sb < SIGINT_SPECTRUM_BANDS.length; sb++) {
     var band = SIGINT_SPECTRUM_BANDS[sb];
-    var actColor = band.activity > 0.8 ? '#ff4444' : (band.activity > 0.5 ? '#ffaa00' : '#00ff88');
+    var actColor = band.activity > 0.8 ? '#ff4444' : (band.activity > 0.5 ? '#eab308' : '#00ff88');
     var actPct = Math.round(band.activity * 100);
     h += '<tr style="border-bottom:1px solid #0f1a28;">';
     h += '<td style="padding:7px 10px;color:#00aaff;font-weight:bold;">' + esc(band.band) + '</td>';
@@ -9015,7 +9070,7 @@ function renderSigint() {
     h += '<td style="padding:7px 10px;color:#6a8aaa;font-size:10px;">' + esc(band.use) + '</td>';
     h += '<td style="padding:7px 10px;color:#fff;font-weight:bold;text-align:center;">' + band.intercepts + '</td>';
     h += '<td style="padding:7px 10px;">';
-    var clColor = band.classification.indexOf('TOP SECRET') !== -1 ? '#ff4444' : (band.classification === 'SECRET' ? '#ffaa00' : '#00ff88');
+    var clColor = band.classification.indexOf('TOP SECRET') !== -1 ? '#ff4444' : (band.classification === 'SECRET' ? '#eab308' : '#00ff88');
     h += '<span style="color:' + clColor + ';font-size:9px;letter-spacing:0.5px;">' + esc(band.classification) + '</span></td>';
     h += '<td style="padding:7px 10px;min-width:120px;">';
     h += '<div style="display:flex;align-items:center;gap:6px;">';
@@ -9052,8 +9107,8 @@ function renderSigint() {
   for (var cl = 0; cl < SIGINT_COMINT_LOG.length; cl++) {
     var log = SIGINT_COMINT_LOG[cl];
     var ts = log.ts.replace('T', ' ').substring(11, 19) + 'Z';
-    var stColor = log.status === 'DECRYPTED' ? '#00ff88' : (log.status === 'RECORDING' ? '#ffaa00' : (log.status === 'ANALYZING' ? '#aa66ff' : '#00aaff'));
-    var clsColor = log.classification.indexOf('TOP SECRET') !== -1 ? '#ff4444' : (log.classification === 'SECRET' ? '#ffaa00' : '#00ff88');
+    var stColor = log.status === 'DECRYPTED' ? '#00ff88' : (log.status === 'RECORDING' ? '#eab308' : (log.status === 'ANALYZING' ? '#aa66ff' : '#3b82f6'));
+    var clsColor = log.classification.indexOf('TOP SECRET') !== -1 ? '#ff4444' : (log.classification === 'SECRET' ? '#eab308' : '#00ff88');
     h += '<tr style="border-bottom:1px solid #0f1a28;">';
     h += '<td style="padding:5px 8px;color:#5a7a9a;white-space:nowrap;">' + esc(ts) + '</td>';
     h += '<td style="padding:5px 8px;color:#8ab4d4;white-space:nowrap;">' + esc(log.freq) + '</td>';
@@ -9080,9 +9135,9 @@ function renderSigint() {
   h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px;">';
   for (var ei = 0; ei < SIGINT_ELINT_EMITTERS.length; ei++) {
     var em = SIGINT_ELINT_EMITTERS[ei];
-    var threatColor = em.threat === 'CRITICAL' ? '#ff2222' : (em.threat === 'HIGH' ? '#ff6644' : (em.threat === 'ALLIED' ? '#44aaff' : '#ffaa00'));
+    var threatColor = em.threat === 'CRITICAL' ? '#ff2222' : (em.threat === 'HIGH' ? '#ff6644' : (em.threat === 'ALLIED' ? '#44aaff' : '#eab308'));
     var borderColor = em.threat === 'CRITICAL' ? '#ff222244' : (em.threat === 'HIGH' ? '#ff664444' : (em.threat === 'ALLIED' ? '#44aaff44' : '#ffaa0044'));
-    var stDot = em.status === 'ACTIVE' ? '#00ff88' : (em.status === 'TRACKING' ? '#00aaff' : '#ffaa00');
+    var stDot = em.status === 'ACTIVE' ? '#00ff88' : (em.status === 'TRACKING' ? '#3b82f6' : '#eab308');
 
     h += '<div style="background:#0a0e1a;border:1px solid ' + borderColor + ';border-radius:6px;padding:12px 14px;">';
     h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">';
@@ -9159,7 +9214,7 @@ function renderSigint() {
   h += '<table style="width:100%;border-collapse:collapse;font-family:monospace;font-size:10px;">';
   for (var mi = 0; mi < SIGINT_MODULATIONS.length; mi++) {
     var mod = SIGINT_MODULATIONS[mi];
-    var compColor = mod.complexity === 'Very High' ? '#ff4444' : (mod.complexity === 'High' ? '#ffaa00' : (mod.complexity === 'Medium' ? '#00aaff' : '#00ff88'));
+    var compColor = mod.complexity === 'Very High' ? '#ff4444' : (mod.complexity === 'High' ? '#eab308' : (mod.complexity === 'Medium' ? '#3b82f6' : '#00ff88'));
     h += '<tr style="border-bottom:1px solid #0f1a28;">';
     h += '<td style="padding:4px 6px;color:#00aaff;font-weight:bold;">' + esc(mod.abbr) + '</td>';
     h += '<td style="padding:4px 6px;color:#8ab4d4;">' + esc(mod.name) + '</td>';
@@ -9208,11 +9263,11 @@ function renderSigint() {
     var cr = SIGINT_CRYPTO_STATUS[cx];
     var cxStColor, cxStBg;
     if (cr.status === 'DECRYPTED') { cxStColor = '#00ff88'; cxStBg = '#00ff8815'; }
-    else if (cr.status === 'IN PROGRESS') { cxStColor = '#ffaa00'; cxStBg = '#ffaa0015'; }
-    else if (cr.status === 'QUEUED') { cxStColor = '#00aaff'; cxStBg = '#00aaff15'; }
+    else if (cr.status === 'IN PROGRESS') { cxStColor = '#eab308'; cxStBg = '#ffaa0015'; }
+    else if (cr.status === 'QUEUED') { cxStColor = '#3b82f6'; cxStBg = '#00aaff15'; }
     else { cxStColor = '#ff4444'; cxStBg = '#ff444415'; }
 
-    var prgColor = cr.progress === 100 ? '#00ff88' : (cr.progress > 50 ? '#ffaa00' : (cr.progress > 0 ? '#00aaff' : '#ff4444'));
+    var prgColor = cr.progress === 100 ? '#00ff88' : (cr.progress > 50 ? '#eab308' : (cr.progress > 0 ? '#3b82f6' : '#ff4444'));
 
     h += '<tr style="border-bottom:1px solid #0f1a28;">';
     h += '<td style="padding:6px 10px;color:#8ab4d4;font-weight:600;">' + esc(cr.signalId) + '</td>';
@@ -9331,11 +9386,11 @@ function renderMasint() {
   // Stat cards
   var stats = [
     { label: 'NUCLEAR SENSORS', value: '24', color: '#aa66ff' },
-    { label: 'SEISMIC STATIONS', value: '184', color: '#00aaff' },
+    { label: 'SEISMIC STATIONS', value: '184', color: '#3b82f6' },
     { label: 'CBRN ALERTS', value: '3', color: '#ff4444' },
     { label: 'EMP DETECTIONS', value: '0', color: '#00ff88' },
-    { label: 'INFRASOUND ARRAYS', value: '11', color: '#ffaa00' },
-    { label: 'HYDROACOUSTIC', value: '6', color: '#00aaff' }
+    { label: 'INFRASOUND ARRAYS', value: '11', color: '#eab308' },
+    { label: 'HYDROACOUSTIC', value: '6', color: '#3b82f6' }
   ];
   h += '<div style="display:flex;gap:10px;margin-bottom:20px;">';
   for (var si = 0; si < stats.length; si++) {
@@ -9368,7 +9423,7 @@ function renderMasint() {
 
   for (var ni = 0; ni < MASINT_NUDET_STATIONS.length; ni++) {
     var ns = MASINT_NUDET_STATIONS[ni];
-    var statusColor = ns.status === 'operational' ? '#00ff88' : ns.status === 'degraded' ? '#ffaa00' : '#ff4444';
+    var statusColor = ns.status === 'operational' ? '#00ff88' : ns.status === 'degraded' ? '#eab308' : '#ff4444';
     var statusLabel = ns.status.toUpperCase();
     h += '<tr style="border-bottom:1px solid #0d1525;">';
     h += '<td style="padding:5px 8px;color:#aa66ff;font-weight:bold;">' + esc(ns.name) + '</td>';
@@ -9409,8 +9464,8 @@ function renderMasint() {
 
   for (var ci = 0; ci < MASINT_CBRN_SENSORS.length; ci++) {
     var cs = MASINT_CBRN_SENSORS[ci];
-    var typeColor = cs.type === 'Chemical' ? '#ffaa00' : cs.type === 'Biological' ? '#00ff88' : cs.type === 'Radiological' ? '#aa66ff' : '#ff4444';
-    var alertColor = cs.alertStatus === 'normal' ? '#00ff88' : cs.alertStatus === 'elevated' ? '#ffaa00' : '#ff4444';
+    var typeColor = cs.type === 'Chemical' ? '#eab308' : cs.type === 'Biological' ? '#00ff88' : cs.type === 'Radiological' ? '#aa66ff' : '#ff4444';
+    var alertColor = cs.alertStatus === 'normal' ? '#00ff88' : cs.alertStatus === 'elevated' ? '#eab308' : '#ff4444';
     h += '<tr style="border-bottom:1px solid #0d1525;">';
     h += '<td style="padding:5px 8px;color:#b0c4d8;font-weight:bold;">' + esc(cs.name) + '</td>';
     h += '<td style="padding:5px 8px;"><span style="background:' + typeColor + '18;color:' + typeColor + ';padding:1px 6px;border-radius:2px;font-size:9px;border:1px solid ' + typeColor + '44;">' + esc(cs.type) + '</span></td>';
@@ -9426,7 +9481,7 @@ function renderMasint() {
   // CBRN reference
   h += '<div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:10px;">';
   var cbrnRef = [
-    { type: 'CWA (Chemical)', color: '#ffaa00', items: 'Nerve (GA/GB/GD/GF/VX/Novichok), Blister (HD/HN/L), Choking (CG/DP/Cl2), Blood (AC/CK/SA)' },
+    { type: 'CWA (Chemical)', color: '#eab308', items: 'Nerve (GA/GB/GD/GF/VX/Novichok), Blister (HD/HN/L), Choking (CG/DP/Cl2), Blood (AC/CK/SA)' },
     { type: 'BWA (Biological)', color: '#00ff88', items: 'Anthrax, Smallpox, Plague, Tularemia, Botulinum, Ricin, SEB, Brucella, VHF (Ebola/Marburg)' },
     { type: 'Radiological', color: '#aa66ff', items: 'Dirty bomb (RDD), Reactor breach, Criticality accident, Radiological exposure device (RED)' },
     { type: 'Nuclear', color: '#ff4444', items: 'Fission device (gun/implosion), Thermonuclear (fusion), IND (improvised nuclear device), Enhanced radiation' }
@@ -9448,7 +9503,7 @@ function renderMasint() {
   h += '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;">';
   for (var ei = 0; ei < MASINT_EMP_PROGRAMS.length; ei++) {
     var ep = MASINT_EMP_PROGRAMS[ei];
-    var empStatusColor = ep.status === 'Operational' || ep.status === 'Deployed' ? '#00ff88' : ep.status === 'Testing' ? '#ffaa00' : '#00aaff';
+    var empStatusColor = ep.status === 'Operational' || ep.status === 'Deployed' ? '#00ff88' : ep.status === 'Testing' ? '#eab308' : '#3b82f6';
     h += '<div style="background:linear-gradient(135deg,#0c1020,#0a0e1a);border:1px solid #1a2a44;border-radius:6px;padding:12px 14px;">';
     h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">';
     h += '<div style="font-family:monospace;font-size:12px;color:#ffaa00;font-weight:bold;">' + esc(ep.nation) + '</div>';
@@ -9480,7 +9535,7 @@ function renderMasint() {
   h += '</tr></thead><tbody>';
   for (var ii = 0; ii < MASINT_INFRASOUND.length; ii++) {
     var inf = MASINT_INFRASOUND[ii];
-    var infColor = inf.status === 'operational' ? '#00ff88' : '#ffaa00';
+    var infColor = inf.status === 'operational' ? '#00ff88' : '#eab308';
     h += '<tr style="border-bottom:1px solid #0d1525;">';
     h += '<td style="padding:4px 6px;color:#00aaff;font-weight:bold;">' + esc(inf.station) + '</td>';
     h += '<td style="padding:4px 6px;color:#b0c4d8;">' + esc(inf.location) + '</td>';
@@ -9503,7 +9558,7 @@ function renderMasint() {
   h += '</tr></thead><tbody>';
   for (var hi = 0; hi < MASINT_HYDROACOUSTIC.length; hi++) {
     var hyd = MASINT_HYDROACOUSTIC[hi];
-    var hydColor = hyd.status === 'operational' ? '#00ff88' : '#ffaa00';
+    var hydColor = hyd.status === 'operational' ? '#00ff88' : '#eab308';
     h += '<tr style="border-bottom:1px solid #0d1525;">';
     h += '<td style="padding:4px 6px;color:#00aaff;font-weight:bold;">' + esc(hyd.station) + '</td>';
     h += '<td style="padding:4px 6px;color:#b0c4d8;">' + esc(hyd.location) + '</td>';
@@ -9525,8 +9580,8 @@ function renderMasint() {
   h += '<div style="margin-bottom:14px;display:flex;gap:10px;">';
   var enrichLevels = [
     { label: 'Natural U', pct: '0.7%', color: '#00ff88', width: '7' },
-    { label: 'LEU', pct: '3-5%', color: '#00aaff', width: '20' },
-    { label: 'HEU', pct: '> 20%', color: '#ffaa00', width: '50' },
+    { label: 'LEU', pct: '3-5%', color: '#3b82f6', width: '20' },
+    { label: 'HEU', pct: '> 20%', color: '#eab308', width: '50' },
     { label: 'Weapons-Grade', pct: '> 90%', color: '#ff4444', width: '90' }
   ];
   for (var el = 0; el < enrichLevels.length; el++) {
@@ -9552,7 +9607,7 @@ function renderMasint() {
 
   for (var mi = 0; mi < MASINT_SIGNATURES.length; mi++) {
     var ms = MASINT_SIGNATURES[mi];
-    var matColor = ms.material.indexOf('Uranium') !== -1 || ms.material.indexOf('Plutonium') !== -1 ? '#aa66ff' : ms.material.indexOf('Nerve') !== -1 || ms.material.indexOf('Novichok') !== -1 || ms.material.indexOf('Sarin') !== -1 || ms.material.indexOf('VX') !== -1 ? '#ffaa00' : '#00aaff';
+    var matColor = ms.material.indexOf('Uranium') !== -1 || ms.material.indexOf('Plutonium') !== -1 ? '#aa66ff' : ms.material.indexOf('Nerve') !== -1 || ms.material.indexOf('Novichok') !== -1 || ms.material.indexOf('Sarin') !== -1 || ms.material.indexOf('VX') !== -1 ? '#eab308' : '#3b82f6';
     h += '<tr style="border-bottom:1px solid #0d1525;">';
     h += '<td style="padding:4px 8px;color:' + matColor + ';font-weight:bold;white-space:nowrap;">' + esc(ms.material) + '</td>';
     h += '<td style="padding:4px 8px;color:#b0c4d8;font-size:9px;">' + esc(ms.threshold) + '</td>';
@@ -9637,17 +9692,14 @@ function renderGlobalWatch() {
     { id: 'threats', label: 'Threat Actors', defaultOn: true },
     { id: 'aircraft', label: 'Live Aircraft', defaultOn: false },
     { id: 'quakes', label: 'Earthquakes', defaultOn: false },
-    { id: 'infra', label: 'Internet Infra', defaultOn: true },
-    { id: 'attacks', label: 'Cyber Attacks', defaultOn: true },
+    { id: 'infra', label: 'Internet Infra', defaultOn: false },
+    { id: 'attacks', label: 'Cyber Attacks', defaultOn: false },
     { id: 'satellites', label: 'Satellites', defaultOn: false }
   ];
 
-  // Load saved state
+  // Clear any stale saved state so defaults apply cleanly
+  try { localStorage.removeItem('dn_global_watch'); } catch (e) { /* ignore */ }
   var savedLayers = null;
-  try {
-    var raw = localStorage.getItem('dn_global_watch');
-    if (raw) savedLayers = JSON.parse(raw);
-  } catch (e) { /* ignore */ }
 
   for (var i = 0; i < layerDefs.length; i++) {
     var ld = layerDefs[i];
@@ -9907,12 +9959,9 @@ function _gwStartAnimationLoop() {
         var arc = _gwAttackArcs[i];
         if (arc.entity && arc.entity.polyline) {
           var phase = (_gwArcTime + i * 0.07) % 1;
-          var alpha = 0.3 + 0.7 * Math.abs(Math.sin(phase * Math.PI));
+          var alpha = 0.05 + 0.1 * Math.abs(Math.sin(phase * Math.PI));
           try {
-            arc.entity.polyline.material = new Cesium.PolylineGlowMaterialProperty({
-              glowPower: 0.15 + 0.1 * alpha,
-              color: Cesium.Color.fromCssColorString(arc.color).withAlpha(alpha)
-            });
+            arc.entity.polyline.material = Cesium.Color.fromCssColorString(arc.color).withAlpha(alpha);
           } catch (e) {}
         }
       }
@@ -10109,38 +10158,37 @@ function _gwToggleTheme() {
   // Remove existing imagery layers
   _gwViewer.imageryLayers.removeAll();
 
-  if (_gwDarkMode) {
-    _gwViewer.imageryLayers.addImageryProvider(
+  function _addSatelliteLayer(dark) {
+    var lyr = _gwViewer.imageryLayers.addImageryProvider(
       new Cesium.UrlTemplateImageryProvider({
         url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-        maximumLevel: 13,
-        credit: 'Esri World Imagery'
+        maximumLevel: 19,
+        credit: 'Esri, Maxar, Earthstar Geographics'
       })
     );
+    if (dark) { lyr.brightness = 0.75; lyr.saturation = 0.85; lyr.contrast = 1.15; }
+  }
+
+  if (_gwDarkMode) {
+    _addSatelliteLayer(true);
     if (_gwViewer.scene.globe) {
-      _gwViewer.scene.globe.baseColor = Cesium.Color.fromCssColorString('#041020');
-      _gwViewer.scene.globe.enableLighting = true;
+      _gwViewer.scene.globe.baseColor = Cesium.Color.fromCssColorString('#0d1117');
+      _gwViewer.scene.globe.enableLighting = false;
     }
     _gwViewer.scene.backgroundColor = Cesium.Color.fromCssColorString('#000206');
     if (btn) {
-      btn.textContent = 'SATELLITE';
+      btn.textContent = 'LIGHT MAP';
       btn.classList.remove('gw-light');
     }
   } else {
-    _gwViewer.imageryLayers.addImageryProvider(
-      new Cesium.UrlTemplateImageryProvider({
-        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
-        maximumLevel: 13,
-        credit: 'Esri World Street Map'
-      })
-    );
+    _addSatelliteLayer(false);
     if (_gwViewer.scene.globe) {
-      _gwViewer.scene.globe.baseColor = Cesium.Color.fromCssColorString('#e0e8f0');
+      _gwViewer.scene.globe.baseColor = Cesium.Color.fromCssColorString('#1a3a5c');
       _gwViewer.scene.globe.enableLighting = false;
     }
-    _gwViewer.scene.backgroundColor = Cesium.Color.fromCssColorString('#a0c0e0');
+    _gwViewer.scene.backgroundColor = Cesium.Color.fromCssColorString('#0a1628');
     if (btn) {
-      btn.textContent = 'STREET MAP';
+      btn.textContent = 'DARK MAP';
       btn.classList.add('gw-light');
     }
   }
@@ -10159,17 +10207,17 @@ function _gwRenderThreatActors() {
 
   for (var i = 0; i < GW_THREAT_ACTORS.length; i++) {
     var ta = GW_THREAT_ACTORS[i];
-    var color = ta.alignment === 'hostile' ? '#ff3333' : '#4488ff';
-    var outlineColor = ta.alignment === 'hostile' ? '#ff0000' : '#2266dd';
-    var pixelSize = ta.tier === 'TIER-1' ? 12 : 9;
+    var color = ta.alignment === 'hostile' ? '#ef4444' : ta.alignment === 'elevated' ? '#f97316' : '#3b82f6';
+    var outlineColor = ta.alignment === 'hostile' ? '#dc2626' : ta.alignment === 'elevated' ? '#ea580c' : '#2563eb';
+    var pixelSize = ta.tier === 'TIER-1' ? 8 : 5;
 
     var entity = _gwViewer.entities.add({
       position: Cesium.Cartesian3.fromDegrees(ta.lon, ta.lat),
       point: {
         pixelSize: pixelSize,
-        color: Cesium.Color.fromCssColorString(color),
+        color: Cesium.Color.fromCssColorString(color).withAlpha(0.8),
         outlineColor: Cesium.Color.fromCssColorString(outlineColor),
-        outlineWidth: 2,
+        outlineWidth: 1,
         heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
         disableDepthTestDistance: Number.POSITIVE_INFINITY
       },
@@ -10221,11 +10269,8 @@ function _gwRenderThreatActors() {
     var arcEntity = _gwViewer.entities.add({
       polyline: {
         positions: arcPositions,
-        width: 2,
-        material: new Cesium.PolylineGlowMaterialProperty({
-          glowPower: 0.2,
-          color: Cesium.Color.fromCssColorString(arc.color).withAlpha(0.6)
-        }),
+        width: 1,
+        material: Cesium.Color.fromCssColorString(arc.color).withAlpha(0.12),
         clampToGround: false
       }
     });
@@ -10344,16 +10389,16 @@ function _gwRenderAircraft() {
     var entity = _gwViewer.entities.add({
       position: Cesium.Cartesian3.fromDegrees(ac.lon, ac.lat, ac.alt),
       point: {
-        pixelSize: 4,
-        color: Cesium.Color.fromCssColorString('#00ff88').withAlpha(0.8),
-        outlineColor: Cesium.Color.fromCssColorString('#00aa44'),
-        outlineWidth: 1,
+        pixelSize: 3,
+        color: Cesium.Color.fromCssColorString('#22c55e').withAlpha(0.5),
+        outlineColor: Cesium.Color.fromCssColorString('#16a34a'),
+        outlineWidth: 0,
         disableDepthTestDistance: Number.POSITIVE_INFINITY
       },
       label: {
         text: ac.cs,
         font: '8px monospace',
-        fillColor: Cesium.Color.fromCssColorString('#00cc66').withAlpha(0.7),
+        fillColor: Cesium.Color.fromCssColorString('#22c55e').withAlpha(0.3),
         outlineColor: Cesium.Color.BLACK,
         outlineWidth: 1,
         style: Cesium.LabelStyle.FILL_AND_OUTLINE,
@@ -10405,20 +10450,20 @@ function _gwRenderEarthquakes() {
         var tsunami = f.properties.tsunami;
 
         // Color by depth
-        var color = '#ffcc00'; // shallow
-        if (depth > 100) color = '#ff6600';
-        else if (depth > 300) color = '#ff0000';
+        var color = '#eab308'; // shallow
+        if (depth > 100) color = '#f97316';
+        else if (depth > 300) color = '#ef4444';
 
         // Size by magnitude
-        var size = Math.max(6, Math.min(mag * 3, 24));
+        var size = Math.max(3, Math.min(mag * 1.5, 10));
 
         var entity = _gwViewer.entities.add({
           position: Cesium.Cartesian3.fromDegrees(lon, lat),
           point: {
             pixelSize: size,
-            color: Cesium.Color.fromCssColorString(color).withAlpha(0.7),
-            outlineColor: Cesium.Color.fromCssColorString(color),
-            outlineWidth: 2,
+            color: Cesium.Color.fromCssColorString(color).withAlpha(0.5),
+            outlineColor: Cesium.Color.fromCssColorString(color).withAlpha(0.3),
+            outlineWidth: 1,
             disableDepthTestDistance: Number.POSITIVE_INFINITY,
             heightReference: Cesium.HeightReference.CLAMP_TO_GROUND
           },
@@ -10467,17 +10512,17 @@ function _gwRenderInfrastructure() {
     var entity = _gwViewer.entities.add({
       position: Cesium.Cartesian3.fromDegrees(ixp.lon, ixp.lat),
       point: {
-        pixelSize: 8,
-        color: Cesium.Color.fromCssColorString('#00ff88').withAlpha(0.8),
-        outlineColor: Cesium.Color.fromCssColorString('#00aa55'),
-        outlineWidth: 2,
+        pixelSize: 4,
+        color: Cesium.Color.fromCssColorString('#3b82f6').withAlpha(0.3),
+        outlineColor: Cesium.Color.fromCssColorString('#2563eb'),
+        outlineWidth: 1,
         disableDepthTestDistance: Number.POSITIVE_INFINITY,
         heightReference: Cesium.HeightReference.CLAMP_TO_GROUND
       },
       label: {
         text: ixp.name.split(' ')[0],
         font: '9px monospace',
-        fillColor: Cesium.Color.fromCssColorString('#00dd77'),
+        fillColor: Cesium.Color.fromCssColorString('#3b82f6').withAlpha(0.5),
         outlineColor: Cesium.Color.BLACK,
         outlineWidth: 2,
         style: Cesium.LabelStyle.FILL_AND_OUTLINE,
@@ -10508,11 +10553,8 @@ function _gwRenderInfrastructure() {
     var linkEntity = _gwViewer.entities.add({
       polyline: {
         positions: linkPositions,
-        width: 1.5,
-        material: new Cesium.PolylineGlowMaterialProperty({
-          glowPower: 0.1,
-          color: Cesium.Color.fromCssColorString('#00aaff').withAlpha(0.35)
-        }),
+        width: 1,
+        material: Cesium.Color.fromCssColorString('#3b82f6').withAlpha(0.05),
         clampToGround: false
       }
     });
@@ -10527,8 +10569,8 @@ function _gwRenderInfrastructure() {
       position: Cesium.Cartesian3.fromDegrees(dns.lon, dns.lat),
       point: {
         pixelSize: 6,
-        color: Cesium.Color.fromCssColorString('#00ddff').withAlpha(0.8),
-        outlineColor: Cesium.Color.fromCssColorString('#0088aa'),
+        color: Cesium.Color.fromCssColorString('#3b82f6').withAlpha(0.6),
+        outlineColor: Cesium.Color.fromCssColorString('#2563eb'),
         outlineWidth: 1,
         disableDepthTestDistance: Number.POSITIVE_INFINITY,
         heightReference: Cesium.HeightReference.CLAMP_TO_GROUND
@@ -10536,7 +10578,7 @@ function _gwRenderInfrastructure() {
       label: {
         text: dns.name.split('.')[0] + '.root',
         font: '8px monospace',
-        fillColor: Cesium.Color.fromCssColorString('#00bbdd').withAlpha(0.7),
+        fillColor: Cesium.Color.fromCssColorString('#3b82f6').withAlpha(0.5),
         outlineColor: Cesium.Color.BLACK,
         outlineWidth: 1,
         style: Cesium.LabelStyle.FILL_AND_OUTLINE,
@@ -10578,8 +10620,8 @@ function _gwRenderInfrastructure() {
     var cableEntity = _gwViewer.entities.add({
       polyline: {
         positions: cablePositions,
-        width: 1.5,
-        material: Cesium.Color.fromCssColorString('#1a6a4a').withAlpha(0.5),
+        width: 1,
+        material: Cesium.Color.fromCssColorString('#3b82f6').withAlpha(0.04),
         clampToGround: false
       }
     });
@@ -10597,10 +10639,10 @@ function _gwRenderInfrastructure() {
     var landingFrom = _gwViewer.entities.add({
       position: Cesium.Cartesian3.fromDegrees(cable.from.lon, cable.from.lat),
       point: {
-        pixelSize: 4,
-        color: Cesium.Color.fromCssColorString('#2a8a5a').withAlpha(0.6),
-        outlineColor: Cesium.Color.fromCssColorString('#1a6a4a'),
-        outlineWidth: 1,
+        pixelSize: 2,
+        color: Cesium.Color.fromCssColorString('#3b82f6').withAlpha(0.2),
+        outlineColor: Cesium.Color.fromCssColorString('#2563eb').withAlpha(0.2),
+        outlineWidth: 0,
         disableDepthTestDistance: Number.POSITIVE_INFINITY,
         heightReference: Cesium.HeightReference.CLAMP_TO_GROUND
       }
@@ -10611,10 +10653,10 @@ function _gwRenderInfrastructure() {
     var landingTo = _gwViewer.entities.add({
       position: Cesium.Cartesian3.fromDegrees(cable.to.lon, cable.to.lat),
       point: {
-        pixelSize: 4,
-        color: Cesium.Color.fromCssColorString('#2a8a5a').withAlpha(0.6),
-        outlineColor: Cesium.Color.fromCssColorString('#1a6a4a'),
-        outlineWidth: 1,
+        pixelSize: 2,
+        color: Cesium.Color.fromCssColorString('#3b82f6').withAlpha(0.2),
+        outlineColor: Cesium.Color.fromCssColorString('#2563eb').withAlpha(0.2),
+        outlineWidth: 0,
         disableDepthTestDistance: Number.POSITIVE_INFINITY,
         heightReference: Cesium.HeightReference.CLAMP_TO_GROUND
       }
@@ -10651,8 +10693,8 @@ function _gwRenderCyberAttacks() {
           position: Cesium.Cartesian3.fromDegrees(coords.lon, coords.lat),
           point: {
             pixelSize: 5,
-            color: Cesium.Color.fromCssColorString('#ff2222').withAlpha(0.6),
-            outlineColor: Cesium.Color.fromCssColorString('#cc0000'),
+            color: Cesium.Color.fromCssColorString('#ef4444').withAlpha(0.6),
+            outlineColor: Cesium.Color.fromCssColorString('#dc2626'),
             outlineWidth: 1,
             disableDepthTestDistance: Number.POSITIVE_INFINITY,
             heightReference: Cesium.HeightReference.CLAMP_TO_GROUND
@@ -10683,13 +10725,13 @@ function _gwRenderCyberAttacks() {
               positions: arcPos,
               width: 1.5,
               material: new Cesium.PolylineGlowMaterialProperty({
-                glowPower: 0.15,
-                color: Cesium.Color.fromCssColorString('#ff3333').withAlpha(0.4)
+                glowPower: 0.08,
+                color: Cesium.Color.fromCssColorString('#ef4444').withAlpha(0.2)
               }),
               clampToGround: false
             }
           });
-          _gwAttackArcs.push({ entity: attackArc, color: '#ff3333' });
+          _gwAttackArcs.push({ entity: attackArc, color: '#ef4444' });
           _gwLayerEntities.attacks.push(attackArc);
           _gwEntityCount++;
         }
@@ -10727,8 +10769,8 @@ function _gwRenderCyberAttacks() {
           position: Cesium.Cartesian3.fromDegrees(offsetLon, offsetLat),
           point: {
             pixelSize: 7,
-            color: Cesium.Color.fromCssColorString('#ff6644').withAlpha(0.7),
-            outlineColor: Cesium.Color.fromCssColorString('#ff4422'),
+            color: Cesium.Color.fromCssColorString('#ef4444').withAlpha(0.7),
+            outlineColor: Cesium.Color.fromCssColorString('#dc2626'),
             outlineWidth: 1,
             disableDepthTestDistance: Number.POSITIVE_INFINITY,
             heightReference: Cesium.HeightReference.CLAMP_TO_GROUND
@@ -10736,7 +10778,7 @@ function _gwRenderCyberAttacks() {
           label: {
             text: cve.cve,
             font: '8px monospace',
-            fillColor: Cesium.Color.fromCssColorString('#ff8866').withAlpha(0.6),
+            fillColor: Cesium.Color.fromCssColorString('#ef4444').withAlpha(0.6),
             outlineColor: Cesium.Color.BLACK,
             outlineWidth: 1,
             style: Cesium.LabelStyle.FILL_AND_OUTLINE,
@@ -10851,10 +10893,10 @@ function _gwAddSatEntity(name, lat, lon, altKm, satColor, constellation, satType
   var entity = _gwViewer.entities.add({
     position: Cesium.Cartesian3.fromDegrees(lon, lat, altKm * 1000),
     point: {
-      pixelSize: 5,
-      color: Cesium.Color.fromCssColorString(satColor).withAlpha(0.8),
-      outlineColor: Cesium.Color.fromCssColorString(satColor),
-      outlineWidth: 1,
+      pixelSize: 3,
+      color: Cesium.Color.fromCssColorString(satColor).withAlpha(0.5),
+      outlineColor: Cesium.Color.fromCssColorString(satColor).withAlpha(0.3),
+      outlineWidth: 0,
       disableDepthTestDistance: Number.POSITIVE_INFINITY
     },
     label: {
@@ -10903,11 +10945,8 @@ function _gwRenderISSOrbitPath(satrec) {
   var orbitEntity = _gwViewer.entities.add({
     polyline: {
       positions: positions,
-      width: 1.5,
-      material: new Cesium.PolylineGlowMaterialProperty({
-        glowPower: 0.15,
-        color: Cesium.Color.fromCssColorString('#ffaa00').withAlpha(0.4)
-      }),
+      width: 1,
+      material: Cesium.Color.fromCssColorString('#eab308').withAlpha(0.06),
       clampToGround: false
     }
   });
@@ -10919,7 +10958,7 @@ function _gwRenderSatellitesFallback() {
   if (!_gwViewer || _gwViewer.isDestroyed()) return;
   for (var i = 0; i < GW_SATELLITES.length; i++) {
     var sat = GW_SATELLITES[i];
-    var satColor = sat.type === 'military' ? '#ff6644' : sat.type === 'navigation' ? '#44aaff' : '#aa44ff';
+    var satColor = sat.type === 'military' ? '#ef4444' : sat.type === 'navigation' ? '#3b82f6' : '#8b5cf6';
     var ent = _gwAddSatEntity(sat.name, sat.lat, sat.lon, sat.alt, satColor, sat.constellation, sat.type);
     if (ent) {
       _gwLayerEntities.satellites.push(ent);
@@ -10952,16 +10991,16 @@ function _gwFetchISS() {
       var issEntity = _gwViewer.entities.add({
         position: Cesium.Cartesian3.fromDegrees(lon, lat, 420000),
         point: {
-          pixelSize: 10,
-          color: Cesium.Color.fromCssColorString('#ffaa00'),
-          outlineColor: Cesium.Color.fromCssColorString('#ff8800'),
-          outlineWidth: 2,
+          pixelSize: 6,
+          color: Cesium.Color.fromCssColorString('#eab308'),
+          outlineColor: Cesium.Color.fromCssColorString('#ca8a04'),
+          outlineWidth: 1,
           disableDepthTestDistance: Number.POSITIVE_INFINITY
         },
         label: {
           text: 'ISS [ZARYA]',
           font: '10px monospace',
-          fillColor: Cesium.Color.fromCssColorString('#ffcc44'),
+          fillColor: Cesium.Color.fromCssColorString('#eab308'),
           outlineColor: Cesium.Color.BLACK,
           outlineWidth: 2,
           style: Cesium.LabelStyle.FILL_AND_OUTLINE,
@@ -10972,7 +11011,7 @@ function _gwFetchISS() {
           leadTime: 0,
           trailTime: 3600,
           width: 1,
-          material: Cesium.Color.fromCssColorString('#ffaa00').withAlpha(0.3)
+          material: Cesium.Color.fromCssColorString('#eab308').withAlpha(0.08)
         }
       });
       issEntity._gwData = {
@@ -11061,7 +11100,7 @@ var _gwShaderMode = 'default'; // default, surveillance, thermal, retro
 var GW_HUD_COLORS = {
   surveillance: { main: 'rgba(51,255,51,0.8)', glow: 'rgba(51,255,51,0.5)', border: 'rgba(51,255,51,0.2)', accent: '#33ff33' },
   thermal:      { main: 'rgba(255,255,255,0.7)', glow: 'rgba(255,255,255,0.4)', border: 'rgba(255,255,255,0.15)', accent: '#ffffff' },
-  retro:        { main: 'rgba(255,170,0,0.8)', glow: 'rgba(255,170,0,0.5)', border: 'rgba(255,170,0,0.2)', accent: '#ffaa00' },
+  retro:        { main: 'rgba(255,170,0,0.8)', glow: 'rgba(255,170,0,0.5)', border: 'rgba(255,170,0,0.2)', accent: '#eab308' },
   default:      { main: 'rgba(0,212,255,0.6)', glow: 'rgba(0,212,255,0.4)', border: 'rgba(0,212,255,0.15)', accent: '#00d4ff' }
 };
 
@@ -11199,75 +11238,49 @@ function _gwSetShaderMode(mode) {
     } catch (e) { /* some versions don't support removeAll */ }
   }
 
+  function _addDarkSatellite() {
+    var lyr = _gwViewer.imageryLayers.addImageryProvider(
+      new Cesium.UrlTemplateImageryProvider({
+        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+        maximumLevel: 19,
+        credit: 'Esri, Maxar, Earthstar Geographics'
+      })
+    );
+    lyr.brightness = 0.75;
+    lyr.saturation = 0.85;
+    lyr.contrast = 1.15;
+  }
+
   switch (mode) {
     case 'surveillance':
-      // NVG — green tint, amplified brightness
       scene.backgroundColor = Cesium.Color.fromCssColorString('#000800');
-      if (globe) {
-        globe.baseColor = Cesium.Color.fromCssColorString('#001a00');
-      }
-      // Swap to dark tiles but we'll tint via HUD
+      if (globe) { globe.baseColor = Cesium.Color.fromCssColorString('#001a00'); }
       _gwViewer.imageryLayers.removeAll();
-      _gwViewer.imageryLayers.addImageryProvider(
-        new Cesium.UrlTemplateImageryProvider({
-          url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
-          maximumLevel: 16,
-          credit: 'Esri'
-        })
-      );
+      _addDarkSatellite();
       break;
 
     case 'thermal':
-      // FLIR — white-hot thermal
       scene.backgroundColor = Cesium.Color.fromCssColorString('#0a0a0a');
-      if (globe) {
-        globe.baseColor = Cesium.Color.fromCssColorString('#111111');
-      }
+      if (globe) { globe.baseColor = Cesium.Color.fromCssColorString('#111111'); }
       _gwViewer.imageryLayers.removeAll();
-      _gwViewer.imageryLayers.addImageryProvider(
-        new Cesium.UrlTemplateImageryProvider({
-          url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
-          maximumLevel: 16,
-          credit: 'Esri'
-        })
-      );
+      _addDarkSatellite();
       break;
 
     case 'retro':
-      // CRT amber
       scene.backgroundColor = Cesium.Color.fromCssColorString('#0a0800');
-      if (globe) {
-        globe.baseColor = Cesium.Color.fromCssColorString('#1a1000');
-      }
+      if (globe) { globe.baseColor = Cesium.Color.fromCssColorString('#1a1000'); }
       _gwViewer.imageryLayers.removeAll();
-      _gwViewer.imageryLayers.addImageryProvider(
-        new Cesium.UrlTemplateImageryProvider({
-          url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
-          maximumLevel: 16,
-          credit: 'Esri'
-        })
-      );
+      _addDarkSatellite();
       break;
 
     default:
-      // Standard — full color satellite imagery
       scene.backgroundColor = Cesium.Color.fromCssColorString('#000206');
       if (globe) {
-        globe.baseColor = Cesium.Color.fromCssColorString('#041020');
-        globe.enableLighting = true;
+        globe.baseColor = Cesium.Color.fromCssColorString('#0d1117');
+        globe.enableLighting = false;
       }
       _gwViewer.imageryLayers.removeAll();
-      _gwViewer.imageryLayers.addImageryProvider(
-        new Cesium.UrlTemplateImageryProvider({
-          url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-          maximumLevel: 13,
-          credit: 'Esri World Imagery'
-        })
-      );
-      if (_gwViewer.scene.skyBox) _gwViewer.scene.skyBox.show = true;
-      _gwViewer.scene.sun.show = true;
-      _gwViewer.scene.moon.show = true;
-      if (_gwViewer.scene.skyAtmosphere) _gwViewer.scene.skyAtmosphere.show = true;
+      _addDarkSatellite();
       break;
   }
 
@@ -11301,10 +11314,10 @@ function _gwAddPulseRings() {
     var ta = GW_THREAT_ACTORS[i];
     if (ta.alignment !== 'hostile') continue;
 
-    var color = ta.tier === 'TIER-1' ? '#ff2222' : '#ff8844';
-    var maxRadius = ta.tier === 'TIER-1' ? 300000 : 200000;
+    var color = ta.tier === 'TIER-1' ? '#ef4444' : '#f97316';
+    var maxRadius = ta.tier === 'TIER-1' ? 120000 : 80000;
 
-    // Animated pulsing ellipse
+    // Animated pulsing ellipse — subtle
     var pulseEntity = _gwViewer.entities.add({
       position: Cesium.Cartesian3.fromDegrees(ta.lon, ta.lat),
       ellipse: {
@@ -11324,7 +11337,7 @@ function _gwAddPulseRings() {
           new Cesium.CallbackProperty(function(c, speed) {
             return function() {
               var t = (Date.now() * speed) % 1;
-              var alpha = 0.15 * (1 - t);
+              var alpha = 0.06 * (1 - t);
               return Cesium.Color.fromCssColorString(c).withAlpha(alpha);
             };
           }(color, 0.0003 + i * 0.00002), false)
@@ -11350,8 +11363,6 @@ _gwInitGlobe = function() {
     if (!container) return;
 
     try {
-      Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJkYzUwOGY4MS1iNzFjLTRhOTAtOWEzOC04NWQ2NjczNzAyMzYiLCJpZCI6MjU5LCJpYXQiOjE3MzIxNDM0MjV9.placeholder';
-
       _gwViewer = new Cesium.Viewer('gw-cesium-container', {
         animation: false,
         timeline: false,
@@ -11365,35 +11376,44 @@ _gwInitGlobe = function() {
         infoBox: false,
         selectionIndicator: false,
         creditContainer: document.createElement('div'),
-        imageryProvider: false,
+        baseLayer: false,
+        terrainProvider: new Cesium.EllipsoidTerrainProvider(),
         requestRenderMode: false
       });
 
-      _gwViewer.imageryLayers.addImageryProvider(
+      var _initLyr = _gwViewer.imageryLayers.addImageryProvider(
         new Cesium.UrlTemplateImageryProvider({
           url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-          maximumLevel: 13,
-          credit: 'Esri World Imagery'
+          maximumLevel: 19,
+          credit: 'Esri, Maxar, Earthstar Geographics'
         })
       );
+      _initLyr.brightness = 0.75;
+      _initLyr.saturation = 0.85;
+      _initLyr.contrast = 1.15;
 
       _gwViewer.scene.backgroundColor = Cesium.Color.fromCssColorString('#000206');
-      if (_gwViewer.scene.skyBox) _gwViewer.scene.skyBox.show = true;
-      _gwViewer.scene.sun.show = true;
-      _gwViewer.scene.moon.show = true;
+      if (_gwViewer.scene.skyBox) _gwViewer.scene.skyBox.show = false;
+      _gwViewer.scene.sun.show = false;
+      _gwViewer.scene.moon.show = false;
       if (_gwViewer.scene.skyAtmosphere) {
-        _gwViewer.scene.skyAtmosphere.show = true;
+        _gwViewer.scene.skyAtmosphere.show = false;
       }
       if (_gwViewer.scene.globe) {
-        _gwViewer.scene.globe.enableLighting = true;
-        _gwViewer.scene.globe.baseColor = Cesium.Color.fromCssColorString('#041020');
+        _gwViewer.scene.globe.enableLighting = false;
+        _gwViewer.scene.globe.baseColor = Cesium.Color.fromCssColorString('#1a3a5c');
         _gwViewer.scene.globe.showGroundAtmosphere = false;
-        _gwViewer.scene.globe.tileCacheSize = 100;
+        _gwViewer.scene.globe.tileCacheSize = 1000;
+        _gwViewer.scene.globe.maximumScreenSpaceError = 0.8;
+        _gwViewer.scene.globe.preloadSiblings = true;
+        _gwViewer.scene.globe.preloadAncestors = true;
       }
       if (_gwViewer.scene) {
         _gwViewer.scene.logarithmicDepthBuffer = true;
+        _gwViewer.scene.fxaa = true;
       }
-      _gwViewer.scene.screenSpaceCameraController.minimumZoomDistance = 250000;
+      _gwViewer.scene.screenSpaceCameraController.minimumZoomDistance = 1;
+      _gwViewer.scene.screenSpaceCameraController.maximumZoomDistance = 50000000;
 
       if (loadingEl) loadingEl.style.display = 'none';
 

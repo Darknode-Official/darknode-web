@@ -1,0 +1,26 @@
+{
+  "id": "/",
+  "name": "Darknode — Cybersecurity Platform",
+  "short_name": "Darknode",
+  "description": "AI-powered cybersecurity education platform with 160+ tools, interactive labs, and threat intelligence",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone"],
+  "background_color": "#f8fafc",
+  "theme_color": "#2563eb",
+  "orientation": "any",
+  "categories": ["security", "education", "developer"],
+  "prefer_related_applications": false,
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/og.png", "sizes": "1200x630", "type": "image/png" }
+  ],
+  "shortcuts": [
+    { "name": "Dashboard", "short_name": "Home", "description": "Home dashboard", "url": "/", "icons": [{ "src": "/favicon.svg", "sizes": "any" }] },
+    { "name": "Tools", "short_name": "Tools", "description": "Security tools", "url": "/tools" },
+    { "name": "Nexus AI", "short_name": "AI", "description": "AI security agent", "url": "/ai" },
+    { "name": "Settings", "short_name": "Settings", "description": "App settings", "url": "/settings" }
+  ],
+  "screenshots": []
+}

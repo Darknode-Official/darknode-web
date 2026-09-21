@@ -1339,7 +1339,7 @@ export function renderHashSuite(container) {
     if (!a || !b) { out.innerHTML = '<div class="hs-output" style="color:#f44336;">Enter both hashes</div>'; return; }
     const match = a === b;
     let html = `<div class="hs-output" style="border-color:${match ? "#00c853" : "#f44336"};">`;
-    html += match ? '<span class="hs-match">✓ MATCH — Hashes are identical</span>' : '<span class="hs-nomatch">✗ NO MATCH — Hashes differ</span>';
+    html += match ? '<span class="hs-match">MATCH — Hashes are identical</span>' : '<span class="hs-nomatch">NO MATCH — Hashes differ</span>';
     if (!match && a.length === b.length) {
       let diffCount = 0;
       for (let i = 0; i < a.length; i++) { if (a[i] !== b[i]) diffCount++; }
@@ -1428,7 +1428,7 @@ export function renderHashSuite(container) {
         <div class="hs-info-row"><span class="hs-info-label">Crack time (10B/s)</span><span class="hs-info-value">${result.crackTime}</span></div>`;
     if (result.patterns.length) {
       html += '<div style="margin-top:12px;"><span class="hs-label">Warnings</span>';
-      for (const p of result.patterns) html += `<div style="font-size:0.8rem;color:#ffb74d;margin:4px 0;">⚠ ${p}</div>`;
+      for (const p of result.patterns) html += `<div style="font-size:0.8rem;color:#ffb74d;margin:4px 0;">${p}</div>`;
       html += "</div>";
     }
     html += "</div>";

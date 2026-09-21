@@ -2,6 +2,9 @@
 // Source-available for learning only. Redistribution prohibited. See LICENSE.
 (function(){var _h=location.hostname,_a=["darknode.ai","www.darknode.ai","sentinel-b4194.web.app","sentinel-b4194-6173e.web.app","localhost","127.0.0.1"];if(!_a.some(function(d){return _h===d}))throw document.body.innerHTML="",new Error("unlicensed")}());
 import { auth, db, googleProvider, githubProvider, OWNER_EMAIL } from "/js/firebase.js";
+import "/js/scroll-top.js";
+import "/js/shortcuts.js";
+import { showToast } from "/js/toast.js";
 import { collection as fbCollection, addDoc as fbAddDoc, serverTimestamp as fbServerTimestamp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
 import {
   onAuthStateChanged, signInWithRedirect, getRedirectResult, signOut,
@@ -16,7 +19,7 @@ let MORE = [], CATALOG = [], CATEGORIES = [];
 import("/js/toolkit.js").then(m => { MORE = m.MORE; CATALOG = m.CATALOG; CATEGORIES = m.CATEGORIES; });
 import { startTour, tourDone } from "/js/tour.js";
 let _landing = null;
-async function loadLanding() { if (!_landing) _landing = await import("/js/landing.js"); return _landing; }
+async function loadLanding() { if (!_landing) _landing = await import("/js/landing.js?v=20260919n"); return _landing; }
 import {
   renderThreat, renderCheats, renderLearn, homeWidgetsHTML, wireHome, COUNTS,
   CHEATS, RESOURCES,
@@ -89,8 +92,12 @@ const errText = (e) => {
 
 async function ensureUserDoc(user) {
   try {
+    const providers = user.providerData.map(p => p.providerId.replace('.com', '')).join(', ') || 'email';
     await setDoc(doc(db, "users", user.uid), {
       email: user.email, name: user.displayName || "", lastSeen: serverTimestamp(),
+      provider: providers, photoURL: user.photoURL || "",
+      createdAt: user.metadata?.creationTime || null,
+      lastLoginAt: user.metadata?.lastSignInTime || null,
     }, { merge: true });
   } catch (_) { /* rules/offline - non-fatal */ }
 }
@@ -139,7 +146,60 @@ function showLanding() {
   dismissBoot();
   document.body.classList.remove("app");
   document.body.classList.add("landing");
-  userSlot.innerHTML = `<a class="nav-link" id="nav-signin">Sign in</a><button class="btn" id="nav-start">Get Started</button>`;
+  userSlot.innerHTML = `
+    <div class="nav-dd" data-dd="products">
+      <button class="nav-dd-btn">Products <svg width="10" height="6" viewBox="0 0 10 6"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg></button>
+      <div class="nav-dd-menu">
+        <a class="nav-dd-item" href="/get-started" data-nav="auth"><span class="nav-dd-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M7 8h10M7 12h6M7 16h8"/></svg></span><span><strong>Web App</strong><span class="nav-dd-desc">Tools and labs in your browser</span></span></a>
+        <a class="nav-dd-item" href="https://github.com/Darknode-Official/darknode-cli" target="_blank" rel="noopener"><span class="nav-dd-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg></span><span><strong>CLI</strong><span class="nav-dd-desc">Install via npm</span></span></a>
+        <a class="nav-dd-item" href="https://github.com/Darknode-Official/darknode-os" target="_blank" rel="noopener"><span class="nav-dd-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 8h20"/></svg></span><span><strong>Linux VM</strong><span class="nav-dd-desc">Pre-built Darknode OS</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd" data-dd="features">
+      <button class="nav-dd-btn">Features <svg width="10" height="6" viewBox="0 0 10 6"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg></button>
+      <div class="nav-dd-menu">
+        <a class="nav-dd-item" href="/features" data-nav="section" data-section="features"><span class="nav-dd-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg></span><span><strong>Overview</strong><span class="nav-dd-desc">Everything you need to learn security</span></span></a>
+        <a class="nav-dd-item" href="/arsenal" data-nav="auth"><span class="nav-dd-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg></span><span><strong>120+ Tools</strong><span class="nav-dd-desc">Security tools and utilities</span></span></a>
+        <a class="nav-dd-item" href="/ai" data-nav="auth"><span class="nav-dd-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg></span><span><strong>Nexus AI</strong><span class="nav-dd-desc">AI-powered security agent</span></span></a>
+        <a class="nav-dd-item" href="/cyberrange" data-nav="auth"><span class="nav-dd-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 3h6v4l4 8H5l4-8V3z"/><path d="M5 15h14v2a4 4 0 01-4 4H9a4 4 0 01-4-4v-2z"/></svg></span><span><strong>Practice Labs</strong><span class="nav-dd-desc">Hands-on CTF challenges</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd" data-dd="resources">
+      <button class="nav-dd-btn">Resources <svg width="10" height="6" viewBox="0 0 10 6"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg></button>
+      <div class="nav-dd-menu">
+        <a class="nav-dd-item" href="/pricing" data-nav="section" data-section="pricing"><span class="nav-dd-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M12 8v8M8 12h8"/></svg></span><span><strong>Pricing</strong><span class="nav-dd-desc">Free forever, upgrade anytime</span></span></a>
+        <a class="nav-dd-item" href="/faq" data-nav="section" data-section="faq"><span class="nav-dd-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M9 9a3 3 0 115.12 2.13c-.6.53-1.12 1.28-1.12 2.37M12 17h.01"/></svg></span><span><strong>FAQ</strong><span class="nav-dd-desc">Common questions answered</span></span></a>
+        <a class="nav-dd-item" href="https://github.com/Darknode-Official" target="_blank" rel="noopener"><span class="nav-dd-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.44 9.8 8.2 11.39.6.11.82-.26.82-.58v-2.23c-3.34.73-4.04-1.42-4.04-1.42-.55-1.39-1.34-1.76-1.34-1.76-1.08-.74.08-.73.08-.73 1.2.08 1.84 1.23 1.84 1.23 1.07 1.83 2.81 1.3 3.5 1 .1-.78.42-1.3.76-1.6-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.14-.3-.54-1.52.1-3.18 0 0 1-.32 3.3 1.23a11.5 11.5 0 016.02 0c2.28-1.55 3.29-1.23 3.29-1.23.64 1.66.24 2.88.12 3.18.77.84 1.23 1.91 1.23 3.22 0 4.61-2.8 5.63-5.48 5.92.42.37.81 1.1.81 2.22v3.29c0 .32.22.7.82.58A12.01 12.01 0 0024 12c0-6.63-5.37-12-12-12z"/></svg></span><span><strong>GitHub</strong><span class="nav-dd-desc">Source code and releases</span></span></a>
+      </div>
+    </div>
+    <span class="nav-spacer"></span>
+    <a class="nav-link" id="nav-signin">Log in</a>
+    <button class="btn" id="nav-start">Get Started</button>`;
+  document.querySelectorAll(".nav-dd").forEach(dd => {
+    const btn = dd.querySelector(".nav-dd-btn");
+    let closeTimer;
+    const show = () => { clearTimeout(closeTimer); document.querySelectorAll(".nav-dd.open").forEach(d => { if (d !== dd) d.classList.remove("open"); }); dd.classList.add("open"); };
+    const hide = () => { closeTimer = setTimeout(() => dd.classList.remove("open"), 120); };
+    btn.addEventListener("mouseenter", show);
+    btn.addEventListener("mouseleave", hide);
+    dd.querySelector(".nav-dd-menu").addEventListener("mouseenter", () => clearTimeout(closeTimer));
+    dd.querySelector(".nav-dd-menu").addEventListener("mouseleave", hide);
+    btn.addEventListener("click", (e) => { e.stopPropagation(); dd.classList.toggle("open"); });
+  });
+  document.addEventListener("click", () => document.querySelectorAll(".nav-dd.open").forEach(d => d.classList.remove("open")));
+  document.querySelectorAll(".nav-dd-item[data-nav]").forEach(item => {
+    item.addEventListener("click", (e) => {
+      e.preventDefault();
+      document.querySelectorAll(".nav-dd.open").forEach(d => d.classList.remove("open"));
+      const nav = item.dataset.nav;
+      if (nav === "auth") {
+        history.pushState(null, "", item.getAttribute("href"));
+        renderAuth("signup");
+      } else if (nav === "section") {
+        window.location.href = item.getAttribute("href");
+      }
+    });
+  });
   document.getElementById("nav-signin").onclick = () => renderAuth("signin");
   document.getElementById("nav-start").onclick = () => renderAuth("signup");
   loadLanding().then(m => m.renderLanding(view, {
@@ -153,28 +213,36 @@ function renderAuth(mode = "signin") {
   userSlot.innerHTML = "";
   const isSignup = mode === "signup";
   view.innerHTML = `
-    <section class="card auth-card">
-      <a class="auth-back" id="authBack">&larr; Back</a>
-      <div class="auth-logo"><img src="/logo-light.svg" alt=""></div>
-      <h1>${isSignup ? "Create your account" : "Welcome back"}</h1>
-      <p class="muted">${isSignup ? "Set up your Darknode console in seconds." : "Sign in to your Darknode console."}</p>
-      <button class="btn google" id="google">Continue with Google</button>
-      <button class="btn github" id="github">Continue with GitHub</button>
-      <div class="or"><span></span>or<span></span></div>
-      <form id="pwform" autocomplete="on">
-        <input type="email" id="email" placeholder="Email" autocomplete="email" required>
-        <input type="password" id="password" placeholder="Password (6+ chars)" autocomplete="${isSignup ? "new-password" : "current-password"}" required>
-        <button class="btn" type="submit">${isSignup ? "Create account" : "Sign in"}</button>
-      </form>
-      <div class="auth-links">
-        ${isSignup
-          ? `<a id="toSignin">Have an account? Sign in</a>`
-          : `<a id="toSignup">Create account</a><a id="forgot">Forgot password?</a>`}
-      </div>
-      <p id="err" class="auth-err"></p>
-    </section>`;
+    <div class="auth-page">
+      <section class="card auth-card">
+        <a class="auth-back" id="authBack">&larr; Back</a>
+        <div class="auth-logo"><img src="/logo-light.svg" alt=""></div>
+        <h1>${isSignup ? "Create your account" : "Welcome back"}</h1>
+        <p class="auth-subtitle">${isSignup ? "Set up your Darknode console in seconds." : "Sign in to your Darknode console."}</p>
+        <button class="btn google" id="google"><svg width="18" height="18" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18A10.96 10.96 0 001 12c0 1.77.42 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>Continue with Google</button>
+        <button class="btn github" id="github"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.44 9.8 8.2 11.39.6.11.82-.26.82-.58v-2.23c-3.34.73-4.04-1.42-4.04-1.42-.55-1.39-1.34-1.76-1.34-1.76-1.08-.74.08-.73.08-.73 1.2.08 1.84 1.23 1.84 1.23 1.07 1.83 2.81 1.3 3.5 1 .1-.78.42-1.3.76-1.6-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.14-.3-.54-1.52.1-3.18 0 0 1-.32 3.3 1.23a11.5 11.5 0 016.02 0c2.28-1.55 3.29-1.23 3.29-1.23.64 1.66.24 2.88.12 3.18.77.84 1.23 1.91 1.23 3.22 0 4.61-2.8 5.63-5.48 5.92.42.37.81 1.1.81 2.22v3.29c0 .32.22.7.82.58A12.01 12.01 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>Continue with GitHub</button>
+        <div class="or"><span></span>or<span></span></div>
+        <form id="pwform" autocomplete="on">
+          <input type="email" id="email" placeholder="Email address" autocomplete="email" required>
+          <input type="password" id="password" placeholder="Password" autocomplete="${isSignup ? "new-password" : "current-password"}" required>
+          <button class="btn" type="submit">${isSignup ? "Create account" : "Sign in"}</button>
+        </form>
+        <div class="auth-links">
+          ${isSignup
+            ? `<a id="toSignin">Already have an account? <strong>Sign in</strong></a>`
+            : `<a id="toSignup">New here? <strong>Create account</strong></a><a id="forgot">Forgot password?</a>`}
+        </div>
+        <p id="err" class="auth-err"></p>
+        <div class="auth-test"><a id="testMode">Test Mode (no account)</a></div>
+      </section>
+      <div class="auth-footer">darknode.ai &mdash; cybersecurity platform</div>
+    </div>`;
 
   const err = (m) => { document.getElementById("err").textContent = m; };
+  document.getElementById("testMode").onclick = () => {
+    const fakeUser = { uid: "test-user", email: "test@darknode.ai", displayName: "Test User", providerData: [{ providerId: "test" }], metadata: { creationTime: new Date().toISOString() }, refreshToken: "", getIdToken: () => Promise.resolve("") };
+    renderApp(fakeUser);
+  };
   document.getElementById("google").onclick = async () => {
     err("");
     try { try { sessionStorage.setItem("sw_fresh_signin", "1"); } catch (_) {} await signInWithRedirect(auth, googleProvider); }
@@ -503,17 +571,21 @@ function renderHome(main, user, isOwner, show) {
   main.innerHTML = `
     <div class="dash-hero">
       <div class="dash-hero-top">
-        <div class="eyebrow">SECURITY CONSOLE</div>
+        <div class="dash-hero-left">
+          <div class="eyebrow">SECURITY CONSOLE</div>
+          <span class="dash-clock" id="dashClock">${esc(dt.date)} &bull; ${esc(dt.time)}</span>
+        </div>
         <div class="dash-meta">
           <span class="dash-status"><span class="dash-status-dot"></span>All systems operational</span>
-          <span class="dash-clock" id="dashClock">${esc(dt.date)} -- ${esc(dt.time)}</span>
+          <span class="dash-threat-level"><span class="dash-threat-pip t1"></span><span class="dash-threat-pip t2"></span><span class="dash-threat-pip t3"></span><span class="dash-threat-pip t4 dim"></span><span class="dash-threat-pip t5 dim"></span><span class="dash-threat-label">ELEVATED</span></span>
         </div>
       </div>
       <h1 class="pg-h1">Welcome back${name ? ", " + esc(name) : ""}</h1>
-      <p class="muted pg-sub">Tools, threat intel, cheat sheets, local AI and setup guides &mdash; your whole workflow in one place.</p>
+      <p class="muted pg-sub">160+ security tools, threat intel, local AI and training labs &mdash; your complete offensive &amp; defensive workflow.</p>
       <div class="hero-actions">
         <button class="btn" data-sec="tools">Browse tools</button>
-        <button class="btn ghost" data-sec="cheats">Cheat sheets</button>
+        <button class="btn ghost" data-sec="ai">Nexus AI</button>
+        <button class="btn ghost" data-sec="sentineleye">Sentinel Eye</button>
         <button class="btn ghost" data-sec="threat">Threat intel</button>
       </div>
     </div>
@@ -524,22 +596,40 @@ function renderHome(main, user, isOwner, show) {
       ${stat(COUNTS.resources, "resources")}
       ${stat(CATEGORIES.length, "categories")}
       ${stat(59, "AI modules", "Ollama + cloud")}
-      ${stat("571K+", "lines of code", "CLI + web")}
+      ${stat("592K+", "lines of code", "CLI + web")}
+    </div>
+    <div class="dash-changelog">
+      <div class="dash-cl-header">
+        <h2 class="pg-h2">What's new</h2>
+        <span class="dash-cl-viewall muted" data-sec="docs" data-more="">View all updates</span>
+      </div>
+      <div class="cl-items">
+        <div class="cl-item"><span class="cl-tag new">NEW</span><span class="cl-text">22 new security tools &mdash; DNS Enum, Firewall Rules, XSS Lab, Privilege Escalation &amp; more</span><span class="cl-date muted">Sep 2026</span></div>
+        <div class="cl-item"><span class="cl-tag new">NEW</span><span class="cl-text">Dark Web OSINT module &mdash; .onion crawling &amp; leak monitoring</span><span class="cl-date muted">Sep 2026</span></div>
+        <div class="cl-item"><span class="cl-tag imp">IMPROVED</span><span class="cl-text">PROMETHEUS incident engine &mdash; faster TTPs, 40+ new playbooks</span><span class="cl-date muted">Sep 2026</span></div>
+        <div class="cl-item"><span class="cl-tag new">NEW</span><span class="cl-text">Private Cloud deployment &mdash; run the full stack on your infra</span><span class="cl-date muted">Aug 2026</span></div>
+        <div class="cl-item"><span class="cl-tag fix">FIX</span><span class="cl-text">Sentinel Eye globe &mdash; satellite imagery, deeper zoom, sharper tiles</span><span class="cl-date muted">Sep 2026</span></div>
+        <div class="cl-item"><span class="cl-tag imp">IMPROVED</span><span class="cl-text">59 Nexus AI modules &mdash; enhanced chain-of-thought reasoning</span><span class="cl-date muted">Jul 2026</span></div>
+      </div>
     </div>
     <h2 class="pg-h2">Jump in</h2>
     <div class="qa-grid">
-      ${qa("ai", "", "AI assistant", "Chat with your local Ollama &mdash; unrestricted security &amp; coding help.")}
-      ${qa("payloads", "", "Payload library", "Copy-ready SQLi, XSS, LFI, SSTI, SSRF and more.")}
-      ${qa("snippets", "", "Code snippets", "Everyday one-liners for bash, Python, JS, git, docker, SQL.")}
-      ${qa("utils", "", "Utilities", "Run tools in your browser &mdash; encode, hash, decode JWTs, gen shells.")}
-      ${qa("tools", "", "Browse tools", "Search and use the catalog &mdash; encoders, hashes, payloads and more.")}
-      ${qa("cheats", "", "Cheat sheets", "Copy-paste one-liners for recon, shells, privesc and cracking.")}
-      ${qa("threat", "", "Threat intel", "Notable CVEs and a common-ports attack-surface reference.")}
-      ${qa("learn", "", "Learn", "Curated hubs: HackTricks, OWASP, PayloadsAllTheThings and more.")}
-      ${qa("setup", "aicoding", "Local AI coding", "Run Ollama models on your machine, in the terminal or a browser UI.")}
-      ${qa("setup", "toolkit", "Prebuilt toolkit", "Install the whole CLI toolkit + SSH in one command.")}
-      ${qa("webshell", "", "Web Shell", "Access a terminal in your browser &mdash; run commands, pull AI models.")}
+      ${qa("ai", "", "Nexus AI", "Chat with Ollama, Claude, GPT, Gemini &mdash; unrestricted security &amp; coding help.")}
+      ${qa("sentineleye", "", "Sentinel Eye", "Global threat visualization with live CesiumJS globe &amp; 14 intelligence tabs.")}
+      ${qa("tools", "", "Scanner Suite", "Nmap, Nikto, Gobuster and 160+ security tools in one catalog.")}
+      ${qa("payloads", "", "Payload Forge", "Copy-ready SQLi, XSS, LFI, SSTI, SSRF and more.")}
+      ${qa("utils", "", "Toolbox", "Run tools in your browser &mdash; encode, hash, decode JWTs, gen shells.")}
+      ${qa("cheats", "", "Cheat Sheets", "Copy-paste one-liners for recon, shells, privesc and cracking.")}
+      ${qa("threat", "", "Threat Feed", "Notable CVEs, IOCs and a common-ports attack-surface reference.")}
+      ${qa("learn", "", "Academy", "Curated hubs: HackTricks, OWASP, PayloadsAllTheThings and more.")}
+      ${qa("prometheus", "", "Prometheus", "AI-powered incident response engine with 40+ playbooks.")}
       ${qa("report", "", "Report Generator", "Generate professional pentest reports from your findings.")}
+      ${qa("exploitdev", "", "Exploit Writer", "Craft and test custom exploits with built-in templates.")}
+      ${qa("cyberrange", "", "Cyber Range", "Hands-on attack/defense labs with guided walkthroughs.")}
+      ${qa("sandbox", "", "Malware Sandbox", "Detonate and analyze suspicious files in an isolated environment.")}
+      ${qa("netmap", "", "Network Mapper", "Visualize network topology, open ports and service fingerprints.")}
+      ${qa("snippets", "", "Snippet Vault", "Everyday one-liners for bash, Python, JS, git, docker, SQL.")}
+      ${qa("setup", "aicoding", "Local AI Setup", "Run Ollama models on your machine, in the terminal or a browser UI.")}
     </div>
     <div class="dash-extras">
       <div class="dash-extra-col">
@@ -565,6 +655,18 @@ function renderHome(main, user, isOwner, show) {
     ${homeWidgetsHTML()}`;
   main.addEventListener("click", (e) => { const b = e.target.closest("[data-sec]"); if (b) show(b.dataset.sec, b.dataset.more || ""); });
   wireHome(main, show);
+  // Recently used tools
+  try {
+    const recent = JSON.parse(localStorage.getItem("dn_recent") || "[]").slice(0, 6);
+    if (recent.length) {
+      const recentEl = document.createElement("div");
+      recentEl.style.cssText = "margin:0 0 20px;display:flex;flex-wrap:wrap;align-items:center;gap:8px";
+      recentEl.innerHTML = '<span style="font-size:.75rem;font-weight:600;color:var(--mut);text-transform:uppercase;letter-spacing:.05em;margin-right:4px">Recent</span>' +
+        recent.map(s => `<button class="btn sm ghost" data-sec="${esc(s)}" style="font-size:.72rem;padding:4px 12px">${esc(labelOf(s))}</button>`).join("");
+      const qaGrid = main.querySelector(".qa-grid");
+      if (qaGrid) qaGrid.parentNode.insertBefore(recentEl, qaGrid);
+    }
+  } catch (_) {}
 
   // Live clock update
   const clockEl = main.querySelector("#dashClock");
@@ -584,7 +686,7 @@ function renderSetup(main, openTo) {
   main.innerHTML = `
     <h1 class="pg-h1">Local setup</h1>
     <p class="muted pg-sub">A website can't run these &mdash; spin them up on your own machine with one copy-paste.</p>
-    ${MORE.map((m) => `<div class="card" id="setup-${m.id}"><h3>${esc(m.name)}</h3><p class="muted">${esc(m.desc)}</p>
+    ${MORE.map((m) => `<div class="card" id="setup-${m.id}"><h3 style="margin:0 0 6px">${esc(m.name)}</h3><p class="muted" style="margin:0 0 12px">${esc(m.desc)}</p>
       <div class="dl-cmd-row"><code class="dl-cmd cmd-block">${esc(m.body)}</code><button class="dl-copy" data-copy="${m.id}">copy</button></div></div>`).join("")}`;
   main.onclick = (e) => {
     const b = e.target.closest("[data-copy]"); if (!b) return;
@@ -628,8 +730,15 @@ function renderSettingsPage(main, user, isOwner) {
         <button class="btn danger" id="set-out">Log out</button>
       </div>`,
     apikeys: `<h2 class="set-panel-h">API Keys</h2>
-      <p class="muted" style="font-size:.84rem;margin-bottom:16px">Add your own API keys to enable live threat intelligence lookups. Keys are stored locally in your browser — never sent to our servers.</p>
+      <p class="muted" style="font-size:.84rem;margin-bottom:16px">Add your own API keys to power AI and threat intelligence. Keys are stored locally in your browser — never sent to our servers.</p>
       <div id="set-apikeys-form" style="display:flex;flex-direction:column;gap:12px;max-width:500px">
+        <h3 style="font-size:.92rem;margin:0;opacity:.7">AI Engines</h3>
+        <div class="set-row" style="flex-direction:column;align-items:stretch;gap:4px"><span class="muted">Groq (free)</span><input class="tk-f" id="ak-groq" type="password" placeholder="gsk_..." autocomplete="off" spellcheck="false" style="width:100%"><span class="muted" style="font-size:.72rem">Free at <a href="https://console.groq.com" target="_blank" rel="noopener" style="color:var(--acc)">console.groq.com</a> — Llama 3.3 70B, Gemma, Mixtral (no credit card)</span></div>
+        <div class="set-row" style="flex-direction:column;align-items:stretch;gap:4px"><span class="muted">OpenRouter</span><input class="tk-f" id="ak-openrouter" type="password" placeholder="sk-or-..." autocomplete="off" spellcheck="false" style="width:100%"><span class="muted" style="font-size:.72rem">Get a key at <a href="https://openrouter.ai/keys" target="_blank" rel="noopener" style="color:var(--acc)">openrouter.ai</a> — one key, 100+ models (Claude, GPT, Llama, DeepSeek)</span></div>
+        <div class="set-row" style="flex-direction:column;align-items:stretch;gap:4px"><span class="muted">Anthropic (Claude)</span><input class="tk-f" id="ak-anthropic" type="password" placeholder="sk-ant-..." autocomplete="off" spellcheck="false" style="width:100%"><span class="muted" style="font-size:.72rem">Get a key at <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener" style="color:var(--acc)">console.anthropic.com</a> — powers AI Assistant (Claude)</span></div>
+        <div class="set-row" style="flex-direction:column;align-items:stretch;gap:4px"><span class="muted">OpenAI (GPT)</span><input class="tk-f" id="ak-openai" type="password" placeholder="sk-..." autocomplete="off" spellcheck="false" style="width:100%"><span class="muted" style="font-size:.72rem">Get a key at <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener" style="color:var(--acc)">platform.openai.com</a> — powers AI Assistant (GPT)</span></div>
+        <div class="set-row" style="flex-direction:column;align-items:stretch;gap:4px"><span class="muted">Google (Gemini)</span><input class="tk-f" id="ak-gemini" type="password" placeholder="AI..." autocomplete="off" spellcheck="false" style="width:100%"><span class="muted" style="font-size:.72rem">Get a key at <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener" style="color:var(--acc)">aistudio.google.com</a> — powers AI Assistant (Gemini)</span></div>
+        <h3 style="font-size:.92rem;margin:8px 0 0;opacity:.7">Threat Intelligence</h3>
         <div class="set-row" style="flex-direction:column;align-items:stretch;gap:4px"><span class="muted">AbuseIPDB</span><input class="tk-f" id="ak-abuseipdb" type="password" placeholder="Your AbuseIPDB API key" autocomplete="off" spellcheck="false" style="width:100%"><span class="muted" style="font-size:.72rem">Free at <a href="https://www.abuseipdb.com/account/api" target="_blank" rel="noopener" style="color:var(--acc)">abuseipdb.com</a> — IP reputation checks</span></div>
         <div class="set-row" style="flex-direction:column;align-items:stretch;gap:4px"><span class="muted">VirusTotal</span><input class="tk-f" id="ak-virustotal" type="password" placeholder="Your VirusTotal API key" autocomplete="off" spellcheck="false" style="width:100%"><span class="muted" style="font-size:.72rem">Free at <a href="https://www.virustotal.com/gui/my-apikey" target="_blank" rel="noopener" style="color:var(--acc)">virustotal.com</a> — file/URL/IP analysis</span></div>
         <div class="set-row" style="flex-direction:column;align-items:stretch;gap:4px"><span class="muted">Shodan</span><input class="tk-f" id="ak-shodan" type="password" placeholder="Your Shodan API key" autocomplete="off" spellcheck="false" style="width:100%"><span class="muted" style="font-size:.72rem">Free at <a href="https://account.shodan.io" target="_blank" rel="noopener" style="color:var(--acc)">shodan.io</a> — internet-wide scanning data</span></div>
@@ -654,11 +763,16 @@ function renderSettingsPage(main, user, isOwner) {
       <p class="muted" style="font-size:.75rem">Version 1.0</p>`,
   };
   main.innerHTML = `
-    <h1 class="pg-h1">Settings</h1>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">
+      <button class="btn ghost" id="set-back" style="padding:4px 12px;font-size:.82rem">&larr; Back</button>
+      <h1 class="pg-h1" style="margin:0">Settings</h1>
+    </div>
     <div class="set-layout">
       <nav class="set-nav">${SET_TABS.map(([k, l]) => `<button class="set-tab${k === "account" ? " active" : ""}" data-stab="${k}">${l}</button>`).join("")}</nav>
       <div class="set-panel" id="set-panel">${panels.account}</div>
     </div>`;
+  const backBtn = main.querySelector("#set-back");
+  if (backBtn) backBtn.onclick = () => appShow && appShow("home");
   let curTab = "account";
   function showSetTab(tab) {
     curTab = tab;
@@ -684,16 +798,26 @@ function renderSettingsPage(main, user, isOwner) {
     if (shellSeg) { const curShell = (() => { try { return localStorage.getItem("dn_shell_mode") || "education"; } catch (_) { return "education"; } })(); shellSeg.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b.dataset.shell === curShell)); shellSeg.onclick = (e) => { const b = e.target.closest("button[data-shell]"); if (!b) return; try { localStorage.setItem("dn_shell_mode", b.dataset.shell); } catch (_) {} shellSeg.querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b)); }; }
     const akSave = main.querySelector("#ak-save");
     if (akSave) {
-      const akFields = [["abuseipdb", "#ak-abuseipdb"], ["virustotal", "#ak-virustotal"], ["shodan", "#ak-shodan"], ["otx", "#ak-otx"]];
+      const akFields = [["groq", "#ak-groq"], ["openrouter", "#ak-openrouter"], ["anthropic", "#ak-anthropic"], ["openai", "#ak-openai"], ["gemini", "#ak-gemini"], ["abuseipdb", "#ak-abuseipdb"], ["virustotal", "#ak-virustotal"], ["shodan", "#ak-shodan"], ["otx", "#ak-otx"]];
       try {
         const keys = JSON.parse(localStorage.getItem("dn_api_keys") || "{}");
         akFields.forEach(([svc, sel]) => { const el = main.querySelector(sel); if (el && keys[svc]) el.value = keys[svc]; });
+        const qk = (localStorage.getItem("sw_groq_key") || "").trim(); if (qk && !keys.groq) { const el = main.querySelector("#ak-groq"); if (el) el.value = qk; }
+        const ork = (localStorage.getItem("sw_openrouter_key") || "").trim(); if (ork && !keys.openrouter) { const el = main.querySelector("#ak-openrouter"); if (el) el.value = ork; }
+        const ck = (localStorage.getItem("sw_claude_key") || "").trim(); if (ck && !keys.anthropic) { const el = main.querySelector("#ak-anthropic"); if (el) el.value = ck; }
+        const ok = (localStorage.getItem("sw_openai_key") || "").trim(); if (ok && !keys.openai) { const el = main.querySelector("#ak-openai"); if (el) el.value = ok; }
+        const gk = (localStorage.getItem("sw_gemini_key") || "").trim(); if (gk && !keys.gemini) { const el = main.querySelector("#ak-gemini"); if (el) el.value = gk; }
       } catch (_) {}
       akSave.onclick = () => {
         try {
           const keys = JSON.parse(localStorage.getItem("dn_api_keys") || "{}");
           akFields.forEach(([svc, sel]) => { const el = main.querySelector(sel); if (el) { const v = el.value.trim(); if (v) keys[svc] = v; else delete keys[svc]; } });
           localStorage.setItem("dn_api_keys", JSON.stringify(keys));
+          if (keys.groq) localStorage.setItem("sw_groq_key", keys.groq); else localStorage.removeItem("sw_groq_key");
+          if (keys.openrouter) localStorage.setItem("sw_openrouter_key", keys.openrouter); else localStorage.removeItem("sw_openrouter_key");
+          if (keys.anthropic) localStorage.setItem("sw_claude_key", keys.anthropic); else localStorage.removeItem("sw_claude_key");
+          if (keys.openai) localStorage.setItem("sw_openai_key", keys.openai); else localStorage.removeItem("sw_openai_key");
+          if (keys.gemini) localStorage.setItem("sw_gemini_key", keys.gemini); else localStorage.removeItem("sw_gemini_key");
           const st = main.querySelector("#ak-status"); if (st) { st.textContent = "Keys saved."; st.style.color = "var(--ok,#3fb950)"; setTimeout(() => { st.textContent = ""; }, 2000); }
         } catch (e) { const st = main.querySelector("#ak-status"); if (st) { st.textContent = "Error: " + e.message; st.style.color = "var(--bad,red)"; } }
       };
@@ -701,7 +825,7 @@ function renderSettingsPage(main, user, isOwner) {
     const akClear = main.querySelector("#ak-clear");
     if (akClear) {
       akClear.onclick = () => {
-        try { localStorage.removeItem("dn_api_keys"); } catch (_) {}
+        try { localStorage.removeItem("dn_api_keys"); localStorage.removeItem("sw_groq_key"); localStorage.removeItem("sw_openrouter_key"); localStorage.removeItem("sw_claude_key"); localStorage.removeItem("sw_openai_key"); localStorage.removeItem("sw_gemini_key"); } catch (_) {}
         const inputs = main.querySelectorAll("#set-apikeys-form input"); inputs.forEach((el) => { el.value = ""; });
         const st = main.querySelector("#ak-status"); if (st) { st.textContent = "All keys cleared."; st.style.color = "var(--ok,#3fb950)"; setTimeout(() => { st.textContent = ""; }, 2000); }
       };
@@ -709,7 +833,7 @@ function renderSettingsPage(main, user, isOwner) {
     const out = main.querySelector("#set-out"); if (out) out.onclick = () => signOut(auth);
     const tour = main.querySelector("#set-tour"); if (tour) tour.onclick = () => startTour(tourSteps(isOwner));
     const pwBtn = main.querySelector("#set-pw");
-    if (pwBtn) pwBtn.onclick = async () => { try { await sendPasswordResetEmail(auth, user.email); alert("Password reset link sent to " + user.email); } catch (e) { alert(errText(e)); } };
+    if (pwBtn) pwBtn.onclick = async () => { try { await sendPasswordResetEmail(auth, user.email); showToast("Password reset link sent to " + user.email, "success"); } catch (e) { showToast(errText(e), "error"); } };
     const codeInput = main.querySelector("#nexus-code");
     if (codeInput) {
       if (!codeInput.value) { user.getIdToken().then(() => { codeInput.value = user.refreshToken || ""; }).catch(() => {}); }
@@ -756,43 +880,44 @@ function renderApp(user) {
       <aside class="sidebar" id="sidebar" role="complementary" aria-label="Main navigation">
         <div class="side-brand">Darknode</div>
         <nav class="side-nav" role="navigation" aria-label="Application sections">
+          <div class="side-search-wrap"><input class="side-search" placeholder="Search 120+ tools..." id="sideSearch" spellcheck="false" autocomplete="off"><svg class="side-search-icon" viewBox="0 0 16 16" width="13" height="13"><circle cx="6.5" cy="6.5" r="5" fill="none" stroke="currentColor" stroke-width="1.5"/><line x1="10" y1="10" x2="14" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
           <button class="side-item" data-sec="home">Dashboard</button>
 
-          <div class="side-group side-collapse" data-open="1">Command Centers</div>
-          <button class="side-item" data-sec="prometheus">PROMETHEUS</button>
-          <button class="side-item" data-sec="sentineleye">SENTINEL EYE</button>
+          <div class="side-group side-collapse" data-open="1">Mission Control <span class="side-cnt">6</span></div>
+          <button class="side-item" data-sec="prometheus">PROMETHEUS <span class="side-badge live">LIVE</span></button>
+          <button class="side-item" data-sec="sentineleye">SENTINEL EYE <span class="side-badge live">LIVE</span></button>
           <button class="side-item" data-sec="hydra">HYDRA Engine</button>
           <button class="side-item" data-sec="aegis">AEGIS Ops Center</button>
           <button class="side-item" data-sec="vanguard">VANGUARD</button>
           <button class="side-item" data-sec="secdash">Security Dashboard</button>
 
-          <div class="side-group side-collapse">Offensive Security</div>
-          <button class="side-item" data-sec="payloads">Payload Generator</button>
+          <div class="side-group side-collapse">Red Team <span class="side-cnt">10</span></div>
+          <button class="side-item" data-sec="payloads">Payload Forge</button>
           <button class="side-item" data-sec="exploitdb">Exploit Database</button>
           <button class="side-item" data-sec="exploitdev">Exploit Writer</button>
           <button class="side-item" data-sec="packetcraft">Packet Crafter</button>
-          <button class="side-item" data-sec="webshell">Web Shell</button>
-          <button class="side-item" data-sec="cracklab">Password Cracking</button>
+          <button class="side-item" data-sec="webshell">Terminal</button>
+          <button class="side-item" data-sec="cracklab">Hashcat Lab</button>
           <button class="side-item" data-sec="attacksim">Attack Simulator</button>
-          <button class="side-item" data-sec="firewall">Firewall Builder</button>
-          <button class="side-item" data-sec="wirelesslab">Wireless Pentest Lab</button>
+          <button class="side-item" data-sec="firewall">Firewall Rules</button>
+          <button class="side-item" data-sec="wirelesslab">Wireless Lab</button>
           <button class="side-item" data-sec="pentestconsole">Pentest Console</button>
 
-          <div class="side-group side-collapse">Reconnaissance</div>
-          <button class="side-item" data-sec="addressintel">Address Intelligence</button>
+          <div class="side-group side-collapse">Recon &amp; OSINT <span class="side-cnt">12</span></div>
+          <button class="side-item" data-sec="addressintel">Address Intel</button>
           <button class="side-item" data-sec="tools">Scanner Suite</button>
           <button class="side-item" data-sec="osint">OSINT Dashboard</button>
-          <button class="side-item" data-sec="subdomains">Subdomain Finder</button>
+          <button class="side-item" data-sec="subdomains">Subdomain Enum</button>
           <button class="side-item" data-sec="dns">DNS Toolkit</button>
           <button class="side-item" data-sec="netmap">Network Mapper</button>
-          <button class="side-item" data-sec="attacksurf">Attack Surface Mapper</button>
-          <button class="side-item" data-sec="ghdb">Google Dorks</button>
+          <button class="side-item" data-sec="attacksurf">Attack Surface</button>
+          <button class="side-item" data-sec="ghdb">Google Dorking</button>
           <button class="side-item" data-sec="apitester">API Tester</button>
-          <button class="side-item" data-sec="apiscan">API Security Scanner</button>
-          <button class="side-item" data-sec="wayback">Wayback Recon</button>
+          <button class="side-item" data-sec="apiscan">API Scanner</button>
+          <button class="side-item" data-sec="wayback">Wayback Machine</button>
           <button class="side-item" data-sec="favicon">Favicon Hasher</button>
 
-          <div class="side-group side-collapse">Analysis &amp; Forensics</div>
+          <div class="side-group side-collapse">Forensics &amp; Malware <span class="side-cnt">9</span></div>
           <button class="side-item" data-sec="binanalyze">Binary Analyzer</button>
           <button class="side-item" data-sec="loganalyze">Log Analyzer</button>
           <button class="side-item" data-sec="memforensics">Memory Forensics</button>
@@ -803,8 +928,8 @@ function renderApp(user) {
           <button class="side-item" data-sec="stego">Steganography</button>
           <button class="side-item" data-sec="reveng">Reverse Engineering</button>
 
-          <div class="side-group side-collapse">Defense &amp; Response</div>
-          <button class="side-item" data-sec="adversary">Adversary Mind</button>
+          <div class="side-group side-collapse">Blue Team <span class="side-cnt">9</span></div>
+          <button class="side-item" data-sec="adversary">Adversary Emulation</button>
           <button class="side-item" data-sec="breachsim">Breach Simulator</button>
           <button class="side-item" data-sec="huntlab">Threat Hunt Lab</button>
           <button class="side-item" data-sec="purpleteam">Purple Team Ops</button>
@@ -812,56 +937,86 @@ function renderApp(user) {
           <button class="side-item" data-sec="incidents">Incident Tracker</button>
           <button class="side-item" data-sec="threatmodel">Threat Modeler</button>
           <button class="side-item" data-sec="containers">Container Security</button>
-          <button class="side-item" data-sec="mobilesec">Mobile Security Lab</button>
+          <button class="side-item" data-sec="mobilesec">Mobile Security</button>
 
-          <div class="side-group side-collapse">Intelligence &amp; Compliance</div>
-          <button class="side-item" data-sec="threat">Threat Intelligence</button>
+          <div class="side-group side-collapse">Threat Intel <span class="side-cnt">8</span></div>
+          <button class="side-item" data-sec="threat">Threat Feed</button>
           <button class="side-item" data-sec="ipreputation">IP Reputation</button>
-          <button class="side-item" data-sec="darkwebosint">Dark Web OSINT</button>
+          <button class="side-item" data-sec="darkwebosint">Dark Web OSINT <span class="side-badge new">NEW</span></button>
           <button class="side-item" data-sec="vulnprio">Vuln Prioritizer</button>
-          <button class="side-item" data-sec="compliance">Compliance Checker</button>
-          <button class="side-item" data-sec="zerotrust">Zero Trust Designer</button>
-          <button class="side-item" data-sec="supplychain">Supply Chain Analyzer</button>
-          <button class="side-item" data-sec="socialeng">Social Engineering Sim</button>
+          <button class="side-item" data-sec="compliance">Compliance &amp; GRC</button>
+          <button class="side-item" data-sec="zerotrust">Zero Trust Planner</button>
+          <button class="side-item" data-sec="supplychain">Supply Chain</button>
+          <button class="side-item" data-sec="socialeng">Social Engineering</button>
 
-          <div class="side-group side-collapse">Tools &amp; Utilities</div>
+          <div class="side-group side-collapse">Government &amp; Enterprise <span class="side-cnt">14</span></div>
+          <button class="side-item" data-sec="cyberbriefing">Cyber Briefing <span class="side-badge new">NEW</span></button>
+          <button class="side-item" data-sec="vulntriage">Vuln Triage Engine <span class="side-badge new">NEW</span></button>
+          <button class="side-item" data-sec="incidentcost">Incident Cost Calc <span class="side-badge new">NEW</span></button>
+          <button class="side-item" data-sec="fedcompliance">Federal Compliance <span class="side-badge new">NEW</span></button>
+          <button class="side-item" data-sec="adversaryplaybook">Adversary Playbook <span class="side-badge new">NEW</span></button>
+          <button class="side-item" data-sec="emailheader">Email Header Analyzer <span class="side-badge new">NEW</span></button>
+          <button class="side-item" data-sec="iocextractor">IOC Extractor <span class="side-badge new">NEW</span></button>
+          <button class="side-item" data-sec="threatcanvas">Threat Model Canvas <span class="side-badge new">NEW</span></button>
+          <button class="side-item" data-sec="logforensics">Log Forensics <span class="side-badge new">NEW</span></button>
+          <button class="side-item" data-sec="reconplanner">Recon Planner <span class="side-badge new">NEW</span></button>
+          <button class="side-item" data-sec="subdomainenum">Subdomain Enumerator <span class="side-badge new">NEW</span></button>
+          <button class="side-item" data-sec="passwordanalyzer">Password Analyzer <span class="side-badge new">NEW</span></button>
+          <button class="side-item" data-sec="certanalyzer">Certificate Analyzer <span class="side-badge new">NEW</span></button>
+          <button class="side-item" data-sec="packetinspector">Packet Inspector <span class="side-badge new">NEW</span></button>
+          <button class="side-item" data-sec="siemdash">SIEM Dashboard <span class="side-badge new">NEW</span></button>
+          <button class="side-item" data-sec="credauditor">Credential Auditor <span class="side-badge new">NEW</span></button>
+          <button class="side-item" data-sec="subdomainscanner">Subdomain Scanner <span class="side-badge new">NEW</span></button>
+
+          <div class="side-group side-collapse">Network &amp; Defense <span class="side-cnt">12</span></div>
+          <button class="side-item" data-sec="dnsenum">DNS Enumeration <span class="side-badge new">NEW</span></button>
+          <button class="side-item" data-sec="malwaresandbox">Malware Sandbox <span class="side-badge new">NEW</span></button>
+          <button class="side-item" data-sec="firewallrules">Firewall Rules <span class="side-badge new">NEW</span></button>
+          <button class="side-item" data-sec="sslcertanalyzer">SSL Cert Analyzer <span class="side-badge new">NEW</span></button>
+          <button class="side-item" data-sec="apifuzzer">API Fuzzer <span class="side-badge new">NEW</span></button>
+          <button class="side-item" data-sec="incidentresponse">Incident Response <span class="side-badge new">NEW</span></button>
+          <button class="side-item" data-sec="networktraffic">Network Traffic <span class="side-badge new">NEW</span></button>
+          <button class="side-item" data-sec="hashtoolkit">Hash Toolkit <span class="side-badge new">NEW</span></button>
+          <button class="side-item" data-sec="privesc">Privilege Escalation <span class="side-badge new">NEW</span></button>
+          <button class="side-item" data-sec="reverseshell">Reverse Shell Gen <span class="side-badge new">NEW</span></button>
+          <button class="side-item" data-sec="xsslab">XSS Lab <span class="side-badge new">NEW</span></button>
+          <button class="side-item" data-sec="osintemail">OSINT Email Intel <span class="side-badge new">NEW</span></button>
+
+          <div class="side-group side-collapse">Crypto &amp; Encoding <span class="side-cnt">9</span></div>
           <button class="side-item" data-sec="credaudit">Credential Auditor</button>
           <button class="side-item" data-sec="jwtanalyzer">JWT Analyzer</button>
           <button class="side-item" data-sec="cspevaluator">CSP Evaluator</button>
           <button class="side-item" data-sec="urldissect">URL Dissector</button>
-          <button class="side-item" data-sec="encoding">Encoding Toolkit</button>
+          <button class="side-item" data-sec="encoding">Encoding Suite</button>
           <button class="side-item" data-sec="cryptotools">Crypto Toolkit</button>
           <button class="side-item" data-sec="regexlab">Regex Lab</button>
           <button class="side-item" data-sec="cheats">Cheat Sheets</button>
-          <button class="side-item" data-sec="utils">Utilities</button>
+          <button class="side-item" data-sec="utils">Toolbox</button>
 
-          <div class="side-group side-collapse">AI &amp; Automation</div>
-          <button class="side-item" data-sec="ai">AI Assistant</button>
-          <button class="side-item" data-sec="coder">Nexus Agent</button>
+          <div class="side-group side-collapse">Nexus AI <span class="side-cnt">4</span></div>
+          <button class="side-item" data-sec="ai">AI Chat</button>
+          <button class="side-item" data-sec="coder">Nexus Agent <span class="side-badge ai">AI</span></button>
           <button class="side-item" data-sec="engines">Security Engines</button>
           <button class="side-item" data-sec="report">Report Generator</button>
 
-          <div class="side-group side-collapse">Learning</div>
-          <button class="side-item" data-sec="learn">Learn Hub</button>
-          <button class="side-item" data-sec="cyberrange">Cyber Range</button>
+          <div class="side-group side-collapse">Training Ground <span class="side-cnt">9</span></div>
+          <button class="side-item" data-sec="learn">Academy</button>
+          <button class="side-item" data-sec="cyberrange">Cyber Range <span class="side-badge hot">HOT</span></button>
           <button class="side-item" data-sec="training">Training Labs</button>
-          <button class="side-item" data-sec="secquiz">Security Training</button>
-          <button class="side-item" data-sec="refs">References</button>
-          <button class="side-item" data-sec="snippets">Code Snippets</button>
+          <button class="side-item" data-sec="secquiz">Skill Assessments</button>
+          <button class="side-item" data-sec="refs">Reference Library</button>
+          <button class="side-item" data-sec="snippets">Snippet Vault</button>
           <button class="side-item" data-sec="targets">Practice Targets</button>
           <button class="side-item" data-sec="vms">Vulnerable VMs</button>
           <button class="side-item" data-sec="vmlab">VM Lab</button>
 
-          <div class="side-group side-collapse">Platform</div>
-          <button class="side-item" data-sec="arsenal">External Resources</button>
+          <div class="side-group side-collapse">Infrastructure <span class="side-cnt">6</span></div>
           <button class="side-item" data-sec="downloads">Darknode OS</button>
           <button class="side-item" data-sec="dlguide">Download Guide</button>
           <button class="side-item" data-sec="setup">Local Setup</button>
-          <button class="side-item" data-sec="privatecloud">Private Cloud</button>
-          <button class="side-item" data-sec="github">GitHub</button>
+          <button class="side-item" data-sec="privatecloud">Private Cloud <span class="side-badge beta">BETA</span></button>
           <button class="side-item" data-sec="api">API</button>
-          <button class="side-item" data-sec="docs">Documentation</button>
-          <button class="side-item" data-sec="gmail">Gmail</button>
+          <button class="side-item" data-sec="docs">Docs</button>
 
           ${isOwner ? `<div class="side-group side-collapse">Admin</div><button class="side-item" data-sec="admin">Admin Console</button>` : ""}
         </nav>
@@ -870,7 +1025,7 @@ function renderApp(user) {
       <main class="app-main" id="app-main" role="main"><div id="crumbs" class="crumbs" aria-label="Breadcrumb" role="navigation"></div><div id="app-content"></div>
         <footer class="app-foot">
           <div class="app-foot-row">
-            <span class="app-foot-brand">Darknode</span><span class="app-foot-ver">v2.29</span>
+            <span class="app-foot-brand">Darknode</span><span class="app-foot-ver">v3.1</span>
             <nav class="app-foot-links">
               <a data-foot="docs">Docs</a><a data-foot="terms">Terms</a><a data-foot="privacy">Privacy</a><a data-foot="aup">Acceptable Use</a><a data-foot="license">License</a><a data-foot="downloads">Downloads</a>
             </nav>
@@ -881,7 +1036,7 @@ function renderApp(user) {
     </div>`;
 
   const main = document.getElementById("app-content");
-  const labelOf = (s) => { const b = view.querySelector('.side-item[data-sec="' + s + '"]'); return b ? b.textContent.trim() : s.charAt(0).toUpperCase() + s.slice(1); };
+  const labelOf = (s) => { const b = view.querySelector('.side-item[data-sec="' + s + '"]'); if (!b) return s.charAt(0).toUpperCase() + s.slice(1); const badge = b.querySelector(".side-badge"); return badge ? b.textContent.replace(badge.textContent, "").trim() : b.textContent.trim(); };
   let trail = [], curSec = "home";
   function renderCrumbs(sec) {
     const i = trail.indexOf(sec);
@@ -908,9 +1063,15 @@ function renderApp(user) {
       history.pushState({ sec }, "", path);
     }
     view.querySelectorAll(".side-item").forEach((x) => x.classList.toggle("active", x.dataset.sec === sec));
+    const shell = view.querySelector(".app-shell");
+    if (shell) shell.classList.toggle("no-sidebar", sec === "settings" || sec === "docs");
+    const prevH = main.offsetHeight;
+    if (prevH > 200) main.style.minHeight = prevH + "px";
+    requestAnimationFrame(() => { main.style.minHeight = ""; });
+    if (sec && sec !== "home" && sec !== "settings") { try { let r = JSON.parse(localStorage.getItem("dn_recent")||"[]"); r = r.filter(s=>s!==sec); r.unshift(sec); r = r.slice(0,8); localStorage.setItem("dn_recent", JSON.stringify(r)); } catch(_){} }
     if (sec === "tools") { main.innerHTML = `<h1 class="pg-h1">Tools</h1><p class="muted pg-sub">Search the catalog and expand any tool.</p><div id="tools"></div>`; import("/js/tools.js").then(m => m.renderTools(document.getElementById("tools"))); }
     else if (sec === "utils") { import("/js/utils.js").then(m => m.renderUtils(main)); }
-    else if (sec === "ai") { import("/js/webai.js").then(m => m.renderAI(main)); }
+    else if (sec === "ai") { import("/js/webai.js?v=20260920").then(m => m.renderAI(main)); }
     else if (sec === "payloads") { import("/js/labs.js").then(m => m.renderPayloads(main)); }
     else if (sec === "targets") { import("/js/labs.js").then(m => m.renderTargets(main)); }
     else if (sec === "ghdb") { import("/js/ghdb.js").then(m => m.renderGHDB(main)); }
@@ -923,7 +1084,7 @@ function renderApp(user) {
     else if (sec === "report") { import("/js/report.js").then(m => m.renderReport(main)); }
     else if (sec === "snippets") { import("/js/labs.js").then(m => m.renderSnippets(main)); }
     else if (sec === "refs") { import("/js/labs.js").then(m => m.renderRefs(main)); }
-    else if (sec === "arsenal") { import("/js/arsenal.js").then(m => m.renderArsenal(main)); }
+    else if (sec === "arsenal") { show("home"); return; }
     else if (sec === "engines") { import("/js/arsenal.js").then(m => m.renderEngines(main)); }
     else if (sec === "packetcraft") { import("/js/packet-crafter.js").then(m => m.renderPacketCrafter(main)); }
     else if (sec === "binanalyze") { import("/js/binary-analyzer.js").then(m => m.renderBinaryAnalyzer(main)); }
@@ -952,8 +1113,8 @@ function renderApp(user) {
     else if (sec === "reveng") { import("/js/reverse-engineering.js").then(m => m.renderReverseEngineering(main)); }
     else if (sec === "darkwebosint") { import("/js/darkweb-osint.js").then(m => m.renderDarkwebOsint(main)); }
     else if (sec === "cyberrange") { import("/js/cyber-range.js").then(m => m.renderCyberRange(main)); }
-    else if (sec === "prometheus") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading PROMETHEUS...</p>"; const _s=sec; import("/js/prometheus-web.js").then(m => { if(curSec!==_s)return; m.renderPrometheus(main); _prevCleanup = m.cleanupPrometheus; }); }
-    else if (sec === "sentineleye") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading SENTINEL EYE...</p>"; if(!document.querySelector('script[src="/js/threat-api.js"]')){var s1=document.createElement("script");s1.src="/js/threat-api.js";document.head.appendChild(s1)}if(!document.querySelector('script[src="/js/threat-map.js"]')){var s2=document.createElement("script");s2.src="/js/threat-map.js";document.head.appendChild(s2)} const _s=sec; import("/js/sentinel-eye.js").then(m => { if(curSec!==_s)return; m.renderSentinelEye(main); _prevCleanup = m.cleanupSentinelEye; }); }
+    else if (sec === "prometheus") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading PROMETHEUS...</p>"; const _s=sec; import("/js/prometheus-web.js?v=20260919r").then(m => { if(curSec!==_s)return; m.renderPrometheus(main); _prevCleanup = m.cleanupPrometheus; }); }
+    else if (sec === "sentineleye") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading SENTINEL EYE...</p>"; if(!document.querySelector('script[src="/js/threat-api.js"]')){var s1=document.createElement("script");s1.src="/js/threat-api.js";document.head.appendChild(s1)}if(!document.querySelector('script[src="/js/threat-map.js"]')){var s2=document.createElement("script");s2.src="/js/threat-map.js";document.head.appendChild(s2)} const _s=sec; import("/js/sentinel-eye.js?v=20260920").then(m => { if(curSec!==_s)return; m.renderSentinelEye(main); _prevCleanup = m.cleanupSentinelEye; }); }
     else if (sec === "exploitdev") { import("/js/exploit-writer.js").then(m => m.renderExploitWriter(main)); }
     else if (sec === "secdash") { import("/js/security-dashboard.js").then(m => m.renderSecurityDashboard(main)); }
     else if (sec === "phishing") { import("/js/phishing-analyzer.js").then(m => m.renderPhishingAnalyzer(main)); }
@@ -961,7 +1122,7 @@ function renderApp(user) {
     else if (sec === "cracklab") { import("/js/password-cracking-lab.js").then(m => m.renderPasswordCrackingLab(main)); }
     else if (sec === "hydra") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading HYDRA...</p>"; import("/js/hydra-engine.js").then(m => m.renderHydra(main)); }
     else if (sec === "aegis") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading AEGIS...</p>"; import("/js/aegis-web.js").then(m => m.renderAegis(main)); }
-    else if (sec === "vanguard") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading VANGUARD...</p>"; import("/js/vanguard.js").then(m => m.renderVanguard(main)); }
+    else if (sec === "vanguard") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading VANGUARD...</p>"; import("/js/vanguard.js?v=20260919n").then(m => m.renderVanguard(main)); }
     else if (sec === "jwtanalyzer") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading JWT Analyzer...</p>"; import("/js/jwt-analyzer.js").then(m => m.renderJwtAnalyzer(main)); }
     else if (sec === "cspevaluator") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading CSP Evaluator...</p>"; import("/js/csp-evaluator.js").then(m => m.renderCspEvaluator(main)); }
     else if (sec === "wayback") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Wayback Recon...</p>"; import("/js/wayback-recon.js").then(m => m.renderWaybackRecon(main)); }
@@ -976,19 +1137,49 @@ function renderApp(user) {
     else if (sec === "malclass") { import("/js/malware-classifier.js").then(m => m.renderMalwareClassifier(main)); }
     else if (sec === "zerotrust") { import("/js/zero-trust-designer.js").then(m => m.renderZeroTrustDesigner(main)); }
     else if (sec === "vulnprio") { import("/js/vulnerability-prioritizer.js").then(m => m.renderVulnPrioritizer(main)); }
+    else if (sec === "vulntriage") { import("/js/vuln-triage.js").then(m => m.renderVulnTriage(main)); }
     else if (sec === "secquiz") { import("/js/security-awareness-quiz.js").then(m => m.renderSecurityQuiz(main)); }
     else if (sec === "supplychain") { import("/js/supply-chain-analyzer.js").then(m => m.renderSupplyChainAnalyzer(main)); }
     else if (sec === "cryptotools") { import("/js/crypto-tools.js").then(m => m.renderCryptoTools(main)); }
     else if (sec === "ftimeline") { import("/js/forensic-timeline.js").then(m => m.renderForensicTimeline(main)); }
     else if (sec === "socialeng") { import("/js/social-engineering-sim.js").then(m => m.renderSocialEngSim(main)); }
     else if (sec === "training") { import("/js/arsenal.js").then(m => m.renderTraining(main)); }
-    else if (sec === "apikeys") { import("/js/labs.js").then(m => m.renderApiKeys(main)); }
+    else if (sec === "apikeys") { show("settings"); return; }
     else if (sec === "cheats") renderCheats(main);
     else if (sec === "threat") renderThreat(main);
     else if (sec === "ipreputation") { import("/js/ip-reputation.js").then(m => m.renderIPReputation(main)); }
+    else if (sec === "cyberbriefing") { import("/js/cyber-briefing.js").then(m => m.renderCyberBriefing(main)); }
+    else if (sec === "vulntriage") { import("/js/vuln-triage.js").then(m => m.renderVulnTriage(main)); }
+    else if (sec === "incidentcost") { import("/js/incident-cost.js").then(m => m.renderIncidentCost(main)); }
+    else if (sec === "fedcompliance") { import("/js/fed-compliance.js").then(m => m.renderFedCompliance(main)); }
+    else if (sec === "adversaryplaybook") { import("/js/adversary-playbook.js").then(m => m.renderAdversaryPlaybook(main)); }
+    else if (sec === "emailheader") { import("/js/email-header.js").then(m => m.renderEmailHeader(main)); }
+    else if (sec === "iocextractor") { import("/js/ioc-extractor.js").then(m => m.renderIOCExtractor(main)); }
+    else if (sec === "threatcanvas") { import("/js/threat-model.js").then(m => m.renderThreatModel(main)); }
+    else if (sec === "logforensics") { import("/js/log-forensics.js").then(m => m.renderLogForensics(main)); }
+    else if (sec === "reconplanner") { import("/js/recon-planner.js").then(m => m.renderReconPlanner(main)); }
+    else if (sec === "subdomainenum") { import("/js/subdomain-enum.js").then(m => m.renderSubdomainEnum(main)); }
+    else if (sec === "passwordanalyzer") { import("/js/password-analyzer.js").then(m => m.renderPasswordAnalyzer(main)); }
+    else if (sec === "certanalyzer") { import("/js/cert-analyzer.js").then(m => m.renderCertAnalyzer(main)); }
+    else if (sec === "packetinspector") { import("/js/packet-inspector.js").then(m => m.renderPacketInspector(main)); }
+    else if (sec === "siemdash") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading SIEM...</p>"; import("/js/siem-dash.js").then(m => m.renderSiemDash(main)); }
+    else if (sec === "credauditor") { import("/js/cred-auditor.js").then(m => m.renderCredAuditor(main)); }
+    else if (sec === "subdomainscanner") { import("/js/subdomain-scanner.js").then(m => m.renderSubdomainScanner(main)); }
+    else if (sec === "dnsenum") { import("/js/dns-enum.js").then(m => m.renderDNSEnum(main)); }
+    else if (sec === "malwaresandbox") { import("/js/malware-sandbox.js").then(m => m.renderMalwareSandbox(main)); }
+    else if (sec === "firewallrules") { import("/js/firewall-rules.js").then(m => m.renderFirewallRules(main)); }
+    else if (sec === "sslcertanalyzer") { import("/js/ssl-cert-analyzer.js").then(m => m.renderSSLCertAnalyzer(main)); }
+    else if (sec === "apifuzzer") { import("/js/api-fuzzer.js").then(m => m.renderAPIFuzzer(main)); }
+    else if (sec === "incidentresponse") { import("/js/incident-response.js").then(m => m.renderIncidentResponse(main)); }
+    else if (sec === "networktraffic") { import("/js/network-traffic.js").then(m => m.renderNetworkTraffic(main)); }
+    else if (sec === "hashtoolkit") { import("/js/hash-toolkit.js").then(m => m.renderHashToolkit(main)); }
+    else if (sec === "privesc") { import("/js/privesc-toolkit.js").then(m => m.renderPrivescToolkit(main)); }
+    else if (sec === "reverseshell") { import("/js/reverse-shell.js").then(m => m.renderReverseShell(main)); }
+    else if (sec === "xsslab") { import("/js/xss-lab.js").then(m => m.renderXSSLab(main)); }
+    else if (sec === "osintemail") { import("/js/osint-email.js").then(m => m.renderOSINTEmail(main)); }
     else if (sec === "learn") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Learn Hub...</p>"; loadLearnHub().then(m => m.renderLearnHub(main)); }
-    else if (sec === "github") { import("/js/github.js").then(m => m.renderGitHub(main)); }
-    else if (sec === "gmail") { import("/js/gmail.js").then(m => m.renderGmail(main)); }
+    else if (sec === "github") { show("settings"); return; }
+    else if (sec === "gmail") { show("settings"); return; }
     else if (sec === "coder") { import("/js/coder.js").then(m => m.renderCliCoder(main)); }
     else if (sec === "downloads") { import("/js/getapp.js").then(m => m.renderDownloads(main)); }
     else if (sec === "dlguide") { import("/js/getapp.js").then(m => m.renderDownloadDocs(main)); }
@@ -996,7 +1187,7 @@ function renderApp(user) {
     else if (sec === "docs") { import("/js/docs.js").then(m => m.renderDocs(main)); }
     else if (sec === "setup") renderSetup(main, more);
     else if (sec === "settings") renderSettingsPage(main, user, isOwner);
-    else if (sec === "admin") { import("/js/admin.js").then(m => m.renderAdmin(main, user)); }
+    else if (sec === "admin") { import("/js/admin.js?v=20260919r").then(m => m.renderAdmin(main, user)); }
     else if (sec === "contact") renderContact(main);
     else renderHome(main, user, isOwner, show);
     if (more === undefined) { try { localStorage.setItem("sw_last_sec", sec); } catch (_) {} }
@@ -1007,6 +1198,8 @@ function renderApp(user) {
     const sec = (e.state && e.state.sec) || pathToSec(location.pathname);
     show(sec, undefined, true);
   });
+  // Handle keyboard shortcut navigation (from shortcuts.js)
+  document.addEventListener("dn:navigate", (e) => { if (e.detail) show(e.detail); });
 
   view.querySelector(".side-nav").onclick = (e) => {
     const b = e.target.closest(".side-item");
@@ -1057,6 +1250,30 @@ function renderApp(user) {
       }
     }
   });
+  // Sidebar search filter
+  const sideSearch = view.querySelector("#sideSearch");
+  if (sideSearch) {
+    sideSearch.oninput = () => {
+      const q = sideSearch.value.toLowerCase().trim();
+      const nav = view.querySelector(".side-nav");
+      nav.querySelectorAll(".side-item").forEach(item => {
+        if (item.dataset.sec === "home") return;
+        item.style.display = !q || item.textContent.toLowerCase().includes(q) ? "" : "none";
+      });
+      nav.querySelectorAll(".side-group").forEach(g => {
+        if (!q) {
+          g.style.display = "";
+          let el = g.nextElementSibling;
+          const open = g.dataset.open === "1";
+          while (el && !el.classList.contains("side-group")) { el.style.display = open ? "" : "none"; el = el.nextElementSibling; }
+          return;
+        }
+        let hasVisible = false; let el = g.nextElementSibling;
+        while (el && !el.classList.contains("side-group")) { if (el.style.display !== "none") hasVisible = true; el = el.nextElementSibling; }
+        g.style.display = hasVisible ? "" : "none";
+      });
+    };
+  }
   // Hamburger toggle for mobile sidebar
   const hamburger = document.getElementById("hamburger");
   const sidebar = document.getElementById("sidebar");
@@ -1072,6 +1289,7 @@ function renderApp(user) {
 
   userSlot.innerHTML = `
     <button class="cmdk-btn" id="cmdkBtn" title="Search (Ctrl+K)"><span>Search</span><kbd>Ctrl K</kbd></button>
+    <span id="cli-dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#71717a;margin:0 10px;cursor:pointer;vertical-align:middle;transition:background .3s" title="CLI not connected" onclick="(function(){var t=prompt('Enter Darknode CLI auth token (from your terminal):');if(t&&window._bridge)window._bridge.connect(t.trim()).then(function(r){document.getElementById('cli-dot').style.background='#22c55e';document.getElementById('cli-dot').title='CLI connected: '+(r.hostname||'local');showToast('Connected to '+(r.hostname||'CLI')+' — '+(r.tools||[]).length+' tools, '+(r.ollama||[]).length+' AI models','success')}).catch(function(e){showToast('Failed: '+e.message,'error')})})()"></span>
     <div class="tb-item">
       <button class="icon-btn" id="moreBtn" title="More" aria-label="More">&#8943;</button>
       <div class="menu" id="moreMenu" hidden>
@@ -1083,7 +1301,6 @@ function renderApp(user) {
       <div class="menu" id="profileMenu" hidden>
         <div class="menu-prof">${avatar}<div style="min-width:0"><div class="su-name">${esc(name)}</div><div class="su-mail muted">${esc(user.email)}${isOwner ? ' <span class="owner-badge">OWNER</span>' : ""}</div></div></div>
         <button class="menu-item" data-nav="settings">Settings</button>
-        <button class="menu-item" data-nav="apikeys">API keys</button>
         <button class="menu-item" data-nav="saved">Saved Items</button>
         <button class="menu-item" data-a="theme">Toggle light / dark</button>
         <div class="menu-div"></div>
@@ -1124,6 +1341,14 @@ function renderApp(user) {
 
   appShow = show;
   initSaved(user);
+
+  import('/js/bridge.js').then(function(mod) {
+    window._bridge = mod.bridge;
+    var dot = document.getElementById('cli-dot');
+    mod.bridge.probe().then(function(ok) { if (ok && dot) { dot.style.background = '#f59e0b'; dot.title = 'CLI detected — click to connect'; } });
+    mod.bridge.addEventListener('connect', function() { if (dot) { dot.style.background = '#22c55e'; dot.title = 'CLI connected: ' + mod.bridge.hostname; } });
+    mod.bridge.addEventListener('disconnect', function() { if (dot) { dot.style.background = '#71717a'; dot.title = 'CLI disconnected'; } });
+  }).catch(function() {});
 
   // ---- breadcrumb navigation ----
   document.getElementById("crumbs").onclick = (e) => { const b = e.target.closest("[data-crumb]"); if (b) show(b.dataset.crumb); };
@@ -1181,7 +1406,7 @@ function pushRecent(id) { let r = paletteRecents().filter((x) => x !== id); r.un
 
 function openPalette() {
   if (document.getElementById("cmdk")) return;
-  const sections = [["home", "Home"], ["ai", "AI assistant"], ["tools", "Tools"], ["saved", "Saved"], ["utils", "Utilities"], ["payloads", "Payloads"], ["exploitdb", "Exploit & vuln databases"], ["ghdb", "Google dorks"], ["targets", "Practice targets"], ["vms", "Vulnerable VMs"], ["threat", "Threat intel"], ["cheats", "Cheat sheets"], ["snippets", "Code snippets"], ["refs", "References"], ["arsenal", "Arsenal"], ["training", "Training"], ["github", "GitHub"], ["gmail", "Gmail"], ["privatecloud", "Private Cloud Generator"], ["report", "Report generator"], ["learn", "Learn"], ["setup", "Local setup"], ["coder", "Nexus"], ["downloads", "Get the app"], ["dlguide", "Download guide"], ["api", "API"], ["docs", "Documentation"], ["apikeys", "API keys"], ["settings", "Settings"], ["admin", "Admin"], ["vanguard", "VANGUARD"], ["jwtanalyzer", "JWT Analyzer"], ["cspevaluator", "CSP Evaluator"], ["wayback", "Wayback Recon"], ["urldissect", "URL Dissector"], ["favicon", "Favicon Hasher"]];
+  const sections = [["home", "Dashboard"], ["ai", "AI Chat"], ["tools", "Scanner Suite"], ["saved", "Saved"], ["utils", "Toolbox"], ["payloads", "Payload Forge"], ["exploitdb", "Exploit Database"], ["ghdb", "Google Dorking"], ["targets", "Practice Targets"], ["vms", "Vulnerable VMs"], ["threat", "Threat Feed"], ["cheats", "Cheat Sheets"], ["snippets", "Snippet Vault"], ["refs", "Reference Library"], ["training", "Training Labs"], ["privatecloud", "Private Cloud"], ["report", "Report Generator"], ["learn", "Academy"], ["setup", "Local Setup"], ["coder", "Nexus Agent"], ["downloads", "Darknode OS"], ["dlguide", "Download Guide"], ["api", "API"], ["docs", "Docs"], ["settings", "Settings"], ["admin", "Admin"], ["vanguard", "VANGUARD"], ["prometheus", "PROMETHEUS"], ["sentineleye", "SENTINEL EYE"], ["hydra", "HYDRA Engine"], ["aegis", "AEGIS Ops Center"], ["secdash", "Security Dashboard"], ["jwtanalyzer", "JWT Analyzer"], ["cspevaluator", "CSP Evaluator"], ["wayback", "Wayback Machine"], ["urldissect", "URL Dissector"], ["favicon", "Favicon Hasher"], ["cyberrange", "Cyber Range"], ["sandbox", "Malware Sandbox"], ["netmap", "Network Mapper"], ["exploitdev", "Exploit Writer"], ["cracklab", "Hashcat Lab"], ["osint", "OSINT Dashboard"], ["darkwebosint", "Dark Web OSINT"], ["cyberbriefing", "Cyber Briefing"], ["vulntriage", "Vuln Triage Engine"], ["incidentcost", "Incident Cost Calculator"], ["fedcompliance", "Federal Compliance"], ["adversaryplaybook", "Adversary Playbook"], ["emailheader", "Email Header Analyzer"], ["iocextractor", "IOC Extractor"], ["threatcanvas", "Threat Model Canvas"], ["logforensics", "Log Forensics"], ["reconplanner", "Recon Planner"], ["subdomainenum", "Subdomain Enumerator"], ["passwordanalyzer", "Password Analyzer"], ["certanalyzer", "Certificate Analyzer"], ["packetinspector", "Packet Inspector"], ["siemdash", "SIEM Dashboard"], ["credauditor", "Credential Auditor"], ["subdomainscanner", "Subdomain Scanner"], ["dnsenum", "DNS Enumeration"], ["malwaresandbox", "Malware Sandbox"], ["firewallrules", "Firewall Rules"], ["sslcertanalyzer", "SSL Cert Analyzer"], ["apifuzzer", "API Fuzzer"], ["incidentresponse", "Incident Response"], ["networktraffic", "Network Traffic"], ["hashtoolkit", "Hash Toolkit"], ["privesc", "Privilege Escalation"], ["reverseshell", "Reverse Shell Gen"], ["xsslab", "XSS Lab"], ["osintemail", "OSINT Email Intel"]];
   const items = [
     ...sections.map(([s, n]) => ({ type: "section", id: s, name: n, desc: "Go to " + n })),
     ...CATALOG.map((t) => ({ type: "tool", id: t.id, name: t.name, desc: t.cat + " · " + t.desc })),
@@ -1305,7 +1530,7 @@ onAuthStateChanged(auth, async (user) => {
     } else if (!user.emailVerified) { renderVerify(user); return; }
   }
   if (!(await accessAllowed(user))) {
-    alert("Access restricted — your email isn't on the allow-list. Contact the owner.");
+    showToast("Access restricted — your email isn't on the allow-list. Contact the owner.", "error", 6000);
     await signOut(auth); return;
   }
   await ensureUserDoc(user);

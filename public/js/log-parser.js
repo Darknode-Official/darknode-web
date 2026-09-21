@@ -266,7 +266,7 @@ export function renderLogParser(container) {
           ${analysis.topAgents.map(([ua,c]) => {
             const isTool = /sqlmap|nikto|nmap|hydra|gobuster|dirbuster|wfuzz|nuclei|curl/i.test(ua);
             return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;font-size:11px;${isTool?'background:#7f1d1d20;padding:4px 8px;border-radius:4px':''}">
-              <span style="flex:1;color:${isTool?'#fca5a5':'#94a3b8'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${ua}${isTool?' ⚠':''}</span>
+              <span style="flex:1;color:${isTool?'#fca5a5':'#94a3b8'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${ua}${isTool?' ':''}</span>
               <span style="font-weight:600">${c}</span>
             </div>`;
           }).join("")}

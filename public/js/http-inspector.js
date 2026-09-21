@@ -270,11 +270,25 @@ export function renderHttpInspector(container) {
   }
 
   function renderGrader() {
+    const cliReady = window._bridge && window._bridge.connected && window._bridge.hasTool('curl');
     panelsEl.innerHTML = `<div class="hti-panel active">
+      ${cliReady ? '<div style="margin-bottom:12px"><div class="hti-label">Fetch headers from URL <span style="color:#22c55e;font-size:10px;font-weight:700">[LIVE]</span></div><div style="display:flex;gap:8px"><input class="hti-input" id="hti-gr-url" style="height:36px;font-size:13px" placeholder="https://example.com"><button class="hti-btn" id="hti-gr-fetch">Fetch</button></div></div><div style="text-align:center;font-size:11px;opacity:.5;padding:4px 0">or paste manually</div>' : ''}
       <div class="hti-label">Paste response headers (one per line, Name: Value)</div>
       <textarea class="hti-input" id="hti-gr-input" placeholder="Strict-Transport-Security: max-age=31536000\nContent-Security-Policy: default-src 'self'\nX-Content-Type-Options: nosniff\n..."></textarea>
       <button class="hti-btn" id="hti-gr-go">Grade Security</button>
       <div id="hti-gr-result"></div></div>`;
+    if (cliReady) {
+      panelsEl.querySelector("#hti-gr-fetch").onclick = async () => {
+        const url = panelsEl.querySelector("#hti-gr-url").value.trim().replace(/[;|`$()&]/g,'');
+        if (!url) return;
+        panelsEl.querySelector("#hti-gr-result").innerHTML = '<div style="padding:12px;opacity:.6">Fetching headers...</div>';
+        try {
+          const r = await window._bridge.exec("curl -sI '" + url.replace(/'/g,'') + "' 2>/dev/null | head -40");
+          panelsEl.querySelector("#hti-gr-input").value = r.stdout || '';
+          panelsEl.querySelector("#hti-gr-go").click();
+        } catch(e) { panelsEl.querySelector("#hti-gr-result").innerHTML = '<div style="color:#ef4444;padding:12px">Error: '+e.message+'</div>'; }
+      };
+    }
     panelsEl.querySelector("#hti-gr-go").onclick = () => {
       const raw = panelsEl.querySelector("#hti-gr-input").value;
       const headers = {};
@@ -308,7 +322,7 @@ export function renderHttpInspector(container) {
         '<tr><td>Path</td><td>' + esc(c.path || "(not set)") + '</td></tr>' +
         '<tr><td>Expires</td><td>' + esc(c.expires || "(session)") + '</td></tr>' +
         '<tr><td>Max-Age</td><td>' + esc(c.maxAge || "(not set)") + '</td></tr></table>' +
-        (c.issues.length ? '<div style="margin-top:8px">' + c.issues.map(i => '<div class="hti-issue">⚠ ' + esc(i) + '</div>').join("") + '</div>' : '<div class="hti-good" style="margin-top:8px">✓ No issues found</div>') +
+        (c.issues.length ? '<div style="margin-top:8px">' + c.issues.map(i => '<div class="hti-issue">[!] ' + esc(i) + '</div>').join("") + '</div>' : '<div class="hti-good" style="margin-top:8px">[OK] No issues found</div>') +
         '</div>'
       ).join("") || '<div class="hti-result">No cookies parsed</div>';
     };
@@ -330,7 +344,7 @@ export function renderHttpInspector(container) {
             const isUnsafe = v.includes("unsafe") || v === "*";
             return '<span style="color:' + (isUnsafe ? "#ef4444" : "var(--txt)") + '">' + esc(v) + '</span>';
           }).join(" ") + '</span>' +
-          (d.issues.length ? d.issues.map(i => '<div class="hti-issue">⚠ ' + esc(i) + '</div>').join("") : '') +
+          (d.issues.length ? d.issues.map(i => '<div class="hti-issue">[!] ' + esc(i) + '</div>').join("") : '') +
           '</div>'
         ).join("") + '</div>';
     };
@@ -350,7 +364,7 @@ export function renderHttpInspector(container) {
         '<div class="hti-result"><div class="hti-label">Header</div><pre style="background:rgba(0,212,255,.05);padding:8px;border-radius:4px;overflow-x:auto;color:var(--acc)">' + esc(JSON.stringify(result.header, null, 2)) + '</pre></div>' +
         '<div class="hti-result"><div class="hti-label">Payload</div><pre style="background:rgba(0,212,255,.05);padding:8px;border-radius:4px;overflow-x:auto;color:var(--txt)">' + esc(JSON.stringify(result.payload, null, 2)) + '</pre></div>' +
         '<div class="hti-result"><div class="hti-label">Signature</div><div style="word-break:break-all;color:var(--mut)">' + esc(result.signature) + '</div></div>' +
-        (result.issues.length ? '<div class="hti-result">' + result.issues.map(i => '<div class="hti-issue">⚠ ' + esc(i) + '</div>').join("") + '</div>' : '<div class="hti-result hti-good">✓ No issues detected</div>');
+        (result.issues.length ? '<div class="hti-result">' + result.issues.map(i => '<div class="hti-issue">[!] ' + esc(i) + '</div>').join("") + '</div>' : '<div class="hti-result hti-good">[OK] No issues detected</div>');
     };
   }
 
@@ -375,7 +389,7 @@ export function renderHttpInspector(container) {
         '</table></div>' +
         (result.params.length ? '<div class="hti-result"><div class="hti-label">Query Parameters</div><table class="hti-table"><tr><th>Key</th><th>Value</th></tr>' +
           result.params.map(p => '<tr><td style="color:var(--acc)">' + esc(p.key) + '</td><td>' + esc(p.value) + '</td></tr>').join("") + '</table></div>' : '') +
-        (result.issues.length ? '<div class="hti-result">' + result.issues.map(i => '<div class="hti-issue">⚠ ' + esc(i) + '</div>').join("") + '</div>' : '<div class="hti-result hti-good">✓ No security issues detected</div>');
+        (result.issues.length ? '<div class="hti-result">' + result.issues.map(i => '<div class="hti-issue">[!] ' + esc(i) + '</div>').join("") + '</div>' : '<div class="hti-result hti-good">[OK] No security issues detected</div>');
     };
   }
 

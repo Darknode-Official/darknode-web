@@ -343,7 +343,7 @@ export function renderCryptoPlayground(container) {
       el.querySelector("#cp-rsa-result").innerHTML = `
         <div class="cp-step"><b>Encrypt:</b> c = ${m}<sup>${keys.e}</sup> mod ${keys.n} = <b style="color:#00d4ff">${c}</b></div>
         <div class="cp-step"><b>Decrypt:</b> m = c<sup>d</sup> mod n = ${c}<sup>${keys.d}</sup> mod ${keys.n} = <b style="color:#17a34a">${dec}</b></div>
-        <div class="cp-step" style="color:${dec === m ? "#17a34a" : "#ef4444"}">${dec === m ? "✓ Decryption matches original!" : "✗ Mismatch!"}</div>`;
+        <div class="cp-step" style="color:${dec === m ? "#17a34a" : "#ef4444"}">${dec === m ? "[OK] Decryption matches original!" : "[X] Mismatch!"}</div>`;
     };
   }
 
@@ -386,7 +386,7 @@ export function renderCryptoPlayground(container) {
           <div class="cp-step"><b>Bob:</b> secret b = ${r.b}, sends B = g<sup>b</sup> mod p = ${r.g}<sup>${r.b}</sup> mod ${r.p} = <b style="color:#00d4ff">${r.B}</b></div>
           <div class="cp-step" style="margin-top:6px"><b>Alice computes:</b> B<sup>a</sup> mod p = ${r.B}<sup>${r.a}</sup> mod ${r.p} = <b style="color:#17a34a">${r.sharedA}</b></div>
           <div class="cp-step"><b>Bob computes:</b> A<sup>b</sup> mod p = ${r.A}<sup>${r.b}</sup> mod ${r.p} = <b style="color:#17a34a">${r.sharedB}</b></div>
-          <div class="cp-step" style="margin-top:6px;color:${r.match ? "#17a34a" : "#ef4444"}"><b>Shared secret: ${r.sharedA}</b> ${r.match ? "✓ Both sides match!" : "✗ Mismatch!"}</div>
+          <div class="cp-step" style="margin-top:6px;color:${r.match ? "#17a34a" : "#ef4444"}"><b>Shared secret: ${r.sharedA}</b> ${r.match ? "[OK] Both sides match!" : "[X] Mismatch!"}</div>
           <div class="cp-step" style="color:#888;margin-top:8px">An eavesdropper sees p=${r.p}, g=${r.g}, A=${r.A}, B=${r.B} — but cannot compute the shared secret without solving the discrete logarithm problem.</div>
         </div>`;
     };
