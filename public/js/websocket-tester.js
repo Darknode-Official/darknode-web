@@ -7,7 +7,7 @@ var esc = function(s) { return String(s != null ? s : '').replace(/[&<>"']/g, fu
 var _wsConnection = null;
 var _wsLog = [];
 
-window.renderWebSocketTester = function(container) {
+export function renderWebSocketTester(container) {
   var h = '';
   h += '<div style="background:#0a0e14;color:#c8d6e5;font-family:\'Courier New\',monospace;padding:20px;min-height:500px;">';
   h += '<h2 style="color:#00ddff;font-size:18px;letter-spacing:2px;margin:0 0 4px;">WEBSOCKET TESTER</h2>';

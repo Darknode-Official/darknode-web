@@ -20,7 +20,7 @@ let MORE = [], CATALOG = [], CATEGORIES = [];
 import("/js/toolkit.js").then(m => { MORE = m.MORE; CATALOG = m.CATALOG; CATEGORIES = m.CATEGORIES; });
 import { startTour, tourDone } from "/js/tour.js";
 let _landing = null;
-async function loadLanding() { if (!_landing) _landing = await import("/js/landing.js?v=20260922"); return _landing; }
+async function loadLanding() { if (!_landing) _landing = await import("/js/landing.js?v=20260923"); return _landing; }
 import {
   renderThreat, renderCheats, renderLearn, homeWidgetsHTML, wireHome, COUNTS,
   CHEATS, RESOURCES,
@@ -891,7 +891,7 @@ function renderApp(user) {
       <aside class="sidebar" id="sidebar" role="complementary" aria-label="Main navigation">
         <div class="side-brand">Darknode</div>
         <nav class="side-nav" role="navigation" aria-label="Application sections">
-          <div class="side-search-wrap"><input class="side-search" placeholder="Search 120+ tools..." id="sideSearch" spellcheck="false" autocomplete="off"><svg class="side-search-icon" viewBox="0 0 16 16" width="13" height="13"><circle cx="6.5" cy="6.5" r="5" fill="none" stroke="currentColor" stroke-width="1.5"/><line x1="10" y1="10" x2="14" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
+          <div class="side-search-wrap"><input class="side-search" placeholder="Search 160+ tools..." id="sideSearch" spellcheck="false" autocomplete="off"><svg class="side-search-icon" viewBox="0 0 16 16" width="13" height="13"><circle cx="6.5" cy="6.5" r="5" fill="none" stroke="currentColor" stroke-width="1.5"/><line x1="10" y1="10" x2="14" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
           <button class="side-item" data-sec="home">Dashboard</button>
 
           <div class="side-group side-collapse" data-open="1">Mission Control <span class="side-cnt">6</span></div>
@@ -902,67 +902,95 @@ function renderApp(user) {
           <button class="side-item" data-sec="vanguard">VANGUARD</button>
           <button class="side-item" data-sec="secdash">Security Dashboard</button>
 
-          <div class="side-group side-collapse">Red Team <span class="side-cnt">10</span></div>
+          <div class="side-group side-collapse">Red Team <span class="side-cnt">13</span></div>
           <button class="side-item" data-sec="payloads">Payload Forge</button>
+          <button class="side-item" data-sec="payloadgen">Payload Generator</button>
           <button class="side-item" data-sec="exploitdb">Exploit Database</button>
+          <button class="side-item" data-sec="exploitdbbrowser">Exploit DB Browser</button>
           <button class="side-item" data-sec="exploitdev">Exploit Writer</button>
           <button class="side-item" data-sec="packetcraft">Packet Crafter</button>
           <button class="side-item" data-sec="webshell">Terminal</button>
           <button class="side-item" data-sec="cracklab">Hashcat Lab</button>
+          <button class="side-item" data-sec="passwordtools">Password Tools</button>
           <button class="side-item" data-sec="attacksim">Attack Simulator</button>
           <button class="side-item" data-sec="firewall">Firewall Rules</button>
           <button class="side-item" data-sec="wirelesslab">Wireless Lab</button>
           <button class="side-item" data-sec="pentestconsole">Pentest Console</button>
 
-          <div class="side-group side-collapse">Recon &amp; OSINT <span class="side-cnt">12</span></div>
+          <div class="side-group side-collapse">Recon &amp; OSINT <span class="side-cnt">24</span></div>
           <button class="side-item" data-sec="addressintel">Address Intel</button>
+          <button class="side-item" data-sec="asnexplorer">ASN Explorer</button>
           <button class="side-item" data-sec="tools">Scanner Suite</button>
+          <button class="side-item" data-sec="securityscanner">Security Scanner</button>
           <button class="side-item" data-sec="osint">OSINT Dashboard</button>
           <button class="side-item" data-sec="subdomains">Subdomain Enum</button>
           <button class="side-item" data-sec="dns">DNS Toolkit</button>
+          <button class="side-item" data-sec="dnsrecon">DNS Recon</button>
           <button class="side-item" data-sec="netmap">Network Mapper</button>
           <button class="side-item" data-sec="attacksurf">Attack Surface</button>
           <button class="side-item" data-sec="ghdb">Google Dorking</button>
+          <button class="side-item" data-sec="whoisrecon">WHOIS Recon</button>
+          <button class="side-item" data-sec="emailintel">Email Intel</button>
+          <button class="side-item" data-sec="ipgeolocation">IP Geolocation</button>
+          <button class="side-item" data-sec="iptools">IP Tools</button>
+          <button class="side-item" data-sec="headeranalyzer">Header Analyzer</button>
+          <button class="side-item" data-sec="httpinspector">HTTP Inspector</button>
+          <button class="side-item" data-sec="httpprobe">HTTP Probe</button>
+          <button class="side-item" data-sec="corstester">CORS Tester</button>
+          <button class="side-item" data-sec="techfingerprint">Tech Fingerprint</button>
           <button class="side-item" data-sec="apitester">API Tester</button>
           <button class="side-item" data-sec="apiscan">API Scanner</button>
           <button class="side-item" data-sec="wayback">Wayback Machine</button>
           <button class="side-item" data-sec="favicon">Favicon Hasher</button>
 
-          <div class="side-group side-collapse">Forensics &amp; Malware <span class="side-cnt">9</span></div>
+          <div class="side-group side-collapse">Forensics &amp; Malware <span class="side-cnt">13</span></div>
           <button class="side-item" data-sec="binanalyze">Binary Analyzer</button>
           <button class="side-item" data-sec="loganalyze">Log Analyzer</button>
+          <button class="side-item" data-sec="logparser">Log Parser</button>
           <button class="side-item" data-sec="memforensics">Memory Forensics</button>
+          <button class="side-item" data-sec="forensicstoolkit">Forensics Toolkit</button>
+          <button class="side-item" data-sec="forensicstools">Forensics Tools</button>
           <button class="side-item" data-sec="ftimeline">Forensic Timeline</button>
+          <button class="side-item" data-sec="timelineviz">Timeline Visualization</button>
           <button class="side-item" data-sec="malclass">Malware Classifier</button>
           <button class="side-item" data-sec="sandbox">Malware Sandbox</button>
           <button class="side-item" data-sec="phishing">Phishing Analyzer</button>
           <button class="side-item" data-sec="stego">Steganography</button>
           <button class="side-item" data-sec="reveng">Reverse Engineering</button>
 
-          <div class="side-group side-collapse">Blue Team <span class="side-cnt">9</span></div>
+          <div class="side-group side-collapse">Blue Team <span class="side-cnt">11</span></div>
           <button class="side-item" data-sec="adversary">Adversary Emulation</button>
           <button class="side-item" data-sec="breachsim">Breach Simulator</button>
           <button class="side-item" data-sec="huntlab">Threat Hunt Lab</button>
           <button class="side-item" data-sec="purpleteam">Purple Team Ops</button>
           <button class="side-item" data-sec="deception">Deception Architect</button>
+          <button class="side-item" data-sec="riskcalculator">Risk Calculator</button>
+          <button class="side-item" data-sec="identitymatrix">Identity Matrix</button>
           <button class="side-item" data-sec="incidents">Incident Tracker</button>
           <button class="side-item" data-sec="threatmodel">Threat Modeler</button>
           <button class="side-item" data-sec="containers">Container Security</button>
           <button class="side-item" data-sec="mobilesec">Mobile Security</button>
 
-          <div class="side-group side-collapse">Threat Intel <span class="side-cnt">10</span></div>
+          <div class="side-group side-collapse">Threat Intel <span class="side-cnt">17</span></div>
           <button class="side-item" data-sec="threat">Threat Feed</button>
-          <button class="side-item" data-sec="threatfeed">Threat Intel Feed <span class="side-badge new">NEW</span></button>
-          <button class="side-item" data-sec="secchecklist">Security Checklist <span class="side-badge new">NEW</span></button>
+          <button class="side-item" data-sec="threatfeed">Threat Intel Feed</button>
+          <button class="side-item" data-sec="threatfeedagg">Threat Aggregator</button>
+          <button class="side-item" data-sec="threatdashboard">Threat Dashboard</button>
+          <button class="side-item" data-sec="secchecklist">Security Checklist</button>
+          <button class="side-item" data-sec="breachlookup">Breach Lookup</button>
+          <button class="side-item" data-sec="cvesearch">CVE Search</button>
+          <button class="side-item" data-sec="cvetimeline">CVE Timeline</button>
+          <button class="side-item" data-sec="darknetradar">Darknet Radar</button>
+          <button class="side-item" data-sec="vulndb">Vulnerability DB</button>
           <button class="side-item" data-sec="ipreputation">IP Reputation</button>
-          <button class="side-item" data-sec="darkwebosint">Dark Web OSINT <span class="side-badge new">NEW</span></button>
+          <button class="side-item" data-sec="darkwebosint">Dark Web OSINT</button>
           <button class="side-item" data-sec="vulnprio">Vuln Prioritizer</button>
           <button class="side-item" data-sec="compliance">Compliance &amp; GRC</button>
           <button class="side-item" data-sec="zerotrust">Zero Trust Planner</button>
           <button class="side-item" data-sec="supplychain">Supply Chain</button>
           <button class="side-item" data-sec="socialeng">Social Engineering</button>
 
-          <div class="side-group side-collapse">Government &amp; Enterprise <span class="side-cnt">14</span></div>
+          <div class="side-group side-collapse">Government &amp; Enterprise <span class="side-cnt">17</span></div>
           <button class="side-item" data-sec="cyberbriefing">Cyber Briefing <span class="side-badge new">NEW</span></button>
           <button class="side-item" data-sec="vulntriage">Vuln Triage Engine <span class="side-badge new">NEW</span></button>
           <button class="side-item" data-sec="incidentcost">Incident Cost Calc <span class="side-badge new">NEW</span></button>
@@ -981,42 +1009,58 @@ function renderApp(user) {
           <button class="side-item" data-sec="credauditor">Credential Auditor <span class="side-badge new">NEW</span></button>
           <button class="side-item" data-sec="subdomainscanner">Subdomain Scanner <span class="side-badge new">NEW</span></button>
 
-          <div class="side-group side-collapse">Network &amp; Defense <span class="side-cnt">12</span></div>
-          <button class="side-item" data-sec="dnsenum">DNS Enumeration <span class="side-badge new">NEW</span></button>
-          <button class="side-item" data-sec="malwaresandbox">Malware Sandbox <span class="side-badge new">NEW</span></button>
-          <button class="side-item" data-sec="firewallrules">Firewall Rules <span class="side-badge new">NEW</span></button>
-          <button class="side-item" data-sec="sslcertanalyzer">SSL Cert Analyzer <span class="side-badge new">NEW</span></button>
-          <button class="side-item" data-sec="apifuzzer">API Fuzzer <span class="side-badge new">NEW</span></button>
-          <button class="side-item" data-sec="incidentresponse">Incident Response <span class="side-badge new">NEW</span></button>
-          <button class="side-item" data-sec="networktraffic">Network Traffic <span class="side-badge new">NEW</span></button>
-          <button class="side-item" data-sec="hashtoolkit">Hash Toolkit <span class="side-badge new">NEW</span></button>
-          <button class="side-item" data-sec="privesc">Privilege Escalation <span class="side-badge new">NEW</span></button>
-          <button class="side-item" data-sec="reverseshell">Reverse Shell Gen <span class="side-badge new">NEW</span></button>
-          <button class="side-item" data-sec="xsslab">XSS Lab <span class="side-badge new">NEW</span></button>
-          <button class="side-item" data-sec="osintemail">OSINT Email Intel <span class="side-badge new">NEW</span></button>
+          <div class="side-group side-collapse">Network &amp; Defense <span class="side-cnt">19</span></div>
+          <button class="side-item" data-sec="networkscanner">Network Scanner</button>
+          <button class="side-item" data-sec="networktools">Network Tools</button>
+          <button class="side-item" data-sec="packetanalyzer">Packet Analyzer</button>
+          <button class="side-item" data-sec="subnetvisualizer">Subnet Visualizer</button>
+          <button class="side-item" data-sec="sslinspector">SSL Inspector</button>
+          <button class="side-item" data-sec="trafficanalyzer">Traffic Analyzer</button>
+          <button class="side-item" data-sec="websockettester">WebSocket Tester</button>
+          <button class="side-item" data-sec="dnsenum">DNS Enumeration</button>
+          <button class="side-item" data-sec="malwaresandbox">Malware Sandbox</button>
+          <button class="side-item" data-sec="firewallrules">Firewall Rules</button>
+          <button class="side-item" data-sec="sslcertanalyzer">SSL Cert Analyzer</button>
+          <button class="side-item" data-sec="apifuzzer">API Fuzzer</button>
+          <button class="side-item" data-sec="incidentresponse">Incident Response</button>
+          <button class="side-item" data-sec="networktraffic">Network Traffic</button>
+          <button class="side-item" data-sec="hashtoolkit">Hash Toolkit</button>
+          <button class="side-item" data-sec="privesc">Privilege Escalation</button>
+          <button class="side-item" data-sec="reverseshell">Reverse Shell Gen</button>
+          <button class="side-item" data-sec="xsslab">XSS Lab</button>
+          <button class="side-item" data-sec="osintemail">OSINT Email Intel</button>
 
-          <div class="side-group side-collapse">Crypto &amp; Encoding <span class="side-cnt">9</span></div>
+          <div class="side-group side-collapse">Crypto &amp; Encoding <span class="side-cnt">14</span></div>
           <button class="side-item" data-sec="credaudit">Credential Auditor</button>
           <button class="side-item" data-sec="jwtanalyzer">JWT Analyzer</button>
           <button class="side-item" data-sec="cspevaluator">CSP Evaluator</button>
           <button class="side-item" data-sec="urldissect">URL Dissector</button>
           <button class="side-item" data-sec="encoding">Encoding Suite</button>
+          <button class="side-item" data-sec="encodingtoolkit">Encoding Toolkit</button>
           <button class="side-item" data-sec="cryptotools">Crypto Toolkit</button>
+          <button class="side-item" data-sec="cryptotoolkit">Crypto Suite</button>
+          <button class="side-item" data-sec="cryptoplayground">Crypto Playground</button>
+          <button class="side-item" data-sec="hashlookup">Hash Lookup</button>
+          <button class="side-item" data-sec="hashsuite">Hash Suite</button>
           <button class="side-item" data-sec="regexlab">Regex Lab</button>
           <button class="side-item" data-sec="cheats">Cheat Sheets</button>
           <button class="side-item" data-sec="utils">Toolbox</button>
 
-          <div class="side-group side-collapse">Nexus AI <span class="side-cnt">4</span></div>
+          <div class="side-group side-collapse">Nexus AI <span class="side-cnt">6</span></div>
           <button class="side-item" data-sec="ai">AI Chat</button>
           <button class="side-item" data-sec="coder">Nexus Agent <span class="side-badge ai">AI</span></button>
           <button class="side-item" data-sec="engines">Security Engines</button>
           <button class="side-item" data-sec="report">Report Generator</button>
+          <button class="side-item" data-sec="reportbuilder">Report Builder</button>
+          <button class="side-item" data-sec="dataviz">Data Visualization</button>
 
-          <div class="side-group side-collapse">Training Ground <span class="side-cnt">9</span></div>
+          <div class="side-group side-collapse">Training Ground <span class="side-cnt">11</span></div>
           <button class="side-item" data-sec="learn">Academy</button>
           <button class="side-item" data-sec="cyberrange">Cyber Range <span class="side-badge hot">HOT</span></button>
           <button class="side-item" data-sec="training">Training Labs</button>
           <button class="side-item" data-sec="secquiz">Skill Assessments</button>
+          <button class="side-item" data-sec="securityquiz">Security Quiz</button>
+          <button class="side-item" data-sec="chess">Chess</button>
           <button class="side-item" data-sec="refs">Reference Library</button>
           <button class="side-item" data-sec="snippets">Snippet Vault</button>
           <button class="side-item" data-sec="targets">Practice Targets</button>
@@ -1084,7 +1128,7 @@ function renderApp(user) {
     if (sec && sec !== "home" && sec !== "settings") { try { let r = JSON.parse(localStorage.getItem("dn_recent")||"[]"); r = r.filter(s=>s!==sec); r.unshift(sec); r = r.slice(0,8); localStorage.setItem("dn_recent", JSON.stringify(r)); } catch(_){} }
     if (sec === "tools") { main.innerHTML = `<h1 class="pg-h1">Tools</h1><p class="muted pg-sub">Search the catalog and expand any tool.</p><div id="tools"></div>`; import("/js/tools.js").then(m => m.renderTools(document.getElementById("tools"))); }
     else if (sec === "utils") { import("/js/utils.js").then(m => m.renderUtils(main)); }
-    else if (sec === "ai") { import("/js/webai.js?v=20260922").then(m => m.renderAI(main)); }
+    else if (sec === "ai") { import("/js/webai.js?v=20260923").then(m => m.renderAI(main)); }
     else if (sec === "payloads") { import("/js/labs.js").then(m => m.renderPayloads(main)); }
     else if (sec === "targets") { import("/js/labs.js").then(m => m.renderTargets(main)); }
     else if (sec === "ghdb") { import("/js/ghdb.js").then(m => m.renderGHDB(main)); }
@@ -1126,8 +1170,8 @@ function renderApp(user) {
     else if (sec === "reveng") { import("/js/reverse-engineering.js").then(m => m.renderReverseEngineering(main)); }
     else if (sec === "darkwebosint") { import("/js/darkweb-osint.js").then(m => m.renderDarkwebOsint(main)); }
     else if (sec === "cyberrange") { import("/js/cyber-range.js").then(m => m.renderCyberRange(main)); }
-    else if (sec === "prometheus") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading PROMETHEUS...</p>"; const _s=sec; import("/js/prometheus-web.js?v=20260922").then(m => { if(curSec!==_s)return; m.renderPrometheus(main); _prevCleanup = m.cleanupPrometheus; }); }
-    else if (sec === "sentineleye") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading SENTINEL EYE...</p>"; if(!document.querySelector('script[src="/js/threat-api.js"]')){var s1=document.createElement("script");s1.src="/js/threat-api.js";document.head.appendChild(s1)}if(!document.querySelector('script[src="/js/threat-map.js"]')){var s2=document.createElement("script");s2.src="/js/threat-map.js";document.head.appendChild(s2)} const _s=sec; import("/js/sentinel-eye.js?v=20260922").then(m => { if(curSec!==_s)return; m.renderSentinelEye(main); _prevCleanup = m.cleanupSentinelEye; }); }
+    else if (sec === "prometheus") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading PROMETHEUS...</p>"; const _s=sec; import("/js/prometheus-web.js?v=20260923").then(m => { if(curSec!==_s)return; m.renderPrometheus(main); _prevCleanup = m.cleanupPrometheus; }); }
+    else if (sec === "sentineleye") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading SENTINEL EYE...</p>"; if(!document.querySelector('script[src="/js/threat-api.js"]')){var s1=document.createElement("script");s1.src="/js/threat-api.js";document.head.appendChild(s1)}if(!document.querySelector('script[src="/js/threat-map.js"]')){var s2=document.createElement("script");s2.src="/js/threat-map.js";document.head.appendChild(s2)} const _s=sec; import("/js/sentinel-eye.js?v=20260923").then(m => { if(curSec!==_s)return; m.renderSentinelEye(main); _prevCleanup = m.cleanupSentinelEye; }); }
     else if (sec === "exploitdev") { import("/js/exploit-writer.js").then(m => m.renderExploitWriter(main)); }
     else if (sec === "secdash") { import("/js/security-dashboard.js").then(m => m.renderSecurityDashboard(main)); }
     else if (sec === "phishing") { import("/js/phishing-analyzer.js").then(m => m.renderPhishingAnalyzer(main)); }
@@ -1135,7 +1179,7 @@ function renderApp(user) {
     else if (sec === "cracklab") { import("/js/password-cracking-lab.js").then(m => m.renderPasswordCrackingLab(main)); }
     else if (sec === "hydra") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading HYDRA...</p>"; import("/js/hydra-engine.js").then(m => m.renderHydra(main)); }
     else if (sec === "aegis") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading AEGIS...</p>"; import("/js/aegis-web.js").then(m => m.renderAegis(main)); }
-    else if (sec === "vanguard") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading VANGUARD...</p>"; import("/js/vanguard.js?v=20260922").then(m => m.renderVanguard(main)); }
+    else if (sec === "vanguard") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading VANGUARD...</p>"; import("/js/vanguard.js?v=20260923").then(m => m.renderVanguard(main)); }
     else if (sec === "jwtanalyzer") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading JWT Analyzer...</p>"; import("/js/jwt-analyzer.js").then(m => m.renderJwtAnalyzer(main)); }
     else if (sec === "cspevaluator") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading CSP Evaluator...</p>"; import("/js/csp-evaluator.js").then(m => m.renderCspEvaluator(main)); }
     else if (sec === "wayback") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Wayback Recon...</p>"; import("/js/wayback-recon.js").then(m => m.renderWaybackRecon(main)); }
@@ -1162,7 +1206,6 @@ function renderApp(user) {
     else if (sec === "threat") renderThreat(main);
     else if (sec === "ipreputation") { import("/js/ip-reputation.js").then(m => m.renderIPReputation(main)); }
     else if (sec === "cyberbriefing") { import("/js/cyber-briefing.js").then(m => m.renderCyberBriefing(main)); }
-    else if (sec === "vulntriage") { import("/js/vuln-triage.js").then(m => m.renderVulnTriage(main)); }
     else if (sec === "incidentcost") { import("/js/incident-cost.js").then(m => m.renderIncidentCost(main)); }
     else if (sec === "fedcompliance") { import("/js/fed-compliance.js").then(m => m.renderFedCompliance(main)); }
     else if (sec === "adversaryplaybook") { import("/js/adversary-playbook.js").then(m => m.renderAdversaryPlaybook(main)); }
@@ -1192,6 +1235,50 @@ function renderApp(user) {
     else if (sec === "osintemail") { import("/js/osint-email.js").then(m => m.renderOSINTEmail(main)); }
     else if (sec === "threatfeed") { import("/js/threat-feed.js").then(m => m.renderThreatFeed(main)); }
     else if (sec === "secchecklist") { import("/js/sec-checklist.js").then(m => m.renderSecChecklist(main)); }
+    else if (sec === "chess") { import("/js/chess.js").then(m => m.render(main)); }
+    else if (sec === "cryptoplayground") { import("/js/crypto-playground.js").then(m => m.renderCryptoPlayground(main)); }
+    else if (sec === "cryptotoolkit") { import("/js/crypto-toolkit.js").then(m => m.renderCryptoToolkit(main)); }
+    else if (sec === "cvetimeline") { import("/js/cve-timeline.js").then(m => m.renderCveTimeline(main)); }
+    else if (sec === "dataviz") { import("/js/data-viz.js").then(m => m.renderDataViz(main)); }
+    else if (sec === "encodingtoolkit") { import("/js/encoding-toolkit.js").then(m => m.renderEncodingToolkit(main)); }
+    else if (sec === "exploitdbbrowser") { import("/js/exploit-db-browser.js").then(m => m.renderExploitDbBrowser(main)); }
+    else if (sec === "forensicstoolkit") { import("/js/forensics-toolkit.js").then(m => m.renderForensicsToolkit(main)); }
+    else if (sec === "forensicstools") { import("/js/forensics-tools.js").then(m => m.renderForensicsTools(main)); }
+    else if (sec === "hashsuite") { import("/js/hash-suite.js").then(m => m.renderHashSuite(main)); }
+    else if (sec === "httpinspector") { import("/js/http-inspector.js").then(m => m.renderHttpInspector(main)); }
+    else if (sec === "iptools") { import("/js/ip-tools.js").then(m => m.renderIPTools(main)); }
+    else if (sec === "logparser") { import("/js/log-parser.js").then(m => m.renderLogParser(main)); }
+    else if (sec === "networktools") { import("/js/network-tools.js").then(m => m.renderNetworkTools(main)); }
+    else if (sec === "packetanalyzer") { import("/js/packet-analyzer.js").then(m => m.renderPacketAnalyzer(main)); }
+    else if (sec === "passwordtools") { import("/js/password-tools.js").then(m => m.renderPasswordTools(main)); }
+    else if (sec === "payloadgen") { import("/js/payload-gen.js").then(m => m.renderPayloadGen(main)); }
+    else if (sec === "reportbuilder") { import("/js/report-builder.js").then(m => m.renderReportBuilder(main)); }
+    else if (sec === "riskcalculator") { import("/js/risk-calculator.js").then(m => m.renderRiskCalculator(main)); }
+    else if (sec === "securityquiz") { import("/js/security-quiz.js").then(m => m.renderSecurityQuiz(main)); }
+    else if (sec === "securityscanner") { import("/js/security-scanner.js").then(m => m.renderSecurityScanner(main)); }
+    else if (sec === "subnetvisualizer") { import("/js/subnet-visualizer.js").then(m => m.renderSubnetVisualizer(main)); }
+    else if (sec === "threatdashboard") { import("/js/threat-dashboard.js").then(m => m.renderThreatDashboard(main)); }
+    else if (sec === "timelineviz") { import("/js/timeline-viz.js").then(m => m.renderTimelineViz(main)); }
+    else if (sec === "vulndb") { import("/js/vulnerability-db.js").then(m => m.renderVulnerabilityDB(main)); }
+    else if (sec === "asnexplorer") { import("/js/asn-explorer.js").then(m => m.renderAsnExplorer(main)); }
+    else if (sec === "breachlookup") { import("/js/breach-lookup.js").then(m => m.renderBreachLookup(main)); }
+    else if (sec === "corstester") { import("/js/cors-tester.js").then(m => m.renderCorsTester(main)); }
+    else if (sec === "cvesearch") { import("/js/cve-search.js").then(m => m.renderCveSearch(main)); }
+    else if (sec === "darknetradar") { import("/js/darknet-radar.js").then(m => m.renderDarknetRadar(main)); }
+    else if (sec === "dnsrecon") { import("/js/dns-recon.js").then(m => m.renderDNSRecon(main)); }
+    else if (sec === "emailintel") { import("/js/email-intel.js").then(m => m.renderEmailIntel(main)); }
+    else if (sec === "hashlookup") { import("/js/hash-lookup.js").then(m => m.renderHashLookup(main)); }
+    else if (sec === "headeranalyzer") { import("/js/header-analyzer.js").then(m => m.renderHeaderAnalyzer(main)); }
+    else if (sec === "httpprobe") { import("/js/http-probe.js").then(m => m.renderHttpProbe(main)); }
+    else if (sec === "identitymatrix") { import("/js/identity-matrix.js").then(m => m.renderIdentityMatrix(main)); }
+    else if (sec === "ipgeolocation") { import("/js/ip-geolocation.js").then(m => m.renderIPGeolocation(main)); }
+    else if (sec === "networkscanner") { import("/js/network-scanner.js").then(m => m.renderNetworkScanner(main)); }
+    else if (sec === "sslinspector") { import("/js/ssl-inspector.js").then(m => m.renderSSLInspector(main)); }
+    else if (sec === "techfingerprint") { import("/js/tech-fingerprint.js").then(m => m.renderTechFingerprint(main)); }
+    else if (sec === "threatfeedagg") { import("/js/threat-feed-aggregator.js").then(m => m.renderThreatFeedAggregator(main)); }
+    else if (sec === "trafficanalyzer") { import("/js/traffic-analyzer.js").then(m => m.renderTrafficAnalyzer(main)); }
+    else if (sec === "websockettester") { import("/js/websocket-tester.js").then(m => m.renderWebSocketTester(main)); }
+    else if (sec === "whoisrecon") { import("/js/whois-recon.js").then(m => m.renderWhoisRecon(main)); }
     else if (sec === "learn") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Learn Hub...</p>"; loadLearnHub().then(m => m.renderLearnHub(main)); }
     else if (sec === "github") { show("settings"); return; }
     else if (sec === "gmail") { show("settings"); return; }
@@ -1202,7 +1289,7 @@ function renderApp(user) {
     else if (sec === "docs") { import("/js/docs.js").then(m => m.renderDocs(main)); }
     else if (sec === "setup") renderSetup(main, more);
     else if (sec === "settings") renderSettingsPage(main, user, isOwner);
-    else if (sec === "admin") { import("/js/admin.js?v=20260922").then(m => m.renderAdmin(main, user)); }
+    else if (sec === "admin") { import("/js/admin.js?v=20260923").then(m => m.renderAdmin(main, user)); }
     else if (sec === "contact") renderContact(main);
     else renderHome(main, user, isOwner, show);
     if (more === undefined) { try { localStorage.setItem("sw_last_sec", sec); } catch (_) {} }
@@ -1436,7 +1523,7 @@ function highlightMatch(text, query) {
 }
 function openPalette() {
   if (document.getElementById("cmdk")) return;
-  const sections = [["home", "Dashboard"], ["ai", "AI Chat"], ["tools", "Scanner Suite"], ["saved", "Saved"], ["utils", "Toolbox"], ["payloads", "Payload Forge"], ["exploitdb", "Exploit Database"], ["ghdb", "Google Dorking"], ["targets", "Practice Targets"], ["vms", "Vulnerable VMs"], ["threat", "Threat Feed"], ["threatfeed", "Threat Intel Feed"], ["secchecklist", "Security Checklist"], ["cheats", "Cheat Sheets"], ["snippets", "Snippet Vault"], ["refs", "Reference Library"], ["training", "Training Labs"], ["privatecloud", "Private Cloud"], ["report", "Report Generator"], ["learn", "Academy"], ["setup", "Local Setup"], ["coder", "Nexus Agent"], ["downloads", "Darknode OS"], ["dlguide", "Download Guide"], ["api", "API"], ["docs", "Docs"], ["settings", "Settings"], ["admin", "Admin"], ["vanguard", "VANGUARD"], ["prometheus", "PROMETHEUS"], ["sentineleye", "SENTINEL EYE"], ["hydra", "HYDRA Engine"], ["aegis", "AEGIS Ops Center"], ["secdash", "Security Dashboard"], ["jwtanalyzer", "JWT Analyzer"], ["cspevaluator", "CSP Evaluator"], ["wayback", "Wayback Machine"], ["urldissect", "URL Dissector"], ["favicon", "Favicon Hasher"], ["cyberrange", "Cyber Range"], ["sandbox", "Malware Sandbox"], ["netmap", "Network Mapper"], ["exploitdev", "Exploit Writer"], ["cracklab", "Hashcat Lab"], ["osint", "OSINT Dashboard"], ["darkwebosint", "Dark Web OSINT"], ["cyberbriefing", "Cyber Briefing"], ["vulntriage", "Vuln Triage Engine"], ["incidentcost", "Incident Cost Calculator"], ["fedcompliance", "Federal Compliance"], ["adversaryplaybook", "Adversary Playbook"], ["emailheader", "Email Header Analyzer"], ["iocextractor", "IOC Extractor"], ["threatcanvas", "Threat Model Canvas"], ["logforensics", "Log Forensics"], ["reconplanner", "Recon Planner"], ["subdomainenum", "Subdomain Enumerator"], ["passwordanalyzer", "Password Analyzer"], ["certanalyzer", "Certificate Analyzer"], ["packetinspector", "Packet Inspector"], ["siemdash", "SIEM Dashboard"], ["credauditor", "Credential Auditor"], ["subdomainscanner", "Subdomain Scanner"], ["dnsenum", "DNS Enumeration"], ["malwaresandbox", "Malware Sandbox"], ["firewallrules", "Firewall Rules"], ["sslcertanalyzer", "SSL Cert Analyzer"], ["apifuzzer", "API Fuzzer"], ["incidentresponse", "Incident Response"], ["networktraffic", "Network Traffic"], ["hashtoolkit", "Hash Toolkit"], ["privesc", "Privilege Escalation"], ["reverseshell", "Reverse Shell Gen"], ["xsslab", "XSS Lab"], ["osintemail", "OSINT Email Intel"]];
+  const sections = [["home", "Dashboard"], ["ai", "AI Chat"], ["tools", "Scanner Suite"], ["saved", "Saved"], ["utils", "Toolbox"], ["payloads", "Payload Forge"], ["exploitdb", "Exploit Database"], ["ghdb", "Google Dorking"], ["targets", "Practice Targets"], ["vms", "Vulnerable VMs"], ["threat", "Threat Feed"], ["threatfeed", "Threat Intel Feed"], ["secchecklist", "Security Checklist"], ["cheats", "Cheat Sheets"], ["snippets", "Snippet Vault"], ["refs", "Reference Library"], ["training", "Training Labs"], ["privatecloud", "Private Cloud"], ["report", "Report Generator"], ["learn", "Academy"], ["setup", "Local Setup"], ["coder", "Nexus Agent"], ["downloads", "Darknode OS"], ["dlguide", "Download Guide"], ["api", "API"], ["docs", "Docs"], ["settings", "Settings"], ["admin", "Admin"], ["vanguard", "VANGUARD"], ["prometheus", "PROMETHEUS"], ["sentineleye", "SENTINEL EYE"], ["hydra", "HYDRA Engine"], ["aegis", "AEGIS Ops Center"], ["secdash", "Security Dashboard"], ["jwtanalyzer", "JWT Analyzer"], ["cspevaluator", "CSP Evaluator"], ["wayback", "Wayback Machine"], ["urldissect", "URL Dissector"], ["favicon", "Favicon Hasher"], ["cyberrange", "Cyber Range"], ["sandbox", "Malware Sandbox"], ["netmap", "Network Mapper"], ["exploitdev", "Exploit Writer"], ["cracklab", "Hashcat Lab"], ["osint", "OSINT Dashboard"], ["darkwebosint", "Dark Web OSINT"], ["cyberbriefing", "Cyber Briefing"], ["vulntriage", "Vuln Triage Engine"], ["incidentcost", "Incident Cost Calculator"], ["fedcompliance", "Federal Compliance"], ["adversaryplaybook", "Adversary Playbook"], ["emailheader", "Email Header Analyzer"], ["iocextractor", "IOC Extractor"], ["threatcanvas", "Threat Model Canvas"], ["logforensics", "Log Forensics"], ["reconplanner", "Recon Planner"], ["subdomainenum", "Subdomain Enumerator"], ["passwordanalyzer", "Password Analyzer"], ["certanalyzer", "Certificate Analyzer"], ["packetinspector", "Packet Inspector"], ["siemdash", "SIEM Dashboard"], ["credauditor", "Credential Auditor"], ["subdomainscanner", "Subdomain Scanner"], ["dnsenum", "DNS Enumeration"], ["malwaresandbox", "Malware Sandbox"], ["firewallrules", "Firewall Rules"], ["sslcertanalyzer", "SSL Cert Analyzer"], ["apifuzzer", "API Fuzzer"], ["incidentresponse", "Incident Response"], ["networktraffic", "Network Traffic"], ["hashtoolkit", "Hash Toolkit"], ["privesc", "Privilege Escalation"], ["reverseshell", "Reverse Shell Gen"], ["xsslab", "XSS Lab"], ["osintemail", "OSINT Email Intel"], ["chess", "Chess"], ["cryptoplayground", "Crypto Playground"], ["cryptotoolkit", "Crypto Suite"], ["cvetimeline", "CVE Timeline"], ["dataviz", "Data Visualization"], ["encodingtoolkit", "Encoding Toolkit"], ["exploitdbbrowser", "Exploit DB Browser"], ["forensicstoolkit", "Forensics Toolkit"], ["forensicstools", "Forensics Tools"], ["hashsuite", "Hash Suite"], ["httpinspector", "HTTP Inspector"], ["iptools", "IP Tools"], ["logparser", "Log Parser"], ["networktools", "Network Tools"], ["packetanalyzer", "Packet Analyzer"], ["passwordtools", "Password Tools"], ["payloadgen", "Payload Generator"], ["reportbuilder", "Report Builder"], ["riskcalculator", "Risk Calculator"], ["securityquiz", "Security Quiz"], ["securityscanner", "Security Scanner"], ["subnetvisualizer", "Subnet Visualizer"], ["threatdashboard", "Threat Dashboard"], ["timelineviz", "Timeline Visualization"], ["vulndb", "Vulnerability Database"], ["asnexplorer", "ASN Explorer"], ["breachlookup", "Breach Lookup"], ["corstester", "CORS Tester"], ["cvesearch", "CVE Search"], ["darknetradar", "Darknet Radar"], ["dnsrecon", "DNS Recon"], ["emailintel", "Email Intel"], ["hashlookup", "Hash Lookup"], ["headeranalyzer", "Header Analyzer"], ["httpprobe", "HTTP Probe"], ["identitymatrix", "Identity Matrix"], ["ipgeolocation", "IP Geolocation"], ["networkscanner", "Network Scanner"], ["sslinspector", "SSL Inspector"], ["techfingerprint", "Tech Fingerprint"], ["threatfeedagg", "Threat Aggregator"], ["trafficanalyzer", "Traffic Analyzer"], ["websockettester", "WebSocket Tester"], ["whoisrecon", "WHOIS Recon"]];
   const actions = [
     { type: "action", id: "cycle-style", name: "Cycle theme style", desc: "Switch between Pro, Dark, Classic", action: cycleStyle },
     { type: "action", id: "toggle-dark", name: "Toggle light / dark", desc: "Switch light and dark mode", action: () => { const cur = document.documentElement.getAttribute("data-theme") || "dark"; applyTheme(cur === "dark" ? "light" : "dark"); } },

@@ -16,7 +16,7 @@ var BULLETPROOF_ASNS = {
 
 var HIGH_RISK_COUNTRIES = ['RU', 'CN', 'KP', 'IR', 'BY', 'SY', 'VE', 'CU'];
 
-window.renderIPGeolocation = function(container) {
+export function renderIPGeolocation(container) {
   if (!container) return;
   var h = '';
   h += '<div style="background:#0a0e14;color:#c8d6e5;font-family:\'Courier New\',monospace;padding:24px;min-height:80vh;">';

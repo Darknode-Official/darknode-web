@@ -188,7 +188,7 @@ function _tfRenderFeed() {
   el.innerHTML = h;
 }
 
-window.renderThreatFeedAggregator = function(container) {
+export function renderThreatFeedAggregator(container) {
   var h = '';
   h += '<div style="padding:20px 24px;max-width:1100px;margin:0 auto;">';
 

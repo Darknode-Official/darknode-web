@@ -86,7 +86,7 @@ function _taBar(pct, color) {
 
 // ── Main render ─────────────────────────────────────────────────────────────
 
-window.renderTrafficAnalyzer = function(container) {
+export function renderTrafficAnalyzer(container) {
   var el = typeof container === 'string' ? document.getElementById(container) : container;
   if (!el) return;
 

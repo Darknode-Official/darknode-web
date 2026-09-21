@@ -27,7 +27,7 @@ var _asnBulletproof = {
   201011: 'NETZBETRIEB — bulletproof (DE)'
 };
 
-window.renderAsnExplorer = function(container) {
+export function renderAsnExplorer(container) {
   var h = '';
   h += '<div style="background:#0a0e14;color:#c8d6e5;font-family:\'Courier New\',monospace;padding:20px;min-height:600px;">';
   h += '<h2 style="color:#00ddff;font-size:18px;letter-spacing:2px;margin:0 0 4px;">ASN EXPLORER</h2>';

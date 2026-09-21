@@ -1,4 +1,4 @@
-const CACHE = 'darknode-v5';
+const CACHE = 'darknode-v6';
 const STATIC = [
   '/',
   '/css/styles.css',
