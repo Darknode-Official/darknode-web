@@ -4,6 +4,7 @@
 import { auth, db, googleProvider, githubProvider, OWNER_EMAIL } from "/js/firebase.js";
 import "/js/scroll-top.js";
 import "/js/shortcuts.js";
+import "/js/mobile-nav.js";
 import { showToast } from "/js/toast.js";
 import { collection as fbCollection, addDoc as fbAddDoc, serverTimestamp as fbServerTimestamp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
 import {
@@ -19,7 +20,7 @@ let MORE = [], CATALOG = [], CATEGORIES = [];
 import("/js/toolkit.js").then(m => { MORE = m.MORE; CATALOG = m.CATALOG; CATEGORIES = m.CATEGORIES; });
 import { startTour, tourDone } from "/js/tour.js";
 let _landing = null;
-async function loadLanding() { if (!_landing) _landing = await import("/js/landing.js?v=20260919n"); return _landing; }
+async function loadLanding() { if (!_landing) _landing = await import("/js/landing.js?v=20260922"); return _landing; }
 import {
   renderThreat, renderCheats, renderLearn, homeWidgetsHTML, wireHome, COUNTS,
   CHEATS, RESOURCES,
@@ -64,7 +65,8 @@ function dismissBoot() {
   if (window.__boot) window.__boot.set(100);
   const b = document.getElementById("bootscreen"); if (!b) return;
   const elapsed = performance.now() - _bootStart;
-  const delay = Math.max(0, 2200 - elapsed);
+  const isPro = document.documentElement.getAttribute("data-boot") === "pro";
+  const delay = Math.max(0, (isPro ? 1200 : 2200) - elapsed);
   setTimeout(() => {
     const inner = b.querySelector(".boot-inner"); if (inner) inner.classList.add("exit");
     setTimeout(() => { b.style.opacity = "0"; }, 150);
@@ -376,6 +378,15 @@ function applyAccent(c) {
 }
 (function () { let a = null; try { a = localStorage.getItem("sw_accent"); } catch (_) {} if (a) applyAccent(a); })();
 function applyTheme(m) { document.documentElement.setAttribute("data-theme", m); try { localStorage.setItem("sw_theme", m); } catch (_) {} }
+const STYLES = ["pro", "dark", "classic"];
+function cycleStyle() {
+  const cur = document.documentElement.getAttribute("data-style") || "pro";
+  const next = STYLES[(STYLES.indexOf(cur) + 1) % STYLES.length];
+  document.documentElement.setAttribute("data-style", next);
+  try { localStorage.setItem("sw_style", next); } catch (_) {}
+  const btn = document.getElementById("styleToggle");
+  if (btn) { btn.title = "Theme: " + next; btn.setAttribute("aria-label", "Theme: " + next); btn.dataset.style = next; }
+}
 (function () { let t = "dark"; try { t = localStorage.getItem("sw_theme") || "dark"; } catch (_) {} applyTheme(t); })();
 function crtOn() { try { return localStorage.getItem("sw_crt") === "1"; } catch (_) { return false; } }
 function applyCrt(on) { document.documentElement.classList.toggle("crt", on); try { localStorage.setItem("sw_crt", on ? "1" : "0"); } catch (_) {} }
@@ -939,8 +950,10 @@ function renderApp(user) {
           <button class="side-item" data-sec="containers">Container Security</button>
           <button class="side-item" data-sec="mobilesec">Mobile Security</button>
 
-          <div class="side-group side-collapse">Threat Intel <span class="side-cnt">8</span></div>
+          <div class="side-group side-collapse">Threat Intel <span class="side-cnt">10</span></div>
           <button class="side-item" data-sec="threat">Threat Feed</button>
+          <button class="side-item" data-sec="threatfeed">Threat Intel Feed <span class="side-badge new">NEW</span></button>
+          <button class="side-item" data-sec="secchecklist">Security Checklist <span class="side-badge new">NEW</span></button>
           <button class="side-item" data-sec="ipreputation">IP Reputation</button>
           <button class="side-item" data-sec="darkwebosint">Dark Web OSINT <span class="side-badge new">NEW</span></button>
           <button class="side-item" data-sec="vulnprio">Vuln Prioritizer</button>
@@ -1071,7 +1084,7 @@ function renderApp(user) {
     if (sec && sec !== "home" && sec !== "settings") { try { let r = JSON.parse(localStorage.getItem("dn_recent")||"[]"); r = r.filter(s=>s!==sec); r.unshift(sec); r = r.slice(0,8); localStorage.setItem("dn_recent", JSON.stringify(r)); } catch(_){} }
     if (sec === "tools") { main.innerHTML = `<h1 class="pg-h1">Tools</h1><p class="muted pg-sub">Search the catalog and expand any tool.</p><div id="tools"></div>`; import("/js/tools.js").then(m => m.renderTools(document.getElementById("tools"))); }
     else if (sec === "utils") { import("/js/utils.js").then(m => m.renderUtils(main)); }
-    else if (sec === "ai") { import("/js/webai.js?v=20260920").then(m => m.renderAI(main)); }
+    else if (sec === "ai") { import("/js/webai.js?v=20260922").then(m => m.renderAI(main)); }
     else if (sec === "payloads") { import("/js/labs.js").then(m => m.renderPayloads(main)); }
     else if (sec === "targets") { import("/js/labs.js").then(m => m.renderTargets(main)); }
     else if (sec === "ghdb") { import("/js/ghdb.js").then(m => m.renderGHDB(main)); }
@@ -1113,8 +1126,8 @@ function renderApp(user) {
     else if (sec === "reveng") { import("/js/reverse-engineering.js").then(m => m.renderReverseEngineering(main)); }
     else if (sec === "darkwebosint") { import("/js/darkweb-osint.js").then(m => m.renderDarkwebOsint(main)); }
     else if (sec === "cyberrange") { import("/js/cyber-range.js").then(m => m.renderCyberRange(main)); }
-    else if (sec === "prometheus") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading PROMETHEUS...</p>"; const _s=sec; import("/js/prometheus-web.js?v=20260919r").then(m => { if(curSec!==_s)return; m.renderPrometheus(main); _prevCleanup = m.cleanupPrometheus; }); }
-    else if (sec === "sentineleye") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading SENTINEL EYE...</p>"; if(!document.querySelector('script[src="/js/threat-api.js"]')){var s1=document.createElement("script");s1.src="/js/threat-api.js";document.head.appendChild(s1)}if(!document.querySelector('script[src="/js/threat-map.js"]')){var s2=document.createElement("script");s2.src="/js/threat-map.js";document.head.appendChild(s2)} const _s=sec; import("/js/sentinel-eye.js?v=20260920").then(m => { if(curSec!==_s)return; m.renderSentinelEye(main); _prevCleanup = m.cleanupSentinelEye; }); }
+    else if (sec === "prometheus") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading PROMETHEUS...</p>"; const _s=sec; import("/js/prometheus-web.js?v=20260922").then(m => { if(curSec!==_s)return; m.renderPrometheus(main); _prevCleanup = m.cleanupPrometheus; }); }
+    else if (sec === "sentineleye") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading SENTINEL EYE...</p>"; if(!document.querySelector('script[src="/js/threat-api.js"]')){var s1=document.createElement("script");s1.src="/js/threat-api.js";document.head.appendChild(s1)}if(!document.querySelector('script[src="/js/threat-map.js"]')){var s2=document.createElement("script");s2.src="/js/threat-map.js";document.head.appendChild(s2)} const _s=sec; import("/js/sentinel-eye.js?v=20260922").then(m => { if(curSec!==_s)return; m.renderSentinelEye(main); _prevCleanup = m.cleanupSentinelEye; }); }
     else if (sec === "exploitdev") { import("/js/exploit-writer.js").then(m => m.renderExploitWriter(main)); }
     else if (sec === "secdash") { import("/js/security-dashboard.js").then(m => m.renderSecurityDashboard(main)); }
     else if (sec === "phishing") { import("/js/phishing-analyzer.js").then(m => m.renderPhishingAnalyzer(main)); }
@@ -1122,7 +1135,7 @@ function renderApp(user) {
     else if (sec === "cracklab") { import("/js/password-cracking-lab.js").then(m => m.renderPasswordCrackingLab(main)); }
     else if (sec === "hydra") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading HYDRA...</p>"; import("/js/hydra-engine.js").then(m => m.renderHydra(main)); }
     else if (sec === "aegis") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading AEGIS...</p>"; import("/js/aegis-web.js").then(m => m.renderAegis(main)); }
-    else if (sec === "vanguard") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading VANGUARD...</p>"; import("/js/vanguard.js?v=20260919n").then(m => m.renderVanguard(main)); }
+    else if (sec === "vanguard") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading VANGUARD...</p>"; import("/js/vanguard.js?v=20260922").then(m => m.renderVanguard(main)); }
     else if (sec === "jwtanalyzer") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading JWT Analyzer...</p>"; import("/js/jwt-analyzer.js").then(m => m.renderJwtAnalyzer(main)); }
     else if (sec === "cspevaluator") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading CSP Evaluator...</p>"; import("/js/csp-evaluator.js").then(m => m.renderCspEvaluator(main)); }
     else if (sec === "wayback") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Wayback Recon...</p>"; import("/js/wayback-recon.js").then(m => m.renderWaybackRecon(main)); }
@@ -1177,6 +1190,8 @@ function renderApp(user) {
     else if (sec === "reverseshell") { import("/js/reverse-shell.js").then(m => m.renderReverseShell(main)); }
     else if (sec === "xsslab") { import("/js/xss-lab.js").then(m => m.renderXSSLab(main)); }
     else if (sec === "osintemail") { import("/js/osint-email.js").then(m => m.renderOSINTEmail(main)); }
+    else if (sec === "threatfeed") { import("/js/threat-feed.js").then(m => m.renderThreatFeed(main)); }
+    else if (sec === "secchecklist") { import("/js/sec-checklist.js").then(m => m.renderSecChecklist(main)); }
     else if (sec === "learn") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Learn Hub...</p>"; loadLearnHub().then(m => m.renderLearnHub(main)); }
     else if (sec === "github") { show("settings"); return; }
     else if (sec === "gmail") { show("settings"); return; }
@@ -1187,7 +1202,7 @@ function renderApp(user) {
     else if (sec === "docs") { import("/js/docs.js").then(m => m.renderDocs(main)); }
     else if (sec === "setup") renderSetup(main, more);
     else if (sec === "settings") renderSettingsPage(main, user, isOwner);
-    else if (sec === "admin") { import("/js/admin.js?v=20260919r").then(m => m.renderAdmin(main, user)); }
+    else if (sec === "admin") { import("/js/admin.js?v=20260922").then(m => m.renderAdmin(main, user)); }
     else if (sec === "contact") renderContact(main);
     else renderHome(main, user, isOwner, show);
     if (more === undefined) { try { localStorage.setItem("sw_last_sec", sec); } catch (_) {} }
@@ -1288,6 +1303,7 @@ function renderApp(user) {
   function closeSidebar() { if (sidebar) { sidebar.classList.remove("open"); if (hamburger) { hamburger.classList.remove("active"); hamburger.setAttribute("aria-expanded", "false"); } } }
 
   userSlot.innerHTML = `
+    <button class="style-toggle" id="styleToggle" data-style="${document.documentElement.getAttribute("data-style")||"pro"}" title="Theme: ${document.documentElement.getAttribute("data-style")||"pro"}" aria-label="Cycle theme style"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="5.5"/><path d="M8 2.5v11M2.5 8h11"/></svg></button>
     <button class="cmdk-btn" id="cmdkBtn" title="Search (Ctrl+K)"><span>Search</span><kbd>Ctrl K</kbd></button>
     <span id="cli-dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#71717a;margin:0 10px;cursor:pointer;vertical-align:middle;transition:background .3s" title="CLI not connected" onclick="(function(){var t=prompt('Enter Darknode CLI auth token (from your terminal):');if(t&&window._bridge)window._bridge.connect(t.trim()).then(function(r){document.getElementById('cli-dot').style.background='#22c55e';document.getElementById('cli-dot').title='CLI connected: '+(r.hostname||'local');showToast('Connected to '+(r.hostname||'CLI')+' — '+(r.tools||[]).length+' tools, '+(r.ollama||[]).length+' AI models','success')}).catch(function(e){showToast('Failed: '+e.message,'error')})})()"></span>
     <div class="tb-item">
@@ -1331,6 +1347,8 @@ function renderApp(user) {
   if (moreMenu) moreMenu.onclick = (e) => { const b = e.target.closest("[data-more]"); if (!b) return; closeMenus(); show("setup", b.dataset.more); };
   const cmdkBtn = document.getElementById("cmdkBtn");
   if (cmdkBtn) cmdkBtn.onclick = openPalette;
+  const styleToggle = document.getElementById("styleToggle");
+  if (styleToggle) styleToggle.onclick = cycleStyle;
 
   view.querySelectorAll("[data-foot]").forEach((a) => a.addEventListener("click", () => {
     const f = a.dataset.foot;
@@ -1404,10 +1422,30 @@ function fuzzyScore(hay, needle) {
 const paletteRecents = () => { try { return JSON.parse(localStorage.getItem("sw_recent")) || []; } catch (_) { return []; } };
 function pushRecent(id) { let r = paletteRecents().filter((x) => x !== id); r.unshift(id); r = r.slice(0, 6); try { localStorage.setItem("sw_recent", JSON.stringify(r)); } catch (_) {} }
 
+function highlightMatch(text, query) {
+  if (!query) return esc(text);
+  const lt = text.toLowerCase(), lq = query.toLowerCase();
+  let out = "", hi = 0;
+  for (const ch of lq) {
+    const idx = lt.indexOf(ch, hi);
+    if (idx < 0) break;
+    out += esc(text.slice(hi, idx)) + "<mark>" + esc(text[idx]) + "</mark>";
+    hi = idx + 1;
+  }
+  return out + esc(text.slice(hi));
+}
 function openPalette() {
   if (document.getElementById("cmdk")) return;
-  const sections = [["home", "Dashboard"], ["ai", "AI Chat"], ["tools", "Scanner Suite"], ["saved", "Saved"], ["utils", "Toolbox"], ["payloads", "Payload Forge"], ["exploitdb", "Exploit Database"], ["ghdb", "Google Dorking"], ["targets", "Practice Targets"], ["vms", "Vulnerable VMs"], ["threat", "Threat Feed"], ["cheats", "Cheat Sheets"], ["snippets", "Snippet Vault"], ["refs", "Reference Library"], ["training", "Training Labs"], ["privatecloud", "Private Cloud"], ["report", "Report Generator"], ["learn", "Academy"], ["setup", "Local Setup"], ["coder", "Nexus Agent"], ["downloads", "Darknode OS"], ["dlguide", "Download Guide"], ["api", "API"], ["docs", "Docs"], ["settings", "Settings"], ["admin", "Admin"], ["vanguard", "VANGUARD"], ["prometheus", "PROMETHEUS"], ["sentineleye", "SENTINEL EYE"], ["hydra", "HYDRA Engine"], ["aegis", "AEGIS Ops Center"], ["secdash", "Security Dashboard"], ["jwtanalyzer", "JWT Analyzer"], ["cspevaluator", "CSP Evaluator"], ["wayback", "Wayback Machine"], ["urldissect", "URL Dissector"], ["favicon", "Favicon Hasher"], ["cyberrange", "Cyber Range"], ["sandbox", "Malware Sandbox"], ["netmap", "Network Mapper"], ["exploitdev", "Exploit Writer"], ["cracklab", "Hashcat Lab"], ["osint", "OSINT Dashboard"], ["darkwebosint", "Dark Web OSINT"], ["cyberbriefing", "Cyber Briefing"], ["vulntriage", "Vuln Triage Engine"], ["incidentcost", "Incident Cost Calculator"], ["fedcompliance", "Federal Compliance"], ["adversaryplaybook", "Adversary Playbook"], ["emailheader", "Email Header Analyzer"], ["iocextractor", "IOC Extractor"], ["threatcanvas", "Threat Model Canvas"], ["logforensics", "Log Forensics"], ["reconplanner", "Recon Planner"], ["subdomainenum", "Subdomain Enumerator"], ["passwordanalyzer", "Password Analyzer"], ["certanalyzer", "Certificate Analyzer"], ["packetinspector", "Packet Inspector"], ["siemdash", "SIEM Dashboard"], ["credauditor", "Credential Auditor"], ["subdomainscanner", "Subdomain Scanner"], ["dnsenum", "DNS Enumeration"], ["malwaresandbox", "Malware Sandbox"], ["firewallrules", "Firewall Rules"], ["sslcertanalyzer", "SSL Cert Analyzer"], ["apifuzzer", "API Fuzzer"], ["incidentresponse", "Incident Response"], ["networktraffic", "Network Traffic"], ["hashtoolkit", "Hash Toolkit"], ["privesc", "Privilege Escalation"], ["reverseshell", "Reverse Shell Gen"], ["xsslab", "XSS Lab"], ["osintemail", "OSINT Email Intel"]];
+  const sections = [["home", "Dashboard"], ["ai", "AI Chat"], ["tools", "Scanner Suite"], ["saved", "Saved"], ["utils", "Toolbox"], ["payloads", "Payload Forge"], ["exploitdb", "Exploit Database"], ["ghdb", "Google Dorking"], ["targets", "Practice Targets"], ["vms", "Vulnerable VMs"], ["threat", "Threat Feed"], ["threatfeed", "Threat Intel Feed"], ["secchecklist", "Security Checklist"], ["cheats", "Cheat Sheets"], ["snippets", "Snippet Vault"], ["refs", "Reference Library"], ["training", "Training Labs"], ["privatecloud", "Private Cloud"], ["report", "Report Generator"], ["learn", "Academy"], ["setup", "Local Setup"], ["coder", "Nexus Agent"], ["downloads", "Darknode OS"], ["dlguide", "Download Guide"], ["api", "API"], ["docs", "Docs"], ["settings", "Settings"], ["admin", "Admin"], ["vanguard", "VANGUARD"], ["prometheus", "PROMETHEUS"], ["sentineleye", "SENTINEL EYE"], ["hydra", "HYDRA Engine"], ["aegis", "AEGIS Ops Center"], ["secdash", "Security Dashboard"], ["jwtanalyzer", "JWT Analyzer"], ["cspevaluator", "CSP Evaluator"], ["wayback", "Wayback Machine"], ["urldissect", "URL Dissector"], ["favicon", "Favicon Hasher"], ["cyberrange", "Cyber Range"], ["sandbox", "Malware Sandbox"], ["netmap", "Network Mapper"], ["exploitdev", "Exploit Writer"], ["cracklab", "Hashcat Lab"], ["osint", "OSINT Dashboard"], ["darkwebosint", "Dark Web OSINT"], ["cyberbriefing", "Cyber Briefing"], ["vulntriage", "Vuln Triage Engine"], ["incidentcost", "Incident Cost Calculator"], ["fedcompliance", "Federal Compliance"], ["adversaryplaybook", "Adversary Playbook"], ["emailheader", "Email Header Analyzer"], ["iocextractor", "IOC Extractor"], ["threatcanvas", "Threat Model Canvas"], ["logforensics", "Log Forensics"], ["reconplanner", "Recon Planner"], ["subdomainenum", "Subdomain Enumerator"], ["passwordanalyzer", "Password Analyzer"], ["certanalyzer", "Certificate Analyzer"], ["packetinspector", "Packet Inspector"], ["siemdash", "SIEM Dashboard"], ["credauditor", "Credential Auditor"], ["subdomainscanner", "Subdomain Scanner"], ["dnsenum", "DNS Enumeration"], ["malwaresandbox", "Malware Sandbox"], ["firewallrules", "Firewall Rules"], ["sslcertanalyzer", "SSL Cert Analyzer"], ["apifuzzer", "API Fuzzer"], ["incidentresponse", "Incident Response"], ["networktraffic", "Network Traffic"], ["hashtoolkit", "Hash Toolkit"], ["privesc", "Privilege Escalation"], ["reverseshell", "Reverse Shell Gen"], ["xsslab", "XSS Lab"], ["osintemail", "OSINT Email Intel"]];
+  const actions = [
+    { type: "action", id: "cycle-style", name: "Cycle theme style", desc: "Switch between Pro, Dark, Classic", action: cycleStyle },
+    { type: "action", id: "toggle-dark", name: "Toggle light / dark", desc: "Switch light and dark mode", action: () => { const cur = document.documentElement.getAttribute("data-theme") || "dark"; applyTheme(cur === "dark" ? "light" : "dark"); } },
+    { type: "action", id: "toggle-crt", name: "Toggle CRT effect", desc: "Turn scanline overlay on or off", action: () => applyCrt(!crtOn()) },
+    { type: "action", id: "copy-url", name: "Copy current URL", desc: "Copy page link to clipboard", action: () => { navigator.clipboard.writeText(location.href).then(() => showToast("URL copied", "success")).catch(() => {}); } },
+    { type: "action", id: "replay-tour", name: "Replay walkthrough", desc: "Start the guided tour again", action: () => startTour(tourSteps(isOwner)) },
+  ];
   const items = [
+    ...actions,
     ...sections.map(([s, n]) => ({ type: "section", id: s, name: n, desc: "Go to " + n })),
     ...CATALOG.map((t) => ({ type: "tool", id: t.id, name: t.name, desc: t.cat + " · " + t.desc })),
     ...CHEATS.map((c) => ({ type: "section", id: "cheats", name: c.name + " cheat sheet", desc: "Cheat sheet · " + c.cat })),
@@ -1415,32 +1453,34 @@ function openPalette() {
   ];
   const ov = document.createElement("div");
   ov.id = "cmdk"; ov.className = "cmdk";
-  ov.innerHTML = `<div class="cmdk-box"><input class="cmdk-input" id="cmdk-in" placeholder="Search sections, tools, cheat sheets, resources…" autocomplete="off" spellcheck="false"><div class="cmdk-list" id="cmdk-list"></div><div class="cmdk-foot"><span><kbd>↑</kbd><kbd>↓</kbd> navigate</span><span><kbd>↵</kbd> open</span><span><kbd>esc</kbd> close</span></div></div>`;
+  ov.innerHTML = `<div class="cmdk-box"><input class="cmdk-input" id="cmdk-in" placeholder="Search sections, tools, actions..." autocomplete="off" spellcheck="false"><div class="cmdk-list" id="cmdk-list"></div><div class="cmdk-foot"><span><kbd>↑</kbd><kbd>↓</kbd> navigate</span><span><kbd>↵</kbd> open</span><span><kbd>esc</kbd> close</span></div></div>`;
   document.body.appendChild(ov);
   const inp = ov.querySelector("#cmdk-in"), list = ov.querySelector("#cmdk-list");
-  const BADGE = { section: "go", tool: "tool", link: "link" };
-  let sel = 0, filtered = items, recentMode = false;
+  const BADGE = { section: "go", tool: "tool", link: "link", action: "run" };
+  let sel = 0, filtered = items, recentMode = false, _query = "";
   const close = () => ov.remove();
   function render(q) {
-    const t = q.trim();
-    if (!t) {
+    _query = q.trim();
+    if (!_query) {
       const rec = paletteRecents().map((id) => items.find((x) => x.type === "section" && x.id === id)).filter(Boolean);
       const recIds = new Set(rec.map((x) => x.id));
       filtered = [...rec, ...items.filter((x) => !(x.type === "section" && recIds.has(x.id)))].slice(0, 80);
       recentMode = rec.length;
     } else {
-      filtered = items.map((x) => ({ x, s: fuzzyScore(x.name + " " + x.desc, t) })).filter((o) => o.s >= 0).sort((a, b) => b.s - a.s).slice(0, 60).map((o) => o.x);
+      filtered = items.map((x) => ({ x, s: fuzzyScore(x.name + " " + x.desc, _query) })).filter((o) => o.s >= 0).sort((a, b) => b.s - a.s).slice(0, 60).map((o) => o.x);
       recentMode = 0;
     }
     if (sel >= filtered.length) sel = 0;
     list.innerHTML = filtered.map((x, i) => {
       const hdr = (i === 0 && recentMode) ? `<div class="cmdk-group">Recent</div>` : (i === recentMode && recentMode) ? `<div class="cmdk-group">All</div>` : "";
-      return `${hdr}<div class="cmdk-item${i === sel ? " sel" : ""}" data-i="${i}"><span class="cmdk-badge ${x.type}">${BADGE[x.type]}</span><span class="cmdk-name">${esc(x.name)}</span><span class="cmdk-desc">${esc(x.desc)}</span></div>`;
+      const nameHtml = _query ? highlightMatch(x.name, _query) : esc(x.name);
+      return `${hdr}<div class="cmdk-item${i === sel ? " sel" : ""}" data-i="${i}"><span class="cmdk-badge ${x.type}">${BADGE[x.type]}</span><span class="cmdk-name">${nameHtml}</span><span class="cmdk-desc">${esc(x.desc)}</span></div>`;
     }).join("") || `<div class="cmdk-empty">No results</div>`;
     const a = list.querySelector(".cmdk-item.sel"); if (a) a.scrollIntoView({ block: "nearest" });
   }
   function run(i) {
     const x = filtered[i]; if (!x) return; close();
+    if (x.type === "action") { x.action(); return; }
     if (x.type === "link") { window.open(x.id, "_blank", "noopener"); return; }
     if (x.type === "section") { pushRecent(x.id); appShow && appShow(x.id); return; }
     appShow && appShow("tools");
@@ -1448,8 +1488,8 @@ function openPalette() {
   }
   inp.oninput = () => { sel = 0; render(inp.value); };
   inp.onkeydown = (e) => {
-    if (e.key === "ArrowDown") { e.preventDefault(); sel = Math.min(sel + 1, filtered.length - 1); render(inp.value); }
-    else if (e.key === "ArrowUp") { e.preventDefault(); sel = Math.max(sel - 1, 0); render(inp.value); }
+    if (e.key === "ArrowDown" || (e.ctrlKey && e.key === "j")) { e.preventDefault(); sel = Math.min(sel + 1, filtered.length - 1); render(inp.value); }
+    else if (e.key === "ArrowUp" || (e.ctrlKey && e.key === "k")) { e.preventDefault(); sel = Math.max(sel - 1, 0); render(inp.value); }
     else if (e.key === "Enter") { e.preventDefault(); run(sel); }
     else if (e.key === "Escape") { close(); }
   };
