@@ -164,6 +164,15 @@ export function renderBreachSimulator(main) {
 
   function render() {
     main.innerHTML =
+      '<div class="tool-intro">' +
+        '<h2>Breach Simulator</h2>' +
+        '<p>Walks you through real-world data breach scenarios step by step. Learn how attacks happen and how to defend against them.</p>' +
+        '<div class="tool-steps">' +
+          '<div class="tool-step"><span class="step-num">1</span><div class="step-text"><strong>Pick a scenario</strong>Choose breach type, industry, and company size</div></div>' +
+          '<div class="tool-step"><span class="step-num">2</span><div class="step-text"><strong>Follow the attack chain</strong>See the timeline, financial impact, and regulatory response</div></div>' +
+          '<div class="tool-step"><span class="step-num">3</span><div class="step-text"><strong>Review defense strategies</strong>Learn what could have prevented the breach</div></div>' +
+        '</div>' +
+      '</div>' +
       '<style>' +
       '.bs-header { display:flex; align-items:center; gap:16px; padding:16px 0; border-bottom:2px solid #ff1744; }' +
       '.bs-title { font-size:1.5rem; font-weight:800; color:#ff1744; margin:0; letter-spacing:.05em; }' +

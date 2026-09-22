@@ -2,7 +2,7 @@ import { esc } from '/js/shared.js';
 
 const IR_PLAYBOOKS = {
   ransomware: {
-    name: 'Ransomware Attack', icon: '\u{1F512}', severity: 'P1',
+    name: 'Ransomware Attack', icon: '[LOCK]', severity: 'P1',
     phases: {
       detection: {
         title: 'Detection & Analysis', time: '0-2 hours',
@@ -42,7 +42,7 @@ const IR_PLAYBOOKS = {
     }
   },
   databreach: {
-    name: 'Data Breach / Exfiltration', icon: '\u{1F4E4}', severity: 'P1',
+    name: 'Data Breach / Exfiltration', icon: '[DATA]', severity: 'P1',
     phases: {
       detection: {
         title: 'Detection & Analysis', time: '0-4 hours',
@@ -82,7 +82,7 @@ const IR_PLAYBOOKS = {
     }
   },
   phishing: {
-    name: 'Phishing Campaign', icon: '\u{1F3A3}', severity: 'P2',
+    name: 'Phishing Campaign', icon: '[HOOK]', severity: 'P2',
     phases: {
       detection: {
         title: 'Detection & Analysis', time: '0-1 hour',
@@ -122,7 +122,7 @@ const IR_PLAYBOOKS = {
     }
   },
   ddos: {
-    name: 'DDoS Attack', icon: '\u{1F30A}', severity: 'P1',
+    name: 'DDoS Attack', icon: '[FLOOD]', severity: 'P1',
     phases: {
       detection: {
         title: 'Detection & Analysis', time: '0-30 min',
@@ -162,7 +162,7 @@ const IR_PLAYBOOKS = {
     }
   },
   insider: {
-    name: 'Insider Threat', icon: '\u{1F46E}', severity: 'P2',
+    name: 'Insider Threat', icon: '[AGENT]', severity: 'P2',
     phases: {
       detection: {
         title: 'Detection & Analysis', time: '0-24 hours',
@@ -202,7 +202,7 @@ const IR_PLAYBOOKS = {
     }
   },
   supplychain: {
-    name: 'Supply Chain Compromise', icon: '\u{1F517}', severity: 'P1',
+    name: 'Supply Chain Compromise', icon: '[CHAIN]', severity: 'P1',
     phases: {
       detection: {
         title: 'Detection & Analysis', time: '0-24 hours',
@@ -242,7 +242,7 @@ const IR_PLAYBOOKS = {
     }
   },
   malware: {
-    name: 'Malware Outbreak', icon: '\u{1F41B}', severity: 'P2',
+    name: 'Malware Outbreak', icon: '[MAL]', severity: 'P2',
     phases: {
       detection: {
         title: 'Detection & Analysis', time: '0-2 hours',
@@ -282,7 +282,7 @@ const IR_PLAYBOOKS = {
     }
   },
   accountcompromise: {
-    name: 'Account Compromise', icon: '\u{1F511}', severity: 'P2',
+    name: 'Account Compromise', icon: '[KEY]', severity: 'P2',
     phases: {
       detection: {
         title: 'Detection & Analysis', time: '0-2 hours',
@@ -748,11 +748,11 @@ ${phases.map(pk => {
 
     container.innerHTML = `<div class="ir-wrap">
       <div class="ir-header">
-        <h2 class="ir-title">\u{1F6A8} Incident Response Manager</h2>
+        <h2 class="ir-title">Incident Response Manager</h2>
         <div class="ir-subtitle">Interactive playbook-driven incident response workflow</div>
       </div>
       <div class="ir-tabs">${tabs.map(t =>
-        `<button class="ir-tab ${activeTab === t.id ? 'active' : ''}" data-tab="${t.id}">${t.label}${t.id === 'active' && incident ? ' \u{1F534}' : ''}</button>`
+        `<button class="ir-tab ${activeTab === t.id ? 'active' : ''}" data-tab="${t.id}">${t.label}${t.id === 'active' && incident ? ' [!]' : ''}</button>`
       ).join('')}</div>
       <div class="ir-content">${content}</div>
     </div>`;

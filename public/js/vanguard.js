@@ -257,6 +257,16 @@ export function renderVanguard(container) {
   var h = '';
   h += '<div id="vg-root" style="background:' + c.bg + ';color:' + c.fg + ';font-family:' + c.font + ';padding:0;min-height:100vh;">';
 
+  // === TOOL INTRO ===
+  h += '<div class="tool-intro" style="margin:16px 24px 0">';
+  h += '<h2>VANGUARD</h2>';
+  h += '<p>Scans any website to find security weaknesses. Enter a domain and it automatically checks DNS, subdomains, ports, headers, SSL, and vulnerabilities.</p>';
+  h += '<div class="tool-steps">';
+  h += '<div class="tool-step"><span class="step-num">1</span><div class="step-text"><strong>Enter a domain</strong>Type a domain like example.com in the target box</div></div>';
+  h += '<div class="tool-step"><span class="step-num">2</span><div class="step-text"><strong>Click Launch Recon</strong>The scan runs 10 phases automatically</div></div>';
+  h += '<div class="tool-step"><span class="step-num">3</span><div class="step-text"><strong>Review the findings</strong>See vulnerabilities, risk scores, and recommendations</div></div>';
+  h += '</div></div>';
+
   // === HEADER ===
   h += '<div style="background:' + c.bg2 + ';border-bottom:1px solid ' + c.line + ';padding:20px 24px;">';
   h += '<div style="display:flex;align-items:center;gap:16px;">';

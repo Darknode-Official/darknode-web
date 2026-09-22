@@ -356,6 +356,15 @@ export function renderPasswordCrackingLab(main) {
   main.innerHTML =
     '<h1 class="pg-h1">Password Cracking Lab</h1>' +
     '<p class="muted pg-sub">Hash identification, cracking references, wordlists, rules, and practice challenges.</p>' +
+    '<div class="tool-intro">' +
+      '<h2>Hashcat Lab</h2>' +
+      '<p>Teaches you how password cracking works. Paste a hash, choose an attack method, and watch it try to recover the password. All simulation, nothing leaves your browser.</p>' +
+      '<div class="tool-steps">' +
+        '<div class="tool-step"><span class="step-num">1</span><div class="step-text"><strong>Paste a hash or use a sample</strong>Drop in an MD5, SHA, bcrypt, or NTLM hash to identify it</div></div>' +
+        '<div class="tool-step"><span class="step-num">2</span><div class="step-text"><strong>Pick an attack mode</strong>Choose dictionary, brute-force, rules, or combinator attacks</div></div>' +
+        '<div class="tool-step"><span class="step-num">3</span><div class="step-text"><strong>Click Crack and watch</strong>See the cracking process and learn the technique</div></div>' +
+      '</div>' +
+    '</div>' +
     '<div class="tab-bar" id="pcl-tabs">' +
       PCL_TABS.map(function(t, i) { return '<button class="tab' + (i === 0 ? ' active' : '') + '" data-tab="' + t.id + '">' + t.label + '</button>'; }).join('') +
     '</div>' +

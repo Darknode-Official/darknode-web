@@ -474,6 +474,15 @@ export function renderDNSToolkit(main) {
   main.innerHTML = STYLE +
     '<h1 class="pg-h1">DNS Toolkit</h1>' +
     '<p class="muted pg-sub">DNS analysis, record building, attack reference, and email security configuration.</p>' +
+    '<div class="tool-intro">' +
+      '<h2>DNS Toolkit</h2>' +
+      '<p>Performs comprehensive DNS lookups on any domain. See all record types, check email security (SPF/DKIM/DMARC), and discover subdomains.</p>' +
+      '<div class="tool-steps">' +
+        '<div class="tool-step"><span class="step-num">1</span><div class="step-text"><strong>Enter a domain name</strong>Type a domain like example.com to analyze</div></div>' +
+        '<div class="tool-step"><span class="step-num">2</span><div class="step-text"><strong>Choose the lookup type</strong>Pick a tab: Records, SPF Builder, DKIM, DMARC, Attacks, or Subdomains</div></div>' +
+        '<div class="tool-step"><span class="step-num">3</span><div class="step-text"><strong>View the results</strong>See DNS records, security configs, and recommendations</div></div>' +
+      '</div>' +
+    '</div>' +
     '<div class="tab-bar" id="dns-tabs" style="flex-wrap:wrap">' +
       TABS.map(function(t, i) { return '<button class="tab' + (i === 0 ? ' active' : '') + '" data-tab="' + t.id + '">' + t.label + '</button>'; }).join('') +
     '</div>' +

@@ -177,6 +177,15 @@ export function renderCyberRange(main) {
     main.innerHTML =
       '<h1 class="pg-h1">Cyber Range</h1>' +
       '<p class="muted pg-sub">CTF-style challenges with interactive labs. Capture flags, earn points, rank up.</p>' +
+      '<div class="tool-intro">' +
+        '<h2>Cyber Range</h2>' +
+        '<p>A hands-on training environment where you practice real attack and defense techniques in guided scenarios. No setup required.</p>' +
+        '<div class="tool-steps">' +
+          '<div class="tool-step"><span class="step-num">1</span><div class="step-text"><strong>Choose a challenge</strong>Browse by category and difficulty, from Easy to Insane</div></div>' +
+          '<div class="tool-step"><span class="step-num">2</span><div class="step-text"><strong>Follow the instructions</strong>Read the setup, use hints if stuck, and work through the problem</div></div>' +
+          '<div class="tool-step"><span class="step-num">3</span><div class="step-text"><strong>Complete the objectives</strong>Submit the flag to earn points and track your progress</div></div>' +
+        '</div>' +
+      '</div>' +
       '<div class="cr-user-stats">' +
       '<div class="cr-ustat"><span class="cr-ustat-v">' + progress.points + '</span><span class="cr-ustat-l">Points</span></div>' +
       '<div class="cr-ustat"><span class="cr-ustat-v">' + progress.solved.length + '</span><span class="cr-ustat-l">Solved</span></div>' +

@@ -26,6 +26,15 @@ export function renderSecurityDashboard(main) {
   main.innerHTML =
     '<h1 class="pg-h1">Security Dashboard</h1>' +
     '<p class="muted pg-sub">Organization security posture -- asset inventory, vulnerability tracking, risk register, patch management, and metrics. All data stored locally.</p>' +
+    '<div class="tool-intro">' +
+      '<h2>Security Dashboard</h2>' +
+      '<p>Gives you a single view of your security posture. See vulnerability counts, threat levels, compliance status, and recent alerts.</p>' +
+      '<div class="tool-steps">' +
+        '<div class="tool-step"><span class="step-num">1</span><div class="step-text"><strong>Review the overview</strong>See your security score, open vulnerabilities, and SLA status</div></div>' +
+        '<div class="tool-step"><span class="step-num">2</span><div class="step-text"><strong>Click into any metric</strong>Switch tabs to manage assets, vulnerabilities, risks, or patches</div></div>' +
+        '<div class="tool-step"><span class="step-num">3</span><div class="step-text"><strong>Take action on findings</strong>Add entries, update statuses, and generate reports</div></div>' +
+      '</div>' +
+    '</div>' +
     '<div class="tab-bar" id="sd-tabs">' +
       '<button class="tab active" data-tab="overview">Overview</button>' +
       '<button class="tab" data-tab="assets">Assets</button>' +

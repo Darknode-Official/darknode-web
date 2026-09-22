@@ -337,6 +337,15 @@ export function renderAI(main) {
   }).join("");
 
   main.innerHTML = `
+    <div class="tool-intro">
+      <h2>Nexus AI</h2>
+      <p>Your security assistant. Ask it anything about hacking, networking, code, or cybersecurity. It uses your own AI key or a free local model.</p>
+      <div class="tool-steps">
+        <div class="tool-step"><span class="step-num">1</span><div class="step-text"><strong>Choose your AI model</strong>Pick from the dropdown -- Ollama models are free and local</div></div>
+        <div class="tool-step"><span class="step-num">2</span><div class="step-text"><strong>Type your question</strong>Ask about tools, techniques, code, or anything security-related</div></div>
+        <div class="tool-step"><span class="step-num">3</span><div class="step-text"><strong>Read the response</strong>AI streams the answer in real time with markdown formatting</div></div>
+      </div>
+    </div>
     <div class="ai-wrap">
       <div class="ai-header">
         <h1 class="ai-title">AI assistant</h1>
