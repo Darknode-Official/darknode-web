@@ -2,6 +2,9 @@ User-agent: *
 Allow: /
 Sitemap: https://darknode.ai/sitemap.xml
 
-# Darknode - Cybersecurity Education Platform
-# Category: Education / Information Security Training
-# Contact: jawahar4k@gmail.com
+# Darknode — Cybersecurity Education Platform
+# https://darknode.ai
+# Category: Education / Technology / Information Security Training
+# Audience: Students, educators, IT professionals, security analysts
+# Standards: NIST NICE Framework, NSA CAE-CD, CompTIA Security+
+# Contact: https://darknode.ai/education

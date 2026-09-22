@@ -1413,6 +1413,7 @@ testing methodology for 10.10.14.7:
       <div class="wrap land-footer-inner">
         <div class="land-footer-left">
           <span class="land-footer-brand">Darknode</span>
+          <p style="font-size:.72rem;color:inherit;opacity:.5;margin:0 0 4px">Cybersecurity education platform for students and professionals. All tools are for authorized educational use only.</p>
           <span class="land-footer-copy">&copy; 2026 Darknode-Official. All rights reserved.</span>
         </div>
         <div class="land-footer-links">
