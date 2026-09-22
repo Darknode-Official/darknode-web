@@ -471,11 +471,8 @@ a.dl-card:hover{border-color:var(--acc)}
 /* sidebar groups */
 .side-group{font-size:.58rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--mut);padding:18px 10px 5px;margin-top:2px;border-top:1px solid color-mix(in srgb,var(--line) 40%,transparent);flex-shrink:0}
 .side-group:first-child{padding-top:2px;border-top:none;margin-top:0}
-.side-collapse{cursor:pointer;user-select:none;display:flex;align-items:center;justify-content:space-between;transition:color .15s}
-.side-collapse::after{content:">";font-size:.5rem;color:var(--mut);transition:transform .2s;transform:rotate(90deg);opacity:.5}
-.side-collapse[data-open="0"]::after{transform:rotate(0deg)}
+.side-collapse{cursor:pointer;user-select:none;transition:color .15s}
 .side-collapse:hover{color:var(--txt)}
-.side-collapse:hover::after{opacity:1}
 @media(max-width:720px){.side-group{display:none}}
 
 /* sidebar search */
@@ -486,7 +483,7 @@ a.dl-card:hover{border-color:var(--acc)}
 .side-search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--mut);pointer-events:none}
 
 /* sidebar count + badge */
-.side-cnt{margin-left:auto;font-size:.52rem;font-weight:600;color:var(--mut);opacity:.6;letter-spacing:0;text-transform:none}
+.side-cnt{font-size:.52rem;font-weight:600;color:var(--mut);opacity:.6;letter-spacing:0;text-transform:none}
 .side-badge{margin-left:auto;font-size:.48rem;font-weight:800;letter-spacing:.06em;padding:1px 5px;border-radius:3px;flex-shrink:0;line-height:1.4}
 .side-badge.live{background:color-mix(in srgb,var(--ok) 18%,transparent);color:var(--ok)}
 .side-badge.new{background:color-mix(in srgb,var(--acc) 18%,transparent);color:var(--acc)}
@@ -8826,7 +8823,7 @@ body.landing section + section::before {
 
 /* --- Sidebar collapse/expand arrow --- */
 .side-group.side-collapse{cursor:pointer;user-select:none}
-.side-group.side-collapse::after{content:"";width:0;height:0;margin-left:auto;
+.side-group.side-collapse::after{content:"";width:0;height:0;margin-left:4px;
   border-left:3.5px solid transparent;border-right:3.5px solid transparent;
   border-top:4px solid currentColor;opacity:.4;transition:transform .2s ease;flex-shrink:0}
 .side-group.side-collapse[data-open="1"]::after,
