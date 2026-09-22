@@ -985,7 +985,7 @@ html[data-style=pro].crt body::after {
 }
 [data-style=pro] .app-main {
   background: #f8fafc !important;
-  padding: 20px 28px !important;
+  padding: 32px 48px !important;
 }
 [data-style=pro] #view {
   background: #f8fafc !important;
@@ -5177,9 +5177,9 @@ html[data-style=dark].crt body::after {
    SPACING & LAYOUT — Neat, airy, professional rhythm
    ===================================================================== */
 
-/* Main content area — generous padding */
+/* Main content area — match base horizontal padding, pro vertical spacing */
 [data-style=pro] .app-main {
-  padding: 36px 56px 48px !important;
+  padding: 32px 48px !important;
 }
 
 /* Breadcrumbs — more breathing room */
@@ -5358,9 +5358,7 @@ html[data-style=dark].crt body::after {
     padding: 28px 32px 40px !important;
   }
 }
-@media (max-width: 1100px) {
-  [data-style=pro] .qa-grid { grid-template-columns: repeat(3, 1fr) !important; }
-}
+/* qa-grid uses auto-fill from base theme — no pro override needed */
 @media (max-width: 768px) {
   [data-style=pro] .app-main {
     padding: 20px 16px 32px !important;
@@ -5691,7 +5689,7 @@ html[data-style=dark].crt body::after {
   background: #f8fafc !important;
 }
 [data-style=pro] .app-main > div {
-  max-width: 1200px;
+  max-width: none;
 }
 
 /* --- 11. Pro-theme topbar search --- */
@@ -6168,11 +6166,9 @@ html[data-style=dark].crt body::after {
   transform: translateX(0) !important;
 }
 
-/* 4. Layered card glow on hover */
+/* 4. Layered glow on interactive hover elements only */
 [data-style=pro] .qa:hover,
-[data-style=pro] .stat:hover,
-[data-style=pro] .card:hover,
-[data-style=pro] .panel:hover {
+[data-style=pro] .stat:hover {
   box-shadow:
     0 4px 6px -1px rgba(0,0,0,0.05),
     0 10px 15px -3px rgba(0,0,0,0.05),
@@ -6301,14 +6297,14 @@ html[data-style=dark].crt body::after {
   clip-path: polygon(50% 100%, 0 0, 100% 0) !important;
 }
 
-/* 18. Stat card accent via nth-child gradient borders */
-[data-style=pro] .stat:nth-child(1) { border-image: linear-gradient(135deg, #2563eb, #3b82f6) 1 !important; border-top: 3px solid !important; }
-[data-style=pro] .stat:nth-child(2) { border-image: linear-gradient(135deg, #7c3aed, #8b5cf6) 1 !important; border-top: 3px solid !important; }
-[data-style=pro] .stat:nth-child(3) { border-image: linear-gradient(135deg, #059669, #10b981) 1 !important; border-top: 3px solid !important; }
-[data-style=pro] .stat:nth-child(4) { border-image: linear-gradient(135deg, #d97706, #f59e0b) 1 !important; border-top: 3px solid !important; }
-[data-style=pro] .stat:nth-child(5) { border-image: linear-gradient(135deg, #db2777, #ec4899) 1 !important; border-top: 3px solid !important; }
-[data-style=pro] .stat:nth-child(6) { border-image: linear-gradient(135deg, #0891b2, #06b6d4) 1 !important; border-top: 3px solid !important; }
-[data-style=pro] .stat:nth-child(7) { border-image: linear-gradient(135deg, #ea580c, #f97316) 1 !important; border-top: 3px solid !important; }
+/* 18. Stat card accent — top-border only, no border-image */
+[data-style=pro] .stat { border-image: none !important; border: 1px solid #e2e8f0 !important; border-top: 3px solid #2563eb !important; border-radius: 12px !important; }
+[data-style=pro] .stat:nth-child(2) { border-top-color: #8b5cf6 !important; }
+[data-style=pro] .stat:nth-child(3) { border-top-color: #059669 !important; }
+[data-style=pro] .stat:nth-child(4) { border-top-color: #d97706 !important; }
+[data-style=pro] .stat:nth-child(5) { border-top-color: #ec4899 !important; }
+[data-style=pro] .stat:nth-child(6) { border-top-color: #06b6d4 !important; }
+[data-style=pro] .stat:nth-child(7) { border-top-color: #f97316 !important; }
 
 /* 19. Color-mix for dynamic hover tints */
 [data-style=pro] .qa:hover {
@@ -7713,11 +7709,13 @@ html[data-style=dark].crt body::after {
 }
 [data-style=pro] .bento-card:hover,
 [data-style=pro] .ts-card:hover,
-[data-style=pro] .qa:hover,
 [data-style=pro] .os-card:hover {
-  transform: translateY(-6px) scale(1.01) !important;
-  filter: brightness(1.01) !important;
-  box-shadow: 0 20px 50px -12px rgba(37,99,235,.12), 0 0 0 1px rgba(37,99,235,.08) !important;
+  transform: translateY(-3px) !important;
+  box-shadow: 0 12px 30px -8px rgba(37,99,235,.1), 0 0 0 1px rgba(37,99,235,.06) !important;
+}
+[data-style=pro] .qa:hover {
+  transform: translateX(3px) !important;
+  box-shadow: 0 4px 16px rgba(0,0,0,.06) !important;
 }
 
 /* Active micro-feedback */
@@ -12501,3 +12499,80 @@ html[data-style=dark] .boot-sweep {
 [data-style="dark"] .or-content { color: #cbd5e1; }
 [data-style="dark"] .or-timeline-item { border-color: #334155; }
 [data-style="dark"] .or-phase-bar { background: #334155; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   FINAL OVERRIDES — highest cascade priority, end of file
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* Dashboard stat row — 4-column grid so 7 cards flow as 4+3, not 6+1 */
+html[data-style="pro"] .stat-row {
+  grid-template-columns: repeat(4, 1fr) !important;
+}
+@media (max-width: 900px) {
+  html[data-style="pro"] .stat-row { grid-template-columns: repeat(3, 1fr) !important; }
+}
+@media (max-width: 640px) {
+  html[data-style="pro"] .stat-row { grid-template-columns: repeat(2, 1fr) !important; }
+}
+
+/* Dashboard stat cards — clean top-only accent border */
+html[data-style="pro"] .stat-row .stat {
+  border-image: none !important;
+  border: 1px solid #e2e8f0 !important;
+  border-top: 3px solid #2563eb !important;
+  border-radius: 12px !important;
+  background: #fff !important;
+  padding: 20px 24px !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,.04) !important;
+}
+html[data-style="pro"] .stat-row .stat:nth-child(2) { border-top-color: #8b5cf6 !important; }
+html[data-style="pro"] .stat-row .stat:nth-child(3) { border-top-color: #059669 !important; }
+html[data-style="pro"] .stat-row .stat:nth-child(4) { border-top-color: #d97706 !important; }
+html[data-style="pro"] .stat-row .stat:nth-child(5) { border-top-color: #ec4899 !important; }
+html[data-style="pro"] .stat-row .stat:nth-child(6) { border-top-color: #06b6d4 !important; }
+html[data-style="pro"] .stat-row .stat:nth-child(7) { border-top-color: #f97316 !important; }
+html[data-style="pro"] .stat-row .stat:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 24px -4px rgba(37,99,235,.1) !important;
+}
+html[data-style="pro"] .stat-row .stat .stat-n {
+  font-size: 1.85rem !important;
+  font-weight: 800 !important;
+  color: #0f172a !important;
+}
+html[data-style="pro"] .stat-row .stat .stat-l {
+  font-size: .68rem !important;
+  color: #64748b !important;
+  text-transform: uppercase !important;
+  letter-spacing: .06em !important;
+  font-weight: 600 !important;
+}
+
+/* Dark theme stat row */
+html[data-style="dark"] .stat-row {
+  grid-template-columns: repeat(4, 1fr) !important;
+}
+@media (max-width: 900px) {
+  html[data-style="dark"] .stat-row { grid-template-columns: repeat(3, 1fr) !important; }
+}
+@media (max-width: 640px) {
+  html[data-style="dark"] .stat-row { grid-template-columns: repeat(2, 1fr) !important; }
+}
+
+/* Dark theme stat cards */
+html[data-style="dark"] .stat-row .stat {
+  border-image: none !important;
+  border: 1px solid #334155 !important;
+  border-top: 3px solid #3b82f6 !important;
+  border-radius: 12px !important;
+  background: #1e293b !important;
+}
+html[data-style="dark"] .stat-row .stat:nth-child(2) { border-top-color: #8b5cf6 !important; }
+html[data-style="dark"] .stat-row .stat:nth-child(3) { border-top-color: #10b981 !important; }
+html[data-style="dark"] .stat-row .stat:nth-child(4) { border-top-color: #f59e0b !important; }
+html[data-style="dark"] .stat-row .stat:nth-child(5) { border-top-color: #ec4899 !important; }
+html[data-style="dark"] .stat-row .stat:nth-child(6) { border-top-color: #06b6d4 !important; }
+html[data-style="dark"] .stat-row .stat:nth-child(7) { border-top-color: #f97316 !important; }
+html[data-style="dark"] .stat-row .stat .stat-n {
+  color: #e2e8f0 !important;
+}
