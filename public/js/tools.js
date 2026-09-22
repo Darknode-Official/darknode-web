@@ -10,6 +10,15 @@ const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
 export function renderTools(el) {
   if (!el) return;
   el.innerHTML = `
+    <div class="tool-intro">
+      <h2>Tool Catalog</h2>
+      <p>Browse all 160+ security tools organized by category. Click any tool to expand it and see what it does, then click Open to launch it.</p>
+      <div class="tool-steps">
+        <div class="tool-step"><span class="step-num">1</span><div class="step-text"><strong>Search or browse</strong>Type in the search bar or scroll through categories</div></div>
+        <div class="tool-step"><span class="step-num">2</span><div class="step-text"><strong>Click a tool to expand</strong>See its description and whether it runs in your browser or locally</div></div>
+        <div class="tool-step"><span class="step-num">3</span><div class="step-text"><strong>Click Open to launch</strong>The tool loads right here -- no installation needed for web tools</div></div>
+      </div>
+    </div>
     <input class="tk-search" id="tk-search" placeholder="Search ${CATALOG.length} tools by name, category, or what they do...">
     <div class="tk-cats" id="tk-cats"></div>`;
   const cats = el.querySelector("#tk-cats");

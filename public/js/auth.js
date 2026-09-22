@@ -20,7 +20,7 @@ let MORE = [], CATALOG = [], CATEGORIES = [];
 import("/js/toolkit.js").then(m => { MORE = m.MORE; CATALOG = m.CATALOG; CATEGORIES = m.CATEGORIES; });
 import { startTour, tourDone } from "/js/tour.js";
 let _landing = null;
-async function loadLanding() { if (!_landing) _landing = await import("/js/landing.js?v=20260923"); return _landing; }
+async function loadLanding() { if (!_landing) _landing = await import("/js/landing.js?v=20260924"); return _landing; }
 import {
   renderThreat, renderCheats, renderLearn, homeWidgetsHTML, wireHome, COUNTS,
   CHEATS, RESOURCES,
@@ -592,7 +592,7 @@ function renderHome(main, user, isOwner, show) {
         </div>
       </div>
       <h1 class="pg-h1">Welcome back${name ? ", " + esc(name) : ""}</h1>
-      <p class="muted pg-sub">160+ security tools, threat intel, local AI and training labs &mdash; your complete offensive &amp; defensive workflow.</p>
+      <p class="muted pg-sub">164+ security tools, threat intel, local AI and training labs &mdash; your complete cybersecurity workflow.</p>
       <div class="hero-actions">
         <button class="btn" data-sec="tools">Browse tools</button>
         <button class="btn ghost" data-sec="ai">Nexus AI</button>
@@ -627,19 +627,23 @@ function renderHome(main, user, isOwner, show) {
     <div class="dash-section">
       <h3 class="dash-cat-label">Flagship Tools</h3>
       <div class="qa-grid">
-        ${qa("ai", "", "Nexus AI", "Chat with Ollama, Claude, GPT, Gemini &mdash; unrestricted security &amp; coding help.")}
+        ${qa("ai", "", "Nexus AI", "Chat with Ollama, Claude, GPT, Gemini &mdash; security &amp; coding help.")}
         ${qa("sentineleye", "", "Sentinel Eye", "Global threat visualization with live CesiumJS globe &amp; 14 intelligence tabs.")}
         ${qa("prometheus", "", "Prometheus", "AI-powered incident response engine with 40+ playbooks.")}
         ${qa("secdash", "", "Security Dashboard", "Unified dashboard for threat intel, alerts and system health.")}
+        ${qa("phantom", "", "PHANTOM", "Deep packet inspection, protocol dissection &amp; network traffic analysis.")}
+        ${qa("citadel", "", "CITADEL", "SOC operations center with log correlation, detection rules &amp; alert triage.")}
+        ${qa("oracle", "", "ORACLE", "Threat intelligence platform with IOC management &amp; campaign tracking.")}
+        ${qa("spectre", "", "SPECTRE", "Cloud security posture management for AWS, Azure &amp; GCP.")}
       </div>
     </div>
     <div class="dash-section">
       <h3 class="dash-cat-label">Offensive Security</h3>
       <div class="qa-grid">
-        ${qa("tools", "", "Scanner Suite", "Nmap, Nikto, Gobuster and 160+ security tools in one catalog.")}
-        ${qa("payloads", "", "Payload Forge", "Copy-ready SQLi, XSS, LFI, SSTI, SSRF and more.")}
-        ${qa("exploitdev", "", "Exploit Writer", "Craft and test custom exploits with built-in templates.")}
-        ${qa("pentestconsole", "", "Pentest Console", "Interactive pentest workflow with target scoping and notes.")}
+        ${qa("tools", "", "Scanner Suite", "Nmap, Nikto, Gobuster and 164+ security tools in one catalog.")}
+        ${qa("payloads", "", "Test Script Forge", "Copy-ready security test scripts for common vulnerability classes.")}
+        ${qa("exploitdev", "", "Security Research Lab", "Study and test vulnerability proofs-of-concept with built-in templates.")}
+        ${qa("pentestconsole", "", "Security Assessment", "Interactive security assessment workflow with scoping and notes.")}
       </div>
     </div>
     <div class="dash-section">
@@ -648,15 +652,15 @@ function renderHome(main, user, isOwner, show) {
         ${qa("threat", "", "Threat Feed", "Notable CVEs, IOCs and a common-ports attack-surface reference.")}
         ${qa("breachlookup", "", "Breach Lookup", "Search major data breaches by company, year and severity.")}
         ${qa("netmap", "", "Network Mapper", "Visualize network topology, open ports and service fingerprints.")}
-        ${qa("sandbox", "", "Malware Sandbox", "Detonate and analyze suspicious files in an isolated environment.")}
+        ${qa("sandbox", "", "Threat Analysis Lab", "Analyze suspicious files and samples in an isolated environment.")}
       </div>
     </div>
     <div class="dash-section">
       <h3 class="dash-cat-label">Learn &amp; Practice</h3>
       <div class="qa-grid">
-        ${qa("learn", "", "Academy", "Curated hubs: HackTricks, OWASP, PayloadsAllTheThings and more.")}
-        ${qa("cyberrange", "", "Cyber Range", "Hands-on attack/defense labs with guided walkthroughs.")}
-        ${qa("cheats", "", "Cheat Sheets", "Copy-paste one-liners for recon, shells, privesc and cracking.")}
+        ${qa("learn", "", "Academy", "Curated hubs: OWASP, security references, and learning resources.")}
+        ${qa("cyberrange", "", "Cyber Range", "Hands-on security labs with guided walkthroughs.")}
+        ${qa("cheats", "", "Cheat Sheets", "Copy-paste one-liners for recon, networking, security and more.")}
         ${qa("snippets", "", "Snippet Vault", "Everyday one-liners for bash, Python, JS, git, docker, SQL.")}
       </div>
     </div>
@@ -918,42 +922,45 @@ function renderApp(user) {
       <aside class="sidebar" id="sidebar" role="complementary" aria-label="Main navigation">
         <div class="side-brand">Darknode</div>
         <nav class="side-nav" role="navigation" aria-label="Application sections">
-          <div class="side-search-wrap"><input class="side-search" placeholder="Search 160+ tools..." id="sideSearch" spellcheck="false" autocomplete="off"><svg class="side-search-icon" viewBox="0 0 16 16" width="13" height="13"><circle cx="6.5" cy="6.5" r="5" fill="none" stroke="currentColor" stroke-width="1.5"/><line x1="10" y1="10" x2="14" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
+          <div class="side-search-wrap"><input class="side-search" placeholder="Search 164+ tools..." id="sideSearch" spellcheck="false" autocomplete="off"><svg class="side-search-icon" viewBox="0 0 16 16" width="13" height="13"><circle cx="6.5" cy="6.5" r="5" fill="none" stroke="currentColor" stroke-width="1.5"/><line x1="10" y1="10" x2="14" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
           <button class="side-item" data-sec="home">Dashboard</button>
 
-          <div class="side-group side-collapse" data-open="1" data-color="blue">Mission Control <span class="side-cnt">6</span></div>
+          <div class="side-group side-collapse" data-open="1" data-color="blue">Mission Control <span class="side-cnt">10</span></div>
           <button class="side-item" data-sec="prometheus">PROMETHEUS <span class="side-badge live">LIVE</span></button>
           <button class="side-item" data-sec="sentineleye">SENTINEL EYE <span class="side-badge live">LIVE</span></button>
           <button class="side-item" data-sec="hydra">HYDRA Engine</button>
           <button class="side-item" data-sec="aegis">AEGIS Ops Center</button>
           <button class="side-item" data-sec="vanguard">VANGUARD</button>
+          <button class="side-item" data-sec="phantom">PHANTOM <span class="side-badge live">LIVE</span></button>
+          <button class="side-item" data-sec="citadel">CITADEL <span class="side-badge live">LIVE</span></button>
+          <button class="side-item" data-sec="oracle">ORACLE <span class="side-badge live">LIVE</span></button>
+          <button class="side-item" data-sec="spectre">SPECTRE <span class="side-badge live">LIVE</span></button>
           <button class="side-item" data-sec="secdash">Security Dashboard</button>
 
-          <div class="side-group side-collapse" data-color="red">Red Team <span class="side-cnt">12</span></div>
-          <button class="side-item" data-sec="attacksim">Attack Simulator</button>
-          <button class="side-item" data-sec="cracklab">Hashcat Lab</button>
-          <button class="side-item" data-sec="exploitdb">Exploit Database</button>
-          <button class="side-item" data-sec="exploitdbbrowser">Exploit DB Browser</button>
-          <button class="side-item" data-sec="exploitdev">Exploit Writer</button>
+          <div class="side-group side-collapse" data-color="red">Offensive Security <span class="side-cnt">11</span></div>
+          <button class="side-item" data-sec="attacksim">Threat Simulator</button>
+          <button class="side-item" data-sec="cracklab">Password Security Lab</button>
+          <button class="side-item" data-sec="exploitdb">Vulnerability Database</button>
+          <button class="side-item" data-sec="exploitdev">Security Research Lab</button>
           <button class="side-item" data-sec="packetcraft">Packet Crafter</button>
           <button class="side-item" data-sec="passwordtools">Password Tools</button>
-          <button class="side-item" data-sec="payloads">Payload Forge</button>
-          <button class="side-item" data-sec="payloadgen">Payload Generator</button>
-          <button class="side-item" data-sec="pentestconsole">Pentest Console</button>
-          <button class="side-item" data-sec="privesc">Privilege Escalation</button>
-          <button class="side-item" data-sec="reverseshell">Reverse Shell Gen</button>
+          <button class="side-item" data-sec="payloads">Test Script Forge</button>
+          <button class="side-item" data-sec="payloadgen">Test Script Generator</button>
+          <button class="side-item" data-sec="pentestconsole">Security Assessment</button>
+          <button class="side-item" data-sec="privesc">Privilege Analysis</button>
+          <button class="side-item" data-sec="reverseshell">Remote Access Testing</button>
 
-          <div class="side-group side-collapse" data-color="red">Exploitation Labs <span class="side-cnt">5</span></div>
+          <div class="side-group side-collapse" data-color="red">Security Labs <span class="side-cnt">5</span></div>
           <button class="side-item" data-sec="firewall">Firewall Rules</button>
           <button class="side-item" data-sec="webshell">Terminal</button>
           <button class="side-item" data-sec="wirelesslab">Wireless Lab</button>
-          <button class="side-item" data-sec="xsslab">XSS Lab</button>
+          <button class="side-item" data-sec="xsslab">Web Security Lab</button>
           <button class="side-item" data-sec="socialeng">Social Engineering</button>
 
           <div class="side-group side-collapse" data-color="cyan">Reconnaissance <span class="side-cnt">12</span></div>
           <button class="side-item" data-sec="addressintel">Address Intel</button>
           <button class="side-item" data-sec="asnexplorer">ASN Explorer</button>
-          <button class="side-item" data-sec="attacksurf">Attack Surface</button>
+          <button class="side-item" data-sec="attacksurf">Exposure Mapping</button>
           <button class="side-item" data-sec="dns">DNS Toolkit</button>
           <button class="side-item" data-sec="dnsrecon">DNS Recon</button>
           <button class="side-item" data-sec="ghdb">Google Dorking</button>
@@ -978,24 +985,20 @@ function renderApp(user) {
           <button class="side-item" data-sec="techfingerprint">Tech Fingerprint</button>
           <button class="side-item" data-sec="whoisrecon">WHOIS Recon</button>
 
-          <div class="side-group side-collapse" data-color="purple">Forensics <span class="side-cnt">11</span></div>
+          <div class="side-group side-collapse" data-color="purple">Forensics <span class="side-cnt">8</span></div>
           <button class="side-item" data-sec="binanalyze">Binary Analyzer</button>
           <button class="side-item" data-sec="forensicstoolkit">Forensics Toolkit</button>
-          <button class="side-item" data-sec="forensicstools">Forensics Tools</button>
           <button class="side-item" data-sec="ftimeline">Forensic Timeline</button>
           <button class="side-item" data-sec="loganalyze">Log Analyzer</button>
-          <button class="side-item" data-sec="logforensics">Log Forensics</button>
-          <button class="side-item" data-sec="logparser">Log Parser</button>
           <button class="side-item" data-sec="memforensics">Memory Forensics</button>
           <button class="side-item" data-sec="reveng">Reverse Engineering</button>
           <button class="side-item" data-sec="stego">Steganography</button>
           <button class="side-item" data-sec="timelineviz">Timeline Visualization</button>
 
-          <div class="side-group side-collapse" data-color="purple">Malware Analysis <span class="side-cnt">4</span></div>
-          <button class="side-item" data-sec="malclass">Malware Classifier</button>
-          <button class="side-item" data-sec="malwaresandbox">Malware Sandbox</button>
+          <div class="side-group side-collapse" data-color="purple">Threat Analysis <span class="side-cnt">3</span></div>
+          <button class="side-item" data-sec="malclass">Threat Classifier</button>
           <button class="side-item" data-sec="phishing">Phishing Analyzer</button>
-          <button class="side-item" data-sec="sandbox">Malware Sandbox</button>
+          <button class="side-item" data-sec="sandbox">Threat Analysis Lab</button>
 
           <div class="side-group side-collapse" data-color="green">Blue Team <span class="side-cnt">11</span></div>
           <button class="side-item" data-sec="adversary">Adversary Emulation</button>
@@ -1010,28 +1013,25 @@ function renderApp(user) {
           <button class="side-item" data-sec="riskcalculator">Risk Calculator</button>
           <button class="side-item" data-sec="threatmodel">Threat Modeler</button>
 
-          <div class="side-group side-collapse" data-color="orange">Threat Intelligence <span class="side-cnt">10</span></div>
+          <div class="side-group side-collapse" data-color="orange">Threat Intelligence <span class="side-cnt">9</span></div>
           <button class="side-item" data-sec="breachlookup">Breach Lookup</button>
           <button class="side-item" data-sec="cvesearch">CVE Search</button>
           <button class="side-item" data-sec="cvetimeline">CVE Timeline</button>
           <button class="side-item" data-sec="darknetradar">Darknet Radar</button>
-          <button class="side-item" data-sec="darkwebosint">Dark Web OSINT</button>
+          <button class="side-item" data-sec="darkwebosint">Deep Web Intel</button>
           <button class="side-item" data-sec="ipreputation">IP Reputation</button>
           <button class="side-item" data-sec="threat">Threat Feed</button>
           <button class="side-item" data-sec="threatdashboard">Threat Dashboard</button>
           <button class="side-item" data-sec="threatfeed">Threat Intel Feed</button>
-          <button class="side-item" data-sec="threatfeedagg">Threat Aggregator</button>
 
-          <div class="side-group side-collapse" data-color="orange">Vulnerability Mgmt <span class="side-cnt">6</span></div>
+          <div class="side-group side-collapse" data-color="orange">Vulnerability Mgmt <span class="side-cnt">5</span></div>
           <button class="side-item" data-sec="vulndb">Vulnerability DB</button>
           <button class="side-item" data-sec="vulnprio">Vuln Prioritizer</button>
           <button class="side-item" data-sec="vulntriage">Vuln Triage Engine</button>
           <button class="side-item" data-sec="secchecklist">Security Checklist</button>
           <button class="side-item" data-sec="supplychain">Supply Chain</button>
-          <button class="side-item" data-sec="threatcanvas">Threat Model Canvas</button>
 
-          <div class="side-group side-collapse" data-color="teal">Network Analysis <span class="side-cnt">10</span></div>
-          <button class="side-item" data-sec="dnsenum">DNS Enumeration</button>
+          <div class="side-group side-collapse" data-color="teal">Network Analysis <span class="side-cnt">9</span></div>
           <button class="side-item" data-sec="networkscanner">Network Scanner</button>
           <button class="side-item" data-sec="networktools">Network Tools</button>
           <button class="side-item" data-sec="networktraffic">Network Traffic</button>
@@ -1042,51 +1042,39 @@ function renderApp(user) {
           <button class="side-item" data-sec="trafficanalyzer">Traffic Analyzer</button>
           <button class="side-item" data-sec="websockettester">WebSocket Tester</button>
 
-          <div class="side-group side-collapse" data-color="teal">Security Operations <span class="side-cnt">12</span></div>
+          <div class="side-group side-collapse" data-color="teal">Security Operations <span class="side-cnt">7</span></div>
           <button class="side-item" data-sec="adversaryplaybook">Adversary Playbook</button>
           <button class="side-item" data-sec="apifuzzer">API Fuzzer</button>
           <button class="side-item" data-sec="apitester">API Tester</button>
           <button class="side-item" data-sec="apiscan">API Scanner</button>
-          <button class="side-item" data-sec="certanalyzer">Certificate Analyzer</button>
-          <button class="side-item" data-sec="firewallrules">Firewall Rules</button>
-          <button class="side-item" data-sec="hashtoolkit">Hash Toolkit</button>
           <button class="side-item" data-sec="incidentcost">Incident Cost Calc</button>
           <button class="side-item" data-sec="incidentresponse">Incident Response</button>
           <button class="side-item" data-sec="siemdash">SIEM Dashboard</button>
-          <button class="side-item" data-sec="sslcertanalyzer">SSL Cert Analyzer</button>
-          <button class="side-item" data-sec="subdomainscanner">Subdomain Scanner</button>
 
-          <div class="side-group side-collapse" data-color="yellow">Compliance &amp; GRC <span class="side-cnt">8</span></div>
+          <div class="side-group side-collapse" data-color="yellow">Compliance &amp; GRC <span class="side-cnt">6</span></div>
           <button class="side-item" data-sec="compliance">Compliance Checker</button>
-          <button class="side-item" data-sec="credauditor">Credential Auditor</button>
           <button class="side-item" data-sec="cyberbriefing">Cyber Briefing</button>
           <button class="side-item" data-sec="emailheader">Email Header Analyzer</button>
           <button class="side-item" data-sec="fedcompliance">Federal Compliance</button>
           <button class="side-item" data-sec="iocextractor">IOC Extractor</button>
-          <button class="side-item" data-sec="passwordanalyzer">Password Analyzer</button>
           <button class="side-item" data-sec="zerotrust">Zero Trust Planner</button>
 
-          <div class="side-group side-collapse" data-color="indigo">Crypto &amp; Encoding <span class="side-cnt">12</span></div>
+          <div class="side-group side-collapse" data-color="indigo">Crypto &amp; Encoding <span class="side-cnt">8</span></div>
           <button class="side-item" data-sec="credaudit">Credential Auditor</button>
-          <button class="side-item" data-sec="cryptoplayground">Crypto Playground</button>
           <button class="side-item" data-sec="cryptotools">Crypto Toolkit</button>
-          <button class="side-item" data-sec="cryptotoolkit">Crypto Suite</button>
           <button class="side-item" data-sec="cspevaluator">CSP Evaluator</button>
           <button class="side-item" data-sec="encoding">Encoding Suite</button>
-          <button class="side-item" data-sec="encodingtoolkit">Encoding Toolkit</button>
-          <button class="side-item" data-sec="hashlookup">Hash Lookup</button>
           <button class="side-item" data-sec="hashsuite">Hash Suite</button>
           <button class="side-item" data-sec="jwtanalyzer">JWT Analyzer</button>
           <button class="side-item" data-sec="regexlab">Regex Lab</button>
           <button class="side-item" data-sec="urldissect">URL Dissector</button>
 
-          <div class="side-group side-collapse" data-color="violet">Nexus AI <span class="side-cnt">6</span></div>
+          <div class="side-group side-collapse" data-color="violet">Nexus AI <span class="side-cnt">5</span></div>
           <button class="side-item" data-sec="ai">AI Chat</button>
           <button class="side-item" data-sec="coder">Nexus Agent <span class="side-badge ai">AI</span></button>
           <button class="side-item" data-sec="dataviz">Data Visualization</button>
           <button class="side-item" data-sec="engines">Security Engines</button>
           <button class="side-item" data-sec="report">Report Generator</button>
-          <button class="side-item" data-sec="reportbuilder">Report Builder</button>
 
           <div class="side-group side-collapse" data-color="emerald">Training <span class="side-cnt">11</span></div>
           <button class="side-item" data-sec="chess">Chess</button>
@@ -1105,14 +1093,13 @@ function renderApp(user) {
           <button class="side-item" data-sec="vms">Vulnerable VMs</button>
           <button class="side-item" data-sec="vmlab">VM Lab</button>
 
-          <div class="side-group side-collapse" data-color="slate">Infrastructure <span class="side-cnt">7</span></div>
+          <div class="side-group side-collapse" data-color="slate">Infrastructure <span class="side-cnt">6</span></div>
           <button class="side-item" data-sec="api">API</button>
           <button class="side-item" data-sec="docs">Docs</button>
           <button class="side-item" data-sec="downloads">Darknode OS</button>
           <button class="side-item" data-sec="dlguide">Download Guide</button>
           <button class="side-item" data-sec="privatecloud">Private Cloud <span class="side-badge beta">BETA</span></button>
           <button class="side-item" data-sec="setup">Local Setup</button>
-          <button class="side-item" data-sec="subdomainenum">Subdomain Enumerator</button>
 
           ${isOwner ? `<div class="side-group side-collapse">Admin</div><button class="side-item" data-sec="admin">Admin Console</button>` : ""}
         </nav>
@@ -1167,7 +1154,7 @@ function renderApp(user) {
     if (sec && sec !== "home" && sec !== "settings") { try { let r = JSON.parse(localStorage.getItem("dn_recent")||"[]"); r = r.filter(s=>s!==sec); r.unshift(sec); r = r.slice(0,8); localStorage.setItem("dn_recent", JSON.stringify(r)); } catch(_){} }
     if (sec === "tools") { main.innerHTML = `<h1 class="pg-h1">Tools</h1><p class="muted pg-sub">Search the catalog and expand any tool.</p><div id="tools"></div>`; import("/js/tools.js").then(m => m.renderTools(document.getElementById("tools"))); }
     else if (sec === "utils") { import("/js/utils.js").then(m => m.renderUtils(main)); }
-    else if (sec === "ai") { import("/js/webai.js?v=20260923").then(m => m.renderAI(main)); }
+    else if (sec === "ai") { import("/js/webai.js?v=20260924").then(m => m.renderAI(main)); }
     else if (sec === "payloads") { import("/js/labs.js").then(m => m.renderPayloads(main)); }
     else if (sec === "targets") { import("/js/labs.js").then(m => m.renderTargets(main)); }
     else if (sec === "ghdb") { import("/js/ghdb.js").then(m => m.renderGHDB(main)); }
@@ -1209,8 +1196,8 @@ function renderApp(user) {
     else if (sec === "reveng") { import("/js/reverse-engineering.js").then(m => m.renderReverseEngineering(main)); }
     else if (sec === "darkwebosint") { import("/js/darkweb-osint.js").then(m => m.renderDarkwebOsint(main)); }
     else if (sec === "cyberrange") { import("/js/cyber-range.js").then(m => m.renderCyberRange(main)); }
-    else if (sec === "prometheus") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading PROMETHEUS...</p>"; const _s=sec; import("/js/prometheus-web.js?v=20260923").then(m => { if(curSec!==_s)return; m.renderPrometheus(main); _prevCleanup = m.cleanupPrometheus; }); }
-    else if (sec === "sentineleye") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading SENTINEL EYE...</p>"; if(!document.querySelector('script[src="/js/threat-api.js"]')){var s1=document.createElement("script");s1.src="/js/threat-api.js";document.head.appendChild(s1)}if(!document.querySelector('script[src="/js/threat-map.js"]')){var s2=document.createElement("script");s2.src="/js/threat-map.js";document.head.appendChild(s2)} const _s=sec; import("/js/sentinel-eye.js?v=20260923").then(m => { if(curSec!==_s)return; m.renderSentinelEye(main); _prevCleanup = m.cleanupSentinelEye; }); }
+    else if (sec === "prometheus") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading PROMETHEUS...</p>"; const _s=sec; import("/js/prometheus-web.js?v=20260924").then(m => { if(curSec!==_s)return; m.renderPrometheus(main); _prevCleanup = m.cleanupPrometheus; }); }
+    else if (sec === "sentineleye") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading SENTINEL EYE...</p>"; if(!document.querySelector('script[src="/js/threat-api.js"]')){var s1=document.createElement("script");s1.src="/js/threat-api.js";document.head.appendChild(s1)}if(!document.querySelector('script[src="/js/threat-map.js"]')){var s2=document.createElement("script");s2.src="/js/threat-map.js";document.head.appendChild(s2)} const _s=sec; import("/js/sentinel-eye.js?v=20260924").then(m => { if(curSec!==_s)return; m.renderSentinelEye(main); _prevCleanup = m.cleanupSentinelEye; }); }
     else if (sec === "exploitdev") { import("/js/exploit-writer.js").then(m => m.renderExploitWriter(main)); }
     else if (sec === "secdash") { import("/js/security-dashboard.js").then(m => m.renderSecurityDashboard(main)); }
     else if (sec === "phishing") { import("/js/phishing-analyzer.js").then(m => m.renderPhishingAnalyzer(main)); }
@@ -1218,7 +1205,11 @@ function renderApp(user) {
     else if (sec === "cracklab") { import("/js/password-cracking-lab.js").then(m => m.renderPasswordCrackingLab(main)); }
     else if (sec === "hydra") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading HYDRA...</p>"; import("/js/hydra-engine.js").then(m => m.renderHydra(main)); }
     else if (sec === "aegis") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading AEGIS...</p>"; import("/js/aegis-web.js").then(m => m.renderAegis(main)); }
-    else if (sec === "vanguard") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading VANGUARD...</p>"; import("/js/vanguard.js?v=20260923").then(m => m.renderVanguard(main)); }
+    else if (sec === "vanguard") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading VANGUARD...</p>"; import("/js/vanguard.js?v=20260924").then(m => m.renderVanguard(main)); }
+    else if (sec === "phantom") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading PHANTOM...</p>"; const _s=sec; import("/js/phantom.js?v=20260924").then(m => { if(curSec!==_s)return; m.renderPhantom(main); _prevCleanup = m.cleanupPhantom; }); }
+    else if (sec === "citadel") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading CITADEL...</p>"; const _s=sec; import("/js/citadel.js?v=20260924").then(m => { if(curSec!==_s)return; m.renderCitadel(main); _prevCleanup = m.cleanupCitadel; }); }
+    else if (sec === "oracle") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading ORACLE...</p>"; const _s=sec; import("/js/oracle.js?v=20260924").then(m => { if(curSec!==_s)return; m.renderOracle(main); _prevCleanup = m.cleanupOracle; }); }
+    else if (sec === "spectre") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading SPECTRE...</p>"; const _s=sec; import("/js/spectre.js?v=20260924").then(m => { if(curSec!==_s)return; m.renderSpectre(main); _prevCleanup = m.cleanupSpectre; }); }
     else if (sec === "jwtanalyzer") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading JWT Analyzer...</p>"; import("/js/jwt-analyzer.js").then(m => m.renderJwtAnalyzer(main)); }
     else if (sec === "cspevaluator") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading CSP Evaluator...</p>"; import("/js/csp-evaluator.js").then(m => m.renderCspEvaluator(main)); }
     else if (sec === "wayback") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Wayback Recon...</p>"; import("/js/wayback-recon.js").then(m => m.renderWaybackRecon(main)); }
@@ -1250,24 +1241,12 @@ function renderApp(user) {
     else if (sec === "adversaryplaybook") { import("/js/adversary-playbook.js").then(m => m.renderAdversaryPlaybook(main)); }
     else if (sec === "emailheader") { import("/js/email-header.js").then(m => m.renderEmailHeader(main)); }
     else if (sec === "iocextractor") { import("/js/ioc-extractor.js").then(m => m.renderIOCExtractor(main)); }
-    else if (sec === "threatcanvas") { import("/js/threat-model.js").then(m => m.renderThreatModel(main)); }
-    else if (sec === "logforensics") { import("/js/log-forensics.js").then(m => m.renderLogForensics(main)); }
     else if (sec === "reconplanner") { import("/js/recon-planner.js").then(m => m.renderReconPlanner(main)); }
-    else if (sec === "subdomainenum") { import("/js/subdomain-enum.js").then(m => m.renderSubdomainEnum(main)); }
-    else if (sec === "passwordanalyzer") { import("/js/password-analyzer.js").then(m => m.renderPasswordAnalyzer(main)); }
-    else if (sec === "certanalyzer") { import("/js/cert-analyzer.js").then(m => m.renderCertAnalyzer(main)); }
     else if (sec === "packetinspector") { import("/js/packet-inspector.js").then(m => m.renderPacketInspector(main)); }
     else if (sec === "siemdash") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading SIEM...</p>"; import("/js/siem-dash.js").then(m => m.renderSiemDash(main)); }
-    else if (sec === "credauditor") { import("/js/cred-auditor.js").then(m => m.renderCredAuditor(main)); }
-    else if (sec === "subdomainscanner") { import("/js/subdomain-scanner.js").then(m => m.renderSubdomainScanner(main)); }
-    else if (sec === "dnsenum") { import("/js/dns-enum.js").then(m => m.renderDNSEnum(main)); }
-    else if (sec === "malwaresandbox") { import("/js/malware-sandbox.js").then(m => m.renderMalwareSandbox(main)); }
-    else if (sec === "firewallrules") { import("/js/firewall-rules.js").then(m => m.renderFirewallRules(main)); }
-    else if (sec === "sslcertanalyzer") { import("/js/ssl-cert-analyzer.js").then(m => m.renderSSLCertAnalyzer(main)); }
     else if (sec === "apifuzzer") { import("/js/api-fuzzer.js").then(m => m.renderAPIFuzzer(main)); }
     else if (sec === "incidentresponse") { import("/js/incident-response.js").then(m => m.renderIncidentResponse(main)); }
     else if (sec === "networktraffic") { import("/js/network-traffic.js").then(m => m.renderNetworkTraffic(main)); }
-    else if (sec === "hashtoolkit") { import("/js/hash-toolkit.js").then(m => m.renderHashToolkit(main)); }
     else if (sec === "privesc") { import("/js/privesc-toolkit.js").then(m => m.renderPrivescToolkit(main)); }
     else if (sec === "reverseshell") { import("/js/reverse-shell.js").then(m => m.renderReverseShell(main)); }
     else if (sec === "xsslab") { import("/js/xss-lab.js").then(m => m.renderXSSLab(main)); }
@@ -1275,23 +1254,16 @@ function renderApp(user) {
     else if (sec === "threatfeed") { import("/js/threat-feed.js").then(m => m.renderThreatFeed(main)); }
     else if (sec === "secchecklist") { import("/js/sec-checklist.js").then(m => m.renderSecChecklist(main)); }
     else if (sec === "chess") { import("/js/chess.js").then(m => m.render(main)); }
-    else if (sec === "cryptoplayground") { import("/js/crypto-playground.js").then(m => m.renderCryptoPlayground(main)); }
-    else if (sec === "cryptotoolkit") { import("/js/crypto-toolkit.js").then(m => m.renderCryptoToolkit(main)); }
     else if (sec === "cvetimeline") { import("/js/cve-timeline.js").then(m => m.renderCveTimeline(main)); }
     else if (sec === "dataviz") { import("/js/data-viz.js").then(m => m.renderDataViz(main)); }
-    else if (sec === "encodingtoolkit") { import("/js/encoding-toolkit.js").then(m => m.renderEncodingToolkit(main)); }
-    else if (sec === "exploitdbbrowser") { import("/js/exploit-db-browser.js").then(m => m.renderExploitDbBrowser(main)); }
     else if (sec === "forensicstoolkit") { import("/js/forensics-toolkit.js").then(m => m.renderForensicsToolkit(main)); }
-    else if (sec === "forensicstools") { import("/js/forensics-tools.js").then(m => m.renderForensicsTools(main)); }
     else if (sec === "hashsuite") { import("/js/hash-suite.js").then(m => m.renderHashSuite(main)); }
     else if (sec === "httpinspector") { import("/js/http-inspector.js").then(m => m.renderHttpInspector(main)); }
     else if (sec === "iptools") { import("/js/ip-tools.js").then(m => m.renderIPTools(main)); }
-    else if (sec === "logparser") { import("/js/log-parser.js").then(m => m.renderLogParser(main)); }
     else if (sec === "networktools") { import("/js/network-tools.js").then(m => m.renderNetworkTools(main)); }
     else if (sec === "packetanalyzer") { import("/js/packet-analyzer.js").then(m => m.renderPacketAnalyzer(main)); }
     else if (sec === "passwordtools") { import("/js/password-tools.js").then(m => m.renderPasswordTools(main)); }
     else if (sec === "payloadgen") { import("/js/payload-gen.js").then(m => m.renderPayloadGen(main)); }
-    else if (sec === "reportbuilder") { import("/js/report-builder.js").then(m => m.renderReportBuilder(main)); }
     else if (sec === "riskcalculator") { import("/js/risk-calculator.js").then(m => m.renderRiskCalculator(main)); }
     else if (sec === "securityquiz") { import("/js/security-quiz.js").then(m => m.renderSecurityQuiz(main)); }
     else if (sec === "securityscanner") { import("/js/security-scanner.js").then(m => m.renderSecurityScanner(main)); }
@@ -1306,7 +1278,6 @@ function renderApp(user) {
     else if (sec === "darknetradar") { import("/js/darknet-radar.js").then(m => m.renderDarknetRadar(main)); }
     else if (sec === "dnsrecon") { import("/js/dns-recon.js").then(m => m.renderDNSRecon(main)); }
     else if (sec === "emailintel") { import("/js/email-intel.js").then(m => m.renderEmailIntel(main)); }
-    else if (sec === "hashlookup") { import("/js/hash-lookup.js").then(m => m.renderHashLookup(main)); }
     else if (sec === "headeranalyzer") { import("/js/header-analyzer.js").then(m => m.renderHeaderAnalyzer(main)); }
     else if (sec === "httpprobe") { import("/js/http-probe.js").then(m => m.renderHttpProbe(main)); }
     else if (sec === "identitymatrix") { import("/js/identity-matrix.js").then(m => m.renderIdentityMatrix(main)); }
@@ -1314,7 +1285,6 @@ function renderApp(user) {
     else if (sec === "networkscanner") { import("/js/network-scanner.js").then(m => m.renderNetworkScanner(main)); }
     else if (sec === "sslinspector") { import("/js/ssl-inspector.js").then(m => m.renderSSLInspector(main)); }
     else if (sec === "techfingerprint") { import("/js/tech-fingerprint.js").then(m => m.renderTechFingerprint(main)); }
-    else if (sec === "threatfeedagg") { import("/js/threat-feed-aggregator.js").then(m => m.renderThreatFeedAggregator(main)); }
     else if (sec === "trafficanalyzer") { import("/js/traffic-analyzer.js").then(m => m.renderTrafficAnalyzer(main)); }
     else if (sec === "websockettester") { import("/js/websocket-tester.js").then(m => m.renderWebSocketTester(main)); }
     else if (sec === "whoisrecon") { import("/js/whois-recon.js").then(m => m.renderWhoisRecon(main)); }
@@ -1328,7 +1298,7 @@ function renderApp(user) {
     else if (sec === "docs") { import("/js/docs.js").then(m => m.renderDocs(main)); }
     else if (sec === "setup") renderSetup(main, more);
     else if (sec === "settings") renderSettingsPage(main, user, isOwner);
-    else if (sec === "admin") { import("/js/admin.js?v=20260923").then(m => m.renderAdmin(main, user)); }
+    else if (sec === "admin") { import("/js/admin.js?v=20260924").then(m => m.renderAdmin(main, user)); }
     else if (sec === "contact") renderContact(main);
     else renderHome(main, user, isOwner, show);
     if (more === undefined) { try { localStorage.setItem("sw_last_sec", sec); } catch (_) {} }
@@ -1519,7 +1489,7 @@ function renderApp(user) {
   let frame = null; try { frame = JSON.parse(localStorage.getItem(FRAME)); } catch (_) {}
   let lastSec; try { lastSec = localStorage.getItem("sw_last_sec"); } catch (_) {}
   const pathSec = location.pathname !== "/" ? pathToSec(location.pathname) : null;
-  const HEAVY = new Set(["sentineleye","prometheus","hydra","aegis","vanguard"]);
+  const HEAVY = new Set(["sentineleye","prometheus","hydra","aegis","vanguard","phantom","citadel","oracle","spectre"]);
   const startSec = pathSec || (frame && frame.sec) || lastSec || "home";
   const okSec = startSec && startSec !== "setup" && (startSec !== "admin" || isOwner) && !HEAVY.has(startSec);
   show(okSec ? startSec : "home");
@@ -1562,7 +1532,7 @@ function highlightMatch(text, query) {
 }
 function openPalette() {
   if (document.getElementById("cmdk")) return;
-  const sections = [["home", "Dashboard"], ["ai", "AI Chat"], ["tools", "Scanner Suite"], ["saved", "Saved"], ["utils", "Toolbox"], ["payloads", "Payload Forge"], ["exploitdb", "Exploit Database"], ["ghdb", "Google Dorking"], ["targets", "Practice Targets"], ["vms", "Vulnerable VMs"], ["threat", "Threat Feed"], ["threatfeed", "Threat Intel Feed"], ["secchecklist", "Security Checklist"], ["cheats", "Cheat Sheets"], ["snippets", "Snippet Vault"], ["refs", "Reference Library"], ["training", "Training Labs"], ["privatecloud", "Private Cloud"], ["report", "Report Generator"], ["learn", "Academy"], ["setup", "Local Setup"], ["coder", "Nexus Agent"], ["downloads", "Darknode OS"], ["dlguide", "Download Guide"], ["api", "API"], ["docs", "Docs"], ["settings", "Settings"], ["admin", "Admin"], ["vanguard", "VANGUARD"], ["prometheus", "PROMETHEUS"], ["sentineleye", "SENTINEL EYE"], ["hydra", "HYDRA Engine"], ["aegis", "AEGIS Ops Center"], ["secdash", "Security Dashboard"], ["jwtanalyzer", "JWT Analyzer"], ["cspevaluator", "CSP Evaluator"], ["wayback", "Wayback Machine"], ["urldissect", "URL Dissector"], ["favicon", "Favicon Hasher"], ["cyberrange", "Cyber Range"], ["sandbox", "Malware Sandbox"], ["netmap", "Network Mapper"], ["exploitdev", "Exploit Writer"], ["cracklab", "Hashcat Lab"], ["osint", "OSINT Dashboard"], ["darkwebosint", "Dark Web OSINT"], ["cyberbriefing", "Cyber Briefing"], ["vulntriage", "Vuln Triage Engine"], ["incidentcost", "Incident Cost Calculator"], ["fedcompliance", "Federal Compliance"], ["adversaryplaybook", "Adversary Playbook"], ["emailheader", "Email Header Analyzer"], ["iocextractor", "IOC Extractor"], ["threatcanvas", "Threat Model Canvas"], ["logforensics", "Log Forensics"], ["reconplanner", "Recon Planner"], ["subdomainenum", "Subdomain Enumerator"], ["passwordanalyzer", "Password Analyzer"], ["certanalyzer", "Certificate Analyzer"], ["packetinspector", "Packet Inspector"], ["siemdash", "SIEM Dashboard"], ["credauditor", "Credential Auditor"], ["subdomainscanner", "Subdomain Scanner"], ["dnsenum", "DNS Enumeration"], ["malwaresandbox", "Malware Sandbox"], ["firewallrules", "Firewall Rules"], ["sslcertanalyzer", "SSL Cert Analyzer"], ["apifuzzer", "API Fuzzer"], ["incidentresponse", "Incident Response"], ["networktraffic", "Network Traffic"], ["hashtoolkit", "Hash Toolkit"], ["privesc", "Privilege Escalation"], ["reverseshell", "Reverse Shell Gen"], ["xsslab", "XSS Lab"], ["osintemail", "OSINT Email Intel"], ["chess", "Chess"], ["cryptoplayground", "Crypto Playground"], ["cryptotoolkit", "Crypto Suite"], ["cvetimeline", "CVE Timeline"], ["dataviz", "Data Visualization"], ["encodingtoolkit", "Encoding Toolkit"], ["exploitdbbrowser", "Exploit DB Browser"], ["forensicstoolkit", "Forensics Toolkit"], ["forensicstools", "Forensics Tools"], ["hashsuite", "Hash Suite"], ["httpinspector", "HTTP Inspector"], ["iptools", "IP Tools"], ["logparser", "Log Parser"], ["networktools", "Network Tools"], ["packetanalyzer", "Packet Analyzer"], ["passwordtools", "Password Tools"], ["payloadgen", "Payload Generator"], ["reportbuilder", "Report Builder"], ["riskcalculator", "Risk Calculator"], ["securityquiz", "Security Quiz"], ["securityscanner", "Security Scanner"], ["subnetvisualizer", "Subnet Visualizer"], ["threatdashboard", "Threat Dashboard"], ["timelineviz", "Timeline Visualization"], ["vulndb", "Vulnerability Database"], ["asnexplorer", "ASN Explorer"], ["breachlookup", "Breach Lookup"], ["corstester", "CORS Tester"], ["cvesearch", "CVE Search"], ["darknetradar", "Darknet Radar"], ["dnsrecon", "DNS Recon"], ["emailintel", "Email Intel"], ["hashlookup", "Hash Lookup"], ["headeranalyzer", "Header Analyzer"], ["httpprobe", "HTTP Probe"], ["identitymatrix", "Identity Matrix"], ["ipgeolocation", "IP Geolocation"], ["networkscanner", "Network Scanner"], ["sslinspector", "SSL Inspector"], ["techfingerprint", "Tech Fingerprint"], ["threatfeedagg", "Threat Aggregator"], ["trafficanalyzer", "Traffic Analyzer"], ["websockettester", "WebSocket Tester"], ["whoisrecon", "WHOIS Recon"]];
+  const sections = [["home", "Dashboard"], ["ai", "AI Chat"], ["tools", "Scanner Suite"], ["saved", "Saved"], ["utils", "Toolbox"], ["payloads", "Payload Forge"], ["exploitdb", "Exploit Database"], ["ghdb", "Google Dorking"], ["targets", "Practice Targets"], ["vms", "Vulnerable VMs"], ["threat", "Threat Feed"], ["threatfeed", "Threat Intel Feed"], ["secchecklist", "Security Checklist"], ["cheats", "Cheat Sheets"], ["snippets", "Snippet Vault"], ["refs", "Reference Library"], ["training", "Training Labs"], ["privatecloud", "Private Cloud"], ["report", "Report Generator"], ["learn", "Academy"], ["setup", "Local Setup"], ["coder", "Nexus Agent"], ["downloads", "Darknode OS"], ["dlguide", "Download Guide"], ["api", "API"], ["docs", "Docs"], ["settings", "Settings"], ["admin", "Admin"], ["vanguard", "VANGUARD"], ["prometheus", "PROMETHEUS"], ["sentineleye", "SENTINEL EYE"], ["hydra", "HYDRA Engine"], ["aegis", "AEGIS Ops Center"], ["phantom", "PHANTOM"], ["citadel", "CITADEL"], ["oracle", "ORACLE"], ["spectre", "SPECTRE"], ["secdash", "Security Dashboard"], ["jwtanalyzer", "JWT Analyzer"], ["cspevaluator", "CSP Evaluator"], ["wayback", "Wayback Machine"], ["urldissect", "URL Dissector"], ["favicon", "Favicon Hasher"], ["cyberrange", "Cyber Range"], ["sandbox", "Threat Analysis Lab"], ["netmap", "Network Mapper"], ["exploitdev", "Security Research Lab"], ["cracklab", "Password Security Lab"], ["osint", "OSINT Dashboard"], ["darkwebosint", "Deep Web Intel"], ["cyberbriefing", "Cyber Briefing"], ["vulntriage", "Vuln Triage Engine"], ["incidentcost", "Incident Cost Calculator"], ["fedcompliance", "Federal Compliance"], ["adversaryplaybook", "Adversary Playbook"], ["emailheader", "Email Header Analyzer"], ["iocextractor", "IOC Extractor"], ["reconplanner", "Recon Planner"], ["packetinspector", "Packet Inspector"], ["siemdash", "SIEM Dashboard"], ["apifuzzer", "API Fuzzer"], ["incidentresponse", "Incident Response"], ["networktraffic", "Network Traffic"], ["privesc", "Privilege Analysis"], ["reverseshell", "Remote Access Testing"], ["xsslab", "Web Security Lab"], ["osintemail", "OSINT Email Intel"], ["chess", "Chess"], ["cvetimeline", "CVE Timeline"], ["dataviz", "Data Visualization"], ["forensicstoolkit", "Forensics Toolkit"], ["hashsuite", "Hash Suite"], ["httpinspector", "HTTP Inspector"], ["iptools", "IP Tools"], ["networktools", "Network Tools"], ["packetanalyzer", "Packet Analyzer"], ["passwordtools", "Password Tools"], ["payloadgen", "Test Script Generator"], ["riskcalculator", "Risk Calculator"], ["securityquiz", "Security Quiz"], ["securityscanner", "Security Scanner"], ["subnetvisualizer", "Subnet Visualizer"], ["threatdashboard", "Threat Dashboard"], ["timelineviz", "Timeline Visualization"], ["vulndb", "Vulnerability Database"], ["asnexplorer", "ASN Explorer"], ["breachlookup", "Breach Lookup"], ["corstester", "CORS Tester"], ["cvesearch", "CVE Search"], ["darknetradar", "Darknet Radar"], ["dnsrecon", "DNS Recon"], ["emailintel", "Email Intel"], ["headeranalyzer", "Header Analyzer"], ["httpprobe", "HTTP Probe"], ["identitymatrix", "Identity Matrix"], ["ipgeolocation", "IP Geolocation"], ["networkscanner", "Network Scanner"], ["sslinspector", "SSL Inspector"], ["techfingerprint", "Tech Fingerprint"], ["trafficanalyzer", "Traffic Analyzer"], ["websockettester", "WebSocket Tester"], ["whoisrecon", "WHOIS Recon"]];
   const actions = [
     { type: "action", id: "cycle-style", name: "Cycle theme style", desc: "Switch between Pro, Dark, Classic", action: cycleStyle },
     { type: "action", id: "toggle-dark", name: "Toggle light / dark", desc: "Switch light and dark mode", action: () => { const cur = document.documentElement.getAttribute("data-theme") || "dark"; applyTheme(cur === "dark" ? "light" : "dark"); } },

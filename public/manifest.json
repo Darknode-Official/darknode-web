@@ -2,7 +2,7 @@
   "id": "/",
   "name": "Darknode — Cybersecurity Platform",
   "short_name": "Darknode",
-  "description": "AI-powered cybersecurity education platform with 160+ tools, interactive labs, and threat intelligence",
+  "description": "Cybersecurity education platform with 164+ interactive study tools, practice labs, AI tutoring, and compliance training for students and professionals",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
@@ -10,7 +10,7 @@
   "background_color": "#f8fafc",
   "theme_color": "#2563eb",
   "orientation": "any",
-  "categories": ["security", "education", "developer"],
+  "categories": ["education", "security", "productivity"],
   "prefer_related_applications": false,
   "icons": [
     { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },

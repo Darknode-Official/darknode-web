@@ -181,6 +181,15 @@ export function renderUtils(main) {
   main.innerHTML = `
     <h1 class="pg-h1">Utilities</h1>
     <p class="muted pg-sub">Interactive tools that run right here in your browser &mdash; nothing leaves this page.</p>
+    <div class="tool-intro">
+      <h2>Toolbox</h2>
+      <p>Everyday security utilities right in your browser. Encode, decode, hash, generate passwords, and analyze data without installing anything.</p>
+      <div class="tool-steps">
+        <div class="tool-step"><span class="step-num">1</span><div class="step-text"><strong>Pick a tool</strong>Scroll through the cards below to find what you need</div></div>
+        <div class="tool-step"><span class="step-num">2</span><div class="step-text"><strong>Paste or type your input</strong>Enter text, hashes, IPs, or data into the input field</div></div>
+        <div class="tool-step"><span class="step-num">3</span><div class="step-text"><strong>Copy the result</strong>Click the copy button to grab the output</div></div>
+      </div>
+    </div>
     <div class="util-grid" id="ug"></div>`;
   const ug = main.querySelector("#ug");
 

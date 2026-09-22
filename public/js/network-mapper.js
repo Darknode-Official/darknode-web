@@ -382,6 +382,14 @@ export function renderNetworkMapper(main) {
   function render() {
     var html = '<h1 class="pg-h1">Network Mapper</h1>';
     html += '<p class="muted pg-sub">Topology visualization, subnet calculator, attack surface analysis, and nmap import. All processing runs locally.</p>';
+    html += '<div class="tool-intro">';
+    html += '<h2>Network Mapper</h2>';
+    html += '<p>Visualizes network topology, shows open ports, and maps services across hosts. Great for understanding your network layout.</p>';
+    html += '<div class="tool-steps">';
+    html += '<div class="tool-step"><span class="step-num">1</span><div class="step-text"><strong>Enter a target or load a demo</strong>Add hosts manually, import nmap output, or load a template</div></div>';
+    html += '<div class="tool-step"><span class="step-num">2</span><div class="step-text"><strong>Run the scan</strong>View hosts, ports, and services on the interactive map</div></div>';
+    html += '<div class="tool-step"><span class="step-num">3</span><div class="step-text"><strong>Explore the map</strong>Drag nodes to rearrange, click for details, and analyze attack surface</div></div>';
+    html += '</div></div>';
     var tabs = [
       { id: "map", label: "Network Map" }, { id: "hosts", label: "Hosts (" + nodes.length + ")" },
       { id: "subnet", label: "Subnet Calc" }, { id: "vlsm", label: "VLSM" },
