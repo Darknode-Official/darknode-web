@@ -990,7 +990,7 @@ html[data-style=pro].crt body::after {
 [data-style=pro] #view {
   background: #f8fafc !important;
   max-width: none !important;
-  padding: 0 !important;
+  padding: 20px 28px !important;
 }
 
 /* User menu */

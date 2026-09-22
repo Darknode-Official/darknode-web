@@ -483,7 +483,11 @@ a.dl-card:hover{border-color:var(--acc)}
 .side-search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--mut);pointer-events:none}
 
 /* sidebar count + badge */
-.side-cnt{font-size:.52rem;font-weight:600;color:var(--mut);opacity:.6;letter-spacing:0;text-transform:none}
+.side-cnt{margin-left:auto;font-size:.5rem;font-weight:600;color:var(--mut);
+  background:color-mix(in srgb,var(--line) 60%,transparent);
+  padding:1px 5px;border-radius:8px;line-height:1.3;
+  font-variant-numeric:tabular-nums;min-width:16px;text-align:center;
+  letter-spacing:0;text-transform:none;flex-shrink:0}
 .side-badge{margin-left:auto;font-size:.48rem;font-weight:800;letter-spacing:.06em;padding:1px 5px;border-radius:3px;flex-shrink:0;line-height:1.4}
 .side-badge.live{background:color-mix(in srgb,var(--ok) 18%,transparent);color:var(--ok)}
 .side-badge.new{background:color-mix(in srgb,var(--acc) 18%,transparent);color:var(--acc)}
@@ -8815,11 +8819,7 @@ body.landing section + section::before {
    ORGANIZATION & BUTTON STRUCTURE
    ===================================================== */
 
-/* --- Sidebar group count badge --- */
-.side-cnt{margin-left:auto;font-size:.5rem;font-weight:600;color:var(--mut);
-  background:color-mix(in srgb,var(--line) 60%,transparent);
-  padding:1px 5px;border-radius:8px;line-height:1.3;
-  font-variant-numeric:tabular-nums}
+/* --- Sidebar group count badge (defined above in sidebar section) --- */
 
 /* --- Sidebar collapse/expand arrow --- */
 .side-group.side-collapse{cursor:pointer;user-select:none}

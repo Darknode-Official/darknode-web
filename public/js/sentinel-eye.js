@@ -10153,13 +10153,14 @@ function _gwToggleTheme() {
   _gwViewer.imageryLayers.removeAll();
 
   function _addSatelliteLayer(dark) {
-    var lyr = _gwViewer.imageryLayers.addImageryProvider(
-      new Cesium.UrlTemplateImageryProvider({
-        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-        maximumLevel: 19,
-        credit: 'Esri, Maxar, Earthstar Geographics'
-      })
-    );
+    var prov = new Cesium.UrlTemplateImageryProvider({
+      url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+      maximumLevel: 19,
+      credit: 'Esri, Maxar, Earthstar Geographics',
+      hasAlphaChannel: false
+    });
+    prov.errorEvent.addEventListener(function() { });
+    var lyr = _gwViewer.imageryLayers.addImageryProvider(prov);
     if (dark) { lyr.brightness = 0.75; lyr.saturation = 0.85; lyr.contrast = 1.15; }
   }
 
@@ -11233,13 +11234,14 @@ function _gwSetShaderMode(mode) {
   }
 
   function _addDarkSatellite() {
-    var lyr = _gwViewer.imageryLayers.addImageryProvider(
-      new Cesium.UrlTemplateImageryProvider({
-        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-        maximumLevel: 19,
-        credit: 'Esri, Maxar, Earthstar Geographics'
-      })
-    );
+    var prov = new Cesium.UrlTemplateImageryProvider({
+      url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+      maximumLevel: 19,
+      credit: 'Esri, Maxar, Earthstar Geographics',
+      hasAlphaChannel: false
+    });
+    prov.errorEvent.addEventListener(function() { });
+    var lyr = _gwViewer.imageryLayers.addImageryProvider(prov);
     lyr.brightness = 0.75;
     lyr.saturation = 0.85;
     lyr.contrast = 1.15;
@@ -11357,6 +11359,9 @@ _gwInitGlobe = function() {
     if (!container) return;
 
     try {
+      Cesium.Ion.defaultAccessToken = undefined;
+      Cesium.RequestScheduler.requestsByServer = { 'server.arcgisonline.com:443': 18 };
+
       _gwViewer = new Cesium.Viewer('gw-cesium-container', {
         animation: false,
         timeline: false,
@@ -11375,16 +11380,17 @@ _gwInitGlobe = function() {
         requestRenderMode: false
       });
 
-      var _initLyr = _gwViewer.imageryLayers.addImageryProvider(
-        new Cesium.UrlTemplateImageryProvider({
-          url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-          maximumLevel: 19,
-          credit: 'Esri, Maxar, Earthstar Geographics'
-        })
-      );
+      var _initProvider = new Cesium.UrlTemplateImageryProvider({
+        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+        maximumLevel: 19,
+        credit: 'Esri, Maxar, Earthstar Geographics',
+        hasAlphaChannel: false
+      });
+      var _initLyr = _gwViewer.imageryLayers.addImageryProvider(_initProvider);
       _initLyr.brightness = 0.75;
       _initLyr.saturation = 0.85;
       _initLyr.contrast = 1.15;
+      _initProvider.errorEvent.addEventListener(function() { });
 
       _gwViewer.scene.backgroundColor = Cesium.Color.fromCssColorString('#000206');
       if (_gwViewer.scene.skyBox) _gwViewer.scene.skyBox.show = false;
