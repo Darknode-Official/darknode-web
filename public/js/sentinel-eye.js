@@ -10159,7 +10159,7 @@ function _gwToggleTheme() {
       credit: 'Esri, Maxar, Earthstar Geographics',
       hasAlphaChannel: false
     });
-    prov.errorEvent.addEventListener(function() { });
+    prov.errorEvent.addEventListener(function() { return true; });
     var lyr = _gwViewer.imageryLayers.addImageryProvider(prov);
     if (dark) { lyr.brightness = 0.75; lyr.saturation = 0.85; lyr.contrast = 1.15; }
   }
@@ -11240,7 +11240,7 @@ function _gwSetShaderMode(mode) {
       credit: 'Esri, Maxar, Earthstar Geographics',
       hasAlphaChannel: false
     });
-    prov.errorEvent.addEventListener(function() { });
+    prov.errorEvent.addEventListener(function() { return true; });
     var lyr = _gwViewer.imageryLayers.addImageryProvider(prov);
     lyr.brightness = 0.75;
     lyr.saturation = 0.85;
@@ -11359,7 +11359,8 @@ _gwInitGlobe = function() {
     if (!container) return;
 
     try {
-      Cesium.Ion.defaultAccessToken = undefined;
+      Cesium.Ion.defaultAccessToken = '';
+      try { Cesium.Ion.defaultServer = undefined; } catch(_){}
       Cesium.RequestScheduler.requestsByServer = { 'server.arcgisonline.com:443': 18 };
 
       _gwViewer = new Cesium.Viewer('gw-cesium-container', {
@@ -11390,7 +11391,7 @@ _gwInitGlobe = function() {
       _initLyr.brightness = 0.75;
       _initLyr.saturation = 0.85;
       _initLyr.contrast = 1.15;
-      _initProvider.errorEvent.addEventListener(function() { });
+      _initProvider.errorEvent.addEventListener(function() { return true; });
 
       _gwViewer.scene.backgroundColor = Cesium.Color.fromCssColorString('#000206');
       if (_gwViewer.scene.skyBox) _gwViewer.scene.skyBox.show = false;
