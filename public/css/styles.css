@@ -2162,7 +2162,7 @@ tr:hover td {
 .price-desc{color:var(--mut);font-size:.85rem;margin:8px 0 20px}
 .price-features{list-style:none;padding:0;margin:0 0 24px}
 .price-features li{padding:6px 0;font-size:.85rem;color:var(--txt-2);border-bottom:1px solid color-mix(in srgb,var(--line) 50%,transparent)}
-.price-features li::before{content:"✓ ";color:var(--acc);font-weight:700}
+.price-features li::before{content:"";display:inline-block;width:16px;height:16px;margin-right:8px;vertical-align:middle;flex-shrink:0;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='7' fill='none' stroke='%232563eb' stroke-width='1.5'/%3E%3Cpath d='M5 8l2 2 4-4' fill='none' stroke='%232563eb' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat center/contain}
 .price-features li:last-child{border-bottom:none}
 
 /* ---- Product Cards ---- */
@@ -2850,7 +2850,7 @@ body.landing .hero-h1{max-width:none}
 .price-desc{color:var(--mut);font-size:.85rem;margin:4px 0 20px}
 .price-features{list-style:none;padding:0;margin:0 0 24px;flex:1}
 .price-features li{padding:7px 0;font-size:.85rem;color:var(--txt-2);border-bottom:1px solid color-mix(in srgb,var(--line) 50%,transparent)}
-.price-features li::before{content:"✓ ";color:var(--acc);font-weight:700}
+.price-features li::before{content:"";display:inline-block;width:16px;height:16px;margin-right:8px;vertical-align:middle;flex-shrink:0;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='7' fill='none' stroke='%232563eb' stroke-width='1.5'/%3E%3Cpath d='M5 8l2 2 4-4' fill='none' stroke='%232563eb' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat center/contain}
 .price-features li:first-child::before{content:""}
 .price-features li:first-child{color:var(--mut);font-size:.78rem;font-weight:600;letter-spacing:.02em}
 .price-features li.feat-section{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--acc);padding:12px 0 4px;border-bottom:none;margin-top:4px}
@@ -8944,3 +8944,27 @@ body.landing section + section::before {
 .action-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 @media(max-width:480px){.action-row{flex-direction:column}
   .action-row .btn{width:100%;justify-content:center}}
+
+/* =====================================================
+   BILLING TOGGLE & PRICING ENHANCEMENTS
+   ===================================================== */
+
+.billing-toggle{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:32px}
+.billing-toggle label{font-size:.85rem;color:var(--mut);cursor:pointer;font-weight:500;transition:color .2s,font-weight .2s}
+.billing-toggle label.active{color:var(--txt);font-weight:700}
+.billing-switch{position:relative;width:44px;height:24px;background:var(--line);border-radius:12px;border:none;cursor:pointer;padding:0;transition:background .2s}
+.billing-switch::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;background:#fff;border-radius:50%;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.billing-switch.annual{background:var(--acc)}
+.billing-switch.annual::after{transform:translateX(20px)}
+.billing-save{font-size:.7rem;font-weight:700;color:var(--ok);background:color-mix(in srgb,var(--ok) 12%,transparent);padding:2px 8px;border-radius:10px}
+
+/* Annual / monthly price display switching */
+.price-annual{display:none}
+.billing-annual .price-monthly{display:none}
+.billing-annual .price-annual{display:block}
+
+/* Saved amount badge inside price-amount */
+.price-saved{font-size:.72rem;font-weight:700;color:var(--ok);background:color-mix(in srgb,var(--ok) 12%,transparent);padding:2px 8px;border-radius:8px;margin-left:6px;vertical-align:middle}
+
+/* Price features list — use flexbox for icon alignment */
+.price-features li{display:flex;align-items:flex-start}

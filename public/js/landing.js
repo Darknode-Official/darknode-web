@@ -30,9 +30,9 @@ export function renderLanding(view, actions) {
           <div class="trust-sep"></div>
           <div class="trust-item"><span class="trust-n" data-count="160" data-suffix="+">0</span><span class="trust-l">Security tools</span></div>
           <div class="trust-sep"></div>
-          <div class="trust-item"><span class="trust-n" data-count="34">0</span><span class="trust-l">AI modules</span></div>
+          <div class="trust-item"><span class="trust-n" data-count="59">0</span><span class="trust-l">AI modules</span></div>
           <div class="trust-sep"></div>
-          <div class="trust-item"><span class="trust-n" data-count="18">0</span><span class="trust-l">Security engines</span></div>
+          <div class="trust-item"><span class="trust-n" data-count="19">0</span><span class="trust-l">Sidebar groups</span></div>
           <div class="trust-sep"></div>
           <div class="trust-item"><span class="trust-n trust-n-static">100%</span><span class="trust-l">Local &amp; private</span></div>
         </div>
@@ -936,59 +936,75 @@ attack methodology for 10.10.14.7:
                 <td>$449/yr</td>
               </tr>
               <tr>
-                <td>AI Agent</td>
-                <td class="cmp-dn"><span class="cmp-check">&check;</span> 59 modules</td>
+                <td>AI security agent</td>
+                <td class="cmp-dn"><span class="cmp-check">&check;</span> 59 modules, 8 backends</td>
                 <td><span class="cmp-x">&mdash;</span></td>
                 <td><span class="cmp-x">&mdash;</span></td>
                 <td><span class="cmp-x">&mdash;</span></td>
                 <td><span class="cmp-x">&mdash;</span></td>
               </tr>
               <tr>
-                <td>Local / Private</td>
-                <td class="cmp-dn"><span class="cmp-check">&check;</span> 100%</td>
+                <td>100% local and private</td>
+                <td class="cmp-dn"><span class="cmp-check">&check;</span></td>
                 <td><span class="cmp-check">&check;</span></td>
-                <td><span class="cmp-x">&mdash;</span></td>
-                <td><span class="cmp-x">&mdash;</span></td>
-                <td>Local</td>
+                <td><span class="cmp-x">&mdash;</span> Cloud only</td>
+                <td><span class="cmp-x">&mdash;</span> Cloud only</td>
+                <td>Local install</td>
               </tr>
               <tr>
-                <td>Tools included</td>
-                <td class="cmp-dn"><span class="cmp-check">&check;</span> 160+</td>
-                <td>600+</td>
+                <td>Security tools</td>
+                <td class="cmp-dn"><span class="cmp-check">&check;</span> 160+ built-in</td>
+                <td>600+ (CLI)</td>
                 <td>Limited</td>
                 <td>Limited</td>
-                <td>1</td>
+                <td>1 (proxy)</td>
               </tr>
               <tr>
-                <td>Practice labs</td>
-                <td class="cmp-dn"><span class="cmp-check">&check;</span></td>
+                <td>Interactive labs</td>
+                <td class="cmp-dn"><span class="cmp-check">&check;</span> Cyber Range</td>
                 <td><span class="cmp-x">&mdash;</span></td>
                 <td><span class="cmp-check">&check;</span></td>
                 <td><span class="cmp-check">&check;</span></td>
                 <td><span class="cmp-x">&mdash;</span></td>
               </tr>
               <tr>
-                <td>Code analysis</td>
-                <td class="cmp-dn"><span class="cmp-check">&check;</span></td>
+                <td>Threat intelligence</td>
+                <td class="cmp-dn"><span class="cmp-check">&check;</span> Live feeds</td>
+                <td><span class="cmp-x">&mdash;</span></td>
+                <td><span class="cmp-x">&mdash;</span></td>
+                <td><span class="cmp-x">&mdash;</span></td>
+                <td><span class="cmp-x">&mdash;</span></td>
+              </tr>
+              <tr>
+                <td>Report generation</td>
+                <td class="cmp-dn"><span class="cmp-check">&check;</span> AI-powered</td>
                 <td><span class="cmp-x">&mdash;</span></td>
                 <td><span class="cmp-x">&mdash;</span></td>
                 <td><span class="cmp-x">&mdash;</span></td>
                 <td><span class="cmp-check">&check;</span></td>
               </tr>
               <tr>
-                <td>Custom reports</td>
+                <td>Works offline</td>
                 <td class="cmp-dn"><span class="cmp-check">&check;</span></td>
-                <td><span class="cmp-x">&mdash;</span></td>
+                <td><span class="cmp-check">&check;</span></td>
                 <td><span class="cmp-x">&mdash;</span></td>
                 <td><span class="cmp-x">&mdash;</span></td>
                 <td><span class="cmp-check">&check;</span></td>
               </tr>
               <tr>
-                <td>Runs offline</td>
-                <td class="cmp-dn"><span class="cmp-check">&check;</span></td>
+                <td>Custom OS</td>
+                <td class="cmp-dn"><span class="cmp-check">&check;</span> 2 editions</td>
                 <td><span class="cmp-check">&check;</span></td>
                 <td><span class="cmp-x">&mdash;</span></td>
                 <td><span class="cmp-x">&mdash;</span></td>
+                <td><span class="cmp-x">&mdash;</span></td>
+              </tr>
+              <tr>
+                <td>Web GUI</td>
+                <td class="cmp-dn"><span class="cmp-check">&check;</span> Full SPA</td>
+                <td><span class="cmp-x">&mdash;</span> CLI only</td>
+                <td><span class="cmp-check">&check;</span></td>
+                <td><span class="cmp-check">&check;</span></td>
                 <td><span class="cmp-check">&check;</span></td>
               </tr>
             </tbody>
@@ -1129,65 +1145,69 @@ attack methodology for 10.10.14.7:
         <div class="sec-label">Pricing</div>
         <h2 class="sec-title" id="pricing-title">Free to start. Upgrade when you're ready.</h2>
         <p class="sec-sub">Bring your own AI key on any plan. Paid plans unlock platform features, not AI access.</p>
-        <div class="pricing-grid">
+        <div class="billing-toggle">
+          <label id="bill-monthly" class="active">Monthly</label>
+          <button class="billing-switch" id="billing-switch" type="button" aria-label="Toggle annual billing"></button>
+          <label id="bill-annual">Annual</label>
+          <span class="billing-save">Save up to 33%</span>
+        </div>
+        <div class="pricing-grid" id="pricing-grid">
           <div class="price-card">
             <div class="price-tier">Free</div>
             <div class="price-amount">$0<span class="price-period">/forever</span></div>
             <p class="price-desc">The full platform. No limits, no trials, no paywalls.</p>
             <ul class="price-features">
-              <li>All 160+ security tools, command centers, and dashboards</li>
-              <li>HYDRA, AEGIS, SENTINEL EYE, PROMETHEUS &mdash; full access</li>
-              <li>Pentest Console, Address Intelligence, Cyber Range</li>
-              <li>Academy &mdash; 1,400+ topics with quizzes</li>
-              <li>Nexus AI agent with BYOK (Claude, GPT, Gemini, Ollama)</li>
-              <li>Built-in Terminal + shell server</li>
-              <li>Live threat feeds (NVD, ThreatFox, URLhaus)</li>
-              <li>Darknode OS (2 editions)</li>
-              <li>CLI &amp; desktop app</li>
-              <li>Community support</li>
+              <li>All 160+ security tools (no limits)</li>
+              <li>PROMETHEUS, SENTINEL EYE, HYDRA, AEGIS &mdash; full access</li>
+              <li>Nexus AI agent (BYOK &mdash; Claude, GPT, Gemini, Ollama)</li>
+              <li>Academy with 1,400+ topics and quizzes</li>
+              <li>CLI, desktop app, and Darknode OS</li>
+              <li>Live threat intelligence feeds</li>
+              <li>Unlimited scans and analysis</li>
+              <li>Community Discord support</li>
             </ul>
             <button class="btn lg" id="price-free">Get started free</button>
           </div>
           <div class="price-card featured">
             <div class="price-badge">Recommended</div>
             <div class="price-tier">Pro</div>
-            <div class="price-amount">$12<span class="price-period">/month</span></div>
-            <p class="price-desc">Priority features built for working professionals.</p>
+            <div class="price-amount price-monthly" data-monthly="$12" data-annual="$99">$12<span class="price-period">/month</span></div>
+            <div class="price-amount price-annual" data-monthly="$12" data-annual="$99">$99<span class="price-period">/year</span> <span class="price-saved">Save $45</span></div>
+            <p class="price-desc">Built for working security professionals.</p>
             <ul class="price-features compact">
               <li>Everything in Free, plus:</li>
-              <li>Automated Pentest Scheduler</li>
-              <li>Vulnerability Tracker</li>
-              <li>Threat Watchlist</li>
-              <li>Custom Wordlist Generator</li>
-              <li>Credential Leak Monitor</li>
-              <li>Nexus Overnight Mode</li>
-              <li>AI Pentest Report Writer</li>
-              <li>AI Code Auditor</li>
-              <li>5x API rate limits</li>
-              <li>Custom scan profiles &amp; templates</li>
-              <li>Early access to new features</li>
-              <li>Email support</li>
+              <li>Automated scan scheduling (daily/weekly/monthly)</li>
+              <li>Vulnerability tracker with severity trends</li>
+              <li>Threat watchlist with real-time alerts</li>
+              <li>AI-powered pentest report writer</li>
+              <li>AI code auditor</li>
+              <li>Custom scan profiles and templates</li>
+              <li>Credential leak monitoring</li>
+              <li>Nexus Overnight Mode (background analysis)</li>
+              <li>Priority API rate limits (5x)</li>
+              <li>Early access to new tools</li>
+              <li>Email support (24h response)</li>
             </ul>
             <button class="btn lg ghost" id="price-pro">Join waitlist</button>
           </div>
           <div class="price-card">
             <div class="price-tier">Team</div>
-            <div class="price-amount">$25<span class="price-period">/user/month</span></div>
+            <div class="price-amount price-monthly" data-monthly="$25" data-annual="$199">$25<span class="price-period">/user/month</span></div>
+            <div class="price-amount price-annual" data-monthly="$25" data-annual="$199">$199<span class="price-period">/user/year</span> <span class="price-saved">Save $101</span></div>
             <p class="price-desc">Collaborate, compete, and train as a team.</p>
             <ul class="price-features compact">
               <li>Everything in Pro, plus:</li>
-              <li>Shared workspace &amp; findings</li>
-              <li>Team CTF Builder</li>
-              <li>Shared scan history &amp; assets</li>
-              <li>Activity feed &amp; leaderboard</li>
-              <li>Role management</li>
-              <li>Branded pentest reports</li>
-              <li>Engagement management</li>
-              <li>Findings deduplication</li>
-              <li>Export to Jira, GitHub, CSV</li>
-              <li>10x API rate limits</li>
-              <li>Plugin system &amp; SDK</li>
-              <li>Priority email &amp; chat support</li>
+              <li>Shared workspace and findings</li>
+              <li>Team CTF builder with scoring</li>
+              <li>Asset inventory and shared scan history</li>
+              <li>Activity feed and leaderboard</li>
+              <li>Role-based permissions</li>
+              <li>Branded pentest reports (custom logo)</li>
+              <li>Engagement and project management</li>
+              <li>Findings deduplication and tracking</li>
+              <li>Export to Jira, GitHub, Linear, CSV</li>
+              <li>Plugin system and SDK</li>
+              <li>Priority chat support (4h response)</li>
             </ul>
             <button class="btn lg ghost" id="price-team">Join waitlist</button>
           </div>
@@ -1197,23 +1217,22 @@ attack methodology for 10.10.14.7:
             <p class="price-desc">Control, compliance, and scale for organizations.</p>
             <ul class="price-features compact">
               <li>Everything in Team, plus:</li>
-              <li>SSO &amp; SAML authentication</li>
-              <li>Data isolation &amp; tenant separation</li>
+              <li>SSO and SAML authentication</li>
+              <li>Data isolation and tenant separation</li>
               <li>Role-based access control (RBAC)</li>
-              <li>Audit logging &amp; compliance exports</li>
-              <li>Self-hosted deployment</li>
-              <li>SOC2, PCI-DSS, HIPAA frameworks</li>
-              <li>Org-branded Darknode OS builds</li>
-              <li>Admin dashboard &amp; analytics</li>
-              <li>User provisioning &amp; SCIM</li>
+              <li>Audit logging and compliance exports (SOC2, PCI-DSS, HIPAA)</li>
+              <li>Self-hosted and air-gapped deployment</li>
+              <li>Custom Darknode OS builds (org-branded)</li>
+              <li>Admin dashboard and analytics</li>
+              <li>User provisioning (SCIM)</li>
               <li>Dedicated account manager</li>
-              <li>SLA guarantee</li>
-              <li>Volume licensing</li>
+              <li>99.9% SLA guarantee</li>
+              <li>Volume licensing and invoicing</li>
             </ul>
-            <button class="btn lg ghost" id="price-enterprise">Join waitlist</button>
+            <button class="btn lg ghost" id="price-enterprise">Contact sales</button>
           </div>
         </div>
-        <p class="pricing-note">Every tool on the platform is <strong>free forever</strong> &mdash; HYDRA, AEGIS, SENTINEL EYE, PROMETHEUS, all 160+ tools, the CLI, desktop app, Darknode OS, and live threat feeds. Paid plans add <strong>new pro-exclusive features</strong> like automated scan scheduling, vulnerability tracking, AI report generation, and team collaboration. You never pay for AI tokens &mdash; bring your own key or run Ollama locally for free.</p>
+        <p class="pricing-note">Every tool on the platform is <strong>free forever</strong> &mdash; all 160+ security tools, command centers, the CLI, desktop app, Darknode OS, and live threat feeds. You never pay for AI tokens &mdash; bring your own key or run Ollama locally for free. Paid plans add <strong>professional-grade features</strong> like automated scan scheduling, vulnerability tracking, AI report generation, credential leak monitoring, and team collaboration. No hidden fees, no usage caps, cancel anytime.</p>
       </div>
     </section>
 
@@ -1419,6 +1438,19 @@ attack methodology for 10.10.14.7:
   if ($("price-pro")) $("price-pro").onclick = scrollToCta;
   if ($("price-team")) $("price-team").onclick = scrollToCta;
   if ($("price-enterprise")) $("price-enterprise").onclick = scrollToCta;
+
+  // Billing toggle (monthly ↔ annual)
+  const billSwitch = $("billing-switch");
+  if (billSwitch) {
+    billSwitch.onclick = function() {
+      const grid = $("pricing-grid");
+      const isAnnual = billSwitch.classList.toggle("annual");
+      grid.classList.toggle("billing-annual", isAnnual);
+      var mLabel = $("bill-monthly"), aLabel = $("bill-annual");
+      if (mLabel) mLabel.classList.toggle("active", !isAnnual);
+      if (aLabel) aLabel.classList.toggle("active", isAnnual);
+    };
+  }
 
   // Animated counter for hero stats — scroll-triggered with easing
   const counterEls = view.querySelectorAll("[data-count]");
