@@ -1712,15 +1712,19 @@ onAuthStateChanged(auth, async (user) => {
         <p style="color:var(--mut,#888);margin-bottom:20px">Please read and accept before continuing.</p>
         <div style="background:var(--card,#1a1a1a);border:1px solid var(--line,#333);padding:20px;max-height:400px;overflow-y:auto;font-size:.85rem;line-height:1.7;margin-bottom:20px;border-radius:4px" id="tosBox">
           <h3>Darknode Terms of Service</h3>
-          <p><strong>Last updated:</strong> September 11, 2026</p>
-          <p>By using Darknode ("the Platform"), including darknode.ai, Darknode CLI, Nexus AI agent, Darknode OS, and all associated tools, you agree to these terms.</p>
+          <p><strong>Last updated:</strong> September 21, 2026</p>
+          <p>By using Darknode ("the Platform"), including darknode.ai, Darknode CLI, Nexus AI agent, Darknode OS, and all associated tools, you agree to these terms. If you do not agree, do not use the Platform.</p>
 
-          <h4>1. Ethical Use Only</h4>
+          <h4>1. Eligibility</h4>
+          <p>You must be at least <strong>16 years old</strong> to use Darknode. If you are between 16 and 18, you represent that a parent or legal guardian has reviewed and consented to these terms on your behalf. We do not knowingly collect data from anyone under 16. If we learn we have, we will delete it promptly.</p>
+
+          <h4>2. Ethical Use Only</h4>
           <p>Darknode is built for <strong>ethical hacking, authorized penetration testing, cybersecurity education, and legitimate security research</strong>. All tools, intelligence data, exploit references, payloads, and operational platforms (including AEGIS, PROMETHEUS, HYDRA, and all CLI/VM tools) are designed to help security professionals protect systems — not attack them illegally.</p>
           <p><strong>You MUST have explicit written authorization before testing any system, network, or application you do not own.</strong> This includes but is not limited to: penetration tests, vulnerability scans, social engineering assessments, wireless audits, and red team engagements. Unauthorized access to computer systems is a criminal offense under the Computer Fraud and Abuse Act (CFAA), the Computer Misuse Act, and equivalent laws worldwide.</p>
 
-          <h4>2. No Liability — Complete Indemnification</h4>
-          <p><strong>Darknode, its creators, owners, contributors, affiliates, and partners are NOT liable for any damages, losses, legal consequences, criminal charges, civil actions, fines, penalties, or harm of any kind</strong> resulting from your use or misuse of the Platform, its tools, scripts, AI agents, operating system, exploit databases, payload libraries, intelligence data, or any other component. This includes but is not limited to:</p>
+          <h4>3. Disclaimer of Warranties &amp; Limitation of Liability</h4>
+          <p>The Platform is provided <strong>"as-is" and "as-available"</strong> without warranties of any kind, express or implied, including but not limited to merchantability, fitness for a particular purpose, non-infringement, accuracy, or availability.</p>
+          <p><strong>Darknode, its creators, owners, contributors, affiliates, and partners are NOT liable for any damages, losses, legal consequences, criminal charges, civil actions, fines, penalties, or harm of any kind</strong> resulting from your use or misuse of the Platform. This includes but is not limited to:</p>
           <ul>
             <li>Unauthorized access to systems, networks, or data</li>
             <li>Data loss, corruption, theft, or exposure</li>
@@ -1731,15 +1735,16 @@ onAuthStateChanged(auth, async (user) => {
             <li>Financial losses, business disruption, or reputational harm</li>
             <li>Use of real CVE data, exploit code, or vulnerability information provided by the platform</li>
           </ul>
-          <p><strong>You use everything entirely at your own risk.</strong> The Platform is provided "as-is" with absolutely no warranties, express or implied. By using Darknode, you agree to indemnify and hold harmless Darknode and its team from any claims arising from your use of the platform.</p>
+          <p><strong>To the maximum extent permitted by law, Darknode's total aggregate liability for any claim is limited to the amount you paid to Darknode in the 12 months before the claim arose, or $50 USD, whichever is greater.</strong> This cap applies regardless of the legal theory (contract, tort, strict liability, or otherwise).</p>
+          <p>By using Darknode, you agree to <strong>indemnify and hold harmless</strong> Darknode and its team from any claims, damages, or expenses (including reasonable legal fees) arising from your use of the platform or violation of these terms.</p>
 
-          <h4>3. Real Security Data</h4>
+          <h4>4. Real Security Data</h4>
           <p>Darknode provides real-world security intelligence including CVE databases, exploit references, MITRE ATT&amp;CK mappings, APT group profiles, vulnerability data, and penetration testing methodologies. This information is sourced from publicly available databases and is provided for <strong>defensive security, education, and authorized testing purposes only</strong>. Darknode does not create exploits — it references publicly known vulnerabilities to help defenders understand and mitigate threats.</p>
 
-          <h4>4. BYOK (Bring Your Own Key)</h4>
-          <p>AI features require your own API keys. Darknode does not execute AI on its hosted servers. You are solely responsible for your API usage, costs, and any actions taken by AI agents operating with your keys.</p>
+          <h4>5. BYOK (Bring Your Own Key)</h4>
+          <p>AI features require your own API keys. Darknode does not execute AI on its hosted servers and does not proxy, store, or log your prompts or API responses. You are solely responsible for your API usage, costs, compliance with your AI provider's terms, and any actions taken by AI agents operating with your keys.</p>
 
-          <h4>5. User Responsibility</h4>
+          <h4>6. User Responsibility</h4>
           <p><strong>You are solely and entirely responsible for:</strong></p>
           <ul>
             <li>Obtaining proper written authorization before any security testing</li>
@@ -1750,25 +1755,67 @@ onAuthStateChanged(auth, async (user) => {
             <li>Any damage caused to systems, networks, or data during authorized testing</li>
           </ul>
 
-          <h4>6. Prohibited Activities</h4>
+          <h4>7. Prohibited Activities</h4>
           <p>You agree NOT to use Darknode for:</p>
           <ul>
             <li>Attacking systems without explicit written authorization</li>
             <li>Creating, distributing, or deploying malware for malicious purposes</li>
             <li>Conducting denial-of-service attacks against unauthorized targets</li>
             <li>Stealing, selling, or exposing personal data or credentials</li>
+            <li>Reverse-engineering, reselling, or redistributing the Platform or its source code in violation of the license</li>
             <li>Any activity that violates applicable cybercrime laws</li>
           </ul>
           <p>Violation of these terms may result in immediate account termination and reporting to appropriate authorities.</p>
 
-          <h4>7. Educational Purpose</h4>
+          <h4>8. Intellectual Property</h4>
+          <p>The Platform, its design, code, branding, documentation, and all related assets are the intellectual property of Darknode and its contributors, protected by copyright and trademark law. You may not copy, modify, distribute, or create derivative works from the Platform except as expressly permitted by the applicable open-source license.</p>
+          <p><strong>Your content:</strong> You retain all rights to data, reports, scan results, and other outputs you create using the Platform. By using collaborative or cloud features, you grant Darknode a limited, non-exclusive license to process that content solely to provide the service.</p>
+          <p>The Platform incorporates open-source components distributed under their respective licenses. A list is available in the project repository.</p>
+
+          <h4>9. Educational Purpose</h4>
           <p>Darknode is fundamentally a cybersecurity <strong>education and training platform</strong>. Tools, labs, simulations, and resources exist to train the next generation of ethical hackers, penetration testers, incident responders, and security engineers. We do not endorse, encourage, or condone any illegal activity whatsoever.</p>
 
-          <h4>8. Data</h4>
-          <p>We store minimal user data (email, display name, login timestamps) in Firebase. We do not sell or share your data. You can request deletion by emailing contact@darknode.ai.</p>
+          <h4>10. Data &amp; Privacy</h4>
+          <p>We store minimal user data in Firebase (Google Cloud):</p>
+          <ul>
+            <li><strong>What we collect:</strong> email address, display name, profile photo URL, login timestamps, and ToS acceptance records.</li>
+            <li><strong>Legal basis:</strong> legitimate interest (providing the service) and your consent (accepting these terms).</li>
+            <li><strong>Data retention:</strong> your data is retained while your account is active. After deletion, data is purged within 30 days, except where retention is required by law.</li>
+            <li><strong>No selling or sharing:</strong> we do not sell, rent, or share your personal data with third parties for marketing purposes.</li>
+            <li><strong>Cookies:</strong> we use only essential cookies and localStorage for session management and user preferences. We do not use tracking cookies or third-party analytics.</li>
+            <li><strong>International transfers:</strong> data is processed and stored in Google Cloud data centers. By using the Platform, you consent to transfer of data to servers that may be outside your country of residence.</li>
+          </ul>
+          <p><strong>Your rights (GDPR, CCPA, and similar laws):</strong> depending on your jurisdiction, you may have the right to access, correct, delete, or export your personal data, restrict processing, object to processing, or withdraw consent. To exercise any of these rights, email <strong>contact@darknode.ai</strong>. We will respond within 30 days. You also have the right to lodge a complaint with your local data protection authority.</p>
 
-          <h4>9. Changes</h4>
-          <p>We may update these terms. Continued use after changes constitutes acceptance.</p>
+          <h4>11. Account Termination</h4>
+          <p><strong>By you:</strong> you may stop using the Platform and request account deletion at any time by emailing contact@darknode.ai. Upon deletion, your data will be removed in accordance with Section 10.</p>
+          <p><strong>By us:</strong> we may suspend or terminate your account immediately, without prior notice, if we reasonably believe you have violated these terms. We may also discontinue the Platform or any feature at any time with reasonable notice.</p>
+
+          <h4>12. Paid Plans &amp; Pricing</h4>
+          <p>The core Platform is free. Paid plans (when available) unlock additional professional features. Prices are listed on the pricing page and may change with at least <strong>30 days' notice</strong> before your next billing cycle. Refunds are handled on a case-by-case basis. Cancellation takes effect at the end of the current billing period. You are responsible for any applicable taxes.</p>
+
+          <h4>13. Service Availability</h4>
+          <p>We aim for high availability but do not guarantee uninterrupted access. We are not liable for downtime caused by events beyond our reasonable control, including but not limited to: natural disasters, internet outages, hosting provider failures, government actions, cyberattacks, or other force majeure events. Scheduled maintenance will be announced when feasible.</p>
+
+          <h4>14. Dispute Resolution</h4>
+          <p>If a dispute arises, you agree to first attempt resolution by emailing contact@darknode.ai. If we cannot resolve it within 60 days, either party may pursue binding arbitration under the rules of a mutually agreed arbitration provider, conducted in English. <strong>You agree to resolve disputes on an individual basis and waive the right to participate in a class action.</strong> Nothing in this section prevents either party from seeking injunctive relief in court for intellectual property violations or imminent harm.</p>
+
+          <h4>15. Governing Law</h4>
+          <p>These terms are governed by and construed in accordance with the laws of the State of California, United States, without regard to conflict-of-law principles. Any legal proceedings not subject to arbitration shall be brought in the state or federal courts located in California.</p>
+
+          <h4>16. Changes to These Terms</h4>
+          <p>We may update these terms from time to time. When we make material changes, we will notify you by email or by posting a notice on the Platform at least <strong>14 days before</strong> the changes take effect. If you continue to use the Platform after the effective date, you accept the updated terms. If you disagree, you may close your account before the changes take effect.</p>
+
+          <h4>17. General Provisions</h4>
+          <ul>
+            <li><strong>Entire agreement:</strong> these terms, together with any referenced policies, constitute the entire agreement between you and Darknode regarding the Platform and supersede all prior agreements.</li>
+            <li><strong>Severability:</strong> if any provision of these terms is found to be unenforceable or invalid, that provision will be limited or eliminated to the minimum extent necessary, and the remaining provisions will remain in full force.</li>
+            <li><strong>No waiver:</strong> failure to enforce any right or provision does not constitute a waiver of that right or provision.</li>
+            <li><strong>Assignment:</strong> you may not assign these terms without our written consent. We may assign our rights and obligations without restriction.</li>
+          </ul>
+
+          <h4>Contact</h4>
+          <p>Questions about these terms? Email <strong>contact@darknode.ai</strong>.</p>
 
           <p style="margin-top:20px"><strong>By clicking "I Agree" below, you acknowledge that you have read, understood, and agree to be bound by these terms.</strong></p>
         </div>
