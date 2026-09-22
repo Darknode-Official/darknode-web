@@ -6617,67 +6617,130 @@ body.app .dash-hero + .stat-row + .pg-h2 {
   margin-top: 0;
 }
 
-/* --- 8. Sidebar — proper width, spacing, active accent ----------- */
+/* --- 8. Sidebar — compact, collapsible, modern design ------------ */
 body.app .sidebar {
-  width: 220px;
+  width: 230px;
   flex: none;
   border-right: 1px solid var(--line);
-  padding: 14px 10px 14px 12px;
+  padding: 10px 8px 10px 8px;
   display: flex;
   flex-direction: column;
   position: sticky;
   top: var(--topbar-h);
   height: calc(100vh - var(--topbar-h));
-  background: linear-gradient(180deg, color-mix(in srgb, var(--bg) 65%, var(--card)), var(--bg));
+  background: var(--bg);
   overflow-y: auto;
   overflow-x: hidden;
+  transition: width .25s ease, padding .25s ease;
 }
+body.app .sidebar.collapsed {
+  width: 52px;
+  padding: 10px 4px;
+}
+body.app .sidebar.collapsed .side-brand,
+body.app .sidebar.collapsed .side-search-wrap,
+body.app .sidebar.collapsed .side-foot .side-user,
+body.app .sidebar.collapsed .side-group .side-cnt,
+body.app .sidebar.collapsed .side-collapse::after {
+  display: none;
+}
+body.app .sidebar.collapsed .side-item {
+  font-size: 0;
+  padding: 10px;
+  border-left: none;
+  border-radius: 8px;
+  text-align: center;
+  justify-content: center;
+}
+body.app .sidebar.collapsed .side-item .side-badge {
+  display: none;
+}
+body.app .sidebar.collapsed .side-group {
+  font-size: 0;
+  padding: 8px 4px 2px;
+  border-top: 1px solid color-mix(in srgb, var(--line) 25%, transparent);
+}
+body.app .sidebar.collapsed .side-group::before {
+  content: '';
+  display: block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  margin: 0 auto;
+}
+.side-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--mut);
+  cursor: pointer;
+  font-size: .7rem;
+  flex-shrink: 0;
+  margin: 0 0 8px auto;
+  transition: all .15s;
+}
+.side-toggle:hover { border-color: var(--acc); color: var(--acc); }
 body.app .side-item {
   text-align: left;
   background: transparent;
   border: none;
-  border-left: 3px solid transparent;
+  border-left: 2px solid transparent;
   color: var(--mut);
-  padding: 10px 12px 10px 14px;
+  padding: 7px 10px 7px 12px;
   border-radius: 0 6px 6px 0;
   cursor: pointer;
   font-family: inherit;
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   font-weight: 500;
   transition: all 0.15s ease;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   flex-shrink: 0;
-  margin-bottom: 1px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 body.app .side-item:hover {
-  background: color-mix(in srgb, var(--acc) 8%, transparent);
+  background: color-mix(in srgb, var(--acc) 6%, transparent);
   color: var(--txt);
-  border-left-color: color-mix(in srgb, var(--acc) 35%, transparent);
+  border-left-color: color-mix(in srgb, var(--acc) 30%, transparent);
 }
 body.app .side-item.active {
-  background: color-mix(in srgb, var(--acc) 12%, transparent);
+  background: color-mix(in srgb, var(--acc) 10%, transparent);
   color: var(--acc);
   font-weight: 600;
   border-left-color: var(--acc);
 }
 body.app .side-group {
-  font-size: 0.6rem;
-  font-weight: 800;
+  font-size: 0.58rem;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
   color: var(--mut);
-  padding: 20px 12px 6px;
-  margin-top: 4px;
-  border-top: 1px solid color-mix(in srgb, var(--line) 35%, transparent);
+  padding: 14px 10px 4px;
+  margin-top: 2px;
+  border-top: 1px solid color-mix(in srgb, var(--line) 30%, transparent);
   flex-shrink: 0;
   user-select: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 body.app .side-group:first-child {
   padding-top: 4px;
   border-top: none;
   margin-top: 0;
+}
+body.app .side-group:hover {
+  color: var(--txt);
 }
 
 /* --- 9. Top bar — clean, subtle border, proper height ------------ */

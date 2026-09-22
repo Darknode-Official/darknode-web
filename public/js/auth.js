@@ -920,7 +920,12 @@ function renderApp(user) {
   view.innerHTML = `
     <div class="app-shell">
       <aside class="sidebar" id="sidebar" role="complementary" aria-label="Main navigation">
-        <div class="side-brand">Darknode</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;padding:0 4px">
+          <button class="side-toggle" id="sideToggle" aria-label="Toggle sidebar" title="Toggle sidebar">
+            <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="3" y1="4" x2="13" y2="4"/><line x1="3" y1="8" x2="13" y2="8"/><line x1="3" y1="12" x2="13" y2="12"/></svg>
+          </button>
+          <span class="side-brand" style="margin:0;padding:0;font-size:.72rem">DARKNODE</span>
+        </div>
         <nav class="side-nav" role="navigation" aria-label="Application sections">
           <div class="side-search-wrap"><input class="side-search" placeholder="Search 164+ tools..." id="sideSearch" spellcheck="false" autocomplete="off"><svg class="side-search-icon" viewBox="0 0 16 16" width="13" height="13"><circle cx="6.5" cy="6.5" r="5" fill="none" stroke="currentColor" stroke-width="1.5"/><line x1="10" y1="10" x2="14" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
           <button class="side-item" data-sec="home">Dashboard</button>
@@ -1146,6 +1151,24 @@ function renderApp(user) {
       history.pushState({ sec }, "", path);
     }
     view.querySelectorAll(".side-item").forEach((x) => x.classList.toggle("active", x.dataset.sec === sec));
+    // Auto-expand the active tool's parent group, collapse others
+    const activeItem = view.querySelector('.side-item[data-sec="' + sec + '"]');
+    if (activeItem) {
+      let parentGroup = activeItem.previousElementSibling;
+      while (parentGroup && !parentGroup.classList.contains("side-group")) parentGroup = parentGroup.previousElementSibling;
+      if (parentGroup && parentGroup.dataset.open !== "1") {
+        view.querySelectorAll(".side-collapse").forEach((g) => {
+          if (g !== parentGroup && g.dataset.open === "1") {
+            g.dataset.open = "0";
+            let el = g.nextElementSibling;
+            while (el && !el.classList.contains("side-group")) { el.style.display = "none"; el = el.nextElementSibling; }
+          }
+        });
+        parentGroup.dataset.open = "1";
+        let el = parentGroup.nextElementSibling;
+        while (el && !el.classList.contains("side-group")) { el.style.display = ""; el = el.nextElementSibling; }
+      }
+    }
     const shell = view.querySelector(".app-shell");
     if (shell) shell.classList.toggle("no-sidebar", sec === "settings" || sec === "docs");
     const prevH = main.offsetHeight;
@@ -1319,28 +1342,25 @@ function renderApp(user) {
     const g = e.target.closest(".side-collapse");
     if (g) {
       const isOpen = g.dataset.open === "1";
+      if (!isOpen) {
+        view.querySelectorAll(".side-collapse").forEach((other) => {
+          if (other !== g && other.dataset.open === "1") {
+            other.dataset.open = "0";
+            let oel = other.nextElementSibling;
+            while (oel && !oel.classList.contains("side-group")) {
+              oel.style.display = "none";
+              oel = oel.nextElementSibling;
+            }
+          }
+        });
+      }
       g.dataset.open = isOpen ? "0" : "1";
       let el = g.nextElementSibling;
       while (el && !el.classList.contains("side-group")) {
         if (isOpen) {
-          el.style.overflow = "hidden";
-          el.style.maxHeight = el.scrollHeight + "px";
-          el.offsetHeight;
-          el.style.maxHeight = "0";
-          el.style.opacity = "0";
-          el.style.padding = "0 10px 0 12px";
-          setTimeout((() => { const e = el; return () => { e.style.display = "none"; }; })(), 150);
+          el.style.display = "none";
         } else {
           el.style.display = "";
-          el.style.overflow = "hidden";
-          el.style.maxHeight = "0";
-          el.style.opacity = "0";
-          el.offsetHeight;
-          el.style.transition = "max-height .15s ease, opacity .15s ease, padding .15s ease";
-          el.style.maxHeight = el.scrollHeight + "px";
-          el.style.opacity = "1";
-          el.style.padding = "";
-          setTimeout((() => { const e = el; return () => { e.style.maxHeight = ""; e.style.overflow = ""; e.style.transition = ""; }; })(), 160);
         }
         el = el.nextElementSibling;
       }
@@ -1362,6 +1382,19 @@ function renderApp(user) {
       }
     }
   });
+  // Sidebar collapse toggle
+  const sideToggleBtn = view.querySelector("#sideToggle");
+  if (sideToggleBtn) {
+    const sb = view.querySelector("#sidebar");
+    const savedCollapsed = localStorage.getItem("sw_sidebar_collapsed");
+    if (savedCollapsed === "1" && sb) sb.classList.add("collapsed");
+    sideToggleBtn.onclick = () => {
+      if (sb) {
+        sb.classList.toggle("collapsed");
+        localStorage.setItem("sw_sidebar_collapsed", sb.classList.contains("collapsed") ? "1" : "0");
+      }
+    };
+  }
   // Sidebar search filter
   const sideSearch = view.querySelector("#sideSearch");
   if (sideSearch) {
