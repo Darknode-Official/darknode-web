@@ -12576,3 +12576,44 @@ html[data-style="dark"] .stat-row .stat:nth-child(7) { border-top-color: #f97316
 html[data-style="dark"] .stat-row .stat .stat-n {
   color: #e2e8f0 !important;
 }
+
+/* Sidebar collapse — override all theme widths */
+html .sidebar.collapsed {
+  width: 52px !important;
+  padding: 10px 4px !important;
+  overflow: hidden !important;
+}
+html .sidebar.collapsed .side-brand,
+html .sidebar.collapsed .side-search-wrap,
+html .sidebar.collapsed .side-foot .side-user {
+  display: none !important;
+}
+html .sidebar.collapsed .side-item {
+  font-size: 0 !important;
+  padding: 8px !important;
+  border-left: none !important;
+  border-radius: 6px !important;
+  text-align: center !important;
+  min-height: 32px !important;
+}
+html .sidebar.collapsed .side-item .side-badge {
+  display: none !important;
+}
+html .sidebar.collapsed .side-group {
+  font-size: 0 !important;
+  padding: 6px 4px 2px !important;
+  justify-content: center !important;
+}
+html .sidebar.collapsed .side-group .side-cnt,
+html .sidebar.collapsed .side-collapse::after {
+  display: none !important;
+}
+html .sidebar.collapsed .side-group::before {
+  content: '' !important;
+  display: block !important;
+  width: 8px !important;
+  height: 8px !important;
+  border-radius: 50% !important;
+  background: currentColor !important;
+  margin: 0 auto !important;
+}
