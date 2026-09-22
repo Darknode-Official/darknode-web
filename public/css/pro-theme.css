@@ -1064,14 +1064,14 @@ html[data-style=pro].crt body::after {
 
 /* Mono/code text */
 [data-style=pro] .mono,
-[data-style=pro] code {
+[data-style=pro] code:not(.tw-body code):not(.term-body code):not(.code-block code) {
   color: #18181b !important;
   background: #f4f4f5 !important;
   border-radius: 6px;
   padding: 2px 5px;
   font-size: .85em;
 }
-[data-style=pro] pre {
+[data-style=pro] pre:not(.tw-body):not(.term-body) {
   background: #fafafa !important;
   border: 1px solid #e5e5e5 !important;
   border-radius: 8px !important;
