@@ -1351,7 +1351,7 @@ export function renderHydra(main) {
     '.hy-controls{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:12px 0}' +
     '.hy-select{background:rgba(0,0,0,.3);color:var(--txt);border:1px solid var(--line);padding:6px 12px;border-radius:3px;font-size:.75rem;font-family:inherit}' +
     '.hy-select:focus{border-color:var(--acc);outline:none;box-shadow:0 0 0 1px var(--acc)}' +
-    '.hy-btn{background:transparent;border:1px solid var(--acc);color:var(--acc);padding:6px 14px;font-size:.72rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;border-radius:3px;cursor:pointer;font-family:inherit;transition:all .15s}' +
+    '.hy-btn{background:transparent;border:1px solid var(--acc);color:var(--acc);padding:6px 14px;font-size:.72rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;border-radius:4px;cursor:pointer;font-family:inherit;transition:all .15s}' +
     '.hy-btn:hover{background:var(--acc);color:var(--bg);box-shadow:0 0 12px color-mix(in srgb,var(--acc) 40%,transparent)}' +
     '.hy-btn:disabled{opacity:.3;cursor:default}.hy-btn:disabled:hover{background:transparent;color:var(--acc);box-shadow:none}' +
     '.hy-btn-ghost{border-color:var(--line);color:var(--mut)}.hy-btn-ghost:hover{border-color:var(--txt);color:var(--txt);background:rgba(255,255,255,.05);box-shadow:none}' +
@@ -1362,7 +1362,7 @@ export function renderHydra(main) {
     '.hy-log-entry{margin-bottom:2px;border-left:3px solid;padding:6px 10px;cursor:pointer;transition:background .15s;font-size:.7rem;line-height:1.5;border-radius:0 3px 3px 0}' +
     '.hy-log-entry:hover{background:rgba(255,255,255,.05)}' +
     '.hy-log-detail{display:none;color:var(--mut);white-space:pre-wrap;margin-top:4px;padding:8px;background:rgba(0,0,0,.3);border-radius:3px;border:1px solid var(--line);font-size:.68rem}' +
-    '.hy-agent-toggle{display:flex;align-items:center;gap:6px;font-size:.7rem;cursor:pointer;padding:4px 8px;border-radius:3px;border:1px solid transparent;transition:all .15s}' +
+    '.hy-agent-toggle{display:flex;align-items:center;gap:6px;font-size:.7rem;cursor:pointer;padding:4px 8px;border-radius:4px;border:1px solid transparent;transition:all .15s}' +
     '.hy-agent-toggle:hover{border-color:var(--line);background:rgba(255,255,255,.02)}' +
     '.hy-agent-name{font-weight:700;letter-spacing:.03em}' +
     '.hy-node-tooltip{position:absolute;top:8px;right:8px;background:rgba(6,8,14,0.95);border:1px solid var(--acc);border-radius:4px;padding:12px;font-size:.72rem;max-width:280px;backdrop-filter:blur(8px);box-shadow:0 4px 20px rgba(0,0,0,.5);display:none}' +

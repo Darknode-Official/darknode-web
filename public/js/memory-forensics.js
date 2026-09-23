@@ -759,7 +759,7 @@ var MF_CSS = '<style>' +
   '.mf-pass{padding:8px 12px;background:rgba(76,175,80,.12);border:1px solid rgba(76,175,80,.3);border-radius:4px;color:#4caf50;font-size:.85rem;margin-bottom:8px}' +
   '.mf-err{padding:8px 12px;background:rgba(244,67,54,.12);border:1px solid rgba(244,67,54,.3);border-radius:4px;color:#f44336;font-size:.85rem}' +
   '.mf-filter{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px}' +
-  '.mf-chip{padding:4px 12px;border:1px solid var(--line,#333);background:var(--card,#1a1a1a);color:var(--txt,#eee);cursor:pointer;font-size:.78rem;border-radius:3px;transition:all .15s}' +
+  '.mf-chip{padding:4px 12px;border:1px solid var(--line,#333);background:var(--card,#1a1a1a);color:var(--txt,#eee);cursor:pointer;font-size:.78rem;border-radius:4px;transition:all .15s}' +
   '.mf-chip:hover{background:var(--bg,#111)}' +
   '.mf-chip.on{background:var(--acc,#ffc107);color:#111;border-color:var(--acc,#ffc107);font-weight:600}' +
   '.mf-chip-sm{padding:2px 8px;background:var(--bg,#111);border:1px solid var(--line,#333);border-radius:3px;font-size:.7rem;color:var(--acc,#ffc107)}' +

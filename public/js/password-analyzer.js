@@ -229,7 +229,7 @@ export function renderPasswordAnalyzer(container) {
     '.pa-title{font-size:1.6rem;font-weight:700;margin:0 0 6px;color:var(--txt)}' +
     '.pa-sub{color:var(--mut);font-size:.85rem;margin-bottom:20px;line-height:1.5}' +
     '.pa-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:24px}' +
-    '.pa-tab{background:var(--card);border:1px solid var(--line);color:var(--mut);padding:8px 16px;font-size:.75rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;cursor:pointer;border-radius:6px;transition:all .15s;font-family:inherit}' +
+    '.pa-tab{background:var(--card);border:1px solid var(--line);color:var(--mut);padding:8px 16px;font-size:.75rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;cursor:pointer;border-radius:4px;transition:all .15s;font-family:inherit}' +
     '.pa-tab:hover{background:color-mix(in srgb,var(--acc) 8%,var(--card));color:var(--txt)}' +
     '.pa-tab.active{background:var(--acc);color:var(--on-acc,#fff);border-color:var(--acc)}' +
     '.pa-panel{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:20px;margin-bottom:16px}' +
@@ -237,7 +237,7 @@ export function renderPasswordAnalyzer(container) {
     '.pa-input-wrap{display:flex;gap:8px;margin-bottom:16px}' +
     '.pa-input{flex:1;background:var(--card2,#0a0e14);border:1px solid var(--line);color:var(--txt);font-family:ui-monospace,monospace;font-size:.85rem;padding:12px;border-radius:6px}' +
     '.pa-input:focus{border-color:var(--acc);outline:none}' +
-    '.pa-btn{background:var(--acc);color:var(--on-acc,#fff);border:1px solid var(--acc);padding:8px 16px;border-radius:6px;font-size:.78rem;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s}' +
+    '.pa-btn{background:var(--acc);color:var(--on-acc,#fff);border:1px solid var(--acc);padding:8px 16px;border-radius:4px;font-size:.78rem;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s}' +
     '.pa-btn:hover{opacity:.9}' +
     '.pa-btn.ghost{background:transparent;color:var(--acc);border-color:var(--line)}' +
     '.pa-btn.ghost:hover{border-color:var(--acc);background:color-mix(in srgb,var(--acc) 8%,transparent)}' +
@@ -276,7 +276,7 @@ export function renderPasswordAnalyzer(container) {
     '.pa-slider{flex:1;accent-color:var(--acc)}' +
     '.pa-slider-val{font-family:ui-monospace,monospace;font-size:.85rem;color:var(--txt);min-width:36px;text-align:center}' +
     '.pa-toggle-row{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px}' +
-    '.pa-toggle{display:flex;align-items:center;gap:6px;padding:6px 14px;background:var(--card2,#0a0e14);border:1px solid var(--line);border-radius:6px;cursor:pointer;font-size:.78rem;color:var(--mut);transition:all .15s;user-select:none}' +
+    '.pa-toggle{display:flex;align-items:center;gap:6px;padding:6px 14px;background:var(--card2,#0a0e14);border:1px solid var(--line);border-radius:4px;cursor:pointer;font-size:.78rem;color:var(--mut);transition:all .15s;user-select:none}' +
     '.pa-toggle.on{border-color:var(--acc);color:var(--acc);background:color-mix(in srgb,var(--acc) 10%,var(--card2,#0a0e14))}' +
     '.pa-toggle-dot{width:10px;height:10px;border-radius:50%;background:var(--line);transition:background .15s}' +
     '.pa-toggle.on .pa-toggle-dot{background:var(--acc)}' +

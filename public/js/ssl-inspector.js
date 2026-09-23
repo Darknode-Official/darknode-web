@@ -138,7 +138,7 @@ function _sslRenderCerts(el) {
   var h = '';
   h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">';
   h += '<div style="color:#00d4ff;font-size:12px;letter-spacing:1px;">' + certs.length + ' CERTIFICATES FOUND</div>';
-  h += '<div style="color:#556;font-size:10px;">Domain: ' + esc(_sslData.domain) + '</div>';
+  h += '<div style="display:flex;align-items:center;gap:10px;"><span style="color:#556;font-size:10px;">Domain: ' + esc(_sslData.domain) + '</span>' + _sslGraphBtnHTML() + '</div>';
   h += '</div>';
 
   h += '<div style="overflow-x:auto;">';
@@ -270,6 +270,73 @@ function _sslRenderTimeline(el) {
   el.innerHTML = h;
 }
 
+// Findings derived from CT log statistics (shared by the Analysis tab and the graph export).
+function _sslFindings(st) {
+  var findings = [];
+  if (st.expired > st.total * 0.5) findings.push({ severity: 'HIGH', title: 'Poor certificate lifecycle management', msg: 'Over 50% of certificates are expired — poor certificate lifecycle management' });
+  if (st.wildcards > 5) findings.push({ severity: 'MEDIUM', title: 'Excessive wildcard certificates', msg: st.wildcards + ' wildcard certificates found — increases attack surface if private keys are compromised' });
+  if (st.issuers > 5) findings.push({ severity: 'LOW', title: 'Many certificate issuers', msg: 'Multiple certificate issuers (' + st.issuers + ') — consider consolidating for easier management' });
+  if (st.recent30d > 10) findings.push({ severity: 'INFO', title: 'High certificate churn', msg: st.recent30d + ' certificates issued in last 30 days — high certificate churn may indicate automation or rapid deployment' });
+  if (_sslData.subdomains.length > 50) findings.push({ severity: 'INFO', title: 'Large CT-exposed attack surface', msg: _sslData.subdomains.length + ' subdomains discovered — large attack surface exposed via CT logs' });
+  return findings;
+}
+
+function _sslCertStats() {
+  var certs = _sslData.certs, now = new Date();
+  var st = { total: certs.length, expired: 0, wildcards: 0, issuers: 0, recent30d: 0 };
+  var iss = {};
+  for (var i = 0; i < certs.length; i++) {
+    var c = certs[i];
+    if (new Date(c.not_after || '') < now) st.expired++;
+    if ((c.common_name || '').indexOf('*') !== -1 || (c.name_value || '').indexOf('*') !== -1) st.wildcards++;
+    if ((now - new Date(c.not_before || '')) < 30 * 86400000) st.recent30d++;
+    var org = (c.issuer_name || '').replace(/^.*O=/, '').replace(/,.*$/, '').trim();
+    if (org) iss[org] = true;
+  }
+  st.issuers = Object.keys(iss).length;
+  return st;
+}
+
+function _sslGraphBtnHTML() {
+  return '<button onclick="_sslToGraph(this)" style="background:#00aaff22;color:#00aaff;border:1px solid #00aaff44;border-radius:4px;padding:4px 12px;font-family:monospace;font-size:10px;cursor:pointer;letter-spacing:1px;">SEND TO SECURITY GRAPH</button>';
+}
+
+// Live crt.sh data: root DOMAIN, currently valid certificates (newest 50) as CERTIFICATE
+// linked to the domain, and CT-derived findings as FINDING --affects--> DOMAIN.
+function _sslToGraph(btn) {
+  var domain = _sslData.domain;
+  if (!domain || !_sslData.certs.length) return;
+  var now = new Date();
+  var valid = _sslData.certs.filter(function(c) { return new Date(c.not_after || '') >= now; })
+    .sort(function(a, b) { return String(b.not_before || '').localeCompare(String(a.not_before || '')); })
+    .slice(0, 50);
+  var findings = _sslFindings(_sslCertStats());
+  var sevMap = { CRITICAL: 'critical', HIGH: 'high', MEDIUM: 'medium', LOW: 'low', INFO: 'info' };
+  var tags = ['ssl', 'ct-log', 'crt.sh'];
+  btn.disabled = true;
+  import('/js/graph-bridge.js?v=20260923c').then(function(gb) {
+    var rr = gb.sendToGraph('SSL Inspector', [{ type: 'DOMAIN', name: domain, data: { ctCertificates: _sslData.certs.length, ctSubdomains: _sslData.subdomains.length }, opts: { tags: tags } }], undefined, true);
+    var root = rr.entities[0];
+    var cr = gb.sendToGraph('SSL Inspector', valid.map(function(c) {
+      return {
+        type: 'CERTIFICATE', name: (c.common_name || domain) + ' #' + (c.id || c.serial_number || ''),
+        data: { commonName: c.common_name || '', sans: (c.name_value || '').split('\n').join(', '), issuer: c.issuer_name || '', notBefore: c.not_before || '', notAfter: c.not_after || '', serial: c.serial_number || '', crtShId: c.id || '' },
+        opts: { tags: tags.concat(((c.common_name || '').indexOf('*') !== -1) ? ['wildcard'] : []) }
+      };
+    }), undefined, true);
+    var fr = gb.sendToGraph('SSL Inspector', findings.map(function(f) {
+      return { type: 'FINDING', name: f.title + ' (' + domain + ')', data: { description: f.msg, domain: domain, source: 'CT log analysis' }, opts: { tags: tags, severity: sevMap[f.severity] || null } };
+    }), undefined, true);
+    if (root) {
+      cr.entities.forEach(function(e) { gb.linkEntities(e.id, root.id, 'related_to'); });
+      fr.entities.forEach(function(e) { gb.linkEntities(e.id, root.id, 'affects'); });
+    }
+    var created = rr.created + cr.created + fr.created, updated = rr.updated + cr.updated + fr.updated;
+    btn.textContent = 'SENT: ' + created + ' NEW, ' + updated + ' MERGED';
+    gb.showGraphToast('Security Graph: ' + domain + ', ' + cr.entities.length + ' certificates, ' + fr.entities.length + ' findings');
+  }).catch(function() { btn.textContent = 'GRAPH UNAVAILABLE'; btn.disabled = false; });
+}
+
 function _sslRenderAnalysis(el) {
   var certs = _sslData.certs;
   var now = new Date();
@@ -311,13 +378,11 @@ function _sslRenderAnalysis(el) {
   h += '</div>';
 
   // Security findings
-  h += '<div style="color:#ff6644;font-size:12px;letter-spacing:1px;margin-bottom:10px;">FINDINGS</div>';
-  var findings = [];
-  if (expired > certs.length * 0.5) findings.push({ severity: 'HIGH', msg: 'Over 50% of certificates are expired — poor certificate lifecycle management' });
-  if (wildcards > 5) findings.push({ severity: 'MEDIUM', msg: wildcards + ' wildcard certificates found — increases attack surface if private keys are compromised' });
-  if (Object.keys(uniqueIssuers).length > 5) findings.push({ severity: 'LOW', msg: 'Multiple certificate issuers (' + Object.keys(uniqueIssuers).length + ') — consider consolidating for easier management' });
-  if (recent30d > 10) findings.push({ severity: 'INFO', msg: recent30d + ' certificates issued in last 30 days — high certificate churn may indicate automation or rapid deployment' });
-  if (_sslData.subdomains.length > 50) findings.push({ severity: 'INFO', msg: _sslData.subdomains.length + ' subdomains discovered — large attack surface exposed via CT logs' });
+  h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">';
+  h += '<div style="color:#ff6644;font-size:12px;letter-spacing:1px;">FINDINGS</div>';
+  h += _sslGraphBtnHTML();
+  h += '</div>';
+  var findings = _sslFindings({ total: certs.length, expired: expired, wildcards: wildcards, issuers: Object.keys(uniqueIssuers).length, recent30d: recent30d });
   if (findings.length === 0) findings.push({ severity: 'INFO', msg: 'No significant issues detected in certificate transparency data' });
 
   var sevColors = { HIGH: '#ff4444', MEDIUM: '#ff8800', LOW: '#ffcc00', INFO: '#00aaff' };
@@ -334,3 +399,4 @@ function _sslRenderAnalysis(el) {
 
 window._sslSearch = _sslSearch;
 window._sslCopySubdomains = _sslCopySubdomains;
+window._sslToGraph = _sslToGraph;

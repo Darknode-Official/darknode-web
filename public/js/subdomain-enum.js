@@ -78,7 +78,7 @@ export function renderSubdomainEnum(container) {
     '.se-title{font-size:1.6rem;font-weight:700;margin:0 0 6px;color:var(--txt)}' +
     '.se-sub{color:var(--mut);font-size:.85rem;margin-bottom:20px;line-height:1.5}' +
     '.se-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:24px}' +
-    '.se-tab{background:var(--card);border:1px solid var(--line);color:var(--mut);padding:8px 16px;font-size:.75rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;cursor:pointer;border-radius:6px;transition:all .15s;font-family:inherit}' +
+    '.se-tab{background:var(--card);border:1px solid var(--line);color:var(--mut);padding:8px 16px;font-size:.75rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;cursor:pointer;border-radius:4px;transition:all .15s;font-family:inherit}' +
     '.se-tab:hover{background:color-mix(in srgb,var(--acc) 8%,var(--card));color:var(--txt)}' +
     '.se-tab.active{background:var(--acc);color:var(--on-acc,#fff);border-color:var(--acc)}' +
     '.se-panel{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:20px;margin-bottom:16px}' +
@@ -87,7 +87,7 @@ export function renderSubdomainEnum(container) {
     '.se-input:focus{border-color:var(--acc);outline:none}' +
     '.se-textarea{width:100%;min-height:200px;background:var(--card2,#0a0e14);border:1px solid var(--line);color:var(--txt);font-family:ui-monospace,monospace;font-size:.75rem;padding:12px;border-radius:6px;resize:vertical;box-sizing:border-box}' +
     '.se-textarea:focus{border-color:var(--acc);outline:none}' +
-    '.se-btn{background:var(--acc);color:var(--on-acc,#fff);border:1px solid var(--acc);padding:8px 16px;border-radius:6px;font-size:.78rem;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s}' +
+    '.se-btn{background:var(--acc);color:var(--on-acc,#fff);border:1px solid var(--acc);padding:8px 16px;border-radius:4px;font-size:.78rem;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s}' +
     '.se-btn:hover{opacity:.9}' +
     '.se-btn:disabled{opacity:.5;cursor:not-allowed}' +
     '.se-btn.ghost{background:transparent;color:var(--acc);border-color:var(--line)}' +
@@ -217,6 +217,40 @@ export function renderSubdomainEnum(container) {
     return lines.join('\n');
   }
 
+  // Scan results are randomly generated (and "Load Sample" is fixed demo data),
+  // so everything sent to the graph is tagged simulated.
+  function sendResultsToGraph(btn) {
+    var tags = ['subdomain-enum', 'simulated'];
+    var meta = { simulated: true, scannedAt: new Date().toISOString() };
+    btn.disabled = true;
+    import('/js/graph-bridge.js?v=20260923c').then(function(gb) {
+      var root = gb.sendToGraph('Subdomain Enum', [{ type: 'DOMAIN', name: domain, data: Object.assign({ subdomainCount: results.length }, meta), opts: { tags: tags.concat('root-domain') } }], undefined, true).entities[0];
+      var created = 0, updated = 0, links = 0;
+      results.forEach(function(r) {
+        var sr = gb.sendToGraph('Subdomain Enum', [{
+          type: 'DOMAIN', name: r.sub,
+          data: Object.assign({ ip: r.ip || '', httpStatus: r.status, technology: r.tech || '', live: r.live, parent: domain }, meta),
+          opts: { tags: tags.concat('subdomain', r.live ? 'live' : 'down') }
+        }], undefined, true);
+        created += sr.created; updated += sr.updated;
+        var sub = sr.entities[0];
+        if (!sub) return;
+        if (root && sub.id !== root.id && gb.linkEntities(root.id, sub.id, 'related_to')) links++;
+        if (r.ip) {
+          var ir = gb.sendToGraph('Subdomain Enum', [{ type: 'IP', name: r.ip, data: Object.assign({ resolvedFrom: r.sub }, meta), opts: { tags: tags } }], undefined, true);
+          created += ir.created; updated += ir.updated;
+          if (ir.entities[0] && gb.linkEntities(sub.id, ir.entities[0].id, 'related_to')) links++;
+        }
+      });
+      btn.textContent = 'Sent: ' + created + ' new, ' + updated + ' merged';
+      gb.showGraphToast('Security Graph: ' + results.length + ' subdomains of ' + domain + ', ' + created + ' added, ' + links + ' links (tagged simulated)');
+    }).catch(function() { btn.textContent = 'Security Graph unavailable'; btn.disabled = false; });
+  }
+
+  function graphBtnHtml() {
+    return '<button class="se-btn ghost se-to-graph" title="Simulated results are tagged simulated">Send ' + results.length + ' subdomains to Security Graph</button>';
+  }
+
   function downloadFile(content, filename, mime) {
     var blob = new Blob([content], { type: mime });
     var url = URL.createObjectURL(blob);
@@ -324,6 +358,7 @@ export function renderSubdomainEnum(container) {
             '<option value="5xx"' + (filterStatus === '5xx' ? ' selected' : '') + '>5xx Server Error</option>' +
           '</select>' +
           '<button class="se-btn ghost" id="se-clear-filters" style="font-size:.72rem">Clear Filters</button>' +
+          graphBtnHtml() +
         '</div>';
 
         var sortArrow = function(col) {
@@ -368,6 +403,7 @@ export function renderSubdomainEnum(container) {
             '<button class="se-btn" id="se-export-csv">Export CSV</button>' +
             '<button class="se-btn ghost" id="se-export-json">Export JSON</button>' +
             '<button class="se-btn ghost" id="se-export-scope">Export Scope File</button>' +
+            graphBtnHtml() +
           '</div>' +
         '</div>' +
         '<div class="se-grid">' +
@@ -504,6 +540,10 @@ export function renderSubdomainEnum(container) {
     if (scopeBtn) scopeBtn.onclick = function() {
       downloadFile(generateScope(), domain.replace(/\./g, '_') + '_scope.txt', 'text/plain');
     };
+
+    container.querySelectorAll('.se-to-graph').forEach(function(btn) {
+      btn.onclick = function() { sendResultsToGraph(btn); };
+    });
 
     /* Wordlist tab */
     var wlSaveBtn = container.querySelector('#se-wl-save');

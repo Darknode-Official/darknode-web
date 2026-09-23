@@ -284,8 +284,8 @@ export function renderVanguard(container) {
   h += '<div style="display:flex;gap:8px;align-items:center;">';
   h += '<div style="color:' + c.mut + ';font-size:11px;letter-spacing:1px;flex-shrink:0;">TARGET:</div>';
   h += '<input id="vg-target" style="flex:1;background:' + c.inputBg + ';border:1px solid ' + c.inputBorder + ';border-radius:6px;color:' + c.inputColor + ';font-family:' + c.font + ';font-size:14px;padding:10px 14px;outline:none;" placeholder="example.com" spellcheck="false" autocomplete="off">';
-  h += '<button onclick="_vgLaunchRecon()" id="vg-launch-btn" style="background:' + c.btnBg + ';color:' + c.btnColor + ';border:1px solid ' + c.btnBorder + ';padding:10px 24px;font-family:' + c.font + ';font-size:12px;font-weight:' + (isPro ? '500' : 'bold') + ';cursor:pointer;border-radius:6px;letter-spacing:' + (isPro ? '.02em' : '2px') + ';transition:all 0.2s;">' + (isPro ? 'Launch Recon' : 'LAUNCH RECON') + '</button>';
-  h += '<button onclick="_vgAbort()" style="background:' + c.abortBg + ';color:' + c.abortColor + ';border:1px solid ' + c.abortBorder + ';padding:10px 16px;font-family:' + c.font + ';font-size:11px;cursor:pointer;border-radius:6px;letter-spacing:' + (isPro ? '.02em' : '1px') + ';">' + (isPro ? 'Abort' : 'ABORT') + '</button>';
+  h += '<button onclick="_vgLaunchRecon()" id="vg-launch-btn" style="background:' + c.btnBg + ';color:' + c.btnColor + ';border:1px solid ' + c.btnBorder + ';padding:10px 24px;font-family:' + c.font + ';font-size:12px;font-weight:' + (isPro ? '500' : 'bold') + ';cursor:pointer;border-radius:4px;letter-spacing:' + (isPro ? '.02em' : '2px') + ';transition:all 0.2s;">' + (isPro ? 'Launch Recon' : 'LAUNCH RECON') + '</button>';
+  h += '<button onclick="_vgAbort()" style="background:' + c.abortBg + ';color:' + c.abortColor + ';border:1px solid ' + c.abortBorder + ';padding:10px 16px;font-family:' + c.font + ';font-size:11px;cursor:pointer;border-radius:4px;letter-spacing:' + (isPro ? '.02em' : '1px') + ';">' + (isPro ? 'Abort' : 'ABORT') + '</button>';
   h += '</div>';
 
   // Authorization reminder

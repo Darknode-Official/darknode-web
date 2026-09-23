@@ -1006,17 +1006,17 @@ var STYLE = '<style>' +
   '.ai-input::placeholder{color:var(--ai-mut)}' +
   '.ai-type-indicator{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:.7rem;font-weight:700;padding:3px 8px;border-radius:4px;font-family:var(--ai-mono);text-transform:uppercase;background:rgba(0,212,255,.1);color:var(--ai-acc);display:none}' +
   '.ai-type-indicator.ai-active{display:block}' +
-  '.ai-btn-investigate{padding:12px 28px;background:linear-gradient(135deg,var(--ai-acc),var(--ai-acc2));border:none;border-radius:8px;color:#fff;font-size:.9rem;font-weight:600;cursor:pointer;white-space:nowrap;transition:opacity .2s}' +
+  '.ai-btn-investigate{padding:12px 28px;background:linear-gradient(135deg,var(--ai-acc),var(--ai-acc2));border:none;border-radius:4px;color:#fff;font-size:.9rem;font-weight:600;cursor:pointer;white-space:nowrap;transition:opacity .2s}' +
   '.ai-btn-investigate:hover{opacity:.85}' +
   '.ai-btn-investigate:disabled{opacity:.4;cursor:not-allowed}' +
 
   '.ai-history-section{margin-top:16px}' +
   '.ai-history-title{font-size:.78rem;color:var(--ai-mut);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}' +
   '.ai-history-list{display:flex;flex-wrap:wrap;gap:6px}' +
-  '.ai-history-item{padding:4px 10px;background:var(--ai-card2);border:1px solid var(--ai-line);border-radius:6px;font-size:.75rem;color:var(--ai-mut);cursor:pointer;font-family:var(--ai-mono);transition:border-color .2s,color .2s}' +
+  '.ai-history-item{padding:4px 10px;background:var(--ai-card2);border:1px solid var(--ai-line);border-radius:4px;font-size:.75rem;color:var(--ai-mut);cursor:pointer;font-family:var(--ai-mono);transition:border-color .2s,color .2s}' +
   '.ai-history-item:hover{border-color:var(--ai-acc);color:var(--ai-acc)}' +
   '.ai-history-type{color:var(--ai-acc);margin-right:4px;font-weight:600}' +
-  '.ai-history-clear{padding:4px 10px;background:transparent;border:1px solid var(--ai-line);border-radius:6px;font-size:.72rem;color:var(--ai-mut);cursor:pointer;transition:color .2s}' +
+  '.ai-history-clear{padding:4px 10px;background:transparent;border:1px solid var(--ai-line);border-radius:4px;font-size:.72rem;color:var(--ai-mut);cursor:pointer;transition:color .2s}' +
   '.ai-history-clear:hover{color:#e74c3c;border-color:#e74c3c}' +
 
   '.ai-api-keys-section{margin-top:16px}' +

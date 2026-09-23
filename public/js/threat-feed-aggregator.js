@@ -200,8 +200,8 @@ export function renderThreatFeedAggregator(container) {
   h += '</div>';
   h += '<div style="display:flex;gap:8px;align-items:center;">';
   h += '<div id="tf-status" style="background:#00ff8822;color:#00ff88;font-size:10px;font-family:monospace;padding:4px 10px;border-radius:4px;border:1px solid #00ff8844;font-weight:bold;">READY</div>';
-  h += '<button onclick="_tfFetchAll()" style="background:#ff880022;border:1px solid #ff880066;border-radius:6px;padding:6px 14px;color:#ff8800;font-family:monospace;font-size:11px;font-weight:bold;cursor:pointer;">FETCH ALL</button>';
-  h += '<button onclick="_tfExport()" style="background:#0a1a28;border:1px solid #1a3050;border-radius:6px;padding:6px 14px;color:#5a8aaa;font-family:monospace;font-size:11px;cursor:pointer;">EXPORT JSON</button>';
+  h += '<button onclick="_tfFetchAll()" style="background:#ff880022;border:1px solid #ff880066;border-radius:4px;padding:6px 14px;color:#ff8800;font-family:monospace;font-size:11px;font-weight:bold;cursor:pointer;">FETCH ALL</button>';
+  h += '<button onclick="_tfExport()" style="background:#0a1a28;border:1px solid #1a3050;border-radius:4px;padding:6px 14px;color:#5a8aaa;font-family:monospace;font-size:11px;cursor:pointer;">EXPORT JSON</button>';
   h += '</div></div>';
 
   // Stats row

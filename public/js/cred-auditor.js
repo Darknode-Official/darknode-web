@@ -118,7 +118,7 @@ export function renderCredAuditor(container) {
     '.ca-title{font-size:1.5rem;font-weight:700;margin:0 0 6px}' +
     '.ca-sub{color:var(--mut,#64748b);font-size:.85rem}' +
     '.ca-tabs{display:flex;gap:4px;margin-bottom:20px;flex-wrap:wrap}' +
-    '.ca-tab{padding:8px 16px;border:1px solid var(--line,#1e293b);border-radius:6px;background:transparent;color:var(--mut,#8899aa);cursor:pointer;font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;transition:all .15s;font-family:inherit}' +
+    '.ca-tab{padding:8px 16px;border:1px solid var(--line,#1e293b);border-radius:4px;background:transparent;color:var(--mut,#8899aa);cursor:pointer;font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;transition:all .15s;font-family:inherit}' +
     '.ca-tab:hover{background:rgba(255,255,255,.05);color:var(--txt)}' +
     '.ca-tab.active{background:var(--acc,#2563eb);color:#fff;border-color:var(--acc,#2563eb)}' +
     '.ca-panel{background:var(--card,#0d1117);border:1px solid var(--line,#1e293b);border-radius:8px;padding:20px;margin-bottom:16px}' +
@@ -271,7 +271,7 @@ export function renderCredAuditor(container) {
     rules.forEach(function(r) {
       h += '<div class="ca-policy-row"><label>' + r.label + '</label>';
       if (r.type === 'toggle') {
-        h += '<div class="ca-toggle' + (r.val ? ' on' : '') + '" data-policy="' + r.key + '"></div>';
+        h += '<div class="dn-round ca-toggle' + (r.val ? ' on' : '') + '" data-policy="' + r.key + '"></div>';
       } else {
         h += '<input class="ca-num-input" type="number" data-policy-num="' + r.key + '" value="' + r.val + '" min="1" max="256">';
       }
@@ -317,10 +317,10 @@ export function renderCredAuditor(container) {
   function renderGenerator() {
     var h = '<div class="ca-panel"><h3 style="margin:0 0 14px;font-size:.85rem">Password Generator</h3>' +
       '<div class="ca-policy-row"><label>Length</label><input class="ca-num-input" type="number" id="ca-gen-len" value="' + state.genLen + '" min="4" max="128"></div>' +
-      '<div class="ca-policy-row"><label>Uppercase (A-Z)</label><div class="ca-toggle' + (state.genIncUpper ? ' on' : '') + '" data-gen="upper"></div></div>' +
-      '<div class="ca-policy-row"><label>Lowercase (a-z)</label><div class="ca-toggle' + (state.genIncLower ? ' on' : '') + '" data-gen="lower"></div></div>' +
-      '<div class="ca-policy-row"><label>Digits (0-9)</label><div class="ca-toggle' + (state.genIncDigit ? ' on' : '') + '" data-gen="digit"></div></div>' +
-      '<div class="ca-policy-row"><label>Special (!@#$...)</label><div class="ca-toggle' + (state.genIncSpecial ? ' on' : '') + '" data-gen="special"></div></div>' +
+      '<div class="ca-policy-row"><label>Uppercase (A-Z)</label><div class="dn-round ca-toggle' + (state.genIncUpper ? ' on' : '') + '" data-gen="upper"></div></div>' +
+      '<div class="ca-policy-row"><label>Lowercase (a-z)</label><div class="dn-round ca-toggle' + (state.genIncLower ? ' on' : '') + '" data-gen="lower"></div></div>' +
+      '<div class="ca-policy-row"><label>Digits (0-9)</label><div class="dn-round ca-toggle' + (state.genIncDigit ? ' on' : '') + '" data-gen="digit"></div></div>' +
+      '<div class="ca-policy-row"><label>Special (!@#$...)</label><div class="dn-round ca-toggle' + (state.genIncSpecial ? ' on' : '') + '" data-gen="special"></div></div>' +
       '<div style="display:flex;gap:8px;margin-top:14px">' +
       '<button class="ca-btn" id="ca-gen-one">Generate 1</button>' +
       '<button class="ca-btn ca-btn-ghost" id="ca-gen-five">Generate 5</button>' +

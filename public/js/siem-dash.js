@@ -140,7 +140,7 @@ const STYLE = `
 
 /* live feed */
 .sd-feed-controls{display:flex;gap:10px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
-.sd-feed-controls select,.sd-feed-controls button{background:var(--card2,#080c14);color:var(--txt,#c8d6e5);border:1px solid var(--line,#1e293b);border-radius:6px;padding:6px 12px;font-size:.78rem;cursor:pointer}
+.sd-feed-controls select,.sd-feed-controls button{background:var(--card2,#080c14);color:var(--txt,#c8d6e5);border:1px solid var(--line,#1e293b);border-radius:4px;padding:6px 12px;font-size:.78rem;cursor:pointer}
 .sd-feed-controls button:hover{border-color:var(--acc,#2563eb)}
 .sd-feed-controls .sd-count{margin-left:auto;font-size:.75rem;color:var(--mut,#64748b)}
 .sd-feed-log{max-height:480px;overflow-y:auto;display:flex;flex-direction:column;gap:2px}
@@ -367,7 +367,7 @@ export function renderSiemDash(container) {
             <option value="all"${filterSev === "all" ? " selected" : ""}>All Severities</option>
             ${SEV_ORDER.map(s => `<option value="${s}"${filterSev === s ? " selected" : ""}>${s.charAt(0).toUpperCase() + s.slice(1)} (${counts[s]})</option>`).join("")}
           </select>
-          <button id="sd-pause">${paused ? "▶ Resume" : "Pause"}</button>
+          <button id="sd-pause">${paused ? "Resume" : "Pause"}</button>
           <span class="sd-count">${filtered.length} events displayed</span>
         </div>
         <div class="sd-feed-log" id="sd-feed-log">

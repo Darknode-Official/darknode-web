@@ -262,28 +262,28 @@ export function renderSecurityQuiz(main) {
         '<h2 style="margin:0 0 4px;color:' + mod.color + '">' + esc(mod.name) + '</h2>' +
         '<p class="muted" style="margin:0 0 24px;font-size:.85rem">Select difficulty level to begin.</p>' +
         '<div style="display:grid;gap:10px">' +
-          '<div class="sa-diff-btn" data-diff="all" style="background:var(--card);border:1px solid var(--line);border-radius:8px;padding:16px;cursor:pointer;transition:border-color .15s">' +
+          '<div class="sa-diff-btn" data-diff="all" style="background:var(--card);border:1px solid var(--line);border-radius:4px;padding:16px;cursor:pointer;transition:border-color .15s">' +
             '<div style="display:flex;align-items:center;gap:10px">' +
               '<div style="font-weight:600;font-size:.95rem;flex:1">All Levels</div>' +
               '<span class="muted" style="font-size:.78rem">' + counts.all + ' questions</span>' +
             '</div>' +
             '<div class="muted" style="font-size:.78rem;margin-top:4px">Complete test across all difficulty levels.</div>' +
           '</div>' +
-          '<div class="sa-diff-btn" data-diff="beginner" style="background:var(--card);border:1px solid var(--line);border-left:3px solid #22c55e;border-radius:8px;padding:16px;cursor:pointer;transition:border-color .15s">' +
+          '<div class="sa-diff-btn" data-diff="beginner" style="background:var(--card);border:1px solid var(--line);border-left:3px solid #22c55e;border-radius:4px;padding:16px;cursor:pointer;transition:border-color .15s">' +
             '<div style="display:flex;align-items:center;gap:10px">' +
               '<div style="font-weight:600;font-size:.95rem;color:#22c55e;flex:1">Beginner</div>' +
               '<span class="muted" style="font-size:.78rem">' + counts.beginner + ' questions</span>' +
             '</div>' +
             '<div class="muted" style="font-size:.78rem;margin-top:4px">Fundamental concepts every employee should know.</div>' +
           '</div>' +
-          '<div class="sa-diff-btn" data-diff="intermediate" style="background:var(--card);border:1px solid var(--line);border-left:3px solid #f59e0b;border-radius:8px;padding:16px;cursor:pointer;transition:border-color .15s">' +
+          '<div class="sa-diff-btn" data-diff="intermediate" style="background:var(--card);border:1px solid var(--line);border-left:3px solid #f59e0b;border-radius:4px;padding:16px;cursor:pointer;transition:border-color .15s">' +
             '<div style="display:flex;align-items:center;gap:10px">' +
               '<div style="font-weight:600;font-size:.95rem;color:#f59e0b;flex:1">Intermediate</div>' +
               '<span class="muted" style="font-size:.78rem">' + counts.intermediate + ' questions</span>' +
             '</div>' +
             '<div class="muted" style="font-size:.78rem;margin-top:4px">Applied knowledge for security-aware professionals.</div>' +
           '</div>' +
-          '<div class="sa-diff-btn" data-diff="advanced" style="background:var(--card);border:1px solid var(--line);border-left:3px solid #ef4444;border-radius:8px;padding:16px;cursor:pointer;transition:border-color .15s">' +
+          '<div class="sa-diff-btn" data-diff="advanced" style="background:var(--card);border:1px solid var(--line);border-left:3px solid #ef4444;border-radius:4px;padding:16px;cursor:pointer;transition:border-color .15s">' +
             '<div style="display:flex;align-items:center;gap:10px">' +
               '<div style="font-weight:600;font-size:.95rem;color:#ef4444;flex:1">Advanced</div>' +
               '<span class="muted" style="font-size:.78rem">' + counts.advanced + ' questions</span>' +
@@ -343,7 +343,7 @@ export function renderSecurityQuiz(main) {
         '<div style="font-size:1rem;font-weight:600;margin-bottom:16px;line-height:1.5">' + esc(q.q) + '</div>' +
         '<div id="sa-opts" style="display:grid;gap:8px">' +
           q.opts.map(function(opt, i) {
-            return '<button class="sa-opt" data-idx="' + i + '" style="text-align:left;padding:12px 16px;background:var(--card);border:1px solid var(--line);border-radius:6px;cursor:pointer;font-size:.85rem;color:var(--txt);font-family:inherit;transition:all .15s">' +
+            return '<button class="sa-opt" data-idx="' + i + '" style="text-align:left;padding:12px 16px;background:var(--card);border:1px solid var(--line);border-radius:4px;cursor:pointer;font-size:.85rem;color:var(--txt);font-family:inherit;transition:all .15s">' +
               '<span style="color:var(--acc);font-weight:600;margin-right:8px">' + String.fromCharCode(65 + i) + '.</span>' + esc(opt) +
             '</button>';
           }).join('') +

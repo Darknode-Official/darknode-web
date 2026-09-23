@@ -167,6 +167,87 @@ function entropy(str) {
 }
 
 // ============================================================================
+// SECURITY GRAPH EXPORT
+// ============================================================================
+// PHANTOM has no live capture path: packets and anomalies come from the demo
+// dataset (PCAP import only overlays demo packets), so everything is tagged simulated.
+var PH_SEV = { CRITICAL: 'critical', HIGH: 'high', MEDIUM: 'medium', LOW: 'low', INFO: 'info' };
+var PH_IP_RE = /\b\d{1,3}(?:\.\d{1,3}){3}\b/g;
+var PH_DOMAIN_RE = /\b(?:[a-z0-9-]+\.)+[a-z]{2,}\b/gi;
+
+function phIsPrivate(ip) {
+  return /^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|127\.)/.test(ip);
+}
+
+function phHostItem(ip, extra) {
+  var tags = ['phantom', 'network', 'simulated', phIsPrivate(ip) ? 'internal' : 'external'];
+  return { type: 'IP', name: ip, data: Object.assign({ simulated: true }, extra || {}), opts: { tags: tags } };
+}
+
+function phUnique(arr) {
+  return arr.filter(function(v, i) { return arr.indexOf(v) === i; });
+}
+
+function phSendGraph(btn, build) {
+  btn.disabled = true;
+  import('/js/graph-bridge.js?v=20260923c').then(function(gb) {
+    var res = build(gb);
+    btn.textContent = 'Sent: ' + res.created + ' new, ' + res.updated + ' merged';
+    gb.showGraphToast('Security Graph: ' + res.summary + ' (tagged simulated)');
+  }).catch(function() { btn.textContent = 'Security Graph unavailable'; btn.disabled = false; });
+}
+
+// Unique hosts seen in the capture -> IP entities with traffic totals.
+function phSendHosts(btn, packets) {
+  phSendGraph(btn, function(gb) {
+    var hosts = {};
+    packets.forEach(function(p) {
+      [[p.srcIP, 'sent'], [p.dstIP, 'recv']].forEach(function(pair) {
+        var ip = pair[0];
+        if (!ip || !/^\d{1,3}(\.\d{1,3}){3}$/.test(ip)) return;
+        var h = hosts[ip] || (hosts[ip] = { packets: 0, bytes: 0, protocols: [] });
+        h.packets++; h.bytes += p.length || 0;
+        if (h.protocols.indexOf(p.protocol) === -1) h.protocols.push(p.protocol);
+      });
+    });
+    var items = Object.keys(hosts).map(function(ip) {
+      var h = hosts[ip];
+      return phHostItem(ip, { packets: h.packets, bytes: h.bytes, protocols: h.protocols.join(', ') });
+    });
+    var r = gb.sendToGraph('PHANTOM', items, undefined, true);
+    r.summary = items.length + ' hosts, ' + r.created + ' added';
+    return r;
+  });
+}
+
+// Anomalies -> ALERT (with severity), linked to the IPs/domains named in their evidence.
+function phSendAnomalies(btn, anomalies) {
+  phSendGraph(btn, function(gb) {
+    var created = 0, updated = 0, links = 0;
+    anomalies.forEach(function(a) {
+      var text = a.description + ' ' + a.evidence;
+      var ips = phUnique(text.match(PH_IP_RE) || []);
+      var domains = phUnique((text.match(PH_DOMAIN_RE) || []).filter(function(d) { return !/^\d+(\.\d+)+$/.test(d); }));
+      var ar = gb.sendToGraph('PHANTOM', [{
+        type: 'ALERT', name: 'PHANTOM: ' + a.type,
+        data: { description: a.description, evidence: a.evidence, recommendation: a.recommendation, involvedIPs: ips.join(', '), simulated: true },
+        opts: { tags: ['phantom', 'anomaly', 'simulated'], severity: PH_SEV[a.severity] || null }
+      }], undefined, true);
+      created += ar.created; updated += ar.updated;
+      var alert = ar.entities[0];
+      var rr = gb.sendToGraph('PHANTOM', ips.map(function(ip) { return phHostItem(ip, { seenIn: a.type }); }).concat(domains.map(function(d) {
+        return { type: 'DOMAIN', name: d.toLowerCase(), data: { seenIn: a.type, simulated: true }, opts: { tags: ['phantom', 'network', 'simulated'] } };
+      })), undefined, true);
+      created += rr.created; updated += rr.updated;
+      if (alert) rr.entities.forEach(function(e) {
+        if (gb.linkEntities(alert.id, e.id, e.type === 'IP' ? 'observed_in' : 'related_to')) links++;
+      });
+    });
+    return { created: created, updated: updated, summary: anomalies.length + ' alerts, ' + created + ' added, ' + links + ' links' };
+  });
+}
+
+// ============================================================================
 // MAIN RENDER
 // ============================================================================
 var _phInterval = null;
@@ -386,6 +467,7 @@ export function renderPhantom(main) {
         '<button class="ph-btn" id="ph-demo-btn">Load Demo Capture (50 packets)</button>' +
         '<label class="ph-btn ghost" style="cursor:pointer">Import PCAP <input type="file" accept=".pcap,.pcapng,.cap" id="ph-pcap-input" style="display:none"></label>' +
         '<span style="font-size:.72rem;color:var(--mut)" id="ph-pkt-count">' + (packets.length ? packets.length + ' packets loaded' : 'No packets loaded') + '</span>' +
+        (packets.length ? '<button class="ph-btn ghost" id="ph-hosts-graph" title="Demo capture data is tagged simulated">Send hosts to Security Graph</button>' : '') +
       '</div>' +
       (packets.length === 0 ?
         '<div class="ph-empty">No capture loaded. Click "Load Demo Capture" to explore sample network traffic, or import a PCAP file.</div>' :
@@ -419,6 +501,8 @@ export function renderPhantom(main) {
 
     var demoBtn = c.querySelector('#ph-demo-btn');
     if (demoBtn) demoBtn.onclick = loadDemo;
+    var hostsGraphBtn = c.querySelector('#ph-hosts-graph');
+    if (hostsGraphBtn) hostsGraphBtn.onclick = function() { phSendHosts(hostsGraphBtn, packets); };
 
     var pcapInput = c.querySelector('#ph-pcap-input');
     if (pcapInput) pcapInput.onchange = function(e) {
@@ -706,7 +790,8 @@ export function renderPhantom(main) {
         '<div class="ph-stat"><div class="ph-stat-n" style="color:#eab308">' + sevCounts.MEDIUM + '</div><div class="ph-stat-l">Medium</div></div>' +
         '<div class="ph-stat"><div class="ph-stat-n" style="color:#22c55e">' + sevCounts.LOW + '</div><div class="ph-stat-l">Low / Info</div></div>' +
       '</div>' +
-      '<div style="margin-bottom:12px"><button class="ph-btn" id="ph-run-anomaly">Run Analysis' + (packets.length > 0 ? ' (' + packets.length + ' packets)' : '') + '</button></div>' +
+      '<div style="margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap"><button class="ph-btn" id="ph-run-anomaly">Run Analysis' + (packets.length > 0 ? ' (' + packets.length + ' packets)' : '') + '</button>' +
+        '<button class="ph-btn ghost" id="ph-anomaly-graph" title="Demo anomaly data is tagged simulated">Send ' + anomalies.length + ' anomalies to Security Graph</button></div>' +
       anomalies.map(function(a) {
         return '<div class="ph-alert">' +
           '<div class="ph-alert-head">' +
@@ -719,6 +804,8 @@ export function renderPhantom(main) {
         '</div>';
       }).join('');
 
+    var anomGraphBtn = c.querySelector('#ph-anomaly-graph');
+    if (anomGraphBtn) anomGraphBtn.onclick = function() { phSendAnomalies(anomGraphBtn, anomalies); };
     var runBtn = c.querySelector('#ph-run-anomaly');
     if (runBtn) runBtn.onclick = function() {
       if (packets.length === 0) { loadDemo(); }

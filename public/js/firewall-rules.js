@@ -527,7 +527,7 @@ export function renderFirewallRules(container) {
 .fw-title{font-size:1.4em;font-weight:700;color:#00aaff}
 .fw-subtitle{font-size:.85em;color:#6a8a9e;margin-top:4px}
 .fw-tabs{display:flex;gap:4px;background:#0a0e14;border:1px solid #1a2a44;border-radius:8px;padding:4px;margin-bottom:20px}
-.fw-tab{padding:10px 20px;background:transparent;color:#6a8a9e;border:none;border-radius:6px;cursor:pointer;font-family:inherit;font-size:.85em;transition:all .2s}
+.fw-tab{padding:10px 20px;background:transparent;color:#6a8a9e;border:none;border-radius:4px;cursor:pointer;font-family:inherit;font-size:.85em;transition:all .2s}
 .fw-tab:hover{color:#c8d6e5;background:rgba(0,170,255,.08)}
 .fw-tab.active{background:rgba(0,170,255,.15);color:#00aaff;font-weight:600}
 .fw-content{background:#0c1020;border:1px solid #1a2a44;border-radius:10px;padding:24px}
@@ -536,12 +536,12 @@ export function renderFirewallRules(container) {
 .fw-label{display:flex;flex-direction:column;gap:4px;font-size:.8em;color:#6a8a9e;flex:1;min-width:140px}
 .fw-select,.fw-input{background:#0c1020;border:1px solid #1a2a44;border-radius:6px;padding:8px 12px;color:#c8d6e5;font-family:inherit;font-size:.9em}
 .fw-select:focus,.fw-input:focus{border-color:#00aaff;outline:none;box-shadow:0 0 0 2px rgba(0,170,255,.15)}
-.fw-btn{padding:10px 20px;background:#00aaff;color:#0a0e14;border:none;border-radius:6px;cursor:pointer;font-family:inherit;font-weight:600;font-size:.85em;transition:all .2s}
+.fw-btn{padding:10px 20px;background:#00aaff;color:#0a0e14;border:none;border-radius:4px;cursor:pointer;font-family:inherit;font-weight:600;font-size:.85em;transition:all .2s}
 .fw-btn:hover{background:#33bbff;transform:translateY(-1px)}
 .fw-add-btn{align-self:flex-end;margin-top:auto}
 .fw-platform-bar{display:flex;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap}
 .fw-plat-label{font-size:.8em;color:#6a8a9e}
-.fw-plat-btn{padding:6px 14px;background:#0a0e14;border:1px solid #1a2a44;border-radius:6px;color:#6a8a9e;cursor:pointer;font-family:inherit;font-size:.78em;transition:all .2s}
+.fw-plat-btn{padding:6px 14px;background:#0a0e14;border:1px solid #1a2a44;border-radius:4px;color:#6a8a9e;cursor:pointer;font-family:inherit;font-size:.78em;transition:all .2s}
 .fw-plat-btn:hover{border-color:#00aaff;color:#00aaff}
 .fw-plat-btn.active{background:rgba(0,170,255,.12);border-color:#00aaff;color:#00aaff}
 .fw-table{width:100%;border-collapse:collapse;font-size:.82em}
@@ -611,7 +611,7 @@ export function renderFirewallRules(container) {
 .fw-conflict-tip{margin-top:10px;font-size:.8em;color:#6a8a9e;font-style:italic}
 .fw-export-head{font-size:1.05em;font-weight:600;color:#00aaff;margin-bottom:16px}
 .fw-export-tabs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:16px}
-.fw-exp-tab{padding:8px 16px;background:#0a0e14;border:1px solid #1a2a44;border-radius:6px;color:#6a8a9e;cursor:pointer;font-family:inherit;font-size:.78em;transition:all .2s}
+.fw-exp-tab{padding:8px 16px;background:#0a0e14;border:1px solid #1a2a44;border-radius:4px;color:#6a8a9e;cursor:pointer;font-family:inherit;font-size:.78em;transition:all .2s}
 .fw-exp-tab:hover{border-color:#00aaff;color:#00aaff}
 .fw-exp-tab.active{background:rgba(0,170,255,.12);border-color:#00aaff;color:#00aaff}
 .fw-export-code{background:#0a0e14;border:1px solid #1a2a44;border-radius:8px;padding:20px;color:#00e688;font-family:'Courier New',monospace;font-size:.82em;line-height:1.6;overflow-x:auto;white-space:pre;max-height:500px;overflow-y:auto;margin-bottom:16px}

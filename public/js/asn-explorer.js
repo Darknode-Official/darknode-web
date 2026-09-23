@@ -51,7 +51,7 @@ export function renderAsnExplorer(container) {
   var bpKeys = Object.keys(_asnBulletproof);
   for (var b = 0; b < bpKeys.length; b++) {
     var asn = bpKeys[b];
-    h += '<div style="background:#1a0a0a;border:1px solid #ff222233;border-radius:3px;padding:5px 8px;font-size:10px;display:flex;justify-content:space-between;cursor:pointer;" onclick="_asnLookupDirect(' + esc(asn) + ')">';
+    h += '<div style="background:#1a0a0a;border:1px solid #ff222233;border-radius:4px;padding:5px 8px;font-size:10px;display:flex;justify-content:space-between;cursor:pointer;" onclick="_asnLookupDirect(' + esc(asn) + ')">';
     h += '<span style="color:#ff4444;font-weight:bold;">AS' + esc(asn) + '</span>';
     h += '<span style="color:#ff8866;">' + esc(_asnBulletproof[asn]) + '</span>';
     h += '</div>';
@@ -237,7 +237,7 @@ function _asnRenderResults(el, asn, asnData, prefixData, peerData) {
         var peer = upstream[u];
         var peerBP = _asnBulletproof[peer.asn];
         var peerColor = peerBP ? '#ff4444' : '#00aaff';
-        h += '<span style="background:' + peerColor + '10;border:1px solid ' + peerColor + '33;border-radius:3px;padding:2px 6px;font-size:9px;color:' + peerColor + ';cursor:pointer;" onclick="_asnLookupDirect(' + peer.asn + ')" title="' + esc(peer.name || '') + '">AS' + peer.asn + '</span>';
+        h += '<span style="background:' + peerColor + '10;border:1px solid ' + peerColor + '33;border-radius:4px;padding:2px 6px;font-size:9px;color:' + peerColor + ';cursor:pointer;" onclick="_asnLookupDirect(' + peer.asn + ')" title="' + esc(peer.name || '') + '">AS' + peer.asn + '</span>';
       }
       if (upstream.length > 40) h += '<span style="color:#4a6a8a;font-size:9px;padding:2px 6px;">+' + (upstream.length - 40) + ' more</span>';
       h += '</div>';

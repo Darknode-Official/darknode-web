@@ -86,7 +86,7 @@ function injectStyles() {
 .tf-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px}
 .tf-header h1{font-size:1.4rem;font-weight:700;margin:0;color:var(--txt)}
 .tf-actions{display:flex;gap:8px;flex-wrap:wrap}
-.tf-btn{padding:6px 14px;border-radius:6px;border:1px solid var(--line);background:var(--card);color:var(--txt-2);
+.tf-btn{padding:6px 14px;border-radius:4px;border:1px solid var(--line);background:var(--card);color:var(--txt-2);
   font-size:.78rem;cursor:pointer;transition:all .15s ease;font-weight:500}
 .tf-btn:hover{border-color:var(--acc);color:var(--acc)}
 .tf-btn.active{background:var(--acc);color:#fff;border-color:var(--acc)}

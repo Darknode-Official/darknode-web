@@ -205,7 +205,7 @@ export function renderRiskCalculator(container) {
         '.cvss-metric-name{font-weight:600;font-size:.88rem;margin-bottom:2px}' +
         '.cvss-metric-desc{font-size:.72rem;color:var(--mut,#6b7280);margin-bottom:8px}' +
         '.cvss-btns{display:flex;gap:4px;flex-wrap:wrap}' +
-        '.cvss-btn{padding:6px 14px;border:1px solid var(--border,#21262d);border-radius:5px;background:var(--card,#161b22);color:var(--txt,#c8d6e5);cursor:pointer;font-size:.78rem;font-family:inherit;transition:all .12s}' +
+        '.cvss-btn{padding:6px 14px;border:1px solid var(--border,#21262d);border-radius:4px;background:var(--card,#161b22);color:var(--txt,#c8d6e5);cursor:pointer;font-size:.78rem;font-family:inherit;transition:all .12s}' +
         '.cvss-btn:hover{border-color:var(--acc,#00d4ff)}' +
         '.cvss-btn.sel{background:var(--acc,#00d4ff);color:#0d1117;border-color:var(--acc,#00d4ff);font-weight:700}' +
         '.cvss-gauge{height:28px;border-radius:6px;background:var(--border,#21262d);position:relative;overflow:hidden;margin:12px 0}' +

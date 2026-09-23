@@ -96,7 +96,7 @@ export function renderReportBuilder(container) {
             }).join("")}
           </div>
         </div>
-        <button id="gen-report" style="margin-top:16px;background:var(--acc,#00d4ff);color:#000;border:none;padding:12px 24px;border-radius:8px;font-size:.95rem;font-weight:700;cursor:pointer">Generate Report Preview</button>
+        <button id="gen-report" style="margin-top:16px;background:var(--acc,#00d4ff);color:#000;border:none;padding:12px 24px;border-radius:4px;font-size:.95rem;font-weight:700;cursor:pointer">Generate Report Preview</button>
       </div>`;
     container.querySelectorAll(".tmpl-card").forEach(card => {
       card.onmouseenter = () => card.style.borderColor = "var(--acc,#00d4ff)";
@@ -124,7 +124,7 @@ export function renderReportBuilder(container) {
 
     container.innerHTML = `
       <div style="max-width:900px;margin:20px auto;padding:20px">
-        <button id="report-back" style="background:none;border:1px solid var(--border,#374151);color:var(--txt,#f9fafb);padding:6px 14px;border-radius:6px;cursor:pointer;font-size:.82rem;margin-bottom:16px">← Back to Builder</button>
+        <button id="report-back" style="background:none;border:1px solid var(--border,#374151);color:var(--txt,#f9fafb);padding:6px 14px;border-radius:4px;cursor:pointer;font-size:.82rem;margin-bottom:16px">← Back to Builder</button>
 
         <div style="background:var(--surface,#111827);border:1px solid var(--border,#1f2937);border-radius:12px;overflow:hidden">
           <!-- Cover Page -->

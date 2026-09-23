@@ -277,7 +277,7 @@ export function renderPasswordTools(container) {
   .pwt{font-family:var(--mono,'JetBrains Mono',monospace);color:var(--txt,#e0e6ed);max-width:1100px;margin:0 auto;padding:24px}
   .pwt h2{font-family:var(--font-display,system-ui);font-weight:700;font-size:1.4rem;margin:0 0 16px;color:var(--acc,#00d4ff)}
   .pwt-tabs{display:flex;gap:6px;margin-bottom:20px;flex-wrap:wrap}
-  .pwt-tab{padding:6px 14px;border-radius:6px;cursor:pointer;font-size:.85rem;border:1px solid var(--border,#1e2a3a);background:var(--bg2,#0d1520);color:var(--mut,#8892a4)}
+  .pwt-tab{padding:6px 14px;border-radius:4px;cursor:pointer;font-size:.85rem;border:1px solid var(--border,#1e2a3a);background:var(--bg2,#0d1520);color:var(--mut,#8892a4)}
   .pwt-tab.active{background:var(--acc,#00d4ff);color:#000;border-color:var(--acc)}
   .pwt-panel{display:none}.pwt-panel.active{display:block}
   .pwt-input{width:100%;padding:10px 12px;background:var(--bg2,#0d1520);border:1px solid var(--border,#1e2a3a);border-radius:6px;color:var(--txt);font-family:inherit;font-size:.9rem;margin-bottom:12px}

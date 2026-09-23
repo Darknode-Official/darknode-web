@@ -114,7 +114,7 @@ export function renderIdentityMatrix(container) {
   var tabs = ['JWT Decoder', 'RBAC Model', 'Priv Escalation', 'OAuth Flows', 'Token Entropy'];
   for (var ti = 0; ti < tabs.length; ti++) {
     var isActive = ti === 0;
-    h += '<button class="im-tab" data-im-tab="' + ti + '" style="background:' + (isActive ? '#1a1a3a' : '#0f1218') + ';border:1px solid ' + (isActive ? '#7c5cff' : '#1a2a3a') + ';color:' + (isActive ? '#7c5cff' : '#5a7a9a') + ';padding:6px 14px;font-family:monospace;font-size:11px;cursor:pointer;border-radius:3px;letter-spacing:1px;">' + esc(tabs[ti]) + '</button>';
+    h += '<button class="im-tab" data-im-tab="' + ti + '" style="background:' + (isActive ? '#1a1a3a' : '#0f1218') + ';border:1px solid ' + (isActive ? '#7c5cff' : '#1a2a3a') + ';color:' + (isActive ? '#7c5cff' : '#5a7a9a') + ';padding:6px 14px;font-family:monospace;font-size:11px;cursor:pointer;border-radius:4px;letter-spacing:1px;">' + esc(tabs[ti]) + '</button>';
   }
   h += '</div>';
 
@@ -123,7 +123,7 @@ export function renderIdentityMatrix(container) {
   h += '<div style="margin-bottom:12px;">';
   h += '<label style="color:#5a8aaa;font-size:11px;display:block;margin-bottom:4px;">PASTE JWT TOKEN:</label>';
   h += '<textarea id="im-jwt-input" rows="4" style="width:100%;background:#0f1218;border:1px solid #1a2a3a;color:#c8d6e5;padding:10px;font-family:monospace;font-size:11px;border-radius:3px;resize:vertical;box-sizing:border-box;" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"></textarea>';
-  h += '<button id="im-jwt-decode" style="background:#1a1a3a;border:1px solid #7c5cff;color:#7c5cff;padding:6px 16px;font-family:monospace;font-size:11px;cursor:pointer;border-radius:3px;margin-top:6px;">DECODE</button>';
+  h += '<button id="im-jwt-decode" style="background:#1a1a3a;border:1px solid #7c5cff;color:#7c5cff;padding:6px 16px;font-family:monospace;font-size:11px;cursor:pointer;border-radius:4px;margin-top:6px;">DECODE</button>';
   h += '</div>';
   h += '<div id="im-jwt-result" style="min-height:80px;"></div>';
   h += '</div>';
@@ -186,7 +186,7 @@ export function renderIdentityMatrix(container) {
   h += '<div style="margin-bottom:12px;">';
   h += '<label style="color:#5a8aaa;font-size:11px;display:block;margin-bottom:4px;">PASTE SESSION TOKEN / API KEY / COOKIE VALUE:</label>';
   h += '<textarea id="im-entropy-input" rows="3" style="width:100%;background:#0f1218;border:1px solid #1a2a3a;color:#c8d6e5;padding:10px;font-family:monospace;font-size:11px;border-radius:3px;resize:vertical;box-sizing:border-box;" placeholder="eyJhbGciOiJSUzI1NiIs..."></textarea>';
-  h += '<button id="im-entropy-calc" style="background:#0a2a3a;border:1px solid #1a4a6a;color:#00d4ff;padding:6px 16px;font-family:monospace;font-size:11px;cursor:pointer;border-radius:3px;margin-top:6px;">ANALYZE</button>';
+  h += '<button id="im-entropy-calc" style="background:#0a2a3a;border:1px solid #1a4a6a;color:#00d4ff;padding:6px 16px;font-family:monospace;font-size:11px;cursor:pointer;border-radius:4px;margin-top:6px;">ANALYZE</button>';
   h += '</div>';
   h += '<div id="im-entropy-result"></div>';
   h += '</div>';

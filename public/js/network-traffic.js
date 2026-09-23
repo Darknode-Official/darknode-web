@@ -394,7 +394,7 @@ export function renderNetworkTraffic(container){
     anomalies = detectAnomalies();
     return `<div class="nt-content">
       <div class="nt-controls">
-        <button class="nt-btn" id="nt-refresh-anomalies">↻ Refresh Analysis</button>
+        <button class="nt-btn" id="nt-refresh-anomalies">Refresh Analysis</button>
         <span style="font-size:11px;color:#6a8a9e;">${anomalies.length} anomalies detected</span>
       </div>
       ${anomalies.length ? anomalies.map(a => `<div class="nt-anomaly ${a.severity}">

@@ -955,7 +955,7 @@ export function renderPacketAnalyzer(container) {
     .pka{font-family:var(--mono,'JetBrains Mono',monospace);color:var(--txt,#e0e6ed);max-width:1200px;margin:0 auto;padding:24px}
     .pka h2{font-family:var(--font-display,system-ui);font-weight:700;font-size:1.4rem;margin:0 0 16px;color:var(--acc,#00d4ff)}
     .pka-tabs{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
-    .pka-tab{padding:6px 14px;border-radius:6px;cursor:pointer;font-size:.85rem;border:1px solid var(--border,#1e2a3a);background:var(--bg2,#0d1520);color:var(--mut,#8892a4);transition:all .15s}
+    .pka-tab{padding:6px 14px;border-radius:4px;cursor:pointer;font-size:.85rem;border:1px solid var(--border,#1e2a3a);background:var(--bg2,#0d1520);color:var(--mut,#8892a4);transition:all .15s}
     .pka-tab.active{background:var(--acc,#00d4ff);color:#000;border-color:var(--acc)}
     .pka-input{width:100%;min-height:120px;background:var(--bg2,#0d1520);border:1px solid var(--border,#1e2a3a);border-radius:8px;color:var(--txt);font-family:inherit;font-size:.85rem;padding:12px;resize:vertical;margin-bottom:12px}
     .pka-input:focus{outline:none;border-color:var(--acc,#00d4ff)}
@@ -980,7 +980,7 @@ export function renderPacketAnalyzer(container) {
     .pk-layer-head.open .pk-arrow{transform:rotate(90deg)}
     .pk-dim{color:var(--mut,#556677);font-size:.75rem}
     .pk-fields{padding-left:24px}
-    .pk-field{padding:2px 8px;font-size:.8rem;cursor:pointer;border-radius:3px}
+    .pk-field{padding:2px 8px;font-size:.8rem;cursor:pointer;border-radius:4px}
     .pk-field:hover{background:rgba(0,212,255,.06)}
     .pk-fname{color:var(--mut,#8892a4)}
     .pk-fval{color:var(--txt)}

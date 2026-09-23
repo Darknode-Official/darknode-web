@@ -1,19 +1,19 @@
 import { esc } from '/js/shared.js';
 
 const IOC_PATTERNS = {
-  ipv4: { regex: /(?:^|[\s,;|"'(<\[])(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})(?:[\s,;|"')>\]]|$)/gm, label: 'IPv4 Addresses', icon: '\ud83c\udf10' },
-  ipv6: { regex: /(?:^|[\s,;|])([0-9a-fA-F]{1,4}(?::[0-9a-fA-F]{0,4}){2,7})(?:[\s,;|]|$)/gm, label: 'IPv6 Addresses', icon: '\ud83c\udf10' },
-  domain: { regex: /(?:^|[\s,;|"'(<\[])([a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*\.(?:com|net|org|io|xyz|ru|cn|ir|kp|info|biz|co|uk|de|fr|jp|br|in|au|ca|gov|edu|mil|int|top|tk|ml|ga|cf|gq|cc|tv|us|me|pro|name|club|site|online|store|tech|fun|icu|buzz|space|dev|app|ai))(?:[\s,;|"')>\]]|$)/gim, label: 'Domains', icon: '\ud83d\udd17' },
-  url: { regex: /https?:\/\/[^\s<>"')\]]+/gi, label: 'URLs', icon: '\ud83d\udd17' },
-  email: { regex: /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/gi, label: 'Email Addresses', icon: '\ud83d\udce7' },
-  md5: { regex: /\b([a-fA-F0-9]{32})\b/g, label: 'MD5 Hashes', icon: '#\ufe0f\u20e3' },
-  sha1: { regex: /\b([a-fA-F0-9]{40})\b/g, label: 'SHA-1 Hashes', icon: '#\ufe0f\u20e3' },
-  sha256: { regex: /\b([a-fA-F0-9]{64})\b/g, label: 'SHA-256 Hashes', icon: '#\ufe0f\u20e3' },
-  cve: { regex: /CVE-\d{4}-\d{4,}/gi, label: 'CVE IDs', icon: '\ud83d\udee1' },
-  mac: { regex: /\b([0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}\b/g, label: 'MAC Addresses', icon: '\ud83d\udcf6' },
-  registry: { regex: /(?:HKLM|HKCU|HKCR|HKU|HKCC)\\[\w\\]+/gi, label: 'Registry Keys', icon: '\ud83d\uddc3' },
-  filepath: { regex: /(?:[A-Z]:\\(?:[\w.-]+\\)*[\w.-]+|\/(?:[\w.-]+\/)*[\w.-]+\.\w+)/g, label: 'File Paths', icon: '\ud83d\udcc2' },
-  btc: { regex: /\b[13][a-km-zA-HJ-NP-Z1-9]{25,34}\b/g, label: 'Bitcoin Addresses', icon: '\u20bf' },
+  ipv4: { regex: /(?:^|[\s,;|"'(<\[])(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})(?:[\s,;|"')>\]]|$)/gm, label: 'IPv4 Addresses', icon: 'IP4' },
+  ipv6: { regex: /(?:^|[\s,;|])([0-9a-fA-F]{1,4}(?::[0-9a-fA-F]{0,4}){2,7})(?:[\s,;|]|$)/gm, label: 'IPv6 Addresses', icon: 'IP6' },
+  domain: { regex: /(?:^|[\s,;|"'(<\[])([a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*\.(?:com|net|org|io|xyz|ru|cn|ir|kp|info|biz|co|uk|de|fr|jp|br|in|au|ca|gov|edu|mil|int|top|tk|ml|ga|cf|gq|cc|tv|us|me|pro|name|club|site|online|store|tech|fun|icu|buzz|space|dev|app|ai))(?:[\s,;|"')>\]]|$)/gim, label: 'Domains', icon: 'DNS' },
+  url: { regex: /https?:\/\/[^\s<>"')\]]+/gi, label: 'URLs', icon: 'URL' },
+  email: { regex: /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/gi, label: 'Email Addresses', icon: 'MAIL' },
+  md5: { regex: /\b([a-fA-F0-9]{32})\b/g, label: 'MD5 Hashes', icon: 'MD5' },
+  sha1: { regex: /\b([a-fA-F0-9]{40})\b/g, label: 'SHA-1 Hashes', icon: 'SHA1' },
+  sha256: { regex: /\b([a-fA-F0-9]{64})\b/g, label: 'SHA-256 Hashes', icon: 'SHA256' },
+  cve: { regex: /CVE-\d{4}-\d{4,}/gi, label: 'CVE IDs', icon: 'CVE' },
+  mac: { regex: /\b([0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}\b/g, label: 'MAC Addresses', icon: 'MAC' },
+  registry: { regex: /(?:HKLM|HKCU|HKCR|HKU|HKCC)\\[\w\\]+/gi, label: 'Registry Keys', icon: 'REG' },
+  filepath: { regex: /(?:[A-Z]:\\(?:[\w.-]+\\)*[\w.-]+|\/(?:[\w.-]+\/)*[\w.-]+\.\w+)/g, label: 'File Paths', icon: 'FILE' },
+  btc: { regex: /\b[13][a-km-zA-HJ-NP-Z1-9]{25,34}\b/g, label: 'Bitcoin Addresses', icon: 'BTC' },
 };
 
 const SAMPLE_TEXT = `Incident Report - APT29 Campaign Analysis
@@ -65,10 +65,29 @@ function extractIOCs(text) {
       }
     }
     if (type === 'ipv4') matches = matches.filter(function(ip) { return ip.split('.').every(function(o) { return parseInt(o) <= 255; }); });
+    if (type === 'ipv6') matches = matches.filter(function(ip) { return !/^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$/.test(ip); });
     if (type === 'sha256') matches = matches.filter(function(h) { return !seen['sha1:' + h.substring(0, 40).toLowerCase()] || h.length === 64; });
     if (matches.length > 0) results[type] = matches;
   });
   return results;
+}
+
+// IOC type -> Security Graph entity type
+var GRAPH_TYPE = { ipv4: 'IP', ipv6: 'IP', domain: 'DOMAIN', cve: 'VULNERABILITY' };
+
+function iocGraphItems(iocs) {
+  var items = [];
+  Object.keys(iocs).forEach(function(type) {
+    iocs[type].forEach(function(v) {
+      items.push({
+        type: GRAPH_TYPE[type] || 'INDICATOR',
+        name: v,
+        data: { iocType: type },
+        opts: { tags: ['ioc', type] }
+      });
+    });
+  });
+  return items;
 }
 
 function defang(val) {
@@ -90,7 +109,7 @@ export function renderIOCExtractor(container) {
     '.ioc-title{font-size:1.6rem;font-weight:700;margin:0 0 6px;color:var(--txt)}' +
     '.ioc-sub{color:var(--mut);font-size:.85rem;margin-bottom:20px;line-height:1.5}' +
     '.ioc-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:24px}' +
-    '.ioc-tab{background:var(--card);border:1px solid var(--line);color:var(--mut);padding:8px 16px;font-size:.75rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;cursor:pointer;border-radius:6px;transition:all .15s;font-family:inherit}' +
+    '.ioc-tab{background:var(--card);border:1px solid var(--line);color:var(--mut);padding:8px 16px;font-size:.75rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;cursor:pointer;border-radius:4px;transition:all .15s;font-family:inherit}' +
     '.ioc-tab:hover{background:color-mix(in srgb,var(--acc) 8%,var(--card));color:var(--txt)}' +
     '.ioc-tab.active{background:var(--acc);color:var(--on-acc,#fff);border-color:var(--acc)}' +
     '.ioc-panel{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:20px;margin-bottom:16px}' +
@@ -108,7 +127,7 @@ export function renderIOCExtractor(container) {
     '.ioc-stat-label{font-size:.7rem;color:var(--mut);text-transform:uppercase;letter-spacing:.04em;margin-top:4px}' +
     '.ioc-group{margin-bottom:20px}' +
     '.ioc-group-head{display:flex;align-items:center;gap:8px;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--line)}' +
-    '.ioc-group-icon{font-size:1.1rem}' +
+    '.ioc-group-icon{font-size:.62rem;font-weight:800;letter-spacing:.05em;padding:2px 6px;border-radius:4px;background:color-mix(in srgb,var(--acc) 14%,transparent);color:var(--acc);font-family:ui-monospace,monospace}' +
     '.ioc-group-label{font-weight:700;font-size:.85rem;color:var(--txt)}' +
     '.ioc-group-count{background:var(--acc);color:#fff;padding:2px 8px;border-radius:10px;font-size:.65rem;font-weight:700}' +
     '.ioc-item{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:4px;font-family:ui-monospace,monospace;font-size:.75rem;color:var(--txt);cursor:pointer;transition:background .12s}' +
@@ -232,6 +251,10 @@ export function renderIOCExtractor(container) {
       if (totalCount() === 0) {
         contentHtml = '<div class="ioc-panel"><div class="ioc-empty">No IOCs extracted yet. Paste text and click Extract.</div></div>';
       } else {
+        contentHtml += '<div class="ioc-row" style="align-items:center">' +
+          '<button class="ioc-btn" id="ioc-to-graph">Send ' + totalCount() + ' IOCs to Security Graph</button>' +
+          '<span style="font-size:.75rem;color:var(--mut)">Duplicates are merged. Linked to the active investigation if one is set.</span>' +
+        '</div>';
         Object.keys(iocs).forEach(function(type) {
           var p = IOC_PATTERNS[type];
           contentHtml += '<div class="ioc-group">' +
@@ -302,6 +325,15 @@ export function renderIOCExtractor(container) {
     var clearBtn = container.querySelector('#ioc-clear');
     if (clearBtn) clearBtn.onclick = function() { rawInput = ''; iocs = {}; render(); };
 
+    var toGraphBtn = container.querySelector('#ioc-to-graph');
+    if (toGraphBtn) toGraphBtn.onclick = function() {
+      toGraphBtn.disabled = true;
+      import('/js/graph-bridge.js?v=20260923c').then(function(gb) {
+        var r = gb.sendToGraph('IOC Extractor', iocGraphItems(iocs));
+        toGraphBtn.textContent = 'Sent: ' + r.created + ' new, ' + r.updated + ' merged';
+      }).catch(function() { toGraphBtn.textContent = 'Security Graph unavailable'; toGraphBtn.disabled = false; });
+    };
+
     var defangToggle = container.querySelector('#ioc-defang-toggle');
     if (defangToggle) defangToggle.onclick = function() { defanged = !defanged; render(); };
 
@@ -309,7 +341,7 @@ export function renderIOCExtractor(container) {
       item.onclick = function() {
         navigator.clipboard.writeText(item.dataset.val);
         var cp = item.querySelector('.ioc-copy');
-        if (cp) { cp.textContent = 'COPIED!'; setTimeout(function() { cp.textContent = 'COPY'; }, 1200); }
+        if (cp) { cp.textContent = 'COPIED'; setTimeout(function() { cp.textContent = 'COPY'; }, 1200); }
       };
     });
 

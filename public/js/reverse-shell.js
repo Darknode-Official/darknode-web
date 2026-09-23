@@ -229,7 +229,7 @@ export function renderReverseShell(container) {
     .rs-textarea{background:#0f172a;color:#e2e8f0;border:1px solid #1e293b;padding:12px;border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:12px;resize:vertical;min-height:100px;outline:none;width:100%;box-sizing:border-box}
     .rs-textarea:focus{border-color:#ff4444}
     .rs-encode-btns{display:flex;gap:8px;flex-wrap:wrap}
-    .rs-btn{background:#1e293b;color:#c8d6e5;border:1px solid #2a3a5a;padding:8px 16px;border-radius:6px;font-size:12px;cursor:pointer;transition:all .2s;font-weight:500}
+    .rs-btn{background:#1e293b;color:#c8d6e5;border:1px solid #2a3a5a;padding:8px 16px;border-radius:4px;font-size:12px;cursor:pointer;transition:all .2s;font-weight:500}
     .rs-btn:hover{background:#ff4444;color:#fff;border-color:#ff4444}
     .rs-btn.active{background:#ff4444;color:#fff;border-color:#ff4444}
     .rs-info{background:#0f172a;border:1px solid #1a2a44;border-radius:8px;padding:16px;margin-top:12px}

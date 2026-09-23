@@ -133,7 +133,7 @@ export function renderSSLCertAnalyzer(container) {
     .sc-textarea{width:100%;min-height:160px;background:#080c14;border:1px solid #1a2a44;border-radius:6px;color:#c8d6e5;padding:12px;font-family:'JetBrains Mono','Fira Code',monospace;font-size:12px;resize:vertical;box-sizing:border-box}
     .sc-textarea:focus{outline:none;border-color:#00aaff;box-shadow:0 0 0 2px rgba(0,170,255,0.15)}
     .sc-textarea::placeholder{color:#3a5a7a}
-    .sc-btn{padding:10px 22px;background:#00aaff;color:#0a0e14;border:none;border-radius:6px;font-weight:600;font-size:13px;cursor:pointer;transition:all .2s;font-family:inherit}
+    .sc-btn{padding:10px 22px;background:#00aaff;color:#0a0e14;border:none;border-radius:4px;font-weight:600;font-size:13px;cursor:pointer;transition:all .2s;font-family:inherit}
     .sc-btn:hover{background:#0088dd;transform:translateY(-1px)}
     .sc-btn.secondary{background:transparent;border:1px solid #1a2a44;color:#c8d6e5}
     .sc-btn.secondary:hover{border-color:#00aaff;color:#00aaff}

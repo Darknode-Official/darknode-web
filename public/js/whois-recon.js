@@ -260,7 +260,7 @@ export function renderWhoisRecon(container) {
     'style="flex:1;background:#0a0e1a;border:1px solid #1a2a44;border-radius:6px;padding:10px 14px;color:#c8d6e5;font-family:monospace;font-size:13px;outline:none;" ' +
     'onkeydown="if(event.key===\'Enter\')_wrRunLookup(this.value)">' +
     '<button onclick="_wrRunLookup(document.getElementById(\'wr-input\').value)" ' +
-    'style="background:linear-gradient(135deg,#00aaff22,#00aaff11);border:1px solid #00aaff66;border-radius:6px;padding:10px 20px;color:#00ddff;font-family:monospace;font-size:12px;font-weight:bold;cursor:pointer;letter-spacing:1px;">LOOKUP</button>' +
+    'style="background:linear-gradient(135deg,#00aaff22,#00aaff11);border:1px solid #00aaff66;border-radius:4px;padding:10px 20px;color:#00ddff;font-family:monospace;font-size:12px;font-weight:bold;cursor:pointer;letter-spacing:1px;">LOOKUP</button>' +
     '</div>' +
 
     // Quick links
@@ -268,7 +268,7 @@ export function renderWhoisRecon(container) {
     '<span style="color:#3a5a7a;font-size:10px;font-family:monospace;line-height:26px;">QUICK:</span>' +
     ['google.com', 'cloudflare.com', 'github.com', '8.8.8.8', '1.1.1.1', 'darknode.ai'].map(function(d) {
       return '<button onclick="document.getElementById(\'wr-input\').value=\'' + d + '\';_wrRunLookup(\'' + d + '\')" ' +
-        'style="background:#0a1a28;border:1px solid #1a3050;color:#5a8aaa;padding:3px 10px;font-size:10px;font-family:monospace;cursor:pointer;border-radius:3px;">' + d + '</button>';
+        'style="background:#0a1a28;border:1px solid #1a3050;color:#5a8aaa;padding:3px 10px;font-size:10px;font-family:monospace;cursor:pointer;border-radius:4px;">' + d + '</button>';
     }).join('') +
     '</div>' +
 
