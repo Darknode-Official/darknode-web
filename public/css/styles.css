@@ -331,7 +331,7 @@ body.app #view{max-width:none;padding:0;margin:0}
 .side-user{min-width:0}
 .su-name{font-size:.78rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .su-mail{font-size:.68rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.app-main{flex:1;min-width:0;padding:32px 48px;display:flex;flex-direction:column}
+.app-main{flex:1;min-width:0;padding:18px 16px;display:flex;flex-direction:column}
 .pg-h1{font-size:1.6rem;font-weight:700;margin:0 0 6px;letter-spacing:-.02em;color:var(--txt)}
 .pg-h2{font-size:1.1rem;font-weight:600;margin:24px 0 12px;color:var(--txt);letter-spacing:-.01em}
 .pg-sub{margin:0 0 24px;font-size:.88rem;color:var(--mut);line-height:1.5}
@@ -6301,7 +6301,7 @@ input[type="range"]:focus::-webkit-slider-thumb{box-shadow:0 0 0 3px color-mix(i
    ================================================================ */
 
 /* 1. View padding — tools render into #view, not #app-content */
-body.app #view{padding:20px 28px}
+body.app #view{padding:0}
 
 /* 2. Border-radius consistency — 3 tiers: 6px small, 8px cards, 10px containers */
 .card,.panel,.qa,.stat,.pc-tpl-card,.wl-atk-card,.cr-chal,.dw-actor-card,.dw-paste-card,.re-panel,.wl-vuln-card,.wl-bt-card,.wl-cmd-box,.cr-writeup,.wl-sim-panel,.dw-panel,.cr-lab,.wl-defense-box,.wl-hs-4way{border-radius:8px !important}
@@ -8425,7 +8425,7 @@ body.app .side-group{font-size:.6rem !important;font-weight:700 !important;text-
 
 body.app #topbar{background:var(--bg) !important;border-bottom:1px solid var(--line) !important;height:48px !important;display:flex !important;align-items:center !important;padding:0 16px !important}
 
-body.app #view{padding:20px 28px !important}
+body.app #view{padding:0 !important}
 body.app .pg-h1{font-size:1.3rem !important;font-weight:700 !important;margin:0 0 4px !important}
 body.app .pg-sub{font-size:.85rem !important;color:var(--mut) !important;margin:0 0 16px !important;line-height:1.6 !important}
 

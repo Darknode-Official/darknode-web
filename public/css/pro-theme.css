@@ -977,12 +977,12 @@ html[data-style=pro].crt body::after {
 }
 [data-style=pro] .app-main {
   background: #f8fafc !important;
-  padding: 32px 48px !important;
+  padding: 18px 16px !important;
 }
 [data-style=pro] #view {
   background: #f8fafc !important;
   max-width: none !important;
-  padding: 20px 28px !important;
+  padding: 0 !important;
 }
 
 /* User menu */
@@ -5171,7 +5171,7 @@ html[data-style=dark].crt body::after {
 
 /* Main content area — match base horizontal padding, pro vertical spacing */
 [data-style=pro] .app-main {
-  padding: 32px 48px !important;
+  padding: 18px 16px !important;
 }
 
 /* Breadcrumbs — more breathing room */
