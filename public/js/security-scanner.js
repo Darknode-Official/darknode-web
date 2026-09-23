@@ -283,7 +283,7 @@ export function renderSecurityScanner(container) {
       <div style="display:flex;gap:12px;margin-bottom:24px;flex-wrap:wrap;">
         <input id="scan-url" type="text" placeholder="https://example.com" value="${location.origin}"
           style="flex:1;min-width:240px;padding:10px 14px;background:var(--bg-alt,#111);color:var(--txt,#fff);border:1px solid var(--border,#333);border-radius:8px;font-size:.9rem;font-family:inherit;">
-        <button id="scan-go" style="padding:10px 24px;background:var(--acc,#00d4ff);color:#000;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:.9rem;">Scan</button>
+        <button id="scan-go" style="padding:10px 24px;background:var(--acc,#00d4ff);color:#000;border:none;border-radius:4px;font-weight:600;cursor:pointer;font-size:.9rem;">Scan</button>
       </div>
       <div id="scan-results"></div>
       <div style="margin-top:32px;">

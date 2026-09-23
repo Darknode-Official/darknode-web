@@ -179,7 +179,7 @@ function generatePermutations(domain) {
 function simulateScan(domain, words) {
   const results = [];
   const hash = (s) => { let h = 0; for (let i = 0; i < s.length; i++) { h = ((h << 5) - h + s.charCodeAt(i)) | 0; } return Math.abs(h); };
-  const ips = ['192.168.1.', '10.0.0.', '172.16.', '104.21.', '1.2.3.', '34.102.', '151.101.', '185.199.'];
+  const ips = ['192.168.1.', '10.0.0.', '172.16.0.', '104.21.', '1.2.3.', '34.102.', '151.101.', '185.199.'];
   const servers = ['nginx/1.24', 'Apache/2.4', 'cloudflare', 'AmazonS3', 'gws', 'Microsoft-IIS/10.0', 'LiteSpeed', 'openresty'];
   const titles = ['Login', 'Dashboard', 'Admin Panel', 'Welcome', 'Portal', 'API Documentation', 'Status Page', 'Service'];
   const portSets = [['80','443'], ['80','443','22'], ['443'], ['80','443','8080'], ['22','80','443'], ['80','443','3306'], ['80','443','8443']];
@@ -258,6 +258,7 @@ export function renderSubdomainFinder(main) {
           '<button class="btn sm" id="sf-scan">Scan Subdomains</button>' +
           '<button class="btn sm ghost" id="sf-export-csv">Export CSV</button>' +
           '<button class="btn sm ghost" id="sf-export-json">Export JSON</button>' +
+          '<button class="btn sm" id="sf-to-graph">Send to Security Graph</button>' +
         '</div>' +
         '<div style="margin-top:6px;font-size:.75rem;color:var(--mut)">Uses a built-in wordlist of ' + WORDLIST.length + ' common subdomains. Results are simulated for educational purposes.</div>' +
         '<div id="sf-results" style="margin-top:12px"></div>' +
@@ -286,6 +287,31 @@ export function renderSubdomainFinder(main) {
       var el = document.createElement('textarea');
       el.value = csv; document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el);
       main.querySelector('#sf-stats').textContent = 'CSV copied to clipboard (' + scanResults.length + ' rows)';
+    };
+
+    main.querySelector('#sf-to-graph').onclick = function() {
+      var btn = this;
+      if (!scanResults.length) { main.querySelector('#sf-stats').textContent = 'Run a scan first'; return; }
+      var root = scanResults[0].subdomain.split('.').slice(1).join('.');
+      var meta = { simulated: true, scannedAt: new Date().toISOString() };
+      var tags = ['subdomain', 'simulated'];
+      btn.disabled = true;
+      import('/js/graph-bridge.js?v=20260923c').then(function(gb) {
+        var rootEnt = gb.sendToGraph('Subdomain Finder', [{ type: 'DOMAIN', name: root, data: meta, opts: { tags: tags } }], undefined, true).entities[0];
+        var created = 0, updated = 0;
+        gb.batchGraph(function() { scanResults.forEach(function(r) {
+          var out = gb.sendToGraph('Subdomain Finder', [
+            { type: 'DOMAIN', name: r.subdomain, data: Object.assign({ ip: r.ip, status: r.status, server: r.server, ports: r.ports.join(',') }, meta), opts: { tags: tags } },
+            { type: 'IP', name: r.ip, data: Object.assign({ record: r.subdomain }, meta), opts: { tags: tags } }
+          ], undefined, true);
+          created += out.created; updated += out.updated;
+          var sub = out.entities[0], ip = out.entities[1];
+          if (rootEnt && sub) gb.linkEntities(rootEnt.id, sub.id, 'related_to');
+          if (sub && ip) gb.linkEntities(sub.id, ip.id, 'related_to');
+        }); });
+        btn.textContent = 'Sent: ' + created + ' new, ' + updated + ' merged';
+        gb.showGraphToast('Security Graph: ' + scanResults.length + ' subdomains of ' + root + ' (tagged simulated)');
+      }).catch(function() { btn.textContent = 'Security Graph unavailable'; btn.disabled = false; });
     };
 
     main.querySelector('#sf-export-json').onclick = function() {

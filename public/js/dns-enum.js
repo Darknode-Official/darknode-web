@@ -199,6 +199,7 @@ export function renderDNSEnum(container) {
   let subdomainData = null;
   let zoneData = null;
   let dnssecData = null;
+  let scanLive = false;
 
   container.innerHTML = `<style>
 .de-wrap{font-family:'JetBrains Mono','Fira Code',monospace;background:#0a0e14;color:#c8d6e5;min-height:100vh;padding:24px}
@@ -210,13 +211,13 @@ export function renderDNSEnum(container) {
 .de-input{flex:1;min-width:240px;background:#0c1220;border:1px solid #1a2a44;color:#e2e8f0;padding:10px 16px;border-radius:8px;font-family:inherit;font-size:14px;outline:none;transition:border-color .2s}
 .de-input:focus{border-color:#00aaff}
 .de-input::placeholder{color:#3a5a7a}
-.de-btn{padding:10px 20px;border:none;border-radius:8px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s}
+.de-btn{padding:10px 20px;border:none;border-radius:4px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s}
 .de-btn-primary{background:#00aaff;color:#0a0e14}
 .de-btn-primary:hover{background:#33bbff;transform:translateY(-1px)}
 .de-btn-secondary{background:#1a2a44;color:#c8d6e5;border:1px solid #283a5a}
 .de-btn-secondary:hover{background:#243448}
 .de-tabs{display:flex;gap:4px;margin-bottom:20px;background:#0c1220;padding:4px;border-radius:10px;border:1px solid #1a2a44;flex-wrap:wrap}
-.de-tab{padding:10px 20px;border:none;background:transparent;color:#4a7a9b;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;border-radius:8px;transition:all .2s}
+.de-tab{padding:10px 20px;border:none;background:transparent;color:#4a7a9b;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;border-radius:4px;transition:all .2s}
 .de-tab:hover{color:#c8d6e5;background:#111828}
 .de-tab.active{background:#00aaff;color:#0a0e14}
 .de-panel{background:#0c1220;border:1px solid #1a2a44;border-radius:10px;padding:20px;margin-bottom:16px}
@@ -269,7 +270,7 @@ export function renderDNSEnum(container) {
 .de-ref-code{font-family:inherit;background:#0a0e14;color:#00ff88;padding:2px 6px;border-radius:3px;font-size:12px}
 .de-empty{text-align:center;padding:40px 20px;color:#3a5a7a;font-size:14px}
 .de-filter-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
-.de-filter{padding:4px 12px;border:1px solid #1a2a44;background:#0c1220;color:#4a7a9b;border-radius:6px;font-family:inherit;font-size:11px;cursor:pointer;transition:all .2s}
+.de-filter{padding:4px 12px;border:1px solid #1a2a44;background:#0c1220;color:#4a7a9b;border-radius:4px;font-family:inherit;font-size:11px;cursor:pointer;transition:all .2s}
 .de-filter.active{background:#00aaff;color:#0a0e14;border-color:#00aaff}
 .de-filter:hover{border-color:#00aaff}
 .de-stats{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}
@@ -372,6 +373,7 @@ export function renderDNSEnum(container) {
     currentDomain = domain;
 
     const isLive = window._bridge && window._bridge.connected && window._bridge.hasTool('dig');
+    scanLive = !!isLive;
     const modeTag = isLive ? '<span style="color:#22c55e;font-size:11px;font-weight:700;margin-left:8px">[LIVE]</span>' : '<span style="color:#f59e0b;font-size:11px;font-weight:700;margin-left:8px">[SIMULATED]</span>';
 
     content.innerHTML = `<div class="de-panel"><div class="de-panel-title">Scanning ${esc(domain)}...${modeTag}</div><div class="de-progress"><div class="de-progress-bar" style="width:0%"></div></div><div class="de-status-line" id="deStatusLine">Initializing...</div></div>`;
@@ -433,6 +435,38 @@ export function renderDNSEnum(container) {
 
   let activeFilter = 'ALL';
 
+  function sendDnsToGraph(btn) {
+    const tags = ['dns', scanLive ? 'live' : 'simulated'];
+    const meta = { simulated: !scanLive, scannedAt: new Date().toISOString() };
+    const items = [];
+    for (const r of (recordsData?.A || []).concat(recordsData?.AAAA || [])) {
+      items.push({ type: 'IP', name: r.value, data: { ...meta, record: r.name }, opts: { tags } });
+    }
+    for (const sd of (subdomainData || []).filter(x => x.status === 'FOUND')) {
+      items.push({ type: 'DOMAIN', name: sd.subdomain, data: { ...meta, ip: sd.ip || '', ports: (sd.ports || []).join(',') }, opts: { tags: tags.concat('subdomain') } });
+      if (sd.ip) items.push({ type: 'IP', name: sd.ip, data: { ...meta, record: sd.subdomain }, opts: { tags } });
+    }
+    const axfrOpen = zoneData && zoneData.success && zoneData.records.length;
+    btn.disabled = true;
+    import('/js/graph-bridge.js?v=20260923c').then(gb => {
+      const root = gb.sendToGraph('DNS Enum', [{ type: 'DOMAIN', name: currentDomain, data: { ...meta, axfrOpen: !!axfrOpen }, opts: { tags, severity: axfrOpen ? 'high' : null } }], undefined, true).entities[0];
+      const r = gb.sendToGraph('DNS Enum', items, undefined, true);
+      if (root) {
+        for (const e of r.entities) if (e.id !== root.id) gb.linkEntities(root.id, e.id, 'related_to');
+        if (axfrOpen) {
+          const f = gb.sendToGraph('DNS Enum', [{ type: 'FINDING', name: 'Zone transfer (AXFR) permitted on ' + currentDomain, data: { ...meta, server: zoneData.server, recordsExposed: zoneData.records.length }, opts: { tags, severity: 'high' } }], undefined, true).entities[0];
+          if (f) gb.linkEntities(f.id, root.id, 'affects');
+        }
+      }
+      btn.textContent = 'Sent ' + (r.entities.length + 1) + ' entities' + (scanLive ? '' : ' (tagged simulated)');
+      gb.showGraphToast('Security Graph: ' + (r.created + (root ? 1 : 0)) + ' entities from ' + currentDomain + (axfrOpen ? ', 1 finding' : ''));
+    }).catch(() => { btn.textContent = 'Security Graph unavailable'; btn.disabled = false; });
+  }
+
+  function graphBtnHTML() {
+    return `<button class="de-btn de-btn-primary" id="deToGraph" title="${scanLive ? 'Live results' : 'Simulated results will be tagged simulated'}">Send to Security Graph</button>`;
+  }
+
   function renderRecords() {
     if (!recordsData) { content.innerHTML = '<div class="de-empty">No data — run a scan first</div>'; return; }
     let totalRecords = 0;
@@ -465,9 +499,11 @@ export function renderDNSEnum(container) {
     html += `<div class="de-export-row">
       <button class="de-btn de-btn-secondary" id="deExportRecJSON">Export JSON</button>
       <button class="de-btn de-btn-secondary" id="deExportRecCSV">Export CSV</button>
+      ${graphBtnHTML()}
     </div>`;
 
     content.innerHTML = html;
+    content.querySelector('#deToGraph')?.addEventListener('click', e => sendDnsToGraph(e.currentTarget));
 
     content.querySelectorAll('.de-filter').forEach(f => f.addEventListener('click', () => {
       activeFilter = f.dataset.f;
@@ -512,9 +548,11 @@ export function renderDNSEnum(container) {
     html += `<div class="de-export-row">
       <button class="de-btn de-btn-secondary" id="deExportSubJSON">Export JSON</button>
       <button class="de-btn de-btn-secondary" id="deExportSubCSV">Export CSV</button>
+      ${graphBtnHTML()}
     </div>`;
 
     content.innerHTML = html;
+    content.querySelector('#deToGraph')?.addEventListener('click', e => sendDnsToGraph(e.currentTarget));
     content.querySelector('#deExportSubJSON')?.addEventListener('click', () => {
       _deExportJSON({ domain: currentDomain, subdomains: subdomainData }, `subdomains-${currentDomain}.json`);
     });

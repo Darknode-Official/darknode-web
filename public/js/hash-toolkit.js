@@ -157,7 +157,7 @@ const HT_STYLE = `
 .ht-input,.ht-select,.ht-textarea{background:#0a0e14;border:1px solid #1a2a44;border-radius:6px;color:#e2e8f0;padding:8px 12px;font-size:13px;font-family:inherit;width:100%;box-sizing:border-box}
 .ht-textarea{font-family:'JetBrains Mono','Fira Code',monospace;resize:vertical;min-height:80px}
 .ht-input:focus,.ht-select:focus,.ht-textarea:focus{outline:none;border-color:#00aaff;box-shadow:0 0 0 2px rgba(0,170,255,.15)}
-.ht-btn{padding:8px 18px;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;transition:.2s}
+.ht-btn{padding:8px 18px;border:none;border-radius:4px;cursor:pointer;font-size:13px;font-weight:600;transition:.2s}
 .ht-btn-primary{background:#00aaff;color:#0a0e14}
 .ht-btn-primary:hover{background:#33bbff}
 .ht-btn-danger{background:#ff4444;color:#fff}

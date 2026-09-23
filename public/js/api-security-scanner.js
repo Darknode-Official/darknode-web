@@ -133,7 +133,7 @@ export function renderAPISecurityScanner(main) {
           '<p style="color:var(--mut);font-size:.78rem;margin:0 0 8px">' + esc(item.desc) + '</p>' +
           '<div style="font-size:.75rem;margin-bottom:6px"><strong>How to test:</strong> ' + esc(item.test) + '</div>' +
           '<div style="font-size:.72rem;color:var(--acc)">' +
-          item.payloads.map(function(p){return '<code style="display:inline-block;background:var(--bg);border:1px solid var(--line);padding:2px 6px;margin:2px;border-radius:3px;cursor:pointer" onclick="navigator.clipboard.writeText(this.textContent)">' + esc(p) + '</code>'}).join(' ') +
+          item.payloads.map(function(p){return '<code style="display:inline-block;background:var(--bg);border:1px solid var(--line);padding:2px 6px;margin:2px;border-radius:4px;cursor:pointer" onclick="navigator.clipboard.writeText(this.textContent)">' + esc(p) + '</code>'}).join(' ') +
           '</div></div>';
       }).join('');
   }

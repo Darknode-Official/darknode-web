@@ -562,6 +562,7 @@ var _spAwsResults = null;
 var _spAzureResults = null;
 var _spGcpResults = null;
 var _spTfFindings = null;
+var _spTfSource = '';
 var _spIamFindings = null;
 var _spIamMatrix = null;
 var _spSelectedPolicy = null;
@@ -717,6 +718,79 @@ function _spRenderDashboard(c) {
 // ============================================================================
 // TAB 2/3/4 — CLOUD AUDIT (shared renderer)
 // ============================================================================
+// ============================================================================
+// SECURITY GRAPH EXPORT
+// ============================================================================
+var _SP_GRAPH_SEV = { CRITICAL: 'critical', HIGH: 'high', MEDIUM: 'medium', LOW: 'low', INFO: 'info' };
+
+function _spSendGraph(btn, build) {
+  btn.disabled = true;
+  import('/js/graph-bridge.js?v=20260923c').then(function(gb) {
+    var tally = { created: 0, updated: 0, links: 0, findings: 0 };
+    var push = function(item) {
+      var r = gb.sendToGraph('SPECTRE', [item], undefined, true);
+      tally.created += r.created; tally.updated += r.updated;
+      return r.entities[0] || null;
+    };
+    // finding --affects--> asset
+    var sendPair = function(finding, asset) {
+      var f = push(finding), a = push(asset);
+      tally.findings++;
+      if (f && a && gb.linkEntities(f.id, a.id, 'affects')) tally.links++;
+    };
+    var simulated = build(sendPair);
+    btn.textContent = 'Sent: ' + tally.created + ' new, ' + tally.updated + ' merged';
+    gb.showGraphToast('Security Graph: ' + tally.findings + ' findings, ' + tally.created + ' added, ' + tally.links + ' links' + (simulated ? ' (tagged simulated)' : ''));
+  }).catch(function() { btn.textContent = 'Security Graph unavailable'; btn.disabled = false; });
+}
+
+// Audit results are randomly generated (no cloud API connection), so they are always tagged simulated.
+function _spSendAuditToGraph(btn, provider, results) {
+  _spSendGraph(btn, function(sendPair) {
+    var tags = ['spectre', 'cspm', provider.toLowerCase(), 'simulated'];
+    results.filter(function(r) { return r.status !== 'PASS'; }).forEach(function(r) {
+      var assetName = provider + ' ' + r.service + ': ' + r.resource;
+      sendPair({
+        type: 'FINDING', name: r.id + ': ' + r.name + ' (' + r.resource + ')',
+        data: { checkId: r.id, provider: provider, service: r.service, category: r.category, cis: r.cis, auditStatus: r.status, description: r.description, recommendation: r.recommendation, resource: assetName, simulated: true },
+        opts: { tags: tags.concat(r.status === 'WARN' ? ['warning'] : ['failed']), severity: _SP_GRAPH_SEV[r.severity] || null }
+      }, {
+        type: 'ASSET', name: assetName,
+        data: { provider: provider, service: r.service, resourceId: r.resource, kind: 'cloud-resource', simulated: true },
+        opts: { tags: tags.concat(['cloud-resource']) }
+      });
+    });
+    return true;
+  });
+}
+
+// Terraform findings come from a real static scan of the pasted HCL; the bundled sample config is tagged simulated.
+function _spSendTfToGraph(btn, hcl, findings) {
+  var simulated = hcl === TF_SAMPLE;
+  var lines = hcl.split('\n');
+  _spSendGraph(btn, function(sendPair) {
+    var tags = ['spectre', 'terraform', 'iac'].concat(simulated ? ['simulated'] : []);
+    findings.forEach(function(f) {
+      // Walk up to the enclosing resource block to name the affected resource.
+      var resName = f.resource;
+      for (var i = f.line - 1; i >= 0; i--) {
+        var m = /^\s*resource\s+"([^"]+)"\s+"([^"]+)"/.exec(lines[i]);
+        if (m) { resName = m[1] + '.' + m[2]; break; }
+      }
+      sendPair({
+        type: 'FINDING', name: f.issue + ' (' + resName + ')',
+        data: { line: f.line, code: f.lineText, fix: f.fix, resource: resName, simulated: simulated },
+        opts: { tags: tags, severity: _SP_GRAPH_SEV[f.severity] || null }
+      }, {
+        type: 'ASSET', name: resName,
+        data: { resourceType: f.resource, kind: 'terraform-resource', simulated: simulated },
+        opts: { tags: tags.concat(['cloud-resource']) }
+      });
+    });
+    return simulated;
+  });
+}
+
 function _spRenderAudit(c, provider, checks, results) {
   var services = {};
   checks.forEach(function(ch) { if (!services[ch.service]) services[ch.service] = 0; services[ch.service]++; });
@@ -739,6 +813,7 @@ function _spRenderAudit(c, provider, checks, results) {
       '<div class="sp-audit-actions">' +
         '<button class="sp-btn sp-btn-primary" id="sp-run-audit">Run Audit</button>' +
         '<button class="sp-btn sp-btn-ghost" id="sp-load-demo">Load Demo Config</button>' +
+        (results ? '<button class="sp-btn sp-btn-ghost" id="sp-audit-graph" title="Simulated audit results are tagged simulated">Send ' + (failed + warned) + ' findings to Security Graph</button>' : '') +
       '</div>' +
     '</div>' +
     (results ? '<div class="sp-audit-summary">' +
@@ -781,6 +856,9 @@ function _spRenderAudit(c, provider, checks, results) {
     else if (provider === 'GCP') { _spGcpResults = _spRunAudit(GCP_CHECKS, {}); }
     _spRender(c.closest('.sp-wrap').parentNode);
   };
+
+  var auditGraphBtn = c.querySelector('#sp-audit-graph');
+  if (auditGraphBtn) auditGraphBtn.onclick = function() { _spSendAuditToGraph(auditGraphBtn, provider, results); };
 
   c.querySelectorAll('.sp-chip').forEach(function(chip) {
     chip.onclick = function() { _spAuditFilter.service = chip.dataset.svc; _spRender(c.closest('.sp-wrap').parentNode); };
@@ -922,12 +1000,13 @@ function _spRenderTerraform(c) {
     '<div class="sp-tf-controls">' +
       '<button class="sp-btn sp-btn-primary" id="sp-scan-tf">Scan Configuration</button>' +
       '<button class="sp-btn sp-btn-ghost" id="sp-load-tf-demo">Load Sample Config</button>' +
+      (_spTfFindings && _spTfFindings.length ? '<button class="sp-btn sp-btn-ghost" id="sp-tf-graph">Send ' + _spTfFindings.length + ' findings to Security Graph</button>' : '') +
       '<span class="sp-tf-checks">' + TF_CHECKS.length + ' security checks</span>' +
     '</div>' +
     '<div class="sp-tf-layout">' +
       '<div class="sp-tf-editor">' +
         '<div class="sp-tf-label">Terraform Configuration</div>' +
-        '<textarea class="sp-textarea sp-tf-input" id="sp-tf-input" rows="24" placeholder="Paste your Terraform HCL here...">' + (c._tfValue || '') + '</textarea>' +
+        '<textarea class="sp-textarea sp-tf-input" id="sp-tf-input" rows="24" placeholder="Paste your Terraform HCL here...">' + esc(c._tfValue || _spTfSource || '') + '</textarea>' +
       '</div>' +
       (_spTfFindings ? '<div class="sp-tf-results">' +
         '<div class="sp-tf-label">Scan Results — ' + _spTfFindings.length + ' issue' + (_spTfFindings.length !== 1 ? 's' : '') + ' found</div>' +
@@ -951,11 +1030,15 @@ function _spRenderTerraform(c) {
     c._tfValue = TF_SAMPLE;
   };
 
+  var tfGraphBtn = c.querySelector('#sp-tf-graph');
+  if (tfGraphBtn) tfGraphBtn.onclick = function() { _spSendTfToGraph(tfGraphBtn, _spTfSource, _spTfFindings); };
+
   c.querySelector('#sp-scan-tf').onclick = function() {
     var hcl = c.querySelector('#sp-tf-input').value;
     c._tfValue = hcl;
     if (!hcl.trim()) { alert('Please paste a Terraform configuration first.'); return; }
     _spTfFindings = _spRunTfScan(hcl);
+    _spTfSource = hcl;
     _spRender(c.closest('.sp-wrap').parentNode);
   };
 }
@@ -1027,14 +1110,14 @@ function _spInjectCSS() {
 .sp-na{background:rgba(100,116,139,.1);color:#64748b}
 .sp-empty{padding:32px;text-align:center;color:var(--mut);font-size:.82rem}
 .sp-ok-msg{padding:16px;text-align:center;color:#22c55e;font-size:.82rem;background:rgba(34,197,94,.08);border-radius:8px;font-weight:600}
-.sp-btn{padding:7px 16px;font-size:.78rem;font-weight:600;border-radius:7px;cursor:pointer;font-family:inherit;border:none;transition:background .15s,color .15s;display:inline-flex;align-items:center;gap:6px}
+.sp-btn{padding:7px 16px;font-size:.78rem;font-weight:600;border-radius:4px;cursor:pointer;font-family:inherit;border:none;transition:background .15s,color .15s;display:inline-flex;align-items:center;gap:6px}
 .sp-btn-primary{background:var(--acc);color:#fff}
 .sp-btn-primary:hover{filter:brightness(1.1)}
 .sp-btn-ghost{background:transparent;color:var(--txt);border:1px solid var(--line)}
 .sp-btn-ghost:hover{border-color:var(--acc);color:var(--acc)}
 .sp-btn-sm{padding:4px 10px;font-size:.72rem}
 .sp-btn-active{border-color:var(--acc);color:var(--acc);background:color-mix(in srgb,var(--acc) 8%,transparent)}
-.sp-chip{padding:4px 10px;font-size:.7rem;font-weight:600;border-radius:12px;border:1px solid var(--line);background:transparent;color:var(--mut);cursor:pointer;font-family:inherit;transition:all .15s;white-space:nowrap}
+.sp-chip{padding:4px 10px;font-size:.7rem;font-weight:600;border-radius:4px;border:1px solid var(--line);background:transparent;color:var(--mut);cursor:pointer;font-family:inherit;transition:all .15s;white-space:nowrap}
 .sp-chip:hover{border-color:var(--acc);color:var(--acc)}
 .sp-chip.on{background:color-mix(in srgb,var(--acc) 10%,transparent);border-color:var(--acc);color:var(--acc)}
 .sp-service-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
@@ -1071,7 +1154,7 @@ function _spInjectCSS() {
 .sp-legend-item{display:flex;align-items:center;gap:5px}
 .sp-legend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
 .sp-comp-tabs{display:flex;gap:4px;margin-bottom:16px;flex-wrap:wrap}
-.sp-comp-tab{padding:6px 14px;font-size:.74rem;font-weight:600;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--mut);cursor:pointer;font-family:inherit;transition:all .15s}
+.sp-comp-tab{padding:6px 14px;font-size:.74rem;font-weight:600;border-radius:4px;border:1px solid var(--line);background:transparent;color:var(--mut);cursor:pointer;font-family:inherit;transition:all .15s}
 .sp-comp-tab:hover{border-color:var(--acc);color:var(--acc)}
 .sp-comp-tab.on{background:color-mix(in srgb,var(--acc) 10%,transparent);border-color:var(--acc);color:var(--acc)}
 .sp-comp-summary{display:flex;align-items:center;gap:24px;margin-bottom:20px;flex-wrap:wrap}
@@ -1116,6 +1199,7 @@ export function renderSpectre(main) {
   _spAzureResults = null;
   _spGcpResults = null;
   _spTfFindings = null;
+  _spTfSource = '';
   _spIamFindings = null;
   _spIamMatrix = null;
   _spSelectedPolicy = null;

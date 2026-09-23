@@ -70,7 +70,7 @@ export function renderLanding(view, actions) {
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
             </div>
             <h3>CLI</h3>
-            <p>One command: <code>npm i -g darknode-cli</code>. 164+ tools, AI agent, and the Nexus engine in your terminal.</p>
+            <p>One command: <code>npm i -g darknode-cli</code>. 192+ tools, AI agent, and the Nexus engine in your terminal.</p>
             <span class="bento-tag">npm install</span>
           </div>
           <div class="bento-card">
@@ -93,7 +93,7 @@ export function renderLanding(view, actions) {
         <div class="feature-rows">
           <div class="feature-row">
             <div class="feature-text">
-              <h3>164+ security tools, one command away</h3>
+              <h3>192+ security tools, one command away</h3>
               <p>Nmap, Nuclei, Gobuster, Nikto, and more — pre-configured with copy-paste install commands. Search, filter, and launch from the web or CLI.</p>
             </div>
             <div class="feature-visual">
@@ -213,7 +213,7 @@ export function renderLanding(view, actions) {
     <section class="section alt" id="tools-showcase" aria-labelledby="tools-title">
       <div class="wrap">
         <div class="sec-label">Toolkit</div>
-        <h2 class="sec-title" id="tools-title">164+ purpose-built security tools</h2>
+        <h2 class="sec-title" id="tools-title">192+ purpose-built security tools</h2>
         <p class="sec-sub">Every tool built from scratch for Darknode. Not wrappers around other software — original security assessment and defense tooling.</p>
         <div class="ts-tabs" role="tablist" aria-label="Tool categories">
           <button class="ts-tab on" data-cat="all" role="tab" aria-selected="true">All</button>
@@ -392,7 +392,7 @@ export function renderLanding(view, actions) {
           </div>
         </div>
         <div style="text-align:center;margin-top:32px">
-          <a class="btn lg ghost" href="/get-started" id="ts-view-all">View all 164+ tools &rarr;</a>
+          <a class="btn lg ghost" href="/get-started" id="ts-view-all">View all 192+ tools &rarr;</a>
         </div>
       </div>
     </section>
@@ -471,7 +471,7 @@ export function renderLanding(view, actions) {
           </div>
           <div class="nx-arch-connector"></div>
           <div class="nx-arch-layer nx-arch-l5">
-            <div class="nx-arch-footer-band">59 modules &mdash; 592,000+ lines of code</div>
+            <div class="nx-arch-footer-band">59 modules &mdash; 382,000+ lines of code</div>
           </div>
         </div>
 
@@ -953,7 +953,7 @@ testing methodology for 10.10.14.7:
               </tr>
               <tr>
                 <td>Security tools</td>
-                <td class="cmp-dn"><span class="cmp-check">&check;</span> 164+ built-in</td>
+                <td class="cmp-dn"><span class="cmp-check">&check;</span> 192+ built-in</td>
                 <td>600+ (CLI)</td>
                 <td>Limited</td>
                 <td>Limited</td>
@@ -1045,7 +1045,7 @@ testing methodology for 10.10.14.7:
               <li>Ubuntu 24.04 LTS with XFCE desktop</li>
               <li>Darknode CLI + Nexus pre-installed</li>
               <li>nmap, sqlmap, nuclei, ffuf, httpx, Burp Suite</li>
-              <li>164+ security tools ready to run</li>
+              <li>192+ security tools ready to run</li>
               <li>Custom wallpapers, icons, and theming</li>
               <li>Cloud-init auto-provisioning on first boot</li>
             </ul>
@@ -1157,7 +1157,7 @@ testing methodology for 10.10.14.7:
             <div class="price-amount">$0<span class="price-period">/forever</span></div>
             <p class="price-desc">The full platform. No limits, no trials, no paywalls.</p>
             <ul class="price-features">
-              <li>All 164+ security tools (no limits)</li>
+              <li>All 192+ security tools (no limits)</li>
               <li>PROMETHEUS, SENTINEL EYE, HYDRA, AEGIS &mdash; full access</li>
               <li>Nexus AI agent (BYOK &mdash; Claude, GPT, Gemini, Ollama)</li>
               <li>Academy with 1,400+ topics and quizzes</li>
@@ -1232,7 +1232,7 @@ testing methodology for 10.10.14.7:
             <button class="btn lg ghost" id="price-enterprise">Contact sales</button>
           </div>
         </div>
-        <p class="pricing-note">Every tool on the platform is <strong>free forever</strong> &mdash; all 164+ security tools, command centers, the CLI, desktop app, Darknode OS, and live threat feeds. You never pay for AI tokens &mdash; bring your own key or run Ollama locally for free. Paid plans add <strong>professional-grade features</strong> like automated scan scheduling, vulnerability tracking, AI report generation, credential leak monitoring, and team collaboration. No hidden fees, no usage caps, cancel anytime.</p>
+        <p class="pricing-note">Every tool on the platform is <strong>free forever</strong> &mdash; all 192+ security tools, command centers, the CLI, desktop app, Darknode OS, and live threat feeds. You never pay for AI tokens &mdash; bring your own key or run Ollama locally for free. Paid plans add <strong>professional-grade features</strong> like automated scan scheduling, vulnerability tracking, AI report generation, credential leak monitoring, and team collaboration. No hidden fees, no usage caps, cancel anytime.</p>
       </div>
     </section>
 
@@ -1249,7 +1249,7 @@ testing methodology for 10.10.14.7:
               <span class="faq-toggle" aria-hidden="true">+</span>
             </button>
             <div class="faq-a" hidden>
-              <div class="faq-a-inner">Yes. Every tool on the platform &mdash; HYDRA, AEGIS, SENTINEL EYE, PROMETHEUS, PHANTOM, CITADEL, ORACLE, SPECTRE, the Security Assessment Console, Cyber Range, all 164+ security tools, the CLI, the desktop app, and Darknode OS &mdash; is free with no time limits, no trials, and no paywalls. You also get full access to the Nexus AI agent on any plan using your own API key or a free local model like Ollama. Paid plans (coming soon) will add professional extras like automated scan scheduling, AI report generation, and team collaboration, but the core platform stays free forever.</div>
+              <div class="faq-a-inner">Yes. Every tool on the platform &mdash; HYDRA, AEGIS, SENTINEL EYE, PROMETHEUS, PHANTOM, CITADEL, ORACLE, SPECTRE, the Security Assessment Console, Cyber Range, all 192+ security tools, the CLI, the desktop app, and Darknode OS &mdash; is free with no time limits, no trials, and no paywalls. You also get full access to the Nexus AI agent on any plan using your own API key or a free local model like Ollama. Paid plans (coming soon) will add professional extras like automated scan scheduling, AI report generation, and team collaboration, but the core platform stays free forever.</div>
             </div>
           </div>
 
@@ -1319,7 +1319,7 @@ testing methodology for 10.10.14.7:
               <span class="faq-toggle" aria-hidden="true">+</span>
             </button>
             <div class="faq-a" hidden>
-              <div class="faq-a-inner">Paid plans (coming soon) add professional features on top of the free platform. The core platform, all 164+ tools, and the CLI stay free forever. Pro and Team tiers unlock extras like automated scan scheduling, vulnerability tracking, AI report generation, and team collaboration.</div>
+              <div class="faq-a-inner">Paid plans (coming soon) add professional features on top of the free platform. The core platform, all 192+ tools, and the CLI stay free forever. Pro and Team tiers unlock extras like automated scan scheduling, vulnerability tracking, AI report generation, and team collaboration.</div>
             </div>
           </div>
 
@@ -1657,7 +1657,7 @@ testing methodology for 10.10.14.7:
     });
   });
 
-  // Tool showcase: "View all 164+ tools" links to the tools section in the app
+  // Tool showcase: "View all 192+ tools" links to the tools section in the app
   const tsViewAll = $("ts-view-all");
   if (tsViewAll) {
     tsViewAll.addEventListener("click", (e) => {

@@ -286,7 +286,7 @@ function injectStyles() {
   '.ic-range { flex: 1; accent-color: #00e5ff; }' +
   '.ic-range-val { font-family: monospace; font-size: 13px; color: #00e5ff; font-weight: 700; min-width: 60px; text-align: right; }' +
   '.ic-checkbox-group { display: flex; flex-wrap: wrap; gap: 6px; }' +
-  '.ic-check { display: flex; align-items: center; gap: 5px; background: #111820; border: 1px solid #1a2332; border-radius: 5px; padding: 5px 10px; font-size: 11px; cursor: pointer; transition: all .15s; }' +
+  '.ic-check { display: flex; align-items: center; gap: 5px; background: #111820; border: 1px solid #1a2332; border-radius: 4px; padding: 5px 10px; font-size: 11px; cursor: pointer; transition: all .15s; }' +
   '.ic-check:hover { border-color: #2a3a4a; }' +
   '.ic-check.active { background: #0a2a3a; border-color: #00e5ff; color: #00e5ff; }' +
   '.ic-check input { accent-color: #00e5ff; margin: 0; }' +
@@ -337,12 +337,12 @@ function injectStyles() {
 
   // Tabs
   '.ic-tabs { display: flex; gap: 2px; margin-bottom: 20px; background: #0a0e14; border-radius: 8px; padding: 3px; }' +
-  '.ic-tab { flex: 1; text-align: center; padding: 8px 12px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #667788; cursor: pointer; border-radius: 6px; transition: all .15s; border: none; background: none; font-family: inherit; }' +
+  '.ic-tab { flex: 1; text-align: center; padding: 8px 12px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #667788; cursor: pointer; border-radius: 4px; transition: all .15s; border: none; background: none; font-family: inherit; }' +
   '.ic-tab:hover { color: #aabbcc; }' +
   '.ic-tab.active { background: #1a2332; color: #00e5ff; }' +
 
   // Report button
-  '.ic-btn { display: inline-flex; align-items: center; gap: 6px; background: #00e5ff; color: #000; border: none; border-radius: 6px; padding: 8px 16px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; transition: all .15s; }' +
+  '.ic-btn { display: inline-flex; align-items: center; gap: 6px; background: #00e5ff; color: #000; border: none; border-radius: 4px; padding: 8px 16px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; transition: all .15s; }' +
   '.ic-btn:hover { background: #33eeff; transform: translateY(-1px); }' +
   '.ic-btn.ghost { background: transparent; color: #c8d6e5; border: 1px solid #1a2332; }' +
   '.ic-btn.ghost:hover { border-color: #00e5ff; color: #00e5ff; }' +
@@ -585,7 +585,7 @@ export function renderIncidentCost(container) {
     // GDPR toggle
     h += '<div class="ic-toggle-row">';
     h += '<div><span class="ic-toggle-label">GDPR applicable (EU data subjects)</span></div>';
-    h += '<div class="ic-toggle' + (state.gdprApplicable ? ' on' : '') + '" id="ic-gdpr"></div>';
+    h += '<div class="ic-toggle dn-round' + (state.gdprApplicable ? ' on' : '') + '" id="ic-gdpr"></div>';
     h += '</div>';
 
     h += '</div>'; // panel
@@ -605,7 +605,7 @@ export function renderIncidentCost(container) {
       h += '<span class="ic-toggle-label">' + toggles[tg].label + '</span><br>';
       h += '<span class="ic-toggle-savings">saves ' + toggles[tg].savings + '</span>';
       h += '</div>';
-      h += '<div class="ic-toggle' + (state[toggles[tg].key] ? ' on' : '') + '" data-toggle="' + toggles[tg].key + '"></div>';
+      h += '<div class="ic-toggle dn-round' + (state[toggles[tg].key] ? ' on' : '') + '" data-toggle="' + toggles[tg].key + '"></div>';
       h += '</div>';
     }
 
@@ -645,7 +645,7 @@ export function renderIncidentCost(container) {
       h += '<span class="ic-toggle-label">' + esc(AMPLIFIERS[ai].name) + '</span><br>';
       h += '<span class="ic-factor-cost amp">+' + fmt$(AMPLIFIERS[ai].cost) + '</span>';
       h += '</div>';
-      h += '<div class="ic-toggle' + (ampActive ? ' on' : '') + '" data-amplifier="' + AMPLIFIERS[ai].id + '"></div>';
+      h += '<div class="ic-toggle dn-round' + (ampActive ? ' on' : '') + '" data-amplifier="' + AMPLIFIERS[ai].id + '"></div>';
       h += '</div>';
     }
     if (costs.amplifierTotal > 0) {
@@ -664,7 +664,7 @@ export function renderIncidentCost(container) {
       h += '<span class="ic-toggle-label">' + esc(MITIGATORS[mi].name) + '</span><br>';
       h += '<span class="ic-factor-cost mit">-' + fmt$(MITIGATORS[mi].savings) + '</span>';
       h += '</div>';
-      h += '<div class="ic-toggle' + (mitActive ? ' on' : '') + '" data-mitigator="' + MITIGATORS[mi].id + '"></div>';
+      h += '<div class="ic-toggle dn-round' + (mitActive ? ' on' : '') + '" data-mitigator="' + MITIGATORS[mi].id + '"></div>';
       h += '</div>';
     }
     if (costs.mitigatorTotal > 0) {

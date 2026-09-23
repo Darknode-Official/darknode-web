@@ -219,7 +219,7 @@ function injectStyles() {
   '.vt-stat-l { font-size: 0.72rem; color: #6b7b8d; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }' +
 
   '.vt-tabs { display: flex; gap: 2px; margin-bottom: 20px; background: #0d1117; border-radius: 10px; padding: 4px; border: 1px solid #1e293b; flex-wrap: wrap; }' +
-  '.vt-tab { padding: 8px 16px; border-radius: 8px; font-size: 0.78rem; font-weight: 600; cursor: pointer; background: transparent; border: none; color: #6b7b8d; transition: all 0.2s; font-family: inherit; }' +
+  '.vt-tab { padding: 8px 16px; border-radius: 4px; font-size: 0.78rem; font-weight: 600; cursor: pointer; background: transparent; border: none; color: #6b7b8d; transition: all 0.2s; font-family: inherit; }' +
   '.vt-tab:hover { color: #c8d6e5; background: #1e293b; }' +
   '.vt-tab.active { color: #fff; background: #1e293b; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }' +
 
@@ -232,7 +232,7 @@ function injectStyles() {
   '.vt-tree-node { background: #111827; border: 1px solid #1e293b; border-radius: 8px; padding: 14px; }' +
   '.vt-tree-q { font-size: 0.82rem; font-weight: 700; color: #e2e8f0; margin-bottom: 10px; }' +
   '.vt-tree-opts { display: flex; gap: 8px; flex-wrap: wrap; }' +
-  '.vt-tree-opt { padding: 6px 16px; border-radius: 6px; font-size: 0.78rem; font-weight: 600; cursor: pointer; border: 1px solid #334155; background: transparent; color: #94a3b8; transition: all 0.15s; font-family: inherit; }' +
+  '.vt-tree-opt { padding: 6px 16px; border-radius: 4px; font-size: 0.78rem; font-weight: 600; cursor: pointer; border: 1px solid #334155; background: transparent; color: #94a3b8; transition: all 0.15s; font-family: inherit; }' +
   '.vt-tree-opt:hover { border-color: #60a5fa; color: #93c5fd; }' +
   '.vt-tree-opt.selected { background: #1e40af; border-color: #3b82f6; color: #fff; }' +
 

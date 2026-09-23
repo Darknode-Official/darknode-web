@@ -640,7 +640,7 @@ function renderAttackTree(el) {
       childrenHTML = node.children.map(function(c) { return renderNode(c, depth + 1); }).join("");
     }
     return '<div style="margin-left:' + indent + 'px;margin-bottom:4px">' +
-      '<div data-nid="' + esc(node.id) + '" style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border:2px solid ' + (isSel ? "var(--acc)" : "var(--line)") + ';border-radius:2px;cursor:pointer;background:' + (isSel ? "var(--acc)10" : "var(--card)") + '">' +
+      '<div data-nid="' + esc(node.id) + '" style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border:2px solid ' + (isSel ? "var(--acc)" : "var(--line)") + ';border-radius:4px;cursor:pointer;background:' + (isSel ? "var(--acc)10" : "var(--card)") + '">' +
         (node.children && node.children.length ? '<span style="font-size:.65rem;padding:1px 4px;border-radius:2px;background:' + gateColor + ';color:#fff;font-weight:700">' + node.gate + '</span>' : '') +
         '<span style="font-size:.82rem">' + esc(node.name) + '</span>' +
         (node.id !== "root" ? '<span class="at-del" data-did="' + esc(node.id) + '" style="font-size:.7rem;color:#f44336;cursor:pointer;margin-left:4px">[x]</span>' : '') +
@@ -743,7 +743,7 @@ function renderDFD(el) {
     var elems = elements.map(function(e, i) {
       return '<div style="display:inline-block;margin:8px;' + typeStyle(e.type) + ';font-size:.82rem;position:relative">' +
         esc(e.name) +
-        '<span class="dfd-del" data-eidx="' + i + '" style="position:absolute;top:-6px;right:-6px;width:16px;height:16px;border-radius:50%;background:#f44336;color:#fff;font-size:.65rem;display:flex;align-items:center;justify-content:center;cursor:pointer">x</span>' +
+        '<span class="dfd-del dn-round" data-eidx="' + i + '" style="position:absolute;top:-6px;right:-6px;width:16px;height:16px;border-radius:50%;background:#f44336;color:#fff;font-size:.65rem;display:flex;align-items:center;justify-content:center;cursor:pointer">x</span>' +
       '</div>';
     }).join("");
     var flowsList = flows.map(function(f, i) {

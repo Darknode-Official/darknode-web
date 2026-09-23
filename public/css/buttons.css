@@ -1,0 +1,22 @@
+/* Copyright (c) 2026 Darknode-Official. All rights reserved.
+   Button shape: squared-off 4px corners (Devin-style) across every style and skin.
+   Loaded last. The :not(#dn-x) chain adds ID-level specificity so this beats the
+   class-heavy !important rules in earlier layers without touching them one by one.
+   Add class "dn-round" to anything that must stay circular (avatars, dots, swatches). */
+:root { --btn-radius: 4px; }
+
+html body :is(
+  button,
+  .btn,
+  a.btn,
+  [role="button"],
+  input[type="button"],
+  input[type="submit"],
+  input[type="reset"],
+  [class$="-btn"],
+  [class*="-btn "],
+  [class^="btn-"],
+  [class*=" btn-"]
+):not(.dn-round, [role="switch"], [role="radio"], [role="checkbox"], [class*="avatar"], [class*="switch"], [class*="swatch"]):not(#dn-x):not(#dn-y) {
+  border-radius: var(--btn-radius) !important;
+}

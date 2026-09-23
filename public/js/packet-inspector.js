@@ -203,9 +203,9 @@ export function renderPacketInspector(container) {
 .pi-label{font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--mut,#64748b);margin-bottom:8px}
 .pi-textarea{width:100%;min-height:140px;background:var(--card2,#080c14);border:1px solid var(--line,#1e293b);border-radius:6px;color:var(--txt,#c8d6e5);font-family:'JetBrains Mono',monospace;font-size:.78rem;padding:12px;resize:vertical;box-sizing:border-box}
 .pi-textarea:focus{outline:none;border-color:var(--acc,#2563eb)}
-.pi-btn{background:var(--acc,#2563eb);color:#fff;border:none;padding:8px 18px;border-radius:6px;font-size:.8rem;font-weight:600;cursor:pointer;transition:opacity .15s}
+.pi-btn{background:var(--acc,#2563eb);color:#fff;border:none;padding:8px 18px;border-radius:4px;font-size:.8rem;font-weight:600;cursor:pointer;transition:opacity .15s}
 .pi-btn:hover{opacity:.85}
-.pi-btn-sm{background:var(--card2,#080c14);color:var(--txt,#c8d6e5);border:1px solid var(--line,#1e293b);padding:6px 14px;border-radius:5px;font-size:.75rem;cursor:pointer;transition:border-color .15s}
+.pi-btn-sm{background:var(--card2,#080c14);color:var(--txt,#c8d6e5);border:1px solid var(--line,#1e293b);padding:6px 14px;border-radius:4px;font-size:.75rem;cursor:pointer;transition:border-color .15s}
 .pi-btn-sm:hover{border-color:var(--acc,#2563eb)}
 .pi-samples{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
 .pi-tree-layer{border-left:3px solid;border-radius:6px;padding:10px 14px;margin-bottom:8px}
@@ -238,7 +238,7 @@ export function renderPacketInspector(container) {
 .pi-stat-card-val{font-size:1.5rem;font-weight:700;color:var(--acc,#2563eb)}
 .pi-stat-card-label{font-size:.72rem;color:var(--mut,#64748b);margin-top:4px}
 .pi-pkt-select{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
-.pi-pkt-chip{padding:5px 12px;border-radius:5px;font-size:.74rem;cursor:pointer;border:1px solid var(--line,#1e293b);background:var(--card2,#080c14);transition:border-color .15s}
+.pi-pkt-chip{padding:5px 12px;border-radius:4px;font-size:.74rem;cursor:pointer;border:1px solid var(--line,#1e293b);background:var(--card2,#080c14);transition:border-color .15s}
 .pi-pkt-chip.active{border-color:var(--acc,#2563eb);color:var(--acc,#2563eb)}
 @media(max-width:700px){.pi-hex-wrap{grid-template-columns:1fr}.pi-conv-row{grid-template-columns:1fr;gap:4px}}
 [data-style=pro] .pi-wrap{color:#1e293b}

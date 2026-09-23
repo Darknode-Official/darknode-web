@@ -175,7 +175,7 @@ export function renderSubnetVisualizer(container) {
         .sv-legend-dot{width:12px;height:12px;border-radius:2px;border:1px solid}
         .sv-detail{background:#0a0f14;border:1px solid #00d4ff33;border-radius:8px;padding:16px;margin-top:12px}
         .sv-presets{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
-        .sv-preset{padding:4px 10px;border:1px solid #333;border-radius:12px;font-size:.75rem;cursor:pointer;background:none;color:#888;transition:all .2s}
+        .sv-preset{padding:4px 10px;border:1px solid #333;border-radius:var(--btn-radius,4px);font-size:.75rem;cursor:pointer;background:none;color:#888;transition:all .2s}
         .sv-preset:hover{border-color:#00d4ff;color:#00d4ff}
         .sv-vlsm-row{display:grid;grid-template-columns:1fr 80px 40px;gap:8px;align-items:center;margin:4px 0}
         .sv-vlsm-input{background:#0a0a0a;border:1px solid #333;color:#e0e0e0;padding:6px 8px;border-radius:4px;font-size:.8rem}

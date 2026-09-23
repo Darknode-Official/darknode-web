@@ -83,12 +83,12 @@ function injectStyles() {
 .sc-header h1{font-size:1.5rem;font-weight:700;margin:0 0 4px;color:var(--txt)}
 .sc-header p{color:var(--txt-2);font-size:.85rem;margin:0}
 .sc-tabs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px}
-.sc-tab{padding:8px 16px;border-radius:var(--r,8px);border:1px solid var(--line);background:var(--card);color:var(--txt-2);font-size:.78rem;font-weight:600;cursor:pointer;transition:all .15s ease;white-space:nowrap}
+.sc-tab{padding:8px 16px;border-radius:4px;border:1px solid var(--line);background:var(--card);color:var(--txt-2);font-size:.78rem;font-weight:600;cursor:pointer;transition:all .15s ease;white-space:nowrap}
 .sc-tab:hover{border-color:var(--acc);color:var(--acc)}
 .sc-tab.active{background:var(--acc);color:#fff;border-color:var(--acc)}
 .sc-tab-ver{font-weight:400;opacity:.7;margin-left:4px}
 .sc-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:20px}
-.sc-toolbar .sc-btn{padding:6px 14px;border-radius:6px;border:1px solid var(--line);background:var(--card);color:var(--txt-2);font-size:.75rem;font-weight:600;cursor:pointer;transition:all .15s ease}
+.sc-toolbar .sc-btn{padding:6px 14px;border-radius:4px;border:1px solid var(--line);background:var(--card);color:var(--txt-2);font-size:.75rem;font-weight:600;cursor:pointer;transition:all .15s ease}
 .sc-toolbar .sc-btn:hover{border-color:var(--acc);color:var(--acc)}
 .sc-toolbar .sc-btn.danger:hover{border-color:#dc2626;color:#dc2626}
 .sc-progress-wrap{flex:1;min-width:200px;display:flex;align-items:center;gap:10px}

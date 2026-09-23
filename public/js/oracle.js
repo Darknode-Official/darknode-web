@@ -355,6 +355,127 @@ function _orNationFlag(n) {
 }
 
 // ============================================================================
+// SECURITY GRAPH EXPORT
+// ============================================================================
+// Built-in IOC and campaign records are demo data and are tagged "simulated";
+// IOCs the analyst adds or imports are sent untagged. The actor library is
+// public reference material (real APT groups) and is tagged "reference".
+var _OR_BUILTIN_IOC_IDS = {};
+IOC_DB.forEach(function(i) { _OR_BUILTIN_IOC_IDS[i.id] = true; });
+
+function _orGraphSev(s) {
+  var v = String(s || '').toLowerCase();
+  return ['critical', 'high', 'medium', 'low', 'info'].indexOf(v) !== -1 ? v : null;
+}
+
+// Map an ORACLE indicator (type label + value) to a Security Graph entity type.
+function _orGraphType(type, value) {
+  var v = String(value || '');
+  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(v)) return 'IP';
+  if (type === 'Domain') return 'DOMAIN';
+  if (type === 'CVE') return 'VULNERABILITY';
+  // Untyped values (actor library): infer a bare domain; CIDRs, hashes, etc. stay indicators
+  if (!type && /^[a-z0-9-]+(\.[a-z0-9-]+)*\.[a-z]{2,}$/i.test(v)) return 'DOMAIN';
+  return 'INDICATOR';
+}
+
+// Resolve an actor from a name, alias, or IOC tag.
+function _orFindActor(label) {
+  var q = String(label || '').toLowerCase();
+  if (!q) return null;
+  return APT_DB.find(function(a) {
+    return a.name.toLowerCase() === q || a.aliases.some(function(al) { return al.toLowerCase() === q; });
+  }) || null;
+}
+
+function _orActorItem(a) {
+  return {
+    type: 'THREAT_ACTOR', name: a.name,
+    data: { aliases: a.aliases.join(', '), nation: a.nation, agency: a.agency || '', motivation: a.motivation, sectors: a.sectors.join(', '), since: a.since, techniques: a.techniques.join(', '), source: 'ORACLE actor library' },
+    opts: { tags: ['oracle', 'threat-actor', 'reference'] }
+  };
+}
+
+function _orCampaignItem(camp) {
+  return {
+    type: 'CAMPAIGN', name: camp.name,
+    data: { actor: camp.actor, status: camp.status, start: camp.start, vector: camp.vector, sectors: camp.sectors.join(', '), regions: camp.regions.join(', '), simulated: true },
+    opts: { tags: ['oracle', 'campaign', 'simulated'] }
+  };
+}
+
+// Sends one item at a time so results line up with inputs; tally accumulates counts.
+function _orGraphPush(gb, tally, item) {
+  var r = gb.sendToGraph('ORACLE', [item], undefined, true);
+  tally.created += r.created; tally.updated += r.updated;
+  return r.entities[0] || null;
+}
+
+// Wraps the lazy bridge import, button state, and the single summary toast.
+function _orSendGraph(btn, label, build) {
+  btn.disabled = true;
+  import('/js/graph-bridge.js?v=20260923c').then(function(gb) {
+    var tally = { created: 0, updated: 0, links: 0 };
+    var actorCache = {};
+    var ctx = {
+      push: function(item) { return _orGraphPush(gb, tally, item); },
+      actor: function(a) {
+        if (!actorCache[a.id]) actorCache[a.id] = _orGraphPush(gb, tally, _orActorItem(a));
+        return actorCache[a.id];
+      },
+      link: function(from, to, rel) { if (from && to && gb.linkEntities(from.id, to.id, rel)) tally.links++; }
+    };
+    build(ctx);
+    btn.textContent = 'Sent: ' + tally.created + ' new, ' + tally.updated + ' merged';
+    gb.showGraphToast('Security Graph: ' + label + ' - ' + tally.created + ' added, ' + tally.updated + ' updated, ' + tally.links + ' links');
+  }).catch(function() { btn.textContent = 'Security Graph unavailable'; btn.disabled = false; });
+}
+
+function _orSendIOCs(btn, list) {
+  _orSendGraph(btn, list.length + ' IOCs', function(g) {
+    list.forEach(function(i) {
+      var sim = !!_OR_BUILTIN_IOC_IDS[i.id];
+      var tags = ['oracle', 'ioc'].concat(sim ? ['simulated'] : []).concat(i.tags || []);
+      var ent = g.push({
+        type: _orGraphType(i.type, i.value), name: i.value,
+        data: { iocType: i.type, confidence: i.confidence, source: i.source, added: i.added, notes: i.notes || '', simulated: sim },
+        opts: { tags: tags, severity: _orGraphSev(i.severity) }
+      });
+      (i.tags || []).forEach(function(t) {
+        var a = _orFindActor(t);
+        if (a) g.link(ent, g.actor(a), 'attributed_to');
+      });
+    });
+  });
+}
+
+function _orSendActors(btn, list) {
+  _orSendGraph(btn, list.length + ' actors', function(g) {
+    list.forEach(function(a) {
+      var actorEnt = g.actor(a);
+      a.iocs.forEach(function(v) {
+        var ent = g.push({
+          type: _orGraphType('', v), name: v,
+          data: { iocType: 'Actor IOC', actor: a.name, source: 'ORACLE actor library', simulated: true },
+          opts: { tags: ['oracle', 'ioc', 'simulated', a.name] }
+        });
+        g.link(ent, actorEnt, 'attributed_to');
+      });
+    });
+  });
+}
+
+function _orSendCampaigns(btn, list) {
+  _orSendGraph(btn, list.length + ' campaigns', function(g) {
+    list.forEach(function(camp) {
+      var campEnt = g.push(_orCampaignItem(camp));
+      var a = _orFindActor(camp.actor);
+      if (a) g.link(campEnt, g.actor(a), 'attributed_to');
+    });
+  });
+}
+
+// ============================================================================
 // MAIN RENDER
 // ============================================================================
 var _orInterval = null;
@@ -595,6 +716,7 @@ export function renderOracle(main) {
         '<span style="flex:1"></span>' +
         '<button class="or-btn sm" id="or-export-json">Export JSON</button>' +
         '<button class="or-btn sm" id="or-export-csv">Export CSV</button>' +
+        '<button class="or-btn sm fill" id="or-ioc-graph"' + (filtered.length ? '' : ' disabled') + '>Send ' + filtered.length + ' IOCs to Security Graph</button>' +
       '</div>' +
 
       '<div class="or-panel">' +
@@ -655,6 +777,7 @@ export function renderOracle(main) {
       var blob = new Blob([csv], { type: 'text/csv' });
       var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'oracle-iocs.csv'; a.click();
     };
+    c.querySelector('#or-ioc-graph').onclick = function(e) { _orSendIOCs(e.currentTarget, filtered); };
     c.querySelectorAll('[data-del]').forEach(function(btn) {
       btn.onclick = function() { iocs = iocs.filter(function(i) { return String(i.id) !== btn.dataset.del; }); renderIOCManager(c); };
     });
@@ -678,6 +801,7 @@ export function renderOracle(main) {
         '<select class="or-sel" id="or-actor-nation"><option value="">All Nations</option>' + nations.map(function(n) { return '<option' + (actorNationFilter === n ? ' selected' : '') + '>' + esc(n) + '</option>'; }).join('') + '</select>' +
         '<span style="flex:1"></span>' +
         '<span class="or-sub">' + filtered.length + ' actors</span>' +
+        '<button class="or-btn sm fill" id="or-actor-graph"' + (filtered.length ? '' : ' disabled') + '>Send ' + filtered.length + ' actors to Security Graph</button>' +
       '</div>' +
 
       '<div class="or-grid3">' +
@@ -705,6 +829,7 @@ export function renderOracle(main) {
 
     c.querySelector('#or-actor-search').oninput = function(e) { actorSearch = e.target.value; renderActors(c); };
     c.querySelector('#or-actor-nation').onchange = function(e) { actorNationFilter = e.target.value; renderActors(c); };
+    c.querySelector('#or-actor-graph').onclick = function(e) { _orSendActors(e.currentTarget, filtered); };
     c.querySelectorAll('.or-card[data-actor]').forEach(function(card) {
       card.onclick = function() {
         var a = APT_DB.find(function(x) { return x.id === card.dataset.actor; });
@@ -748,6 +873,11 @@ export function renderOracle(main) {
     var FULL_KC = ['Reconnaissance', 'Weaponization', 'Delivery', 'Exploitation', 'Installation', 'C2', 'Actions on Objectives'];
 
     c.innerHTML =
+      '<div class="or-search-row">' +
+        '<span class="or-sub">' + CAMPAIGN_DB.length + ' campaigns</span>' +
+        '<span style="flex:1"></span>' +
+        '<button class="or-btn sm fill" id="or-camp-graph" title="Built-in campaign data is tagged simulated">Send ' + CAMPAIGN_DB.length + ' campaigns to Security Graph</button>' +
+      '</div>' +
       '<div class="or-grid2" style="margin-bottom:12px">' +
       CAMPAIGN_DB.map(function(camp) {
         return '<div class="or-card' + (selectedCampaign === camp.id ? ' or-corr' : '') + '" data-camp="' + camp.id + '">' +
@@ -798,6 +928,7 @@ export function renderOracle(main) {
       }
     }
 
+    c.querySelector('#or-camp-graph').onclick = function(e) { _orSendCampaigns(e.currentTarget, CAMPAIGN_DB); };
     c.querySelectorAll('.or-card[data-camp]').forEach(function(card) {
       card.onclick = function() { selectedCampaign = card.dataset.camp; renderCampaigns(c); };
     });

@@ -1649,7 +1649,7 @@ function tmInjectStyles() {
     .tm-table th, .tm-table td { border: 1px solid rgba(255,255,255,.08); padding: 8px 10px; text-align: left; vertical-align: top; }
     .tm-table th { background: rgba(255,255,255,.04); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; opacity: .8; }
     .tm-pill-toggle { display: inline-flex; gap: 6px; flex-wrap: wrap; }
-    .tm-pill { padding: 5px 12px; border-radius: 999px; border: 1px solid rgba(255,255,255,.15); font-size: 12px; cursor: pointer; background: transparent; color: inherit; }
+    .tm-pill { padding: 5px 12px; border-radius: 4px; border: 1px solid rgba(255,255,255,.15); font-size: 12px; cursor: pointer; background: transparent; color: inherit; }
     .tm-pill.active { background: rgba(255,46,99,.15); border-color: #ff2e63; color: #ff2e63; }
     .tm-progress-bar { height: 6px; border-radius: 4px; background: rgba(255,255,255,.08); overflow: hidden; }
     .tm-progress-fill { height: 100%; background: linear-gradient(90deg, #ff2e63, #ff5f56); }

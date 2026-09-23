@@ -44,7 +44,7 @@ export function renderCorsTester(container) {
   ];
   for (var i = 0; i < quickTests.length; i++) {
     var qt = quickTests[i];
-    h += '<button onclick="document.getElementById(\'cors-url\').value=\'' + esc(qt.url) + '\';_corsTest()" style="background:#0a1a28;border:1px solid #1a3050;color:#5a8aaa;padding:4px 10px;font-family:monospace;font-size:10px;cursor:pointer;border-radius:3px;">' + esc(qt.label) + '</button>';
+    h += '<button onclick="document.getElementById(\'cors-url\').value=\'' + esc(qt.url) + '\';_corsTest()" style="background:#0a1a28;border:1px solid #1a3050;color:#5a8aaa;padding:4px 10px;font-family:monospace;font-size:10px;cursor:pointer;border-radius:4px;">' + esc(qt.label) + '</button>';
   }
   h += '</div></div>';
 

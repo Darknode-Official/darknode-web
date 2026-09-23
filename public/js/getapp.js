@@ -120,16 +120,16 @@ export function renderDownloads(main) {
     <p class="muted" style="font-size:.8rem;margin-top:16px">All rights reserved.</p>`;
   const builds = main.querySelector("#dlBuilds");
   const cmpVer = (a, b) => { const pa = (a || "0").split(".").map(Number), pb = (b || "0").split(".").map(Number); for (let i = 0; i < 3; i++) { if ((pa[i] || 0) !== (pb[i] || 0)) return (pa[i] || 0) - (pb[i] || 0); } return 0; };
-  const osBtn = (m, a) => { const ver = verOf(a.name); return `<a class="dl-osbtn" href="${esc(a.browser_download_url)}" download>
+  const osBtn = (m, a) => { const ver = verOf(a.name); return `<a class="dl-osbtn" style="border-radius:var(--btn-radius,4px)" href="${esc(a.browser_download_url)}" download>
       <span class="dl-os">${esc(m.os)}</span>
       <span class="dl-fmt">${esc(m.fmt)}${ver ? " · v" + esc(ver) : ""} · ${esc(fmtSize(a.size))}</span></a>`; };
   const fallback = () => {
     builds.innerHTML = `<p class="muted" style="margin:0 0 10px">Live release info unavailable &mdash; download directly:</p>
       <div class="dl-btnrow">
-        <a class="dl-osbtn" href="${REL_DL}/Darknode-cli-linux" download><span class="dl-os">Linux</span><span class="dl-fmt">Nexus CLI</span></a>
-        <a class="dl-osbtn" href="${REL_DL}/Darknode-cli-windows.exe" download><span class="dl-os">Windows</span><span class="dl-fmt">Nexus CLI</span></a>
-        <a class="dl-osbtn" href="${REL_DL}/Darknode-cli-macos-arm64" download><span class="dl-os">macOS · Apple Silicon</span><span class="dl-fmt">Nexus CLI</span></a>
-        <a class="dl-osbtn" href="${REL_DL}/Darknode-cli-macos-x64" download><span class="dl-os">macOS · Intel</span><span class="dl-fmt">Nexus CLI</span></a>
+        <a class="dl-osbtn" style="border-radius:var(--btn-radius,4px)" href="${REL_DL}/Darknode-cli-linux" download><span class="dl-os">Linux</span><span class="dl-fmt">Nexus CLI</span></a>
+        <a class="dl-osbtn" style="border-radius:var(--btn-radius,4px)" href="${REL_DL}/Darknode-cli-windows.exe" download><span class="dl-os">Windows</span><span class="dl-fmt">Nexus CLI</span></a>
+        <a class="dl-osbtn" style="border-radius:var(--btn-radius,4px)" href="${REL_DL}/Darknode-cli-macos-arm64" download><span class="dl-os">macOS · Apple Silicon</span><span class="dl-fmt">Nexus CLI</span></a>
+        <a class="dl-osbtn" style="border-radius:var(--btn-radius,4px)" href="${REL_DL}/Darknode-cli-macos-x64" download><span class="dl-os">macOS · Intel</span><span class="dl-fmt">Nexus CLI</span></a>
       </div>`;
   };
   if (window._dnRelCached) { fallback(); return; }

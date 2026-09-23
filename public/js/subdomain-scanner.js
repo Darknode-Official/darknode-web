@@ -59,14 +59,14 @@ export function renderSubdomainScanner(container) {
     '.ss-title{font-size:1.5rem;font-weight:700;margin:0 0 6px}' +
     '.ss-sub{color:var(--mut,#64748b);font-size:.85rem}' +
     '.ss-tabs{display:flex;gap:4px;margin-bottom:20px;flex-wrap:wrap}' +
-    '.ss-tab{padding:8px 16px;border:1px solid var(--line,#1e293b);border-radius:6px;background:transparent;color:var(--mut,#8899aa);cursor:pointer;font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;transition:all .15s;font-family:inherit}' +
+    '.ss-tab{padding:8px 16px;border:1px solid var(--line,#1e293b);border-radius:4px;background:transparent;color:var(--mut,#8899aa);cursor:pointer;font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;transition:all .15s;font-family:inherit}' +
     '.ss-tab:hover{background:rgba(255,255,255,.05);color:var(--txt)}' +
     '.ss-tab.active{background:var(--acc,#2563eb);color:#fff;border-color:var(--acc,#2563eb)}' +
     '.ss-panel{background:var(--card,#0d1117);border:1px solid var(--line,#1e293b);border-radius:8px;padding:20px;margin-bottom:16px}' +
     '.ss-input-row{display:flex;gap:8px;align-items:center}' +
     '.ss-input{flex:1;background:var(--card2,#080c14);border:1px solid var(--line,#1e293b);border-radius:6px;color:var(--txt,#e2e8f0);font-family:ui-monospace,monospace;font-size:.85rem;padding:10px 14px}' +
     '.ss-input:focus{border-color:var(--acc);outline:none}' +
-    '.ss-btn{padding:10px 20px;border:none;border-radius:6px;background:var(--acc,#2563eb);color:#fff;cursor:pointer;font-size:.78rem;font-weight:600;font-family:inherit;transition:all .15s}' +
+    '.ss-btn{padding:10px 20px;border:none;border-radius:4px;background:var(--acc,#2563eb);color:#fff;cursor:pointer;font-size:.78rem;font-weight:600;font-family:inherit;transition:all .15s}' +
     '.ss-btn:hover{opacity:.9}' +
     '.ss-btn:disabled{opacity:.5;cursor:not-allowed}' +
     '.ss-btn-ghost{background:transparent;border:1px solid var(--line);color:var(--mut);padding:7px 14px}' +

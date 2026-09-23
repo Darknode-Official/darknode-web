@@ -9,7 +9,7 @@
 :root{
   --bg:#070a12; --bg2:#0c1020; --card:#0f1726; --card2:#151f34; --line:#283a5a;
   --line-2:#354d72; --txt:#e6eefc; --txt-2:#aebfdd; --mut:#7a93b8; --placeholder:#5f7294;
-  --acc:#00d4ff; --acc-2:#7c5cff; --ok:#2ee6a6; --bad:#ff5c6c; --warn:#f5b041; --radius:8px;
+  --acc:#00d4ff; --acc-2:#7c5cff; --ok:#2ee6a6; --bad:#ff5c6c; --warn:#f5b041; --radius:8px; --btn-radius:4px;
   --topbar-h:57px;
   --on-acc:#04121a;
   --code-bg:#0b0f1a;
@@ -79,7 +79,7 @@ body{margin:0;background:var(--bg);color:var(--txt);
   transition:border-color var(--dur) var(--ease),box-shadow var(--dur) var(--ease),transform var(--dur) var(--ease)}
 .card:hover{border-color:var(--acc-line);box-shadow:var(--sh-2)}
 button.card:hover,a.card:hover,.card[onclick]:hover,.card[role="button"]:hover{transform:translateY(-2px);box-shadow:var(--sh-hover)}
-.btn{background:var(--acc);color:var(--on-acc);border:none;border-radius:var(--radius);padding:8px 16px;font-weight:600;font-size:.82rem;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:6px;
+.btn{background:var(--acc);color:var(--on-acc);border:none;border-radius:var(--btn-radius, 4px);padding:8px 16px;font-weight:600;font-size:.82rem;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:6px;
   transition:all var(--dur) var(--ease);line-height:1.3;position:relative;overflow:hidden}
 .btn:hover{background:color-mix(in srgb,var(--acc) 85%,#fff);transform:translateY(-1px);box-shadow:0 4px 12px -2px color-mix(in srgb,var(--acc) 40%,transparent)}
 .btn:active{transform:translateY(0) scale(.98);box-shadow:none;transition-duration:.1s}
@@ -89,8 +89,8 @@ button.card:hover,a.card:hover,.card[onclick]:hover,.card[role="button"]:hover{t
 .btn.ghost:hover{border-color:var(--acc);background:color-mix(in srgb,var(--acc) 8%,transparent);color:var(--acc);box-shadow:0 4px 12px -4px color-mix(in srgb,var(--acc) 20%,transparent)}
 .btn.danger{background:var(--bad);color:#fff}
 .btn.danger:hover{background:color-mix(in srgb,var(--bad) 80%,#fff);box-shadow:0 4px 12px -2px color-mix(in srgb,var(--bad) 35%,transparent)}
-.btn.sm{padding:5px 12px;font-size:.76rem;border-radius:6px}
-.btn.lg{padding:12px 28px;font-size:.92rem;border-radius:11px;box-shadow:0 2px 8px -2px color-mix(in srgb,var(--acc) 30%,transparent);transition:all .25s cubic-bezier(.4,0,.2,1)}
+.btn.sm{padding:5px 12px;font-size:.76rem;border-radius:var(--btn-radius, 4px)}
+.btn.lg{padding:12px 28px;font-size:.92rem;border-radius:var(--btn-radius, 4px);box-shadow:0 2px 8px -2px color-mix(in srgb,var(--acc) 30%,transparent);transition:all .25s cubic-bezier(.4,0,.2,1)}
 .badge{display:inline-flex;align-items:center;gap:4px;padding:2px 10px;border-radius:var(--r-full);font-size:.72rem;font-weight:600;letter-spacing:.02em}
 .badge.badge-info{background:color-mix(in srgb,var(--acc) 15%,transparent);color:var(--acc)}
 .badge.badge-ok{background:color-mix(in srgb,var(--ok) 15%,transparent);color:var(--ok)}
@@ -299,9 +299,9 @@ body:not(.landing):not(.app)::before{content:"";position:fixed;inset:0;z-index:-
 /* topbar profile + "..." menu */
 #user-slot{display:flex;align-items:center;gap:8px}
 .tb-item{position:relative}
-.icon-btn{background:transparent;border:1px solid var(--line);color:var(--txt);border-radius:8px;width:34px;height:34px;cursor:pointer;font-size:1.1rem;line-height:1;font-family:inherit}
+.icon-btn{background:transparent;border:1px solid var(--line);color:var(--txt);border-radius:var(--btn-radius, 4px);width:34px;height:34px;cursor:pointer;font-size:1.1rem;line-height:1;font-family:inherit}
 .icon-btn:hover{border-color:var(--acc);color:var(--acc)}
-.profile-btn{display:flex;align-items:center;gap:8px;background:transparent;border:1px solid var(--line);border-radius:20px;padding:3px 12px 3px 3px;cursor:pointer;color:var(--txt);font-family:inherit}
+.profile-btn{display:flex;align-items:center;gap:8px;background:transparent;border:1px solid var(--line);border-radius:var(--btn-radius, 4px);padding:3px 12px 3px 3px;cursor:pointer;color:var(--txt);font-family:inherit}
 .profile-btn:hover{border-color:var(--acc)}
 .p-avatar{width:26px;height:26px;border-radius:50%;object-fit:cover;display:flex;align-items:center;justify-content:center;flex:none}
 .p-initials{background:var(--acc);color:var(--on-acc);font-weight:800;font-size:.8rem}
@@ -388,6 +388,14 @@ body.app #view{max-width:none;padding:0;margin:0}
 @media(max-width:720px){
   .app-main{padding:20px}
 }
+/* Phone topbar: drop the wide profile email, theme toggle and palette button
+   (the bottom nav carries Search). Global to every style/skin so it does not
+   depend on the Command Center skin. */
+@media(max-width:720px){
+  #topbar .p-email{display:none !important}
+  #topbar #styleToggle{display:none !important}
+  #topbar .cmdk-btn{display:none !important}
+}
 /* command palette */
 .cmdk{position:fixed;inset:0;z-index:70;background:var(--overlay-bg);display:flex;align-items:flex-start;justify-content:center;padding-top:12vh;backdrop-filter:blur(2px)}
 .cmdk-box{width:min(700px,94vw);background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:0 24px 70px rgba(0,0,0,.55);overflow:hidden}
@@ -404,12 +412,12 @@ body.app #view{max-width:none;padding:0;margin:0}
 .style-toggle[data-style=dark]{color:#3b82f6}
 .style-toggle[data-style=classic]{color:#00d4ff}
 @media(max-width:560px){.style-toggle{width:28px;height:28px;margin-right:4px}}
-.cmdk-btn{display:inline-flex;align-items:center;gap:8px;background:var(--card2);border:1px solid var(--line);border-radius:8px;padding:5px 10px;color:var(--mut);cursor:pointer;font-family:inherit;font-size:.8rem}
+.cmdk-btn{display:inline-flex;align-items:center;gap:8px;background:var(--card2);border:1px solid var(--line);border-radius:var(--btn-radius, 4px);padding:5px 10px;color:var(--mut);cursor:pointer;font-family:inherit;font-size:.8rem}
 .cmdk-btn:hover{border-color:var(--acc)}
 .cmdk-btn kbd{background:var(--card);border:1px solid var(--line);border-radius:4px;padding:0 5px;font-size:.68rem;font-family:var(--font-mono)}
 @media(max-width:560px){.cmdk-btn span{display:none}}
 /* segmented toggle */
-.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:5px;overflow:hidden}
 .seg button{background:transparent;border:none;color:var(--mut);padding:.35rem .8rem;cursor:pointer;font-family:inherit;font-size:.8rem}
 .seg button.on{background:var(--acc);color:var(--on-acc);font-weight:700}
 /* downloads */
@@ -694,7 +702,7 @@ a.dl-card:hover{border-color:var(--acc)}
 .hero-inner{position:relative;z-index:1;display:grid;grid-template-columns:1.05fr .95fr;gap:40px;align-items:center;padding-bottom:34px}
 .hero-copy{min-width:0}
 .hero-sub{max-width:560px}
-.hero-cta .btn.lg{border-radius:11px}
+.hero-cta .btn.lg{border-radius:var(--btn-radius, 4px)}
 .btn.glow{box-shadow:0 0 0 1px color-mix(in srgb,var(--acc) 25%,transparent)}
 .btn.glow:hover{box-shadow:0 0 0 1px color-mix(in srgb,var(--acc) 40%,transparent)}
 .hero-metrics{display:grid;grid-template-columns:repeat(2,max-content);gap:14px 0;margin-top:30px}
@@ -2757,7 +2765,7 @@ body.landing .hero-h1{max-width:none}
 
 /* ===== Tool Showcase ===== */
 .ts-tabs{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:32px}
-.ts-tab{background:transparent;border:1px solid var(--line);color:var(--mut);border-radius:100px;
+.ts-tab{background:transparent;border:1px solid var(--line);color:var(--mut);border-radius:var(--btn-radius, 4px);
   padding:8px 20px;cursor:pointer;font-family:inherit;font-size:.82rem;font-weight:600;
   transition:all .25s cubic-bezier(.4,0,.2,1)}
 .ts-tab:hover{border-color:var(--acc-line);color:var(--txt);background:color-mix(in srgb,var(--acc) 6%,transparent)}
@@ -3274,7 +3282,7 @@ html{scroll-behavior:smooth;scroll-padding-top:80px;overscroll-behavior-y:none}
 .btn{
   display:inline-flex;align-items:center;gap:7px;
   background:var(--grad-acc);color:var(--on-acc);
-  border:none;border-radius:var(--ctrl-radius);
+  border:none;border-radius:var(--btn-radius, 4px);
   padding:.5rem 1rem;font-weight:700;font-size:.85rem;
   cursor:pointer;font-family:inherit;line-height:1.4;
   box-shadow:var(--sh-1),inset 0 1px 0 rgba(255,255,255,.18);
@@ -3379,11 +3387,11 @@ input,textarea,.tk-f,.tk-in,.tk-search,.ai-input,.lh-inp{width:100%}
    radius and focus ring.                                            */
 .seg{
   display:inline-flex;border:1px solid var(--line);
-  border-radius:var(--ctrl-radius);overflow:hidden;
+  border-radius:5px;overflow:hidden;
   background:var(--card2);padding:2px;gap:2px;
 }
 .seg button{
-  background:transparent;border:none;border-radius:calc(var(--ctrl-radius) - 2px);
+  background:transparent;border:none;border-radius:var(--btn-radius, 4px);
   color:var(--mut);padding:.35rem .8rem;cursor:pointer;
   font-family:inherit;font-size:.8rem;font-weight:500;
   transition:background var(--ctrl-timing),color var(--ctrl-timing),
@@ -3421,7 +3429,7 @@ input,textarea,.tk-f,.tk-in,.tk-search,.ai-input,.lh-inp{width:100%}
 
 /* ---- ICON BUTTONS --------------------------------------------- */
 .icon-btn{
-  border-radius:var(--ctrl-radius);
+  border-radius:var(--btn-radius, 4px);
   transition:border-color var(--ctrl-timing),color var(--ctrl-timing),
              background var(--ctrl-timing);
 }
@@ -5884,7 +5892,7 @@ textarea:focus {
 .btn {
   font-weight: 700;
   padding: 9px 20px;
-  border-radius: 8px;
+  border-radius: var(--btn-radius, 4px);
   font-size: 0.84rem;
   letter-spacing: 0.01em;
   transition:
@@ -5904,12 +5912,12 @@ textarea:focus {
 .btn.sm {
   padding: 6px 14px;
   font-size: 0.78rem;
-  border-radius: 6px;
+  border-radius: var(--btn-radius, 4px);
 }
 .btn.lg {
   padding: 12px 24px;
   font-size: 0.92rem;
-  border-radius: 10px;
+  border-radius: var(--btn-radius, 4px);
 }
 .btn.ghost {
   box-shadow: none;
@@ -6675,7 +6683,7 @@ body.app .sidebar.collapsed .side-group::before {
   justify-content: center;
   width: 28px;
   height: 28px;
-  border-radius: 6px;
+  border-radius: var(--btn-radius, 4px);
   border: 1px solid var(--line);
   background: transparent;
   color: var(--mut);
@@ -6935,7 +6943,7 @@ body.app .admin-card {
 body.app .dash-hero .btn {
   padding: 9px 20px;
   font-size: 0.84rem;
-  border-radius: 8px;
+  border-radius: var(--btn-radius, 4px);
   font-weight: 700;
 }
 body.app .dash-hero .btn.ghost {
@@ -7016,7 +7024,7 @@ body.app .dash-hero .btn.ghost:hover {
 .dl-tab,.doc-tab,.enc-tab,.ft-tab,.hs-tab,.hti-tab,.ip-tab,.os-tab,
 .pwt-tab,.rag-tab,.rc-tab,.rx-tab,.set-tab,.sv-tab,.tm-tab,.ts-tab{
   padding:8px 16px;font-size:.78rem;font-weight:600;
-  border:1.5px solid var(--line);border-radius:6px;
+  border:1.5px solid var(--line);border-radius:var(--btn-radius, 4px);
   background:transparent;color:var(--mut);cursor:pointer;
   font-family:inherit;transition:all .15s ease;display:inline-flex;
   align-items:center;gap:5px;line-height:1.3;white-space:nowrap
@@ -7682,12 +7690,12 @@ body.landing .price-features li.feat-section{
 }
 body.landing .price-card .btn.lg{
   width:100%;justify-content:center;padding:12px 20px;font-size:.92rem;
-  border-radius:10px;font-weight:700
+  border-radius:var(--btn-radius, 4px);font-weight:700
 }
 
 /* --- 16. CTA buttons — prominence hierarchy --- */
 body.landing .btn.lg.glow{
-  padding:12px 28px;font-size:.95rem;font-weight:700;border-radius:10px;
+  padding:12px 28px;font-size:.95rem;font-weight:700;border-radius:var(--btn-radius, 4px);
   box-shadow:0 0 0 1px color-mix(in srgb,var(--acc) 30%,transparent),
              0 4px 20px color-mix(in srgb,var(--acc) 30%,transparent);
   transition:all .2s ease
@@ -7698,7 +7706,7 @@ body.landing .btn.lg.glow:hover{
   transform:translateY(-2px)
 }
 body.landing .btn.lg.ghost{
-  padding:12px 28px;font-size:.95rem;font-weight:600;border-radius:10px;
+  padding:12px 28px;font-size:.95rem;font-weight:600;border-radius:var(--btn-radius, 4px);
   border:1px solid var(--line-2);background:transparent;
   transition:all .2s ease
 }
@@ -8358,7 +8366,7 @@ code:not(pre code){
 body.app .tab:hover,body.app .ca-tab:hover,body.app .pc-tab:hover{transform:none;background:color-mix(in srgb,var(--acc) 6%,var(--card))}
 
 /* 5. DASHBOARD HERO — asymmetric layout */
-.dash-hero{display:grid;grid-template-columns:1fr auto;gap:24px;align-items:start;padding:28px 32px}
+.dash-hero{display:grid;grid-template-columns:minmax(0,1fr);gap:0 24px;align-items:start;padding:28px 32px}
 .dash-hero-left{min-width:0}
 .dash-hero-right{display:flex;flex-direction:column;gap:8px;align-items:flex-end}
 .dash-hero .pg-h1{font-size:var(--fs-xl);font-weight:800;margin:0 0 2px;letter-spacing:-.02em}
@@ -8914,8 +8922,8 @@ body.landing section + section::before {
 .tool-header .tool-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 
 /* --- Button sizing system --- */
-.btn.xs{padding:3px 8px;font-size:.7rem;border-radius:5px;gap:4px}
-.btn.sm{padding:5px 12px;font-size:.76rem;border-radius:6px;gap:5px}
+.btn.xs{padding:3px 8px;font-size:.7rem;border-radius:var(--btn-radius, 4px);gap:4px}
+.btn.sm{padding:5px 12px;font-size:.76rem;border-radius:var(--btn-radius, 4px);gap:5px}
 .btn.md{padding:8px 16px;font-size:.84rem}
 .btn.lg{padding:10px 22px;font-size:.92rem}
 .btn.xl{padding:12px 28px;font-size:1rem}
@@ -8927,8 +8935,8 @@ body.landing section + section::before {
 /* --- Button group --- */
 .btn-group{display:inline-flex;gap:0}
 .btn-group .btn{border-radius:0}
-.btn-group .btn:first-child{border-radius:var(--ctrl-radius) 0 0 var(--ctrl-radius)}
-.btn-group .btn:last-child{border-radius:0 var(--ctrl-radius) var(--ctrl-radius) 0}
+.btn-group .btn:first-child{border-radius:var(--btn-radius,4px) 0 0 var(--btn-radius,4px)}
+.btn-group .btn:last-child{border-radius:0 var(--btn-radius,4px) var(--btn-radius,4px) 0}
 .btn-group .btn+.btn{border-left:1px solid color-mix(in srgb,var(--on-acc) 20%,transparent)}
 .btn-group .btn.ghost+.btn.ghost{border-left:1px solid var(--line)}
 
@@ -8957,7 +8965,7 @@ body.landing section + section::before {
 .input-group{display:flex;gap:0;align-items:stretch}
 .input-group input,.input-group select{border-radius:var(--ctrl-radius) 0 0 var(--ctrl-radius);
   border-right:none;flex:1;min-width:0}
-.input-group .btn{border-radius:0 var(--ctrl-radius) var(--ctrl-radius) 0;
+.input-group .btn{border-radius:0 var(--btn-radius,4px) var(--btn-radius,4px) 0;
   flex-shrink:0}
 
 /* --- Stat card grid --- */
@@ -9041,3 +9049,30 @@ body.landing section + section::before {
 .tool-intro .step-text{font-size:.78rem;color:var(--txt-2);line-height:1.4}
 .tool-intro .step-text strong{color:var(--txt);display:block;font-size:.8rem;margin-bottom:2px}
 @media(max-width:600px){.tool-intro .tool-steps{flex-direction:column}}
+
+/* =====================================================================
+   CONTROL SHAPE — squared 4px corners on clickable non-<button> controls
+   (tabs, clickable chips / filter pills, sidebar items), all styles.
+   Companion to css/buttons.css, which covers button/.btn/*-btn.
+   ID-level :not(#dn-x) beats the class-heavy !important theme layers.
+   Circles stay for avatars, dots, switches and swatches.
+   ===================================================================== */
+html body :is(
+  .tab-bar .tab,
+  [class$="-tab"],
+  [class*="-tab "],
+  .ts-tab,
+  .side-item,
+  a.chip,
+  .chip[data-filter],
+  .chip.on,
+  .ai-chip,
+  .ai-presets .chip,
+  .or-chip,
+  .pi-pkt-chip,
+  .res-chip,
+  .sgu-type-pill
+):not(.dn-round, [class*="avatar"], [class*="switch"], [class*="swatch"], [class*="dot"]):not(#dn-x) {
+  border-radius: var(--btn-radius, 4px) !important;
+}
+html body .seg:not(#dn-x) { border-radius: 5px !important; }

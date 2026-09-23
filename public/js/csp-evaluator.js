@@ -318,10 +318,10 @@ export function renderCspEvaluator(container) {
   html += '<div style="font-size:10px;color:#4a6a8a;letter-spacing:2px;">CONTENT SECURITY POLICY ANALYZER &amp; GENERATOR</div></div>';
 
   html += '<div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;">';
-  html += '<button class="csp-preset-btn" data-preset="strict" style="background:#00ff8815;color:#00ff88;border:1px solid #00ff8833;padding:5px 12px;font-family:monospace;font-size:9px;cursor:pointer;border-radius:3px;letter-spacing:1px;">STRICT</button>';
-  html += '<button class="csp-preset-btn" data-preset="moderate" style="background:#ffaa0015;color:#ffaa00;border:1px solid #ffaa0033;padding:5px 12px;font-family:monospace;font-size:9px;cursor:pointer;border-radius:3px;letter-spacing:1px;">MODERATE</button>';
-  html += '<button class="csp-preset-btn" data-preset="permissive" style="background:#ff660015;color:#ff6600;border:1px solid #ff660033;padding:5px 12px;font-family:monospace;font-size:9px;cursor:pointer;border-radius:3px;letter-spacing:1px;">PERMISSIVE</button>';
-  html += '<button class="csp-preset-btn" data-preset="broken" style="background:#ff222215;color:#ff2222;border:1px solid #ff222233;padding:5px 12px;font-family:monospace;font-size:9px;cursor:pointer;border-radius:3px;letter-spacing:1px;">BROKEN</button>';
+  html += '<button class="csp-preset-btn" data-preset="strict" style="background:#00ff8815;color:#00ff88;border:1px solid #00ff8833;padding:5px 12px;font-family:monospace;font-size:9px;cursor:pointer;border-radius:4px;letter-spacing:1px;">STRICT</button>';
+  html += '<button class="csp-preset-btn" data-preset="moderate" style="background:#ffaa0015;color:#ffaa00;border:1px solid #ffaa0033;padding:5px 12px;font-family:monospace;font-size:9px;cursor:pointer;border-radius:4px;letter-spacing:1px;">MODERATE</button>';
+  html += '<button class="csp-preset-btn" data-preset="permissive" style="background:#ff660015;color:#ff6600;border:1px solid #ff660033;padding:5px 12px;font-family:monospace;font-size:9px;cursor:pointer;border-radius:4px;letter-spacing:1px;">PERMISSIVE</button>';
+  html += '<button class="csp-preset-btn" data-preset="broken" style="background:#ff222215;color:#ff2222;border:1px solid #ff222233;padding:5px 12px;font-family:monospace;font-size:9px;cursor:pointer;border-radius:4px;letter-spacing:1px;">BROKEN</button>';
   html += '</div>';
 
   html += '<div style="margin-bottom:16px;">';

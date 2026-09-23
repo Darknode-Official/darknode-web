@@ -395,7 +395,7 @@ const ENC_STYLES = `
   .enc-input:focus, .enc-textarea:focus { border-color: #7c5cff; }
   .enc-textarea { resize: vertical; min-height: 100px; }
   .enc-select { padding: 8px 12px; background: var(--input-bg, #161b22); border: 1px solid var(--border, #1a2233); border-radius: 6px; color: var(--txt, #e0e6ed); font-family: inherit; font-size: 0.85rem; outline: none; cursor: pointer; }
-  .enc-btn { padding: 8px 18px; border: none; border-radius: 6px; cursor: pointer; font-family: inherit; font-size: 0.8rem; font-weight: 600; transition: all 0.15s; }
+  .enc-btn { padding: 8px 18px; border: none; border-radius: 4px; cursor: pointer; font-family: inherit; font-size: 0.8rem; font-weight: 600; transition: all 0.15s; }
   .enc-btn-primary { background: linear-gradient(135deg, #7c5cff, #5a3fdd); color: #fff; }
   .enc-btn-primary:hover { filter: brightness(1.15); transform: translateY(-1px); }
   .enc-btn-ghost { background: transparent; color: #7c5cff; border: 1px solid rgba(124,92,255,0.3); }
@@ -404,7 +404,7 @@ const ENC_STYLES = `
   .enc-copy-btn { position: absolute; top: 6px; right: 6px; padding: 4px 10px; font-size: 0.7rem; background: rgba(124,92,255,0.15); color: #7c5cff; border: none; border-radius: 4px; cursor: pointer; font-family: inherit; }
   .enc-copy-btn:hover { background: rgba(124,92,255,0.3); }
   .enc-swap { display: flex; align-items: center; justify-content: center; padding: 8px; }
-  .enc-swap-btn { background: none; border: 1px solid var(--border, #1a2233); border-radius: 50%; width: 36px; height: 36px; cursor: pointer; color: var(--txt-2, #8899aa); font-size: 1.1rem; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+  .enc-swap-btn { background: none; border: 1px solid var(--border, #1a2233); border-radius: 4px; width: 36px; height: 36px; cursor: pointer; color: var(--txt-2, #8899aa); font-size: 1.1rem; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
   .enc-swap-btn:hover { border-color: #7c5cff; color: #7c5cff; background: rgba(124,92,255,0.08); }
   .enc-jwt-section { margin-top: 12px; }
   .enc-jwt-header { font-size: 0.75rem; color: var(--txt-2, #8899aa); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }

@@ -103,6 +103,15 @@ function gradeHeaders(headers) {
   return { grade, score: pct, results };
 }
 
+// Graph severity for a failed/weak security header check.
+function headerIssueSeverity(r) {
+  const missing = r.status === "missing";
+  if (r.weight >= 20) return missing ? "high" : "medium";
+  if (r.required) return missing ? "medium" : "low";
+  if (r.weight >= 5 || r.status === "bad") return "low";
+  return "info";
+}
+
 // ── Cookie Parser ───────────────────────────────────────────────────────────
 
 function parseCookies(setCookieHeader) {
@@ -215,7 +224,7 @@ export function renderHttpInspector(container) {
   .hti{font-family:var(--mono,'JetBrains Mono',monospace);color:var(--txt,#e0e6ed);max-width:1100px;margin:0 auto;padding:24px}
   .hti h2{font-family:var(--font-display,system-ui);font-weight:700;font-size:1.4rem;margin:0 0 16px;color:var(--acc,#00d4ff)}
   .hti-tabs{display:flex;gap:6px;margin-bottom:20px;flex-wrap:wrap}
-  .hti-tab{padding:6px 14px;border-radius:6px;cursor:pointer;font-size:.85rem;border:1px solid var(--border,#1e2a3a);background:var(--bg2,#0d1520);color:var(--mut,#8892a4)}
+  .hti-tab{padding:6px 14px;border-radius:4px;cursor:pointer;font-size:.85rem;border:1px solid var(--border,#1e2a3a);background:var(--bg2,#0d1520);color:var(--mut,#8892a4)}
   .hti-tab.active{background:var(--acc,#00d4ff);color:#000;border-color:var(--acc)}
   .hti-panel{display:none}.hti-panel.active{display:block}
   .hti-input{width:100%;padding:10px 12px;background:var(--bg2,#0d1520);border:1px solid var(--border,#1e2a3a);border-radius:6px;color:var(--txt);font-family:inherit;font-size:.85rem;margin-bottom:12px}
@@ -269,6 +278,32 @@ export function renderHttpInspector(container) {
     render("");
   }
 
+  let fetchedHost = "";
+  let lastGrade = null;
+
+  // Header issues -> FINDING (severity from header weight) --affects--> DOMAIN.
+  // Headers come from a live curl fetch via the CLI bridge or are pasted by the user, so nothing is simulated.
+  function sendHeadersToGraph(btn) {
+    const host = (panelsEl.querySelector("#hti-gr-domain")?.value || "").trim().toLowerCase().replace(/^https?:\/\//, "").replace(/\/.*$/, "");
+    if (!lastGrade) return;
+    const issues = lastGrade.results.filter(r => r.status !== "good");
+    const tags = ["http-headers", lastGrade.live ? "live" : "pasted"];
+    const label = host || "pasted headers";
+    btn.disabled = true;
+    import('/js/graph-bridge.js?v=20260923c').then(gb => {
+      const root = host ? gb.sendToGraph("HTTP Inspector", [{ type: "DOMAIN", name: host, data: { headerGrade: lastGrade.grade, headerScore: lastGrade.score }, opts: { tags } }], undefined, true).entities[0] : null;
+      const r = gb.sendToGraph("HTTP Inspector", issues.map(i => ({
+        type: "FINDING",
+        name: i.name + " header " + (i.status === "missing" ? "missing" : i.status === "bad" ? "insecure" : "weak") + " (" + label + ")",
+        data: { header: i.name, value: i.value, check: i.status, note: i.note, domain: host, grade: lastGrade.grade },
+        opts: { tags: tags.concat("security-header"), severity: headerIssueSeverity(i) }
+      })), undefined, true);
+      if (root) r.entities.forEach(e => gb.linkEntities(e.id, root.id, "affects"));
+      btn.textContent = "Sent: " + r.created + " new, " + r.updated + " merged";
+      gb.showGraphToast("Security Graph: " + r.entities.length + " header findings for " + label + (root ? "" : " (not linked: no domain given)"));
+    }).catch(() => { btn.textContent = "Security Graph unavailable"; btn.disabled = false; });
+  }
+
   function renderGrader() {
     const cliReady = window._bridge && window._bridge.connected && window._bridge.hasTool('curl');
     panelsEl.innerHTML = `<div class="hti-panel active">
@@ -281,11 +316,13 @@ export function renderHttpInspector(container) {
       panelsEl.querySelector("#hti-gr-fetch").onclick = async () => {
         const url = panelsEl.querySelector("#hti-gr-url").value.trim().replace(/[;|`$()&]/g,'');
         if (!url) return;
+        fetchedHost = parseURL(/^https?:\/\//i.test(url) ? url : "https://" + url)?.hostname || "";
         panelsEl.querySelector("#hti-gr-result").innerHTML = '<div style="padding:12px;opacity:.6">Fetching headers...</div>';
         try {
           const r = await window._bridge.exec("curl -sI '" + url.replace(/'/g,'') + "' 2>/dev/null | head -40");
           panelsEl.querySelector("#hti-gr-input").value = r.stdout || '';
           panelsEl.querySelector("#hti-gr-go").click();
+          if (lastGrade) lastGrade.live = true;
         } catch(e) { panelsEl.querySelector("#hti-gr-result").innerHTML = '<div style="color:#ef4444;padding:12px">Error: '+e.message+'</div>'; }
       };
     }
@@ -297,12 +334,19 @@ export function renderHttpInspector(container) {
         if (colon > 0) headers[line.slice(0, colon).trim().toLowerCase()] = line.slice(colon + 1).trim();
       }
       const g = gradeHeaders(headers);
+      lastGrade = Object.assign({ live: false }, g);
+      const issueCount = g.results.filter(r => r.status !== "good").length;
       panelsEl.querySelector("#hti-gr-result").innerHTML =
         '<div class="hti-result"><div style="display:flex;align-items:center;gap:16px;margin-bottom:16px"><div class="hti-grade hti-grade-' + g.grade + '">' + g.grade + '</div><div><div style="font-size:1.2rem;font-weight:700">' + g.score + '/100</div><div style="color:var(--mut);font-size:.85rem">Security Header Score</div></div></div>' +
         '<table class="hti-table"><tr><th>Header</th><th>Value</th><th>Status</th></tr>' +
         g.results.map(r => '<tr><td style="color:var(--acc)">' + esc(r.name) + (r.required ? ' <span style="color:#f59e0b">*</span>' : '') + '</td><td style="font-size:.75rem">' + esc(r.value).slice(0, 80) + '</td><td class="' + (r.status === "good" ? "hti-good" : r.status === "weak" ? "hti-warn" : r.status === "bad" ? "hti-bad" : "hti-bad") + '">' + r.status.toUpperCase() + (r.note ? ' <span style="color:var(--mut);font-size:.7rem">(' + esc(r.note) + ')</span>' : '') + '</td></tr>').join("") +
-        '</table><div style="color:var(--mut);font-size:.75rem">* = required for baseline security</div></div>';
+        '</table><div style="color:var(--mut);font-size:.75rem">* = required for baseline security</div>' +
+        (issueCount ? '<div style="display:flex;gap:8px;align-items:center;margin-top:12px;flex-wrap:wrap"><input class="hti-input" id="hti-gr-domain" style="flex:1;min-width:200px;margin-bottom:8px" placeholder="Domain these headers belong to (links findings in the graph)" value="' + esc(fetchedHost) + '"><button class="hti-btn" id="hti-gr-graph">Send ' + issueCount + ' header issues to Security Graph</button></div>' : '') +
+        '</div>';
+      const graphBtn = panelsEl.querySelector("#hti-gr-graph");
+      if (graphBtn) graphBtn.onclick = () => sendHeadersToGraph(graphBtn);
     };
+    panelsEl.querySelector("#hti-gr-input").oninput = () => { fetchedHost = ""; };
   }
 
   function renderCookieAnalyzer() {

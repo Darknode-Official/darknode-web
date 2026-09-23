@@ -321,7 +321,7 @@ export function renderPrivescToolkit(container) {
 .pe-tab.active{color:#bf7fff;border-bottom-color:#bf7fff;background:rgba(191,127,255,.08)}
 .pe-content{padding:20px 24px}
 .pe-sub-tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
-.pe-sub-tab{padding:6px 14px;background:#111828;border:1px solid #1e293b;border-radius:6px;color:#8ab4d0;font-size:12px;cursor:pointer;transition:all .2s}
+.pe-sub-tab{padding:6px 14px;background:#111828;border:1px solid #1e293b;border-radius:4px;color:#8ab4d0;font-size:12px;cursor:pointer;transition:all .2s}
 .pe-sub-tab:hover{border-color:#bf7fff;color:#bf7fff}
 .pe-sub-tab.active{background:#1a0a2e;border-color:#bf7fff;color:#bf7fff}
 .pe-card{background:#111828;border:1px solid #1e293b;border-radius:8px;margin-bottom:12px;overflow:hidden}

@@ -201,7 +201,7 @@ export function renderDocs(main) {
   style.textContent =
     '.dc-wrap{max-width:960px;margin:0 auto;padding:40px 32px 60px}' +
     '.dc-header{display:flex;align-items:center;gap:16px;margin-bottom:8px}' +
-    '.dc-back{display:inline-flex;align-items:center;gap:6px;background:var(--card,#141c28);color:var(--acc,#00aaff);border:1px solid var(--line,#1a2a44);border-radius:6px;padding:8px 16px;cursor:pointer;font-size:.85rem;font-weight:600;font-family:inherit;transition:all .15s}' +
+    '.dc-back{display:inline-flex;align-items:center;gap:6px;background:var(--card,#141c28);color:var(--acc,#00aaff);border:1px solid var(--line,#1a2a44);border-radius:4px;padding:8px 16px;cursor:pointer;font-size:.85rem;font-weight:600;font-family:inherit;transition:all .15s}' +
     '.dc-back:hover{background:var(--acc,#00aaff);color:#fff;border-color:var(--acc,#00aaff)}' +
     '.dc-breadcrumb{display:flex;align-items:center;gap:6px;color:var(--mut,#64748b);font-size:.82rem;margin-bottom:24px}' +
     '.dc-breadcrumb a{color:var(--acc,#00aaff);text-decoration:none;cursor:pointer}' +

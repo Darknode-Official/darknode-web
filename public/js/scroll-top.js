@@ -2,7 +2,7 @@
 (function () {
   const s = document.createElement("style");
   s.textContent = `
-    .stt{position:fixed;bottom:24px;right:24px;z-index:90;width:44px;height:44px;border-radius:50%;
+    .stt{position:fixed;bottom:24px;right:24px;z-index:90;width:44px;height:44px;border-radius:var(--btn-radius,4px);
       border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;
       background:#18181b;color:#fff;box-shadow:0 4px 14px rgba(0,0,0,.18);
       opacity:0;pointer-events:none;transform:translateY(12px);

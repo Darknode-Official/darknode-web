@@ -202,7 +202,7 @@ export function renderCertAnalyzer(container) {
     '.ca-title{font-size:1.6rem;font-weight:700;margin:0 0 6px;color:var(--txt)}' +
     '.ca-sub{color:var(--mut);font-size:.85rem;margin-bottom:20px;line-height:1.5}' +
     '.ca-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:24px}' +
-    '.ca-tab{background:var(--card);border:1px solid var(--line);color:var(--mut);padding:8px 16px;font-size:.75rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;cursor:pointer;border-radius:6px;transition:all .15s;font-family:inherit}' +
+    '.ca-tab{background:var(--card);border:1px solid var(--line);color:var(--mut);padding:8px 16px;font-size:.75rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;cursor:pointer;border-radius:4px;transition:all .15s;font-family:inherit}' +
     '.ca-tab:hover{background:color-mix(in srgb,var(--acc) 8%,var(--card));color:var(--txt)}' +
     '.ca-tab.active{background:var(--acc);color:var(--on-acc,#fff);border-color:var(--acc)}' +
     '.ca-panel{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:20px;margin-bottom:16px}' +

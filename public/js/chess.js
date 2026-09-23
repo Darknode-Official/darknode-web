@@ -487,7 +487,7 @@ const STYLE = `
 .chess-engine-status{font-size:.72rem;color:var(--mut,#7a93b8);text-align:center;padding:4px}
 .chess-promo-overlay{position:absolute;inset:0;background:rgba(0,0,0,.6);z-index:10;display:flex;align-items:center;justify-content:center;border-radius:var(--radius,8px)}
 .chess-promo-picker{display:flex;gap:6px;background:var(--card,#0f1726);border:1px solid var(--acc,#00d4ff);border-radius:var(--radius,8px);padding:12px;box-shadow:0 8px 32px rgba(0,0,0,.5)}
-.chess-promo-opt{width:52px;height:52px;cursor:pointer;border:2px solid var(--line,#283a5a);border-radius:var(--radius,8px);background:var(--card2,#151f34);display:flex;align-items:center;justify-content:center;transition:all .15s}
+.chess-promo-opt{width:52px;height:52px;cursor:pointer;border:2px solid var(--line,#283a5a);border-radius:var(--btn-radius,4px);background:var(--card2,#151f34);display:flex;align-items:center;justify-content:center;transition:all .15s}
 .chess-promo-opt:hover{border-color:var(--acc,#00d4ff);background:color-mix(in srgb,var(--acc,#00d4ff) 15%,var(--card2,#151f34));transform:scale(1.1)}
 .chess-promo-opt svg{width:36px;height:36px}
 .chess-label{font-size:.72rem;color:var(--mut,#7a93b8);text-transform:uppercase;letter-spacing:.08em;font-weight:600}

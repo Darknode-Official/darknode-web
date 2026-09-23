@@ -162,7 +162,7 @@ export function renderHeaderAnalyzer(container) {
     'style="flex:1;background:#0a0e1a;border:1px solid #1a2a44;border-radius:6px;padding:10px 14px;color:#c8d6e5;font-family:monospace;font-size:13px;outline:none;" ' +
     'onkeydown="if(event.key===\'Enter\')_haAnalyze(this.value)">' +
     '<button onclick="_haAnalyze(document.getElementById(\'ha-input\').value)" ' +
-    'style="background:linear-gradient(135deg,#00aaff22,#00aaff11);border:1px solid #00aaff66;border-radius:6px;padding:10px 20px;color:#00ddff;font-family:monospace;font-size:12px;font-weight:bold;cursor:pointer;letter-spacing:1px;">ANALYZE</button>' +
+    'style="background:linear-gradient(135deg,#00aaff22,#00aaff11);border:1px solid #00aaff66;border-radius:4px;padding:10px 20px;color:#00ddff;font-family:monospace;font-size:12px;font-weight:bold;cursor:pointer;letter-spacing:1px;">ANALYZE</button>' +
     '</div>' +
 
     '<div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;">' +

@@ -795,7 +795,7 @@ export function renderCyberBriefing(container) {
       '</div>' +
       '<textarea class="cb-export-textarea" id="cb-export-text" readonly>' + esc(text) + '</textarea>' +
       '<div class="cb-export-actions">' +
-      '<button class="cb-btn" id="cb-copy-text">&#128203; Copy to Clipboard</button>' +
+      '<button class="cb-btn" id="cb-copy-text">Copy to Clipboard</button>' +
       '</div>' +
       '</div>';
 

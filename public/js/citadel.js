@@ -831,6 +831,52 @@ const THREAT_ACTORS = [
   {name:'FIN7 / Carbanak',nation:'Russia',sectors:['Retail','Hospitality','Financial','Restaurant'],ttps:['T1566','T1059.001','T1003','T1048'],tools:['Carbanak RAT','Cobalt Strike','Metasploit'],confidence:'Medium',relevance:'Financial sector targeting and Cobalt Strike usage'},
 ];
 
+// ========== SECURITY GRAPH EXPORT ==========
+// CITADEL's alert queue is built-in demo data (no SIEM connection), so every entity is tagged simulated.
+var CT_GRAPH_SEV = {Critical:'critical',High:'high',Medium:'medium',Low:'low',Info:'info'};
+var CT_GRAPH_STATUS = {New:'new',Investigating:'investigating',Escalated:'open',Resolved:'resolved'};
+
+// Classify an alert endpoint value: IPv4 -> IP, dotted hostname -> DOMAIN, other names (DC-01, FS-01) -> ASSET.
+function ctHostItem(v, tags) {
+  var type = /^\d{1,3}(\.\d{1,3}){3}$/.test(v) ? 'IP' : /^[a-z0-9-]+(\.[a-z0-9-]+)*\.[a-z]{2,}$/i.test(v) ? 'DOMAIN' : 'ASSET';
+  return {type:type,name:v,data:{simulated:true,source:'CITADEL alert queue'},opts:{tags:tags}};
+}
+
+function ctSendAlertsToGraph(btn, alerts) {
+  btn.disabled = true;
+  import('/js/graph-bridge.js?v=20260923c').then(function(gb) {
+    var tags = ['citadel','soc','simulated'];
+    var created = 0, updated = 0, links = 0, incidents = 0;
+    var one = function(item) {
+      var r = gb.sendToGraph('CITADEL', [item], undefined, true);
+      created += r.created; updated += r.updated;
+      return r.entities[0] || null;
+    };
+    var link = function(from, to, rel) { if (from && to && gb.linkEntities(from.id, to.id, rel)) links++; };
+    alerts.forEach(function(a) {
+      var alert = one({
+        type:'ALERT', name:a.id + ': ' + a.title,
+        data:{alertId:a.id,rule:a.rule,source:a.source,timestamp:a.timestamp,srcIp:a.srcIp||'',dstIp:a.dstIp||'',eventCount:a.count,mitre:a.mitre,analyst:a.analyst||'',triageStatus:a.status,simulated:true},
+        opts:{tags:tags.concat('alert', String(a.source).toLowerCase()), severity:CT_GRAPH_SEV[a.severity]||null, status:CT_GRAPH_STATUS[a.status]}
+      });
+      if (!alert) return;
+      [a.srcIp, a.dstIp].forEach(function(v) { if (v) link(alert, one(ctHostItem(v, tags)), 'observed_in'); });
+      if (a.mitre) link(alert, one({type:'TECHNIQUE',name:a.mitre,data:{framework:'MITRE ATT&CK'},opts:{tags:['mitre-attack']}}), 'related_to');
+      // Escalated alerts become incidents that contain the alert.
+      if (a.status === 'Escalated') {
+        var inc = one({
+          type:'INCIDENT', name:'Escalated ' + a.id + ': ' + a.title,
+          data:{fromAlert:a.id,lead:a.analyst||'',mitre:a.mitre,simulated:true},
+          opts:{tags:tags.concat('incident'), severity:CT_GRAPH_SEV[a.severity]||null, status:'open'}
+        });
+        if (inc) { incidents++; link(inc, alert, 'contains'); }
+      }
+    });
+    btn.textContent = 'Sent: ' + created + ' new, ' + updated + ' merged';
+    gb.showGraphToast('Security Graph: ' + alerts.length + ' alerts' + (incidents ? ', ' + incidents + ' incidents' : '') + ', ' + links + ' links (tagged simulated)');
+  }).catch(function() { btn.textContent = 'Security Graph unavailable'; btn.disabled = false; });
+}
+
 // ========== MAIN RENDER ==========
 export function renderCitadel(main) {
   var activeTab = 'dashboard';
@@ -878,7 +924,7 @@ export function renderCitadel(main) {
       '.ct-stat{background:rgba(0,0,0,.2);border:1px solid var(--line);border-radius:4px;padding:10px 14px}' +
       '.ct-stat-v{font-size:1.3rem;font-weight:700;font-variant-numeric:tabular-nums}' +
       '.ct-stat-l{font-size:.6rem;color:var(--mut);letter-spacing:.04em;text-transform:uppercase;margin-top:2px}' +
-      '.ct-btn{background:transparent;border:1px solid var(--acc);color:var(--acc);padding:6px 14px;font-size:.68rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;border-radius:3px;cursor:pointer;font-family:inherit;transition:all .15s}' +
+      '.ct-btn{background:transparent;border:1px solid var(--acc);color:var(--acc);padding:6px 14px;font-size:.68rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;border-radius:4px;cursor:pointer;font-family:inherit;transition:all .15s}' +
       '.ct-btn:hover{background:var(--acc);color:var(--bg);box-shadow:0 0 12px color-mix(in srgb,var(--acc) 40%,transparent)}' +
       '.ct-btn-ghost{border-color:var(--line);color:var(--mut)}' +
       '.ct-btn-ghost:hover{border-color:var(--txt);color:var(--txt);background:rgba(255,255,255,.05);box-shadow:none}' +
@@ -934,7 +980,7 @@ export function renderCitadel(main) {
       '.ct-corr-arrow{color:var(--mut);font-size:1rem}' +
       '.ct-corr-window{background:rgba(0,229,255,.1);border:1px solid rgba(0,229,255,.3);border-radius:10px;padding:2px 8px;font-size:.55rem;color:#00e5ff}' +
       '.ct-compliance-bar{display:flex;gap:4px;margin-bottom:12px}' +
-      '.ct-compliance-btn{background:transparent;border:1px solid var(--line);color:var(--mut);padding:6px 14px;font-size:.65rem;font-weight:600;border-radius:3px;cursor:pointer;font-family:inherit;transition:all .15s}' +
+      '.ct-compliance-btn{background:transparent;border:1px solid var(--line);color:var(--mut);padding:6px 14px;font-size:.65rem;font-weight:600;border-radius:4px;cursor:pointer;font-family:inherit;transition:all .15s}' +
       '.ct-compliance-btn.on{border-color:var(--acc);color:var(--acc);background:rgba(0,229,255,.08)}' +
       '.ct-score-ring{position:relative;width:100px;height:100px;margin:0 auto}' +
       '.ct-scanline{position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--acc),transparent);opacity:.15;animation:ct-scan 6s linear infinite;pointer-events:none}' +
@@ -990,7 +1036,7 @@ export function renderCitadel(main) {
       '.ct-code-block .number{color:#00e5ff}' +
       '.ct-code-block .comment{color:var(--mut);font-style:italic}' +
       '.ct-tabs-mini{display:flex;gap:2px;margin-bottom:8px}' +
-      '.ct-tab-mini{background:transparent;border:1px solid var(--line);color:var(--mut);padding:4px 10px;font-size:.6rem;font-weight:600;border-radius:2px;cursor:pointer;font-family:inherit;transition:all .15s}' +
+      '.ct-tab-mini{background:transparent;border:1px solid var(--line);color:var(--mut);padding:4px 10px;font-size:.6rem;font-weight:600;border-radius:4px;cursor:pointer;font-family:inherit;transition:all .15s}' +
       '.ct-tab-mini.on{border-color:var(--acc);color:var(--acc);background:rgba(0,229,255,.08)}' +
       '.ct-progress{display:flex;gap:2px;margin-top:4px}' +
       '.ct-progress-seg{height:4px;flex:1;border-radius:2px;background:var(--line)}' +
@@ -2039,6 +2085,7 @@ export function renderCitadel(main) {
         '</select>' +
         '<span style="flex:1"></span>' +
         '<span style="color:var(--mut);font-size:.65rem">' + filtered.length + ' alerts</span>' +
+        '<button class="ct-btn ct-btn-sm" id="ct-triage-graph" title="Demo alert data is tagged simulated"' + (filtered.length ? '' : ' disabled') + '>Send ' + filtered.length + ' alerts to Security Graph</button>' +
       '</div>' +
 
       '<div class="ct-grid2">' +
@@ -2152,6 +2199,7 @@ export function renderCitadel(main) {
                   '<button class="ct-btn ct-btn-sm ct-btn-ghost" data-action="fp">Close as FP</button>' +
                   '<button class="ct-btn ct-btn-sm" style="border-color:#00e676;color:#00e676" data-action="resolve">Resolve</button>' +
                   '<button class="ct-btn ct-btn-sm ct-btn-ghost">Export PDF</button>' +
+                  '<button class="ct-btn ct-btn-sm" id="ct-alert-graph" title="Demo alert data is tagged simulated">Send to Security Graph</button>' +
                 '</div>' +
               '</div>' +
             '</div>' +
@@ -2210,6 +2258,10 @@ export function renderCitadel(main) {
     c.querySelector('#ct-triage-sev').onchange = function(e) {
       triageFilter.severity = e.target.value; renderTriage(c);
     };
+    var triageGraphBtn = c.querySelector('#ct-triage-graph');
+    if (triageGraphBtn) triageGraphBtn.onclick = function() { ctSendAlertsToGraph(triageGraphBtn, filtered); };
+    var alertGraphBtn = c.querySelector('#ct-alert-graph');
+    if (alertGraphBtn && detail) alertGraphBtn.onclick = function(e) { e.stopPropagation(); ctSendAlertsToGraph(alertGraphBtn, [detail]); };
     c.querySelectorAll('[data-aid]').forEach(function(card) {
       card.onclick = function() {
         selectedAlert = card.dataset.aid === selectedAlert ? null : card.dataset.aid;

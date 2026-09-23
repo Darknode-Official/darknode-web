@@ -2949,7 +2949,7 @@ function renderCounterOps() {
     for (var ro = 0; ro < roe.options.length; ro++) {
       var optColor = ro === 0 ? '#00ff88' : ro === 1 ? '#3b82f6' : ro === 2 ? '#eab308' : '#ef4444';
       var isSelected = ro === 0 ? 'background:' + optColor + '22;border-color:' + optColor + ';color:' + optColor + ';' : 'background:transparent;border-color:#334;color:#667;';
-      h += '<div style="font-size:10px;font-family:monospace;padding:4px 10px;border:1px solid;border-radius:3px;cursor:pointer;' + isSelected + '">';
+      h += '<div style="font-size:10px;font-family:monospace;padding:4px 10px;border:1px solid;border-radius:4px;cursor:pointer;' + isSelected + '">';
       h += esc(roe.options[ro]);
       h += '</div>';
     }
@@ -3495,7 +3495,7 @@ function renderIntelFusion() {
   for (var it = 0; it < intelTypes.length; it++) {
     var iType = intelTypes[it];
     var isFirstTab = it === 0;
-    h += '<div style="background:' + (isFirstTab ? iType.color + '22' : '#0a0e1a') + ';border:1px solid ' + (isFirstTab ? iType.color + '66' : '#1a2a44') + ';border-radius:6px 6px 0 0;padding:8px 16px;cursor:pointer;flex:1;text-align:center;">';
+    h += '<div style="background:' + (isFirstTab ? iType.color + '22' : '#0a0e1a') + ';border:1px solid ' + (isFirstTab ? iType.color + '66' : '#1a2a44') + ';border-radius:4px 4px 0 0;padding:8px 16px;cursor:pointer;flex:1;text-align:center;">';
     h += '<div style="color:' + (isFirstTab ? iType.color : '#556') + ';font-size:12px;font-family:monospace;font-weight:bold;">' + iType.icon + ' ' + esc(iType.name) + '</div>';
     h += '<div style="color:' + (isFirstTab ? '#aab' : '#334') + ';font-size:9px;font-family:monospace;">' + esc(iType.desc) + '</div>';
     h += '</div>';
@@ -3630,7 +3630,7 @@ function renderIntelFusion() {
     h += '<div style="color:#556;font-size:9px;font-family:monospace;margin-top:2px;">' + esc(prod.format) + '</div>';
     h += '</div>';
     h += '<div style="text-align:right;">';
-    h += '<div style="background:#00aaff22;color:#00aaff;font-size:9px;font-family:monospace;padding:4px 10px;border-radius:3px;cursor:pointer;border:1px solid #00aaff44;margin-bottom:4px;">GENERATE</div>';
+    h += '<div style="background:#00aaff22;color:#00aaff;font-size:9px;font-family:monospace;padding:4px 10px;border-radius:4px;cursor:pointer;border:1px solid #00aaff44;margin-bottom:4px;">GENERATE</div>';
     h += '<div style="color:#445;font-size:8px;font-family:monospace;">Last: ' + esc(prod.lastGenerated) + '</div>';
     h += '</div>';
     h += '</div>';
@@ -4117,7 +4117,7 @@ function renderCommand() {
     h += '<div style="display:flex;flex-wrap:wrap;gap:4px;">';
     for (var ao = 0; ao < aThreat.options.length; ao++) {
       var isFirstOpt = ao === 0;
-      h += '<div style="font-size:9px;font-family:monospace;padding:4px 8px;border-radius:3px;cursor:pointer;background:' + (isFirstOpt ? urgencyColor + '22' : 'transparent') + ';border:1px solid ' + (isFirstOpt ? urgencyColor : '#334') + ';color:' + (isFirstOpt ? urgencyColor : '#667') + ';">' + esc(aThreat.options[ao]) + '</div>';
+      h += '<div style="font-size:9px;font-family:monospace;padding:4px 8px;border-radius:4px;cursor:pointer;background:' + (isFirstOpt ? urgencyColor + '22' : 'transparent') + ';border:1px solid ' + (isFirstOpt ? urgencyColor : '#334') + ';color:' + (isFirstOpt ? urgencyColor : '#667') + ';">' + esc(aThreat.options[ao]) + '</div>';
     }
     h += '</div>';
     h += '</div>';
@@ -7187,7 +7187,7 @@ function renderTracking() {
   for (var st = 0; st < subTabs.length; st++) {
     var sub = subTabs[st];
     var isActiveSub = sub.id === _seTrackingSubTab;
-    h += '<div style="background:' + (isActiveSub ? sub.color + '22' : '#0a0e1a') + ';border:1px solid ' + (isActiveSub ? sub.color + '66' : '#1a2a44') + ';border-radius:6px 6px 0 0;padding:8px 16px;cursor:pointer;flex:1;text-align:center;" onclick="_seTrackingSubTab=\'' + sub.id + '\';switchTab(\'tracking\')">';
+    h += '<div style="background:' + (isActiveSub ? sub.color + '22' : '#0a0e1a') + ';border:1px solid ' + (isActiveSub ? sub.color + '66' : '#1a2a44') + ';border-radius:4px 4px 0 0;padding:8px 16px;cursor:pointer;flex:1;text-align:center;" onclick="_seTrackingSubTab=\'' + sub.id + '\';switchTab(\'tracking\')">';
     h += '<div style="color:' + (isActiveSub ? sub.color : '#556') + ';font-size:12px;font-family:monospace;font-weight:bold;">' + sub.icon + ' ' + esc(sub.label) + '</div>';
     h += '</div>';
   }
@@ -7338,7 +7338,7 @@ function _seRenderCyberTab() {
   h += '<div style="margin-bottom:14px;">';
   h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">';
   h += '<div style="color:#ff6644;font-size:11px;font-family:monospace;letter-spacing:1px;font-weight:bold;">NATIONAL VULNERABILITY DATABASE (NVD)</div>';
-  h += '<div onclick="_seFetchNVD()" style="background:#ff664422;color:#ff6644;font-size:9px;font-family:monospace;padding:4px 10px;border-radius:3px;cursor:pointer;border:1px solid #ff664444;">REFRESH</div>';
+  h += '<div onclick="_seFetchNVD()" style="background:#ff664422;color:#ff6644;font-size:9px;font-family:monospace;padding:4px 10px;border-radius:4px;cursor:pointer;border:1px solid #ff664444;">REFRESH</div>';
   h += '</div>';
   h += '<div id="se-nvd-feed" style="background:#080c14;border:1px solid #1a2030;border-radius:6px;padding:12px;max-height:220px;overflow-y:auto;">';
   h += '<div style="text-align:center;padding:20px;color:#556;font-family:monospace;font-size:11px;">Loading NVD vulnerability data...</div>';
@@ -7349,7 +7349,7 @@ function _seRenderCyberTab() {
   h += '<div style="margin-bottom:14px;">';
   h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">';
   h += '<div style="color:#ff2244;font-size:11px;font-family:monospace;letter-spacing:1px;font-weight:bold;">CISA KNOWN EXPLOITED VULNERABILITIES</div>';
-  h += '<div onclick="_seFetchKEV()" style="background:#ff224422;color:#ff2244;font-size:9px;font-family:monospace;padding:4px 10px;border-radius:3px;cursor:pointer;border:1px solid #ff224444;">REFRESH</div>';
+  h += '<div onclick="_seFetchKEV()" style="background:#ff224422;color:#ff2244;font-size:9px;font-family:monospace;padding:4px 10px;border-radius:4px;cursor:pointer;border:1px solid #ff224444;">REFRESH</div>';
   h += '</div>';
   h += '<div id="se-kev-feed" style="background:#080c14;border:1px solid #1a2030;border-radius:6px;padding:12px;max-height:220px;overflow-y:auto;">';
   h += '<div style="text-align:center;padding:20px;color:#556;font-family:monospace;font-size:11px;">Loading CISA KEV data...</div>';
@@ -7360,7 +7360,7 @@ function _seRenderCyberTab() {
   h += '<div style="margin-bottom:14px;">';
   h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">';
   h += '<div style="color:#aa44ff;font-size:11px;font-family:monospace;letter-spacing:1px;font-weight:bold;">THREAT INTELLIGENCE FEED (IOCs)</div>';
-  h += '<div onclick="_seFetchIOC()" style="background:#aa44ff22;color:#aa44ff;font-size:9px;font-family:monospace;padding:4px 10px;border-radius:3px;cursor:pointer;border:1px solid #aa44ff44;">REFRESH</div>';
+  h += '<div onclick="_seFetchIOC()" style="background:#aa44ff22;color:#aa44ff;font-size:9px;font-family:monospace;padding:4px 10px;border-radius:4px;cursor:pointer;border:1px solid #aa44ff44;">REFRESH</div>';
   h += '</div>';
   h += '<div id="se-ioc-feed" style="background:#080c14;border:1px solid #1a2030;border-radius:6px;padding:12px;max-height:220px;overflow-y:auto;">';
   h += '<div style="text-align:center;padding:20px;color:#556;font-family:monospace;font-size:11px;">Loading threat IOC data...</div>';
@@ -7371,7 +7371,7 @@ function _seRenderCyberTab() {
   h += '<div style="margin-bottom:14px;">';
   h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">';
   h += '<div style="color:#00ff88;font-size:11px;font-family:monospace;letter-spacing:1px;font-weight:bold;">BOTNET C2 SERVERS — Feodo Tracker (abuse.ch)</div>';
-  h += '<div onclick="_seFetchBotnetC2()" style="background:#00ff8822;color:#00ff88;font-size:9px;font-family:monospace;padding:4px 10px;border-radius:3px;cursor:pointer;border:1px solid #00ff8844;">REFRESH</div>';
+  h += '<div onclick="_seFetchBotnetC2()" style="background:#00ff8822;color:#00ff88;font-size:9px;font-family:monospace;padding:4px 10px;border-radius:4px;cursor:pointer;border:1px solid #00ff8844;">REFRESH</div>';
   h += '</div>';
   h += '<div id="se-c2-feed" style="background:#080c14;border:1px solid #1a2030;border-radius:6px;padding:12px;max-height:220px;overflow-y:auto;">';
   h += '<div style="text-align:center;padding:20px;color:#556;font-family:monospace;font-size:11px;">Loading botnet C2 data...</div>';
@@ -7382,7 +7382,7 @@ function _seRenderCyberTab() {
   h += '<div>';
   h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">';
   h += '<div style="color:#ffaa00;font-size:11px;font-family:monospace;letter-spacing:1px;font-weight:bold;">MALWARE DISTRIBUTION URLS — URLhaus (abuse.ch)</div>';
-  h += '<div onclick="_seFetchMalwareURLs()" style="background:#ffaa0022;color:#ffaa00;font-size:9px;font-family:monospace;padding:4px 10px;border-radius:3px;cursor:pointer;border:1px solid #ffaa0044;">REFRESH</div>';
+  h += '<div onclick="_seFetchMalwareURLs()" style="background:#ffaa0022;color:#ffaa00;font-size:9px;font-family:monospace;padding:4px 10px;border-radius:4px;cursor:pointer;border:1px solid #ffaa0044;">REFRESH</div>';
   h += '</div>';
   h += '<div id="se-malurl-feed" style="background:#080c14;border:1px solid #1a2030;border-radius:6px;padding:12px;max-height:220px;overflow-y:auto;">';
   h += '<div style="text-align:center;padding:20px;color:#556;font-family:monospace;font-size:11px;">Loading malware URL data...</div>';
@@ -9634,7 +9634,7 @@ function renderGlobalWatch() {
   h += '.gw-title { font-size: 14px; font-weight: bold; letter-spacing: 2px; color: #00ddff; text-transform: uppercase; }';
   h += '.gw-subtitle { font-size: 9px; color: #4a6a8a; letter-spacing: 1px; }';
   h += '.gw-layers { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }';
-  h += '.gw-layer-btn { background: #111a24; border: 1px solid #1a3050; color: #4a6a8a; padding: 3px 8px; font-size: 10px; font-family: monospace; cursor: pointer; border-radius: 3px; letter-spacing: 1px; transition: all 0.2s; }';
+  h += '.gw-layer-btn { background: #111a24; border: 1px solid #1a3050; color: #4a6a8a; padding: 3px 8px; font-size: 10px; font-family: monospace; cursor: pointer; border-radius: 4px; letter-spacing: 1px; transition: all 0.2s; }';
   h += '.gw-layer-btn:hover { border-color: #2a5a8a; color: #8ab4d4; }';
   h += '.gw-layer-btn.gw-on { background: #0a2a44; border-color: #00aaff; color: #00ddff; box-shadow: 0 0 6px rgba(0,170,255,0.2); }';
   h += '.gw-status-bar { display: none; }';
@@ -9644,9 +9644,9 @@ function renderGlobalWatch() {
   h += '.gw-controls { display: flex; gap: 6px; padding: 4px 12px; background: #080c14; border-top: 1px solid #1a3a5a; flex-shrink: 0; overflow-x: auto; align-items: center; scrollbar-width: thin; scrollbar-color: #1a3050 transparent; font-size: 9px; }';
   h += '.gw-ctrl-group { display: flex; gap: 4px; align-items: center; }';
   h += '.gw-ctrl-label { font-size: 10px; color: #3a5a7a; letter-spacing: 1px; margin-right: 4px; }';
-  h += '.gw-fly-btn { background: #0a1a28; border: 1px solid #1a3050; color: #5a8aaa; padding: 3px 8px; font-size: 10px; font-family: monospace; cursor: pointer; border-radius: 2px; letter-spacing: 1px; }';
+  h += '.gw-fly-btn { background: #0a1a28; border: 1px solid #1a3050; color: #5a8aaa; padding: 3px 8px; font-size: 10px; font-family: monospace; cursor: pointer; border-radius: 4px; letter-spacing: 1px; }';
   h += '.gw-fly-btn:hover { border-color: #00aaff; color: #00ddff; background: #0a2a44; }';
-  h += '.gw-speed-ctrl { background: #0a1a28; border: 1px solid #1a3050; color: #5a8aaa; padding: 3px 8px; font-size: 10px; font-family: monospace; cursor: pointer; border-radius: 2px; }';
+  h += '.gw-speed-ctrl { background: #0a1a28; border: 1px solid #1a3050; color: #5a8aaa; padding: 3px 8px; font-size: 10px; font-family: monospace; cursor: pointer; border-radius: 4px; }';
   h += '.gw-popup { position: absolute; background: rgba(8,12,20,0.96); border: 1px solid #1a4a6a; border-radius: 4px; padding: 12px 16px; max-width: 380px; min-width: 260px; z-index: 1000; box-shadow: 0 4px 24px rgba(0,0,0,0.7); pointer-events: auto; }';
   h += '.gw-popup-title { font-size: 14px; color: #00ddff; font-weight: bold; letter-spacing: 1px; margin-bottom: 6px; border-bottom: 1px solid #1a3a5a; padding-bottom: 6px; }';
   h += '.gw-popup-row { font-size: 11px; color: #8ab4d4; margin: 3px 0; }';
@@ -9663,7 +9663,7 @@ function renderGlobalWatch() {
   h += '.gw-loading-text { color: #00aaff; font-size: 14px; font-family: monospace; letter-spacing: 2px; }';
   h += '.gw-loading-text span { animation: gw-pulse 1.5s ease-in-out infinite; }';
   h += '@keyframes gw-pulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }';
-  h += '.gw-dark-toggle { background: #0a1a28; border: 1px solid #1a3050; color: #5a8aaa; padding: 3px 8px; font-size: 10px; font-family: monospace; cursor: pointer; border-radius: 2px; }';
+  h += '.gw-dark-toggle { background: #0a1a28; border: 1px solid #1a3050; color: #5a8aaa; padding: 3px 8px; font-size: 10px; font-family: monospace; cursor: pointer; border-radius: 4px; }';
   h += '.gw-dark-toggle.gw-light { background: #1a2a3a; color: #aaddff; border-color: #3a6a8a; }';
   h += '.gw-legend { position: absolute; bottom: 8px; left: 8px; background: rgba(8,12,20,0.92); border: 1px solid #1a3a5a; border-radius: 4px; padding: 4px 8px; font-size: 8px; z-index: 300; max-height: 140px; overflow-y: auto; display: none; }';
   h += '.gw-legend.gw-legend-show { display: block; }';
@@ -10155,11 +10155,16 @@ function _gwToggleTheme() {
   function _addSatelliteLayer(dark) {
     var prov = new Cesium.UrlTemplateImageryProvider({
       url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-      maximumLevel: 19,
+      maximumLevel: 17,
+      minimumLevel: 0,
+      tileWidth: 256,
+      tileHeight: 256,
       credit: 'Esri, Maxar, Earthstar Geographics',
       hasAlphaChannel: false
     });
-    prov.errorEvent.addEventListener(function() { return true; });
+    prov.errorEvent.addEventListener(function(err) {
+      if (err && err.timesRetried < 3) { err.retry = true; }
+    });
     var lyr = _gwViewer.imageryLayers.addImageryProvider(prov);
     if (dark) { lyr.brightness = 0.75; lyr.saturation = 0.85; lyr.contrast = 1.15; }
   }
@@ -11236,11 +11241,16 @@ function _gwSetShaderMode(mode) {
   function _addDarkSatellite() {
     var prov = new Cesium.UrlTemplateImageryProvider({
       url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-      maximumLevel: 19,
+      maximumLevel: 17,
+      minimumLevel: 0,
+      tileWidth: 256,
+      tileHeight: 256,
       credit: 'Esri, Maxar, Earthstar Geographics',
       hasAlphaChannel: false
     });
-    prov.errorEvent.addEventListener(function() { return true; });
+    prov.errorEvent.addEventListener(function(err) {
+      if (err && err.timesRetried < 3) { err.retry = true; }
+    });
     var lyr = _gwViewer.imageryLayers.addImageryProvider(prov);
     lyr.brightness = 0.75;
     lyr.saturation = 0.85;
@@ -11359,7 +11369,7 @@ _gwInitGlobe = function() {
     if (!container) return;
 
     try {
-      Cesium.Ion.defaultAccessToken = '';
+      Cesium.Ion.defaultAccessToken = 'NOT_NEEDED';
       try { Cesium.Ion.defaultServer = undefined; } catch(_){}
       Cesium.RequestScheduler.requestsByServer = { 'server.arcgisonline.com:443': 18 };
 
@@ -11383,7 +11393,10 @@ _gwInitGlobe = function() {
 
       var _initProvider = new Cesium.UrlTemplateImageryProvider({
         url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-        maximumLevel: 19,
+        maximumLevel: 17,
+        minimumLevel: 0,
+        tileWidth: 256,
+        tileHeight: 256,
         credit: 'Esri, Maxar, Earthstar Geographics',
         hasAlphaChannel: false
       });
@@ -11391,7 +11404,9 @@ _gwInitGlobe = function() {
       _initLyr.brightness = 0.75;
       _initLyr.saturation = 0.85;
       _initLyr.contrast = 1.15;
-      _initProvider.errorEvent.addEventListener(function() { return true; });
+      _initProvider.errorEvent.addEventListener(function(err) {
+        if (err && err.timesRetried < 3) { err.retry = true; }
+      });
 
       _gwViewer.scene.backgroundColor = Cesium.Color.fromCssColorString('#000206');
       if (_gwViewer.scene.skyBox) _gwViewer.scene.skyBox.show = false;
@@ -11405,7 +11420,7 @@ _gwInitGlobe = function() {
         _gwViewer.scene.globe.baseColor = Cesium.Color.fromCssColorString('#1a3a5c');
         _gwViewer.scene.globe.showGroundAtmosphere = false;
         _gwViewer.scene.globe.tileCacheSize = 1000;
-        _gwViewer.scene.globe.maximumScreenSpaceError = 0.8;
+        _gwViewer.scene.globe.maximumScreenSpaceError = 2;
         _gwViewer.scene.globe.preloadSiblings = true;
         _gwViewer.scene.globe.preloadAncestors = true;
       }
@@ -11413,7 +11428,7 @@ _gwInitGlobe = function() {
         _gwViewer.scene.logarithmicDepthBuffer = true;
         _gwViewer.scene.fxaa = true;
       }
-      _gwViewer.scene.screenSpaceCameraController.minimumZoomDistance = 1;
+      _gwViewer.scene.screenSpaceCameraController.minimumZoomDistance = 500;
       _gwViewer.scene.screenSpaceCameraController.maximumZoomDistance = 50000000;
 
       if (loadingEl) loadingEl.style.display = 'none';

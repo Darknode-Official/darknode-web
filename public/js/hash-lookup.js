@@ -149,7 +149,7 @@ function _hlRenderComputed(el, input, hashes) {
     h += '<div style="color:#00aaff;font-size:10px;letter-spacing:1px;margin-bottom:2px;">' + esc(keys[i]) + '</div>';
     h += '<div style="display:flex;gap:6px;align-items:center;">';
     h += '<code style="flex:1;background:#080c14;border:1px solid #1a2a44;border-radius:3px;padding:6px 8px;font-size:11px;color:#00ff88;word-break:break-all;">' + esc(hashes[keys[i]]) + '</code>';
-    h += '<button onclick="navigator.clipboard.writeText(\'' + esc(hashes[keys[i]]) + '\')" style="background:#111a24;border:1px solid #1a3050;color:#4a6a8a;padding:4px 8px;font-family:monospace;font-size:9px;cursor:pointer;border-radius:2px;flex-shrink:0;">COPY</button>';
+    h += '<button onclick="navigator.clipboard.writeText(\'' + esc(hashes[keys[i]]) + '\')" style="background:#111a24;border:1px solid #1a3050;color:#4a6a8a;padding:4px 8px;font-family:monospace;font-size:9px;cursor:pointer;border-radius:4px;flex-shrink:0;">COPY</button>';
     h += '</div></div>';
   }
   h += '</div>';
@@ -210,7 +210,7 @@ window._hlHashFile = function(file) {
               h += '<div style="color:#00aaff;font-size:10px;letter-spacing:1px;margin-bottom:2px;">' + esc(keys[i]) + '</div>';
               h += '<div style="display:flex;gap:6px;align-items:center;">';
               h += '<code style="flex:1;background:#080c14;border:1px solid #1a2a44;border-radius:3px;padding:6px 8px;font-size:10px;color:#00ff88;word-break:break-all;">' + esc(hashes[keys[i]]) + '</code>';
-              h += '<button onclick="navigator.clipboard.writeText(\'' + esc(hashes[keys[i]]) + '\')" style="background:#111a24;border:1px solid #1a3050;color:#4a6a8a;padding:4px 8px;font-family:monospace;font-size:9px;cursor:pointer;border-radius:2px;flex-shrink:0;">COPY</button>';
+              h += '<button onclick="navigator.clipboard.writeText(\'' + esc(hashes[keys[i]]) + '\')" style="background:#111a24;border:1px solid #1a3050;color:#4a6a8a;padding:4px 8px;font-family:monospace;font-size:9px;cursor:pointer;border-radius:4px;flex-shrink:0;">COPY</button>';
               h += '</div></div>';
             }
             h += '</div>';

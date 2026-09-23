@@ -179,7 +179,7 @@ export function renderZeroTrustDesigner(main) {
           '<div style="display:flex;gap:4px;flex-wrap:wrap">';
         q.labels.forEach(function(label, li) {
           var isSelected = current === li;
-          html += '<button class="zt-opt" data-pillar="' + pillar.id + '" data-qi="' + qi + '" data-val="' + li + '" style="padding:4px 10px;font-size:.72rem;border-radius:3px;cursor:pointer;border:1px solid ' + (isSelected ? pillar.color : 'var(--line)') + ';background:' + (isSelected ? pillar.color + '22' : 'transparent') + ';color:' + (isSelected ? pillar.color : 'var(--mut)') + '">' + esc(label) + '</button>';
+          html += '<button class="zt-opt" data-pillar="' + pillar.id + '" data-qi="' + qi + '" data-val="' + li + '" style="padding:4px 10px;font-size:.72rem;border-radius:4px;cursor:pointer;border:1px solid ' + (isSelected ? pillar.color : 'var(--line)') + ';background:' + (isSelected ? pillar.color + '22' : 'transparent') + ';color:' + (isSelected ? pillar.color : 'var(--mut)') + '">' + esc(label) + '</button>';
         });
         html += '</div></div>';
       });
