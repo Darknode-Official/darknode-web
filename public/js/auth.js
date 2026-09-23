@@ -21,6 +21,237 @@ import("/js/toolkit.js").then(m => { MORE = m.MORE; CATALOG = m.CATALOG; CATEGOR
 import { startTour, tourDone } from "/js/tour.js";
 let _landing = null;
 async function loadLanding() { if (!_landing) _landing = await import("/js/landing.js?v=20260924a"); return _landing; }
+
+// Plain-language, newbie-friendly one-liners for every sidebar item + group.
+// Surfaced as a hover tooltip so the sidebar stays visually neat while every
+// jargony tool name explains itself. Keyed by data-sec (items) / label (groups).
+const SIDE_DESC = {
+  home: "Your home base — activity, stats and quick links. Start here.",
+  // Mission Control
+  prometheus: "Live threat-intelligence feed — new CVEs and vulnerabilities as they break.",
+  sentineleye: "A 3D world map of live cyber threats, aircraft, satellites and attacks.",
+  hydra: "Automated recon and vulnerability scanning across many targets at once.",
+  aegis: "Command center for planning and coordinating your security work.",
+  vanguard: "Threat hunting with attack kill-chain visualization.",
+  phantom: "Network traffic analysis — read packet captures and spot anomalies.",
+  citadel: "SOC operations — correlate logs, write detection rules, triage alerts.",
+  oracle: "Threat-intel platform — manage indicators (IOCs) and track attacker campaigns.",
+  spectre: "Cloud security posture checks for AWS, Azure and GCP.",
+  crucible: "Cyber wargaming range — run and score simulated attack-vs-defense exercises.",
+  navarch: "Naval & maritime cyber-defense — fleet integrity and AIS anti-spoofing.",
+  secdash: "One screen showing your overall security posture at a glance.",
+  // Offensive Security
+  attacksim: "Safely simulate real attacker techniques (MITRE ATT&CK).",
+  cracklab: "Password-cracking lab — test how strong password hashes really are.",
+  exploitdb: "Searchable database of known exploits and vulnerabilities.",
+  exploitdev: "Workspace for security research and building proof-of-concepts.",
+  packetcraft: "Hand-craft custom network packets for testing.",
+  passwordtools: "Generate, hash and check passwords.",
+  payloads: "Build test payloads (reverse/web shells) for authorized testing.",
+  payloadgen: "Generate ready-made test scripts and payloads.",
+  pentestconsole: "Interactive workspace for running a security assessment.",
+  privesc: "Checklists to find privilege-escalation paths on Linux and Windows.",
+  reverseshell: "Generate remote-access (reverse shell) one-liners in 15+ languages.",
+  // Security Labs
+  firewall: "Build and check firewall rules (iptables, pf, Windows Firewall).",
+  webshell: "An in-browser command terminal.",
+  wirelesslab: "Wi-Fi security testing workflows (WPA/WPA2).",
+  xsslab: "Practice finding and fixing cross-site scripting (XSS) bugs.",
+  socialeng: "Phishing-simulation and social-engineering templates.",
+  // Reconnaissance
+  addressintel: "Look up an IP or domain — location, owner and reputation.",
+  asnexplorer: "See which networks (ASNs) own a range of IP addresses.",
+  attacksurf: "Map everything your organization exposes to the internet.",
+  dns: "DNS lookup and enumeration toolkit.",
+  dnsenum: "Pull every DNS record for a domain (A, MX, TXT, and more).",
+  dnsrecon: "Deeper DNS recon — zone transfers and subdomain discovery.",
+  ghdb: "Google 'dorks' — clever search queries that surface exposed data.",
+  netmap: "Map a network and scan it for open ports.",
+  reconplanner: "Plan your recon step-by-step with methodology templates.",
+  securityscanner: "Point-and-scan a target for common security issues.",
+  subdomains: "Discover all of a domain's subdomains.",
+  tools: "A suite of quick scanners gathered in one place.",
+  wayback: "Browse old snapshots of any website (the Wayback Machine).",
+  // OSINT
+  corstester: "Check a site's cross-origin (CORS) rules for misconfiguration.",
+  emailintel: "Investigate an email address — breaches, links and footprint.",
+  favicon: "Identify sites by their favicon hash (Shodan/Censys).",
+  headeranalyzer: "Inspect a website's HTTP response headers.",
+  httpinspector: "See a full HTTP request/response with header analysis.",
+  httpprobe: "Quickly probe a list of URLs to see what's live.",
+  ipgeolocation: "Find the likely physical location behind an IP address.",
+  iptools: "Handy IP utilities — lookup, convert and subnet.",
+  osint: "Your OSINT hub for gathering public intelligence on a target.",
+  osintemail: "Email intelligence — breach lookup and account discovery.",
+  techfingerprint: "Detect what technologies a website is built with.",
+  whoisrecon: "WHOIS lookup — who registered a domain, and when.",
+  // Forensics
+  binanalyze: "Analyze a binary (PE/ELF) — strings, entropy and structure.",
+  forensicstoolkit: "A collection of digital-forensics utilities.",
+  ftimeline: "Build an investigation timeline from your evidence.",
+  loganalyze: "Parse and search system, application and security logs.",
+  memforensics: "Analyze a RAM dump — processes and hidden malware.",
+  reveng: "A reverse-engineering workspace.",
+  stego: "Hide or extract data inside images and files (steganography).",
+  timelineviz: "Plot events on an interactive timeline.",
+  // Threat Analysis
+  malclass: "Classify suspicious files and identify malware families.",
+  phishing: "Analyze suspected phishing emails and pages.",
+  sandbox: "Detonate and study suspicious files safely.",
+  // Blue Team
+  adversary: "Emulate real adversary playbooks to test your defenses.",
+  breachsim: "Simulate a breach end-to-end to find the gaps.",
+  containers: "Scan Docker and Kubernetes for security issues.",
+  deception: "Plan honeypots and honeytokens to catch intruders.",
+  huntlab: "A hands-on threat-hunting workspace.",
+  identitymatrix: "Map identities and access across your organization.",
+  incidents: "Track and manage security incidents.",
+  mobilesec: "Test the security of Android and iOS apps.",
+  purpleteam: "Run collaborative red-vs-blue team exercises.",
+  riskcalculator: "Estimate and compare security risks.",
+  threatmodel: "Model threats to a system (STRIDE / DREAD).",
+  // Threat Intelligence
+  breachlookup: "Check whether an email or password appeared in a breach.",
+  cvesearch: "Search the CVE vulnerability database.",
+  cvetimeline: "Browse CVEs on an interactive timeline.",
+  darknetradar: "Monitor dark-web chatter and marketplaces.",
+  darkwebosint: "Investigate .onion sites and deep-web sources.",
+  ipreputation: "Check an IP address against threat blocklists.",
+  threat: "A live, aggregated threat feed.",
+  threatdashboard: "A visual overview of the current threat landscape.",
+  threatfeed: "A curated threat-intelligence feed.",
+  // Vulnerability Mgmt
+  vulndb: "Searchable database of known vulnerabilities.",
+  vulnprio: "Rank vulnerabilities by real-world risk (CVSS, EPSS, KEV).",
+  vulntriage: "Decide which vulnerabilities to fix first.",
+  secchecklist: "A step-by-step security-hardening checklist.",
+  supplychain: "Assess the risk in your software supply chain.",
+  // Network Analysis
+  networkscanner: "Scan a network for live hosts and open ports.",
+  networktools: "General-purpose networking utilities.",
+  networktraffic: "Analyze live network traffic for anomalies.",
+  packetanalyzer: "Break captured packets down protocol-by-protocol.",
+  packetinspector: "Deep packet inspection.",
+  sslinspector: "Check a site's SSL/TLS certificate and cipher suites.",
+  subnetvisualizer: "Visualize and plan IP subnets.",
+  trafficanalyzer: "Spot patterns and anomalies in network traffic.",
+  websockettester: "Test and inspect WebSocket connections.",
+  // Security Operations
+  adversaryplaybook: "Prebuilt attacker playbooks to exercise your SOC.",
+  apifuzzer: "Fuzz API endpoints to uncover weaknesses.",
+  apitester: "Interactive API testing, like Postman.",
+  apiscan: "Discover and security-test API endpoints.",
+  incidentcost: "Estimate what a security breach would cost.",
+  incidentresponse: "Build and follow incident-response playbooks.",
+  siemdash: "A SIEM-style dashboard of security events.",
+  // Compliance & GRC
+  compliance: "Check systems against CIS and other compliance benchmarks.",
+  cyberbriefing: "Your daily cybersecurity news briefing.",
+  emailheader: "Analyze email headers (SPF/DKIM/DMARC) to trace origin.",
+  fedcompliance: "NIST, FedRAMP and FISMA compliance checklists.",
+  iocextractor: "Pull indicators of compromise (IOCs) out of text and logs.",
+  zerotrust: "Plan a zero-trust security architecture.",
+  // Crypto & Encoding
+  credaudit: "Audit credentials against breach lists and password policy.",
+  cryptotools: "Encrypt, decrypt and work with crypto primitives.",
+  cspevaluator: "Build and validate a Content-Security-Policy (CSP).",
+  encoding: "Encode and decode Base64, hex, URL and more.",
+  hashsuite: "Generate and identify hashes (MD5, SHA, bcrypt…).",
+  jwtanalyzer: "Decode, verify and attack JSON Web Tokens (JWT).",
+  regexlab: "Build and test regular expressions.",
+  urldissect: "Break a URL apart and spot suspicious pieces.",
+  // Nexus AI
+  ai: "Chat with the built-in AI about security, code and tooling.",
+  coder: "An AI agent that can carry out multi-step tasks for you.",
+  dataviz: "Turn raw data into charts and visualizations.",
+  engines: "Configure the security-analysis engines.",
+  report: "Generate professional penetration-test reports.",
+  // Training
+  cheats: "Quick-reference cheat sheets.",
+  cyberrange: "A hands-on virtual training range.",
+  learn: "Guided lessons — the Academy.",
+  refs: "A reference library of security material.",
+  secquiz: "Assess your skills with graded quizzes.",
+  securityquiz: "Test your security knowledge.",
+  snippets: "Save and reuse handy code snippets.",
+  targets: "Legal, safe practice targets to hack on.",
+  training: "Guided, hands-on training labs.",
+  utils: "A grab-bag of small, handy tools.",
+  // Labs & VMs
+  vms: "Downloadable, intentionally-vulnerable VMs to practice on.",
+  vmlab: "Manage your practice virtual machines.",
+  // Investigations
+  investigation: "A case workspace to collect findings and evidence.",
+  secgraph: "A visual graph linking assets, indicators and incidents.",
+  casemgmt: "Manage your investigation case files.",
+  // Infrastructure
+  api: "Your Darknode API keys and usage.",
+  docs: "Documentation.",
+  education: "Learning resources and courses.",
+  downloads: "Get the Darknode OS and desktop app.",
+  dlguide: "A step-by-step install guide.",
+  privatecloud: "Private-cloud security architecture (beta).",
+  setup: "Connect the local Darknode CLI to this browser.",
+  admin: "Owner-only admin console.",
+};
+const GROUP_DESC = {
+  "Mission Control": "Flagship, real-time operations tools — the big dashboards.",
+  "Offensive Security": "Red-team / attack-side tools for authorized testing.",
+  "Security Labs": "Hands-on practice labs.",
+  "Reconnaissance": "Discover and map a target before testing.",
+  "OSINT": "Open-source intelligence — dig up public info on a target.",
+  "Forensics": "Investigate files, memory and evidence after the fact.",
+  "Threat Analysis": "Analyze suspicious files and messages.",
+  "Blue Team": "Defensive security — protect and detect.",
+  "Threat Intelligence": "Track threats, breaches and CVEs.",
+  "Vulnerability Mgmt": "Find, rank and fix vulnerabilities.",
+  "Network Analysis": "Inspect networks, packets and traffic.",
+  "Security Operations": "SOC workflows and API-security tooling.",
+  "Compliance & GRC": "Compliance, governance and risk.",
+  "Crypto & Encoding": "Hashing, encoding and cryptography.",
+  "Nexus AI": "AI assistants, data viz and reporting.",
+  "Training": "Learn and practice your skills.",
+  "Labs & VMs": "Practice virtual machines.",
+  "Investigations": "Case management and link analysis.",
+  "Infrastructure": "Account, docs, downloads and setup.",
+  "Admin": "Owner-only controls.",
+};
+function applySidebarHelp(view) {
+  const nav = view.querySelector(".side-nav");
+  if (!nav || nav.dataset.helpWired) return;
+  const escT = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const cleanName = (el, sel) => { const b = el.querySelector(sel); let t = el.textContent || ""; if (b) t = t.replace(b.textContent, ""); return t.trim(); };
+  // Stamp name + description onto each item and group.
+  nav.querySelectorAll(".side-item[data-sec]").forEach((it) => {
+    const d = SIDE_DESC[it.dataset.sec]; if (!d) return;
+    it.dataset.name = cleanName(it, ".side-badge"); it.dataset.desc = d;
+    it.setAttribute("title", it.dataset.name + " — " + d); // a11y / fallback
+  });
+  nav.querySelectorAll(".side-group").forEach((g) => {
+    const nm = cleanName(g, ".side-cnt"); const d = GROUP_DESC[nm]; if (!d) return;
+    g.dataset.name = nm; g.dataset.desc = d;
+  });
+  // One shared, styled tooltip for the whole sidebar.
+  let tip = document.getElementById("side-tip");
+  if (!tip) { tip = document.createElement("div"); tip.id = "side-tip"; tip.className = "side-tip"; tip.hidden = true; document.body.appendChild(tip); }
+  const place = (el) => {
+    const name = el.dataset.name, desc = el.dataset.desc; if (!desc) return;
+    tip.innerHTML = `<b>${escT(name)}</b><span>${escT(desc)}</span>`;
+    tip.hidden = false;
+    const r = el.getBoundingClientRect();
+    tip.style.top = Math.min(Math.max(8, r.top), window.innerHeight - tip.offsetHeight - 8) + "px";
+    let left = r.right + 10;
+    if (left + tip.offsetWidth > window.innerWidth - 8) left = r.left - tip.offsetWidth - 10; // flip to the left if it would overflow
+    tip.style.left = Math.max(8, left) + "px";
+  };
+  const hide = () => { tip.hidden = true; };
+  nav.addEventListener("mouseover", (e) => { const el = e.target.closest(".side-item[data-desc],.side-group[data-desc]"); if (el) { el._savedTitle = el.getAttribute("title"); el.removeAttribute("title"); place(el); } });
+  nav.addEventListener("mouseout", (e) => { const el = e.target.closest(".side-item[data-desc],.side-group[data-desc]"); if (el) { if (el._savedTitle != null) el.setAttribute("title", el._savedTitle); hide(); } });
+  nav.addEventListener("scroll", hide, true);
+  nav.addEventListener("click", hide);
+  window.addEventListener("blur", hide);
+  nav.dataset.helpWired = "1";
+}
 import {
   renderThreat, renderCheats, renderLearn, homeWidgetsHTML, wireHome, COUNTS,
   CHEATS, RESOURCES,
@@ -1606,6 +1837,10 @@ function renderApp(user) {
       }
     }
   });
+
+  // Newbie help: attach a plain-language description to every tool + group and
+  // show it in one shared, styled tooltip on hover (keeps the sidebar neat).
+  applySidebarHelp(view);
   // Sidebar collapse toggle — the collapsed rail shows a 2-letter token per
   // tool (items have no icons) plus the full name as a tooltip, so it reads as
   // a proper icon rail instead of empty boxes.
