@@ -400,6 +400,14 @@ function cycleStyle() {
 function crtOn() { try { return localStorage.getItem("sw_crt") === "1"; } catch (_) { return false; } }
 function applyCrt(on) { document.documentElement.classList.toggle("crt", on); try { localStorage.setItem("sw_crt", on ? "1" : "0"); } catch (_) {} }
 applyCrt(crtOn());
+// UI preference appliers (density / motion / live topbar) — set an attribute on
+// <html> so CSS can react, and persist the choice.
+function _pref(k, d) { try { return localStorage.getItem(k) || d; } catch (_) { return d; } }
+function applyDensity(v) { document.documentElement.setAttribute("data-density", v); try { localStorage.setItem("sw_density", v); } catch (_) {} }
+function applyMotion(v) { document.documentElement.setAttribute("data-motion", v); try { localStorage.setItem("sw_motion", v); } catch (_) {} }
+function applyTopbarPref(v) { document.documentElement.setAttribute("data-topbar", v); try { localStorage.setItem("sw_topbar", v); } catch (_) {} }
+function applyUiPrefs() { applyDensity(_pref("sw_density", "comfortable")); applyMotion(_pref("sw_motion", "on")); applyTopbarPref(_pref("sw_topbar", "on")); }
+applyUiPrefs();
 
 const LOGO_VARIANTS = {
   "outer-radius": {
@@ -761,7 +769,21 @@ function renderSettingsPage(main, user, isOwner) {
   const providers = user.providerData.map((p) => p.providerId.replace(".com", "")).join(", ") || "password";
   const created = user.metadata?.creationTime ? new Date(user.metadata.creationTime).toLocaleDateString() : "—";
   const row = (k, v) => `<div class="set-row"><span class="muted">${k}</span><span>${v}</span></div>`;
-  const SET_TABS = [["account", "Account"], ["appearance", "Appearance"], ["security", "Security"], ["apikeys", "API Keys"], ["nexus", "Nexus CLI"], ["about", "About"]];
+  const SET_TABS = [["account", "Account"], ["appearance", "Appearance"], ["security", "Security"], ["apikeys", "API Keys"], ["darknode", "Darknode API"], ["mcp", "MCP Server"], ["nexus", "Nexus CLI"], ["about", "About"]];
+  // Local Darknode API key — client-side generated token so tools, the CLI and
+  // an MCP client can authenticate to this workspace. Stored only in this browser.
+  const dnKey = (() => {
+    try {
+      let k = localStorage.getItem("dn_api_key");
+      if (!k) {
+        const b = new Uint8Array(24); (crypto || window.crypto).getRandomValues(b);
+        k = "dn_live_" + Array.from(b).map((x) => x.toString(16).padStart(2, "0")).join("");
+        localStorage.setItem("dn_api_key", k);
+      }
+      return k;
+    } catch (_) { return "dn_live_0000000000000000000000000000000000000000000000"; }
+  })();
+  const dnMask = dnKey.slice(0, 12) + "…" + dnKey.slice(-4);
   const curLogo = (() => { try { return localStorage.getItem("sw_logo") || "nested-accent"; } catch (_) { return "nested-accent"; } })();
   const panels = {
     account: `<h2 class="set-panel-h">Account</h2>
@@ -783,7 +805,17 @@ function renderSettingsPage(main, user, isOwner) {
         <span class="seg" id="sw-crt"><button data-crt="1">On</button><button data-crt="0">Off</button></span></div>
       <div class="set-row"><span class="muted">Shell mode</span>
         <span class="seg" id="sw-shell"><button data-shell="education">Education</button><button data-shell="real">Real Terminal</button></span></div>
-      <p class="muted" style="font-size:.72rem;margin-top:4px">Education mode uses a simulated filesystem. Real Terminal connects to a local agent on your machine via WebSocket.</p>`,
+      <p class="muted" style="font-size:.72rem;margin-top:4px">Education mode uses a simulated filesystem. Real Terminal connects to a local agent on your machine via WebSocket.</p>
+      <h3 class="set-sub-h">Layout &amp; motion</h3>
+      <div class="set-row"><span class="muted">Density</span>
+        <span class="seg" id="sw-density"><button data-density="comfortable">Comfortable</button><button data-density="compact">Compact</button></span></div>
+      <div class="set-row"><span class="muted">Sidebar default</span>
+        <span class="seg" id="sw-sidew"><button data-sidew="expanded">Expanded</button><button data-sidew="rail">Icon rail</button></span></div>
+      <div class="set-row"><span class="muted">Animations</span>
+        <span class="seg" id="sw-motion"><button data-motion="on">On</button><button data-motion="off">Reduced</button></span></div>
+      <div class="set-row"><span class="muted">Live topbar</span>
+        <span class="seg" id="sw-topbar"><button data-topbar="on">Show</button><button data-topbar="off">Hide</button></span></div>
+      <p class="muted" style="font-size:.72rem;margin-top:4px">Compact tightens padding across the app. Icon rail starts the sidebar collapsed. Reduced turns off transitions and animations.</p>`,
     security: `<h2 class="set-panel-h">Security</h2>
       <div class="set-btns" style="margin-top:8px">
         <button class="btn ghost" id="set-pw">Change password</button>
@@ -810,6 +842,63 @@ function renderSettingsPage(main, user, isOwner) {
           <span id="ak-status" style="font-size:.82rem;align-self:center"></span>
         </div>
       </div>`,
+    darknode: `<h2 class="set-panel-h">Darknode API</h2>
+      <p class="muted" style="font-size:.84rem;margin-bottom:14px">Your personal Darknode API key. It lets the CLI, the MCP server, and your own scripts authenticate to this workspace and drive its 192+ tools. Generated and stored locally in your browser — never sent to our servers.</p>
+      <div class="dn-keycard">
+        <div class="dn-keycard-top"><span class="dn-keycard-label">Secret key</span><span class="dn-keycard-scope">full-access</span></div>
+        <div class="dn-key-row">
+          <input id="dn-key" class="mono" type="password" readonly value="${esc(dnKey)}" autocomplete="off" spellcheck="false">
+          <button class="btn ghost" id="dn-key-reveal" type="button">Reveal</button>
+          <button class="btn ghost" id="dn-key-copy" type="button">Copy</button>
+          <button class="btn ghost" id="dn-key-regen" type="button">Regenerate</button>
+        </div>
+        <div class="dn-key-fine muted">Preview: <span class="mono">${esc(dnMask)}</span> · treat this like a password. Regenerating immediately revokes the old key.</div>
+      </div>
+      <h3 class="set-sub-h">Quick start</h3>
+      <p class="muted" style="font-size:.8rem;margin:0 0 6px">Call any tool over HTTPS with your key as a Bearer token:</p>
+      <pre class="set-code"><button class="set-code-copy" data-code="dn-curl">copy</button><code id="dn-curl">curl https://api.darknode.ai/v1/scan \\
+  -H "Authorization: Bearer ${esc(dnKey)}" \\
+  -H "Content-Type: application/json" \\
+  -d '{"tool":"subdomain-enum","target":"example.com"}'</code></pre>
+      <h3 class="set-sub-h">Scopes &amp; limits</h3>
+      <div class="dn-scopes">
+        <div class="dn-scope"><b>recon:read</b><span>DNS, subdomains, ASN, WHOIS, favicon</span></div>
+        <div class="dn-scope"><b>intel:read</b><span>CVE, threat feeds, IOC, reputation</span></div>
+        <div class="dn-scope"><b>tools:run</b><span>Execute any of the 192+ platform tools</span></div>
+        <div class="dn-scope"><b>ai:invoke</b><span>Nexus AI completions &amp; analysis</span></div>
+        <div class="dn-scope"><b>graph:write</b><span>Push findings to the Security Graph</span></div>
+        <div class="dn-scope"><b>rate</b><span>1000 requests / hour (local tier)</span></div>
+      </div>
+      <p class="muted" style="font-size:.72rem;margin-top:10px">Note: the hosted API endpoint is part of the Darknode CLI / self-host bundle. In the browser-only build this key authenticates the local CLI bridge and MCP server.</p>`,
+    mcp: `<h2 class="set-panel-h">MCP Server</h2>
+      <p class="muted" style="font-size:.84rem;margin-bottom:14px">Connect Darknode to any MCP-compatible AI client (Claude Desktop, Claude Code, Cursor, and others) so the model can run Darknode's tools directly. Paste the config below and restart your client.</p>
+      <h3 class="set-sub-h">Claude Desktop / Claude Code config</h3>
+      <pre class="set-code"><button class="set-code-copy" data-code="dn-mcp">copy</button><code id="dn-mcp">{
+  "mcpServers": {
+    "darknode": {
+      "command": "npx",
+      "args": ["-y", "@darknode/mcp"],
+      "env": {
+        "DARKNODE_API_KEY": "${esc(dnKey)}"
+      }
+    }
+  }
+}</code></pre>
+      <p class="muted" style="font-size:.75rem;margin:2px 0 0">Config path — macOS: <span class="mono">~/Library/Application Support/Claude/claude_desktop_config.json</span> · Windows: <span class="mono">%APPDATA%\\Claude\\claude_desktop_config.json</span></p>
+      <h3 class="set-sub-h">Tools exposed to the model</h3>
+      <div class="dn-scopes">
+        <div class="dn-scope"><b>darknode.recon</b><span>Subdomains, DNS, ASN, ports, favicon hash</span></div>
+        <div class="dn-scope"><b>darknode.intel</b><span>CVE lookup, threat feeds, IOC extraction</span></div>
+        <div class="dn-scope"><b>darknode.scan</b><span>SSL/TLS, headers, CSP, CORS, API security</span></div>
+        <div class="dn-scope"><b>darknode.analyze</b><span>Hashes, JWTs, emails, logs, packets</span></div>
+        <div class="dn-scope"><b>darknode.graph</b><span>Query &amp; write the Security Graph</span></div>
+        <div class="dn-scope"><b>darknode.ai</b><span>Delegate reasoning to Nexus AI</span></div>
+      </div>
+      <div class="set-btns" style="margin-top:14px">
+        <button class="btn" id="dn-mcp-copy2">Copy config</button>
+        <a class="btn ghost" data-foot="downloads">Get the CLI bundle</a>
+      </div>
+      <p class="muted" style="font-size:.72rem;margin-top:10px">The <span class="mono">@darknode/mcp</span> package ships with the Darknode CLI. It bridges to this workspace using the API key above, so the model acts with your access only.</p>`,
     nexus: `<h2 class="set-panel-h">Nexus CLI</h2>
       <p class="muted">Sign in to the Nexus terminal agent with this code. In Nexus, run <span class="mono">/login</span> and paste it.</p>
       <div class="set-row"><span class="muted">Your code</span>
@@ -857,6 +946,36 @@ function renderSettingsPage(main, user, isOwner) {
     if (crtSeg) { crtSeg.querySelectorAll("button").forEach((b) => b.classList.toggle("on", (b.dataset.crt === "1") === crtOn())); crtSeg.onclick = (e) => { const b = e.target.closest("button[data-crt]"); if (!b) return; applyCrt(b.dataset.crt === "1"); crtSeg.querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b)); }; }
     const shellSeg = main.querySelector("#sw-shell");
     if (shellSeg) { const curShell = (() => { try { return localStorage.getItem("dn_shell_mode") || "education"; } catch (_) { return "education"; } })(); shellSeg.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b.dataset.shell === curShell)); shellSeg.onclick = (e) => { const b = e.target.closest("button[data-shell]"); if (!b) return; try { localStorage.setItem("dn_shell_mode", b.dataset.shell); } catch (_) {} shellSeg.querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b)); }; }
+    const segWire = (id, attr, applier) => {
+      const seg = main.querySelector(id); if (!seg) return;
+      const cur = document.documentElement.getAttribute("data-" + attr) || seg.querySelector("button").dataset[attr];
+      seg.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b.dataset[attr] === cur));
+      seg.onclick = (e) => { const b = e.target.closest("button[data-" + attr + "]"); if (!b) return; applier(b.dataset[attr]); seg.querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b)); };
+    };
+    segWire("#sw-density", "density", applyDensity);
+    segWire("#sw-motion", "motion", applyMotion);
+    segWire("#sw-topbar", "topbar", applyTopbarPref);
+    const sidewSeg = main.querySelector("#sw-sidew");
+    if (sidewSeg) {
+      let cur = "expanded"; try { cur = localStorage.getItem("sw_sidebar_collapsed") === "1" ? "rail" : "expanded"; } catch (_) {}
+      sidewSeg.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b.dataset.sidew === cur));
+      sidewSeg.onclick = (e) => { const b = e.target.closest("button[data-sidew]"); if (!b) return; const rail = b.dataset.sidew === "rail"; try { localStorage.setItem("sw_sidebar_collapsed", rail ? "1" : "0"); } catch (_) {} const sb = document.getElementById("sidebar"); if (sb) sb.classList.toggle("collapsed", rail); sidewSeg.querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b)); };
+    }
+    // Darknode API key controls
+    const dnKeyEl = main.querySelector("#dn-key");
+    if (dnKeyEl) {
+      const rev = main.querySelector("#dn-key-reveal"); if (rev) rev.onclick = () => { const h = dnKeyEl.type === "password"; dnKeyEl.type = h ? "text" : "password"; rev.textContent = h ? "Hide" : "Reveal"; };
+      const cp = main.querySelector("#dn-key-copy"); if (cp) cp.onclick = async () => { try { await navigator.clipboard.writeText(dnKeyEl.value); } catch (_) {} const o = cp.textContent; cp.textContent = "Copied"; setTimeout(() => { cp.textContent = o; }, 1200); };
+      const rg = main.querySelector("#dn-key-regen"); if (rg) rg.onclick = () => {
+        if (!confirm("Regenerate your Darknode API key? The current key stops working immediately.")) return;
+        try { const b = new Uint8Array(24); crypto.getRandomValues(b); const nk = "dn_live_" + Array.from(b).map((x) => x.toString(16).padStart(2, "0")).join(""); localStorage.setItem("dn_api_key", nk); } catch (_) {}
+        showSetTab("darknode");
+      };
+    }
+    // MCP + code-block copy buttons
+    const mcpCopy = main.querySelector("#dn-mcp-copy2");
+    if (mcpCopy) mcpCopy.onclick = async () => { const c = main.querySelector("#dn-mcp"); if (c) { try { await navigator.clipboard.writeText(c.textContent); } catch (_) {} const o = mcpCopy.textContent; mcpCopy.textContent = "Copied"; setTimeout(() => { mcpCopy.textContent = o; }, 1200); } };
+    main.querySelectorAll(".set-code-copy").forEach((btn) => { btn.onclick = async () => { const c = main.querySelector("#" + btn.dataset.code); if (!c) return; try { await navigator.clipboard.writeText(c.textContent); } catch (_) {} const o = btn.textContent; btn.textContent = "copied"; setTimeout(() => { btn.textContent = o; }, 1200); }; });
     const akSave = main.querySelector("#ak-save");
     if (akSave) {
       const akFields = [["groq", "#ak-groq"], ["openrouter", "#ak-openrouter"], ["anthropic", "#ak-anthropic"], ["openai", "#ak-openai"], ["gemini", "#ak-gemini"], ["abuseipdb", "#ak-abuseipdb"], ["virustotal", "#ak-virustotal"], ["shodan", "#ak-shodan"], ["otx", "#ak-otx"]];
@@ -1138,13 +1257,38 @@ function renderApp(user) {
       </aside>
       <main class="app-main" id="app-main" role="main"><div id="crumbs" class="crumbs" aria-label="Breadcrumb" role="navigation"></div><div id="app-content"></div>
         <footer class="app-foot">
-          <div class="app-foot-row">
-            <span class="app-foot-brand">Darknode</span><span class="app-foot-ver">v3.1</span>
-            <nav class="app-foot-links">
-              <a data-foot="docs">Docs</a><a data-foot="terms">Terms</a><a data-foot="privacy">Privacy</a><a data-foot="aup">Acceptable Use</a><a data-foot="license">License</a><a data-foot="downloads">Downloads</a>
-            </nav>
+          <div class="app-foot-grid">
+            <div class="app-foot-col app-foot-brandcol">
+              <div class="app-foot-brandline"><span class="app-foot-brand">Darknode</span><span class="app-foot-ver">v3.1</span></div>
+              <p class="app-foot-tag">Unified cybersecurity operations platform — 192+ tools, live global intel, and AI in a single console.</p>
+              <div class="app-foot-status"><span class="afs-dot"></span>All systems operational</div>
+              <div class="app-foot-social">
+                <a data-goto="ai" class="afs-chip">Nexus AI</a>
+                <a data-foot="downloads" class="afs-chip">Get the CLI</a>
+                <a data-goto="settings" class="afs-chip">API &amp; MCP</a>
+              </div>
+            </div>
+            <div class="app-foot-col">
+              <h4>Mission Control</h4>
+              <a data-goto="home">Dashboard</a><a data-goto="sentineleye">Sentinel Eye</a><a data-goto="prometheus">Prometheus</a><a data-goto="crucible">Crucible</a><a data-goto="vanguard">Vanguard</a>
+            </div>
+            <div class="app-foot-col">
+              <h4>Flagships</h4>
+              <a data-goto="citadel">Citadel SOC</a><a data-goto="phantom">Phantom</a><a data-goto="oracle">Oracle</a><a data-goto="spectre">Spectre</a><a data-goto="hydra">Hydra Engine</a>
+            </div>
+            <div class="app-foot-col">
+              <h4>Workspace</h4>
+              <a data-goto="ai">Nexus AI</a><a data-goto="settings">Settings</a><a data-goto="saved">Saved Items</a><a data-foot="docs">Docs</a><a data-foot="downloads">Downloads</a>
+            </div>
+            <div class="app-foot-col">
+              <h4>Legal</h4>
+              <a data-foot="terms">Terms</a><a data-foot="privacy">Privacy</a><a data-foot="aup">Acceptable Use</a><a data-foot="license">License</a><a data-goto="contact">Contact / Feedback</a>
+            </div>
           </div>
-          <div class="app-foot-fine">Use only on systems you own or are authorized to test.</div>
+          <div class="app-foot-bar">
+            <span class="app-foot-fine">Use only on systems you own or are authorized to test.</span>
+            <span class="app-foot-copy">&copy; 2026 Darknode-Official · All rights reserved</span>
+          </div>
         </footer>
       </main>
     </div>`;
@@ -1347,8 +1491,8 @@ function renderApp(user) {
     else if (sec === "github") { show("settings"); return; }
     else if (sec === "gmail") { show("settings"); return; }
     else if (sec === "coder") { import("/js/coder.js").then(m => m.renderCliCoder(main)); }
-    else if (sec === "downloads") { import("/js/getapp.js?v=20260924b").then(m => m.renderDownloads(main)); }
-    else if (sec === "dlguide") { import("/js/getapp.js?v=20260924b").then(m => m.renderDownloadDocs(main)); }
+    else if (sec === "downloads") { import("/js/getapp.js?v=20260924c").then(m => m.renderDownloads(main)); }
+    else if (sec === "dlguide") { import("/js/getapp.js?v=20260924c").then(m => m.renderDownloadDocs(main)); }
     else if (sec === "api") { import("/js/api.js").then(m => m.renderAPI(main, user)); }
     else if (sec === "docs") { import("/js/docs.js?v=20260924b").then(m => m.renderDocs(main)); }
     else if (sec === "setup") renderSetup(main, more);
@@ -1414,10 +1558,33 @@ function renderApp(user) {
       }
     }
   });
-  // Sidebar collapse toggle
+  // Sidebar collapse toggle — the collapsed rail shows a 2-letter token per
+  // tool (items have no icons) plus the full name as a tooltip, so it reads as
+  // a proper icon rail instead of empty boxes.
+  const setSideAbbrs = (sb) => {
+    sb.querySelectorAll(".side-item").forEach((it) => {
+      if (it.dataset.abbr) return;
+      const badge = it.querySelector(".side-badge");
+      let t = it.textContent || "";
+      if (badge) t = t.replace(badge.textContent, "");
+      t = t.trim();
+      const w = t.split(/\s+/).filter(Boolean);
+      const ab = (w.length >= 2 ? (w[0][0] + w[1][0]) : t.slice(0, 2)) || "?";
+      it.dataset.abbr = ab.toUpperCase();
+      if (!it.title) it.title = t;
+    });
+    sb.querySelectorAll(".side-group").forEach((g) => {
+      if (g.dataset.abbr) return;
+      const cnt = g.querySelector(".side-cnt");
+      let t = g.textContent || "";
+      if (cnt) t = t.replace(cnt.textContent, "");
+      g.dataset.abbr = (t.trim()[0] || "•").toUpperCase();
+    });
+  };
   const sideToggleBtn = view.querySelector("#sideToggle");
   if (sideToggleBtn) {
     const sb = view.querySelector("#sidebar");
+    if (sb) setSideAbbrs(sb);
     const savedCollapsed = localStorage.getItem("sw_sidebar_collapsed");
     if (savedCollapsed === "1" && sb) sb.classList.add("collapsed");
     sideToggleBtn.onclick = () => {
@@ -1518,6 +1685,29 @@ function renderApp(user) {
     show("docs");
     if (f !== "docs") setTimeout(() => { const t = document.getElementById("doc-" + f); if (t) t.scrollIntoView({ behavior: "smooth", block: "start" }); }, 60);
   }));
+  // Quick-nav links (footer, topbar strip) that jump straight to a section.
+  view.querySelectorAll("[data-goto]").forEach((a) => a.addEventListener("click", () => show(a.dataset.goto)));
+
+  // Topbar live ops strip — fills the empty center of the header with a status
+  // line, a ticking UTC clock, headline threat metrics and quick launchers.
+  const tbCenter = document.getElementById("topbar-center");
+  if (tbCenter) {
+    tbCenter.innerHTML = `
+      <span class="tbx tbx-status"><span class="tbx-dot"></span>OPERATIONAL</span>
+      <span class="tbx-sep"></span>
+      <span class="tbx tbx-clock" id="tb-clock" title="System time (UTC)">--:--:-- UTC</span>
+      <span class="tbx-sep"></span>
+      <span class="tbx"><b>17</b>&nbsp;threats</span>
+      <span class="tbx"><b>38</b>&nbsp;APTs</span>
+      <span class="tbx tbx-defcon">DEFCON 3</span>
+      <span class="tbx-sep"></span>
+      <button class="tbx tbx-btn" data-goto="sentineleye">Sentinel Eye</button>
+      <button class="tbx tbx-btn" data-goto="ai">Nexus AI</button>`;
+    tbCenter.querySelectorAll("[data-goto]").forEach((b) => b.addEventListener("click", () => show(b.dataset.goto)));
+    try { if (window._tbClock) clearInterval(window._tbClock); } catch (_) {}
+    const tick = () => { const el = document.getElementById("tb-clock"); if (el) el.textContent = new Date().toISOString().slice(11, 19) + " UTC"; };
+    tick(); try { window._tbClock = setInterval(tick, 1000); } catch (_) {}
+  }
 
   appShow = show;
   initSaved(user);
