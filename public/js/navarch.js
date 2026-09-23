@@ -299,7 +299,7 @@ function panelFleet(host) {
     </div>
     <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:14px" class="nv-fleet-layout">
       <div><div class="nv-grid" id="nv-fleet-grid"></div></div>
-      <div><div class="card panel" id="nv-fleet-detail" style="padding:16px"><div class="muted">Select a vessel to inspect onboard systems and cyber posture.</div></div></div>
+      <div><div class="card panel" id="nv-fleet-detail" style="padding:16px">${fleetOverviewHtml()}</div></div>
     </div>`;
 
   const grid = host.querySelector('#nv-fleet-grid');
@@ -324,6 +324,30 @@ function panelFleet(host) {
       showVesselDetail(host, FLEET[+el.dataset.i]);
     });
   });
+}
+
+// Default right-hand panel: a plain-language overview so the space isn't empty
+// and a newcomer immediately understands what this board is for.
+function fleetOverviewHtml() {
+  const avg = Math.round(FLEET.reduce((a, v) => a + v.readiness, 0) / FLEET.length);
+  const col = avg >= 80 ? '#3ddc84' : avg >= 60 ? '#f1c40f' : '#ff6b5e';
+  const worst = FLEET.slice().sort((a, b) => a.readiness - b.readiness)[0];
+  const dark = FLEET.filter(v => v.status === 'DARK');
+  return `
+    <div class="pg-h2" style="font-size:14px;margin:0 0 4px">Fleet posture</div>
+    <p class="muted" style="font-size:12.5px;line-height:1.55;margin:0 0 12px">
+      Every hull you are monitoring and the cyber health of its onboard systems.
+      <b>Click any vessel card on the left</b> to inspect its ECDIS, radar, propulsion,
+      cargo/ballast SCADA and satellite links.</p>
+    <div class="nv-kv"><span>Fleet-wide readiness</span><b style="color:${col}">${avg}/100</b></div>
+    <div class="nv-meter" style="margin-bottom:12px"><i style="width:${avg}%;background:${col}"></i></div>
+    <div class="nv-kv"><span>Most at risk</span><b style="color:#ff6b5e">${esc(worst.name)} · ${worst.readiness}/100</b></div>
+    <div class="nv-kv"><span>Going dark (AIS off)</span><b>${dark.length ? dark.map(v => esc(v.name)).join(', ') : 'None'}</b></div>
+    <div class="pg-h2" style="font-size:12px;margin:14px 0 6px">HOW TO READ POSTURE</div>
+    <div class="nv-row"><span>Systems locked down, patched, monitored</span>${badge('SECURE', 'ok')}</div>
+    <div class="nv-row"><span>Weakness present — needs attention</span>${badge('DEGRADED', 'warn')}</div>
+    <div class="nv-row"><span>Actively exploitable / unprotected</span>${badge('EXPOSED', 'bad')}</div>
+    <div class="nv-note">A "dark ship" has switched off its AIS transponder — sometimes routine, often a sign of sanctions evasion, smuggling, or an attempt to hide a hijacked or spoofed track.</div>`;
 }
 
 function showVesselDetail(host, v) {
@@ -351,6 +375,7 @@ function panelAis(host) {
   host.innerHTML = `
     <div class="pg-h2" style="font-size:15px">AIS Integrity Scanner</div>
     <div class="pg-sub" style="margin-bottom:10px">AIS is unauthenticated and broadcast in the clear — trivially spoofed. Paste position reports and run consecutive-fix analysis to expose fabricated tracks.</div>
+    <div class="nv-note" style="margin:0 0 8px">New here? Click <b>Load spoofed sample</b> then <b>Scan</b> to watch the detector catch faked ship tracks — teleporting vessels, cloned identities and impossible speeds.</div>
     <div class="muted" style="font-size:11.5px;margin-bottom:6px">Format: MMSI,LAT,LON,SOG(kn),COG,TIMESTAMP — one report per line</div>
     <textarea class="nv-ta" id="nv-ais-in">${esc(AIS_SAMPLE_CLEAN)}</textarea>
     <div style="display:flex;flex-wrap:wrap;gap:8px;margin:10px 0">

@@ -5,7 +5,7 @@ import { auth, db, googleProvider, githubProvider, OWNER_EMAIL } from "/js/fireb
 import "/js/scroll-top.js?v=20260924b";
 import "/js/shortcuts.js";
 import "/js/mobile-nav.js";
-import { showToast } from "/js/toast.js";
+import { showToast } from "/js/toast.js?v=20260924a";
 import { collection as fbCollection, addDoc as fbAddDoc, serverTimestamp as fbServerTimestamp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
 import {
   onAuthStateChanged, signInWithRedirect, getRedirectResult, signOut,
@@ -1452,7 +1452,7 @@ function renderApp(user) {
     else if (sec === "oracle") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading ORACLE...</p>"; const _s=sec; import("/js/oracle.js?v=20260923c").then(m => { if(curSec!==_s)return; m.renderOracle(main); _prevCleanup = m.cleanupOracle; }); }
     else if (sec === "spectre") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading SPECTRE...</p>"; const _s=sec; import("/js/spectre.js?v=20260924b").then(m => { if(curSec!==_s)return; m.renderSpectre(main); _prevCleanup = m.cleanupSpectre; }); }
     else if (sec === "crucible") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading CRUCIBLE...</p>"; const _s=sec; import("/js/crucible.js?v=20260924a").then(m => { if(curSec!==_s)return; m.renderCrucible(main); _prevCleanup = m.cleanupCrucible; }); }
-    else if (sec === "navarch") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading NAVARCH...</p>"; const _s=sec; import("/js/navarch.js?v=20260924a").then(m => { if(curSec!==_s)return; m.renderNavarch(main); _prevCleanup = m.cleanupNavarch; }); }
+    else if (sec === "navarch") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading NAVARCH...</p>"; const _s=sec; import("/js/navarch.js?v=20260924b").then(m => { if(curSec!==_s)return; m.renderNavarch(main); _prevCleanup = m.cleanupNavarch; }); }
     else if (sec === "jwtanalyzer") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading JWT Analyzer...</p>"; import("/js/jwt-analyzer.js").then(m => m.renderJwtAnalyzer(main)); }
     else if (sec === "cspevaluator") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading CSP Evaluator...</p>"; import("/js/csp-evaluator.js?v=20260924b").then(m => m.renderCspEvaluator(main)); }
     else if (sec === "wayback") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Wayback Recon...</p>"; import("/js/wayback-recon.js").then(m => m.renderWaybackRecon(main)); }

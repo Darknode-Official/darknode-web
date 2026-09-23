@@ -9102,7 +9102,7 @@ html body .seg:not(#dn-x) { border-radius: 5px !important; }
   justify-content: center;
   gap: 12px;
   min-width: 0;
-  overflow: hidden;
+  overflow: visible; /* was hidden — it clipped the +New / Alerts dropdowns */
   font-size: .72rem;
   color: var(--mut);
 }

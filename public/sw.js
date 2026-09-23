@@ -1,4 +1,4 @@
-const CACHE = 'darknode-v28';
+const CACHE = 'darknode-v30';
 const STATIC = [
   '/',
   '/css/styles.css',
@@ -34,6 +34,22 @@ self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
   if (url.origin !== location.origin) return;
 
+  // SPA client-side routes (e.g. /navarch, /ai) have no file on disk. Always
+  // serve the cached app shell so a direct load or reload works offline, and
+  // never let respondWith resolve to undefined (that throws "Failed to convert
+  // value to 'Response'").
+  if (e.request.mode === 'navigate') {
+    e.respondWith((async () => {
+      try {
+        const res = await fetch(e.request);
+        if (res && res.ok) return res;           // real page (prod rewrites SPA routes to index.html)
+      } catch (_) { /* offline / network error */ }
+      const shell = await caches.match('/');       // SPA route with no file → serve the app shell
+      return shell || (await caches.match(e.request)) || Response.error();
+    })());
+    return;
+  }
+
   if (url.pathname.startsWith('/js/') || url.pathname.startsWith('/data/')) {
     e.respondWith(
       caches.open(CACHE).then(c =>
@@ -62,6 +78,8 @@ self.addEventListener('fetch', e => {
   }
 
   e.respondWith(
-    fetch(e.request).catch(() => caches.match(e.request))
+    fetch(e.request).catch(() =>
+      caches.match(e.request).then(cached => cached || caches.match('/') || Response.error())
+    )
   );
 });
