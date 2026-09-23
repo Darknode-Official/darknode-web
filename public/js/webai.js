@@ -4,13 +4,14 @@ const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const OLLAMA = "http://127.0.0.1:11434";
 const SYS_KEY = "sw_ai_sys", MODEL_KEY = "sw_ai_model";
-const _BK = ["\x67\x73\x6b\x5f\x32\x78\x71\x4a\x55\x78\x77\x32\x32\x6a\x72\x4e\x39\x4b\x6a\x52\x7a\x67\x43\x43\x57\x47\x64\x79\x62\x33\x46\x59\x41\x67\x73\x6f\x69\x4e\x6d\x6d\x4c\x32\x44\x76\x4f\x55\x4a\x64\x46\x76\x64\x39\x59\x6f\x68\x36","\x73\x6b\x2d\x6f\x72\x2d\x76\x31\x2d\x37\x61\x66\x62\x39\x66\x32\x62\x32\x63\x31\x32\x32\x63\x30\x61\x30\x31\x38\x63\x37\x39\x30\x34\x35\x65\x38\x33\x32\x33\x36\x31\x62\x62\x63\x35\x65\x63\x31\x64\x38\x61\x66\x34\x36\x66\x37\x34\x66\x62\x31\x39\x39\x31\x65\x37\x35\x31\x39\x34\x34\x66\x35\x35","\x66\x38\x75\x79\x70\x4f\x55\x47\x78\x33\x76\x49\x59\x6b\x74\x42\x69\x36\x69\x66\x68\x4e\x7a\x4f\x66\x4a\x73\x31\x63\x58\x79\x50"];
+const _BK = ["\x67\x73\x6b\x5f\x32\x78\x71\x4a\x55\x78\x77\x32\x32\x6a\x72\x4e\x39\x4b\x6a\x52\x7a\x67\x43\x43\x57\x47\x64\x79\x62\x33\x46\x59\x41\x67\x73\x6f\x69\x4e\x6d\x6d\x4c\x32\x44\x76\x4f\x55\x4a\x64\x46\x76\x64\x39\x59\x6f\x68\x36","\x73\x6b\x2d\x6f\x72\x2d\x76\x31\x2d\x37\x61\x66\x62\x39\x66\x32\x62\x32\x63\x31\x32\x32\x63\x30\x61\x30\x31\x38\x63\x37\x39\x30\x34\x35\x65\x38\x33\x32\x33\x36\x31\x62\x62\x63\x35\x65\x63\x31\x64\x38\x61\x66\x34\x36\x66\x37\x34\x66\x62\x31\x39\x39\x31\x65\x37\x35\x31\x39\x34\x34\x66\x35\x35","\x66\x38\x75\x79\x70\x4f\x55\x47\x78\x33\x76\x49\x59\x6b\x74\x42\x69\x36\x69\x66\x68\x4e\x7a\x4f\x66\x4a\x73\x31\x63\x58\x79\x50","\x41\x51\x2e\x41\x62\x38\x52\x4e\x36\x4c\x64\x5a\x46\x41\x52\x4e\x65\x4d\x43\x2d\x42\x4f\x4d\x5a\x34\x42\x73\x62\x4c\x7a\x53\x35\x4b\x62\x4e\x42\x30\x71\x65\x38\x52\x41\x66\x35\x5a\x4f\x77\x77\x70\x37\x50\x6a\x51"];
 function _key(provider) {
   const map = { claude: "sw_claude_key", openai: "sw_openai_key", gemini: "sw_gemini_key", groq: "sw_groq_key", openrouter: "sw_openrouter_key", mistral: "sw_mistral_key" };
   try { const u = (localStorage.getItem(map[provider]) || "").trim(); if (u) return u; } catch (_) {}
   if (provider === "groq") return _BK[0];
   if (provider === "openrouter") return _BK[1];
   if (provider === "mistral") return _BK[2];
+  if (provider === "gemini") return _BK[3];
   return "";
 }
 
@@ -178,10 +179,21 @@ Windows: whoami /priv | wmic service get pathname (unquoted paths) | cmdkey /lis
 - Be direct and technical; when a request would only make sense as unauthorized harm, redirect it to the authorized, lab, or defensive version instead of refusing flatly`;
 
 const OLLAMA_MODELS = [
-  { id: "claude-fable", name: "Claude Fable 5.1", provider: "ollama", group: "Local AI (Ollama — Free)", sub: "recommended" },
+  { id: "claude-fable", name: "Claude Fable 5.1", provider: "ollama", group: "Local AI (Ollama — Free)", sub: "local" },
+];
+
+// Free cloud models powered by the built-in Gemini key — no install, no BYOK.
+// Uses the self-updating "-latest" alias so it won't hard-deprecate the way a
+// pinned version can. Flash is the best tier that's actually free on this key
+// (Pro is quota-limited), so it's the platform default.
+const GEMINI_MODELS = [
+  { id: "gemini-flash-latest", name: "Gemini Flash", provider: "gemini", group: "Recommended (Free)", sub: "recommended" },
+  { id: "gemini-3.8-flash", name: "Gemini 3.8 Flash", provider: "gemini", group: "Recommended (Free)" },
+  { id: "gemini-flash-lite-latest", name: "Gemini Flash-Lite", provider: "gemini", group: "Recommended (Free)", sub: "fastest" },
 ];
 
 const MODELS = [
+  ...GEMINI_MODELS,
   ...OLLAMA_MODELS,
   { id: "llama-3.3-70b-specdec", name: "Llama 3.3 70B", provider: "groq", group: "Fast & Free (Groq)" },
   { id: "llama-3.1-8b-instant", name: "Llama 3.1 8B", provider: "groq", group: "Fast & Free (Groq)", sub: "fastest" },
@@ -208,8 +220,6 @@ const MODELS = [
   { id: "gpt-4o-mini", name: "GPT-4o Mini", provider: "openai", group: "OpenAI (own key)" },
   { id: "gpt-4.1", name: "GPT-4.1", provider: "openai", group: "OpenAI (own key)" },
   { id: "o4-mini", name: "o4-mini", provider: "openai", group: "OpenAI (own key)" },
-  { id: "gemini-2.5-pro", name: "Gemini 2.5 Pro", provider: "gemini", group: "Gemini (own key)" },
-  { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash", provider: "gemini", group: "Gemini (own key)" },
 ];
 
 // --- streaming ---
@@ -259,8 +269,18 @@ async function streamGemini(model, messages, onToken, signal) {
   });
   const body = { contents };
   if (sys && sys.content) body.systemInstruction = { parts: [{ text: sys.content }] };
-  const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse&key=${key}`, { method: "POST", signal, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse&key=${key}`;
+  const opts = { method: "POST", signal, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) };
+  // Free-tier flash can briefly return 503 "high demand" or 429 — retry a couple times before surfacing.
+  let r;
+  for (let attempt = 0; ; attempt++) {
+    r = await fetch(url, opts);
+    if (r.ok || r.status === 401 || r.status === 403 || (r.status !== 429 && r.status !== 503) || attempt >= 2) break;
+    await new Promise((res) => setTimeout(res, 700 * (attempt + 1)));
+  }
   if (r.status === 401 || r.status === 403) throw new Error("Invalid Gemini key.");
+  if (r.status === 429) throw new Error("Gemini is rate-limited right now — wait a few seconds, or pick another model from the dropdown.");
+  if (r.status === 503) throw new Error("Gemini is briefly overloaded — try again in a moment, or pick another model from the dropdown.");
   if (!r.ok) { const e = await r.text().catch(() => ""); throw new Error("Gemini API " + r.status + (e ? ": " + e.slice(0, 200) : "")); }
   if (!r.body) throw new Error("No streaming body");
   const reader = r.body.getReader(), dec = new TextDecoder(); let buf = "";
@@ -341,7 +361,7 @@ export function renderAI(main) {
   const seen = new Set();
   models.forEach((m) => { if (!seen.has(m.group)) { seen.add(m.group); groups.push(m.group); } });
 
-  const byokProviders = new Set(["claude", "openai", "gemini"]);
+  const byokProviders = new Set(["claude", "openai"]);
   const optionsHtml = groups.map((g) => {
     const items = models.filter((m) => m.group === g);
     return `<optgroup label="${esc(g)}">${items.map((m) => {
@@ -397,7 +417,8 @@ export function renderAI(main) {
 
   if (defaultModel) {
     const prov = defaultModel.provider;
-    if (prov === "ollama") status.textContent = "Ready — " + defaultModel.name + " via Ollama (local, free)";
+    if (prov === "gemini") status.textContent = "Ready — " + defaultModel.name + " via Google (free, no setup)";
+    else if (prov === "ollama") status.textContent = "Ready — " + defaultModel.name + " via Ollama (local, free)";
     else if (prov === "groq") status.textContent = "Ready — " + defaultModel.name + " via Groq (~800 tok/s)";
     else if (prov === "mistral") status.textContent = "Ready — " + defaultModel.name + " via Mistral";
     else if (prov === "openrouter") status.textContent = "Ready — " + defaultModel.name + " via OpenRouter";
