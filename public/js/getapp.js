@@ -47,10 +47,17 @@ export function renderDownloads(main) {
     <h1 class="pg-h1">Downloads</h1>
     <p class="muted pg-sub">The desktop app, terminal edition, and the full Darknode OS VM go far beyond the web console &mdash; a native port scanner, DNS/WHOIS/TLS recon, subdomain enumeration, a code workbench, live terminals, an autonomous AI agent, and auto-configuring tools.</p>
     <p style="margin:-6px 0 14px"><button class="btn ghost" data-sec="dlguide">Not sure which to download? Read the full guide &rarr;</button></p>
-    <div class="card" style="max-width:640px;border-color:color-mix(in srgb,var(--acc) 45%,transparent);margin-bottom:14px">
+    <div class="dl-hero-grid">
+    <div class="card dl-hero" style="border-color:color-mix(in srgb,var(--acc) 45%,transparent)">
       <h2 class="pg-h2" style="margin:0 0 6px">Nexus &mdash; AI coding agent</h2>
       <p class="muted" style="font-size:.85rem;margin:0 0 10px">A terminal AI coder (like Claude Code) built into the CLI: it edits files and runs commands using your own local models &mdash; private, no cloud. Download the CLI, then run <code data-cmd>darknode nexus</code>.</p>
-      <div class="btns" style="flex-wrap:wrap;gap:8px">
+      <div class="dl-feat">
+        <div class="dl-feat-i"><b>Edits your code</b><span>Reads, writes and refactors files across the repo, then runs the commands to verify.</span></div>
+        <div class="dl-feat-i"><b>Runs on local models</b><span>Ollama + Claude Fable by default &mdash; nothing leaves your machine, zero API cost.</span></div>
+        <div class="dl-feat-i"><b>Live terminals</b><span>Spawns real shells, port scans, recon and build steps under your control.</span></div>
+        <div class="dl-feat-i"><b>MCP-aware</b><span>Wire the Darknode MCP server so any MCP client can drive the toolset.</span></div>
+      </div>
+      <div class="btns" style="flex-wrap:wrap;gap:8px;margin-top:12px">
         <a class="btn" href="${REL_DL}/Darknode-cli-linux" download>Linux</a>
         <a class="btn" href="${REL_DL}/Darknode-cli-windows.exe" download>Windows</a>
         <a class="btn" href="${REL_DL}/Darknode-cli-macos-arm64" download>macOS &middot; Apple Silicon</a>
@@ -58,7 +65,7 @@ export function renderDownloads(main) {
       </div>
       <p class="muted" style="font-size:.75rem;margin:8px 0 0">Or install via npm: <code data-cmd>npm i -g darknode-cli</code> &nbsp;|&nbsp; <a class="nav-link" href="${NEXUS_REPO}" target="_blank" rel="noopener">Source on GitHub</a></p>
     </div>
-    <div class="card" style="max-width:640px;border-color:color-mix(in srgb,var(--acc) 45%,transparent);margin-bottom:14px">
+    <div class="card dl-hero" style="border-color:color-mix(in srgb,var(--acc) 45%,transparent)">
       <h2 class="pg-h2" style="margin:0 0 6px">Darknode OS &mdash; the security VM</h2>
       <p class="muted" style="font-size:.85rem;margin:0 0 10px">A self-provisioning Linux workstation &mdash; a Kali / BlackArch alternative. Pick the edition that fits: a bare terminal, a lean desktop, or the everything build. Each boots in VirtualBox or QEMU/KVM and self-configures on first launch.</p>
       <div class="btns" style="flex-wrap:wrap;gap:8px;margin-bottom:12px">
@@ -105,9 +112,10 @@ export function renderDownloads(main) {
         </div>
       </div>
     </div>
+    </div>
     <h2 class="pg-h2">1 · Choose a build</h2>
     <p class="muted" style="font-size:.85rem;margin:-6px 0 12px">Prefer just the app or the terminal edition? Grab the latest build for your platform — Linux, Windows or macOS.</p>
-    <div class="card" style="max-width:760px">
+    <div class="card">
       <div id="dlBuilds" class="dl-builds"><p class="muted" style="margin:0">Loading the latest builds…</p></div>
     </div>
     <h2 class="pg-h2" style="margin-top:24px">2 · Choose a setup edition</h2>
