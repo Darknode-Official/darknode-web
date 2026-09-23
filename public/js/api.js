@@ -219,7 +219,10 @@ curl -X POST http://localhost:8080/api/v1/scan/url \\
 
   const regenBtn = $("#apiKeyRegen");
   if (regenBtn) regenBtn.onclick = async () => {
-    if (!confirm("Regenerate your API key? The old key will stop working immediately.")) return;
+    const ok = window.dnConfirm
+      ? await window.dnConfirm("Regenerate API key?", "Your current key stops working immediately and any integrations using it will break until you update them.", { submitText: "Regenerate", danger: true })
+      : true;
+    if (!ok) return;
     const key = genKey();
     try {
       await setDoc(doc(db, "users", user.uid), { apiKey: key, apiUsage: { calls: 0, lastCall: null }, apiKeyCreated: serverTimestamp() }, { merge: true });

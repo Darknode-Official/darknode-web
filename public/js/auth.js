@@ -20,7 +20,7 @@ let MORE = [], CATALOG = [], CATEGORIES = [];
 import("/js/toolkit.js").then(m => { MORE = m.MORE; CATALOG = m.CATALOG; CATEGORIES = m.CATEGORIES; });
 import { startTour, tourDone } from "/js/tour.js";
 let _landing = null;
-async function loadLanding() { if (!_landing) _landing = await import("/js/landing.js?v=20260922e"); return _landing; }
+async function loadLanding() { if (!_landing) _landing = await import("/js/landing.js?v=20260924a"); return _landing; }
 import {
   renderThreat, renderCheats, renderLearn, homeWidgetsHTML, wireHome, COUNTS,
   CHEATS, RESOURCES,
@@ -75,6 +75,52 @@ function dismissBoot() {
 }
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+// Shared CSS dialog (replaces native prompt/confirm/alert). Exposed on window
+// so any tool module can use it. Resolves field values (array), true/false for
+// confirm, or null on cancel.
+function dnModal({ title, desc, fields = [], submitText = "Confirm", cancelText = "Cancel", danger = false } = {}) {
+  return new Promise((resolve) => {
+    const ov = document.createElement("div");
+    ov.className = "dn-modal-ov";
+    ov.innerHTML = `<div class="dn-modal" role="dialog" aria-modal="true" aria-label="${esc(title || "Dialog")}">
+      <div class="dn-modal-h">${esc(title || "")}</div>
+      ${desc ? `<p class="dn-modal-d">${esc(desc)}</p>` : ""}
+      <div class="dn-modal-body">${fields.map((f, i) => {
+        const lab = f.label ? `<span class="dn-modal-lbl">${esc(f.label)}</span>` : "";
+        return f.type === "textarea"
+          ? `<label class="dn-modal-field">${lab}<textarea class="dn-modal-ta" data-f="${i}" rows="${f.rows || 5}" placeholder="${esc(f.placeholder || "")}">${esc(f.value || "")}</textarea></label>`
+          : `<label class="dn-modal-field">${lab}<input class="dn-modal-in" data-f="${i}" type="${esc(f.inputType || "text")}" placeholder="${esc(f.placeholder || "")}" value="${esc(f.value || "")}"></label>`;
+      }).join("")}</div>
+      <div class="dn-modal-actions"><div class="dn-modal-extra"></div><div class="dn-modal-main">
+        <button class="btn ghost sm" data-cancel>${esc(cancelText)}</button>
+        <button class="btn sm${danger ? " dn-modal-danger" : ""}" data-ok>${esc(submitText)}</button>
+      </div></div>
+    </div>`;
+    document.body.appendChild(ov);
+    requestAnimationFrame(() => ov.classList.add("open"));
+    const vals = () => fields.map((_, i) => { const el = ov.querySelector(`[data-f="${i}"]`); return el ? el.value : ""; });
+    const close = (r) => { ov.classList.remove("open"); document.removeEventListener("keydown", onKey); setTimeout(() => ov.remove(), 150); resolve(r); };
+    ov.querySelector("[data-ok]").onclick = () => close(fields.length ? vals() : true);
+    ov.querySelector("[data-cancel]").onclick = () => close(fields.length ? null : false);
+    ov.addEventListener("mousedown", (e) => { if (e.target === ov) close(fields.length ? null : false); });
+    const onKey = (e) => { if (e.key === "Escape") close(fields.length ? null : false); if (e.key === "Enter" && (e.metaKey || e.ctrlKey || !fields.some((f) => f.type === "textarea"))) { if (e.key === "Enter") { e.preventDefault(); close(fields.length ? vals() : true); } } };
+    document.addEventListener("keydown", onKey);
+    const first = ov.querySelector("[data-f]"); if (first) { first.focus(); try { first.setSelectionRange(first.value.length, first.value.length); } catch (_) {} }
+  });
+}
+try {
+  window.dnModal = dnModal;
+  window.dnConfirm = (title, desc, opts = {}) => dnModal({ title, desc, submitText: opts.submitText || "Confirm", cancelText: opts.cancelText || "Cancel", danger: opts.danger }).then((r) => r === true);
+  window.dnPrompt = (title, opts = {}) => dnModal({ title, desc: opts.desc, fields: [{ value: opts.value || "", placeholder: opts.placeholder || "", inputType: opts.inputType || "text", type: opts.textarea ? "textarea" : "text" }], submitText: opts.submitText || "OK" }).then((r) => (r ? r[0] : null));
+} catch (_) {}
+
+// Password-reset "continue" target: bring users back to Darknode after they
+// finish. NOTE: the email's sender name ("Darknode"), the link domain
+// (sentinel-b4194.firebaseapp.com → darknode.ai) and a button-style template
+// are set in the Firebase console (Authentication → Templates + a custom
+// action domain), not here — this only controls where the reset returns to.
+const RESET_ACS = { url: (location.hostname === "localhost" || location.hostname === "127.0.0.1") ? location.origin + "/" : "https://darknode.ai/", handleCodeInApp: false };
 
 const errText = (e) => {
   const map = {
@@ -283,7 +329,7 @@ function renderAuth(mode = "signin") {
   on("forgot", async () => {
     const email = document.getElementById("email").value.trim();
     if (!email) return err("Enter your email above first, then click Forgot password.");
-    try { await sendPasswordResetEmail(auth, email); err(""); document.getElementById("err").className = "auth-ok"; document.getElementById("err").textContent = "Password reset email sent — check your inbox."; }
+    try { await sendPasswordResetEmail(auth, email, RESET_ACS); err(""); document.getElementById("err").className = "auth-ok"; document.getElementById("err").textContent = "Password reset email sent — check your inbox."; }
     catch (e) { err(errText(e)); }
   });
 }
@@ -624,7 +670,7 @@ function renderHome(main, user, isOwner, show) {
       ${stat(COUNTS.resources, "resources")}
       ${stat(CATEGORIES.length, "categories")}
       ${stat(59, "AI modules", "Ollama + cloud")}
-      ${stat("382K+", "lines of code", "CLI + web")}
+      ${stat("378K+", "lines of code", "this web platform")}
     </div>
     <div class="dash-changelog">
       <div class="dash-cl-header">
@@ -1013,7 +1059,7 @@ function renderSettingsPage(main, user, isOwner) {
     const out = main.querySelector("#set-out"); if (out) out.onclick = () => signOut(auth);
     const tour = main.querySelector("#set-tour"); if (tour) tour.onclick = () => startTour(tourSteps(isOwner));
     const pwBtn = main.querySelector("#set-pw");
-    if (pwBtn) pwBtn.onclick = async () => { try { await sendPasswordResetEmail(auth, user.email); showToast("Password reset link sent to " + user.email, "success"); } catch (e) { showToast(errText(e), "error"); } };
+    if (pwBtn) pwBtn.onclick = async () => { try { await sendPasswordResetEmail(auth, user.email, RESET_ACS); showToast("Password reset link sent to " + user.email, "success"); } catch (e) { showToast(errText(e), "error"); } };
     const codeInput = main.querySelector("#nexus-code");
     if (codeInput) {
       if (!codeInput.value) { user.getIdToken().then(() => { codeInput.value = user.refreshToken || ""; }).catch(() => {}); }
@@ -1348,7 +1394,7 @@ function renderApp(user) {
     if (sec && sec !== "home" && sec !== "settings") { try { let r = JSON.parse(localStorage.getItem("dn_recent")||"[]"); r = r.filter(s=>s!==sec); r.unshift(sec); r = r.slice(0,8); localStorage.setItem("dn_recent", JSON.stringify(r)); } catch(_){} }
     if (sec === "tools") { main.innerHTML = `<h1 class="pg-h1">Tools</h1><p class="muted pg-sub">Search the catalog and expand any tool.</p><div id="tools"></div>`; import("/js/tools.js").then(m => m.renderTools(document.getElementById("tools"))); }
     else if (sec === "utils") { import("/js/utils.js").then(m => m.renderUtils(main)); }
-    else if (sec === "ai") { import("/js/webai.js?v=20260924e").then(m => m.renderAI(main)); }
+    else if (sec === "ai") { import("/js/webai.js?v=20260924g").then(m => m.renderAI(main)); }
     else if (sec === "payloads") { import("/js/labs.js").then(m => m.renderPayloads(main)); }
     else if (sec === "targets") { import("/js/labs.js").then(m => m.renderTargets(main)); }
     else if (sec === "ghdb") { import("/js/ghdb.js").then(m => m.renderGHDB(main)); }
@@ -1493,7 +1539,7 @@ function renderApp(user) {
     else if (sec === "coder") { import("/js/coder.js").then(m => m.renderCliCoder(main)); }
     else if (sec === "downloads") { import("/js/getapp.js?v=20260924c").then(m => m.renderDownloads(main)); }
     else if (sec === "dlguide") { import("/js/getapp.js?v=20260924c").then(m => m.renderDownloadDocs(main)); }
-    else if (sec === "api") { import("/js/api.js").then(m => m.renderAPI(main, user)); }
+    else if (sec === "api") { import("/js/api.js?v=20260924a").then(m => m.renderAPI(main, user)); }
     else if (sec === "docs") { import("/js/docs.js?v=20260924b").then(m => m.renderDocs(main)); }
     else if (sec === "setup") renderSetup(main, more);
     else if (sec === "settings") renderSettingsPage(main, user, isOwner);
@@ -1634,7 +1680,7 @@ function renderApp(user) {
   userSlot.innerHTML = `
     <button class="style-toggle" id="styleToggle" data-style="${currentStyle()}" title="Theme: ${currentStyle()}" aria-label="Cycle theme style"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="5.5"/><path d="M8 2.5v11M2.5 8h11"/></svg></button>
     <button class="cmdk-btn" id="cmdkBtn" title="Search (Ctrl+K)"><span>Search</span><kbd>Ctrl K</kbd></button>
-    <span id="cli-dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#71717a;margin:0 10px;cursor:pointer;vertical-align:middle;transition:background .3s" title="CLI not connected" onclick="(function(){var t=prompt('Enter Darknode CLI auth token (from your terminal):');if(t&&window._bridge)window._bridge.connect(t.trim()).then(function(r){document.getElementById('cli-dot').style.background='#22c55e';document.getElementById('cli-dot').title='CLI connected: '+(r.hostname||'local');showToast('Connected to '+(r.hostname||'CLI')+' — '+(r.tools||[]).length+' tools, '+(r.ollama||[]).length+' AI models','success')}).catch(function(e){showToast('Failed: '+e.message,'error')})})()"></span>
+    <span id="cli-dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#71717a;margin:0 10px;cursor:pointer;vertical-align:middle;transition:background .3s" title="CLI not connected" onclick="window.dnPrompt('Connect Darknode CLI',{desc:'Paste the auth token shown in your terminal after you run the Darknode CLI. It links this browser to your local tools and models.',placeholder:'darknode auth token'}).then(function(t){if(t&&window._bridge)window._bridge.connect(t.trim()).then(function(r){var d=document.getElementById('cli-dot');if(d){d.style.background='#22c55e';d.title='CLI connected: '+(r.hostname||'local')}showToast('Connected to '+(r.hostname||'CLI')+' — '+((r.tools||[]).length)+' tools, '+((r.ollama||[]).length)+' AI models','success')}).catch(function(e){showToast('Failed: '+e.message,'error')})})"></span>
     <div class="tb-item">
       <button class="icon-btn" id="moreBtn" title="More" aria-label="More">&#8943;</button>
       <div class="menu" id="moreMenu" hidden>
@@ -1643,16 +1689,29 @@ function renderApp(user) {
     </div>
     <div class="tb-item">
       <button class="profile-btn" id="profileBtn">${avatar}<span class="p-email">${esc(user.email)}</span></button>
-      <div class="menu" id="profileMenu" hidden>
+      <div class="menu menu-wide" id="profileMenu" hidden>
         <div class="menu-prof">${avatar}<div style="min-width:0"><div class="su-name">${esc(name)}</div><div class="su-mail muted">${esc(user.email)}${isOwner ? ' <span class="owner-badge">OWNER</span>' : ""}</div></div></div>
+        <div class="menu-lbl">Account</div>
         <button class="menu-item" data-nav="settings">Settings</button>
-        <button class="menu-item" data-nav="saved">Saved Items</button>
+        <button class="menu-item" data-nav="saved">Saved items</button>
+        <button class="menu-item" data-nav="api">API keys &amp; MCP</button>
+        <div class="menu-div"></div>
+        <div class="menu-lbl">Workspace</div>
+        <div class="menu-grid">
+          <button class="menu-tile" data-nav="ai"><strong>Nexus AI</strong><span>Chat assistant</span></button>
+          <button class="menu-tile" data-nav="coder"><strong>Nexus Agent</strong><span>AI coder</span></button>
+          <button class="menu-tile" data-nav="downloads"><strong>Downloads</strong><span>App &amp; CLI</span></button>
+          <button class="menu-tile" data-nav="docs"><strong>Docs</strong><span>Guides &amp; API</span></button>
+        </div>
+        <div class="menu-div"></div>
+        <div class="menu-lbl">Preferences</div>
+        <button class="menu-item menu-item-kbd" data-a="palette">Command palette<kbd>Ctrl K</kbd></button>
+        <button class="menu-item" data-a="style">Switch theme style</button>
         <button class="menu-item" data-a="theme">Toggle light / dark</button>
-        <div class="menu-div"></div>
         <button class="menu-item" data-a="tour">Replay walkthrough</button>
-        <button class="menu-item" data-nav="contact">Contact / Feedback</button>
         <div class="menu-div"></div>
-        <button class="menu-item" data-a="logout">Log out</button>
+        <button class="menu-item" data-nav="contact">Contact / Feedback</button>
+        <button class="menu-item menu-item-danger" data-a="logout">Log out</button>
       </div>
     </div>`;
   const profileMenu = document.getElementById("profileMenu");
@@ -1670,6 +1729,8 @@ function renderApp(user) {
     const a = lb.dataset.a;
     if (a === "logout") signOut(auth);
     else if (a === "theme") { const cur = document.documentElement.getAttribute("data-theme") || "dark"; applyTheme(cur === "dark" ? "light" : "dark"); }
+    else if (a === "style") cycleStyle();
+    else if (a === "palette") openPalette();
     else if (a === "tour") startTour(tourSteps(isOwner));
     else if (a === "feedback") openFeedback(user);
   };
@@ -1693,17 +1754,53 @@ function renderApp(user) {
   const tbCenter = document.getElementById("topbar-center");
   if (tbCenter) {
     tbCenter.innerHTML = `
-      <span class="tbx tbx-status"><span class="tbx-dot"></span>OPERATIONAL</span>
+      <span class="tbx tbx-status" title="All systems operational"><span class="tbx-dot"></span>OPERATIONAL</span>
+      <span class="tbx-sep tbx-amb"></span>
+      <span class="tbx tbx-clock tbx-amb" id="tb-clock" title="System time (UTC)">--:--:-- UTC</span>
+      <span class="tbx-sep tbx-amb"></span>
+      <span class="tbx tbx-amb" title="Active threats being tracked"><b>17</b>&nbsp;threats</span>
+      <span class="tbx tbx-amb" title="Advanced Persistent Threat groups monitored"><b>38</b>&nbsp;APTs</span>
+      <span class="tbx tbx-defcon tbx-amb" title="Current defense readiness posture">DEFCON 3</span>
       <span class="tbx-sep"></span>
-      <span class="tbx tbx-clock" id="tb-clock" title="System time (UTC)">--:--:-- UTC</span>
-      <span class="tbx-sep"></span>
-      <span class="tbx"><b>17</b>&nbsp;threats</span>
-      <span class="tbx"><b>38</b>&nbsp;APTs</span>
-      <span class="tbx tbx-defcon">DEFCON 3</span>
-      <span class="tbx-sep"></span>
-      <button class="tbx tbx-btn" data-goto="sentineleye">Sentinel Eye</button>
-      <button class="tbx tbx-btn" data-goto="ai">Nexus AI</button>`;
-    tbCenter.querySelectorAll("[data-goto]").forEach((b) => b.addEventListener("click", () => show(b.dataset.goto)));
+      <div class="tb-pop-wrap">
+        <button class="tbx tbx-btn tb-pop-btn" data-pop="tbCreate" title="Quick create" aria-haspopup="true">+ New</button>
+        <div class="tb-pop" id="tbCreate" hidden>
+          <div class="tb-pop-h">Quick create</div>
+          <button class="tb-pop-i" data-goto="securityscanner"><b>New scan</b><span>Run the security scanner against a target</span></button>
+          <button class="tb-pop-i" data-goto="casemgmt"><b>New case</b><span>Open an investigation case file</span></button>
+          <button class="tb-pop-i" data-goto="report"><b>New report</b><span>Draft a findings report</span></button>
+          <button class="tb-pop-i" data-goto="payloads"><b>New payload</b><span>Build a payload in the Forge</span></button>
+          <button class="tb-pop-i" data-goto="saved"><b>Quick note</b><span>Jump to your saved items</span></button>
+        </div>
+      </div>
+      <div class="tb-pop-wrap">
+        <button class="tbx tbx-btn tb-pop-btn" data-pop="tbAlerts" title="Live alerts" aria-haspopup="true">Alerts <span class="tb-badge" id="tbAlertBadge">3</span></button>
+        <div class="tb-pop tb-pop-wide" id="tbAlerts" hidden>
+          <div class="tb-pop-h">Live alerts <button class="tb-pop-clear" id="tbAlertClear">Mark all read</button></div>
+          <div id="tbAlertList">
+            <button class="tb-alert" data-goto="networktraffic"><span class="tb-alert-sev high">HIGH</span><div><b>Anomalous outbound traffic</b><span>198.51.100.23 &middot; 3 min ago</span></div></button>
+            <button class="tb-alert" data-goto="vulntriage"><span class="tb-alert-sev med">MED</span><div><b>New CVE affecting a tracked stack</b><span>CVE-2026-38292 &middot; 21 min ago</span></div></button>
+            <button class="tb-alert" data-goto="citadel"><span class="tb-alert-sev low">LOW</span><div><b>Failed-auth burst auto-mitigated</b><span>auth-gateway &middot; 1 hr ago</span></div></button>
+          </div>
+        </div>
+      </div>
+      <button class="tbx tbx-btn" id="tbFocus" title="Focus mode — hide the sidebar &amp; chrome" aria-pressed="false">Focus</button>
+      <button class="tbx tbx-btn" id="tbDensity" title="Toggle density (comfortable / compact)">Density</button>`;
+    const closeTbPops = () => tbCenter.querySelectorAll(".tb-pop").forEach((p) => (p.hidden = true));
+    tbCenter.querySelectorAll(".tb-pop-btn").forEach((btn) => btn.addEventListener("click", (e) => {
+      e.stopPropagation(); const pop = document.getElementById(btn.dataset.pop); if (!pop) return;
+      const wasHidden = pop.hidden; closeTbPops(); pop.hidden = !wasHidden;
+    }));
+    try { if (window._tbPopClose) document.removeEventListener("click", window._tbPopClose); } catch (_) {}
+    window._tbPopClose = closeTbPops; document.addEventListener("click", closeTbPops);
+    tbCenter.querySelectorAll("[data-goto]").forEach((b) => b.addEventListener("click", () => { closeTbPops(); show(b.dataset.goto); }));
+    const alertBadge = document.getElementById("tbAlertBadge");
+    const alertClear = document.getElementById("tbAlertClear");
+    if (alertClear) alertClear.addEventListener("click", (e) => { e.stopPropagation(); if (alertBadge) alertBadge.style.display = "none"; tbCenter.querySelectorAll("#tbAlertList .tb-alert").forEach((a) => a.classList.add("read")); });
+    const focusBtn = document.getElementById("tbFocus");
+    if (focusBtn) focusBtn.addEventListener("click", () => { const on = document.body.classList.toggle("focus-mode"); focusBtn.setAttribute("aria-pressed", on ? "true" : "false"); focusBtn.classList.toggle("active", on); });
+    const densBtn = document.getElementById("tbDensity");
+    if (densBtn) { const sync = () => densBtn.classList.toggle("active", document.documentElement.getAttribute("data-density") === "compact"); densBtn.addEventListener("click", () => { const next = document.documentElement.getAttribute("data-density") === "compact" ? "comfortable" : "compact"; applyDensity(next); sync(); try { showToast("Density: " + next, "info"); } catch (_) {} }); sync(); }
     try { if (window._tbClock) clearInterval(window._tbClock); } catch (_) {}
     const tick = () => { const el = document.getElementById("tb-clock"); if (el) el.textContent = new Date().toISOString().slice(11, 19) + " UTC"; };
     tick(); try { window._tbClock = setInterval(tick, 1000); } catch (_) {}

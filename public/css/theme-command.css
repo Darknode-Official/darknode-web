@@ -157,7 +157,10 @@ html[data-style="pro"][data-skin="command"] .sidebar::-webkit-scrollbar-thumb,
 html[data-style="pro"][data-skin="command"] .sidebar .side-nav::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, .25) !important; }
 
 /* ---- Main column ---- */
-html[data-style="pro"][data-skin="command"] .app-main { padding: 28px 36px 40px !important; }
+/* Space parity: the command skin must occupy the SAME content width as
+   pro/dark/classic (see the theme-agnostic .app-main rules in styles.css).
+   Previously 28px 36px 40px, which made switching skins shift the layout. */
+html[data-style="pro"][data-skin="command"] .app-main { padding: 18px 16px !important; }
 html[data-style="pro"][data-skin="command"] .crumbs .crumb { color: #475569 !important; font-weight: 600 !important; }
 html[data-style="pro"][data-skin="command"] .crumbs .crumb.cur { color: #0f172a !important; }
 
@@ -357,7 +360,7 @@ html[data-style="pro"][data-skin="command"] .app-foot { border-top: 2px solid #d
   html[data-style="pro"][data-skin="command"] .stat-row { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
   html[data-style="pro"][data-skin="command"] .dash-hero { padding: 24px 20px !important; }
   html[data-style="pro"][data-skin="command"] .dash-hero .pg-h1 { font-size: 1.8rem !important; }
-  html[data-style="pro"][data-skin="command"] .app-main { padding: 18px 16px 32px !important; }
+  html[data-style="pro"][data-skin="command"] .app-main { padding: 16px 14px 28px !important; }
   html[data-style="pro"][data-skin="command"] #topbar .cmdk-btn { min-width: 0; }
 }
 

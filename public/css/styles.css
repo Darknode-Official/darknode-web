@@ -311,9 +311,9 @@ body:not(.landing):not(.app)::before{content:"";position:fixed;inset:0;z-index:-
 .menu-hd{padding:8px 10px;font-size:.78rem;color:var(--mut);border-bottom:1px solid var(--line);margin-bottom:4px;overflow:hidden;text-overflow:ellipsis}
 .menu-item{display:block;width:100%;text-align:left;background:transparent;border:none;color:var(--txt);padding:8px 10px;border-radius:7px;cursor:pointer;font-family:inherit;font-size:.85rem}
 .menu-item:hover{background:var(--card2)}
-.menu-item.col{display:flex;flex-direction:column;gap:2px}
-.menu-item.col strong{font-size:.85rem}
-.menu-sub{font-size:.72rem;color:var(--mut);white-space:normal}
+.menu-item.col{display:flex;flex-direction:column;gap:4px;padding-top:9px;padding-bottom:9px}
+.menu-item.col strong{font-size:.84rem;line-height:1.25}
+.menu-sub{font-size:.72rem;color:var(--mut);white-space:normal;line-height:1.4}
 .set-block .set-lbl{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--mut);margin-bottom:4px}
 .menu-prof{display:flex;align-items:center;gap:9px;padding:8px 10px;border-bottom:1px solid var(--line);margin-bottom:4px}
 .menu-div{height:1px;background:var(--line);margin:5px 4px}
@@ -9230,3 +9230,121 @@ html[data-density="compact"] body.app .app-main { padding: 12px 12px !important;
   .dl-hero-grid { grid-template-columns: 1fr; }
   .dl-feat { grid-template-columns: 1fr; }
 }
+
+/* ============================================================
+   TOPBAR UTILITIES — new self-contained controls (not nav dupes)
+   Quick-create menu, live Alerts dropdown, Focus mode, Density.
+   ============================================================ */
+.tb-pop-wrap { position: relative; display: inline-flex; }
+.tb-pop { position: absolute; top: calc(100% + 8px); right: 0; min-width: 240px; background: var(--card); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 16px 40px rgba(0,0,0,.20); padding: 6px; z-index: 1300; }
+.tb-pop-wide { min-width: 320px; }
+.tb-pop-h { font-size: .68rem; text-transform: uppercase; letter-spacing: .07em; color: var(--mut); padding: 7px 9px 8px; display: flex; align-items: center; justify-content: space-between; }
+.tb-pop-clear { background: none; border: 0; color: var(--acc); font-size: .7rem; cursor: pointer; text-transform: none; letter-spacing: 0; }
+.tb-pop-clear:hover { text-decoration: underline; }
+.tb-pop-i { display: block; width: 100%; text-align: left; background: none; border: 0; border-radius: 8px; padding: 8px 10px; cursor: pointer; color: var(--txt); }
+.tb-pop-i:hover { background: color-mix(in srgb, var(--card2) 85%, transparent); }
+.tb-pop-i b { display: block; font-size: .82rem; font-weight: 600; }
+.tb-pop-i span { font-size: .72rem; color: var(--mut); line-height: 1.35; }
+.tb-badge { background: var(--acc); color: #fff; border-radius: 999px; font-size: .62rem; line-height: 1; padding: 2px 6px; margin-left: 5px; font-weight: 700; vertical-align: middle; }
+.tb-alert { display: flex; gap: 9px; align-items: center; width: 100%; text-align: left; background: none; border: 0; padding: 8px 10px; border-radius: 8px; cursor: pointer; color: var(--txt); }
+.tb-alert:hover { background: color-mix(in srgb, var(--card2) 85%, transparent); }
+.tb-alert.read { opacity: .45; }
+.tb-alert > div { min-width: 0; }
+.tb-alert b { display: block; font-size: .8rem; font-weight: 600; }
+.tb-alert span { font-size: .7rem; color: var(--mut); }
+.tb-alert-sev { font-size: .58rem; font-weight: 800; letter-spacing: .04em; padding: 3px 6px; border-radius: 5px; flex-shrink: 0; }
+.tb-alert-sev.high { background: color-mix(in srgb, #ef4444 20%, transparent); color: #ef4444; }
+.tb-alert-sev.med  { background: color-mix(in srgb, #f59e0b 22%, transparent); color: #b45309; }
+.tb-alert-sev.low  { background: color-mix(in srgb, #3b82f6 20%, transparent); color: #2563eb; }
+.tb-center .tbx-btn.active { background: var(--acc-soft, color-mix(in srgb, var(--acc) 14%, transparent)); color: var(--acc); border-color: var(--acc); }
+
+/* Focus mode — distraction-free: hide sidebar + footer, content goes full width */
+body.focus-mode .sidebar { display: none !important; }
+body.focus-mode .app-foot, body.focus-mode .app-foot-grid { display: none !important; }
+body.focus-mode .app-main { padding-left: 20px !important; padding-right: 20px !important; }
+
+/* Keep the action buttons; drop ambient status first when the bar gets tight */
+@media (max-width: 1280px) { .tb-center .tbx-amb { display: none !important; } }
+
+/* ============================================================
+   NEXUS AI — Claude-style chat layout (full-height, composer
+   holds the model selector; nothing glued to the edges).
+   ============================================================ */
+.ai2 { display: flex; flex-direction: column; height: calc(100vh - 150px); min-height: 480px; max-width: 900px; width: 100%; margin: 0 auto; }
+.ai2-main { flex: 1 1 auto; overflow-y: auto; padding: 8px 4px 16px; scrollbar-width: thin; }
+.ai2-main .msg { max-width: 100%; margin: 0 0 16px; padding: 14px 16px; border-radius: 12px; line-height: 1.6; font-size: .92rem; }
+.ai2-main .msg.you { background: color-mix(in srgb, var(--acc) 9%, var(--card)); border: 1px solid color-mix(in srgb, var(--acc) 20%, var(--line)); }
+.ai2-main .msg.ai { background: var(--card); border: 1px solid var(--line); }
+.ai2-main .msg.err { border-color: #ef4444; color: #ef4444; }
+.ai2-main .msg-img { max-width: 260px; border-radius: 8px; display: block; margin: 0 0 8px; }
+/* Welcome / empty state — vertically centered greeting */
+.ai2-welcome { min-height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 24px 16px; gap: 4px; }
+.ai2-logo { font-size: 2.2rem; color: var(--acc); line-height: 1; margin-bottom: 6px; }
+.ai2-h1 { font-size: 1.7rem; font-weight: 700; margin: 0; letter-spacing: -.02em; color: var(--txt); }
+.ai2-lead { max-width: 560px; margin: 6px 0 18px; color: var(--mut); font-size: .92rem; line-height: 1.55; }
+.ai2-welcome .ai-presets { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; max-width: 640px; }
+/* Dock: sticky composer area at the bottom */
+.ai2-dock { flex: 0 0 auto; padding-top: 8px; }
+.ai2-byok { margin: 0 0 8px; padding: 8px 12px; font-size: .74rem; color: #ef4444; background: color-mix(in srgb, #ef4444 8%, transparent); border: 1px solid color-mix(in srgb, #ef4444 25%, transparent); border-radius: 10px; }
+.ai2-composer { border: 1px solid var(--line); border-radius: 16px; background: var(--card); padding: 10px 12px 8px; box-shadow: 0 2px 10px rgba(0,0,0,.04); transition: border-color .15s, box-shadow .15s; }
+.ai2-composer:focus-within { border-color: color-mix(in srgb, var(--acc) 55%, var(--line)); box-shadow: 0 4px 18px color-mix(in srgb, var(--acc) 12%, transparent); }
+.ai2-input { width: 100%; border: 0; background: transparent; resize: none; outline: none; color: var(--txt); font: inherit; font-size: .95rem; line-height: 1.5; max-height: 220px; min-height: 24px; padding: 4px 4px 2px; }
+.ai2-input::placeholder { color: var(--mut); }
+.ai2-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 6px; }
+.ai2-bar-l { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.ai2-bar-r { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+/* Model selector — a subtle pill living inside the composer */
+.ai2-modelwrap { position: relative; display: inline-flex; align-items: center; }
+.ai2-model { appearance: none; -webkit-appearance: none; border: 1px solid var(--line); background: color-mix(in srgb, var(--card2) 60%, transparent); color: var(--txt); font: inherit; font-size: .8rem; font-weight: 500; border-radius: 999px; padding: 5px 26px 5px 12px; max-width: 230px; cursor: pointer; text-overflow: ellipsis; }
+.ai2-model:hover { border-color: color-mix(in srgb, var(--acc) 45%, var(--line)); }
+.ai2-model:focus { outline: none; border-color: var(--acc); }
+.ai2-model-caret { position: absolute; right: 10px; pointer-events: none; color: var(--mut); }
+.ai2-tool { display: inline-flex; align-items: center; justify-content: center; gap: 5px; height: 32px; min-width: 32px; padding: 0 8px; border: 1px solid transparent; border-radius: 8px; background: transparent; color: var(--mut); cursor: pointer; font-size: .8rem; }
+.ai2-tool:hover { background: var(--card2); color: var(--txt); }
+.ai2-tool-txt { padding: 0 10px; }
+.ai2-send { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 50%; border: 0; background: var(--acc); color: #fff; cursor: pointer; transition: background .15s, transform .1s; }
+.ai2-send:hover { background: color-mix(in srgb, var(--acc) 85%, #000); }
+.ai2-send:active { transform: scale(.94); }
+.ai2-send.is-stop { background: #ef4444; }
+.ai2-status { text-align: center; font-size: .72rem; color: var(--mut); padding: 8px 0 0; min-height: 14px; }
+@media (max-width: 720px) {
+  .ai2 { height: calc(100vh - 130px); }
+  .ai2-model { max-width: 150px; }
+}
+
+/* ============================================================
+   DN MODAL — shared CSS dialog (replaces prompt/alert/confirm)
+   ============================================================ */
+.dn-modal-ov { position: fixed; inset: 0; z-index: 4000; display: flex; align-items: center; justify-content: center; padding: 20px; background: rgba(2,6,16,.55); backdrop-filter: blur(3px); opacity: 0; transition: opacity .15s ease; }
+.dn-modal-ov.open { opacity: 1; }
+.dn-modal { width: 100%; max-width: 560px; max-height: 88vh; overflow-y: auto; background: var(--card); border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 24px 60px rgba(0,0,0,.35); padding: 20px 22px; transform: translateY(8px) scale(.98); transition: transform .15s ease; }
+.dn-modal-ov.open .dn-modal { transform: none; }
+.dn-modal-h { font-size: 1.1rem; font-weight: 700; color: var(--txt); letter-spacing: -.01em; }
+.dn-modal-d { margin: 6px 0 14px; font-size: .85rem; color: var(--mut); line-height: 1.5; }
+.dn-modal-body { display: flex; flex-direction: column; gap: 12px; }
+.dn-modal-field { display: flex; flex-direction: column; gap: 5px; }
+.dn-modal-lbl { font-size: .78rem; font-weight: 600; color: var(--txt); }
+.dn-modal-in, .dn-modal-ta { width: 100%; box-sizing: border-box; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--txt); font: inherit; font-size: .88rem; padding: 10px 12px; outline: none; }
+.dn-modal-ta { resize: vertical; line-height: 1.5; font-family: var(--font-mono, ui-monospace, monospace); font-size: .8rem; }
+.dn-modal-in:focus, .dn-modal-ta:focus { border-color: var(--acc); box-shadow: 0 0 0 3px color-mix(in srgb, var(--acc) 15%, transparent); }
+.dn-modal-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 18px; }
+.dn-modal-main { display: flex; gap: 8px; margin-left: auto; }
+
+/* ============================================================
+   PROFILE MENU — richer, grouped (was near-empty). Adds section
+   labels, a 2x2 workspace tile grid, palette shortcut, danger.
+   ============================================================ */
+.menu.menu-wide { min-width: 288px; max-height: min(80vh, 620px); overflow-y: auto; }
+.menu-lbl { font-size: .64rem; text-transform: uppercase; letter-spacing: .08em; color: var(--mut); padding: 8px 10px 4px; font-weight: 600; }
+.menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 2px 6px 4px; }
+.menu-tile { display: flex; flex-direction: column; gap: 2px; align-items: flex-start; text-align: left; padding: 9px 10px; border: 1px solid var(--line); border-radius: 9px; background: color-mix(in srgb, var(--card2) 45%, transparent); cursor: pointer; color: var(--txt); }
+.menu-tile:hover { border-color: color-mix(in srgb, var(--acc) 45%, var(--line)); background: color-mix(in srgb, var(--acc) 8%, transparent); }
+.menu-tile strong { font-size: .82rem; font-weight: 600; }
+.menu-tile span { font-size: .68rem; color: var(--mut); }
+.menu-item-kbd { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.menu-item-kbd kbd { font-size: .62rem; font-family: var(--font-mono, ui-monospace, monospace); background: var(--card2); border: 1px solid var(--line); border-radius: 4px; padding: 1px 6px; color: var(--mut); }
+.menu-item-danger { color: #ef4444; }
+.menu-item-danger:hover { background: color-mix(in srgb, #ef4444 10%, transparent); }
+
+.dn-modal-danger{background:#ef4444 !important;border-color:#ef4444 !important;color:#fff !important;}
+.dn-modal-danger:hover{background:#dc2626 !important;}
