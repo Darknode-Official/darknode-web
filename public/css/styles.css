@@ -9404,3 +9404,13 @@ body.focus-mode .app-main { padding-left: 20px !important; padding-right: 20px !
 
 .dn-modal-danger{background:#ef4444 !important;border-color:#ef4444 !important;color:#fff !important;}
 .dn-modal-danger:hover{background:#dc2626 !important;}
+
+/* ============================================================
+   SIDEBAR HELP TOOLTIP — plain-language description per tool /
+   group, shown on hover so the sidebar stays neat for newbies.
+   ============================================================ */
+.side-tip { position: fixed; z-index: 6000; max-width: 264px; pointer-events: none; background: var(--card); color: var(--txt); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 12px 32px rgba(0,0,0,.22); padding: 9px 12px; font-size: .78rem; line-height: 1.45; animation: sideTipIn .12s ease-out; }
+.side-tip b { display: block; font-size: .8rem; font-weight: 700; margin-bottom: 2px; color: var(--txt); }
+.side-tip span { display: block; color: var(--mut); }
+@keyframes sideTipIn { from { opacity: 0; transform: translateX(-4px); } to { opacity: 1; transform: none; } }
+@media (max-width: 900px) { .side-tip { display: none; } }
