@@ -352,6 +352,44 @@ function availableModels() {
   return MODELS.filter((m) => m.provider === "ollama" || !!_key(m.provider));
 }
 
+// Lightweight CSS modal (replaces native prompt()/confirm()). Resolves with an
+// array of field values, or null on cancel. `extra` buttons resolve with a
+// single-value array [button.value].
+function aiModal({ title, desc, fields = [], submitText = "Save", extra = [] } = {}) {
+  return new Promise((resolve) => {
+    const ov = document.createElement("div");
+    ov.className = "dn-modal-ov";
+    ov.innerHTML = `<div class="dn-modal" role="dialog" aria-modal="true" aria-label="${esc(title || "Dialog")}">
+      <div class="dn-modal-h">${esc(title || "")}</div>
+      ${desc ? `<p class="dn-modal-d">${esc(desc)}</p>` : ""}
+      <div class="dn-modal-body">${fields.map((f, i) => {
+        const lab = f.label ? `<span class="dn-modal-lbl">${esc(f.label)}</span>` : "";
+        return f.type === "textarea"
+          ? `<label class="dn-modal-field">${lab}<textarea class="dn-modal-ta" data-f="${i}" rows="${f.rows || 6}" placeholder="${esc(f.placeholder || "")}">${esc(f.value || "")}</textarea></label>`
+          : `<label class="dn-modal-field">${lab}<input class="dn-modal-in" data-f="${i}" type="${esc(f.inputType || "text")}" placeholder="${esc(f.placeholder || "")}" value="${esc(f.value || "")}"></label>`;
+      }).join("")}</div>
+      <div class="dn-modal-actions">
+        <div class="dn-modal-extra">${extra.map((e, i) => `<button class="btn ghost sm" data-x="${i}">${esc(e.label)}</button>`).join("")}</div>
+        <div class="dn-modal-main">
+          <button class="btn ghost sm" data-cancel>Cancel</button>
+          <button class="btn sm" data-ok>${esc(submitText)}</button>
+        </div>
+      </div>
+    </div>`;
+    document.body.appendChild(ov);
+    requestAnimationFrame(() => ov.classList.add("open"));
+    const vals = () => fields.map((_, i) => { const el = ov.querySelector(`[data-f="${i}"]`); return el ? el.value : ""; });
+    const close = (r) => { ov.classList.remove("open"); document.removeEventListener("keydown", onKey); setTimeout(() => ov.remove(), 150); resolve(r); };
+    ov.querySelector("[data-ok]").onclick = () => close(vals());
+    ov.querySelector("[data-cancel]").onclick = () => close(null);
+    ov.querySelectorAll("[data-x]").forEach((b) => b.onclick = () => close([extra[+b.dataset.x].value]));
+    ov.addEventListener("mousedown", (e) => { if (e.target === ov) close(null); });
+    const onKey = (e) => { if (e.key === "Escape") close(null); if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) close(vals()); };
+    document.addEventListener("keydown", onKey);
+    const first = ov.querySelector("[data-f]"); if (first) { first.focus(); if (first.setSelectionRange) try { first.setSelectionRange(first.value.length, first.value.length); } catch (_) {} }
+  });
+}
+
 export function renderAI(main) {
   const models = availableModels();
   const saved = (() => { try { return localStorage.getItem(MODEL_KEY) || ""; } catch (_) { return ""; } })();
@@ -370,40 +408,45 @@ export function renderAI(main) {
     }).join("")}</optgroup>`;
   }).join("");
 
+  const welcomeHtml = `<div class="ai2-welcome ai-empty">
+        <div class="ai2-logo" aria-hidden="true">◆</div>
+        <h1 class="ai2-h1">Nexus AI</h1>
+        <p class="ai2-lead">Your local-first security assistant. Ask about recon, exploitation, tooling, code, or defense — answers stream in real time using free local models or your own key.</p>
+        <div class="ai-presets" id="aiPresets"></div>
+      </div>`;
   main.innerHTML = `
-    <div class="tool-intro">
-      <h2>Nexus AI</h2>
-      <p>Your security assistant. Ask it anything about hacking, networking, code, or cybersecurity. It uses your own AI key or a free local model.</p>
-      <div class="tool-steps">
-        <div class="tool-step"><span class="step-num">1</span><div class="step-text"><strong>Choose your AI model</strong>Pick from the dropdown -- Ollama models are free and local</div></div>
-        <div class="tool-step"><span class="step-num">2</span><div class="step-text"><strong>Type your question</strong>Ask about tools, techniques, code, or anything security-related</div></div>
-        <div class="tool-step"><span class="step-num">3</span><div class="step-text"><strong>Read the response</strong>AI streams the answer in real time with markdown formatting</div></div>
-      </div>
-    </div>
-    <div class="ai-wrap">
-      <div class="ai-header">
-        <h1 class="ai-title">AI assistant</h1>
-        <div class="ai-controls">
-          <select class="ai-sel" id="aiModel" style="min-width:180px">${optionsHtml}</select>
-          <button class="btn ghost sm" id="aiSys" title="System prompt">System</button>
-          <button class="btn ghost sm" id="aiClear">Clear</button>
+    <div class="ai2">
+      <div class="ai2-main" id="aiChat">${welcomeHtml}</div>
+      <div class="ai2-dock">
+        <div id="aiThumbs" class="ai-thumbs"></div>
+        <div id="aiByokHint" class="ai2-byok" style="display:none">Bring Your Own Key — add your API key in Settings → API Keys to use this model</div>
+        <div class="ai2-composer">
+          <textarea class="ai2-input" id="aiMsg" rows="1" placeholder="Message Nexus AI…" spellcheck="false"></textarea>
+          <div class="ai2-bar">
+            <div class="ai2-bar-l">
+              <label class="ai2-modelwrap" title="Model">
+                <select class="ai2-model" id="aiModel" aria-label="AI model">${optionsHtml}</select>
+                <svg class="ai2-model-caret" viewBox="0 0 12 12" width="10" height="10" aria-hidden="true"><path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </label>
+              <button class="ai2-tool" id="aiImg" title="Attach image" aria-label="Attach image"><svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M10 5v10M5 10h10" stroke-linecap="round"/></svg></button>
+              <button class="ai2-tool" id="aiSys" title="System prompt" aria-label="System prompt"><svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="10" r="2.5"/><path d="M10 3v2M10 15v2M3 10h2M15 10h2M5.5 5.5l1.4 1.4M13.1 13.1l1.4 1.4M14.5 5.5l-1.4 1.4M6.9 13.1l-1.4 1.4" stroke-linecap="round"/></svg></button>
+              <button class="ai2-tool ai2-tool-txt" id="aiClear" title="Clear conversation" aria-label="Clear conversation">Clear</button>
+            </div>
+            <div class="ai2-bar-r">
+              <button class="ai2-send" id="aiSend" title="Send" aria-label="Send"><svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 16V4M5 9l5-5 5 5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+            </div>
+          </div>
         </div>
-      </div>
-      <div id="aiByokHint" style="display:none;padding:4px 16px;font-size:11px;font-family:monospace;color:#ef4444;background:rgba(239,68,68,.08);border-bottom:1px solid rgba(239,68,68,.2);">Bring Your Own Key — add your API key in Settings → API Keys to use this model</div>
-      <div id="aiStatus" class="ai-status"></div>
-      <div class="ai-chat" id="aiChat"><div class="ai-empty">Ask anything — recon, exploitation, tooling, or code.</div></div>
-      <div class="ai-presets" id="aiPresets"></div>
-      <div id="aiThumbs" class="ai-thumbs"></div>
-      <div class="ai-input-row">
-        <textarea class="ai-input" id="aiMsg" rows="1" placeholder="Message Darknode AI..."></textarea>
-        <button class="btn ghost sm" id="aiImg" title="Attach image">Image</button>
-        <button class="btn sm" id="aiSend">Send</button>
+        <div id="aiStatus" class="ai2-status"></div>
       </div>
     </div>
     <input type="file" id="aiFile" accept="image/*" hidden>`;
   const $ = (s) => main.querySelector(s);
   try { const pf = sessionStorage.getItem("sw_ai_prefill"); if (pf) { sessionStorage.removeItem("sw_ai_prefill"); const box = $("#aiMsg"); box.value = pf + (box.value ? "\n\n" + box.value : ""); setTimeout(() => { box.focus(); box.selectionStart = box.selectionEnd = box.value.length; }, 0); } } catch (_) {}
   const chatEl = $("#aiChat"), sel = $("#aiModel"), status = $("#aiStatus");
+  const SEND_ICON = '<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 16V4M5 9l5-5 5 5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  const STOP_ICON = '<svg viewBox="0 0 20 20" width="13" height="13"><rect x="4" y="4" width="12" height="12" rx="2.5" fill="currentColor"/></svg>';
+  const setSend = (b) => { const el = $("#aiSend"); if (!el) return; el.innerHTML = b ? STOP_ICON : SEND_ICON; el.classList.toggle("is-stop", !!b); el.setAttribute("aria-label", b ? "Stop" : "Send"); el.title = b ? "Stop" : "Send"; };
   let _sysBase = localStorage.getItem(SYS_KEY) || DEFAULT_SYS;
   function _buildSys() {
     let ctx = '';
@@ -434,8 +477,11 @@ export function renderAI(main) {
   updateByokHint();
   sel.onchange = () => { try { localStorage.setItem(MODEL_KEY, sel.value.split(":").slice(1).join(":")); } catch (_) {} const m = MODELS.find((x) => sel.value === x.provider + ":" + x.id); if (m) status.textContent = "Switched to " + m.name; updateByokHint(); };
   $("#aiSys").onclick = () => {
-    const v = prompt("System prompt — controls how the AI behaves:", localStorage.getItem(SYS_KEY) || DEFAULT_SYS);
-    if (v !== null) { try { localStorage.setItem(SYS_KEY, v); } catch (_) {} _sysBase = v; history[0] = { role: "system", content: _buildSys() }; status.textContent = "System prompt updated."; }
+    aiModal({ title: "System prompt", desc: "Controls how Nexus behaves for the whole conversation.", fields: [{ type: "textarea", value: localStorage.getItem(SYS_KEY) || DEFAULT_SYS, rows: 12 }], submitText: "Save", extra: [{ label: "Reset to default", value: "__reset__" }] }).then((v) => {
+      if (!v) return;
+      const val = v[0] === "__reset__" ? DEFAULT_SYS : v[0];
+      try { localStorage.setItem(SYS_KEY, val); } catch (_) {} _sysBase = val; history[0] = { role: "system", content: _buildSys() }; status.textContent = "System prompt updated.";
+    });
   };
   const add = (role, text) => { const d = document.createElement("div"); d.className = "msg " + (role === "user" ? "you" : "ai"); d.textContent = text; const empty = chatEl.querySelector(".ai-empty"); if (empty) empty.remove(); chatEl.appendChild(d); chatEl.scrollTop = chatEl.scrollHeight; return d; };
 
@@ -470,7 +516,7 @@ export function renderAI(main) {
     const provider = val.slice(0, colIdx);
     const modelId = val.slice(colIdx + 1);
     if (!_key(provider) && provider !== "ollama") { status.textContent = "No API key for " + provider + " — add one in Settings → API Keys."; return; }
-    busy = true; ctrl = new AbortController(); const btn = $("#aiSend"); btn.textContent = "Stop"; $("#aiMsg").value = "";
+    busy = true; ctrl = new AbortController(); setSend(true); $("#aiMsg").value = ""; autoGrow();
     const um = { role: "user", content: text || "Read and transcribe any text in this image, then help with it." };
     if (imgs.length) um.images = imgs;
     history.push(um);
@@ -483,30 +529,35 @@ export function renderAI(main) {
       if (looksLikeRefusal(acc)) offerReframe(out, text);
     }
     catch (e) { if (e.name === "AbortError") { out.innerHTML = mdToHtml(acc) + `<div class="muted" style="font-size:.72rem;margin-top:4px">stopped</div>`; history.push({ role: "assistant", content: acc || "" }); } else { out.textContent = "Error: " + e.message; out.classList.add("err"); if (history[history.length - 1] === um) history.pop(); } }
-    finally { busy = false; ctrl = null; const b = $("#aiSend"); b.textContent = "Send"; $("#aiMsg").focus(); }
+    finally { busy = false; ctrl = null; setSend(false); $("#aiMsg").focus(); }
   }
   $("#aiSend").onclick = () => { if (busy && ctrl) ctrl.abort(); else send(); };
-  $("#aiClear").onclick = () => { if (busy && ctrl) ctrl.abort(); history.length = 1; chatEl.innerHTML = `<div class="ai-empty">Ask anything — recon, exploitation, tooling, or code.</div>`; };
+  $("#aiClear").onclick = () => { if (busy && ctrl) ctrl.abort(); history.length = 1; chatEl.innerHTML = welcomeHtml; drawPresets(); status.textContent = ""; };
+  const msgBox = $("#aiMsg");
+  const autoGrow = () => { if (!msgBox) return; msgBox.style.height = "auto"; msgBox.style.height = Math.min(msgBox.scrollHeight, 220) + "px"; };
+  msgBox.addEventListener("input", autoGrow);
   $("#aiMsg").onkeydown = (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } };
   let userPrompts = loadPrompts();
   const drawPresets = () => {
-    $("#aiPresets").innerHTML =
+    const el = $("#aiPresets"); if (!el) return;
+    el.innerHTML =
       PRESETS.map((p, i) => `<button class="chip" data-p="${i}">${esc(p[0])}</button>`).join("") +
       userPrompts.map((p, i) => `<button class="chip chip-user" data-u="${i}">${esc(p[0])}<span class="chip-x" data-del="${i}" title="remove">&times;</span></button>`).join("") +
       `<button class="chip chip-add" data-add="1">+ Save prompt</button>`;
   };
   drawPresets();
-  const insert = (text) => { const box = $("#aiMsg"); box.value = text + box.value; box.focus(); box.selectionStart = box.selectionEnd = box.value.length; };
-  $("#aiPresets").onclick = (e) => {
+  const insert = (text) => { const box = $("#aiMsg"); box.value = text + box.value; box.focus(); box.selectionStart = box.selectionEnd = box.value.length; autoGrow(); };
+  // Preset clicks are delegated on the persistent chat container so they keep
+  // working after the welcome (which holds #aiPresets) is re-rendered on Clear.
+  chatEl.addEventListener("click", (e) => {
     const del = e.target.closest("[data-del]");
     if (del) { e.stopPropagation(); userPrompts.splice(+del.dataset.del, 1); savePrompts(userPrompts); drawPresets(); return; }
     const addb = e.target.closest("[data-add]");
-    if (addb) { const label = prompt("Preset name:"); if (!label) return; const text = prompt("Prompt text (inserted before your message):"); if (text == null) return; userPrompts.push([label.trim(), text]); savePrompts(userPrompts); drawPresets(); return; }
-    const u = e.target.closest("[data-u]"); if (u) return insert(userPrompts[+u.dataset.u][1]);
-    const b = e.target.closest("[data-p]"); if (b) insert(PRESETS[+b.dataset.p][1]);
-  };
-  chatEl.addEventListener("click", (e) => {
+    if (addb) { aiModal({ title: "Save a prompt preset", desc: "Give it a short name; the prompt text is inserted before your next message.", fields: [{ label: "Name", placeholder: "e.g. Explain like I'm five" }, { label: "Prompt text", type: "textarea", placeholder: "Explain the following simply, step by step:" }], submitText: "Save preset" }).then((v) => { if (!v) return; const label = (v[0] || "").trim(); if (!label) return; userPrompts.push([label, v[1] || ""]); savePrompts(userPrompts); drawPresets(); }); return; }
+    const u = e.target.closest("[data-u]"); if (u) { insert(userPrompts[+u.dataset.u][1]); return; }
+    const bp = e.target.closest("[data-p]"); if (bp) { insert(PRESETS[+bp.dataset.p][1]); return; }
     const nav = e.target.closest("[data-sec]");
     if (nav) { const it = document.querySelector('.side-item[data-sec="' + nav.dataset.sec + '"]'); if (it) it.click(); return; }
-    const b = e.target.closest(".cb-copy"); if (!b) return; const code = b.parentElement.querySelector("code"); navigator.clipboard?.writeText(code.textContent).then(() => { b.textContent = "copied"; setTimeout(() => (b.textContent = "copy"), 1000); }); });
+    const cb = e.target.closest(".cb-copy"); if (!cb) return; const code = cb.parentElement.querySelector("code"); navigator.clipboard?.writeText(code.textContent).then(() => { cb.textContent = "copied"; setTimeout(() => (cb.textContent = "copy"), 1000); });
+  });
 }
