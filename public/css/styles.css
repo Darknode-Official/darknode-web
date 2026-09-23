@@ -9313,6 +9313,62 @@ body.focus-mode .app-main { padding-left: 20px !important; padding-right: 20px !
 }
 
 /* ============================================================
+   NEXUS AI v2 — history sidebar, per-message actions, edit,
+   file attachments, streaming dots. Model-driven transcript.
+   ============================================================ */
+.ai2-shell { display: flex; gap: 16px; width: 100%; max-width: 1180px; margin: 0 auto; align-items: stretch; position: relative; }
+.ai2-shell .ai2 { margin: 0; max-width: 860px; flex: 1 1 auto; min-width: 0; }
+/* history rail */
+.ai2-hist { flex: 0 0 260px; width: 260px; display: flex; flex-direction: column; gap: 8px; height: calc(100vh - 150px); min-height: 480px; border: 1px solid var(--line); border-radius: 16px; background: color-mix(in srgb, var(--card2) 40%, var(--card)); padding: 12px 10px; }
+.ai2-hist-top { padding: 2px; }
+.ai2-newchat { width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 12px; border: 1px solid color-mix(in srgb, var(--acc) 35%, var(--line)); border-radius: 12px; background: color-mix(in srgb, var(--acc) 10%, transparent); color: var(--txt); font: inherit; font-size: .86rem; font-weight: 600; cursor: pointer; transition: background .15s, border-color .15s; }
+.ai2-newchat:hover { background: color-mix(in srgb, var(--acc) 18%, transparent); border-color: var(--acc); }
+.ai2-hist-lbl { font-size: .64rem; text-transform: uppercase; letter-spacing: .09em; color: var(--mut); font-weight: 700; padding: 6px 8px 2px; }
+.ai2-hlist { flex: 1 1 auto; overflow-y: auto; display: flex; flex-direction: column; gap: 3px; scrollbar-width: thin; }
+.ai2-hist-empty { font-size: .78rem; color: var(--mut); line-height: 1.5; padding: 8px 8px; }
+.ai2-hitem { display: flex; align-items: center; gap: 6px; padding: 9px 10px; border-radius: 10px; cursor: pointer; color: var(--txt); border: 1px solid transparent; }
+.ai2-hitem:hover { background: var(--card2); }
+.ai2-hitem.active { background: color-mix(in srgb, var(--acc) 12%, transparent); border-color: color-mix(in srgb, var(--acc) 30%, var(--line)); }
+.ai2-hitem-t { flex: 1 1 auto; min-width: 0; font-size: .82rem; line-height: 1.35; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ai2-hitem-x { flex: 0 0 auto; width: 20px; height: 20px; border: 0; border-radius: 6px; background: transparent; color: var(--mut); font-size: 1.1rem; line-height: 1; cursor: pointer; opacity: 0; transition: opacity .12s; }
+.ai2-hitem:hover .ai2-hitem-x, .ai2-hitem.active .ai2-hitem-x { opacity: 1; }
+.ai2-hitem-x:hover { background: color-mix(in srgb, #ef4444 15%, transparent); color: #ef4444; }
+/* per-message action toolbar */
+.ai2-main .msg { position: relative; }
+.msg-tools { display: flex; gap: 4px; margin-top: 8px; opacity: 0; transition: opacity .12s; }
+.ai2-main .msg:hover .msg-tools, .ai2-main .msg:focus-within .msg-tools { opacity: 1; }
+.mt { border: 1px solid var(--line); background: color-mix(in srgb, var(--card2) 50%, transparent); color: var(--mut); font: inherit; font-size: .7rem; font-weight: 500; padding: 3px 9px; border-radius: 7px; cursor: pointer; }
+.mt:hover { color: var(--txt); border-color: var(--acc); background: color-mix(in srgb, var(--acc) 10%, transparent); }
+.msg-txt { white-space: pre-wrap; }
+.msg-files { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+.msg-file { display: inline-flex; align-items: center; gap: 5px; font-size: .74rem; padding: 3px 9px; border-radius: 999px; background: color-mix(in srgb, var(--acc) 10%, transparent); border: 1px solid color-mix(in srgb, var(--acc) 25%, var(--line)); color: var(--txt); font-family: var(--font-mono, ui-monospace, monospace); }
+.msg-stopped { font-size: .7rem; color: var(--mut); margin-top: 6px; font-style: italic; }
+/* inline edit */
+.msg-edit { width: 100%; box-sizing: border-box; border: 1px solid var(--acc); border-radius: 10px; background: var(--bg); color: var(--txt); font: inherit; font-size: .9rem; line-height: 1.5; padding: 10px 12px; resize: none; outline: none; }
+.msg-edit-actions { display: flex; gap: 8px; margin-top: 8px; }
+/* attachment chips in the composer dock */
+.ai-thumbs { display: flex; flex-wrap: wrap; gap: 8px; }
+.ai-thumbs:not(:empty) { margin-bottom: 8px; }
+.ai-filechip { display: inline-flex; align-items: center; gap: 6px; font-size: .76rem; padding: 5px 10px; border-radius: 999px; background: var(--card2); border: 1px solid var(--line); color: var(--txt); font-family: var(--font-mono, ui-monospace, monospace); max-width: 220px; }
+.ai-filechip svg { flex: 0 0 auto; color: var(--acc); }
+.ai-filechip button { border: 0; background: transparent; color: var(--mut); font-size: 1rem; line-height: 1; cursor: pointer; padding: 0 0 0 2px; }
+.ai-filechip button:hover { color: #ef4444; }
+/* streaming typing indicator */
+.ai-dots { display: inline-flex; gap: 4px; align-items: center; padding: 2px 0; }
+.ai-dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--mut); animation: aiDot 1.2s infinite ease-in-out; }
+.ai-dots i:nth-child(2) { animation-delay: .2s; }
+.ai-dots i:nth-child(3) { animation-delay: .4s; }
+@keyframes aiDot { 0%, 60%, 100% { opacity: .3; transform: translateY(0); } 30% { opacity: 1; transform: translateY(-3px); } }
+/* drag-drop affordance */
+.ai2-shell.drag::after { content: "Drop files to attach"; position: absolute; inset: 0; z-index: 5; display: flex; align-items: center; justify-content: center; font-size: 1rem; font-weight: 600; color: var(--acc); background: color-mix(in srgb, var(--acc) 10%, color-mix(in srgb, var(--card) 80%, transparent)); border: 2px dashed var(--acc); border-radius: 16px; pointer-events: none; }
+@media (max-width: 900px) {
+  .ai2-hist { position: absolute; left: 0; top: 0; z-index: 6; box-shadow: 0 20px 50px rgba(0,0,0,.3); transform: translateX(-110%); transition: transform .2s ease; }
+  .ai2-shell.hist-open .ai2-hist { transform: none; }
+  .ai2-shell .ai2 { max-width: 100%; }
+}
+@media (min-width: 901px) { .ai2-histbtn-hide { display: none; } }
+
+/* ============================================================
    DN MODAL — shared CSS dialog (replaces prompt/alert/confirm)
    ============================================================ */
 .dn-modal-ov { position: fixed; inset: 0; z-index: 4000; display: flex; align-items: center; justify-content: center; padding: 20px; background: rgba(2,6,16,.55); backdrop-filter: blur(3px); opacity: 0; transition: opacity .15s ease; }

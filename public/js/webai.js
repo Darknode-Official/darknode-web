@@ -348,6 +348,19 @@ const PROMPTS_KEY = "sw_ai_prompts";
 const loadPrompts = () => { try { return JSON.parse(localStorage.getItem(PROMPTS_KEY)) || []; } catch (_) { return []; } };
 const savePrompts = (a) => { try { localStorage.setItem(PROMPTS_KEY, JSON.stringify(a)); } catch (_) {} };
 
+// --- conversation history (persisted list of past chats) ---
+const CONVOS_KEY = "sw_ai_convos", CUR_KEY = "sw_ai_cur";
+const loadConvos = () => { try { return JSON.parse(localStorage.getItem(CONVOS_KEY)) || []; } catch (_) { return []; } };
+const saveConvos = (a) => {
+  try { localStorage.setItem(CONVOS_KEY, JSON.stringify(a)); }
+  catch (_) { // localStorage quota — drop the oldest chats and retry once
+    try { localStorage.setItem(CONVOS_KEY, JSON.stringify(a.slice(0, 25))); } catch (__) {}
+  }
+};
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+// Files that are safe to read as text and attach inline.
+const TEXT_EXT = /\.(txt|text|md|markdown|log|csv|tsv|json|ya?ml|xml|svg|html?|css|scss|less|js|jsx|mjs|cjs|ts|tsx|py|rb|go|rs|c|h|cpp|hpp|cc|cxx|java|kt|kts|swift|php|pl|lua|r|sh|bash|zsh|fish|ps1|bat|sql|toml|ini|conf|cfg|env|properties|gradle|dockerfile|makefile|cmake|diff|patch|pcap|har|nmap|gnmap|asm|s)$/i;
+
 function availableModels() {
   return MODELS.filter((m) => m.provider === "ollama" || !!_key(m.provider));
 }
@@ -415,32 +428,42 @@ export function renderAI(main) {
         <div class="ai-presets" id="aiPresets"></div>
       </div>`;
   main.innerHTML = `
-    <div class="ai2">
-      <div class="ai2-main" id="aiChat">${welcomeHtml}</div>
-      <div class="ai2-dock">
-        <div id="aiThumbs" class="ai-thumbs"></div>
-        <div id="aiByokHint" class="ai2-byok" style="display:none">Bring Your Own Key — add your API key in Settings → API Keys to use this model</div>
-        <div class="ai2-composer">
-          <textarea class="ai2-input" id="aiMsg" rows="1" placeholder="Message Nexus AI…" spellcheck="false"></textarea>
-          <div class="ai2-bar">
-            <div class="ai2-bar-l">
-              <label class="ai2-modelwrap" title="Model">
-                <select class="ai2-model" id="aiModel" aria-label="AI model">${optionsHtml}</select>
-                <svg class="ai2-model-caret" viewBox="0 0 12 12" width="10" height="10" aria-hidden="true"><path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </label>
-              <button class="ai2-tool" id="aiImg" title="Attach image" aria-label="Attach image"><svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M10 5v10M5 10h10" stroke-linecap="round"/></svg></button>
-              <button class="ai2-tool" id="aiSys" title="System prompt" aria-label="System prompt"><svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="10" r="2.5"/><path d="M10 3v2M10 15v2M3 10h2M15 10h2M5.5 5.5l1.4 1.4M13.1 13.1l1.4 1.4M14.5 5.5l-1.4 1.4M6.9 13.1l-1.4 1.4" stroke-linecap="round"/></svg></button>
-              <button class="ai2-tool ai2-tool-txt" id="aiClear" title="Clear conversation" aria-label="Clear conversation">Clear</button>
-            </div>
-            <div class="ai2-bar-r">
-              <button class="ai2-send" id="aiSend" title="Send" aria-label="Send"><svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 16V4M5 9l5-5 5 5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <div class="ai2-shell">
+      <aside class="ai2-hist" id="aiHist">
+        <div class="ai2-hist-top">
+          <button class="ai2-newchat" id="aiNew"><svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M10 4v12M4 10h12" stroke-linecap="round"/></svg>New chat</button>
+        </div>
+        <div class="ai2-hist-lbl">Recent chats</div>
+        <div class="ai2-hlist" id="aiHList"></div>
+      </aside>
+      <div class="ai2">
+        <div class="ai2-main" id="aiChat">${welcomeHtml}</div>
+        <div class="ai2-dock">
+          <div id="aiThumbs" class="ai-thumbs"></div>
+          <div id="aiByokHint" class="ai2-byok" style="display:none">Bring Your Own Key — add your API key in Settings → API Keys to use this model</div>
+          <div class="ai2-composer">
+            <textarea class="ai2-input" id="aiMsg" rows="1" placeholder="Message Nexus AI…" spellcheck="false"></textarea>
+            <div class="ai2-bar">
+              <div class="ai2-bar-l">
+                <button class="ai2-tool" id="aiHistBtn" title="Show / hide chat history" aria-label="Toggle chat history"><svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 5h12M4 10h12M4 15h8" stroke-linecap="round"/></svg></button>
+                <label class="ai2-modelwrap" title="Model">
+                  <select class="ai2-model" id="aiModel" aria-label="AI model">${optionsHtml}</select>
+                  <svg class="ai2-model-caret" viewBox="0 0 12 12" width="10" height="10" aria-hidden="true"><path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </label>
+                <button class="ai2-tool" id="aiImg" title="Attach image or text/code file" aria-label="Attach file"><svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M13.5 8.5l-4.6 4.6a2.5 2.5 0 01-3.5-3.5l5.3-5.3a1.6 1.6 0 012.3 2.3l-5.3 5.3a.7.7 0 01-1-1l4.9-4.9" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                <button class="ai2-tool" id="aiSys" title="System prompt" aria-label="System prompt"><svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="10" r="2.5"/><path d="M10 3v2M10 15v2M3 10h2M15 10h2M5.5 5.5l1.4 1.4M13.1 13.1l1.4 1.4M14.5 5.5l-1.4 1.4M6.9 13.1l-1.4 1.4" stroke-linecap="round"/></svg></button>
+                <button class="ai2-tool ai2-tool-txt" id="aiClear" title="Clear conversation" aria-label="Clear conversation">Clear</button>
+              </div>
+              <div class="ai2-bar-r">
+                <button class="ai2-send" id="aiSend" title="Send" aria-label="Send"><svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 16V4M5 9l5-5 5 5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+              </div>
             </div>
           </div>
+          <div id="aiStatus" class="ai2-status"></div>
         </div>
-        <div id="aiStatus" class="ai2-status"></div>
       </div>
     </div>
-    <input type="file" id="aiFile" accept="image/*" hidden>`;
+    <input type="file" id="aiFile" accept="image/*,text/*,.md,.markdown,.json,.csv,.tsv,.log,.yml,.yaml,.xml,.svg,.html,.htm,.css,.scss,.js,.jsx,.mjs,.ts,.tsx,.py,.rb,.go,.rs,.c,.h,.cpp,.hpp,.cc,.java,.kt,.swift,.php,.pl,.lua,.r,.sh,.bash,.ps1,.bat,.sql,.toml,.ini,.conf,.cfg,.env,.gradle,.dockerfile,.makefile,.diff,.patch,.har,.pcap,.asm" multiple hidden>`;
   const $ = (s) => main.querySelector(s);
   try { const pf = sessionStorage.getItem("sw_ai_prefill"); if (pf) { sessionStorage.removeItem("sw_ai_prefill"); const box = $("#aiMsg"); box.value = pf + (box.value ? "\n\n" + box.value : ""); setTimeout(() => { box.focus(); box.selectionStart = box.selectionEnd = box.value.length; }, 0); } } catch (_) {}
   const chatEl = $("#aiChat"), sel = $("#aiModel"), status = $("#aiStatus");
@@ -483,15 +506,130 @@ export function renderAI(main) {
       try { localStorage.setItem(SYS_KEY, val); } catch (_) {} _sysBase = val; history[0] = { role: "system", content: _buildSys() }; status.textContent = "System prompt updated.";
     });
   };
-  const add = (role, text) => { const d = document.createElement("div"); d.className = "msg " + (role === "user" ? "you" : "ai"); d.textContent = text; const empty = chatEl.querySelector(".ai-empty"); if (empty) empty.remove(); chatEl.appendChild(d); chatEl.scrollTop = chatEl.scrollHeight; return d; };
+  const shell = main.querySelector(".ai2-shell");
 
-  let pending = [];
-  const drawThumbs = () => { $("#aiThumbs").innerHTML = pending.map((b, i) => `<span class="ai-thumb"><img alt="attachment ${i + 1}" src="data:image/png;base64,${b}"><button data-rm="${i}" title="remove" aria-label="remove attachment ${i + 1}">&times;</button></span>`).join(""); };
-  const addImage = (file) => { if (!file || !file.type.startsWith("image/")) return; const rd = new FileReader(); rd.onload = () => { pending.push(String(rd.result).split(",")[1]); drawThumbs(); }; rd.readAsDataURL(file); };
+  // ---- conversation state (curId ties this session to a saved chat) ----
+  let curId = null;
+  try { curId = localStorage.getItem(CUR_KEY) || null; } catch (_) {}
+  if (curId) {
+    const c = loadConvos().find((x) => x.id === curId);
+    if (c && c.msgs) c.msgs.forEach((m) => history.push({ role: m.role, content: m.content, images: m.images, files: m.files, stopped: m.stopped }));
+    else curId = null;
+  }
+
+  const curModel = () => { const v = sel.value; const c = v.indexOf(":"); return { provider: v.slice(0, c), modelId: v.slice(c + 1) }; };
+  // Fold attached text/code files into the message the model actually sees,
+  // while the visible bubble keeps only what the user typed.
+  const wire = (h) => h.map((m) => {
+    if (m.files && m.files.length) {
+      const extra = m.files.map((f) => `\n\n--- Attached file: ${f.name} ---\n\`\`\`\n${f.content}\n\`\`\``).join("");
+      return { role: m.role, content: (m.content || "") + extra, images: m.images };
+    }
+    return m;
+  });
+
+  // ---- render the whole transcript from the history model ----
+  function renderMessages() {
+    if (history.length <= 1) { chatEl.innerHTML = welcomeHtml; drawPresets(); return; }
+    let html = "";
+    for (let i = 1; i < history.length; i++) {
+      const m = history[i]; if (m.role === "system") continue;
+      const you = m.role === "user";
+      const imgs = (m.images || []).map((b) => `<img class="msg-img" alt="attached image" src="data:image/png;base64,${b}">`).join("");
+      const files = (m.files || []).map((f) => `<span class="msg-file">${esc(f.name)}</span>`).join("");
+      const body = you
+        ? imgs + (files ? `<div class="msg-files">${files}</div>` : "") + `<span class="msg-txt">${esc(m.content || "")}</span>`
+        : mdToHtml(m.content || "") + (m.stopped ? `<div class="msg-stopped">stopped</div>` : "");
+      const tools = [`<button class="mt" data-act="copy" data-i="${i}" title="Copy">Copy</button>`];
+      if (you) tools.push(`<button class="mt" data-act="edit" data-i="${i}" title="Edit &amp; resend">Edit</button>`);
+      else {
+        tools.push(`<button class="mt" data-act="regen" data-i="${i}" title="Regenerate this reply">Retry</button>`);
+        if (i === history.length - 1) tools.push(`<button class="mt" data-act="continue" data-i="${i}" title="Continue this reply">Continue</button>`);
+      }
+      html += `<div class="msg ${you ? "you" : "ai"}" data-i="${i}"><div class="msg-body">${body}</div><div class="msg-tools">${tools.join("")}</div></div>`;
+    }
+    chatEl.innerHTML = html;
+    chatEl.scrollTop = chatEl.scrollHeight;
+  }
+  function appendStreaming() {
+    const empty = chatEl.querySelector(".ai-empty"); if (empty) chatEl.innerHTML = "";
+    const d = document.createElement("div"); d.className = "msg ai streaming";
+    d.innerHTML = `<div class="msg-body"><span class="ai-dots"><i></i><i></i><i></i></span></div>`;
+    chatEl.appendChild(d); chatEl.scrollTop = chatEl.scrollHeight;
+    return d.querySelector(".msg-body");
+  }
+
+  // ---- persistence + history sidebar ----
+  const deriveTitle = (msgs) => { const u = msgs.find((m) => m.role === "user"); let t = ((u && u.content) || "New chat").replace(/\s+/g, " ").trim(); if (!t) t = "New chat"; return t.length > 46 ? t.slice(0, 46) + "…" : t; };
+  function persist() {
+    const msgs = history.slice(1).map((m) => ({ role: m.role, content: m.content, images: m.images, files: m.files, stopped: m.stopped }));
+    if (!msgs.length) return;
+    if (!curId) { curId = uid(); try { localStorage.setItem(CUR_KEY, curId); } catch (_) {} }
+    const convos = loadConvos();
+    const rec = { id: curId, title: deriveTitle(msgs), ts: Date.now(), msgs };
+    const at = convos.findIndex((c) => c.id === curId);
+    if (at >= 0) convos[at] = rec; else convos.unshift(rec);
+    convos.sort((a, b) => b.ts - a.ts);
+    saveConvos(convos); drawHistory();
+  }
+  function drawHistory() {
+    const el = $("#aiHList"); if (!el) return;
+    const convos = loadConvos();
+    if (!convos.length) { el.innerHTML = `<div class="ai2-hist-empty">No saved chats yet. Your conversations are saved here automatically.</div>`; return; }
+    el.innerHTML = convos.map((c) => `<div class="ai2-hitem${c.id === curId ? " active" : ""}" data-load="${c.id}"><span class="ai2-hitem-t">${esc(c.title)}</span><button class="ai2-hitem-x" data-del-convo="${c.id}" title="Delete chat" aria-label="Delete chat">&times;</button></div>`).join("");
+  }
+  function loadConvo(id) {
+    if (busy && ctrl) ctrl.abort();
+    const c = loadConvos().find((x) => x.id === id); if (!c) return;
+    curId = id; try { localStorage.setItem(CUR_KEY, id); } catch (_) {}
+    history.length = 1;
+    (c.msgs || []).forEach((m) => history.push({ role: m.role, content: m.content, images: m.images, files: m.files, stopped: m.stopped }));
+    renderMessages(); drawHistory(); status.textContent = "";
+  }
+  function newChat() {
+    if (busy && ctrl) ctrl.abort();
+    curId = null; try { localStorage.removeItem(CUR_KEY); } catch (_) {}
+    history.length = 1; renderMessages(); drawHistory();
+    const b = $("#aiMsg"); if (b) b.focus();
+  }
+  function delConvo(id) {
+    saveConvos(loadConvos().filter((c) => c.id !== id));
+    if (id === curId) newChat(); else drawHistory();
+  }
+  $("#aiNew").onclick = newChat;
+  $("#aiHistBtn").onclick = () => shell.classList.toggle("hist-open");
+  $("#aiHist").addEventListener("click", (e) => {
+    const dx = e.target.closest("[data-del-convo]"); if (dx) { e.stopPropagation(); delConvo(dx.dataset.delConvo); return; }
+    const ld = e.target.closest("[data-load]"); if (ld) { loadConvo(ld.dataset.load); if (window.innerWidth <= 900) shell.classList.remove("hist-open"); }
+  });
+
+  // ---- attachments: images + text/code files ----
+  let pendingImgs = [], pendingFiles = [];
+  const drawThumbs = () => {
+    const t = $("#aiThumbs"); if (!t) return;
+    t.innerHTML =
+      pendingImgs.map((b, i) => `<span class="ai-thumb"><img alt="attachment ${i + 1}" src="data:image/png;base64,${b}"><button data-rm-img="${i}" title="remove" aria-label="remove image ${i + 1}">&times;</button></span>`).join("") +
+      pendingFiles.map((f, i) => `<span class="ai-filechip" title="${esc(f.name)}"><svg viewBox="0 0 20 20" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M11 3H6a1 1 0 00-1 1v12a1 1 0 001 1h8a1 1 0 001-1V7z" stroke-linejoin="round"/><path d="M11 3v4h4" stroke-linejoin="round"/></svg>${esc(f.name)}<button data-rm-file="${i}" title="remove" aria-label="remove file">&times;</button></span>`).join("");
+  };
+  const addImage = (file) => { if (!file) return; const rd = new FileReader(); rd.onload = () => { pendingImgs.push(String(rd.result).split(",")[1]); drawThumbs(); }; rd.readAsDataURL(file); };
+  const addTextFile = (file) => { const rd = new FileReader(); rd.onload = () => { let c = String(rd.result || ""); if (c.length > 100000) c = c.slice(0, 100000) + "\n… [file truncated at 100 KB]"; pendingFiles.push({ name: file.name, content: c }); drawThumbs(); }; rd.readAsText(file); };
+  const addFile = (file) => {
+    if (!file) return;
+    if ((file.type || "").startsWith("image/")) return addImage(file);
+    if (TEXT_EXT.test(file.name) || /^text\//.test(file.type || "") || file.type === "application/json" || file.type === "application/xml") return addTextFile(file);
+    status.textContent = "Skipped “" + file.name + "” — only images and text/code files can be attached.";
+  };
   $("#aiImg").onclick = () => $("#aiFile").click();
-  $("#aiFile").onchange = (e) => { [...e.target.files].forEach(addImage); e.target.value = ""; };
-  $("#aiThumbs").onclick = (e) => { const b = e.target.closest("[data-rm]"); if (b) { pending.splice(+b.dataset.rm, 1); drawThumbs(); } };
+  $("#aiFile").onchange = (e) => { [...e.target.files].forEach(addFile); e.target.value = ""; };
+  $("#aiThumbs").onclick = (e) => {
+    const bi = e.target.closest("[data-rm-img]"); if (bi) { pendingImgs.splice(+bi.dataset.rmImg, 1); drawThumbs(); return; }
+    const bf = e.target.closest("[data-rm-file]"); if (bf) { pendingFiles.splice(+bf.dataset.rmFile, 1); drawThumbs(); }
+  };
   $("#aiMsg").addEventListener("paste", (e) => { for (const it of e.clipboardData.items) if (it.type.startsWith("image/")) addImage(it.getAsFile()); });
+  // drag & drop files anywhere on the AI surface
+  ["dragenter", "dragover"].forEach((ev) => shell.addEventListener(ev, (e) => { if (e.dataTransfer && [...e.dataTransfer.types].includes("Files")) { e.preventDefault(); shell.classList.add("drag"); } }));
+  shell.addEventListener("dragleave", (e) => { if (!e.relatedTarget || !shell.contains(e.relatedTarget)) shell.classList.remove("drag"); });
+  shell.addEventListener("drop", (e) => { if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length) { e.preventDefault(); [...e.dataTransfer.files].forEach(addFile); } shell.classList.remove("drag"); });
 
   function offerReframe(container, original) {
     if (!original) return;
@@ -508,31 +646,75 @@ export function renderAI(main) {
   }
 
   let busy = false, ctrl = null;
+  // Produce a fresh assistant reply from the current history (which must end
+  // with a user turn). Shared by send / edit / regenerate.
+  async function generate() {
+    const { provider, modelId } = curModel();
+    if (!_key(provider) && provider !== "ollama") { status.textContent = "No API key for " + provider + " — add one in Settings → API Keys."; return; }
+    const lastUser = [...history].reverse().find((m) => m.role === "user");
+    busy = true; ctrl = new AbortController(); setSend(true);
+    const out = appendStreaming(); let acc = "";
+    try {
+      await streamFor(provider, modelId, wire(history), (t) => { acc += t; out.innerHTML = mdToHtml(acc); chatEl.scrollTop = chatEl.scrollHeight; }, ctrl.signal);
+      history.push({ role: "assistant", content: acc || "" });
+      persist(); renderMessages();
+      if (looksLikeRefusal(acc)) { const last = chatEl.querySelector(".msg.ai:last-child .msg-body"); if (last) offerReframe(last, lastUser && lastUser.content); }
+    } catch (e) {
+      if (e.name === "AbortError") { history.push({ role: "assistant", content: acc || "", stopped: true }); persist(); renderMessages(); }
+      else { out.innerHTML = `<span class="err">Error: ${esc(e.message)}</span>`; status.textContent = "Error — " + e.message; }
+    } finally { busy = false; ctrl = null; setSend(false); const b = $("#aiMsg"); if (b) b.focus(); }
+  }
   async function send(overrideText) {
     if (busy) return;
-    const text = (overrideText != null ? overrideText : $("#aiMsg").value).trim(); const imgs = overrideText != null ? [] : pending.slice(); if (!text && !imgs.length) return;
-    const val = sel.value;
-    const colIdx = val.indexOf(":");
-    const provider = val.slice(0, colIdx);
-    const modelId = val.slice(colIdx + 1);
-    if (!_key(provider) && provider !== "ollama") { status.textContent = "No API key for " + provider + " — add one in Settings → API Keys."; return; }
-    busy = true; ctrl = new AbortController(); setSend(true); $("#aiMsg").value = ""; autoGrow();
-    const um = { role: "user", content: text || "Read and transcribe any text in this image, then help with it." };
+    const typed = (overrideText != null ? overrideText : $("#aiMsg").value).trim();
+    const imgs = overrideText != null ? [] : pendingImgs.slice();
+    const files = overrideText != null ? [] : pendingFiles.slice();
+    if (!typed && !imgs.length && !files.length) return;
+    const um = { role: "user", content: typed || (imgs.length ? "Read and transcribe any text in this image, then help with it." : "Review the attached file(s) and help with them.") };
     if (imgs.length) um.images = imgs;
+    if (files.length) um.files = files;
     history.push(um);
-    const you = add("user", ""); you.innerHTML = imgs.map((b) => `<img class="msg-img" alt="attached image" src="data:image/png;base64,${b}">`).join("") + esc(text);
-    pending = []; drawThumbs();
-    const out = add("ai", "…"); let acc = "";
+    if (overrideText == null) { $("#aiMsg").value = ""; autoGrow(); pendingImgs = []; pendingFiles = []; drawThumbs(); }
+    renderMessages();
+    await generate();
+  }
+  // Continue the last assistant turn, appending to it rather than starting anew.
+  async function continueLast(i) {
+    if (busy) return;
+    if (!history[i] || history[i].role !== "assistant") return;
+    const { provider, modelId } = curModel();
+    if (!_key(provider) && provider !== "ollama") { status.textContent = "No API key for " + provider + " — add one in Settings → API Keys."; return; }
+    const base = history[i].content || "";
+    const msgs = wire(history).concat([{ role: "user", content: "Continue exactly where you left off. Do not repeat anything you have already written." }]);
+    busy = true; ctrl = new AbortController(); setSend(true);
+    const out = appendStreaming(); let acc = "";
     try {
-      await streamFor(provider, modelId, history, (t) => { acc += t; out.innerHTML = mdToHtml(acc); chatEl.scrollTop = chatEl.scrollHeight; }, ctrl.signal);
-      history.push({ role: "assistant", content: acc || "" });
-      if (looksLikeRefusal(acc)) offerReframe(out, text);
-    }
-    catch (e) { if (e.name === "AbortError") { out.innerHTML = mdToHtml(acc) + `<div class="muted" style="font-size:.72rem;margin-top:4px">stopped</div>`; history.push({ role: "assistant", content: acc || "" }); } else { out.textContent = "Error: " + e.message; out.classList.add("err"); if (history[history.length - 1] === um) history.pop(); } }
-    finally { busy = false; ctrl = null; setSend(false); $("#aiMsg").focus(); }
+      await streamFor(provider, modelId, msgs, (t) => { acc += t; out.innerHTML = mdToHtml(base + "\n\n" + acc); chatEl.scrollTop = chatEl.scrollHeight; }, ctrl.signal);
+      history[i].content = base + (acc ? "\n\n" + acc : ""); persist(); renderMessages();
+    } catch (e) {
+      if (e.name === "AbortError") { history[i].content = base + (acc ? "\n\n" + acc : ""); persist(); renderMessages(); }
+      else { out.innerHTML = `<span class="err">Error: ${esc(e.message)}</span>`; }
+    } finally { busy = false; ctrl = null; setSend(false); }
+  }
+  // Regenerate: drop this assistant turn (and anything after) then re-run.
+  async function regen(i) { if (busy) return; history.length = i; renderMessages(); await generate(); }
+  // Edit a user turn in place, drop everything after it, then re-run.
+  function startEdit(i) {
+    const wrap = chatEl.querySelector(`.msg[data-i="${i}"] .msg-body`); if (!wrap) return;
+    wrap.innerHTML = `<textarea class="msg-edit" spellcheck="false">${esc(history[i].content || "")}</textarea><div class="msg-edit-actions"><button class="btn sm" data-editsave="${i}">Save &amp; submit</button><button class="btn ghost sm" data-editcancel="1">Cancel</button></div>`;
+    const ta = wrap.querySelector("textarea"); ta.focus(); ta.style.height = "auto"; ta.style.height = Math.min(ta.scrollHeight, 260) + "px"; try { ta.setSelectionRange(ta.value.length, ta.value.length); } catch (_) {}
+    ta.addEventListener("input", () => { ta.style.height = "auto"; ta.style.height = Math.min(ta.scrollHeight, 260) + "px"; });
+    ta.addEventListener("keydown", (e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); commitEdit(i); } if (e.key === "Escape") renderMessages(); });
+  }
+  async function commitEdit(i) {
+    if (busy) return;
+    const ta = chatEl.querySelector(`.msg[data-i="${i}"] textarea`); if (!ta) return;
+    const v = ta.value.trim(); if (!v) return;
+    history[i].content = v; history.length = i + 1; // drop replies after the edited turn
+    renderMessages(); persist(); await generate();
   }
   $("#aiSend").onclick = () => { if (busy && ctrl) ctrl.abort(); else send(); };
-  $("#aiClear").onclick = () => { if (busy && ctrl) ctrl.abort(); history.length = 1; chatEl.innerHTML = welcomeHtml; drawPresets(); status.textContent = ""; };
+  $("#aiClear").onclick = () => newChat();
   const msgBox = $("#aiMsg");
   const autoGrow = () => { if (!msgBox) return; msgBox.style.height = "auto"; msgBox.style.height = Math.min(msgBox.scrollHeight, 220) + "px"; };
   msgBox.addEventListener("input", autoGrow);
@@ -550,6 +732,17 @@ export function renderAI(main) {
   // Preset clicks are delegated on the persistent chat container so they keep
   // working after the welcome (which holds #aiPresets) is re-rendered on Clear.
   chatEl.addEventListener("click", (e) => {
+    // per-message actions: copy / edit / regenerate / continue
+    const mt = e.target.closest(".mt");
+    if (mt) {
+      const i = +mt.dataset.i, act = mt.dataset.act;
+      if (act === "copy") { navigator.clipboard?.writeText((history[i] && history[i].content) || "").then(() => { mt.textContent = "Copied"; setTimeout(() => (mt.textContent = "Copy"), 1000); }); return; }
+      if (act === "edit") { startEdit(i); return; }
+      if (act === "regen") { regen(i); return; }
+      if (act === "continue") { continueLast(i); return; }
+    }
+    const es = e.target.closest("[data-editsave]"); if (es) { commitEdit(+es.dataset.editsave); return; }
+    const ec = e.target.closest("[data-editcancel]"); if (ec) { renderMessages(); return; }
     const del = e.target.closest("[data-del]");
     if (del) { e.stopPropagation(); userPrompts.splice(+del.dataset.del, 1); savePrompts(userPrompts); drawPresets(); return; }
     const addb = e.target.closest("[data-add]");
@@ -560,4 +753,8 @@ export function renderAI(main) {
     if (nav) { const it = document.querySelector('.side-item[data-sec="' + nav.dataset.sec + '"]'); if (it) it.click(); return; }
     const cb = e.target.closest(".cb-copy"); if (!cb) return; const code = cb.parentElement.querySelector("code"); navigator.clipboard?.writeText(code.textContent).then(() => { cb.textContent = "copied"; setTimeout(() => (cb.textContent = "copy"), 1000); });
   });
+
+  // Initial paint: restored conversation (if any) + the history sidebar.
+  renderMessages();
+  drawHistory();
 }
