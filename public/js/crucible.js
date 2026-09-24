@@ -11,19 +11,24 @@
 // All shared state, data and the engine live in crucible-core.js.
 
 import * as core from '/js/crucible-core.js?v=20260924b';
+import { mountModeSwitcher } from '/js/core/tool-modes.js';
 
 const V = '?v=20260924b';
 const { esc, CRU } = core;
 
+// Each pillar maps to an operational posture; the mode switcher filters them.
+// After-Action is agnostic (relevant in every posture). Fusion (situational
+// awareness) serves both scouting and defensive.
 const TABS = [
-  { id: 'range', name: 'Wargame Range', sub: 'Adversary campaigns', mod: 'crucible-range.js', fn: 'renderRange' },
-  { id: 'autopilot', name: 'Defense Autopilot', sub: 'Autonomous blue team', mod: 'crucible-autopilot.js', fn: 'renderAutopilot' },
-  { id: 'fusion', name: 'Fusion Command', sub: 'Live threat picture', mod: 'crucible-fusion.js', fn: 'renderFusion' },
+  { id: 'fusion', name: 'Fusion Command', sub: 'Live threat picture', mod: 'crucible-fusion.js', fn: 'renderFusion', modes: ['scouting', 'defensive'] },
+  { id: 'autopilot', name: 'Defense Autopilot', sub: 'Autonomous blue team', mod: 'crucible-autopilot.js', fn: 'renderAutopilot', modes: ['defensive'] },
+  { id: 'range', name: 'Wargame Range', sub: 'Adversary campaigns', mod: 'crucible-range.js', fn: 'renderRange', modes: ['offensive'] },
   { id: 'afteraction', name: 'After-Action', sub: 'Scoring & reporting', mod: 'crucible-afteraction.js', fn: 'renderAfterAction' },
 ];
 
 let _root = null;
 let _toastTimer = null;
+let _visibleTabs = TABS.slice();
 
 function toast(msg, kind = 'info') {
   if (!_root) return;
@@ -51,7 +56,7 @@ async function loadPillar(tab, container) {
 }
 
 function go(tabId) {
-  const tab = TABS.find((t) => t.id === tabId) || TABS[0];
+  const tab = TABS.find((t) => t.id === tabId) || _visibleTabs[0] || TABS[0];
   CRU.tab = tab.id;
   if (!_root) return;
   _root.querySelectorAll('.cru-tab').forEach((b) => b.classList.toggle('on', b.dataset.tab === tab.id));
@@ -59,11 +64,37 @@ function go(tabId) {
   if (container) loadPillar(tab, container);
 }
 
+// Render the tab bar from the mode-filtered pillar list.
+function renderTabsBar() {
+  const nav = _root && _root.querySelector('#cru-tabs');
+  if (!nav) return;
+  nav.innerHTML = _visibleTabs.map((t) => (
+    '<button class="cru-tab' + (t.id === CRU.tab ? ' on' : '') + '" data-tab="' + t.id + '">' +
+    '<span class="cru-tab-name">' + esc(t.name) + '</span>' +
+    '<span class="cru-tab-sub">' + esc(t.sub) + '</span>' +
+    '</button>'
+  )).join('');
+  nav.querySelectorAll('.cru-tab').forEach((b) => { b.onclick = () => go(b.dataset.tab); });
+}
+
 export function renderCrucible(main) {
   main.innerHTML = shellHTML();
   _root = main.querySelector('#crucible-root');
-  _root.querySelectorAll('.cru-tab').forEach((b) => { b.onclick = () => go(b.dataset.tab); });
-  go(CRU.tab || 'range');
+  // Operational-mode switcher: filters the pillars to the active posture and
+  // retints the console (via [data-tool-mode] -> --acc). Persists per tool.
+  mountModeSwitcher({
+    toolId: 'crucible',
+    tabs: TABS,
+    mount: _root.querySelector('#cru-modebar'),
+    host: _root,
+    note: _root.querySelector('#cru-modenote'),
+    onChange: (_mode, tabs) => {
+      _visibleTabs = tabs;
+      if (!tabs.some((t) => t.id === CRU.tab)) CRU.tab = tabs[0] ? tabs[0].id : null;
+      renderTabsBar();
+      if (CRU.tab) go(CRU.tab);
+    },
+  });
 }
 
 export function cleanupCrucible() {
@@ -72,12 +103,6 @@ export function cleanupCrucible() {
 }
 
 function shellHTML() {
-  const tabs = TABS.map((t) => (
-    '<button class="cru-tab' + (t.id === CRU.tab ? ' on' : '') + '" data-tab="' + t.id + '">' +
-    '<span class="cru-tab-name">' + esc(t.name) + '</span>' +
-    '<span class="cru-tab-sub">' + esc(t.sub) + '</span>' +
-    '</button>'
-  )).join('');
   return (
     '<style>' + CSS + '</style>' +
     '<div id="crucible-root">' +
@@ -85,13 +110,15 @@ function shellHTML() {
         '<div class="cru-head-main">' +
           '<div class="cru-mark">CRUCIBLE</div>' +
           '<div class="cru-tagline">Cyber Defense &amp; Wargaming Command</div>' +
+          '<div class="cru-modenote" id="cru-modenote"></div>' +
         '</div>' +
         '<div class="cru-head-meta">' +
+          '<div id="cru-modebar"></div>' +
           '<span class="cru-badge">SIMULATION</span>' +
           '<span class="cru-status"><span class="cru-dot"></span>Range online</span>' +
         '</div>' +
       '</header>' +
-      '<nav class="cru-tabs">' + tabs + '</nav>' +
+      '<nav class="cru-tabs" id="cru-tabs"></nav>' +
       '<section id="cru-panel" class="cru-panel"></section>' +
     '</div>'
   );
@@ -110,7 +137,11 @@ const CSS = `
 .cru-badge{font-size:.6rem;font-weight:700;letter-spacing:.12em;padding:3px 8px;border:1px solid var(--line);border-radius:4px;color:var(--mut)}
 .cru-status{display:inline-flex;align-items:center;gap:6px;font-size:.72rem;color:var(--mut)}
 .cru-dot{width:7px;height:7px;border-radius:50%;background:#10b981;box-shadow:0 0 0 3px color-mix(in srgb,#10b981 22%,transparent)}
-.cru-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:18px}
+.cru-modenote{font-size:.7rem;letter-spacing:.04em;color:var(--mut);margin-top:6px}
+/* Posture accent: retint the whole console by remapping --acc on the root. */
+#crucible-root[data-tool-mode=scouting]{--acc:#f59e0b}
+#crucible-root[data-tool-mode=offensive]{--acc:#dc2626}
+.cru-tabs{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;margin-bottom:18px}
 .cru-tab{display:flex;flex-direction:column;gap:2px;text-align:left;padding:10px 14px;background:var(--card);border:1px solid var(--line);border-radius:4px;cursor:pointer;font-family:inherit;color:var(--txt);transition:border-color .15s,background .15s}
 .cru-tab:hover{border-color:var(--acc)}
 .cru-tab.on{border-color:var(--acc);background:color-mix(in srgb,var(--acc) 12%,var(--card));box-shadow:inset 0 0 0 1px var(--acc)}
