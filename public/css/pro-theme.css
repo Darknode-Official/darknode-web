@@ -13975,3 +13975,42 @@ html[data-style="pro"]:not([data-skin="command"]) body.app .qa-grid .qa-title{fo
 html[data-style="pro"]:not([data-skin="command"]) body.app .qa-grid .qa-desc{font-size:.72rem !important;line-height:1.4 !important}
 @media(max-width:1180px){html[data-style="pro"]:not([data-skin="command"]) body.app .qa-grid{grid-template-columns:repeat(3,1fr) !important}}
 @media(max-width:720px){html[data-style="pro"]:not([data-skin="command"]) body.app .qa-grid{grid-template-columns:repeat(2,1fr) !important}}
+
+/* ===== Sidebar group header: perfectly-aligned count + caret column (2026-09-23) =====
+   The count badge and +/- caret were laid out in-flow, so long labels shoved them
+   right (count right-edge ranged 185-193px) and 1- vs 2-digit badges had different
+   widths. Pin both to a fixed right column and give the badge a fixed centered box
+   so every group's count lines up to the pixel. */
+html[data-style="pro"]:not([data-skin="command"]) body.app .sidebar .side-group.side-collapse{
+  padding-top:9px !important;
+  padding-bottom:9px !important;
+  padding-right:48px !important;   /* reserve the count(22)+gap+caret(16) zone */
+  overflow:hidden !important;
+}
+html[data-style="pro"]:not([data-skin="command"]) body.app .sidebar .side-group .side-cnt{
+  position:absolute !important;
+  right:24px !important;           /* count column: left of the caret */
+  top:50% !important;
+  transform:translateY(-50%) !important;
+  margin:0 !important;
+  min-width:22px !important;
+  padding:1px 4px !important;
+  text-align:center !important;
+  font-variant-numeric:tabular-nums !important;
+  flex:none !important;
+}
+html[data-style="pro"]:not([data-skin="command"]) body.app .sidebar .side-group.side-collapse::after{
+  position:absolute !important;
+  right:8px !important;            /* caret column: fixed at the far edge */
+  top:50% !important;
+  transform:translateY(-50%) !important;
+  margin:0 !important;
+}
+html[data-style="pro"]:not([data-skin="command"]) body.app .sidebar .side-group.side-collapse[data-open="1"]::after,
+html[data-style="pro"]:not([data-skin="command"]) body.app .sidebar .side-group.side-collapse.open::after{
+  transform:translateY(-50%) !important;
+}
+/* collapsed rail: nothing to pin, absolute badge/caret stay hidden */
+html[data-style="pro"]:not([data-skin="command"]) body.app .sidebar.collapsed .side-group.side-collapse{
+  padding-right:4px !important;
+}
