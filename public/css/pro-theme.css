@@ -13916,3 +13916,62 @@ html[data-style="classic"]:not([data-skin="command"]) body.app .stat-row {
   }
 }
 /* ==================== end THEME LAYOUT UNIFICATION ==================== */
+
+/* ============================================================
+   ENTERPRISE DENSITY PASS — Professional dashboard
+   Turns the big rounded "AI cards" into a dense operations
+   console: compact header, metric strip, paired ops band,
+   compact service tiles. Appended last so it wins by source order.
+   ============================================================ */
+/* Compact console header (was a 275px gradient hero) */
+[data-style=pro] .dash-hero{
+  background:#fff !important;
+  border:1px solid #e2e8f0 !important;
+  border-radius:10px !important;
+  padding:16px 20px !important;
+  box-shadow:0 1px 3px rgba(0,0,0,.04) !important;
+}
+[data-style=pro] .dash-hero::before,[data-style=pro] .dash-hero::after{display:none !important}
+[data-style=pro] .dash-hero-top{margin-bottom:12px !important}
+[data-style=pro] .dash-hero-main{display:flex !important;align-items:flex-end !important;justify-content:space-between !important;gap:20px !important}
+[data-style=pro] .dash-hero .pg-h1{font-size:1.3rem !important;margin-bottom:2px !important}
+[data-style=pro] .dash-hero .pg-sub{font-size:.82rem !important;line-height:1.45 !important;margin:0 !important;max-width:none !important}
+[data-style=pro] .dash-hero .hero-actions{margin-top:0 !important;flex-shrink:0 !important}
+[data-style=pro] .dash-hero .hero-actions .btn{padding:7px 15px !important;font-size:.77rem !important}
+
+/* Metric strip — compact bordered cells, no hover jump.
+   body.app prefix beats the body.app .stat override layer (styles.css ~8417). */
+html[data-style="pro"]:not([data-skin="command"]) body.app .stat-row{
+  grid-template-columns:repeat(auto-fit,minmax(126px,1fr)) !important;
+  gap:8px !important;margin-bottom:20px !important;background:transparent !important;
+  border:none !important;border-radius:0 !important;overflow:visible !important;
+}
+html[data-style="pro"]:not([data-skin="command"]) body.app .stat-row .stat{border:1px solid #e2e8f0 !important;border-radius:8px !important;padding:12px 14px !important;box-shadow:none !important;background:#fff !important;text-align:left !important;min-width:0 !important}
+html[data-style="pro"]:not([data-skin="command"]) body.app .stat-row .stat:hover{transform:none !important;box-shadow:0 1px 4px rgba(0,0,0,.05) !important;background:#fff !important;border-color:#cbd5e1 !important}
+html[data-style="pro"]:not([data-skin="command"]) body.app .stat-row .stat-n{font-size:1.35rem !important}
+html[data-style="pro"]:not([data-skin="command"]) body.app .stat-row .stat-l{font-size:.62rem !important;margin-top:3px !important}
+html[data-style="pro"]:not([data-skin="command"]) body.app .stat-row .stat-s{font-size:.6rem !important;margin-top:1px !important}
+
+/* Ops band: What's-new + activity/quick-stats side by side */
+[data-style=pro] .dash-changelog{border-radius:10px !important;padding:14px 16px !important;margin:0 !important}
+[data-style=pro] .dash-cl-header{margin-bottom:4px !important}
+[data-style=pro] .cl-item{padding:6px 10px !important;gap:10px !important;margin-bottom:1px !important}
+[data-style=pro] .cl-text{font-size:.78rem !important}
+[data-style=pro] .cl-date{font-size:.68rem !important}
+[data-style=pro] .dash-activity-panel,[data-style=pro] .dash-qstats-panel{border-radius:10px !important}
+[data-style=pro] .dash-activity-panel .panel-h,[data-style=pro] .dash-qstats-panel .panel-h{padding:11px 16px !important}
+[data-style=pro] .dash-timeline{padding:6px 16px 12px !important}
+[data-style=pro] .dash-timeline::before{left:23px !important}
+[data-style=pro] .dash-tl-item{padding:7px 0 7px 22px !important;font-size:.78rem !important}
+
+/* Services header + compact service tiles */
+[data-style=pro] .dash-services-head .pg-h2{font-size:1.05rem !important}
+[data-style=pro] .dash-section{margin-bottom:14px !important}
+[data-style=pro] .dash-cat-label{margin:0 0 8px !important;font-size:.72rem !important}
+html[data-style="pro"]:not([data-skin="command"]) body.app .qa-grid{gap:10px !important;grid-template-columns:repeat(4,1fr) !important;margin-bottom:0 !important}
+html[data-style="pro"]:not([data-skin="command"]) body.app .qa-grid .qa{padding:11px 14px !important}
+html[data-style="pro"]:not([data-skin="command"]) body.app .qa-grid .qa:hover{transform:none !important;box-shadow:0 4px 14px rgba(0,0,0,.07) !important}
+html[data-style="pro"]:not([data-skin="command"]) body.app .qa-grid .qa-title{font-size:.82rem !important;margin-bottom:2px !important}
+html[data-style="pro"]:not([data-skin="command"]) body.app .qa-grid .qa-desc{font-size:.72rem !important;line-height:1.4 !important}
+@media(max-width:1180px){html[data-style="pro"]:not([data-skin="command"]) body.app .qa-grid{grid-template-columns:repeat(3,1fr) !important}}
+@media(max-width:720px){html[data-style="pro"]:not([data-skin="command"]) body.app .qa-grid{grid-template-columns:repeat(2,1fr) !important}}

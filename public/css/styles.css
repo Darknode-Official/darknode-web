@@ -9414,3 +9414,18 @@ body.focus-mode .app-main { padding-left: 20px !important; padding-right: 20px !
 .side-tip span { display: block; color: var(--mut); }
 @keyframes sideTipIn { from { opacity: 0; transform: translateX(-4px); } to { opacity: 1; transform: none; } }
 @media (max-width: 900px) { .side-tip { display: none; } }
+
+/* ============================================================
+   ENTERPRISE DASHBOARD DENSITY — structural (all themes)
+   Compact console header + 2-col ops band + services header.
+   ============================================================ */
+.dash-hero-main{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap}
+.dash-hero-headings{min-width:0}
+.dash-hero-main .hero-actions{margin-top:0;flex-shrink:0}
+.dash-ops{display:grid;grid-template-columns:1.6fr 1fr;gap:16px;margin:0 0 20px;align-items:start}
+.dash-ops-side{display:flex;flex-direction:column;gap:16px;min-width:0}
+.dash-ops .dash-changelog{margin:0}
+.dash-services-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin:6px 0 12px}
+.dash-services-sub{font-size:.8rem}
+@media(max-width:1000px){.dash-ops{grid-template-columns:1fr}}
+@media(max-width:640px){.dash-hero-main{flex-direction:column;align-items:stretch;gap:12px}.dash-hero-main .hero-actions{flex-wrap:wrap}}
