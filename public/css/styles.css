@@ -9429,3 +9429,31 @@ body.focus-mode .app-main { padding-left: 20px !important; padding-right: 20px !
 .dash-services-sub{font-size:.8rem}
 @media(max-width:1000px){.dash-ops{grid-template-columns:1fr}}
 @media(max-width:640px){.dash-hero-main{flex-direction:column;align-items:stretch;gap:12px}.dash-hero-main .hero-actions{flex-wrap:wrap}}
+
+/* ===== Tools catalog: enterprise toolbar (theme-agnostic, token-based) ===== */
+.pg-head{margin-bottom:14px}
+.tk-toolbar{position:sticky;top:0;z-index:6;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin:0 0 16px;display:flex;flex-direction:column;gap:10px}
+.tk-toolbar-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.tk-search-wrap{position:relative;flex:1;min-width:220px}
+.tk-toolbar .tk-search-wrap .tk-search{width:100%;margin:0;padding-left:34px!important;box-sizing:border-box}
+/* accordion row badges are inline, not the absolute .tk-card badge (styles L267) */
+.tk-head .tk-badge{position:static;top:auto;right:auto}
+.tk-head .tk-name{padding-right:14px}
+.tk-search-ico{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:13px;height:13px;border:2px solid var(--mut);border-radius:50%;pointer-events:none}
+.tk-search-ico::after{content:"";position:absolute;right:-4px;bottom:-3px;width:6px;height:2px;background:var(--mut);transform:rotate(45deg);border-radius:2px}
+.tk-kind{display:flex;gap:0;flex:none;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--card)}
+.tk-kchip{background:transparent;border:none;border-right:1px solid var(--line);color:var(--mut);font-family:inherit;font-size:.76rem;font-weight:600;padding:8px 13px;cursor:pointer;display:flex;align-items:center;gap:6px;transition:background .12s,color .12s}
+.tk-kchip:last-child{border-right:none}
+.tk-kchip:hover{background:var(--card2);color:var(--txt)}
+.tk-kchip.on{background:var(--acc);color:#fff}
+.tk-kn{font-size:.66rem;font-weight:700;background:color-mix(in srgb,var(--mut) 20%,transparent);border-radius:8px;padding:0 6px;color:inherit}
+.tk-kchip.on .tk-kn{background:rgba(255,255,255,.24)}
+.tk-catnav{display:flex;gap:6px;flex-wrap:wrap;align-items:center;border-top:1px solid var(--line);padding-top:10px}
+.tk-catchip{background:var(--card);border:1px solid var(--line);color:var(--mut);font-family:inherit;font-size:.72rem;font-weight:600;padding:5px 10px;border-radius:20px;cursor:pointer;display:flex;align-items:center;gap:6px;transition:border-color .12s,color .12s,background .12s}
+.tk-catchip:hover{border-color:var(--acc-line);color:var(--txt)}
+.tk-catchip.on{background:color-mix(in srgb,var(--acc) 14%,transparent);border-color:var(--acc);color:var(--txt)}
+.tk-cn{font-size:.62rem;font-weight:700;background:color-mix(in srgb,var(--mut) 18%,transparent);border-radius:8px;padding:0 5px;line-height:1.5}
+.tk-catchip.on .tk-cn{background:color-mix(in srgb,var(--acc) 26%,transparent)}
+.tk-count{font-size:.72rem;font-weight:600;letter-spacing:.01em}
+.tk-empty{padding:24px 12px;text-align:center}
+@media(max-width:640px){.tk-toolbar-row{flex-direction:column;align-items:stretch}.tk-kind{width:100%}.tk-kchip{flex:1;justify-content:center}}
