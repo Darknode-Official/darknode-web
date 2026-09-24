@@ -999,7 +999,11 @@ export function renderPrometheus(main) {
     {id:'supplychain',label:'SUPPLY CHAIN',icon:'&#9741;'},
     {id:'defense',label:'DEFENSE',icon:'&#9879;'},
     {id:'bda',label:'BATTLE DAMAGE',icon:'&#10006;'},
-    {id:'authority',label:'AUTHORITY',icon:'&#9878;'}
+    {id:'authority',label:'AUTHORITY',icon:'&#9878;'},
+    {id:'pivot',label:'OMNI-PIVOT',icon:'[PX]'},
+    {id:'attribution',label:'ATTRIBUTION',icon:'[AX]'},
+    {id:'exposure',label:'EXPOSURE',icon:'[EX]'},
+    {id:'report',label:'REPORT BUILDER',icon:'[RB]'}
   ];
 
   // ============================================================================
@@ -6839,6 +6843,460 @@ export function renderPrometheus(main) {
     }
   }
 
+  // ==========================================================================
+  // OMNI ANALYSIS SUITE — added tabs: pivot / attribution / exposure / report
+  // All computation is client-side over the existing in-memory datasets.
+  // ==========================================================================
+  function pmDownload(filename, mime, content) {
+    try {
+      var blob = new Blob([content], { type: mime });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      // object URL intentionally not revoked via timer to respect no-timer rule
+    } catch (e) {}
+  }
+  function pmCSV(headers, rows) {
+    var q = function(v) { v = String(v == null ? '' : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+    var out = headers.map(q).join(',') + '\n';
+    for (var i = 0; i < rows.length; i++) out += rows[i].map(q).join(',') + '\n';
+    return out;
+  }
+  function pmSevColor(score) {
+    return score >= 75 ? '#ff0040' : score >= 50 ? '#ffaa00' : score >= 25 ? '#00e5ff' : '#00ff88';
+  }
+  function pmHay(parts) { return parts.filter(Boolean).join(' ').toLowerCase(); }
+  function pmHi(text, q) {
+    var s = esc(String(text == null ? '' : text));
+    if (!q) return s;
+    try {
+      var re = new RegExp('(' + q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'ig');
+      return s.replace(re, '<span class="pm-hl">$1</span>');
+    } catch (e) { return s; }
+  }
+  function pmActorIOCs(group) {
+    var out = [], name = group.name, al = group.aliases || [], db = IOC_DATABASE || [];
+    for (var i = 0; i < db.length; i++) {
+      var t = db[i].threat;
+      if (t && (t === name || name.indexOf(t) !== -1 || al.indexOf(t) !== -1)) out.push(db[i]);
+    }
+    return out;
+  }
+  function pmActorCampaigns(group) {
+    var out = [];
+    for (var i = 0; i < APT_CAMPAIGNS.length; i++) if (APT_CAMPAIGNS[i].apt === group.id) out.push(APT_CAMPAIGNS[i]);
+    return out;
+  }
+  function pmActorTTPs(group) {
+    var set = {};
+    (group.ttps || []).forEach(function(t) { set[t.split('.')[0]] = true; });
+    pmActorCampaigns(group).forEach(function(c) { (c.ttps || []).forEach(function(t) { set[t.split('.')[0]] = true; }); });
+    return Object.keys(set);
+  }
+  function pmMitreName(code) {
+    for (var i = 0; i < MITRE_TECHNIQUES.length; i++) if (MITRE_TECHNIQUES[i].id === code) return MITRE_TECHNIQUES[i].name;
+    return '';
+  }
+  function pmNodeExposure(node) {
+    var vulns = [], kev = 0, expl = 0, maxCvss = 0, i;
+    for (i = 0; i < VULN_DATABASE.length; i++) {
+      var v = VULN_DATABASE[i];
+      if (v.affectedNodes && v.affectedNodes.indexOf(node.id) !== -1) {
+        vulns.push(v);
+        if (v.kev) kev++;
+        if (v.exploitAvailable) expl++;
+        if (v.cvss > maxCvss) maxCvss = v.cvss;
+      }
+    }
+    var preds = [], maxConf = 0;
+    for (i = 0; i < THREAT_PREDICTIONS.length; i++) {
+      var p = THREAT_PREDICTIONS[i];
+      if (p.targets && p.targets.indexOf(node.id) !== -1) { preds.push(p); if (p.confidence > maxConf) maxConf = p.confidence; }
+    }
+    var dependents = 0;
+    for (i = 0; i < INFRA_NODES.length; i++) if (INFRA_NODES[i].deps && INFRA_NODES[i].deps.indexOf(node.id) !== -1) dependents++;
+    var score = Math.min(100, Math.round(node.criticality * 4 + kev * 12 + expl * 6 + preds.length * 10 + dependents * 2));
+    return { vulns: vulns, kev: kev, expl: expl, maxCvss: maxCvss, preds: preds, maxConf: maxConf, dependents: dependents, score: score };
+  }
+  function pmBar(score) {
+    var c = pmSevColor(score);
+    return '<div style="display:flex;align-items:center;gap:8px">' +
+      '<div class="pm-bar-track" style="max-width:120px"><div class="pm-bar-fill" style="width:' + score + '%;background:' + c + '"></div></div>' +
+      '<span style="color:' + c + ';font-weight:bold;font-family:monospace;min-width:26px">' + score + '</span></div>';
+  }
+
+  // -------- TAB: OMNI-PIVOT --------------------------------------------------
+  function pmRenderPivotResults(q) {
+    var IOCDB = IOC_DATABASE || [];
+    q = (q || '').trim().toLowerCase();
+    if (!q) {
+      var ov = [
+        ['IOC DATABASE', IOCDB.length], ['THREAT ACTORS', APT_GROUPS.length],
+        ['CAMPAIGNS', APT_CAMPAIGNS.length], ['INTEL FEEDS', INTEL_FEEDS.length],
+        ['PREDICTIONS', THREAT_PREDICTIONS.length], ['VULNERABILITIES', VULN_DATABASE.length],
+        ['ATT&CK TECHNIQUES', MITRE_TECHNIQUES.length], ['INFRA NODES', INFRA_NODES.length],
+        ['SUPPLY CHAIN', SUPPLY_CHAIN.length]
+      ];
+      var oh = '<div class="pm-stat-row">';
+      for (var i = 0; i < ov.length; i++) oh += '<div class="pm-stat-box"><div class="pm-stat-value" style="color:#00e5ff">' + ov[i][1] + '</div><div class="pm-stat-label">' + ov[i][0] + '</div></div>';
+      oh += '</div><div class="pm-mono" style="padding:16px 0;text-align:center;color:#667788">Enter a query above to correlate an entity across every dataset.</div>';
+      return oh;
+    }
+    var has = function(x, parts) { return pmHay(parts).indexOf(q) !== -1; };
+    var ioc = IOCDB.filter(function(x) { return has(x, [x.value, x.threat, x.type, x.source, (x.tags || []).join(' ')]); });
+    var act = APT_GROUPS.filter(function(x) { return has(x, [x.id, x.name, x.nation, (x.aliases || []).join(' '), (x.targets || []).join(' '), (x.ttps || []).join(' ')]); });
+    var camp = APT_CAMPAIGNS.filter(function(x) { return has(x, [x.id, x.name, x.apt, (x.tools || []).join(' '), (x.ttps || []).join(' '), (x.sectors || []).join(' '), (x.infrastructure || []).join(' '), x.description]); });
+    var intel = INTEL_FEEDS.filter(function(x) { return has(x, [x.id, x.source, x.type, x.summary, x.classification]); });
+    var pred = THREAT_PREDICTIONS.filter(function(x) { return has(x, [x.id, x.threat, (x.targets || []).join(' '), (x.indicators || []).join(' '), (x.geopoliticalTriggers || []).join(' ')]); });
+    var vuln = VULN_DATABASE.filter(function(x) { return has(x, [x.cve, x.product, x.vendor, x.type, (x.affectedNodes || []).join(' ')]); });
+    var mitre = MITRE_TECHNIQUES.filter(function(x) { return has(x, [x.id, x.name, x.tactic, (x.usedBy || []).join(' ')]); });
+    var nodes = INFRA_NODES.filter(function(x) { return has(x, [x.id, x.name, x.sector, x.type, x.ip]); });
+    var sc = SUPPLY_CHAIN.filter(function(x) { return has(x, [x.id, x.name, x.vendor, x.category, (x.vulns || []).join(' ')]); });
+    var all = [ioc, act, camp, intel, pred, vuln, mitre, nodes, sc];
+    var total = 0, ds = 0;
+    for (var k = 0; k < all.length; k++) { total += all[k].length; if (all[k].length) ds++; }
+    function grp(label, items, color, lineFn) {
+      if (!items.length) return '';
+      var cap = items.slice(0, 30);
+      var b = '<div class="pm-hitcard"><div class="pm-hitcard-hdr"><span class="pm-card-title" style="margin:0">' + label + '</span><span class="pm-badge" style="background:' + color + ';color:#04121a;border:none">' + items.length + '</span></div>';
+      for (var i = 0; i < cap.length; i++) b += '<div class="pm-hitline">' + lineFn(cap[i]) + '</div>';
+      if (items.length > cap.length) b += '<div class="pm-mono" style="padding-top:6px">+' + (items.length - cap.length) + ' more records</div>';
+      return b + '</div>';
+    }
+    var out = '<div class="pm-mono" style="margin:6px 0 12px">MATCH SUMMARY: <strong style="color:#00ff88">' + total + '</strong> records across <strong style="color:#00e5ff">' + ds + '</strong> of 9 datasets for "<strong>' + esc(q) + '</strong>"</div>';
+    if (!total) return out + '<div class="pm-mono" style="padding:20px 0;text-align:center;color:#667788">No correlations found. Try an actor name, IP, domain, CVE, ATT&amp;CK ID, or node ID.</div>';
+    out += '<div class="pm-pivot-grid">';
+    out += grp('IOC DATABASE', ioc, '#ff6600', function(x) { return '<span class="pm-badge pm-badge-medium">' + esc(x.type) + '</span> ' + pmHi(x.value, q) + '<div class="pm-mono">actor: ' + pmHi(x.threat, q) + ' &middot; ' + esc(x.confidence) + ' conf &middot; ' + esc((x.tags || []).join(', ')) + '</div>'; });
+    out += grp('THREAT ACTORS', act, '#ff0040', function(x) { return '<strong>' + pmHi(x.id + ' / ' + x.name, q) + '</strong> (' + pmHi(x.nation, q) + ') &middot; threat ' + esc(x.threatLevel) + '<div class="pm-mono">aka ' + pmHi((x.aliases || []).join(', '), q) + '</div>'; });
+    out += grp('CAMPAIGNS', camp, '#ffaa00', function(x) { return '<strong>' + pmHi(x.id + ' ' + x.name, q) + '</strong> &middot; ' + esc(x.apt) + ' &middot; ' + esc(x.victims) + ' victims<div class="pm-mono">' + pmHi((x.tools || []).join(', '), q) + '</div>'; });
+    out += grp('INTEL FEEDS', intel, '#00bfff', function(x) { return '<strong>' + esc(x.id) + '</strong> <span class="pm-badge pm-badge-low">' + esc(x.type) + '</span> ' + pmHi(x.source, q) + '<div class="pm-mono">' + pmHi(x.summary, q) + '</div>'; });
+    out += grp('PREDICTIONS', pred, '#cc44ff', function(x) { return '<strong>' + esc(x.id) + '</strong> &middot; ' + esc(x.confidence) + '% &middot; ' + esc(x.horizon) + '<div class="pm-mono">' + pmHi(x.threat, q) + '</div><div class="pm-mono">targets: ' + pmHi((x.targets || []).join(', '), q) + '</div>'; });
+    out += grp('VULNERABILITIES', vuln, '#ff3355', function(x) { return '<strong>' + pmHi(x.cve, q) + '</strong> &middot; CVSS ' + esc(x.cvss) + (x.kev ? ' <span class="pm-badge pm-badge-critical">KEV</span>' : '') + '<div class="pm-mono">' + pmHi(x.product + ' (' + x.vendor + ')', q) + ' &middot; nodes: ' + esc((x.affectedNodes || []).join(', ') || 'none') + '</div>'; });
+    out += grp('ATT&CK TECHNIQUES', mitre, '#00e5ff', function(x) { return '<strong>' + pmHi(x.id, q) + '</strong> ' + pmHi(x.name, q) + '<div class="pm-mono">' + esc(x.tactic) + ' &middot; used by ' + esc((x.usedBy || []).length) + ' actors</div>'; });
+    out += grp('INFRA NODES', nodes, '#00ff88', function(x) { return '<strong>' + pmHi(x.id + ' ' + x.name, q) + '</strong><div class="pm-mono">' + pmHi(x.sector, q) + ' &middot; ' + esc(x.type) + ' &middot; ' + pmHi(x.ip, q) + ' &middot; crit ' + esc(x.criticality) + '</div>'; });
+    out += grp('SUPPLY CHAIN', sc, '#88ccff', function(x) { return '<strong>' + pmHi(x.id + ' ' + x.name, q) + '</strong> &middot; ' + pmHi(x.vendor, q) + '<div class="pm-mono">risk ' + esc(x.riskScore) + ' &middot; vulns: ' + esc((x.vulns || []).join(', ') || 'none') + '</div>'; });
+    return out + '</div>';
+  }
+  function renderPivot() {
+    var q = state.pivotQ || '';
+    var html = '<div class="pm-section-header">OMNI-PIVOT :: CROSS-DATASET INDICATOR CORRELATION</div>';
+    html += '<div class="pm-mono" style="margin-bottom:10px">Search any indicator, entity, actor, CVE, ATT&amp;CK ID, node, or keyword across all 9 intelligence datasets simultaneously.</div>';
+    html += '<div class="pm-filter-bar">';
+    html += '<input type="text" class="pm-input" id="pm-pivot-input" placeholder="e.g. APT28, Sandworm, 185.220.101.42, CVE-2024-3400, T1190, PG16, LockBit" value="' + esc(q) + '" style="max-width:560px">';
+    html += '<button class="pm-btn" id="pm-pivot-clear">CLEAR</button>';
+    html += '</div>';
+    html += '<div class="pm-filter-bar"><span class="pm-filter-label">QUICK PIVOTS:</span>';
+    var seeds = ['APT28', 'Sandworm', 'Volt Typhoon', 'LockBit', 'Lazarus', 'CVE-2024-3400', 'T1190', 'SCADA', '185.220.101.42', 'PG16'];
+    for (var s = 0; s < seeds.length; s++) html += '<button class="pm-filter-btn" data-pivot-seed="' + esc(seeds[s]) + '">' + esc(seeds[s]) + '</button>';
+    html += '</div>';
+    html += '<div id="pm-pivot-results">' + pmRenderPivotResults(q) + '</div>';
+    return html;
+  }
+  function bindPivot() {
+    var input = main.querySelector('#pm-pivot-input');
+    var results = main.querySelector('#pm-pivot-results');
+    var run = function(v) { state.pivotQ = v; if (results) results.innerHTML = pmRenderPivotResults(v); };
+    if (input) {
+      input.addEventListener('input', function() { run(this.value); });
+      input.focus();
+      try { var vlen = input.value.length; input.setSelectionRange(vlen, vlen); } catch (e) {}
+    }
+    var clr = main.querySelector('#pm-pivot-clear');
+    if (clr) clr.addEventListener('click', function() { if (input) input.value = ''; run(''); if (input) input.focus(); });
+    var seeds = main.querySelectorAll('[data-pivot-seed]');
+    for (var i = 0; i < seeds.length; i++) seeds[i].addEventListener('click', function() {
+      var v = this.getAttribute('data-pivot-seed');
+      if (input) { input.value = v; input.focus(); }
+      run(v);
+    });
+  }
+
+  // -------- TAB: ATTRIBUTION -------------------------------------------------
+  function pmAttrRows() {
+    return APT_GROUPS.map(function(g) {
+      var camps = pmActorCampaigns(g), iocs = pmActorIOCs(g), ttps = pmActorTTPs(g);
+      var victims = camps.reduce(function(a, c) { return a + (c.victims || 0); }, 0);
+      var score = Math.min(100, Math.round(g.threatLevel * 7 + camps.length * 8 + iocs.length * 2 + Math.min(30, victims / 3) + (g.active ? 10 : 0)));
+      return { g: g, camps: camps, iocs: iocs, ttps: ttps, victims: victims, score: score };
+    }).sort(function(a, b) { return b.score - a.score; });
+  }
+  function renderAttribution() {
+    var rows = pmAttrRows();
+    var sel = state.attrActor;
+    if (!sel || !rows.some(function(r) { return r.g.id === sel; })) sel = rows[0].g.id;
+    var nations = {};
+    rows.forEach(function(r) { nations[r.g.nation] = 1; });
+    var nationList = Object.keys(nations).sort();
+    var html = '<div class="pm-section-header">ATTRIBUTION :: ACTOR LINKAGE &amp; TTP-OVERLAP ENGINE</div>';
+    html += '<div class="pm-mono" style="margin-bottom:10px">Activity score derived from threat level, linked campaigns, attributed IOCs, victim totals, and operational status. Select an actor for linkage detail.</div>';
+    html += '<div class="pm-filter-bar"><span class="pm-filter-label">NATION:</span>';
+    html += '<button class="pm-filter-btn active" data-attr-nation="ALL">ALL</button>';
+    for (var n = 0; n < nationList.length; n++) html += '<button class="pm-filter-btn" data-attr-nation="' + esc(nationList[n]) + '">' + esc(nationList[n]) + '</button>';
+    html += '</div>';
+    html += '<div class="pm-table-wrap"><table class="pm-table"><thead><tr><th>#</th><th>ACTOR</th><th>NATION</th><th>THREAT</th><th>CAMPAIGNS</th><th>IOCs</th><th>TTPs</th><th>VICTIMS</th><th>STATUS</th><th>ACTIVITY</th></tr></thead><tbody>';
+    for (var i = 0; i < rows.length; i++) {
+      var r = rows[i];
+      html += '<tr class="pm-clickrow' + (r.g.id === sel ? ' pm-rowsel' : '') + '" data-attr-actor="' + esc(r.g.id) + '" data-nation="' + esc(r.g.nation) + '">';
+      html += '<td>' + (i + 1) + '</td>';
+      html += '<td><strong>' + esc(r.g.name) + '</strong><div class="pm-mono">' + esc(r.g.id) + '</div></td>';
+      html += '<td>' + esc(r.g.nation) + '</td>';
+      html += '<td><span class="pm-badge ' + (r.g.threatLevel >= 9 ? 'pm-badge-critical' : r.g.threatLevel >= 7 ? 'pm-badge-high' : 'pm-badge-medium') + '">' + esc(r.g.threatLevel) + '</span></td>';
+      html += '<td>' + r.camps.length + '</td><td>' + r.iocs.length + '</td><td>' + r.ttps.length + '</td><td>' + r.victims + '</td>';
+      html += '<td>' + (r.g.active ? '<span class="pm-status-green">ACTIVE</span>' : '<span class="pm-status-dim">DORMANT</span>') + '</td>';
+      html += '<td>' + pmBar(r.score) + '</td></tr>';
+    }
+    html += '</tbody></table></div>';
+    // Detail panel
+    var srow = null;
+    for (var j = 0; j < rows.length; j++) if (rows[j].g.id === sel) { srow = rows[j]; break; }
+    if (srow) {
+      var g = srow.g;
+      // closest actors by TTP Jaccard
+      var jac = function(a, b) { var sb = {}; b.forEach(function(x) { sb[x] = 1; }); var inter = 0; a.forEach(function(x) { if (sb[x]) inter++; }); var uni = a.length + b.length - inter; return uni ? inter / uni : 0; };
+      var near = rows.filter(function(x) { return x.g.id !== g.id; }).map(function(x) {
+        var shared = x.ttps.filter(function(t) { return srow.ttps.indexOf(t) !== -1; });
+        return { g: x.g, shared: shared, sim: jac(srow.ttps, x.ttps) };
+      }).filter(function(x) { return x.shared.length > 0; }).sort(function(a, b) { return b.sim - a.sim; }).slice(0, 6);
+      var iocByType = {};
+      srow.iocs.forEach(function(x) { iocByType[x.type] = (iocByType[x.type] || 0) + 1; });
+      html += '<div class="pm-section-sub">ATTRIBUTION DETAIL :: ' + esc(g.name) + ' (' + esc(g.id) + ')</div>';
+      html += '<div class="pm-grid-3">';
+      // Campaigns
+      html += '<div class="pm-card"><div class="pm-card-title">LINKED CAMPAIGNS (' + srow.camps.length + ')</div>';
+      if (srow.camps.length) { for (var c = 0; c < srow.camps.length; c++) { var cp = srow.camps[c]; html += '<div class="pm-hitline"><strong>' + esc(cp.name) + '</strong> <span class="pm-mono">' + esc(cp.status) + '</span><div class="pm-mono">' + esc((cp.sectors || []).join(', ')) + ' &middot; ' + esc(cp.victims) + ' victims</div></div>'; } }
+      else html += '<div class="pm-mono">No campaigns linked.</div>';
+      html += '</div>';
+      // IOCs
+      html += '<div class="pm-card"><div class="pm-card-title">ATTRIBUTED IOCs (' + srow.iocs.length + ')</div>';
+      var itk = Object.keys(iocByType);
+      if (itk.length) { for (var t2 = 0; t2 < itk.length; t2++) html += '<div class="pm-kv"><span class="pm-kv-k">' + esc(itk[t2]) + '</span><span>' + iocByType[itk[t2]] + '</span></div>'; }
+      else html += '<div class="pm-mono">No IOCs attributed.</div>';
+      html += '</div>';
+      // Closest actors
+      html += '<div class="pm-card"><div class="pm-card-title">CLOSEST ACTORS (TTP OVERLAP)</div>';
+      if (near.length) { for (var m = 0; m < near.length; m++) { var nn = near[m]; html += '<div class="pm-hitline"><strong>' + esc(nn.g.name) + '</strong> <span class="pm-mono">' + esc(nn.g.nation) + '</span><div class="pm-mono">' + nn.shared.length + ' shared TTPs &middot; ' + Math.round(nn.sim * 100) + '% similarity</div></div>'; } }
+      else html += '<div class="pm-mono">No overlapping TTPs.</div>';
+      html += '</div>';
+      html += '</div>';
+      // TTP list
+      html += '<div class="pm-section-sub">TECHNIQUE PROFILE (' + srow.ttps.length + ' UNIQUE ATT&amp;CK TECHNIQUES)</div>';
+      html += '<div style="display:flex;flex-wrap:wrap;gap:4px">';
+      for (var tt = 0; tt < srow.ttps.length; tt++) { var nm = pmMitreName(srow.ttps[tt]); html += '<span class="pm-tag" title="' + esc(nm) + '">' + esc(srow.ttps[tt]) + (nm ? ' ' + esc(nm) : '') + '</span>'; }
+      html += '</div>';
+    }
+    return html;
+  }
+  function bindAttribution() {
+    var rows = main.querySelectorAll('[data-attr-actor]');
+    for (var i = 0; i < rows.length; i++) rows[i].addEventListener('click', function() {
+      state.attrActor = this.getAttribute('data-attr-actor');
+      render();
+    });
+    var nb = main.querySelectorAll('[data-attr-nation]');
+    for (var j = 0; j < nb.length; j++) nb[j].addEventListener('click', function() {
+      var val = this.getAttribute('data-attr-nation');
+      var all = main.querySelectorAll('[data-attr-nation]');
+      for (var k = 0; k < all.length; k++) all[k].classList.remove('active');
+      this.classList.add('active');
+      var trs = main.querySelectorAll('tr[data-nation]');
+      for (var t = 0; t < trs.length; t++) trs[t].style.display = (val === 'ALL' || trs[t].getAttribute('data-nation') === val) ? '' : 'none';
+    });
+  }
+
+  // -------- TAB: EXPOSURE ----------------------------------------------------
+  function renderExposure() {
+    var data = INFRA_NODES.map(function(n) { return { n: n, e: pmNodeExposure(n) }; });
+    var exposedVuln = 0, kevNodes = 0, predNodes = 0, sum = 0;
+    data.forEach(function(d) { if (d.e.vulns.length) exposedVuln++; if (d.e.kev > 0) kevNodes++; if (d.e.preds.length) predNodes++; sum += d.e.score; });
+    var avg = data.length ? Math.round(sum / data.length) : 0;
+    var sectors = {};
+    data.forEach(function(d) { sectors[d.n.sector] = 1; });
+    var sectorList = Object.keys(sectors).sort();
+    data.sort(function(a, b) { return b.e.score - a.e.score; });
+    var shown = data.filter(function(d) { return d.e.vulns.length || d.e.preds.length || d.n.criticality >= 8; });
+    var cap = shown.slice(0, 80);
+    var html = '<div class="pm-section-header">EXPOSURE :: INFRASTRUCTURE ATTACK-SURFACE EXPLORER</div>';
+    html += '<div class="pm-mono" style="margin-bottom:10px">Exposure score = criticality&times;4 + KEV&times;12 + exploitable&times;6 + predicted-target&times;10 + dependents&times;2 (capped at 100), computed live over the vulnerability, prediction, and dependency graphs.</div>';
+    html += '<div class="pm-stat-row">';
+    html += '<div class="pm-stat-box"><div class="pm-stat-value" style="color:#ff6600">' + exposedVuln + '</div><div class="pm-stat-label">NODES WITH VULNS</div></div>';
+    html += '<div class="pm-stat-box"><div class="pm-stat-value" style="color:#ff0040">' + kevNodes + '</div><div class="pm-stat-label">KEV-AFFECTED</div></div>';
+    html += '<div class="pm-stat-box"><div class="pm-stat-value" style="color:#cc44ff">' + predNodes + '</div><div class="pm-stat-label">PREDICTED TARGETS</div></div>';
+    html += '<div class="pm-stat-box"><div class="pm-stat-value" style="color:' + pmSevColor(avg) + '">' + avg + '</div><div class="pm-stat-label">AVG EXPOSURE</div></div>';
+    html += '<div class="pm-stat-box"><div class="pm-stat-value" style="color:#00e5ff">' + shown.length + '</div><div class="pm-stat-label">FLAGGED NODES</div></div>';
+    html += '</div>';
+    html += '<div class="pm-filter-bar">';
+    html += '<span class="pm-filter-label">SECTOR:</span><select class="pm-select" id="pm-exp-sector"><option value="ALL">ALL SECTORS</option>';
+    for (var s = 0; s < sectorList.length; s++) html += '<option value="' + esc(sectorList[s]) + '">' + esc(sectorList[s]) + '</option>';
+    html += '</select>';
+    html += '<button class="pm-filter-btn active" data-exp-flag="ALL">ALL</button>';
+    html += '<button class="pm-filter-btn" data-exp-flag="KEV">KEV ONLY</button>';
+    html += '<button class="pm-filter-btn" data-exp-flag="PRED">PREDICTED ONLY</button>';
+    html += '<input type="text" class="pm-input" id="pm-exp-search" placeholder="filter by node id / name" style="max-width:240px">';
+    html += '</div>';
+    html += '<div class="pm-table-wrap"><table class="pm-table"><thead><tr><th>NODE</th><th>NAME</th><th>SECTOR</th><th>CRIT</th><th>VULNS</th><th>KEV</th><th>EXPL</th><th>MAX CVSS</th><th>PREDICTED</th><th>DEPENDENTS</th><th>EXPOSURE</th></tr></thead><tbody>';
+    for (var i = 0; i < cap.length; i++) {
+      var d = cap[i], e = d.e;
+      html += '<tr class="pm-exp-row" data-sector="' + esc(d.n.sector) + '" data-kev="' + (e.kev > 0 ? '1' : '0') + '" data-pred="' + (e.preds.length ? '1' : '0') + '" data-search="' + esc((d.n.id + ' ' + d.n.name).toLowerCase()) + '">';
+      html += '<td><strong>' + esc(d.n.id) + '</strong></td><td>' + esc(d.n.name) + '</td><td>' + esc(d.n.sector) + '</td>';
+      html += '<td>' + esc(d.n.criticality) + '</td><td>' + e.vulns.length + '</td>';
+      html += '<td>' + (e.kev ? '<span class="pm-status-red">' + e.kev + '</span>' : '0') + '</td>';
+      html += '<td>' + e.expl + '</td><td>' + (e.maxCvss || '-') + '</td>';
+      html += '<td>' + (e.preds.length ? '<span class="pm-status-yellow">' + e.preds.length + '</span> (' + e.maxConf + '%)' : '-') + '</td>';
+      html += '<td>' + e.dependents + '</td><td>' + pmBar(e.score) + '</td></tr>';
+    }
+    html += '</tbody></table></div>';
+    if (shown.length > cap.length) html += '<div class="pm-mono" style="padding-top:8px">Showing top ' + cap.length + ' of ' + shown.length + ' flagged nodes by exposure score.</div>';
+    return html;
+  }
+  function bindExposure() {
+    var applyFilters = function() {
+      var secEl = main.querySelector('#pm-exp-sector');
+      var sec = secEl ? secEl.value : 'ALL';
+      var flagBtn = main.querySelector('[data-exp-flag].active');
+      var flag = flagBtn ? flagBtn.getAttribute('data-exp-flag') : 'ALL';
+      var searchEl = main.querySelector('#pm-exp-search');
+      var term = searchEl ? searchEl.value.trim().toLowerCase() : '';
+      var rows = main.querySelectorAll('.pm-exp-row');
+      for (var i = 0; i < rows.length; i++) {
+        var r = rows[i], show = true;
+        if (sec !== 'ALL' && r.getAttribute('data-sector') !== sec) show = false;
+        if (flag === 'KEV' && r.getAttribute('data-kev') !== '1') show = false;
+        if (flag === 'PRED' && r.getAttribute('data-pred') !== '1') show = false;
+        if (term && r.getAttribute('data-search').indexOf(term) === -1) show = false;
+        r.style.display = show ? '' : 'none';
+      }
+    };
+    var sec = main.querySelector('#pm-exp-sector');
+    if (sec) sec.addEventListener('change', applyFilters);
+    var srch = main.querySelector('#pm-exp-search');
+    if (srch) srch.addEventListener('input', applyFilters);
+    var flags = main.querySelectorAll('[data-exp-flag]');
+    for (var i = 0; i < flags.length; i++) flags[i].addEventListener('click', function() {
+      var all = main.querySelectorAll('[data-exp-flag]');
+      for (var k = 0; k < all.length; k++) all[k].classList.remove('active');
+      this.classList.add('active');
+      applyFilters();
+    });
+  }
+
+  // -------- TAB: REPORT BUILDER ---------------------------------------------
+  function pmBuildReport(opts) {
+    var sections = [];
+    if (opts.actors) {
+      var acts = APT_GROUPS.filter(function(g) { return g.active; }).sort(function(a, b) { return b.threatLevel - a.threatLevel; });
+      sections.push({ key: 'actors', title: 'ACTIVE THREAT ACTORS', count: acts.length, rows: acts.map(function(g) { return { id: g.id, label: g.name, detail: g.nation + ' / threat ' + g.threatLevel, severity: g.threatLevel >= 9 ? 'critical' : g.threatLevel >= 7 ? 'high' : 'medium' }; }) });
+    }
+    if (opts.campaigns) {
+      var cs = APT_CAMPAIGNS.filter(function(c) { return c.status === 'active'; }).sort(function(a, b) { return (b.victims || 0) - (a.victims || 0); });
+      sections.push({ key: 'campaigns', title: 'ACTIVE CAMPAIGNS', count: cs.length, rows: cs.map(function(c) { return { id: c.id, label: c.name, detail: c.apt + ' / ' + c.victims + ' victims / ' + (c.sectors || []).join(', '), severity: c.victims >= 40 ? 'critical' : c.victims >= 15 ? 'high' : 'medium' }; }) });
+    }
+    if (opts.predictions) {
+      var ps = THREAT_PREDICTIONS.filter(function(p) { return p.status === 'active'; }).sort(function(a, b) { return b.confidence - a.confidence; });
+      sections.push({ key: 'predictions', title: 'ACTIVE PREDICTIONS', count: ps.length, rows: ps.map(function(p) { return { id: p.id, label: p.threat, detail: p.confidence + '% / ' + p.horizon + ' / targets ' + (p.targets || []).join(', '), severity: p.confidence >= 80 ? 'critical' : p.confidence >= 60 ? 'high' : 'medium' }; }) });
+    }
+    if (opts.iocs) {
+      var hi = (IOC_DATABASE || []).filter(function(x) { return x.confidence === 'high'; });
+      sections.push({ key: 'iocs', title: 'HIGH-CONFIDENCE IOCs', count: hi.length, rows: hi.map(function(x) { return { id: x.type, label: x.value, detail: x.threat + ' / ' + (x.tags || []).join(', '), severity: 'high' }; }) });
+    }
+    if (opts.vulns) {
+      var kv = VULN_DATABASE.filter(function(v) { return v.kev; }).sort(function(a, b) { return b.cvss - a.cvss; });
+      sections.push({ key: 'vulns', title: 'KEV VULNERABILITIES', count: kv.length, rows: kv.map(function(v) { return { id: v.cve, label: v.product + ' (' + v.vendor + ')', detail: 'CVSS ' + v.cvss + ' / ' + v.type + ' / nodes ' + ((v.affectedNodes || []).join(', ') || 'none'), severity: v.cvss >= 9 ? 'critical' : 'high' }; }) });
+    }
+    if (opts.exposure) {
+      var ex = INFRA_NODES.map(function(n) { return { n: n, e: pmNodeExposure(n) }; }).sort(function(a, b) { return b.e.score - a.e.score; }).slice(0, 15);
+      sections.push({ key: 'exposure', title: 'TOP EXPOSED NODES', count: ex.length, rows: ex.map(function(d) { return { id: d.n.id, label: d.n.name, detail: d.n.sector + ' / exposure ' + d.e.score + ' / ' + d.e.vulns.length + ' vulns', severity: d.e.score >= 75 ? 'critical' : d.e.score >= 50 ? 'high' : 'medium' }; }) });
+    }
+    return { meta: { title: opts.title, classification: opts.classification, generated: new Date().toISOString() }, sections: sections };
+  }
+  function pmReportPreview(rep) {
+    var L = [];
+    L.push(rep.meta.classification);
+    L.push('=========================================================');
+    L.push('INTELLIGENCE PRODUCT :: ' + rep.meta.title);
+    L.push('GENERATED: ' + rep.meta.generated);
+    L.push('SYSTEM: PROMETHEUS (TRAINING ENVIRONMENT)');
+    L.push('=========================================================');
+    L.push('');
+    if (!rep.sections.length) { L.push('No sections selected. Choose at least one section to include.'); }
+    for (var i = 0; i < rep.sections.length; i++) {
+      var s = rep.sections[i];
+      L.push('[' + (i + 1) + '] ' + s.title + ' (' + s.count + ')');
+      L.push('---------------------------------------------------------');
+      var cap = s.rows.slice(0, 20);
+      for (var j = 0; j < cap.length; j++) L.push('  ' + s.rows[j].id + '  ' + s.rows[j].label + '  ::  ' + s.rows[j].detail);
+      if (s.rows.length > cap.length) L.push('  ... +' + (s.rows.length - cap.length) + ' more');
+      L.push('');
+    }
+    L.push('=========================================================');
+    L.push(rep.meta.classification + ' // TRAINING ENVIRONMENT');
+    return L.join('\n');
+  }
+  function pmReadReportOpts() {
+    var titleEl = main.querySelector('#pm-rep-title');
+    var classEl = main.querySelector('#pm-rep-class');
+    var opts = { title: titleEl && titleEl.value ? titleEl.value : 'THREAT INTELLIGENCE SUMMARY', classification: classEl ? classEl.value : 'UNCLASSIFIED' };
+    var boxes = main.querySelectorAll('[data-rep-sec]');
+    for (var i = 0; i < boxes.length; i++) opts[boxes[i].getAttribute('data-rep-sec')] = boxes[i].checked;
+    return opts;
+  }
+  function renderReport() {
+    var secs = [['actors', 'Active Threat Actors'], ['campaigns', 'Active Campaigns'], ['predictions', 'Active Predictions'], ['iocs', 'High-Confidence IOCs'], ['vulns', 'KEV Vulnerabilities'], ['exposure', 'Top Exposed Nodes']];
+    var html = '<div class="pm-section-header">REPORT BUILDER :: INTELLIGENCE PRODUCT &amp; EXPORT</div>';
+    html += '<div class="pm-mono" style="margin-bottom:10px">Assemble a formatted intelligence product from live dataset aggregates and export it as JSON or CSV (client-side, no network).</div>';
+    html += '<div class="pm-grid-2">';
+    html += '<div class="pm-card"><div class="pm-card-title">REPORT PARAMETERS</div>';
+    html += '<div class="pm-form-group"><div class="pm-label">TITLE</div><input type="text" class="pm-input" id="pm-rep-title" value="THREAT INTELLIGENCE SUMMARY"></div>';
+    html += '<div class="pm-form-group"><div class="pm-label">CLASSIFICATION</div><select class="pm-select" id="pm-rep-class"><option>UNCLASSIFIED</option><option>CONFIDENTIAL</option><option>SECRET</option><option selected>TOP SECRET // SCI</option></select></div>';
+    html += '<div class="pm-label">SECTIONS</div><div class="pm-checkbox-group">';
+    for (var i = 0; i < secs.length; i++) html += '<label class="pm-checkbox-label"><input type="checkbox" data-rep-sec="' + secs[i][0] + '" checked> ' + esc(secs[i][1]) + '</label>';
+    html += '</div>';
+    html += '<div class="pm-filter-bar" style="margin-top:12px"><button class="pm-btn" id="pm-rep-gen">GENERATE PREVIEW</button><button class="pm-btn pm-btn-blue" id="pm-rep-json">DOWNLOAD JSON</button><button class="pm-btn pm-btn-warn" id="pm-rep-csv">DOWNLOAD CSV</button></div>';
+    html += '<div class="pm-mono" id="pm-rep-status" style="margin-top:6px"></div>';
+    html += '</div>';
+    html += '<div class="pm-card"><div class="pm-card-title">PRODUCT PREVIEW</div>';
+    var initial = pmReportPreview(pmBuildReport({ title: 'THREAT INTELLIGENCE SUMMARY', classification: 'TOP SECRET // SCI', actors: true, campaigns: true, predictions: true, iocs: true, vulns: true, exposure: true }));
+    html += '<pre id="pm-rep-preview" style="white-space:pre-wrap;word-break:break-word;font-family:monospace;font-size:11px;line-height:1.5;max-height:520px;overflow:auto;margin:0">' + esc(initial) + '</pre>';
+    html += '</div>';
+    html += '</div>';
+    return html;
+  }
+  function bindReport() {
+    var refresh = function() {
+      var rep = pmBuildReport(pmReadReportOpts());
+      var pv = main.querySelector('#pm-rep-preview');
+      if (pv) pv.textContent = pmReportPreview(rep);
+      return rep;
+    };
+    var gen = main.querySelector('#pm-rep-gen');
+    if (gen) gen.addEventListener('click', function() {
+      var rep = refresh();
+      var st = main.querySelector('#pm-rep-status');
+      var total = rep.sections.reduce(function(a, s) { return a + s.count; }, 0);
+      if (st) st.textContent = 'Preview generated: ' + rep.sections.length + ' sections, ' + total + ' records.';
+    });
+    var boxes = main.querySelectorAll('[data-rep-sec]');
+    for (var i = 0; i < boxes.length; i++) boxes[i].addEventListener('change', refresh);
+    var titleEl = main.querySelector('#pm-rep-title');
+    if (titleEl) titleEl.addEventListener('input', refresh);
+    var classEl = main.querySelector('#pm-rep-class');
+    if (classEl) classEl.addEventListener('change', refresh);
+    var jbtn = main.querySelector('#pm-rep-json');
+    if (jbtn) jbtn.addEventListener('click', function() {
+      var rep = pmBuildReport(pmReadReportOpts());
+      pmDownload('prometheus-intel-report.json', 'application/json', JSON.stringify(rep, null, 2));
+      var st = main.querySelector('#pm-rep-status'); if (st) st.textContent = 'JSON export downloaded.';
+    });
+    var cbtn = main.querySelector('#pm-rep-csv');
+    if (cbtn) cbtn.addEventListener('click', function() {
+      var rep = pmBuildReport(pmReadReportOpts());
+      var rows = [];
+      rep.sections.forEach(function(s) { s.rows.forEach(function(r) { rows.push([s.title, r.id, r.label, r.detail, r.severity]); }); });
+      pmDownload('prometheus-intel-report.csv', 'text/csv', pmCSV(['section', 'id', 'label', 'detail', 'severity'], rows));
+      var st = main.querySelector('#pm-rep-status'); if (st) st.textContent = 'CSV export downloaded (' + rows.length + ' records).';
+    });
+  }
+
   function render() {
     state.intervals.forEach(function(id) { clearInterval(id); });
     state.intervals = [];
@@ -6865,6 +7323,10 @@ export function renderPrometheus(main) {
       case 'defense': contentHtml = renderDefense(); break;
       case 'bda': contentHtml = renderBDA(); break;
       case 'authority': contentHtml = renderAuthority(); break;
+      case 'pivot': contentHtml = renderPivot(); break;
+      case 'attribution': contentHtml = renderAttribution(); break;
+      case 'exposure': contentHtml = renderExposure(); break;
+      case 'report': contentHtml = renderReport(); break;
     }
 
     main.innerHTML = PM_CSS +
@@ -6916,6 +7378,10 @@ export function renderPrometheus(main) {
       case 'defense': bindDefense(); break;
       case 'bda': bindBDA(); break;
       case 'authority': bindAuthority(); break;
+      case 'pivot': bindPivot(); break;
+      case 'attribution': bindAttribution(); break;
+      case 'exposure': bindExposure(); break;
+      case 'report': bindReport(); break;
     }
   }
 
@@ -8557,6 +9023,26 @@ var PM_CSS_EXT = '<style>' +
   '[data-style=pro] .pm-status-bar { background: #f9fafb !important; box-shadow: 0 -1px 0 #e5e5e5 !important; }' +
   '[data-style=pro] .pm-clock-item { color: #3f3f46 !important; }' +
   '[data-style=pro] .pm-comp-delta { background: #f4f4f5 !important; border-color: #e5e5e5 !important; color: #18181b !important; }' +
+
+  /* OMNI ANALYSIS SUITE (pivot / attribution / exposure / report) */
+  '.pm-hl { background: rgba(0,229,255,0.22); color: #00e5ff; border-radius: 2px; padding: 0 1px; }' +
+  '.pm-pivot-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; align-items: start; }' +
+  '.pm-hitcard { background: #0d1117; border: 1px solid #1a2332; border-radius: 4px; padding: 12px; }' +
+  '.pm-hitcard-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; gap: 8px; }' +
+  '.pm-hitline { font-size: 11px; padding: 5px 0; border-bottom: 1px solid #111820; line-height: 1.5; word-break: break-word; }' +
+  '.pm-hitline:last-child { border-bottom: none; }' +
+  '.pm-kv { display: flex; gap: 8px; font-size: 11px; padding: 3px 0; }' +
+  '.pm-kv-k { color: #667788; min-width: 90px; text-transform: uppercase; letter-spacing: 1px; font-size: 9px; }' +
+  '.pm-bar-track { background: #111820; border-radius: 3px; height: 10px; width: 100%; overflow: hidden; }' +
+  '.pm-bar-fill { height: 100%; border-radius: 3px; }' +
+  '.pm-clickrow { cursor: pointer; }' +
+  '.pm-rowsel td { background: rgba(0,255,136,0.08) !important; border-top: 1px solid #00ff88; border-bottom: 1px solid #00ff88; }' +
+  '[data-style=pro] .pm-hl { background: #dbeafe !important; color: #1d4ed8 !important; }' +
+  '[data-style=pro] .pm-hitcard { background: #fff !important; border-color: #e5e5e5 !important; }' +
+  '[data-style=pro] .pm-hitline { border-bottom-color: #f4f4f5 !important; color: #3f3f46 !important; }' +
+  '[data-style=pro] .pm-kv-k { color: #71717a !important; }' +
+  '[data-style=pro] .pm-bar-track { background: #e5e5e5 !important; }' +
+  '[data-style=pro] .pm-rowsel td { background: #f0f9f4 !important; border-color: #16a34a !important; }' +
 
   '</style>';
 

@@ -638,6 +638,21 @@ function buildStyles() {
   s += '.se-col-side{width:320px;flex-shrink:0}';
   s += '@media(max-width:900px){.se-cols{flex-direction:column}.se-col-side{width:100%}}';
 
+  // === THREAT ANALYTICS / BRIEFING / EXPORT (additive) ===
+  s += '.se-an-barrow{display:flex;align-items:center;gap:10px;margin-bottom:6px}';
+  s += '.se-an-barlabel{width:150px;flex-shrink:0;font-size:10px;color:#8aa8c8;font-family:"Courier New",Courier,monospace;text-align:right;letter-spacing:0.5px}';
+  s += '.se-an-bartrack{flex:1;background:#0c1424;border:1px solid #1a3a5c;border-radius:3px;height:16px;overflow:hidden;position:relative}';
+  s += '.se-an-barfill{height:100%;background:linear-gradient(90deg,#0077cc,#00aaff);border-radius:2px;transition:width 0.5s ease-out}';
+  s += '.se-an-barval{width:52px;flex-shrink:0;font-size:10px;color:#00aaff;font-weight:700;font-family:"Courier New",Courier,monospace}';
+  s += '.se-an-sort{cursor:pointer;user-select:none}';
+  s += '.se-an-sort:hover{color:#66ccff}';
+  s += '.se-an-sort.se-an-on{color:#fff;text-decoration:underline}';
+  s += '.se-an-svg{width:100%;height:auto;display:block;background:#080b12;border:1px solid #1a3a5c;border-radius:6px}';
+  s += '.se-brief-filterable{transition:opacity 0.15s}';
+  s += '.se-exp-check{display:flex;align-items:center;gap:8px;padding:8px 12px;background:#0c1424;border:1px solid #1a3a5c;border-radius:4px;cursor:pointer;font-size:11px;color:#c8d8e8;font-family:"Courier New",Courier,monospace}';
+  s += '.se-exp-check:hover{border-color:#00aaff}';
+  s += '.se-exp-preview{background:#060a12;border:1px solid #1a3a5c;border-radius:6px;padding:12px;font-family:"Courier New",Courier,monospace;font-size:10px;color:#8aa8c8;white-space:pre-wrap;max-height:360px;overflow:auto;line-height:1.5}';
+
   s += '</style>';
   return s;
 }
@@ -721,7 +736,10 @@ function renderMainShell() {
     { id: 'tracking', label: 'LIVE TRACKING', icon: '[LT]' },
     { id: 'sigint', label: 'SIGINT', icon: '[SI]' },
     { id: 'masint', label: 'MASINT', icon: '[MA]' },
-    { id: 'globalwatch', label: 'GLOBAL WATCH', icon: '[GW]' }
+    { id: 'globalwatch', label: 'GLOBAL WATCH', icon: '[GW]' },
+    { id: 'analytics', label: 'THREAT ANALYTICS', icon: '[TA]' },
+    { id: 'briefing', label: 'ACTOR BRIEFING', icon: '[AB]' },
+    { id: 'intelexport', label: 'INTEL EXPORT', icon: '[IX]' }
   ];
 
   for (var t = 0; t < tabs.length; t++) {
@@ -1342,6 +1360,15 @@ function switchTab(tabId) {
       break;
     case 'globalwatch':
       html = renderGlobalWatch();
+      break;
+    case 'analytics':
+      html = renderThreatAnalytics();
+      break;
+    case 'briefing':
+      html = renderActorBriefing();
+      break;
+    case 'intelexport':
+      html = renderIntelExport();
       break;
     default:
       html = renderSituation();
@@ -8402,6 +8429,582 @@ Object.defineProperty(window, '_seTrackingSubTab', {
   set: function(v) { _seTrackingSubTab = v; },
   configurable: true
 });
+
+// ============================================================================
+// ADDITIVE STRATEGIC-INTEL TABS (DOM only — no Cesium, no network, no timers)
+//   TAB: THREAT ANALYTICS  (id 'analytics')
+//   TAB: ACTOR BRIEFING    (id 'briefing')
+//   TAB: INTEL EXPORT      (id 'intelexport')
+// All panels compute over existing in-memory datasets:
+//   NATION_STATE_PROFILES, APT_GROUPS, HISTORICAL_OPS
+// ============================================================================
+
+// --- shared derivation helpers ---------------------------------------------
+function _seAttrToken(attr) {
+  var s = String(attr != null ? attr : '');
+  var p = s.indexOf(' (');
+  if (p >= 0) s = s.slice(0, p);
+  return s.trim();
+}
+
+var _SE_NATION_ALIASES = {
+  us: ['United States', 'US'], gb: ['United Kingdom', 'UK'], kp: ['North Korea', 'DPRK'],
+  kr: ['South Korea'], cn: ['China'], ru: ['Russia'], ir: ['Iran'], il: ['Israel']
+};
+
+function _seNationOpCount(nation) {
+  var ops = (typeof HISTORICAL_OPS !== 'undefined' && HISTORICAL_OPS) ? HISTORICAL_OPS : [];
+  var aliases = _SE_NATION_ALIASES[nation.id] || [nation.name];
+  var n = 0;
+  for (var i = 0; i < ops.length; i++) {
+    var attr = String(ops[i].attribution || '');
+    for (var a = 0; a < aliases.length; a++) {
+      if (attr.indexOf(aliases[a]) >= 0) { n++; break; }
+    }
+  }
+  return n;
+}
+
+function _seNationAptCount(nation) {
+  var apts = (typeof APT_GROUPS !== 'undefined' && APT_GROUPS) ? APT_GROUPS : [];
+  var n = 0;
+  for (var i = 0; i < apts.length; i++) {
+    if (String(apts[i].nationState || '').toLowerCase().indexOf(nation.name.toLowerCase()) === 0) n++;
+  }
+  return n;
+}
+
+function _seActorMetrics(apt) {
+  var camps = apt.campaigns || [];
+  var active = 0;
+  for (var i = 0; i < camps.length; i++) {
+    var st = String(camps[i].status || '').toLowerCase();
+    if (st === 'active' || st === 'ongoing') active++;
+  }
+  var tools = (apt.tools || []).length;
+  var techs = (apt.mitreAttack || []).length;
+  var infra = apt.infrastructure || {};
+  var domains = infra.domains || 0;
+  var ips = infra.ips || 0;
+  // Threat index: weighted composite of operational footprint (0-100+ scale, clamped)
+  var idx = (camps.length * 6) + (active * 8) + (tools * 2) + (techs * 2) +
+            (apt.active ? 12 : 0) + Math.round(domains / 60) + Math.round(ips / 30);
+  return { campaigns: camps.length, active: active, tools: tools, techs: techs,
+           domains: domains, ips: ips, index: Math.min(100, idx) };
+}
+
+// --- analytics aggregate ----------------------------------------------------
+var _seAnalyticsCache = null;
+function _seAnalyticsCompute() {
+  if (_seAnalyticsCache) return _seAnalyticsCache;
+  var nations = (typeof NATION_STATE_PROFILES !== 'undefined' && NATION_STATE_PROFILES) ? NATION_STATE_PROFILES : [];
+  var apts = (typeof APT_GROUPS !== 'undefined' && APT_GROUPS) ? APT_GROUPS : [];
+  var ops = (typeof HISTORICAL_OPS !== 'undefined' && HISTORICAL_OPS) ? HISTORICAL_OPS : [];
+
+  var rank = [];
+  for (var i = 0; i < nations.length; i++) {
+    var ns = nations[i];
+    var caps = ns.capabilities || { offense: 0, defense: 0, intel: 0 };
+    rank.push({
+      id: ns.id, name: ns.name, flag: ns.flag, tier: ns.tier,
+      offense: caps.offense || 0, defense: caps.defense || 0, intel: caps.intel || 0,
+      composite: (caps.offense || 0) + (caps.defense || 0) + (caps.intel || 0),
+      aptCount: _seNationAptCount(ns), opCount: _seNationOpCount(ns)
+    });
+  }
+
+  var opsByType = {};
+  var opsByYear = {};
+  var attribution = {};
+  for (var o = 0; o < ops.length; o++) {
+    var op = ops[o];
+    var t = op.type || 'unknown';
+    opsByType[t] = (opsByType[t] || 0) + 1;
+    var y = op.year || 0;
+    opsByYear[y] = (opsByYear[y] || 0) + 1;
+    var tok = _seAttrToken(op.attribution) || 'Unknown';
+    attribution[tok] = (attribution[tok] || 0) + 1;
+  }
+
+  var yearArr = [];
+  var yk = Object.keys(opsByYear).map(Number).sort(function(a, b) { return a - b; });
+  for (var yi = 0; yi < yk.length; yi++) yearArr.push({ year: yk[yi], count: opsByYear[yk[yi]] });
+
+  var attrArr = [];
+  var ak = Object.keys(attribution);
+  for (var ai = 0; ai < ak.length; ai++) attrArr.push({ label: ak[ai], count: attribution[ak[ai]] });
+  attrArr.sort(function(a, b) { return b.count - a.count; });
+
+  var activeCampaigns = 0;
+  for (var ap = 0; ap < apts.length; ap++) activeCampaigns += _seActorMetrics(apts[ap]).active;
+
+  _seAnalyticsCache = {
+    nations: rank, opsByType: opsByType, opsByYear: yearArr, attribution: attrArr,
+    totals: { nations: nations.length, apts: apts.length, ops: ops.length, activeCampaigns: activeCampaigns }
+  };
+  return _seAnalyticsCache;
+}
+
+// --- simple bar-row renderer ------------------------------------------------
+function _seAnBarRow(label, value, max, suffix) {
+  var pct = max > 0 ? Math.round((value / max) * 100) : 0;
+  var h = '<div class="se-an-barrow">';
+  h += '<div class="se-an-barlabel">' + esc(label) + '</div>';
+  h += '<div class="se-an-bartrack"><div class="se-an-barfill" style="width:' + pct + '%"></div></div>';
+  h += '<div class="se-an-barval">' + esc(String(value)) + (suffix ? esc(suffix) : '') + '</div>';
+  h += '</div>';
+  return h;
+}
+
+// --- year column chart (inline SVG) -----------------------------------------
+function _seAnYearChartSvg(yearArr) {
+  if (!yearArr.length) return '<div class="se-muted se-small">No operations data.</div>';
+  var W = 1000, H = 220, padL = 34, padB = 26, padT = 12, padR = 8;
+  var plotW = W - padL - padR, plotH = H - padT - padB;
+  var maxC = 0;
+  for (var i = 0; i < yearArr.length; i++) maxC = Math.max(maxC, yearArr[i].count);
+  if (maxC < 1) maxC = 1;
+  var n = yearArr.length;
+  var slot = plotW / n;
+  var bw = Math.max(3, slot * 0.7);
+  var svg = '<svg class="se-an-svg" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" role="img" aria-label="Operations per year">';
+  // gridlines
+  var steps = 4;
+  for (var g = 0; g <= steps; g++) {
+    var gy = padT + plotH - (plotH * g / steps);
+    var gv = Math.round(maxC * g / steps);
+    svg += '<line x1="' + padL + '" y1="' + gy.toFixed(1) + '" x2="' + (W - padR) + '" y2="' + gy.toFixed(1) + '" stroke="#12233a" stroke-width="1"/>';
+    svg += '<text x="' + (padL - 4) + '" y="' + (gy + 3).toFixed(1) + '" fill="#3a5a7a" font-size="9" text-anchor="end" font-family="monospace">' + gv + '</text>';
+  }
+  for (var b = 0; b < n; b++) {
+    var val = yearArr[b].count;
+    var bh = (val / maxC) * plotH;
+    var x = padL + slot * b + (slot - bw) / 2;
+    var y = padT + plotH - bh;
+    svg += '<rect x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + bh.toFixed(1) + '" fill="#00aaff" opacity="0.82"><title>' + esc(String(yearArr[b].year)) + ': ' + val + ' ops</title></rect>';
+    if (n <= 40 && (b % Math.ceil(n / 18) === 0 || b === n - 1)) {
+      svg += '<text x="' + (padL + slot * b + slot / 2).toFixed(1) + '" y="' + (H - 8) + '" fill="#5a7a9a" font-size="9" text-anchor="middle" font-family="monospace">' + esc(String(yearArr[b].year)) + '</text>';
+    }
+  }
+  svg += '<line x1="' + padL + '" y1="' + (padT + plotH) + '" x2="' + (W - padR) + '" y2="' + (padT + plotH) + '" stroke="#1a3a5c" stroke-width="1"/>';
+  svg += '</svg>';
+  return svg;
+}
+
+// --- nation ranking table (sortable) ----------------------------------------
+var _seAnSort = 'composite';
+function _seAnRankingTable() {
+  var data = _seAnalyticsCompute();
+  var rows = data.nations.slice();
+  var key = _seAnSort;
+  rows.sort(function(a, b) {
+    if (key === 'name') return a.name < b.name ? -1 : (a.name > b.name ? 1 : 0);
+    if (key === 'tier') return a.tier - b.tier || b.composite - a.composite;
+    return (b[key] || 0) - (a[key] || 0);
+  });
+  var maxComp = 30;
+  function th(k, lbl) {
+    return '<th class="se-an-sort' + (_seAnSort === k ? ' se-an-on' : '') + '" onclick="window._seAnSortBy(\'' + k + '\')">' + lbl + '</th>';
+  }
+  var h = '<div class="se-table-wrap"><table class="se-table">';
+  h += '<thead><tr>';
+  h += '<th>#</th>' + th('name', 'NATION') + th('tier', 'TIER') +
+       th('offense', 'OFF') + th('defense', 'DEF') + th('intel', 'INT') +
+       th('composite', 'COMPOSITE') + th('aptCount', 'APT GROUPS') + th('opCount', 'OPS');
+  h += '</tr></thead><tbody>';
+  for (var i = 0; i < rows.length; i++) {
+    var r = rows[i];
+    var tierCls = r.tier === 1 ? 'se-badge-tier1' : (r.tier === 2 ? 'se-badge-tier2' : 'se-badge-tier3');
+    var pct = Math.round((r.composite / maxComp) * 100);
+    h += '<tr>';
+    h += '<td class="se-muted">' + (i + 1) + '</td>';
+    h += '<td><span style="font-size:13px;margin-right:6px">' + esc(r.flag) + '</span>' + esc(r.name) + '</td>';
+    h += '<td><span class="se-badge ' + tierCls + '">T' + r.tier + '</span></td>';
+    h += '<td class="se-danger">' + r.offense + '</td>';
+    h += '<td class="se-highlight">' + r.defense + '</td>';
+    h += '<td class="se-warning-text">' + r.intel + '</td>';
+    h += '<td><div style="display:flex;align-items:center;gap:8px"><div class="se-an-bartrack" style="width:80px"><div class="se-an-barfill" style="width:' + pct + '%"></div></div><span class="se-highlight" style="font-weight:700">' + r.composite + '</span></div></td>';
+    h += '<td>' + r.aptCount + '</td>';
+    h += '<td>' + r.opCount + '</td>';
+    h += '</tr>';
+  }
+  h += '</tbody></table></div>';
+  return h;
+}
+
+function renderThreatAnalytics() {
+  var data = _seAnalyticsCompute();
+  var h = '';
+
+  h += '<div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0 10px;border-bottom:1px solid #1a3a5c;margin-bottom:16px;">';
+  h += '<div style="font-size:20px;font-weight:bold;letter-spacing:2px;color:#00aaff;font-family:monospace;text-transform:uppercase;">STRATEGIC THREAT ANALYTICS</div>';
+  h += '<div style="font-family:monospace;font-size:10px;color:#5a7a9a;">COMPUTED OVER ' + data.totals.nations + ' NATIONS / ' + data.totals.apts + ' APT GROUPS / ' + data.totals.ops + ' OPERATIONS</div>';
+  h += '</div>';
+
+  // Stat boxes
+  var peakYear = { year: '-', count: 0 };
+  for (var yi = 0; yi < data.opsByYear.length; yi++) { if (data.opsByYear[yi].count > peakYear.count) peakYear = data.opsByYear[yi]; }
+  var tier1 = 0;
+  for (var ti = 0; ti < data.nations.length; ti++) { if (data.nations[ti].tier === 1) tier1++; }
+  h += '<div class="se-grid-4" style="margin-bottom:20px">';
+  h += '<div class="se-stat-box"><div class="se-stat-value">' + data.totals.apts + '</div><div class="se-stat-label">APT Groups Tracked</div></div>';
+  h += '<div class="se-stat-box"><div class="se-stat-value se-critical">' + data.totals.activeCampaigns + '</div><div class="se-stat-label">Active Campaigns</div></div>';
+  h += '<div class="se-stat-box"><div class="se-stat-value se-warning">' + data.totals.ops + '</div><div class="se-stat-label">Documented Operations</div></div>';
+  h += '<div class="se-stat-box"><div class="se-stat-value">' + tier1 + '</div><div class="se-stat-label">Tier-1 Cyber Powers</div></div>';
+  h += '</div>';
+
+  // Nation power ranking
+  h += '<div class="se-section-head">NATION POWER RANKING <span class="se-muted se-small" style="font-weight:400;letter-spacing:0">(click a column to sort)</span></div>';
+  h += '<div id="se-an-ranking-wrap">' + _seAnRankingTable() + '</div>';
+
+  // Two-column: ops by type + attribution leaderboard
+  h += '<div class="se-grid-2" style="margin-top:20px">';
+
+  h += '<div class="se-card"><div class="se-card-header"><div class="se-card-title">OPERATIONS BY TYPE</div></div><div class="se-card-body">';
+  var typeOrder = ['destruction', 'disruption', 'espionage', 'financial', 'hybrid'];
+  var maxType = 0, tk;
+  for (tk in data.opsByType) { if (data.opsByType[tk] > maxType) maxType = data.opsByType[tk]; }
+  var seenTypes = {};
+  for (var to = 0; to < typeOrder.length; to++) {
+    if (data.opsByType[typeOrder[to]] != null) { h += _seAnBarRow(typeOrder[to].toUpperCase(), data.opsByType[typeOrder[to]], maxType, ''); seenTypes[typeOrder[to]] = 1; }
+  }
+  for (tk in data.opsByType) { if (!seenTypes[tk]) h += _seAnBarRow(String(tk).toUpperCase(), data.opsByType[tk], maxType, ''); }
+  h += '</div></div>';
+
+  h += '<div class="se-card"><div class="se-card-header"><div class="se-card-title">ATTRIBUTION FREQUENCY (TOP 10)</div></div><div class="se-card-body">';
+  var maxAttr = data.attribution.length ? data.attribution[0].count : 0;
+  for (var af = 0; af < data.attribution.length && af < 10; af++) {
+    h += _seAnBarRow(data.attribution[af].label, data.attribution[af].count, maxAttr, '');
+  }
+  h += '</div></div>';
+
+  h += '</div>';
+
+  // Ops per year trend (SVG)
+  h += '<div class="se-section-head" style="margin-top:20px">OPERATIONS TEMPO BY YEAR</div>';
+  h += '<div class="se-card"><div class="se-card-body">' + _seAnYearChartSvg(data.opsByYear) + '</div></div>';
+
+  h += '<div class="se-muted se-small" style="margin-top:8px">Analytics derived from static intelligence datasets. Per-nation operation counts use documented-attribution string matching and are approximate.</div>';
+  return h;
+}
+
+// --- ACTOR BRIEFING ---------------------------------------------------------
+var _seBriefA = null;
+var _seBriefB = null;
+
+function _seActorById(id) {
+  var apts = (typeof APT_GROUPS !== 'undefined' && APT_GROUPS) ? APT_GROUPS : [];
+  for (var i = 0; i < apts.length; i++) { if (apts[i].id === id) return apts[i]; }
+  return null;
+}
+
+function _seBriefColumn(apt, other) {
+  if (!apt) return '<div class="se-card se-card-body se-muted">Select an actor.</div>';
+  var m = _seActorMetrics(apt);
+  var om = other ? _seActorMetrics(other) : null;
+  function cmp(a, b) {
+    if (om == null) return '';
+    if (a > b) return ' <span class="se-success-text">&#9650;</span>';
+    if (a < b) return ' <span class="se-danger">&#9660;</span>';
+    return '';
+  }
+  var h = '<div class="se-card se-card-3d">';
+  h += '<div style="font-size:16px;font-weight:700;color:#00aaff;letter-spacing:1px;font-family:monospace">' + esc(apt.name) + '</div>';
+  h += '<div class="se-small se-muted" style="margin:2px 0 8px">' + esc(apt.nationState || '') + '</div>';
+  h += '<div style="margin-bottom:8px">';
+  if (apt.active) h += '<span class="se-badge se-badge-critical">ACTIVE</span> ';
+  else h += '<span class="se-badge se-badge-info">DORMANT</span> ';
+  h += '<span class="se-badge se-badge-low">THREAT INDEX ' + m.index + '/100</span>';
+  h += '</div>';
+  if (apt.aliases && apt.aliases.length) {
+    h += '<div style="margin-bottom:8px">';
+    for (var a = 0; a < apt.aliases.length; a++) h += '<span class="se-tag se-tag-blue">' + esc(apt.aliases[a]) + '</span>';
+    h += '</div>';
+  }
+  var stats = [
+    ['Campaigns', m.campaigns, om ? om.campaigns : 0],
+    ['Active campaigns', m.active, om ? om.active : 0],
+    ['Tools', m.tools, om ? om.tools : 0],
+    ['MITRE techniques', m.techs, om ? om.techs : 0],
+    ['Infra domains', m.domains, om ? om.domains : 0],
+    ['Infra IPs', m.ips, om ? om.ips : 0]
+  ];
+  h += '<div class="se-table-wrap"><table class="se-table"><tbody>';
+  for (var s = 0; s < stats.length; s++) {
+    h += '<tr><td class="se-muted">' + esc(stats[s][0]) + '</td><td class="se-highlight" style="font-weight:700">' + stats[s][1] + cmp(stats[s][1], stats[s][2]) + '</td></tr>';
+  }
+  h += '</tbody></table></div>';
+  if (apt.currentTargets && apt.currentTargets.length) {
+    h += '<div class="se-form-label" style="margin-top:10px">CURRENT TARGETS</div><div>';
+    for (var c = 0; c < apt.currentTargets.length; c++) h += '<span class="se-tag se-tag-red">' + esc(apt.currentTargets[c]) + '</span>';
+    h += '</div>';
+  }
+  if (apt.activityPattern) {
+    h += '<div class="se-small se-muted" style="margin-top:8px">Peak: ' + esc(apt.activityPattern.peakHours || '-') + ' &bull; ' + esc(apt.activityPattern.peakDays || '-') + '</div>';
+  }
+  h += '</div>';
+  return h;
+}
+
+function _seBriefCompareHtml() {
+  var a = _seActorById(_seBriefA);
+  var b = _seActorById(_seBriefB);
+  var h = '<div class="se-grid-2">';
+  h += _seBriefColumn(a, b);
+  h += _seBriefColumn(b, a);
+  h += '</div>';
+  return h;
+}
+
+function renderActorBriefing() {
+  var apts = (typeof APT_GROUPS !== 'undefined' && APT_GROUPS) ? APT_GROUPS.slice() : [];
+  apts.sort(function(x, y) { return x.name < y.name ? -1 : (x.name > y.name ? 1 : 0); });
+  if (!apts.length) return '<div class="se-card se-card-body se-muted">Actor dataset unavailable.</div>';
+  if (!_seBriefA || !_seActorById(_seBriefA)) _seBriefA = apts[0].id;
+  if (!_seBriefB || !_seActorById(_seBriefB)) _seBriefB = apts.length > 1 ? apts[1].id : apts[0].id;
+
+  var h = '';
+  h += '<div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0 10px;border-bottom:1px solid #1a3a5c;margin-bottom:16px;">';
+  h += '<div style="font-size:20px;font-weight:bold;letter-spacing:2px;color:#00aaff;font-family:monospace;text-transform:uppercase;">THREAT ACTOR BRIEFING &amp; COMPARISON</div>';
+  h += '<div style="font-family:monospace;font-size:10px;color:#5a7a9a;">' + apts.length + ' ACTORS PROFILED</div>';
+  h += '</div>';
+
+  // Selectors
+  function sel(id, current) {
+    var s = '<select class="se-select" id="' + id + '" onchange="window._seBriefUpdate()" style="min-width:220px">';
+    for (var i = 0; i < apts.length; i++) {
+      s += '<option value="' + esc(apts[i].id) + '"' + (apts[i].id === current ? ' selected' : '') + '>' + esc(apts[i].name) + ' — ' + esc(_seAttrToken(apts[i].nationState)) + '</option>';
+    }
+    s += '</select>';
+    return s;
+  }
+  h += '<div class="se-filter-bar">';
+  h += '<span class="se-filter-label">ACTOR A</span>' + sel('se-brief-a', _seBriefA);
+  h += '<span class="se-filter-label">ACTOR B</span>' + sel('se-brief-b', _seBriefB);
+  h += '</div>';
+
+  h += '<div id="se-brief-compare">' + _seBriefCompareHtml() + '</div>';
+
+  // Full metrics table for all actors
+  h += '<div class="se-section-head" style="margin-top:20px">ALL ACTOR METRICS</div>';
+  h += '<div class="se-filter-bar"><span class="se-filter-label">FILTER</span>';
+  h += '<input type="text" class="se-search-box" id="se-brief-filter" placeholder="Filter actors / nation..." oninput="window._seBriefFilter(this.value)" /></div>';
+  h += '<div class="se-table-wrap"><table class="se-table"><thead><tr>';
+  h += '<th>ACTOR</th><th>NATION</th><th>STATUS</th><th>CAMPAIGNS</th><th>ACTIVE</th><th>TOOLS</th><th>TECHNIQUES</th><th>DOMAINS</th><th>IPS</th><th>THREAT IDX</th>';
+  h += '</tr></thead><tbody>';
+  for (var i = 0; i < apts.length; i++) {
+    var ap = apts[i];
+    var m = _seActorMetrics(ap);
+    var flt = (ap.name + ' ' + (ap.nationState || '') + ' ' + (ap.aliases || []).join(' ')).toLowerCase();
+    h += '<tr class="se-brief-filterable" data-flt="' + esc(flt) + '">';
+    h += '<td class="se-highlight">' + esc(ap.name) + '</td>';
+    h += '<td>' + esc(_seAttrToken(ap.nationState)) + '</td>';
+    h += '<td>' + (ap.active ? '<span class="se-badge se-badge-critical">ACTIVE</span>' : '<span class="se-badge se-badge-info">DORMANT</span>') + '</td>';
+    h += '<td>' + m.campaigns + '</td><td>' + m.active + '</td><td>' + m.tools + '</td><td>' + m.techs + '</td><td>' + m.domains + '</td><td>' + m.ips + '</td>';
+    h += '<td><div style="display:flex;align-items:center;gap:6px"><div class="se-an-bartrack" style="width:60px"><div class="se-an-barfill" style="width:' + m.index + '%"></div></div><span class="se-highlight">' + m.index + '</span></div></td>';
+    h += '</tr>';
+  }
+  h += '</tbody></table></div>';
+  return h;
+}
+
+// --- INTEL EXPORT -----------------------------------------------------------
+function _seExpSelected() {
+  var ids = ['se-exp-nations', 'se-exp-apts', 'se-exp-ops', 'se-exp-analytics'];
+  var out = {};
+  for (var i = 0; i < ids.length; i++) {
+    var el = document.getElementById(ids[i]);
+    out[ids[i].replace('se-exp-', '')] = el ? !!el.checked : (i < 3);
+  }
+  return out;
+}
+
+function _seBuildExportObject(sel) {
+  var obj = { generated: new Date().toISOString(), source: 'Sentinel Eye — Strategic Threat Intelligence', datasets: {} };
+  if (sel.nations && typeof NATION_STATE_PROFILES !== 'undefined') {
+    obj.datasets.nationProfiles = NATION_STATE_PROFILES.map(function(n) {
+      return { id: n.id, name: n.name, tier: n.tier, cyberCommand: n.cyberCommand,
+               capabilities: n.capabilities, aptGroups: n.aptGroups, primaryTargets: n.primaryTargets };
+    });
+  }
+  if (sel.apts && typeof APT_GROUPS !== 'undefined') {
+    obj.datasets.aptGroups = APT_GROUPS.map(function(a) {
+      var m = _seActorMetrics(a);
+      return { id: a.id, name: a.name, aliases: a.aliases, nationState: a.nationState, active: a.active,
+               campaigns: m.campaigns, activeCampaigns: m.active, tools: m.tools, mitreTechniques: m.techs,
+               infrastructure: a.infrastructure, currentTargets: a.currentTargets, threatIndex: m.index };
+    });
+  }
+  if (sel.ops && typeof HISTORICAL_OPS !== 'undefined') {
+    obj.datasets.historicalOperations = HISTORICAL_OPS.map(function(o) {
+      return { id: o.id, name: o.name, year: o.year, attribution: o.attribution, type: o.type, targets: o.targets, impact: o.impact };
+    });
+  }
+  if (sel.analytics) {
+    var d = _seAnalyticsCompute();
+    obj.datasets.analyticsSummary = { totals: d.totals, operationsByType: d.opsByType,
+      operationsByYear: d.opsByYear, attributionFrequency: d.attribution, nationRanking: d.nations };
+  }
+  return obj;
+}
+
+function _seCsvCell(v) {
+  var s = String(v == null ? '' : v);
+  if (s.indexOf('"') >= 0 || s.indexOf(',') >= 0 || s.indexOf('\n') >= 0) s = '"' + s.replace(/"/g, '""') + '"';
+  return s;
+}
+
+function _seBuildExportCsv(sel) {
+  var lines = [];
+  if (sel.nations && typeof NATION_STATE_PROFILES !== 'undefined') {
+    lines.push('# NATION PROFILES');
+    lines.push(['id', 'name', 'tier', 'offense', 'defense', 'intel', 'aptGroupCount', 'cyberCommand'].join(','));
+    NATION_STATE_PROFILES.forEach(function(n) {
+      var c = n.capabilities || {};
+      lines.push([n.id, n.name, n.tier, c.offense, c.defense, c.intel, (n.aptGroups || []).length, n.cyberCommand].map(_seCsvCell).join(','));
+    });
+    lines.push('');
+  }
+  if (sel.apts && typeof APT_GROUPS !== 'undefined') {
+    lines.push('# APT GROUPS');
+    lines.push(['id', 'name', 'nationState', 'active', 'campaigns', 'activeCampaigns', 'tools', 'mitreTechniques', 'domains', 'ips', 'threatIndex'].join(','));
+    APT_GROUPS.forEach(function(a) {
+      var m = _seActorMetrics(a); var inf = a.infrastructure || {};
+      lines.push([a.id, a.name, a.nationState, a.active, m.campaigns, m.active, m.tools, m.techs, inf.domains, inf.ips, m.index].map(_seCsvCell).join(','));
+    });
+    lines.push('');
+  }
+  if (sel.ops && typeof HISTORICAL_OPS !== 'undefined') {
+    lines.push('# HISTORICAL OPERATIONS');
+    lines.push(['id', 'name', 'year', 'attribution', 'type', 'targets', 'impact'].join(','));
+    HISTORICAL_OPS.forEach(function(o) {
+      lines.push([o.id, o.name, o.year, o.attribution, o.type, o.targets, o.impact].map(_seCsvCell).join(','));
+    });
+    lines.push('');
+  }
+  if (sel.analytics) {
+    var d = _seAnalyticsCompute();
+    lines.push('# ANALYTICS — ATTRIBUTION FREQUENCY');
+    lines.push(['attribution', 'operations'].join(','));
+    d.attribution.forEach(function(x) { lines.push([x.label, x.count].map(_seCsvCell).join(',')); });
+  }
+  return lines.join('\n');
+}
+
+function _seExpStatus(msg) {
+  var el = document.getElementById('se-exp-status');
+  if (el) el.textContent = msg;
+}
+
+function _seDownloadText(filename, text, mime) {
+  try {
+    var blob = new Blob([text], { type: mime || 'text/plain;charset=utf-8' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    return true;
+  } catch (e) { return false; }
+}
+
+function renderIntelExport() {
+  var h = '';
+  h += '<div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0 10px;border-bottom:1px solid #1a3a5c;margin-bottom:16px;">';
+  h += '<div style="font-size:20px;font-weight:bold;letter-spacing:2px;color:#00aaff;font-family:monospace;text-transform:uppercase;">INTELLIGENCE EXPORT &amp; REPORT BUILDER</div>';
+  h += '<div style="font-family:monospace;font-size:10px;color:#5a7a9a;">LOCAL EXPORT — NO NETWORK</div>';
+  h += '</div>';
+
+  h += '<div class="se-card"><div class="se-card-header"><div class="se-card-title">SELECT DATASETS</div></div><div class="se-card-body">';
+  h += '<div class="se-grid-4">';
+  h += '<label class="se-exp-check"><input type="checkbox" id="se-exp-nations" checked onchange="window._seExpPreview()"> Nation Profiles</label>';
+  h += '<label class="se-exp-check"><input type="checkbox" id="se-exp-apts" checked onchange="window._seExpPreview()"> APT Groups</label>';
+  h += '<label class="se-exp-check"><input type="checkbox" id="se-exp-ops" checked onchange="window._seExpPreview()"> Historical Operations</label>';
+  h += '<label class="se-exp-check"><input type="checkbox" id="se-exp-analytics" onchange="window._seExpPreview()"> Analytics Summary</label>';
+  h += '</div>';
+  h += '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px">';
+  h += '<span class="se-btn se-btn-primary" onclick="window._seExpRun(\'json\')">DOWNLOAD JSON</span>';
+  h += '<span class="se-btn se-btn-success" onclick="window._seExpRun(\'csv\')">DOWNLOAD CSV</span>';
+  h += '<span class="se-btn se-btn-neutral" onclick="window._seExpCopy()">COPY JSON</span>';
+  h += '<span class="se-btn se-btn-warning" onclick="window._seExpGraph()">PUSH ACTORS TO SECURITY GRAPH</span>';
+  h += '</div>';
+  h += '<div id="se-exp-status" class="se-small se-muted" style="margin-top:10px" aria-live="polite">Ready. Select datasets and choose an export format.</div>';
+  h += '</div></div>';
+
+  h += '<div class="se-section-head">PREVIEW (JSON, truncated)</div>';
+  h += '<div id="se-exp-preview" class="se-exp-preview">' + esc(_seExpPreviewText()) + '</div>';
+  return h;
+}
+
+function _seExpPreviewText() {
+  var obj = _seBuildExportObject(_seExpSelected());
+  var full = JSON.stringify(obj, null, 2);
+  if (full.length > 6000) return full.slice(0, 6000) + '\n... [truncated — full content included in download]';
+  return full;
+}
+
+// --- window exposure for the additive tabs ---------------------------------
+window._seAnSortBy = function(key) {
+  _seAnSort = key;
+  var wrap = document.getElementById('se-an-ranking-wrap');
+  if (wrap) wrap.innerHTML = _seAnRankingTable();
+};
+window._seBriefUpdate = function() {
+  var a = document.getElementById('se-brief-a');
+  var b = document.getElementById('se-brief-b');
+  if (a) _seBriefA = a.value;
+  if (b) _seBriefB = b.value;
+  var wrap = document.getElementById('se-brief-compare');
+  if (wrap) wrap.innerHTML = _seBriefCompareHtml();
+};
+window._seBriefFilter = function(q) {
+  var query = String(q || '').toLowerCase();
+  var rows = document.querySelectorAll('.se-brief-filterable');
+  for (var i = 0; i < rows.length; i++) {
+    var flt = rows[i].getAttribute('data-flt') || '';
+    rows[i].style.display = (!query || flt.indexOf(query) >= 0) ? '' : 'none';
+  }
+};
+window._seExpPreview = function() {
+  var el = document.getElementById('se-exp-preview');
+  if (el) el.textContent = _seExpPreviewText();
+};
+window._seExpRun = function(format) {
+  var sel = _seExpSelected();
+  if (!sel.nations && !sel.apts && !sel.ops && !sel.analytics) { _seExpStatus('Select at least one dataset.'); return; }
+  var stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+  var ok;
+  if (format === 'csv') {
+    ok = _seDownloadText('sentinel-eye-intel-' + stamp + '.csv', _seBuildExportCsv(sel), 'text/csv;charset=utf-8');
+  } else {
+    ok = _seDownloadText('sentinel-eye-intel-' + stamp + '.json', JSON.stringify(_seBuildExportObject(sel), null, 2), 'application/json;charset=utf-8');
+  }
+  _seExpStatus(ok ? ('Export downloaded (' + format.toUpperCase() + ') at ' + new Date().toLocaleTimeString() + '.') : 'Export failed — browser blocked the download.');
+};
+window._seExpCopy = function() {
+  var text = JSON.stringify(_seBuildExportObject(_seExpSelected()), null, 2);
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function() { _seExpStatus('JSON copied to clipboard.'); }, function() { _seExpStatus('Clipboard blocked — use Download JSON instead.'); });
+    } else { _seExpStatus('Clipboard unavailable — use Download JSON instead.'); }
+  } catch (e) { _seExpStatus('Clipboard unavailable — use Download JSON instead.'); }
+};
+window._seExpGraph = function() {
+  var apts = (typeof APT_GROUPS !== 'undefined' && APT_GROUPS) ? APT_GROUPS : [];
+  if (!apts.length) { _seExpStatus('No actor data to push.'); return; }
+  var items = apts.map(function(a) {
+    var m = _seActorMetrics(a);
+    return { id: 'apt:' + a.id, label: a.name, type: 'threat-actor',
+             nation: _seAttrToken(a.nationState), active: !!a.active, threatIndex: m.index };
+  });
+  _seExpStatus('Pushing ' + items.length + ' actors to Security Graph...');
+  import('/js/graph-bridge.js?v=20260923c').then(function(gb) {
+    gb.sendToGraph('SENTINEL', items, undefined, true);
+    _seExpStatus('Pushed ' + items.length + ' actors to Security Graph.');
+  }).catch(function() { _seExpStatus('Security Graph bridge unavailable.'); });
+};
 
 var _seTimers = [];
 export function cleanupSentinelEye() {

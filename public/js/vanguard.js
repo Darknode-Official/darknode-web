@@ -1364,6 +1364,356 @@ function _vgFormatElapsed() {
 }
 
 // ============================================================================
+// INTELLIGENCE ANALYSIS — post-scan analytics tabs computed over in-memory data
+// (no network; pure computation over _vgState.results / _vgState.findings)
+// ============================================================================
+
+// Known third-party hosting fingerprints for subdomain-takeover detection.
+var _vgTakeoverSignatures = [
+  { svc: 'GitHub Pages',  re: /github\.io|githubusercontent/i,                                     note: 'Unclaimed GitHub Pages repository can be re-registered by an attacker' },
+  { svc: 'Amazon S3',     re: /s3[.-][a-z0-9-]*\.amazonaws\.com|s3\.amazonaws\.com/i,               note: 'A deleted S3 bucket name can be re-created by an attacker' },
+  { svc: 'AWS CloudFront',re: /cloudfront\.net/i,                                                   note: 'Dangling CloudFront distribution' },
+  { svc: 'Heroku',        re: /herokuapp\.com|herokudns\.com/i,                                     note: 'Unclaimed Heroku app name' },
+  { svc: 'Azure',         re: /azurewebsites\.net|cloudapp\.azure|blob\.core\.windows\.net|trafficmanager\.net/i, note: 'Dangling Azure resource' },
+  { svc: 'Vercel',        re: /vercel-dns|vercel\.app|now\.sh/i,                                     note: 'Unclaimed Vercel deployment' },
+  { svc: 'Netlify',       re: /netlify\.app|netlify\.com/i,                                          note: 'Unclaimed Netlify site' },
+  { svc: 'Shopify',       re: /myshopify\.com/i,                                                     note: 'Unclaimed Shopify store' },
+  { svc: 'Fastly',        re: /fastly\.net/i,                                                        note: 'Dangling Fastly service' },
+  { svc: 'Zendesk',       re: /zendesk\.com/i,                                                       note: 'Unclaimed Zendesk subdomain' },
+  { svc: 'GitLab Pages',  re: /gitlab\.io/i,                                                         note: 'Unclaimed GitLab Pages project' },
+  { svc: 'Firebase',      re: /firebaseapp\.com|web\.app/i,                                          note: 'Dangling Firebase Hosting site' },
+  { svc: 'Surge',         re: /surge\.sh/i,                                                          note: 'Unclaimed Surge deployment' },
+  { svc: 'Pantheon',      re: /pantheonsite\.io/i,                                                   note: 'Unclaimed Pantheon site' }
+];
+
+function _vgBandVar(b) { return 'var(--vg-' + b + ')'; }
+
+// Rank each live host by a computed exposure-risk score (0-100).
+function _vgComputeHostRisk() {
+  var hosts = (_vgState.results.hosts || []).filter(function(h) { return h.alive; });
+  var sec = _vgState.results.security || [];
+  var tech = _vgState.results.tech || [];
+  var vulns = _vgState.results.vulns || [];
+  var findings = _vgState.findings || [];
+  var secByHost = {}, techByHost = {}, vulnByTech = {};
+  sec.forEach(function(s) { secByHost[s.host] = s; });
+  tech.forEach(function(t) { techByHost[t.host] = t; });
+  vulns.forEach(function(v) { (vulnByTech[v.tech] = vulnByTech[v.tech] || []).push(v); });
+
+  var out = hosts.map(function(ho) {
+    var risk = 0, factors = [];
+    var s = secByHost[ho.host];
+    if (s) {
+      var gap = 100 - (s.score || 0);
+      var p = Math.round(gap * 0.35);
+      if (p > 0) { risk += p; factors.push('Security headers ' + s.grade + ' (+' + p + ')'); }
+      if (s.cors === '*') { risk += 12; factors.push('Wildcard CORS (+12)'); }
+    }
+    if (ho.protocol === 'http') { risk += 18; factors.push('HTTP only, no TLS (+18)'); }
+    var t = techByHost[ho.host];
+    if (t) {
+      if (t.server && /\/\d/.test(t.server)) { risk += 8; factors.push('Server version disclosed (+8)'); }
+      if (t.poweredBy) { risk += 6; factors.push('X-Powered-By exposed (+6)'); }
+      var cveC = 0, cveH = 0, kev = 0;
+      (t.technologies || []).forEach(function(tt) {
+        (vulnByTech[tt.name] || []).forEach(function(v) {
+          if (v.severity === 'critical') cveC++; else if (v.severity === 'high') cveH++;
+          if (v.inKEV) kev++;
+        });
+      });
+      if (cveC) { risk += cveC * 10; factors.push(cveC + ' critical CVE (+' + (cveC * 10) + ')'); }
+      if (cveH) { risk += cveH * 6; factors.push(cveH + ' high CVE (+' + (cveH * 6) + ')'); }
+      if (kev) { risk += kev * 15; factors.push(kev + ' CISA KEV exploited (+' + (kev * 15) + ')'); }
+    }
+    var hf = findings.filter(function(f) { return f.host === ho.host && (f.severity === 'critical' || f.severity === 'high'); }).length;
+    if (hf) { risk += hf * 4; factors.push(hf + ' high/critical findings (+' + (hf * 4) + ')'); }
+    risk = Math.min(100, risk);
+    var band = risk >= 70 ? 'crit' : risk >= 45 ? 'high' : risk >= 25 ? 'med' : risk > 0 ? 'low' : 'info';
+    return { host: ho.host, protocol: ho.protocol, grade: s ? s.grade : null, risk: risk, band: band, factors: factors };
+  });
+  out.sort(function(a, b) { return b.risk - a.risk; });
+  return out;
+}
+
+// Detect subdomain-takeover / dangling-DNS exposure over discovered assets.
+function _vgComputeTakeover() {
+  var subs = _vgState.results.subdomains || [];
+  var hosts = _vgState.results.hosts || [];
+  var dns = _vgState.results.dns || {};
+  var aliveMap = {}, probedMap = {};
+  hosts.forEach(function(h) { probedMap[h.host] = h; if (h.alive) aliveMap[h.host] = h; });
+  var riskTokens = ['old', 'legacy', 'test', 'staging', 'dev', 'beta', 'demo', 'sandbox', 'backup', 'tmp', 'temp', 'deprecated', 'archive', 'preview', 'uat', 'qa', 'internal'];
+  var results = [];
+
+  // Apex-level CNAME pointing to a third-party hosting service.
+  (dns.CNAME || []).forEach(function(r) {
+    var target = String(r.data || '').toLowerCase().replace(/\.$/, '');
+    var sig = _vgTakeoverSignatures.filter(function(s) { return s.re.test(target); })[0];
+    if (sig) results.push({ name: String(r.name || _vgState.target).replace(/\.$/, ''), alive: !!aliveMap[_vgState.target], service: sig.svc, risk: 'high', reason: ['CNAME -> ' + target + ' (' + sig.note + ')'] });
+  });
+
+  subs.forEach(function(sub) {
+    var name = sub.name;
+    if (name === _vgState.target) return;
+    var probed = probedMap[name];
+    var isAlive = !!aliveMap[name];
+    var tokens = riskTokens.filter(function(tk) { return new RegExp('(^|[.-])' + tk + '([.-]|$)').test(name); });
+    var sig = _vgTakeoverSignatures.filter(function(s) { return s.re.test(name); })[0];
+    var risk = 'low', reason = [];
+    if (sig) { risk = 'high'; reason.push('Name references ' + sig.svc + ' (' + sig.note + ')'); }
+    if (probed && !isAlive) {
+      if (risk !== 'high') risk = 'medium';
+      reason.push('Resolves in DNS but serves no live HTTP/HTTPS response - possible dangling record');
+    } else if (!probed) {
+      reason.push('Discovered via ' + sub.source + ' but not confirmed live');
+      if (tokens.length && risk === 'low') risk = 'medium';
+    }
+    if (tokens.length) { reason.push('Stale-looking name token(s): ' + tokens.join(', ')); if (risk === 'low') risk = 'medium'; }
+    if (isAlive && !sig && !tokens.length) reason.push('Live and serving content - low takeover risk');
+    results.push({ name: name, source: sub.source, alive: isAlive, service: sig ? sig.svc : null, risk: risk, reason: reason });
+  });
+
+  var order = { high: 0, medium: 1, low: 2 };
+  results.sort(function(a, b) { return order[a.risk] - order[b.risk]; });
+  return results;
+}
+
+// Aggregate technology fingerprints across all fingerprinted hosts.
+function _vgComputeTechAgg() {
+  var tech = _vgState.results.tech || [];
+  var vulns = _vgState.results.vulns || [];
+  var byName = {}, byCat = {}, servers = {}, powered = {};
+  var cdnHosts = 0, wafHosts = 0, totalHosts = tech.length;
+  tech.forEach(function(t) {
+    var hasCdn = false, hasWaf = false;
+    (t.technologies || []).forEach(function(x) {
+      if (!byName[x.name]) byName[x.name] = { name: x.name, category: x.category, hosts: [] };
+      byName[x.name].hosts.push(t.host);
+      (byCat[x.category] = byCat[x.category] || {})[x.name] = 1;
+      if (/CDN/i.test(x.category)) hasCdn = true;
+      if (/WAF/i.test(x.category)) hasWaf = true;
+    });
+    if (hasCdn) cdnHosts++;
+    if (hasWaf) wafHosts++;
+    if (t.server) servers[t.server] = (servers[t.server] || 0) + 1;
+    if (t.poweredBy) powered[t.poweredBy] = (powered[t.poweredBy] || 0) + 1;
+  });
+  var vulnByTech = {};
+  vulns.forEach(function(v) { vulnByTech[v.tech] = (vulnByTech[v.tech] || 0) + 1; });
+  var cats = Object.keys(byCat).map(function(c) {
+    return { category: c, techs: Object.keys(byCat[c]).map(function(n) { return byName[n]; }) };
+  });
+  cats.sort(function(a, b) { return b.techs.length - a.techs.length; });
+  return { names: byName, cats: cats, servers: servers, powered: powered, cdnHosts: cdnHosts, wafHosts: wafHosts, totalHosts: totalHosts, vulnByTech: vulnByTech };
+}
+
+// Build a deterministic radial SVG map of the discovered asset relationships.
+function _vgBuildAssetMapSVG() {
+  var infra = _vgState.results.infra || [];
+  var hosts = _vgState.results.hosts || [];
+  var subs = _vgState.results.subdomains || [];
+  var sec = _vgState.results.security || [];
+  var gradeBand = { A: 'low', B: 'low', C: 'med', D: 'high', F: 'crit' };
+  var gradeByHost = {};
+  sec.forEach(function(s) { gradeByHost[s.host] = s.grade; });
+  var W = 920, H = 560, cx = W / 2, cy = H / 2;
+  var edges = '', nodes = '';
+  function circle(x, y, r, fill, stroke) { return '<circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="' + r + '" fill="' + fill + '" stroke="' + stroke + '" stroke-width="1.5"/>'; }
+  function label(x, y, txt, size, fill) { return '<text x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" text-anchor="middle" font-size="' + size + '" fill="' + fill + '">' + esc(txt) + '</text>'; }
+  function trim(s, n) { s = String(s); return s.length > n ? s.slice(0, n - 1) + '…' : s; }
+  function edge(x1, y1, x2, y2) { return '<line x1="' + x1.toFixed(1) + '" y1="' + y1.toFixed(1) + '" x2="' + x2.toFixed(1) + '" y2="' + y2.toFixed(1) + '" stroke="var(--vg-line)" stroke-width="1" opacity="0.4"/>'; }
+
+  var primaries;
+  if (infra.length) {
+    primaries = infra.slice(0, 12).map(function(i) {
+      return { label: i.ip, sub: (i.cloud || i.country || i.org || ''), band: i.bulletproof ? 'crit' : (i.cloud ? 'info' : 'med'), children: i.hosts || [] };
+    });
+  } else {
+    var aliveH = hosts.filter(function(h) { return h.alive; });
+    if (aliveH.length) {
+      primaries = aliveH.slice(0, 12).map(function(h) { var g = gradeByHost[h.host]; return { label: h.host, sub: String(h.protocol || '').toUpperCase(), band: g ? gradeBand[g] : 'info', children: [] }; });
+    } else {
+      primaries = subs.slice(0, 16).map(function(s) { return { label: s.name, sub: s.source, band: 'info', children: [] }; });
+    }
+  }
+
+  var N = primaries.length || 1;
+  var R1 = N <= 4 ? 150 : N <= 8 ? 190 : 220;
+  primaries.forEach(function(pn, i) {
+    var ang = (i / N) * Math.PI * 2 - Math.PI / 2;
+    var x = cx + Math.cos(ang) * R1, y = cy + Math.sin(ang) * R1;
+    var col = 'var(--vg-' + pn.band + ')';
+    edges += edge(cx, cy, x, y);
+    var ch = (pn.children || []).slice(0, 5);
+    ch.forEach(function(cName, ci) {
+      var a2 = ang + (ci - (ch.length - 1) / 2) * 0.28;
+      var cxp = cx + Math.cos(a2) * (R1 + 72), cyp = cy + Math.sin(a2) * (R1 + 72);
+      var g = gradeByHost[cName];
+      var ccol = g ? ('var(--vg-' + gradeBand[g] + ')') : 'var(--vg-mut)';
+      edges += edge(x, y, cxp, cyp);
+      nodes += circle(cxp, cyp, 6, ccol, ccol) + label(cxp, cyp + 15, trim(cName, 18), 7, 'var(--vg-mut)');
+    });
+    var extra = (pn.children || []).length - ch.length;
+    nodes += circle(x, y, 16, col, col);
+    nodes += label(x, y - 22, trim(pn.label, 24), 9, 'var(--vg-txt)');
+    if (pn.sub || extra > 0) nodes += label(x, y + 27, trim(pn.sub, 22) + (extra > 0 ? ' +' + extra + ' more' : ''), 7, 'var(--vg-mut)');
+  });
+  nodes += circle(cx, cy, 26, 'var(--vg-card)', 'var(--vg-acc)');
+  nodes += label(cx, cy - 1, trim(_vgState.target, 24), 10, 'var(--vg-txt)');
+  nodes += label(cx, cy + 12, 'TARGET', 7, 'var(--vg-acc)');
+
+  return '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" preserveAspectRatio="xMidYMid meet" style="max-width:100%;height:auto;display:block;min-width:620px;">' + edges + nodes + '</svg>';
+}
+
+var _VG_INTEL_CSS = '<style id="vg-intel-css">'
+  + '#vg-intel{--vg-crit:var(--bad,#ff5c6c);--vg-high:color-mix(in srgb,var(--bad,#ff5c6c) 60%,var(--warn,#f5b041));--vg-med:var(--warn,#f5b041);--vg-low:var(--ok,#2ee6a6);--vg-info:var(--acc,#00d4ff);--vg-card:var(--card,#0f1726);--vg-card2:var(--card2,#151f34);--vg-line:var(--line,#283a5a);--vg-mut:var(--mut,#7a93b8);--vg-txt:var(--txt,#e6eefc);--vg-acc:var(--acc,#00d4ff);margin-top:22px;color:var(--vg-txt);}'
+  + '#vg-intel .vg-intel-head{font-size:13px;font-weight:700;letter-spacing:2px;color:var(--vg-acc);margin-bottom:10px;}'
+  + '#vg-intel .vg-tabbar{display:flex;gap:4px;flex-wrap:wrap;border-bottom:1px solid var(--vg-line);margin-bottom:12px;}'
+  + '#vg-intel .vg-tab{background:transparent;border:1px solid var(--vg-line);border-bottom:none;color:var(--vg-mut);font:inherit;font-size:10px;letter-spacing:.5px;padding:8px 14px;cursor:pointer;border-radius:4px 4px 0 0;transition:all .15s;}'
+  + '#vg-intel .vg-tab:hover{color:var(--vg-txt);}'
+  + '#vg-intel .vg-tab.on{background:var(--vg-card);color:var(--vg-acc);border-color:var(--vg-acc);}'
+  + '#vg-intel .vg-panel{display:none;}#vg-intel .vg-panel.on{display:block;}'
+  + '#vg-intel .vg-empty{color:var(--vg-mut);font-size:11px;padding:16px;border:1px dashed var(--vg-line);border-radius:4px;}'
+  + '#vg-intel .vg-sub{color:var(--vg-mut);font-size:10px;line-height:1.5;}'
+  + '#vg-intel .vg-note{color:var(--vg-mut);font-size:10px;line-height:1.5;margin-bottom:10px;padding:7px 10px;border:1px solid var(--vg-line);border-radius:4px;background:var(--vg-card);}'
+  + '#vg-intel .vg-panel-bar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;}'
+  + '#vg-intel .vg-mini-btn{background:transparent;border:1px solid var(--vg-acc);color:var(--vg-acc);font:inherit;font-size:10px;padding:6px 12px;border-radius:4px;cursor:pointer;}'
+  + '#vg-intel .vg-mini-btn:hover{background:var(--vg-card2);}'
+  + '#vg-intel .vg-riskrow,#vg-intel .vg-tkrow{background:var(--vg-card);border:1px solid var(--vg-line);border-radius:4px;padding:9px 11px;margin:6px 0;}'
+  + '#vg-intel .vg-tkrow{border-left-width:3px;}'
+  + '#vg-intel .vg-riskhead,#vg-intel .vg-tkhead{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px;}'
+  + '#vg-intel .vg-riskhost{font-size:11px;color:var(--vg-txt);font-weight:600;word-break:break-all;}'
+  + '#vg-intel .vg-badge{font-size:9px;font-weight:700;letter-spacing:.5px;padding:2px 7px;border:1px solid var(--vg-line);border-radius:3px;white-space:nowrap;}'
+  + '#vg-intel .vg-bar{height:7px;background:var(--vg-card2);border-radius:4px;overflow:hidden;margin:2px 0 6px;}'
+  + '#vg-intel .vg-bar-fill{height:100%;border-radius:4px;}'
+  + '#vg-intel .vg-factors{display:flex;flex-wrap:wrap;gap:4px;}'
+  + '#vg-intel .vg-chip{font-size:9px;color:var(--vg-mut);background:var(--vg-card2);border:1px solid var(--vg-line);border-radius:3px;padding:2px 6px;}'
+  + '#vg-intel .vg-chip-ok{color:var(--vg-low);border-color:var(--vg-low);}'
+  + '#vg-intel .vg-svc{font-size:10px;color:var(--vg-mut);margin-bottom:5px;}'
+  + '#vg-intel .vg-summrow,#vg-intel .vg-covgrid{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;}'
+  + '#vg-intel .vg-cov{flex:1;min-width:120px;background:var(--vg-card);border:1px solid var(--vg-line);border-radius:4px;padding:10px;text-align:center;}'
+  + '#vg-intel .vg-cov-n{font-size:20px;font-weight:700;color:var(--vg-acc);}'
+  + '#vg-intel .vg-cov-l{font-size:8px;letter-spacing:.5px;color:var(--vg-mut);margin-top:3px;}'
+  + '#vg-intel .vg-catgrp{border:1px solid var(--vg-line);border-radius:4px;margin:8px 0;overflow:hidden;}'
+  + '#vg-intel .vg-cathead{background:var(--vg-card2);color:var(--vg-txt);font-size:10px;font-weight:700;letter-spacing:1px;padding:7px 11px;}'
+  + '#vg-intel .vg-techrow{display:flex;align-items:center;gap:10px;padding:6px 11px;border-top:1px solid var(--vg-line);font-size:10px;}'
+  + '#vg-intel .vg-techname{flex:1;color:var(--vg-txt);word-break:break-all;}'
+  + '#vg-intel .vg-count{color:var(--vg-mut);font-size:9px;white-space:nowrap;}'
+  + '#vg-intel .vg-svgwrap{background:var(--vg-card);border:1px solid var(--vg-line);border-radius:4px;padding:10px;overflow-x:auto;}'
+  + '#vg-intel .vg-legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:8px;font-size:9px;color:var(--vg-mut);}'
+  + '#vg-intel .vg-legend i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:4px;vertical-align:middle;}'
+  + '</style>';
+
+function _vgRenderIntel() {
+  var risk = _vgComputeHostRisk();
+  var tk = _vgComputeTakeover();
+  var ta = _vgComputeTechAgg();
+
+  var h = _VG_INTEL_CSS;
+  h += '<div id="vg-intel">';
+  h += '<div class="vg-intel-head">INTELLIGENCE ANALYSIS</div>';
+  h += '<div class="vg-tabbar">';
+  h += '<button class="vg-tab on" data-tab="riskmatrix" onclick="_vgIntelTab(\'riskmatrix\')">Host Risk Matrix</button>';
+  h += '<button class="vg-tab" data-tab="takeover" onclick="_vgIntelTab(\'takeover\')">Takeover / Dangling DNS</button>';
+  h += '<button class="vg-tab" data-tab="techagg" onclick="_vgIntelTab(\'techagg\')">Tech Fingerprint Aggregation</button>';
+  h += '<button class="vg-tab" data-tab="assetmap" onclick="_vgIntelTab(\'assetmap\')">Asset Relationship Map</button>';
+  h += '</div>';
+
+  // --- Panel 1: Host Risk Matrix ---
+  h += '<div class="vg-panel on" data-panel="riskmatrix">';
+  if (!risk.length) {
+    h += '<div class="vg-empty">No live hosts with readable headers. Host probing may have been blocked by the browser (CSP) - run VANGUARD from the Darknode CLI for full host scoring.</div>';
+  } else {
+    h += '<div class="vg-panel-bar"><div class="vg-sub">' + risk.length + ' live host(s) ranked by computed exposure risk (security headers, TLS, banner disclosure, correlated CVEs and host findings).</div>';
+    h += '<button class="vg-mini-btn" onclick="_vgSendRiskToGraph()">Send Hosts to Security Graph</button></div>';
+    risk.forEach(function(r) {
+      var col = _vgBandVar(r.band);
+      h += '<div class="vg-riskrow">';
+      h += '<div class="vg-riskhead"><span class="vg-riskhost">' + esc(r.host) + '</span>';
+      h += '<span class="vg-badge" style="color:' + col + ';border-color:' + col + ';">' + (r.grade ? 'SEC ' + r.grade + ' · ' : '') + r.risk + '/100</span></div>';
+      h += '<div class="vg-bar"><div class="vg-bar-fill" style="width:' + r.risk + '%;background:' + col + ';"></div></div>';
+      h += '<div class="vg-factors">' + (r.factors.length ? r.factors.map(function(f) { return '<span class="vg-chip">' + esc(f) + '</span>'; }).join('') : '<span class="vg-chip vg-chip-ok">No notable exposure detected</span>') + '</div>';
+      h += '</div>';
+    });
+  }
+  h += '</div>';
+
+  // --- Panel 2: Takeover / Dangling DNS ---
+  h += '<div class="vg-panel" data-panel="takeover">';
+  h += '<div class="vg-note">Heuristic detector: flags subdomains that resolve in DNS but serve no live HTTP(S) response (dangling records), names that point at third-party hosting (takeover surface), and stale-looking hostnames. Browser probing is constrained by CSP - verify high-risk items with the Darknode CLI.</div>';
+  if (!tk.length) {
+    h += '<div class="vg-empty">No subdomains were discovered for this target.</div>';
+  } else {
+    var counts = { high: 0, medium: 0, low: 0 };
+    tk.forEach(function(t) { counts[t.risk]++; });
+    h += '<div class="vg-summrow">';
+    [['high', 'crit'], ['medium', 'med'], ['low', 'low']].forEach(function(pair) {
+      h += '<span class="vg-badge" style="color:var(--vg-' + pair[1] + ');border-color:var(--vg-' + pair[1] + ');">' + pair[0].toUpperCase() + ': ' + counts[pair[0]] + '</span>';
+    });
+    h += '</div>';
+    tk.forEach(function(t) {
+      var band = t.risk === 'high' ? 'crit' : t.risk === 'medium' ? 'med' : 'low';
+      var col = 'var(--vg-' + band + ')';
+      h += '<div class="vg-tkrow" style="border-left-color:' + col + ';">';
+      h += '<div class="vg-tkhead"><span class="vg-riskhost">' + esc(t.name) + '</span>';
+      h += '<span class="vg-badge" style="color:' + col + ';border-color:' + col + ';">' + t.risk.toUpperCase() + (t.alive ? ' · LIVE' : '') + '</span></div>';
+      if (t.service) h += '<div class="vg-svc">Third-party service: ' + esc(t.service) + '</div>';
+      h += '<div class="vg-factors">' + (t.reason || []).map(function(x) { return '<span class="vg-chip">' + esc(x) + '</span>'; }).join('') + '</div>';
+      h += '</div>';
+    });
+  }
+  h += '</div>';
+
+  // --- Panel 3: Tech Fingerprint Aggregation ---
+  h += '<div class="vg-panel" data-panel="techagg">';
+  if (!ta.totalHosts) {
+    h += '<div class="vg-empty">No technology fingerprints available (no live hosts with readable headers).</div>';
+  } else {
+    h += '<div class="vg-covgrid">';
+    h += '<div class="vg-cov"><div class="vg-cov-n">' + Object.keys(ta.names).length + '</div><div class="vg-cov-l">UNIQUE TECHNOLOGIES</div></div>';
+    h += '<div class="vg-cov"><div class="vg-cov-n">' + ta.cdnHosts + '/' + ta.totalHosts + '</div><div class="vg-cov-l">HOSTS BEHIND CDN</div></div>';
+    h += '<div class="vg-cov"><div class="vg-cov-n">' + ta.wafHosts + '/' + ta.totalHosts + '</div><div class="vg-cov-l">HOSTS BEHIND WAF</div></div>';
+    h += '<div class="vg-cov"><div class="vg-cov-n">' + (ta.totalHosts - ta.wafHosts) + '</div><div class="vg-cov-l">ORIGINS WITHOUT WAF</div></div>';
+    h += '</div>';
+    ta.cats.forEach(function(cat) {
+      h += '<div class="vg-catgrp"><div class="vg-cathead">' + esc(cat.category) + '</div>';
+      cat.techs.forEach(function(tn) {
+        var vc = ta.vulnByTech[tn.name] || 0;
+        h += '<div class="vg-techrow"><span class="vg-techname">' + esc(tn.name) + '</span>';
+        h += '<span class="vg-count">' + tn.hosts.length + ' host' + (tn.hosts.length !== 1 ? 's' : '') + '</span>';
+        if (vc) h += '<span class="vg-badge" style="color:var(--vg-high);border-color:var(--vg-high);">' + vc + ' CVE</span>';
+        h += '</div>';
+      });
+      h += '</div>';
+    });
+    var srv = Object.keys(ta.servers), pw = Object.keys(ta.powered);
+    if (srv.length || pw.length) {
+      h += '<div class="vg-catgrp"><div class="vg-cathead">Banner / Version Disclosure</div>';
+      srv.forEach(function(s) { h += '<div class="vg-techrow"><span class="vg-techname">Server: ' + esc(s) + '</span><span class="vg-count">' + ta.servers[s] + ' host' + (ta.servers[s] !== 1 ? 's' : '') + '</span>' + (/\/\d/.test(s) ? '<span class="vg-badge" style="color:var(--vg-med);border-color:var(--vg-med);">VERSION LEAK</span>' : '') + '</div>'; });
+      pw.forEach(function(s) { h += '<div class="vg-techrow"><span class="vg-techname">X-Powered-By: ' + esc(s) + '</span><span class="vg-count">' + ta.powered[s] + ' host' + (ta.powered[s] !== 1 ? 's' : '') + '</span><span class="vg-badge" style="color:var(--vg-med);border-color:var(--vg-med);">EXPOSED</span></div>'; });
+      h += '</div>';
+    }
+  }
+  h += '</div>';
+
+  // --- Panel 4: Asset Relationship Map (SVG) ---
+  h += '<div class="vg-panel" data-panel="assetmap">';
+  h += '<div class="vg-note">Radial map of the discovered attack surface: the target at the centre, unique IP addresses (or live hosts) in the inner ring, and hosted subdomains as leaf nodes. Node colour reflects hosting posture and per-host security grade.</div>';
+  h += '<div class="vg-svgwrap">' + _vgBuildAssetMapSVG() + '</div>';
+  h += '<div class="vg-legend">';
+  h += '<span><i style="background:var(--vg-info)"></i>Target / Cloud / CDN</span>';
+  h += '<span><i style="background:var(--vg-crit)"></i>Bulletproof host / Grade F</span>';
+  h += '<span><i style="background:var(--vg-med)"></i>Direct origin / Grade C-D</span>';
+  h += '<span><i style="background:var(--vg-low)"></i>Grade A-B host</span>';
+  h += '<span><i style="background:var(--vg-mut)"></i>Unverified host</span>';
+  h += '</div>';
+  h += '</div>';
+
+  h += '</div>';
+  return h;
+}
+
+// ============================================================================
 // PHASE RESULTS RENDERER
 // ============================================================================
 function _vgRenderPhaseResults() {
@@ -1502,6 +1852,9 @@ function _vgRenderPhaseResults() {
     h += '</div>';
   }
 
+  // Intelligence analysis tabs (computed over in-memory recon data)
+  h += _vgRenderIntel();
+
   // Report export
   if (_vgState.results.report) {
     h += '<div style="margin-top:12px;display:flex;gap:8px;">';
@@ -1564,4 +1917,28 @@ window._vgCopyReport = function() {
   } catch (e) {
     _vgLog('Report copy failed: ' + e.message, 'error');
   }
+};
+
+// ============================================================================
+// INTELLIGENCE TAB HANDLERS
+// ============================================================================
+window._vgIntelTab = function(id) {
+  var root = document.getElementById('vg-intel');
+  if (!root) return;
+  var tabs = root.querySelectorAll('.vg-tab');
+  for (var i = 0; i < tabs.length; i++) tabs[i].classList.toggle('on', tabs[i].getAttribute('data-tab') === id);
+  var panels = root.querySelectorAll('.vg-panel');
+  for (var j = 0; j < panels.length; j++) panels[j].classList.toggle('on', panels[j].getAttribute('data-panel') === id);
+};
+
+window._vgSendRiskToGraph = function() {
+  var rows = _vgComputeHostRisk();
+  if (!rows.length) { _vgLog('No live host data to send to Security Graph', 'warning'); return; }
+  var items = rows.map(function(r) {
+    return { id: r.host, label: r.host, type: 'host', risk: r.risk, band: r.band, grade: r.grade || null, source: 'VANGUARD' };
+  });
+  import('/js/graph-bridge.js?v=20260923c').then(function(gb) {
+    gb.sendToGraph('VANGUARD', items, undefined, true);
+    _vgLog('Sent ' + items.length + ' host(s) to Security Graph', 'success');
+  }).catch(function() { _vgLog('Security Graph bridge unavailable', 'dim'); });
 };
