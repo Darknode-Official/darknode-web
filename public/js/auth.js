@@ -1656,7 +1656,7 @@ function renderApp(user) {
     else if (sec === "regexlab") { import("/js/regex-lab.js").then(m => m.renderRegexLab(main)); }
     else if (sec === "encoding") { import("/js/encoding-suite.js?v=20260924b").then(m => m.renderEncodingSuite(main)); }
     else if (sec === "threatmodel") { import("/js/threat-modeler.js?v=20260924b").then(m => m.renderThreatModeler(main)); }
-    else if (sec === "osint") { import("/js/osint-dashboard.js").then(m => m.renderOSINTDashboard(main)); }
+    else if (sec === "osint") { import("/js/osint-dashboard.js?v=20260924a").then(m => m.renderOSINTDashboard(main)); }
     else if (sec === "addressintel") { import("/js/address-intel.js?v=20260924b").then(m => m.renderAddressIntel(main)); }
     else if (sec === "incidents") { import("/js/incident-tracker.js").then(m => m.renderIncidentTracker(main)); }
     else if (sec === "firewall") { import("/js/firewall-builder.js").then(m => m.renderFirewallBuilder(main)); }
@@ -1676,7 +1676,7 @@ function renderApp(user) {
     else if (sec === "prometheus") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading PROMETHEUS...</p>"; const _s=sec; import("/js/prometheus-web.js?v=20260924c").then(m => { if(curSec!==_s)return; m.renderPrometheus(main); _prevCleanup = m.cleanupPrometheus; }); }
     else if (sec === "sentineleye") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading SENTINEL EYE...</p>"; if(!document.querySelector('script[src="/js/threat-api.js"]')){var s1=document.createElement("script");s1.src="/js/threat-api.js";document.head.appendChild(s1)}if(!document.querySelector('script[src="/js/threat-map.js"]')){var s2=document.createElement("script");s2.src="/js/threat-map.js";document.head.appendChild(s2)} const _s=sec; import("/js/sentinel-eye.js?v=20260924c").then(m => { if(curSec!==_s)return; m.renderSentinelEye(main); _prevCleanup = m.cleanupSentinelEye; }); }
     else if (sec === "exploitdev") { import("/js/exploit-writer.js").then(m => m.renderExploitWriter(main)); }
-    else if (sec === "secdash") { import("/js/security-dashboard.js").then(m => m.renderSecurityDashboard(main)); }
+    else if (sec === "secdash") { import("/js/security-dashboard.js?v=20260924a").then(m => m.renderSecurityDashboard(main)); }
     else if (sec === "phishing") { import("/js/phishing-analyzer.js").then(m => m.renderPhishingAnalyzer(main)); }
     else if (sec === "containers") { import("/js/container-security.js").then(m => m.renderContainerSecurity(main)); }
     else if (sec === "cracklab") { import("/js/password-cracking-lab.js").then(m => m.renderPasswordCrackingLab(main)); }
