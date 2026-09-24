@@ -9493,3 +9493,32 @@ body.focus-mode .app-main { padding-left: 20px !important; padding-right: 20px !
 .dg-stat-l{font-size:.72rem;color:var(--mut);text-align:right}
 @media(max-width:1100px){.dash-grid{grid-template-columns:repeat(2,1fr)}.dash-grid .dg-span2{grid-column:span 2}}
 @media(max-width:680px){.dash-grid{grid-template-columns:1fr}.dash-grid .dg-span2{grid-column:span 1}}
+
+/* ===== Report Generator: severity summary + two-column layout ===== */
+.rp-sum{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin:0 0 16px}
+.rp-sm{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:3px}
+.rp-sm-n{font-size:1.5rem;font-weight:700;font-variant-numeric:tabular-nums;line-height:1}
+.rp-sm-l{font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mut);font-weight:600}
+.rp-sm[data-sev="total"]{border-left:3px solid var(--acc)}
+.rp-sm[data-sev="total"] .rp-sm-n{color:var(--acc)}
+.rp-sm[data-sev="critical"] .rp-sm-n{color:#dc2626}
+.rp-sm[data-sev="high"] .rp-sm-n{color:#ea580c}
+.rp-sm[data-sev="medium"] .rp-sm-n{color:#ca8a04}
+.rp-sm[data-sev="low"] .rp-sm-n{color:#2563eb}
+.rp-sm[data-sev="info"] .rp-sm-n{color:var(--mut)}
+.rp-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
+.rp-col{display:flex;flex-direction:column;gap:16px;min-width:0}
+.rp-col .card{margin:0;max-width:none}
+@media(max-width:1000px){.rp-grid{grid-template-columns:1fr}.rp-sum{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:560px){.rp-sum{grid-template-columns:repeat(2,1fr)}}
+
+/* ===== Compliance Checker: cross-framework aggregate summary strip ===== */
+.cc-summary{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:0 0 16px}
+.cc-sm{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:3px}
+.cc-sm-n{font-size:1.5rem;font-weight:700;font-variant-numeric:tabular-nums;line-height:1}
+.cc-sm-l{font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mut);font-weight:600}
+.cc-sm[data-k="pct"]{border-left:3px solid var(--acc)}
+.cc-sm[data-k="pct"] .cc-sm-n{color:var(--acc)}
+.cc-sm[data-k="impl"] .cc-sm-n{color:#16a34a}
+@media(max-width:900px){.cc-summary{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:560px){.cc-summary{grid-template-columns:repeat(2,1fr)}}
