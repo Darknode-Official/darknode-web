@@ -56,6 +56,106 @@ export function renderAfterAction(container, ctx) {
     const a = core.ASSET[id];
     return a ? a.name : id;
   }
+  function tacticName(id) {
+    const t = (core.TACTICS || []).find((x) => x.id === id);
+    return t ? t.name : id;
+  }
+
+  // ---- derived response metrics (computed over the run, not scoreRun) -------
+  function responseMetrics(run, s) {
+    const crown = core.ESTATE.crownJewels || [];
+    const exposureMin = run.contained ? (run.containedAt != null ? run.containedAt : run.clockMin) : run.clockMin;
+    // MTTR: mean gap between an alert firing and a containment action citing it.
+    let rtSum = 0, rtN = 0;
+    (run.actions || []).forEach((act) => {
+      if (!act.alertId) return;
+      const al = (run.alerts || []).find((x) => x.id === act.alertId);
+      if (al && act.t >= al.t) { rtSum += (act.t - al.t); rtN += 1; }
+    });
+    const mttrMin = rtN ? Math.round(rtSum / rtN) : null;
+    // Dwell to first crown-jewel contact (undetected reach counts as dwell).
+    let crownDwellMin = null;
+    (run.events || []).forEach((e) => {
+      if (crownDwellMin != null) return;
+      if (!e.blocked && crown.indexOf(e.assetId) !== -1) crownDwellMin = e.t;
+    });
+    const blockedSteps = (run.events || []).filter((e) => e.blocked).length;
+    return { exposureMin, mttrMin, crownDwellMin, blockedSteps };
+  }
+
+  // ---- per-technique scoring rows (in execution order) ---------------------
+  function perTechniqueRows(run) {
+    return (run.events || []).map((e, i) => {
+      const al = (run.alerts || []).find((a) => a.techniqueId === e.techniqueId && a.assetId === e.assetId && a.t === e.t);
+      const status = e.blocked ? 'blocked' : (al ? 'detected' : 'missed');
+      return {
+        i: i + 1, techId: e.techniqueId, techName: e.techniqueName || e.techniqueId,
+        tactic: e.tactic, assetName: e.assetName || assetName(e.assetId),
+        isCrown: (core.ESTATE.crownJewels || []).indexOf(e.assetId) !== -1,
+        t: e.t, status: status, sensor: al ? al.sensor : '', detection: al ? al.detection : '',
+        severity: al ? al.severity : '',
+      };
+    });
+  }
+
+  // ---- rule-based lessons & recommendations from the scored outcome --------
+  function recommendations(run, s, camp, posture) {
+    const recs = [];
+    // 1. Detection gaps grouped by tactic -> instrument / tune.
+    const gapTactics = {};
+    s.missed.forEach((m) => {
+      const tac = (core.TECH[m.techniqueId] || {}).tactic;
+      if (!tac) return;
+      (gapTactics[tac] || (gapTactics[tac] = [])).push(m.techniqueId);
+    });
+    Object.keys(gapTactics).forEach((tac) => {
+      const existing = core.detectionsByTactic(tac);
+      const n = gapTactics[tac].length;
+      if (existing.length) {
+        recs.push({ sev: 'high', title: 'Tune ' + tacticName(tac) + ' detection',
+          detail: n + ' technique(s) executed undetected despite ' + existing.length + ' mapped sensor(s) (' +
+            existing.slice(0, 2).map((d) => d.sensor).join(', ') + '). Raise fidelity or broaden coverage on this tactic.' });
+      } else {
+        recs.push({ sev: 'critical', title: 'Build ' + tacticName(tac) + ' detection',
+          detail: 'No sensor is mapped to ' + tacticName(tac) + ' — a true blind spot the adversary used ' + n + ' time(s). Add telemetry here first.' });
+      }
+    });
+    // 2. Crown jewels reached -> segmentation.
+    if (s.crownHit.length) {
+      const names = s.crownHit.map((id) => (core.ASSET[id] || { name: id }).name);
+      recs.push({ sev: 'critical', title: 'Segment reached crown jewels',
+        detail: 'Adversary reached ' + names.join(', ') + '. Tighten zone segmentation and enforce host isolation earlier on the path to these assets.' });
+    }
+    // 3. Time-to-detect quality.
+    if (s.mttdMin == null) {
+      recs.push({ sev: 'critical', title: 'No detection fired',
+        detail: 'The campaign ran end to end without a single alert. Instrument initial-access and execution tactics as the top priority.' });
+    } else if (s.mttdMin > 90) {
+      recs.push({ sev: 'high', title: 'Cut mean time to detect',
+        detail: 'First detection landed at ' + fmtMin(s.mttdMin) + '. Move earlier-kill-chain sensors up and consider an elevated posture at onboarding.' });
+    }
+    // 4. Containment outcome / autopilot policy.
+    const pol = (core.AGGRESSION && core.AGGRESSION[core.CRU.aggressiveness]) || null;
+    if (!s.contained) {
+      recs.push({ sev: 'high', title: 'Contain earlier in the kill chain',
+        detail: 'The threat was never fully contained' + (pol ? ' under the ' + pol.name + ' policy' : '') +
+          '. A more aggressive autopilot policy or faster analyst approvals would cut the kill chain sooner.' });
+    } else {
+      recs.push({ sev: 'low', title: 'Containment succeeded',
+        detail: 'The kill chain was cut at ' + fmtMin(run.containedAt) + '. Preserve this playbook and rehearse it against faster tradecraft.' });
+    }
+    // 5. Posture vs difficulty context.
+    if (posture && posture.id === 'baseline' && s.detectionRate < 60) {
+      recs.push({ sev: 'medium', title: 'Raise standing posture',
+        detail: 'Detection rate was ' + s.detectionRate + '% at Baseline posture. An elevated posture measurably lifts every detection roll.' });
+    }
+    if (run.difficulty && (run.difficulty.id === 'elite' || run.difficulty.id === 'apex')) {
+      recs.push({ sev: 'medium', title: 'Validated against ' + run.difficulty.name + ' tradecraft',
+        detail: 'This exercise used low-noise, high-tempo tradecraft (detect x' + run.difficulty.detectMult +
+          '). Gaps here are the ones most likely to matter against a real advanced adversary.' });
+    }
+    return recs;
+  }
 
   // ------------------------------ view -------------------------------------
   function render() {
@@ -68,8 +168,11 @@ export function renderAfterAction(container, ctx) {
     container.innerHTML = styleBlock() + [
       headerHTML(run, camp, posture),
       scoreCardHTML(s),
+      metricsHTML(run, s),
       heatmapHTML(s),
+      perTechniqueHTML(run),
       gapsHTML(s),
+      recommendationsHTML(run, s, camp, posture),
       timelineHTML(run),
       actionsHTML(),
       '<div id="caa-report-slot"></div>',
@@ -123,6 +226,79 @@ export function renderAfterAction(container, ctx) {
           '</div>' +
         '</div>' +
         '<div class="cru-kpis caa-kpis">' + kpis + '</div>' +
+      '</div>'
+    );
+  }
+
+  function metricsHTML(run, s) {
+    const m = responseMetrics(run, s);
+    const tiles = [
+      ['Exposure Window', fmtMin(m.exposureMin), ''],
+      ['Mean Time to Detect', s.mttdMin == null ? '—' : fmtMin(s.mttdMin), s.mttdMin == null ? 'cru-sev-high' : ''],
+      ['Mean Time to Respond', m.mttrMin == null ? '—' : fmtMin(m.mttrMin), ''],
+      ['Dwell to Crown Jewel', m.crownDwellMin == null ? 'not reached' : fmtMin(m.crownDwellMin), m.crownDwellMin == null ? 'cru-sev-low' : 'cru-sev-critical'],
+      ['Steps Blocked', String(m.blockedSteps), m.blockedSteps ? 'cru-sev-low' : ''],
+    ].map(([l, n, cls]) =>
+      '<div class="cru-kpi"><div class="cru-kpi-n ' + cls + '">' + esc(n) + '</div><div class="cru-kpi-l">' + esc(l) + '</div></div>'
+    ).join('');
+    return (
+      '<div class="cru-card">' +
+        '<h3>Response Metrics</h3>' +
+        '<p class="cru-sub">Dwell and timing derived from the engagement. Exposure is the window the adversary operated; MTTR is the mean gap between a detection and the containment action that cited it.</p>' +
+        '<div class="cru-kpis">' + tiles + '</div>' +
+      '</div>'
+    );
+  }
+
+  function perTechniqueHTML(run) {
+    const rows = perTechniqueRows(run);
+    if (!rows.length) return '';
+    const body = rows.map((r) => {
+      const tag = r.status === 'blocked' ? '<span class="caa-tl-tag caa-tl-block">blocked</span>'
+        : r.status === 'detected' ? '<span class="caa-tl-tag caa-tl-det">detected</span>'
+        : '<span class="caa-tl-tag caa-tl-miss">undetected</span>';
+      const sensor = r.status === 'detected' ? esc(r.sensor) + (r.detection ? ' (' + esc(r.detection) + ')' : '') : '<span class="caa-none-txt">—</span>';
+      return (
+        '<div class="caa-pt-row caa-pt-' + r.status + '">' +
+          '<span class="caa-pt-i">' + esc(r.i) + '</span>' +
+          '<span class="caa-pt-tech"><span class="caa-pt-id">' + esc(r.techId) + '</span> ' + esc(r.techName) +
+            '<span class="caa-pt-tac">' + esc(tacticName(r.tactic)) + '</span></span>' +
+          '<span class="caa-pt-tgt">' + esc(r.assetName) + (r.isCrown ? ' <span class="caa-pt-cj">CJ</span>' : '') + '</span>' +
+          '<span class="caa-pt-t">' + esc(fmtMin(r.t)) + '</span>' +
+          '<span class="caa-pt-sensor">' + sensor + '</span>' +
+          '<span class="caa-pt-status">' + tag + '</span>' +
+        '</div>'
+      );
+    }).join('');
+    return (
+      '<div class="cru-card">' +
+        '<h3>Per-Technique Scoring</h3>' +
+        '<p class="cru-sub">Every technique the adversary executed, in order, with the detection outcome and the sensor that caught it.</p>' +
+        '<div class="caa-pt-head">' +
+          '<span class="caa-pt-i">#</span><span class="caa-pt-tech">Technique</span>' +
+          '<span class="caa-pt-tgt">Target</span><span class="caa-pt-t">Time</span>' +
+          '<span class="caa-pt-sensor">Sensor</span><span class="caa-pt-status">Outcome</span>' +
+        '</div>' +
+        '<div class="caa-pt">' + body + '</div>' +
+      '</div>'
+    );
+  }
+
+  function recommendationsHTML(run, s, camp, posture) {
+    const recs = recommendations(run, s, camp, posture);
+    if (!recs.length) return '';
+    const items = recs.map((r) =>
+      '<li class="caa-rec caa-rec-' + esc(r.sev) + '">' +
+        '<span class="caa-rec-sev cru-sev-' + esc(r.sev) + '">' + esc(r.sev) + '</span>' +
+        '<span class="caa-rec-body"><span class="caa-rec-t">' + esc(r.title) + '</span>' +
+          '<span class="caa-rec-d">' + esc(r.detail) + '</span></span>' +
+      '</li>'
+    ).join('');
+    return (
+      '<div class="cru-card">' +
+        '<h3>Lessons &amp; Recommendations</h3>' +
+        '<p class="cru-sub">Prioritised actions generated from this exercise\'s detection gaps, dwell metrics and containment outcome.</p>' +
+        '<ul class="caa-recs">' + items + '</ul>' +
       '</div>'
     );
   }
@@ -320,6 +496,22 @@ export function renderAfterAction(container, ctx) {
     L.push('Contained        : ' + (s.contained ? 'yes, at ' + fmtMin(s.containedAt) : 'no'));
     L.push('Crown jewels hit : ' + s.crownHit.length);
     L.push('');
+    const rm = responseMetrics(run, s);
+    L.push('RESPONSE METRICS');
+    L.push('-'.repeat(52));
+    L.push('Exposure window        : ' + fmtMin(rm.exposureMin));
+    L.push('Mean time to detect    : ' + (s.mttdMin == null ? 'never' : fmtMin(s.mttdMin)));
+    L.push('Mean time to respond   : ' + (rm.mttrMin == null ? 'n/a' : fmtMin(rm.mttrMin)));
+    L.push('Dwell to crown jewel   : ' + (rm.crownDwellMin == null ? 'not reached' : fmtMin(rm.crownDwellMin)));
+    L.push('Steps blocked          : ' + rm.blockedSteps);
+    L.push('');
+    L.push('PER-TECHNIQUE SCORING');
+    L.push('-'.repeat(52));
+    perTechniqueRows(run).forEach((r) => {
+      L.push('  ' + String(r.i).padStart(2, ' ') + '. ' + r.techId + ' ' + (r.techName || '').padEnd(28, ' ').slice(0, 28) +
+        ' [' + r.status + ']' + (r.sensor ? ' via ' + r.sensor : ''));
+    });
+    L.push('');
     L.push('MITRE ATT&CK COVERAGE');
     L.push('-'.repeat(52));
     core.TACTICS.forEach((t) => {
@@ -336,6 +528,15 @@ export function renderAfterAction(container, ctx) {
     L.push('CRITICAL FINDINGS (crown jewels reached)');
     L.push('-'.repeat(52));
     if (s.crownHit.length) s.crownHit.forEach((id) => { const a = core.ASSET[id] || { name: id }; L.push('  - ' + a.name + ' (' + (a.ip || '') + ', zone ' + (a.zone || '') + ')'); });
+    else L.push('  none');
+    L.push('');
+    L.push('LESSONS & RECOMMENDATIONS');
+    L.push('-'.repeat(52));
+    const recs = recommendations(run, s, camp, posture);
+    if (recs.length) recs.forEach((r) => {
+      L.push('  [' + r.sev.toUpperCase() + '] ' + r.title);
+      L.push('        ' + r.detail);
+    });
     else L.push('  none');
     L.push('');
     L.push('TIMELINE');
@@ -440,6 +641,34 @@ function styleBlock() {
     '.caa-report-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}' +
     '.caa-report-btns{display:flex;gap:8px}' +
     '.caa-report-body{margin:12px 0 0;padding:14px;background:var(--bg);border:1px solid var(--line);border-radius:6px;font-size:.76rem;line-height:1.5;white-space:pre-wrap;word-break:break-word;max-height:460px;overflow:auto;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--txt)}' +
+    '.caa-pt-head,.caa-pt-row{display:grid;grid-template-columns:28px 2.4fr 1.3fr 64px 1.6fr 88px;gap:10px;align-items:center}' +
+    '.caa-pt-head{font-size:.62rem;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);padding:0 10px 8px;margin-top:12px;border-bottom:1px solid var(--line)}' +
+    '.caa-pt{display:flex;flex-direction:column;gap:4px;margin-top:6px}' +
+    '.caa-pt-row{padding:7px 10px;border:1px solid var(--line);border-radius:4px;font-size:.78rem;background:var(--card)}' +
+    '.caa-pt-row.caa-pt-blocked{border-left:3px solid #2563eb}' +
+    '.caa-pt-row.caa-pt-detected{border-left:3px solid #16a34a}' +
+    '.caa-pt-row.caa-pt-missed{border-left:3px solid #dc2626}' +
+    '.caa-pt-i{color:var(--mut);font-variant-numeric:tabular-nums;font-size:.72rem}' +
+    '.caa-pt-tech{min-width:0;font-weight:600;display:flex;flex-direction:column;gap:1px}' +
+    '.caa-pt-id{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.72rem;color:var(--mut)}' +
+    '.caa-pt-tac{font-size:.62rem;color:var(--mut);text-transform:uppercase;letter-spacing:.04em}' +
+    '.caa-pt-tgt{font-size:.74rem;color:var(--mut);min-width:0;display:inline-flex;align-items:center;gap:5px}' +
+    '.caa-pt-cj{font-size:.54rem;font-weight:800;color:#d97706;border:1px solid #d97706;border-radius:3px;padding:0 4px}' +
+    '.caa-pt-t{font-size:.72rem;color:var(--mut);font-variant-numeric:tabular-nums}' +
+    '.caa-pt-sensor{font-size:.72rem;color:var(--txt);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}' +
+    '.caa-none-txt{color:var(--mut)}' +
+    '.caa-pt-status{text-align:right}' +
+    '@media (max-width:720px){.caa-pt-head{display:none}' +
+      '.caa-pt-row{grid-template-columns:22px 1fr auto;grid-auto-rows:min-content;row-gap:4px}' +
+      '.caa-pt-tgt{grid-column:2/4}.caa-pt-t,.caa-pt-sensor{grid-column:2/4}.caa-pt-status{grid-column:3/4;grid-row:1}}' +
+    '.caa-recs{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}' +
+    '.caa-rec{display:flex;gap:12px;align-items:flex-start;padding:10px 12px;border:1px solid var(--line);border-radius:4px;background:var(--card)}' +
+    '.caa-rec-critical{border-left:3px solid #dc2626}.caa-rec-high{border-left:3px solid #ea580c}' +
+    '.caa-rec-medium{border-left:3px solid #d97706}.caa-rec-low{border-left:3px solid #16a34a}' +
+    '.caa-rec-sev{font-size:.6rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;flex:0 0 auto;padding-top:2px;min-width:56px}' +
+    '.caa-rec-body{display:flex;flex-direction:column;gap:3px;min-width:0}' +
+    '.caa-rec-t{font-weight:700;font-size:.82rem}' +
+    '.caa-rec-d{font-size:.76rem;color:var(--mut);line-height:1.45}' +
     '@media (max-width:640px){.caa-scorewrap{grid-template-columns:1fr}}' +
     '</style>';
 }

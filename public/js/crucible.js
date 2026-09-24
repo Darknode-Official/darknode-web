@@ -10,9 +10,9 @@
 // ctx = { go(tabId), toast(msg, kind), core }  (core = crucible-core exports)
 // All shared state, data and the engine live in crucible-core.js.
 
-import * as core from '/js/crucible-core.js?v=20260924a';
+import * as core from '/js/crucible-core.js?v=20260924b';
 
-const V = '?v=20260924a';
+const V = '?v=20260924b';
 const { esc, CRU } = core;
 
 const TABS = [

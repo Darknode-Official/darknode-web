@@ -555,6 +555,178 @@ function _spBuildPermMatrix(policy) {
 }
 
 // ============================================================================
+// DETERMINISTIC POSTURE SNAPSHOT (stable across renders — never Math.random)
+// ============================================================================
+// A single reproducible posture snapshot computed over the in-memory check
+// catalogs. Status and resource names are derived from a hash of each check id
+// so every render (and every new tab) sees an identical, stable data set.
+function _spHash(str) {
+  var h = 2166136261;
+  str = String(str);
+  for (var i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return h >>> 0;
+}
+function _spDetStatus(check) {
+  var r = _spHash(check.id) % 100;
+  var t = check.severity === 'CRITICAL' ? 52 : check.severity === 'HIGH' ? 42 : check.severity === 'MEDIUM' ? 32 : 22;
+  if (r < t) return 'FAIL';
+  if (r < t + 13) return 'WARN';
+  return 'PASS';
+}
+function _spDetResource(check) {
+  var slug = check.service.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+  return slug + '-' + (100 + _spHash(check.id + '#res') % 900);
+}
+var _SP_CLOUDS = [['AWS', AWS_CHECKS], ['Azure', AZURE_CHECKS], ['GCP', GCP_CHECKS]];
+var _SP_SEV_ORDER = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3 };
+var _SP_CLOUD_ORDER = { AWS: 0, Azure: 1, GCP: 2 };
+function _spBuildSnapshot() {
+  var out = [];
+  _SP_CLOUDS.forEach(function (pair) {
+    pair[1].forEach(function (ch) {
+      out.push({ cloud: pair[0], id: ch.id, service: ch.service, name: ch.name, severity: ch.severity, category: ch.category, cis: ch.cis, description: ch.description, recommendation: ch.recommendation, field: ch.field || '', status: _spDetStatus(ch), resource: _spDetResource(ch) });
+    });
+  });
+  return out;
+}
+
+// Internet-exposure classifier used by the Attack Surface tab.
+function _spClassifyExposure(item) {
+  var t = (item.name + ' ' + (item.description || '') + ' ' + (item.field || '')).toLowerCase();
+  if (/ssh/.test(t) && /0\.0\.0\.0|internet|\bany\b|open/.test(t)) return { type: 'Exposed SSH (22)', why: 'SSH is reachable from the public internet, a prime target for credential brute-force and exploit attempts.' };
+  if (/rdp/.test(t) && /0\.0\.0\.0|internet|\bany\b|open/.test(t)) return { type: 'Exposed RDP (3389)', why: 'RDP is reachable from the internet, a leading ransomware entry vector.' };
+  if (/public invocation|publicly accessible function/.test(t)) return { type: 'Public function invoke', why: 'The function can be invoked anonymously from the internet with no authentication.' };
+  if (/public ami|shared publicly/.test(t)) return { type: 'Public image share', why: 'A machine image is shared publicly and may leak baked-in secrets or configuration.' };
+  if (/public ip|external ip/.test(t)) return { type: 'Public IP address', why: 'The resource has a routable public IP and is directly reachable from the internet.' };
+  if (/public bucket|public blob|public-read|public read or write|allusers|allauthenticatedusers|permissive bucket acl|anonymous public/.test(t)) return { type: 'Public data exposure', why: 'Stored data is readable (or writable) from the public internet without authentication.' };
+  if (/no private endpoint|accessible over public|public endpoint|public internet|access from all networks|all networks/.test(t)) return { type: 'Public service endpoint', why: 'The service is published on a public endpoint instead of a private link.' };
+  if (/0\.0\.0\.0\/0|any-to-any|all inbound|from internet|high-risk ports|authorized networks include|unrestricted nacl/.test(t)) return { type: 'Open network ingress', why: 'Network controls accept inbound traffic from any source address (0.0.0.0/0).' };
+  if (/publicly accessible/.test(t)) return { type: 'Public data exposure', why: 'The resource is publicly accessible from the internet.' };
+  return null;
+}
+
+// Effort estimate used to curate the Remediation Plan.
+function _spEffort(item) {
+  var t = (item.name + ' ' + (item.description || '')).toLowerCase();
+  if (/private endpoint|private link|multi-az|multi-region|conditional access|\bpim\b|migrate|legacy network|delete default|custom vpc|network segmentation|workload identity|shielded vm|confidential/.test(t)) return 'High';
+  if (/encrypt|encryption|logging|log file|flow logs|versioning|rotation|https|\btls\b|soft delete|purge protection|backup|monitoring|auditing|\btde\b|boot diagnostics/.test(t)) return 'Low';
+  return 'Medium';
+}
+
+// Curated remediation snippets ({R} = resource). Unmapped checks fall back to a
+// concrete per-cloud command scaffold built from the check's own recommendation.
+var _SP_REMEDIATION = {
+  'AWS-S3-001': 'aws s3api put-public-access-block --bucket {R} \\\n  --public-access-block-configuration BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true',
+  'AWS-S3-002': 'aws s3api put-bucket-encryption --bucket {R} \\\n  --server-side-encryption-configuration \'{"Rules":[{"ApplyServerSideEncryptionByDefault":{"SSEAlgorithm":"aws:kms"}}]}\'',
+  'AWS-S3-003': 'aws s3api put-bucket-versioning --bucket {R} --versioning-configuration Status=Enabled',
+  'AWS-S3-006': 'aws s3api put-bucket-acl --bucket {R} --acl private\naws s3api put-bucket-ownership-controls --bucket {R} \\\n  --ownership-controls \'{"Rules":[{"ObjectOwnership":"BucketOwnerEnforced"}]}\'',
+  'AWS-IAM-001': '# Sign in as root, open IAM > Security credentials, and assign a hardware MFA device.\naws iam get-account-summary --query \'SummaryMap.AccountMFAEnabled\'',
+  'AWS-IAM-003': '# Scope the policy to specific actions/resources, then publish a new default version:\naws iam create-policy-version --policy-arn <policy-arn> --set-as-default \\\n  --policy-document file://least-privilege.json',
+  'AWS-IAM-004': 'aws iam update-account-password-policy --minimum-password-length 14 \\\n  --require-symbols --require-numbers --require-uppercase-characters --require-lowercase-characters',
+  'AWS-IAM-007': '# Replace wildcard actions with explicit ones, then set as the default version:\naws iam create-policy-version --policy-arn <policy-arn> --set-as-default \\\n  --policy-document file://scoped-policy.json',
+  'AWS-EC2-001': 'aws ec2 revoke-security-group-ingress --group-id {R} --protocol tcp --port 22 --cidr 0.0.0.0/0',
+  'AWS-EC2-002': 'aws ec2 revoke-security-group-ingress --group-id {R} --protocol tcp --port 3389 --cidr 0.0.0.0/0',
+  'AWS-EC2-003': 'aws ec2 enable-ebs-encryption-by-default\naws ec2 get-ebs-encryption-by-default',
+  'AWS-EC2-005': 'aws ec2 modify-instance-metadata-options --instance-id {R} \\\n  --http-tokens required --http-endpoint enabled',
+  'AWS-RDS-001': 'aws rds modify-db-instance --db-instance-identifier {R} --no-publicly-accessible --apply-immediately',
+  'AWS-RDS-002': '# Encryption is fixed at creation. Snapshot, copy with a KMS key, then restore:\naws rds copy-db-snapshot --source-db-snapshot-identifier <snap> \\\n  --target-db-snapshot-identifier {R}-enc --kms-key-id <kms-key>',
+  'AWS-CT-001': 'aws cloudtrail create-trail --name org-trail --s3-bucket-name <log-bucket> --is-multi-region-trail\naws cloudtrail start-logging --name org-trail',
+  'AWS-CT-002': 'aws cloudtrail update-trail --name org-trail --enable-log-file-validation',
+  'AWS-LM-001': 'aws lambda remove-permission --function-name {R} --statement-id <public-statement-id>',
+  'AWS-KMS-001': 'aws kms enable-key-rotation --key-id {R}',
+  'AWS-VPC-002': 'aws ec2 create-flow-logs --resource-type VPC --resource-ids {R} \\\n  --traffic-type ALL --log-destination-type cloud-watch-logs --log-group-name /vpc/flowlogs',
+  'AZ-NSG-001': 'az network nsg rule delete -g <rg> --nsg-name {R} -n allow-any-any',
+  'AZ-NSG-002': 'az network nsg rule update -g <rg> --nsg-name {R} -n Allow-SSH \\\n  --source-address-prefixes <bastion-cidr> --access Allow',
+  'AZ-NSG-003': 'az network nsg rule update -g <rg> --nsg-name {R} -n Allow-RDP \\\n  --source-address-prefixes <admin-cidr> --access Allow',
+  'AZ-ST-001': 'az storage account update -n {R} --allow-blob-public-access false',
+  'AZ-ST-004': 'az storage account update -n {R} --default-action Deny\naz storage account network-rule add -n {R} --vnet-name <vnet> --subnet <subnet>',
+  'AZ-ST-005': 'az storage account update -n {R} --https-only true',
+  'AZ-KV-003': 'az keyvault update -n {R} --default-action Deny\naz keyvault network-rule add -n {R} --subnet <subnet-id>',
+  'AZ-AD-001': '# Create a Conditional Access policy in Entra ID that requires MFA for all\n# privileged directory roles (Global Administrator and equivalents).',
+  'AZ-VM-001': 'az network nic ip-config update -g <rg> --nic-name <nic> -n ipconfig1 --remove publicIpAddress\naz network public-ip delete -g <rg> -n {R}',
+  'AZ-SQL-001': 'az sql server audit-policy update -g <rg> -n {R} --state Enabled \\\n  --log-analytics-target-state Enabled --log-analytics-workspace-resource-id <ws-id>',
+  'AZ-SQL-003': 'az sql db tde set -g <rg> -s {R} -d <db> --status Enabled',
+  'AZ-SQL-005': 'az sql server update -g <rg> -n {R} --set publicNetworkAccess=Disabled',
+  'GCP-CE-002': 'gcloud compute instances delete-access-config {R} --access-config-name "External NAT" --zone <zone>',
+  'GCP-GCS-001': 'gsutil iam ch -d allUsers gs://{R}\ngsutil iam ch -d allAuthenticatedUsers gs://{R}',
+  'GCP-GCS-005': 'gsutil iam ch -d allUsers gs://{R}\ngsutil iam ch -d allAuthenticatedUsers gs://{R}',
+  'GCP-VPC-003': 'gcloud compute firewall-rules update {R} --source-ranges=10.0.0.0/8',
+  'GCP-SQL-001': 'gcloud sql instances patch {R} --no-assign-ip',
+  'GCP-SQL-002': 'gcloud sql instances patch {R} --require-ssl',
+  'GCP-SQL-004': 'gcloud sql instances patch {R} --authorized-networks=<office-cidr>',
+  'GCP-KMS-001': 'gcloud kms keys update {R} --keyring=<keyring> --location=<location> \\\n  --rotation-period=90d --next-rotation-time=$(date -u -d "+90 days" +%Y-%m-%dT%H:%M:%SZ)',
+  'GCP-IAM-004': '# Remove domain-wide delegation from the service account in the Admin console\n# (Security > API controls) unless strictly required, then audit its OAuth scopes.',
+  'GCP-LOG-003': '# Enable Data Access audit logs for all services via the IAM audit config:\ngcloud projects get-iam-policy <project> --format=json > policy.json\n# add an auditConfigs block for allServices, then:\ngcloud projects set-iam-policy <project> policy.json'
+};
+function _spCliLang(cloud) { return cloud === 'AWS' ? 'aws-cli' : cloud === 'Azure' ? 'az-cli' : 'gcloud'; }
+function _spCliGroup(item) {
+  var m = { S3: 's3api', IAM: 'iam', EC2: 'ec2', RDS: 'rds', CloudTrail: 'cloudtrail', Lambda: 'lambda', VPC: 'ec2', KMS: 'kms', NSG: 'network nsg', Storage: 'storage account', 'Key Vault': 'keyvault', 'Azure AD': 'ad', VM: 'vm', 'App Service': 'webapp', SQL: 'sql', Compute: 'compute instances', 'Cloud Storage': 'storage', 'Cloud SQL': 'sql', Logging: 'logging' };
+  return m[item.service] || item.service.toLowerCase();
+}
+function _spRemediationSnippet(item) {
+  var code = _SP_REMEDIATION[item.id];
+  if (!code) {
+    var tool = item.cloud === 'AWS' ? 'aws' : item.cloud === 'Azure' ? 'az' : 'gcloud';
+    code = '# ' + item.id + ' — ' + item.name + '\n# ' + item.recommendation + '\n# Target: ' + item.resource + '\n' + tool + ' ' + _spCliGroup(item) + ' --help   # locate the update/modify call, then apply the fix above';
+  }
+  return { lang: _spCliLang(item.cloud), code: code.split('{R}').join(item.resource) };
+}
+
+// Deterministic 12-point score history seeded from posture counts (Risk Trends).
+function _spScoreHistory(seed, current, n) {
+  n = n || 12;
+  var arr = [], h = (seed >>> 0) || 1;
+  var start = Math.max(18, Math.min(current - 4, current - 20 + (h % 12)));
+  for (var i = 0; i < n; i++) {
+    h = (Math.imul(h, 1103515245) + 12345) >>> 0;
+    var frac = i / (n - 1);
+    var base = start + (current - start) * frac;
+    var wob = ((h % 1000) / 1000 - 0.5) * 9 * (1 - frac * 0.5);
+    var v = Math.round(base + wob);
+    if (v < 0) v = 0; if (v > 100) v = 100;
+    arr.push(v);
+  }
+  arr[n - 1] = current;
+  return arr;
+}
+function _spSparkline(values, w, h, color) {
+  var step = w / (values.length - 1);
+  var pts = values.map(function (v, i) { return (i * step).toFixed(1) + ',' + (h - (v / 100) * h).toFixed(1); });
+  var area = 'M0,' + h + ' L' + pts.join(' L') + ' L' + w + ',' + h + ' Z';
+  return '<svg class="sp-spark" viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none">' +
+    '<path d="' + area + '" fill="' + color + '" opacity="0.12"/>' +
+    '<polyline points="' + pts.join(' ') + '" fill="none" stroke="' + color + '" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>' +
+    '</svg>';
+}
+
+// Small stat tile used by Attack Surface and Remediation Plan.
+function _spStatTile(n, label, color) {
+  return '<div class="sp-stat-tile"><span class="sp-stat-n" style="color:' + color + '">' + esc(n) + '</span><span class="sp-stat-l">' + esc(label) + '</span></div>';
+}
+
+// Clipboard copy with an inline "Copied" affordance (no native dialogs).
+function _spFallbackCopy(text) {
+  var ta = document.createElement('textarea');
+  ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+  document.body.appendChild(ta); ta.focus(); ta.select();
+  try { document.execCommand('copy'); } catch (e) { /* ignore */ }
+  document.body.removeChild(ta);
+}
+function _spCopyText(text, btn) {
+  var done = function () {
+    var old = btn.getAttribute('data-label') || 'Copy';
+    btn.textContent = 'Copied'; btn.classList.add('sp-copied');
+    var id = setTimeout(function () { btn.textContent = old; btn.classList.remove('sp-copied'); }, 1500);
+    (window._spectreTimers = window._spectreTimers || []).push(id);
+  };
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, function () { _spFallbackCopy(text); done(); });
+    } else { _spFallbackCopy(text); done(); }
+  } catch (e) { try { _spFallbackCopy(text); done(); } catch (e2) { /* ignore */ } }
+}
+
+// ============================================================================
 // RENDER FUNCTIONS
 // ============================================================================
 var _spActiveTab = 'dashboard';
@@ -569,6 +741,8 @@ var _spSelectedPolicy = null;
 var _spAuditFilter = { service: '', severity: '', status: '' };
 var _spComplianceTab = 'cis';
 var _spInterval = null;
+var _spRemedEffort = '';
+var _spExplorer = { cloud: '', severity: '', status: '', q: '' };
 
 function _spRender(main) {
   var tabs = [
@@ -578,7 +752,11 @@ function _spRender(main) {
     { id: 'gcp', label: 'GCP Audit' },
     { id: 'iam', label: 'IAM Analyzer' },
     { id: 'compliance', label: 'Compliance' },
-    { id: 'terraform', label: 'Terraform Scanner' }
+    { id: 'terraform', label: 'Terraform Scanner' },
+    { id: 'surface', label: 'Attack Surface' },
+    { id: 'remediate', label: 'Remediation Plan' },
+    { id: 'trends', label: 'Risk Trends' },
+    { id: 'explorer', label: 'Findings Explorer' }
   ];
 
   main.innerHTML =
@@ -615,6 +793,10 @@ function _spRender(main) {
   else if (_spActiveTab === 'iam') _spRenderIAM(c);
   else if (_spActiveTab === 'compliance') _spRenderCompliance(c);
   else if (_spActiveTab === 'terraform') _spRenderTerraform(c);
+  else if (_spActiveTab === 'surface') _spRenderSurface(c);
+  else if (_spActiveTab === 'remediate') _spRenderRemediate(c);
+  else if (_spActiveTab === 'trends') _spRenderTrends(c);
+  else if (_spActiveTab === 'explorer') _spRenderExplorer(c);
 }
 
 // ============================================================================
@@ -1044,6 +1226,203 @@ function _spRenderTerraform(c) {
 }
 
 // ============================================================================
+// TAB 8 — ATTACK SURFACE
+// ============================================================================
+function _spRenderSurface(c) {
+  var snap = _spBuildSnapshot();
+  var exposed = [];
+  snap.forEach(function (r) { var ex = _spClassifyExposure(r); if (ex) exposed.push({ r: r, type: ex.type, why: ex.why }); });
+  exposed.sort(function (a, b) {
+    var s = _SP_SEV_ORDER[a.r.severity] - _SP_SEV_ORDER[b.r.severity]; if (s) return s;
+    var cl = _SP_CLOUD_ORDER[a.r.cloud] - _SP_CLOUD_ORDER[b.r.cloud]; if (cl) return cl;
+    return a.r.id < b.r.id ? -1 : 1;
+  });
+  var byCloud = { AWS: 0, Azure: 0, GCP: 0 };
+  var crit = 0;
+  var typeCounts = {};
+  exposed.forEach(function (e) {
+    byCloud[e.r.cloud]++;
+    if (e.r.severity === 'CRITICAL') crit++;
+    typeCounts[e.type] = (typeCounts[e.type] || 0) + 1;
+  });
+
+  c.innerHTML =
+    '<h2 class="sp-h2">Internet Attack Surface</h2>' +
+    '<p class="sp-sub">Every check that leaves a resource reachable from the public internet, aggregated across AWS, Azure and GCP and ranked by severity. This is the "what can an attacker reach from outside" view.</p>' +
+    '<div class="sp-stat-tiles">' +
+      _spStatTile(exposed.length, 'Exposed Findings', 'var(--acc)') +
+      _spStatTile(crit, 'Critical Exposures', '#dc2626') +
+      _spStatTile(byCloud.AWS, 'AWS', '#f97316') +
+      _spStatTile(byCloud.Azure, 'Azure', '#3b82f6') +
+      _spStatTile(byCloud.GCP, 'GCP', '#22c55e') +
+    '</div>' +
+    '<div class="sp-chip-legend">' +
+      Object.keys(typeCounts).sort().map(function (k) { return '<span class="sp-legend-chip">' + esc(k) + ' <b>' + typeCounts[k] + '</b></span>'; }).join('') +
+    '</div>' +
+    (exposed.length ?
+      '<table class="sp-table"><thead><tr><th>Resource</th><th>Cloud</th><th>Exposure Type</th><th>Severity</th><th>Why It Matters</th></tr></thead><tbody>' +
+      exposed.map(function (e) {
+        return '<tr><td class="sp-mono">' + esc(e.r.resource) + '<div class="sp-cell-sub">' + esc(e.r.id) + ' · ' + esc(e.r.name) + '</div></td>' +
+          '<td>' + esc(e.r.cloud) + '</td>' +
+          '<td>' + esc(e.type) + '</td>' +
+          '<td><span class="sp-sev-badge" style="color:' + _spSevColor(e.r.severity) + ';background:' + _spSevBg(e.r.severity) + '">' + e.r.severity + '</span></td>' +
+          '<td class="sp-why">' + esc(e.why) + '</td></tr>';
+      }).join('') +
+      '</tbody></table>' :
+      '<div class="sp-empty">No internet-exposed findings detected.</div>');
+}
+
+// ============================================================================
+// TAB 9 — REMEDIATION PLAN
+// ============================================================================
+function _spRenderRemediate(c) {
+  var snap = _spBuildSnapshot();
+  var failing = snap.filter(function (r) { return r.status === 'FAIL'; });
+  failing.forEach(function (r) { r.effort = _spEffort(r); });
+  var effRank = { Low: 0, Medium: 1, High: 2 };
+  var queue = failing.filter(function (r) { return !_spRemedEffort || r.effort === _spRemedEffort; });
+  queue.sort(function (a, b) {
+    var s = _SP_SEV_ORDER[a.severity] - _SP_SEV_ORDER[b.severity]; if (s) return s;
+    var e = effRank[a.effort] - effRank[b.effort]; if (e) return e;
+    var cl = _SP_CLOUD_ORDER[a.cloud] - _SP_CLOUD_ORDER[b.cloud]; if (cl) return cl;
+    return a.id < b.id ? -1 : 1;
+  });
+  var sev = { CRITICAL: 0, HIGH: 0, MEDIUM: 0, LOW: 0 };
+  var eff = { Low: 0, Medium: 0, High: 0 };
+  failing.forEach(function (r) { sev[r.severity]++; eff[r.effort]++; });
+  var snippets = queue.map(_spRemediationSnippet);
+
+  c.innerHTML =
+    '<h2 class="sp-h2">Remediation Plan</h2>' +
+    '<p class="sp-sub">A prioritised fix queue built from every failing check across the three clouds, sorted by severity then estimated effort then cloud. Each item carries a concrete, copyable remediation command.</p>' +
+    '<div class="sp-stat-tiles">' +
+      _spStatTile(failing.length, 'Open Findings', 'var(--acc)') +
+      _spStatTile(sev.CRITICAL, 'Critical', '#dc2626') +
+      _spStatTile(sev.HIGH, 'High', '#f97316') +
+      _spStatTile(sev.MEDIUM, 'Medium', '#eab308') +
+      _spStatTile(eff.Low + ' / ' + eff.Medium + ' / ' + eff.High, 'Effort L / M / H', 'var(--txt)') +
+    '</div>' +
+    '<div class="sp-service-chips">' +
+      ['', 'Low', 'Medium', 'High'].map(function (e) {
+        return '<button class="sp-chip' + (_spRemedEffort === e ? ' on' : '') + '" data-eff="' + e + '">' + (e ? esc(e) + ' effort (' + eff[e] + ')' : 'All effort') + '</button>';
+      }).join('') +
+    '</div>' +
+    '<div class="sp-remed-list">' +
+      queue.map(function (r, i) {
+        var sn = snippets[i];
+        return '<div class="sp-remed-item">' +
+          '<div class="sp-remed-head">' +
+            '<span class="sp-sev-badge" style="color:' + _spSevColor(r.severity) + ';background:' + _spSevBg(r.severity) + '">' + r.severity + '</span>' +
+            '<span class="sp-remed-cloud">' + esc(r.cloud) + '</span>' +
+            '<strong class="sp-remed-title">' + esc(r.id) + ' — ' + esc(r.name) + '</strong>' +
+            '<span class="sp-effort sp-effort-' + r.effort.toLowerCase() + '">' + r.effort + ' effort</span>' +
+          '</div>' +
+          '<div class="sp-remed-desc">' + esc(r.description) + '</div>' +
+          '<div class="sp-remed-fix">Fix: ' + esc(r.recommendation) + '</div>' +
+          '<div class="sp-code-block"><div class="sp-code-bar"><span class="sp-code-lang">' + esc(sn.lang) + '</span><button class="sp-copy-btn" data-idx="' + i + '" data-label="Copy">Copy</button></div><pre class="sp-code">' + esc(sn.code) + '</pre></div>' +
+        '</div>';
+      }).join('') +
+      (queue.length ? '' : '<div class="sp-empty">No findings match this effort filter.</div>') +
+    '</div>';
+
+  c.querySelectorAll('.sp-chip').forEach(function (chip) {
+    chip.onclick = function () { _spRemedEffort = chip.dataset.eff; _spRender(c.closest('.sp-wrap').parentNode); };
+  });
+  c.querySelectorAll('.sp-copy-btn').forEach(function (btn) {
+    btn.onclick = function () { _spCopyText(snippets[+btn.dataset.idx].code, btn); };
+  });
+}
+
+// ============================================================================
+// TAB 10 — RISK TRENDS (deterministic, simulated)
+// ============================================================================
+function _spRenderTrends(c) {
+  var snap = _spBuildSnapshot();
+  var passAll = snap.filter(function (r) { return r.status === 'PASS'; }).length;
+  var overall = _spPct(passAll, snap.length);
+  var hist = _spScoreHistory(_spHash('overall#' + snap.length + '#' + passAll), overall, 12);
+  var delta = hist[hist.length - 1] - hist[0];
+
+  var clouds = _SP_CLOUDS.map(function (pair) {
+    var rows = snap.filter(function (r) { return r.cloud === pair[0]; });
+    var pass = rows.filter(function (r) { return r.status === 'PASS'; }).length;
+    var score = _spPct(pass, rows.length);
+    var h = _spScoreHistory(_spHash(pair[0] + '#' + score + '#' + rows.length), score, 12);
+    return { cloud: pair[0], score: score, hist: h, delta: h[h.length - 1] - h[0] };
+  });
+
+  var barColor = function (v) { return v > 70 ? '#22c55e' : v > 40 ? '#eab308' : '#dc2626'; };
+  var deltaStr = function (d) { return (d >= 0 ? '+' : '') + d; };
+  var deltaColor = function (d) { return d >= 0 ? '#22c55e' : '#dc2626'; };
+
+  c.innerHTML =
+    '<h2 class="sp-h2">Risk Trends <span class="sp-sim-tag">Simulated / projected</span></h2>' +
+    '<p class="sp-sub">A reproducible 12-point posture history derived deterministically from the current check pass/fail counts. Values are simulated for illustration and stay stable across renders — there is no live telemetry.</p>' +
+    '<div class="sp-card">' +
+      '<div class="sp-card-h">Overall Posture Score — last 12 scans</div>' +
+      '<div class="sp-trend-top"><span class="sp-trend-now" style="color:' + barColor(overall) + '">' + overall + '</span><span class="sp-trend-unit">/ 100</span><span class="sp-trend-delta" style="color:' + deltaColor(delta) + '">' + deltaStr(delta) + ' vs first scan</span></div>' +
+      _spSparkline(hist, 600, 90, barColor(overall)) +
+      '<div class="sp-trend-axis"><span>Scan 1: ' + hist[0] + '%</span><span>Latest: ' + hist[hist.length - 1] + '%</span></div>' +
+    '</div>' +
+    '<div class="sp-grid-3" style="margin-top:14px">' +
+      clouds.map(function (cd) {
+        return '<div class="sp-card">' +
+          '<div class="sp-card-h">' + esc(cd.cloud) + ' posture</div>' +
+          '<div class="sp-trend-top"><span class="sp-trend-now" style="color:' + barColor(cd.score) + '">' + cd.score + '</span><span class="sp-trend-unit">/ 100</span><span class="sp-trend-delta" style="color:' + deltaColor(cd.delta) + '">' + deltaStr(cd.delta) + '</span></div>' +
+          _spSparkline(cd.hist, 300, 60, barColor(cd.score)) +
+        '</div>';
+      }).join('') +
+    '</div>';
+}
+
+// ============================================================================
+// TAB 11 — FINDINGS EXPLORER
+// ============================================================================
+function _spRenderExplorer(c) {
+  var snap = _spBuildSnapshot();
+  var total = snap.length;
+  var f = _spExplorer;
+
+  c.innerHTML =
+    '<h2 class="sp-h2">Findings Explorer</h2>' +
+    '<p class="sp-sub">Every check across AWS, Azure and GCP in one dense, filterable table. Narrow by cloud, severity or status, or search titles and resources — filters apply live.</p>' +
+    '<div class="sp-exp-filters">' +
+      '<input class="sp-search" id="sp-exp-q" type="text" placeholder="Search title, id or resource..." value="' + esc(f.q) + '">' +
+      '<select class="sp-select" id="sp-exp-cloud"><option value="">All Clouds</option><option value="AWS">AWS</option><option value="Azure">Azure</option><option value="GCP">GCP</option></select>' +
+      '<select class="sp-select" id="sp-exp-sev"><option value="">All Severities</option><option value="CRITICAL">Critical</option><option value="HIGH">High</option><option value="MEDIUM">Medium</option><option value="LOW">Low</option></select>' +
+      '<select class="sp-select" id="sp-exp-status"><option value="">All Statuses</option><option value="PASS">Pass</option><option value="FAIL">Fail</option><option value="WARN">Warn</option></select>' +
+      '<span class="sp-exp-count" id="sp-exp-count"></span>' +
+    '</div>' +
+    '<table class="sp-table"><thead><tr><th>ID</th><th>Cloud</th><th>Service</th><th>Check</th><th>Category</th><th>Status</th><th>Severity</th><th>CIS</th><th>Resource</th></tr></thead><tbody id="sp-exp-body"></tbody></table>';
+
+  var cloudSel = c.querySelector('#sp-exp-cloud'); cloudSel.value = f.cloud;
+  var sevSel = c.querySelector('#sp-exp-sev'); sevSel.value = f.severity;
+  var statusSel = c.querySelector('#sp-exp-status'); statusSel.value = f.status;
+  var qInput = c.querySelector('#sp-exp-q');
+  var body = c.querySelector('#sp-exp-body');
+  var countEl = c.querySelector('#sp-exp-count');
+
+  function apply() {
+    _spExplorer = { cloud: cloudSel.value, severity: sevSel.value, status: statusSel.value, q: qInput.value };
+    var q = qInput.value.trim().toLowerCase();
+    var rows = snap.filter(function (r) {
+      if (cloudSel.value && r.cloud !== cloudSel.value) return false;
+      if (sevSel.value && r.severity !== sevSel.value) return false;
+      if (statusSel.value && r.status !== statusSel.value) return false;
+      if (q && (r.name + ' ' + r.resource + ' ' + r.id).toLowerCase().indexOf(q) < 0) return false;
+      return true;
+    });
+    countEl.textContent = 'Showing ' + rows.length + ' of ' + total;
+    body.innerHTML = rows.length ? rows.map(function (r) {
+      return '<tr><td class="sp-mono">' + esc(r.id) + '</td><td>' + esc(r.cloud) + '</td><td>' + esc(r.service) + '</td><td title="' + esc(r.description) + '">' + esc(r.name) + '</td><td>' + esc(r.category) + '</td><td><span class="sp-status-badge" style="color:' + _spStatusColor(r.status) + '">' + r.status + '</span></td><td><span class="sp-sev-badge" style="color:' + _spSevColor(r.severity) + ';background:' + _spSevBg(r.severity) + '">' + r.severity + '</span></td><td class="sp-mono">' + esc(r.cis || '') + '</td><td class="sp-mono">' + esc(r.resource) + '</td></tr>';
+    }).join('') : '<tr><td colspan="9"><div class="sp-empty">No checks match the current filters.</div></td></tr>';
+  }
+  cloudSel.onchange = apply; sevSel.onchange = apply; statusSel.onchange = apply;
+  qInput.oninput = apply;
+  apply();
+}
+
+// ============================================================================
 // INLINE CSS
 // ============================================================================
 var _spStyleId = 'sp-styles';
@@ -1185,6 +1564,44 @@ function _spInjectCSS() {
 .sp-tf-finding-issue{font-size:.8rem;font-weight:600;color:var(--txt);margin-bottom:4px}
 .sp-tf-finding-code{font-family:var(--font-mono);font-size:.72rem;color:var(--acc);background:var(--card2,var(--card));padding:4px 8px;border-radius:4px;margin-bottom:6px;overflow-x:auto;white-space:pre}
 .sp-tf-finding-fix{font-size:.74rem;color:var(--mut)}
+.sp-stat-tiles{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.sp-stat-tile{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px 18px;text-align:center;flex:1;min-width:110px}
+.sp-stat-n{display:block;font-size:1.5rem;font-weight:800;line-height:1.1}
+.sp-stat-l{font-size:.66rem;color:var(--mut);text-transform:uppercase;letter-spacing:.05em;font-weight:600}
+.sp-cell-sub{font-size:.68rem;color:var(--mut);margin-top:2px;font-family:var(--font-body,system-ui,sans-serif)}
+.sp-why{font-size:.74rem;color:var(--mut);max-width:420px}
+.sp-chip-legend{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.sp-legend-chip{font-size:.7rem;color:var(--mut);border:1px solid var(--line);border-radius:12px;padding:3px 10px;background:color-mix(in srgb,var(--acc) 4%,transparent)}
+.sp-legend-chip b{color:var(--txt)}
+.sp-remed-list{display:flex;flex-direction:column;gap:12px}
+.sp-remed-item{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px}
+.sp-remed-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+.sp-remed-cloud{font-size:.66rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--mut);border:1px solid var(--line);border-radius:4px;padding:1px 6px}
+.sp-remed-title{font-size:.82rem;color:var(--txt)}
+.sp-effort{margin-left:auto;font-size:.64rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:2px 8px;border-radius:10px}
+.sp-effort-low{color:#22c55e;background:rgba(34,197,94,.12)}
+.sp-effort-medium{color:#eab308;background:rgba(234,179,8,.12)}
+.sp-effort-high{color:#f97316;background:rgba(249,115,22,.12)}
+.sp-remed-desc{font-size:.76rem;color:var(--mut);margin-bottom:4px}
+.sp-remed-fix{font-size:.76rem;color:var(--acc);font-weight:500;margin-bottom:8px}
+.sp-code-block{border:1px solid var(--line);border-radius:8px;overflow:hidden;background:color-mix(in srgb,var(--bg) 60%,var(--card))}
+.sp-code-bar{display:flex;align-items:center;justify-content:space-between;padding:5px 10px;border-bottom:1px solid var(--line)}
+.sp-code-lang{font-size:.64rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--mut)}
+.sp-copy-btn{font-family:inherit;font-size:.66rem;font-weight:700;color:var(--txt);background:transparent;border:1px solid var(--line);border-radius:4px;padding:3px 10px;cursor:pointer;transition:all .15s}
+.sp-copy-btn:hover{border-color:var(--acc);color:var(--acc)}
+.sp-copy-btn.sp-copied{color:#22c55e;border-color:#22c55e}
+.sp-code{margin:0;padding:10px 12px;font-family:var(--font-mono,monospace);font-size:.72rem;line-height:1.55;color:var(--txt);white-space:pre;overflow-x:auto}
+.sp-sim-tag{font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#eab308;background:rgba(234,179,8,.12);padding:2px 8px;border-radius:10px;vertical-align:middle;margin-left:6px}
+.sp-trend-top{display:flex;align-items:baseline;gap:6px;margin-bottom:8px}
+.sp-trend-now{font-size:1.8rem;font-weight:800;line-height:1}
+.sp-trend-unit{font-size:.72rem;color:var(--mut)}
+.sp-trend-delta{margin-left:auto;font-size:.74rem;font-weight:700}
+.sp-spark{width:100%;height:auto;display:block}
+.sp-trend-axis{display:flex;justify-content:space-between;font-size:.66rem;color:var(--mut);margin-top:6px}
+.sp-exp-filters{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.sp-search{flex:1;min-width:200px;padding:7px 12px;font-size:.78rem;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--txt);font-family:inherit}
+.sp-search:focus{outline:none;border-color:var(--acc)}
+.sp-exp-count{font-size:.72rem;color:var(--mut);font-weight:600;margin-left:auto;white-space:nowrap}
   `;
   document.head.appendChild(style);
 }
@@ -1194,6 +1611,8 @@ function _spInjectCSS() {
 // ============================================================================
 export function renderSpectre(main) {
   _spInjectCSS();
+  if (Array.isArray(window._spectreTimers)) { window._spectreTimers.forEach(function (t) { clearTimeout(t); }); }
+  window._spectreTimers = [];
   _spActiveTab = 'dashboard';
   _spAwsResults = null;
   _spAzureResults = null;
@@ -1205,9 +1624,12 @@ export function renderSpectre(main) {
   _spSelectedPolicy = null;
   _spAuditFilter = { service: '', severity: '', status: '' };
   _spComplianceTab = 'cis';
+  _spRemedEffort = '';
+  _spExplorer = { cloud: '', severity: '', status: '', q: '' };
   _spRender(main);
 }
 
 export function cleanupSpectre() {
   if (_spInterval) { clearInterval(_spInterval); _spInterval = null; }
+  if (Array.isArray(window._spectreTimers)) { window._spectreTimers.forEach(function (t) { clearTimeout(t); }); window._spectreTimers = []; }
 }

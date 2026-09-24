@@ -92,6 +92,41 @@ export function renderFusion(container, ctx) {
   .crf-empty .cru-btn{margin-top:12px}
   .crf-kpi-crit .cru-kpi-n{color:#dc2626}.crf-kpi-warn .cru-kpi-n{color:#d97706}
   .crf-kpi-good .cru-kpi-n{color:#16a34a}
+
+  /* rollup + attribution */
+  .crf-two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media (max-width:820px){.crf-two{grid-template-columns:1fr}}
+  .crf-sub-empty{color:var(--mut);font-size:.8rem;padding:18px 4px}
+  .crf-roll-sect{margin-bottom:14px}.crf-roll-sect:last-child{margin-bottom:0}
+  .crf-roll-h{font-size:.62rem;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);margin-bottom:8px}
+  .crf-roll-row{display:grid;grid-template-columns:82px 1fr 28px;align-items:center;gap:8px;margin-bottom:5px}
+  .crf-roll-l{font-size:.68rem}
+  .crf-roll-bar{height:8px;border-radius:4px;background:color-mix(in srgb,var(--line) 60%,transparent);overflow:hidden}
+  .crf-roll-fill{display:block;height:100%;border-radius:4px}
+  .crf-fill-critical{background:#dc2626}.crf-fill-high{background:#ea580c}
+  .crf-fill-medium{background:#d97706}.crf-fill-low{background:#16a34a}
+  .crf-roll-n{font-size:.72rem;font-weight:700;text-align:right;font-variant-numeric:tabular-nums}
+  .crf-chips{display:flex;flex-wrap:wrap;gap:6px}
+  .crf-chip{font-size:.66rem;padding:2px 8px;border:1px solid var(--line);border-radius:3px;color:var(--mut)}
+  .crf-chip b{color:var(--txt)}
+  .crf-tt{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:5px}
+  .crf-tt li{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:.74rem;
+    border:1px solid var(--line);border-radius:4px;padding:5px 9px;background:var(--bg)}
+  .crf-tt-n{display:inline-flex;align-items:center;gap:6px;font-weight:600;min-width:0}
+  .crf-tt-c{font-size:.66rem;color:var(--mut);flex:0 0 auto}
+  .crf-attr-head{font-size:.72rem;color:var(--mut);margin-bottom:10px;line-height:1.5}
+  .crf-attr-head b{color:var(--txt)}
+  .crf-attr-list{display:flex;flex-direction:column;gap:8px}
+  .crf-attr-row{border:1px solid var(--line);border-radius:4px;padding:8px 10px;background:var(--bg)}
+  .crf-attr-row.lead{border-color:var(--acc);box-shadow:inset 0 0 0 1px var(--acc)}
+  .crf-attr-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .crf-attr-name{font-size:.78rem;font-weight:700;display:inline-flex;align-items:center;gap:6px}
+  .crf-attr-eng{font-size:.55rem;font-weight:800;letter-spacing:.06em;color:#dc2626;
+    border:1px solid #dc2626;border-radius:3px;padding:0 5px}
+  .crf-attr-pct{font-size:.78rem;font-weight:800;font-variant-numeric:tabular-nums}
+  .crf-attr-sub{font-size:.64rem;color:var(--mut);margin:3px 0 6px}
+  .crf-attr-bar{height:6px;border-radius:3px;background:color-mix(in srgb,var(--line) 60%,transparent);overflow:hidden}
+  .crf-attr-fill{display:block;height:100%;border-radius:3px;background:var(--acc)}
   </style>`;
 
   container.innerHTML = STYLE +
@@ -106,6 +141,16 @@ export function renderFusion(container, ctx) {
           '<span><i class="crf-sw reached"></i>Reached (undetected)</span>' +
           '<span><i class="crf-sw detected"></i>Detected</span>' +
           '<span><i class="crf-sw blocked"></i>Blocked</span>' +
+        '</div>' +
+      '</div>' +
+      '<div class="crf-two">' +
+        '<div class="cru-card">' +
+          '<div class="crf-sect-h"><h3>Detection Rollup</h3><span>Severity &middot; sensor &middot; targets</span></div>' +
+          '<div id="crf-rollup"></div>' +
+        '</div>' +
+        '<div class="cru-card">' +
+          '<div class="crf-sect-h"><h3>Threat Attribution</h3><span>Technique-overlap analytic</span></div>' +
+          '<div id="crf-attrib"></div>' +
         '</div>' +
       '</div>' +
       '<div class="cru-card">' +
@@ -281,11 +326,104 @@ export function renderFusion(container, ctx) {
     }).join('');
   }
 
+  // Severity rollup, sensor breakdown and the most-targeted assets, computed
+  // live over the run's detections and events.
+  function renderRollup() {
+    const r = run();
+    const el = $('crf-rollup');
+    if (!el) return;
+    if (!r || !r.alerts.length) {
+      el.innerHTML = '<div class="crf-sub-empty">' +
+        (r ? 'No detections yet. Rollups populate as sensors fire.' : 'No active run.') + '</div>';
+      return;
+    }
+    const order = ['critical', 'high', 'medium', 'low'];
+    const sevCount = {};
+    r.alerts.forEach((a) => { const s = a.severity || 'low'; sevCount[s] = (sevCount[s] || 0) + 1; });
+    const total = r.alerts.length;
+    const sevBars = order.filter((s) => sevCount[s]).map((s) => {
+      const n = sevCount[s], pct = Math.round(n / total * 100);
+      return '<div class="crf-roll-row">' +
+        '<span class="crf-roll-l"><span class="crf-sev cru-sev-' + s + '">' + esc(s) + '</span></span>' +
+        '<span class="crf-roll-bar"><span class="crf-roll-fill crf-fill-' + s + '" style="width:' + pct + '%"></span></span>' +
+        '<span class="crf-roll-n">' + esc(n) + '</span>' +
+      '</div>';
+    }).join('');
+
+    // sensor breakdown
+    const senCount = {};
+    r.alerts.forEach((a) => { const s = a.sensor || 'Unknown'; senCount[s] = (senCount[s] || 0) + 1; });
+    const senChips = Object.keys(senCount).sort((a, b) => senCount[b] - senCount[a]).slice(0, 6)
+      .map((s) => '<span class="crf-chip">' + esc(s) + ' <b>' + esc(senCount[s]) + '</b></span>').join('');
+
+    // most-targeted assets (by attacker events, alerted or not)
+    const crown = core.ESTATE.crownJewels || [];
+    const tgt = {};
+    r.events.forEach((e) => { tgt[e.assetId] = (tgt[e.assetId] || 0) + 1; });
+    const topTargets = Object.keys(tgt).sort((a, b) => tgt[b] - tgt[a]).slice(0, 5).map((id) => {
+      const a = core.ASSET[id] || { name: id };
+      const cj = crown.indexOf(id) !== -1;
+      return '<li><span class="crf-tt-n">' + esc(a.name) + (cj ? ' <span class="crf-cj">CROWN</span>' : '') + '</span>' +
+        '<span class="crf-tt-c">' + esc(tgt[id]) + ' hit' + (tgt[id] === 1 ? '' : 's') + '</span></li>';
+    }).join('');
+
+    el.innerHTML =
+      '<div class="crf-roll-sect"><div class="crf-roll-h">By severity</div>' + sevBars + '</div>' +
+      '<div class="crf-roll-sect"><div class="crf-roll-h">By sensor</div><div class="crf-chips">' + senChips + '</div></div>' +
+      '<div class="crf-roll-sect"><div class="crf-roll-h">Most-targeted assets</div><ul class="crf-tt">' + topTargets + '</ul></div>';
+  }
+
+  // Behavioural attribution: rank every known adversary campaign by how much
+  // its technique repertoire overlaps the techniques observed this run
+  // (Jaccard similarity). The live campaign rises as its kill chain unfolds.
+  function renderAttribution() {
+    const r = run();
+    const el = $('crf-attrib');
+    if (!el) return;
+    if (!r) { el.innerHTML = '<div class="crf-sub-empty">No active run to attribute.</div>'; return; }
+    const observed = new Set(r.events.map((e) => e.techniqueId));
+    if (!observed.size) {
+      el.innerHTML = '<div class="crf-sub-empty">Awaiting telemetry. Attribution needs observed techniques.</div>';
+      return;
+    }
+    const ranked = (core.CAMPAIGNS || []).map((c) => {
+      const set = new Set((c.steps || []).map((s) => s.techniqueId));
+      let inter = 0;
+      observed.forEach((t) => { if (set.has(t)) inter += 1; });
+      const union = new Set([...observed, ...set]).size;
+      const sim = union ? inter / union : 0;
+      return { c: c, inter: inter, size: set.size, sim: sim };
+    }).sort((a, b) => b.sim - a.sim);
+
+    const top = ranked[0];
+    const isLive = top && r.campaignId === top.c.id;
+    const rows = ranked.map((x, i) => {
+      const pct = Math.round(x.sim * 100);
+      const engaged = r.campaignId === x.c.id;
+      return '<div class="crf-attr-row' + (i === 0 ? ' lead' : '') + '">' +
+        '<div class="crf-attr-top">' +
+          '<span class="crf-attr-name">' + esc(x.c.name) +
+            (engaged ? ' <span class="crf-attr-eng">ENGAGED</span>' : '') + '</span>' +
+          '<span class="crf-attr-pct">' + esc(pct) + '%</span>' +
+        '</div>' +
+        '<div class="crf-attr-sub">' + esc(x.c.actor) + ' &middot; ' + esc(x.inter) + '/' + esc(x.size) + ' techniques matched</div>' +
+        '<div class="crf-attr-bar"><span class="crf-attr-fill" style="width:' + pct + '%"></span></div>' +
+      '</div>';
+    }).join('');
+    const head = top
+      ? '<div class="crf-attr-head">Leading candidate <b>' + esc(top.c.name) + '</b> (' + esc(top.c.actor) + ') at ' +
+          esc(Math.round(top.sim * 100)) + '% overlap' + (isLive ? ' — consistent with the engaged campaign.' : '.') + '</div>'
+      : '';
+    el.innerHTML = head + '<div class="crf-attr-list">' + rows + '</div>';
+  }
+
   function renderAll() {
     if (!container.isConnected) return;
     renderBanner();
     renderKpis();
     renderRibbon();
+    renderRollup();
+    renderAttribution();
     renderEstate();
     renderFeed();
   }

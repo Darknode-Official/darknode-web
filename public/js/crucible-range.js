@@ -15,6 +15,8 @@ export function renderRange(container, ctx) {
   let selectedCampaign = (core.CRU.run && core.CRU.run.campaignId) ||
     (core.CAMPAIGNS[0] && core.CAMPAIGNS[0].id) || null;
   let selectedPosture = (core.POSTURES[0] && core.POSTURES[0].id) || null;
+  let selectedDifficulty = core.CRU.difficulty ||
+    ((core.DIFFICULTIES || []).find((d) => d.id === 'standard') || (core.DIFFICULTIES || [])[0] || {}).id || null;
   let timer = null;         // active step interval
   let running = false;
 
@@ -136,6 +138,89 @@ export function renderRange(container, ctx) {
     }).join('');
   }
 
+  // ---------------------------------------------------- kill-chain plan
+  // A step-by-step ATT&CK view of the SELECTED campaign, grouped by tactic in
+  // kill-chain order. Each step shows its target, dwell, noise and whether the
+  // defender has any sensor mapped to that technique (a pre-launch coverage
+  // preview). If a run for this campaign exists, each step is overlaid with its
+  // live outcome (blocked / detected / reached).
+  function planHTML() {
+    const camp = core.CAMPAIGN[selectedCampaign];
+    if (!camp) return '';
+    const steps = camp.steps || [];
+    const run = core.CRU.run;
+    const overlay = (run && run.campaignId === selectedCampaign) ? run : null;
+
+    // coverage preview: how many distinct techniques have a mapped detection.
+    const techIds = steps.map((s) => s.techniqueId);
+    const uniqTech = Array.from(new Set(techIds));
+    const covered = uniqTech.filter((id) => (core.DET_BY_TECH[id] || []).length).length;
+    const crownSteps = steps.filter((s) => (core.ESTATE.crownJewels || []).includes(s.targetAssetId)).length;
+
+    let lastTac = null;
+    let rows = '';
+    steps.forEach((s, i) => {
+      const tech = core.TECH[s.techniqueId] || { id: s.techniqueId, name: s.techniqueId, tactic: 'execution' };
+      const asset = core.ASSET[s.targetAssetId] || { id: s.targetAssetId, name: s.targetAssetId };
+      const dets = core.DET_BY_TECH[s.techniqueId] || [];
+      const isCrown = (core.ESTATE.crownJewels || []).includes(s.targetAssetId);
+      if (tech.tactic !== lastTac) {
+        lastTac = tech.tactic;
+        const tacDef = core.TACTICS.find((t) => t.id === tech.tactic);
+        const order = (core.TACTIC_ORDER[tech.tactic] ?? 0) + 1;
+        rows +=
+          '<div class="crr-plan-phase">' +
+            '<span class="crr-plan-phase-n">' + esc(String(order).padStart(2, '0')) + '</span>' +
+            '<span class="crr-plan-phase-t">' + esc(tacDef ? tacDef.name : tech.tactic) + '</span>' +
+          '</div>';
+      }
+      // live overlay status from the matching event (events are in step order).
+      let statusCls = 'planned', statusTxt = 'planned';
+      if (overlay) {
+        const ev = overlay.events[i];
+        if (ev) {
+          const al = overlay.alerts.find((a) => a.techniqueId === ev.techniqueId && a.assetId === ev.assetId && a.t === ev.t);
+          if (ev.blocked) { statusCls = 'blocked'; statusTxt = 'blocked'; }
+          else if (al) { statusCls = 'detected'; statusTxt = 'detected'; }
+          else { statusCls = 'reached'; statusTxt = 'reached'; }
+        }
+      }
+      const cov = dets.length
+        ? '<span class="crr-plan-cov ok">' + esc(dets.length) + ' sensor' + (dets.length === 1 ? '' : 's') + ': ' +
+            esc(dets.map((d) => d.sensor).join(', ')) + '</span>'
+        : '<span class="crr-plan-cov gap">no sensor mapped &middot; blind spot</span>';
+      rows +=
+        '<div class="crr-plan-step ' + statusCls + '">' +
+          '<span class="crr-plan-step-i">' + esc(i + 1) + '</span>' +
+          '<span class="crr-plan-step-body">' +
+            '<span class="crr-plan-step-l1">' +
+              '<span class="crr-plan-tech">' + esc(tech.id) + ' &middot; ' + esc(tech.name) + '</span>' +
+              '<span class="crr-plan-status crr-plan-' + statusCls + '">' + esc(statusTxt) + '</span>' +
+            '</span>' +
+            '<span class="crr-plan-step-l2">' +
+              '<span class="crr-plan-tgt">target: ' + esc(asset.name) +
+                (isCrown ? ' <span class="crr-crown">CJ</span>' : '') + '</span>' +
+              '<span class="crr-plan-meta">dwell ' + esc(s.dwellMin) + 'm &middot; noise ' + esc(Math.round((s.noise || 0) * 100)) + '%</span>' +
+            '</span>' +
+            '<span class="crr-plan-step-l3">' + cov + '</span>' +
+          '</span>' +
+        '</div>';
+    });
+
+    return (
+      '<div class="cru-card" id="crr-plan">' +
+        '<div class="crr-exec-head">' +
+          '<h3 style="margin:0">Kill-Chain Plan &mdash; ' + esc(camp.name) + '</h3>' +
+          '<span class="crr-plan-badge">' + esc(covered) + '/' + esc(uniqTech.length) + ' techniques instrumented</span>' +
+        '</div>' +
+        '<p class="cru-sub">Projected ATT&amp;CK progression for the selected campaign across ' +
+          esc(steps.length) + ' steps' + (crownSteps ? ', ' + esc(crownSteps) + ' targeting crown jewels' : '') +
+          '. Blind spots are techniques with no mapped sensor.</p>' +
+        '<div class="crr-plan">' + rows + '</div>' +
+      '</div>'
+    );
+  }
+
   // ------------------------------------------------------- launch controls
   function launchHTML() {
     const postures = (core.POSTURES || []).map((p) => (
@@ -145,10 +230,24 @@ export function renderRange(container, ctx) {
         '<span class="crr-posture-mult">x' + esc(p.mult) + ' detect</span>' +
       '</button>'
     )).join('');
+    const diffs = (core.DIFFICULTIES || []).map((d) => (
+      '<button type="button" class="crr-diff' + (d.id === selectedDifficulty ? ' on' : '') +
+        '" data-diff="' + esc(d.id) + '" title="' + esc(d.desc) + '">' +
+        '<span class="crr-diff-name">' + esc(d.name) + '</span>' +
+        '<span class="crr-diff-mult">detect x' + esc(d.detectMult) + ' &middot; tempo x' + esc(d.dwellMult) + '</span>' +
+      '</button>'
+    )).join('');
+    const selDiff = core.DIFFICULTY ? core.DIFFICULTY[selectedDifficulty] : null;
     return (
       '<div class="cru-card">' +
         '<h3>Launch Controls</h3>' +
-        '<p class="cru-sub">Choose a defensive posture and defender mode, then launch the selected campaign.</p>' +
+        '<p class="cru-sub">Set adversary tradecraft, defensive posture and defender mode, then launch the selected campaign.</p>' +
+        '<div class="crr-ctl crr-ctl-full">' +
+          '<div class="crr-ctl-l">Adversary Tradecraft (Difficulty)</div>' +
+          '<div class="crr-diffs">' + diffs + '</div>' +
+          '<div class="cru-sub crr-diff-note" style="margin:8px 0 0">' +
+            (selDiff ? esc(selDiff.desc) : '') + '</div>' +
+        '</div>' +
         '<div class="crr-ctl-row">' +
           '<div class="crr-ctl">' +
             '<div class="crr-ctl-l">Defensive Posture</div>' +
@@ -205,10 +304,22 @@ export function renderRange(container, ctx) {
           '<p class="cru-sub">Select an adversary campaign to stage against the estate.</p>' +
           '<div class="crr-camps">' + campaignCardsHTML() + '</div>' +
         '</div>' +
+        planHTML() +
         launchHTML() +
         executionShellHTML() +
       '</div>';
     wire();
+  }
+
+  // Re-render just the plan card in place (campaign changed, or run advanced).
+  function refreshPlan() {
+    if (!container.isConnected) return;
+    const el = container.querySelector('#crr-plan');
+    if (!el) return;
+    const tmp = document.createElement('div');
+    tmp.innerHTML = planHTML();
+    const fresh = tmp.firstElementChild;
+    if (fresh) el.replaceWith(fresh);
   }
 
   function wire() {
@@ -223,6 +334,7 @@ export function renderRange(container, ctx) {
           const chk = x.querySelector('.crr-camp-check');
           if (chk) chk.textContent = on ? 'SELECTED' : 'SELECT';
         });
+        refreshPlan();
       };
     });
     // posture selection
@@ -231,6 +343,18 @@ export function renderRange(container, ctx) {
         if (running) return;
         selectedPosture = b.dataset.posture;
         container.querySelectorAll('.crr-posture').forEach((x) => x.classList.toggle('on', x === b));
+      };
+    });
+    // difficulty selection -- persisted on CRU so it changes the engine on launch
+    container.querySelectorAll('.crr-diff').forEach((b) => {
+      b.onclick = () => {
+        if (running) return;
+        selectedDifficulty = b.dataset.diff;
+        core.CRU.difficulty = selectedDifficulty;
+        container.querySelectorAll('.crr-diff').forEach((x) => x.classList.toggle('on', x === b));
+        const note = container.querySelector('.crr-diff-note');
+        const d = core.DIFFICULTY ? core.DIFFICULTY[selectedDifficulty] : null;
+        if (note && d) note.textContent = d.desc;
       };
     });
     // autopilot toggle
@@ -256,6 +380,7 @@ export function renderRange(container, ctx) {
     const run = core.newRun(selectedCampaign, {
       postureId: selectedPosture,
       autopilot: core.CRU.autopilot,
+      difficultyId: selectedDifficulty,
     });
     core.CRU.run = run;
 
@@ -265,7 +390,7 @@ export function renderRange(container, ctx) {
     // lock controls
     const launch = container.querySelector('#crr-launch');
     if (launch) { launch.disabled = true; launch.textContent = 'Wargame Running…'; }
-    container.querySelectorAll('.crr-camp,.crr-posture').forEach((x) => x.classList.add('crr-lock'));
+    container.querySelectorAll('.crr-camp,.crr-posture,.crr-diff').forEach((x) => x.classList.add('crr-lock'));
 
     const status = container.querySelector('#crr-exec-status');
     if (status) { status.textContent = 'RUNNING'; status.className = 'crr-run-badge live'; }
@@ -302,6 +427,7 @@ export function renderRange(container, ctx) {
       setText('#crr-k-alert', String(alerts));
       setText('#crr-k-block', String(blocked));
       setText('#crr-k-clock', run.clockMin + 'm');
+      refreshPlan();
 
       if (res.done) {
         stopTimer();
@@ -349,6 +475,7 @@ export function renderRange(container, ctx) {
   function finishRun(run) {
     running = false;
     if (!container.isConnected) return;
+    refreshPlan();
     const score = core.scoreRun(run);
     const status = container.querySelector('#crr-exec-status');
     if (status) {
@@ -452,6 +579,39 @@ export function renderRange(container, ctx) {
     '.crr-toggle.on .crr-toggle-knob{background:var(--acc)}' +
     '.crr-toggle.on .crr-toggle-knob:after{transform:translateX(16px)}' +
     '.crr-toggle-txt{font-size:.72rem;font-weight:700;letter-spacing:.05em}' +
+    '.crr-ctl-full{margin-bottom:16px}' +
+    '.crr-diffs{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px}' +
+    '.crr-diff{font-family:inherit;text-align:left;color:var(--txt);background:var(--card);border:1px solid var(--line);border-radius:4px;padding:8px 12px;cursor:pointer;display:flex;flex-direction:column;gap:3px}' +
+    '.crr-diff:hover{border-color:var(--acc)}' +
+    '.crr-diff.on{border-color:var(--acc);box-shadow:inset 0 0 0 1px var(--acc);background:color-mix(in srgb,var(--acc) 10%,var(--card))}' +
+    '.crr-diff.crr-lock{opacity:.55;cursor:default}' +
+    '.crr-diff-name{font-weight:700;font-size:.8rem}' +
+    '.crr-diff-mult{font-size:.6rem;color:var(--mut);font-variant-numeric:tabular-nums}' +
+    '.crr-plan-badge{font-size:.62rem;font-weight:700;letter-spacing:.06em;padding:3px 8px;border-radius:4px;border:1px solid var(--line);color:var(--mut)}' +
+    '.crr-plan{margin-top:12px;display:flex;flex-direction:column;gap:5px;max-height:420px;overflow-y:auto}' +
+    '.crr-plan-phase{display:flex;align-items:center;gap:8px;margin:8px 0 3px;padding-bottom:3px;border-bottom:1px solid var(--line)}' +
+    '.crr-plan-phase:first-child{margin-top:0}' +
+    '.crr-plan-phase-n{font-size:.6rem;font-weight:800;color:var(--acc);font-variant-numeric:tabular-nums}' +
+    '.crr-plan-phase-t{font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}' +
+    '.crr-plan-step{display:flex;gap:10px;align-items:flex-start;padding:7px 10px;border:1px solid var(--line);border-radius:4px;background:var(--card)}' +
+    '.crr-plan-step.blocked{border-left:3px solid #16a34a}' +
+    '.crr-plan-step.detected{border-left:3px solid #d97706}' +
+    '.crr-plan-step.reached{border-left:3px solid #dc2626}' +
+    '.crr-plan-step-i{font-size:.66rem;color:var(--mut);min-width:18px;font-variant-numeric:tabular-nums;padding-top:2px;font-weight:700}' +
+    '.crr-plan-step-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}' +
+    '.crr-plan-step-l1{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}' +
+    '.crr-plan-tech{font-weight:600;font-size:.78rem}' +
+    '.crr-plan-status{font-size:.6rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:1px 6px;border-radius:3px;border:1px solid var(--line);color:var(--mut)}' +
+    '.crr-plan-blocked{color:#16a34a;border-color:color-mix(in srgb,#16a34a 45%,transparent)}' +
+    '.crr-plan-detected{color:#d97706;border-color:color-mix(in srgb,#d97706 45%,transparent)}' +
+    '.crr-plan-reached{color:#dc2626;border-color:color-mix(in srgb,#dc2626 45%,transparent)}' +
+    '.crr-plan-step-l2{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:.7rem;color:var(--mut)}' +
+    '.crr-plan-tgt{display:inline-flex;align-items:center;gap:6px}' +
+    '.crr-plan-meta{font-variant-numeric:tabular-nums}' +
+    '.crr-plan-step-l3{font-size:.66rem}' +
+    '.crr-plan-cov{display:inline-block}' +
+    '.crr-plan-cov.ok{color:#16a34a}' +
+    '.crr-plan-cov.gap{color:#dc2626;font-weight:600}' +
     '.crr-launch-bar{display:flex;align-items:center;gap:14px;margin-top:16px;flex-wrap:wrap}' +
     '.crr-launch{font-size:.9rem;padding:11px 22px;letter-spacing:.04em}' +
     '.crr-exec-head{display:flex;align-items:center;justify-content:space-between;gap:10px}' +
