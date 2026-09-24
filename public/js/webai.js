@@ -186,6 +186,12 @@ const OLLAMA_MODELS = [
 // Uses the self-updating "-latest" alias so it won't hard-deprecate the way a
 // pinned version can. Flash is the best tier that's actually free on this key
 // (Pro is quota-limited), so it's the platform default.
+// The platform's automatic default model. Gemini Flash is free on the built-in
+// key, needs no install, and is the most capable free tier — so it's what every
+// user gets until they pick something else. Kept as a named constant so the
+// default is explicit and survives any reordering of MODELS.
+const DEFAULT_MODEL_ID = "gemini-flash-latest";
+
 const GEMINI_MODELS = [
   { id: "gemini-flash-latest", name: "Gemini Flash", provider: "gemini", group: "Recommended (Free)", sub: "recommended" },
   { id: "gemini-3.8-flash", name: "Gemini 3.8 Flash", provider: "gemini", group: "Recommended (Free)" },
@@ -406,7 +412,9 @@ function aiModal({ title, desc, fields = [], submitText = "Save", extra = [] } =
 export function renderAI(main) {
   const models = availableModels();
   const saved = (() => { try { return localStorage.getItem(MODEL_KEY) || ""; } catch (_) { return ""; } })();
-  const defaultModel = models.find((m) => m.id === saved) || models[0];
+  const defaultModel = models.find((m) => m.id === saved)
+    || models.find((m) => m.id === DEFAULT_MODEL_ID)
+    || models[0];
 
   const groups = [];
   const seen = new Set();
