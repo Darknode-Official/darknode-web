@@ -864,6 +864,9 @@ function renderHome(main, user, isOwner, show) {
   const dt = _dashDateTime();
   const recentItems = _dashRecentActivity();
   const sStats = _dashSessionStats();
+  const catCounts = CATEGORIES.map((c) => ({ c, n: CATALOG.filter((t) => t.cat === c).length })).sort((a, b) => b.n - a.n);
+  const maxCat = catCounts.length ? catCounts[0].n : 1;
+  const flagships = [["Prometheus", "prometheus"], ["Sentinel Eye", "sentineleye"], ["PHANTOM", "phantom"], ["CITADEL", "citadel"], ["ORACLE", "oracle"], ["SPECTRE", "spectre"], ["CRUCIBLE", "crucible"], ["NAVARCH", "navarch"], ["AEGIS", "aegis"], ["VANGUARD", "vanguard"], ["HYDRA", "hydra"], ["Investigation", "investigation"]];
 
   const timeAgo = (ts) => {
     const diff = Date.now() - ts;
@@ -907,39 +910,44 @@ function renderHome(main, user, isOwner, show) {
       ${stat(59, "AI modules", "Ollama + cloud")}
       ${stat("610K+", "lines of code", "across the Darknode ecosystem")}
     </div>
-    <div class="dash-ops">
-      <div class="dash-changelog">
-      <div class="dash-cl-header">
-        <h2 class="pg-h2">What's new</h2>
-        <span class="dash-cl-viewall muted" data-sec="docs" data-more="">View all updates</span>
-      </div>
-      <div class="cl-items">
-        <div class="cl-item"><span class="cl-tag new">NEW</span><span class="cl-text">PHANTOM &mdash; network traffic analysis with PCAP parsing, protocol dissection, anomaly detection</span><span class="cl-date muted">Sep 2026</span></div>
-        <div class="cl-item"><span class="cl-tag new">NEW</span><span class="cl-text">CITADEL &mdash; SOC operations center with log correlation, detection rules, alert triage</span><span class="cl-date muted">Sep 2026</span></div>
-        <div class="cl-item"><span class="cl-tag new">NEW</span><span class="cl-text">ORACLE &mdash; threat intelligence platform with IOC management and campaign tracking</span><span class="cl-date muted">Sep 2026</span></div>
-        <div class="cl-item"><span class="cl-tag new">NEW</span><span class="cl-text">SPECTRE &mdash; cloud security posture management for AWS, Azure, and GCP</span><span class="cl-date muted">Sep 2026</span></div>
-        <div class="cl-item"><span class="cl-tag new">NEW</span><span class="cl-text">Security Graph &mdash; unified entity store linking assets, indicators, incidents across all tools</span><span class="cl-date muted">Sep 2026</span></div>
-        <div class="cl-item"><span class="cl-tag new">NEW</span><span class="cl-text">Investigation Workspace &mdash; case management, timelines, findings, and evidence collection</span><span class="cl-date muted">Sep 2026</span></div>
-        <div class="cl-item"><span class="cl-tag imp">IMPROVED</span><span class="cl-text">Pro theme visual overhaul &mdash; refined sidebar, topbar, cards, command palette, AI chat</span><span class="cl-date muted">Sep 2026</span></div>
-        <div class="cl-item"><span class="cl-tag fix">FIX</span><span class="cl-text">Sentinel Eye globe &mdash; satellite imagery, deeper zoom, sharper tiles</span><span class="cl-date muted">Sep 2026</span></div>
-      </div>
-      </div>
-      <div class="dash-ops-side">
-        <div class="panel dash-activity-panel">
-          <div class="panel-h"><h2 class="pg-h2" style="margin:0">Recent activity</h2></div>
-          <div class="dash-timeline" id="dashTimeline">
-            ${recentItems.map((item) => `<div class="dash-tl-item"><span class="dash-tl-dot"></span><span class="dash-tl-text">${esc(item.text)}</span><span class="dash-tl-time muted">${timeAgo(item.ts)}</span></div>`).join("")}
-          </div>
+    <div class="dash-grid">
+      <section class="dg-panel dg-span2">
+        <div class="dg-h"><span class="dg-t">Catalog coverage</span><span class="dg-badge">${CATALOG.length} tools &middot; ${CATEGORIES.length} categories</span></div>
+        <div class="dg-bars">
+          ${catCounts.slice(0, 10).map(({ c, n }) => `<button class="dg-bar-row" data-sec="tools"><span class="dg-bar-l">${esc(c)}</span><span class="dg-bar-track"><span class="dg-bar-fill" style="width:${Math.max(6, Math.round((n / maxCat) * 100))}%"></span></span><span class="dg-bar-n">${n}</span></button>`).join("")}
         </div>
-        <div class="panel dash-qstats-panel">
-          <div class="panel-h"><h2 class="pg-h2" style="margin:0">Quick stats</h2></div>
-          <div class="dash-qstats">
-            <div class="dash-qs-item"><div class="dash-qs-n">${sStats.sessions}</div><div class="dash-qs-l">Total sessions</div></div>
-            <div class="dash-qs-item"><div class="dash-qs-n">${sStats.aiConvos}</div><div class="dash-qs-l">AI conversations</div></div>
-            <div class="dash-qs-item"><div class="dash-qs-n">${sStats.toolsUsed}</div><div class="dash-qs-l">Tools used</div></div>
-          </div>
+      </section>
+      <section class="dg-panel">
+        <div class="dg-h"><span class="dg-t">Flagship platforms</span><span class="dg-badge live"><span class="dg-live"></span>${flagships.length} live</span></div>
+        <div class="dg-flag-list">
+          ${flagships.map(([nm, sec]) => `<button class="dg-flag-item" data-sec="${sec}"><span class="dg-live"></span><span class="dg-flag-nm">${esc(nm)}</span><span class="dg-flag-go">&rsaquo;</span></button>`).join("")}
         </div>
-      </div>
+      </section>
+      <section class="dg-panel">
+        <div class="dg-h"><span class="dg-t">Recent activity</span></div>
+        <div class="dash-timeline" id="dashTimeline">
+          ${recentItems.map((item) => `<div class="dash-tl-item"><span class="dash-tl-dot"></span><span class="dash-tl-text">${esc(item.text)}</span><span class="dash-tl-time muted">${timeAgo(item.ts)}</span></div>`).join("")}
+        </div>
+      </section>
+      <section class="dg-panel">
+        <div class="dg-h"><span class="dg-t">Session</span></div>
+        <div class="dg-stat-list">
+          <div class="dg-stat"><span class="dg-stat-n">${sStats.sessions}</span><span class="dg-stat-l">Total sessions</span></div>
+          <div class="dg-stat"><span class="dg-stat-n">${sStats.aiConvos}</span><span class="dg-stat-l">AI conversations</span></div>
+          <div class="dg-stat"><span class="dg-stat-n">${sStats.toolsUsed}</span><span class="dg-stat-l">Tools used</span></div>
+        </div>
+      </section>
+      <section class="dg-panel dg-span2">
+        <div class="dg-h"><span class="dg-t">What's new</span><span class="dg-badge" data-sec="docs" data-more="">View all</span></div>
+        <div class="cl-items">
+          <div class="cl-item"><span class="cl-tag new">NEW</span><span class="cl-text">PHANTOM &mdash; network traffic analysis, PCAP parsing, protocol dissection</span><span class="cl-date muted">Sep 2026</span></div>
+          <div class="cl-item"><span class="cl-tag new">NEW</span><span class="cl-text">CITADEL &mdash; SOC ops center: log correlation, detection rules, alert triage</span><span class="cl-date muted">Sep 2026</span></div>
+          <div class="cl-item"><span class="cl-tag new">NEW</span><span class="cl-text">ORACLE &mdash; threat intel platform: IOC management &amp; campaign tracking</span><span class="cl-date muted">Sep 2026</span></div>
+          <div class="cl-item"><span class="cl-tag new">NEW</span><span class="cl-text">SPECTRE &mdash; cloud security posture management for AWS, Azure, GCP</span><span class="cl-date muted">Sep 2026</span></div>
+          <div class="cl-item"><span class="cl-tag new">NEW</span><span class="cl-text">Security Graph &mdash; unified entity store across all tools</span><span class="cl-date muted">Sep 2026</span></div>
+          <div class="cl-item"><span class="cl-tag imp">IMPROVED</span><span class="cl-text">Pro theme overhaul &mdash; sidebar, topbar, cards, command palette, AI chat</span><span class="cl-date muted">Sep 2026</span></div>
+        </div>
+      </section>
     </div>
     <div class="dash-services-head">
       <h2 class="pg-h2" style="margin:0">Services</h2>
