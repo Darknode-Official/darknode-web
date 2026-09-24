@@ -20,7 +20,7 @@ let MORE = [], CATALOG = [], CATEGORIES = [];
 import("/js/toolkit.js").then(m => { MORE = m.MORE; CATALOG = m.CATALOG; CATEGORIES = m.CATEGORIES; });
 import { startTour, tourDone } from "/js/tour.js";
 let _landing = null;
-async function loadLanding() { if (!_landing) _landing = await import("/js/landing.js?v=20260924a"); return _landing; }
+async function loadLanding() { if (!_landing) _landing = await import("/js/landing.js?v=20260924b"); return _landing; }
 
 // Plain-language, newbie-friendly one-liners for every sidebar item + group.
 // Surfaced as a hover tooltip so the sidebar stays visually neat while every
@@ -905,7 +905,7 @@ function renderHome(main, user, isOwner, show) {
       ${stat(COUNTS.resources, "resources")}
       ${stat(CATEGORIES.length, "categories")}
       ${stat(59, "AI modules", "Ollama + cloud")}
-      ${stat("378K+", "lines of code", "this web platform")}
+      ${stat("385K+", "lines of code", "this web platform")}
     </div>
     <div class="dash-ops">
       <div class="dash-changelog">
@@ -1631,7 +1631,7 @@ function renderApp(user) {
     if (sec && sec !== "home" && sec !== "settings") { try { let r = JSON.parse(localStorage.getItem("dn_recent")||"[]"); r = r.filter(s=>s!==sec); r.unshift(sec); r = r.slice(0,8); localStorage.setItem("dn_recent", JSON.stringify(r)); } catch(_){} }
     if (sec === "tools") { main.innerHTML = `<div class="pg-head"><div><h1 class="pg-h1">Tools</h1><p class="muted pg-sub">Search, filter, and open any tool in the catalog.</p></div></div><div id="tools"></div>`; import("/js/tools.js?v=20260924a").then(m => m.renderTools(document.getElementById("tools"))); }
     else if (sec === "utils") { import("/js/utils.js").then(m => m.renderUtils(main)); }
-    else if (sec === "ai") { import("/js/webai.js?v=20260924h").then(m => m.renderAI(main)); }
+    else if (sec === "ai") { import("/js/webai.js?v=20260924i").then(m => m.renderAI(main)); }
     else if (sec === "payloads") { import("/js/labs.js").then(m => m.renderPayloads(main)); }
     else if (sec === "targets") { import("/js/labs.js").then(m => m.renderTargets(main)); }
     else if (sec === "ghdb") { import("/js/ghdb.js").then(m => m.renderGHDB(main)); }
