@@ -4,14 +4,16 @@ const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const OLLAMA = "http://127.0.0.1:11434";
 const SYS_KEY = "sw_ai_sys", MODEL_KEY = "sw_ai_model";
-const _BK = ["\x67\x73\x6b\x5f\x32\x78\x71\x4a\x55\x78\x77\x32\x32\x6a\x72\x4e\x39\x4b\x6a\x52\x7a\x67\x43\x43\x57\x47\x64\x79\x62\x33\x46\x59\x41\x67\x73\x6f\x69\x4e\x6d\x6d\x4c\x32\x44\x76\x4f\x55\x4a\x64\x46\x76\x64\x39\x59\x6f\x68\x36","\x73\x6b\x2d\x6f\x72\x2d\x76\x31\x2d\x37\x61\x66\x62\x39\x66\x32\x62\x32\x63\x31\x32\x32\x63\x30\x61\x30\x31\x38\x63\x37\x39\x30\x34\x35\x65\x38\x33\x32\x33\x36\x31\x62\x62\x63\x35\x65\x63\x31\x64\x38\x61\x66\x34\x36\x66\x37\x34\x66\x62\x31\x39\x39\x31\x65\x37\x35\x31\x39\x34\x34\x66\x35\x35","\x66\x38\x75\x79\x70\x4f\x55\x47\x78\x33\x76\x49\x59\x6b\x74\x42\x69\x36\x69\x66\x68\x4e\x7a\x4f\x66\x4a\x73\x31\x63\x58\x79\x50","\x41\x51\x2e\x41\x62\x38\x52\x4e\x36\x4c\x64\x5a\x46\x41\x52\x4e\x65\x4d\x43\x2d\x42\x4f\x4d\x5a\x34\x42\x73\x62\x4c\x7a\x53\x35\x4b\x62\x4e\x42\x30\x71\x65\x38\x52\x41\x66\x35\x5a\x4f\x77\x77\x70\x37\x50\x6a\x51"];
+// The free tier is served by the server-side proxy (/api/chat): the keys for
+// these providers live ONLY in the Cloud Function environment — never in this
+// file, never shipped to the browser. (A static site cannot hide a key it holds,
+// so we don't hold one.) If a user enters their own key in Settings, that BYOK
+// key is used directly instead of the proxy.
+const PROXY_URL = "/api/chat";
+const PROXY_PROVIDERS = new Set(["gemini", "groq", "openrouter", "mistral"]);
 function _key(provider) {
   const map = { claude: "sw_claude_key", openai: "sw_openai_key", gemini: "sw_gemini_key", groq: "sw_groq_key", openrouter: "sw_openrouter_key", mistral: "sw_mistral_key" };
   try { const u = (localStorage.getItem(map[provider]) || "").trim(); if (u) return u; } catch (_) {}
-  if (provider === "groq") return _BK[0];
-  if (provider === "openrouter") return _BK[1];
-  if (provider === "mistral") return _BK[2];
-  if (provider === "gemini") return _BK[3];
   return "";
 }
 
@@ -310,8 +312,29 @@ async function streamOllama(model, messages, onToken, signal) {
   for (;;) { const { done, value } = await reader.read(); if (done) break; buf += dec.decode(value, { stream: true }); let nl; while ((nl = buf.indexOf("\n")) >= 0) { const line = buf.slice(0, nl).trim(); buf = buf.slice(nl + 1); if (!line) continue; try { const j = JSON.parse(line); if (j.message && j.message.content) onToken(j.message.content); } catch (_) {} } }
 }
 
+// Free tier: POST {provider, model, messages} to the server proxy, which holds
+// the key and normalizes every provider to OpenAI-style SSE, so this reader is
+// identical to the direct OpenAI-compat one.
+async function streamProxy(provider, model, messages, onToken, signal) {
+  let r;
+  try {
+    r = await fetch(PROXY_URL, { method: "POST", signal, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ provider, model, messages }) });
+  } catch (e) {
+    if (e.name === "AbortError") throw e;
+    throw new Error("Can't reach the Darknode AI service. Add your own API key in Settings → API Keys to use this model directly.");
+  }
+  if (r.status === 404) throw new Error("The free AI service isn't available here yet. Add your own API key in Settings → API Keys, or run the app with the AI proxy deployed.");
+  if (r.status === 429) throw new Error("Rate limit reached — wait a moment or switch to a different model.");
+  if (!r.ok) { const e = await r.text().catch(() => ""); let msg = e; try { msg = JSON.parse(e).error || e; } catch (_) {} throw new Error("AI service " + r.status + (msg ? ": " + String(msg).slice(0, 200) : "")); }
+  if (!r.body) throw new Error("No streaming body");
+  const reader = r.body.getReader(), dec = new TextDecoder(); let buf = "";
+  for (;;) { const { done, value } = await reader.read(); if (done) break; buf += dec.decode(value, { stream: true }); let nl; while ((nl = buf.indexOf("\n")) >= 0) { const line = buf.slice(0, nl).trim(); buf = buf.slice(nl + 1); if (!line.startsWith("data: ")) continue; const payload = line.slice(6); if (payload === "[DONE]") return; try { const j = JSON.parse(payload); const delta = j.choices && j.choices[0] && j.choices[0].delta; if (delta && delta.content) onToken(delta.content); } catch (_) {} } }
+}
+
 function streamFor(provider, model, messages, onToken, signal) {
   const key = _key(provider);
+  // No user key but the server can serve it for free -> go through the proxy.
+  if (!key && PROXY_PROVIDERS.has(provider)) return streamProxy(provider, model, messages, onToken, signal);
   if (provider === "groq") return streamOpenAICompat("https://api.groq.com/openai/v1/chat/completions", key, model, messages, onToken, signal);
   if (provider === "openrouter") return streamOpenAICompat("https://openrouter.ai/api/v1/chat/completions", key, model, messages, onToken, signal, { "HTTP-Referer": location.origin, "X-Title": "Darknode AI" });
   if (provider === "mistral") return streamOpenAICompat("https://api.mistral.ai/v1/chat/completions", key, model, messages, onToken, signal);
@@ -368,7 +391,9 @@ const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 
 const TEXT_EXT = /\.(txt|text|md|markdown|log|csv|tsv|json|ya?ml|xml|svg|html?|css|scss|less|js|jsx|mjs|cjs|ts|tsx|py|rb|go|rs|c|h|cpp|hpp|cc|cxx|java|kt|kts|swift|php|pl|lua|r|sh|bash|zsh|fish|ps1|bat|sql|toml|ini|conf|cfg|env|properties|gradle|dockerfile|makefile|cmake|diff|patch|pcap|har|nmap|gnmap|asm|s)$/i;
 
 function availableModels() {
-  return MODELS.filter((m) => m.provider === "ollama" || !!_key(m.provider));
+  // Ollama is local; proxy providers are free via the server; everything else
+  // needs the user's own key.
+  return MODELS.filter((m) => m.provider === "ollama" || PROXY_PROVIDERS.has(m.provider) || !!_key(m.provider));
 }
 
 // Lightweight CSS modal (replaces native prompt()/confirm()). Resolves with an
