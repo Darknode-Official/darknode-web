@@ -417,7 +417,7 @@ export function renderAI(main) {
     const items = models.filter((m) => m.group === g);
     return `<optgroup label="${esc(g)}">${items.map((m) => {
       const needsKey = byokProviders.has(m.provider) && !_key(m.provider);
-      return `<option value="${esc(m.provider + ":" + m.id)}"${m === defaultModel ? " selected" : ""}${needsKey ? ' class="ai-byok"' : ""}>${needsKey ? "\u{1F512} " : ""}${esc(m.name)}${m.sub ? " · " + esc(m.sub) : ""}${needsKey ? " (BYOK)" : ""}</option>`;
+      return `<option value="${esc(m.provider + ":" + m.id)}"${m === defaultModel ? " selected" : ""}${needsKey ? ' class="ai-byok"' : ""}>${esc(m.name)}${m.sub ? " · " + esc(m.sub) : ""}${needsKey ? " (BYOK)" : ""}</option>`;
     }).join("")}</optgroup>`;
   }).join("");
 
