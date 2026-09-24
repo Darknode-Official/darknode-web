@@ -20,7 +20,7 @@ let MORE = [], CATALOG = [], CATEGORIES = [];
 import("/js/toolkit.js").then(m => { MORE = m.MORE; CATALOG = m.CATALOG; CATEGORIES = m.CATEGORIES; });
 import { startTour, tourDone } from "/js/tour.js";
 let _landing = null;
-async function loadLanding() { if (!_landing) _landing = await import("/js/landing.js?v=20260924d"); return _landing; }
+async function loadLanding() { if (!_landing) _landing = await import("/js/landing.js?v=20260924e"); return _landing; }
 
 // Plain-language, newbie-friendly one-liners for every sidebar item + group.
 // Surfaced as a hover tooltip so the sidebar stays visually neat while every
@@ -905,7 +905,7 @@ function renderHome(main, user, isOwner, show) {
       ${stat(COUNTS.resources, "resources")}
       ${stat(CATEGORIES.length, "categories")}
       ${stat(59, "AI modules", "Ollama + cloud")}
-      ${stat("700K+", "lines of code", "across the Darknode ecosystem")}
+      ${stat("610K+", "lines of code", "across the Darknode ecosystem")}
     </div>
     <div class="dash-ops">
       <div class="dash-changelog">

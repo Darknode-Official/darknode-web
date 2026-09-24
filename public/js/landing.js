@@ -26,7 +26,7 @@ export function renderLanding(view, actions) {
           </a>
         </div>
         <div class="hero-trust">
-          <div class="trust-item"><span class="trust-n" data-count="700000" data-suffix="+" data-format="comma">0</span><span class="trust-l">Lines of code</span></div>
+          <div class="trust-item"><span class="trust-n" data-count="610000" data-suffix="+" data-format="comma">0</span><span class="trust-l">Lines of code</span></div>
           <div class="trust-sep"></div>
           <div class="trust-item"><span class="trust-n" data-count="192" data-suffix="+">0</span><span class="trust-l">Security tools</span></div>
           <div class="trust-sep"></div>
@@ -471,7 +471,7 @@ export function renderLanding(view, actions) {
           </div>
           <div class="nx-arch-connector"></div>
           <div class="nx-arch-layer nx-arch-l5">
-            <div class="nx-arch-footer-band">59 modules &mdash; 700,000+ lines of code</div>
+            <div class="nx-arch-footer-band">59 modules &mdash; 610,000+ lines of code</div>
           </div>
         </div>
 
