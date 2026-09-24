@@ -410,17 +410,8 @@ export function renderOSINTDashboard(main) {
   }).join("");
 
   main.innerHTML =
-    '<h1 class="pg-h1">OSINT Dashboard</h1>' +
-    '<p class="muted pg-sub">Open-source intelligence research organizer — target profiling, username checking, Google dorks, tool directory, and investigation timeline.</p>' +
-    '<div class="tool-intro">' +
-      '<h2>OSINT Dashboard</h2>' +
-      '<p>Searches for publicly available information about usernames, emails, and domains across the internet. All lookups are passive and legal.</p>' +
-      '<div class="tool-steps">' +
-        '<div class="tool-step"><span class="step-num">1</span><div class="step-text"><strong>Enter a username or email</strong>Type the target identifier you want to research</div></div>' +
-        '<div class="tool-step"><span class="step-num">2</span><div class="step-text"><strong>Select data sources</strong>Pick a tab: Username Checker, Google Dorks, Email OSINT, or Domain Intel</div></div>' +
-        '<div class="tool-step"><span class="step-num">3</span><div class="step-text"><strong>Review what was found</strong>See matching profiles, results, and investigation leads</div></div>' +
-      '</div>' +
-    '</div>' +
+    '<div class="pg-head"><div><h1 class="pg-h1">OSINT Dashboard</h1>' +
+    '<p class="muted pg-sub">Open-source intelligence research organizer — target profiling, username checking, Google dorks, tool directory, and investigation timeline. All lookups are passive; data stored locally.</p></div></div>' +
     '<div class="cs-filter" id="osint-tabs">' + tabBtns + '</div>' +
     '<div id="osint-content" style="margin-top:16px"></div>';
 

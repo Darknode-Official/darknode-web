@@ -24,17 +24,8 @@ export function renderSecurityDashboard(main) {
   var data = loadData();
 
   main.innerHTML =
-    '<h1 class="pg-h1">Security Dashboard</h1>' +
-    '<p class="muted pg-sub">Organization security posture -- asset inventory, vulnerability tracking, risk register, patch management, and metrics. All data stored locally.</p>' +
-    '<div class="tool-intro">' +
-      '<h2>Security Dashboard</h2>' +
-      '<p>Gives you a single view of your security posture. See vulnerability counts, threat levels, compliance status, and recent alerts.</p>' +
-      '<div class="tool-steps">' +
-        '<div class="tool-step"><span class="step-num">1</span><div class="step-text"><strong>Review the overview</strong>See your security score, open vulnerabilities, and SLA status</div></div>' +
-        '<div class="tool-step"><span class="step-num">2</span><div class="step-text"><strong>Click into any metric</strong>Switch tabs to manage assets, vulnerabilities, risks, or patches</div></div>' +
-        '<div class="tool-step"><span class="step-num">3</span><div class="step-text"><strong>Take action on findings</strong>Add entries, update statuses, and generate reports</div></div>' +
-      '</div>' +
-    '</div>' +
+    '<div class="pg-head"><div><h1 class="pg-h1">Security Dashboard</h1>' +
+    '<p class="muted pg-sub">Organization security posture — asset inventory, vulnerability tracking, risk register, patch management, and metrics. All data stored locally in this browser.</p></div></div>' +
     '<div class="tab-bar" id="sd-tabs">' +
       '<button class="tab active" data-tab="overview">Overview</button>' +
       '<button class="tab" data-tab="assets">Assets</button>' +
@@ -84,31 +75,23 @@ export function renderSecurityDashboard(main) {
     var scoreColor = score >= 80 ? '#22c55e' : score >= 60 ? '#f59e0b' : '#ef4444';
     var scoreLabel = score >= 80 ? 'Good' : score >= 60 ? 'Fair' : 'Critical';
 
+    var metric = function(val, label, color, sub) {
+      return '<div style="background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px 14px;min-width:0">' +
+        '<div style="font-size:1.6rem;font-weight:700;line-height:1.1;color:' + color + '">' + val + '</div>' +
+        '<div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;color:var(--mut);margin-top:4px">' + label + '</div>' +
+        (sub ? '<div style="font-size:.7rem;color:' + color + ';margin-top:2px">' + sub + '</div>' : '') + '</div>';
+    };
     content.innerHTML =
-      '<div style="margin-top:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px">' +
-        '<div style="background:var(--card);border:1px solid var(--line);border-radius:6px;padding:16px;text-align:center">' +
-          '<div style="font-size:2rem;font-weight:700;color:' + scoreColor + '">' + score + '</div>' +
-          '<div style="font-size:.8rem;color:var(--mut)">Security Score</div>' +
-          '<div style="font-size:.75rem;color:' + scoreColor + '">' + scoreLabel + '</div></div>' +
-        '<div style="background:var(--card);border:1px solid var(--line);border-radius:6px;padding:16px;text-align:center">' +
-          '<div style="font-size:2rem;font-weight:700;color:var(--acc)">' + totalAssets + '</div>' +
-          '<div style="font-size:.8rem;color:var(--mut)">Total Assets</div></div>' +
-        '<div style="background:var(--card);border:1px solid var(--line);border-radius:6px;padding:16px;text-align:center">' +
-          '<div style="font-size:2rem;font-weight:700;color:#ef4444">' + openVulns + '</div>' +
-          '<div style="font-size:.8rem;color:var(--mut)">Open Vulnerabilities</div>' +
-          '<div style="font-size:.75rem;color:#ef4444">' + critVulns + ' critical</div></div>' +
-        '<div style="background:var(--card);border:1px solid var(--line);border-radius:6px;padding:16px;text-align:center">' +
-          '<div style="font-size:2rem;font-weight:700;color:#f59e0b">' + openRisks + '</div>' +
-          '<div style="font-size:.8rem;color:var(--mut)">Open Risks</div></div>' +
-        '<div style="background:var(--card);border:1px solid var(--line);border-radius:6px;padding:16px;text-align:center">' +
-          '<div style="font-size:2rem;font-weight:700;color:#a855f7">' + pendingPatches + '</div>' +
-          '<div style="font-size:.8rem;color:var(--mut)">Pending Patches</div></div>' +
-        '<div style="background:var(--card);border:1px solid var(--line);border-radius:6px;padding:16px;text-align:center">' +
-          '<div style="font-size:2rem;font-weight:700;color:' + (slaBreaches ? '#ef4444' : '#22c55e') + '">' + slaBreaches + '</div>' +
-          '<div style="font-size:.8rem;color:var(--mut)">SLA Breaches</div></div>' +
+      '<div style="margin-top:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:8px">' +
+        metric(score, 'Security Score', scoreColor, scoreLabel) +
+        metric(totalAssets, 'Total Assets', 'var(--acc)', '') +
+        metric(openVulns, 'Open Vulnerabilities', '#ef4444', critVulns + ' critical') +
+        metric(openRisks, 'Open Risks', '#f59e0b', '') +
+        metric(pendingPatches, 'Pending Patches', '#a855f7', '') +
+        metric(slaBreaches, 'SLA Breaches', slaBreaches ? '#ef4444' : '#22c55e', '') +
       '</div>' +
-      '<div style="margin-top:16px;background:var(--card);border:1px solid var(--line);border-radius:6px;padding:16px">' +
-        '<h3 style="margin-top:0;font-size:.95rem">Quick Actions</h3>' +
+      '<div style="margin-top:14px;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:14px 16px">' +
+        '<h3 style="margin-top:0;margin-bottom:10px;font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;color:var(--mut)">Quick Actions</h3>' +
         '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
           '<button class="btn sm" id="sd-add-asset-btn">Add Asset</button>' +
           '<button class="btn sm" id="sd-add-vuln-btn">Add Vulnerability</button>' +
@@ -122,8 +105,11 @@ export function renderSecurityDashboard(main) {
     main.querySelector('#sd-add-vuln-btn').onclick = function() { switchTab('vulns'); };
     main.querySelector('#sd-add-risk-btn').onclick = function() { switchTab('risks'); };
     main.querySelector('#sd-add-patch-btn').onclick = function() { switchTab('patches'); };
-    main.querySelector('#sd-clear-btn').onclick = function() {
-      if (confirm('Clear all security dashboard data?')) { data = defaultData(); saveData(data); renderOverview(); }
+    main.querySelector('#sd-clear-btn').onclick = async function() {
+      var ok = window.dnConfirm
+        ? await window.dnConfirm('Clear all security dashboard data?', 'This permanently removes every asset, vulnerability, risk, and patch entry stored in this browser. This cannot be undone.', { submitText: 'Clear all', danger: true })
+        : true;
+      if (ok) { data = defaultData(); saveData(data); renderOverview(); }
     };
   }
 
