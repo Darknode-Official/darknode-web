@@ -237,8 +237,31 @@ const FRAMEWORKS = {
 
 function renderFrameworkSelector(main, data) {
   const fwNames = Object.keys(FRAMEWORKS);
-  var html = '<h1 class="pg-h1">Compliance Checker</h1>' +
-    '<p class="muted pg-sub">Assess your organization against major security frameworks. Track controls, map across standards, and generate audit-ready reports.</p>' +
+  // Real cross-framework aggregates (computed from the built-in control library
+  // plus the user's own progress — no fabricated numbers).
+  var aggCtrl = 0, aggImpl = 0, aggMap = 0;
+  for (var a = 0; a < fwNames.length; a++) {
+    var afw = FRAMEWORKS[fwNames[a]];
+    var afwData = data[fwNames[a]] || {};
+    aggCtrl += afw.controls.length;
+    for (var b = 0; b < afw.controls.length; b++) {
+      if ((afwData[afw.controls[b].id] || {}).status === "Implemented") aggImpl++;
+      aggMap += Object.keys(afw.controls[b].mapping || {}).length;
+    }
+  }
+  var aggPct = aggCtrl > 0 ? Math.round((aggImpl / aggCtrl) * 100) : 0;
+  var ccCell = function (n, label, key) {
+    return '<div class="cc-sm" data-k="' + key + '"><span class="cc-sm-n">' + n + '</span><span class="cc-sm-l">' + label + '</span></div>';
+  };
+  var html = '<div class="pg-head"><h1 class="pg-h1">Compliance Checker</h1>' +
+    '<p class="muted pg-sub">Assess your organization against major security frameworks. Track controls, map across standards, and generate audit-ready reports.</p></div>' +
+    '<div class="cc-summary">' +
+      ccCell(fwNames.length, "Frameworks", "fw") +
+      ccCell(aggCtrl, "Total controls", "ctrl") +
+      ccCell(aggImpl, "Implemented", "impl") +
+      ccCell(aggPct + "%", "Overall readiness", "pct") +
+      ccCell(aggMap, "Cross-mappings", "map") +
+    '</div>' +
     '<div class="cc-fw-grid">';
   for (var i = 0; i < fwNames.length; i++) {
     var fw = FRAMEWORKS[fwNames[i]];

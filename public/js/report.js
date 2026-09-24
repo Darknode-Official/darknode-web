@@ -27,35 +27,54 @@ function toMarkdown(d) {
   return md;
 }
 
+// Severity summary strip — real counts computed from the current findings.
+function sumStrip(d) {
+  const cell = (n, label, key) => `<div class="rp-sm" data-sev="${key}"><span class="rp-sm-n">${n}</span><span class="rp-sm-l">${label}</span></div>`;
+  const bySev = SEV.map((s) => d.findings.filter((f) => f.sev === s).length);
+  return `<div class="rp-sum">
+    ${cell(d.findings.length, "Findings", "total")}
+    ${SEV.map((s, i) => cell(bySev[i], s, s.toLowerCase())).join("")}
+  </div>`;
+}
+
 export function renderReport(main) {
   let d = load();
   const draw = () => {
     main.innerHTML = `
-      <h1 class="pg-h1">Report generator</h1>
-      <p class="muted pg-sub">Collect findings and export a clean Markdown report. Saved in this browser. For authorized engagements only.</p>
-      <div class="card" style="max-width:900px">
-        <label class="pc-f"><span>Report title</span><input class="tk-f" id="rTitle" value="${esc(d.title)}" placeholder="Acme Corp — External Pentest"></label>
+      <div class="pg-head">
+        <h1 class="pg-h1">Report Generator</h1>
+        <p class="muted pg-sub">Collect findings and export a clean Markdown report. Saved in this browser. For authorized engagements only.</p>
       </div>
-      <div class="card" style="max-width:900px">
-        <div class="lbl">Add a finding</div>
-        <div class="pb-fields" style="display:grid;grid-template-columns:2fr 1fr;gap:10px">
-          <input class="tk-f" id="fTitle" placeholder="Finding title (e.g. SQL injection in login)">
-          <select class="tk-f" id="fSev">${SEV.map((s) => `<option>${s}</option>`).join("")}</select>
+      ${sumStrip(d)}
+      <div class="rp-grid">
+        <div class="rp-col">
+          <div class="card">
+            <label class="pc-f"><span>Report title</span><input class="tk-f" id="rTitle" value="${esc(d.title)}" placeholder="Acme Corp — External Pentest"></label>
+          </div>
+          <div class="card">
+            <div class="lbl">Add a finding</div>
+            <div class="pb-fields" style="display:grid;grid-template-columns:2fr 1fr;gap:10px">
+              <input class="tk-f" id="fTitle" placeholder="Finding title (e.g. SQL injection in login)">
+              <select class="tk-f" id="fSev">${SEV.map((s) => `<option>${s}</option>`).join("")}</select>
+            </div>
+            <input class="tk-f" id="fTarget" placeholder="Target (URL / host / param)" style="margin-top:8px">
+            <textarea class="tk-in" id="fDesc" rows="2" placeholder="Description" style="margin-top:8px"></textarea>
+            <textarea class="tk-in mono" id="fEvidence" rows="2" placeholder="Evidence (request/response, payload, output)" style="margin-top:8px"></textarea>
+            <textarea class="tk-in" id="fRem" rows="2" placeholder="Remediation" style="margin-top:8px"></textarea>
+            <div class="util-btns" style="margin-top:10px"><button class="btn sm" id="rAdd">Add finding</button></div>
+          </div>
         </div>
-        <input class="tk-f" id="fTarget" placeholder="Target (URL / host / param)" style="margin-top:8px">
-        <textarea class="tk-in" id="fDesc" rows="2" placeholder="Description" style="margin-top:8px"></textarea>
-        <textarea class="tk-in mono" id="fEvidence" rows="2" placeholder="Evidence (request/response, payload, output)" style="margin-top:8px"></textarea>
-        <textarea class="tk-in" id="fRem" rows="2" placeholder="Remediation" style="margin-top:8px"></textarea>
-        <div class="util-btns" style="margin-top:10px"><button class="btn sm" id="rAdd">Add finding</button></div>
-      </div>
-      <div class="card" style="max-width:900px">
-        <div class="lbl">Findings (${d.findings.length})</div>
-        <div id="rList">${d.findings.length ? d.findings.map((f, i) => `<div class="saved-row"><span class="sev ${f.sev.toLowerCase()}">${esc(f.sev)}</span><span class="saved-go" style="cursor:default">${esc(f.title || "Untitled")}</span><span class="muted" style="font-size:.74rem">${esc(f.target || "")}</span><button class="saved-x" data-rm="${i}">&times;</button></div>`).join("") : `<p class="muted" style="font-size:.85rem">No findings yet.</p>`}</div>
-      </div>
-      <div class="card" style="max-width:900px">
-        <div class="lbl">Markdown preview</div>
-        <pre class="out" id="rPreview" style="max-height:40vh;overflow:auto;white-space:pre-wrap"></pre>
-        <div class="util-btns" style="margin-top:10px"><button class="btn sm" id="rCopy">Copy Markdown</button><button class="btn ghost sm" id="rDl">Download .md</button><button class="btn ghost sm" id="rClear">Clear all</button></div>
+        <div class="rp-col">
+          <div class="card">
+            <div class="lbl">Findings (${d.findings.length})</div>
+            <div id="rList">${d.findings.length ? d.findings.map((f, i) => `<div class="saved-row"><span class="sev ${f.sev.toLowerCase()}">${esc(f.sev)}</span><span class="saved-go" style="cursor:default">${esc(f.title || "Untitled")}</span><span class="muted" style="font-size:.74rem">${esc(f.target || "")}</span><button class="saved-x" data-rm="${i}">&times;</button></div>`).join("") : `<p class="muted" style="font-size:.85rem">No findings yet. Add one on the left — it appears here and in the report instantly.</p>`}</div>
+          </div>
+          <div class="card">
+            <div class="lbl">Markdown preview</div>
+            <pre class="out" id="rPreview" style="max-height:46vh;overflow:auto;white-space:pre-wrap"></pre>
+            <div class="util-btns" style="margin-top:10px"><button class="btn sm" id="rCopy">Copy Markdown</button><button class="btn ghost sm" id="rDl">Download .md</button><button class="btn ghost sm" id="rClear">Clear all</button></div>
+          </div>
+        </div>
       </div>`;
     const $ = (s) => main.querySelector(s);
     $("#rTitle").oninput = () => { d.title = $("#rTitle").value; save(d); $("#rPreview").textContent = toMarkdown(d); };
@@ -67,7 +86,7 @@ export function renderReport(main) {
     $("#rList").onclick = (e) => { const b = e.target.closest("[data-rm]"); if (!b) return; d.findings.splice(+b.dataset.rm, 1); save(d); draw(); };
     $("#rCopy").onclick = () => { navigator.clipboard?.writeText(toMarkdown(d)); $("#rCopy").textContent = "copied"; setTimeout(() => ($("#rCopy").textContent = "Copy Markdown"), 1000); };
     $("#rDl").onclick = () => { const url = URL.createObjectURL(new Blob([toMarkdown(d)], { type: "text/markdown" })); const a = document.createElement("a"); a.href = url; a.download = (d.title || "report").replace(/[^\w.-]+/g, "_") + ".md"; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000); };
-    $("#rClear").onclick = () => { if (!confirm("Clear the whole report?")) return; d = { title: "", findings: [] }; save(d); draw(); };
+    $("#rClear").onclick = async () => { const ok = await (window.dnConfirm ? window.dnConfirm("Clear report?", "This removes the report title and all findings from this browser. This cannot be undone.", { submitText: "Clear all", danger: true }) : Promise.resolve(true)); if (!ok) return; d = { title: "", findings: [] }; save(d); draw(); };
     $("#rPreview").textContent = toMarkdown(d);
   };
   draw();

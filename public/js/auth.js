@@ -1649,7 +1649,7 @@ function renderApp(user) {
     else if (sec === "vmlab") { import("/js/vmlab.js").then(m => m.renderVMLab(main)); }
     else if (sec === "privatecloud") { import("/js/privatecloud.js").then(m => m.renderPrivateCloud(main)); }
     else if (sec === "saved") { import("/js/saved.js").then(m => m.renderSaved(main, show)); }
-    else if (sec === "report") { import("/js/report.js").then(m => m.renderReport(main)); }
+    else if (sec === "report") { import("/js/report.js?v=20260924a").then(m => m.renderReport(main)); }
     else if (sec === "snippets") { import("/js/labs.js").then(m => m.renderSnippets(main)); }
     else if (sec === "refs") { import("/js/labs.js").then(m => m.renderRefs(main)); }
     else if (sec === "arsenal") { show("home"); return; }
@@ -1670,7 +1670,7 @@ function renderApp(user) {
     else if (sec === "firewall") { import("/js/firewall-builder.js").then(m => m.renderFirewallBuilder(main)); }
     else if (sec === "apitester") { import("/js/api-tester.js").then(m => m.renderAPITester(main)); }
     else if (sec === "sandbox") { import("/js/malware-sandbox.js").then(m => m.renderMalwareSandbox(main)); }
-    else if (sec === "compliance") { import("/js/compliance-checker.js").then(m => m.renderComplianceChecker(main)); }
+    else if (sec === "compliance") { import("/js/compliance-checker.js?v=20260924a").then(m => m.renderComplianceChecker(main)); }
     else if (sec === "attacksim") { import("/js/attack-simulator.js").then(m => m.renderAttackSimulator(main)); }
     else if (sec === "dns") { import("/js/dns-toolkit.js").then(m => m.renderDNSToolkit(main)); }
     else if (sec === "subdomains") { import("/js/subdomain-finder.js?v=20260923d").then(m => m.renderSubdomainFinder(main)); }
