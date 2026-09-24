@@ -7443,28 +7443,32 @@ html[data-style=dark].crt body::after {
 /* ═══════════════════════════════════════════════════════════════
    TOAST / NOTIFICATION — Clean rounded with colored accents
    ═══════════════════════════════════════════════════════════════ */
+/* NOTE: target the toast ELEMENT only (.toast / .toast-item), never
+   [class*="toast"] — that greedily matched every child (.toast-msg,
+   .toast-label, .toast-x, .toast-bar) and painted each as its own card,
+   producing nested boxes. */
 [data-style=pro] .toast,
 [data-style=pro] .notification,
-[data-style=pro] [class*="toast"] {
+[data-style=pro] .toast-item {
   background: #fff !important;
   color: #1e293b !important;
   border: 1px solid #e2e8f0 !important;
   border-radius: 12px !important;
   box-shadow: 0 8px 30px rgba(0,0,0,.1), 0 2px 4px rgba(0,0,0,.04) !important;
   font-size: .88rem !important;
-  border-left: 4px solid #2563eb !important;
+  border-left: 4px solid var(--toast-c, #2563eb) !important;
   padding: 14px 18px !important;
 }
 [data-style=pro] .toast.success,
-[data-style=pro] [class*="toast"].success {
+[data-style=pro] .toast-item.success {
   border-left-color: #16a34a !important;
 }
 [data-style=pro] .toast.error,
-[data-style=pro] [class*="toast"].error {
+[data-style=pro] .toast-item.error {
   border-left-color: #dc2626 !important;
 }
 [data-style=pro] .toast.warning,
-[data-style=pro] [class*="toast"].warning {
+[data-style=pro] .toast-item.warning {
   border-left-color: #f59e0b !important;
 }
 

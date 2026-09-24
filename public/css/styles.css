@@ -8060,7 +8060,7 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{
   from{opacity:1;transform:translateY(0) scale(1)}
   to{opacity:0;transform:translateY(-8px) scale(.96)}
 }
-.toast,.notification,[class*="toast"]{
+.toast,.notification,.toast-item{
   animation:dk-toast-in .25s ease forwards;
 }
 .toast.exiting,.notification.exiting{
