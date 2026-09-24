@@ -68,14 +68,28 @@ const FLEET = [
 ];
 
 const CHOKEPOINTS = [
-  { name: 'Strait of Hormuz', volume: 21, tension: 88, jamming: 72, piracy: 40, altRoute: 15 },
-  { name: 'Strait of Malacca', volume: 24, tension: 55, jamming: 35, piracy: 65, altRoute: 30 },
-  { name: 'Suez Canal', volume: 12, tension: 70, jamming: 45, piracy: 50, altRoute: 20 },
-  { name: 'Bab-el-Mandeb', volume: 9, tension: 92, jamming: 60, piracy: 85, altRoute: 25 },
-  { name: 'Panama Canal', volume: 14, tension: 30, jamming: 15, piracy: 20, altRoute: 40 },
-  { name: 'Bosphorus', volume: 8, tension: 68, jamming: 55, piracy: 25, altRoute: 10 },
-  { name: 'Strait of Gibraltar', volume: 10, tension: 40, jamming: 30, piracy: 22, altRoute: 55 },
-  { name: 'Danish Straits', volume: 7, tension: 62, jamming: 68, piracy: 12, altRoute: 45 }
+  { name: 'Strait of Hormuz', volume: 21, tension: 88, jamming: 72, piracy: 40, altRoute: 15, lat: 26.57, lon: 56.25 },
+  { name: 'Strait of Malacca', volume: 24, tension: 55, jamming: 35, piracy: 65, altRoute: 30, lat: 2.50, lon: 101.50 },
+  { name: 'Suez Canal', volume: 12, tension: 70, jamming: 45, piracy: 50, altRoute: 20, lat: 30.50, lon: 32.35 },
+  { name: 'Bab-el-Mandeb', volume: 9, tension: 92, jamming: 60, piracy: 85, altRoute: 25, lat: 12.58, lon: 43.33 },
+  { name: 'Panama Canal', volume: 14, tension: 30, jamming: 15, piracy: 20, altRoute: 40, lat: 9.08, lon: -79.68 },
+  { name: 'Bosphorus', volume: 8, tension: 68, jamming: 55, piracy: 25, altRoute: 10, lat: 41.12, lon: 29.07 },
+  { name: 'Strait of Gibraltar', volume: 10, tension: 40, jamming: 30, piracy: 22, altRoute: 55, lat: 35.95, lon: -5.60 },
+  { name: 'Danish Straits', volume: 7, tension: 62, jamming: 68, piracy: 12, altRoute: 45, lat: 55.70, lon: 12.70 }
+];
+
+// Ports / navigational waypoints for the Route Risk Planner (name + lat/lon).
+const WAYPOINTS = [
+  { name: 'Rotterdam', lat: 51.95, lon: 4.14 },
+  { name: 'Singapore', lat: 1.29, lon: 103.85 },
+  { name: 'Jebel Ali (Dubai)', lat: 25.00, lon: 55.06 },
+  { name: 'Shanghai', lat: 31.23, lon: 121.47 },
+  { name: 'New York', lat: 40.67, lon: -74.04 },
+  { name: 'Mumbai', lat: 18.94, lon: 72.84 },
+  { name: 'Piraeus', lat: 37.94, lon: 23.64 },
+  { name: 'Yokohama', lat: 35.44, lon: 139.64 },
+  { name: 'Norfolk', lat: 36.94, lon: -76.31 },
+  { name: 'Cape Town', lat: -33.90, lon: 18.42 }
 ];
 
 const CABLES = [
@@ -241,6 +255,74 @@ function chokepointRisk(c, tensionMult, jammingMult) {
 }
 
 // ---------------------------------------------------------------------------
+// Route planning (reuses haversineNm + chokepointRisk)
+// ---------------------------------------------------------------------------
+
+// Build a transit: origin -> the chokepoints that lie roughly on the corridor
+// (low detour ratio), ordered by distance from origin -> destination.
+function buildRoute(origin, dest, tensionMult, jammingMult) {
+  const direct = haversineNm(origin.lat, origin.lon, dest.lat, dest.lon);
+  const between = CHOKEPOINTS
+    .filter(c => typeof c.lat === 'number' && typeof c.lon === 'number')
+    .map(c => {
+      const fromO = haversineNm(origin.lat, origin.lon, c.lat, c.lon);
+      const toD = haversineNm(c.lat, c.lon, dest.lat, dest.lon);
+      return { c, fromO, detour: fromO + toD };
+    })
+    .filter(x => x.detour <= direct * 1.35 + 150) // on-corridor if barely a detour
+    .sort((a, b) => a.fromO - b.fromO)
+    .map(x => x.c);
+
+  const nodes = [
+    { name: origin.name, lat: origin.lat, lon: origin.lon, choke: null },
+    ...between.map(c => ({ name: c.name, lat: c.lat, lon: c.lon, choke: c })),
+    { name: dest.name, lat: dest.lat, lon: dest.lon, choke: null }
+  ];
+
+  const legs = [];
+  let total = 0;
+  for (let i = 1; i < nodes.length; i++) {
+    const a = nodes[i - 1], b = nodes[i];
+    const dist = haversineNm(a.lat, a.lon, b.lat, b.lon);
+    total += dist;
+    const chk = b.choke || a.choke;
+    const risk = chk ? chokepointRisk(chk, tensionMult, jammingMult)
+                     : { score: 20, band: 'GUARDED', kind: 'ok' }; // open-water baseline
+    legs.push({ from: a.name, to: b.name, dist, risk });
+  }
+
+  // Aggregate route risk weighted by leg distance.
+  const agg = total > 0
+    ? Math.round(legs.reduce((s, l) => s + l.risk.score * l.dist, 0) / total)
+    : 0;
+
+  // Single highest-risk chokepoint on the route.
+  let worst = null;
+  between.forEach(c => {
+    const r = chokepointRisk(c, tensionMult, jammingMult);
+    if (!worst || r.score > worst.r.score) worst = { c, r };
+  });
+
+  return { nodes, legs, total, agg, worst, between, direct };
+}
+
+// Recommended EMCON posture + one-line advisory keyed to aggregate route risk.
+function routePosture(agg) {
+  if (agg >= 65) return {
+    emcon: 'BRAVO', kind: 'bad',
+    advisory: 'Composite route risk is HIGH. Tighten to EMCON BRAVO/ALPHA, run hardened PNT with eLoran fallback, and escort merchant traffic through the flagged chokepoint.'
+  };
+  if (agg >= 45) return {
+    emcon: 'CHARLIE', kind: 'warn',
+    advisory: 'Elevated route risk. Hold EMCON CHARLIE, pre-brief GNSS-spoofing indicators, and stagger transit timing away from peak congestion.'
+  };
+  return {
+    emcon: 'UNRESTRICTED', kind: 'ok',
+    advisory: 'Route risk is manageable. Maintain unrestricted emissions for full situational awareness; keep watching chokepoint drivers for change.'
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Style injection (scoped .nv-*)
 // ---------------------------------------------------------------------------
 
@@ -277,6 +359,11 @@ function injectStyle() {
   .nv-note{font-size:12px;color:var(--mut);margin-top:8px;line-height:1.5}
   .nv-kv{font-size:12px;color:var(--mut);display:flex;justify-content:space-between;padding:3px 0}
   .nv-kv b{color:var(--txt);font-weight:600}
+  .nv-select{background:var(--bg);color:var(--txt);border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-size:13px;min-width:180px}
+  .nv-select:focus{outline:none;border-color:var(--acc)}
+  .nv-check{display:flex;align-items:center;gap:8px;padding:8px 6px;border-bottom:1px solid var(--line);cursor:pointer;font-size:13px}
+  .nv-check:last-child{border-bottom:none}
+  .nv-check input{accent-color:var(--acc);width:15px;height:15px;flex:none}
   `;
   document.head.appendChild(s);
 }
@@ -560,6 +647,170 @@ function panelEmcon(host) {
   draw();
 }
 
+function panelRoute(host) {
+  const opts = WAYPOINTS.map((w, i) => `<option value="${i}">${esc(w.name)}</option>`).join('');
+  host.innerHTML = `
+    <div class="pg-h2" style="font-size:15px">Route Risk Planner</div>
+    <div class="pg-sub" style="margin-bottom:8px">Plot a transit between ports; the planner threads it through the strategic chokepoints on the corridor and scores composite risk leg by leg. Adjust global drivers to recompute live.</div>
+    <div class="nv-controls">
+      <label>Origin
+        <select class="nv-select" id="nv-rt-origin">${opts}</select></label>
+      <label>Destination
+        <select class="nv-select" id="nv-rt-dest">${opts}</select></label>
+      <label>Geopolitical tension <span id="nv-rt-tv">1.00x</span>
+        <input type="range" id="nv-rt-tension" min="50" max="150" value="100"></label>
+      <label>GNSS jamming <span id="nv-rt-jv">1.00x</span>
+        <input type="range" id="nv-rt-jam" min="50" max="150" value="100"></label>
+    </div>
+    <div id="nv-rt-out"></div>`;
+
+  const oSel = host.querySelector('#nv-rt-origin');
+  const dSel = host.querySelector('#nv-rt-dest');
+  const tSl = host.querySelector('#nv-rt-tension');
+  const jSl = host.querySelector('#nv-rt-jam');
+  const out = host.querySelector('#nv-rt-out');
+  oSel.value = '0'; dSel.value = '1'; // Rotterdam -> Singapore
+
+  function draw() {
+    const tm = +tSl.value / 100, jm = +jSl.value / 100;
+    host.querySelector('#nv-rt-tv').textContent = tm.toFixed(2) + 'x';
+    host.querySelector('#nv-rt-jv').textContent = jm.toFixed(2) + 'x';
+    const origin = WAYPOINTS[+oSel.value], dest = WAYPOINTS[+dSel.value];
+    if (origin === dest) {
+      out.innerHTML = `<div class="card panel" style="padding:14px">${badge('SELECT', 'info')} Origin and destination are the same port — choose two different endpoints.</div>`;
+      return;
+    }
+    const rt = buildRoute(origin, dest, tm, jm);
+    const post = routePosture(rt.agg);
+    const aggCol = post.kind === 'bad' ? '#ff6b5e' : post.kind === 'warn' ? '#f1c40f' : '#3ddc84';
+    const legRows = rt.legs.map(l => `<tr>
+      <td>${esc(l.from)}</td><td>${esc(l.to)}</td>
+      <td class="nv-mono">${Math.round(l.dist)}</td>
+      <td>${badge(l.risk.band, l.risk.kind)} <span class="muted">${l.risk.score}</span></td>
+    </tr>`).join('');
+    out.innerHTML = `
+      <div class="stat-row" style="display:flex;flex-wrap:wrap;gap:10px;margin:6px 0 14px">
+        <div class="stat card" style="padding:12px 16px;flex:1;min-width:120px"><div class="muted" style="font-size:11px">TOTAL DISTANCE</div><div class="nv-score" style="font-size:24px">${Math.round(rt.total)}<span class="muted" style="font-size:12px"> nm</span></div></div>
+        <div class="stat card" style="padding:12px 16px;flex:1;min-width:120px"><div class="muted" style="font-size:11px">ROUTE RISK</div><div class="nv-score" style="font-size:24px;color:${aggCol}">${rt.agg}<span class="muted" style="font-size:12px">/100</span></div></div>
+        <div class="stat card" style="padding:12px 16px;flex:1;min-width:120px"><div class="muted" style="font-size:11px">CHOKEPOINTS</div><div class="nv-score" style="font-size:24px">${rt.between.length}</div></div>
+        <div class="stat card" style="padding:12px 16px;flex:1;min-width:120px"><div class="muted" style="font-size:11px">REC. EMCON</div><div class="nv-score" style="font-size:20px">${esc(post.emcon)}</div></div>
+      </div>
+      <div class="card panel" style="padding:0;overflow-x:auto;margin-bottom:12px">
+        <table class="nv-table"><thead><tr><th>From</th><th>To</th><th>Distance (nm)</th><th>Leg risk</th></tr></thead><tbody>${legRows}</tbody></table>
+      </div>
+      ${rt.worst ? `<div class="card panel" style="padding:14px;margin-bottom:12px">
+        <div class="nv-kv"><span>Highest-risk chokepoint on route</span><b>${esc(rt.worst.c.name)} &nbsp;${badge(rt.worst.r.band, rt.worst.r.kind)} ${rt.worst.r.score}/100</b></div>
+      </div>` : `<div class="nv-note" style="margin-bottom:12px">No strategic chokepoints lie on this corridor — open-water transit.</div>`}
+      <div class="card panel" style="padding:14px">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b>Recommended posture</b>${badge('EMCON ' + post.emcon, post.kind)}</div>
+        <div class="nv-note">${esc(post.advisory)}</div>
+      </div>`;
+  }
+
+  oSel.addEventListener('change', draw);
+  dSel.addEventListener('change', draw);
+  tSl.addEventListener('input', draw);
+  jSl.addEventListener('input', draw);
+  draw();
+}
+
+function panelConvoy(host) {
+  const WARSHIP = ['Destroyer', 'Carrier', 'Submarine', 'Frigate', 'Cruiser'];
+  const isWarship = v => WARSHIP.includes(v.cls);
+  const THRESH = 60;
+  const sel = new Set([0, 2, 7]); // a warship, a soft merchant, a dark ship
+  const statusKind = { UNDERWAY: 'ok', MOORED: 'info', DARK: 'bad' };
+
+  host.innerHTML = `
+    <div class="pg-h2" style="font-size:15px">Convoy Planner</div>
+    <div class="pg-sub" style="margin-bottom:10px">Assemble a convoy from the fleet. A convoy's cyber resilience is set by its weakest hull — one compromised bridge network can betray the group's position, route and intent. Toggle vessels to recompute.</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px" class="nv-fleet-layout">
+      <div class="card panel" style="padding:14px">
+        <div class="pg-h2" style="font-size:13px;margin-bottom:8px">SELECT HULLS</div>
+        <div id="nv-cv-list"></div>
+      </div>
+      <div class="card panel" style="padding:14px" id="nv-cv-out"></div>
+    </div>`;
+
+  const list = host.querySelector('#nv-cv-list');
+  const out = host.querySelector('#nv-cv-out');
+
+  function drawList() {
+    list.innerHTML = FLEET.map((v, i) => {
+      const on = sel.has(i);
+      return `<label class="nv-check"><input type="checkbox" data-i="${i}"${on ? ' checked' : ''}>
+        <span style="flex:1"><b style="font-size:13px">${esc(v.name)}</b><span class="muted" style="font-size:11px"> · ${esc(v.cls)} · ${v.readiness}/100</span></span>
+        ${badge(v.status, statusKind[v.status])}</label>`;
+    }).join('');
+    list.querySelectorAll('input[type=checkbox]').forEach(cb => cb.addEventListener('change', () => {
+      const i = +cb.dataset.i;
+      if (cb.checked) sel.add(i); else sel.delete(i);
+      drawOut();
+    }));
+  }
+
+  function drawOut() {
+    const ships = [...sel].sort((a, b) => a - b).map(i => FLEET[i]);
+    if (!ships.length) {
+      out.innerHTML = `<div class="pg-h2" style="font-size:13px;margin-bottom:8px">CONVOY STATUS</div><div class="nv-note">No hulls selected. Choose two or more vessels to form a convoy.</div>`;
+      return;
+    }
+    const avg = Math.round(ships.reduce((a, v) => a + v.readiness, 0) / ships.length);
+    const weakest = ships.slice().sort((a, b) => a.readiness - b.readiness)[0];
+    const warships = ships.filter(isWarship);
+    const merchants = ships.filter(v => !isWarship(v));
+    const darkShips = ships.filter(v => v.status === 'DARK');
+    const weakHulls = ships.filter(v => v.readiness < THRESH);
+    const avgCol = avg >= 80 ? '#3ddc84' : avg >= 60 ? '#f1c40f' : '#ff6b5e';
+    const minCol = weakest.readiness >= 80 ? '#3ddc84' : weakest.readiness >= 60 ? '#f1c40f' : '#ff6b5e';
+
+    // Escort recommendation: soft merchant (low readiness or AIS-dark) needs a
+    // warship screen; recommend the best-readiness warship in the selection.
+    const needsEscort = merchants.some(v => v.readiness < THRESH || v.status === 'DARK');
+    const bestWarship = warships.slice().sort((a, b) => b.readiness - a.readiness)[0];
+    let escortHtml;
+    if (needsEscort) {
+      escortHtml = bestWarship
+        ? `${badge('ESCORT SET', 'ok')} Assign <b>${esc(bestWarship.name)}</b> (${bestWarship.readiness}/100) to screen the low-readiness merchant traffic and provide hardened PNT/EW cover.`
+        : `${badge('NO ESCORT', 'bad')} Convoy carries vulnerable merchant hulls but no warship. Add a high-readiness escort (Destroyer/Frigate) before sailing.`;
+    } else if (bestWarship) {
+      escortHtml = `${badge('COVERED', 'ok')} <b>${esc(bestWarship.name)}</b> provides organic escort; all merchant hulls sit above the ${THRESH}/100 readiness floor.`;
+    } else {
+      escortHtml = `${badge('BENIGN', 'info')} All hulls above the readiness floor; no dedicated escort required for a low-threat transit.`;
+    }
+
+    const formation = warships.length && merchants.length
+      ? (warships.length >= 2
+          ? 'Diamond screen — warships on the threat axes, merchants boxed in the center of the formation.'
+          : 'Line-ahead with the escort leading; merchants stationed astern in the screened lane.')
+      : warships.length
+        ? 'Surface action group — line-abreast search-and-patrol formation.'
+        : 'Merchant column — tight line-ahead to simplify station-keeping; request external escort.';
+
+    const warnRows = [];
+    darkShips.forEach(v => warnRows.push(`<div class="nv-row"><span>AIS dark — position unverifiable</span>${badge(v.name, 'bad')}</div>`));
+    weakHulls.forEach(v => warnRows.push(`<div class="nv-row"><span>Below ${THRESH}/100 readiness floor</span>${badge(v.name + ' · ' + v.readiness, 'warn')}</div>`));
+
+    out.innerHTML = `
+      <div class="pg-h2" style="font-size:13px;margin-bottom:8px">CONVOY STATUS — ${ships.length} HULLS</div>
+      <div class="nv-kv"><span>Composition</span><b>${warships.length} warship${warships.length !== 1 ? 's' : ''} · ${merchants.length} merchant${merchants.length !== 1 ? 's' : ''}</b></div>
+      <div class="nv-kv"><span>Average readiness</span><b style="color:${avgCol}">${avg}/100</b></div>
+      <div class="nv-meter"><i style="width:${avg}%;background:${avgCol}"></i></div>
+      <div class="nv-kv" style="margin-top:8px"><span>Weakest link (min)</span><b style="color:${minCol}">${esc(weakest.name)} · ${weakest.readiness}/100</b></div>
+      <div class="nv-meter"><i style="width:${weakest.readiness}%;background:${minCol}"></i></div>
+      ${warnRows.length
+        ? `<div class="pg-h2" style="font-size:12px;margin:14px 0 6px">WARNINGS</div>${warnRows.join('')}`
+        : `<div class="nv-note" style="margin-top:10px">${badge('CLEAR', 'ok')} No dark ships and no hull below the ${THRESH}/100 readiness floor.</div>`}
+      <div class="pg-h2" style="font-size:12px;margin:14px 0 6px">ESCORT RECOMMENDATION</div>
+      <div class="nv-note">${escortHtml}</div>
+      <div class="pg-h2" style="font-size:12px;margin:14px 0 6px">FORMATION</div>
+      <div class="nv-note">${esc(formation)}</div>`;
+  }
+
+  drawList();
+  drawOut();
+}
+
 // ---------------------------------------------------------------------------
 // Main render
 // ---------------------------------------------------------------------------
@@ -568,6 +819,8 @@ const TABS = [
   { id: 'fleet', label: 'FLEET COMMAND', fn: panelFleet },
   { id: 'ais', label: 'AIS INTEGRITY', fn: panelAis },
   { id: 'choke', label: 'CHOKEPOINTS', fn: panelChokepoints },
+  { id: 'route', label: 'ROUTE RISK', fn: panelRoute },
+  { id: 'convoy', label: 'CONVOY', fn: panelConvoy },
   { id: 'gnss', label: 'GNSS / ECDIS', fn: panelGnss },
   { id: 'cables', label: 'SUBSEA CABLES', fn: panelCables },
   { id: 'emcon', label: 'EMCON', fn: panelEmcon }
