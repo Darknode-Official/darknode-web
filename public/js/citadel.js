@@ -1,6 +1,8 @@
 // Darknode Project - CITADEL SOC Operations Center
 // Copyright (c) 2026 Darknode-Official. All rights reserved.
 
+import { mountModeSwitcher } from '/js/core/tool-modes.js';
+
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 // ========== SAMPLE LOGS (200+) ==========
@@ -1067,6 +1069,36 @@ function ctClearCitadelTimers() {
 // ========== MAIN RENDER ==========
 export function renderCitadel(main) {
   var activeTab = 'dashboard';
+  // Operational-posture state (SCOUTING / DEFENSIVE / OFFENSIVE) — the shared
+  // core/tool-modes switcher filters the visible tab set to the active posture.
+  var citMode = 'defensive';
+  var visibleTabs = null;
+  // Full tab descriptor list. Each item declares the modes it belongs to; a tab
+  // with no `modes` (dashboard, ATT&CK matrix) is posture-agnostic and shows in
+  // every mode. Detection / triage / incidents / correlation are DEFENSIVE; the
+  // Log Explorer, Rule Tester and Threat Hunt double as SCOUTING (hunting /
+  // discovery). Telemetry Recon is SCOUTING-only; Adversary Emulation is
+  // OFFENSIVE-only (simulated purple-team detection-coverage testing).
+  var TAB_DESCRIPTORS = [
+    {id:'dashboard',   label:'SOC Dashboard'},
+    {id:'telemetry',   label:'Telemetry Recon',   modes:['scouting']},
+    {id:'logs',        label:'Log Explorer',       modes:['scouting','defensive']},
+    {id:'correlation', label:'Correlation Engine', modes:['defensive']},
+    {id:'detection',   label:'Detection Rules',    modes:['defensive']},
+    {id:'triage',      label:'Alert Triage',       modes:['defensive']},
+    {id:'summary',     label:'Triage Summary',     modes:['defensive']},
+    {id:'incidents',   label:'Incidents',          modes:['defensive']},
+    {id:'attmatrix',   label:'ATT&CK Matrix'},
+    {id:'ruletester',  label:'Rule Tester',        modes:['scouting','defensive']},
+    {id:'hunt',        label:'Threat Hunt',        modes:['scouting','defensive']},
+    {id:'compliance',  label:'Compliance',         modes:['defensive']},
+    {id:'metrics',     label:'Metrics',            modes:['defensive']},
+    {id:'purple',      label:'Adversary Emulation',modes:['offensive']}
+  ];
+  // Per-panel UI state for the two new mode panels.
+  var reconHunt = 'beacon';
+  var ptScenario = 'ransom';
+  var ptStep = 0;
   var logFilter = {format:'all',severity:'all',search:'',source:'all'};
   var triageFilter = {status:'all',severity:'all'};
   var huntFilter = 'all';
@@ -1095,7 +1127,7 @@ export function renderCitadel(main) {
     return all;
   }
 
-  function render() {
+  function renderShell() {
     ctClearCitadelTimers();
     main.innerHTML =
       '<style>' +
@@ -1252,24 +1284,60 @@ export function renderCitadel(main) {
           '<div class="ct-dot"></div>' +
           '<span class="ct-sub">Centralized Intelligence Triage And Detection Engine Lab</span>' +
           '<span style="flex:1"></span>' +
+          '<div id="ct-modebar"></div>' +
           '<span class="ct-sub" style="color:var(--acc)">SOC OPERATIONAL</span>' +
         '</div>' +
-        '<div class="ct-tabs">' +
-          ['dashboard:SOC Dashboard','logs:Log Explorer','correlation:Correlation Engine','detection:Detection Rules','triage:Alert Triage','summary:Triage Summary','incidents:Incidents','attmatrix:ATT&CK Matrix','ruletester:Rule Tester','hunt:Threat Hunt','compliance:Compliance','metrics:Metrics'].map(function(t) {
-            var p = t.split(':');
-            return '<button class="ct-tab' + (activeTab === p[0] ? ' on' : '') + '" data-t="' + p[0] + '">' + p[1] + '</button>';
-          }).join('') +
-        '</div>' +
+        '<div class="ct-sub" id="ct-modenote" style="padding:6px 0 0;text-transform:none;letter-spacing:.02em;color:var(--mut)"></div>' +
+        '<div class="ct-tabs" id="ct-tabbar"></div>' +
         '<div id="ct-content" style="margin-top:10px"></div>' +
       '</div>';
 
-    main.querySelector('.ct-tabs').onclick = function(e) {
+    var wrap = main.querySelector('.ct-wrap');
+    var tabbar = main.querySelector('#ct-tabbar');
+
+    // Paint the tab bar from the mode-filtered descriptor list.
+    function renderTabbar() {
+      var tabs = visibleTabs || TAB_DESCRIPTORS;
+      tabbar.innerHTML = tabs.map(function(t) {
+        return '<button class="ct-tab' + (activeTab === t.id ? ' on' : '') + '" data-t="' + t.id + '">' + t.label + '</button>';
+      }).join('');
+    }
+    tabbar.onclick = function(e) {
       var b = e.target.closest('.ct-tab');
-      if (b) { activeTab = b.dataset.t; render(); }
+      if (b) { activeTab = b.dataset.t; renderTabbar(); renderActive(); }
     };
 
+    // Mount the shared operational-mode switcher. It persists the last posture
+    // per tool, retints the console via [data-tool-mode], and calls onChange on
+    // mount and each switch with the tabs visible in that posture. We re-render
+    // the tab bar + active panel from the filtered set (no full shell rebuild,
+    // so the switcher itself survives tab changes).
+    mountModeSwitcher({
+      toolId: 'citadel',
+      tabs: TAB_DESCRIPTORS,
+      mount: main.querySelector('#ct-modebar'),
+      host: wrap,
+      note: main.querySelector('#ct-modenote'),
+      onChange: function(mode, tabs) {
+        citMode = mode;
+        visibleTabs = tabs;
+        if (!visibleTabs.some(function(t){ return t.id === activeTab; })) {
+          activeTab = (visibleTabs[0] || {}).id || 'dashboard';
+        }
+        renderTabbar();
+        renderActive();
+      }
+    });
+  }
+
+  // Dispatch the active tab into the content pane. Clears timers first so each
+  // panel starts from a clean state (mirrors the original render() behavior).
+  function renderActive() {
+    ctClearCitadelTimers();
     var content = main.querySelector('#ct-content');
+    if (!content) return;
     if (activeTab === 'dashboard') renderDashboard(content);
+    else if (activeTab === 'telemetry') renderTelemetryRecon(content);
     else if (activeTab === 'logs') renderLogExplorer(content);
     else if (activeTab === 'correlation') renderCorrelation(content);
     else if (activeTab === 'detection') renderDetection(content);
@@ -1281,6 +1349,7 @@ export function renderCitadel(main) {
     else if (activeTab === 'hunt') renderHunt(content);
     else if (activeTab === 'compliance') renderComplianceTab(content);
     else if (activeTab === 'metrics') renderMetrics(content);
+    else if (activeTab === 'purple') renderPurpleTeam(content);
   }
 
   // ========== SOC DASHBOARD ==========
@@ -3615,7 +3684,353 @@ export function renderCitadel(main) {
     });
   }
 
-  render();
+  // ========== SCOUTING — TELEMETRY RECONNAISSANCE / THREAT HUNTING ==========
+  // Real derivation over CITADEL's existing simulated log corpus + alert queue:
+  // enumerate the log sources and telemetry available, then run a small set of
+  // hunt hypotheses that scan the actual data and return matching hits.
+  function ctIsInternalIp(ip) {
+    return /^10\./.test(ip) || /^192\.168\./.test(ip) || /^172\.(1[6-9]|2\d|3[01])\./.test(ip);
+  }
+  function ctExtractIps(text) {
+    return (String(text).match(/\b\d{1,3}(?:\.\d{1,3}){3}\b/g) || []);
+  }
+  var CT_TELEMETRY = {
+    syslog:  'Unix / network-device syslog — firewall blocks, SSH auth, IDS/Suricata, DNS, proxy, HIDS',
+    json:    'Structured cloud & EDR telemetry — CloudTrail, Azure, Okta, CrowdStrike, GuardDuty, Duo',
+    cef:     'CEF appliance events — NGFW, WAF, EDR, email security, IPS',
+    windows: 'Windows Security / Sysmon event log — process creation, logon, Kerberos, object access',
+    leef:    'QRadar LEEF — correlated network + host security offenses',
+    access:  'Web-server access logs — HTTP method, URI, status, user-agent'
+  };
+  // --- Hunt 1: beacon-like periodic connections to external hosts -----------
+  function ctHuntBeacon() {
+    var byExt = {};
+    getAllLogs().forEach(function(l) {
+      var ips = ctExtractIps(l.raw);
+      var ext = ips.filter(function(ip){ return !ctIsInternalIp(ip) && ip !== '0.0.0.0'; });
+      var intr = ips.filter(ctIsInternalIp);
+      ext.forEach(function(e) {
+        var rec = byExt[e] || (byExt[e] = {count:0, internals:{}, lines:[]});
+        rec.count++;
+        intr.forEach(function(i){ rec.internals[i] = 1; });
+        if (rec.lines.length < 6) rec.lines.push(l);
+      });
+    });
+    return Object.keys(byExt).map(function(e) {
+      return {ext:e, count:byExt[e].count, internals:Object.keys(byExt[e].internals), lines:byExt[e].lines};
+    }).filter(function(h){ return h.count >= 3; })
+      .sort(function(a,b){ return b.count - a.count; });
+  }
+  // --- Hunt 2: rare parent -> child process lineage --------------------------
+  function ctHuntParentChild() {
+    var suspChild = /(powershell|cmd\.exe|nltest|dsquery|net\.exe|whoami|certutil|rundll32|ntdsutil|mimikatz|wmic|regsvr32)/i;
+    var suspParent = /(services\.exe|cmd\.exe|powershell\.exe|wscript|cscript|winword|excel|outlook)/i;
+    var hits = [];
+    WINDOWS_EVENTS.forEach(function(e) {
+      var d = e.data || {};
+      var parent = d.ParentProcessName || d.ParentImage || '';
+      var child = d.NewProcessName || d.Image || '';
+      if (!parent || !child) return;
+      var pbase = parent.split('\\').pop().toLowerCase();
+      var cbase = child.split('\\').pop().toLowerCase();
+      if (suspParent.test(pbase) && suspChild.test(cbase)) {
+        hits.push({ts:e.ts, computer:e.computer, parent:pbase, child:cbase, cmd:d.CommandLine || ''});
+      }
+    });
+    return hits;
+  }
+  // --- Hunt 3: interactive logons from new / foreign geography ---------------
+  function ctHuntNewGeo() {
+    var foreign = /(\bRU\b|\bCN\b|Russia|Moscow|Beijing|China)/i;
+    var hits = [];
+    JSON_LOGS.forEach(function(e) {
+      var d = e.data || {}, geo = '', user = '', ip = '';
+      if (e.source === 'azure-signin' && d.location) { geo = (d.location.countryOrRegion || '') + ' / ' + (d.location.city || ''); user = d.userPrincipalName; ip = d.ipAddress; }
+      else if (e.source === 'okta-syslog' && d.client && d.client.geographicalContext) { var g = d.client.geographicalContext; geo = (g.country || '') + ' / ' + (g.city || ''); user = d.actor && d.actor.alternateId; ip = d.client.ipAddress; }
+      else if (e.source === 'duo-auth' && d.location) { geo = (d.location.country || '') + ' / ' + (d.location.city || ''); user = d.username; ip = d.ip; }
+      if (geo && foreign.test(geo)) hits.push({ts:e.ts, user:user || '-', ip:ip || '-', geo:geo, source:e.source});
+    });
+    LEEF_LOGS.forEach(function(e) {
+      if (/ImpossibleTravel|Beijing|Moscow/i.test(e.raw)) {
+        var m = e.raw.match(/usrName=([^\t]+)/); var s = e.raw.match(/src=([^\t]+)/);
+        hits.push({ts:e.ts, user:(m && m[1]) || '-', ip:(s && s[1]) || '-', geo:'Impossible travel', source:'QRadar'});
+      }
+    });
+    return hits;
+  }
+  // --- Hunt 4: LOLBin download / execute -------------------------------------
+  function ctHuntLolbin() {
+    var re = /(certutil|bitsadmin|mshta|regsvr32|\bwget\b|\bcurl\b|DownloadString|IEX\s*\()/i;
+    var net = /(https?:\/\/|urlcache|DownloadString|\/payload|beacon|shell\.ps1|-urlcache)/i;
+    return getAllLogs().filter(function(l){ return re.test(l.raw) && net.test(l.raw); });
+  }
+  var CT_HUNTS = [
+    {id:'beacon',  name:'Beacon-like periodic connections', mitre:'T1071.001',
+     hyp:'A C2 implant contacts the same external host repeatedly at regular intervals. Enumerate external destinations contacted 3+ times and the internal hosts talking to them.',
+     run:ctHuntBeacon},
+    {id:'lineage', name:'Rare parent-child process lineage', mitre:'T1059 / T1218',
+     hyp:'Post-exploitation tools spawned from shells or service hosts. Surface unusual parent->child pairs (services.exe/cmd.exe -> powershell / recon binaries).',
+     run:ctHuntParentChild},
+    {id:'geo',     name:'Logons from new / foreign geography', mitre:'T1078',
+     hyp:'Valid-account abuse often originates from unusual locations. Flag interactive/cloud logons from foreign geos and impossible-travel offenses.',
+     run:ctHuntNewGeo},
+    {id:'lolbin',  name:'LOLBin download & execute',          mitre:'T1105 / T1218',
+     hyp:'Living-off-the-land binaries used to stage payloads. Hunt for certutil/bitsadmin/mshta/wget/IEX paired with a remote URL or cache flag.',
+     run:ctHuntLolbin}
+  ];
+  function renderTelemetryRecon(c) {
+    var logs = getAllLogs();
+    // Source catalog: distinct format+source with counts, derived from real data.
+    var srcAgg = {};
+    logs.forEach(function(l) {
+      var key = l.format + '||' + l.source;
+      var rec = srcAgg[key] || (srcAgg[key] = {format:l.format, source:l.source, count:0});
+      rec.count++;
+    });
+    var byFormat = {};
+    logs.forEach(function(l){ byFormat[l.format] = (byFormat[l.format] || 0) + 1; });
+    var srcRows = Object.keys(srcAgg).map(function(k){ return srcAgg[k]; })
+      .sort(function(a,b){ return b.count - a.count; }).slice(0, 24);
+
+    var catRows = Object.keys(byFormat).sort(function(a,b){ return byFormat[b] - byFormat[a]; }).map(function(fmt) {
+      return '<tr><td><span class="ct-tag">' + esc(fmt.toUpperCase()) + '</span></td>' +
+        '<td>' + esc(CT_TELEMETRY[fmt] || 'Log telemetry') + '</td>' +
+        '<td style="text-align:right;font-weight:600">' + byFormat[fmt] + '</td></tr>';
+    }).join('');
+
+    c.innerHTML =
+      '<div class="ct-panel" style="border-color:var(--mode-accent,#f59e0b)">' +
+        '<div class="ct-panel-h" style="color:var(--mode-accent,#f59e0b)">Telemetry Reconnaissance &middot; Scouting Posture</div>' +
+        '<div class="ct-panel-b" style="font-size:.72rem;color:var(--mut);line-height:1.6">' +
+          'Map the visibility you have before you hunt: which log sources are feeding CITADEL and what telemetry each provides, then run hypothesis-driven hunts that scan the live corpus (' + logs.length + ' records across ' + Object.keys(byFormat).length + ' formats) for weak signals that never raised an alert.' +
+        '</div>' +
+      '</div>' +
+
+      '<div class="ct-grid2">' +
+        '<div class="ct-panel">' +
+          '<div class="ct-panel-h">Telemetry Coverage by Source Type</div>' +
+          '<div class="ct-panel-b"><table class="ct-tbl"><thead><tr><th>Format</th><th>Telemetry Provided</th><th style="text-align:right">Records</th></tr></thead><tbody>' + catRows + '</tbody></table></div>' +
+        '</div>' +
+        '<div class="ct-panel">' +
+          '<div class="ct-panel-h">Active Log Sources (' + Object.keys(srcAgg).length + ')</div>' +
+          '<div class="ct-panel-b" style="max-height:300px;overflow-y:auto"><table class="ct-tbl"><thead><tr><th>Source</th><th>Format</th><th style="text-align:right">Events</th></tr></thead><tbody>' +
+            srcRows.map(function(r) {
+              return '<tr><td style="color:var(--acc)">' + esc(r.source) + '</td><td><span class="ct-tag">' + esc(r.format.toUpperCase()) + '</span></td><td style="text-align:right;font-weight:600">' + r.count + '</td></tr>';
+            }).join('') +
+          '</tbody></table></div>' +
+        '</div>' +
+      '</div>' +
+
+      '<div class="ct-panel">' +
+        '<div class="ct-panel-h">Hunt Hypotheses &middot; run over live telemetry</div>' +
+        '<div class="ct-panel-b">' +
+          '<div class="ct-tabs-mini" id="ct-recon-hunts">' +
+            CT_HUNTS.map(function(h){ return '<button class="ct-tab-mini' + (reconHunt === h.id ? ' on' : '') + '" data-h="' + h.id + '">' + esc(h.name) + '</button>'; }).join('') +
+          '</div>' +
+          '<div id="ct-recon-out"></div>' +
+        '</div>' +
+      '</div>';
+
+    function runHunt() {
+      var hunt = CT_HUNTS.filter(function(h){ return h.id === reconHunt; })[0] || CT_HUNTS[0];
+      var hits = hunt.run();
+      var out = c.querySelector('#ct-recon-out');
+      var head =
+        '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">' +
+          '<span class="ct-badge ct-info">' + esc(hunt.mitre) + '</span>' +
+          '<span class="ct-badge ' + (hits.length ? 'ct-high' : 'ct-low') + '">' + hits.length + ' hit' + (hits.length === 1 ? '' : 's') + '</span>' +
+        '</div>' +
+        '<div style="font-size:.68rem;color:var(--mut);line-height:1.6;margin-bottom:10px">' + esc(hunt.hyp) + '</div>';
+
+      var body;
+      if (!hits.length) {
+        body = '<div class="ct-empty">No matches in current telemetry.</div>';
+      } else if (hunt.id === 'beacon') {
+        body = '<table class="ct-tbl"><thead><tr><th>External Host</th><th>Internal Talkers</th><th style="text-align:right">Sightings</th><th>Assessment</th></tr></thead><tbody>' +
+          hits.map(function(h) {
+            var beaconish = h.count >= 5;
+            return '<tr><td style="color:#ff9100;font-weight:600">' + esc(h.ext) + '</td>' +
+              '<td>' + (h.internals.map(esc).join(', ') || '-') + '</td>' +
+              '<td style="text-align:right;font-weight:600">' + h.count + '</td>' +
+              '<td>' + (beaconish ? '<span class="ct-badge ct-crit">Beacon-like</span>' : '<span class="ct-badge ct-med">Recurring</span>') + '</td></tr>';
+          }).join('') + '</tbody></table>';
+      } else if (hunt.id === 'lineage') {
+        body = '<table class="ct-tbl"><thead><tr><th>Time</th><th>Host</th><th>Parent</th><th>Child</th><th>Command</th></tr></thead><tbody>' +
+          hits.map(function(h) {
+            return '<tr><td class="ct-log-ts">' + esc(h.ts.slice(11,19)) + '</td><td style="color:var(--acc)">' + esc(h.computer) + '</td>' +
+              '<td>' + esc(h.parent) + '</td><td style="color:#ff9100">' + esc(h.child) + '</td>' +
+              '<td style="word-break:break-all;max-width:280px">' + esc(h.cmd) + '</td></tr>';
+          }).join('') + '</tbody></table>';
+      } else if (hunt.id === 'geo') {
+        body = '<table class="ct-tbl"><thead><tr><th>Time</th><th>User</th><th>Source IP</th><th>Geography</th><th>Source</th></tr></thead><tbody>' +
+          hits.map(function(h) {
+            return '<tr><td class="ct-log-ts">' + esc(h.ts.slice(11,19)) + '</td><td style="color:var(--acc)">' + esc(h.user) + '</td>' +
+              '<td>' + esc(h.ip) + '</td><td style="color:#ff9100">' + esc(h.geo) + '</td>' +
+              '<td><span class="ct-tag">' + esc(h.source) + '</span></td></tr>';
+          }).join('') + '</tbody></table>';
+      } else {
+        body = '<div style="max-height:340px;overflow-y:auto">' +
+          hits.map(function(l) {
+            return '<div class="ct-log-line"><span class="ct-log-ts">' + esc(l.ts.slice(11,19)) + '</span>' +
+              '<span class="ct-log-src">' + esc(l.source) + '</span>' +
+              '<span class="ct-log-msg">' + esc(l.raw) + '</span></div>';
+          }).join('') + '</div>';
+      }
+      out.innerHTML = head + body;
+    }
+
+    c.querySelector('#ct-recon-hunts').onclick = function(e) {
+      var b = e.target.closest('[data-h]');
+      if (!b) return;
+      reconHunt = b.dataset.h;
+      c.querySelectorAll('#ct-recon-hunts .ct-tab-mini').forEach(function(x){ x.classList.toggle('on', x.dataset.h === reconHunt); });
+      runHunt();
+    };
+    runHunt();
+  }
+
+  // ========== OFFENSIVE — SIMULATED PURPLE-TEAM ADVERSARY EMULATION ==========
+  // SIMULATION ONLY. Reconstructs an attack chain from the existing MITRE-tagged
+  // alert queue, then for each kill-chain step reports which detection(s) fired
+  // vs. which are MISSED (coverage gaps) — reasoning over the existing alert and
+  // detection-rule data. No live attack and no network activity occur.
+  function ctTechMatch(a, b) {
+    if (!a || !b) return false;
+    if (a === b) return true;
+    return String(a).split('.')[0] === String(b).split('.')[0];
+  }
+  function ctFindDetections(mitre) {
+    return DETECTION_RULES.filter(function(r){ return r.enabled && ctTechMatch(r.mitre, mitre); });
+  }
+  var CT_SCENARIOS = [
+    {id:'ransom', name:'Ransomware Intrusion — WS-JSMITH-01 (10.0.2.100)',
+     summary:'Emotet loader to Cobalt Strike C2, encoded PowerShell, LSASS/Mimikatz credential theft, Pass-the-Hash and Kerberoasting, domain persistence, SMB lateral movement, mass collection, exfiltration and ransomware detonation.',
+     alertIds:['ALT-025','ALT-003','ALT-004','ALT-027','ALT-012','ALT-021','ALT-010','ALT-005','ALT-013','ALT-014','ALT-020','ALT-015','ALT-007','ALT-009','ALT-006'],
+     gaps:[{mitre:'T1566.001', tactic:'Initial Access', name:'Phishing: Spearphishing Attachment'},
+           {mitre:'T1204.002', tactic:'Execution', name:'User Execution: Malicious File'}]},
+    {id:'cloud', name:'Cloud Account Takeover — 198.51.100.50',
+     summary:'Valid cloud-account abuse: risky sign-ins and impossible travel, IAM backdoor user with admin policy, public S3 exposure, and bulk collection from SharePoint and code repositories.',
+     alertIds:['ALT-016','ALT-023','ALT-017','ALT-018','ALT-029','ALT-024'],
+     gaps:[{mitre:'T1621', tactic:'Credential Access', name:'Multi-Factor Authentication Request Generation'}]},
+    {id:'perimeter', name:'Perimeter Breach — External-facing services',
+     summary:'External reconnaissance and brute force against exposed services: web vulnerability scanning, SQL injection, SSH brute force, honeypot capture, untrusted container deployment and DNS-based C2.',
+     alertIds:['ALT-011','ALT-002','ALT-001','ALT-022','ALT-019','ALT-008'],
+     gaps:[{mitre:'T1505.003', tactic:'Persistence', name:'Server Software Component: Web Shell'}]}
+  ];
+  function ctBuildScenarioSteps(scn) {
+    var steps = [];
+    scn.alertIds.forEach(function(id) {
+      var a = ALERTS.filter(function(x){ return x.id === id; })[0];
+      if (!a) return;
+      var info = ctTechInfo(a.mitre);
+      steps.push({mitre:a.mitre, tactic:info.tactic, name:info.name, action:a.title, alert:a, gap:false});
+    });
+    (scn.gaps || []).forEach(function(g) {
+      steps.push({mitre:g.mitre, tactic:g.tactic, name:g.name, action:g.name, alert:null, gap:true});
+    });
+    steps.sort(function(x, y) {
+      var tx = ctTacticIndex(x.tactic), ty = ctTacticIndex(y.tactic);
+      if (tx !== ty) return tx - ty;
+      var ax = x.alert ? new Date(x.alert.timestamp).getTime() : 0;
+      var ay = y.alert ? new Date(y.alert.timestamp).getTime() : 0;
+      return ax - ay;
+    });
+    return steps;
+  }
+  function ctStepVerdict(step) {
+    var dets = ctFindDetections(step.mitre);
+    if (step.alert && dets.length) return {k:'detected', label:'DETECTED', cls:'ct-low', dets:dets};
+    if (step.alert && !dets.length) return {k:'partial', label:'ALERTED — no catalog rule', cls:'ct-med', dets:dets};
+    if (!step.alert && dets.length) return {k:'gap', label:'MISSED — rule exists, no telemetry', cls:'ct-high', dets:dets};
+    return {k:'missed', label:'MISSED — no detection', cls:'ct-crit', dets:dets};
+  }
+
+  function renderPurpleTeam(c) {
+    var scn = CT_SCENARIOS.filter(function(s){ return s.id === ptScenario; })[0] || CT_SCENARIOS[0];
+    var steps = ctBuildScenarioSteps(scn);
+    if (ptStep > steps.length) ptStep = steps.length;
+    if (ptStep < 0) ptStep = 0;
+
+    var verdicts = steps.map(ctStepVerdict);
+    var detected = verdicts.filter(function(v){ return v.k === 'detected'; }).length;
+    var missed = verdicts.filter(function(v){ return v.k === 'missed' || v.k === 'gap'; }).length;
+    var coverage = steps.length ? Math.round(detected / steps.length * 100) : 0;
+    var covColor = coverage >= 75 ? '#00e676' : coverage >= 50 ? '#ff9100' : '#ff1744';
+
+    c.innerHTML =
+      '<div class="ct-panel" style="border-color:var(--mode-accent,#dc2626)">' +
+        '<div class="ct-panel-h" style="color:var(--mode-accent,#dc2626)">Adversary Emulation &middot; Purple-Team Detection Coverage</div>' +
+        '<div class="ct-panel-b">' +
+          '<div style="display:inline-block;padding:2px 8px;border-radius:2px;font-size:.6rem;font-weight:700;letter-spacing:.05em;background:rgba(255,23,68,.15);color:#ff1744;border:1px solid rgba(255,23,68,.4);margin-bottom:8px">SIMULATION ONLY</div>' +
+          '<div style="font-size:.72rem;color:var(--mut);line-height:1.6">This is a tabletop purple-team exercise. It reconstructs an attack chain from the existing MITRE-tagged alert queue and reports, per kill-chain step, whether our detections would fire or MISS it. No live attack is performed and no network activity occurs — it reasons over recorded telemetry to expose detection-coverage gaps.</div>' +
+        '</div>' +
+      '</div>' +
+
+      '<div class="ct-filter-row">' +
+        '<span class="ct-sub" style="color:var(--mut)">Scenario</span>' +
+        '<select class="ct-sel" id="ct-pt-scn">' +
+          CT_SCENARIOS.map(function(s){ return '<option value="' + s.id + '"' + (s.id === ptScenario ? ' selected' : '') + '>' + esc(s.name) + '</option>'; }).join('') +
+        '</select>' +
+        '<span style="flex:1"></span>' +
+        '<button class="ct-btn ct-btn-sm ct-btn-ghost" id="ct-pt-reset">Reset</button>' +
+        '<button class="ct-btn ct-btn-sm" id="ct-pt-step">Advance Step</button>' +
+        '<button class="ct-btn ct-btn-sm" id="ct-pt-all">Reveal Full Chain</button>' +
+      '</div>' +
+
+      '<div class="ct-grid4" style="margin-bottom:10px">' +
+        '<div class="ct-stat"><div class="ct-stat-v">' + steps.length + '</div><div class="ct-stat-l">Kill-chain Steps</div></div>' +
+        '<div class="ct-stat"><div class="ct-stat-v" style="color:#00e676">' + detected + '</div><div class="ct-stat-l">Detected</div></div>' +
+        '<div class="ct-stat"><div class="ct-stat-v" style="color:#ff1744">' + missed + '</div><div class="ct-stat-l">Missed / Gaps</div></div>' +
+        '<div class="ct-stat"><div class="ct-stat-v" style="color:' + covColor + '">' + coverage + '<span style="font-size:.6rem">%</span></div><div class="ct-stat-l">Detection Coverage</div></div>' +
+      '</div>' +
+
+      '<div class="ct-panel">' +
+        '<div class="ct-panel-h">' + esc(scn.name) + '</div>' +
+        '<div class="ct-panel-b">' +
+          '<div style="font-size:.68rem;color:var(--mut);line-height:1.6;margin-bottom:10px">' + esc(scn.summary) + '</div>' +
+          '<div class="ct-timeline" id="ct-pt-timeline"></div>' +
+        '</div>' +
+      '</div>';
+
+    function renderTimeline() {
+      var shown = ptStep === 0 ? steps.length : Math.min(ptStep, steps.length);
+      var tl = c.querySelector('#ct-pt-timeline');
+      tl.innerHTML = steps.slice(0, shown).map(function(step, i) {
+        var v = verdicts[i];
+        var detTxt = v.dets.length
+          ? v.dets.map(function(d){ return d.id + ' ' + d.name; }).join(' &middot; ')
+          : 'No matching detection rule in catalog';
+        var alertTxt = step.alert
+          ? (step.alert.id + ' &middot; ' + esc(step.alert.source) + ' &middot; rule ' + esc(step.alert.rule))
+          : 'No alert observed in telemetry';
+        return '<div class="ct-tl-item">' +
+            '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">' +
+              '<span class="ct-badge ct-info">' + esc(step.tactic) + '</span>' +
+              '<b style="font-size:.72rem">' + esc(step.name) + '</b>' +
+              '<span class="ct-tag">' + esc(step.mitre) + '</span>' +
+              '<span style="flex:1"></span>' +
+              '<span class="ct-badge ' + v.cls + '">' + v.label + '</span>' +
+            '</div>' +
+            '<div style="font-size:.66rem;color:var(--txt);margin-top:4px">Adversary action: ' + esc(step.action) + '</div>' +
+            '<div class="ct-field-row"><span class="ct-field-key">Alert</span><span class="ct-field-val">' + alertTxt + '</span></div>' +
+            '<div class="ct-field-row"><span class="ct-field-key">Detection</span><span class="ct-field-val">' + detTxt + '</span></div>' +
+          '</div>';
+      }).join('');
+      if (ptStep !== 0 && ptStep < steps.length) {
+        tl.innerHTML += '<div class="ct-tl-item" style="opacity:.5"><span class="ct-sub">' + (steps.length - ptStep) + ' more step(s) hidden — Advance Step or Reveal Full Chain</span></div>';
+      }
+    }
+
+    // ptStep === 0 means "reveal the full chain"; otherwise it is the number of
+    // kill-chain steps revealed so far.
+    c.querySelector('#ct-pt-scn').onchange = function(e) { ptScenario = e.target.value; ptStep = 0; renderPurpleTeam(c); };
+    c.querySelector('#ct-pt-reset').onclick = function() { ptStep = 1; renderTimeline(); };
+    c.querySelector('#ct-pt-step').onclick = function() { ptStep = ptStep === 0 ? 1 : Math.min(ptStep + 1, steps.length); renderTimeline(); };
+    c.querySelector('#ct-pt-all').onclick = function() { ptStep = 0; renderTimeline(); };
+    renderTimeline();
+  }
+
+  renderShell();
 }
 
 export function cleanupCitadel() {

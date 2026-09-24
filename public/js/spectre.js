@@ -1,6 +1,11 @@
 // SPECTRE — Security Posture Evaluation, Cloud Threat Response & Enforcement
 // Browser-based cloud security posture management platform for Darknode
 // Copyright (c) 2026 Darknode-Official. All rights reserved.
+//
+// Operates in three postures (SCOUTING / DEFENSIVE / OFFENSIVE) via the shared
+// core/tool-modes switcher — same mechanism every flagship uses.
+
+import { mountModeSwitcher } from '/js/core/tool-modes.js';
 
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
@@ -743,21 +748,57 @@ var _spComplianceTab = 'cis';
 var _spInterval = null;
 var _spRemedEffort = '';
 var _spExplorer = { cloud: '', severity: '', status: '', q: '' };
+var _spAttackScenario = '';
+
+// Full tab list. Each tab declares which operational postures it belongs to via
+// `modes` (a subset of scouting/defensive/offensive). A tab with no `modes` is
+// mode-agnostic and shows in every posture. The core/tool-modes switcher filters
+// this list to the active posture and re-tints the console.
+//   - dashboard          — agnostic overview (always shown)
+//   - aws/azure/gcp/iam/compliance/terraform/remediate/trends — CSPM & hardening
+//     work, ['defensive']
+//   - surface, explorer  — inventory / exposure views useful for recon too,
+//     ['scouting','defensive']
+//   - recon (NEW)        — outside-in external attack-surface enumeration,
+//     ['scouting']
+//   - attackpath (NEW)   — simulated attack-path / privilege-escalation chains,
+//     ['offensive']
+function _spBuildTabs() {
+  return [
+    { id: 'dashboard', label: 'Posture Dashboard' },
+    { id: 'recon', label: 'Attack Surface Recon', modes: ['scouting'] },
+    { id: 'aws', label: 'AWS Audit', modes: ['defensive'] },
+    { id: 'azure', label: 'Azure Audit', modes: ['defensive'] },
+    { id: 'gcp', label: 'GCP Audit', modes: ['defensive'] },
+    { id: 'iam', label: 'IAM Analyzer', modes: ['defensive'] },
+    { id: 'compliance', label: 'Compliance', modes: ['defensive'] },
+    { id: 'terraform', label: 'Terraform Scanner', modes: ['defensive'] },
+    { id: 'surface', label: 'Attack Surface', modes: ['scouting', 'defensive'] },
+    { id: 'attackpath', label: 'Attack Paths', modes: ['offensive'] },
+    { id: 'remediate', label: 'Remediation Plan', modes: ['defensive'] },
+    { id: 'trends', label: 'Risk Trends', modes: ['defensive'] },
+    { id: 'explorer', label: 'Findings Explorer', modes: ['scouting', 'defensive'] }
+  ];
+}
+
+function _spRouteContent(id, c) {
+  if (id === 'dashboard') _spRenderDashboard(c);
+  else if (id === 'recon') _spRenderRecon(c);
+  else if (id === 'aws') _spRenderAudit(c, 'AWS', AWS_CHECKS, _spAwsResults);
+  else if (id === 'azure') _spRenderAudit(c, 'Azure', AZURE_CHECKS, _spAzureResults);
+  else if (id === 'gcp') _spRenderAudit(c, 'GCP', GCP_CHECKS, _spGcpResults);
+  else if (id === 'iam') _spRenderIAM(c);
+  else if (id === 'compliance') _spRenderCompliance(c);
+  else if (id === 'terraform') _spRenderTerraform(c);
+  else if (id === 'surface') _spRenderSurface(c);
+  else if (id === 'attackpath') _spRenderAttackPath(c);
+  else if (id === 'remediate') _spRenderRemediate(c);
+  else if (id === 'trends') _spRenderTrends(c);
+  else if (id === 'explorer') _spRenderExplorer(c);
+}
 
 function _spRender(main) {
-  var tabs = [
-    { id: 'dashboard', label: 'Posture Dashboard' },
-    { id: 'aws', label: 'AWS Audit' },
-    { id: 'azure', label: 'Azure Audit' },
-    { id: 'gcp', label: 'GCP Audit' },
-    { id: 'iam', label: 'IAM Analyzer' },
-    { id: 'compliance', label: 'Compliance' },
-    { id: 'terraform', label: 'Terraform Scanner' },
-    { id: 'surface', label: 'Attack Surface' },
-    { id: 'remediate', label: 'Remediation Plan' },
-    { id: 'trends', label: 'Risk Trends' },
-    { id: 'explorer', label: 'Findings Explorer' }
-  ];
+  var tabs = _spBuildTabs();
 
   main.innerHTML =
     '<div class="sp-wrap">' +
@@ -767,36 +808,54 @@ function _spRender(main) {
           '<span class="sp-subtitle">Cloud Security Posture Management</span>' +
         '</div>' +
         '<div class="sp-meta">' +
+          '<div id="sp-modebar"></div>' +
           '<span class="sp-meta-item"><span class="sp-dot" style="background:#22c55e"></span>System Active</span>' +
           '<span class="sp-meta-item">Checks: ' + (AWS_CHECKS.length + AZURE_CHECKS.length + GCP_CHECKS.length) + '</span>' +
           '<span class="sp-meta-item">Frameworks: 5</span>' +
         '</div>' +
       '</div>' +
-      '<div class="sp-tabs">' +
-        tabs.map(function(t) {
-          return '<button class="sp-tab' + (_spActiveTab === t.id ? ' on' : '') + '" data-t="' + t.id + '">' + esc(t.label) + '</button>';
-        }).join('') +
-      '</div>' +
+      '<div class="sp-modenote" id="sp-modenote"></div>' +
+      '<div class="sp-tabs" id="sp-tabs"></div>' +
       '<div id="sp-content" style="margin-top:12px"></div>' +
     '</div>';
 
-  main.querySelector('.sp-tabs').onclick = function(e) {
-    var b = e.target.closest('.sp-tab');
-    if (b) { _spActiveTab = b.dataset.t; _spRender(main); }
-  };
-
+  var wrap = main.querySelector('.sp-wrap');
   var c = main.querySelector('#sp-content');
-  if (_spActiveTab === 'dashboard') _spRenderDashboard(c);
-  else if (_spActiveTab === 'aws') _spRenderAudit(c, 'AWS', AWS_CHECKS, _spAwsResults);
-  else if (_spActiveTab === 'azure') _spRenderAudit(c, 'Azure', AZURE_CHECKS, _spAzureResults);
-  else if (_spActiveTab === 'gcp') _spRenderAudit(c, 'GCP', GCP_CHECKS, _spGcpResults);
-  else if (_spActiveTab === 'iam') _spRenderIAM(c);
-  else if (_spActiveTab === 'compliance') _spRenderCompliance(c);
-  else if (_spActiveTab === 'terraform') _spRenderTerraform(c);
-  else if (_spActiveTab === 'surface') _spRenderSurface(c);
-  else if (_spActiveTab === 'remediate') _spRenderRemediate(c);
-  else if (_spActiveTab === 'trends') _spRenderTrends(c);
-  else if (_spActiveTab === 'explorer') _spRenderExplorer(c);
+  var tabsEl = main.querySelector('#sp-tabs');
+  var visibleTabs = tabs.slice();
+
+  function activate(id) {
+    _spActiveTab = id;
+    tabsEl.querySelectorAll('.sp-tab').forEach(function (b) { b.classList.toggle('on', b.dataset.t === id); });
+    _spRouteContent(id, c);
+  }
+
+  function renderTabs() {
+    tabsEl.innerHTML = visibleTabs.map(function (t) {
+      return '<button class="sp-tab' + (_spActiveTab === t.id ? ' on' : '') + '" data-t="' + t.id + '">' + esc(t.label) + '</button>';
+    }).join('');
+    tabsEl.querySelectorAll('.sp-tab').forEach(function (b) {
+      b.onclick = function () { activate(b.dataset.t); };
+    });
+  }
+
+  // Operational-mode switcher: filters the tab bar to the active posture and
+  // re-tints the console. Persists the last-used mode per tool via core/store.
+  mountModeSwitcher({
+    toolId: 'spectre',
+    tabs: tabs,
+    mount: main.querySelector('#sp-modebar'),
+    host: wrap,
+    note: main.querySelector('#sp-modenote'),
+    onChange: function (_mode, vt) {
+      visibleTabs = vt;
+      if (!visibleTabs.some(function (t) { return t.id === _spActiveTab; })) {
+        _spActiveTab = visibleTabs[0] ? visibleTabs[0].id : 'dashboard';
+      }
+      renderTabs();
+      activate(_spActiveTab);
+    }
+  });
 }
 
 // ============================================================================
@@ -1423,6 +1482,299 @@ function _spRenderExplorer(c) {
 }
 
 // ============================================================================
+// SCOUTING TAB — EXTERNAL ATTACK-SURFACE RECON (outside-in enumeration)
+// ============================================================================
+// Reconnaissance view: enumerate everything an attacker can see or reach from
+// outside the accounts, derived entirely from the deterministic posture
+// snapshot. Publicly-reachable resources are grouped the way an adversary maps
+// them ("what does the perimeter look like?"), plus the over-permissive
+// identity surface that turns a foothold into full compromise. A weighted
+// exposure score summarises how wide open the estate is.
+var _SP_RECON_GROUPS = [
+  { key: 'data', label: 'Exposed Data Stores', desc: 'Buckets, blobs and images readable (or writable) from the public internet with no authentication — the fastest path to a data breach or leaked credentials.', types: ['Public data exposure', 'Public image share'] },
+  { key: 'ingress', label: 'Open Network Ingress', desc: 'Security groups / NSGs / firewall rules that accept inbound traffic from any source (0.0.0.0/0), including exposed SSH and RDP — direct entry points for brute-force and exploitation.', types: ['Exposed SSH (22)', 'Exposed RDP (3389)', 'Open network ingress'] },
+  { key: 'endpoints', label: 'Exposed Endpoints & Services', desc: 'Databases, functions and management planes published on public IPs or endpoints instead of private links — reachable and enumerable before any credential is needed.', types: ['Public service endpoint', 'Public IP address', 'Public function invoke'] }
+];
+
+// Over-permissive identity surface: the trust relationships an attacker probes
+// to escalate once inside. Derived from failing/degraded IAM-family findings.
+function _spReconIdentity(snap) {
+  return snap.filter(function (r) {
+    if (r.status === 'PASS') return false;
+    var svc = (r.service || '').toLowerCase();
+    var isIdentity = svc.indexOf('iam') >= 0 || svc.indexOf('azure ad') >= 0 || svc === 'ad';
+    if (!isIdentity) return false;
+    var t = (r.name + ' ' + (r.description || '')).toLowerCase();
+    return /wildcard|overprivileged|admin|privilege|passrole|assume|inline polic|primitive role|service account key|domain-wide|mfa|password polic|access key|unused/.test(t);
+  });
+}
+
+// Weighted exposure score (higher = more exposed / worse), capped at 100.
+function _spExposureScore(items) {
+  var w = { CRITICAL: 14, HIGH: 8, MEDIUM: 3, LOW: 1 };
+  var s = 0;
+  items.forEach(function (x) { s += (w[x.severity] || 1); });
+  return Math.min(100, Math.round(s));
+}
+function _spExposureBand(score) {
+  if (score >= 70) return { t: 'WIDE OPEN', c: '#dc2626' };
+  if (score >= 40) return { t: 'ELEVATED', c: '#f97316' };
+  if (score > 0) return { t: 'GUARDED', c: '#eab308' };
+  return { t: 'HARDENED', c: '#22c55e' };
+}
+
+function _spRenderRecon(c) {
+  var snap = _spBuildSnapshot();
+  var exposed = [];
+  snap.forEach(function (r) { var ex = _spClassifyExposure(r); if (ex) exposed.push({ r: r, type: ex.type, why: ex.why }); });
+  var identity = _spReconIdentity(snap);
+
+  // Assemble grouped view.
+  var groups = _SP_RECON_GROUPS.map(function (g) {
+    var items = exposed.filter(function (e) { return g.types.indexOf(e.type) >= 0; });
+    items.sort(function (a, b) {
+      var s = _SP_SEV_ORDER[a.r.severity] - _SP_SEV_ORDER[b.r.severity]; if (s) return s;
+      var cl = _SP_CLOUD_ORDER[a.r.cloud] - _SP_CLOUD_ORDER[b.r.cloud]; if (cl) return cl;
+      return a.r.id < b.r.id ? -1 : 1;
+    });
+    return { g: g, items: items };
+  });
+  identity.sort(function (a, b) {
+    var s = _SP_SEV_ORDER[a.severity] - _SP_SEV_ORDER[b.severity]; if (s) return s;
+    var cl = _SP_CLOUD_ORDER[a.cloud] - _SP_CLOUD_ORDER[b.cloud]; if (cl) return cl;
+    return a.id < b.id ? -1 : 1;
+  });
+
+  // Score over reachable exposures + identity surface.
+  var scored = exposed.map(function (e) { return e.r; }).concat(identity);
+  var score = _spExposureScore(scored);
+  var band = _spExposureBand(score);
+  var crit = scored.filter(function (r) { return r.severity === 'CRITICAL'; }).length;
+
+  var groupCard = function (label, desc, rowsHtml, count) {
+    return '<div class="sp-card" style="margin-top:14px">' +
+      '<div class="sp-card-h" style="display:flex;justify-content:space-between;align-items:center">' +
+        '<span>' + esc(label) + '</span><span style="color:var(--txt)">' + count + '</span>' +
+      '</div>' +
+      '<p class="sp-why" style="max-width:none;margin:0 0 10px">' + esc(desc) + '</p>' +
+      (count ?
+        '<table class="sp-table"><thead><tr><th>Resource</th><th>Cloud</th><th>What an attacker sees</th><th>Severity</th></tr></thead><tbody>' + rowsHtml + '</tbody></table>' :
+        '<div class="sp-empty" style="padding:16px">Nothing exposed in this category.</div>') +
+      '</div>';
+  };
+
+  var html =
+    '<h2 class="sp-h2">External Attack Surface — Outside-In Recon</h2>' +
+    '<p class="sp-sub">Reconnaissance view of everything reachable or observable from outside the accounts, derived from the current posture snapshot. This is the map an attacker builds <b>before</b> authenticating — publicly-exposed resources grouped by perimeter type, plus the over-permissive identity surface that turns any foothold into full compromise. Close the widest categories first.</p>' +
+    '<div class="sp-stat-tiles">' +
+      _spStatTile(score + ' — ' + band.t, 'Exposure Score', band.c) +
+      _spStatTile(scored.length, 'Reachable / Weak Assets', 'var(--acc)') +
+      _spStatTile(crit, 'Critical Exposures', '#dc2626') +
+      _spStatTile(exposed.length, 'Perimeter Findings', '#f97316') +
+      _spStatTile(identity.length, 'Permissive Identities', '#eab308') +
+    '</div>';
+
+  groups.forEach(function (grp) {
+    var rows = grp.items.map(function (e) {
+      return '<tr><td class="sp-mono">' + esc(e.r.resource) + '<div class="sp-cell-sub">' + esc(e.r.id) + ' · ' + esc(e.r.name) + '</div></td>' +
+        '<td>' + esc(e.r.cloud) + '</td>' +
+        '<td>' + esc(e.type) + '<div class="sp-cell-sub">' + esc(e.why) + '</div></td>' +
+        '<td><span class="sp-sev-badge" style="color:' + _spSevColor(e.r.severity) + ';background:' + _spSevBg(e.r.severity) + '">' + e.r.severity + '</span></td></tr>';
+    }).join('');
+    html += groupCard(grp.g.label, grp.g.desc, rows, grp.items.length);
+  });
+
+  // Identity surface card (own shape — no exposure "type").
+  var idRows = identity.map(function (r) {
+    return '<tr><td class="sp-mono">' + esc(r.resource) + '<div class="sp-cell-sub">' + esc(r.id) + ' · ' + esc(r.service) + '</div></td>' +
+      '<td>' + esc(r.cloud) + '</td>' +
+      '<td>' + esc(r.name) + '<div class="sp-cell-sub">' + esc(r.description || '') + '</div></td>' +
+      '<td><span class="sp-sev-badge" style="color:' + _spSevColor(r.severity) + ';background:' + _spSevBg(r.severity) + '">' + r.severity + '</span></td></tr>';
+  }).join('');
+  html += groupCard('Over-Permissive Identity & Trust', 'IAM roles, policies and directory settings an attacker abuses to escalate from an initial foothold — wildcard grants, missing MFA on privileged roles, stale keys and broad trust relationships. Not internet-visible, but the difference between a contained incident and full account takeover.', idRows, identity.length);
+
+  c.innerHTML = html;
+}
+
+// ============================================================================
+// OFFENSIVE TAB — SIMULATED ATTACK PATHS (wargaming; no live capability)
+// ============================================================================
+// SIMULATION ONLY. Each scenario chains real misconfiguration findings into a
+// plausible attack path (public entry -> credential access -> privilege
+// escalation -> lateral movement -> exfiltration). Every step names the specific
+// check IDs that would enable it; at render time we look those IDs up in the
+// live snapshot to show whether the enabling misconfig is actually failing, and
+// derive a blast-radius / detection verdict. This is illustrative reasoning over
+// existing findings to prioritise defense — never a real attack capability.
+var _SP_ATTACK_SCENARIOS = [
+  {
+    id: 'aws-bucket-exfil', name: 'AWS: Public bucket to data exfiltration', cloud: 'AWS',
+    tactic: 'Initial Access → Credential Access → Privilege Escalation → Exfiltration',
+    foothold: 'An anonymous, internet-facing S3 bucket',
+    impact: 'An unauthenticated attacker reads a public bucket, harvests credentials committed to it, assumes an over-privileged role, and exfiltrates data from across the account — potentially without leaving an audit trail.',
+    steps: [
+      { phase: 'Foothold', action: 'Enumerate and read the public S3 bucket anonymously from the internet.', ids: ['AWS-S3-001', 'AWS-S3-006'] },
+      { phase: 'Credential Access', action: 'Recover long-lived access keys and config from unencrypted, unlogged objects in the bucket.', ids: ['AWS-S3-002', 'AWS-IAM-005'] },
+      { phase: 'Privilege Escalation', action: 'Use the harvested keys against an over-privileged / wildcard IAM policy to grant admin.', ids: ['AWS-IAM-003', 'AWS-IAM-007'] },
+      { phase: 'Lateral Movement', action: 'Reach a publicly-accessible RDS instance and additional data stores with the escalated role.', ids: ['AWS-RDS-001'] },
+      { phase: 'Exfiltration', action: 'Bulk-copy data out of the account to attacker-controlled storage.', ids: ['AWS-S3-008'] }
+    ],
+    detectIds: ['AWS-CT-001', 'AWS-VPC-002']
+  },
+  {
+    id: 'aws-ssh-pivot', name: 'AWS: Internet-exposed host to account takeover', cloud: 'AWS',
+    tactic: 'Initial Access → Credential Access → Privilege Escalation → Lateral Movement',
+    foothold: 'A security group exposing SSH (22) to 0.0.0.0/0',
+    impact: 'An attacker brute-forces or exploits an internet-facing instance, steals its role credentials from the metadata service, escalates through a permissive policy and pivots across the VPC.',
+    steps: [
+      { phase: 'Foothold', action: 'Reach and compromise the instance via SSH open to the whole internet.', ids: ['AWS-EC2-001'] },
+      { phase: 'Credential Access', action: 'Query the instance metadata service (IMDSv1) to steal the attached role credentials.', ids: ['AWS-EC2-005'] },
+      { phase: 'Privilege Escalation', action: 'Abuse over-privileged / inline IAM policies attached to the role to widen access.', ids: ['AWS-IAM-003', 'AWS-IAM-006'] },
+      { phase: 'Lateral Movement', action: 'Pivot across a flat VPC with permissive ingress to reach internal databases.', ids: ['AWS-VPC-003', 'AWS-RDS-001'] }
+    ],
+    detectIds: ['AWS-CT-001', 'AWS-VPC-002']
+  },
+  {
+    id: 'az-nsg-sql', name: 'Azure: Open NSG to SQL & Key Vault breach', cloud: 'Azure',
+    tactic: 'Initial Access → Discovery → Collection → Privilege Escalation',
+    foothold: 'An NSG allowing any-source inbound / exposed management ports',
+    impact: 'An attacker reaches a VM over an open NSG, discovers a SQL server on a public endpoint, pulls secrets from a network-open Key Vault, and escalates via a privileged role without MFA.',
+    steps: [
+      { phase: 'Foothold', action: 'Connect to an exposed VM through an NSG rule allowing traffic from any source.', ids: ['AZ-NSG-001', 'AZ-NSG-002'] },
+      { phase: 'Discovery', action: 'Reach the VM public IP and enumerate reachable data services.', ids: ['AZ-VM-001'] },
+      { phase: 'Collection', action: 'Query a SQL server whose public network access is enabled, and pull secrets from a network-open Key Vault.', ids: ['AZ-SQL-005', 'AZ-KV-003'] },
+      { phase: 'Privilege Escalation', action: 'Take over a privileged directory role that is not protected by MFA / Conditional Access.', ids: ['AZ-AD-001'] }
+    ],
+    detectIds: ['AZ-SQL-001']
+  },
+  {
+    id: 'gcp-bucket-project', name: 'GCP: Public bucket to project compromise', cloud: 'GCP',
+    tactic: 'Initial Access → Credential Access → Privilege Escalation → Exfiltration',
+    foothold: 'A Cloud Storage bucket granting access to allUsers',
+    impact: 'An attacker reads a public GCS bucket, recovers a service-account key, abuses broad delegation to impersonate high-privilege identities, reaches a public Cloud SQL instance and exfiltrates — with data-access audit logging off.',
+    steps: [
+      { phase: 'Foothold', action: 'Read the public Cloud Storage bucket anonymously (allUsers / allAuthenticatedUsers).', ids: ['GCP-GCS-001', 'GCP-GCS-005'] },
+      { phase: 'Credential Access', action: 'Recover a service-account key from the bucket contents.', ids: ['GCP-IAM-004'] },
+      { phase: 'Privilege Escalation', action: 'Abuse broad / primitive IAM grants to impersonate a high-privilege service account.', ids: ['GCP-IAM-001'] },
+      { phase: 'Lateral Movement', action: 'Connect to a Cloud SQL instance exposed on a public IP.', ids: ['GCP-SQL-001'] },
+      { phase: 'Exfiltration', action: 'Export data out of the project to attacker-controlled storage.', ids: ['GCP-GCS-002'] }
+    ],
+    detectIds: ['GCP-LOG-003']
+  }
+];
+
+function _spResolveFinding(id, snap) {
+  var f = null;
+  for (var i = 0; i < snap.length; i++) { if (snap[i].id === id) { f = snap[i]; break; } }
+  return f || { id: id, name: id, service: '', cloud: '', severity: 'MEDIUM', status: 'N/A', resource: '-' };
+}
+
+// Evaluate a scenario against the live snapshot: which steps are actually
+// enabled (an enabling misconfig is FAILing), and whether detection controls
+// would catch it.
+function _spEvalPath(scenario, snap) {
+  var steps = scenario.steps.map(function (st) {
+    var findings = st.ids.map(function (id) { return _spResolveFinding(id, snap); });
+    var viable = findings.some(function (f) { return f.status === 'FAIL'; });
+    var partial = !viable && findings.some(function (f) { return f.status === 'WARN'; });
+    return { st: st, findings: findings, viable: viable, partial: partial };
+  });
+  var enabled = steps.filter(function (s) { return s.viable; }).length;
+  var entryViable = steps[0] && steps[0].viable;
+  var detect = scenario.detectIds.map(function (id) { return _spResolveFinding(id, snap); });
+  var detectionGap = detect.some(function (f) { return f.status === 'FAIL'; });
+
+  var verdict;
+  if (!entryViable) verdict = { t: 'CHAIN BLOCKED AT ENTRY', k: 'ok', c: '#22c55e' };
+  else if (enabled === steps.length) verdict = { t: 'FULL CHAIN VIABLE', k: 'bad', c: '#dc2626' };
+  else verdict = { t: 'PARTIAL CHAIN — ' + enabled + '/' + steps.length + ' STEPS VIABLE', k: 'warn', c: '#f97316' };
+
+  return { steps: steps, enabled: enabled, entryViable: entryViable, detect: detect, detectionGap: detectionGap, verdict: verdict };
+}
+
+function _spRenderAttackPath(c) {
+  var snap = _spBuildSnapshot();
+  if (!_spAttackScenario || !_SP_ATTACK_SCENARIOS.some(function (s) { return s.id === _spAttackScenario; })) {
+    _spAttackScenario = _SP_ATTACK_SCENARIOS[0].id;
+  }
+  var scenario = _SP_ATTACK_SCENARIOS.filter(function (s) { return s.id === _spAttackScenario; })[0];
+  var ev = _spEvalPath(scenario, snap);
+
+  var statusBadge = function (st) {
+    return '<span class="sp-status-badge" style="color:' + _spStatusColor(st) + '">' + esc(st) + '</span>';
+  };
+
+  var stepCards = ev.steps.map(function (s, i) {
+    var stateColor = s.viable ? '#dc2626' : s.partial ? '#f97316' : '#22c55e';
+    var stateLabel = s.viable ? 'ENABLING MISCONFIG PRESENT' : s.partial ? 'PARTIALLY EXPOSED' : 'CONTROL HOLDS';
+    var findingRows = s.findings.map(function (f) {
+      return '<div style="display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;margin-top:4px">' +
+        statusBadge(f.status) +
+        '<span class="sp-mono" style="font-size:.72rem">' + esc(f.id) + '</span>' +
+        '<span class="sp-cell-sub" style="margin-top:0">' + esc(f.name) + (f.resource && f.resource !== '-' ? ' · ' + esc(f.resource) : '') + '</span>' +
+        '</div>';
+    }).join('');
+    var connector = i > 0 ? '<div style="text-align:center;color:var(--mut);font-size:1rem;line-height:1;margin:2px 0">&#8595;</div>' : '';
+    return connector +
+      '<div class="sp-card" style="border-left:3px solid ' + stateColor + '">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">' +
+          '<strong style="font-size:.82rem;color:var(--txt)">Step ' + (i + 1) + ' — ' + esc(s.st.phase) + '</strong>' +
+          '<span class="sp-sev-badge" style="color:' + stateColor + ';background:color-mix(in srgb,' + stateColor + ' 12%,transparent)">' + stateLabel + '</span>' +
+        '</div>' +
+        '<div class="sp-remed-desc" style="margin-top:6px">' + esc(s.st.action) + '</div>' +
+        '<div style="margin-top:6px"><span class="sp-cell-sub" style="margin-top:0">Enabled by:</span>' + findingRows + '</div>' +
+      '</div>';
+  }).join('');
+
+  var detectRows = ev.detect.map(function (f) {
+    return '<div style="display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;margin-top:4px">' +
+      statusBadge(f.status) +
+      '<span class="sp-mono" style="font-size:.72rem">' + esc(f.id) + '</span>' +
+      '<span class="sp-cell-sub" style="margin-top:0">' + esc(f.name) + '</span></div>';
+  }).join('');
+
+  var detectVerdict = ev.detectionGap
+    ? { t: 'LIKELY UNDETECTED', c: '#dc2626', note: 'A logging / audit control on this path is failing — the attack could complete without generating a reliable trail. Restore audit logging first so the chain is at least observable.' }
+    : { t: 'DETECTION LIKELY', c: '#22c55e', note: 'Audit / logging controls on this path are active — the activity would be recorded and is available for detection and response.' };
+
+  c.innerHTML =
+    '<h2 class="sp-h2">Simulated Attack Paths <span class="sp-sim-tag">Simulation only</span></h2>' +
+    '<p class="sp-sub"><b>Illustrative reasoning over existing findings — no network calls, no exploitation.</b> Each scenario chains real misconfiguration checks into a plausible attack path and ties every step to the specific finding IDs that would enable it. Steps are evaluated against the current posture snapshot to show which are actually viable and whether the attack would be detected. Use it to prioritise which misconfigurations to close first.</p>' +
+    '<div class="sp-exp-filters">' +
+      '<label class="sp-cell-sub" style="margin-top:0">Scenario</label>' +
+      '<select class="sp-select" id="sp-ap-scenario">' +
+        _SP_ATTACK_SCENARIOS.map(function (s) {
+          return '<option value="' + esc(s.id) + '"' + (s.id === scenario.id ? ' selected' : '') + '>' + esc(s.name) + '</option>';
+        }).join('') +
+      '</select>' +
+    '</div>' +
+    '<div class="sp-card" style="margin-bottom:14px">' +
+      '<div class="sp-card-h">Scenario</div>' +
+      '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px">' +
+        '<span class="sp-legend-chip">Cloud <b>' + esc(scenario.cloud) + '</b></span>' +
+        '<span class="sp-legend-chip">Foothold <b>' + esc(scenario.foothold) + '</b></span>' +
+      '</div>' +
+      '<div class="sp-why" style="max-width:none;margin-bottom:8px">' + esc(scenario.tactic) + '</div>' +
+      '<div class="sp-stat-tiles">' +
+        _spStatTile(ev.verdict.t, 'Blast-Radius Verdict', ev.verdict.c) +
+        _spStatTile(ev.enabled + ' / ' + ev.steps.length, 'Viable Steps', 'var(--acc)') +
+        _spStatTile(detectVerdict.t, 'Detection', detectVerdict.c) +
+      '</div>' +
+      '<div class="sp-remed-desc" style="margin-top:12px"><b>Impact:</b> ' + esc(scenario.impact) + '</div>' +
+    '</div>' +
+    '<h3 class="sp-h3">Attack chain</h3>' +
+    stepCards +
+    '<div class="sp-card" style="margin-top:14px;border-left:3px solid ' + detectVerdict.c + '">' +
+      '<div class="sp-card-h">Detection &amp; blast radius</div>' +
+      '<div class="sp-remed-desc">' + esc(detectVerdict.note) + '</div>' +
+      '<div style="margin-top:8px"><span class="sp-cell-sub" style="margin-top:0">Controls that would catch this path:</span>' + (detectRows || '<div class="sp-cell-sub">None mapped.</div>') + '</div>' +
+    '</div>';
+
+  var sel = c.querySelector('#sp-ap-scenario');
+  if (sel) sel.onchange = function () { _spAttackScenario = sel.value; _spRenderAttackPath(c); };
+}
+
+// ============================================================================
 // INLINE CSS
 // ============================================================================
 var _spStyleId = 'sp-styles';
@@ -1447,6 +1799,7 @@ function _spInjectCSS() {
 .sp-h2{margin:0 0 8px;font-size:1rem;font-weight:700;color:var(--txt)}
 .sp-h3{margin:16px 0 8px;font-size:.88rem;font-weight:700;color:var(--txt)}
 .sp-sub{color:var(--mut);font-size:.82rem;margin:0 0 16px}
+.sp-modenote{color:var(--mut);font-size:.72rem;margin:4px 0 10px;min-height:1em}
 .sp-card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px}
 .sp-card-h{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--mut);margin-bottom:12px}
 .sp-grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
@@ -1626,6 +1979,7 @@ export function renderSpectre(main) {
   _spComplianceTab = 'cis';
   _spRemedEffort = '';
   _spExplorer = { cloud: '', severity: '', status: '', q: '' };
+  _spAttackScenario = '';
   _spRender(main);
 }
 

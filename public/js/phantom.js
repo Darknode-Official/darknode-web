@@ -2,6 +2,8 @@
 // Browser-based network traffic analysis and deep packet inspection platform
 // Copyright (c) 2026 Darknode-Official. All rights reserved.
 
+import { mountModeSwitcher, filterTabsByMode, getToolMode } from '/js/core/tool-modes.js';
+
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 // ============================================================================
@@ -366,6 +368,213 @@ function phDownload(filename, content, mime) {
 }
 
 // ============================================================================
+// OPERATIONAL MODES — tab catalog tagged by posture (SCOUTING/DEFENSIVE/OFFENSIVE)
+// ============================================================================
+// A tab with no `modes` array is mode-agnostic (shows in every posture). The
+// core/tool-modes switcher filters this list to the active posture.
+var PH_TABS = [
+  { id: 'dashboard', label: 'Dashboard' },                                        // agnostic overview
+  { id: 'capture', label: 'Capture' },                                            // agnostic — load packets in any posture
+  { id: 'recon', label: 'Network Recon', modes: ['scouting'] },                   // NEW scouting panel
+  { id: 'flows', label: 'Flow Analysis', modes: ['scouting', 'defensive'] },
+  { id: 'stats', label: 'Statistics', modes: ['scouting', 'defensive'] },
+  { id: 'trafficstats', label: 'Traffic Stats', modes: ['scouting', 'defensive'] },
+  { id: 'dissector', label: 'Protocol Dissector', modes: ['defensive'] },
+  { id: 'anomaly', label: 'Anomaly Detection', modes: ['defensive', 'offensive'] },
+  { id: 'dns', label: 'DNS Inspector', modes: ['defensive'] },
+  { id: 'tls', label: 'TLS / SSL', modes: ['defensive'] },
+  { id: 'stream', label: 'Follow Stream', modes: ['defensive'] },
+  { id: 'filter', label: 'Display Filter', modes: ['defensive'] },
+  { id: 'ioc', label: 'IOC Export', modes: ['defensive'] },
+  { id: 'attacksim', label: 'Attack Simulation', modes: ['offensive'] },          // NEW offensive panel
+];
+
+// Well-known service ports for recon service enumeration + exposure grading.
+// exposure: 'plaintext' (data in the clear), 'exposed' (high-value remote svc),
+// 'suspicious' (attacker infra), 'encrypted' (protected).
+var PH_SERVICE_PORTS = {
+  21: { name: 'FTP', exposure: 'plaintext' },
+  22: { name: 'SSH', exposure: 'encrypted' },
+  23: { name: 'Telnet', exposure: 'plaintext' },
+  25: { name: 'SMTP', exposure: 'plaintext' },
+  53: { name: 'DNS', exposure: 'plaintext' },
+  80: { name: 'HTTP', exposure: 'plaintext' },
+  110: { name: 'POP3', exposure: 'plaintext' },
+  123: { name: 'NTP', exposure: 'plaintext' },
+  137: { name: 'NetBIOS-NS', exposure: 'plaintext' },
+  139: { name: 'NetBIOS-SSN', exposure: 'exposed' },
+  143: { name: 'IMAP', exposure: 'plaintext' },
+  443: { name: 'HTTPS / TLS', exposure: 'encrypted' },
+  445: { name: 'SMB', exposure: 'exposed' },
+  3306: { name: 'MySQL', exposure: 'exposed' },
+  3389: { name: 'RDP', exposure: 'exposed' },
+  4444: { name: 'Shell / C2', exposure: 'suspicious' },
+  5432: { name: 'PostgreSQL', exposure: 'exposed' },
+  8080: { name: 'HTTP-Alt', exposure: 'plaintext' },
+  8443: { name: 'HTTPS-Alt', exposure: 'encrypted' },
+};
+
+function phServiceInfo(port) {
+  return PH_SERVICE_PORTS[port] || null;
+}
+
+// ============================================================================
+// OFFENSIVE — simulated attack scenarios (adversary emulation for blue-team
+// testing only). Every play generates an illustrative, hardcoded packet
+// sequence and a verdict for whether PHANTOM's own defensive views would catch
+// it. SIMULATION ONLY: no packet crafting, no network calls.
+// ============================================================================
+var PH_ATTACK_PLAYS = [
+  {
+    id: 'portscan',
+    name: 'TCP SYN Port Scan',
+    tactic: 'Reconnaissance / Service Discovery',
+    summary: 'Rapid half-open SYN probes across many ports on one host to enumerate open services without completing handshakes.',
+    chain: [
+      'Attacker selects a target host on the segment',
+      'Emit SYN packets to a sweep of common service ports',
+      'Open ports answer SYN,ACK; closed ports answer RST',
+      'Never complete the handshake (stealth / half-open scan)',
+      'Map the responses into an open-service inventory',
+    ],
+    verdict: 'DETECTED',
+    control: 'Flow Analysis + Anomaly Detection',
+    detectNote: 'One source fanning out to many ports on a single host in a tight window is a textbook horizontal scan. Flow Analysis shows the fan-out and the lopsided half-open ratio; an IDS rule fires on SYN volume per source.',
+    gen: function(target) {
+      var atk = '10.0.0.66';
+      var ports = [21, 22, 23, 80, 139, 443, 445, 3306, 3389, 8080];
+      var open = { 22: 1, 80: 1, 443: 1, 445: 1 };
+      var seq = [];
+      var t = 0;
+      ports.forEach(function(port, i) {
+        t += 0.0012 + i * 0.0004;
+        seq.push({ ts: t, src: atk + ':' + (40000 + i), dst: target + ':' + port, proto: 'TCP', len: 74, flags: 'SYN', info: 'Probe ' + port + ' [SYN]' });
+        t += 0.0006;
+        if (open[port]) seq.push({ ts: t, src: target + ':' + port, dst: atk + ':' + (40000 + i), proto: 'TCP', len: 74, flags: 'SYN,ACK', info: 'Port ' + port + ' OPEN [SYN,ACK]' });
+        else seq.push({ ts: t, src: target + ':' + port, dst: atk + ':' + (40000 + i), proto: 'TCP', len: 54, flags: 'RST,ACK', info: 'Port ' + port + ' closed [RST,ACK]' });
+      });
+      return seq;
+    },
+  },
+  {
+    id: 'arpspoof',
+    name: 'ARP Spoof / MITM',
+    tactic: 'Adversary-in-the-Middle',
+    summary: 'Poison the victim and gateway ARP caches so all traffic is relayed through the attacker for interception.',
+    chain: [
+      'Attacker sends forged ARP replies to the victim ("I am the gateway")',
+      'Attacker sends forged ARP replies to the gateway ("I am the victim")',
+      'Both caches now map the peer IP to the attacker MAC',
+      'Victim traffic is relayed through the attacker (interception)',
+      'Attacker forwards packets to keep the path alive (MITM)',
+    ],
+    verdict: 'PARTIAL',
+    control: 'Protocol Dissector (L2 visibility gap)',
+    detectNote: 'PHANTOM dissects layer 3 and above; ARP lives at layer 2 and is largely invisible in this IP-centric capture. Detection depends on correlating a single MAC suddenly claiming two IPs, or one IP flipping MACs — a genuine visibility gap to close with dedicated ARP monitoring.',
+    gen: function(target) {
+      var atkMac = 'aa:bb:cc:00:11:66';
+      var gw = '10.0.0.1';
+      return [
+        { ts: 0.0000, src: atkMac + ' (' + target + ')', dst: gw, proto: 'ARP', len: 42, flags: '', info: 'Gratuitous ARP: ' + target + ' is-at ' + atkMac + ' (spoofed)' },
+        { ts: 0.0100, src: atkMac + ' (' + gw + ')', dst: target, proto: 'ARP', len: 42, flags: '', info: 'Gratuitous ARP: ' + gw + ' is-at ' + atkMac + ' (spoofed)' },
+        { ts: 0.5200, src: target + ':49300', dst: '93.184.216.34:443', proto: 'TLS', len: 583, flags: 'PSH,ACK', info: 'Victim traffic now transiting attacker MAC' },
+        { ts: 0.5240, src: atkMac + ' relay', dst: '93.184.216.34:443', proto: 'TLS', len: 583, flags: 'PSH,ACK', info: 'Attacker forwards packet (interception)' },
+        { ts: 1.0300, src: atkMac + ' (' + gw + ')', dst: target, proto: 'ARP', len: 42, flags: '', info: 'Re-assert poisoned mapping (keep-alive)' },
+      ];
+    },
+  },
+  {
+    id: 'dnsexfil',
+    name: 'DNS Exfiltration',
+    tactic: 'Exfiltration Over Alternative Protocol',
+    summary: 'Smuggle stolen data out as encoded labels inside DNS queries to an attacker-controlled authoritative server.',
+    chain: [
+      'Compromised host chunks and base32/base64-encodes the target data',
+      'Each chunk becomes a subdomain label of an attacker domain',
+      'Host issues TXT/A queries; the recursive resolver forwards them',
+      'Attacker name server reconstructs the data from the labels',
+      'Traffic blends into normally-permitted DNS',
+    ],
+    verdict: 'DETECTED',
+    control: 'DNS Inspector + Anomaly Detection',
+    detectNote: 'Abnormally long, high-entropy subdomain labels and a burst of TXT queries to a single low-reputation domain trip the DNS Tunneling rule already present in Anomaly Detection; DNS Inspector surfaces the encoded labels directly.',
+    gen: function(target) {
+      var labels = ['aGVsbG8gd29ybGQ', 'c2VjcmV0ZmlsZQ', 'cGFzc3dvcmRz', 'ZXhmaWxjaHVuaw'];
+      var seq = [];
+      var t = 0;
+      labels.forEach(function(lab, i) {
+        t += 0.12 + i * 0.03;
+        seq.push({ ts: t, src: target + ':' + (51300 + i), dst: '8.8.8.8:53', proto: 'DNS', len: 90 + lab.length, flags: '', info: 'Query TXT ' + lab + '.c2.evil.com' });
+        t += 0.02;
+        seq.push({ ts: t, src: '8.8.8.8:53', dst: target + ':' + (51300 + i), proto: 'DNS', len: 70, flags: '', info: 'Response TXT (chunk ' + (i + 1) + '/' + labels.length + ' acked)' });
+      });
+      return seq;
+    },
+  },
+  {
+    id: 'c2beacon',
+    name: 'C2 Beacon (Cobalt Strike)',
+    tactic: 'Command & Control',
+    summary: 'Implant checks in with its controller on a fixed interval over TLS, awaiting tasking.',
+    chain: [
+      'Implant establishes a TLS channel to the C2 server',
+      'Beacon home on a regular interval (with small jitter)',
+      'Each check-in is a short, near-identical encrypted request',
+      'Controller replies with tasking or an empty ack',
+      'Pattern repeats indefinitely (low and slow)',
+    ],
+    verdict: 'DETECTED',
+    control: 'TLS / SSL (JA3) + Flow Analysis',
+    detectNote: 'The TLS/SSL view fingerprints the client handshake as JA3 e35f5f2b6d25675d54afec5d54fa5b96 = Cobalt Strike Beacon (Critical). The metronome-like flow timing to one external host is a classic beacon signature in Flow Analysis.',
+    gen: function(target) {
+      var c2 = '198.51.100.44';
+      var seq = [];
+      var base = 0;
+      seq.push({ ts: 0, src: target + ':49400', dst: c2 + ':443', proto: 'TLS', len: 517, flags: 'PSH,ACK', info: 'Client Hello (JA3: Cobalt Strike Beacon)' });
+      for (var i = 0; i < 4; i++) {
+        base += 60.0 + (i % 2 ? 0.8 : -0.6); // ~60s interval with jitter
+        seq.push({ ts: base, src: target + ':' + (49400 + i), dst: c2 + ':443', proto: 'TLS', len: 226 + (i % 3), flags: 'PSH,ACK', info: 'Beacon check-in #' + (i + 1) + ' (encrypted)' });
+        seq.push({ ts: base + 0.03, src: c2 + ':443', dst: target + ':' + (49400 + i), proto: 'TLS', len: 118, flags: 'PSH,ACK', info: 'C2 tasking / ack (encrypted)' });
+      }
+      return seq;
+    },
+  },
+  {
+    id: 'synflood',
+    name: 'SYN Flood (DoS)',
+    tactic: 'Resource Exhaustion / Denial of Service',
+    summary: 'Flood a service with spoofed-source SYNs to exhaust its half-open connection table.',
+    chain: [
+      'Attacker generates SYNs with randomized spoofed source IPs',
+      'Target allocates a half-open connection per SYN and replies SYN,ACK',
+      'The spoofed sources never send the final ACK',
+      'The backlog fills; legitimate handshakes are refused',
+      'Service availability degrades or collapses',
+    ],
+    verdict: 'DETECTED',
+    control: 'Statistics + Traffic Stats',
+    detectNote: 'A sharp spike in SYN packets to one port with an extreme SYN-to-ACK imbalance and many one-packet sources is unmistakable. Statistics and Traffic Stats surface the volume and the half-open ratio.',
+    gen: function(target) {
+      var seq = [];
+      var t = 0;
+      for (var i = 0; i < 10; i++) {
+        var spoof = '203.0.113.' + (10 + i * 7 % 240);
+        t += 0.0003;
+        seq.push({ ts: t, src: spoof + ':' + (1024 + i * 111), dst: target + ':80', proto: 'TCP', len: 60, flags: 'SYN', info: 'Spoofed SYN (no ACK will follow)' });
+        if (i < 3) { t += 0.0002; seq.push({ ts: t, src: target + ':80', dst: spoof + ':' + (1024 + i * 111), proto: 'TCP', len: 60, flags: 'SYN,ACK', info: 'Half-open allocated (backlog+1)' }); }
+      }
+      return seq;
+    },
+  },
+];
+
+function phVerdictBadge(v) {
+  var map = { DETECTED: 'LOW', PARTIAL: 'MEDIUM', MISSED: 'CRITICAL' };
+  var label = { DETECTED: 'DETECTED & CONTAINED', PARTIAL: 'PARTIALLY DETECTED', MISSED: 'MISSED — CONTROL GAP' };
+  return '<span class="ph-badge ph-sev-' + (map[v] || 'INFO') + '">' + esc(label[v] || v) + '</span>';
+}
+
+// ============================================================================
 // MAIN RENDER
 // ============================================================================
 var _phInterval = null;
@@ -378,6 +587,7 @@ export function renderPhantom(main) {
   var selectedStream = null;
   var filterExpr = '';
   var autoRefresh = false;
+  var currentMode = getToolMode('phantom');
 
   function loadDemo() {
     packets = SAMPLE_PACKETS.slice();
@@ -387,20 +597,11 @@ export function renderPhantom(main) {
   }
 
   function render() {
-    var tabs = [
-      'dashboard:Dashboard',
-      'capture:Capture',
-      'dissector:Protocol Dissector',
-      'flows:Flow Analysis',
-      'anomaly:Anomaly Detection',
-      'dns:DNS Inspector',
-      'tls:TLS / SSL',
-      'stats:Statistics',
-      'stream:Follow Stream',
-      'trafficstats:Traffic Stats',
-      'filter:Display Filter',
-      'ioc:IOC Export',
-    ];
+    var visTabs = filterTabsByMode(PH_TABS, currentMode);
+    // If the active tab isn't in the current posture, fall back to the first visible one.
+    if (!visTabs.some(function(t) { return t.id === activeTab; })) {
+      activeTab = (visTabs[0] && visTabs[0].id) || 'dashboard';
+    }
 
     main.innerHTML =
       '<style>' +
@@ -477,14 +678,17 @@ export function renderPhantom(main) {
       '.ph-hint{font-size:.7rem;color:#ef4444;margin-top:6px;min-height:14px}' +
       '</style>' +
       '<div class="ph-wrap">' +
-        '<div class="ph-header">' +
-          '<div class="ph-dot"></div>' +
-          '<div><div class="ph-title">PHANTOM</div><div class="ph-sub">Packet Handler, Analyzer, Network Topology &amp; Operations Monitor</div></div>' +
+        '<div class="ph-header" style="justify-content:space-between">' +
+          '<div style="display:flex;align-items:center;gap:16px">' +
+            '<div class="ph-dot"></div>' +
+            '<div><div class="ph-title">PHANTOM</div><div class="ph-sub">Packet Handler, Analyzer, Network Topology &amp; Operations Monitor</div></div>' +
+          '</div>' +
+          '<div id="ph-modebar"></div>' +
         '</div>' +
+        '<div class="ph-sub" id="ph-modenote" style="padding:8px 0 0;text-transform:none;letter-spacing:0"></div>' +
         '<div class="ph-tabs">' +
-          tabs.map(function(t) {
-            var p = t.split(':');
-            return '<button class="ph-tab' + (activeTab === p[0] ? ' on' : '') + '" data-t="' + p[0] + '">' + p[1] + '</button>';
+          visTabs.map(function(t) {
+            return '<button class="ph-tab' + (activeTab === t.id ? ' on' : '') + '" data-t="' + t.id + '">' + esc(t.label) + '</button>';
           }).join('') +
         '</div>' +
         '<div id="ph-content" style="margin-top:12px"></div>' +
@@ -495,9 +699,28 @@ export function renderPhantom(main) {
       if (b) { activeTab = b.dataset.t; render(); }
     };
 
+    // Operational-mode switcher: filters tabs to the active posture and retints
+    // the console. Persists the last-used mode per tool via core/store.
+    mountModeSwitcher({
+      toolId: 'phantom',
+      tabs: PH_TABS,
+      mount: main.querySelector('#ph-modebar'),
+      host: main.querySelector('.ph-wrap'),
+      note: main.querySelector('#ph-modenote'),
+      onChange: function(modeId) {
+        if (modeId === currentMode) return; // mount-time / same-posture re-fire: no-op
+        currentMode = modeId;
+        var vt = filterTabsByMode(PH_TABS, currentMode);
+        activeTab = (vt[0] && vt[0].id) || 'dashboard';
+        render();
+      },
+    });
+
     var content = main.querySelector('#ph-content');
     if (activeTab === 'dashboard') renderDashboard(content);
     else if (activeTab === 'capture') renderCapture(content);
+    else if (activeTab === 'recon') renderRecon(content);
+    else if (activeTab === 'attacksim') renderAttackSim(content);
     else if (activeTab === 'dissector') renderDissector(content);
     else if (activeTab === 'flows') renderFlows(content);
     else if (activeTab === 'anomaly') renderAnomaly(content);
@@ -1496,6 +1719,194 @@ export function renderPhantom(main) {
         return r;
       });
     };
+  }
+
+  // ========================================================================
+  // TAB (SCOUTING): NETWORK RECON — passive asset & service enumeration
+  // ========================================================================
+  // Real analysis over the loaded capture: discover hosts/talkers, enumerate
+  // the services each host offers, build an asset+service inventory and flag
+  // exposed / plaintext services. This is the map an attacker builds first.
+  function renderRecon(c) {
+    if (packets.length === 0) {
+      c.innerHTML =
+        '<div class="ph-empty">No capture loaded. Reconnaissance is built from captured traffic.' +
+        '<div style="margin-top:12px"><button class="ph-btn" id="ph-recon-demo">Load Demo Capture (50 packets)</button></div></div>';
+      var db = c.querySelector('#ph-recon-demo');
+      if (db) db.onclick = loadDemo;
+      return;
+    }
+
+    // --- Host inventory ---------------------------------------------------
+    var hosts = {}; // ip -> { sent, recv, bytes, protocols:{}, ports:{} }
+    function host(ip) {
+      return hosts[ip] || (hosts[ip] = { sent: 0, recv: 0, bytes: 0, protocols: {}, ports: {} });
+    }
+    // --- Service inventory ------------------------------------------------
+    var services = {}; // ip|port -> { ip, port, proto, count, info }
+    function noteService(ip, port, proto) {
+      var info = phServiceInfo(port);
+      if (!info) return;
+      var key = ip + '|' + port;
+      var s = services[key] || (services[key] = { ip: ip, port: port, proto: proto, name: info.name, exposure: info.exposure, count: 0 });
+      s.count++;
+      host(ip).ports[port] = info.name;
+    }
+
+    packets.forEach(function(p) {
+      var validSrc = /^\d{1,3}(\.\d{1,3}){3}$/.test(p.srcIP);
+      var validDst = /^\d{1,3}(\.\d{1,3}){3}$/.test(p.dstIP);
+      if (validSrc) { var hs = host(p.srcIP); hs.sent++; hs.bytes += p.length || 0; hs.protocols[p.protocol] = true; }
+      if (validDst) { var hd = host(p.dstIP); hd.recv++; hd.bytes += p.length || 0; hd.protocols[p.protocol] = true; }
+      // The endpoint bound to a well-known service port is offering that service.
+      if (validDst && phServiceInfo(p.dstPort)) noteService(p.dstIP, p.dstPort, phTransport(p.protocol));
+      if (validSrc && phServiceInfo(p.srcPort)) noteService(p.srcIP, p.srcPort, phTransport(p.protocol));
+    });
+
+    var hostArr = Object.keys(hosts).map(function(ip) {
+      var h = hosts[ip];
+      return { ip: ip, internal: phIsPrivate(ip), sent: h.sent, recv: h.recv, bytes: h.bytes,
+        protocols: Object.keys(h.protocols).join(', '), ports: Object.keys(h.ports).map(Number).sort(function(a, b) { return a - b; }) };
+    }).sort(function(a, b) { return b.bytes - a.bytes; });
+
+    var svcArr = Object.keys(services).map(function(k) { return services[k]; })
+      .sort(function(a, b) { return b.count - a.count; });
+
+    var internalCount = hostArr.filter(function(h) { return h.internal; }).length;
+    var riskyCount = svcArr.filter(function(s) { return s.exposure !== 'encrypted'; }).length;
+
+    var expBadge = {
+      plaintext: '<span class="ph-badge ph-sev-MEDIUM">PLAINTEXT</span>',
+      exposed: '<span class="ph-badge ph-sev-HIGH">EXPOSED</span>',
+      suspicious: '<span class="ph-badge ph-sev-CRITICAL">SUSPICIOUS</span>',
+      encrypted: '<span class="ph-badge ph-sev-LOW">ENCRYPTED</span>',
+    };
+
+    c.innerHTML =
+      '<div class="ph-grid">' +
+        '<div class="ph-stat"><div class="ph-stat-n">' + hostArr.length + '</div><div class="ph-stat-l">Hosts Discovered</div></div>' +
+        '<div class="ph-stat"><div class="ph-stat-n">' + internalCount + ' / ' + (hostArr.length - internalCount) + '</div><div class="ph-stat-l">Internal / External</div></div>' +
+        '<div class="ph-stat"><div class="ph-stat-n">' + svcArr.length + '</div><div class="ph-stat-l">Services Observed</div></div>' +
+        '<div class="ph-stat"><div class="ph-stat-n" style="color:' + (riskyCount ? '#f97316' : '#22c55e') + '">' + riskyCount + '</div><div class="ph-stat-l">Unencrypted / Exposed</div></div>' +
+      '</div>' +
+
+      '<div class="ph-panel"><div class="ph-panel-h">Passive Reconnaissance</div><div class="ph-panel-body">' +
+        '<div style="font-size:.78rem;color:var(--txt);line-height:1.5">This is the asset and service picture an adversary assembles <b>before</b> acting, reconstructed purely from observed traffic &mdash; no active scanning. Close the exposed and plaintext services first.</div>' +
+      '</div></div>' +
+
+      '<div class="ph-panel"><div class="ph-panel-h">Host Inventory (asset map)</div><div class="ph-panel-body"><div class="ph-scroll" style="max-height:320px">' +
+        '<table class="ph-table"><thead><tr><th>Host</th><th>Scope</th><th>Sent</th><th>Recv</th><th>Bytes</th><th>Protocols</th><th>Offered Ports</th></tr></thead><tbody>' +
+        hostArr.map(function(h) {
+          return '<tr><td style="font-family:var(--font-mono,monospace)">' + esc(h.ip) + '</td>' +
+            '<td>' + (h.internal ? '<span class="ph-chip">internal</span>' : 'external') + '</td>' +
+            '<td>' + h.sent + '</td><td>' + h.recv + '</td><td>' + fmtBytes(h.bytes) + '</td>' +
+            '<td style="font-size:.72rem">' + esc(h.protocols) + '</td>' +
+            '<td style="font-family:var(--font-mono,monospace);font-size:.72rem">' + (h.ports.length ? esc(h.ports.join(', ')) : '&mdash;') + '</td></tr>';
+        }).join('') +
+        '</tbody></table>' +
+      '</div></div></div>' +
+
+      '<div class="ph-panel"><div class="ph-panel-h">Observed Services (attack surface)</div><div class="ph-panel-body"><div class="ph-scroll" style="max-height:320px">' +
+        (svcArr.length ?
+          '<table class="ph-table"><thead><tr><th>Host</th><th>Port</th><th>Service</th><th>Transport</th><th>Exposure</th><th>Observed</th></tr></thead><tbody>' +
+          svcArr.map(function(s) {
+            return '<tr><td style="font-family:var(--font-mono,monospace)">' + esc(s.ip) + '</td>' +
+              '<td style="font-family:var(--font-mono,monospace)">' + s.port + '</td>' +
+              '<td>' + esc(s.name) + '</td><td>' + esc(s.proto) + '</td>' +
+              '<td>' + (expBadge[s.exposure] || esc(s.exposure)) + '</td>' +
+              '<td>' + s.count + ' pkt' + (s.count === 1 ? '' : 's') + '</td></tr>';
+          }).join('') +
+          '</tbody></table>' :
+          '<div class="ph-empty">No well-known services observed in this capture.</div>') +
+      '</div></div></div>';
+  }
+
+  // ========================================================================
+  // TAB (OFFENSIVE): ATTACK SIMULATION — adversary emulation (blue-team only)
+  // ========================================================================
+  // SIMULATION ONLY. Pick a network attack technique and "run" it: PHANTOM
+  // generates an illustrative packet sequence / attack chain and a verdict for
+  // whether its own defensive views would catch it. No packet crafting, no
+  // network activity of any kind.
+  function renderAttackSim(c) {
+    var selPlay = renderAttackSim._play || PH_ATTACK_PLAYS[0].id;
+    // Target list: prefer real internal hosts from the capture, else a default.
+    var targets = [];
+    packets.forEach(function(p) {
+      if (phIsPrivate(p.dstIP) && targets.indexOf(p.dstIP) === -1) targets.push(p.dstIP);
+      if (phIsPrivate(p.srcIP) && targets.indexOf(p.srcIP) === -1) targets.push(p.srcIP);
+    });
+    if (targets.length === 0) targets = ['10.0.0.5'];
+    var selTarget = renderAttackSim._target && targets.indexOf(renderAttackSim._target) >= 0 ? renderAttackSim._target : targets[0];
+
+    c.innerHTML =
+      '<div class="ph-panel" style="border-color:#ef4444"><div class="ph-panel-h" style="color:#ef4444">Adversary Emulation &mdash; Simulation Only</div><div class="ph-panel-body">' +
+        '<div style="font-size:.78rem;color:var(--txt);line-height:1.5"><b style="color:#ef4444">SIMULATION ONLY.</b> Choose a technique and run it to see an illustrative, generated packet sequence and whether PHANTOM\'s own defensive views would catch it. No packets are crafted and nothing touches the network &mdash; this exercises the blue-side detections, nothing more.</div>' +
+        '<div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-top:12px">' +
+          '<div style="flex:1;min-width:220px"><div class="ph-stat-l" style="margin-bottom:4px;text-align:left">Technique</div>' +
+            '<select id="ph-as-play" style="width:100%;padding:6px 10px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--txt);font-size:.78rem;font-family:inherit">' +
+            PH_ATTACK_PLAYS.map(function(p) { return '<option value="' + p.id + '"' + (p.id === selPlay ? ' selected' : '') + '>' + esc(p.name) + '</option>'; }).join('') +
+            '</select></div>' +
+          '<div style="flex:1;min-width:180px"><div class="ph-stat-l" style="margin-bottom:4px;text-align:left">Target host</div>' +
+            '<select id="ph-as-target" style="width:100%;padding:6px 10px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--txt);font-size:.78rem;font-family:inherit">' +
+            targets.map(function(t) { return '<option value="' + esc(t) + '"' + (t === selTarget ? ' selected' : '') + '>' + esc(t) + '</option>'; }).join('') +
+            '</select></div>' +
+          '<button class="ph-btn" id="ph-as-run" style="background:#ef4444">Run Simulation</button>' +
+        '</div>' +
+      '</div></div>' +
+      '<div id="ph-as-out"></div>';
+
+    var out = c.querySelector('#ph-as-out');
+    var playSel = c.querySelector('#ph-as-play');
+    var tgtSel = c.querySelector('#ph-as-target');
+    playSel.onchange = function() { renderAttackSim._play = playSel.value; };
+    tgtSel.onchange = function() { renderAttackSim._target = tgtSel.value; };
+
+    function run() {
+      var play = PH_ATTACK_PLAYS.find(function(p) { return p.id === playSel.value; }) || PH_ATTACK_PLAYS[0];
+      var target = tgtSel.value;
+      renderAttackSim._play = play.id;
+      renderAttackSim._target = target;
+      var seq = play.gen(target);
+      var verdictNote = play.verdict === 'MISSED'
+        ? 'This technique would likely evade the current controls. Prioritize closing the named gap.'
+        : play.verdict === 'PARTIAL'
+        ? 'Partial coverage: the attack leaves traces but may not be fully caught. Tune or extend the named control.'
+        : 'PHANTOM\'s defensive views would catch and contain this technique. Keep the detection exercised.';
+
+      out.innerHTML =
+        '<div class="ph-panel"><div class="ph-panel-h">' + esc(play.name) + ' &mdash; ' + esc(play.tactic) + '</div><div class="ph-panel-body">' +
+          '<div class="ph-alert-desc">' + esc(play.summary) + '</div>' +
+          '<div class="ph-stat-l" style="text-align:left;margin:10px 0 4px">Simulated attack chain</div>' +
+          '<ol style="margin:0;padding-left:20px;font-size:.78rem;line-height:1.7;color:var(--txt)">' +
+            play.chain.map(function(s) { return '<li>' + esc(s) + '</li>'; }).join('') +
+          '</ol>' +
+        '</div></div>' +
+
+        '<div class="ph-panel"><div class="ph-panel-h">Simulated Packet Sequence <span class="ph-chip" style="background:rgba(239,68,68,.1);color:#ef4444;border-color:rgba(239,68,68,.2)">generated</span></div><div class="ph-panel-body"><div class="ph-scroll" style="max-height:340px">' +
+          '<table class="ph-table"><thead><tr><th>#</th><th>Time</th><th>Source</th><th>Destination</th><th>Protocol</th><th>Length</th><th>Info</th></tr></thead><tbody>' +
+          seq.map(function(p, i) {
+            var col = protoColor(p.proto);
+            return '<tr><td>' + (i + 1) + '</td><td>' + fmtTime(p.ts) + '</td>' +
+              '<td style="font-family:var(--font-mono,monospace);font-size:.72rem">' + esc(p.src) + '</td>' +
+              '<td style="font-family:var(--font-mono,monospace);font-size:.72rem">' + esc(p.dst) + '</td>' +
+              '<td><span class="ph-proto" style="background:' + col.bg + ';color:' + col.text + '">' + esc(p.proto) + '</span></td>' +
+              '<td>' + p.len + (p.flags ? ' <span style="color:var(--mut);font-size:.66rem">' + esc(p.flags) + '</span>' : '') + '</td>' +
+              '<td style="font-size:.72rem">' + esc(p.info) + '</td></tr>';
+          }).join('') +
+          '</tbody></table>' +
+        '</div></div></div>' +
+
+        '<div class="ph-panel"><div class="ph-panel-h">Detection Verdict</div><div class="ph-panel-body">' +
+          '<div class="ph-alert-head">' + phVerdictBadge(play.verdict) + '<span class="ph-alert-type">Would PHANTOM catch it?</span></div>' +
+          '<div style="font-size:.74rem;color:var(--mut);margin-bottom:6px">Blue-side control tested: <b style="color:var(--txt)">' + esc(play.control) + '</b></div>' +
+          '<div class="ph-alert-ev">' + esc(play.detectNote) + '</div>' +
+          '<div class="ph-alert-rec">' + esc(verdictNote) + '</div>' +
+        '</div></div>';
+    }
+
+    c.querySelector('#ph-as-run').onclick = run;
+    run();
   }
 
   render();

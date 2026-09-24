@@ -1,6 +1,14 @@
 // ORACLE — Omniscient Reconnaissance, Analysis, Campaign & Lookup Engine
 // Browser-based threat intelligence platform for Darknode
 // Copyright (c) 2026 Darknode-Official. All rights reserved.
+//
+// ORACLE operates in three postures (SCOUTING / DEFENSIVE / OFFENSIVE) via the
+// shared core/tool-modes switcher. Scouting surfaces adversary reconnaissance &
+// intel collection; defensive centers on detection/coverage; offensive is a
+// SIMULATED adversary-emulation planner for purple-team testing (no live
+// capability, no network, no exploit code).
+
+import { mountModeSwitcher } from '/js/core/tool-modes.js';
 
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
@@ -400,6 +408,35 @@ var OR_TECH_INFO = {
 function _orTechName(id) { var t = OR_TECH_INFO[id]; return t ? t.name : 'Unknown Technique'; }
 function _orTechTactic(id) { var t = OR_TECH_INFO[id]; return t ? t.tactic : 'Unknown'; }
 
+// Canonical ATT&CK tactic ordering — used to sequence an adversary-emulation
+// plan into ordered kill-chain phases (Initial Access first, Impact last).
+var OR_TACTIC_ORDER = [
+  'Initial Access', 'Execution', 'Persistence', 'Privilege Escalation',
+  'Defense Evasion', 'Credential Access', 'Discovery', 'Lateral Movement',
+  'Collection', 'Command and Control', 'Exfiltration', 'Impact'
+];
+function _orTacticRank(tactic) {
+  var i = OR_TACTIC_ORDER.indexOf(tactic);
+  return i === -1 ? OR_TACTIC_ORDER.length : i;
+}
+// What a defensive/purple team validates when a technique from each tactic is
+// emulated — i.e. the blue-side detection the emulation step exercises.
+var OR_TACTIC_VALIDATES = {
+  'Initial Access': 'Perimeter, email and public-facing-app controls: is the delivery/exploit attempt caught at the door?',
+  'Execution': 'Endpoint execution telemetry: does EDR flag the script/command interpreter activity?',
+  'Persistence': 'Persistence auditing: are scheduled tasks, autoruns and account changes alerted on?',
+  'Privilege Escalation': 'Privilege-abuse detection: are token/priv changes and escalation attempts surfaced?',
+  'Defense Evasion': 'Tamper protection: are log clearing, obfuscation and defense-impairing actions detected?',
+  'Credential Access': 'Credential-theft detection: is LSASS/dumping and stored-credential access alerted?',
+  'Discovery': 'Recon detection: are internal scanning and enumeration bursts noticed?',
+  'Lateral Movement': 'East-west monitoring: are remote-service and internal auth anomalies caught?',
+  'Collection': 'Data-staging detection: is bulk local/email collection flagged before exfil?',
+  'Command and Control': 'Network detection: are beaconing, anomalous protocols and DNS tunneling alerted?',
+  'Exfiltration': 'DLP & egress monitoring: are large or abnormal outbound transfers blocked?',
+  'Impact': 'Backup/recovery & anti-ransomware: is mass encryption, wiping or DoS detected and contained?',
+  'Unknown': 'General SOC visibility: is this activity logged and reviewable at all?'
+};
+
 // ============================================================================
 // IOC CLASSIFICATION + DEFANG / REFANG
 // ============================================================================
@@ -620,6 +657,31 @@ export function renderOracle(main) {
   var enrichDefang = true;
   var enrichResults = null;
   var covTech = null;
+  // Operational-mode panels
+  var reconActor = APT_DB[0].id;   // SCOUTING: adversary recon target
+  var emuActor = APT_DB[0].id;     // OFFENSIVE: emulation-plan subject
+  var oracleMode = null;           // active posture (set by the mode switcher)
+
+  // Full tab catalog, tagged with operational modes. A tab with no `modes`
+  // array is mode-agnostic (shows in every posture). Actor/technique browsing
+  // and the intel graph are scouting/defensive; detection & mitigation views
+  // are defensive; recon is scouting-only; emulation is offensive-only.
+  var TABS = [
+    { id: 'dashboard', label: 'Intel Dashboard', fn: renderDashboard },
+    { id: 'recon', label: 'Adversary Recon', fn: renderRecon, modes: ['scouting'] },
+    { id: 'iocs', label: 'IOC Manager', fn: renderIOCManager, modes: ['scouting', 'defensive'] },
+    { id: 'actors', label: 'Threat Actors', fn: renderActors, modes: ['scouting', 'defensive'] },
+    { id: 'campaigns', label: 'Campaign Tracker', fn: renderCampaigns, modes: ['scouting', 'defensive'] },
+    { id: 'graph', label: 'Actor Graph', fn: renderGraph, modes: ['scouting', 'defensive'] },
+    { id: 'compare', label: 'Actor Compare', fn: renderCompare, modes: ['scouting', 'defensive'] },
+    { id: 'feeds', label: 'Feed Aggregator', fn: renderFeeds, modes: ['scouting', 'defensive'] },
+    { id: 'stix', label: 'STIX Viewer', fn: renderSTIX, modes: ['scouting', 'defensive'] },
+    { id: 'enrich', label: 'IOC Enrichment', fn: renderEnrich, modes: ['defensive'] },
+    { id: 'coverage', label: 'ATT&CK Coverage', fn: renderCoverage, modes: ['defensive'] },
+    { id: 'emulation', label: 'Adversary Emulation', fn: renderEmulation, modes: ['offensive'] },
+    { id: 'reports', label: 'Reports', fn: renderReports }
+  ];
+  var visibleTabs = TABS.slice();
 
   function render() {
     main.innerHTML =
@@ -725,33 +787,57 @@ export function renderOracle(main) {
           '<div class="or-dot"></div>' +
           '<span class="or-sub">Omniscient Reconnaissance, Analysis, Campaign &amp; Lookup Engine</span>' +
           '<span style="flex:1"></span>' +
+          '<div id="or-modebar"></div>' +
           '<span class="or-sub" style="font-variant-numeric:tabular-nums">' + esc(iocs.length) + ' IOCs | ' + esc(APT_DB.length) + ' Actors | ' + esc(CAMPAIGN_DB.length) + ' Campaigns</span>' +
         '</div>' +
-        '<div class="or-tabs">' +
-          [['dashboard','Intel Dashboard'],['iocs','IOC Manager'],['actors','Threat Actors'],['campaigns','Campaign Tracker'],['graph','Actor Graph'],['compare','Actor Compare'],['enrich','IOC Enrichment'],['coverage','ATT&CK Coverage'],['stix','STIX Viewer'],['feeds','Feed Aggregator'],['reports','Reports']].map(function(t) {
-            return '<button class="or-tab' + (activeTab === t[0] ? ' on' : '') + '" data-t="' + t[0] + '">' + t[1] + '</button>';
-          }).join('') +
-        '</div>' +
+        '<div class="or-sub" id="or-modenote" style="padding:8px 0 0;text-transform:none;letter-spacing:.02em"></div>' +
+        '<div class="or-tabs"></div>' +
         '<div class="or-content" id="or-content"></div>' +
       '</div>';
 
-    main.querySelector('.or-tabs').onclick = function(e) {
+    var tabsEl = main.querySelector('.or-tabs');
+    tabsEl.onclick = function(e) {
       var b = e.target.closest('.or-tab');
-      if (b) { activeTab = b.dataset.t; render(); }
+      if (b) { activeTab = b.dataset.t; paintTabs(); paintContent(); }
     };
 
+    // Operational-mode switcher: filters the tab bar to the active posture and
+    // retints the tool via [data-tool-mode]. Persists the last mode per tool.
+    // onChange fires on mount and on every switch — it drives the visible tabs.
+    mountModeSwitcher({
+      toolId: 'oracle',
+      tabs: TABS,
+      mount: main.querySelector('#or-modebar'),
+      host: main.querySelector('.or-wrap'),
+      note: main.querySelector('#or-modenote'),
+      onChange: function(mode, tabs) {
+        oracleMode = mode;
+        visibleTabs = tabs;
+        if (!visibleTabs.some(function(t) { return t.id === activeTab; })) {
+          activeTab = visibleTabs.length ? visibleTabs[0].id : 'dashboard';
+        }
+        paintTabs();
+        paintContent();
+      }
+    });
+  }
+
+  // Fill the tab bar from the mode-filtered tab list, marking the active tab.
+  function paintTabs() {
+    var tabsEl = main.querySelector('.or-tabs');
+    if (!tabsEl) return;
+    tabsEl.innerHTML = visibleTabs.map(function(t) {
+      return '<button class="or-tab' + (activeTab === t.id ? ' on' : '') + '" data-t="' + esc(t.id) + '">' + esc(t.label) + '</button>';
+    }).join('');
+  }
+
+  // Dispatch the active tab to its panel renderer.
+  function paintContent() {
     var content = main.querySelector('#or-content');
-    if (activeTab === 'dashboard') renderDashboard(content);
-    else if (activeTab === 'iocs') renderIOCManager(content);
-    else if (activeTab === 'actors') renderActors(content);
-    else if (activeTab === 'campaigns') renderCampaigns(content);
-    else if (activeTab === 'graph') renderGraph(content);
-    else if (activeTab === 'compare') renderCompare(content);
-    else if (activeTab === 'enrich') renderEnrich(content);
-    else if (activeTab === 'coverage') renderCoverage(content);
-    else if (activeTab === 'stix') renderSTIX(content);
-    else if (activeTab === 'feeds') renderFeeds(content);
-    else if (activeTab === 'reports') renderReports(content);
+    if (!content) return;
+    var t = visibleTabs.find(function(x) { return x.id === activeTab; }) ||
+            TABS.find(function(x) { return x.id === activeTab; });
+    (t && typeof t.fn === 'function' ? t.fn : renderDashboard)(content);
   }
 
   // ========== TAB 1: INTEL DASHBOARD ==========
@@ -1690,6 +1776,213 @@ export function renderOracle(main) {
     c.querySelectorAll('.or-cov-row[data-tech]').forEach(function(row) {
       row.onclick = function() { covTech = covTech === row.dataset.tech ? null : row.dataset.tech; renderCoverage(c); };
     });
+  }
+
+  // ========== TAB (SCOUTING): ADVERSARY RECON / COLLECTION PROFILE ==========
+  // "What we know about the adversary" — a collection dossier derived entirely
+  // from the actor library + IOC/campaign databases: infrastructure & IOCs,
+  // targeted sectors (with cross-actor breadth), known campaigns, and the
+  // actor's TTP fingerprint grouped by ATT&CK tactic.
+  function renderRecon(c) {
+    var a = APT_DB.find(function(x) { return x.id === reconActor; }) || APT_DB[0];
+    var names = [a.name].concat(a.aliases || []).map(function(n) { return String(n).toLowerCase(); });
+
+    // Cross-actor sector targeting breadth (how contested each sector is).
+    var sectorUse = {};
+    APT_DB.forEach(function(x) { x.sectors.forEach(function(s) { sectorUse[s] = (sectorUse[s] || 0) + 1; }); });
+
+    // Enriched infrastructure: IOC-DB records tagged with this actor/aliases.
+    var enrichedIocs = IOC_DB.filter(function(i) {
+      return (i.tags || []).some(function(t) { return names.indexOf(String(t).toLowerCase()) !== -1; });
+    });
+    // The actor's own indicators, classified by type.
+    var ownIocs = a.iocs.map(function(v) { return { value: v, type: _orClassifyIOC(v) }; });
+    var infraTypes = {};
+    ownIocs.forEach(function(o) { infraTypes[o.type] = (infraTypes[o.type] || 0) + 1; });
+
+    // Known campaigns attributed to this actor in the campaign tracker.
+    var campaigns = CAMPAIGN_DB.filter(function(cp) { return names.indexOf(String(cp.actor).toLowerCase()) !== -1; });
+
+    // TTP fingerprint grouped by tactic, ordered along the kill chain.
+    var byTactic = {};
+    a.techniques.forEach(function(t) { var tac = _orTechTactic(t); (byTactic[tac] = byTactic[tac] || []).push(t); });
+    var tacticGroups = Object.keys(byTactic).sort(function(p, q) { return _orTacticRank(p) - _orTacticRank(q); });
+
+    var sel = '<select class="or-sel" id="or-recon-sel" style="min-width:220px">' +
+      APT_DB.map(function(x) { return '<option value="' + x.id + '"' + (x.id === a.id ? ' selected' : '') + '>' + esc(x.name) + '</option>'; }).join('') + '</select>';
+
+    c.innerHTML =
+      '<div class="or-search-row">' +
+        '<span class="or-sub">Collection target</span>' + sel +
+        '<span style="flex:1"></span>' +
+        '<button class="or-btn sm" id="or-recon-graph">Send actor to Security Graph</button>' +
+      '</div>' +
+      '<div class="or-panel" style="border-left:3px solid #f59e0b">' +
+        '<div class="or-panel-h" style="color:#f59e0b">Adversary Reconnaissance &mdash; ' + esc(a.name) + '</div>' +
+        '<div class="or-panel-b" style="font-size:.78rem;color:var(--mut);line-height:1.6">' +
+          'Passive collection profile: everything we know about <strong style="color:var(--txt)">' + esc(a.name) + '</strong> ' +
+          '(' + esc(a.aliases.join(', ')) + '). This is the picture built <em>before</em> action &mdash; the adversary\'s ' +
+          'infrastructure, victimology and tradecraft, and therefore what to hunt for and harden first.' +
+        '</div>' +
+      '</div>' +
+      '<div class="or-grid4" style="margin-bottom:12px">' +
+        '<div class="or-stat"><div class="or-stat-v" style="color:#f59e0b;font-size:1.1rem">' + _orNationFlag(a.nation) + ' ' + esc(a.nation) + '</div><div class="or-stat-l">Attribution &bull; ' + esc(a.agency || 'unknown') + '</div></div>' +
+        '<div class="or-stat"><div class="or-stat-v" style="color:#3b82f6">' + esc(a.since) + '</div><div class="or-stat-l">Active Since &bull; ' + esc(a.motivation) + '</div></div>' +
+        '<div class="or-stat"><div class="or-stat-v" style="color:#f97316">' + a.techniques.length + '</div><div class="or-stat-l">Known Techniques (' + tacticGroups.length + ' tactics)</div></div>' +
+        '<div class="or-stat"><div class="or-stat-v" style="color:#22c55e">' + (ownIocs.length + enrichedIocs.length) + '</div><div class="or-stat-l">Collected Indicators</div></div>' +
+      '</div>' +
+      '<div class="or-grid2">' +
+        // --- Infrastructure & IOCs ---
+        '<div class="or-panel"><div class="or-panel-h">Infrastructure &amp; Indicators</div><div class="or-panel-b">' +
+          '<div style="font-size:.65rem;color:var(--mut);margin-bottom:6px">ACTOR-LIBRARY INDICATORS (' + ownIocs.length + ')</div>' +
+          '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">' +
+            ownIocs.map(function(o) {
+              return '<span class="or-badge" title="' + esc(o.type) + '" style="background:rgba(59,130,246,.1);color:' + _orTypeColor(o.type.indexOf('Hash') === 0 ? 'Hash-MD5' : (o.type === 'IPv4' || o.type === 'CIDR') ? 'IP' : o.type) + ';font-family:var(--font-mono,monospace)">' + esc(o.value) + '</span>';
+            }).join('') +
+          '</div>' +
+          (enrichedIocs.length
+            ? '<div style="font-size:.65rem;color:var(--mut);margin:4px 0 6px">CORRELATED FEED INDICATORS (' + enrichedIocs.length + ')</div>' +
+              '<div style="overflow-x:auto"><table class="or-tbl"><thead><tr><th>Indicator</th><th>Type</th><th>Conf</th><th>Source</th></tr></thead><tbody>' +
+              enrichedIocs.map(function(i) {
+                return '<tr>' +
+                  '<td style="font-family:var(--font-mono,monospace);font-size:.7rem">' + esc(i.value) + '</td>' +
+                  '<td><span class="or-badge" style="background:rgba(59,130,246,.1);color:' + _orTypeColor(i.type) + '">' + esc(i.type) + '</span></td>' +
+                  '<td style="font-variant-numeric:tabular-nums">' + esc(i.confidence) + '%</td>' +
+                  '<td class="or-sub" style="font-size:.66rem">' + esc(i.source) + '</td>' +
+                '</tr>';
+              }).join('') + '</tbody></table></div>'
+            : '<div class="or-sub" style="font-size:.7rem">No correlated feed indicators for this actor.</div>') +
+        '</div></div>' +
+        // --- Targeted sectors ---
+        '<div class="or-panel"><div class="or-panel-h">Targeted Sectors (Victimology)</div><div class="or-panel-b">' +
+          a.sectors.map(function(s) {
+            var breadth = sectorUse[s] || 1;
+            var niche = breadth <= 2;
+            return '<div class="or-cov-row" style="cursor:default">' +
+              '<span style="font-size:.72rem;flex:0 0 46%">' + esc(s) + '</span>' +
+              '<div class="or-cov-track"><div class="or-cov-bar" style="width:' + Math.round(breadth / APT_DB.length * 100) + '%;background:' + (niche ? '#f59e0b' : '#8b5cf6') + '"></div></div>' +
+              '<span class="or-sub" style="font-size:.64rem;min-width:96px;text-align:right">' + breadth + '/' + APT_DB.length + ' actors' + (niche ? ' &bull; niche' : '') + '</span>' +
+            '</div>';
+          }).join('') +
+          '<div class="or-sub" style="font-size:.66rem;margin-top:8px">A "niche" sector (few tracked actors) is a stronger attribution signal than a broadly-contested one.</div>' +
+        '</div></div>' +
+      '</div>' +
+      // --- Known campaigns ---
+      '<div class="or-panel"><div class="or-panel-h">Known Campaigns (' + campaigns.length + ')</div><div class="or-panel-b">' +
+        (campaigns.length
+          ? '<div class="or-grid2">' + campaigns.map(function(cp) {
+              var sk = cp.status === 'Active' ? '#ff1744' : cp.status === 'Dormant' ? '#ff9100' : '#64748b';
+              return '<div class="or-card" style="cursor:default">' +
+                '<div class="or-card-title">' + esc(cp.name) + ' <span class="or-badge" style="background:rgba(100,116,139,.15);color:' + sk + '">' + esc(cp.status) + '</span></div>' +
+                '<div class="or-card-sub" style="margin-top:4px">' + esc(cp.vector) + '</div>' +
+                '<div class="or-card-sub" style="margin-top:4px">Sectors: ' + esc(cp.sectors.join(', ')) + '</div>' +
+                '<div class="or-card-sub">Regions: ' + esc(cp.regions.join(', ')) + '</div>' +
+              '</div>';
+            }).join('') + '</div>'
+          : '<div class="or-sub" style="font-size:.72rem">Actor-library campaigns: ' + (a.campaigns.length ? esc(a.campaigns.join(', ')) : 'none catalogued') + '. No structured campaign records in the tracker.</div>') +
+      '</div></div>' +
+      // --- TTP fingerprint ---
+      '<div class="or-panel"><div class="or-panel-h">TTP Fingerprint (kill-chain ordered)</div><div class="or-panel-b">' +
+        tacticGroups.map(function(tac) {
+          return '<div style="margin-bottom:10px">' +
+            '<div style="font-size:.66rem;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:#f97316;margin-bottom:4px">' + esc(tac) + '</div>' +
+            '<div style="display:flex;gap:6px;flex-wrap:wrap">' +
+            byTactic[tac].map(function(t) {
+              return '<span class="or-badge" title="' + esc(_orTechName(t)) + '" style="background:rgba(249,115,22,.12);color:#f97316">' + esc(t) + ' ' + esc(_orTechName(t)) + '</span>';
+            }).join('') +
+            '</div></div>';
+        }).join('') +
+      '</div></div>';
+
+    c.querySelector('#or-recon-sel').onchange = function(e) { reconActor = e.target.value; renderRecon(c); };
+    c.querySelector('#or-recon-graph').onclick = function(e) { _orSendActors(e.currentTarget, [a]); };
+  }
+
+  // ========== TAB (OFFENSIVE): SIMULATED ADVERSARY EMULATION PLAN ==========
+  // A PLANNING artifact in the spirit of MITRE ATT&CK Evaluations / Caldera
+  // adversary emulation: take an APT's known technique IDs, map them to tactics
+  // / kill-chain phases, sequence them, and note for each phase which blue-side
+  // detection a purple team would validate. SIMULATION ONLY — no live attack,
+  // no exploit code, no network activity; it produces a plan over existing TTP
+  // data so defenders can exercise their controls.
+  function renderEmulation(c) {
+    var a = APT_DB.find(function(x) { return x.id === emuActor; }) || APT_DB[0];
+    var names = [a.name].concat(a.aliases || []).map(function(n) { return String(n).toLowerCase(); });
+    var refCampaigns = CAMPAIGN_DB.filter(function(cp) { return names.indexOf(String(cp.actor).toLowerCase()) !== -1; });
+
+    // Order the actor's techniques along the ATT&CK kill chain, then group into
+    // ordered phases by tactic.
+    var ordered = a.techniques.slice().map(function(t) {
+      return { id: t, name: _orTechName(t), tactic: _orTechTactic(t) };
+    }).sort(function(p, q) { return _orTacticRank(p.tactic) - _orTacticRank(q.tactic) || p.id.localeCompare(q.id); });
+
+    var phases = [], idx = {};
+    ordered.forEach(function(s) {
+      if (idx[s.tactic] == null) { idx[s.tactic] = phases.length; phases.push({ tactic: s.tactic, steps: [] }); }
+      phases[idx[s.tactic]].steps.push(s);
+    });
+
+    var sel = '<select class="or-sel" id="or-emu-sel" style="min-width:220px">' +
+      APT_DB.map(function(x) { return '<option value="' + x.id + '"' + (x.id === a.id ? ' selected' : '') + '>' + esc(x.name) + '</option>'; }).join('') + '</select>';
+
+    var step = 0;
+    var planHtml = phases.map(function(ph, pi) {
+      var validates = OR_TACTIC_VALIDATES[ph.tactic] || OR_TACTIC_VALIDATES['Unknown'];
+      var rows = ph.steps.map(function(s) {
+        step++;
+        return '<div class="or-cov-row" style="cursor:default;align-items:flex-start">' +
+          '<span class="or-badge" style="background:rgba(220,38,38,.14);color:#ff6b6b;min-width:34px;text-align:center">' + step + '</span>' +
+          '<span class="or-badge" style="background:rgba(249,115,22,.12);color:#f97316;min-width:60px;text-align:center">' + esc(s.id) + '</span>' +
+          '<span style="font-size:.74rem;flex:1">' + esc(s.name) + '</span>' +
+        '</div>';
+      }).join('');
+      return '<div class="or-panel" style="margin-bottom:10px">' +
+        '<div class="or-panel-h">Phase ' + (pi + 1) + ' &bull; ' + esc(ph.tactic) + '<span style="flex:1"></span><span class="or-badge" style="background:rgba(100,116,139,.15);color:var(--mut)">' + ph.steps.length + ' technique' + (ph.steps.length !== 1 ? 's' : '') + '</span></div>' +
+        '<div class="or-panel-b">' + rows +
+          '<div style="margin-top:8px;padding:8px 10px;border-radius:6px;background:rgba(59,130,246,.06);border:1px solid var(--line,#333)">' +
+            '<span style="font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#3b82f6">Validates &mdash;</span> ' +
+            '<span style="font-size:.72rem;color:var(--txt,#eee)">' + esc(validates) + '</span>' +
+          '</div>' +
+        '</div></div>';
+    }).join('');
+
+    c.innerHTML =
+      '<div class="or-search-row">' +
+        '<span class="or-sub">Emulate adversary</span>' + sel +
+      '</div>' +
+      '<div class="or-panel" style="border-left:3px solid #dc2626">' +
+        '<div class="or-panel-h" style="color:#ff6b6b">Adversary Emulation Plan &mdash; ' + esc(a.name) + '</div>' +
+        '<div class="or-panel-b" style="font-size:.78rem;color:var(--mut);line-height:1.6">' +
+          '<strong style="color:#ff6b6b">SIMULATION / PLANNING ONLY.</strong> This is an adversary-emulation plan for ' +
+          '<strong style="color:var(--txt)">defensive testing</strong> &mdash; a purple-team script that sequences ' +
+          esc(a.name) + '\'s known ATT&amp;CK techniques into kill-chain phases so your blue team can verify each ' +
+          'detection fires. It is a plan derived from catalogued TTP data: <strong style="color:var(--txt)">no live ' +
+          'attack, no exploit code, and no network activity</strong> is performed.' +
+        '</div>' +
+      '</div>' +
+      '<div class="or-grid4" style="margin-bottom:12px">' +
+        '<div class="or-stat"><div class="or-stat-v" style="color:#ff6b6b">' + ordered.length + '</div><div class="or-stat-l">Techniques in Plan</div></div>' +
+        '<div class="or-stat"><div class="or-stat-v" style="color:#8b5cf6">' + phases.length + '</div><div class="or-stat-l">Kill-Chain Phases</div></div>' +
+        '<div class="or-stat"><div class="or-stat-v" style="color:#f97316">' + (phases[0] ? esc(phases[0].tactic) : '-') + '</div><div class="or-stat-l">Entry Tactic</div></div>' +
+        '<div class="or-stat"><div class="or-stat-v" style="color:#22c55e">' + (phases.length ? esc(phases[phases.length - 1].tactic) : '-') + '</div><div class="or-stat-l">Objective Tactic</div></div>' +
+      '</div>' +
+      // Kill-chain phase strip
+      '<div class="or-killchain">' +
+        phases.map(function(ph, pi) { return '<span class="or-kc-step or-kc-active">' + (pi + 1) + '. ' + esc(ph.tactic) + '</span>'; }).join('') +
+      '</div>' +
+      // Ordered emulation plan
+      '<div style="margin-top:8px">' + (planHtml || '<div class="or-sub" style="font-size:.72rem">No mappable techniques for this actor.</div>') + '</div>' +
+      // Reference scenarios
+      '<div class="or-panel"><div class="or-panel-h">Reference Scenarios (real campaigns to model the exercise on)</div><div class="or-panel-b">' +
+        (refCampaigns.length
+          ? refCampaigns.map(function(cp) {
+              return '<div class="or-timeline-item"><strong>' + esc(cp.name) + '</strong> &mdash; ' + esc(cp.vector) + ' <span class="or-sub">(' + esc(cp.status) + ')</span></div>';
+            }).join('')
+          : '<div class="or-sub" style="font-size:.72rem">Actor-library campaigns to model the exercise on: ' + (a.campaigns.length ? esc(a.campaigns.join(', ')) : 'none catalogued') + '.</div>') +
+        '<div class="or-sub" style="font-size:.66rem;margin-top:8px">Run each phase in a controlled range, confirm the "Validates" detection triggers, and record gaps. This exercises blue-side controls only.</div>' +
+      '</div></div>';
+
+    c.querySelector('#or-emu-sel').onchange = function(e) { emuActor = e.target.value; renderEmulation(c); };
   }
 
   // Initial render
