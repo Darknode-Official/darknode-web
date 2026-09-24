@@ -2,7 +2,7 @@
 import { esc, formatDate, debounce } from '/js/shared.js';
 import {
   createEntity, getEntity, updateEntity, deleteEntity, listEntities,
-  createRelationship, getRelationships, getRelated,
+  createRelationship, getRelationships, getRelated, deleteRelationship,
   search, ENTITY_TYPES, SEVERITIES, STATUSES
 } from '/js/security-graph.js';
 
@@ -430,16 +430,9 @@ function renderEntitiesTab(panel, inv, main, show) {
     const removeBtn = e.target.closest('[data-remove-id]');
     if (removeBtn) {
       e.stopPropagation();
-      const rels = getRelationships(inv.id);
-      const rel = rels.find(r => r.targetId === removeBtn.dataset.removeId || r.sourceId === removeBtn.dataset.removeId);
-      if (rel) {
-        const allRels = getRelationships();
-        const idx = allRels.findIndex(r => r.id === rel.id);
-        if (idx >= 0) {
-          allRels.splice(idx, 1);
-          try { localStorage.setItem('dn_sg_relationships', JSON.stringify(allRels)); } catch (_) {}
-        }
-      }
+      const removeId = removeBtn.dataset.removeId;
+      const rel = getRelationships(inv.id).find(r => r.toId === removeId || r.fromId === removeId);
+      if (rel) deleteRelationship(rel.id);
       renderEntitiesTab(panel, getEntity(inv.id), main, show);
     }
   };
@@ -502,11 +495,7 @@ function openEntitySearchModal(invId, onDone) {
   overlay.querySelector('#inv-modal-results').onclick = (e) => {
     const btn = e.target.closest('[data-add-btn]');
     if (!btn) return;
-    createRelationship({
-      sourceId: invId,
-      targetId: btn.dataset.addBtn,
-      type: 'CONTAINS'
-    });
+    createRelationship(invId, btn.dataset.addBtn, 'contains');
     relatedIds.add(btn.dataset.addBtn);
     const item = btn.closest('.inv-modal-item');
     if (item) {
@@ -565,7 +554,7 @@ function renderTimelineTab(panel, inv, main, show) {
       source: getAuthor(),
       status: 'OPEN'
     });
-    createRelationship({ sourceId: inv.id, targetId: event.id, type: 'CONTAINS' });
+    createRelationship(inv.id, event.id, 'contains');
     renderTimelineTab(panel, getEntity(inv.id), main, show);
   };
 }
@@ -672,7 +661,7 @@ function renderFindingsTab(panel, inv, main, show) {
       source: getAuthor(),
       status: 'OPEN'
     });
-    createRelationship({ sourceId: inv.id, targetId: finding.id, type: 'CONTAINS' });
+    createRelationship(inv.id, finding.id, 'contains');
     renderFindingsTab(panel, getEntity(inv.id), main, show);
   };
 
@@ -872,7 +861,7 @@ export function openAddToInvestigation(entity) {
   overlay.querySelector('.inv-modal-body').onclick = (e) => {
     const btn = e.target.closest('[data-ati-inv]');
     if (btn) {
-      createRelationship({ sourceId: btn.dataset.atiInv, targetId: entity.id, type: 'CONTAINS' });
+      createRelationship(btn.dataset.atiInv, entity.id, 'contains');
       const item = btn.closest('.inv-modal-item');
       if (item) {
         btn.replaceWith(Object.assign(document.createElement('span'), {
@@ -892,7 +881,7 @@ export function openAddToInvestigation(entity) {
       status: 'OPEN',
       source: 'manual'
     });
-    createRelationship({ sourceId: inv.id, targetId: entity.id, type: 'CONTAINS' });
+    createRelationship(inv.id, entity.id, 'contains');
     close();
   };
 }
