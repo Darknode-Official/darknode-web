@@ -885,13 +885,17 @@ function renderHome(main, user, isOwner, show) {
           <span class="dash-threat-level"><span class="dash-threat-pip t1"></span><span class="dash-threat-pip t2"></span><span class="dash-threat-pip t3"></span><span class="dash-threat-pip t4 dim"></span><span class="dash-threat-pip t5 dim"></span><span class="dash-threat-label">ELEVATED</span></span>
         </div>
       </div>
-      <h1 class="pg-h1">Welcome back${name ? ", " + esc(name) : ""}</h1>
-      <p class="muted pg-sub">192+ security tools, threat intel, local AI and training labs &mdash; your complete cybersecurity workflow.</p>
-      <div class="hero-actions">
-        <button class="btn" data-sec="tools">Browse tools</button>
-        <button class="btn ghost" data-sec="ai">Nexus AI</button>
-        <button class="btn ghost" data-sec="sentineleye">Sentinel Eye</button>
-        <button class="btn ghost" data-sec="threat">Threat intel</button>
+      <div class="dash-hero-main">
+        <div class="dash-hero-headings">
+          <h1 class="pg-h1">Welcome back${name ? ", " + esc(name) : ""}</h1>
+          <p class="muted pg-sub">192+ security tools, threat intel, local AI and training labs &mdash; your complete cybersecurity workflow.</p>
+        </div>
+        <div class="hero-actions">
+          <button class="btn" data-sec="tools">Browse tools</button>
+          <button class="btn ghost" data-sec="ai">Nexus AI</button>
+          <button class="btn ghost" data-sec="sentineleye">Sentinel Eye</button>
+          <button class="btn ghost" data-sec="threat">Threat intel</button>
+        </div>
       </div>
     </div>
     <div class="stat-row">
@@ -903,7 +907,8 @@ function renderHome(main, user, isOwner, show) {
       ${stat(59, "AI modules", "Ollama + cloud")}
       ${stat("378K+", "lines of code", "this web platform")}
     </div>
-    <div class="dash-changelog">
+    <div class="dash-ops">
+      <div class="dash-changelog">
       <div class="dash-cl-header">
         <h2 class="pg-h2">What's new</h2>
         <span class="dash-cl-viewall muted" data-sec="docs" data-more="">View all updates</span>
@@ -918,8 +923,28 @@ function renderHome(main, user, isOwner, show) {
         <div class="cl-item"><span class="cl-tag imp">IMPROVED</span><span class="cl-text">Pro theme visual overhaul &mdash; refined sidebar, topbar, cards, command palette, AI chat</span><span class="cl-date muted">Sep 2026</span></div>
         <div class="cl-item"><span class="cl-tag fix">FIX</span><span class="cl-text">Sentinel Eye globe &mdash; satellite imagery, deeper zoom, sharper tiles</span><span class="cl-date muted">Sep 2026</span></div>
       </div>
+      </div>
+      <div class="dash-ops-side">
+        <div class="panel dash-activity-panel">
+          <div class="panel-h"><h2 class="pg-h2" style="margin:0">Recent activity</h2></div>
+          <div class="dash-timeline" id="dashTimeline">
+            ${recentItems.map((item) => `<div class="dash-tl-item"><span class="dash-tl-dot"></span><span class="dash-tl-text">${esc(item.text)}</span><span class="dash-tl-time muted">${timeAgo(item.ts)}</span></div>`).join("")}
+          </div>
+        </div>
+        <div class="panel dash-qstats-panel">
+          <div class="panel-h"><h2 class="pg-h2" style="margin:0">Quick stats</h2></div>
+          <div class="dash-qstats">
+            <div class="dash-qs-item"><div class="dash-qs-n">${sStats.sessions}</div><div class="dash-qs-l">Total sessions</div></div>
+            <div class="dash-qs-item"><div class="dash-qs-n">${sStats.aiConvos}</div><div class="dash-qs-l">AI conversations</div></div>
+            <div class="dash-qs-item"><div class="dash-qs-n">${sStats.toolsUsed}</div><div class="dash-qs-l">Tools used</div></div>
+          </div>
+        </div>
+      </div>
     </div>
-    <h2 class="pg-h2">Jump in</h2>
+    <div class="dash-services-head">
+      <h2 class="pg-h2" style="margin:0">Services</h2>
+      <span class="muted dash-services-sub">Jump into any of Darknode's ${CATALOG.length}+ tools &amp; platforms</span>
+    </div>
     <div class="dash-section">
       <h3 class="dash-cat-label">Flagship Tools</h3>
       <div class="qa-grid">
@@ -975,26 +1000,6 @@ function renderHome(main, user, isOwner, show) {
         ${qa("report", "", "Report Generator", "Generate professional pentest reports from your findings.")}
         ${qa("setup", "aicoding", "Local AI Setup", "Run Ollama models on your machine, in the terminal or a browser UI.")}
         ${qa("coder", "", "Nexus Agent", "AI-powered code generation and security analysis agent.")}
-      </div>
-    </div>
-    <div class="dash-extras">
-      <div class="dash-extra-col">
-        <div class="panel dash-activity-panel">
-          <div class="panel-h"><h2 class="pg-h2" style="margin:0">Recent activity</h2></div>
-          <div class="dash-timeline" id="dashTimeline">
-            ${recentItems.map((item) => `<div class="dash-tl-item"><span class="dash-tl-dot"></span><span class="dash-tl-text">${esc(item.text)}</span><span class="dash-tl-time muted">${timeAgo(item.ts)}</span></div>`).join("")}
-          </div>
-        </div>
-      </div>
-      <div class="dash-extra-col">
-        <div class="panel dash-qstats-panel">
-          <div class="panel-h"><h2 class="pg-h2" style="margin:0">Quick stats</h2></div>
-          <div class="dash-qstats">
-            <div class="dash-qs-item"><div class="dash-qs-n">${sStats.sessions}</div><div class="dash-qs-l">Total sessions</div></div>
-            <div class="dash-qs-item"><div class="dash-qs-n">${sStats.aiConvos}</div><div class="dash-qs-l">AI conversations</div></div>
-            <div class="dash-qs-item"><div class="dash-qs-n">${sStats.toolsUsed}</div><div class="dash-qs-l">Tools used</div></div>
-          </div>
-        </div>
       </div>
     </div>
     ${isOwner ? `<div class="admin-card"><strong>Owner controls</strong><p class="muted">You're the owner &mdash; admin features live under Admin in the sidebar.</p></div>` : ""}
