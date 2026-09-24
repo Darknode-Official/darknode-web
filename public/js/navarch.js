@@ -1,6 +1,9 @@
 // navarch.js — NAVARCH flagship: Naval & maritime cyber-defense command console.
-// Self-contained ES module. Pure vanilla JS, no imports, no network calls.
-// All data simulated/hardcoded. Uses site design tokens + utility classes.
+// Vanilla JS ES module, no network calls; all data simulated/hardcoded.
+// Operates in three postures (SCOUTING / DEFENSIVE / OFFENSIVE) via the shared
+// core/tool-modes switcher. Uses site design tokens + utility classes.
+
+import { mountModeSwitcher } from '/js/core/tool-modes.js';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -815,15 +818,191 @@ function panelConvoy(host) {
 // Main render
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// SCOUTING — maritime reconnaissance / exposure enumeration
+// ---------------------------------------------------------------------------
+
+// Externally observable / attackable surfaces on a modern hull. Lower cyber
+// readiness => more of these are unhardened and reachable.
+const OT_SERVICES = [
+  { svc: 'AIS transponder', port: '—', proto: 'VDL 161.975MHz', note: 'Unauthenticated broadcast; identity trivially spoofable.' },
+  { svc: 'VSAT terminal', port: '80/443', proto: 'HTTP(S) mgmt', note: 'Default creds & exposed admin panels are common at sea.' },
+  { svc: 'ECDIS workstation', port: '—', proto: 'S-63 ENC / USB', note: 'Chart updates via USB are a classic malware vector.' },
+  { svc: 'IBS / bridge network', port: '502', proto: 'Modbus/TCP', note: 'Flat OT segment lets IT compromise reach propulsion.' },
+  { svc: 'Cargo / ballast SCADA', port: '44818', proto: 'EtherNet/IP', note: 'Safety-critical; rarely patched, seldom monitored.' },
+  { svc: 'Crew Wi-Fi / IT LAN', port: '3389', proto: 'RDP', note: 'Crew network bridged to OT is the usual initial foothold.' }
+];
+
+// Derive an exposure picture for a vessel from its readiness + AIS status.
+function reconVessel(v) {
+  // The weaker the cyber readiness, the deeper into the service list is exposed.
+  const exposedCount = clamp(Math.round((100 - v.readiness) / 16) + 1, 1, OT_SERVICES.length);
+  const exposed = OT_SERVICES.slice(0, exposedCount);
+  const aisDark = v.status === 'DARK';
+  // Attack surface score: exposure breadth + signal posture.
+  const surface = clamp(Math.round(exposedCount / OT_SERVICES.length * 70) + (aisDark ? 0 : 20) + (v.flag === '??' ? 10 : 0), 0, 100);
+  const band = surface >= 70 ? { t: 'WIDE OPEN', k: 'bad' } : surface >= 45 ? { t: 'REACHABLE', k: 'warn' } : { t: 'HARDENED', k: 'ok' };
+  return { exposed, exposedCount, aisDark, surface, band };
+}
+
+function panelRecon(host) {
+  const rows = FLEET.map((v) => {
+    const r = reconVessel(v);
+    return `<tr>
+      <td><b>${esc(v.name)}</b><div class="nv-note" style="margin:2px 0 0">${esc(v.cls)} · ${esc(v.flag)} · <span class="nv-mono">${esc(v.mmsi)}</span></div></td>
+      <td>${r.aisDark ? badge('AIS DARK', 'bad') : badge('BROADCASTING', 'info')}</td>
+      <td><b>${r.exposedCount}</b> / ${OT_SERVICES.length}</td>
+      <td>${badge(r.band.t, r.band.k)} <b>${r.surface}</b>/100</td>
+      <td class="nv-note" style="max-width:280px">${r.exposed.map((s) => esc(s.svc)).join(', ')}</td>
+    </tr>`;
+  }).join('');
+
+  host.innerHTML = `
+    <div class="pg-h2" style="font-size:13px;margin-bottom:6px">MARITIME RECON — ATTACK-SURFACE ENUMERATION</div>
+    <div class="nv-note" style="margin:0 0 10px">Passive reconnaissance of the fleet: what each hull exposes to an attacker, derived from cyber-readiness and signal posture. This is the picture an adversary builds <b>before</b> acting — and the gaps you should close first.</div>
+    <div class="nv-card" style="overflow-x:auto">
+      <table class="nv-table"><thead><tr><th>Vessel</th><th>Signal</th><th>Exposed services</th><th>Attack surface</th><th>Reachable OT/IT</th></tr></thead><tbody>${rows}</tbody></table>
+    </div>
+    <div class="pg-h2" style="font-size:13px;margin:16px 0 6px">SERVICE CATALOG — MARITIME OT/IT</div>
+    <div class="nv-grid wide" id="nv-recon-svc"></div>`;
+
+  const grid = host.querySelector('#nv-recon-svc');
+  grid.innerHTML = OT_SERVICES.map((s) => `
+    <div class="nv-card">
+      <div class="nv-kv"><span>Service</span><b>${esc(s.svc)}</b></div>
+      <div class="nv-kv"><span>Port</span><b class="nv-mono">${esc(s.port)}</b></div>
+      <div class="nv-kv"><span>Protocol</span><b>${esc(s.proto)}</b></div>
+      <div class="nv-note">${esc(s.note)}</div>
+    </div>`).join('');
+}
+
+// ---------------------------------------------------------------------------
+// OFFENSIVE — simulated adversary emulation (wargaming; no live capability)
+// ---------------------------------------------------------------------------
+
+// Each play models an adversary technique against maritime targets. `control`
+// names the DEFENSIVE panel that is supposed to catch it, so the sim closes the
+// loop: run an attack, see whether our own defenses would detect it.
+const ADVERSARY_PLAYS = [
+  {
+    id: 'ais-spoof', name: 'AIS Identity Spoofing', tactic: 'Deception / Masquerade',
+    chain: ['Capture legitimate MMSI from open VDL broadcast', 'Craft AIS frames with cloned identity + false position', 'Transmit over 161.975/162.025 MHz to inject a ghost track', 'Walk the ghost across a chokepoint to trigger false collision-avoidance'],
+    impact: 'Phantom vessels, hijacked identities, forced route changes and false CPA alarms across the traffic picture.',
+    control: 'AIS INTEGRITY', defeats: ['impossible speed', 'position teleport', 'duplicate MMSI']
+  },
+  {
+    id: 'gnss-spoof', name: 'GNSS Position Injection', tactic: 'PNT Manipulation',
+    chain: ['Deploy SDR spoofer within line-of-sight of the bridge GNSS antenna', 'Lock onto genuine GPS signal, then slew power above it', 'Gradually drag the reported fix off true position', 'Autopilot follows the false fix toward hazardous water'],
+    impact: 'Own-ship believes it is on track while set toward grounding, a restricted zone, or an ambush.',
+    control: 'GNSS / ECDIS', defeats: ['gyro/AIS divergence', 'INS cross-check', 'eLoran fallback']
+  },
+  {
+    id: 'gps-jam', name: 'GPS Denial (Jamming)', tactic: 'Denial of PNT',
+    chain: ['Position a broadband L1/L2 jammer near a chokepoint', 'Raise noise floor until receivers lose lock', 'Force reversion to dead-reckoning under time pressure', 'Exploit navigational uncertainty to shepherd traffic'],
+    impact: 'Loss of GPS-fed navigation, timing and AIS position across every hull in the denial bubble.',
+    control: 'GNSS / ECDIS', defeats: ['jamming level alarm', 'eLoran fallback']
+  },
+  {
+    id: 'ecdis-poison', name: 'ECDIS Chart Poisoning', tactic: 'Data Integrity Attack',
+    chain: ['Introduce a tampered ENC cell via USB chart update', 'Bypass S-63 signature check on an unpatched ECDIS', 'Shift a charted hazard or delete a depth contour', 'Bridge team trusts the poisoned chart in low visibility'],
+    impact: 'Trusted navigation display shows safe water where there is none — grounding without any sensor alarm.',
+    control: 'GNSS / ECDIS', defeats: ['ENC checksum integrity', 'S-63 verification']
+  },
+  {
+    id: 'vsat-pivot', name: 'VSAT Compromise → OT Pivot', tactic: 'Initial Access / Lateral Movement',
+    chain: ['Exploit exposed VSAT management panel (default creds)', 'Land on the ship IT LAN via the satellite link', 'Cross a flat network into the bridge / IBS segment', 'Reach propulsion or cargo/ballast SCADA'],
+    impact: 'IT-to-OT breach: remote influence over steering, propulsion or ballast from off-hull.',
+    control: 'FLEET COMMAND', defeats: ['IT/OT segmentation', 'bridge-network monitoring']
+  },
+  {
+    id: 'cable-interdict', name: 'Subsea Cable Interdiction', tactic: 'Grey-Zone Sabotage',
+    chain: ['Loiter a deniable merchant/dredger over a cable corridor', 'Drag anchor across the cable route under cover of AIS gaps', 'Sever or damage the longhaul segment', 'Deny attribution behind flag-of-convenience registration'],
+    impact: 'Regional connectivity loss and capacity re-routing; deniable strategic disruption.',
+    control: 'SUBSEA CABLES', defeats: ['vessel-loitering alerts', 'AIS-gap correlation']
+  }
+];
+
+// Compute a detection verdict from the target's own defensive posture.
+function emulateOutcome(play, v) {
+  const r = v ? v.readiness : 60;
+  const aisDark = v && v.status === 'DARK';
+  // Base detection tracks cyber readiness; a dark ship blinds AIS-based controls.
+  let score = r;
+  if (play.id === 'ais-spoof' && aisDark) score -= 25;
+  if (play.id === 'vsat-pivot') score -= 10; // OT segmentation lags on most hulls
+  if (play.id === 'cable-interdict') score -= 5;
+  score = clamp(score, 0, 100);
+  const verdict = score >= 75 ? { t: 'DETECTED & CONTAINED', k: 'ok' } : score >= 50 ? { t: 'PARTIALLY DETECTED', k: 'warn' } : { t: 'MISSED — CONTROL GAP', k: 'bad' };
+  return { score, verdict, aisDark };
+}
+
+function panelRedcell(host) {
+  let selPlay = ADVERSARY_PLAYS[0].id;
+  let selTarget = FLEET[0].mmsi;
+
+  host.innerHTML = `
+    <div class="pg-h2" style="font-size:13px;margin-bottom:6px">ADVERSARY EMULATION — SIMULATED RED CELL</div>
+    <div class="nv-note" style="margin:0 0 10px"><b style="color:#ff6b5e">SIMULATION ONLY.</b> Wargame an adversary technique against a hull, then see whether our own defensive controls would catch it. No live capability — this exercises the blue-side detections, nothing more.</div>
+    <div class="nv-card" style="margin-bottom:12px">
+      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
+        <div style="flex:1;min-width:220px">
+          <div class="nv-note" style="margin:0 0 4px">Technique</div>
+          <select id="nv-rc-play" class="nv-select" style="width:100%">${ADVERSARY_PLAYS.map((p) => `<option value="${p.id}">${esc(p.name)}</option>`).join('')}</select>
+        </div>
+        <div style="flex:1;min-width:220px">
+          <div class="nv-note" style="margin:0 0 4px">Target hull</div>
+          <select id="nv-rc-target" class="nv-select" style="width:100%">${FLEET.map((v) => `<option value="${v.mmsi}">${esc(v.name)} (${esc(v.status)})</option>`).join('')}</select>
+        </div>
+        <button class="btn sm" id="nv-rc-run" style="background:#dc2626;color:#fff;border-color:#dc2626">RUN EMULATION</button>
+      </div>
+    </div>
+    <div id="nv-rc-out"></div>`;
+
+  const out = host.querySelector('#nv-rc-out');
+  const playSel = host.querySelector('#nv-rc-play');
+  const tgtSel = host.querySelector('#nv-rc-target');
+  playSel.onchange = () => { selPlay = playSel.value; };
+  tgtSel.onchange = () => { selTarget = tgtSel.value; };
+
+  host.querySelector('#nv-rc-run').onclick = () => {
+    const play = ADVERSARY_PLAYS.find((p) => p.id === selPlay) || ADVERSARY_PLAYS[0];
+    const v = FLEET.find((x) => x.mmsi === selTarget);
+    const o = emulateOutcome(play, v);
+    out.innerHTML = `
+      <div class="nv-card" style="border-left:3px solid #dc2626">
+        <div class="nv-kv"><span>Technique</span><b>${esc(play.name)}</b></div>
+        <div class="nv-kv"><span>Tactic</span><b>${esc(play.tactic)}</b></div>
+        <div class="nv-kv"><span>Target</span><b>${v ? esc(v.name) : '—'} ${o.aisDark ? badge('AIS DARK', 'bad') : ''}</b></div>
+        <div class="pg-h2" style="font-size:12px;margin:12px 0 4px">SIMULATED ATTACK CHAIN</div>
+        <ol style="margin:0 0 8px;padding-left:18px;font-size:12.5px;line-height:1.7">${play.chain.map((s) => `<li>${esc(s)}</li>`).join('')}</ol>
+        <div class="nv-note" style="margin:0 0 10px"><b style="color:var(--txt)">Impact:</b> ${esc(play.impact)}</div>
+        <div class="nv-kv"><span>Blue-side control tested</span><b>${esc(play.control)}</b></div>
+        <div class="nv-kv"><span>Detections exercised</span><b>${play.defeats.map((d) => esc(d)).join(' · ')}</b></div>
+        <div style="margin-top:12px;padding:10px 12px;border-radius:8px;background:var(--card2)">
+          <div class="nv-kv" style="padding:0"><span>Detection verdict</span><b>${badge(o.verdict.t, o.verdict.k)}</b></div>
+          <div class="nv-kv" style="padding:2px 0 0"><span>Modeled detection confidence</span><b>${o.score}/100</b></div>
+        </div>
+        <div class="nv-note" style="margin-top:8px">${o.verdict.k === 'bad'
+          ? 'This hull would likely MISS the attack. Prioritize hardening the named control before real-world exposure.'
+          : o.verdict.k === 'warn'
+          ? 'Partial coverage — the attack would leave traces but may not be contained in time. Tune the detection thresholds.'
+          : 'Defensive controls would catch and contain this technique on this hull. Good posture; keep it exercised.'}</div>
+      </div>`;
+  };
+  host.querySelector('#nv-rc-run').click();
+}
+
 const TABS = [
-  { id: 'fleet', label: 'FLEET COMMAND', fn: panelFleet },
-  { id: 'ais', label: 'AIS INTEGRITY', fn: panelAis },
-  { id: 'choke', label: 'CHOKEPOINTS', fn: panelChokepoints },
-  { id: 'route', label: 'ROUTE RISK', fn: panelRoute },
-  { id: 'convoy', label: 'CONVOY', fn: panelConvoy },
-  { id: 'gnss', label: 'GNSS / ECDIS', fn: panelGnss },
-  { id: 'cables', label: 'SUBSEA CABLES', fn: panelCables },
-  { id: 'emcon', label: 'EMCON', fn: panelEmcon }
+  { id: 'fleet', label: 'FLEET COMMAND', fn: panelFleet, modes: ['scouting', 'defensive', 'offensive'] },
+  { id: 'recon', label: 'MARITIME RECON', fn: panelRecon, modes: ['scouting'] },
+  { id: 'choke', label: 'CHOKEPOINTS', fn: panelChokepoints, modes: ['scouting', 'defensive'] },
+  { id: 'cables', label: 'SUBSEA CABLES', fn: panelCables, modes: ['scouting', 'defensive'] },
+  { id: 'ais', label: 'AIS INTEGRITY', fn: panelAis, modes: ['defensive'] },
+  { id: 'gnss', label: 'GNSS / ECDIS', fn: panelGnss, modes: ['defensive'] },
+  { id: 'route', label: 'ROUTE RISK', fn: panelRoute, modes: ['defensive', 'scouting'] },
+  { id: 'convoy', label: 'CONVOY', fn: panelConvoy, modes: ['defensive'] },
+  { id: 'emcon', label: 'EMCON', fn: panelEmcon, modes: ['defensive', 'offensive'] },
+  { id: 'redcell', label: 'ADVERSARY EMULATION', fn: panelRedcell, modes: ['offensive'] }
 ];
 
 export function renderNavarch(main) {
@@ -837,24 +1016,43 @@ export function renderNavarch(main) {
           <h1 class="pg-h1">NAVARCH</h1>
           <div class="pg-sub">Naval &amp; maritime cyber-defense command — fleet integrity, AIS anti-spoofing, chokepoint risk, GNSS/ECDIS assurance</div>
         </div>
-        <div class="chip nv-mono" id="nv-clock" style="align-self:center"></div>
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <div id="nv-modebar"></div>
+          <div class="chip nv-mono" id="nv-clock"></div>
+        </div>
       </div>
-      <div class="nv-tabs" id="nv-tabs">
-        ${TABS.map((t, i) => `<button class="nv-tab${i === 0 ? ' active' : ''}" data-id="${t.id}">${esc(t.label)}</button>`).join('')}
-      </div>
+      <div class="nv-note" id="nv-modenote" style="margin:2px 0 0"></div>
+      <div class="nv-tabs" id="nv-tabs"></div>
       <div id="nv-panel"></div>
     </div>`;
 
+  const wrap = main.querySelector('.nv-wrap');
   const panel = main.querySelector('#nv-panel');
   const tabsEl = main.querySelector('#nv-tabs');
+  let visibleTabs = TABS.slice();
 
   function activate(id) {
     tabsEl.querySelectorAll('.nv-tab').forEach(b => b.classList.toggle('active', b.dataset.id === id));
-    const t = TABS.find(x => x.id === id) || TABS[0];
-    t.fn(panel);
+    const t = visibleTabs.find(x => x.id === id) || visibleTabs[0];
+    if (t) t.fn(panel);
   }
-  tabsEl.querySelectorAll('.nv-tab').forEach(b => b.addEventListener('click', () => activate(b.dataset.id)));
-  activate('fleet');
+
+  function renderTabs() {
+    tabsEl.innerHTML = visibleTabs.map((t, i) => `<button class="nv-tab${i === 0 ? ' active' : ''}" data-id="${esc(t.id)}">${esc(t.label)}</button>`).join('');
+    tabsEl.querySelectorAll('.nv-tab').forEach(b => b.addEventListener('click', () => activate(b.dataset.id)));
+    if (visibleTabs[0]) activate(visibleTabs[0].id);
+  }
+
+  // Operational-mode switcher: filters the tabs to the active posture and
+  // retints the console. Persists the last mode per tool via core/store.
+  mountModeSwitcher({
+    toolId: 'navarch',
+    tabs: TABS,
+    mount: main.querySelector('#nv-modebar'),
+    host: wrap,
+    note: main.querySelector('#nv-modenote'),
+    onChange: (_mode, tabs) => { visibleTabs = tabs; renderTabs(); }
+  });
 
   // Live UTC clock.
   const clock = main.querySelector('#nv-clock');
