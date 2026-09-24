@@ -431,6 +431,96 @@ const NOC_ANOMALIES = [
 ];
 
 // ============================================================================
+// FIREWALL RULE BASE + SEGMENTATION ZONES
+// Ordered ACL evaluated top-down, first-match-wins (references NOC topology IPs)
+// ============================================================================
+const FW_RULEBASE = [
+  { seq: 10, name: 'Inbound HTTPS to Web Tier', action: 'allow', src: 'any', dst: '10.0.20.0/24', proto: 'tcp', port: '443', enabled: true, hits: 184203, added: '2025-01-14', by: 'admin' },
+  { seq: 20, name: 'Inbound HTTP to Web Tier', action: 'allow', src: 'any', dst: '10.0.20.0/24', proto: 'tcp', port: '80', enabled: true, hits: 96110, added: '2025-01-14', by: 'admin' },
+  { seq: 30, name: 'WEB-01 HTTPS Explicit', action: 'allow', src: 'any', dst: '10.0.20.1', proto: 'tcp', port: '443', enabled: true, hits: 0, added: '2025-03-02', by: 'jdoe' },
+  { seq: 40, name: 'Block Web Mgmt Port', action: 'deny', src: 'any', dst: '10.0.20.0/24', proto: 'tcp', port: '8080', enabled: true, hits: 412, added: '2025-02-10', by: 'admin' },
+  { seq: 50, name: 'Corp VLAN10 to DB MySQL', action: 'allow', src: '10.0.100.0/24', dst: '10.0.30.0/24', proto: 'tcp', port: '3306', enabled: true, hits: 33210, added: '2025-01-20', by: 'admin' },
+  { seq: 60, name: 'Corp VLAN20 to DB', action: 'allow', src: '10.0.200.0/24', dst: '10.0.30.1', proto: 'tcp', port: '3306', enabled: true, hits: 1204, added: '2025-04-01', by: 'msmith' },
+  { seq: 70, name: 'Mgmt SSH to All Segments', action: 'allow', src: '10.0.0.0/22', dst: 'any', proto: 'tcp', port: '22', enabled: true, hits: 8890, added: '2025-01-15', by: 'admin' },
+  { seq: 80, name: 'TEMP Permit Any-Any', action: 'allow', src: 'any', dst: 'any', proto: 'any', port: 'any', enabled: true, hits: 29944, added: '2025-05-30', by: 'oncall' },
+  { seq: 90, name: 'Block Dev to Domain Controllers', action: 'deny', src: '10.0.300.0/24', dst: '10.0.10.0/24', proto: 'any', port: 'any', enabled: true, hits: 0, added: '2025-06-02', by: 'admin' },
+  { seq: 100, name: 'WiFi to Mail SMTP', action: 'allow', src: '172.16.0.0/16', dst: '10.0.40.1', proto: 'tcp', port: '25', enabled: true, hits: 0, added: '2025-06-02', by: 'admin' },
+  { seq: 110, name: 'Legacy Telnet Allow', action: 'allow', src: '10.0.100.0/24', dst: '10.0.10.0/24', proto: 'tcp', port: '23', enabled: false, hits: 0, added: '2024-11-01', by: 'legacy' },
+  { seq: 120, name: 'Default Deny', action: 'deny', src: 'any', dst: 'any', proto: 'any', port: 'any', enabled: true, hits: 52310, added: '2025-01-14', by: 'admin' },
+];
+
+const FW_ZONES = [
+  { id: 'ext', name: 'EXTERNAL', cidr: '0.0.0.0/0', desc: 'Untrusted Internet' },
+  { id: 'mgmt', name: 'MGMT', cidr: '10.0.0.0/22', desc: 'Firewalls / routers / switches' },
+  { id: 'dc', name: 'DC-AD', cidr: '10.0.10.0/24', desc: 'Domain controllers' },
+  { id: 'web', name: 'DMZ-WEB', cidr: '10.0.20.0/24', desc: 'Public web tier' },
+  { id: 'db', name: 'DATABASE', cidr: '10.0.30.0/24', desc: 'Database servers' },
+  { id: 'mail', name: 'MAIL', cidr: '10.0.40.0/24', desc: 'Mail gateway' },
+  { id: 'v10', name: 'CORP-V10', cidr: '10.0.100.0/24', desc: 'Workstations VLAN10' },
+  { id: 'v20', name: 'CORP-V20', cidr: '10.0.200.0/24', desc: 'Workstations VLAN20' },
+  { id: 'dev', name: 'DEV-V30', cidr: '10.0.300.0/24', desc: 'Developer VLAN' },
+  { id: 'wifi', name: 'WIFI', cidr: '172.16.0.0/16', desc: 'Corporate WiFi' },
+];
+
+const FW_UDP_PORTS = { 53: 1, 67: 1, 68: 1, 69: 1, 123: 1, 161: 1, 162: 1, 500: 1, 514: 1, 1900: 1, 4500: 1 };
+
+// ---- CIDR / port / proto match helpers (pure, no network) ----
+function fwIp2int(ip) { var o = String(ip).split('.'); return (((parseInt(o[0], 10) || 0) * 16777216) + ((parseInt(o[1], 10) || 0) * 65536) + ((parseInt(o[2], 10) || 0) * 256) + (parseInt(o[3], 10) || 0)) >>> 0; }
+function fwMaskBits(bits) { bits = Math.max(0, Math.min(32, bits)); return bits === 0 ? 0 : ((0xFFFFFFFF << (32 - bits)) >>> 0); }
+function fwParseCidr(s) { s = String(s == null ? '' : s).trim(); if (!s || s === 'any' || s === '*' || s === '0.0.0.0/0') return { any: true, bits: 0, base: 0 }; var pr = s.split('/'); var bits = pr[1] != null ? parseInt(pr[1], 10) : 32; return { any: false, bits: bits, base: (fwIp2int(pr[0]) & fwMaskBits(bits)) >>> 0 }; }
+function fwIpInCidr(ip, cidr) { var c = (typeof cidr === 'string') ? fwParseCidr(cidr) : cidr; if (c.any) return true; return ((fwIp2int(String(ip).split('/')[0]) & fwMaskBits(c.bits)) >>> 0) === c.base; }
+function fwCidrCovers(outer, inner) { var o = (typeof outer === 'string') ? fwParseCidr(outer) : outer; var i = (typeof inner === 'string') ? fwParseCidr(inner) : inner; if (o.any) return true; if (i.any) return false; return o.bits <= i.bits && (((i.base & fwMaskBits(o.bits)) >>> 0) === o.base); }
+function fwCidrOverlap(a, b) { var x = (typeof a === 'string') ? fwParseCidr(a) : a; var y = (typeof b === 'string') ? fwParseCidr(b) : b; if (x.any || y.any) return true; return fwCidrCovers(x, y) || fwCidrCovers(y, x); }
+function fwParsePort(s) { s = String(s == null ? 'any' : s).trim().toLowerCase(); if (s === '' || s === 'any' || s === '*') return { any: true, lo: 0, hi: 65535 }; if (s.indexOf('-') > -1) { var pr = s.split('-'); return { any: false, lo: parseInt(pr[0], 10) || 0, hi: parseInt(pr[1], 10) || 65535 }; } var n = parseInt(s, 10) || 0; return { any: false, lo: n, hi: n }; }
+function fwPortCovers(outer, inner) { var o = fwParsePort(outer), i = fwParsePort(inner); if (o.any) return true; if (i.any) return false; return o.lo <= i.lo && o.hi >= i.hi; }
+function fwPortMatch(rulePort, pkt) { var o = fwParsePort(rulePort); var p = parseInt(pkt, 10); if (o.any) return true; return p >= o.lo && p <= o.hi; }
+function fwProtoCovers(outer, inner) { outer = String(outer || 'any').toLowerCase(); inner = String(inner || 'any').toLowerCase(); return outer === 'any' || outer === inner; }
+function fwProtoMatch(ruleProto, pkt) { ruleProto = String(ruleProto || 'any').toLowerCase(); pkt = String(pkt || 'any').toLowerCase(); if (ruleProto === 'any' || pkt === 'any') return true; return ruleProto === pkt; }
+function fwTransport(port, proto) { proto = String(proto || '').toLowerCase(); if (proto === 'tcp' || proto === 'udp') return proto; return FW_UDP_PORTS[parseInt(port, 10)] ? 'udp' : 'tcp'; }
+function fwZoneOf(ip) { for (var i = 0; i < FW_ZONES.length; i++) { var z = FW_ZONES[i]; if (z.id === 'ext') continue; if (fwIpInCidr(ip, z.cidr)) return z; } return FW_ZONES[0]; }
+// First-match-wins evaluation over enabled rules
+function fwSimulate(pkt) {
+  for (var i = 0; i < FW_RULEBASE.length; i++) {
+    var r = FW_RULEBASE[i];
+    if (!r.enabled) continue;
+    if (fwIpInCidr(pkt.src, r.src) && fwIpInCidr(pkt.dst, r.dst) && fwProtoMatch(r.proto, pkt.proto) && fwPortMatch(r.port, pkt.port)) {
+      return { action: r.action, rule: r, index: i, matched: true, evaluated: i + 1 };
+    }
+  }
+  return { action: 'deny', rule: null, matched: false, evaluated: FW_RULEBASE.length, reason: 'No matching rule - implicit default deny' };
+}
+// Static rule-base analysis: shadowed / redundant / overly-permissive / disabled
+function fwAnalyze() {
+  var out = [];
+  for (var i = 0; i < FW_RULEBASE.length; i++) {
+    var R = FW_RULEBASE[i]; var issues = [];
+    var sAny = fwParseCidr(R.src).any, dAny = fwParseCidr(R.dst).any, pAny = fwParsePort(R.port).any;
+    if (R.action === 'allow' && R.enabled) {
+      if (sAny && dAny && pAny) issues.push({ sev: 'Critical', type: 'Overly Permissive', msg: 'Allows ANY source to ANY destination on ANY port/proto' });
+      else if ((sAny || dAny) && pAny) issues.push({ sev: 'High', type: 'Overly Permissive', msg: 'Allow with any ' + (sAny ? 'source' : 'destination') + ' and any port' });
+      else if (sAny || dAny) issues.push({ sev: 'Medium', type: 'Broad Scope', msg: 'Allow with any ' + (sAny ? 'source' : 'destination') });
+    }
+    if (R.action === 'allow') {
+      var pr = PORT_REFERENCE.find(function (p) { return String(p.port) === String(R.port); });
+      if (pr && (pr.risk === 'High' || pr.risk === 'Critical')) issues.push({ sev: pr.risk, type: 'Risky Service', msg: 'Permits ' + pr.service + ' (' + pr.risk.toLowerCase() + ' risk): ' + pr.notes });
+    }
+    if (R.enabled) {
+      for (var j = 0; j < i; j++) {
+        var E = FW_RULEBASE[j]; if (!E.enabled) continue;
+        if (fwCidrCovers(E.src, R.src) && fwCidrCovers(E.dst, R.dst) && fwProtoCovers(E.proto, R.proto) && fwPortCovers(E.port, R.port)) {
+          if (E.action === R.action) issues.push({ sev: 'Medium', type: 'Redundant', msg: 'Fully covered by earlier rule #' + E.seq + ' (' + E.name + ') with same action - never fires' });
+          else issues.push({ sev: 'High', type: 'Shadowed', msg: 'Unreachable: earlier rule #' + E.seq + ' (' + E.name + ', ' + E.action + ') matches all its traffic first' });
+          break;
+        }
+      }
+    }
+    if (!R.enabled) issues.push({ sev: 'Info', type: 'Disabled', msg: 'Rule is disabled and not enforced' });
+    out.push({ rule: R, issues: issues });
+  }
+  return out;
+}
+
+// ============================================================================
 // EXPLOIT DEVELOPMENT LAB DATA
 // ============================================================================
 const SHELLCODE_TEMPLATES = {
@@ -1669,6 +1759,12 @@ export function renderAegis(main) {
       '.ag-chain-step.crit{border-left-color:#ff1744}' +
       '.ag-chain-step.high{border-left-color:#ff9100}' +
       '.ag-evidence-row{display:flex;align-items:center;gap:12px;padding:8px;border-bottom:1px solid var(--line);font-size:.7rem}' +
+      '.ag-seg-tbl{border-collapse:collapse;font-size:.55rem;width:100%}' +
+      '.ag-seg-tbl th{padding:4px 3px;color:var(--mut);text-align:center;font-weight:600;letter-spacing:.02em;border-bottom:2px solid var(--line);white-space:nowrap}' +
+      '.ag-seg-tbl th.ag-seg-rowh,.ag-seg-tbl td.ag-seg-rowh{text-align:left;color:var(--txt);font-weight:600;border-right:2px solid var(--line);white-space:nowrap;padding-right:8px}' +
+      '.ag-seg-cell{padding:4px 2px;text-align:center;font-weight:700;border:1px solid var(--line);border-radius:2px;font-size:.5rem}' +
+      '.ag-fw-mono{font-variant-numeric:tabular-nums}' +
+      '.ag-fw-diag{border-left:3px solid var(--line);padding:6px 10px;margin:4px 0;font-size:.68rem;background:rgba(0,0,0,.15)}' +
       '</style>' +
       '<div class="ag-wrap">' +
         '<div class="ag-cls-banner" style="background:' + clsColor + '">' + esc(cls) + '</div>' +
@@ -1681,7 +1777,7 @@ export function renderAegis(main) {
           (mission ? '<span class="ag-sub" style="color:var(--acc)">MISSION: ' + esc(mission.name) + '</span>' : '<span class="ag-sub" style="color:var(--mut)">NO ACTIVE MISSION</span>') +
         '</div>' +
         '<div class="ag-tabs">' +
-          ['command:Command Center','missions:Missions','recon:Reconnaissance','vuln:Vulnerabilities','planning:Attack Planning','intel:Threat Intel','defense:Defense Ops','crypto:Crypto Lab','noc:NOC','exploit:Exploit Lab','adplanner:AD Planner','cloud:Cloud Attack','hunting:Threat Hunt','warroom:War Room','comms:Comms Log','reporting:Reporting','settings:Settings'].map(function(t) {
+          ['command:Command Center','missions:Missions','recon:Reconnaissance','vuln:Vulnerabilities','planning:Attack Planning','intel:Threat Intel','defense:Defense Ops','crypto:Crypto Lab','noc:NOC','rulebase:Rule Base','simulator:Policy Sim','segmentation:Segmentation','flowaudit:Flow Audit','exploit:Exploit Lab','adplanner:AD Planner','cloud:Cloud Attack','hunting:Threat Hunt','warroom:War Room','comms:Comms Log','reporting:Reporting','settings:Settings'].map(function(t) {
             var p = t.split(':');
             return '<button class="ag-tab' + (activeTab === p[0] ? ' on' : '') + '" data-t="' + p[0] + '">' + p[1] + '</button>';
           }).join('') +
@@ -1704,6 +1800,10 @@ export function renderAegis(main) {
     else if (activeTab === 'defense') renderDefense(content, mission);
     else if (activeTab === 'crypto') renderCrypto(content);
     else if (activeTab === 'noc') renderNOC(content);
+    else if (activeTab === 'rulebase') renderRuleBase(content);
+    else if (activeTab === 'simulator') renderPolicySim(content);
+    else if (activeTab === 'segmentation') renderSegmentation(content);
+    else if (activeTab === 'flowaudit') renderFlowAudit(content);
     else if (activeTab === 'exploit') renderExploitLab(content);
     else if (activeTab === 'adplanner') renderADPlanner(content);
     else if (activeTab === 'cloud') renderCloudAttack(content);
@@ -2753,6 +2853,318 @@ export function renderAegis(main) {
         renderNOCContent(nocTab);
       };
     });
+  }
+
+  // ========== FIREWALL RULE BASE ANALYZER ==========
+  function fwSevCls(s) { return s === 'Critical' ? 'ag-crit' : s === 'High' ? 'ag-high' : s === 'Medium' ? 'ag-med' : s === 'Low' ? 'ag-low' : 'ag-info'; }
+
+  function renderRuleBase(c) {
+    var analysis = fwAnalyze();
+    var flagged = analysis.filter(function (a) { return a.issues.length; });
+    var count = function (t) { return analysis.filter(function (a) { return a.issues.some(function (i) { return i.type === t; }); }).length; };
+    var permissive = analysis.filter(function (a) { return a.issues.some(function (i) { return i.type === 'Overly Permissive' || i.type === 'Broad Scope'; }); }).length;
+    var shadowed = count('Shadowed');
+    var redundant = count('Redundant');
+    var risky = count('Risky Service');
+    var disabled = FW_RULEBASE.filter(function (r) { return !r.enabled; }).length;
+    c.innerHTML =
+      '<div class="ag-grid4" style="margin-bottom:10px">' +
+        '<div class="ag-stat"><div class="ag-stat-v" style="color:var(--acc)">' + FW_RULEBASE.length + '</div><div class="ag-stat-l">Total Rules</div></div>' +
+        '<div class="ag-stat"><div class="ag-stat-v" style="color:' + (permissive ? '#ff1744' : '#00e676') + '">' + permissive + '</div><div class="ag-stat-l">Overly Permissive</div></div>' +
+        '<div class="ag-stat"><div class="ag-stat-v" style="color:' + (shadowed ? '#ff9100' : '#00e676') + '">' + shadowed + '</div><div class="ag-stat-l">Shadowed / Unreachable</div></div>' +
+        '<div class="ag-stat"><div class="ag-stat-v" style="color:' + (redundant ? '#ffd600' : '#00e676') + '">' + redundant + '</div><div class="ag-stat-l">Redundant</div></div>' +
+        '<div class="ag-stat"><div class="ag-stat-v" style="color:' + (risky ? '#ff9100' : '#00e676') + '">' + risky + '</div><div class="ag-stat-l">Risky Services</div></div>' +
+        '<div class="ag-stat"><div class="ag-stat-v" style="color:var(--mut)">' + disabled + '</div><div class="ag-stat-l">Disabled</div></div>' +
+      '</div>' +
+      '<div class="ag-panel">' +
+        '<div class="ag-panel-h"><span style="color:var(--acc)">FIREWALL RULE BASE</span><span style="flex:1"></span><span style="color:var(--mut)">first-match-wins, evaluated top-down</span></div>' +
+        '<div class="ag-panel-b" style="overflow-x:auto">' +
+          '<table class="ag-tbl"><thead><tr><th>#</th><th>Name</th><th>Action</th><th>Source</th><th>Dest</th><th>Proto</th><th>Port</th><th>Hits</th><th>Analysis</th></tr></thead><tbody>' +
+          analysis.map(function (a) {
+            var r = a.rule;
+            var worst = a.issues.reduce(function (m, i) { var ord = { Critical: 5, High: 4, Medium: 3, Low: 2, Info: 1 }; return ord[i.sev] > ord[m] ? i.sev : m; }, 'none');
+            var rowBg = worst === 'Critical' ? 'background:rgba(255,23,68,.06)' : worst === 'High' ? 'background:rgba(255,145,0,.05)' : '';
+            return '<tr style="' + rowBg + (r.enabled ? '' : ';opacity:.55') + '">' +
+              '<td class="ag-fw-mono" style="color:var(--mut)">' + r.seq + '</td>' +
+              '<td style="font-size:.66rem">' + esc(r.name) + '</td>' +
+              '<td><span class="ag-badge ' + (r.action === 'allow' ? 'ag-low' : 'ag-crit') + '">' + esc(r.action) + '</span></td>' +
+              '<td class="ag-fw-mono" style="font-size:.62rem">' + esc(r.src) + '</td>' +
+              '<td class="ag-fw-mono" style="font-size:.62rem">' + esc(r.dst) + '</td>' +
+              '<td style="color:var(--mut)">' + esc(r.proto) + '</td>' +
+              '<td class="ag-fw-mono">' + esc(r.port) + '</td>' +
+              '<td class="ag-fw-mono" style="color:var(--mut)">' + (r.hits ? r.hits.toLocaleString() : '0') + '</td>' +
+              '<td>' + (a.issues.length ? a.issues.map(function (i) { return '<span class="ag-badge ' + fwSevCls(i.sev) + '" title="' + esc(i.msg) + '">' + esc(i.type) + '</span>'; }).join(' ') : '<span class="ag-badge ag-low">OK</span>') + '</td>' +
+            '</tr>';
+          }).join('') +
+          '</tbody></table>' +
+        '</div>' +
+      '</div>' +
+      '<div class="ag-panel">' +
+        '<div class="ag-panel-h"><span style="color:#ff1744">FINDINGS DETAIL</span><span style="flex:1"></span><span style="color:var(--mut)">' + flagged.reduce(function (s, a) { return s + a.issues.length; }, 0) + ' issues across ' + flagged.length + ' rules</span></div>' +
+        '<div class="ag-panel-b">' +
+          (flagged.length ? flagged.map(function (a) {
+            return a.issues.map(function (i) {
+              return '<div class="ag-fw-diag" style="border-left-color:' + (i.sev === 'Critical' ? '#ff1744' : i.sev === 'High' ? '#ff9100' : i.sev === 'Medium' ? '#ffd600' : '#00e5ff') + '">' +
+                '<span class="ag-badge ' + fwSevCls(i.sev) + '">' + esc(i.sev) + '</span> ' +
+                '<span style="color:var(--txt);font-weight:600">#' + a.rule.seq + ' ' + esc(a.rule.name) + '</span> &mdash; ' +
+                '<span style="color:var(--acc)">' + esc(i.type) + ':</span> <span style="color:var(--mut)">' + esc(i.msg) + '</span>' +
+              '</div>';
+            }).join('');
+          }).join('') : '<div style="color:var(--mut);font-size:.72rem">No issues detected.</div>') +
+        '</div>' +
+      '</div>';
+  }
+
+  // ========== POLICY SIMULATOR ("would this packet be allowed?") ==========
+  function renderPolicySim(c) {
+    c.innerHTML =
+      '<div class="ag-panel">' +
+        '<div class="ag-panel-h"><span style="color:var(--acc)">PACKET POLICY SIMULATOR</span><span style="flex:1"></span><span style="color:var(--mut)">evaluated against ' + FW_RULEBASE.filter(function (r) { return r.enabled; }).length + ' enabled rules</span></div>' +
+        '<div class="ag-panel-b">' +
+          '<div class="ag-grid4">' +
+            '<div><div class="ag-stat-l" style="margin-bottom:3px">Source IP</div><input class="ag-inp" id="ag-sim-src" value="185.220.101.34"></div>' +
+            '<div><div class="ag-stat-l" style="margin-bottom:3px">Destination IP</div><input class="ag-inp" id="ag-sim-dst" value="10.0.20.1"></div>' +
+            '<div><div class="ag-stat-l" style="margin-bottom:3px">Protocol</div><select class="ag-sel" id="ag-sim-proto" style="width:100%"><option value="tcp">TCP</option><option value="udp">UDP</option><option value="any">ANY</option></select></div>' +
+            '<div><div class="ag-stat-l" style="margin-bottom:3px">Dest Port</div><input class="ag-inp" id="ag-sim-port" value="443"></div>' +
+          '</div>' +
+          '<div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">' +
+            '<button class="ag-btn" id="ag-sim-run">EVALUATE PACKET</button>' +
+            ['185.220.101.34>10.0.20.1:443:tcp:External to web HTTPS','10.0.300.90>10.0.30.1:5432:tcp:Dev to DB (Postgres)','10.0.100.55>8.8.8.8:53:udp:Workstation DNS out','45.33.32.100>10.0.10.1:22:tcp:External SSH to DC'].map(function (p, k) {
+              return '<button class="ag-btn ag-btn-ghost" data-preset="' + esc(p.split(':').slice(0, 4).join(':')) + '">' + esc(p.split(':')[4]) + '</button>';
+            }).join('') +
+          '</div>' +
+          '<div id="ag-sim-result" style="margin-top:12px"></div>' +
+        '</div>' +
+      '</div>';
+
+    function runSim() {
+      var src = (c.querySelector('#ag-sim-src').value || '').trim();
+      var dst = (c.querySelector('#ag-sim-dst').value || '').trim();
+      var proto = c.querySelector('#ag-sim-proto').value;
+      var port = (c.querySelector('#ag-sim-port').value || '').trim();
+      var res = fwSimulate({ src: src, dst: dst, proto: proto, port: port });
+      var allow = res.action === 'allow';
+      var srcZone = fwZoneOf(src), dstZone = fwZoneOf(dst);
+      // Build per-rule evaluation trace up to and including the match
+      var trace = [];
+      for (var i = 0; i < FW_RULEBASE.length; i++) {
+        var r = FW_RULEBASE[i];
+        var reached = res.matched ? i <= res.index : true;
+        if (!reached) break;
+        if (!r.enabled) { trace.push({ r: r, state: 'skip', note: 'disabled' }); continue; }
+        var mSrc = fwIpInCidr(src, r.src), mDst = fwIpInCidr(dst, r.dst), mProto = fwProtoMatch(r.proto, proto), mPort = fwPortMatch(r.port, port);
+        var hit = mSrc && mDst && mProto && mPort;
+        trace.push({ r: r, state: hit ? 'match' : 'nomatch', note: hit ? '' : [!mSrc ? 'src' : '', !mDst ? 'dst' : '', !mProto ? 'proto' : '', !mPort ? 'port' : ''].filter(Boolean).join(',') + ' mismatch' });
+        if (hit) break;
+      }
+      c.querySelector('#ag-sim-result').innerHTML =
+        '<div class="ag-panel" style="border-color:' + (allow ? '#00e676' : '#ff1744') + '">' +
+          '<div class="ag-panel-h" style="color:' + (allow ? '#00e676' : '#ff1744') + '">VERDICT: ' + (allow ? 'ALLOW' : 'DENY') + '</div>' +
+          '<div class="ag-panel-b" style="font-size:.72rem">' +
+            '<div style="margin-bottom:6px">' + esc(src) + ' <span style="color:var(--mut)">[' + esc(srcZone.name) + ']</span> &rarr; ' + esc(dst) + ' <span style="color:var(--mut)">[' + esc(dstZone.name) + ']</span> ' + esc(proto.toUpperCase()) + '/' + esc(port) + '</div>' +
+            (res.matched ?
+              '<div>Matched rule <span style="color:var(--acc)">#' + res.rule.seq + ' ' + esc(res.rule.name) + '</span> after evaluating ' + res.evaluated + ' rule(s).</div>' +
+              (res.rule.src === 'any' && res.rule.dst === 'any' && res.rule.action === 'allow' ? '<div style="color:#ff1744;margin-top:4px">WARNING: permitted only by a broad any-any rule &mdash; segmentation is being bypassed.</div>' : '')
+              : '<div style="color:#ff1744">' + esc(res.reason) + '</div>') +
+          '</div>' +
+        '</div>' +
+        '<div class="ag-panel"><div class="ag-panel-h"><span style="color:var(--acc)">EVALUATION TRACE</span></div><div class="ag-panel-b">' +
+          trace.map(function (t) {
+            var col = t.state === 'match' ? '#00e676' : t.state === 'skip' ? 'var(--mut)' : 'var(--mut)';
+            var tag = t.state === 'match' ? (t.r.action === 'allow' ? 'MATCH / ALLOW' : 'MATCH / DENY') : t.state === 'skip' ? 'SKIP' : 'no match';
+            return '<div class="ag-fw-diag" style="border-left-color:' + (t.state === 'match' ? (t.r.action === 'allow' ? '#00e676' : '#ff1744') : 'var(--line)') + '">' +
+              '<span class="ag-fw-mono" style="color:var(--mut)">#' + t.r.seq + '</span> ' + esc(t.r.name) +
+              ' <span style="color:' + col + '">[' + tag + ']</span>' + (t.note ? ' <span style="color:var(--mut);font-size:.62rem">(' + esc(t.note) + ')</span>' : '') +
+            '</div>';
+          }).join('') +
+        '</div></div>';
+    }
+
+    c.querySelector('#ag-sim-run').onclick = runSim;
+    c.querySelectorAll('[data-preset]').forEach(function (b) {
+      b.onclick = function () {
+        var p = b.dataset.preset.split(':'); // src>dst : port : proto  (src>dst combined first)
+        var sd = p[0].split('>');
+        c.querySelector('#ag-sim-src').value = sd[0];
+        c.querySelector('#ag-sim-dst').value = sd[1];
+        c.querySelector('#ag-sim-port').value = p[1];
+        c.querySelector('#ag-sim-proto').value = p[2];
+        runSim();
+      };
+    });
+    runSim();
+  }
+
+  // ========== NETWORK SEGMENTATION MAP ==========
+  function renderSegmentation(c) {
+    var zones = FW_ZONES;
+    // Node inventory per zone from live topology
+    var inv = {};
+    zones.forEach(function (z) { inv[z.id] = []; });
+    NOC_TOPOLOGY.forEach(function (n) { var z = fwZoneOf(n.ip); inv[z.id].push(n.label); });
+    // Zone-to-zone reachability from rule base
+    function cellPolicy(a, b) {
+      var specific = 0, broad = 0, deny = 0;
+      FW_RULEBASE.forEach(function (r) {
+        if (!r.enabled) return;
+        if (!(fwCidrOverlap(r.src, a.cidr) && fwCidrOverlap(r.dst, b.cidr))) return;
+        var isBroad = fwParseCidr(r.src).any && fwParseCidr(r.dst).any;
+        if (r.action === 'allow') { if (isBroad) broad++; else specific++; }
+        else if (!isBroad) deny++;
+      });
+      if (specific > 0) return { v: 'ALLOW', bg: 'rgba(0,230,118,.15)', fg: '#00e676', n: specific };
+      if (broad > 0) return { v: 'OPEN', bg: 'rgba(255,23,68,.18)', fg: '#ff1744', n: broad };
+      if (deny > 0) return { v: 'DENY', bg: 'rgba(255,145,0,.10)', fg: '#ff9100', n: deny };
+      return { v: '-', bg: 'transparent', fg: 'var(--mut)', n: 0 };
+    }
+    var srcZones = zones, dstZones = zones;
+    var openCells = 0;
+    var matrix = srcZones.map(function (a) {
+      return { zone: a, cells: dstZones.map(function (b) { var cp = cellPolicy(a, b); if (cp.v === 'OPEN') openCells++; return cp; }) };
+    });
+    // Observed cross-zone flows that violate segmentation intent
+    var violations = NOC_CONNECTIONS.map(function (conn) {
+      var za = fwZoneOf(conn.src), zb = fwZoneOf(conn.dst);
+      var res = fwSimulate({ src: conn.src, dst: conn.dst, proto: fwTransport(conn.port, conn.proto), port: conn.port });
+      var broadOnly = res.matched && res.rule.action === 'allow' && fwParseCidr(res.rule.src).any && fwParseCidr(res.rule.dst).any;
+      var external = za.id === 'ext';
+      var crossSensitive = za.id !== zb.id && (zb.id === 'dc' || zb.id === 'db' || zb.id === 'mgmt');
+      var reason = res.action === 'deny' ? 'blocked by policy but observed active' : broadOnly ? 'permitted only by broad any-any rule' : external ? 'external ingress into internal zone' : crossSensitive ? 'cross-segment access to sensitive zone' : '';
+      return { conn: conn, za: za, zb: zb, res: res, reason: reason, broadOnly: broadOnly, external: external };
+    }).filter(function (x) { return x.reason; });
+
+    c.innerHTML =
+      '<div class="ag-grid4" style="margin-bottom:10px">' +
+        '<div class="ag-stat"><div class="ag-stat-v" style="color:var(--acc)">' + zones.length + '</div><div class="ag-stat-l">Defined Zones</div></div>' +
+        '<div class="ag-stat"><div class="ag-stat-v" style="color:var(--txt)">' + NOC_TOPOLOGY.length + '</div><div class="ag-stat-l">Mapped Assets</div></div>' +
+        '<div class="ag-stat"><div class="ag-stat-v" style="color:' + (openCells ? '#ff1744' : '#00e676') + '">' + openCells + '</div><div class="ag-stat-l">Open (Any-Any) Paths</div></div>' +
+        '<div class="ag-stat"><div class="ag-stat-v" style="color:' + (violations.length ? '#ff9100' : '#00e676') + '">' + violations.length + '</div><div class="ag-stat-l">Flow Violations</div></div>' +
+      '</div>' +
+      '<div class="ag-panel">' +
+        '<div class="ag-panel-h"><span style="color:var(--acc)">SEGMENTATION REACHABILITY MATRIX</span><span style="flex:1"></span><span style="color:var(--mut)">source (rows) &rarr; destination (cols)</span></div>' +
+        '<div class="ag-panel-b" style="overflow-x:auto">' +
+          '<table class="ag-seg-tbl"><thead><tr><th class="ag-seg-rowh">FROM \\ TO</th>' +
+          dstZones.map(function (z) { return '<th>' + esc(z.name) + '</th>'; }).join('') + '</tr></thead><tbody>' +
+          matrix.map(function (row) {
+            return '<tr><td class="ag-seg-rowh">' + esc(row.zone.name) + '</td>' +
+              row.cells.map(function (cp) { return '<td><div class="ag-seg-cell" style="background:' + cp.bg + ';color:' + cp.fg + '">' + cp.v + (cp.n > 1 ? '<br><span style="font-size:.44rem;opacity:.7">x' + cp.n + '</span>' : '') + '</div></td>'; }).join('') +
+            '</tr>';
+          }).join('') +
+          '</tbody></table>' +
+          '<div style="margin-top:8px;font-size:.6rem;color:var(--mut)"><span style="color:#00e676">ALLOW</span> specific rule &middot; <span style="color:#ff1744">OPEN</span> permitted only by broad any-any rule &middot; <span style="color:#ff9100">DENY</span> explicit block &middot; - no path</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="ag-panel">' +
+        '<div class="ag-panel-h"><span style="color:var(--acc)">ZONE INVENTORY</span></div>' +
+        '<div class="ag-panel-b"><table class="ag-tbl"><thead><tr><th>Zone</th><th>CIDR</th><th>Purpose</th><th>Assets</th><th>Members</th></tr></thead><tbody>' +
+          zones.filter(function (z) { return z.id !== 'ext'; }).map(function (z) {
+            return '<tr><td style="color:var(--acc);font-weight:600">' + esc(z.name) + '</td><td class="ag-fw-mono" style="font-size:.62rem">' + esc(z.cidr) + '</td><td style="color:var(--mut);font-size:.66rem">' + esc(z.desc) + '</td><td class="ag-fw-mono">' + inv[z.id].length + '</td><td style="font-size:.62rem;color:var(--mut)">' + (inv[z.id].map(esc).join(', ') || '&mdash;') + '</td></tr>';
+          }).join('') +
+        '</tbody></table></div>' +
+      '</div>' +
+      '<div class="ag-panel">' +
+        '<div class="ag-panel-h"><span style="color:#ff1744">SEGMENTATION VIOLATIONS (OBSERVED FLOWS)</span><span style="flex:1"></span><span style="color:var(--mut)">' + violations.length + ' of ' + NOC_CONNECTIONS.length + ' flows</span></div>' +
+        '<div class="ag-panel-b">' +
+          (violations.length ? '<table class="ag-tbl"><thead><tr><th>Source</th><th>From</th><th>Destination</th><th>To</th><th>Port</th><th>Policy</th><th>Reason</th></tr></thead><tbody>' +
+            violations.map(function (v) {
+              return '<tr style="background:rgba(255,23,68,.05)"><td class="ag-fw-mono" style="font-size:.62rem;color:' + (v.external ? '#ff1744' : 'var(--txt)') + '">' + esc(v.conn.src) + '</td><td style="color:var(--mut);font-size:.62rem">' + esc(v.za.name) + '</td>' +
+                '<td class="ag-fw-mono" style="font-size:.62rem">' + esc(v.conn.dst) + '</td><td style="color:var(--mut);font-size:.62rem">' + esc(v.zb.name) + '</td><td class="ag-fw-mono">' + v.conn.port + '</td>' +
+                '<td><span class="ag-badge ' + (v.res.action === 'allow' ? 'ag-high' : 'ag-crit') + '">' + esc(v.res.action) + '</span></td><td style="color:var(--mut);font-size:.64rem">' + esc(v.reason) + '</td></tr>';
+            }).join('') + '</tbody></table>' : '<div style="color:var(--mut);font-size:.72rem">No segmentation violations in observed flows.</div>') +
+        '</div>' +
+      '</div>';
+  }
+
+  // ========== FLOW AUDIT / TRAFFIC ANALYTICS ==========
+  function renderFlowAudit(c) {
+    var portRisk = {};
+    PORT_REFERENCE.forEach(function (p) { portRisk[p.port] = p; });
+    var rows = NOC_CONNECTIONS.map(function (conn) {
+      var res = fwSimulate({ src: conn.src, dst: conn.dst, proto: fwTransport(conn.port, conn.proto), port: conn.port });
+      var external = fwZoneOf(conn.src).id === 'ext';
+      var pr = portRisk[conn.port];
+      var risk = pr ? pr.risk : 'Low';
+      var broadOnly = res.matched && res.rule.action === 'allow' && fwParseCidr(res.rule.src).any && fwParseCidr(res.rule.dst).any;
+      var suspectState = conn.state === 'SYN_RECV' || conn.state === 'SYN_SENT';
+      var flags = [];
+      if (external) flags.push('EXT');
+      if (broadOnly) flags.push('BROAD');
+      if (risk === 'High' || risk === 'Critical') flags.push('RISKY-PORT');
+      if (suspectState) flags.push('HALF-OPEN');
+      return { conn: conn, res: res, external: external, risk: risk, broadOnly: broadOnly, flags: flags };
+    });
+    var allowed = rows.filter(function (r) { return r.res.action === 'allow'; }).length;
+    var denied = rows.length - allowed;
+    var ext = rows.filter(function (r) { return r.external; }).length;
+    var riskyPort = rows.filter(function (r) { return r.risk === 'High' || r.risk === 'Critical'; }).length;
+    var broad = rows.filter(function (r) { return r.broadOnly; }).length;
+    var flagged = rows.filter(function (r) { return r.flags.length; });
+    // Protocol distribution
+    var byProto = {};
+    rows.forEach(function (r) { byProto[r.conn.proto] = (byProto[r.conn.proto] || 0) + 1; });
+    var protoList = Object.keys(byProto).sort(function (a, b) { return byProto[b] - byProto[a]; });
+    // Top talkers by bytes
+    var talkers = rows.slice().sort(function (a, b) { return b.conn.bytes - a.conn.bytes; }).slice(0, 5);
+    var totalBytes = rows.reduce(function (s, r) { return s + r.conn.bytes; }, 0);
+
+    c.innerHTML =
+      '<div class="ag-grid4" style="margin-bottom:10px">' +
+        '<div class="ag-stat"><div class="ag-stat-v" style="color:var(--acc)">' + rows.length + '</div><div class="ag-stat-l">Observed Flows</div></div>' +
+        '<div class="ag-stat"><div class="ag-stat-v" style="color:#00e676">' + allowed + '</div><div class="ag-stat-l">Allowed by Policy</div></div>' +
+        '<div class="ag-stat"><div class="ag-stat-v" style="color:' + (denied ? '#ff1744' : '#00e676') + '">' + denied + '</div><div class="ag-stat-l">Denied</div></div>' +
+        '<div class="ag-stat"><div class="ag-stat-v" style="color:' + (ext ? '#ff9100' : '#00e676') + '">' + ext + '</div><div class="ag-stat-l">External Origin</div></div>' +
+        '<div class="ag-stat"><div class="ag-stat-v" style="color:' + (riskyPort ? '#ff9100' : '#00e676') + '">' + riskyPort + '</div><div class="ag-stat-l">Risky Ports</div></div>' +
+        '<div class="ag-stat"><div class="ag-stat-v" style="color:' + (broad ? '#ff1744' : '#00e676') + '">' + broad + '</div><div class="ag-stat-l">Broad-Rule Permitted</div></div>' +
+      '</div>' +
+      '<div class="ag-grid2">' +
+        '<div class="ag-panel"><div class="ag-panel-h"><span style="color:var(--acc)">PROTOCOL DISTRIBUTION</span></div><div class="ag-panel-b">' +
+          protoList.map(function (p) {
+            var pct = Math.round((byProto[p] / rows.length) * 100);
+            return '<div style="margin-bottom:6px"><div style="display:flex;justify-content:space-between;font-size:.66rem"><span>' + esc(p) + '</span><span style="color:var(--mut)">' + byProto[p] + ' (' + pct + '%)</span></div><div class="ag-health-bar"><div class="ag-health-fill" style="width:' + pct + '%;background:var(--acc)"></div></div></div>';
+          }).join('') +
+        '</div></div>' +
+        '<div class="ag-panel"><div class="ag-panel-h"><span style="color:var(--acc)">TOP TALKERS (BY VOLUME)</span></div><div class="ag-panel-b">' +
+          talkers.map(function (t) {
+            var pct = totalBytes ? Math.round((t.conn.bytes / totalBytes) * 100) : 0;
+            return '<div style="margin-bottom:6px"><div style="display:flex;justify-content:space-between;font-size:.64rem"><span class="ag-fw-mono">' + esc(t.conn.src) + ' &rarr; ' + esc(t.conn.dst) + '</span><span style="color:var(--mut)">' + (t.conn.bytes > 1000000 ? (t.conn.bytes / 1000000).toFixed(1) + ' MB' : (t.conn.bytes / 1000).toFixed(0) + ' KB') + '</span></div><div class="ag-health-bar"><div class="ag-health-fill" style="width:' + pct + '%;background:#ffd600"></div></div></div>';
+          }).join('') +
+        '</div></div>' +
+      '</div>' +
+      '<div class="ag-panel">' +
+        '<div class="ag-panel-h"><span style="color:var(--acc)">FLOW AUDIT</span><span style="flex:1"></span>' +
+          '<button class="ag-btn ag-btn-ghost" id="ag-fw-graph" style="padding:3px 10px">PUSH FLAGGED TO GRAPH</button>' +
+          '<span id="ag-fw-graphmsg" style="color:var(--mut);font-size:.62rem;margin-left:8px"></span></div>' +
+        '<div class="ag-panel-b" style="overflow-x:auto"><table class="ag-tbl"><thead><tr><th>Source</th><th>Destination</th><th>Proto</th><th>Port</th><th>Port Risk</th><th>Policy</th><th>Matched Rule</th><th>Flags</th></tr></thead><tbody>' +
+          rows.map(function (r) {
+            return '<tr style="' + (r.flags.length ? 'background:rgba(255,145,0,.05)' : '') + '">' +
+              '<td class="ag-fw-mono" style="font-size:.62rem;color:' + (r.external ? '#ff1744' : 'var(--txt)') + '">' + esc(r.conn.src) + '</td>' +
+              '<td class="ag-fw-mono" style="font-size:.62rem">' + esc(r.conn.dst) + '</td>' +
+              '<td style="color:var(--acc)">' + esc(r.conn.proto) + '</td>' +
+              '<td class="ag-fw-mono">' + r.conn.port + '</td>' +
+              '<td><span class="ag-badge ' + fwSevCls(r.risk) + '">' + esc(r.risk) + '</span></td>' +
+              '<td><span class="ag-badge ' + (r.res.action === 'allow' ? 'ag-low' : 'ag-crit') + '">' + esc(r.res.action) + '</span></td>' +
+              '<td style="font-size:.62rem;color:var(--mut)">' + (r.res.matched ? '#' + r.res.rule.seq + ' ' + esc(r.res.rule.name) : 'implicit deny') + '</td>' +
+              '<td>' + (r.flags.length ? r.flags.map(function (f) { return '<span class="ag-badge ' + (f === 'BROAD' || f === 'EXT' ? 'ag-crit' : f === 'RISKY-PORT' ? 'ag-high' : 'ag-med') + '">' + f + '</span>'; }).join(' ') : '<span class="ag-badge ag-low">CLEAN</span>') + '</td>' +
+            '</tr>';
+          }).join('') +
+        '</tbody></table></div>' +
+      '</div>';
+
+    var graphBtn = c.querySelector('#ag-fw-graph');
+    if (graphBtn) graphBtn.onclick = function () {
+      var msg = c.querySelector('#ag-fw-graphmsg');
+      if (!flagged.length) { if (msg) msg.textContent = 'No flagged flows to push.'; return; }
+      var items = flagged.map(function (r) {
+        return { type: 'FINDING', name: 'Suspect flow ' + r.conn.src + ' -> ' + r.conn.dst + ':' + r.conn.port + ' (' + r.flags.join('/') + ')',
+          data: { src: r.conn.src, dst: r.conn.dst, port: r.conn.port, proto: r.conn.proto, policy: r.res.action, flags: r.flags.join(',') },
+          opts: { tags: ['aegis', 'firewall', 'flow'], severity: (r.external || r.broadOnly) ? 'high' : 'medium' } };
+      });
+      if (msg) msg.textContent = 'Pushing ' + items.length + ' flagged flow(s)...';
+      import('/js/graph-bridge.js?v=20260923c').then(function (gb) {
+        try { gb.sendToGraph('AEGIS', items, undefined, true); if (msg) msg.textContent = items.length + ' flow(s) sent to Security Graph.'; }
+        catch (_) { if (msg) msg.textContent = 'Graph unavailable.'; }
+      }).catch(function () { if (msg) msg.textContent = 'Graph unavailable.'; });
+    };
   }
 
   // ========== EXPLOIT DEVELOPMENT LAB ==========
