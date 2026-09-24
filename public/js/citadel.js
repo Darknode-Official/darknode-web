@@ -831,6 +831,185 @@ const THREAT_ACTORS = [
   {name:'FIN7 / Carbanak',nation:'Russia',sectors:['Retail','Hospitality','Financial','Restaurant'],ttps:['T1566','T1059.001','T1003','T1048'],tools:['Carbanak RAT','Cobalt Strike','Metasploit'],confidence:'Medium',relevance:'Financial sector targeting and Cobalt Strike usage'},
 ];
 
+// ========== MITRE ATT&CK TECHNIQUE LOOKUP ==========
+// Kill-chain tactic ordering (index used to sequence alerts into a story).
+const CT_TACTIC_ORDER = [
+  'Reconnaissance','Resource Development','Initial Access','Execution','Persistence',
+  'Privilege Escalation','Defense Evasion','Credential Access','Discovery','Lateral Movement',
+  'Collection','Command and Control','Exfiltration','Impact'
+];
+// Technique id -> {name, tactic}. Covers every mitre id present in ALERTS (verified against data).
+const CT_TECHNIQUES = {
+  'T1595.002':{name:'Active Scanning: Vulnerability Scanning',tactic:'Reconnaissance'},
+  'T1190':{name:'Exploit Public-Facing Application',tactic:'Initial Access'},
+  'T1566.002':{name:'Phishing: Spearphishing Link',tactic:'Initial Access'},
+  'T1078':{name:'Valid Accounts',tactic:'Initial Access'},
+  'T1078.004':{name:'Valid Accounts: Cloud Accounts',tactic:'Initial Access'},
+  'T1059.001':{name:'Command & Scripting Interpreter: PowerShell',tactic:'Execution'},
+  'T1610':{name:'Deploy Container',tactic:'Execution'},
+  'T1136.001':{name:'Create Account: Local Account',tactic:'Persistence'},
+  'T1098':{name:'Account Manipulation',tactic:'Persistence'},
+  'T1543.003':{name:'Create/Modify System Process: Windows Service',tactic:'Persistence'},
+  'T1053.005':{name:'Scheduled Task/Job: Scheduled Task',tactic:'Persistence'},
+  'T1070.001':{name:'Indicator Removal: Clear Windows Event Logs',tactic:'Defense Evasion'},
+  'T1110':{name:'Brute Force',tactic:'Credential Access'},
+  'T1110.001':{name:'Brute Force: Password Guessing',tactic:'Credential Access'},
+  'T1558.003':{name:'Steal/Forge Kerberos Tickets: Kerberoasting',tactic:'Credential Access'},
+  'T1003.001':{name:'OS Credential Dumping: LSASS Memory',tactic:'Credential Access'},
+  'T1046':{name:'Network Service Discovery',tactic:'Discovery'},
+  'T1021.002':{name:'Remote Services: SMB/Windows Admin Shares',tactic:'Lateral Movement'},
+  'T1550.002':{name:'Use Alternate Auth Material: Pass the Hash',tactic:'Lateral Movement'},
+  'T1039':{name:'Data from Network Shared Drive',tactic:'Collection'},
+  'T1530':{name:'Data from Cloud Storage',tactic:'Collection'},
+  'T1213.002':{name:'Data from Info Repositories: SharePoint',tactic:'Collection'},
+  'T1213.003':{name:'Data from Info Repositories: Code Repositories',tactic:'Collection'},
+  'T1071':{name:'Application Layer Protocol',tactic:'Command and Control'},
+  'T1071.001':{name:'Application Layer Protocol: Web Protocols',tactic:'Command and Control'},
+  'T1071.004':{name:'Application Layer Protocol: DNS',tactic:'Command and Control'},
+  'T1568.002':{name:'Dynamic Resolution: Domain Generation Algorithms',tactic:'Command and Control'},
+  'T1048':{name:'Exfiltration Over Alternative Protocol',tactic:'Exfiltration'},
+  'T1486':{name:'Data Encrypted for Impact',tactic:'Impact'}
+};
+function ctTechInfo(id) {
+  if (CT_TECHNIQUES[id]) return CT_TECHNIQUES[id];
+  // Fall back to the parent technique (e.g. T1071.099 -> T1071) so unknown sub-techniques still map.
+  var base = String(id || '').split('.')[0];
+  if (CT_TECHNIQUES[base]) return {name:CT_TECHNIQUES[base].name,tactic:CT_TECHNIQUES[base].tactic};
+  return {name:'Unmapped Technique',tactic:'Impact'};
+}
+function ctTacticIndex(tactic) {
+  var i = CT_TACTIC_ORDER.indexOf(tactic);
+  return i === -1 ? CT_TACTIC_ORDER.length : i;
+}
+
+// ========== DETECTION RULE TESTER ENGINE ==========
+// Decide whether a rule string is a plain regex or a key:value contains-match expression.
+function ctRuleIsKv(rule) {
+  var r = String(rule || '').trim();
+  if (!r || r.indexOf(':') === -1) return false;
+  // Every AND/OR-separated segment must look like  word:value  for this to be a key:value expression.
+  var segs = r.split(/\s+(?:AND|OR|and|or)\s+/);
+  return segs.every(function(s){ return /^[a-z0-9_]+\s*:\S/i.test(s.trim()); });
+}
+// Parse a key:value expression into {op:'AND'|'OR', terms:[{key,value}]}.
+function ctParseKv(rule) {
+  var r = String(rule || '').trim();
+  var op = /\bOR\b/i.test(r) && !/\bAND\b/i.test(r) ? 'OR' : 'AND';
+  var parts = r.split(/\s+(?:AND|OR|and|or)\s+/);
+  var terms = [];
+  parts.forEach(function(p) {
+    var idx = p.indexOf(':');
+    if (idx === -1) return;
+    var key = p.slice(0, idx).trim().toLowerCase();
+    var val = p.slice(idx + 1).trim();
+    if (key && val) terms.push({key:key, value:val});
+  });
+  return {op:op, terms:terms};
+}
+// Map a rule key onto an alert field value (also handles synonyms like description/host).
+function ctAlertFieldValue(alert, key) {
+  var map = {
+    srcip:alert.srcIp, src:alert.srcIp, source_ip:alert.srcIp,
+    dstip:alert.dstIp, dst:alert.dstIp, dest:alert.dstIp, destination:alert.dstIp,
+    id:alert.id, title:alert.title, description:alert.title, desc:alert.title, message:alert.title, msg:alert.title,
+    severity:alert.severity, sev:alert.severity, status:alert.status,
+    source:alert.source, sensor:alert.source, rule:alert.rule, mitre:alert.mitre, technique:alert.mitre,
+    analyst:alert.analyst, count:alert.count
+  };
+  if (Object.prototype.hasOwnProperty.call(map, key)) return map[key];
+  return undefined;
+}
+// Evaluate a parsed key:value rule against one alert. Unknown keys fall back to whole-record search.
+function ctKvMatchesAlert(parsed, alert) {
+  if (!parsed.terms.length) return false;
+  var whole = [alert.id,alert.title,alert.severity,alert.status,alert.source,alert.srcIp,alert.dstIp,alert.rule,alert.mitre,alert.analyst,alert.count].join(' ').toLowerCase();
+  var results = parsed.terms.map(function(t) {
+    var fv = ctAlertFieldValue(alert, t.key);
+    var hay = (fv === undefined || fv === null) ? whole : String(fv).toLowerCase();
+    return hay.indexOf(t.value.toLowerCase()) !== -1;
+  });
+  return parsed.op === 'OR' ? results.some(Boolean) : results.every(Boolean);
+}
+// Evaluate a parsed key:value rule against a raw log text line (value contains-match on the whole line).
+function ctKvMatchesText(parsed, text) {
+  if (!parsed.terms.length) return false;
+  var hay = String(text || '').toLowerCase();
+  var results = parsed.terms.map(function(t) { return hay.indexOf(t.value.toLowerCase()) !== -1; });
+  return parsed.op === 'OR' ? results.some(Boolean) : results.every(Boolean);
+}
+// Compile a regex safely; returns null on invalid pattern.
+function ctSafeRegex(rule) {
+  try { return new RegExp(rule, 'gi'); } catch (e) { return null; }
+}
+// Build highlighted HTML for text, wrapping the given [start,end) ranges in a mark span.
+function ctHighlight(text, ranges) {
+  if (!ranges.length) return esc(text);
+  ranges = ranges.slice().sort(function(a,b){return a[0]-b[0];});
+  // Merge overlaps.
+  var merged = [];
+  ranges.forEach(function(r) {
+    if (merged.length && r[0] <= merged[merged.length-1][1]) {
+      merged[merged.length-1][1] = Math.max(merged[merged.length-1][1], r[1]);
+    } else merged.push([r[0], r[1]]);
+  });
+  var out = '', pos = 0;
+  merged.forEach(function(r) {
+    if (r[0] > pos) out += esc(text.slice(pos, r[0]));
+    out += '<span style="background:rgba(0,229,255,.25);color:#00e5ff;border-radius:2px;padding:0 1px">' + esc(text.slice(r[0], r[1])) + '</span>';
+    pos = r[1];
+  });
+  if (pos < text.length) out += esc(text.slice(pos));
+  return out;
+}
+
+// ========== ALERT CORRELATION (union-find over shared host/IP within a time window) ==========
+function ctBuildIncidents(alerts, windowMs) {
+  var n = alerts.length;
+  var parent = alerts.map(function(_, i){ return i; });
+  function find(x){ while (parent[x] !== x) { parent[x] = parent[parent[x]]; x = parent[x]; } return x; }
+  function union(a, b){ var ra = find(a), rb = find(b); if (ra !== rb) parent[ra] = rb; }
+  function hostsOf(a){ return [a.srcIp, a.dstIp].filter(Boolean); }
+  for (var i = 0; i < n; i++) {
+    for (var j = i + 1; j < n; j++) {
+      var hi = hostsOf(alerts[i]), hj = hostsOf(alerts[j]);
+      var shared = hi.some(function(h){ return hj.indexOf(h) !== -1; });
+      if (!shared) continue;
+      var dt = Math.abs(new Date(alerts[i].timestamp) - new Date(alerts[j].timestamp));
+      if (dt <= windowMs) union(i, j);
+    }
+  }
+  var groups = {};
+  for (var k = 0; k < n; k++) {
+    var root = find(k);
+    (groups[root] = groups[root] || []).push(alerts[k]);
+  }
+  return Object.keys(groups).map(function(root) {
+    var members = groups[root].slice().sort(function(a,b){ return new Date(a.timestamp) - new Date(b.timestamp); });
+    // Primary host = the host value appearing across the most member alerts.
+    var hostCount = {};
+    members.forEach(function(a){ [a.srcIp, a.dstIp].filter(Boolean).forEach(function(h){ hostCount[h] = (hostCount[h]||0)+1; }); });
+    var hosts = Object.keys(hostCount).sort(function(a,b){ return hostCount[b]-hostCount[a]; });
+    var sevRoll = {Critical:0,High:0,Medium:0,Low:0};
+    members.forEach(function(a){ if (sevRoll[a.severity] !== undefined) sevRoll[a.severity]++; });
+    var peak = sevRoll.Critical ? 'Critical' : sevRoll.High ? 'High' : sevRoll.Medium ? 'Medium' : 'Low';
+    // Kill-chain ordering: by tactic index, then time.
+    var chain = members.slice().sort(function(a,b) {
+      var ta = ctTacticIndex(ctTechInfo(a.mitre).tactic), tb = ctTacticIndex(ctTechInfo(b.mitre).tactic);
+      if (ta !== tb) return ta - tb;
+      return new Date(a.timestamp) - new Date(b.timestamp);
+    });
+    var tacticSeq = [];
+    chain.forEach(function(a){ var t = ctTechInfo(a.mitre).tactic; if (tacticSeq[tacticSeq.length-1] !== t) tacticSeq.push(t); });
+    var start = new Date(members[0].timestamp), end = new Date(members[members.length-1].timestamp);
+    var spanMin = Math.round((end - start) / 60000);
+    return {hosts:hosts, primary:hosts[0], members:members, chain:chain, sevRoll:sevRoll, peak:peak, tacticSeq:tacticSeq, start:start, end:end, spanMin:spanMin};
+  }).sort(function(a,b){
+    var sw = {Critical:4,High:3,Medium:2,Low:1};
+    if (b.members.length !== a.members.length) return b.members.length - a.members.length;
+    return sw[b.peak] - sw[a.peak];
+  });
+}
+
 // ========== SECURITY GRAPH EXPORT ==========
 // CITADEL's alert queue is built-in demo data (no SIEM connection), so every entity is tagged simulated.
 var CT_GRAPH_SEV = {Critical:'critical',High:'high',Medium:'medium',Low:'low',Info:'info'};
@@ -877,6 +1056,14 @@ function ctSendAlertsToGraph(btn, alerts) {
   }).catch(function() { btn.textContent = 'Security Graph unavailable'; btn.disabled = false; });
 }
 
+// ========== TIMERS ==========
+// All CITADEL intervals live here so cleanupCitadel() and each re-render can clear them.
+function ctClearCitadelTimers() {
+  if (!window._citadelTimers) { window._citadelTimers = []; return; }
+  window._citadelTimers.forEach(function(id){ clearInterval(id); });
+  window._citadelTimers = [];
+}
+
 // ========== MAIN RENDER ==========
 export function renderCitadel(main) {
   var activeTab = 'dashboard';
@@ -888,6 +1075,13 @@ export function renderCitadel(main) {
   var selectedRule = null;
   var selectedSigma = null;
   var correlationTest = null;
+  var matrixSelectedTech = null;
+  var selectedIncident = 0;
+  var ruleTester = {
+    log:'Sep 21 08:15:15 auth-server sshd[24187]: Failed password for invalid user postgres from 92.63.197.48 port 49821 ssh2',
+    rule:'srcip:92.63.197 AND description:Failed password',
+    result:null
+  };
 
   function getAllLogs() {
     var all = [];
@@ -902,6 +1096,7 @@ export function renderCitadel(main) {
   }
 
   function render() {
+    ctClearCitadelTimers();
     main.innerHTML =
       '<style>' +
       '.ct-wrap{font-family:"JetBrains Mono",ui-monospace,monospace;position:relative}' +
@@ -1060,7 +1255,7 @@ export function renderCitadel(main) {
           '<span class="ct-sub" style="color:var(--acc)">SOC OPERATIONAL</span>' +
         '</div>' +
         '<div class="ct-tabs">' +
-          ['dashboard:SOC Dashboard','logs:Log Explorer','correlation:Correlation Engine','detection:Detection Rules','triage:Alert Triage','hunt:Threat Hunt','compliance:Compliance','metrics:Metrics'].map(function(t) {
+          ['dashboard:SOC Dashboard','logs:Log Explorer','correlation:Correlation Engine','detection:Detection Rules','triage:Alert Triage','summary:Triage Summary','incidents:Incidents','attmatrix:ATT&CK Matrix','ruletester:Rule Tester','hunt:Threat Hunt','compliance:Compliance','metrics:Metrics'].map(function(t) {
             var p = t.split(':');
             return '<button class="ct-tab' + (activeTab === p[0] ? ' on' : '') + '" data-t="' + p[0] + '">' + p[1] + '</button>';
           }).join('') +
@@ -1079,6 +1274,10 @@ export function renderCitadel(main) {
     else if (activeTab === 'correlation') renderCorrelation(content);
     else if (activeTab === 'detection') renderDetection(content);
     else if (activeTab === 'triage') renderTriage(content);
+    else if (activeTab === 'summary') renderTriageSummary(content);
+    else if (activeTab === 'incidents') renderIncidents(content);
+    else if (activeTab === 'attmatrix') renderAttackMatrix(content);
+    else if (activeTab === 'ruletester') renderRuleTester(content);
     else if (activeTab === 'hunt') renderHunt(content);
     else if (activeTab === 'compliance') renderComplianceTab(content);
     else if (activeTab === 'metrics') renderMetrics(content);
@@ -3057,7 +3256,371 @@ export function renderCitadel(main) {
       '</div>';
   }
 
+  // ========== TRIAGE SUMMARY ==========
+  function renderTriageSummary(c) {
+    var total = ALERTS.length;
+    var sevColor = {Critical:'#ff1744',High:'#ff9100',Medium:'#ffd600',Low:'#00e676'};
+    var statusColor = {New:'#2196f3',Investigating:'#ff9100',Escalated:'#ff1744',Resolved:'#00e676'};
+    var sev = {Critical:0,High:0,Medium:0,Low:0};
+    var status = {New:0,Investigating:0,Escalated:0,Resolved:0};
+    var srcCount = {}, dstCount = {};
+    ALERTS.forEach(function(a) {
+      if (sev[a.severity] !== undefined) sev[a.severity]++;
+      if (status[a.status] !== undefined) status[a.status]++;
+      srcCount[a.source] = (srcCount[a.source] || 0) + 1;
+      if (a.dstIp) dstCount[a.dstIp] = (dstCount[a.dstIp] || 0) + 1;
+    });
+    var openAlerts = ALERTS.filter(function(a){ return a.status !== 'Resolved'; });
+    var oldest = openAlerts.slice().sort(function(a,b){ return new Date(a.timestamp) - new Date(b.timestamp); })[0];
+    var topDst = Object.keys(dstCount).sort(function(a,b){ return dstCount[b]-dstCount[a]; }).slice(0,6);
+    var maxDst = topDst.length ? dstCount[topDst[0]] : 1;
+    var sources = Object.keys(srcCount).sort(function(a,b){ return srcCount[b]-srcCount[a]; });
+    var maxSrc = sources.length ? srcCount[sources[0]] : 1;
+
+    function ctAgeStr(ms) {
+      if (ms < 0) ms = 0;
+      var s = Math.floor(ms/1000), d = Math.floor(s/86400), h = Math.floor((s%86400)/3600), m = Math.floor((s%3600)/60), sec = s%60;
+      if (d) return d + 'd ' + h + 'h ' + m + 'm';
+      if (h) return h + 'h ' + m + 'm ' + sec + 's';
+      if (m) return m + 'm ' + sec + 's';
+      return sec + 's';
+    }
+    function meter(label, count, denom, color) {
+      var pct = denom ? Math.round(count/denom*100) : 0;
+      return '<div style="margin-bottom:7px">' +
+        '<div style="display:flex;justify-content:space-between;font-size:.62rem;margin-bottom:3px"><span style="color:var(--txt)">' + esc(label) + '</span><span style="font-variant-numeric:tabular-nums;color:var(--mut)">' + count + ' (' + pct + '%)</span></div>' +
+        '<div class="ct-gauge"><div class="ct-gauge-fill" style="width:' + pct + '%;background:' + color + '"></div></div>' +
+      '</div>';
+    }
+
+    c.innerHTML =
+      '<div class="ct-grid4" style="margin-bottom:10px">' +
+        '<div class="ct-stat"><div class="ct-stat-v">' + total + '</div><div class="ct-stat-l">Total Alerts</div></div>' +
+        '<div class="ct-stat"><div class="ct-stat-v" style="color:#ff1744">' + sev.Critical + '</div><div class="ct-stat-l">Critical</div></div>' +
+        '<div class="ct-stat"><div class="ct-stat-v" style="color:#2196f3">' + openAlerts.length + '</div><div class="ct-stat-l">Open (Unresolved)</div></div>' +
+        '<div class="ct-stat"><div class="ct-stat-v" style="color:#00e676">' + status.Resolved + '</div><div class="ct-stat-l">Resolved</div></div>' +
+        '<div class="ct-stat"><div class="ct-stat-v" style="color:#ff9100" id="ct-mttr-age">' + (oldest ? ctAgeStr(Date.now() - new Date(oldest.timestamp)) : '--') + '</div><div class="ct-stat-l">Oldest Open Age</div></div>' +
+        '<div class="ct-stat"><div class="ct-stat-v">' + Object.keys(srcCount).length + '</div><div class="ct-stat-l">Data Sources</div></div>' +
+      '</div>' +
+
+      '<div class="ct-grid2" style="margin-bottom:10px">' +
+        '<div class="ct-panel"><div class="ct-panel-h">By Severity</div><div class="ct-panel-b">' +
+          ['Critical','High','Medium','Low'].map(function(k){ return meter(k, sev[k], total, sevColor[k]); }).join('') +
+        '</div></div>' +
+        '<div class="ct-panel"><div class="ct-panel-h">By Status</div><div class="ct-panel-b">' +
+          ['New','Investigating','Escalated','Resolved'].map(function(k){ return meter(k, status[k], total, statusColor[k]); }).join('') +
+        '</div></div>' +
+      '</div>' +
+
+      '<div class="ct-grid2">' +
+        '<div class="ct-panel"><div class="ct-panel-h">By Source</div><div class="ct-panel-b">' +
+          sources.map(function(s){ return meter(s, srcCount[s], maxSrc, 'var(--acc)'); }).join('') +
+        '</div></div>' +
+        '<div class="ct-panel"><div class="ct-panel-h">Top Targeted Hosts (Destinations)</div><div class="ct-panel-b">' +
+          (topDst.length ? topDst.map(function(h){ return meter(h, dstCount[h], maxDst, '#ff9100'); }).join('') : '<div class="ct-empty">No destination hosts recorded</div>') +
+          (oldest ?
+            '<hr class="ct-divider">' +
+            '<div style="font-size:.62rem;color:var(--mut);text-transform:uppercase;margin-bottom:4px">Oldest Open Alert (MTTR clock)</div>' +
+            '<div style="font-size:.68rem">' + esc(oldest.id) + ' &middot; ' + esc(oldest.title) + '</div>' +
+            '<div style="font-size:.6rem;color:var(--mut);margin-top:2px">Opened ' + new Date(oldest.timestamp).toLocaleString('en-US',{hour12:false}) + ' &middot; open for <span id="ct-mttr-age2" style="color:#ff9100">' + ctAgeStr(Date.now() - new Date(oldest.timestamp)) + '</span></div>'
+          : '') +
+        '</div></div>' +
+      '</div>';
+
+    if (oldest) {
+      var openTs = new Date(oldest.timestamp).getTime();
+      var tick = function() {
+        var s = ctAgeStr(Date.now() - openTs);
+        var e1 = c.querySelector('#ct-mttr-age'); if (e1) e1.textContent = s;
+        var e2 = c.querySelector('#ct-mttr-age2'); if (e2) e2.textContent = s;
+      };
+      window._citadelTimers.push(setInterval(tick, 1000));
+    }
+  }
+
+  // ========== ALERT CORRELATION -> INCIDENTS ==========
+  function renderIncidents(c) {
+    var incidents = ctBuildIncidents(ALERTS, 60 * 60 * 1000);
+    var multi = incidents.filter(function(i){ return i.members.length >= 2; });
+    var singles = incidents.length - multi.length;
+    if (selectedIncident >= incidents.length) selectedIncident = 0;
+    var inc = incidents[selectedIncident];
+    var sevBadge = {Critical:'ct-crit',High:'ct-high',Medium:'ct-med',Low:'ct-low'};
+
+    c.innerHTML =
+      '<div class="ct-filter-row" style="margin-bottom:8px">' +
+        '<span style="color:var(--mut);font-size:.65rem">' + ALERTS.length + ' alerts correlated into ' + incidents.length + ' incidents (' + multi.length + ' multi-alert, ' + singles + ' standalone) &middot; grouped by shared host/IP within 60m</span>' +
+        '<span style="flex:1"></span>' +
+        (inc ? '<button class="ct-btn ct-btn-sm" id="ct-inc-graph" title="Demo alert data is tagged simulated">Send incident to Security Graph</button>' : '') +
+      '</div>' +
+      '<div class="ct-grid2">' +
+        '<div class="ct-panel">' +
+          '<div class="ct-panel-h">Correlated Incidents</div>' +
+          '<div class="ct-panel-b" style="max-height:560px;overflow-y:auto">' +
+            incidents.map(function(x, i) {
+              return '<div class="ct-rule-card' + (i === selectedIncident ? ' selected' : '') + '" data-inc="' + i + '" style="margin-bottom:6px">' +
+                '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">' +
+                  '<span style="font-size:.72rem;font-weight:600;color:var(--acc)">' + esc(x.primary || 'unknown') + '</span>' +
+                  '<span class="ct-badge ' + (sevBadge[x.peak] || 'ct-low') + '">' + esc(x.peak) + '</span>' +
+                '</div>' +
+                '<div style="font-size:.6rem;color:var(--mut);margin-bottom:3px">' + x.members.length + ' alerts &middot; ' + x.tacticSeq.length + ' tactics &middot; ' + x.spanMin + ' min span</div>' +
+                '<div style="font-size:.58rem;color:var(--txt)">' + esc(x.tacticSeq.join(' -> ')) + '</div>' +
+              '</div>';
+            }).join('') +
+          '</div>' +
+        '</div>' +
+        '<div>' +
+          (inc ?
+            '<div class="ct-panel">' +
+              '<div class="ct-panel-h">Incident: ' + esc(inc.primary || 'unknown') + '</div>' +
+              '<div class="ct-panel-b">' +
+                '<div style="font-size:.72rem;font-weight:600;margin-bottom:6px;line-height:1.5">' +
+                  esc((inc.primary || 'Unknown host') + ' targeted across ' + inc.members.length + ' alert' + (inc.members.length === 1 ? '' : 's') + ': ' + inc.tacticSeq.join(' -> ') + '. Spanned ' + inc.spanMin + ' minutes, peak severity ' + inc.peak + '.') +
+                '</div>' +
+                '<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px">' +
+                  inc.hosts.map(function(h){ return '<span class="ct-tag">' + esc(h) + '</span>'; }).join('') +
+                '</div>' +
+                '<div class="ct-grid4" style="margin-bottom:10px">' +
+                  ['Critical','High','Medium','Low'].map(function(k){
+                    return '<div class="ct-stat"><div class="ct-stat-v" style="color:' + ({Critical:'#ff1744',High:'#ff9100',Medium:'#ffd600',Low:'#00e676'}[k]) + '">' + inc.sevRoll[k] + '</div><div class="ct-stat-l">' + k + '</div></div>';
+                  }).join('') +
+                '</div>' +
+                '<div style="font-size:.62rem;color:var(--mut);text-transform:uppercase;margin-bottom:6px">Kill-Chain Sequence</div>' +
+                '<div class="ct-timeline">' +
+                  inc.chain.map(function(a) {
+                    var info = ctTechInfo(a.mitre);
+                    return '<div class="ct-tl-item">' +
+                      '<div class="ct-tl-time">' + new Date(a.timestamp).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}) + ' &middot; ' + esc(info.tactic) + '</div>' +
+                      '<div style="font-weight:600">' + esc(a.title) + '</div>' +
+                      '<div style="font-size:.58rem;color:var(--mut)">' + esc(a.id) + ' &middot; <span style="color:var(--acc)">' + esc(a.mitre) + '</span> ' + esc(info.name) + ' &middot; ' +
+                        '<span class="ct-badge ' + (sevBadge[a.severity] || 'ct-low') + '" style="font-size:.5rem">' + esc(a.severity) + '</span></div>' +
+                    '</div>';
+                  }).join('') +
+                '</div>' +
+              '</div>' +
+            '</div>'
+          :
+            '<div class="ct-panel"><div class="ct-panel-b ct-empty">No incidents to display</div></div>'
+          ) +
+        '</div>' +
+      '</div>';
+
+    c.querySelectorAll('[data-inc]').forEach(function(card) {
+      card.onclick = function() { selectedIncident = parseInt(card.dataset.inc, 10); renderIncidents(c); };
+    });
+    var incGraphBtn = c.querySelector('#ct-inc-graph');
+    if (incGraphBtn && inc) incGraphBtn.onclick = function() { ctSendAlertsToGraph(incGraphBtn, inc.members); };
+  }
+
+  // ========== MITRE ATT&CK MATRIX ==========
+  function renderAttackMatrix(c) {
+    var byTech = {};
+    ALERTS.forEach(function(a){ (byTech[a.mitre] = byTech[a.mitre] || []).push(a); });
+    var techIds = Object.keys(byTech);
+    var byTactic = {};
+    techIds.forEach(function(id) {
+      var t = ctTechInfo(id).tactic;
+      (byTactic[t] = byTactic[t] || []).push(id);
+    });
+    var cols = CT_TACTIC_ORDER.filter(function(t){ return byTactic[t]; });
+    var maxCount = Math.max.apply(null, techIds.map(function(id){ return byTech[id].length; }).concat([1]));
+    var totalMapped = techIds.reduce(function(s,id){ return s + byTech[id].length; }, 0);
+    var selAlerts = matrixSelectedTech && byTech[matrixSelectedTech] ? byTech[matrixSelectedTech] : null;
+    var sevBadge = {Critical:'ct-crit',High:'ct-high',Medium:'ct-med',Low:'ct-low'};
+
+    c.innerHTML =
+      '<div class="ct-grid4" style="margin-bottom:10px">' +
+        '<div class="ct-stat"><div class="ct-stat-v">' + techIds.length + '</div><div class="ct-stat-l">Techniques Observed</div></div>' +
+        '<div class="ct-stat"><div class="ct-stat-v">' + cols.length + ' / ' + CT_TACTIC_ORDER.length + '</div><div class="ct-stat-l">Tactics Covered</div></div>' +
+        '<div class="ct-stat"><div class="ct-stat-v">' + totalMapped + '</div><div class="ct-stat-l">Alerts Mapped</div></div>' +
+        '<div class="ct-stat"><div class="ct-stat-v" style="color:#ff1744">' + (function(){ var top=techIds.slice().sort(function(a,b){return byTech[b].length-byTech[a].length;})[0]; return top?esc(top):'--'; })() + '</div><div class="ct-stat-l">Hottest Technique</div></div>' +
+      '</div>' +
+      '<div class="ct-panel">' +
+        '<div class="ct-panel-h">ATT&CK Coverage Heatmap &middot; intensity by alert volume &middot; click a technique to list its alerts</div>' +
+        '<div class="ct-panel-b" style="overflow-x:auto">' +
+          '<div class="ct-mitre-matrix">' +
+            cols.map(function(tactic) {
+              var ids = byTactic[tactic].slice().sort(function(a,b){ return byTech[b].length - byTech[a].length; });
+              return '<div class="ct-mitre-col">' +
+                '<div class="ct-mitre-header" title="' + esc(tactic) + '">' + esc(tactic) + '</div>' +
+                ids.map(function(id) {
+                  var cnt = byTech[id].length;
+                  var intensity = 0.14 + 0.66 * (cnt / maxCount);
+                  var isSel = matrixSelectedTech === id;
+                  return '<div class="ct-mitre-tech" data-tech="' + esc(id) + '" title="' + esc(id + ' ' + ctTechInfo(id).name + ' (' + cnt + ' alert' + (cnt===1?'':'s') + ')') + '" ' +
+                    'style="background:rgba(255,23,68,' + intensity.toFixed(2) + ');border-color:' + (isSel ? '#00e5ff' : 'rgba(255,23,68,.4)') + ';color:#fff' + (isSel ? ';box-shadow:0 0 8px rgba(0,229,255,.6)' : '') + '">' +
+                    '<div style="font-weight:700">' + esc(id) + '</div>' +
+                    '<div style="font-size:.4rem">x' + cnt + '</div>' +
+                  '</div>';
+                }).join('') +
+              '</div>';
+            }).join('') +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+      (selAlerts ?
+        '<div class="ct-panel">' +
+          '<div class="ct-panel-h">' + esc(matrixSelectedTech) + ' &middot; ' + esc(ctTechInfo(matrixSelectedTech).name) + ' &middot; ' + esc(ctTechInfo(matrixSelectedTech).tactic) + ' &middot; ' + selAlerts.length + ' alert' + (selAlerts.length===1?'':'s') + '</div>' +
+          '<div class="ct-panel-b">' +
+            '<table class="ct-tbl"><thead><tr><th>ID</th><th>Alert</th><th>Severity</th><th>Status</th><th>Source</th><th>Src IP</th><th>Time</th></tr></thead><tbody>' +
+              selAlerts.map(function(a) {
+                return '<tr><td style="color:var(--mut)">' + esc(a.id) + '</td>' +
+                  '<td>' + esc(a.title) + '</td>' +
+                  '<td><span class="ct-badge ' + (sevBadge[a.severity]||'ct-low') + '">' + esc(a.severity) + '</span></td>' +
+                  '<td>' + esc(a.status) + '</td>' +
+                  '<td>' + esc(a.source) + '</td>' +
+                  '<td>' + esc(a.srcIp || 'N/A') + '</td>' +
+                  '<td style="color:var(--mut)">' + new Date(a.timestamp).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:false}) + '</td></tr>';
+              }).join('') +
+            '</tbody></table>' +
+          '</div>' +
+        '</div>'
+      :
+        '<div class="ct-panel"><div class="ct-panel-b ct-empty">Select a technique cell above to list the alerts that hit it</div></div>'
+      );
+
+    c.querySelectorAll('[data-tech]').forEach(function(cell) {
+      cell.onclick = function() {
+        matrixSelectedTech = cell.dataset.tech === matrixSelectedTech ? null : cell.dataset.tech;
+        renderAttackMatrix(c);
+      };
+    });
+  }
+
+  // ========== DETECTION RULE TESTER ==========
+  function runRuleTest() {
+    var rule = ruleTester.rule || '', text = ruleTester.log || '';
+    var isKv = ctRuleIsKv(rule);
+    var ranges = [], parsed = null, rxHi = null, rxTest = null, invalid = false, logMatched = false;
+    if (isKv) {
+      parsed = ctParseKv(rule);
+      logMatched = ctKvMatchesText(parsed, text);
+      var lo = text.toLowerCase();
+      parsed.terms.forEach(function(t) {
+        var v = t.value.toLowerCase(), from = 0, idx;
+        while (v && (idx = lo.indexOf(v, from)) !== -1) { ranges.push([idx, idx + v.length]); from = idx + v.length; }
+      });
+    } else {
+      rxHi = ctSafeRegex(rule);
+      try { rxTest = new RegExp(rule, 'i'); } catch (e) { rxTest = null; }
+      invalid = !rxHi || !rxTest;
+      if (!invalid) {
+        var m; rxHi.lastIndex = 0;
+        while ((m = rxHi.exec(text)) !== null) {
+          if (m[0] === '') { rxHi.lastIndex++; continue; }
+          ranges.push([m.index, m.index + m[0].length]);
+          logMatched = true;
+        }
+      }
+    }
+    var firedAlerts = invalid ? [] : ALERTS.filter(function(a) {
+      if (isKv) return ctKvMatchesAlert(parsed, a);
+      return rxTest.test([a.id,a.title,a.severity,a.status,a.source,a.srcIp,a.dstIp,a.rule,a.mitre,a.analyst].join(' '));
+    });
+    var firedLogs = invalid ? [] : getAllLogs().filter(function(l) {
+      if (isKv) return ctKvMatchesText(parsed, l.raw);
+      return rxTest.test(l.raw);
+    });
+    return {isKv:isKv, invalid:invalid, logMatched:logMatched, ranges:ranges, parsed:parsed, firedAlerts:firedAlerts, firedLogs:firedLogs};
+  }
+
+  function renderRuleTester(c) {
+    var res = runRuleTest();
+    var modeLabel = res.invalid ? 'Invalid regex' : (res.isKv ? 'Key:Value contains-match' : 'Regular expression');
+    var sevBadge = {Critical:'ct-crit',High:'ct-high',Medium:'ct-med',Low:'ct-low'};
+
+    c.innerHTML =
+      '<div class="ct-grid2">' +
+        '<div class="ct-panel">' +
+          '<div class="ct-panel-h">Test Input</div>' +
+          '<div class="ct-panel-b">' +
+            '<div style="font-size:.62rem;color:var(--mut);text-transform:uppercase;margin-bottom:4px">Sample Log Line</div>' +
+            '<textarea class="ct-textarea" id="ct-rt-log" style="min-height:70px">' + esc(ruleTester.log) + '</textarea>' +
+            '<div style="font-size:.62rem;color:var(--mut);text-transform:uppercase;margin:10px 0 4px">Detection Rule &middot; plain regex OR key:value with AND / OR</div>' +
+            '<input class="ct-inp" id="ct-rt-rule" value="' + esc(ruleTester.rule) + '">' +
+            '<div style="font-size:.55rem;color:var(--mut);margin-top:4px">Examples: <code>srcip:185.220 AND description:brute</code> &nbsp; or &nbsp; <code>Failed password for (invalid user )?\\w+ from [0-9.]+</code></div>' +
+            '<div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">' +
+              '<button class="ct-btn ct-btn-sm" id="ct-rt-run">Run Test</button>' +
+              '<button class="ct-btn ct-btn-sm ct-btn-ghost" data-rt-preset="brute">Preset: SSH Brute</button>' +
+              '<button class="ct-btn ct-btn-sm ct-btn-ghost" data-rt-preset="c2">Preset: C2 Regex</button>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="ct-panel">' +
+          '<div class="ct-panel-h">Result</div>' +
+          '<div class="ct-panel-b">' +
+            '<div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;flex-wrap:wrap">' +
+              '<span class="ct-badge ' + (res.invalid ? 'ct-crit' : res.logMatched ? 'ct-low' : 'ct-med') + '">' + (res.invalid ? 'INVALID' : res.logMatched ? 'MATCH' : 'NO MATCH') + '</span>' +
+              '<span class="ct-tag">Mode: ' + esc(modeLabel) + '</span>' +
+              (res.isKv && res.parsed ? '<span class="ct-tag">' + res.parsed.terms.length + ' term(s), ' + esc(res.parsed.op) + '</span>' : '') +
+            '</div>' +
+            '<div style="font-size:.62rem;color:var(--mut);text-transform:uppercase;margin-bottom:4px">Sample Line (matches highlighted)</div>' +
+            '<div class="ct-code-block">' + (res.invalid ? esc(ruleTester.log) : ctHighlight(ruleTester.log, res.ranges)) + '</div>' +
+            (res.invalid ? '<div style="font-size:.62rem;color:#ff1744;margin-top:6px">Rule is not a valid regular expression. Fix the pattern or use a key:value expression.</div>' : '') +
+            '<div class="ct-grid2" style="margin-top:10px">' +
+              '<div class="ct-stat"><div class="ct-stat-v" style="color:#ff9100">' + res.firedAlerts.length + '</div><div class="ct-stat-l">Alerts Fired</div></div>' +
+              '<div class="ct-stat"><div class="ct-stat-v" style="color:var(--acc)">' + res.firedLogs.length + '</div><div class="ct-stat-l">Log Events Fired</div></div>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+
+      '<div class="ct-panel">' +
+        '<div class="ct-panel-h">Alerts This Rule Would Fire On (' + res.firedAlerts.length + ')</div>' +
+        '<div class="ct-panel-b">' +
+          (res.firedAlerts.length ?
+            '<table class="ct-tbl"><thead><tr><th>ID</th><th>Alert</th><th>Severity</th><th>Src IP</th><th>MITRE</th></tr></thead><tbody>' +
+            res.firedAlerts.map(function(a) {
+              return '<tr><td style="color:var(--mut)">' + esc(a.id) + '</td><td>' + esc(a.title) + '</td>' +
+                '<td><span class="ct-badge ' + (sevBadge[a.severity]||'ct-low') + '">' + esc(a.severity) + '</span></td>' +
+                '<td>' + esc(a.srcIp || 'N/A') + '</td><td style="color:var(--acc)">' + esc(a.mitre) + '</td></tr>';
+            }).join('') + '</tbody></table>'
+          : '<div class="ct-empty">No alerts match this rule</div>') +
+        '</div>' +
+      '</div>' +
+
+      '<div class="ct-panel">' +
+        '<div class="ct-panel-h">Log Events This Rule Would Fire On (' + res.firedLogs.length + ', showing up to 15)</div>' +
+        '<div class="ct-panel-b" style="max-height:320px;overflow-y:auto">' +
+          (res.firedLogs.length ?
+            res.firedLogs.slice(0,15).map(function(l) {
+              return '<div class="ct-log-line" style="cursor:default">' +
+                '<span class="ct-log-ts">' + new Date(l.ts).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}) + '</span>' +
+                '<span class="ct-log-src">' + esc(l.source) + '</span>' +
+                '<span class="ct-log-msg">' + (res.isKv ? esc(l.raw) : ctHighlight(l.raw, (function(){ var rr=[]; var rx=ctSafeRegex(ruleTester.rule); if(rx){var m;rx.lastIndex=0;while((m=rx.exec(l.raw))!==null){if(m[0]===''){rx.lastIndex++;continue;}rr.push([m.index,m.index+m[0].length]);}} return rr; })())) + '</span>' +
+              '</div>';
+            }).join('')
+          : '<div class="ct-empty">No log events match this rule</div>') +
+        '</div>' +
+      '</div>';
+
+    var logEl = c.querySelector('#ct-rt-log');
+    var ruleEl = c.querySelector('#ct-rt-rule');
+    logEl.oninput = function(){ ruleTester.log = logEl.value; };
+    ruleEl.oninput = function(){ ruleTester.rule = ruleEl.value; };
+    c.querySelector('#ct-rt-run').onclick = function() {
+      ruleTester.log = logEl.value; ruleTester.rule = ruleEl.value; renderRuleTester(c);
+    };
+    c.querySelectorAll('[data-rt-preset]').forEach(function(btn) {
+      btn.onclick = function() {
+        if (btn.dataset.rtPreset === 'brute') {
+          ruleTester.log = 'Sep 21 08:15:15 auth-server sshd[24187]: Failed password for invalid user postgres from 92.63.197.48 port 49821 ssh2';
+          ruleTester.rule = 'srcip:92.63.197 AND description:Failed password';
+        } else {
+          ruleTester.log = 'named[2048]: client 10.0.2.100#43212 (x8k3jf2.evil-c2.xyz): query: x8k3jf2.evil-c2.xyz IN A + (10.0.1.53)';
+          ruleTester.rule = '\\w+\\.evil-c2\\.xyz';
+        }
+        renderRuleTester(c);
+      };
+    });
+  }
+
   render();
 }
 
-export function cleanupCitadel() {}
+export function cleanupCitadel() {
+  if (window._citadelTimers) {
+    window._citadelTimers.forEach(function(id){ clearInterval(id); });
+  }
+  window._citadelTimers = [];
+}

@@ -355,6 +355,116 @@ function _orNationFlag(n) {
 }
 
 // ============================================================================
+// ATT&CK TECHNIQUE LOOKUP (name + tactic for the ids present in the library)
+// ============================================================================
+var OR_TECH_INFO = {
+  T1001: { name: 'Data Obfuscation', tactic: 'Command and Control' },
+  T1003: { name: 'OS Credential Dumping', tactic: 'Credential Access' },
+  T1005: { name: 'Data from Local System', tactic: 'Collection' },
+  T1014: { name: 'Rootkit', tactic: 'Defense Evasion' },
+  T1021: { name: 'Remote Services', tactic: 'Lateral Movement' },
+  T1027: { name: 'Obfuscated Files or Information', tactic: 'Defense Evasion' },
+  T1041: { name: 'Exfiltration Over C2 Channel', tactic: 'Exfiltration' },
+  T1046: { name: 'Network Service Discovery', tactic: 'Discovery' },
+  T1048: { name: 'Exfiltration Over Alternative Protocol', tactic: 'Exfiltration' },
+  T1053: { name: 'Scheduled Task/Job', tactic: 'Execution' },
+  T1055: { name: 'Process Injection', tactic: 'Defense Evasion' },
+  T1056: { name: 'Input Capture', tactic: 'Credential Access' },
+  T1059: { name: 'Command and Scripting Interpreter', tactic: 'Execution' },
+  T1071: { name: 'Application Layer Protocol', tactic: 'Command and Control' },
+  T1078: { name: 'Valid Accounts', tactic: 'Initial Access' },
+  T1098: { name: 'Account Manipulation', tactic: 'Persistence' },
+  T1105: { name: 'Ingress Tool Transfer', tactic: 'Command and Control' },
+  T1114: { name: 'Email Collection', tactic: 'Collection' },
+  T1132: { name: 'Data Encoding', tactic: 'Command and Control' },
+  T1189: { name: 'Drive-by Compromise', tactic: 'Initial Access' },
+  T1190: { name: 'Exploit Public-Facing Application', tactic: 'Initial Access' },
+  T1195: { name: 'Supply Chain Compromise', tactic: 'Initial Access' },
+  T1199: { name: 'Trusted Relationship', tactic: 'Initial Access' },
+  T1203: { name: 'Exploitation for Client Execution', tactic: 'Execution' },
+  T1204: { name: 'User Execution', tactic: 'Execution' },
+  T1486: { name: 'Data Encrypted for Impact', tactic: 'Impact' },
+  T1490: { name: 'Inhibit System Recovery', tactic: 'Impact' },
+  T1498: { name: 'Network Denial of Service', tactic: 'Impact' },
+  T1505: { name: 'Server Software Component', tactic: 'Persistence' },
+  T1539: { name: 'Steal Web Session Cookie', tactic: 'Credential Access' },
+  T1542: { name: 'Pre-OS Boot', tactic: 'Defense Evasion' },
+  T1547: { name: 'Boot or Logon Autostart Execution', tactic: 'Persistence' },
+  T1555: { name: 'Credentials from Password Stores', tactic: 'Credential Access' },
+  T1561: { name: 'Disk Wipe', tactic: 'Impact' },
+  T1562: { name: 'Impair Defenses', tactic: 'Defense Evasion' },
+  T1567: { name: 'Exfiltration Over Web Service', tactic: 'Exfiltration' },
+  T1621: { name: 'Multi-Factor Authentication Request Generation', tactic: 'Credential Access' },
+  T1657: { name: 'Financial Theft', tactic: 'Impact' }
+};
+function _orTechName(id) { var t = OR_TECH_INFO[id]; return t ? t.name : 'Unknown Technique'; }
+function _orTechTactic(id) { var t = OR_TECH_INFO[id]; return t ? t.tactic : 'Unknown'; }
+
+// ============================================================================
+// IOC CLASSIFICATION + DEFANG / REFANG
+// ============================================================================
+// Classify a single indicator string into a coarse type.
+function _orClassifyIOC(raw) {
+  var v = String(raw == null ? '' : raw).trim();
+  if (!v) return 'Unknown';
+  if (/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\/\d{1,2}$/.test(v)) return 'CIDR';
+  if (/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(v)) {
+    return v.split('.').every(function(o) { return parseInt(o, 10) <= 255; }) ? 'IPv4' : 'Unknown';
+  }
+  if (/^[a-f0-9]{32}$/i.test(v)) return 'Hash-MD5';
+  if (/^[a-f0-9]{40}$/i.test(v)) return 'Hash-SHA1';
+  if (/^[a-f0-9]{64}$/i.test(v)) return 'Hash-SHA256';
+  if (/^(https?|ftp|hxxps?):\/\//i.test(v) || /\[:\/\/\]/.test(v)) return 'URL';
+  if (/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v)) return 'Email';
+  if (/^([a-z0-9-]+\.)+[a-z]{2,}$/i.test(v) || /\.onion$/i.test(v)) return 'Domain';
+  if (/^[a-f0-9]{8,}$/i.test(v)) return 'Hash';
+  return 'Unknown';
+}
+// Defang an indicator so it cannot be accidentally clicked/resolved.
+function _orDefang(s) {
+  return String(s == null ? '' : s)
+    .replace(/https/gi, 'hxxps').replace(/http/gi, 'hxxp')
+    .replace(/:\/\//g, '[://]')
+    .replace(/\./g, '[.]')
+    .replace(/@/g, '[@]');
+}
+// Reverse a defanged indicator back to its live form.
+function _orRefang(s) {
+  return String(s == null ? '' : s)
+    .replace(/\[\.\]/g, '.').replace(/\[@\]/g, '@').replace(/\[:\/\/\]/g, '://')
+    .replace(/hxxps/gi, 'https').replace(/hxxp/gi, 'http')
+    .replace(/\[\.]|\(\.\)|\{\.\}/g, '.');
+}
+// True when an IPv4 shares its /24 with another IPv4 or CIDR (a "near" match).
+function _orSameSlash24(a, b) {
+  var ma = String(a).match(/^(\d{1,3}\.\d{1,3}\.\d{1,3})\.\d{1,3}$/);
+  var mb = String(b).match(/^(\d{1,3}\.\d{1,3}\.\d{1,3})[./]/);
+  return !!(ma && mb && ma[1] === mb[1]);
+}
+// Cross-reference an indicator against the actor library + IOC database.
+// Returns [{ actor, kind:'exact'|'near' }].
+function _orAttributeIOC(value) {
+  var v = String(value == null ? '' : value).toLowerCase();
+  if (!v) return [];
+  var hits = [];
+  function add(name, kind) {
+    var ex = hits.find(function(h) { return h.actor === name; });
+    if (!ex) hits.push({ actor: name, kind: kind });
+    else if (kind === 'exact') ex.kind = 'exact';
+  }
+  APT_DB.forEach(function(a) {
+    var exact = a.iocs.some(function(x) { return String(x).toLowerCase() === v; });
+    if (exact) { add(a.name, 'exact'); return; }
+    if (a.iocs.some(function(x) { return _orSameSlash24(value, x); })) add(a.name, 'near');
+  });
+  IOC_DB.forEach(function(i) {
+    if (String(i.value).toLowerCase() !== v) return;
+    (i.tags || []).forEach(function(t) { var act = _orFindActor(t); if (act) add(act.name, 'exact'); });
+  });
+  return hits;
+}
+
+// ============================================================================
 // SECURITY GRAPH EXPORT
 // ============================================================================
 // Built-in IOC and campaign records are demo data and are tagged "simulated";
@@ -482,6 +592,10 @@ var _orInterval = null;
 
 export function cleanupOracle() {
   if (_orInterval) { clearInterval(_orInterval); _orInterval = null; }
+  if (window._oracleTimers) {
+    window._oracleTimers.forEach(function(t) { clearTimeout(t); clearInterval(t); });
+    window._oracleTimers = [];
+  }
 }
 
 export function renderOracle(main) {
@@ -496,6 +610,16 @@ export function renderOracle(main) {
   var iocTypeFilter = '';
   var selectedCampaign = null;
   var reportType = 'executive';
+  // New feature state
+  var graphActor = APT_DB[0].id;
+  var graphMode = 'related';
+  var graphSel = null;
+  var cmpA = APT_DB[0].id;
+  var cmpB = APT_DB[1] ? APT_DB[1].id : APT_DB[0].id;
+  var enrichInput = '';
+  var enrichDefang = true;
+  var enrichResults = null;
+  var covTech = null;
 
   function render() {
     main.innerHTML =
@@ -576,7 +700,24 @@ export function renderOracle(main) {
       '.or-report-preview ul{margin:4px 0;padding-left:18px}' +
       '.or-report-preview li{margin:3px 0}' +
       '.or-corr{border:2px solid var(--acc,#3b82f6);background:rgba(59,130,246,.08)}' +
-      '@media(max-width:768px){.or-grid2,.or-grid3,.or-grid4,.or-map,.or-diamond{grid-template-columns:1fr}.or-tabs{gap:0}}' +
+      '.or-graph-wrap{position:relative;width:100%;min-height:540px;border:1px solid var(--line,#333);border-radius:8px;background:rgba(0,0,0,.14);overflow:hidden}' +
+      '.or-graph-node{cursor:pointer}' +
+      '.or-graph-node text{pointer-events:none}' +
+      '.or-graph-node.sel > *:first-child{filter:drop-shadow(0 0 6px var(--acc,#3b82f6))}' +
+      '.or-graph-detail{margin-top:10px;padding:10px 12px;border:1px solid var(--line,#333);border-radius:6px;background:rgba(0,0,0,.12);font-size:.76rem;color:var(--txt,#eee);line-height:1.5;min-height:22px}' +
+      '.or-legend{display:flex;gap:12px;flex-wrap:wrap;font-size:.6rem;text-transform:none;letter-spacing:0;font-weight:600}' +
+      '.or-legend span{display:inline-flex;align-items:center;gap:5px;color:var(--mut,#888)}' +
+      '.or-legend i{width:10px;height:10px;display:inline-block;flex-shrink:0}' +
+      '.or-cmp-cols{display:grid;grid-template-columns:1fr 1fr;gap:10px}' +
+      '.or-cmp-col{background:var(--card,#1a1f2e);border:1px solid var(--line,#333);border-radius:8px;padding:12px}' +
+      '.or-score{font-size:2.4rem;font-weight:800;font-variant-numeric:tabular-nums;line-height:1}' +
+      '.or-cov-row{display:flex;align-items:center;gap:10px;padding:6px 4px;cursor:pointer;border-bottom:1px solid var(--line,#333)}' +
+      '.or-cov-row:hover{background:rgba(59,130,246,.04)}' +
+      '.or-cov-row.on{background:rgba(59,130,246,.09)}' +
+      '.or-cov-track{flex:1;height:14px;background:rgba(100,116,139,.14);border-radius:3px;overflow:hidden}' +
+      '.or-cov-bar{height:100%;border-radius:3px;background:var(--acc,#3b82f6);min-width:2px}' +
+      '.or-enrich-tbl td{vertical-align:top}' +
+      '@media(max-width:768px){.or-grid2,.or-grid3,.or-grid4,.or-map,.or-diamond,.or-cmp-cols{grid-template-columns:1fr}.or-tabs{gap:0}}' +
       '</style>' +
       '<div class="or-wrap">' +
         '<div class="or-header">' +
@@ -587,7 +728,7 @@ export function renderOracle(main) {
           '<span class="or-sub" style="font-variant-numeric:tabular-nums">' + esc(iocs.length) + ' IOCs | ' + esc(APT_DB.length) + ' Actors | ' + esc(CAMPAIGN_DB.length) + ' Campaigns</span>' +
         '</div>' +
         '<div class="or-tabs">' +
-          [['dashboard','Intel Dashboard'],['iocs','IOC Manager'],['actors','Threat Actors'],['campaigns','Campaign Tracker'],['stix','STIX Viewer'],['feeds','Feed Aggregator'],['reports','Reports']].map(function(t) {
+          [['dashboard','Intel Dashboard'],['iocs','IOC Manager'],['actors','Threat Actors'],['campaigns','Campaign Tracker'],['graph','Actor Graph'],['compare','Actor Compare'],['enrich','IOC Enrichment'],['coverage','ATT&CK Coverage'],['stix','STIX Viewer'],['feeds','Feed Aggregator'],['reports','Reports']].map(function(t) {
             return '<button class="or-tab' + (activeTab === t[0] ? ' on' : '') + '" data-t="' + t[0] + '">' + t[1] + '</button>';
           }).join('') +
         '</div>' +
@@ -604,6 +745,10 @@ export function renderOracle(main) {
     else if (activeTab === 'iocs') renderIOCManager(content);
     else if (activeTab === 'actors') renderActors(content);
     else if (activeTab === 'campaigns') renderCampaigns(content);
+    else if (activeTab === 'graph') renderGraph(content);
+    else if (activeTab === 'compare') renderCompare(content);
+    else if (activeTab === 'enrich') renderEnrich(content);
+    else if (activeTab === 'coverage') renderCoverage(content);
     else if (activeTab === 'stix') renderSTIX(content);
     else if (activeTab === 'feeds') renderFeeds(content);
     else if (activeTab === 'reports') renderReports(content);
@@ -1233,6 +1378,318 @@ export function renderOracle(main) {
             '<li><strong>Associated IOCs:</strong> ' + camp.iocCount + '</li>' +
           '</ul>';
       }).join('');
+  }
+
+  // ========== TAB: ACTOR GRAPH ==========
+  function _orNodeShape(type, x, y, color, big) {
+    var s = big ? 20 : 12;
+    if (type === 'technique') return '<polygon points="' + x + ',' + (y - s) + ' ' + (x + s) + ',' + y + ' ' + x + ',' + (y + s) + ' ' + (x - s) + ',' + y + '" fill="' + color + '22" stroke="' + color + '" stroke-width="2"/>';
+    if (type === 'campaign') return '<polygon points="' + x + ',' + (y - s) + ' ' + (x + s) + ',' + (y + s * 0.9) + ' ' + (x - s) + ',' + (y + s * 0.9) + '" fill="' + color + '22" stroke="' + color + '" stroke-width="2"/>';
+    if (type === 'sector') return '<rect x="' + (x - s) + '" y="' + (y - s) + '" width="' + (2 * s) + '" height="' + (2 * s) + '" rx="2" fill="' + color + '22" stroke="' + color + '" stroke-width="2"/>';
+    if (type === 'ioc') { var p = []; for (var k = 0; k < 6; k++) { var g = Math.PI / 180 * (60 * k - 30); p.push((x + s * Math.cos(g)).toFixed(1) + ',' + (y + s * Math.sin(g)).toFixed(1)); } return '<polygon points="' + p.join(' ') + '" fill="' + color + '22" stroke="' + color + '" stroke-width="2"/>'; }
+    return '<circle cx="' + x + '" cy="' + y + '" r="' + s + '" fill="' + color + '22" stroke="' + color + '" stroke-width="2"/>';
+  }
+  function _orTrunc(s, n) { s = String(s); return s.length > n ? s.slice(0, n - 1) + '...' : s; }
+
+  function renderGraph(c) {
+    var a = APT_DB.find(function(x) { return x.id === graphActor; }) || APT_DB[0];
+    var legend = graphMode === 'related'
+      ? '<div class="or-legend"><span><i style="background:#0ea5e9;border-radius:50%"></i>Actor</span><span><i style="background:#f97316;transform:rotate(45deg)"></i>Technique</span><span><i style="background:#22c55e;clip-path:polygon(50% 0,100% 100%,0 100%)"></i>Campaign</span><span><i style="background:#8b5cf6"></i>Sector</span><span><i style="background:#3b82f6;clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%)"></i>IOC</span></div>'
+      : '<div class="or-legend"><span><i style="background:#0ea5e9;border-radius:50%"></i>Selected actor</span><span><i style="background:#ef4444;border-radius:50%"></i>Shares &ge;1 technique</span><span>Edge thickness = shared count</span></div>';
+    c.innerHTML =
+      '<div class="or-search-row">' +
+        '<label class="or-sub">Actor</label>' +
+        '<select class="or-sel" id="or-g-actor">' + APT_DB.map(function(x) { return '<option value="' + x.id + '"' + (x.id === graphActor ? ' selected' : '') + '>' + esc(x.name) + '</option>'; }).join('') + '</select>' +
+        '<div style="display:flex;gap:4px">' +
+          '<span class="or-chip' + (graphMode === 'related' ? ' on' : '') + '" data-gmode="related">Entity Links</span>' +
+          '<span class="or-chip' + (graphMode === 'shared' ? ' on' : '') + '" data-gmode="shared">Shared Techniques</span>' +
+        '</div>' +
+        '<span style="flex:1"></span>' +
+        '<span class="or-sub">' + (graphMode === 'related' ? 'Actor to techniques / campaigns / sectors / IOCs' : 'Other actors sharing an ATT&amp;CK technique') + '</span>' +
+      '</div>' +
+      '<div class="or-panel">' +
+        '<div class="or-panel-h">' + esc(a.name) + ' &mdash; ' + (graphMode === 'related' ? 'Relationship Graph' : 'Shared-Technique Graph') + '<span style="flex:1"></span>' + legend + '</div>' +
+        '<div class="or-panel-b">' +
+          '<div class="or-graph-wrap" id="or-graph-host"></div>' +
+          '<div class="or-graph-detail" id="or-graph-detail">' + (graphSel ? graphSel : 'Click a node to inspect it.') + '</div>' +
+        '</div>' +
+      '</div>';
+
+    c.querySelector('#or-g-actor').onchange = function(e) { graphActor = e.target.value; graphSel = null; renderGraph(c); };
+    c.querySelectorAll('[data-gmode]').forEach(function(el) { el.onclick = function() { graphMode = el.dataset.gmode; graphSel = null; renderGraph(c); }; });
+
+    var host = c.querySelector('#or-graph-host');
+    if (graphMode === 'related') _orDrawRelated(host, a, c); else _orDrawShared(host, a, c);
+  }
+
+  function _orWireGraphNodes(host, c, metas) {
+    var detail = c.querySelector('#or-graph-detail');
+    host.querySelectorAll('.or-graph-node').forEach(function(el) {
+      el.onclick = function() {
+        host.querySelectorAll('.or-graph-node.sel').forEach(function(n) { n.classList.remove('sel'); });
+        el.classList.add('sel');
+        var html = metas[el.getAttribute('data-nid')] || '';
+        graphSel = html;
+        if (detail) detail.innerHTML = html;
+      };
+    });
+  }
+
+  function _orDrawRelated(host, a, c) {
+    var w = host.offsetWidth || 700; if (w < 320) w = 320;
+    var h = 540, cx = w / 2, cy = h / 2;
+    var usage = {}; APT_DB.forEach(function(x) { x.techniques.forEach(function(t) { usage[t] = (usage[t] || 0) + 1; }); });
+    var sectorUse = {}; APT_DB.forEach(function(x) { x.sectors.forEach(function(s) { sectorUse[s] = (sectorUse[s] || 0) + 1; }); });
+    var rings = [
+      { type: 'technique', color: '#f97316', r: 95, items: a.techniques.map(function(t) { return { label: t, full: t + ' ' + _orTechName(t), detail: '<strong>' + esc(t) + '</strong> ' + esc(_orTechName(t)) + ' &mdash; Tactic: <strong>' + esc(_orTechTactic(t)) + '</strong>. Used by ' + (usage[t] || 1) + ' of ' + APT_DB.length + ' tracked actors.' }; }) },
+      { type: 'campaign', color: '#22c55e', r: 160, items: a.campaigns.map(function(t) { return { label: _orTrunc(t, 16), full: t, detail: '<strong>Campaign:</strong> ' + esc(t) + ' &mdash; attributed to ' + esc(a.name) + '.' }; }) },
+      { type: 'sector', color: '#8b5cf6', r: 214, items: a.sectors.map(function(t) { return { label: _orTrunc(t, 14), full: t, detail: '<strong>Target sector:</strong> ' + esc(t) + ' &mdash; targeted by ' + (sectorUse[t] || 1) + ' tracked actor(s).' }; }) },
+      { type: 'ioc', color: '#3b82f6', r: 260, items: a.iocs.map(function(t) { return { label: _orTrunc(t, 16), full: t, detail: '<strong>IOC:</strong> <span style="font-family:var(--font-mono,monospace)">' + esc(t) + '</span> &mdash; classified as ' + esc(_orClassifyIOC(t)) + '; attributed to ' + esc(a.name) + '.' }; }) }
+    ];
+    var maxR = 260, rScale = Math.min(1, (Math.min(w, h) / 2 - 34) / maxR);
+    var svg = '<svg width="' + w + '" height="' + h + '" style="position:absolute;top:0;left:0">';
+    var nodesSvg = '', metas = {};
+    rings.forEach(function(ring, ri) {
+      var n = ring.items.length, off = ri * 0.55;
+      ring.items.forEach(function(it, j) {
+        var ang = (j / Math.max(1, n)) * 2 * Math.PI - Math.PI / 2 + off;
+        var rr = ring.r * rScale, x = cx + rr * Math.cos(ang), y = cy + rr * Math.sin(ang);
+        svg += '<line x1="' + cx + '" y1="' + cy + '" x2="' + x + '" y2="' + y + '" stroke="' + ring.color + '" stroke-opacity="0.3" stroke-width="1"/>';
+        var nid = ring.type + '-' + j;
+        metas[nid] = it.detail;
+        nodesSvg += '<g class="or-graph-node" data-nid="' + nid + '">' + _orNodeShape(ring.type, x, y, ring.color, false) +
+          '<text x="' + x + '" y="' + (y + 24) + '" text-anchor="middle" font-size="9" fill="var(--txt,#cbd5e1)">' + esc(it.label) + '</text></g>';
+      });
+    });
+    // center actor node
+    metas['actor-center'] = '<strong>' + esc(a.name) + '</strong> (' + esc(a.nation) + ', ' + esc(a.agency || 'n/a') + ') &mdash; ' + a.techniques.length + ' techniques, ' + a.campaigns.length + ' campaigns, ' + a.sectors.length + ' sectors, ' + a.iocs.length + ' IOCs.';
+    nodesSvg += '<g class="or-graph-node" data-nid="actor-center">' + _orNodeShape('actor', cx, cy, '#0ea5e9', true) +
+      '<text x="' + cx + '" y="' + (cy + 4) + '" text-anchor="middle" font-size="10" font-weight="700" fill="#e2e8f0">' + esc(_orTrunc(a.name, 12)) + '</text></g>';
+    svg += nodesSvg + '</svg>';
+    host.innerHTML = svg;
+    _orWireGraphNodes(host, c, metas);
+  }
+
+  function _orDrawShared(host, a, c) {
+    var w = host.offsetWidth || 700; if (w < 320) w = 320;
+    var h = 540, cx = w / 2, cy = h / 2;
+    var others = APT_DB.filter(function(x) { return x.id !== a.id; }).map(function(x) {
+      var shared = x.techniques.filter(function(t) { return a.techniques.indexOf(t) !== -1; });
+      return { actor: x, shared: shared };
+    }).filter(function(o) { return o.shared.length > 0; }).sort(function(p, q) { return q.shared.length - p.shared.length; });
+
+    if (!others.length) { host.innerHTML = '<div style="padding:40px;text-align:center;color:var(--mut,#888);font-size:.8rem">No other tracked actor shares an ATT&amp;CK technique with ' + esc(a.name) + '.</div>'; return; }
+
+    var maxR = Math.min(w, h) / 2 - 50, rr = Math.max(120, maxR);
+    var svg = '<svg width="' + w + '" height="' + h + '" style="position:absolute;top:0;left:0">';
+    var nodesSvg = '', metas = {};
+    others.forEach(function(o, j) {
+      var ang = (j / others.length) * 2 * Math.PI - Math.PI / 2;
+      var x = cx + rr * Math.cos(ang), y = cy + rr * Math.sin(ang);
+      var mx = (cx + x) / 2, my = (cy + y) / 2;
+      svg += '<line x1="' + cx + '" y1="' + cy + '" x2="' + x + '" y2="' + y + '" stroke="#ef4444" stroke-opacity="0.35" stroke-width="' + Math.min(6, o.shared.length) + '"/>';
+      svg += '<text x="' + mx + '" y="' + (my - 4) + '" text-anchor="middle" font-size="9" fill="var(--mut,#888)">' + o.shared.length + '</text>';
+      var nid = 'other-' + j;
+      metas[nid] = '<strong>' + esc(o.actor.name) + '</strong> (' + esc(o.actor.nation) + ') shares ' + o.shared.length + ' technique(s) with ' + esc(a.name) + ': ' + o.shared.map(function(t) { return esc(t) + ' ' + esc(_orTechName(t)); }).join(', ') + '.';
+      nodesSvg += '<g class="or-graph-node" data-nid="' + nid + '">' + _orNodeShape('actor', x, y, '#ef4444', false) +
+        '<text x="' + x + '" y="' + (y + 26) + '" text-anchor="middle" font-size="9" fill="var(--txt,#cbd5e1)">' + esc(_orTrunc(o.actor.name, 14)) + '</text></g>';
+    });
+    metas['actor-center'] = '<strong>' + esc(a.name) + '</strong> &mdash; ' + a.techniques.length + ' techniques; ' + others.length + ' other actor(s) share at least one.';
+    nodesSvg += '<g class="or-graph-node" data-nid="actor-center">' + _orNodeShape('actor', cx, cy, '#0ea5e9', true) +
+      '<text x="' + cx + '" y="' + (cy + 4) + '" text-anchor="middle" font-size="10" font-weight="700" fill="#e2e8f0">' + esc(_orTrunc(a.name, 12)) + '</text></g>';
+    svg += nodesSvg + '</svg>';
+    host.innerHTML = svg;
+    _orWireGraphNodes(host, c, metas);
+  }
+
+  // ========== TAB: ACTOR COMPARE ==========
+  function renderCompare(c) {
+    var A = APT_DB.find(function(x) { return x.id === cmpA; }) || APT_DB[0];
+    var B = APT_DB.find(function(x) { return x.id === cmpB; }) || APT_DB[0];
+    function uniq(arr) { var o = {}; arr.forEach(function(v) { o[v] = 1; }); return Object.keys(o); }
+    var sharedT = A.techniques.filter(function(t) { return B.techniques.indexOf(t) !== -1; });
+    var unionT = uniq(A.techniques.concat(B.techniques));
+    var jaccard = unionT.length ? sharedT.length / unionT.length : 0;
+    var sharedSec = A.sectors.filter(function(s) { return B.sectors.indexOf(s) !== -1; });
+    var sharedIOC = A.iocs.filter(function(i) { return B.iocs.some(function(j) { return String(i).toLowerCase() === String(j).toLowerCase(); }); });
+    var nearIOC = [];
+    A.iocs.forEach(function(i) { B.iocs.forEach(function(j) { if (_orSameSlash24(i, j) && String(i).toLowerCase() !== String(j).toLowerCase()) nearIOC.push(i + ' ~ ' + j); }); });
+    var pct = Math.round(jaccard * 100);
+    var scoreColor = pct >= 50 ? '#ff1744' : pct >= 25 ? '#ff9100' : '#3b82f6';
+    var sel = function(id, cur) { return '<select class="or-sel" id="' + id + '" style="min-width:200px">' + APT_DB.map(function(x) { return '<option value="' + x.id + '"' + (x.id === cur ? ' selected' : '') + '>' + esc(x.name) + '</option>'; }).join('') + '</select>'; };
+    function techList(actor, highlight) {
+      return actor.techniques.map(function(t) {
+        var on = highlight.indexOf(t) !== -1;
+        return '<span class="or-badge" style="background:' + (on ? 'rgba(255,23,68,.16);color:#ff5b7f' : 'rgba(249,115,22,.12);color:#f97316') + '" title="' + esc(_orTechName(t)) + '">' + esc(t) + (on ? ' *' : '') + '</span>';
+      }).join(' ');
+    }
+    function secList(actor, highlight) {
+      return actor.sectors.map(function(s) {
+        var on = highlight.indexOf(s) !== -1;
+        return '<span class="or-badge" style="background:' + (on ? 'rgba(255,23,68,.16);color:#ff5b7f' : 'rgba(139,92,246,.1);color:#8b5cf6') + '">' + esc(s) + '</span>';
+      }).join(' ');
+    }
+    c.innerHTML =
+      '<div class="or-search-row">' + sel('or-cmp-a', cmpA) + '<span class="or-sub">vs</span>' + sel('or-cmp-b', cmpB) + '</div>' +
+      '<div class="or-panel"><div class="or-panel-b" style="display:flex;align-items:center;gap:20px;flex-wrap:wrap">' +
+        '<div><div class="or-score" style="color:' + scoreColor + '">' + pct + '%</div><div class="or-stat-l">Technique Similarity (Jaccard)</div></div>' +
+        '<div style="font-size:.78rem;color:var(--mut)">' + sharedT.length + ' shared / ' + unionT.length + ' combined techniques &bull; ' + sharedSec.length + ' shared sectors &bull; ' + sharedIOC.length + ' shared IOCs &bull; ' + nearIOC.length + ' near IOCs</div>' +
+      '</div></div>' +
+      '<div class="or-panel"><div class="or-panel-h">Overlap</div><div class="or-panel-b">' +
+        '<div style="font-size:.72rem;margin-bottom:6px"><strong style="color:#ff5b7f">Shared techniques (' + sharedT.length + '):</strong> ' + (sharedT.length ? sharedT.map(function(t) { return '<span class="or-badge" style="background:rgba(255,23,68,.16);color:#ff5b7f" title="' + esc(_orTechName(t)) + '">' + esc(t) + ' ' + esc(_orTechName(t)) + '</span>'; }).join(' ') : '<span class="or-sub">none</span>') + '</div>' +
+        '<div style="font-size:.72rem;margin-bottom:6px"><strong style="color:#8b5cf6">Shared sectors (' + sharedSec.length + '):</strong> ' + (sharedSec.length ? esc(sharedSec.join(', ')) : '<span class="or-sub">none</span>') + '</div>' +
+        '<div style="font-size:.72rem;margin-bottom:6px"><strong style="color:#3b82f6">Shared IOCs (' + sharedIOC.length + '):</strong> ' + (sharedIOC.length ? sharedIOC.map(function(i) { return '<span style="font-family:var(--font-mono,monospace);font-size:.68rem;background:rgba(59,130,246,.12);padding:2px 6px;border-radius:4px">' + esc(i) + '</span>'; }).join(' ') : '<span class="or-sub">none</span>') + '</div>' +
+        '<div style="font-size:.72rem"><strong style="color:#ff9100">Near IOCs, same /24 (' + nearIOC.length + '):</strong> ' + (nearIOC.length ? nearIOC.map(function(i) { return '<span style="font-family:var(--font-mono,monospace);font-size:.66rem">' + esc(i) + '</span>'; }).join('; ') : '<span class="or-sub">none</span>') + '</div>' +
+      '</div></div>' +
+      '<div class="or-cmp-cols">' +
+        '<div class="or-cmp-col"><div class="or-card-title">' + esc(A.name) + ' <span class="or-badge" style="background:rgba(59,130,246,.1);color:#3b82f6">[' + _orNationFlag(A.nation) + ']</span></div>' +
+          '<div class="or-card-sub" style="margin:4px 0">' + esc(A.motivation) + ' &bull; since ' + A.since + '</div>' +
+          '<div style="font-size:.65rem;color:var(--mut);margin-top:6px">Techniques (* = shared)</div><div style="margin:4px 0">' + techList(A, sharedT) + '</div>' +
+          '<div style="font-size:.65rem;color:var(--mut);margin-top:6px">Sectors</div><div style="margin:4px 0">' + secList(A, sharedSec) + '</div></div>' +
+        '<div class="or-cmp-col"><div class="or-card-title">' + esc(B.name) + ' <span class="or-badge" style="background:rgba(59,130,246,.1);color:#3b82f6">[' + _orNationFlag(B.nation) + ']</span></div>' +
+          '<div class="or-card-sub" style="margin:4px 0">' + esc(B.motivation) + ' &bull; since ' + B.since + '</div>' +
+          '<div style="font-size:.65rem;color:var(--mut);margin-top:6px">Techniques (* = shared)</div><div style="margin:4px 0">' + techList(B, sharedT) + '</div>' +
+          '<div style="font-size:.65rem;color:var(--mut);margin-top:6px">Sectors</div><div style="margin:4px 0">' + secList(B, sharedSec) + '</div></div>' +
+      '</div>';
+    c.querySelector('#or-cmp-a').onchange = function(e) { cmpA = e.target.value; renderCompare(c); };
+    c.querySelector('#or-cmp-b').onchange = function(e) { cmpB = e.target.value; renderCompare(c); };
+  }
+
+  // ========== TAB: IOC ENRICHMENT & DEFANG ==========
+  function _orRunEnrich(text) {
+    var lines = String(text || '').split(/\r?\n/).map(function(l) { return l.trim(); }).filter(Boolean);
+    return lines.map(function(raw) {
+      var refanged = _orRefang(raw);
+      var type = _orClassifyIOC(refanged);
+      var attrib = _orAttributeIOC(refanged);
+      return { input: raw, refanged: refanged, defanged: _orDefang(refanged), type: type, actors: attrib };
+    });
+  }
+  function renderEnrich(c) {
+    var results = enrichResults;
+    var typeCounts = {};
+    if (results) results.forEach(function(r) { typeCounts[r.type] = (typeCounts[r.type] || 0) + 1; });
+    c.innerHTML =
+      '<div class="or-panel"><div class="or-panel-h">Paste Indicators (one per line)</div><div class="or-panel-b">' +
+        '<textarea class="or-textarea" id="or-enrich-in" placeholder="185.86.148.27&#10;avsvmcloud[.]com&#10;hxxps://evil[.]example[.]com/x&#10;5d2b4e3c7a1f8e9d0b6ca3f2d7e1b894">' + esc(enrichInput) + '</textarea>' +
+        '<div class="or-actions" style="margin-top:8px">' +
+          '<button class="or-btn fill" id="or-enrich-run">Classify &amp; Enrich</button>' +
+          '<label class="or-chip' + (enrichDefang ? ' on' : '') + '" id="or-enrich-defang">Show ' + (enrichDefang ? 'Defanged' : 'Live (Refanged)') + '</label>' +
+          '<button class="or-btn ghost sm" id="or-enrich-sample">Load Sample</button>' +
+          '<button class="or-btn ghost sm" id="or-enrich-clear">Clear</button>' +
+          '<span style="flex:1"></span>' +
+          '<button class="or-btn sm" id="or-enrich-json"' + (results && results.length ? '' : ' disabled') + '>Export JSON</button>' +
+          '<button class="or-btn sm" id="or-enrich-csv"' + (results && results.length ? '' : ' disabled') + '>Export CSV</button>' +
+        '</div>' +
+      '</div></div>';
+
+    if (results) {
+      var matched = results.filter(function(r) { return r.actors.length; }).length;
+      c.innerHTML +=
+        '<div class="or-grid4" style="margin-bottom:12px">' +
+          '<div class="or-stat"><div class="or-stat-v" style="color:#3b82f6">' + results.length + '</div><div class="or-stat-l">Indicators</div></div>' +
+          '<div class="or-stat"><div class="or-stat-v" style="color:#22c55e">' + matched + '</div><div class="or-stat-l">Attributed to Actors</div></div>' +
+          '<div class="or-stat"><div class="or-stat-v" style="color:#f97316">' + (typeCounts['Unknown'] || 0) + '</div><div class="or-stat-l">Unknown Type</div></div>' +
+          '<div class="or-stat"><div class="or-stat-v" style="color:#8b5cf6">' + Object.keys(typeCounts).length + '</div><div class="or-stat-l">Distinct Types</div></div>' +
+        '</div>' +
+        '<div class="or-panel"><div class="or-panel-h">Enrichment Results</div><div style="overflow-x:auto">' +
+          '<table class="or-tbl or-enrich-tbl"><thead><tr><th>' + (enrichDefang ? 'Defanged' : 'Indicator') + '</th><th>Type</th><th>Attribution</th></tr></thead><tbody>' +
+          results.map(function(r) {
+            var shown = enrichDefang ? r.defanged : r.refanged;
+            var attr = r.actors.length
+              ? r.actors.map(function(h) { return '<span class="or-badge" style="background:' + (h.kind === 'exact' ? 'rgba(255,23,68,.14);color:#ff5b7f' : 'rgba(255,145,0,.14);color:#ff9100') + '">' + esc(h.actor) + (h.kind === 'near' ? ' (near)' : '') + '</span>'; }).join(' ')
+              : '<span class="or-sub">no known attribution</span>';
+            return '<tr>' +
+              '<td style="font-family:var(--font-mono,monospace);font-size:.72rem;max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(shown) + '</td>' +
+              '<td><span class="or-badge" style="background:rgba(59,130,246,.1);color:' + _orTypeColor(r.type.indexOf('Hash') === 0 ? 'Hash-MD5' : r.type === 'IPv4' || r.type === 'CIDR' ? 'IP' : r.type) + '">' + esc(r.type) + '</span></td>' +
+              '<td>' + attr + '</td>' +
+            '</tr>';
+          }).join('') +
+          '</tbody></table></div></div>';
+    }
+
+    var inEl = c.querySelector('#or-enrich-in');
+    inEl.oninput = function(e) { enrichInput = e.target.value; };
+    c.querySelector('#or-enrich-run').onclick = function() { enrichInput = inEl.value; enrichResults = _orRunEnrich(enrichInput); renderEnrich(c); };
+    c.querySelector('#or-enrich-defang').onclick = function() { enrichInput = inEl.value; enrichDefang = !enrichDefang; renderEnrich(c); };
+    c.querySelector('#or-enrich-sample').onclick = function() {
+      enrichInput = ['185.86.148.27', '185.86.148.99', 'avsvmcloud[.]com', 'hxxps://update-system32[.]com/patch/critical.exe', '5d2b4e3c7a1f8e9d0b6ca3f2d7e1b894', 'lockbit-leak.onion', 'not-a-known-indicator.test'].join('\n');
+      enrichResults = _orRunEnrich(enrichInput); renderEnrich(c);
+    };
+    c.querySelector('#or-enrich-clear').onclick = function() { enrichInput = ''; enrichResults = null; renderEnrich(c); };
+    c.querySelector('#or-enrich-json').onclick = function() {
+      if (!enrichResults) return;
+      var out = enrichResults.map(function(r) { return { indicator: r.refanged, defanged: r.defanged, type: r.type, attribution: r.actors }; });
+      var blob = new Blob([JSON.stringify(out, null, 2)], { type: 'application/json' });
+      var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'oracle-enrichment.json'; a.click();
+    };
+    c.querySelector('#or-enrich-csv').onclick = function() {
+      if (!enrichResults) return;
+      var csv = 'Indicator,Defanged,Type,Attribution\n' + enrichResults.map(function(r) {
+        var attr = r.actors.map(function(h) { return h.actor + (h.kind === 'near' ? ' (near)' : ''); }).join('; ');
+        return ['"' + r.refanged + '"', '"' + r.defanged + '"', r.type, '"' + attr + '"'].join(',');
+      }).join('\n');
+      var blob = new Blob([csv], { type: 'text/csv' });
+      var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'oracle-enrichment.csv'; a.click();
+    };
+  }
+
+  // ========== TAB: ATT&CK COVERAGE ==========
+  function renderCoverage(c) {
+    var map = {};
+    APT_DB.forEach(function(a) { a.techniques.forEach(function(t) { (map[t] = map[t] || []).push(a.name); }); });
+    var ranked = Object.keys(map).map(function(t) {
+      return { id: t, name: _orTechName(t), tactic: _orTechTactic(t), actors: map[t] };
+    }).sort(function(a, b) { return b.actors.length - a.actors.length || a.id.localeCompare(b.id); });
+    var maxN = ranked.length ? ranked[0].actors.length : 1;
+    var tactics = {};
+    ranked.forEach(function(r) { tactics[r.tactic] = (tactics[r.tactic] || 0) + r.actors.length; });
+    var tacRank = Object.keys(tactics).map(function(k) { return [k, tactics[k]]; }).sort(function(a, b) { return b[1] - a[1]; });
+    var tacMax = tacRank.length ? tacRank[0][1] : 1;
+
+    c.innerHTML =
+      '<div class="or-grid4" style="margin-bottom:12px">' +
+        '<div class="or-stat"><div class="or-stat-v" style="color:#3b82f6">' + ranked.length + '</div><div class="or-stat-l">Distinct Techniques</div></div>' +
+        '<div class="or-stat"><div class="or-stat-v" style="color:#8b5cf6">' + tacRank.length + '</div><div class="or-stat-l">Tactics Covered</div></div>' +
+        '<div class="or-stat"><div class="or-stat-v" style="color:#f97316">' + (ranked[0] ? ranked[0].id : '-') + '</div><div class="or-stat-l">Most Common (' + (ranked[0] ? ranked[0].actors.length : 0) + ' actors)</div></div>' +
+        '<div class="or-stat"><div class="or-stat-v" style="color:#22c55e">' + APT_DB.length + '</div><div class="or-stat-l">Actors Aggregated</div></div>' +
+      '</div>' +
+      '<div class="or-grid2">' +
+        '<div class="or-panel"><div class="or-panel-h">Technique Frequency (click to drill down)</div><div class="or-panel-b" style="max-height:460px;overflow-y:auto">' +
+          ranked.map(function(r) {
+            return '<div class="or-cov-row' + (covTech === r.id ? ' on' : '') + '" data-tech="' + r.id + '">' +
+              '<span class="or-badge" style="background:rgba(249,115,22,.12);color:#f97316;min-width:56px;text-align:center">' + esc(r.id) + '</span>' +
+              '<span style="font-size:.72rem;flex:0 0 40%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(r.name) + '</span>' +
+              '<div class="or-cov-track"><div class="or-cov-bar" style="width:' + Math.round(r.actors.length / maxN * 100) + '%"></div></div>' +
+              '<span style="font-size:.72rem;font-variant-numeric:tabular-nums;min-width:24px;text-align:right">' + r.actors.length + '</span>' +
+            '</div>';
+          }).join('') +
+        '</div></div>' +
+        '<div class="or-panel"><div class="or-panel-h">Per-Tactic Rollup</div><div class="or-panel-b">' +
+          tacRank.map(function(t) {
+            return '<div class="or-cov-row" style="cursor:default">' +
+              '<span style="font-size:.72rem;flex:0 0 42%">' + esc(t[0]) + '</span>' +
+              '<div class="or-cov-track"><div class="or-cov-bar" style="width:' + Math.round(t[1] / tacMax * 100) + '%;background:#8b5cf6"></div></div>' +
+              '<span style="font-size:.72rem;font-variant-numeric:tabular-nums;min-width:24px;text-align:right">' + t[1] + '</span>' +
+            '</div>';
+          }).join('') +
+        '</div></div>' +
+      '</div>';
+
+    if (covTech) {
+      var r = ranked.find(function(x) { return x.id === covTech; });
+      if (r) {
+        c.innerHTML +=
+          '<div class="or-panel"><div class="or-panel-h">' + esc(r.id) + ' &mdash; ' + esc(r.name) + ' (' + esc(r.tactic) + ')<span style="flex:1"></span><button class="or-btn sm ghost" id="or-cov-close">Close</button></div>' +
+          '<div class="or-panel-b"><div style="font-size:.72rem;color:var(--mut);margin-bottom:8px">' + r.actors.length + ' of ' + APT_DB.length + ' tracked actors use this technique:</div>' +
+          '<div style="display:flex;gap:6px;flex-wrap:wrap">' + r.actors.map(function(n) { return '<span class="or-badge" style="background:rgba(59,130,246,.1);color:#3b82f6">' + esc(n) + '</span>'; }).join('') + '</div></div></div>';
+        var cb = c.querySelector('#or-cov-close');
+        if (cb) cb.onclick = function() { covTech = null; renderCoverage(c); };
+      }
+    }
+    c.querySelectorAll('.or-cov-row[data-tech]').forEach(function(row) {
+      row.onclick = function() { covTech = covTech === row.dataset.tech ? null : row.dataset.tech; renderCoverage(c); };
+    });
   }
 
   // Initial render

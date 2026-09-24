@@ -248,6 +248,124 @@ function phSendAnomalies(btn, anomalies) {
 }
 
 // ============================================================================
+// STREAM / FILTER / EXPORT HELPERS (added features)
+// ============================================================================
+var PH_PROTOS = ['TCP', 'UDP', 'DNS', 'HTTP', 'TLS', 'ICMP'];
+
+// Map an application protocol to its transport-layer protocol for 5-tuple grouping.
+function phTransport(proto) {
+  if (proto === 'TCP' || proto === 'TLS' || proto === 'HTTP') return 'TCP';
+  if (proto === 'UDP' || proto === 'DNS') return 'UDP';
+  return proto;
+}
+
+// Group packets into bidirectional streams keyed by a normalized 5-tuple
+// (transport + sorted endpoints, so A<->B and B<->A collapse into one stream).
+function phBuildStreams(packets) {
+  var map = {};
+  packets.forEach(function(p) {
+    var t = phTransport(p.protocol);
+    var a = p.srcIP + ':' + p.srcPort;
+    var b = p.dstIP + ':' + p.dstPort;
+    var lo = a <= b ? a : b;
+    var hi = a <= b ? b : a;
+    var key = t + '|' + lo + '|' + hi;
+    var s = map[key] || (map[key] = {
+      key: key, transport: t, epA: lo, epB: hi,
+      packets: [], bytes: 0, startTs: p.ts, endTs: p.ts,
+      protocols: [], client: null, server: null
+    });
+    // The source of the first packet seen is treated as the client (initiator).
+    if (s.client === null) { s.client = a; s.server = b; }
+    s.packets.push(p);
+    s.bytes += p.length || 0;
+    if (p.ts < s.startTs) s.startTs = p.ts;
+    if (p.ts > s.endTs) s.endTs = p.ts;
+    if (s.protocols.indexOf(p.protocol) === -1) s.protocols.push(p.protocol);
+  });
+  return Object.keys(map).map(function(k) { return map[k]; });
+}
+
+// Small inline bar meter using site tokens.
+function phMeter(pct, color) {
+  var w = Math.max(0, Math.min(100, pct || 0));
+  return '<span class="ph-meter"><span class="ph-meter-fill" style="width:' + w.toFixed(1) + '%;background:' + (color || '#06b6d4') + '"></span></span>';
+}
+
+// Parse a single Wireshark-style filter term into a predicate.
+function phParseTerm(term) {
+  var m = term.match(/^(\S+)\s*(==|!=)\s*(.+)$/);
+  if (m) {
+    var field = m[1].toLowerCase();
+    var neg = m[2] === '!=';
+    var val = m[3].trim().replace(/^["']|["']$/g, '');
+    var test, n;
+    switch (field) {
+      case 'ip.addr': case 'addr':
+        test = function(p) { return p.srcIP === val || p.dstIP === val; }; break;
+      case 'ip.src': case 'src':
+        test = function(p) { return p.srcIP === val; }; break;
+      case 'ip.dst': case 'dst':
+        test = function(p) { return p.dstIP === val; }; break;
+      case 'tcp.port':
+        n = parseInt(val, 10);
+        if (isNaN(n)) return { ok: false, error: 'Invalid port number "' + val + '"' };
+        test = function(p) { return phTransport(p.protocol) === 'TCP' && (p.srcPort === n || p.dstPort === n); }; break;
+      case 'udp.port':
+        n = parseInt(val, 10);
+        if (isNaN(n)) return { ok: false, error: 'Invalid port number "' + val + '"' };
+        test = function(p) { return phTransport(p.protocol) === 'UDP' && (p.srcPort === n || p.dstPort === n); }; break;
+      case 'port':
+        n = parseInt(val, 10);
+        if (isNaN(n)) return { ok: false, error: 'Invalid port number "' + val + '"' };
+        test = function(p) { return p.srcPort === n || p.dstPort === n; }; break;
+      case 'protocol': case 'proto': case 'ip.proto':
+        test = function(p) { return p.protocol.toLowerCase() === val.toLowerCase(); }; break;
+      default:
+        return { ok: false, error: 'Unknown field "' + field + '"' };
+    }
+    return { ok: true, fn: neg ? function(p) { return !test(p); } : test };
+  }
+  // Bare protocol name, e.g. DNS / TLS.
+  if (PH_PROTOS.indexOf(term.toUpperCase()) >= 0) {
+    var up = term.toUpperCase();
+    return { ok: true, fn: function(p) { return p.protocol === up; } };
+  }
+  return { ok: false, error: 'Cannot parse "' + term + '"' };
+}
+
+// Parse a full filter expression (terms joined by && or the word "and").
+function phParseFilter(expr) {
+  expr = (expr || '').trim();
+  if (!expr) return { ok: true, fn: function() { return true; }, empty: true };
+  var parts = expr.split(/\s*(?:&&|\band\b)\s*/i).map(function(s) { return s.trim(); }).filter(Boolean);
+  if (parts.length === 0) return { ok: true, fn: function() { return true; }, empty: true };
+  var preds = [];
+  for (var i = 0; i < parts.length; i++) {
+    var pr = phParseTerm(parts[i]);
+    if (!pr.ok) return pr;
+    preds.push(pr.fn);
+  }
+  return { ok: true, fn: function(p) { return preds.every(function(f) { return f(p); }); } };
+}
+
+// Trigger a client-side file download via Blob + object URL (no network).
+function phDownload(filename, content, mime) {
+  try {
+    var blob = new Blob([content], { type: mime || 'application/octet-stream' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window._phantomTimers = window._phantomTimers || [];
+    window._phantomTimers.push(setTimeout(function() { URL.revokeObjectURL(url); }, 2000));
+  } catch (e) { /* ignore */ }
+}
+
+// ============================================================================
 // MAIN RENDER
 // ============================================================================
 var _phInterval = null;
@@ -257,6 +375,8 @@ export function renderPhantom(main) {
   var packets = [];
   var selectedPkt = null;
   var selectedFlow = null;
+  var selectedStream = null;
+  var filterExpr = '';
   var autoRefresh = false;
 
   function loadDemo() {
@@ -276,6 +396,10 @@ export function renderPhantom(main) {
       'dns:DNS Inspector',
       'tls:TLS / SSL',
       'stats:Statistics',
+      'stream:Follow Stream',
+      'trafficstats:Traffic Stats',
+      'filter:Display Filter',
+      'ioc:IOC Export',
     ];
 
     main.innerHTML =
@@ -340,6 +464,17 @@ export function renderPhantom(main) {
       '.ph-empty{text-align:center;padding:40px 20px;color:var(--mut);font-size:.85rem}' +
       '.ph-flow-dir{color:#06b6d4;font-weight:700;font-size:.68rem}' +
       '.ph-chip{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:10px;font-size:.65rem;font-weight:600;background:rgba(6,182,212,.1);color:#06b6d4;border:1px solid rgba(6,182,212,.2)}' +
+      '.ph-meter{display:inline-block;vertical-align:middle;width:90px;height:8px;border-radius:4px;background:var(--line);overflow:hidden;margin-right:6px}' +
+      '.ph-meter-fill{display:block;height:100%;border-radius:4px;background:#06b6d4}' +
+      '.ph-stream-view{display:flex;flex-direction:column;gap:6px}' +
+      '.ph-stream-line{padding:6px 10px;border-radius:5px;border-left:3px solid var(--line);background:var(--card2,rgba(0,0,0,.1))}' +
+      '.ph-stream-line.ph-dir-cs{border-left-color:#06b6d4}' +
+      '.ph-stream-line.ph-dir-sc{border-left-color:#a855f7}' +
+      '.ph-dir-cs{color:#06b6d4}.ph-dir-sc{color:#a855f7}' +
+      '.ph-stream-dir{font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em}' +
+      '.ph-stream-meta{font-size:.62rem;color:var(--mut);margin-left:8px;font-family:var(--font-mono,monospace)}' +
+      '.ph-stream-body{font-family:var(--font-mono,monospace);font-size:.72rem;color:var(--txt);margin-top:3px;word-break:break-all}' +
+      '.ph-hint{font-size:.7rem;color:#ef4444;margin-top:6px;min-height:14px}' +
       '</style>' +
       '<div class="ph-wrap">' +
         '<div class="ph-header">' +
@@ -369,6 +504,10 @@ export function renderPhantom(main) {
     else if (activeTab === 'dns') renderDNS(content);
     else if (activeTab === 'tls') renderTLS(content);
     else if (activeTab === 'stats') renderStats(content);
+    else if (activeTab === 'stream') renderStream(content);
+    else if (activeTab === 'trafficstats') renderTrafficStats(content);
+    else if (activeTab === 'filter') renderFilter(content);
+    else if (activeTab === 'ioc') renderIOC(content);
   }
 
   // ========================================================================
@@ -1070,9 +1209,302 @@ export function renderPhantom(main) {
       '</div></div>';
   }
 
+  // ========================================================================
+  // TAB 9: FOLLOW STREAM
+  // ========================================================================
+  function renderStream(c) {
+    if (packets.length === 0) {
+      c.innerHTML = '<div class="ph-empty">No capture loaded. Go to the Capture tab first.</div>';
+      return;
+    }
+    var streams = phBuildStreams(packets).sort(function(a, b) { return b.bytes - a.bytes; });
+    var sel = selectedStream ? (streams.find(function(s) { return s.key === selectedStream; }) || null) : null;
+
+    var listRows = streams.map(function(s, i) {
+      var on = sel && sel.key === s.key;
+      var dur = (s.endTs - s.startTs).toFixed(3);
+      return '<tr data-stream="' + esc(s.key) + '" style="cursor:pointer;' + (on ? 'background:rgba(6,182,212,.08)' : '') + '">' +
+        '<td>' + (i + 1) + '</td>' +
+        '<td style="font-family:var(--font-mono,monospace);font-size:.7rem">' + esc(s.epA) + '</td>' +
+        '<td class="ph-flow-dir">&lt;--&gt;</td>' +
+        '<td style="font-family:var(--font-mono,monospace);font-size:.7rem">' + esc(s.epB) + '</td>' +
+        '<td>' + esc(s.transport) + '</td>' +
+        '<td style="font-size:.7rem">' + esc(s.protocols.join(', ')) + '</td>' +
+        '<td>' + s.packets.length + '</td>' +
+        '<td>' + fmtBytes(s.bytes) + '</td>' +
+        '<td>' + dur + 's</td></tr>';
+    }).join('');
+
+    var detail = '';
+    if (sel) {
+      var ordered = sel.packets.slice().sort(function(a, b) { return a.ts - b.ts; });
+      var tbl = ordered.map(function(p) {
+        var isCS = (p.srcIP + ':' + p.srcPort) === sel.client;
+        return '<tr><td>' + p.id + '</td><td>' + fmtTime(p.ts) + '</td>' +
+          '<td class="' + (isCS ? 'ph-dir-cs' : 'ph-dir-sc') + '" style="font-weight:700;font-size:.68rem">' + (isCS ? 'C-&gt;S' : 'S-&gt;C') + '</td>' +
+          '<td style="font-family:var(--font-mono,monospace);font-size:.7rem">' + esc(p.srcIP) + ':' + p.srcPort + '</td>' +
+          '<td style="font-family:var(--font-mono,monospace);font-size:.7rem">' + esc(p.dstIP) + ':' + p.dstPort + '</td>' +
+          '<td>' + esc(p.protocol) + '</td><td>' + p.length + '</td>' +
+          '<td style="font-size:.72rem">' + esc(p.info) + '</td></tr>';
+      }).join('');
+      var lines = ordered.map(function(p) {
+        var isCS = (p.srcIP + ':' + p.srcPort) === sel.client;
+        var arrow = isCS ? 'client -&gt; server' : 'server -&gt; client';
+        var cls = isCS ? 'ph-dir-cs' : 'ph-dir-sc';
+        var body = esc(p.info) + (p.payload ? '  [' + esc(p.payload.slice(0, 48)) + (p.payload.length > 48 ? '...' : '') + ']' : '');
+        return '<div class="ph-stream-line ' + cls + '"><span class="ph-stream-dir">' + arrow + '</span>' +
+          '<span class="ph-stream-meta">#' + p.id + ' t=' + fmtTime(p.ts) + ' ' + esc(p.protocol) + ' ' + p.length + 'B</span>' +
+          '<div class="ph-stream-body">' + body + '</div></div>';
+      }).join('');
+      detail =
+        '<div class="ph-panel"><div class="ph-panel-h">Stream Packets - ' + esc(sel.client) + ' (client) &lt;--&gt; ' + esc(sel.server) + ' (server)</div><div class="ph-panel-body">' +
+          '<div class="ph-scroll"><table class="ph-table"><thead><tr><th>#</th><th>Time</th><th>Dir</th><th>Source</th><th>Destination</th><th>Protocol</th><th>Length</th><th>Info</th></tr></thead><tbody>' + tbl + '</tbody></table></div>' +
+        '</div></div>' +
+        '<div class="ph-panel"><div class="ph-panel-h">Reassembled Conversation (' + ordered.length + ' segments)</div><div class="ph-panel-body">' +
+          '<div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:10px;font-size:.7rem">' +
+            '<span class="ph-dir-cs" style="font-weight:700">client -&gt; server</span>' +
+            '<span class="ph-dir-sc" style="font-weight:700">server -&gt; client</span>' +
+          '</div>' +
+          '<div class="ph-stream-view">' + lines + '</div>' +
+        '</div></div>';
+    }
+
+    c.innerHTML =
+      '<div class="ph-panel"><div class="ph-panel-h">Conversations (' + streams.length + ' streams) - select one to follow</div><div class="ph-panel-body">' +
+        '<div class="ph-scroll"><table class="ph-table"><thead><tr><th>#</th><th>Endpoint A</th><th></th><th>Endpoint B</th><th>Transport</th><th>Protocols</th><th>Packets</th><th>Bytes</th><th>Duration</th></tr></thead><tbody>' + listRows + '</tbody></table></div>' +
+      '</div></div>' + detail;
+
+    var tb = c.querySelector('tbody');
+    if (tb) tb.onclick = function(e) {
+      var row = e.target.closest('tr[data-stream]');
+      if (row) { selectedStream = row.dataset.stream; render(); }
+    };
+  }
+
+  // ========================================================================
+  // TAB 10: TRAFFIC STATS
+  // ========================================================================
+  function renderTrafficStats(c) {
+    if (packets.length === 0) {
+      c.innerHTML = '<div class="ph-empty">No capture loaded. Go to the Capture tab first.</div>';
+      return;
+    }
+    var totalPkts = packets.length;
+    var totalBytes = packets.reduce(function(s, p) { return s + (p.length || 0); }, 0) || 1;
+
+    // (a) Protocol hierarchy
+    var pc = {}, pb = {};
+    packets.forEach(function(p) {
+      pc[p.protocol] = (pc[p.protocol] || 0) + 1;
+      pb[p.protocol] = (pb[p.protocol] || 0) + (p.length || 0);
+    });
+    var protoRows = Object.keys(pc).sort(function(a, b) { return pb[b] - pb[a]; }).map(function(k) {
+      var col = protoColor(k);
+      var bytePct = pb[k] / totalBytes * 100;
+      var pktPct = pc[k] / totalPkts * 100;
+      return '<tr><td><span class="ph-proto" style="background:' + col.bg + ';color:' + col.text + '">' + esc(k) + '</span></td>' +
+        '<td>' + pc[k] + '</td><td>' + fmtBytes(pb[k]) + '</td>' +
+        '<td>' + pktPct.toFixed(1) + '%</td>' +
+        '<td style="min-width:150px">' + phMeter(bytePct, col.text) + '<span style="font-size:.66rem;color:var(--mut)">' + bytePct.toFixed(1) + '%</span></td></tr>';
+    }).join('');
+
+    // (b) Top talkers (per IP, sent + received)
+    var tk = {};
+    packets.forEach(function(p) {
+      [p.srcIP, p.dstIP].forEach(function(ip) {
+        var t = tk[ip] || (tk[ip] = { packets: 0, bytes: 0 });
+        t.packets++; t.bytes += (p.length || 0);
+      });
+    });
+    var talkers = Object.keys(tk).map(function(ip) { return { ip: ip, packets: tk[ip].packets, bytes: tk[ip].bytes }; })
+      .sort(function(a, b) { return b.bytes - a.bytes; });
+    var maxTalk = talkers.reduce(function(m, t) { return Math.max(m, t.bytes); }, 1);
+    var talkerRows = talkers.map(function(t, i) {
+      return '<tr><td>' + (i + 1) + '</td><td style="font-family:var(--font-mono,monospace)">' + esc(t.ip) + (phIsPrivate(t.ip) ? ' <span class="ph-chip">internal</span>' : '') + '</td>' +
+        '<td>' + t.packets + '</td><td>' + fmtBytes(t.bytes) + '</td>' +
+        '<td style="min-width:170px">' + phMeter(t.bytes / maxTalk * 100) + '</td></tr>';
+    }).join('');
+
+    // (c) Conversations (per 5-tuple)
+    var streams = phBuildStreams(packets).sort(function(a, b) { return b.bytes - a.bytes; });
+    var maxConv = streams.reduce(function(m, s) { return Math.max(m, s.bytes); }, 1);
+    var convRows = streams.map(function(s) {
+      return '<tr><td style="font-family:var(--font-mono,monospace);font-size:.7rem">' + esc(s.epA) + ' &lt;--&gt; ' + esc(s.epB) + '</td>' +
+        '<td style="font-size:.7rem">' + esc(s.protocols.join(', ')) + '</td>' +
+        '<td>' + s.packets.length + '</td>' +
+        '<td>' + fmtBytes(s.bytes) + '</td>' +
+        '<td>' + (s.endTs - s.startTs).toFixed(3) + 's</td>' +
+        '<td style="min-width:150px">' + phMeter(s.bytes / maxConv * 100) + '</td></tr>';
+    }).join('');
+
+    c.innerHTML =
+      '<div class="ph-grid">' +
+        '<div class="ph-stat"><div class="ph-stat-n">' + totalPkts + '</div><div class="ph-stat-l">Packets</div></div>' +
+        '<div class="ph-stat"><div class="ph-stat-n">' + fmtBytes(totalBytes) + '</div><div class="ph-stat-l">Total Bytes</div></div>' +
+        '<div class="ph-stat"><div class="ph-stat-n">' + Object.keys(pc).length + '</div><div class="ph-stat-l">Protocols</div></div>' +
+        '<div class="ph-stat"><div class="ph-stat-n">' + streams.length + '</div><div class="ph-stat-l">Conversations</div></div>' +
+      '</div>' +
+      '<div class="ph-panel"><div class="ph-panel-h">Protocol Hierarchy</div><div class="ph-panel-body">' +
+        '<table class="ph-table"><thead><tr><th>Protocol</th><th>Packets</th><th>Bytes</th><th>% Packets</th><th>% of Traffic (bytes)</th></tr></thead><tbody>' + protoRows + '</tbody></table>' +
+      '</div></div>' +
+      '<div class="ph-panel"><div class="ph-panel-h">Top Talkers</div><div class="ph-panel-body"><div class="ph-scroll">' +
+        '<table class="ph-table"><thead><tr><th>#</th><th>IP Address</th><th>Packets (tx+rx)</th><th>Bytes</th><th>Share</th></tr></thead><tbody>' + talkerRows + '</tbody></table>' +
+      '</div></div></div>' +
+      '<div class="ph-panel"><div class="ph-panel-h">Conversations (per 5-tuple)</div><div class="ph-panel-body"><div class="ph-scroll">' +
+        '<table class="ph-table"><thead><tr><th>Endpoints</th><th>Protocols</th><th>Packets</th><th>Bytes</th><th>Duration</th><th>Share</th></tr></thead><tbody>' + convRows + '</tbody></table>' +
+      '</div></div></div>';
+  }
+
+  // ========================================================================
+  // TAB 11: DISPLAY FILTER
+  // ========================================================================
+  function renderFilter(c) {
+    if (packets.length === 0) {
+      c.innerHTML = '<div class="ph-empty">No capture loaded. Go to the Capture tab first.</div>';
+      return;
+    }
+    var rowsHTML = packets.map(function(pkt) {
+      var col = protoColor(pkt.protocol);
+      return '<tr data-fpkt="' + pkt.id + '">' +
+        '<td>' + pkt.id + '</td><td>' + fmtTime(pkt.ts) + '</td>' +
+        '<td style="font-family:var(--font-mono,monospace);font-size:.72rem">' + esc(pkt.srcIP) + ':' + pkt.srcPort + '</td>' +
+        '<td style="font-family:var(--font-mono,monospace);font-size:.72rem">' + esc(pkt.dstIP) + ':' + pkt.dstPort + '</td>' +
+        '<td><span class="ph-proto" style="background:' + col.bg + ';color:' + col.text + '">' + esc(pkt.protocol) + '</span></td>' +
+        '<td>' + pkt.length + '</td>' +
+        '<td style="font-size:.72rem;max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(pkt.info) + '</td></tr>';
+    }).join('');
+
+    c.innerHTML =
+      '<div class="ph-panel"><div class="ph-panel-h">Display Filter</div><div class="ph-panel-body">' +
+        '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">' +
+          '<input id="ph-dfilter" type="text" spellcheck="false" placeholder="e.g. ip.addr == 10.0.0.5 &amp;&amp; protocol == DNS" value="' + esc(filterExpr) + '" style="flex:1;min-width:260px;padding:7px 10px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--txt);font-size:.78rem;font-family:var(--font-mono,monospace)">' +
+          '<button class="ph-btn ghost" id="ph-dfilter-clear">Clear</button>' +
+          '<span id="ph-dfilter-count" style="font-size:.72rem;color:var(--mut)"></span>' +
+        '</div>' +
+        '<div id="ph-dfilter-hint" class="ph-hint"></div>' +
+        '<div style="font-size:.68rem;color:var(--mut);margin-top:4px">Fields: ip.addr, ip.src, ip.dst, tcp.port, udp.port, port, protocol - operators == != - combine with &amp;&amp; or and - bare protocol name e.g. DNS</div>' +
+      '</div></div>' +
+      '<div class="ph-panel"><div class="ph-panel-h">Filtered Packets</div><div class="ph-panel-body"><div class="ph-scroll" style="max-height:420px">' +
+        '<table class="ph-table"><thead><tr><th>#</th><th>Time</th><th>Source</th><th>Destination</th><th>Protocol</th><th>Length</th><th>Info</th></tr></thead><tbody id="ph-dfilter-body">' + rowsHTML + '</tbody></table>' +
+      '</div></div></div>';
+
+    var input = c.querySelector('#ph-dfilter');
+    var hint = c.querySelector('#ph-dfilter-hint');
+    var countEl = c.querySelector('#ph-dfilter-count');
+    var rows = c.querySelectorAll('#ph-dfilter-body tr[data-fpkt]');
+
+    function apply() {
+      filterExpr = input.value;
+      var res = phParseFilter(filterExpr);
+      if (!res.ok) {
+        hint.textContent = res.error;
+        countEl.textContent = '';
+        return;
+      }
+      hint.textContent = '';
+      var shown = 0;
+      rows.forEach(function(row) {
+        var id = parseInt(row.dataset.fpkt, 10);
+        var p = packets.find(function(pk) { return pk.id === id; });
+        var ok = p ? res.fn(p) : false;
+        row.hidden = !ok;
+        if (ok) shown++;
+      });
+      countEl.textContent = 'showing ' + shown + ' of ' + packets.length + ' packets';
+    }
+    if (input) input.oninput = apply;
+    var clr = c.querySelector('#ph-dfilter-clear');
+    if (clr) clr.onclick = function() { input.value = ''; filterExpr = ''; apply(); input.focus(); };
+    apply();
+  }
+
+  // ========================================================================
+  // TAB 12: IOC EXPORT
+  // ========================================================================
+  function renderIOC(c) {
+    if (packets.length === 0) {
+      c.innerHTML = '<div class="ph-empty">No capture loaded. Go to the Capture tab first.</div>';
+      return;
+    }
+    var ipSet = {}, domSet = {};
+    packets.forEach(function(p) {
+      if (/^\d{1,3}(\.\d{1,3}){3}$/.test(p.srcIP)) ipSet[p.srcIP] = true;
+      if (/^\d{1,3}(\.\d{1,3}){3}$/.test(p.dstIP)) ipSet[p.dstIP] = true;
+      var matches = (p.info || '').match(PH_DOMAIN_RE) || [];
+      matches.forEach(function(d) {
+        d = d.toLowerCase();
+        if (/^\d+(\.\d+)+$/.test(d)) return; // skip IP-like tokens
+        domSet[d] = true;
+      });
+    });
+    var ips = Object.keys(ipSet).sort();
+    var domains = Object.keys(domSet).sort();
+
+    var iocData = { source: 'PHANTOM', generated: new Date().toISOString(), simulated: true, ips: ips, domains: domains };
+
+    var graphBtn = '<button class="ph-btn ghost" id="ph-ioc-graph" title="Sends extracted IOCs to the Security Graph tool (tagged simulated)">Send to Security Graph</button>';
+
+    c.innerHTML =
+      '<div class="ph-grid">' +
+        '<div class="ph-stat"><div class="ph-stat-n">' + ips.length + '</div><div class="ph-stat-l">Unique IPs</div></div>' +
+        '<div class="ph-stat"><div class="ph-stat-n">' + domains.length + '</div><div class="ph-stat-l">Domains / DNS Names</div></div>' +
+        '<div class="ph-stat"><div class="ph-stat-n">' + (ips.length + domains.length) + '</div><div class="ph-stat-l">Total Indicators</div></div>' +
+      '</div>' +
+      '<div style="margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap">' +
+        '<button class="ph-btn" id="ph-ioc-json">Export JSON</button>' +
+        '<button class="ph-btn" id="ph-ioc-csv">Export CSV</button>' +
+        graphBtn +
+      '</div>' +
+      '<div class="ph-panel"><div class="ph-panel-h">IP Indicators (' + ips.length + ')</div><div class="ph-panel-body"><div class="ph-scroll" style="max-height:300px">' +
+        '<table class="ph-table"><thead><tr><th>#</th><th>IP Address</th><th>Scope</th></tr></thead><tbody>' +
+        ips.map(function(ip, i) {
+          return '<tr><td>' + (i + 1) + '</td><td style="font-family:var(--font-mono,monospace)">' + esc(ip) + '</td><td>' + (phIsPrivate(ip) ? '<span class="ph-chip">internal</span>' : 'external') + '</td></tr>';
+        }).join('') +
+        '</tbody></table>' +
+      '</div></div></div>' +
+      '<div class="ph-panel"><div class="ph-panel-h">Domain Indicators (' + domains.length + ')</div><div class="ph-panel-body"><div class="ph-scroll" style="max-height:300px">' +
+        (domains.length ?
+          '<table class="ph-table"><thead><tr><th>#</th><th>Domain / DNS Name</th></tr></thead><tbody>' +
+          domains.map(function(d, i) {
+            return '<tr><td>' + (i + 1) + '</td><td style="font-family:var(--font-mono,monospace);font-size:.74rem">' + esc(d) + '</td></tr>';
+          }).join('') +
+          '</tbody></table>' :
+          '<div class="ph-empty">No domains extracted from capture.</div>') +
+      '</div></div></div>';
+
+    var jsonBtn = c.querySelector('#ph-ioc-json');
+    if (jsonBtn) jsonBtn.onclick = function() {
+      phDownload('phantom-iocs.json', JSON.stringify(iocData, null, 2), 'application/json');
+    };
+    var csvBtn = c.querySelector('#ph-ioc-csv');
+    if (csvBtn) csvBtn.onclick = function() {
+      var lines = ['type,indicator'];
+      ips.forEach(function(ip) { lines.push('ip,' + ip); });
+      domains.forEach(function(d) { lines.push('domain,' + d); });
+      phDownload('phantom-iocs.csv', lines.join('\n'), 'text/csv');
+    };
+    var gbtn = c.querySelector('#ph-ioc-graph');
+    if (gbtn) gbtn.onclick = function() {
+      // Uses the same dynamic-import graph-bridge pattern as phSendHosts/phSendAnomalies.
+      phSendGraph(gbtn, function(gb) {
+        var items = ips.map(function(ip) { return phHostItem(ip, { source: 'IOC export' }); })
+          .concat(domains.map(function(d) {
+            return { type: 'DOMAIN', name: d, data: { simulated: true, source: 'IOC export' }, opts: { tags: ['phantom', 'ioc', 'simulated'] } };
+          }));
+        var r = gb.sendToGraph('PHANTOM', items, undefined, true);
+        r.summary = (ips.length + domains.length) + ' IOCs, ' + r.created + ' added';
+        return r;
+      });
+    };
+  }
+
   render();
 }
 
 export function cleanupPhantom() {
+  if (window._phantomTimers && window._phantomTimers.length) {
+    window._phantomTimers.forEach(function(t) { clearTimeout(t); clearInterval(t); });
+    window._phantomTimers = [];
+  }
   if (_phInterval) { clearInterval(_phInterval); _phInterval = null; }
 }
