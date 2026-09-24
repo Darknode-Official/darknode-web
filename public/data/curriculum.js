@@ -1,5 +1,5 @@
 /**
- * Darknode Academy -- Cybersecurity Learning Curriculum
+ * Darknode Learn Hub -- Cybersecurity Learning Curriculum
  *
  * Structured learning paths, certification guides, CTF platforms,
  * and recommended reading for cybersecurity education.

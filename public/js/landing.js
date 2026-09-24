@@ -1160,7 +1160,7 @@ testing methodology for 10.10.14.7:
               <li>All 192+ security tools (no limits)</li>
               <li>PROMETHEUS, SENTINEL EYE, HYDRA, AEGIS &mdash; full access</li>
               <li>Nexus AI agent (BYOK &mdash; Claude, GPT, Gemini, Ollama)</li>
-              <li>Academy with 1,400+ topics and quizzes</li>
+              <li>Learn Hub with 1,400+ topics and quizzes</li>
               <li>CLI, desktop app, and Darknode OS</li>
               <li>Live threat intelligence feeds</li>
               <li>Unlimited scans and analysis</li>
