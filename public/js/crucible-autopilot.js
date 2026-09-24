@@ -18,8 +18,16 @@ export function renderAutopilot(container, ctx) {
   const timers = [];      // setTimeout / setInterval ids
   const processed = new Set();   // alert ids the agent has already picked up
   const pending = new Map();     // alertId -> { actionIds, applied, decideEl }
+  const monitored = new Map();   // alertId -> { entry, decision, priority } held below policy threshold
   let ticker = null;      // interval that drives the attacker forward
   let torn = false;
+
+  // Current autonomous-containment policy (aggressiveness preset from core).
+  function policy() {
+    return (core.AGGRESSION && core.AGGRESSION[core.CRU.aggressiveness]) ||
+      (core.AGGRESSIONS && core.AGGRESSIONS[1]) ||
+      { id: 'balanced', name: 'Balanced', threshold: 6, maxActions: 2 };
+  }
 
   function teardown() {
     if (torn) return;
@@ -46,9 +54,9 @@ export function renderAutopilot(container, ctx) {
   existing.forEach((al, i) => later(() => ingest(al, true), 200 + i * 550));
   // And subscribe to everything the engine emits from here on.
   subs.push(core.on('alert', (al) => { if (alive()) ingest(al, false); }));
-  subs.push(core.on('action', () => { if (alive()) { renderStatus(); renderKpis(); } }));
-  subs.push(core.on('contained', () => { stopTicker(); if (alive()) { renderStatus(); renderKpis(); renderBanner(); ctx.toast('Threat contained by autopilot', 'good'); } }));
-  subs.push(core.on('event', () => { if (alive()) renderBanner(); }));
+  subs.push(core.on('action', () => { if (alive()) { renderStatus(); renderKpis(); renderPolicy(); } }));
+  subs.push(core.on('contained', () => { stopTicker(); if (alive()) { renderStatus(); renderKpis(); renderBanner(); renderPolicy(); ctx.toast('Threat contained by autopilot', 'good'); } }));
+  subs.push(core.on('event', () => { if (alive()) { renderBanner(); renderPolicy(); } }));
 
   // Race the attacker: while the run is live, Autopilot itself drives the
   // campaign one step at a time so alerts arrive in real time and the agent
@@ -97,7 +105,8 @@ export function renderAutopilot(container, ctx) {
       '</div>' +
       '<div id="cra-banner"></div>' +
       '<div class="cru-kpis" id="cra-kpis" style="margin:14px 0"></div>' +
-      '<div class="cra-cols">' +
+      '<div class="cru-card cra-policy" id="cra-policy"></div>' +
+      '<div class="cra-cols" style="margin-top:14px">' +
         '<div class="cru-card cra-tracewrap">' +
           '<h3>Agent reasoning trace</h3>' +
           '<p class="cru-sub">Observation to action, per detection. Newest at the top.</p>' +
@@ -105,7 +114,7 @@ export function renderAutopilot(container, ctx) {
         '</div>' +
         '<div class="cru-card"><h3>Containment status</h3><div id="cra-status"></div></div>' +
       '</div>';
-    renderToggle(); renderBanner(); renderKpis(); renderStatus();
+    renderToggle(); renderBanner(); renderKpis(); renderStatus(); renderPolicy();
   }
 
   function wireControls() {
@@ -121,10 +130,10 @@ export function renderAutopilot(container, ctx) {
     if (rr) rr.onclick = () => {
       stopTicker();
       core.resetRun(run);
-      processed.clear(); pending.clear();
+      processed.clear(); pending.clear(); monitored.clear();
       const tr = container.querySelector('#cra-trace');
       if (tr) tr.innerHTML = '<div class="cra-idle">Run re-armed. Autopilot is driving the attacker again…</div>';
-      renderBanner(); renderKpis(); renderStatus();
+      renderBanner(); renderKpis(); renderStatus(); renderPolicy();
       startTicker(); // Autopilot drives the fresh run itself
       ctx.toast('Run reset — re-engaging ' + run.campaign.name, 'info');
     };
@@ -158,18 +167,48 @@ export function renderAutopilot(container, ctx) {
 
     if (!decision.actionIds.length) {
       setDecideLine(entry, 'No containment maps to this tactic. Escalating to analyst review.', 'amber');
+      renderPolicy();
       return;
     }
 
+    const pol = policy();
     if (core.CRU.autopilot) {
-      // Autonomous: brief deliberation delay, then apply and log the outcome.
-      setDecideLine(entry, 'DECIDE: ' + decision.names.join(' + ') + ' — executing…', 'amber');
-      later(() => applyDecision(alert, decision, entry), isBacklog ? 200 : 400);
+      if (a.priority >= pol.threshold) {
+        // Autonomous: priority clears the policy bar -> deliberate, apply, log.
+        setDecideLine(entry,
+          'DECIDE: ' + decision.names.join(' + ') + ' — priority P' + a.priority +
+          ' at/above threshold T' + pol.threshold + ' (' + pol.name + '), executing…', 'amber');
+        later(() => applyDecision(alert, decision, entry), isBacklog ? 200 : 400);
+      } else {
+        // Below the bar: hold and monitor. Raising aggressiveness reconsiders it.
+        monitored.set(alert.id, { entry: entry, decision: decision, priority: a.priority });
+        setDecideLine(entry,
+          'MONITOR: priority P' + a.priority + ' below auto-contain threshold T' + pol.threshold +
+          ' (' + pol.name + '). Holding — raise aggressiveness to contain.', 'amber');
+      }
     } else {
       // Manual: hold for a human. Approve applies; Dismiss stands down.
       pending.set(alert.id, { actionIds: decision.actionIds, applied: false, entry: entry });
       renderApproval(alert, decision, entry);
     }
+    renderPolicy();
+  }
+
+  // Re-evaluate held (monitored) alerts after the policy is loosened so a raise
+  // in aggressiveness measurably changes the live outcome.
+  function reconsider() {
+    if (!core.CRU.autopilot) return;
+    const pol = policy();
+    Array.from(monitored.keys()).forEach((id) => {
+      const m = monitored.get(id);
+      if (!m || m.priority < pol.threshold) return;
+      const alert = run.alerts.find((x) => x.id === id);
+      monitored.delete(id);
+      if (!alert) return;
+      const decision = decide(alert);
+      if (m.entry && m.entry.actionsEl) m.entry.actionsEl.innerHTML = '';
+      applyDecision(alert, decision, m.entry);
+    });
   }
 
   function applyDecision(alert, decision, entry) {
@@ -180,10 +219,11 @@ export function renderAutopilot(container, ctx) {
       if (r && r.ok) notes.push((core.ACTION[id] || {}).name || id);
     });
     const p = pending.get(alert.id); if (p) p.applied = true;
+    monitored.delete(alert.id);
     setDecideLine(entry,
       'APPLIED: ' + (notes.join(' + ') || decision.names.join(' + ')) +
       ' — mttd ' + fmtMin(alert.t) + (run.contained ? ' — CONTAINED' : ''), 'green');
-    renderStatus(); renderKpis(); renderBanner();
+    renderStatus(); renderKpis(); renderBanner(); renderPolicy();
   }
 
   function renderApproval(alert, decision, entry) {
@@ -242,7 +282,7 @@ export function renderAutopilot(container, ctx) {
 
   function decide(alert) {
     let ids = (alert.suggested && alert.suggested.length) ? alert.suggested.slice() : core.suggestActions(alert.tactic);
-    ids = ids.filter((id) => core.ACTION[id]).slice(0, 2);
+    ids = ids.filter((id) => core.ACTION[id]).slice(0, policy().maxActions);
     return { actionIds: ids, names: ids.map((id) => (core.ACTION[id] || {}).name || id) };
   }
 
@@ -286,6 +326,73 @@ export function renderAutopilot(container, ctx) {
     host.innerHTML =
       '<div class="cra-status-block"><div class="cra-k">Blocked tactics</div><div class="cra-chips">' + blockChips + '</div></div>' +
       '<div class="cra-status-block"><div class="cra-k">Containment actions (' + acts.length + ')</div><ul class="cra-actlist">' + actList + '</ul></div>';
+  }
+
+  // ---- defense-policy panel: tunable aggressiveness + live tradeoff meters --
+  function renderPolicy() {
+    const host = container.querySelector('#cra-policy');
+    if (!host) return;
+    const pol = policy();
+    const aggs = core.AGGRESSIONS || [];
+    const seg = aggs.map((a) => (
+      '<button type="button" class="cra-agg' + (a.id === pol.id ? ' on' : '') +
+        '" data-agg="' + esc(a.id) + '" title="' + esc(a.desc) + '">' + esc(a.name) + '</button>'
+    )).join('');
+
+    const contained = (run.actions || []).length;
+    const held = monitored.size;
+    const reasoned = processed.size;
+
+    // The core tradeoff: how much of the campaign's kill chain is now blocked
+    // (containment) versus how much of it we managed to alert on (detection).
+    const campTactics = Array.from(new Set((run.campaign.steps || [])
+      .map((s) => (core.TECH[s.techniqueId] || {}).tactic).filter(Boolean)));
+    const blockedCov = campTactics.filter((t) => (run.blockedTactics || {})[t]).length;
+    const containCovPct = campTactics.length ? Math.round(blockedCov / campTactics.length * 100) : 0;
+    const detCovPct = run.events.length ? Math.round(run.alerts.length / run.events.length * 100) : 0;
+
+    host.innerHTML =
+      '<div class="cra-policy-head">' +
+        '<div><h3 style="margin:0">Defense Policy</h3>' +
+          '<p class="cru-sub" style="margin:2px 0 0">' + esc(pol.desc) + '</p></div>' +
+        '<div class="cra-agg-seg" role="group" aria-label="Containment aggressiveness">' + seg + '</div>' +
+      '</div>' +
+      '<div class="cra-policy-grid">' +
+        metric('Auto-contain at', 'P' + pol.threshold + '+') +
+        metric('Actions / alert', String(pol.maxActions)) +
+        metric('Alerts reasoned', String(reasoned)) +
+        metric('Contained', String(contained)) +
+        metric('Held / monitor', String(held)) +
+      '</div>' +
+      '<div class="cra-meter-row">' +
+        meter('Containment coverage', containCovPct, blockedCov + ' / ' + campTactics.length + ' tactics blocked', '#16a34a') +
+        meter('Detection coverage', detCovPct, run.alerts.length + ' / ' + run.events.length + ' steps alerted', '#d97706') +
+      '</div>';
+
+    host.querySelectorAll('.cra-agg').forEach((b) => {
+      b.onclick = () => {
+        const id = b.dataset.agg;
+        if (!core.AGGRESSION || !core.AGGRESSION[id] || id === core.CRU.aggressiveness) return;
+        core.CRU.aggressiveness = id;
+        const p = policy();
+        renderPolicy();
+        ctx.toast('Policy: ' + p.name + ' — auto-contain at P' + p.threshold + '+', 'info');
+        reconsider();
+      };
+    });
+  }
+
+  function metric(l, n) {
+    return '<div class="cra-metric"><div class="cra-metric-n">' + esc(n) +
+      '</div><div class="cra-metric-l">' + esc(l) + '</div></div>';
+  }
+  function meter(label, pct, sub, color) {
+    const p = Math.max(0, Math.min(100, Number(pct) || 0));
+    return '<div class="cra-meter">' +
+      '<div class="cra-meter-top"><span>' + esc(label) + '</span><span>' + esc(pct) + '%</span></div>' +
+      '<div class="cra-meter-bar"><div class="cra-meter-fill" style="width:' + p + '%;background:' + color + '"></div></div>' +
+      '<div class="cra-meter-sub">' + esc(sub) + '</div>' +
+    '</div>';
   }
 
   function renderKpis() {
@@ -377,6 +484,22 @@ export function renderAutopilot(container, ctx) {
       '.cra-warn{border-color:#d97706;background:color-mix(in srgb,#d97706 9%,var(--card))}.cra-warn .cra-banner-title{color:#d97706}' +
       '.cra-neutral{background:var(--card)}' +
       '#cra-toggle.cra-on{border-color:#16a34a;color:#16a34a}' +
+      '.cra-policy-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}' +
+      '.cra-agg-seg{display:inline-flex;border:1px solid var(--line);border-radius:4px;overflow:hidden;flex:none}' +
+      '.cra-agg{font-family:inherit;color:var(--txt);background:var(--card);border:0;border-left:1px solid var(--line);padding:7px 14px;cursor:pointer;font-size:.74rem;font-weight:600;letter-spacing:.02em}' +
+      '.cra-agg:first-child{border-left:0}' +
+      '.cra-agg:hover{background:color-mix(in srgb,var(--acc) 8%,var(--card))}' +
+      '.cra-agg.on{background:var(--acc);color:#fff}' +
+      '.cra-policy-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-top:14px}' +
+      '.cra-metric{border:1px solid var(--line);border-radius:4px;padding:8px 10px;background:color-mix(in srgb,var(--acc) 4%,var(--card))}' +
+      '.cra-metric-n{font-size:1.1rem;font-weight:800;font-variant-numeric:tabular-nums}' +
+      '.cra-metric-l{font-size:.62rem;letter-spacing:.05em;text-transform:uppercase;color:var(--mut);margin-top:2px}' +
+      '.cra-meter-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}' +
+      '@media (max-width:640px){.cra-meter-row{grid-template-columns:1fr}}' +
+      '.cra-meter-top{display:flex;justify-content:space-between;font-size:.72rem;font-weight:600;margin-bottom:5px}' +
+      '.cra-meter-bar{height:8px;border-radius:4px;background:color-mix(in srgb,var(--line) 60%,transparent);overflow:hidden}' +
+      '.cra-meter-fill{height:100%;border-radius:4px;transition:width .3s}' +
+      '.cra-meter-sub{font-size:.64rem;color:var(--mut);margin-top:4px}' +
       '</style>';
   }
 }

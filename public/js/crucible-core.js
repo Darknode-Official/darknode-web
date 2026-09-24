@@ -20,7 +20,9 @@
 //   POSTURES    [{id,name,mult}]        -> defensive posture options
 //   ACTIONS     [{id,name,kind,cost,blocks[]}] -> containment actions
 //
-//   newRun(campaignId, opts)  -> run    opts:{postureId, autopilot}
+//   newRun(campaignId, opts)  -> run    opts:{postureId, autopilot, difficultyId}
+//   DIFFICULTIES [{id,name,desc,detectMult,dwellMult}] -> adversary tradecraft
+//   AGGRESSIONS  [{id,name,desc,threshold,maxActions}] -> autopilot policy
 //   stepRun(run)              -> {done, step, phase, events[], alerts[]}
 //   resetRun(run)             -> run
 //   applyAction(run, actionId, alertId?) -> {ok, note}
@@ -45,6 +47,8 @@ export const CRU = {
   history: [],        // completed runs
   tab: 'range',       // active pillar
   autopilot: true,    // default defender mode
+  difficulty: 'standard',       // selected adversary tradecraft (see DIFFICULTIES)
+  aggressiveness: 'balanced',   // autopilot containment policy (see AGGRESSIONS)
 };
 
 // ------------------------------ ATT&CK model -------------------------------
@@ -356,14 +360,43 @@ export const ACTIONS = [
 ];
 export const ACTION = ACTIONS.reduce((m, a) => (m[a.id] = a, m), {});
 
+// ------------------------------ difficulty ---------------------------------
+// Difficulty models the adversary's tradecraft. detectMult scales EVERY
+// detection roll (stealthier operators are simply harder to catch); dwellMult
+// scales how long each step lingers on the sim clock (a faster operator gives
+// the blue team less time to react). 'standard' is neutral (both 1.0) so a run
+// with no difficulty specified behaves exactly as before.
+export const DIFFICULTIES = [
+  { id: 'training', name: 'Training', desc: 'Loud, deliberate operator. Sensors have every advantage.', detectMult: 1.35, dwellMult: 1.25 },
+  { id: 'standard', name: 'Standard', desc: 'Competent crew operating at a normal tempo.', detectMult: 1.0, dwellMult: 1.0 },
+  { id: 'elite', name: 'Elite', desc: 'Disciplined, low-noise tradecraft. Detection is measurably harder.', detectMult: 0.78, dwellMult: 0.8 },
+  { id: 'apex', name: 'Apex', desc: 'Bleeding-edge operator moving fast and quiet.', detectMult: 0.6, dwellMult: 0.62 },
+];
+export const DIFFICULTY = DIFFICULTIES.reduce((m, d) => (m[d.id] = d, m), {});
+
+// ------------------------------ autopilot policy ---------------------------
+// The autonomous blue team weighs each detection's priority (1..10) against a
+// containment threshold. Below the threshold it monitors rather than acting;
+// at or above it contains, applying up to maxActions playbook actions. Raising
+// aggressiveness lowers the bar and widens the response -- more containment,
+// fewer objectives reached, at the cost of acting on lower-confidence signal.
+export const AGGRESSIONS = [
+  { id: 'conservative', name: 'Conservative', desc: 'Hold unless the threat is severe or already near the crown jewels.', threshold: 8, maxActions: 1 },
+  { id: 'balanced', name: 'Balanced', desc: 'Contain credible threats; monitor low-priority noise.', threshold: 6, maxActions: 2 },
+  { id: 'aggressive', name: 'Aggressive', desc: 'Contain on the first credible signal anywhere in the kill chain.', threshold: 4, maxActions: 3 },
+];
+export const AGGRESSION = AGGRESSIONS.reduce((m, a) => (m[a.id] = a, m), {});
+
 // ================================ ENGINE ===================================
 // A run is a single wargame execution. Pillars drive it with stepRun().
 export function newRun(campaignId, opts = {}) {
   const camp = CAMPAIGN[campaignId] || CAMPAIGNS[0];
   const posture = POSTURE[opts.postureId] || POSTURES[0];
+  const difficulty = DIFFICULTY[opts.difficultyId] || DIFFICULTY.standard || DIFFICULTIES[0];
   return {
     id: uid('run'), campaignId: camp.id, campaign: camp,
     postureId: posture.id, autopilot: opts.autopilot !== false,
+    difficultyId: difficulty.id, difficulty: difficulty,
     cursor: 0, clockMin: 0, done: false, startedAt: Date.now(),
     events: [], alerts: [], actions: [], blockedTactics: {},
     isolatedAssets: {}, reached: [], contained: false, containedAt: null,
@@ -380,7 +413,8 @@ export function stepRun(run) {
   const step = run.campaign.steps[run.cursor];
   const tech = TECH[step.techniqueId] || { id: step.techniqueId, name: step.techniqueId, tactic: 'execution', detectability: 0.5 };
   const asset = ASSET[step.targetAssetId] || { id: step.targetAssetId, name: step.targetAssetId, zone: 'corp' };
-  run.clockMin += step.dwellMin;
+  const dwellMult = (run.difficulty && run.difficulty.dwellMult) || 1;
+  run.clockMin += Math.max(1, Math.round(step.dwellMin * dwellMult));
   run.cursor += 1;
 
   const events = [];
@@ -403,9 +437,10 @@ export function stepRun(run) {
   const posture = POSTURE[run.postureId] || POSTURES[0];
   const dets = DET_BY_TECH[tech.id] || [];
   const monitoring = instrumentation(asset);
+  const diffMult = (run.difficulty && run.difficulty.detectMult) || 1;
   let best = null;
   dets.forEach((d) => {
-    const p = Math.min(0.98, (tech.detectability) * d.fidelity * posture.mult * monitoring * (0.5 + step.noise));
+    const p = Math.min(0.98, (tech.detectability) * d.fidelity * posture.mult * monitoring * diffMult * (0.5 + step.noise));
     if (Math.random() < p) { if (!best || d.fidelity > best.fidelity) best = d; }
   });
   if (best) {
@@ -473,7 +508,7 @@ export function applyAction(run, actionId, alertId) {
 }
 
 export function resetRun(run) {
-  const fresh = newRun(run.campaignId, { postureId: run.postureId, autopilot: run.autopilot });
+  const fresh = newRun(run.campaignId, { postureId: run.postureId, autopilot: run.autopilot, difficultyId: run.difficultyId });
   Object.assign(run, fresh);
   return run;
 }
