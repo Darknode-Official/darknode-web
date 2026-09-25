@@ -70,6 +70,10 @@ export function consoleHTML(isOwner) {
       <span class="con-favlbl">★ Favorites</span><span class="con-favs" id="conFavs"></span>
       <span class="con-favlbl con-reclbl">Recent</span><span class="con-favs" id="conRecent"></span>
     </div>
+    <div class="con-catbar" id="conCatbar" aria-label="Browse by category">
+      <span class="con-favlbl">Categories</span>
+      <span class="con-cats">${gs.map((g) => `<button class="con-catchip" data-cat="${g.id}" data-color="${g.color}" title="${esc(g.name)} — ${g.items.length} tool${g.items.length === 1 ? "" : "s"}"><span class="svc-dot"></span>${esc(g.name)}<span class="con-catn">${g.items.length}</span></button>`).join("")}</span>
+    </div>
   </div>
   <aside class="svc-menu" id="sidebar" aria-label="All services">
     <div class="svc-cols">
@@ -150,6 +154,8 @@ export function wireConsole(root) {
 
   btn.onclick = () => setOpen(!isOpen());
   menu.querySelector(".svc-cats").addEventListener("click", (e) => { const c = e.target.closest(".svc-cat"); if (!c) return; cat = c.dataset.cat; search.value = ""; render(); });
+  const catbar = root.querySelector("#conCatbar");
+  if (catbar) catbar.addEventListener("click", (e) => { const c = e.target.closest(".con-catchip"); if (!c) return; cat = c.dataset.cat; search.value = ""; if (!isOpen()) setOpen(true); else render(); });
   menu.querySelector(".svc-cats").addEventListener("mouseover", (e) => { const c = e.target.closest(".svc-cat"); if (!c || search.value || !matchMedia("(hover:hover)").matches) return; if (cat !== c.dataset.cat) { cat = c.dataset.cat; render(); } });
   menu.addEventListener("click", (e) => {
     const s = e.target.closest(".svc-star"); if (!s) return;
@@ -169,7 +175,7 @@ export function wireConsole(root) {
     const t = e.target, typing = t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName));
     if (e.key === "/" && !typing && !e.ctrlKey && !e.metaKey) { e.preventDefault(); search.focus(); }
   });
-  document.addEventListener("click", (e) => { if (isOpen() && !e.target.closest("#sidebar, .con-bar, #hamburger")) setOpen(false); });
+  document.addEventListener("click", (e) => { if (isOpen() && !e.target.closest("#sidebar, .con-bar, .con-catbar, #hamburger")) setOpen(false); });
   renderBars();
 
   return {
