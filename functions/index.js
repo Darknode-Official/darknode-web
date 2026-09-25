@@ -20,6 +20,15 @@ const { onRequest } = require("firebase-functions/v2/https");
 const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
 
 const PROVIDERS = {
+  // Darknode's own model. Points at a self-hosted OpenAI-compatible endpoint
+  // (Ollama /v1, vLLM, or SGLang) set via DARKNODE_URL. Key optional — a
+  // self-hosted box may need none. This is the platform's flagship model.
+  darknode: {
+    url: () => process.env.DARKNODE_URL || "http://127.0.0.1:11434/v1/chat/completions",
+    env: "DARKNODE_KEY",
+    format: "openai",
+    optionalKey: true,
+  },
   groq: { url: () => "https://api.groq.com/openai/v1/chat/completions", env: "GROQ_KEY", format: "openai" },
   openrouter: {
     url: () => "https://openrouter.ai/api/v1/chat/completions",
@@ -120,12 +129,12 @@ exports.chat = onRequest({ cors: true, region: "us-central1", timeoutSeconds: 12
   if (!cfg) { res.status(400).json({ error: "Unknown provider: " + provider }); return; }
 
   const key = process.env[cfg.env];
-  if (!key) { res.status(500).json({ error: "Server key not configured for " + provider }); return; }
+  if (!key && !cfg.optionalKey) { res.status(500).json({ error: "Server key not configured for " + provider }); return; }
 
   const isGemini = cfg.format === "gemini";
   const url = cfg.url(model, key);
   const headers = { "Content-Type": "application/json" };
-  if (!isGemini) headers["Authorization"] = "Bearer " + key; // Gemini keys the URL instead
+  if (!isGemini && key) headers["Authorization"] = "Bearer " + key; // Gemini keys the URL instead; self-hosted may need none
   if (cfg.headers) Object.assign(headers, cfg.headers);
   const body = isGemini ? toGeminiBody(messages) : toOpenAiBody(model, messages);
 

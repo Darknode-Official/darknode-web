@@ -10,7 +10,7 @@ const SYS_KEY = "sw_ai_sys", MODEL_KEY = "sw_ai_model";
 // so we don't hold one.) If a user enters their own key in Settings, that BYOK
 // key is used directly instead of the proxy.
 const PROXY_URL = "/api/chat";
-const PROXY_PROVIDERS = new Set(["gemini", "groq", "openrouter", "mistral"]);
+const PROXY_PROVIDERS = new Set(["darknode", "gemini", "groq", "openrouter", "mistral"]);
 function _key(provider) {
   const map = { claude: "sw_claude_key", openai: "sw_openai_key", gemini: "sw_gemini_key", groq: "sw_groq_key", openrouter: "sw_openrouter_key", mistral: "sw_mistral_key" };
   try { const u = (localStorage.getItem(map[provider]) || "").trim(); if (u) return u; } catch (_) {}
@@ -180,6 +180,16 @@ Windows: whoami /priv | wmic service get pathname (unquoted paths) | cmdkey /lis
 - Reference Darknode tools when relevant (e.g. "You can use the Hash Toolkit in the sidebar to identify this hash type")
 - Be direct and technical; when a request would only make sense as unauthorized harm, redirect it to the authorized, lab, or defensive version instead of refusing flatly`;
 
+// Darknode's own model — the platform flagship. Two ways to reach it:
+//  - provider "darknode": via the server proxy to a hosted Darknode endpoint
+//    (set DARKNODE_URL in the Cloud Function env). This is the production path.
+//  - provider "ollama": a locally-run `darknode` model (after `ollama create
+//    darknode` from the foundation track). This is the local-dev path.
+const DARKNODE_MODELS = [
+  { id: "darknode", name: "Darknode AI", provider: "darknode", group: "Darknode AI (built-in)", sub: "flagship" },
+  { id: "darknode", name: "Darknode AI (local)", provider: "ollama", group: "Darknode AI (built-in)", sub: "local" },
+];
+
 const OLLAMA_MODELS = [
   { id: "claude-fable", name: "Claude Fable 5.1", provider: "ollama", group: "Local AI (Ollama — Free)", sub: "local" },
 ];
@@ -192,7 +202,10 @@ const OLLAMA_MODELS = [
 // key, needs no install, and is the most capable free tier — so it's what every
 // user gets until they pick something else. Kept as a named constant so the
 // default is explicit and survives any reordering of MODELS.
-const DEFAULT_MODEL_ID = "gemini-flash-latest";
+// Darknode AI is the platform's own model and the default every user gets. The
+// other providers below remain available in the picker (a fallback during the
+// Darknode trial); once Darknode is confirmed they can be pruned.
+const DEFAULT_MODEL_ID = "darknode";
 
 const GEMINI_MODELS = [
   { id: "gemini-flash-latest", name: "Gemini Flash", provider: "gemini", group: "Recommended (Free)", sub: "recommended" },
@@ -201,6 +214,7 @@ const GEMINI_MODELS = [
 ];
 
 const MODELS = [
+  ...DARKNODE_MODELS,
   ...GEMINI_MODELS,
   ...OLLAMA_MODELS,
   { id: "llama-3.3-70b-specdec", name: "Llama 3.3 70B", provider: "groq", group: "Fast & Free (Groq)" },
@@ -437,7 +451,8 @@ function aiModal({ title, desc, fields = [], submitText = "Save", extra = [] } =
 export function renderAI(main) {
   const models = availableModels();
   const saved = (() => { try { return localStorage.getItem(MODEL_KEY) || ""; } catch (_) { return ""; } })();
-  const defaultModel = models.find((m) => m.id === saved)
+  const defaultModel = models.find((m) => (m.provider + ":" + m.id) === saved)
+    || models.find((m) => m.id === saved)  // back-compat: older builds stored id only
     || models.find((m) => m.id === DEFAULT_MODEL_ID)
     || models[0];
 
@@ -531,7 +546,7 @@ export function renderAI(main) {
     else { byokHint.style.display = "none"; sel.style.borderColor = ""; sel.style.color = ""; }
   }
   updateByokHint();
-  sel.onchange = () => { try { localStorage.setItem(MODEL_KEY, sel.value.split(":").slice(1).join(":")); } catch (_) {} const m = MODELS.find((x) => sel.value === x.provider + ":" + x.id); if (m) status.textContent = "Switched to " + m.name; updateByokHint(); };
+  sel.onchange = () => { try { localStorage.setItem(MODEL_KEY, sel.value); } catch (_) {} const m = MODELS.find((x) => sel.value === x.provider + ":" + x.id); if (m) status.textContent = "Switched to " + m.name; updateByokHint(); };
   $("#aiSys").onclick = () => {
     aiModal({ title: "System prompt", desc: "Controls how Nexus behaves for the whole conversation.", fields: [{ type: "textarea", value: localStorage.getItem(SYS_KEY) || DEFAULT_SYS, rows: 12 }], submitText: "Save", extra: [{ label: "Reset to default", value: "__reset__" }] }).then((v) => {
       if (!v) return;
