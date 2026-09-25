@@ -405,9 +405,10 @@ const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 
 const TEXT_EXT = /\.(txt|text|md|markdown|log|csv|tsv|json|ya?ml|xml|svg|html?|css|scss|less|js|jsx|mjs|cjs|ts|tsx|py|rb|go|rs|c|h|cpp|hpp|cc|cxx|java|kt|kts|swift|php|pl|lua|r|sh|bash|zsh|fish|ps1|bat|sql|toml|ini|conf|cfg|env|properties|gradle|dockerfile|makefile|cmake|diff|patch|pcap|har|nmap|gnmap|asm|s)$/i;
 
 function availableModels() {
-  // Ollama is local; proxy providers are free via the server; everything else
-  // needs the user's own key.
-  return MODELS.filter((m) => m.provider === "ollama" || PROXY_PROVIDERS.has(m.provider) || !!_key(m.provider));
+  // Show EVERY model. Ollama is local and proxy providers are free via the
+  // server; own-key (BYOK) models are listed too and marked "(BYOK)" in the
+  // dropdown — picking one prompts for that provider's key before it's used.
+  return MODELS.slice();
 }
 
 // Lightweight CSS modal (replaces native prompt()/confirm()). Resolves with an
