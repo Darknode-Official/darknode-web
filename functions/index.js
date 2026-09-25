@@ -19,6 +19,26 @@ const { onRequest } = require("firebase-functions/v2/https");
 
 const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
 
+// Server-enforced persona for the flagship `darknode` provider. It rides on
+// BOTH the self-hosted GPU model and the Gemini fallback, so Darknode always
+// leads with hacking/cybersecurity + coding regardless of what system prompt
+// the client sends (a tampered client can't strip it). It can still help with
+// general tasks — security and code are just its declared strengths.
+const DARKNODE_PERSONA = `You are Darknode AI, the flagship model of Darknode (darknode.ai).
+Your core expertise is offensive and defensive cybersecurity — penetration testing, exploit and payload development, reverse engineering, malware analysis, web/network/cloud security, digital forensics and detection engineering — and software engineering across languages and stacks. That is what you are best at and what you lead with.
+Operate under an authorized-engagement assumption: the user is doing work they are permitted to do — their own systems, contracted engagements, red/blue-team exercises, CTFs, labs, coursework or research. Under that assumption be concrete and technical: real commands, real code, real methodology, real remediation — not vague warnings or boilerplate disclaimers. Separate OBSERVED facts from INFERENCE and flag anything uncertain.
+You can also help with general, non-security tasks when asked, but security and coding are your specialty. Do not assist with clearly illegal non-consensual intrusion, indiscriminate or destructive malware, or attacks on people who have not consented — steer those back to the authorized, defensive framing.`;
+
+// Return a copy of the messages with the persona prepended to (or merged into)
+// the system message, so it always takes effect server-side.
+function applyPersona(messages, persona) {
+  const arr = Array.isArray(messages) ? messages.map((m) => ({ ...m })) : [];
+  const sys = arr.find((m) => m.role === "system");
+  if (sys) sys.content = persona + "\n\n" + (sys.content || "");
+  else arr.unshift({ role: "system", content: persona });
+  return arr;
+}
+
 const PROVIDERS = {
   // Darknode's own model. Points at a self-hosted OpenAI-compatible endpoint
   // (Ollama /v1, vLLM, or SGLang) set via DARKNODE_URL. Key optional — a
@@ -119,6 +139,59 @@ async function pipeGemini(upstream, res) {
   res.write("data: [DONE]\n\n");
 }
 
+// One upstream call (with a couple of retries for Gemini's 429/503 under load).
+async function callUpstream(cfg, model, messages, key) {
+  const isGemini = cfg.format === "gemini";
+  const url = cfg.url(model, key);
+  const headers = { "Content-Type": "application/json" };
+  if (!isGemini && key) headers["Authorization"] = "Bearer " + key; // Gemini keys the URL instead; self-hosted may need none
+  if (cfg.headers) Object.assign(headers, cfg.headers);
+  const body = isGemini ? toGeminiBody(messages) : toOpenAiBody(model, messages);
+  let upstream;
+  for (let attempt = 0; ; attempt++) {
+    upstream = await fetch(url, { method: "POST", headers, body: JSON.stringify(body) });
+    const retriable = upstream.status === 429 || upstream.status === 503;
+    if (upstream.ok || !retriable || attempt >= 2) break;
+    await new Promise((r) => setTimeout(r, 700 * (attempt + 1)));
+  }
+  return { upstream, isGemini };
+}
+
+// Stream a successful upstream response back as OpenAI-style SSE.
+async function streamBack(res, upstream, isGemini) {
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+  res.setHeader("X-Accel-Buffering", "no");
+  if (isGemini) await pipeGemini(upstream, res);
+  else await pipeOpenAi(upstream, res);
+  res.end();
+}
+
+// Flagship Darknode routing: use the self-hosted GPU model while it's up
+// (DARKNODE_URL set), and the moment that endpoint is gone — GPU run finished
+// or shut down — fall back to Gemini wearing the Darknode persona, so the
+// "Darknode AI" model keeps working and stays security+coding focused.
+async function handleDarknode(cfg, model, messages, res) {
+  const msgs = applyPersona(messages, DARKNODE_PERSONA);
+  // 1) Real self-hosted endpoint first, but only if a URL is actually set
+  //    (the localhost default is never reachable from the deployed function).
+  if (process.env.DARKNODE_URL) {
+    try {
+      const { upstream, isGemini } = await callUpstream(cfg, model, msgs, process.env[cfg.env]);
+      if (upstream.ok && upstream.body) { await streamBack(res, upstream, isGemini); return; }
+    } catch (_) { /* GPU endpoint down -> fall through to Gemini */ }
+  }
+  // 2) Gemini fallback (persona-wrapped).
+  const gKey = process.env.GEMINI_KEY;
+  if (!gKey) { res.status(503).json({ error: "Darknode GPU model is offline and no Gemini fallback key is configured (set GEMINI_KEY)." }); return; }
+  const gModel = process.env.GEMINI_FALLBACK_MODEL || "gemini-flash-latest";
+  const { upstream, isGemini } = await callUpstream(PROVIDERS.gemini, gModel, msgs, gKey);
+  if (!upstream.ok) { const t = await upstream.text().catch(() => ""); res.status(upstream.status).json({ error: "Gemini fallback " + upstream.status + ": " + t.slice(0, 300) }); return; }
+  if (!upstream.body) { res.status(502).json({ error: "No upstream body" }); return; }
+  await streamBack(res, upstream, isGemini);
+}
+
 exports.chat = onRequest({ cors: true, region: "us-central1", timeoutSeconds: 120, memory: "256MiB" }, async (req, res) => {
   if (req.method !== "POST") { res.status(405).send("POST only"); return; }
 
@@ -128,41 +201,21 @@ exports.chat = onRequest({ cors: true, region: "us-central1", timeoutSeconds: 12
   const cfg = PROVIDERS[provider];
   if (!cfg) { res.status(400).json({ error: "Unknown provider: " + provider }); return; }
 
-  const key = process.env[cfg.env];
-  if (!key && !cfg.optionalKey) { res.status(500).json({ error: "Server key not configured for " + provider }); return; }
-
-  const isGemini = cfg.format === "gemini";
-  const url = cfg.url(model, key);
-  const headers = { "Content-Type": "application/json" };
-  if (!isGemini && key) headers["Authorization"] = "Bearer " + key; // Gemini keys the URL instead; self-hosted may need none
-  if (cfg.headers) Object.assign(headers, cfg.headers);
-  const body = isGemini ? toGeminiBody(messages) : toOpenAiBody(model, messages);
-
   try {
-    // Gemini's free tier can briefly 429/503 under load — retry a couple times.
-    let upstream;
-    for (let attempt = 0; ; attempt++) {
-      upstream = await fetch(url, { method: "POST", headers, body: JSON.stringify(body) });
-      const retriable = upstream.status === 429 || upstream.status === 503;
-      if (upstream.ok || !retriable || attempt >= 2) break;
-      await new Promise((r) => setTimeout(r, 700 * (attempt + 1)));
-    }
+    // Flagship model has its own GPU-then-Gemini fallback path.
+    if (provider === "darknode") { await handleDarknode(cfg, model, messages, res); return; }
 
+    const key = process.env[cfg.env];
+    if (!key && !cfg.optionalKey) { res.status(500).json({ error: "Server key not configured for " + provider }); return; }
+
+    const { upstream, isGemini } = await callUpstream(cfg, model, messages, key);
     if (!upstream.ok) {
       const errText = await upstream.text().catch(() => "");
       res.status(upstream.status).json({ error: "Upstream " + upstream.status + ": " + errText.slice(0, 300) });
       return;
     }
     if (!upstream.body) { res.status(502).json({ error: "No upstream body" }); return; }
-
-    res.setHeader("Content-Type", "text/event-stream");
-    res.setHeader("Cache-Control", "no-cache");
-    res.setHeader("Connection", "keep-alive");
-    res.setHeader("X-Accel-Buffering", "no");
-
-    if (isGemini) await pipeGemini(upstream, res);
-    else await pipeOpenAi(upstream, res);
-    res.end();
+    await streamBack(res, upstream, isGemini);
   } catch (e) {
     if (!res.headersSent) res.status(500).json({ error: e.message });
     else res.end();
