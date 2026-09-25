@@ -5,7 +5,7 @@ compatibility_date = "2024-11-01"
 # Non-secret config. Set DARKNODE_URL here (or as a secret) once your GPU-hosted
 # Darknode model is up; until then the flagship falls back to Gemini.
 [vars]
-GEMINI_FALLBACK_MODEL = "gemini-flash-latest"
+GEMINI_FALLBACK_MODEL = "gemini-flash-lite-latest"
 # DARKNODE_URL = "https://your-gpu-box/v1/chat/completions"
 
 # Secrets are NOT stored here. Set them once with:
