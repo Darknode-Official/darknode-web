@@ -5,7 +5,7 @@ import { auth, db, googleProvider, githubProvider, OWNER_EMAIL } from "/js/fireb
 import "/js/scroll-top.js?v=20260924b";
 import "/js/shortcuts.js";
 import "/js/mobile-nav.js";
-import { consoleHTML, directoryHTML, wireConsole, labelOf as navLabel } from "/js/console-nav.js";
+import { consoleHTML, directoryHTML, wireConsole, labelOf as navLabel } from "/js/console-nav.js?v=20260925d";
 import { showToast } from "/js/toast.js?v=20260924a";
 import { collection as fbCollection, addDoc as fbAddDoc, serverTimestamp as fbServerTimestamp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
 import {
