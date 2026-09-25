@@ -126,6 +126,13 @@
       }
       raf = requestAnimationFrame(tick);
       window.__boot = { set: set };
+      // If the app never boots (e.g. Firebase CDN blocked), the CSS bootFallback hides the
+      // loader at 8s and leaves a blank page — explain instead.
+      setTimeout(function () {
+        var v = document.getElementById("view");
+        if (!v || v.childElementCount) return;
+        v.innerHTML = "<div style='text-align:center;font:500 1rem/1.6 system-ui,sans-serif;color:#888;padding:64px 24px'>Darknode is taking too long to load.<br>Check your connection or disable content blockers, then <a href='' style='color:#00a3cc'>reload</a>.</div>";
+      }, 12000);
     })();
     (function () {
       var q = window.__errorQueue = [], seen = {};
