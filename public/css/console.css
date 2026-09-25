@@ -2,13 +2,15 @@
    Loaded after styles.css/pro-theme.css. Replaces the left sidebar with an AWS-style
    top console. Works in the light (pro) and dark themes. */
 :root{
-  --con-bar:#0f1622; --con-bar-2:#182233; --con-bar-line:#28374e;
-  --con-bar-txt:#eaf1fb; --con-bar-mut:#9db0cc; --con-acc:#35e0bf;
-  --con-h1:46px; --con-h2:36px;
-}
-:root[data-theme="light"],[data-style=pro]:root:not([data-theme="dark"]){
-  --con-bar:#111827; --con-bar-2:#1c2637; --con-bar-line:#2b3a52;
-  --con-bar-txt:#f2f6fc; --con-bar-mut:#aebccf; --con-acc:#12b39a;
+  /* Console chrome is derived from the page's own palette so the bar always
+     matches the content below it — in every theme (dark, light, pro-light,
+     pro-dark). No hardcoded navy: the toolbar reads as an elevated surface of
+     the same UI, and its accent is the page accent. */
+  --con-bar:var(--card2);
+  --con-bar-2:color-mix(in srgb,var(--txt) 7%,var(--card2));
+  --con-bar-line:var(--line);
+  --con-bar-txt:var(--txt); --con-bar-mut:var(--mut); --con-acc:var(--acc);
+  --con-h1:48px; --con-h2:38px;
 }
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 
@@ -31,18 +33,22 @@ body.app .app-main::before{inset:0!important}
 
 /* ---- top bars ---- */
 .con-top{position:sticky;top:var(--topbar-h);z-index:50}
-.con-bar{display:flex;align-items:center;gap:10px;height:var(--con-h1);padding:0 16px;background:var(--con-bar);color:var(--con-bar-txt);border-bottom:1px solid var(--con-bar-line)}
+/* thin category-coloured accent strip = a rich, purpose-built console header
+   that ties the bar to the colour-coded category system in the menu below */
+.con-top::before{content:"";display:block;height:2px;background:linear-gradient(90deg,#3b82f6,#06b6d4,#14b8a6,#22c55e,#eab308,#f97316,#ef4444,#a855f7,#6366f1)}
+.con-bar{display:flex;align-items:center;gap:10px;height:var(--con-h1);padding:0 16px;background:linear-gradient(180deg,color-mix(in srgb,var(--con-acc) 5%,var(--con-bar)),var(--con-bar));color:var(--con-bar-txt);border-bottom:1px solid var(--con-bar-line)}
 .con-services{display:flex;align-items:center;gap:8px;height:32px;padding:0 12px;background:transparent;border:1px solid transparent;border-radius:3px;color:var(--con-bar-txt);font-family:inherit;font-weight:700;font-size:.88rem;cursor:pointer;flex:none}
 .con-services:hover,.con-services[aria-expanded=true]{background:var(--con-bar-2);border-color:var(--con-bar-line)}
 .con-services[aria-expanded=true] .con-caret{transform:rotate(180deg)}
 .con-caret{font-size:.7rem;color:var(--con-bar-mut);transition:transform .15s}
+.con-svc-count{font-family:var(--font-mono);font-weight:700;font-size:.62rem;line-height:1;color:var(--con-acc);background:color-mix(in srgb,var(--con-acc) 15%,transparent);border:1px solid color-mix(in srgb,var(--con-acc) 35%,transparent);border-radius:10px;padding:2px 6px}
 .con-grid-ic{width:14px;height:14px;flex:none;background:
   linear-gradient(var(--con-acc),var(--con-acc)) 0 0/6px 6px no-repeat,
   linear-gradient(var(--con-bar-txt),var(--con-bar-txt)) 100% 0/6px 6px no-repeat,
   linear-gradient(var(--con-bar-txt),var(--con-bar-txt)) 0 100%/6px 6px no-repeat,
   linear-gradient(var(--con-bar-txt),var(--con-bar-txt)) 100% 100%/6px 6px no-repeat}
 .con-search{flex:1;max-width:680px;position:relative;display:flex;align-items:center}
-.con-search input{width:100%;height:30px;padding:0 34px 0 12px;background:#0a1019;border:1px solid var(--con-bar-line);border-radius:3px;color:var(--con-bar-txt);font:inherit;font-size:.84rem;outline:none}
+.con-search input{width:100%;height:30px;padding:0 34px 0 12px;background:var(--card);border:1px solid var(--con-bar-line);border-radius:3px;color:var(--con-bar-txt);font:inherit;font-size:.84rem;outline:none}
 .con-search input::placeholder{color:var(--con-bar-mut)}
 .con-search input:focus{border-color:var(--con-acc);box-shadow:0 0 0 1px var(--con-acc)}
 .con-search kbd{position:absolute;right:8px;font-family:var(--font-mono);font-weight:600;font-size:.7rem;color:var(--con-bar-mut);border:1px solid var(--con-bar-line);border-radius:3px;padding:3px 6px;pointer-events:none}
