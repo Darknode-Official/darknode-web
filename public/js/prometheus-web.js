@@ -2794,7 +2794,7 @@ export function renderPrometheus(main) {
         var sectorName = this.getAttribute('data-sector');
         twinState.selectedSector = (twinState.selectedSector === sectorName) ? null : sectorName;
         twinState.selectedNode = null;
-        renderActiveTab();
+        render();
       });
     }
 
@@ -2805,7 +2805,7 @@ export function renderPrometheus(main) {
       nodeRows[nri].addEventListener('click', function() {
         var nodeId = this.getAttribute('data-nodeid');
         twinState.selectedNode = (twinState.selectedNode === nodeId) ? null : nodeId;
-        renderActiveTab();
+        render();
       });
     }
 
@@ -2814,7 +2814,7 @@ export function renderPrometheus(main) {
     if (searchInput) {
       searchInput.addEventListener('input', function() {
         twinState.searchQuery = this.value;
-        renderActiveTab();
+        render();
       });
     }
 
@@ -2826,7 +2826,7 @@ export function renderPrometheus(main) {
         var typeSelect = main.querySelector('#pm-sim-type');
         if (!nodeSelect || !typeSelect || !nodeSelect.value) return;
         twinState.simResults = simulateAttack(nodeSelect.value, typeSelect.value);
-        renderActiveTab();
+        render();
       });
     }
   }
@@ -3208,7 +3208,7 @@ export function renderPrometheus(main) {
       topoRows[tri].addEventListener('click', function() {
         var nodeId = this.getAttribute('data-nodeid');
         terrainState.selectedAsset = (terrainState.selectedAsset === nodeId) ? null : nodeId;
-        renderActiveTab();
+        render();
       });
     }
 
@@ -3222,7 +3222,7 @@ export function renderPrometheus(main) {
         terrainState.attackPathSource = srcSel.value;
         terrainState.attackPathTarget = tgtSel.value;
         terrainState.attackPathResult = calculateAttackPath(srcSel.value, tgtSel.value);
-        renderActiveTab();
+        render();
       });
     }
 
@@ -3238,7 +3238,7 @@ export function renderPrometheus(main) {
           terrainState.sortCol = col;
           terrainState.sortAsc = true;
         }
-        renderActiveTab();
+        render();
       });
     }
   }

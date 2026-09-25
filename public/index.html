@@ -50,6 +50,7 @@
   <script>!function(){var b='pro';try{b=localStorage.getItem('sw_boot_theme')||'pro'}catch(_){}document.documentElement.setAttribute('data-boot',b);var s='pro';try{s=localStorage.getItem('sw_style')||'pro'}catch(_){}document.documentElement.setAttribute('data-style',s)}()</script>
   <link rel="stylesheet" href="/css/styles.css?v=20260919e" media="all">
   <link rel="stylesheet" href="/css/pro-theme.css?v=20260919e" media="all">
+  <link rel="stylesheet" href="/css/console.css?v=20260925a" media="all">
 </head>
 <body>
   <script>!function(){var a=["darknode.ai","www.darknode.ai","localhost","127.0.0.1"],h=location.hostname;if(!a.some(function(d){return h===d||h.endsWith("."+d)})){document.documentElement.innerHTML="<body style='background:#0a0e16;color:#f44;font:600 1.2rem/2 system-ui;display:flex;align-items:center;justify-content:center;height:100vh;text-align:center;padding:2rem'><div><h1>Unauthorized</h1><p>This software is licensed exclusively to <b>darknode.ai</b>.<br>Redistribution and rehosting are prohibited.<br><br><a href=\x22https://darknode.ai\x22 style=\x22color:#00d4ff\x22>Visit the official site</a></p></div></body>";throw new Error("Unauthorized domain")}}()</script>
@@ -126,6 +127,13 @@
       }
       raf = requestAnimationFrame(tick);
       window.__boot = { set: set };
+      // If the app never boots (e.g. Firebase CDN blocked), the CSS bootFallback hides the
+      // loader at 8s and leaves a blank page — explain instead.
+      setTimeout(function () {
+        var v = document.getElementById("view");
+        if (!v || v.childElementCount) return;
+        v.innerHTML = "<div style='text-align:center;font:500 1rem/1.6 system-ui,sans-serif;color:#888;padding:64px 24px'>Darknode is taking too long to load.<br>Check your connection or disable content blockers, then <a href='' style='color:#00a3cc'>reload</a>.</div>";
+      }, 12000);
     })();
     (function () {
       var q = window.__errorQueue = [], seen = {};
