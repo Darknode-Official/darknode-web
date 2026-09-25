@@ -25,6 +25,7 @@ let _learnHub = null;
 async function loadLearnHub() { if (!_learnHub) { _learnHub = await import("/js/learn-hub.js"); } return _learnHub; }
 import { emailConfigured, sendCode, sendLoginAlert, genCode, hashCode, deviceInfo } from "/js/notify.js";
 import { initSaved } from "/js/saved.js";
+import { consoleHTML, directoryHTML, wireConsole, labelOf as navLabel } from "/js/console-nav.js";
 import("/js/shell-bridge.js").then(m => {
   window.shellIsConnected = m.shellIsConnected;
   window.shellConnect = m.shellConnect;
@@ -541,6 +542,7 @@ function renderHome(main, user, isOwner, show) {
       ${qa("webshell", "", "Web Shell", "Access a terminal in your browser &mdash; run commands, pull AI models.")}
       ${qa("report", "", "Report Generator", "Generate professional pentest reports from your findings.")}
     </div>
+    ${directoryHTML(isOwner)}
     <div class="dash-extras">
       <div class="dash-extra-col">
         <div class="panel dash-activity-panel">
@@ -561,7 +563,7 @@ function renderHome(main, user, isOwner, show) {
         </div>
       </div>
     </div>
-    ${isOwner ? `<div class="admin-card"><strong>Owner controls</strong><p class="muted">You're the owner &mdash; admin features live under Admin in the sidebar.</p></div>` : ""}
+    ${isOwner ? `<div class="admin-card"><strong>Owner controls</strong><p class="muted">You're the owner &mdash; admin features live under Admin in the Services menu.</p></div>` : ""}
     ${homeWidgetsHTML()}`;
   main.addEventListener("click", (e) => { const b = e.target.closest("[data-sec]"); if (b) show(b.dataset.sec, b.dataset.more || ""); });
   wireHome(main, show);
@@ -753,120 +755,7 @@ function renderApp(user) {
 
   view.innerHTML = `
     <div class="app-shell">
-      <aside class="sidebar" id="sidebar" role="complementary" aria-label="Main navigation">
-        <div class="side-brand">Darknode</div>
-        <nav class="side-nav" role="navigation" aria-label="Application sections">
-          <button class="side-item" data-sec="home">Dashboard</button>
-
-          <div class="side-group side-collapse" data-open="1">Command Centers</div>
-          <button class="side-item" data-sec="prometheus">PROMETHEUS</button>
-          <button class="side-item" data-sec="sentineleye">SENTINEL EYE</button>
-          <button class="side-item" data-sec="hydra">HYDRA Engine</button>
-          <button class="side-item" data-sec="aegis">AEGIS Ops Center</button>
-          <button class="side-item" data-sec="vanguard">VANGUARD</button>
-          <button class="side-item" data-sec="secdash">Security Dashboard</button>
-
-          <div class="side-group side-collapse">Offensive Security</div>
-          <button class="side-item" data-sec="payloads">Payload Generator</button>
-          <button class="side-item" data-sec="exploitdb">Exploit Database</button>
-          <button class="side-item" data-sec="exploitdev">Exploit Writer</button>
-          <button class="side-item" data-sec="packetcraft">Packet Crafter</button>
-          <button class="side-item" data-sec="webshell">Web Shell</button>
-          <button class="side-item" data-sec="cracklab">Password Cracking</button>
-          <button class="side-item" data-sec="attacksim">Attack Simulator</button>
-          <button class="side-item" data-sec="firewall">Firewall Builder</button>
-          <button class="side-item" data-sec="wirelesslab">Wireless Pentest Lab</button>
-          <button class="side-item" data-sec="pentestconsole">Pentest Console</button>
-
-          <div class="side-group side-collapse">Reconnaissance</div>
-          <button class="side-item" data-sec="addressintel">Address Intelligence</button>
-          <button class="side-item" data-sec="tools">Scanner Suite</button>
-          <button class="side-item" data-sec="osint">OSINT Dashboard</button>
-          <button class="side-item" data-sec="subdomains">Subdomain Finder</button>
-          <button class="side-item" data-sec="dns">DNS Toolkit</button>
-          <button class="side-item" data-sec="netmap">Network Mapper</button>
-          <button class="side-item" data-sec="attacksurf">Attack Surface Mapper</button>
-          <button class="side-item" data-sec="ghdb">Google Dorks</button>
-          <button class="side-item" data-sec="apitester">API Tester</button>
-          <button class="side-item" data-sec="apiscan">API Security Scanner</button>
-          <button class="side-item" data-sec="wayback">Wayback Recon</button>
-          <button class="side-item" data-sec="favicon">Favicon Hasher</button>
-
-          <div class="side-group side-collapse">Analysis &amp; Forensics</div>
-          <button class="side-item" data-sec="binanalyze">Binary Analyzer</button>
-          <button class="side-item" data-sec="loganalyze">Log Analyzer</button>
-          <button class="side-item" data-sec="memforensics">Memory Forensics</button>
-          <button class="side-item" data-sec="ftimeline">Forensic Timeline</button>
-          <button class="side-item" data-sec="malclass">Malware Classifier</button>
-          <button class="side-item" data-sec="sandbox">Malware Sandbox</button>
-          <button class="side-item" data-sec="phishing">Phishing Analyzer</button>
-          <button class="side-item" data-sec="stego">Steganography</button>
-          <button class="side-item" data-sec="reveng">Reverse Engineering</button>
-
-          <div class="side-group side-collapse">Defense &amp; Response</div>
-          <button class="side-item" data-sec="adversary">Adversary Mind</button>
-          <button class="side-item" data-sec="breachsim">Breach Simulator</button>
-          <button class="side-item" data-sec="huntlab">Threat Hunt Lab</button>
-          <button class="side-item" data-sec="purpleteam">Purple Team Ops</button>
-          <button class="side-item" data-sec="deception">Deception Architect</button>
-          <button class="side-item" data-sec="incidents">Incident Tracker</button>
-          <button class="side-item" data-sec="threatmodel">Threat Modeler</button>
-          <button class="side-item" data-sec="containers">Container Security</button>
-          <button class="side-item" data-sec="mobilesec">Mobile Security Lab</button>
-
-          <div class="side-group side-collapse">Intelligence &amp; Compliance</div>
-          <button class="side-item" data-sec="threat">Threat Intelligence</button>
-          <button class="side-item" data-sec="ipreputation">IP Reputation</button>
-          <button class="side-item" data-sec="darkwebosint">Dark Web OSINT</button>
-          <button class="side-item" data-sec="vulnprio">Vuln Prioritizer</button>
-          <button class="side-item" data-sec="compliance">Compliance Checker</button>
-          <button class="side-item" data-sec="zerotrust">Zero Trust Designer</button>
-          <button class="side-item" data-sec="supplychain">Supply Chain Analyzer</button>
-          <button class="side-item" data-sec="socialeng">Social Engineering Sim</button>
-
-          <div class="side-group side-collapse">Tools &amp; Utilities</div>
-          <button class="side-item" data-sec="credaudit">Credential Auditor</button>
-          <button class="side-item" data-sec="jwtanalyzer">JWT Analyzer</button>
-          <button class="side-item" data-sec="cspevaluator">CSP Evaluator</button>
-          <button class="side-item" data-sec="urldissect">URL Dissector</button>
-          <button class="side-item" data-sec="encoding">Encoding Toolkit</button>
-          <button class="side-item" data-sec="cryptotools">Crypto Toolkit</button>
-          <button class="side-item" data-sec="regexlab">Regex Lab</button>
-          <button class="side-item" data-sec="cheats">Cheat Sheets</button>
-          <button class="side-item" data-sec="utils">Utilities</button>
-
-          <div class="side-group side-collapse">AI &amp; Automation</div>
-          <button class="side-item" data-sec="ai">AI Assistant</button>
-          <button class="side-item" data-sec="coder">Nexus Agent</button>
-          <button class="side-item" data-sec="engines">Security Engines</button>
-          <button class="side-item" data-sec="report">Report Generator</button>
-
-          <div class="side-group side-collapse">Learning</div>
-          <button class="side-item" data-sec="learn">Learn Hub</button>
-          <button class="side-item" data-sec="cyberrange">Cyber Range</button>
-          <button class="side-item" data-sec="training">Training Labs</button>
-          <button class="side-item" data-sec="secquiz">Security Training</button>
-          <button class="side-item" data-sec="refs">References</button>
-          <button class="side-item" data-sec="snippets">Code Snippets</button>
-          <button class="side-item" data-sec="targets">Practice Targets</button>
-          <button class="side-item" data-sec="vms">Vulnerable VMs</button>
-          <button class="side-item" data-sec="vmlab">VM Lab</button>
-
-          <div class="side-group side-collapse">Platform</div>
-          <button class="side-item" data-sec="arsenal">External Resources</button>
-          <button class="side-item" data-sec="downloads">Darknode OS</button>
-          <button class="side-item" data-sec="dlguide">Download Guide</button>
-          <button class="side-item" data-sec="setup">Local Setup</button>
-          <button class="side-item" data-sec="privatecloud">Private Cloud</button>
-          <button class="side-item" data-sec="github">GitHub</button>
-          <button class="side-item" data-sec="api">API</button>
-          <button class="side-item" data-sec="docs">Documentation</button>
-          <button class="side-item" data-sec="gmail">Gmail</button>
-
-          ${isOwner ? `<div class="side-group side-collapse">Admin</div><button class="side-item" data-sec="admin">Admin Console</button>` : ""}
-        </nav>
-        <div class="side-foot">${avatar}<div class="side-user"><div class="su-name">${esc(name)}</div><div class="su-mail muted">${esc(user.email)}</div></div></div>
-      </aside>
+      ${consoleHTML(isOwner)}
       <main class="app-main" id="app-main" role="main"><div id="crumbs" class="crumbs" aria-label="Breadcrumb" role="navigation"></div><div id="app-content"></div>
         <footer class="app-foot">
           <div class="app-foot-row">
@@ -881,7 +770,8 @@ function renderApp(user) {
     </div>`;
 
   const main = document.getElementById("app-content");
-  const labelOf = (s) => { const b = view.querySelector('.side-item[data-sec="' + s + '"]'); return b ? b.textContent.trim() : s.charAt(0).toUpperCase() + s.slice(1); };
+  const labelOf = navLabel;
+  const conNav = wireConsole(view);
   let trail = [], curSec = "home";
   function renderCrumbs(sec) {
     const i = trail.indexOf(sec);
@@ -901,7 +791,7 @@ function renderApp(user) {
   let _prevCleanup = null;
   function show(sec, more, skipPush) {
     if (_prevCleanup) { try { _prevCleanup(); } catch (_) {} _prevCleanup = null; }
-    curSec = sec; renderCrumbs(sec);
+    curSec = sec; renderCrumbs(sec); conNav.track(sec);
     // Update browser URL
     const path = secToPath(sec);
     if (!skipPush && path !== location.pathname) {
@@ -1062,8 +952,10 @@ function renderApp(user) {
   const sidebar = document.getElementById("sidebar");
   if (hamburger) {
     hamburger.hidden = false;
-    hamburger.onclick = () => {
-      const open = sidebar.classList.toggle("open");
+    hamburger.onclick = (e) => {
+      e.stopPropagation();
+      document.getElementById("conServices")?.click();
+      const open = sidebar.classList.contains("open");
       hamburger.classList.toggle("active", open);
       hamburger.setAttribute("aria-expanded", String(open));
     };
@@ -1243,7 +1135,7 @@ document.addEventListener("keydown", (e) => {
 function tourSteps(isOwner) {
   const steps = [
     { title: "Welcome to Darknode", text: "A quick tour of the console. You can skip anytime." },
-    { sel: ".side-nav", title: "Navigate", text: "Move between Home, Tools, Local setup, and Settings here." },
+    { sel: "#conServices", title: "Services", text: "Every tool lives here, grouped by category. Search it, or press / from anywhere. Click ☆ to pin a tool to your favorites bar." },
     { sel: ".qa-grid", title: "Quick actions", text: "Jump straight into browsing tools or setting up local AI." },
     { sel: "#moreBtn", title: "The … menu", text: "Spin up the full local toolkit + SSH, or a local AI coding setup with Ollama." },
     { sel: "#profileBtn", title: "Your profile", text: "Navigation, settings, change password, and log out live here." },
