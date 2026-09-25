@@ -9,9 +9,13 @@ const SYS_KEY = "sw_ai_sys", MODEL_KEY = "sw_ai_model";
 // file, never shipped to the browser. (A static site cannot hide a key it holds,
 // so we don't hold one.) If a user enters their own key in Settings, that BYOK
 // key is used directly instead of the proxy.
-// Proxy endpoint. Defaults to same-origin /api/chat; override to a Cloudflare
-// Worker URL by setting window.DARKNODE_PROXY_URL (see public/js/config.js).
-const PROXY_URL = ((typeof window !== "undefined" && window.DARKNODE_PROXY_URL) || "/api/chat");
+// Proxy endpoint, resolved at call time so it's independent of script load
+// order. Defaults to same-origin /api/chat; set window.DARKNODE_PROXY_URL (an
+// inline <script> in index.html) to a Cloudflare Worker URL to use that instead.
+function proxyUrl() {
+  try { if (typeof window !== "undefined" && window.DARKNODE_PROXY_URL) return window.DARKNODE_PROXY_URL; } catch (_) {}
+  return "/api/chat";
+}
 const PROXY_PROVIDERS = new Set(["darknode", "gemini", "groq", "openrouter", "mistral"]);
 function _key(provider) {
   const map = { claude: "sw_claude_key", openai: "sw_openai_key", gemini: "sw_gemini_key", groq: "sw_groq_key", openrouter: "sw_openrouter_key", mistral: "sw_mistral_key" };
@@ -334,7 +338,7 @@ async function streamOllama(model, messages, onToken, signal) {
 async function streamProxy(provider, model, messages, onToken, signal) {
   let r;
   try {
-    r = await fetch(PROXY_URL, { method: "POST", signal, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ provider, model, messages }) });
+    r = await fetch(proxyUrl(), { method: "POST", signal, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ provider, model, messages }) });
   } catch (e) {
     if (e.name === "AbortError") throw e;
     throw new Error("Can't reach the Darknode AI service. Add your own API key in Settings → API Keys to use this model directly.");
