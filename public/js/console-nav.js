@@ -54,7 +54,7 @@ export function consoleHTML(isOwner) {
   <div class="con-wrap">
   <div class="con-top">
     <div class="con-bar" role="navigation" aria-label="Console">
-      <button class="con-services" id="conServices" aria-expanded="false" aria-controls="sidebar"><span class="con-grid-ic" aria-hidden="true"></span>Services<span class="con-caret" aria-hidden="true">▾</span></button>
+      <button class="con-services" id="conServices" aria-expanded="false" aria-controls="sidebar"><span class="con-grid-ic" aria-hidden="true"></span>Services<span class="con-svc-count" aria-hidden="true">${total}</span><span class="con-caret" aria-hidden="true">▾</span></button>
       <label class="con-search"><span class="sr-only">Find a service</span>
         <input id="conSearch" type="search" placeholder="Search ${total} services — type a name, e.g. &quot;cve&quot;" autocomplete="off" spellcheck="false">
         <kbd>/</kbd>
