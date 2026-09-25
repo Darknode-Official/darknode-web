@@ -1,0 +1,16 @@
+name = "darknode-proxy"
+main = "worker.js"
+compatibility_date = "2024-11-01"
+
+# Non-secret config. Set DARKNODE_URL here (or as a secret) once your GPU-hosted
+# Darknode model is up; until then the flagship falls back to Gemini.
+[vars]
+GEMINI_FALLBACK_MODEL = "gemini-flash-latest"
+# DARKNODE_URL = "https://your-gpu-box/v1/chat/completions"
+
+# Secrets are NOT stored here. Set them once with:
+#   npx wrangler secret put GEMINI_KEY        # required — powers Darknode's fallback
+#   npx wrangler secret put GROQ_KEY          # optional — for the free Groq models
+#   npx wrangler secret put OPENROUTER_KEY    # optional — for the free OpenRouter models
+#   npx wrangler secret put MISTRAL_KEY       # optional — for the free Mistral models
+#   npx wrangler secret put DARKNODE_KEY      # optional — only if your GPU box needs auth
