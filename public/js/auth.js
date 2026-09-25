@@ -5,6 +5,7 @@ import { auth, db, googleProvider, githubProvider, OWNER_EMAIL } from "/js/fireb
 import "/js/scroll-top.js?v=20260924b";
 import "/js/shortcuts.js";
 import "/js/mobile-nav.js";
+import { consoleHTML, directoryHTML, wireConsole, labelOf as navLabel } from "/js/console-nav.js";
 import { showToast } from "/js/toast.js?v=20260924a";
 import { collection as fbCollection, addDoc as fbAddDoc, serverTimestamp as fbServerTimestamp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
 import {
@@ -1010,6 +1011,7 @@ function renderHome(main, user, isOwner, show) {
         ${qa("coder", "", "Nexus Agent", "AI-powered code generation and security analysis agent.")}
       </div>
     </div>
+    ${directoryHTML(isOwner)}
     ${isOwner ? `<div class="admin-card"><strong>Owner controls</strong><p class="muted">You're the owner &mdash; admin features live under Admin in the sidebar.</p></div>` : ""}
     ${homeWidgetsHTML()}`;
   main.addEventListener("click", (e) => { const b = e.target.closest("[data-sec]"); if (b) show(b.dataset.sec, b.dataset.more || ""); });
@@ -1347,205 +1349,7 @@ function renderApp(user) {
 
   view.innerHTML = `
     <div class="app-shell">
-      <aside class="sidebar" id="sidebar" role="complementary" aria-label="Main navigation">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;padding:0 4px">
-          <button class="side-toggle" id="sideToggle" aria-label="Toggle sidebar" title="Toggle sidebar">
-            <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="3" y1="4" x2="13" y2="4"/><line x1="3" y1="8" x2="13" y2="8"/><line x1="3" y1="12" x2="13" y2="12"/></svg>
-          </button>
-          <span class="side-brand" style="margin:0;padding:0;font-size:.72rem">DARKNODE</span>
-        </div>
-        <nav class="side-nav" role="navigation" aria-label="Application sections">
-          <div class="side-search-wrap"><input class="side-search" placeholder="Search 192+ tools..." id="sideSearch" spellcheck="false" autocomplete="off"><svg class="side-search-icon" viewBox="0 0 16 16" width="13" height="13"><circle cx="6.5" cy="6.5" r="5" fill="none" stroke="currentColor" stroke-width="1.5"/><line x1="10" y1="10" x2="14" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
-          <button class="side-item" data-sec="home">Dashboard</button>
-
-          <div class="side-group side-collapse" data-open="1" data-color="blue">Mission Control <span class="side-cnt">12</span></div>
-          <button class="side-item" data-sec="prometheus">PROMETHEUS <span class="side-badge live">LIVE</span></button>
-          <button class="side-item" data-sec="sentineleye">SENTINEL EYE <span class="side-badge live">LIVE</span></button>
-          <button class="side-item" data-sec="hydra">HYDRA Engine</button>
-          <button class="side-item" data-sec="aegis">AEGIS Ops Center</button>
-          <button class="side-item" data-sec="vanguard">VANGUARD</button>
-          <button class="side-item" data-sec="phantom">PHANTOM <span class="side-badge live">LIVE</span></button>
-          <button class="side-item" data-sec="citadel">CITADEL <span class="side-badge live">LIVE</span></button>
-          <button class="side-item" data-sec="oracle">ORACLE <span class="side-badge live">LIVE</span></button>
-          <button class="side-item" data-sec="spectre">SPECTRE <span class="side-badge live">LIVE</span></button>
-          <button class="side-item" data-sec="crucible">CRUCIBLE <span class="side-badge live">LIVE</span></button>
-          <button class="side-item" data-sec="navarch">NAVARCH <span class="side-badge live">LIVE</span></button>
-          <button class="side-item" data-sec="secdash">Security Dashboard</button>
-
-          <div class="side-group side-collapse" data-color="red">Offensive Security <span class="side-cnt">11</span></div>
-          <button class="side-item" data-sec="attacksim">Threat Simulator</button>
-          <button class="side-item" data-sec="cracklab">Password Security Lab</button>
-          <button class="side-item" data-sec="exploitdb">Vulnerability Database</button>
-          <button class="side-item" data-sec="exploitdev">Security Research Lab</button>
-          <button class="side-item" data-sec="packetcraft">Packet Crafter</button>
-          <button class="side-item" data-sec="passwordtools">Password Tools</button>
-          <button class="side-item" data-sec="payloads">Test Script Forge</button>
-          <button class="side-item" data-sec="payloadgen">Test Script Generator</button>
-          <button class="side-item" data-sec="pentestconsole">Security Assessment</button>
-          <button class="side-item" data-sec="privesc">Privilege Analysis</button>
-          <button class="side-item" data-sec="reverseshell">Remote Access Testing</button>
-
-          <div class="side-group side-collapse" data-color="red">Security Labs <span class="side-cnt">5</span></div>
-          <button class="side-item" data-sec="firewall">Firewall Rules</button>
-          <button class="side-item" data-sec="webshell">Terminal</button>
-          <button class="side-item" data-sec="wirelesslab">Wireless Lab</button>
-          <button class="side-item" data-sec="xsslab">Web Security Lab</button>
-          <button class="side-item" data-sec="socialeng">Social Engineering</button>
-
-          <div class="side-group side-collapse" data-color="cyan">Reconnaissance <span class="side-cnt">13</span></div>
-          <button class="side-item" data-sec="addressintel">Address Intel</button>
-          <button class="side-item" data-sec="asnexplorer">ASN Explorer</button>
-          <button class="side-item" data-sec="attacksurf">Exposure Mapping</button>
-          <button class="side-item" data-sec="dns">DNS Toolkit</button>
-          <button class="side-item" data-sec="dnsenum">DNS Enumeration</button>
-          <button class="side-item" data-sec="dnsrecon">DNS Recon</button>
-          <button class="side-item" data-sec="ghdb">Google Dorking</button>
-          <button class="side-item" data-sec="netmap">Network Mapper</button>
-          <button class="side-item" data-sec="reconplanner">Recon Planner</button>
-          <button class="side-item" data-sec="securityscanner">Security Scanner</button>
-          <button class="side-item" data-sec="subdomains">Subdomain Enum</button>
-          <button class="side-item" data-sec="tools">Scanner Suite</button>
-          <button class="side-item" data-sec="wayback">Wayback Machine</button>
-
-          <div class="side-group side-collapse" data-color="cyan">OSINT <span class="side-cnt">12</span></div>
-          <button class="side-item" data-sec="corstester">CORS Tester</button>
-          <button class="side-item" data-sec="emailintel">Email Intel</button>
-          <button class="side-item" data-sec="favicon">Favicon Hasher</button>
-          <button class="side-item" data-sec="headeranalyzer">Header Analyzer</button>
-          <button class="side-item" data-sec="httpinspector">HTTP Inspector</button>
-          <button class="side-item" data-sec="httpprobe">HTTP Probe</button>
-          <button class="side-item" data-sec="ipgeolocation">IP Geolocation</button>
-          <button class="side-item" data-sec="iptools">IP Tools</button>
-          <button class="side-item" data-sec="osint">OSINT Dashboard</button>
-          <button class="side-item" data-sec="osintemail">OSINT Email Intel</button>
-          <button class="side-item" data-sec="techfingerprint">Tech Fingerprint</button>
-          <button class="side-item" data-sec="whoisrecon">WHOIS Recon</button>
-
-          <div class="side-group side-collapse" data-color="purple">Forensics <span class="side-cnt">8</span></div>
-          <button class="side-item" data-sec="binanalyze">Binary Analyzer</button>
-          <button class="side-item" data-sec="forensicstoolkit">Forensics Toolkit</button>
-          <button class="side-item" data-sec="ftimeline">Forensic Timeline</button>
-          <button class="side-item" data-sec="loganalyze">Log Analyzer</button>
-          <button class="side-item" data-sec="memforensics">Memory Forensics</button>
-          <button class="side-item" data-sec="reveng">Reverse Engineering</button>
-          <button class="side-item" data-sec="stego">Steganography</button>
-          <button class="side-item" data-sec="timelineviz">Timeline Visualization</button>
-
-          <div class="side-group side-collapse" data-color="purple">Threat Analysis <span class="side-cnt">3</span></div>
-          <button class="side-item" data-sec="malclass">Threat Classifier</button>
-          <button class="side-item" data-sec="phishing">Phishing Analyzer</button>
-          <button class="side-item" data-sec="sandbox">Threat Analysis Lab</button>
-
-          <div class="side-group side-collapse" data-color="green">Blue Team <span class="side-cnt">11</span></div>
-          <button class="side-item" data-sec="adversary">Adversary Emulation</button>
-          <button class="side-item" data-sec="breachsim">Breach Simulator</button>
-          <button class="side-item" data-sec="containers">Container Security</button>
-          <button class="side-item" data-sec="deception">Deception Architect</button>
-          <button class="side-item" data-sec="huntlab">Threat Hunt Lab</button>
-          <button class="side-item" data-sec="identitymatrix">Identity Matrix</button>
-          <button class="side-item" data-sec="incidents">Incident Tracker</button>
-          <button class="side-item" data-sec="mobilesec">Mobile Security</button>
-          <button class="side-item" data-sec="purpleteam">Purple Team Ops</button>
-          <button class="side-item" data-sec="riskcalculator">Risk Calculator</button>
-          <button class="side-item" data-sec="threatmodel">Threat Modeler</button>
-
-          <div class="side-group side-collapse" data-color="orange">Threat Intelligence <span class="side-cnt">9</span></div>
-          <button class="side-item" data-sec="breachlookup">Breach Lookup</button>
-          <button class="side-item" data-sec="cvesearch">CVE Search</button>
-          <button class="side-item" data-sec="cvetimeline">CVE Timeline</button>
-          <button class="side-item" data-sec="darknetradar">Darknet Radar</button>
-          <button class="side-item" data-sec="darkwebosint">Deep Web Intel</button>
-          <button class="side-item" data-sec="ipreputation">IP Reputation</button>
-          <button class="side-item" data-sec="threat">Threat Feed</button>
-          <button class="side-item" data-sec="threatdashboard">Threat Dashboard</button>
-          <button class="side-item" data-sec="threatfeed">Threat Intel Feed</button>
-
-          <div class="side-group side-collapse" data-color="orange">Vulnerability Mgmt <span class="side-cnt">5</span></div>
-          <button class="side-item" data-sec="vulndb">Vulnerability DB</button>
-          <button class="side-item" data-sec="vulnprio">Vuln Prioritizer</button>
-          <button class="side-item" data-sec="vulntriage">Vuln Triage Engine</button>
-          <button class="side-item" data-sec="secchecklist">Security Checklist</button>
-          <button class="side-item" data-sec="supplychain">Supply Chain</button>
-
-          <div class="side-group side-collapse" data-color="teal">Network Analysis <span class="side-cnt">9</span></div>
-          <button class="side-item" data-sec="networkscanner">Network Scanner</button>
-          <button class="side-item" data-sec="networktools">Network Tools</button>
-          <button class="side-item" data-sec="networktraffic">Network Traffic</button>
-          <button class="side-item" data-sec="packetanalyzer">Packet Analyzer</button>
-          <button class="side-item" data-sec="packetinspector">Packet Inspector</button>
-          <button class="side-item" data-sec="sslinspector">SSL Inspector</button>
-          <button class="side-item" data-sec="subnetvisualizer">Subnet Visualizer</button>
-          <button class="side-item" data-sec="trafficanalyzer">Traffic Analyzer</button>
-          <button class="side-item" data-sec="websockettester">WebSocket Tester</button>
-
-          <div class="side-group side-collapse" data-color="teal">Security Operations <span class="side-cnt">7</span></div>
-          <button class="side-item" data-sec="adversaryplaybook">Adversary Playbook</button>
-          <button class="side-item" data-sec="apifuzzer">API Fuzzer</button>
-          <button class="side-item" data-sec="apitester">API Tester</button>
-          <button class="side-item" data-sec="apiscan">API Scanner</button>
-          <button class="side-item" data-sec="incidentcost">Incident Cost Calc</button>
-          <button class="side-item" data-sec="incidentresponse">Incident Response</button>
-          <button class="side-item" data-sec="siemdash">SIEM Dashboard</button>
-
-          <div class="side-group side-collapse" data-color="yellow">Compliance &amp; GRC <span class="side-cnt">6</span></div>
-          <button class="side-item" data-sec="compliance">Compliance Checker</button>
-          <button class="side-item" data-sec="cyberbriefing">Cyber Briefing</button>
-          <button class="side-item" data-sec="emailheader">Email Header Analyzer</button>
-          <button class="side-item" data-sec="fedcompliance">Federal Compliance</button>
-          <button class="side-item" data-sec="iocextractor">IOC Extractor</button>
-          <button class="side-item" data-sec="zerotrust">Zero Trust Planner</button>
-
-          <div class="side-group side-collapse" data-color="indigo">Crypto &amp; Encoding <span class="side-cnt">8</span></div>
-          <button class="side-item" data-sec="credaudit">Credential Auditor</button>
-          <button class="side-item" data-sec="cryptotools">Crypto Toolkit</button>
-          <button class="side-item" data-sec="cspevaluator">CSP Evaluator</button>
-          <button class="side-item" data-sec="encoding">Encoding Suite</button>
-          <button class="side-item" data-sec="hashsuite">Hash Suite</button>
-          <button class="side-item" data-sec="jwtanalyzer">JWT Analyzer</button>
-          <button class="side-item" data-sec="regexlab">Regex Lab</button>
-          <button class="side-item" data-sec="urldissect">URL Dissector</button>
-
-          <div class="side-group side-collapse" data-color="violet">Nexus AI <span class="side-cnt">5</span></div>
-          <button class="side-item" data-sec="ai">AI Chat</button>
-          <button class="side-item" data-sec="coder">Nexus Agent <span class="side-badge ai">AI</span></button>
-          <button class="side-item" data-sec="dataviz">Data Visualization</button>
-          <button class="side-item" data-sec="engines">Security Engines</button>
-          <button class="side-item" data-sec="report">Report Generator</button>
-
-          <div class="side-group side-collapse" data-color="emerald">Training <span class="side-cnt">10</span></div>
-          <button class="side-item" data-sec="cheats">Cheat Sheets</button>
-          <button class="side-item" data-sec="cyberrange">Cyber Range</button>
-          <button class="side-item" data-sec="learn">Learn Hub</button>
-          <button class="side-item" data-sec="refs">Reference Library</button>
-          <button class="side-item" data-sec="secquiz">Skill Assessments</button>
-          <button class="side-item" data-sec="securityquiz">Security Quiz</button>
-          <button class="side-item" data-sec="snippets">Snippet Vault</button>
-          <button class="side-item" data-sec="targets">Practice Targets</button>
-          <button class="side-item" data-sec="training">Training Labs</button>
-          <button class="side-item" data-sec="utils">Toolbox</button>
-
-          <div class="side-group side-collapse" data-color="emerald">Labs &amp; VMs <span class="side-cnt">2</span></div>
-          <button class="side-item" data-sec="vms">Vulnerable VMs</button>
-          <button class="side-item" data-sec="vmlab">VM Lab</button>
-
-          <div class="side-group side-collapse" data-open="1" data-color="rose">Investigations <span class="side-cnt">3</span></div>
-          <button class="side-item" data-sec="investigation">Investigation Workspace</button>
-          <button class="side-item" data-sec="secgraph">Security Graph</button>
-          <button class="side-item" data-sec="casemgmt">Case Manager</button>
-
-          <div class="side-group side-collapse" data-color="slate">Infrastructure <span class="side-cnt">7</span></div>
-          <button class="side-item" data-sec="api">API</button>
-          <button class="side-item" data-sec="docs">Docs</button>
-          <button class="side-item" data-sec="education">Education</button>
-          <button class="side-item" data-sec="downloads">Darknode OS</button>
-          <button class="side-item" data-sec="dlguide">Download Guide</button>
-          <button class="side-item" data-sec="privatecloud">Private Cloud <span class="side-badge beta">BETA</span></button>
-          <button class="side-item" data-sec="setup">Local Setup</button>
-
-          ${isOwner ? `<div class="side-group side-collapse">Admin</div><button class="side-item" data-sec="admin">Admin Console</button>` : ""}
-        </nav>
-        <div class="side-foot">${avatar}<div class="side-user"><div class="su-name">${esc(name)}</div><div class="su-mail muted">${esc(user.email)}</div></div></div>
-      </aside>
+      ${consoleHTML(isOwner)}
       <main class="app-main" id="app-main" role="main"><div id="crumbs" class="crumbs" aria-label="Breadcrumb" role="navigation"></div><div id="app-content"></div>
         <footer class="app-foot">
           <div class="app-foot-grid">
@@ -1585,7 +1389,8 @@ function renderApp(user) {
     </div>`;
 
   const main = document.getElementById("app-content");
-  const labelOf = (s) => { const b = view.querySelector('.side-item[data-sec="' + s + '"]'); if (!b) return s.charAt(0).toUpperCase() + s.slice(1); const badge = b.querySelector(".side-badge"); return badge ? b.textContent.replace(badge.textContent, "").trim() : b.textContent.trim(); };
+  const labelOf = navLabel;
+  const conNav = wireConsole(view);
   let trail = [], curSec = "home";
   function renderCrumbs(sec) {
     const i = trail.indexOf(sec);
@@ -1605,7 +1410,7 @@ function renderApp(user) {
   let _prevCleanup = null;
   function show(sec, more, skipPush) {
     if (_prevCleanup) { try { _prevCleanup(); } catch (_) {} _prevCleanup = null; }
-    curSec = sec; renderCrumbs(sec);
+    curSec = sec; renderCrumbs(sec); conNav.track(sec);
     // Update browser URL
     const path = secToPath(sec);
     if (!skipPush && path !== location.pathname) {
