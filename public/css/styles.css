@@ -9124,7 +9124,11 @@ html body .seg:not(#dn-x) { border-radius: 5px !important; }
 .tb-center .tbx-btn { background: color-mix(in srgb, var(--acc) 12%, transparent); color: var(--acc); border: 1px solid color-mix(in srgb, var(--acc) 35%, transparent); border-radius: 4px; padding: 3px 10px; font: inherit; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; cursor: pointer; transition: background .15s, border-color .15s; }
 .tb-center .tbx-btn:hover { background: color-mix(in srgb, var(--acc) 22%, transparent); border-color: var(--acc); }
 html[data-topbar="off"] #topbar-center.tb-center { display: none !important; }
-@media (max-width: 1180px) { #topbar-center.tb-center .tbx-btn, #topbar-center.tb-center .tbx:nth-of-type(n+5) { display: none; } }
+/* Staged degradation of the ops strip so it never bleeds under the brand or
+   user menu. The full strip needs ~1560px; below that we shed the least
+   important pieces first (email, clock, ambient stats) and keep the action
+   buttons longest. Tuned so there is zero overlap at every width. */
+@media (max-width: 1120px) { #topbar-center.tb-center .tbx-btn { display: none !important; } }
 @media (max-width: 900px) { #topbar-center.tb-center { display: none; } }
 
 /* --- Rich app footer (fills the empty footer) --- */
@@ -9264,7 +9268,10 @@ body.focus-mode .app-foot, body.focus-mode .app-foot-grid { display: none !impor
 body.focus-mode .app-main { padding-left: 20px !important; padding-right: 20px !important; }
 
 /* Keep the action buttons; drop ambient status first when the bar gets tight */
-@media (max-width: 1280px) { .tb-center .tbx-amb { display: none !important; } }
+/* ops-strip staged shedding (see note near the tb-center breakpoints above) */
+@media (max-width: 1560px) { #topbar .p-email { display: none !important; } }
+@media (max-width: 1400px) { .tb-center .tbx-clock, .tb-center .tbx-sep { display: none !important; } }
+@media (max-width: 1280px) { .tb-center .tbx-amb, .tb-center .tbx-status { display: none !important; } }
 
 /* ============================================================
    NEXUS AI — Claude-style chat layout (full-height, composer

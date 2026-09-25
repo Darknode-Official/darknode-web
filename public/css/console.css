@@ -61,6 +61,15 @@ body.app .app-main::before{inset:0!important}
 .con-favlbl{font-weight:700;font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;color:var(--con-acc);flex:none}
 .con-reclbl{margin-left:14px;padding-left:14px;border-left:1px solid var(--con-bar-line);color:var(--con-bar-mut)}
 .con-favs{display:flex;gap:2px;flex:none}
+/* category rail — every category with a live tool count, click to jump into
+   that section of the Services menu. Dense but labelled and scrollable. */
+.con-catbar{display:flex;align-items:center;gap:8px;height:var(--con-h2);padding:0 16px;background:var(--con-bar);border-bottom:1px solid var(--con-bar-line);overflow-x:auto;white-space:nowrap;scrollbar-width:none}
+.con-catbar::-webkit-scrollbar{display:none}
+.con-cats{display:flex;gap:3px;flex:none}
+.con-catchip{display:inline-flex;align-items:center;gap:6px;background:transparent;border:1px solid transparent;border-radius:3px;color:var(--con-bar-txt);font-family:inherit;font-weight:600;font-size:.74rem;padding:5px 8px;cursor:pointer;white-space:nowrap}
+.con-catchip:hover{background:var(--con-bar-2);border-color:var(--con-bar-line)}
+.con-catchip .svc-dot{width:7px;height:7px}
+.con-catn{font-family:var(--font-mono);font-weight:700;font-size:.63rem;line-height:1;color:var(--gc,var(--con-acc));background:color-mix(in srgb,var(--gc,var(--con-acc)) 16%,transparent);border-radius:8px;padding:2px 5px}
 .con-chip{display:inline-flex;align-items:center;gap:5px;background:transparent;border:1px solid transparent;border-radius:3px;color:var(--con-bar-txt);font-family:inherit;font-weight:500;font-size:.78rem;padding:6px 9px;cursor:pointer;white-space:nowrap}
 .con-chip:hover{background:var(--con-bar);border-color:var(--con-bar-line)}
 .con-chip.rec{color:var(--con-bar-mut)}
@@ -74,7 +83,7 @@ body.app .app-main::before{inset:0!important}
 .con-chip .svc-badge{font-size:.46rem}
 
 /* ---- Services mega-menu ---- */
-.svc-menu{display:none;position:absolute;left:0;right:0;top:calc(var(--con-h1) + var(--con-h2));height:min(660px,calc(100vh - var(--topbar-h) - var(--con-h1) - var(--con-h2) - 20px));z-index:60;background:var(--card);border-bottom:1px solid var(--line);box-shadow:0 20px 44px -14px rgba(0,0,0,.5)}
+.svc-menu{display:none;position:absolute;left:0;right:0;top:calc(var(--con-h1) + var(--con-h2)*2);height:min(660px,calc(100vh - var(--topbar-h) - var(--con-h1) - var(--con-h2)*2 - 20px));z-index:60;background:var(--card);border-bottom:1px solid var(--line);box-shadow:0 20px 44px -14px rgba(0,0,0,.5)}
 .svc-menu.open{display:block}
 .svc-cols{display:grid;grid-template-columns:264px 1fr;height:100%}
 .svc-cats{display:flex;flex-direction:column;padding:10px 0;background:var(--card2);border-right:1px solid var(--line);overflow-y:auto}
@@ -124,9 +133,9 @@ body.app .svc-menu .svc-card .side-item.active{color:var(--txt)!important;font-w
   .con-bar{padding:0 8px;gap:6px}
   .con-services{padding:0 8px}
   .con-quick,.con-search kbd{display:none}
-  .con-favbar{padding:0 8px}
+  .con-favbar,.con-catbar{padding:0 8px}
   body.app .app-main{padding:14px}
-  .svc-menu{height:calc(100vh - var(--topbar-h) - var(--con-h1) - var(--con-h2))}
+  .svc-menu{height:calc(100vh - var(--topbar-h) - var(--con-h1) - var(--con-h2)*2)}
   .svc-cols{grid-template-columns:1fr;grid-template-rows:auto 1fr}
   .svc-cats{flex-direction:row;overflow-x:auto;padding:6px;border-right:0;border-bottom:1px solid var(--line)}
   .svc-cat{flex:none;border-left:0;border-bottom:3px solid transparent;padding:8px 10px}
