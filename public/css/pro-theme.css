@@ -229,7 +229,7 @@ html[data-style=dark].crt body::after {
   filter: invert(1) !important;
 }
 [data-style=pro] .brand-mark {
-  content: url('/logo-dark.svg') !important;
+  content: url('/favicon.svg') !important;
   filter: none !important;
 }
 
