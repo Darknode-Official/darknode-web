@@ -14,7 +14,7 @@ const IOC_PATTERNS = {
   sha1: { regex: /\b([a-fA-F0-9]{40})\b/g, label: 'SHA-1 Hashes', icon: 'SHA1' },
   sha256: { regex: /\b([a-fA-F0-9]{64})\b/g, label: 'SHA-256 Hashes', icon: 'SHA256' },
   cve: { regex: /CVE-\d{4}-\d{4,}/gi, label: 'CVE IDs', icon: 'CVE' },
-  mac: { regex: /\b([0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}\b/g, label: 'MAC Addresses', icon: 'MAC' },
+  mac: { regex: /\b(?:[0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}\b/g, label: 'MAC Addresses', icon: 'MAC' },
   registry: { regex: /(?:HKLM|HKCU|HKCR|HKU|HKCC)\\[\w\\]+/gi, label: 'Registry Keys', icon: 'REG' },
   filepath: { regex: /(?:[A-Z]:\\(?:[\w.-]+\\)*[\w.-]+|\/(?:[\w.-]+\/)*[\w.-]+\.\w+)/g, label: 'File Paths', icon: 'FILE' },
   btc: { regex: /\b[13][a-km-zA-HJ-NP-Z1-9]{25,34}\b/g, label: 'Bitcoin Addresses', icon: 'BTC' },
