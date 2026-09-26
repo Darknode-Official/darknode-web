@@ -256,7 +256,7 @@ export const TOOLS = [
   },
   {
     id: "col-rgb-hsl", name: "RGB / HSL", cat: "color", tags: ["rgb", "hsl"],
-    desc: "Convert a color between RGB and HSL.",
+    desc: "Convert a color (hex, rgb() or a name) to HSL, or back to rgb().",
     inputs: [col(), { k: "mode", label: "Direction", type: "select", opts: ["RGB -> HSL", "HSL -> RGB"], value: "RGB -> HSL" }],
     run(v) {
       if (isEmpty(v.c)) return "";

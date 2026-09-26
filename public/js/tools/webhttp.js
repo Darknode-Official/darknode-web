@@ -1305,8 +1305,8 @@ export const TOOLS = [
     },
   },
   {
-    id: 'wb-status-emoji', name: 'Status Code Emoji Summary', cat: 'web',
-    desc: 'Summarize a status code with a class emoji, name, and meaning.',
+    id: 'wb-status-emoji', name: 'Status Code Summary', cat: 'web',
+    desc: 'Summarize a status code with its class label, name, and meaning.',
     tags: ['http', 'status', 'emoji'],
     inputs: [{ k: 'code', type: 'text', label: 'Status code', ph: '500', def: '' }],
     run(v) {
