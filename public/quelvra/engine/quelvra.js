@@ -21,6 +21,8 @@ import * as U from "./units.js";
 
 export const loadErrors = [];
 const OPTIONAL = ["./strategies/solve.js", "./strategies/integrate.js", "./strategies/calculus.js", "./strategies/analysis.js"];
+// advanced continuous commands (engine/advanced/, strategies/advanced-continuous.js)
+OPTIONAL.push("./strategies/advanced-continuous.js");
 for (const m of OPTIONAL) {
   try { await import(m); } catch (e) { if (!/Cannot find module|Failed to fetch|ERR_MODULE_NOT_FOUND|404/.test(String(e && (e.code || e.message)))) loadErrors.push({ module: m, message: String(e && e.message) }); }
 }

@@ -25,6 +25,10 @@ const COMMANDS = new Set(["solve", "simplify", "expand", "factor", "series", "ta
   "domain", "range", "zeros", "intercepts", "asymptotes", "extrema", "inflection", "monotonic", "critical", "tangent", "normal", "inverse",
   "completesquare", "apart", "identity", "line", "slope", "distance", "midpoint", "arclength", "areabetween", "volume", "avgvalue",
   "maximize", "minimize", "dot", "cross"]);
+// ---- advanced continuous commands (engine/advanced/, strategies/advanced-continuous.js) ----
+import { ADVANCED_CONTINUOUS_COMMANDS } from "./advanced/names.js";
+for (const n of ADVANCED_CONTINUOUS_COMMANDS) COMMANDS.add(n);
+// ---- end advanced continuous commands ----
 
 // Choose the unknown(s) to solve for.
 const PREFERRED = ["x", "y", "z", "t", "n", "u", "v", "w", "a", "b", "c", "theta"];
