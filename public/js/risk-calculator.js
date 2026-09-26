@@ -77,7 +77,7 @@ var CVE_EXAMPLES = [
   {cve:"CVE-2022-27925",name:"Zimbra RCE",score:7.2,vector:"CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:U/C:H/I:H/A:H",severity:"High",desc:"Authenticated RCE in Zimbra Collaboration via mboximport functionality."},
   {cve:"CVE-2024-21762",name:"FortiOS Out-of-Bound Write",score:9.8,vector:"CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",severity:"Critical",desc:"Unauthenticated RCE in FortiOS SSL VPN, actively exploited in the wild."},
   {cve:"CVE-2021-40444",name:"MSHTML RCE",score:7.8,vector:"CVSS:3.1/AV:L/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H",severity:"High",desc:"RCE via ActiveX control in MSHTML engine through crafted Office documents."},
-  {cve:"CVE-2023-4966",name:"Citrix Bleed",score:9.4,vector:"CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:L",severity:"Critical",desc:"Session token leakage in Citrix NetScaler allowing authentication bypass."}
+  {cve:"CVE-2023-4966",name:"Citrix Bleed",score:7.5,vector:"CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",severity:"High",desc:"Sensitive session-token disclosure in Citrix NetScaler enabling session hijacking."}
 ];
 
 export function renderRiskCalculator(container) {
