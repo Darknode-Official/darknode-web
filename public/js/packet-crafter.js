@@ -315,21 +315,62 @@ function udpChecksum(srcIp, dstIp, udpHeaderAndData) {
 
 // ─── Byte serialization ────────────────────────────────────────────────────
 function macToBytes(mac) {
-  return mac.split(":").map((h) => parseInt(h, 16) || 0);
+  return String(mac).split(":").map((h) => (parseInt(h, 16) || 0) & 0xFF);
 }
 
 function ipToBytes(ip) {
-  return ip.split(".").map((o) => parseInt(o, 10) || 0);
+  const parts = String(ip).split(".").map((o) => (parseInt(o, 10) || 0) & 0xFF);
+  while (parts.length < 4) parts.push(0);
+  return parts.slice(0, 4);
 }
 
 function ipv6ToBytes(addr) {
-  const groups = addr.split(":");
-  const bytes = [];
-  for (const g of groups) {
-    const val = parseInt(g, 16) || 0;
-    bytes.push((val >> 8) & 0xFF, val & 0xFF);
+  addr = String(addr).trim();
+  if (addr === "") return new Array(16).fill(0);
+
+  // Split on "::" (zero-compression). At most one "::" is valid.
+  const halves = addr.split("::");
+  const headStr = halves[0];
+  const tailStr = halves.length > 1 ? halves[1] : null;
+
+  // Parse a colon-separated run of groups into 16-bit words. A trailing
+  // dotted-quad (e.g. ::ffff:192.168.1.1) expands to two words.
+  function parseGroups(str) {
+    if (str === "") return [];
+    const words = [];
+    const parts = str.split(":");
+    for (let i = 0; i < parts.length; i++) {
+      const p = parts[i];
+      if (p.indexOf(".") !== -1) {
+        // Embedded IPv4 dotted-quad -> two 16-bit words.
+        const octets = p.split(".").map((o) => parseInt(o, 10) & 0xFF);
+        while (octets.length < 4) octets.push(0);
+        words.push((octets[0] << 8) | octets[1]);
+        words.push((octets[2] << 8) | octets[3]);
+      } else {
+        words.push(parseInt(p, 16) & 0xFFFF || 0);
+      }
+    }
+    return words;
   }
-  while (bytes.length < 16) bytes.push(0);
+
+  const head = parseGroups(headStr);
+  let words;
+  if (tailStr === null) {
+    // No compression: use groups as-is, pad to 8 words.
+    words = head.slice(0, 8);
+    while (words.length < 8) words.push(0);
+  } else {
+    const tail = parseGroups(tailStr);
+    const fill = Math.max(0, 8 - head.length - tail.length);
+    words = head.concat(new Array(fill).fill(0), tail).slice(0, 8);
+    while (words.length < 8) words.push(0);
+  }
+
+  const bytes = [];
+  for (const w of words) {
+    bytes.push((w >> 8) & 0xFF, w & 0xFF);
+  }
   return bytes.slice(0, 16);
 }
 
