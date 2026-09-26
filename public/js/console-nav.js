@@ -23,12 +23,12 @@ export const NAV = [
   G("secops", "Security Operations", "teal", [["adversaryplaybook","Adversary Playbook"],["apifuzzer","API Fuzzer"],["apitester","API Tester"],["apiscan","API Scanner"],["incidentcost","Incident Cost Calc"],["incidentresponse","Incident Response"],["siemdash","SIEM Dashboard"]]),
   G("compliance", "Compliance & GRC", "yellow", [["compliance","Compliance Checker"],["cyberbriefing","Cyber Briefing"],["emailheader","Email Header Analyzer"],["fedcompliance","Federal Compliance"],["iocextractor","IOC Extractor"],["zerotrust","Zero Trust Planner"]]),
   G("crypto", "Crypto & Encoding", "indigo", [["credaudit","Credential Auditor"],["cryptotools","Crypto Toolkit"],["cspevaluator","CSP Evaluator"],["encoding","Encoding Suite"],["hashsuite","Hash Suite"],["jwtanalyzer","JWT Analyzer"],["regexlab","Regex Lab"],["urldissect","URL Dissector"]]),
-  G("ai", "Darknode AI", "violet", [["ai","AI Chat"],["math","Quelvra Math","ai"],["coder","Nexus Agent","ai"],["dataviz","Data Visualization"],["engines","Security Engines"],["report","Report Generator"]]),
+  G("ai", "Darknode AI", "violet", [["ai","AI Chat"],["math","Quelvra Math"],["coder","Nexus Agent","ai"],["dataviz","Data Visualization"],["engines","Security Engines"],["report","Report Generator"]]),
   G("training", "Training", "emerald", [["cheats","Cheat Sheets"],["cyberrange","Cyber Range"],["learn","Learn Hub"],["refs","Reference Library"],["secquiz","Skill Assessments"],["securityquiz","Security Quiz"],["snippets","Snippet Vault"],["targets","Practice Targets"],["training","Training Labs"],["utils","Toolbox"]]),
   G("vms", "Virtual Machines", "emerald", [["vms","Vulnerable VMs"],["vmlab","VM Lab"]]),
   G("invest", "Investigations", "rose", [["investigation","Investigation Workspace"],["secgraph","Security Graph"],["casemgmt","Case Manager"]]),
   G("infra", "Infrastructure", "slate", [["api","API"],["docs","Docs"],["education","Education"],["downloads","Darknode OS"],["dlguide","Download Guide"],["privatecloud","Private Cloud","beta"],["setup","Local Setup"]]),
-  G("workspace", "Account", "slate", [["toolbox","Toolbox","ai"],["saved","Saved Items"],["settings","Settings"],["apikeys","API Keys"],["contact","Contact / Feedback"]]),
+  G("workspace", "Account", "slate", [["toolbox","Toolbox"],["saved","Saved Items"],["settings","Settings"],["apikeys","API Keys"],["contact","Contact / Feedback"]]),
 ];
 
 // Append the mini-tool categories (js/tools/*) as browsable, searchable service

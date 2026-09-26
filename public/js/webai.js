@@ -600,11 +600,14 @@ export function renderAI(main) {
     saveConvos(loadConvos().filter((c) => c.id !== id));
     if (id === curId) newChat(); else drawHistory();
   }
-  $("#aiNew").onclick = newChat;
-  $("#aiHistBtn").onclick = () => shell.classList.toggle("hist-open");
+  const closeHist = () => shell.classList.remove("hist-open");
+  $("#aiNew").onclick = () => { newChat(); closeHist(); };
+  $("#aiHistBtn").onclick = (e) => { e.stopPropagation(); shell.classList.toggle("hist-open"); };
+  // the rail is an overlay drawer: a click outside it (on the backdrop) closes it
+  shell.addEventListener("click", (e) => { if (shell.classList.contains("hist-open") && !e.target.closest("#aiHist") && !e.target.closest("#aiHistBtn")) closeHist(); });
   $("#aiHist").addEventListener("click", (e) => {
     const dx = e.target.closest("[data-del-convo]"); if (dx) { e.stopPropagation(); delConvo(dx.dataset.delConvo); return; }
-    const ld = e.target.closest("[data-load]"); if (ld) { loadConvo(ld.dataset.load); if (window.innerWidth <= 900) shell.classList.remove("hist-open"); }
+    const ld = e.target.closest("[data-load]"); if (ld) { loadConvo(ld.dataset.load); closeHist(); }
   });
 
   // ---- attachments: images + text/code files ----
