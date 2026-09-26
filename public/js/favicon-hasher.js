@@ -131,9 +131,19 @@ export function renderFaviconHasher(container) {
 
   var _fhResults = [];
 
+  // Python's base64.encodebytes() — which Shodan/Censys feed into mmh3 —
+  // wraps the base64 output at 76 characters per line and appends a trailing
+  // newline. Plain btoa() omits these, producing a hash that never matches
+  // real http.favicon.hash values, so replicate encodebytes() exactly.
+  function base64EncodeBytes(b64) {
+    var out = '';
+    for (var i = 0; i < b64.length; i += 76) out += b64.slice(i, i + 76) + '\n';
+    return out;
+  }
+
   async function processFavicon(arrayBuf, name) {
     var b64 = arrayBufferToBase64(arrayBuf);
-    var b64Bytes = textToBytes(b64);
+    var b64Bytes = textToBytes(base64EncodeBytes(b64));
     var shodanHash = murmurHash3(b64Bytes);
     var rawHash = murmurHash3(new Uint8Array(arrayBuf));
     var sha = await sha256Hex(arrayBuf);
