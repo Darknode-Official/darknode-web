@@ -80,7 +80,7 @@ const HEADER_REF = [
 // ── Security Header Grading ────────────────────────────────────────────────
 
 const SECURITY_HEADERS = [
-  { name: "Strict-Transport-Security", weight: 20, required: true, check: v => /max-age=\d{7,}/.test(v) ? "good" : /max-age=\d+/.test(v) ? "weak" : "missing" },
+  { name: "Strict-Transport-Security", weight: 20, required: true, check: v => { const m = /max-age=(\d+)/.exec(v); return m ? (+m[1] >= 31536000 ? "good" : "weak") : "missing"; } },
   { name: "Content-Security-Policy", weight: 20, required: true, check: v => v && !v.includes("unsafe-inline") && !v.includes("unsafe-eval") ? "good" : v ? "weak" : "missing" },
   { name: "X-Content-Type-Options", weight: 10, required: true, check: v => v === "nosniff" ? "good" : "missing" },
   { name: "X-Frame-Options", weight: 8, required: true, check: v => /^(DENY|SAMEORIGIN)$/i.test(v) ? "good" : "missing" },
@@ -127,7 +127,10 @@ function headerIssueSeverity(r) {
 
 function parseCookies(setCookieHeader) {
   const cookies = [];
-  const parts = setCookieHeader.split(/\n|(?<=;)\s*(?=[a-zA-Z_-]+=)/);
+  // One Set-Cookie header per line (RFC 6265): ";" separates attributes WITHIN
+  // a cookie, never cookies, so splitting on ";attr=" tore a single cookie apart
+  // (Path=, SameSite=, Expires=… became fake cookies). Split on newlines only.
+  const parts = setCookieHeader.split(/\n/);
   for (const raw of parts) {
     if (!raw.trim()) continue;
     const attrs = raw.split(";").map(s => s.trim());

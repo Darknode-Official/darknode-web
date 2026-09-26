@@ -2,7 +2,7 @@
 // Source-available for learning only. Redistribution prohibited. See LICENSE.
 
 const LOG_FORMATS = {
-  apache: { name: "Apache/Nginx Access Log", regex: /^(\S+) \S+ \S+ \[([^\]]+)\] "(\S+) (\S+) \S+" (\d+) (\d+|-) "([^"]*)" "([^"]*)"/, fields: ["ip","timestamp","method","path","status","size","referer","user_agent"] },
+  apache: { name: "Apache/Nginx Access Log", regex: /^(\S+) \S+ \S+ \[([^\]]+)\] "(\S+) (.+?) \S+" (\d+) (\d+|-) "([^"]*)" "([^"]*)"/, fields: ["ip","timestamp","method","path","status","size","referer","user_agent"] },
   auth: { name: "auth.log / syslog", regex: /^(\S+ +\d+ \d+:\d+:\d+) (\S+) (\S+?)(?:\[\d+\])?: (.+)/, fields: ["timestamp","host","service","message"] },
   json: { name: "JSON Log", regex: /^\{/, fields: [] },
   syslog: { name: "Syslog (RFC 3164)", regex: /^<(\d+)>(\S+ +\d+ \d+:\d+:\d+) (\S+) (\S+?)(?:\[\d+\])?: (.+)/, fields: ["priority","timestamp","host","service","message"] },
