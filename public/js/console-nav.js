@@ -39,6 +39,10 @@ for (const [cat, meta] of Object.entries(TOOL_CATS)) {
   if (items.length) NAV.push(G(`tg-${cat}`, meta.name, meta.color, items));
 }
 
+// Section directory for the support-chat bridge (botpress-bridge.js), so "open citadel"
+// typed in the chat resolves to a real section. Admin is deliberately left out.
+try { window.dnSections = NAV.flatMap((g) => g.items.map((i) => ({ sec: i.sec, label: i.label, group: g.name }))); } catch (_) {}
+
 const ADMIN = G("admin", "Admin", "slate", [["admin","Admin Console"]]);
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));

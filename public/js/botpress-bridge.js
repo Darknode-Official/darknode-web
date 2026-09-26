@@ -97,6 +97,7 @@
         sr.appendChild(st);
       }
       if (st.textContent !== SHADOW_CSS) st.textContent = SHADOW_CSS;
+      watchComposer(sr);
       styled = true;
       log("webchat styled (bubble hidden, footer removed, brand skin)");
       return true;
@@ -110,6 +111,100 @@
     var ok = styleWidget();
     if (styleTries > 200) clearInterval(styleIv);
   }, 150);
+
+  // ── Local intent: "open citadel" typed in the chat opens it ────────────────
+  // The cloud bot cannot touch the page, so the page reads the visitor's own
+  // outgoing message and, when it is a clear "open / go to / show X" request
+  // that matches a real section or tool, routes there itself. Anything that
+  // does not match a known section is left alone for the bot to answer.
+  var norm = function (s) { return String(s || "").toLowerCase().replace(/[^a-z0-9]/g, ""); };
+  var INTENT = /^(?:hey\s+|hi\s+|ok(?:ay)?\s+)?(?:please\s+)?(?:(?:can|could|would|will)\s+you\s+(?:please\s+)?|i\s+(?:want|need|would like)\s+to\s+|let\s+me\s+|help\s+me\s+)?(?:open(?:\s+up)?|go\s+to|goto|navigate\s+to|take\s+me\s+to|bring\s+(?:me\s+to|up)|show(?:\s+me)?|launch|start|run|use|pull\s+up|jump\s+to|switch\s+to|visit)\s+(?:the\s+|my\s+|a\s+)?(.+?)$/i;
+  var TRAIL = /\s+(?:for\s+me|please|pls|now|page|tab|tool|section|dashboard|panel|app|screen|menu|on\s+the\s+(?:website|site)|thanks?|thank\s+you)$/i;
+  function intentTarget(text) {
+    var m = String(text || "").trim().replace(/[.!?\s]+$/, "").match(INTENT);
+    if (!m) return null;
+    var t = m[1];
+    for (var i = 0; i < 4; i++) t = t.replace(TRAIL, "");
+    return t.trim();
+  }
+  function resolveSection(q) {
+    var list = Array.isArray(window.dnSections) ? window.dnSections : [];
+    var n = norm(q);
+    if (!n) return null;
+    var tiers = [[], [], [], []];
+    list.forEach(function (s) {
+      var l = norm(s.label), k = norm(s.sec.replace(/^tool-/, ""));
+      if (l === n || k === n) tiers[0].push(s);
+      else if (l.indexOf(n) === 0 || k.indexOf(n) === 0) tiers[1].push(s);
+      else if (n.length >= 4 && l.indexOf(n) >= 0) tiers[2].push(s);
+      else if (l.length >= 4 && n.indexOf(l) >= 0) tiers[3].push(s);
+    });
+    for (var j = 0; j < tiers.length; j++) {
+      if (!tiers[j].length) continue;
+      // prefer a main section over a mini-tool, then the shortest label
+      tiers[j].sort(function (a, b) { return (/^tool-/.test(a.sec) - /^tool-/.test(b.sec)) || a.label.length - b.label.length; });
+      return tiers[j][0];
+    }
+    return null;
+  }
+  function note(msg) {
+    try {
+      var el = document.createElement("div");
+      el.textContent = msg;
+      el.setAttribute("role", "status");
+      el.style.cssText = "position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:2147483646;background:#0f172a;color:#fff;font:500 13px/1.4 system-ui,sans-serif;padding:10px 16px;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.25);border:1px solid #2563eb;max-width:90vw";
+      document.body.appendChild(el);
+      setTimeout(function () { el.remove(); }, 2800);
+    } catch (_) {}
+  }
+  function handleOutgoing(text) {
+    var q = intentTarget(text);
+    if (!q) return false;
+    var hit = resolveSection(q);
+    var inApp = document.body.classList.contains("app");
+    if (!hit) {
+      var id = norm(q);
+      var el = id && document.getElementById(id);
+      if (el) { el.scrollIntoView({ behavior: "smooth", block: "start" }); return true; }
+      return false;
+    }
+    if (!inApp) { note("Sign in to open " + hit.label + "."); nav("signin"); return true; }
+    var ok = nav(hit.sec);
+    if (ok) note("Opened " + hit.label + ".");
+    log("chat intent -> " + hit.sec, ok);
+    return ok;
+  }
+  // A recognised request is handled here and never sent to the bot, so the bot
+  // cannot answer "I can't open that" after the page already opened it.
+  var draft = "";
+  function clearComposer(t) {
+    try {
+      var setter = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(t), "value").set;
+      setter.call(t, "");
+      t.dispatchEvent(new Event("input", { bubbles: true, composed: true }));
+    } catch (_) {}
+    draft = "";
+  }
+  function swallow(e, t) { e.preventDefault(); e.stopImmediatePropagation(); if (t) clearComposer(t); }
+  function watchComposer(sr) {
+    if (sr.__dnComposer) return;
+    sr.__dnComposer = true;
+    var field = function (e) { var t = e.composedPath()[0]; return t && (t.tagName === "TEXTAREA" || t.tagName === "INPUT") ? t : null; };
+    sr.addEventListener("input", function (e) { var t = field(e); if (t) draft = t.value || ""; }, true);
+    sr.addEventListener("keydown", function (e) {
+      var t = field(e);
+      if (!t || e.key !== "Enter" || e.shiftKey || e.isComposing) return;
+      if (handleOutgoing(t.value || draft)) swallow(e, t);
+    }, true);
+    sr.addEventListener("click", function (e) {
+      var b = e.composedPath().find(function (n) { return n && n.tagName === "BUTTON"; });
+      if (!b || !draft.trim() || !(b.type === "submit" || /send/i.test((b.getAttribute("aria-label") || "") + " " + b.className))) return;
+      var t = sr.querySelector("textarea");
+      if (handleOutgoing(draft)) swallow(e, t);
+    }, true);
+  }
+  window.darknode = window.darknode || {};
+  window.darknode.chatIntent = handleOutgoing;
 
   // ── Normalise many possible command shapes into { action, target, … } ──────
   function parseCmd(raw) {

@@ -4,7 +4,7 @@
   const mod = mac ? "Cmd" : "Ctrl";
   const shortcuts = [
     [mod + "+K", "Command palette"],
-    ["Shift+?", "Keyboard shortcuts"],
+    [mod + "+/", "Keyboard shortcuts"],
     ["Esc", "Close overlays"],
     ["G then H", "Go to Dashboard"],
     ["G then T", "Go to Tools"],
@@ -57,9 +57,12 @@
 
   let gPending = false, gTimer;
   document.addEventListener("keydown", (e) => {
-    if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA" || e.target.isContentEditable) return;
+    // composedPath()[0] is the real target even inside shadow DOM (the support chat lives in one)
+    const t = (e.composedPath && e.composedPath()[0]) || e.target;
+    if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable)) return;
+    if (t && t !== e.target && e.target.id === "fab-root") return;
     if (e.key === "Escape" && overlay && overlay.classList.contains("open")) { close(); e.preventDefault(); return; }
-    if ((e.key === "?" && e.shiftKey) || (e.key === "/" && (e.ctrlKey || e.metaKey))) { e.preventDefault(); open(); return; }
+    if (e.key === "/" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); open(); return; }
     if (e.key === "g" || e.key === "G") { if (!gPending) { gPending = true; gTimer = setTimeout(() => { gPending = false; }, 800); } return; }
     if (gPending) {
       gPending = false; clearTimeout(gTimer);
