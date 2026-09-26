@@ -70,7 +70,7 @@ export function renderLanding(view, actions) {
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
             </div>
             <h3>CLI</h3>
-            <p>One command: <code>npm i -g darknode-cli</code>. 1,000+ tools, AI agent, and the Darknode engine in your terminal.</p>
+            <p>One command: <code>npm i -g darknode-cli</code>. 1,000+ tools, AI agent, and the Nexus engine in your terminal.</p>
             <span class="bento-tag">npm install</span>
           </div>
           <div class="bento-card">
@@ -102,7 +102,7 @@ export function renderLanding(view, actions) {
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 8h20"/><circle cx="5" cy="6" r=".5" fill="currentColor"/><circle cx="7.5" cy="6" r=".5" fill="currentColor"/></svg>
             </div>
             <h3>Cloud VM</h3>
-            <p>A full security workstation. Like Kali, but with Darknode and Darknode AI built in. Runs in VirtualBox, QEMU, or the cloud.</p>
+            <p>A full security workstation. Like Kali, but with Darknode and Nexus AI built in. Runs in VirtualBox, QEMU, or the cloud.</p>
             <span class="bento-tag">VirtualBox &middot; cloud</span>
           </div>
         </div>
@@ -151,12 +151,12 @@ export function renderLanding(view, actions) {
           <div class="feature-row reverse">
             <div class="feature-text">
               <h3>AI that runs on your machine</h3>
-              <p>Darknode is a 59-module AI agent engine. It reads your code, runs commands, explains vulnerabilities, and writes scripts. Use free local models or bring your own API key. We never see your data.</p>
+              <p>Nexus is a 59-module AI agent engine. It reads your code, runs commands, explains vulnerabilities, and writes scripts. Use free local models or bring your own API key. We never see your data.</p>
             </div>
             <div class="feature-visual">
               <div class="term-window">
                 <div class="tw-bar"><span class="tw-dot r"></span><span class="tw-dot y"></span><span class="tw-dot g"></span><span class="tw-title">nexus</span></div>
-                <pre class="tw-body"><span class="c-pl">$</span> darknode nexus "explain CVE-2021-44228"\n\n<span class="c-acc">Darknode:</span> Log4Shell is a critical RCE\nin Apache Log4j. It exploits\nJNDI lookup string injection...\n\n<span class="c-mut">engine: ollama (local, free)</span></pre>
+                <pre class="tw-body"><span class="c-pl">$</span> darknode nexus "explain CVE-2021-44228"\n\n<span class="c-acc">Nexus:</span> Log4Shell is a critical RCE\nin Apache Log4j. It exploits\nJNDI lookup string injection...\n\n<span class="c-mut">engine: ollama (local, free)</span></pre>
               </div>
             </div>
           </div>
@@ -206,13 +206,13 @@ export function renderLanding(view, actions) {
             <div class="tlv-num">2</div>
             <div class="tlv-body">
               <div class="tlv-text">
-                <h3>Launch Darknode AI</h3>
+                <h3>Launch Nexus AI</h3>
                 <p>Run <code>darknode</code> in your terminal. The AI agent starts with GPT-OSS 120B -- free, private, no API key needed.</p>
               </div>
               <div class="tlv-visual">
                 <div class="term-window demo-term">
                   <div class="tw-bar"><span class="tw-dot r"></span><span class="tw-dot y"></span><span class="tw-dot g"></span><span class="tw-title">darknode</span></div>
-                  <pre class="tw-body"><span class="c-pl">$</span> darknode\n\n  <span class="c-acc">Darknode Darknode v2.14</span>\n  Engine: <span class="c-ok">GPT-OSS 120B</span> (local)\n  Status: <span class="c-ok">Ready</span>\n\n<span class="c-acc">nexus&gt;</span> <span class="tw-cursor">_</span></pre>
+                  <pre class="tw-body"><span class="c-pl">$</span> darknode\n\n  <span class="c-acc">Darknode v2.14</span>\n  Engine: <span class="c-ok">GPT-OSS 120B</span> (local)\n  Status: <span class="c-ok">Ready</span>\n\n<span class="c-acc">nexus&gt;</span> <span class="tw-cursor">_</span></pre>
                 </div>
               </div>
             </div>
@@ -223,12 +223,12 @@ export function renderLanding(view, actions) {
             <div class="tlv-body">
               <div class="tlv-text">
                 <h3>Ask it anything</h3>
-                <p>Describe what you want to do in plain English. Darknode reads your code, runs scans, writes scripts, and explains every step.</p>
+                <p>Describe what you want to do in plain English. Nexus reads your code, runs scans, writes scripts, and explains every step.</p>
               </div>
               <div class="tlv-visual">
                 <div class="term-window demo-term">
                   <div class="tw-bar"><span class="tw-dot r"></span><span class="tw-dot y"></span><span class="tw-dot g"></span><span class="tw-title">nexus</span></div>
-                  <pre class="tw-body"><span class="c-acc">nexus&gt;</span> scan 10.10.14.7 and explain\n        what you find\n\n<span class="c-acc">Darknode:</span> Running nmap on target...\n\n<span class="c-ok">22</span>  ssh    OpenSSH 9.6\n<span class="c-ok">80</span>  http   nginx 1.24\n<span class="c-ok">443</span> https\n\nPort 22: check <span class="c-bad">CVE-2024-6387</span>...</pre>
+                  <pre class="tw-body"><span class="c-acc">nexus&gt;</span> scan 10.10.14.7 and explain\n        what you find\n\n<span class="c-acc">Nexus:</span> Running nmap on target...\n\n<span class="c-ok">22</span>  ssh    OpenSSH 9.6\n<span class="c-ok">80</span>  http   nginx 1.24\n<span class="c-ok">443</span> https\n\nPort 22: check <span class="c-bad">CVE-2024-6387</span>...</pre>
                 </div>
               </div>
             </div>
@@ -244,7 +244,7 @@ export function renderLanding(view, actions) {
               <div class="tlv-visual">
                 <div class="term-window demo-term">
                   <div class="tw-bar"><span class="tw-dot r"></span><span class="tw-dot y"></span><span class="tw-dot g"></span><span class="tw-title">darknode</span></div>
-                  <pre class="tw-body"><span class="c-pl">$</span> darknode lab start dvwa\n<span class="c-ok">[+]</span> DVWA running on localhost:8080\n\n<span class="c-acc">nexus&gt;</span> walk me through SQL injection\n\n<span class="c-acc">Darknode:</span> Open localhost:8080/login.\nTry entering <span class="c-bad">' OR 1=1--</span> in the\nusername field...</pre>
+                  <pre class="tw-body"><span class="c-pl">$</span> darknode lab start dvwa\n<span class="c-ok">[+]</span> DVWA running on localhost:8080\n\n<span class="c-acc">nexus&gt;</span> walk me through SQL injection\n\n<span class="c-acc">Nexus:</span> Open localhost:8080/login.\nTry entering <span class="c-bad">' OR 1=1--</span> in the\nusername field...</pre>
                 </div>
               </div>
             </div>
@@ -447,11 +447,11 @@ export function renderLanding(view, actions) {
       <div class="nx-section-glow"></div>
       <div class="wrap">
         <div class="sec-label">AI Engine</div>
-        <h2 class="sec-title" id="nexus-title">Darknode &mdash; the engine under the hood</h2>
+        <h2 class="sec-title" id="nexus-title">Nexus &mdash; the engine under the hood</h2>
         <p class="sec-sub">Not a wrapper around ChatGPT. A full agentic platform with planning, multi-agent orchestration, self-evaluation, and 8 AI backends. Every layer built from scratch.</p>
 
         <!-- Architecture diagram -->
-        <div class="nx-arch" aria-label="Darknode architecture diagram">
+        <div class="nx-arch" aria-label="Nexus architecture diagram">
           <div class="nx-arch-layer nx-arch-l1">
             <div class="nx-arch-header">
               <span class="nx-arch-label">8 AI Engines</span>
@@ -579,7 +579,7 @@ export function renderLanding(view, actions) {
       <div class="wrap">
         <div class="sec-label">See it in action</div>
         <h2 class="sec-title" id="demo-title">From recon to report in one workflow</h2>
-        <p class="sec-sub">Four steps. One tool. Watch Darknode and Darknode AI take a target from unknown to fully documented.</p>
+        <p class="sec-sub">Four steps. One tool. Watch Darknode and Nexus AI take a target from unknown to fully documented.</p>
         <div class="showcase-tabs" role="tablist" aria-label="Demo tabs">
           <button class="showcase-tab active" role="tab" aria-selected="true" aria-controls="stab-recon" id="tab-recon" data-tab="recon">Recon scan</button>
           <button class="showcase-tab" role="tab" aria-selected="false" aria-controls="stab-analysis" id="tab-analysis" data-tab="analysis">AI analysis</button>
@@ -606,7 +606,7 @@ export function renderLanding(view, actions) {
 <span class="c-mut">[*] Scan completed in 14.2s</span>
 <span class="c-acc">[+] Results saved to ./scans/10.10.14.7.json</span></span><span class="showcase-panel" id="stab-analysis" role="tabpanel" aria-labelledby="tab-analysis" hidden><span class="c-pl">$</span> darknode nexus "analyze the scan results for vulnerabilities"
 
-<span class="c-acc">Darknode:</span> Analyzing scan output for 10.10.14.7...
+<span class="c-acc">Nexus:</span> Analyzing scan output for 10.10.14.7...
 
 <span class="c-ok">CRITICAL FINDINGS:</span>
 
@@ -623,11 +623,11 @@ export function renderLanding(view, actions) {
 
 <span class="c-pl">3. Jetty 9.4.43 (port 8080)</span>
    Check for CVE-2023-26048 (multipart DoS).
-   Often fronts Jenkins, Darknode, or Solr instances.
+   Often fronts Jenkins, Nexus, or Solr instances.
 
 <span class="c-mut">engine: ollama/llama3 (local, free)</span></span><span class="showcase-panel" id="stab-exploit" role="tabpanel" aria-labelledby="tab-exploit" hidden><span class="c-pl">$</span> darknode nexus "suggest assessment approach"
 
-<span class="c-acc">Darknode:</span> Based on the findings, here is a recommended
+<span class="c-acc">Nexus:</span> Based on the findings, here is a recommended
 testing methodology for 10.10.14.7:
 
 <span class="c-ok">PHASE 1 -- Enumeration</span>
@@ -689,7 +689,7 @@ testing methodology for 10.10.14.7:
       <div class="wrap">
         <div class="sec-label">Security RAG</div>
         <h2 class="sec-title" id="rag-title">Built-in security knowledge</h2>
-        <p class="sec-sub">Not a generic chatbot. Darknode ships with a deep, structured knowledge base covering real-world security techniques, OWASP standards, and professional tooling.</p>
+        <p class="sec-sub">Not a generic chatbot. Nexus ships with a deep, structured knowledge base covering real-world security techniques, OWASP standards, and professional tooling.</p>
         <div class="rag-tabs" role="tablist" aria-label="Knowledge categories">
           <button class="rag-tab active" role="tab" aria-selected="true" data-rag="owasp">OWASP Top 10</button>
           <button class="rag-tab" role="tab" aria-selected="false" data-rag="attacks">Security Patterns</button>
@@ -1085,10 +1085,10 @@ testing methodology for 10.10.14.7:
           <div class="os-card">
             <div class="os-card-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg></div>
             <h3 class="os-card-title">Darknode OS — Linux Edition</h3>
-            <p class="os-card-desc">Full desktop environment built on Ubuntu 24.04 LTS. Pre-loaded with the entire Darknode toolkit, Darknode AI agent, and every security tool configured and ready to go.</p>
+            <p class="os-card-desc">Full desktop environment built on Ubuntu 24.04 LTS. Pre-loaded with the entire Darknode toolkit, Nexus AI agent, and every security tool configured and ready to go.</p>
             <ul class="os-features">
               <li>Ubuntu 24.04 LTS with XFCE desktop</li>
-              <li>Darknode CLI + Darknode pre-installed</li>
+              <li>Darknode CLI + Nexus pre-installed</li>
               <li>nmap, sqlmap, nuclei, ffuf, httpx, Burp Suite</li>
               <li>1,000+ security tools ready to run</li>
               <li>Custom wallpapers, icons, and theming</li>
@@ -1113,13 +1113,13 @@ testing methodology for 10.10.14.7:
  Network: NE2000 NIC | Stack: IPv4/ICMP/UDP/DHCP/DNS
  Filesystems: ramfs, devfs mounted
 
- darknode&gt; help
+ nexus&gt; help
  Available commands (28):
    help ls cat mkdir touch write rm cd pwd ps mount
    disk free mem cpuinfo time uptime echo version
    clear reboot shutdown ifconfig ping arp dhcp dns netstat
 
- darknode&gt; _</pre>
+ nexus&gt; _</pre>
           </div>
         </div>
       </div>
@@ -1174,7 +1174,7 @@ testing methodology for 10.10.14.7:
           </div>
           <div class="testimonial-card">
             <div class="testimonial-quote">&ldquo;</div>
-            <blockquote class="testimonial-text">The Darknode AI agent writes better Nuclei templates than most of my team.</blockquote>
+            <blockquote class="testimonial-text">The Nexus AI agent writes better Nuclei templates than most of my team.</blockquote>
             <div class="testimonial-author">
               <div class="testimonial-role">Security Researcher</div>
               <div class="testimonial-org">Vulnerability Research</div>
@@ -1204,7 +1204,7 @@ testing methodology for 10.10.14.7:
             <ul class="price-features">
               <li>All 1,000+ security tools (no limits)</li>
               <li>PROMETHEUS, SENTINEL EYE, HYDRA, AEGIS &mdash; full access</li>
-              <li>Darknode AI agent (BYOK &mdash; Claude, GPT, Gemini, Ollama)</li>
+              <li>Nexus AI agent (BYOK &mdash; Claude, GPT, Gemini, Ollama)</li>
               <li>Learn Hub with 1,400+ topics and quizzes</li>
               <li>CLI, desktop app, and Darknode OS</li>
               <li>Live threat intelligence feeds</li>
@@ -1228,7 +1228,7 @@ testing methodology for 10.10.14.7:
               <li>AI code auditor</li>
               <li>Custom scan profiles and templates</li>
               <li>Credential leak monitoring</li>
-              <li>Darknode Overnight Mode (background analysis)</li>
+              <li>Nexus Overnight Mode (background analysis)</li>
               <li>Priority API rate limits (5x)</li>
               <li>Early access to new tools</li>
               <li>Email support (24h response)</li>
@@ -1294,7 +1294,7 @@ testing methodology for 10.10.14.7:
               <span class="faq-toggle" aria-hidden="true">+</span>
             </button>
             <div class="faq-a" hidden>
-              <div class="faq-a-inner">Yes. Every tool on the platform &mdash; HYDRA, AEGIS, SENTINEL EYE, PROMETHEUS, PHANTOM, CITADEL, ORACLE, SPECTRE, the Security Assessment Console, Cyber Range, all 1,000+ security tools, the CLI, the desktop app, and Darknode OS &mdash; is free with no time limits, no trials, and no paywalls. You also get full access to the Darknode AI agent on any plan using your own API key or a free local model like Ollama. Paid plans (coming soon) will add professional extras like automated scan scheduling, AI report generation, and team collaboration, but the core platform stays free forever.</div>
+              <div class="faq-a-inner">Yes. Every tool on the platform &mdash; HYDRA, AEGIS, SENTINEL EYE, PROMETHEUS, PHANTOM, CITADEL, ORACLE, SPECTRE, the Security Assessment Console, Cyber Range, all 1,000+ security tools, the CLI, the desktop app, and Darknode OS &mdash; is free with no time limits, no trials, and no paywalls. You also get full access to the Nexus AI agent on any plan using your own API key or a free local model like Ollama. Paid plans (coming soon) will add professional extras like automated scan scheduling, AI report generation, and team collaboration, but the core platform stays free forever.</div>
             </div>
           </div>
 
@@ -1304,7 +1304,7 @@ testing methodology for 10.10.14.7:
               <span class="faq-toggle" aria-hidden="true">+</span>
             </button>
             <div class="faq-a" hidden>
-              <div class="faq-a-inner">No. Darknode is designed with privacy at its core. All scans, analysis, and practice labs run entirely on your machine. If you use the Darknode AI agent with a local model (via Ollama), everything stays offline. If you bring a cloud API key (OpenAI, Anthropic, Google), your queries go directly to that provider &mdash; Darknode never proxies, logs, or stores your prompts or results. Your scan data, saved findings, credentials, and wordlists are stored locally and never transmitted anywhere.</div>
+              <div class="faq-a-inner">No. Darknode is designed with privacy at its core. All scans, analysis, and practice labs run entirely on your machine. If you use the Nexus AI agent with a local model (via Ollama), everything stays offline. If you bring a cloud API key (OpenAI, Anthropic, Google), your queries go directly to that provider &mdash; Darknode never proxies, logs, or stores your prompts or results. Your scan data, saved findings, credentials, and wordlists are stored locally and never transmitted anywhere.</div>
             </div>
           </div>
 
@@ -1314,7 +1314,7 @@ testing methodology for 10.10.14.7:
               <span class="faq-toggle" aria-hidden="true">+</span>
             </button>
             <div class="faq-a" hidden>
-              <div class="faq-a-inner">Darknode supports 8 AI providers out of the box. For cloud models: Claude 3.5/4 (Anthropic), GPT-4o/o1 (OpenAI), Gemini 2.0 (Google), Mistral Large, and Cohere Command R+. For free local models: any Ollama-compatible model including Llama 3, Mixtral, CodeLlama, Phi-3, and Qwen. The Darknode AI agent can switch between providers mid-conversation, race multiple models against each other, or ensemble their answers for higher accuracy. You bring your own API key &mdash; Darknode never charges for AI tokens on any plan.</div>
+              <div class="faq-a-inner">Darknode supports 8 AI providers out of the box. For cloud models: Claude 3.5/4 (Anthropic), GPT-4o/o1 (OpenAI), Gemini 2.0 (Google), Mistral Large, and Cohere Command R+. For free local models: any Ollama-compatible model including Llama 3, Mixtral, CodeLlama, Phi-3, and Qwen. The Nexus AI agent can switch between providers mid-conversation, race multiple models against each other, or ensemble their answers for higher accuracy. You bring your own API key &mdash; Darknode never charges for AI tokens on any plan.</div>
             </div>
           </div>
 
@@ -1334,7 +1334,7 @@ testing methodology for 10.10.14.7:
               <span class="faq-toggle" aria-hidden="true">+</span>
             </button>
             <div class="faq-a" hidden>
-              <div class="faq-a-inner">Kali Linux gives you a collection of pre-installed tools. Darknode gives you those same tools plus an AI agent (Darknode) that explains what each tool does, generates the right commands for your target, walks you through methodologies step by step, and writes professional reports from your findings. Darknode also includes a built-in learning hub with 1,400+ cybersecurity topics, interactive quizzes, practice labs, CTF challenges, and real-time threat intelligence feeds. Think of Kali as the toolbox and Darknode as the toolbox plus a mentor who teaches you how to use every tool in it.</div>
+              <div class="faq-a-inner">Kali Linux gives you a collection of pre-installed tools. Darknode gives you those same tools plus an AI agent (Nexus) that explains what each tool does, generates the right commands for your target, walks you through methodologies step by step, and writes professional reports from your findings. Darknode also includes a built-in learning hub with 1,400+ cybersecurity topics, interactive quizzes, practice labs, CTF challenges, and real-time threat intelligence feeds. Think of Kali as the toolbox and Darknode as the toolbox plus a mentor who teaches you how to use every tool in it.</div>
             </div>
           </div>
 
@@ -1384,7 +1384,7 @@ testing methodology for 10.10.14.7:
               <span class="faq-toggle" aria-hidden="true">+</span>
             </button>
             <div class="faq-a" hidden>
-              <div class="faq-a-inner">There are several ways to get support. The Darknode AI agent has a built-in <code>/docs</code> command that covers every feature and tool on the platform. For bug reports and feature requests, open an issue on our GitHub repository. The AI assistant can answer most questions about how to use specific tools, interpret scan results, or follow security methodologies. For account-related issues, use the in-app feedback form. Pro and Team subscribers also get priority email and chat support.</div>
+              <div class="faq-a-inner">There are several ways to get support. The Nexus AI agent has a built-in <code>/docs</code> command that covers every feature and tool on the platform. For bug reports and feature requests, open an issue on our GitHub repository. The AI assistant can answer most questions about how to use specific tools, interpret scan results, or follow security methodologies. For account-related issues, use the in-app feedback form. Pro and Team subscribers also get priority email and chat support.</div>
             </div>
           </div>
 
@@ -1465,7 +1465,7 @@ testing methodology for 10.10.14.7:
           <a href="${GITHUB}" target="_blank" rel="noopener">GitHub</a>
           <a href="${GITHUB}/darknode-cli" target="_blank" rel="noopener">CLI</a>
           <a href="${GITHUB}/darknode-os" target="_blank" rel="noopener">OS</a>
-          <a href="${GITHUB}/nexus" target="_blank" rel="noopener">Darknode</a>
+          <a href="${GITHUB}/nexus" target="_blank" rel="noopener">Nexus</a>
           <a href="/faq" data-nav="section" data-section="faq">FAQ</a>
         </div>
       </div>

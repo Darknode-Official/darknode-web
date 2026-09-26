@@ -684,7 +684,7 @@ export async function renderAdmin(main, user) {
     },
     welcome: {
       subject: "Welcome to Darknode",
-      body: "Welcome to Darknode!\n\nThanks for signing up. Here's what you can do:\n\n- Explore 120+ security tools and cheat sheets\n- Use the Nexus AI coding agent\n- Practice in our security labs\n- Track your progress in the Learn Hub\n\nGet started at darknode.ai\n\nBest,\nThe Darknode Team\ncontact@darknode.ai"
+      body: "Welcome to Darknode!\n\nThanks for signing up. Here's what you can do:\n\n- Explore 1,000+ security tools and cheat sheets\n- Use the Nexus AI coding agent\n- Practice in our security labs\n- Track your progress in the Learn Hub\n\nGet started at darknode.ai\n\nBest,\nThe Darknode Team\ncontact@darknode.ai"
     },
     security: {
       subject: "Security Notice — Darknode",
