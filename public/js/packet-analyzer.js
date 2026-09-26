@@ -149,7 +149,7 @@ const DHCP_MSG_TYPES = {
 // ── Hex Parsing Utilities ───────────────────────────────────────────────────
 
 function hexToBytes(hex) {
-  const clean = hex.replace(/[\s\-:,0x]/g, "").toLowerCase();
+  const clean = hex.replace(/0x/gi, "").replace(/[\s\-:,]/g, "").toLowerCase();
   const bytes = [];
   for (let i = 0; i < clean.length; i += 2) {
     const b = parseInt(clean.substr(i, 2), 16);
