@@ -75,7 +75,11 @@ function calcEntropy(pw) {
   if (/\d/.test(pw)) charset += 10;
   if (/[^a-zA-Z0-9]/.test(pw)) charset += 33;
   if (charset === 0) charset = 1;
-  return Math.round(Math.log2(Math.pow(charset, pw.length)) * 10) / 10;
+  // length * log2(charset) is algebraically identical to log2(charset^length)
+  // but avoids Math.pow overflowing to Infinity for long passwords (e.g.
+  // charset^length exceeds Number.MAX_VALUE past ~150 chars), which used to
+  // report "Infinity bits".
+  return Math.round(pw.length * Math.log2(charset) * 10) / 10;
 }
 
 function crackTime(entropy) {
