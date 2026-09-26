@@ -277,10 +277,10 @@ function urlEncode(str) { return encodeURIComponent(str); }
 function urlDecode(str) { try { return decodeURIComponent(str); } catch { return str; } }
 
 function unicodeEscape(str) {
-  return str.split('').map(c => {
-    const code = c.charCodeAt(0);
-    return code > 127 ? `\\u${code.toString(16).padStart(4, '0')}` : c;
-  }).join('');
+  // Escape every character as \uXXXX (matching the panel's cheat sheet, which
+  // documents < -> <, and the sibling encoder in payload-gen.js). Escaping
+  // only code points > 127 made this a no-op for typical all-ASCII payloads.
+  return str.split('').map(c => `\\u${c.charCodeAt(0).toString(16).padStart(4, '0')}`).join('');
 }
 
 function hexEncode(str) {
