@@ -155,6 +155,24 @@ body.app .svc-menu .svc-card .side-item.active{color:var(--txt)!important;font-w
 .mt-crumb{display:inline-flex;align-items:center;gap:7px;font-size:.76rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--mut)}
 .mt-title{font-size:1.5rem;font-weight:800;letter-spacing:-.02em;margin:0 0 4px;color:var(--txt)}
 .mt-desc{color:var(--mut);font-size:.92rem;margin:0 0 18px;max-width:70ch;line-height:1.5}
+/* plain-English help: what it does, when to use it, a worked example */
+.mt-about{display:grid;gap:8px;margin:0 0 16px;max-width:78ch}
+.mt-about p{margin:0;font-size:.95rem;line-height:1.55;color:var(--txt)}
+.mt-about .mt-when{color:var(--mut)}
+.mt-k{display:block;font-size:.7rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);margin-bottom:2px}
+.mt-ex{border:1px solid var(--line);border-radius:12px;background:var(--card);padding:12px 14px;margin:0 0 18px}
+.mt-ex[hidden]{display:none}
+.mt-ex-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px}
+.mt-ex-head .mt-k{margin:0}
+.mt-ex-try{font:inherit;font-size:.82rem;font-weight:600;padding:6px 12px;border-radius:8px;border:1px solid var(--acc);background:transparent;color:var(--acc);cursor:pointer}
+.mt-ex-try:hover{background:color-mix(in srgb,var(--acc) 10%,transparent)}
+.mt-ex-grid{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:12px;align-items:start}
+.mt-ex-in{display:grid;gap:6px;min-width:0}
+.mt-ex-row{display:grid;gap:2px;min-width:0}
+.mt-ex-l{font-size:.75rem;color:var(--mut)}
+.mt-ex-v,.mt-ex-out{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.8rem;background:color-mix(in srgb,var(--txt) 5%,transparent);border-radius:6px;padding:5px 8px;white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;max-height:9.5em;overflow:auto;margin:0;color:var(--txt)}
+.mt-ex-arrow{align-self:center;font-size:.75rem;font-weight:600;color:var(--mut)}
+@media (max-width:640px){.mt-ex-grid{grid-template-columns:minmax(0,1fr)}.mt-ex-arrow{justify-self:start}}
 .mt-body{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;align-items:start}
 @media(max-width:820px){.mt-body{grid-template-columns:1fr}}
 .mt-form{display:flex;flex-direction:column;gap:14px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
@@ -202,3 +220,15 @@ body.app .svc-menu .svc-card .side-item.active{color:var(--txt)!important;font-w
 /* Quelvra math engine embedded in the console (/math) */
 .qv-embed{margin:-4px 0 0;border:1px solid var(--line, rgba(127,127,127,.25));border-radius:14px;overflow:hidden;background:var(--card, transparent)}
 .qv-embed iframe{display:block;width:100%;border:0;min-height:420px;background:transparent}
+/* plain-English intro above each console section (auth.js renderIntro, section-help.js) */
+.sec-intro{max-width:1100px;margin:0 auto 14px;padding:0 2px}
+.sec-intro[hidden]{display:none}
+.sec-intro-card{display:flex;gap:14px;align-items:flex-start;background:var(--card);border:1px solid var(--line);border-left:3px solid var(--acc);border-radius:12px;padding:12px 14px}
+.sec-intro-body{display:grid;gap:8px;min-width:0;flex:1}
+.sec-intro-body p{margin:0;font-size:.92rem;line-height:1.55;color:var(--txt);max-width:90ch}
+.sec-intro-body .sec-intro-when{color:var(--mut)}
+.sec-intro-note{font-size:.82rem !important;color:var(--mut) !important;font-style:italic}
+.sec-intro-x,.sec-intro-show{font:inherit;font-size:.78rem;font-weight:600;border:1px solid var(--line);background:transparent;color:var(--mut);border-radius:8px;padding:5px 10px;cursor:pointer;flex:none}
+.sec-intro-x:hover,.sec-intro-show:hover{color:var(--txt);border-color:var(--acc)}
+.sec-intro-show{margin:0}
+@media (max-width:640px){.sec-intro-card{flex-direction:column}.sec-intro-x{align-self:flex-end}}
