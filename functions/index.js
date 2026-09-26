@@ -54,7 +54,7 @@ function applyPersona(messages, persona) {
 function applyCiteDirective(messages, cite) {
   const line = cite
     ? "When you use information from fetched web pages or web search, cite the source URLs inline so the reader can verify them."
-    : "Do not cite sources, list URLs, or mention that you searched the web or read a page — just answer directly using what you know.";
+    : "Use any fetched page content or web results to answer, but answer directly and concisely: do not include a sources list, cite URLs, or mention that you searched the web or read a page.";
   const arr = Array.isArray(messages) ? messages.map((m) => ({ ...m })) : [];
   const sys = arr.find((m) => m.role === "system");
   if (sys) sys.content = (sys.content || "") + "\n\n" + line;
@@ -308,7 +308,8 @@ async function callUpstream(cfg, model, messages, key, opts = {}) {
   let upstream;
   for (let attempt = 0; attempt < 3; attempt++) {
     upstream = await fetch(url, { method: "POST", headers, body: JSON.stringify(build()) });
-    if (!upstream.ok && search && (upstream.status === 400 || upstream.status === 403)) { search = false; continue; } // grounding unsupported -> plain retry
+    // Grounding is paid-tier: free keys reject it with 400/403/429. Drop the tool and retry plain.
+    if (!upstream.ok && search && (upstream.status === 400 || upstream.status === 403 || upstream.status === 429)) { search = false; continue; }
     const retriable = upstream.status === 429 || upstream.status === 503;
     if (upstream.ok || !retriable) break;
     await new Promise((r) => setTimeout(r, 700 * (attempt + 1)));
