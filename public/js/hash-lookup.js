@@ -14,7 +14,7 @@ var _hlHashTypes = [
   { name: 'NTLM', len: 32, pattern: /^[a-f0-9]{32}$/i },
   { name: 'CRC32', len: 8, pattern: /^[a-f0-9]{8}$/i },
   { name: 'RIPEMD-160', len: 40, pattern: /^[a-f0-9]{40}$/i },
-  { name: 'MySQL 4.1+', len: 40, pattern: /^\*[a-f0-9]{40}$/i },
+  { name: 'MySQL 4.1+', len: 41, pattern: /^\*[a-f0-9]{40}$/i },
   { name: 'bcrypt', len: null, pattern: /^\$2[aby]?\$\d{2}\$.{53}$/ },
   { name: 'Argon2', len: null, pattern: /^\$argon2(i|d|id)\$/ },
   { name: 'scrypt', len: null, pattern: /^\$s0\$/ }
