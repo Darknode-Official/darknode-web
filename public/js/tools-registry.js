@@ -3,14 +3,14 @@
 // accent colour, matching the console colour system). Each category's tools live
 // in js/tools/<file>.js and are aggregated here. console-nav.js reads this to add
 // the tool categories to the Services menu; mini-tools.js reads it to render.
-import { TOOLS as encoding } from "/js/tools/encoding.js?v=20260925g";
-import { TOOLS as hashing } from "/js/tools/hashing.js?v=20260925g";
-import { TOOLS as generators } from "/js/tools/generators.js?v=20260925g";
-import { TOOLS as converters } from "/js/tools/converters.js?v=20260925g";
-import { TOOLS as network } from "/js/tools/network.js?v=20260925g";
-import { TOOLS as websec } from "/js/tools/websec.js?v=20260925g";
-import { TOOLS as text } from "/js/tools/text.js?v=20260925g";
-import { TOOLS as dev } from "/js/tools/dev.js?v=20260925g";
+import { TOOLS as encoding } from "/js/tools/encoding.js?v=20260925h";
+import { TOOLS as hashing } from "/js/tools/hashing.js?v=20260925h";
+import { TOOLS as generators } from "/js/tools/generators.js?v=20260925h";
+import { TOOLS as converters } from "/js/tools/converters.js?v=20260925h";
+import { TOOLS as network } from "/js/tools/network.js?v=20260925h";
+import { TOOLS as websec } from "/js/tools/websec.js?v=20260925h";
+import { TOOLS as text } from "/js/tools/text.js?v=20260925h";
+import { TOOLS as dev } from "/js/tools/dev.js?v=20260925h";
 
 export const TOOL_CATS = {
   encoding: { name: "Encoding & Ciphers", color: "indigo" },

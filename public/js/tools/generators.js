@@ -510,12 +510,7 @@ export const TOOLS = [
       return `${v.username}:{SHA}${b64FromBytes(new Uint8Array(digest))}`;
     } },
 
-  { id: "g-slug", name: "Slug Generator", cat: "generators", desc: "Convert text into a URL-friendly slug.", tags: ["slug", "url", "seo"],
-    inputs: [
-      { k: "text", label: "Text", type: "text", placeholder: "My Blog Post Title!" },
-      { k: "sep", label: "Separator", type: "select", opts: ["-", "_"], value: "-" },
-    ],
-    run(v) { if (!v.text) return ""; return slugify(v.text, v.sep || "-"); } },
+  
 
   { id: "g-pin", name: "Random PIN Generator", cat: "generators", desc: "Generate a random numeric PIN of a given length.", tags: ["pin", "numeric", "random"], button: "Generate",
     inputs: [{ k: "length", label: "Digits", type: "range", min: 4, max: 12, step: 1, value: 6 }],
@@ -600,25 +595,7 @@ export const TOOLS = [
       return out;
     } },
 
-  { id: "g-jwt-mock", name: "Mock JWT Generator", cat: "generators", desc: "Build a mock HS256-signed JWT from a JSON payload and secret, for testing auth code paths locally (not a real credential authority).", tags: ["jwt", "auth", "mock", "testing"],
-    inputs: [
-      { k: "payload", label: "Payload (JSON, blank = sample claims)", type: "textarea", rows: 4, placeholder: '{"sub":"1234567890","name":"Test User"}' },
-      { k: "secret", label: "HMAC secret", type: "text", value: "mock-secret" },
-    ],
-    async run(v, H) {
-      let payloadObj;
-      try { payloadObj = v.payload && v.payload.trim() ? JSON.parse(v.payload) : { sub: "1234567890", name: "Test User", iat: Math.floor(Date.now() / 1000) }; }
-      catch (e) { return { error: "Payload must be valid JSON." }; }
-      const header = { alg: "HS256", typ: "JWT" };
-      const b64url = (obj) => H.b64encode(JSON.stringify(obj), { url: true });
-      const headerB64 = b64url(header);
-      const payloadB64 = b64url(payloadObj);
-      const secret = v.secret || "mock-secret";
-      const key = await crypto.subtle.importKey("raw", H.bytes(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
-      const sig = await crypto.subtle.sign("HMAC", key, H.bytes(`${headerB64}.${payloadB64}`));
-      const sigB64 = b64FromBytes(new Uint8Array(sig)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-      return `${headerB64}.${payloadB64}.${sigB64}`;
-    } },
+  
 
   { id: "g-user-agent", name: "Random User-Agent Generator", cat: "generators", desc: "Generate a random plausible browser User-Agent string for test requests.", tags: ["user-agent", "http", "browser"], button: "Generate",
     inputs: [{ k: "browser", label: "Browser", type: "select", opts: ["Chrome", "Safari", "Firefox", "Edge"], value: "Chrome" }],

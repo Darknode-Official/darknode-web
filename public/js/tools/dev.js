@@ -346,17 +346,7 @@ export const TOOLS = [
     inputs: [{ k: "md", label: "Markdown", type: "textarea", rows: 8, placeholder: "# Title\n\n**bold** and *italic*" }],
     run(v) { if (!v.md) return ""; return mdToHtml(v.md); } },
 
-  { id: "d-html-to-text", name: "HTML → Plain Text", cat: "dev", desc: "Strip tags from HTML and decode entities, leaving plain text.", tags: ["html", "text", "strip"],
-    inputs: [{ k: "html", label: "HTML", type: "textarea", rows: 8 }],
-    run(v) {
-      if (!v.html) return "";
-      let s = String(v.html);
-      s = s.replace(/<(script|style)[^>]*>[\s\S]*?<\/\1>/gi, "");
-      s = s.replace(/<br\s*\/?>/gi, "\n").replace(/<\/(p|div|li|h[1-6]|tr)>/gi, "\n").replace(/<[^>]+>/g, "");
-      const map = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " " };
-      s = s.replace(/&(#x?[0-9a-fA-F]+|[a-zA-Z]+);/g, (m, e) => { if (e[0] === "#") { const n = e[1] === "x" || e[1] === "X" ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10); return isNaN(n) ? m : String.fromCodePoint(n); } return map[e] != null ? map[e] : m; });
-      return s.replace(/[ \t]+/g, " ").replace(/\n{3,}/g, "\n\n").trim();
-    } },
+  
 
   { id: "d-multi-escape", name: "Multi-Target Escaper", cat: "dev", desc: "Escape text for shell, JSON, regex, or HTML context.", tags: ["escape", "shell", "regex", "html", "json"],
     inputs: [{ k: "text", label: "Text", type: "textarea", rows: 6 }, { k: "target", label: "Target", type: "select", opts: ["Shell", "JSON", "Regex", "HTML"], value: "Shell" }],
@@ -456,20 +446,7 @@ export const TOOLS = [
       return `${days}d ${hrs}h ${mins}m ${secs}s\nTotal seconds: ${Math.floor(Math.abs(b - a) / 1000)}\nTotal ms: ${Math.abs(b - a)}`;
     } },
 
-  { id: "d-useragent-builder", name: "User-Agent String Builder", cat: "dev", desc: "Build a browser/OS user-agent string.", tags: ["useragent", "http", "browser"],
-    inputs: [
-      { k: "browser", label: "Browser", type: "select", opts: ["Chrome", "Firefox", "Safari", "Edge"], value: "Chrome" },
-      { k: "version", label: "Version", type: "text", placeholder: "128.0.0.0" },
-      { k: "os", label: "OS", type: "select", opts: ["Windows 10/11", "macOS", "Linux", "Android", "iOS"], value: "Windows 10/11" },
-    ],
-    run(v) {
-      const ver = v.version || "128.0.0.0";
-      const osStr = { "Windows 10/11": "Windows NT 10.0; Win64; x64", "macOS": "Macintosh; Intel Mac OS X 10_15_7", "Linux": "X11; Linux x86_64", "Android": "Linux; Android 14; Pixel 8", "iOS": "iPhone; CPU iPhone OS 17_0 like Mac OS X" }[v.os] || "Windows NT 10.0; Win64; x64";
-      if (v.browser === "Firefox") return `Mozilla/5.0 (${osStr}; rv:${ver}) Gecko/20100101 Firefox/${ver}`;
-      if (v.browser === "Safari") return `Mozilla/5.0 (${osStr}) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/${ver} Safari/605.1.15`;
-      if (v.browser === "Edge") return `Mozilla/5.0 (${osStr}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${ver} Safari/537.36 Edg/${ver}`;
-      return `Mozilla/5.0 (${osStr}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${ver} Safari/537.36`;
-    } },
+  
 
   { id: "d-htaccess-redirect", name: ".htaccess Redirect Generator", cat: "dev", desc: "Generate an Apache .htaccess Redirect directive.", tags: ["htaccess", "apache", "redirect"],
     inputs: [{ k: "from", label: "From path", type: "text", placeholder: "/old-page" }, { k: "to", label: "To URL", type: "text", placeholder: "https://example.com/new-page" }, { k: "code", label: "Status", type: "select", opts: ["301", "302"], value: "301" }],
@@ -490,13 +467,7 @@ export const TOOLS = [
       }).join("\n");
     } },
 
-  { id: "d-number-format", name: "Number Formatter", cat: "dev", desc: "Add thousands separators and fix decimal places.", tags: ["number", "format", "locale"],
-    inputs: [{ k: "num", label: "Number", type: "text", placeholder: "1234567.891" }, { k: "decimals", label: "Decimal places", type: "range", min: 0, max: 10, step: 1, value: 2 }],
-    run(v) {
-      const n = parseFloat(v.num);
-      if (isNaN(n)) return { error: "Enter a valid number." };
-      return n.toLocaleString("en-US", { minimumFractionDigits: +v.decimals, maximumFractionDigits: +v.decimals });
-    } },
+  
 
   { id: "d-percentage-calc", name: "Percentage Calculator", cat: "dev", desc: "Compute 'x is what % of y' and 'x% of y'.", tags: ["percentage", "math"],
     inputs: [{ k: "x", label: "X", type: "text", placeholder: "25" }, { k: "y", label: "Y", type: "text", placeholder: "80" }],
@@ -554,15 +525,7 @@ export const TOOLS = [
       return out.length ? out.join("\n") : "No differences.";
     } },
 
-  { id: "d-string-stats", name: "String Statistics", cat: "dev", desc: "Character/byte/line/word counts for a text block.", tags: ["stats", "count", "length"],
-    inputs: [{ k: "text", label: "Text", type: "textarea", rows: 8 }],
-    run(v, H) {
-      const t = S(v.text);
-      const lines = t.length ? t.split(/\r?\n/).length : 0;
-      const words = t.trim() ? t.trim().split(/\s+/).length : 0;
-      const bytes = H.bytes(t).length;
-      return [`Characters: ${t.length}`, `Bytes (UTF-8): ${bytes}`, `Words: ${words}`, `Lines: ${lines}`].join("\n");
-    } },
+  
 
   { id: "d-dup-lines", name: "Duplicate Line Finder", cat: "dev", desc: "Find and count duplicate lines in a block of text.", tags: ["duplicate", "lines", "dedupe"],
     inputs: [{ k: "text", label: "Text", type: "textarea", rows: 8 }, { k: "trim", label: "Trim whitespace before comparing", type: "checkbox", value: true }],
@@ -693,84 +656,19 @@ export const TOOLS = [
       return lines.map((l) => l.slice(0, minIndent).trim() === "" ? l.slice(minIndent) : l).join("\n");
     } },
 
-  { id: "d-slugify", name: "Slugify", cat: "dev", desc: "Convert text into a URL-friendly slug.", tags: ["slug", "url", "kebab-case"],
-    inputs: [{ k: "text", label: "Text", type: "text", placeholder: "My Great Article Title!" }],
-    run(v) {
-      if (!v.text) return "";
-      return v.text.toString().trim().toLowerCase().normalize("NFKD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
-    } },
+  
 
-  { id: "d-case-convert", name: "Identifier Case Converter", cat: "dev", desc: "Convert an identifier between camelCase, PascalCase, snake_case, kebab-case, and CONSTANT_CASE.", tags: ["case", "camelcase", "snakecase", "kebabcase"],
-    inputs: [{ k: "text", label: "Identifier", type: "text", placeholder: "my_variable_name" }, { k: "target", label: "Target case", type: "select", opts: ["camelCase", "PascalCase", "snake_case", "kebab-case", "CONSTANT_CASE"], value: "camelCase" }],
-    run(v) {
-      if (!v.text) return "";
-      const words = v.text.trim().replace(/([a-z0-9])([A-Z])/g, "$1 $2").split(/[\s_\-]+/).filter(Boolean).map((w) => w.toLowerCase());
-      if (!words.length) return "";
-      if (v.target === "camelCase") return words[0] + words.slice(1).map((w) => w[0].toUpperCase() + w.slice(1)).join("");
-      if (v.target === "PascalCase") return words.map((w) => w[0].toUpperCase() + w.slice(1)).join("");
-      if (v.target === "snake_case") return words.join("_");
-      if (v.target === "kebab-case") return words.join("-");
-      return words.join("_").toUpperCase();
-    } },
+  
 
-  { id: "d-json-minify", name: "JSON Minifier", cat: "dev", desc: "Strip all insignificant whitespace from JSON.", tags: ["json", "minify", "compact"],
-    inputs: [{ k: "json", label: "JSON", type: "textarea", rows: 8 }],
-    run(v) { const p = tryParseJSON(v.json || ""); if (!p.ok) return { error: "Invalid JSON: " + p.err }; return JSON.stringify(p.val); } },
+  
 
-  { id: "d-lorem-ipsum", name: "Lorem Ipsum Generator", cat: "dev", desc: "Generate placeholder Lorem Ipsum text by paragraphs, sentences, or words.", tags: ["lorem", "placeholder", "dummy"],
-    inputs: [{ k: "unit", label: "Unit", type: "select", opts: ["Words", "Sentences", "Paragraphs"], value: "Paragraphs" }, { k: "count", label: "Count", type: "range", min: 1, max: 20, step: 1, value: 3 }],
-    run(v) {
-      const WORDS = "lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua ut enim ad minim veniam quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat".split(" ");
-      const rnd = (n) => Math.floor(Math.random() * n);
-      const genWords = (n) => Array.from({ length: n }, () => WORDS[rnd(WORDS.length)]).join(" ");
-      const genSentence = () => { const s = genWords(6 + rnd(8)); return s[0].toUpperCase() + s.slice(1) + "."; };
-      const genParagraph = () => Array.from({ length: 3 + rnd(4) }, genSentence).join(" ");
-      const count = Math.max(1, Math.min(20, parseInt(v.count, 10) || 1));
-      if (v.unit === "Words") return genWords(count);
-      if (v.unit === "Sentences") return Array.from({ length: count }, genSentence).join(" ");
-      return Array.from({ length: count }, genParagraph).join("\n\n");
-    } },
+  
 
-  { id: "d-random-data", name: "Random Test Data Generator", cat: "dev", desc: "Generate random names, emails, or IDs for test fixtures.", tags: ["fake", "mock", "test-data", "fixture"],
-    inputs: [{ k: "kind", label: "Kind", type: "select", opts: ["Name", "Email", "Username", "Phone (US)"], value: "Name" }, { k: "count", label: "How many", type: "range", min: 1, max: 50, step: 1, value: 5 }],
-    run(v) {
-      const first = ["Alex", "Jordan", "Sam", "Taylor", "Casey", "Morgan", "Riley", "Jamie", "Drew", "Quinn"];
-      const last = ["Smith", "Johnson", "Lee", "Brown", "Garcia", "Davis", "Miller", "Wilson", "Clark", "Lewis"];
-      const rnd = (arr) => arr[Math.floor(Math.random() * arr.length)];
-      const count = Math.max(1, Math.min(50, parseInt(v.count, 10) || 1));
-      const out = [];
-      for (let i = 0; i < count; i++) {
-        const f = rnd(first), l = rnd(last);
-        if (v.kind === "Name") out.push(`${f} ${l}`);
-        else if (v.kind === "Email") out.push(`${f.toLowerCase()}.${l.toLowerCase()}${Math.floor(Math.random() * 100)}@example.com`);
-        else if (v.kind === "Username") out.push(`${f.toLowerCase()}${l.toLowerCase()}${Math.floor(Math.random() * 1000)}`);
-        else out.push(`(${100 + Math.floor(Math.random() * 900)}) ${100 + Math.floor(Math.random() * 900)}-${1000 + Math.floor(Math.random() * 9000)}`);
-      }
-      return out.join("\n");
-    } },
+  
 
-  { id: "d-csv-to-json", name: "CSV → JSON", cat: "dev", desc: "Convert CSV (with header row) into a JSON array of objects.", tags: ["csv", "json", "convert"],
-    inputs: [{ k: "csv", label: "CSV", type: "textarea", rows: 8, placeholder: "id,name\n1,Alex" }],
-    run(v) {
-      if (!v.csv) return "";
-      const lines = v.csv.split(/\r?\n/).filter((l) => l.length);
-      if (lines.length < 1) return { error: "No CSV data." };
-      const parseRow = (line) => { const out = []; let cur = "", inQ = false; for (let i = 0; i < line.length; i++) { const c = line[i]; if (c === '"') inQ = !inQ; else if (c === "," && !inQ) { out.push(cur); cur = ""; } else cur += c; } out.push(cur); return out; };
-      const header = parseRow(lines[0]);
-      const rows = lines.slice(1).map((l) => { const cells = parseRow(l); const o = {}; header.forEach((h, i) => o[h] = cells[i] !== undefined ? cells[i] : ""); return o; });
-      return JSON.stringify(rows, null, 2);
-    } },
+  
 
-  { id: "d-json-to-csv", name: "JSON → CSV", cat: "dev", desc: "Convert a JSON array of flat objects into CSV.", tags: ["json", "csv", "convert"],
-    inputs: [{ k: "json", label: "JSON array", type: "textarea", rows: 8, placeholder: '[{"id":1,"name":"Alex"}]' }],
-    run(v) {
-      const p = tryParseJSON(v.json || ""); if (!p.ok) return { error: "Invalid JSON: " + p.err };
-      if (!Array.isArray(p.val) || !p.val.length) return { error: "Provide a non-empty JSON array of objects." };
-      const cols = [...new Set(p.val.flatMap((r) => Object.keys(r || {})))];
-      const esc = (s) => { s = s === undefined || s === null ? "" : typeof s === "object" ? JSON.stringify(s) : String(s); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
-      const lines = [cols.join(","), ...p.val.map((r) => cols.map((c) => esc(r[c])).join(","))];
-      return lines.join("\n");
-    } },
+  
 
   { id: "d-diff-stats", name: "Diff Summary Stats", cat: "dev", desc: "Count added/removed/unchanged lines between two texts without printing the full diff.", tags: ["diff", "stats", "summary"],
     inputs: [{ k: "a", label: "Original", type: "textarea", rows: 6 }, { k: "b", label: "Changed", type: "textarea", rows: 6 }],
@@ -789,40 +687,9 @@ export const TOOLS = [
       return `Added: ${added}\nRemoved: ${removed}\nUnchanged: ${same}`;
     } },
 
-  { id: "d-word-frequency", name: "Word Frequency Counter", cat: "dev", desc: "Count occurrences of each word in a text, sorted by frequency.", tags: ["word", "frequency", "count"],
-    inputs: [{ k: "text", label: "Text", type: "textarea", rows: 8 }, { k: "top", label: "Show top N", type: "range", min: 1, max: 50, step: 1, value: 15 }],
-    run(v) {
-      if (!v.text) return "";
-      const words = v.text.toLowerCase().match(/[a-z0-9']+/g) || [];
-      const counts = new Map();
-      for (const w of words) counts.set(w, (counts.get(w) || 0) + 1);
-      const sorted = [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, Math.max(1, Math.min(50, parseInt(v.top, 10) || 15)));
-      return sorted.map(([w, c]) => `${c.toString().padStart(4)}  ${w}`).join("\n") || "(no words found)";
-    } },
+  
 
-  { id: "d-ip-cidr-info", name: "IPv4 CIDR Calculator", cat: "dev", desc: "Compute network address, broadcast address, and host range from an IPv4 CIDR.", tags: ["ip", "cidr", "network", "subnet"],
-    inputs: [{ k: "cidr", label: "CIDR", type: "text", placeholder: "192.168.1.10/24" }],
-    run(v) {
-      const m = S(v.cidr).trim().match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})\/(\d{1,2})$/);
-      if (!m) return { error: "Enter an IPv4 CIDR, e.g. 192.168.1.0/24" };
-      const octs = [1, 2, 3, 4].map((i) => +m[i]);
-      const prefix = +m[5];
-      if (octs.some((o) => o > 255) || prefix > 32) return { error: "Invalid IPv4 CIDR values." };
-      const ip = (octs[0] << 24) + (octs[1] << 16) + (octs[2] << 8) + octs[3];
-      const mask = prefix === 0 ? 0 : (0xffffffff << (32 - prefix)) >>> 0;
-      const network = (ip & mask) >>> 0;
-      const broadcast = (network | (~mask >>> 0)) >>> 0;
-      const toIp = (n) => [(n >>> 24) & 255, (n >>> 16) & 255, (n >>> 8) & 255, n & 255].join(".");
-      const hostCount = prefix >= 31 ? Math.pow(2, 32 - prefix) : Math.max(0, Math.pow(2, 32 - prefix) - 2);
-      return [
-        `Network:    ${toIp(network)}/${prefix}`,
-        `Broadcast:  ${toIp(broadcast)}`,
-        `Netmask:    ${toIp(mask)}`,
-        `First host: ${prefix >= 31 ? toIp(network) : toIp(network + 1)}`,
-        `Last host:  ${prefix >= 31 ? toIp(broadcast) : toIp(broadcast - 1)}`,
-        `Usable hosts: ${hostCount}`,
-      ].join("\n");
-    } },
+  
 
   { id: "d-json-schema-infer", name: "JSON Schema Inferrer", cat: "dev", desc: "Infer a basic JSON Schema (types) from a sample JSON value.", tags: ["json", "schema", "infer"],
     inputs: [{ k: "json", label: "Sample JSON", type: "textarea", rows: 8 }],
@@ -839,22 +706,5 @@ export const TOOLS = [
       return JSON.stringify(infer(p.val), null, 2);
     } },
 
-  { id: "d-text-wrap", name: "Text Line Wrapper", cat: "dev", desc: "Wrap text to a maximum line width (word-aware).", tags: ["wrap", "text", "width"],
-    inputs: [{ k: "text", label: "Text", type: "textarea", rows: 8 }, { k: "width", label: "Max width", type: "range", min: 20, max: 200, step: 5, value: 80 }],
-    run(v) {
-      if (!v.text) return "";
-      const width = +v.width || 80;
-      return v.text.split(/\r?\n/).map((para) => {
-        if (!para) return "";
-        const words = para.split(/\s+/).filter(Boolean);
-        const lines = [];
-        let line = "";
-        for (const w of words) {
-          if ((line + " " + w).trim().length > width && line) { lines.push(line); line = w; }
-          else line = (line ? line + " " : "") + w;
-        }
-        if (line) lines.push(line);
-        return lines.join("\n");
-      }).join("\n");
-    } },
+  
 ];
