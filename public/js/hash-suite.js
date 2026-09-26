@@ -137,13 +137,19 @@ const MD5 = (function () {
   function str2rstrUTF8(input) {
     let output = "";
     for (let i = 0; i < input.length; i++) {
-      const c = input.charCodeAt(i);
+      const c = input.codePointAt(i);
+      if (c > 0xFFFF) i++; // consumed a surrogate pair
       if (c < 128) { output += String.fromCharCode(c); }
       else if (c < 2048) {
         output += String.fromCharCode((c >> 6) | 192);
         output += String.fromCharCode((c & 63) | 128);
-      } else {
+      } else if (c < 0x10000) {
         output += String.fromCharCode((c >> 12) | 224);
+        output += String.fromCharCode(((c >> 6) & 63) | 128);
+        output += String.fromCharCode((c & 63) | 128);
+      } else {
+        output += String.fromCharCode((c >> 18) | 240);
+        output += String.fromCharCode(((c >> 12) & 63) | 128);
         output += String.fromCharCode(((c >> 6) & 63) | 128);
         output += String.fromCharCode((c & 63) | 128);
       }
