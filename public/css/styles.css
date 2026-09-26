@@ -9535,3 +9535,7 @@ body.focus-mode .app-main { padding-left: 20px !important; padding-right: 20px !
 .cc-sm[data-k="impl"] .cc-sm-n{color:#16a34a}
 @media(max-width:900px){.cc-summary{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:560px){.cc-summary{grid-template-columns:repeat(2,1fr)}}
+
+/* Equal-width, aligned button/chip groups (fixes uneven preset rows). */
+.btn-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;align-items:stretch}
+.btn-grid .btn{width:100%;justify-content:center;text-align:center;white-space:nowrap}
