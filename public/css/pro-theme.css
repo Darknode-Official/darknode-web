@@ -1340,7 +1340,7 @@ html[data-style=dark].crt body::after {
   background: linear-gradient(180deg, #fff 0%, #eff6ff 100%) !important;
   border: none !important;
   border-bottom: 1px solid #e2e8f0 !important;
-  padding: 120px 24px 80px !important;
+  padding: 90px 24px 60px !important;
   text-align: center !important;
 }
 [data-style=pro] .hero::before,
@@ -1872,8 +1872,11 @@ html[data-style=dark].crt body::after {
    ============================================================ */
 [data-style=pro] .section {
   background: #fff !important;
-  padding: 80px 24px !important;
+  padding: 54px 24px !important;
   border: none !important;
+}
+[data-style=pro] .integ-band {
+  padding: 34px 24px !important;
 }
 [data-style=pro] .section.alt {
   background: #f9fafb !important;
