@@ -4,7 +4,7 @@
 // successful response refreshes the cache. Requests outside /quelvra/ are never intercepted.
 // FILES and VERSION are generated: run `node tools/quelvra-sw-files.mjs` before deploying.
 
-const VERSION = "quelvra-muin6h0e";
+const VERSION = "quelvra-muiobr0y";
 const BASE = "/quelvra/";
 const FILES = [
   "",
@@ -144,6 +144,8 @@ const FILES = [
   "manifest.webmanifest",
   "mathml.js",
   "storage.js",
+  "tools-core.js",
+  "tools.js",
   "worker.js",
 ].map((f) => BASE + f);
 
