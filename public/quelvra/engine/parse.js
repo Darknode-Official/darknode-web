@@ -61,6 +61,10 @@ const WHOLE_ONLY = new Set(["li", "Si", "Ci", "Shi", "Chi", "Ei", "erfi", "erfc"
   "domain", "range", "zeros", "intercepts", "asymptotes", "extrema", "inflection", "monotonic", "critical", "tangent", "normal", "inverse",
   "completesquare", "apart", "identity", "line", "slope", "distance", "midpoint", "arclength", "areabetween", "volume", "avgvalue",
   "maximize", "minimize", "dot", "cross", "piecewise"]);
+// advanced discrete commands (engine/discrete/names.js; strategies/advanced-discrete.js): call-form
+// names and argument helpers, recognised as whole identifiers only
+import { ADV_DISCRETE_NAMES } from "./discrete/names.js";
+for (const w of ADV_DISCRETE_NAMES) { FUNCTIONS.add(w); WHOLE_ONLY.add(w); }
 const WORDS = [...FUNCTIONS, ...Object.keys(ALIASES), ...GREEK, ...Object.keys(CONSTS), ...KEYWORDS]
   .filter((w) => w.length > 1 && !WHOLE_ONLY.has(w))
   .sort((a, b) => b.length - a.length);

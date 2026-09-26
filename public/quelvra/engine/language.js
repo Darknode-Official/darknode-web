@@ -514,7 +514,12 @@ function logNote(math, words, notes) {
 }
 
 // Main entry.
+// advanced discrete commands (engine/discrete/lang.js): graphs, logic, sets, permutations, finite
+// fields, LP, games, cryptography, homology and proof requests become canonical call forms
+import { translateAdvancedDiscrete } from "./discrete/lang.js";
 export function translate(input) {
+  const advDiscrete = translateAdvancedDiscrete(String(input || ""));
+  if (advDiscrete) return advDiscrete;
   let raw = clean(String(input || "").replace(/\s+/g, " "));
   // "2+2=" / "2+2 = ?": an evaluation request
   if (/=\s*$/.test(raw) && (raw.match(/=/g) || []).length === 1 && !/[<>]/.test(raw)) raw = clean(raw.replace(/=\s*$/, ""));
