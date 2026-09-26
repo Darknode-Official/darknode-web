@@ -127,7 +127,7 @@ const MORSE = { A: ".-", B: "-...", C: "-.-.", D: "-..", E: ".", F: "..-.", G: "
 const MORSE_R = Object.fromEntries(Object.entries(MORSE).map(([k, v]) => [v, k]));
 const B32 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
 function base32enc(s) { let bits = ""; for (const b of enc.encode(s)) bits += b.toString(2).padStart(8, "0"); let out = ""; for (let i = 0; i < bits.length; i += 5) out += B32[parseInt(bits.slice(i, i + 5).padEnd(5, "0"), 2)]; while (out.length % 8) out += "="; return out; }
-function base32dec(s) { s = s.replace(/=+$/, "").toUpperCase(); let bits = ""; for (const c of s) { const v = B32.indexOf(c); if (v >= 0) bits += v.toString(2).padStart(5, "0"); } let out = ""; for (let i = 0; i + 8 <= bits.length; i += 8) out += String.fromCharCode(parseInt(bits.slice(i, i + 8), 2)); return out; }
+function base32dec(s) { s = s.replace(/=+$/, "").toUpperCase(); let bits = ""; for (const c of s) { const v = B32.indexOf(c); if (v >= 0) bits += v.toString(2).padStart(5, "0"); } const bytes = []; for (let i = 0; i + 8 <= bits.length; i += 8) bytes.push(parseInt(bits.slice(i, i + 8), 2)); return new TextDecoder().decode(new Uint8Array(bytes)); }
 
 B.jsonfmt = (r) => io(r, [{ label: "Format", fn: (s) => JSON.stringify(JSON.parse(s), null, 2) }, { label: "Minify", fn: (s) => JSON.stringify(JSON.parse(s)) }], "Paste JSON");
 B.csvjson = (r) => io(r, [{ label: "CSV -> JSON", fn: (s) => { const rows = s.trim().split(/\r?\n/).map((l) => l.split(",")); const head = rows.shift().map((h) => h.trim()); return JSON.stringify(rows.map((rw) => Object.fromEntries(head.map((h, i) => [h, (rw[i] || "").trim()]))), null, 2); } }], "header row, then data rows");
