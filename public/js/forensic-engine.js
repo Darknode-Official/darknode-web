@@ -124,7 +124,7 @@ export function fileEntropy(data, blockSize = 256) {
     blocks,
     size: bytes.length,
     encrypted, compressed, packed,
-    assessment: encrypted ? "likely encrypted/random" : compressed ? "likely compressed" : packed ? "possibly packed" : "normal",
+    assessment: encrypted ? "likely encrypted/random" : packed ? "possibly packed" : compressed ? "likely compressed" : "normal",
   };
 }
 
