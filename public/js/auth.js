@@ -5,7 +5,7 @@ import { auth, db, googleProvider, githubProvider, OWNER_EMAIL } from "/js/fireb
 import "/js/scroll-top.js?v=20260924b";
 import "/js/shortcuts.js";
 import "/js/mobile-nav.js";
-import { consoleHTML, directoryHTML, wireConsole, labelOf as navLabel } from "/js/console-nav.js?v=20260925e";
+import { consoleHTML, directoryHTML, wireConsole, labelOf as navLabel } from "/js/console-nav.js?v=20260925f";
 import { showToast } from "/js/toast.js?v=20260924a";
 import { collection as fbCollection, addDoc as fbAddDoc, serverTimestamp as fbServerTimestamp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
 import {
@@ -1444,7 +1444,7 @@ function renderApp(user) {
     if (sec && sec !== "home" && sec !== "settings") { try { let r = JSON.parse(localStorage.getItem("dn_recent")||"[]"); r = r.filter(s=>s!==sec); r.unshift(sec); r = r.slice(0,8); localStorage.setItem("dn_recent", JSON.stringify(r)); } catch(_){} }
     if (sec === "tools") { main.innerHTML = `<div class="pg-head"><div><h1 class="pg-h1">Tools</h1><p class="muted pg-sub">Search, filter, and open any tool in the catalog.</p></div></div><div id="tools"></div>`; import("/js/tools.js?v=20260924a").then(m => m.renderTools(document.getElementById("tools"))); }
     else if (sec === "utils") { import("/js/utils.js").then(m => m.renderUtils(main)); }
-    else if (sec === "ai") { import("/js/webai.js?v=20260924x").then(m => m.renderAI(main)); }
+    else if (sec === "ai") { import("/js/webai.js?v=20260925f").then(m => m.renderAI(main)); }
     else if (sec === "payloads") { import("/js/labs.js").then(m => m.renderPayloads(main)); }
     else if (sec === "targets") { import("/js/labs.js").then(m => m.renderTargets(main)); }
     else if (sec === "ghdb") { import("/js/ghdb.js").then(m => m.renderGHDB(main)); }
@@ -1896,7 +1896,9 @@ function renderApp(user) {
   import('/js/bridge.js').then(function(mod) {
     window._bridge = mod.bridge;
     var dot = document.getElementById('cli-dot');
-    mod.bridge.probe().then(function(ok) { if (ok && dot) { dot.style.background = '#f59e0b'; dot.title = 'CLI detected — click to connect'; } });
+    // No auto-probe of localhost: the web build is cloud-only, so we don't poll
+    // 127.0.0.1 for a local CLI on every load (it only spammed the console with
+    // connection-refused errors). The CLI dot still connects on demand via click.
     mod.bridge.addEventListener('connect', function() { if (dot) { dot.style.background = '#22c55e'; dot.title = 'CLI connected: ' + mod.bridge.hostname; } });
     mod.bridge.addEventListener('disconnect', function() { if (dot) { dot.style.background = '#71717a'; dot.title = 'CLI disconnected'; } });
   }).catch(function() {});

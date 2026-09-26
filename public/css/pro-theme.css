@@ -12788,9 +12788,12 @@ html[data-style="pro"] .profile-btn:hover {
   border-color: #cbd5e1 !important;
 }
 html[data-style="pro"] .p-avatar {
-  width: 26px !important;
-  height: 26px !important;
+  width: 28px !important;
+  height: 28px !important;
   border-radius: 6px !important;
+  object-fit: cover !important;
+  overflow: hidden !important;
+  flex: none !important;
 }
 html[data-style="pro"] .p-initials {
   background: #2563eb !important;

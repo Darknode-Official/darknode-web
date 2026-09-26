@@ -7,26 +7,26 @@
 const G = (id, name, color, items) => ({ id, name, color, items: items.map(([sec, label, badge]) => ({ sec, label, badge: badge || null })) });
 
 export const NAV = [
-  G("command", "Mission Control", "blue", [["prometheus","PROMETHEUS","live"],["sentineleye","SENTINEL EYE","live"],["hydra","HYDRA Engine"],["aegis","AEGIS Ops Center"],["vanguard","VANGUARD"],["phantom","PHANTOM","live"],["citadel","CITADEL","live"],["oracle","ORACLE","live"],["spectre","SPECTRE","live"],["crucible","CRUCIBLE","live"],["navarch","NAVARCH","live"],["secdash","Security Dashboard"]]),
+  G("command", "Dashboards", "blue", [["prometheus","PROMETHEUS","live"],["sentineleye","SENTINEL EYE","live"],["hydra","HYDRA Engine"],["aegis","AEGIS Ops Center"],["vanguard","VANGUARD"],["phantom","PHANTOM","live"],["citadel","CITADEL","live"],["oracle","ORACLE","live"],["spectre","SPECTRE","live"],["crucible","CRUCIBLE","live"],["navarch","NAVARCH","live"],["secdash","Security Dashboard"]]),
   G("offense", "Offensive Security", "red", [["attacksim","Threat Simulator"],["cracklab","Password Security Lab"],["exploitdb","Vulnerability Database"],["exploitdev","Security Research Lab"],["packetcraft","Packet Crafter"],["passwordtools","Password Tools"],["payloads","Test Script Forge"],["payloadgen","Test Script Generator"],["pentestconsole","Security Assessment"],["privesc","Privilege Analysis"],["reverseshell","Remote Access Testing"]]),
   G("labs", "Security Labs", "red", [["firewall","Firewall Rules"],["webshell","Terminal"],["wirelesslab","Wireless Lab"],["xsslab","Web Security Lab"],["socialeng","Social Engineering"]]),
   G("recon", "Reconnaissance", "cyan", [["addressintel","Address Intel"],["asnexplorer","ASN Explorer"],["attacksurf","Exposure Mapping"],["dns","DNS Toolkit"],["dnsenum","DNS Enumeration"],["dnsrecon","DNS Recon"],["ghdb","Google Dorking"],["netmap","Network Mapper"],["reconplanner","Recon Planner"],["securityscanner","Security Scanner"],["subdomains","Subdomain Enum"],["tools","Scanner Suite"],["wayback","Wayback Machine"]]),
   G("osint", "OSINT", "cyan", [["corstester","CORS Tester"],["emailintel","Email Intel"],["favicon","Favicon Hasher"],["headeranalyzer","Header Analyzer"],["httpinspector","HTTP Inspector"],["httpprobe","HTTP Probe"],["ipgeolocation","IP Geolocation"],["iptools","IP Tools"],["osint","OSINT Dashboard"],["osintemail","OSINT Email Intel"],["techfingerprint","Tech Fingerprint"],["whoisrecon","WHOIS Recon"]]),
   G("forensics", "Forensics", "purple", [["binanalyze","Binary Analyzer"],["forensicstoolkit","Forensics Toolkit"],["ftimeline","Forensic Timeline"],["loganalyze","Log Analyzer"],["memforensics","Memory Forensics"],["reveng","Reverse Engineering"],["stego","Steganography"],["timelineviz","Timeline Visualization"]]),
-  G("threatanalysis", "Threat Analysis", "purple", [["malclass","Threat Classifier"],["phishing","Phishing Analyzer"],["sandbox","Threat Analysis Lab"]]),
+  G("threatanalysis", "Malware Analysis", "purple", [["malclass","Threat Classifier"],["phishing","Phishing Analyzer"],["sandbox","Threat Analysis Lab"]]),
   G("blueteam", "Blue Team", "green", [["adversary","Adversary Emulation"],["breachsim","Breach Simulator"],["containers","Container Security"],["deception","Deception Architect"],["huntlab","Threat Hunt Lab"],["identitymatrix","Identity Matrix"],["incidents","Incident Tracker"],["mobilesec","Mobile Security"],["purpleteam","Purple Team Ops"],["riskcalculator","Risk Calculator"],["threatmodel","Threat Modeler"]]),
   G("threatintel", "Threat Intelligence", "orange", [["breachlookup","Breach Lookup"],["cvesearch","CVE Search"],["cvetimeline","CVE Timeline"],["darknetradar","Darknet Radar"],["darkwebosint","Deep Web Intel"],["ipreputation","IP Reputation"],["threat","Threat Feed"],["threatdashboard","Threat Dashboard"],["threatfeed","Threat Intel Feed"]]),
-  G("vulnmgmt", "Vulnerability Mgmt", "orange", [["vulndb","Vulnerability DB"],["vulnprio","Vuln Prioritizer"],["vulntriage","Vuln Triage Engine"],["secchecklist","Security Checklist"],["supplychain","Supply Chain"]]),
+  G("vulnmgmt", "Vulnerability Management", "orange", [["vulndb","Vulnerability DB"],["vulnprio","Vuln Prioritizer"],["vulntriage","Vuln Triage Engine"],["secchecklist","Security Checklist"],["supplychain","Supply Chain"]]),
   G("network", "Network Analysis", "teal", [["networkscanner","Network Scanner"],["networktools","Network Tools"],["networktraffic","Network Traffic"],["packetanalyzer","Packet Analyzer"],["packetinspector","Packet Inspector"],["sslinspector","SSL Inspector"],["subnetvisualizer","Subnet Visualizer"],["trafficanalyzer","Traffic Analyzer"],["websockettester","WebSocket Tester"]]),
   G("secops", "Security Operations", "teal", [["adversaryplaybook","Adversary Playbook"],["apifuzzer","API Fuzzer"],["apitester","API Tester"],["apiscan","API Scanner"],["incidentcost","Incident Cost Calc"],["incidentresponse","Incident Response"],["siemdash","SIEM Dashboard"]]),
   G("compliance", "Compliance & GRC", "yellow", [["compliance","Compliance Checker"],["cyberbriefing","Cyber Briefing"],["emailheader","Email Header Analyzer"],["fedcompliance","Federal Compliance"],["iocextractor","IOC Extractor"],["zerotrust","Zero Trust Planner"]]),
   G("crypto", "Crypto & Encoding", "indigo", [["credaudit","Credential Auditor"],["cryptotools","Crypto Toolkit"],["cspevaluator","CSP Evaluator"],["encoding","Encoding Suite"],["hashsuite","Hash Suite"],["jwtanalyzer","JWT Analyzer"],["regexlab","Regex Lab"],["urldissect","URL Dissector"]]),
-  G("ai", "Nexus AI", "violet", [["ai","AI Chat"],["coder","Nexus Agent","ai"],["dataviz","Data Visualization"],["engines","Security Engines"],["report","Report Generator"]]),
+  G("ai", "Darknode AI", "violet", [["ai","AI Chat"],["coder","Darknode Agent","ai"],["dataviz","Data Visualization"],["engines","Security Engines"],["report","Report Generator"]]),
   G("training", "Training", "emerald", [["cheats","Cheat Sheets"],["cyberrange","Cyber Range"],["learn","Learn Hub"],["refs","Reference Library"],["secquiz","Skill Assessments"],["securityquiz","Security Quiz"],["snippets","Snippet Vault"],["targets","Practice Targets"],["training","Training Labs"],["utils","Toolbox"]]),
-  G("vms", "Labs & VMs", "emerald", [["vms","Vulnerable VMs"],["vmlab","VM Lab"]]),
+  G("vms", "Virtual Machines", "emerald", [["vms","Vulnerable VMs"],["vmlab","VM Lab"]]),
   G("invest", "Investigations", "rose", [["investigation","Investigation Workspace"],["secgraph","Security Graph"],["casemgmt","Case Manager"]]),
   G("infra", "Infrastructure", "slate", [["api","API"],["docs","Docs"],["education","Education"],["downloads","Darknode OS"],["dlguide","Download Guide"],["privatecloud","Private Cloud","beta"],["setup","Local Setup"]]),
-  G("workspace", "Workspace", "slate", [["saved","Saved Items"],["settings","Settings"],["apikeys","API Keys"],["contact","Contact / Feedback"]]),
+  G("workspace", "Account", "slate", [["saved","Saved Items"],["settings","Settings"],["apikeys","API Keys"],["contact","Contact / Feedback"]]),
 ];
 const ADMIN = G("admin", "Admin", "slate", [["admin","Admin Console"]]);
 
@@ -61,7 +61,7 @@ export function consoleHTML(isOwner) {
       </label>
       <div class="con-quick" aria-label="Shortcuts">
         <button class="con-qbtn" data-sec="home">Dashboard</button>
-        <button class="con-qbtn" data-sec="ai">Nexus AI</button>
+        <button class="con-qbtn" data-sec="ai">Darknode AI</button>
         <button class="con-qbtn" data-sec="docs">Docs</button>
         <button class="con-qbtn" data-sec="settings">Settings</button>
       </div>

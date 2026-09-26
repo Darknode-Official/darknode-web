@@ -2,7 +2,6 @@
 // Built-in keys power the free tier. Users can override in Settings → API Keys.
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-const OLLAMA = "http://127.0.0.1:11434";
 const SYS_KEY = "sw_ai_sys", MODEL_KEY = "sw_ai_model";
 // The free tier is served by the server-side proxy (/api/chat): the keys for
 // these providers live ONLY in the Cloud Function environment — never in this
@@ -16,7 +15,9 @@ function proxyUrl() {
   try { if (typeof window !== "undefined" && window.DARKNODE_PROXY_URL) return window.DARKNODE_PROXY_URL; } catch (_) {}
   return "/api/chat";
 }
-const PROXY_PROVIDERS = new Set(["darknode", "gemini", "groq", "openrouter", "mistral"]);
+// Free, no-setup providers served by the server proxy (built-in keys): only the
+// Darknode flagship and Gemini. Everything else is BYOK (uses the user's key).
+const PROXY_PROVIDERS = new Set(["darknode", "gemini"]);
 function _key(provider) {
   const map = { claude: "sw_claude_key", openai: "sw_openai_key", gemini: "sw_gemini_key", groq: "sw_groq_key", openrouter: "sw_openrouter_key", mistral: "sw_mistral_key" };
   try { const u = (localStorage.getItem(map[provider]) || "").trim(); if (u) return u; } catch (_) {}
@@ -193,11 +194,6 @@ Windows: whoami /priv | wmic service get pathname (unquoted paths) | cmdkey /lis
 //    darknode` from the foundation track). This is the local-dev path.
 const DARKNODE_MODELS = [
   { id: "darknode", name: "Darknode AI", provider: "darknode", group: "Darknode AI (built-in)", sub: "flagship" },
-  { id: "darknode", name: "Darknode AI (local)", provider: "ollama", group: "Darknode AI (built-in)", sub: "local" },
-];
-
-const OLLAMA_MODELS = [
-  { id: "claude-fable", name: "Claude Fable 5.1", provider: "ollama", group: "Local AI (Ollama — Free)", sub: "local" },
 ];
 
 // Free cloud models powered by the built-in Gemini key — no install, no BYOK.
@@ -219,35 +215,21 @@ const GEMINI_MODELS = [
   { id: "gemini-flash-lite-latest", name: "Gemini Flash-Lite", provider: "gemini", group: "Recommended (Free)", sub: "fastest" },
 ];
 
+// Only two things run for free with no setup: Darknode AI (the platform
+// flagship, served by the proxy) and Gemini (the built-in Google key). Every
+// other model is Bring-Your-Own-Key — it needs the user's own API key, entered
+// in Settings -> API Keys. No local/Ollama models: the site is cloud-only.
 const MODELS = [
   ...DARKNODE_MODELS,
   ...GEMINI_MODELS,
-  ...OLLAMA_MODELS,
-  { id: "llama-3.3-70b-specdec", name: "Llama 3.3 70B", provider: "groq", group: "Fast & Free (Groq)" },
-  { id: "llama-3.1-8b-instant", name: "Llama 3.1 8B", provider: "groq", group: "Fast & Free (Groq)", sub: "fastest" },
-  { id: "gemma2-9b-it", name: "Gemma 2 9B", provider: "groq", group: "Fast & Free (Groq)" },
-  { id: "mixtral-8x7b-32768", name: "Mixtral 8x7B", provider: "groq", group: "Fast & Free (Groq)" },
-  { id: "mistral-small-latest", name: "Mistral Small", provider: "mistral", group: "Mistral" },
-  { id: "mistral-large-latest", name: "Mistral Large", provider: "mistral", group: "Mistral" },
-  { id: "codestral-latest", name: "Codestral", provider: "mistral", group: "Mistral", sub: "code" },
-  { id: "meta-llama/llama-3.3-70b-instruct:free", name: "Llama 3.3 70B (free)", provider: "openrouter", group: "OpenRouter" },
-  { id: "google/gemma-2-9b-it:free", name: "Gemma 2 9B (free)", provider: "openrouter", group: "OpenRouter" },
-  { id: "deepseek/deepseek-r1", name: "DeepSeek R1", provider: "openrouter", group: "OpenRouter", sub: "reasoning" },
-  { id: "deepseek/deepseek-chat", name: "DeepSeek V3", provider: "openrouter", group: "OpenRouter" },
-  { id: "meta-llama/llama-3.1-405b-instruct", name: "Llama 3.1 405B", provider: "openrouter", group: "OpenRouter" },
-  { id: "anthropic/claude-sonnet-4", name: "Claude Sonnet 4", provider: "openrouter", group: "OpenRouter" },
-  { id: "openai/gpt-4o", name: "GPT-4o", provider: "openrouter", group: "OpenRouter" },
-  { id: "openai/gpt-4o-mini", name: "GPT-4o Mini", provider: "openrouter", group: "OpenRouter" },
-  { id: "qwen/qwen-2.5-72b-instruct", name: "Qwen 2.5 72B", provider: "openrouter", group: "OpenRouter" },
-  { id: "mistralai/mistral-large", name: "Mistral Large", provider: "openrouter", group: "OpenRouter" },
-  { id: "claude-sonnet-4-20250514", name: "Sonnet 4", provider: "claude", group: "Claude (own key)" },
-  { id: "claude-3-5-sonnet-20241022", name: "Sonnet 3.5", provider: "claude", group: "Claude (own key)" },
-  { id: "claude-opus-4-20250514", name: "Opus 4", provider: "claude", group: "Claude (own key)" },
-  { id: "claude-fable-5-1", name: "Fable 5.1", provider: "claude", group: "Claude (own key)" },
-  { id: "gpt-4o", name: "GPT-4o", provider: "openai", group: "OpenAI (own key)" },
-  { id: "gpt-4o-mini", name: "GPT-4o Mini", provider: "openai", group: "OpenAI (own key)" },
-  { id: "gpt-4.1", name: "GPT-4.1", provider: "openai", group: "OpenAI (own key)" },
-  { id: "o4-mini", name: "o4-mini", provider: "openai", group: "OpenAI (own key)" },
+  { id: "claude-sonnet-4-20250514", name: "Claude Sonnet 4", provider: "claude", group: "Bring Your Own Key" },
+  { id: "claude-opus-4-20250514", name: "Claude Opus 4", provider: "claude", group: "Bring Your Own Key" },
+  { id: "gpt-4o", name: "GPT-4o", provider: "openai", group: "Bring Your Own Key" },
+  { id: "gpt-4.1", name: "GPT-4.1", provider: "openai", group: "Bring Your Own Key" },
+  { id: "o4-mini", name: "o4-mini", provider: "openai", group: "Bring Your Own Key" },
+  { id: "llama-3.3-70b-specdec", name: "Llama 3.3 70B (Groq)", provider: "groq", group: "Bring Your Own Key", sub: "fastest" },
+  { id: "mistral-large-latest", name: "Mistral Large", provider: "mistral", group: "Bring Your Own Key" },
+  { id: "deepseek/deepseek-r1", name: "DeepSeek R1 (OpenRouter)", provider: "openrouter", group: "Bring Your Own Key", sub: "reasoning" },
 ];
 
 // --- streaming ---
@@ -315,23 +297,6 @@ async function streamGemini(model, messages, onToken, signal) {
   for (;;) { const { done, value } = await reader.read(); if (done) break; buf += dec.decode(value, { stream: true }); let nl; while ((nl = buf.indexOf("\n")) >= 0) { const line = buf.slice(0, nl).trim(); buf = buf.slice(nl + 1); if (!line.startsWith("data: ")) continue; const payload = line.slice(6); if (payload === "[DONE]") return; try { const j = JSON.parse(payload); const parts = j.candidates && j.candidates[0] && j.candidates[0].content && j.candidates[0].content.parts; if (parts) parts.forEach((p) => { if (p.text) onToken(p.text); }); } catch (_) {} } }
 }
 
-async function streamOllama(model, messages, onToken, signal) {
-  if (window._bridge && window._bridge.connected) {
-    return window._bridge.streamAI(model, messages, onToken);
-  }
-  let r;
-  try {
-    r = await fetch(OLLAMA + "/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model, messages, stream: true }), signal });
-  } catch (e) {
-    if (e.name === "AbortError") throw e;
-    throw new Error("Ollama not running. Install from ollama.com, then run: ollama pull " + model + "\nOr run Darknode CLI (node darknode-cli.js) to connect remotely.");
-  }
-  if (r.status === 404) throw new Error("Model '" + model + "' not found. Run: ollama pull " + model);
-  if (!r.ok || !r.body) throw new Error("Ollama returned " + r.status);
-  const reader = r.body.getReader(), dec = new TextDecoder(); let buf = "";
-  for (;;) { const { done, value } = await reader.read(); if (done) break; buf += dec.decode(value, { stream: true }); let nl; while ((nl = buf.indexOf("\n")) >= 0) { const line = buf.slice(0, nl).trim(); buf = buf.slice(nl + 1); if (!line) continue; try { const j = JSON.parse(line); if (j.message && j.message.content) onToken(j.message.content); } catch (_) {} } }
-}
-
 // Free tier: POST {provider, model, messages} to the server proxy, which holds
 // the key and normalizes every provider to OpenAI-style SSE, so this reader is
 // identical to the direct OpenAI-compat one.
@@ -361,7 +326,8 @@ function streamFor(provider, model, messages, onToken, signal) {
   if (provider === "openai") return streamOpenAICompat("https://api.openai.com/v1/chat/completions", key, model, messages, onToken, signal);
   if (provider === "claude") return streamClaude(model, messages, onToken, signal);
   if (provider === "gemini") return streamGemini(model, messages, onToken, signal);
-  return streamOllama(model, messages, onToken, signal);
+  // BYOK providers reached here without a key: guide the user to add one.
+  return Promise.reject(new Error("This model needs your own API key — add it in Settings → API Keys, or switch to Darknode AI or Gemini (both free)."));
 }
 
 // --- helpers ---
@@ -467,7 +433,7 @@ export function renderAI(main) {
   const seen = new Set();
   models.forEach((m) => { if (!seen.has(m.group)) { seen.add(m.group); groups.push(m.group); } });
 
-  const byokProviders = new Set(["claude", "openai"]);
+  const byokProviders = new Set(["claude", "openai", "groq", "openrouter", "mistral"]);
   const optionsHtml = groups.map((g) => {
     const items = models.filter((m) => m.group === g);
     return `<optgroup label="${esc(g)}">${items.map((m) => {
@@ -478,8 +444,8 @@ export function renderAI(main) {
 
   const welcomeHtml = `<div class="ai2-welcome ai-empty">
         <div class="ai2-logo" aria-hidden="true">◆</div>
-        <h1 class="ai2-h1">Nexus AI</h1>
-        <p class="ai2-lead">Your local-first security assistant. Ask about recon, exploitation, tooling, code, or defense — answers stream in real time using free local models or your own key.</p>
+        <h1 class="ai2-h1">Darknode AI</h1>
+        <p class="ai2-lead">Your security assistant. Ask about recon, exploitation, tooling, code, or defense — answers stream in real time, free with Darknode AI or Gemini, or bring your own key.</p>
         <div class="ai-presets" id="aiPresets"></div>
       </div>`;
   main.innerHTML = `
@@ -497,7 +463,7 @@ export function renderAI(main) {
           <div id="aiThumbs" class="ai-thumbs"></div>
           <div id="aiByokHint" class="ai2-byok" style="display:none">Bring Your Own Key — add your API key in Settings → API Keys to use this model</div>
           <div class="ai2-composer">
-            <textarea class="ai2-input" id="aiMsg" rows="1" placeholder="Message Nexus AI…" spellcheck="false"></textarea>
+            <textarea class="ai2-input" id="aiMsg" rows="1" placeholder="Message Darknode AI…" spellcheck="false"></textarea>
             <div class="ai2-bar">
               <div class="ai2-bar-l">
                 <button class="ai2-tool" id="aiHistBtn" title="Show / hide chat history" aria-label="Toggle chat history"><svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 5h12M4 10h12M4 15h8" stroke-linecap="round"/></svg></button>
@@ -538,12 +504,9 @@ export function renderAI(main) {
 
   if (defaultModel) {
     const prov = defaultModel.provider;
-    if (prov === "gemini") status.textContent = "Ready — " + defaultModel.name + " via Google (free, no setup)";
-    else if (prov === "ollama") status.textContent = "Ready — " + defaultModel.name + " via Ollama (local, free)";
-    else if (prov === "groq") status.textContent = "Ready — " + defaultModel.name + " via Groq (~800 tok/s)";
-    else if (prov === "mistral") status.textContent = "Ready — " + defaultModel.name + " via Mistral";
-    else if (prov === "openrouter") status.textContent = "Ready — " + defaultModel.name + " via OpenRouter";
-    else status.textContent = "Ready — " + defaultModel.name;
+    if (prov === "darknode") status.textContent = "Ready — Darknode AI (free, no setup)";
+    else if (prov === "gemini") status.textContent = "Ready — " + defaultModel.name + " via Google (free, no setup)";
+    else status.textContent = "Ready — " + defaultModel.name + " (your API key)";
   }
 
   const byokHint = $("#aiByokHint");
@@ -555,7 +518,7 @@ export function renderAI(main) {
   updateByokHint();
   sel.onchange = () => { try { localStorage.setItem(MODEL_KEY, sel.value); } catch (_) {} const m = MODELS.find((x) => sel.value === x.provider + ":" + x.id); if (m) status.textContent = "Switched to " + m.name; updateByokHint(); };
   $("#aiSys").onclick = () => {
-    aiModal({ title: "System prompt", desc: "Controls how Nexus behaves for the whole conversation.", fields: [{ type: "textarea", value: localStorage.getItem(SYS_KEY) || DEFAULT_SYS, rows: 12 }], submitText: "Save", extra: [{ label: "Reset to default", value: "__reset__" }] }).then((v) => {
+    aiModal({ title: "System prompt", desc: "Controls how Darknode AI behaves for the whole conversation.", fields: [{ type: "textarea", value: localStorage.getItem(SYS_KEY) || DEFAULT_SYS, rows: 12 }], submitText: "Save", extra: [{ label: "Reset to default", value: "__reset__" }] }).then((v) => {
       if (!v) return;
       const val = v[0] === "__reset__" ? DEFAULT_SYS : v[0];
       try { localStorage.setItem(SYS_KEY, val); } catch (_) {} _sysBase = val; history[0] = { role: "system", content: _buildSys() }; status.textContent = "System prompt updated.";
@@ -691,7 +654,7 @@ export function renderAI(main) {
     const note = document.createElement("div");
     note.className = "ai-reframe";
     note.style.cssText = "margin-top:8px;padding:10px 12px;border:1px solid var(--line,rgba(148,163,184,.25));border-left:3px solid var(--acc,#22d3ee);border-radius:4px;background:color-mix(in srgb,var(--acc,#22d3ee) 8%,transparent);font-size:.78rem;display:flex;flex-direction:column;gap:8px;align-items:flex-start";
-    note.innerHTML = '<div style="line-height:1.45">This model declined the request. Nexus is built for <strong>authorized, defensive, and educational</strong> security work — pentests you’re engaged for, your own systems, lab ranges, or CTFs. Reframing it in that context usually gets a real answer.</div>';
+    note.innerHTML = '<div style="line-height:1.45">This model declined the request. Darknode AI is built for <strong>authorized, defensive, and educational</strong> security work — pentests you’re engaged for, your own systems, lab ranges, or CTFs. Reframing it in that context usually gets a real answer.</div>';
     const btn = document.createElement("button");
     btn.type = "button"; btn.className = "btn ghost sm"; btn.textContent = "Retry with authorized context";
     btn.onclick = () => { note.remove(); send("Context: this is authorized, defensive, and educational security work on the Darknode training platform (a contracted engagement / my own system / a lab or CTF target). With that in mind, please help with the following:\n\n" + original); };
@@ -705,7 +668,7 @@ export function renderAI(main) {
   // with a user turn). Shared by send / edit / regenerate.
   async function generate() {
     const { provider, modelId } = curModel();
-    if (!_key(provider) && provider !== "ollama") { status.textContent = "No API key for " + provider + " — add one in Settings → API Keys."; return; }
+    if (!_key(provider) && !PROXY_PROVIDERS.has(provider)) { status.textContent = "No API key for " + provider + " — add one in Settings → API Keys."; return; }
     const lastUser = [...history].reverse().find((m) => m.role === "user");
     busy = true; ctrl = new AbortController(); setSend(true);
     const out = appendStreaming(); let acc = "";
@@ -738,7 +701,7 @@ export function renderAI(main) {
     if (busy) return;
     if (!history[i] || history[i].role !== "assistant") return;
     const { provider, modelId } = curModel();
-    if (!_key(provider) && provider !== "ollama") { status.textContent = "No API key for " + provider + " — add one in Settings → API Keys."; return; }
+    if (!_key(provider) && !PROXY_PROVIDERS.has(provider)) { status.textContent = "No API key for " + provider + " — add one in Settings → API Keys."; return; }
     const base = history[i].content || "";
     const msgs = wire(history).concat([{ role: "user", content: "Continue exactly where you left off. Do not repeat anything you have already written." }]);
     busy = true; ctrl = new AbortController(); setSend(true);

@@ -9323,8 +9323,14 @@ body.focus-mode .app-main { padding-left: 20px !important; padding-right: 20px !
    NEXUS AI v2 — history sidebar, per-message actions, edit,
    file attachments, streaming dots. Model-driven transcript.
    ============================================================ */
-.ai2-shell { display: flex; gap: 16px; width: 100%; max-width: 1180px; margin: 0 auto; align-items: stretch; position: relative; }
-.ai2-shell .ai2 { margin: 0; max-width: 860px; flex: 1 1 auto; min-width: 0; }
+.ai2-shell { display: flex; gap: 24px; width: 100%; max-width: 1600px; margin: 0 auto; align-items: stretch; position: relative; }
+/* The chat column fills all the width left of the history rail; the conversation
+   and composer inside it stay centered at a comfortable reading width, so a wide
+   screen reads as an intentional, balanced layout instead of a narrow strip
+   pinned to the left with dead space on the right. */
+.ai2-shell .ai2 { margin: 0; max-width: none; flex: 1 1 auto; min-width: 0; }
+.ai2-shell .ai2 > .ai2-main,
+.ai2-shell .ai2 > .ai2-dock { width: 100%; max-width: 820px; margin-left: auto; margin-right: auto; }
 /* history rail */
 .ai2-hist { flex: 0 0 260px; width: 260px; display: flex; flex-direction: column; gap: 8px; height: calc(100vh - 150px); min-height: 480px; border: 1px solid var(--line); border-radius: 16px; background: color-mix(in srgb, var(--card2) 40%, var(--card)); padding: 12px 10px; }
 .ai2-hist-top { padding: 2px; }
