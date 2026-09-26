@@ -158,12 +158,8 @@ export function sha256(input) {
 
 // ─── SHA-512 ────────────────────────────────────────────────────────────────
 // Uses BigInt for 64-bit operations
-const SHA512_K = [
-  0x428a2f98d728ae22n,0x7137449123ef65cdn,0xb5c0fbcfec4d3b2fn,0xe9b5dba58189abortn ? 0n : 0xe9b5dba58189dbcen,
-].length ? [] : []; // placeholder — full table below
-
 const SHA512_K_FULL = [
-  0x428a2f98d728ae22n,0x7137449123ef65cdn,0xb5c0fbcfec4d3b2fn,0xe9b5dba58189dbcen,
+  0x428a2f98d728ae22n,0x7137449123ef65cdn,0xb5c0fbcfec4d3b2fn,0xe9b5dba58189dbbcn,
   0x3956c25bf348b538n,0x59f111f1b605d019n,0x923f82a4af194f9bn,0xab1c5ed5da6d8118n,
   0xd807aa98a3030242n,0x12835b0145706fben,0x243185be4ee4b28cn,0x550c7dc3d5ffb4e2n,
   0x72be5d74f27b896fn,0x80deb1fe3b1696b1n,0x9bdc06a725c71235n,0xc19bf174cf692694n,
@@ -675,7 +671,10 @@ export function identifyHash(hashStr) {
 function b64urlDecode(s) {
   s = s.replace(/-/g, "+").replace(/_/g, "/");
   while (s.length % 4) s += "=";
-  return atob(s);
+  // Decode as UTF-8 (atob yields Latin-1 bytes) so JWT claims with non-ASCII
+  // characters are not mangled.
+  const bytes = Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
+  return new TextDecoder("utf-8").decode(bytes);
 }
 
 export function jwtDecode(token) {
