@@ -66,28 +66,28 @@ function htmlEncodeHex(str) {
 // ---------------------------------------------------------------------------
 function hexEncode(str) {
   let out = "";
-  for (let i = 0; i < str.length; i++) out += str.charCodeAt(i).toString(16).padStart(2, "0");
+  for (const b of new TextEncoder().encode(str)) out += b.toString(16).padStart(2, "0");
   return out;
 }
 function hexDecode(str) {
-  const clean = str.replace(/\s+/g, "").replace(/^0x/i, "");
+  const clean = str.replace(/\s+/g, "").replace(/\\x/gi, "").replace(/^0x/i, "");
   if (clean.length % 2 !== 0) return "Error: Odd number of hex characters";
-  let out = "";
+  const bytes = [];
   for (let i = 0; i < clean.length; i += 2) {
     const byte = parseInt(clean.substr(i, 2), 16);
     if (isNaN(byte)) return "Error: Invalid hex character at position " + i;
-    out += String.fromCharCode(byte);
+    bytes.push(byte);
   }
-  return out;
+  return new TextDecoder().decode(new Uint8Array(bytes));
 }
 function hexWithSpaces(str) {
   let out = "";
-  for (let i = 0; i < str.length; i++) out += str.charCodeAt(i).toString(16).padStart(2, "0") + " ";
+  for (const b of new TextEncoder().encode(str)) out += b.toString(16).padStart(2, "0") + " ";
   return out.trim();
 }
 function hexWith0x(str) {
   let out = "";
-  for (let i = 0; i < str.length; i++) out += "\\x" + str.charCodeAt(i).toString(16).padStart(2, "0");
+  for (const b of new TextEncoder().encode(str)) out += "\\x" + b.toString(16).padStart(2, "0");
   return out;
 }
 
@@ -95,31 +95,43 @@ function hexWith0x(str) {
 // Binary / Octal / Decimal conversion
 // ---------------------------------------------------------------------------
 function textToBinary(str) {
-  return Array.from(str).map(ch => ch.charCodeAt(0).toString(2).padStart(8, "0")).join(" ");
+  return Array.from(new TextEncoder().encode(str)).map(b => b.toString(2).padStart(8, "0")).join(" ");
 }
 function binaryToText(bin) {
-  return bin.trim().split(/\s+/).map(b => {
-    const n = parseInt(b, 2);
-    return isNaN(n) ? "?" : String.fromCharCode(n);
-  }).join("");
+  const tokens = bin.trim().split(/\s+/).filter(Boolean);
+  const bytes = [];
+  for (const t of tokens) {
+    const n = parseInt(t, 2);
+    if (isNaN(n)) return "Error: Invalid binary value \"" + t + "\"";
+    bytes.push(n & 0xFF);
+  }
+  return new TextDecoder().decode(new Uint8Array(bytes));
 }
 function textToOctal(str) {
-  return Array.from(str).map(ch => ch.charCodeAt(0).toString(8).padStart(3, "0")).join(" ");
+  return Array.from(new TextEncoder().encode(str)).map(b => b.toString(8).padStart(3, "0")).join(" ");
 }
 function octalToText(oct) {
-  return oct.trim().split(/\s+/).map(o => {
-    const n = parseInt(o, 8);
-    return isNaN(n) ? "?" : String.fromCharCode(n);
-  }).join("");
+  const tokens = oct.trim().split(/\s+/).filter(Boolean);
+  const bytes = [];
+  for (const t of tokens) {
+    const n = parseInt(t, 8);
+    if (isNaN(n)) return "Error: Invalid octal value \"" + t + "\"";
+    bytes.push(n & 0xFF);
+  }
+  return new TextDecoder().decode(new Uint8Array(bytes));
 }
 function textToDecimal(str) {
-  return Array.from(str).map(ch => ch.charCodeAt(0).toString(10)).join(" ");
+  return Array.from(new TextEncoder().encode(str)).map(b => b.toString(10)).join(" ");
 }
 function decimalToText(dec) {
-  return dec.trim().split(/\s+/).map(d => {
-    const n = parseInt(d, 10);
-    return isNaN(n) ? "?" : String.fromCharCode(n);
-  }).join("");
+  const tokens = dec.trim().split(/\s+/).filter(Boolean);
+  const bytes = [];
+  for (const t of tokens) {
+    const n = parseInt(t, 10);
+    if (isNaN(n)) return "Error: Invalid decimal value \"" + t + "\"";
+    bytes.push(n & 0xFF);
+  }
+  return new TextDecoder().decode(new Uint8Array(bytes));
 }
 
 // ---------------------------------------------------------------------------
