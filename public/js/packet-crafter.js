@@ -310,7 +310,10 @@ function udpChecksum(srcIp, dstIp, udpHeaderAndData) {
   pseudo[10] = (udpHeaderAndData.length >> 8) & 0xFF;
   pseudo[11] = udpHeaderAndData.length & 0xFF;
   pseudo.set(udpHeaderAndData, 12);
-  return ipChecksum(pseudo);
+  // RFC 768: a computed UDP checksum of zero is transmitted as all ones
+  // (0xFFFF); an all-zero field is the reserved "checksum not present" value.
+  const c = ipChecksum(pseudo);
+  return c === 0 ? 0xFFFF : c;
 }
 
 // ─── Byte serialization ────────────────────────────────────────────────────
@@ -675,7 +678,7 @@ function seqAnalysis(isn, dataLen, windowSize) {
   const nextSeq = (isn + dataLen) >>> 0;
   const ackExpected = nextSeq;
   const windowEnd = (isn + windowSize) >>> 0;
-  const wrapDistance = 0xFFFFFFFF - isn;
+  const wrapDistance = 0x100000000 - isn;
   return {
     isn,
     nextSeq,
