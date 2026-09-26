@@ -254,7 +254,7 @@ export const TOOLS = [
 
   { id: "tx-remove-html", name: "Remove HTML Tags", cat: "textx", desc: "Strip HTML/XML tags, leaving the text content.", tags: ["html", "strip", "clean"],
     inputs: [{ k: "text", label: "Text", type: "textarea", rows: 6 }],
-    run(v) { if (!v.text) return ""; return v.text.replace(/<\/?[^>]+>/g, "").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'"); } },
+    run(v) { if (!v.text) return ""; return v.text.replace(/<\/?[^>]+>/g, "").replace(/&nbsp;/g, " ").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, "&"); } },
 
   { id: "tx-strip-accents", name: "Strip Accents / Diacritics", cat: "textx", desc: "Remove accent marks (café → cafe).", tags: ["accents", "diacritics", "normalize"],
     inputs: [{ k: "text", label: "Text", type: "textarea", rows: 6 }],

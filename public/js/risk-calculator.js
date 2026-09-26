@@ -130,7 +130,7 @@ export function renderRiskCalculator(container) {
     if (!scopeChanged) {
       impact = 6.42 * iss;
     } else {
-      impact = 7.52 * (iss - 0.029) - 3.25 * Math.pow(iss - 0.02, 15);
+      impact = 7.52 * (iss - 0.029) - 3.25 * Math.pow(iss * 0.9731 - 0.02, 13);
     }
 
     var exploitability = 8.22 * avVal * acVal * prVal * uiVal;

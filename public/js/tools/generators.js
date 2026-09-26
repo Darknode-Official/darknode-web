@@ -10,6 +10,24 @@ function randInt(min, max) { // inclusive, uniform via crypto
   return min + (buf[0] % range);
 }
 function pick(arr) { return arr[randInt(0, arr.length - 1)]; }
+// Uniformly draw `len` characters from `set` using crypto bytes with
+// rejection sampling. Plain (byte % set.length) is biased toward low indices
+// whenever set.length does not divide the sample space evenly.
+function randStringFromSet(set, len) {
+  const n = set.length;
+  if (n <= 1) return set.repeat(Math.max(0, len)).slice(0, len);
+  let out = "";
+  if (n <= 256) {
+    const max = Math.floor(256 / n) * n;
+    const buf = new Uint8Array(1);
+    while (out.length < len) { crypto.getRandomValues(buf); if (buf[0] < max) out += set[buf[0] % n]; }
+  } else {
+    const max = Math.floor(65536 / n) * n;
+    const buf = new Uint16Array(1);
+    while (out.length < len) { crypto.getRandomValues(buf); if (buf[0] < max) out += set[buf[0] % n]; }
+  }
+  return out;
+}
 
 const B32C = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
 function b32FromBytes(u8) {
@@ -131,10 +149,7 @@ export const TOOLS = [
     run(v, H) {
       const alphabet = v.alphabet && v.alphabet.length >= 2 ? v.alphabet : "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-";
       const len = H.clampInt(v.length, 4, 64, 21);
-      const b = H.randBytes(len);
-      let out = "";
-      for (let i = 0; i < len; i++) out += alphabet[b[i] % alphabet.length];
-      return out;
+      return randStringFromSet(alphabet, len);
     } },
 
   { id: "g-password", name: "Strong Password Generator", cat: "generators", desc: "Generate a cryptographically random password with configurable length and character sets.", tags: ["password", "secret"], button: "Generate",
@@ -156,10 +171,7 @@ export const TOOLS = [
       if (v.noAmbiguous) set = set.replace(/[0O1lI]/g, "");
       if (!set) return { error: "No characters left after excluding ambiguous ones." };
       const len = H.clampInt(v.length, 4, 128, 16);
-      const b = H.randBytes(len);
-      let out = "";
-      for (let i = 0; i < len; i++) out += set[b[i] % set.length];
-      return out;
+      return randStringFromSet(set, len);
     } },
 
   { id: "g-passphrase", name: "Passphrase Generator", cat: "generators", desc: "Generate a memorable multi-word passphrase (Diceware-style) from a wordlist.", tags: ["passphrase", "diceware"], button: "Generate",
@@ -190,9 +202,7 @@ export const TOOLS = [
     run(v, H) {
       const len = H.clampInt(v.length, 16, 64, 32);
       const set = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-      const b = H.randBytes(len);
-      let rand = "";
-      for (let i = 0; i < len; i++) rand += set[b[i] % set.length];
+      const rand = randStringFromSet(set, len);
       const prefix = (v.prefix || "key").replace(/[^a-zA-Z0-9_]/g, "");
       return `${prefix}_${rand}`;
     } },
@@ -589,10 +599,7 @@ export const TOOLS = [
       let set = v.preset === "Custom" ? (v.custom || "") : (sets[v.preset] || sets["Alphanumeric"]);
       if (!set || set.length < 2) return { error: "Provide at least 2 distinct characters." };
       const len = H.clampInt(v.length, 1, 256, 24);
-      const b = H.randBytes(len);
-      let out = "";
-      for (let i = 0; i < len; i++) out += set[b[i] % set.length];
-      return out;
+      return randStringFromSet(set, len);
     } },
 
   

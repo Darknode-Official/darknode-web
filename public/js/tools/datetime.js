@@ -493,11 +493,23 @@ const defs = [
       if (!b) return DATE_ERR;
       const now = new Date();
       if (b > now) return { error: "Birthdate is in the future." };
-      let y = now.getFullYear() - b.getFullYear();
-      let m = now.getMonth() - b.getMonth();
-      let d2 = now.getDate() - b.getDate();
-      if (d2 < 0) { m--; d2 += daysInMonth(now.getFullYear(), now.getMonth() - 1); }
-      if (m < 0) { y--; m += 12; }
+      // Advance from the birthdate by whole months (clamping day overflow, so
+      // Jan 31 + 1 month = Feb 28), then measure the leftover days. The old
+      // single day-borrow could leave the day component negative when the
+      // birth day-of-month exceeded a shorter intervening month (e.g. born
+      // Jan 31, evaluated on Mar 1 -> "-2 days").
+      const addMonths = function (date, n) {
+        const total = date.getFullYear() * 12 + date.getMonth() + n;
+        const ty = Math.floor(total / 12);
+        const tm = ((total % 12) + 12) % 12;
+        return new Date(ty, tm, Math.min(date.getDate(), daysInMonth(ty, tm)));
+      };
+      let months = (now.getFullYear() - b.getFullYear()) * 12 + (now.getMonth() - b.getMonth());
+      let anchor = addMonths(b, months);
+      if (anchor > now) { months--; anchor = addMonths(b, months); }
+      const y = Math.floor(months / 12);
+      const m = months % 12;
+      const d2 = Math.floor((now - anchor) / 86400000);
       const totalDays = Math.floor((now - b) / 86400000);
       return y + " years, " + m + " months, " + d2 + " days\nTotal days: " + totalDays;
     }

@@ -187,9 +187,10 @@ export const TOOLS = [
     run(v, H) {
       if (!v.text) return "";
       const n = H.clampInt(v.length, 0, 1000000, 100);
-      if (v.text.length <= n) return v.text;
       const ell = v.ellipsis != null ? v.ellipsis : "...";
-      return v.text.slice(0, Math.max(0, n - ell.length)) + ell;
+      const arr = Array.from(v.text);
+      if (arr.length <= n) return v.text;
+      return arr.slice(0, Math.max(0, n - Array.from(ell).length)).join("") + ell;
     } },
 
   { id: "t-remove-accents", name: "Remove Accents / Diacritics", cat: "text", desc: "Strip accents so text becomes plain ASCII-ish letters.", tags: ["accents", "diacritics", "normalize"],
@@ -295,7 +296,7 @@ export const TOOLS = [
       if (!v.text) return "";
       const words = (v.text.match(/\S+/g) || []).length;
       const sentences = (v.text.match(/[^.!?]+[.!?]+/g) || (v.text.trim() ? [v.text] : [])).length;
-      const chars = v.text.length;
+      const chars = Array.from(v.text).length;
       const wpm = H.clampInt(v.wpm, 50, 1000, 200);
       const minutes = Math.max(1, Math.round(words / wpm));
       return `Words: ${words}\nSentences: ${sentences}\nCharacters: ${chars}\nEstimated reading time: ~${minutes} min (at ${wpm} wpm)`;
