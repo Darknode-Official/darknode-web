@@ -404,3 +404,7 @@ math { font-family: var(--math); }
 /* research / open-problem results: plain-text answers and the evidence notice */
 .research-note{margin:0 0 12px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--card-2);color:var(--txt-2);font-size:.9rem;line-height:1.45}
 .ans-textual .ans-text{font-size:1rem;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere}
+
+/* embedded in the darknode console (/math): the console already shows darknode branding */
+.embedded .brand .by, .embedded .foot { display: none; }
+.embedded body, html.embedded { background: var(--bg); }
