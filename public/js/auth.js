@@ -5,7 +5,7 @@ import { auth, db, googleProvider, githubProvider, OWNER_EMAIL } from "/js/fireb
 import "/js/scroll-top.js?v=20260924b";
 import "/js/shortcuts.js";
 import "/js/mobile-nav.js";
-import { consoleHTML, directoryHTML, wireConsole, labelOf as navLabel, groupOf as navGroup, recentSecs as navRecent, favSecs as navFavs } from "/js/console-nav.js?v=20260927a";
+import { consoleHTML, directoryHTML, wireConsole, labelOf as navLabel, groupOf as navGroup, recentSecs as navRecent, favSecs as navFavs } from "/js/console-nav.js?v=20260927e";
 import { TOOLS as _MINI_TOOLS } from "/js/tools-registry.js?v=20260926h";
 const MINI_COUNT = _MINI_TOOLS.length;
 import { showToast } from "/js/toast.js?v=20260924a";
@@ -692,11 +692,13 @@ function setStyle(name) {
   if (name === "command") root.setAttribute("data-skin", "command"); else root.removeAttribute("data-skin");
   try { localStorage.setItem("sw_style", name); } catch (_) {}
 }
+// The top-bar button is a plain light/dark switch: it never changes the layout,
+// only the colour scheme. The full four-way style picker lives in Settings.
 function cycleStyle() {
-  const next = STYLES[(STYLES.indexOf(currentStyle()) + 1) % STYLES.length];
+  const next = currentStyle() === "dark" ? "pro" : "dark";
   setStyle(next);
   const btn = document.getElementById("styleToggle");
-  if (btn) { btn.title = "Theme: " + next; btn.setAttribute("aria-label", "Theme: " + next); btn.dataset.style = next; }
+  if (btn) { const lbl = next === "dark" ? "Switch to light" : "Switch to dark"; btn.title = lbl; btn.setAttribute("aria-label", lbl); btn.dataset.style = next; }
 }
 (function () { let t = "dark"; try { t = localStorage.getItem("sw_theme") || "dark"; } catch (_) {} applyTheme(t); })();
 function crtOn() { try { return localStorage.getItem("sw_crt") === "1"; } catch (_) { return false; } }
@@ -973,68 +975,6 @@ function renderHome(main, user, isOwner, show) {
         </div>
       </section>
     </div>
-    <div class="dash-services-head">
-      <h2 class="pg-h2" style="margin:0">Services</h2>
-      <span class="muted dash-services-sub">Jump into any of Darknode's 1,000+ tools &amp; platforms</span>
-    </div>
-    <div class="dash-section">
-      <h3 class="dash-cat-label">Flagship Tools</h3>
-      <div class="qa-grid">
-        ${qa("investigation", "", "Investigation Workspace", "Collect entities, build timelines, create findings &mdash; unified analyst workspace.")}
-        ${qa("ai", "", "Darknode AI", "Chat with Ollama, Claude, GPT, Gemini &mdash; security &amp; coding help.")}
-        ${qa("sentineleye", "", "Sentinel Eye", "Global threat visualization with live CesiumJS globe &amp; 14 intelligence tabs.")}
-        ${qa("prometheus", "", "Prometheus", "AI-powered incident response engine with 40+ playbooks.")}
-        ${qa("secdash", "", "Security Dashboard", "Unified dashboard for threat intel, alerts and system health.")}
-        ${qa("phantom", "", "PHANTOM", "Deep packet inspection, protocol dissection &amp; network traffic analysis.")}
-        ${qa("citadel", "", "CITADEL", "SOC operations center with log correlation, detection rules &amp; alert triage.")}
-        ${qa("oracle", "", "ORACLE", "Threat intelligence platform with IOC management &amp; campaign tracking.")}
-        ${qa("spectre", "", "SPECTRE", "Cloud security posture management for AWS, Azure &amp; GCP.")}
-      </div>
-    </div>
-    <div class="dash-section">
-      <h3 class="dash-cat-label">Security Operations</h3>
-      <div class="qa-grid">
-        ${qa("secgraph", "", "Security Graph", "Unified entity store &mdash; assets, indicators, incidents, and their relationships.")}
-        ${qa("casemgmt", "", "Case Manager", "Track cases and incidents with priority, status, and linked entities.")}
-      </div>
-    </div>
-    <div class="dash-section">
-      <h3 class="dash-cat-label">Offensive Security</h3>
-      <div class="qa-grid">
-        ${qa("tools", "", "Scanner Suite", "Nmap, Nikto, Gobuster and 1,000+ security tools in one catalog.")}
-        ${qa("payloads", "", "Test Script Forge", "Copy-ready security test scripts for common vulnerability classes.")}
-        ${qa("exploitdev", "", "Security Research Lab", "Study and test vulnerability proofs-of-concept with built-in templates.")}
-        ${qa("pentestconsole", "", "Security Assessment", "Interactive security assessment workflow with scoping and notes.")}
-      </div>
-    </div>
-    <div class="dash-section">
-      <h3 class="dash-cat-label">Intel &amp; Analysis</h3>
-      <div class="qa-grid">
-        ${qa("threat", "", "Threat Feed", "Notable CVEs, IOCs and a common-ports attack-surface reference.")}
-        ${qa("breachlookup", "", "Breach Lookup", "Search major data breaches by company, year and severity.")}
-        ${qa("netmap", "", "Network Mapper", "Visualize network topology, open ports and service fingerprints.")}
-        ${qa("sandbox", "", "Threat Analysis Lab", "Analyze suspicious files and samples in an isolated environment.")}
-      </div>
-    </div>
-    <div class="dash-section">
-      <h3 class="dash-cat-label">Learn &amp; Practice</h3>
-      <div class="qa-grid">
-        ${qa("learn", "", "Learn Hub", "Curated hubs: OWASP, security references, and learning resources.")}
-        ${qa("cyberrange", "", "Cyber Range", "Hands-on security labs with guided walkthroughs.")}
-        ${qa("cheats", "", "Cheat Sheets", "Copy-paste one-liners for recon, networking, security and more.")}
-        ${qa("snippets", "", "Snippet Vault", "Everyday one-liners for bash, Python, JS, git, docker, SQL.")}
-      </div>
-    </div>
-    <div class="dash-section">
-      <h3 class="dash-cat-label">Utilities</h3>
-      <div class="qa-grid">
-        ${qa("utils", "", "Toolbox", "Run tools in your browser &mdash; encode, hash, decode JWTs, gen shells.")}
-        ${qa("report", "", "Report Generator", "Generate professional pentest reports from your findings.")}
-        ${qa("setup", "aicoding", "Local AI Setup", "Run Ollama models on your machine, in the terminal or a browser UI.")}
-        ${qa("coder", "", "Nexus Agent", "AI-powered code generation and security analysis agent.")}
-      </div>
-    </div>
-    ${directoryHTML(isOwner)}
     ${isOwner ? `<div class="admin-card"><strong>Owner controls</strong><p class="muted">You're the owner &mdash; admin features live under Admin in the sidebar.</p></div>` : ""}
     ${homeWidgetsHTML()}`;
   main.addEventListener("click", (e) => {
@@ -1521,7 +1461,7 @@ function renderApp(user) {
     if (sec && sec !== "home" && sec !== "settings") { try { let r = JSON.parse(localStorage.getItem("dn_recent")||"[]"); r = r.filter(s=>s!==sec); r.unshift(sec); r = r.slice(0,8); localStorage.setItem("dn_recent", JSON.stringify(r)); } catch(_){} }
     if (sec === "tools") { main.innerHTML = `<div class="pg-head"><div><h1 class="pg-h1">Tools</h1><p class="muted pg-sub">Search, filter, and open any tool in the catalog.</p></div></div><div id="tools"></div>`; import("/js/tools.js?v=20260924a").then(m => m.renderTools(document.getElementById("tools"))); }
     else if (sec === "utils") { import("/js/utils.js").then(m => m.renderUtils(main)); }
-    else if (sec === "ai") { import("/js/webai.js?v=20260925j").then(m => m.renderAI(main)); }
+    else if (sec === "ai") { import("/js/webai.js?v=20260927e").then(m => m.renderAI(main)); }
     else if (sec === "math") { _prevCleanup = renderQuelvra(main, more); }
     else if (sec === "payloads") { import("/js/labs.js").then(m => m.renderPayloads(main)); }
     else if (sec === "targets") { import("/js/labs.js").then(m => m.renderTargets(main)); }
@@ -1819,7 +1759,7 @@ function renderApp(user) {
   function closeSidebar() { if (sidebar) { sidebar.classList.remove("open"); if (hamburger) { hamburger.classList.remove("active"); hamburger.setAttribute("aria-expanded", "false"); } } }
 
   userSlot.innerHTML = `
-    <button class="style-toggle" id="styleToggle" data-style="${currentStyle()}" title="Theme: ${currentStyle()}" aria-label="Cycle theme style"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="5.5"/><path d="M8 2.5v11M2.5 8h11"/></svg></button>
+    <button class="style-toggle" id="styleToggle" data-style="${currentStyle()}" title="${currentStyle() === "dark" ? "Switch to light" : "Switch to dark"}" aria-label="${currentStyle() === "dark" ? "Switch to light theme" : "Switch to dark theme"}"><svg class="ic-sun" viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="3.2"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3 3l1.4 1.4M11.6 11.6L13 13M13 3l-1.4 1.4M4.4 11.6L3 13" stroke-linecap="round"/></svg><svg class="ic-moon" viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13.5 9.5A5.5 5.5 0 016.5 2.5a5.5 5.5 0 107 7z" stroke-linejoin="round"/></svg></button>
     <button class="cmdk-btn" id="cmdkBtn" title="Search (Ctrl+K)"><span>Search</span><kbd>Ctrl K</kbd></button>
     <button class="tb-help-btn" id="helpBtn" title="Help &amp; support" aria-label="Help and support" onclick="window.darknode&&window.darknode.openHelp&&window.darknode.openHelp()"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg><span>Help</span></button>
     <span id="cli-dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#71717a;margin:0 10px;cursor:pointer;vertical-align:middle;transition:background .3s" title="CLI not connected" onclick="window.dnPrompt('Connect Darknode CLI',{desc:'Paste the auth token shown in your terminal after you run the Darknode CLI. It links this browser to your local tools and models.',placeholder:'darknode auth token'}).then(function(t){if(t&&window._bridge)window._bridge.connect(t.trim()).then(function(r){var d=document.getElementById('cli-dot');if(d){d.style.background='#22c55e';d.title='CLI connected: '+(r.hostname||'local')}showToast('Connected to '+(r.hostname||'CLI')+' — '+((r.tools||[]).length)+' tools, '+((r.ollama||[]).length)+' AI models','success')}).catch(function(e){showToast('Failed: '+e.message,'error')})})"></span>
@@ -2060,7 +2000,7 @@ function openPalette() {
   if (document.getElementById("cmdk")) return;
   const sections = [["home", "Dashboard"], ["investigation", "Investigation Workspace"], ["secgraph", "Security Graph"], ["casemgmt", "Case Manager"], ["ai", "AI Chat"], ["math", "Quelvra Math"], ["tools", "Scanner Suite"], ["saved", "Saved"], ["utils", "Toolbox"], ["payloads", "Payload Forge"], ["exploitdb", "Exploit Database"], ["ghdb", "Google Dorking"], ["targets", "Practice Targets"], ["vms", "Vulnerable VMs"], ["threat", "Threat Feed"], ["threatfeed", "Threat Intel Feed"], ["secchecklist", "Security Checklist"], ["cheats", "Cheat Sheets"], ["snippets", "Snippet Vault"], ["refs", "Reference Library"], ["training", "Training Labs"], ["privatecloud", "Private Cloud"], ["report", "Report Generator"], ["learn", "Learn Hub"], ["setup", "Local Setup"], ["coder", "Nexus Agent"], ["downloads", "Darknode OS"], ["dlguide", "Download Guide"], ["api", "API"], ["docs", "Docs"], ["education", "Education"], ["settings", "Settings"], ["admin", "Admin"], ["vanguard", "VANGUARD"], ["prometheus", "PROMETHEUS"], ["sentineleye", "SENTINEL EYE"], ["hydra", "HYDRA Engine"], ["aegis", "AEGIS Ops Center"], ["phantom", "PHANTOM"], ["citadel", "CITADEL"], ["oracle", "ORACLE"], ["spectre", "SPECTRE"], ["crucible", "CRUCIBLE"], ["navarch", "NAVARCH"], ["secdash", "Security Dashboard"], ["jwtanalyzer", "JWT Analyzer"], ["cspevaluator", "CSP Evaluator"], ["wayback", "Wayback Machine"], ["urldissect", "URL Dissector"], ["favicon", "Favicon Hasher"], ["cyberrange", "Cyber Range"], ["sandbox", "Threat Analysis Lab"], ["netmap", "Network Mapper"], ["exploitdev", "Security Research Lab"], ["cracklab", "Password Security Lab"], ["osint", "OSINT Dashboard"], ["darkwebosint", "Deep Web Intel"], ["cyberbriefing", "Cyber Briefing"], ["vulntriage", "Vuln Triage Engine"], ["incidentcost", "Incident Cost Calculator"], ["fedcompliance", "Federal Compliance"], ["adversaryplaybook", "Adversary Playbook"], ["emailheader", "Email Header Analyzer"], ["iocextractor", "IOC Extractor"], ["reconplanner", "Recon Planner"], ["packetinspector", "Packet Inspector"], ["siemdash", "SIEM Dashboard"], ["apifuzzer", "API Fuzzer"], ["incidentresponse", "Incident Response"], ["networktraffic", "Network Traffic"], ["privesc", "Privilege Analysis"], ["reverseshell", "Remote Access Testing"], ["xsslab", "Web Security Lab"], ["osintemail", "OSINT Email Intel"], ["cvetimeline", "CVE Timeline"], ["dataviz", "Data Visualization"], ["forensicstoolkit", "Forensics Toolkit"], ["hashsuite", "Hash Suite"], ["httpinspector", "HTTP Inspector"], ["iptools", "IP Tools"], ["networktools", "Network Tools"], ["packetanalyzer", "Packet Analyzer"], ["passwordtools", "Password Tools"], ["payloadgen", "Test Script Generator"], ["riskcalculator", "Risk Calculator"], ["securityquiz", "Security Quiz"], ["securityscanner", "Security Scanner"], ["subnetvisualizer", "Subnet Visualizer"], ["threatdashboard", "Threat Dashboard"], ["timelineviz", "Timeline Visualization"], ["vulndb", "Vulnerability Database"], ["asnexplorer", "ASN Explorer"], ["breachlookup", "Breach Lookup"], ["corstester", "CORS Tester"], ["cvesearch", "CVE Search"], ["darknetradar", "Darknet Radar"], ["dnsenum", "DNS Enumeration"], ["dnsrecon", "DNS Recon"], ["emailintel", "Email Intel"], ["headeranalyzer", "Header Analyzer"], ["httpprobe", "HTTP Probe"], ["identitymatrix", "Identity Matrix"], ["ipgeolocation", "IP Geolocation"], ["networkscanner", "Network Scanner"], ["sslinspector", "SSL Inspector"], ["techfingerprint", "Tech Fingerprint"], ["trafficanalyzer", "Traffic Analyzer"], ["websockettester", "WebSocket Tester"], ["whoisrecon", "WHOIS Recon"]];
   const actions = [
-    { type: "action", id: "cycle-style", name: "Cycle theme style", desc: "Switch between Pro, Dark, Classic", action: cycleStyle },
+    { type: "action", id: "cycle-style", name: "Toggle light / dark", desc: "Switch the console between light and dark", action: cycleStyle },
     { type: "action", id: "toggle-dark", name: "Toggle light / dark", desc: "Switch light and dark mode", action: () => { const cur = document.documentElement.getAttribute("data-theme") || "dark"; applyTheme(cur === "dark" ? "light" : "dark"); } },
     { type: "action", id: "toggle-crt", name: "Toggle CRT effect", desc: "Turn scanline overlay on or off", action: () => applyCrt(!crtOn()) },
     { type: "action", id: "copy-url", name: "Copy current URL", desc: "Copy page link to clipboard", action: () => { navigator.clipboard.writeText(location.href).then(() => showToast("URL copied", "success")).catch(() => {}); } },

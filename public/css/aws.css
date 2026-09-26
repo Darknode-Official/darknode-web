@@ -123,6 +123,10 @@ html body.app #topbar#topbar :is(.style-toggle, .icon-btn, .tb-help-btn):hover {
 html body.app #topbar#topbar .tb-help-btn svg,
 html body.app #topbar#topbar .icon-btn svg,
 html body.app #topbar#topbar .style-toggle svg { color: var(--aws-hdr-txt); stroke: currentColor; }
+/* one icon at a time: moon in light mode (click = go dark), sun in dark mode (click = go light) */
+.style-toggle .ic-sun, .style-toggle .ic-moon { display: none; }
+html[data-style=dark] .style-toggle .ic-sun { display: inline-flex; }
+html:not([data-style=dark]) .style-toggle .ic-moon { display: inline-flex; }
 html body.app #topbar#topbar .profile-btn {
   height: 32px !important;
   background: transparent !important;
@@ -140,6 +144,8 @@ html body.app #topbar#topbar .p-initials { background: var(--aws-orange) !import
 html body.app .con-wrap { grid-column: 1 / -1; position: sticky; top: var(--topbar-h); z-index: 50; contain: none !important; }
 body.app .con-top { position: static; }
 body.app .con-favbar {
+  display: flex;
+  align-items: center;
   height: var(--con-h2);
   gap: 2px;
   padding: 0 12px;
@@ -147,7 +153,9 @@ body.app .con-favbar {
   border-bottom: 0;
   font-family: var(--aws-font);
 }
-body.app .con-favlbl { color: var(--aws-hdr-mut); font-size: 12px; letter-spacing: .02em; margin-right: 4px; }
+body.app .con-favlbl { display: inline-flex; align-items: center; height: 28px; color: var(--aws-hdr-mut); font-size: 12px; letter-spacing: .02em; margin: 0 6px 0 0; }
+body.app .con-favlbl.con-reclbl { margin-left: 14px; }
+body.app .con-favbar .con-favs { display: inline-flex; align-items: center; gap: 2px; }
 body.app .con-favbar .con-chip {
   height: 28px;
   padding: 0 10px;
@@ -677,3 +685,34 @@ html[data-skin=command] body.landing #topbar .nav-link {
   background: transparent !important;
 }
 html[data-skin=command] body.landing #topbar .nav-link:hover { color: #fff !important; border-color: #fff !important; }
+
+/* ============================================================
+   Console AI chat — fit under the sticky header, and in the
+   empty state center the greeting + composer as one group so
+   there is no dead space and no need to scroll to the input.
+   ============================================================ */
+html body.app .app-main .ai2 { height: calc(100vh - var(--topbar-h) - var(--con-h2) - 96px); min-height: 420px; }
+html body.app .app-main .ai2-shell:has(.ai-empty) .ai2 { justify-content: center; }
+html body.app .app-main .ai2-shell:has(.ai-empty) .ai2-main { flex: 0 0 auto; overflow: visible; }
+html body.app .app-main .ai2-shell:has(.ai-empty) .ai2-welcome { min-height: 0; padding-bottom: 8px; }
+/* The chat-history rail is not site navigation — the console already has a left
+   nav. So it is not a permanent second sidebar: it slides in as an overlay only
+   when the history button in the composer is pressed (shell.hist-open). */
+html body.app .app-main .ai2-shell .ai2 { max-width: none; }
+html body.app .app-main .ai2-hist {
+  position: absolute; left: 0; top: 0; bottom: 0; z-index: 6; width: 264px; height: auto;
+  background: var(--card) !important; border: 1px solid var(--line); border-radius: 14px;
+  box-shadow: 0 24px 60px rgba(0, 7, 22, .28);
+  transform: translateX(-112%); transition: transform .18s ease; will-change: transform;
+}
+html body.app .app-main .ai2-shell.hist-open .ai2-hist { transform: none; }
+html body.app .app-main .ai2-shell.hist-open::before {
+  content: ""; position: absolute; inset: 0; z-index: 5; background: rgba(0, 7, 22, .18);
+}
+
+/* The "More" / setup menu stacks a bold title over a description. In the console,
+   body.app .menu-item forces display:block, which collapsed the two onto one line
+   ("Prebuilt local toolkitInstall the full CLI toolkit…"). Restore the column. */
+html body.app .menu-item.col { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; }
+html body.app .menu-item.col > strong { display: block; }
+html body.app .menu-item.col .menu-sub { display: block; white-space: normal; }
