@@ -17,7 +17,7 @@ function proxyUrl() {
 }
 // Free, no-setup providers served by the server proxy (built-in keys): only the
 // Darknode flagship and Gemini. Everything else is BYOK (uses the user's key).
-const PROXY_PROVIDERS = new Set(["darknode", "gemini"]);
+const PROXY_PROVIDERS = new Set(["gemini"]);
 function _key(provider) {
   const map = { claude: "sw_claude_key", openai: "sw_openai_key", gemini: "sw_gemini_key", groq: "sw_groq_key", openrouter: "sw_openrouter_key", mistral: "sw_mistral_key" };
   try { const u = (localStorage.getItem(map[provider]) || "").trim(); if (u) return u; } catch (_) {}
@@ -187,41 +187,27 @@ Windows: whoami /priv | wmic service get pathname (unquoted paths) | cmdkey /lis
 - Reference Darknode tools when relevant (e.g. "You can use the Hash Toolkit in the sidebar to identify this hash type")
 - Be direct and technical; when a request would only make sense as unauthorized harm, redirect it to the authorized, lab, or defensive version instead of refusing flatly`;
 
-// Darknode's own model — the platform flagship. Two ways to reach it:
-//  - provider "darknode": via the server proxy to a hosted Darknode endpoint
-//    (set DARKNODE_URL in the Cloud Function env). This is the production path.
-//  - provider "ollama": a locally-run `darknode` model (after `ollama create
-//    darknode` from the foundation track). This is the local-dev path.
+// The Darknode AI models — the platform's free, no-setup assistant. They are
+// served by the built-in server proxy (the key lives only in the Worker/Cloud
+// Function env, never in the browser), so users need no API key of their own.
+// Under the hood each maps to a Google model tier via the proxy; we use the
+// self-updating "-latest" aliases so a version deprecation never hard-breaks
+// them (a pinned 2.x line broke exactly this way). Only flash-tier is free on
+// the built-in key, so those are the tiers we expose, branded as Darknode.
 const DARKNODE_MODELS = [
-  { id: "darknode", name: "Darknode AI", provider: "darknode", group: "Darknode AI (built-in)", sub: "flagship" },
+  { id: "gemini-flash-latest", name: "Darknode Flash", provider: "gemini", group: "Darknode AI", sub: "recommended" },
+  { id: "gemini-3.8-flash", name: "Darknode Flash 3.8", provider: "gemini", group: "Darknode AI", sub: "newest" },
+  { id: "gemini-flash-lite-latest", name: "Darknode Lite", provider: "gemini", group: "Darknode AI", sub: "fastest" },
 ];
 
-// Free cloud models powered by the built-in Gemini key — no install, no BYOK.
-// Uses the self-updating "-latest" alias so it won't hard-deprecate the way a
-// pinned version can. Flash is the best tier that's actually free on this key
-// (Pro is quota-limited), so it's the platform default.
-// The platform's automatic default model. Gemini Flash is free on the built-in
-// key, needs no install, and is the most capable free tier — so it's what every
-// user gets until they pick something else. Kept as a named constant so the
-// default is explicit and survives any reordering of MODELS.
-// Darknode AI is the platform's own model and the default every user gets. The
-// other providers below remain available in the picker (a fallback during the
-// Darknode trial); once Darknode is confirmed they can be pruned.
-const DEFAULT_MODEL_ID = "darknode";
+// The platform default every user gets until they pick something else.
+const DEFAULT_MODEL_ID = "gemini-flash-latest";
 
-const GEMINI_MODELS = [
-  { id: "gemini-flash-latest", name: "Gemini Flash", provider: "gemini", group: "Recommended (Free)", sub: "recommended" },
-  { id: "gemini-3.8-flash", name: "Gemini 3.8 Flash", provider: "gemini", group: "Recommended (Free)" },
-  { id: "gemini-flash-lite-latest", name: "Gemini Flash-Lite", provider: "gemini", group: "Recommended (Free)", sub: "fastest" },
-];
-
-// Only two things run for free with no setup: Darknode AI (the platform
-// flagship, served by the proxy) and Gemini (the built-in Google key). Every
-// other model is Bring-Your-Own-Key — it needs the user's own API key, entered
-// in Settings -> API Keys. No local/Ollama models: the site is cloud-only.
+// Darknode AI (above) runs free with no setup, served by the proxy. Every model
+// below is Bring-Your-Own-Key — it needs the user's own API key, entered in
+// Settings -> API Keys. No local/Ollama models: the site is cloud-only.
 const MODELS = [
   ...DARKNODE_MODELS,
-  ...GEMINI_MODELS,
   { id: "claude-sonnet-4-20250514", name: "Claude Sonnet 4", provider: "claude", group: "Bring Your Own Key" },
   { id: "claude-opus-4-20250514", name: "Claude Opus 4", provider: "claude", group: "Bring Your Own Key" },
   { id: "gpt-4o", name: "GPT-4o", provider: "openai", group: "Bring Your Own Key" },
@@ -317,17 +303,18 @@ async function streamProxy(provider, model, messages, onToken, signal) {
 }
 
 function streamFor(provider, model, messages, onToken, signal) {
+  // Darknode AI (gemini-backed) always runs through the server proxy: the key
+  // lives only server-side, it is free with no setup, and this ignores any key
+  // the user may have entered so it can never fail on a bad personal key.
+  if (provider === "gemini") return streamProxy("gemini", model, messages, onToken, signal);
   const key = _key(provider);
-  // No user key but the server can serve it for free -> go through the proxy.
-  if (!key && PROXY_PROVIDERS.has(provider)) return streamProxy(provider, model, messages, onToken, signal);
   if (provider === "groq") return streamOpenAICompat("https://api.groq.com/openai/v1/chat/completions", key, model, messages, onToken, signal);
   if (provider === "openrouter") return streamOpenAICompat("https://openrouter.ai/api/v1/chat/completions", key, model, messages, onToken, signal, { "HTTP-Referer": location.origin, "X-Title": "Darknode AI" });
   if (provider === "mistral") return streamOpenAICompat("https://api.mistral.ai/v1/chat/completions", key, model, messages, onToken, signal);
   if (provider === "openai") return streamOpenAICompat("https://api.openai.com/v1/chat/completions", key, model, messages, onToken, signal);
   if (provider === "claude") return streamClaude(model, messages, onToken, signal);
-  if (provider === "gemini") return streamGemini(model, messages, onToken, signal);
   // BYOK providers reached here without a key: guide the user to add one.
-  return Promise.reject(new Error("This model needs your own API key — add it in Settings → API Keys, or switch to Darknode AI or Gemini (both free)."));
+  return Promise.reject(new Error("This model needs your own API key — add it in Settings → API Keys, or switch to Darknode AI (free)."));
 }
 
 // --- helpers ---
@@ -445,7 +432,7 @@ export function renderAI(main) {
   const welcomeHtml = `<div class="ai2-welcome ai-empty">
         <div class="ai2-logo" aria-hidden="true">◆</div>
         <h1 class="ai2-h1">Darknode AI</h1>
-        <p class="ai2-lead">Your security assistant. Ask about recon, exploitation, tooling, code, or defense — answers stream in real time, free with Darknode AI or Gemini, or bring your own key.</p>
+        <p class="ai2-lead">Your security assistant. Ask about recon, exploitation, tooling, code, or defense — answers stream in real time, free with Darknode AI, or bring your own key.</p>
         <div class="ai-presets" id="aiPresets"></div>
       </div>`;
   main.innerHTML = `
@@ -504,8 +491,7 @@ export function renderAI(main) {
 
   if (defaultModel) {
     const prov = defaultModel.provider;
-    if (prov === "darknode") status.textContent = "Ready — Darknode AI (free, no setup)";
-    else if (prov === "gemini") status.textContent = "Ready — " + defaultModel.name + " via Google (free, no setup)";
+    if (prov === "gemini") status.textContent = "Ready — " + defaultModel.name + " (free, no setup)";
     else status.textContent = "Ready — " + defaultModel.name + " (your API key)";
   }
 
