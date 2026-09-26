@@ -250,9 +250,7 @@ export const TOOLS = [
     inputs: [{ k: "value", label: "Value", type: "text", placeholder: "24" }, { k: "base", label: "Base font size (px)", type: "text", value: "16" }, { k: "mode", label: "Mode", type: "select", opts: ["px → rem", "rem → px"], value: "px → rem" }],
     run(v) { const n = parseFloat(v.value); if (isNaN(n)) return { error: "Enter a numeric value." }; const base = parseFloat(v.base) || 16; if (v.mode === "px → rem") return (n / base) + "rem"; return (n * base) + "px"; } },
 
-  { id: "c-ip-int", name: "IPv4 ↔ Integer", cat: "converters", desc: "Convert an IPv4 address to its 32-bit integer form and back.", tags: ["ip", "ipv4", "network"],
-    inputs: [{ k: "value", label: "IPv4 or integer", type: "text", placeholder: "192.168.1.1" }, { k: "mode", label: "Mode", type: "select", opts: ["IPv4 → Integer", "Integer → IPv4"], value: "IPv4 → Integer" }],
-    run(v) { const s = String(v.value || "").trim(); if (!s) return ""; if (v.mode === "IPv4 → Integer") { const parts = s.split("."); if (parts.length !== 4 || parts.some((p) => !/^\d+$/.test(p) || +p > 255)) return { error: "Enter a valid IPv4 address." }; return String(parts.reduce((acc, p) => acc * 256 + +p, 0)); } if (!/^\d+$/.test(s)) return { error: "Enter a non-negative integer." }; const n = Number(s); if (n < 0 || n > 4294967295) return { error: "Integer out of IPv4 range (0-4294967295)." }; return [24, 16, 8, 0].map((sh) => (n >>> sh) & 255).join("."); } },
+  
 
   { id: "c-ascii-text", name: "ASCII Codes ↔ Text", cat: "converters", desc: "Convert text to space-separated decimal character codes and back.", tags: ["ascii", "codes"],
     inputs: [{ k: "text", label: "Text or codes", type: "textarea" }, { k: "mode", label: "Mode", type: "select", opts: ["Text → Codes", "Codes → Text"], value: "Text → Codes" }],
@@ -322,15 +320,9 @@ export const TOOLS = [
     inputs: [{ k: "text", label: "Data", type: "textarea", rows: 8 }, { k: "mode", label: "Mode", type: "select", opts: ["CSV → TSV", "TSV → CSV"], value: "CSV → TSV" }],
     run(v) { if (!v.text) return ""; const from = v.mode === "CSV → TSV" ? "," : "\t"; const to = v.mode === "CSV → TSV" ? "\t" : ","; const rows = cleanRows(parseCSV(v.text.replace(/\r\n/g, "\n"), from)); return rows.map((r) => r.map((c) => csvField(c, to)).join(to)).join("\n"); } },
 
-  { id: "c-url-parts", name: "URL Parts Breakdown", cat: "converters", desc: "Split a URL into protocol, host, path, query params and hash.", tags: ["url", "parse"],
-    inputs: [{ k: "url", label: "URL", type: "text", placeholder: "https://example.com:8080/a/b?x=1&y=2#frag" }],
-    run(v) { if (!v.url) return ""; let u; try { u = new URL(v.url); } catch (e) { try { u = new URL("http://" + v.url); } catch (e2) { return { error: "Enter a valid URL." }; } } const params = []; u.searchParams.forEach((val, key) => params.push(`  ${key} = ${val}`)); return [`protocol: ${u.protocol}`, `host: ${u.host}`, `hostname: ${u.hostname}`, `port: ${u.port || "(default)"}`, `pathname: ${u.pathname}`, `search: ${u.search || "(none)"}`, `hash: ${u.hash || "(none)"}`, params.length ? "query params:\n" + params.join("\n") : "query params: (none)"].join("\n"); } },
+  
 
-  { id: "c-slug", name: "Text → URL Slug", cat: "converters", desc: "Convert text into a lowercase, hyphenated URL slug (accent-stripped).", tags: ["slug", "url", "seo"],
-    inputs: [{ k: "text", label: "Text", type: "text", placeholder: "Café Déjà Vu!" }],
-    run(v) { if (!v.text) return ""; let s = v.text.normalize("NFKD").replace(/[̀-ͯ]/g, ""); s = s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").replace(/-{2,}/g, "-"); return s; } },
+  
 
-  { id: "c-mac-format", name: "MAC Address Formatter", cat: "converters", desc: "Reformat a MAC address between colon, dash, dot and plain notation.", tags: ["mac", "network", "address"],
-    inputs: [{ k: "mac", label: "MAC address", type: "text", placeholder: "aabbccddeeff" }, { k: "format", label: "Output format", type: "select", opts: ["Colon (aa:bb:cc:dd:ee:ff)", "Dash (aa-bb-cc-dd-ee-ff)", "Dot (aabb.ccdd.eeff)", "Plain (aabbccddeeff)"], value: "Colon (aa:bb:cc:dd:ee:ff)" }, { k: "upper", label: "Uppercase", type: "checkbox", value: false }],
-    run(v) { const raw = String(v.mac || "").trim(); const hex = raw.replace(/[^0-9a-fA-F]/g, ""); if (hex.length !== 12) return { error: "Enter a 6-byte MAC address (12 hex digits)." }; let pairs = hex.match(/.{2}/g); pairs = v.upper ? pairs.map((p) => p.toUpperCase()) : pairs.map((p) => p.toLowerCase()); if (v.format.startsWith("Colon")) return pairs.join(":"); if (v.format.startsWith("Dash")) return pairs.join("-"); if (v.format.startsWith("Dot")) return pairs.join("").match(/.{4}/g).join("."); return pairs.join(""); } },
+  
 ];

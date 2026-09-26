@@ -183,19 +183,7 @@ export const TOOLS = [
       return `Algorithm: bcrypt (${variant})\nCost factor: ${parseInt(rounds, 10)} (2^${parseInt(rounds, 10)} iterations)\nSalt: ${rest.slice(0, 22)}\nHash: ${rest.slice(22)}`;
     } },
 
-  { id: "h-jwt-decode", name: "JWT Decoder", cat: "hashing", desc: "Decode a JSON Web Token's header and payload (no signature verification).", tags: ["jwt", "token", "decode"],
-    inputs: [{ k: "token", label: "JWT", type: "textarea", rows: 4, placeholder: "eyJhbGciOi...header.eyJzdWIi...payload.signature" }],
-    run(v) {
-      if (!v.token) return "";
-      const parts = v.token.trim().split(".");
-      if (parts.length < 2) return { error: "Not a JWT (expected header.payload.signature)." };
-      const decode = (s) => { let t = s.replace(/-/g, "+").replace(/_/g, "/"); while (t.length % 4) t += "="; const bin = atob(t); try { return decodeURIComponent(Array.from(bin, (c) => "%" + c.charCodeAt(0).toString(16).padStart(2, "0")).join("")); } catch (e) { return bin; } };
-      try {
-        const header = JSON.parse(decode(parts[0]));
-        const payload = JSON.parse(decode(parts[1]));
-        return `HEADER:\n${JSON.stringify(header, null, 2)}\n\nPAYLOAD:\n${JSON.stringify(payload, null, 2)}\n\nSIGNATURE: ${parts[2] || "(none)"} (not verified)`;
-      } catch (e) { return { error: "Malformed JWT — could not decode base64url JSON." }; }
-    } },
+  
 
   { id: "h-luhn", name: "Luhn Checksum Validator", cat: "hashing", desc: "Validate any number (card, IMEI, etc.) against the Luhn (mod 10) algorithm.", tags: ["luhn", "mod10", "checksum"],
     inputs: [{ k: "number", label: "Number", type: "text", placeholder: "4111111111111111" }],
