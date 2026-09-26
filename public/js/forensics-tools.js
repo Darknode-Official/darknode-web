@@ -676,11 +676,9 @@ function renderHexViewer(root) {
   }
 
   function textToBytes(str) {
-    const bytes = new Uint8Array(str.length);
-    for (let i = 0; i < str.length; i++) {
-      bytes[i] = str.charCodeAt(i) & 0xFF;
-    }
-    return bytes;
+    // Encode as UTF-8 so the hex dump reflects real on-disk bytes; charCodeAt
+    // would truncate multi-byte characters (é, €, 😀) to a single wrong byte.
+    return new TextEncoder().encode(str);
   }
 
   function formatHexDump(bytes) {
