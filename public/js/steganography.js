@@ -897,11 +897,15 @@ export function renderSteganography(main) {
 
     panel.querySelector("#steg-bin-to").onclick = function() {
       var text = panel.querySelector("#steg-bin-text").value;
+      // Work on the UTF-8 byte sequence so every group is a real 8-bit byte.
+      // charCodeAt would emit UTF-16 code units, so a CJK char or emoji produced
+      // a 3-4 hex-digit "byte" that disagreed with its own binary/decimal columns.
+      var bytes = new TextEncoder().encode(text);
       var binGroups = [];
       var hexGroups = [];
       var decGroups = [];
-      for (var i = 0; i < text.length; i++) {
-        var code = text.charCodeAt(i);
+      for (var i = 0; i < bytes.length; i++) {
+        var code = bytes[i];
         var bin = "";
         for (var b = 7; b >= 0; b--) bin += ((code >> b) & 1);
         binGroups.push(bin);
@@ -915,19 +919,21 @@ export function renderSteganography(main) {
 
     panel.querySelector("#steg-bin-from").onclick = function() {
       var bits = panel.querySelector("#steg-bin-bits").value.replace(/\s/g, "");
-      var text = "";
+      // Collect every full 8-bit group as a byte — including 0x00, which is a
+      // legitimate value; dropping it silently corrupted binary that carried a
+      // null byte. Decode the byte run as UTF-8 so multi-byte chars reassemble.
+      var bytes = [];
       for (var i = 0; i + 7 < bits.length; i += 8) {
-        var byte = parseInt(bits.substring(i, i + 8), 2);
-        if (byte > 0) text += String.fromCharCode(byte);
+        bytes.push(parseInt(bits.substring(i, i + 8), 2) & 0xFF);
       }
-      panel.querySelector("#steg-bin-text").value = text;
-      // Also update hex and decimal
+      panel.querySelector("#steg-bin-text").value = new TextDecoder().decode(new Uint8Array(bytes));
+      // Mirror the same bytes into hex and decimal (not the decoded text, whose
+      // code points would re-expand multi-byte chars).
       var hexGroups = [];
       var decGroups = [];
-      for (var j = 0; j < text.length; j++) {
-        var code = text.charCodeAt(j);
-        hexGroups.push(code.toString(16).toUpperCase().padStart(2, "0"));
-        decGroups.push(code.toString());
+      for (var j = 0; j < bytes.length; j++) {
+        hexGroups.push(bytes[j].toString(16).toUpperCase().padStart(2, "0"));
+        decGroups.push(bytes[j].toString());
       }
       panel.querySelector("#steg-bin-hex").value = hexGroups.join(" ");
       panel.querySelector("#steg-bin-dec").value = decGroups.join(" ");
