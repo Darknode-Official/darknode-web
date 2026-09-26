@@ -82,7 +82,7 @@ const HEADER_REF = [
 const SECURITY_HEADERS = [
   { name: "Strict-Transport-Security", weight: 20, required: true, check: v => { const m = /max-age=(\d+)/.exec(v); return m ? (+m[1] >= 31536000 ? "good" : "weak") : "missing"; } },
   { name: "Content-Security-Policy", weight: 20, required: true, check: v => v && !v.includes("unsafe-inline") && !v.includes("unsafe-eval") ? "good" : v ? "weak" : "missing" },
-  { name: "X-Content-Type-Options", weight: 10, required: true, check: v => v === "nosniff" ? "good" : "missing" },
+  { name: "X-Content-Type-Options", weight: 10, required: true, check: v => (v || "").trim().toLowerCase() === "nosniff" ? "good" : "missing" },
   { name: "X-Frame-Options", weight: 8, required: true, check: v => /^(DENY|SAMEORIGIN)$/i.test(v) ? "good" : "missing" },
   { name: "Referrer-Policy", weight: 8, required: true, check: v => v ? "good" : "missing" },
   { name: "Permissions-Policy", weight: 8, required: false, check: v => v ? "good" : "missing" },
@@ -164,15 +164,16 @@ function parseCSP(csp) {
   for (const part of csp.split(";")) {
     const tokens = part.trim().split(/\s+/);
     if (!tokens[0]) continue;
-    const name = tokens[0];
+    const name = tokens[0].toLowerCase();
     const values = tokens.slice(1);
+    const lvalues = values.map(v => v.toLowerCase());
     const issues = [];
-    if (values.includes("'unsafe-inline'")) issues.push("unsafe-inline allows inline scripts/styles (XSS risk)");
-    if (values.includes("'unsafe-eval'")) issues.push("unsafe-eval allows eval() and similar (code injection risk)");
-    if (values.includes("*")) issues.push("Wildcard (*) allows any source — extremely permissive");
-    if (values.some(v => v.startsWith("http://"))) issues.push("HTTP source allows insecure loading");
-    if (name === "default-src" && values.includes("*")) issues.push("default-src * provides no protection");
-    if (name === "script-src" && !values.includes("'strict-dynamic'") && (values.includes("'unsafe-inline'") || values.includes("*"))) {
+    if (lvalues.includes("'unsafe-inline'")) issues.push("unsafe-inline allows inline scripts/styles (XSS risk)");
+    if (lvalues.includes("'unsafe-eval'")) issues.push("unsafe-eval allows eval() and similar (code injection risk)");
+    if (lvalues.includes("*")) issues.push("Wildcard (*) allows any source — extremely permissive");
+    if (lvalues.some(v => v.startsWith("http://"))) issues.push("HTTP source allows insecure loading");
+    if (name === "default-src" && lvalues.includes("*")) issues.push("default-src * provides no protection");
+    if (name === "script-src" && !lvalues.includes("'strict-dynamic'") && (lvalues.includes("'unsafe-inline'") || lvalues.includes("*"))) {
       issues.push("script-src should use nonces/hashes with strict-dynamic instead of unsafe-inline/*");
     }
     directives.push({ name, values, issues });

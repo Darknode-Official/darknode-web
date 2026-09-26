@@ -430,17 +430,33 @@ function generateYARA(name, strings, data) {
   var hexPatterns = [];
   // Find unique byte sequences near entry point or interesting sections
   if (data.length >= 16) {
-    var ep = 0;
-    // Try to find PE entry point
+    var epFileOffset = 0;
+    // Try to find the PE entry point. AddressOfEntryPoint is a Relative
+    // Virtual Address, not a file offset, so convert it via the section
+    // table (mirroring parsePE) before indexing the raw file buffer.
     if (data[0] === 0x4D && data[1] === 0x5A && data.length > 64) {
       var peOffset = readU32LE(data, 0x3C);
       if (peOffset + 44 < data.length && data[peOffset] === 0x50 && data[peOffset + 1] === 0x45) {
-        ep = readU32LE(data, peOffset + 40); // AddressOfEntryPoint
+        var epRVA = readU32LE(data, peOffset + 40); // AddressOfEntryPoint (RVA)
+        var numSections = readU16LE(data, peOffset + 6);
+        var sizeOptHdr = readU16LE(data, peOffset + 20);
+        var secBase = peOffset + 24 + sizeOptHdr;
+        for (var si = 0; si < numSections; si++) {
+          var so = secBase + si * 40;
+          if (so + 40 > data.length) break;
+          var vaddr = readU32LE(data, so + 12);
+          var vsize = readU32LE(data, so + 8);
+          var praw = readU32LE(data, so + 20);
+          if (epRVA >= vaddr && epRVA < vaddr + vsize) {
+            epFileOffset = praw + (epRVA - vaddr);
+            break;
+          }
+        }
       }
     }
-    if (ep > 0 && ep + 16 < data.length) {
+    if (epFileOffset > 0 && epFileOffset + 16 <= data.length) {
       var pattern = [];
-      for (var h = 0; h < 16; h++) pattern.push(data[ep + h].toString(16).padStart(2, "0").toUpperCase());
+      for (var h = 0; h < 16; h++) pattern.push(data[epFileOffset + h].toString(16).padStart(2, "0").toUpperCase());
       hexPatterns.push("$entry = { " + pattern.join(" ") + " }");
     }
   }
