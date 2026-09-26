@@ -1,9 +1,9 @@
 import { esc } from '/js/shared.js';
 
 const IOC_PATTERNS = {
-  ipv4: { regex: /(?:^|[\s,;|"'(<\[])(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})(?:[\s,;|"')>\]]|$)/gm, label: 'IPv4 Addresses', icon: 'IP4' },
-  ipv6: { regex: /(?:^|[\s,;|])([0-9a-fA-F]{1,4}(?::[0-9a-fA-F]{0,4}){2,7})(?:[\s,;|]|$)/gm, label: 'IPv6 Addresses', icon: 'IP6' },
-  domain: { regex: /(?:^|[\s,;|"'(<\[])([a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*\.(?:com|net|org|io|xyz|ru|cn|ir|kp|info|biz|co|uk|de|fr|jp|br|in|au|ca|gov|edu|mil|int|top|tk|ml|ga|cf|gq|cc|tv|us|me|pro|name|club|site|online|store|tech|fun|icu|buzz|space|dev|app|ai))(?:[\s,;|"')>\]]|$)/gim, label: 'Domains', icon: 'DNS' },
+  ipv4: { regex: /(?:^|[\s,;|"'(<\[])(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})(?=[\s,;|"')>\]]|$)/gm, label: 'IPv4 Addresses', icon: 'IP4' },
+  ipv6: { regex: /(?:^|[\s,;|])([0-9a-fA-F]{1,4}(?::[0-9a-fA-F]{0,4}){2,7})(?=[\s,;|]|$)/gm, label: 'IPv6 Addresses', icon: 'IP6' },
+  domain: { regex: /(?:^|[\s,;|"'(<\[])([a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*\.(?:com|net|org|io|xyz|ru|cn|ir|kp|info|biz|co|uk|de|fr|jp|br|in|au|ca|gov|edu|mil|int|top|tk|ml|ga|cf|gq|cc|tv|us|me|pro|name|club|site|online|store|tech|fun|icu|buzz|space|dev|app|ai))(?=[\s,;|"')>\]]|$)/gim, label: 'Domains', icon: 'DNS' },
   url: { regex: /https?:\/\/[^\s<>"')\]]+/gi, label: 'URLs', icon: 'URL' },
   email: { regex: /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/gi, label: 'Email Addresses', icon: 'MAIL' },
   md5: { regex: /\b([a-fA-F0-9]{32})\b/g, label: 'MD5 Hashes', icon: 'MD5' },
