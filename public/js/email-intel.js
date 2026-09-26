@@ -125,9 +125,9 @@ window._eiAnalyzeHeaders = function() {
 
   var checks = [
     { name: 'SPF', header: 'received-spf', pass: /pass/i },
-    { name: 'DKIM', header: 'dkim-signature', pass: /.+/ },
+    { name: 'DKIM', header: 'authentication-results', pass: /dkim=pass/i },
     { name: 'DMARC', header: 'authentication-results', pass: /dmarc=pass/i },
-    { name: 'ARC', header: 'arc-authentication-results', pass: /.+/ },
+    { name: 'ARC', header: 'arc-authentication-results', pass: /arc=pass/i },
     { name: 'TLS', header: 'received', pass: /TLS|ESMTPS|with\s+HTTPS/i }
   ];
 
@@ -295,7 +295,7 @@ function _eiRenderSPFResults(el, domain, data) {
   h += '<div style="color:#ffaa00;font-size:12px;font-weight:bold;margin-bottom:8px;">DMARC POLICY</div>';
   if (dmarcRecord) {
     h += '<div style="background:#080c14;border:1px solid #00ff8833;border-radius:4px;padding:8px 12px;font-size:11px;color:#00ff88;word-break:break-all;">' + esc(dmarcRecord.replace(/"/g, '')) + '</div>';
-    var policy = (dmarcRecord.match(/p=(\w+)/i) || [])[1] || 'none';
+    var policy = (dmarcRecord.match(/(?:^|[;\s])p=(\w+)/i) || [])[1] || 'none';
     var pColor = policy === 'reject' ? '#00ff88' : policy === 'quarantine' ? '#ffaa00' : '#ff4444';
     h += '<div style="color:' + pColor + ';font-size:10px;margin-top:4px;">Policy: ' + esc(policy.toUpperCase()) + (policy === 'none' ? ' (weak — emails not rejected)' : '') + '</div>';
   } else {
@@ -321,7 +321,7 @@ function _eiRenderSPFResults(el, domain, data) {
   var grade = 'F';
   var gradeColor = '#ff4444';
   if (spfRecord && dmarcRecord) {
-    var dPolicy = (dmarcRecord.match(/p=(\w+)/i) || [])[1] || 'none';
+    var dPolicy = (dmarcRecord.match(/(?:^|[;\s])p=(\w+)/i) || [])[1] || 'none';
     if (dPolicy === 'reject') { grade = 'A'; gradeColor = '#00ff88'; }
     else if (dPolicy === 'quarantine') { grade = 'B'; gradeColor = '#44cc44'; }
     else { grade = 'C'; gradeColor = '#ffaa00'; }
