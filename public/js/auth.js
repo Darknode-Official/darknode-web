@@ -5,7 +5,7 @@ import { auth, db, googleProvider, githubProvider, OWNER_EMAIL } from "/js/fireb
 import "/js/scroll-top.js?v=20260924b";
 import "/js/shortcuts.js";
 import "/js/mobile-nav.js";
-import { consoleHTML, directoryHTML, wireConsole, labelOf as navLabel } from "/js/console-nav.js?v=20260926h";
+import { consoleHTML, directoryHTML, wireConsole, labelOf as navLabel, groupOf as navGroup, recentSecs as navRecent, favSecs as navFavs } from "/js/console-nav.js?v=20260927a";
 import { TOOLS as _MINI_TOOLS } from "/js/tools-registry.js?v=20260926h";
 const MINI_COUNT = _MINI_TOOLS.length;
 import { showToast } from "/js/toast.js?v=20260924a";
@@ -761,18 +761,14 @@ function _dashDateTime() {
 
 function _dashRecentActivity() {
   const KEY = "dn_recent_activity";
-  let items;
-  try { items = JSON.parse(localStorage.getItem(KEY)); } catch (_) {}
-  if (!Array.isArray(items) || items.length === 0) {
-    // Seed with placeholder entries so the section isn't empty on first load
-    items = [
-      { text: "Scanned 10.10.14.7", ts: Date.now() - 3600000 },
-      { text: "Queried CVE-2024-1234", ts: Date.now() - 7200000 },
-      { text: "Generated report", ts: Date.now() - 18000000 },
-    ];
-    try { localStorage.setItem(KEY, JSON.stringify(items)); } catch (_) {}
-  }
-  return items.slice(0, 8);
+  // Older builds seeded three placeholder entries here; never show those as real activity.
+  const SEED = new Set(["Scanned 10.10.14.7", "Queried CVE-2024-1234", "Generated report"]);
+  let items = [];
+  try { items = JSON.parse(localStorage.getItem(KEY)) || []; } catch (_) {}
+  if (!Array.isArray(items)) items = [];
+  const real = items.filter((i) => i && i.text && !SEED.has(i.text));
+  if (real.length !== items.length) { try { localStorage.setItem(KEY, JSON.stringify(real)); } catch (_) {} }
+  return real.slice(0, 6);
 }
 
 function _dashSessionStats() {
@@ -886,7 +882,6 @@ function renderHome(main, user, isOwner, show) {
   const browsers = CATALOG.filter((t) => t.kind === "browser").length;
   const stat = (n, l, s) => `<div class="stat"><div class="stat-n">${n}</div><div class="stat-l">${l}</div>${s ? `<div class="stat-s">${s}</div>` : ""}</div>`;
   const qa = (sec, more, title, desc) => `<button class="qa" data-sec="${sec}" data-more="${more}"><div class="qa-title">${title}</div><div class="qa-desc">${desc}</div></button>`;
-  const dt = _dashDateTime();
   const recentItems = _dashRecentActivity();
   const sStats = _dashSessionStats();
   const catCounts = CATEGORIES.map((c) => ({ c, n: CATALOG.filter((t) => t.cat === c).length })).sort((a, b) => b.n - a.n);
@@ -901,85 +896,80 @@ function renderHome(main, user, isOwner, show) {
     return Math.floor(diff / 86400000) + "d ago";
   };
 
+  const recentSecs = navRecent().slice(0, 8);
+  const favSecs = navFavs().slice(0, 8);
+  const svcRow = (sec) => `<button class="awh-link" data-sec="${esc(sec)}"><span class="awh-link-t">${esc(navLabel(sec))}</span><span class="awh-link-g">${esc(navGroup(sec))}</span></button>`;
   main.innerHTML = `
-    <div class="dash-hero">
-      <div class="dash-hero-top">
-        <div class="dash-hero-left">
-          <div class="eyebrow">SECURITY CONSOLE</div>
-          <span class="dash-clock" id="dashClock">${esc(dt.date)} &bull; ${esc(dt.time)}</span>
-        </div>
-        <div class="dash-meta">
-          <span class="dash-status"><span class="dash-status-dot"></span>All systems operational</span>
-          <span class="dash-threat-level"><span class="dash-threat-pip t1"></span><span class="dash-threat-pip t2"></span><span class="dash-threat-pip t3"></span><span class="dash-threat-pip t4 dim"></span><span class="dash-threat-pip t5 dim"></span><span class="dash-threat-label">ELEVATED</span></span>
-        </div>
-      </div>
-      <div class="dash-hero-main">
-        <div class="dash-hero-headings">
-          <h1 class="pg-h1">Welcome back${name ? ", " + esc(name) : ""}</h1>
-          <p class="muted pg-sub">1,000+ security tools, threat intel, local AI and training labs &mdash; your complete cybersecurity workflow.</p>
-        </div>
-        <div class="hero-actions">
-          <button class="btn" data-sec="tools">Browse tools</button>
-          <button class="btn ghost" data-sec="ai">Darknode AI</button>
-          <button class="btn ghost" data-sec="sentineleye">Sentinel Eye</button>
-          <button class="btn ghost" data-sec="threat">Threat intel</button>
-        </div>
-      </div>
+    <div class="awh-head">
+      <div><h1 class="pg-h1">Console Home</h1><p class="awh-sub">${name ? "Signed in as " + esc(name) + ". " : ""}${(CATALOG.length + MINI_COUNT).toLocaleString()} tools and utilities, live threat intel, Darknode AI and training labs.</p></div>
+      <div class="awh-actions"><button class="btn ghost" data-sec="docs">Documentation</button><button class="btn" data-sec="ai">Ask Darknode AI</button></div>
     </div>
-    <div class="stat-row">
-      ${stat((CATALOG.length + MINI_COUNT).toLocaleString(), "tools & utilities", CATALOG.length + " platforms &middot; " + MINI_COUNT + " in-browser utilities")}
-      ${stat(COUNTS.cheats, "cheat sheets")}
-      ${stat(COUNTS.cves, "tracked CVEs")}
-      ${stat(COUNTS.resources, "resources")}
-      ${stat(CATEGORIES.length, "categories")}
-      ${stat(59, "AI modules", "Ollama + cloud")}
-      ${stat("610K+", "lines of code", "across the Darknode ecosystem")}
-    </div>
-    <div class="dash-grid">
-      <section class="dg-panel dg-span2">
-        <div class="dg-h"><span class="dg-t">Catalog coverage</span><span class="dg-badge">${CATALOG.length} tools &middot; ${CATEGORIES.length} categories</span></div>
+    <div class="awh-grid">
+      <section class="panel awh-w awh-span2">
+        <div class="awh-wh"><h2>Recently visited</h2><button class="awh-more" data-open-services>View all services</button></div>
+        <div class="awh-links">${recentSecs.length ? recentSecs.map(svcRow).join("") : `<p class="awh-empty">No recently visited services. Open one from the Services menu or the navigation on the left and it will show up here.</p>`}</div>
+      </section>
+      <section class="panel awh-w">
+        <div class="awh-wh"><h2>Welcome to Darknode</h2></div>
+        <div class="awh-list">
+          <button class="awh-item" data-sec="learn"><b>Getting started</b><span>Learn the basics with curated guides and references.</span></button>
+          <button class="awh-item" data-sec="training"><b>Training labs</b><span>Practice defensive skills in guided, hands-on labs.</span></button>
+          <button class="awh-item" data-sec="setup" data-more="aicoding"><b>Run AI locally</b><span>Set up Ollama so the AI runs on your own machine.</span></button>
+          <button class="awh-item" data-sec="docs"><b>Documentation</b><span>How every part of the console works.</span></button>
+        </div>
+      </section>
+      <section class="panel awh-w">
+        <div class="awh-wh"><h2>Favorites</h2><button class="awh-more" data-open-services>Manage</button></div>
+        <div class="awh-links">${favSecs.length ? favSecs.map(svcRow).join("") : `<p class="awh-empty">Nothing pinned yet. Open Services and select the star next to a service.</p>`}</div>
+      </section>
+      <section class="panel awh-w">
+        <div class="awh-wh"><h2>Platform at a glance</h2></div>
+        <dl class="awh-kv">
+          <div><dt>Tools and utilities</dt><dd>${(CATALOG.length + MINI_COUNT).toLocaleString()}</dd></div>
+          <div><dt>Platforms</dt><dd>${CATALOG.length}</dd></div>
+          <div><dt>In-browser utilities</dt><dd>${MINI_COUNT}</dd></div>
+          <div><dt>Categories</dt><dd>${CATEGORIES.length}</dd></div>
+          <div><dt>Cheat sheets</dt><dd>${COUNTS.cheats}</dd></div>
+          <div><dt>Learning resources</dt><dd>${COUNTS.resources}</dd></div>
+        </dl>
+      </section>
+      <section class="panel awh-w">
+        <div class="awh-wh"><h2>Your usage</h2><span class="awh-note">This browser</span></div>
+        <dl class="awh-kv">
+          <div><dt>Sessions</dt><dd>${sStats.sessions}</dd></div>
+          <div><dt>AI conversations</dt><dd>${sStats.aiConvos}</dd></div>
+          <div><dt>Tools used</dt><dd>${sStats.toolsUsed}</dd></div>
+        </dl>
+        <div class="awh-wh awh-wh-sub"><h3>Recent activity</h3></div>
+        <div class="awh-activity">${recentItems.length ? recentItems.map((item) => `<div class="awh-act"><span>${esc(item.text)}</span><span class="awh-note">${timeAgo(item.ts)}</span></div>`).join("") : `<p class="awh-empty">No activity yet. Actions you take in investigations and the security graph appear here.</p>`}</div>
+      </section>
+      <section class="panel awh-w awh-span2">
+        <div class="awh-wh"><h2>Catalog coverage</h2><span class="awh-note">${CATALOG.length} platforms in ${CATEGORIES.length} categories</span></div>
         <div class="dg-bars">
           ${catCounts.slice(0, 10).map(({ c, n }) => `<button class="dg-bar-row" data-sec="tools"><span class="dg-bar-l">${esc(c)}</span><span class="dg-bar-track"><span class="dg-bar-fill" style="width:${Math.max(6, Math.round((n / maxCat) * 100))}%"></span></span><span class="dg-bar-n">${n}</span></button>`).join("")}
         </div>
       </section>
-      <section class="dg-panel">
-        <div class="dg-h"><span class="dg-t">Flagship platforms</span><span class="dg-badge live"><span class="dg-live"></span>${flagships.length} live</span></div>
-        <div class="dg-flag-list">
-          ${flagships.map(([nm, sec]) => `<button class="dg-flag-item" data-sec="${sec}"><span class="dg-live"></span><span class="dg-flag-nm">${esc(nm)}</span><span class="dg-flag-go">&rsaquo;</span></button>`).join("")}
+      <section class="panel awh-w">
+        <div class="awh-wh"><h2>Build with Darknode</h2></div>
+        <div class="awh-list">
+          <button class="awh-item" data-sec="settings" data-more="darknode"><b>REST API</b><span>One key for every tool and the agent over HTTP.</span></button>
+          <button class="awh-item" data-sec="settings" data-more="mcp"><b>MCP server</b><span>Expose tools to Claude, Cursor and other clients.</span></button>
+          <button class="awh-item" data-sec="settings" data-more="nexus"><b>Nexus CLI</b><span>Pair your terminal coding agent.</span></button>
+          <button class="awh-item" data-sec="settings" data-more="apikeys"><b>AI provider keys</b><span>Bring your own Claude, GPT or Gemini key.</span></button>
         </div>
       </section>
-      <section class="dg-panel">
-        <div class="dg-h"><span class="dg-t">Recent activity</span></div>
-        <div class="dash-timeline" id="dashTimeline">
-          ${recentItems.map((item) => `<div class="dash-tl-item"><span class="dash-tl-dot"></span><span class="dash-tl-text">${esc(item.text)}</span><span class="dash-tl-time muted">${timeAgo(item.ts)}</span></div>`).join("")}
-        </div>
+      <section class="panel awh-w awh-span2">
+        <div class="awh-wh"><h2>Flagship platforms</h2></div>
+        <div class="awh-links">${flagships.map(([nm, sec]) => `<button class="awh-link" data-sec="${sec}"><span class="awh-link-t">${esc(nm)}</span><span class="awh-link-g">${esc(navGroup(sec))}</span></button>`).join("")}</div>
       </section>
-      <section class="dg-panel">
-        <div class="dg-h"><span class="dg-t">Session</span></div>
-        <div class="dg-stat-list">
-          <div class="dg-stat"><span class="dg-stat-n">${sStats.sessions}</span><span class="dg-stat-l">Total sessions</span></div>
-          <div class="dg-stat"><span class="dg-stat-n">${sStats.aiConvos}</span><span class="dg-stat-l">AI conversations</span></div>
-          <div class="dg-stat"><span class="dg-stat-n">${sStats.toolsUsed}</span><span class="dg-stat-l">Tools used</span></div>
-        </div>
-      </section>
-      <section class="dg-panel dg-span2">
-        <div class="dg-h"><span class="dg-t">What's new</span><span class="dg-badge" data-sec="docs" data-more="">View all</span></div>
+      <section class="panel awh-w">
+        <div class="awh-wh"><h2>What's new</h2><button class="awh-more" data-sec="docs">View all</button></div>
         <div class="cl-items">
           <div class="cl-item"><span class="cl-tag new">NEW</span><span class="cl-text">PHANTOM &mdash; network traffic analysis, PCAP parsing, protocol dissection</span><span class="cl-date muted">Sep 2026</span></div>
           <div class="cl-item"><span class="cl-tag new">NEW</span><span class="cl-text">CITADEL &mdash; SOC ops center: log correlation, detection rules, alert triage</span><span class="cl-date muted">Sep 2026</span></div>
           <div class="cl-item"><span class="cl-tag new">NEW</span><span class="cl-text">ORACLE &mdash; threat intel platform: IOC management &amp; campaign tracking</span><span class="cl-date muted">Sep 2026</span></div>
-          <div class="cl-item"><span class="cl-tag new">NEW</span><span class="cl-text">SPECTRE &mdash; cloud security posture management for AWS, Azure, GCP</span><span class="cl-date muted">Sep 2026</span></div>
-          <div class="cl-item"><span class="cl-tag new">NEW</span><span class="cl-text">Security Graph &mdash; unified entity store across all tools</span><span class="cl-date muted">Sep 2026</span></div>
-          <div class="cl-item"><span class="cl-tag imp">IMPROVED</span><span class="cl-text">Pro theme overhaul &mdash; sidebar, topbar, cards, command palette, AI chat</span><span class="cl-date muted">Sep 2026</span></div>
-        </div>
-      </section>
-      <section class="dg-panel dg-span2">
-        <div class="dg-h"><span class="dg-t">Automation &amp; access</span><span class="dg-badge">Programmable platform</span></div>
-        <div class="dg-access-grid">
-          <button class="dg-access" data-sec="settings" data-more="darknode"><span class="dg-access-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></svg></span><span class="dg-access-t">REST API</span><span class="dg-access-d">One key, every tool &amp; the agent over HTTP</span></button>
-          <button class="dg-access" data-sec="settings" data-more="mcp"><span class="dg-access-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 7l8-4 8 4v10l-8 4-8-4z"/><path d="M4 7l8 4 8-4M12 11v10"/></svg></span><span class="dg-access-t">MCP Server</span><span class="dg-access-d">Expose tools to Claude, Cursor &amp; Code</span></button>
-          <button class="dg-access" data-sec="settings" data-more="nexus"><span class="dg-access-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg></span><span class="dg-access-t">Nexus CLI</span><span class="dg-access-d">Pair your terminal AI coding agent</span></button>
-          <button class="dg-access" data-sec="settings" data-more="apikeys"><span class="dg-access-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 2l-2 2m-7.6 7.6a5 5 0 11-7.1 7.1 5 5 0 017.1-7.1zm0 0L15 8m0 0l3 3 3-3-3-3"/></svg></span><span class="dg-access-t">AI provider keys</span><span class="dg-access-d">Bring your own Claude, GPT or Gemini</span></button>
+          <div class="cl-item"><span class="cl-tag new">NEW</span><span class="cl-text">Quelvra &mdash; offline math engine that verifies every answer</span><span class="cl-date muted">Sep 2026</span></div>
+          <div class="cl-item"><span class="cl-tag imp">IMPROVED</span><span class="cl-text">Console layout &mdash; header search, side navigation, location breadcrumbs</span><span class="cl-date muted">Sep 2026</span></div>
         </div>
       </section>
     </div>
@@ -1047,20 +1037,11 @@ function renderHome(main, user, isOwner, show) {
     ${directoryHTML(isOwner)}
     ${isOwner ? `<div class="admin-card"><strong>Owner controls</strong><p class="muted">You're the owner &mdash; admin features live under Admin in the sidebar.</p></div>` : ""}
     ${homeWidgetsHTML()}`;
-  main.addEventListener("click", (e) => { const b = e.target.closest("[data-sec]"); if (b) show(b.dataset.sec, b.dataset.more || ""); });
+  main.addEventListener("click", (e) => {
+    if (e.target.closest("[data-open-services]")) { e.stopPropagation(); const sb = document.getElementById("conServices"); if (sb) sb.click(); return; }
+    const b = e.target.closest("[data-sec]"); if (b) show(b.dataset.sec, b.dataset.more || "");
+  });
   wireHome(main, show);
-  // Recently used tools
-  try {
-    const recent = JSON.parse(localStorage.getItem("dn_recent") || "[]").slice(0, 6);
-    if (recent.length) {
-      const recentEl = document.createElement("div");
-      recentEl.style.cssText = "margin:0 0 20px;display:flex;flex-wrap:wrap;align-items:center;gap:8px";
-      recentEl.innerHTML = '<span style="font-size:.75rem;font-weight:600;color:var(--mut);text-transform:uppercase;letter-spacing:.05em;margin-right:4px">Recent</span>' +
-        recent.map(s => `<button class="btn sm ghost" data-sec="${esc(s)}" style="font-size:.72rem;padding:4px 12px">${esc(navLabel(s))}</button>`).join("");
-      const qaGrid = main.querySelector(".qa-grid");
-      if (qaGrid) qaGrid.parentNode.insertBefore(recentEl, qaGrid);
-    }
-  } catch (_) {}
 
   // Live clock update
   const clockEl = main.querySelector("#dashClock");
@@ -1425,13 +1406,17 @@ function renderApp(user) {
   const main = document.getElementById("app-content");
   const labelOf = navLabel;
   const conNav = wireConsole(view);
-  let trail = [], curSec = "home";
+  let curSec = "home";
+  // Location breadcrumbs (Console > Category > Page), like a cloud console, rather than a visit history.
   function renderCrumbs(sec) {
-    const i = trail.indexOf(sec);
-    if (i >= 0) trail = trail.slice(0, i + 1); else trail.push(sec);
-    if (trail.length > 5) trail = trail.slice(-5);
     const cr = document.getElementById("crumbs"); if (!cr) return;
-    cr.innerHTML = trail.map((s, idx) => `<button class="crumb${idx === trail.length - 1 ? " cur" : ""}" data-crumb="${esc(s)}">${esc(labelOf(s))}</button>`).join('<span class="crumb-sep">›</span>');
+    const parts = [`<button class="crumb${sec === "home" ? " cur" : ""}" data-crumb="home">Darknode</button>`];
+    if (sec !== "home") {
+      const g = navGroup(sec);
+      if (g) parts.push(`<span class="crumb crumb-grp">${esc(g)}</span>`);
+      parts.push(`<span class="crumb cur" aria-current="page">${esc(labelOf(sec))}</span>`);
+    }
+    cr.innerHTML = parts.join('<span class="crumb-sep" aria-hidden="true">›</span>');
   }
   // Plain-English intro above each section: what the page is and when to use it (section-help.js).
   // Hiding it leaves a small "What is this page?" button; the choice is remembered per section.
