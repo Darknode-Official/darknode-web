@@ -173,8 +173,9 @@ const MD5 = (function () {
   }
 
   function hmacMD5(key, data) {
-    let bkey = rstr2binl(str2rstrUTF8(key));
-    if (bkey.length > 16) bkey = binlMD5(bkey, key.length * 8);
+    const kstr = str2rstrUTF8(key);
+    let bkey = rstr2binl(kstr);
+    if (bkey.length > 16) bkey = binlMD5(bkey, kstr.length * 8);
     const ipad = new Array(16), opad = new Array(16);
     for (let i = 0; i < 16; i++) {
       ipad[i] = bkey[i] ^ 0x36363636;
@@ -204,13 +205,19 @@ const SHA1 = (function () {
   function str2rstrUTF8(input) {
     let output = "";
     for (let i = 0; i < input.length; i++) {
-      const c = input.charCodeAt(i);
-      if (c < 128) output += String.fromCharCode(c);
+      const c = input.codePointAt(i);
+      if (c > 0xFFFF) i++; // consumed a surrogate pair
+      if (c < 128) { output += String.fromCharCode(c); }
       else if (c < 2048) {
         output += String.fromCharCode((c >> 6) | 192);
         output += String.fromCharCode((c & 63) | 128);
-      } else {
+      } else if (c < 0x10000) {
         output += String.fromCharCode((c >> 12) | 224);
+        output += String.fromCharCode(((c >> 6) & 63) | 128);
+        output += String.fromCharCode((c & 63) | 128);
+      } else {
+        output += String.fromCharCode((c >> 18) | 240);
+        output += String.fromCharCode(((c >> 12) & 63) | 128);
         output += String.fromCharCode(((c >> 6) & 63) | 128);
         output += String.fromCharCode((c & 63) | 128);
       }
@@ -267,8 +274,9 @@ const SHA1 = (function () {
   function rstrSHA1(s) { return binb2rstr(binbSHA1(rstr2binb(s), s.length * 8)); }
 
   function hmacSHA1(key, data) {
-    let bkey = rstr2binb(str2rstrUTF8(key));
-    if (bkey.length > 16) bkey = binbSHA1(bkey, key.length * 8);
+    const kstr = str2rstrUTF8(key);
+    let bkey = rstr2binb(kstr);
+    if (bkey.length > 16) bkey = binbSHA1(bkey, kstr.length * 8);
     const ipad = new Array(16), opad = new Array(16);
     for (let i = 0; i < 16; i++) {
       ipad[i] = (bkey[i] || 0) ^ 0x36363636;
@@ -320,13 +328,19 @@ const SHA256 = (function () {
   function str2rstrUTF8(input) {
     let output = "";
     for (let i = 0; i < input.length; i++) {
-      const c = input.charCodeAt(i);
-      if (c < 128) output += String.fromCharCode(c);
+      const c = input.codePointAt(i);
+      if (c > 0xFFFF) i++; // consumed a surrogate pair
+      if (c < 128) { output += String.fromCharCode(c); }
       else if (c < 2048) {
         output += String.fromCharCode((c >> 6) | 192);
         output += String.fromCharCode((c & 63) | 128);
-      } else {
+      } else if (c < 0x10000) {
         output += String.fromCharCode((c >> 12) | 224);
+        output += String.fromCharCode(((c >> 6) & 63) | 128);
+        output += String.fromCharCode((c & 63) | 128);
+      } else {
+        output += String.fromCharCode((c >> 18) | 240);
+        output += String.fromCharCode(((c >> 12) & 63) | 128);
         output += String.fromCharCode(((c >> 6) & 63) | 128);
         output += String.fromCharCode((c & 63) | 128);
       }
@@ -383,8 +397,9 @@ const SHA256 = (function () {
   function rstrSHA256(s) { return binb2rstr(coreSHA256(rstr2binb(s), s.length * 8)); }
 
   function hmacSHA256(key, data) {
-    let bkey = rstr2binb(str2rstrUTF8(key));
-    if (bkey.length > 16) bkey = coreSHA256(bkey, key.length * 8);
+    const kstr = str2rstrUTF8(key);
+    let bkey = rstr2binb(kstr);
+    if (bkey.length > 16) bkey = coreSHA256(bkey, kstr.length * 8);
     const ipad = new Array(16), opad = new Array(16);
     for (let i = 0; i < 16; i++) {
       ipad[i] = (bkey[i] || 0) ^ 0x36363636;
@@ -486,13 +501,19 @@ const SHA512 = (function () {
   function str2rstrUTF8(input) {
     let output = "";
     for (let i = 0; i < input.length; i++) {
-      const c = input.charCodeAt(i);
-      if (c < 128) output += String.fromCharCode(c);
+      const c = input.codePointAt(i);
+      if (c > 0xFFFF) i++; // consumed a surrogate pair
+      if (c < 128) { output += String.fromCharCode(c); }
       else if (c < 2048) {
         output += String.fromCharCode((c >> 6) | 192);
         output += String.fromCharCode((c & 63) | 128);
-      } else {
+      } else if (c < 0x10000) {
         output += String.fromCharCode((c >> 12) | 224);
+        output += String.fromCharCode(((c >> 6) & 63) | 128);
+        output += String.fromCharCode((c & 63) | 128);
+      } else {
+        output += String.fromCharCode((c >> 18) | 240);
+        output += String.fromCharCode(((c >> 12) & 63) | 128);
         output += String.fromCharCode(((c >> 6) & 63) | 128);
         output += String.fromCharCode((c & 63) | 128);
       }
