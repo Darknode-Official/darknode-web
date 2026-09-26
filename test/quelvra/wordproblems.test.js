@@ -21,7 +21,7 @@ const run = (cases) => {
 };
 
 // minimum ok counts are floors a little under today's numbers, so a regression shows up
-for (const [name, cases, floor] of [["main", CASES, 260], ["held-out", HELDOUT, 58], ["fresh", HELDOUT_FRESH, 30]]) {
+for (const [name, cases, floor] of [["main", CASES, 260], ["held-out", HELDOUT, 76], ["fresh", HELDOUT_FRESH, 30]]) {
   test(`word problems (${name}): zero WRONG, at least ${floor} answered`, () => {
     const { tally, wrong } = run(cases);
     eq(wrong.length, 0, `WRONG answers:\n  ${wrong.join("\n  ")}`);
