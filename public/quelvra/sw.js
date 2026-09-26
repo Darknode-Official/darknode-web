@@ -4,7 +4,7 @@
 // successful response refreshes the cache. Requests outside /quelvra/ are never intercepted.
 // FILES and VERSION are generated: run `node tools/quelvra-sw-files.mjs` before deploying.
 
-const VERSION = "quelvra-muil8cga";
+const VERSION = "quelvra-muilewox";
 const BASE = "/quelvra/";
 const FILES = [
   "",
