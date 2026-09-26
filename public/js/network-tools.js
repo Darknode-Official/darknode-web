@@ -337,7 +337,7 @@ function renderSubnetCalculator(root) {
           if (b && a.bits === b.bits && a.end + 1 === b.start) {
             const superBits = a.bits - 1;
             const superSize = Math.pow(2, 32 - superBits);
-            const superStart = a.start & maskFromBits(superBits);
+            const superStart = (a.start & maskFromBits(superBits)) >>> 0;
             if (superBits >= 0 && superStart === a.start && (a.end - a.start + 1) * 2 === superSize) {
               next.push({ start: superStart, end: superStart + superSize - 1, bits: superBits });
               i += 2; merged = true; continue;
