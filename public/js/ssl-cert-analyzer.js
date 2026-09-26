@@ -658,8 +658,8 @@ AK7WLIe0YLEr3p4k20BKHQD7nwSi2JQRVEr0epGmGKOU2TH00RM3gSfIG5FVD3Fz
         exportBtn.style.display = '';
       });
 
-      const fetchBtn = content.querySelector('#sc-fetch-btn');
-      const domainInput = content.querySelector('#sc-domain-input');
+      const fetchBtn = container.querySelector('#sc-fetch-btn');
+      const domainInput = container.querySelector('#sc-domain-input');
       if (fetchBtn && domainInput) {
         fetchBtn.addEventListener('click', async () => {
           const host = domainInput.value.trim().replace(/^https?:\/\//, '').replace(/[/:].*/,'').replace(/[^a-zA-Z0-9.\-]/g,'');

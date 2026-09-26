@@ -244,7 +244,12 @@ export function renderSubnetVisualizer(container) {
     const binaryMask = s.mask.toString(2).padStart(32, "0").replace(/(.{8})/g, "$1.").slice(0, -1);
     const binaryNet = s.network.toString(2).padStart(32, "0").replace(/(.{8})/g, "$1.").slice(0, -1);
     const ipClass = s.network < 0x80000000 ? "A" : s.network < 0xC0000000 ? "B" : s.network < 0xE0000000 ? "C" : s.network < 0xF0000000 ? "D" : "E";
-    const isPrivate = PRIVATE_RANGES.some(r => { const p = parseCidr(r.cidr); return p && s.network >= p.network && s.broadcast <= p.broadcast; });
+    const inRange = (cidr) => { const p = parseCidr(cidr); return p && s.network >= p.network && s.broadcast <= p.broadcast; };
+    const RFC1918 = ["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"];
+    const isPrivate = RFC1918.some(inRange);
+    const special = PRIVATE_RANGES.find(r => !RFC1918.includes(r.cidr) && inRange(r.cidr));
+    const typeLabel = isPrivate ? "Private (RFC 1918)" : special ? special.name : "Public";
+    const shortType = isPrivate ? "Private" : special ? special.name : "Public";
     return `
       <div class="sv-card">
         <h3>CIDR Input</h3>
@@ -272,7 +277,7 @@ export function renderSubnetVisualizer(container) {
             ["Total Addresses", formatNumber(s.totalHosts), true],
             ["Usable Hosts", formatNumber(s.usableHosts), true],
             ["IP Class", ipClass, false],
-            ["Type", isPrivate ? "Private (RFC 1918)" : "Public", false],
+            ["Type", typeLabel, false],
           ].map(([l, v, a]) => `<div class="sv-row"><span class="sv-label">${l}</span><span class="sv-val${a ? " accent" : ""}">${v}</span></div>`).join("")}
         </div>
         <div class="sv-card">
@@ -301,7 +306,7 @@ Wildcard:    ${s.wildcardIp}
 Broadcast:   ${s.broadcastIp}
 Usable:      ${s.firstUsable} – ${s.lastUsable}
 Hosts:       ${formatNumber(s.usableHosts)}
-Class:       ${ipClass} (${isPrivate ? "Private" : "Public"})</div>
+Class:       ${ipClass} (${shortType})</div>
       </div>`;
   }
 
