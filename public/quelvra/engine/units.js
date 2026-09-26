@@ -106,9 +106,44 @@ def("rev", Z(X.mul(X.TWO, X.PI)), ONE);
 def(["degC", "°C", "celsius"], 1, TEMP, { offset: N.fromDecimal("273.15") });
 def(["degF", "°F", "fahrenheit"], frac(5, 9), TEMP, { offset: N.Q(45967, 180) });
 
+// long names ("miles", "kilometres", "pounds") map onto the symbols above
+const WORDS = {
+  meter: "m", gram: "g", second: "s", sec: "s", ampere: "A", amp: "A", kelvin: "K", mole: "mol", candela: "cd",
+  newton: "N", joule: "J", watt: "W", pascal: "Pa", hertz: "Hz", coulomb: "C", volt: "V", farad: "F", siemens: "S",
+  weber: "Wb", tesla: "T", henry: "H", liter: "L", minute: "min", hour: "h", day: "day", week: "week", year: "yr",
+  hectare: "ha", tonne: "t", inch: "in", foot: "ft", yard: "yd", mile: "mi", "nautical mile": "nmi", pound: "lb",
+  ounce: "oz", gallon: "gal", knot: "knot", calorie: "cal", electronvolt: "eV", atmosphere: "atm", radian: "rad",
+  degree: "deg", revolution: "rev", celsius: "degC", fahrenheit: "degF",
+};
+const WORD_PREFIX = { kilo: "k", centi: "c", milli: "m", micro: "µ", nano: "n", mega: "M", giga: "G", deci: "d" };
+function wordUnit(w) {
+  let s = w.toLowerCase().replace(/metre/g, "meter").replace(/litre/g, "liter");
+  if (s === "feet") s = "foot";
+  else if (/(inch|siemens)es$/.test(s) || s === "inches") s = s.replace(/es$/, "");
+  else if (/s$/.test(s) && !/(siemens|hertz|celsius)$/.test(s)) s = s.slice(0, -1);
+  if (WORDS[s]) return WORDS[s];
+  for (const [p, sym] of Object.entries(WORD_PREFIX)) {
+    if (s.startsWith(p) && WORDS[s.slice(p.length)]) {
+      const base = WORDS[s.slice(p.length)];
+      const b = UNITS.get(base);
+      if (b && b.prefix) return sym + base;
+    }
+  }
+  return null;
+}
+// multi-word phrases -> unit syntax the parser reads ("miles per hour" -> "mi/h", "square feet" -> "ft^2")
+export function normalizeUnitWords(src) {
+  return String(src)
+    .replace(/\bdeg(?:ree)?s?\s+(celsius|centigrade|fahrenheit|kelvin|c|f)\b/gi, (_, u) => ({ c: "degC", f: "degF", centigrade: "degC", kelvin: "K" })[u.toLowerCase()] || (/^c/i.test(u) ? "degC" : "degF"))
+    .replace(/\bnautical\s+miles?\b/gi, "nmi")
+    .replace(/\b(square|sq\.?|cubic)\s+([a-z]+)/gi, (_, k, u) => `${u}^${/^cub/i.test(k) ? 3 : 2}`)
+    .replace(/\s+per\s+/gi, "/");
+}
+
 function lookup(sym) {
   const u = UNITS.get(sym);
   if (u) return { ...u, symbol: sym };
+  if (/^[A-Za-z]{3,}$/.test(sym)) { const w = wordUnit(sym); if (w && w !== sym) { const r = lookup(w); if (r) return { ...r, symbol: w }; } }
   for (const [p, e] of PREFIXES) {
     if (sym.length > p.length && sym.startsWith(p)) {
       const b = UNITS.get(sym.slice(p.length));
@@ -129,7 +164,7 @@ function makeUnit(parts, factor, dim, offset = null) {
 function atomUnit(sym) {
   const e = lookup(sym);
   if (!e) throw fail(`Quelvra: unknown unit "${sym}"`, "UNIT");
-  return makeUnit([[sym, N.ONE]], e.factor, e.dim, e.offset);
+  return makeUnit([[e.symbol, N.ONE]], e.factor, e.dim, e.offset);
 }
 export const DIMENSIONLESS = makeUnit([], X.ONE, ONE);
 function combine(a, b, sign = N.ONE) {
@@ -420,6 +455,7 @@ export function decimalOf(v, digits = 12) {
 }
 // convertText("5 km/h to m/s") -> { value, unit, text, decimal, exact, steps }
 export function convertText(src) {
+  src = normalizeUnitWords(src);
   const m = String(src).match(/^(.*\S)\s+(?:to|in|into|as)\s+(.+)$/) || String(src).match(/^(.*\S)\s*(?:->|=>|→)\s*(.+)$/);
   if (!m) {
     const q = simplifyQuantity(parseQuantity(src));

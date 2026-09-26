@@ -167,3 +167,17 @@ test("property: adding different dimensions always throws, same dimension never"
     eq(threw, !same);
   }
 });
+
+test("units: long names, plurals and phrases", () => {
+  const d = (s) => U.convertText(s).decimal;
+  eq(d("5 km to miles"), "3.106855961187 mi");
+  eq(d("5 kilometres to miles"), "3.106855961187 mi");
+  eq(d("100 degrees fahrenheit to celsius").replace(/ .*/, ""), "37.777777777778");
+  eq(d("30 degrees C to fahrenheit").replace(/ .*/, ""), "86");
+  eq(d("60 miles per hour to meters per second"), "26.8224 m/s");
+  eq(d("10 square feet to square meters"), "0.9290304 m^2");
+  eq(d("2 pounds to kilograms"), "0.90718474 kg");
+  eq(d("12 inches to feet"), "1 ft");
+  eq(d("500 milliliters to liters"), "0.5 L");
+  throws(() => U.convertText("5 bananas to miles"));
+});
