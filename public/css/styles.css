@@ -9573,3 +9573,8 @@ body.focus-mode .app-main { padding-left: 20px !important; padding-right: 20px !
 .tb-help-btn:hover{border-color:var(--acc-line);color:var(--acc);background:color-mix(in srgb,var(--acc) 7%,var(--card2))}
 .tb-help-btn svg{color:var(--acc);flex:none}
 @media (max-width:640px){.tb-help-btn span{display:none}.tb-help-btn{padding:0 9px}}
+
+/* Quelvra landing band */
+.qv-band-row{display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap;margin-top:24px}
+.qv-band-note{color:var(--muted,#8a8f98);font-size:14px}
+.qv-band-row .btn{text-decoration:none}

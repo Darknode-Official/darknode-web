@@ -730,6 +730,20 @@ function switchTab(which) {
   }
 }
 
+// ---------------- embedded in the darknode console ----------------
+// /math in the darknode app shows Quelvra in an iframe with ?embed=1&theme=dark|light. The
+// parent can change the theme later with a same-origin postMessage; nothing else is accepted.
+const EMBED = new URLSearchParams(location.search).get("embed") === "1";
+if (EMBED) {
+  document.documentElement.classList.add("embedded");
+  const t = new URLSearchParams(location.search).get("theme");
+  if (t === "dark" || t === "light") document.documentElement.setAttribute("data-theme", t);
+  window.addEventListener("message", (e) => {
+    if (e.origin !== location.origin || e.source !== window.parent || !e.data || e.data.type !== "quelvra:theme") return;
+    if (e.data.theme === "dark" || e.data.theme === "light") { document.documentElement.setAttribute("data-theme", e.data.theme); updateThemeButton(); }
+  });
+}
+
 // ---------------- theme ----------------
 const sysDark = () => window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches;
 const effectiveTheme = () => document.documentElement.getAttribute("data-theme") || (sysDark() ? "dark" : "light");
