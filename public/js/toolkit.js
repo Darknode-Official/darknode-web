@@ -103,8 +103,14 @@ const B = {
       const n = Math.max(4, Math.min(128, +r.querySelector("#pg-len").value || 20));
       let cs = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
       if (r.querySelector("#pg-sym").checked) cs += "!@#$%^&*()-_=+[]{};:,.?";
-      const a = crypto.getRandomValues(new Uint32Array(n));
-      r.querySelector("#pg-out").textContent = [...a].map((x) => cs[x % cs.length]).join("");
+      // Rejection-sample to avoid modulo bias: discard draws in the unusable
+      // tail (>= largest multiple of cs.length that fits in a uint32).
+      const max = Math.floor(0x100000000 / cs.length) * cs.length, out = [], buf = new Uint32Array(n);
+      while (out.length < n) {
+        crypto.getRandomValues(buf);
+        for (let k = 0; k < buf.length && out.length < n; k++) if (buf[k] < max) out.push(cs[buf[k] % cs.length]);
+      }
+      r.querySelector("#pg-out").textContent = out.join("");
     };
   },
   uuid: (r) => { r.innerHTML = `<div class="tk-btns"><button class="btn sm" id="u-go">Generate UUID v4</button></div><pre class="tk-out" id="u-out"></pre>`;
