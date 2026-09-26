@@ -903,7 +903,7 @@ function renderHome(main, user, isOwner, show) {
       </div>
     </div>
     <div class="stat-row">
-      ${stat(CATALOG.length, "tools", browsers + " run in-browser")}
+      ${stat("1,000+", "tools & utilities", CATALOG.length + " platforms &middot; " + browsers + " in-browser")}
       ${stat(COUNTS.cheats, "cheat sheets")}
       ${stat(COUNTS.cves, "tracked CVEs")}
       ${stat(COUNTS.resources, "resources")}
@@ -949,10 +949,19 @@ function renderHome(main, user, isOwner, show) {
           <div class="cl-item"><span class="cl-tag imp">IMPROVED</span><span class="cl-text">Pro theme overhaul &mdash; sidebar, topbar, cards, command palette, AI chat</span><span class="cl-date muted">Sep 2026</span></div>
         </div>
       </section>
+      <section class="dg-panel dg-span2">
+        <div class="dg-h"><span class="dg-t">Automation &amp; access</span><span class="dg-badge">Programmable platform</span></div>
+        <div class="dg-access-grid">
+          <button class="dg-access" data-sec="settings" data-more="darknode"><span class="dg-access-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></svg></span><span class="dg-access-t">REST API</span><span class="dg-access-d">One key, every tool &amp; the agent over HTTP</span></button>
+          <button class="dg-access" data-sec="settings" data-more="mcp"><span class="dg-access-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 7l8-4 8 4v10l-8 4-8-4z"/><path d="M4 7l8 4 8-4M12 11v10"/></svg></span><span class="dg-access-t">MCP Server</span><span class="dg-access-d">Expose tools to Claude, Cursor &amp; Code</span></button>
+          <button class="dg-access" data-sec="settings" data-more="nexus"><span class="dg-access-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg></span><span class="dg-access-t">Nexus CLI</span><span class="dg-access-d">Pair your terminal AI coding agent</span></button>
+          <button class="dg-access" data-sec="settings" data-more="apikeys"><span class="dg-access-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 2l-2 2m-7.6 7.6a5 5 0 11-7.1 7.1 5 5 0 017.1-7.1zm0 0L15 8m0 0l3 3 3-3-3-3"/></svg></span><span class="dg-access-t">AI provider keys</span><span class="dg-access-d">Bring your own Claude, GPT or Gemini</span></button>
+        </div>
+      </section>
     </div>
     <div class="dash-services-head">
       <h2 class="pg-h2" style="margin:0">Services</h2>
-      <span class="muted dash-services-sub">Jump into any of Darknode's ${CATALOG.length}+ tools &amp; platforms</span>
+      <span class="muted dash-services-sub">Jump into any of Darknode's 1,000+ tools &amp; platforms</span>
     </div>
     <div class="dash-section">
       <h3 class="dash-cat-label">Flagship Tools</h3>
@@ -1057,11 +1066,12 @@ function renderSetup(main, openTo) {
   if (openTo) { const el = main.querySelector("#setup-" + openTo); if (el) el.scrollIntoView({ behavior: "smooth", block: "center" }); }
 }
 
-function renderSettingsPage(main, user, isOwner) {
+function renderSettingsPage(main, user, isOwner, initialTab) {
   const providers = user.providerData.map((p) => p.providerId.replace(".com", "")).join(", ") || "password";
   const created = user.metadata?.creationTime ? new Date(user.metadata.creationTime).toLocaleDateString() : "—";
   const row = (k, v) => `<div class="set-row"><span class="muted">${k}</span><span>${v}</span></div>`;
   const SET_TABS = [["account", "Account"], ["appearance", "Appearance"], ["security", "Security"], ["apikeys", "API Keys"], ["darknode", "Darknode API"], ["mcp", "MCP Server"], ["nexus", "Nexus CLI"], ["about", "About"]];
+  const startTab = SET_TABS.some(([k]) => k === initialTab) ? initialTab : "account";
   // Local Darknode API key — client-side generated token so tools, the CLI and
   // an MCP client can authenticate to this workspace. Stored only in this browser.
   const dnKey = (() => {
@@ -1210,12 +1220,12 @@ function renderSettingsPage(main, user, isOwner) {
       <h1 class="pg-h1" style="margin:0">Settings</h1>
     </div>
     <div class="set-layout">
-      <nav class="set-nav">${SET_TABS.map(([k, l]) => `<button class="set-tab${k === "account" ? " active" : ""}" data-stab="${k}">${l}</button>`).join("")}</nav>
-      <div class="set-panel" id="set-panel">${panels.account}</div>
+      <nav class="set-nav">${SET_TABS.map(([k, l]) => `<button class="set-tab${k === startTab ? " active" : ""}" data-stab="${k}">${l}</button>`).join("")}</nav>
+      <div class="set-panel" id="set-panel">${panels[startTab] || panels.account}</div>
     </div>`;
   const backBtn = main.querySelector("#set-back");
   if (backBtn) backBtn.onclick = () => appShow && appShow("home");
-  let curTab = "account";
+  let curTab = startTab;
   function showSetTab(tab) {
     curTab = tab;
     const panel = main.querySelector("#set-panel"); if (!panel) return;
@@ -1588,12 +1598,12 @@ function renderApp(user) {
     else if (sec === "github") { show("settings"); return; }
     else if (sec === "gmail") { show("settings"); return; }
     else if (sec === "coder") { import("/js/coder.js").then(m => m.renderCliCoder(main)); }
-    else if (sec === "downloads") { import("/js/getapp.js?v=20260925j").then(m => m.renderDownloads(main)); }
-    else if (sec === "dlguide") { import("/js/getapp.js?v=20260925j").then(m => m.renderDownloadDocs(main)); }
+    else if (sec === "downloads") { import("/js/getapp.js?v=20260925k").then(m => m.renderDownloads(main)); }
+    else if (sec === "dlguide") { import("/js/getapp.js?v=20260925k").then(m => m.renderDownloadDocs(main)); }
     else if (sec === "api") { import("/js/api.js?v=20260925j").then(m => m.renderAPI(main, user)); }
     else if (sec === "docs") { import("/js/docs.js?v=20260924b").then(m => m.renderDocs(main)); }
     else if (sec === "setup") renderSetup(main, more);
-    else if (sec === "settings") renderSettingsPage(main, user, isOwner);
+    else if (sec === "settings") renderSettingsPage(main, user, isOwner, more);
     else if (sec === "admin") { import("/js/admin.js?v=20260925j").then(m => m.renderAdmin(main, user)); }
     else if (sec === "contact") renderContact(main);
     else if (sec === "education") { main.innerHTML = `<div class="panel" style="max-width:800px;margin:40px auto"><div class="panel-h">About Darknode Education</div><div style="padding:18px;line-height:1.8;font-size:.9rem"><p><strong>Darknode is a cybersecurity education platform</strong> designed for students, educators, and security professionals to learn information security through hands-on practice in a safe, controlled environment.</p><p style="margin-top:16px"><strong>Our Mission:</strong> To make cybersecurity education accessible, interactive, and practical. Every tool on this platform runs locally in your browser or on your own machine -- no data ever leaves your computer.</p><p style="margin-top:16px"><strong>Who Uses Darknode:</strong></p><ul style="margin:8px 0 0 20px;line-height:2"><li>Computer science and cybersecurity students</li><li>IT professionals studying for certifications (CompTIA Security+, CISSP, CEH, OSCP)</li><li>University professors and instructors teaching security courses</li><li>Security operations center (SOC) analysts in training</li><li>Career changers learning cybersecurity fundamentals</li></ul><p style="margin-top:16px"><strong>Educational Standards:</strong> Our curriculum aligns with NIST NICE Framework, NSA CAE-CD requirements, and CompTIA Security+ objectives. All practice environments are isolated, legal, and designed for authorized educational use only.</p><p style="margin-top:16px"><strong>Responsible Use:</strong> Darknode tools are designed exclusively for educational purposes and authorized security testing. Users must comply with all applicable laws and obtain proper authorization before testing any system they do not own.</p><p style="margin-top:16px;color:var(--mut);font-size:.82rem">Darknode is a product of Darknode-Official. For questions about our educational programs, visit darknode.ai.</p></div></div>`; }
