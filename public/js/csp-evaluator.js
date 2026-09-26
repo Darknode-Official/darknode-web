@@ -104,7 +104,7 @@ export function renderCspEvaluator(container) {
 
     if (!dirs['frame-ancestors']) { score -= 10; issues.push({ sev: 'high', msg: 'Missing frame-ancestors — no clickjacking protection' }); }
     var objSrc = dirs['object-src'] || dirs['default-src'] || [];
-    if (objSrc.length === 0 || (objSrc.length > 0 && objSrc[0] !== "'none'")) { score -= 10; issues.push({ sev: 'high', msg: "Missing or permissive object-src — plugin-based XSS possible" }); }
+    if (objSrc.length === 0 || (objSrc.length > 0 && objSrc[0].toLowerCase() !== "'none'")) { score -= 10; issues.push({ sev: 'high', msg: "Missing or permissive object-src — plugin-based XSS possible" }); }
     if (!dirs['base-uri']) { score -= 8; issues.push({ sev: 'medium', msg: 'Missing base-uri — base tag injection possible' }); }
     if (!dirs['form-action']) { score -= 5; issues.push({ sev: 'medium', msg: 'Missing form-action — forms can submit anywhere' }); }
 
@@ -141,7 +141,7 @@ export function renderCspEvaluator(container) {
     if (!dirs['base-uri']) {
       bypasses.push({ sev: 'medium', title: 'Base Tag Injection', desc: 'Without base-uri restriction, an attacker who can inject HTML can add a <base> tag to redirect relative URLs to a malicious server.' });
     }
-    if (!dirs['object-src'] && (!dirs['default-src'] || dirs['default-src'][0] !== "'none'")) {
+    if (!dirs['object-src'] && (!dirs['default-src'] || (dirs['default-src'][0] || '').toLowerCase() !== "'none'")) {
       bypasses.push({ sev: 'high', title: 'Plugin-Based XSS', desc: 'Without object-src none, an attacker can embed Flash/Java applets to execute scripts in the page context.' });
     }
 

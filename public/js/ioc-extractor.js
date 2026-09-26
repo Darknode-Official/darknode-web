@@ -186,7 +186,8 @@ export function renderIOCExtractor(container) {
     Object.keys(iocs).forEach(function(type) {
       iocs[type].forEach(function(v) {
         var stixType = '', pattern = '';
-        if (type === 'ipv4' || type === 'ipv6') { stixType = 'ipv4-addr'; pattern = "[ipv4-addr:value = '" + v + "']"; }
+        if (type === 'ipv4') { stixType = 'ipv4-addr'; pattern = "[ipv4-addr:value = '" + v + "']"; }
+        else if (type === 'ipv6') { stixType = 'ipv6-addr'; pattern = "[ipv6-addr:value = '" + v + "']"; }
         else if (type === 'domain') { stixType = 'domain-name'; pattern = "[domain-name:value = '" + v + "']"; }
         else if (type === 'url') { stixType = 'url'; pattern = "[url:value = '" + v + "']"; }
         else if (type === 'email') { stixType = 'email-addr'; pattern = "[email-addr:value = '" + v + "']"; }
