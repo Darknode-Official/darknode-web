@@ -16,7 +16,10 @@ var _tfSignatures = [
   { name: 'PHP', category: 'Language', detect: function(h) { return (h.get('x-powered-by') || '').toLowerCase().indexOf('php') !== -1; }, color: '#777bb3' },
   { name: 'ASP.NET', category: 'Framework', detect: function(h) { return (h.get('x-powered-by') || '').toLowerCase().indexOf('asp.net') !== -1 || h.has('x-aspnet-version'); }, color: '#512bd4' },
   { name: 'Express', category: 'Framework', detect: function(h) { return (h.get('x-powered-by') || '').toLowerCase().indexOf('express') !== -1; }, color: '#333333' },
-  { name: 'Django', category: 'Framework', detect: function(h) { return h.has('x-frame-options') && (h.get('content-type') || '').indexOf('csrfmiddlewaretoken') !== -1; }, color: '#092e20' },
+  // "csrfmiddlewaretoken" is a Django HTML form field, never a Content-Type
+  // value (RFC 9110 §8.3), so the old test could never fire. Key off Django's
+  // distinctive csrftoken cookie instead (readable when Set-Cookie is exposed).
+  { name: 'Django', category: 'Framework', detect: function(h) { return (h.get('set-cookie') || '').toLowerCase().indexOf('csrftoken') !== -1; }, color: '#092e20' },
   { name: 'Firebase', category: 'Platform', detect: function(h) { return (h.get('server') || '').indexOf('Google Frontend') !== -1 || h.has('x-cloud-trace-context'); }, color: '#ffca28' },
   { name: 'Vercel', category: 'Platform', detect: function(h) { return h.has('x-vercel-id') || (h.get('server') || '').indexOf('Vercel') !== -1; }, color: '#000000' },
   { name: 'Netlify', category: 'Platform', detect: function(h) { return h.has('x-nf-request-id') || (h.get('server') || '').indexOf('Netlify') !== -1; }, color: '#00c7b7' },

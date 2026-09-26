@@ -122,7 +122,11 @@ export function renderUrlDissector(container) {
     var host = r.parts.hostname || '';
     var cyrillic = /[Ѐ-ӿ]/;
     if (cyrillic.test(raw)) s.push({ flag: 'Homograph Characters', detail: 'Cyrillic or similar lookalike characters detected', severity: 'critical' });
-    if (host && /[^\x00-\x7F]/.test(host) && !/xn--/.test(host)) s.push({ flag: 'Non-ASCII Domain', detail: 'Domain contains non-ASCII characters (possible IDN homograph)', severity: 'high' });
+    // The WHATWG URL parser already runs domain-to-ASCII, so r.parts.hostname is
+    // ALWAYS punycode/ASCII — testing it for non-ASCII bytes was a dead branch.
+    // An xn-- label in the parsed host is the real IDN/homograph signal (e.g.
+    // exämple.com → xn--exmple-cua.com), so flag on that instead.
+    if (host && /(^|\.)xn--/i.test(host)) s.push({ flag: 'Non-ASCII Domain', detail: 'Domain contains non-ASCII characters (possible IDN homograph)', severity: 'high' });
 
     var redirectParams = ['url', 'redirect', 'redirect_uri', 'return', 'returnTo', 'return_url', 'next', 'dest', 'destination', 'redir', 'target', 'continue', 'goto'];
     r.params.forEach(function(p) {
