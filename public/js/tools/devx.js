@@ -924,7 +924,7 @@ export const TOOLS = [
   },
   {
     id: "dv-sort-imports", name: "Sort Import Lines", cat: "devx",
-    desc: "Sort import (or any) lines alphabetically, keeping blank-line groups optional.",
+    desc: "Sort import (or any) lines alphabetically; blank lines are removed.",
     tags: ["imports", "sort", "organize"],
     inputs: [
       { k: "text", label: "Import lines", type: "textarea", rows: 6 },
