@@ -1,0 +1,679 @@
+/* Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
+   Cloud-console layout, loaded last.
+   Chrome (every style): one dark header holding Services + search, a slim favorites bar,
+   a collapsible left side navigation, and location breadcrumbs.
+   Content (Professional, Command and Dark styles): grey page, white rounded containers,
+   pill buttons (orange primary, blue-outline secondary), blue links, 8px inputs.
+   The Classic style keeps its own content colours. */
+
+body.app {
+  --topbar-h: 48px;
+  --con-h1: 48px;
+  --con-h2: 36px;
+  --aws-side-w: 264px;
+  --aws-hdr: #161d26;
+  --aws-hdr-2: #232f3e;
+  --aws-hdr-line: #414d5c;
+  --aws-hdr-txt: #ffffff;
+  --aws-hdr-mut: #b6bec9;
+  --aws-orange: #ff9900;
+  --aws-orange-2: #fa6f00;
+  --aws-font: "Amazon Ember", "Helvetica Neue", Roboto, Arial, sans-serif;
+  --aws-side-bg: #ffffff;
+  --aws-side-line: #e9ebed;
+  --aws-side-txt: #414d5c;
+  --aws-side-head: #000716;
+  --aws-side-on: #0972d3;
+  --aws-crumb: #0972d3;
+  --aws-crumb-cur: #5f6b7a;
+}
+html[data-style=dark] body.app,
+html[data-style=classic] body.app {
+  --aws-side-bg: #161d26;
+  --aws-side-line: #414d5c;
+  --aws-side-txt: #d1d5db;
+  --aws-side-head: #fbfbfb;
+  --aws-side-on: #539fe5;
+  --aws-crumb: #539fe5;
+  --aws-crumb-cur: #8d99a8;
+}
+
+/* ================= header ================= */
+html body.app #topbar#topbar {
+  height: var(--topbar-h) !important;
+  min-height: 0 !important;
+  padding: 0 12px 0 16px !important;
+  gap: 8px !important;
+  background: var(--aws-hdr) !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+html body.app #topbar#topbar::before,
+html body.app #topbar#topbar::after { display: none !important; }
+html body.app #topbar#topbar .brand { flex: none; margin-right: 6px; }
+html body.app #topbar#topbar .brand-mark,
+html body.app #topbar#topbar .brand-wordmark { filter: brightness(0) invert(1) !important; }
+html body.app #topbar#topbar #topbar-center,
+html body.app #topbar#topbar #cmdkBtn,
+html body.app #topbar#topbar #cli-dot { display: none !important; }
+
+/* Services button + search, moved into the header by console-nav.js */
+html body.app #topbar#topbar .con-bar {
+  flex: 1;
+  min-width: 0;
+  height: var(--topbar-h);
+  padding: 0;
+  gap: 8px;
+  background: transparent;
+  border: 0;
+  color: var(--aws-hdr-txt);
+}
+html body.app #topbar#topbar .con-services {
+  height: 32px;
+  padding: 0 10px;
+  color: var(--aws-hdr-txt);
+  font-family: var(--aws-font);
+  font-size: 14px;
+  font-weight: 700;
+  border: 1px solid transparent;
+  border-radius: 8px !important;
+}
+html body.app #topbar#topbar .con-services:hover,
+html body.app #topbar#topbar .con-services[aria-expanded=true] { background: rgba(255, 255, 255, .1); border-color: transparent; }
+html body.app #topbar#topbar .con-svc-count { display: none; }
+html body.app #topbar#topbar .con-caret { color: var(--aws-hdr-mut); }
+html body.app #topbar#topbar .con-grid-ic {
+  background:
+    linear-gradient(#fff, #fff) 0 0/6px 6px no-repeat,
+    linear-gradient(#fff, #fff) 100% 0/6px 6px no-repeat,
+    linear-gradient(#fff, #fff) 0 100%/6px 6px no-repeat,
+    linear-gradient(#fff, #fff) 100% 100%/6px 6px no-repeat;
+}
+html body.app #topbar#topbar .con-search { max-width: 560px; }
+html body.app #topbar#topbar .con-search input {
+  height: 32px;
+  padding: 0 44px 0 12px;
+  background: #0f141a;
+  border: 1px solid #5f6b7a;
+  border-radius: 8px;
+  color: #fff;
+  font-family: var(--aws-font);
+  font-size: 14px;
+}
+html body.app #topbar#topbar .con-search input::placeholder { color: #8d99a8; }
+html body.app #topbar#topbar .con-search input:focus { border-color: #539fe5; box-shadow: 0 0 0 1px #539fe5; }
+html body.app #topbar#topbar .con-search kbd { color: #8d99a8; border-color: #5f6b7a; background: transparent; }
+html body.app #topbar#topbar .con-quick { display: none; }
+
+/* right-hand icons: help, style, more, profile */
+html body.app #topbar#topbar #user-slot { gap: 4px !important; flex: none; }
+html body.app #topbar#topbar :is(.style-toggle, .icon-btn, .tb-help-btn) {
+  height: 32px !important;
+  min-width: 32px;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  color: var(--aws-hdr-txt) !important;
+  border-radius: 8px !important;
+  font-family: var(--aws-font);
+  font-size: 14px;
+}
+html body.app #topbar#topbar :is(.style-toggle, .icon-btn, .tb-help-btn):hover { background: rgba(255, 255, 255, .1) !important; }
+html body.app #topbar#topbar .tb-help-btn svg,
+html body.app #topbar#topbar .icon-btn svg,
+html body.app #topbar#topbar .style-toggle svg { color: var(--aws-hdr-txt); stroke: currentColor; }
+html body.app #topbar#topbar .profile-btn {
+  height: 32px !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  color: var(--aws-hdr-txt) !important;
+  border-radius: 8px !important;
+  padding: 0 6px !important;
+}
+html body.app #topbar#topbar .profile-btn:hover { background: rgba(255, 255, 255, .1) !important; }
+html body.app #topbar#topbar .p-initials { background: var(--aws-orange) !important; color: #0f141a !important; font-weight: 700; }
+
+/* ================= favorites bar ================= */
+/* contain:layout (set elsewhere) would make this the containing block of the fixed Services menu */
+html body.app .con-wrap { grid-column: 1 / -1; position: sticky; top: var(--topbar-h); z-index: 50; contain: none !important; }
+body.app .con-top { position: static; }
+body.app .con-favbar {
+  height: var(--con-h2);
+  gap: 2px;
+  padding: 0 12px;
+  background: var(--aws-hdr-2);
+  border-bottom: 0;
+  font-family: var(--aws-font);
+}
+body.app .con-favlbl { color: var(--aws-hdr-mut); font-size: 12px; letter-spacing: .02em; margin-right: 4px; }
+body.app .con-favbar .con-chip {
+  height: 28px;
+  padding: 0 10px;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  color: #eaeded !important;
+  font-family: var(--aws-font);
+  font-size: 13px;
+  font-weight: 400;
+  border-radius: 6px !important;
+}
+body.app .con-favbar .con-chip:hover { background: rgba(255, 255, 255, .1) !important; color: #fff !important; }
+body.app .con-favbar .con-empty { color: var(--aws-hdr-mut); font-size: 12px; }
+body.app .con-catbar { display: none !important; }
+
+/* Services mega-menu drops from the header, anchored under the Services button */
+html body.app .svc-menu.svc-menu {
+  position: fixed;
+  top: calc(var(--topbar-h) + var(--con-h2)) !important;
+  left: var(--svc-left, 0px);
+  right: auto;
+  width: min(1120px, calc(100vw - var(--svc-left, 0px) - 12px));
+  height: min(640px, calc(100vh - var(--topbar-h) - 16px));
+  border: 1px solid var(--line);
+  border-top: 0;
+  border-radius: 0 0 12px 12px;
+  box-shadow: 0 12px 32px rgba(0, 7, 22, .28);
+  font-family: var(--aws-font);
+}
+
+/* ================= shell: side nav + main ================= */
+body.app .app-shell {
+  display: grid !important;
+  grid-template-columns: var(--aws-side-w) minmax(0, 1fr);
+  grid-template-rows: auto 1fr;
+  /* a transform (or a running transform animation) here would trap the fixed side drawer and Services menu */
+  transform: none !important;
+  animation: none !important;
+}
+body.app.aws-side-closed { --aws-side-w: 40px; }
+body.app .app-main { grid-column: 2; grid-row: 2; padding: 16px 32px 24px; }
+
+.aws-side {
+  grid-column: 1;
+  grid-row: 2;
+  position: sticky;
+  top: calc(var(--topbar-h) + var(--con-h2));
+  height: calc(100vh - var(--topbar-h) - var(--con-h2));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--aws-side-txt) 30%, transparent) transparent;
+  padding: 12px 0 24px;
+  background: var(--aws-side-bg);
+  border-right: 1px solid var(--aws-side-line);
+  font-family: var(--aws-font);
+  z-index: 30;
+}
+body.app.aws-side-closed .aws-side { display: none; }
+.aws-side-h { display: flex; align-items: center; gap: 8px; padding: 4px 12px 10px 24px; }
+html body .aws-side .aws-side-title {
+  flex: 1;
+  text-align: left;
+  background: none !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  color: var(--aws-side-head) !important;
+  font: 700 18px/1.3 var(--aws-font);
+  cursor: pointer;
+}
+html body .aws-side .aws-side-x,
+html body .aws-side-open {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  flex: none;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  border-radius: 8px !important;
+  cursor: pointer;
+  color: var(--aws-side-txt);
+}
+html body .aws-side .aws-side-x:hover,
+html body .aws-side-open:hover { background: color-mix(in srgb, var(--aws-side-txt) 12%, transparent) !important; }
+.aws-side-x::before,
+.aws-side-x::after {
+  content: "";
+  position: absolute;
+  left: 9px;
+  top: 15px;
+  width: 14px;
+  height: 2px;
+  background: currentColor;
+  border-radius: 1px;
+}
+.aws-side-x::before { transform: rotate(45deg); }
+.aws-side-x::after { transform: rotate(-45deg); }
+.aws-side-open { display: none; }
+body.app.aws-side-closed .aws-side-open {
+  display: block;
+  grid-column: 1;
+  grid-row: 2;
+  position: sticky;
+  top: calc(var(--topbar-h) + var(--con-h2) + 12px);
+  margin: 0 auto;
+}
+.aws-side-open span,
+.aws-side-open span::before,
+.aws-side-open span::after {
+  position: absolute;
+  left: 9px;
+  width: 14px;
+  height: 2px;
+  background: currentColor;
+  border-radius: 1px;
+}
+.aws-side-open span { top: 15px; }
+.aws-side-open span::before,
+.aws-side-open span::after { content: ""; left: 0; }
+.aws-side-open span::before { top: -5px; }
+.aws-side-open span::after { top: 5px; }
+
+.aws-side-div { height: 1px; margin: 12px 24px; background: var(--aws-side-line); }
+.aws-side-lbl { padding: 0 24px 6px; color: var(--aws-side-head); font: 700 14px/1.4 var(--aws-font); }
+html body .aws-side :is(.aws-sl, .aws-sg-h) {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-height: 0;
+  height: auto;
+  text-align: left;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  color: var(--aws-side-txt) !important;
+  font: 400 14px/1.45 var(--aws-font);
+  padding: 4px 16px 4px 24px !important;
+  cursor: pointer;
+  transform: none !important;
+}
+html body .aws-side .aws-sg-items .aws-sl { padding-left: 44px !important; }
+html body .aws-side .aws-sl:hover,
+html body .aws-side .aws-sg-h:hover { color: var(--aws-side-on) !important; text-decoration: underline; }
+html body .aws-side .aws-sl.on { color: var(--aws-side-on) !important; font-weight: 700; }
+html body .aws-side .aws-sg-h { font-weight: 400; }
+.aws-sg-name { flex: 1; min-width: 0; }
+.aws-sg-n { color: var(--aws-crumb-cur); font-size: 12px; }
+.aws-caret {
+  position: relative;
+  width: 14px;
+  height: 14px;
+  flex: none;
+  margin-left: -18px;
+}
+.aws-caret::before {
+  content: "";
+  position: absolute;
+  left: 3px;
+  top: 4px;
+  width: 5px;
+  height: 5px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform .12s;
+}
+.aws-sg-h[aria-expanded=true] .aws-caret::before { transform: rotate(45deg); top: 2px; }
+.aws-side .svc-badge { font-size: 10px; }
+
+/* ================= breadcrumbs ================= */
+html body.app #app-main #crumbs.crumbs {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0;
+  min-height: 20px;
+  margin: 0 0 14px;
+  padding: 0;
+  background: none;
+  border: 0;
+  font: 400 14px/20px var(--aws-font);
+}
+html body.app #app-main #crumbs .crumb {
+  background: none !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  height: auto !important;
+  font: inherit;
+  color: var(--aws-crumb) !important;
+  cursor: pointer;
+}
+html body.app #app-main #crumbs button.crumb:hover { text-decoration: underline; }
+html body.app #app-main #crumbs .crumb.cur,
+html body.app #app-main #crumbs .crumb-grp { color: var(--aws-crumb-cur) !important; cursor: default; }
+html body.app #app-main #crumbs button.crumb.cur:hover { text-decoration: none; }
+html body.app #app-main #crumbs .crumb-sep { margin: 0 10px !important; color: var(--aws-crumb-cur) !important; font-size: 14px !important; opacity: 1 !important; }
+
+/* ================= content (Professional, Command, Dark) ================= */
+html[data-style=pro] body.app {
+  --bg: #f2f3f3;
+  --bg2: #ffffff;
+  --card: #ffffff;
+  --card2: #fafafa;
+  --line: #e9ebed;
+  --line-2: #c6c6cd;
+  --txt: #000716;
+  --txt-2: #414d5c;
+  --mut: #5f6b7a;
+  --placeholder: #8c8c94;
+  --acc: #0972d3;
+  --acc-2: #033160;
+  --acc-soft: #f2f8fd;
+  --acc-line: #b5d6f4;
+  --ok: #037f0c;
+  --bad: #d91515;
+  --warn: #8d6605;
+  --surface: #fafafa;
+  --border: #e9ebed;
+  --code-bg: #f4f4f4;
+  --aws-in-bg: #ffffff;
+  --aws-in-line: #8c8c94;
+  --aws-ghost-bg-h: #f2f8fd;
+  --aws-ghost-txt-h: #033160;
+  --aws-shadow: 0 1px 1px 0 rgba(0, 28, 36, .3), 1px 1px 1px 0 rgba(0, 28, 36, .15), -1px 1px 1px 0 rgba(0, 28, 36, .15);
+  --aws-row-h: #f2f8fd;
+}
+html[data-style=dark] body.app {
+  --bg: #0f1b2a;
+  --bg2: #192534;
+  --card: #192534;
+  --card2: #1b2b3d;
+  --line: #414d5c;
+  --line-2: #5f6b7a;
+  --txt: #d1d5db;
+  --txt-2: #c6c6cd;
+  --mut: #8d99a8;
+  --placeholder: #8d99a8;
+  --acc: #539fe5;
+  --acc-2: #89bdee;
+  --acc-soft: rgba(83, 159, 229, .12);
+  --acc-line: #1d4f7e;
+  --surface: #192534;
+  --border: #414d5c;
+  --aws-in-bg: #0f1b2a;
+  --aws-in-line: #7d8998;
+  --aws-ghost-bg-h: #1a2b3d;
+  --aws-ghost-txt-h: #89bdee;
+  --aws-shadow: 0 1px 1px 0 rgba(0, 0, 0, .5), 0 0 0 1px #2a3b4f;
+  --aws-row-h: #1a2b3d;
+}
+
+html:is([data-style=pro], [data-style=dark]) body.app {
+  background: var(--bg) !important;
+  background-image: none !important;
+
+  & :is(#app, #view, .app-shell) { background: var(--bg) !important; background-image: none !important; }
+  color: var(--txt) !important;
+  font-family: var(--aws-font);
+  --font-display: var(--aws-font);
+
+  & .app-main::before { display: none !important; }
+  & .app-main { background: var(--bg) !important; font-size: 14px; }
+
+  /* form fields */
+  & .app-main :is(input:is([type=text], [type=search], [type=url], [type=email], [type=number], [type=password], [type=date], [type=time], :not([type])), select, textarea) {
+    background-color: var(--aws-in-bg) !important;
+    border: 1px solid var(--aws-in-line) !important;
+    border-radius: 8px !important;
+    color: var(--txt) !important;
+    font-family: var(--aws-font);
+    font-size: 14px;
+    box-shadow: none !important;
+  }
+  & .app-main :is(input, select):not([type=checkbox], [type=radio], [type=range], [type=color], [type=file]) { min-height: 32px; }
+  & .app-main :is(input, select, textarea):focus {
+    border-color: var(--acc) !important;
+    box-shadow: 0 0 0 1px var(--acc) !important;
+    outline: none !important;
+  }
+  & .app-main :is(input, textarea)::placeholder { color: var(--placeholder) !important; font-style: italic; }
+
+  /* tables */
+  & .app-main table { border-collapse: collapse; }
+  & .app-main th {
+    background: var(--card) !important;
+    color: var(--txt-2) !important;
+    font-family: var(--aws-font) !important;
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    text-transform: none !important;
+    letter-spacing: normal !important;
+    border-bottom: 1px solid var(--line-2) !important;
+  }
+  & .app-main td { border-bottom: 1px solid var(--line) !important; }
+  & .app-main tbody tr:hover > td { background: var(--aws-row-h) !important; }
+
+  /* tabs */
+  & .app-main :is(.tab, [role=tab]) {
+    font-family: var(--aws-font);
+    font-weight: 700;
+    color: var(--txt-2);
+  }
+  & .app-main :is(.tab, [role=tab]):is(.active, .on, [aria-selected=true]) { color: var(--acc) !important; }
+
+  /* footer */
+  & .app-foot { background: var(--bg) !important; border-top: 1px solid var(--line) !important; }
+}
+
+/* Headings, containers and buttons outrank the skins' class-heavy !important rules
+   (the :not(#id) chain adds ID-level specificity, the same trick buttons.css uses). */
+html:is([data-style=pro], [data-style=dark]):not(#aws-a):not(#aws-b) body.app {
+  & :is(.pg-h1, .app-main h1) {
+    font-family: var(--aws-font) !important;
+    font-size: 24px !important;
+    font-weight: 700 !important;
+    letter-spacing: normal !important;
+    color: var(--txt) !important;
+    background: none !important;
+    -webkit-text-fill-color: currentColor !important;
+  }
+  & :is(.pg-h2, .app-main h2) {
+    font-family: var(--aws-font) !important;
+    font-weight: 700 !important;
+    letter-spacing: normal !important;
+    -webkit-text-fill-color: currentColor !important;
+  }
+  & .app-main a:not(.btn):not([class*="-btn"]) { color: var(--acc); }
+
+  /* containers */
+  & .app-main :is(.panel, .card) {
+    background: var(--card) !important;
+    border: 0 !important;
+    border-radius: 16px !important;
+    box-shadow: var(--aws-shadow) !important;
+  }
+  & .app-main :is(.panel, .card) :is(.panel, .card) {
+    box-shadow: none !important;
+    border: 1px solid var(--line) !important;
+    border-radius: 12px !important;
+  }
+  & .app-main .stat {
+    background: var(--card) !important;
+    border: 0 !important;
+    border-radius: 16px !important;
+    box-shadow: var(--aws-shadow) !important;
+  }
+
+  /* buttons: pill shape; plain .btn is primary (orange), .ghost is the outlined normal button */
+  & .btn {
+    --btn-radius: 20px;
+    font-family: var(--aws-font) !important;
+    font-weight: 700 !important;
+    font-size: 14px !important;
+    letter-spacing: .01em !important;
+    text-transform: none !important;
+    padding: 4px 20px !important;
+    min-height: 32px;
+    border-width: 2px !important;
+    border-style: solid !important;
+    box-shadow: none !important;
+    transform: none !important;
+    filter: none !important;
+    background-image: none !important;
+  }
+  & .btn:not(.ghost, .danger, .github) {
+    background: var(--aws-orange) !important;
+    border-color: var(--aws-orange) !important;
+    color: #0f141a !important;
+  }
+  & .btn:not(.ghost, .danger, .github):hover {
+    background: var(--aws-orange-2) !important;
+    border-color: var(--aws-orange-2) !important;
+    color: #0f141a !important;
+  }
+  & .btn.ghost {
+    background: var(--card) !important;
+    border-color: var(--acc) !important;
+    color: var(--acc) !important;
+  }
+  & .btn.ghost:hover {
+    background: var(--aws-ghost-bg-h) !important;
+    border-color: var(--aws-ghost-txt-h) !important;
+    color: var(--aws-ghost-txt-h) !important;
+  }
+  & .btn.danger { background: var(--card) !important; border-color: var(--bad) !important; color: var(--bad) !important; }
+  & .btn.sm { padding: 2px 14px !important; min-height: 28px; font-size: 13px !important; }
+  & .btn.lg { padding: 6px 24px !important; min-height: 36px; }
+  & .btn:disabled { background: var(--card2) !important; border-color: var(--line) !important; color: var(--mut) !important; }
+
+  & .app-main .panel > .panel-h {
+    background: transparent !important;
+    color: var(--txt) !important;
+    font: 700 18px/1.3 var(--aws-font) !important;
+    letter-spacing: normal !important;
+    text-transform: none !important;
+    border-bottom: 1px solid var(--line) !important;
+  }
+  & .app-main .panel > .panel-h * { color: inherit !important; }
+
+  /* Console Home: service cards as plain containers */
+  & .dash-services-head { margin: 8px 0 12px; }
+  & .dash-cat-label {
+    font: 700 18px/1.3 var(--aws-font) !important;
+    letter-spacing: normal !important;
+    text-transform: none !important;
+    color: var(--txt) !important;
+    padding: 0 !important;
+    margin: 20px 0 12px !important;
+  }
+  & .dash-cat-label::before,
+  & .dash-cat-label::after { display: none !important; }
+  & .app-main .qa {
+    background: var(--card) !important;
+    border: 0 !important;
+    border-radius: 16px !important;
+    box-shadow: var(--aws-shadow) !important;
+    transform: none !important;
+    padding: 16px 20px !important;
+  }
+  & .app-main .qa::before,
+  & .app-main .qa::after { display: none !important; }
+  & .app-main .qa .qa-title { color: var(--acc) !important; font: 700 16px/1.3 var(--aws-font) !important; }
+  & .app-main .qa:hover .qa-title { text-decoration: underline; }
+  & .app-main .qa .qa-desc { color: var(--mut) !important; font-size: 14px !important; }
+}
+
+/* ================= Console Home widgets ================= */
+body.app .awh-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin: 0 0 20px; }
+body.app .awh-head .pg-h1 { margin: 0 0 4px; }
+body.app .awh-sub { margin: 0; color: var(--mut); font-size: 14px; }
+body.app .awh-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+body.app .awh-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; margin: 0 0 32px; align-items: start; }
+body.app .awh-span2 { grid-column: span 2; }
+html body.app .app-main .awh-w.awh-w { padding: 16px 20px 20px !important; margin: 0 !important; min-width: 0; }
+body.app .awh-wh { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 0 0 12px; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
+body.app .awh-wh h2 { margin: 0; font: 700 18px/1.3 var(--aws-font); color: var(--txt); }
+body.app .awh-wh-sub { margin-top: 16px; }
+body.app .awh-wh h3 { margin: 0; font: 700 14px/1.3 var(--aws-font); color: var(--txt); }
+html body.app .awh-more {
+  background: none !important; border: 0 !important; box-shadow: none !important; padding: 0 !important;
+  color: var(--acc) !important; font: 700 14px var(--aws-font); cursor: pointer; white-space: nowrap;
+}
+html body.app .awh-more:hover { text-decoration: underline; }
+body.app .awh-note { color: var(--mut); font-size: 12px; }
+body.app .awh-empty { margin: 4px 0; color: var(--mut); font-size: 14px; }
+body.app .awh-links { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 2px 16px; }
+body.app .awh-w:not(.awh-span2) .awh-links { grid-template-columns: 1fr; }
+body.app .awh-w .cl-item { align-items: flex-start; }
+html body.app .awh-link,
+html body.app .awh-item {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 1px; width: 100%; text-align: left;
+  background: none !important; border: 0 !important; box-shadow: none !important; transform: none !important;
+  padding: 6px 0 !important; cursor: pointer; font-family: var(--aws-font); min-height: 0; height: auto;
+}
+body.app .awh-link-t,
+body.app .awh-item b { color: var(--acc); font-size: 14px; font-weight: 700; }
+body.app .awh-link-g,
+body.app .awh-item span { color: var(--mut); font-size: 12px; font-weight: 400; }
+body.app .awh-link:hover .awh-link-t,
+body.app .awh-item:hover b { text-decoration: underline; }
+body.app .awh-list { display: flex; flex-direction: column; gap: 6px; }
+body.app .awh-kv { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 16px; margin: 0; }
+body.app .awh-kv dt { color: var(--mut); font-size: 12px; margin: 0 0 2px; }
+body.app .awh-kv dd { margin: 0; color: var(--txt); font: 700 20px/1.2 var(--aws-font); }
+body.app .awh-activity { display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
+body.app .awh-act { display: flex; justify-content: space-between; gap: 8px; }
+body.app .awh-w .cl-items { display: flex; flex-direction: column; gap: 8px; }
+body.app .awh-w .dg-bars { display: flex; flex-direction: column; gap: 4px; }
+@media (max-width: 1200px) {
+  body.app .awh-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 700px) {
+  body.app .awh-grid { grid-template-columns: 1fr; }
+  body.app .awh-span2 { grid-column: auto; }
+}
+
+/* ================= narrow screens ================= */
+@media (max-width: 900px) {
+  body.app, body.app.aws-side-closed { --aws-side-w: 0px; }
+  body.app .app-main { grid-column: 1 / -1; padding: 12px 16px 20px; }
+  .aws-side {
+    position: fixed;
+    left: 0;
+    top: calc(var(--topbar-h) + var(--con-h2));
+    width: min(300px, 86vw);
+    box-shadow: 8px 0 24px rgba(0, 7, 22, .3);
+    z-index: 70;
+  }
+  body.app.aws-side-closed .aws-side-open {
+    position: fixed;
+    left: 8px;
+    bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+    top: auto;
+    z-index: 70;
+    width: 44px;
+    height: 44px;
+    background: var(--aws-hdr) !important;
+    color: #fff;
+    border-radius: 22px !important;
+    box-shadow: 0 4px 12px rgba(0, 7, 22, .35) !important;
+  }
+  body.app.aws-side-closed .aws-side-open span { left: 15px; top: 21px; }
+  html body.app #topbar#topbar .brand-wordmark { display: none !important; }
+  html body.app #topbar#topbar .con-services { padding: 0 8px; }
+  html body.app #topbar#topbar .con-services { font-size: 0; }
+  html body.app #topbar#topbar .con-services .con-caret { display: none; }
+  html body.app #topbar#topbar .con-search kbd { display: none; }
+  html body.app #topbar#topbar .con-search input { padding-right: 10px; }
+  html body.app #topbar#topbar .tb-help-btn span { display: none; }
+  body.app .svc-menu { left: 0; width: 100vw; }
+}
+@media print {
+  .aws-side, .aws-side-open { display: none !important; }
+  body.app .app-shell { display: block !important; }
+}
+
+/* Landing page under the Command skin: the header is dark, so its text links must be light. */
+html[data-skin=command] body.landing #topbar .nav-link {
+  color: #e5e7eb !important;
+  border-color: rgba(255, 255, 255, .35) !important;
+  background: transparent !important;
+}
+html[data-skin=command] body.landing #topbar .nav-link:hover { color: #fff !important; border-color: #fff !important; }

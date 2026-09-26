@@ -51,6 +51,7 @@ const ALL = [...NAV, ADMIN];
 const LABELS = new Map(ALL.flatMap((g) => g.items.map((i) => [i.sec, i.label])));
 const GROUP_OF = new Map(ALL.flatMap((g) => g.items.map((i) => [i.sec, g.name])));
 const BADGE_OF = new Map(ALL.flatMap((g) => g.items.map((i) => [i.sec, i.badge])));
+export const groupOf = (sec) => GROUP_OF.get(sec) || "";
 export const labelOf = (sec) => LABELS.get(sec) || sec.charAt(0).toUpperCase() + sec.slice(1);
 const badgeHTML = (sec) => { const b = BADGE_OF.get(sec); return b ? ` <span class="svc-badge ${b}">${b === "live" ? "LIVE" : b === "ai" ? "AI" : "BETA"}</span>` : ""; };
 
@@ -60,6 +61,8 @@ const FAV_KEY = "sw_favs", RECENT_KEY = "sw_recent";
 const DEFAULT_FAVS = ["prometheus", "citadel", "ai", "cvesearch", "threat", "learn"];
 const favTouched = () => { try { return localStorage.getItem(FAV_KEY) !== null; } catch (_) { return false; } };
 const favs = () => { const f = load(FAV_KEY); return f.length || favTouched() ? f : DEFAULT_FAVS; };
+export const recentSecs = () => load(RECENT_KEY);
+export const favSecs = () => favs();
 const chip = (sec, cls = "") => `<button class="con-chip ${cls}" data-sec="${esc(sec)}" title="${esc(GROUP_OF.get(sec) || "")}">${esc(labelOf(sec))}${badgeHTML(sec)}</button>`;
 
 export function consoleHTML(isOwner) {
@@ -110,7 +113,20 @@ export function consoleHTML(isOwner) {
       </div>
     </div>
   </aside>
-  </div>`;
+  </div>
+  <nav class="aws-side" id="awsSide" aria-label="Side navigation">
+    <div class="aws-side-h"><button class="aws-side-title" data-sec="home">Darknode Console</button><button class="aws-side-x" id="awsSideClose" aria-label="Close side navigation" title="Close navigation"></button></div>
+    <button class="aws-sl aws-sl-top" data-sec="home">Console home</button>
+    <button class="aws-sl aws-sl-top" data-sec="ai">Darknode AI</button>
+    <div class="aws-side-div"></div>
+    <div class="aws-side-lbl">Categories</div>
+    ${gs.map((g) => `<div class="aws-sg" data-g="${g.id}"><button class="aws-sg-h" aria-expanded="false"><span class="aws-caret" aria-hidden="true"></span><span class="aws-sg-name">${esc(g.name)}</span><span class="aws-sg-n">${g.items.length}</span></button><div class="aws-sg-items" hidden></div></div>`).join("")}
+    <div class="aws-side-div"></div>
+    <button class="aws-sl aws-sl-top" data-sec="docs">Documentation</button>
+    <button class="aws-sl aws-sl-top" data-sec="settings">Settings</button>
+    <button class="aws-sl aws-sl-top" data-sec="contact">Feedback</button>
+  </nav>
+  <button class="aws-side-open" id="awsSideOpen" aria-label="Open side navigation" title="Open navigation"><span></span></button>`;
 }
 
 export function directoryHTML(isOwner) {
@@ -193,10 +209,61 @@ export function wireConsole(root) {
   document.addEventListener("click", (e) => { if (isOpen() && !e.target.closest("#sidebar, .con-bar, .con-catbar, #hamburger")) setOpen(false); });
   renderBars();
 
+  // AWS-style chrome: the Services button + search live in the dark top header, and a
+  // collapsible left side navigation lists every category (current one expanded).
+  const topbar = document.getElementById("topbar"), bar = root.querySelector(".con-bar");
+  if (topbar && bar) {
+    topbar.querySelectorAll(".con-bar").forEach((b) => b !== bar && b.remove());
+    const brand = topbar.querySelector(".brand");
+    if (brand) brand.after(bar); else topbar.prepend(bar);
+    const pos = () => { const r = bar.getBoundingClientRect(); menu.style.setProperty("--svc-left", Math.max(0, r.left) + "px"); };
+    btn.addEventListener("click", pos); search.addEventListener("focus", pos);
+  }
+  const side = root.querySelector("#awsSide");
+  const SIDE_KEY = "sw_awsside";
+  const narrow = () => matchMedia("(max-width: 900px)").matches;
+  const setSide = (open, persist) => {
+    document.body.classList.toggle("aws-side-closed", !open);
+    if (persist && !narrow()) { try { localStorage.setItem(SIDE_KEY, open ? "1" : "0"); } catch (_) {} }
+  };
+  let sidePref = "1"; try { sidePref = localStorage.getItem(SIDE_KEY) || "1"; } catch (_) {}
+  setSide(sidePref === "1" && !narrow(), false);
+  const fillGroup = (sg) => {
+    const box = sg.querySelector(".aws-sg-items");
+    if (box.dataset.filled) return;
+    const g = ALL.find((x) => x.id === sg.dataset.g); if (!g) return;
+    box.innerHTML = g.items.map((i) => `<button class="aws-sl" data-sec="${esc(i.sec)}">${esc(i.label)}${badgeHTML(i.sec)}</button>`).join("");
+    box.dataset.filled = "1";
+  };
+  const openGroup = (sg, open) => {
+    if (open) fillGroup(sg);
+    sg.querySelector(".aws-sg-items").hidden = !open;
+    sg.querySelector(".aws-sg-h").setAttribute("aria-expanded", String(open));
+  };
+  const markActive = (sec) => {
+    if (!side) return;
+    side.querySelectorAll(".aws-sl.on").forEach((b) => b.classList.remove("on"));
+    const gname = GROUP_OF.get(sec);
+    const g = ALL.find((x) => x.name === gname && x.items.some((i) => i.sec === sec));
+    if (g) { const sg = side.querySelector(`.aws-sg[data-g="${g.id}"]`); if (sg) openGroup(sg, true); }
+    side.querySelectorAll(`.aws-sl[data-sec="${CSS.escape(sec)}"]`).forEach((b) => b.classList.add("on"));
+    const on = side.querySelector(".aws-sg .aws-sl.on");
+    if (on) { const r = on.getBoundingClientRect(), sr = side.getBoundingClientRect(); if (r.top < sr.top || r.bottom > sr.bottom) on.scrollIntoView({ block: "center" }); }
+  };
+  if (side) {
+    side.addEventListener("click", (e) => {
+      const h = e.target.closest(".aws-sg-h");
+      if (h) { const sg = h.closest(".aws-sg"); openGroup(sg, h.getAttribute("aria-expanded") !== "true"); return; }
+      if (e.target.closest("[data-sec]") && narrow()) setSide(false, false);
+    });
+    root.querySelector("#awsSideClose").onclick = () => setSide(false, true);
+    root.querySelector("#awsSideOpen").onclick = () => setSide(true, true);
+  }
+
   return {
     track(sec) {
       if (LABELS.has(sec) && sec !== "home") { const r = load(RECENT_KEY).filter((s) => s !== sec); r.unshift(sec); save(RECENT_KEY, r.slice(0, 12)); }
-      search.value = ""; setOpen(false); renderBars();
+      search.value = ""; setOpen(false); renderBars(); markActive(sec);
     },
   };
 }
