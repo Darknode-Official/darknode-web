@@ -136,7 +136,9 @@ function fetchVirusTotalDomain(domain, key) {
 }
 
 function fetchVirusTotalURL(url, key) {
-  var urlId = btoa(url).replace(/=/g, "");
+  // VirusTotal v3 URL id = unpadded base64url of the URL. btoa() emits
+  // standard base64, so translate +/ to -_ or the id won't match VT's.
+  var urlId = btoa(url).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
   return fetch("https://www.virustotal.com/api/v3/urls/" + encodeURIComponent(urlId), {
     headers: { "x-apikey": key }
   }).then(function(r) {
