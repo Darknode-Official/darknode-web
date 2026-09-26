@@ -205,8 +205,8 @@ function renderSubnetCalculator(root) {
           <div class="stat-l">Broadcast</div><div class="mono">${intToIp(broadcast)}</div>
           <div class="stat-l">Netmask</div><div class="mono">${intToIp(mask)} (/${bits})</div>
           <div class="stat-l">Wildcard mask</div><div class="mono">${intToIp(wildcard)}</div>
-          <div class="stat-l">First usable host</div><div class="mono">${bits >= 31 ? "n/a" : intToIp(firstHost)}</div>
-          <div class="stat-l">Last usable host</div><div class="mono">${bits >= 31 ? "n/a" : intToIp(lastHost)}</div>
+          <div class="stat-l">First usable host</div><div class="mono">${bits === 32 ? "n/a" : intToIp(firstHost)}</div>
+          <div class="stat-l">Last usable host</div><div class="mono">${bits === 32 ? "n/a" : intToIp(lastHost)}</div>
           <div class="stat-l">Usable hosts</div><div class="mono">${usable.toLocaleString()}</div>
           <div class="stat-l">Total addresses</div><div class="mono">${totalAddrs.toLocaleString()}</div>
           <div class="stat-l">Address class</div><div class="mono">${cls}</div>
