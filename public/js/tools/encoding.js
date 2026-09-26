@@ -2,6 +2,55 @@
 // Encoding & decoding mini-tools. See _schema.md for the contract.
 const S = (v) => (v == null ? "" : String(v));
 
+// RFC 3492 Punycode decode (ToUnicode). Browsers expose ToASCII via the URL
+// API but keep hostnames in xn-- form, so the reverse direction is hand-rolled.
+const PUNY = { BASE: 36, TMIN: 1, TMAX: 26, SKEW: 38, DAMP: 700, IBIAS: 72, IN: 128, MAX: 0x7fffffff };
+function punyAdapt(delta, n, first) {
+  delta = first ? Math.floor(delta / PUNY.DAMP) : delta >> 1;
+  delta += Math.floor(delta / n);
+  let k = 0;
+  for (; delta > ((PUNY.BASE - PUNY.TMIN) * PUNY.TMAX) >> 1; k += PUNY.BASE) delta = Math.floor(delta / (PUNY.BASE - PUNY.TMIN));
+  return Math.floor(k + (PUNY.BASE - PUNY.TMIN + 1) * delta / (delta + PUNY.SKEW));
+}
+function punyBasicToDigit(cp) {
+  if (cp >= 0x30 && cp <= 0x39) return cp - 0x30 + 26;
+  if (cp >= 0x41 && cp <= 0x5a) return cp - 0x41;
+  if (cp >= 0x61 && cp <= 0x7a) return cp - 0x61;
+  return PUNY.BASE;
+}
+function punyDecode(input) {
+  const output = [];
+  let n = PUNY.IN, i = 0, bias = PUNY.IBIAS;
+  let basic = input.lastIndexOf("-");
+  if (basic < 0) basic = 0;
+  for (let j = 0; j < basic; j++) { const c = input.charCodeAt(j); if (c >= 0x80) throw new Error("bad"); output.push(c); }
+  let idx = basic > 0 ? basic + 1 : 0;
+  while (idx < input.length) {
+    const oldi = i;
+    let w = 1;
+    for (let k = PUNY.BASE; ; k += PUNY.BASE) {
+      if (idx >= input.length) throw new Error("bad");
+      const digit = punyBasicToDigit(input.charCodeAt(idx++));
+      if (digit >= PUNY.BASE || digit > Math.floor((PUNY.MAX - i) / w)) throw new Error("bad");
+      i += digit * w;
+      const t = k <= bias ? PUNY.TMIN : (k >= bias + PUNY.TMAX ? PUNY.TMAX : k - bias);
+      if (digit < t) break;
+      w *= (PUNY.BASE - t);
+    }
+    const out = output.length + 1;
+    bias = punyAdapt(i - oldi, out, oldi === 0);
+    if (Math.floor(i / out) > PUNY.MAX - n) throw new Error("bad");
+    n += Math.floor(i / out);
+    i %= out;
+    output.splice(i, 0, n);
+    i++;
+  }
+  return String.fromCodePoint(...output);
+}
+function punyToUnicode(host) {
+  return host.split(".").map((l) => /^xn--/i.test(l) ? punyDecode(l.slice(4)) : l).join(".");
+}
+
 export const TOOLS = [
   { id: "base64", name: "Base64 Encoder / Decoder", cat: "encoding", desc: "Encode or decode Base64, with URL-safe and MIME variants.", tags: ["b64"],
     inputs: [{ k: "text", label: "Text", type: "textarea", placeholder: "Hello, Darknode" }, { k: "mode", label: "Mode", type: "select", opts: ["Encode", "Decode"], value: "Encode" }, { k: "url", label: "URL-safe (base64url)", type: "checkbox" }],
@@ -81,5 +130,5 @@ export const TOOLS = [
 
   { id: "punycode", name: "Punycode (IDN) Converter", cat: "encoding", desc: "Convert internationalized domain names to/from ASCII (xn--).", tags: ["idn", "domain"],
     inputs: [{ k: "text", label: "Domain", type: "text", placeholder: "münchen.de" }, { k: "mode", label: "Mode", type: "select", opts: ["To ASCII", "To Unicode"], value: "To ASCII" }],
-    run(v) { if (!v.text) return ""; try { const u = new URL("http://" + v.text.trim()); if (v.mode === "To ASCII") return u.hostname; try { return decodeURIComponent(escape(u.hostname)); } catch (_) {} return u.hostname; } catch (e) { return { error: "Enter a valid domain name." }; } } },
+    run(v) { if (!v.text) return ""; try { const u = new URL("http://" + v.text.trim()); if (v.mode === "To ASCII") return u.hostname; try { return punyToUnicode(u.hostname); } catch (_) { return u.hostname; } } catch (e) { return { error: "Enter a valid domain name." }; } } },
 ];
