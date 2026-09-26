@@ -273,8 +273,14 @@ function decodeJWT(token) {
   function b64urlDecode(s) {
     s = s.replace(/-/g, "+").replace(/_/g, "/");
     while (s.length % 4) s += "=";
-    try { return JSON.parse(atob(s)); }
-    catch (e) { return atob(s); }
+    let text;
+    try {
+      const bin = atob(s);
+      const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      text = new TextDecoder("utf-8").decode(bytes);
+    } catch (e) { return null; }
+    try { return JSON.parse(text); } catch (e) { return text; }
   }
   const header = b64urlDecode(parts[0]);
   const payload = b64urlDecode(parts[1]);

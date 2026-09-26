@@ -1,4 +1,15 @@
 // API Tester — HTTP API security testing tool (client-side fetch)
+// Decode a base64url JWT segment to its parsed JSON, handling padding and
+// UTF-8 claims (atob yields a Latin-1 byte string; decode it as UTF-8 so
+// non-ASCII claim values are not mangled).
+function _jwtSegJson(seg) {
+  var s = String(seg).replace(/-/g, "+").replace(/_/g, "/");
+  while (s.length % 4) s += "=";
+  var bin = atob(s);
+  var bytes = new Uint8Array(bin.length);
+  for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return JSON.parse(new TextDecoder("utf-8").decode(bytes));
+}
 const esc = (s) => String(s != null ? s : "").replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
@@ -50,8 +61,8 @@ function decodeJWT(token) {
   try {
     var parts = token.split(".");
     if (parts.length !== 3) return null;
-    var header = JSON.parse(atob(parts[0].replace(/-/g, "+").replace(/_/g, "/")));
-    var payload = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/")));
+    var header = _jwtSegJson(parts[0]);
+    var payload = _jwtSegJson(parts[1]);
     var issues = [];
     if (header.alg === "none") issues.push("CRITICAL: Algorithm is 'none' - token is unsigned");
     if (header.alg === "HS256" && header.jku) issues.push("WARNING: jku header present with symmetric algorithm");

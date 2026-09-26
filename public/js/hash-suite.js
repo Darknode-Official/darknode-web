@@ -669,7 +669,9 @@ function calcEntropy(password) {
   if (hasDigit)    charset += 10;
   if (hasSpecial)  charset += 33;
   if (hasExtended) charset += 128;
-  const entropy = Math.log2(Math.pow(charset, password.length));
+  // length * log2(charset) avoids Math.pow(charset, length) overflowing to
+  // Infinity for long passwords (which made the entropy readout show Infinity).
+  const entropy = password.length * Math.log2(charset || 1);
   let strength, crackTime;
   const seconds = Math.pow(2, entropy) / 10e9;
   if (entropy < 28)      { strength = "very weak"; crackTime = "< 1 second"; }
