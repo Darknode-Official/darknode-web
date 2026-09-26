@@ -78,9 +78,9 @@ function hexDecode(str) {
   if (clean.length % 2 !== 0) return "Error: Odd number of hex characters";
   const bytes = [];
   for (let i = 0; i < clean.length; i += 2) {
-    const byte = parseInt(clean.substr(i, 2), 16);
-    if (isNaN(byte)) return "Error: Invalid hex character at position " + i;
-    bytes.push(byte);
+    const pair = clean.substr(i, 2);
+    if (!/^[0-9a-fA-F]{2}$/.test(pair)) return "Error: Invalid hex character at position " + i;
+    bytes.push(parseInt(pair, 16));
   }
   return new TextDecoder().decode(new Uint8Array(bytes));
 }
