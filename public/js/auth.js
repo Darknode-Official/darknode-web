@@ -1023,7 +1023,7 @@ function renderHome(main, user, isOwner, show) {
       const recentEl = document.createElement("div");
       recentEl.style.cssText = "margin:0 0 20px;display:flex;flex-wrap:wrap;align-items:center;gap:8px";
       recentEl.innerHTML = '<span style="font-size:.75rem;font-weight:600;color:var(--mut);text-transform:uppercase;letter-spacing:.05em;margin-right:4px">Recent</span>' +
-        recent.map(s => `<button class="btn sm ghost" data-sec="${esc(s)}" style="font-size:.72rem;padding:4px 12px">${esc(labelOf(s))}</button>`).join("");
+        recent.map(s => `<button class="btn sm ghost" data-sec="${esc(s)}" style="font-size:.72rem;padding:4px 12px">${esc(navLabel(s))}</button>`).join("");
       const qaGrid = main.querySelector(".qa-grid");
       if (qaGrid) qaGrid.parentNode.insertBefore(recentEl, qaGrid);
     }
@@ -1977,7 +1977,7 @@ function openPalette() {
     { type: "action", id: "toggle-dark", name: "Toggle light / dark", desc: "Switch light and dark mode", action: () => { const cur = document.documentElement.getAttribute("data-theme") || "dark"; applyTheme(cur === "dark" ? "light" : "dark"); } },
     { type: "action", id: "toggle-crt", name: "Toggle CRT effect", desc: "Turn scanline overlay on or off", action: () => applyCrt(!crtOn()) },
     { type: "action", id: "copy-url", name: "Copy current URL", desc: "Copy page link to clipboard", action: () => { navigator.clipboard.writeText(location.href).then(() => showToast("URL copied", "success")).catch(() => {}); } },
-    { type: "action", id: "replay-tour", name: "Replay walkthrough", desc: "Start the guided tour again", action: () => startTour(tourSteps(isOwner)) },
+    { type: "action", id: "replay-tour", name: "Replay walkthrough", desc: "Start the guided tour again", action: () => startTour(tourSteps(auth.currentUser?.email === OWNER_EMAIL)) },
   ];
   const items = [
     ...actions,
