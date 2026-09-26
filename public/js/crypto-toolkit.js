@@ -83,7 +83,7 @@ const KEY_RECOMMENDATIONS = [
 // ============================================================================
 function hex(buf) { return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join(''); }
 function fromHex(h) { var bytes = []; for (var i = 0; i < h.length; i += 2) bytes.push(parseInt(h.substr(i, 2), 16)); return new Uint8Array(bytes); }
-function b64(buf) { return btoa(String.fromCharCode.apply(null, new Uint8Array(buf))); }
+function b64(buf) { var bytes = new Uint8Array(buf), bin = ''; for (var i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]); return btoa(bin); }
 function entropy(data) {
   var freq = {};
   for (var i = 0; i < data.length; i++) {
