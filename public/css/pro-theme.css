@@ -12775,7 +12775,9 @@ html[data-style="pro"] .profile-btn {
   border: 1px solid #e2e8f0 !important;
   border-radius: var(--btn-radius, 4px) !important;
   background: #f8fafc !important;
-  padding: 4px 10px 4px 4px !important;
+  height: 34px !important;
+  box-sizing: border-box !important;
+  padding: 0 10px 0 3px !important;
   display: inline-flex !important;
   align-items: center !important;
   gap: 8px !important;

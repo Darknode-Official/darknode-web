@@ -1358,7 +1358,7 @@ function renderApp(user) {
               <p class="app-foot-tag">Unified cybersecurity operations platform — 192+ tools, live global intel, and AI in a single console.</p>
               <div class="app-foot-status"><span class="afs-dot"></span>All systems operational</div>
               <div class="app-foot-social">
-                <a data-goto="ai" class="afs-chip">Nexus AI</a>
+                <a data-goto="ai" class="afs-chip">Darknode AI</a>
                 <a data-foot="downloads" class="afs-chip">Get the CLI</a>
                 <a data-goto="settings" class="afs-chip">API &amp; MCP</a>
               </div>
@@ -1601,7 +1601,13 @@ function renderApp(user) {
     else if (sec.indexOf("tool-") === 0) { const _tid = sec.slice(5); import("/js/mini-tools.js?v=20260925h").then(m => m.renderMiniTool(main, _tid, { onBack: () => show("toolbox") })); }
     else renderHome(main, user, isOwner, show);
     if (more === undefined) { try { localStorage.setItem("sw_last_sec", sec); } catch (_) {} }
+    // Jump back to the top on every navigation. The page scrolls on the window
+    // (not #app-content), and several routes mount their content in an async
+    // import().then() a frame or two later, so reset the window now and again
+    // after the new view has had a chance to mount.
     main.scrollTop = 0;
+    window.scrollTo(0, 0);
+    requestAnimationFrame(() => window.scrollTo(0, 0));
   }
   // Handle browser back/forward
   window.addEventListener("popstate", (e) => {
@@ -1755,8 +1761,8 @@ function renderApp(user) {
         <div class="menu-div"></div>
         <div class="menu-lbl">Workspace</div>
         <div class="menu-grid">
-          <button class="menu-tile" data-nav="ai"><strong>Nexus AI</strong><span>Chat assistant</span></button>
-          <button class="menu-tile" data-nav="coder"><strong>Nexus Agent</strong><span>AI coder</span></button>
+          <button class="menu-tile" data-nav="ai"><strong>Darknode AI</strong><span>Chat assistant</span></button>
+          <button class="menu-tile" data-nav="coder"><strong>Darknode Agent</strong><span>AI coder</span></button>
           <button class="menu-tile" data-nav="downloads"><strong>Downloads</strong><span>App &amp; CLI</span></button>
           <button class="menu-tile" data-nav="docs"><strong>Docs</strong><span>Guides &amp; API</span></button>
         </div>
