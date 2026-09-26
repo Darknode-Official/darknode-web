@@ -1342,12 +1342,15 @@ export const TOOLS = [
       }
       const body = S(v.body);
       if (body) {
-        lines.push(`Content-Length: ${body.length}`);
+        // Content-Length is the octet count of the body (RFC 7230 3.3.2),
+        // not the JS string length (UTF-16 code units).
+        lines.push(`Content-Length: ${new TextEncoder().encode(body).length}`);
         lines.push('', body);
       } else {
         lines.push('');
       }
-      return { out: lines.join('\n') };
+      // A raw HTTP/1.1 message uses CRLF line terminators (RFC 7230 3).
+      return { out: lines.join('\r\n') };
     },
   },
   {
