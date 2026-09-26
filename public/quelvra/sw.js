@@ -4,7 +4,7 @@
 // successful response refreshes the cache. Requests outside /quelvra/ are never intercepted.
 // FILES and VERSION are generated: run `node tools/quelvra-sw-files.mjs` before deploying.
 
-const VERSION = "quelvra-muiovtsr";
+const VERSION = "quelvra-muiuj3my";
 const BASE = "/quelvra/";
 const FILES = [
   "",
@@ -39,6 +39,7 @@ const FILES = [
   "engine/calc/int-special.js",
   "engine/calc/int-util.js",
   "engine/calc/integrate.js",
+  "engine/calc/limit-steps.js",
   "engine/calc/limit.js",
   "engine/calc/ode.js",
   "engine/calc/recur.js",
@@ -75,6 +76,7 @@ const FILES = [
   "engine/identify.js",
   "engine/interval.js",
   "engine/language-more.js",
+  "engine/language-words.js",
   "engine/language.js",
   "engine/linalg.js",
   "engine/logic.js",
