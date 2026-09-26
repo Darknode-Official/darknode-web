@@ -1,168 +1,151 @@
 import { esc } from '/js/shared.js';
 
-const DE_SUBDOMAINS = [
-  'www','mail','ftp','api','dev','staging','admin','vpn','remote','portal',
-  'app','blog','cdn','cloud','cms','cpanel','dashboard','db','demo','dns',
-  'docs','download','email','files','forum','gateway','git','grafana','help',
-  'hr','hub','id','images','internal','intranet','jenkins','jira','ldap',
-  'legacy','login','m','media','meet','monitor','mx','my','nas','news',
-  'ns1','ns2','office','old','owa','panel','pay','pop','proxy','rdp',
-  'repo','search','secure','server','shop','sip','smtp','sql','sso','staging',
-  'static','status','store','support','test','tools','ts','upload','vault',
-  'video','voip','web','webmail','wiki','ws','www2','api-v2','beta','sandbox'
-];
-
 const DE_RECORD_TYPES = ['A','AAAA','MX','NS','TXT','CNAME','SOA','SRV','PTR','CAA'];
 
-function _deRandIP() {
-  return `${10+Math.floor(Math.random()*240)}.${Math.floor(Math.random()*256)}.${Math.floor(Math.random()*256)}.${Math.floor(Math.random()*256)}`;
-}
-function _deRandIPv6() {
-  const s = [];
-  for (let i = 0; i < 8; i++) s.push(Math.floor(Math.random()*65536).toString(16).padStart(4,'0'));
-  return s.join(':');
+// Real lookups over DNS-over-HTTPS (JSON API). Google first, Cloudflare as fallback.
+const DE_DOH = [
+  (n, t, extra) => `https://dns.google/resolve?name=${encodeURIComponent(n)}&type=${t}${extra || ''}`,
+  (n, t, extra) => `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(n)}&type=${t}${extra || ''}`
+];
+const DE_TYPE_NUM = { A: 1, NS: 2, CNAME: 5, SOA: 6, PTR: 12, MX: 15, TXT: 16, AAAA: 28, SRV: 33, DS: 43, RRSIG: 46, DNSKEY: 48, CAA: 257 };
+const DE_ALGOS = { 5: 'RSASHA1', 7: 'RSASHA1-NSEC3-SHA1', 8: 'RSASHA256', 10: 'RSASHA512', 13: 'ECDSAP256SHA256', 14: 'ECDSAP384SHA384', 15: 'ED25519', 16: 'ED448' };
+const DE_DIGESTS = { 1: 'SHA-1', 2: 'SHA-256', 4: 'SHA-384' };
+
+async function _deDoh(name, type, extra) {
+  let lastErr = null;
+  for (const u of DE_DOH) {
+    try {
+      const r = await fetch(u(name, type, extra), { headers: { accept: 'application/dns-json' } });
+      if (!r.ok) { lastErr = new Error('HTTP ' + r.status); continue; }
+      return await r.json();
+    } catch (e) { lastErr = e; }
+  }
+  throw lastErr || new Error('DoH lookup failed');
 }
 
-function _deGenerateRecords(domain) {
-  const ip = _deRandIP();
-  const ip2 = _deRandIP();
-  const ipv6 = _deRandIPv6();
-  const now = Math.floor(Date.now()/1000);
+function _deAnswers(json, type) {
+  const num = DE_TYPE_NUM[type];
+  return ((json && json.Answer) || []).filter(a => a.type === num);
+}
+
+function _deStripDot(s) { return String(s || '').replace(/\.$/, ''); }
+
+function _deParseAnswer(type, a) {
+  const name = _deStripDot(a.name);
+  const ttl = a.TTL;
+  const d = String(a.data || '');
+  if (type === 'MX') { const p = d.split(/\s+/); return { name, ttl, priority: parseInt(p[0], 10), value: _deStripDot(p[1] || d) }; }
+  if (type === 'SRV') { const p = d.split(/\s+/); return { name, ttl, priority: parseInt(p[0], 10), weight: p[1], port: p[2], value: _deStripDot(p[3] || d) }; }
+  if (type === 'CAA') { const m = d.match(/^(\d+)\s+(\S+)\s+"?(.*?)"?$/); return m ? { name, ttl, flag: m[1], tag: m[2], value: m[3] } : { name, ttl, value: d }; }
+  if (type === 'TXT') return { name, ttl, value: d.replace(/^"|"$/g, '').replace(/"\s*"/g, '') };
+  return { name, ttl, value: _deStripDot(d) };
+}
+
+async function _deDohRecords(domain) {
+  const records = {};
+  const q = async (name, type) => {
+    try { return _deAnswers(await _deDoh(name, type), type).map(a => _deParseAnswer(type, a)); }
+    catch { return []; }
+  };
+  const [A, AAAA, MX, NS, TXT, SOA, CAA, dmarc, cnApex, cnWww] = await Promise.all([
+    q(domain, 'A'), q(domain, 'AAAA'), q(domain, 'MX'), q(domain, 'NS'), q(domain, 'TXT'),
+    q(domain, 'SOA'), q(domain, 'CAA'), q('_dmarc.' + domain, 'TXT'), q(domain, 'CNAME'), q('www.' + domain, 'CNAME')
+  ]);
+  const srvNames = ['_sip._tcp', '_sips._tcp', '_xmpp-server._tcp', '_xmpp-client._tcp', '_ldap._tcp', '_autodiscover._tcp', '_caldavs._tcp'];
+  const srv = (await Promise.all(srvNames.map(s => q(s + '.' + domain, 'SRV')))).flat();
+  let PTR = [];
+  if (A.length) {
+    const rev = A[0].value.split('.').reverse().join('.') + '.in-addr.arpa';
+    PTR = await q(rev, 'PTR');
+  }
+  Object.assign(records, { A, AAAA, MX, NS, TXT: TXT.concat(dmarc), CNAME: cnApex.concat(cnWww), SOA, SRV: srv, PTR, CAA });
+  return records;
+}
+
+async function _deDohSubdomains(domain) {
+  const prefixes = ['www','mail','ftp','api','dev','staging','admin','vpn','remote','portal','app','blog','cdn','docs','m','shop','status','support','test','webmail','smtp','git','sso','login','beta'];
+  const out = await Promise.all(prefixes.map(async p => {
+    const full = p + '.' + domain;
+    try {
+      const j = await _deDoh(full, 'A');
+      const a = _deAnswers(j, 'A');
+      if (a.length) return { subdomain: full, status: 'FOUND', ip: a[0].data, ports: [], headers: null };
+      return { subdomain: full, status: j.Status === 3 ? 'NXDOMAIN' : 'NO A RECORD', ip: null, ports: [], headers: null };
+    } catch { return { subdomain: full, status: 'LOOKUP FAILED', ip: null, ports: [], headers: null }; }
+  }));
+  return out.sort((a,b) => (b.status==='FOUND'?1:0)-(a.status==='FOUND'?1:0) || a.subdomain.localeCompare(b.subdomain));
+}
+
+// A browser cannot open raw TCP/53 connections, so AXFR is not attempted here.
+function _deZoneTransferInfo(domain, nsRecords) {
+  const ns = (nsRecords || []).map(r => r.value).filter(Boolean);
   return {
-    A: [
-      { name: domain, ttl: 300, value: ip },
-      { name: domain, ttl: 300, value: ip2 }
-    ],
-    AAAA: [
-      { name: domain, ttl: 300, value: ipv6 }
-    ],
-    MX: [
-      { name: domain, ttl: 3600, priority: 10, value: `mx1.${domain}` },
-      { name: domain, ttl: 3600, priority: 20, value: `mx2.${domain}` },
-      { name: domain, ttl: 3600, priority: 30, value: `mx-backup.${domain}` }
-    ],
-    NS: [
-      { name: domain, ttl: 86400, value: `ns1.${domain}` },
-      { name: domain, ttl: 86400, value: `ns2.${domain}` },
-      { name: domain, ttl: 86400, value: `ns3.cdn-provider.net` }
-    ],
-    TXT: [
-      { name: domain, ttl: 3600, value: `v=spf1 include:_spf.google.com include:mail.${domain} ~all` },
-      { name: domain, ttl: 3600, value: `google-site-verification=abc123xyz456` },
-      { name: `_dmarc.${domain}`, ttl: 3600, value: `v=DMARC1; p=reject; rua=mailto:dmarc@${domain}; ruf=mailto:forensic@${domain}; pct=100` },
-      { name: `default._domainkey.${domain}`, ttl: 3600, value: `v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w...` }
-    ],
-    CNAME: [
-      { name: `www.${domain}`, ttl: 3600, value: domain },
-      { name: `mail.${domain}`, ttl: 3600, value: `ghs.googlehosted.com` },
-      { name: `cdn.${domain}`, ttl: 300, value: `d1234.cloudfront.net` }
-    ],
-    SOA: [
-      { name: domain, ttl: 86400, value: `ns1.${domain} admin.${domain} ${now} 7200 3600 1209600 86400` }
-    ],
-    SRV: [
-      { name: `_sip._tcp.${domain}`, ttl: 3600, priority: 10, weight: 60, port: 5060, value: `sip.${domain}` },
-      { name: `_xmpp-server._tcp.${domain}`, ttl: 3600, priority: 5, weight: 0, port: 5269, value: `xmpp.${domain}` },
-      { name: `_ldap._tcp.${domain}`, ttl: 3600, priority: 0, weight: 100, port: 389, value: `ldap.${domain}` }
-    ],
-    PTR: [
-      { name: ip.split('.').reverse().join('.')+'.in-addr.arpa', ttl: 86400, value: domain }
-    ],
-    CAA: [
-      { name: domain, ttl: 3600, flag: 0, tag: 'issue', value: 'letsencrypt.org' },
-      { name: domain, ttl: 3600, flag: 0, tag: 'issuewild', value: ';' },
-      { name: domain, ttl: 3600, flag: 0, tag: 'iodef', value: `mailto:security@${domain}` }
-    ]
+    tested: false,
+    success: false,
+    records: [],
+    nameservers: ns,
+    server: ns[0] || '',
+    message: 'Not tested. A zone transfer (AXFR) needs a raw TCP connection to port 53 on each nameserver, which a web browser cannot open. Run the commands below from a terminal, or connect the local agent.'
   };
 }
 
-function _deGenerateSubdomains(domain) {
-  const results = [];
-  const count = 20 + Math.floor(Math.random() * 30);
-  const picked = [...DE_SUBDOMAINS].sort(() => Math.random()-0.5).slice(0, count);
-  for (const sub of picked) {
-    const full = `${sub}.${domain}`;
-    const alive = Math.random() > 0.25;
-    results.push({
-      subdomain: full,
-      status: alive ? 'FOUND' : 'NXDOMAIN',
-      ip: alive ? _deRandIP() : null,
-      ports: alive ? _deRandPorts() : [],
-      headers: alive ? _deRandHeaders() : null
-    });
-  }
-  return results.sort((a,b) => (b.status==='FOUND'?1:0)-(a.status==='FOUND'?1:0) || a.subdomain.localeCompare(b.subdomain));
-}
-
-function _deRandPorts() {
-  const common = [22,25,53,80,110,143,443,465,587,993,995,3306,5432,8080,8443];
-  const n = 1 + Math.floor(Math.random()*5);
-  return common.sort(() => Math.random()-0.5).slice(0,n).sort((a,b)=>a-b);
-}
-
-function _deRandHeaders() {
-  const servers = ['nginx/1.24.0','Apache/2.4.57','cloudflare','Microsoft-IIS/10.0','LiteSpeed','openresty'];
-  return { server: servers[Math.floor(Math.random()*servers.length)], status: [200,301,302,403][Math.floor(Math.random()*4)] };
-}
-
-function _deZoneTransfer(domain) {
-  const vulnerable = Math.random() > 0.6;
-  if (!vulnerable) {
+// Real DNSSEC check: DS (parent) and DNSKEY (zone) via validating DoH resolvers, reading the AD flag.
+async function _deDNSSECReal(domain) {
+  try {
+    const [ds, dk, a] = await Promise.all([
+      _deDoh(domain, 'DS', '&do=1&cd=0'),
+      _deDoh(domain, 'DNSKEY', '&do=1&cd=0'),
+      _deDoh(domain, 'SOA', '&do=1&cd=0')
+    ]);
+    const dsAns = _deAnswers(ds, 'DS');
+    const dkAns = _deAnswers(dk, 'DNSKEY');
+    const rrsig = _deAnswers(a, 'RRSIG').length > 0 || _deAnswers(dk, 'RRSIG').length > 0;
+    const ad = !!(a.AD || dk.AD);
+    const servfail = a.Status === 2 || dk.Status === 2;
+    const hasDS = dsAns.length > 0, hasKey = dkAns.length > 0;
+    let status, message, recommendation;
+    if (servfail && hasDS) {
+      status = 'BOGUS';
+      message = 'The validating resolver returned SERVFAIL while a DS record exists at the parent. This usually means the DNSSEC chain is broken (validation failure).';
+      recommendation = 'Check that the DNSKEY published in the zone matches the DS record at the registrar, and that signatures (RRSIG) have not expired.';
+    } else if (ad && hasDS && hasKey) {
+      status = 'SECURE';
+      message = 'The resolver validated the answer (AD flag set). DS is published at the parent and DNSKEY records are present.';
+      recommendation = 'DNSSEC is working. Monitor key rollovers and signature expiry.';
+    } else if (hasKey && !hasDS) {
+      status = 'INSECURE';
+      message = 'The zone publishes DNSKEY records but no DS record exists at the parent, so resolvers cannot validate it (island of security).';
+      recommendation = 'Publish the DS record for your key-signing key at your registrar to complete the chain of trust.';
+    } else if (!hasDS && !hasKey) {
+      status = 'UNSIGNED';
+      message = 'No DS or DNSKEY records found. The domain is not signed with DNSSEC.';
+      recommendation = 'Enable DNSSEC signing with your DNS provider, then publish the DS record at your registrar.';
+    } else {
+      status = 'INDETERMINATE';
+      message = 'DNSSEC records were found but the resolver did not set the AD flag. Validation could not be confirmed from here.';
+      recommendation = 'Verify with a local validating resolver: dig +dnssec ' + domain + ' SOA, or use dnsviz.net.';
+    }
+    const firstDS = dsAns[0] ? String(dsAns[0].data).split(/\s+/) : null;
+    const ksk = dkAns.map(k => String(k.data).split(/\s+/)).find(p => p[0] === '257') || (dkAns[0] ? String(dkAns[0].data).split(/\s+/) : null);
     return {
-      success: false,
-      server: `ns1.${domain}`,
-      message: 'Transfer refused — AXFR not permitted (REFUSED)',
-      records: []
-    };
-  }
-  const records = [];
-  const subs = ['www','mail','ftp','api','dev','staging','admin','vpn','internal','db','jenkins','gitlab','monitoring','nas','ldap','sso','owa','legacy'];
-  for (const s of subs) {
-    records.push({ name: `${s}.${domain}`, type: 'A', ttl: 3600, value: _deRandIP() });
-  }
-  records.push({ name: domain, type: 'SOA', ttl: 86400, value: `ns1.${domain} admin.${domain} ${Math.floor(Date.now()/1000)} 7200 3600 1209600 86400` });
-  records.push({ name: domain, type: 'MX', ttl: 3600, value: `10 mx1.${domain}` });
-  records.push({ name: domain, type: 'NS', ttl: 86400, value: `ns1.${domain}` });
-  records.push({ name: domain, type: 'NS', ttl: 86400, value: `ns2.${domain}` });
-  return { success: true, server: `ns1.${domain}`, message: `Zone transfer successful — ${records.length} records retrieved`, records };
-}
-
-function _deDNSSEC(domain) {
-  const signed = Math.random() > 0.35;
-  const algorithms = ['RSASHA256','ECDSAP256SHA256','ED25519','RSASHA512'];
-  const algo = algorithms[Math.floor(Math.random()*algorithms.length)];
-  if (!signed) {
-    return {
-      signed: false,
-      status: 'INSECURE',
-      message: 'Domain does not have DNSSEC enabled',
+      checked: true,
+      signed: hasDS || hasKey,
+      status, message, recommendation, ad,
+      algorithm: firstDS ? (DE_ALGOS[firstDS[1]] || 'alg ' + firstDS[1]) : ksk ? (DE_ALGOS[ksk[2]] || 'alg ' + ksk[2]) : '-',
+      keyTag: firstDS ? firstDS[0] : '-',
+      digestType: firstDS ? (DE_DIGESTS[firstDS[2]] || 'type ' + firstDS[2]) : '-',
+      dsCount: dsAns.length, dnskeyCount: dkAns.length,
       chain: [
-        { zone: '.', status: 'SECURE', ds: true, dnskey: true, rrsig: true },
-        { zone: domain.split('.').slice(-1)[0]+'.', status: 'SECURE', ds: true, dnskey: true, rrsig: true },
-        { zone: domain+'.', status: 'INSECURE', ds: false, dnskey: false, rrsig: false }
-      ],
-      recommendation: 'Enable DNSSEC signing at your domain registrar and publish DS records with your parent zone.'
+        { zone: domain + '.', status, ds: hasDS, dnskey: hasKey, rrsig }
+      ]
+    };
+  } catch (e) {
+    return {
+      checked: false, signed: false, status: 'ERROR', chain: [],
+      message: 'DNSSEC lookup failed: ' + (e && e.message ? e.message : 'network error') + '. No verdict is shown.',
+      recommendation: 'Retry, or check from a terminal: dig +dnssec ' + domain + ' DNSKEY'
     };
   }
-  const chainValid = Math.random() > 0.15;
-  return {
-    signed: true,
-    status: chainValid ? 'SECURE' : 'BOGUS',
-    algorithm: algo,
-    keyTag: Math.floor(Math.random()*65535),
-    digestType: 'SHA-256',
-    message: chainValid
-      ? 'DNSSEC validation successful — full chain of trust verified'
-      : 'DNSSEC validation FAILED — broken chain of trust detected',
-    chain: [
-      { zone: '.', status: 'SECURE', ds: true, dnskey: true, rrsig: true },
-      { zone: domain.split('.').slice(-1)[0]+'.', status: 'SECURE', ds: true, dnskey: true, rrsig: true },
-      { zone: domain+'.', status: chainValid ? 'SECURE' : 'BOGUS', ds: true, dnskey: true, rrsig: chainValid }
-    ],
-    recommendation: chainValid
-      ? 'DNSSEC is properly configured. Monitor key rotation schedules and DS record updates.'
-      : 'RRSIG validation failed. Check that DNSKEY records match the DS in the parent zone. Possible key rollover issue.'
-  };
 }
 
 function _deFormatTTL(ttl) {
@@ -288,7 +271,7 @@ export function renderDNSEnum(container) {
     <div class="de-logo">DNS</div>
     <div>
       <div class="de-title">DNS Enumeration Toolkit</div>
-      <div class="de-subtitle">Comprehensive DNS record analysis, subdomain discovery &amp; DNSSEC validation</div>
+      <div class="de-subtitle">Live DNS record lookup over DNS-over-HTTPS, common-subdomain check &amp; DNSSEC check</div>
     </div>
   </div>
   <div class="de-input-row">
@@ -367,53 +350,66 @@ export function renderDNSEnum(container) {
     return found;
   }
 
+  async function _deLiveAXFR(domain, nsRecords) {
+    const b = window._bridge;
+    const ns = (nsRecords || []).map(r => r.value).filter(Boolean).slice(0, 4);
+    if (!ns.length) return _deZoneTransferInfo(domain, nsRecords);
+    for (const server of ns) {
+      try {
+        const r = await b.exec('dig axfr @' + _deSafe(server) + ' ' + _deSafe(domain) + ' +time=5 +tries=1');
+        const out = r.stdout || '';
+        const lines = out.split('\n').filter(l => l.trim() && !l.startsWith(';'));
+        if (lines.length > 2 && !/Transfer failed/i.test(out)) {
+          const records = lines.map(l => {
+            const p = l.split(/\s+/);
+            return { name: _deStripDot(p[0]), ttl: parseInt(p[1], 10) || 0, type: p[3] || '?', value: p.slice(4).join(' ') };
+          });
+          return { tested: true, success: true, server, nameservers: ns, records, message: 'Zone transfer succeeded from ' + server + ': ' + records.length + ' records retrieved.' };
+        }
+      } catch {}
+    }
+    return { tested: true, success: false, server: ns.join(', '), nameservers: ns, records: [], message: 'Transfer refused or failed on all tested nameservers (' + ns.join(', ') + ').' };
+  }
+
   async function runScan() {
     const domain = inp.value.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*/, '');
     if (!domain || !domain.includes('.')) return;
     currentDomain = domain;
 
     const isLive = window._bridge && window._bridge.connected && window._bridge.hasTool('dig');
-    scanLive = !!isLive;
-    const modeTag = isLive ? '<span style="color:#22c55e;font-size:11px;font-weight:700;margin-left:8px">[LIVE]</span>' : '<span style="color:#f59e0b;font-size:11px;font-weight:700;margin-left:8px">[SIMULATED]</span>';
+    scanLive = true;
+    const modeTag = isLive
+      ? '<span style="color:#22c55e;font-size:11px;font-weight:700;margin-left:8px">[LOCAL AGENT]</span>'
+      : '<span style="color:#22c55e;font-size:11px;font-weight:700;margin-left:8px">[DNS-over-HTTPS]</span>';
 
     content.innerHTML = `<div class="de-panel"><div class="de-panel-title">Scanning ${esc(domain)}...${modeTag}</div><div class="de-progress"><div class="de-progress-bar" style="width:0%"></div></div><div class="de-status-line" id="deStatusLine">Initializing...</div></div>`;
     const bar = content.querySelector('.de-progress-bar');
     const status = content.querySelector('#deStatusLine');
 
     if (isLive) {
-      status.textContent = 'Querying DNS records (live)...';
+      status.textContent = 'Querying DNS records (local agent)...';
       bar.style.width = '20%';
       recordsData = await _deLiveRecords(domain);
-      bar.style.width = '50%';
-      status.textContent = 'Enumerating subdomains (live)...';
-      subdomainData = await _deLiveSubs(domain);
-      bar.style.width = '80%';
-      status.textContent = 'Checking zone transfer...';
-      zoneData = _deZoneTransfer(domain);
-      dnssecData = _deDNSSEC(domain);
-      bar.style.width = '100%';
-      status.textContent = 'Complete (live results)';
+      bar.style.width = '45%';
+      status.textContent = 'Enumerating subdomains (local agent)...';
+      subdomainData = (await _deLiveSubs(domain)).map(s => ({ subdomain: s.name, status: 'FOUND', ip: s.ip && s.ip !== '-' ? s.ip : null, ports: [], headers: null }));
+      bar.style.width = '70%';
+      status.textContent = 'Attempting zone transfer (dig axfr)...';
+      zoneData = await _deLiveAXFR(domain, recordsData.NS);
     } else {
-      const steps = [
-        [10, 'Querying A / AAAA records...'],
-        [25, 'Resolving MX / NS records...'],
-        [40, 'Fetching TXT / SPF / DMARC...'],
-        [55, 'Checking CNAME / SRV / CAA...'],
-        [70, 'Enumerating subdomains...'],
-        [85, 'Attempting zone transfer...'],
-        [95, 'Validating DNSSEC chain...'],
-        [100, 'Complete (simulated)']
-      ];
-      for (const [pct, msg] of steps) {
-        await new Promise(r => setTimeout(r, 200 + Math.random()*300));
-        bar.style.width = pct + '%';
-        status.textContent = msg;
-      }
-      recordsData = _deGenerateRecords(domain);
-      subdomainData = _deGenerateSubdomains(domain);
-      zoneData = _deZoneTransfer(domain);
-      dnssecData = _deDNSSEC(domain);
+      status.textContent = 'Querying DNS records over DNS-over-HTTPS...';
+      bar.style.width = '20%';
+      recordsData = await _deDohRecords(domain);
+      bar.style.width = '50%';
+      status.textContent = 'Checking common subdomain names...';
+      subdomainData = await _deDohSubdomains(domain);
+      bar.style.width = '75%';
+      zoneData = _deZoneTransferInfo(domain, recordsData.NS);
     }
+    status.textContent = 'Checking DNSSEC (DS / DNSKEY / AD flag)...';
+    dnssecData = await _deDNSSECReal(domain);
+    bar.style.width = '100%';
+    status.textContent = 'Complete';
 
     renderContent();
   }
@@ -464,7 +460,7 @@ export function renderDNSEnum(container) {
   }
 
   function graphBtnHTML() {
-    return `<button class="de-btn de-btn-primary" id="deToGraph" title="${scanLive ? 'Live results' : 'Simulated results will be tagged simulated'}">Send to Security Graph</button>`;
+    return `<button class="de-btn de-btn-primary" id="deToGraph" title="Live DNS results">Send to Security Graph</button>`;
   }
 
   function renderRecords() {
@@ -532,15 +528,14 @@ export function renderDNSEnum(container) {
     </div>`;
 
     html += `<div class="de-panel"><div class="de-panel-title">Discovered Subdomains <span class="de-badge de-badge-ok">${found.length} alive</span></div>
-    <table class="de-table"><thead><tr><th>Subdomain</th><th>Status</th><th>IP</th><th>Open Ports</th><th>Server</th></tr></thead><tbody>`;
+    <div class="de-status-line" style="margin-bottom:10px">Checks a short list of common names by DNS lookup only. Ports and web servers are not probed.</div>
+    <table class="de-table"><thead><tr><th>Subdomain</th><th>Status</th><th>IP</th></tr></thead><tbody>`;
     for (const s of subdomainData) {
       const cls = s.status === 'FOUND' ? 'de-found' : 'de-notfound';
       html += `<tr>
         <td>${esc(s.subdomain)}</td>
-        <td><span class="${cls}">${s.status}</span></td>
-        <td>${s.ip ? esc(s.ip) : '—'}</td>
-        <td>${s.ports.length ? s.ports.map(p=>`<span class="de-badge de-badge-info">${p}</span>`).join(' ') : '—'}</td>
-        <td>${s.headers ? `${esc(s.headers.server)} <span class="de-badge ${s.headers.status<400?'de-badge-ok':'de-badge-warn'}">${s.headers.status}</span>` : '—'}</td>
+        <td><span class="${cls}">${esc(s.status)}</span></td>
+        <td>${s.ip ? esc(s.ip) : '-'}</td>
       </tr>`;
     }
     html += `</tbody></table></div>`;
@@ -557,8 +552,8 @@ export function renderDNSEnum(container) {
       _deExportJSON({ domain: currentDomain, subdomains: subdomainData }, `subdomains-${currentDomain}.json`);
     });
     content.querySelector('#deExportSubCSV')?.addEventListener('click', () => {
-      const rows = subdomainData.map(s => ({ subdomain: s.subdomain, status: s.status, ip: s.ip||'', ports: s.ports.join(';'), server: s.headers?.server||'' }));
-      _deExportCSV(rows, ['subdomain','status','ip','ports','server'], `subdomains-${currentDomain}.csv`);
+      const rows = subdomainData.map(s => ({ subdomain: s.subdomain, status: s.status, ip: s.ip||'' }));
+      _deExportCSV(rows, ['subdomain','status','ip'], `subdomains-${currentDomain}.csv`);
     });
   }
 
@@ -566,28 +561,40 @@ export function renderDNSEnum(container) {
     if (!zoneData) { content.innerHTML = '<div class="de-empty">No data — run a scan first</div>'; return; }
 
     let html = '';
-    if (zoneData.success) {
-      html += `<div class="de-vuln-banner danger">VULNERABILITY: Zone transfer (AXFR) permitted on ${esc(zoneData.server)} — ${zoneData.records.length} records exposed</div>`;
+    if (!zoneData.tested) {
+      html += `<div class="de-panel"><div class="de-panel-title">AXFR <span class="de-badge de-badge-warn">NOT TESTED</span></div>
+      <div class="de-status-line">${esc(zoneData.message)}</div>`;
+      if (zoneData.nameservers.length) {
+        html += `<div class="de-panel-title" style="margin-top:14px">Nameservers found (${zoneData.nameservers.length})</div>`;
+        for (const ns of zoneData.nameservers) {
+          html += `<div class="de-zone-record"><span class="de-zone-name">${esc(ns)}</span><span class="de-zone-value"><span class="de-ref-code">dig axfr @${esc(ns)} ${esc(currentDomain)}</span></span></div>`;
+        }
+      } else {
+        html += `<div class="de-status-line" style="margin-top:10px">No NS records were returned for ${esc(currentDomain)}. Try the parent zone or check the domain name.</div>`;
+      }
+      html += `</div>`;
     } else {
-      html += `<div class="de-vuln-banner safe">Zone transfer properly restricted on ${esc(zoneData.server)}</div>`;
-    }
-
-    html += `<div class="de-panel"><div class="de-panel-title">AXFR Query — ${esc(zoneData.server)} <span class="de-badge ${zoneData.success?'de-badge-err':'de-badge-ok'}">${zoneData.success?'VULNERABLE':'SECURE'}</span></div>
-    <div class="de-status-line">${esc(zoneData.message)}</div>`;
-
-    if (zoneData.success && zoneData.records.length) {
-      html += `<div style="margin-top:14px">`;
-      for (const r of zoneData.records) {
-        html += `<div class="de-zone-record">
-          <span class="de-zone-name">${esc(r.name)}</span>
-          <span class="de-zone-type"><span class="de-record-type de-type-${r.type}">${r.type}</span></span>
-          <span class="de-zone-ttl">${_deFormatTTL(r.ttl)}</span>
-          <span class="de-zone-value">${esc(r.value)}</span>
-        </div>`;
+      if (zoneData.success) {
+        html += `<div class="de-vuln-banner danger">VULNERABILITY: Zone transfer (AXFR) permitted on ${esc(zoneData.server)}: ${zoneData.records.length} records exposed</div>`;
+      } else {
+        html += `<div class="de-vuln-banner safe">Zone transfer refused by the tested nameservers</div>`;
+      }
+      html += `<div class="de-panel"><div class="de-panel-title">AXFR Query (local agent) <span class="de-badge ${zoneData.success?'de-badge-err':'de-badge-ok'}">${zoneData.success?'VULNERABLE':'REFUSED'}</span></div>
+      <div class="de-status-line">${esc(zoneData.message)}</div>`;
+      if (zoneData.success && zoneData.records.length) {
+        html += `<div style="margin-top:14px">`;
+        for (const r of zoneData.records) {
+          html += `<div class="de-zone-record">
+            <span class="de-zone-name">${esc(r.name)}</span>
+            <span class="de-zone-type"><span class="de-record-type de-type-${esc(r.type)}">${esc(r.type)}</span></span>
+            <span class="de-zone-ttl">${_deFormatTTL(r.ttl)}</span>
+            <span class="de-zone-value">${esc(r.value)}</span>
+          </div>`;
+        }
+        html += `</div>`;
       }
       html += `</div>`;
     }
-    html += `</div>`;
 
     html += `<div class="de-panel"><div class="de-panel-title">Remediation</div>
     <div class="de-ref-item"><div class="de-ref-item-title">Restrict AXFR</div><div class="de-ref-item-desc">Configure your DNS server to allow zone transfers only to authorized secondary nameservers:<br><span class="de-ref-code">allow-transfer { 192.168.1.2; 10.0.0.5; };</span> (BIND9)<br><span class="de-ref-code">Set-DnsServerPrimaryZone -Name domain.com -SecureSecondaries TransferToSecureServers</span> (Windows DNS)</div></div>
@@ -600,33 +607,40 @@ export function renderDNSEnum(container) {
   function renderDNSSECTab() {
     if (!dnssecData) { content.innerHTML = '<div class="de-empty">No data — run a scan first</div>'; return; }
 
-    const statusBadge = dnssecData.status === 'SECURE' ? 'de-badge-ok' : dnssecData.status === 'BOGUS' ? 'de-badge-err' : 'de-badge-warn';
+    const statusBadge = dnssecData.status === 'SECURE' ? 'de-badge-ok' : (dnssecData.status === 'BOGUS' || dnssecData.status === 'ERROR') ? 'de-badge-err' : 'de-badge-warn';
 
-    let html = `<div class="de-panel"><div class="de-panel-title">DNSSEC Validation <span class="de-badge ${statusBadge}">${dnssecData.status}</span></div>
+    let html = `<div class="de-panel"><div class="de-panel-title">DNSSEC Check <span class="de-badge ${statusBadge}">${esc(dnssecData.status)}</span></div>
     <div class="de-status-line" style="margin-bottom:14px">${esc(dnssecData.message)}</div>`;
 
-    if (dnssecData.signed) {
+    if (dnssecData.checked) {
       html += `<div class="de-stats">
-        <div class="de-stat"><div class="de-stat-val" style="font-size:14px;color:#00aaff">${dnssecData.algorithm}</div><div class="de-stat-label">Algorithm</div></div>
-        <div class="de-stat"><div class="de-stat-val" style="font-size:14px;color:#00aaff">${dnssecData.keyTag}</div><div class="de-stat-label">Key Tag</div></div>
-        <div class="de-stat"><div class="de-stat-val" style="font-size:14px;color:#00aaff">${dnssecData.digestType}</div><div class="de-stat-label">Digest</div></div>
+        <div class="de-stat"><div class="de-stat-val" style="font-size:14px;color:${dnssecData.ad?'#00ff88':'#ff9f43'}">${dnssecData.ad?'SET':'NOT SET'}</div><div class="de-stat-label">AD flag</div></div>
+        <div class="de-stat"><div class="de-stat-val" style="font-size:14px;color:#00aaff">${dnssecData.dsCount}</div><div class="de-stat-label">DS records</div></div>
+        <div class="de-stat"><div class="de-stat-val" style="font-size:14px;color:#00aaff">${dnssecData.dnskeyCount}</div><div class="de-stat-label">DNSKEY records</div></div>
       </div>`;
+      if (dnssecData.signed) {
+        html += `<div class="de-stats">
+          <div class="de-stat"><div class="de-stat-val" style="font-size:14px;color:#00aaff">${esc(dnssecData.algorithm)}</div><div class="de-stat-label">Algorithm</div></div>
+          <div class="de-stat"><div class="de-stat-val" style="font-size:14px;color:#00aaff">${esc(dnssecData.keyTag)}</div><div class="de-stat-label">DS Key Tag</div></div>
+          <div class="de-stat"><div class="de-stat-val" style="font-size:14px;color:#00aaff">${esc(dnssecData.digestType)}</div><div class="de-stat-label">DS Digest</div></div>
+        </div>`;
+      }
+      html += `<div class="de-panel-title" style="margin-top:16px">Zone</div><div class="de-chain">`;
+      for (const node of dnssecData.chain) {
+        const cls = node.status === 'SECURE' ? 'secure' : node.status === 'BOGUS' ? 'bogus' : 'insecure';
+        html += `<div class="de-chain-node ${cls}">
+          <span class="de-chain-zone">${esc(node.zone)}</span>
+          <span class="de-badge ${statusBadge}">${esc(node.status)}</span>
+          <div class="de-chain-checks">
+            <span class="de-chain-check ${node.ds?'pass':'fail'}">DS ${node.ds?'Y':'N'}</span>
+            <span class="de-chain-check ${node.dnskey?'pass':'fail'}">DNSKEY ${node.dnskey?'Y':'N'}</span>
+            <span class="de-chain-check ${node.rrsig?'pass':'fail'}">RRSIG ${node.rrsig?'Y':'N'}</span>
+          </div>
+        </div>`;
+      }
+      html += `</div><div class="de-status-line" style="margin-top:10px">Checked through public validating DNS-over-HTTPS resolvers (dns.google, cloudflare-dns.com).</div>`;
     }
-
-    html += `<div class="de-panel-title" style="margin-top:16px">Trust Chain</div><div class="de-chain">`;
-    for (const node of dnssecData.chain) {
-      const cls = node.status === 'SECURE' ? 'secure' : node.status === 'BOGUS' ? 'bogus' : 'insecure';
-      html += `<div class="de-chain-node ${cls}">
-        <span class="de-chain-zone">${esc(node.zone)}</span>
-        <span class="de-badge ${node.status==='SECURE'?'de-badge-ok':node.status==='BOGUS'?'de-badge-err':'de-badge-warn'}">${node.status}</span>
-        <div class="de-chain-checks">
-          <span class="de-chain-check ${node.ds?'pass':'fail'}">DS ${node.ds?'Y':'N'}</span>
-          <span class="de-chain-check ${node.dnskey?'pass':'fail'}">DNSKEY ${node.dnskey?'Y':'N'}</span>
-          <span class="de-chain-check ${node.rrsig?'pass':'fail'}">RRSIG ${node.rrsig?'Y':'N'}</span>
-        </div>
-      </div>`;
-    }
-    html += `</div></div>`;
+    html += `</div>`;
 
     html += `<div class="de-panel"><div class="de-panel-title">Recommendation</div>
     <div class="de-ref-item"><div class="de-ref-item-desc">${esc(dnssecData.recommendation)}</div></div></div>`;

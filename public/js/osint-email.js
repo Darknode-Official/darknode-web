@@ -273,11 +273,6 @@ export function renderOSINTEmail(container) {
     const isFree = ['gmail.com','yahoo.com','hotmail.com','outlook.com','aol.com','mail.com','gmx.com','yandex.com'].includes(domain);
     const isSecure = ['protonmail.com','proton.me','tutanota.com','hey.com','fastmail.com'].includes(domain);
 
-    const seed = oeSeed(email);
-    const age = (seed % 8) + 1;
-    const breachCount = seed % 5;
-    const risk = breachCount >= 3 ? 'high' : breachCount >= 1 ? 'medium' : 'low';
-    const riskScore = breachCount >= 3 ? 72 + (seed % 20) : breachCount >= 1 ? 35 + (seed % 25) : 5 + (seed % 15);
 
     if (window._bridge && window._bridge.connected && window._bridge.hasTool('dig')) {
       _oeLiveDomain(domain).then(function(info) {
@@ -301,10 +296,7 @@ export function renderOSINTEmail(container) {
             <div style="font-size:18px;font-weight:700;color:#e2e8f0;margin-bottom:4px">${esc(email)}</div>
             <div style="color:#6a8aaa;font-size:12px">Analysis completed • ${new Date().toLocaleString()}</div>
           </div>
-          <div class="oe-score ${risk}">
-            ${riskScore}/100
-            <span style="font-size:12px;font-weight:400">risk</span>
-          </div>
+          <div style="max-width:320px;color:#6a8aaa;font-size:12px;line-height:1.5">Format and domain analysis only. No breach database is queried and no risk score is computed here.</div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
           <div>
@@ -322,8 +314,7 @@ export function renderOSINTEmail(container) {
             <div class="oe-panel-title" style="font-size:13px">Domain Intelligence</div>
             <div class="oe-field"><span class="oe-field-label">Provider Type</span><span>${isFree ? '<span class="oe-badge oe-badge-yellow">FREE</span>' : isSecure ? '<span class="oe-badge oe-badge-green">SECURE</span>' : isKnown ? '<span class="oe-badge oe-badge-blue">KNOWN</span>' : '<span class="oe-badge oe-badge-purple">CUSTOM</span>'}</span></div>
             <div class="oe-field"><span class="oe-field-label">Known Provider</span><span class="oe-field-value">${isKnown ? 'Yes' : 'No (custom domain)'}</span></div>
-            <div class="oe-field"><span class="oe-field-label">Est. Account Age</span><span class="oe-field-value">~${age} years (simulated)</span></div>
-            <div class="oe-field"><span class="oe-field-label">Breach Exposure</span><span>${breachCount > 0 ? `<span class="oe-badge oe-badge-red">${breachCount} breaches</span>` : '<span class="oe-badge oe-badge-green">None found</span>'}</span></div>
+            <div class="oe-field"><span class="oe-field-label">Breach Exposure</span><span class="oe-field-value">Not checked. Use <a href="https://haveibeenpwned.com/" target="_blank" rel="noopener noreferrer" style="color:#00aaff">haveibeenpwned.com</a></span></div>
             <div class="oe-field"><span class="oe-field-label">Disposable</span><span class="oe-field-value">${['tempmail.com','guerrillamail.com','throwaway.email','mailinator.com','10minutemail.com'].includes(domain) ? 'Likely' : 'No'}</span></div>
             <div id="oe-live-intel" style="margin-top:12px"></div>
             <div class="oe-field"><span class="oe-field-label">Privacy-Focused</span><span class="oe-field-value">${isSecure ? 'Yes' : 'No'}</span></div>
@@ -338,7 +329,7 @@ export function renderOSINTEmail(container) {
       </div>`;
 
     out.querySelector('.oe-export-json').addEventListener('click', function() {
-      const data = { email, local, domain, tld, sld, isKnownProvider: isKnown, isFreeProvider: isFree, isSecureProvider: isSecure, riskScore, breachCount, analyzedAt: new Date().toISOString() };
+      const data = { email, local, domain, tld, sld, isKnownProvider: isKnown, isFreeProvider: isFree, isSecureProvider: isSecure, analyzedAt: new Date().toISOString() };
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
