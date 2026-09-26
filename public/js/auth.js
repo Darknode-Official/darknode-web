@@ -5,7 +5,9 @@ import { auth, db, googleProvider, githubProvider, OWNER_EMAIL } from "/js/fireb
 import "/js/scroll-top.js?v=20260924b";
 import "/js/shortcuts.js";
 import "/js/mobile-nav.js";
-import { consoleHTML, directoryHTML, wireConsole, labelOf as navLabel } from "/js/console-nav.js?v=20260925j";
+import { consoleHTML, directoryHTML, wireConsole, labelOf as navLabel } from "/js/console-nav.js?v=20260925p";
+import { TOOLS as _MINI_TOOLS } from "/js/tools-registry.js?v=20260925p";
+const MINI_COUNT = _MINI_TOOLS.length;
 import { showToast } from "/js/toast.js?v=20260924a";
 import { collection as fbCollection, addDoc as fbAddDoc, serverTimestamp as fbServerTimestamp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
 import {
@@ -924,7 +926,7 @@ function renderHome(main, user, isOwner, show) {
       </div>
     </div>
     <div class="stat-row">
-      ${stat("1,000+", "tools & utilities", CATALOG.length + " platforms &middot; " + browsers + " in-browser")}
+      ${stat((CATALOG.length + MINI_COUNT).toLocaleString(), "tools & utilities", CATALOG.length + " platforms &middot; " + MINI_COUNT + " in-browser utilities")}
       ${stat(COUNTS.cheats, "cheat sheets")}
       ${stat(COUNTS.cves, "tracked CVEs")}
       ${stat(COUNTS.resources, "resources")}
@@ -1628,8 +1630,8 @@ function renderApp(user) {
     else if (sec === "admin") { import("/js/admin.js?v=20260925j").then(m => m.renderAdmin(main, user)); }
     else if (sec === "contact") renderContact(main);
     else if (sec === "education") { main.innerHTML = `<div class="panel" style="max-width:800px;margin:40px auto"><div class="panel-h">About Darknode Education</div><div style="padding:18px;line-height:1.8;font-size:.9rem"><p><strong>Darknode is a cybersecurity education platform</strong> designed for students, educators, and security professionals to learn information security through hands-on practice in a safe, controlled environment.</p><p style="margin-top:16px"><strong>Our Mission:</strong> To make cybersecurity education accessible, interactive, and practical. Every tool on this platform runs locally in your browser or on your own machine -- no data ever leaves your computer.</p><p style="margin-top:16px"><strong>Who Uses Darknode:</strong></p><ul style="margin:8px 0 0 20px;line-height:2"><li>Computer science and cybersecurity students</li><li>IT professionals studying for certifications (CompTIA Security+, CISSP, CEH, OSCP)</li><li>University professors and instructors teaching security courses</li><li>Security operations center (SOC) analysts in training</li><li>Career changers learning cybersecurity fundamentals</li></ul><p style="margin-top:16px"><strong>Educational Standards:</strong> Our curriculum aligns with NIST NICE Framework, NSA CAE-CD requirements, and CompTIA Security+ objectives. All practice environments are isolated, legal, and designed for authorized educational use only.</p><p style="margin-top:16px"><strong>Responsible Use:</strong> Darknode tools are designed exclusively for educational purposes and authorized security testing. Users must comply with all applicable laws and obtain proper authorization before testing any system they do not own.</p><p style="margin-top:16px;color:var(--mut);font-size:.82rem">Darknode is a product of Darknode-Official. For questions about our educational programs, visit darknode.ai.</p></div></div>`; }
-    else if (sec === "toolbox") { import("/js/mini-tools.js?v=20260925h").then(m => m.renderToolbox(main, { onOpen: (id) => show("tool-" + id) })); }
-    else if (sec.indexOf("tool-") === 0) { const _tid = sec.slice(5); import("/js/mini-tools.js?v=20260925h").then(m => m.renderMiniTool(main, _tid, { onBack: () => show("toolbox") })); }
+    else if (sec === "toolbox") { import("/js/mini-tools.js?v=20260925p").then(m => m.renderToolbox(main, { onOpen: (id) => show("tool-" + id) })); }
+    else if (sec.indexOf("tool-") === 0) { const _tid = sec.slice(5); import("/js/mini-tools.js?v=20260925p").then(m => m.renderMiniTool(main, _tid, { onBack: () => show("toolbox") })); }
     else renderHome(main, user, isOwner, show);
     if (more === undefined) { try { localStorage.setItem("sw_last_sec", sec); } catch (_) {} }
     // Jump back to the top on every navigation. The page scrolls on the window
