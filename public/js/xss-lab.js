@@ -277,14 +277,14 @@ function urlEncode(str) { return encodeURIComponent(str); }
 function urlDecode(str) { try { return decodeURIComponent(str); } catch { return str; } }
 
 function unicodeEscape(str) {
-  return Array.from(str).map(c => {
-    const code = c.codePointAt(0);
+  return str.split('').map(c => {
+    const code = c.charCodeAt(0);
     return code > 127 ? `\\u${code.toString(16).padStart(4, '0')}` : c;
   }).join('');
 }
 
 function hexEncode(str) {
-  return Array.from(str).map(c => `\\x${c.charCodeAt(0).toString(16).padStart(2, '0')}`).join('');
+  return Array.from(new TextEncoder().encode(str)).map(b => `\\x${b.toString(16).padStart(2, '0')}`).join('');
 }
 
 function jsEscape(str) {
