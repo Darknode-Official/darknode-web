@@ -20,3 +20,6 @@ html body :is(
 ):not(.dn-round, [role="switch"], [role="radio"], [role="checkbox"], [class*="avatar"], [class*="switch"], [class*="swatch"]):not(#dn-x):not(#dn-y) {
   border-radius: var(--btn-radius) !important;
 }
+
+/* Links styled as buttons (<a class="btn">) otherwise keep the browser's default underline. */
+a.btn, a.btn:hover, a.btn:focus-visible { text-decoration: none; }

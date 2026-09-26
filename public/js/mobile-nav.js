@@ -26,7 +26,8 @@
 .mnav-icon{width:20px;height:20px}
 .mnav-icon svg{width:100%;height:100%;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;fill:none}
 .mnav-label{line-height:1;letter-spacing:.02em}
-@media(max-width:720px){.mnav-bar{display:flex}#view{padding-bottom:64px}}
+@media(max-width:720px){body.app .mnav-bar{display:flex}body.app #view{padding-bottom:64px}}
+body:not(.app) .mnav-bar{display:none!important}
 @media(min-width:721px){.mnav-bar{display:none!important}}`;
   document.head.appendChild(style);
 

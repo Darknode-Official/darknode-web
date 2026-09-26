@@ -34,6 +34,9 @@
   --overlay-bg: rgba(0,0,0,.4);
   --surface: #f8fafc;
   --border: #e2e8f0;
+  /* Used by tools that otherwise fall back to a dark #111 card with dark --txt (unreadable) */
+  --bg-alt: #f8fafc;
+  --txt-dim: #64748b;
   --grad-acc: linear-gradient(135deg, #2563eb, #3b82f6);
 }
 
@@ -1137,6 +1140,8 @@ html[data-style=pro].crt body::after {
   --warn: #eab308;
   --surface: #111;
   --border: #222;
+  --bg-alt: #111;
+  --txt-dim: #999;
 }
 
 [data-style=dark] body {
@@ -1865,6 +1870,15 @@ html[data-style=dark].crt body::after {
   body.landing .nav-link { font-size: .78rem; padding: 4px 8px; margin-right: 4px; }
   body.landing .btn { font-size: .78rem; padding: 6px 12px; }
   #topbar { padding-left: 12px; padding-right: 12px; gap: 6px; }
+}
+/* Topbar auth buttons must stay on one line; the !important pro rules above
+   otherwise win over the compact sizes and "Log in"/"Get Started" wrap. */
+body.landing #nav-signin,
+body.landing #nav-start { white-space: nowrap !important; flex-shrink: 0; }
+@media (max-width: 560px) {
+  [data-style=pro] body.landing #nav-signin,
+  [data-style=pro] body.landing #nav-start { font-size: .8rem !important; padding: 6px 10px !important; margin-right: 0 !important; }
+  [data-style=pro] body.landing #user-slot { gap: 6px !important; }
 }
 
 /* ============================================================
@@ -4578,7 +4592,7 @@ html[data-style=dark].crt body::after {
 [data-style=pro] .tl-filter-group label { color: #0f172a !important; }
 [data-style=pro] .tl-chip { background: #f8fafc !important; color: #475569 !important; border: 1px solid #e2e8f0 !important; border-radius: 6px !important; }
 [data-style=pro] .tl-chip:hover { border-color: #cbd5e1 !important; background: #f1f5f9 !important; }
-[data-style=pro] .tl-chip.active { color: #fff !important; border-color: transparent !important; }
+[data-style=pro] .tl-chip.active { color: #fff !important; border-color: transparent !important; background: var(--chip-color, #2563eb) !important; }
 [data-style=pro] .tl-main { background: #fff !important; border-radius: 10px !important; }
 [data-style=pro] .tl-main::-webkit-scrollbar-thumb { background: #cbd5e1 !important; border-radius: 4px !important; }
 [data-style=pro] .tl-year-group::before { background: #e2e8f0 !important; }
@@ -4598,6 +4612,7 @@ html[data-style=dark].crt body::after {
 [data-style=pro] .tl-stats { background: #fff !important; border: 1px solid #e2e8f0 !important; border-radius: 10px !important; }
 [data-style=pro] .tl-stats h4 { color: #0f172a !important; }
 [data-style=pro] .tl-badge { color: #fff !important; }
+[data-style=pro] .tl-badge.tl-badge-type { background: #f1f5f9 !important; color: #475569 !important; }
 [data-style=pro] .tl-btn { background: #2563eb !important; color: #fff !important; border-radius: 6px !important; }
 [data-style=pro] .tl-input { background: #fff !important; border: 1px solid #e2e8f0 !important; color: #0f172a !important; }
 
@@ -5309,6 +5324,12 @@ html[data-style=dark].crt body::after {
 [data-style=pro] [class$="-content"] {
   padding: 20px !important;
 }
+/* ...but the landing timeline body is a layout grid, not a panel: the generic
+   20px padding above let the step number badge overlap the step title on mobile. */
+[data-style=pro] .tlv-body { padding: 0 !important; }
+@media (max-width: 860px) {
+  [data-style=pro] .tlv-body { padding: 0 0 0 58px !important; }
+}
 
 /* Footer spacing */
 [data-style=pro] footer,
@@ -5385,7 +5406,7 @@ html[data-style=dark].crt body::after {
   }
 }
 @media (max-width: 500px) {
-  [data-style=pro] .qa-grid { grid-template-columns: 1fr !important; }
+  [data-style=pro] .qa-grid { grid-template-columns: minmax(0, 1fr) !important; }
 }
 
 /* =====================================================================
@@ -6348,7 +6369,7 @@ html[data-style=dark].crt body::after {
   [data-style=pro] .se-card { padding: 12px !important; }
   [data-style=pro] .se-grid-2,
   [data-style=pro] .se-grid-3,
-  [data-style=pro] .se-grid-4 { grid-template-columns: 1fr !important; }
+  [data-style=pro] .se-grid-4 { grid-template-columns: minmax(0, 1fr) !important; }
   [data-style=pro] .gw-header { padding: 4px 10px !important; }
   [data-style=pro] .gw-controls { padding: 4px 8px !important; }
   [data-style=pro] .section { padding: 40px 16px !important; }
@@ -6359,8 +6380,8 @@ html[data-style=dark].crt body::after {
   [data-style=pro] .se-tab-bar { gap: 0 !important; }
   [data-style=pro] .se-header-title { font-size: 14px !important; }
   [data-style=pro] .td-kpis { grid-template-columns: 1fr 1fr !important; }
-  [data-style=pro] .edb-grid { grid-template-columns: 1fr !important; }
-  [data-style=pro] .tl-layout { grid-template-columns: 1fr !important; }
+  [data-style=pro] .edb-grid { grid-template-columns: minmax(0, 1fr) !important; }
+  [data-style=pro] .tl-layout { grid-template-columns: minmax(0, 1fr) !important; }
 }
 
 /* ═══ DNS Enumeration ═══ */
@@ -7720,7 +7741,7 @@ html[data-style=dark].crt body::after {
 /* Container query for pro-theme stat grid */
 [data-style=pro] .stat-row { container-type: inline-size; }
 @container (max-width: 600px) { [data-style=pro] .stat-row { grid-template-columns: repeat(2, 1fr) !important; } }
-@container (max-width: 380px) { [data-style=pro] .stat-row { grid-template-columns: 1fr !important; } }
+@container (max-width: 380px) { [data-style=pro] .stat-row { grid-template-columns: minmax(0, 1fr) !important; } }
 
 /* Glass morphism on topbar — layered filters */
 [data-style=pro] #topbar {
@@ -7797,10 +7818,10 @@ html[data-style=dark].crt body::after {
 [data-style=pro] .app-main > div .stat:nth-child(n+5) { animation-delay: 200ms; }
 
 /* --- B4. Table Zebra Striping --- */
-[data-style=pro] tbody tr:nth-child(even) td {
+[data-style=pro] tbody tr:nth-child(even) td:not([style*="background"]) { /* keep cells that paint their own fill (heatmaps) */
   background: #fafbff !important;
 }
-[data-style=pro] tbody tr:hover td {
+[data-style=pro] tbody tr:hover td:not([style*="background"]) {
   background: #eff6ff !important;
 }
 
@@ -8106,6 +8127,8 @@ html[data-style=dark].crt body::after {
   --overlay-bg: rgba(0, 0, 0, .6);
   --surface: #1e293b;
   --border: #334155;
+  --bg-alt: #1e293b;
+  --txt-dim: #94a3b8;
   --grad-acc: linear-gradient(135deg, #3b82f6, #60a5fa);
   --sh-1: 0 1px 3px rgba(0,0,0,.3), 0 1px 2px rgba(0,0,0,.2);
   --sh-2: 0 4px 6px -1px rgba(0,0,0,.3), 0 10px 20px -5px rgba(0,0,0,.2);
@@ -8647,7 +8670,7 @@ html[data-style=dark] .boot-sweep {
 /* --- D3. Better Small Screen Stats --- */
 @media (max-width: 360px) {
   .stat-row {
-    grid-template-columns: 1fr !important;
+    grid-template-columns: minmax(0, 1fr) !important;
   }
   .stat {
     padding: 12px !important;
@@ -8669,7 +8692,7 @@ html[data-style=dark] .boot-sweep {
     display: none;
   }
   [class$="-grid"] {
-    grid-template-columns: 1fr !important;
+    grid-template-columns: minmax(0, 1fr) !important;
   }
 }
 
@@ -10340,6 +10363,10 @@ html[data-style=dark] .boot-sweep {
   border: 1px solid #bfdbfe !important;
   padding: 4px 14px !important;
   border-radius: 20px !important;
+  /* Pill hugs its text instead of stretching the full .wrap width */
+  display: table !important;
+  width: auto !important;
+  margin: 0 auto 16px !important;
 }
 [data-style=pro] .sec-title {
   color: #0f172a !important;
@@ -13611,7 +13638,7 @@ html[data-style="pro"] .empty-state {
     font-size: 1.25rem !important;
   }
   html[data-style="pro"] .qa-grid {
-    grid-template-columns: 1fr !important;
+    grid-template-columns: minmax(0, 1fr) !important;
     gap: 8px !important;
   }
   html[data-style="pro"] .dash-hero {
@@ -13778,7 +13805,8 @@ html[data-style="pro"]:not([data-skin="command"]) body.app .dash-hero .dash-hero
 html[data-style="pro"]:not([data-skin="command"]) body.app .dash-hero .dash-meta {
   display: flex !important;
   flex-direction: row !important;
-  flex-wrap: nowrap !important;
+  flex-wrap: wrap !important; /* nowrap pushed the date chip / threat meter off-screen on phones */
+  max-width: 100% !important;
   align-items: center !important;
   gap: 10px !important;
   margin: 0 !important;
@@ -14018,3 +14046,45 @@ html[data-style="pro"]:not([data-skin="command"]) body.app .sidebar .side-group.
 html[data-style="pro"]:not([data-skin="command"]) body.app .sidebar.collapsed .side-group.side-collapse{
   padding-right:4px !important;
 }
+
+/* =====================================================================
+   Readability fixes — text that ended up the same colour as its
+   background once the light pro theme re-skinned dark tool panels.
+   ===================================================================== */
+/* The "[style*=background:#0]" dark-bg catch-all also matches accent/neon
+   colours (#00d4ff, #00aaff, #00ff88…), turning accent buttons white-on-white. */
+[data-style=pro] [style*="background:#00d4ff"],
+[data-style=pro] [style*="background: #00d4ff"],
+[data-style=pro] [style*="background:#00ddff"],
+[data-style=pro] [style*="background:#00aaff"],
+[data-style=pro] [style*="background: #00aaff"] { background: #eff6ff !important; color: #2563eb !important; }
+[data-style=pro] [style*="background:#00ff88"],
+[data-style=pro] [style*="background: #00ff88"],
+[data-style=pro] [style*="background:#00e676"] { background: #dcfce7 !important; color: #16a34a !important; }
+[data-style=pro] [style*="color:#000"][style*="background:#00d4ff"],
+[data-style=pro] [style*="color:#000"][style*="background:#00ddff"],
+[data-style=pro] [style*="color:#000"][style*="background:#00aaff"] { background: #2563eb !important; color: #fff !important; }
+/* Slate-50/100 text left on panels the catch-all turned white */
+[data-style=pro] [style*="color:#f8fafc"],
+[data-style=pro] [style*="color: #f8fafc"],
+[data-style=pro] [style*="color:#f1f5f9"] { color: #0f172a !important; }
+/* Pentest console: download button is an <a> so the global link colour made it blue-on-blue */
+html[data-style="pro"] .app-main a.pt-guide-dl:not(#_) { color: #fff !important; }
+/* XSS lab keeps its dark cards; the global heading colour made titles vanish */
+[data-style=pro] .xl-card h3 { color: #e2e8f0 !important; }
+/* OSINT email: panel goes white but the title kept its light-on-dark colour */
+[data-style=pro] .oe-panel-title { color: #0f172a !important; }
+/* Subnet visualizer values */
+[data-style=pro] .sv-val { color: #0f172a !important; }
+/* Dark feeds / viewers / cards that stay dark: inherited text must be light */
+[data-style=pro] .nt-feed,
+[data-style=pro] .vl-viewer,
+[data-style=pro] .ir-playbook-card .ir-pb-icon { color: #e2e8f0 !important; }
+/* Cyber briefing option pros/cons on the light option card */
+[data-style=pro] .cb-option-pro { color: #15803d !important; }
+[data-style=pro] .cb-option-con { color: #b91c1c !important; }
+/* Code blocks: the generic light <pre> rule outranked the dark .code-block rule,
+   leaving light code text on a near-white block */
+html[data-style="pro"] .app-main pre.code-block { background: #1e293b !important; color: #e2e8f0 !important; }
+/* Data-viz heatmap cells set their own white text on a coloured fill */
+html[data-style="pro"] .app-main table td[style*="color: rgb(255, 255, 255)"] { color: #fff !important; }

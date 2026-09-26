@@ -118,10 +118,12 @@ body.app .svc-menu .svc-card .side-item.active{color:var(--txt)!important;font-w
   .con-bar{padding:0 8px;gap:6px}
   .con-services{padding:0 8px}
   .con-quick,.con-search kbd{display:none}
+  /* global mobile/touch input min-height (42–44px) made the box taller than the bar and overhang the topbar */
+  .con-search input{min-height:0;height:34px;margin:0}
   .con-favbar{padding:0 8px}
   body.app .app-main{padding:14px}
   .svc-menu{height:calc(100vh - var(--topbar-h) - var(--con-h1) - var(--con-h2))}
-  .svc-cols{grid-template-columns:1fr;grid-template-rows:auto 1fr}
+  .svc-cols{grid-template-columns:minmax(0,1fr);grid-template-rows:auto 1fr}
   .svc-cats{flex-direction:row;overflow-x:auto;padding:6px;border-right:0;border-bottom:1px solid var(--line)}
   .svc-cat{flex:none;border-left:0;border-bottom:3px solid transparent;padding:8px 10px}
   .svc-cat.on{border-bottom-color:var(--gc,var(--con-acc))}

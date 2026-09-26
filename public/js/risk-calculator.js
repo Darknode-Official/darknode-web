@@ -185,6 +185,7 @@ export function renderRiskCalculator(container) {
         '.rc-tab:hover{color:var(--txt)}' +
         '.rc-tab.active{color:var(--acc,#00d4ff);border-bottom-color:var(--acc,#00d4ff)}' +
         '.rc-matrix{display:grid;grid-template-columns:auto repeat(5,1fr);gap:2px;margin:20px 0}' +
+        '@media(max-width:600px){.rc-matrix{grid-template-columns:auto repeat(5,minmax(0,1fr))}.rc-cell{padding:6px 2px;font-size:.68rem;overflow-wrap:anywhere}.rc-cell.header{font-size:.58rem}}' +
         '.rc-cell{padding:10px;text-align:center;font-size:.75rem;border-radius:4px;min-height:40px;display:flex;align-items:center;justify-content:center;flex-direction:column}' +
         '.rc-cell.header{background:transparent;color:var(--mut,#6b7280);font-weight:700;font-size:.7rem}' +
         '.rc-cell.data{cursor:pointer;transition:transform .15s}' +

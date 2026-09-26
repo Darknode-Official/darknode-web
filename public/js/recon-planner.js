@@ -63,6 +63,7 @@ export function renderReconPlanner(container) {
     '.rp-title{font-size:1.5rem;font-weight:700;margin:0 0 6px}' +
     '.rp-sub{color:var(--mut,#64748b);font-size:.85rem}' +
     '.rp-phases{display:flex;gap:2px;margin-bottom:20px;position:relative}' +
+    '@media(max-width:600px){.rp-phases{overflow-x:auto;scrollbar-width:none}.rp-phase{flex:1 0 auto;min-width:64px}}' +
     '.rp-phases::before{content:"";position:absolute;top:50%;left:0;right:0;height:2px;background:var(--line,#1e293b);z-index:0}' +
     '.rp-phase{position:relative;z-index:1;flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 4px;border:none;background:transparent;color:var(--mut,#64748b);cursor:pointer;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;transition:all .15s;font-family:inherit}' +
     '.rp-phase:hover{color:var(--txt)}' +
