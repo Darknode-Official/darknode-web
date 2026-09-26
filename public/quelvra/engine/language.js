@@ -207,7 +207,11 @@ function equationsText(s) {
 }
 
 // Patterns: each returns a translation or null. Ordered from most to least specific.
+// ---- advanced continuous commands (engine/advanced/language-patterns.js): first, each steps aside when not applicable ----
+import { advancedPatterns } from "./advanced/language-patterns.js";
 const PATTERNS = [
+  ...advancedPatterns({ expr, mathOf, bound, splitInterval, guessVar, looksLikeMath, fnOf }),
+  // ---- end advanced continuous commands ----
   // probability, statistics, counting, complex numbers, series, geometry, number theory, ... (language-more.js)
   ...morePatterns({ expr, mathOf, LEAD, re }),
   // ---- differential equations and systems ----

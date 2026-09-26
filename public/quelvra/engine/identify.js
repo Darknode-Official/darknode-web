@@ -28,6 +28,10 @@ const COMMANDS = new Set(["solve", "simplify", "expand", "factor", "series", "ta
   // data statistics, inverse normal, bases and polynomial commands (strategies/compute-more.js)
   "pstdev", "pvariance", "quartiles", "iqr", "datarange", "wmean", "corr", "linreg", "invnorm", "tobase", "frombase",
   "polydiv", "polyrem", "polygcd", "coeff", "discriminant", "vertex", "circle", "linedist", "rootsum", "rootprod", "diffat", "dblint", "grad", "solvein", "polar"]);
+// ---- advanced continuous commands (engine/advanced/, strategies/advanced-continuous.js) ----
+import { ADVANCED_CONTINUOUS_COMMANDS } from "./advanced/names.js";
+for (const n of ADVANCED_CONTINUOUS_COMMANDS) COMMANDS.add(n);
+// ---- end advanced continuous commands ----
 
 // Choose the unknown(s) to solve for.
 const PREFERRED = ["x", "y", "z", "t", "n", "u", "v", "w", "a", "b", "c", "theta"];
