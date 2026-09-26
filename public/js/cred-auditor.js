@@ -48,7 +48,7 @@ function scorePassword(pw) {
   if (/[a-z]/.test(pw)) charSet += 26;
   if (/[A-Z]/.test(pw)) charSet += 26;
   if (/\d/.test(pw)) charSet += 10;
-  if (/[^a-zA-Z0-9]/.test(pw)) charSet += 32;
+  if (/[^a-zA-Z0-9]/.test(pw)) charSet += 33;
   var entropy = Math.floor(pw.length * Math.log2(Math.max(charSet, 1)));
   score = Math.min(100, score);
   var label, color;

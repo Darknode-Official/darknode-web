@@ -167,12 +167,27 @@ function parseSemver(v) {
   return { major: +m[1], minor: +m[2], patch: +m[3], pre: m[4] || "", build: m[5] || "" };
 }
 
+function cmpSemverId(a, b) {
+  const an = /^\d+$/.test(a), bn = /^\d+$/.test(b);
+  if (an && bn) return Number(a) - Number(b);
+  if (an) return -1;
+  if (bn) return 1;
+  return a < b ? -1 : a > b ? 1 : 0;
+}
+
 function cmpSemver(a, b) {
   for (const k of ["major", "minor", "patch"]) { if (a[k] !== b[k]) return a[k] - b[k]; }
   if (!a.pre && !b.pre) return 0;
   if (!a.pre) return 1;
   if (!b.pre) return -1;
-  return a.pre < b.pre ? -1 : a.pre > b.pre ? 1 : 0;
+  const ai = a.pre.split("."), bi = b.pre.split(".");
+  for (let i = 0; i < Math.max(ai.length, bi.length); i++) {
+    if (ai[i] === undefined) return -1;
+    if (bi[i] === undefined) return 1;
+    const c = cmpSemverId(ai[i], bi[i]);
+    if (c !== 0) return c;
+  }
+  return 0;
 }
 
 function mdToHtml(md) {
@@ -395,7 +410,7 @@ export const TOOLS = [
       if (!v.expr) return "";
       const fields = S(v.expr).trim().split(/\s+/);
       if (fields.length !== 5) return { error: "Expected 5 fields: minute hour day month weekday." };
-      const ranges = [[0, 59], [0, 23], [1, 31], [1, 12], [0, 6]];
+      const ranges = [[0, 59], [0, 23], [1, 31], [1, 12], [0, 7]];
       const parseField = (f, [lo, hi]) => {
         const set = new Set();
         for (const part of f.split(",")) {
@@ -414,6 +429,9 @@ export const TOOLS = [
       const sets = fields.map((f, i) => parseField(f, ranges[i]));
       if (sets.some((s) => !s)) return { error: "Could not parse cron field(s)." };
       const [mins, hrs, doms, mons, dows] = sets;
+      if (dows.has(7)) dows.add(0);
+      const domRestricted = fields[2] !== "*";
+      const dowRestricted = fields[4] !== "*";
       const count = Math.max(1, Math.min(20, parseInt(v.count, 10) || 5));
       const out = [];
       let d = new Date();
@@ -423,8 +441,10 @@ export const TOOLS = [
       while (out.length < count && guard < 600000) {
         guard++;
         if (!mons.has(d.getMonth() + 1)) { d.setMonth(d.getMonth() + 1, 1); d.setHours(0, 0, 0, 0); continue; }
-        if (!doms.has(d.getDate())) { d.setDate(d.getDate() + 1); d.setHours(0, 0, 0, 0); continue; }
-        if (!dows.has(d.getDay())) { d.setDate(d.getDate() + 1); d.setHours(0, 0, 0, 0); continue; }
+        const domOk = doms.has(d.getDate());
+        const dowOk = dows.has(d.getDay());
+        const dayOk = domRestricted && dowRestricted ? (domOk || dowOk) : (domOk && dowOk);
+        if (!dayOk) { d.setDate(d.getDate() + 1); d.setHours(0, 0, 0, 0); continue; }
         if (!hrs.has(d.getHours())) { d.setHours(d.getHours() + 1, 0, 0, 0); continue; }
         if (!mins.has(d.getMinutes())) { d.setMinutes(d.getMinutes() + 1, 0, 0); continue; }
         out.push(new Date(d).toISOString());
