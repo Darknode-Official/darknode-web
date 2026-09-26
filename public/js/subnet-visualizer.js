@@ -113,8 +113,16 @@ export function renderSubnetVisualizer(container) {
       if (s.network < minNet) minNet = s.network;
       if (s.broadcast > maxBcast) maxBcast = s.broadcast;
     }
+    // Size the block from the shared leading bits of the low network and the
+    // high broadcast, not from the raw span. Sizing from the span and then
+    // masking minNet down produced a block whose broadcast could fall short of
+    // maxBcast when minNet was not aligned to the chosen prefix, silently
+    // dropping the upper input(s) — e.g. supernet(192.168.1.0/24,
+    // 192.168.2.0/24) yielded 192.168.0.0/23, which excludes 192.168.2.0/24.
+    // Matching the common prefix guarantees network<=minNet and
+    // broadcast(=network|~mask)>=maxBcast, so the block covers every input.
     let bits = 0;
-    while (Math.pow(2, bits) <= (maxBcast - minNet)) bits++;
+    while (bits < 32 && ((minNet >>> bits) !== (maxBcast >>> bits))) bits++;
     const prefix = 32 - bits;
     const mask = prefix === 0 ? 0 : (0xFFFFFFFF << (32 - prefix)) >>> 0;
     const network = (minNet & mask) >>> 0;
