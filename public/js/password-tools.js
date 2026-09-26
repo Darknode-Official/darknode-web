@@ -199,6 +199,25 @@ function analyzePassword(pw) {
   return { score, entropy, feedback, level, charsetSize, isCommon, length: pw.length };
 }
 
+// Uniform random integers in [0, mod) via rejection sampling. A plain
+// (uint32 % mod) over-represents the first (2^32 % mod) values; discarding
+// draws in that unusable tail removes the modulo bias.
+function _unbiasedIndices(count, mod) {
+  const out = new Array(count);
+  const max = Math.floor(0x100000000 / mod) * mod;
+  // getRandomValues rejects buffers over 65536 bytes (16384 uint32s), so
+  // refill in bounded chunks rather than allocating one array of `count`.
+  const buf = new Uint32Array(Math.min(Math.max(count, 1), 16384));
+  let filled = 0;
+  while (filled < count) {
+    crypto.getRandomValues(buf);
+    for (let i = 0; i < buf.length && filled < count; i++) {
+      if (buf[i] < max) out[filled++] = buf[i] % mod;
+    }
+  }
+  return out;
+}
+
 function generatePassword(length, options) {
   const sets = { lower: "abcdefghijklmnopqrstuvwxyz", upper: "ABCDEFGHIJKLMNOPQRSTUVWXYZ", digits: "0123456789", symbols: "!@#$%^&*()_+-=[]{}|;:,.<>?" };
   let chars = "";
@@ -207,15 +226,11 @@ function generatePassword(length, options) {
   if (options.digits !== false) chars += sets.digits;
   if (options.symbols !== false) chars += sets.symbols;
   if (!chars) chars = sets.lower + sets.digits;
-  const arr = new Uint32Array(length);
-  crypto.getRandomValues(arr);
-  return Array.from(arr).map(n => chars[n % chars.length]).join("");
+  return _unbiasedIndices(length, chars.length).map(i => chars[i]).join("");
 }
 
 function generatePassphrase(wordCount, separator) {
-  const arr = new Uint32Array(wordCount);
-  crypto.getRandomValues(arr);
-  return Array.from(arr).map(n => WORDLIST[n % WORDLIST.length]).join(separator || "-");
+  return _unbiasedIndices(wordCount, WORDLIST.length).map(i => WORDLIST[i]).join(separator || "-");
 }
 
 function identifyHash(hash) {
