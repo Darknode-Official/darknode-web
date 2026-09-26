@@ -77,7 +77,11 @@ function extractAllFields(headers, name) {
 function parseReceived(val) {
   var from = '', by = '', ip = '', date = '', proto = '';
   var fm = val.match(/from\s+([^\s(]+)(?:\s*\(([^)]*)\))?/i);
-  if (fm) { from = fm[1]; if (fm[2]) { var ipm = fm[2].match(/\[?([\d.]+)\]?/); if (ipm) ip = ipm[1]; } }
+  // The parenthetical is typically "hostname [1.2.3.4]" (RFC 5321 §4.4). The
+  // old /\[?([\d.]+)\]?/ made brackets optional and matched any digit/dot run,
+  // so it grabbed a digit from the hostname (e.g. the "1" in "mail-wm1-...")
+  // instead of the address literal. Match a full dotted-quad instead.
+  if (fm) { from = fm[1]; if (fm[2]) { var ipm = fm[2].match(/(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})/); if (ipm) ip = ipm[1]; } }
   var bm = val.match(/by\s+([^\s]+)/i);
   if (bm) by = bm[1];
   var pm = val.match(/with\s+(ESMTPS?A?|SMTP|LMTP|HTTP)/i);
