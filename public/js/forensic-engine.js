@@ -500,7 +500,7 @@ export function convertTimestamp(value, fromFormat = "auto") {
       const min = (time >> 5) & 0x3F;
       const sec = (time & 0x1F) * 2;
       if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
-        results.fat = { date: new Date(year, month-1, day, hour, min, sec), format: "FAT timestamp" };
+        results.fat = { date: new Date(Date.UTC(year, month-1, day, hour, min, sec)), format: "FAT timestamp" };
       }
     }
   }
@@ -508,7 +508,7 @@ export function convertTimestamp(value, fromFormat = "auto") {
   if (fromFormat === "auto" || fromFormat === "hfs") {
     // HFS+ (seconds since 1904-01-01)
     if (num > 0 && num < 0xFFFFFFFF) {
-      const hfsEpoch = new Date(1904, 0, 1).getTime();
+      const hfsEpoch = Date.UTC(1904, 0, 1);
       const ms = hfsEpoch + num * 1000;
       if (ms > 0 && ms < 4e12) results.hfs = { date: new Date(ms), format: "HFS+ timestamp" };
     }
