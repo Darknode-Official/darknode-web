@@ -359,8 +359,8 @@ export function renderDNSEnum(container) {
       for (const p of prefixes) {
         try {
           const r = await b.exec('dig +short A ' + _deSafe(p + '.' + domain));
-          const ip = (r.stdout || '').trim().split('\n')[0];
-          if (ip && ip.match(/^\d/)) found.push({ name: p + '.' + domain, ip, status: 'resolved' });
+          const ip = (r.stdout || '').trim().split('\n').map(function(l) { return l.trim(); }).find(function(l) { return /^\d+\.\d+\.\d+\.\d+$/.test(l); });
+          if (ip) found.push({ name: p + '.' + domain, ip, status: 'resolved' });
         } catch {}
       }
     }
