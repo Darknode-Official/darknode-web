@@ -71,8 +71,18 @@ const ANOMALIES = [
   { name: "Suspicious Tool", check: (entries) => { const tools = /sqlmap|nikto|nmap|masscan|hydra|gobuster|dirbuster|wfuzz|nuclei|metasploit/i; return entries.filter(e => tools.test(e.raw)).map(e => ({ ip: e.ip, desc: `Security tool detected: ${(e.user_agent || e.raw).slice(0, 80)}` })); } },
 ];
 
+// Most-specific formats first: the generic "auth.log / syslog" regex also
+// matches firewall (kernel: SRC=… DST=…) and syslog-priority lines, so it must
+// be tried AFTER those, or every firewall/syslog log is misclassified as auth.
+const FORMAT_PRIORITY = ["json", "windows", "syslog", "fail2ban", "firewall", "apache", "auth", "csv"];
+
 function detectFormat(text) {
   const line = text.trim().split("\n")[0] || "";
+  for (const key of FORMAT_PRIORITY) {
+    const fmt = LOG_FORMATS[key];
+    if (fmt && fmt.regex.test(line)) return key;
+  }
+  // Any format defined but not listed in the priority order (defensive).
   for (const [key, fmt] of Object.entries(LOG_FORMATS)) {
     if (fmt.regex.test(line)) return key;
   }

@@ -176,7 +176,10 @@ function _ipBulkLookup() {
   var result = document.getElementById('ip-bulk-result');
   if (!textarea || !result) return;
 
-  var ips = textarea.value.split('\n').map(function(l) { return l.trim(); }).filter(function(l) { return l && /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(l); });
+  var ips = textarea.value.split('\n').map(function(l) { return l.trim(); }).filter(function(l) {
+    // Octets are 0–255 (RFC 791); reject 256–999 that a bare \d{1,3} would pass.
+    return l && /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(l) && l.split('.').every(function(o) { return Number(o) <= 255; });
+  });
   if (ips.length === 0) { result.innerHTML = '<div style="color:#ff4444;padding:12px;text-align:center;">No valid IPs found — enter one IP per line</div>'; return; }
   if (ips.length > 20) { ips = ips.slice(0, 20); }
 

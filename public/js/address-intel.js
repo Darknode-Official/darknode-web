@@ -28,13 +28,19 @@ function saveHistory(entry) {
   try { localStorage.setItem(HISTORY_KEY, JSON.stringify(hist)); } catch(e) {}
 }
 
+// Dotted-decimal octets are 0–255 (RFC 791); `\d{1,3}` alone accepts 256–999,
+// so validate each octet's numeric range as the project's own isValidIPv4 does.
+function _validIPv4Octets(s) {
+  return s.split(".").every(function(o) { return /^\d{1,3}$/.test(o) && Number(o) <= 255; });
+}
+
 function detectInputType(input) {
   if (!input) return null;
   input = input.trim();
   if (/^https?:\/\//i.test(input)) return "URL";
-  if (/^(\d{1,3}\.){3}\d{1,3}$/.test(input)) return "IP";
+  if (/^(\d{1,3}\.){3}\d{1,3}$/.test(input) && _validIPv4Octets(input)) return "IP";
   if (/^[a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?)*\.[a-zA-Z]{2,}$/.test(input)) return "DOMAIN";
-  if (/^(\d{1,3}\.){3}\d{1,3}(:\d+)?$/.test(input)) return "IP";
+  if (/^(\d{1,3}\.){3}\d{1,3}(:\d+)?$/.test(input) && _validIPv4Octets(input.split(":")[0])) return "IP";
   return null;
 }
 
@@ -513,7 +519,7 @@ function renderReputationPanel(results) {
   // URLhaus
   html += '<div class="ai-subsection-title">URLhaus</div>';
   if (results.urlhaus) {
-    if (results.urlhaus.query_status !== "no_results" && results.urlhaus.urls && results.urlhaus.urls.length > 0) {
+    if (results.urlhaus.query_status !== "no_result" && results.urlhaus.urls && results.urlhaus.urls.length > 0) {
       html += '<table class="ai-table"><thead><tr><th>URL</th><th>Status</th><th>Threat</th><th>Date Added</th><th>Tags</th></tr></thead><tbody>';
       for (var u = 0; u < results.urlhaus.urls.length && u < 20; u++) {
         var uh = results.urlhaus.urls[u];
@@ -940,7 +946,7 @@ function runInvestigation(input, type, container) {
   // --- URL-specific lookups ---
   if (fullURL) {
     fetchURLhausURL(fullURL).then(function(data) {
-      if (data && data.query_status !== "no_results") {
+      if (data && data.query_status !== "no_result") {
         results.urlhaus_url = data;
         // Merge into urlhaus results for display
         if (!results.urlhaus) results.urlhaus = { query_status: "ok", urls: [] };
