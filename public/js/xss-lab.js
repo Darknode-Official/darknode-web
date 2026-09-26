@@ -613,8 +613,8 @@ export function renderXSSLab(container) {
           case 'unicode': result = unicodeEscape(input); break;
           case 'hex': result = hexEncode(input); break;
           case 'js-esc': result = jsEscape(input); break;
-          case 'base64-enc': result = btoa(input); break;
-          case 'base64-dec': try { result = atob(input); } catch { result = '[Invalid Base64]'; } break;
+          case 'base64-enc': try { result = btoa(unescape(encodeURIComponent(input))); } catch { result = '[Encode error]'; } break;
+          case 'base64-dec': try { result = decodeURIComponent(escape(atob(input))); } catch { try { result = atob(input); } catch { result = '[Invalid Base64]'; } } break;
         }
         lastOutput = result;
         outEl.textContent = result;

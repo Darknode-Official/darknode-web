@@ -13,7 +13,12 @@ var esc = function(s) {
 function _imDecodeBase64Url(str) {
   var s = str.replace(/-/g, '+').replace(/_/g, '/');
   while (s.length % 4) s += '=';
-  try { return JSON.parse(atob(s)); } catch (e) { return null; }
+  try {
+    var bin = atob(s);
+    var bytes = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return JSON.parse(new TextDecoder('utf-8').decode(bytes));
+  } catch (e) { return null; }
 }
 
 function _imDecodeJWT(token) {
