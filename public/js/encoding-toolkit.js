@@ -212,13 +212,27 @@ function vigenereDecode(text, key) {
 }
 
 // ── XOR ──
-function xorEncode(text, key) {
-  if (!key) return text;
-  var out = [];
-  for (var i = 0; i < text.length; i++) {
-    out.push(String.fromCharCode(text.charCodeAt(i) ^ key.charCodeAt(i % key.length)));
+// XOR is a byte-level operation: XOR the UTF-8 bytes of the text with the
+// UTF-8 bytes of the key (matching real xor tools). Iterating UTF-16 code
+// units and re-encoding the result as UTF-8 corrupts any byte >= 0x80.
+function xorBytes(bytes, key) {
+  var kb = new TextEncoder().encode(key || "");
+  var out = new Uint8Array(bytes.length);
+  for (var i = 0; i < bytes.length; i++) {
+    out[i] = bytes[i] ^ (kb.length ? kb[i % kb.length] : 0);
   }
-  return out.join("");
+  return out;
+}
+function bytesToHexStr(bytes) {
+  var out = [];
+  for (var i = 0; i < bytes.length; i++) out.push(bytes[i].toString(16).padStart(2, "0"));
+  return out.join(" ");
+}
+function hexStrToBytes(s) {
+  var hex = s.trim().replace(/\s+/g, "").replace(/0x/gi, "");
+  var bytes = [];
+  for (var i = 0; i + 1 < hex.length; i += 2) bytes.push(parseInt(hex.substring(i, i + 2), 16));
+  return new Uint8Array(bytes);
 }
 
 // ── Hash generators (using SubtleCrypto) ──
@@ -450,7 +464,7 @@ export function renderEncodingToolkit(main) {
       out.textContent = vigenereEncode(text, key);
     } else {
       var key2 = (cipherPanel.querySelector("#enc-cip-key") || {}).value || "";
-      out.textContent = ENCODINGS.hex.encode(xorEncode(text, key2));
+      out.textContent = bytesToHexStr(xorBytes(new TextEncoder().encode(text), key2));
     }
   };
 
@@ -465,8 +479,7 @@ export function renderEncodingToolkit(main) {
       out.textContent = vigenereDecode(text, key);
     } else {
       var key2 = (cipherPanel.querySelector("#enc-cip-key") || {}).value || "";
-      var decoded = ENCODINGS.hex.decode(text);
-      out.textContent = xorEncode(decoded, key2);
+      out.textContent = new TextDecoder().decode(xorBytes(hexStrToBytes(text), key2));
     }
   };
 
