@@ -799,8 +799,8 @@ function extractSerial(bytes) {
 // ─── Base64/Hex/URL encoder panel ───
 function encodePanel(input) {
   var results = {};
-  try { results["Base64 Encode"] = btoa(input); } catch (_) { results["Base64 Encode"] = "(error — non-Latin1)"; }
-  try { results["Base64 Decode"] = atob(input); } catch (_) { results["Base64 Decode"] = "(not valid Base64)"; }
+  try { results["Base64 Encode"] = btoa(unescape(encodeURIComponent(input))); } catch (_) { results["Base64 Encode"] = "(encode error)"; }
+  try { results["Base64 Decode"] = decodeURIComponent(escape(atob(input))); } catch (_) { try { results["Base64 Decode"] = atob(input); } catch (__) { results["Base64 Decode"] = "(not valid Base64)"; } }
   results["URL Encode"] = encodeURIComponent(input);
   try { results["URL Decode"] = decodeURIComponent(input); } catch (_) { results["URL Decode"] = "(not valid URL encoding)"; }
   results["Hex Encode"] = Array.from(new TextEncoder().encode(input)).map(function(b) { return b.toString(16).padStart(2, "0"); }).join("");
