@@ -212,6 +212,11 @@ const STYLE = `
 .ap-heatmap th { background: #111820; color: #8899aa; padding: 6px 8px; border: 1px solid #1a2332; text-align: center; font-weight: normal; white-space: nowrap; }
 .ap-heatmap th:first-child { text-align: left; min-width: 160px; }
 .ap-heatmap td { padding: 4px; border: 1px solid #1a2332; text-align: center; width: 30px; height: 30px; }
+.ap-heatmap th.ap-hm-toggle { cursor: pointer; }
+.ap-heatmap th.ap-hm-toggle:hover { color: #c8d6e5; border-color: #2a3a4a; }
+.ap-heatmap th.ap-hm-toggle.on { background: #0a2a0a; color: #00ff88; }
+.ap-cov-help { font-size: 12px; color: #8899aa; margin: 0 0 12px; line-height: 1.5; }
+.ap-cov-help .ap-btn { margin-left: 8px; }
 .ap-hm-covered { background: #0a2a0a; color: #00ff88; }
 .ap-hm-partial { background: #2a2a0a; color: #eab308; }
 .ap-hm-none { background: #2a0a0a; color: #ff4444; }
@@ -332,14 +337,28 @@ export function renderAdversaryPlaybook(container) {
   let selectedActor = THREAT_ACTORS[0];
   let selectedTechniques = new Set();
   let killChain = [];
-  let detectedTechniques = new Set();
   let currentTab = 'matrix';
   let detailTech = null;
 
-  // Randomly mark some techniques as detected for demo
-  TECHNIQUES.forEach(t => {
-    if (Math.random() > 0.6) detectedTechniques.add(t.id);
-  });
+  // Detection coverage is YOUR input: which techniques your SOC can detect.
+  // It starts empty and is saved in this browser (localStorage) as you toggle it.
+  const COVERAGE_KEY = 'dn_ap_detected_v1';
+  function loadCoverage() {
+    try {
+      const raw = localStorage.getItem(COVERAGE_KEY);
+      const arr = raw ? JSON.parse(raw) : [];
+      const valid = new Set(TECHNIQUES.map(t => t.id));
+      return new Set(Array.isArray(arr) ? arr.filter(id => valid.has(id)) : []);
+    } catch (e) { return new Set(); }
+  }
+  function saveCoverage() {
+    try { localStorage.setItem(COVERAGE_KEY, JSON.stringify(Array.from(detectedTechniques))); } catch (e) { /* storage unavailable: keep in memory only */ }
+  }
+  function toggleDetected(tid) {
+    if (detectedTechniques.has(tid)) detectedTechniques.delete(tid); else detectedTechniques.add(tid);
+    saveCoverage();
+  }
+  let detectedTechniques = loadCoverage();
 
   function getTechById(id) { return TECHNIQUES.find(t => t.id === id); }
   function getTechsForTactic(tacticId) { return TECHNIQUES.filter(t => t.tactic === tacticId); }
@@ -513,6 +532,9 @@ export function renderAdversaryPlaybook(container) {
   function renderHeatmap() {
     let h = '';
     h += '<div class="ap-section-title">DETECTION COVERAGE HEATMAP — ' + esc(selectedActor.name) + '</div>';
+    h += '<div class="ap-cov-help">Coverage is your own assessment: click a technique column header to mark it as detected (or not) by your SOC. ' +
+      'It starts with nothing detected and is saved in this browser only. ' + detectedTechniques.size + ' technique' + (detectedTechniques.size === 1 ? '' : 's') + ' marked detected.' +
+      (detectedTechniques.size ? ' <button class="ap-btn ap-btn-ghost ap-btn-sm" id="ap-clear-detect">Clear coverage</button>' : '') + '</div>';
 
     const actorTechs = selectedActor.techniques.map(tid => getTechById(tid)).filter(Boolean);
     if (actorTechs.length === 0) {
@@ -524,7 +546,8 @@ export function renderAdversaryPlaybook(container) {
     h += '<table class="ap-heatmap">';
     h += '<thead><tr><th>DATA SOURCE</th>';
     actorTechs.forEach(tech => {
-      h += '<th title="' + esc(tech.name) + '">' + esc(tech.id.replace('T', '')) + '</th>';
+      const on = detectedTechniques.has(tech.id);
+      h += '<th class="ap-hm-toggle' + (on ? ' on' : '') + '" data-detect-toggle="' + esc(tech.id) + '" role="button" tabindex="0" aria-pressed="' + on + '" title="' + esc(tech.id + ': ' + tech.name + (on ? ' (detected, click to unmark)' : ' (not detected, click to mark detected)')) + '">' + esc(tech.id.replace('T', '')) + '</th>';
     });
     h += '</tr></thead><tbody>';
 
@@ -831,6 +854,7 @@ export function renderAdversaryPlaybook(container) {
     }
     h += '</ul></div>';
     h += '<div class="ap-detail-section"><div class="ap-detail-section-title">Detection Status</div>';
+    h += '<button class="ap-btn ap-btn-ghost ap-btn-sm" id="ap-toggle-detect" style="margin-bottom:8px">' + (detectedTechniques.has(tech.id) ? 'Mark as not detected' : 'Mark as detected') + '</button>';
     if (detectedTechniques.has(tech.id)) {
       h += '<div style="color:#00ff88;font-size:13px;font-weight:bold">● COVERED</div>';
     } else if (selectedActor.techniques.includes(tech.id)) {
@@ -861,6 +885,17 @@ export function renderAdversaryPlaybook(container) {
     container.querySelectorAll('.ap-tab').forEach(tab => {
       tab.onclick = () => { currentTab = tab.dataset.tab; render(); };
     });
+
+    // Detection coverage toggles (heatmap headers + detail panel)
+    container.querySelectorAll('[data-detect-toggle]').forEach(th => {
+      const act = () => { toggleDetected(th.dataset.detectToggle); render(); };
+      th.onclick = act;
+      th.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); act(); } };
+    });
+    const detBtn = container.querySelector('#ap-toggle-detect');
+    if (detBtn && detailTech) detBtn.onclick = () => { toggleDetected(detailTech.id); render(); };
+    const clrDet = container.querySelector('#ap-clear-detect');
+    if (clrDet) clrDet.onclick = () => { detectedTechniques = new Set(); saveCoverage(); render(); };
 
     // Tech cell clicks
     container.querySelectorAll('[data-tech]').forEach(cell => {

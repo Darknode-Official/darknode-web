@@ -1563,7 +1563,7 @@ function renderApp(user) {
     else if (sec === "encoding") { import("/js/encoding-suite.js?v=20260924b").then(m => m.renderEncodingSuite(main)); }
     else if (sec === "threatmodel") { import("/js/threat-modeler.js?v=20260924b").then(m => m.renderThreatModeler(main)); }
     else if (sec === "osint") { import("/js/osint-dashboard.js?v=20260924a").then(m => m.renderOSINTDashboard(main)); }
-    else if (sec === "addressintel") { import("/js/address-intel.js?v=20260924b").then(m => m.renderAddressIntel(main)); }
+    else if (sec === "addressintel") { import("/js/address-intel.js?v=20260927a").then(m => m.renderAddressIntel(main)); }
     else if (sec === "incidents") { import("/js/incident-tracker.js").then(m => m.renderIncidentTracker(main)); }
     else if (sec === "firewall") { import("/js/firewall-builder.js").then(m => m.renderFirewallBuilder(main)); }
     else if (sec === "apitester") { import("/js/api-tester.js").then(m => m.renderAPITester(main)); }
@@ -1591,7 +1591,7 @@ function renderApp(user) {
     else if (sec === "vanguard") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading VANGUARD...</p>"; import("/js/vanguard.js?v=20260924c").then(m => m.renderVanguard(main)); }
     else if (sec === "phantom") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading PHANTOM...</p>"; const _s=sec; import("/js/phantom.js?v=20260924x").then(m => { if(curSec!==_s)return; m.renderPhantom(main); _prevCleanup = m.cleanupPhantom; }); }
     else if (sec === "citadel") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading CITADEL...</p>"; const _s=sec; import("/js/citadel.js?v=20260924x").then(m => { if(curSec!==_s)return; m.renderCitadel(main); _prevCleanup = m.cleanupCitadel; }); }
-    else if (sec === "oracle") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading ORACLE...</p>"; const _s=sec; import("/js/oracle.js?v=20260924x").then(m => { if(curSec!==_s)return; m.renderOracle(main); _prevCleanup = m.cleanupOracle; }); }
+    else if (sec === "oracle") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading ORACLE...</p>"; const _s=sec; import("/js/oracle.js?v=20260927a").then(m => { if(curSec!==_s)return; m.renderOracle(main); _prevCleanup = m.cleanupOracle; }); }
     else if (sec === "spectre") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading SPECTRE...</p>"; const _s=sec; import("/js/spectre.js?v=20260924x").then(m => { if(curSec!==_s)return; m.renderSpectre(main); _prevCleanup = m.cleanupSpectre; }); }
     else if (sec === "crucible") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading CRUCIBLE...</p>"; const _s=sec; import("/js/crucible.js?v=20260924w").then(m => { if(curSec!==_s)return; m.renderCrucible(main); _prevCleanup = m.cleanupCrucible; }); }
     else if (sec === "navarch") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading NAVARCH...</p>"; const _s=sec; import("/js/navarch.js?v=20260924w").then(m => { if(curSec!==_s)return; m.renderNavarch(main); _prevCleanup = m.cleanupNavarch; }); }
@@ -1620,15 +1620,15 @@ function renderApp(user) {
     else if (sec === "cheats") renderCheats(main);
     else if (sec === "threat") renderThreat(main);
     else if (sec === "ipreputation") { import("/js/ip-reputation.js").then(m => m.renderIPReputation(main)); }
-    else if (sec === "cyberbriefing") { import("/js/cyber-briefing.js?v=20260924b").then(m => m.renderCyberBriefing(main)); }
+    else if (sec === "cyberbriefing") { import("/js/cyber-briefing.js?v=20260927a").then(m => m.renderCyberBriefing(main)); }
     else if (sec === "incidentcost") { import("/js/incident-cost.js?v=20260924b").then(m => m.renderIncidentCost(main)); }
     else if (sec === "fedcompliance") { import("/js/fed-compliance.js").then(m => m.renderFedCompliance(main)); }
-    else if (sec === "adversaryplaybook") { import("/js/adversary-playbook.js").then(m => m.renderAdversaryPlaybook(main)); }
+    else if (sec === "adversaryplaybook") { import("/js/adversary-playbook.js?v=20260927a").then(m => m.renderAdversaryPlaybook(main)); }
     else if (sec === "emailheader") { import("/js/email-header.js?v=20260924b").then(m => m.renderEmailHeader(main)); }
     else if (sec === "iocextractor") { import("/js/ioc-extractor.js?v=20260924b").then(m => m.renderIOCExtractor(main)); }
     else if (sec === "reconplanner") { import("/js/recon-planner.js").then(m => m.renderReconPlanner(main)); }
     else if (sec === "packetinspector") { import("/js/packet-inspector.js?v=20260924b").then(m => m.renderPacketInspector(main)); }
-    else if (sec === "siemdash") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading SIEM...</p>"; import("/js/siem-dash.js?v=20260924b").then(m => m.renderSiemDash(main)); }
+    else if (sec === "siemdash") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading SIEM...</p>"; import("/js/siem-dash.js?v=20260927a").then(m => m.renderSiemDash(main)); }
     else if (sec === "apifuzzer") { import("/js/api-fuzzer.js").then(m => m.renderAPIFuzzer(main)); }
     else if (sec === "incidentresponse") { import("/js/incident-response.js").then(m => m.renderIncidentResponse(main)); }
     else if (sec === "networktraffic") { import("/js/network-traffic.js?v=20260924b").then(m => m.renderNetworkTraffic(main)); }
@@ -1636,7 +1636,7 @@ function renderApp(user) {
     else if (sec === "reverseshell") { import("/js/reverse-shell.js?v=20260924b").then(m => m.renderReverseShell(main)); }
     else if (sec === "xsslab") { import("/js/xss-lab.js").then(m => m.renderXSSLab(main)); }
     else if (sec === "osintemail") { import("/js/osint-email.js").then(m => m.renderOSINTEmail(main)); }
-    else if (sec === "threatfeed") { import("/js/threat-feed.js?v=20260924b").then(m => m.renderThreatFeed(main)); }
+    else if (sec === "threatfeed") { import("/js/threat-feed.js?v=20260927a").then(m => m.renderThreatFeed(main)); }
     else if (sec === "secchecklist") { import("/js/sec-checklist.js?v=20260924b").then(m => m.renderSecChecklist(main)); }
     else if (sec === "investigation") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Investigation Workspace...</p>"; const _s=sec; import("/js/investigation.js?v=20260924w").then(m => { if(curSec!==_s)return; m.renderInvestigation(main); _prevCleanup = m.cleanupInvestigation; }); }
     else if (sec === "secgraph") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Security Graph...</p>"; import("/js/security-graph-ui.js?v=20260924b").then(m => m.renderSecurityGraphUI(main)); }
@@ -1656,7 +1656,7 @@ function renderApp(user) {
     else if (sec === "securityquiz") { import("/js/security-quiz.js").then(m => m.renderSecurityQuiz(main)); }
     else if (sec === "securityscanner") { import("/js/security-scanner.js?v=20260924b").then(m => m.renderSecurityScanner(main)); }
     else if (sec === "subnetvisualizer") { import("/js/subnet-visualizer.js?v=20260924b").then(m => m.renderSubnetVisualizer(main)); }
-    else if (sec === "threatdashboard") { import("/js/threat-dashboard.js").then(m => m.renderThreatDashboard(main)); }
+    else if (sec === "threatdashboard") { import("/js/threat-dashboard.js?v=20260927a").then(m => m.renderThreatDashboard(main)); }
     else if (sec === "timelineviz") { import("/js/timeline-viz.js").then(m => m.renderTimelineViz(main)); }
     else if (sec === "vulndb") { import("/js/vulnerability-db.js?v=20260924b").then(m => m.renderVulnerabilityDB(main)); }
     else if (sec === "asnexplorer") { import("/js/asn-explorer.js?v=20260924b").then(m => m.renderAsnExplorer(main)); }

@@ -124,6 +124,8 @@ const STYLE = `
 .sd-wrap{font-family:system-ui,-apple-system,sans-serif;color:var(--txt,#c8d6e5);max-width:1100px;margin:0 auto;padding:20px 0}
 .sd-hdr{display:flex;align-items:center;gap:14px;margin-bottom:18px;flex-wrap:wrap}
 .sd-hdr h2{margin:0;font-size:1.45rem;font-weight:700;letter-spacing:-.02em}
+.sd-hdr .sd-sim-badge{background:#f59e0b;color:#1a1200;font-size:.65rem;padding:2px 8px;border-radius:4px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.sd-hdr .sd-sim-note{font-size:.75rem;color:var(--mut,#94a3b8)}
 .sd-hdr .sd-badge{background:var(--acc,#2563eb);color:#fff;font-size:.65rem;padding:2px 8px;border-radius:9999px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
 .sd-tabs{display:flex;gap:4px;margin-bottom:18px;border-bottom:1px solid var(--line,#1e293b);padding-bottom:0;flex-wrap:wrap}
 .sd-tab{background:none;border:none;color:var(--mut,#64748b);font-size:.82rem;padding:8px 16px;cursor:pointer;border-bottom:2px solid transparent;transition:color .15s,border-color .15s;font-weight:500}
@@ -268,7 +270,7 @@ export function renderSiemDash(container) {
   else if (container._sdInterval) { clearInterval(container._sdInterval); clearInterval(container._sdEpmInterval); }
 
   const TABS = [
-    { id: "feed",        label: "Live Feed" },
+    { id: "feed",        label: "Event Feed" },
     { id: "alerts",      label: "Alerts" },
     { id: "correlation", label: "Correlation" },
     { id: "sources",     label: "Sources" },
@@ -300,7 +302,8 @@ export function renderSiemDash(container) {
   <div class="sd-wrap">
     <div class="sd-hdr">
       <h2>SIEM Dashboard</h2>
-      <span class="sd-badge">Real-Time</span>
+      <span class="sd-sim-badge" title="Every event, alert, source and metric on this page is randomly generated for demonstration. Nothing here comes from a real log source.">Simulated events</span>
+      <span class="sd-sim-note">Demo data: events are randomly generated, not collected from real systems.</span>
     </div>
     <div class="sd-tabs">${TABS.map(t => `<button class="sd-tab${t.id === activeTab ? " active" : ""}" data-tab="${t.id}">${esc(t.label)}</button>`).join("")}</div>
     <div id="sd-content"></div>
