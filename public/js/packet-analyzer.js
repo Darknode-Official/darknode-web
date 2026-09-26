@@ -547,7 +547,10 @@ function parseDNS(bytes, offset, maxLen) {
       if (len === 0) { p++; break; }
       if ((len & 0xC0) === 0xC0) {
         if (!jumped) savedP = p + 2;
-        p = ((len & 0x3F) << 8) | bytes[p + 1];
+        // RFC 1035 §4.1.4: a compression pointer is an offset from the start
+        // of the DNS message, not the captured frame. The DNS message begins
+        // at `offset` within `bytes` (the whole Ethernet frame), so rebase it.
+        p = offset + (((len & 0x3F) << 8) | bytes[p + 1]);
         jumped = true;
         continue;
       }

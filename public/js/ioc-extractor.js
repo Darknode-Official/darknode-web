@@ -2,7 +2,11 @@ import { esc } from '/js/shared.js';
 
 const IOC_PATTERNS = {
   ipv4: { regex: /(?:^|[\s,;|"'(<\[])(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})(?=[\s,;|"')>\]]|$)/gm, label: 'IPv4 Addresses', icon: 'IP4' },
-  ipv6: { regex: /(?:^|[\s,;|])([0-9a-fA-F]{1,4}(?::[0-9a-fA-F]{0,4}){2,7})(?=[\s,;|]|$)/gm, label: 'IPv6 Addresses', icon: 'IP6' },
+  // RFC 4291 §2.2: a valid IPv6 text form is 8 hextet groups, OR fewer groups
+  // only when a single "::" compression is present. The old {2,7} pattern
+  // accepted bare 3-7 group strings (matching timestamps like 12:30:45 and
+  // versions like 1:2:3) and could never match a "::"-leading address (::1).
+  ipv6: { regex: /(?:^|[\s,;|])((?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}|(?:[0-9a-fA-F]{1,4}:){1,7}:|(?:[0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|(?:[0-9a-fA-F]{1,4}:){1,5}(?::[0-9a-fA-F]{1,4}){1,2}|(?:[0-9a-fA-F]{1,4}:){1,4}(?::[0-9a-fA-F]{1,4}){1,3}|(?:[0-9a-fA-F]{1,4}:){1,3}(?::[0-9a-fA-F]{1,4}){1,4}|(?:[0-9a-fA-F]{1,4}:){1,2}(?::[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:(?::[0-9a-fA-F]{1,4}){1,6}|:(?:(?::[0-9a-fA-F]{1,4}){1,7}|:))(?=[\s,;|]|$)/gm, label: 'IPv6 Addresses', icon: 'IP6' },
   domain: { regex: /(?:^|[\s,;|"'(<\[])([a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*\.(?:com|net|org|io|xyz|ru|cn|ir|kp|info|biz|co|uk|de|fr|jp|br|in|au|ca|gov|edu|mil|int|top|tk|ml|ga|cf|gq|cc|tv|us|me|pro|name|club|site|online|store|tech|fun|icu|buzz|space|dev|app|ai))(?=[\s,;|"')>\]]|$)/gim, label: 'Domains', icon: 'DNS' },
   url: { regex: /https?:\/\/[^\s<>"')\]]+/gi, label: 'URLs', icon: 'URL' },
   email: { regex: /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/gi, label: 'Email Addresses', icon: 'MAIL' },
@@ -10,7 +14,7 @@ const IOC_PATTERNS = {
   sha1: { regex: /\b([a-fA-F0-9]{40})\b/g, label: 'SHA-1 Hashes', icon: 'SHA1' },
   sha256: { regex: /\b([a-fA-F0-9]{64})\b/g, label: 'SHA-256 Hashes', icon: 'SHA256' },
   cve: { regex: /CVE-\d{4}-\d{4,}/gi, label: 'CVE IDs', icon: 'CVE' },
-  mac: { regex: /\b([0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}\b/g, label: 'MAC Addresses', icon: 'MAC' },
+  mac: { regex: /\b(?:[0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}\b/g, label: 'MAC Addresses', icon: 'MAC' },
   registry: { regex: /(?:HKLM|HKCU|HKCR|HKU|HKCC)\\[\w\\]+/gi, label: 'Registry Keys', icon: 'REG' },
   filepath: { regex: /(?:[A-Z]:\\(?:[\w.-]+\\)*[\w.-]+|\/(?:[\w.-]+\/)*[\w.-]+\.\w+)/g, label: 'File Paths', icon: 'FILE' },
   btc: { regex: /\b[13][a-km-zA-HJ-NP-Z1-9]{25,34}\b/g, label: 'Bitcoin Addresses', icon: 'BTC' },
