@@ -76,9 +76,9 @@ const MD5 = (function () {
       c = md5gg(c, d, a, b, x[i + 3],  14, -187363961);
       b = md5gg(b, c, d, a, x[i + 8],  20, 1163531501);
       a = md5gg(a, b, c, d, x[i + 13], 5, -1444681467);
-      d = md5gg(d, a, b, c, x[i + 6],  9, -51403784);
-      c = md5gg(c, d, a, b, x[i + 11], 14, 1735328473);
-      b = md5gg(b, c, d, a, x[i + 0],  20, -1926607734);
+      d = md5gg(d, a, b, c, x[i + 2],  9, -51403784);
+      c = md5gg(c, d, a, b, x[i + 7],  14, 1735328473);
+      b = md5gg(b, c, d, a, x[i + 12], 20, -1926607734);
 
       a = md5hh(a, b, c, d, x[i + 5],  4, -378558);
       d = md5hh(d, a, b, c, x[i + 8],  11, -2022574463);
@@ -446,19 +446,23 @@ const SHA512 = (function () {
   ];
 
   function int64add(dst, a, b) {
+    // Read every input before writing dst: dst may alias a (e.g. the final
+    // int64add(H[i], H[i], ...) accumulation), and writing dst.lo first would
+    // corrupt the carry computation.
     const lo = (a.lo >>> 0) + (b.lo >>> 0);
+    const hi = (a.hi + b.hi + (lo > 0xffffffff ? 1 : 0)) | 0;
     dst.lo = lo | 0;
-    dst.hi = (a.hi + b.hi + ((lo >>> 0) < (a.lo >>> 0) ? 1 : 0)) | 0;
+    dst.hi = hi;
   }
   function int64add4(dst, a, b, c, d) {
     const lo = (a.lo >>> 0) + (b.lo >>> 0) + (c.lo >>> 0) + (d.lo >>> 0);
     dst.lo = lo | 0;
-    dst.hi = (a.hi + b.hi + c.hi + d.hi + Math.floor((lo >>> 0) / 0x100000000)) | 0;
+    dst.hi = (a.hi + b.hi + c.hi + d.hi + Math.floor(lo / 0x100000000)) | 0;
   }
   function int64add5(dst, a, b, c, d, e) {
     const lo = (a.lo >>> 0) + (b.lo >>> 0) + (c.lo >>> 0) + (d.lo >>> 0) + (e.lo >>> 0);
     dst.lo = lo | 0;
-    dst.hi = (a.hi + b.hi + c.hi + d.hi + e.hi + Math.floor((lo >>> 0) / 0x100000000)) | 0;
+    dst.hi = (a.hi + b.hi + c.hi + d.hi + e.hi + Math.floor(lo / 0x100000000)) | 0;
   }
   function int64shr(dst, x, shift) {
     dst.lo = (x.lo >>> shift) | (x.hi << (32 - shift));
@@ -500,15 +504,17 @@ const SHA512 = (function () {
   }
 
   function coreSHA512(msg, len) {
-    const bytelen = len / 8;
-    const msglen = bytelen + 128 - ((bytelen + 16) % 128);
-    const m = new Array(msglen / 4);
+    // Pad into 32-bit big-endian words. Each 1024-bit block is 32 words; the
+    // low 32 bits of the (128-bit) message length go in the final word of the
+    // last block, which is where the compression loop reads W[15].lo.
+    const lenWordIdx = (((len + 128) >> 10) << 5) + 31;
+    const m = new Array(lenWordIdx + 1);
     for (let i = 0; i < m.length; i++) m[i] = 0;
-    for (let i = 0; i < bytelen; i++) {
-      m[i >> 2] |= (msg.charCodeAt(i) & 0xff) << (24 - (i % 4) * 8);
+    for (let i = 0; i < len; i += 8) {
+      m[i >> 5] |= (msg.charCodeAt(i / 8) & 0xff) << (24 - (i % 32));
     }
-    m[bytelen >> 2] |= 0x80 << (24 - (bytelen % 4) * 8);
-    m[m.length - 1] = len;
+    m[len >> 5] |= 0x80 << (24 - (len % 32));
+    m[lenWordIdx] = len;
 
     const W = new Array(80);
     for (let j = 0; j < 80; j++) W[j] = new Int64(0, 0);
@@ -554,7 +560,7 @@ const SHA512 = (function () {
         int64add5(T1, h, s1, ch, K[j], W[j]);
         int64rotr(r1, a, 28);
         int64revrrot(r2, a, 2);
-        int64rotr(r3, a, 7);
+        int64revrrot(r3, a, 7);
         s0.lo = r1.lo ^ r2.lo ^ r3.lo;
         s0.hi = r1.hi ^ r2.hi ^ r3.hi;
         maj.lo = (a.lo & b.lo) ^ (a.lo & c.lo) ^ (b.lo & c.lo);

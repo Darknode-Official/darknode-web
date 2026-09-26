@@ -96,7 +96,10 @@ export function renderFaviconHasher(container) {
     msg.push(0x80);
     while (msg.length % 64 !== 56) msg.push(0);
     var bitLen = origLen * 8;
-    for (var b = 0; b < 8; b++) msg.push((bitLen >>> (b * 8)) & 0xff);
+    // 64-bit little-endian length. Use division, not `>>>`: JS shifts by
+    // (count & 31), so `bitLen >>> 32` would wrap to `>>> 0` and duplicate the
+    // low bytes into bytes 4-7 instead of emitting the high 32 bits (0 here).
+    for (var b = 0; b < 8; b++) msg.push(Math.floor(bitLen / Math.pow(2, 8 * b)) & 0xff);
 
     var S = [7,12,17,22, 5,9,14,20, 4,11,16,23, 6,10,15,21];
     var K = [];
