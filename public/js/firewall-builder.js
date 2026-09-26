@@ -207,15 +207,15 @@ function ruleToCiscoACL(r, num) {
   if (src !== "any") {
     var sp = src.split("/");
     var mask = sp[1] ? parseInt(sp[1], 10) : 32;
-    var wildcard = ((1 << (32 - mask)) - 1);
-    var w3 = wildcard & 0xFF, w2 = (wildcard >> 8) & 0xFF, w1 = (wildcard >> 16) & 0xFF, w0 = (wildcard >> 24) & 0xFF;
+    var wildcard = mask === 0 ? 0xFFFFFFFF : (((1 << (32 - mask)) - 1) >>> 0);
+    var w3 = wildcard & 0xFF, w2 = (wildcard >> 8) & 0xFF, w1 = (wildcard >> 16) & 0xFF, w0 = (wildcard >>> 24) & 0xFF;
     src = sp[0] + " " + w0 + "." + w1 + "." + w2 + "." + w3;
   }
   if (dst !== "any") {
     var dp = dst.split("/");
     var dmask = dp[1] ? parseInt(dp[1], 10) : 32;
-    var dwildcard = ((1 << (32 - dmask)) - 1);
-    var d3 = dwildcard & 0xFF, d2 = (dwildcard >> 8) & 0xFF, d1 = (dwildcard >> 16) & 0xFF, d0 = (dwildcard >> 24) & 0xFF;
+    var dwildcard = dmask === 0 ? 0xFFFFFFFF : (((1 << (32 - dmask)) - 1) >>> 0);
+    var d3 = dwildcard & 0xFF, d2 = (dwildcard >> 8) & 0xFF, d1 = (dwildcard >> 16) & 0xFF, d0 = (dwildcard >>> 24) & 0xFF;
     dst = dp[0] + " " + d0 + "." + d1 + "." + d2 + "." + d3;
   }
   var cmd = "access-list " + (100 + num) + " " + act + " " + proto + " " + src + " " + dst;
