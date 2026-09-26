@@ -327,7 +327,10 @@ export function renderAPIFuzzer(container) {
           <input class="af-input" id="af-url" placeholder="https://api.example.com/v1/users" value="${esc(state.url)}" style="flex:1">
           <button class="af-btn" id="af-send">Send Request</button>
         </div>
+        <div style="font-size:11px;color:#4a6a8a;margin-top:4px">Sends a real request from your browser. Cross-origin targets may be blocked by CORS or this site’s security policy.</div>
       </div>
+
+      ${renderManualResult()}
 
       <div class="af-panel">
         <h3>Headers</h3>
@@ -425,9 +428,11 @@ export function renderAPIFuzzer(container) {
           </div>
         </div>
         <div style="margin-top:16px;display:flex;align-items:center;gap:12px">
-          <button class="af-btn${state.fuzzRunning?' danger':''}" id="af-start-fuzz">${state.fuzzRunning ? 'Stop Fuzzing' : `Start Fuzzing (${totalPayloads} payloads)`}</button>
-          <span style="font-size:12px;color:#6a8aaa">Use <code style="color:#00aaff">FUZZ</code> as the placeholder in URL, headers, or body</span>
+          <button class="af-btn${state.fuzzRunning?' danger':''}" id="af-start-fuzz">${state.fuzzRunning ? 'Stop Fuzzing' : `Start Fuzzing (${Math.min(totalPayloads, 50)} of ${totalPayloads} payloads)`}</button>
+          <span style="font-size:12px;color:#6a8aaa">Use <code style="color:#00aaff">FUZZ</code> as the placeholder in the URL or body</span>
         </div>
+        <div style="font-size:11px;color:#4a6a8a;margin-top:8px">Sends real requests from your browser (capped at 50, 250ms apart). Cross-origin targets may be blocked by CORS or this site’s security policy — those rows are marked "blocked", never guessed.</div>
+        ${state.manualError ? `<div style="font-size:12px;color:#ff4444;margin-top:8px">${esc(state.manualError)}</div>` : ''}
         ${state.fuzzRunning ? `<div class="af-progress"><div class="af-progress-bar" id="af-fuzz-progress"></div></div><div id="af-fuzz-status" style="font-size:12px;color:#6a8aaa;text-align:center"></div>` : ''}
       </div>
 
@@ -470,27 +475,29 @@ export function renderAPIFuzzer(container) {
 
     const results = state.fuzzResults;
     const statusDist = {};
-    let totalTime = 0, minTime = Infinity, maxTime = 0, totalSize = 0;
+    let totalTime = 0, minTime = Infinity, maxTime = 0, totalSize = 0, timed = 0, sized = 0;
     const anomalies = results.filter(r => r.anomaly);
+    const blocked = results.filter(r => r.blocked).length;
 
     results.forEach(r => {
       statusDist[r.status] = (statusDist[r.status] || 0) + 1;
-      totalTime += r.time;
-      if (r.time < minTime) minTime = r.time;
-      if (r.time > maxTime) maxTime = r.time;
-      totalSize += r.size;
+      if (typeof r.time === 'number') { totalTime += r.time; timed++; if (r.time < minTime) minTime = r.time; if (r.time > maxTime) maxTime = r.time; }
+      if (typeof r.size === 'number') { totalSize += r.size; sized++; }
     });
 
-    const avgTime = Math.round(totalTime / results.length);
-    const avgSize = Math.round(totalSize / results.length);
+    const avgTime = timed ? Math.round(totalTime / timed) : 0;
+    const avgSize = sized ? Math.round(totalSize / sized) : 0;
+    if (maxTime === 0) maxTime = 0;
 
     return `
+      <div class="af-panel" style="padding:12px 16px"><div style="font-size:12px;color:#6a8aaa">These are real responses to requests sent from your browser. Requests the browser blocked (CORS / this site’s security policy / network error) are marked <strong style="color:#ff4444">blocked</strong>.</div></div>
       <div class="af-stats">
-        <div class="af-stat"><div class="af-stat-val">${results.length}</div><div class="af-stat-label">Total Requests</div></div>
+        <div class="af-stat"><div class="af-stat-val">${results.length}</div><div class="af-stat-label">Requests Sent</div></div>
+        <div class="af-stat"><div class="af-stat-val" style="color:#ff4444">${blocked}</div><div class="af-stat-label">Blocked</div></div>
         <div class="af-stat"><div class="af-stat-val" style="color:#ff4444">${anomalies.length}</div><div class="af-stat-label">Anomalies</div></div>
-        <div class="af-stat"><div class="af-stat-val" style="color:#00ff88">${avgTime}ms</div><div class="af-stat-label">Avg Response</div></div>
-        <div class="af-stat"><div class="af-stat-val" style="color:#ffaa00">${maxTime}ms</div><div class="af-stat-label">Max Response</div></div>
-        <div class="af-stat"><div class="af-stat-val">${formatBytes(avgSize)}</div><div class="af-stat-label">Avg Size</div></div>
+        <div class="af-stat"><div class="af-stat-val" style="color:#00ff88">${timed ? avgTime + 'ms' : '—'}</div><div class="af-stat-label">Avg Response</div></div>
+        <div class="af-stat"><div class="af-stat-val" style="color:#ffaa00">${timed ? maxTime + 'ms' : '—'}</div><div class="af-stat-label">Max Response</div></div>
+        <div class="af-stat"><div class="af-stat-val">${sized ? formatBytes(avgSize) : '—'}</div><div class="af-stat-label">Avg Size</div></div>
       </div>
 
       <div class="af-panel">
@@ -519,12 +526,12 @@ export function renderAPIFuzzer(container) {
           <div>Status</div><div>Time</div><div>Payload</div><div style="text-align:right">Size</div>
         </div>
         ${results.slice(0, 100).map(r => {
-          const cls = String(r.status).startsWith('2') ? 's2xx' : String(r.status).startsWith('3') ? 's3xx' : String(r.status).startsWith('4') ? 's4xx' : 's5xx';
+          const cls = r.blocked ? 's4xx' : String(r.status).startsWith('2') ? 's2xx' : String(r.status).startsWith('3') ? 's3xx' : String(r.status).startsWith('4') ? 's4xx' : 's5xx';
           return `<div class="af-result-card" style="${r.anomaly ? 'border-color:#ff4444' : ''}">
-            <div class="af-status ${cls}">${r.status} ${r.anomaly ? '<span class="af-badge anomaly" style="font-size:9px;margin-left:2px">!</span>' : ''}</div>
-            <div class="af-timing">${r.time}ms</div>
+            <div class="af-status ${cls}">${esc(String(r.status))} ${r.anomaly && !r.blocked ? '<span class="af-badge anomaly" style="font-size:9px;margin-left:2px">!</span>' : ''}</div>
+            <div class="af-timing">${typeof r.time === 'number' ? r.time + 'ms' : '—'}</div>
             <div class="af-payload-preview" title="${esc(r.payload)}">${esc(r.payload)}</div>
-            <div class="af-size">${formatBytes(r.size)}</div>
+            <div class="af-size">${typeof r.size === 'number' ? formatBytes(r.size) : '—'}</div>
           </div>`;
         }).join('')}
         ${results.length > 100 ? `<div style="text-align:center;padding:12px;color:#4a6a8a;font-size:13px">Showing 100 of ${results.length} results</div>` : ''}
@@ -586,7 +593,7 @@ export function renderAPIFuzzer(container) {
       if (addHeader) addHeader.onclick = () => { state.headers.push({ key: '', val: '' }); render(); };
 
       const sendBtn = $('#af-send');
-      if (sendBtn) sendBtn.onclick = () => simulateSend();
+      if (sendBtn) sendBtn.onclick = () => sendRequest();
     }
 
     if (state.tab === 'payloads') {
@@ -610,6 +617,14 @@ export function renderAPIFuzzer(container) {
     }
 
     if (state.tab === 'fuzzer') {
+      const fuzzUrl = $('#af-fuzz-url');
+      if (fuzzUrl) fuzzUrl.oninput = () => { state.url = fuzzUrl.value; };
+      const fuzzTarget = $('#af-fuzz-target');
+      if (fuzzTarget) fuzzTarget.onchange = () => { state.fuzzTarget = fuzzTarget.value; };
+      const fuzzCat = $('#af-fuzz-cat');
+      if (fuzzCat) fuzzCat.onchange = () => { state.fuzzCategory = fuzzCat.value; render(); };
+      const fuzzMethod = $('#af-fuzz-method');
+      if (fuzzMethod) fuzzMethod.onchange = () => { state.method = fuzzMethod.value; };
       const startBtn = $('#af-start-fuzz');
       if (startBtn) startBtn.onclick = () => {
         if (state.fuzzRunning) {
@@ -638,84 +653,169 @@ export function renderAPIFuzzer(container) {
     }
   }
 
-  function simulateSend() {
-    const status = [200, 201, 204, 301, 400, 401, 403, 404, 500][Math.floor(Math.random() * 9)];
-    const time = 50 + Math.floor(Math.random() * 450);
-    const size = 200 + Math.floor(Math.random() * 5000);
+  function buildHeaders() {
+    const h = {};
+    state.headers.forEach(hd => {
+      const k = (hd.key || '').trim();
+      if (k) h[k] = hd.val || '';
+    });
+    return h;
+  }
 
-    state.fuzzResults = [{
-      payload: '(manual request)',
-      status,
-      time,
-      size,
-      anomaly: false
-    }];
-    state.tab = 'results';
+  function blockedMessage(err) {
+    // A failed fetch in the browser is almost always CORS, a network error,
+    // or this site's Content-Security-Policy connect-src restriction. The
+    // browser does not reveal which, so report honestly without inventing data.
+    const msg = err && err.message ? err.message : String(err);
+    return 'Request could not be completed. The browser or this site’s security policy blocked it '
+      + '(cross-origin / CORS restriction, this site’s Content-Security-Policy connect-src, or a network error). '
+      + 'No response data is available. Detail: ' + msg;
+  }
+
+  async function sendRequest() {
+    const url = (state.url || '').trim();
+    if (!url) {
+      state.manualResult = { error: 'Enter a request URL first.' };
+      render();
+      return;
+    }
+    let parsed;
+    try { parsed = new URL(url); } catch {
+      state.manualResult = { error: 'That is not a valid absolute URL (include http:// or https://).' };
+      render();
+      return;
+    }
+
+    state.manualResult = { pending: true };
+    render();
+
+    const opts = { method: state.method, headers: buildHeaders() };
+    if (!['GET', 'HEAD'].includes(state.method) && state.body) opts.body = state.body;
+
+    const t0 = performance.now();
+    try {
+      const res = await fetch(url, opts);
+      const bodyText = await res.text();
+      const timeMs = Math.round(performance.now() - t0);
+      const size = new TextEncoder().encode(bodyText).length;
+      const headers = [];
+      res.headers.forEach((v, k) => headers.push([k, v]));
+      state.manualResult = {
+        status: res.status,
+        statusText: res.statusText,
+        timeMs,
+        size,
+        headers,
+        bodyPreview: bodyText.slice(0, 4000),
+        truncated: bodyText.length > 4000
+      };
+    } catch (err) {
+      state.manualResult = { error: blockedMessage(err) };
+    }
     render();
   }
 
-  function startFuzzing() {
-    const payloads = AF_PAYLOADS[state.fuzzCategory]?.payloads || [];
-    if (!payloads.length) return;
+  function renderManualResult() {
+    const r = state.manualResult;
+    if (!r) return '';
+    if (r.pending) {
+      return `<div class="af-panel"><h3>Response</h3><div style="color:#6a8aaa;font-size:13px">Sending real request…</div></div>`;
+    }
+    if (r.error) {
+      return `<div class="af-panel" style="border-color:#ff4444"><h3 style="color:#ff4444">Request blocked</h3>
+        <div style="font-size:13px;color:#c8d6e5;line-height:1.6">${esc(r.error)}</div></div>`;
+    }
+    const cls = String(r.status).startsWith('2') ? 's2xx' : String(r.status).startsWith('3') ? 's3xx' : String(r.status).startsWith('4') ? 's4xx' : 's5xx';
+    return `<div class="af-panel"><h3>Response (live)</h3>
+      <div class="af-stats" style="margin-bottom:16px">
+        <div class="af-stat"><div class="af-stat-val"><span class="af-status ${cls}" style="display:inline-block;padding:4px 10px">${r.status}</span></div><div class="af-stat-label">${esc(r.statusText || '')}</div></div>
+        <div class="af-stat"><div class="af-stat-val" style="color:#00ff88">${r.timeMs}ms</div><div class="af-stat-label">Round Trip</div></div>
+        <div class="af-stat"><div class="af-stat-val" style="color:#ffaa00">${formatBytes(r.size)}</div><div class="af-stat-label">Body Size</div></div>
+      </div>
+      <div style="font-size:12px;color:#4a6a8a;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Response Headers</div>
+      <div style="background:#1a2744;padding:12px;border-radius:6px;font-family:monospace;font-size:12px;color:#8ab4d0;line-height:1.7;margin-bottom:16px;max-height:180px;overflow:auto">
+        ${r.headers.length ? r.headers.map(([k, v]) => `${esc(k)}: ${esc(v)}`).join('<br>') : '(no readable headers — cross-origin responses expose only a limited set)'}
+      </div>
+      <div style="font-size:12px;color:#4a6a8a;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Body${r.truncated ? ' (first 4000 chars)' : ''}</div>
+      <pre style="background:#1a2744;padding:12px;border-radius:6px;font-size:12px;color:#c8d6e5;overflow:auto;max-height:300px;white-space:pre-wrap;word-break:break-all;margin:0">${esc(r.bodyPreview) || '(empty body)'}</pre>
+    </div>`;
+  }
 
+  const FUZZ_MAX = 50;
+  const FUZZ_DELAY = 250;
+
+  function buildFuzzTarget(payload) {
+    // Replace the FUZZ marker; if none present, append to query string.
+    const url = state.url || '';
+    let body = state.body || '';
+    let finalUrl = url;
+    if (state.fuzzTarget === 'body') {
+      body = body.includes('FUZZ') ? body.split('FUZZ').join(payload) : body;
+    } else if (state.fuzzTarget !== 'header') {
+      finalUrl = url.includes('FUZZ') ? url.split('FUZZ').join(encodeURIComponent(payload)) : url;
+    }
+    return { finalUrl, body };
+  }
+
+  async function startFuzzing() {
+    const all = AF_PAYLOADS[state.fuzzCategory]?.payloads || [];
+    if (!all.length) return;
+    if (!(state.url || '').trim()) {
+      state.fuzzResults = [];
+      state.manualError = 'Enter a target URL (with a FUZZ marker) first.';
+      state.tab = 'fuzzer';
+      render();
+      return;
+    }
+    const payloads = all.slice(0, FUZZ_MAX);
+
+    state.manualError = null;
     state.fuzzRunning = true;
     state.fuzzResults = [];
     render();
 
-    const baseline = { status: 200, time: 120, size: 1500 };
-    let idx = 0;
-
-    const interval = setInterval(() => {
-      if (!state.fuzzRunning || idx >= payloads.length) {
-        state.fuzzRunning = false;
-        clearInterval(interval);
-        state.tab = 'results';
-        render();
-        return;
-      }
-
+    let baseline = null;
+    for (let idx = 0; idx < payloads.length; idx++) {
+      if (!state.fuzzRunning) break;
       const payload = payloads[idx];
-      const status = generateStatus(payload);
-      const time = generateTime(payload, baseline.time);
-      const size = generateSize(payload, baseline.size);
-      const anomaly = status !== baseline.status ||
-        time > baseline.time * 2.5 ||
-        Math.abs(size - baseline.size) > baseline.size * 0.35;
+      const { finalUrl, body } = buildFuzzTarget(payload);
+      const hdrs = buildHeaders();
+      if (state.fuzzTarget === 'header') {
+        Object.keys(hdrs).forEach(k => { if (hdrs[k].includes('FUZZ')) hdrs[k] = hdrs[k].split('FUZZ').join(payload); });
+      }
+      const opts = { method: state.method, headers: hdrs };
+      if (!['GET', 'HEAD'].includes(state.method) && body) opts.body = body;
 
-      state.fuzzResults.push({ payload, status, time, size, anomaly });
-      idx++;
+      let entry;
+      const t0 = performance.now();
+      try {
+        const res = await fetch(finalUrl, opts);
+        const text = await res.text();
+        const timeMs = Math.round(performance.now() - t0);
+        const size = new TextEncoder().encode(text).length;
+        if (!baseline) baseline = { status: res.status, time: timeMs, size };
+        const anomaly = res.status !== baseline.status ||
+          timeMs > baseline.time * 2.5 + 200 ||
+          Math.abs(size - baseline.size) > baseline.size * 0.35;
+        entry = { payload, status: res.status, time: timeMs, size, anomaly };
+      } catch (err) {
+        entry = { payload, status: 'blocked', time: null, size: null, anomaly: true, blocked: true, error: String((err && err.message) || err) };
+      }
+      state.fuzzResults.push(entry);
 
       const progress = container.querySelector('#af-fuzz-progress');
       const statusEl = container.querySelector('#af-fuzz-status');
-      if (progress) progress.style.width = `${Math.round(idx / payloads.length * 100)}%`;
-      if (statusEl) statusEl.textContent = `Testing ${idx}/${payloads.length}: ${payload.substring(0, 60)}...`;
-    }, 80);
-  }
+      if (progress) progress.style.width = `${Math.round((idx + 1) / payloads.length * 100)}%`;
+      if (statusEl) statusEl.textContent = `Sent ${idx + 1}/${payloads.length}: ${payload.substring(0, 60)}`;
 
-  function generateStatus(payload) {
-    const p = payload.toLowerCase();
-    if (p.includes('sleep') || p.includes('waitfor') || p.includes('benchmark')) return Math.random() > 0.6 ? 500 : 200;
-    if (p.includes('union') || p.includes('select')) return Math.random() > 0.7 ? 500 : 200;
-    if (p.includes('<script>') || p.includes('onerror')) return Math.random() > 0.5 ? 400 : 200;
-    if (p.includes('../') || p.includes('..\\')) return Math.random() > 0.6 ? 403 : 200;
-    if (p.includes('127.0.0.1') || p.includes('localhost')) return Math.random() > 0.5 ? 403 : 200;
-    if (p.includes('admin')) return Math.random() > 0.7 ? 401 : 200;
-    return [200, 200, 200, 200, 400, 403, 500][Math.floor(Math.random() * 7)];
-  }
+      if (idx < payloads.length - 1 && state.fuzzRunning) {
+        await new Promise(r => setTimeout(r, FUZZ_DELAY));
+      }
+    }
 
-  function generateTime(payload, base) {
-    const p = payload.toLowerCase();
-    if (p.includes('sleep') || p.includes('waitfor') || p.includes('benchmark')) return base + 3000 + Math.floor(Math.random() * 2000);
-    if (p.includes('union') || p.includes('select') || p.includes('information_schema')) return base + Math.floor(Math.random() * 300);
-    return base + Math.floor(Math.random() * 200) - 50;
-  }
-
-  function generateSize(payload, base) {
-    const p = payload.toLowerCase();
-    if (p.includes('union') && p.includes('select')) return base + 500 + Math.floor(Math.random() * 3000);
-    if (p.includes('etc/passwd') || p.includes('etc/shadow')) return Math.random() > 0.7 ? base + 2000 : base;
-    if (p.includes('<script>')) return base + Math.floor(Math.random() * 100);
-    return base + Math.floor(Math.random() * 400) - 200;
+    state.fuzzRunning = false;
+    state.tab = 'results';
+    render();
   }
 
   function formatBytes(b) {
