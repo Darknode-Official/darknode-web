@@ -109,19 +109,6 @@ export function renderLanding(view, actions) {
       </div>
     </section>
 
-    <!-- ====== QUELVRA ====== -->
-    <section class="section qv-band" id="quelvra" aria-labelledby="quelvra-title">
-      <div class="wrap">
-        <div class="sec-label">Quelvra</div>
-        <h2 class="sec-title" id="quelvra-title">Math that checks itself.</h2>
-        <p class="sec-sub">A math engine that shows an answer only after checking it independently. Algebra, calculus, equations, matrices and number theory, with steps and a teaching mode. Type it, draw it, or snap a photo. It works offline and says so when it cannot prove an answer.</p>
-        <div class="qv-band-row">
-          <a class="btn lg" href="/quelvra/">Open Quelvra</a>
-          <span class="qv-band-note">Free. No account needed.</span>
-        </div>
-      </div>
-    </section>
-
     <!-- ====== INTEGRATIONS STRIP ====== -->
     <section class="section integ-band" aria-label="Integrations">
       <div class="wrap">

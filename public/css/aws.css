@@ -57,6 +57,8 @@ html body.app #topbar#topbar .brand-wordmark { filter: brightness(0) invert(1) !
 html body.app #topbar#topbar #topbar-center,
 html body.app #topbar#topbar #cmdkBtn,
 html body.app #topbar#topbar #cli-dot { display: none !important; }
+/* The live ops strip belongs to the console only; never let a stale copy show on the landing page. */
+body.landing #topbar #topbar-center { display: none !important; }
 
 /* Services button + search, moved into the header by console-nav.js */
 html body.app #topbar#topbar .con-bar {
