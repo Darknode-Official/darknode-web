@@ -4,7 +4,7 @@
 // `.side-item[data-sec]` sections — every section still gets one of those buttons in
 // the hidden menu, so routing, breadcrumbs and global search keep working unchanged.
 
-import { TOOLS as MINI_TOOLS, TOOL_CATS } from "/js/tools-registry.js?v=20260925h";
+import { TOOLS as MINI_TOOLS, TOOL_CATS } from "/js/tools-registry.js?v=20260925p";
 
 const G = (id, name, color, items) => ({ id, name, color, items: items.map(([sec, label, badge]) => ({ sec, label, badge: badge || null })) });
 
