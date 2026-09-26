@@ -280,7 +280,7 @@ export function renderForensicsToolkit(container) {
         const date = (n >> 16) & 0xFFFF, time = n & 0xFFFF;
         const y = ((date >> 9) & 0x7F) + 1980, mo = (date >> 5) & 0x0F, d = date & 0x1F;
         const h = (time >> 11) & 0x1F, mi = (time >> 5) & 0x3F, s = (time & 0x1F) * 2;
-        ms = new Date(y, mo - 1, d, h, mi, s).getTime(); break;
+        ms = Date.UTC(y, mo - 1, d, h, mi, s); break;
       }
       case "chrome": ms = (n / 1000) - 11644473600000; break;
       case "webkit": ms = (n - 978307200) * 1000; break;
