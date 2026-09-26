@@ -21,7 +21,7 @@ let MORE = [], CATALOG = [], CATEGORIES = [];
 import("/js/toolkit.js").then(m => { MORE = m.MORE; CATALOG = m.CATALOG; CATEGORIES = m.CATEGORIES; });
 import { startTour, tourDone } from "/js/tour.js";
 let _landing = null;
-async function loadLanding() { if (!_landing) _landing = await import("/js/landing.js?v=20260924x"); return _landing; }
+async function loadLanding() { if (!_landing) _landing = await import("/js/landing.js?v=20260925j"); return _landing; }
 
 // Plain-language, newbie-friendly one-liners for every sidebar item + group.
 // Surfaced as a hover tooltip so the sidebar stays visually neat while every
@@ -161,7 +161,7 @@ const SIDE_DESC = {
   jwtanalyzer: "Decode, verify and attack JSON Web Tokens (JWT).",
   regexlab: "Build and test regular expressions.",
   urldissect: "Break a URL apart and spot suspicious pieces.",
-  // Nexus AI
+  // Darknode AI
   ai: "Chat with the built-in AI about security, code and tooling.",
   coder: "An AI agent that can carry out multi-step tasks for you.",
   dataviz: "Turn raw data into charts and visualizations.",
@@ -210,7 +210,7 @@ const GROUP_DESC = {
   "Security Operations": "SOC workflows and API-security tooling.",
   "Compliance & GRC": "Compliance, governance and risk.",
   "Crypto & Encoding": "Hashing, encoding and cryptography.",
-  "Nexus AI": "AI assistants, data viz and reporting.",
+  "Darknode AI": "AI assistants, data viz and reporting.",
   "Training": "Learn and practice your skills.",
   "Labs & VMs": "Practice virtual machines.",
   "Investigations": "Case management and link analysis.",
@@ -439,8 +439,8 @@ function showLanding() {
       <button class="nav-dd-btn">Features <svg width="10" height="6" viewBox="0 0 10 6"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg></button>
       <div class="nav-dd-menu">
         <a class="nav-dd-item" href="/features" data-nav="section" data-section="features"><span class="nav-dd-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg></span><span><strong>Overview</strong><span class="nav-dd-desc">Everything you need to learn security</span></span></a>
-        <a class="nav-dd-item" href="/arsenal" data-nav="auth"><span class="nav-dd-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg></span><span><strong>120+ Tools</strong><span class="nav-dd-desc">Security tools and utilities</span></span></a>
-        <a class="nav-dd-item" href="/ai" data-nav="auth"><span class="nav-dd-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg></span><span><strong>Nexus AI</strong><span class="nav-dd-desc">AI-powered security agent</span></span></a>
+        <a class="nav-dd-item" href="/arsenal" data-nav="auth"><span class="nav-dd-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg></span><span><strong>1,000+ Tools</strong><span class="nav-dd-desc">Security tools and utilities</span></span></a>
+        <a class="nav-dd-item" href="/ai" data-nav="auth"><span class="nav-dd-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg></span><span><strong>Darknode AI</strong><span class="nav-dd-desc">AI-powered security agent</span></span></a>
         <a class="nav-dd-item" href="/cyberrange" data-nav="auth"><span class="nav-dd-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 3h6v4l4 8H5l4-8V3z"/><path d="M5 15h14v2a4 4 0 01-4 4H9a4 4 0 01-4-4v-2z"/></svg></span><span><strong>Practice Labs</strong><span class="nav-dd-desc">Hands-on CTF challenges</span></span></a>
       </div>
     </div>
@@ -896,7 +896,7 @@ function renderHome(main, user, isOwner, show) {
         </div>
         <div class="hero-actions">
           <button class="btn" data-sec="tools">Browse tools</button>
-          <button class="btn ghost" data-sec="ai">Nexus AI</button>
+          <button class="btn ghost" data-sec="ai">Darknode AI</button>
           <button class="btn ghost" data-sec="sentineleye">Sentinel Eye</button>
           <button class="btn ghost" data-sec="threat">Threat intel</button>
         </div>
@@ -958,7 +958,7 @@ function renderHome(main, user, isOwner, show) {
       <h3 class="dash-cat-label">Flagship Tools</h3>
       <div class="qa-grid">
         ${qa("investigation", "", "Investigation Workspace", "Collect entities, build timelines, create findings &mdash; unified analyst workspace.")}
-        ${qa("ai", "", "Nexus AI", "Chat with Ollama, Claude, GPT, Gemini &mdash; security &amp; coding help.")}
+        ${qa("ai", "", "Darknode AI", "Chat with Ollama, Claude, GPT, Gemini &mdash; security &amp; coding help.")}
         ${qa("sentineleye", "", "Sentinel Eye", "Global threat visualization with live CesiumJS globe &amp; 14 intelligence tabs.")}
         ${qa("prometheus", "", "Prometheus", "AI-powered incident response engine with 40+ playbooks.")}
         ${qa("secdash", "", "Security Dashboard", "Unified dashboard for threat intel, alerts and system health.")}
@@ -1008,7 +1008,7 @@ function renderHome(main, user, isOwner, show) {
         ${qa("utils", "", "Toolbox", "Run tools in your browser &mdash; encode, hash, decode JWTs, gen shells.")}
         ${qa("report", "", "Report Generator", "Generate professional pentest reports from your findings.")}
         ${qa("setup", "aicoding", "Local AI Setup", "Run Ollama models on your machine, in the terminal or a browser UI.")}
-        ${qa("coder", "", "Nexus Agent", "AI-powered code generation and security analysis agent.")}
+        ${qa("coder", "", "Darknode Agent", "AI-powered code generation and security analysis agent.")}
       </div>
     </div>
     ${directoryHTML(isOwner)}
@@ -1061,7 +1061,7 @@ function renderSettingsPage(main, user, isOwner) {
   const providers = user.providerData.map((p) => p.providerId.replace(".com", "")).join(", ") || "password";
   const created = user.metadata?.creationTime ? new Date(user.metadata.creationTime).toLocaleDateString() : "—";
   const row = (k, v) => `<div class="set-row"><span class="muted">${k}</span><span>${v}</span></div>`;
-  const SET_TABS = [["account", "Account"], ["appearance", "Appearance"], ["security", "Security"], ["apikeys", "API Keys"], ["darknode", "Darknode API"], ["mcp", "MCP Server"], ["nexus", "Nexus CLI"], ["about", "About"]];
+  const SET_TABS = [["account", "Account"], ["appearance", "Appearance"], ["security", "Security"], ["apikeys", "API Keys"], ["darknode", "Darknode API"], ["mcp", "MCP Server"], ["nexus", "Darknode CLI"], ["about", "About"]];
   // Local Darknode API key — client-side generated token so tools, the CLI and
   // an MCP client can authenticate to this workspace. Stored only in this browser.
   const dnKey = (() => {
@@ -1135,7 +1135,7 @@ function renderSettingsPage(main, user, isOwner) {
         </div>
       </div>`,
     darknode: `<h2 class="set-panel-h">Darknode API</h2>
-      <p class="muted" style="font-size:.84rem;margin-bottom:14px">Your personal Darknode API key. It lets the CLI, the MCP server, and your own scripts authenticate to this workspace and drive its 192+ tools. Generated and stored locally in your browser — never sent to our servers.</p>
+      <p class="muted" style="font-size:.84rem;margin-bottom:14px">Your personal Darknode API key. It lets the CLI, the MCP server, and your own scripts authenticate to this workspace and drive its 1,000+ tools. Generated and stored locally in your browser — never sent to our servers.</p>
       <div class="dn-keycard">
         <div class="dn-keycard-top"><span class="dn-keycard-label">Secret key</span><span class="dn-keycard-scope">full-access</span></div>
         <div class="dn-key-row">
@@ -1157,7 +1157,7 @@ function renderSettingsPage(main, user, isOwner) {
         <div class="dn-scope"><b>recon:read</b><span>DNS, subdomains, ASN, WHOIS, favicon</span></div>
         <div class="dn-scope"><b>intel:read</b><span>CVE, threat feeds, IOC, reputation</span></div>
         <div class="dn-scope"><b>tools:run</b><span>Execute any of the 192+ platform tools</span></div>
-        <div class="dn-scope"><b>ai:invoke</b><span>Nexus AI completions &amp; analysis</span></div>
+        <div class="dn-scope"><b>ai:invoke</b><span>Darknode AI completions &amp; analysis</span></div>
         <div class="dn-scope"><b>graph:write</b><span>Push findings to the Security Graph</span></div>
         <div class="dn-scope"><b>rate</b><span>1000 requests / hour (local tier)</span></div>
       </div>
@@ -1184,15 +1184,15 @@ function renderSettingsPage(main, user, isOwner) {
         <div class="dn-scope"><b>darknode.scan</b><span>SSL/TLS, headers, CSP, CORS, API security</span></div>
         <div class="dn-scope"><b>darknode.analyze</b><span>Hashes, JWTs, emails, logs, packets</span></div>
         <div class="dn-scope"><b>darknode.graph</b><span>Query &amp; write the Security Graph</span></div>
-        <div class="dn-scope"><b>darknode.ai</b><span>Delegate reasoning to Nexus AI</span></div>
+        <div class="dn-scope"><b>darknode.ai</b><span>Delegate reasoning to Darknode AI</span></div>
       </div>
       <div class="set-btns" style="margin-top:14px">
         <button class="btn" id="dn-mcp-copy2">Copy config</button>
         <a class="btn ghost" data-foot="downloads">Get the CLI bundle</a>
       </div>
       <p class="muted" style="font-size:.72rem;margin-top:10px">The <span class="mono">@darknode/mcp</span> package ships with the Darknode CLI. It bridges to this workspace using the API key above, so the model acts with your access only.</p>`,
-    nexus: `<h2 class="set-panel-h">Nexus CLI</h2>
-      <p class="muted">Sign in to the Nexus terminal agent with this code. In Nexus, run <span class="mono">/login</span> and paste it.</p>
+    nexus: `<h2 class="set-panel-h">Darknode CLI</h2>
+      <p class="muted">Sign in to the Darknode terminal agent with this code. In Darknode, run <span class="mono">/login</span> and paste it.</p>
       <div class="set-row"><span class="muted">Your code</span>
         <span class="nexus-code-row">
           <input id="nexus-code" class="mono" type="password" readonly value="${esc(user.refreshToken || "")}" autocomplete="off" spellcheck="false">
@@ -1355,7 +1355,7 @@ function renderApp(user) {
           <div class="app-foot-grid">
             <div class="app-foot-col app-foot-brandcol">
               <div class="app-foot-brandline"><span class="app-foot-brand">Darknode</span><span class="app-foot-ver">v3.1</span></div>
-              <p class="app-foot-tag">Unified cybersecurity operations platform — 192+ tools, live global intel, and AI in a single console.</p>
+              <p class="app-foot-tag">Unified cybersecurity operations platform — 1,000+ tools, live global intel, and AI in a single console.</p>
               <div class="app-foot-status"><span class="afs-dot"></span>All systems operational</div>
               <div class="app-foot-social">
                 <a data-goto="ai" class="afs-chip">Darknode AI</a>
@@ -1373,7 +1373,7 @@ function renderApp(user) {
             </div>
             <div class="app-foot-col">
               <h4>Workspace</h4>
-              <a data-goto="ai">Nexus AI</a><a data-goto="settings">Settings</a><a data-goto="saved">Saved Items</a><a data-foot="docs">Docs</a><a data-foot="downloads">Downloads</a>
+              <a data-goto="ai">Darknode AI</a><a data-goto="settings">Settings</a><a data-goto="saved">Saved Items</a><a data-foot="docs">Docs</a><a data-foot="downloads">Downloads</a>
             </div>
             <div class="app-foot-col">
               <h4>Legal</h4>
@@ -1979,7 +1979,7 @@ function highlightMatch(text, query) {
 }
 function openPalette() {
   if (document.getElementById("cmdk")) return;
-  const sections = [["home", "Dashboard"], ["investigation", "Investigation Workspace"], ["secgraph", "Security Graph"], ["casemgmt", "Case Manager"], ["ai", "AI Chat"], ["tools", "Scanner Suite"], ["saved", "Saved"], ["utils", "Toolbox"], ["payloads", "Payload Forge"], ["exploitdb", "Exploit Database"], ["ghdb", "Google Dorking"], ["targets", "Practice Targets"], ["vms", "Vulnerable VMs"], ["threat", "Threat Feed"], ["threatfeed", "Threat Intel Feed"], ["secchecklist", "Security Checklist"], ["cheats", "Cheat Sheets"], ["snippets", "Snippet Vault"], ["refs", "Reference Library"], ["training", "Training Labs"], ["privatecloud", "Private Cloud"], ["report", "Report Generator"], ["learn", "Learn Hub"], ["setup", "Local Setup"], ["coder", "Nexus Agent"], ["downloads", "Darknode OS"], ["dlguide", "Download Guide"], ["api", "API"], ["docs", "Docs"], ["education", "Education"], ["settings", "Settings"], ["admin", "Admin"], ["vanguard", "VANGUARD"], ["prometheus", "PROMETHEUS"], ["sentineleye", "SENTINEL EYE"], ["hydra", "HYDRA Engine"], ["aegis", "AEGIS Ops Center"], ["phantom", "PHANTOM"], ["citadel", "CITADEL"], ["oracle", "ORACLE"], ["spectre", "SPECTRE"], ["crucible", "CRUCIBLE"], ["navarch", "NAVARCH"], ["secdash", "Security Dashboard"], ["jwtanalyzer", "JWT Analyzer"], ["cspevaluator", "CSP Evaluator"], ["wayback", "Wayback Machine"], ["urldissect", "URL Dissector"], ["favicon", "Favicon Hasher"], ["cyberrange", "Cyber Range"], ["sandbox", "Threat Analysis Lab"], ["netmap", "Network Mapper"], ["exploitdev", "Security Research Lab"], ["cracklab", "Password Security Lab"], ["osint", "OSINT Dashboard"], ["darkwebosint", "Deep Web Intel"], ["cyberbriefing", "Cyber Briefing"], ["vulntriage", "Vuln Triage Engine"], ["incidentcost", "Incident Cost Calculator"], ["fedcompliance", "Federal Compliance"], ["adversaryplaybook", "Adversary Playbook"], ["emailheader", "Email Header Analyzer"], ["iocextractor", "IOC Extractor"], ["reconplanner", "Recon Planner"], ["packetinspector", "Packet Inspector"], ["siemdash", "SIEM Dashboard"], ["apifuzzer", "API Fuzzer"], ["incidentresponse", "Incident Response"], ["networktraffic", "Network Traffic"], ["privesc", "Privilege Analysis"], ["reverseshell", "Remote Access Testing"], ["xsslab", "Web Security Lab"], ["osintemail", "OSINT Email Intel"], ["cvetimeline", "CVE Timeline"], ["dataviz", "Data Visualization"], ["forensicstoolkit", "Forensics Toolkit"], ["hashsuite", "Hash Suite"], ["httpinspector", "HTTP Inspector"], ["iptools", "IP Tools"], ["networktools", "Network Tools"], ["packetanalyzer", "Packet Analyzer"], ["passwordtools", "Password Tools"], ["payloadgen", "Test Script Generator"], ["riskcalculator", "Risk Calculator"], ["securityquiz", "Security Quiz"], ["securityscanner", "Security Scanner"], ["subnetvisualizer", "Subnet Visualizer"], ["threatdashboard", "Threat Dashboard"], ["timelineviz", "Timeline Visualization"], ["vulndb", "Vulnerability Database"], ["asnexplorer", "ASN Explorer"], ["breachlookup", "Breach Lookup"], ["corstester", "CORS Tester"], ["cvesearch", "CVE Search"], ["darknetradar", "Darknet Radar"], ["dnsenum", "DNS Enumeration"], ["dnsrecon", "DNS Recon"], ["emailintel", "Email Intel"], ["headeranalyzer", "Header Analyzer"], ["httpprobe", "HTTP Probe"], ["identitymatrix", "Identity Matrix"], ["ipgeolocation", "IP Geolocation"], ["networkscanner", "Network Scanner"], ["sslinspector", "SSL Inspector"], ["techfingerprint", "Tech Fingerprint"], ["trafficanalyzer", "Traffic Analyzer"], ["websockettester", "WebSocket Tester"], ["whoisrecon", "WHOIS Recon"]];
+  const sections = [["home", "Dashboard"], ["investigation", "Investigation Workspace"], ["secgraph", "Security Graph"], ["casemgmt", "Case Manager"], ["ai", "AI Chat"], ["tools", "Scanner Suite"], ["saved", "Saved"], ["utils", "Toolbox"], ["payloads", "Payload Forge"], ["exploitdb", "Exploit Database"], ["ghdb", "Google Dorking"], ["targets", "Practice Targets"], ["vms", "Vulnerable VMs"], ["threat", "Threat Feed"], ["threatfeed", "Threat Intel Feed"], ["secchecklist", "Security Checklist"], ["cheats", "Cheat Sheets"], ["snippets", "Snippet Vault"], ["refs", "Reference Library"], ["training", "Training Labs"], ["privatecloud", "Private Cloud"], ["report", "Report Generator"], ["learn", "Learn Hub"], ["setup", "Local Setup"], ["coder", "Darknode Agent"], ["downloads", "Darknode OS"], ["dlguide", "Download Guide"], ["api", "API"], ["docs", "Docs"], ["education", "Education"], ["settings", "Settings"], ["admin", "Admin"], ["vanguard", "VANGUARD"], ["prometheus", "PROMETHEUS"], ["sentineleye", "SENTINEL EYE"], ["hydra", "HYDRA Engine"], ["aegis", "AEGIS Ops Center"], ["phantom", "PHANTOM"], ["citadel", "CITADEL"], ["oracle", "ORACLE"], ["spectre", "SPECTRE"], ["crucible", "CRUCIBLE"], ["navarch", "NAVARCH"], ["secdash", "Security Dashboard"], ["jwtanalyzer", "JWT Analyzer"], ["cspevaluator", "CSP Evaluator"], ["wayback", "Wayback Machine"], ["urldissect", "URL Dissector"], ["favicon", "Favicon Hasher"], ["cyberrange", "Cyber Range"], ["sandbox", "Threat Analysis Lab"], ["netmap", "Network Mapper"], ["exploitdev", "Security Research Lab"], ["cracklab", "Password Security Lab"], ["osint", "OSINT Dashboard"], ["darkwebosint", "Deep Web Intel"], ["cyberbriefing", "Cyber Briefing"], ["vulntriage", "Vuln Triage Engine"], ["incidentcost", "Incident Cost Calculator"], ["fedcompliance", "Federal Compliance"], ["adversaryplaybook", "Adversary Playbook"], ["emailheader", "Email Header Analyzer"], ["iocextractor", "IOC Extractor"], ["reconplanner", "Recon Planner"], ["packetinspector", "Packet Inspector"], ["siemdash", "SIEM Dashboard"], ["apifuzzer", "API Fuzzer"], ["incidentresponse", "Incident Response"], ["networktraffic", "Network Traffic"], ["privesc", "Privilege Analysis"], ["reverseshell", "Remote Access Testing"], ["xsslab", "Web Security Lab"], ["osintemail", "OSINT Email Intel"], ["cvetimeline", "CVE Timeline"], ["dataviz", "Data Visualization"], ["forensicstoolkit", "Forensics Toolkit"], ["hashsuite", "Hash Suite"], ["httpinspector", "HTTP Inspector"], ["iptools", "IP Tools"], ["networktools", "Network Tools"], ["packetanalyzer", "Packet Analyzer"], ["passwordtools", "Password Tools"], ["payloadgen", "Test Script Generator"], ["riskcalculator", "Risk Calculator"], ["securityquiz", "Security Quiz"], ["securityscanner", "Security Scanner"], ["subnetvisualizer", "Subnet Visualizer"], ["threatdashboard", "Threat Dashboard"], ["timelineviz", "Timeline Visualization"], ["vulndb", "Vulnerability Database"], ["asnexplorer", "ASN Explorer"], ["breachlookup", "Breach Lookup"], ["corstester", "CORS Tester"], ["cvesearch", "CVE Search"], ["darknetradar", "Darknet Radar"], ["dnsenum", "DNS Enumeration"], ["dnsrecon", "DNS Recon"], ["emailintel", "Email Intel"], ["headeranalyzer", "Header Analyzer"], ["httpprobe", "HTTP Probe"], ["identitymatrix", "Identity Matrix"], ["ipgeolocation", "IP Geolocation"], ["networkscanner", "Network Scanner"], ["sslinspector", "SSL Inspector"], ["techfingerprint", "Tech Fingerprint"], ["trafficanalyzer", "Traffic Analyzer"], ["websockettester", "WebSocket Tester"], ["whoisrecon", "WHOIS Recon"]];
   const actions = [
     { type: "action", id: "cycle-style", name: "Cycle theme style", desc: "Switch between Pro, Dark, Classic", action: cycleStyle },
     { type: "action", id: "toggle-dark", name: "Toggle light / dark", desc: "Switch light and dark mode", action: () => { const cur = document.documentElement.getAttribute("data-theme") || "dark"; applyTheme(cur === "dark" ? "light" : "dark"); } },
@@ -2130,7 +2130,7 @@ onAuthStateChanged(auth, async (user) => {
         <div style="background:var(--card,#1a1a1a);border:1px solid var(--line,#333);padding:20px;max-height:400px;overflow-y:auto;font-size:.85rem;line-height:1.7;margin-bottom:20px;border-radius:4px" id="tosBox">
           <h3>Darknode Terms of Service</h3>
           <p><strong>Last updated:</strong> September 21, 2026</p>
-          <p>By using Darknode ("the Platform"), including darknode.ai, Darknode CLI, Nexus AI agent, Darknode OS, and all associated tools, you agree to these terms. If you do not agree, do not use the Platform.</p>
+          <p>By using Darknode ("the Platform"), including darknode.ai, Darknode CLI, Darknode AI agent, Darknode OS, and all associated tools, you agree to these terms. If you do not agree, do not use the Platform.</p>
 
           <h4>1. Ethical Use Only</h4>
           <p>Darknode is built for <strong>ethical hacking, authorized penetration testing, cybersecurity education, and legitimate security research</strong>. All tools, intelligence data, exploit references, payloads, and operational platforms (including AEGIS, PROMETHEUS, HYDRA, and all CLI/VM tools) are designed to help security professionals protect systems — not attack them illegally.</p>
@@ -2145,7 +2145,7 @@ onAuthStateChanged(auth, async (user) => {
             <li>Criminal prosecution or legal action taken against you</li>
             <li>Damage to hardware, software, infrastructure, or third-party systems</li>
             <li>Consequences of AI-generated code, commands, exploits, or recommendations</li>
-            <li>Actions taken by the Nexus AI agent, AEGIS, PROMETHEUS, or any automated tool</li>
+            <li>Actions taken by the Darknode AI agent, AEGIS, PROMETHEUS, or any automated tool</li>
             <li>Financial losses, business disruption, or reputational harm</li>
             <li>Use of real CVE data, exploit code, or vulnerability information provided by the platform</li>
           </ul>
