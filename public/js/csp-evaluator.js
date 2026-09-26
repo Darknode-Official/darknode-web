@@ -69,7 +69,9 @@ export function renderCspEvaluator(container) {
       if (!trimmed) return;
       var tokens = trimmed.split(/\s+/);
       var name = tokens[0].toLowerCase();
-      directives[name] = tokens.slice(1);
+      // CSP Level 3: on a duplicate directive the FIRST occurrence is enforced
+      // and later ones are ignored (browsers only log a warning).
+      if (!Object.prototype.hasOwnProperty.call(directives, name)) directives[name] = tokens.slice(1);
     });
     return directives;
   }
