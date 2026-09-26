@@ -2068,7 +2068,7 @@ function parseAuthLog(text) {
     const isSuccess = AUTH_SUCCESS_RE.test(line);
     const isSudo = SUDO_RE.test(line);
     const ips = line.match(IPV4_RE) || [];
-    const userMatch = line.match(/(?:for|user[= ])(\S+)/i);
+    const userMatch = line.match(/(?:for(?:\s+user)?|user[= ])\s*(\S+)/i);
     entries.push({
       raw: line,
       type: isFailed ? 'failed' : isSuccess ? 'success' : isSudo ? 'sudo' : 'other',
