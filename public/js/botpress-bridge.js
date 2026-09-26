@@ -98,18 +98,20 @@
       }
       if (st.textContent !== SHADOW_CSS) st.textContent = SHADOW_CSS;
       watchComposer(sr);
+      if (!styled) log("webchat styled (bubble hidden, footer removed, brand skin)");
       styled = true;
-      log("webchat styled (bubble hidden, footer removed, brand skin)");
       return true;
     } catch (_) { return false; }
   }
   // The shadow root appears asynchronously after the widget mounts; poll for it.
   // Keep a light re-apply loop briefly in case Botpress re-renders the subtree.
-  var styleTries = 0;
+  var styleTries = 0, styledAt = -1;
   var styleIv = setInterval(function () {
     styleTries++;
     var ok = styleWidget();
-    if (styleTries > 200) clearInterval(styleIv);
+    // once styled, re-check for a few more seconds in case Botpress re-renders, then stop
+    if (ok && styledAt < 0) styledAt = styleTries;
+    if (styleTries > 200 || (styledAt >= 0 && styleTries - styledAt > 40)) clearInterval(styleIv);
   }, 150);
 
   // ── Local intent: "open citadel" typed in the chat opens it ────────────────
