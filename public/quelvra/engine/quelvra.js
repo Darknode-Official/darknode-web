@@ -20,7 +20,7 @@ import * as NUM from "./numeric.js";
 import * as U from "./units.js";
 
 export const loadErrors = [];
-const OPTIONAL = ["./strategies/solve.js", "./strategies/integrate.js", "./strategies/calculus.js"];
+const OPTIONAL = ["./strategies/solve.js", "./strategies/integrate.js", "./strategies/calculus.js", "./strategies/analysis.js"];
 for (const m of OPTIONAL) {
   try { await import(m); } catch (e) { if (!/Cannot find module|Failed to fetch|ERR_MODULE_NOT_FOUND|404/.test(String(e && (e.code || e.message)))) loadErrors.push({ module: m, message: String(e && e.message) }); }
 }
@@ -39,7 +39,8 @@ export function solve(input, options = {}) {
   const text = typeof input === "string" ? input.split(/\r?\n/).map((l) => l.trim()).filter(Boolean).join("; ") : input;
   // unit conversion requests go straight to the units engine ("5 km/h to m/s")
   if (typeof text === "string") {
-    const m = text.match(/^(?:convert\s+)?(-?[\d.]+(?:\s*[a-zA-Z°][\w°/^*·.]*)+)\s+(?:to|in|into)\s+([a-zA-Z°][\w°/^*·.]*)$/i);
+    const ut = /^(?:convert\s+)?-?[\d.]+\s*[a-z°]/i.test(text) ? U.normalizeUnitWords(text) : text;
+    const m = ut.match(/^(?:convert\s+)?(-?[\d.]+(?:\s*[a-zA-Z°][\w°/^*·.]*)+)\s+(?:to|in|into)\s+([a-zA-Z°][\w°/^*·.]*)$/i);
     if (m) {
       try {
         const r = U.convertText(`${m[1]} to ${m[2]}`);
