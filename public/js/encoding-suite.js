@@ -375,21 +375,23 @@ function parseASN1(hexStr) {
     const valueHex = valueBytes.map(b => b.toString(16).padStart(2, "0")).join(" ");
     let valueStr = "";
     if (tag === 0x02) {
-      let n = 0;
-      for (const b of valueBytes) n = (n << 8) | b;
+      let n = 0n;
+      for (const b of valueBytes) n = (n << 8n) | BigInt(b);
+      if (valueBytes.length && (valueBytes[0] & 0x80)) n -= (1n << BigInt(8 * valueBytes.length));
       valueStr = n.toString();
     } else if (tag === 0x13 || tag === 0x16 || tag === 0x0c || tag === 0x1a) {
       valueStr = valueBytes.map(b => String.fromCharCode(b)).join("");
     } else if (tag === 0x06) {
-      const oid = [];
-      oid.push(Math.floor(valueBytes[0] / 40));
-      oid.push(valueBytes[0] % 40);
-      let acc = 0;
-      for (let i = 1; i < valueBytes.length; i++) {
-        acc = (acc << 7) | (valueBytes[i] & 0x7f);
-        if (!(valueBytes[i] & 0x80)) { oid.push(acc); acc = 0; }
+      const subs = [];
+      let acc = 0n;
+      for (const b of valueBytes) {
+        acc = (acc << 7n) | BigInt(b & 0x7f);
+        if (!(b & 0x80)) { subs.push(acc); acc = 0n; }
       }
-      valueStr = oid.join(".");
+      const first = subs.length ? subs[0] : 0n;
+      const a1 = first < 40n ? 0n : first < 80n ? 1n : 2n;
+      const a2 = first - a1 * 40n;
+      valueStr = [a1, a2, ...subs.slice(1)].map(x => x.toString()).join(".");
     } else if (tag === 0x17) {
       valueStr = valueBytes.map(b => String.fromCharCode(b)).join("");
     } else if (tag === 0x01) {
