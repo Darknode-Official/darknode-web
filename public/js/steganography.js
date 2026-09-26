@@ -206,24 +206,71 @@ function extractBitPlane(imageData, channel, bit) {
   return canvas;
 }
 
-// ── Chi-square analysis ──
+// ── Chi-square CDF via the regularised lower incomplete gamma P(a,x) ──
+// (Lanczos log-gamma + Numerical Recipes series/continued-fraction for gammp.)
+function _stegLnGamma(x) {
+  var c = [76.18009172947146, -86.50532032941678, 24.01409824083091,
+           -1.231739572450155, 0.1208650973866179e-2, -0.5395239384953e-5];
+  var y = x, tmp = x + 5.5;
+  tmp -= (x + 0.5) * Math.log(tmp);
+  var ser = 1.000000000190015;
+  for (var j = 0; j < 6; j++) { y++; ser += c[j] / y; }
+  return -tmp + Math.log(2.5066282746310007 * ser / x);
+}
+function _stegGammaP(a, x) {
+  if (x <= 0 || a <= 0) return 0;
+  if (x < a + 1) {
+    var ap = a, sum = 1 / a, del = sum;
+    for (var n = 0; n < 300; n++) {
+      ap++; del *= x / ap; sum += del;
+      if (Math.abs(del) < Math.abs(sum) * 1e-13) break;
+    }
+    return sum * Math.exp(-x + a * Math.log(x) - _stegLnGamma(a));
+  }
+  var b = x + 1 - a, cc = 1e300, d = 1 / b, h = d;
+  for (var i = 1; i <= 300; i++) {
+    var an = -i * (i - a);
+    b += 2;
+    d = an * d + b; if (Math.abs(d) < 1e-300) d = 1e-300;
+    cc = b + an / cc; if (Math.abs(cc) < 1e-300) cc = 1e-300;
+    d = 1 / d; var dc = d * cc; h *= dc;
+    if (Math.abs(dc - 1) < 1e-13) break;
+  }
+  return 1 - Math.exp(-x + a * Math.log(x) - _stegLnGamma(a)) * h;
+}
+function chiSquareCdf(x, k) { return k > 0 ? _stegGammaP(k / 2, x / 2) : 0; }
+
+// ── Chi-square steganalysis (Westfeld–Pfitzmann) ──
+// LSB embedding equalises the frequencies of each value pair (2k, 2k+1). For
+// each pair we compare the even value's observed count against the expected
+// count under embedding — the pair mean — and accumulate a chi-square. A
+// suspiciously LOW chi-square (a near-perfect fit to the equalised model) is
+// unlikely by chance, so a low CDF flags probable hidden data.
+// The old routine tested the pair-bucket histogram against a flat uniform
+// distribution, which is huge for any natural image and so reported every
+// image as "suspicious".
 function chiSquareAnalysis(imageData, channel) {
   var data = imageData.data;
-  var pairs = new Array(128).fill(0);
-  for (var i = 0; i < data.length; i += 4) {
-    var v = data[i + channel];
-    pairs[Math.floor(v / 2)]++;
-  }
-  var totalPixels = data.length / 4;
-  var expected = totalPixels / 128;
-  var chiSq = 0;
-  for (var j = 0; j < 128; j++) {
-    var diff = pairs[j] - expected;
+  var hist = new Array(256).fill(0);
+  for (var i = 0; i < data.length; i += 4) hist[data[i + channel]]++;
+
+  var chiSq = 0, df = 0;
+  for (var k = 0; k < 128; k++) {
+    var even = hist[2 * k], odd = hist[2 * k + 1];
+    var expected = (even + odd) / 2;
+    // Cochran's rule: skip pairs whose expected count is too small for the
+    // chi-square approximation to hold.
+    if (expected < 5) continue;
+    var diff = even - expected;
     chiSq += (diff * diff) / expected;
+    df++;
   }
-  var df = 127;
-  var pValue = chiSq > df * 2 ? 0.0 : chiSq < df * 0.5 ? 1.0 : 1.0 - (chiSq - df) / df;
-  return { chiSquare: chiSq, degreesOfFreedom: df, pValue: Math.max(0, Math.min(1, pValue)), suspicious: pValue < 0.05 };
+  df = df > 0 ? df - 1 : 0;
+  // Report the CDF itself: a value below ~0.05 means the fit to the equalised
+  // model is suspiciously good, which is what "low p-values suggest hidden
+  // data" refers to in the panel.
+  var pValue = df > 0 ? chiSquareCdf(chiSq, df) : 1;
+  return { chiSquare: chiSq, degreesOfFreedom: df, pValue: pValue, suspicious: pValue < 0.05 };
 }
 
 // ── Histogram ──
