@@ -298,7 +298,10 @@ body:not(.landing):not(.app)::before{content:"";position:fixed;inset:0;z-index:-
 .cmd-block{white-space:pre-wrap;word-break:break-word;display:block;line-height:1.5}
 /* topbar profile + "..." menu */
 #user-slot{display:flex;align-items:center;gap:8px}
-.tb-item{position:relative}
+/* flex wrapper so the inline-flex profile button (which contains an <img> whose
+   baseline would otherwise inflate the block line-box with descender space) sits
+   flush at 34px and lines up with the other topbar controls */
+.tb-item{position:relative;display:flex;align-items:center}
 .icon-btn{background:transparent;border:1px solid var(--line);color:var(--txt);border-radius:var(--btn-radius, 4px);width:34px;height:34px;cursor:pointer;font-size:1.1rem;line-height:1;font-family:inherit}
 .icon-btn:hover{border-color:var(--acc);color:var(--acc)}
 .profile-btn{display:flex;align-items:center;gap:8px;background:transparent;border:1px solid var(--line);border-radius:var(--btn-radius, 4px);padding:3px 12px 3px 3px;cursor:pointer;color:var(--txt);font-family:inherit}

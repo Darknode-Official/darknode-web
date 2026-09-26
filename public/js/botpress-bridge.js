@@ -79,8 +79,9 @@
     ".bpWebchat{border-radius:18px !important;overflow:hidden !important;" +
       "box-shadow:0 16px 48px rgba(2,6,23,.24),0 2px 10px rgba(2,6,23,.12) !important;" +
       "border:1px solid rgba(2,6,23,.10) !important}" +
-    /* header on the site accent, white foreground for contrast */
-    ".bpHeaderContainer{background:#2563eb !important;border-bottom:none !important}" +
+    /* header in the Darknode brand black (clearly distinct from Botpress blue),
+       white foreground, thin accent underline */
+    ".bpHeaderContainer{background:#0f172a !important;border-bottom:1px solid #2563eb !important}" +
     ".bpHeaderContainer,.bpHeaderContainer *{color:#fff !important}";
 
   var styled = false;

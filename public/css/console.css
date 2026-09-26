@@ -50,7 +50,7 @@ body.app .app-main::before{inset:0!important}
 .con-search input{width:100%;height:30px;padding:0 34px 0 12px;background:var(--card);border:1px solid var(--con-bar-line);border-radius:3px;color:var(--con-bar-txt);font:inherit;font-size:.84rem;outline:none}
 .con-search input::placeholder{color:var(--con-bar-mut)}
 .con-search input:focus{border-color:var(--con-acc);box-shadow:0 0 0 1px var(--con-acc)}
-.con-search kbd{position:absolute;right:8px;font-family:var(--font-mono);font-weight:600;font-size:.7rem;color:var(--con-bar-mut);border:1px solid var(--con-bar-line);border-radius:3px;padding:3px 6px;pointer-events:none}
+.con-search kbd{position:absolute;right:8px;top:50%;transform:translateY(-50%);display:flex;align-items:center;line-height:1;font-family:var(--font-mono);font-weight:600;font-size:.7rem;color:var(--con-bar-mut);border:1px solid var(--con-bar-line);border-radius:3px;padding:3px 6px;pointer-events:none}
 .con-quick{display:flex;gap:2px;margin-left:auto}
 .con-qbtn{background:transparent;border:0;color:var(--con-bar-mut);font-family:inherit;font-weight:500;font-size:.8rem;padding:8px 10px;border-radius:3px;cursor:pointer}
 .con-qbtn:hover{color:var(--con-bar-txt);background:var(--con-bar-2)}
