@@ -61,6 +61,10 @@ const WHOLE_ONLY = new Set(["li", "Si", "Ci", "Shi", "Chi", "Ei", "erfi", "erfc"
   "domain", "range", "zeros", "intercepts", "asymptotes", "extrema", "inflection", "monotonic", "critical", "tangent", "normal", "inverse",
   "completesquare", "apart", "identity", "line", "slope", "distance", "midpoint", "arclength", "areabetween", "volume", "avgvalue",
   "maximize", "minimize", "dot", "cross", "piecewise"]);
+// ---- advanced continuous commands (engine/advanced/): bracket-only, whole-word names ----
+import { ADVANCED_CONTINUOUS_COMMANDS, ADVANCED_CONTINUOUS_FUNCTIONS } from "./advanced/names.js";
+for (const n of [...ADVANCED_CONTINUOUS_COMMANDS, ...ADVANCED_CONTINUOUS_FUNCTIONS]) { FUNCTIONS.add(n); CALL_ONLY.add(n); WHOLE_ONLY.add(n); }
+// ---- end advanced continuous commands ----
 const WORDS = [...FUNCTIONS, ...Object.keys(ALIASES), ...GREEK, ...Object.keys(CONSTS), ...KEYWORDS]
   .filter((w) => w.length > 1 && !WHOLE_ONLY.has(w))
   .sort((a, b) => b.length - a.length);

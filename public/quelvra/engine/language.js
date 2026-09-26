@@ -206,7 +206,11 @@ function equationsText(s) {
 }
 
 // Patterns: each returns a translation or null. Ordered from most to least specific.
+// ---- advanced continuous commands (engine/advanced/language-patterns.js): first, each steps aside when not applicable ----
+import { advancedPatterns } from "./advanced/language-patterns.js";
 const PATTERNS = [
+  ...advancedPatterns({ expr, mathOf, bound, splitInterval, guessVar, looksLikeMath, fnOf }),
+  // ---- end advanced continuous commands ----
   // ---- differential equations and systems ----
   { id: "solve-ode", re: /^solve (?:the )?(?:differential )?(?:equation )?(.+?) (?:with|given|where|if|subject to|and) (?:the )?(?:initial (?:conditions?|values?) )?((?:[a-z]'*\(.+?\) ?= ?.+?)(?:(?:,| and) [a-z]'*\(.+?\) ?= ?.+?)*)$/i,
     build: (m) => { if (!/'|d[a-z]\/d[a-z]/.test(m[1])) return null; const conds = m[2].split(/\s*(?:,|\band\b)\s*/).map(expr); const math = [expr(m[1]), ...conds].join(", ");
