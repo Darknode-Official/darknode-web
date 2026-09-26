@@ -16,8 +16,7 @@ var ENCODINGS = {
     name: "Base32",
     encode: function(s) {
       var alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
-      var bytes = [];
-      for (var i = 0; i < s.length; i++) bytes.push(s.charCodeAt(i));
+      var bytes = new TextEncoder().encode(s);
       var bits = "";
       for (var j = 0; j < bytes.length; j++) bits += bytes[j].toString(2).padStart(8, "0");
       while (bits.length % 5 !== 0) bits += "0";
@@ -37,21 +36,22 @@ var ENCODINGS = {
       }
       var bytes = [];
       for (var j = 0; j + 7 < bits.length; j += 8) bytes.push(parseInt(bits.substring(j, j + 8), 2));
-      return bytes.map(function(b) { return String.fromCharCode(b); }).join("");
+      return new TextDecoder().decode(new Uint8Array(bytes));
     }
   },
   hex: {
     name: "Hex (Base16)",
     encode: function(s) {
+      var bytes = new TextEncoder().encode(s);
       var out = [];
-      for (var i = 0; i < s.length; i++) out.push(s.charCodeAt(i).toString(16).padStart(2, "0"));
+      for (var i = 0; i < bytes.length; i++) out.push(bytes[i].toString(16).padStart(2, "0"));
       return out.join(" ");
     },
     decode: function(s) {
       var hex = s.trim().replace(/\s+/g, "").replace(/0x/gi, "");
-      var out = "";
-      for (var i = 0; i + 1 < hex.length; i += 2) out += String.fromCharCode(parseInt(hex.substring(i, i + 2), 16));
-      return out;
+      var bytes = [];
+      for (var i = 0; i + 1 < hex.length; i += 2) bytes.push(parseInt(hex.substring(i, i + 2), 16));
+      return new TextDecoder().decode(new Uint8Array(bytes));
     }
   },
   url: {
@@ -87,35 +87,40 @@ var ENCODINGS = {
   binary: {
     name: "Binary (8-bit)",
     encode: function(s) {
+      var bytes = new TextEncoder().encode(s);
       var out = [];
-      for (var i = 0; i < s.length; i++) out.push(s.charCodeAt(i).toString(2).padStart(8, "0"));
+      for (var i = 0; i < bytes.length; i++) out.push(bytes[i].toString(2).padStart(8, "0"));
       return out.join(" ");
     },
     decode: function(s) {
-      var bits = s.trim().split(/\s+/);
-      return bits.map(function(b) { return String.fromCharCode(parseInt(b, 2)); }).join("");
+      var bytes = s.trim().split(/\s+/).filter(Boolean).map(function(b) { return parseInt(b, 2) & 0xFF; });
+      return new TextDecoder().decode(new Uint8Array(bytes));
     }
   },
   octal: {
     name: "Octal",
     encode: function(s) {
+      var bytes = new TextEncoder().encode(s);
       var out = [];
-      for (var i = 0; i < s.length; i++) out.push(s.charCodeAt(i).toString(8).padStart(3, "0"));
+      for (var i = 0; i < bytes.length; i++) out.push(bytes[i].toString(8).padStart(3, "0"));
       return out.join(" ");
     },
     decode: function(s) {
-      return s.trim().split(/\s+/).map(function(o) { return String.fromCharCode(parseInt(o, 8)); }).join("");
+      var bytes = s.trim().split(/\s+/).filter(Boolean).map(function(o) { return parseInt(o, 8) & 0xFF; });
+      return new TextDecoder().decode(new Uint8Array(bytes));
     }
   },
   decimal: {
     name: "Decimal",
     encode: function(s) {
+      var bytes = new TextEncoder().encode(s);
       var out = [];
-      for (var i = 0; i < s.length; i++) out.push(s.charCodeAt(i).toString());
+      for (var i = 0; i < bytes.length; i++) out.push(bytes[i].toString());
       return out.join(" ");
     },
     decode: function(s) {
-      return s.trim().split(/\s+/).map(function(d) { return String.fromCharCode(parseInt(d, 10)); }).join("");
+      var bytes = s.trim().split(/\s+/).filter(Boolean).map(function(d) { return parseInt(d, 10) & 0xFF; });
+      return new TextDecoder().decode(new Uint8Array(bytes));
     }
   },
   rot13: {
@@ -653,7 +658,7 @@ export function renderEncodingToolkit(main) {
       '<tr><td>Milliseconds</td><td>' + (ts * 1000) + '</td></tr>' +
       '<tr><td>Windows FILETIME</td><td>' + ft + '</td></tr>' +
       '<tr><td>Day of Week</td><td>' + ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"][d.getDay()] + '</td></tr>' +
-      '<tr><td>Day of Year</td><td>' + Math.ceil((d - new Date(d.getFullYear(),0,1)) / 86400000 + 1) + '</td></tr>';
+      '<tr><td>Day of Year</td><td>' + (Math.round((new Date(d.getFullYear(), d.getMonth(), d.getDate()) - new Date(d.getFullYear(), 0, 1)) / 86400000) + 1) + '</td></tr>';
   }
 
   // ── Integer Converter Panel ──
