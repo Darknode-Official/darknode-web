@@ -23,7 +23,7 @@ let MORE = [], CATALOG = [], CATEGORIES = [];
 import("/js/toolkit.js").then(m => { MORE = m.MORE; CATALOG = m.CATALOG; CATEGORIES = m.CATEGORIES; });
 import { startTour, tourDone } from "/js/tour.js";
 let _landing = null;
-async function loadLanding() { if (!_landing) _landing = await import("/js/landing.js?v=20260926b"); return _landing; }
+async function loadLanding() { if (!_landing) _landing = await import("/js/landing.js?v=20260927f"); return _landing; }
 
 // Plain-language, newbie-friendly one-liners for every sidebar item + group.
 // Surfaced as a hover tooltip so the sidebar stays visually neat while every
@@ -448,6 +448,13 @@ function showLanding() {
   dismissBoot();
   document.body.classList.remove("app");
   document.body.classList.add("landing");
+  // Tear down the console's live ops strip so it can't overlap the landing nav.
+  try {
+    const tc = document.getElementById("topbar-center");
+    if (tc) tc.innerHTML = "";
+    if (window._tbClock) { clearInterval(window._tbClock); window._tbClock = null; }
+    if (window._tbPopClose) { document.removeEventListener("click", window._tbPopClose); window._tbPopClose = null; }
+  } catch (_) {}
   userSlot.innerHTML = `
     <div class="nav-dd" data-dd="products">
       <button class="nav-dd-btn">Products <svg width="10" height="6" viewBox="0 0 10 6"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg></button>
@@ -680,16 +687,15 @@ function applyAccent(c) {
 }
 (function () { let a = null; try { a = localStorage.getItem("sw_accent"); } catch (_) {} if (a) applyAccent(a); })();
 function applyTheme(m) { document.documentElement.setAttribute("data-theme", m); try { localStorage.setItem("sw_theme", m); } catch (_) {} }
-const STYLES = ["pro", "command", "dark", "classic"];
-// "command" is the Command Center skin layered on the Professional style (css/theme-command.css).
+const STYLES = ["pro", "dark", "classic"];
+// "pro" is the default light theme; "dark" and "classic" are the alternatives.
 function currentStyle() {
-  const s = document.documentElement.getAttribute("data-style") || "pro";
-  return s === "pro" && document.documentElement.getAttribute("data-skin") === "command" ? "command" : s;
+  return document.documentElement.getAttribute("data-style") || "pro";
 }
 function setStyle(name) {
   const root = document.documentElement;
-  root.setAttribute("data-style", name === "command" ? "pro" : name);
-  if (name === "command") root.setAttribute("data-skin", "command"); else root.removeAttribute("data-skin");
+  root.setAttribute("data-style", name);
+  root.removeAttribute("data-skin"); // retired the Command Center skin
   try { localStorage.setItem("sw_style", name); } catch (_) {}
 }
 // The top-bar button is a plain light/dark switch: it never changes the layout,
@@ -1041,7 +1047,7 @@ function renderSettingsPage(main, user, isOwner, initialTab) {
       ${row("User ID", '<span class="mono">' + esc(user.uid) + "</span>")}`,
     appearance: `<h2 class="set-panel-h">Appearance</h2>
       <div class="set-row"><span class="muted">Style</span>
-        <span class="seg" id="sw-style"><button data-style="pro">Professional</button><button data-style="command">Command Center</button><button data-style="dark">Dark</button><button data-style="classic">Classic</button></span></div>
+        <span class="seg" id="sw-style"><button data-style="pro">Light</button><button data-style="dark">Dark</button><button data-style="classic">Classic</button></span></div>
       <div class="set-row"><span class="muted">Accent color</span>
         <span class="swatches" id="sw-acc">${ACCENTS.map((c) => `<button class="swatch" style="background:${c}" data-c="${c}" title="${c}"></button>`).join("")}</span></div>
       <div class="set-row"><span class="muted">Logo</span>
@@ -1186,7 +1192,7 @@ function renderSettingsPage(main, user, isOwner, initialTab) {
     const themeSeg = main.querySelector("#sw-theme");
     if (themeSeg) { const curTheme = document.documentElement.getAttribute("data-theme") || "dark"; themeSeg.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b.dataset.t === curTheme)); themeSeg.onclick = (e) => { const b = e.target.closest("button[data-t]"); if (!b) return; applyTheme(b.dataset.t); themeSeg.querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b)); }; }
     const styleSeg = main.querySelector("#sw-style");
-    if (styleSeg) { let curStyle = "pro"; try { curStyle = localStorage.getItem("sw_style") || "pro"; } catch (_) {} styleSeg.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b.dataset.style === curStyle)); styleSeg.onclick = (e) => { const b = e.target.closest("button[data-style]"); if (!b) return; setStyle(b.dataset.style); styleSeg.querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b)); }; }
+    if (styleSeg) { let curStyle = "pro"; try { curStyle = localStorage.getItem("sw_style") || "pro"; } catch (_) {} if (curStyle === "command") curStyle = "pro"; styleSeg.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b.dataset.style === curStyle)); styleSeg.onclick = (e) => { const b = e.target.closest("button[data-style]"); if (!b) return; setStyle(b.dataset.style); styleSeg.querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b)); }; }
     const bootSeg = main.querySelector("#sw-boot");
     if (bootSeg) { let curBoot = "pro"; try { curBoot = localStorage.getItem("sw_boot_theme") || "pro"; } catch (_) {} bootSeg.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b.dataset.boot === curBoot)); bootSeg.onclick = (e) => { const b = e.target.closest("button[data-boot]"); if (!b) return; try { localStorage.setItem("sw_boot_theme", b.dataset.boot); } catch (_) {} bootSeg.querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b)); }; }
     const crtSeg = main.querySelector("#sw-crt");
