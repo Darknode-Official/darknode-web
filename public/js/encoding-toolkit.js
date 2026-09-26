@@ -175,16 +175,17 @@ var ENCODINGS = {
 
 // ── Caesar cipher ──
 function caesarEncode(s, shift) {
+  var sh = ((Math.trunc(Number(shift) || 0) % 26) + 26) % 26;
   return s.replace(/[a-zA-Z]/g, function(c) {
     var base = c <= "Z" ? 65 : 97;
-    return String.fromCharCode(((c.charCodeAt(0) - base + shift) % 26) + base);
+    return String.fromCharCode(((c.charCodeAt(0) - base + sh) % 26) + base);
   });
 }
 
 // ── Vigenere cipher ──
 function vigenereEncode(text, key) {
+  key = String(key || "").toUpperCase().replace(/[^A-Z]/g, "");
   if (!key) return text;
-  key = key.toUpperCase();
   var ki = 0;
   return text.replace(/[a-zA-Z]/g, function(c) {
     var base = c <= "Z" ? 65 : 97;
@@ -194,8 +195,8 @@ function vigenereEncode(text, key) {
   });
 }
 function vigenereDecode(text, key) {
+  key = String(key || "").toUpperCase().replace(/[^A-Z]/g, "");
   if (!key) return text;
-  key = key.toUpperCase();
   var ki = 0;
   return text.replace(/[a-zA-Z]/g, function(c) {
     var base = c <= "Z" ? 65 : 97;
