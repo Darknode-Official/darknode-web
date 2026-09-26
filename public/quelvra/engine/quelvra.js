@@ -101,7 +101,10 @@ function unitResult(text, r) {
   const out = base(text);
   const unitText = r.unit && r.unit.text ? r.unit.text : r.target || "";
   out.answers = [{ kind: "exact", tree: r.value, label: null, unit: unitText, text: `${r.text || ""}` }];
-  if (r.decimal) out.answers.push({ kind: "approx", approx: { value: String(r.decimal).replace(/\s.*$/, ""), digits: 12, requested: 12, errorBound: null, method: "exact conversion factor", iterations: 0, converged: true }, unit: unitText });
+  const dec = r.decimal ? String(r.decimal).replace(/\s.*$/, "") : "";
+  // a terminating value shown with fewer than 12 significant digits is the exact value
+  const exactDec = r.repeating === false && /^-?[\d.]+$/.test(dec) && dec.replace(/[-.]/g, "").replace(/^0+/, "").length < 12;
+  if (r.decimal) out.answers.push({ kind: "approx", approx: { value: dec, digits: 12, requested: 12, errorBound: exactDec ? "0" : /^-?\d+\.\d+$/.test(dec) ? `5e-${dec.split(".")[1].length + 1}` : null, method: "exact conversion factor", iterations: 0, converged: true }, unit: unitText });
   out.steps = r.steps || [];
   out.verification = toContractVerification([{ status: "verified-exact", checks: [{ kind: "exact-factors", ok: true, detail: "conversion uses exact rational factors between SI definitions" }] }]);
   out.confidence.verification = 1;

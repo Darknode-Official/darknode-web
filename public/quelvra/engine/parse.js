@@ -514,6 +514,7 @@ class Parser {
     else if (X.isInt(left)) node = X.eq(X.fn("mod", r, m), red(left));
     else node = X.eq(X.fn("mod", X.sub(left, r), m), X.ZERO);
     if (infix && t.v === "=") this.warnings.push({ msg: `Read "... = ... mod ${M}" as a congruence modulo ${M}. Write mod(a, ${M}) for the remainder itself.`, pos: t.s });
+    this.congruence = true; // congruence notation means the unknowns are integers
     return node;
   }
 
@@ -900,7 +901,7 @@ export function parseDetailed(src) {
   if (text.length > 20000) throw new QuelvraSyntaxError("Input is too long (limit 20,000 characters)", 20000);
   const p = new Parser(text);
   const node = applyDefinitions(callForms(p.parseTop(), p.warnings), p.warnings);
-  return { node, warnings: p.warnings };
+  return { node, warnings: p.warnings, congruence: !!p.congruence };
 }
 export const parse = (src) => parseDetailed(src).node;
 
