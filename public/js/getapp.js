@@ -4,6 +4,15 @@ const REPO = "Darknode-Official/darknode-app";
 const TAG = "latest";
 const RELEASES = "https://github.com/" + REPO + "/releases";
 const REL_DL = RELEASES + "/download/" + TAG;
+
+// What is actually published right now. Flip a flag to true as each release goes
+// live so we never surface a link or command for a file that doesn't exist yet:
+//   desktopApp  — installers (.deb/.AppImage/.exe/.dmg) in the darknode-app release
+//   cliBinaries — prebuilt Darknode-cli-* binaries in the same release
+//   npm         — the `darknode-cli` package on npm
+// Until then the CLI is offered via `git clone` (works today, Node 18+).
+const PUBLISHED = { desktopApp: false, cliBinaries: false, npm: false };
+
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
@@ -24,6 +33,8 @@ const verOf = (name) => (name.match(/(\d+\.\d+\.\d+)/) || [])[1] || "";
 const SITE = "https://darknode.ai";
 const OS_REPO = "https://github.com/Darknode-Official/darknode-os";
 const NEXUS_REPO = "https://github.com/Darknode-Official/darknode-cli";
+// Run the CLI straight from source — the install path that works today.
+const CLI_CLONE = "git clone " + NEXUS_REPO + " && cd darknode-cli && node darknode.js";
 const APP_EDITIONS = [
   { name: "Netinstall", tag: "lightest · ~95 MB", desc: "Just the app. Every tool auto-configures itself the first time you launch it — nothing pre-downloaded.", steps: ["Install the .deb / AppImage / .exe from the Builds tab.", "Open any tool — Darknode sets it up on first use."] },
   { name: "Slim", tag: "recommended", desc: "The app plus the essential toolset: recon, web, and password tools.", steps: ["Install the app from the Builds tab.", `curl -sL ${SITE}/arsenal.sh | bash -s -- recon web passwords`] },
@@ -31,7 +42,7 @@ const APP_EDITIONS = [
 ];
 const CLI_EDITIONS = [
   { name: "git clone", tag: "tiny · ~300 KB", desc: "Clone the source and run with Node — no 52 MB binary on disk, and git pull keeps it current. Needs Node 18+.", steps: ["git clone https://github.com/Darknode-Official/darknode-cli && cd darknode-cli && node darknode.js"] },
-  { name: "Compact", tag: "standalone · ~52 MB", desc: "The self-contained binary — Node bundled in, no dependencies, runs on its own. Grab it from the Builds tab.", steps: ["Download the CLI binary from the Builds tab — it just runs."] },
+  { name: "Compact", need: "cliBinaries", tag: "standalone · ~52 MB", desc: "The self-contained binary — Node bundled in, no dependencies, runs on its own. Grab it from the Builds tab.", steps: ["Download the CLI binary from the Builds tab — it just runs."] },
   { name: "Pro", tag: "full toolset", desc: "The CLI (either way above) plus the complete external toolset it can drive (nmap, sqlmap, nuclei…).", steps: [`curl -sL ${SITE}/arsenal.sh | bash`] },
 ];
 
@@ -58,12 +69,13 @@ export function renderDownloads(main) {
         <div class="dl-feat-i"><b>MCP-aware</b><span>Wire the Darknode MCP server so any MCP client can drive the toolset.</span></div>
       </div>
       <div class="btns" style="flex-wrap:wrap;gap:8px;margin-top:12px">
-        <a class="btn" href="${REL_DL}/Darknode-cli-linux" download>Linux</a>
+        ${PUBLISHED.cliBinaries ? `<a class="btn" href="${REL_DL}/Darknode-cli-linux" download>Linux</a>
         <a class="btn" href="${REL_DL}/Darknode-cli-windows.exe" download>Windows</a>
         <a class="btn" href="${REL_DL}/Darknode-cli-macos-arm64" download>macOS &middot; Apple Silicon</a>
-        <a class="btn" href="${REL_DL}/Darknode-cli-macos-x64" download>macOS &middot; Intel</a>
+        <a class="btn" href="${REL_DL}/Darknode-cli-macos-x64" download>macOS &middot; Intel</a>`
+        : `<a class="btn" href="${NEXUS_REPO}" target="_blank" rel="noopener">Get the CLI &middot; GitHub</a>`}
       </div>
-      <p class="muted" style="font-size:.75rem;margin:8px 0 0">Or install via npm: <code data-cmd>npm i -g darknode-cli</code> &nbsp;|&nbsp; <a class="nav-link" href="${NEXUS_REPO}" target="_blank" rel="noopener">Source on GitHub</a></p>
+      <p class="muted" style="font-size:.75rem;margin:8px 0 0">${PUBLISHED.npm ? `Install via npm: <code data-cmd>npm i -g darknode-cli</code> &nbsp;|&nbsp; ` : `Run from source (Node 18+): <code data-cmd>${CLI_CLONE}</code> &nbsp;|&nbsp; `}<a class="nav-link" href="${NEXUS_REPO}" target="_blank" rel="noopener">Source on GitHub</a></p>
     </div>
     <div class="card dl-hero" style="border-color:color-mix(in srgb,var(--acc) 45%,transparent)">
       <h2 class="pg-h2" style="margin:0 0 6px">Darknode OS &mdash; the security VM</h2>
@@ -113,6 +125,7 @@ export function renderDownloads(main) {
       </div>
     </div>
     </div>
+    ${(PUBLISHED.desktopApp || PUBLISHED.cliBinaries) ? `
     <h2 class="pg-h2">1 · Choose a build</h2>
     <p class="muted" style="font-size:.85rem;margin:-6px 0 12px">Prefer just the app or the terminal edition? Grab the latest build for your platform — Linux, Windows or macOS.</p>
     <div class="card">
@@ -120,10 +133,16 @@ export function renderDownloads(main) {
     </div>
     <h2 class="pg-h2" style="margin-top:24px">2 · Choose a setup edition</h2>
     <p class="muted" style="font-size:.85rem;margin:-6px 0 12px">Same installer, different amount of tooling. Pick how much you want set up, then run the command after installing.</p>
-    <h3 class="pg-h3" style="margin:0 0 8px">Desktop app</h3>
-    <div class="ed-grid">${APP_EDITIONS.map(edCard).join("")}</div>
+    ${PUBLISHED.desktopApp ? `<h3 class="pg-h3" style="margin:0 0 8px">Desktop app</h3>
+    <div class="ed-grid">${APP_EDITIONS.map(edCard).join("")}</div>` : ``}
     <h3 class="pg-h3" style="margin:22px 0 8px">Terminal edition (CLI)</h3>
-    <div class="ed-grid">${CLI_EDITIONS.map(edCard).join("")}</div>
+    <div class="ed-grid">${CLI_EDITIONS.filter((e) => !e.need || PUBLISHED[e.need]).map(edCard).join("")}</div>` : `
+    <h2 class="pg-h2">Install the CLI</h2>
+    <p class="muted" style="font-size:.85rem;margin:-6px 0 12px">Prebuilt binaries, the desktop app and the npm package are on the way. Right now the terminal edition — including the Nexus AI agent — runs straight from source and is always current:</p>
+    <div class="card" style="max-width:760px">
+      <ol class="ed-steps"><li>Needs Node 18+, then:<br><code data-cmd>${CLI_CLONE} nexus --tui</code></li></ol>
+      <p class="muted" style="font-size:.8rem;margin:8px 0 0">Provision the external toolset any time with <code data-cmd>curl -sL ${SITE}/arsenal.sh | bash</code>, or read the full <button class="linklike" data-sec="dlguide">download guide</button>.</p>
+    </div>`}
     <p class="muted" style="font-size:.78rem;margin-top:14px">Provisioning uses systems you own or are authorized to test. <a href="${SITE}/arsenal.sh" download>Download the script</a> to review it first.</p>
     <p class="muted" style="font-size:.8rem;margin-top:16px">All rights reserved.</p>`;
   const builds = main.querySelector("#dlBuilds");
@@ -140,29 +159,34 @@ export function renderDownloads(main) {
         <a class="dl-osbtn" style="border-radius:var(--btn-radius,4px)" href="${REL_DL}/Darknode-cli-macos-x64" download><span class="dl-os">macOS · Intel</span><span class="dl-fmt">Nexus CLI</span></a>
       </div>`;
   };
-  if (window._dnRelCached) { fallback(); return; }
-  window._dnRelCached = true;
-  const ctrl = new AbortController(); setTimeout(() => ctrl.abort(), 8000);
-  fetch("https://api.github.com/repos/" + REPO + "/releases/" + TAG, { signal: ctrl.signal })
-    .catch(function(e){console.warn(e)}).then((r) => r.ok ? r.json() : Promise.reject("no-release"))
-    .then((rel) => {
-      const all = rel.assets || [];
-      // one button per platform/format — the LATEST version only (by semver, then upload time)
-      const latest = META.map((m) => {
-        const ms = all.filter((a) => m.re.test(a.name));
-        if (!ms.length) return null;
-        ms.sort((a, b) => cmpVer(verOf(b.name), verOf(a.name)) || (new Date(b.created_at) - new Date(a.created_at)));
-        return { m, a: ms[0] };
-      }).filter(Boolean);
-      if (!latest.length) return fallback();
-      const groups = [...new Set(META.map((m) => m.group))];
-      builds.innerHTML = groups.map((g) => {
-        const items = latest.filter((x) => x.m.group === g);
-        if (!items.length) return "";
-        return `<div class="dl-bgroup"><h4 class="dl-bh">${esc(g)}</h4><div class="dl-btnrow">` + items.map(({ m, a }) => osBtn(m, a)).join("") + `</div></div>`;
-      }).join("");
-    })
-    .catch(fallback);
+  // Only fetch live builds when a builds section is actually rendered (i.e. some
+  // installer/binary is published). Otherwise there is nothing to populate.
+  if (builds && !window._dnRelCached) {
+    window._dnRelCached = true;
+    const ctrl = new AbortController(); setTimeout(() => ctrl.abort(), 8000);
+    fetch("https://api.github.com/repos/" + REPO + "/releases/" + TAG, { signal: ctrl.signal })
+      .catch(function(e){console.warn(e)}).then((r) => r.ok ? r.json() : Promise.reject("no-release"))
+      .then((rel) => {
+        const all = rel.assets || [];
+        // one button per platform/format — the LATEST version only (by semver, then upload time)
+        const latest = META.map((m) => {
+          const ms = all.filter((a) => m.re.test(a.name));
+          if (!ms.length) return null;
+          ms.sort((a, b) => cmpVer(verOf(b.name), verOf(a.name)) || (new Date(b.created_at) - new Date(a.created_at)));
+          return { m, a: ms[0] };
+        }).filter(Boolean);
+        if (!latest.length) return fallback();
+        const groups = [...new Set(META.map((m) => m.group))];
+        builds.innerHTML = groups.map((g) => {
+          const items = latest.filter((x) => x.m.group === g);
+          if (!items.length) return "";
+          return `<div class="dl-bgroup"><h4 class="dl-bh">${esc(g)}</h4><div class="dl-btnrow">` + items.map(({ m, a }) => osBtn(m, a)).join("") + `</div></div>`;
+        }).join("");
+      })
+      .catch(fallback);
+  } else if (builds) {
+    fallback();
+  }
 
   main.addEventListener("click", (e) => {
     const c = e.target.closest("code[data-cmd]"); if (!c) return;
@@ -225,27 +249,27 @@ const APP_DOCS = [
 ];
 
 const CLI_DOCS = [
-  { title: "Nexus / CLI — Linux binary", os: "Linux", fmt: "standalone binary",
+  { title: "Nexus / CLI — Linux binary", need: "cliBinaries", os: "Linux", fmt: "standalone binary",
     what: "The terminal edition as one self-contained executable (Node is bundled in). Gives you the whole toolkit plus <b>Nexus</b>, the AI coding agent, with no runtime to install.",
     best: "you live in the terminal, are on a server/headless box, or want the AI coder without installing Node.",
     req: "64-bit Linux. Nothing else for the tools. Nexus's <code>claude</code> engine needs the Claude Code CLI; the free <code>ollama</code> engine needs Ollama.",
     steps: [ { t: "Download, mark executable, and (optionally) put it on your PATH:", cmd: `curl -L ${REL_DL}/Darknode-cli-linux -o darknode && chmod +x darknode && sudo mv darknode /usr/local/bin/` }, { t: "Run the AI coder:", cmd: `darknode nexus --tui` } ],
     note: "No PATH access? Just run <code>./darknode</code> from wherever you saved it.",
     trouble: "“Permission denied” means it isn't executable yet: <code>chmod +x darknode</code>." },
-  { title: "Nexus / CLI — Windows executable", os: "Windows", fmt: "CLI .exe",
+  { title: "Nexus / CLI — Windows executable", need: "cliBinaries", os: "Windows", fmt: "CLI .exe",
     what: "The same terminal edition and Nexus agent, compiled for Windows as a standalone <code>.exe</code>.",
     best: "you want the CLI and Nexus on Windows without installing Node.",
     req: "Windows 10/11 64-bit. Use Windows Terminal / PowerShell for the best rendering.",
     steps: [ { t: "Download it, then run from PowerShell:", cmd: `curl.exe -L ${REL_DL}/Darknode-cli-windows.exe -o darknode.exe; .\\darknode.exe nexus --tui` } ],
     trouble: "If box-drawing looks off, use Windows Terminal (not the legacy console)." },
-  { title: "Nexus / CLI — macOS binary", os: "macOS", fmt: "Apple Silicon + Intel",
+  { title: "Nexus / CLI — macOS binary", need: "cliBinaries", os: "macOS", fmt: "Apple Silicon + Intel",
     what: "The terminal edition + Nexus AI agent as a standalone macOS binary. Pick <code>Darknode-cli-macos-arm64</code> (Apple Silicon) or <code>-x64</code> (Intel).",
     best: "you want the CLI on a Mac without installing Node.",
     req: "macOS 12+. The free <code>ollama</code> engine (default) needs Ollama (<code>brew install ollama</code>) — no API key, no cost.",
     steps: [ { t: "Download, make executable, ad-hoc sign (Apple Silicon requires it), then run:", cmd: `curl -L ${REL_DL}/Darknode-cli-macos-arm64 -o darknode && chmod +x darknode && codesign --sign - darknode && ./darknode nexus --tui` } ],
     note: "Prefer no binary? <code>git clone</code> below runs on macOS with Node — nothing to sign.",
     trouble: "\"killed\" / \"cannot be opened\": it needs the ad-hoc signature above (<code>codesign --sign - darknode</code>), then <code>xattr -d com.apple.quarantine darknode</code> if downloaded via a browser." },
-  { title: "Nexus / CLI — npm install (any OS)", os: "Any", fmt: "npm package",
+  { title: "Nexus / CLI — npm install (any OS)", need: "npm", os: "Any", fmt: "npm package",
     what: "Install the CLI globally via npm. Works on Linux, Windows, macOS — anywhere Node runs. Adds <code>darknode</code> to your PATH automatically.",
     best: "you already have Node 18+ and want a one-command install that's easy to update.",
     req: "Node.js 18 or newer, npm.",
@@ -267,36 +291,36 @@ export function renderDownloadDocs(main) {
     <div class="card" style="max-width:760px;margin-bottom:16px">
       <h2 class="pg-h2" style="margin:0 0 8px">Which one should I get?</h2>
       <div style="overflow-x:auto"><table class="cmp-table"><tbody>
-        <tr><td>I want a normal app with a window &amp; icon</td><td class="yes">Desktop app</td><td>.deb (Ubuntu/Kali) · AppImage (any Linux) · .exe (Windows) · .dmg (macOS)</td></tr>
-        <tr><td>I want the AI coding agent (Nexus) in my terminal</td><td class="yes">Terminal edition (CLI)</td><td>Linux · Windows · macOS (ARM + Intel)</td></tr>
-        <tr><td>I want the quickest install on any OS</td><td class="yes">npm install</td><td><code>npm i -g darknode-cli</code> &mdash; works everywhere Node runs</td></tr>
+        ${PUBLISHED.desktopApp ? `<tr><td>I want a normal app with a window &amp; icon</td><td class="yes">Desktop app</td><td>.deb (Ubuntu/Kali) · AppImage (any Linux) · .exe (Windows) · .dmg (macOS)</td></tr>` : ``}
+        <tr><td>I want the AI coding agent (Nexus) in my terminal</td><td class="yes">Terminal edition (CLI)</td><td>${PUBLISHED.cliBinaries ? "Linux · Windows · macOS (ARM + Intel)" : "run from source with Node 18+"}</td></tr>
+        ${PUBLISHED.npm ? `<tr><td>I want the quickest install on any OS</td><td class="yes">npm install</td><td><code>npm i -g darknode-cli</code> &mdash; works everywhere Node runs</td></tr>` : ``}
         <tr><td>I want a full security VM</td><td class="yes">Darknode OS</td><td>VirtualBox (all OS) · QEMU/KVM (Linux) · UTM (macOS)</td></tr>
-        <tr><td>I'm on a server / headless box</td><td class="yes">CLI Linux binary</td><td>no GUI, no Node needed</td></tr>
-        <tr><td>I can't use apt / want zero install</td><td class="yes">AppImage</td><td>one file, just run it</td></tr>
+        ${PUBLISHED.cliBinaries ? `<tr><td>I'm on a server / headless box</td><td class="yes">CLI Linux binary</td><td>no GUI, no Node needed</td></tr>` : ``}
+        ${PUBLISHED.desktopApp ? `<tr><td>I can't use apt / want zero install</td><td class="yes">AppImage</td><td>one file, just run it</td></tr>` : ``}
         <tr><td>I already have Node and want the smallest download</td><td class="yes">git clone</td><td>~300&nbsp;KB, <code>git pull</code> to update</td></tr>
       </tbody></table></div>
       <p class="muted" style="font-size:.82rem;margin:10px 0 0">The desktop app and the CLI share the same toolkit. The difference is the interface: a window vs. your terminal. You can run both.</p>
     </div>
 
-    <h2 class="pg-h2">Desktop app</h2>
+    ${PUBLISHED.desktopApp ? `<h2 class="pg-h2">Desktop app</h2>
     <p class="muted" style="font-size:.85rem;margin:-4px 0 12px">A graphical app: AI Assistant, VM lab runner, recon &amp; exploitation tools, live terminals.</p>
-    ${APP_DOCS.map(dlDoc).join("")}
+    ${APP_DOCS.map(dlDoc).join("")}` : ``}
 
     <h2 class="pg-h2" style="margin-top:22px">Terminal edition &amp; Nexus</h2>
     <p class="muted" style="font-size:.85rem;margin:-4px 0 12px">The full toolkit plus <b>Nexus</b> &mdash; the AI coding agent with a live token/cost meter, <code>/undo</code> checkpoints, and a hybrid local+cloud engine. Run <code data-cmd>darknode nexus --tui</code> after installing.</p>
-    ${CLI_DOCS.map(dlDoc).join("")}
+    ${CLI_DOCS.filter((d) => !d.need || PUBLISHED[d.need]).map(dlDoc).join("")}
 
     <h2 class="pg-h2" style="margin-top:22px">Setup editions (how much tooling)</h2>
-    <p class="muted" style="font-size:.85rem;margin:-4px 0 12px">After you install either the app or the CLI, pick how much of the external toolset to provision. Same program &mdash; just more tools set up.</p>
-    <h3 class="pg-h3" style="margin:0 0 8px">Desktop app</h3>
-    <div class="ed-grid">${APP_EDITIONS.map(edCard).join("")}</div>
+    <p class="muted" style="font-size:.85rem;margin:-4px 0 12px">After you install the CLI${PUBLISHED.desktopApp ? " or the app" : ""}, pick how much of the external toolset to provision. Same program &mdash; just more tools set up.</p>
+    ${PUBLISHED.desktopApp ? `<h3 class="pg-h3" style="margin:0 0 8px">Desktop app</h3>
+    <div class="ed-grid">${APP_EDITIONS.map(edCard).join("")}</div>` : ``}
     <h3 class="pg-h3" style="margin:22px 0 8px">Terminal edition (CLI)</h3>
-    <div class="ed-grid">${CLI_EDITIONS.map(edCard).join("")}</div>
+    <div class="ed-grid">${CLI_EDITIONS.filter((e) => !e.need || PUBLISHED[e.need]).map(edCard).join("")}</div>
 
     <h2 class="pg-h2" style="margin-top:22px">After you install</h2>
     <div class="card" style="max-width:760px">
       <ol class="ed-steps">
-        <li><b>Desktop app:</b> open it and pick a tool &mdash; anything not present auto-configures on first use.</li>
+        ${PUBLISHED.desktopApp ? `<li><b>Desktop app:</b> open it and pick a tool &mdash; anything not present auto-configures on first use.</li>` : ``}
         <li><b>CLI:</b> scaffold a project with <code data-cmd>darknode init</code>, then start the agent with <code data-cmd>darknode nexus --tui</code>.</li>
         <li><b>For free/local AI:</b> the Darknode CLI installs Ollama + local models for you on setup &mdash; then just <code data-cmd>darknode nexus --engine ollama</code>.</li>
         <li><b>For the strongest AI:</b> install the Claude Code CLI and log in; Nexus's default <code>claude</code> engine drives it and shows your real token cost per turn.</li>
@@ -305,8 +329,8 @@ export function renderDownloadDocs(main) {
 
     <h2 class="pg-h2" style="margin-top:22px">Updating &amp; removing</h2>
     <div class="card" style="max-width:760px">
-      <p class="muted" style="font-size:.85rem;margin:0 0 6px"><b>Update:</b> .deb &mdash; install the newer file over the top. AppImage / CLI binary &mdash; download the new one. git clone &mdash; <code data-cmd>git pull</code>.</p>
-      <p class="muted" style="font-size:.85rem;margin:0"><b>Remove:</b> .deb &mdash; <code data-cmd>sudo apt remove darknode-app</code>. AppImage / CLI binary &mdash; delete the file. Windows &mdash; use “Add or remove programs”.</p>
+      <p class="muted" style="font-size:.85rem;margin:0 0 6px"><b>Update:</b> ${(PUBLISHED.desktopApp || PUBLISHED.cliBinaries) ? `.deb &mdash; install the newer file over the top. AppImage / CLI binary &mdash; download the new one. ` : ``}git clone &mdash; <code data-cmd>git pull</code>.${PUBLISHED.npm ? ` npm &mdash; <code data-cmd>npm update -g darknode-cli</code>.` : ``}</p>
+      <p class="muted" style="font-size:.85rem;margin:0"><b>Remove:</b> ${PUBLISHED.desktopApp ? `.deb &mdash; <code data-cmd>sudo apt remove darknode-app</code>. AppImage &mdash; delete the file. Windows &mdash; use “Add or remove programs”. ` : ``}git clone / CLI &mdash; delete the folder.</p>
     </div>
 
     <p class="muted" style="font-size:.8rem;margin-top:16px">All rights reserved. &middot; <button class="linklike" data-sec="downloads">Back to downloads</button> &middot; <button class="linklike" data-sec="coder">About Nexus</button></p>`;
