@@ -9438,7 +9438,6 @@ var GW_VENDOR_HQ = {
   'Mandiant': { lat: 37.39, lon: -122.08, city: 'Reston, VA' },
   'Schneider Electric': { lat: 48.78, lon: 2.24, city: 'Rueil-Malmaison, France' },
   'ABB': { lat: 47.56, lon: 7.59, city: 'Zurich, Switzerland' },
-  'Ivanti': { lat: 40.59, lon: -111.83, city: 'South Jordan, UT' },
   'Progress Software': { lat: 42.37, lon: -71.06, city: 'Burlington, MA' },
   'Barracuda Networks': { lat: 37.39, lon: -122.08, city: 'Campbell, CA' },
   'F5 Networks': { lat: 47.61, lon: -122.33, city: 'Seattle, WA' },
