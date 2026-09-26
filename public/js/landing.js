@@ -7,6 +7,44 @@ import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/fir
 
 const GITHUB = "https://github.com/Darknode-Official";
 
+// Desktop app downloads. The exact asset name carries a version, so instead of
+// hardcoding a URL that rots on every release we resolve the right installer for
+// the visitor's OS at click time from the latest GitHub release (same source the
+// in-console download page uses). Falls back to the releases page if that fails.
+// Flip to true once darknode-app publishes a release with installers
+// (.AppImage / .dmg / Setup.exe). Until then the desktop-app card shows the
+// platform tag instead of a download button, so we never link to an empty page.
+const APP_DL_LIVE = false;
+const APP_REPO = "Darknode-Official/darknode-app";
+const APP_RELEASES = "https://github.com/" + APP_REPO + "/releases/latest";
+const APP_OS_LABEL = { linux: "Linux", mac: "macOS", windows: "Windows" };
+// First matching asset wins per OS (AppImage preferred over .deb on Linux).
+const APP_OS_MATCH = {
+  windows: [/setup.*\.exe$/i, /\.exe$/i],
+  mac: [/\.dmg$/i],
+  linux: [/\.appimage$/i, /_amd64\.deb$/i],
+};
+function appDetectOS() {
+  const s = (navigator.userAgent + " " + (navigator.platform || "")).toLowerCase();
+  if (s.includes("win")) return "windows";
+  if (s.includes("mac") || s.includes("iphone") || s.includes("ipad")) return "mac";
+  return "linux";
+}
+async function appResolveAsset(os) {
+  try {
+    const r = await fetch("https://api.github.com/repos/" + APP_REPO + "/releases/latest");
+    if (r.ok) {
+      const rel = await r.json();
+      const assets = rel.assets || [];
+      for (const re of (APP_OS_MATCH[os] || [])) {
+        const a = assets.find((x) => re.test(x.name || ""));
+        if (a && a.browser_download_url) return a.browser_download_url;
+      }
+    }
+  } catch (_) {}
+  return null;
+}
+
 export function renderLanding(view, actions) {
   view.innerHTML = `
 
@@ -79,7 +117,10 @@ export function renderLanding(view, actions) {
             </div>
             <h3>Desktop App</h3>
             <p>Native app for macOS, Windows, and Linux. The full workspace, offline-first, with system-level scanning and a built-in agent.</p>
-            <span class="bento-tag">macOS &middot; Win &middot; Linux</span>
+            ${APP_DL_LIVE ? `<div class="bento-dl">
+              <a class="btn sm" id="app-dl" href="${APP_RELEASES}" target="_blank" rel="noopener">Download the app</a>
+              <a class="bento-dl-alt" id="app-dl-alt" href="${APP_RELEASES}" target="_blank" rel="noopener">Other platforms</a>
+            </div>` : `<span class="bento-tag">macOS &middot; Win &middot; Linux</span>`}
           </div>
           <div class="bento-card">
             <div class="bento-icon">
@@ -1480,6 +1521,26 @@ testing methodology for 10.10.14.7:
   $("cta-start").onclick = actions.onGetStarted;
   $("cta-signup").onclick = actions.onGetStarted;
   if ($("price-free")) $("price-free").onclick = actions.onGetStarted;
+
+  // Desktop-app download button — label it for the visitor's OS and, on click,
+  // resolve the matching installer from the latest release (fallback: releases page).
+  const appDl = APP_DL_LIVE && $("app-dl");
+  if (appDl) {
+    const os = appDetectOS();
+    appDl.textContent = "Download for " + (APP_OS_LABEL[os] || "your OS");
+    appDl.addEventListener("click", async (e) => {
+      e.preventDefault();
+      const prev = appDl.textContent;
+      appDl.textContent = "Finding latest build...";
+      appDl.style.pointerEvents = "none";
+      const url = await appResolveAsset(os);
+      appDl.textContent = prev;
+      appDl.style.pointerEvents = "";
+      if (url) window.location.href = url;
+      else window.open(APP_RELEASES, "_blank", "noopener");
+    });
+  }
+
   const scrollToCta = () => { const el = view.querySelector(".cta-notify"); if (el) el.scrollIntoView({ behavior: "smooth", block: "center" }); };
   if ($("price-pro")) $("price-pro").onclick = scrollToCta;
   if ($("price-team")) $("price-team").onclick = scrollToCta;
