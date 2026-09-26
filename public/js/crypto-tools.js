@@ -2632,7 +2632,10 @@ function base58Decode(str) {
   }
   let hex = value.toString(16);
   if (hex.length % 2 !== 0) hex = "0" + hex;
-  const bytes = hex === "0" ? [] : [...hexToBytes(hex)];
+  // Guard on the value, not the padded hex: when value is 0 (input is all
+  // leading '1's) hex has already become "00", so a `hex === "0"` check would
+  // never fire and an extra zero byte would be appended on top of leadingZeros.
+  const bytes = value === 0n ? [] : [...hexToBytes(hex)];
   let leadingZeros = 0;
   for (const ch of clean) { if (ch === BASE58_ALPHABET[0]) leadingZeros++; else break; }
   return new Uint8Array([...new Array(leadingZeros).fill(0), ...bytes]);
