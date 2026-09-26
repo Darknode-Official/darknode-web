@@ -26,11 +26,12 @@ function b64Decode(str) {
 function urlEncode(str) { try { return encodeURIComponent(str); } catch (e) { return "Error: " + e.message; } }
 function urlDecode(str) { try { return decodeURIComponent(str); } catch (e) { return "Error: " + e.message; } }
 function urlEncodeAll(str) {
+  // RFC 3986 percent-encoding operates on UTF-8 bytes, not UTF-16 code units.
+  // Iterating str.charCodeAt() emitted "%20AC" for "€" (a single >255 unit) —
+  // not valid percent-encoding — and "%E9" for "é" instead of "%C3%A9".
+  const bytes = new TextEncoder().encode(str);
   let out = "";
-  for (let i = 0; i < str.length; i++) {
-    const code = str.charCodeAt(i);
-    out += "%" + code.toString(16).toUpperCase().padStart(2, "0");
-  }
+  for (let i = 0; i < bytes.length; i++) out += "%" + bytes[i].toString(16).toUpperCase().padStart(2, "0");
   return out;
 }
 function doubleUrlEncode(str) { return encodeURIComponent(encodeURIComponent(str)); }
@@ -51,13 +52,16 @@ function htmlDecode(str) {
   return el.value;
 }
 function htmlEncodeAll(str) {
+  // Iterate by code point (for...of), not by UTF-16 unit: an astral character
+  // such as "😀" (U+1F600) must become the single reference &#128512; rather
+  // than two lone-surrogate entities &#55357;&#56832;.
   let out = "";
-  for (let i = 0; i < str.length; i++) out += "&#" + str.charCodeAt(i) + ";";
+  for (const ch of str) out += "&#" + ch.codePointAt(0) + ";";
   return out;
 }
 function htmlEncodeHex(str) {
   let out = "";
-  for (let i = 0; i < str.length; i++) out += "&#x" + str.charCodeAt(i).toString(16) + ";";
+  for (const ch of str) out += "&#x" + ch.codePointAt(0).toString(16) + ";";
   return out;
 }
 
@@ -314,7 +318,20 @@ function decodeJWT(token) {
     payload: payload,
     signature: signature,
     signatureBase64Url: parts[2],
-    signatureHex: Array.from(atob(parts[2].replace(/-/g, "+").replace(/_/g, "/") + "==")).map(c => c.charCodeAt(0).toString(16).padStart(2, "0")).join(""),
+    signatureHex: (function () {
+      // Pad to a multiple of 4, not a hardcoded "==": a 32-byte HS256 signature
+      // is 43 base64url chars, and 43 + "==" = 45 (≡1 mod 4), which the browser's
+      // strict atob() rejects with InvalidCharacterError — throwing out of this
+      // object literal and failing the entire JWT decode for most real tokens.
+      try {
+        let s = parts[2].replace(/-/g, "+").replace(/_/g, "/");
+        while (s.length % 4) s += "=";
+        const bin = atob(s);
+        let hex = "";
+        for (let i = 0; i < bin.length; i++) hex += bin.charCodeAt(i).toString(16).padStart(2, "0");
+        return hex;
+      } catch (e) { return ""; }
+    })(),
     claims: claims,
     algorithm: header && header.alg ? header.alg : "unknown",
     type: header && header.typ ? header.typ : "unknown"
