@@ -7,6 +7,7 @@ var esc = function(s) { return String(s != null ? s : '').replace(/[&<>"']/g, fu
 var DNS_RECORD_TYPES = ['A', 'AAAA', 'CNAME', 'MX', 'NS', 'TXT', 'SOA', 'SRV', 'CAA', 'PTR'];
 var DNS_TYPE_COLORS = { A: '#00ff88', AAAA: '#00aaff', CNAME: '#aa66ff', MX: '#ff6644', NS: '#ffaa00', TXT: '#44cccc', SOA: '#ff66aa', SRV: '#88cc44', CAA: '#ff8844', PTR: '#66aaff' };
 var DNS_TYPE_NUMS = { A: 1, AAAA: 28, CNAME: 5, MX: 15, NS: 2, TXT: 16, SOA: 6, SRV: 33, CAA: 257, PTR: 12 };
+var DNS_TYPE_NAMES = {}; Object.keys(DNS_TYPE_NUMS).forEach(function(k) { DNS_TYPE_NAMES[DNS_TYPE_NUMS[k]] = k; });
 
 var COMMON_SUBDOMAINS = [
   'www', 'mail', 'ftp', 'smtp', 'pop', 'imap', 'webmail', 'admin', 'portal', 'vpn',
@@ -127,12 +128,13 @@ function _dnsFullScan() {
     for (var ri = 0; ri < googleResults.length; ri++) {
       var r = googleResults[ri];
       if (!r.data || !r.data.Answer) continue;
-      var typeColor = DNS_TYPE_COLORS[r.type] || '#aaa';
       for (var ai = 0; ai < r.data.Answer.length; ai++) {
         var ans = r.data.Answer[ai];
+        var ansType = (typeof ans.type === 'number' ? DNS_TYPE_NAMES[ans.type] : null) || r.type;
+        var typeColor = DNS_TYPE_COLORS[ansType] || '#aaa';
         var rowBg = ai % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)';
         h += '<tr style="border-bottom:1px solid #0d1525;background:' + rowBg + ';">';
-        h += '<td style="padding:5px 6px;"><span style="color:' + typeColor + ';font-weight:bold;font-size:9px;background:' + typeColor + '18;padding:1px 6px;border-radius:2px;">' + esc(r.type) + '</span></td>';
+        h += '<td style="padding:5px 6px;"><span style="color:' + typeColor + ';font-weight:bold;font-size:9px;background:' + typeColor + '18;padding:1px 6px;border-radius:2px;">' + esc(ansType) + '</span></td>';
         h += '<td style="padding:5px 6px;color:#8899aa;max-width:200px;overflow:hidden;text-overflow:ellipsis;">' + esc(ans.name || '') + '</td>';
         h += '<td style="padding:5px 6px;color:#c8d6e5;word-break:break-all;max-width:400px;cursor:pointer;" onclick="navigator.clipboard.writeText(this.textContent);this.style.color=\'#00ff88\';var e=this;setTimeout(function(){e.style.color=\'#c8d6e5\';},500);">' + esc(String(ans.data || '')) + '</td>';
         h += '<td style="padding:5px 6px;color:#556;">' + (ans.TTL || '--') + '</td>';
@@ -228,7 +230,7 @@ function _dnsSubBrute() {
         return function(data) {
           checked++;
           if (data && data.Answer && data.Answer.length > 0) {
-            found.push({ name: subdomain, ips: data.Answer.map(function(a) { return a.data; }) });
+            found.push({ name: subdomain, ips: data.Answer.filter(function(a) { return a.type === 1 || a.type === 28; }).map(function(a) { return a.data; }) });
           }
           var prog = document.getElementById('dns-brute-progress');
           var bar = document.getElementById('dns-brute-bar');
