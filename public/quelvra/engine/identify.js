@@ -32,6 +32,9 @@ const COMMANDS = new Set(["solve", "simplify", "expand", "factor", "series", "ta
 import { ADVANCED_CONTINUOUS_COMMANDS } from "./advanced/names.js";
 for (const n of ADVANCED_CONTINUOUS_COMMANDS) COMMANDS.add(n);
 // ---- end advanced continuous commands ----
+// advanced discrete commands (engine/discrete/names.js; strategies/advanced-discrete.js)
+import { ADV_DISCRETE_COMMANDS } from "./discrete/names.js";
+for (const c of ADV_DISCRETE_COMMANDS) COMMANDS.add(c);
 
 // Choose the unknown(s) to solve for.
 const PREFERRED = ["x", "y", "z", "t", "n", "u", "v", "w", "a", "b", "c", "theta"];
