@@ -80,6 +80,7 @@ export const HELDOUT = [
   ["trap", "A bag contains 3 red and 5 blue marbles. What is the probability of drawing a purple marble?", { refuse: true }],
   ["trap", "A car travels at 60 miles per hour for 90 minutes. How far does it go?", 90],
   // Word-families widening (work, percent, interest, distance, mixture, consecutive, digits, ratio):
+  // on these 33, before the widening pass: 14 ok, 18 refused, 1 WRONG; after (run once): 18 ok, 15 refused, 0 WRONG.
   // written and committed before the recogniser changes, never tuned against. Answers worked by hand.
   ["work", "Tap A can fill a bucket in 12 minutes and tap B can fill it in 24 minutes. If both taps are turned on, how long will it take to fill the bucket?", 8],
   ["work", "Ann and Bea can clean the house together in 2 hours. Ann alone needs 3 hours. How long does Bea need alone?", 6],
