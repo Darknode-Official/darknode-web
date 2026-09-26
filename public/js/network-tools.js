@@ -2001,7 +2001,7 @@ function renderBandwidthCalculator(root) {
       <p class="pg-sub" style="margin-top:22px">Common connection speed reference</p>
       <table class="mono" style="width:100%;border-collapse:collapse;font-size:.82rem">
         <tr><td><strong>Connection</strong></td><td><strong>Typical speed</strong></td><td><strong>1 GB transfer time</strong></td></tr>
-        ${CONNECTION_SPEEDS.map((s) => `<tr><td>${s.name}</td><td>${s.mbps.toLocaleString()} Mbps</td><td>${formatDuration((1024 * 8) / s.mbps)}</td></tr>`).join("")}
+        ${CONNECTION_SPEEDS.map((s) => `<tr><td>${s.name}</td><td>${s.mbps.toLocaleString()} Mbps</td><td>${formatDuration((1024 ** 3 * 8) / (s.mbps * 1e6))}</td></tr>`).join("")}
       </table>
     </div>`;
 
