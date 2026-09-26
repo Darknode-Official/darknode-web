@@ -76,9 +76,10 @@ function _htRIPEMD160(str) {
 }
 
 function _htCRC32(str) {
+  const bytes = new TextEncoder().encode(str);
   let crc = 0xFFFFFFFF;
-  for (let i = 0; i < str.length; i++) {
-    crc ^= str.charCodeAt(i);
+  for (let i = 0; i < bytes.length; i++) {
+    crc ^= bytes[i];
     for (let j = 0; j < 8; j++) crc = (crc >>> 1) ^ (crc & 1 ? 0xEDB88320 : 0);
   }
   return ((crc ^ 0xFFFFFFFF) >>> 0).toString(16).padStart(8, '0');
