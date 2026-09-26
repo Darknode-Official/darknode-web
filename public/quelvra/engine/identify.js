@@ -4,7 +4,7 @@
 //   { kind, family, goal, unknowns, params, degree, features, method: "structural", label, notes }
 //
 // kind   : arithmetic | expression | equation | inequality | system | derivative | integral | limit |
-//          sum | product | matrix | vector | function-definition | command | set | unknown
+//          sum | product | matrix | vector | function-definition | command | set | interval | unknown
 // family : for equations/inequalities: linear, quadratic, cubic, quartic, polynomial, rational,
 //          radical, absolute-value, exponential, logarithmic, trigonometric, hyperbolic,
 //          transcendental, literal, identity, constant ; for systems: linear-system, nonlinear-system,
@@ -20,7 +20,11 @@ const ATRIG = new Set(["asin", "acos", "atan", "acot", "asec", "acsc"]);
 const HYP = new Set(["sinh", "cosh", "tanh", "coth", "sech", "csch", "asinh", "acosh", "atanh"]);
 const COMMANDS = new Set(["solve", "simplify", "expand", "factor", "series", "taylor", "plot", "det", "inv", "transpose", "rank", "trace", "rref",
   "eigenvalues", "eigenvectors", "isprime", "factorint", "phi", "divisors", "mean", "median", "mode", "variance", "stdev", "gcd", "lcm", "convert",
-  "kaprekar", "collatz", "collatzverify", "goldbach", "goldbachverify", "twinprimes", "primegaps", "zetazeros", "eulerbricks", "movingsofa"]);
+  "kaprekar", "collatz", "collatzverify", "goldbach", "goldbachverify", "twinprimes", "primegaps", "zetazeros", "eulerbricks", "movingsofa",
+  // function analysis, geometry and optimisation (call forms from the language engine; see parse.js FUNCTIONS)
+  "domain", "range", "zeros", "intercepts", "asymptotes", "extrema", "inflection", "monotonic", "critical", "tangent", "normal", "inverse",
+  "completesquare", "apart", "identity", "line", "slope", "distance", "midpoint", "arclength", "areabetween", "volume", "avgvalue",
+  "maximize", "minimize", "dot", "cross"]);
 
 // Choose the unknown(s) to solve for.
 const PREFERRED = ["x", "y", "z", "t", "n", "u", "v", "w", "a", "b", "c", "theta"];
@@ -194,6 +198,8 @@ export function classify(node, opts = {}) {
       return { ...card, kind: u.k, family: u.k, goal: opts.goal || "evaluate", label: u.k === "matrix" ? "Matrix" : "Vector" };
     case "fndef":
       return { ...card, kind: "function-definition", family: "function", goal: "define", label: `Define ${u.name}` };
+    case "interval":
+      return { ...card, kind: "interval", family: "interval", goal: opts.goal || "evaluate", label: "Interval" };
     case "set": case "tuple":
       return { ...card, kind: u.k, family: u.k, goal: "evaluate", label: u.k === "set" ? "Set" : "List" };
     case "system": return classifySystem(u, card, opts);
