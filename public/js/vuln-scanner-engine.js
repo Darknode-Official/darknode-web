@@ -939,7 +939,10 @@ export function calculateCVSS(vector) {
 
   const iss = 1 - ((1 - ci) * (1 - ii) * (1 - ai));
   const impact = scopeChanged
-    ? 7.52 * (iss - 0.029) - 3.25 * Math.pow(iss - 0.02, 15)
+    // CVSS v3.1 scope-changed impact (spec §7.1). The v3.0 form
+    // 3.25*(ISS-0.02)^15 gives a wrong score on 80/1296 changed vectors
+    // (some crossing a severity boundary) while this is labeled v3.1.
+    ? 7.52 * (iss - 0.029) - 3.25 * Math.pow(iss * 0.9731 - 0.02, 13)
     : 6.42 * iss;
 
   const exploitability = 8.22 * av * ac * pr * ui;

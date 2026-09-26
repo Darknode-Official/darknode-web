@@ -2270,7 +2270,12 @@ function detectPatterns(entries) {
   }
   // XSS detection
   for (const e of entries) {
-    if (e.url && /<script|javascript:|onerror\s*=|onload\s*=/i.test(decodeURIComponent(e.url))) {
+    // A literal '%' not followed by two hex digits is legal in a URL (e.g.
+    // "?q=100%") but makes decodeURIComponent throw, which would abort the
+    // whole detector and discard every finding already collected. Guard it.
+    let xssDecoded;
+    try { xssDecoded = decodeURIComponent(e.url || ''); } catch (_) { xssDecoded = e.url || ''; }
+    if (e.url && /<script|javascript:|onerror\s*=|onload\s*=/i.test(xssDecoded)) {
       findings.push({
         type: 'xss',
         severity: 'high',
@@ -2287,7 +2292,10 @@ function buildTimeline(entries) {
   const hours = new Array(24).fill(0);
   for (const e of entries) {
     const ts = e.timestamp || '';
-    const hMatch = ts.match(/(\d{2}):\d{2}:\d{2}/);
+    // Anchor on a non-digit (or start) so the hour isn't captured from inside
+    // a 4-digit year: /(\d{2}):.../ matched "26:03:17" in the Apache stamp
+    // "…/2026:03:17:33", writing hours[26] and corrupting the 24-slot histogram.
+    const hMatch = ts.match(/(?:^|\D)(\d{2}):\d{2}:\d{2}/);
     if (hMatch) {
       hours[parseInt(hMatch[1], 10)]++;
     }

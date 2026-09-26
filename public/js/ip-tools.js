@@ -61,6 +61,7 @@ function isPrivateIP(ip) {
   if ((n>>>16)===0xC0A8) return { private:true, range:"192.168.0.0/16 (Class C private)" };
   if ((n>>>24)===127) return { private:true, range:"127.0.0.0/8 (Loopback)" };
   if ((n>>>16)===0xA9FE) return { private:true, range:"169.254.0.0/16 (Link-local)" };
+  if ((n>>>22)===401) return { private:true, range:"100.64.0.0/10 (CGNAT / RFC 6598 shared)" };
   return { private:false, range:"Public" };
 }
 function ipRange(startIP, endIP) {
