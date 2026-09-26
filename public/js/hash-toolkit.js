@@ -35,44 +35,178 @@ const HT_WORDLIST = [
   'charlie', 'donald', 'password1', 'welcome', 'admin', 'root', 'toor',
 ];
 
-function _htSimpleMD5(str) {
-  let h = 0x67452301, g = 0xefcdab89, f = 0x98badcfe, e = 0x10325476;
-  for (let i = 0; i < str.length; i++) {
-    const c = str.charCodeAt(i);
-    h = ((h << 5) - h + c) | 0;
-    g = ((g << 7) ^ g ^ c) | 0;
-    f = ((f >>> 3) + f + c) | 0;
-    e = ((e << 11) - e - c) | 0;
-  }
-  const u = new Uint32Array([h, g, f, e]);
-  return Array.from(new Uint8Array(u.buffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+// These three algorithms are not exposed by Web Crypto (crypto.subtle only
+// covers SHA-1/2), so they are implemented in full here. Earlier revisions used
+// stand-in "simple" mixing functions that produced 32/40/64-hex-shaped output
+// but were NOT the real algorithms — MD5("abc") did not equal
+// 900150983cd24fb0d6963f7d28e17f72, SHA3-256/512 were SHA-2 IV + FNV, and
+// RIPEMD-160 lacked its dual pipeline entirely. Every value copied from the
+// tool was therefore wrong. These are real, test-vector-verified
+// implementations operating on the UTF-8 bytes of the input (matching how
+// crypto.subtle hashes strings).
+
+function _htUtf8Bytes(str) { return Array.from(new TextEncoder().encode(str)); }
+function _htHexLE(v) {
+  return ((v & 0xff).toString(16).padStart(2, '0')) +
+    (((v >>> 8) & 0xff).toString(16).padStart(2, '0')) +
+    (((v >>> 16) & 0xff).toString(16).padStart(2, '0')) +
+    (((v >>> 24) & 0xff).toString(16).padStart(2, '0'));
 }
 
-function _htSimpleSHA3(str, bits) {
-  let h0 = 0x6a09e667, h1 = 0xbb67ae85, h2 = 0x3c6ef372, h3 = 0xa54ff53a;
-  let h4 = 0x510e527f, h5 = 0x9b05688c, h6 = 0x1f83d9ab, h7 = 0x5be0cd19;
-  for (let i = 0; i < str.length; i++) {
-    const c = str.charCodeAt(i);
-    h0 = ((h0 ^ c) * 0x01000193) | 0; h1 = ((h1 + c) * 0x01000193) | 0;
-    h2 = ((h2 ^ (c << 3)) * 0x811c9dc5) | 0; h3 = ((h3 + (c << 7)) * 0x811c9dc5) | 0;
-    h4 = ((h4 ^ c) * 16777619) | 0; h5 = ((h5 - c) * 16777619) | 0;
-    h6 = ((h6 ^ (c << 5)) * 0x01000193) | 0; h7 = ((h7 + (c << 11)) * 0x811c9dc5) | 0;
+// MD5 (RFC 1321).
+function _htMD5(str) {
+  const msg = _htUtf8Bytes(str);
+  const origLen = msg.length;
+  msg.push(0x80);
+  while (msg.length % 64 !== 56) msg.push(0);
+  const bitLen = origLen * 8;
+  for (let b = 0; b < 8; b++) msg.push(Math.floor(bitLen / Math.pow(2, 8 * b)) & 0xff);
+  const S = [7, 12, 17, 22, 5, 9, 14, 20, 4, 11, 16, 23, 6, 10, 15, 21];
+  const K = [];
+  for (let i = 0; i < 64; i++) K[i] = Math.floor(Math.abs(Math.sin(i + 1)) * 0x100000000);
+  let a0 = 0x67452301, b0 = 0xefcdab89, c0 = 0x98badcfe, d0 = 0x10325476;
+  for (let off = 0; off < msg.length; off += 64) {
+    const M = [];
+    for (let j = 0; j < 16; j++) M[j] = msg[off + j * 4] | (msg[off + j * 4 + 1] << 8) | (msg[off + j * 4 + 2] << 16) | (msg[off + j * 4 + 3] << 24);
+    let A = a0, B = b0, C = c0, D = d0;
+    for (let i = 0; i < 64; i++) {
+      let F, g;
+      if (i < 16) { F = (B & C) | (~B & D); g = i; }
+      else if (i < 32) { F = (D & B) | (~D & C); g = (5 * i + 1) % 16; }
+      else if (i < 48) { F = B ^ C ^ D; g = (3 * i + 5) % 16; }
+      else { F = C ^ (B | ~D); g = (7 * i) % 16; }
+      F = (F + A + K[i] + M[g]) | 0;
+      A = D; D = C; C = B;
+      const s = S[Math.floor(i / 16) * 4 + (i % 4)];
+      B = (B + ((F << s) | (F >>> (32 - s)))) | 0;
+    }
+    a0 = (a0 + A) | 0; b0 = (b0 + B) | 0; c0 = (c0 + C) | 0; d0 = (d0 + D) | 0;
   }
-  const words = bits === 512 ? [h0, h1, h2, h3, h4, h5, h6, h7, h0 ^ h4, h1 ^ h5, h2 ^ h6, h3 ^ h7, h0 ^ h7, h1 ^ h6, h2 ^ h5, h3 ^ h4]
-    : [h0, h1, h2, h3, h4, h5, h6, h7];
-  const u = new Uint32Array(words);
-  return Array.from(new Uint8Array(u.buffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+  return _htHexLE(a0) + _htHexLE(b0) + _htHexLE(c0) + _htHexLE(d0);
 }
 
+// RIPEMD-160 (dual left/right lines with independent constants, rotations and
+// message schedules; ISO/IEC 10118-3).
+const _HT_RMD_R = [
+  0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+  7, 4, 13, 1, 10, 6, 15, 3, 12, 0, 9, 5, 2, 14, 11, 8,
+  3, 10, 14, 4, 9, 15, 8, 1, 2, 7, 0, 6, 13, 11, 5, 12,
+  1, 9, 11, 10, 0, 8, 12, 4, 13, 3, 7, 15, 14, 5, 6, 2,
+  4, 0, 5, 9, 7, 12, 2, 10, 14, 1, 3, 8, 11, 6, 15, 13];
+const _HT_RMD_RP = [
+  5, 14, 7, 0, 9, 2, 11, 4, 13, 6, 15, 8, 1, 10, 3, 12,
+  6, 11, 3, 7, 0, 13, 5, 10, 14, 15, 8, 12, 4, 9, 1, 2,
+  15, 5, 1, 3, 7, 14, 6, 9, 11, 8, 12, 2, 10, 0, 4, 13,
+  8, 6, 4, 1, 3, 11, 15, 0, 5, 12, 2, 13, 9, 7, 10, 14,
+  12, 15, 10, 4, 1, 5, 8, 7, 6, 2, 13, 14, 0, 3, 9, 11];
+const _HT_RMD_S = [
+  11, 14, 15, 12, 5, 8, 7, 9, 11, 13, 14, 15, 6, 7, 9, 8,
+  7, 6, 8, 13, 11, 9, 7, 15, 7, 12, 15, 9, 11, 7, 13, 12,
+  11, 13, 6, 7, 14, 9, 13, 15, 14, 8, 13, 6, 5, 12, 7, 5,
+  11, 12, 14, 15, 14, 15, 9, 8, 9, 14, 5, 6, 8, 6, 5, 12,
+  9, 15, 5, 11, 6, 8, 13, 12, 5, 12, 13, 14, 11, 8, 5, 6];
+const _HT_RMD_SP = [
+  8, 9, 9, 11, 13, 15, 15, 5, 7, 7, 8, 11, 14, 14, 12, 6,
+  9, 13, 15, 7, 12, 8, 9, 11, 7, 7, 12, 7, 6, 15, 13, 11,
+  9, 7, 15, 11, 8, 6, 6, 14, 12, 13, 5, 14, 13, 13, 7, 5,
+  15, 5, 8, 11, 14, 14, 6, 14, 6, 9, 12, 9, 12, 5, 15, 8,
+  8, 5, 12, 9, 12, 5, 14, 6, 8, 13, 6, 5, 15, 13, 11, 11];
 function _htRIPEMD160(str) {
-  let a = 0x67452301, b = 0xefcdab89, c = 0x98badcfe, d = 0x10325476, e = 0xc3d2e1f0;
-  for (let i = 0; i < str.length; i++) {
-    const ch = str.charCodeAt(i);
-    a = ((a << 5) | (a >>> 27)) + (b ^ c ^ d) + e + ch; a |= 0;
-    [a, b, c, d, e] = [e, a, b, (c << 10) | (c >>> 22), d];
+  const rol = (x, n) => ((x << n) | (x >>> (32 - n))) >>> 0;
+  const f = (j, x, y, z) => {
+    if (j < 16) return (x ^ y ^ z) >>> 0;
+    if (j < 32) return ((x & y) | (~x & z)) >>> 0;
+    if (j < 48) return ((x | ~y) ^ z) >>> 0;
+    if (j < 64) return ((x & z) | (y & ~z)) >>> 0;
+    return (x ^ (y | ~z)) >>> 0;
+  };
+  const K = [0x00000000, 0x5a827999, 0x6ed9eba1, 0x8f1bbcdc, 0xa953fd4e];
+  const KP = [0x50a28be6, 0x5c4dd124, 0x6d703ef3, 0x7a6d76e9, 0x00000000];
+  const msg = _htUtf8Bytes(str);
+  const origLen = msg.length;
+  msg.push(0x80);
+  while (msg.length % 64 !== 56) msg.push(0);
+  const bitLen = origLen * 8;
+  for (let b = 0; b < 8; b++) msg.push(Math.floor(bitLen / Math.pow(2, 8 * b)) & 0xff);
+  let h0 = 0x67452301, h1 = 0xefcdab89, h2 = 0x98badcfe, h3 = 0x10325476, h4 = 0xc3d2e1f0;
+  for (let off = 0; off < msg.length; off += 64) {
+    const X = [];
+    for (let j = 0; j < 16; j++) X[j] = (msg[off + j * 4] | (msg[off + j * 4 + 1] << 8) | (msg[off + j * 4 + 2] << 16) | (msg[off + j * 4 + 3] << 24)) >>> 0;
+    let al = h0, bl = h1, cl = h2, dl = h3, el = h4;
+    let ar = h0, br = h1, cr = h2, dr = h3, er = h4;
+    for (let j = 0; j < 80; j++) {
+      const rnd = Math.floor(j / 16);
+      let t = (((al + f(j, bl, cl, dl)) >>> 0) + X[_HT_RMD_R[j]]) >>> 0;
+      t = (t + K[rnd]) >>> 0;
+      t = (rol(t, _HT_RMD_S[j]) + el) >>> 0;
+      al = el; el = dl; dl = rol(cl, 10); cl = bl; bl = t;
+      t = (((ar + f(79 - j, br, cr, dr)) >>> 0) + X[_HT_RMD_RP[j]]) >>> 0;
+      t = (t + KP[rnd]) >>> 0;
+      t = (rol(t, _HT_RMD_SP[j]) + er) >>> 0;
+      ar = er; er = dr; dr = rol(cr, 10); cr = br; br = t;
+    }
+    const t = (h1 + cl + dr) >>> 0;
+    h1 = (h2 + dl + er) >>> 0;
+    h2 = (h3 + el + ar) >>> 0;
+    h3 = (h4 + al + br) >>> 0;
+    h4 = (h0 + bl + cr) >>> 0;
+    h0 = t;
   }
-  const u = new Uint32Array([a, b, c, d, e]);
-  return Array.from(new Uint8Array(u.buffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+  return _htHexLE(h0) + _htHexLE(h1) + _htHexLE(h2) + _htHexLE(h3) + _htHexLE(h4);
+}
+
+// SHA-3 (Keccak-f[1600], FIPS 202) with 64-bit lanes held as BigInt.
+const _HT_KECCAK_M64 = (1n << 64n) - 1n;
+const _HT_KECCAK_RC = [
+  0x0000000000000001n, 0x0000000000008082n, 0x800000000000808an, 0x8000000080008000n,
+  0x000000000000808bn, 0x0000000080000001n, 0x8000000080008081n, 0x8000000000008009n,
+  0x000000000000008an, 0x0000000000000088n, 0x0000000080008009n, 0x000000008000000an,
+  0x000000008000808bn, 0x800000000000008bn, 0x8000000000008089n, 0x8000000000008003n,
+  0x8000000000008002n, 0x8000000000000080n, 0x000000000000800an, 0x800000008000000an,
+  0x8000000080008081n, 0x8000000000008080n, 0x0000000080000001n, 0x8000000080008008n];
+const _HT_KECCAK_ROT = [[0, 36, 3, 41, 18], [1, 44, 10, 45, 2], [62, 6, 43, 15, 61], [28, 55, 25, 21, 56], [27, 20, 39, 8, 14]];
+function _htKeccakF(A) {
+  const rol = (x, n) => { const nb = BigInt(n); return ((x << nb) | (x >> (64n - nb))) & _HT_KECCAK_M64; };
+  for (let round = 0; round < 24; round++) {
+    const C = [];
+    for (let x = 0; x < 5; x++) C[x] = A[x][0] ^ A[x][1] ^ A[x][2] ^ A[x][3] ^ A[x][4];
+    const D = [];
+    for (let x = 0; x < 5; x++) D[x] = C[(x + 4) % 5] ^ rol(C[(x + 1) % 5], 1);
+    for (let x = 0; x < 5; x++) for (let y = 0; y < 5; y++) A[x][y] ^= D[x];
+    const B = [[0n, 0n, 0n, 0n, 0n], [0n, 0n, 0n, 0n, 0n], [0n, 0n, 0n, 0n, 0n], [0n, 0n, 0n, 0n, 0n], [0n, 0n, 0n, 0n, 0n]];
+    for (let x = 0; x < 5; x++) for (let y = 0; y < 5; y++) B[y][(2 * x + 3 * y) % 5] = rol(A[x][y], _HT_KECCAK_ROT[x][y]);
+    for (let x = 0; x < 5; x++) for (let y = 0; y < 5; y++) A[x][y] = (B[x][y] ^ (~B[(x + 1) % 5][y] & B[(x + 2) % 5][y])) & _HT_KECCAK_M64;
+    A[0][0] ^= _HT_KECCAK_RC[round];
+  }
+}
+function _htSHA3(str, bits) {
+  const rate = (1600 - bits * 2) / 8;
+  const outLen = bits / 8;
+  const msg = _htUtf8Bytes(str);
+  msg.push(0x06);
+  while (msg.length % rate !== 0) msg.push(0);
+  msg[msg.length - 1] ^= 0x80;
+  const A = [[0n, 0n, 0n, 0n, 0n], [0n, 0n, 0n, 0n, 0n], [0n, 0n, 0n, 0n, 0n], [0n, 0n, 0n, 0n, 0n], [0n, 0n, 0n, 0n, 0n]];
+  for (let off = 0; off < msg.length; off += rate) {
+    for (let i = 0; i < rate / 8; i++) {
+      let lane = 0n;
+      for (let b = 0; b < 8; b++) lane |= BigInt(msg[off + i * 8 + b]) << BigInt(8 * b);
+      A[i % 5][Math.floor(i / 5)] ^= lane;
+    }
+    _htKeccakF(A);
+  }
+  let out = '', produced = 0;
+  outer: for (;;) {
+    for (let i = 0; i < rate / 8; i++) {
+      const lane = A[i % 5][Math.floor(i / 5)];
+      for (let b = 0; b < 8; b++) {
+        out += Number((lane >> BigInt(8 * b)) & 0xffn).toString(16).padStart(2, '0');
+        if (++produced >= outLen) break outer;
+      }
+    }
+    _htKeccakF(A);
+  }
+  return out;
 }
 
 function _htCRC32(str) {
@@ -95,12 +229,15 @@ async function _htComputeHash(algo, text) {
       return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
     } catch (_) { /* fallback */ }
   }
-  if (algo === 'md5') return _htSimpleMD5(text);
+  if (algo === 'md5') return _htMD5(text);
   if (algo === 'crc32') return _htCRC32(text);
   if (algo === 'ripemd160') return _htRIPEMD160(text);
-  if (algo === 'sha3_256') return _htSimpleSHA3(text, 256);
-  if (algo === 'sha3_512') return _htSimpleSHA3(text, 512);
-  return _htSimpleMD5(text + algo);
+  if (algo === 'sha3_256') return _htSHA3(text, 256);
+  if (algo === 'sha3_512') return _htSHA3(text, 512);
+  // Only reachable if a SHA-1/2 algorithm was requested but Web Crypto was
+  // unavailable (e.g. a non-secure context). Emitting a stand-in value under a
+  // real algorithm name would be worse than saying so, so report honestly.
+  return '[unavailable: ' + a.name + ' requires Web Crypto in a secure context]';
 }
 
 async function _htComputeFileHash(algoSubtle, file) {
@@ -497,7 +634,7 @@ export function renderHashToolkit(container) {
         <h3>Hash Length Reference</h3>
         <table class="ht-table">
           <thead><tr><th>Algorithm</th><th>Bits</th><th>Hex Length</th><th>Native</th></tr></thead>
-          <tbody>${HT_ALGOS.map(a => `<tr><td style="color:#00aaff">${esc(a.name)}</td><td>${a.bits}</td><td>${a.hex}</td><td>${a.native ? '<span class="ht-badge ht-badge-green">SubtleCrypto</span>' : '<span class="ht-badge ht-badge-yellow">Simulated</span>'}</td></tr>`).join('')}
+          <tbody>${HT_ALGOS.map(a => `<tr><td style="color:#00aaff">${esc(a.name)}</td><td>${a.bits}</td><td>${a.hex}</td><td>${a.native ? '<span class="ht-badge ht-badge-green">SubtleCrypto</span>' : '<span class="ht-badge ht-badge-green">Pure JS</span>'}</td></tr>`).join('')}
           <tr><td style="color:#a855f7">bcrypt</td><td>184</td><td>60 chars</td><td><span class="ht-badge ht-badge-purple">Format</span></td></tr>
           <tr><td style="color:#a855f7">Argon2</td><td>Variable</td><td>Variable</td><td><span class="ht-badge ht-badge-purple">Format</span></td></tr>
           <tr><td style="color:#a855f7">NTLM</td><td>128</td><td>32</td><td><span class="ht-badge ht-badge-yellow">Simulated</span></td></tr>
