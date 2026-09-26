@@ -62,11 +62,15 @@ function recognise(input, options) {
   const source = (input && input.source) || options.source || "text";
   const srcConf = input && typeof input.confidence === "number" ? input.confidence : 1;
   if (!src) return { error: Object.assign(new Error("Nothing to solve: the input is empty."), { pos: 0, hint: "Type an equation or expression." }), text: src, source };
+  // greetings and chat are not math, even though "hi" would parse as h*i
+  if (/^(?:hi+|hello|hey+|yo|sup|ok(?:ay)?|thanks?(?: you)?|thx|ty|lol|bye|yes|yeah|no+|nope|oh|hm+|help|test(?:ing)?)[\s!?.,]*$/i.test(src)) {
+    return { error: Object.assign(new Error(`"${src}" is not a math problem.`), { pos: 0, hint: "Type an equation or expression, for example 2x + 3 = 11, or pick one from Examples." }), text: src, source };
+  }
   const t = translate(src);
   if (t.ok && t.pattern !== "math") {
     try {
-      const { node, warnings } = parseDetailed(t.math);
-      return { tree: node, text: t.math, original: src, warnings, source: source === "text" ? "language" : source, confidence: srcConf * t.confidence,
+      const { node, warnings, congruence } = parseDetailed(t.math);
+      return { tree: node, text: t.math, original: src, warnings, congruence, source: source === "text" ? "language" : source, confidence: srcConf * t.confidence,
         interpretation: t.interpretation, goal: t.goal, variable: t.variable, notes: t.notes || [] };
     } catch (_) { /* fall through */ }
   }
@@ -77,10 +81,10 @@ function recognise(input, options) {
     return { error: e, text: src, source, languageReason: t.reason };
   }
   try {
-    const { node, warnings } = parseDetailed(src);
+    const { node, warnings, congruence } = parseDetailed(src);
     const w = [...warnings];
     for (const word of words) w.push(`"${word}" was read as the product ${word.split("").join("*")}.`);
-    return { tree: node, text: src, warnings: w, source, confidence: srcConf * (w.length ? 0.9 : 1) };
+    return { tree: node, text: src, warnings: w, congruence, source, confidence: srcConf * (w.length ? 0.9 : 1) };
   } catch (e) {
     return { error: e, text: src, source, languageReason: t.reason };
   }
@@ -105,6 +109,11 @@ export function solve(input, options = {}) {
     base.confidence = { recognition: 0, classification: 0, solution: 0, verification: 0 };
     base.ms = now() - t0;
     return base;
+  }
+  // congruence notation (3x ≡ 2 (mod 7)) asks for integer solutions unless a domain was chosen
+  if (rec.congruence && options.integers === undefined && options.domain !== "complex" && options.domain !== "integer") {
+    options = { ...options, integers: true };
+    base.input.warnings = [...base.input.warnings, "A congruence is solved over the integers."];
   }
   const tree = rec.tree;
   const card = classify(tree, { variable: options.variable || rec.variable, goal: options.goal || rec.goal || undefined });

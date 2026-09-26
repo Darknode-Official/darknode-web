@@ -350,8 +350,8 @@ function approxView(a) {
   const ap = a.approx || {};
   const box = h("div", { class: "ans" });
   box.append(
-    h("div", { class: "ans-math" }, h("span", { class: "approx" }, "≈ " + (ap.value ?? "")), h("div", { class: "approx-meta" }, approxMeta(ap))),
-    h("div", { class: "ans-tools" }, copyBtn(String(ap.value ?? ""), "value", "Copy value"))
+    h("div", { class: "ans-math" }, h("span", { class: "approx" }, "≈ " + (ap.value ?? "") + (a.unit ? " " + a.unit : "")), h("div", { class: "approx-meta" }, approxMeta(ap))),
+    h("div", { class: "ans-tools" }, copyBtn(String(ap.value ?? "") + (a.unit ? " " + a.unit : ""), "value", "Copy value"))
   );
   return box;
 }
@@ -411,13 +411,15 @@ function answerCard(r) {
     const rec = a.tree;
     const row = h("div", { class: "ans" });
     if (a.label) row.append(h("div", { class: "ans-label" }, a.label));
-    row.append(h("div", { class: "ans-math" }, mathEl(rec, { display: false, label: "Answer" })));
+    const mathBox = h("div", { class: "ans-math" }, mathEl(rec, { display: false, label: "Answer" }));
+    if (a.unit) mathBox.append(h("span", { class: "ans-unit" }, a.unit));
+    row.append(mathBox);
     const tools = h("div", { class: "ans-tools" });
-    if (rec && rec.text) tools.append(copyBtn(rec.text, "text", "Copy answer as text"));
+    if (rec && rec.text) tools.append(copyBtn(rec.text + (a.unit ? " " + a.unit : ""), "text", "Copy answer as text"));
     if (rec && rec.latex) tools.append(copyBtn(rec.latex, "LaTeX", "Copy answer as LaTeX"));
     row.append(tools);
     list.append(row);
-    if (a.approx) list.append(approxView({ approx: a.approx }));
+    if (a.approx) list.append(approxView({ approx: a.approx, unit: a.unit }));
   }
   card.append(list);
   return card;

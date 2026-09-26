@@ -422,6 +422,8 @@ function mergeNumericRadicals(fs) {
 }
 
 // ---------------- sums ----------------
+const addTerms = (u) => (u.k === "add" ? u.args.length : u === ZERO ? 0 : 1);
+const scaledSum = (f) => f.k === "mul" && coeffAndTerm(f)[1].k === "add";
 export function simpAdd(args) {
   tick();
   let flat = [];
@@ -429,6 +431,22 @@ export function simpAdd(args) {
     if (a === UNDEF) return UNDEF;
     if (a.k === "add") flat.push(...a.args); else flat.push(a);
   }
+  const plain = simpAddFlat(flat);
+  // k*(a + b) next to other terms: distribute only when terms then cancel (x + 1 - (x + 1) -> 0),
+  // so intended forms such as 6(x - 3) + 9 are kept
+  if (flat.length > 1 && plain.k === "add" && flat.some(scaledSum)) {
+    const dist = [];
+    for (const f of flat) {
+      if (!scaledSum(f)) { dist.push(f); continue; }
+      const [k, t] = coeffAndTerm(f);
+      for (const a of t.args) dist.push(simpMul([Nn(k), a]));
+    }
+    const d = simpAddFlat(dist.flatMap((a) => (a.k === "add" ? a.args : [a])));
+    if (d !== UNDEF && addTerms(d) < addTerms(plain)) return d;
+  }
+  return plain;
+}
+function simpAddFlat(flat) {
   // infinities
   const infs = flat.filter((f) => f === OO || (f.k === "mul" && f.args.includes(OO)));
   if (infs.length) {

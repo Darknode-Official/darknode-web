@@ -29,7 +29,51 @@ const matOf = (u) => {
 };
 const logSteps = (env, steps) => { for (const st of steps || []) env.log.add(st); };
 
+// vectors: [1, 2, 3], or a matrix with one row or one column
+const vecOf = (u) => {
+  const s = simplify(u);
+  if (s.k === "vector" || s.k === "tuple") return s.args;
+  if (s.k === "matrix") {
+    const rows = s.args.map((r) => r.args);
+    if (rows.length === 1) return rows[0];
+    if (rows.every((r) => r.length === 1)) return rows.map((r) => r[0]);
+  }
+  throw unsupported("expected a vector such as [1, 2, 3]");
+};
+const dotOf = (a, b) => simplify(X.add(...a.map((ai, i) => X.mul(ai, b[i]))));
+const isZ = (u) => simplify(expand(u)) === X.ZERO;
+
 const COMMANDS = {
+  dot(node, env) {
+    if (node.args.length !== 2) throw unsupported("dot needs two vectors: dot([1, 2, 3], [4, 5, 6])");
+    const a = vecOf(node.args[0]), b = vecOf(node.args[1]);
+    if (a.length !== b.length) throw unsupported(`the vectors have different lengths (${a.length} and ${b.length})`);
+    const d = dotOf(a, b);
+    env.log.add({ rule: "vec.dot", title: "Multiply matching components and add", why: a.map((ai, i) => `(${toText(ai)})(${toText(b[i])})`).join(" + ") + ` = ${toText(d)}`, before: node, after: d });
+    return { ...exact(d), verify: () => {
+      // independent: floating-point sum of products, compared with the exact value
+      const fa = a.map(L.evalFloat), fb = b.map(L.evalFloat), fd = L.evalFloat(d);
+      if (![...fa, ...fb, fd].every(Number.isFinite)) return { status: "not-applicable", checks: [] };
+      const want = fa.reduce((s, x, i) => s + x * fb[i], 0);
+      const ok = Math.abs(want - fd) <= 1e-9 * Math.max(1, Math.abs(want));
+      return V(ok ? "verified-numeric" : "failed", `independent floating-point dot product (${+want.toPrecision(12)}) agrees`, "recompute");
+    } };
+  },
+  cross(node, env) {
+    if (node.args.length !== 2) throw unsupported("cross needs two vectors: cross([1, 2, 3], [4, 5, 6])");
+    const a = vecOf(node.args[0]), b = vecOf(node.args[1]);
+    if (a.length !== 3 || b.length !== 3) throw unsupported("the cross product is defined for 3-component vectors");
+    const c = [X.sub(X.mul(a[1], b[2]), X.mul(a[2], b[1])), X.sub(X.mul(a[2], b[0]), X.mul(a[0], b[2])), X.sub(X.mul(a[0], b[1]), X.mul(a[1], b[0]))].map((t) => simplify(t));
+    const r = X.vector(...c);
+    env.log.add({ rule: "vec.cross", title: "Cross product by components", why: "(a2 b3 - a3 b2, a3 b1 - a1 b3, a1 b2 - a2 b1)", before: node, after: r });
+    return { ...exact(r), verify: () => {
+      // independent exact identities: the result is orthogonal to both inputs, and
+      // |a x b|^2 = |a|^2 |b|^2 - (a . b)^2 (Lagrange's identity)
+      const orth = isZ(dotOf(c, a)) && isZ(dotOf(c, b));
+      const lag = isZ(X.sub(dotOf(c, c), X.sub(X.mul(dotOf(a, a), dotOf(b, b)), X.pow(dotOf(a, b), X.TWO))));
+      return V(orth && lag ? "verified-exact" : "failed", "the result is orthogonal to both vectors and its length satisfies Lagrange's identity", "identities");
+    } };
+  },
   det(node, env) {
     const A = matOf(node.args[0]);
     const r = L.detSteps ? L.detSteps(A) : null;

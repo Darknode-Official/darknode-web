@@ -8,6 +8,7 @@ import { toText } from "../print.js";
 import { diff } from "../calc/diff.js";
 import { equivalent, verifyDerivative } from "../verify.js";
 import { register, toContractVerification, unsupported } from "../orchestrate.js";
+import { rationalize } from "../rules.js";
 
 let approxHook = null;
 // The numerical engine installs a function (tree, digits) -> Approx record.
@@ -32,9 +33,25 @@ function exactAndApprox(tree, digits) {
 register({
   id: "evaluate.exact", kinds: ["arithmetic"], priority: 10,
   run(node, card, env) {
+    // simplify(...) / expand(...) around a constant: evaluate the inside, never echo the command
+    const cmd = node.k === "fn" && ["simplify", "expand"].includes(node.name) && node.args.length === 1 ? node.name : null;
+    if (cmd) node = node.args[0];
     const before = node;
-    const v = simplify(node, env.ctx);
+    let v = simplify(node, env.ctx);
     if (v !== before) env.log.add({ rule: "simp.evaluate", title: "Evaluate exactly", why: "Exact arithmetic on rationals, radicals and known constants.", before, after: v });
+    if (cmd === "expand") { try { v = expand(v, env.ctx); } catch (e) { if (e.code !== "BUDGET") throw e; } }
+    else if (cmd === "simplify" && v !== X.UNDEF) {
+      // rationalise the denominator (1/(1 + sqrt(2)) -> sqrt(2) - 1), keeping the smallest equal form
+      try {
+        const r = rationalize(v);
+        if (r && r.result && !r.stopped && !(r.conditions || []).length && r.result !== v) {
+          let best = r.result;
+          try { const e = expand(best, env.ctx); if (X.size(e) < X.size(best)) best = e; } catch (e) { if (e.code !== "BUDGET") throw e; }
+          env.log.add({ rule: "rad.rationalize", title: "Rationalise the denominator", why: "Multiply the top and bottom by the conjugate so no root is left in the denominator.", before: v, after: best });
+          v = best;
+        }
+      } catch (_) { /* keep the evaluated form */ }
+    }
     if (v === X.UNDEF) return { answers: [{ kind: "none", label: "undefined" }], solutionStatus: "exact", note: "the expression is undefined", verify: () => ({ status: "not-applicable", checks: [] }) };
     return {
       answers: exactAndApprox(v, env.digits), solutionStatus: "exact",
