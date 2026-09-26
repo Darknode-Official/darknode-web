@@ -1,4 +1,15 @@
 // Copyright (c) 2026 Darknode-Official. All rights reserved.
+// Decode a base64url JWT segment to its parsed JSON, handling padding and
+// UTF-8 claims (atob yields a Latin-1 byte string; decode it as UTF-8 so
+// non-ASCII claim values are not mangled).
+function _jwtSegJson(seg) {
+  var s = String(seg).replace(/-/g, "+").replace(/_/g, "/");
+  while (s.length % 4) s += "=";
+  var bin = atob(s);
+  var bytes = new Uint8Array(bin.length);
+  for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return JSON.parse(new TextDecoder("utf-8").decode(bytes));
+}
 // Source-available for learning only. Redistribution prohibited. See LICENSE.
 // Darknode HTTP Inspector — headers, cookies, CSP, CORS, JWT, URL analysis
 
@@ -175,8 +186,8 @@ function decodeJWT(token) {
   const parts = token.split(".");
   if (parts.length < 2) return { error: "Not a valid JWT (needs at least 2 parts separated by '.')" };
   try {
-    const header = JSON.parse(atob(parts[0].replace(/-/g, "+").replace(/_/g, "/")));
-    const payload = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/")));
+    const header = _jwtSegJson(parts[0]);
+    const payload = _jwtSegJson(parts[1]);
     const issues = [];
     if (header.alg === "none") issues.push("CRITICAL: alg=none — signature not verified!");
     if (header.alg === "HS256" && !parts[2]) issues.push("HMAC algorithm but no signature present");

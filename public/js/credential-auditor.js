@@ -1,4 +1,15 @@
 // Credential Auditor — password analysis, hash identification, JWT decode, TOTP, cert decode
+// Decode a base64url JWT segment to its parsed JSON, handling padding and
+// UTF-8 claims (atob yields a Latin-1 byte string; decode it as UTF-8 so
+// non-ASCII claim values are not mangled).
+function _jwtSegJson(seg) {
+  var s = String(seg).replace(/-/g, "+").replace(/_/g, "/");
+  while (s.length % 4) s += "=";
+  var bin = atob(s);
+  var bytes = new Uint8Array(bin.length);
+  for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return JSON.parse(new TextDecoder("utf-8").decode(bytes));
+}
 // All analysis runs client-side. Nothing leaves the browser.
 const esc = (s) => String(s != null ? s : "").replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -502,8 +513,8 @@ function decodeJWT(token) {
   const parts = token.split(".");
   if (parts.length < 2 || parts.length > 3) return { error: "Not a valid JWT (expected 2-3 dot-separated parts)" };
   try {
-    const header = JSON.parse(atob(parts[0].replace(/-/g, "+").replace(/_/g, "/")));
-    const payload = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/")));
+    const header = _jwtSegJson(parts[0]);
+    const payload = _jwtSegJson(parts[1]);
     const result = { header: header, payload: payload, hasSig: parts.length === 3 };
     if (payload.exp) {
       const expDate = new Date(payload.exp * 1000);
