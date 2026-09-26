@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Darknode-Official. All rights reserved.
-// Threat Intel Feed — CVE/advisory aggregator with severity filtering, search, and export
+// Threat Intel Feed — recently published CVEs from the NIST NVD API, with severity filtering, search, and export
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -9,6 +9,7 @@ const SEV = {
   HIGH:     { label: "High",     color: "#ea580c", floor: 7.0 },
   MEDIUM:   { label: "Medium",   color: "#d97706", floor: 4.0 },
   LOW:      { label: "Low",      color: "#16a34a", floor: 0.0 },
+  NONE:     { label: "Unscored", color: "#64748b", floor: -1 },
 };
 
 function sevOf(cvss) {
@@ -18,63 +19,87 @@ function sevOf(cvss) {
   return "LOW";
 }
 
-function randomDate(daysBack) {
-  const d = new Date();
-  d.setDate(d.getDate() - Math.floor(Math.random() * daysBack));
-  return d.toISOString().slice(0, 10);
+// ---------------------------------------------------------------------------
+// Live data: NIST NVD CVE API 2.0 (same public source as the CVE Search page;
+// allowed by the site CSP connect-src). No API key, so NVD rate-limits to about
+// 5 requests / 30 s. We ask for CVEs published in the selected window and keep
+// the newest PAGE_SIZE of them.
+// ---------------------------------------------------------------------------
+const NVD_API = "https://services.nvd.nist.gov/rest/json/cves/2.0";
+const PAGE_SIZE = 200;
+
+// NVD wants "YYYY-MM-DDTHH:MM:SS.000" (UTC, no zone suffix).
+function nvdDate(d) { return d.toISOString().slice(0, 19) + ".000"; }
+
+function nvdUrl(days, startIndex, perPage) {
+  const end = new Date();
+  const start = new Date(end.getTime() - days * 86400000);
+  return NVD_API + "?pubStartDate=" + encodeURIComponent(nvdDate(start)) +
+    "&pubEndDate=" + encodeURIComponent(nvdDate(end)) +
+    "&noRejected&resultsPerPage=" + perPage + "&startIndex=" + startIndex;
 }
 
-function buildCVEs() {
-  const vendors = ["Microsoft", "Linux Kernel", "Apache", "Cisco", "Google Chrome", "Mozilla Firefox",
-    "OpenSSL", "VMware", "Oracle", "Adobe", "Fortinet", "Palo Alto Networks", "SolarWinds",
-    "Ivanti", "Juniper", "Red Hat", "Nginx", "WordPress", "Drupal", "GitLab"];
-  const titles = [
-    ["Remote Code Execution in {v} HTTP Handler", "A crafted HTTP request triggers a buffer overflow in the request parser, allowing unauthenticated remote code execution.", "HTTP daemon, Web server module"],
-    ["Privilege Escalation via {v} Kernel Driver", "A local attacker can exploit a race condition in the kernel driver to escalate from user to root privileges.", "Kernel driver, OS core"],
-    ["SQL Injection in {v} Admin Panel", "Improper input sanitization in the administrative interface allows authenticated attackers to execute arbitrary SQL queries.", "Admin panel, Database layer"],
-    ["Cross-Site Scripting in {v} Dashboard", "Reflected XSS in the search parameter of the dashboard allows attackers to steal session tokens.", "Web dashboard, Search module"],
-    ["Authentication Bypass in {v} SSO Module", "A flaw in the SAML assertion parser allows attackers to forge authentication tokens and bypass login.", "SSO module, SAML handler"],
-    ["Denial of Service via {v} TLS Handshake", "A malformed TLS ClientHello message causes an infinite loop, consuming all available CPU resources.", "TLS/SSL library, Network stack"],
-    ["Information Disclosure in {v} API", "The REST API returns internal stack traces and database connection strings in error responses.", "REST API, Error handler"],
-    ["Path Traversal in {v} File Upload", "Insufficient path validation allows attackers to write files outside the intended upload directory.", "File upload handler, Storage module"],
-    ["Deserialization Vulnerability in {v} RPC", "Untrusted data passed to the deserialization function allows remote code execution via crafted payloads.", "RPC handler, Serialization library"],
-    ["Memory Corruption in {v} Image Parser", "A heap-based buffer overflow in the image parsing library allows code execution when processing crafted PNG files.", "Image parser, Media handler"],
-    ["Command Injection in {v} Diagnostic Tool", "User-supplied input is passed unsanitized to a shell command in the diagnostic utility.", "Diagnostic module, CLI tool"],
-    ["Insecure Default Configuration in {v}", "The default installation ships with debug mode enabled and a hardcoded API key, exposing internal endpoints.", "Configuration module, Setup wizard"],
-    ["Certificate Validation Bypass in {v}", "The TLS client does not verify the server certificate chain, enabling man-in-the-middle attacks.", "TLS client, Certificate handler"],
-    ["Use-After-Free in {v} Session Manager", "A use-after-free condition in session cleanup allows an attacker to execute arbitrary code in the context of the service.", "Session manager, Memory allocator"],
-    ["Integer Overflow in {v} Protocol Parser", "An integer overflow in packet length validation leads to a heap buffer overflow during protocol parsing.", "Protocol parser, Network stack"],
-  ];
-  const mitigations = [
-    "Apply the vendor patch immediately. If patching is not possible, restrict network access to the affected service.",
-    "Update to the latest version. Implement network segmentation to limit lateral movement.",
-    "Apply the security update. Enable WAF rules to block known exploit patterns.",
-    "Upgrade to the patched release. Disable the affected feature if not required.",
-    "Install the vendor fix. Monitor logs for indicators of exploitation.",
-  ];
-  const refs = [
-    "https://nvd.nist.gov/vuln/detail/", "https://cve.mitre.org/cgi-bin/cvename.cgi?name=",
-    "https://www.cisa.gov/known-exploited-vulnerabilities-catalog",
-  ];
+async function nvdJSON(url) {
+  const r = await fetch(url);
+  if (!r.ok) throw new Error("NVD returned HTTP " + r.status + (r.status === 403 || r.status === 429 ? " (rate limited, try again in 30 seconds)" : ""));
+  return r.json();
+}
 
-  const cves = [];
-  for (let i = 0; i < 50; i++) {
-    const t = titles[i % titles.length];
-    const v = vendors[i % vendors.length];
-    const cvss = +(Math.random() * 9.2 + 0.8).toFixed(1);
-    const id = `CVE-2026-${String(40000 + i).padStart(5, "0")}`;
-    cves.push({
-      id, vendor: v, cvss, severity: sevOf(cvss),
-      title: t[0].replace("{v}", v),
-      description: t[1],
-      affected: t[2],
-      date: randomDate(90),
-      mitigation: mitigations[i % mitigations.length],
-      references: [refs[0] + id, refs[1] + id],
-    });
-  }
-  cves.sort((a, b) => b.date.localeCompare(a.date));
-  return cves;
+function metricOf(cve) {
+  const m = cve.metrics || {};
+  const pick = (m.cvssMetricV40 || [])[0] || (m.cvssMetricV31 || [])[0] || (m.cvssMetricV30 || [])[0] || (m.cvssMetricV2 || [])[0];
+  if (!pick || !pick.cvssData) return null;
+  return { score: pick.cvssData.baseScore, version: pick.cvssData.version || "" };
+}
+
+// First vendor/product pairs from CPE match strings (cpe:2.3:a:vendor:product:...).
+function productsOf(cve) {
+  const out = [];
+  (cve.configurations || []).forEach(cfg => (cfg.nodes || []).forEach(n => (n.cpeMatch || []).forEach(cm => {
+    const p = String(cm.criteria || "").split(":");
+    if (p.length > 4) {
+      const name = (p[3] + " " + p[4]).replace(/_/g, " ");
+      if (!out.includes(name)) out.push(name);
+    }
+  })));
+  return out;
+}
+
+function mapNvd(v) {
+  const cve = v.cve || {};
+  const desc = ((cve.descriptions || []).find(d => d.lang === "en") || (cve.descriptions || [])[0] || {}).value || "";
+  const metric = metricOf(cve);
+  const products = productsOf(cve);
+  const cwes = [];
+  (cve.weaknesses || []).forEach(w => (w.description || []).forEach(d => { if (d.value && !cwes.includes(d.value)) cwes.push(d.value); }));
+  const refs = (cve.references || []).map(r => r.url).filter(u => /^https?:\/\//i.test(u || ""));
+  const firstSentence = desc.split(/(?<=\.)\s/)[0] || desc;
+  return {
+    id: cve.id,
+    vendor: products.length ? products[0].split(" ")[0] : "",
+    cvss: metric ? metric.score : null,
+    cvssVersion: metric ? metric.version : "",
+    severity: metric ? sevOf(metric.score) : "NONE",
+    title: firstSentence.length > 160 ? firstSentence.slice(0, 157) + "..." : firstSentence,
+    description: desc,
+    affected: products.slice(0, 8).join(", ") || "Not yet listed by NVD",
+    weaknesses: cwes.join(", "),
+    status: cve.vulnStatus || "",
+    date: String(cve.published || "").slice(0, 10),
+    references: ["https://nvd.nist.gov/vuln/detail/" + encodeURIComponent(cve.id)].concat(refs.slice(0, 6)),
+  };
+}
+
+// Newest PAGE_SIZE CVEs published in the last `days` days.
+async function fetchRecentCVEs(days) {
+  const head = await nvdJSON(nvdUrl(days, 0, 1));
+  const total = head.totalResults || 0;
+  if (!total) return { cves: [], total: 0 };
+  const startIndex = Math.max(0, total - PAGE_SIZE);
+  const page = await nvdJSON(nvdUrl(days, startIndex, PAGE_SIZE));
+  const cves = (page.vulnerabilities || []).map(mapNvd).filter(c => c.id);
+  cves.sort((a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id));
+  return { cves, total };
 }
 
 function injectStyles() {
@@ -123,6 +148,8 @@ function injectStyles() {
 .tf-detail a:hover{text-decoration:underline}
 .tf-empty{text-align:center;padding:40px;color:var(--txt-2);font-size:.88rem}
 .tf-count{font-size:.78rem;color:var(--txt-2);margin-bottom:8px}
+.tf-source{font-size:.76rem;color:var(--txt-2);margin:-8px 0 16px;line-height:1.5}
+.tf-err{padding:14px 16px;border-radius:8px;border:1px solid #dc262655;background:rgba(220,38,38,.06);color:var(--txt);font-size:.82rem;margin-bottom:12px}
 @media(max-width:600px){
   .tf-header{flex-direction:column;align-items:stretch}
   .tf-filters{flex-direction:column}
@@ -137,22 +164,21 @@ function injectStyles() {
 
 export function renderThreatFeed(main) {
   injectStyles();
-  const cves = buildCVEs();
+  let cves = [];
+  let totalInWindow = 0;
+  let loading = false;
+  let loadError = "";
+  let loadedAt = null;
   let expanded = new Set();
   let autoRefresh = false;
   let autoTimer = null;
 
-  function getFiltered(query, severity, range) {
-    const now = Date.now();
-    const ranges = { "7d": 7, "30d": 30, "90d": 90, all: Infinity };
-    const days = ranges[range] || Infinity;
+  const RANGE_DAYS = { "7d": 7, "30d": 30, "90d": 90 };
+
+  function getFiltered(query, severity) {
     const q = (query || "").toLowerCase().trim();
     return cves.filter(c => {
       if (severity !== "all" && c.severity !== severity) return false;
-      if (days !== Infinity) {
-        const age = (now - new Date(c.date).getTime()) / 86400000;
-        if (age > days) return false;
-      }
       if (q && !c.id.toLowerCase().includes(q) && !c.title.toLowerCase().includes(q)
           && !c.vendor.toLowerCase().includes(q) && !c.description.toLowerCase().includes(q)) return false;
       return true;
@@ -162,10 +188,9 @@ export function renderThreatFeed(main) {
   function render() {
     const query = main.querySelector(".tf-search")?.value || "";
     const severity = main.querySelector("#tf-sev-filter")?.value || "all";
-    const range = main.querySelector("#tf-range-filter")?.value || "all";
-    const filtered = getFiltered(query, severity, range);
+    const filtered = getFiltered(query, severity);
 
-    const counts = { CRITICAL: 0, HIGH: 0, MEDIUM: 0, LOW: 0 };
+    const counts = { CRITICAL: 0, HIGH: 0, MEDIUM: 0, LOW: 0, NONE: 0 };
     filtered.forEach(c => counts[c.severity]++);
 
     const statsEl = main.querySelector(".tf-stats");
@@ -177,14 +202,32 @@ export function renderThreatFeed(main) {
 
     const listEl = main.querySelector(".tf-list");
     if (!listEl) return;
+    const countEl = main.querySelector(".tf-count");
+    const srcEl = main.querySelector(".tf-source");
+    const days = RANGE_DAYS[main.querySelector("#tf-range-filter")?.value] || 7;
+    if (srcEl) {
+      srcEl.textContent = "Source: NIST National Vulnerability Database (services.nvd.nist.gov), CVEs published in the last " + days + " days" +
+        (loadedAt ? ". Fetched " + loadedAt.toLocaleTimeString() + (totalInWindow > cves.length ? "; showing " + cves.length + " of " + totalInWindow + " (the last page of NVD results)." : ".") : ".");
+    }
+
+    if (loading && !cves.length) {
+      if (countEl) countEl.textContent = "";
+      listEl.innerHTML = `<div class="tf-empty">Loading recent CVEs from NVD...</div>`;
+      return;
+    }
+    if (loadError && !cves.length) {
+      if (countEl) countEl.textContent = "";
+      listEl.innerHTML = `<div class="tf-err"><strong>Could not load CVEs from NVD.</strong> ${esc(loadError)}<br>Use Refresh to try again. The CVE Search page also queries NVD directly.</div>`;
+      return;
+    }
 
     if (filtered.length === 0) {
+      if (countEl) countEl.textContent = "";
       listEl.innerHTML = `<div class="tf-empty">No CVEs match the current filters.</div>`;
       return;
     }
 
-    const countEl = main.querySelector(".tf-count");
-    if (countEl) countEl.textContent = `Showing ${filtered.length} of ${cves.length} advisories`;
+    if (countEl) countEl.textContent = `Showing ${filtered.length} of ${cves.length} CVEs` + (loadError ? ` (last refresh failed: ${loadError})` : "");
 
     listEl.innerHTML = filtered.map(c => {
       const sev = SEV[c.severity];
@@ -193,7 +236,7 @@ export function renderThreatFeed(main) {
         <div class="tf-card-top">
           <span class="tf-cve-id">${esc(c.id)}</span>
           <span class="tf-sev" style="background:${sev.color}">${sev.label}</span>
-          <span class="tf-cvss">CVSS ${c.cvss}</span>
+          <span class="tf-cvss">${c.cvss != null ? "CVSS " + c.cvss + (c.cvssVersion ? " (v" + esc(c.cvssVersion) + ")" : "") : "Not yet scored"}</span>
           <span class="tf-date">${esc(c.date)}</span>
           <span class="tf-vendor">${esc(c.vendor)}</span>
         </div>
@@ -207,10 +250,14 @@ export function renderThreatFeed(main) {
             <div class="tf-detail-label">Affected Products</div>
             <div>${esc(c.affected)}</div>
           </div>
-          <div class="tf-detail-section">
-            <div class="tf-detail-label">Mitigation</div>
-            <div>${esc(c.mitigation)}</div>
-          </div>
+          ${c.weaknesses ? `<div class="tf-detail-section">
+            <div class="tf-detail-label">Weakness</div>
+            <div>${esc(c.weaknesses)}</div>
+          </div>` : ""}
+          ${c.status ? `<div class="tf-detail-section">
+            <div class="tf-detail-label">NVD Status</div>
+            <div>${esc(c.status)}</div>
+          </div>` : ""}
           <div class="tf-detail-section">
             <div class="tf-detail-label">References</div>
             ${c.references.map(r => `<div><a href="${esc(r)}" target="_blank" rel="noopener">${esc(r)}</a></div>`).join("")}
@@ -223,8 +270,7 @@ export function renderThreatFeed(main) {
   function exportJSON() {
     const query = main.querySelector(".tf-search")?.value || "";
     const severity = main.querySelector("#tf-sev-filter")?.value || "all";
-    const range = main.querySelector("#tf-range-filter")?.value || "all";
-    const data = getFiltered(query, severity, range);
+    const data = getFiltered(query, severity);
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
@@ -236,11 +282,10 @@ export function renderThreatFeed(main) {
   function exportCSV() {
     const query = main.querySelector(".tf-search")?.value || "";
     const severity = main.querySelector("#tf-sev-filter")?.value || "all";
-    const range = main.querySelector("#tf-range-filter")?.value || "all";
-    const data = getFiltered(query, severity, range);
+    const data = getFiltered(query, severity);
     const header = "CVE ID,Title,Severity,CVSS,Vendor,Date,Description\n";
     const rows = data.map(c =>
-      `"${c.id}","${c.title.replace(/"/g, '""')}","${c.severity}",${c.cvss},"${c.vendor}","${c.date}","${c.description.replace(/"/g, '""')}"`
+      `"${c.id}","${c.title.replace(/"/g, '""')}","${c.severity}",${c.cvss != null ? c.cvss : ""},"${c.vendor.replace(/"/g, '""')}","${c.date}","${c.description.replace(/"/g, '""')}"`
     ).join("\n");
     const blob = new Blob([header + rows], { type: "text/csv" });
     const a = document.createElement("a");
@@ -254,6 +299,7 @@ export function renderThreatFeed(main) {
     <div class="tf-header">
       <h1>Threat Intel Feed</h1>
       <div class="tf-actions">
+        <button class="tf-btn" id="tf-refresh">Refresh</button>
         <button class="tf-btn" id="tf-auto">Auto-Refresh: Off</button>
         <button class="tf-btn" id="tf-export-json">Export JSON</button>
         <button class="tf-btn" id="tf-export-csv">Export CSV</button>
@@ -267,27 +313,52 @@ export function renderThreatFeed(main) {
         <option value="HIGH">High</option>
         <option value="MEDIUM">Medium</option>
         <option value="LOW">Low</option>
+        <option value="NONE">Unscored</option>
       </select>
       <select class="tf-select" id="tf-range-filter">
-        <option value="all">All Time</option>
-        <option value="7d">Last 7 Days</option>
-        <option value="30d">Last 30 Days</option>
-        <option value="90d">Last 90 Days</option>
+        <option value="7d" selected>Published: Last 7 Days</option>
+        <option value="30d">Published: Last 30 Days</option>
+        <option value="90d">Published: Last 90 Days</option>
       </select>
     </div>
+    <div class="tf-source"></div>
     <div class="tf-stats"></div>
     <div class="tf-count"></div>
     <div class="tf-list"></div>
   </div>`;
 
+  async function load() {
+    if (loading) return;
+    loading = true;
+    const days = RANGE_DAYS[main.querySelector("#tf-range-filter")?.value] || 7;
+    const btn = main.querySelector("#tf-refresh");
+    if (btn) { btn.disabled = true; btn.textContent = "Loading..."; }
+    render();
+    try {
+      const res = await fetchRecentCVEs(days);
+      cves = res.cves;
+      totalInWindow = res.total;
+      loadError = "";
+      loadedAt = new Date();
+    } catch (err) {
+      loadError = String((err && err.message) || err || "Network error");
+    } finally {
+      loading = false;
+      if (btn) { btn.disabled = false; btn.textContent = "Refresh"; }
+    }
+    if (main.querySelector(".tf-wrap")) render();
+  }
+
   render();
+  load();
 
   const searchEl = main.querySelector(".tf-search");
   const sevEl = main.querySelector("#tf-sev-filter");
   const rangeEl = main.querySelector("#tf-range-filter");
   searchEl.addEventListener("input", render);
   sevEl.addEventListener("change", render);
-  rangeEl.addEventListener("change", render);
+  rangeEl.addEventListener("change", () => { cves = []; expanded = new Set(); load(); });
+  main.querySelector("#tf-refresh").addEventListener("click", load);
 
   main.querySelector(".tf-list").addEventListener("click", (e) => {
     const card = e.target.closest(".tf-card");
@@ -303,10 +374,14 @@ export function renderThreatFeed(main) {
   const autoBtn = main.querySelector("#tf-auto");
   autoBtn.addEventListener("click", () => {
     autoRefresh = !autoRefresh;
-    autoBtn.textContent = `Auto-Refresh: ${autoRefresh ? "On" : "Off"}`;
+    autoBtn.textContent = `Auto-Refresh: ${autoRefresh ? "On (10 min)" : "Off"}`;
     autoBtn.classList.toggle("active", autoRefresh);
     if (autoRefresh) {
-      autoTimer = setInterval(render, 30000);
+      // NVD asks unauthenticated clients to stay well under 5 requests / 30 s.
+      autoTimer = setInterval(() => {
+        if (!main.querySelector(".tf-wrap")) { clearInterval(autoTimer); autoTimer = null; return; }
+        load();
+      }, 10 * 60 * 1000);
     } else {
       clearInterval(autoTimer);
       autoTimer = null;
