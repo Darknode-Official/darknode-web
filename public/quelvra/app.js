@@ -447,14 +447,15 @@ function valuesView(a) {
     box.append(h("span", { class: "ans-pair" }, h("span", { class: "ans-var" }, String(name) + "\u00a0=\u00a0"), mathEl(v, { display: false, label: String(name) })));
   });
   row.append(box);
-  if (Array.isArray(a.params) && a.params.length) row.append(h("div", { class: "muted small-t" }, "for any value of " + a.params.join(", ")));
+  if (paramsNote(a)) row.append(h("div", { class: "muted small-t" }, paramsNote(a)));
   const tools = h("div", { class: "ans-tools" });
   tools.append(copyBtn(valuesText(a), "text", "Copy answer as text"));
-  if (pairs.every(([, v]) => v && v.latex)) tools.append(copyBtn(pairs.map(([n, v]) => n + " = " + v.latex).join(",\\; "), "LaTeX", "Copy answer as LaTeX"));
+  if (pairs.every(([, v]) => v && v.latex)) tools.append(copyBtn(pairs.map(([n, v]) => n + " = " + v.latex).join(",\\; ") + (paramsNote(a) ? ",\\; \\text{" + paramsNote(a) + "}" : ""), "LaTeX", "Copy answer as LaTeX"));
   row.append(tools);
   return row;
 }
-const valuesText = (a) => a.values.filter((p) => Array.isArray(p) && p.length === 2).map(([n, v]) => n + " = " + textOf(v)).join(", ");
+const paramsNote = (a) => (Array.isArray(a.params) && a.params.length ? "for any value of " + a.params.join(", ") : "");
+const valuesText = (a) => a.values.filter((p) => Array.isArray(p) && p.length === 2).map(([n, v]) => n + " = " + textOf(v)).join(", ") + (paramsNote(a) ? ", " + paramsNote(a) : "");
 
 function statusBadge(ok, text) {
   const cls = ok === true ? "st-ok" : ok === false ? "st-bad" : ok === "warn" ? "st-warn" : "st-mut";
