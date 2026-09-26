@@ -137,7 +137,10 @@ function parseCookies(setCookieHeader) {
     const [nameVal, ...rest] = attrs;
     const eq = nameVal.indexOf("=");
     if (eq < 0) continue;
-    const cookie = { name: nameVal.slice(0, eq), value: nameVal.slice(eq + 1), httpOnly: false, secure: false, sameSite: "None (default)", domain: "", path: "", expires: "", maxAge: "", issues: [] };
+    // Modern browsers (Chrome 80+, Firefox, Edge — RFC 6265bis) treat an absent
+    // SameSite attribute as Lax, NOT None. Lax already blocks cross-site POST/
+    // unsafe-method CSRF, so an absent attribute is not the same exposure as None.
+    const cookie = { name: nameVal.slice(0, eq), value: nameVal.slice(eq + 1), httpOnly: false, secure: false, sameSite: "Lax (default)", domain: "", path: "", expires: "", maxAge: "", issues: [] };
     for (const attr of rest) {
       const a = attr.toLowerCase();
       if (a === "httponly") cookie.httpOnly = true;
@@ -150,7 +153,7 @@ function parseCookies(setCookieHeader) {
     }
     if (!cookie.httpOnly) cookie.issues.push("Missing HttpOnly — accessible to JavaScript (XSS risk)");
     if (!cookie.secure) cookie.issues.push("Missing Secure — sent over HTTP (MitM risk)");
-    if (cookie.sameSite.toLowerCase() === "none" || cookie.sameSite.includes("default")) cookie.issues.push("SameSite=None or absent — vulnerable to CSRF");
+    if (cookie.sameSite.toLowerCase() === "none") cookie.issues.push("SameSite=None — cookie sent on cross-site requests (CSRF risk unless backed by anti-CSRF tokens; also requires Secure)");
     if (cookie.name.toLowerCase().includes("session") && !cookie.httpOnly) cookie.issues.push("Session cookie without HttpOnly is a high-severity finding");
     cookies.push(cookie);
   }
