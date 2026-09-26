@@ -652,7 +652,7 @@ export function renderReverseShell(container) {
     container.innerHTML = `
       <div class="rs-wrap">
         <div class="rs-header">
-          <h2>\u{1f41a} Reverse Shell Generator <span>20+ languages • Listeners • Stabilize • Encode</span></h2>
+          <h2>Reverse Shell Generator <span>20+ languages • Listeners • Stabilize • Encode</span></h2>
         </div>
         <div class="rs-tabs">
           ${tabs.map(t => `<button class="rs-tab${t.id === activeTab ? ' active' : ''}" data-tab="${t.id}">${t.label}</button>`).join('')}

@@ -50,10 +50,10 @@ export function renderDownloads(main) {
     <div class="dl-hero-grid">
     <div class="card dl-hero" style="border-color:color-mix(in srgb,var(--acc) 45%,transparent)">
       <h2 class="pg-h2" style="margin:0 0 6px">Nexus &mdash; AI coding agent</h2>
-      <p class="muted" style="font-size:.85rem;margin:0 0 10px">A terminal AI coder (like Claude Code) built into the CLI: it edits files and runs commands using your own local models &mdash; private, no cloud. Download the CLI, then run <code data-cmd>darknode nexus</code>.</p>
+      <p class="muted" style="font-size:.85rem;margin:0 0 10px">A terminal AI coder (like Claude Code) built into the CLI: it edits files and runs commands using the AI engine you choose &mdash; local models through Ollama (nothing leaves your machine) or a cloud engine such as Claude. Download the CLI, then run <code data-cmd>darknode nexus</code>.</p>
       <div class="dl-feat">
         <div class="dl-feat-i"><b>Edits your code</b><span>Reads, writes and refactors files across the repo, then runs the commands to verify.</span></div>
-        <div class="dl-feat-i"><b>Runs on local models</b><span>Ollama + Claude Fable by default &mdash; nothing leaves your machine, zero API cost.</span></div>
+        <div class="dl-feat-i"><b>Local or cloud models</b><span>The Ollama engine runs fully on your machine with no API cost. The Claude engine is a cloud service: your prompts and code go to Anthropic.</span></div>
         <div class="dl-feat-i"><b>Live terminals</b><span>Spawns real shells, port scans, recon and build steps under your control.</span></div>
         <div class="dl-feat-i"><b>MCP-aware</b><span>Wire the Darknode MCP server so any MCP client can drive the toolset.</span></div>
       </div>

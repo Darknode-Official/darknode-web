@@ -85,9 +85,9 @@ const SIDE_DESC = {
   ipgeolocation: "Find the likely physical location behind an IP address.",
   iptools: "Handy IP utilities — lookup, convert and subnet.",
   osint: "Your OSINT hub for gathering public intelligence on a target.",
-  osintemail: "Email intelligence — breach lookup and account discovery.",
+  osintemail: "Email address format and domain analysis, plus account-discovery helpers.",
   techfingerprint: "Detect what technologies a website is built with.",
-  whoisrecon: "WHOIS lookup — who registered a domain, and when.",
+  whoisrecon: "WHOIS via RDAP — who registered a domain or IP range, and when, plus DNS and certificates.",
   // Forensics
   binanalyze: "Analyze a binary (PE/ELF) — strings, entropy and structure.",
   forensicstoolkit: "A collection of digital-forensics utilities.",
@@ -132,12 +132,12 @@ const SIDE_DESC = {
   // Network Analysis
   networkscanner: "Scan a network for live hosts and open ports.",
   networktools: "General-purpose networking utilities.",
-  networktraffic: "Analyze live network traffic for anomalies.",
+  networktraffic: "Explore sample network traffic and learn to spot anomalies.",
   packetanalyzer: "Break captured packets down protocol-by-protocol.",
   packetinspector: "Deep packet inspection.",
   sslinspector: "Check a site's SSL/TLS certificate and cipher suites.",
   subnetvisualizer: "Visualize and plan IP subnets.",
-  trafficanalyzer: "Spot patterns and anomalies in network traffic.",
+  trafficanalyzer: "Learn to spot patterns and anomalies using sample traffic.",
   websockettester: "Test and inspect WebSocket connections.",
   // Security Operations
   adversaryplaybook: "Prebuilt attacker playbooks to exercise your SOC.",
@@ -167,7 +167,7 @@ const SIDE_DESC = {
   ai: "Chat with the built-in AI about security, code and tooling.",
   coder: "An AI agent that can carry out multi-step tasks for you.",
   dataviz: "Turn raw data into charts and visualizations.",
-  engines: "Configure the security-analysis engines.",
+  engines: "Reference list of the bundled security-analysis engine modules.",
   report: "Generate professional penetration-test reports.",
   // Training
   cheats: "Quick-reference cheat sheets.",
@@ -1551,9 +1551,9 @@ function renderApp(user) {
     else if (sec === "snippets") { import("/js/labs.js").then(m => m.renderSnippets(main)); }
     else if (sec === "refs") { import("/js/labs.js").then(m => m.renderRefs(main)); }
     else if (sec === "arsenal") { show("home"); return; }
-    else if (sec === "engines") { import("/js/arsenal.js").then(m => m.renderEngines(main)); }
+    else if (sec === "engines") { import("/js/arsenal.js?v=20260927b").then(m => m.renderEngines(main)); }
     else if (sec === "packetcraft") { import("/js/packet-crafter.js").then(m => m.renderPacketCrafter(main)); }
-    else if (sec === "binanalyze") { import("/js/binary-analyzer.js").then(m => m.renderBinaryAnalyzer(main)); }
+    else if (sec === "binanalyze") { import("/js/binary-analyzer.js?v=20260927b").then(m => m.renderBinaryAnalyzer(main)); }
     else if (sec === "netmap") { import("/js/network-mapper.js").then(m => m.renderNetworkMapper(main)); }
     else if (sec === "loganalyze") { import("/js/log-analyzer.js").then(m => m.renderLogAnalyzer(main)); }
     else if (sec === "credaudit") { import("/js/credential-auditor.js").then(m => m.renderCredentialAuditor(main)); }
@@ -1589,10 +1589,10 @@ function renderApp(user) {
     else if (sec === "hydra") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading HYDRA...</p>"; import("/js/hydra-engine.js?v=20260924b").then(m => m.renderHydra(main)); }
     else if (sec === "aegis") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading AEGIS...</p>"; import("/js/aegis-web.js?v=20260924b").then(m => m.renderAegis(main)); }
     else if (sec === "vanguard") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading VANGUARD...</p>"; import("/js/vanguard.js?v=20260924c").then(m => m.renderVanguard(main)); }
-    else if (sec === "phantom") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading PHANTOM...</p>"; const _s=sec; import("/js/phantom.js?v=20260924x").then(m => { if(curSec!==_s)return; m.renderPhantom(main); _prevCleanup = m.cleanupPhantom; }); }
+    else if (sec === "phantom") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading PHANTOM...</p>"; const _s=sec; import("/js/phantom.js?v=20260927b").then(m => { if(curSec!==_s)return; m.renderPhantom(main); _prevCleanup = m.cleanupPhantom; }); }
     else if (sec === "citadel") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading CITADEL...</p>"; const _s=sec; import("/js/citadel.js?v=20260924x").then(m => { if(curSec!==_s)return; m.renderCitadel(main); _prevCleanup = m.cleanupCitadel; }); }
     else if (sec === "oracle") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading ORACLE...</p>"; const _s=sec; import("/js/oracle.js?v=20260924x").then(m => { if(curSec!==_s)return; m.renderOracle(main); _prevCleanup = m.cleanupOracle; }); }
-    else if (sec === "spectre") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading SPECTRE...</p>"; const _s=sec; import("/js/spectre.js?v=20260924x").then(m => { if(curSec!==_s)return; m.renderSpectre(main); _prevCleanup = m.cleanupSpectre; }); }
+    else if (sec === "spectre") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading SPECTRE...</p>"; const _s=sec; import("/js/spectre.js?v=20260927b").then(m => { if(curSec!==_s)return; m.renderSpectre(main); _prevCleanup = m.cleanupSpectre; }); }
     else if (sec === "crucible") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading CRUCIBLE...</p>"; const _s=sec; import("/js/crucible.js?v=20260924w").then(m => { if(curSec!==_s)return; m.renderCrucible(main); _prevCleanup = m.cleanupCrucible; }); }
     else if (sec === "navarch") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading NAVARCH...</p>"; const _s=sec; import("/js/navarch.js?v=20260924w").then(m => { if(curSec!==_s)return; m.renderNavarch(main); _prevCleanup = m.cleanupNavarch; }); }
     else if (sec === "jwtanalyzer") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading JWT Analyzer...</p>"; import("/js/jwt-analyzer.js").then(m => m.renderJwtAnalyzer(main)); }
@@ -1605,7 +1605,7 @@ function renderApp(user) {
     else if (sec === "huntlab") { import("/js/threat-hunt-lab.js").then(m => m.renderThreatHuntLab(main)); }
     else if (sec === "attacksurf") { import("/js/attack-surface-mapper.js").then(m => m.renderAttackSurfaceMapper(main)); }
     else if (sec === "deception") { import("/js/deception-architect.js").then(m => m.renderDeceptionArchitect(main)); }
-    else if (sec === "purpleteam") { import("/js/purple-team-ops.js").then(m => m.renderPurpleTeamOps(main)); }
+    else if (sec === "purpleteam") { import("/js/purple-team-ops.js?v=20260927b").then(m => m.renderPurpleTeamOps(main)); }
     else if (sec === "malclass") { import("/js/malware-classifier.js").then(m => m.renderMalwareClassifier(main)); }
     else if (sec === "zerotrust") { import("/js/zero-trust-designer.js?v=20260924b").then(m => m.renderZeroTrustDesigner(main)); }
     else if (sec === "vulnprio") { import("/js/vulnerability-prioritizer.js").then(m => m.renderVulnPrioritizer(main)); }
@@ -1615,8 +1615,8 @@ function renderApp(user) {
     else if (sec === "cryptotools") { import("/js/crypto-tools.js").then(m => m.renderCryptoTools(main)); }
     else if (sec === "ftimeline") { import("/js/forensic-timeline.js").then(m => m.renderForensicTimeline(main)); }
     else if (sec === "socialeng") { import("/js/social-engineering-sim.js").then(m => m.renderSocialEngSim(main)); }
-    else if (sec === "training") { import("/js/arsenal.js").then(m => m.renderTraining(main)); }
-    else if (sec === "apikeys") { show("settings"); return; }
+    else if (sec === "training") { import("/js/arsenal.js?v=20260927b").then(m => m.renderTraining(main)); }
+    else if (sec === "apikeys") { show("settings", "apikeys"); return; }
     else if (sec === "cheats") renderCheats(main);
     else if (sec === "threat") renderThreat(main);
     else if (sec === "ipreputation") { import("/js/ip-reputation.js").then(m => m.renderIPReputation(main)); }
@@ -1629,13 +1629,13 @@ function renderApp(user) {
     else if (sec === "reconplanner") { import("/js/recon-planner.js").then(m => m.renderReconPlanner(main)); }
     else if (sec === "packetinspector") { import("/js/packet-inspector.js?v=20260924b").then(m => m.renderPacketInspector(main)); }
     else if (sec === "siemdash") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading SIEM...</p>"; import("/js/siem-dash.js?v=20260924b").then(m => m.renderSiemDash(main)); }
-    else if (sec === "apifuzzer") { import("/js/api-fuzzer.js").then(m => m.renderAPIFuzzer(main)); }
+    else if (sec === "apifuzzer") { import("/js/api-fuzzer.js?v=20260927b").then(m => m.renderAPIFuzzer(main)); }
     else if (sec === "incidentresponse") { import("/js/incident-response.js").then(m => m.renderIncidentResponse(main)); }
-    else if (sec === "networktraffic") { import("/js/network-traffic.js?v=20260924b").then(m => m.renderNetworkTraffic(main)); }
-    else if (sec === "privesc") { import("/js/privesc-toolkit.js?v=20260924b").then(m => m.renderPrivescToolkit(main)); }
-    else if (sec === "reverseshell") { import("/js/reverse-shell.js?v=20260924b").then(m => m.renderReverseShell(main)); }
-    else if (sec === "xsslab") { import("/js/xss-lab.js").then(m => m.renderXSSLab(main)); }
-    else if (sec === "osintemail") { import("/js/osint-email.js").then(m => m.renderOSINTEmail(main)); }
+    else if (sec === "networktraffic") { import("/js/network-traffic.js?v=20260927b").then(m => m.renderNetworkTraffic(main)); }
+    else if (sec === "privesc") { import("/js/privesc-toolkit.js?v=20260927b").then(m => m.renderPrivescToolkit(main)); }
+    else if (sec === "reverseshell") { import("/js/reverse-shell.js?v=20260927b").then(m => m.renderReverseShell(main)); }
+    else if (sec === "xsslab") { import("/js/xss-lab.js?v=20260927b").then(m => m.renderXSSLab(main)); }
+    else if (sec === "osintemail") { import("/js/osint-email.js?v=20260927b").then(m => m.renderOSINTEmail(main)); }
     else if (sec === "threatfeed") { import("/js/threat-feed.js?v=20260924b").then(m => m.renderThreatFeed(main)); }
     else if (sec === "secchecklist") { import("/js/sec-checklist.js?v=20260924b").then(m => m.renderSecChecklist(main)); }
     else if (sec === "investigation") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Investigation Workspace...</p>"; const _s=sec; import("/js/investigation.js?v=20260924w").then(m => { if(curSec!==_s)return; m.renderInvestigation(main); _prevCleanup = m.cleanupInvestigation; }); }
@@ -1664,32 +1664,32 @@ function renderApp(user) {
     else if (sec === "corstester") { import("/js/cors-tester.js?v=20260924b").then(m => m.renderCorsTester(main)); }
     else if (sec === "cvesearch") { import("/js/cve-search.js?v=20260924b").then(m => m.renderCveSearch(main)); }
     else if (sec === "darknetradar") { import("/js/darknet-radar.js").then(m => m.renderDarknetRadar(main)); }
-    else if (sec === "dnsenum") { import("/js/dns-enum.js?v=20260924b").then(m => m.renderDNSEnum(main)); }
+    else if (sec === "dnsenum") { import("/js/dns-enum.js?v=20260927b").then(m => m.renderDNSEnum(main)); }
     else if (sec === "dnsrecon") { import("/js/dns-recon.js").then(m => m.renderDNSRecon(main)); }
     else if (sec === "emailintel") { import("/js/email-intel.js").then(m => m.renderEmailIntel(main)); }
     else if (sec === "headeranalyzer") { import("/js/header-analyzer.js?v=20260924b").then(m => m.renderHeaderAnalyzer(main)); }
     else if (sec === "httpprobe") { import("/js/http-probe.js").then(m => m.renderHttpProbe(main)); }
     else if (sec === "identitymatrix") { import("/js/identity-matrix.js?v=20260924b").then(m => m.renderIdentityMatrix(main)); }
-    else if (sec === "ipgeolocation") { import("/js/ip-geolocation.js").then(m => m.renderIPGeolocation(main)); }
+    else if (sec === "ipgeolocation") { import("/js/ip-geolocation.js?v=20260927b").then(m => m.renderIPGeolocation(main)); }
     else if (sec === "networkscanner") { import("/js/network-scanner.js").then(m => m.renderNetworkScanner(main)); }
     else if (sec === "sslinspector") { import("/js/ssl-inspector.js?v=20260923c").then(m => m.renderSSLInspector(main)); }
     else if (sec === "techfingerprint") { import("/js/tech-fingerprint.js").then(m => m.renderTechFingerprint(main)); }
-    else if (sec === "trafficanalyzer") { import("/js/traffic-analyzer.js").then(m => m.renderTrafficAnalyzer(main)); }
+    else if (sec === "trafficanalyzer") { import("/js/traffic-analyzer.js?v=20260927b").then(m => m.renderTrafficAnalyzer(main)); }
     else if (sec === "websockettester") { import("/js/websocket-tester.js").then(m => m.renderWebSocketTester(main)); }
-    else if (sec === "whoisrecon") { import("/js/whois-recon.js?v=20260924b").then(m => m.renderWhoisRecon(main)); }
+    else if (sec === "whoisrecon") { import("/js/whois-recon.js?v=20260927b").then(m => m.renderWhoisRecon(main)); }
     else if (sec === "learn") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Learn Hub...</p>"; loadLearnHub().then(m => m.renderLearnHub(main)); }
     else if (sec === "github") { show("settings"); return; }
     else if (sec === "gmail") { show("settings"); return; }
     else if (sec === "coder") { import("/js/coder.js").then(m => m.renderCliCoder(main)); }
-    else if (sec === "downloads") { import("/js/getapp.js?v=20260925k").then(m => m.renderDownloads(main)); }
-    else if (sec === "dlguide") { import("/js/getapp.js?v=20260925k").then(m => m.renderDownloadDocs(main)); }
+    else if (sec === "downloads") { import("/js/getapp.js?v=20260927b").then(m => m.renderDownloads(main)); }
+    else if (sec === "dlguide") { import("/js/getapp.js?v=20260927b").then(m => m.renderDownloadDocs(main)); }
     else if (sec === "api") { import("/js/api.js?v=20260925j").then(m => m.renderAPI(main, user)); }
     else if (sec === "docs") { import("/js/docs.js?v=20260924b").then(m => m.renderDocs(main)); }
     else if (sec === "setup") renderSetup(main, more);
     else if (sec === "settings") renderSettingsPage(main, user, isOwner, more);
     else if (sec === "admin") { import("/js/admin.js?v=20260925j").then(m => m.renderAdmin(main, user)); }
     else if (sec === "contact") renderContact(main);
-    else if (sec === "education") { main.innerHTML = `<div class="panel" style="max-width:800px;margin:40px auto"><div class="panel-h">About Darknode Education</div><div style="padding:18px;line-height:1.8;font-size:.9rem"><p><strong>Darknode is a cybersecurity education platform</strong> designed for students, educators, and security professionals to learn information security through hands-on practice in a safe, controlled environment.</p><p style="margin-top:16px"><strong>Our Mission:</strong> To make cybersecurity education accessible, interactive, and practical. Every tool on this platform runs locally in your browser or on your own machine -- no data ever leaves your computer.</p><p style="margin-top:16px"><strong>Who Uses Darknode:</strong></p><ul style="margin:8px 0 0 20px;line-height:2"><li>Computer science and cybersecurity students</li><li>IT professionals studying for certifications (CompTIA Security+, CISSP, CEH, OSCP)</li><li>University professors and instructors teaching security courses</li><li>Security operations center (SOC) analysts in training</li><li>Career changers learning cybersecurity fundamentals</li></ul><p style="margin-top:16px"><strong>Educational Standards:</strong> Our curriculum aligns with NIST NICE Framework, NSA CAE-CD requirements, and CompTIA Security+ objectives. All practice environments are isolated, legal, and designed for authorized educational use only.</p><p style="margin-top:16px"><strong>Responsible Use:</strong> Darknode tools are designed exclusively for educational purposes and authorized security testing. Users must comply with all applicable laws and obtain proper authorization before testing any system they do not own.</p><p style="margin-top:16px;color:var(--mut);font-size:.82rem">Darknode is a product of Darknode-Official. For questions about our educational programs, visit darknode.ai.</p></div></div>`; }
+    else if (sec === "education") { main.innerHTML = `<div class="panel" style="max-width:800px;margin:40px auto"><div class="panel-h">About Darknode Education</div><div style="padding:18px;line-height:1.8;font-size:.9rem"><p><strong>Darknode is a cybersecurity education platform</strong> designed for students, educators, and security professionals to learn information security through hands-on practice in a safe, controlled environment.</p><p style="margin-top:16px"><strong>Our Mission:</strong> To make cybersecurity education accessible, interactive, and practical. Most tools run in your browser or on your own machine. Some features do send data out: AI chat goes through Darknode's server to the AI provider, some lookup pages query public services (for example NVD, crt.sh and DNS-over-HTTPS resolvers), and saved items and account data are stored in Google Firebase. Each page that contacts an outside service does so only when you run it.</p><p style="margin-top:16px"><strong>Who Uses Darknode:</strong></p><ul style="margin:8px 0 0 20px;line-height:2"><li>Computer science and cybersecurity students</li><li>IT professionals studying for certifications (CompTIA Security+, CISSP, CEH, OSCP)</li><li>University professors and instructors teaching security courses</li><li>Security operations center (SOC) analysts in training</li><li>Career changers learning cybersecurity fundamentals</li></ul><p style="margin-top:16px"><strong>Educational Standards:</strong> Our curriculum aligns with NIST NICE Framework, NSA CAE-CD requirements, and CompTIA Security+ objectives. All practice environments are isolated, legal, and designed for authorized educational use only.</p><p style="margin-top:16px"><strong>Responsible Use:</strong> Darknode tools are designed exclusively for educational purposes and authorized security testing. Users must comply with all applicable laws and obtain proper authorization before testing any system they do not own.</p><p style="margin-top:16px;color:var(--mut);font-size:.82rem">Darknode is a product of Darknode-Official. For questions about our educational programs, visit darknode.ai.</p></div></div>`; }
     else if (sec === "toolbox") { import("/js/mini-tools.js?v=20260926h").then(m => m.renderToolbox(main, { onOpen: (id) => show("tool-" + id) })); }
     else if (sec.indexOf("tool-") === 0) { const _tid = sec.slice(5); import("/js/mini-tools.js?v=20260926h").then(m => m.renderMiniTool(main, _tid, { onBack: () => show("toolbox") })); }
     else renderHome(main, user, isOwner, show);

@@ -929,7 +929,7 @@ export function renderBinaryAnalyzer(main) {
 
     if (!fileData) {
       html += '<div class="ba-upload" id="ba-drop">';
-      html += '<div class="ba-upload-icon">&#x1F4C1;</div>';
+      html += '<div class="ba-upload-icon"></div>';
       html += '<div class="ba-upload-text">Drop a file here or click to select</div>';
       html += '<div class="ba-upload-sub">Supports any file type — PE, ELF, Mach-O, PDF, ZIP, images, and more</div>';
       html += '<input type="file" id="ba-file" style="display:none">';

@@ -355,7 +355,7 @@ export function renderXSSLab(container) {
 </style>
 <div class="xl-wrap" id="${id}">
   <div class="xl-header">
-    <h2>&#x26A0; XSS Testing Lab</h2>
+    <h2>XSS Testing Lab</h2>
     <p>Cross-Site Scripting payload library, context analyzer, encoder & prevention reference</p>
   </div>
   <div class="xl-tabs">
@@ -645,7 +645,7 @@ export function renderXSSLab(container) {
           <div class="xl-code-block safe">${esc(item.safe)}</div>
           <div style="font-size:12px;color:#ff4444;margin:8px 0 4px;font-weight:600">&#x2717; Vulnerable (Don't Do This)</div>
           <div class="xl-code-block bad">${esc(item.bad)}</div>
-          <div style="font-size:12px;color:#00aaff;margin:8px 0 4px;font-weight:600">&#x1F6E1; Library / Tool</div>
+          <div style="font-size:12px;color:#00aaff;margin:8px 0 4px;font-weight:600">Library / Tool</div>
           <div class="xl-code-block lib">${esc(item.lib)}</div>
         </div>
       `).join('')}
