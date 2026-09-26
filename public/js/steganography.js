@@ -4,12 +4,21 @@
 const esc = (s) => String(s != null ? s : "").replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
-// ── XOR encryption ──
+// ── UTF-8 <-> binary string ──
+// A "binary string" holds one byte (0-255) per char. Messages and passwords
+// are converted to their UTF-8 byte sequence first so that non-ASCII text
+// (accents, CJK, emoji) survives hiding/extraction instead of being truncated
+// to its low byte.
+function utf8Encode(str) { return unescape(encodeURIComponent(str)); }
+function utf8Decode(bin) { try { return decodeURIComponent(escape(bin)); } catch (e) { return bin; } }
+
+// ── XOR encryption (byte-wise over UTF-8 bytes) ──
 function xorEncrypt(text, password) {
   if (!password) return text;
+  var pw = utf8Encode(password);
   var result = [];
   for (var i = 0; i < text.length; i++) {
-    result.push(String.fromCharCode(text.charCodeAt(i) ^ password.charCodeAt(i % password.length)));
+    result.push(String.fromCharCode(text.charCodeAt(i) ^ pw.charCodeAt(i % pw.length)));
   }
   return result.join("");
 }
@@ -33,7 +42,8 @@ function bitsToText(bits) {
     for (var b = 0; b < 8; b++) {
       byte = (byte << 1) | bits[i + b];
     }
-    if (byte === 0) break;
+    // Do NOT stop at a zero byte: callers slice to the exact message length
+    // from the header, and XOR-encrypted payloads legitimately contain 0x00.
     chars.push(String.fromCharCode(byte));
   }
   return chars.join("");
@@ -41,7 +51,7 @@ function bitsToText(bits) {
 
 // ── LSB Encoding (1-bit and 2-bit) ──
 function lsbEncode(imageData, message, bitsPerChannel, password) {
-  var encrypted = xorEncrypt(message, password);
+  var encrypted = xorEncrypt(utf8Encode(message), password);
   // Prepend 32-bit length header
   var len = encrypted.length;
   var headerBits = [];
@@ -115,13 +125,13 @@ function lsbDecode(imageData, bitsPerChannel, password) {
   if (password) {
     decrypted = xorEncrypt(decrypted, password);
   }
-  return { success: true, message: decrypted, length: len };
+  return { success: true, message: utf8Decode(decrypted), length: len };
 }
 
 // ── Spread Spectrum Encoding ──
 function spreadEncode(imageData, message, password, spread) {
   spread = spread || 7;
-  var encrypted = xorEncrypt(message, password);
+  var encrypted = xorEncrypt(utf8Encode(message), password);
   var len = encrypted.length;
   var headerBits = [];
   for (var i = 31; i >= 0; i--) headerBits.push((len >> i) & 1);
@@ -173,7 +183,7 @@ function spreadDecode(imageData, password, spread) {
   var msgBits = bits.slice(32, neededBits);
   var decrypted = bitsToText(msgBits);
   if (password) decrypted = xorEncrypt(decrypted, password);
-  return { success: true, message: decrypted, length: len };
+  return { success: true, message: utf8Decode(decrypted), length: len };
 }
 
 // ── Bit plane extraction ──
