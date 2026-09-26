@@ -91,7 +91,7 @@ export async function renderAdmin(main, user) {
           <p class="adm-msg" id="emailMsg"></p>
           <div style="margin-top:10px;border-top:1px solid var(--line);padding-top:10px">
             <p class="muted" style="font-size:.75rem;margin:0 0 6px">Quick templates:</p>
-            <div class="set-btns" style="flex-wrap:wrap">
+            <div class="btn-grid">
               <button class="btn ghost sm emailTpl" data-tpl="downtime">Downtime apology</button>
               <button class="btn ghost sm emailTpl" data-tpl="update">New update</button>
               <button class="btn ghost sm emailTpl" data-tpl="welcome">Welcome</button>
@@ -117,7 +117,7 @@ export async function renderAdmin(main, user) {
 
         <div class="panel">
           <div class="panel-h"><h2 class="pg-h2" style="margin:0">Announcement</h2></div>
-          <div class="row" id="annPresets" style="gap:6px;flex-wrap:wrap;margin-bottom:8px">
+          <div class="btn-grid" id="annPresets" style="margin-bottom:8px">
             <button class="btn ghost sm" data-preset="maint">Maintenance</button>
             <button class="btn ghost sm" data-preset="release">New release</button>
             <button class="btn ghost sm" data-preset="security">Security notice</button>

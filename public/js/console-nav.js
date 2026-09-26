@@ -4,6 +4,8 @@
 // `.side-item[data-sec]` sections — every section still gets one of those buttons in
 // the hidden menu, so routing, breadcrumbs and global search keep working unchanged.
 
+import { TOOLS as MINI_TOOLS, TOOL_CATS } from "/js/tools-registry.js?v=20260925g";
+
 const G = (id, name, color, items) => ({ id, name, color, items: items.map(([sec, label, badge]) => ({ sec, label, badge: badge || null })) });
 
 export const NAV = [
@@ -26,8 +28,17 @@ export const NAV = [
   G("vms", "Virtual Machines", "emerald", [["vms","Vulnerable VMs"],["vmlab","VM Lab"]]),
   G("invest", "Investigations", "rose", [["investigation","Investigation Workspace"],["secgraph","Security Graph"],["casemgmt","Case Manager"]]),
   G("infra", "Infrastructure", "slate", [["api","API"],["docs","Docs"],["education","Education"],["downloads","Darknode OS"],["dlguide","Download Guide"],["privatecloud","Private Cloud","beta"],["setup","Local Setup"]]),
-  G("workspace", "Account", "slate", [["saved","Saved Items"],["settings","Settings"],["apikeys","API Keys"],["contact","Contact / Feedback"]]),
+  G("workspace", "Account", "slate", [["toolbox","Toolbox","ai"],["saved","Saved Items"],["settings","Settings"],["apikeys","API Keys"],["contact","Contact / Feedback"]]),
 ];
+
+// Append the mini-tool categories (js/tools/*) as browsable, searchable service
+// groups, so every instant utility shows up in the Services menu, the category
+// rail, favorites and global search — and the service count reflects them.
+for (const [cat, meta] of Object.entries(TOOL_CATS)) {
+  const items = MINI_TOOLS.filter((t) => t.cat === cat).map((t) => [`tool-${t.id}`, t.name]);
+  if (items.length) NAV.push(G(`tg-${cat}`, meta.name, meta.color, items));
+}
+
 const ADMIN = G("admin", "Admin", "slate", [["admin","Admin Console"]]);
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
