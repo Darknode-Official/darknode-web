@@ -281,7 +281,8 @@ export function renderNetworkTraffic(container){
     const bytes = getTotalBytes();
     const cliReady = window._bridge && window._bridge.connected;
     return `<div class="nt-header">
-      <h2><span class="nt-live-dot ${paused?'paused':''}"></span>Network Traffic Analyzer ${cliReady?'<span style="color:#22c55e;font-size:11px;font-weight:700;margin-left:8px">[CLI CONNECTED]</span>':''}</h2>
+      <h2><span class="nt-live-dot ${paused?'paused':''}"></span>Network Traffic Analyzer <span style="font-size:11px;font-weight:700;margin-left:8px;padding:1px 7px;border:1px solid #ffa726;color:#ffa726;border-radius:3px">SAMPLE TRAFFIC</span> ${cliReady?'<span style="color:#22c55e;font-size:11px;font-weight:700;margin-left:8px">[CLI CONNECTED]</span>':''}</h2>
+      <div style="font-size:11px;color:#8a9bb0;margin:4px 0 6px">The packets below are simulated in your browser for learning. They are not captured from your network.${cliReady?' Use Show Live Ports for real data from your local agent.':''}</div>
       <div class="nt-header-stats">
         <div>Packets: <span>${total.toLocaleString()}</span></div>
         <div>Bytes: <span>${(bytes/1024).toFixed(1)} KB</span></div>
@@ -292,7 +293,7 @@ export function renderNetworkTraffic(container){
   }
 
   function renderTabs(){
-    const tabs = [{id:'feed',label:'Live Feed'},{id:'stats',label:'Statistics'},{id:'talkers',label:'Top Talkers'},{id:'anomalies',label:'Anomalies'},{id:'filters',label:'Filters'},{id:'export',label:'Export'}];
+    const tabs = [{id:'feed',label:'Sample Feed'},{id:'stats',label:'Statistics'},{id:'talkers',label:'Top Talkers'},{id:'anomalies',label:'Anomalies'},{id:'filters',label:'Filters'},{id:'export',label:'Export'}];
     return `<div class="nt-tabs">${tabs.map(t=>`<button class="nt-tab ${activeTab===t.id?'active':''}" data-tab="${t.id}">${t.label}</button>`).join('')}</div>`;
   }
 
@@ -468,9 +469,9 @@ export function renderNetworkTraffic(container){
         <button class="nt-btn" id="nt-export-copy">Copy to Clipboard</button>
         <button class="nt-btn" id="nt-export-dl">Download as .log</button>
         <button class="nt-btn" id="nt-export-json">Export JSON</button>
-        <span style="font-size:11px;color:#6a8a9e;">Last 100 packets</span>
+        <span style="font-size:11px;color:#6a8a9e;">Last 100 sample packets (simulated, not a real capture)</span>
       </div>
-      <div class="nt-export-area" id="nt-export-text">${lines.length ? esc(lines.join('\n')) : 'No packets captured yet.'}</div>
+      <div class="nt-export-area" id="nt-export-text">${lines.length ? esc(lines.join('\n')) : 'No sample packets generated yet.'}</div>
     </div>`;
   }
 

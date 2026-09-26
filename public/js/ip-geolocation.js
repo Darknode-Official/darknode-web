@@ -1,17 +1,20 @@
 // Copyright (c) 2026 Darknode-Official. All rights reserved.
-// IP Geolocation & Reputation — locate IPs, check ASN reputation, bulk lookup
+// IP Geolocation — locate IPs, classify hosting/datacenter ASNs, bulk lookup
 // Uses ipapi.co (free, 1000/day, CORS OK) — no API key required
 
 var esc = function(s) { return String(s != null ? s : '').replace(/[&<>"']/g, function(c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); };
 
-var BULLETPROOF_ASNS = {
-  '4785': 'XTOM (known hosting abuse)', '9009': 'M247 (mixed reputation)', '16276': 'OVH (frequent abuse reports)',
-  '14061': 'DigitalOcean (frequent C2 hosting)', '24940': 'Hetzner (hosting abuse)', '49505': 'Selectel (RU hosting)',
-  '197540': 'Netcup (DE hosting)', '53667': 'FranTech/BuyVM', '62563': 'GTHost (bulletproof)',
-  '210644': 'Aeza Group (RU bulletproof)', '210558': 'MVPS (BG bulletproof)', '44477': 'Stark Industries (RU bulletproof)',
-  '57043': 'Hostkey (NL bulletproof)', '213371': 'Squitter (abuse-tolerant)', '51396': 'Pfcloud (abuse-tolerant)',
-  '47583': 'Hostinger (frequent abuse)', '209588': 'PINDC (bulletproof hosting)', '203953': 'PPTechnology (abuse)',
-  '59642': 'CherryServers (abuse-tolerant)', '50673': 'Serverius (NL abuse-tolerant)'
+// Hosting / datacenter networks. Being on this list is CONTEXT, not a verdict:
+// it means the IP most likely belongs to a server, VPN or proxy rather than a
+// home or mobile connection. It does not say the provider or IP is malicious.
+var HOSTING_ASNS = {
+  '16509': 'Amazon AWS', '14618': 'Amazon AWS', '15169': 'Google', '396982': 'Google Cloud',
+  '8075': 'Microsoft Azure', '13335': 'Cloudflare', '14061': 'DigitalOcean', '63949': 'Akamai/Linode',
+  '20473': 'Vultr (Choopa)', '16276': 'OVH', '24940': 'Hetzner', '197540': 'Netcup', '47583': 'Hostinger',
+  '4785': 'xTom', '9009': 'M247', '49505': 'Selectel', '53667': 'FranTech/BuyVM', '62563': 'GTHost',
+  '210644': 'Aeza Group', '210558': 'MVPS', '44477': 'Stark Industries', '57043': 'Hostkey',
+  '213371': 'Squitter', '51396': 'Pfcloud', '209588': 'PINDC', '203953': 'PPTechnology',
+  '59642': 'Cherry Servers', '50673': 'Serverius'
 };
 
 var HIGH_RISK_COUNTRIES = ['RU', 'CN', 'KP', 'IR', 'BY', 'SY', 'VE', 'CU'];
@@ -24,7 +27,7 @@ export function renderIPGeolocation(container) {
   h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">';
   h += '<div>';
   h += '<h2 style="margin:0;font-size:20px;color:#ff6644;letter-spacing:2px;">IP GEOLOCATION</h2>';
-  h += '<div style="color:#4a6a8a;font-size:11px;letter-spacing:1px;margin-top:4px;">Locate &bull; Reputation &bull; ASN Analysis &bull; Bulk Lookup</div>';
+  h += '<div style="color:#4a6a8a;font-size:11px;letter-spacing:1px;margin-top:4px;">Locate &bull; Hosting / Datacenter Check &bull; ASN Analysis &bull; Bulk Lookup</div>';
   h += '</div>';
   h += '<button onclick="_ipLookupSelf()" style="background:#ff664422;color:#ff6644;border:1px solid #ff664444;border-radius:4px;padding:8px 16px;font-family:monospace;font-size:11px;cursor:pointer;letter-spacing:1px;">MY IP</button>';
   h += '</div>';
@@ -42,7 +45,7 @@ export function renderIPGeolocation(container) {
   h += '<button onclick="_ipLookup()" style="background:#ff664422;color:#ff6644;border:1px solid #ff664444;border-radius:4px;padding:10px 20px;font-family:monospace;font-size:12px;cursor:pointer;letter-spacing:1px;font-weight:bold;">LOCATE</button>';
   h += '</div>';
   h += '<div id="ip-result" style="min-height:300px;background:#0c1020;border:1px solid #1a2a44;border-radius:6px;padding:20px;">';
-  h += '<div style="text-align:center;color:#4a6a8a;padding:60px 20px;"><div style="font-size:36px;margin-bottom:10px;opacity:0.3;">&#x1F4CD;</div><div style="font-size:13px;">Enter an IP address to geolocate</div></div>';
+  h += '<div style="text-align:center;color:#4a6a8a;padding:60px 20px;"><div style="font-size:36px;margin-bottom:10px;opacity:0.3;"></div><div style="font-size:13px;">Enter an IP address to geolocate</div></div>';
   h += '</div></div>';
 
   // Bulk lookup (hidden by default)
@@ -106,9 +109,9 @@ function _ipLookupSelf() {
 
 function _ipRenderResult(el, d) {
   var asnStr = String(d.asn || '').replace('AS', '');
-  var isBulletproof = BULLETPROOF_ASNS[asnStr];
+  var hostingName = HOSTING_ASNS[asnStr];
   var isHighRisk = HIGH_RISK_COUNTRIES.indexOf(d.country_code || '') !== -1;
-  var riskLevel = isBulletproof ? 'HIGH' : isHighRisk ? 'MEDIUM' : 'LOW';
+  var riskLevel = isHighRisk ? 'MEDIUM' : 'LOW';
   var riskColor = { HIGH: '#ff4444', MEDIUM: '#ffaa00', LOW: '#00ff88' }[riskLevel];
 
   var h = '';
@@ -138,8 +141,9 @@ function _ipRenderResult(el, d) {
     { label: 'IP ADDRESS', value: d.ip, color: '#ff6644' },
     { label: 'COUNTRY', value: (d.country_name || '--') + ' (' + (d.country_code || '--') + ')', color: isHighRisk ? '#ff4444' : '#c8d6e5' },
     { label: 'CITY', value: (d.city || '--') + ', ' + (d.region || ''), color: '#c8d6e5' },
-    { label: 'ISP / ORG', value: d.org || d.isp || '--', color: isBulletproof ? '#ff4444' : '#c8d6e5' },
-    { label: 'ASN', value: (d.asn || '--') + ' — ' + (d.org || ''), color: isBulletproof ? '#ff4444' : '#00aaff' },
+    { label: 'ISP / ORG', value: d.org || d.isp || '--', color: '#c8d6e5' },
+    { label: 'ASN', value: (d.asn || '--') + ' — ' + (d.org || ''), color: '#00aaff' },
+    { label: 'NETWORK TYPE', value: hostingName ? 'Hosting / datacenter (' + hostingName + ')' : 'Not in hosting list', color: hostingName ? '#00aaff' : '#8899aa' },
     { label: 'TIMEZONE', value: d.timezone || '--', color: '#8899aa' },
     { label: 'POSTAL', value: d.postal || '--', color: '#8899aa' },
     { label: 'CURRENCY', value: (d.currency_name || '--') + ' (' + (d.currency || '') + ')', color: '#8899aa' }
@@ -153,16 +157,16 @@ function _ipRenderResult(el, d) {
   }
   h += '</div>';
 
-  // Reputation
+  // Context (country flag + hosting classification)
   h += '<div style="background:#0a1018;border:1px solid ' + riskColor + '33;border-radius:6px;padding:12px 16px;">';
   h += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">';
   h += '<div style="color:' + riskColor + ';font-size:12px;font-weight:bold;letter-spacing:1px;">RISK: ' + riskLevel + '</div>';
   h += '<div style="flex:1;height:4px;background:#1a2a3a;border-radius:2px;overflow:hidden;"><div style="height:100%;width:' + (riskLevel === 'HIGH' ? '90' : riskLevel === 'MEDIUM' ? '50' : '15') + '%;background:' + riskColor + ';border-radius:2px;"></div></div>';
   h += '</div>';
   var reasons = [];
-  if (isBulletproof) reasons.push('ASN ' + asnStr + ' — ' + isBulletproof);
+  if (hostingName) reasons.push('ASN ' + asnStr + ' (' + hostingName + ') is a hosting/datacenter network: the IP is likely a server, VPN or proxy. This is context, not evidence of abuse.');
   if (isHighRisk) reasons.push('Located in high-risk country: ' + (d.country_name || d.country_code));
-  if (reasons.length === 0) reasons.push('No known negative reputation indicators for this ASN or country');
+  if (!isHighRisk) reasons.push('No country-based flag. This tool does not check abuse or blocklist reputation.');
   for (var ri = 0; ri < reasons.length; ri++) {
     h += '<div style="color:#8899aa;font-size:10px;margin:2px 0;">&bull; ' + esc(reasons[ri]) + '</div>';
   }
@@ -195,20 +199,20 @@ function _ipBulkLookup() {
     h += '<div style="color:#ff6644;font-size:12px;letter-spacing:1px;margin-bottom:10px;">' + results.length + ' IPs GEOLOCATED</div>';
     h += '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:10px;">';
     h += '<thead><tr style="border-bottom:2px solid #1a3a5c;">';
-    var headers = ['IP', 'COUNTRY', 'CITY', 'ISP/ORG', 'ASN', 'RISK'];
+    var headers = ['IP', 'COUNTRY', 'CITY', 'ISP/ORG', 'ASN', 'NETWORK', 'RISK'];
     for (var hi = 0; hi < headers.length; hi++) h += '<th style="text-align:left;padding:6px;color:#ff6644;font-size:9px;white-space:nowrap;">' + headers[hi] + '</th>';
     h += '</tr></thead><tbody>';
 
     for (var i = 0; i < results.length; i++) {
       var d = results[i];
       if (d.error) {
-        h += '<tr style="border-bottom:1px solid #0d1525;"><td colspan="6" style="padding:5px 6px;color:#ff4444;">' + esc(d.ip) + ' — lookup failed</td></tr>';
+        h += '<tr style="border-bottom:1px solid #0d1525;"><td colspan="7" style="padding:5px 6px;color:#ff4444;">' + esc(d.ip) + ' — lookup failed</td></tr>';
         continue;
       }
       var asnStr = String(d.asn || '').replace('AS', '');
-      var isBP = BULLETPROOF_ASNS[asnStr];
+      var hostName = HOSTING_ASNS[asnStr];
       var isHR = HIGH_RISK_COUNTRIES.indexOf(d.country_code || '') !== -1;
-      var risk = isBP ? 'HIGH' : isHR ? 'MEDIUM' : 'LOW';
+      var risk = isHR ? 'MEDIUM' : 'LOW';
       var rColor = { HIGH: '#ff4444', MEDIUM: '#ffaa00', LOW: '#00ff88' }[risk];
       var rowBg = i % 2 ? 'rgba(255,255,255,0.02)' : 'transparent';
 
@@ -216,8 +220,9 @@ function _ipBulkLookup() {
       h += '<td style="padding:5px 6px;color:#c8d6e5;cursor:pointer;" onclick="navigator.clipboard.writeText(this.textContent)">' + esc(d.ip || '') + '</td>';
       h += '<td style="padding:5px 6px;color:' + (isHR ? '#ff4444' : '#8899aa') + ';">' + esc(d.country_code || '--') + '</td>';
       h += '<td style="padding:5px 6px;color:#8899aa;">' + esc(d.city || '--') + '</td>';
-      h += '<td style="padding:5px 6px;color:' + (isBP ? '#ff4444' : '#8899aa') + ';max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(d.org || '--') + '</td>';
+      h += '<td style="padding:5px 6px;color:' + '#8899aa;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(d.org || '--') + '</td>';
       h += '<td style="padding:5px 6px;color:#556;">' + esc(d.asn || '--') + '</td>';
+      h += '<td style="padding:5px 6px;color:' + (hostName ? '#00aaff' : '#556') + ';">' + (hostName ? 'Hosting' : '--') + '</td>';
       h += '<td style="padding:5px 6px;"><span style="color:' + rColor + ';font-weight:bold;font-size:9px;">' + risk + '</span></td>';
       h += '</tr>';
     }

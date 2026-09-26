@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Darknode-Official. All rights reserved.
 // WHOIS Recon — Domain/IP Intelligence Tool
-// DNS lookups, IP geolocation, certificate transparency, reverse DNS
+// RDAP registration data (the modern WHOIS), DNS lookups, IP geolocation,
+// certificate transparency, reverse DNS.
 // All queries run in the browser via free CORS-friendly APIs
 
 var esc = function(s) { return String(s != null ? s : '').replace(/[&<>"']/g, function(c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); };
@@ -56,6 +57,71 @@ function _wrCertSearch(domain) {
     .catch(function() { return []; });
 }
 
+// RDAP (Registration Data Access Protocol) — the standardised, JSON replacement
+// for WHOIS. rdap.org redirects to the authoritative registry/RIR server; the
+// redirect target must also be allowed by the site's CSP connect-src, so some
+// registries can fail from the browser. Failures are reported, never guessed.
+function _wrRdap(query, isIP) {
+  var url = 'https://rdap.org/' + (isIP ? 'ip/' : 'domain/') + encodeURIComponent(query);
+  return fetch(url, { headers: { 'Accept': 'application/rdap+json, application/json' } })
+    .then(function(r) {
+      if (r.status === 404) throw new Error('No RDAP record found (404). The name may be unregistered, or its registry does not publish RDAP.');
+      if (!r.ok) throw new Error('RDAP server returned HTTP ' + r.status + '.');
+      return r.json();
+    });
+}
+
+function _wrRdapVcardName(entity) {
+  var v = entity && entity.vcardArray && entity.vcardArray[1];
+  if (!Array.isArray(v)) return '';
+  for (var i = 0; i < v.length; i++) {
+    if (v[i][0] === 'fn' && v[i][3]) return String(v[i][3]);
+  }
+  for (var j = 0; j < v.length; j++) {
+    if (v[j][0] === 'org' && v[j][3]) return String(v[j][3]);
+  }
+  return '';
+}
+
+function _wrRdapSection(query, isIP) {
+  var link = 'https://rdap.org/' + (isIP ? 'ip/' : 'domain/') + encodeURIComponent(query);
+  return _wrRdap(query, isIP).then(function(d) {
+    var rows = [];
+    if (d.ldhName) rows.push(['Name', d.ldhName]);
+    if (d.handle) rows.push(['Handle', d.handle]);
+    if (isIP) {
+      if (d.startAddress) rows.push(['Range', d.startAddress + ' - ' + (d.endAddress || '')]);
+      if (d.name) rows.push(['Network name', d.name]);
+      if (d.type) rows.push(['Type', d.type]);
+      if (d.country) rows.push(['Country', d.country]);
+    }
+    var ev = d.events || [];
+    for (var i = 0; i < ev.length; i++) {
+      if (ev[i].eventAction && ev[i].eventDate) rows.push(['Event: ' + ev[i].eventAction, ev[i].eventDate]);
+    }
+    if (Array.isArray(d.status) && d.status.length) rows.push(['Status', d.status.join(', ')]);
+    var ents = d.entities || [];
+    for (var e = 0; e < ents.length; e++) {
+      var roles = (ents[e].roles || []).join(', ') || 'entity';
+      var nm = _wrRdapVcardName(ents[e]) || ents[e].handle || '';
+      if (nm) rows.push(['Entity (' + roles + ')', nm]);
+    }
+    var ns = d.nameservers || [];
+    if (ns.length) rows.push(['Nameservers', ns.map(function(n) { return (n.ldhName || '').toLowerCase(); }).filter(Boolean).join(', ')]);
+    if (d.secureDNS && typeof d.secureDNS.delegationSigned === 'boolean') rows.push(['DNSSEC (delegation signed)', d.secureDNS.delegationSigned ? 'Yes' : 'No']);
+    if (d.port43) rows.push(['Legacy WHOIS server', d.port43]);
+    if (!rows.length) rows.push(['Result', 'RDAP answered but returned no registration fields.']);
+    return _wrRenderSection('REGISTRATION DATA (RDAP / WHOIS)', _wrRenderTable(['FIELD', 'VALUE'], rows) +
+      '<div style="color:#4a6a8a;font-family:monospace;font-size:10px;">Source: RDAP via rdap.org. Many registries redact personal contact details.</div>',
+      JSON.stringify(d, null, 2));
+  }).catch(function(e) {
+    var msg = (e && e.message) || 'unknown error';
+    if (e instanceof TypeError) msg = 'The browser blocked the request or could not reach the registry\'s RDAP server (CORS, network, or this site\'s security policy does not allow that registry host).';
+    return _wrRenderSection('REGISTRATION DATA (RDAP / WHOIS)', '<div style="color:#ffaa00;font-family:monospace;font-size:11px;">RDAP lookup failed: ' + esc(msg) +
+      ' <a href="' + esc(link) + '" target="_blank" rel="noopener noreferrer" style="color:#00aaff;">Open on rdap.org</a></div>');
+  });
+}
+
 // Reverse DNS
 function _wrReverseDNS(ip) {
   var arpa = ip.split('.').reverse().join('.') + '.in-addr.arpa';
@@ -102,6 +168,9 @@ async function _wrRunLookup(query) {
   var isIP = _wrIsIP(query);
 
   try {
+    // Registration data (RDAP — the modern WHOIS), for domains and IPs
+    html += await _wrRdapSection(isIP ? query : query.replace(/^www\./, ''), isIP);
+
     // DNS Records (for domains)
     if (!isIP) {
       var types = ['A', 'AAAA', 'MX', 'NS', 'TXT', 'CNAME', 'SOA'];
@@ -244,12 +313,12 @@ export function renderWhoisRecon(container) {
     '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">' +
     '<div>' +
     '<h2 style="margin:0;font-size:20px;color:#00aaff;font-family:monospace;letter-spacing:2px;text-transform:uppercase;">WHOIS RECON</h2>' +
-    '<div style="color:#4a6a8a;font-size:11px;font-family:monospace;margin-top:4px;">Domain &amp; IP Intelligence — DNS, Geolocation, Certificate Transparency</div>' +
+    '<div style="color:#4a6a8a;font-size:11px;font-family:monospace;margin-top:4px;">Domain &amp; IP Intelligence — RDAP registration data (WHOIS), DNS, Geolocation, Certificate Transparency</div>' +
     '</div>' +
     '<div style="display:flex;gap:8px;">' +
     '<div style="background:#0a0e1a;border:1px solid #00aaff33;border-radius:6px;padding:6px 14px;text-align:center;">' +
     '<div style="color:#556;font-size:8px;font-family:monospace;letter-spacing:1px;">SOURCES</div>' +
-    '<div style="color:#00aaff;font-size:18px;font-weight:bold;font-family:monospace;">4</div>' +
+    '<div style="color:#00aaff;font-size:18px;font-weight:bold;font-family:monospace;">5</div>' +
     '</div>' +
     '</div>' +
     '</div>' +

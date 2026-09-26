@@ -381,7 +381,7 @@ export function renderPrivescToolkit(container) {
 @media(max-width:768px){.pe-grid{grid-template-columns:1fr}.pe-cmd-gen-grid{grid-template-columns:1fr}.pe-content{padding:14px 12px}}
 </style>
 <div class="pe-header">
-  <h2>&#x1f510; PRIVILEGE ESCALATION TOOLKIT</h2>
+  <h2>PRIVILEGE ESCALATION TOOLKIT</h2>
   <p>Linux &amp; Windows privesc vectors, checklists, and command generators</p>
 </div>
 <div class="pe-tabs">
