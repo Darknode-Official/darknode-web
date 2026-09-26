@@ -63,34 +63,51 @@
     return false;
   }
 
-  // ── Hide the default floating bubble ───────────────────────────────────────
+  // ── Style the webchat + hide the default floating bubble ───────────────────
   // The entire webchat (FAB + chat window) is rendered inside #fab-root's shadow
-  // DOM, so a page-level `#fab-root{display:none}` would hide the chat window too.
-  // Instead we inject a <style> INTO the shadow root that hides only .bpFabWrapper
-  // (the floating button), leaving .bpWebchat (the opened window) fully visible.
-  // Access to the chat is then only through the "Help" tab -> window.botpress.open().
-  var fabHidden = false;
-  function hideFab() {
+  // DOM, so page-level CSS cannot reach it (a `#fab-root{display:none}` would hide
+  // the chat window too). Instead we inject a <style> INTO the shadow root that:
+  //   • hides only .bpFabWrapper (the floating button) — access is via the Help tab;
+  //   • removes the "⚡ by Botpress" composer footer;
+  //   • aligns the popup to the Darknode brand (accent header, softer radius/shadow).
+  var SHADOW_CSS =
+    /* hide the floating bubble; the chat opens from the Help tab */
+    ".bpFabWrapper{display:none !important}" +
+    /* drop the Botpress footer branding */
+    ".bpComposerFooter{display:none !important}" +
+    /* popup shell: refined corners, depth and hairline border */
+    ".bpWebchat{border-radius:18px !important;overflow:hidden !important;" +
+      "box-shadow:0 16px 48px rgba(2,6,23,.24),0 2px 10px rgba(2,6,23,.12) !important;" +
+      "border:1px solid rgba(2,6,23,.10) !important}" +
+    /* header on the site accent, white foreground for contrast */
+    ".bpHeaderContainer{background:#2563eb !important;border-bottom:none !important}" +
+    ".bpHeaderContainer,.bpHeaderContainer *{color:#fff !important}";
+
+  var styled = false;
+  function styleWidget() {
     try {
       var host = document.getElementById("fab-root");
       if (!host || !host.shadowRoot) return false;
       var sr = host.shadowRoot;
-      if (!sr.getElementById("dn-fab-hide")) {
-        var st = document.createElement("style");
-        st.id = "dn-fab-hide";
-        st.textContent = ".bpFabWrapper{display:none !important}";
+      var st = sr.getElementById("dn-webchat-style");
+      if (!st) {
+        st = document.createElement("style");
+        st.id = "dn-webchat-style";
         sr.appendChild(st);
       }
-      fabHidden = true;
-      log("floating bubble hidden");
+      if (st.textContent !== SHADOW_CSS) st.textContent = SHADOW_CSS;
+      styled = true;
+      log("webchat styled (bubble hidden, footer removed, brand skin)");
       return true;
     } catch (_) { return false; }
   }
   // The shadow root appears asynchronously after the widget mounts; poll for it.
-  var fabTries = 0;
-  var fabIv = setInterval(function () {
-    fabTries++;
-    if (hideFab() || fabTries > 200) clearInterval(fabIv);
+  // Keep a light re-apply loop briefly in case Botpress re-renders the subtree.
+  var styleTries = 0;
+  var styleIv = setInterval(function () {
+    styleTries++;
+    var ok = styleWidget();
+    if (styleTries > 200) clearInterval(styleIv);
   }, 150);
 
   // ── Normalise many possible command shapes into { action, target, … } ──────
