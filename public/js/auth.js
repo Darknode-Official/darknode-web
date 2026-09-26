@@ -345,6 +345,26 @@ try {
   window.dnModal = dnModal;
   window.dnConfirm = (title, desc, opts = {}) => dnModal({ title, desc, submitText: opts.submitText || "Confirm", cancelText: opts.cancelText || "Cancel", danger: opts.danger }).then((r) => r === true);
   window.dnPrompt = (title, opts = {}) => dnModal({ title, desc: opts.desc, fields: [{ value: opts.value || "", placeholder: opts.placeholder || "", inputType: opts.inputType || "text", type: opts.textarea ? "textarea" : "text" }], submitText: opts.submitText || "OK" }).then((r) => (r ? r[0] : null));
+  // Programmatic navigation entry point — lets the support agent (and any
+  // host script) drive the app. `appShow` is the in-app router once signed in;
+  // otherwise we scroll the landing or open the auth flow. Returns true on a
+  // handled navigation.
+  window.dnNavigate = function (target, opts = {}) {
+    try {
+      const t = String(target || "").trim().replace(/^\/+/, "").replace(/^#/, "");
+      if (!t) return false;
+      const more = opts.more || opts.tab || "";
+      const inApp = document.body.classList.contains("app") && typeof appShow === "function";
+      if (inApp) { appShow(t, more); return true; }
+      // Logged-out / landing
+      if (["signup", "get-started", "getstarted", "start", "register"].includes(t.toLowerCase())) { renderAuth("signup"); return true; }
+      if (["signin", "login", "log-in"].includes(t.toLowerCase())) { renderAuth("signin"); return true; }
+      const el = document.getElementById(t);
+      if (el) { el.scrollIntoView({ behavior: "smooth", block: "start" }); return true; }
+      window.location.href = "/" + t;
+      return true;
+    } catch (_) { return false; }
+  };
 } catch (_) {}
 
 // Password-reset "continue" target: bring users back to Darknode after they
@@ -453,6 +473,7 @@ function showLanding() {
       </div>
     </div>
     <span class="nav-spacer"></span>
+    <a class="nav-link" id="nav-help" onclick="window.darknode&&window.darknode.openHelp&&window.darknode.openHelp()">Help</a>
     <a class="nav-link" id="nav-signin">Log in</a>
     <button class="btn" id="nav-start">Get Started</button>`;
   document.querySelectorAll(".nav-dd").forEach(dd => {
@@ -1753,6 +1774,7 @@ function renderApp(user) {
   userSlot.innerHTML = `
     <button class="style-toggle" id="styleToggle" data-style="${currentStyle()}" title="Theme: ${currentStyle()}" aria-label="Cycle theme style"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="5.5"/><path d="M8 2.5v11M2.5 8h11"/></svg></button>
     <button class="cmdk-btn" id="cmdkBtn" title="Search (Ctrl+K)"><span>Search</span><kbd>Ctrl K</kbd></button>
+    <button class="tb-help-btn" id="helpBtn" title="Help &amp; support" aria-label="Help and support" onclick="window.darknode&&window.darknode.openHelp&&window.darknode.openHelp()"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg><span>Help</span></button>
     <span id="cli-dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#71717a;margin:0 10px;cursor:pointer;vertical-align:middle;transition:background .3s" title="CLI not connected" onclick="window.dnPrompt('Connect Darknode CLI',{desc:'Paste the auth token shown in your terminal after you run the Darknode CLI. It links this browser to your local tools and models.',placeholder:'darknode auth token'}).then(function(t){if(t&&window._bridge)window._bridge.connect(t.trim()).then(function(r){var d=document.getElementById('cli-dot');if(d){d.style.background='#22c55e';d.title='CLI connected: '+(r.hostname||'local')}showToast('Connected to '+(r.hostname||'CLI')+' — '+((r.tools||[]).length)+' tools, '+((r.ollama||[]).length)+' AI models','success')}).catch(function(e){showToast('Failed: '+e.message,'error')})})"></span>
     <div class="tb-item">
       <button class="icon-btn" id="moreBtn" title="More" aria-label="More">&#8943;</button>
