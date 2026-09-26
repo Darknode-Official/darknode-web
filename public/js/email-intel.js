@@ -404,7 +404,13 @@ window._eiCheckPhishing = function() {
   if (path.split('/').length > 6) { flags.push({ text: 'Deep path nesting (' + path.split('/').length + ' levels)', severity: 'LOW' }); score += 5; }
   if (/login|signin|verify|secure|account|update|confirm|bank/i.test(path)) { flags.push({ text: 'Credential harvesting keywords in path', severity: 'MEDIUM' }); score += 10; }
   if (url.indexOf('@') !== -1) { flags.push({ text: 'URL contains @ symbol (possible URL obfuscation)', severity: 'HIGH' }); score += 30; }
-  if (/[01]/.test(hostname) && /paypal|google|apple|microsoft|amazon|netflix|facebook|instagram|twitter|bank/i.test(hostname)) { flags.push({ text: 'Possible brand impersonation with character substitution', severity: 'CRITICAL' }); score += 40; }
+  // Leetspeak brand impersonation (g00gle, micros0ft): normalize 0→o and 1→l
+  // and check the RESULT against the brand list. The old test required both a
+  // digit AND the intact brand string, which are mutually exclusive for a
+  // substituted brand — so it never fired for g00gle/micros0ft (its documented
+  // targets) and only matched intact-brand+digit hosts.
+  var brandNorm = hostname.replace(/0/g, 'o').replace(/1/g, 'l');
+  if (brandNorm !== hostname && /paypal|google|apple|microsoft|amazon|netflix|facebook|instagram|twitter|bank/i.test(brandNorm)) { flags.push({ text: 'Possible brand impersonation with character substitution', severity: 'CRITICAL' }); score += 40; }
   if (hostname.length > 40) { flags.push({ text: 'Unusually long domain name (' + hostname.length + ' chars)', severity: 'LOW' }); score += 5; }
   if (url.indexOf('data:') === 0) { flags.push({ text: 'Data URI detected — may contain hidden content', severity: 'CRITICAL' }); score += 50; }
 
