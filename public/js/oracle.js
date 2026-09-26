@@ -302,16 +302,46 @@ const SAMPLE_STIX = {
 };
 
 // ============================================================================
-// FEED DATA (hardcoded fallback)
+// FEED DATA
+// The feed files under /data/feeds/ are saved snapshots written by
+// tools/threat-feed-sync.py. Each file is { updated, source, count, data: [...] }.
+// count/updated start null and are filled from the files when they load.
 // ============================================================================
 const FEED_SOURCES = [
-  { id: 'cisa-kev', name: 'CISA KEV', desc: 'Known Exploited Vulnerabilities Catalog', url: '/data/feeds/cisa-kev.json', count: 1200, updated: '2026-09-21T06:00:00Z' },
-  { id: 'threatfox', name: 'ThreatFox IOCs', desc: 'Indicators of Compromise from abuse.ch', url: '/data/feeds/threat-iocs.json', count: 850, updated: '2026-09-21T04:30:00Z' },
-  { id: 'urlhaus', name: 'URLhaus', desc: 'Malicious URL tracking by abuse.ch', url: '/data/feeds/malware-urls.json', count: 620, updated: '2026-09-21T05:15:00Z' },
-  { id: 'botnet-c2', name: 'Botnet C2', desc: 'Botnet command and control trackers', url: '/data/feeds/botnet-c2.json', count: 340, updated: '2026-09-21T03:45:00Z' },
-  { id: 'malwarebazaar', name: 'MalwareBazaar', desc: 'Malware sample sharing platform', url: null, count: 480, updated: '2026-09-21T02:00:00Z' },
+  { id: 'cisa-kev', name: 'CISA KEV', desc: 'Known Exploited Vulnerabilities Catalog', url: '/data/feeds/cisa-kev.json', count: null, updated: null, status: 'pending' },
+  { id: 'threatfox', name: 'ThreatFox IOCs', desc: 'Indicators of Compromise from abuse.ch', url: '/data/feeds/threat-iocs.json', count: null, updated: null, status: 'pending' },
+  { id: 'urlhaus', name: 'URLhaus', desc: 'Malicious URL tracking by abuse.ch', url: '/data/feeds/malware-urls.json', count: null, updated: null, status: 'pending' },
+  { id: 'botnet-c2', name: 'Botnet C2', desc: 'Botnet command and control trackers', url: '/data/feeds/botnet-c2.json', count: null, updated: null, status: 'pending' },
+  { id: 'malwarebazaar', name: 'MalwareBazaar', desc: 'Malware sample sharing platform', url: null, count: null, updated: null, status: 'not-connected' },
 ];
 
+// Feed files wrap entries as { data: [...] }; older files may be a bare array.
+function _orFeedEntries(json) {
+  if (Array.isArray(json)) return json;
+  if (json && Array.isArray(json.data)) return json.data;
+  return [];
+}
+
+// Map one raw snapshot entry to a Combined Feed row, per source format.
+function _orFeedRow(feedId, feedName, e) {
+  var day = function(v) { return v ? String(v).slice(0, 10) : ''; };
+  if (feedId === 'cisa-kev') {
+    return { date: day(e.dateAdded), feed: feedName, type: 'CVE', value: e.cve || e.cveID || '', severity: e.knownRansomware === 'Known' || e.knownRansomwareCampaignUse === 'Known' ? 'Critical' : 'High', details: e.name || e.vulnerabilityName || ((e.vendor || '') + ' ' + (e.product || '')).trim() };
+  }
+  if (feedId === 'threatfox') {
+    var conf = +e.confidenceLevel || 0;
+    return { date: day(e.firstSeen), feed: feedName, type: e.iocType || 'IOC', value: e.iocValue || e.ioc_value || e.ioc || '', severity: conf >= 90 ? 'High' : conf >= 50 ? 'Medium' : 'Low', details: (e.malware || '') + (e.tags && e.tags.length ? ' [' + e.tags.join(', ') + ']' : '') };
+  }
+  if (feedId === 'urlhaus') {
+    return { date: day(e.dateAdded), feed: feedName, type: 'URL', value: e.url || '', severity: e.status === 'online' ? 'High' : 'Medium', details: (e.threat || '') + (e.status ? ' (' + e.status + ')' : '') };
+  }
+  if (feedId === 'botnet-c2') {
+    return { date: day(e.firstSeen || e.lastOnline), feed: feedName, type: 'IP', value: e.ip ? e.ip + (e.port ? ':' + e.port : '') : '', severity: e.status === 'online' ? 'High' : 'Medium', details: (e.malware || '') + (e.country ? ' / ' + e.country : '') + (e.status ? ' (' + e.status + ')' : '') };
+  }
+  return { date: day(e.date || e.dateAdded), feed: feedName, type: e.type || 'IOC', value: e.value || e.ip || e.url || JSON.stringify(e).slice(0, 40), severity: e.severity || 'Medium', details: e.description || e.name || '' };
+}
+
+// Built-in example rows, shown (and labelled as example data) only when no feed snapshot loads.
 const FALLBACK_FEED = [
   { date: '2026-09-21', feed: 'CISA KEV', type: 'CVE', value: 'CVE-2024-3400', severity: 'Critical', details: 'PAN-OS GlobalProtect command injection' },
   { date: '2026-09-21', feed: 'CISA KEV', type: 'CVE', value: 'CVE-2024-21762', severity: 'Critical', details: 'FortiOS SSL VPN out-of-bounds write' },
@@ -639,6 +669,40 @@ export function renderOracle(main) {
   var activeTab = 'dashboard';
   var iocs = IOC_DB.map(function(i) { return Object.assign({}, i); });
   var feedData = FALLBACK_FEED.slice();
+  var feedIsFallback = true;   // true while feedData holds the built-in example rows
+
+  // Load every feed snapshot. Replaces the example rows with real snapshot
+  // rows when at least one file loads; otherwise keeps (and labels) the examples.
+  function loadFeeds(done) {
+    var sources = FEED_SOURCES.filter(function(f) { return f.url; });
+    var pending = sources.length;
+    var rows = [];
+    function finish() {
+      if (--pending > 0) return;
+      if (rows.length) {
+        rows.sort(function(a, b) { return String(b.date).localeCompare(String(a.date)); });
+        feedData = rows;
+        feedIsFallback = false;
+      } else {
+        feedData = FALLBACK_FEED.slice();
+        feedIsFallback = true;
+      }
+      if (typeof done === 'function') done();
+    }
+    sources.forEach(function(f) {
+      fetch(f.url).then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }).then(function(json) {
+        var entries = _orFeedEntries(json);
+        f.count = entries.length;
+        f.updated = (json && !Array.isArray(json) && json.updated) || null;
+        f.status = 'loaded';
+        entries.slice(0, 25).forEach(function(e) {
+          var row = _orFeedRow(f.id, f.name, e);
+          if (row.value) rows.push(row);
+        });
+        finish();
+      }).catch(function() { f.status = 'error'; f.count = null; finish(); });
+    });
+  }
   var stixBundle = null;
   var selectedStixNode = null;
   var actorSearch = '';
@@ -899,10 +963,9 @@ export function renderOracle(main) {
     var events = [];
     iocs.slice(0, 8).forEach(function(i) { events.push({ time: _orTimeAgo(i.added), text: 'New ' + i.type + ' IOC added: ' + i.value.substring(0, 30) + (i.value.length > 30 ? '...' : '') }); });
     CAMPAIGN_DB.filter(function(c) { return c.status === 'Active'; }).forEach(function(c) { events.push({ time: _orTimeAgo(c.start), text: 'Campaign active: ' + c.name + ' (' + c.actor + ')' }); });
-    events.push({ time: '2h ago', text: 'Feed refresh: CISA KEV updated with 3 new entries' });
-    events.push({ time: '4h ago', text: 'Feed refresh: ThreatFox added 12 new IOCs' });
-    events.push({ time: '6h ago', text: 'Threat actor profile updated: Volt Typhoon' });
-    events.push({ time: '8h ago', text: 'New STIX bundle imported: 28 objects' });
+    FEED_SOURCES.forEach(function(f) {
+      if (f.status === 'loaded' && f.updated) events.push({ time: _orTimeAgo(f.updated), text: 'Feed snapshot: ' + f.name + ' (' + f.count + ' entries)' });
+    });
     return events.slice(0, 20);
   }
 
@@ -1312,12 +1375,16 @@ export function renderOracle(main) {
         FEED_SOURCES.map(function(f) {
           return '<div class="or-stat">' +
             '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">' +
-              '<span style="width:6px;height:6px;border-radius:50%;background:#22c55e;flex-shrink:0"></span>' +
+              '<span style="width:6px;height:6px;border-radius:50%;background:' + (f.status === 'loaded' ? '#22c55e' : f.status === 'error' ? '#ef4444' : '#6b7280') + ';flex-shrink:0"></span>' +
               '<span style="font-size:.72rem;font-weight:700">' + esc(f.name) + '</span>' +
             '</div>' +
-            '<div class="or-stat-v" style="color:#3b82f6;font-size:1.2rem">' + f.count + '</div>' +
+            '<div class="or-stat-v" style="color:#3b82f6;font-size:1.2rem">' + (f.count != null ? f.count : '--') + '</div>' +
             '<div class="or-stat-l">' + esc(f.desc) + '</div>' +
-            '<div style="font-size:.6rem;color:var(--mut);margin-top:4px">Updated: ' + _orTimeAgo(f.updated) + '</div>' +
+            '<div style="font-size:.6rem;color:var(--mut);margin-top:4px">' +
+              (f.status === 'loaded' ? 'Snapshot' + (f.updated ? ', updated ' + esc(String(f.updated).slice(0, 10)) + ' (' + _orTimeAgo(f.updated) + ')' : '') :
+               f.status === 'error' ? 'Snapshot unavailable' :
+               f.status === 'not-connected' ? 'Not connected' : 'Loading...') +
+            '</div>' +
           '</div>';
         }).join('') +
       '</div>' +
@@ -1328,7 +1395,11 @@ export function renderOracle(main) {
       '</div>' +
 
       '<div class="or-panel">' +
-        '<div class="or-panel-h">Combined Feed (' + feedData.length + ' entries)</div>' +
+        '<div class="or-panel-h">Combined Feed (' + feedData.length + ' entries)' +
+          (feedIsFallback
+            ? ' <span class="or-badge" style="background:rgba(245,158,11,.15);color:#f59e0b">Example data - feed snapshots not loaded</span>'
+            : ' <span class="or-badge" style="background:rgba(59,130,246,.12);color:#3b82f6">From saved feed snapshots</span>') +
+        '</div>' +
         '<div style="overflow-x:auto">' +
           '<table class="or-tbl"><thead><tr><th>Date</th><th>Source</th><th>Type</th><th>Value</th><th>Severity</th><th>Details</th></tr></thead><tbody>' +
           feedData.map(function(f) {
@@ -1347,19 +1418,9 @@ export function renderOracle(main) {
       '</div>';
 
     c.querySelector('#or-refresh-feeds').onclick = function() {
-      var fetched = 0;
-      FEED_SOURCES.forEach(function(f) {
-        if (!f.url) { fetched++; return; }
-        fetch(f.url).then(function(r) { return r.json(); }).then(function(data) {
-          if (Array.isArray(data)) {
-            data.slice(0, 5).forEach(function(entry) {
-              feedData.unshift({ date: new Date().toISOString().slice(0,10), feed: f.name, type: entry.type || 'IOC', value: entry.value || entry.cveID || entry.ip || JSON.stringify(entry).slice(0,40), severity: entry.severity || 'Medium', details: entry.description || entry.name || '' });
-            });
-          }
-          fetched++;
-          if (fetched >= FEED_SOURCES.length) renderFeeds(c);
-        }).catch(function() { fetched++; if (fetched >= FEED_SOURCES.length) renderFeeds(c); });
-      });
+      this.disabled = true;
+      this.textContent = 'Loading...';
+      loadFeeds(function() { if (c.isConnected) renderFeeds(c); });
     };
     c.querySelector('#or-correlate-feeds').onclick = function() { renderFeeds(c); };
   }
@@ -1988,15 +2049,8 @@ export function renderOracle(main) {
   // Initial render
   render();
 
-  // Try to load live feeds on startup
-  FEED_SOURCES.forEach(function(f) {
-    if (!f.url) return;
-    fetch(f.url).then(function(r) { return r.json(); }).then(function(data) {
-      if (Array.isArray(data)) {
-        data.slice(0, 3).forEach(function(entry) {
-          feedData.push({ date: new Date().toISOString().slice(0,10), feed: f.name, type: entry.type || 'IOC', value: entry.value || entry.cveID || entry.ip || JSON.stringify(entry).slice(0,40), severity: entry.severity || 'Medium', details: entry.description || entry.name || '' });
-        });
-      }
-    }).catch(function() {});
+  // Load the saved feed snapshots on startup; repaint the active tab once they arrive.
+  loadFeeds(function() {
+    if ((activeTab === 'feeds' || activeTab === 'dashboard') && main.querySelector('#or-content')) paintContent();
   });
 }
