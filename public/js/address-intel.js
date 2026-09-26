@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Darknode-Official. All rights reserved.
 // Address Intelligence -- IP, domain, and URL intelligence gathering from real public sources.
-// Parallel lookups against GreyNoise, AbuseIPDB, Shodan, VirusTotal, ThreatFox, URLhaus, crt.sh, DNS
+// Parallel lookups against GreyNoise, AbuseIPDB, Shodan, VirusTotal, crt.sh, DNS, plus
+// saved ThreatFox / URLhaus snapshot files (not live queries)
 
 var esc = function(s) {
   return String(s == null ? "" : s).replace(/[&<>"']/g, function(c) {
@@ -147,61 +148,106 @@ function fetchVirusTotalURL(url, key) {
   });
 }
 
-function fetchThreatFox(searchTerm) {
-  return fetch("/data/feeds/threat-iocs.json")
-    .then(function(r) {
+// ThreatFox and URLhaus are NOT queried live: they read saved snapshot files
+// under /data/feeds/ (written by tools/threat-feed-sync.py). The snapshot
+// format is { updated, source, count, data: [...] } with camelCase fields
+// (iocValue, confidenceLevel, dateAdded, status ...). Entries are normalised
+// to the field names the render code uses, and the snapshot date is kept so
+// the UI can label the source honestly.
+var _aiSnapCache = {};
+function loadSnapshot(path) {
+  if (!_aiSnapCache[path]) {
+    _aiSnapCache[path] = fetch(path).then(function(r) {
       if (!r.ok) throw new Error("HTTP " + r.status);
       return r.json();
-    })
-    .then(function(feed) {
-      var matches = [];
-      var term = String(searchTerm).toLowerCase();
-      var entries = (feed && feed.data) ? feed.data : [];
-      for (var i = 0; i < entries.length; i++) {
-        var ioc = entries[i];
-        var val = String(ioc.ioc_value || ioc.ioc || "").toLowerCase();
-        if (val.indexOf(term) !== -1) matches.push(ioc);
-      }
-      return { query_status: matches.length > 0 ? "ok" : "no_result", data: matches.length > 0 ? matches : null };
+    }).then(function(feed) {
+      var entries = Array.isArray(feed) ? feed : ((feed && Array.isArray(feed.data)) ? feed.data : []);
+      return { entries: entries, updated: (feed && !Array.isArray(feed) && feed.updated) || null };
     });
+    _aiSnapCache[path].catch(function() { delete _aiSnapCache[path]; });
+  }
+  return _aiSnapCache[path];
+}
+
+// Host part of an IOC / URL value: strips scheme (incl. defanged hxxp), port, path.
+function iocHost(v) {
+  var s = String(v || "").toLowerCase().trim().replace(/^hxxp/, "http").replace(/\[\.\]/g, ".");
+  s = s.replace(/^[a-z][a-z0-9+.-]*:\/\//, "");
+  s = s.split(/[\/?#]/)[0];
+  if (s.charAt(0) === "[") return s.slice(1, s.indexOf("]") > 0 ? s.indexOf("]") : undefined);
+  if ((s.match(/:/g) || []).length === 1) s = s.split(":")[0];
+  return s;
+}
+
+function hostMatches(candidate, term) {
+  return candidate === term || (candidate.length > term.length && candidate.slice(-(term.length + 1)) === "." + term);
+}
+
+function fetchThreatFox(searchTerm) {
+  return loadSnapshot("/data/feeds/threat-iocs.json").then(function(snap) {
+    var matches = [];
+    var term = iocHost(searchTerm);
+    for (var i = 0; i < snap.entries.length; i++) {
+      var e = snap.entries[i];
+      var raw = e.iocValue || e.ioc_value || e.ioc || "";
+      if (!raw) continue;
+      if (String(raw).toLowerCase() === String(searchTerm).toLowerCase() || hostMatches(iocHost(raw), term)) {
+        matches.push({
+          ioc: raw,
+          threat_type: e.threat_type || e.threatType || e.iocType || "",
+          malware: e.malware || "",
+          malware_printable: e.malware_printable || e.malwarePrintable || e.malware || "",
+          confidence_level: e.confidence_level != null ? e.confidence_level : e.confidenceLevel,
+          first_seen: e.first_seen || e.firstSeen || "",
+          tags: e.tags || []
+        });
+      }
+    }
+    return { query_status: matches.length > 0 ? "ok" : "no_result", data: matches.length > 0 ? matches : null, snapshot: { updated: snap.updated, count: snap.entries.length } };
+  });
+}
+
+function normURLhaus(u) {
+  return {
+    url: u.url || "",
+    host: u.host || "",
+    url_status: u.url_status || u.status || "",
+    threat: u.threat || "",
+    date_added: u.date_added || u.dateAdded || "",
+    tags: u.tags || []
+  };
 }
 
 function fetchURLhaus(host) {
-  return fetch("/data/feeds/malware-urls.json")
-    .then(function(r) {
-      if (!r.ok) throw new Error("HTTP " + r.status);
-      return r.json();
-    })
-    .then(function(feed) {
-      var matches = [];
-      var h = String(host).toLowerCase();
-      var entries = (feed && feed.data) ? feed.data : [];
-      for (var i = 0; i < entries.length; i++) {
-        var u = entries[i];
-        var uHost = String(u.host || u.url || "").toLowerCase();
-        if (uHost.indexOf(h) !== -1) matches.push(u);
-      }
-      return { query_status: matches.length > 0 ? "ok" : "no_result", urls: matches.length > 0 ? matches : null };
-    });
+  return loadSnapshot("/data/feeds/malware-urls.json").then(function(snap) {
+    var matches = [];
+    var h = iocHost(host);
+    for (var i = 0; i < snap.entries.length; i++) {
+      var u = snap.entries[i];
+      if (hostMatches(iocHost(u.host || u.url), h)) matches.push(normURLhaus(u));
+    }
+    return { query_status: matches.length > 0 ? "ok" : "no_results", urls: matches.length > 0 ? matches : null, snapshot: { updated: snap.updated, count: snap.entries.length } };
+  });
 }
 
 function fetchURLhausURL(url) {
-  return fetch("/data/feeds/malware-urls.json")
-    .then(function(r) {
-      if (!r.ok) throw new Error("HTTP " + r.status);
-      return r.json();
-    })
-    .then(function(feed) {
-      var matches = [];
-      var target = String(url).toLowerCase();
-      var entries = (feed && feed.data) ? feed.data : [];
-      for (var i = 0; i < entries.length; i++) {
-        var u = entries[i];
-        var uUrl = String(u.url || "").toLowerCase();
-        if (uUrl.indexOf(target) !== -1) matches.push(u);
-      }
-      return { query_status: matches.length > 0 ? "ok" : "no_result", urls: matches.length > 0 ? matches : null };
-    });
+  return loadSnapshot("/data/feeds/malware-urls.json").then(function(snap) {
+    var matches = [];
+    var target = String(url).toLowerCase().replace(/^hxxp/, "http");
+    for (var i = 0; i < snap.entries.length; i++) {
+      var u = snap.entries[i];
+      var uUrl = String(u.url || "").toLowerCase().replace(/^hxxp/, "http");
+      if (uUrl && uUrl === target) matches.push(normURLhaus(u));
+    }
+    return { query_status: matches.length > 0 ? "ok" : "no_results", urls: matches.length > 0 ? matches : null, snapshot: { updated: snap.updated, count: snap.entries.length } };
+  });
+}
+
+// "snapshot, updated 2026-09-18" label for a snapshot-backed source.
+function snapshotLabel(res) {
+  var snap = res && res.snapshot;
+  var d = snap && snap.updated ? String(snap.updated).slice(0, 10) : "";
+  return "snapshot" + (d ? ", updated " + d : "") + ", not live";
 }
 
 function fetchDNSRecords(domain, type) {
@@ -486,7 +532,7 @@ function renderReputationPanel(results) {
   }
 
   // ThreatFox
-  html += '<div class="ai-subsection-title">ThreatFox IOC</div>';
+  html += '<div class="ai-subsection-title">ThreatFox IOC <span class="ai-snap-note">(' + esc(snapshotLabel(results.threatfox)) + ')</span></div>';
   if (results.threatfox) {
     if (results.threatfox.query_status === "ok" && results.threatfox.data && results.threatfox.data.length > 0) {
       html += '<table class="ai-table"><thead><tr><th>IOC</th><th>Threat Type</th><th>Malware</th><th>Confidence</th><th>First Seen</th></tr></thead><tbody>';
@@ -502,7 +548,7 @@ function renderReputationPanel(results) {
       }
       html += '</tbody></table>';
     } else {
-      html += panelUnavailable("No ThreatFox IOC matches found");
+      html += panelUnavailable("No match in the saved ThreatFox snapshot" + (results.threatfox.snapshot ? " (" + results.threatfox.snapshot.count + " entries)" : ""));
     }
   } else if (results.threatfox_err) {
     html += panelUnavailable(results.threatfox_err);
@@ -511,7 +557,7 @@ function renderReputationPanel(results) {
   }
 
   // URLhaus
-  html += '<div class="ai-subsection-title">URLhaus</div>';
+  html += '<div class="ai-subsection-title">URLhaus <span class="ai-snap-note">(' + esc(snapshotLabel(results.urlhaus)) + ')</span></div>';
   if (results.urlhaus) {
     if (results.urlhaus.query_status !== "no_results" && results.urlhaus.urls && results.urlhaus.urls.length > 0) {
       html += '<table class="ai-table"><thead><tr><th>URL</th><th>Status</th><th>Threat</th><th>Date Added</th><th>Tags</th></tr></thead><tbody>';
@@ -528,7 +574,7 @@ function renderReputationPanel(results) {
       }
       html += '</tbody></table>';
     } else {
-      html += panelUnavailable("No URLhaus matches found");
+      html += panelUnavailable("No match in the saved URLhaus snapshot" + (results.urlhaus.snapshot ? " (" + results.urlhaus.snapshot.count + " entries)" : ""));
     }
   } else if (results.urlhaus_err) {
     html += panelUnavailable(results.urlhaus_err);
@@ -648,7 +694,7 @@ function renderThreatIntelPanel(results) {
   // URLhaus threat info
   if (results.urlhaus && results.urlhaus.urls && results.urlhaus.urls.length > 0) {
     hasContent = true;
-    html += '<div class="ai-subsection-title">Malware URLs (URLhaus)</div>';
+    html += '<div class="ai-subsection-title">Malware URLs (URLhaus ' + esc(snapshotLabel(results.urlhaus)) + ')</div>';
     var threats = {};
     for (var u = 0; u < results.urlhaus.urls.length; u++) {
       var thr = results.urlhaus.urls[u].threat || "unknown";
@@ -858,6 +904,25 @@ function runInvestigation(input, type, container) {
       results.threatfox_err = "ThreatFox lookup failed";
       updatePanel("reputation", renderReputationPanel(results));
     });
+
+    // URLhaus snapshot entries carry a host field, which is often a bare IP.
+    if (!domain) {
+      fetchURLhaus(ip).then(function(data) {
+        // Keep any rows already merged in by the exact-URL lookup, without duplicates.
+        var prev = (results.urlhaus && results.urlhaus.urls) || [];
+        var seen = {};
+        var merged = prev.concat(data.urls || []).filter(function(u) { if (seen[u.url]) return false; seen[u.url] = true; return true; });
+        data.urls = merged.length ? merged : null;
+        data.query_status = merged.length ? "ok" : "no_results";
+        results.urlhaus = data;
+        updatePanel("reputation", renderReputationPanel(results));
+        updatePanel("threat", renderThreatIntelPanel(results));
+        updateSummary();
+      }).catch(function() {
+        results.urlhaus_err = "URLhaus lookup failed";
+        updatePanel("reputation", renderReputationPanel(results));
+      });
+    }
   }
 
   // --- Domain lookups ---
@@ -943,7 +1008,7 @@ function runInvestigation(input, type, container) {
       if (data && data.query_status !== "no_results") {
         results.urlhaus_url = data;
         // Merge into urlhaus results for display
-        if (!results.urlhaus) results.urlhaus = { query_status: "ok", urls: [] };
+        if (!results.urlhaus) results.urlhaus = { query_status: "ok", urls: [], snapshot: data.snapshot };
         if (data.urls) {
           results.urlhaus.urls = (results.urlhaus.urls || []).concat(data.urls);
         }
@@ -1076,6 +1141,7 @@ var STYLE = '<style>' +
 
   '.ai-subsection-title{font-size:.8rem;font-weight:700;color:var(--ai-acc);margin:16px 0 8px;padding-bottom:4px;border-bottom:1px solid var(--ai-line);text-transform:uppercase;letter-spacing:.4px}' +
   '.ai-subsection-title:first-child{margin-top:0}' +
+  '.ai-snap-note{font-weight:500;text-transform:none;letter-spacing:0;color:var(--ai-mut,#8a8f98);font-size:.72rem}' +
 
   '.ai-table{width:100%;border-collapse:collapse;font-size:.76rem;margin-bottom:8px}' +
   '.ai-table thead th{text-align:left;padding:8px 10px;color:var(--ai-mut);font-weight:600;border-bottom:1px solid var(--ai-line);font-size:.72rem;text-transform:uppercase;letter-spacing:.3px;white-space:nowrap}' +
