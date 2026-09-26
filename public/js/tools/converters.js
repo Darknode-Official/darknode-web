@@ -114,6 +114,23 @@ function cronPart(val, unit, names) {
 function splitIdentifier(s) {
   return String(s).trim().replace(/([a-z0-9])([A-Z])/g, "$1 $2").replace(/[_\-\s]+/g, " ").trim().split(" ").filter(Boolean).map((w) => w.toLowerCase());
 }
+// Round a non-negative decimal given as separate integer/fraction digit strings to
+// `places` fractional digits (half-up), string-based to preserve big-integer precision.
+function roundDecimalParts(ip, dp, places) {
+  const arr = (ip + (dp || "")).split("");
+  const keepLen = ip.length + places;
+  const roundUp = keepLen < arr.length && arr[keepLen] >= "5";
+  let kept = arr.slice(0, keepLen);
+  while (kept.length < keepLen) kept.push("0");
+  if (roundUp) {
+    let i = kept.length - 1;
+    for (; i >= 0; i--) { if (kept[i] === "9") { kept[i] = "0"; } else { kept[i] = String(+kept[i] + 1); break; } }
+    if (i < 0) kept.unshift("1");
+  }
+  const frac = places > 0 ? kept.slice(kept.length - places).join("") : "";
+  const intPart = kept.slice(0, kept.length - places).join("") || "0";
+  return { ip: intPart, dp: frac };
+}
 function simpleCase(mode, s) {
   s = String(s);
   if (mode === "UPPERCASE") return s.toUpperCase();
@@ -310,11 +327,11 @@ export const TOOLS = [
 
   { id: "c-thousands-sep", name: "Thousands Separator Formatter", cat: "converters", desc: "Format a number with a thousands separator and optional fixed decimals.", tags: ["number", "format"],
     inputs: [{ k: "value", label: "Number", type: "text", placeholder: "1234567.891" }, { k: "sep", label: "Separator", type: "select", opts: [",", ".", " ", "_"], value: "," }, { k: "decimals", label: "Decimal places (blank = as-is)", type: "text", placeholder: "auto" }],
-    run(v) { const raw = String(v.value || "").trim(); if (!raw) return ""; if (!/^-?\d+(\.\d+)?$/.test(raw)) return { error: "Enter a valid number." }; const neg = raw[0] === "-"; const abs = neg ? raw.slice(1) : raw; const [ip, dp] = abs.split("."); const sep = v.sep || ","; const grouped = ip.replace(/\B(?=(\d{3})+(?!\d))/g, sep); let dec = ""; if (v.decimals !== undefined && v.decimals !== "") { const places = Math.max(0, parseInt(v.decimals, 10) || 0); const base = (dp || "").padEnd(places, "0").slice(0, places); dec = places > 0 ? "." + base : ""; } else if (dp !== undefined) { dec = "." + dp; } return (neg ? "-" : "") + grouped + dec; } },
+    run(v) { const raw = String(v.value || "").trim(); if (!raw) return ""; if (!/^-?\d+(\.\d+)?$/.test(raw)) return { error: "Enter a valid number." }; const neg = raw[0] === "-"; const abs = neg ? raw.slice(1) : raw; const [ip, dp] = abs.split("."); const sep = v.sep || ","; let ipOut = ip, dec = ""; if (v.decimals !== undefined && v.decimals !== "") { const places = Math.max(0, parseInt(v.decimals, 10) || 0); const r = roundDecimalParts(ip, dp, places); ipOut = r.ip; dec = places > 0 ? "." + r.dp : ""; } else if (dp !== undefined) { dec = "." + dp; } const grouped = ipOut.replace(/\B(?=(\d{3})+(?!\d))/g, sep); return (neg ? "-" : "") + grouped + dec; } },
 
   { id: "c-sci-decimal", name: "Scientific Notation ↔ Decimal", cat: "converters", desc: "Convert between plain decimal and scientific (exponential) notation.", tags: ["scientific", "exponential", "number"],
     inputs: [{ k: "value", label: "Value", type: "text", placeholder: "123000" }, { k: "mode", label: "Mode", type: "select", opts: ["Decimal → Scientific", "Scientific → Decimal"], value: "Decimal → Scientific" }, { k: "digits", label: "Significant digits (Decimal → Scientific)", type: "text", value: "6" }],
-    run(v) { const s = String(v.value || "").trim(); if (!s) return ""; if (v.mode === "Decimal → Scientific") { const n = Number(s); if (!isFinite(n)) return { error: "Enter a valid number." }; const digits = v.digits !== undefined && v.digits !== "" ? Math.max(0, parseInt(v.digits, 10)) : 6; return n.toExponential(digits); } const n = Number(s); if (!isFinite(n)) return { error: "Enter valid scientific notation (e.g. 1.23e5)." }; return n.toString(); } },
+    run(v) { const s = String(v.value || "").trim(); if (!s) return ""; if (v.mode === "Decimal → Scientific") { const n = Number(s); if (!isFinite(n)) return { error: "Enter a valid number." }; const digits = v.digits !== undefined && v.digits !== "" ? Math.max(1, parseInt(v.digits, 10) || 1) : 6; return n.toExponential(digits - 1); } const n = Number(s); if (!isFinite(n)) return { error: "Enter valid scientific notation (e.g. 1.23e5)." }; return n.toString(); } },
 
   { id: "c-csv-tsv", name: "CSV ↔ TSV", cat: "converters", desc: "Convert delimited data between comma-separated and tab-separated.", tags: ["csv", "tsv", "delimiter"],
     inputs: [{ k: "text", label: "Data", type: "textarea", rows: 8 }, { k: "mode", label: "Mode", type: "select", opts: ["CSV → TSV", "TSV → CSV"], value: "CSV → TSV" }],

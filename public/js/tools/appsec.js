@@ -503,7 +503,7 @@ export const TOOLS = [
         if (g[i] === "0") { if (run < 0) run = i; runLen++; if (runLen > bestLen) { bestLen = runLen; best = run; } }
         else { run = -1; runLen = 0; }
       }
-      if (bestLen > 1) { g.splice(best, bestLen, ""); const j = g.join(":"); return j.startsWith(":") ? (g[0] === "" && g[1] === "" ? "::" + g.slice(2).join(":") : "::" + j.replace(/^:/, "")) : (j.endsWith(":") ? j.replace(/:$/, "") + "::" : j.replace(/::?$/, "::")); }
+      if (bestLen > 1) { const head = g.slice(0, best).join(":"); const tail = g.slice(best + bestLen).join(":"); return head + "::" + tail; }
       return g.join(":");
     } },
 

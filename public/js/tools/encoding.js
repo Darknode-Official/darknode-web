@@ -21,7 +21,7 @@ export const TOOLS = [
 
   { id: "html-entities", name: "HTML Entity Encoder / Decoder", cat: "encoding", desc: "Escape or unescape HTML entities (&lt; &amp; …).", tags: ["escape", "xss"],
     inputs: [{ k: "text", label: "Text", type: "textarea", placeholder: "<b>hi</b> & \"you\"" }, { k: "mode", label: "Mode", type: "select", opts: ["Encode", "Decode"], value: "Encode" }],
-    run(v) { if (!v.text) return ""; if (v.mode === "Encode") return v.text.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); const map = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", "#39": "'", nbsp: " " }; return v.text.replace(/&(#x?[0-9a-fA-F]+|[a-zA-Z]+);/g, (m, e) => { if (e[0] === "#") { const n = e[1] === "x" || e[1] === "X" ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10); return isNaN(n) ? m : String.fromCodePoint(n); } return map[e] != null ? map[e] : m; }); } },
+    run(v) { if (!v.text) return ""; if (v.mode === "Encode") return v.text.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); const map = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", "#39": "'", nbsp: " " }; return v.text.replace(/&(#x?[0-9a-fA-F]+|[a-zA-Z]+);/g, (m, e) => { if (e[0] === "#") { const n = e[1] === "x" || e[1] === "X" ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10); return isNaN(n) ? m : String.fromCodePoint(n); } return map[e] != null ? map[e] : m; }); } },
 
   { id: "hex-text", name: "Hex Encoder / Decoder", cat: "encoding", desc: "Convert text to hex bytes and back.", tags: ["hex", "base16"],
     inputs: [{ k: "text", label: "Text or hex", type: "textarea" }, { k: "mode", label: "Mode", type: "select", opts: ["Text → Hex", "Hex → Text"], value: "Text → Hex" }, { k: "sep", label: "Separator (encode)", type: "select", opts: [["", "none"], [" ", "space"], [":", "colon"]], value: "" }],
@@ -57,7 +57,7 @@ export const TOOLS = [
 
   { id: "unicode-escape", name: "Unicode Escape / Unescape", cat: "encoding", desc: "Convert to \\uXXXX escapes and back.", tags: ["unicode", "\\u"],
     inputs: [{ k: "text", label: "Text", type: "textarea", placeholder: "café résumé naïve" }, { k: "mode", label: "Mode", type: "select", opts: ["Escape", "Unescape"], value: "Escape" }],
-    run(v) { if (!v.text) return ""; if (v.mode === "Escape") return Array.from(v.text).map((c) => { const cp = c.codePointAt(0); return cp > 126 || cp < 32 ? "\\u" + cp.toString(16).padStart(4, "0") : c; }).join(""); try { return v.text.replace(/\\u\{([0-9a-fA-F]+)\}|\\u([0-9a-fA-F]{4})/g, (m, a, b) => String.fromCodePoint(parseInt(a || b, 16))); } catch (e) { return { error: "Bad escape sequence." }; } } },
+    run(v) { if (!v.text) return ""; if (v.mode === "Escape") return Array.from(v.text).map((c) => { const cp = c.codePointAt(0); if (cp > 126 || cp < 32) return cp > 0xffff ? "\\u{" + cp.toString(16) + "}" : "\\u" + cp.toString(16).padStart(4, "0"); return c; }).join(""); try { return v.text.replace(/\\u\{([0-9a-fA-F]+)\}|\\u([0-9a-fA-F]{4})/g, (m, a, b) => String.fromCodePoint(parseInt(a || b, 16))); } catch (e) { return { error: "Bad escape sequence." }; } } },
 
   { id: "json-string-escape", name: "JSON String Escaper", cat: "encoding", desc: "Escape text into a JSON string literal, or unescape one.", tags: ["json", "escape"],
     inputs: [{ k: "text", label: "Text", type: "textarea" }, { k: "mode", label: "Mode", type: "select", opts: ["Escape", "Unescape"], value: "Escape" }],
