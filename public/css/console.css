@@ -33,9 +33,8 @@ body.app .app-main::before{inset:0!important}
 
 /* ---- top bars ---- */
 .con-top{position:sticky;top:var(--topbar-h);z-index:50}
-/* thin category-coloured accent strip = a rich, purpose-built console header
-   that ties the bar to the colour-coded category system in the menu below */
-.con-top::before{content:"";display:block;height:2px;background:linear-gradient(90deg,#3b82f6,#06b6d4,#14b8a6,#22c55e,#eab308,#f97316,#ef4444,#a855f7,#6366f1)}
+/* No divider strip between the header and the Services bar: they read as one
+   continuous console header, not two stacked bars. */
 .con-bar{display:flex;align-items:center;gap:10px;height:var(--con-h1);padding:0 16px;background:linear-gradient(180deg,color-mix(in srgb,var(--con-acc) 5%,var(--con-bar)),var(--con-bar));color:var(--con-bar-txt);border-bottom:1px solid var(--con-bar-line)}
 .con-services{display:flex;align-items:center;gap:8px;height:32px;padding:0 12px;background:transparent;border:1px solid transparent;border-radius:3px;color:var(--con-bar-txt);font-family:inherit;font-weight:700;font-size:.88rem;cursor:pointer;flex:none}
 .con-services:hover,.con-services[aria-expanded=true]{background:var(--con-bar-2);border-color:var(--con-bar-line)}
