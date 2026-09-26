@@ -671,7 +671,10 @@ export function identifyHash(hashStr) {
 function b64urlDecode(s) {
   s = s.replace(/-/g, "+").replace(/_/g, "/");
   while (s.length % 4) s += "=";
-  return atob(s);
+  // Decode as UTF-8 (atob yields Latin-1 bytes) so JWT claims with non-ASCII
+  // characters are not mangled.
+  const bytes = Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
+  return new TextDecoder("utf-8").decode(bytes);
 }
 
 export function jwtDecode(token) {
