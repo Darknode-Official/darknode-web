@@ -21,6 +21,12 @@ function parseDate(s) {
     const d = new Date(ms);
     return isNaN(d.getTime()) ? null : d;
   }
+  // A bare calendar date (YYYY-MM-DD) is parsed by `new Date` as UTC midnight,
+  // which disagrees with the local-time parsing this function gives date+time
+  // strings and with the local getters most consumers use. Parse it as LOCAL
+  // midnight so a typed calendar date means that same calendar day everywhere.
+  const iso = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(s);
+  if (iso) { const d = new Date(+iso[1], +iso[2] - 1, +iso[3]); return isNaN(d.getTime()) ? null : d; }
   const d = new Date(s);
   return isNaN(d.getTime()) ? null : d;
 }
@@ -414,9 +420,9 @@ const defs = [
       if (!s) return "";
       const d = parseDate(s);
       if (!d) return DATE_ERR;
-      const diff = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()) - Date.UTC(d.getUTCFullYear(), 0, 1);
+      const diff = Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) - Date.UTC(d.getFullYear(), 0, 1);
       const doy = Math.floor(diff / 86400000) + 1;
-      return "Day " + doy + " of " + d.getUTCFullYear();
+      return "Day " + doy + " of " + d.getFullYear();
     }
   },
   {
@@ -429,7 +435,7 @@ const defs = [
       if (!s) return "";
       const d = parseDate(s);
       if (!d) return DATE_ERR;
-      const w = isoWeek(d);
+      const w = isoWeek(new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())));
       return "ISO week " + w.week + " of " + w.year;
     }
   },
@@ -1233,7 +1239,7 @@ const defs = [
       if (mo < 1 || mo > 12) return "Not a real date - month " + mo + " is out of range (1-12).";
       const dim = daysInMonth(y, mo - 1);
       if (da < 1 || da > dim) return "Not a real date - " + MONTHS[mo - 1] + " " + y + " has " + dim + " days, got day " + da + ".";
-      return "Real date - " + formatPattern(new Date(Date.UTC(y, mo - 1, da)), "YYYY-MM-DD dddd") + ".";
+      return "Real date - " + formatPattern(new Date(y, mo - 1, da), "YYYY-MM-DD dddd") + ".";
     }
   },
   {
