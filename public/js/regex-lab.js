@@ -46,7 +46,7 @@ var REGEX_LIBRARY = [
   { cat: "Attacks", name: "SQL Injection (UNION)", pattern: "(?:UNION\\s+(?:ALL\\s+)?SELECT|SELECT\\s+.*\\s+FROM|OR\\s+1\\s*=\\s*1|'\\s*OR\\s*'|--\\s*$)", desc: "SQL injection patterns" },
   { cat: "Attacks", name: "XSS Payload", pattern: "<script[^>]*>|javascript\\s*:|on(?:load|error|click|mouseover|focus|blur)\\s*=", desc: "Common XSS vectors" },
   { cat: "Attacks", name: "Command Injection", pattern: "[;&|`$]\\s*(?:cat|ls|id|whoami|wget|curl|nc|bash|sh|python|perl)\\b", desc: "OS command injection" },
-  { cat: "Attacks", name: "Path Traversal", pattern: "(?:\\.\\.[\\/\\\\]){2,}|%2e%2e[%2f%5c]", desc: "Directory traversal" },
+  { cat: "Attacks", name: "Path Traversal", pattern: "(?:\\.\\.[\\/\\\\])+|%2e%2e(?:%2f|%5c)", desc: "Directory traversal" },
   { cat: "Attacks", name: "SSRF (metadata)", pattern: "169\\.254\\.169\\.254|metadata\\.google|100\\.100\\.100\\.200", desc: "Cloud metadata endpoints" },
   { cat: "Attacks", name: "Log4Shell", pattern: "\\$\\{jndi:(?:ldap|rmi|dns|iiop)://", desc: "Log4j JNDI injection (CVE-2021-44228)" },
 
