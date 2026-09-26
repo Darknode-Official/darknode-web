@@ -283,7 +283,7 @@ export function renderForensicsToolkit(container) {
         ms = Date.UTC(y, mo - 1, d, h, mi, s); break;
       }
       case "chrome": ms = (n / 1000) - 11644473600000; break;
-      case "webkit": ms = (n - 978307200) * 1000; break;
+      case "webkit": ms = (n + 978307200) * 1000; break;
       case "iso": ms = new Date(value).getTime(); break;
       default: ms = n * 1000;
     }
@@ -299,7 +299,7 @@ export function renderForensicsToolkit(container) {
       filetime: winFT.toString(),
       mac_absolute: macAbs,
       chrome: chromeFT,
-      webkit: Math.floor(ms / 1000) + 978307200,
+      webkit: Math.floor(ms / 1000) - 978307200,
       human: d.toLocaleString("en-US", { dateStyle: "full", timeStyle: "long", timeZone: "UTC" }) + " UTC",
       local: d.toLocaleString(),
     };
