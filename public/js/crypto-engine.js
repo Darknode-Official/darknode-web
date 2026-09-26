@@ -509,7 +509,11 @@ export function caesarBruteForce(text) {
 
 // ─── Vigenere Cipher ────────────────────────────────────────────────────────
 export function vigenereEncrypt(text, key) {
-  const k = key.toLowerCase();
+  // Strip non-letters from the key: the classic Vigenère tableau is indexed by
+  // A-Z only, so a key like "my key" must collapse to "mykey" rather than let a
+  // space (code 32) produce a negative shift and a garbled, non-invertible result.
+  const k = String(key || "").toLowerCase().replace(/[^a-z]/g, "");
+  if (!k) return text;
   let ki = 0;
   return text.replace(/[a-zA-Z]/g, c => {
     const base = c < "a" ? 65 : 97;
@@ -520,7 +524,8 @@ export function vigenereEncrypt(text, key) {
 }
 
 export function vigenereDecrypt(text, key) {
-  const k = key.toLowerCase();
+  const k = String(key || "").toLowerCase().replace(/[^a-z]/g, "");
+  if (!k) return text;
   let ki = 0;
   return text.replace(/[a-zA-Z]/g, c => {
     const base = c < "a" ? 65 : 97;
