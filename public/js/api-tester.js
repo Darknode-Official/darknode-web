@@ -143,7 +143,8 @@ function parseCurl(text) {
 
 function substituteEnvVars(text, envVars) {
   for (var key in envVars) {
-    text = text.replace(new RegExp("\\{\\{" + key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\}\\}", "g"), envVars[key]);
+    var val = envVars[key];
+    text = text.replace(new RegExp("\\{\\{" + key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\}\\}", "g"), function () { return val; });
   }
   return text;
 }
@@ -280,7 +281,7 @@ export function renderAPITester(main) {
         } else if (aType === "basic") {
           var user = (content.querySelector("#at-auth-user") || {}).value || "";
           var pass = (content.querySelector("#at-auth-pass") || {}).value || "";
-          if (user) fetchHeaders["Authorization"] = "Basic " + btoa(user + ":" + pass);
+          if (user) fetchHeaders["Authorization"] = "Basic " + btoa(unescape(encodeURIComponent(user + ":" + pass)));
         } else if (aType === "apikey-header") {
           var kn = (content.querySelector("#at-auth-key-name") || {}).value || "X-API-Key";
           var kv = (content.querySelector("#at-auth-key-val") || {}).value || "";
@@ -325,7 +326,7 @@ export function renderAPITester(main) {
                 '<span style="font-weight:700;font-size:1.1rem;color:' + statusColor + '">' + resp.status + '</span>' +
                 '<span style="color:var(--mut);font-size:.85rem">' + esc(statusText) + '</span>' +
                 '<span style="margin-left:auto;font-size:.78rem;color:var(--mut)">' + elapsed + 'ms</span>' +
-                '<span style="font-size:.78rem;color:var(--mut)">' + (respBody.length / 1024).toFixed(1) + ' KB</span>' +
+                '<span style="font-size:.78rem;color:var(--mut)">' + (new TextEncoder().encode(respBody).length / 1024).toFixed(1) + ' KB</span>' +
               '</div>' +
               '<div style="padding:10px 14px">' +
                 '<div style="margin-bottom:8px"><strong style="font-size:.82rem">Response Headers</strong></div>' +

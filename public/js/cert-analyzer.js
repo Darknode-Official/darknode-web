@@ -170,7 +170,7 @@ function simulateParse(pem) {
 function daysUntil(dateStr) {
   var target = new Date(dateStr);
   var now = new Date();
-  return Math.ceil((target - now) / 86400000);
+  return Math.floor((target - now) / 86400000);
 }
 
 function formatDate(dateStr) {
@@ -324,10 +324,10 @@ export function renderCertAnalyzer(container) {
     var notBefore = new Date(cert.notBefore);
     var notAfter = new Date(cert.notAfter);
     var validityDays = Math.ceil((notAfter - notBefore) / 86400000);
-    if (validityDays > 397) {
-      checks.push({ name: 'Validity Period', severity: 'warning', status: 'warn', detail: 'Certificate validity is ' + validityDays + ' days. Apple/Mozilla limit is 397 days since Sep 2020.' });
+    if (validityDays > 398) {
+      checks.push({ name: 'Validity Period', severity: 'warning', status: 'warn', detail: 'Certificate validity is ' + validityDays + ' days. Apple/Mozilla limit is 398 days since Sep 2020.' });
     } else {
-      checks.push({ name: 'Validity Period', severity: 'pass', status: 'pass', detail: 'Certificate validity is ' + validityDays + ' days. Within the 397-day limit.' });
+      checks.push({ name: 'Validity Period', severity: 'pass', status: 'pass', detail: 'Certificate validity is ' + validityDays + ' days. Within the 398-day limit.' });
     }
 
     checks.push({ name: 'Certificate Transparency', severity: 'pass', status: 'pass', detail: 'SCT data present. Certificate is logged in public CT logs for auditability.' });

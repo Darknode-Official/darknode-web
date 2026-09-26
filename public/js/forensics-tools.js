@@ -64,7 +64,7 @@ const FILE_SIGS = [
   // -- Documents --
   { bytes: "25504446", ext: "pdf", mime: "application/pdf", desc: "PDF Document" },
   { bytes: "504B0304", ext: "zip", mime: "application/zip", desc: "ZIP Archive (also DOCX/XLSX/PPTX/ODT/EPUB/JAR/APK -- inspect contents)" },
-  { bytes: "D0CF11E0A1B1A1E1", ext: "doc", mime: "application/msword", desc: "OLE2 Compound Document (DOC/XLS/PPT/MSI)" },
+  { bytes: "D0CF11E0A1B11AE1", ext: "doc", mime: "application/msword", desc: "OLE2 Compound Document (DOC/XLS/PPT/MSI)" },
   { bytes: "7B5C727466", ext: "rtf", mime: "application/rtf", desc: "Rich Text Format" },
   { bytes: "25215053", ext: "ps", mime: "application/postscript", desc: "PostScript Document" },
   { bytes: "41542654464F524D", ext: "djvu", mime: "image/vnd.djvu", desc: "DjVu Document" },
@@ -188,7 +188,7 @@ const FILE_SIGS = [
   { bytes: "0001000000", ext: "ttf", mime: "font/ttf", desc: "TrueType Font" },
   { bytes: "4F54544F", ext: "otf", mime: "font/otf", desc: "OpenType Font" },
   { bytes: "774F4646", ext: "woff", mime: "font/woff", desc: "Web Open Font Format (WOFF)" },
-  { bytes: "774F463200", ext: "woff2", mime: "font/woff2", desc: "Web Open Font Format 2 (WOFF2)" },
+  { bytes: "774F4632", ext: "woff2", mime: "font/woff2", desc: "Web Open Font Format 2 (WOFF2)" },
   { bytes: "00010000", ext: "ttf", mime: "font/ttf", desc: "TrueType Font (4-byte signature)" },
 
   // -- Crypto / Certificates --
