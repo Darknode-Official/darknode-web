@@ -561,8 +561,8 @@ export function renderReverseShell(container) {
     outputArea.readOnly = true;
 
     const encoders = [
-      { label: 'Base64', fn: s => { try { return window.btoa(s); } catch { return 'Error: input contains non-ASCII'; } } },
-      { label: 'Base64 Decode', fn: s => { try { return window.atob(s); } catch { return 'Error: invalid base64'; } } },
+      { label: 'Base64', fn: s => { try { return window.btoa(unescape(encodeURIComponent(s))); } catch { return 'Error: unable to encode input'; } } },
+      { label: 'Base64 Decode', fn: s => { try { return decodeURIComponent(escape(window.atob(s))); } catch { return 'Error: invalid base64'; } } },
       { label: 'URL Encode', fn: s => encodeURIComponent(s) },
       { label: 'URL Decode', fn: s => { try { return decodeURIComponent(s); } catch { return 'Error: invalid URL encoding'; } } },
       { label: 'Hex Encode', fn: s => Array.from(new TextEncoder().encode(s)).map(b => '\\x' + b.toString(16).padStart(2, '0')).join('') },
