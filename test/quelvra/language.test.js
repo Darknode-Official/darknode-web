@@ -24,3 +24,14 @@ test("refuses vague", () => ok(!translate("what is the meaning of life").ok));
 test("number words", () => eq(wordsToNumbers("three hundred and twenty five"), "325"));
 test("fraction words", () => eq(wordsToNumbers("two thirds of x"), "(2/3) of x"));
 test("sum-difference yields system", () => eq(parse(translate("the sum of two numbers is 20 and their difference is 4").math).k, "system"));
+// conventions are stated, never silent
+const hasNote = (s, re) => { const r = translate(s); ok(r.ok, s); ok((r.notes || []).some((n) => re.test(n)), `${s}: notes ${JSON.stringify(r.notes)}`); return r; };
+test("log without a base says base 10", () => { const r = hasNote("the log of 100", /base 10/); eq(r.math, "log 100"); });
+test("area under a curve says signed area", () => { const r = hasNote("area under y = x^2 from 0 to 2", /signed/); eq(r.math, "integrate(x^2, x, 0, 2)"); });
+test("taylor series states default centre and order", () => { const r = hasNote("taylor series of sin(x)", /order 5/i); eq(r.math, "taylor(sin(x), x, 0, 5)"); });
+test("f(x) = expr passes expr and x", () => eq(translate("find the domain of f(x) = sqrt(x - 1)").math, "domain(sqrt(x - 1), x)"));
+test("variable choice skips e and pi", () => eq(translate("find the critical points of e^t - pi t").math, "critical(e^t - pi t, t)"));
+test("maximize uses the optimize call form", () => eq(translate("maximize x(10 - x)").math, "maximize(x(10 - x), x)"));
+test("volume about the y-axis is not guessed", () => ok(!translate("volume of y = x^2 from 0 to 1 rotated about the y-axis").ok || !/volume\(/.test(translate("volume of y = x^2 from 0 to 1 rotated about the y-axis").math)));
+test("mixed travel units are not guessed", () => ok(!/^\d/.test(translate("how long does it take to travel 300 km at 60 mph").math || "")));
+test("factorial is not sentence punctuation", () => eq(translate("5!").math, "5!"));
