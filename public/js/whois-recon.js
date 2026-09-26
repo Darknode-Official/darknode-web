@@ -155,7 +155,7 @@ async function _wrRunLookup(query) {
           var names = (cn + '\n' + nv).split('\n');
           for (var ni = 0; ni < names.length; ni++) {
             var n = names[ni].trim().toLowerCase().replace(/^\*\./, '');
-            if (n && n.indexOf(query) !== -1) uniqueDomains[n] = (uniqueDomains[n] || 0) + 1;
+            if (n && (n === query || n.slice(-(query.length + 1)) === '.' + query)) uniqueDomains[n] = (uniqueDomains[n] || 0) + 1;
           }
         }
         var subdomains = Object.keys(uniqueDomains).sort();
