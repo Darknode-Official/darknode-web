@@ -1398,7 +1398,12 @@ function renderApp(user) {
   const secToPath = (s) => s === "home" ? "/" : "/" + s.replace(/([A-Z])/g, "-$1").toLowerCase();
   const pathToSec = (p) => {
     if (!p || p === "/") return "home";
-    const s = p.replace(/^\//, "").replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+    const raw = p.replace(/^\//, "");
+    // Toolbox mini-tool secs are literally hyphenated (e.g. tool-base64, tool-col-hex-rgb)
+    // and must round-trip exactly — do NOT camelCase them (that yields an invalid sec and
+    // falls back to home). secToPath leaves them unchanged, so pathToSec must too.
+    if (raw.startsWith("tool-")) return raw;
+    const s = raw.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
     return s || "home";
   };
 
