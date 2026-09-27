@@ -3866,6 +3866,8 @@ html[data-style=dark].crt body::after {
 [data-style=pro] [style*="color:#00e676"],
 [data-style=pro] [style*="color:#00e5ff"],
 [data-style=pro] [style*="color:#22c55e"],
+[data-style=pro] [style*="color:#00cc88"],
+[data-style=pro] [style*="color:#00cc66"],
 [data-style=pro] [style*="color:#2ee6"],
 [data-style=pro] [style*="color: #00ff88"],
 [data-style=pro] [style*="color: #00e5ff"] {
@@ -3906,12 +3908,22 @@ html[data-style=dark].crt body::after {
 [data-style=pro] [style*="color:#ff9100"],
 [data-style=pro] [style*="color:#ff8800"],
 [data-style=pro] [style*="color:#ffd600"],
+[data-style=pro] [style*="color:#ffcc00"],
+[data-style=pro] [style*="color:#ffc107"],
 [data-style=pro] [style*="color:#f5b041"],
 [data-style=pro] [style*="color:#eab308"],
 [data-style=pro] [style*="color: #ffaa00"],
 [data-style=pro] [style*="color: #ff9100"] {
   color: #ca8a04 !important;
 }
+
+/* Class-based neon badges (colors set in injected <style> blocks, so the
+   inline [style*=] overrides above can't reach them) — Threat Hunt Lab
+   difficulty chips read as bright neon on the light theme's white cards. */
+[data-style=pro] .thl-diff-Easy { color: #16a34a !important; }
+[data-style=pro] .thl-diff-Medium { color: #ca8a04 !important; }
+[data-style=pro] .thl-diff-Hard { color: #ea580c !important; }
+[data-style=pro] .thl-diff-Expert { color: #dc2626 !important; }
 
 /* Purple/violet → pro purple */
 [data-style=pro] [style*="color:#aa66ff"],
