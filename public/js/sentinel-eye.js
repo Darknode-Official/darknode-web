@@ -10327,7 +10327,7 @@ function renderGlobalWatch() {
   h += '</div>';
 
   // -- Legend --
-  h += '<div class="gw-legend" id="gw-legend">';
+  h += '<div class="gw-legend gw-legend-show" id="gw-legend">';
   h += '<div style="color:#5a8aaa;font-weight:bold;margin-bottom:4px;letter-spacing:1px;">LEGEND</div>';
   h += '<div class="gw-legend-item"><span class="gw-legend-dot" style="background:#ff3333;"></span> HOSTILE ACTOR</div>';
   h += '<div class="gw-legend-item"><span class="gw-legend-dot" style="background:#4488ff;"></span> ALLIED ASSET</div>';
@@ -10804,6 +10804,14 @@ function _gwToggleTheme() {
 // ---------------------------------------------------------------------------
 // 1. THREAT ACTORS
 // ---------------------------------------------------------------------------
+// Short, recognizable on-globe label for an actor (e.g. "APT28", "Lazarus",
+// "Volt Typhoon") instead of the internal id ("RU_GRU"). Falls back to the id.
+function gwActorLabel(ta) {
+  var s = (ta.aptGroups ? ta.aptGroups.split(',')[0] : (ta.name || '')).trim();
+  s = s.replace(/\s*\(attributed\)/i, '').trim();
+  if (s.length > 18) s = s.slice(0, 17).replace(/\s+\S*$/, '').trim() + '…';
+  return s || (ta.id || '').toUpperCase();
+}
 function _gwRenderThreatActors() {
   if (!_gwViewer || _gwViewer.isDestroyed()) return;
   _gwLayerEntities.threats = [];
@@ -10825,7 +10833,7 @@ function _gwRenderThreatActors() {
         disableDepthTestDistance: 1.0e6
       },
       label: {
-        text: ta.id.toUpperCase(),
+        text: gwActorLabel(ta),
         font: '9px monospace',
         fillColor: Cesium.Color.fromCssColorString(color).withAlpha(0.7),
         outlineColor: Cesium.Color.BLACK,
