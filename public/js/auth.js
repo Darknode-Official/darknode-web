@@ -1963,7 +1963,10 @@ function renderApp(user) {
   const pathSec = location.pathname !== "/" ? pathToSec(location.pathname) : null;
   const HEAVY = new Set(["sentineleye","prometheus","hydra","aegis","vanguard","phantom","citadel","oracle","spectre","crucible","navarch"]);
   const startSec = pathSec || (frame && frame.sec) || lastSec || "home";
-  const okSec = startSec && startSec !== "setup" && (startSec !== "admin" || isOwner) && !HEAVY.has(startSec);
+  // HEAVY dashboards are skipped on a cold restore (last-section / saved-frame) to avoid
+  // loading heavy WebGL unprompted — but an explicit deep-link (pathSec, e.g. the app embed
+  // opening /prometheus) is a direct request for that tool, so honor it.
+  const okSec = startSec && startSec !== "setup" && (startSec !== "admin" || isOwner) && (pathSec === startSec || !HEAVY.has(startSec));
   show(okSec ? startSec : "home");
   if (frame && frame.fields && frame.sec === startSec) {
     setTimeout(() => { Object.entries(frame.fields).forEach(([id, v]) => { const el = main.querySelector("#" + (window.CSS && CSS.escape ? CSS.escape(id) : id)); if (el && v != null) { el.value = v; el.dispatchEvent(new Event("input", { bubbles: true })); el.dispatchEvent(new Event("change", { bubbles: true })); } }); }, 120);
@@ -2128,7 +2131,20 @@ onAuthStateChanged(auth, async (user) => {
   const _hn = [0x64,0x61,0x72,0x6b,0x6e,0x6f,0x64,0x65,0x2e,0x61,0x69].map(c=>String.fromCharCode(c)).join("");
   if(location.hostname!==_hn&&location.hostname!=="www."+_hn&&location.hostname!=="localhost"&&location.hostname!=="127.0.0.1"){document.body.innerHTML="";return}
   let fresh = false; try { fresh = sessionStorage.getItem("sw_fresh_signin") === "1"; if (fresh) sessionStorage.removeItem("sw_fresh_signin"); } catch (_) {}
-  if (!user) { showLanding(); return; }
+  if (!user) {
+    // Desktop-app embed / guest deep-link: the Darknode app embeds tools in a webview and
+    // cannot sign in. A `?app=1` param (persisted to sessionStorage so in-console navigation
+    // keeps it) enters the same public Test Mode the sign-in page offers and routes straight
+    // to the requested tool. No new exposure — Test Mode is already a public no-account path.
+    let guest = false;
+    try { guest = new URLSearchParams(location.search).get("app") === "1" || sessionStorage.getItem("dn_guest") === "1"; } catch (_) {}
+    if (guest) {
+      try { sessionStorage.setItem("dn_guest", "1"); } catch (_) {}
+      renderApp({ uid: "app-guest", email: "guest@darknode.ai", displayName: "Guest", providerData: [{ providerId: "test" }], metadata: { creationTime: new Date().toISOString() }, refreshToken: "", getIdToken: () => Promise.resolve("") });
+      return;
+    }
+    showLanding(); return;
+  }
   // Email/password users must verify — a 6-digit code when EmailJS is configured, else the Firebase link.
   const providerEmailPw = user.providerData.some((p) => p.providerId === "password");
   if (providerEmailPw) {
