@@ -62,10 +62,10 @@ export function renderCorsTester(container) {
   for (var ch = 0; ch < corsHeaders.length; ch++) {
     var hdr = corsHeaders[ch];
     var impColor = hdr.importance === 'REQUIRED' ? '#ff4444' : hdr.importance === 'PREFLIGHT' ? '#ffaa00' : '#00cc88';
-    h += '<div style="margin:4px 0;font-size:10px;display:flex;gap:8px;align-items:flex-start;">';
+    h += '<div style="margin:4px 0;font-size:10px;display:flex;flex-wrap:wrap;gap:4px 8px;align-items:flex-start;">';
     h += '<span style="color:' + impColor + ';font-size:8px;padding:1px 4px;background:' + impColor + '15;border:1px solid ' + impColor + '33;border-radius:2px;flex-shrink:0;">' + hdr.importance + '</span>';
-    h += '<span style="color:#00aaff;min-width:240px;flex-shrink:0;">' + esc(hdr.header) + '</span>';
-    h += '<span style="color:#6a8aaa;">' + esc(hdr.desc) + '</span>';
+    h += '<span style="color:#00aaff;min-width:min(240px,100%);flex-shrink:0;">' + esc(hdr.header) + '</span>';
+    h += '<span style="color:#6a8aaa;flex:1 1 180px;min-width:0;">' + esc(hdr.desc) + '</span>';
     h += '</div>';
   }
   h += '</div>';

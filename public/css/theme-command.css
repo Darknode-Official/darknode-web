@@ -410,7 +410,7 @@ html[data-style="pro"][data-skin="command"] body.app .sidebar .side-group.side-c
 html[data-style="pro"][data-skin="command"] body.app .sidebar .side-group.side-collapse.open::after { content: "\2212" !important; }
 
 /* Hero: stack into one column so the headline leads */
-html[data-style="pro"][data-skin="command"] body.app .dash-hero { grid-template-columns: 1fr !important; row-gap: 14px !important; }
+html[data-style="pro"][data-skin="command"] body.app .dash-hero { grid-template-columns: minmax(0, 1fr) !important; row-gap: 14px !important; }
 html[data-style="pro"][data-skin="command"] body.app .dash-hero .dash-hero-top { display: flex !important; flex-wrap: wrap !important; align-items: center !important; justify-content: space-between !important; gap: 12px !important; }
 html[data-style="pro"][data-skin="command"] body.app .dash-hero .dash-hero-left { display: flex !important; align-items: center !important; gap: 10px !important; flex-direction: row !important; }
 html[data-style="pro"][data-skin="command"] body.app .dash-hero .dash-meta { display: flex !important; align-items: center !important; gap: 14px !important; flex-direction: row !important; margin: 0 !important; }

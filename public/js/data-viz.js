@@ -1201,7 +1201,7 @@ export function renderDataViz(main) {
       .dv-grid .dv-span-2 { grid-column: span 2; }
     }
     @media (max-width: 640px) {
-      .dv-stat-row { grid-template-columns: repeat(2, 1fr); }
+      .dv-stat-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
   `;
   wrapper.appendChild(styleTag);

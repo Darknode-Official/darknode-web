@@ -298,7 +298,7 @@ export function renderSecurityScanner(container) {
               <p style="font-size:.78rem;color:var(--txt-dim,#888);margin:0 0 6px;">${h.desc}</p>
               <div style="font-size:.72rem;color:var(--txt-dim,#666);">
                 <span style="color:#ff6b6b;">Risk:</span> ${h.risk}<br>
-                <span style="color:#69db7c;">Best:</span> <code style="font-size:.68rem;">${h.best}</code>
+                <span style="color:#69db7c;">Best:</span> <code style="font-size:.68rem;overflow-wrap:anywhere;">${h.best}</code>
               </div>
             </div>
           `).join("")}
@@ -306,7 +306,7 @@ export function renderSecurityScanner(container) {
       </div>
       <div style="margin-top:32px;">
         <h3 style="font-size:1.1rem;font-weight:600;margin:0 0 12px;">Cookie Security Flags</h3>
-        <table style="width:100%;border-collapse:collapse;font-size:.82rem;">
+        <div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:.82rem;">
           <thead><tr style="border-bottom:1px solid var(--border,#333);">
             <th style="text-align:left;padding:8px;color:var(--txt-dim,#888);">Flag</th>
             <th style="text-align:left;padding:8px;color:var(--txt-dim,#888);">Purpose</th>
@@ -319,7 +319,7 @@ export function renderSecurityScanner(container) {
               <td style="padding:8px;color:#ff6b6b;">${f.risk}</td>
             </tr>`).join("")}
           </tbody>
-        </table>
+        </table></div>
       </div>
       <div style="margin-top:32px;">
         <h3 style="font-size:1.1rem;font-weight:600;margin:0 0 12px;">CSP Directive Reference</h3>

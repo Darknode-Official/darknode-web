@@ -16,7 +16,7 @@ export function renderLanding(view, actions) {
       <div class="hero-grain"></div>
       <div class="wrap hero-inner">
         <div class="hero-badge"><span class="badge-dot"></span> Source available &middot; Free forever</div>
-        <h1 class="hero-h1">The AI-powered platform<br>for <span class="hero-rotate-wrap"><span class="hero-rotate" id="hero-rotate">cybersecurity</span></span></h1>
+        <h1 class="hero-h1">The AI&#8209;powered platform<br>for <span class="hero-rotate-wrap"><span class="hero-rotate" id="hero-rotate">cybersecurity</span></span></h1>
         <p class="hero-sub">Tools, labs, and an AI agent to learn cybersecurity — running entirely on your machine. No cloud. No subscriptions. No data leaves your computer.</p>
         <div class="hero-cta">
           <button class="btn lg" id="cta-start">Get started &mdash; free</button>
@@ -1425,11 +1425,7 @@ testing methodology for 10.10.14.7:
         </div>
       </div>
     </footer>
-
-    <!-- Back to top -->
-    <button class="btt" id="btt" aria-label="Back to top" title="Back to top">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
-    </button>`;
+`;
 
   const $ = (id) => view.querySelector("#" + id);
   $("cta-start").onclick = actions.onGetStarted;
@@ -1779,24 +1775,6 @@ testing methodology for 10.10.14.7:
         notifyBtn.disabled = false;
         notifyBtn.textContent = "Notify me";
       }
-    });
-  }
-
-  // Back to top button — show after scrolling down 600px
-  const bttBtn = $("btt");
-  if (bttBtn) {
-    let bttVisible = false;
-    const toggleBtt = () => {
-      const scrolled = window.scrollY > 600;
-      if (scrolled !== bttVisible) {
-        bttVisible = scrolled;
-        bttBtn.classList.toggle("btt-show", scrolled);
-      }
-    };
-    window.addEventListener("scroll", toggleBtt, { passive: true });
-    toggleBtt();
-    bttBtn.addEventListener("click", () => {
-      window.scrollTo({ top: 0, behavior: "smooth" });
     });
   }
 

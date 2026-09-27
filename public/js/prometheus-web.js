@@ -563,6 +563,7 @@ export function renderPrometheus(main) {
     '.pm-alert-item:last-child { border-bottom: none; }' +
     '.pm-alert-time { color: #445566; font-size: 10px; font-family: "Courier New", monospace; min-width: 65px; flex-shrink: 0; }' +
     '.pm-alert-sev { font-size: 9px; font-weight: bold; padding: 3px 8px; border-radius: 3px; text-transform: uppercase; letter-spacing: 1px; min-width: 70px; text-align: center; flex-shrink: 0; box-shadow: 0 2px 6px rgba(0,0,0,0.3); }' +
+    '.pm-alert-sev[style*="#ffcc00"] { color: #1a1a1a !important; }' +
     '.pm-alert-id { font-size: 10px; color: #556677; font-family: "Courier New", monospace; min-width: 90px; flex-shrink: 0; }' +
     '.pm-alert-msg { flex: 1; color: #aabbcc; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }' +
     '.pm-alert-critical { border-left: 3px solid #ff0040; }' +

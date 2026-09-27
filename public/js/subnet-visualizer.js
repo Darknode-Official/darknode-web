@@ -186,7 +186,7 @@ export function renderSubnetVisualizer(container) {
         .sv-table th{text-align:left;padding:6px 8px;border-bottom:1px solid #333;color:#888;font-weight:600}
         .sv-table td{padding:6px 8px;border-bottom:1px solid #1a1a1a;font-family:monospace}
         .sv-2col{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-        @media(max-width:768px){.sv-2col{grid-template-columns:1fr}}
+        @media(max-width:768px){.sv-2col{grid-template-columns:minmax(0,1fr)}}
       </style>
       <div class="sv-wrap">
         <h1 class="sv-h1">Subnet Visualizer</h1>

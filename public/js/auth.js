@@ -2,7 +2,7 @@
 // Source-available for learning only. Redistribution prohibited. See LICENSE.
 (function(){var _h=location.hostname,_a=["darknode.ai","www.darknode.ai","darknode-official.github.io","sentinel-b4194.web.app","sentinel-b4194-6173e.web.app","localhost","127.0.0.1"];if(!_a.some(function(d){return _h===d}))throw document.body.innerHTML="",new Error("unlicensed")}());
 import { auth, db, googleProvider, githubProvider, OWNER_EMAIL } from "/js/firebase.js";
-import "/js/scroll-top.js?v=20260924b";
+import "/js/scroll-top.js?v=20260926a";
 import "/js/shortcuts.js";
 import "/js/mobile-nav.js";
 import { consoleHTML, directoryHTML, wireConsole, labelOf as navLabel } from "/js/console-nav.js";
@@ -21,7 +21,7 @@ let MORE = [], CATALOG = [], CATEGORIES = [];
 import("/js/toolkit.js").then(m => { MORE = m.MORE; CATALOG = m.CATALOG; CATEGORIES = m.CATEGORIES; });
 import { startTour, tourDone } from "/js/tour.js";
 let _landing = null;
-async function loadLanding() { if (!_landing) _landing = await import("/js/landing.js?v=20260924x"); return _landing; }
+async function loadLanding() { if (!_landing) _landing = await import("/js/landing.js?v=20260926a"); return _landing; }
 
 // Plain-language, newbie-friendly one-liners for every sidebar item + group.
 // Surfaced as a hover tooltip so the sidebar stays visually neat while every
@@ -1487,7 +1487,7 @@ function renderApp(user) {
     else if (sec === "darkwebosint") { import("/js/darkweb-osint.js").then(m => m.renderDarkwebOsint(main)); }
     else if (sec === "cyberrange") { import("/js/cyber-range.js").then(m => m.renderCyberRange(main)); }
     else if (sec === "prometheus") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading PROMETHEUS...</p>"; const _s=sec; import("/js/prometheus-web.js?v=20260924c").then(m => { if(curSec!==_s)return; m.renderPrometheus(main); _prevCleanup = m.cleanupPrometheus; }); }
-    else if (sec === "sentineleye") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading SENTINEL EYE...</p>"; if(!document.querySelector('script[src="/js/threat-api.js"]')){var s1=document.createElement("script");s1.src="/js/threat-api.js";document.head.appendChild(s1)}if(!document.querySelector('script[src="/js/threat-map.js"]')){var s2=document.createElement("script");s2.src="/js/threat-map.js";document.head.appendChild(s2)} const _s=sec; import("/js/sentinel-eye.js?v=20260924c").then(m => { if(curSec!==_s)return; m.renderSentinelEye(main); _prevCleanup = m.cleanupSentinelEye; }); }
+    else if (sec === "sentineleye") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading SENTINEL EYE...</p>"; if(!document.querySelector('script[src="/js/threat-api.js"]')){var s1=document.createElement("script");s1.src="/js/threat-api.js";document.head.appendChild(s1)}if(!document.querySelector('script[src="/js/threat-map.js"]')){var s2=document.createElement("script");s2.src="/js/threat-map.js";document.head.appendChild(s2)} const _s=sec; import("/js/sentinel-eye.js?v=20260927a").then(m => { if(curSec!==_s)return; m.renderSentinelEye(main); _prevCleanup = m.cleanupSentinelEye; }); }
     else if (sec === "exploitdev") { import("/js/exploit-writer.js").then(m => m.renderExploitWriter(main)); }
     else if (sec === "secdash") { import("/js/security-dashboard.js?v=20260924a").then(m => m.renderSecurityDashboard(main)); }
     else if (sec === "phishing") { import("/js/phishing-analyzer.js").then(m => m.renderPhishingAnalyzer(main)); }
