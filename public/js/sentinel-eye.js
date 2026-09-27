@@ -10758,7 +10758,7 @@ function _gwToggleTheme() {
   function _addSatelliteLayer(dark) {
     var prov = new Cesium.UrlTemplateImageryProvider({
       url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-      maximumLevel: 17,
+      maximumLevel: 19,
       minimumLevel: 0,
       tileWidth: 256,
       tileHeight: 256,
@@ -10822,7 +10822,7 @@ function _gwRenderThreatActors() {
         outlineColor: Cesium.Color.fromCssColorString(outlineColor),
         outlineWidth: 1,
         heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
-        disableDepthTestDistance: Number.POSITIVE_INFINITY
+        disableDepthTestDistance: 1.0e6
       },
       label: {
         text: ta.id.toUpperCase(),
@@ -10832,7 +10832,7 @@ function _gwRenderThreatActors() {
         outlineWidth: 2,
         style: Cesium.LabelStyle.FILL_AND_OUTLINE,
         pixelOffset: new Cesium.Cartesian2(0, -16),
-        disableDepthTestDistance: Number.POSITIVE_INFINITY,
+        disableDepthTestDistance: 1.0e6,
         scaleByDistance: new Cesium.NearFarScalar(5e5, 0.8, 8e6, 0.0)
       }
     });
@@ -10894,7 +10894,7 @@ function _gwRenderThreatActors() {
         color: Cesium.Color.fromCssColorString(arc.color).withAlpha(0.7),
         outlineColor: Cesium.Color.fromCssColorString(arc.color),
         outlineWidth: 1,
-        disableDepthTestDistance: Number.POSITIVE_INFINITY,
+        disableDepthTestDistance: 1.0e6,
         heightReference: Cesium.HeightReference.CLAMP_TO_GROUND
       },
       label: {
@@ -10905,7 +10905,7 @@ function _gwRenderThreatActors() {
         outlineWidth: 2,
         style: Cesium.LabelStyle.FILL_AND_OUTLINE,
         pixelOffset: new Cesium.Cartesian2(0, -10),
-        disableDepthTestDistance: Number.POSITIVE_INFINITY,
+        disableDepthTestDistance: 1.0e6,
         scaleByDistance: new Cesium.NearFarScalar(3e5, 0.7, 3e6, 0.0),
         scale: 0.7
       }
@@ -10996,7 +10996,7 @@ function _gwRenderAircraft() {
         color: Cesium.Color.fromCssColorString('#22c55e').withAlpha(0.5),
         outlineColor: Cesium.Color.fromCssColorString('#16a34a'),
         outlineWidth: 0,
-        disableDepthTestDistance: Number.POSITIVE_INFINITY
+        disableDepthTestDistance: 1.0e6
       },
       label: {
         text: ac.cs,
@@ -11006,7 +11006,7 @@ function _gwRenderAircraft() {
         outlineWidth: 1,
         style: Cesium.LabelStyle.FILL_AND_OUTLINE,
         pixelOffset: new Cesium.Cartesian2(6, -4),
-        disableDepthTestDistance: Number.POSITIVE_INFINITY,
+        disableDepthTestDistance: 1.0e6,
         scale: 0.8,
         scaleByDistance: new Cesium.NearFarScalar(5e5, 0.8, 5e6, 0.0)
       }
@@ -11067,7 +11067,7 @@ function _gwRenderEarthquakes() {
             color: Cesium.Color.fromCssColorString(color).withAlpha(0.5),
             outlineColor: Cesium.Color.fromCssColorString(color).withAlpha(0.3),
             outlineWidth: 1,
-            disableDepthTestDistance: Number.POSITIVE_INFINITY,
+            disableDepthTestDistance: 1.0e6,
             heightReference: Cesium.HeightReference.CLAMP_TO_GROUND
           },
           label: {
@@ -11078,7 +11078,7 @@ function _gwRenderEarthquakes() {
             outlineWidth: 2,
             style: Cesium.LabelStyle.FILL_AND_OUTLINE,
             pixelOffset: new Cesium.Cartesian2(0, -14),
-            disableDepthTestDistance: Number.POSITIVE_INFINITY,
+            disableDepthTestDistance: 1.0e6,
             heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
             scaleByDistance: new Cesium.NearFarScalar(5e5, 0.8, 5e6, 0.0)
           }
@@ -11119,7 +11119,7 @@ function _gwRenderInfrastructure() {
         color: Cesium.Color.fromCssColorString('#3b82f6').withAlpha(0.3),
         outlineColor: Cesium.Color.fromCssColorString('#2563eb'),
         outlineWidth: 1,
-        disableDepthTestDistance: Number.POSITIVE_INFINITY,
+        disableDepthTestDistance: 1.0e6,
         heightReference: Cesium.HeightReference.CLAMP_TO_GROUND
       },
       label: {
@@ -11130,7 +11130,7 @@ function _gwRenderInfrastructure() {
         outlineWidth: 2,
         style: Cesium.LabelStyle.FILL_AND_OUTLINE,
         pixelOffset: new Cesium.Cartesian2(0, -14),
-        disableDepthTestDistance: Number.POSITIVE_INFINITY,
+        disableDepthTestDistance: 1.0e6,
         heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
         scaleByDistance: new Cesium.NearFarScalar(5e5, 0.8, 5e6, 0.0)
       }
@@ -11175,7 +11175,7 @@ function _gwRenderInfrastructure() {
         color: Cesium.Color.fromCssColorString('#3b82f6').withAlpha(0.6),
         outlineColor: Cesium.Color.fromCssColorString('#2563eb'),
         outlineWidth: 1,
-        disableDepthTestDistance: Number.POSITIVE_INFINITY,
+        disableDepthTestDistance: 1.0e6,
         heightReference: Cesium.HeightReference.CLAMP_TO_GROUND
       },
       label: {
@@ -11186,7 +11186,7 @@ function _gwRenderInfrastructure() {
         outlineWidth: 1,
         style: Cesium.LabelStyle.FILL_AND_OUTLINE,
         pixelOffset: new Cesium.Cartesian2(8, 0),
-        disableDepthTestDistance: Number.POSITIVE_INFINITY,
+        disableDepthTestDistance: 1.0e6,
         heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
         scaleByDistance: new Cesium.NearFarScalar(5e5, 0.7, 3e6, 0.0)
       }
@@ -11246,7 +11246,7 @@ function _gwRenderInfrastructure() {
         color: Cesium.Color.fromCssColorString('#3b82f6').withAlpha(0.2),
         outlineColor: Cesium.Color.fromCssColorString('#2563eb').withAlpha(0.2),
         outlineWidth: 0,
-        disableDepthTestDistance: Number.POSITIVE_INFINITY,
+        disableDepthTestDistance: 1.0e6,
         heightReference: Cesium.HeightReference.CLAMP_TO_GROUND
       }
     });
@@ -11260,7 +11260,7 @@ function _gwRenderInfrastructure() {
         color: Cesium.Color.fromCssColorString('#3b82f6').withAlpha(0.2),
         outlineColor: Cesium.Color.fromCssColorString('#2563eb').withAlpha(0.2),
         outlineWidth: 0,
-        disableDepthTestDistance: Number.POSITIVE_INFINITY,
+        disableDepthTestDistance: 1.0e6,
         heightReference: Cesium.HeightReference.CLAMP_TO_GROUND
       }
     });
@@ -11299,7 +11299,7 @@ function _gwRenderCyberAttacks() {
             color: Cesium.Color.fromCssColorString('#ef4444').withAlpha(0.6),
             outlineColor: Cesium.Color.fromCssColorString('#dc2626'),
             outlineWidth: 1,
-            disableDepthTestDistance: Number.POSITIVE_INFINITY,
+            disableDepthTestDistance: 1.0e6,
             heightReference: Cesium.HeightReference.CLAMP_TO_GROUND
           }
         });
@@ -11375,7 +11375,7 @@ function _gwRenderCyberAttacks() {
             color: Cesium.Color.fromCssColorString('#ef4444').withAlpha(0.7),
             outlineColor: Cesium.Color.fromCssColorString('#dc2626'),
             outlineWidth: 1,
-            disableDepthTestDistance: Number.POSITIVE_INFINITY,
+            disableDepthTestDistance: 1.0e6,
             heightReference: Cesium.HeightReference.CLAMP_TO_GROUND
           },
           label: {
@@ -11386,7 +11386,7 @@ function _gwRenderCyberAttacks() {
             outlineWidth: 1,
             style: Cesium.LabelStyle.FILL_AND_OUTLINE,
             pixelOffset: new Cesium.Cartesian2(8, -2),
-            disableDepthTestDistance: Number.POSITIVE_INFINITY,
+            disableDepthTestDistance: 1.0e6,
             heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
             scaleByDistance: new Cesium.NearFarScalar(1e4, 0.8, 2e6, 0.0)
           }
@@ -11500,7 +11500,7 @@ function _gwAddSatEntity(name, lat, lon, altKm, satColor, constellation, satType
       color: Cesium.Color.fromCssColorString(satColor).withAlpha(0.5),
       outlineColor: Cesium.Color.fromCssColorString(satColor).withAlpha(0.3),
       outlineWidth: 0,
-      disableDepthTestDistance: Number.POSITIVE_INFINITY
+      disableDepthTestDistance: 1.0e6
     },
     label: {
       text: name,
@@ -11510,7 +11510,7 @@ function _gwAddSatEntity(name, lat, lon, altKm, satColor, constellation, satType
       outlineWidth: 1,
       style: Cesium.LabelStyle.FILL_AND_OUTLINE,
       pixelOffset: new Cesium.Cartesian2(8, -4),
-      disableDepthTestDistance: Number.POSITIVE_INFINITY,
+      disableDepthTestDistance: 1.0e6,
       scaleByDistance: new Cesium.NearFarScalar(1e6, 0.8, 1e7, 0.0)
     }
   });
@@ -11598,7 +11598,7 @@ function _gwFetchISS() {
           color: Cesium.Color.fromCssColorString('#eab308'),
           outlineColor: Cesium.Color.fromCssColorString('#ca8a04'),
           outlineWidth: 1,
-          disableDepthTestDistance: Number.POSITIVE_INFINITY
+          disableDepthTestDistance: 1.0e6
         },
         label: {
           text: 'ISS [ZARYA]',
@@ -11608,7 +11608,7 @@ function _gwFetchISS() {
           outlineWidth: 2,
           style: Cesium.LabelStyle.FILL_AND_OUTLINE,
           pixelOffset: new Cesium.Cartesian2(12, -2),
-          disableDepthTestDistance: Number.POSITIVE_INFINITY
+          disableDepthTestDistance: 1.0e6
         },
         path: {
           leadTime: 0,
@@ -11844,7 +11844,7 @@ function _gwSetShaderMode(mode) {
   function _addDarkSatellite() {
     var prov = new Cesium.UrlTemplateImageryProvider({
       url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-      maximumLevel: 17,
+      maximumLevel: 19,
       minimumLevel: 0,
       tileWidth: 256,
       tileHeight: 256,
@@ -11996,7 +11996,7 @@ _gwInitGlobe = function() {
 
       var _initProvider = new Cesium.UrlTemplateImageryProvider({
         url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-        maximumLevel: 17,
+        maximumLevel: 19,
         minimumLevel: 0,
         tileWidth: 256,
         tileHeight: 256,
@@ -12031,7 +12031,8 @@ _gwInitGlobe = function() {
         _gwViewer.scene.logarithmicDepthBuffer = true;
         _gwViewer.scene.fxaa = true;
       }
-      _gwViewer.scene.screenSpaceCameraController.minimumZoomDistance = 500;
+      _gwViewer.scene.screenSpaceCameraController.minimumZoomDistance = 120;
+      _gwViewer.scene.screenSpaceCameraController.enableCollisionDetection = false;
       _gwViewer.scene.screenSpaceCameraController.maximumZoomDistance = 50000000;
 
       if (loadingEl) loadingEl.style.display = 'none';
