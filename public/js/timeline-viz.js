@@ -128,52 +128,52 @@ export function renderTimelineViz(container) {
 
   function showTab(tab) {
     tabs.forEach(t => { t.style.background = "var(--bg-alt,#111)"; t.style.color = "var(--txt,#fff)"; t.classList.remove("active"); });
-    const active = container.querySelector(\`[data-tab="\${tab}"]\`);
+    const active = container.querySelector(`[data-tab="${tab}"]`);
     if (active) { active.style.background = "var(--acc,#00d4ff)"; active.style.color = "#000"; active.classList.add("active"); }
 
     if (tab === "killchain") {
-      panel.innerHTML = \`
+      panel.innerHTML = `
         <h3 style="font-size:1.1rem;font-weight:600;margin:0 0 16px;">Lockheed Martin Cyber Kill Chain</h3>
         <div style="display:flex;overflow-x:auto;gap:0;padding-bottom:12px;">
-          \${KILL_CHAIN_PHASES.map((p, i) => \`
+          ${KILL_CHAIN_PHASES.map((p, i) => `
             <div style="flex:0 0 150px;position:relative;">
-              <div style="background:\${p.color}22;border:2px solid \${p.color};border-radius:10px;padding:12px;text-align:center;position:relative;z-index:1;">
-                <div style="font-size:.72rem;color:\${p.color};font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Phase \${i+1}</div>
-                <div style="font-size:.88rem;font-weight:700;color:var(--txt,#fff);margin-bottom:6px;">\${p.name}</div>
-                <div style="font-size:.7rem;color:var(--txt-dim,#999);line-height:1.4;">\${p.desc.substring(0, 80)}...</div>
+              <div style="background:${p.color}22;border:2px solid ${p.color};border-radius:10px;padding:12px;text-align:center;position:relative;z-index:1;">
+                <div style="font-size:.72rem;color:${p.color};font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Phase ${i+1}</div>
+                <div style="font-size:.88rem;font-weight:700;color:var(--txt,#fff);margin-bottom:6px;">${p.name}</div>
+                <div style="font-size:.7rem;color:var(--txt-dim,#999);line-height:1.4;">${p.desc.substring(0, 80)}...</div>
               </div>
-              \${i < KILL_CHAIN_PHASES.length - 1 ? '<div style="position:absolute;right:-12px;top:50%;transform:translateY(-50%);font-size:1.2rem;color:var(--txt-dim,#555);z-index:2;">&rarr;</div>' : ''}
+              ${i < KILL_CHAIN_PHASES.length - 1 ? '<div style="position:absolute;right:-12px;top:50%;transform:translateY(-50%);font-size:1.2rem;color:var(--txt-dim,#555);z-index:2;">&rarr;</div>' : ''}
             </div>
-          \`).join("")}
+          `).join("")}
         </div>
         <div style="margin-top:20px;display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;">
-          \${KILL_CHAIN_PHASES.map(p => \`
-            <div style="background:var(--bg-alt,#111);border:1px solid var(--border,#222);border-radius:8px;padding:14px;border-top:3px solid \${p.color};">
-              <h4 style="font-size:.9rem;margin:0 0 8px;color:\${p.color};">\${p.name}</h4>
-              <p style="font-size:.78rem;color:var(--txt-dim,#888);margin:0 0 8px;">\${p.desc}</p>
+          ${KILL_CHAIN_PHASES.map(p => `
+            <div style="background:var(--bg-alt,#111);border:1px solid var(--border,#222);border-radius:8px;padding:14px;border-top:3px solid ${p.color};">
+              <h4 style="font-size:.9rem;margin:0 0 8px;color:${p.color};">${p.name}</h4>
+              <p style="font-size:.78rem;color:var(--txt-dim,#888);margin:0 0 8px;">${p.desc}</p>
               <ul style="list-style:none;padding:0;margin:0;">
-                \${p.techniques.map(t => \`<li style="font-size:.75rem;color:var(--txt-dim,#ccc);padding:2px 0;border-bottom:1px solid var(--border,#1a1a1a);">&#8226; \${t}</li>\`).join("")}
+                ${p.techniques.map(t => `<li style="font-size:.75rem;color:var(--txt-dim,#ccc);padding:2px 0;border-bottom:1px solid var(--border,#1a1a1a);">&#8226; ${t}</li>`).join("")}
               </ul>
             </div>
-          \`).join("")}
+          `).join("")}
         </div>
-      \`;
+      `;
     } else if (tab === "mitre") {
-      panel.innerHTML = \`
+      panel.innerHTML = `
         <h3 style="font-size:1.1rem;font-weight:600;margin:0 0 16px;">MITRE ATT&CK Tactics</h3>
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;">
-          \${MITRE_TACTICS.map(t => \`
-            <div style="background:\${t.color}15;border:1px solid \${t.color}44;border-radius:8px;padding:12px;text-align:center;cursor:pointer;transition:transform .15s ease,box-shadow .15s ease;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 12px rgba(0,0,0,.3)'" onmouseout="this.style.transform='none';this.style.boxShadow='none'">
-              <div style="font-size:.65rem;color:\${t.color};font-family:monospace;margin-bottom:4px;">\${t.id}</div>
-              <div style="font-size:.82rem;font-weight:600;color:var(--txt,#fff);margin-bottom:6px;">\${t.name}</div>
-              <div style="font-size:1.4rem;font-weight:800;color:\${t.color};">\${t.count}</div>
+          ${MITRE_TACTICS.map(t => `
+            <div style="background:${t.color}15;border:1px solid ${t.color}44;border-radius:8px;padding:12px;text-align:center;cursor:pointer;transition:transform .15s ease,box-shadow .15s ease;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 12px rgba(0,0,0,.3)'" onmouseout="this.style.transform='none';this.style.boxShadow='none'">
+              <div style="font-size:.65rem;color:${t.color};font-family:monospace;margin-bottom:4px;">${t.id}</div>
+              <div style="font-size:.82rem;font-weight:600;color:var(--txt,#fff);margin-bottom:6px;">${t.name}</div>
+              <div style="font-size:1.4rem;font-weight:800;color:${t.color};">${t.count}</div>
               <div style="font-size:.65rem;color:var(--txt-dim,#888);">techniques</div>
             </div>
-          \`).join("")}
+          `).join("")}
         </div>
-      \`;
+      `;
     } else if (tab === "topology") {
-      panel.innerHTML = \`
+      panel.innerHTML = `
         <h3 style="font-size:1.1rem;font-weight:600;margin:0 0 16px;">Network Topology</h3>
         <canvas id="topo-canvas" style="width:100%;max-width:800px;display:block;margin:0 auto;background:var(--bg-alt,#0a0a1a);border-radius:12px;border:1px solid var(--border,#222);"></canvas>
         <div style="display:flex;justify-content:center;gap:16px;margin-top:12px;flex-wrap:wrap;">
@@ -184,35 +184,35 @@ export function renderTimelineViz(container) {
           <span style="font-size:.72rem;display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:50%;background:#90caf9;display:inline-block;"></span> Workstation</span>
           <span style="font-size:.72rem;display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:50%;background:#ffb74d;display:inline-block;"></span> Database</span>
         </div>
-      \`;
+      `;
       const c = container.querySelector("#topo-canvas");
       if (c) drawTopology(c, 800, 560);
     } else if (tab === "risk") {
       const M = RISK_MATRIX;
-      panel.innerHTML = \`
+      panel.innerHTML = `
         <h3 style="font-size:1.1rem;font-weight:600;margin:0 0 16px;">Risk Assessment Matrix</h3>
         <div style="overflow-x:auto;">
           <table style="border-collapse:collapse;min-width:500px;margin:0 auto;">
             <thead>
               <tr>
                 <th style="padding:8px;border:1px solid var(--border,#333);background:var(--bg-alt,#111);font-size:.72rem;color:var(--txt-dim,#888);">Likelihood / Impact</th>
-                \${M.labels.impact.map(l => \`<th style="padding:8px 12px;border:1px solid var(--border,#333);background:var(--bg-alt,#111);font-size:.75rem;text-align:center;">\${l}</th>\`).join("")}
+                ${M.labels.impact.map(l => `<th style="padding:8px 12px;border:1px solid var(--border,#333);background:var(--bg-alt,#111);font-size:.75rem;text-align:center;">${l}</th>`).join("")}
               </tr>
             </thead>
             <tbody>
-              \${M.labels.likelihood.slice().reverse().map((l, ri) => {
+              ${M.labels.likelihood.slice().reverse().map((l, ri) => {
                 const row = M.cells[4 - ri];
-                return \`<tr>
-                  <td style="padding:8px 12px;border:1px solid var(--border,#333);background:var(--bg-alt,#111);font-weight:600;font-size:.78rem;">\${l}</td>
-                  \${row.map(v => {
+                return `<tr>
+                  <td style="padding:8px 12px;border:1px solid var(--border,#333);background:var(--bg-alt,#111);font-weight:600;font-size:.78rem;">${l}</td>
+                  ${row.map(v => {
                     const c = M.colors[v] || "#666";
                     const label = v <= 3 ? "Low" : v <= 6 ? "Medium" : v <= 12 ? "High" : v <= 16 ? "Very High" : "Critical";
-                    return \`<td style="padding:12px;border:1px solid var(--border,#333);background:\${c}33;text-align:center;cursor:pointer;" title="\${label} (\${v})">
-                      <div style="font-size:1.1rem;font-weight:800;color:\${c};">\${v}</div>
-                      <div style="font-size:.62rem;color:var(--txt-dim,#999);">\${label}</div>
-                    </td>\`;
+                    return `<td style="padding:12px;border:1px solid var(--border,#333);background:${c}33;text-align:center;cursor:pointer;" title="${label} (${v})">
+                      <div style="font-size:1.1rem;font-weight:800;color:${c};">${v}</div>
+                      <div style="font-size:.62rem;color:var(--txt-dim,#999);">${label}</div>
+                    </td>`;
                   }).join("")}
-                </tr>\`;
+                </tr>`;
               }).join("")}
             </tbody>
           </table>
@@ -224,9 +224,9 @@ export function renderTimelineViz(container) {
           <span style="font-size:.72rem;display:flex;align-items:center;gap:4px;"><span style="width:14px;height:14px;border-radius:3px;background:#d84315;display:inline-block;"></span> Very High (15-16)</span>
           <span style="font-size:.72rem;display:flex;align-items:center;gap:4px;"><span style="width:14px;height:14px;border-radius:3px;background:#b71c1c;display:inline-block;"></span> Critical (20-25)</span>
         </div>
-      \`;
+      `;
     } else if (tab === "timeline") {
-      panel.innerHTML = \`
+      panel.innerHTML = `
         <h3 style="font-size:1.1rem;font-weight:600;margin:0 0 4px;">Incident Timeline</h3>
         <p style="font-size:.78rem;color:var(--txt-dim,#888);margin:0 0 16px;">Sample incident: Cobalt Strike intrusion with lateral movement and data exfiltration.</p>
         <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
@@ -237,21 +237,21 @@ export function renderTimelineViz(container) {
         </div>
         <div style="position:relative;padding-left:40px;">
           <div style="position:absolute;left:19px;top:0;bottom:0;width:2px;background:var(--border,#333);"></div>
-          \${SAMPLE_INCIDENT.map((e, i) => \`
-            <div style="position:relative;margin-bottom:16px;animation:fadeInUp .3s ease \${i * 0.05}s both;">
-              <div style="position:absolute;left:-29px;top:4px;width:12px;height:12px;border-radius:50%;background:\${SEV_COLORS[e.severity]};border:2px solid var(--bg,#0a0e16);z-index:1;"></div>
-              <div style="background:var(--bg-alt,#111);border:1px solid var(--border,#222);border-radius:8px;padding:10px 14px;border-left:3px solid \${SEV_COLORS[e.severity]};">
+          ${SAMPLE_INCIDENT.map((e, i) => `
+            <div style="position:relative;margin-bottom:16px;animation:fadeInUp .3s ease ${i * 0.05}s both;">
+              <div style="position:absolute;left:-29px;top:4px;width:12px;height:12px;border-radius:50%;background:${SEV_COLORS[e.severity]};border:2px solid var(--bg,#0a0e16);z-index:1;"></div>
+              <div style="background:var(--bg-alt,#111);border:1px solid var(--border,#222);border-radius:8px;padding:10px 14px;border-left:3px solid ${SEV_COLORS[e.severity]};">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-                  <code style="font-size:.72rem;color:var(--txt-dim,#888);">\${e.time}</code>
-                  <span style="font-size:.65rem;padding:2px 6px;border-radius:4px;background:\${SEV_COLORS[e.severity]}22;color:\${SEV_COLORS[e.severity]};text-transform:uppercase;font-weight:600;">\${e.severity}</span>
+                  <code style="font-size:.72rem;color:var(--txt-dim,#888);">${e.time}</code>
+                  <span style="font-size:.65rem;padding:2px 6px;border-radius:4px;background:${SEV_COLORS[e.severity]}22;color:${SEV_COLORS[e.severity]};text-transform:uppercase;font-weight:600;">${e.severity}</span>
                 </div>
-                <p style="font-size:.82rem;color:var(--txt,#fff);margin:0;">\${e.event}</p>
-                <span style="font-size:.65rem;color:var(--txt-dim,#666);margin-top:4px;display:inline-block;">Phase: \${e.phase}</span>
+                <p style="font-size:.82rem;color:var(--txt,#fff);margin:0;">${e.event}</p>
+                <span style="font-size:.65rem;color:var(--txt-dim,#666);margin-top:4px;display:inline-block;">Phase: ${e.phase}</span>
               </div>
             </div>
-          \`).join("")}
+          `).join("")}
         </div>
-      \`;
+      `;
     }
   }
 

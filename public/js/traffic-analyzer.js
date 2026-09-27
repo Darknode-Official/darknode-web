@@ -112,7 +112,7 @@ export function renderTrafficAnalyzer(container) {
   h += '</div>';
 
   // ── Protocol Distribution ──
-  h += '<div style="margin-bottom:24px;">';
+  h += '<div style="margin-bottom:24px;overflow-x:auto;">';
   h += '<h3 style="color:#5a9abb;font-size:13px;letter-spacing:2px;margin:0 0 10px;border-bottom:1px solid #1a2a3a;padding-bottom:6px;">PROTOCOL DISTRIBUTION</h3>';
   h += '<table style="width:100%;border-collapse:collapse;font-size:11px;">';
   h += '<tr style="color:#4a6a8a;text-align:left;"><th style="padding:4px 8px;">PROTOCOL</th><th style="padding:4px 8px;">PORT</th><th style="padding:4px 8px;">PACKETS</th><th style="padding:4px 8px;">BYTES</th><th style="padding:4px 8px;width:40%;">DISTRIBUTION</th></tr>';
@@ -145,7 +145,7 @@ export function renderTrafficAnalyzer(container) {
   h += '</div></div>';
 
   // ── Top Talkers ──
-  h += '<div style="margin-bottom:24px;">';
+  h += '<div style="margin-bottom:24px;overflow-x:auto;">';
   h += '<h3 style="color:#5a9abb;font-size:13px;letter-spacing:2px;margin:0 0 10px;border-bottom:1px solid #1a2a3a;padding-bottom:6px;">TOP TALKERS</h3>';
   h += '<table style="width:100%;border-collapse:collapse;font-size:11px;">';
   h += '<tr style="color:#4a6a8a;text-align:left;"><th style="padding:4px 8px;">IP</th><th style="padding:4px 8px;">HOSTNAME</th><th style="padding:4px 8px;">SENT</th><th style="padding:4px 8px;">RECV</th><th style="padding:4px 8px;">CONNS</th><th style="padding:4px 8px;">FLAG</th></tr>';

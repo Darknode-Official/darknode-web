@@ -123,7 +123,7 @@ export function renderBreachLookup(container) {
   h += '<div style="color:#4a6a8a;font-size:11px;font-family:monospace;margin-bottom:16px;">Database of ' + BREACHES.length + ' major data breaches — ' + _blFormatNum(totalRecords) + '+ records exposed</div>';
 
   // Stats row
-  h += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;">';
+  h += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(120px,100%),1fr));gap:10px;margin-bottom:16px;">';
   h += '<div style="background:#0a0e1a;border:1px solid #ff444433;border-radius:6px;padding:12px;text-align:center;"><div style="color:#ff4444;font-size:22px;font-weight:bold;font-family:monospace;">' + _blFormatNum(totalRecords) + '</div><div style="color:#4a6a8a;font-size:9px;font-family:monospace;letter-spacing:1px;">TOTAL RECORDS</div></div>';
   h += '<div style="background:#0a0e1a;border:1px solid #ff880033;border-radius:6px;padding:12px;text-align:center;"><div style="color:#ff8800;font-size:22px;font-weight:bold;font-family:monospace;">' + BREACHES.length + '</div><div style="color:#4a6a8a;font-size:9px;font-family:monospace;letter-spacing:1px;">BREACHES TRACKED</div></div>';
   h += '<div style="background:#0a0e1a;border:1px solid #00aaff33;border-radius:6px;padding:12px;text-align:center;"><div style="color:#00aaff;font-size:22px;font-weight:bold;font-family:monospace;">' + Object.keys(sectors).length + '</div><div style="color:#4a6a8a;font-size:9px;font-family:monospace;letter-spacing:1px;">SECTORS HIT</div></div>';
