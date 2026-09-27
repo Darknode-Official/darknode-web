@@ -10329,14 +10329,15 @@ function renderGlobalWatch() {
   // -- Legend --
   h += '<div class="gw-legend gw-legend-show" id="gw-legend">';
   h += '<div style="color:#5a8aaa;font-weight:bold;margin-bottom:4px;letter-spacing:1px;">LEGEND</div>';
-  h += '<div class="gw-legend-item"><span class="gw-legend-dot" style="background:#ff3333;"></span> HOSTILE ACTOR</div>';
-  h += '<div class="gw-legend-item"><span class="gw-legend-dot" style="background:#4488ff;"></span> ALLIED ASSET</div>';
-  h += '<div class="gw-legend-item"><span class="gw-legend-dot" style="background:#00ff88;"></span> IXP / DNS ROOT</div>';
-  h += '<div class="gw-legend-item"><span class="gw-legend-line" style="background:#ff4444;"></span> ATTACK VECTOR</div>';
-  h += '<div class="gw-legend-item"><span class="gw-legend-line" style="background:#00aaff;"></span> INTERNET BACKBONE</div>';
-  h += '<div class="gw-legend-item"><span class="gw-legend-line" style="background:#2a5a3a;"></span> UNDERSEA CABLE</div>';
-  h += '<div class="gw-legend-item"><span class="gw-legend-dot" style="background:#ffaa00;"></span> SEISMIC EVENT</div>';
-  h += '<div class="gw-legend-item"><span class="gw-legend-dot" style="background:#aa44ff;"></span> SATELLITE ASSET</div>';
+  h += '<div class="gw-legend-item"><span class="gw-legend-dot" style="background:#ef4444;"></span> HOSTILE ACTOR</div>';
+  h += '<div class="gw-legend-item"><span class="gw-legend-dot" style="background:#f97316;"></span> ELEVATED ACTOR</div>';
+  h += '<div class="gw-legend-item"><span class="gw-legend-dot" style="background:#3b82f6;"></span> ALLIED ASSET</div>';
+  h += '<div class="gw-legend-item"><span class="gw-legend-dot" style="background:#22d3ee;"></span> INTERNET INFRA (IXP / DNS)</div>';
+  h += '<div class="gw-legend-item"><span class="gw-legend-dot" style="background:#22c55e;"></span> LIVE AIRCRAFT</div>';
+  h += '<div class="gw-legend-item"><span class="gw-legend-dot" style="background:#8b5cf6;"></span> SATELLITE ASSET</div>';
+  h += '<div class="gw-legend-item"><span class="gw-legend-dot" style="background:#eab308;"></span> SEISMIC EVENT</div>';
+  h += '<div class="gw-legend-item"><span class="gw-legend-line" style="background:#ef4444;"></span> ATTACK VECTOR</div>';
+  h += '<div class="gw-legend-item"><span class="gw-legend-line" style="background:#22d3ee;"></span> BACKBONE / CABLE</div>';
   h += '</div>';
 
   // -- Popup container --
@@ -10841,7 +10842,11 @@ function _gwRenderThreatActors() {
         style: Cesium.LabelStyle.FILL_AND_OUTLINE,
         pixelOffset: new Cesium.Cartesian2(0, -16),
         disableDepthTestDistance: 1.0e6,
-        scaleByDistance: new Cesium.NearFarScalar(5e5, 0.8, 8e6, 0.0)
+        // TIER-1 names stay readable out to a wide view; TIER-2 fade out sooner
+        // so the overview isn't a wall of overlapping labels (they return on zoom-in).
+        scaleByDistance: ta.tier === 'TIER-1'
+          ? new Cesium.NearFarScalar(5e5, 0.85, 1.2e7, 0.0)
+          : new Cesium.NearFarScalar(3e5, 0.75, 2.5e6, 0.0)
       }
     });
     entity._gwData = {
@@ -11124,8 +11129,8 @@ function _gwRenderInfrastructure() {
       position: Cesium.Cartesian3.fromDegrees(ixp.lon, ixp.lat),
       point: {
         pixelSize: 4,
-        color: Cesium.Color.fromCssColorString('#3b82f6').withAlpha(0.3),
-        outlineColor: Cesium.Color.fromCssColorString('#2563eb'),
+        color: Cesium.Color.fromCssColorString('#22d3ee').withAlpha(0.3),
+        outlineColor: Cesium.Color.fromCssColorString('#0e7490'),
         outlineWidth: 1,
         disableDepthTestDistance: 1.0e6,
         heightReference: Cesium.HeightReference.CLAMP_TO_GROUND
@@ -11133,7 +11138,7 @@ function _gwRenderInfrastructure() {
       label: {
         text: ixp.name.split(' ')[0],
         font: '9px monospace',
-        fillColor: Cesium.Color.fromCssColorString('#3b82f6').withAlpha(0.5),
+        fillColor: Cesium.Color.fromCssColorString('#22d3ee').withAlpha(0.5),
         outlineColor: Cesium.Color.BLACK,
         outlineWidth: 2,
         style: Cesium.LabelStyle.FILL_AND_OUTLINE,
@@ -11165,7 +11170,7 @@ function _gwRenderInfrastructure() {
       polyline: {
         positions: linkPositions,
         width: 1,
-        material: Cesium.Color.fromCssColorString('#3b82f6').withAlpha(0.05),
+        material: Cesium.Color.fromCssColorString('#22d3ee').withAlpha(0.05),
         clampToGround: false
       }
     });
@@ -11180,8 +11185,8 @@ function _gwRenderInfrastructure() {
       position: Cesium.Cartesian3.fromDegrees(dns.lon, dns.lat),
       point: {
         pixelSize: 6,
-        color: Cesium.Color.fromCssColorString('#3b82f6').withAlpha(0.6),
-        outlineColor: Cesium.Color.fromCssColorString('#2563eb'),
+        color: Cesium.Color.fromCssColorString('#22d3ee').withAlpha(0.6),
+        outlineColor: Cesium.Color.fromCssColorString('#0e7490'),
         outlineWidth: 1,
         disableDepthTestDistance: 1.0e6,
         heightReference: Cesium.HeightReference.CLAMP_TO_GROUND
@@ -11189,7 +11194,7 @@ function _gwRenderInfrastructure() {
       label: {
         text: dns.name.split('.')[0] + '.root',
         font: '8px monospace',
-        fillColor: Cesium.Color.fromCssColorString('#3b82f6').withAlpha(0.5),
+        fillColor: Cesium.Color.fromCssColorString('#22d3ee').withAlpha(0.5),
         outlineColor: Cesium.Color.BLACK,
         outlineWidth: 1,
         style: Cesium.LabelStyle.FILL_AND_OUTLINE,
@@ -11232,7 +11237,7 @@ function _gwRenderInfrastructure() {
       polyline: {
         positions: cablePositions,
         width: 1,
-        material: Cesium.Color.fromCssColorString('#3b82f6').withAlpha(0.04),
+        material: Cesium.Color.fromCssColorString('#22d3ee').withAlpha(0.04),
         clampToGround: false
       }
     });
@@ -11251,8 +11256,8 @@ function _gwRenderInfrastructure() {
       position: Cesium.Cartesian3.fromDegrees(cable.from.lon, cable.from.lat),
       point: {
         pixelSize: 2,
-        color: Cesium.Color.fromCssColorString('#3b82f6').withAlpha(0.2),
-        outlineColor: Cesium.Color.fromCssColorString('#2563eb').withAlpha(0.2),
+        color: Cesium.Color.fromCssColorString('#22d3ee').withAlpha(0.2),
+        outlineColor: Cesium.Color.fromCssColorString('#0e7490').withAlpha(0.2),
         outlineWidth: 0,
         disableDepthTestDistance: 1.0e6,
         heightReference: Cesium.HeightReference.CLAMP_TO_GROUND
@@ -11265,8 +11270,8 @@ function _gwRenderInfrastructure() {
       position: Cesium.Cartesian3.fromDegrees(cable.to.lon, cable.to.lat),
       point: {
         pixelSize: 2,
-        color: Cesium.Color.fromCssColorString('#3b82f6').withAlpha(0.2),
-        outlineColor: Cesium.Color.fromCssColorString('#2563eb').withAlpha(0.2),
+        color: Cesium.Color.fromCssColorString('#22d3ee').withAlpha(0.2),
+        outlineColor: Cesium.Color.fromCssColorString('#0e7490').withAlpha(0.2),
         outlineWidth: 0,
         disableDepthTestDistance: 1.0e6,
         heightReference: Cesium.HeightReference.CLAMP_TO_GROUND
