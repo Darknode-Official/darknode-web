@@ -735,7 +735,7 @@ group("engine: wiring and hygiene (source level)", () => {
     const nlp = read("../../public/js/engine/nlp.js");
     assert.deepEqual([...nlp.matchAll(/\bimport\b[^;\n]*?\bfrom\s+"([^"]+)"/g)], []);
   });
-  test("the deterministic core never imports the optional Gemini front-end", () => {
+  test("the deterministic core never imports the optional Smart mode front-end", () => {
     const eng = read("../../public/js/engine/engine.js");
     assert.ok(!/smart\.js/.test(eng)); // smart mode is a UI-only add-on; the engine stays model-free
   });
@@ -744,9 +744,10 @@ group("engine: wiring and hygiene (source level)", () => {
     assert.ok(/from "\/js\/engine\/smart\.js"/.test(tab));
     assert.ok(/id="ueSmart"/.test(tab) && /smartInterpret/.test(tab));
   });
-  test("smart.js uses the user's own key and asserts no built-in AI is bundled", () => {
+  test("smart.js calls the server route, ships no key, and bundles no model", () => {
     const smart = read("../../public/js/engine/smart.js");
-    assert.ok(/sw_gemini_key/.test(smart)); // the site's BYOK slot, entered by the user
+    assert.ok(/\/api\/smart/.test(smart)); // the key lives only in the Worker's secrets
+    assert.ok(!/AIza[0-9A-Za-z_-]{20,}/.test(smart) && !/generativelanguage/.test(smart) && !/localStorage/.test(smart));
     const imports = [...smart.matchAll(/\bimport\b[^;\n]*?\bfrom\s+"([^"]+)"/g)];
     assert.deepEqual(imports, []); // no imports: pure browser fetch, nothing bundled
   });
@@ -905,17 +906,20 @@ group("engine: typo-aware routing + prediction wiring (source level)", () => {
 group("engine: agentic Smart mode + tab wiring (source level)", () => {
   const smart = read("../../public/js/engine/smart.js");
   const tab = read("../../public/js/engine-tab.js");
-  test("Smart mode plans steps with conversation context, on a current model id", () => {
-    assert.ok(/"steps": \[<command strings>\]/.test(smart));
+  test("Smart mode plans steps with conversation context through the server route", () => {
     assert.ok(/export async function smartInterpret\(input, history = \[\]\)/.test(smart));
-    assert.ok(/DEFAULT_MODEL = "gemini-flash-latest"/.test(smart));
-    assert.ok(/r\.status === 404 && model !== FALLBACK_MODEL/.test(smart)); // retired model id -> retry
-    assert.ok(/sw_gemini_key/.test(smart) && !/AIza[0-9A-Za-z_-]{20,}/.test(smart)); // BYOK slot only, no key in source
+    assert.ok(/history: \(history \|\| \[\]\)\.slice\(-6\)/.test(smart));
+    const worker = read("../../worker/worker.js");
+    assert.ok(/"steps": \[<engine command strings>\]/.test(worker) && /pathname === "\/api\/smart"/.test(worker));
+    assert.ok(/env\.SMART_KEY \|\| env\.GEMINI_KEY/.test(worker) && !/AIza[0-9A-Za-z_-]{20,}/.test(worker)); // secret only
+  });
+  test("Smart mode's UI never names a vendor", () => {
+    for (const f of [smart, tab, read("../../public/js/engine/engine.js")]) assert.ok(!/gemini/i.test(f.replace(/\/\/.*$/gm, "")));
   });
   test("the tab runs requests through the agent and DI verifies each planned step", () => {
     assert.ok(/agent\(s, model, session\)/.test(tab));
     assert.ok(/runSteps\(out\.steps, model, session\)/.test(tab));
-    assert.ok(/not verified by DI/.test(tab)); // Gemini-only text stays labelled
+    assert.ok(/not verified by DI/.test(tab)); // Smart mode's own text stays labelled
   });
 });
 

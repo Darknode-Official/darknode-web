@@ -10,6 +10,7 @@ GEMINI_FALLBACK_MODEL = "gemini-flash-lite-latest"
 
 # Secrets are NOT stored here. Set them once with:
 #   npx wrangler secret put GEMINI_KEY        # required — powers Darknode's fallback
+#   npx wrangler secret put SMART_KEY         # optional — the DI tab's Smart mode (/api/smart); falls back to GEMINI_KEY
 #   npx wrangler secret put GROQ_KEY          # optional — for the free Groq models
 #   npx wrangler secret put OPENROUTER_KEY    # optional — for the free OpenRouter models
 #   npx wrangler secret put MISTRAL_KEY       # optional — for the free Mistral models
