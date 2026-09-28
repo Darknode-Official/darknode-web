@@ -779,7 +779,7 @@ export function heatmap(container, data, options = {}) {
       const textColor = relativeLuminance(bg) < 0.5 ? '#ffffff' : '#111827';
       td.textContent = formatNumber(value);
       td.style.cssText = `
-        background:${bg};color:${textColor};
+        background:${bg} !important;color:${textColor} !important;
         width:${opts.cellSize}px;height:${opts.cellSize}px;
         min-width:${opts.cellSize}px;
         text-align:center;font-size:11px;font-family:inherit;
@@ -1002,8 +1002,8 @@ export function dataTable(container, data, options = {}) {
       }
       th.textContent = header + indicator;
       th.style.cssText = `
-        text-align:left;padding:8px 10px;background:#f9fafb;
-        color:${INK_SECONDARY};font-weight:600;border-bottom:2px solid ${GRID_COLOR};
+        text-align:left;padding:8px 10px;background:#f9fafb !important;
+        color:${INK_SECONDARY} !important;font-weight:600;border-bottom:2px solid ${GRID_COLOR};
         white-space:nowrap;${opts.sortable ? 'cursor:pointer;user-select:none;' : ''}
       `;
       if (opts.sortable) {
@@ -1034,13 +1034,13 @@ export function dataTable(container, data, options = {}) {
 
     pageRows.forEach((row, i) => {
       const tr = document.createElement('tr');
-      tr.style.cssText = `background:${i % 2 === 0 ? '#ffffff' : '#f9fafb'};`;
+      tr.style.cssText = `background:${i % 2 === 0 ? '#ffffff' : '#f9fafb'} !important;`;
       tr.addEventListener('mouseenter', () => { tr.style.background = '#eff6ff'; });
       tr.addEventListener('mouseleave', () => { tr.style.background = i % 2 === 0 ? '#ffffff' : '#f9fafb'; });
       row.forEach((cell) => {
         const td = document.createElement('td');
         td.textContent = cell;
-        td.style.cssText = `padding:8px 10px;color:${INK_PRIMARY};border-bottom:1px solid ${GRID_COLOR};`;
+        td.style.cssText = `padding:8px 10px;color:${INK_PRIMARY} !important;border-bottom:1px solid ${GRID_COLOR};`;
         tr.appendChild(td);
       });
       tbody.appendChild(tr);
@@ -1185,7 +1185,7 @@ export function renderDataViz(main) {
   main.innerHTML = '';
 
   const wrapper = document.createElement('div');
-  wrapper.style.cssText = 'font-family:inherit;padding:16px;';
+  wrapper.style.cssText = 'font-family:inherit;padding:20px;background:#f8fafc;border:1px solid #e5e7eb;border-radius:12px;color:#111827;';
 
   const title = document.createElement('h2');
   title.textContent = 'Data Visualization Dashboard';
@@ -1201,7 +1201,7 @@ export function renderDataViz(main) {
       .dv-grid .dv-span-2 { grid-column: span 2; }
     }
     @media (max-width: 640px) {
-      .dv-stat-row { grid-template-columns: repeat(2, 1fr); }
+      .dv-stat-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
   `;
   wrapper.appendChild(styleTag);

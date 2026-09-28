@@ -793,7 +793,7 @@ ${phases.map(pk => {
 .ir-playbook-grid { display: flex; flex-direction: column; gap: 10px; }
 .ir-playbook-card { display: flex; align-items: center; gap: 16px; padding: 16px 20px; background: #0f1726; border: 1px solid #1a2a44; border-radius: 8px; cursor: pointer; transition: all .2s; }
 .ir-playbook-card:hover { border-color: #00aaff; background: #111d30; }
-.ir-pb-icon { font-size: 28px; }
+.ir-pb-icon { font-size: 13px; font-weight: 700; letter-spacing: .04em; font-family: ui-monospace, monospace; }
 .ir-pb-icon-lg { font-size: 36px; }
 .ir-pb-info { flex: 1; }
 .ir-pb-name { font-size: 15px; font-weight: 600; color: #e2e8f0; margin-bottom: 4px; }

@@ -14,7 +14,8 @@
     [data-style=pro] .stt:hover{background:#f8fafc;border-color:#cbd5e1;box-shadow:0 4px 14px rgba(37,99,235,.1)}
     [data-style=dark] .stt{background:#1e293b;border:1px solid #334155}
     [data-style=dark] .stt:hover{background:#334155}
-    @media(max-width:640px){.stt{bottom:16px;right:16px;width:48px;height:48px}}`;
+    @media(max-width:640px){.stt{bottom:16px;right:16px;width:48px;height:48px}}
+    @media(max-width:720px){body.app .stt{bottom:calc(76px + env(safe-area-inset-bottom,0px))}}`;
   document.head.appendChild(s);
 
   const btn = document.createElement("button");
