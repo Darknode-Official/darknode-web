@@ -920,6 +920,8 @@ function renderHome(main, user, isOwner, show) {
       <section class="panel awh-w">
         <div class="awh-wh"><h2>Welcome to Darknode</h2></div>
         <div class="awh-list">
+          <button class="awh-item" data-sec="engine"><b>Deterministic Intelligence (DI)</b><span>The deterministic counterpart to AI: answers and generates code with no AI, on your device. Try it in a chat.</span></button>
+          <button class="awh-item" data-sec="learndo"><b>Learn &amp; Do</b><span>71 hands-on activities in 12 collections. Pick one and check it off.</span></button>
           <button class="awh-item" data-sec="learn"><b>Getting started</b><span>Learn the basics with curated guides and references.</span></button>
           <button class="awh-item" data-sec="training"><b>Training labs</b><span>Practice defensive skills in guided, hands-on labs.</span></button>
           <button class="awh-item" data-sec="setup" data-more="aicoding"><b>Run AI locally</b><span>Set up Ollama so the AI runs on your own machine.</span></button>
@@ -1614,6 +1616,8 @@ function renderApp(user) {
     else if (sec === "websockettester") { import("/js/websocket-tester.js").then(m => m.renderWebSocketTester(main)); }
     else if (sec === "whoisrecon") { import("/js/whois-recon.js?v=20260927b").then(m => m.renderWhoisRecon(main)); }
     else if (sec === "learn") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Learn Hub...</p>"; loadLearnHub().then(m => m.renderLearnHub(main)); }
+    else if (sec === "learndo") { import("/js/learndo.js").then(m => m.renderLearnDo(main)); }
+    else if (sec === "engine") { import("/js/engine-tab.js").then(m => m.renderEngine(main)); }
     else if (sec === "github") { show("settings"); return; }
     else if (sec === "gmail") { show("settings"); return; }
     else if (sec === "coder") { import("/js/coder.js").then(m => m.renderCliCoder(main)); }
