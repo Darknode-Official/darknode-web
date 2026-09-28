@@ -37,6 +37,10 @@ function subCost(a, b) {
   return 1;
 }
 
+// silent letters people leave out: "dg" (budget), "bt" (doubt), "sc" (descend);
+// "x_" marks a letter silent after x: "rc" (arctic), "xc" (except), "mn" (condemn), "gh" (night), "rh" (rhythm)
+const SILENT = new Set(["dg", "bt", "sc", "rc_", "xc_", "mn_", "gh_", "rh_", "wh_"]);
+
 // Weighted optimal-string-alignment distance from what was TYPED (a) to a
 // vocabulary word (b). Stops early once every path exceeds `limit`.
 export function typoDistance(a, b, limit = Infinity) {
@@ -46,8 +50,12 @@ export function typoDistance(a, b, limit = Infinity) {
   for (let i = 0; i <= m; i++) d.push(new Array(n + 1).fill(0));
   // an extra letter typed: cheap when it doubles its neighbour ("smmarter")
   const del = (i) => (i >= 2 && a[i - 1] === a[i - 2]) ? 0.3 : VOWEL.has(a[i - 1]) ? 0.8 : 1;
-  // a letter left out: cheap when it was one half of a double ("fibonaci"), or a vowel ("wrte")
-  const ins = (j) => (j >= 2 && b[j - 1] === b[j - 2]) ? 0.4 : VOWEL.has(b[j - 1]) ? 0.7 : 1;
+  // a letter left out: cheap when it was one half of a double ("fibonaci"), a vowel
+  // ("wrte"), a silent letter in a cluster ("buget", "condem", "dout"), or an "r"
+  // after a vowel, which is often not heard ("youself", "suprise")
+  const ins = (j) => (j >= 2 && b[j - 1] === b[j - 2]) ? 0.4 : VOWEL.has(b[j - 1]) ? 0.7
+    : SILENT.has(b[j - 1] + (b[j] || "")) || SILENT.has((b[j - 2] || "") + b[j - 1] + "_") ? 0.5
+    : b[j - 1] === "r" && j >= 2 && VOWEL.has(b[j - 2]) && b[j] && !VOWEL.has(b[j]) ? 0.7 : 1;
   for (let i = 1; i <= m; i++) d[i][0] = d[i - 1][0] + del(i);
   for (let j = 1; j <= n; j++) d[0][j] = d[0][j - 1] + ins(j);
   let prevMin = 0;
@@ -135,12 +143,35 @@ const DETERMINER = new Set(["the", "a", "an", "this", "that", "these", "those", 
 const FUNCTION = new Set(["whether", "their", "there", "then", "than", "which", "because", "although", "though", "and", "or", "but", "if", "of", "to", "is", "are", "was", "were", "the", "a", "an", "they", "them", "he", "she", "we", "you", "it", "who", "what", "when", "where", "why", "how", "with", "from", "into", "onto", "for", "not", "very", "been", "being", "have", "has", "had", "does", "did", "will", "would", "should", "could", "can"]);
 function inDict(lex, w) {
   if (!lex.dict || TYPO_WORDS.has(w)) return false;
-  return lex.dict.has(w);
+  return lex.dict.has(w) || british(lex, w);
+}
+// British spellings are correct English, not typos: the dictionary is American, so
+// "colour", "centre", "realise", "travelled", "licence" are checked by their US form.
+const BRITISH = [[/our(s|ed|ing|able|ably|ite|ites|hood|hoods|ful|less)?$/, "or$1"], [/our/, "or"], [/re(s|d)?$/, "er$1"], [/is(e|es|ed|ing|ation|ations|er|ers)$/, "iz$1"], [/ys(e|es|ed|ing)$/, "yz$1"], [/ll(ed|ing|er|ers)$/, "l$1"], [/ogue(s)?$/, "og$1"], [/ence(s)?$/, "ense$1"], [/ae/, "e"], [/oe/, "e"], [/gramme(s)?$/, "gram$1"]];
+function british(lex, w) {
+  if (w.length < 5) return false;
+  for (const [re, to] of BRITISH) if (re.test(w)) { const us = w.replace(re, to); if (us !== w && lex.dict.has(us)) return true; }
+  return false;
+}
+// A regular derivation of a real word may be a real word too ("paintless",
+// "lamplight", "whisperings", "unassailed"), but "wonderfull" and "sandwhich" also
+// split into real parts. So a derivation is not accepted outright: it competes as
+// "leave it alone" at this cost (0.8 for an affix, 0.9 for a compound), and only a
+// correction cheaper than that wins. Every part must be a word of 4+ letters.
+const SUFFIX = /^(.{4,}?)(less|ish|ness|ful|fully|ly|ings|ers|like|wards?)$/;
+const PREFIX = /^(un|re|over|under|out|non|pre|mis|counter|super|semi|sub|inter)(.{4,})$/;
+function derived(lex, w) {
+  if (w.length < 7 || MISSPELLINGS[w]) return false;
+  const d = lex.dict, m1 = w.match(SUFFIX), m2 = w.match(PREFIX);
+  if (m1 && d.has(m1[1])) return 0.8;
+  if (m2 && d.has(m2[2])) return 0.8;
+  for (let i = 4; i <= w.length - 4; i++) if (d.has(w.slice(0, i)) && d.has(w.slice(i)) && (!lex.band || (lex.band(w.slice(0, i)) >= 2 && lex.band(w.slice(i)) >= 2))) return 0.9;
+  return 0;
 }
 
 // Misspellings people make on purpose-looking words, where the edit distance
 // alone points the wrong way ("suprise" is one letter from "sunrise" too).
-export const MISSPELLINGS = { wich: "which", probly: "probably", prolly: "probably", rember: "remember", remeber: "remember", suprise: "surprise", happend: "happened", devide: "divide", truely: "truly", basicly: "basically", begining: "beginning", persue: "pursue", wierd: "weird", recieve: "receive", beleive: "believe", freind: "friend", definately: "definitely", defiantly: "definitely", seperate: "separate", untill: "until", alot: "a lot", thier: "their", occured: "occurred", tommorow: "tomorrow", tomorow: "tomorrow", arguement: "argument", goverment: "government", enviroment: "environment", neccessary: "necessary", necesary: "necessary", accomodate: "accommodate", acheive: "achieve", calender: "calendar", concious: "conscious", existance: "existence", foward: "forward", grammer: "grammar", immediatly: "immediately", independant: "independent", knowlege: "knowledge", libary: "library", posible: "possible", reccomend: "recommend", recomend: "recommend", sucess: "success", fourty: "forty", jewelery: "jewelry", jewellry: "jewelry", tounge: "tongue", minit: "minute", mony: "money", studing: "studying", calander: "calendar", desparate: "desperate", dicision: "decision", cofee: "coffee", coffe: "coffee", succes: "success", tomatos: "tomatoes", writting: "writing", becuase: "because", beacuse: "because", becasue: "because", finaly: "finally", realy: "really", publically: "publicly", embarass: "embarrass", occurence: "occurrence", wether: ["whether", "weather"], lenght: "length", widht: "width", heigth: "height", hieght: "height", strenght: "strength", seige: "siege", wensday: "wednesday", wendsday: "wednesday", febuary: "february", feburary: "february", substract: "subtract", mulitply: "multiply", tempature: "temperature", temprature: "temperature", celcius: "celsius", farenheit: "fahrenheit", fahrenheight: "fahrenheit", milimeter: "millimeter", algoritm: "algorithm", algorythm: "algorithm", pyhton: "python", pytohn: "python", javscript: "javascript", javasript: "javascript", funtion: "function", fucntion: "function", varible: "variable", arguements: "arguments", paramter: "parameter", parmeter: "parameter", recursoin: "recursion", fibonaci: "fibonacci", fibbonacci: "fibonacci", palindrom: "palindrome", factoral: "factorial", squareroot: "square root", percentge: "percentage" };
+export const MISSPELLINGS = { wich: "which", probly: "probably", prolly: "probably", rember: "remember", remeber: "remember", suprise: "surprise", happend: "happened", devide: "divide", truely: "truly", basicly: "basically", begining: "beginning", persue: "pursue", wierd: "weird", recieve: "receive", beleive: "believe", freind: "friend", definately: "definitely", defiantly: "definitely", seperate: "separate", untill: "until", alot: "a lot", thier: "their", occured: "occurred", tommorow: "tomorrow", tomorow: "tomorrow", arguement: "argument", goverment: "government", enviroment: "environment", neccessary: "necessary", necesary: "necessary", accomodate: "accommodate", acheive: "achieve", calender: "calendar", concious: "conscious", existance: "existence", foward: "forward", grammer: "grammar", immediatly: "immediately", independant: "independent", knowlege: "knowledge", libary: "library", posible: "possible", reccomend: "recommend", recomend: "recommend", sucess: "success", fourty: "forty", jewelery: "jewelry", jewellry: "jewelry", tounge: "tongue", minit: "minute", mony: "money", studing: "studying", calander: "calendar", desparate: "desperate", dicision: "decision", cofee: "coffee", coffe: "coffee", succes: "success", tomatos: "tomatoes", writting: "writing", becuase: "because", beacuse: "because", becasue: "because", finaly: "finally", realy: "really", publically: "publicly", embarass: "embarrass", occurence: "occurrence", wether: ["whether", "weather"], lenght: "length", widht: "width", heigth: "height", hieght: "height", strenght: "strength", seige: "siege", wensday: "wednesday", wendsday: "wednesday", febuary: "february", feburary: "february", substract: "subtract", mulitply: "multiply", tempature: "temperature", temprature: "temperature", celcius: "celsius", farenheit: "fahrenheit", fahrenheight: "fahrenheit", milimeter: "millimeter", algoritm: "algorithm", algorythm: "algorithm", pyhton: "python", pytohn: "python", javscript: "javascript", javasript: "javascript", funtion: "function", fucntion: "function", varible: "variable", arguements: "arguments", paramter: "parameter", parmeter: "parameter", recursoin: "recursion", fibonaci: "fibonacci", fibbonacci: "fibonacci", palindrom: "palindrome", factoral: "factorial", squareroot: "square root", percentge: "percentage", restaraunt: "restaurant", restraunt: "restaurant", resteraunt: "restaurant", resturant: "restaurant", liberry: "library", nucular: "nuclear", yatch: "yacht", excercise: "exercise", wholy: "wholly" };
 
 // Is this word (or a plain inflection of it) already a known word? With a
 // dictionary attached, the dictionary decides (it lists real inflections), so
@@ -161,7 +192,9 @@ function limitFor(L) { return L <= 3 ? 0.6 : L === 4 ? 0.8 : L <= 6 ? 1.2 : L <=
 // -able/-ible, -ary/-ery), ie/ei, a dropped "y" before -ing, -ise/-ize.
 const VARIANTS = [[/er$/, "or"], [/or$/, "er"], [/ar$/, "er"], [/er$/, "ar"], [/ant$/, "ent"], [/ent$/, "ant"], [/ance$/, "ence"], [/ence$/, "ance"], [/ancy$/, "ency"], [/ency$/, "ancy"],
   [/able$/, "ible"], [/ible$/, "able"], [/ery$/, "ary"], [/ary$/, "ery"], [/ory$/, "ary"], [/ie/, "ei"], [/ei/, "ie"], [/([^aeiouy])ing$/, "$1ying"], [/ise$/, "ize"], [/ture$/, "teur"], [/ous$/, "eous"], [/ius$/, "ious"],
-  [/sion$/, "tion"], [/tion$/, "sion"], [/([^aeiou])ys$/, "$1ies"], [/os$/, "oes"], [/ley$/, "ly"], [/ary$/, "arly"], [/cle$/, "cal"], [/tle$/, "tal"], [/oe$/, "o"], [/ph/, "f"], [/f/, "ph"], [/ck/, "k"], [/k$/, "ck"]];
+  [/sion$/, "tion"], [/tion$/, "sion"], [/([^aeiou])ys$/, "$1ies"], [/os$/, "oes"], [/ley$/, "ly"], [/ary$/, "arly"], [/cle$/, "cal"], [/cal$/, "cle"], [/tle$/, "tal"], [/tal$/, "tle"], [/oe$/, "o"], [/ph/, "f"], [/f/, "ph"], [/ck/, "k"], [/k$/, "ck"],
+  [/a?tl?e?ly$/, "itely"], [/^des/, "dis"], [/^dis/, "des"], [/tion$/, "tition"], [/sion$/, "ssion"], [/ular$/, "lear"], [/tch$/, "cht"], [/egue$/, "eague"],
+  [/icly$/, "ically"], [/ently$/, "entally"], [/yness$/, "iness"], [/eatful$/, "ateful"], [/^interg/, "integ"], [/whi/, "wi"]];
 function variants(lex, w) {
   const out = [];
   for (const [re, to] of VARIANTS) {
@@ -184,7 +217,7 @@ function candidates(lex, w) {
     for (let L = w.length - 1; L <= w.length + 1; L++) {
       const bucket = lex.byLen.get(L); if (!bucket) continue;
       for (const [cand, c] of bucket) {
-        if (c < 40 || cand[0] !== w[0]) continue;
+        if (c < 40 || cand[0] !== w[0] || (lex.band && lex.band(w) > 2)) continue; // a common real word ("chose") is meant
         const cost = typoDistance(w, cand, 0.45);
         if (cost <= 0.45) list.push([cand, cost, c]);
       }
@@ -207,13 +240,16 @@ function candidates(lex, w) {
       }
     }
     for (const v of variants(lex, w)) if (!list.some((x) => x[0] === v[0] && x[1] <= v[1])) list.push(v);
+    const keep = lex.dict ? derived(lex, w) : 0;
+    if (keep) list.push([w, keep, -1]); // "leave it alone" (see derived)
     // a run-together pair of real words ("whatis", "howmany") splits. A split
     // costs 0.75, so a one-letter slip ("predicton" -> prediction, 0.7) still wins.
+    // The split competes with the other candidates, so "youself" is still yourself.
     const SPLIT = 0.75;
     if (w.length >= 5 && !list.some((x) => x[1] <= SPLIT)) {
       for (let i = 2; i <= w.length - 2; i++) {
         const l = w.slice(0, i), r = w.slice(i);
-        if (lex.freq.has(l) && lex.freq.has(r) && lex.freq.get(l) >= 2 && lex.freq.get(r) >= 2) { list = [[l + " " + r, SPLIT, 2]]; break; }
+        if (lex.freq.has(l) && lex.freq.has(r) && lex.freq.get(l) >= 2 && lex.freq.get(r) >= 2) { list.push([l + " " + r, SPLIT, Math.min(lex.freq.get(l), lex.freq.get(r))]); break; }
       }
     }
   }
@@ -230,8 +266,9 @@ export function rankFixes(lex, word, prev) {
   const p = prev ? String(prev).toLowerCase() : null;
   const ctx = (a, b) => (lex.ctx ? lex.ctx(a, b) : 0);
   const out = [];
+  let keepKey = Infinity;
   for (const [cand, cost, c] of list) {
-    if (cand === w) continue;
+    if (cand === w) { if (c === -1) keepKey = cost; continue; }
     // a dictionary-only word is a rarer guess in a request; after a number
     // other than 1, a plural reads right ("5 mils" -> miles, not mile)
     const plural = (p && /^\d+(?:\.\d+)?$/.test(p) && p !== "1" && /s$/.test(cand) ? 0.25 : 0) - (/[^s]s$/.test(w) && !/s$/.test(cand) ? 0.3 : 0); // "minuts" stays plural
@@ -244,8 +281,9 @@ export function rankFixes(lex, word, prev) {
     const lead = prev === null && lex.ctx && c >= 40 ? 0.2 : 0;
     const grammar = p && DETERMINER.has(p) && FUNCTION.has(cand) ? 0.5 : 0;
     const key = cost + rare - prior - (p ? 0.3 * Math.log10(1 + ctx(p, cand)) : 0) - plural - lead + grammar;
-    out.push({ to: cand, cost, key });
+    if (key < keepKey) out.push({ to: cand, cost, key });
   }
+  if (keepKey < Infinity) return out.filter((x) => x.key < keepKey).sort((x, y) => (x.key - y.key) || (x.to < y.to ? -1 : 1));
   return out.sort((x, y) => (x.key - y.key) || (x.to < y.to ? -1 : 1));
 }
 // Best correction for one lowercase word: { to, cost } or null if it is fine / unfixable.
@@ -256,7 +294,7 @@ export function bestFix(lex, word, prev) {
 // Is this a word the corrector recognises as correctly spelled?
 export function isWord(lex, word) {
   const w = String(word || "").toLowerCase();
-  return w.length < 3 || known(lex, w) || (inDict(lex, w) && !MISSPELLINGS[w]);
+  return w.length < 3 || known(lex, w) || (inDict(lex, w) && !MISSPELLINGS[w]) || (!!lex.dict && !!derived(lex, w) && !rankFixes(lex, w).length);
 }
 export function correctWord(lex, word) { const f = bestFix(lex, word); return f ? f.to : null; }
 
@@ -274,7 +312,7 @@ export function correctText(lex, input, accept) {
   if (colon >= 0) for (let i = colon + 1; i < s.length; i++) guard[i] = true; // "reverse: <payload>"
   const fixes = [];
   let last = null;
-  const text = s.replace(/[A-Za-z][A-Za-z']*/g, (tok, at) => {
+  const text = s.replace(/[A-Za-z][A-Za-z'\u2019]*/g, (tok, at) => {
     const out = fixOne(tok, at);
     last = { at, from: tok, to: out };
     return out;
@@ -285,20 +323,27 @@ export function correctText(lex, input, accept) {
     if (/[_.$0-9]/.test(before) || /[_$0-9(]/.test(after) || (after === "." && /[A-Za-z_]/.test(s[at + tok.length + 1] || ""))) return tok; // identifier, call, or path
     if (/^[A-Z]{2,5}$/.test(tok)) return tok; // an acronym (ABC, NASA, HTML) is content, not a typo
     // a possessive ("carbon's", "James'") is its stem plus the ending: fix only the stem
-    const poss = tok.match(/^(.+?)('s|s'|')$/i);
+    const poss = tok.match(/^(.+?)(['\u2019]s|s['\u2019]|['\u2019])$/i);
     if (poss && poss[1].length >= 2 && /^[A-Za-z]+$/.test(poss[1])) {
       if (isWord(lex, poss[1].toLowerCase())) return tok;
       const inner = fixOne(poss[1], at);
       return inner + poss[2];
     }
     const cap = /^[A-Z]/.test(tok) && !/^[A-Z]+$/.test(tok);
+    // a Capitalised word inside a sentence is usually a name ("Hurst", "Chester")
+    const midCap = cap && at > 0 && !/(?:^|[.!?:\n]["'\u201c\u2018(]?)\s*$/.test(s.slice(Math.max(0, at - 4), at));
+    if (/^(?:mr|mrs|ms|dr|st|jr|sr|vs|etc)$/i.test(tok)) return tok;
+    // a contraction ("wasn't", "they'd") is left alone unless it is a known slip
+    const ap = tok.search(/['\u2019]/);
+    if (ap > 0 && !/['\u2019]s$/i.test(tok) && !/^[a-z]+['\u2019]$/i.test(tok)) return tok;
     const pm = s.slice(0, at).match(/([A-Za-z0-9']+)[^A-Za-z0-9']*$/);
     // the word before, as corrected ("Teh wether" reads "the" + wether)
     const prevWord = pm ? (last && last.at + last.from.length === pm.index + pm[1].length ? last.to : pm[1]) : null;
     const f = bestFix(lex, tok, prevWord);
     // a Capitalised word may be a name ("Maya", "Ada", "Sam"): only a cheap slip
     // (a swap, doubled or neighbouring key: "Captial") is fixed, never a real edit
-    if (!f || (cap && f.cost > 0.6) || (accept && !accept(f.to))) return tok;
+    // mid-sentence, only a slip into a request word ("the Captial of") is fixed
+    if (!f || (cap && f.cost > 0.6) || (midCap && lex.dict && (lex.freq.get(f.to) || 0) < 40) || (accept && !accept(f.to))) return tok;
     const fix = f.to;
     fixes.push({ from: tok, to: fix });
     if (/^[A-Z][a-z]/.test(tok)) return fix.charAt(0).toUpperCase() + fix.slice(1);

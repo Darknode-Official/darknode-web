@@ -994,3 +994,32 @@ group("engine/spell: spelling rules and number words", () => {
     assert.equal(numberToWords(1000000), "one million");
   });
 });
+
+group("engine/spell: real prose is left alone", () => {
+  const dict = englishWords();
+  const full = () => withDictionary(makeLexicon(["the", "a", "of", "and", "capital", "convert"].concat(Array(40).fill("capital"))), dict, wordBand);
+  test("British spellings are correct English", () => {
+    const l = full();
+    for (const w of ["colour", "neighbour", "neighbourhood", "favourable", "centre", "realise", "travelled", "licence", "catalogue"]) assert.equal(bestFix(l, w), null, w);
+  });
+  test("names inside a sentence and titles are not typos", () => {
+    const l = full();
+    assert.equal(correctText(l, "and then Chester met Mrs Hurst").text, "and then Chester met Mrs Hurst");
+  });
+  test("contractions with either apostrophe are kept", () => {
+    const l = full();
+    assert.equal(correctText(l, "she wasn’t sure and they couldn't go").text, "she wasn’t sure and they couldn't go");
+  });
+  test("a regular derivation stays unless a cheap correction beats it", () => {
+    const l = full();
+    assert.equal(bestFix(l, "lamplight"), null);
+    assert.equal(bestFix(l, "whisperings"), null);
+    assert.equal(correctWord(l, "wonderfull"), "wonderful");
+    assert.equal(correctWord(l, "sandwhich"), "sandwich");
+  });
+  test("silent letters, a dropped r, and -ally/-iness forms", () => {
+    const l = full();
+    for (const [bad, good] of [["buget", "budget"], ["condem", "condemn"], ["dout", "doubt"], ["youself", "yourself"], ["accidently", "accidentally"], ["specificly", "specifically"], ["lazyness", "laziness"], ["vehical", "vehicle"], ["competion", "competition"]])
+      assert.equal(correctWord(l, bad), good, bad);
+  });
+});
