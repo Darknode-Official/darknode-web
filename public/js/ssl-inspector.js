@@ -33,7 +33,7 @@ export function renderSSLInspector(container) {
   h += '</div>';
 
   // Tabs
-  h += '<div id="ssl-tabs" style="display:flex;gap:4px;margin-bottom:16px;">';
+  h += '<div id="ssl-tabs" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:16px;">';
   var tabs = [
     { id: 'certs', label: 'Certificates' },
     { id: 'subdomains', label: 'Subdomains' },

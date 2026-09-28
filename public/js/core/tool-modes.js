@@ -96,6 +96,14 @@ function injectCss() {
 .dn-modebar[data-mode=defensive] .dn-modebtn.on{background:#2563eb}
 .dn-modebar[data-mode=offensive] .dn-modebtn.on{background:#dc2626}
 .dn-modenote{font-size:.72rem;color:var(--mut,#64748b);margin-left:10px}
+/* Phones: the 3-button bar (~360px) was wider than the tool headers it sits in
+   and ran off-screen. Shrink it to fit and let the host headers wrap. */
+@media(max-width:720px){
+.dn-modebar{display:flex;max-width:100%}
+.dn-modebtn{flex:1 1 0;min-width:0;justify-content:center;padding:8px 6px;font-size:.64rem;letter-spacing:.03em}
+:is(.ph-header,.ct-header,.or-header,.sp-meta,.cru-head-meta):has(.dn-modebar){flex-wrap:wrap;max-width:100%}
+*:has(> .dn-modebar){max-width:100%;min-width:0}
+}
 /* Per-mode accent applied to the tool wrapper via [data-tool-mode]. Tools can
    read var(--mode-accent) for buttons, active tabs, borders, etc. */
 [data-tool-mode=scouting]{--mode-accent:#f59e0b;--mode-accent-soft:rgba(245,158,11,.12)}

@@ -145,7 +145,7 @@ export function renderSecurityQuiz(container) {
           <div style="margin-top:8px;font-size:.8rem;font-weight:700;color:var(--mut,#6b7280);text-transform:uppercase;letter-spacing:.06em">Category Drill</div>
           ${categories.map(c => {
             const count = QUESTIONS.filter(q => q.category === c).length;
-            return `<button class="quiz-btn" data-mode="cat" data-cat="${c}" style="background:var(--surface,#111827);color:var(--txt,#f9fafb);border:1px solid var(--border,#1f2937);padding:12px;border-radius:8px;font-size:.9rem;cursor:pointer;text-align:left">${c} <span style="float:right;color:var(--mut,#6b7280)">${count}q</span></button>`;
+            return `<button class="quiz-btn" data-mode="cat" data-cat="${c}" style="background:var(--surface,#111827);color:var(--txt,#f9fafb);border:1px solid var(--border,#1f2937);padding:12px;border-radius:8px;font-size:.9rem;cursor:pointer;text-align:left">${c} <span style="float:right;color:var(--txt,#f9fafb);opacity:.65">${count}q</span></button>`;
           }).join("")}
         </div>
       </div>`;
