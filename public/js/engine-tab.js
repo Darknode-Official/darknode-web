@@ -43,6 +43,7 @@ const SOURCES = [
   ["Statistics", "mean, median, mode, variance, std dev, quartiles over a list"],
   ["Number theory", "prime test, factorization, gcd/lcm, nth prime, nth Fibonacci, first N primes"],
   ["Spelling", "a 64,000-word English dictionary with a noisy-channel corrector (keyboard slips, sound-alike letters, suffix rules, the word before): spell a word, spell-check or proofread a sentence, pick between two spellings, spell out a number"],
+  ["Program library", "52 complete, hand-written programs, each compiled and run before shipping (tools/check-programs.sh): snake, pong, tic-tac-toe, hangman, quiz, to-do app, calculator, stopwatch, HTTP servers and REST APIs, file and JSON I/O, linked lists, trees, stacks, queues, sorts and more, in up to 12 languages"],
   ["Code generator", "synthesizes real code from a spec or formula across 7 languages: parses your spec to an AST and compiles it, with inferred int/float/bool types, multi-step let bindings, piecewise conditionals, recursion, iterative sum/prod/count loops and math calls (no stored snippets)"],
   ["Data / CSV", "parse a CSV and summarize every column, numeric or text"],
   ["Base convert", "decimal, hex, binary, octal, any base 2-36, and Roman numerals"],
@@ -60,6 +61,9 @@ const SOURCES = [
 ];
 
 const EXAMPLES = [
+  "make a snake game",
+  "tic tac toe in python",
+  "http server in go",
   "sqrt(144) + gcd(48, 60) + 5!",
   "r = 3; pi * r^2",
   "solve x^2 - 5x + 6 = 0",
@@ -188,10 +192,11 @@ export function renderEngine(main) {
 
   const bubble = (cls, html) => { const d = document.createElement("div"); d.className = "ue-msg " + cls; d.innerHTML = html; logEl.appendChild(d); d.scrollIntoView({ block: "end" }); return d; };
 
-  function renderBot(r) {
+  // q: the request this answers, so DI can offer to hand it to Smart mode
+  function renderBot(r, q) {
     let html = '<div class="ue-title">' + esc(r.title || "Engine") + '</div><div>' + md(r.body || "") + '</div>';
     if (r.pre != null && r.pre !== "") html += '<pre>' + esc(r.pre) + '</pre>';
-    if (r.code) html += '<pre>' + esc(r.code) + '</pre>';
+    if (r.code) html += md("```" + (r.lang || "") + "\n" + r.code + "\n```"); // code block with a Copy button
     if (r.note) html += '<div class="ue-meta">' + esc(r.note) + '</div>';
     const bits = [];
     if (r.skill) bits.push("source: " + esc(r.skill) + (r.confidence ? " (" + Math.round(r.confidence * 100) + "% confident)" : ""));
@@ -201,6 +206,9 @@ export function renderEngine(main) {
       meta += '<div class="ue-meta">Did you mean: ' + r.alternatives.map((a) =>
         '<span class="ue-alt" data-alt="' + esc(a.skill) + '">' + esc(a.skill) + '</span>').join("") + '</div>';
     }
+    // DI could not write it (a scaffold, or an app outside its library): offer Smart mode in one click
+    if (q && !smartOn() && (r.smart || (r.result && r.result.kind === "skeleton")))
+      meta += '<div class="ue-meta"><button type="button" class="ue-copy" data-smartq="' + esc(q) + '">Write it with Smart mode</button></div>';
     bubble("ue-bot", html + meta);
   }
 
@@ -233,10 +241,13 @@ export function renderEngine(main) {
     if (!smartOn()) {
       const r = agent(s, model, session); // plans multi-step requests, resolves "it" and follow-ups
       log.push({ q: s, r });
-      show(r);
+      show(r, s);
       return;
     }
+    await smartRun(s);
+  }
 
+  async function smartRun(s) {
     // Smart mode: the server PLANS the steps (with the recent conversation as
     // context); DI runs and verifies every step it can. Smart mode's own words
     // are shown only for what DI has no rule for, and are labelled unverified.
@@ -268,8 +279,8 @@ export function renderEngine(main) {
   }
 
   // one answer, or a plan: a header bubble, then one bubble per step
-  function show(r) {
-    if (!r.agent) { renderBot(r); return; }
+  function show(r, q) {
+    if (!r.agent) { renderBot(r, q); return; }
     bubble("ue-bot", '<div class="ue-title">' + esc(r.title) + '</div><div>' + md(r.body || "") + '</div>');
     r.steps.forEach((d, i) => renderBot(Object.assign({}, d.r, { title: "Step " + (i + 1) + " of " + r.steps.length + " · " + (d.r.title || "Engine") })));
   }
@@ -317,6 +328,8 @@ export function renderEngine(main) {
 
   main.querySelector("#ueEx").addEventListener("click", (e) => { const b = e.target.closest("[data-ex]"); if (b) send(b.dataset.ex); });
   logEl.addEventListener("click", (e) => {
+    const sq = e.target.closest("[data-smartq]");
+    if (sq) { sq.disabled = true; sq.textContent = "Sent to Smart mode"; smartRun(sq.dataset.smartq); return; }
     const c = e.target.closest(".ue-copy");
     if (!c) return;
     const code = c.closest(".ue-code").querySelector("code").textContent;
