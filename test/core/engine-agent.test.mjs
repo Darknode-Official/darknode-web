@@ -278,3 +278,14 @@ group("engine: everyday questions, round 4", () => {
     assert.ok(/a b c/.test(run("remove duplicate words from a a b b c")));
   });
 });
+
+group("engine: spell check keeps its text whole", () => {
+  test("a colon payload with 'then' is one spell check, not a plan", () => {
+    const r = E.agent("spell check: then Chester chose teh colour", model, {});
+    assert.equal(r.skill, "spelling");
+    assert.equal(r.pre, "Then Chester chose the colour");
+  });
+  test("repeated fixes are counted", () => {
+    assert.ok(/corrected 2 words: i → I \(x2\)/.test(E.agent("proofread: i went home and then i slept", model, {}).body.replace(/\*\*/g, "")));
+  });
+});

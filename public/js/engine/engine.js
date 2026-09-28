@@ -281,7 +281,7 @@ function say(skill, res, input, model) {
       if (res.kind === "choice") return { title: "Spelling", body: res.text, result: res };
       if (res.kind === "word") return { title: "Spelling", body: res.correct ? "**" + res.word + "** is spelled correctly." : res.best ? "The correct spelling is **" + res.best + "**" + (res.others.length ? " (other close words: " + res.others.join(", ") + ")" : "") + "." : "I do not recognize **" + res.word + "** and have no close match in my dictionary, so I will not guess.", result: res };
       return res.fixes.length
-        ? { title: "Spelling", body: "I corrected **" + res.fixes.length + "** word" + (res.fixes.length === 1 ? "" : "s") + ": " + res.fixes.map((f) => f.from + " \u2192 " + f.to).join(", ") + ".", pre: res.text, note: "Checked against a 64,000-word English dictionary. Names (capitalised words), acronyms, quotes and code are left alone.", result: res }
+        ? { title: "Spelling", body: "I corrected **" + fixCount(res.fixes) + "** word" + (fixCount(res.fixes) === 1 ? "" : "s") + ": " + res.fixes.map((f) => f.from + " \u2192 " + f.to).join(", ") + ".", pre: res.text, note: "Checked against a 64,000-word English dictionary. Names (capitalised words), acronyms, quotes and code are left alone.", result: res }
         : { title: "Spelling", body: "I found no spelling mistakes.", pre: res.text, result: res };
     }
     case "listops":
@@ -457,6 +457,8 @@ const CONFUSIONS = [
   [/\bwho's\s+(car|house|phone|book|idea|turn|fault|dog|cat)\b/gi, "whose $1"],
   [/\bloose\s+(the game|weight|my|your|his|her|our|their|it|them|money|control|track)\b/gi, "lose $1"],
 ];
+// how many words a fix list changed: "i -> I (x2)" is two, "3 sentence starts" is three
+const fixCount = (fixes) => fixes.reduce((n, f) => n + Number((String(f.to).match(/\(x(\d+)\)$/) || String(f.from).match(/^(\d+) sentence start/) || [0, 1])[1]), 0);
 function proofread(text) {
   const fixes = [];
   let t = text.replace(/\b[A-Za-z]+\b/g, (w) => { const c = CONTRACT[w.toLowerCase()]; if (!c) return w; fixes.push({ from: w, to: c }); return /^[A-Z]/.test(w) ? c.charAt(0).toUpperCase() + c.slice(1) : c; });
@@ -465,8 +467,10 @@ function proofread(text) {
   let caps = 0;
   t = t.replace(/(^\s*|[.!?]\s+)([a-z])/g, (m, a, ch) => { caps++; return a + ch.toUpperCase(); });
   if (caps) fixes.push({ from: caps + " sentence start" + (caps === 1 ? "" : "s"), to: "capitalised" });
-  const seen = new Set();
-  return { text: t, fixes: fixes.filter((f) => { const k = f.from + ">" + f.to; if (seen.has(k)) return false; seen.add(k); return true; }) };
+  // the same fix made more than once is listed once, with how many times ("i -> I (x2)")
+  const seen = new Map();
+  for (const f of fixes) { const k = f.from + ">" + f.to; if (seen.has(k)) seen.get(k).times++; else seen.set(k, { ...f, times: 1 }); }
+  return { text: t, fixes: [...seen.values()].map((f) => f.times > 1 ? { from: f.from, to: f.to + " (x" + f.times + ")" } : { from: f.from, to: f.to }) };
 }
 
 // Sort a list of numbers (numerically) or words (alphabetically), either way round.
@@ -920,6 +924,8 @@ const LEAD_OP = /^(?:plus|minus|times|multiplied by|divided by|over|to the power
 export function splitSteps(input, model) {
   const s = String(input || "").trim();
   if (!s || parseSpec(s) || /[[{]/.test(s) || /\n/.test(s)) return [s];
+  // text to check or transform ("spell check: ... then ...", "proofread: ...") is content, never steps
+  if (/^(?:please\s+)?(?:spell ?check|spellcheck|proofread|(?:check|fix|correct) (?:the |my )?spelling(?: of| in)?|reverse|uppercase|lowercase|count (?:the )?words(?: in)?)\b[^:]*:/i.test(s)) return [s];
   const pieces = [];
   for (const part of s.split(SEQ)) for (const sub of part.split(AND_CMD)) if (sub && sub.trim()) pieces.push(sub.trim());
   if (pieces.length < 2) return [s];
