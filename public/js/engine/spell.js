@@ -318,7 +318,7 @@ export function correctText(lex, input, accept) {
     return out;
   });
   function fixOne(tok, at) {
-    if (guard[at]) return tok;
+    if (guard[at] || tok.length > 30) return tok; // no English word is that long: content, not a typo
     const before = s[at - 1] || "", after = s[at + tok.length] || "";
     if (/[_.$0-9]/.test(before) || /[_$0-9(]/.test(after) || (after === "." && /[A-Za-z_]/.test(s[at + tok.length + 1] || ""))) return tok; // identifier, call, or path
     if (/^[A-Z]{2,5}$/.test(tok)) return tok; // an acronym (ABC, NASA, HTML) is content, not a typo

@@ -25,7 +25,7 @@ function nPr(n, r) { if (r < 0 || r > n) return 0; return Math.round(factorial(n
 // Functions take an argument array, so min/max/gcd/lcm/hypot are variadic.
 const MFUNCS = {
   sqrt: (a) => Math.sqrt(a[0]), cbrt: (a) => Math.cbrt(a[0]), abs: (a) => Math.abs(a[0]),
-  round: (a) => { const d = a.length > 1 ? Math.max(0, Math.min(12, Math.trunc(a[1]))) : 0; const f = 10 ** d; return Math.round(a[0] * f) / f; }, floor: (a) => Math.floor(a[0]), ceil: (a) => Math.ceil(a[0]),
+  round: (a) => { const d = a.length > 1 ? Math.max(-15, Math.min(12, Math.trunc(a[1]))) : 0; const f = 10 ** d; return d < 0 ? Math.round(a[0] * f) * 10 ** -d : Math.round(a[0] * f) / f; }, floor: (a) => Math.floor(a[0]), ceil: (a) => Math.ceil(a[0]),
   sin: (a) => Math.sin(a[0]), cos: (a) => Math.cos(a[0]), tan: (a) => Math.tan(a[0]),
   asin: (a) => Math.asin(a[0]), acos: (a) => Math.acos(a[0]), atan: (a) => Math.atan(a[0]),
   ln: (a) => Math.log(a[0]), log: (a) => Math.log10(a[0]), log2: (a) => Math.log2(a[0]),
@@ -109,6 +109,18 @@ function evalTokens(toks, vars) {
   return val;
 }
 
+// Exact big integers when a double overflows: "171!", "2^1024", "50! / 48!" is not
+// covered, only a lone factorial or an integer power. Capped to stay fast.
+function bigExact(src) {
+  const f = src.match(/^\s*\(?\s*(\d+)\s*\)?\s*!\s*$/), p = src.match(/^\s*\(?\s*(-?\d+)\s*\)?\s*(?:\^|\*\*)\s*(\d+)\s*$/);
+  let v;
+  if (f && +f[1] <= 3000) { v = 1n; for (let i = 2n; i <= BigInt(f[1]); i++) v *= i; }
+  else if (p && BigInt(p[1].replace("-", "")).toString(2).length * +p[2] <= 40000) v = BigInt(p[1]) ** BigInt(p[2]);
+  else return null;
+  const digits = v.toString().replace("-", "").length;
+  return { ok: true, value: v.toString(), big: true, digits };
+}
+
 function runCalc(src) {
   const stmts = src.split(/[;\n]+/).map((s) => s.trim()).filter(Boolean);
   const vars = {};
@@ -124,9 +136,15 @@ function runCalc(src) {
       } else value = evalTokens(toks, vars);
     }
     if (!Number.isFinite(value)) {
-      if (value === Infinity || value === -Infinity) return { ok: false, error: "result is infinite (division by zero or overflow?)" };
-      throw new Error("malformed expression");
+      const big = bigExact(src);
+      if (big) return big;
+      if (/\/\s*\(?\s*0(?:\.0*)?\s*\)?(?![\d.])/.test(src)) return { ok: false, error: /(?:^|[^\d.])0(?:\.0*)?\s*\/\s*\(?\s*0/.test(src) ? "0 / 0 is undefined (it has no single value)" : "division by zero is undefined" };
+      if (/\b(?:log|ln|log10|log2)\s*\(\s*0\s*\)/.test(src)) return { ok: false, error: "the logarithm of 0 is undefined (it falls toward minus infinity)" };
+      if (value === Infinity || value === -Infinity) return { ok: false, error: "the result is too large for a double-precision number (above about 1.8 x 10^308)" };
+      return { ok: false, error: "the result is not a real number (for example the square root or logarithm of a negative number, or 0 / 0)" };
     }
+    // tan at an odd multiple of 90 degrees is undefined, but floating point gives ~1.6e16
+    if (/\btan\s*\(/.test(src) && Math.abs(value) > 1e15) return { ok: false, error: "tan is undefined there (at odd multiples of 90 degrees, or pi/2 radians)" };
     value = Math.round(value * 1e12) / 1e12;
     const out = { ok: true, value };
     if (Object.keys(vars).length) out.vars = vars;
@@ -134,9 +152,28 @@ function runCalc(src) {
   } catch (e) { return { ok: false, error: e.message }; }
 }
 
+// the simplest fraction within 1e-9 of x, by continued fractions (0.75 -> 3/4)
+export function toFraction(x) {
+  const sign = x < 0 ? -1 : 1; x = Math.abs(x);
+  let h1 = 1, h0 = 0, k1 = 0, k0 = 1, b = x;
+  for (let i = 0; i < 40; i++) {
+    const a = Math.floor(b);
+    [h1, h0] = [a * h1 + h0, h1]; [k1, k0] = [a * k1 + k0, k1];
+    if (Math.abs(x - h1 / k1) < 1e-9 * Math.max(1, x) || k1 > 1e9) break;
+    b = 1 / (b - a);
+  }
+  return { n: sign * h1, d: k1 };
+}
+
 export function calc(input) {
   let src = String(input || "").toLowerCase().replace(/[?]/g, "").trim();
   if (!src) return { ok: false, error: "empty expression" };
+  const fr = src.match(/^(?:what is |whats |convert |write )?(-?\d*\.\d+|-?\d+(?:\.\d+)?\s*\/\s*\d+)\s+(?:as|to|in|into)\s+(?:a\s+|its\s+)?(?:simplest\s+)?fraction\s*$/);
+  if (fr) {
+    const x = runCalc(fr[1]); if (!x.ok) return x;
+    const { n, d } = toFraction(x.value);
+    return { ok: true, value: d === 1 ? String(n) : n + "/" + d, expr: fr[1] + " as a fraction" };
+  }
   src = src.replace(/([0-9.]+)\s*%\s+of\s+/g, "($1/100)*"); // "15% of 200"
   const res = runCalc(src);
   if (res.ok) { res.expr = src; return res; }
@@ -163,7 +200,7 @@ const UNITS = {
   data: { base: "b", u: { bit: 0.125, b: 1, byte: 1, bytes: 1, kb: 1e3, kib: 1024, mb: 1e6, mib: 1048576, gb: 1e9, gib: 1073741824, tb: 1e12, tib: 1099511627776 } },
   speed: { base: "mps", u: { mps: 1, "m/s": 1, kph: 0.277778, "km/h": 0.277778, mph: 0.44704, kn: 0.514444, knot: 0.514444, knots: 0.514444 } },
   // US customary volumes (gallon = 231 cubic inches exactly)
-  volume: { base: "l", u: { ml: 1e-3, milliliter: 1e-3, milliliters: 1e-3, millilitre: 1e-3, millilitres: 1e-3, cc: 1e-3, cl: 1e-2, l: 1, liter: 1, liters: 1, litre: 1, litres: 1, gal: 3.785411784, gallon: 3.785411784, gallons: 3.785411784, qt: 0.946352946, quart: 0.946352946, quarts: 0.946352946, pt: 0.473176473, pint: 0.473176473, pints: 0.473176473, cup: 0.2365882365, cups: 0.2365882365, floz: 0.0295735295625, tbsp: 0.01478676478125, tablespoon: 0.01478676478125, tablespoons: 0.01478676478125, tsp: 0.00492892159375, teaspoon: 0.00492892159375, teaspoons: 0.00492892159375 } },
+  volume: { base: "l", u: { ml: 1e-3, milliliter: 1e-3, milliliters: 1e-3, millilitre: 1e-3, millilitres: 1e-3, cc: 1e-3, cl: 1e-2, l: 1, liter: 1, liters: 1, litre: 1, litres: 1, gal: 3.785411784, gallon: 3.785411784, gallons: 3.785411784, qt: 0.946352946, quart: 0.946352946, quarts: 0.946352946, pt: 0.473176473, pint: 0.473176473, pints: 0.473176473, cup: 0.2365882365, cups: 0.2365882365, floz: 0.0295735295625, "fl oz": 0.0295735295625, tbsp: 0.01478676478125, tablespoon: 0.01478676478125, tablespoons: 0.01478676478125, tsp: 0.00492892159375, teaspoon: 0.00492892159375, teaspoons: 0.00492892159375 } },
   area: { base: "m2", u: { m2: 1, sqm: 1, km2: 1e6, sqkm: 1e6, ft2: 0.09290304, sqft: 0.09290304, acre: 4046.8564224, acres: 4046.8564224, hectare: 1e4, hectares: 1e4, ha: 1e4 } },
 };
 function findUnit(u) { u = u.toLowerCase(); for (const dim in UNITS) if (u in UNITS[dim].u) return { dim, factor: UNITS[dim].u[u] }; return null; }
@@ -180,11 +217,16 @@ export function convert(input) {
   const T = { c: "c", celsius: "c", f: "f", fahrenheit: "f", k: "k", kelvin: "k" };
   if (T[from] && T[to]) {
     let c; if (T[from] === "c") c = val; else if (T[from] === "f") c = (val - 32) * 5 / 9; else c = val - 273.15;
+    if (c < -273.15 - 1e-9) return { ok: false, error: val + " " + from + " is below absolute zero (-273.15 C, -459.67 F, 0 K), so it is not a physical temperature" };
     let out; if (T[to] === "c") out = c; else if (T[to] === "f") out = c * 9 / 5 + 32; else out = c + 273.15;
     return { ok: true, value: Math.round(out * 1e6) / 1e6, dim: "temperature", from, to, input: val };
   }
-  const a = findUnit(from), b = findUnit(to);
+  let a = findUnit(from), b = findUnit(to);
   if (!a || !b) return { ok: false, error: "unknown unit: " + (!a ? from : to) };
+  // "ounces" next to a volume means fluid ounces ("how many ounces in a cup")
+  const FLOZ = { dim: "volume", factor: 0.0295735295625 };
+  if (a.dim === "mass" && b.dim === "volume" && /^(?:oz|ounces?)$/.test(from)) a = FLOZ;
+  if (b.dim === "mass" && a.dim === "volume" && /^(?:oz|ounces?)$/.test(to)) b = FLOZ;
   if (a.dim !== b.dim) return { ok: false, error: "cannot convert " + a.dim + " to " + b.dim };
   const out = val * a.factor / b.factor;
   return { ok: true, value: Math.round(out * 1e9) / 1e9, dim: a.dim, from, to, input: val };
@@ -405,6 +447,7 @@ export function text(op, s) {
     case "lower": return s.toLowerCase();
     case "title": return s.replace(/\w\S*/g, (w) => w[0].toUpperCase() + w.slice(1).toLowerCase());
     case "reverse": return [...s].reverse().join("");
+    case "palindrome": { const k = s.toLowerCase().replace(/[^a-z0-9]/g, ""); return k && k === [...k].reverse().join("") ? "yes, \u201c" + s + "\u201d is a palindrome (it reads the same backwards, ignoring spaces and punctuation)" : "no, \u201c" + s + "\u201d is not a palindrome (backwards it is \u201c" + [...s].reverse().join("") + "\u201d)"; }
     case "slug": return s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
     case "words": return s.trim() ? s.trim().split(/\s+/).length : 0;
     case "chars": return [...s].length;
@@ -469,11 +512,20 @@ export function regexTest(pattern, sample) {
 // datetime: deterministic date math (no timezone guessing; UTC).
 // ---------------------------------------------------------------------------
 const DAYNAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-function parseISO(s) { const m = String(s).match(/(\d{4})-(\d{1,2})-(\d{1,2})/); if (!m) return null; return new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])); }
+// a real calendar date only: "2024-02-30" and "2024-13-45" are rejected, not rolled over
+function parseISO(s) { const m = String(s).match(/(\d{4})-(\d{1,2})-(\d{1,2})/); if (!m) return null; const d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])); return d.getUTCMonth() === +m[2] - 1 && d.getUTCDate() === +m[3] ? d : null; }
 const HOLIDAYS = { "christmas eve": [12, 24], "christmas": [12, 25], "new year's eve": [12, 31], "new years eve": [12, 31], "new year's day": [1, 1], "new years day": [1, 1], "new year": [1, 1], "new years": [1, 1], "halloween": [10, 31], "valentine's day": [2, 14], "valentines day": [2, 14], "valentines": [2, 14], "april fools": [4, 1], "independence day": [7, 4], "thanksgiving": [11, 27] };
 export function datetime(input) {
   const low = String(input || "").toLowerCase();
-  const dates = (low.match(/\d{4}-\d{1,2}-\d{1,2}/g) || []).map(parseISO).filter(Boolean);
+  const isoAll = low.match(/\d{4}-\d{1,2}-\d{1,2}/g) || [];
+  const bad = isoAll.find((d) => !parseISO(d));
+  if (bad) return { ok: false, error: bad + " is not a real calendar date" };
+  const dates = isoAll.map(parseISO);
+  const nowY = new Date().getUTCFullYear();
+  if (/^(?:what|which)\s+year\s+is\s+(?:it|this)(?:\s+now)?\s*$|^(?:what is |whats )?(?:the )?current year\s*$/.test(low.replace(/[?.!]/g, "").trim())) return { ok: true, kind: "year", text: "It is " + nowY + " (by this device's clock, UTC)" };
+  if (/^(?:what is |whats |what's )?(?:the )?(?:date )?today(?:'s date)?\s*$|^(?:what is |whats |what's )(?:the )?date(?: today)?\s*$|^what day is (?:it|today)\s*$/.test(low.replace(/[?.!]/g, "").trim())) { const d = new Date(); return { ok: true, kind: "today", text: "Today is " + DAYNAMES[d.getUTCDay()] + ", " + d.toISOString().slice(0, 10) + " (UTC)" }; }
+  const born = low.match(/\bborn in (\d{4})\b/) || low.match(/\bage (?:of )?(?:someone |a person )?(?:born )?(?:in )?(\d{4})\b/);
+  if (born && /how old|age/.test(low)) { const y = +born[1], a = nowY - y; if (a < 0) return { ok: false, error: y + " is in the future" }; return { ok: true, kind: "age", value: a, text: "Someone born in " + y + " is " + (a - 1) + " or " + a + " in " + nowY + " (" + a + " once their birthday has passed this year)" }; }
   // "how many days are in february 2024": month length, leap years included
   const MN = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
   const dim = low.match(/\bdays?\s+(?:are\s+|is\s+)?(?:there\s+)?in\s+(?:the\s+month\s+of\s+)?(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?(?:\s+(?:of\s+)?(\d{4}))?/);

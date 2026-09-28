@@ -289,3 +289,66 @@ group("engine: spell check keeps its text whole", () => {
     assert.ok(/corrected 2 words: i → I \(x2\)/.test(E.agent("proofread: i went home and then i slept", model, {}).body.replace(/\*\*/g, "")));
   });
 });
+
+group("engine: honest edge cases and everyday formulas", () => {
+  const all = (r) => (r.agent ? r.steps.map((d) => (d.r.body || "") + " " + (d.r.pre || "")).join(" ") : (r.body || "") + " " + (r.pre || "")).replace(/\*\*/g, "");
+  const run = (q) => all(E.agent(q, model, {}));
+  test("undefined results say why", () => {
+    assert.ok(/division by zero is undefined/.test(run("1/0")));
+    assert.ok(/0 \/ 0 is undefined/.test(run("0/0")));
+    assert.ok(/not a real number/.test(run("sqrt(-1)")));
+    assert.ok(/logarithm of 0 is undefined/.test(run("log 0")));
+    assert.ok(/tan is undefined/.test(run("tan 90 degrees")));
+  });
+  test("big integers are exact", () => {
+    const r = E.agent("171!", model, {});
+    assert.ok(/310 digits/.test(r.body) && r.pre.startsWith("1241018070") && r.pre.length === 310);
+    assert.equal(E.agent("2^100", model, {}).pre || null, null); // fits a double: a normal answer
+    assert.ok(/309 digits/.test(E.agent("2^1024", model, {}).body));
+  });
+  test("number theory at the edges", () => {
+    assert.ok(/-7 is not prime \(primes are whole numbers greater than 1\)/.test(run("is -7 prime")));
+    assert.ok(/1 has no prime factorization/.test(run("factorize 1")));
+    assert.ok(/negative position/.test(run("fibonacci -5")));
+    assert.ok(/no primes below 2/.test(run("primes below 2")));
+  });
+  test("dates must be real; temperatures must be physical", () => {
+    assert.ok(/2024-02-30 is not a real calendar date/.test(run("2024-02-30 weekday")));
+    assert.ok(/Thursday/.test(run("2024-02-29 weekday")));
+    assert.ok(/below absolute zero/.test(run("convert -300 celsius to kelvin")));
+  });
+  test("degrees, rounding to places and to tens", () => {
+    assert.ok(/\b0\.5\b/.test(run("sin 30 degrees")));
+    assert.ok(/radians/.test(run("tan 90")));
+    assert.ok(/\b1200\b/.test(run("round 1234 to the nearest hundred")));
+    assert.ok(/\b3\.14\b/.test(run("round 3.14159 to the nearest hundredth")));
+  });
+  test("geometry, money and body formulas", () => {
+    assert.ok(/28\.27/.test(run("what is the area of a circle with radius 3")));
+    assert.ok(/\b20\b/.test(run("area of a rectangle 4 by 5")));
+    assert.ok(/\b5\b/.test(run("hypotenuse of 3 and 4")));
+    assert.ok(/\b100\b/.test(run("simple interest on 1000 at 5% for 2 years")));
+    assert.ok(/1210/.test(run("compound interest 1000 at 10% for 2 years")));
+    assert.ok(/22\.8/.test(run("bmi 70 kg 1.75 m")));
+    assert.ok(/5050/.test(run("sum of 1 to 100")));
+    assert.ok(/\b2\b/.test(run("remainder of 17 divided by 5")));
+  });
+  test("fractions, stats words, bases, units", () => {
+    assert.ok(/3\/4/.test(run("what is 0.75 as a fraction")));
+    assert.ok(/1\/3/.test(run("0.333333333 as a fraction")));
+    assert.ok(/mode\s+2/.test(run("mode of 1 2 2 3")));
+    assert.ok(/255/.test(run("what is ff in decimal")));
+    assert.ok(/\b8\b/.test(run("how many ounces in a cup")));
+    assert.ok(/226\.796/.test(run("8 oz to grams")));
+  });
+  test("text: palindromes and content after the op word", () => {
+    assert.ok(/yes, .racecar. is a palindrome/.test(run("is racecar a palindrome")));
+    assert.ok(/MAKE IT LOUD/.test(run("uppercase make it loud")));
+  });
+  test("everyday: formulas, year, age", () => {
+    assert.ok(/water/.test(run("what is h2o")));
+    assert.ok(/H2O/.test(run("what is the formula for water")));
+    assert.ok(/It is \d{4}/.test(run("what year is it")));
+    assert.ok(/born in 1990 is \d+ or \d+/.test(run("how old is someone born in 1990")));
+  });
+});
