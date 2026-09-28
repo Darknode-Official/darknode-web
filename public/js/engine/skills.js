@@ -399,6 +399,7 @@ function synthExpr(rawExpr, lang, ctx) {
 export function codegen(input) {
   const raw = String(input || "").trim();
   const low = raw.toLowerCase();
+
   // detect language (default python)
   let lang = "python";
   for (const k in LANGS) { const re = new RegExp("\\b" + k + "\\b"); if (re.test(low)) { lang = LANGS[k]; break; } }
@@ -431,7 +432,7 @@ export function codegen(input) {
     java: `static Object ${nC}(Object... args) {\n    // TODO: ${raw.replace(/\n/g, " ")}\n    throw new UnsupportedOperationException();\n}`,
     c: `void ${nS}(void) {\n    /* TODO: ${raw.replace(/\n/g, " ")} */\n}`,
   };
-  return { ok: true, kind: "skeleton", lang, code: skel[lang], note: "No exact synthesis rule matched, so this is a correct, typed scaffold. Give a specific known task (factorial, fibonacci, reverse, prime, palindrome, fizzbuzz, sum) for a full implementation." };
+  return { ok: true, kind: "skeleton", lang, code: skel[lang], note: "No exact synthesis rule matched, so this is a correct, typed scaffold. Give a specific known task (factorial, fibonacci, reverse, prime, palindrome, fizzbuzz, sum), a formula like f(x) = 3x^2 + 1, or one of the ready programs (snake, tic-tac-toe, to-do app, calculator, HTTP server, linked list, quicksort, ...) for a full implementation." };
 }
 
 // ---------------------------------------------------------------------------

@@ -11,6 +11,7 @@ import { mathPhrase, hasMathPhrase, numberWords, numberToWords, synonyms, natura
 import * as MX from "/js/engine/matrix.js";
 import { unitMath } from "/js/engine/units.js";
 import { synth, parseSpec } from "/js/engine/synth.js";
+import { findProgram, detectLang, program, PROGRAMS, LANG_NAMES, RUN_HINT, fenceLang } from "/js/engine/programs.js";
 import * as F from "/js/engine/facts.js";
 import * as H from "/js/engine/hash.js";
 import { makeLexicon, withDictionary, withContext, rankFixes, isWord, correctText, correctWord, typoDistance, fuzzyPrefix } from "/js/engine/spell.js";
@@ -41,7 +42,7 @@ function editDist(a, b) {
 function normalizeTypos(text) {
   return text.replace(/[a-z]{3,}/gi, (w) => {
     const lw = w.toLowerCase();
-    if (KWSET.has(lw)) return w;
+    if (KWSET.has(lw) || PROGRAM_SET.has(lw)) return w; // "node" is not a typo of "mode"
     let best = "", bd = 99;
     for (const k of KW) { const dd = editDist(lw, k); if (dd < bd) { bd = dd; best = k; } }
     const thr = lw.length <= 6 ? 1 : 2;
@@ -92,7 +93,10 @@ function score(input) {
   const langKW = has(/\b(python|javascript|js|typescript|ts|rust|go|golang|java|c)\b/);
   // Route to code synthesis for an algorithm or a language-tagged function — but a
   // whole app/game noun without an algorithm keyword is out of scope, so skip it.
-  if ((codeAsk || buildAsk || howTo) && (algoKW || (langKW && !APP_NOUN.test(low))))
+  // a complete program from the library ("make a snake game", "read a file in go")
+  if (findProgram(low) && (codeAsk || buildAsk || howTo || langKW || detectLang(low) || has(/\b(program|script|code|app|game)\b/)) && !(isDef && !codeAsk))
+    add("codegen", 9, "a complete program from the library");
+  else if ((codeAsk || buildAsk || howTo) && (algoKW || (langKW && !APP_NOUN.test(low))))
     add("codegen", 7, "asks to generate code");
   // a well-formed function spec ("name(args) = body", "... that returns <expr>")
   // is synthesizable on its own, even without a verb like "write" or "generate".
@@ -179,6 +183,10 @@ function say(skill, res, input, model) {
         ? { title: "Unit conversion", body: "**" + res.input + " " + res.from + "** equals **" + res.value + " " + res.to + "** (" + res.dim + "). This uses a fixed conversion factor, so it is precise.", result: res }
         : { title: "Unit conversion", body: "I could not convert that: " + res.error + ".", result: res };
     case "codegen": {
+      if (res.kind === "program") {
+        const miss = res.missing ? " I do not have a " + (LANG_NAMES[res.missing] || res.missing) + " version of this one yet, so here it is in **" + LANG_NAMES[res.lang] + "**; turn on **Smart mode** to have it translated." : "";
+        return { title: res.op + " \u00b7 " + LANG_NAMES[res.lang], body: "Here is a complete, runnable **" + res.op.toLowerCase() + "** in **" + LANG_NAMES[res.lang] + "**. It comes from DI's library of hand-written programs, each one compiled and run before it ships." + miss + "\n\n```" + fenceLang(res.lang) + "\n" + res.code + "\n```", lang: res.lang, note: res.note, result: res };
+      }
       const lead = res.kind === "compiled"
         ? "I compiled `" + res.op + "` into **" + res.lang + "** from scratch — I parsed your spec into an abstract syntax tree and generated the code from it, so it is built for this request, not pasted from a snippet:"
         : res.kind === "synthesized"
@@ -332,6 +340,13 @@ function run(skill, input, model) {
           const shape = r.recursive ? " It compiled the self-reference into real recursion." : r.iterative ? " It compiled the aggregation into an accumulator loop." : "";
           return { ok: true, kind: "compiled", lang, op: r.name + "(" + r.params.join(", ") + ")", code: built.code, note: "Parsed your spec to an AST and compiled it to " + lang + " from scratch (no stored snippet)." + shape + imp, result: r };
         }
+      }
+      // a whole program from the hand-tested library (games, apps, data structures,
+      // file and network I/O, ...) takes precedence over single-function synthesis
+      const prog = program(low);
+      if (prog) {
+        const other = prog.langs.filter((l) => l !== prog.lang).map((l) => LANG_NAMES[l]);
+        return Object.assign(prog, { note: RUN_HINT[prog.lang] + (other.length ? " Also available in " + other.join(", ") + ": just ask, e.g. \u201cin " + other[0].toLowerCase() + "\u201d." : "") });
       }
       return S.codegen(input);
     }
@@ -534,7 +549,10 @@ const ENGINE_WORDS = [...KW, ...LANGS, ...TEXT_CMDS, ...UNIT_WORDS, ...Object.ke
   "abs", "absolute", "cbrt", "log", "ln", "sin", "cos", "tan", "ceil", "floor", "min", "max", "avg", "hcf", "lcm", "gcd", "exp"];
 const ENGINE_SET = new Set(ENGINE_WORDS.map((w) => w.toLowerCase()));
 const CAPITAL_CITIES = new Set(Object.values(F.CAPITALS).map((c) => c.toLowerCase()));
-const DOMAIN_WORDS = [...Object.keys(A.GLOSSARY), ...Object.keys(F.CAPITALS), ...Object.values(F.CAPITALS), ...F.ELEMENTS.map((e) => e.name), ...Object.keys(F.CONSTANTS)];
+// words from the program library ("tic tac toe", "todo", "pong") are real requests, not typos
+const PROGRAM_WORDS = ["todo", "todos", "pong", "tic", "tac", "toe", "hangman", "quicksort", "mergesort", "bst", "http", "https", "api", "stopwatch", "countdown", "portfolio", "dedupe", "caesar", "armstrong", "sieve", "anagram", "anagrams", "flatten", "argv", "cli", "bmi", "html", "css", "node", "nodejs", "golang", "cpp", "csharp", "ruby", "bash", "express", "flask"];
+const PROGRAM_SET = new Set([...PROGRAM_WORDS, "rest", "server", "servers", "game", "games", "app", "apps", "clock", "timer", "quiz", "queue", "stack", "tree", "list", "file", "files", "website", "page", "form", "login", "dice", "table", "tables"]);
+const DOMAIN_WORDS = [...PROGRAM_WORDS, ...Object.keys(A.GLOSSARY), ...Object.keys(F.CAPITALS), ...Object.values(F.CAPITALS), ...F.ELEMENTS.map((e) => e.name), ...Object.keys(F.CONSTANTS)];
 const lexCache = new WeakMap();
 let lexStatic = null;
 function lexicon(model) {
@@ -898,7 +916,7 @@ export function respond(input, model) {
       return {
         skill: null, confidence: 0, alternatives: [], smart: true,
         title: "That is a whole " + thing + ", not a single function",
-        body: "I understand: you want to build a **" + thing + "**. Here is the honest boundary, and I will not pretend otherwise. This engine has no AI model. It synthesizes one function at a time from a spec — from scratch, in 7 languages — with real recursion and loops. A complete " + thing + " is a full application, and writing one from an open-ended description is exactly what a trained model does, not a rule-based engine.\n\nTwo real ways forward:\n- Turn on **Smart mode** (toggle, top right): it works online and writes complete programs like this one.\n- Or hand me the pieces as function specs and I will generate each right now, for example: `move(pos, velocity, dt) = pos + velocity * dt`, `clamp(x, lo, hi) = x < lo ? lo : (x > hi ? hi : x)`, `score(hits, misses) = hits - misses`.",
+        body: "I understand: you want to build a **" + thing + "**. I do not have that one in my program library, and I will not pretend to write it: DI has no AI model, so it writes only programs it has rules or tested code for.\n\nWays forward:\n- Ask for one I can write right now, offline: " + PROGRAMS.filter((p) => p.langs.html || /game|app|server|api|calculator|quiz/i.test(p.title)).map((p) => "**" + p.title.toLowerCase() + "**").join(", ") + ".\n- Turn on **Smart mode** (toggle, top right): it works online and writes complete programs like this one.\n- Or hand me the pieces as function specs and I will generate each right now, for example: `move(pos, velocity, dt) = pos + velocity * dt`, `clamp(x, lo, hi) = x < lo ? lo : (x > hi ? hi : x)`.",
       };
     }
     // 2) Otherwise: say which words it did recognize, then ask to disambiguate.
