@@ -332,13 +332,17 @@ async function handleSmart(request, env) {
   contents.push({ role: "user", parts: [{ text: input }] });
   const req = { systemInstruction: { parts: [{ text: SMART_SYS }] }, contents, generationConfig: { temperature: 0.2, responseMimeType: "application/json", maxOutputTokens: 8192 } };
   // Primary model, then fallbacks when one is overloaded, missing or unreachable.
-  const models = [env.SMART_MODEL || "gemini-flash-latest", env.SMART_FALLBACK_MODEL || "gemini-flash-lite-latest"];
-  let r = null;
+  // Overload (503) and quota (429) are per model, so move down the chain on either.
+  const models = [...new Set([env.SMART_MODEL || "gemini-flash-latest", "gemini-3.8-flash", "gemini-3.5-flash",
+    env.SMART_FALLBACK_MODEL || "gemini-flash-lite-latest", "gemini-3.1-flash-lite", "gemini-2.5-flash-lite"])];
+  let r = null, last = null;
   for (const model of models) {
     try { r = await fetch(`${GEMINI_BASE}/${encodeURIComponent(model)}:generateContent`, { method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": key }, body: JSON.stringify(req) }); }
     catch (_) { r = null; continue; }
-    if (r.ok || r.status === 400 || r.status === 429) break;
+    last = r;
+    if (r.ok || r.status === 400 || r.status === 401 || r.status === 403) break;
   }
+  r = r || last;
   if (!r) return json({ error: "Smart mode could not be reached. Try again in a moment." }, 502);
   if (r.status === 429) return json({ error: "Smart mode is busy right now. Wait a few seconds and try again." }, 429);
   if (!r.ok) return json({ error: "Smart mode had a problem (" + r.status + "). Try again, or turn Smart mode off." }, 502);
