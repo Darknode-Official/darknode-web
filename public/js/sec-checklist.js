@@ -86,6 +86,7 @@ function injectStyles() {
 .sc-tab{padding:8px 16px;border-radius:4px;border:1px solid var(--line);background:var(--card);color:var(--txt-2);font-size:.78rem;font-weight:600;cursor:pointer;transition:all .15s ease;white-space:nowrap}
 .sc-tab:hover{border-color:var(--acc);color:var(--acc)}
 .sc-tab.active{background:var(--acc);color:#fff;border-color:var(--acc)}
+.sc-tab.active .sc-tab-ver{color:#fff !important;opacity:.85}
 .sc-tab-ver{font-weight:400;opacity:.7;margin-left:4px}
 .sc-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:20px}
 .sc-toolbar .sc-btn{padding:6px 14px;border-radius:4px;border:1px solid var(--line);background:var(--card);color:var(--txt-2);font-size:.75rem;font-weight:600;cursor:pointer;transition:all .15s ease}

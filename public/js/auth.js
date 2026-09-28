@@ -1482,7 +1482,7 @@ function renderApp(user) {
     else if (sec === "mobilesec") { import("/js/mobile-security-lab.js").then(m => m.renderMobileSecurityLab(main)); }
     else if (sec === "apiscan") { import("/js/api-security-scanner.js?v=20260924b").then(m => m.renderAPISecurityScanner(main)); }
     else if (sec === "wirelesslab") { import("/js/wireless-lab.js").then(m => m.renderWirelessLab(main)); }
-    else if (sec === "pentestconsole") { import("/js/pentest-console.js?v=20260924b").then(m => m.renderPentestConsole(main)); }
+    else if (sec === "pentestconsole") { import("/js/pentest-console.js?v=20260928a").then(m => m.renderPentestConsole(main)); }
     else if (sec === "reveng") { import("/js/reverse-engineering.js").then(m => m.renderReverseEngineering(main)); }
     else if (sec === "darkwebosint") { import("/js/darkweb-osint.js").then(m => m.renderDarkwebOsint(main)); }
     else if (sec === "cyberrange") { import("/js/cyber-range.js").then(m => m.renderCyberRange(main)); }
@@ -1544,13 +1544,13 @@ function renderApp(user) {
     else if (sec === "xsslab") { import("/js/xss-lab.js").then(m => m.renderXSSLab(main)); }
     else if (sec === "osintemail") { import("/js/osint-email.js").then(m => m.renderOSINTEmail(main)); }
     else if (sec === "threatfeed") { import("/js/threat-feed.js?v=20260924b").then(m => m.renderThreatFeed(main)); }
-    else if (sec === "secchecklist") { import("/js/sec-checklist.js?v=20260924b").then(m => m.renderSecChecklist(main)); }
+    else if (sec === "secchecklist") { import("/js/sec-checklist.js?v=20260928a").then(m => m.renderSecChecklist(main)); }
     else if (sec === "investigation") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Investigation Workspace...</p>"; const _s=sec; import("/js/investigation.js?v=20260924w").then(m => { if(curSec!==_s)return; m.renderInvestigation(main); _prevCleanup = m.cleanupInvestigation; }); }
     else if (sec === "secgraph") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Security Graph...</p>"; import("/js/security-graph-ui.js?v=20260924b").then(m => m.renderSecurityGraphUI(main)); }
     else if (sec === "casemgmt") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Case Manager...</p>"; import("/js/case-manager.js?v=20260924b").then(m => m.renderCaseManager(main)); }
 
     else if (sec === "cvetimeline") { import("/js/cve-timeline.js?v=20260924b").then(m => m.renderCveTimeline(main)); }
-    else if (sec === "dataviz") { import("/js/data-viz.js").then(m => m.renderDataViz(main)); }
+    else if (sec === "dataviz") { import("/js/data-viz.js?v=20260928a").then(m => m.renderDataViz(main)); }
     else if (sec === "forensicstoolkit") { import("/js/forensics-toolkit.js").then(m => m.renderForensicsToolkit(main)); }
     else if (sec === "hashsuite") { import("/js/hash-suite.js").then(m => m.renderHashSuite(main)); }
     else if (sec === "httpinspector") { import("/js/http-inspector.js?v=20260924b").then(m => m.renderHttpInspector(main)); }
@@ -1560,7 +1560,7 @@ function renderApp(user) {
     else if (sec === "passwordtools") { import("/js/password-tools.js?v=20260924b").then(m => m.renderPasswordTools(main)); }
     else if (sec === "payloadgen") { import("/js/payload-gen.js?v=20260924b").then(m => m.renderPayloadGen(main)); }
     else if (sec === "riskcalculator") { import("/js/risk-calculator.js?v=20260924b").then(m => m.renderRiskCalculator(main)); }
-    else if (sec === "securityquiz") { import("/js/security-quiz.js").then(m => m.renderSecurityQuiz(main)); }
+    else if (sec === "securityquiz") { import("/js/security-quiz.js?v=20260928a").then(m => m.renderSecurityQuiz(main)); }
     else if (sec === "securityscanner") { import("/js/security-scanner.js?v=20260924b").then(m => m.renderSecurityScanner(main)); }
     else if (sec === "subnetvisualizer") { import("/js/subnet-visualizer.js?v=20260924b").then(m => m.renderSubnetVisualizer(main)); }
     else if (sec === "threatdashboard") { import("/js/threat-dashboard.js").then(m => m.renderThreatDashboard(main)); }
