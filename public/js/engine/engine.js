@@ -20,7 +20,7 @@ import { words as englishWords, band as wordBand } from "/js/engine/words.js";
 // This runs ONLY over the text used for routing, never over the payload a skill
 // operates on, so it makes intent detection forgiving of misspellings ("convrt",
 // "genarate", "revrse") without ever altering the user's actual content.
-const KW = ["what", "calculate", "compute", "evaluate", "convert", "generate", "write", "implement", "function", "reverse", "uppercase", "lowercase", "fibonacci", "factorial", "palindrome", "fizzbuzz", "binary", "search", "bubble", "sort", "average", "median", "variance", "solve", "stats", "statistics", "factorize", "prime", "encode", "decode", "base64", "hexadecimal", "octal", "roman", "color", "json", "query", "weekday", "complete", "predict", "continue", "explain", "define", "regex", "email", "emails", "url", "urls", "number", "numbers", "celsius", "fahrenheit", "analyze", "summarize", "kebab", "camel", "snake", "constant", "slug", "dedupe", "frequency", "between", "total", "altogether", "combined", "difference", "remaining", "python", "javascript", "typescript", "rust", "golang", "java",
+const KW = ["mode", "fraction", "what", "calculate", "compute", "evaluate", "convert", "generate", "write", "implement", "function", "reverse", "uppercase", "lowercase", "fibonacci", "factorial", "palindrome", "fizzbuzz", "binary", "search", "bubble", "sort", "average", "median", "variance", "solve", "stats", "statistics", "factorize", "prime", "encode", "decode", "base64", "hexadecimal", "octal", "roman", "color", "json", "query", "weekday", "complete", "predict", "continue", "explain", "define", "regex", "email", "emails", "url", "urls", "number", "numbers", "celsius", "fahrenheit", "analyze", "summarize", "kebab", "camel", "snake", "constant", "slug", "dedupe", "frequency", "between", "total", "altogether", "combined", "difference", "remaining", "python", "javascript", "typescript", "rust", "golang", "java",
   // domain vocabulary protected as fixed points (never "corrected" into a keyword)
   "product", "matrix", "matrices", "determinant", "transpose", "vector", "vectors", "dot", "cross", "inverse", "union", "intersection", "sequence", "series", "progression", "combination", "combinations", "permutation", "permutations", "probability", "choose", "truth", "table", "discount",
   "sqrt", "cbrt", "root", "square", "squared", "cube", "cubed", "capital", "element", "atomic", "factor", "factors", "multiple", "multiples",
@@ -86,6 +86,7 @@ function score(input) {
   // JSON path query (a JSON blob plus a path or a get/query verb)
   if (/[[{][\s\S]*[\]}]/.test(s) && (has(/\b(get|query|path|value of|field|extract)\b/) || /\.[a-z_$]/i.test(s))) add("jsonquery", 8, "JSON path query");
   if (has(/days? between|day of (the )?week|weekday|what day|add \d+ days?|leap\s*year|day of (the )?year|which day of|days?\s+(?:until|till|til|to go|left)/)) add("datetime", 6, "date arithmetic")
+  if (has(/^(?:what|which)\s+year\s+is\s+(?:it|this)|\bcurrent year\b|\bborn in \d{4}\b|^(?:what is |whats |what's )?(?:the )?(?:date )?today(?:'s date)?\s*\??$|^(?:what is |whats |what's )(?:the )?date(?: today)?\s*\??$|^what day is (?:it|today)/)) add("datetime", 8, "today's date");
   if (has(/\bdays?\s+(?:are\s+|is\s+)?(?:there\s+)?in\s+(?:the\s+(?:month|year)\s+(?:of\s+)?)?(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|\d{4}\b)/)) add("datetime", 8, "days in a month or year");
   const algoKW = has(/factorial|fibonacci|fib|reverse|prime|palindrome|fizzbuzz|binary search|bubble sort|\bsort\b|\bsearch\b|\bgcd\b|average|function|func|method|class/);
   const langKW = has(/\b(python|javascript|js|typescript|ts|rust|go|golang|java|c)\b/);
@@ -96,15 +97,15 @@ function score(input) {
   // a well-formed function spec ("name(args) = body", "... that returns <expr>")
   // is synthesizable on its own, even without a verb like "write" or "generate".
   else if (parseSpec(s)) add("codegen", 7, "a function specification to synthesize");
-  if (has(/uppercase|lowercase|\breverse\b|spell.*backwards|title case|camel ?case|snake ?case|kebab ?case|constant case|slug|word frequency|count (the )?words|word count|how many words|count (the )?(characters|letters)|how many (characters|letters|chars)|number of (characters|letters|words)|sort lines|dedupe|pretty ?print|format json|extract (emails?|urls?|links?|numbers?)|\bvowels?\b|\bconsonants?\b/))
+  if (has(/uppercase|lowercase|\breverse\b|spell.*backwards|title case|camel ?case|snake ?case|kebab ?case|constant case|slug|word frequency|count (the )?words|word count|how many words|count (the )?(characters|letters)|how many (characters|letters|chars)|number of (characters|letters|words)|sort lines|dedupe|pretty ?print|format json|extract (emails?|urls?|links?|numbers?)|\bvowels?\b|\bconsonants?\b|^palindrome:/))
     add("text", 6, "text transform");
   if (has(/complete|continue|predict|next word|finish (this|the) sentence|autocomplete/)) add("predict", 6, "asks for a prediction");
   // statistics
-  if (has(/\bstats?\b|\bmean\b|\bmedian\b|\baverage\b|standard deviation|std ?dev|variance|quartile/) && has(/\d[ ,].*\d/)) add("stats", 7, "statistics over a list");
+  if (has(/\bstats?\b|\bmean\b|\bmedian\b|\bmode\b|\brange\b|\baverage\b|standard deviation|std ?dev|variance|quartile/) && has(/\d[ ,].*\d/) && !has(/average speed|\bspeed\b/)) add("stats", 7, "statistics over a list");
   // algebra: an equation with a variable (distinct from a bare calc assignment like x=5)
   if (!codeAsk && !has(/base64|\bencode|\bdecode|rot13|\bhex\b|\bhash\b|md5|\bsha/) && (has(/\bsolve\b/) || (has(/=/) && (has(/\d\s*[a-z]/) || has(/[a-z]\s*\^/))))) add("algebra", 8, "an equation to solve");
   // number theory (asking for a value, not code)
-  if (!codeAsk && has(/factori[sz]e|prime factor|\bfactors?\s+of\b|\bfactor\s+\d|\bgcd\b|\blcm\b|greatest common|least common|is\s+\d+\s+prime|\d+(?:st|nd|rd|th)\s+(?:prime|fib)|nth\s+(?:prime|fib)|\bfirst\s+\d+\s+primes?\b|\bprimes?\s+(?:below|under|less than|up to)\s+\d/)) add("numbertheory", 7, "number theory");
+  if (!codeAsk && has(/factori[sz]e|prime factor|\bfactors?\s+of\b|\bfactor\s+\d|\bgcd\b|\blcm\b|greatest common|least common|is\s+\d+\s+prime|\d+(?:st|nd|rd|th)\s+(?:prime|fib)|nth\s+(?:prime|fib)|\bfirst\s+\d+\s+primes?\b|\bprimes?\s+(?:below|under|less than|up to)\s+\d|is\s+-\d+\s+prime|\bfib(?:onacci)?\s+(?:of\s+|number\s+)?-?\d/)) add("numbertheory", 7, "number theory");
   // encoding / hashing
   if (!isDef && has(/base64|\bhex\b|rot13|morse|url ?(en|de)code|to binary|from binary|crc32|fnv1a?|djb2|\bhash\b|\bmd5\b|\bsha-?(?:1|256)?\b/)) add("encode", 7, "encode / hash");
   // knowledge base (a definition question that is not math, code, or number theory)
@@ -148,6 +149,7 @@ function score(input) {
       has(/how (much|many)|in total|\btotal\b|altogether|in all|combined|\bsum\b|together|overall|left over|\bleft\b|remaining|remain\b|difference|fewer|less than|more than|spen[dt]|save[sd]?|gains?|earns?|deposit|split|shared|divid|\bper\b|each\b|multipl|\btimes\b|product|twice|double|triple|\boff\b|discount|\bsale\b|\badd\b|\bsum of\b/))
     add("wordmath", 6, "arithmetic word problem");
   // calc: math operators, a "what is <numbers>" request, or a variable assignment
+  if (has(/\d\s+(?:as|to|in|into)\s+(?:a\s+|its\s+)?(?:simplest\s+)?fraction\s*\??$/)) add("calc", 9, "a decimal as a fraction");
   if (has(/[-+*/^]/) && has(/\d/)) add("calc", 5, "arithmetic expression");
   if (has(/^(what\s+is|calc(ulate)?|compute|evaluate)\b/) && has(/\d/)) add("calc", 4, "arithmetic request");
   if (has(/^[a-z_]\w*\s*=[^=]/)) add("calc", 4, "variable assignment");
@@ -166,7 +168,11 @@ function say(skill, res, input, model) {
   switch (skill) {
     case "calc":
       return res.ok
-        ? { title: "Calculation", body: "The value of `" + res.expr + "` is **" + res.value + "**. I computed this by parsing the expression and evaluating it operator by operator, so the result is exact and reproducible.", result: res }
+        ? / as a fraction$/.test(res.expr || "")
+          ? { title: "Fraction", body: "`" + res.expr.replace(/ as a fraction$/, "") + "` as a fraction is **" + res.value + "** (the simplest fraction, found by continued fractions).", result: res }
+          : res.big
+          ? { title: "Calculation", body: "`" + res.expr + "` is an exact whole number with **" + res.digits + " digits**, too large for ordinary floating point, so I computed it with arbitrary-precision integers.", pre: res.value, result: res }
+          : { title: "Calculation", body: "The value of `" + res.expr + "` is **" + res.value + "**. I computed this by parsing the expression and evaluating it operator by operator, so the result is exact and reproducible." + (/\b(?:sin|cos|tan)\s*\(/.test(res.expr) && !/pi/.test(res.expr) ? " Angles are in radians; say “sin 30 degrees” for degrees." : ""), result: res }
         : { title: "Calculation", body: "I could not evaluate that: " + res.error + ".", result: res };
     case "convert":
       return res.ok
@@ -376,7 +382,7 @@ function run(skill, input, model) {
       return { op: eop, value: A.encode(eop, payload || ""), payload: payload || "" };
     }
     case "text": {
-      const opMap = [["camel", /camel ?case/], ["snake", /snake ?case/], ["kebab", /kebab ?case/], ["constant", /constant case/], ["wordfreq", /word frequency|frequenc/], ["emails", /extract emails?|\bemails?\b/], ["urls", /extract (urls?|links?)|\burls?\b|\blinks?\b/], ["numbers", /extract numbers?|\bnumbers\b(?! in)/], ["vowels", /\bvowels?\b/], ["consonants", /\bconsonants?\b/], ["upper", /uppercase/], ["lower", /lowercase/], ["title", /title case/], ["slug", /slug/], ["reverse", /reverse|backwards/], ["chars", /count (the )?(characters|letters)|char count|how many (characters|letters|chars)|number of (characters|letters)/], ["words", /count (the )?words|word count|how many words|number of words/], ["sortlines", /sort lines/], ["dedupewords", /dedupe words|(?:duplicate|repeated) words/], ["dedupe", /dedupe|remove duplicate/], ["unbase64", /decode base64|from base64|unbase64/], ["json", /pretty ?print|format json/]];
+      const opMap = [["camel", /camel ?case/], ["snake", /snake ?case/], ["kebab", /kebab ?case/], ["constant", /constant case/], ["wordfreq", /word frequency|frequenc/], ["emails", /extract emails?|\bemails?\b/], ["urls", /extract (urls?|links?)|\burls?\b|\blinks?\b/], ["numbers", /extract numbers?|\bnumbers\b(?! in)/], ["vowels", /\bvowels?\b/], ["consonants", /\bconsonants?\b/], ["upper", /uppercase/], ["lower", /lowercase/], ["title", /title case/], ["slug", /slug/], ["palindrome", /palindrome/], ["reverse", /reverse|backwards/], ["chars", /count (the )?(characters|letters)|char count|how many (characters|letters|chars)|number of (characters|letters)/], ["words", /count (the )?words|word count|how many words|number of words/], ["sortlines", /sort lines/], ["dedupewords", /dedupe words|(?:duplicate|repeated) words/], ["dedupe", /dedupe|remove duplicate/], ["unbase64", /decode base64|from base64|unbase64/], ["json", /pretty ?print|format json/]];
       let op = "words"; for (const [name, re] of opMap) if (re.test(low)) { op = name; break; }
       const scan = op === "emails" || op === "urls" || op === "numbers" || op === "wordfreq"; // scan whole input, do not strip content
       const q = input.match(/["']([^"']+)["']/); const c = input.indexOf(":");
@@ -384,6 +390,8 @@ function run(skill, input, model) {
       if (q) payload = q[1];
       else if (c >= 0) payload = input.slice(c + 1).trim();
       else if (scan) payload = input;
+      else if (/^(?:uppercase|lowercase|upper case|lower case|reverse|title ?case|camel ?case|snake ?case|kebab ?case|slugify)\s+(?!(?:the|this|these|that|it|my|a)\b)(?!(?:text|string|word|words|sentence|phrase|letters|characters)\b)\S/i.test(input.trim()) && !/\s(?:in|of|from|to|into|as)\s/i.test(input))
+        payload = input.trim().replace(/^(?:uppercase|lowercase|upper case|lower case|reverse|title ?case|camel ?case|snake ?case|kebab ?case|slugify)\s+/i, ""); // "uppercase make it loud"
       else {
         // "convert hello world to camel case": the target case is the command, not content
         input = input.replace(/\s+(?:to|into|in|as)\s+(?:(?:camel|snake|kebab|constant|title|upper|lower) ?case|uppercase|lowercase|a slug|slug)\s*$/i, "");
@@ -427,6 +435,7 @@ function spelling(input, model) {
     t = t.replace(/^is\s+/i, "").replace(/\s+(?:spelled|spelt|spelling)(?:\s+(?:right|correctly|properly|wrong))?\s*\??$/i, "").replace(/\s*\?$/, "").trim();
   }
   if (!t) return { ok: false, error: "tell me the word or text, e.g. 'how do you spell recieve' or 'spell check: teh wether is nice'" };
+  if (/^-?\d+(?:\.\d+)?e[+-]?\d+$/i.test(t)) { const n = Number(t); if (Number.isFinite(n) && Math.abs(n) < 1e15) t = String(n); else return { ok: false, error: "that number is too large to spell out (up to the trillions)" }; }
   if (/^-?\d+(?:\.\d+)?$/.test(t.replace(/,/g, ""))) {
     const words = numberToWords(t.replace(/,/g, ""));
     return words ? { ok: true, kind: "number", input: t, words } : { ok: false, error: "that number is too large to spell out (up to the trillions)" };
@@ -699,8 +708,11 @@ const REPHRASE = [
   [new RegExp("(" + NUM + ")\\s+(?:to the power|raised to(?: the power)?|to power)(?: of)?\\s+(" + NUM + ")", "gi"), "$1 ^ $2"],
   [new RegExp("\\b(?:square root|sqrt)\\s+(" + NUM + ")", "gi"), "sqrt($1)"],
   [new RegExp("\\b(?:cube root|cbrt)\\s+(" + NUM + ")", "gi"), "cbrt($1)"],
-  [new RegExp("^(?:please\\s+)?round\\s+(" + NUM + ")\\s+to\\s+(\\d+)\\s*(?:decimal places?|decimals?|dp|places?|digits?)\\s*\\??$", "i"), "round($1, $2)"],
+  [new RegExp("^(?:please\\s+)?round\\s+(" + NUM + ")\\s+to\\s+(-?\\d+)\\s*(?:decimal places?|decimals?|dp|places?|digits?)\\s*\\??$", "i"), "round($1, $2)"],
   [new RegExp("^(?:please\\s+)?round\\s+(" + NUM + ")(?:\\s+to the nearest (?:whole number|integer|one))?\\s*\\??$", "i"), "round($1)"],
+  [new RegExp("^(?:please\\s+)?round\\s+(" + NUM + ")\\s+to the nearest\\s+(ten|hundred|thousand|million|tenth|hundredth|thousandth)\\s*\\??$", "i"), (m, n, u) => "round(" + n + ", " + { ten: -1, hundred: -2, thousand: -3, million: -6, tenth: 1, hundredth: 2, thousandth: 3 }[u.toLowerCase()] + ")"],
+  // trig in degrees: "sin 30 degrees", "tan(45°)"
+  [new RegExp("\\b(sin|cos|tan)\\s*(?:of\\s+)?\\(?\\s*(" + NUM + ")\\s*(?:°|deg(?:rees?)?)\\s*\\)?", "gi"), (m, f, n) => f.toLowerCase() + "(" + n + " * pi / 180)"],
   [new RegExp("\\bnegative\\s+(" + NUM + ")", "gi"), "-$1"],
   [new RegExp("^(?:what is |whats |calculate |the )?(?:the )?(abs|log|ln|sin|cos|tan|ceil|floor|exp)\\s+(?:of\\s+)?(" + NUM + ")\\s*\\??$", "i"), (m, f, n) => f.toLowerCase() + "(" + n + ")"],
   [new RegExp("\\b(?:the\\s+)?(?:absolute value|abs|magnitude|modulus) of\\s+(" + NUM + ")", "gi"), "abs($1)"],
@@ -728,9 +740,34 @@ const REPHRASE = [
   // algebra said in words: "find x: x/2 = 8", "solve x squared = 64"
   [/^(?:find|solve for|get|what is)\s+([a-z])\s*[:,]\s*(.+=.+)$/i, "solve $2"],
   [/\b([a-z])\s+(squared|cubed)\b/gi, (m, v, p, off, str) => /=/.test(str) ? v + "^" + (p.toLowerCase() === "squared" ? 2 : 3) : m],
+  // "is racecar a palindrome" -> a palindrome check (not code)
+  [/^(?:is|check if|check whether|tell me if)\s+["']?(.+?)["']?\s+(?:is\s+)?an?\s+palindrome\s*\??$/i, "palindrome: $1"],
   // text: "capitalize every word in ...", "remove duplicate words from ..."
   [/^(?:capitali[sz]e|uppercase)\s+(?:the\s+first\s+letter\s+of\s+)?(?:every|each|all(?:\s+the)?)\s+words?(?:\s+(?:in|of))?\s*:?\s+(.+)$/i, "title case: $1"],
   [/^(?:remove|delete|drop|strip)\s+(?:the\s+)?(?:duplicate|repeated|double)\s+words\s+(?:from|in)\s*:?\s+(.+)$/i, "dedupe words: $1"],
+  // geometry, money and everyday formulas said in words -> an expression
+  [new RegExp("^(?:what is |whats |find |calculate )?(?:the )?area of (?:a |the )?circle (?:with |of )?(?:a )?radius (?:of )?(" + NUM + ")\\s*\\??$", "i"), "pi * $1^2"],
+  [new RegExp("^(?:what is |whats |find |calculate )?(?:the )?area of (?:a |the )?circle (?:with |of )?(?:a )?diameter (?:of )?(" + NUM + ")\\s*\\??$", "i"), "pi * ($1 / 2)^2"],
+  [new RegExp("^(?:what is |whats |find |calculate )?(?:the )?(?:circumference|perimeter) of (?:a |the )?circle (?:with |of )?(?:a )?radius (?:of )?(" + NUM + ")\\s*\\??$", "i"), "2 * pi * $1"],
+  [new RegExp("^(?:what is |whats |find |calculate )?(?:the )?(?:circumference|perimeter) of (?:a |the )?circle (?:with |of )?(?:a )?diameter (?:of )?(" + NUM + ")\\s*\\??$", "i"), "pi * $1"],
+  [new RegExp("^(?:what is |whats |find |calculate )?(?:the )?area of (?:a |the )?(?:rectangle|room|floor|garden|field)(?: that is| with (?:sides?|length and width))?\\s+(" + NUM + ")\\s*(?:[a-z]+\\s*)?(?:by|x|and|\\*)\\s*(" + NUM + ")\\s*[a-z]*\\s*\\??$", "i"), "$1 * $2"],
+  [new RegExp("^(?:what is |whats |find |calculate )?(?:the )?area of (?:a |the )?square (?:with |of )?(?:a )?(?:side|sides|side length)? ?(?:of )?(" + NUM + ")\\s*\\??$", "i"), "$1^2"],
+  [new RegExp("^(?:what is |whats |find |calculate )?(?:the )?area of (?:a |the )?triangle (?:with )?(?:a )?base (?:of )?(" + NUM + ")\\s*(?:and\\s+)?(?:a\\s+)?height (?:of )?(" + NUM + ")\\s*\\??$", "i"), "$1 * $2 / 2"],
+  [new RegExp("^(?:what is |whats |find |calculate )?(?:the )?perimeter of (?:a |the )?square (?:with |of )?(?:a )?(?:side|sides|side length)? ?(?:of )?(" + NUM + ")\\s*\\??$", "i"), "4 * $1"],
+  [new RegExp("^(?:what is |whats |find |calculate )?(?:the )?perimeter of (?:a |the )?rectangle\\s+(" + NUM + ")\\s*(?:by|x|and)\\s*(" + NUM + ")\\s*\\??$", "i"), "2 * ($1 + $2)"],
+  [new RegExp("^(?:what is |whats |find |calculate )?(?:the )?volume of (?:a |the )?cube (?:with |of )?(?:a )?(?:side|sides|edge)? ?(?:of )?(" + NUM + ")\\s*\\??$", "i"), "$1^3"],
+  [new RegExp("^(?:what is |whats |find |calculate )?(?:the )?volume of (?:a |the )?sphere (?:with |of )?(?:a )?radius (?:of )?(" + NUM + ")\\s*\\??$", "i"), "4 / 3 * pi * $1^3"],
+  [new RegExp("^(?:what is |whats |find |calculate )?(?:the )?volume of (?:a |the )?cylinder (?:with )?(?:a )?radius (?:of )?(" + NUM + ")\\s*(?:and\\s+)?(?:a\\s+)?height (?:of )?(" + NUM + ")\\s*\\??$", "i"), "pi * $1^2 * $2"],
+  [new RegExp("^(?:what is |whats |find |calculate )?(?:the )?hypotenuse (?:of |for |with (?:sides|legs) )?(?:a (?:right )?triangle (?:with (?:sides|legs) )?)?(" + NUM + ")\\s*(?:and|,)\\s*(" + NUM + ")\\s*\\??$", "i"), "sqrt($1^2 + $2^2)"],
+  [new RegExp("^(?:what is |whats |calculate )?(?:the )?simple interest (?:on|for) \\$?(" + NUM + ")\\s*(?:dollars\\s*)?at (" + NUM + ")\\s*%(?: a year| per year| annually)? (?:for|over) (" + NUM + ")\\s*years?\\s*\\??$", "i"), "$1 * $2 / 100 * $3"],
+  [new RegExp("^(?:what is |whats |calculate )?(?:the )?compound interest (?:on |for )?\\$?(" + NUM + ")\\s*(?:dollars\\s*)?at (" + NUM + ")\\s*%(?: a year| per year| annually| compounded yearly)? (?:for|over) (" + NUM + ")\\s*years?\\s*\\??$", "i"), "$1 * (1 + $2 / 100)^$3"],
+  [new RegExp("^(?:what is |whats |calculate )?(?:the )?average speed (?:of |for |if you (?:drive|go|travel) )?(" + NUM + ")\\s*(km|miles?|mi|m|meters?)\\s+in\\s+(" + NUM + ")\\s*(hours?|hrs?|h|seconds?|s|minutes?|mins?)\\s*\\??$", "i"), "$1 / $3"],
+  [new RegExp("^(?:what is |whats |calculate )?(?:my |the )?bmi (?:for |of |with )?(" + NUM + ")\\s*kg\\s*(?:and\\s*)?(" + NUM + ")\\s*m\\s*\\??$", "i"), "$1 / $2^2"],
+  [new RegExp("^(?:what is |whats |find )?(?:the )?remainder (?:of|when|after)\\s+(" + NUM + ")\\s+(?:is\\s+)?divided by\\s+(" + NUM + ")\\s*\\??$", "i"), "$1 mod $2"],
+  [new RegExp("^(?:what is |whats |find )?(?:the )?sum of (?:all )?(?:the )?(?:numbers|integers|whole numbers)?\\s*(?:from )?(\\d+) (?:to|through|thru) (\\d+)\\s*\\??$", "i"), (m, a, b) => "(" + a + " + " + b + ") * (" + b + " - " + a + " + 1) / 2"],
+  // bare hex digits: "what is ff in decimal"
+  [/^(?:what is |whats |convert )?(?:hex\s+)?([0-9a-f]*[a-f][0-9a-f]*)(?:\s+hex)?\s+(?:in|to|into|as)\s+(?:decimal|base 10|a number)\s*\??$/i, "0x$1 to decimal"],
+  [/^(?:what is |whats |convert )?(?:binary\s+)?([01]{2,})(?:\s+binary)?\s+(?:in|to|into|as)\s+(?:decimal|base 10)\s*\??$/i, "0b$1 to decimal"],
   // "1 mile is how many km", "5 foot 10 in cm"
   [new RegExp("^(" + NUM + ")\\s*([a-z/]+)\\s+(?:is|are|equals|=|makes)\\s+how many\\s+([a-z/]+)\\s*\\??$", "i"), "$1 $2 to $3"],
   [/\b(\d+)\s*(?:foot|feet|ft|')\s*(\d+(?:\.\d+)?)\s*(?:inches|inch|in|")?\s+(in|to|into|as)\s+([a-z]+)/gi, (m, f, i, p, u) => (Number(f) * 12 + Number(i)) + " inches " + p + " " + u],
@@ -755,7 +792,7 @@ const REPHRASE = [
   // number theory names
   [/\b(?:lowest|least|smallest) common (?:multiple|denominator)\b/gi, "lcm"],
   [/\b(?:greatest|highest|biggest|largest) common (?:divisor|factor|denominator)\b|\bhcf\b/gi, "gcd"],
-  [/^(?:is|was)\s+(\d+)\s+(?:a\s+)?prime(?:\s+number)?\s*\??$/i, "is $1 prime"],
+  [/^(?:is|was)\s+(-?\d+)\s+(?:a\s+)?prime(?:\s+number)?\s*\??$/i, "is $1 prime"],
   [/^(?:is|was)\s+(\d+)\s+(?:a\s+)?(?:composite|non-?prime)(?:\s+number)?\s*\??$/i, "is $1 prime"],
   // combinatorics: "how many ways can i arrange 4 books"
   [/\b(?:ways?\s+(?:can\s+(?:i|you|we|they)\s+|to\s+|of\s+|there are to\s+)?(?:arrange|order|line up|sort|permute|seat)|arrangements of)\s+(\d+)(?:\s+[a-z]+)?/gi, "ways to arrange $1"],

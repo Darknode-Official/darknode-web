@@ -480,8 +480,15 @@ export function sci(v) {
 }
 
 // facts(input) — pick the pack from the question's wording, then fall through.
+// common chemical formulas, read case-insensitively ("what is h2o")
+const COMPOUNDS = { h2o: "water", co2: "carbon dioxide", co: "carbon monoxide", o2: "oxygen gas", o3: "ozone", n2: "nitrogen gas", h2: "hydrogen gas", nacl: "sodium chloride (table salt)", h2o2: "hydrogen peroxide", ch4: "methane", nh3: "ammonia", h2so4: "sulfuric acid", hcl: "hydrochloric acid", hno3: "nitric acid", naoh: "sodium hydroxide (lye)", c6h12o6: "glucose", c12h22o11: "sucrose (table sugar)", c2h5oh: "ethanol", c2h6o: "ethanol", caco3: "calcium carbonate (chalk, limestone)", nahco3: "sodium bicarbonate (baking soda)", so2: "sulfur dioxide", no2: "nitrogen dioxide", n2o: "nitrous oxide", fe2o3: "iron(III) oxide (rust)", sio2: "silicon dioxide (quartz, sand)", c8h10n4o2: "caffeine", ch3cooh: "acetic acid (vinegar)", kcl: "potassium chloride", mgso4: "magnesium sulfate (Epsom salt)" };
+const FORMULA_OF = Object.fromEntries(Object.entries(COMPOUNDS).map(([f, n]) => [n.replace(/ \(.*\)$/, ""), f]));
 export function facts(input) {
   const t = clean(input);
+  const cf = t.match(/^\s*(?:what is |whats |what's |define )?(?:the )?(?:formula )?([a-z0-9]+)\s*$/);
+  if (cf && COMPOUNDS[cf[1]] && /\d/.test(cf[1])) return { ok: true, trivia: true, text: cf[1].toUpperCase() + " is " + COMPOUNDS[cf[1]] + "." };
+  const fo = t.match(/(?:chemical )?formula (?:for|of) (?:the )?([a-z ()]+?)\s*$/);
+  if (fo && FORMULA_OF[fo[1].trim()]) return { ok: true, trivia: true, text: "The chemical formula of " + fo[1].trim() + " is " + FORMULA_OF[fo[1].trim()].toUpperCase() + "." };
   if (/\bhow many (?:chemical )?elements\b/.test(t)) return { ok: true, trivia: true, text: "There are " + ELEMENTS.length + " known elements, from hydrogen (1) to oganesson (" + ELEMENTS.length + ")." };
   const ext = t.match(/\b(heaviest|lightest|last|first) (?:chemical )?element\b/);
   if (ext) { const el = /heaviest|last/.test(ext[1]) ? EL_BY_Z[ELEMENTS.length] : EL_BY_Z[1]; return { ...elRes(el), trivia: ext[1] }; }

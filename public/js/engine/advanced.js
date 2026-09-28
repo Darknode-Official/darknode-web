@@ -89,6 +89,7 @@ function gcd(a, b) { a = Math.abs(Math.trunc(a)); b = Math.abs(Math.trunc(b)); w
 export function numberTheory(input) {
   const low = String(input || "").toLowerCase();
   const nums = (low.match(/\d+/g) || []).map(Number);
+  if (/factori[sz]e|prime factor|factors of/.test(low) && nums.length && nums[0] < 2) return { ok: true, kind: "factorize", n: nums[0], factors: [], text: nums[0] + " has no prime factorization (only whole numbers from 2 up have one)" };
   if (/factori[sz]e|prime factor|factors of/.test(low) && nums.length) {
     const f = factorize(nums[0]);
     const grouped = {}; for (const p of f) grouped[p] = (grouped[p] || 0) + 1;
@@ -97,16 +98,21 @@ export function numberTheory(input) {
   }
   if (/\bg\.?c\.?d|greatest common/.test(low) && nums.length >= 2) return { ok: true, kind: "gcd", text: String(nums.reduce((a, b) => gcd(a, b))) };
   if (/\bl\.?c\.?m|least common/.test(low) && nums.length >= 2) return { ok: true, kind: "lcm", text: String(nums.reduce((a, b) => Math.abs(a / gcd(a, b) * b))) };
+  const signed = (low.match(/-?\d+/g) || []).map(Number);
+  if (/prime/.test(low) && /\b(is|check)\b/.test(low) && signed.length && signed[0] < 2) return { ok: true, kind: "isprime", text: signed[0] + " is not prime (primes are whole numbers greater than 1)" };
   if (/prime/.test(low) && /\b(is|check)\b/.test(low) && nums.length) return { ok: true, kind: "isprime", text: (isPrime(nums[0]) ? nums[0] + " is prime" : nums[0] + " is not prime (" + (factorize(nums[0]).join(" * ")) + ")") };
   const fp = low.match(/\b(?:first|list(?: the)?(?: first)?)\s+(\d+)\s+primes?(?: numbers?)?\b|\bprimes?\s+(?:below|under|less than|up to)\s+(\d+)/);
   if (fp) {
     const out = [];
+    const capped = fp[1] ? +fp[1] > 1000 : +fp[2] > 100000;
     if (fp[1]) { const k = Math.min(1000, +fp[1]); for (let n = 2; out.length < k; n++) if (isPrime(n)) out.push(n); }
     else { const lim = Math.min(100000, +fp[2] - (/up to/.test(low) ? 0 : 1)); for (let n = 2; n <= lim; n++) if (isPrime(n)) out.push(n); }
-    return { ok: true, kind: "primes", text: out.join(", ") + " (" + out.length + " primes)" };
+    if (!out.length) return { ok: true, kind: "primes", text: "none: there are no primes " + (fp[1] ? "in an empty list" : "below 2") + " (the first prime is 2)" };
+    return { ok: true, kind: "primes", text: out.join(", ") + " (" + out.length + " primes" + (capped ? ", capped here to keep the answer readable" : "") + ")" };
   }
   const np = low.match(/(\d+)(?:st|nd|rd|th)?\s+prime/) || (/nth prime/.test(low) && nums.length ? [0, nums[0]] : null);
   if (np) return { ok: true, kind: "nthprime", text: "prime #" + np[1] + " is " + nthPrime(Number(np[1])) };
+  if (/fib/.test(low) && /(?:^|\s)-\d/.test(low)) return { ok: false, error: "Fibonacci numbers are indexed from 0 up, so a negative position has no value here" };
   const nf = low.match(/(\d+)(?:st|nd|rd|th)?\s+fib/) || (/fibonacci/.test(low) && nums.length ? [0, nums[0]] : null);
   if (nf) return { ok: true, kind: "fib", text: "Fibonacci #" + nf[1] + " is " + nthFib(Number(nf[1])) };
   return { ok: false, error: "try: factorize 360, gcd 12 18, is 97 prime, 10th prime, 20th fibonacci" };
