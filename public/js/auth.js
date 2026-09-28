@@ -286,8 +286,14 @@ if (window.__errorQueue) { window.__errorQueue.splice(0).forEach(e => _logError(
 window.addEventListener("error", (ev) => {
   _logError({ message: String(ev.message || ""), source: ev.filename || "", line: ev.lineno, col: ev.colno, stack: ev.error?.stack?.slice(0, 2000) || "", url: location.href, ua: navigator.userAgent, clientTs: Date.now() });
 });
+// Firebase Auth refreshes its persisted user in the background; when the browser
+// closes IndexedDB for a hidden/frozen tab, that write rejects unhandled with
+// "Database is closing/hidden". Auth reopens the database on its next use, so
+// the error is harmless noise: silence it rather than log it.
+const _benignIdb = /Database is closing|Database is closed|database connection is closing|InvalidStateError.*IDB/i;
 window.addEventListener("unhandledrejection", (ev) => {
   const r = ev.reason || {};
+  if (_benignIdb.test(String(r.message || r)) && /indexed_?db|PersistenceUserManager|firebase/i.test(String(r.stack || "") + String(r.message || ""))) { ev.preventDefault(); return; }
   _logError({ message: r.message || String(r), source: "unhandledrejection", stack: r.stack?.slice(0, 2000) || "", url: location.href, ua: navigator.userAgent, clientTs: Date.now() });
 });
 

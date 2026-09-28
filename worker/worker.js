@@ -298,10 +298,66 @@ async function handleDarknode(cfg, env, model, messages, opts) {
   return streamBack(upstream, isGemini, opts);
 }
 
+// ---- Smart mode for the DI tab (/api/smart) --------------------------------
+// The site's own key (SMART_KEY secret, falling back to GEMINI_KEY) stays here on
+// the server and never reaches the browser. The planner prompt is fixed server
+// side, so this route only ever plans DI requests or writes an answer/code; it
+// is not a general-purpose proxy. Non-streaming JSON: { steps, answer }.
+const SMART_SYS = `You are Smart mode, the language front-end of DI, a deterministic computation engine on the Darknode website. Refer to yourself only as "Smart mode"; do not name any underlying model, vendor or company.
+
+The engine can: evaluate arithmetic and math expressions (variables, functions, factorial, percentages); convert units; convert number bases and roman numerals; convert colors; solve linear and quadratic equations; do number theory (prime test, gcd/lcm, factorize, nth prime, nth fibonacci); compute statistics over a list; transform text (case, slug, counts, extract emails/urls/numbers, reverse, palindromes); build and test regular expressions; run JSON path queries; do date math; encode/hash (base64, hex, url, rot13, morse, md5, sha1, sha256); spell-check text; look up country capitals, chemical elements and physical constants; truth tables, set operations, matrices, sequences and combinatorics; geometry and interest formulas.
+
+Understand the user's request however it is phrased or misspelled, using the earlier conversation for context. Reply with STRICT JSON and nothing else:
+{"steps": [<engine command strings>], "answer": <string or null>}
+
+Rules:
+- CODE: whenever the user asks for code of any kind (a function, class, script, program, app, game, website, query, config, a fix, a refactor, a code review or an explanation of code), put the COMPLETE, correct, runnable code in "answer" as markdown: one or two short sentences, then fenced code blocks with a language tag (e.g. \`\`\`python). No placeholders, no "TODO", no "rest of the code here": write all of it. Use the language the user asked for (default: Python). Set "steps" to [].
+- COMPUTATION: put every part the engine can compute into "steps", one short normalized command each (e.g. "convert 5 km to miles", "solve x^2 - 5x + 6 = 0", "reverse: hello world", "capital of japan"). A later step may say "it" for the previous result (e.g. ["15% of 240", "multiply it by 3", "is it prime"]). For a math word problem a step is ONLY the arithmetic ("45+62+58").
+- EVERYTHING ELSE (explanations, advice, writing, general knowledge): answer it in "answer", concise, correct and friendly, in markdown. If everything is covered by steps, "answer" is null.
+- Output JSON only: no code fences around the JSON, no extra prose.`;
+
+async function handleSmart(request, env) {
+  const key = env.SMART_KEY || env.GEMINI_KEY;
+  if (!key) return json({ error: "Smart mode is not configured on the server." }, 503);
+  let body;
+  try { body = await request.json(); } catch (_) { return json({ error: "Invalid JSON body" }, 400); }
+  const input = String((body && body.input) || "").slice(0, 6000).trim();
+  if (!input) return json({ error: "Empty request" }, 400);
+  const contents = [];
+  for (const h of (Array.isArray(body.history) ? body.history : []).slice(-6)) {
+    if (!h || !h.q) continue;
+    contents.push({ role: "user", parts: [{ text: String(h.q).slice(0, 2000) }] });
+    contents.push({ role: "model", parts: [{ text: String(h.a || "(answered)").slice(0, 600) }] });
+  }
+  contents.push({ role: "user", parts: [{ text: input }] });
+  const req = { systemInstruction: { parts: [{ text: SMART_SYS }] }, contents, generationConfig: { temperature: 0.2, responseMimeType: "application/json", maxOutputTokens: 8192 } };
+  // Primary model, then fallbacks when one is overloaded, missing or unreachable.
+  const models = [env.SMART_MODEL || "gemini-flash-latest", env.SMART_FALLBACK_MODEL || "gemini-flash-lite-latest"];
+  let r = null;
+  for (const model of models) {
+    try { r = await fetch(`${GEMINI_BASE}/${encodeURIComponent(model)}:generateContent`, { method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": key }, body: JSON.stringify(req) }); }
+    catch (_) { r = null; continue; }
+    if (r.ok || r.status === 400 || r.status === 429) break;
+  }
+  if (!r) return json({ error: "Smart mode could not be reached. Try again in a moment." }, 502);
+  if (r.status === 429) return json({ error: "Smart mode is busy right now. Wait a few seconds and try again." }, 429);
+  if (!r.ok) return json({ error: "Smart mode had a problem (" + r.status + "). Try again, or turn Smart mode off." }, 502);
+  let j; try { j = await r.json(); } catch (_) { return json({ error: "Smart mode returned an unreadable response." }, 502); }
+  const parts = (((j.candidates || [])[0] || {}).content || {}).parts || [];
+  const text = parts.filter((p) => !p.thought).map((p) => p.text || "").join("").trim();
+  if (!text) return json({ error: "Smart mode returned an empty response. Try rephrasing." }, 502);
+  let parsed = null;
+  try { parsed = JSON.parse(text.replace(/^```(?:json)?/i, "").replace(/```$/, "").trim()); } catch (_) {}
+  if (!parsed || typeof parsed !== "object") return json({ steps: [], answer: text });
+  const steps = Array.isArray(parsed.steps) ? parsed.steps.filter((x) => typeof x === "string" && x.trim()).map((x) => x.trim()).slice(0, 12) : [];
+  return json({ steps, answer: typeof parsed.answer === "string" && parsed.answer.trim() ? parsed.answer : null });
+}
+
 export default {
   async fetch(request, env) {
     if (request.method === "OPTIONS") return new Response(null, { headers: CORS });
     const { pathname } = new URL(request.url);
+    if (pathname === "/api/smart" && request.method === "POST") return handleSmart(request, env);
     if (pathname !== "/api/chat") return json({ error: "Not found" }, 404);
     if (request.method !== "POST") return json({ error: "POST only" }, 405);
 

@@ -898,7 +898,7 @@ export function respond(input, model) {
       return {
         skill: null, confidence: 0, alternatives: [], smart: true,
         title: "That is a whole " + thing + ", not a single function",
-        body: "I understand: you want to build a **" + thing + "**. Here is the honest boundary, and I will not pretend otherwise. This engine has no AI model. It synthesizes one function at a time from a spec — from scratch, in 7 languages — with real recursion and loops. A complete " + thing + " is a full application, and writing one from an open-ended description is exactly what a trained model does, not a rule-based engine.\n\nTwo real ways forward:\n- Turn on **Smart mode** (toggle, top right) to use your own Gemini key for open-ended requests like this one.\n- Or hand me the pieces as function specs and I will generate each right now, for example: `move(pos, velocity, dt) = pos + velocity * dt`, `clamp(x, lo, hi) = x < lo ? lo : (x > hi ? hi : x)`, `score(hits, misses) = hits - misses`.",
+        body: "I understand: you want to build a **" + thing + "**. Here is the honest boundary, and I will not pretend otherwise. This engine has no AI model. It synthesizes one function at a time from a spec — from scratch, in 7 languages — with real recursion and loops. A complete " + thing + " is a full application, and writing one from an open-ended description is exactly what a trained model does, not a rule-based engine.\n\nTwo real ways forward:\n- Turn on **Smart mode** (toggle, top right): it works online and writes complete programs like this one.\n- Or hand me the pieces as function specs and I will generate each right now, for example: `move(pos, velocity, dt) = pos + velocity * dt`, `clamp(x, lo, hi) = x < lo ? lo : (x > hi ? hi : x)`, `score(hits, misses) = hits - misses`.",
       };
     }
     // 2) Otherwise: say which words it did recognize, then ask to disambiguate.
@@ -912,7 +912,7 @@ export function respond(input, model) {
     return {
       skill: null, confidence: 0, alternatives: [],
       title: "Not sure yet",
-      body: recognized + "I could not confidently match that to one of my skills, and I do not guess like a language model. Tell me which you want: **calculate**, **convert**, **generate code**, **transform text**, **build a regex**, or **date math** — or turn on **Smart mode** to let your own Gemini key read a free-form request." + (cont ? "\n\nYou seem mid-sentence; my statistical continuation is below." : ""),
+      body: recognized + "I could not confidently match that to one of my skills, and I do not guess like a language model. Tell me which you want: **calculate**, **convert**, **generate code**, **transform text**, **build a regex**, or **date math** — or turn on **Smart mode** to have a free-form request understood online." + (cont ? "\n\nYou seem mid-sentence; my statistical continuation is below." : ""),
       pre: cont || null,
     };
   }

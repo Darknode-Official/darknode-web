@@ -5,13 +5,29 @@
 // predictor trained on a bundled corpus. Reuses the AWS console page classes.
 import { CORPUS } from "/js/engine/corpus.js";
 import { respond, route, predictWords, fixTypos, buildModel, learn, agent, runSteps } from "/js/engine/engine.js";
-import { smartInterpret, hasSmartKey } from "/js/engine/smart.js";
+import { smartInterpret } from "/js/engine/smart.js";
 
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
-// tiny markdown: **bold**, `code`, newlines -> <br>
-const md = (s) => esc(s).replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>").replace(/`([^`]+)`/g, '<code>$1</code>').replace(/\n/g, "<br>");
+// tiny markdown: **bold**, `code`, "# heading" lines, newlines -> <br>, and
+// ```lang fenced blocks -> <pre> with a Copy button (Smart mode writes code)
+const mdInline = (s) => esc(s).replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>").replace(/`([^`]+)`/g, '<code>$1</code>')
+  .replace(/^#{1,6} +(.+)$/gm, "<b>$1</b>").replace(/\n/g, "<br>");
+const md = (s) => {
+  // split() with two groups yields [text, lang, code, text, lang, code, ..., text]
+  const parts = String(s == null ? "" : s).split(/```([\w+#.-]*)[ \t]*\n?([\s\S]*?)(?:```|$)/);
+  let html = "";
+  for (let i = 0; i < parts.length; i += 3) {
+    html += mdInline((parts[i] || "").replace(/^\n+|\n+$/g, ""));
+    if (i + 2 < parts.length) {
+      const lang = parts[i + 1] || "", code = (parts[i + 2] || "").replace(/\n+$/, "");
+      html += '<div class="ue-code"><div class="ue-code-bar"><span>' + esc(lang || "code") +
+        '</span><button type="button" class="ue-copy">Copy</button></div><pre><code>' + esc(code) + '</code></pre></div>';
+    }
+  }
+  return html;
+};
 
 const SOURCES = [
   ["Calculator", "variables, multi-arg functions, factorial, %, hex/binary — parsed and evaluated exactly"],
@@ -128,6 +144,10 @@ export function renderEngine(main) {
     '.ue-bot .ue-title{font-weight:700;color:var(--acc);font-size:.8rem;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px}' +
     '.ue-bot pre{background:rgba(127,127,127,.12);border:1px solid var(--line);border-radius:8px;padding:10px 12px;overflow:auto;margin:8px 0 4px;font-size:.82rem}' +
     '.ue-meta{font-size:.7rem;color:var(--mut);margin-top:6px}' +
+    '.ue-code{margin:8px 0 4px}.ue-code pre{margin:0;border-top-left-radius:0;border-top-right-radius:0;white-space:pre}' +
+    '.ue-code-bar{display:flex;justify-content:space-between;align-items:center;font-size:.7rem;color:var(--mut);padding:4px 8px 4px 12px;border:1px solid var(--line);border-bottom:0;border-radius:8px 8px 0 0}' +
+    '.ue-copy{font:inherit;color:inherit;background:transparent;border:1px solid var(--line);border-radius:6px;padding:2px 8px;cursor:pointer}' +
+    '.ue-msg.ue-bot:has(.ue-code){max-width:100%;width:100%;box-sizing:border-box}' +
     '.ue-alt{display:inline-block;margin-left:6px;text-decoration:underline;cursor:pointer;color:var(--mut)}' +
     '.ue-pred{display:flex;gap:6px;flex-wrap:wrap;min-height:26px;margin:2px 0 8px}' +
     '.ue-pred .chip{cursor:pointer}' +
@@ -144,7 +164,7 @@ export function renderEngine(main) {
     '</style>' +
     '<div class="ue-wrap">' +
     '<h1 class="pg-h1">Deterministic Intelligence <span style="font-size:.5em;vertical-align:middle;opacity:.6;font-weight:600">DI</span></h1>' +
-    '<p class="muted pg-sub">The deterministic counterpart to AI. Where an AI predicts an answer from a trained model, <b>DI</b> computes one from rules, synthesis, and sourced facts &mdash; with <b>no AI, no neural network, and no data leaving your device</b>. It routes your request across a dozen built-in sources, shows its confidence, and predicts as you type. Specific requests get exact, tested results; vague ones get a clarifying question, never a confident guess. It reads through typos itself (a keyboard-aware spelling corrector over its own vocabulary) and tells you what it corrected. Turn on <b>Smart mode</b> to let your own Gemini key read open-ended requests &mdash; DI still computes and verifies the answer whenever it can.</p>' +
+    '<p class="muted pg-sub">The deterministic counterpart to AI. Where an AI predicts an answer from a trained model, <b>DI</b> computes one from rules, synthesis, and sourced facts &mdash; with <b>no AI and no neural network</b>, entirely on your device. It routes your request across a dozen built-in sources, shows its confidence, and predicts as you type. Specific requests get exact, tested results; vague ones get a clarifying question, never a confident guess. It reads through typos itself (a keyboard-aware spelling corrector over its own vocabulary) and tells you what it corrected. Turn on <b>Smart mode</b> for open-ended requests and code: it works online through Darknode's servers, and DI still computes and verifies the answer whenever it can.</p>' +
     '<div class="ue-src">' + SOURCES.map(([n, d]) =>
       '<div class="arse-card"><div class="an">' + esc(n) + '</div><div class="ad">' + esc(d) + '</div></div>').join("") + '</div>' +
     '<div class="cs-filter" id="ueEx" style="margin-bottom:6px">' +
@@ -191,9 +211,7 @@ export function renderEngine(main) {
   function updateHint() {
     if (!hintEl) return;
     if (!smartOn()) { hintEl.textContent = "Deterministic: exact, verified, on-device. No AI."; return; }
-    hintEl.textContent = hasSmartKey()
-      ? "Smart mode: your Gemini reads the request, DI still computes and verifies the answer."
-      : "Smart mode needs your Gemini key — add it in Settings → API Keys.";
+    hintEl.textContent = "Smart mode (online): understands open-ended requests and writes code; DI still computes and verifies what it can.";
   }
 
   // restore saved mode
@@ -219,31 +237,31 @@ export function renderEngine(main) {
       return;
     }
 
-    // Smart mode: Gemini PLANS the steps (with the recent conversation as
-    // context); DI runs and verifies every step it can. Gemini's own words are
-    // shown only for what DI has no rule for, and are labelled unverified.
-    const pend = bubble("ue-bot", '<div class="ue-title">Smart mode</div><div class="ue-meta">Planning with Gemini…</div>');
+    // Smart mode: the server PLANS the steps (with the recent conversation as
+    // context); DI runs and verifies every step it can. Smart mode's own words
+    // are shown only for what DI has no rule for, and are labelled unverified.
+    const pend = bubble("ue-bot", '<div class="ue-title">Smart mode</div><div class="ue-meta">Thinking…</div>');
     let out;
     try { out = await smartInterpret(s, log.slice(-6).map((h) => ({ q: h.q, a: summary(h.r) }))); } catch (e) { out = { ok: false, error: (e && e.message) || "Smart mode failed." }; }
     if (pend && pend.parentNode) pend.parentNode.removeChild(pend);
 
     if (!out.ok) {
-      const r = { title: "Smart mode", body: out.error, note: out.needKey ? "You can still use DI without Smart mode — just turn the toggle off." : "" };
+      const r = { title: "Smart mode", body: out.error, note: "You can still use DI without Smart mode: just turn the toggle off." };
       log.push({ q: s, r });
       renderBot(r);
       return;
     }
     const done = out.steps && out.steps.length ? runSteps(out.steps, model, session) : [];
     const verified = done.filter((d) => d.r.skill);
-    for (const d of done) d.r.note = (d.r.note ? d.r.note + " " : "") + "Smart mode: Gemini planned \u201c" + d.step + "\u201d; DI " + (d.r.skill ? "computed it deterministically." : "has no rule for it.");
+    for (const d of done) d.r.note = (d.r.note ? d.r.note + " " : "") + "Smart mode planned \u201c" + d.step + "\u201d; DI " + (d.r.skill ? "computed it deterministically." : "has no rule for it.");
     if (done.length === 1 && verified.length === 1 && !out.answer) { log.push({ q: s, r: done[0].r }); show(done[0].r); return; }
     if (done.length) {
-      const plan = { agent: true, steps: done, title: "Smart plan: " + done.length + " step" + (done.length === 1 ? "" : "s"), body: "Gemini planned **" + done.length + "** step" + (done.length === 1 ? "" : "s") + "; DI verified **" + verified.length + "** of them." };
+      const plan = { agent: true, steps: done, title: "Smart plan: " + done.length + " step" + (done.length === 1 ? "" : "s"), body: "Smart mode planned **" + done.length + "** step" + (done.length === 1 ? "" : "s") + "; DI verified **" + verified.length + "** of them." };
       log.push({ q: s, r: plan });
       show(plan);
     }
     if (out.answer || !done.length) {
-      const r = { title: "Smart mode · Gemini", body: out.answer || "No answer.", note: "Answered by Gemini using your API key. This part is not verified by DI's deterministic core." };
+      const r = { title: "Smart mode", body: out.answer || "No answer.", note: "Written by Smart mode. This part is not verified by DI's deterministic core, so test code before relying on it." };
       log.push({ q: s, r });
       renderBot(r);
     }
@@ -298,6 +316,13 @@ export function renderEngine(main) {
   });
 
   main.querySelector("#ueEx").addEventListener("click", (e) => { const b = e.target.closest("[data-ex]"); if (b) send(b.dataset.ex); });
+  logEl.addEventListener("click", (e) => {
+    const c = e.target.closest(".ue-copy");
+    if (!c) return;
+    const code = c.closest(".ue-code").querySelector("code").textContent;
+    const done = () => { c.textContent = "Copied"; setTimeout(() => { c.textContent = "Copy"; }, 1400); };
+    try { navigator.clipboard.writeText(code).then(done, () => {}); } catch (_) {}
+  });
   logEl.addEventListener("click", (e) => { const a = e.target.closest("[data-alt]"); if (a) { const last = log[log.length - 1]; if (last) renderBot(respond(last.q, model)); } });
 
   // greeting
