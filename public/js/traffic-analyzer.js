@@ -106,7 +106,8 @@ export function renderTrafficAnalyzer(container) {
   h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">';
   h += '<div>';
   h += '<h2 style="margin:0;color:#00d4ff;letter-spacing:2px;font-size:18px;">NETWORK TRAFFIC ANALYZER</h2>';
-  h += '<div style="color:#4a6a8a;font-size:11px;margin-top:4px;">Capture period: 2026-09-18 00:00Z — 14:30Z | 114,460 packets | 130.4 MB</div>';
+  h += '<div style="margin-top:6px;display:inline-block;padding:2px 8px;border:1px solid #ffaa22;color:#ffaa22;font-size:11px;border-radius:3px;letter-spacing:1px;">SAMPLE TRAFFIC</div>';
+  h += '<div style="color:#4a6a8a;font-size:11px;margin-top:4px;">Illustrative sample data generated in your browser for learning. It is not a capture of your network.</div>';
   h += '</div>';
   h += '<button id="ta-export" style="background:#0a2a3a;border:1px solid #1a4a6a;color:#00d4ff;padding:6px 14px;font-family:monospace;font-size:11px;cursor:pointer;border-radius:3px;">EXPORT REPORT</button>';
   h += '</div>';
@@ -203,7 +204,8 @@ export function renderTrafficAnalyzer(container) {
   if (exportBtn) {
     exportBtn.addEventListener('click', function() {
       var report = '=== DARKNODE TRAFFIC ANALYSIS REPORT ===\n';
-      report += 'Generated: ' + new Date().toISOString() + '\n\n';
+      report += 'Generated: ' + new Date().toISOString() + '\n';
+      report += 'NOTE: SAMPLE TRAFFIC - illustrative data generated in the browser, not a real capture.\n\n';
       report += '--- SUSPICIOUS ACTIVITY ---\n';
       for (var r = 0; r < suspicious.length; r++) {
         report += '[' + suspicious[r].severity.toUpperCase() + '] ' + suspicious[r].type + ': ' + suspicious[r].src + ' -> ' + suspicious[r].dst + '\n';

@@ -205,8 +205,8 @@ function renderSubnetCalculator(root) {
           <div class="stat-l">Broadcast</div><div class="mono">${intToIp(broadcast)}</div>
           <div class="stat-l">Netmask</div><div class="mono">${intToIp(mask)} (/${bits})</div>
           <div class="stat-l">Wildcard mask</div><div class="mono">${intToIp(wildcard)}</div>
-          <div class="stat-l">First usable host</div><div class="mono">${bits >= 31 ? "n/a" : intToIp(firstHost)}</div>
-          <div class="stat-l">Last usable host</div><div class="mono">${bits >= 31 ? "n/a" : intToIp(lastHost)}</div>
+          <div class="stat-l">First usable host</div><div class="mono">${bits === 32 ? "n/a" : intToIp(firstHost)}</div>
+          <div class="stat-l">Last usable host</div><div class="mono">${bits === 32 ? "n/a" : intToIp(lastHost)}</div>
           <div class="stat-l">Usable hosts</div><div class="mono">${usable.toLocaleString()}</div>
           <div class="stat-l">Total addresses</div><div class="mono">${totalAddrs.toLocaleString()}</div>
           <div class="stat-l">Address class</div><div class="mono">${cls}</div>
@@ -337,7 +337,7 @@ function renderSubnetCalculator(root) {
           if (b && a.bits === b.bits && a.end + 1 === b.start) {
             const superBits = a.bits - 1;
             const superSize = Math.pow(2, 32 - superBits);
-            const superStart = a.start & maskFromBits(superBits);
+            const superStart = (a.start & maskFromBits(superBits)) >>> 0;
             if (superBits >= 0 && superStart === a.start && (a.end - a.start + 1) * 2 === superSize) {
               next.push({ start: superStart, end: superStart + superSize - 1, bits: superBits });
               i += 2; merged = true; continue;
@@ -2001,7 +2001,7 @@ function renderBandwidthCalculator(root) {
       <p class="pg-sub" style="margin-top:22px">Common connection speed reference</p>
       <table class="mono" style="width:100%;border-collapse:collapse;font-size:.82rem">
         <tr><td><strong>Connection</strong></td><td><strong>Typical speed</strong></td><td><strong>1 GB transfer time</strong></td></tr>
-        ${CONNECTION_SPEEDS.map((s) => `<tr><td>${s.name}</td><td>${s.mbps.toLocaleString()} Mbps</td><td>${formatDuration((1024 * 8) / s.mbps)}</td></tr>`).join("")}
+        ${CONNECTION_SPEEDS.map((s) => `<tr><td>${s.name}</td><td>${s.mbps.toLocaleString()} Mbps</td><td>${formatDuration((1024 ** 3 * 8) / (s.mbps * 1e6))}</td></tr>`).join("")}
       </table>
     </div>`;
 

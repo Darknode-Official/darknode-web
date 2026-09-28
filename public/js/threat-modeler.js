@@ -127,7 +127,7 @@ function calcCVSS31(vals) {
   var scopeChanged = s === "C";
   var prScore = Array.isArray(pr.score) ? pr.score[scopeChanged ? 1 : 0] : pr.score;
   var iss = 1 - ((1 - cVal.score) * (1 - iVal.score) * (1 - aVal.score));
-  var impact = scopeChanged ? 7.52 * (iss - 0.029) - 3.25 * Math.pow(iss - 0.02, 15) : 6.42 * iss;
+  var impact = scopeChanged ? 7.52 * (iss - 0.029) - 3.25 * Math.pow(iss * 0.9731 - 0.02, 13) : 6.42 * iss;
   if (impact <= 0) return { score: 0, severity: "None", vector: "CVSS:3.1/AV:" + vals.AV + "/AC:" + vals.AC + "/PR:" + vals.PR + "/UI:" + vals.UI + "/S:" + vals.S + "/C:" + vals.C + "/I:" + vals.I + "/A:" + vals.A };
   var exploitability = 8.22 * av.score * ac.score * prScore * ui.score;
   var score;

@@ -298,7 +298,10 @@ body:not(.landing):not(.app)::before{content:"";position:fixed;inset:0;z-index:-
 .cmd-block{white-space:pre-wrap;word-break:break-word;display:block;line-height:1.5}
 /* topbar profile + "..." menu */
 #user-slot{display:flex;align-items:center;gap:8px}
-.tb-item{position:relative}
+/* flex wrapper so the inline-flex profile button (which contains an <img> whose
+   baseline would otherwise inflate the block line-box with descender space) sits
+   flush at 34px and lines up with the other topbar controls */
+.tb-item{position:relative;display:flex;align-items:center}
 .icon-btn{background:transparent;border:1px solid var(--line);color:var(--txt);border-radius:var(--btn-radius, 4px);width:34px;height:34px;cursor:pointer;font-size:1.1rem;line-height:1;font-family:inherit}
 .icon-btn:hover{border-color:var(--acc);color:var(--acc)}
 .profile-btn{display:flex;align-items:center;gap:8px;background:transparent;border:1px solid var(--line);border-radius:var(--btn-radius, 4px);padding:3px 12px 3px 3px;cursor:pointer;color:var(--txt);font-family:inherit}
@@ -2334,7 +2337,8 @@ body.landing .hero-h1{max-width:none}
 .sec-sub{text-align:center;color:var(--mut);font-size:.95rem;max-width:600px;margin:0 auto 48px;line-height:1.7}
 
 /* Bento grid (like Linear/Vercel) */
-.bento{display:grid;grid-template-columns:1fr 1fr;gap:16px;container-type:inline-size}
+.bento{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;container-type:inline-size}
+@container (max-width:900px){.bento{grid-template-columns:1fr 1fr}}
 @container (max-width:600px){.bento{grid-template-columns:minmax(0,1fr)}}
 .bento-lg{grid-column:1/-1}
 .bento-card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:32px;
@@ -2355,6 +2359,9 @@ body.landing .hero-h1{max-width:none}
 .bento-tag{display:inline-block;font-size:.7rem;font-weight:600;color:var(--acc);padding:4px 12px;
   border-radius:100px;border:1px solid color-mix(in srgb,var(--acc) 25%,transparent);
   background:color-mix(in srgb,var(--acc) 6%,transparent)}
+.bento-dl{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.bento-dl-alt{font-size:.78rem;color:var(--mut);text-decoration:none;border-bottom:1px solid transparent;transition:color .2s,border-color .2s}
+.bento-dl-alt:hover{color:var(--acc);border-bottom-color:color-mix(in srgb,var(--acc) 40%,transparent)}
 @media(max-width:600px){.bento{grid-template-columns:minmax(0,1fr)}}
 
 /* Feature rows (alternating text + visual) */
@@ -9124,7 +9131,11 @@ html body .seg:not(#dn-x) { border-radius: 5px !important; }
 .tb-center .tbx-btn { background: color-mix(in srgb, var(--acc) 12%, transparent); color: var(--acc); border: 1px solid color-mix(in srgb, var(--acc) 35%, transparent); border-radius: 4px; padding: 3px 10px; font: inherit; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; cursor: pointer; transition: background .15s, border-color .15s; }
 .tb-center .tbx-btn:hover { background: color-mix(in srgb, var(--acc) 22%, transparent); border-color: var(--acc); }
 html[data-topbar="off"] #topbar-center.tb-center { display: none !important; }
-@media (max-width: 1180px) { #topbar-center.tb-center .tbx-btn, #topbar-center.tb-center .tbx:nth-of-type(n+5) { display: none; } }
+/* Staged degradation of the ops strip so it never bleeds under the brand or
+   user menu. The full strip needs ~1560px; below that we shed the least
+   important pieces first (email, clock, ambient stats) and keep the action
+   buttons longest. Tuned so there is zero overlap at every width. */
+@media (max-width: 1120px) { #topbar-center.tb-center .tbx-btn { display: none !important; } }
 @media (max-width: 900px) { #topbar-center.tb-center { display: none; } }
 
 /* --- Rich app footer (fills the empty footer) --- */
@@ -9264,8 +9275,10 @@ body.focus-mode .app-foot, body.focus-mode .app-foot-grid { display: none !impor
 body.focus-mode .app-main { padding-left: 20px !important; padding-right: 20px !important; }
 
 /* Keep the action buttons; drop ambient status first when the bar gets tight */
-/* The ambient metrics need ~900px next to the brand + user menu; below ~1560px they overlapped the logo. */
-@media (max-width: 1560px) { .tb-center .tbx-amb { display: none !important; } }
+/* ops-strip staged shedding (see note near the tb-center breakpoints above) */
+@media (max-width: 1560px) { #topbar .p-email { display: none !important; } }
+@media (max-width: 1400px) { .tb-center .tbx-clock, .tb-center .tbx-sep { display: none !important; } }
+@media (max-width: 1280px) { .tb-center .tbx-amb, .tb-center .tbx-status { display: none !important; } }
 
 /* ============================================================
    NEXUS AI — Claude-style chat layout (full-height, composer
@@ -9317,8 +9330,14 @@ body.focus-mode .app-main { padding-left: 20px !important; padding-right: 20px !
    NEXUS AI v2 — history sidebar, per-message actions, edit,
    file attachments, streaming dots. Model-driven transcript.
    ============================================================ */
-.ai2-shell { display: flex; gap: 16px; width: 100%; max-width: 1180px; margin: 0 auto; align-items: stretch; position: relative; }
-.ai2-shell .ai2 { margin: 0; max-width: 860px; flex: 1 1 auto; min-width: 0; }
+.ai2-shell { display: flex; gap: 24px; width: 100%; max-width: 1600px; margin: 0 auto; align-items: stretch; position: relative; }
+/* The chat column fills all the width left of the history rail; the conversation
+   and composer inside it stay centered at a comfortable reading width, so a wide
+   screen reads as an intentional, balanced layout instead of a narrow strip
+   pinned to the left with dead space on the right. */
+.ai2-shell .ai2 { margin: 0; max-width: none; flex: 1 1 auto; min-width: 0; }
+.ai2-shell .ai2 > .ai2-main,
+.ai2-shell .ai2 > .ai2-dock { width: 100%; max-width: 820px; margin-left: auto; margin-right: auto; }
 /* history rail */
 .ai2-hist { flex: 0 0 260px; width: 260px; display: flex; flex-direction: column; gap: 8px; height: calc(100vh - 150px); min-height: 480px; border: 1px solid var(--line); border-radius: 16px; background: color-mix(in srgb, var(--card2) 40%, var(--card)); padding: 12px 10px; }
 .ai2-hist-top { padding: 2px; }
@@ -9485,6 +9504,16 @@ body.focus-mode .app-main { padding-left: 20px !important; padding-right: 20px !
 .dg-live{width:7px;height:7px;border-radius:50%;background:#22c55e;flex:none;box-shadow:0 0 0 3px color-mix(in srgb,#22c55e 22%,transparent)}
 .dg-flag-nm{font-size:.78rem;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dg-flag-go{color:var(--mut);font-size:1rem;line-height:1}
+/* automation & access grid */
+.dg-access-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+@media (max-width:560px){.dg-access-grid{grid-template-columns:1fr}}
+.dg-access{display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto auto;column-gap:10px;row-gap:2px;align-items:center;
+  padding:11px 12px;border:1px solid var(--line);border-radius:8px;background:var(--card2,transparent);cursor:pointer;font-family:inherit;text-align:left;color:var(--txt);transition:border-color .15s,transform .15s,background .15s}
+.dg-access:hover{border-color:var(--acc-line);transform:translateY(-2px);background:color-mix(in srgb,var(--acc) 6%,transparent)}
+.dg-access-ic{grid-row:1/3;width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--acc) 12%,transparent);border:1px solid var(--acc-line,var(--line))}
+.dg-access-ic svg{width:18px;height:18px;color:var(--acc)}
+.dg-access-t{font-size:.84rem;font-weight:650;letter-spacing:-.01em}
+.dg-access-d{font-size:.72rem;color:var(--mut);line-height:1.35}
 /* session stats */
 .dg-stat-list{display:flex;flex-direction:column}
 .dg-stat{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)}
@@ -9530,3 +9559,32 @@ body.focus-mode .app-main { padding-left: 20px !important; padding-right: 20px !
   .cs-head, .ed-head { flex-wrap: wrap; }
   .cs-head .chip, .ed-head .chip { white-space: normal; max-width: 100%; }
 }
+
+/* Equal-width, aligned button/chip groups (fixes uneven preset rows). */
+.btn-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;align-items:stretch}
+.btn-grid .btn{width:100%;justify-content:center;text-align:center;white-space:nowrap}
+
+/* Integrations band (landing) */
+.integ-band{padding:40px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.integ-label{text-align:center;color:var(--mut);font-size:.82rem;letter-spacing:.04em;text-transform:uppercase;margin:0 0 20px}
+.integ-row{display:flex;flex-wrap:wrap;justify-content:center;gap:10px}
+.integ-pill{display:inline-flex;align-items:center;padding:8px 16px;border:1px solid var(--line);border-radius:999px;
+  background:var(--card);color:var(--txt);font-size:.86rem;font-weight:600;letter-spacing:-.01em;
+  transition:border-color .15s,transform .15s}
+.integ-pill:hover{border-color:var(--acc-line);transform:translateY(-2px)}
+
+/* Botpress support agent: the whole webchat (FAB + chat window) lives inside
+   #fab-root's shadow DOM, so hiding #fab-root here would hide the chat window too.
+   The floating bubble is hidden instead by injecting a style INTO the shadow root
+   (.bpFabWrapper{display:none}) from botpress-bridge.js. Access is via the Help tab. */
+/* Help tab in the topbar */
+.tb-help-btn{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 12px;border:1px solid var(--line);border-radius:var(--btn-radius,8px);
+  background:var(--card2);color:var(--txt);font-family:inherit;font-size:.8rem;font-weight:600;cursor:pointer;transition:border-color .15s,background .15s,color .15s}
+.tb-help-btn:hover{border-color:var(--acc-line);color:var(--acc);background:color-mix(in srgb,var(--acc) 7%,var(--card2))}
+.tb-help-btn svg{color:var(--acc);flex:none}
+@media (max-width:640px){.tb-help-btn span{display:none}.tb-help-btn{padding:0 9px}}
+
+/* Quelvra landing band */
+.qv-band-row{display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap;margin-top:24px}
+.qv-band-note{color:var(--muted,#8a8f98);font-size:14px}
+.qv-band-row .btn{text-decoration:none}

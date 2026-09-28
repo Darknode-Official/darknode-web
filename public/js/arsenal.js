@@ -130,7 +130,8 @@ export function renderEngines(main) {
   ).join("");
   main.innerHTML =
     '<h1 class="pg-h1">Security Engines</h1>' +
-    '<p class="muted pg-sub">' + engines.length + ' purpose-built engines — ' + totalLines.toLocaleString() + ' lines of security tooling running in your browser. No servers, no API calls, no data leaves your machine.</p>' +
+    '<style>.eng-card.arse-card,.eng-card.arse-card:hover{cursor:default;transform:none!important;box-shadow:none!important;border-color:var(--line)!important;background:color-mix(in srgb,var(--acc) 3%,transparent)}[data-style=pro] .eng-card.arse-card,[data-style=pro] .eng-card.arse-card:hover{border-color:#e5e5e5!important;background:#fff!important}[data-style=dark] .eng-card.arse-card,[data-style=dark] .eng-card.arse-card:hover{border-color:#334155!important;background:#1e293b!important}</style>' +
+    '<p class="muted pg-sub">Reference list of the ' + engines.length + ' JavaScript engine modules bundled with Darknode (' + totalLines.toLocaleString() + ' lines in total). These are libraries, listed for information only; the cards are not clickable and do not open a tool.</p>' +
     '<div class="cs-filter" id="engFilter"><button class="chip on" data-c="all">All</button>' + filterHtml + '</div>' +
     '<div class="arse-grid" id="engGrid">' + cardsHtml + '</div>';
   main.querySelector("#engFilter").onclick = (e) => {

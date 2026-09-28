@@ -2,7 +2,7 @@
 // Firebase init for Darknode Web.
 // The apiKey here is NOT a secret (it only identifies the project); real protection
 // comes from the Firestore/Storage Security Rules in ../firebase/.
-if(!/^(darknode\.ai|www\.darknode\.ai|sentinel-b4194\.web\.app|sentinel-b4194-6173e\.web\.app|localhost|127\.0\.0\.1)$/.test(location.hostname)){throw new Error("unlicensed")}
+if(!/^(darknode\.ai|www\.darknode\.ai|sentinel-b4194\.web\.app|sentinel-b4194-6173e\.web\.app|darknode-web-e1s2\.onrender\.com|localhost|127\.0\.0\.1)$/.test(location.hostname)){throw new Error("unlicensed")}
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-app.js";
 import { getAuth, GoogleAuthProvider, GithubAuthProvider } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-auth.js";

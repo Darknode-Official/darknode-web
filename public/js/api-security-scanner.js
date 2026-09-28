@@ -1,4 +1,15 @@
 // API Security Scanner — API testing, JWT analysis, OAuth reference, OWASP API Top 10
+// Decode a base64url JWT segment to its parsed JSON, handling padding and
+// UTF-8 claims (atob yields a Latin-1 byte string; decode it as UTF-8 so
+// non-ASCII claim values are not mangled).
+function _jwtSegJson(seg) {
+  var s = String(seg).replace(/-/g, "+").replace(/_/g, "/");
+  while (s.length % 4) s += "=";
+  var bin = atob(s);
+  var bytes = new Uint8Array(bin.length);
+  for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return JSON.parse(new TextDecoder("utf-8").decode(bytes));
+}
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 const OWASP_API_TOP10 = [
@@ -219,8 +230,8 @@ export function renderAPISecurityScanner(main) {
       var parts = token.split('.');
       if (parts.length < 2) { output.innerHTML = '<p style="color:#ff1744">Invalid JWT: expected 3 dot-separated parts, got ' + parts.length + '</p>'; return; }
       try {
-        var header = JSON.parse(atob(parts[0].replace(/-/g,'+').replace(/_/g,'/')));
-        var payload = JSON.parse(atob(parts[1].replace(/-/g,'+').replace(/_/g,'/')));
+        var header = _jwtSegJson(parts[0]);
+        var payload = _jwtSegJson(parts[1]);
         var warnings = [];
         if (header.alg === 'none') warnings.push('Algorithm is "none" — token is unsigned');
         if (header.alg === 'HS256' && header.typ === 'JWT') warnings.push('HS256 — check for key confusion attack if server uses RS256');

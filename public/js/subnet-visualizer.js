@@ -113,8 +113,16 @@ export function renderSubnetVisualizer(container) {
       if (s.network < minNet) minNet = s.network;
       if (s.broadcast > maxBcast) maxBcast = s.broadcast;
     }
+    // Size the block from the shared leading bits of the low network and the
+    // high broadcast, not from the raw span. Sizing from the span and then
+    // masking minNet down produced a block whose broadcast could fall short of
+    // maxBcast when minNet was not aligned to the chosen prefix, silently
+    // dropping the upper input(s) — e.g. supernet(192.168.1.0/24,
+    // 192.168.2.0/24) yielded 192.168.0.0/23, which excludes 192.168.2.0/24.
+    // Matching the common prefix guarantees network<=minNet and
+    // broadcast(=network|~mask)>=maxBcast, so the block covers every input.
     let bits = 0;
-    while (Math.pow(2, bits) <= (maxBcast - minNet)) bits++;
+    while (bits < 32 && ((minNet >>> bits) !== (maxBcast >>> bits))) bits++;
     const prefix = 32 - bits;
     const mask = prefix === 0 ? 0 : (0xFFFFFFFF << (32 - prefix)) >>> 0;
     const network = (minNet & mask) >>> 0;
@@ -236,7 +244,12 @@ export function renderSubnetVisualizer(container) {
     const binaryMask = s.mask.toString(2).padStart(32, "0").replace(/(.{8})/g, "$1.").slice(0, -1);
     const binaryNet = s.network.toString(2).padStart(32, "0").replace(/(.{8})/g, "$1.").slice(0, -1);
     const ipClass = s.network < 0x80000000 ? "A" : s.network < 0xC0000000 ? "B" : s.network < 0xE0000000 ? "C" : s.network < 0xF0000000 ? "D" : "E";
-    const isPrivate = PRIVATE_RANGES.some(r => { const p = parseCidr(r.cidr); return p && s.network >= p.network && s.broadcast <= p.broadcast; });
+    const inRange = (cidr) => { const p = parseCidr(cidr); return p && s.network >= p.network && s.broadcast <= p.broadcast; };
+    const RFC1918 = ["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"];
+    const isPrivate = RFC1918.some(inRange);
+    const special = PRIVATE_RANGES.find(r => !RFC1918.includes(r.cidr) && inRange(r.cidr));
+    const typeLabel = isPrivate ? "Private (RFC 1918)" : special ? special.name : "Public";
+    const shortType = isPrivate ? "Private" : special ? special.name : "Public";
     return `
       <div class="sv-card">
         <h3>CIDR Input</h3>
@@ -264,7 +277,7 @@ export function renderSubnetVisualizer(container) {
             ["Total Addresses", formatNumber(s.totalHosts), true],
             ["Usable Hosts", formatNumber(s.usableHosts), true],
             ["IP Class", ipClass, false],
-            ["Type", isPrivate ? "Private (RFC 1918)" : "Public", false],
+            ["Type", typeLabel, false],
           ].map(([l, v, a]) => `<div class="sv-row"><span class="sv-label">${l}</span><span class="sv-val${a ? " accent" : ""}">${v}</span></div>`).join("")}
         </div>
         <div class="sv-card">
@@ -293,7 +306,7 @@ Wildcard:    ${s.wildcardIp}
 Broadcast:   ${s.broadcastIp}
 Usable:      ${s.firstUsable} – ${s.lastUsable}
 Hosts:       ${formatNumber(s.usableHosts)}
-Class:       ${ipClass} (${isPrivate ? "Private" : "Public"})</div>
+Class:       ${ipClass} (${shortType})</div>
       </div>`;
   }
 

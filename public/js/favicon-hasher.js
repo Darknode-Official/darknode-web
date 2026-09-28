@@ -15,7 +15,7 @@ export function renderFaviconHasher(container) {
     '-1293291324': 'Microsoft IIS 7/8',
     '-1002298449': 'Microsoft IIS 10',
     '247761667': 'Microsoft Exchange OWA',
-    '-305179312': 'Microsoft SharePoint',
+    '-305179312': 'Microsoft SharePoint or SonicWall (shared hash)',
     '-553691228': 'Grafana',
     '-1395847077': 'Kibana',
     '81462090': 'Jenkins CI',
@@ -34,7 +34,6 @@ export function renderFaviconHasher(container) {
     '362091310': 'Fortinet FortiGate',
     '1916021449': 'Palo Alto GlobalProtect',
     '-996278746': 'Cisco ASA VPN',
-    '-305179312': 'SonicWall',
     '1848946384': 'Sophos UTM',
     '-1214941836': 'Synology DSM',
     '681542341': 'QNAP NAS',
@@ -97,7 +96,10 @@ export function renderFaviconHasher(container) {
     msg.push(0x80);
     while (msg.length % 64 !== 56) msg.push(0);
     var bitLen = origLen * 8;
-    for (var b = 0; b < 8; b++) msg.push((bitLen >>> (b * 8)) & 0xff);
+    // 64-bit little-endian length. Use division, not `>>>`: JS shifts by
+    // (count & 31), so `bitLen >>> 32` would wrap to `>>> 0` and duplicate the
+    // low bytes into bytes 4-7 instead of emitting the high 32 bits (0 here).
+    for (var b = 0; b < 8; b++) msg.push(Math.floor(bitLen / Math.pow(2, 8 * b)) & 0xff);
 
     var S = [7,12,17,22, 5,9,14,20, 4,11,16,23, 6,10,15,21];
     var K = [];
@@ -132,9 +134,19 @@ export function renderFaviconHasher(container) {
 
   var _fhResults = [];
 
+  // Python's base64.encodebytes() — which Shodan/Censys feed into mmh3 —
+  // wraps the base64 output at 76 characters per line and appends a trailing
+  // newline. Plain btoa() omits these, producing a hash that never matches
+  // real http.favicon.hash values, so replicate encodebytes() exactly.
+  function base64EncodeBytes(b64) {
+    var out = '';
+    for (var i = 0; i < b64.length; i += 76) out += b64.slice(i, i + 76) + '\n';
+    return out;
+  }
+
   async function processFavicon(arrayBuf, name) {
     var b64 = arrayBufferToBase64(arrayBuf);
-    var b64Bytes = textToBytes(b64);
+    var b64Bytes = textToBytes(base64EncodeBytes(b64));
     var shodanHash = murmurHash3(b64Bytes);
     var rawHash = murmurHash3(new Uint8Array(arrayBuf));
     var sha = await sha256Hex(arrayBuf);
