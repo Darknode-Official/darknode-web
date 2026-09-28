@@ -1,6 +1,6 @@
 // Copyright (c) 2026 Darknode-Official. All rights reserved.
 // Source-available for learning only. Redistribution prohibited. See LICENSE.
-(function(){var _h=location.hostname,_a=["darknode.ai","www.darknode.ai","localhost","127.0.0.1"];if(!_a.some(function(d){return _h===d}))throw document.body.innerHTML="",new Error("unlicensed")}());
+(function(){var _h=location.hostname,_a=["darknode.ai","www.darknode.ai","darknode-web-e1s2.onrender.com","localhost","127.0.0.1"];if(!_a.some(function(d){return _h===d}))throw document.body.innerHTML="",new Error("unlicensed")}());
 
 // Timeline Viz — interactive security timeline and attack chain visualization.
 // Renders kill chains, topology diagrams, attack trees, risk heat maps, and incident timelines.

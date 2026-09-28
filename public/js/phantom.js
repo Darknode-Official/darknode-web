@@ -169,10 +169,267 @@ function entropy(str) {
 }
 
 // ============================================================================
+// CLASSIC PCAP PARSER (libpcap format, not pcapng)
+// ============================================================================
+// Parses the 24-byte global header (either byte order, micro- or nanosecond
+// timestamps) and each 16-byte packet record header. Supported link types:
+// 0 (BSD loopback), 1 (Ethernet, incl. one 802.1Q tag), 101/12/14 (raw IP) and
+// 113 (Linux cooked SLL). Decodes IPv4/IPv6, TCP, UDP and ICMP headers into the
+// same packet shape the demo data uses, so every tab works on imported captures.
+var PH_PCAP_MAX_PACKETS = 20000;
+var PH_PAYLOAD_HEX_BYTES = 160; // genHexDump shows at most 160 bytes
+
+function phHex(bytes, start, end) {
+  var s = '';
+  for (var i = start; i < end; i++) s += (bytes[i] < 16 ? '0' : '') + bytes[i].toString(16);
+  return s;
+}
+function phMac(b, o) {
+  var parts = [];
+  for (var i = 0; i < 6; i++) parts.push((b[o + i] < 16 ? '0' : '') + b[o + i].toString(16));
+  return parts.join(':');
+}
+function phIPv6(b, o) {
+  var g = [];
+  for (var i = 0; i < 16; i += 2) g.push(((b[o + i] << 8) | b[o + i + 1]).toString(16));
+  // Compress the longest run of zero groups (RFC 5952 style).
+  var best = -1, bestLen = 0, cur = -1, curLen = 0;
+  for (var j = 0; j < 8; j++) {
+    if (g[j] === '0') { if (cur < 0) { cur = j; curLen = 0; } curLen++; if (curLen > bestLen) { best = cur; bestLen = curLen; } }
+    else cur = -1;
+  }
+  if (bestLen < 2) return g.join(':');
+  return g.slice(0, best).join(':') + '::' + g.slice(best + bestLen).join(':');
+}
+function phAscii(b, start, end) {
+  var s = '';
+  for (var i = start; i < end; i++) {
+    var ch = b[i];
+    if (ch === 13 || ch === 10) break;
+    if (ch < 32 || ch > 126) return null;
+    s += String.fromCharCode(ch);
+  }
+  return s;
+}
+var PH_DNS_TYPES = { 1: 'A', 2: 'NS', 5: 'CNAME', 6: 'SOA', 12: 'PTR', 15: 'MX', 16: 'TXT', 28: 'AAAA', 33: 'SRV', 65: 'HTTPS', 255: 'ANY' };
+function phDnsInfo(b, o, end) {
+  if (end - o < 12) return null;
+  var isResp = (b[o + 2] & 0x80) !== 0;
+  var qd = (b[o + 4] << 8) | b[o + 5];
+  var an = (b[o + 6] << 8) | b[o + 7];
+  var p = o + 12, labels = [], guard = 0;
+  if (qd < 1) return isResp ? 'Response' : 'Query';
+  while (p < end && b[p] !== 0 && guard++ < 64) {
+    var len = b[p];
+    if ((len & 0xc0) || p + 1 + len > end) return isResp ? 'Response' : 'Query';
+    labels.push(phAscii(b, p + 1, p + 1 + len) || '?');
+    p += 1 + len;
+  }
+  var qtype = p + 3 <= end ? ((b[p + 1] << 8) | b[p + 2]) : 0;
+  var t = PH_DNS_TYPES[qtype] || ('TYPE' + qtype);
+  var name = labels.join('.') || '<root>';
+  return isResp ? 'Response ' + t + ' ' + name + ' (' + an + ' answer' + (an === 1 ? '' : 's') + ')' : 'Query ' + t + ' ' + name;
+}
+var PH_TLS_HS = { 1: 'Client Hello', 2: 'Server Hello', 4: 'New Session Ticket', 11: 'Certificate', 12: 'Server Key Exchange', 14: 'Server Hello Done', 16: 'Client Key Exchange' };
+function phTlsSni(b, o, end) {
+  // o points at the handshake header of a ClientHello.
+  var p = o + 4 + 2 + 32;
+  if (p >= end) return '';
+  p += 1 + b[p]; // session id
+  if (p + 2 > end) return '';
+  p += 2 + ((b[p] << 8) | b[p + 1]); // cipher suites
+  if (p >= end) return '';
+  p += 1 + b[p]; // compression methods
+  if (p + 2 > end) return '';
+  var extEnd = Math.min(end, p + 2 + ((b[p] << 8) | b[p + 1]));
+  p += 2;
+  while (p + 4 <= extEnd) {
+    var type = (b[p] << 8) | b[p + 1], len = (b[p + 2] << 8) | b[p + 3];
+    if (type === 0 && p + 9 <= extEnd) {
+      var nlen = (b[p + 7] << 8) | b[p + 8];
+      return phAscii(b, p + 9, Math.min(extEnd, p + 9 + nlen)) || '';
+    }
+    p += 4 + len;
+  }
+  return '';
+}
+function phTlsInfo(b, o, end) {
+  if (end - o < 5) return null;
+  var ct = b[o];
+  if (ct < 20 || ct > 23 || b[o + 1] !== 3) return null;
+  if (ct === 20) return 'Change Cipher Spec';
+  if (ct === 21) return 'Alert';
+  if (ct === 23) return 'Application Data';
+  var hs = b[o + 5];
+  var name = PH_TLS_HS[hs] || ('Handshake type ' + hs);
+  if (hs === 1) { var sni = phTlsSni(b, o + 5, end); return sni ? name + ' - ' + sni : name; }
+  return name;
+}
+var PH_TCP_FLAGS = [[0x02, 'SYN'], [0x01, 'FIN'], [0x04, 'RST'], [0x08, 'PSH'], [0x10, 'ACK'], [0x20, 'URG']];
+
+function phDecodeIP(b, o, end, pkt) {
+  if (o >= end) return false;
+  var ver = b[o] >> 4, proto, l4;
+  if (ver === 4) {
+    if (end - o < 20) return false;
+    var ihl = (b[o] & 0x0f) * 4;
+    var totLen = (b[o + 2] << 8) | b[o + 3];
+    if (totLen >= ihl && o + totLen < end) end = o + totLen; // strip Ethernet padding
+    pkt.ipVersion = 4; pkt.ipHeaderLen = ihl; pkt.ipTotalLen = totLen;
+    pkt.ttl = b[o + 8]; proto = b[o + 9];
+    pkt.srcIP = b[o + 12] + '.' + b[o + 13] + '.' + b[o + 14] + '.' + b[o + 15];
+    pkt.dstIP = b[o + 16] + '.' + b[o + 17] + '.' + b[o + 18] + '.' + b[o + 19];
+    var fragOff = ((b[o + 6] & 0x1f) << 8) | b[o + 7];
+    l4 = o + ihl;
+    if (fragOff !== 0) { pkt.protocol = 'IPv4'; pkt.info = 'Fragment (offset ' + fragOff * 8 + '), proto ' + proto; pkt.ipProto = proto; return true; }
+  } else if (ver === 6) {
+    if (end - o < 40) return false;
+    pkt.ipVersion = 6; pkt.ipHeaderLen = 40;
+    var plen = (b[o + 4] << 8) | b[o + 5];
+    if (o + 40 + plen < end) end = o + 40 + plen;
+    proto = b[o + 6]; pkt.ttl = b[o + 7];
+    pkt.srcIP = phIPv6(b, o + 8); pkt.dstIP = phIPv6(b, o + 24);
+    l4 = o + 40;
+    // Skip common extension headers (hop-by-hop, routing, destination options).
+    var guard = 0;
+    while ((proto === 0 || proto === 43 || proto === 60) && l4 + 2 <= end && guard++ < 8) {
+      proto = b[l4]; l4 += (b[l4 + 1] + 1) * 8;
+    }
+  } else {
+    return false;
+  }
+  pkt.ipProto = proto;
+  if (proto === 6 && end - l4 >= 20) {
+    var sp = (b[l4] << 8) | b[l4 + 1], dp = (b[l4 + 2] << 8) | b[l4 + 3];
+    var seq = ((b[l4 + 4] << 24) | (b[l4 + 5] << 16) | (b[l4 + 6] << 8) | b[l4 + 7]) >>> 0;
+    var ack = ((b[l4 + 8] << 24) | (b[l4 + 9] << 16) | (b[l4 + 10] << 8) | b[l4 + 11]) >>> 0;
+    var doff = (b[l4 + 12] >> 4) * 4, fl = b[l4 + 13];
+    var win = (b[l4 + 14] << 8) | b[l4 + 15];
+    var flags = PH_TCP_FLAGS.filter(function(f) { return fl & f[0]; }).map(function(f) { return f[1]; });
+    pkt.srcPort = sp; pkt.dstPort = dp; pkt.flags = flags.join(','); pkt.seq = seq; pkt.ack = ack; pkt.window = win;
+    pkt.checksum = '0x' + phHex(b, l4 + 16, l4 + 18);
+    var pl = Math.min(end, l4 + doff);
+    pkt.payload = phHex(b, pl, Math.min(end, pl + PH_PAYLOAD_HEX_BYTES));
+    pkt.protocol = 'TCP';
+    var app = null;
+    if (pl < end) {
+      if (sp === 443 || dp === 443 || sp === 8443 || dp === 8443 || (b[pl] >= 20 && b[pl] <= 23 && b[pl + 1] === 3)) {
+        app = phTlsInfo(b, pl, end); if (app) pkt.protocol = 'TLS';
+      }
+      if (!app) {
+        var line = phAscii(b, pl, Math.min(end, pl + 200));
+        if (line && /^(GET|POST|PUT|DELETE|HEAD|OPTIONS|PATCH|CONNECT) \S+ HTTP\/\d|^HTTP\/\d\.\d \d{3}/.test(line)) { app = line; pkt.protocol = 'HTTP'; }
+      }
+      if (!app && (sp === 53 || dp === 53) && end - pl > 2) { app = phDnsInfo(b, pl + 2, end); if (app) pkt.protocol = 'DNS'; }
+    }
+    pkt.info = app || (sp + ' -> ' + dp + ' [' + pkt.flags + '] Seq=' + seq + (fl & 0x10 ? ' Ack=' + ack : '') + ' Win=' + win + ' Len=' + Math.max(0, end - pl));
+  } else if (proto === 17 && end - l4 >= 8) {
+    var usp = (b[l4] << 8) | b[l4 + 1], udp = (b[l4 + 2] << 8) | b[l4 + 3];
+    pkt.srcPort = usp; pkt.dstPort = udp; pkt.udpLength = (b[l4 + 4] << 8) | b[l4 + 5];
+    pkt.checksum = '0x' + phHex(b, l4 + 6, l4 + 8);
+    pkt.payload = phHex(b, l4 + 8, Math.min(end, l4 + 8 + PH_PAYLOAD_HEX_BYTES));
+    pkt.protocol = 'UDP';
+    var dinfo = (usp === 53 || udp === 53 || usp === 5353 || udp === 5353) ? phDnsInfo(b, l4 + 8, end) : null;
+    if (dinfo) { pkt.protocol = 'DNS'; pkt.info = dinfo; }
+    else pkt.info = usp + ' -> ' + udp + ' Len=' + Math.max(0, pkt.udpLength - 8);
+  } else if ((proto === 1 || proto === 58) && end - l4 >= 4) {
+    var it = b[l4], ic = b[l4 + 1];
+    pkt.protocol = 'ICMP'; pkt.icmpType = it; pkt.icmpCode = ic;
+    pkt.checksum = '0x' + phHex(b, l4 + 2, l4 + 4);
+    pkt.payload = phHex(b, l4, Math.min(end, l4 + PH_PAYLOAD_HEX_BYTES));
+    var names = proto === 1 ? { 0: 'Echo (ping) reply', 3: 'Destination unreachable', 5: 'Redirect', 8: 'Echo (ping) request', 11: 'Time exceeded' }
+                            : { 1: 'Destination unreachable', 3: 'Time exceeded', 128: 'Echo (ping) request', 129: 'Echo (ping) reply', 133: 'Router solicitation', 134: 'Router advertisement', 135: 'Neighbor solicitation', 136: 'Neighbor advertisement' };
+    var nm = names[it] || ('Type ' + it + ' code ' + ic);
+    if ((/Echo/.test(nm)) && end - l4 >= 8) {
+      nm += ' id=0x' + phHex(b, l4 + 4, l4 + 6) + ' seq=' + ((b[l4 + 6] << 8) | b[l4 + 7]);
+    }
+    pkt.info = (proto === 58 ? 'ICMPv6 ' : '') + nm;
+  } else {
+    pkt.protocol = 'IPv' + pkt.ipVersion;
+    pkt.payload = phHex(b, l4, Math.min(end, l4 + PH_PAYLOAD_HEX_BYTES));
+    pkt.info = 'IP protocol ' + proto;
+  }
+  return true;
+}
+
+// Returns { packets, linktype, nanos, truncated, skipped } or throws Error with a
+// user-facing message.
+function phParsePcap(buf) {
+  var b = new Uint8Array(buf);
+  if (b.length < 24) throw new Error('File is too small to be a pcap capture (' + b.length + ' bytes).');
+  var dv = new DataView(b.buffer, b.byteOffset, b.byteLength);
+  var m = dv.getUint32(0, false);
+  if (m === 0x0a0d0d0a) throw new Error('This is a pcapng file. Only classic pcap is supported: in Wireshark use File > Save As > "Wireshark/tcpdump - pcap", or run: editcap -F pcap in.pcapng out.pcap');
+  var le, nanos;
+  if (m === 0xa1b2c3d4) { le = false; nanos = false; }
+  else if (m === 0xd4c3b2a1) { le = true; nanos = false; }
+  else if (m === 0xa1b23c4d) { le = false; nanos = true; }
+  else if (m === 0x4d3cb2a1) { le = true; nanos = true; }
+  else throw new Error('Not a pcap file (unknown magic number 0x' + m.toString(16).padStart(8, '0') + ').');
+  var linktype = dv.getUint32(20, le) & 0x0fffffff;
+  if ([0, 1, 12, 14, 101, 113].indexOf(linktype) === -1) {
+    throw new Error('Unsupported link type ' + linktype + '. Supported: Ethernet (1), raw IP (101), Linux cooked (113), loopback (0).');
+  }
+  var packets = [], skipped = 0, truncated = false, off = 24, t0 = null;
+  while (off + 16 <= b.length) {
+    if (packets.length + skipped >= PH_PCAP_MAX_PACKETS) { truncated = true; break; }
+    var sec = dv.getUint32(off, le), frac = dv.getUint32(off + 4, le);
+    var incl = dv.getUint32(off + 8, le), orig = dv.getUint32(off + 12, le);
+    var start = off + 16, end = start + incl;
+    if (end > b.length) { truncated = true; break; }
+    off = end;
+    var ts = sec + frac / (nanos ? 1e9 : 1e6);
+    if (t0 === null) t0 = ts;
+    var pkt = {
+      id: packets.length + skipped + 1, ts: ts - t0, absTs: ts,
+      srcMAC: '', dstMAC: '', srcIP: '', dstIP: '', srcPort: 0, dstPort: 0,
+      protocol: 'Other', length: orig, capLength: incl, ttl: 0, flags: '', payload: '', info: '',
+      linktype: linktype, imported: true
+    };
+    var o = start, ethType = 0;
+    if (linktype === 1) {
+      if (incl < 14) { skipped++; continue; }
+      pkt.dstMAC = phMac(b, o); pkt.srcMAC = phMac(b, o + 6);
+      ethType = (b[o + 12] << 8) | b[o + 13]; o += 14;
+      if ((ethType === 0x8100 || ethType === 0x88a8) && o + 4 <= end) { pkt.vlan = ((b[o] << 8) | b[o + 1]) & 0x0fff; ethType = (b[o + 2] << 8) | b[o + 3]; o += 4; }
+    } else if (linktype === 113) {
+      if (incl < 16) { skipped++; continue; }
+      ethType = (b[o + 14] << 8) | b[o + 15]; o += 16;
+    } else if (linktype === 0) {
+      if (incl < 4) { skipped++; continue; }
+      o += 4; ethType = (b[o] >> 4) === 6 ? 0x86dd : 0x0800;
+    } else {
+      ethType = (b[o] >> 4) === 6 ? 0x86dd : 0x0800;
+    }
+    pkt.ethType = ethType;
+    if (ethType === 0x0800 || ethType === 0x86dd) {
+      if (!phDecodeIP(b, o, end, pkt)) { pkt.protocol = 'Other'; pkt.info = 'Malformed or truncated IP header'; }
+    } else if (ethType === 0x0806) {
+      pkt.protocol = 'ARP';
+      if (end - o >= 28) {
+        var op = (b[o + 6] << 8) | b[o + 7];
+        var spa = b[o + 14] + '.' + b[o + 15] + '.' + b[o + 16] + '.' + b[o + 17];
+        var tpa = b[o + 24] + '.' + b[o + 25] + '.' + b[o + 26] + '.' + b[o + 27];
+        pkt.srcIP = spa; pkt.dstIP = tpa;
+        pkt.info = op === 1 ? 'Who has ' + tpa + '? Tell ' + spa : op === 2 ? spa + ' is at ' + phMac(b, o + 8) : 'ARP op ' + op;
+      } else pkt.info = 'ARP (truncated)';
+      pkt.payload = phHex(b, o, Math.min(end, o + PH_PAYLOAD_HEX_BYTES));
+    } else {
+      pkt.info = 'EtherType 0x' + ethType.toString(16).padStart(4, '0');
+      pkt.payload = phHex(b, o, Math.min(end, o + PH_PAYLOAD_HEX_BYTES));
+    }
+    packets.push(pkt);
+  }
+  if (off < b.length && !truncated) truncated = true;
+  return { packets: packets, linktype: linktype, nanos: nanos, truncated: truncated, skipped: skipped };
+}
+
+// ============================================================================
 // SECURITY GRAPH EXPORT
 // ============================================================================
-// PHANTOM has no live capture path: packets and anomalies come from the demo
-// dataset (PCAP import only overlays demo packets), so everything is tagged simulated.
+// PHANTOM has no live capture path. Packets come either from the demo dataset
+// (tagged simulated) or from a user-imported classic pcap file (tagged imported).
+// The anomaly list is always demo data, so it is always tagged simulated.
 var PH_SEV = { CRITICAL: 'critical', HIGH: 'high', MEDIUM: 'medium', LOW: 'low', INFO: 'info' };
 var PH_IP_RE = /\b\d{1,3}(?:\.\d{1,3}){3}\b/g;
 var PH_DOMAIN_RE = /\b(?:[a-z0-9-]+\.)+[a-z]{2,}\b/gi;
@@ -181,26 +438,27 @@ function phIsPrivate(ip) {
   return /^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|127\.)/.test(ip);
 }
 
-function phHostItem(ip, extra) {
-  var tags = ['phantom', 'network', 'simulated', phIsPrivate(ip) ? 'internal' : 'external'];
-  return { type: 'IP', name: ip, data: Object.assign({ simulated: true }, extra || {}), opts: { tags: tags } };
+function phHostItem(ip, extra, imported) {
+  var tags = ['phantom', 'network', imported ? 'pcap-import' : 'simulated', phIsPrivate(ip) ? 'internal' : 'external'];
+  var base = imported ? { source: 'pcap import' } : { simulated: true };
+  return { type: 'IP', name: ip, data: Object.assign(base, extra || {}), opts: { tags: tags } };
 }
 
 function phUnique(arr) {
   return arr.filter(function(v, i) { return arr.indexOf(v) === i; });
 }
 
-function phSendGraph(btn, build) {
+function phSendGraph(btn, build, tagNote) {
   btn.disabled = true;
   import('/js/graph-bridge.js?v=20260923c').then(function(gb) {
     var res = build(gb);
     btn.textContent = 'Sent: ' + res.created + ' new, ' + res.updated + ' merged';
-    gb.showGraphToast('Security Graph: ' + res.summary + ' (tagged simulated)');
+    gb.showGraphToast('Security Graph: ' + res.summary + ' (' + (tagNote || 'tagged simulated') + ')');
   }).catch(function() { btn.textContent = 'Security Graph unavailable'; btn.disabled = false; });
 }
 
 // Unique hosts seen in the capture -> IP entities with traffic totals.
-function phSendHosts(btn, packets) {
+function phSendHosts(btn, packets, imported) {
   phSendGraph(btn, function(gb) {
     var hosts = {};
     packets.forEach(function(p) {
@@ -214,12 +472,12 @@ function phSendHosts(btn, packets) {
     });
     var items = Object.keys(hosts).map(function(ip) {
       var h = hosts[ip];
-      return phHostItem(ip, { packets: h.packets, bytes: h.bytes, protocols: h.protocols.join(', ') });
+      return phHostItem(ip, { packets: h.packets, bytes: h.bytes, protocols: h.protocols.join(', ') }, imported);
     });
     var r = gb.sendToGraph('PHANTOM', items, undefined, true);
     r.summary = items.length + ' hosts, ' + r.created + ' added';
     return r;
-  });
+  }, imported ? 'tagged pcap-import' : 'tagged simulated');
 }
 
 // Anomalies -> ALERT (with severity), linked to the IPs/domains named in their evidence.
@@ -252,7 +510,7 @@ function phSendAnomalies(btn, anomalies) {
 // ============================================================================
 // STREAM / FILTER / EXPORT HELPERS (added features)
 // ============================================================================
-var PH_PROTOS = ['TCP', 'UDP', 'DNS', 'HTTP', 'TLS', 'ICMP'];
+var PH_PROTOS = ['TCP', 'UDP', 'DNS', 'HTTP', 'TLS', 'ICMP', 'ARP'];
 
 // Map an application protocol to its transport-layer protocol for 5-tuple grouping.
 function phTransport(proto) {
@@ -588,12 +846,32 @@ export function renderPhantom(main) {
   var filterExpr = '';
   var autoRefresh = false;
   var currentMode = getToolMode('phantom');
+  // Where the loaded packets came from: null (none), { demo: true } or
+  // { demo: false, name, size, linktype, truncated, skipped } for a pcap import.
+  var dataSource = null;
+  var importMsg = '';
 
   function loadDemo() {
     packets = SAMPLE_PACKETS.slice();
+    dataSource = { demo: true };
+    importMsg = '';
     selectedPkt = null;
     selectedFlow = null;
+    selectedStream = null;
     render();
+  }
+
+  function isImported() { return !!(dataSource && !dataSource.demo); }
+
+  function sourceBanner() {
+    if (!packets.length || !dataSource) return '';
+    if (dataSource.demo) {
+      return '<div class="ph-src-banner demo"><b>Demo data</b> - these ' + packets.length + ' packets are a built-in sample capture, not traffic from your network. Import a classic .pcap file to analyze real traffic.</div>';
+    }
+    return '<div class="ph-src-banner real"><b>Imported capture</b> - ' + esc(dataSource.name) + ' (' + fmtBytes(dataSource.size) + ', ' + packets.length + ' packets' +
+      (dataSource.skipped ? ', ' + dataSource.skipped + ' unreadable frames skipped' : '') +
+      (dataSource.truncated ? ', file truncated or over the ' + PH_PCAP_MAX_PACKETS + '-packet limit' : '') +
+      '). Parsed locally in your browser; the file is not uploaded.</div>';
   }
 
   function render() {
@@ -616,6 +894,10 @@ export function renderPhantom(main) {
       '.ph-tab{background:transparent;border:none;border-bottom:2px solid transparent;color:var(--mut);padding:8px 14px;font-size:.7rem;font-weight:600;letter-spacing:.03em;text-transform:uppercase;cursor:pointer;transition:all .15s;font-family:inherit;white-space:nowrap;flex-shrink:0}' +
       '.ph-tab:hover{color:var(--txt);background:rgba(6,182,212,.05)}' +
       '.ph-tab.on{color:#06b6d4;border-bottom-color:#06b6d4}' +
+      '.ph-src-banner{margin-top:10px;padding:8px 12px;border-radius:6px;font-size:.74rem;line-height:1.45;border:1px solid var(--line);color:var(--txt)}' +
+      '.ph-src-banner.demo{border-left:3px solid #eab308;background:rgba(234,179,8,.08)}' +
+      '.ph-src-banner.real{border-left:3px solid #22c55e;background:rgba(34,197,94,.08)}' +
+      '.ph-demo-tag{display:inline-block;padding:1px 6px;border-radius:4px;background:rgba(234,179,8,.18);color:#a16207;font-size:.62rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;margin-left:6px}' +
       '.ph-panel{background:var(--card);border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:12px}' +
       '.ph-panel-h{padding:10px 14px;border-bottom:1px solid var(--line);background:rgba(0,0,0,.06);font-size:.7rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--mut);display:flex;align-items:center;gap:8px}' +
       '.ph-panel-body{padding:14px}' +
@@ -686,6 +968,7 @@ export function renderPhantom(main) {
           '<div id="ph-modebar"></div>' +
         '</div>' +
         '<div class="ph-sub" id="ph-modenote" style="padding:8px 0 0;text-transform:none;letter-spacing:0"></div>' +
+        sourceBanner() +
         '<div class="ph-tabs">' +
           visTabs.map(function(t) {
             return '<button class="ph-tab' + (activeTab === t.id ? ' on' : '') + '" data-t="' + t.id + '">' + esc(t.label) + '</button>';
@@ -773,6 +1056,7 @@ export function renderPhantom(main) {
     var bwMbps = (Math.random() * 80 + 20).toFixed(1);
 
     c.innerHTML =
+      '<div class="ph-src-banner demo" style="margin:0 0 12px"><b>Demo data</b> - this dashboard shows randomly generated sample connections. A browser page cannot see your machine\'s live connections; import a .pcap in the Capture tab to analyze real traffic.</div>' +
       '<div class="ph-grid">' +
         '<div class="ph-stat"><div class="ph-stat-n">' + conns.length + '</div><div class="ph-stat-l">Active Connections</div></div>' +
         '<div class="ph-stat"><div class="ph-stat-n">' + Object.keys(protoCounts).length + '</div><div class="ph-stat-l">Protocols Detected</div></div>' +
@@ -796,7 +1080,7 @@ export function renderPhantom(main) {
         '</div>' +
       '</div></div>' +
 
-      '<div class="ph-panel"><div class="ph-panel-h">Active Connections</div><div class="ph-panel-body">' +
+      '<div class="ph-panel"><div class="ph-panel-h">Active Connections<span class="ph-demo-tag">Demo data</span></div><div class="ph-panel-body">' +
         '<div class="ph-scroll">' +
           '<table class="ph-table"><thead><tr><th>#</th><th>Source</th><th>Destination</th><th>Port</th><th>Protocol</th><th>Bytes</th><th>State</th></tr></thead><tbody>' +
           conns.map(function(cn, idx) {
@@ -811,7 +1095,7 @@ export function renderPhantom(main) {
         '</div>' +
       '</div></div>' +
 
-      '<div class="ph-panel"><div class="ph-panel-h">Top Talkers</div><div class="ph-panel-body">' +
+      '<div class="ph-panel"><div class="ph-panel-h">Top Talkers<span class="ph-demo-tag">Demo data</span></div><div class="ph-panel-body">' +
         '<table class="ph-table"><thead><tr><th>#</th><th>IP Address</th><th>Packets</th><th>Bytes</th><th>Protocols</th></tr></thead><tbody>' +
         talkerArr.map(function(t, i) {
           return '<tr><td>' + (i + 1) + '</td><td style="font-family:var(--font-mono,monospace)">' + esc(t.ip) + '</td><td>' + t.packets + '</td><td>' + fmtBytes(t.bytes) + '</td><td>' + esc(t.protocols) + '</td></tr>';
@@ -827,15 +1111,15 @@ export function renderPhantom(main) {
     c.innerHTML =
       '<div class="ph-file-input">' +
         '<button class="ph-btn" id="ph-demo-btn">Load Demo Capture (50 packets)</button>' +
-        '<label class="ph-btn ghost" style="cursor:pointer">Import PCAP <input type="file" accept=".pcap,.pcapng,.cap" id="ph-pcap-input" style="display:none"></label>' +
-        '<span style="font-size:.72rem;color:var(--mut)" id="ph-pkt-count">' + (packets.length ? packets.length + ' packets loaded' : 'No packets loaded') + '</span>' +
-        (packets.length ? '<button class="ph-btn ghost" id="ph-hosts-graph" title="Demo capture data is tagged simulated">Send hosts to Security Graph</button>' : '') +
+        '<label class="ph-btn ghost" style="cursor:pointer" title="Classic libpcap format (.pcap). pcapng is not supported.">Import PCAP <input type="file" accept=".pcap,.cap,.dmp,.pcapng" id="ph-pcap-input" style="display:none"></label>' +
+        '<span style="font-size:.72rem;color:var(--mut)" id="ph-pkt-count">' + (importMsg ? esc(importMsg) : packets.length ? packets.length + ' packets loaded' + (dataSource && dataSource.demo ? ' (demo data)' : '') : 'No packets loaded') + '</span>' +
+        (packets.length ? '<button class="ph-btn ghost" id="ph-hosts-graph" title="' + (isImported() ? 'Hosts from the imported capture are tagged pcap-import' : 'Demo capture data is tagged simulated') + '">Send hosts to Security Graph</button>' : '') +
       '</div>' +
       (packets.length === 0 ?
-        '<div class="ph-empty">No capture loaded. Click "Load Demo Capture" to explore sample network traffic, or import a PCAP file.</div>' :
+        '<div class="ph-empty">No capture loaded. Click "Load Demo Capture" to explore sample network traffic, or import a classic .pcap file (parsed locally in your browser).</div>' :
         '<div style="margin-bottom:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">' +
           '<input id="ph-filter" type="text" placeholder="Filter by IP, protocol, or keyword..." style="flex:1;min-width:200px;padding:6px 10px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--txt);font-size:.78rem;font-family:inherit">' +
-          '<select id="ph-proto-filter" style="padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--txt);font-size:.76rem;font-family:inherit"><option value="">All Protocols</option><option>TCP</option><option>UDP</option><option>DNS</option><option>HTTP</option><option>TLS</option><option>ICMP</option></select>' +
+          '<select id="ph-proto-filter" style="padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--txt);font-size:.76rem;font-family:inherit"><option value="">All Protocols</option><option>TCP</option><option>UDP</option><option>DNS</option><option>HTTP</option><option>TLS</option><option>ICMP</option><option>ARP</option></select>' +
         '</div>' +
         '<div class="ph-panel"><div class="ph-panel-h">Packet List (<span id="ph-shown-count">' + packets.length + '</span> / ' + packets.length + ' packets)</div><div class="ph-panel-body">' +
           '<div class="ph-scroll" style="max-height:360px">' +
@@ -864,27 +1148,33 @@ export function renderPhantom(main) {
     var demoBtn = c.querySelector('#ph-demo-btn');
     if (demoBtn) demoBtn.onclick = loadDemo;
     var hostsGraphBtn = c.querySelector('#ph-hosts-graph');
-    if (hostsGraphBtn) hostsGraphBtn.onclick = function() { phSendHosts(hostsGraphBtn, packets); };
+    if (hostsGraphBtn) hostsGraphBtn.onclick = function() { phSendHosts(hostsGraphBtn, packets, isImported()); };
 
     var pcapInput = c.querySelector('#ph-pcap-input');
     if (pcapInput) pcapInput.onchange = function(e) {
       var file = e.target.files[0];
       if (!file) return;
+      var cnt = c.querySelector('#ph-pkt-count');
+      function fail(msg) {
+        importMsg = file.name + ': ' + msg;
+        if (cnt) { cnt.textContent = importMsg; cnt.style.color = '#ef4444'; }
+      }
+      if (file.size > 200 * 1048576) { fail('file is larger than 200 MB; split it first (e.g. editcap -c 20000).'); return; }
+      if (cnt) cnt.textContent = 'Parsing ' + file.name + '...';
       var reader = new FileReader();
+      reader.onerror = function() { fail('could not read the file.'); };
       reader.onload = function(ev) {
-        var arr = new Uint8Array(ev.target.result);
-        var magic = (arr[0] << 24 | arr[1] << 16 | arr[2] << 8 | arr[3]) >>> 0;
-        if (magic === 0xa1b2c3d4 || magic === 0xd4c3b2a1 || magic === 0x0a0d0d0a) {
-          packets = SAMPLE_PACKETS.slice();
-          var cnt = c.querySelector('#ph-pkt-count');
-          if (cnt) cnt.textContent = 'PCAP detected: ' + file.name + ' (' + fmtBytes(file.size) + ') - showing demo packets overlay';
-          render();
-        } else {
-          var cnt = c.querySelector('#ph-pkt-count');
-          if (cnt) cnt.textContent = 'Invalid PCAP format: ' + file.name;
-        }
+        var res;
+        try { res = phParsePcap(ev.target.result); }
+        catch (err) { fail(err.message); return; }
+        if (!res.packets.length) { fail('no packets found in the capture.'); return; }
+        packets = res.packets;
+        dataSource = { demo: false, name: file.name, size: file.size, linktype: res.linktype, truncated: res.truncated, skipped: res.skipped };
+        importMsg = '';
+        selectedPkt = null; selectedFlow = null; selectedStream = null;
+        render();
       };
-      reader.readAsArrayBuffer(file.slice(0, 4096));
+      reader.readAsArrayBuffer(file);
     };
 
     var tbody = c.querySelector('#ph-pkt-tbody');
@@ -945,46 +1235,82 @@ export function renderPhantom(main) {
     }
 
     var layers = [];
+    var real = !!pkt.imported;
+    var isV6 = pkt.ipVersion === 6;
+    var ethName = { 0x0800: 'IPv4', 0x86dd: 'IPv6', 0x0806: 'ARP' };
+    var l3 = pkt.protocol === 'ARP' ? 'ARP' : (real && !pkt.ipVersion) ? '' : (isV6 ? 'IPv6' : 'IPv4');
+    var l4name = pkt.ipProto === 58 ? 'ICMPv6' : pkt.protocol;
+    var stackTail = (l3 ? l3 + (pkt.protocol !== 'ARP' && pkt.protocol !== l3 ? ':' + l4name : '') : pkt.protocol);
+    var linkName = !real || pkt.linktype === 1 ? 'Ethernet' : pkt.linktype === 113 ? 'Linux cooked (SLL)' : pkt.linktype === 0 ? 'Loopback' : 'Raw IP';
     layers.push(layerHTML('Frame', '#64748b', [
       ['Frame Number', String(pkt.id)],
-      ['Capture Length', pkt.length + ' bytes'],
-      ['Timestamp', fmtTime(pkt.ts) + ' seconds'],
-      ['Protocols in Frame', 'Ethernet:IPv4:' + pkt.protocol],
-    ]));
+      ['Frame Length', pkt.length + ' bytes'],
+    ].concat(real ? [['Captured Length', pkt.capLength + ' bytes'], ['Arrival Time', new Date(pkt.absTs * 1000).toISOString()]] : []).concat([
+      ['Time Since First Frame', fmtTime(pkt.ts) + ' seconds'],
+      ['Protocols in Frame', (linkName === 'Raw IP' ? '' : linkName.split(' ')[0] + ':') + stackTail],
+    ])));
 
-    layers.push(layerHTML('Ethernet II', '#8b5cf6', [
-      ['Source MAC', pkt.srcMAC],
-      ['Destination MAC', pkt.dstMAC],
-      ['Type', '0x0800 (IPv4)'],
-    ]));
+    if (!real || pkt.linktype === 1) {
+      var et = real ? pkt.ethType : 0x0800;
+      layers.push(layerHTML('Ethernet II', '#8b5cf6', [
+        ['Source MAC', pkt.srcMAC],
+        ['Destination MAC', pkt.dstMAC],
+      ].concat(pkt.vlan != null ? [['802.1Q VLAN ID', String(pkt.vlan)]] : []).concat([
+        ['Type', '0x' + (et || 0).toString(16).padStart(4, '0') + (ethName[et] ? ' (' + ethName[et] + ')' : '')],
+      ])));
+    } else if (real) {
+      layers.push(layerHTML(linkName, '#8b5cf6', [['Link Type', String(pkt.linktype)], ['Protocol', '0x' + (pkt.ethType || 0).toString(16).padStart(4, '0') + (ethName[pkt.ethType] ? ' (' + ethName[pkt.ethType] + ')' : '')]]));
+    }
 
-    layers.push(layerHTML('Internet Protocol v4', '#3b82f6', [
-      ['Version', '4'],
-      ['Header Length', '20 bytes (5)'],
-      ['Total Length', pkt.length + ' bytes'],
-      ['TTL', String(pkt.ttl)],
-      ['Protocol', pkt.protocol === 'TCP' || pkt.protocol === 'HTTP' || pkt.protocol === 'TLS' ? '6 (TCP)' : pkt.protocol === 'UDP' || pkt.protocol === 'DNS' ? '17 (UDP)' : pkt.protocol === 'ICMP' ? '1 (ICMP)' : 'Unknown'],
-      ['Source Address', pkt.srcIP],
-      ['Destination Address', pkt.dstIP],
-    ]));
+    var ipProtoLabel = pkt.protocol === 'TCP' || pkt.protocol === 'HTTP' || pkt.protocol === 'TLS' ? '6 (TCP)' : pkt.protocol === 'UDP' || pkt.protocol === 'DNS' ? '17 (UDP)' : pkt.ipProto === 58 ? '58 (ICMPv6)' : pkt.protocol === 'ICMP' ? '1 (ICMP)' : pkt.ipProto != null ? String(pkt.ipProto) : 'Unknown';
+    if (!real || pkt.ipVersion === 4) {
+      layers.push(layerHTML('Internet Protocol v4', '#3b82f6', [
+        ['Version', '4'],
+        ['Header Length', real ? pkt.ipHeaderLen + ' bytes (' + (pkt.ipHeaderLen / 4) + ')' : '20 bytes (5)'],
+        ['Total Length', (real ? pkt.ipTotalLen : pkt.length) + ' bytes'],
+        ['TTL', String(pkt.ttl)],
+        ['Protocol', ipProtoLabel],
+        ['Source Address', pkt.srcIP],
+        ['Destination Address', pkt.dstIP],
+      ]));
+    } else if (isV6) {
+      layers.push(layerHTML('Internet Protocol v6', '#3b82f6', [
+        ['Version', '6'],
+        ['Hop Limit', String(pkt.ttl)],
+        ['Next Header', ipProtoLabel],
+        ['Source Address', pkt.srcIP],
+        ['Destination Address', pkt.dstIP],
+      ]));
+    } else if (pkt.protocol === 'ARP') {
+      layers.push(layerHTML('Address Resolution Protocol', '#3b82f6', [
+        ['Summary', pkt.info],
+        ['Sender IP', pkt.srcIP],
+        ['Target IP', pkt.dstIP],
+      ]));
+    }
 
-    if (pkt.protocol === 'TCP' || pkt.protocol === 'HTTP' || pkt.protocol === 'TLS') {
+    if (pkt.protocol === 'TCP' || pkt.protocol === 'HTTP' || pkt.protocol === 'TLS' || (real && pkt.ipProto === 6 && pkt.window != null)) {
       layers.push(layerHTML('Transmission Control Protocol', '#06b6d4', [
         ['Source Port', String(pkt.srcPort)],
         ['Destination Port', String(pkt.dstPort)],
-        ['Flags', pkt.flags || 'ACK'],
-        ['Window Size', '65535'],
-        ['Sequence Number', pkt.info.match(/Seq=(\d+)/) ? pkt.info.match(/Seq=(\d+)/)[1] : '0 (relative)'],
-      ]));
+        ['Flags', pkt.flags || (real ? '(none)' : 'ACK')],
+        ['Window Size', real ? String(pkt.window) : '65535'],
+        ['Sequence Number', real ? String(pkt.seq) + ' (raw)' : pkt.info.match(/Seq=(\d+)/) ? pkt.info.match(/Seq=(\d+)/)[1] : '0 (relative)'],
+      ].concat(real ? [['Acknowledgment Number', String(pkt.ack) + ' (raw)'], ['Checksum', pkt.checksum]] : [])));
     } else if (pkt.protocol === 'UDP' || pkt.protocol === 'DNS') {
       layers.push(layerHTML('User Datagram Protocol', '#22c55e', [
         ['Source Port', String(pkt.srcPort)],
         ['Destination Port', String(pkt.dstPort)],
-        ['Length', String(pkt.length - 42) + ' bytes'],
-        ['Checksum', '0x' + Math.floor(Math.random() * 65535).toString(16).padStart(4, '0')],
+        ['Length', real ? String(pkt.udpLength) + ' bytes' : String(pkt.length - 42) + ' bytes'],
+        ['Checksum', real ? pkt.checksum : 'n/a (demo data)'],
       ]));
     } else if (pkt.protocol === 'ICMP') {
-      layers.push(layerHTML('Internet Control Message Protocol', '#f97316', [
+      layers.push(layerHTML(pkt.ipProto === 58 ? 'Internet Control Message Protocol v6' : 'Internet Control Message Protocol', '#f97316', real ? [
+        ['Type', String(pkt.icmpType)],
+        ['Code', String(pkt.icmpCode)],
+        ['Checksum', pkt.checksum],
+        ['Summary', pkt.info],
+      ] : [
         ['Type', pkt.info.indexOf('request') >= 0 ? '8 (Echo Request)' : '0 (Echo Reply)'],
         ['Code', '0'],
         ['Identifier', pkt.info.match(/id=(0x[0-9a-f]+)/) ? pkt.info.match(/id=(0x[0-9a-f]+)/)[1] : '0x0000'],
@@ -992,7 +1318,29 @@ export function renderPhantom(main) {
       ]));
     }
 
-    if (pkt.protocol === 'HTTP') {
+    if (real && (pkt.protocol === 'HTTP' || pkt.protocol === 'DNS' || pkt.protocol === 'TLS')) {
+      // Imported packets: show only what was actually decoded from the bytes.
+      var ph = pkt.payload || '';
+      if (pkt.protocol === 'HTTP') {
+        layers.push(layerHTML('Hypertext Transfer Protocol', '#f97316', [['First Line', pkt.info]]));
+      } else if (pkt.protocol === 'DNS') {
+        var dnsOff = pkt.ipProto === 6 ? 4 : 0; // DNS over TCP has a 2-byte length prefix
+        layers.push(layerHTML('Domain Name System', '#eab308', [
+          ['Transaction ID', '0x' + ph.slice(dnsOff, dnsOff + 4)],
+          ['Type', pkt.info.indexOf('Response') === 0 ? 'Response' : 'Query'],
+          ['Summary', pkt.info],
+        ]));
+      } else {
+        var ctByte = parseInt(ph.slice(0, 2), 16);
+        var ctNames = { 20: 'Change Cipher Spec (20)', 21: 'Alert (21)', 22: 'Handshake (22)', 23: 'Application Data (23)' };
+        layers.push(layerHTML('Transport Layer Security', '#a855f7', [
+          ['Content Type', ctNames[ctByte] || String(ctByte)],
+          ['Record Version', '0x' + ph.slice(2, 6)],
+          ['Record Length', String(parseInt(ph.slice(6, 10), 16) || 0) + ' bytes'],
+          ['Summary', pkt.info],
+        ]));
+      }
+    } else if (pkt.protocol === 'HTTP') {
       var isReq = pkt.info.indexOf('GET') >= 0 || pkt.info.indexOf('POST') >= 0;
       layers.push(layerHTML('Hypertext Transfer Protocol', '#f97316', isReq ? [
         ['Method', pkt.info.match(/(GET|POST|PUT|DELETE)/)?.[1] || 'GET'],
@@ -1152,7 +1500,8 @@ export function renderPhantom(main) {
         '<div class="ph-stat"><div class="ph-stat-n" style="color:#eab308">' + sevCounts.MEDIUM + '</div><div class="ph-stat-l">Medium</div></div>' +
         '<div class="ph-stat"><div class="ph-stat-n" style="color:#22c55e">' + sevCounts.LOW + '</div><div class="ph-stat-l">Low / Info</div></div>' +
       '</div>' +
-      '<div style="margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap"><button class="ph-btn" id="ph-run-anomaly">Run Analysis' + (packets.length > 0 ? ' (' + packets.length + ' packets)' : '') + '</button>' +
+      '<div class="ph-src-banner demo" style="margin:0 0 12px"><b>Demo data</b> - the findings below are built-in sample anomalies. They are not computed from ' + (isImported() ? 'your imported capture' : 'the loaded packets') + '.</div>' +
+      '<div style="margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap">' + (packets.length === 0 ? '<button class="ph-btn" id="ph-run-anomaly">Load Demo Capture</button>' : '') +
         '<button class="ph-btn ghost" id="ph-anomaly-graph" title="Demo anomaly data is tagged simulated">Send ' + anomalies.length + ' anomalies to Security Graph</button></div>' +
       anomalies.map(function(a) {
         return '<div class="ph-alert">' +
@@ -1274,14 +1623,15 @@ export function renderPhantom(main) {
     var tlsPkts = packets.filter(function(p) { return p.protocol === 'TLS'; });
 
     c.innerHTML =
+      '<div class="ph-src-banner demo" style="margin:0 0 12px"><b>Demo data</b> - only the TLS packet count comes from the loaded capture. The certificates below are built-in samples; the cipher suite and JA3 tables are reference lists.</div>' +
       '<div class="ph-grid">' +
         '<div class="ph-stat"><div class="ph-stat-n">' + tlsPkts.length + '</div><div class="ph-stat-l">TLS Packets</div></div>' +
-        '<div class="ph-stat"><div class="ph-stat-n">' + SAMPLE_CERTS.length + '</div><div class="ph-stat-l">Certificates</div></div>' +
-        '<div class="ph-stat"><div class="ph-stat-n">' + JA3_DB.length + '</div><div class="ph-stat-l">JA3 Fingerprints</div></div>' +
-        '<div class="ph-stat"><div class="ph-stat-n">' + SAMPLE_CERTS.filter(function(cert) { return cert.keySize < 1024 || cert.sigAlg.indexOf('MD5') >= 0 || cert.sigAlg.indexOf('SHA1') >= 0; }).length + '</div><div class="ph-stat-l" style="color:#ef4444">Weak Certificates</div></div>' +
+        '<div class="ph-stat"><div class="ph-stat-n">' + SAMPLE_CERTS.length + '</div><div class="ph-stat-l">Sample Certificates</div></div>' +
+        '<div class="ph-stat"><div class="ph-stat-n">' + JA3_DB.length + '</div><div class="ph-stat-l">Reference JA3 Hashes</div></div>' +
+        '<div class="ph-stat"><div class="ph-stat-n">' + SAMPLE_CERTS.filter(function(cert) { return cert.keySize < 1024 || cert.sigAlg.indexOf('MD5') >= 0 || cert.sigAlg.indexOf('SHA1') >= 0; }).length + '</div><div class="ph-stat-l" style="color:#ef4444">Weak (sample certs)</div></div>' +
       '</div>' +
 
-      '<div class="ph-panel"><div class="ph-panel-h">Certificate Chain Analysis</div><div class="ph-panel-body">' +
+      '<div class="ph-panel"><div class="ph-panel-h">Certificate Chain Analysis<span class="ph-demo-tag">Demo data</span></div><div class="ph-panel-body">' +
         '<div class="ph-scroll">' +
           '<table class="ph-table"><thead><tr><th>Subject</th><th>Issuer</th><th>Valid From</th><th>Valid To</th><th>Key Size</th><th>Signature</th><th>Status</th></tr></thead><tbody>' +
           SAMPLE_CERTS.map(function(cert) {
@@ -1301,7 +1651,7 @@ export function renderPhantom(main) {
         '</div>' +
       '</div></div>' +
 
-      '<div class="ph-panel"><div class="ph-panel-h">Cipher Suite Analysis</div><div class="ph-panel-body">' +
+      '<div class="ph-panel"><div class="ph-panel-h">Cipher Suite Reference</div><div class="ph-panel-body">' +
         '<table class="ph-table"><thead><tr><th>Cipher Suite</th><th>Protocol</th><th>Key Exchange</th><th>Encryption</th><th>Rating</th></tr></thead><tbody>' +
           '<tr><td>TLS_AES_256_GCM_SHA384</td><td>TLS 1.3</td><td>ECDHE</td><td>AES-256-GCM</td><td style="color:#22c55e;font-weight:700">STRONG</td></tr>' +
           '<tr><td>TLS_CHACHA20_POLY1305_SHA256</td><td>TLS 1.3</td><td>ECDHE</td><td>ChaCha20-Poly1305</td><td style="color:#22c55e;font-weight:700">STRONG</td></tr>' +
@@ -1663,9 +2013,11 @@ export function renderPhantom(main) {
     var ips = Object.keys(ipSet).sort();
     var domains = Object.keys(domSet).sort();
 
-    var iocData = { source: 'PHANTOM', generated: new Date().toISOString(), simulated: true, ips: ips, domains: domains };
+    var imported = isImported();
+    var iocData = { source: 'PHANTOM', generated: new Date().toISOString(), ips: ips, domains: domains };
+    if (imported) iocData.capture = dataSource.name; else iocData.simulated = true;
 
-    var graphBtn = '<button class="ph-btn ghost" id="ph-ioc-graph" title="Sends extracted IOCs to the Security Graph tool (tagged simulated)">Send to Security Graph</button>';
+    var graphBtn = '<button class="ph-btn ghost" id="ph-ioc-graph" title="Sends extracted IOCs to the Security Graph tool (tagged ' + (imported ? 'pcap-import' : 'simulated') + ')">Send to Security Graph</button>';
 
     c.innerHTML =
       '<div class="ph-grid">' +
@@ -1710,14 +2062,15 @@ export function renderPhantom(main) {
     if (gbtn) gbtn.onclick = function() {
       // Uses the same dynamic-import graph-bridge pattern as phSendHosts/phSendAnomalies.
       phSendGraph(gbtn, function(gb) {
-        var items = ips.map(function(ip) { return phHostItem(ip, { source: 'IOC export' }); })
+        var items = ips.map(function(ip) { return phHostItem(ip, { source: 'IOC export' }, imported); })
           .concat(domains.map(function(d) {
-            return { type: 'DOMAIN', name: d, data: { simulated: true, source: 'IOC export' }, opts: { tags: ['phantom', 'ioc', 'simulated'] } };
+            var data = imported ? { source: 'IOC export (pcap import)' } : { simulated: true, source: 'IOC export' };
+            return { type: 'DOMAIN', name: d, data: data, opts: { tags: ['phantom', 'ioc', imported ? 'pcap-import' : 'simulated'] } };
           }));
         var r = gb.sendToGraph('PHANTOM', items, undefined, true);
         r.summary = (ips.length + domains.length) + ' IOCs, ' + r.created + ' added';
         return r;
-      });
+      }, imported ? 'tagged pcap-import' : 'tagged simulated');
     };
   }
 

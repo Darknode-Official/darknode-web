@@ -320,7 +320,7 @@ export function renderWaybackRecon(container) {
     resultsEl.innerHTML = '';
 
     try {
-      var url = 'https://web.archive.org/cdx/search/cdx?url=' + encodeURIComponent(domain) + '/*&output=json&fl=timestamp,original,mimetype,statuscode,digest&collapse=urlkey&limit=500';
+      var url = 'https://web.archive.org/cdx/search/cdx?url=' + encodeURIComponent(domain) + '/*&output=json&fl=timestamp,original,mimetype,statuscode,digest&collapse=digest&limit=500';
       var resp = await fetch(url);
       if (!resp.ok) throw new Error('CDX API returned ' + resp.status);
       var data = await resp.json();

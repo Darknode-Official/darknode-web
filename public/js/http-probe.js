@@ -107,7 +107,7 @@ function _hpTestMethods(url) {
     (function(method) {
       promises.push(
         fetch(url, { method: method, mode: 'cors' })
-          .then(function(resp) { results[method] = { status: resp.status, allowed: resp.status < 500 }; })
+          .then(function(resp) { results[method] = { status: resp.status, allowed: resp.status !== 405 && resp.status !== 501 && resp.status < 500 }; })
           .catch(function() { results[method] = { status: 0, allowed: false }; })
       );
     })(_hpMethods[i]);

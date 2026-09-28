@@ -239,17 +239,22 @@ function renderFrameworkSelector(main, data) {
   const fwNames = Object.keys(FRAMEWORKS);
   // Real cross-framework aggregates (computed from the built-in control library
   // plus the user's own progress — no fabricated numbers).
-  var aggCtrl = 0, aggImpl = 0, aggMap = 0;
+  var aggCtrl = 0, aggImpl = 0, aggMap = 0, aggApplicable = 0;
   for (var a = 0; a < fwNames.length; a++) {
     var afw = FRAMEWORKS[fwNames[a]];
     var afwData = data[fwNames[a]] || {};
     aggCtrl += afw.controls.length;
     for (var b = 0; b < afw.controls.length; b++) {
-      if ((afwData[afw.controls[b].id] || {}).status === "Implemented") aggImpl++;
+      var aSt = (afwData[afw.controls[b].id] || {}).status;
+      if (aSt === "Implemented") aggImpl++;
+      if (aSt !== "Not Applicable") aggApplicable++;
       aggMap += Object.keys(afw.controls[b].mapping || {}).length;
     }
   }
-  var aggPct = aggCtrl > 0 ? Math.round((aggImpl / aggCtrl) * 100) : 0;
+  // Readiness is implemented / applicable; "Not Applicable" controls are not
+  // gaps and must be excluded from the denominator (matches the critical-gap
+  // logic below, which also treats Not Applicable as not-a-gap).
+  var aggPct = aggApplicable > 0 ? Math.round((aggImpl / aggApplicable) * 100) : 0;
   var ccCell = function (n, label, key) {
     return '<div class="cc-sm" data-k="' + key + '"><span class="cc-sm-n">' + n + '</span><span class="cc-sm-l">' + label + '</span></div>';
   };
@@ -267,11 +272,15 @@ function renderFrameworkSelector(main, data) {
     var fw = FRAMEWORKS[fwNames[i]];
     var fwData = data[fwNames[i]] || {};
     var total = fw.controls.length;
-    var implemented = 0;
+    var implemented = 0, applicable = 0;
     for (var j = 0; j < fw.controls.length; j++) {
-      if ((fwData[fw.controls[j].id] || {}).status === "Implemented") implemented++;
+      var st = (fwData[fw.controls[j].id] || {}).status;
+      if (st === "Implemented") implemented++;
+      if (st !== "Not Applicable") applicable++;
     }
-    var pct = total > 0 ? Math.round((implemented / total) * 100) : 0;
+    // "% ready" excludes Not Applicable controls from the denominator so
+    // marking a control N/A cannot drag readiness down.
+    var pct = applicable > 0 ? Math.round((implemented / applicable) * 100) : 0;
     var barColor = pct >= 80 ? "#22c55e" : pct >= 50 ? "#f59e0b" : "#ef4444";
     html += '<div class="cc-fw-card" data-fw="' + esc(fwNames[i]) + '">' +
       '<div class="cc-fw-name">' + esc(fwNames[i]) + '</div>' +
@@ -439,7 +448,7 @@ function renderGapTab(container, fw, fwName, fwData) {
 
   for (var s = 0; s < STATUSES.length; s++) byStatus[STATUSES[s]] = 0;
   for (var p = 0; p < PRIORITIES.length; p++) byPriority[PRIORITIES[p]] = 0;
-  for (var c = 0; c < fw.categories.length; c++) byCat[fw.categories[c]] = { total: 0, implemented: 0 };
+  for (var c = 0; c < fw.categories.length; c++) byCat[fw.categories[c]] = { total: 0, implemented: 0, applicable: 0 };
 
   for (var i = 0; i < fw.controls.length; i++) {
     var ctrl = fw.controls[i];
@@ -448,20 +457,23 @@ function renderGapTab(container, fw, fwName, fwData) {
     var priority = cd.priority || ctrl.priority;
     byStatus[status] = (byStatus[status] || 0) + 1;
     byPriority[priority] = (byPriority[priority] || 0) + 1;
-    if (!byCat[ctrl.category]) byCat[ctrl.category] = { total: 0, implemented: 0 };
+    if (!byCat[ctrl.category]) byCat[ctrl.category] = { total: 0, implemented: 0, applicable: 0 };
     byCat[ctrl.category].total++;
+    if (status !== "Not Applicable") byCat[ctrl.category].applicable++;
     if (status === "Implemented") byCat[ctrl.category].implemented++;
   }
 
   var implemented = byStatus["Implemented"] || 0;
-  var score = total > 0 ? Math.round((implemented / total) * 100) : 0;
+  // Readiness excludes Not Applicable controls: they are out of scope, not gaps.
+  var applicable = total - (byStatus["Not Applicable"] || 0);
+  var score = applicable > 0 ? Math.round((implemented / applicable) * 100) : 0;
   var scoreColor = score >= 80 ? "#22c55e" : score >= 50 ? "#f59e0b" : "#ef4444";
 
   var html = '<div class="cc-gap-header">' +
     '<div class="cc-score-card">' +
       '<div class="cc-score-num" style="color:' + scoreColor + '">' + score + '</div>' +
       '<div class="cc-score-label">Audit Readiness Score</div>' +
-      '<div class="cc-score-sub">' + implemented + ' of ' + total + ' controls implemented</div>' +
+      '<div class="cc-score-sub">' + implemented + ' of ' + applicable + ' applicable controls implemented</div>' +
     '</div>' +
   '</div>' +
   '<h3 style="margin:16px 0 8px">Status Breakdown</h3>' +
@@ -481,11 +493,11 @@ function renderGapTab(container, fw, fwName, fwData) {
   var catNames = Object.keys(byCat);
   for (var ci = 0; ci < catNames.length; ci++) {
     var cat = byCat[catNames[ci]];
-    var cpct = cat.total > 0 ? Math.round((cat.implemented / cat.total) * 100) : 0;
+    var cpct = cat.applicable > 0 ? Math.round((cat.implemented / cat.applicable) * 100) : 0;
     var cColor = cpct >= 80 ? "#22c55e" : cpct >= 50 ? "#f59e0b" : "#ef4444";
     html += '<div class="cc-gap-item">' +
       '<div class="cc-gap-label">' + esc(catNames[ci]) + '</div>' +
-      '<div class="cc-gap-val" style="color:' + cColor + '">' + cat.implemented + '/' + cat.total + ' (' + cpct + '%)</div>' +
+      '<div class="cc-gap-val" style="color:' + cColor + '">' + cat.implemented + '/' + cat.applicable + ' (' + cpct + '%)</div>' +
     '</div>';
   }
   html += '</div>';
@@ -557,11 +569,14 @@ function renderMappingTab(container, fw, fwName) {
 
 function renderExportTab(container, fw, fwName, fwData) {
   var total = fw.controls.length;
-  var implemented = 0;
+  var implemented = 0, applicable = 0;
   for (var i = 0; i < fw.controls.length; i++) {
-    if ((fwData[fw.controls[i].id] || {}).status === "Implemented") implemented++;
+    var est = (fwData[fw.controls[i].id] || {}).status;
+    if (est === "Implemented") implemented++;
+    if (est !== "Not Applicable") applicable++;
   }
-  var score = total > 0 ? Math.round((implemented / total) * 100) : 0;
+  // Readiness score excludes Not Applicable controls from the denominator.
+  var score = applicable > 0 ? Math.round((implemented / applicable) * 100) : 0;
 
   var report = "COMPLIANCE ASSESSMENT REPORT\n";
   report += "============================\n\n";
@@ -569,6 +584,7 @@ function renderExportTab(container, fw, fwName, fwData) {
   report += "Date: " + new Date().toISOString().split('T')[0] + "\n";
   report += "Audit Readiness Score: " + score + "%\n";
   report += "Controls Assessed: " + total + "\n";
+  report += "Controls Applicable: " + applicable + "\n";
   report += "Controls Implemented: " + implemented + "\n\n";
   report += "CONTROL DETAILS\n";
   report += "---------------\n\n";

@@ -277,14 +277,14 @@ function urlEncode(str) { return encodeURIComponent(str); }
 function urlDecode(str) { try { return decodeURIComponent(str); } catch { return str; } }
 
 function unicodeEscape(str) {
-  return Array.from(str).map(c => {
-    const code = c.codePointAt(0);
-    return code > 127 ? `\\u${code.toString(16).padStart(4, '0')}` : c;
-  }).join('');
+  // Escape every character as \uXXXX (matching the panel's cheat sheet, which
+  // documents < -> <, and the sibling encoder in payload-gen.js). Escaping
+  // only code points > 127 made this a no-op for typical all-ASCII payloads.
+  return str.split('').map(c => `\\u${c.charCodeAt(0).toString(16).padStart(4, '0')}`).join('');
 }
 
 function hexEncode(str) {
-  return Array.from(str).map(c => `\\x${c.charCodeAt(0).toString(16).padStart(2, '0')}`).join('');
+  return Array.from(new TextEncoder().encode(str)).map(b => `\\x${b.toString(16).padStart(2, '0')}`).join('');
 }
 
 function jsEscape(str) {
@@ -355,7 +355,7 @@ export function renderXSSLab(container) {
 </style>
 <div class="xl-wrap" id="${id}">
   <div class="xl-header">
-    <h2>&#x26A0; XSS Testing Lab</h2>
+    <h2>XSS Testing Lab</h2>
     <p>Cross-Site Scripting payload library, context analyzer, encoder & prevention reference</p>
   </div>
   <div class="xl-tabs">
@@ -613,8 +613,8 @@ export function renderXSSLab(container) {
           case 'unicode': result = unicodeEscape(input); break;
           case 'hex': result = hexEncode(input); break;
           case 'js-esc': result = jsEscape(input); break;
-          case 'base64-enc': result = btoa(input); break;
-          case 'base64-dec': try { result = atob(input); } catch { result = '[Invalid Base64]'; } break;
+          case 'base64-enc': try { result = btoa(unescape(encodeURIComponent(input))); } catch { result = '[Encode error]'; } break;
+          case 'base64-dec': try { result = decodeURIComponent(escape(atob(input))); } catch { try { result = atob(input); } catch { result = '[Invalid Base64]'; } } break;
         }
         lastOutput = result;
         outEl.textContent = result;
@@ -645,7 +645,7 @@ export function renderXSSLab(container) {
           <div class="xl-code-block safe">${esc(item.safe)}</div>
           <div style="font-size:12px;color:#ff4444;margin:8px 0 4px;font-weight:600">&#x2717; Vulnerable (Don't Do This)</div>
           <div class="xl-code-block bad">${esc(item.bad)}</div>
-          <div style="font-size:12px;color:#00aaff;margin:8px 0 4px;font-weight:600">&#x1F6E1; Library / Tool</div>
+          <div style="font-size:12px;color:#00aaff;margin:8px 0 4px;font-weight:600">Library / Tool</div>
           <div class="xl-code-block lib">${esc(item.lib)}</div>
         </div>
       `).join('')}

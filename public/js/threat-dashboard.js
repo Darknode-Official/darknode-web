@@ -1,5 +1,6 @@
 // Copyright (c) 2026 Darknode-Official. All rights reserved.
-// Threat Intelligence Dashboard — Real-time threat visualization with world map
+// Threat Intelligence Dashboard — visualises the saved ThreatFox / URLhaus feed snapshots
+// (/data/feeds/*.json, written by tools/threat-feed-sync.py). Not a live feed.
 
 const COUNTRIES = {
   US: { name: "United States", lat: 39.8, lon: -98.5, cx: 0.225, cy: 0.38 },
@@ -87,12 +88,30 @@ const TOP_PORTS = [
 
 var esc = function(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]; }); };
 
+// Snapshot metadata for the header label: { source, updated }.
+var _tdSnapshot = null;
+
 function fetchThreats() {
   return fetch('/data/feeds/threat-iocs.json')
   .then(function(r) { return r.json(); })
   .then(function(feed) {
     if (feed && feed.data && feed.data.length > 0) {
-      return feed.data.slice(0, 100);
+      _tdSnapshot = { source: feed.source || 'ThreatFox (abuse.ch)', updated: feed.updated || null };
+      // Snapshot entries use camelCase (iocValue, iocType, confidenceLevel,
+      // firstSeen); map them to the snake_case names parseIOC reads.
+      return feed.data.slice(0, 100).map(function(e) {
+        return {
+          ioc_value: e.ioc_value || e.iocValue || '',
+          ioc_type: e.ioc_type || e.iocType || '',
+          threat_type: e.threat_type || e.threatType || '',
+          threat_type_desc: e.threat_type_desc || e.threatTypeDesc || ((e.tags || []).indexOf('c2') !== -1 ? 'Botnet C2' : ''),
+          malware_printable: e.malware_printable || e.malwarePrintable || e.malware || 'unknown',
+          confidence_level: e.confidence_level != null ? e.confidence_level : (e.confidenceLevel || 0),
+          first_seen_utc: e.first_seen_utc || e.firstSeen || '',
+          tags: e.tags || [],
+          reporter: e.reporter || '',
+        };
+      });
     }
     return null;
   })
@@ -104,6 +123,7 @@ function fetchURLhaus() {
   .then(function(r) { return r.json(); })
   .then(function(feed) {
     if (feed && feed.data && feed.data.length > 0) {
+      _tdSnapshot = { source: feed.source || 'URLhaus (abuse.ch)', updated: feed.updated || null };
       return feed.data.map(function(u) {
         return {
           ioc_value: u.url || u.host || '',
@@ -112,7 +132,7 @@ function fetchURLhaus() {
           threat_type_desc: u.threat || u.threat_type || 'Malware download',
           malware_printable: (u.tags && u.tags.length > 0) ? u.tags[0] : 'unknown',
           confidence_level: 75,
-          first_seen_utc: u.date_added || new Date().toISOString(),
+          first_seen_utc: u.date_added || u.dateAdded || '',
           tags: u.tags || [],
           reporter: 'URLhaus',
         };
@@ -163,9 +183,9 @@ export function renderThreatDashboard(container) {
     var tsDate;
     if (tsStr) {
       tsDate = new Date(tsStr.replace(' ', 'T') + (tsStr.indexOf('Z') === -1 && tsStr.indexOf('+') === -1 ? 'Z' : ''));
-      if (isNaN(tsDate.getTime())) tsDate = new Date();
+      if (isNaN(tsDate.getTime())) tsDate = null;
     } else {
-      tsDate = new Date();
+      tsDate = null;
     }
 
     return {
@@ -259,7 +279,7 @@ export function renderThreatDashboard(container) {
 
     ctx.fillStyle = 'rgba(100,116,139,0.6)';
     ctx.font = '11px system-ui, sans-serif';
-    ctx.fillText('Source: Darknode Threat Feeds (local) — IP geolocation requires Pentest Console', 10, H - 10);
+    ctx.fillText('Illustrative map: dots mark reference country positions, not IOC locations', 10, H - 10);
   }
 
   function render() {
@@ -276,14 +296,17 @@ export function renderThreatDashboard(container) {
 
     var criticalCount = events.filter(function(e) { return e.severity === 'critical'; }).length;
     var latestThreat = events.length > 0 ? events[0].malware : '--';
-    var updatedStr = lastUpdated ? lastUpdated.toLocaleTimeString() : '--';
+    var snapDate = _tdSnapshot && _tdSnapshot.updated ? String(_tdSnapshot.updated).slice(0, 10) : '';
+    var snapLabel = _tdSnapshot
+      ? 'SAVED SNAPSHOT - ' + totalEvents + ' IOCs from ' + _tdSnapshot.source + (snapDate ? ', updated ' + snapDate : '') + ' (not live)'
+      : (loadError ? 'NO DATA' : 'Loading snapshot...');
 
     var html = '<style>' +
       '.td-wrap{font-family:system-ui,-apple-system,sans-serif;color:#e2e8f0;background:#070d1a;padding:16px;min-height:100vh}' +
       '.td-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px}' +
       '.td-header h2{margin:0;font-size:1.4rem;background:linear-gradient(135deg,#00d4ff,#7c5cff);-webkit-background-clip:text;background-clip:text;color:transparent}' +
-      '.td-live{display:flex;align-items:center;gap:6px;font-size:.8rem;color:#22c55e}' +
-      '.td-live::before{content:\'\';width:8px;height:8px;border-radius:50%;background:#22c55e;animation:td-pulse 1.5s infinite}' +
+      '.td-live{display:flex;align-items:center;gap:6px;font-size:.8rem;color:#f59e0b}' +
+      '.td-live::before{content:\'\';width:8px;height:8px;border-radius:50%;background:#f59e0b}' +
       '@keyframes td-pulse{0%,100%{opacity:1}50%{opacity:.3}}' +
       '.td-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}' +
       '.td-kpi{background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:14px;text-align:center}' +
@@ -316,11 +339,11 @@ export function renderThreatDashboard(container) {
 
     html += '<div class="td-wrap">' +
       '<div class="td-header"><h2>Threat Intelligence Dashboard</h2>' +
-      '<div class="td-live">LIVE DATA — ' + totalEvents + ' IOCs (updated ' + esc(updatedStr) + ')</div></div>';
+      '<div class="td-live">' + esc(snapLabel) + '</div></div>';
 
     if (loadError) {
       html += '<div style="background:#1e1215;border:1px solid #7f1d1d;border-radius:8px;padding:14px;margin-bottom:16px;font-size:.82rem;color:#fca5a5">' +
-        '<strong>API Error:</strong> ' + esc(loadError) + '</div>';
+        '<strong>Feed error:</strong> ' + esc(loadError) + '</div>';
     }
 
     html += '<div class="td-kpis">' +
@@ -331,7 +354,7 @@ export function renderThreatDashboard(container) {
       '</div>';
 
     html += '<div class="td-grid">' +
-      '<div class="td-map-wrap"><canvas id="td-map" width="800" height="420"></canvas></div>' +
+      '<div class="td-map-wrap"><canvas id="td-map" width="800" height="420" aria-label="Illustrative world map (decorative, not live data)"></canvas></div>' +
       '<div class="td-panels">' +
         '<div class="td-panel"><h4>Top Malware Families</h4>' +
         (malware.length === 0 ? '<div style="color:#64748b;font-size:.78rem">Loading threat data...</div>' :
@@ -361,9 +384,9 @@ export function renderThreatDashboard(container) {
         }).join('')) +
       '</div>' +
       '<div class="td-panel"><h4>Threat Feed</h4><div class="td-log" id="td-log">' +
-      (events.length === 0 ? '<div style="color:#64748b;padding:8px">Fetching live threat intelligence from ThreatFox...</div>' :
+      (events.length === 0 ? '<div style="color:#64748b;padding:8px">Loading saved ThreatFox snapshot...</div>' :
         events.slice(0, 30).map(function(e) {
-          var ts = (e.ts instanceof Date && !isNaN(e.ts.getTime())) ? e.ts.toTimeString().slice(0, 8) : '--:--:--';
+          var ts = (e.ts instanceof Date && !isNaN(e.ts.getTime())) ? e.ts.toISOString().slice(5, 16).replace('T', ' ') : '--';
           return '<div class="td-log-entry">' +
             '<span class="td-log-ts">' + ts + '</span>' +
             '<span class="td-log-sev ' + esc(e.severity) + '">' + esc(e.severity) + '</span>' +
@@ -384,7 +407,7 @@ export function renderThreatDashboard(container) {
   render();
   loadThreats().then(function() { render(); });
 
-  // Refresh from live API every 5 minutes
+  // Re-read the snapshot files every 5 minutes (picks up a newer sync if one was deployed)
   interval = setInterval(function() {
     loadThreats().then(function() { render(); });
   }, 300000);

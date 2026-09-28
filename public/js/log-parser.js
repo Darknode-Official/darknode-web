@@ -2,7 +2,7 @@
 // Source-available for learning only. Redistribution prohibited. See LICENSE.
 
 const LOG_FORMATS = {
-  apache: { name: "Apache/Nginx Access Log", regex: /^(\S+) \S+ \S+ \[([^\]]+)\] "(\S+) (\S+) \S+" (\d+) (\d+|-) "([^"]*)" "([^"]*)"/, fields: ["ip","timestamp","method","path","status","size","referer","user_agent"] },
+  apache: { name: "Apache/Nginx Access Log", regex: /^(\S+) \S+ \S+ \[([^\]]+)\] "(\S+) (.+?) \S+" (\d+) (\d+|-)(?: "([^"]*)" "([^"]*)")?/, fields: ["ip","timestamp","method","path","status","size","referer","user_agent"] },
   auth: { name: "auth.log / syslog", regex: /^(\S+ +\d+ \d+:\d+:\d+) (\S+) (\S+?)(?:\[\d+\])?: (.+)/, fields: ["timestamp","host","service","message"] },
   json: { name: "JSON Log", regex: /^\{/, fields: [] },
   syslog: { name: "Syslog (RFC 3164)", regex: /^<(\d+)>(\S+ +\d+ \d+:\d+:\d+) (\S+) (\S+?)(?:\[\d+\])?: (.+)/, fields: ["priority","timestamp","host","service","message"] },
@@ -71,8 +71,18 @@ const ANOMALIES = [
   { name: "Suspicious Tool", check: (entries) => { const tools = /sqlmap|nikto|nmap|masscan|hydra|gobuster|dirbuster|wfuzz|nuclei|metasploit/i; return entries.filter(e => tools.test(e.raw)).map(e => ({ ip: e.ip, desc: `Security tool detected: ${(e.user_agent || e.raw).slice(0, 80)}` })); } },
 ];
 
+// Most-specific formats first: the generic "auth.log / syslog" regex also
+// matches firewall (kernel: SRC=… DST=…) and syslog-priority lines, so it must
+// be tried AFTER those, or every firewall/syslog log is misclassified as auth.
+const FORMAT_PRIORITY = ["json", "windows", "syslog", "fail2ban", "firewall", "apache", "auth", "csv"];
+
 function detectFormat(text) {
   const line = text.trim().split("\n")[0] || "";
+  for (const key of FORMAT_PRIORITY) {
+    const fmt = LOG_FORMATS[key];
+    if (fmt && fmt.regex.test(line)) return key;
+  }
+  // Any format defined but not listed in the priority order (defensive).
   for (const [key, fmt] of Object.entries(LOG_FORMATS)) {
     if (fmt.regex.test(line)) return key;
   }

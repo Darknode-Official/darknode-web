@@ -1,6 +1,6 @@
 // Copyright (c) 2026 Darknode-Official. All rights reserved.
 // Source-available for learning only. Redistribution prohibited. See LICENSE.
-(function(){var _h=location.hostname,_a=["darknode.ai","www.darknode.ai","localhost","127.0.0.1"];if(!_a.some(function(d){return _h===d}))throw document.body.innerHTML="",new Error("unlicensed")}());
+(function(){var _h=location.hostname,_a=["darknode.ai","www.darknode.ai","darknode-web-e1s2.onrender.com","localhost","127.0.0.1"];if(!_a.some(function(d){return _h===d}))throw document.body.innerHTML="",new Error("unlicensed")}());
 
 // ============================================================================
 // DARKNODE IP TOOLS — Network Calculation Toolkit
@@ -61,6 +61,7 @@ function isPrivateIP(ip) {
   if ((n>>>16)===0xC0A8) return { private:true, range:"192.168.0.0/16 (Class C private)" };
   if ((n>>>24)===127) return { private:true, range:"127.0.0.0/8 (Loopback)" };
   if ((n>>>16)===0xA9FE) return { private:true, range:"169.254.0.0/16 (Link-local)" };
+  if ((n>>>22)===401) return { private:true, range:"100.64.0.0/10 (CGNAT / RFC 6598 shared)" };
   return { private:false, range:"Public" };
 }
 function ipRange(startIP, endIP) {

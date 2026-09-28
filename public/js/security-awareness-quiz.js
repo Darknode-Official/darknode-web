@@ -399,8 +399,17 @@ export function renderSecurityQuiz(main) {
           showResult = true;
           var score = answers.filter(function(a) { return a.correct; }).length;
           var totalTime = Date.now() - quizStartTime;
-          scores[mod.id] = { score: score, total: filteredQuestions.length, date: new Date().toISOString(), difficulty: selectedDifficulty, time: totalTime };
-          saveScores(scores);
+          var attempt = { score: score, total: filteredQuestions.length, date: new Date().toISOString(), difficulty: selectedDifficulty, time: totalTime };
+          // Keep the best result: higher percentage wins; on a tie, the faster
+          // run wins. A worse retake must not downgrade a passing module, and
+          // "Best time" must reflect the fastest run at the best score.
+          var prev = scores[mod.id];
+          var newPct = score / filteredQuestions.length;
+          var prevPct = prev ? prev.score / prev.total : -1;
+          if (!prev || newPct > prevPct || (newPct === prevPct && totalTime < prev.time)) {
+            scores[mod.id] = attempt;
+            saveScores(scores);
+          }
         }
         render();
       };

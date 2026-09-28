@@ -181,108 +181,108 @@ const COMPLIANCE_FRAMEWORKS = {
   cis: {
     name: 'CIS Benchmarks',
     controls: [
-      { id: 'CIS-1.1', name: 'Maintain inventory of authorized software', category: 'Inventory', status: 'pass' },
-      { id: 'CIS-1.2', name: 'Ensure unauthorized software is removed', category: 'Inventory', status: 'partial' },
-      { id: 'CIS-2.1', name: 'Maintain inventory of network devices', category: 'Inventory', status: 'pass' },
-      { id: 'CIS-2.2', name: 'Ensure use of standard secure configurations', category: 'Configuration', status: 'fail' },
-      { id: 'CIS-3.1', name: 'Establish secure configurations for hardware', category: 'Configuration', status: 'pass' },
-      { id: 'CIS-3.2', name: 'Implement automated configuration monitoring', category: 'Configuration', status: 'partial' },
-      { id: 'CIS-4.1', name: 'Conduct regular vulnerability assessments', category: 'Vulnerability', status: 'pass' },
-      { id: 'CIS-4.2', name: 'Remediate vulnerabilities in timely manner', category: 'Vulnerability', status: 'partial' },
-      { id: 'CIS-5.1', name: 'Minimize administrative privileges', category: 'Access Control', status: 'fail' },
-      { id: 'CIS-5.2', name: 'Use multi-factor authentication', category: 'Access Control', status: 'pass' },
-      { id: 'CIS-5.3', name: 'Require strong passwords', category: 'Access Control', status: 'pass' },
-      { id: 'CIS-6.1', name: 'Maintain audit log management', category: 'Logging', status: 'pass' },
-      { id: 'CIS-6.2', name: 'Enable detailed logging on critical systems', category: 'Logging', status: 'partial' },
-      { id: 'CIS-7.1', name: 'Deploy email protection mechanisms', category: 'Email/Web', status: 'pass' },
-      { id: 'CIS-7.2', name: 'Deploy web application firewalls', category: 'Email/Web', status: 'fail' },
-      { id: 'CIS-8.1', name: 'Use centralized anti-malware management', category: 'Malware', status: 'pass' },
-      { id: 'CIS-8.2', name: 'Ensure automatic anti-malware updates', category: 'Malware', status: 'pass' },
-      { id: 'CIS-9.1', name: 'Control access to network ports', category: 'Network', status: 'partial' },
-      { id: 'CIS-9.2', name: 'Ensure only approved ports are accessible', category: 'Network', status: 'fail' },
-      { id: 'CIS-10.1', name: 'Ensure regular data backups', category: 'Recovery', status: 'pass' },
-      { id: 'CIS-10.2', name: 'Test data backup recovery procedures', category: 'Recovery', status: 'partial' },
-      { id: 'CIS-11.1', name: 'Maintain secure network configurations', category: 'Network', status: 'pass' },
-      { id: 'CIS-12.1', name: 'Deploy network boundary defenses', category: 'Perimeter', status: 'pass' },
-      { id: 'CIS-13.1', name: 'Implement data loss prevention', category: 'Data Protection', status: 'fail' },
-      { id: 'CIS-14.1', name: 'Segment network by sensitivity', category: 'Network', status: 'partial' },
+      { id: 'CIS-1.1', name: 'Maintain inventory of authorized software', category: 'Inventory' },
+      { id: 'CIS-1.2', name: 'Ensure unauthorized software is removed', category: 'Inventory' },
+      { id: 'CIS-2.1', name: 'Maintain inventory of network devices', category: 'Inventory' },
+      { id: 'CIS-2.2', name: 'Ensure use of standard secure configurations', category: 'Configuration' },
+      { id: 'CIS-3.1', name: 'Establish secure configurations for hardware', category: 'Configuration' },
+      { id: 'CIS-3.2', name: 'Implement automated configuration monitoring', category: 'Configuration' },
+      { id: 'CIS-4.1', name: 'Conduct regular vulnerability assessments', category: 'Vulnerability' },
+      { id: 'CIS-4.2', name: 'Remediate vulnerabilities in timely manner', category: 'Vulnerability' },
+      { id: 'CIS-5.1', name: 'Minimize administrative privileges', category: 'Access Control' },
+      { id: 'CIS-5.2', name: 'Use multi-factor authentication', category: 'Access Control' },
+      { id: 'CIS-5.3', name: 'Require strong passwords', category: 'Access Control' },
+      { id: 'CIS-6.1', name: 'Maintain audit log management', category: 'Logging' },
+      { id: 'CIS-6.2', name: 'Enable detailed logging on critical systems', category: 'Logging' },
+      { id: 'CIS-7.1', name: 'Deploy email protection mechanisms', category: 'Email/Web' },
+      { id: 'CIS-7.2', name: 'Deploy web application firewalls', category: 'Email/Web' },
+      { id: 'CIS-8.1', name: 'Use centralized anti-malware management', category: 'Malware' },
+      { id: 'CIS-8.2', name: 'Ensure automatic anti-malware updates', category: 'Malware' },
+      { id: 'CIS-9.1', name: 'Control access to network ports', category: 'Network' },
+      { id: 'CIS-9.2', name: 'Ensure only approved ports are accessible', category: 'Network' },
+      { id: 'CIS-10.1', name: 'Ensure regular data backups', category: 'Recovery' },
+      { id: 'CIS-10.2', name: 'Test data backup recovery procedures', category: 'Recovery' },
+      { id: 'CIS-11.1', name: 'Maintain secure network configurations', category: 'Network' },
+      { id: 'CIS-12.1', name: 'Deploy network boundary defenses', category: 'Perimeter' },
+      { id: 'CIS-13.1', name: 'Implement data loss prevention', category: 'Data Protection' },
+      { id: 'CIS-14.1', name: 'Segment network by sensitivity', category: 'Network' },
     ]
   },
   nist: {
     name: 'NIST 800-53',
     controls: [
-      { id: 'AC-1', name: 'Access Control Policy and Procedures', category: 'Access Control', status: 'pass' },
-      { id: 'AC-2', name: 'Account Management', category: 'Access Control', status: 'partial' },
-      { id: 'AC-3', name: 'Access Enforcement', category: 'Access Control', status: 'pass' },
-      { id: 'AC-6', name: 'Least Privilege', category: 'Access Control', status: 'fail' },
-      { id: 'AU-2', name: 'Audit Events', category: 'Audit', status: 'pass' },
-      { id: 'AU-3', name: 'Content of Audit Records', category: 'Audit', status: 'pass' },
-      { id: 'AU-6', name: 'Audit Review, Analysis, and Reporting', category: 'Audit', status: 'partial' },
-      { id: 'CA-7', name: 'Continuous Monitoring', category: 'Assessment', status: 'partial' },
-      { id: 'CM-2', name: 'Baseline Configuration', category: 'Configuration', status: 'fail' },
-      { id: 'CM-6', name: 'Configuration Settings', category: 'Configuration', status: 'partial' },
-      { id: 'IA-2', name: 'Identification and Authentication', category: 'Identification', status: 'pass' },
-      { id: 'IA-5', name: 'Authenticator Management', category: 'Identification', status: 'pass' },
-      { id: 'IR-4', name: 'Incident Handling', category: 'Incident Response', status: 'partial' },
-      { id: 'IR-5', name: 'Incident Monitoring', category: 'Incident Response', status: 'pass' },
-      { id: 'RA-5', name: 'Vulnerability Scanning', category: 'Risk Assessment', status: 'pass' },
-      { id: 'SC-7', name: 'Boundary Protection', category: 'System Protection', status: 'pass' },
-      { id: 'SC-8', name: 'Transmission Confidentiality', category: 'System Protection', status: 'pass' },
-      { id: 'SC-13', name: 'Cryptographic Protection', category: 'System Protection', status: 'partial' },
-      { id: 'SI-2', name: 'Flaw Remediation', category: 'System Integrity', status: 'fail' },
-      { id: 'SI-4', name: 'Information System Monitoring', category: 'System Integrity', status: 'partial' },
+      { id: 'AC-1', name: 'Access Control Policy and Procedures', category: 'Access Control' },
+      { id: 'AC-2', name: 'Account Management', category: 'Access Control' },
+      { id: 'AC-3', name: 'Access Enforcement', category: 'Access Control' },
+      { id: 'AC-6', name: 'Least Privilege', category: 'Access Control' },
+      { id: 'AU-2', name: 'Audit Events', category: 'Audit' },
+      { id: 'AU-3', name: 'Content of Audit Records', category: 'Audit' },
+      { id: 'AU-6', name: 'Audit Review, Analysis, and Reporting', category: 'Audit' },
+      { id: 'CA-7', name: 'Continuous Monitoring', category: 'Assessment' },
+      { id: 'CM-2', name: 'Baseline Configuration', category: 'Configuration' },
+      { id: 'CM-6', name: 'Configuration Settings', category: 'Configuration' },
+      { id: 'IA-2', name: 'Identification and Authentication', category: 'Identification' },
+      { id: 'IA-5', name: 'Authenticator Management', category: 'Identification' },
+      { id: 'IR-4', name: 'Incident Handling', category: 'Incident Response' },
+      { id: 'IR-5', name: 'Incident Monitoring', category: 'Incident Response' },
+      { id: 'RA-5', name: 'Vulnerability Scanning', category: 'Risk Assessment' },
+      { id: 'SC-7', name: 'Boundary Protection', category: 'System Protection' },
+      { id: 'SC-8', name: 'Transmission Confidentiality', category: 'System Protection' },
+      { id: 'SC-13', name: 'Cryptographic Protection', category: 'System Protection' },
+      { id: 'SI-2', name: 'Flaw Remediation', category: 'System Integrity' },
+      { id: 'SI-4', name: 'Information System Monitoring', category: 'System Integrity' },
     ]
   },
   soc2: {
     name: 'SOC 2 Trust Criteria',
     controls: [
-      { id: 'CC1.1', name: 'Control environment integrity', category: 'Common Criteria', status: 'pass' },
-      { id: 'CC2.1', name: 'Information and communication', category: 'Common Criteria', status: 'pass' },
-      { id: 'CC3.1', name: 'Risk assessment processes', category: 'Common Criteria', status: 'partial' },
-      { id: 'CC4.1', name: 'Monitoring activities', category: 'Common Criteria', status: 'partial' },
-      { id: 'CC5.1', name: 'Control activities selection', category: 'Common Criteria', status: 'pass' },
-      { id: 'CC6.1', name: 'Logical and physical access', category: 'Security', status: 'pass' },
-      { id: 'CC6.2', name: 'System credentials management', category: 'Security', status: 'pass' },
-      { id: 'CC6.3', name: 'Authorized access enforcement', category: 'Security', status: 'partial' },
-      { id: 'CC6.6', name: 'Encryption of data in transit', category: 'Security', status: 'pass' },
-      { id: 'CC6.7', name: 'Data movement restrictions', category: 'Security', status: 'fail' },
-      { id: 'CC7.1', name: 'Detection of unauthorized changes', category: 'Availability', status: 'partial' },
-      { id: 'CC7.2', name: 'Monitoring for anomalies', category: 'Availability', status: 'partial' },
-      { id: 'CC8.1', name: 'Change management process', category: 'Change Mgmt', status: 'pass' },
-      { id: 'CC9.1', name: 'Risk mitigation activities', category: 'Risk Mgmt', status: 'pass' },
-      { id: 'CC9.2', name: 'Vendor risk management', category: 'Risk Mgmt', status: 'fail' },
+      { id: 'CC1.1', name: 'Control environment integrity', category: 'Common Criteria' },
+      { id: 'CC2.1', name: 'Information and communication', category: 'Common Criteria' },
+      { id: 'CC3.1', name: 'Risk assessment processes', category: 'Common Criteria' },
+      { id: 'CC4.1', name: 'Monitoring activities', category: 'Common Criteria' },
+      { id: 'CC5.1', name: 'Control activities selection', category: 'Common Criteria' },
+      { id: 'CC6.1', name: 'Logical and physical access', category: 'Security' },
+      { id: 'CC6.2', name: 'System credentials management', category: 'Security' },
+      { id: 'CC6.3', name: 'Authorized access enforcement', category: 'Security' },
+      { id: 'CC6.6', name: 'Encryption of data in transit', category: 'Security' },
+      { id: 'CC6.7', name: 'Data movement restrictions', category: 'Security' },
+      { id: 'CC7.1', name: 'Detection of unauthorized changes', category: 'Availability' },
+      { id: 'CC7.2', name: 'Monitoring for anomalies', category: 'Availability' },
+      { id: 'CC8.1', name: 'Change management process', category: 'Change Mgmt' },
+      { id: 'CC9.1', name: 'Risk mitigation activities', category: 'Risk Mgmt' },
+      { id: 'CC9.2', name: 'Vendor risk management', category: 'Risk Mgmt' },
     ]
   },
   pci: {
     name: 'PCI-DSS v4.0',
     controls: [
-      { id: 'PCI-1', name: 'Install and maintain network security controls', category: 'Network', status: 'pass' },
-      { id: 'PCI-2', name: 'Apply secure configurations to all components', category: 'Configuration', status: 'partial' },
-      { id: 'PCI-3', name: 'Protect stored account data', category: 'Data Protection', status: 'pass' },
-      { id: 'PCI-4', name: 'Protect data with strong cryptography in transit', category: 'Encryption', status: 'pass' },
-      { id: 'PCI-5', name: 'Protect against malicious software', category: 'Malware', status: 'pass' },
-      { id: 'PCI-6', name: 'Develop and maintain secure systems', category: 'Development', status: 'partial' },
-      { id: 'PCI-7', name: 'Restrict access by business need-to-know', category: 'Access', status: 'fail' },
-      { id: 'PCI-8', name: 'Identify users and authenticate access', category: 'Identity', status: 'pass' },
-      { id: 'PCI-9', name: 'Restrict physical access to cardholder data', category: 'Physical', status: 'pass' },
-      { id: 'PCI-10', name: 'Log and monitor all access to components', category: 'Logging', status: 'partial' },
-      { id: 'PCI-11', name: 'Test security of systems and networks regularly', category: 'Testing', status: 'partial' },
-      { id: 'PCI-12', name: 'Support information security with policies', category: 'Governance', status: 'pass' },
+      { id: 'PCI-1', name: 'Install and maintain network security controls', category: 'Network' },
+      { id: 'PCI-2', name: 'Apply secure configurations to all components', category: 'Configuration' },
+      { id: 'PCI-3', name: 'Protect stored account data', category: 'Data Protection' },
+      { id: 'PCI-4', name: 'Protect data with strong cryptography in transit', category: 'Encryption' },
+      { id: 'PCI-5', name: 'Protect against malicious software', category: 'Malware' },
+      { id: 'PCI-6', name: 'Develop and maintain secure systems', category: 'Development' },
+      { id: 'PCI-7', name: 'Restrict access by business need-to-know', category: 'Access' },
+      { id: 'PCI-8', name: 'Identify users and authenticate access', category: 'Identity' },
+      { id: 'PCI-9', name: 'Restrict physical access to cardholder data', category: 'Physical' },
+      { id: 'PCI-10', name: 'Log and monitor all access to components', category: 'Logging' },
+      { id: 'PCI-11', name: 'Test security of systems and networks regularly', category: 'Testing' },
+      { id: 'PCI-12', name: 'Support information security with policies', category: 'Governance' },
     ]
   },
   hipaa: {
     name: 'HIPAA Security Rule',
     controls: [
-      { id: 'HIPAA-164.308(a)(1)', name: 'Security management process', category: 'Administrative', status: 'pass' },
-      { id: 'HIPAA-164.308(a)(3)', name: 'Workforce security', category: 'Administrative', status: 'pass' },
-      { id: 'HIPAA-164.308(a)(4)', name: 'Information access management', category: 'Administrative', status: 'partial' },
-      { id: 'HIPAA-164.308(a)(5)', name: 'Security awareness training', category: 'Administrative', status: 'fail' },
-      { id: 'HIPAA-164.308(a)(6)', name: 'Security incident procedures', category: 'Administrative', status: 'partial' },
-      { id: 'HIPAA-164.308(a)(7)', name: 'Contingency plan', category: 'Administrative', status: 'pass' },
-      { id: 'HIPAA-164.310(a)(1)', name: 'Facility access controls', category: 'Physical', status: 'pass' },
-      { id: 'HIPAA-164.310(d)(1)', name: 'Device and media controls', category: 'Physical', status: 'partial' },
-      { id: 'HIPAA-164.312(a)(1)', name: 'Access control', category: 'Technical', status: 'pass' },
-      { id: 'HIPAA-164.312(e)(1)', name: 'Transmission security', category: 'Technical', status: 'pass' },
+      { id: 'HIPAA-164.308(a)(1)', name: 'Security management process', category: 'Administrative' },
+      { id: 'HIPAA-164.308(a)(3)', name: 'Workforce security', category: 'Administrative' },
+      { id: 'HIPAA-164.308(a)(4)', name: 'Information access management', category: 'Administrative' },
+      { id: 'HIPAA-164.308(a)(5)', name: 'Security awareness training', category: 'Administrative' },
+      { id: 'HIPAA-164.308(a)(6)', name: 'Security incident procedures', category: 'Administrative' },
+      { id: 'HIPAA-164.308(a)(7)', name: 'Contingency plan', category: 'Administrative' },
+      { id: 'HIPAA-164.310(a)(1)', name: 'Facility access controls', category: 'Physical' },
+      { id: 'HIPAA-164.310(d)(1)', name: 'Device and media controls', category: 'Physical' },
+      { id: 'HIPAA-164.312(a)(1)', name: 'Access control', category: 'Technical' },
+      { id: 'HIPAA-164.312(e)(1)', name: 'Transmission security', category: 'Technical' },
     ]
   }
 };
@@ -431,17 +431,6 @@ const TF_CHECKS = [
 ];
 
 // ============================================================================
-// DEMO CONFIG DATA
-// ============================================================================
-const AWS_DEMO_CONFIG = {
-  S3: { buckets: [{ Name: 'darknode-public-assets', PublicAccessBlockConfiguration: { BlockPublicAcls: false }, ServerSideEncryptionConfiguration: null, Versioning: 'Disabled', LoggingConfiguration: null }, { Name: 'darknode-backups', PublicAccessBlockConfiguration: { BlockPublicAcls: true }, ServerSideEncryptionConfiguration: { Rules: [{ ApplyServerSideEncryptionByDefault: { SSEAlgorithm: 'aws:kms' } }] }, Versioning: 'Enabled', LoggingConfiguration: { TargetBucket: 'darknode-logs' } }] },
-  IAM: { users: [{ UserName: 'admin-user', MFADevices: [], PasswordLastUsed: '2026-09-01', AccessKeyAge: 120 }, { UserName: 'dev-user', MFADevices: [{ SerialNumber: 'arn:aws:iam::mfa/dev' }], PasswordLastUsed: '2026-09-20', AccessKeyAge: 45 }], roles: [{ RoleName: 'admin-role', PolicyDocument: '{"Statement":[{"Effect":"Allow","Action":"*","Resource":"*"}]}' }, { RoleName: 'readonly-role', PolicyDocument: '{"Statement":[{"Effect":"Allow","Action":["s3:Get*","ec2:Describe*"],"Resource":"*"}]}' }], passwordPolicy: { MinimumPasswordLength: 8, RequireSymbols: false } },
-  EC2: { instances: [{ InstanceId: 'i-0a1b2c3d4e5f6g7h8', SecurityGroups: [{ GroupId: 'sg-open-ssh', IpPermissions: [{ FromPort: 22, IpProtocol: 'tcp', IpRanges: [{ CidrIp: '0.0.0.0/0' }] }] }], MetadataOptions: { HttpTokens: 'optional' }, Monitoring: { State: 'disabled' } }] },
-  CloudTrail: { trails: [{ Name: 'main-trail', IsLogging: true, LogFileValidationEnabled: false, KmsKeyId: null, IsMultiRegionTrail: false }] },
-  RDS: { instances: [{ DBInstanceIdentifier: 'prod-mysql', PubliclyAccessible: true, StorageEncrypted: false, BackupRetentionPeriod: 0, Port: 3306, MultiAZ: false }] },
-};
-
-// ============================================================================
 // HELPER FUNCTIONS
 // ============================================================================
 function _spSevColor(sev) {
@@ -464,30 +453,98 @@ function _spStatusColor(s) {
   if (s === 'PASS') return '#22c55e';
   return '#64748b';
 }
-function _spStatusLabel(s) {
-  if (s === 'pass') return '<span class="sp-status sp-pass">PASS</span>';
-  if (s === 'fail') return '<span class="sp-status sp-fail">FAIL</span>';
-  if (s === 'partial') return '<span class="sp-status sp-partial">PARTIAL</span>';
-  return '<span class="sp-status sp-na">N/A</span>';
-}
 function _spPct(pass, total) { return total ? Math.round((pass / total) * 100) : 0; }
 
 // ============================================================================
-// AUDIT RUNNER
+// SELF-ASSESSMENT ANSWER STORE
 // ============================================================================
-function _spRunAudit(checks, config) {
-  return checks.map(function(check) {
-    var pass = Math.random() > 0.45;
-    var warn = !pass && Math.random() > 0.6;
-    return {
-      id: check.id, service: check.service, name: check.name,
-      severity: check.severity, category: check.category,
-      cis: check.cis, description: check.description,
-      recommendation: check.recommendation,
-      status: pass ? 'PASS' : (warn ? 'WARN' : 'FAIL'),
-      resource: check.service.toLowerCase() + '-' + Math.floor(Math.random() * 999).toString().padStart(3, '0')
-    };
-  });
+// Spectre does not connect to any cloud account. Every check status comes from
+// the user's own answer to that check (Pass / Fail / N/A), persisted locally.
+// Check names describe the misconfiguration, so "Pass" means the problem is not
+// present and "Fail" means it is. Unanswered checks are never counted.
+var _SP_ANS_KEY = 'darknode.spectre.answers.v1';
+var _SP_HIST_KEY = 'darknode.spectre.history.v1';
+var _spAnswers = null;
+function _spLoadAnswers() {
+  if (_spAnswers) return _spAnswers;
+  _spAnswers = {};
+  try {
+    var raw = localStorage.getItem(_SP_ANS_KEY);
+    var obj = raw ? JSON.parse(raw) : null;
+    if (obj && typeof obj === 'object') _spAnswers = obj;
+  } catch (e) { _spAnswers = {}; }
+  return _spAnswers;
+}
+function _spGetAnswer(key) { return _spLoadAnswers()[key] || ''; }
+function _spSetAnswer(key, val) {
+  var a = _spLoadAnswers();
+  if (val) a[key] = val; else delete a[key];
+  try { localStorage.setItem(_SP_ANS_KEY, JSON.stringify(a)); } catch (e) { /* storage unavailable: keep in memory */ }
+  _spRecordHistory();
+}
+function _spClearAnswers(prefixTest) {
+  var a = _spLoadAnswers();
+  Object.keys(a).forEach(function (k) { if (prefixTest(k)) delete a[k]; });
+  try { localStorage.setItem(_SP_ANS_KEY, JSON.stringify(a)); } catch (e) { /* ignore */ }
+  _spRecordHistory();
+}
+// Status for a cloud check: PASS / FAIL / N/A from the answer, else UNANSWERED.
+function _spCheckStatus(check) {
+  var v = _spGetAnswer(check.id);
+  if (v === 'PASS' || v === 'FAIL') return v;
+  if (v === 'NA') return 'N/A';
+  return 'UNANSWERED';
+}
+function _spPlaceholderResource(check) {
+  return '<your-' + check.service.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '>';
+}
+function _spCheckRow(check) {
+  return {
+    id: check.id, service: check.service, name: check.name,
+    severity: check.severity, category: check.category,
+    cis: check.cis, description: check.description,
+    recommendation: check.recommendation, field: check.field || '',
+    status: _spCheckStatus(check),
+    resource: _spPlaceholderResource(check)
+  };
+}
+// Scored results for one provider: only checks answered Pass or Fail.
+function _spResultsFor(checks) {
+  return checks.map(_spCheckRow).filter(function (r) { return r.status === 'PASS' || r.status === 'FAIL'; });
+}
+function _spAnsweredCount(checks) {
+  return checks.filter(function (ch) { return !!_spGetAnswer(ch.id); }).length;
+}
+// Compliance control status from the user's answer (pass / partial / fail / na) or '' if unanswered.
+function _spControlStatus(fwKey, ct) { return _spGetAnswer('cmp:' + fwKey + ':' + ct.id); }
+
+// One score point per day, recorded whenever answers change, so Risk Trends
+// shows the user's own history rather than invented data.
+function _spRecordHistory() {
+  try {
+    var all = _SP_CLOUDS.reduce(function (acc, pair) { return acc.concat(_spResultsFor(pair[1])); }, []);
+    if (!all.length) return;
+    var point = { overall: _spPct(all.filter(function (r) { return r.status === 'PASS'; }).length, all.length) };
+    _SP_CLOUDS.forEach(function (pair) {
+      var rows = _spResultsFor(pair[1]);
+      point[pair[0]] = rows.length ? _spPct(rows.filter(function (r) { return r.status === 'PASS'; }).length, rows.length) : null;
+    });
+    var raw = localStorage.getItem(_SP_HIST_KEY);
+    var hist = raw ? JSON.parse(raw) : {};
+    if (!hist || typeof hist !== 'object') hist = {};
+    hist[new Date().toISOString().slice(0, 10)] = point;
+    var days = Object.keys(hist).sort();
+    while (days.length > 60) { delete hist[days.shift()]; }
+    localStorage.setItem(_SP_HIST_KEY, JSON.stringify(hist));
+  } catch (e) { /* storage unavailable: no history */ }
+}
+function _spLoadHistory() {
+  try {
+    var raw = localStorage.getItem(_SP_HIST_KEY);
+    var hist = raw ? JSON.parse(raw) : {};
+    if (!hist || typeof hist !== 'object') return [];
+    return Object.keys(hist).sort().map(function (d) { return { date: d, p: hist[d] }; });
+  } catch (e) { return []; }
 }
 
 function _spRunTfScan(hcl) {
@@ -560,28 +617,8 @@ function _spBuildPermMatrix(policy) {
 }
 
 // ============================================================================
-// DETERMINISTIC POSTURE SNAPSHOT (stable across renders — never Math.random)
+// POSTURE SNAPSHOT (built from the user's checklist answers)
 // ============================================================================
-// A single reproducible posture snapshot computed over the in-memory check
-// catalogs. Status and resource names are derived from a hash of each check id
-// so every render (and every new tab) sees an identical, stable data set.
-function _spHash(str) {
-  var h = 2166136261;
-  str = String(str);
-  for (var i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
-  return h >>> 0;
-}
-function _spDetStatus(check) {
-  var r = _spHash(check.id) % 100;
-  var t = check.severity === 'CRITICAL' ? 52 : check.severity === 'HIGH' ? 42 : check.severity === 'MEDIUM' ? 32 : 22;
-  if (r < t) return 'FAIL';
-  if (r < t + 13) return 'WARN';
-  return 'PASS';
-}
-function _spDetResource(check) {
-  var slug = check.service.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-  return slug + '-' + (100 + _spHash(check.id + '#res') % 900);
-}
 var _SP_CLOUDS = [['AWS', AWS_CHECKS], ['Azure', AZURE_CHECKS], ['GCP', GCP_CHECKS]];
 var _SP_SEV_ORDER = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3 };
 var _SP_CLOUD_ORDER = { AWS: 0, Azure: 1, GCP: 2 };
@@ -589,10 +626,17 @@ function _spBuildSnapshot() {
   var out = [];
   _SP_CLOUDS.forEach(function (pair) {
     pair[1].forEach(function (ch) {
-      out.push({ cloud: pair[0], id: ch.id, service: ch.service, name: ch.name, severity: ch.severity, category: ch.category, cis: ch.cis, description: ch.description, recommendation: ch.recommendation, field: ch.field || '', status: _spDetStatus(ch), resource: _spDetResource(ch) });
+      var row = _spCheckRow(ch);
+      row.cloud = pair[0];
+      out.push(row);
     });
   });
   return out;
+}
+// Short "based on your answers" line shown on every snapshot-derived tab.
+function _spAnswerNote(snap) {
+  var answered = snap.filter(function (r) { return r.status !== 'UNANSWERED'; }).length;
+  return '<p class="sp-sub sp-answer-note">Based on your checklist answers: <b>' + answered + ' of ' + snap.length + '</b> checks answered. Spectre does not connect to your cloud accounts; answer checks in the AWS, Azure and GCP tabs.</p>';
 }
 
 // Internet-exposure classifier used by the Attack Surface tab.
@@ -677,23 +721,6 @@ function _spRemediationSnippet(item) {
   return { lang: _spCliLang(item.cloud), code: code.split('{R}').join(item.resource) };
 }
 
-// Deterministic 12-point score history seeded from posture counts (Risk Trends).
-function _spScoreHistory(seed, current, n) {
-  n = n || 12;
-  var arr = [], h = (seed >>> 0) || 1;
-  var start = Math.max(18, Math.min(current - 4, current - 20 + (h % 12)));
-  for (var i = 0; i < n; i++) {
-    h = (Math.imul(h, 1103515245) + 12345) >>> 0;
-    var frac = i / (n - 1);
-    var base = start + (current - start) * frac;
-    var wob = ((h % 1000) / 1000 - 0.5) * 9 * (1 - frac * 0.5);
-    var v = Math.round(base + wob);
-    if (v < 0) v = 0; if (v > 100) v = 100;
-    arr.push(v);
-  }
-  arr[n - 1] = current;
-  return arr;
-}
 function _spSparkline(values, w, h, color) {
   var step = w / (values.length - 1);
   var pts = values.map(function (v, i) { return (i * step).toFixed(1) + ',' + (h - (v / 100) * h).toFixed(1); });
@@ -735,9 +762,6 @@ function _spCopyText(text, btn) {
 // RENDER FUNCTIONS
 // ============================================================================
 var _spActiveTab = 'dashboard';
-var _spAwsResults = null;
-var _spAzureResults = null;
-var _spGcpResults = null;
 var _spTfFindings = null;
 var _spTfSource = '';
 var _spIamFindings = null;
@@ -784,9 +808,9 @@ function _spBuildTabs() {
 function _spRouteContent(id, c) {
   if (id === 'dashboard') _spRenderDashboard(c);
   else if (id === 'recon') _spRenderRecon(c);
-  else if (id === 'aws') _spRenderAudit(c, 'AWS', AWS_CHECKS, _spAwsResults);
-  else if (id === 'azure') _spRenderAudit(c, 'Azure', AZURE_CHECKS, _spAzureResults);
-  else if (id === 'gcp') _spRenderAudit(c, 'GCP', GCP_CHECKS, _spGcpResults);
+  else if (id === 'aws') _spRenderAudit(c, 'AWS', AWS_CHECKS);
+  else if (id === 'azure') _spRenderAudit(c, 'Azure', AZURE_CHECKS);
+  else if (id === 'gcp') _spRenderAudit(c, 'GCP', GCP_CHECKS);
   else if (id === 'iam') _spRenderIAM(c);
   else if (id === 'compliance') _spRenderCompliance(c);
   else if (id === 'terraform') _spRenderTerraform(c);
@@ -809,9 +833,9 @@ function _spRender(main) {
         '</div>' +
         '<div class="sp-meta">' +
           '<div id="sp-modebar"></div>' +
-          '<span class="sp-meta-item"><span class="sp-dot" style="background:#22c55e"></span>System Active</span>' +
+          '<span class="sp-meta-item">Self-assessment (no cloud connection)</span>' +
           '<span class="sp-meta-item">Checks: ' + (AWS_CHECKS.length + AZURE_CHECKS.length + GCP_CHECKS.length) + '</span>' +
-          '<span class="sp-meta-item">Frameworks: 5</span>' +
+          '<span class="sp-meta-item">Frameworks: ' + Object.keys(COMPLIANCE_FRAMEWORKS).length + '</span>' +
         '</div>' +
       '</div>' +
       '<div class="sp-modenote" id="sp-modenote"></div>' +
@@ -862,7 +886,7 @@ function _spRender(main) {
 // TAB 1 — POSTURE DASHBOARD
 // ============================================================================
 function _spRenderDashboard(c) {
-  var allResults = (_spAwsResults || []).concat(_spAzureResults || []).concat(_spGcpResults || []);
+  var allResults = _spResultsFor(AWS_CHECKS).concat(_spResultsFor(AZURE_CHECKS)).concat(_spResultsFor(GCP_CHECKS));
   var hasData = allResults.length > 0;
   var total = allResults.length;
   var passed = allResults.filter(function(r) { return r.status === 'PASS'; }).length;
@@ -883,8 +907,7 @@ function _spRenderDashboard(c) {
     else services[r.service].warn++;
   });
 
-  var trends = [62, 58, 65, 61, 68, 72, score || 75];
-  var maxTrend = Math.max.apply(null, trends);
+  var progress = _SP_CLOUDS.map(function (pair) { return { cloud: pair[0], answered: _spAnsweredCount(pair[1]), total: pair[1].length }; });
 
   c.innerHTML =
     '<div class="sp-grid-3">' +
@@ -898,7 +921,7 @@ function _spRenderDashboard(c) {
             '<text x="60" y="72" text-anchor="middle" fill="currentColor" font-size="10" opacity=".6">/ 100</text>' +
           '</svg>' +
         '</div>' +
-        (hasData ? '<div class="sp-score-detail">' + passed + ' passed / ' + failed + ' failed / ' + warned + ' warnings</div>' : '<div class="sp-score-detail">Run an audit to see your score</div>') +
+        (hasData ? '<div class="sp-score-detail">' + passed + ' passed / ' + failed + ' failed (from your answers)</div>' : '<div class="sp-score-detail">Answer checks in the AWS, Azure or GCP tab to see your score</div>') +
       '</div>' +
       '<div class="sp-card">' +
         '<div class="sp-card-h">Risk Breakdown</div>' +
@@ -909,15 +932,13 @@ function _spRenderDashboard(c) {
             return '<div class="sp-sev-row"><span class="sp-sev-label" style="color:' + _spSevColor(s) + '">' + s + '</span><div class="sp-sev-bar-bg"><div class="sp-sev-bar-fill" style="width:' + _spPct(cnt, maxC) + '%;background:' + _spSevColor(s) + '"></div></div><span class="sp-sev-cnt">' + cnt + '</span></div>';
           }).join('') +
         '</div>' +
-        (!hasData ? '<div class="sp-empty">No audit data yet</div>' : '') +
+        (!hasData ? '<div class="sp-empty">No answers yet</div>' : '') +
       '</div>' +
       '<div class="sp-card">' +
-        '<div class="sp-card-h">Score Trend (7 scans)</div>' +
-        '<div class="sp-trend">' +
-          trends.map(function(v, i) {
-            var h = Math.max(8, (v / maxTrend) * 100);
-            var color = v > 70 ? '#22c55e' : v > 40 ? '#eab308' : '#dc2626';
-            return '<div class="sp-trend-bar" style="height:' + h + '%;background:' + color + '" title="Scan ' + (i + 1) + ': ' + v + '%"><span class="sp-trend-val">' + v + '</span></div>';
+        '<div class="sp-card-h">Checklist Progress</div>' +
+        '<div class="sp-comp-bars">' +
+          progress.map(function(p) {
+            return '<div class="sp-comp-row"><span class="sp-comp-name">' + esc(p.cloud) + '</span><div class="sp-comp-bar-bg"><div class="sp-comp-bar-fill" style="width:' + _spPct(p.answered, p.total) + '%;background:var(--acc)"></div></div><span class="sp-comp-pct">' + p.answered + '/' + p.total + '</span></div>';
           }).join('') +
         '</div>' +
       '</div>' +
@@ -928,10 +949,12 @@ function _spRenderDashboard(c) {
         '<div class="sp-comp-bars">' +
           Object.keys(COMPLIANCE_FRAMEWORKS).map(function(key) {
             var fw = COMPLIANCE_FRAMEWORKS[key];
-            var pass = fw.controls.filter(function(c2) { return c2.status === 'pass'; }).length;
-            var pct = _spPct(pass, fw.controls.length);
+            var sts = fw.controls.map(function(c2) { return _spControlStatus(key, c2); });
+            var pass = sts.filter(function(v) { return v === 'pass'; }).length;
+            var scored = sts.filter(function(v) { return v && v !== 'na'; }).length;
+            var pct = _spPct(pass, scored);
             var color = pct > 70 ? '#22c55e' : pct > 40 ? '#eab308' : '#dc2626';
-            return '<div class="sp-comp-row"><span class="sp-comp-name">' + esc(fw.name) + '</span><div class="sp-comp-bar-bg"><div class="sp-comp-bar-fill" style="width:' + pct + '%;background:' + color + '"></div></div><span class="sp-comp-pct">' + pct + '%</span></div>';
+            return '<div class="sp-comp-row"><span class="sp-comp-name">' + esc(fw.name) + '</span><div class="sp-comp-bar-bg"><div class="sp-comp-bar-fill" style="width:' + pct + '%;background:' + color + '"></div></div><span class="sp-comp-pct">' + (scored ? pct + '%' : '--') + '</span></div>';
           }).join('') +
         '</div>' +
       '</div>' +
@@ -942,17 +965,17 @@ function _spRenderDashboard(c) {
             var d = services[svc];
             return '<div class="sp-svc-row"><span class="sp-svc-name">' + esc(svc) + '</span><span class="sp-svc-pass">' + d.pass + ' pass</span><span class="sp-svc-fail" style="color:#dc2626">' + d.fail + ' fail</span><span class="sp-svc-total">' + d.total + ' total</span></div>';
           }).join('') +
-        '</div>' : '<div class="sp-empty">Run cloud audits to see service breakdown</div>') +
+        '</div>' : '<div class="sp-empty">Answer cloud checks to see a service breakdown</div>') +
       '</div>' +
     '</div>' +
     '<div class="sp-card" style="margin-top:16px">' +
       '<div class="sp-card-h">Top Critical Misconfigurations</div>' +
       (allResults.filter(function(r) { return r.status === 'FAIL'; }).length ?
-        '<table class="sp-table"><thead><tr><th>Check ID</th><th>Service</th><th>Finding</th><th>Severity</th><th>Resource</th></tr></thead><tbody>' +
+        '<table class="sp-table"><thead><tr><th>Check ID</th><th>Service</th><th>Finding</th><th>Severity</th><th>CIS</th></tr></thead><tbody>' +
         allResults.filter(function(r) { return r.status === 'FAIL'; }).sort(function(a, b) { var o = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3 }; return (o[a.severity] || 4) - (o[b.severity] || 4); }).slice(0, 10).map(function(r) {
-          return '<tr><td class="sp-mono">' + esc(r.id) + '</td><td>' + esc(r.service) + '</td><td>' + esc(r.name) + '</td><td><span class="sp-sev-badge" style="color:' + _spSevColor(r.severity) + ';background:' + _spSevBg(r.severity) + '">' + r.severity + '</span></td><td class="sp-mono">' + esc(r.resource) + '</td></tr>';
+          return '<tr><td class="sp-mono">' + esc(r.id) + '</td><td>' + esc(r.service) + '</td><td>' + esc(r.name) + '</td><td><span class="sp-sev-badge" style="color:' + _spSevColor(r.severity) + ';background:' + _spSevBg(r.severity) + '">' + r.severity + '</span></td><td class="sp-mono">' + esc(r.cis || '') + '</td></tr>';
         }).join('') +
-        '</tbody></table>' : '<div class="sp-empty">No failed checks. Run an audit from the AWS, Azure or GCP tabs.</div>') +
+        '</tbody></table>' : '<div class="sp-empty">No checks answered Fail. Answer checks in the AWS, Azure or GCP tabs.</div>') +
     '</div>';
 }
 
@@ -985,23 +1008,23 @@ function _spSendGraph(btn, build) {
   }).catch(function() { btn.textContent = 'Security Graph unavailable'; btn.disabled = false; });
 }
 
-// Audit results are randomly generated (no cloud API connection), so they are always tagged simulated.
+// Audit results come from the user's own checklist answers (no cloud API connection), so they are tagged self-assessed.
 function _spSendAuditToGraph(btn, provider, results) {
   _spSendGraph(btn, function(sendPair) {
-    var tags = ['spectre', 'cspm', provider.toLowerCase(), 'simulated'];
-    results.filter(function(r) { return r.status !== 'PASS'; }).forEach(function(r) {
-      var assetName = provider + ' ' + r.service + ': ' + r.resource;
+    var tags = ['spectre', 'cspm', provider.toLowerCase(), 'self-assessed'];
+    results.filter(function(r) { return r.status === 'FAIL'; }).forEach(function(r) {
+      var assetName = provider + ' ' + r.service;
       sendPair({
-        type: 'FINDING', name: r.id + ': ' + r.name + ' (' + r.resource + ')',
-        data: { checkId: r.id, provider: provider, service: r.service, category: r.category, cis: r.cis, auditStatus: r.status, description: r.description, recommendation: r.recommendation, resource: assetName, simulated: true },
-        opts: { tags: tags.concat(r.status === 'WARN' ? ['warning'] : ['failed']), severity: _SP_GRAPH_SEV[r.severity] || null }
+        type: 'FINDING', name: r.id + ': ' + r.name + ' (' + assetName + ')',
+        data: { checkId: r.id, provider: provider, service: r.service, category: r.category, cis: r.cis, auditStatus: r.status, description: r.description, recommendation: r.recommendation, resource: assetName, selfAssessed: true },
+        opts: { tags: tags.concat(['failed']), severity: _SP_GRAPH_SEV[r.severity] || null }
       }, {
         type: 'ASSET', name: assetName,
-        data: { provider: provider, service: r.service, resourceId: r.resource, kind: 'cloud-resource', simulated: true },
+        data: { provider: provider, service: r.service, kind: 'cloud-service', selfAssessed: true },
         opts: { tags: tags.concat(['cloud-resource']) }
       });
     });
-    return true;
+    return false;
   });
 }
 
@@ -1032,37 +1055,42 @@ function _spSendTfToGraph(btn, hcl, findings) {
   });
 }
 
-function _spRenderAudit(c, provider, checks, results) {
+var _SP_ANS_OPTS = [['', 'Unanswered'], ['PASS', 'Pass - not present'], ['FAIL', 'Fail - present'], ['NA', 'N/A']];
+function _spRenderAudit(c, provider, checks) {
   var services = {};
   checks.forEach(function(ch) { if (!services[ch.service]) services[ch.service] = 0; services[ch.service]++; });
 
-  var filtered = results || [];
+  var rows = checks.map(_spCheckRow);
+  var results = rows.filter(function(r) { return r.status === 'PASS' || r.status === 'FAIL'; });
+  var filtered = rows;
   if (_spAuditFilter.service) filtered = filtered.filter(function(r) { return r.service === _spAuditFilter.service; });
   if (_spAuditFilter.severity) filtered = filtered.filter(function(r) { return r.severity === _spAuditFilter.severity; });
   if (_spAuditFilter.status) filtered = filtered.filter(function(r) { return r.status === _spAuditFilter.status; });
 
-  var passed = (results || []).filter(function(r) { return r.status === 'PASS'; }).length;
-  var failed = (results || []).filter(function(r) { return r.status === 'FAIL'; }).length;
-  var warned = (results || []).filter(function(r) { return r.status === 'WARN'; }).length;
+  var passed = results.filter(function(r) { return r.status === 'PASS'; }).length;
+  var failed = results.filter(function(r) { return r.status === 'FAIL'; }).length;
+  var na = rows.filter(function(r) { return r.status === 'N/A'; }).length;
+  var unanswered = rows.length - results.length - na;
 
   c.innerHTML =
     '<div class="sp-audit-header">' +
       '<div class="sp-audit-info">' +
-        '<h2 class="sp-h2">' + esc(provider) + ' Security Audit</h2>' +
+        '<h2 class="sp-h2">' + esc(provider) + ' Security Checklist</h2>' +
         '<span class="sp-check-cnt">' + checks.length + ' checks across ' + Object.keys(services).length + ' services</span>' +
       '</div>' +
       '<div class="sp-audit-actions">' +
-        '<button class="sp-btn sp-btn-primary" id="sp-run-audit">Run Audit</button>' +
-        '<button class="sp-btn sp-btn-ghost" id="sp-load-demo">Load Demo Config</button>' +
-        (results ? '<button class="sp-btn sp-btn-ghost" id="sp-audit-graph" title="Simulated audit results are tagged simulated">Send ' + (failed + warned) + ' findings to Security Graph</button>' : '') +
+        (failed ? '<button class="sp-btn sp-btn-ghost" id="sp-audit-graph" title="Findings are tagged self-assessed">Send ' + failed + ' findings to Security Graph</button>' : '') +
+        '<button class="sp-btn sp-btn-ghost" id="sp-clear-answers"' + (rows.length === unanswered ? ' disabled' : '') + '>Clear ' + esc(provider) + ' answers</button>' +
       '</div>' +
     '</div>' +
-    (results ? '<div class="sp-audit-summary">' +
+    '<p class="sp-sub">Self-assessment: Spectre does not connect to your ' + esc(provider) + ' account. Each check names a misconfiguration; review your environment and answer <b>Pass</b> if it is not present, <b>Fail</b> if it is, or <b>N/A</b> if it does not apply. Score = Pass / (Pass + Fail). Answers are saved in this browser only.</p>' +
+    '<div class="sp-audit-summary">' +
       '<div class="sp-sum-item sp-sum-pass"><span class="sp-sum-n">' + passed + '</span><span class="sp-sum-l">Passed</span></div>' +
       '<div class="sp-sum-item sp-sum-fail"><span class="sp-sum-n">' + failed + '</span><span class="sp-sum-l">Failed</span></div>' +
-      '<div class="sp-sum-item sp-sum-warn"><span class="sp-sum-n">' + warned + '</span><span class="sp-sum-l">Warnings</span></div>' +
-      '<div class="sp-sum-item"><span class="sp-sum-n">' + _spPct(passed, results.length) + '%</span><span class="sp-sum-l">Score</span></div>' +
-    '</div>' : '') +
+      '<div class="sp-sum-item"><span class="sp-sum-n">' + na + '</span><span class="sp-sum-l">N/A</span></div>' +
+      '<div class="sp-sum-item sp-sum-warn"><span class="sp-sum-n">' + unanswered + '</span><span class="sp-sum-l">Unanswered</span></div>' +
+      '<div class="sp-sum-item"><span class="sp-sum-n">' + (results.length ? _spPct(passed, results.length) + '%' : '--') + '</span><span class="sp-sum-l">Score</span></div>' +
+    '</div>' +
     '<div class="sp-service-chips">' +
       '<button class="sp-chip' + (!_spAuditFilter.service ? ' on' : '') + '" data-svc="">All</button>' +
       Object.keys(services).map(function(s) {
@@ -1071,43 +1099,48 @@ function _spRenderAudit(c, provider, checks, results) {
     '</div>' +
     '<div class="sp-filter-row">' +
       '<select class="sp-select" id="sp-sev-filter"><option value="">All Severities</option><option value="CRITICAL">Critical</option><option value="HIGH">High</option><option value="MEDIUM">Medium</option><option value="LOW">Low</option></select>' +
-      '<select class="sp-select" id="sp-status-filter"><option value="">All Statuses</option><option value="PASS">Pass</option><option value="FAIL">Fail</option><option value="WARN">Warning</option></select>' +
+      '<select class="sp-select" id="sp-status-filter"><option value="">All Answers</option><option value="PASS">Pass</option><option value="FAIL">Fail</option><option value="N/A">N/A</option><option value="UNANSWERED">Unanswered</option></select>' +
     '</div>' +
     (filtered.length ?
-      '<table class="sp-table"><thead><tr><th>ID</th><th>Service</th><th>Check</th><th>Status</th><th>Severity</th><th>CIS</th><th>Resource</th></tr></thead><tbody>' +
+      '<table class="sp-table"><thead><tr><th>ID</th><th>Service</th><th>Check</th><th>Severity</th><th>CIS</th><th>Your answer</th></tr></thead><tbody>' +
       filtered.map(function(r) {
-        return '<tr><td class="sp-mono">' + esc(r.id) + '</td><td>' + esc(r.service) + '</td><td title="' + esc(r.description) + '">' + esc(r.name) + '</td><td><span class="sp-status-badge" style="color:' + _spStatusColor(r.status) + '">' + r.status + '</span></td><td><span class="sp-sev-badge" style="color:' + _spSevColor(r.severity) + ';background:' + _spSevBg(r.severity) + '">' + r.severity + '</span></td><td class="sp-mono">' + esc(r.cis || '') + '</td><td class="sp-mono">' + esc(r.resource) + '</td></tr>';
+        var cur = _spGetAnswer(r.id);
+        return '<tr><td class="sp-mono">' + esc(r.id) + '</td><td>' + esc(r.service) + '</td><td title="' + esc(r.description) + '">' + esc(r.name) + '<div class="sp-cell-sub">' + esc(r.description) + '</div></td><td><span class="sp-sev-badge" style="color:' + _spSevColor(r.severity) + ';background:' + _spSevBg(r.severity) + '">' + r.severity + '</span></td><td class="sp-mono">' + esc(r.cis || '') + '</td>' +
+          '<td><select class="sp-select sp-ans" data-id="' + esc(r.id) + '" aria-label="Answer for ' + esc(r.id) + '" style="color:' + _spStatusColor(r.status) + '">' +
+            _SP_ANS_OPTS.map(function(o) { return '<option value="' + o[0] + '"' + (cur === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') +
+          '</select></td></tr>';
       }).join('') +
       '</tbody></table>' :
-      (results ? '<div class="sp-empty">No results match filters</div>' : '<div class="sp-empty">Click "Run Audit" or "Load Demo Config" to start</div>')) +
-    (results ? '<div class="sp-expand-section" style="margin-top:16px"><details><summary class="sp-details-sum">Check Details & Recommendations</summary><div class="sp-rec-list">' +
-      (results || []).filter(function(r) { return r.status === 'FAIL'; }).map(function(r) {
+      '<div class="sp-empty">No checks match filters</div>') +
+    (failed ? '<div class="sp-expand-section" style="margin-top:16px"><details><summary class="sp-details-sum">Recommendations for checks answered Fail</summary><div class="sp-rec-list">' +
+      results.filter(function(r) { return r.status === 'FAIL'; }).map(function(r) {
         return '<div class="sp-rec-item"><div class="sp-rec-head"><span class="sp-sev-badge" style="color:' + _spSevColor(r.severity) + ';background:' + _spSevBg(r.severity) + '">' + r.severity + '</span><strong>' + esc(r.id) + '</strong> ' + esc(r.name) + '</div><div class="sp-rec-desc">' + esc(r.description) + '</div><div class="sp-rec-fix">Recommendation: ' + esc(r.recommendation) + '</div></div>';
       }).join('') +
     '</div></details></div>' : '');
 
-  c.querySelector('#sp-run-audit').onclick = function() {
-    if (provider === 'AWS') { _spAwsResults = _spRunAudit(AWS_CHECKS, AWS_DEMO_CONFIG); _spRender(c.closest('.sp-wrap').parentNode); }
-    else if (provider === 'Azure') { _spAzureResults = _spRunAudit(AZURE_CHECKS, {}); _spRender(c.closest('.sp-wrap').parentNode); }
-    else if (provider === 'GCP') { _spGcpResults = _spRunAudit(GCP_CHECKS, {}); _spRender(c.closest('.sp-wrap').parentNode); }
-  };
-  c.querySelector('#sp-load-demo').onclick = function() {
-    if (provider === 'AWS') { _spAwsResults = _spRunAudit(AWS_CHECKS, AWS_DEMO_CONFIG); }
-    else if (provider === 'Azure') { _spAzureResults = _spRunAudit(AZURE_CHECKS, {}); }
-    else if (provider === 'GCP') { _spGcpResults = _spRunAudit(GCP_CHECKS, {}); }
-    _spRender(c.closest('.sp-wrap').parentNode);
+  var rerender = function() { _spRenderAudit(c, provider, checks); };
+  c.querySelectorAll('.sp-ans').forEach(function(sel) {
+    sel.onchange = function() { _spSetAnswer(sel.dataset.id, sel.value); rerender(); };
+  });
+  var clearBtn = c.querySelector('#sp-clear-answers');
+  if (clearBtn) clearBtn.onclick = function() {
+    if (!confirm('Clear all ' + provider + ' checklist answers?')) return;
+    var ids = {};
+    checks.forEach(function(ch) { ids[ch.id] = 1; });
+    _spClearAnswers(function(k) { return !!ids[k]; });
+    rerender();
   };
 
   var auditGraphBtn = c.querySelector('#sp-audit-graph');
   if (auditGraphBtn) auditGraphBtn.onclick = function() { _spSendAuditToGraph(auditGraphBtn, provider, results); };
 
   c.querySelectorAll('.sp-chip').forEach(function(chip) {
-    chip.onclick = function() { _spAuditFilter.service = chip.dataset.svc; _spRender(c.closest('.sp-wrap').parentNode); };
+    chip.onclick = function() { _spAuditFilter.service = chip.dataset.svc; rerender(); };
   });
   var sevFilter = c.querySelector('#sp-sev-filter');
-  if (sevFilter) { sevFilter.value = _spAuditFilter.severity; sevFilter.onchange = function() { _spAuditFilter.severity = sevFilter.value; _spRender(c.closest('.sp-wrap').parentNode); }; }
+  if (sevFilter) { sevFilter.value = _spAuditFilter.severity; sevFilter.onchange = function() { _spAuditFilter.severity = sevFilter.value; rerender(); }; }
   var statusFilter = c.querySelector('#sp-status-filter');
-  if (statusFilter) { statusFilter.value = _spAuditFilter.status; statusFilter.onchange = function() { _spAuditFilter.status = statusFilter.value; _spRender(c.closest('.sp-wrap').parentNode); }; }
+  if (statusFilter) { statusFilter.value = _spAuditFilter.status; statusFilter.onchange = function() { _spAuditFilter.status = statusFilter.value; rerender(); }; }
 }
 
 // ============================================================================
@@ -1176,43 +1209,59 @@ function _spRenderIAM(c) {
 // TAB 6 — COMPLIANCE
 // ============================================================================
 function _spRenderCompliance(c) {
-  var fw = COMPLIANCE_FRAMEWORKS[_spComplianceTab];
-  var passed = fw.controls.filter(function(ct) { return ct.status === 'pass'; }).length;
-  var failed = fw.controls.filter(function(ct) { return ct.status === 'fail'; }).length;
-  var partial = fw.controls.filter(function(ct) { return ct.status === 'partial'; }).length;
-  var pct = _spPct(passed, fw.controls.length);
+  var fwKey = _spComplianceTab;
+  var fw = COMPLIANCE_FRAMEWORKS[fwKey];
+  var st = function(ct) { return _spControlStatus(fwKey, ct); };
+  var passed = fw.controls.filter(function(ct) { return st(ct) === 'pass'; }).length;
+  var failed = fw.controls.filter(function(ct) { return st(ct) === 'fail'; }).length;
+  var partial = fw.controls.filter(function(ct) { return st(ct) === 'partial'; }).length;
+  var naCount = fw.controls.filter(function(ct) { return st(ct) === 'na'; }).length;
+  var unanswered = fw.controls.length - passed - failed - partial - naCount;
+  var scored = passed + failed + partial;
+  var pct = _spPct(passed, scored);
   var pctColor = pct > 70 ? '#22c55e' : pct > 40 ? '#eab308' : '#dc2626';
 
   c.innerHTML =
-    '<h2 class="sp-h2">Compliance Monitoring</h2>' +
+    '<h2 class="sp-h2">Compliance Self-Assessment</h2>' +
+    '<p class="sp-sub">Mark each control for your organisation. Nothing is checked automatically; the percentage is Implemented / (Implemented + Partial + Not Implemented), N/A excluded. Answers are saved in this browser only.</p>' +
     '<div class="sp-comp-tabs">' +
       Object.keys(COMPLIANCE_FRAMEWORKS).map(function(key) {
         return '<button class="sp-comp-tab' + (_spComplianceTab === key ? ' on' : '') + '" data-fw="' + key + '">' + esc(COMPLIANCE_FRAMEWORKS[key].name) + '</button>';
       }).join('') +
     '</div>' +
     '<div class="sp-comp-summary">' +
-      '<div class="sp-comp-score" style="border-color:' + pctColor + '"><span class="sp-comp-pct-big" style="color:' + pctColor + '">' + pct + '%</span><span class="sp-comp-pct-label">Compliant</span></div>' +
+      '<div class="sp-comp-score" style="border-color:' + pctColor + '"><span class="sp-comp-pct-big" style="color:' + pctColor + '">' + (scored ? pct + '%' : '--') + '</span><span class="sp-comp-pct-label">Compliant</span></div>' +
       '<div class="sp-comp-stats">' +
         '<div class="sp-comp-stat"><span class="sp-comp-stat-n" style="color:#22c55e">' + passed + '</span><span>Implemented</span></div>' +
         '<div class="sp-comp-stat"><span class="sp-comp-stat-n" style="color:#eab308">' + partial + '</span><span>Partial</span></div>' +
         '<div class="sp-comp-stat"><span class="sp-comp-stat-n" style="color:#dc2626">' + failed + '</span><span>Not Implemented</span></div>' +
+        '<div class="sp-comp-stat"><span class="sp-comp-stat-n">' + unanswered + '</span><span>Unanswered</span></div>' +
         '<div class="sp-comp-stat"><span class="sp-comp-stat-n">' + fw.controls.length + '</span><span>Total Controls</span></div>' +
       '</div>' +
     '</div>' +
     '<table class="sp-table"><thead><tr><th>Control ID</th><th>Control Name</th><th>Category</th><th>Status</th></tr></thead><tbody>' +
       fw.controls.map(function(ct) {
-        return '<tr><td class="sp-mono">' + esc(ct.id) + '</td><td>' + esc(ct.name) + '</td><td>' + esc(ct.category) + '</td><td>' + _spStatusLabel(ct.status) + '</td></tr>';
+        var cur = st(ct);
+        return '<tr><td class="sp-mono">' + esc(ct.id) + '</td><td>' + esc(ct.name) + '</td><td>' + esc(ct.category) + '</td><td>' +
+          '<select class="sp-select sp-cmp-ans" data-id="' + esc(ct.id) + '" aria-label="Status for ' + esc(ct.id) + '">' +
+            [['', 'Unanswered'], ['pass', 'Implemented'], ['partial', 'Partial'], ['fail', 'Not implemented'], ['na', 'N/A']].map(function(o) {
+              return '<option value="' + o[0] + '"' + (cur === o[0] ? ' selected' : '') + '>' + o[1] + '</option>';
+            }).join('') +
+          '</select></td></tr>';
       }).join('') +
     '</tbody></table>' +
     '<div class="sp-comp-actions" style="margin-top:16px">' +
       '<button class="sp-btn sp-btn-ghost" id="sp-export-compliance">Export Compliance Report</button>' +
     '</div>' +
     (failed > 0 ? '<div class="sp-gap-analysis" style="margin-top:16px"><h3 class="sp-h3">Gap Analysis — ' + failed + ' controls need attention</h3>' +
-      fw.controls.filter(function(ct) { return ct.status === 'fail'; }).map(function(ct) {
+      fw.controls.filter(function(ct) { return st(ct) === 'fail'; }).map(function(ct) {
         return '<div class="sp-gap-item"><span class="sp-status sp-fail">NOT IMPLEMENTED</span> <strong>' + esc(ct.id) + '</strong> — ' + esc(ct.name) + ' <span class="sp-gap-cat">(' + esc(ct.category) + ')</span></div>';
       }).join('') +
     '</div>' : '');
 
+  c.querySelectorAll('.sp-cmp-ans').forEach(function(sel) {
+    sel.onchange = function() { _spSetAnswer('cmp:' + fwKey + ':' + sel.dataset.id, sel.value); _spRenderCompliance(c); };
+  });
   c.querySelectorAll('.sp-comp-tab').forEach(function(btn) {
     btn.onclick = function() { _spComplianceTab = btn.dataset.fw; _spRender(c.closest('.sp-wrap').parentNode); };
   });
@@ -1220,8 +1269,8 @@ function _spRenderCompliance(c) {
   var exportBtn = c.querySelector('#sp-export-compliance');
   if (exportBtn) {
     exportBtn.onclick = function() {
-      var report = '# ' + fw.name + ' Compliance Report\n\nDate: ' + new Date().toISOString().split('T')[0] + '\nScore: ' + pct + '%\n\n';
-      fw.controls.forEach(function(ct) { report += ct.id + ' | ' + ct.name + ' | ' + ct.status.toUpperCase() + '\n'; });
+      var report = '# ' + fw.name + ' Compliance Self-Assessment\n\nDate: ' + new Date().toISOString().split('T')[0] + '\nBasis: self-reported answers (not an automated audit)\nScore: ' + (scored ? pct + '%' : 'n/a') + '\n\n';
+      fw.controls.forEach(function(ct) { report += ct.id + ' | ' + ct.name + ' | ' + ((st(ct) || 'unanswered').toUpperCase()) + '\n'; });
       var blob = new Blob([report], { type: 'text/plain' });
       var url = URL.createObjectURL(blob);
       var a = document.createElement('a');
@@ -1290,7 +1339,7 @@ function _spRenderTerraform(c) {
 function _spRenderSurface(c) {
   var snap = _spBuildSnapshot();
   var exposed = [];
-  snap.forEach(function (r) { var ex = _spClassifyExposure(r); if (ex) exposed.push({ r: r, type: ex.type, why: ex.why }); });
+  snap.forEach(function (r) { if (r.status !== 'FAIL') return; var ex = _spClassifyExposure(r); if (ex) exposed.push({ r: r, type: ex.type, why: ex.why }); });
   exposed.sort(function (a, b) {
     var s = _SP_SEV_ORDER[a.r.severity] - _SP_SEV_ORDER[b.r.severity]; if (s) return s;
     var cl = _SP_CLOUD_ORDER[a.r.cloud] - _SP_CLOUD_ORDER[b.r.cloud]; if (cl) return cl;
@@ -1307,7 +1356,8 @@ function _spRenderSurface(c) {
 
   c.innerHTML =
     '<h2 class="sp-h2">Internet Attack Surface</h2>' +
-    '<p class="sp-sub">Every check that leaves a resource reachable from the public internet, aggregated across AWS, Azure and GCP and ranked by severity. This is the "what can an attacker reach from outside" view.</p>' +
+    '<p class="sp-sub">Every check you answered Fail that leaves a resource reachable from the public internet, aggregated across AWS, Azure and GCP and ranked by severity. This is the "what can an attacker reach from outside" view.</p>' +
+    _spAnswerNote(snap) +
     '<div class="sp-stat-tiles">' +
       _spStatTile(exposed.length, 'Exposed Findings', 'var(--acc)') +
       _spStatTile(crit, 'Critical Exposures', '#dc2626') +
@@ -1319,16 +1369,16 @@ function _spRenderSurface(c) {
       Object.keys(typeCounts).sort().map(function (k) { return '<span class="sp-legend-chip">' + esc(k) + ' <b>' + typeCounts[k] + '</b></span>'; }).join('') +
     '</div>' +
     (exposed.length ?
-      '<table class="sp-table"><thead><tr><th>Resource</th><th>Cloud</th><th>Exposure Type</th><th>Severity</th><th>Why It Matters</th></tr></thead><tbody>' +
+      '<table class="sp-table"><thead><tr><th>Check</th><th>Cloud</th><th>Exposure Type</th><th>Severity</th><th>Why It Matters</th></tr></thead><tbody>' +
       exposed.map(function (e) {
-        return '<tr><td class="sp-mono">' + esc(e.r.resource) + '<div class="sp-cell-sub">' + esc(e.r.id) + ' · ' + esc(e.r.name) + '</div></td>' +
+        return '<tr><td class="sp-mono">' + esc(e.r.id) + '<div class="sp-cell-sub">' + esc(e.r.service) + ' · ' + esc(e.r.name) + '</div></td>' +
           '<td>' + esc(e.r.cloud) + '</td>' +
           '<td>' + esc(e.type) + '</td>' +
           '<td><span class="sp-sev-badge" style="color:' + _spSevColor(e.r.severity) + ';background:' + _spSevBg(e.r.severity) + '">' + e.r.severity + '</span></td>' +
           '<td class="sp-why">' + esc(e.why) + '</td></tr>';
       }).join('') +
       '</tbody></table>' :
-      '<div class="sp-empty">No internet-exposed findings detected.</div>');
+      '<div class="sp-empty">No internet-exposure checks answered Fail.</div>');
 }
 
 // ============================================================================
@@ -1353,7 +1403,8 @@ function _spRenderRemediate(c) {
 
   c.innerHTML =
     '<h2 class="sp-h2">Remediation Plan</h2>' +
-    '<p class="sp-sub">A prioritised fix queue built from every failing check across the three clouds, sorted by severity then estimated effort then cloud. Each item carries a concrete, copyable remediation command.</p>' +
+    '<p class="sp-sub">A prioritised fix queue built from every check you answered Fail across the three clouds, sorted by severity then estimated effort then cloud. Each item carries a copyable remediation command template; replace the &lt;your-...&gt; placeholder with your resource name.</p>' +
+    _spAnswerNote(snap) +
     '<div class="sp-stat-tiles">' +
       _spStatTile(failing.length, 'Open Findings', 'var(--acc)') +
       _spStatTile(sev.CRITICAL, 'Critical', '#dc2626') +
@@ -1381,7 +1432,7 @@ function _spRenderRemediate(c) {
           '<div class="sp-code-block"><div class="sp-code-bar"><span class="sp-code-lang">' + esc(sn.lang) + '</span><button class="sp-copy-btn" data-idx="' + i + '" data-label="Copy">Copy</button></div><pre class="sp-code">' + esc(sn.code) + '</pre></div>' +
         '</div>';
       }).join('') +
-      (queue.length ? '' : '<div class="sp-empty">No findings match this effort filter.</div>') +
+      (queue.length ? '' : '<div class="sp-empty">' + (failing.length ? 'No findings match this effort filter.' : 'No checks answered Fail yet.') + '</div>') +
     '</div>';
 
   c.querySelectorAll('.sp-chip').forEach(function (chip) {
@@ -1393,42 +1444,55 @@ function _spRenderRemediate(c) {
 }
 
 // ============================================================================
-// TAB 10 — RISK TRENDS (deterministic, simulated)
+// TAB 10 — RISK TRENDS (your own recorded history)
 // ============================================================================
+// One point per day is recorded locally whenever checklist answers change
+// (see _spRecordHistory). Nothing is invented: with fewer than two recorded
+// days there is no trend line to show.
 function _spRenderTrends(c) {
   var snap = _spBuildSnapshot();
-  var passAll = snap.filter(function (r) { return r.status === 'PASS'; }).length;
-  var overall = _spPct(passAll, snap.length);
-  var hist = _spScoreHistory(_spHash('overall#' + snap.length + '#' + passAll), overall, 12);
-  var delta = hist[hist.length - 1] - hist[0];
+  var scoredAll = snap.filter(function (r) { return r.status === 'PASS' || r.status === 'FAIL'; });
+  var passAll = scoredAll.filter(function (r) { return r.status === 'PASS'; }).length;
+  var overall = scoredAll.length ? _spPct(passAll, scoredAll.length) : null;
+  var history = _spLoadHistory();
 
   var clouds = _SP_CLOUDS.map(function (pair) {
-    var rows = snap.filter(function (r) { return r.cloud === pair[0]; });
+    var rows = snap.filter(function (r) { return r.cloud === pair[0] && (r.status === 'PASS' || r.status === 'FAIL'); });
     var pass = rows.filter(function (r) { return r.status === 'PASS'; }).length;
-    var score = _spPct(pass, rows.length);
-    var h = _spScoreHistory(_spHash(pair[0] + '#' + score + '#' + rows.length), score, 12);
-    return { cloud: pair[0], score: score, hist: h, delta: h[h.length - 1] - h[0] };
+    var hist = history.map(function (h) { return h.p[pair[0]]; }).filter(function (v) { return typeof v === 'number'; });
+    return { cloud: pair[0], score: rows.length ? _spPct(pass, rows.length) : null, hist: hist };
   });
+  var overallHist = history.map(function (h) { return h.p.overall; }).filter(function (v) { return typeof v === 'number'; });
 
-  var barColor = function (v) { return v > 70 ? '#22c55e' : v > 40 ? '#eab308' : '#dc2626'; };
+  var barColor = function (v) { return v == null ? '#64748b' : v > 70 ? '#22c55e' : v > 40 ? '#eab308' : '#dc2626'; };
   var deltaStr = function (d) { return (d >= 0 ? '+' : '') + d; };
   var deltaColor = function (d) { return d >= 0 ? '#22c55e' : '#dc2626'; };
+  var trendBlock = function (hist, w, h, color) {
+    if (hist.length < 2) return '<div class="sp-empty" style="padding:12px">Not enough history yet. A point is recorded each day you update answers.</div>';
+    return _spSparkline(hist, w, h, color);
+  };
+  var deltaHtml = function (hist, suffix) {
+    if (hist.length < 2) return '';
+    var d = hist[hist.length - 1] - hist[0];
+    return '<span class="sp-trend-delta" style="color:' + deltaColor(d) + '">' + deltaStr(d) + (suffix || '') + '</span>';
+  };
 
   c.innerHTML =
-    '<h2 class="sp-h2">Risk Trends <span class="sp-sim-tag">Simulated / projected</span></h2>' +
-    '<p class="sp-sub">A reproducible 12-point posture history derived deterministically from the current check pass/fail counts. Values are simulated for illustration and stay stable across renders — there is no live telemetry.</p>' +
+    '<h2 class="sp-h2">Risk Trends</h2>' +
+    '<p class="sp-sub">Your checklist score over time, recorded in this browser (one point per day, whenever you change answers). There is no live cloud telemetry.</p>' +
+    _spAnswerNote(snap) +
     '<div class="sp-card">' +
-      '<div class="sp-card-h">Overall Posture Score — last 12 scans</div>' +
-      '<div class="sp-trend-top"><span class="sp-trend-now" style="color:' + barColor(overall) + '">' + overall + '</span><span class="sp-trend-unit">/ 100</span><span class="sp-trend-delta" style="color:' + deltaColor(delta) + '">' + deltaStr(delta) + ' vs first scan</span></div>' +
-      _spSparkline(hist, 600, 90, barColor(overall)) +
-      '<div class="sp-trend-axis"><span>Scan 1: ' + hist[0] + '%</span><span>Latest: ' + hist[hist.length - 1] + '%</span></div>' +
+      '<div class="sp-card-h">Overall Checklist Score' + (history.length ? ' - ' + history.length + ' recorded day' + (history.length === 1 ? '' : 's') : '') + '</div>' +
+      '<div class="sp-trend-top"><span class="sp-trend-now" style="color:' + barColor(overall) + '">' + (overall == null ? '--' : overall) + '</span><span class="sp-trend-unit">/ 100</span>' + deltaHtml(overallHist, ' since ' + (history[0] ? esc(history[0].date) : '')) + '</div>' +
+      trendBlock(overallHist, 600, 90, barColor(overall)) +
+      (overallHist.length >= 2 ? '<div class="sp-trend-axis"><span>' + esc(history[0].date) + ': ' + overallHist[0] + '%</span><span>Latest: ' + overallHist[overallHist.length - 1] + '%</span></div>' : '') +
     '</div>' +
     '<div class="sp-grid-3" style="margin-top:14px">' +
       clouds.map(function (cd) {
         return '<div class="sp-card">' +
-          '<div class="sp-card-h">' + esc(cd.cloud) + ' posture</div>' +
-          '<div class="sp-trend-top"><span class="sp-trend-now" style="color:' + barColor(cd.score) + '">' + cd.score + '</span><span class="sp-trend-unit">/ 100</span><span class="sp-trend-delta" style="color:' + deltaColor(cd.delta) + '">' + deltaStr(cd.delta) + '</span></div>' +
-          _spSparkline(cd.hist, 300, 60, barColor(cd.score)) +
+          '<div class="sp-card-h">' + esc(cd.cloud) + ' score</div>' +
+          '<div class="sp-trend-top"><span class="sp-trend-now" style="color:' + barColor(cd.score) + '">' + (cd.score == null ? '--' : cd.score) + '</span><span class="sp-trend-unit">/ 100</span>' + deltaHtml(cd.hist) + '</div>' +
+          trendBlock(cd.hist, 300, 60, barColor(cd.score)) +
         '</div>';
       }).join('') +
     '</div>';
@@ -1444,15 +1508,16 @@ function _spRenderExplorer(c) {
 
   c.innerHTML =
     '<h2 class="sp-h2">Findings Explorer</h2>' +
-    '<p class="sp-sub">Every check across AWS, Azure and GCP in one dense, filterable table. Narrow by cloud, severity or status, or search titles and resources — filters apply live.</p>' +
+    '<p class="sp-sub">Every check across AWS, Azure and GCP in one dense, filterable table, with the answer you gave for each. Narrow by cloud, severity or answer, or search titles and IDs. Filters apply live.</p>' +
+    _spAnswerNote(snap) +
     '<div class="sp-exp-filters">' +
-      '<input class="sp-search" id="sp-exp-q" type="text" placeholder="Search title, id or resource..." value="' + esc(f.q) + '">' +
+      '<input class="sp-search" id="sp-exp-q" type="text" placeholder="Search title, id or service..." value="' + esc(f.q) + '">' +
       '<select class="sp-select" id="sp-exp-cloud"><option value="">All Clouds</option><option value="AWS">AWS</option><option value="Azure">Azure</option><option value="GCP">GCP</option></select>' +
       '<select class="sp-select" id="sp-exp-sev"><option value="">All Severities</option><option value="CRITICAL">Critical</option><option value="HIGH">High</option><option value="MEDIUM">Medium</option><option value="LOW">Low</option></select>' +
-      '<select class="sp-select" id="sp-exp-status"><option value="">All Statuses</option><option value="PASS">Pass</option><option value="FAIL">Fail</option><option value="WARN">Warn</option></select>' +
+      '<select class="sp-select" id="sp-exp-status"><option value="">All Answers</option><option value="PASS">Pass</option><option value="FAIL">Fail</option><option value="N/A">N/A</option><option value="UNANSWERED">Unanswered</option></select>' +
       '<span class="sp-exp-count" id="sp-exp-count"></span>' +
     '</div>' +
-    '<table class="sp-table"><thead><tr><th>ID</th><th>Cloud</th><th>Service</th><th>Check</th><th>Category</th><th>Status</th><th>Severity</th><th>CIS</th><th>Resource</th></tr></thead><tbody id="sp-exp-body"></tbody></table>';
+    '<table class="sp-table"><thead><tr><th>ID</th><th>Cloud</th><th>Service</th><th>Check</th><th>Category</th><th>Answer</th><th>Severity</th><th>CIS</th></tr></thead><tbody id="sp-exp-body"></tbody></table>';
 
   var cloudSel = c.querySelector('#sp-exp-cloud'); cloudSel.value = f.cloud;
   var sevSel = c.querySelector('#sp-exp-sev'); sevSel.value = f.severity;
@@ -1468,13 +1533,13 @@ function _spRenderExplorer(c) {
       if (cloudSel.value && r.cloud !== cloudSel.value) return false;
       if (sevSel.value && r.severity !== sevSel.value) return false;
       if (statusSel.value && r.status !== statusSel.value) return false;
-      if (q && (r.name + ' ' + r.resource + ' ' + r.id).toLowerCase().indexOf(q) < 0) return false;
+      if (q && (r.name + ' ' + r.service + ' ' + r.id).toLowerCase().indexOf(q) < 0) return false;
       return true;
     });
     countEl.textContent = 'Showing ' + rows.length + ' of ' + total;
     body.innerHTML = rows.length ? rows.map(function (r) {
-      return '<tr><td class="sp-mono">' + esc(r.id) + '</td><td>' + esc(r.cloud) + '</td><td>' + esc(r.service) + '</td><td title="' + esc(r.description) + '">' + esc(r.name) + '</td><td>' + esc(r.category) + '</td><td><span class="sp-status-badge" style="color:' + _spStatusColor(r.status) + '">' + r.status + '</span></td><td><span class="sp-sev-badge" style="color:' + _spSevColor(r.severity) + ';background:' + _spSevBg(r.severity) + '">' + r.severity + '</span></td><td class="sp-mono">' + esc(r.cis || '') + '</td><td class="sp-mono">' + esc(r.resource) + '</td></tr>';
-    }).join('') : '<tr><td colspan="9"><div class="sp-empty">No checks match the current filters.</div></td></tr>';
+      return '<tr><td class="sp-mono">' + esc(r.id) + '</td><td>' + esc(r.cloud) + '</td><td>' + esc(r.service) + '</td><td title="' + esc(r.description) + '">' + esc(r.name) + '</td><td>' + esc(r.category) + '</td><td><span class="sp-status-badge" style="color:' + _spStatusColor(r.status) + '">' + r.status + '</span></td><td><span class="sp-sev-badge" style="color:' + _spSevColor(r.severity) + ';background:' + _spSevBg(r.severity) + '">' + r.severity + '</span></td><td class="sp-mono">' + esc(r.cis || '') + '</td></tr>';
+    }).join('') : '<tr><td colspan="8"><div class="sp-empty">No checks match the current filters.</div></td></tr>';
   }
   cloudSel.onchange = apply; sevSel.onchange = apply; statusSel.onchange = apply;
   qInput.oninput = apply;
@@ -1500,7 +1565,7 @@ var _SP_RECON_GROUPS = [
 // to escalate once inside. Derived from failing/degraded IAM-family findings.
 function _spReconIdentity(snap) {
   return snap.filter(function (r) {
-    if (r.status === 'PASS') return false;
+    if (r.status !== 'FAIL') return false;
     var svc = (r.service || '').toLowerCase();
     var isIdentity = svc.indexOf('iam') >= 0 || svc.indexOf('azure ad') >= 0 || svc === 'ad';
     if (!isIdentity) return false;
@@ -1526,7 +1591,7 @@ function _spExposureBand(score) {
 function _spRenderRecon(c) {
   var snap = _spBuildSnapshot();
   var exposed = [];
-  snap.forEach(function (r) { var ex = _spClassifyExposure(r); if (ex) exposed.push({ r: r, type: ex.type, why: ex.why }); });
+  snap.forEach(function (r) { if (r.status !== 'FAIL') return; var ex = _spClassifyExposure(r); if (ex) exposed.push({ r: r, type: ex.type, why: ex.why }); });
   var identity = _spReconIdentity(snap);
 
   // Assemble grouped view.
@@ -1558,25 +1623,26 @@ function _spRenderRecon(c) {
       '</div>' +
       '<p class="sp-why" style="max-width:none;margin:0 0 10px">' + esc(desc) + '</p>' +
       (count ?
-        '<table class="sp-table"><thead><tr><th>Resource</th><th>Cloud</th><th>What an attacker sees</th><th>Severity</th></tr></thead><tbody>' + rowsHtml + '</tbody></table>' :
+        '<table class="sp-table"><thead><tr><th>Check</th><th>Cloud</th><th>What an attacker sees</th><th>Severity</th></tr></thead><tbody>' + rowsHtml + '</tbody></table>' :
         '<div class="sp-empty" style="padding:16px">Nothing exposed in this category.</div>') +
       '</div>';
   };
 
   var html =
     '<h2 class="sp-h2">External Attack Surface — Outside-In Recon</h2>' +
-    '<p class="sp-sub">Reconnaissance view of everything reachable or observable from outside the accounts, derived from the current posture snapshot. This is the map an attacker builds <b>before</b> authenticating — publicly-exposed resources grouped by perimeter type, plus the over-permissive identity surface that turns any foothold into full compromise. Close the widest categories first.</p>' +
+    '<p class="sp-sub">Reconnaissance view of everything reachable or observable from outside the accounts, derived from the checks you answered Fail. This is the map an attacker builds <b>before</b> authenticating — publicly-exposed resources grouped by perimeter type, plus the over-permissive identity surface that turns any foothold into full compromise. Close the widest categories first.</p>' +
     '<div class="sp-stat-tiles">' +
       _spStatTile(score + ' — ' + band.t, 'Exposure Score', band.c) +
       _spStatTile(scored.length, 'Reachable / Weak Assets', 'var(--acc)') +
       _spStatTile(crit, 'Critical Exposures', '#dc2626') +
       _spStatTile(exposed.length, 'Perimeter Findings', '#f97316') +
       _spStatTile(identity.length, 'Permissive Identities', '#eab308') +
-    '</div>';
+    '</div>' +
+    _spAnswerNote(snap);
 
   groups.forEach(function (grp) {
     var rows = grp.items.map(function (e) {
-      return '<tr><td class="sp-mono">' + esc(e.r.resource) + '<div class="sp-cell-sub">' + esc(e.r.id) + ' · ' + esc(e.r.name) + '</div></td>' +
+      return '<tr><td class="sp-mono">' + esc(e.r.id) + '<div class="sp-cell-sub">' + esc(e.r.service) + ' · ' + esc(e.r.name) + '</div></td>' +
         '<td>' + esc(e.r.cloud) + '</td>' +
         '<td>' + esc(e.type) + '<div class="sp-cell-sub">' + esc(e.why) + '</div></td>' +
         '<td><span class="sp-sev-badge" style="color:' + _spSevColor(e.r.severity) + ';background:' + _spSevBg(e.r.severity) + '">' + e.r.severity + '</span></td></tr>';
@@ -1586,7 +1652,7 @@ function _spRenderRecon(c) {
 
   // Identity surface card (own shape — no exposure "type").
   var idRows = identity.map(function (r) {
-    return '<tr><td class="sp-mono">' + esc(r.resource) + '<div class="sp-cell-sub">' + esc(r.id) + ' · ' + esc(r.service) + '</div></td>' +
+    return '<tr><td class="sp-mono">' + esc(r.id) + '<div class="sp-cell-sub">' + esc(r.service) + '</div></td>' +
       '<td>' + esc(r.cloud) + '</td>' +
       '<td>' + esc(r.name) + '<div class="sp-cell-sub">' + esc(r.description || '') + '</div></td>' +
       '<td><span class="sp-sev-badge" style="color:' + _spSevColor(r.severity) + ';background:' + _spSevBg(r.severity) + '">' + r.severity + '</span></td></tr>';
@@ -1676,20 +1742,22 @@ function _spEvalPath(scenario, snap) {
   var steps = scenario.steps.map(function (st) {
     var findings = st.ids.map(function (id) { return _spResolveFinding(id, snap); });
     var viable = findings.some(function (f) { return f.status === 'FAIL'; });
-    var partial = !viable && findings.some(function (f) { return f.status === 'WARN'; });
-    return { st: st, findings: findings, viable: viable, partial: partial };
+    var unknown = !viable && findings.some(function (f) { return f.status === 'UNANSWERED'; });
+    return { st: st, findings: findings, viable: viable, partial: false, unknown: unknown };
   });
   var enabled = steps.filter(function (s) { return s.viable; }).length;
   var entryViable = steps[0] && steps[0].viable;
   var detect = scenario.detectIds.map(function (id) { return _spResolveFinding(id, snap); });
   var detectionGap = detect.some(function (f) { return f.status === 'FAIL'; });
+  var detectUnknown = !detectionGap && detect.some(function (f) { return f.status === 'UNANSWERED'; });
 
   var verdict;
-  if (!entryViable) verdict = { t: 'CHAIN BLOCKED AT ENTRY', k: 'ok', c: '#22c55e' };
+  if (!entryViable && steps[0] && steps[0].unknown) verdict = { t: 'UNKNOWN - ANSWER ENTRY CHECKS', k: 'warn', c: '#64748b' };
+  else if (!entryViable) verdict = { t: 'CHAIN BLOCKED AT ENTRY', k: 'ok', c: '#22c55e' };
   else if (enabled === steps.length) verdict = { t: 'FULL CHAIN VIABLE', k: 'bad', c: '#dc2626' };
   else verdict = { t: 'PARTIAL CHAIN — ' + enabled + '/' + steps.length + ' STEPS VIABLE', k: 'warn', c: '#f97316' };
 
-  return { steps: steps, enabled: enabled, entryViable: entryViable, detect: detect, detectionGap: detectionGap, verdict: verdict };
+  return { steps: steps, enabled: enabled, entryViable: entryViable, detect: detect, detectionGap: detectionGap, detectUnknown: detectUnknown, verdict: verdict };
 }
 
 function _spRenderAttackPath(c) {
@@ -1705,13 +1773,13 @@ function _spRenderAttackPath(c) {
   };
 
   var stepCards = ev.steps.map(function (s, i) {
-    var stateColor = s.viable ? '#dc2626' : s.partial ? '#f97316' : '#22c55e';
-    var stateLabel = s.viable ? 'ENABLING MISCONFIG PRESENT' : s.partial ? 'PARTIALLY EXPOSED' : 'CONTROL HOLDS';
+    var stateColor = s.viable ? '#dc2626' : s.unknown ? '#64748b' : '#22c55e';
+    var stateLabel = s.viable ? 'ENABLING MISCONFIG PRESENT' : s.unknown ? 'NOT YET ANSWERED' : 'CONTROL HOLDS';
     var findingRows = s.findings.map(function (f) {
       return '<div style="display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;margin-top:4px">' +
         statusBadge(f.status) +
         '<span class="sp-mono" style="font-size:.72rem">' + esc(f.id) + '</span>' +
-        '<span class="sp-cell-sub" style="margin-top:0">' + esc(f.name) + (f.resource && f.resource !== '-' ? ' · ' + esc(f.resource) : '') + '</span>' +
+        '<span class="sp-cell-sub" style="margin-top:0">' + esc(f.name) + '</span>' +
         '</div>';
     }).join('');
     var connector = i > 0 ? '<div style="text-align:center;color:var(--mut);font-size:1rem;line-height:1;margin:2px 0">&#8595;</div>' : '';
@@ -1733,13 +1801,15 @@ function _spRenderAttackPath(c) {
       '<span class="sp-cell-sub" style="margin-top:0">' + esc(f.name) + '</span></div>';
   }).join('');
 
-  var detectVerdict = ev.detectionGap
+  var detectVerdict = ev.detectUnknown
+    ? { t: 'UNKNOWN', c: '#64748b', note: 'One or more logging / audit checks on this path have not been answered yet. Answer them in the cloud checklist tabs to evaluate detection.' }
+    : ev.detectionGap
     ? { t: 'LIKELY UNDETECTED', c: '#dc2626', note: 'A logging / audit control on this path is failing — the attack could complete without generating a reliable trail. Restore audit logging first so the chain is at least observable.' }
     : { t: 'DETECTION LIKELY', c: '#22c55e', note: 'Audit / logging controls on this path are active — the activity would be recorded and is available for detection and response.' };
 
   c.innerHTML =
     '<h2 class="sp-h2">Simulated Attack Paths <span class="sp-sim-tag">Simulation only</span></h2>' +
-    '<p class="sp-sub"><b>Illustrative reasoning over existing findings — no network calls, no exploitation.</b> Each scenario chains real misconfiguration checks into a plausible attack path and ties every step to the specific finding IDs that would enable it. Steps are evaluated against the current posture snapshot to show which are actually viable and whether the attack would be detected. Use it to prioritise which misconfigurations to close first.</p>' +
+    '<p class="sp-sub"><b>Illustrative reasoning over existing findings — no network calls, no exploitation.</b> Each scenario chains real misconfiguration checks into a plausible attack path and ties every step to the specific finding IDs that would enable it. Steps are evaluated against your checklist answers to show which would be viable and whether the attack would be detected. Use it to prioritise which misconfigurations to close first.</p>' +
     '<div class="sp-exp-filters">' +
       '<label class="sp-cell-sub" style="margin-top:0">Scenario</label>' +
       '<select class="sp-select" id="sp-ap-scenario">' +
@@ -1748,6 +1818,7 @@ function _spRenderAttackPath(c) {
         }).join('') +
       '</select>' +
     '</div>' +
+    _spAnswerNote(snap) +
     '<div class="sp-card" style="margin-bottom:14px">' +
       '<div class="sp-card-h">Scenario</div>' +
       '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px">' +
@@ -1967,9 +2038,6 @@ export function renderSpectre(main) {
   if (Array.isArray(window._spectreTimers)) { window._spectreTimers.forEach(function (t) { clearTimeout(t); }); }
   window._spectreTimers = [];
   _spActiveTab = 'dashboard';
-  _spAwsResults = null;
-  _spAzureResults = null;
-  _spGcpResults = null;
   _spTfFindings = null;
   _spTfSource = '';
   _spIamFindings = null;

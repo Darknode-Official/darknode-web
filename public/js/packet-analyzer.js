@@ -149,7 +149,7 @@ const DHCP_MSG_TYPES = {
 // ── Hex Parsing Utilities ───────────────────────────────────────────────────
 
 function hexToBytes(hex) {
-  const clean = hex.replace(/[\s\-:,0x]/g, "").toLowerCase();
+  const clean = hex.replace(/0x/gi, "").replace(/[\s\-:,]/g, "").toLowerCase();
   const bytes = [];
   for (let i = 0; i < clean.length; i += 2) {
     const b = parseInt(clean.substr(i, 2), 16);
@@ -174,11 +174,25 @@ function bytesToIP(bytes, start) {
 }
 
 function bytesToIPv6(bytes, start) {
-  const groups = [];
-  for (let i = 0; i < 16; i += 2) {
-    groups.push(bytesToHex(bytes, start + i, 2));
+  // Build 8 hextets, then compress per RFC 5952 §4.2: collapse the LONGEST run
+  // of zero groups (never a single group) with "::", ties resolving leftmost.
+  const hextets = [];
+  for (let i = 0; i < 16; i += 2) hextets.push(((bytes[start + i] || 0) << 8) | (bytes[start + i + 1] || 0));
+  let bestStart = -1, bestLen = 0, curStart = -1, curLen = 0;
+  for (let i = 0; i < 8; i++) {
+    if (hextets[i] === 0) {
+      if (curStart === -1) curStart = i;
+      curLen++;
+      if (curLen > bestLen) { bestLen = curLen; bestStart = curStart; }
+    } else { curStart = -1; curLen = 0; }
   }
-  return groups.join(":").replace(/(^|:)0{1,3}/g, "$1").replace(/(:0)+:/, "::");
+  const parts = hextets.map(h => h.toString(16));
+  if (bestLen > 1) {
+    const before = parts.slice(0, bestStart);
+    const after = parts.slice(bestStart + bestLen);
+    return (before.length ? before.join(":") : "") + "::" + (after.length ? after.join(":") : "");
+  }
+  return parts.join(":");
 }
 
 function bytesToMAC(bytes, start) {
@@ -533,7 +547,10 @@ function parseDNS(bytes, offset, maxLen) {
       if (len === 0) { p++; break; }
       if ((len & 0xC0) === 0xC0) {
         if (!jumped) savedP = p + 2;
-        p = ((len & 0x3F) << 8) | bytes[p + 1];
+        // RFC 1035 §4.1.4: a compression pointer is an offset from the start
+        // of the DNS message, not the captured frame. The DNS message begins
+        // at `offset` within `bytes` (the whole Ethernet frame), so rebase it.
+        p = offset + (((len & 0x3F) << 8) | bytes[p + 1]);
         jumped = true;
         continue;
       }

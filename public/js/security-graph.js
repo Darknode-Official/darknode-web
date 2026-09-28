@@ -272,21 +272,25 @@ export function getRelated(entityId, opts) {
   _load();
   const o = opts || {};
   const depth = Math.min(o.depth || 1, 3);
-  const visited = new Set();
+  // Mark nodes visited when they are discovered (enqueued), not when dequeued.
+  // The previous version only added a node to `visited` when it was processed
+  // as a frontier, so the final frontier — the nodes at the maximum requested
+  // distance — was never recorded, making getRelated() return neighbors only
+  // up to distance depth-1. With the default depth=1 that meant an empty result
+  // even when direct relationships existed.
+  const visited = new Set([entityId]);
   let frontier = [entityId];
 
   for (let d = 0; d < depth; d++) {
     const nextFrontier = [];
     for (const eid of frontier) {
-      if (visited.has(eid)) continue;
-      visited.add(eid);
       const rels = Object.values(_relationships).filter(r => {
         if (o.relType && r.type !== o.relType) return false;
         return r.fromId === eid || r.toId === eid;
       });
       for (const rel of rels) {
         const otherId = rel.fromId === eid ? rel.toId : rel.fromId;
-        if (!visited.has(otherId)) nextFrontier.push(otherId);
+        if (!visited.has(otherId)) { visited.add(otherId); nextFrontier.push(otherId); }
       }
     }
     frontier = nextFrontier;
