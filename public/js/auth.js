@@ -1561,8 +1561,8 @@ function renderApp(user) {
     else if (sec === "payloadgen") { import("/js/payload-gen.js?v=20260924b").then(m => m.renderPayloadGen(main)); }
     else if (sec === "riskcalculator") { import("/js/risk-calculator.js?v=20260924b").then(m => m.renderRiskCalculator(main)); }
     else if (sec === "securityquiz") { import("/js/security-quiz.js?v=20260928a").then(m => m.renderSecurityQuiz(main)); }
-    else if (sec === "securityscanner") { import("/js/security-scanner.js?v=20260924b").then(m => m.renderSecurityScanner(main)); }
-    else if (sec === "subnetvisualizer") { import("/js/subnet-visualizer.js?v=20260924b").then(m => m.renderSubnetVisualizer(main)); }
+    else if (sec === "securityscanner") { import("/js/security-scanner.js?v=20260929a").then(m => m.renderSecurityScanner(main)); }
+    else if (sec === "subnetvisualizer") { import("/js/subnet-visualizer.js?v=20260929a").then(m => m.renderSubnetVisualizer(main)); }
     else if (sec === "threatdashboard") { import("/js/threat-dashboard.js").then(m => m.renderThreatDashboard(main)); }
     else if (sec === "timelineviz") { import("/js/timeline-viz.js").then(m => m.renderTimelineViz(main)); }
     else if (sec === "vulndb") { import("/js/vulnerability-db.js?v=20260924b").then(m => m.renderVulnerabilityDB(main)); }

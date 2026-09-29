@@ -115,9 +115,17 @@ export function renderSubnetVisualizer(container) {
     }
     let bits = 0;
     while (Math.pow(2, bits) <= (maxBcast - minNet)) bits++;
-    const prefix = 32 - bits;
-    const mask = prefix === 0 ? 0 : (0xFFFFFFFF << (32 - prefix)) >>> 0;
-    const network = (minNet & mask) >>> 0;
+    let prefix = 32 - bits;
+    let mask = prefix === 0 ? 0 : (0xFFFFFFFF << (32 - prefix)) >>> 0;
+    let network = (minNet & mask) >>> 0;
+    // Aligning minNet down to the block boundary can push the block's top below
+    // maxBcast, yielding a supernet that doesn't contain all inputs. Widen the
+    // prefix until the block actually reaches maxBcast.
+    while (prefix > 0 && network + Math.pow(2, 32 - prefix) - 1 < maxBcast) {
+      prefix--;
+      mask = prefix === 0 ? 0 : (0xFFFFFFFF << (32 - prefix)) >>> 0;
+      network = (minNet & mask) >>> 0;
+    }
     return { supernet: parseCidr(intToIp(network) + "/" + prefix), inputs: parsed };
   }
 
