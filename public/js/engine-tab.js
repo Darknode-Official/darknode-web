@@ -6,6 +6,7 @@
 import { CORPUS } from "/js/engine/corpus.js";
 import { respond, route, predictWords, fixTypos, buildModel, learn, agent, runSteps } from "/js/engine/engine.js";
 import { smartInterpret } from "/js/engine/smart.js";
+import { loadLexicon } from "/js/engine/lexicon.js";
 
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -120,6 +121,9 @@ const EXAMPLES = [
 ];
 
 export function renderEngine(main) {
+  // the dictionary is normally preloaded during boot; this covers a skipped or failed preload
+  const conn = navigator.connection || {};
+  if (!conn.saveData) loadLexicon();
   // the predictor: bundled corpus + glossary + command phrasebook + these examples,
   // then adapted to this viewer's own past requests (kept only in their browser)
   const model = buildModel(CORPUS, EXAMPLES.join(" .\n"));

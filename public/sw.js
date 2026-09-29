@@ -1,4 +1,7 @@
-const CACHE = 'darknode-v54';
+const CACHE = 'darknode-v55';
+// DI's dictionary (about 4 MB) lives in its own cache so an app update does not download it again;
+// its URL carries a version, so a new word list is a new entry.
+const LEXICON = 'darknode-lexicon';
 const STATIC = [
   '/',
   '/css/styles.css',
@@ -23,7 +26,7 @@ self.addEventListener('install', e => {
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
+      Promise.all(keys.filter(k => k !== CACHE && k !== LEXICON && !k.startsWith('quelvra-')).map(k => caches.delete(k)))
     )
   );
   self.clients.claim();
@@ -47,6 +50,21 @@ self.addEventListener('fetch', e => {
       const shell = await caches.match('/');       // SPA route with no file → serve the app shell
       return shell || (await caches.match(e.request)) || Response.error();
     })());
+    return;
+  }
+
+  if (url.pathname === '/js/engine/lexicon.txt') {
+    e.respondWith(
+      caches.open(LEXICON).then(c =>
+        c.match(e.request).then(cached => cached || fetch(e.request).then(res => {
+          if (res.ok) {
+            c.keys().then(ks => ks.forEach(k => { if (k.url !== e.request.url) c.delete(k); }));
+            c.put(e.request, res.clone());
+          }
+          return res;
+        }))
+      )
+    );
     return;
   }
 
