@@ -87,7 +87,7 @@ function score(input) {
   else if (has(/\bcolou?r\b|to (rgb|hsl|hex)\b/)) add("color", 7, "color conversion");
   // JSON path query (a JSON blob plus a path or a get/query verb)
   if (/[[{][\s\S]*[\]}]/.test(s) && (has(/\b(get|query|path|value of|field|extract)\b/) || /\.[a-z_$]/i.test(s))) add("jsonquery", 8, "JSON path query");
-  if (has(/days? between|day of (the )?week|weekday|what day|add \d+ days?|leap\s*year|day of (the )?year|which day of|days?\s+(?:until|till|til|to go|left)/)) add("datetime", 6, "date arithmetic")
+  if (has(/days? between|day of (the )?week|weekday|what day|(?:add|subtract) \d+ (?:days?|weeks?)|leap\s*year|day of (the )?year|which day of|days?\s+(?:until|till|til|to go|left)/)) add("datetime", 6, "date arithmetic")
   if (has(/^(?:what|which)\s+year\s+is\s+(?:it|this)|\bcurrent year\b|\bborn in \d{4}\b|^(?:what is |whats |what's )?(?:the )?(?:date )?today(?:'s date)?\s*\??$|^(?:what is |whats |what's )(?:the )?date(?: today)?\s*\??$|^what day is (?:it|today)/)) add("datetime", 8, "today's date");
   if (has(/\bdays?\s+(?:are\s+|is\s+)?(?:there\s+)?in\s+(?:the\s+(?:month|year)\s+(?:of\s+)?)?(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|\d{4}\b)/)) add("datetime", 8, "days in a month or year");
   const algoKW = has(/factorial|fibonacci|fib|reverse|prime|palindrome|fizzbuzz|binary search|bubble sort|\bsort\b|\bsearch\b|\bgcd\b|average|function|func|method|class/);
@@ -102,7 +102,7 @@ function score(input) {
   // a well-formed function spec ("name(args) = body", "... that returns <expr>")
   // is synthesizable on its own, even without a verb like "write" or "generate".
   else if (parseSpec(s)) add("codegen", 7, "a function specification to synthesize");
-  if (has(/uppercase|lowercase|\breverse\b|spell.*backwards|title case|camel ?case|snake ?case|kebab ?case|constant case|slug|word frequency|count (the )?words|word count|how many words|count (the )?(characters|letters)|how many (characters|letters|chars)|number of (characters|letters|words)|sort lines|dedupe|pretty ?print|format json|extract (emails?|urls?|links?|numbers?)|\bvowels?\b|\bconsonants?\b|^palindrome:/))
+  if (has(/uppercase|lowercase|\breverse\b|spell.*backwards|title case|camel ?case|snake ?case|kebab ?case|constant case|slug|word frequency|count (the )?words|word count|how many words|count (the )?(characters|letters)|how many (characters|letters|chars)|number of (characters|letters|words)|sort lines|dedupe|remove (?:the )?duplicates? from\s+\S|pretty ?print|format json|extract (emails?|urls?|links?|numbers?)|\bvowels?\b|\bconsonants?\b|^palindrome:/))
     add("text", 6, "text transform");
   if (has(/complete|continue|predict|next word|finish (this|the) sentence|autocomplete/)) add("predict", 6, "asks for a prediction");
   // statistics
@@ -110,7 +110,7 @@ function score(input) {
   // algebra: an equation with a variable (distinct from a bare calc assignment like x=5)
   if (!codeAsk && !has(/base64|\bencode|\bdecode|rot13|\bhex\b|\bhash\b|md5|\bsha/) && (has(/\bsolve\b/) || (has(/=/) && (has(/\d\s*[a-z]/) || has(/[a-z]\s*\^/))))) add("algebra", 8, "an equation to solve");
   // number theory (asking for a value, not code)
-  if (!codeAsk && has(/factori[sz]e|prime factor|\bfactors?\s+of\b|\bfactor\s+\d|\bgcd\b|\blcm\b|greatest common|least common|is\s+\d+\s+prime|\b(?:is|check (?:if|whether))\s+-?\d+\s+(?:an?\s+)?(?:even|odd)\b|\d+(?:st|nd|rd|th)\s+(?:prime|fib)|nth\s+(?:prime|fib)|\bfirst\s+\d+\s+primes?\b|\bprimes?\s+(?:below|under|less than|up to)\s+\d|is\s+-\d+\s+prime|\bfib(?:onacci)?\s+(?:of\s+|number\s+)?-?\d/)) add("numbertheory", 7, "number theory");
+  if (!codeAsk && has(/factori[sz]e|prime factor|\bfactors?\s+of\b|\bfactor\s+\d|\bgcd\b|\blcm\b|greatest common|least common|is\s+\d+\s+prime|\b(?:is|check (?:if|whether))\s+-?\d+\s+(?:an?\s+)?(?:even|odd)\b|\d+(?:st|nd|rd|th)\s+(?:prime|fib)|nth\s+(?:prime|fib)|\bfirst\s+\d+\s+primes?\b|\b(?:first|list(?: the)?(?: first)?)\s+\d+\s+fib|\bprimes?\s+(?:below|under|less than|up to)\s+\d|is\s+-\d+\s+prime|\bfib(?:onacci)?\s+(?:of\s+|number\s+)?-?\d/)) add("numbertheory", 7, "number theory");
   // encoding / hashing
   if (!isDef && has(/base64|\bhex\b|rot13|morse|url ?(en|de)code|to binary|from binary|crc32|fnv1a?|djb2|\bhash\b|\bmd5\b|\bsha-?(?:1|256)?\b/)) add("encode", 7, "encode / hash");
   // knowledge base (a definition question that is not math, code, or number theory)
@@ -398,7 +398,7 @@ function run(skill, input, model) {
       return { op: eop, value: A.encode(eop, payload || ""), payload: payload || "" };
     }
     case "text": {
-      const opMap = [["camel", /camel ?case/], ["snake", /snake ?case/], ["kebab", /kebab ?case/], ["constant", /constant case/], ["wordfreq", /word frequency|frequenc/], ["emails", /extract emails?|\bemails?\b/], ["urls", /extract (urls?|links?)|\burls?\b|\blinks?\b/], ["numbers", /extract numbers?|\bnumbers\b(?! in)/], ["vowels", /\bvowels?\b/], ["consonants", /\bconsonants?\b/], ["upper", /uppercase/], ["lower", /lowercase/], ["title", /title case/], ["slug", /slug/], ["palindrome", /palindrome/], ["reverse", /reverse|backwards/], ["chars", /count (the )?(characters|letters)|char count|how many (characters|letters|chars)|number of (characters|letters)/], ["words", /count (the )?words|word count|how many words|number of words/], ["sortlines", /sort lines/], ["dedupewords", /dedupe words|(?:duplicate|repeated) words/], ["dedupe", /dedupe|remove duplicate/], ["unbase64", /decode base64|from base64|unbase64/], ["json", /pretty ?print|format json/]];
+      const opMap = [["camel", /camel ?case/], ["snake", /snake ?case/], ["kebab", /kebab ?case/], ["constant", /constant case/], ["wordfreq", /word frequency|frequenc/], ["emails", /extract emails?|\bemails?\b/], ["urls", /extract (urls?|links?)|\burls?\b|\blinks?\b/], ["numbers", /extract numbers?|\bnumbers\b(?! in)/], ["vowels", /\bvowels?\b/], ["consonants", /\bconsonants?\b/], ["upper", /uppercase/], ["lower", /lowercase/], ["title", /title case/], ["slug", /slug/], ["palindrome", /palindrome/], ["reversewords", /reverse (?:the )?(?:order of (?:the )?)?words\b|\bwords? in reverse order|reverse word order/], ["reverse", /reverse|backwards/], ["chars", /count (the )?(characters|letters)|char count|how many (characters|letters|chars)|number of (characters|letters)/], ["words", /count (the )?words|word count|how many words|number of words/], ["sortlines", /sort lines/], ["dedupewords", /dedupe words|(?:duplicate|repeated) words/], ["dedupe", /dedupe|remove duplicate/], ["unbase64", /decode base64|from base64|unbase64/], ["json", /pretty ?print|format json/]];
       let op = "words"; for (const [name, re] of opMap) if (re.test(low)) { op = name; break; }
       const scan = op === "emails" || op === "urls" || op === "numbers" || op === "wordfreq"; // scan whole input, do not strip content
       const q = input.match(/["']([^"']+)["']/); const c = input.indexOf(":");
@@ -406,6 +406,7 @@ function run(skill, input, model) {
       if (q) payload = q[1];
       else if (c >= 0) payload = input.slice(c + 1).trim();
       else if (scan) payload = input;
+      else if (/^(?:lowercase|lower case)\s+[A-Z]{2,}\b/.test(input.trim())) payload = input.trim().replace(/^(?:lowercase|lower case)\s+/i, ""); // "lowercase THIS IS LOUD"
       else if (/^(?:uppercase|lowercase|upper case|lower case|reverse|title ?case|camel ?case|snake ?case|kebab ?case|slugify)\s+(?!(?:the|this|these|that|it|my|a)\b)(?!(?:text|string|word|words|sentence|phrase|letters|characters)\b)\S/i.test(input.trim()) && !/\s(?:in|of|from|to|into|as)\s/i.test(input))
         payload = input.trim().replace(/^(?:uppercase|lowercase|upper case|lower case|reverse|title ?case|camel ?case|snake ?case|kebab ?case|slugify)\s+/i, ""); // "uppercase make it loud"
       else {
@@ -691,7 +692,8 @@ export function slang(input, all = true) {
     return map[k];
   });
   // "10 kg 2 lbs": a "2" between two units means "to"
-  if (all) t = t.replace(/(\d(?:\.\d+)?\s*([a-z°]+))\s+2\s+([a-z°]+)\b/gi, (m, q, u1, u2) => (UNIT_WORDS.has(u1.toLowerCase()) && UNIT_WORDS.has(u2.toLowerCase())) ? (fixes.push({ from: "2", to: "to" }), q + " to " + u2) : m);
+  // ...but "6 foot 2 in cm" is a height (feet and inches), and "2 in" followed by another target is a quantity
+  if (all) t = t.replace(/(\d(?:\.\d+)?\s*([a-z°]+))\s+2\s+([a-z°]+)\b(?!\s+(?:in|to|into|as)\s+[a-z°])/gi, (m, q, u1, u2) => (UNIT_WORDS.has(u1.toLowerCase()) && UNIT_WORDS.has(u2.toLowerCase()) && !(/^(?:foot|feet|ft)$/i.test(u1) && /^(?:in|inch|inches)$/i.test(u2))) ? (fixes.push({ from: "2", to: "to" }), q + " to " + u2) : m);
   t = t.replace(/^[\s,.!]+/, "").replace(/\s+([,?.!])/g, "$1").replace(/,\s*,/g, ",").replace(/\s{2,}/g, " ");
   return { text: (t + tail).trim(), fixes };
 }
@@ -717,6 +719,22 @@ const ORDINAL = { second: 2, third: 3, fourth: 4, fifth: 5, sixth: 6, seventh: 7
 const FRACTION_DEN = { third: 3, quarter: 4, fourth: 4, fifth: 5, sixth: 6, seventh: 7, eighth: 8, ninth: 9, tenth: 10, hundredth: 100, thousandth: 1000 };
 const ORDINAL_COUNT = { a: 1, an: 1, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9 };
 const REPHRASE = [
+  [/^(?:what's|whats)\s+(?=[-\d$(.])/i, "what is "],
+  [new RegExp("^how many times (?:does|will|can|would) (" + NUM + ") (?:go|fit) into (" + NUM + ")\\s*\\??$", "i"), "$2 / $1"],
+  // "what is 3 less than 20" is 17 ("is 3 less than 20" stays a comparison)
+  [new RegExp("^(?:what is |what's |find |calculate )(" + NUM + ") (less|fewer|more) than (" + NUM + ")\\s*\\??$", "i"), (m, a, w, b) => b + (/more/i.test(w) ? " + " : " - ") + a],
+  [new RegExp("^(?:what is |what's |find |calculate )?(?:the )?difference between (" + NUM + ") and (" + NUM + ")\\s*\\??$", "i"), "abs($1 - $2)"],
+  [new RegExp("(\\bround\\s+" + NUM + "\\s+to\\s+)(one|two|three|four|five|six)(?=\\s+(?:decimal|dp\\b|places?|digits?))", "i"), (m, a, w) => a + { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6 }[w.toLowerCase()]],
+  [/\bhalf of (a|one|two|three|four|five|six|seven|eight|nine|\d+) (halves|thirds|quarters|fourths|fifths|sixths|eighths|tenths)\b(?!\s+of)/gi, (m, k, part) => "(" + (ORDINAL_COUNT[k.toLowerCase()] || Number(k)) + " / " + { halves: 2, thirds: 3, quarters: 4, fourths: 4, fifths: 5, sixths: 6, eighths: 8, tenths: 10 }[part.toLowerCase()] + " / 2)"],
+  // "2 hours and 30 minutes in minutes": one quantity said in two units
+  [new RegExp("(" + NUM + ")\\s*([a-z]+)\\s+(?:and\\s+)?(" + NUM + ")\\s*([a-z]+)(?=\\s+(?:in|to|into)\\s+[a-z]+\\s*\\??$)", "i"), (m, a, u1, b, u2) => UNIT_WORDS.has(u1.toLowerCase()) && UNIT_WORDS.has(u2.toLowerCase()) && u1.toLowerCase() !== u2.toLowerCase() && !/^(?:foot|feet|ft)$/i.test(u1) ? a + " " + u1 + " + " + b + " " + u2 : m],
+  // dates: "90 days from 2025-01-01", "2025-01-01 + 2 weeks", "10 days before 2025-03-01"
+  [/^(?:what is |whats |what date is |which date is )?(\d+)\s+(days?|weeks?)\s+(?:from|after)\s+(\d{4}-\d{1,2}-\d{1,2})\s*\??$/i, "add $1 $2 to $3"],
+  [/^(?:what is |whats |what date is |which date is )?(\d+)\s+(days?|weeks?)\s+(?:before|prior to)\s+(\d{4}-\d{1,2}-\d{1,2})\s*\??$/i, "subtract $1 $2 from $3"],
+  [/^(?:what is |whats )?(\d{4}-\d{1,2}-\d{1,2})\s*(\+|plus|-|minus)\s*(\d+)\s+(days?|weeks?)\s*\??$/i, (m, d, op, n, u) => (/^(?:\+|plus)$/i.test(op) ? "add " + n + " " + u + " to " : "subtract " + n + " " + u + " from ") + d],
+  [/^(?:convert |what is |whats )?rgb\s*\(?\s*(\d{1,3})\s*[,\s]\s*(\d{1,3})\s*[,\s]\s*(\d{1,3})\s*\)?(?:\s+(?:to|in|into|as)\s+(hex(?:adecimal)?|hsl)(?:\s+(?:code|colou?r))?)?\s*\??$/i, (m, r, g, b, to) => "rgb(" + r + ", " + g + ", " + b + ")" + (to ? " to " + to.toLowerCase().replace("hexadecimal", "hex") : "")],
+  [/^(?:evaluate |what is |whats |is )?((?:not\s+)?(?:true|false)(?:\s+(?:and|or|xor)\s+(?:not\s+)?(?:true|false))+)\s*\??$/i, "truth table: $1"],
+  [/^(?:which|what) country is\s+([a-z][a-z .'-]*?)\s+in\s*\??$/i, (m, c) => CAPITAL_CITIES.has(c.toLowerCase()) ? c + " is the capital of which country" : m],
   // "2 hundred" -> 200 before any rule reads the number
   [new RegExp("\\b(\\d+) (hundred|thousand|million|billion)\\b(?=\\s*(?:$|[?.,!)+\\-*/^]|plus|minus|times|divided|and\\b))", "gi"), (m, n, sc) => String(Number(n) * { hundred: 100, thousand: 1e3, million: 1e6, billion: 1e9 }[sc.toLowerCase()])],
   // conversational lead-ins left after a thank-you ("ty, now whats 9 squared")
@@ -746,7 +764,9 @@ const REPHRASE = [
   // "convert celsius to fahrenheit 100": the number came last
   [new RegExp("^(?:convert\\s+)?([a-z]+)\\s+(?:to|in|into)\\s+([a-z]+)\\s*[:,]?\\s*(" + NUM + ")\\s*\\??$", "i"), (m, a, b, n) => UNIT_WORDS.has(a.toLowerCase()) && UNIT_WORDS.has(b.toLowerCase()) ? "convert " + n + " " + a + " to " + b : m],
   // money: tips and discounts
-  [new RegExp("(" + NUM + ")\\s*(?:%|percent)\\s+tip\\s+(?:on|for|of)\\s+\\$?(" + NUM + ")", "gi"), "$1% of $2"],
+  [new RegExp("(" + NUM + ")\\s*(?:%|percent)\\s+tip\\s+(?:on|for|of)\\s+(?:a\\s+|an\\s+|the\\s+|my\\s+)?\\$?(" + NUM + ")(?:\\s*(?:dollars?|bucks|usd|euros?|pounds?))?(?:\\s+(?:bill|meal|check|tab|dinner|order))?", "gi"), "$1% of $2"],
+  [new RegExp("^(?:what is |whats |calculate |how much is )?(?:the )?(?:sales )?tax (?:of|at) (" + NUM + ")\\s*(?:%|percent) (?:on|for) (?:a |an |the )?\\$?(" + NUM + ")(?:\\s*(?:dollars?|bucks|usd|euros?|pounds?))?\\s*\\??$", "i"), "$1% of $2"],
+  [new RegExp("^(?:what is |whats |calculate |how much is )?(?:the )?(?:sales )?tax (?:on|for) (?:a |an |the )?\\$?(" + NUM + ")(?:\\s*(?:dollars?|bucks|usd|euros?|pounds?))? (?:at|with) (?:a )?(" + NUM + ")\\s*(?:%|percent)(?: tax| rate| tax rate)?\\s*\\??$", "i"), "$2% of $1"],
   [new RegExp("\\btip\\s+(?:of\\s+)?(" + NUM + ")\\s*(?:%|percent)\\s+(?:on|for)\\s+(?:a\\s+|an\\s+|the\\s+|my\\s+)?\\$?(" + NUM + ")(?:\\s*(?:dollars?|bucks|usd|euros?|pounds?))?(?:\\s+(?:bill|meal|check|tab|dinner|order))?", "gi"), "$1% of $2"],
   [new RegExp("^(?:what is |whats |how much is )?\\$?(" + NUM + ")\\s*(?:dollars|bucks|usd|euros|pounds)?\\s+(?:with|at|after|minus|less)\\s+(?:a\\s+)?(" + NUM + ")\\s*(?:%|percent)\\s+(?:off|discount)\\s*\\??$", "i"), "$1 - $2% of $1"],
   // "200 + 10%" / "200 plus 10 percent" adds 10% OF 200 (the calculator convention), not 0.1
