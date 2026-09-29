@@ -123,7 +123,7 @@ const SECURITY_HEADERS = [
     risk: "Wildcard allows any origin to read the response." },
   { name: "Access-Control-Allow-Credentials", abbr: "ACAC", weight: 4, category: "cors",
     desc: "Allows credentials (cookies) in cross-origin requests.",
-    good: v => v !== "true" || true,
+    good: v => v !== "true",
     best: "true only with specific (non-wildcard) Allow-Origin",
     risk: "Credentials may be sent to unintended origins." },
   { name: "Access-Control-Allow-Methods", abbr: "ACAM", weight: 2, category: "cors",
@@ -368,7 +368,11 @@ export function renderSecurityScanner(container) {
         const val = resp.headers.get(h.name);
         maxScore += h.weight;
         const present = !!val;
-        const passed = present && h.good(val);
+        // good() encodes the secure state for each header — for disclosure headers
+        // (Server, X-Powered-By, …) that secure state is *absence*, so good(null) is
+        // true. Gating on `present` would wrongly fail a correctly-omitted header,
+        // so score directly off good().
+        const passed = h.good(val);
         if (passed) score += h.weight;
         else if (present) score += Math.floor(h.weight * 0.5);
         return { ...h, value: val, present, passed };
@@ -386,7 +390,7 @@ export function renderSecurityScanner(container) {
             <div style="display:flex;gap:12px;flex-wrap:wrap;">
               <span style="font-size:.78rem;color:#69db7c;">${results.filter(r=>r.passed).length} passed</span>
               <span style="font-size:.78rem;color:#ffd43b;">${results.filter(r=>r.present&&!r.passed).length} warnings</span>
-              <span style="font-size:.78rem;color:#ff6b6b;">${results.filter(r=>!r.present).length} missing</span>
+              <span style="font-size:.78rem;color:#ff6b6b;">${results.filter(r=>!r.present&&!r.passed).length} missing</span>
             </div>
           </div>
         </div>
