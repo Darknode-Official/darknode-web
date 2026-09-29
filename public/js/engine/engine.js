@@ -14,6 +14,7 @@ import { synth, parseSpec } from "/js/engine/synth.js";
 import { findProgram, detectLang, program, PROGRAMS, LANG_NAMES, RUN_HINT, fenceLang } from "/js/engine/programs.js";
 import * as F from "/js/engine/facts.js";
 import * as H from "/js/engine/hash.js";
+import * as LX from "/js/engine/lexicon.js";
 import { makeLexicon, withDictionary, withContext, rankFixes, isWord, correctText, correctWord, typoDistance, fuzzyPrefix } from "/js/engine/spell.js";
 import { words as englishWords, band as wordBand } from "/js/engine/words.js";
 
@@ -59,7 +60,7 @@ function score(input) {
   // This is used only to DETECT intent; skills receive the original input.
   const low = normalizeTypos(synonyms(numberWords(naturalize(s))));
   const has = (re) => re.test(low);
-  const S0 = { calc: 0, convert: 0, codegen: 0, text: 0, regex: 0, datetime: 0, predict: 0, stats: 0, algebra: 0, numbertheory: 0, encode: 0, knowledge: 0, facts: 0, data: 0, base: 0, color: 0, jsonquery: 0, wordmath: 0, sequence: 0, logic: 0, setops: 0, matrix: 0, units: 0, combinatorics: 0, listops: 0, spelling: 0 };
+  const S0 = { calc: 0, convert: 0, codegen: 0, text: 0, regex: 0, datetime: 0, predict: 0, stats: 0, algebra: 0, numbertheory: 0, encode: 0, knowledge: 0, facts: 0, data: 0, base: 0, color: 0, jsonquery: 0, wordmath: 0, sequence: 0, logic: 0, setops: 0, matrix: 0, units: 0, combinatorics: 0, listops: 0, spelling: 0, dictionary: 0 };
   const why = {};
   const add = (k, n, reason) => { S0[k] += n; if (reason && (!why[k] || n > 0)) why[k] = reason; };
   // a code request needs a real code verb or an explicit "in <language>" — NOT the
@@ -95,7 +96,7 @@ function score(input) {
   // Route to code synthesis for an algorithm or a language-tagged function — but a
   // whole app/game noun without an algorithm keyword is out of scope, so skip it.
   // a complete program from the library ("make a snake game", "read a file in go")
-  if (findProgram(low) && (codeAsk || buildAsk || howTo || langKW || detectLang(low) || has(/\b(program|script|code|app|game)\b/)) && !(isDef && !codeAsk))
+  if (findProgram(low) && (codeAsk || buildAsk || howTo || langKW || detectLang(low) || has(/\b(program|script|code|app|game)\b/)) && !(isDef && !codeAsk) && !(!codeAsk && !buildAsk && (dictionaryAsk(s) || {}).kind === "isa"))
     add("codegen", 9, "a complete program from the library");
   else if ((codeAsk || buildAsk || howTo) && (algoKW || (langKW && !APP_NOUN.test(low))))
     add("codegen", 7, "asks to generate code");
@@ -115,6 +116,8 @@ function score(input) {
   if (!isDef && has(/base64|\bhex\b|rot13|morse|url ?(en|de)code|to binary|from binary|crc32|fnv1a?|djb2|\bhash\b|\bmd5\b|\bsha-?(?:1|256)?\b/)) add("encode", 7, "encode / hash");
   // knowledge base (a definition question that is not math, code, or number theory)
   if (isDef && !codeAsk && !hasMathPhrase(low) && !has(/[-+*/^]/) && !has(/\d[a-z]/) && !has(/\b(sqrt|cbrt|max|min|round|abs|log|ln|sin|cos|tan)\s*\(/)) add("knowledge", 7, "a definition from the glossary");
+  // the English dictionary (WordNet): meanings, synonyms, opposites, "is a dog an animal"
+  if (!codeAsk && dictionaryAsk(s)) add("dictionary", /^(?:define|definition of)\b/i.test(s.trim()) ? 6 : 8, "the English dictionary");
   // fact packs: capitals, elements, constants — triggered by a domain keyword
   if (has(/\bcapital\b|\bcapital city\b/)) add("facts", 8, "country capital lookup");
   if (!codeAsk && F.trivia(s).ok) add("facts", 9, "a curated fact");
@@ -280,7 +283,9 @@ function say(skill, res, input, model) {
       if (res.op === "probability") return { title: "Probability", body: res.text, note: "Stated with its assumption; give exact counts for an exact fraction.", result: res };
       return { title: "Combinatorics", body: "**" + res.value + "** (" + res.op + ")." + (res.formula ? " Using `" + res.formula + "`." : ""), result: res };
     }
+    case "dictionary": return sayDictionary(res);
     case "knowledge":
+      if (res.kind === "dictionary") return sayDictionary(res);
       return res.ok ? { title: "Definition: " + res.term, body: res.text, note: "Source: Universal Engine glossary (curated, not generated). If a term is not covered I say so rather than invent an answer.", result: res }
         : { title: "Knowledge base", body: "I do not have a glossary entry for that, and I will not invent one. Covered terms include: " + (res.terms || []).slice(0, 12).join(", ") + ".", result: res };
     case "facts": {
@@ -379,7 +384,14 @@ function run(skill, input, model) {
     case "matrix": return MX.linalg(input);
     case "units": return unitMath(input);
     case "combinatorics": return A.combinatorics(input);
-    case "knowledge": return A.lookup(input);
+    case "knowledge": {
+      const k = A.lookup(input);
+      if (k.ok) return k;
+      // not in the curated glossary: the dictionary has most ordinary words ("what is a platypus")
+      const d = dictionary("define " + String(input).replace(/^\s*(?:what\s+(?:is|are)|define|explain|tell me about)\s+(?:an?\s+|the\s+)?/i, "").replace(/[?.!]+$/, ""));
+      return d.ok || d.loading ? d : k;
+    }
+    case "dictionary": return dictionary(input);
     case "facts": return F.facts(input);
     case "listops": return listOps(input);
     case "spelling": return spelling(input, model);
@@ -950,6 +962,82 @@ export function rephrase(input) {
 // Public: full response for an input. Always returns something (asks a question
 // when confidence is low), so the chat never dead-ends.
 const SOLVE_FOR = /^(?:find|solve for|get|what is)\s+[a-z]\s*[:,]/i; // "find x: x/2 = 8" is algebra, not a function spec
+// ---------------------------------------------------------------------------
+// Dictionary questions, answered from the built-in WordNet word list (lexicon.js).
+// ---------------------------------------------------------------------------
+const W = "([a-z][a-z'-]*(?: [a-z][a-z'-]*){0,2}?)";
+const DICT_FORMS = [
+  ["isa", new RegExp("^(?:is|are) (?:an? |the )?" + W + " (?:an? )?(?:kind|type|sort|form|species) of (?:an? |the )?" + W + "\\s*\\??$", "i")],
+  ["isa", /^is (?:an? )?([a-z]+) (?:an? )([a-z]+)\s*\??$/i],
+  ["isa", /^are ([a-z]+s) ([a-z]+s)\s*\??$/i],
+  ["syn", new RegExp("^(?:what(?:'s| is| are)? )?(?:the |some |a )?(?:synonyms?|other words?|another word|a different word|similar words?|words? that means?(?: the same as)?) (?:of |for |to |as )?(?:the word )?\"?" + W + "\"?\\s*\\??$", "i")],
+  ["syn", new RegExp("^(?:give me |list )(?:some |the )?synonyms? (?:of |for )?\"?" + W + "\"?\\s*\\??$", "i")],
+  ["ant", new RegExp("^(?:what(?:'s| is| are)? )?(?:the |an? )?(?:antonyms?|opposites?) (?:of |for |to )?(?:the word )?\"?" + W + "\"?\\s*\\??$", "i")],
+  ["def", new RegExp("^(?:what does|what do|whats|what's) (?:the word |the term )?\"?" + W + "\"? (?:mean|means|stand for)\\s*\\??$", "i")],
+  ["def", new RegExp("^(?:what(?:'s| is) )?(?:the )?(?:meaning|definition|meanings|definitions) of (?:the word |the term )?\"?" + W + "\"?\\s*\\??$", "i")],
+  ["def", new RegExp("^(?:define|definition|dictionary|look up|lookup) (?:the word |the term )?\"?" + W + "\"?\\s*\\??$", "i")],
+  ["def", new RegExp("^(?:what is|what's|whats) (?:an? )?\"?" + W + "\"?\\s*\\??$", "i")], // only reached through the glossary fallback
+];
+function dictionaryAsk(s) {
+  const t = String(s || "").trim();
+  if (/\d/.test(t)) return null;
+  for (const [kind, re] of DICT_FORMS.slice(0, -1)) {
+    const m = t.match(re); if (!m) continue;
+    const q = { kind, a: m[1].toLowerCase(), b: m[2] && m[2].toLowerCase() };
+    // "is it a joke" / "is this a test" are not word questions
+    if (kind === "isa" && (LX.isFunctionWord(q.a) || LX.isFunctionWord(q.b) || (LX.lexReady() && !(LX.lemmas(q.a).length && LX.lemmas(q.b).length)))) return null;
+    return q;
+  }
+  return null;
+}
+function dictionary(input) {
+  const q = dictionaryAsk(input) || (() => { const m = String(input || "").trim().match(DICT_FORMS[DICT_FORMS.length - 1][1]); return m ? { kind: "def", a: m[1].toLowerCase() } : null; })();
+  if (!q) return { ok: false, error: "Ask like: define serendipity, synonyms of happy, opposite of hot, is a whale a mammal" };
+  const tiny = (w) => !w || w.replace(/[^a-z]/g, "").length < 3 || LX.isFunctionWord(w);
+  if (tiny(q.a) || (q.kind === "isa" && tiny(q.b))) return { ok: false, error: "Ask about a real word, like: define serendipity, synonyms of happy, opposite of hot, is a whale a mammal" };
+  if (!LX.lexReady()) LX.loadLexicon();
+  if (!LX.lexReady()) return { ok: false, kind: "dictionary", loading: true, error: "My dictionary is still downloading (it loads once, then stays cached on this device). Ask again in a few seconds." };
+  if (q.kind === "isa") {
+    const one = (w) => (LX.lemmas(w).length ? w : w.replace(/s$/, ""));
+    const r = LX.isKindOf(one(q.a), one(q.b));
+    return r.ok ? { ok: true, kind: "dictionary", op: "isa", ...r } : { ok: false, error: "I do not know the word “" + r.unknown + "”" };
+  }
+  if (q.kind === "syn") { const r = LX.synonymsOf(q.a); return r.ok ? { ok: true, kind: "dictionary", op: "syn", ...r } : { ok: false, error: "I do not know the word “" + q.a + "”" }; }
+  if (q.kind === "ant") { const r = LX.antonymsOf(q.a); return r.ok ? { ok: true, kind: "dictionary", op: "ant", ...r } : { ok: false, error: "I do not know the word “" + q.a + "”" }; }
+  const r = LX.define(q.a);
+  return r.ok ? { ok: true, kind: "dictionary", op: "def", ...r } : { ok: false, error: "“" + q.a + "” is not in my dictionary (147,000 English words and phrases). Check the spelling, or it may be a name or a very new word." };
+}
+const DICT_NOTE = "Source: WordNet 3.0 (Princeton University), built into DI and read offline. Quoted, not generated.";
+function sayDictionary(res) {
+  if (!res.ok) return { title: "Dictionary", body: res.error, result: res };
+  if (res.op === "isa") {
+    const art = (w) => (res.proper && w === res.a ? res.display : (/^[aeiou]/i.test(w) ? "an " : "a ") + w);
+    return res.yes
+      ? { title: "Dictionary: " + (res.display || res.a), body: "**Yes" + (res.sense ? ", in one meaning" : "") + ".** " + art(res.a).replace(/^./, (c) => c.toUpperCase()) + (res.sense ? " (" + res.sense + ")" : "") + " is a kind of " + res.b + ": " + res.chain.join(" → ") + "." + (res.other ? " Another meaning: " + res.other + "." : ""), note: DICT_NOTE, result: res }
+      : { title: "Dictionary: " + res.a, body: "**No, not in my dictionary's categories.** " + (res.shared ? "It files " + art(res.a) + " as " + res.chain.join(" → ") + "; " + art(res.a) + " and " + art(res.b) + " are both kinds of " + res.shared + ", on different branches." : (res.chain.length > 1 ? "It files " + art(res.a) + " as " + res.chain.join(" \u2192 ") + " ..., on a different branch from " + res.b + "." : "It does not link " + res.a + " and " + res.b + " at all.")) + " (Everyday usage can differ from these categories; a tomato, for example, is filed as a vegetable.)", note: DICT_NOTE, result: res };
+  }
+  if (res.op === "syn") return { title: "Synonyms of " + res.word, body: res.groups.length ? res.groups.map((g) => "**" + g.words.join(", ") + "** \u2014 " + g.pos + ": " + g.gloss).join("\n") : "My dictionary lists no other word with the same meaning as **" + res.word + "**.", note: DICT_NOTE, result: res };
+  if (res.op === "ant") return { title: "Opposite of " + res.word, body: res.words.length ? res.words.map((w) => "**" + w + "**").join(", ") + "." : "My dictionary lists no direct opposite of **" + res.word + "**.", note: DICT_NOTE, result: res };
+  const lines = [];
+  if (res.word !== res.base) lines.push("**" + res.word + "** is a form of **" + res.base + "**.");
+  for (const g of res.groups) {
+    lines.push("**" + g.pos + "**" + (g.total > g.senses.length ? " (" + g.senses.length + " of " + g.total + " meanings)" : ""));
+    g.senses.forEach((s, i) => lines.push((i + 1) + ". " + s.gloss + (s.example ? " — “" + s.example + "”" : "") + (s.synonyms.length ? " (also: " + s.synonyms.slice(0, 5).join(", ") + ")" : "")));
+  }
+  if (res.formOf && res.formOf.length) lines.push("Also a form of " + res.formOf.map((f) => "**" + f + "**").join(", ") + ".");
+  return { title: "Dictionary: " + res.base, body: lines.join("\n"), note: DICT_NOTE, result: res };
+}
+
+// the first word of a request, when it is a verb DI does not act on but means one it does
+function commandSwap(raw) {
+  const m = String(raw || "").match(/^(\s*(?:please\s+|pls\s+|kindly\s+|(?:can|could|would|will) you\s+(?:please\s+)?)?)([A-Za-z]+)((?:\s+(?:up|out|together|over))?)(\s+.+)$/i);
+  if (!m) return null;
+  const to = LX.commandSynonym(m[2]);
+  // math verbs need numbers to work on; text verbs need something to transform
+  if (to && !/\d/.test(m[4]) && !/^(?:reverse|uppercase|lowercase|capitalize|sort|define|encode|decode)$/.test(to)) return null;
+  return to ? { from: m[2] + m[3], to, text: m[1] + to + m[4] } : null;
+}
+
 export function respond(input, model) {
   const raw = String(input || "").trim();
   if (!raw) return { skill: null, confidence: 0, alternatives: [], title: "Engine", body: "Type a request: a calculation, a conversion, a code task, a text transform, a regex, date math, or ask me to complete a sentence." };
@@ -962,6 +1050,17 @@ export function respond(input, model) {
     const sa = slang(raw, true), sc = slang(raw, false);
     const f1 = fixTypos(sa.text, model), f2 = fixTypos(sc.text, model);
     fx = { text: rephrase(f1.text), fixes: [...sa.fixes, ...f1.fixes], hybrid: rephrase(f2.hybrid), hybridFixes: [...sc.fixes, ...f2.hybridFixes], plain: f1.text, plainHybrid: f2.hybrid };
+  }
+  // "tally up 3, 4 and 5": a verb DI does not act on, but the dictionary says means one it does
+  let swapped = null;
+  if (!spec && LX.lexReady() && !score(fx.text).length) {
+    const sw = commandSwap(raw);
+    if (sw) {
+      const sa = slang(sw.text, true), sc = slang(sw.text, false);
+      const f1 = fixTypos(sa.text, model), f2 = fixTypos(sc.text, model);
+      const alt = { text: rephrase(f1.text), fixes: [...sa.fixes, ...f1.fixes], hybrid: rephrase(f2.hybrid), hybridFixes: [...sc.fixes, ...f2.hybridFixes], plain: f1.text, plainHybrid: f2.hybrid };
+      if (score(alt.text).length) { fx = alt; swapped = sw; }
+    }
   }
   const s = fx.text;
   const ranked = score(s);
@@ -984,10 +1083,18 @@ export function respond(input, model) {
     const words = s.split(/\s+/).length;
     const midSentence = /(?:,|\b(?:the|a|an|of|to|and|or|but|in|on|with|for|is|are|was|that|which|because|as|by|from|my|your|their))$/i.test(s.trim()) && words >= 3 && !/\d/.test(s) && !BUILD_VERB.test(low) && !/^(calculate|convert|generate|reverse|solve|find|compute|show|give|list|sort|count|please|what|whats|how|define|explain|is|are|was|does|do|did|can|could|should|would|will|which|who|whom|whose|where|when|why|tell|put|flip|turn|change|make|meaning|symbol|value)\b/.test(low);
     const cont = (model && midSentence) ? complete(model, s, 16) : "";
+    const cov = LX.lexReady() ? LX.coverage(s) : null;
+    if (cov && cov.words >= 2 && !cov.unknown.length && !cont) return {
+      skill: null, confidence: 0, alternatives: [],
+      title: "Understood, but not something I can do",
+      body: "I know every word of that (all " + cov.words + " are in my dictionary), but it is not a task I have exact rules for, and I do not guess like a language model. " + recognized +
+        "Offline I can **calculate**, **convert**, **generate code**, **transform text**, **build a regex**, do **date math**, look up **facts**, and explain **any English word** (try: define " + (cov.words ? (s.match(/[A-Za-z]{4,}/g) || ["serendipity"]).sort((a, b) => b.length - a.length)[0].toLowerCase() : "serendipity") + "). For open-ended requests, turn on **Smart mode**.",
+    };
+    const unknownNote = cov && cov.unknown.length && cov.unknown.length <= 4 ? "\n\nWords I do not recognize: " + cov.unknown.map((w) => "\u201c" + w + "\u201d").join(", ") + " (a typo, a name, or a very new word?)." : "";
     return {
       skill: null, confidence: 0, alternatives: [],
       title: "Not sure yet",
-      body: recognized + "I could not confidently match that to one of my skills, and I do not guess like a language model. Tell me which you want: **calculate**, **convert**, **generate code**, **transform text**, **build a regex**, or **date math** — or turn on **Smart mode** to have a free-form request understood online." + (cont ? "\n\nYou seem mid-sentence; my statistical continuation is below." : ""),
+      body: recognized + "I could not confidently match that to one of my skills, and I do not guess like a language model. Tell me which you want: **calculate**, **convert**, **generate code**, **transform text**, **build a regex**, or **date math** — or turn on **Smart mode** to have a free-form request understood online." + unknownNote + (cont ? "\n\nYou seem mid-sentence; my statistical continuation is below." : ""),
       pre: cont || null,
     };
   }
@@ -1004,6 +1111,7 @@ export function respond(input, model) {
   const composed = say(top.skill, res, inputFor, model);
   const before = useRaw ? inputFor : VERBATIM.has(top.skill) ? fx.plainHybrid : fx.plain;
   if (before != null && before !== inputFor) composed.note = "Understood as \u201c" + inputFor + "\u201d." + (composed.note ? " " + composed.note : "");
+  if (swapped) composed.note = "Read \u201c" + swapped.from + "\u201d as \u201c" + swapped.to + "\u201d (the same meaning in my dictionary)." + (composed.note ? " " + composed.note : "");
   if (applied.length) composed.note = "Read " + applied.map((f) => f.to === "(dropped)" ? "past \u201c" + f.from + "\u201d" : "\u201c" + f.from + "\u201d as \u201c" + f.to + "\u201d").join(", ") + "." + (composed.note ? " " + composed.note : "");
   return {
     skill: top.skill,
