@@ -125,9 +125,9 @@ window._eiAnalyzeHeaders = function() {
 
   var checks = [
     { name: 'SPF', header: 'received-spf', pass: /pass/i },
-    { name: 'DKIM', header: 'dkim-signature', pass: /.+/ },
+    { name: 'DKIM', header: 'authentication-results', pass: /dkim=pass/i },
     { name: 'DMARC', header: 'authentication-results', pass: /dmarc=pass/i },
-    { name: 'ARC', header: 'arc-authentication-results', pass: /.+/ },
+    { name: 'ARC', header: 'arc-authentication-results', pass: /arc=pass/i },
     { name: 'TLS', header: 'received', pass: /TLS|ESMTPS|with\s+HTTPS/i }
   ];
 
@@ -295,7 +295,7 @@ function _eiRenderSPFResults(el, domain, data) {
   h += '<div style="color:#ffaa00;font-size:12px;font-weight:bold;margin-bottom:8px;">DMARC POLICY</div>';
   if (dmarcRecord) {
     h += '<div style="background:#080c14;border:1px solid #00ff8833;border-radius:4px;padding:8px 12px;font-size:11px;color:#00ff88;word-break:break-all;">' + esc(dmarcRecord.replace(/"/g, '')) + '</div>';
-    var policy = (dmarcRecord.match(/p=(\w+)/i) || [])[1] || 'none';
+    var policy = (dmarcRecord.match(/(?:^|[;\s])p=(\w+)/i) || [])[1] || 'none';
     var pColor = policy === 'reject' ? '#00ff88' : policy === 'quarantine' ? '#ffaa00' : '#ff4444';
     h += '<div style="color:' + pColor + ';font-size:10px;margin-top:4px;">Policy: ' + esc(policy.toUpperCase()) + (policy === 'none' ? ' (weak — emails not rejected)' : '') + '</div>';
   } else {
@@ -321,7 +321,7 @@ function _eiRenderSPFResults(el, domain, data) {
   var grade = 'F';
   var gradeColor = '#ff4444';
   if (spfRecord && dmarcRecord) {
-    var dPolicy = (dmarcRecord.match(/p=(\w+)/i) || [])[1] || 'none';
+    var dPolicy = (dmarcRecord.match(/(?:^|[;\s])p=(\w+)/i) || [])[1] || 'none';
     if (dPolicy === 'reject') { grade = 'A'; gradeColor = '#00ff88'; }
     else if (dPolicy === 'quarantine') { grade = 'B'; gradeColor = '#44cc44'; }
     else { grade = 'C'; gradeColor = '#ffaa00'; }
@@ -404,7 +404,13 @@ window._eiCheckPhishing = function() {
   if (path.split('/').length > 6) { flags.push({ text: 'Deep path nesting (' + path.split('/').length + ' levels)', severity: 'LOW' }); score += 5; }
   if (/login|signin|verify|secure|account|update|confirm|bank/i.test(path)) { flags.push({ text: 'Credential harvesting keywords in path', severity: 'MEDIUM' }); score += 10; }
   if (url.indexOf('@') !== -1) { flags.push({ text: 'URL contains @ symbol (possible URL obfuscation)', severity: 'HIGH' }); score += 30; }
-  if (/0|1|l|O/.test(hostname) && /paypal|google|apple|microsoft|amazon|netflix|facebook|instagram|twitter|bank/i.test(hostname)) { flags.push({ text: 'Possible brand impersonation with character substitution', severity: 'CRITICAL' }); score += 40; }
+  // Leetspeak brand impersonation (g00gle, micros0ft): normalize 0→o and 1→l
+  // and check the RESULT against the brand list. The old test required both a
+  // digit AND the intact brand string, which are mutually exclusive for a
+  // substituted brand — so it never fired for g00gle/micros0ft (its documented
+  // targets) and only matched intact-brand+digit hosts.
+  var brandNorm = hostname.replace(/0/g, 'o').replace(/1/g, 'l');
+  if (brandNorm !== hostname && /paypal|google|apple|microsoft|amazon|netflix|facebook|instagram|twitter|bank/i.test(brandNorm)) { flags.push({ text: 'Possible brand impersonation with character substitution', severity: 'CRITICAL' }); score += 40; }
   if (hostname.length > 40) { flags.push({ text: 'Unusually long domain name (' + hostname.length + ' chars)', severity: 'LOW' }); score += 5; }
   if (url.indexOf('data:') === 0) { flags.push({ text: 'Data URI detected — may contain hidden content', severity: 'CRITICAL' }); score += 50; }
 

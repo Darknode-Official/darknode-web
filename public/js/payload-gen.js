@@ -42,23 +42,23 @@ ENC.base64Url = (s) => {
   catch (_) { return s; }
 };
 
-ENC.hexEscape = (s) => Array.from(s).map((c) => "\\x" + c.charCodeAt(0).toString(16).padStart(2, "0")).join("");
+ENC.hexEscape = (s) => Array.from(new TextEncoder().encode(s)).map((b) => "\\x" + b.toString(16).padStart(2, "0")).join("");
 
-ENC.hexRaw = (s) => Array.from(s).map((c) => c.charCodeAt(0).toString(16).padStart(2, "0")).join("");
+ENC.hexRaw = (s) => Array.from(new TextEncoder().encode(s)).map((b) => b.toString(16).padStart(2, "0")).join("");
 
-ENC.hex0x = (s) => "0x" + Array.from(s).map((c) => c.charCodeAt(0).toString(16).padStart(2, "0")).join("");
+ENC.hex0x = (s) => "0x" + Array.from(new TextEncoder().encode(s)).map((b) => b.toString(16).padStart(2, "0")).join("");
 
-ENC.unicodeEscape = (s) => Array.from(s).map((c) => "\\u" + c.charCodeAt(0).toString(16).padStart(4, "0")).join("");
+ENC.unicodeEscape = (s) => s.split("").map((c) => "\\u" + c.charCodeAt(0).toString(16).padStart(4, "0")).join("");
 
-ENC.unicodeEscapeUpper = (s) => Array.from(s).map((c) => "%u" + c.charCodeAt(0).toString(16).padStart(4, "0").toUpperCase()).join("");
+ENC.unicodeEscapeUpper = (s) => s.split("").map((c) => "%u" + c.charCodeAt(0).toString(16).padStart(4, "0").toUpperCase()).join("");
 
-ENC.htmlDec = (s) => Array.from(s).map((c) => "&#" + c.charCodeAt(0) + ";").join("");
+ENC.htmlDec = (s) => Array.from(s).map((c) => "&#" + c.codePointAt(0) + ";").join("");
 
-ENC.htmlDecPadded = (s) => Array.from(s).map((c) => "&#00" + c.charCodeAt(0) + ";").join("");
+ENC.htmlDecPadded = (s) => Array.from(s).map((c) => "&#00" + c.codePointAt(0) + ";").join("");
 
-ENC.htmlHex = (s) => Array.from(s).map((c) => "&#x" + c.charCodeAt(0).toString(16) + ";").join("");
+ENC.htmlHex = (s) => Array.from(s).map((c) => "&#x" + c.codePointAt(0).toString(16) + ";").join("");
 
-ENC.htmlHexNoSemi = (s) => Array.from(s).map((c) => "&#x" + c.charCodeAt(0).toString(16)).join("");
+ENC.htmlHexNoSemi = (s) => Array.from(s).map((c) => "&#x" + c.codePointAt(0).toString(16)).join("");
 
 ENC.overlongUtf8 = (s) => Array.from(s).map((c) => {
   const cp = c.charCodeAt(0);
@@ -74,7 +74,7 @@ ENC.upperCase = (s) => s.toUpperCase();
 
 ENC.nullByteSuffix = (s) => s + "%00";
 
-ENC.utf16le = (s) => Array.from(s).map((c) => c.charCodeAt(0).toString(16).padStart(2, "0") + "00").join("");
+ENC.utf16le = (s) => s.split("").map((c) => { const cu = c.charCodeAt(0); return (cu & 0xff).toString(16).padStart(2, "0") + ((cu >> 8) & 0xff).toString(16).padStart(2, "0"); }).join("");
 
 const ENC_LABELS = {
   none: "None (raw)",

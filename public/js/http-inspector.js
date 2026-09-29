@@ -1,4 +1,15 @@
 // Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Decode a base64url JWT segment to its parsed JSON, handling padding and
+// UTF-8 claims (atob yields a Latin-1 byte string; decode it as UTF-8 so
+// non-ASCII claim values are not mangled).
+function _jwtSegJson(seg) {
+  var s = String(seg).replace(/-/g, "+").replace(/_/g, "/");
+  while (s.length % 4) s += "=";
+  var bin = atob(s);
+  var bytes = new Uint8Array(bin.length);
+  for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return JSON.parse(new TextDecoder("utf-8").decode(bytes));
+}
 // Source-available for learning only. Redistribution prohibited. See LICENSE.
 // Darknode HTTP Inspector — headers, cookies, CSP, CORS, JWT, URL analysis
 
@@ -69,9 +80,9 @@ const HEADER_REF = [
 // ── Security Header Grading ────────────────────────────────────────────────
 
 const SECURITY_HEADERS = [
-  { name: "Strict-Transport-Security", weight: 20, required: true, check: v => /max-age=\d{7,}/.test(v) ? "good" : /max-age=\d+/.test(v) ? "weak" : "missing" },
+  { name: "Strict-Transport-Security", weight: 20, required: true, check: v => { const m = /max-age=(\d+)/.exec(v); return m ? (+m[1] >= 31536000 ? "good" : "weak") : "missing"; } },
   { name: "Content-Security-Policy", weight: 20, required: true, check: v => v && !v.includes("unsafe-inline") && !v.includes("unsafe-eval") ? "good" : v ? "weak" : "missing" },
-  { name: "X-Content-Type-Options", weight: 10, required: true, check: v => v === "nosniff" ? "good" : "missing" },
+  { name: "X-Content-Type-Options", weight: 10, required: true, check: v => (v || "").trim().toLowerCase() === "nosniff" ? "good" : "missing" },
   { name: "X-Frame-Options", weight: 8, required: true, check: v => /^(DENY|SAMEORIGIN)$/i.test(v) ? "good" : "missing" },
   { name: "Referrer-Policy", weight: 8, required: true, check: v => v ? "good" : "missing" },
   { name: "Permissions-Policy", weight: 8, required: false, check: v => v ? "good" : "missing" },
@@ -116,14 +127,20 @@ function headerIssueSeverity(r) {
 
 function parseCookies(setCookieHeader) {
   const cookies = [];
-  const parts = setCookieHeader.split(/\n|(?<=;)\s*(?=[a-zA-Z_-]+=)/);
+  // One Set-Cookie header per line (RFC 6265): ";" separates attributes WITHIN
+  // a cookie, never cookies, so splitting on ";attr=" tore a single cookie apart
+  // (Path=, SameSite=, Expires=… became fake cookies). Split on newlines only.
+  const parts = setCookieHeader.split(/\n/);
   for (const raw of parts) {
     if (!raw.trim()) continue;
     const attrs = raw.split(";").map(s => s.trim());
     const [nameVal, ...rest] = attrs;
     const eq = nameVal.indexOf("=");
     if (eq < 0) continue;
-    const cookie = { name: nameVal.slice(0, eq), value: nameVal.slice(eq + 1), httpOnly: false, secure: false, sameSite: "None (default)", domain: "", path: "", expires: "", maxAge: "", issues: [] };
+    // Modern browsers (Chrome 80+, Firefox, Edge — RFC 6265bis) treat an absent
+    // SameSite attribute as Lax, NOT None. Lax already blocks cross-site POST/
+    // unsafe-method CSRF, so an absent attribute is not the same exposure as None.
+    const cookie = { name: nameVal.slice(0, eq), value: nameVal.slice(eq + 1), httpOnly: false, secure: false, sameSite: "Lax (default)", domain: "", path: "", expires: "", maxAge: "", issues: [] };
     for (const attr of rest) {
       const a = attr.toLowerCase();
       if (a === "httponly") cookie.httpOnly = true;
@@ -136,7 +153,7 @@ function parseCookies(setCookieHeader) {
     }
     if (!cookie.httpOnly) cookie.issues.push("Missing HttpOnly — accessible to JavaScript (XSS risk)");
     if (!cookie.secure) cookie.issues.push("Missing Secure — sent over HTTP (MitM risk)");
-    if (cookie.sameSite.toLowerCase() === "none" || cookie.sameSite.includes("default")) cookie.issues.push("SameSite=None or absent — vulnerable to CSRF");
+    if (cookie.sameSite.toLowerCase() === "none") cookie.issues.push("SameSite=None — cookie sent on cross-site requests (CSRF risk unless backed by anti-CSRF tokens; also requires Secure)");
     if (cookie.name.toLowerCase().includes("session") && !cookie.httpOnly) cookie.issues.push("Session cookie without HttpOnly is a high-severity finding");
     cookies.push(cookie);
   }
@@ -150,15 +167,16 @@ function parseCSP(csp) {
   for (const part of csp.split(";")) {
     const tokens = part.trim().split(/\s+/);
     if (!tokens[0]) continue;
-    const name = tokens[0];
+    const name = tokens[0].toLowerCase();
     const values = tokens.slice(1);
+    const lvalues = values.map(v => v.toLowerCase());
     const issues = [];
-    if (values.includes("'unsafe-inline'")) issues.push("unsafe-inline allows inline scripts/styles (XSS risk)");
-    if (values.includes("'unsafe-eval'")) issues.push("unsafe-eval allows eval() and similar (code injection risk)");
-    if (values.includes("*")) issues.push("Wildcard (*) allows any source — extremely permissive");
-    if (values.some(v => v.startsWith("http://"))) issues.push("HTTP source allows insecure loading");
-    if (name === "default-src" && values.includes("*")) issues.push("default-src * provides no protection");
-    if (name === "script-src" && !values.includes("'strict-dynamic'") && (values.includes("'unsafe-inline'") || values.includes("*"))) {
+    if (lvalues.includes("'unsafe-inline'")) issues.push("unsafe-inline allows inline scripts/styles (XSS risk)");
+    if (lvalues.includes("'unsafe-eval'")) issues.push("unsafe-eval allows eval() and similar (code injection risk)");
+    if (lvalues.includes("*")) issues.push("Wildcard (*) allows any source — extremely permissive");
+    if (lvalues.some(v => v.startsWith("http://"))) issues.push("HTTP source allows insecure loading");
+    if (name === "default-src" && lvalues.includes("*")) issues.push("default-src * provides no protection");
+    if (name === "script-src" && !lvalues.includes("'strict-dynamic'") && (lvalues.includes("'unsafe-inline'") || lvalues.includes("*"))) {
       issues.push("script-src should use nonces/hashes with strict-dynamic instead of unsafe-inline/*");
     }
     directives.push({ name, values, issues });
@@ -175,8 +193,8 @@ function decodeJWT(token) {
   const parts = token.split(".");
   if (parts.length < 2) return { error: "Not a valid JWT (needs at least 2 parts separated by '.')" };
   try {
-    const header = JSON.parse(atob(parts[0].replace(/-/g, "+").replace(/_/g, "/")));
-    const payload = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/")));
+    const header = _jwtSegJson(parts[0]);
+    const payload = _jwtSegJson(parts[1]);
     const issues = [];
     if (header.alg === "none") issues.push("CRITICAL: alg=none — signature not verified!");
     if (header.alg === "HS256" && !parts[2]) issues.push("HMAC algorithm but no signature present");

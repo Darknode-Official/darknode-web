@@ -53,7 +53,7 @@ const B = {
     { label: "Base64", fn: b64e },
     { label: "Hex \\xNN", fn: (s) => [...enc.encode(s)].map((b) => "\\x" + b.toString(16).padStart(2, "0")).join("") },
     { label: "URL", fn: (s) => [...enc.encode(s)].map((b) => "%" + b.toString(16).padStart(2, "0")).join("") },
-    { label: "Unicode", fn: (s) => [...s].map((c) => "\\u" + c.charCodeAt(0).toString(16).padStart(4, "0")).join("") },
+    { label: "Unicode", fn: (s) => s.split("").map((c) => "\\u" + c.charCodeAt(0).toString(16).padStart(4, "0")).join("") },
   ], "Payload to obfuscate"),
   baseconv: (r) => io(r, [
     { label: "-> bin", fn: (s) => parseInt(s.trim()).toString(2) }, { label: "-> oct", fn: (s) => parseInt(s.trim()).toString(8) },
@@ -103,8 +103,14 @@ const B = {
       const n = Math.max(4, Math.min(128, +r.querySelector("#pg-len").value || 20));
       let cs = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
       if (r.querySelector("#pg-sym").checked) cs += "!@#$%^&*()-_=+[]{};:,.?";
-      const a = crypto.getRandomValues(new Uint32Array(n));
-      r.querySelector("#pg-out").textContent = [...a].map((x) => cs[x % cs.length]).join("");
+      // Rejection-sample to avoid modulo bias: discard draws in the unusable
+      // tail (>= largest multiple of cs.length that fits in a uint32).
+      const max = Math.floor(0x100000000 / cs.length) * cs.length, out = [], buf = new Uint32Array(n);
+      while (out.length < n) {
+        crypto.getRandomValues(buf);
+        for (let k = 0; k < buf.length && out.length < n; k++) if (buf[k] < max) out.push(cs[buf[k] % cs.length]);
+      }
+      r.querySelector("#pg-out").textContent = out.join("");
     };
   },
   uuid: (r) => { r.innerHTML = `<div class="tk-btns"><button class="btn sm" id="u-go">Generate UUID v4</button></div><pre class="tk-out" id="u-out"></pre>`;
@@ -127,7 +133,7 @@ const MORSE = { A: ".-", B: "-...", C: "-.-.", D: "-..", E: ".", F: "..-.", G: "
 const MORSE_R = Object.fromEntries(Object.entries(MORSE).map(([k, v]) => [v, k]));
 const B32 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
 function base32enc(s) { let bits = ""; for (const b of enc.encode(s)) bits += b.toString(2).padStart(8, "0"); let out = ""; for (let i = 0; i < bits.length; i += 5) out += B32[parseInt(bits.slice(i, i + 5).padEnd(5, "0"), 2)]; while (out.length % 8) out += "="; return out; }
-function base32dec(s) { s = s.replace(/=+$/, "").toUpperCase(); let bits = ""; for (const c of s) { const v = B32.indexOf(c); if (v >= 0) bits += v.toString(2).padStart(5, "0"); } let out = ""; for (let i = 0; i + 8 <= bits.length; i += 8) out += String.fromCharCode(parseInt(bits.slice(i, i + 8), 2)); return out; }
+function base32dec(s) { s = s.replace(/=+$/, "").toUpperCase(); let bits = ""; for (const c of s) { const v = B32.indexOf(c); if (v >= 0) bits += v.toString(2).padStart(5, "0"); } const bytes = []; for (let i = 0; i + 8 <= bits.length; i += 8) bytes.push(parseInt(bits.slice(i, i + 8), 2)); return new TextDecoder().decode(new Uint8Array(bytes)); }
 
 B.jsonfmt = (r) => io(r, [{ label: "Format", fn: (s) => JSON.stringify(JSON.parse(s), null, 2) }, { label: "Minify", fn: (s) => JSON.stringify(JSON.parse(s)) }], "Paste JSON");
 B.csvjson = (r) => io(r, [{ label: "CSV -> JSON", fn: (s) => { const rows = s.trim().split(/\r?\n/).map((l) => l.split(",")); const head = rows.shift().map((h) => h.trim()); return JSON.stringify(rows.map((rw) => Object.fromEntries(head.map((h, i) => [h, (rw[i] || "").trim()]))), null, 2); } }], "header row, then data rows");
@@ -139,7 +145,7 @@ B.jsescape = (r) => io(r, [{ label: "Escape", fn: (s) => JSON.stringify(s).slice
 B.caesar = (r) => { r.innerHTML = `<div class="tk-row">Shift <input class="tk-f" id="cz-n" type="number" value="3" style="max-width:90px"></div><textarea class="tk-in" id="cz-in" rows="3" placeholder="Text"></textarea><div class="tk-btns"><button class="btn sm" id="cz-go">Shift</button></div><pre class="tk-out" id="cz-out"></pre>`; r.querySelector("#cz-go").onclick = () => { const n = ((+r.querySelector("#cz-n").value % 26) + 26) % 26; r.querySelector("#cz-out").textContent = r.querySelector("#cz-in").value.replace(/[a-z]/gi, (c) => { const base = c <= "Z" ? 65 : 97; return String.fromCharCode((c.charCodeAt(0) - base + n) % 26 + base); }); }; };
 B.xor = (r) => { r.innerHTML = `<div class="tk-row">Key <input class="tk-f" id="xr-k" placeholder="key"></div><textarea class="tk-in" id="xr-in" rows="3" placeholder="Text"></textarea><div class="tk-btns"><button class="btn sm" id="xr-go">XOR -> hex</button></div><pre class="tk-out" id="xr-out"></pre>`; r.querySelector("#xr-go").onclick = () => { const kb = enc.encode(r.querySelector("#xr-k").value || " "); r.querySelector("#xr-out").textContent = [...enc.encode(r.querySelector("#xr-in").value)].map((b, i) => (b ^ kb[i % kb.length]).toString(16).padStart(2, "0")).join(""); }; };
 B.hmac = (r) => { r.innerHTML = `<div class="tk-row">Key <input class="tk-f" id="hm-k" placeholder="secret"></div><textarea class="tk-in" id="hm-in" rows="3" placeholder="Message"></textarea><div class="tk-btns"><button class="btn sm" id="hm-go">HMAC-SHA256</button></div><pre class="tk-out" id="hm-out"></pre>`; r.querySelector("#hm-go").onclick = async () => { try { const key = await crypto.subtle.importKey("raw", enc.encode(r.querySelector("#hm-k").value), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]); r.querySelector("#hm-out").textContent = hexOf(await crypto.subtle.sign("HMAC", key, enc.encode(r.querySelector("#hm-in").value))); } catch (e) { r.querySelector("#hm-out").textContent = "Error: " + e.message; } }; };
-B.entropy = (r) => io(r, [{ label: "Shannon entropy", fn: (s) => { if (!s) return "0"; const f = {}; for (const c of s) f[c] = (f[c] || 0) + 1; let e = 0; for (const k in f) { const p = f[k] / s.length; e -= p * Math.log2(p); } return e.toFixed(4) + " bits/char  (" + (e * s.length).toFixed(1) + " bits total)"; } }]);
+B.entropy = (r) => io(r, [{ label: "Shannon entropy", fn: (s) => { if (!s) return "0"; const f = {}; for (const c of s) f[c] = (f[c] || 0) + 1; const n = [...s].length; let e = 0; for (const k in f) { const p = f[k] / n; e -= p * Math.log2(p); } return e.toFixed(4) + " bits/char  (" + (e * n).toFixed(1) + " bits total)"; } }]);
 B.slug = (r) => io(r, [{ label: "Slugify", fn: (s) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") }]);
 B.wordcount = (r) => io(r, [{ label: "Count", fn: (s) => `Characters: ${s.length}\nWords: ${(s.trim().match(/\S+/g) || []).length}\nLines: ${s.split(/\n/).length}` }]);
 B.lorem = (r) => { const W = "lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua enim ad minim veniam quis nostrud".split(" "); r.innerHTML = `<div class="tk-row">Paragraphs <input class="tk-f" id="lo-n" type="number" value="2" min="1" max="10" style="max-width:90px"></div><div class="tk-btns"><button class="btn sm" id="lo-go">Generate</button></div><pre class="tk-out" id="lo-out"></pre>`; r.querySelector("#lo-go").onclick = () => { const n = Math.max(1, Math.min(10, +r.querySelector("#lo-n").value || 2)); const p = () => Array.from({ length: 40 }, () => W[Math.floor(Math.random() * W.length)]).join(" "); r.querySelector("#lo-out").textContent = Array.from({ length: n }, p).join("\n\n"); }; };

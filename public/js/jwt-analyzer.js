@@ -11,14 +11,26 @@ function _jwtB64Decode(str) {
   try {
     var pad = str.replace(/-/g, '+').replace(/_/g, '/');
     while (pad.length % 4) pad += '=';
-    return JSON.parse(atob(pad));
+    // atob yields a Latin-1 byte string; JWT segments are UTF-8, so decode the
+    // raw bytes as UTF-8 before parsing or non-ASCII claims get mangled
+    // (e.g. "José" -> "JosÃ©").
+    var bin = atob(pad);
+    var bytes = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return JSON.parse(new TextDecoder('utf-8').decode(bytes));
   } catch (e) { return null; }
 }
 
 function _jwtB64Encode(obj) {
   try {
     var json = JSON.stringify(obj);
-    return btoa(json).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    // UTF-8 encode before btoa: btoa throws on code points > 0xFF, so a claim
+    // with any non-ASCII character would otherwise silently produce an empty
+    // (invalid) segment. Build a byte string the encoder can consume.
+    var utf8 = new TextEncoder().encode(json);
+    var bin = '';
+    for (var i = 0; i < utf8.length; i++) bin += String.fromCharCode(utf8[i]);
+    return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
   } catch (e) { return ''; }
 }
 

@@ -1,16 +1,18 @@
-// Executive Cyber Briefing Generator — PDB-style cyber threat intelligence briefing tool
-// Government-grade tool for SOC analysts, intelligence officers, and executive leadership
+// Executive Cyber Briefing — training / tabletop exercise briefing generator.
+// Everything in this module is a FICTIONAL training scenario: the findings, incident
+// counts, IOCs and decisions are invented for practice and are not real intelligence.
+// No content is sourced from, or attributable to, any government agency.
 const esc = (s) => String(s != null ? s : "").replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// CLASSIFICATION LEVELS
+// EXERCISE MARKINGS (not security classifications)
 // ═══════════════════════════════════════════════════════════════════════════════
 const CLASSIFICATIONS = [
-  { id: 'unclass', label: 'UNCLASSIFIED', color: '#16a34a', bg: '#052e16' },
-  { id: 'cui', label: 'CUI // NOFORN', color: '#7c3aed', bg: '#1e1040' },
-  { id: 'secret', label: 'SECRET // NOFORN', color: '#dc2626', bg: '#2a0a0a' },
-  { id: 'tssci', label: 'TOP SECRET // SCI // NOFORN', color: '#fbbf24', bg: '#2a1a00' }
+  { id: 'training', label: 'TRAINING SCENARIO - FICTIONAL', color: '#fbbf24', bg: '#2a1a00' },
+  { id: 'tabletop', label: 'TABLETOP EXERCISE - FICTIONAL', color: '#16a34a', bg: '#052e16' },
+  { id: 'wargame', label: 'WARGAME INJECT - FICTIONAL', color: '#7c3aed', bg: '#1e1040' },
+  { id: 'redteam', label: 'RED TEAM EXERCISE - FICTIONAL', color: '#dc2626', bg: '#2a0a0a' }
 ];
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -58,25 +60,25 @@ const SECTOR_THREATS = [
 // INTELLIGENCE FINDINGS
 // ═══════════════════════════════════════════════════════════════════════════════
 const INTEL_FINDINGS = [
-  { id: 'IF-2026-0917', title: 'Volt Typhoon Expands Critical Infrastructure Pre-Positioning', source: 'NSA/CSS + CISA', classification: 'TS//SCI', confidence: 95, relevance: 98, date: '2026-09-17', summary: 'SIGINT and network forensics confirm Volt Typhoon has expanded pre-positioned access to 47 critical infrastructure entities across energy, water, and transportation sectors — up from 31 in previous reporting. New access achieved via compromised SOHO routers and VPN appliances. Assessment: preparation for disruptive/destructive operations during potential Taiwan Strait crisis. Recommend immediate hunting operations across all CIKR entities using published IOCs and behavioral analytics.', actionRequired: true },
-  { id: 'IF-2026-0918', title: 'Salt Typhoon Intercept Capability Assessment', source: 'FBI / IC Partners', classification: 'TS//SCI//NOFORN', confidence: 90, relevance: 95, date: '2026-09-18', summary: 'Investigation confirms Salt Typhoon has achieved persistent access to lawful-intercept systems at 4 major US telecommunications providers, potentially enabling real-time surveillance of government communications. Compromise includes ability to modify intercept target lists. Impact assessment ongoing. POTUS and senior national security officials\' communications may have been exposed.', actionRequired: true },
-  { id: 'IF-2026-0915', title: 'DPRK Cryptocurrency Operations Funding Analysis', source: 'OFAC / Treasury', classification: 'SECRET', confidence: 85, relevance: 72, date: '2026-09-15', summary: 'Analysis of blockchain movements confirms $1.2B in cryptocurrency stolen by DPRK-linked actors in 2026 YTD, representing approximately 40% of North Korea\'s weapons program funding. New laundering techniques using cross-chain bridges and mixing protocols are reducing recovery rates. Recommend coordinated sanctions action against 14 identified wallet clusters.', actionRequired: false },
-  { id: 'IF-2026-0916', title: 'Russian Pre-Election Influence Operations Detected', source: 'ODNI / CISA', classification: 'SECRET//NOFORN', confidence: 80, relevance: 88, date: '2026-09-16', summary: 'Multiple Russian information operations identified targeting US midterm election integrity. GRU-linked entities operating fabricated local news websites in 12 swing states. AI-generated deepfake content of election officials making false statements has been detected on 3 major social media platforms. Content amplification network of 2,400+ inauthentic accounts identified.', actionRequired: true },
-  { id: 'IF-2026-0914', title: 'Sandworm Industroyer Variant for North American Grid', source: 'DOE / CESER', classification: 'TS//SCI', confidence: 75, relevance: 85, date: '2026-09-14', summary: 'Sandboxed analysis of malware sample recovered from compromised European energy sector entity reveals a new Industroyer variant specifically tailored for IEC 61850 and DNP3 protocols used in North American power grid. While no active deployment detected, the capability represents a significant escalation in destructive potential targeting the US energy sector. NERC CIP alert recommended.', actionRequired: true }
+  { id: 'IF-2026-0917', title: 'Volt Typhoon Expands Critical Infrastructure Pre-Positioning', source: 'Exercise intel cell (fictional)', classification: 'EXERCISE', confidence: 95, relevance: 98, date: '2026-09-17', summary: 'SIGINT and network forensics confirm Volt Typhoon has expanded pre-positioned access to 47 critical infrastructure entities across energy, water, and transportation sectors — up from 31 in previous reporting. New access achieved via compromised SOHO routers and VPN appliances. Assessment: preparation for disruptive/destructive operations during potential Taiwan Strait crisis. Recommend immediate hunting operations across all CIKR entities using published IOCs and behavioral analytics.', actionRequired: true },
+  { id: 'IF-2026-0918', title: 'Salt Typhoon Intercept Capability Assessment', source: 'Exercise intel cell (fictional)', classification: 'EXERCISE', confidence: 90, relevance: 95, date: '2026-09-18', summary: 'Investigation confirms Salt Typhoon has achieved persistent access to lawful-intercept systems at 4 major US telecommunications providers, potentially enabling real-time surveillance of government communications. Compromise includes ability to modify intercept target lists. Impact assessment ongoing. POTUS and senior national security officials\' communications may have been exposed.', actionRequired: true },
+  { id: 'IF-2026-0915', title: 'DPRK Cryptocurrency Operations Funding Analysis', source: 'Exercise intel cell (fictional)', classification: 'EXERCISE', confidence: 85, relevance: 72, date: '2026-09-15', summary: 'Analysis of blockchain movements confirms $1.2B in cryptocurrency stolen by DPRK-linked actors in 2026 YTD, representing approximately 40% of North Korea\'s weapons program funding. New laundering techniques using cross-chain bridges and mixing protocols are reducing recovery rates. Recommend coordinated sanctions action against 14 identified wallet clusters.', actionRequired: false },
+  { id: 'IF-2026-0916', title: 'Russian Pre-Election Influence Operations Detected', source: 'Exercise intel cell (fictional)', classification: 'EXERCISE', confidence: 80, relevance: 88, date: '2026-09-16', summary: 'Multiple Russian information operations identified targeting US midterm election integrity. GRU-linked entities operating fabricated local news websites in 12 swing states. AI-generated deepfake content of election officials making false statements has been detected on 3 major social media platforms. Content amplification network of 2,400+ inauthentic accounts identified.', actionRequired: true },
+  { id: 'IF-2026-0914', title: 'Sandworm Industroyer Variant for North American Grid', source: 'Exercise intel cell (fictional)', classification: 'EXERCISE', confidence: 75, relevance: 85, date: '2026-09-14', summary: 'Sandboxed analysis of malware sample recovered from compromised European energy sector entity reveals a new Industroyer variant specifically tailored for IEC 61850 and DNP3 protocols used in North American power grid. While no active deployment detected, the capability represents a significant escalation in destructive potential targeting the US energy sector. NERC CIP alert recommended.', actionRequired: true }
 ];
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // RECOMMENDED ACTIONS
 // ═══════════════════════════════════════════════════════════════════════════════
 const RECOMMENDED_ACTIONS = [
-  { priority: 'IMMEDIATE', action: 'Deploy Volt Typhoon hunting playbook across all CIKR entities', owner: 'CISA / SOC', deadline: '48 hours', status: 'IN PROGRESS', risk: 'CRITICAL', rationale: '16 new compromises identified in past 30 days. SOHO router and VPN appliance IOCs must be swept immediately.' },
-  { priority: 'IMMEDIATE', action: 'Issue Emergency Directive for telecom lawful-intercept system audit', owner: 'CISA / FCC', deadline: '72 hours', status: 'PENDING APPROVAL', risk: 'CRITICAL', rationale: 'Salt Typhoon access to intercept systems poses immediate national security risk. All major carriers must verify intercept system integrity.' },
-  { priority: 'URGENT', action: 'Rotate all senior government communication cryptographic keys', owner: 'NSA / IT Ops', deadline: '7 days', status: 'PLANNING', risk: 'HIGH', rationale: 'Potential compromise of government communications via telecom infiltration requires key rotation as precautionary measure.' },
-  { priority: 'URGENT', action: 'Issue NERC CIP alert for Industroyer variant targeting NA grid protocols', owner: 'DOE / CESER', deadline: '5 days', status: 'DRAFT', risk: 'HIGH', rationale: 'New destructive capability targeting IEC 61850 / DNP3 requires immediate awareness across energy sector.' },
-  { priority: 'HIGH', action: 'Coordinate OFAC sanctions package for 14 DPRK cryptocurrency wallet clusters', owner: 'Treasury / Legal', deadline: '14 days', status: 'IN REVIEW', risk: 'MODERATE', rationale: '$1.2B YTD theft directly funding weapons programs. Sanctions can disrupt laundering chain at identified chokepoints.' },
-  { priority: 'HIGH', action: 'Deploy AI-generated content detection at social media platform level', owner: 'CISA / Executive', deadline: '21 days', status: 'COORDINATING', risk: 'MODERATE', rationale: 'Pre-election deepfake detection requires platform cooperation. 2,400+ inauthentic account network must be disrupted before election cycle intensifies.' },
-  { priority: 'MODERATE', action: 'Update cleared defense contractor cybersecurity requirements under CMMC 2.0', owner: 'DoD CIO', deadline: '30 days', status: 'POLICY REVIEW', risk: 'MODERATE', rationale: 'Two contractor compromises with TS data access highlight gaps in current CMMC implementation.' },
-  { priority: 'MODERATE', action: 'Establish water sector cyber mutual aid program pilot', owner: 'EPA / CISA', deadline: '45 days', status: 'PLANNING', risk: 'MODERATE', rationale: 'Small water utilities lack security resources. Mutual aid framework enables shared defense capabilities.' }
+  { priority: 'IMMEDIATE', action: 'Deploy Volt Typhoon hunting playbook across all CIKR entities', owner: 'SOC lead', deadline: '48 hours', status: 'IN PROGRESS', risk: 'CRITICAL', rationale: '16 new compromises identified in past 30 days. SOHO router and VPN appliance IOCs must be swept immediately.' },
+  { priority: 'IMMEDIATE', action: 'Issue Emergency Directive for telecom lawful-intercept system audit', owner: 'Regulatory liaison', deadline: '72 hours', status: 'PENDING APPROVAL', risk: 'CRITICAL', rationale: 'Salt Typhoon access to intercept systems poses immediate national security risk. All major carriers must verify intercept system integrity.' },
+  { priority: 'URGENT', action: 'Rotate all senior government communication cryptographic keys', owner: 'IT Ops / Crypto team', deadline: '7 days', status: 'PLANNING', risk: 'HIGH', rationale: 'Potential compromise of government communications via telecom infiltration requires key rotation as precautionary measure.' },
+  { priority: 'URGENT', action: 'Issue NERC CIP alert for Industroyer variant targeting NA grid protocols', owner: 'OT security lead', deadline: '5 days', status: 'DRAFT', risk: 'HIGH', rationale: 'New destructive capability targeting IEC 61850 / DNP3 requires immediate awareness across energy sector.' },
+  { priority: 'HIGH', action: 'Coordinate OFAC sanctions package for 14 DPRK cryptocurrency wallet clusters', owner: 'Legal / Compliance', deadline: '14 days', status: 'IN REVIEW', risk: 'MODERATE', rationale: '$1.2B YTD theft directly funding weapons programs. Sanctions can disrupt laundering chain at identified chokepoints.' },
+  { priority: 'HIGH', action: 'Deploy AI-generated content detection at social media platform level', owner: 'Comms / Executive', deadline: '21 days', status: 'COORDINATING', risk: 'MODERATE', rationale: 'Pre-election deepfake detection requires platform cooperation. 2,400+ inauthentic account network must be disrupted before election cycle intensifies.' },
+  { priority: 'MODERATE', action: 'Update cleared defense contractor cybersecurity requirements under CMMC 2.0', owner: 'Supplier risk lead', deadline: '30 days', status: 'POLICY REVIEW', risk: 'MODERATE', rationale: 'Two contractor compromises with TS data access highlight gaps in current CMMC implementation.' },
+  { priority: 'MODERATE', action: 'Establish water sector cyber mutual aid program pilot', owner: 'Sector partnership lead', deadline: '45 days', status: 'PLANNING', risk: 'MODERATE', rationale: 'Small water utilities lack security resources. Mutual aid framework enables shared defense capabilities.' }
 ];
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -93,14 +95,14 @@ const DECISION_POINTS = [
   },
   { id: 'DP-002', title: 'Emergency Directive for Telecom Sector Lawful-Intercept Security Audit', deadline: '2026-09-24 0000Z', urgency: 'URGENT', background: 'Salt Typhoon access to lawful-intercept systems at 4 major carriers represents unprecedented counterintelligence risk. Government communications and intelligence operations may be compromised.',
     options: [
-      { label: 'Issue Emergency Directive under CISA authority', risk: 'LOW', pros: 'Fastest path to action. Clear legal authority.', cons: 'Carrier pushback on operational disruption. Resource-intensive audits.' },
+      { label: 'Issue an emergency directive under existing regulatory authority', risk: 'LOW', pros: 'Fastest path to action. Clear legal authority.', cons: 'Carrier pushback on operational disruption. Resource-intensive audits.' },
       { label: 'Request voluntary compliance via FCC coordination', risk: 'LOW', pros: 'Cooperative approach. Less regulatory friction.', cons: 'No enforcement mechanism. Slower implementation.' },
       { label: 'Classify as national security emergency — invoke Title 50 authorities', risk: 'MODERATE', pros: 'Maximum authority and resources. IC engagement.', cons: 'Political sensitivity. Public disclosure risk.' }
     ]
   },
   { id: 'DP-003', title: 'Pre-Election Cyber Threat Public Attribution', deadline: '2026-10-01 0000Z', urgency: 'HIGH', background: 'Russian influence operations targeting midterm elections require a decision on public attribution timing and content. Attribution can deter and educate, but can also amplify the narrative the adversary seeks.',
     options: [
-      { label: 'Joint ODNI/DHS/FBI public attribution statement', risk: 'LOW', pros: 'Public awareness. Deterrence effect. Platform takedown authority.', cons: 'May amplify adversary narratives. Political sensitivities.' },
+      { label: 'Joint government public attribution statement', risk: 'LOW', pros: 'Public awareness. Deterrence effect. Platform takedown authority.', cons: 'May amplify adversary narratives. Political sensitivities.' },
       { label: 'Classified briefing to Congressional leadership only', risk: 'LOW', pros: 'Maintains intelligence equities. Avoids public attention.', cons: 'No public awareness. No platform action. Leak risk.' },
       { label: 'Coordinated attribution with Five Eyes allies', risk: 'LOW', pros: 'Stronger deterrent. Shared burden. International legitimacy.', cons: 'Slower coordination. Alliance equities to manage.' }
     ]
@@ -111,20 +113,20 @@ const DECISION_POINTS = [
 // IOC DATABASE
 // ═══════════════════════════════════════════════════════════════════════════════
 const IOCS = [
-  { type: 'IP', value: '185.220.101.34', actor: 'APT28', context: 'SilentForge C2 server', firstSeen: '2026-08-22', confidence: 'HIGH' },
-  { type: 'IP', value: '103.216.221.19', actor: 'Volt Typhoon', context: 'Compromised SOHO router relay', firstSeen: '2026-07-15', confidence: 'HIGH' },
-  { type: 'IP', value: '91.219.237.88', actor: 'Sandworm', context: 'Industroyer staging infrastructure', firstSeen: '2026-09-01', confidence: 'MODERATE' },
-  { type: 'IP', value: '45.77.65.211', actor: 'Lazarus Group', context: 'Crypto theft exfiltration endpoint', firstSeen: '2026-08-10', confidence: 'HIGH' },
-  { type: 'Domain', value: 'update-service.cloud-cdn[.]net', actor: 'APT29', context: 'OAuth token phishing domain', firstSeen: '2026-09-05', confidence: 'HIGH' },
-  { type: 'Domain', value: 'login.microsoftonline-auth[.]com', actor: 'APT28', context: 'Credential harvesting infrastructure', firstSeen: '2026-08-28', confidence: 'HIGH' },
-  { type: 'Domain', value: 'api.blockchain-verify[.]io', actor: 'Lazarus Group', context: 'Fake recruitment / trojanized app server', firstSeen: '2026-09-08', confidence: 'MODERATE' },
-  { type: 'Domain', value: 'news-daily-report[.]com', actor: 'GRU IO', context: 'Fabricated local news site (influence op)', firstSeen: '2026-08-15', confidence: 'HIGH' },
+  { type: 'IP', value: '192.0.2.34', actor: 'APT28', context: 'SilentForge C2 server', firstSeen: '2026-08-22', confidence: 'HIGH' },
+  { type: 'IP', value: '198.51.100.19', actor: 'Volt Typhoon', context: 'Compromised SOHO router relay', firstSeen: '2026-07-15', confidence: 'HIGH' },
+  { type: 'IP', value: '203.0.113.88', actor: 'Sandworm', context: 'Industroyer staging infrastructure', firstSeen: '2026-09-01', confidence: 'MODERATE' },
+  { type: 'IP', value: '192.0.2.211', actor: 'Lazarus Group', context: 'Crypto theft exfiltration endpoint', firstSeen: '2026-08-10', confidence: 'HIGH' },
+  { type: 'Domain', value: 'update-service.cloud-cdn[.]example', actor: 'APT29', context: 'OAuth token phishing domain', firstSeen: '2026-09-05', confidence: 'HIGH' },
+  { type: 'Domain', value: 'login.office-auth[.]example', actor: 'APT28', context: 'Credential harvesting infrastructure', firstSeen: '2026-08-28', confidence: 'HIGH' },
+  { type: 'Domain', value: 'api.blockchain-verify[.]test', actor: 'Lazarus Group', context: 'Fake recruitment / trojanized app server', firstSeen: '2026-09-08', confidence: 'MODERATE' },
+  { type: 'Domain', value: 'news-daily-report[.]example', actor: 'GRU IO', context: 'Fabricated local news site (influence op)', firstSeen: '2026-08-15', confidence: 'HIGH' },
   { type: 'Hash (SHA-256)', value: 'a3f5d8c2e4b6a1d9c3f7e5b8a2d4c6f8e1b3a5d7c9f2e4b6a8d1c3f5e7b9a2d4', actor: 'Sandworm', context: 'Industroyer v3 (IEC 61850 module)', firstSeen: '2026-09-12', confidence: 'HIGH' },
   { type: 'Hash (SHA-256)', value: 'b7e2f4a6c8d1e3b5a7c9d2f4e6b8a1c3d5e7f9b2a4c6d8e1f3a5b7c9d2e4f6a8', actor: 'APT28', context: 'SilentForge implant (x64)', firstSeen: '2026-08-25', confidence: 'HIGH' },
   { type: 'Hash (SHA-256)', value: 'c9d1e3f5a7b2c4d6e8f1a3b5c7d9e2f4a6b8c1d3e5f7a9b2c4d6e8f1a3b5c7d9', actor: 'APT41', context: 'SaaS backdoor module (Node.js)', firstSeen: '2026-09-10', confidence: 'MODERATE' },
   { type: 'Hash (SHA-256)', value: 'd2e4f6a8b1c3d5e7f9a2b4c6d8e1f3a5b7c9d2e4f6a8b1c3d5e7f9a2b4c6d8e1', actor: 'Lazarus Group', context: 'Dream Job 3.0 payload dropper', firstSeen: '2026-09-06', confidence: 'HIGH' },
-  { type: 'CVE', value: 'CVE-2026-21442', actor: 'Volt Typhoon', context: 'Fortinet FortiOS auth bypass (0-day)', firstSeen: '2026-09-03', confidence: 'HIGH' },
-  { type: 'CVE', value: 'CVE-2026-18844', actor: 'APT41', context: 'SaaS platform SSRF to RCE', firstSeen: '2026-09-09', confidence: 'MODERATE' }
+  { type: 'CVE', value: 'EXERCISE-VULN-01', actor: 'Volt Typhoon', context: 'Fictional VPN appliance auth bypass', firstSeen: '2026-09-03', confidence: 'HIGH' },
+  { type: 'CVE', value: 'EXERCISE-VULN-02', actor: 'APT41', context: 'SaaS platform SSRF to RCE', firstSeen: '2026-09-09', confidence: 'MODERATE' }
 ];
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -133,9 +135,9 @@ const IOCS = [
 const BLUF = {
   potus: 'Three concurrent nation-state cyber campaigns pose immediate risk to US national security and critical infrastructure:\n\n1. CHINA (Volt Typhoon): Pre-positioned destructive access confirmed in 47 US critical infrastructure entities across energy, water, and transportation — assessed as preparation for Taiwan contingency. DECISION REQUIRED: authorize counter-operation.\n\n2. CHINA (Salt Typhoon): Persistent access to lawful-intercept systems at 4 major US telecom carriers confirmed. Senior government communications potentially compromised. EMERGENCY DIRECTIVE recommended.\n\n3. RUSSIA (GRU): Coordinated influence operations targeting midterm elections detected across 12 states. AI-generated deepfake content of election officials in circulation. PUBLIC ATTRIBUTION decision required by Oct 1.',
   secdef: 'BOTTOM LINE: Three active cyber campaigns require DoD attention and potential CYBERCOM action.\n\n1. Volt Typhoon pre-positioning in 47 CIKR entities represents the most significant CNE threat since SolarWinds. CYBERCOM counter-operation (OP PACIFIC SHIELD) awaiting SECDEF authorization. Risk: adversary activation during Taiwan crisis could degrade force projection capability.\n\n2. Salt Typhoon telecom compromise includes interception of DoD communications transiting commercial carriers. Immediate assessment of operational security impact required.\n\n3. Sandworm developing Industroyer variant targeting North American grid protocols. Capability assessment indicates potential for cascading power disruption affecting military installations dependent on commercial grid.',
-  ciso: 'BOTTOM LINE: Three threat vectors require immediate defensive action.\n\n1. HUNT IMMEDIATELY: Volt Typhoon IOCs (CVE-2026-21442, SOHO router compromise indicators). Sweep all internet-facing Fortinet, Cisco, and Netgear devices. 16 new compromises in 30 days.\n\n2. AUDIT NOW: If using any of the 4 affected telecom carriers for government communications, assume compromise. Rotate encryption keys. Transition sensitive comms to classified systems.\n\n3. PATCH/DETECT: Sandworm Industroyer v3 signatures released — deploy to all OT monitoring systems. APT28 SilentForge IOCs appended to this briefing.\n\nCritical patches: CVE-2026-21442 (Fortinet, CVSS 9.8), CVE-2026-18844 (SaaS SSRF, CVSS 8.6).',
+  ciso: 'BOTTOM LINE: Three threat vectors require immediate defensive action.\n\n1. HUNT IMMEDIATELY: Volt Typhoon IOCs (EXERCISE-VULN-01, SOHO router compromise indicators). Sweep all internet-facing VPN appliances and SOHO routers. 16 new compromises in 30 days.\n\n2. AUDIT NOW: If using any of the 4 affected telecom carriers for government communications, assume compromise. Rotate encryption keys. Transition sensitive comms to classified systems.\n\n3. PATCH/DETECT: Sandworm Industroyer v3 signatures released — deploy to all OT monitoring systems. APT28 SilentForge IOCs appended to this briefing.\n\nCritical patches: EXERCISE-VULN-01 (VPN appliance, CVSS 9.8), EXERCISE-VULN-02 (SaaS SSRF, CVSS 8.6).',
   board: 'BOTTOM LINE: Three nation-state campaigns create material cyber risk requiring board awareness.\n\n1. BUSINESS CONTINUITY RISK: Chinese state actors have pre-positioned destructive access in US energy, water, and telecom infrastructure. A geopolitical trigger event could cause cascading service disruptions. Estimated economic impact: $2.4B–$8.7B per day of disruption.\n\n2. DATA BREACH RISK: Telecom provider compromise may have exposed executive communications. If your organization uses affected carriers (names classified), assume compromise of unencrypted communications.\n\n3. REGULATORY RISK: Updated CMMC requirements, SEC cyber disclosure rules, and potential emergency directives will increase compliance obligations. Recommend pre-positioning additional cybersecurity budget.',
-  isac: 'BOTTOM LINE: Three campaigns require sector-specific collective defense actions.\n\n1. ENERGY/WATER SECTOR: Volt Typhoon IOCs must be hunted across all SCADA/ICS environments within 48 hours. Shared indicators attached. Three new water utility compromises this month.\n\n2. TELECOM SECTOR: Salt Typhoon lawful-intercept compromise requires immediate audit of all carrier-grade interception systems. FBI coordination point: CyDiv-SaltTyphoon@ic.fbi.gov.\n\n3. ALL SECTORS: APT28 credential harvesting campaign using domain typosquatting. Block attached domain list at email gateway. Sandworm Industroyer v3 YARA rules attached for OT monitoring.'
+  isac: 'BOTTOM LINE: Three campaigns require sector-specific collective defense actions.\n\n1. ENERGY/WATER SECTOR: Volt Typhoon IOCs must be hunted across all SCADA/ICS environments within 48 hours. Shared indicators attached. Three new water utility compromises this month.\n\n2. TELECOM SECTOR: Salt Typhoon lawful-intercept compromise requires immediate audit of all carrier-grade interception systems. Coordinate through your sector ISAC.\n\n3. ALL SECTORS: APT28 credential harvesting campaign using domain typosquatting. Block attached domain list at email gateway. Sandworm Industroyer v3 YARA rules attached for OT monitoring.'
 };
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -148,6 +150,9 @@ function injectStyles() {
   style.textContent = `
 /* ── Cyber Briefing Generator ── */
 .cb-wrap { font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; color: #c8d6e5; max-width: 1200px; margin: 0 auto; }
+.cb-fiction-badge { display: inline-block; vertical-align: middle; margin-left: 10px; padding: 3px 9px; border-radius: 4px; background: #f59e0b; color: #1a1200; font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; font-family: ui-sans-serif, system-ui, sans-serif; }
+.cb-fiction-note { background: #2a1a00; border: 1px solid #f59e0b; color: #fde68a; border-radius: 6px; padding: 10px 14px; font-size: 12px; line-height: 1.55; margin-bottom: 16px; }
+[data-style=pro] .cb-fiction-note { background: #fffbeb; color: #92400e; }
 .cb-classification-banner { text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; letter-spacing: 3px; padding: 8px 16px; border-radius: 4px; margin-bottom: 20px; }
 .cb-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; margin-bottom: 24px; flex-wrap: wrap; }
 .cb-header-left h1 { margin: 0 0 4px; font-size: 24px; font-family: 'JetBrains Mono', monospace; color: #fff; letter-spacing: 1px; }
@@ -382,15 +387,22 @@ function renderClassificationBanner(classification) {
   return '<div class="cb-classification-banner" style="background:' + c.bg + ';color:' + c.color + ';border:2px solid ' + c.color + '">' + esc(c.label) + '</div>';
 }
 
+function renderFictionNotice() {
+  return '<div class="cb-fiction-note"><strong>Training scenario - fictional.</strong> This briefing is an exercise for practising executive threat communication. ' +
+    'Findings, incident counts, indicators, decisions and dates are invented; they are not real intelligence and are not sourced from or endorsed by any government agency. ' +
+    'Threat-actor names are real public designations used only to make the scenario realistic; the activity described here is fictional. ' +
+    'IP addresses and domains use reserved documentation ranges.</div>';
+}
+
 function renderHeader(classification, audience) {
   var h = '';
   h += '<div class="cb-header">';
   h += '<div class="cb-header-left">';
-  h += '<h1>EXECUTIVE CYBER BRIEFING</h1>';
-  h += '<div class="cb-subtitle">Generated: ' + esc(getNowISO()) + ' | Briefing Period: 24 Hours | Prepared by: Darknode Intelligence Division</div>';
+  h += '<h1>EXECUTIVE CYBER BRIEFING <span class="cb-fiction-badge">Training scenario - fictional</span></h1>';
+  h += '<div class="cb-subtitle">Generated: ' + esc(getNowISO()) + ' | Exercise briefing for practice | Not real intelligence</div>';
   h += '</div>';
   h += '<div class="cb-controls">';
-  h += '<select class="cb-select" id="cb-classification">';
+  h += '<select class="cb-select" id="cb-classification" title="Exercise marking">';
   for (var i = 0; i < CLASSIFICATIONS.length; i++) {
     var cl = CLASSIFICATIONS[i];
     h += '<option value="' + esc(cl.id) + '"' + (cl.id === classification ? ' selected' : '') + '>' + esc(cl.label) + '</option>';
@@ -418,10 +430,10 @@ function renderStats() {
 
   var stats = [
     { value: activeActors, label: 'Active Threat Actors', color: '#ef4444' },
-    { value: totalIncidents, label: 'Incidents (30d)', color: '#f59e0b' },
+    { value: totalIncidents, label: 'Scenario Incidents (30d)', color: '#f59e0b' },
     { value: criticalSectors, label: 'Sectors at Risk', color: '#ea580c' },
     { value: pendingDecisions, label: 'Pending Decisions', color: '#8b5cf6' },
-    { value: IOCS.length, label: 'Active IOCs', color: '#3b82f6' },
+    { value: IOCS.length, label: 'Exercise IOCs', color: '#3b82f6' },
     { value: RECOMMENDED_ACTIONS.filter(function(a) { return a.priority === 'IMMEDIATE'; }).length, label: 'Immediate Actions', color: '#dc2626' }
   ];
 
@@ -482,7 +494,7 @@ function renderActorTable() {
 
 function renderSectorMatrix() {
   var h = '<div class="cb-section">';
-  h += '<div class="cb-section-title"><span class="cb-icon">&#9881;</span> CRITICAL INFRASTRUCTURE SECTOR THREAT MATRIX</div>';
+  h += '<div class="cb-section-title"><span class="cb-icon">&#9881;</span> CRITICAL INFRASTRUCTURE SECTOR THREAT MATRIX (SCENARIO)</div>';
   h += '<div class="cb-sector-grid">';
 
   for (var i = 0; i < SECTOR_THREATS.length; i++) {
@@ -512,7 +524,7 @@ function renderSectorMatrix() {
 
 function renderIntelFindings() {
   var h = '<div class="cb-section">';
-  h += '<div class="cb-section-title"><span class="cb-icon">&#9733;</span> KEY INTELLIGENCE FINDINGS</div>';
+  h += '<div class="cb-section-title"><span class="cb-icon">&#9733;</span> KEY FINDINGS (FICTIONAL EXERCISE INJECTS)</div>';
 
   for (var i = 0; i < INTEL_FINDINGS.length; i++) {
     var f = INTEL_FINDINGS[i];
@@ -528,7 +540,7 @@ function renderIntelFindings() {
     h += '</div>';
     h += '<div class="cb-intel-meta">';
     h += '<div class="cb-intel-meta-item">Source: <span>' + esc(f.source) + '</span></div>';
-    h += '<div class="cb-intel-meta-item">Classification: <span>' + esc(f.classification) + '</span></div>';
+    h += '<div class="cb-intel-meta-item">Marking: <span>' + esc(f.classification) + '</span></div>';
     h += '<div class="cb-intel-meta-item">Confidence: <span class="cb-score-bar"><span class="cb-score-track"><span class="cb-score-fill" style="width:' + f.confidence + '%;background:' + confColor + '"></span></span> <span class="cb-score-val" style="color:' + confColor + '">' + f.confidence + '%</span></span></div>';
     h += '<div class="cb-intel-meta-item">Relevance: <span class="cb-score-bar"><span class="cb-score-track"><span class="cb-score-fill" style="width:' + f.relevance + '%;background:' + relColor + '"></span></span> <span class="cb-score-val" style="color:' + relColor + '">' + f.relevance + '%</span></span></div>';
     h += '</div>';
@@ -608,7 +620,7 @@ function renderDecisionPoints() {
 
 function renderIOCTable() {
   var h = '<div class="cb-section">';
-  h += '<div class="cb-section-title"><span class="cb-icon">&#128270;</span> APPENDIX: INDICATORS OF COMPROMISE (IOCs)</div>';
+  h += '<div class="cb-section-title"><span class="cb-icon">&#128270;</span> APPENDIX: EXERCISE INDICATORS (fictional, not for blocking)</div>';
   h += '<div style="overflow-x:auto">';
   h += '<table class="cb-table">';
   h += '<thead><tr>';
@@ -646,8 +658,7 @@ function generateExportText(classification, audience) {
   text += 'EXECUTIVE CYBER BRIEFING\n';
   text += 'Generated: ' + getNowISO() + '\n';
   text += 'Audience: ' + aud.label + '\n';
-  text += 'Briefing Period: 24 Hours\n';
-  text += 'Prepared by: Darknode Intelligence Division\n';
+  text += 'TRAINING SCENARIO - FICTIONAL. Not real intelligence; not sourced from any government agency.\n';
   text += sep + '\n\n';
 
   text += 'BOTTOM LINE UP FRONT (BLUF)\n';
@@ -706,7 +717,7 @@ function generateExportText(classification, audience) {
     text += '\n';
   }
 
-  text += 'INDICATORS OF COMPROMISE\n';
+  text += 'EXERCISE INDICATORS (fictional, documentation ranges)\n';
   text += line + '\n';
   for (var p = 0; p < IOCS.length; p++) {
     var ioc = IOCS[p];
@@ -729,13 +740,14 @@ function generateExportText(classification, audience) {
 export function renderCyberBriefing(container) {
   injectStyles();
 
-  var curClassification = 'tssci';
+  var curClassification = 'training';
   var curAudience = 'ciso';
 
   function render() {
     var h = '<div class="cb-wrap">';
     h += renderClassificationBanner(curClassification);
     h += renderHeader(curClassification, curAudience);
+    h += renderFictionNotice();
     h += renderStats();
     h += renderBLUF(curAudience);
     h += renderActorTable();

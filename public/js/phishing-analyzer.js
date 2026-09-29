@@ -6,7 +6,7 @@ const SHORTENERS = ["bit.ly","tinyurl.com","t.co","goo.gl","ow.ly","is.gd","buff
 const DANGEROUS_EXTS = [".exe",".scr",".bat",".cmd",".ps1",".vbs",".vbe",".js",".jse",".wsf",".wsh",".msi",".msp",".com",".pif",".hta",".cpl",".inf",".reg",".rgs",".sct",".shb",".iso",".img",".vhd",".vhdx",".cab",".dll",".ocx",".sys",".lnk",".url",".application",".gadget",".jar",".docm",".xlsm",".pptm",".dotm",".xltm",".potm",".sldm",".ppam",".xlam"];
 const BRANDS = ["paypal","amazon","apple","microsoft","google","facebook","instagram","netflix","bank of america","chase","wells fargo","citibank","usps","fedex","ups","dhl","irs","social security","dropbox","linkedin","twitter","spotify","adobe","zoom","docusign","walmart","target","costco","bestbuy","ebay","coinbase","binance","metamask","steam","blizzard","riot"];
 const URGENCY_WORDS = ["act now","immediately","urgent","expire","suspended","verify your","confirm your","unusual activity","unauthorized","limited time","within 24 hours","click here","update your payment","confirm your identity","your account will be","failure to","last warning","final notice","security alert","important update","action required","response required"];
-const HOMOGLYPHS = {"a":"аàáâãä","e":"еèéêë","i":"іìíîï","o":"оòóôõöο","u":"ùúûü","c":"сç","n":"ñ","p":"р","s":"ş","y":"уý","l":"1l","d":"ԁ","g":"ɡ","h":"һ","k":"к","m":"м","t":"т","w":"ѡ","x":"х"};
+const HOMOGLYPHS = {"a":"аàáâãä","e":"еèéêë","i":"іìíîï","o":"оòóôõöο","u":"ùúûü","c":"сç","n":"ñ","p":"р","s":"ş","y":"уý","l":"ӏ","d":"ԁ","g":"ɡ","h":"һ","k":"к","m":"м","t":"т","w":"ѡ","x":"х"};
 
 function parseHeaders(raw) {
   const headers = {};
@@ -62,7 +62,7 @@ function extractHashes(text) {
 }
 
 function defangURL(url) {
-  return url.replace(/https?/i, function(m) { return m.replace("t","x"); }).replace(/\./g, "[.]");
+  return url.replace(/https?/i, function(m) { return m.replace(/t/g, "x"); }).replace(/\./g, "[.]");
 }
 function defangIP(ip) { return ip.replace(/\./g, "[.]"); }
 function defangEmail(em) { return em.replace("@", "[@]").replace(/\./g, "[.]"); }
@@ -102,7 +102,7 @@ function analyzeForPhishing(headers, body) {
     }
   }
   // SPF checks
-  const spf = headers["received-spf"] || headers["authentication-results"] || "";
+  const spf = [headers["authentication-results"], headers["received-spf"]].filter(Boolean).join(" ");
   if (/spf=fail/i.test(spf)) flags.push({ severity: "critical", msg: "SPF authentication failed" });
   else if (/spf=softfail/i.test(spf)) flags.push({ severity: "high", msg: "SPF authentication softfail" });
   else if (/spf=none/i.test(spf)) flags.push({ severity: "medium", msg: "No SPF record found for sender domain" });
