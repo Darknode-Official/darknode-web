@@ -354,6 +354,7 @@ function yaraSearch(bytes, rule) {
       var re = new RegExp(pattern, "gi");
       var m;
       while ((m = re.exec(hexStr)) !== null) {
+        if (m.index % 2 !== 0) { re.lastIndex = m.index + 1; continue; }
         matches.push({ string: s.name, offset: m.index / 2, matchHex: m[0], length: m[0].length / 2 });
       }
     } else if (s.type === "text") {

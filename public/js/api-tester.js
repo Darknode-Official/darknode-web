@@ -1,4 +1,15 @@
 // API Tester — HTTP API security testing tool (client-side fetch)
+// Decode a base64url JWT segment to its parsed JSON, handling padding and
+// UTF-8 claims (atob yields a Latin-1 byte string; decode it as UTF-8 so
+// non-ASCII claim values are not mangled).
+function _jwtSegJson(seg) {
+  var s = String(seg).replace(/-/g, "+").replace(/_/g, "/");
+  while (s.length % 4) s += "=";
+  var bin = atob(s);
+  var bytes = new Uint8Array(bin.length);
+  for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return JSON.parse(new TextDecoder("utf-8").decode(bytes));
+}
 const esc = (s) => String(s != null ? s : "").replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
@@ -50,8 +61,8 @@ function decodeJWT(token) {
   try {
     var parts = token.split(".");
     if (parts.length !== 3) return null;
-    var header = JSON.parse(atob(parts[0].replace(/-/g, "+").replace(/_/g, "/")));
-    var payload = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/")));
+    var header = _jwtSegJson(parts[0]);
+    var payload = _jwtSegJson(parts[1]);
     var issues = [];
     if (header.alg === "none") issues.push("CRITICAL: Algorithm is 'none' - token is unsigned");
     if (header.alg === "HS256" && header.jku) issues.push("WARNING: jku header present with symmetric algorithm");
@@ -132,7 +143,8 @@ function parseCurl(text) {
 
 function substituteEnvVars(text, envVars) {
   for (var key in envVars) {
-    text = text.replace(new RegExp("\\{\\{" + key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\}\\}", "g"), envVars[key]);
+    var val = envVars[key];
+    text = text.replace(new RegExp("\\{\\{" + key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\}\\}", "g"), function () { return val; });
   }
   return text;
 }
@@ -269,7 +281,7 @@ export function renderAPITester(main) {
         } else if (aType === "basic") {
           var user = (content.querySelector("#at-auth-user") || {}).value || "";
           var pass = (content.querySelector("#at-auth-pass") || {}).value || "";
-          if (user) fetchHeaders["Authorization"] = "Basic " + btoa(user + ":" + pass);
+          if (user) fetchHeaders["Authorization"] = "Basic " + btoa(unescape(encodeURIComponent(user + ":" + pass)));
         } else if (aType === "apikey-header") {
           var kn = (content.querySelector("#at-auth-key-name") || {}).value || "X-API-Key";
           var kv = (content.querySelector("#at-auth-key-val") || {}).value || "";
@@ -314,7 +326,7 @@ export function renderAPITester(main) {
                 '<span style="font-weight:700;font-size:1.1rem;color:' + statusColor + '">' + resp.status + '</span>' +
                 '<span style="color:var(--mut);font-size:.85rem">' + esc(statusText) + '</span>' +
                 '<span style="margin-left:auto;font-size:.78rem;color:var(--mut)">' + elapsed + 'ms</span>' +
-                '<span style="font-size:.78rem;color:var(--mut)">' + (respBody.length / 1024).toFixed(1) + ' KB</span>' +
+                '<span style="font-size:.78rem;color:var(--mut)">' + (new TextEncoder().encode(respBody).length / 1024).toFixed(1) + ' KB</span>' +
               '</div>' +
               '<div style="padding:10px 14px">' +
                 '<div style="margin-bottom:8px"><strong style="font-size:.82rem">Response Headers</strong></div>' +

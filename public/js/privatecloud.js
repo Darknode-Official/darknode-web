@@ -53,7 +53,16 @@ const SERVICES = {
   },
 };
 
-function rnd(n) { const a = crypto.getRandomValues(new Uint8Array(n)); return [...a].map((x) => "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789"[x % 55]).join(""); }
+function rnd(n) {
+  const cs = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+  // Rejection-sample bytes to avoid modulo bias (256 % 55 != 0).
+  const max = Math.floor(256 / cs.length) * cs.length, out = [], buf = new Uint8Array(n);
+  while (out.length < n) {
+    crypto.getRandomValues(buf);
+    for (let i = 0; i < buf.length && out.length < n; i++) if (buf[i] < max) out.push(cs[buf[i] % cs.length]);
+  }
+  return out.join("");
+}
 
 // Minimal YAML emitter for the compose object (handles our nested shapes).
 function toYaml(obj, indent) {

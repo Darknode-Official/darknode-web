@@ -1,6 +1,6 @@
 // Copyright (c) 2026 Darknode-Official. All rights reserved.
 // Source-available for learning only. Redistribution prohibited. See LICENSE.
-(function(){var _h=location.hostname,_a=["darknode.ai","www.darknode.ai","localhost","127.0.0.1"];if(!_a.some(function(d){return _h===d}))throw document.body.innerHTML="",new Error("unlicensed")}());
+(function(){var _h=location.hostname,_a=["darknode.ai","www.darknode.ai","darknode-web-e1s2.onrender.com","localhost","127.0.0.1"];if(!_a.some(function(d){return _h===d}))throw document.body.innerHTML="",new Error("unlicensed")}());
 
 // ============================================================================
 // DARKNODE HASH SUITE — Complete Hashing Toolkit
@@ -76,9 +76,9 @@ const MD5 = (function () {
       c = md5gg(c, d, a, b, x[i + 3],  14, -187363961);
       b = md5gg(b, c, d, a, x[i + 8],  20, 1163531501);
       a = md5gg(a, b, c, d, x[i + 13], 5, -1444681467);
-      d = md5gg(d, a, b, c, x[i + 6],  9, -51403784);
-      c = md5gg(c, d, a, b, x[i + 11], 14, 1735328473);
-      b = md5gg(b, c, d, a, x[i + 0],  20, -1926607734);
+      d = md5gg(d, a, b, c, x[i + 2],  9, -51403784);
+      c = md5gg(c, d, a, b, x[i + 7],  14, 1735328473);
+      b = md5gg(b, c, d, a, x[i + 12], 20, -1926607734);
 
       a = md5hh(a, b, c, d, x[i + 5],  4, -378558);
       d = md5hh(d, a, b, c, x[i + 8],  11, -2022574463);
@@ -137,13 +137,19 @@ const MD5 = (function () {
   function str2rstrUTF8(input) {
     let output = "";
     for (let i = 0; i < input.length; i++) {
-      const c = input.charCodeAt(i);
+      const c = input.codePointAt(i);
+      if (c > 0xFFFF) i++; // consumed a surrogate pair
       if (c < 128) { output += String.fromCharCode(c); }
       else if (c < 2048) {
         output += String.fromCharCode((c >> 6) | 192);
         output += String.fromCharCode((c & 63) | 128);
-      } else {
+      } else if (c < 0x10000) {
         output += String.fromCharCode((c >> 12) | 224);
+        output += String.fromCharCode(((c >> 6) & 63) | 128);
+        output += String.fromCharCode((c & 63) | 128);
+      } else {
+        output += String.fromCharCode((c >> 18) | 240);
+        output += String.fromCharCode(((c >> 12) & 63) | 128);
         output += String.fromCharCode(((c >> 6) & 63) | 128);
         output += String.fromCharCode((c & 63) | 128);
       }
@@ -167,8 +173,9 @@ const MD5 = (function () {
   }
 
   function hmacMD5(key, data) {
-    let bkey = rstr2binl(str2rstrUTF8(key));
-    if (bkey.length > 16) bkey = binlMD5(bkey, key.length * 8);
+    const kstr = str2rstrUTF8(key);
+    let bkey = rstr2binl(kstr);
+    if (bkey.length > 16) bkey = binlMD5(bkey, kstr.length * 8);
     const ipad = new Array(16), opad = new Array(16);
     for (let i = 0; i < 16; i++) {
       ipad[i] = bkey[i] ^ 0x36363636;
@@ -198,13 +205,19 @@ const SHA1 = (function () {
   function str2rstrUTF8(input) {
     let output = "";
     for (let i = 0; i < input.length; i++) {
-      const c = input.charCodeAt(i);
-      if (c < 128) output += String.fromCharCode(c);
+      const c = input.codePointAt(i);
+      if (c > 0xFFFF) i++; // consumed a surrogate pair
+      if (c < 128) { output += String.fromCharCode(c); }
       else if (c < 2048) {
         output += String.fromCharCode((c >> 6) | 192);
         output += String.fromCharCode((c & 63) | 128);
-      } else {
+      } else if (c < 0x10000) {
         output += String.fromCharCode((c >> 12) | 224);
+        output += String.fromCharCode(((c >> 6) & 63) | 128);
+        output += String.fromCharCode((c & 63) | 128);
+      } else {
+        output += String.fromCharCode((c >> 18) | 240);
+        output += String.fromCharCode(((c >> 12) & 63) | 128);
         output += String.fromCharCode(((c >> 6) & 63) | 128);
         output += String.fromCharCode((c & 63) | 128);
       }
@@ -261,8 +274,9 @@ const SHA1 = (function () {
   function rstrSHA1(s) { return binb2rstr(binbSHA1(rstr2binb(s), s.length * 8)); }
 
   function hmacSHA1(key, data) {
-    let bkey = rstr2binb(str2rstrUTF8(key));
-    if (bkey.length > 16) bkey = binbSHA1(bkey, key.length * 8);
+    const kstr = str2rstrUTF8(key);
+    let bkey = rstr2binb(kstr);
+    if (bkey.length > 16) bkey = binbSHA1(bkey, kstr.length * 8);
     const ipad = new Array(16), opad = new Array(16);
     for (let i = 0; i < 16; i++) {
       ipad[i] = (bkey[i] || 0) ^ 0x36363636;
@@ -314,13 +328,19 @@ const SHA256 = (function () {
   function str2rstrUTF8(input) {
     let output = "";
     for (let i = 0; i < input.length; i++) {
-      const c = input.charCodeAt(i);
-      if (c < 128) output += String.fromCharCode(c);
+      const c = input.codePointAt(i);
+      if (c > 0xFFFF) i++; // consumed a surrogate pair
+      if (c < 128) { output += String.fromCharCode(c); }
       else if (c < 2048) {
         output += String.fromCharCode((c >> 6) | 192);
         output += String.fromCharCode((c & 63) | 128);
-      } else {
+      } else if (c < 0x10000) {
         output += String.fromCharCode((c >> 12) | 224);
+        output += String.fromCharCode(((c >> 6) & 63) | 128);
+        output += String.fromCharCode((c & 63) | 128);
+      } else {
+        output += String.fromCharCode((c >> 18) | 240);
+        output += String.fromCharCode(((c >> 12) & 63) | 128);
         output += String.fromCharCode(((c >> 6) & 63) | 128);
         output += String.fromCharCode((c & 63) | 128);
       }
@@ -377,8 +397,9 @@ const SHA256 = (function () {
   function rstrSHA256(s) { return binb2rstr(coreSHA256(rstr2binb(s), s.length * 8)); }
 
   function hmacSHA256(key, data) {
-    let bkey = rstr2binb(str2rstrUTF8(key));
-    if (bkey.length > 16) bkey = coreSHA256(bkey, key.length * 8);
+    const kstr = str2rstrUTF8(key);
+    let bkey = rstr2binb(kstr);
+    if (bkey.length > 16) bkey = coreSHA256(bkey, kstr.length * 8);
     const ipad = new Array(16), opad = new Array(16);
     for (let i = 0; i < 16; i++) {
       ipad[i] = (bkey[i] || 0) ^ 0x36363636;
@@ -446,19 +467,23 @@ const SHA512 = (function () {
   ];
 
   function int64add(dst, a, b) {
+    // Read every input before writing dst: dst may alias a (e.g. the final
+    // int64add(H[i], H[i], ...) accumulation), and writing dst.lo first would
+    // corrupt the carry computation.
     const lo = (a.lo >>> 0) + (b.lo >>> 0);
+    const hi = (a.hi + b.hi + (lo > 0xffffffff ? 1 : 0)) | 0;
     dst.lo = lo | 0;
-    dst.hi = (a.hi + b.hi + ((lo >>> 0) < (a.lo >>> 0) ? 1 : 0)) | 0;
+    dst.hi = hi;
   }
   function int64add4(dst, a, b, c, d) {
     const lo = (a.lo >>> 0) + (b.lo >>> 0) + (c.lo >>> 0) + (d.lo >>> 0);
     dst.lo = lo | 0;
-    dst.hi = (a.hi + b.hi + c.hi + d.hi + Math.floor((lo >>> 0) / 0x100000000)) | 0;
+    dst.hi = (a.hi + b.hi + c.hi + d.hi + Math.floor(lo / 0x100000000)) | 0;
   }
   function int64add5(dst, a, b, c, d, e) {
     const lo = (a.lo >>> 0) + (b.lo >>> 0) + (c.lo >>> 0) + (d.lo >>> 0) + (e.lo >>> 0);
     dst.lo = lo | 0;
-    dst.hi = (a.hi + b.hi + c.hi + d.hi + e.hi + Math.floor((lo >>> 0) / 0x100000000)) | 0;
+    dst.hi = (a.hi + b.hi + c.hi + d.hi + e.hi + Math.floor(lo / 0x100000000)) | 0;
   }
   function int64shr(dst, x, shift) {
     dst.lo = (x.lo >>> shift) | (x.hi << (32 - shift));
@@ -476,13 +501,19 @@ const SHA512 = (function () {
   function str2rstrUTF8(input) {
     let output = "";
     for (let i = 0; i < input.length; i++) {
-      const c = input.charCodeAt(i);
-      if (c < 128) output += String.fromCharCode(c);
+      const c = input.codePointAt(i);
+      if (c > 0xFFFF) i++; // consumed a surrogate pair
+      if (c < 128) { output += String.fromCharCode(c); }
       else if (c < 2048) {
         output += String.fromCharCode((c >> 6) | 192);
         output += String.fromCharCode((c & 63) | 128);
-      } else {
+      } else if (c < 0x10000) {
         output += String.fromCharCode((c >> 12) | 224);
+        output += String.fromCharCode(((c >> 6) & 63) | 128);
+        output += String.fromCharCode((c & 63) | 128);
+      } else {
+        output += String.fromCharCode((c >> 18) | 240);
+        output += String.fromCharCode(((c >> 12) & 63) | 128);
         output += String.fromCharCode(((c >> 6) & 63) | 128);
         output += String.fromCharCode((c & 63) | 128);
       }
@@ -500,15 +531,17 @@ const SHA512 = (function () {
   }
 
   function coreSHA512(msg, len) {
-    const bytelen = len / 8;
-    const msglen = bytelen + 128 - ((bytelen + 16) % 128);
-    const m = new Array(msglen / 4);
+    // Pad into 32-bit big-endian words. Each 1024-bit block is 32 words; the
+    // low 32 bits of the (128-bit) message length go in the final word of the
+    // last block, which is where the compression loop reads W[15].lo.
+    const lenWordIdx = (((len + 128) >> 10) << 5) + 31;
+    const m = new Array(lenWordIdx + 1);
     for (let i = 0; i < m.length; i++) m[i] = 0;
-    for (let i = 0; i < bytelen; i++) {
-      m[i >> 2] |= (msg.charCodeAt(i) & 0xff) << (24 - (i % 4) * 8);
+    for (let i = 0; i < len; i += 8) {
+      m[i >> 5] |= (msg.charCodeAt(i / 8) & 0xff) << (24 - (i % 32));
     }
-    m[bytelen >> 2] |= 0x80 << (24 - (bytelen % 4) * 8);
-    m[m.length - 1] = len;
+    m[len >> 5] |= 0x80 << (24 - (len % 32));
+    m[lenWordIdx] = len;
 
     const W = new Array(80);
     for (let j = 0; j < 80; j++) W[j] = new Int64(0, 0);
@@ -554,7 +587,7 @@ const SHA512 = (function () {
         int64add5(T1, h, s1, ch, K[j], W[j]);
         int64rotr(r1, a, 28);
         int64revrrot(r2, a, 2);
-        int64rotr(r3, a, 7);
+        int64revrrot(r3, a, 7);
         s0.lo = r1.lo ^ r2.lo ^ r3.lo;
         s0.hi = r1.hi ^ r2.hi ^ r3.hi;
         maj.lo = (a.lo & b.lo) ^ (a.lo & c.lo) ^ (b.lo & c.lo);
@@ -663,7 +696,9 @@ function calcEntropy(password) {
   if (hasDigit)    charset += 10;
   if (hasSpecial)  charset += 33;
   if (hasExtended) charset += 128;
-  const entropy = Math.log2(Math.pow(charset, password.length));
+  // length * log2(charset) avoids Math.pow(charset, length) overflowing to
+  // Infinity for long passwords (which made the entropy readout show Infinity).
+  const entropy = password.length * Math.log2(charset || 1);
   let strength, crackTime;
   const seconds = Math.pow(2, entropy) / 10e9;
   if (entropy < 28)      { strength = "very weak"; crackTime = "< 1 second"; }

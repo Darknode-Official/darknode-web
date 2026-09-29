@@ -1,6 +1,6 @@
 // Copyright (c) 2026 Darknode-Official. All rights reserved.
 // Source-available for learning only. Redistribution prohibited. See LICENSE.
-(function(){var _h=location.hostname,_a=["darknode.ai","www.darknode.ai","localhost","127.0.0.1"];if(!_a.some(function(d){return _h===d}))throw document.body.innerHTML="",new Error("unlicensed")}());
+(function(){var _h=location.hostname,_a=["darknode.ai","www.darknode.ai","darknode-web-e1s2.onrender.com","localhost","127.0.0.1"];if(!_a.some(function(d){return _h===d}))throw document.body.innerHTML="",new Error("unlicensed")}());
 
 // ============================================================================
 // DARKNODE ENCODING SUITE — Comprehensive Encoding/Decoding Toolkit
@@ -26,11 +26,12 @@ function b64Decode(str) {
 function urlEncode(str) { try { return encodeURIComponent(str); } catch (e) { return "Error: " + e.message; } }
 function urlDecode(str) { try { return decodeURIComponent(str); } catch (e) { return "Error: " + e.message; } }
 function urlEncodeAll(str) {
+  // RFC 3986 percent-encoding operates on UTF-8 bytes, not UTF-16 code units.
+  // Iterating str.charCodeAt() emitted "%20AC" for "€" (a single >255 unit) —
+  // not valid percent-encoding — and "%E9" for "é" instead of "%C3%A9".
+  const bytes = new TextEncoder().encode(str);
   let out = "";
-  for (let i = 0; i < str.length; i++) {
-    const code = str.charCodeAt(i);
-    out += "%" + code.toString(16).toUpperCase().padStart(2, "0");
-  }
+  for (let i = 0; i < bytes.length; i++) out += "%" + bytes[i].toString(16).toUpperCase().padStart(2, "0");
   return out;
 }
 function doubleUrlEncode(str) { return encodeURIComponent(encodeURIComponent(str)); }
@@ -51,13 +52,16 @@ function htmlDecode(str) {
   return el.value;
 }
 function htmlEncodeAll(str) {
+  // Iterate by code point (for...of), not by UTF-16 unit: an astral character
+  // such as "😀" (U+1F600) must become the single reference &#128512; rather
+  // than two lone-surrogate entities &#55357;&#56832;.
   let out = "";
-  for (let i = 0; i < str.length; i++) out += "&#" + str.charCodeAt(i) + ";";
+  for (const ch of str) out += "&#" + ch.codePointAt(0) + ";";
   return out;
 }
 function htmlEncodeHex(str) {
   let out = "";
-  for (let i = 0; i < str.length; i++) out += "&#x" + str.charCodeAt(i).toString(16) + ";";
+  for (const ch of str) out += "&#x" + ch.codePointAt(0).toString(16) + ";";
   return out;
 }
 
@@ -66,28 +70,28 @@ function htmlEncodeHex(str) {
 // ---------------------------------------------------------------------------
 function hexEncode(str) {
   let out = "";
-  for (let i = 0; i < str.length; i++) out += str.charCodeAt(i).toString(16).padStart(2, "0");
+  for (const b of new TextEncoder().encode(str)) out += b.toString(16).padStart(2, "0");
   return out;
 }
 function hexDecode(str) {
-  const clean = str.replace(/\s+/g, "").replace(/^0x/i, "");
+  const clean = str.replace(/\s+/g, "").replace(/\\x/gi, "").replace(/^0x/i, "");
   if (clean.length % 2 !== 0) return "Error: Odd number of hex characters";
-  let out = "";
+  const bytes = [];
   for (let i = 0; i < clean.length; i += 2) {
-    const byte = parseInt(clean.substr(i, 2), 16);
-    if (isNaN(byte)) return "Error: Invalid hex character at position " + i;
-    out += String.fromCharCode(byte);
+    const pair = clean.substr(i, 2);
+    if (!/^[0-9a-fA-F]{2}$/.test(pair)) return "Error: Invalid hex character at position " + i;
+    bytes.push(parseInt(pair, 16));
   }
-  return out;
+  return new TextDecoder().decode(new Uint8Array(bytes));
 }
 function hexWithSpaces(str) {
   let out = "";
-  for (let i = 0; i < str.length; i++) out += str.charCodeAt(i).toString(16).padStart(2, "0") + " ";
+  for (const b of new TextEncoder().encode(str)) out += b.toString(16).padStart(2, "0") + " ";
   return out.trim();
 }
 function hexWith0x(str) {
   let out = "";
-  for (let i = 0; i < str.length; i++) out += "\\x" + str.charCodeAt(i).toString(16).padStart(2, "0");
+  for (const b of new TextEncoder().encode(str)) out += "\\x" + b.toString(16).padStart(2, "0");
   return out;
 }
 
@@ -95,31 +99,43 @@ function hexWith0x(str) {
 // Binary / Octal / Decimal conversion
 // ---------------------------------------------------------------------------
 function textToBinary(str) {
-  return Array.from(str).map(ch => ch.charCodeAt(0).toString(2).padStart(8, "0")).join(" ");
+  return Array.from(new TextEncoder().encode(str)).map(b => b.toString(2).padStart(8, "0")).join(" ");
 }
 function binaryToText(bin) {
-  return bin.trim().split(/\s+/).map(b => {
-    const n = parseInt(b, 2);
-    return isNaN(n) ? "?" : String.fromCharCode(n);
-  }).join("");
+  const tokens = bin.trim().split(/\s+/).filter(Boolean);
+  const bytes = [];
+  for (const t of tokens) {
+    const n = parseInt(t, 2);
+    if (isNaN(n)) return "Error: Invalid binary value \"" + t + "\"";
+    bytes.push(n & 0xFF);
+  }
+  return new TextDecoder().decode(new Uint8Array(bytes));
 }
 function textToOctal(str) {
-  return Array.from(str).map(ch => ch.charCodeAt(0).toString(8).padStart(3, "0")).join(" ");
+  return Array.from(new TextEncoder().encode(str)).map(b => b.toString(8).padStart(3, "0")).join(" ");
 }
 function octalToText(oct) {
-  return oct.trim().split(/\s+/).map(o => {
-    const n = parseInt(o, 8);
-    return isNaN(n) ? "?" : String.fromCharCode(n);
-  }).join("");
+  const tokens = oct.trim().split(/\s+/).filter(Boolean);
+  const bytes = [];
+  for (const t of tokens) {
+    const n = parseInt(t, 8);
+    if (isNaN(n)) return "Error: Invalid octal value \"" + t + "\"";
+    bytes.push(n & 0xFF);
+  }
+  return new TextDecoder().decode(new Uint8Array(bytes));
 }
 function textToDecimal(str) {
-  return Array.from(str).map(ch => ch.charCodeAt(0).toString(10)).join(" ");
+  return Array.from(new TextEncoder().encode(str)).map(b => b.toString(10)).join(" ");
 }
 function decimalToText(dec) {
-  return dec.trim().split(/\s+/).map(d => {
-    const n = parseInt(d, 10);
-    return isNaN(n) ? "?" : String.fromCharCode(n);
-  }).join("");
+  const tokens = dec.trim().split(/\s+/).filter(Boolean);
+  const bytes = [];
+  for (const t of tokens) {
+    const n = parseInt(t, 10);
+    if (isNaN(n)) return "Error: Invalid decimal value \"" + t + "\"";
+    bytes.push(n & 0xFF);
+  }
+  return new TextDecoder().decode(new Uint8Array(bytes));
 }
 
 // ---------------------------------------------------------------------------
@@ -273,8 +289,14 @@ function decodeJWT(token) {
   function b64urlDecode(s) {
     s = s.replace(/-/g, "+").replace(/_/g, "/");
     while (s.length % 4) s += "=";
-    try { return JSON.parse(atob(s)); }
-    catch (e) { return atob(s); }
+    let text;
+    try {
+      const bin = atob(s);
+      const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      text = new TextDecoder("utf-8").decode(bytes);
+    } catch (e) { return null; }
+    try { return JSON.parse(text); } catch (e) { return text; }
   }
   const header = b64urlDecode(parts[0]);
   const payload = b64urlDecode(parts[1]);
@@ -296,7 +318,20 @@ function decodeJWT(token) {
     payload: payload,
     signature: signature,
     signatureBase64Url: parts[2],
-    signatureHex: Array.from(atob(parts[2].replace(/-/g, "+").replace(/_/g, "/") + "==")).map(c => c.charCodeAt(0).toString(16).padStart(2, "0")).join(""),
+    signatureHex: (function () {
+      // Pad to a multiple of 4, not a hardcoded "==": a 32-byte HS256 signature
+      // is 43 base64url chars, and 43 + "==" = 45 (≡1 mod 4), which the browser's
+      // strict atob() rejects with InvalidCharacterError — throwing out of this
+      // object literal and failing the entire JWT decode for most real tokens.
+      try {
+        let s = parts[2].replace(/-/g, "+").replace(/_/g, "/");
+        while (s.length % 4) s += "=";
+        const bin = atob(s);
+        let hex = "";
+        for (let i = 0; i < bin.length; i++) hex += bin.charCodeAt(i).toString(16).padStart(2, "0");
+        return hex;
+      } catch (e) { return ""; }
+    })(),
     claims: claims,
     algorithm: header && header.alg ? header.alg : "unknown",
     type: header && header.typ ? header.typ : "unknown"
@@ -340,21 +375,23 @@ function parseASN1(hexStr) {
     const valueHex = valueBytes.map(b => b.toString(16).padStart(2, "0")).join(" ");
     let valueStr = "";
     if (tag === 0x02) {
-      let n = 0;
-      for (const b of valueBytes) n = (n << 8) | b;
+      let n = 0n;
+      for (const b of valueBytes) n = (n << 8n) | BigInt(b);
+      if (valueBytes.length && (valueBytes[0] & 0x80)) n -= (1n << BigInt(8 * valueBytes.length));
       valueStr = n.toString();
     } else if (tag === 0x13 || tag === 0x16 || tag === 0x0c || tag === 0x1a) {
       valueStr = valueBytes.map(b => String.fromCharCode(b)).join("");
     } else if (tag === 0x06) {
-      const oid = [];
-      oid.push(Math.floor(valueBytes[0] / 40));
-      oid.push(valueBytes[0] % 40);
-      let acc = 0;
-      for (let i = 1; i < valueBytes.length; i++) {
-        acc = (acc << 7) | (valueBytes[i] & 0x7f);
-        if (!(valueBytes[i] & 0x80)) { oid.push(acc); acc = 0; }
+      const subs = [];
+      let acc = 0n;
+      for (const b of valueBytes) {
+        acc = (acc << 7n) | BigInt(b & 0x7f);
+        if (!(b & 0x80)) { subs.push(acc); acc = 0n; }
       }
-      valueStr = oid.join(".");
+      const first = subs.length ? subs[0] : 0n;
+      const a1 = first < 40n ? 0n : first < 80n ? 1n : 2n;
+      const a2 = first - a1 * 40n;
+      valueStr = [a1, a2, ...subs.slice(1)].map(x => x.toString()).join(".");
     } else if (tag === 0x17) {
       valueStr = valueBytes.map(b => String.fromCharCode(b)).join("");
     } else if (tag === 0x01) {

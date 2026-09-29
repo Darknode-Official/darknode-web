@@ -3417,7 +3417,8 @@ export function renderAegis(main) {
                 return b ^ key;
               });
             } else if (method === 'Base64') {
-              var str = String.fromCharCode.apply(null, encoded);
+              var str = '';
+              for (var ci = 0; ci < encoded.length; ci++) str += String.fromCharCode(encoded[ci] & 0xFF);
               encoded = Array.from(new TextEncoder().encode(btoa(str)));
             }
           }

@@ -136,8 +136,11 @@ function fwCidrToRange(cidr) {
   if (!cidr || cidr === '0.0.0.0/0') return { start: 0, end: 0xFFFFFFFF };
   const parts = cidr.split('/');
   const ip = parts[0].split('.').reduce((a, b) => (a << 8) | parseInt(b), 0) >>> 0;
-  const mask = parts[1] ? (~0 << (32 - parseInt(parts[1]))) >>> 0 : 0xFFFFFFFF;
-  return { start: (ip & mask) >>> 0, end: ((ip & mask) | ~mask) >>> 0 };
+  // Prefix 0 must yield mask 0; `~0 << 32` is a no-op in JS (shift count is mod
+  // 32) and would wrongly produce 0xFFFFFFFF, mis-ranging a "x.x.x.x/0" input.
+  const bits = parts[1] !== undefined ? parseInt(parts[1], 10) : 32;
+  const mask = bits === 0 ? 0 : (~0 << (32 - bits)) >>> 0;
+  return { start: (ip & mask) >>> 0, end: ((ip & mask) | (~mask >>> 0)) >>> 0 };
 }
 
 function fwRangesOverlap(a, b) {
@@ -180,8 +183,10 @@ function fwRuleToIptables(r) {
   if (r.proto !== 'ANY') cmd += ` -p ${r.proto.toLowerCase()}`;
   if (r.srcIp && r.srcIp !== '0.0.0.0/0') cmd += ` -s ${r.srcIp}`;
   if (r.dstIp && r.dstIp !== '0.0.0.0/0') cmd += ` -d ${r.dstIp}`;
-  if (r.srcPort) cmd += ` --sport ${r.srcPort}`;
-  if (r.dstPort) cmd += ` --dport ${r.dstPort}`;
+  // Comma-separated port lists require -m multiport; plain --sport/--dport
+  // accept only a single port or a lo:hi range.
+  if (r.srcPort) cmd += r.srcPort.indexOf(',') !== -1 ? ` -m multiport --sports ${r.srcPort.replace(/\s+/g, '')}` : ` --sport ${r.srcPort}`;
+  if (r.dstPort) cmd += r.dstPort.indexOf(',') !== -1 ? ` -m multiport --dports ${r.dstPort.replace(/\s+/g, '')}` : ` --dport ${r.dstPort}`;
   cmd += ` -j ${target}`;
   if (r.comment) cmd += ` -m comment --comment "${esc(r.comment)}"`;
   return cmd;
@@ -194,7 +199,7 @@ function fwRuleToNftables(r) {
   if (r.proto !== 'ANY') cmd += `${r.proto.toLowerCase()} `;
   if (r.srcIp && r.srcIp !== '0.0.0.0/0') cmd += `ip saddr ${r.srcIp} `;
   if (r.dstIp && r.dstIp !== '0.0.0.0/0') cmd += `ip daddr ${r.dstIp} `;
-  if (r.dstPort) cmd += `dport ${r.dstPort} `;
+  if (r.dstPort) cmd += r.dstPort.indexOf(',') !== -1 ? `dport { ${r.dstPort.split(',').map(p => p.trim()).join(', ')} } ` : `dport ${r.dstPort} `;
   cmd += action;
   if (r.comment) cmd += ` comment "${esc(r.comment)}"`;
   return { chain, rule: cmd };
@@ -215,7 +220,9 @@ function fwRuleToNetsh(r) {
 function fwRuleToPf(r) {
   const action = r.action === 'ALLOW' ? 'pass' : 'block';
   const dir = r.dir === 'OUT' ? 'out' : 'in';
-  let cmd = `${action} ${dir}`;
+  // pf is last-match-wins by default; these rules are emitted in first-match
+  // priority order, so each carries `quick` to stop on the first match.
+  let cmd = `${action} ${dir} quick`;
   if (r.proto !== 'ANY') cmd += ` proto ${r.proto.toLowerCase()}`;
   if (r.srcIp && r.srcIp !== '0.0.0.0/0') cmd += ` from ${r.srcIp}`;
   else cmd += ` from any`;
@@ -225,11 +232,21 @@ function fwRuleToPf(r) {
   return cmd;
 }
 
+// A numbered Cisco ACL expresses a network as "address wildcard-mask" (inverse
+// mask), never as CIDR/slash notation. Convert here so the emitted ACE is valid.
+function fwCidrToCisco(cidr) {
+  if (!cidr || cidr === '0.0.0.0/0') return 'any';
+  const sp = cidr.split('/');
+  const bits = sp[1] !== undefined ? parseInt(sp[1], 10) : 32;
+  const wildcard = bits === 0 ? 0xFFFFFFFF : (((1 << (32 - bits)) - 1) >>> 0);
+  return sp[0] + ' ' + ((wildcard >>> 24) & 0xFF) + '.' + ((wildcard >> 16) & 0xFF) + '.' + ((wildcard >> 8) & 0xFF) + '.' + (wildcard & 0xFF);
+}
+
 function fwRuleToCisco(r, i) {
   const action = r.action === 'ALLOW' ? 'permit' : 'deny';
   const proto = r.proto === 'ANY' ? 'ip' : r.proto.toLowerCase();
-  const src = r.srcIp === '0.0.0.0/0' ? 'any' : r.srcIp;
-  const dst = r.dstIp === '0.0.0.0/0' ? 'any' : r.dstIp;
+  const src = fwCidrToCisco(r.srcIp);
+  const dst = fwCidrToCisco(r.dstIp);
   let cmd = `access-list 100 ${action} ${proto} ${src} ${dst}`;
   if (r.dstPort && proto !== 'ip' && proto !== 'icmp') cmd += ` eq ${r.dstPort}`;
   return cmd;

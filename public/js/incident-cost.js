@@ -497,12 +497,16 @@ export function renderIncidentCost(container) {
 
     // Cost breakdown cards
     h += '<div class="ic-cost-cards">';
+    // "% of total" must be computed against the actual total (which also
+    // includes amplifiers, mitigators and fines) — the fixed 29/38/27/6 splits
+    // are shares of base cost only, so they mislabel once fines/amplifiers apply.
+    var pctOfTotal = function (v) { return costs.total > 0 ? Math.round(v / costs.total * 100) : 0; };
     var comps = [
-      { label: 'Detection & Escalation', val: costs.detection, pct: 29, color: '#3b82f6' },
-      { label: 'Lost Business', val: costs.lostBusiness, pct: 38, color: '#ef4444' },
-      { label: 'Post-Breach Response', val: costs.postBreach, pct: 27, color: '#f59e0b' },
-      { label: 'Notification', val: costs.notification, pct: 6, color: '#8b5cf6' },
-      { label: 'Regulatory Fines', val: costs.fines, pct: Math.round(costs.fines / costs.total * 100) || 0, color: '#ef4444' },
+      { label: 'Detection & Escalation', val: costs.detection, pct: pctOfTotal(costs.detection), color: '#3b82f6' },
+      { label: 'Lost Business', val: costs.lostBusiness, pct: pctOfTotal(costs.lostBusiness), color: '#ef4444' },
+      { label: 'Post-Breach Response', val: costs.postBreach, pct: pctOfTotal(costs.postBreach), color: '#f59e0b' },
+      { label: 'Notification', val: costs.notification, pct: pctOfTotal(costs.notification), color: '#8b5cf6' },
+      { label: 'Regulatory Fines', val: costs.fines, pct: pctOfTotal(costs.fines), color: '#ef4444' },
     ];
     for (var c = 0; c < comps.length; c++) {
       h += '<div class="ic-cost-card">';
@@ -618,7 +622,9 @@ export function renderIncidentCost(container) {
     // Cost breakdown bars
     h += '<div class="ic-panel">';
     h += '<div class="ic-panel-title">Cost Breakdown</div>';
-    var maxVal = Math.max(costs.detection, costs.lostBusiness, costs.postBreach, costs.notification);
+    // Fines are one of the bars below, so they must be in the max or a
+    // fines-dominated breach produces a >100% bar width and mis-scales the rest.
+    var maxVal = Math.max(costs.detection, costs.lostBusiness, costs.postBreach, costs.notification, costs.fines);
     var bars = [
       { name: 'Lost Business Impact', val: costs.lostBusiness, cls: 'red' },
       { name: 'Detection & Escalation', val: costs.detection, cls: 'blue' },

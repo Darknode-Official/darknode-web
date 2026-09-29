@@ -72,6 +72,19 @@ export function renderPurpleTeamOps(main) {
     try { localStorage.setItem('purple_results', JSON.stringify(testResults)); } catch (_) {}
   }
 
+  // "Mark Executed" state: { testId: ISO timestamp when the red team ran it }
+  var executed = {};
+  try {
+    var savedExec = JSON.parse(localStorage.getItem('purple_executed') || '{}');
+    if (savedExec && typeof savedExec === 'object' && !Array.isArray(savedExec)) executed = savedExec;
+  } catch (_) {}
+  function saveExecuted() {
+    try { localStorage.setItem('purple_executed', JSON.stringify(executed)); } catch (_) {}
+  }
+  function clearExecuted(id) {
+    if (executed[id]) { delete executed[id]; saveExecuted(); }
+  }
+
   function render() {
     var tabs = [
       { id: 'dashboard', label: 'Dashboard' },
@@ -269,7 +282,10 @@ export function renderPurpleTeamOps(main) {
               '<span style="flex:1"></span>' +
               (existing ?
                 '<span style="color:' + (existing.status === 'detected' ? '#00e676' : '#ff1744') + ';font-weight:600;font-size:.8rem">' + existing.status.toUpperCase() + '</span>' :
-                '<button class="btn sm" data-exec="' + esc(t.id) + '" style="font-size:.65rem;border-color:#ff1744;color:#ff1744">Mark Executed</button>' +
+                (executed[t.id] ?
+                  '<span style="font-size:.7rem;color:#ff9100">Executed ' + esc(new Date(executed[t.id]).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })) + '</span>' +
+                  '<button class="btn sm ghost" data-unexec="' + esc(t.id) + '" style="font-size:.65rem">Undo</button>' :
+                  '<button class="btn sm" data-exec="' + esc(t.id) + '" style="font-size:.65rem;border-color:#ff1744;color:#ff1744">Mark Executed</button>') +
                 '<button class="btn sm" data-detect="' + esc(t.id) + '" style="font-size:.65rem;border-color:#00e676;color:#00e676">Detected</button>' +
                 '<button class="btn sm ghost" data-miss="' + esc(t.id) + '" style="font-size:.65rem">Missed</button>'
               ) +
@@ -286,20 +302,35 @@ export function renderPurpleTeamOps(main) {
 
     container.querySelector('#pt-sla').onchange = function(e) { detectionSLA = parseInt(e.target.value); };
 
+    container.querySelectorAll('[data-exec]').forEach(function(btn) {
+      btn.onclick = function() {
+        executed[btn.dataset.exec] = new Date().toISOString();
+        saveExecuted(); render();
+      };
+    });
+
+    container.querySelectorAll('[data-unexec]').forEach(function(btn) {
+      btn.onclick = function() { clearExecuted(btn.dataset.unexec); render(); };
+    });
+
     container.querySelectorAll('[data-detect]').forEach(function(btn) {
       btn.onclick = function() {
         var id = btn.dataset.detect;
         var test = ATOMIC_TESTS.find(function(t) { return t.id === id; });
         if (!test) return;
-        var mttdInput = prompt('Enter actual detection time in minutes (SLA target: ' + detectionSLA + ' min).\nRun a purple team exercise to measure real MTTD.\nLeave blank if not measured.');
+        var execAt = executed[id] ? new Date(executed[id]).getTime() : NaN;
+        var elapsed = isNaN(execAt) ? '' : String(Math.max(0, Math.round((Date.now() - execAt) / 60000)));
+        var mttdInput = prompt('Enter actual detection time in minutes (SLA target: ' + detectionSLA + ' min).\n' +
+          (elapsed !== '' ? 'Pre-filled with the minutes since you clicked Mark Executed.\n' : 'Run a purple team exercise to measure real MTTD.\n') +
+          'Leave blank if not measured.', elapsed);
         if (mttdInput === null) return;
         var mttd = null;
         if (mttdInput.trim() !== '') {
           mttd = parseInt(mttdInput, 10);
           if (isNaN(mttd) || mttd < 0) mttd = null;
         }
-        testResults.unshift({ testId: id, name: test.name, mitre: test.mitre, tactic: test.tactic, status: 'detected', detectTime: mttd, timestamp: new Date().toISOString() });
-        saveResults(); render();
+        testResults.unshift({ testId: id, name: test.name, mitre: test.mitre, tactic: test.tactic, status: 'detected', detectTime: mttd, executedAt: executed[id] || null, timestamp: new Date().toISOString() });
+        clearExecuted(id); saveResults(); render();
       };
     });
 
@@ -308,8 +339,8 @@ export function renderPurpleTeamOps(main) {
         var id = btn.dataset.miss;
         var test = ATOMIC_TESTS.find(function(t) { return t.id === id; });
         if (!test) return;
-        testResults.unshift({ testId: id, name: test.name, mitre: test.mitre, tactic: test.tactic, status: 'missed', detectTime: null, timestamp: new Date().toISOString() });
-        saveResults(); render();
+        testResults.unshift({ testId: id, name: test.name, mitre: test.mitre, tactic: test.tactic, status: 'missed', detectTime: null, executedAt: executed[id] || null, timestamp: new Date().toISOString() });
+        clearExecuted(id); saveResults(); render();
       };
     });
   }

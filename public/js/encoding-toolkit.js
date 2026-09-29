@@ -16,8 +16,7 @@ var ENCODINGS = {
     name: "Base32",
     encode: function(s) {
       var alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
-      var bytes = [];
-      for (var i = 0; i < s.length; i++) bytes.push(s.charCodeAt(i));
+      var bytes = new TextEncoder().encode(s);
       var bits = "";
       for (var j = 0; j < bytes.length; j++) bits += bytes[j].toString(2).padStart(8, "0");
       while (bits.length % 5 !== 0) bits += "0";
@@ -37,21 +36,22 @@ var ENCODINGS = {
       }
       var bytes = [];
       for (var j = 0; j + 7 < bits.length; j += 8) bytes.push(parseInt(bits.substring(j, j + 8), 2));
-      return bytes.map(function(b) { return String.fromCharCode(b); }).join("");
+      return new TextDecoder().decode(new Uint8Array(bytes));
     }
   },
   hex: {
     name: "Hex (Base16)",
     encode: function(s) {
+      var bytes = new TextEncoder().encode(s);
       var out = [];
-      for (var i = 0; i < s.length; i++) out.push(s.charCodeAt(i).toString(16).padStart(2, "0"));
+      for (var i = 0; i < bytes.length; i++) out.push(bytes[i].toString(16).padStart(2, "0"));
       return out.join(" ");
     },
     decode: function(s) {
       var hex = s.trim().replace(/\s+/g, "").replace(/0x/gi, "");
-      var out = "";
-      for (var i = 0; i + 1 < hex.length; i += 2) out += String.fromCharCode(parseInt(hex.substring(i, i + 2), 16));
-      return out;
+      var bytes = [];
+      for (var i = 0; i + 1 < hex.length; i += 2) bytes.push(parseInt(hex.substring(i, i + 2), 16));
+      return new TextDecoder().decode(new Uint8Array(bytes));
     }
   },
   url: {
@@ -87,35 +87,40 @@ var ENCODINGS = {
   binary: {
     name: "Binary (8-bit)",
     encode: function(s) {
+      var bytes = new TextEncoder().encode(s);
       var out = [];
-      for (var i = 0; i < s.length; i++) out.push(s.charCodeAt(i).toString(2).padStart(8, "0"));
+      for (var i = 0; i < bytes.length; i++) out.push(bytes[i].toString(2).padStart(8, "0"));
       return out.join(" ");
     },
     decode: function(s) {
-      var bits = s.trim().split(/\s+/);
-      return bits.map(function(b) { return String.fromCharCode(parseInt(b, 2)); }).join("");
+      var bytes = s.trim().split(/\s+/).filter(Boolean).map(function(b) { return parseInt(b, 2) & 0xFF; });
+      return new TextDecoder().decode(new Uint8Array(bytes));
     }
   },
   octal: {
     name: "Octal",
     encode: function(s) {
+      var bytes = new TextEncoder().encode(s);
       var out = [];
-      for (var i = 0; i < s.length; i++) out.push(s.charCodeAt(i).toString(8).padStart(3, "0"));
+      for (var i = 0; i < bytes.length; i++) out.push(bytes[i].toString(8).padStart(3, "0"));
       return out.join(" ");
     },
     decode: function(s) {
-      return s.trim().split(/\s+/).map(function(o) { return String.fromCharCode(parseInt(o, 8)); }).join("");
+      var bytes = s.trim().split(/\s+/).filter(Boolean).map(function(o) { return parseInt(o, 8) & 0xFF; });
+      return new TextDecoder().decode(new Uint8Array(bytes));
     }
   },
   decimal: {
     name: "Decimal",
     encode: function(s) {
+      var bytes = new TextEncoder().encode(s);
       var out = [];
-      for (var i = 0; i < s.length; i++) out.push(s.charCodeAt(i).toString());
+      for (var i = 0; i < bytes.length; i++) out.push(bytes[i].toString());
       return out.join(" ");
     },
     decode: function(s) {
-      return s.trim().split(/\s+/).map(function(d) { return String.fromCharCode(parseInt(d, 10)); }).join("");
+      var bytes = s.trim().split(/\s+/).filter(Boolean).map(function(d) { return parseInt(d, 10) & 0xFF; });
+      return new TextDecoder().decode(new Uint8Array(bytes));
     }
   },
   rot13: {
@@ -175,16 +180,17 @@ var ENCODINGS = {
 
 // ── Caesar cipher ──
 function caesarEncode(s, shift) {
+  var sh = ((Math.trunc(Number(shift) || 0) % 26) + 26) % 26;
   return s.replace(/[a-zA-Z]/g, function(c) {
     var base = c <= "Z" ? 65 : 97;
-    return String.fromCharCode(((c.charCodeAt(0) - base + shift) % 26) + base);
+    return String.fromCharCode(((c.charCodeAt(0) - base + sh) % 26) + base);
   });
 }
 
 // ── Vigenere cipher ──
 function vigenereEncode(text, key) {
+  key = String(key || "").toUpperCase().replace(/[^A-Z]/g, "");
   if (!key) return text;
-  key = key.toUpperCase();
   var ki = 0;
   return text.replace(/[a-zA-Z]/g, function(c) {
     var base = c <= "Z" ? 65 : 97;
@@ -194,8 +200,8 @@ function vigenereEncode(text, key) {
   });
 }
 function vigenereDecode(text, key) {
+  key = String(key || "").toUpperCase().replace(/[^A-Z]/g, "");
   if (!key) return text;
-  key = key.toUpperCase();
   var ki = 0;
   return text.replace(/[a-zA-Z]/g, function(c) {
     var base = c <= "Z" ? 65 : 97;
@@ -206,13 +212,27 @@ function vigenereDecode(text, key) {
 }
 
 // ── XOR ──
-function xorEncode(text, key) {
-  if (!key) return text;
-  var out = [];
-  for (var i = 0; i < text.length; i++) {
-    out.push(String.fromCharCode(text.charCodeAt(i) ^ key.charCodeAt(i % key.length)));
+// XOR is a byte-level operation: XOR the UTF-8 bytes of the text with the
+// UTF-8 bytes of the key (matching real xor tools). Iterating UTF-16 code
+// units and re-encoding the result as UTF-8 corrupts any byte >= 0x80.
+function xorBytes(bytes, key) {
+  var kb = new TextEncoder().encode(key || "");
+  var out = new Uint8Array(bytes.length);
+  for (var i = 0; i < bytes.length; i++) {
+    out[i] = bytes[i] ^ (kb.length ? kb[i % kb.length] : 0);
   }
-  return out.join("");
+  return out;
+}
+function bytesToHexStr(bytes) {
+  var out = [];
+  for (var i = 0; i < bytes.length; i++) out.push(bytes[i].toString(16).padStart(2, "0"));
+  return out.join(" ");
+}
+function hexStrToBytes(s) {
+  var hex = s.trim().replace(/\s+/g, "").replace(/0x/gi, "");
+  var bytes = [];
+  for (var i = 0; i + 1 < hex.length; i += 2) bytes.push(parseInt(hex.substring(i, i + 2), 16));
+  return new Uint8Array(bytes);
 }
 
 // ── Hash generators (using SubtleCrypto) ──
@@ -444,7 +464,7 @@ export function renderEncodingToolkit(main) {
       out.textContent = vigenereEncode(text, key);
     } else {
       var key2 = (cipherPanel.querySelector("#enc-cip-key") || {}).value || "";
-      out.textContent = ENCODINGS.hex.encode(xorEncode(text, key2));
+      out.textContent = bytesToHexStr(xorBytes(new TextEncoder().encode(text), key2));
     }
   };
 
@@ -459,8 +479,7 @@ export function renderEncodingToolkit(main) {
       out.textContent = vigenereDecode(text, key);
     } else {
       var key2 = (cipherPanel.querySelector("#enc-cip-key") || {}).value || "";
-      var decoded = ENCODINGS.hex.decode(text);
-      out.textContent = xorEncode(decoded, key2);
+      out.textContent = new TextDecoder().decode(xorBytes(hexStrToBytes(text), key2));
     }
   };
 
@@ -652,7 +671,7 @@ export function renderEncodingToolkit(main) {
       '<tr><td>Milliseconds</td><td>' + (ts * 1000) + '</td></tr>' +
       '<tr><td>Windows FILETIME</td><td>' + ft + '</td></tr>' +
       '<tr><td>Day of Week</td><td>' + ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"][d.getDay()] + '</td></tr>' +
-      '<tr><td>Day of Year</td><td>' + Math.ceil((d - new Date(d.getFullYear(),0,1)) / 86400000 + 1) + '</td></tr>';
+      '<tr><td>Day of Year</td><td>' + (Math.round((new Date(d.getFullYear(), d.getMonth(), d.getDate()) - new Date(d.getFullYear(), 0, 1)) / 86400000) + 1) + '</td></tr>';
   }
 
   // ── Integer Converter Panel ──

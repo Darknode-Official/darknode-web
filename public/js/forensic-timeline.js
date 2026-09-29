@@ -12,7 +12,7 @@ const PARSERS = [
     detect: function(line) { return /EventID|Event ID|<EventID>/i.test(line); },
     parse: function(line) {
       var ts = null, eventId = '', source = '', msg = '';
-      var tsMatch = line.match(/(\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2})/);
+      var tsMatch = line.match(/(\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?)/);
       if (tsMatch) ts = new Date(tsMatch[1]);
       var idMatch = line.match(/(?:EventID|Event ID)[:\s=]*(\d+)/i);
       if (idMatch) eventId = idMatch[1];
@@ -62,7 +62,7 @@ const PARSERS = [
     parse: function(line) {
       var m = line.match(/^([A-Z][a-z]{2}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2})\s+(\S+)\s+(.*)/);
       if (!m) {
-        var tsMatch = line.match(/(\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2})/);
+        var tsMatch = line.match(/(\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?)/);
         if (!tsMatch) return null;
         return { timestamp: new Date(tsMatch[1]), source: 'Auth', detail: line.replace(tsMatch[0], '').trim(), raw: line, category: 'auth' };
       }

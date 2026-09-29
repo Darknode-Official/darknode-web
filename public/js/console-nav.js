@@ -4,30 +4,45 @@
 // `.side-item[data-sec]` sections — every section still gets one of those buttons in
 // the hidden menu, so routing, breadcrumbs and global search keep working unchanged.
 
+import { TOOLS as MINI_TOOLS, TOOL_CATS } from "/js/tools-registry.js?v=20260926h";
+
 const G = (id, name, color, items) => ({ id, name, color, items: items.map(([sec, label, badge]) => ({ sec, label, badge: badge || null })) });
 
 export const NAV = [
-  G("command", "Mission Control", "blue", [["prometheus","PROMETHEUS","live"],["sentineleye","SENTINEL EYE","live"],["hydra","HYDRA Engine"],["aegis","AEGIS Ops Center"],["vanguard","VANGUARD"],["phantom","PHANTOM","live"],["citadel","CITADEL","live"],["oracle","ORACLE","live"],["spectre","SPECTRE","live"],["crucible","CRUCIBLE","live"],["navarch","NAVARCH","live"],["secdash","Security Dashboard"]]),
+  G("command", "Dashboards", "blue", [["prometheus","PROMETHEUS","live"],["sentineleye","SENTINEL EYE","live"],["hydra","HYDRA Engine"],["aegis","AEGIS Ops Center"],["vanguard","VANGUARD"],["phantom","PHANTOM","live"],["citadel","CITADEL","live"],["oracle","ORACLE","live"],["spectre","SPECTRE","live"],["crucible","CRUCIBLE","live"],["navarch","NAVARCH","live"],["secdash","Security Dashboard"]]),
   G("offense", "Offensive Security", "red", [["attacksim","Threat Simulator"],["cracklab","Password Security Lab"],["exploitdb","Vulnerability Database"],["exploitdev","Security Research Lab"],["packetcraft","Packet Crafter"],["passwordtools","Password Tools"],["payloads","Test Script Forge"],["payloadgen","Test Script Generator"],["pentestconsole","Security Assessment"],["privesc","Privilege Analysis"],["reverseshell","Remote Access Testing"]]),
   G("labs", "Security Labs", "red", [["firewall","Firewall Rules"],["webshell","Terminal"],["wirelesslab","Wireless Lab"],["xsslab","Web Security Lab"],["socialeng","Social Engineering"]]),
   G("recon", "Reconnaissance", "cyan", [["addressintel","Address Intel"],["asnexplorer","ASN Explorer"],["attacksurf","Exposure Mapping"],["dns","DNS Toolkit"],["dnsenum","DNS Enumeration"],["dnsrecon","DNS Recon"],["ghdb","Google Dorking"],["netmap","Network Mapper"],["reconplanner","Recon Planner"],["securityscanner","Security Scanner"],["subdomains","Subdomain Enum"],["tools","Scanner Suite"],["wayback","Wayback Machine"]]),
   G("osint", "OSINT", "cyan", [["corstester","CORS Tester"],["emailintel","Email Intel"],["favicon","Favicon Hasher"],["headeranalyzer","Header Analyzer"],["httpinspector","HTTP Inspector"],["httpprobe","HTTP Probe"],["ipgeolocation","IP Geolocation"],["iptools","IP Tools"],["osint","OSINT Dashboard"],["osintemail","OSINT Email Intel"],["techfingerprint","Tech Fingerprint"],["whoisrecon","WHOIS Recon"]]),
   G("forensics", "Forensics", "purple", [["binanalyze","Binary Analyzer"],["forensicstoolkit","Forensics Toolkit"],["ftimeline","Forensic Timeline"],["loganalyze","Log Analyzer"],["memforensics","Memory Forensics"],["reveng","Reverse Engineering"],["stego","Steganography"],["timelineviz","Timeline Visualization"]]),
-  G("threatanalysis", "Threat Analysis", "purple", [["malclass","Threat Classifier"],["phishing","Phishing Analyzer"],["sandbox","Threat Analysis Lab"]]),
+  G("threatanalysis", "Malware Analysis", "purple", [["malclass","Threat Classifier"],["phishing","Phishing Analyzer"],["sandbox","Threat Analysis Lab"]]),
   G("blueteam", "Blue Team", "green", [["adversary","Adversary Emulation"],["breachsim","Breach Simulator"],["containers","Container Security"],["deception","Deception Architect"],["huntlab","Threat Hunt Lab"],["identitymatrix","Identity Matrix"],["incidents","Incident Tracker"],["mobilesec","Mobile Security"],["purpleteam","Purple Team Ops"],["riskcalculator","Risk Calculator"],["threatmodel","Threat Modeler"]]),
   G("threatintel", "Threat Intelligence", "orange", [["breachlookup","Breach Lookup"],["cvesearch","CVE Search"],["cvetimeline","CVE Timeline"],["darknetradar","Darknet Radar"],["darkwebosint","Deep Web Intel"],["ipreputation","IP Reputation"],["threat","Threat Feed"],["threatdashboard","Threat Dashboard"],["threatfeed","Threat Intel Feed"]]),
-  G("vulnmgmt", "Vulnerability Mgmt", "orange", [["vulndb","Vulnerability DB"],["vulnprio","Vuln Prioritizer"],["vulntriage","Vuln Triage Engine"],["secchecklist","Security Checklist"],["supplychain","Supply Chain"]]),
+  G("vulnmgmt", "Vulnerability Management", "orange", [["vulndb","Vulnerability DB"],["vulnprio","Vuln Prioritizer"],["vulntriage","Vuln Triage Engine"],["secchecklist","Security Checklist"],["supplychain","Supply Chain"]]),
   G("network", "Network Analysis", "teal", [["networkscanner","Network Scanner"],["networktools","Network Tools"],["networktraffic","Network Traffic"],["packetanalyzer","Packet Analyzer"],["packetinspector","Packet Inspector"],["sslinspector","SSL Inspector"],["subnetvisualizer","Subnet Visualizer"],["trafficanalyzer","Traffic Analyzer"],["websockettester","WebSocket Tester"]]),
   G("secops", "Security Operations", "teal", [["adversaryplaybook","Adversary Playbook"],["apifuzzer","API Fuzzer"],["apitester","API Tester"],["apiscan","API Scanner"],["incidentcost","Incident Cost Calc"],["incidentresponse","Incident Response"],["siemdash","SIEM Dashboard"]]),
   G("compliance", "Compliance & GRC", "yellow", [["compliance","Compliance Checker"],["cyberbriefing","Cyber Briefing"],["emailheader","Email Header Analyzer"],["fedcompliance","Federal Compliance"],["iocextractor","IOC Extractor"],["zerotrust","Zero Trust Planner"]]),
   G("crypto", "Crypto & Encoding", "indigo", [["credaudit","Credential Auditor"],["cryptotools","Crypto Toolkit"],["cspevaluator","CSP Evaluator"],["encoding","Encoding Suite"],["hashsuite","Hash Suite"],["jwtanalyzer","JWT Analyzer"],["regexlab","Regex Lab"],["urldissect","URL Dissector"]]),
-  G("ai", "Nexus AI", "violet", [["ai","AI Chat"],["coder","Nexus Agent","ai"],["dataviz","Data Visualization"],["engines","Security Engines"],["report","Report Generator"]]),
-  G("training", "Training", "emerald", [["cheats","Cheat Sheets"],["cyberrange","Cyber Range"],["learn","Learn Hub"],["refs","Reference Library"],["secquiz","Skill Assessments"],["securityquiz","Security Quiz"],["snippets","Snippet Vault"],["targets","Practice Targets"],["training","Training Labs"],["utils","Toolbox"]]),
-  G("vms", "Labs & VMs", "emerald", [["vms","Vulnerable VMs"],["vmlab","VM Lab"]]),
+  G("ai", "Darknode AI", "violet", [["ai","AI Chat"],["math","Quelvra Math"],["coder","Nexus Agent","ai"],["dataviz","Data Visualization"],["engines","Security Engines"],["report","Report Generator"]]),
+  G("training", "Learn & Do", "emerald", [["engine","Deterministic Intelligence","new"],["learndo","Learn & Do Hub"],["learn","Learn Hub"],["cyberrange","Cyber Range"],["securityquiz","Security Quiz"],["secquiz","Skill Assessments"],["targets","Practice Targets"],["training","Training Labs"],["cheats","Cheat Sheets"],["refs","Reference Library"],["snippets","Snippet Vault"],["utils","Toolbox"]]),
+  G("vms", "Virtual Machines", "emerald", [["vms","Vulnerable VMs"],["vmlab","VM Lab"]]),
   G("invest", "Investigations", "rose", [["investigation","Investigation Workspace"],["secgraph","Security Graph"],["casemgmt","Case Manager"]]),
   G("infra", "Infrastructure", "slate", [["api","API"],["docs","Docs"],["education","Education"],["downloads","Darknode OS"],["dlguide","Download Guide"],["privatecloud","Private Cloud","beta"],["setup","Local Setup"]]),
-  G("workspace", "Workspace", "slate", [["saved","Saved Items"],["settings","Settings"],["apikeys","API Keys"],["contact","Contact / Feedback"]]),
+  G("workspace", "Account", "slate", [["toolbox","Toolbox"],["saved","Saved Items"],["settings","Settings"],["apikeys","API Keys"],["contact","Contact / Feedback"]]),
 ];
+
+// Append the mini-tool categories (js/tools/*) as browsable, searchable service
+// groups, so every instant utility shows up in the Services menu, the category
+// rail, favorites and global search — and the service count reflects them.
+for (const [cat, meta] of Object.entries(TOOL_CATS)) {
+  const items = MINI_TOOLS.filter((t) => t.cat === cat).map((t) => [`tool-${t.id}`, t.name]);
+  if (items.length) NAV.push(G(`tg-${cat}`, meta.name, meta.color, items));
+}
+
+// Section directory for the support-chat bridge (botpress-bridge.js), so "open citadel"
+// typed in the chat resolves to a real section. Admin is deliberately left out.
+try { window.dnSections = NAV.flatMap((g) => g.items.map((i) => ({ sec: i.sec, label: i.label, group: g.name }))); } catch (_) {}
+
 const ADMIN = G("admin", "Admin", "slate", [["admin","Admin Console"]]);
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -36,6 +51,7 @@ const ALL = [...NAV, ADMIN];
 const LABELS = new Map(ALL.flatMap((g) => g.items.map((i) => [i.sec, i.label])));
 const GROUP_OF = new Map(ALL.flatMap((g) => g.items.map((i) => [i.sec, g.name])));
 const BADGE_OF = new Map(ALL.flatMap((g) => g.items.map((i) => [i.sec, i.badge])));
+export const groupOf = (sec) => GROUP_OF.get(sec) || "";
 export const labelOf = (sec) => LABELS.get(sec) || sec.charAt(0).toUpperCase() + sec.slice(1);
 const badgeHTML = (sec) => { const b = BADGE_OF.get(sec); return b ? ` <span class="svc-badge ${b}">${b === "live" ? "LIVE" : b === "ai" ? "AI" : "BETA"}</span>` : ""; };
 
@@ -45,6 +61,8 @@ const FAV_KEY = "sw_favs", RECENT_KEY = "sw_recent";
 const DEFAULT_FAVS = ["prometheus", "citadel", "ai", "cvesearch", "threat", "learn"];
 const favTouched = () => { try { return localStorage.getItem(FAV_KEY) !== null; } catch (_) { return false; } };
 const favs = () => { const f = load(FAV_KEY); return f.length || favTouched() ? f : DEFAULT_FAVS; };
+export const recentSecs = () => load(RECENT_KEY);
+export const favSecs = () => favs();
 const chip = (sec, cls = "") => `<button class="con-chip ${cls}" data-sec="${esc(sec)}" title="${esc(GROUP_OF.get(sec) || "")}">${esc(labelOf(sec))}${badgeHTML(sec)}</button>`;
 
 export function consoleHTML(isOwner) {
@@ -54,14 +72,14 @@ export function consoleHTML(isOwner) {
   <div class="con-wrap">
   <div class="con-top">
     <div class="con-bar" role="navigation" aria-label="Console">
-      <button class="con-services" id="conServices" aria-expanded="false" aria-controls="sidebar"><span class="con-grid-ic" aria-hidden="true"></span>Services<span class="con-caret" aria-hidden="true">▾</span></button>
+      <button class="con-services" id="conServices" aria-expanded="false" aria-controls="sidebar"><span class="con-grid-ic" aria-hidden="true"></span>Services<span class="con-svc-count" aria-hidden="true">${total}</span><span class="con-caret" aria-hidden="true">▾</span></button>
       <label class="con-search"><span class="sr-only">Find a service</span>
         <input id="conSearch" type="search" placeholder="Search ${total} services — type a name, e.g. &quot;cve&quot;" autocomplete="off" spellcheck="false">
         <kbd>/</kbd>
       </label>
       <div class="con-quick" aria-label="Shortcuts">
         <button class="con-qbtn" data-sec="home">Dashboard</button>
-        <button class="con-qbtn" data-sec="ai">Nexus AI</button>
+        <button class="con-qbtn" data-sec="ai">Darknode AI</button>
         <button class="con-qbtn" data-sec="docs">Docs</button>
         <button class="con-qbtn" data-sec="settings">Settings</button>
       </div>
@@ -69,6 +87,10 @@ export function consoleHTML(isOwner) {
     <div class="con-favbar" aria-label="Favorites">
       <span class="con-favlbl">★ Favorites</span><span class="con-favs" id="conFavs"></span>
       <span class="con-favlbl con-reclbl">Recent</span><span class="con-favs" id="conRecent"></span>
+    </div>
+    <div class="con-catbar" id="conCatbar" aria-label="Browse by category">
+      <span class="con-favlbl">Categories</span>
+      <span class="con-cats">${gs.map((g) => `<button class="con-catchip" data-cat="${g.id}" data-color="${g.color}" title="${esc(g.name)} — ${g.items.length} tool${g.items.length === 1 ? "" : "s"}"><span class="svc-dot"></span>${esc(g.name)}<span class="con-catn">${g.items.length}</span></button>`).join("")}</span>
     </div>
   </div>
   <aside class="svc-menu" id="sidebar" aria-label="All services">
@@ -91,7 +113,20 @@ export function consoleHTML(isOwner) {
       </div>
     </div>
   </aside>
-  </div>`;
+  </div>
+  <nav class="aws-side" id="awsSide" aria-label="Side navigation">
+    <div class="aws-side-h"><button class="aws-side-title" data-sec="home">Darknode Console</button><button class="aws-side-x" id="awsSideClose" aria-label="Close side navigation" title="Close navigation"></button></div>
+    <button class="aws-sl aws-sl-top" data-sec="home">Console home</button>
+    <button class="aws-sl aws-sl-top" data-sec="ai">Darknode AI</button>
+    <div class="aws-side-div"></div>
+    <div class="aws-side-lbl">Categories</div>
+    ${gs.map((g) => `<div class="aws-sg" data-g="${g.id}"><button class="aws-sg-h" aria-expanded="false"><span class="aws-caret" aria-hidden="true"></span><span class="aws-sg-name">${esc(g.name)}</span><span class="aws-sg-n">${g.items.length}</span></button><div class="aws-sg-items" hidden></div></div>`).join("")}
+    <div class="aws-side-div"></div>
+    <button class="aws-sl aws-sl-top" data-sec="docs">Documentation</button>
+    <button class="aws-sl aws-sl-top" data-sec="settings">Settings</button>
+    <button class="aws-sl aws-sl-top" data-sec="contact">Feedback</button>
+  </nav>
+  <button class="aws-side-open" id="awsSideOpen" aria-label="Open side navigation" title="Open navigation"><span></span></button>`;
 }
 
 export function directoryHTML(isOwner) {
@@ -150,6 +185,8 @@ export function wireConsole(root) {
 
   btn.onclick = () => setOpen(!isOpen());
   menu.querySelector(".svc-cats").addEventListener("click", (e) => { const c = e.target.closest(".svc-cat"); if (!c) return; cat = c.dataset.cat; search.value = ""; render(); });
+  const catbar = root.querySelector("#conCatbar");
+  if (catbar) catbar.addEventListener("click", (e) => { const c = e.target.closest(".con-catchip"); if (!c) return; cat = c.dataset.cat; search.value = ""; if (!isOpen()) setOpen(true); else render(); });
   menu.querySelector(".svc-cats").addEventListener("mouseover", (e) => { const c = e.target.closest(".svc-cat"); if (!c || search.value || !matchMedia("(hover:hover)").matches) return; if (cat !== c.dataset.cat) { cat = c.dataset.cat; render(); } });
   menu.addEventListener("click", (e) => {
     const s = e.target.closest(".svc-star"); if (!s) return;
@@ -169,13 +206,64 @@ export function wireConsole(root) {
     const t = e.target, typing = t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName));
     if (e.key === "/" && !typing && !e.ctrlKey && !e.metaKey) { e.preventDefault(); search.focus(); }
   });
-  document.addEventListener("click", (e) => { if (isOpen() && !e.target.closest("#sidebar, .con-bar, #hamburger")) setOpen(false); });
+  document.addEventListener("click", (e) => { if (isOpen() && !e.target.closest("#sidebar, .con-bar, .con-catbar, #hamburger")) setOpen(false); });
   renderBars();
+
+  // AWS-style chrome: the Services button + search live in the dark top header, and a
+  // collapsible left side navigation lists every category (current one expanded).
+  const topbar = document.getElementById("topbar"), bar = root.querySelector(".con-bar");
+  if (topbar && bar) {
+    topbar.querySelectorAll(".con-bar").forEach((b) => b !== bar && b.remove());
+    const brand = topbar.querySelector(".brand");
+    if (brand) brand.after(bar); else topbar.prepend(bar);
+    const pos = () => { const r = bar.getBoundingClientRect(); menu.style.setProperty("--svc-left", Math.max(0, r.left) + "px"); };
+    btn.addEventListener("click", pos); search.addEventListener("focus", pos);
+  }
+  const side = root.querySelector("#awsSide");
+  const SIDE_KEY = "sw_awsside";
+  const narrow = () => matchMedia("(max-width: 900px)").matches;
+  const setSide = (open, persist) => {
+    document.body.classList.toggle("aws-side-closed", !open);
+    if (persist && !narrow()) { try { localStorage.setItem(SIDE_KEY, open ? "1" : "0"); } catch (_) {} }
+  };
+  let sidePref = "1"; try { sidePref = localStorage.getItem(SIDE_KEY) || "1"; } catch (_) {}
+  setSide(sidePref === "1" && !narrow(), false);
+  const fillGroup = (sg) => {
+    const box = sg.querySelector(".aws-sg-items");
+    if (box.dataset.filled) return;
+    const g = ALL.find((x) => x.id === sg.dataset.g); if (!g) return;
+    box.innerHTML = g.items.map((i) => `<button class="aws-sl" data-sec="${esc(i.sec)}">${esc(i.label)}${badgeHTML(i.sec)}</button>`).join("");
+    box.dataset.filled = "1";
+  };
+  const openGroup = (sg, open) => {
+    if (open) fillGroup(sg);
+    sg.querySelector(".aws-sg-items").hidden = !open;
+    sg.querySelector(".aws-sg-h").setAttribute("aria-expanded", String(open));
+  };
+  const markActive = (sec) => {
+    if (!side) return;
+    side.querySelectorAll(".aws-sl.on").forEach((b) => b.classList.remove("on"));
+    const gname = GROUP_OF.get(sec);
+    const g = ALL.find((x) => x.name === gname && x.items.some((i) => i.sec === sec));
+    if (g) { const sg = side.querySelector(`.aws-sg[data-g="${g.id}"]`); if (sg) openGroup(sg, true); }
+    side.querySelectorAll(`.aws-sl[data-sec="${CSS.escape(sec)}"]`).forEach((b) => b.classList.add("on"));
+    const on = side.querySelector(".aws-sg .aws-sl.on");
+    if (on) { const r = on.getBoundingClientRect(), sr = side.getBoundingClientRect(); if (r.top < sr.top || r.bottom > sr.bottom) on.scrollIntoView({ block: "center" }); }
+  };
+  if (side) {
+    side.addEventListener("click", (e) => {
+      const h = e.target.closest(".aws-sg-h");
+      if (h) { const sg = h.closest(".aws-sg"); openGroup(sg, h.getAttribute("aria-expanded") !== "true"); return; }
+      if (e.target.closest("[data-sec]") && narrow()) setSide(false, false);
+    });
+    root.querySelector("#awsSideClose").onclick = () => setSide(false, true);
+    root.querySelector("#awsSideOpen").onclick = () => setSide(true, true);
+  }
 
   return {
     track(sec) {
       if (LABELS.has(sec) && sec !== "home") { const r = load(RECENT_KEY).filter((s) => s !== sec); r.unshift(sec); save(RECENT_KEY, r.slice(0, 12)); }
-      search.value = ""; setOpen(false); renderBars();
+      search.value = ""; setOpen(false); renderBars(); markActive(sec);
     },
   };
 }

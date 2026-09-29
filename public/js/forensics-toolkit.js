@@ -75,18 +75,18 @@ export function renderForensicsToolkit(container) {
     { hex: "2D2D2D2D2D424547494E2050475020", ext: "PGP", desc: "PGP public key block" },
     { hex: "6D6473746F7265", ext: "Spotlight", desc: "macOS Spotlight index" },
     { hex: "4D444D5093A7", ext: "MDF", desc: "Alcohol 120% disk image" },
-    { hex: "434F4E4543545258", ext: "VHD", desc: "Virtual hard disk" },
+    { hex: "636F6E6563746978", ext: "VHD", desc: "Virtual hard disk" },
     { hex: "7F454C460201", ext: "ELF64", desc: "ELF 64-bit executable" },
     { hex: "7F454C460101", ext: "ELF32", desc: "ELF 32-bit executable" },
-    { hex: "64657831", ext: "DEX", desc: "Dalvik Executable (Android)" },
+    { hex: "6465780A", ext: "DEX", desc: "Dalvik Executable (Android)" },
     { hex: "78617221", ext: "XAR", desc: "macOS installer (xar archive)" },
     { hex: "494E4458", ext: "IDX", desc: "Index file" },
     { hex: "4C4E0200", ext: "GUL", desc: "Windows Help (GUL)" },
-    { hex: "4D5448", ext: "MIDI", desc: "MIDI audio" },
+    { hex: "4D546864", ext: "MIDI", desc: "MIDI audio" },
     { hex: "23204D6963726F736F6674", ext: "MSI", desc: "Windows Installer" },
     { hex: "CECECECE", ext: "JCEKS", desc: "Java KeyStore" },
     { hex: "FEEDFEED", ext: "JKS", desc: "Java KeyStore" },
-    { hex: "5061636B", ext: "PACK", desc: "Git pack file" },
+    { hex: "5041434B", ext: "PACK", desc: "Git pack file" },
     { hex: "44494346", ext: "DICF", desc: "Digital Imaging (DICF)" },
     { hex: "28B52FFD", ext: "ZSTD", desc: "Zstandard compressed" },
     { hex: "04224D18", ext: "LZ4", desc: "LZ4 compressed" },
@@ -280,16 +280,16 @@ export function renderForensicsToolkit(container) {
         const date = (n >> 16) & 0xFFFF, time = n & 0xFFFF;
         const y = ((date >> 9) & 0x7F) + 1980, mo = (date >> 5) & 0x0F, d = date & 0x1F;
         const h = (time >> 11) & 0x1F, mi = (time >> 5) & 0x3F, s = (time & 0x1F) * 2;
-        ms = new Date(y, mo - 1, d, h, mi, s).getTime(); break;
+        ms = Date.UTC(y, mo - 1, d, h, mi, s); break;
       }
       case "chrome": ms = (n / 1000) - 11644473600000; break;
-      case "webkit": ms = (n - 978307200) * 1000; break;
+      case "webkit": ms = (n + 978307200) * 1000; break;
       case "iso": ms = new Date(value).getTime(); break;
       default: ms = n * 1000;
     }
     if (isNaN(ms)) return null;
     const d = new Date(ms);
-    const winFT = BigInt(ms + 11644473600000) * 10000n;
+    const winFT = BigInt(Math.round(ms + 11644473600000)) * 10000n;
     const macAbs = Math.floor(ms / 1000) - 978307200;
     const chromeFT = (ms + 11644473600000) * 1000;
     return {
@@ -299,7 +299,7 @@ export function renderForensicsToolkit(container) {
       filetime: winFT.toString(),
       mac_absolute: macAbs,
       chrome: chromeFT,
-      webkit: Math.floor(ms / 1000) + 978307200,
+      webkit: Math.floor(ms / 1000) - 978307200,
       human: d.toLocaleString("en-US", { dateStyle: "full", timeStyle: "long", timeZone: "UTC" }) + " UTC",
       local: d.toLocaleString(),
     };

@@ -4,12 +4,21 @@
 const esc = (s) => String(s != null ? s : "").replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
-// ── XOR encryption ──
+// ── UTF-8 <-> binary string ──
+// A "binary string" holds one byte (0-255) per char. Messages and passwords
+// are converted to their UTF-8 byte sequence first so that non-ASCII text
+// (accents, CJK, emoji) survives hiding/extraction instead of being truncated
+// to its low byte.
+function utf8Encode(str) { return unescape(encodeURIComponent(str)); }
+function utf8Decode(bin) { try { return decodeURIComponent(escape(bin)); } catch (e) { return bin; } }
+
+// ── XOR encryption (byte-wise over UTF-8 bytes) ──
 function xorEncrypt(text, password) {
   if (!password) return text;
+  var pw = utf8Encode(password);
   var result = [];
   for (var i = 0; i < text.length; i++) {
-    result.push(String.fromCharCode(text.charCodeAt(i) ^ password.charCodeAt(i % password.length)));
+    result.push(String.fromCharCode(text.charCodeAt(i) ^ pw.charCodeAt(i % pw.length)));
   }
   return result.join("");
 }
@@ -33,7 +42,8 @@ function bitsToText(bits) {
     for (var b = 0; b < 8; b++) {
       byte = (byte << 1) | bits[i + b];
     }
-    if (byte === 0) break;
+    // Do NOT stop at a zero byte: callers slice to the exact message length
+    // from the header, and XOR-encrypted payloads legitimately contain 0x00.
     chars.push(String.fromCharCode(byte));
   }
   return chars.join("");
@@ -41,7 +51,7 @@ function bitsToText(bits) {
 
 // ── LSB Encoding (1-bit and 2-bit) ──
 function lsbEncode(imageData, message, bitsPerChannel, password) {
-  var encrypted = xorEncrypt(message, password);
+  var encrypted = xorEncrypt(utf8Encode(message), password);
   // Prepend 32-bit length header
   var len = encrypted.length;
   var headerBits = [];
@@ -115,13 +125,13 @@ function lsbDecode(imageData, bitsPerChannel, password) {
   if (password) {
     decrypted = xorEncrypt(decrypted, password);
   }
-  return { success: true, message: decrypted, length: len };
+  return { success: true, message: utf8Decode(decrypted), length: len };
 }
 
 // ── Spread Spectrum Encoding ──
 function spreadEncode(imageData, message, password, spread) {
   spread = spread || 7;
-  var encrypted = xorEncrypt(message, password);
+  var encrypted = xorEncrypt(utf8Encode(message), password);
   var len = encrypted.length;
   var headerBits = [];
   for (var i = 31; i >= 0; i--) headerBits.push((len >> i) & 1);
@@ -173,7 +183,7 @@ function spreadDecode(imageData, password, spread) {
   var msgBits = bits.slice(32, neededBits);
   var decrypted = bitsToText(msgBits);
   if (password) decrypted = xorEncrypt(decrypted, password);
-  return { success: true, message: decrypted, length: len };
+  return { success: true, message: utf8Decode(decrypted), length: len };
 }
 
 // ── Bit plane extraction ──
@@ -196,24 +206,71 @@ function extractBitPlane(imageData, channel, bit) {
   return canvas;
 }
 
-// ── Chi-square analysis ──
+// ── Chi-square CDF via the regularised lower incomplete gamma P(a,x) ──
+// (Lanczos log-gamma + Numerical Recipes series/continued-fraction for gammp.)
+function _stegLnGamma(x) {
+  var c = [76.18009172947146, -86.50532032941678, 24.01409824083091,
+           -1.231739572450155, 0.1208650973866179e-2, -0.5395239384953e-5];
+  var y = x, tmp = x + 5.5;
+  tmp -= (x + 0.5) * Math.log(tmp);
+  var ser = 1.000000000190015;
+  for (var j = 0; j < 6; j++) { y++; ser += c[j] / y; }
+  return -tmp + Math.log(2.5066282746310007 * ser / x);
+}
+function _stegGammaP(a, x) {
+  if (x <= 0 || a <= 0) return 0;
+  if (x < a + 1) {
+    var ap = a, sum = 1 / a, del = sum;
+    for (var n = 0; n < 300; n++) {
+      ap++; del *= x / ap; sum += del;
+      if (Math.abs(del) < Math.abs(sum) * 1e-13) break;
+    }
+    return sum * Math.exp(-x + a * Math.log(x) - _stegLnGamma(a));
+  }
+  var b = x + 1 - a, cc = 1e300, d = 1 / b, h = d;
+  for (var i = 1; i <= 300; i++) {
+    var an = -i * (i - a);
+    b += 2;
+    d = an * d + b; if (Math.abs(d) < 1e-300) d = 1e-300;
+    cc = b + an / cc; if (Math.abs(cc) < 1e-300) cc = 1e-300;
+    d = 1 / d; var dc = d * cc; h *= dc;
+    if (Math.abs(dc - 1) < 1e-13) break;
+  }
+  return 1 - Math.exp(-x + a * Math.log(x) - _stegLnGamma(a)) * h;
+}
+function chiSquareCdf(x, k) { return k > 0 ? _stegGammaP(k / 2, x / 2) : 0; }
+
+// ── Chi-square steganalysis (Westfeld–Pfitzmann) ──
+// LSB embedding equalises the frequencies of each value pair (2k, 2k+1). For
+// each pair we compare the even value's observed count against the expected
+// count under embedding — the pair mean — and accumulate a chi-square. A
+// suspiciously LOW chi-square (a near-perfect fit to the equalised model) is
+// unlikely by chance, so a low CDF flags probable hidden data.
+// The old routine tested the pair-bucket histogram against a flat uniform
+// distribution, which is huge for any natural image and so reported every
+// image as "suspicious".
 function chiSquareAnalysis(imageData, channel) {
   var data = imageData.data;
-  var pairs = new Array(128).fill(0);
-  for (var i = 0; i < data.length; i += 4) {
-    var v = data[i + channel];
-    pairs[Math.floor(v / 2)]++;
-  }
-  var totalPixels = data.length / 4;
-  var expected = totalPixels / 128;
-  var chiSq = 0;
-  for (var j = 0; j < 128; j++) {
-    var diff = pairs[j] - expected;
+  var hist = new Array(256).fill(0);
+  for (var i = 0; i < data.length; i += 4) hist[data[i + channel]]++;
+
+  var chiSq = 0, df = 0;
+  for (var k = 0; k < 128; k++) {
+    var even = hist[2 * k], odd = hist[2 * k + 1];
+    var expected = (even + odd) / 2;
+    // Cochran's rule: skip pairs whose expected count is too small for the
+    // chi-square approximation to hold.
+    if (expected < 5) continue;
+    var diff = even - expected;
     chiSq += (diff * diff) / expected;
+    df++;
   }
-  var df = 127;
-  var pValue = chiSq > df * 2 ? 0.0 : chiSq < df * 0.5 ? 1.0 : 1.0 - (chiSq - df) / df;
-  return { chiSquare: chiSq, degreesOfFreedom: df, pValue: Math.max(0, Math.min(1, pValue)), suspicious: pValue < 0.05 };
+  df = df > 0 ? df - 1 : 0;
+  // Report the CDF itself: a value below ~0.05 means the fit to the equalised
+  // model is suspiciously good, which is what "low p-values suggest hidden
+  // data" refers to in the panel.
+  var pValue = df > 0 ? chiSquareCdf(chiSq, df) : 1;
+  return { chiSquare: chiSq, degreesOfFreedom: df, pValue: pValue, suspicious: pValue < 0.05 };
 }
 
 // ── Histogram ──
@@ -887,11 +944,15 @@ export function renderSteganography(main) {
 
     panel.querySelector("#steg-bin-to").onclick = function() {
       var text = panel.querySelector("#steg-bin-text").value;
+      // Work on the UTF-8 byte sequence so every group is a real 8-bit byte.
+      // charCodeAt would emit UTF-16 code units, so a CJK char or emoji produced
+      // a 3-4 hex-digit "byte" that disagreed with its own binary/decimal columns.
+      var bytes = new TextEncoder().encode(text);
       var binGroups = [];
       var hexGroups = [];
       var decGroups = [];
-      for (var i = 0; i < text.length; i++) {
-        var code = text.charCodeAt(i);
+      for (var i = 0; i < bytes.length; i++) {
+        var code = bytes[i];
         var bin = "";
         for (var b = 7; b >= 0; b--) bin += ((code >> b) & 1);
         binGroups.push(bin);
@@ -905,19 +966,21 @@ export function renderSteganography(main) {
 
     panel.querySelector("#steg-bin-from").onclick = function() {
       var bits = panel.querySelector("#steg-bin-bits").value.replace(/\s/g, "");
-      var text = "";
+      // Collect every full 8-bit group as a byte — including 0x00, which is a
+      // legitimate value; dropping it silently corrupted binary that carried a
+      // null byte. Decode the byte run as UTF-8 so multi-byte chars reassemble.
+      var bytes = [];
       for (var i = 0; i + 7 < bits.length; i += 8) {
-        var byte = parseInt(bits.substring(i, i + 8), 2);
-        if (byte > 0) text += String.fromCharCode(byte);
+        bytes.push(parseInt(bits.substring(i, i + 8), 2) & 0xFF);
       }
-      panel.querySelector("#steg-bin-text").value = text;
-      // Also update hex and decimal
+      panel.querySelector("#steg-bin-text").value = new TextDecoder().decode(new Uint8Array(bytes));
+      // Mirror the same bytes into hex and decimal (not the decoded text, whose
+      // code points would re-expand multi-byte chars).
       var hexGroups = [];
       var decGroups = [];
-      for (var j = 0; j < text.length; j++) {
-        var code = text.charCodeAt(j);
-        hexGroups.push(code.toString(16).toUpperCase().padStart(2, "0"));
-        decGroups.push(code.toString());
+      for (var j = 0; j < bytes.length; j++) {
+        hexGroups.push(bytes[j].toString(16).toUpperCase().padStart(2, "0"));
+        decGroups.push(bytes[j].toString());
       }
       panel.querySelector("#steg-bin-hex").value = hexGroups.join(" ");
       panel.querySelector("#steg-bin-dec").value = decGroups.join(" ");

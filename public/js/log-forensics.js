@@ -134,7 +134,7 @@ function findAnomalies(entries, format) {
     var failedSsh = {};
     entries.forEach(function(e) {
       if (/Failed password/.test(e.message)) failedSsh[e.ip] = (failedSsh[e.ip] || 0) + 1;
-      if (/sudo.*USER=root/.test(e.message)) anomalies.push({ type: 'Privilege Escalation', severity: 'critical', detail: e.user + ' escalated to root via sudo', ip: '' });
+      if (e.service === 'sudo' && /USER=root/.test(e.message)) anomalies.push({ type: 'Privilege Escalation', severity: 'critical', detail: e.user + ' escalated to root via sudo', ip: '' });
       if (/Successful su for root/.test(e.message)) anomalies.push({ type: 'Root Access', severity: 'critical', detail: 'su to root succeeded', ip: '' });
       if (/UFW BLOCK/.test(e.message)) anomalies.push({ type: 'Firewall Block', severity: 'medium', detail: 'Blocked traffic from ' + e.ip, ip: e.ip });
     });
