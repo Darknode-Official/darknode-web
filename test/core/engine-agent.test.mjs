@@ -373,11 +373,23 @@ group("engine: understands more everyday wording", () => {
     ["probability of flipping two heads", /0\.25/], ["probability of getting exactly 2 heads in 4 coin flips", /0\.375/], ["probability of at least one head in 3 flips", /0\.875/], ["chance of three heads in a row", /0\.125/],
     // text and code
     ["backwards: hello", /olleh/], ["reverse the string abc", /\bcba\b/], ["capitalize the quick fox", /The Quick Fox/], ["give me python code for bubble sort", /def /],
+    // second round: each of these was refused or answered wrongly before
+    ["how many times does 7 go into 56", /`56 \/ 7` is 8\b/], ["whats 3 less than 20", /\b17\b/], ["find 5 less than 12", /`12 - 5` is 7\b/],
+    ["what is the difference between 85 and 38", /\b47\b/], ["half of 3 quarters", /0\.375/], ["what's 80 plus 25%", /\b100\b/], ["what's 20 percent off 45", /\b36\b/],
+    ["round 2.567 to one decimal place", /2\.6\b/], ["15% tip on 60 dollars", /\b9\b/], ["sales tax of 8% on 50", /\b4\b/], ["tax on 100 at 5%", /\b5\b/],
+    ["6 foot 2 in cm", /187\.96/], ["2 hours and 30 minutes in minutes", /\b150\b/], ["rgb 0 128 255 to hex", /#0080ff/i],
+    ["what is 90 days from 2025-01-01", /2025-04-01/], ["2026-01-01 - 5 days", /2025-12-27/], ["10 days before 2025-03-01", /2025-02-19/],
+    ["first 8 fibonacci numbers", /0, 1, 1, 2, 3, 5, 8, 13\b/], ["remove duplicates from 1 2 2 3 3", /Result:\s*\|?\s*1 2 3\b/],
+    ["reverse the words in hello big world", /world big hello/], ["lowercase THIS IS LOUD", /this is loud/], ["true and false", /always false/],
+    ["which country is paris in", /France/],
   ];
   for (const [q, re] of cases) test(q, () => { const t = ask(q); assert.ok(re.test(t), q + " -> " + t.slice(0, 120)); });
   test("wording that must keep its meaning", () => {
     assert.ok(/dlrow olleh/.test(ask("reverse hello world")));
     assert.ok(/\b60\b/.test(ask("what is 50 + 10")));
     assert.ok(!/\b(?:5|20)\b.*Calculation/.test(ask("what is double hashing")));
+    assert.ok(!/Calculation/.test(ask("what is the difference between a list and a tuple")));
+    assert.ok(!/Capital of/.test(ask("which country is atlantis in")));
+    assert.ok(/10 kg equals/i.test(ask("10 kg 2 lbs")) || /lb/.test(ask("10 kg 2 lbs")));
   });
 });

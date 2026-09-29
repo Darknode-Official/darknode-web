@@ -115,6 +115,10 @@ export function numberTheory(input) {
   const np = low.match(/(\d+)(?:st|nd|rd|th)?\s+prime/) || (/nth prime/.test(low) && nums.length ? [0, nums[0]] : null);
   if (np) return { ok: true, kind: "nthprime", text: "prime #" + np[1] + " is " + nthPrime(Number(np[1])) };
   if (/fib/.test(low) && /(?:^|\s)-\d/.test(low)) return { ok: false, error: "Fibonacci numbers are indexed from 0 up, so a negative position has no value here" };
+  // "first 8 fibonacci numbers": F(0) .. F(7)
+  const ff = low.match(/\b(?:first|list(?: the)?(?: first)?)\s+(\d+)\s+fib(?:onacci)?(?:\s+(?:numbers?|terms?|sequence))?\b/);
+  if (ff) { const k = Math.min(200, +ff[1]); const out = []; for (let i = 0; i < k; i++) out.push(String(nthFib(i)));
+    return { ok: true, kind: "fibs", text: (out.join(", ") || "none") + " (" + k + " Fibonacci numbers, starting from F(0) = 0" + (+ff[1] > 200 ? ", capped here to keep the answer readable" : "") + ")" }; }
   const nf = low.match(/(\d+)(?:st|nd|rd|th)?\s+fib/) || (/fibonacci/.test(low) && nums.length ? [0, nums[0]] : null);
   if (nf) return { ok: true, kind: "fib", text: "Fibonacci #" + nf[1] + " is " + nthFib(Number(nf[1])) };
   return { ok: false, error: "try: factorize 360, gcd 12 18, is 97 prime, 10th prime, 20th fibonacci" };

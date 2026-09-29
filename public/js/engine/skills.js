@@ -455,7 +455,8 @@ export function text(op, s) {
     case "lines": return s.split(/\n/).length;
     case "sortlines": return s.split(/\n/).sort().join("\n");
     case "dedupewords": { const seen = new Set(); return s.split(/\s+/).filter((w) => { const k = w.toLowerCase(); if (!w || seen.has(k)) return false; seen.add(k); return true; }).join(" "); }
-    case "dedupe": return [...new Set(s.split(/\n/))].join("\n");
+    case "dedupe": return /\n/.test(s) || !/[\s,]/.test(s.trim()) ? [...new Set(s.split(/\n/))].join("\n") : [...new Set(s.trim().split(/\s*,\s*|\s+/))].join(/,/.test(s) ? ", " : " ");
+    case "reversewords": return s.trim().split(/\s+/).reverse().join(" ");
     case "base64": return b64encode(s);
     case "unbase64": return b64decode(s);
     case "json": try { return JSON.stringify(JSON.parse(s), null, 2); } catch (e) { return "invalid JSON: " + e.message; }
@@ -572,8 +573,8 @@ export function datetime(input) {
     const diff = Math.round(Math.abs(dates[1] - dates[0]) / 86400000);
     return { ok: true, kind: "between", value: diff, text: diff + " day" + (diff === 1 ? "" : "s") };
   }
-  const addM = low.match(/add\s+(\d+)\s+days?\s+to\s+(\d{4}-\d{1,2}-\d{1,2})/);
-  if (addM) { const d = parseISO(addM[2]); d.setUTCDate(d.getUTCDate() + +addM[1]); return { ok: true, kind: "add", text: d.toISOString().slice(0, 10) }; }
+  const addM = low.match(/\b(add|subtract)\s+(\d+)\s+(days?|weeks?)\s+(?:to|from)\s+(\d{4}-\d{1,2}-\d{1,2})/);
+  if (addM) { const d = parseISO(addM[4]); d.setUTCDate(d.getUTCDate() + (addM[1] === "add" ? 1 : -1) * +addM[2] * (/week/.test(addM[3]) ? 7 : 1)); return { ok: true, kind: "add", text: d.toISOString().slice(0, 10) }; }
   if (/leap/.test(low)) {
     const y = dates.length ? dates[0].getUTCFullYear() : Number((low.match(/\b(\d{4})\b/) || [])[1]);
     if (Number.isFinite(y)) { const leap = (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0; return { ok: true, kind: "leap", text: y + (leap ? " is a leap year" : " is not a leap year") }; }
