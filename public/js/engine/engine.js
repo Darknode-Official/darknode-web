@@ -15,6 +15,7 @@ import { findProgram, detectLang, program, PROGRAMS, LANG_NAMES, RUN_HINT, fence
 import * as F from "/js/engine/facts.js";
 import * as H from "/js/engine/hash.js";
 import * as LX from "/js/engine/lexicon.js";
+import * as IN from "/js/engine/inflect.js";
 import { makeLexicon, withDictionary, withContext, rankFixes, isWord, correctText, correctWord, typoDistance, fuzzyPrefix } from "/js/engine/spell.js";
 import { words as englishWords, band as wordBand } from "/js/engine/words.js";
 
@@ -60,7 +61,7 @@ function score(input) {
   // This is used only to DETECT intent; skills receive the original input.
   const low = normalizeTypos(synonyms(numberWords(naturalize(s))));
   const has = (re) => re.test(low);
-  const S0 = { calc: 0, convert: 0, codegen: 0, text: 0, regex: 0, datetime: 0, predict: 0, stats: 0, algebra: 0, numbertheory: 0, encode: 0, knowledge: 0, facts: 0, data: 0, base: 0, color: 0, jsonquery: 0, wordmath: 0, sequence: 0, logic: 0, setops: 0, matrix: 0, units: 0, combinatorics: 0, listops: 0, spelling: 0, dictionary: 0 };
+  const S0 = { calc: 0, convert: 0, codegen: 0, text: 0, regex: 0, datetime: 0, predict: 0, stats: 0, algebra: 0, numbertheory: 0, encode: 0, knowledge: 0, facts: 0, data: 0, base: 0, color: 0, jsonquery: 0, wordmath: 0, sequence: 0, logic: 0, setops: 0, matrix: 0, units: 0, combinatorics: 0, listops: 0, spelling: 0, dictionary: 0, inflect: 0, compare: 0 };
   const why = {};
   const add = (k, n, reason) => { S0[k] += n; if (reason && (!why[k] || n > 0)) why[k] = reason; };
   // a code request needs a real code verb or an explicit "in <language>" — NOT the
@@ -118,6 +119,10 @@ function score(input) {
   if (isDef && !codeAsk && !hasMathPhrase(low) && !has(/[-+*/^]/) && !has(/\d[a-z]/) && !has(/\b(sqrt|cbrt|max|min|round|abs|log|ln|sin|cos|tan)\s*\(/)) add("knowledge", 7, "a definition from the glossary");
   // the English dictionary (WordNet): meanings, synonyms, opposites, "is a dog an animal"
   if (!codeAsk && dictionaryAsk(s)) add("dictionary", /^(?:define|definition of)\b/i.test(s.trim()) ? 6 : 8, "the English dictionary");
+  // word grammar: plural/singular of a noun, tenses of a verb, comparative/superlative of an adjective
+  if (!codeAsk && IN.parseInflect(s)) add("inflect", 10, "an English word form");
+  // which of two numbers is larger/smaller (integers, decimals, fractions, percentages)
+  if (!codeAsk && compareAsk(s)) add("compare", 10, "comparing two numbers");
   // fact packs: capitals, elements, constants — triggered by a domain keyword
   if (has(/\bcapital\b|\bcapital city\b/)) add("facts", 8, "country capital lookup");
   if (!codeAsk && F.trivia(s).ok) add("facts", 9, "a curated fact");
@@ -284,6 +289,11 @@ function say(skill, res, input, model) {
       return { title: "Combinatorics", body: "**" + res.value + "** (" + res.op + ")." + (res.formula ? " Using `" + res.formula + "`." : ""), result: res };
     }
     case "dictionary": return sayDictionary(res);
+    case "inflect": return sayInflect(res);
+    case "compare":
+      return res.ok
+        ? { title: "Comparison", body: res.equal ? "They are **equal**: " + res.a.label + " = " + res.b.label + "." : "**" + res.winner.label + "** is " + res.rel + ". " + res.a.label + " = " + fmtNum(res.a.value) + " and " + res.b.label + " = " + fmtNum(res.b.value) + ".", note: "Compared as exact numeric values.", result: res }
+        : { title: "Comparison", body: res.error, result: res };
     case "knowledge":
       if (res.kind === "dictionary") return sayDictionary(res);
       return res.ok ? { title: "Definition: " + res.term, body: res.text, note: "Source: Universal Engine glossary (curated, not generated). If a term is not covered I say so rather than invent an answer.", result: res }
@@ -392,6 +402,8 @@ function run(skill, input, model) {
       return d.ok || d.loading ? d : k;
     }
     case "dictionary": return dictionary(input);
+    case "inflect": return inflectRun(input);
+    case "compare": return compareRun(input);
     case "facts": return F.facts(input);
     case "listops": return listOps(input);
     case "spelling": return spelling(input, model);
@@ -1036,6 +1048,74 @@ function commandSwap(raw) {
   // math verbs need numbers to work on; text verbs need something to transform
   if (to && !/\d/.test(m[4]) && !/^(?:reverse|uppercase|lowercase|capitalize|sort|define|encode|decode)$/.test(to)) return null;
   return to ? { from: m[2] + m[3], to, text: m[1] + to + m[4] } : null;
+}
+
+// ---------------------------------------------------------------------------
+// Word grammar (inflect.js): plural/singular, verb tenses, comparative/superlative.
+// ---------------------------------------------------------------------------
+const INFLECT_NOTE = "Regular English inflection rules plus a table of common irregular forms, applied offline.";
+function inflectRun(input) {
+  const q = IN.parseInflect(input);
+  if (!q) return { ok: false, error: "Ask like: plural of mouse, past tense of run, comparative of happy" };
+  const base = { ok: true, kind: "inflect", op: q.op, word: q.word };
+  if (q.op === "plural") { const r = IN.pluralize(q.word); return { ...base, out: r.word, rule: r.rule, irregular: r.irregular }; }
+  if (q.op === "singular") { const r = IN.singularize(q.word); return { ...base, out: r.word, rule: r.rule, irregular: r.irregular }; }
+  if (q.op === "comparative" || q.op === "superlative") {
+    const r = IN.compareForms(q.word);
+    return { ...base, out: q.op === "comparative" ? r.comparative : r.superlative, comparative: r.comparative, superlative: r.superlative, rule: r.rule || (r.irregular ? "irregular" : r.periphrastic ? "long word: uses more/most" : ""), irregular: r.irregular };
+  }
+  const v = IN.verbForms(q.word); // past / participle / gerund
+  const out = q.op === "past" ? v.past : q.op === "participle" ? v.participle : v.gerund;
+  return { ...base, out, forms: v, irregular: v.irregular };
+}
+function sayInflect(res) {
+  if (!res.ok) return { title: "Word forms", body: res.error, result: res };
+  const LABEL = { plural: "plural", singular: "singular", past: "past tense", participle: "past participle", gerund: "present participle (-ing form)", comparative: "comparative", superlative: "superlative" };
+  const title = { plural: "Plural of ", singular: "Singular of ", past: "Past tense of ", participle: "Participle of ", gerund: "-ing form of ", comparative: "Comparative of ", superlative: "Superlative of " }[res.op] + res.word;
+  let body = "The " + LABEL[res.op] + " of **" + res.word + "** is **" + res.out + "**.";
+  if ((res.op === "comparative" || res.op === "superlative") && res.comparative) body += "  (" + res.word + " → " + res.comparative + " → " + res.superlative + ")";
+  if (res.forms) body += "  Full set: " + res.forms.base + " / " + res.forms.past + " / " + res.forms.participle + " / " + res.forms.gerund + " / " + res.forms.present3 + ".";
+  return { title, body, note: (res.rule ? res.rule + ". " : "") + INFLECT_NOTE, result: res };
+}
+
+// ---------------------------------------------------------------------------
+// Numeric comparison: "which is bigger, 3/4 or 2/3" (ints, decimals, fractions, %).
+// ---------------------------------------------------------------------------
+const NUMRE = "(-?\\d+(?:\\.\\d+)?\\s*/\\s*-?\\d+(?:\\.\\d+)?|-?\\d+(?:\\.\\d+)?\\s*%?|-?\\.\\d+\\s*%?)";
+const CMP_WORDS = "(bigger|larger|greater|higher|more|smaller|lesser|less|lower|tinier)";
+const CMP_RE = new RegExp("^(?:which(?:\\s+one)?\\s+is|what(?:'s| is)|is)\\s+(?:the\\s+)?" + CMP_WORDS + "[,:]?\\s+" + NUMRE + "\\s+(?:or|than|,)\\s+" + NUMRE + "\\s*\\??$", "i");
+const CMP_RE2 = new RegExp("^" + NUMRE + "\\s+(?:vs\\.?|versus|or|compared to)\\s+" + NUMRE + "\\s*\\??$", "i");
+const CMP_RE3 = new RegExp("^is\\s+" + NUMRE + "\\s+or\\s+" + NUMRE + "\\s+" + CMP_WORDS + "\\s*\\??$", "i"); // "is 50% or 0.4 bigger"
+function compareAsk(s) {
+  const t = String(s || "").trim();
+  const m = t.match(CMP_RE); if (m) return { dir: /small|less|lower|tini/i.test(m[1]) ? "smaller" : "bigger", a: m[2], b: m[3] };
+  const m3 = t.match(CMP_RE3); if (m3) return { dir: /small|less|lower|tini/i.test(m3[3]) ? "smaller" : "bigger", a: m3[1], b: m3[2] };
+  const m2 = t.match(CMP_RE2); if (m2) return { dir: "bigger", a: m2[1], b: m2[2] };
+  return null;
+}
+function parseNumToken(tok) {
+  const t = String(tok).replace(/\s+/g, "");
+  const pct = /%$/.test(t);
+  const body = t.replace(/%$/, "");
+  let value, label = tok.trim();
+  if (body.includes("/")) { const [n, d] = body.split("/").map(Number); if (!d) return null; value = n / d; }
+  else value = Number(body);
+  if (!isFinite(value)) return null;
+  if (pct) value = value / 100;
+  return { value, label };
+}
+function compareRun(input) {
+  const q = compareAsk(input);
+  if (!q) return { ok: false, error: "Ask like: which is bigger, 3/4 or 2/3" };
+  const a = parseNumToken(q.a), b = parseNumToken(q.b);
+  if (!a || !b) return { ok: false, error: "I could not read both numbers." };
+  if (Math.abs(a.value - b.value) < 1e-12) return { ok: true, kind: "compare", equal: true, a, b };
+  const aBigger = a.value > b.value;
+  const winner = aBigger ? a : b;
+  const rel = q.dir === "smaller" ? (aBigger ? "the larger; the smaller is " + b.label : "the larger; the smaller is " + a.label) : "the larger";
+  // when they asked for the smaller, report the smaller as the winner
+  if (q.dir === "smaller") { const w = aBigger ? b : a; return { ok: true, kind: "compare", winner: w, rel: "smaller", a, b }; }
+  return { ok: true, kind: "compare", winner, rel: "larger", a, b };
 }
 
 export function respond(input, model) {

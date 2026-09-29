@@ -1634,7 +1634,7 @@ function renderApp(user) {
     else if (sec === "whoisrecon") { import("/js/whois-recon.js?v=20260927b").then(m => m.renderWhoisRecon(main)); }
     else if (sec === "learn") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Learn Hub...</p>"; loadLearnHub().then(m => m.renderLearnHub(main)); }
     else if (sec === "learndo") { import("/js/learndo.js").then(m => m.renderLearnDo(main)); }
-    else if (sec === "engine") { import("/js/engine-tab.js?v=20260928r").then(m => m.renderEngine(main)); }
+    else if (sec === "engine") { import("/js/engine-tab.js?v=20260929e").then(m => m.renderEngine(main)); }
     else if (sec === "github") { show("settings"); return; }
     else if (sec === "gmail") { show("settings"); return; }
     else if (sec === "coder") { import("/js/coder.js").then(m => m.renderCliCoder(main)); }
