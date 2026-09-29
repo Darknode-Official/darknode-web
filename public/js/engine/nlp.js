@@ -34,7 +34,9 @@ function parseCardinal(words) {
 // Replace runs of number words with their digits, leaving the rest of the text intact.
 export function numberWords(text) {
   // treat a hyphen between two letters as a space ("twenty-one" -> "twenty one")
-  const src = String(text || "").replace(/([a-z])-([a-z])/gi, "$1 $2");
+  const src = String(text || "").replace(/([a-z])-([a-z])/gi, "$1 $2")
+    // digits with a scale word: "3 hundred" -> 300, "2.5 million" -> 2500000
+    .replace(/\b(\d+(?:\.\d+)?)\s+(hundred|thousand|million|billion|trillion)\b/gi, (m, n, sc) => String(Number((Number(n) * SCALES[sc.toLowerCase()]).toPrecision(15))));
   const tokens = src.split(/(\s+|[^a-z0-9']+)/i);
   const out = [];
   let run = [];
@@ -66,7 +68,10 @@ export function numberWords(text) {
 // deliberately conservative: it returns a best-effort expression and lets calc
 // validate it, so a mistranslation simply falls back to normal routing.
 // ---------------------------------------------------------------------------
-const MATHY = /\b(square root of|sqrt of|cube root of|cubic root of|root of|squared|cubed|to the power of|raised to|percent of|percentage of|plus|minus|times|multiplied by|divided by|divided into|modulo|mod|factorial of|square of|cube of|add|added to|subtract|multiply|divide[sd]?|sum of)\b|%|\d\s*!/;
+const ORD = { second: 2, third: 3, fourth: 4, fifth: 5, sixth: 6, seventh: 7, eighth: 8, ninth: 9, tenth: 10, eleventh: 11, twelfth: 12, twentieth: 20 };
+const ORD_RE = Object.keys(ORD).join("|");
+const MATHY = new RegExp("\\b(square root of|sqrt of|cube root of|cubic root of|root of|squared|cubed|to the power of|raised to|percent of|percentage of|per cent|plus|minus|times|multiplied by|multiplied with|divided by|divided into|modulo|mod|factorial of|square of|cube of|add|added to|subtract|multiply|divide[sd]?|sum of|take away|deduct|product of)\\b|%|\\d\\s*!|\\d\\s*pc\\b" +
+  "|\\btake\\s+-?\\d+(?:\\.\\d+)?\\s+away\\b|\\b(?:double|twice|triple|quadruple|halve)\\s+-?\\d|\\bto the (?:\\d+(?:st|nd|rd|th)|" + ORD_RE + ")\\b");
 
 export function hasMathPhrase(input) { return MATHY.test(String(input || "").toLowerCase()); }
 
@@ -79,8 +84,13 @@ export function mathPhrase(input) {
   t = t.replace(/\bsubtract\s+(-?\d+(?:\.\d+)?)\s+from\s+(-?\d+(?:\.\d+)?)/g, " $2 - $1 ");
   t = t.replace(/\bmultiply\s+(-?\d+(?:\.\d+)?)\s+by\s+(-?\d+(?:\.\d+)?)/g, " $1 * $2 ");
   t = t.replace(/\bdivide\s+(-?\d+(?:\.\d+)?)\s+by\s+(-?\d+(?:\.\d+)?)/g, " $1 / $2 ");
+  t = t.replace(/\bmultiply\s+(-?\d+(?:\.\d+)?)\s+(?:and|with)\s+(-?\d+(?:\.\d+)?)/g, " $1 * $2 ");
+  t = t.replace(/\b(?:take|deduct)\s+(-?\d+(?:\.\d+)?)\s+(?:away\s+)?from\s+(-?\d+(?:\.\d+)?)/g, " $2 - $1 ");
+  t = t.replace(/\bper cent\b/g, " percent ").replace(/(\d)\s*pc\b/g, "$1 percent");
+  t = t.replace(/\b(double|twice|triple|quadruple|halve)\s+(-?\d+(?:\.\d+)?)/g, (m, w, n) => w === "halve" ? " (" + n + " / 2) " : " (" + { double: 2, twice: 2, triple: 3, quadruple: 4 }[w] + " * " + n + ") ");
+  t = t.replace(new RegExp("\\bto the (?:(\\d+)(?:st|nd|rd|th)|(" + ORD_RE + "))(?:\\s+power)?\\b", "g"), (m, d, o) => " ^ " + (d || ORD[o]) + " ");
   // drop polite / command lead-ins that carry no math meaning
-  t = t.replace(/\b(please|kindly|can you|could you|would you|whats|what is|what's|what|how much is|how much|how many|tell me|work out|figure out|calculate|compute|evaluate|find|give me|the value of|the result of|the answer to|equals|equal to|the|is)\b/g, " ");
+  t = t.replace(/\b(please|kindly|can you|could you|would you|what do you get (?:if|when) you|what does|comes? (?:out )?to|adds? up to|whats|what is|what's|what|how much is|how much|how many|tell me|work out|figure out|calculate|compute|evaluate|find|give me|the value of|the result of|the answer to|equals|equal to|the|is)\b/g, " ");
   t = " " + t.replace(/\s+/g, " ").trim() + " "; // collapse gaps left by stripping so multi-word phrases still match
   // functions and powers (before the binary operators)
   t = t.replace(/\b(cube root of|cubic root of)\b/g, " __cbrt ");
@@ -98,7 +108,7 @@ export function mathPhrase(input) {
   // binary operators (word forms). "and"/"plus" both mean + only via "plus".
   t = t.replace(/\b(plus|added to|add|increased by)\b/g, " + ");
   t = t.replace(/\b(minus|subtract|subtracted by|less|decreased by|take away)\b/g, " - ");
-  t = t.replace(/\b(times|multiplied by|multiply by)\b/g, " * ");
+  t = t.replace(/\b(times|multiplied by|multiplied with|multiply by)\b/g, " * ");
   t = t.replace(/\b(divided by|divide by|divided into|over)\b/g, " / ");
   t = t.replace(/\b(modulo|mod)\b/g, " % ");
   // apply function markers to their following number/parenthesised group
@@ -147,7 +157,7 @@ export function synonyms(text) {
 // skills already parse. Deliberately conservative: it never removes words that
 // the router keys on (like "what is", which definitions need).
 // ---------------------------------------------------------------------------
-const UNITS = new Set(["mm", "cm", "m", "km", "meter", "meters", "metre", "metres", "kilometer", "kilometers", "kilometre", "kilometres", "inch", "inches", "in", "ft", "foot", "feet", "yard", "yards", "yd", "mile", "miles", "mi", "kg", "g", "gram", "grams", "kilogram", "kilograms", "mg", "lb", "lbs", "pound", "pounds", "oz", "ounce", "ounces", "tonne", "tonnes", "ton", "tons", "second", "seconds", "sec", "secs", "minute", "minutes", "min", "mins", "hour", "hours", "hr", "hrs", "day", "days", "week", "weeks", "month", "months", "year", "years", "byte", "bytes", "kb", "mb", "gb", "tb", "kilobyte", "kilobytes", "megabyte", "megabytes", "gigabyte", "gigabytes", "celsius", "fahrenheit", "kelvin", "stone", "st", "ml", "milliliter", "milliliters", "millilitre", "millilitres", "l", "liter", "liters", "litre", "litres", "gallon", "gallons", "gal", "quart", "quarts", "pint", "pints", "cup", "cups", "tablespoon", "tablespoons", "tbsp", "teaspoon", "teaspoons", "tsp", "acre", "acres", "hectare", "hectares", "mph", "kph", "knots"]);
+const UNITS = new Set(["mm", "cm", "m", "km", "meter", "meters", "metre", "metres", "kilometer", "kilometers", "kilometre", "kilometres", "inch", "inches", "in", "ft", "foot", "feet", "yard", "yards", "yd", "mile", "miles", "mi", "kg", "g", "gram", "grams", "kilogram", "kilograms", "mg", "lb", "lbs", "pound", "pounds", "oz", "ounce", "ounces", "tonne", "tonnes", "ton", "tons", "second", "seconds", "sec", "secs", "minute", "minutes", "min", "mins", "hour", "hours", "hr", "hrs", "day", "days", "week", "weeks", "month", "months", "year", "years", "byte", "bytes", "kb", "mb", "gb", "tb", "kilobyte", "kilobytes", "megabyte", "megabytes", "gigabyte", "gigabytes", "celsius", "fahrenheit", "kelvin", "stone", "st", "ml", "milliliter", "milliliters", "millilitre", "millilitres", "l", "liter", "liters", "litre", "litres", "gallon", "gallons", "gal", "quart", "quarts", "pint", "pints", "cup", "cups", "tablespoon", "tablespoons", "tbsp", "teaspoon", "teaspoons", "tsp", "acre", "acres", "hectare", "hectares", "mph", "kph", "knots", "kms", "yds", "kilo", "kilos", "kgs", "gm", "gms", "wk", "wks", "fortnight", "fortnights", "yr", "yrs", "decade", "decades", "century", "centuries", "bit", "bits", "terabyte", "terabytes", "kmph", "kmh", "centigrade"]);
 const isUnit = (w) => UNITS.has(String(w || "").toLowerCase());
 export const UNIT_WORDS = UNITS;
 
@@ -156,6 +166,8 @@ export function naturalize(text) {
   // "how many U1 (are there) in [N|a] U2"  ->  "N U2 in U1"  (only when both are real units)
   t = t.replace(/\bhow (?:many|much)\s+([a-z]+)\s+(?:are\s+)?(?:there\s+)?in\s+(?:a\s+|an\s+|one\s+|each\s+)?(\d+(?:\.\d+)?)?\s*([a-z]+)\b/g,
     (m, u1, n, u2) => (isUnit(u1) && isUnit(u2)) ? " " + (n || "1") + " " + u2 + " in " + u1 + " " : m);
+  t = t.replace(/\bhow (?:many|much)\s+([a-z]+)\s+(?:is|are|makes?|equals?)\s+(\d+(?:\.\d+)?)\s*([a-z]+)\b/g,
+    (m, u1, n, u2) => (isUnit(u1) && isUnit(u2)) ? " " + n + " " + u2 + " in " + u1 + " " : m);
   // strip trailing politeness
   t = t.replace(/[\s,]*\b(please|thanks|thank you|pls|plz)\b[\s.!?]*$/g, " ");
   // strip leading framing that carries no routing signal (repeatedly). NOTE: we do

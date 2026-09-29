@@ -194,11 +194,11 @@ export function calc(input) {
 // convert: unit conversion via factor tables (+ special temperature formulas).
 // ---------------------------------------------------------------------------
 const UNITS = {
-  length: { base: "m", u: { mm: 1e-3, millimeter: 1e-3, millimeters: 1e-3, millimetre: 1e-3, millimetres: 1e-3, cm: 1e-2, centimeter: 1e-2, centimeters: 1e-2, centimetre: 1e-2, centimetres: 1e-2, m: 1, meter: 1, meters: 1, metre: 1, metres: 1, km: 1e3, kilometer: 1e3, kilometers: 1e3, kilometre: 1e3, kilometres: 1e3, in: 0.0254, inch: 0.0254, inches: 0.0254, ft: 0.3048, foot: 0.3048, feet: 0.3048, yd: 0.9144, yard: 0.9144, yards: 0.9144, mi: 1609.344, mile: 1609.344, miles: 1609.344 } },
-  mass: { base: "kg", u: { mg: 1e-6, milligram: 1e-6, milligrams: 1e-6, g: 1e-3, gram: 1e-3, grams: 1e-3, kg: 1, kilogram: 1, kilograms: 1, t: 1e3, tonne: 1e3, tonnes: 1e3, oz: 0.0283495, ounce: 0.0283495, ounces: 0.0283495, lb: 0.453592, lbs: 0.453592, pound: 0.453592, pounds: 0.453592, st: 6.35029, stone: 6.35029 } },
-  time: { base: "s", u: { ms: 1e-3, millisecond: 1e-3, milliseconds: 1e-3, s: 1, sec: 1, secs: 1, second: 1, seconds: 1, min: 60, mins: 60, minute: 60, minutes: 60, h: 3600, hr: 3600, hrs: 3600, hour: 3600, hours: 3600, day: 86400, days: 86400, week: 604800, weeks: 604800, year: 31557600, years: 31557600 } },
-  data: { base: "b", u: { bit: 0.125, b: 1, byte: 1, bytes: 1, kb: 1e3, kib: 1024, mb: 1e6, mib: 1048576, gb: 1e9, gib: 1073741824, tb: 1e12, tib: 1099511627776 } },
-  speed: { base: "mps", u: { mps: 1, "m/s": 1, kph: 0.277778, "km/h": 0.277778, mph: 0.44704, kn: 0.514444, knot: 0.514444, knots: 0.514444 } },
+  length: { base: "m", u: { mm: 1e-3, millimeter: 1e-3, millimeters: 1e-3, millimetre: 1e-3, millimetres: 1e-3, cm: 1e-2, centimeter: 1e-2, centimeters: 1e-2, centimetre: 1e-2, centimetres: 1e-2, m: 1, meter: 1, meters: 1, metre: 1, metres: 1, km: 1e3, kilometer: 1e3, kilometers: 1e3, kilometre: 1e3, kilometres: 1e3, kms: 1e3, in: 0.0254, inch: 0.0254, inches: 0.0254, ft: 0.3048, foot: 0.3048, feet: 0.3048, yd: 0.9144, yard: 0.9144, yards: 0.9144, mi: 1609.344, mile: 1609.344, miles: 1609.344, yds: 0.9144 } },
+  mass: { base: "kg", u: { mg: 1e-6, milligram: 1e-6, milligrams: 1e-6, g: 1e-3, gram: 1e-3, grams: 1e-3, kg: 1, kilogram: 1, kilograms: 1, kilo: 1, kilos: 1, kgs: 1, gm: 1e-3, gms: 1e-3, t: 1e3, tonne: 1e3, tonnes: 1e3, oz: 0.0283495, ounce: 0.0283495, ounces: 0.0283495, lb: 0.453592, lbs: 0.453592, pound: 0.453592, pounds: 0.453592, st: 6.35029, stone: 6.35029 } },
+  time: { base: "s", u: { ms: 1e-3, millisecond: 1e-3, milliseconds: 1e-3, s: 1, sec: 1, secs: 1, second: 1, seconds: 1, min: 60, mins: 60, minute: 60, minutes: 60, h: 3600, hr: 3600, hrs: 3600, hour: 3600, hours: 3600, day: 86400, days: 86400, week: 604800, weeks: 604800, wk: 604800, wks: 604800, fortnight: 1209600, fortnights: 1209600, month: 2629800, months: 2629800, year: 31557600, years: 31557600, yr: 31557600, yrs: 31557600, decade: 315576000, decades: 315576000, century: 3155760000, centuries: 3155760000 } },
+  data: { base: "b", u: { bit: 0.125, bits: 0.125, kilobyte: 1e3, kilobytes: 1e3, megabyte: 1e6, megabytes: 1e6, gigabyte: 1e9, gigabytes: 1e9, terabyte: 1e12, terabytes: 1e12, b: 1, byte: 1, bytes: 1, kb: 1e3, kib: 1024, mb: 1e6, mib: 1048576, gb: 1e9, gib: 1073741824, tb: 1e12, tib: 1099511627776 } },
+  speed: { base: "mps", u: { mps: 1, "m/s": 1, kph: 0.277778, kmph: 0.277778, kmh: 0.277778, "km/h": 0.277778, "km/hr": 0.277778, "mi/h": 0.44704, mph: 0.44704, kn: 0.514444, knot: 0.514444, knots: 0.514444 } },
   // US customary volumes (gallon = 231 cubic inches exactly)
   volume: { base: "l", u: { ml: 1e-3, milliliter: 1e-3, milliliters: 1e-3, millilitre: 1e-3, millilitres: 1e-3, cc: 1e-3, cl: 1e-2, l: 1, liter: 1, liters: 1, litre: 1, litres: 1, gal: 3.785411784, gallon: 3.785411784, gallons: 3.785411784, qt: 0.946352946, quart: 0.946352946, quarts: 0.946352946, pt: 0.473176473, pint: 0.473176473, pints: 0.473176473, cup: 0.2365882365, cups: 0.2365882365, floz: 0.0295735295625, "fl oz": 0.0295735295625, tbsp: 0.01478676478125, tablespoon: 0.01478676478125, tablespoons: 0.01478676478125, tsp: 0.00492892159375, teaspoon: 0.00492892159375, teaspoons: 0.00492892159375 } },
   area: { base: "m2", u: { m2: 1, sqm: 1, km2: 1e6, sqkm: 1e6, ft2: 0.09290304, sqft: 0.09290304, acre: 4046.8564224, acres: 4046.8564224, hectare: 1e4, hectares: 1e4, ha: 1e4 } },
@@ -214,7 +214,7 @@ export function convert(input) {
   const val = parseFloat(m[1]);
   let from = m[2].replace("°", ""), to = m[3].replace("°", "");
   // temperature (non-linear)
-  const T = { c: "c", celsius: "c", f: "f", fahrenheit: "f", k: "k", kelvin: "k" };
+  const T = { c: "c", celsius: "c", centigrade: "c", degc: "c", degf: "f", f: "f", fahrenheit: "f", k: "k", kelvin: "k" };
   if (T[from] && T[to]) {
     let c; if (T[from] === "c") c = val; else if (T[from] === "f") c = (val - 32) * 5 / 9; else c = val - 273.15;
     if (c < -273.15 - 1e-9) return { ok: false, error: val + " " + from + " is below absolute zero (-273.15 C, -459.67 F, 0 K), so it is not a physical temperature" };
