@@ -452,6 +452,7 @@ export function text(op, s) {
     case "slug": return s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
     case "words": return s.trim() ? s.trim().split(/\s+/).length : 0;
     case "chars": return [...s].length;
+    case "letters": return [...s].filter((c) => /\p{L}/u.test(c)).length;
     case "lines": return s.split(/\n/).length;
     case "sortlines": return s.split(/\n/).sort().join("\n");
     case "dedupewords": { const seen = new Set(); return s.split(/\s+/).filter((w) => { const k = w.toLowerCase(); if (!w || seen.has(k)) return false; seen.add(k); return true; }).join(" "); }

@@ -110,13 +110,14 @@ function score(input) {
   // algebra: an equation with a variable (distinct from a bare calc assignment like x=5)
   if (!codeAsk && !has(/base64|\bencode|\bdecode|rot13|\bhex\b|\bhash\b|md5|\bsha/) && (has(/\bsolve\b/) || (has(/=/) && (has(/\d\s*[a-z]/) || has(/[a-z]\s*\^/))))) add("algebra", 8, "an equation to solve");
   // number theory (asking for a value, not code)
-  if (!codeAsk && has(/factori[sz]e|prime factor|\bfactors?\s+of\b|\bfactor\s+\d|\bgcd\b|\blcm\b|greatest common|least common|is\s+\d+\s+prime|\b(?:is|check (?:if|whether))\s+-?\d+\s+(?:an?\s+)?(?:even|odd)\b|\d+(?:st|nd|rd|th)\s+(?:prime|fib)|nth\s+(?:prime|fib)|\bfirst\s+\d+\s+primes?\b|\b(?:first|list(?: the)?(?: first)?)\s+\d+\s+fib|\bprimes?\s+(?:below|under|less than|up to)\s+\d|is\s+-\d+\s+prime|\bfib(?:onacci)?\s+(?:of\s+|number\s+)?-?\d/)) add("numbertheory", 7, "number theory");
+  if (!codeAsk && has(/\bdivisors?\s+of\s+\d|\bis\s+\d+\s+(?:a\s+)?perfect\s+(?:square|cube)\b|\bis\s+\d+\s+(?:evenly\s+)?divisible\s+by\s+\d|\bsum of (?:the |its )?digits (?:of|in)\s+\d|\bdigit sum\b|\bhow many digits (?:does|do|are (?:there )?in|in|are in)\s+\d+\b(?!\s*[\^*!])|factori[sz]e|prime factor|\bfactors?\s+of\b|\bfactor\s+\d|\bgcd\b|\blcm\b|greatest common|least common|is\s+\d+\s+prime|\b(?:is|check (?:if|whether))\s+-?\d+\s+(?:an?\s+)?(?:even|odd)\b|\d+(?:st|nd|rd|th)\s+(?:prime|fib)|nth\s+(?:prime|fib)|\bfirst\s+\d+\s+primes?\b|\b(?:first|list(?: the)?(?: first)?)\s+\d+\s+fib|\bprimes?\s+(?:below|under|less than|up to)\s+\d|is\s+-\d+\s+prime|\bfib(?:onacci)?\s+(?:of\s+|number\s+)?-?\d/)) add("numbertheory", 7, "number theory");
   // encoding / hashing
   if (!isDef && has(/base64|\bhex\b|rot13|morse|url ?(en|de)code|to binary|from binary|crc32|fnv1a?|djb2|\bhash\b|\bmd5\b|\bsha-?(?:1|256)?\b/)) add("encode", 7, "encode / hash");
   // knowledge base (a definition question that is not math, code, or number theory)
   if (isDef && !codeAsk && !hasMathPhrase(low) && !has(/[-+*/^]/) && !has(/\d[a-z]/) && !has(/\b(sqrt|cbrt|max|min|round|abs|log|ln|sin|cos|tan)\s*\(/)) add("knowledge", 7, "a definition from the glossary");
   // fact packs: capitals, elements, constants — triggered by a domain keyword
   if (has(/\bcapital\b|\bcapital city\b/)) add("facts", 8, "country capital lookup");
+  if (!codeAsk && F.trivia(s).ok) add("facts", 9, "a curated fact");
   if (has(/\belements?\b|\batomic\b|\bperiodic\b|\bchemical\b/) && !codeAsk) add("facts", 8, "periodic table lookup");
   if (has(/\bspeed of light\b|\bplanck\b|\bavogadro\b|\bboltzmann\b|\bgravitational constant\b|\bbohr\b|\bstefan.boltzmann\b|\bfine structure\b|\bearth mass\b|\bsolar mass\b|\blight year\b|\bparsec\b|\bstandard gravity\b|\bgas constant\b/)) add("facts", 9, "physical/mathematical constant");
   else if (has(/\bconstant\b/) && !has(/constant ?case/) && !codeAsk) add("facts", 7, "physical/mathematical constant");
@@ -285,7 +286,7 @@ function say(skill, res, input, model) {
     case "facts": {
       if (!res.ok) return { title: "Fact lookup", body: "I do not have that in my fact packs, and I will not invent it. I cover the **capital of every country**, all **118 elements**, and the main **physical, math, and astronomical constants**.", result: res };
       if (res.capital) return { title: "Capital of " + res.country, body: (res.reverse ? "**" + res.capital + "** is the capital of " + F.withThe(res.country).replace(res.country, "**" + res.country + "**") : "The capital of " + F.withThe(res.country).replace(res.country, "**" + res.country + "**") + " is **" + res.capital + "**") + (/\.$/.test(res.capital) ? "" : "."), note: "Source: Universal Engine curated fact pack (not generated).", result: res };
-      if (res.trivia === true) return { title: "Fact", body: res.text.replace(/(\d+) known elements/, "**$1** known elements"), note: "Source: Universal Engine periodic table (118 elements, curated).", result: res };
+      if (res.trivia === true) return { title: "Fact", body: res.text.replace(/(\d+) known elements/, "**$1** known elements"), note: /known elements/.test(res.text) ? "Source: Universal Engine periodic table (118 elements, curated)." : "Source: Universal Engine curated reference facts.", result: res };
       if (res.sym) return { title: "Element: " + res.name, body: (res.trivia ? "The " + res.trivia + " element is " : "") + "**" + res.name.charAt(0).toUpperCase() + res.name.slice(1) + "** (" + res.sym + "), atomic number " + res.z + ", atomic mass " + res.mass + " u. Category: " + res.cat + ".", note: "Source: Universal Engine periodic table (118 elements, curated).", result: res };
       if (res.unit) return { title: "Constant: " + res.name, body: "**" + F.sci(res.value) + (res.unit === "dimensionless" ? "" : " " + res.unit) + "** — " + res.desc, note: "Source: Universal Engine constants pack (curated reference values).", result: res };
       return { title: "Fact", body: JSON.stringify(res), result: res };
@@ -370,7 +371,7 @@ function run(skill, input, model) {
     }
     case "stats": return A.stats(input);
     case "algebra": return A.solveEquation(input);
-    case "numbertheory": return A.numberTheory(input.replace(/\bfactors?\s+(of\s+)?(?=\d)/i, "factorize ").replace(/\bfactor\s+(?=\d)/i, "factorize "));
+    case "numbertheory": return A.numberTheory(input.replace(/\bfactors?\s+(?=\d)/i, "factorize ").replace(/\bfactor\s+(?=\d)/i, "factorize "));
     case "wordmath": return A.wordMath(numberWords(input));
     case "sequence": return A.sequence(input);
     case "logic": return A.logic(input);
@@ -398,7 +399,7 @@ function run(skill, input, model) {
       return { op: eop, value: A.encode(eop, payload || ""), payload: payload || "" };
     }
     case "text": {
-      const opMap = [["camel", /camel ?case/], ["snake", /snake ?case/], ["kebab", /kebab ?case/], ["constant", /constant case/], ["wordfreq", /word frequency|frequenc/], ["emails", /extract emails?|\bemails?\b/], ["urls", /extract (urls?|links?)|\burls?\b|\blinks?\b/], ["numbers", /extract numbers?|\bnumbers\b(?! in)/], ["vowels", /\bvowels?\b/], ["consonants", /\bconsonants?\b/], ["upper", /uppercase/], ["lower", /lowercase/], ["title", /title case/], ["slug", /slug/], ["palindrome", /palindrome/], ["reversewords", /reverse (?:the )?(?:order of (?:the )?)?words\b|\bwords? in reverse order|reverse word order/], ["reverse", /reverse|backwards/], ["chars", /count (the )?(characters|letters)|char count|how many (characters|letters|chars)|number of (characters|letters)/], ["words", /count (the )?words|word count|how many words|number of words/], ["sortlines", /sort lines/], ["dedupewords", /dedupe words|(?:duplicate|repeated) words/], ["dedupe", /dedupe|remove duplicate/], ["unbase64", /decode base64|from base64|unbase64/], ["json", /pretty ?print|format json/]];
+      const opMap = [["camel", /camel ?case/], ["snake", /snake ?case/], ["kebab", /kebab ?case/], ["constant", /constant case/], ["wordfreq", /word frequency|frequenc/], ["emails", /extract emails?|\bemails?\b/], ["urls", /extract (urls?|links?)|\burls?\b|\blinks?\b/], ["numbers", /extract numbers?|\bnumbers\b(?! in)/], ["vowels", /\bvowels?\b/], ["consonants", /\bconsonants?\b/], ["upper", /uppercase/], ["lower", /lowercase/], ["title", /title case/], ["slug", /slug/], ["palindrome", /palindrome/], ["reversewords", /reverse (?:the )?(?:order of (?:the )?)?words\b|\bwords? in reverse order|reverse word order/], ["reverse", /reverse|backwards/], ["letters", /count (?:the )?letters|how many letters|number of letters/], ["chars", /count (the )?(characters|letters)|char count|how many (characters|letters|chars)|number of (characters|letters)/], ["words", /count (the )?words|word count|how many words|number of words/], ["sortlines", /sort lines/], ["dedupewords", /dedupe words|(?:duplicate|repeated) words/], ["dedupe", /dedupe|remove duplicate/], ["unbase64", /decode base64|from base64|unbase64/], ["json", /pretty ?print|format json/]];
       let op = "words"; for (const [name, re] of opMap) if (re.test(low)) { op = name; break; }
       const scan = op === "emails" || op === "urls" || op === "numbers" || op === "wordfreq"; // scan whole input, do not strip content
       const q = input.match(/["']([^"']+)["']/); const c = input.indexOf(":");
@@ -415,7 +416,7 @@ function run(skill, input, model) {
         const CMD = "reverse|backwards|the(?=\\s+(?:text|string|word|words|sentence|phrase|following|letters|characters|name|vowels|consonants)\\b)|text|sentence|phrase|vowels?|consonants?|camelcase|snakecase|kebabcase|titlecase|string|word|to|into|uppercase|lowercase|upper|lower|title|camel|snake|kebab|constant|case|slug|slugify|count|words?|characters?|letters?|chars?|frequency|sort|lines|dedupe|remove|duplicates?|please|make|convert|format|json|pretty|print|this|following|a|an|(?:can|could|would|will) (?:you|u)(?: please)?|how (?:do|can|would) (?:i|you|u)|how many|number of|i want to|i need to|help me";
         // if a command phrase ends in a boundary preposition, keep everything after it verbatim
         const pm = input.trim().match(new RegExp("^(?:(?:" + CMD + ")\\s+)*(?:in|of|from)\\s+(.+)$", "i"));
-        if (pm) payload = pm[1];
+        if (pm) payload = pm[1].replace(/^(?:the\s+)?(?:word|name|string|text|phrase|sentence)\s+(?=\S)/i, "");
         else { // otherwise strip only the leading run of command words (never eats content)
           const TSTRIP = new RegExp("^(?:" + CMD + "|in|of|from)\\b[\\s:]*", "i");
           let t = input.trim(), prev; do { prev = t; t = t.replace(TSTRIP, ""); } while (t !== prev);
@@ -572,6 +573,8 @@ function lexicon(model) {
 // skills that read meaning); `hybrid` fixes only command words and leaves the
 // user's own content verbatim (for skills that transform content, like reverse).
 export function fixTypos(input, model) {
+  // a question that already names a curated fact exactly ("who wrote romeo and juliet") is not a typo
+  if (F.trivia(input).ok) return { text: input, fixes: [], hybrid: input, hybridFixes: [] };
   const lex = lexicon(model);
   const full = correctText(lex, input);
   // content mode: a 3-letter token is too short to call a typo ("reverse abc" is not "reverse abs")
@@ -719,7 +722,12 @@ const ORDINAL = { second: 2, third: 3, fourth: 4, fifth: 5, sixth: 6, seventh: 7
 const FRACTION_DEN = { third: 3, quarter: 4, fourth: 4, fifth: 5, sixth: 6, seventh: 7, eighth: 8, ninth: 9, tenth: 10, hundredth: 100, thousandth: 1000 };
 const ORDINAL_COUNT = { a: 1, an: 1, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9 };
 const REPHRASE = [
-  [/^(?:what's|whats)\s+(?=[-\d$(.])/i, "what is "],
+  [/^(?:what's|whats)\s+(?=[-\d$(.]|(?:a|an|one|half|twice|double|triple)\s)/i, "what is "],
+  [new RegExp("^(?:how much is |how many is |what is |how many are )?(" + NUM + "|a|one|half a) dozen\\s*\\??$", "i"), (m, k) => (/^half/i.test(k) ? "0.5" : /^(?:a|one)$/i.test(k) ? "1" : k) + " * 12"],
+  [new RegExp("^(?:what is |whats |find )?(?:the |my |your )?average speed (?:if|when) (?:i|you|we|he|she|they|it|a car|the car|a train|the train|a bus|the bus) (?:drive|drives|drove|travel|travels|traveled|travelled|go|goes|went|walk|walks|walked|run|runs|ran|cycle|cycles|cycled|ride|rides|rode|cover|covers|covered) (" + NUM + ")\\s*(km|kilometers|kilometres|miles|mi|m|meters|metres) in (" + NUM + ")\\s*(?:hours?|hrs?|h)\\s*\\??$", "i"), "$1 $2 / $3 hours"],
+  [new RegExp("^how long (?:does it take |will it take |would it take |to it take )?(?:to )?(?:travel|drive|go|walk|run|cycle|ride|cover|fly) (" + NUM + ")\\s*(km|kilometers|kilometres|miles|mi) at (" + NUM + ")\\s*(km/h|kmh|kph|km per hour|kilometers per hour|kilometres per hour|mph|miles per hour|miles an hour|km an hour)\\s*\\??$", "i"), (m, d, du, v, vu) => (/^(?:km|kilomet)/i.test(du) === /^(?:k|km)/i.test(vu) ? d + " / " + v : m)],
+  [new RegExp("^how far (?:do|will|can|would|does) (?:i|you|we|he|she|they|it|a car|the car|a train|the train) (?:go|travel|drive|walk|run|cycle|ride|get|fly) in (" + NUM + ")\\s*(?:hours?|hrs?|h) at (" + NUM + ")\\s*(?:km/h|kmh|kph|km per hour|mph|miles per hour|miles an hour|km an hour)\\s*\\??$", "i"), "$2 * $1"],
+  [new RegExp("^how far (?:do|will|can|would|does) (?:i|you|we|he|she|they|it|a car|the car|a train|the train) (?:go|travel|drive|walk|run|cycle|ride|get|fly) at (" + NUM + ")\\s*(?:km/h|kmh|kph|km per hour|mph|miles per hour|miles an hour|km an hour) (?:in|for) (" + NUM + ")\\s*(?:hours?|hrs?|h)\\s*\\??$", "i"), "$1 * $2"],
   [new RegExp("^how many times (?:does|will|can|would) (" + NUM + ") (?:go|fit) into (" + NUM + ")\\s*\\??$", "i"), "$2 / $1"],
   // "what is 3 less than 20" is 17 ("is 3 less than 20" stays a comparison)
   [new RegExp("^(?:what is |what's |find |calculate )(" + NUM + ") (less|fewer|more) than (" + NUM + ")\\s*\\??$", "i"), (m, a, w, b) => b + (/more/i.test(w) ? " + " : " - ") + a],
@@ -823,7 +831,9 @@ const REPHRASE = [
   [new RegExp("^(?:what is |whats |find )?(?:the )?remainder (?:of|when|after)\\s+(" + NUM + ")\\s+(?:is\\s+)?divided by\\s+(" + NUM + ")\\s*\\??$", "i"), "$1 mod $2"],
   [new RegExp("^(?:what is |whats |find )?(?:the )?sum of (?:all )?(?:the )?(?:numbers|integers|whole numbers)?\\s*(?:from )?(\\d+) (?:to|through|thru) (\\d+)\\s*\\??$", "i"), (m, a, b) => "(" + a + " + " + b + ") * (" + b + " - " + a + " + 1) / 2"],
   // bare hex digits: "what is ff in decimal"
-  [/^(?:what is |whats |convert )?(?:hex\s+)?([0-9a-f]*[a-f][0-9a-f]*)(?:\s+hex)?\s+(?:in|to|into|as)\s+(?:decimal|base 10|a number)\s*\??$/i, "0x$1 to decimal"],
+  [/^(?:what is |whats |convert )?(?:binary\s+)?0b([01]+)\s+(?:in|to|into|as)\s+(?:decimal|base 10|a number)\s*\??$/i, "0b$1 to decimal"],
+  [/^(?:what is |whats |convert )?([01]{2,})\s+from\s+binary\s+(?:in|to|into)\s+(?:decimal|base 10)\s*\??$/i, "0b$1 to decimal"],
+  [/^(?:what is |whats |convert )?(?:hex\s+)?(?!0b[01]+\s)([0-9a-f]*[a-f][0-9a-f]*)(?:\s+hex)?\s+(?:in|to|into|as)\s+(?:decimal|base 10|a number)\s*\??$/i, "0x$1 to decimal"],
   [/^(?:what is |whats |convert )?(?:binary\s+)?([01]{2,})(?:\s+binary)?\s+(?:in|to|into|as)\s+(?:decimal|base 10)\s*\??$/i, "0b$1 to decimal"],
   [new RegExp("(" + NUM + ")\\s*(?:°|degrees?|deg)\\s*(fahrenheit|celsius|centigrade|kelvin|f|c|k)\\b", "gi"), "$1 $2"],
   [/\b(to|in|into)\s+degrees?\s+(fahrenheit|celsius|centigrade|kelvin|f|c)\b/gi, "$1 $2"],
