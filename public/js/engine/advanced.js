@@ -99,6 +99,8 @@ export function numberTheory(input) {
   if (/\bg\.?c\.?d|greatest common/.test(low) && nums.length >= 2) return { ok: true, kind: "gcd", text: String(nums.reduce((a, b) => gcd(a, b))) };
   if (/\bl\.?c\.?m|least common/.test(low) && nums.length >= 2) return { ok: true, kind: "lcm", text: String(nums.reduce((a, b) => Math.abs(a / gcd(a, b) * b))) };
   const signed = (low.match(/-?\d+/g) || []).map(Number);
+  const eo = low.match(/\b(?:is|check (?:if|whether))\s+(-?\d+)\s+(?:an?\s+)?(even|odd)\b/);
+  if (eo) { const v = Number(eo[1]), even = v % 2 === 0; return { ok: true, kind: "parity", text: ((eo[2] === "even") === even ? "Yes: " : "No: ") + v + " is " + (even ? "even" : "odd") + " (" + v + " / 2 leaves remainder " + Math.abs(v % 2) + ")" }; }
   if (/prime/.test(low) && /\b(is|check)\b/.test(low) && signed.length && signed[0] < 2) return { ok: true, kind: "isprime", text: signed[0] + " is not prime (primes are whole numbers greater than 1)" };
   if (/prime/.test(low) && /\b(is|check)\b/.test(low) && nums.length) return { ok: true, kind: "isprime", text: (isPrime(nums[0]) ? nums[0] + " is prime" : nums[0] + " is not prime (" + (factorize(nums[0]).join(" * ")) + ")") };
   const fp = low.match(/\b(?:first|list(?: the)?(?: first)?)\s+(\d+)\s+primes?(?: numbers?)?\b|\bprimes?\s+(?:below|under|less than|up to)\s+(\d+)/);
@@ -315,9 +317,10 @@ export function wordMath(input) {
     }
   }
   let op, word;
-  if (cue(/\b(difference|how many more|how much more|how many fewer|how much less|less than|left over|\bleft\b|remaining|remain\b|spen[dt]|gave away|give away|lost|lose|decreas|reduc|minus|take away|subtract|deduct)\b/)) { op = "sub"; word = "subtraction"; }
-  else if (nums.length === 2 && cue(/\b(product|multipl|\btimes\b|twice|double|triple)\b/)) { op = "mul"; word = "multiplication"; }
-  else if (nums.length === 2 && cue(/\b(split|shared? equally|divid|per (person|group|box|bag|day|hour)|each (get|gets|receive|receives))\b/)) { op = "div"; word = "division"; }
+  // stems take \w* so "multiply", "divided", "reduced" match (a bare "multipl\b" never did)
+  if (cue(/\b(difference|how many more|how much more|how many fewer|how much less|less than|left over|\bleft\b|remaining|remain\b|spen[dt]|gave away|give away|lost|lose|decreas\w*|reduc\w*|minus|take away|subtract\w*|deduct\w*)\b/)) { op = "sub"; word = "subtraction"; }
+  else if (nums.length === 2 && cue(/\b(product|multipl\w*|times|twice|double|triple)\b/)) { op = "mul"; word = "multiplication"; }
+  else if (nums.length === 2 && cue(/\b(split|shared? equally|divid\w*|per (person|group|box|bag|day|hour)|each (get|gets|receive|receives))\b/)) { op = "div"; word = "division"; }
   else { op = "add"; word = "addition"; } // totalling wording, or a plain many-number prose sum
   let value, expr;
   if (op === "add") { value = nums.reduce((a, b) => a + b, 0); expr = nums.join(" + "); }
@@ -452,7 +455,21 @@ export function combinatorics(input) {
     const n = nums[0]; return { ok: true, op: "arrangements", n, value: fact(n), formula: n + "!" };
   }
   if (/probability|\bchance\b|\bodds\b/.test(low)) {
-    if (/coin|heads|tails/.test(low)) { const k = nums[0] || 1; return { ok: true, op: "probability", value: Math.round((1 / 2 ** k) * 1e9) / 1e9, text: "P = 1/2^" + k + " = " + (1 / 2 ** k) + " (assuming " + k + " independent fair coin flip" + (k === 1 ? "" : "s") + ")" }; }
+    if (/coin|heads?\b|tails?\b/.test(low)) {
+      // "two heads", "3 tails in a row": number words count too, or "two heads" read as 1 flip
+      const W = { one: 1, a: 1, an: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, twice: 2 };
+      const cn = (low.replace(/\b(one|an?|two|three|four|five|six|seven|eight|nine|ten)\b(?=\s+(?:heads?|tails?|coins?|flips?|tosses?|times?))/g, (w) => String(W[w])).match(/\d+/g) || []).map(Number);
+      const r6 = (x) => Math.round(x * 1e9) / 1e9;
+      const flips = (low.match(/(\d+|one|two|three|four|five|six|seven|eight|nine|ten)\s+(?:coin\s+)?(?:flips|tosses|coins|times)\b/) || [])[1];
+      const n = flips ? (W[flips] || +flips) : null;
+      // "at least one head in 3 flips" is the complement, not 1/2^k
+      if (/at least (?:one|1|a)\b/.test(low) && n) return { ok: true, op: "probability", value: r6(1 - 1 / 2 ** n), text: "P = 1 - 1/2^" + n + " = " + r6(1 - 1 / 2 ** n) + " (at least one in " + n + " fair flips = 1 minus the chance of none)" };
+      // "exactly 2 heads in 5 flips" is binomial
+      const ex = low.match(/exactly\s+(\d+|one|two|three|four|five|six|seven|eight|nine|ten)\s+(?:heads?|tails?)/);
+      if (ex && n) { const k = W[ex[1]] || +ex[1]; const v = nCr(n, k) / 2 ** n; return { ok: true, op: "probability", value: r6(v), text: "P = C(" + n + ", " + k + ") / 2^" + n + " = " + nCr(n, k) + "/" + 2 ** n + " = " + r6(v) + " (exactly " + k + " in " + n + " fair flips)" }; }
+      if (/at least|at most|or more|or fewer|or less/.test(low)) return { ok: false, error: "I can do \"at least one\" or \"exactly k in n flips\"; say it that way and I will compute it exactly" };
+      const k = cn[0] || 1; return { ok: true, op: "probability", value: r6(1 / 2 ** k), text: "P = 1/2^" + k + " = " + r6(1 / 2 ** k) + " (assuming " + k + " independent fair coin flip" + (k === 1 ? "" : "s") + ")" };
+    }
     if (/die|dice|roll/.test(low)) { return { ok: true, op: "probability", value: Math.round((1 / 6) * 1e6) / 1e6, text: "P = 1/6 = 0.166667 (one specific face on a fair 6-sided die)" }; }
     if (nums.length >= 2 && /out of|\/|in\b/.test(low)) { return { ok: true, op: "probability", value: Math.round((nums[0] / nums[1]) * 1e9) / 1e9, text: nums[0] + "/" + nums[1] + " = " + (nums[0] / nums[1]) }; }
   }

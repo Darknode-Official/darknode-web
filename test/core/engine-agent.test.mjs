@@ -352,3 +352,32 @@ group("engine: honest edge cases and everyday formulas", () => {
     assert.ok(/born in 1990 is \d+ or \d+/.test(run("how old is someone born in 1990")));
   });
 });
+
+group("engine: understands more everyday wording", () => {
+  const ask = (q) => { const r = E.agent(q, model, {}); return [r.title, r.body, r.pre, r.code].filter(Boolean).join(" ").replace(/\*\*/g, ""); };
+  const cases = [
+    // operator verbs and lead-ins
+    ["what do you get if you multiply 12 and 8", /\b96\b/], ["multiply 7 with 6", /\b42\b/], ["take 8 away from 50", /\b42\b/], ["deduct 15 from 100", /\b85\b/],
+    ["what is 50 take away 8", /\b42\b/], ["what does 5 plus 10 plus 15 come to", /\b30\b/], ["tally 3 4 5", /\b12\b/], ["combine 7 and 9", /\b16\b/],
+    // powers, roots, fractions and multiples
+    ["2 to the tenth", /1024/], ["12 to the second power", /\b144\b/], ["square-root 81", /\b9\b/], ["square root of 2 hundred", /14\.14/],
+    ["one fifth of 100", /\b20\b/], ["a tenth of 250", /\b25\b/], ["quarter of 80", /\b20\b/], ["three fifths of 50", /\b30\b/], ["quadruple 5", /\b20\b/],
+    // percentages, money
+    ["how much is 15 per cent of 80", /\b12\b/], ["find 15 pc of 80", /\b12\b/], ["200 plus 10 percent", /\b220\b/], ["200 less 25%", /\b150\b/],
+    ["what is 50 with 20 percent off", /\b40\b/], ["tip 15% on a 60 dollar bill", /\b9\b/], ["how much is 144 split into 12", /\b12\b/],
+    // number facts
+    ["round off 3.7", /\b4\b/], ["check if 51 is prime", /not prime/], ["is 10 even", /Yes: 10 is even/], ["is 12 odd", /No: 12 is even/],
+    // units
+    ["how many cm is 5 inches", /12\.7/], ["how many grams in 2 kilos", /2000/], ["100 degrees fahrenheit to celsius", /37\.77/], ["2 yrs to days", /730/],
+    // coins
+    ["probability of flipping two heads", /0\.25/], ["probability of getting exactly 2 heads in 4 coin flips", /0\.375/], ["probability of at least one head in 3 flips", /0\.875/], ["chance of three heads in a row", /0\.125/],
+    // text and code
+    ["backwards: hello", /olleh/], ["reverse the string abc", /\bcba\b/], ["capitalize the quick fox", /The Quick Fox/], ["give me python code for bubble sort", /def /],
+  ];
+  for (const [q, re] of cases) test(q, () => { const t = ask(q); assert.ok(re.test(t), q + " -> " + t.slice(0, 120)); });
+  test("wording that must keep its meaning", () => {
+    assert.ok(/dlrow olleh/.test(ask("reverse hello world")));
+    assert.ok(/\b60\b/.test(ask("what is 50 + 10")));
+    assert.ok(!/\b(?:5|20)\b.*Calculation/.test(ask("what is double hashing")));
+  });
+});

@@ -43,6 +43,7 @@ function normalizeTypos(text) {
   return text.replace(/[a-z]{3,}/gi, (w) => {
     const lw = w.toLowerCase();
     if (KWSET.has(lw) || PROGRAM_SET.has(lw)) return w; // "node" is not a typo of "mode"
+    if (wordBand(lw) >= 4) return w; // a common real word is not a typo: "code" is not "mode", "give" is not "five"
     let best = "", bd = 99;
     for (const k of KW) { const dd = editDist(lw, k); if (dd < bd) { bd = dd; best = k; } }
     const thr = lw.length <= 6 ? 1 : 2;
@@ -74,7 +75,7 @@ function score(input) {
 
   // explicit numeric conversion ("5 miles in km") outranks a definition question;
   // the bare "convert" verb is a weaker signal.
-  if (has(/-?\d+(?:\.\d+)?\s*[a-z°/]+\s+(?:to|in|into|as)\s+[a-z°/]+/) && !has(/\d\s*[a-z]+\s*[+\-]\s*\d/) && !has(/\b0[xbo][0-9a-f]+\b/)) add("convert", 8, "a unit conversion"); // not unit arithmetic like "5 km + 300 m"
+  if (has(/-?\d+(?:\.\d+)?\s*[a-z°/]+\s+(?:to|in|into|as)\s+[a-z°/]+/) && !has(/\bin a row\b|\d\s*[a-z]+\s+(?:to|in|into|as)\s+(?:a|an|the|my|your|this|that|total|all)\b/) && !has(/\d\s*[a-z]+\s*[+\-]\s*\d/) && !has(/\b0[xbo][0-9a-f]+\b/)) add("convert", 8, "a unit conversion"); // not unit arithmetic like "5 km + 300 m"
   else if (has(/\bconvert\b/) && !has(/\b(camel|snake|kebab|constant|title) ?case\b|uppercase|lowercase|\bslug/)) add("convert", 6, "looks like a unit conversion"); // "convert x to camel case" is a text transform
   if (has(/regex|regular expression|pattern for|pattern to match|test.*\/.*\/|\/.+\/\s+(on|against)/)) add("regex", 6, "asks for a regular expression");
   // number base + roman numerals (before convert, which is for physical units)
@@ -109,14 +110,14 @@ function score(input) {
   // algebra: an equation with a variable (distinct from a bare calc assignment like x=5)
   if (!codeAsk && !has(/base64|\bencode|\bdecode|rot13|\bhex\b|\bhash\b|md5|\bsha/) && (has(/\bsolve\b/) || (has(/=/) && (has(/\d\s*[a-z]/) || has(/[a-z]\s*\^/))))) add("algebra", 8, "an equation to solve");
   // number theory (asking for a value, not code)
-  if (!codeAsk && has(/factori[sz]e|prime factor|\bfactors?\s+of\b|\bfactor\s+\d|\bgcd\b|\blcm\b|greatest common|least common|is\s+\d+\s+prime|\d+(?:st|nd|rd|th)\s+(?:prime|fib)|nth\s+(?:prime|fib)|\bfirst\s+\d+\s+primes?\b|\bprimes?\s+(?:below|under|less than|up to)\s+\d|is\s+-\d+\s+prime|\bfib(?:onacci)?\s+(?:of\s+|number\s+)?-?\d/)) add("numbertheory", 7, "number theory");
+  if (!codeAsk && has(/factori[sz]e|prime factor|\bfactors?\s+of\b|\bfactor\s+\d|\bgcd\b|\blcm\b|greatest common|least common|is\s+\d+\s+prime|\b(?:is|check (?:if|whether))\s+-?\d+\s+(?:an?\s+)?(?:even|odd)\b|\d+(?:st|nd|rd|th)\s+(?:prime|fib)|nth\s+(?:prime|fib)|\bfirst\s+\d+\s+primes?\b|\bprimes?\s+(?:below|under|less than|up to)\s+\d|is\s+-\d+\s+prime|\bfib(?:onacci)?\s+(?:of\s+|number\s+)?-?\d/)) add("numbertheory", 7, "number theory");
   // encoding / hashing
   if (!isDef && has(/base64|\bhex\b|rot13|morse|url ?(en|de)code|to binary|from binary|crc32|fnv1a?|djb2|\bhash\b|\bmd5\b|\bsha-?(?:1|256)?\b/)) add("encode", 7, "encode / hash");
   // knowledge base (a definition question that is not math, code, or number theory)
   if (isDef && !codeAsk && !hasMathPhrase(low) && !has(/[-+*/^]/) && !has(/\d[a-z]/) && !has(/\b(sqrt|cbrt|max|min|round|abs|log|ln|sin|cos|tan)\s*\(/)) add("knowledge", 7, "a definition from the glossary");
   // fact packs: capitals, elements, constants — triggered by a domain keyword
   if (has(/\bcapital\b|\bcapital city\b/)) add("facts", 8, "country capital lookup");
-  if (has(/\belement\b|\batomic\b|\bperiodic\b|\bchemical\b/) && !codeAsk) add("facts", 8, "periodic table lookup");
+  if (has(/\belements?\b|\batomic\b|\bperiodic\b|\bchemical\b/) && !codeAsk) add("facts", 8, "periodic table lookup");
   if (has(/\bspeed of light\b|\bplanck\b|\bavogadro\b|\bboltzmann\b|\bgravitational constant\b|\bbohr\b|\bstefan.boltzmann\b|\bfine structure\b|\bearth mass\b|\bsolar mass\b|\blight year\b|\bparsec\b|\bstandard gravity\b|\bgas constant\b/)) add("facts", 9, "physical/mathematical constant");
   else if (has(/\bconstant\b/) && !has(/constant ?case/) && !codeAsk) add("facts", 7, "physical/mathematical constant");
   // "what is gold" / "what is pi": answer from a fact pack, but only when the
@@ -572,7 +573,8 @@ function lexicon(model) {
 export function fixTypos(input, model) {
   const lex = lexicon(model);
   const full = correctText(lex, input);
-  const cmd = correctText(lex, input, (to) => ENGINE_SET.has(to));
+  // content mode: a 3-letter token is too short to call a typo ("reverse abc" is not "reverse abs")
+  const cmd = correctText(lex, input, (to, from) => ENGINE_SET.has(to) && from.length > 3);
   return { text: full.text, fixes: full.fixes, hybrid: cmd.text, hybridFixes: cmd.fixes };
 }
 
@@ -711,7 +713,12 @@ function isoDate(y, mo, d) {
   const dt = new Date(Date.UTC(Number(y), m - 1, day));
   return m && dt.getUTCDate() === day ? y + "-" + pad2(m) + "-" + pad2(day) : null; // reject Feb 30
 }
+const ORDINAL = { second: 2, third: 3, fourth: 4, fifth: 5, sixth: 6, seventh: 7, eighth: 8, ninth: 9, tenth: 10, eleventh: 11, twelfth: 12, twentieth: 20 };
+const FRACTION_DEN = { third: 3, quarter: 4, fourth: 4, fifth: 5, sixth: 6, seventh: 7, eighth: 8, ninth: 9, tenth: 10, hundredth: 100, thousandth: 1000 };
+const ORDINAL_COUNT = { a: 1, an: 1, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9 };
 const REPHRASE = [
+  // "2 hundred" -> 200 before any rule reads the number
+  [new RegExp("\\b(\\d+) (hundred|thousand|million|billion)\\b(?=\\s*(?:$|[?.,!)+\\-*/^]|plus|minus|times|divided|and\\b))", "gi"), (m, n, sc) => String(Number(n) * { hundred: 100, thousand: 1e3, million: 1e6, billion: 1e9 }[sc.toLowerCase()])],
   // conversational lead-ins left after a thank-you ("ty, now whats 9 squared")
   [/^(?:(?:ok|okay|alright|cool|nice|great|perfect|thanks|thank you)[,!.]?\s+)?(?:and\s+)?now[,]?\s+(?=\S)/i, ""],
   [/^(?:ok|okay|alright|cool|nice|great|perfect)[,!.]\s*(?=\S)/i, ""],
@@ -724,10 +731,12 @@ const REPHRASE = [
   // powers, roots and rounding said in words
   [new RegExp("(" + NUM + ")\\s+to the (" + NUM + ")(?:st|nd|rd|th)?(?:\\s+power)?\\b", "gi"), "$1 ^ $2"],
   [new RegExp("(" + NUM + ")\\s+(?:to the power|raised to(?: the power)?|to power)(?: of)?\\s+(" + NUM + ")", "gi"), "$1 ^ $2"],
-  [new RegExp("\\b(?:square root|sqrt)\\s+(" + NUM + ")", "gi"), "sqrt($1)"],
-  [new RegExp("\\b(?:cube root|cbrt)\\s+(" + NUM + ")", "gi"), "cbrt($1)"],
+  [new RegExp("\\b(?:square[- ]root|sqrt)(?:\\s+of)?\\s+(" + NUM + ")", "gi"), "sqrt($1)"],
+  [new RegExp("\\b(?:cube[- ]root|cbrt)(?:\\s+of)?\\s+(" + NUM + ")", "gi"), "cbrt($1)"],
+  // ordinal powers: "2 to the tenth", "12 to the second power"
+  [new RegExp("(" + NUM + ")\\s+to the (second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth|eleventh|twelfth|twentieth)(?:\\s+power)?\\b", "gi"), (m, n, o) => n + " ^ " + ORDINAL[o.toLowerCase()]],
   [new RegExp("^(?:please\\s+)?round\\s+(" + NUM + ")\\s+to\\s+(-?\\d+)\\s*(?:decimal places?|decimals?|dp|places?|digits?)\\s*\\??$", "i"), "round($1, $2)"],
-  [new RegExp("^(?:please\\s+)?round\\s+(" + NUM + ")(?:\\s+to the nearest (?:whole number|integer|one))?\\s*\\??$", "i"), "round($1)"],
+  [new RegExp("^(?:please\\s+)?round(?:\\s+off)?\\s+(" + NUM + ")(?:\\s+to the nearest (?:whole number|integer|one))?\\s*\\??$", "i"), "round($1)"],
   [new RegExp("^(?:please\\s+)?round\\s+(" + NUM + ")\\s+to the nearest\\s+(ten|hundred|thousand|million|tenth|hundredth|thousandth)\\s*\\??$", "i"), (m, n, u) => "round(" + n + ", " + { ten: -1, hundred: -2, thousand: -3, million: -6, tenth: 1, hundredth: 2, thousandth: 3 }[u.toLowerCase()] + ")"],
   // trig in degrees: "sin 30 degrees", "tan(45°)"
   [new RegExp("\\b(sin|cos|tan)\\s*(?:of\\s+)?\\(?\\s*(" + NUM + ")\\s*(?:°|deg(?:rees?)?)\\s*\\)?", "gi"), (m, f, n) => f.toLowerCase() + "(" + n + " * pi / 180)"],
@@ -738,7 +747,10 @@ const REPHRASE = [
   [new RegExp("^(?:convert\\s+)?([a-z]+)\\s+(?:to|in|into)\\s+([a-z]+)\\s*[:,]?\\s*(" + NUM + ")\\s*\\??$", "i"), (m, a, b, n) => UNIT_WORDS.has(a.toLowerCase()) && UNIT_WORDS.has(b.toLowerCase()) ? "convert " + n + " " + a + " to " + b : m],
   // money: tips and discounts
   [new RegExp("(" + NUM + ")\\s*(?:%|percent)\\s+tip\\s+(?:on|for|of)\\s+\\$?(" + NUM + ")", "gi"), "$1% of $2"],
-  [new RegExp("\\btip\\s+(?:of\\s+)?(" + NUM + ")\\s*(?:%|percent)\\s+(?:on|for)\\s+\\$?(" + NUM + ")", "gi"), "$1% of $2"],
+  [new RegExp("\\btip\\s+(?:of\\s+)?(" + NUM + ")\\s*(?:%|percent)\\s+(?:on|for)\\s+(?:a\\s+|an\\s+|the\\s+|my\\s+)?\\$?(" + NUM + ")(?:\\s*(?:dollars?|bucks|usd|euros?|pounds?))?(?:\\s+(?:bill|meal|check|tab|dinner|order))?", "gi"), "$1% of $2"],
+  [new RegExp("^(?:what is |whats |how much is )?\\$?(" + NUM + ")\\s*(?:dollars|bucks|usd|euros|pounds)?\\s+(?:with|at|after|minus|less)\\s+(?:a\\s+)?(" + NUM + ")\\s*(?:%|percent)\\s+(?:off|discount)\\s*\\??$", "i"), "$1 - $2% of $1"],
+  // "200 + 10%" / "200 plus 10 percent" adds 10% OF 200 (the calculator convention), not 0.1
+  [new RegExp("^(?:what is |whats |calculate )?\\$?(" + NUM + ")\\s*(\\+|plus|-|minus|less)\\s*(" + NUM + ")\\s*(?:%|percent|per cent)\\s*\\??$", "i"), (m, a, op, p) => a + (/^(?:\+|plus)$/i.test(op) ? " + " : " - ") + p + "% of " + a],
   [new RegExp("^(?:what is |whats )?(" + NUM + ")\\s*(?:%|percent)\\s+off\\s+(?:of\\s+)?\\$?(" + NUM + ")(?:\\s*(?:dollars|usd|bucks|euros|pounds))?\\s*\\??$", "i"), "$2 - $1% of $2"],
   // "how much is a 20% tip on 45" -> "what is 20% of 45"
   [/^how much (?:is|are|would be|will be)\s+(?:a\s+|an\s+|the\s+)?(?=[\d$(-])/i, "what is "],
@@ -749,6 +761,13 @@ const REPHRASE = [
   [new RegExp("^what (?:percent|percentage|%)\\s+of\\s+(" + NUM + ")\\s+is\\s+(" + NUM + ")\\s*\\??$", "i"), "$2 / $1 * 100"],
   [new RegExp("^(" + NUM + ")\\s+(?:is|out of)\\s+what (?:percent|percentage|%)\\s+(?:of\\s+)?(" + NUM + ")\\s*\\??$", "i"), "$1 / $2 * 100"],
   [new RegExp("^(?:split|divide|share)\\s+\\$?(" + NUM + ")(?:\\s*(?:dollars|bucks|euros|pounds))?\\s+(?:evenly\\s+|equally\\s+)?(?:between|among|amongst|across|by|into|with)\\s+(" + NUM + ")(?:\\s+[a-z]+)?\\s*\\??$", "i"), "$1 / $2"],
+  [new RegExp("^(?:what is |whats )?\\$?(" + NUM + ")(?:\\s*(?:dollars|bucks|euros|pounds))?\\s+(?:split|divided|shared)\\s+(?:evenly\\s+|equally\\s+)?(?:into|between|among|amongst|by)\\s+(" + NUM + ")(?:\\s+(?:ways|parts|pieces|people|groups|friends))?\\s*\\??$", "i"), "$1 / $2"],
+  // plain verbs over numbers: "take 8 away from 50", "multiply 12 and 8", "tally 3 4 5"
+  [/^what do you get (?:if|when) you\s+/i, ""],
+  [/^what (?:does|do)\s+(.+?)\s+(?:come to|come out to|add up to|make|equal)\s*\??$/i, "what is $1"],
+  [new RegExp("^(?:what is |whats )?(?:take|deduct|remove)\\s+\\$?(" + NUM + ")\\s+(?:away\\s+)?from\\s+\\$?(" + NUM + ")\\s*\\??$", "i"), "$2 - $1"],
+  [new RegExp("^multiply\\s+(" + NUM + ")\\s+(?:and|with|times)\\s+(" + NUM + ")\\s*\\??$", "i"), "$1 * $2"],
+  [new RegExp("^(?:please\\s+)?(?:tally(?: up)?|add up|sum up|total up|add together|combine|sum|total)(?: the numbers| these(?: numbers)?| up)?\\s*:?\\s*" + LIST + "\\s*\\??$", "i"), (m, l) => l.match(/-?\d+(?:\.\d+)?/g).join(" + ")],
   // "where is paris" -> which country a capital city belongs to
   [/^where(?:'s| is)\s+([a-z][a-z .'-]*?)\s*\??$/i, (m, c) => CAPITAL_CITIES.has(c.toLowerCase()) ? c + " is the capital of which country" : m],
   // "carbon's atomic number" -> "atomic number of carbon"
@@ -786,6 +805,8 @@ const REPHRASE = [
   // bare hex digits: "what is ff in decimal"
   [/^(?:what is |whats |convert )?(?:hex\s+)?([0-9a-f]*[a-f][0-9a-f]*)(?:\s+hex)?\s+(?:in|to|into|as)\s+(?:decimal|base 10|a number)\s*\??$/i, "0x$1 to decimal"],
   [/^(?:what is |whats |convert )?(?:binary\s+)?([01]{2,})(?:\s+binary)?\s+(?:in|to|into|as)\s+(?:decimal|base 10)\s*\??$/i, "0b$1 to decimal"],
+  [new RegExp("(" + NUM + ")\\s*(?:°|degrees?|deg)\\s*(fahrenheit|celsius|centigrade|kelvin|f|c|k)\\b", "gi"), "$1 $2"],
+  [/\b(to|in|into)\s+degrees?\s+(fahrenheit|celsius|centigrade|kelvin|f|c)\b/gi, "$1 $2"],
   // "1 mile is how many km", "5 foot 10 in cm"
   [new RegExp("^(" + NUM + ")\\s*([a-z/]+)\\s+(?:is|are|equals|=|makes)\\s+how many\\s+([a-z/]+)\\s*\\??$", "i"), "$1 $2 to $3"],
   [/\b(\d+)\s*(?:foot|feet|ft|')\s*(\d+(?:\.\d+)?)\s*(?:inches|inch|in|")?\s+(in|to|into|as)\s+([a-z]+)/gi, (m, f, i, p, u) => (Number(f) * 12 + Number(i)) + " inches " + p + " " + u],
@@ -795,12 +816,14 @@ const REPHRASE = [
   [/\b(?:odds|chance|chances|probability)\s+(?:of\s+)?(?:rolling|getting|throwing)\s+(two|2|double|three|3|four|4)\s+(?:sixes|6s|fives|5s|fours|4s|threes|3s|twos|2s|ones|1s)\b|\b(?:odds|chance|probability)\s+(?:of\s+)?(?:rolling\s+)?snake eyes\b/gi, (m, n) => "(1/6)^" + ({ two: 2, double: 2, three: 3, four: 4 }[String(n || "two").toLowerCase()] || n)],
   // fractions and multiples of a single number
   [new RegExp("\\bhalf of (" + NUM + ")\\b", "gi"), "($1 / 2)"],
-  [new RegExp("\\b(?:a|one) third of (" + NUM + ")\\b", "gi"), "($1 / 3)"],
-  [new RegExp("\\b(?:a|one) (?:quarter|fourth) of (" + NUM + ")\\b", "gi"), "($1 / 4)"],
-  [new RegExp("\\btwo thirds of (" + NUM + ")\\b", "gi"), "($1 * 2 / 3)"],
-  [new RegExp("\\bthree quarters of (" + NUM + ")\\b", "gi"), "($1 * 3 / 4)"],
+  [new RegExp("\\b(?:(a|an|one|two|three|four|five|six|seven|eight|nine|\\d+)\\s+)?(thirds?|quarters?|fourths?|fifths?|sixths?|sevenths?|eighths?|ninths?|tenths?|hundredths?|thousandths?)\\s+of\\s+(" + NUM + ")\\b(?=\\s*(?:$|[?.,!)+\\-*/^]|plus|minus|times|divided|and\\b))", "gi"), (m, k, part, n) => {
+    const d = FRACTION_DEN[part.toLowerCase().replace(/s$/, "")], num = k ? (ORDINAL_COUNT[k.toLowerCase()] || Number(k)) : 1;
+    if (!d || !num || (num > 1 && !/s$/i.test(part))) return m; // "two third of" is not a fraction phrase
+    return num === 1 ? "(" + n + " / " + d + ")" : "(" + n + " * " + num + " / " + d + ")";
+  }],
   [new RegExp("^((?:what is|whats|calculate)\\s+)?(?:double|twice) (" + NUM + ")\\s*\\??$", "i"), "$12 * $2"],
   [new RegExp("^((?:what is|whats|calculate)\\s+)?triple (" + NUM + ")\\s*\\??$", "i"), "$13 * $2"],
+  [new RegExp("^((?:what is|whats|calculate)\\s+)?quadruple (" + NUM + ")\\s*\\??$", "i"), "$14 * $2"],
   [new RegExp("^((?:what is|whats|calculate)\\s+)?halve (" + NUM + ")\\s*\\??$", "i"), "$1$2 / 2"],
   [new RegExp("^(?:what is |whats )?(\\d+)\\s*factorial\\s*\\??$", "i"), "$1!"],
   [/^(?:what is |whats )?factorial (\d+)\s*\??$/i, "$1!"],
@@ -812,6 +835,7 @@ const REPHRASE = [
   [/\b(?:greatest|highest|biggest|largest) common (?:divisor|factor|denominator)\b|\bhcf\b/gi, "gcd"],
   [/^(?:is|was)\s+(-?\d+)\s+(?:a\s+)?prime(?:\s+number)?\s*\??$/i, "is $1 prime"],
   [/^(?:is|was)\s+(\d+)\s+(?:a\s+)?(?:composite|non-?prime)(?:\s+number)?\s*\??$/i, "is $1 prime"],
+  [/^(?:check|tell me|find out|see)\s+(?:if|whether)\s+(-?\d+)\s+is\s+(?:a\s+)?prime(?:\s+number)?\s*\??$/i, "is $1 prime"],
   // combinatorics: "how many ways can i arrange 4 books"
   [/\b(?:ways?\s+(?:can\s+(?:i|you|we|they)\s+|to\s+|of\s+|there are to\s+)?(?:arrange|order|line up|sort|permute|seat)|arrangements of)\s+(\d+)(?:\s+[a-z]+)?/gi, "ways to arrange $1"],
   // sequences
@@ -842,6 +866,9 @@ const REPHRASE = [
   // text transforms in everyday words
   [/^(?:flip|mirror|invert)\s+(.+?)(?:\s+(?:backwards?|around|over|the other way))?\s*$/i, "reverse $1"],
   [/^(reverse\s+.+?)\s+backwards?\s*$/i, "$1"],
+  [/^backwards?\s*[:\-]\s*(.+)$/i, "reverse $1"],
+  [/^(reverse|uppercase|lowercase)\s+(?:the\s+)?(?:word|string|text|phrase|sentence|name)\s*:?\s+(?=\S)/i, "$1 "],
+  [/^capitali[sz]e\s+(?!every\b|each\b|all\b|the first\b)(.+)$/i, "title case: $1"],
   [/^(?:write|say|spell|put)\s+(.+?)\s+backwards?\s*$/i, "reverse $1"],
   [/^(?:make|put|turn|convert|write|change|set|type)\s+(.+?)\s+(?:(?:in|into|to|as)\s+)?(?:all\s+)?(?:caps|capitals|capital letters|block letters|upper ?case|uppercase|big letters)\s*$/i, "uppercase $1"],
   [/^(?:all caps|caps|capitalize everything in|shout)\s*:?\s+(.+)$/i, "uppercase $1"],

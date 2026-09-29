@@ -302,7 +302,7 @@ export function correctWord(lex, word) { const f = bestFix(lex, word); return f 
 const PROTECT = /"[^"]*"|'[^'\s][^']*'|`[^`]*`|\[[^\]]*\]|\{[^}]*\}|\/[^/\s][^/]*\/|#[0-9a-f]{3,8}\b|https?:\/\/\S+|\S+@\S+/gi;
 
 // Correct a whole request. Returns { text, fixes: [{ from, to }] }.
-// `accept(to)` can restrict which corrections are applied (e.g. command words only).
+// `accept(to, from)` can restrict which corrections are applied (e.g. command words only).
 export function correctText(lex, input, accept) {
   const s = String(input || "");
   const colon = s.indexOf(":");
@@ -343,7 +343,7 @@ export function correctText(lex, input, accept) {
     // a Capitalised word may be a name ("Maya", "Ada", "Sam"): only a cheap slip
     // (a swap, doubled or neighbouring key: "Captial") is fixed, never a real edit
     // mid-sentence, only a slip into a request word ("the Captial of") is fixed
-    if (!f || (cap && f.cost > 0.6) || (midCap && lex.dict && (lex.freq.get(f.to) || 0) < 40) || (accept && !accept(f.to))) return tok;
+    if (!f || (cap && f.cost > 0.6) || (midCap && lex.dict && (lex.freq.get(f.to) || 0) < 40) || (accept && !accept(f.to, tok))) return tok;
     const fix = f.to;
     fixes.push({ from: tok, to: fix });
     if (/^[A-Z][a-z]/.test(tok)) return fix.charAt(0).toUpperCase() + fix.slice(1);
