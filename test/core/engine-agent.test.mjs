@@ -382,6 +382,15 @@ group("engine: understands more everyday wording", () => {
     ["first 8 fibonacci numbers", /0, 1, 1, 2, 3, 5, 8, 13\b/], ["remove duplicates from 1 2 2 3 3", /Result:\s*\|?\s*1 2 3\b/],
     ["reverse the words in hello big world", /world big hello/], ["lowercase THIS IS LOUD", /this is loud/], ["true and false", /always false/],
     ["which country is paris in", /France/],
+    // third round
+    ["what's a third of 96", /\b32\b/], ["how much is 3 dozen", /\b36\b/], ["is 64 a perfect square", /Yes: 64 = 8\^2/], ["is 26 a perfect cube", /No: 26/],
+    ["factors of 18", /1, 2, 3, 6, 9, 18/], ["prime factors of 18", /18 = 2 \* 3\^2/], ["divisors of 28", /1, 2, 4, 7, 14, 28/],
+    ["sum of the digits of 9876", /\b30\b/], ["how many digits does 123456 have", /\b6 digits\b/], ["is 1001 divisible by 7", /Yes: 1001 = 7 x 143/],
+    ["is 10 divisible by 0", /division by 0 is undefined/], ["convert 1010 from binary to decimal", /\b10 = 10\b/], ["0b1010 to decimal", /\b10 = 10\b/],
+    ["how many days in a leap year", /366/], ["average speed if i drive 150 km in 2 hours", /\b75\b/], ["how long to travel 300 km at 60 km/h", /\b5\b/],
+    ["how far can a car go at 100 km/h for 2 hours", /\b200\b/], ["how many letters in the word elephant", /Result:\s*\|?\s*8\b/],
+    ["count the letters in the sentence hi there", /Result:\s*\|?\s*7\b/], ["how many continents are there", /\b7 continents/],
+    ["who wrote romeo and juliet", /Shakespeare/], ["what is the boiling point of water", /100 degrees C/],
   ];
   for (const [q, re] of cases) test(q, () => { const t = ask(q); assert.ok(re.test(t), q + " -> " + t.slice(0, 120)); });
   test("wording that must keep its meaning", () => {
@@ -390,6 +399,9 @@ group("engine: understands more everyday wording", () => {
     assert.ok(!/\b(?:5|20)\b.*Calculation/.test(ask("what is double hashing")));
     assert.ok(!/Calculation/.test(ask("what is the difference between a list and a tuple")));
     assert.ok(!/Capital of/.test(ask("which country is atlantis in")));
+    assert.ok(!/725008/.test(ask("0b1010 to decimal")));
+    assert.ok(!/Fact/.test(ask("who wrote this code")));
+    assert.ok(!/Calculation/.test(ask("how long to drive 300 km at 60 mph")));
     assert.ok(/10 kg equals/i.test(ask("10 kg 2 lbs")) || /lb/.test(ask("10 kg 2 lbs")));
   });
 });
