@@ -1115,7 +1115,10 @@ function renderTOTPTab(container) {
     '</div>';
   var interval = null;
   function update() {
-    var secret = container.querySelector("#ca-totp-secret").value.trim();
+    var input = container.querySelector("#ca-totp-secret");
+    // the tab was switched or the page left: stop ticking instead of throwing every second
+    if (!input || !input.isConnected) { clearInterval(interval); interval = null; return; }
+    var secret = input.value.trim();
     if (!secret) return;
     var period = parseInt(container.querySelector("#ca-totp-period").value);
     var digits = parseInt(container.querySelector("#ca-totp-digits").value);
