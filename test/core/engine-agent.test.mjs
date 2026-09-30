@@ -329,7 +329,7 @@ group("engine: honest edge cases and everyday formulas", () => {
     assert.ok(/\b5\b/.test(run("hypotenuse of 3 and 4")));
     assert.ok(/\b100\b/.test(run("simple interest on 1000 at 5% for 2 years")));
     assert.ok(/1210/.test(run("compound interest 1000 at 10% for 2 years")));
-    assert.ok(/22\.8/.test(run("bmi 70 kg 1.75 m")));
+    assert.ok(/BMI 22\.9 \(normal weight\)/.test(run("bmi 70 kg 1.75 m"))); // 22.857 rounded to one place, with the WHO band
     assert.ok(/5050/.test(run("sum of 1 to 100")));
     assert.ok(/\b2\b/.test(run("remainder of 17 divided by 5")));
   });

@@ -18,6 +18,8 @@ import * as LX from "/js/engine/lexicon.js";
 import * as IN from "/js/engine/inflect.js";
 import { makeLexicon, withDictionary, withContext, rankFixes, isWord, correctText, correctWord, typoDistance, fuzzyPrefix } from "/js/engine/spell.js";
 import { words as englishWords, band as wordBand } from "/js/engine/words.js";
+import * as EV from "/js/engine/everyday.js";
+import * as HT from "/js/engine/howto.js";
 
 // --- typo tolerance: nudge a near-miss command word to its canonical spelling ---
 // This runs ONLY over the text used for routing, never over the payload a skill
@@ -61,7 +63,7 @@ function score(input) {
   // This is used only to DETECT intent; skills receive the original input.
   const low = normalizeTypos(synonyms(numberWords(naturalize(s))));
   const has = (re) => re.test(low);
-  const S0 = { calc: 0, convert: 0, codegen: 0, text: 0, regex: 0, datetime: 0, predict: 0, stats: 0, algebra: 0, numbertheory: 0, encode: 0, knowledge: 0, facts: 0, data: 0, base: 0, color: 0, jsonquery: 0, wordmath: 0, sequence: 0, logic: 0, setops: 0, matrix: 0, units: 0, combinatorics: 0, listops: 0, spelling: 0, dictionary: 0, inflect: 0, compare: 0 };
+  const S0 = { calc: 0, convert: 0, codegen: 0, text: 0, regex: 0, datetime: 0, predict: 0, stats: 0, algebra: 0, numbertheory: 0, encode: 0, knowledge: 0, facts: 0, data: 0, base: 0, color: 0, jsonquery: 0, wordmath: 0, sequence: 0, logic: 0, setops: 0, matrix: 0, units: 0, combinatorics: 0, listops: 0, spelling: 0, dictionary: 0, inflect: 0, compare: 0, everyday: 0, howto: 0 };
   const why = {};
   const add = (k, n, reason) => { S0[k] += n; if (reason && (!why[k] || n > 0)) why[k] = reason; };
   // a code request needs a real code verb or an explicit "in <language>" — NOT the
@@ -123,6 +125,11 @@ function score(input) {
   if (!codeAsk && IN.parseInflect(s)) add("inflect", 10, "an English word form");
   // which of two numbers is larger/smaller (integers, decimals, fractions, percentages)
   if (!codeAsk && compareAsk(s)) add("compare", 10, "comparing two numbers");
+  // everyday tools: clock arithmetic, time zones, random draws, tip/BMI/loan, ports...
+  const ev = EV.ask(s);
+  if (ev && (!codeAsk || ev.kind === "uuid" || ev.kind === "lorem")) add("everyday", 10, "an everyday tool");
+  // curated how-to snippets ("git undo last commit", "how do i center a div")
+  if (HT.ask(s)) add("howto", 8, "a curated how-to");
   // fact packs: capitals, elements, constants — triggered by a domain keyword
   if (has(/\bcapital\b|\bcapital city\b/)) add("facts", 8, "country capital lookup");
   if (!codeAsk && F.trivia(s).ok) add("facts", 9, "a curated fact");
@@ -159,7 +166,10 @@ function score(input) {
   if (hasMathPhrase(low) && !has(/\boff\b|discount|\bsale\b/) && mathPhrase(s)) add("calc", 6, "arithmetic expressed in words");
   // word problem: prose (no math operators) with two+ numbers and an operation cue.
   // Guarded so it never steals a plain expression ("9+1") or a stats list.
-  if (!has(/[-+*/^=]/) && has(/[a-z]{3,}/) && numCount >= 2 && !has(/\bstats?\b|\bmedian\b|std ?dev|variance|quartile/) && !(hasMathPhrase(low) && mathPhrase(s)) &&
+  // Clock times ("9am and 5:30pm", "add 45 minutes to 10:20") and periodic saving
+  // ("200 a month for 5 years") are everyday-tool shapes, not sums of their digits.
+  const clockish = /\b\d{1,2}:\d{2}\b|\b\d{1,2}\s*(?:am|pm)\b|\b(?:a|per|each|every)\s+(?:day|week|month|year)\b/.test(low);
+  if (!clockish && !has(/[-+*/^=]/) && has(/[a-z]{3,}/) && numCount >= 2 && !has(/\bstats?\b|\bmedian\b|std ?dev|variance|quartile/) && !(hasMathPhrase(low) && mathPhrase(s)) &&
       has(/how (much|many)|in total|\btotal\b|altogether|in all|combined|\bsum\b|together|overall|left over|\bleft\b|remaining|remain\b|difference|fewer|less than|more than|spen[dt]|save[sd]?|gains?|earns?|deposit|split|shared|divid|\bper\b|each\b|multipl|\btimes\b|product|twice|double|triple|\boff\b|discount|\bsale\b|\badd\b|\bsum of\b/))
     add("wordmath", 6, "arithmetic word problem");
   // calc: math operators, a "what is <numbers>" request, or a variable assignment
@@ -190,7 +200,7 @@ function say(skill, res, input, model) {
         : { title: "Calculation", body: "I could not evaluate that: " + res.error + ".", result: res };
     case "convert":
       return res.ok
-        ? { title: "Unit conversion", body: "**" + res.input + " " + res.from + "** equals **" + res.value + " " + res.to + "** (" + res.dim + "). This uses a fixed conversion factor, so it is precise.", result: res }
+        ? { title: "Unit conversion", body: "**" + res.input + " " + res.from + "** equals **" + (res.feet != null ? res.value + "** (" + res.totalInches + " inches in all" : res.value + " " + res.to + "** (" + res.dim) + "). This uses a fixed conversion factor, so it is precise.", result: res }
         : { title: "Unit conversion", body: "I could not convert that: " + res.error + ".", result: res };
     case "codegen": {
       if (res.kind === "program") {
@@ -290,6 +300,8 @@ function say(skill, res, input, model) {
     }
     case "dictionary": return sayDictionary(res);
     case "inflect": return sayInflect(res);
+    case "everyday": return EV.say(res);
+    case "howto": return HT.say(res);
     case "compare":
       return res.ok
         ? { title: "Comparison", body: res.equal ? "They are **equal**: " + res.a.label + " = " + res.b.label + "." : "**" + res.winner.label + "** is " + res.rel + ". " + res.a.label + " = " + fmtNum(res.a.value) + " and " + res.b.label + " = " + fmtNum(res.b.value) + ".", note: "Compared as exact numeric values.", result: res }
@@ -404,6 +416,8 @@ function run(skill, input, model) {
     case "dictionary": return dictionary(input);
     case "inflect": return inflectRun(input);
     case "compare": return compareRun(input);
+    case "everyday": return EV.run(EV.ask(input));
+    case "howto": return HT.run(HT.ask(input));
     case "facts": return F.facts(input);
     case "listops": return listOps(input);
     case "spelling": return spelling(input, model);
@@ -579,7 +593,7 @@ const CAPITAL_CITIES = new Set(Object.values(F.CAPITALS).map((c) => c.toLowerCas
 // words from the program library ("tic tac toe", "todo", "pong") are real requests, not typos
 const PROGRAM_WORDS = ["todo", "todos", "pong", "tic", "tac", "toe", "hangman", "quicksort", "mergesort", "bst", "http", "https", "api", "stopwatch", "countdown", "portfolio", "dedupe", "caesar", "armstrong", "sieve", "anagram", "anagrams", "flatten", "argv", "cli", "bmi", "html", "css", "node", "nodejs", "golang", "cpp", "csharp", "ruby", "bash", "express", "flask"];
 const PROGRAM_SET = new Set([...PROGRAM_WORDS, "rest", "server", "servers", "game", "games", "app", "apps", "clock", "timer", "quiz", "queue", "stack", "tree", "list", "file", "files", "website", "page", "form", "login", "dice", "table", "tables"]);
-const DOMAIN_WORDS = [...PROGRAM_WORDS, ...Object.keys(A.GLOSSARY), ...Object.keys(F.CAPITALS), ...Object.values(F.CAPITALS), ...F.ELEMENTS.map((e) => e.name), ...Object.keys(F.CONSTANTS)];
+const DOMAIN_WORDS = [...PROGRAM_WORDS, ...Object.keys(A.GLOSSARY), ...Object.keys(F.CAPITALS), ...Object.values(F.CAPITALS), ...F.ELEMENTS.map((e) => e.name), ...Object.keys(F.CONSTANTS), ...EV.VOCAB, ...HT.VOCAB];
 const lexCache = new WeakMap();
 let lexStatic = null;
 function lexicon(model) {
@@ -749,7 +763,8 @@ const REPHRASE = [
   [/^(?:what's|whats)\s+(?=[-\d$(.]|(?:a|an|one|half|twice|double|triple)\s)/i, "what is "],
   [new RegExp("^(?:how much is |how many is |what is |how many are )?(" + NUM + "|a|one|half a) dozen\\s*\\??$", "i"), (m, k) => (/^half/i.test(k) ? "0.5" : /^(?:a|one)$/i.test(k) ? "1" : k) + " * 12"],
   [new RegExp("^(?:what is |whats |find )?(?:the |my |your )?average speed (?:if|when) (?:i|you|we|he|she|they|it|a car|the car|a train|the train|a bus|the bus) (?:drive|drives|drove|travel|travels|traveled|travelled|go|goes|went|walk|walks|walked|run|runs|ran|cycle|cycles|cycled|ride|rides|rode|cover|covers|covered) (" + NUM + ")\\s*(km|kilometers|kilometres|miles|mi|m|meters|metres) in (" + NUM + ")\\s*(?:hours?|hrs?|h)\\s*\\??$", "i"), "$1 $2 / $3 hours"],
-  [new RegExp("^how long (?:does it take |will it take |would it take |to it take )?(?:to )?(?:travel|drive|go|walk|run|cycle|ride|cover|fly) (" + NUM + ")\\s*(km|kilometers|kilometres|miles|mi) at (" + NUM + ")\\s*(km/h|kmh|kph|km per hour|kilometers per hour|kilometres per hour|mph|miles per hour|miles an hour|km an hour)\\s*\\??$", "i"), (m, d, du, v, vu) => (/^(?:km|kilomet)/i.test(du) === /^(?:k|km)/i.test(vu) ? d + " / " + v : m)],
+  // "how long to travel 300 km at 60 km/h" is answered by the everyday travel tool
+  // (a formatted duration, units converted when they differ), so it is not rewritten.
   [new RegExp("^how far (?:do|will|can|would|does) (?:i|you|we|he|she|they|it|a car|the car|a train|the train) (?:go|travel|drive|walk|run|cycle|ride|get|fly) in (" + NUM + ")\\s*(?:hours?|hrs?|h) at (" + NUM + ")\\s*(?:km/h|kmh|kph|km per hour|mph|miles per hour|miles an hour|km an hour)\\s*\\??$", "i"), "$2 * $1"],
   [new RegExp("^how far (?:do|will|can|would|does) (?:i|you|we|he|she|they|it|a car|the car|a train|the train) (?:go|travel|drive|walk|run|cycle|ride|get|fly) at (" + NUM + ")\\s*(?:km/h|kmh|kph|km per hour|mph|miles per hour|miles an hour|km an hour) (?:in|for) (" + NUM + ")\\s*(?:hours?|hrs?|h)\\s*\\??$", "i"), "$1 * $2"],
   [new RegExp("^how many times (?:does|will|can|would) (" + NUM + ") (?:go|fit) into (" + NUM + ")\\s*\\??$", "i"), "$2 / $1"],
@@ -796,10 +811,10 @@ const REPHRASE = [
   // "convert celsius to fahrenheit 100": the number came last
   [new RegExp("^(?:convert\\s+)?([a-z]+)\\s+(?:to|in|into)\\s+([a-z]+)\\s*[:,]?\\s*(" + NUM + ")\\s*\\??$", "i"), (m, a, b, n) => UNIT_WORDS.has(a.toLowerCase()) && UNIT_WORDS.has(b.toLowerCase()) ? "convert " + n + " " + a + " to " + b : m],
   // money: tips and discounts
-  [new RegExp("(" + NUM + ")\\s*(?:%|percent)\\s+tip\\s+(?:on|for|of)\\s+(?:a\\s+|an\\s+|the\\s+|my\\s+)?\\$?(" + NUM + ")(?:\\s*(?:dollars?|bucks|usd|euros?|pounds?))?(?:\\s+(?:bill|meal|check|tab|dinner|order))?", "gi"), "$1% of $2"],
+  [new RegExp("(" + NUM + ")\\s*(?:%|percent)\\s+tip\\s+(?:on|for|of)\\s+(?:a\\s+|an\\s+|the\\s+|my\\s+)?\\$?(" + NUM + ")(?:\\s*(?:dollars?|bucks|usd|euros?|pounds?))?(?:\\s+(?:bill|meal|check|tab|dinner|order))?(?![\\s\\S]*\\b(?:split|between|among|ways|each|people)\\b)", "gi"), "$1% of $2"],
   [new RegExp("^(?:what is |whats |calculate |how much is )?(?:the )?(?:sales )?tax (?:of|at) (" + NUM + ")\\s*(?:%|percent) (?:on|for) (?:a |an |the )?\\$?(" + NUM + ")(?:\\s*(?:dollars?|bucks|usd|euros?|pounds?))?\\s*\\??$", "i"), "$1% of $2"],
   [new RegExp("^(?:what is |whats |calculate |how much is )?(?:the )?(?:sales )?tax (?:on|for) (?:a |an |the )?\\$?(" + NUM + ")(?:\\s*(?:dollars?|bucks|usd|euros?|pounds?))? (?:at|with) (?:a )?(" + NUM + ")\\s*(?:%|percent)(?: tax| rate| tax rate)?\\s*\\??$", "i"), "$2% of $1"],
-  [new RegExp("\\btip\\s+(?:of\\s+)?(" + NUM + ")\\s*(?:%|percent)\\s+(?:on|for)\\s+(?:a\\s+|an\\s+|the\\s+|my\\s+)?\\$?(" + NUM + ")(?:\\s*(?:dollars?|bucks|usd|euros?|pounds?))?(?:\\s+(?:bill|meal|check|tab|dinner|order))?", "gi"), "$1% of $2"],
+  [new RegExp("\\btip\\s+(?:of\\s+)?(" + NUM + ")\\s*(?:%|percent)\\s+(?:on|for)\\s+(?:a\\s+|an\\s+|the\\s+|my\\s+)?\\$?(" + NUM + ")(?:\\s*(?:dollars?|bucks|usd|euros?|pounds?))?(?:\\s+(?:bill|meal|check|tab|dinner|order))?(?![\\s\\S]*\\b(?:split|between|among|ways|each|people)\\b)", "gi"), "$1% of $2"],
   [new RegExp("^(?:what is |whats |how much is )?\\$?(" + NUM + ")\\s*(?:dollars|bucks|usd|euros|pounds)?\\s+(?:with|at|after|minus|less)\\s+(?:a\\s+)?(" + NUM + ")\\s*(?:%|percent)\\s+(?:off|discount)\\s*\\??$", "i"), "$1 - $2% of $1"],
   // "200 + 10%" / "200 plus 10 percent" adds 10% OF 200 (the calculator convention), not 0.1
   [new RegExp("^(?:what is |whats |calculate )?\\$?(" + NUM + ")\\s*(\\+|plus|-|minus|less)\\s*(" + NUM + ")\\s*(?:%|percent|per cent)\\s*\\??$", "i"), (m, a, op, p) => a + (/^(?:\+|plus)$/i.test(op) ? " + " : " - ") + p + "% of " + a],
@@ -831,6 +846,9 @@ const REPHRASE = [
   [/\b([a-z])\s+(squared|cubed)\b/gi, (m, v, p, off, str) => /=/.test(str) ? v + "^" + (p.toLowerCase() === "squared" ? 2 : 3) : m],
   // "is racecar a palindrome" -> a palindrome check (not code)
   [/^(?:is|check if|check whether|tell me if)\s+["']?(.+?)["']?\s+(?:is\s+)?an?\s+palindrome\s*\??$/i, "palindrome: $1"],
+  // "palindrome check racecar", "check palindrome: racecar", "is racecar palindrome"
+  [/^(?:palindrome (?:check|test)|check (?:for )?palindrome|palindrome)[:\s]+["']?([^"']+?)["']?\s*\??$/i, "palindrome: $1"],
+  [/^is\s+["']?(.+?)["']?\s+palindrome\s*\??$/i, "palindrome: $1"],
   // text: "capitalize every word in ...", "remove duplicate words from ..."
   [/^(?:capitali[sz]e|uppercase)\s+(?:the\s+first\s+letter\s+of\s+)?(?:every|each|all(?:\s+the)?)\s+words?(?:\s+(?:in|of))?\s*:?\s+(.+)$/i, "title case: $1"],
   [/^(?:remove|delete|drop|strip)\s+(?:the\s+)?(?:duplicate|repeated|double)\s+words\s+(?:from|in)\s*:?\s+(.+)$/i, "dedupe words: $1"],
@@ -851,7 +869,7 @@ const REPHRASE = [
   [new RegExp("^(?:what is |whats |calculate )?(?:the )?simple interest (?:on|for) \\$?(" + NUM + ")\\s*(?:dollars\\s*)?at (" + NUM + ")\\s*%(?: a year| per year| annually)? (?:for|over) (" + NUM + ")\\s*years?\\s*\\??$", "i"), "$1 * $2 / 100 * $3"],
   [new RegExp("^(?:what is |whats |calculate )?(?:the )?compound interest (?:on |for )?\\$?(" + NUM + ")\\s*(?:dollars\\s*)?at (" + NUM + ")\\s*%(?: a year| per year| annually| compounded yearly)? (?:for|over) (" + NUM + ")\\s*years?\\s*\\??$", "i"), "$1 * (1 + $2 / 100)^$3"],
   [new RegExp("^(?:what is |whats |calculate )?(?:the )?average speed (?:of |for |if you (?:drive|go|travel) )?(" + NUM + ")\\s*(km|miles?|mi|m|meters?)\\s+in\\s+(" + NUM + ")\\s*(hours?|hrs?|h|seconds?|s|minutes?|mins?)\\s*\\??$", "i"), "$1 / $3"],
-  [new RegExp("^(?:what is |whats |calculate )?(?:my |the )?bmi (?:for |of |with )?(" + NUM + ")\\s*kg\\s*(?:and\\s*)?(" + NUM + ")\\s*m\\s*\\??$", "i"), "$1 / $2^2"],
+  // BMI ('bmi 70 kg 1.75 m') is answered by the everyday tool, with its WHO band.
   [new RegExp("^(?:what is |whats |find )?(?:the )?remainder (?:of|when|after)\\s+(" + NUM + ")\\s+(?:is\\s+)?divided by\\s+(" + NUM + ")\\s*\\??$", "i"), "$1 mod $2"],
   [new RegExp("^(?:what is |whats |find )?(?:the )?sum of (?:all )?(?:the )?(?:numbers|integers|whole numbers)?\\s*(?:from )?(\\d+) (?:to|through|thru) (\\d+)\\s*\\??$", "i"), (m, a, b) => "(" + a + " + " + b + ") * (" + b + " - " + a + " + 1) / 2"],
   // bare hex digits: "what is ff in decimal"
@@ -898,7 +916,7 @@ const REPHRASE = [
   [new RegExp("\\b(" + HOLI_KEYS.join("|") + ")(?:\\s+(?:of|in))?\\s+(\\d{4})\\b", "gi"), (m, h, y) => { const d = S.HOLIDAYS[h.toLowerCase()] || S.HOLIDAYS[h.toLowerCase().replace(/(\w)s\b/, "$1's")]; return d ? y + "-" + pad2(d[0]) + "-" + pad2(d[1]) : m; }],
   [new RegExp("\\b(" + MONTHS + ")\\.?\\s+(\\d{1,2})(?:st|nd|rd|th)?,?\\s+(\\d{4})\\b", "gi"), (m, mo, d, y) => isoDate(y, mo, d) || m],
   [new RegExp("\\b(\\d{1,2})(?:st|nd|rd|th)?\\s+(?:of\\s+)?(" + MONTHS + ")\\.?,?\\s+(\\d{4})\\b", "gi"), (m, d, mo, y) => isoDate(y, mo, d) || m],
-  [/\bhow (?:long|much time|many days)\s+(?:is it\s+|is there\s+|do (?:i|we) have\s+|left\s+)?(?:until|till|til|before|to)\b/gi, "how many days until"],
+  [/\bhow (?:long|much time|many days)\s+(?:is it\s+|is there\s+|do (?:i|we) have\s+|left\s+)?(?:until|till|til|before|to)\b(?!\s+(?:travel|drive|go|walk|run|cycle|ride|cover|fly|sail|bike|get)\b)/gi, "how many days until"],
   // definitions
   [/^(?:what is |whats |tell me )?the (?:meaning|definition) of\s+(.+?)\s*\??$/i, "define $1"],
   [/^(?:meaning|definition|def) of\s+(.+?)\s*\??$/i, "define $1"],
@@ -918,7 +936,7 @@ const REPHRASE = [
   [/^how (?:heavy|massive) is (?:the )?(earth|sun)\s*\??$|^how much does (?:the )?(earth|sun) weigh\s*\??$/i, (m, a, b) => "what is the mass of the " + (a || b).toLowerCase()],
   [/^(?:what is |whats )?(?:the )?value of\s+([a-z][a-z' ]*?)\s*\??$/i, (m, x) => F.facts("what is " + x).ok ? "what is " + x : m],
   // text transforms in everyday words
-  [/^(?:flip|mirror|invert)\s+(.+?)(?:\s+(?:backwards?|around|over|the other way))?\s*$/i, "reverse $1"],
+  [/^(?:flip|mirror|invert)\s+(?!(?:a |the )?coin\b)(.+?)(?:\s+(?:backwards?|around|over|the other way))?\s*$/i, "reverse $1"],
   [/^(reverse\s+.+?)\s+backwards?\s*$/i, "$1"],
   [/^backwards?\s*[:\-]\s*(.+)$/i, "reverse $1"],
   [/^(reverse|uppercase|lowercase)\s+(?:the\s+)?(?:word|string|text|phrase|sentence|name)\s*:?\s+(?=\S)/i, "$1 "],
@@ -1081,13 +1099,15 @@ function sayInflect(res) {
 // ---------------------------------------------------------------------------
 // Numeric comparison: "which is bigger, 3/4 or 2/3" (ints, decimals, fractions, %).
 // ---------------------------------------------------------------------------
-const NUMRE = "(-?\\d+(?:\\.\\d+)?\\s*/\\s*-?\\d+(?:\\.\\d+)?|-?\\d+(?:\\.\\d+)?\\s*%?|-?\\.\\d+\\s*%?)";
+const NUMRE = "(-?\\d+(?:\\.\\d+)?\\s*\\^\\s*-?\\d+(?:\\.\\d+)?|-?\\d+(?:\\.\\d+)?\\s*/\\s*-?\\d+(?:\\.\\d+)?|-?\\d+(?:\\.\\d+)?\\s*%?|-?\\.\\d+\\s*%?)"; // ints, decimals, fractions, %, powers
 const CMP_WORDS = "(bigger|larger|greater|higher|more|smaller|lesser|less|lower|tinier)";
 const CMP_RE = new RegExp("^(?:which(?:\\s+one)?\\s+is|what(?:'s| is)|is)\\s+(?:the\\s+)?" + CMP_WORDS + "[,:]?\\s+" + NUMRE + "\\s+(?:or|than|,)\\s+" + NUMRE + "\\s*\\??$", "i");
 const CMP_RE2 = new RegExp("^" + NUMRE + "\\s+(?:vs\\.?|versus|or|compared to)\\s+" + NUMRE + "\\s*\\??$", "i");
 const CMP_RE3 = new RegExp("^is\\s+" + NUMRE + "\\s+or\\s+" + NUMRE + "\\s+" + CMP_WORDS + "\\s*\\??$", "i"); // "is 50% or 0.4 bigger"
+const CMP_RE4 = new RegExp("^compare\\s+" + NUMRE + "\\s+(?:and|to|with|vs\\.?|versus|against)\\s+" + NUMRE + "\\s*\\??$", "i"); // "compare 0.3 and 1/3"
 function compareAsk(s) {
   const t = String(s || "").trim();
+  const m4 = t.match(CMP_RE4); if (m4) return { dir: "bigger", a: m4[1], b: m4[2] };
   const m = t.match(CMP_RE); if (m) return { dir: /small|less|lower|tini/i.test(m[1]) ? "smaller" : "bigger", a: m[2], b: m[3] };
   const m3 = t.match(CMP_RE3); if (m3) return { dir: /small|less|lower|tini/i.test(m3[3]) ? "smaller" : "bigger", a: m3[1], b: m3[2] };
   const m2 = t.match(CMP_RE2); if (m2) return { dir: "bigger", a: m2[1], b: m2[2] };
@@ -1098,7 +1118,8 @@ function parseNumToken(tok) {
   const pct = /%$/.test(t);
   const body = t.replace(/%$/, "");
   let value, label = tok.trim();
-  if (body.includes("/")) { const [n, d] = body.split("/").map(Number); if (!d) return null; value = n / d; }
+  if (body.includes("^")) { const [b, e] = body.split("^").map(Number); value = Math.pow(b, e); }
+  else if (body.includes("/")) { const [n, d] = body.split("/").map(Number); if (!d) return null; value = n / d; }
   else value = Number(body);
   if (!isFinite(value)) return null;
   if (pct) value = value / 100;

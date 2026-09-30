@@ -301,7 +301,7 @@ export const GLOSSARY = {
   "url": "A URL (uniform resource locator) is a web address: a scheme, a host, and a path, such as https://example.com/page, naming where a resource lives.",
   "open source": "Open source software publishes its source code under a licence that lets anyone read, change, and share it.",
 };
-const KB_ALIASES = { xss: "cross site scripting", sqli: "sql injection", "ssl": "tls", "big o": "big o notation", "least privilege": "authorization", "asymmetric encryption": "public key cryptography" };
+const KB_ALIASES = { xss: "cross site scripting", sqli: "sql injection", "ssl": "tls", "big o": "big o notation", "least privilege": "authorization", "asymmetric encryption": "public key cryptography", hash: "hash function", hashing: "hash function", hashes: "hash function", hashmap: "hash map" };
 export function lookup(input) {
   let low = String(input || "").toLowerCase().replace(/^(what\s+is|what\s+are|define|explain|tell me about)\s+/, "").replace(/[?.]/g, "").replace(/^(a|an|the)\s+/, "").trim();
   if (GLOSSARY[low]) return { ok: true, term: low, text: GLOSSARY[low] };
