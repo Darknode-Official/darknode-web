@@ -52,8 +52,11 @@ html body.app #topbar#topbar {
 html body.app #topbar#topbar::before,
 html body.app #topbar#topbar::after { display: none !important; }
 html body.app #topbar#topbar .brand { flex: none; margin-right: 6px; }
-html body.app #topbar#topbar .brand-mark,
+/* the wordmark is drawn dark and is whitened for the dark header; the mark is not filtered,
+   because a filter would also whiten its yellow dot. The light-stroke logo is used instead. */
 html body.app #topbar#topbar .brand-wordmark { filter: brightness(0) invert(1) !important; }
+html body.app #topbar#topbar .brand-mark { filter: none !important; }
+html body.app #topbar#topbar .brand-mark:not([src^="data:"]) { content: url('/logo-light.svg') !important; }
 html body.app #topbar#topbar #topbar-center,
 html body.app #topbar#topbar #cmdkBtn,
 html body.app #topbar#topbar #cli-dot { display: none !important; }
