@@ -91,8 +91,8 @@ function score(input) {
   else if (has(/\bcolou?r\b|to (rgb|hsl|hex)\b/)) add("color", 7, "color conversion");
   // JSON path query (a JSON blob plus a path or a get/query verb)
   if (/[[{][\s\S]*[\]}]/.test(s) && (has(/\b(get|query|path|value of|field|extract)\b/) || /\.[a-z_$]/i.test(s))) add("jsonquery", 8, "JSON path query");
-  if (has(/days? between|day of (the )?week|weekday|what day|(?:add|subtract) \d+ (?:days?|weeks?)|leap\s*year|day of (the )?year|which day of|days?\s+(?:until|till|til|to go|left)/)) add("datetime", 6, "date arithmetic")
-  if (has(/^(?:what|which)\s+year\s+is\s+(?:it|this)|\bcurrent year\b|\bborn in \d{4}\b|^(?:what is |whats |what's )?(?:the )?(?:date )?today(?:'s date)?\s*\??$|^(?:what is |whats |what's )(?:the )?date(?: today)?\s*\??$|^what day is (?:it|today)/)) add("datetime", 8, "today's date");
+  if (has(/days? between|day of (the )?week|weekday|what day|(?:add|subtract) \d+ (?:days?|weeks?)|leap\s*year|day of (the )?year|which day of|days?\s+(?:until|till|til|to go|left)|\d+\s+(?:days?|weeks?|months?|years?)\s+(?:from|after|before)\s+(?:today|now)\b|(?:what|which)\s+(?:day|date)\s+(?:was|is|will)\b.*\b\d+\s+(?:days?|weeks?|months?|years?)\s+ago\b|^(?:what|which)\s+(?:day|date)\s+(?:is|will)\s+(?:it\s+)?in\s+\d+\s+(?:days?|weeks?|months?|years?)\b/)) add("datetime", 6, "date arithmetic")
+  if (has(/^(?:what|which)\s+year\s+is\s+(?:it|this)|\bcurrent year\b|\bborn in \d{4}\b|^(?:what is |whats |what's )?(?:the )?(?:date )?today(?:'s date)?\s*\??$|^(?:what is |whats |what's )(?:the )?date(?: today)?\s*\??$|^what day is (?:it|today)|^(?:what is |whats |what's )?\d+\s+(?:days?|weeks?|months?|years?)\s+(?:from|after|before)\s+(?:today|now)\s*\??$/)) add("datetime", 8, "today's date");
   if (has(/\bdays?\s+(?:are\s+|is\s+)?(?:there\s+)?in\s+(?:the\s+(?:month|year)\s+(?:of\s+)?)?(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|\d{4}\b)/)) add("datetime", 8, "days in a month or year");
   const algoKW = has(/factorial|fibonacci|fib|reverse|prime|palindrome|fizzbuzz|binary search|bubble sort|\bsort\b|\bsearch\b|\bgcd\b|average|function|func|method|class/);
   const langKW = has(/\b(python|javascript|js|typescript|ts|rust|go|golang|java|c)\b/);
@@ -127,7 +127,7 @@ function score(input) {
   if (!codeAsk && compareAsk(s)) add("compare", 10, "comparing two numbers");
   // everyday tools: clock arithmetic, time zones, random draws, tip/BMI/loan, ports...
   const ev = EV.ask(s);
-  if (ev && (!codeAsk || ev.kind === "uuid" || ev.kind === "lorem")) add("everyday", 10, "an everyday tool");
+  if (ev && (!codeAsk || EV.CODE_OK.has(ev.kind))) add("everyday", 10, "an everyday tool");
   // curated how-to snippets ("git undo last commit", "how do i center a div")
   if (HT.ask(s)) add("howto", 8, "a curated how-to");
   // fact packs: capitals, elements, constants — triggered by a domain keyword
@@ -174,6 +174,8 @@ function score(input) {
     add("wordmath", 6, "arithmetic word problem");
   // calc: math operators, a "what is <numbers>" request, or a variable assignment
   if (has(/\d\s+(?:as|to|in|into)\s+(?:a\s+|its\s+)?(?:simplest\s+)?fraction\s*\??$/)) add("calc", 9, "a decimal as a fraction");
+  if (has(/^(?:simplify|reduce|simplest form of|lowest terms of)\s+-?\d+\s*\/\s*\d+\s*\??$|^-?\d+\s*\/\s*\d+\s+(?:in|to)\s+(?:its\s+)?(?:lowest|simplest)\s+(?:terms|form)\s*\??$/)) add("calc", 9, "a fraction to simplify");
+  if (has(/\d\s+(?:as|to|in|into)\s+(?:a\s+)?percent(?:age)?\s*\??$/) && !has(/\bof\b/)) add("calc", 9, "a number as a percentage");
   if (has(/[-+*/^]/) && has(/\d/)) add("calc", 5, "arithmetic expression");
   if (has(/^(what\s+is|calc(ulate)?|compute|evaluate)\b/) && has(/\d/)) add("calc", 4, "arithmetic request");
   if (has(/^[a-z_]\w*\s*=[^=]/)) add("calc", 4, "variable assignment");
@@ -194,13 +196,17 @@ function say(skill, res, input, model) {
       return res.ok
         ? / as a fraction$/.test(res.expr || "")
           ? { title: "Fraction", body: "`" + res.expr.replace(/ as a fraction$/, "") + "` as a fraction is **" + res.value + "** (the simplest fraction, found by continued fractions).", result: res }
+          : / simplified$/.test(res.expr || "")
+          ? { title: "Simplified fraction", body: res.already ? "`" + res.expr.replace(/ simplified$/, "") + "` is already in lowest terms: the numerator and denominator share no factor but 1." : "`" + res.expr.replace(/ simplified$/, "") + "` simplifies to **" + res.value + "** (divide top and bottom by their greatest common divisor, " + res.gcd + ").", result: res }
+          : / as a percent$/.test(res.expr || "")
+          ? { title: "Percentage", body: "`" + res.expr.replace(/ as a percent$/, "") + "` is **" + res.value + "**" + (res.exact ? "" : " (rounded to 4 decimal places)") + ". Multiply by 100 to turn a fraction or decimal into a percentage.", result: res }
           : res.big
           ? { title: "Calculation", body: "`" + res.expr + "` is an exact whole number with **" + res.digits + " digits**, too large for ordinary floating point, so I computed it with arbitrary-precision integers.", pre: res.value, result: res }
           : { title: "Calculation", body: "The value of `" + res.expr + "` is **" + res.value + "**. I computed this by parsing the expression and evaluating it operator by operator, so the result is exact and reproducible." + (/\b(?:sin|cos|tan)\s*\(/.test(res.expr) && !/pi/.test(res.expr) ? " Angles are in radians; say “sin 30 degrees” for degrees." : ""), result: res }
         : { title: "Calculation", body: "I could not evaluate that: " + res.error + ".", result: res };
     case "convert":
       return res.ok
-        ? { title: "Unit conversion", body: "**" + res.input + " " + res.from + "** equals **" + (res.feet != null ? res.value + "** (" + res.totalInches + " inches in all" : res.value + " " + res.to + "** (" + res.dim) + "). This uses a fixed conversion factor, so it is precise.", result: res }
+        ? { title: "Unit conversion", body: "**" + res.input + " " + res.from + "** equals **" + (res.feet != null ? res.value + "** (" + res.totalInches + " inches in all" : res.value + " " + res.to + "** (" + res.dim) + "). " + (/^(?:years?|yrs?|months?|decades?|centur(?:y|ies))$/.test(res.from) || /^(?:years?|yrs?|months?|decades?|centur(?:y|ies))$/.test(res.to) ? "This uses the average calendar year of 365.25 days (a month is a twelfth of that), so a particular year or month can differ slightly." : "This uses a fixed conversion factor, so it is precise."), result: res }
         : { title: "Unit conversion", body: "I could not convert that: " + res.error + ".", result: res };
     case "codegen": {
       if (res.kind === "program") {

@@ -131,7 +131,10 @@ const PORT_BY_NAME = new Map(); for (const p of PORTS) for (const n of p[3]) POR
 const PORT_NAMES = [...PORT_BY_NAME.keys()].sort((a, b) => b.length - a.length);
 
 // words the typo corrector must leave alone (city names, service names, tool nouns)
-export const VOCAB = [...new Set([...ZONE_KEYS.flatMap((k) => k.split(" ")), ...PORT_NAMES.flatMap((k) => k.split(/[\s-]/)), "uuid", "guid", "uuids", "guids", "lorem", "ipsum", "bmi", "mortgage", "loan", "tip", "coin", "dice", "die", "d20", "d6", "d10", "d12", "d8", "d4", "d100", "steps", "noon", "midnight", "am", "pm", "utc", "gmt", "shuffle", "pick", "choose", "port", "ports", "https", "http", "ssh", "ftp", "smtp", "dns", "rdp", "vnc", "mysql", "postgres", "redis", "mongodb"]).values()].filter((w) => w.length > 1);
+export const VOCAB = [...new Set([...ZONE_KEYS.flatMap((k) => k.split(" ")), ...PORT_NAMES.flatMap((k) => k.split(/[\s-]/)), "uuid", "guid", "uuids", "guids", "lorem", "ipsum", "bmi", "mortgage", "loan", "tip", "coin", "dice", "die", "d20", "d6", "d10", "d12", "d8", "d4", "d100", "steps", "noon", "midnight", "am", "pm", "utc", "gmt", "shuffle", "pick", "choose", "port", "ports", "https", "http", "ssh", "ftp", "smtp", "dns", "rdp", "vnc", "mysql", "postgres", "redis", "mongodb",
+  "json", "cron", "crontab", "minify", "minified", "prettify", "validate", "weekday", "weekdays", "weekends", "hourly", "derivative", "integral", "antiderivative", "differentiate", "integrate", "wrt", "forecast", "bitcoin", "btc", "eth", "ethereum",
+  "usd", "eur", "gbp", "jpy", "cny", "inr", "aud", "cad", "chf", "nzd", "sek", "nok", "dkk", "krw", "brl", "mxn", "zar", "sgd", "hkd", "rub", "pln", "thb", "idr", "php", "myr", "vnd", "aed", "sar", "ils", "czk", "huf", "euros", "rupees", "yen", "yuan", "pesos", "rubles",
+  "spanish", "french", "german", "italian", "portuguese", "japanese", "chinese", "mandarin", "korean", "russian", "arabic", "hindi", "dutch", "swedish", "latin", "greek", "turkish", "polish", "hebrew", "vietnamese", "thai", "tagalog", "filipino", "indonesian", "swahili"]).values()].filter((w) => w.length > 1);
 
 // ---------------------------------------------------------------------------
 // ask(): which everyday tool does this line want? (null = not one of these)
@@ -246,8 +249,84 @@ export function ask(input) {
   if (m) return { kind: "yearahead", n: +m[1] };
   m = low.match(/^(?:what year |when )(?:was|were) (?:i|you|someone|a person|they|he|she) born (?:if|when) (?:i am|i'm|you are|you're|they are|they're|he is|she is|someone is|aged?)?\s*(\d{1,3})(?: years old| years| yo)?$/) || low.match(/^(?:birth year|year of birth|born year) (?:for|if|of) (?:someone |a person |age )?(?:aged? |who is )?(\d{1,3})(?: years old)?$/) || low.match(/^if (?:i am|i'm|you are|someone is) (\d{1,3})(?: years old)?,? (?:what year|when) (?:was|were) (?:i|you|they) born$/);
   if (m) return { kind: "birthyear", age: +m[1] };
+  // --- random colour ---
+  if (/^(?:(?:pick|choose|give me|generate|make|suggest|show me)\s+)?(?:me\s+)?(?:a\s+|any\s+)?random\s+(?:hex\s+|rgb\s+)?colou?r(?: code| hex| value| please)?$/.test(low) || /^random colou?r$/.test(low)) return { kind: "randcolor" };
+  // --- JSON tools: format / minify / validate a pasted document ---
+  if (/\bjson\b/.test(low) && /[[{]/.test(s)) {
+    const a = Math.min(...[s.indexOf("{"), s.indexOf("[")].filter((i) => i >= 0)), b = Math.max(s.lastIndexOf("}"), s.lastIndexOf("]"));
+    if (a >= 0 && b > a) {
+      const head = (s.slice(0, a) + " " + s.slice(b + 1)).toLowerCase();
+      const op = /\b(minif|compact|one line|single line|compress)/.test(head) ? "minify" : /\b(valid|check|lint|is this|correct)/.test(head) ? "validate" : /\b(format|pretty|beautif|indent|prettif|tidy|clean|write|show|print|display|output|dump|render|parse)/.test(head) ? "format" : /^\s*json\s*:?\s*$/.test(head) ? "format" : null;
+      if (op) return { kind: "json", op, payload: s.slice(a, b + 1) };
+    }
+  }
+  // --- cron expression builder (only when cron/crontab is named: the 5-field format is specific) ---
+  if (/\bcron(?:tab| job| expression| schedule| string| syntax)?\b/.test(low) && !/\bhow (?:do|to|does)\b|\bwhat is (?:a )?cron\b|\bexplain\b/.test(low)) {
+    const c = cronOf(low.replace(/\b(?:cron(?:tab| job| expression| schedule| string| syntax)?)\b/g, " ").replace(/\b(?:for|to|that runs|run|runs|which runs|running|a|an|the|please|me|give|make|build|create|write|generate|schedule|scheduled|i want|i need|expression)\b/g, " ").replace(/\s+/g, " ").trim());
+    if (c) return { kind: "cron", ...c };
+  }
+  // --- calculus: pointed at Quelvra, which carries the CAS (DI does not) ---
+  m = low.match(/^(?:what is |whats |what's |find |compute |calculate |give me )?(?:the )?(derivative|integral|antiderivative|limit)\s+of\s+(.+)$/) || low.match(/^(differentiate|integrate)\s+(.+)$/) || low.match(/^(d\/dx)\s*\(?\s*(.+?)\s*\)?$/);
+  if (m && /[\d^()]|\b[a-z]\b/.test(m[2]) && !/^(?:a|an|the)\b/.test(m[2]) && !/\bin (?:python|javascript|js|java|c|rust|go)\b/.test(low)) return { kind: "calculus", what: m[1], expr: m[2].replace(/\s+(?:with respect to|wrt)\s+[a-z]$/, "") };
+  // --- live data this offline engine cannot have (weather, news, prices, scores) ---
+  m = low.match(/\b(weather|forecast|temperature (?:outside|today|right now|tomorrow)|is it (?:raining|snowing|sunny|cold|hot|windy)(?: outside| today| now)?|(?:will|is) it (?:going to )?rain|news|headlines|stock price|share price|(?:price|value) of (?:bitcoin|btc|eth|ethereum|gold|silver|oil|a stock|[a-z]+ stock)|bitcoin price|exchange rate|(?:latest|current|live) (?:score|scores|results?|price|prices)|who won (?:the|last|yesterday'?s?)|traffic (?:right now|now|today))\b/);
+  if (m && !/\bjson\b|\bapi\b|\bfetch\b|\bcode\b|\bpython\b|\bjavascript\b/.test(low)) return { kind: "nolive", topic: m[1].split(" ")[0].replace(/^(?:is|will)$/, "weather") };
+  // --- translation: DI carries an English dictionary only ---
+  m = low.match(/^(?:how (?:do|would|can|to) (?:you|i|u|we|one) )?(?:say|translate|write)\s+(.+?)\s+(?:in|into|to)\s+(spanish|french|german|italian|portuguese|japanese|chinese|mandarin|korean|russian|arabic|hindi|dutch|swedish|latin|greek|turkish|polish|hebrew|vietnamese|thai|tagalog|filipino|indonesian|swahili)$/) || low.match(/^(?:what is|whats|what's) (?:the )?(?:word for |translation of )?(.+?) in (spanish|french|german|italian|portuguese|japanese|chinese|mandarin|korean|russian|arabic|hindi|dutch|swedish|latin|greek|turkish|polish|hebrew|vietnamese|thai|tagalog|filipino|indonesian|swahili)$/) || low.match(/^(spanish|french|german|italian|portuguese|japanese|chinese|mandarin|korean|russian|arabic|hindi|dutch|swedish|latin|greek|turkish|polish|hebrew|vietnamese|thai|tagalog|filipino|indonesian|swahili) (?:word |translation )?for (.+)$/);
+  if (m) { const lang = /^(spanish|french|german|italian|portuguese|japanese|chinese|mandarin|korean|russian|arabic|hindi|dutch|swedish|latin|greek|turkish|polish|hebrew|vietnamese|thai|tagalog|filipino|indonesian|swahili)$/.test(m[1]) ? m[1] : m[2]; return { kind: "translate", lang, phrase: lang === m[1] ? m[2] : m[1] }; }
   return null;
 }
+
+// cron: turn a plain schedule phrase into the five fields, or null when any part is unclear.
+const DOW = { sunday: 0, sun: 0, monday: 1, mon: 1, tuesday: 2, tue: 2, tues: 2, wednesday: 3, wed: 3, thursday: 4, thu: 4, thur: 4, thurs: 4, friday: 5, fri: 5, saturday: 6, sat: 6 };
+const DOW_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+function clock(txt) {
+  // "9am", "9:30 pm", "17:00", "noon", "midnight" -> { h, m } in 24h, or null
+  if (txt === "noon" || txt === "midday") return { h: 12, m: 0 };
+  if (txt === "midnight") return { h: 0, m: 0 };
+  const t = txt.match(/^(\d{1,2})(?::(\d{2}))?\s*(am|pm|a\.m\.|p\.m\.)?$/);
+  if (!t) return null;
+  let h = +t[1]; const mm = +(t[2] || 0), ap = (t[3] || "").replace(/\./g, "");
+  if (mm > 59) return null;
+  if (ap) { if (h < 1 || h > 12) return null; if (ap === "pm" && h < 12) h += 12; if (ap === "am" && h === 12) h = 0; }
+  else if (h > 23) return null;
+  return { h, m: mm };
+}
+const TIMERE = "(\\d{1,2}(?::\\d{2})?\\s*(?:am|pm|a\\.m\\.|p\\.m\\.)?|noon|midday|midnight)";
+export function cronOf(p) {
+  p = p.replace(/\s+/g, " ").trim();
+  let m;
+  if (/^(?:every minute|each minute|minutely)$/.test(p)) return { expr: "* * * * *", reads: "every minute" };
+  if (/^(?:every hour|each hour|hourly)$/.test(p)) return { expr: "0 * * * *", reads: "at minute 0 of every hour" };
+  if ((m = p.match(/^every (\d+) (minutes?|mins?)$/)) && +m[1] >= 1 && +m[1] <= 59) return { expr: "*/" + m[1] + " * * * *", reads: "every " + m[1] + " minutes (from the top of each hour)" };
+  if ((m = p.match(/^every (\d+) (hours?|hrs?)(?: at (\d{1,2}) (?:past|minutes past)(?: the hour)?)?$/)) && +m[1] >= 1 && +m[1] <= 23) return { expr: (m[3] || "0") + " */" + m[1] + " * * *", reads: "every " + m[1] + " hours at minute " + (m[3] || "0") + " (counted from midnight)" };
+  // "every day at 9am", "daily at 17:30", "at midnight", "at noon"
+  m = p.match(new RegExp("^(?:(?:every day|each day|daily|everyday) (?:at )?|at )" + TIMERE + "$")) || p.match(/^(?:every day|each day|daily|everyday)$/);
+  if (m) { const t = m[1] ? clock(m[1]) : { h: 0, m: 0 }; if (!t) return null; return { expr: t.m + " " + t.h + " * * *", reads: "every day at " + hm(t) }; }
+  // "every monday at 9am", "every weekday at 8:30", "weekends at noon", "mondays and thursdays at 9am"
+  m = p.match(new RegExp("^(?:every |each |on |on every )?((?:(?:mon|tues?|wed|thur?s?|fri|sat|sun)(?:day|nesday|sday|urday|rday)?s?)(?:(?:,| and| &|,? and) (?:mon|tues?|wed|thur?s?|fri|sat|sun)(?:day|nesday|sday|urday|rday)?s?)*|weekdays?|week ?days?|weekends?|working days)(?: at )?(?:" + TIMERE + ")?$"));
+  if (m) {
+    const t = m[2] ? clock(m[2]) : { h: 0, m: 0 }; if (!t) return null;
+    let dow, reads;
+    if (/^week ?days?$|^working days$/.test(m[1])) { dow = "1-5"; reads = "Monday to Friday"; }
+    else if (/^weekends?$/.test(m[1])) { dow = "0,6"; reads = "Saturday and Sunday"; }
+    else {
+      const names = m[1].split(/,\s*|\s+and\s+|\s*&\s*/).map((d) => d.replace(/s$/, ""));
+      const ns = names.map((d) => DOW[d]); if (ns.some((n) => n === undefined)) return null;
+      dow = [...new Set(ns)].sort((a, b) => a - b).join(","); reads = [...new Set(ns)].sort((a, b) => a - b).map((n) => DOW_NAMES[n]).join(", ");
+    }
+    return { expr: t.m + " " + t.h + " * * " + dow, reads: reads + " at " + hm(t) };
+  }
+  if (/^(?:every week|each week|weekly)$/.test(p)) return { expr: "0 0 * * 0", reads: "every Sunday at 00:00 (weekly)" };
+  // "every month on the 1st at 6am", "monthly", "on the 15th at 9am"
+  m = p.match(new RegExp("^(?:(?:every month|each month|monthly) )?(?:on )?(?:the )?(\\d{1,2})(?:st|nd|rd|th)?(?: of (?:every|each|the) month)?(?: at " + TIMERE + ")?$")) || p.match(/^(?:every month|each month|monthly)$/);
+  if (m) { const day = m[1] ? +m[1] : 1; if (day < 1 || day > 31) return null; const t = m[2] ? clock(m[2]) : { h: 0, m: 0 }; if (!t) return null; return { expr: t.m + " " + t.h + " " + day + " * *", reads: "day " + day + " of every month at " + hm(t) + (day > 28 ? " (skipped in months that are shorter)" : "") }; }
+  if (/^(?:every year|each year|yearly|annually)$/.test(p)) return { expr: "0 0 1 1 *", reads: "every 1 January at 00:00" };
+  return null;
+}
+function hm(t) { return String(t.h).padStart(2, "0") + ":" + String(t.m).padStart(2, "0"); }
+// kinds that are safe to answer even when the line also reads like a code request
+export const CODE_OK = new Set(["uuid", "lorem", "json", "cron", "calculus", "nolive", "translate", "randcolor"]);
 
 // ---------------------------------------------------------------------------
 // run(): compute the answer for an ask() result
@@ -328,6 +407,31 @@ export function run(q) {
     case "yearago": return { ok: true, kind: q.kind, value: nowY - q.n, text: String(nowY - q.n) + " (" + q.n + " years before " + nowY + ")" };
     case "yearahead": return { ok: true, kind: q.kind, value: nowY + q.n, text: String(nowY + q.n) + " (" + q.n + " years after " + nowY + ")" };
     case "birthyear": return { ok: true, kind: q.kind, value: nowY - q.age, text: (nowY - q.age) + " if their birthday has already passed this year, otherwise " + (nowY - q.age - 1) };
+    case "randcolor": {
+      const r = randInt(0, 255), g = randInt(0, 255), b = randInt(0, 255);
+      const hex = "#" + [r, g, b].map((v) => v.toString(16).padStart(2, "0")).join("");
+      const R = r / 255, G = g / 255, B = b / 255, mx = Math.max(R, G, B), mn = Math.min(R, G, B), l = (mx + mn) / 2, d = mx - mn;
+      let h = 0, s = 0;
+      if (d) { s = d / (1 - Math.abs(2 * l - 1)); h = mx === R ? ((G - B) / d) % 6 : mx === G ? (B - R) / d + 2 : (R - G) / d + 4; h = Math.round(h * 60); if (h < 0) h += 360; }
+      const hsl = "hsl(" + h + ", " + Math.round(s * 100) + "%, " + Math.round(l * 100) + "%)";
+      return { ok: true, kind: q.kind, value: hex, hex, rgb: "rgb(" + r + ", " + g + ", " + b + ")", hsl, text: hex };
+    }
+    case "json": {
+      let parsed;
+      try { parsed = JSON.parse(q.payload); }
+      catch (e) {
+        const at = /position (\d+)/.exec(e.message), pos = at ? +at[1] : -1;
+        const line = pos >= 0 ? q.payload.slice(0, pos).split("\n").length : null, col = pos >= 0 ? pos - q.payload.lastIndexOf("\n", pos - 1) : null;
+        return { ok: true, kind: q.kind, op: q.op, valid: false, value: "invalid", text: "invalid JSON: " + e.message.replace(/^JSON\.parse: /, "").replace(/ in JSON at position \d+.*$/, "") + (line ? " (line " + line + ", column " + col + ")" : ""), payload: q.payload };
+      }
+      const out = q.op === "minify" ? JSON.stringify(parsed) : JSON.stringify(parsed, null, 2);
+      const kind = Array.isArray(parsed) ? "array of " + parsed.length : parsed && typeof parsed === "object" ? "object with " + Object.keys(parsed).length + " key" + (Object.keys(parsed).length === 1 ? "" : "s") : typeof parsed;
+      return { ok: true, kind: q.kind, op: q.op, valid: true, value: out, text: out, shape: kind, bytes: q.payload.length, outBytes: out.length };
+    }
+    case "cron": return { ok: true, kind: q.kind, value: q.expr, expr: q.expr, reads: q.reads, text: q.expr };
+    case "calculus": return { ok: true, kind: q.kind, what: q.what, expr: q.expr, value: null, text: "Quelvra handles " + q.what + " problems", link: "/quelvra/?q=" + encodeURIComponent((q.what === "d/dx" ? "derivative of " : /^(differentiate|integrate)$/.test(q.what) ? q.what + " " : q.what + " of ") + q.expr) };
+    case "nolive": return { ok: true, kind: q.kind, topic: q.topic, value: null, text: "no live " + q.topic + " data offline" };
+    case "translate": return { ok: true, kind: q.kind, lang: q.lang, phrase: q.phrase, value: null, text: "no " + q.lang + " dictionary" };
     default: return { ok: false, error: "not an everyday request" };
   }
 }
@@ -359,6 +463,14 @@ export function say(res) {
     case "portnum": return { title: "Port " + res.port, body: "**" + res.text + "**.", note: "IANA service name and port number registry / de-facto default.", result: res };
     case "yearago": case "yearahead": return { title: "Year", body: "**" + res.text + "**.", note: "Counted from the current year on this device's clock.", result: res };
     case "birthyear": return { title: "Birth year", body: "**" + res.text + "**.", note: "Counted from the current year on this device's clock.", result: res };
+    case "randcolor": return { title: "Random colour", body: "**" + res.hex + "**", pre: "hex  " + res.hex + "\nrgb  " + res.rgb + "\nhsl  " + res.hsl, note: "Three random bytes, one per channel. " + RANDOM_NOTE, result: res };
+    case "json": return res.valid
+      ? { title: res.op === "minify" ? "Minified JSON" : res.op === "validate" ? "Valid JSON" : "Formatted JSON", body: (res.op === "validate" ? "Valid JSON: " : "") + (/^[aeiou]/.test(res.shape) ? "an " : "a ") + res.shape + (res.op === "minify" ? ", minified from " + res.bytes + " to " + res.outBytes + " characters:" : res.op === "validate" ? "." : ", formatted with 2-space indent:"), pre: res.op === "validate" ? undefined : res.value, note: "Parsed with the browser's JSON parser (RFC 8259), so anything it accepts is valid JSON; comments and trailing commas are not.", result: res }
+      : { title: "Invalid JSON", body: "**" + res.text + "**.", note: "The browser's JSON parser rejected it. Common causes: single quotes, a trailing comma, unquoted keys, or a comment.", result: res };
+    case "cron": return { title: "Cron expression", body: "**`" + res.expr + "`** runs " + res.reads + ".", pre: "# minute hour day-of-month month day-of-week\n" + res.expr + "  /path/to/command", note: "Standard five-field cron (minute hour day month weekday; 0 = Sunday). The times are in the cron daemon's own time zone, usually the server's.", result: res };
+    case "calculus": return { title: "Calculus", body: "DI's calculator does arithmetic, not symbolic calculus. **Quelvra**, the site's verified math engine, does: open [" + res.what + " of " + res.expr + "](" + res.link + ") in Quelvra and it will work it out and check the result.", note: "Quelvra runs offline in the browser too; every answer it gives is verified by a second method before it is shown.", result: res };
+    case "nolive": return { title: "No live data", body: "I cannot answer that: **" + res.topic + "** needs live data, and this engine runs entirely offline with no network access, so anything I said would be made up.", note: "Fixed facts, arithmetic, conversions, dates and code are what I do have. A weather, news or market site has the live figures.", result: res };
+    case "translate": return { title: "Translation", body: "I cannot translate **" + res.phrase + "** into " + res.lang.charAt(0).toUpperCase() + res.lang.slice(1) + ": the only dictionary built into this engine is English, and guessing a word in another language could be wrong or rude.", note: "An offline dictionary app or a translation service will have it.", result: res };
     default: return { title: "Everyday tool", body: res.text || "", result: res };
   }
 }

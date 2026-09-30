@@ -386,7 +386,7 @@ group("engine: understands more everyday wording", () => {
     ["what's a third of 96", /\b32\b/], ["how much is 3 dozen", /\b36\b/], ["is 64 a perfect square", /Yes: 64 = 8\^2/], ["is 26 a perfect cube", /No: 26/],
     ["factors of 18", /1, 2, 3, 6, 9, 18/], ["prime factors of 18", /18 = 2 \* 3\^2/], ["divisors of 28", /1, 2, 4, 7, 14, 28/],
     ["sum of the digits of 9876", /\b30\b/], ["how many digits does 123456 have", /\b6 digits\b/], ["is 1001 divisible by 7", /Yes: 1001 = 7 x 143/],
-    ["is 10 divisible by 0", /division by 0 is undefined/], ["convert 1010 from binary to decimal", /\b10 = 10\b/], ["0b1010 to decimal", /\b10 = 10\b/],
+    ["is 10 divisible by 0", /division by 0 is undefined/], ["convert 1010 from binary to decimal", /0b1010 \(binary\) = 10 \(decimal\)/], ["0b1010 to decimal", /0b1010 \(binary\) = 10 \(decimal\)/],
     ["how many days in a leap year", /366/], ["average speed if i drive 150 km in 2 hours", /\b75\b/], ["how long to travel 300 km at 60 km/h", /\b5\b/],
     ["how far can a car go at 100 km/h for 2 hours", /\b200\b/], ["how many letters in the word elephant", /Result:\s*\|?\s*8\b/],
     ["count the letters in the sentence hi there", /Result:\s*\|?\s*7\b/], ["how many continents are there", /\b7 continents/],

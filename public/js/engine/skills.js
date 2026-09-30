@@ -174,6 +174,22 @@ export function calc(input) {
     const { n, d } = toFraction(x.value);
     return { ok: true, value: d === 1 ? String(n) : n + "/" + d, expr: fr[1] + " as a fraction" };
   }
+  // "simplify 18/24", "reduce 18/24", "18/24 in lowest terms": exact integer gcd, no floats
+  const sf = src.match(/^(?:(?:simplify|reduce|simplest form of|lowest terms of)\s+)?(-?\d+)\s*\/\s*(\d+)(?:\s+(?:in|to)\s+(?:its\s+)?(?:lowest|simplest)\s+(?:terms|form))?\s*$/);
+  if (sf && /simplify|reduce|lowest|simplest/.test(src)) {
+    const n0 = parseInt(sf[1], 10), d0 = parseInt(sf[2], 10);
+    if (d0 === 0) return { ok: false, error: "division by zero" };
+    const g = (a, b) => { a = Math.abs(a); while (b) [a, b] = [b, a % b]; return a; };
+    const k = g(n0, d0) || 1, n = n0 / k, d = d0 / k;
+    return { ok: true, value: d === 1 ? String(n) : n + "/" + d, expr: sf[1] + "/" + sf[2] + " simplified", gcd: k, already: k === 1 };
+  }
+  // "1/3 as a percent", "0.25 as a percentage", "3/8 to percent"
+  const pc = src.match(/^(?:what is |whats |convert |write |express )?(-?\d*\.\d+|-?\d+(?:\.\d+)?\s*\/\s*\d+|-?\d+)\s+(?:as|to|in|into)\s+(?:a\s+)?percent(?:age)?\s*$/);
+  if (pc) {
+    const x = runCalc(pc[1]); if (!x.ok) return x;
+    const raw = x.value * 100, v = Math.round(raw * 1e4) / 1e4;
+    return { ok: true, value: v + "%", expr: pc[1] + " as a percent", exact: Math.abs(raw - v) < 1e-12 };
+  }
   src = src.replace(/([0-9.]+)\s*%\s+of\s+/g, "($1/100)*"); // "15% of 200"
   const res = runCalc(src);
   if (res.ok) { res.expr = src; return res; }
@@ -204,6 +220,8 @@ const UNITS = {
   area: { base: "m2", u: { m2: 1, sqm: 1, km2: 1e6, sqkm: 1e6, ft2: 0.09290304, sqft: 0.09290304, acre: 4046.8564224, acres: 4046.8564224, hectare: 1e4, hectares: 1e4, ha: 1e4 } },
 };
 function findUnit(u) { u = u.toLowerCase(); for (const dim in UNITS) if (u in UNITS[dim].u) return { dim, factor: UNITS[dim].u[u] }; return null; }
+// ISO currency codes and common names, recognised only to refuse honestly (no live rates offline)
+export const CURRENCY = new Set(["usd", "eur", "gbp", "jpy", "cny", "inr", "aud", "cad", "chf", "nzd", "sek", "nok", "dkk", "krw", "brl", "mxn", "zar", "sgd", "hkd", "rub", "try", "pln", "thb", "idr", "php", "myr", "vnd", "aed", "sar", "ils", "czk", "huf", "btc", "eth", "dollars", "dollar", "euros", "euro", "pounds", "pound", "yen", "yuan", "rupees", "rupee", "francs", "franc", "won", "pesos", "peso", "rubles", "ruble", "rand", "bitcoin", "bitcoins"]);
 
 export function convert(input) {
   // find the "<number> <unit> to <unit>" pattern anywhere, so leading words
@@ -233,6 +251,9 @@ export function convert(input) {
     return { ok: true, value: Math.round(out * 1e6) / 1e6, dim: "temperature", from, to, input: val };
   }
   let a = findUnit(from), b = findUnit(to);
+  // currency needs a live exchange rate, which this offline engine does not have
+  const cur = (!a && CURRENCY.has(from)) ? from : (!b && CURRENCY.has(to)) ? to : null;
+  if (cur) return { ok: false, error: "currency conversion needs today's exchange rate, and this engine runs offline with no live data; a bank or exchange site will have the current " + (CURRENCY.has(from) && CURRENCY.has(to) ? from.toUpperCase() + " to " + to.toUpperCase() : cur.toUpperCase()) + " rate" };
   if (!a || !b) return { ok: false, error: "unknown unit: " + (!a ? from : to) };
   // "ounces" next to a volume means fluid ounces ("how many ounces in a cup")
   const FLOZ = { dim: "volume", factor: 0.0295735295625 };
@@ -551,6 +572,23 @@ export function datetime(input) {
   }
   const dyr = low.match(/\bdays?\s+(?:are\s+)?(?:there\s+)?in\s+(?:the\s+year\s+)?(\d{4})\b/);
   if (dyr) { const y = +dyr[1], n = (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0 ? 366 : 365; return { ok: true, kind: "yeardays", value: n, text: y + " has " + n + " days" }; }
+  // "what day is 90 days from today", "in 3 weeks", "2 months ago", "what date is 45 days from now"
+  const relN = low.match(/\b(\d{1,4})\s+(days?|weeks?|months?|years?)\s+(from|after|before|ago)(?:\s+(?:today|now))?\b/) || low.match(/\bin\s+(\d{1,4})\s+(days?|weeks?|months?|years?)\b/);
+  if (relN && !dates.length && !/\b(?:add|subtract|until|till|between|how many|how much)\b/.test(low)) {
+    const n = +relN[1], unit = relN[2], dir = relN[3] === "before" || relN[3] === "ago" ? -1 : 1;
+    const now = new Date();
+    let d;
+    if (/^day/.test(unit)) d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + dir * n));
+    else if (/^week/.test(unit)) d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + dir * n * 7));
+    else {
+      const y = now.getUTCFullYear() + (/^year/.test(unit) ? dir * n : 0), mo = now.getUTCMonth() + (/^month/.test(unit) ? dir * n : 0);
+      const last = new Date(Date.UTC(y, mo + 1, 0)).getUTCDate();
+      d = new Date(Date.UTC(y, mo, Math.min(now.getUTCDate(), last)));
+    }
+    const label = n + " " + unit.replace(/s$/, "") + (n === 1 ? "" : "s") + (dir < 0 ? " ago" : " from today");
+    const note = /^(?:month|year)/.test(unit) && d.getUTCDate() !== now.getUTCDate() ? " (day clamped: the target month is shorter)" : "";
+    return { ok: true, kind: "weekday", value: d.toISOString().slice(0, 10), text: label.charAt(0).toUpperCase() + label.slice(1) + " is " + DAYNAMES[d.getUTCDay()] + ", " + d.toISOString().slice(0, 10) + " (UTC)" + note };
+  }
   // "what day is tomorrow", "yesterday was what day": relative to today (UTC)
   const rel = low.match(/\b(today|tomorrow|yesterday|the day after tomorrow|the day before yesterday)\b/);
   if (rel && /\bwhat day\b|\bwhich day\b|\bday (?:is|was|will)\b|\bweekday\b/.test(low)) {
