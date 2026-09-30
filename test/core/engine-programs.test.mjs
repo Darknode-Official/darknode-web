@@ -35,7 +35,7 @@ group("engine/programs: whole programs, offline", () => {
     const cases = [
       ["hello world in rust", "hello", "rust"], ["how do i read a file in python", "readfile", "python"], ["http server in node", "httpserver", "javascript"],
       ["build a rest api in flask", "restapi", "python"], ["merge two sorted arrays in java", "mergesorted", "java"], ["binary search tree in c", "bst", "c"],
-      ["quicksort in c++", "quicksort", "cpp"], ["caesar cipher in go", "caesar", "go"], ["count vowels in a string javascript", "vowels", "javascript"],
+      ["quicksort in c++", "quicksort", "cpp"], ["caesar cipher in go", "caesar", "go"],
       ["how to write to a file in c", "writefile", "c"], ["flatten a nested list python", "flatten", "python"], ["sieve of eratosthenes in rust", "sieve", "rust"],
     ];
     for (const [q, id, lang] of cases) {

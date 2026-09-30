@@ -768,3 +768,34 @@ html body.app .app-main .ai2-shell.hist-open::before {
 html body.app .menu-item.col { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; }
 html body.app .menu-item.col > strong { display: block; }
 html body.app .menu-item.col .menu-sub { display: block; white-space: normal; }
+
+/* ============================================================
+   Full-width content pane. The console content fills the pane
+   between the side navigation and the window edge the way the
+   AWS console does: no centred column, no dead margins. Reading
+   measures (paragraph max-widths in ch) are kept on purpose.
+   ============================================================ */
+html body.app .app-main .mt-shell,
+html body.app .app-main .mt-hub,
+html body.app .app-main .sec-intro,
+html body.app .app-main .lh-tp,
+html body.app .app-main .demo-grid,
+html body.app .app-main .product-grid,
+html body.app .app-main .pricing-grid,
+html body.app .app-main .dlapp-grid,
+html body.app .app-main .nx-arch,
+html body.app .app-main .nx-highlights,
+html body.app .app-main .os-boot-preview,
+html body.app .app-main .wrap { max-width: none; margin-left: 0; margin-right: 0; }
+html body.app .app-main .wrap { padding-left: 0; padding-right: 0; }
+html body.app .app-main .mt-hub-search input { max-width: none; }
+html body.app .app-main .api-key-section .panel { max-width: none; }
+/* grids grow to use the extra width instead of leaving a gutter on the right */
+html body.app .app-main .demo-grid { grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr)); }
+html body.app .app-main .product-grid,
+html body.app .app-main .pricing-grid { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+html body.app .app-main .dlapp-grid { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+html body.app .app-main .nx-highlights { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+html body.app .app-main .mt-shell,
+html body.app .app-main .mt-hub,
+html body.app .app-main .sec-intro { padding-left: 0; padding-right: 0; }

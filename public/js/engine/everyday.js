@@ -42,6 +42,7 @@ function fmtDur(mins) {
   const parts = []; if (h) parts.push(plural(h, "hour")); if (m || !h) parts.push(plural(m, "minute"));
   return parts.join(" ");
 }
+const MONTH_INDEX = { jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12 };
 const TIME_RE = new RegExp(TIME, "i");
 const hasClock = (s) => /\b\d{1,2}:\d{2}\b|\b\d{1,2}\s*(?:am|pm|a\.m\.|p\.m\.)\b|\bnoon\b|\bmidnight\b/i.test(s)
   || /\bhours?\b/.test(s) && /\b\d{1,2}\s+(?:to|until|till)\s+\d{1,2}\b/.test(s); // "9 to 5 is how many hours"
@@ -135,6 +136,7 @@ export const VOCAB = [...new Set([...ZONE_KEYS.flatMap((k) => k.split(" ")), ...
   "json", "cron", "crontab", "minify", "minified", "prettify", "validate", "weekday", "weekdays", "weekends", "hourly", "derivative", "integral", "antiderivative", "differentiate", "integrate", "wrt", "forecast", "bitcoin", "btc", "eth", "ethereum",
   "usd", "eur", "gbp", "jpy", "cny", "inr", "aud", "cad", "chf", "nzd", "sek", "nok", "dkk", "krw", "brl", "mxn", "zar", "sgd", "hkd", "rub", "pln", "thb", "idr", "php", "myr", "vnd", "aed", "sar", "ils", "czk", "huf", "euros", "rupees", "yen", "yuan", "pesos", "rubles",
   "bitwise", "xor", "nand", "nor", "shl", "shr", "ascii", "unicode", "utf", "codepoint", "cidr", "subnet", "loopback", "localhost", "passphrase", "pwd", "entities", "unescape", "escape", "epoch", "unix", "posix", "timestamp", "iso", "multicast", "broadcast", "wildcard", "http", "https", "prime", "primes",
+  "military", "pace", "mpg", "fuel", "mileage", "gallon", "gallons", "zodiac", "horoscope", "astrological", "generation", "millennial", "millennials", "boomer", "boomers", "anagram", "anagrams", "acronym", "initialism", "initials", "pizzas", "pizza", "overtime", "salary", "biweekly", "fortnight", "marathon", "puppy", "kitten", "chinese", "lunar", "sagittarius", "capricorn", "aquarius", "pisces", "aries", "taurus", "gemini", "leo", "virgo", "libra", "scorpio", "petrol", "diesel", "litre", "litres",
   "spanish", "french", "german", "italian", "portuguese", "japanese", "chinese", "mandarin", "korean", "russian", "arabic", "hindi", "dutch", "swedish", "latin", "greek", "turkish", "polish", "hebrew", "vietnamese", "thai", "tagalog", "filipino", "indonesian", "swahili"]).values()].filter((w) => w.length > 1);
 
 // ---------------------------------------------------------------------------
@@ -321,6 +323,74 @@ export function ask(input) {
   // --- HTTP status codes ---
   m = low.match(/^(?:what (?:is|does|do) |whats |what's |explain |meaning of |define )?(?:an? |the )?(?:http |https |http\/\d(?:\.\d)? |status |error |response )*(?:status |error |response |code |status code |error code |response code )*(\d{3})(?: (?:status|error|response|code|status code|error code|http|http status))*(?: mean| means| stand for| error| status| code| response)*$/);
   if (m && HTTP_STATUS[+m[1]] !== undefined && /\b(?:http|status|error|response|code|mean)\b/.test(low)) return { kind: "httpstatus", code: +m[1] };
+  // --- round 9: clock formats ---
+  m = low.match(/^(?:convert |what is |whats |what's |write |express )?(\d{1,2}):(\d{2})\s*(?:hours|hrs|h)?\s*(?:to|in|as|into)\s+(?:12[- ]?hour(?: time| format| clock)?|am\/?pm(?: time| format)?|12h|regular time|normal time|standard time)$/);
+  if (m && +m[1] < 24 && +m[2] < 60) return { kind: "clockfmt", h: +m[1], mi: +m[2], to: "12" };
+  m = low.match(/^(?:convert |what is |whats |what's |write |express )?(\d{1,2})(?::(\d{2}))?\s*(am|pm|a\.m\.|p\.m\.)\s*(?:to|in|as|into)\s+(?:24[- ]?hour(?: time| format| clock)?|military(?: time| format)?|24h)$/);
+  if (m && +m[1] >= 1 && +m[1] <= 12 && (!m[2] || +m[2] < 60)) { const pm = /^p/.test(m[3]); return { kind: "clockfmt", h: (+m[1] % 12) + (pm ? 12 : 0), mi: +(m[2] || 0), to: "24" }; }
+  m = low.match(/^(?:what is |whats |what's |what time is |convert )?(\d{4})\s*(?:hours|hrs|h)?\s*(?:in|to|as|into|is what in|means in|means)?\s*(?:military(?: time| format)?|regular time|normal time|standard time|12[- ]?hour(?: time| format)?|24[- ]?hour(?: time)?)?$/);
+  if (m && /military|regular|normal|standard|hour/.test(low) && +m[1].slice(0, 2) < 24 && +m[1].slice(2) < 60) return { kind: "clockfmt", h: +m[1].slice(0, 2), mi: +m[1].slice(2), to: "both", military: /military/.test(low) && !/regular|normal|standard|12/.test(low) };
+  // --- round 9: a clock time relative to now ---
+  m = low.match(new RegExp("^(?:what time (?:is it |will it be |is |it is )?|what is |whats |what's |time )?(?:in\\s+)?" + NUM + "\\s*(hours?|hrs?|h|minutes?|mins?|m)(?:\\s+(?:and\\s+)?" + NUM + "\\s*(?:minutes?|mins?|m))?\\s+(from now|from right now|later|ago|before now|earlier)$"))
+    || low.match(new RegExp("^what time (?:will it be|is it|was it)\\s+(?:in\\s+)?" + NUM + "\\s*(hours?|hrs?|h|minutes?|mins?|m)(?:\\s+(?:and\\s+)?" + NUM + "\\s*(?:minutes?|mins?|m))?(?:\\s+(from now|later|ago|earlier))?$"));
+  if (m) { const mins = (/^h/.test(m[2]) ? +m[1] * 60 : +m[1]) + (m[3] ? +m[3] : 0); return { kind: "fromnow", delta: /ago|before|earlier/.test(m[4] || "") ? -mins : mins }; }
+  // --- round 9: pay and salary (40-hour week, 52 weeks = 2080 hours a year) ---
+  m = low.match(new RegExp("^(?:what is |whats |what's |how much is )?(?:the |my )?(?:annual |yearly )?(?:salary|annual salary|yearly salary|income|pay|wage|earnings|annual income)\\s+(?:for|of|at|on|from|if (?:i|you) (?:make|earn))\\s+\\$?" + NUM + "k?(?:\\s+(?:dollars|bucks|usd))?\\s*(?:an|per|a|/|each)\\s*(?:hour|hr|h)$"))
+    || low.match(new RegExp("^(?:what is |whats |what's |how much is )?\\$?" + NUM + "(?:\\s+(?:dollars|bucks|usd))?\\s*(?:an|per|a|/)\\s*(?:hour|hr|h)\\s+(?:is how much |is what |to |as |in |equals |= |converted to |annually |yearly |a year |per year |salary |annual salary |monthly |a month |per month |weekly |a week |per week |biweekly |daily |a day |per day )+(?:a |per |an )?(?:year|annual(?:ly)?|salary|yearly|annually|month|monthly|week|weekly|biweekly|fortnight|day|daily)?$"));
+  if (m) { const per = /month/.test(low) ? "month" : /biweekly|fortnight/.test(low) ? "biweekly" : /week/.test(low) ? "week" : /\bday|daily/.test(low) ? "day" : "year"; return { kind: "pay", mode: "hourly", rate: +m[1], per }; }
+  m = low.match(new RegExp("^(?:what is |whats |what's |how much is )?\\$?" + NUM + "(k)?(?:\\s+(?:dollars|bucks|usd))?\\s*(?:an|per|a|/)\\s*(?:year|yr|annum)(?:\\s+salary)?\\s+(?:is how much |is what |to |as |in |equals |= |converted to |broken down |per |a |an )+(?:per |a |an )?(hour(?:ly)?|hr|month(?:ly)?|week(?:ly)?|biweekly|fortnight(?:ly)?|day|daily|working day)$"))
+    || low.match(new RegExp("^(?:how much is |what is |whats |what's )?(?:a |an )?(?:salary of )?\\$?" + NUM + "(k)?(?:\\s+(?:dollars|bucks|usd))?\\s+(?:a|per)\\s+year\\s+(?:per|an|a|in|as|to|by the|each)\\s+(hour(?:ly)?|hr|month(?:ly)?|week(?:ly)?|biweekly|fortnight(?:ly)?|day|daily|working day)$"))
+    || low.match(new RegExp("^(?:what is |whats |what's )?(?:the )?(hourly|monthly|weekly|biweekly|daily) (?:rate|pay|wage|salary|equivalent|income|amount|breakdown) (?:of|for|on|from) (?:a |an )?(?:salary of |annual salary of |yearly salary of )?\\$?" + NUM + "(k)?(?:\\s+(?:dollars|bucks|usd))?(?:\\s+(?:a|per)\\s+year| salary| annual(?:ly)?| yearly| annual salary)?$"));
+  if (m) { const flip = /^(hourly|monthly|weekly|biweekly|daily)$/.test(m[1]); const amt = flip ? +m[2] : +m[1], k = flip ? m[3] : m[2], w = flip ? m[1] : m[3]; const per = /^h/.test(w) ? "hour" : /month/.test(w) ? "month" : /biweekly|fortnight/.test(w) ? "biweekly" : /week/.test(w) ? "week" : "day"; return { kind: "pay", mode: "annual", amount: amt * (k ? 1000 : 1), per }; }
+  m = low.match(new RegExp("^(?:what is |whats |what's |calculate )?(time and a half|time-and-a-half|double time|double-time|overtime(?: rate| pay)?|1\\.5x|1\\.5 x|2x)\\s+(?:of|on|for|at|from)\\s+\\$?" + NUM + "(?:\\s+(?:dollars|bucks|usd))?(?:\\s*(?:an|per|a|/)\\s*(?:hour|hr|h))?$"));
+  if (m) return { kind: "pay", mode: "overtime", rate: +m[2], mult: /double|2x/.test(m[1]) ? 2 : 1.5, word: m[1] };
+  m = low.match(new RegExp("^(?:pay for |wages for |earnings for |how much (?:is|for|do i (?:make|earn|get) for|will i (?:make|earn|get) for|would i (?:make|earn) for) |what is |whats |what's |total for )?" + NUM + "\\s*(?:hours?|hrs?|h)\\s+(?:at|x|times|@|for|of work at|worked at|of)\\s+\\$?" + NUM + "(?:\\s+(?:dollars|bucks|usd))?(?:\\s*(?:an|per|a|/|each)\\s*(?:hour|hr|h))?(?:\\s+(?:each|pay|rate))?$"));
+  if (m) return { kind: "pay", mode: "hours", hours: +m[1], rate: +m[2] };
+  // --- round 9: fuel economy ---
+  m = low.match(new RegExp("^(?:(?:what is |whats |what's |calculate |find )?(?:the |my )?(?:fuel (?:consumption|economy|efficiency|usage|mileage)|gas mileage|mileage|consumption|mpg|l/100 ?km|km per liter|km/l|economy)\\s*:?\\s*)?(?:for |of |if |on |driving |i drove |i drive |a car (?:that )?(?:does|goes|drives|travels) |the car (?:did|does|went) |when |after )?" + NUM + "\\s*(km|kilometers|kilometres|miles|mi)\\s+(?:on|with|using|per|for|from|takes|took|uses|used|burns|burned|needs|needed)\\s+" + NUM + "\\s*(liters?|litres?|l|gallons?|gal|us gallons?|uk gallons?|imperial gallons?)(?:\\s+of\\s+(?:fuel|gas|petrol|diesel))?$"));
+  if (m && /fuel|mileage|consumption|economy|mpg|l\/100|km per liter|km\/l|liter|litre|gallon|\bgas\b|petrol|diesel|\bl\b|\bgal\b/.test(low)) return { kind: "fuel", dist: +m[1], du: m[2], vol: +m[3], vu: m[4] };
+  m = low.match(new RegExp("^(?:convert |what is |whats |what's |how much is )?" + NUM + "\\s*(mpg|miles per gallon|miles per us gallon|miles per uk gallon|us mpg|uk mpg|imperial mpg|l/100 ?km|liters per 100 ?km|litres per 100 ?km|litres/100 ?km|liters/100 ?km|km/l|km per liter|km per litre|kilometers per liter|kilometres per litre)\\s+(?:to|in|as|into|=|equals)\\s+(mpg|miles per gallon|miles per us gallon|miles per uk gallon|us mpg|uk mpg|imperial mpg|l/100 ?km|liters per 100 ?km|litres per 100 ?km|litres/100 ?km|liters/100 ?km|km/l|km per liter|km per litre|kilometers per liter|kilometres per litre)(?:\\s*\\(?(us|uk|imperial)\\)?)?$"));
+  if (m) return { kind: "fuelconv", value: +m[1], from: m[2], to: m[3], region: m[4] || (/\buk\b|imperial/.test(m[2] + m[3]) ? "uk" : "us") };
+  // --- round 9: running pace ---
+  const DUR = "(?:(\\d{1,2}):(\\d{2})(?::(\\d{2}))?|" + NUM + "\\s*(?:hours?|hrs?|h)(?:\\s+(?:and\\s+)?" + NUM + "\\s*(?:minutes?|mins?|min|m))?|" + NUM + "\\s*(?:minutes?|mins?|min|m)(?:\\s+(?:and\\s+)?" + NUM + "\\s*(?:seconds?|secs?|sec|s))?)";
+  m = low.match(new RegExp("^(?:(?:what |what's |whats |what is |calculate |find |my )?(?:the |my )?(?:running |run |walking |walk |cycling |bike |average )?pace\\s+(?:for |of |if |to run |running |when running |to finish |to do |on |over |at |per km for |per mile for )?(?:a |an )?)?" + NUM + "\\s*(km|k|kilometers|kilometres|kilometer|kilometre|miles?|mi|m|meters|metres)\\s+(?:in|at|for|takes|took|done in|finished in|run in|ran in)\\s+" + DUR + "(?:\\s+(?:is what pace|what pace|pace|what is (?:the|my) pace|what was my pace|per (?:km|mile) pace|min per (?:km|mile)))?$"))
+    || low.match(new RegExp("^(?:i |we |she |he )?(?:ran|jogged|walked|cycled|biked|swam|did|finished|completed|covered) (?:a |an |the )?" + NUM + "\\s*(km|k|kilometers|kilometres|kilometer|kilometre|miles?|mi|m|meters|metres)\\s+in\\s+" + DUR + "\\.?,?\\s*(?:what (?:was|is) (?:my|the|our) (?:average )?pace|what pace (?:is|was) that|pace\\??|what is that (?:in|as a) pace|how fast|what speed)$"));
+  if (m && /pace|how fast|what speed/.test(low)) {
+    const secs = m[3] != null ? +m[3] * 3600 + +m[4] * 60 + +(m[5] || 0) : m[6] != null ? +m[6] * 3600 + +(m[7] || 0) * 60 : +m[8] * 60 + +(m[9] || 0);
+    if (secs > 0 && +m[1] > 0) return { kind: "pace", dist: +m[1], du: m[2], secs };
+  }
+  m = low.match(new RegExp("^(?:how long (?:to|will it take to|does it take to|would it take to|for) (?:run|finish|complete|cover|do|jog|walk)|what (?:time|finish time) (?:for|to run|will i get for|would i run)|finish time (?:for|of)|time (?:to run|for))\\s+(?:a |an |the )?" + NUM + "?\\s*(km|k|kilometers|kilometres|miles?|mi|marathon|half marathon|half-marathon|10k|5k)\\s+at\\s+(?:a |an )?(\\d{1,2}):(\\d{2})\\s*(?:min(?:ute)?s?)?\\s*(?:pace|per km|per kilometer|per kilometre|per mile|/km|/mile|min/km|min/mile|a km|a mile|min per km|min per mile)?(?:\\s+pace)?$"));
+  if (m) { const unit = m[2]; const dist = /marathon/.test(unit) ? (/half/.test(unit) ? 21.0975 : 42.195) : unit === "10k" ? 10 : unit === "5k" ? 5 : +m[1]; if (dist > 0) { const inKm = !/mile|mi$/.test(unit) || /marathon|k$/.test(unit); const perMile = /mile/.test(low.slice(low.indexOf(" at ") + 4)) || (!/km|kilomet|per k\b|\/k/.test(low.slice(low.indexOf(" at ") + 4)) && /mile/.test(unit)); return { kind: "finish", dist, inKm, paceSecs: +m[3] * 60 + +m[4], perMile }; } }
+  // --- round 9: dog and cat years ---
+  m = low.match(new RegExp("^(?:how old is |what is |whats |what's )?(?:a |my |the )?" + NUM + "[- ](?:year|yr)[- ]old (dog|cat|puppy|kitten|pup) (?:in|to) (?:human|people|person) years$"))
+    || low.match(new RegExp("^(?:convert |what is |whats |what's )?(?:a )?(dog|cat) (?:years|age) (?:for|of|to human years for) (?:a |my )?" + NUM + "[- ](?:year|yr)[- ]old(?: (?:dog|cat|puppy|kitten))?$"))
+    || low.match(new RegExp("^(?:convert |what is |whats |what's )?" + NUM + " (dog|cat) years? (?:in|to|as|into|equals|is how many) (?:human|people|person) years$"))
+    || low.match(new RegExp("^(?:how old is |what is the age of )?(?:my |a |the )?(dog|cat|puppy|kitten) (?:in (?:human|people) years )?(?:if (?:it|he|she) is |aged |age |that is |who is )?" + NUM + "(?: years? old)?(?: in (?:human|people|person) years)?$"))
+    || low.match(new RegExp("^(?:how old is |what is |whats |what's )?(?:a |my |the )?(dog|cat|puppy|kitten) (?:of |aged |who is |that is )?" + NUM + " (?:years? old )?in (?:human|people|person) years$"));
+  if (m) { const a = /^\d/.test(m[1]) ? +m[1] : +m[2], pet = /^\d/.test(m[1]) ? m[2] : m[1]; if (a >= 0 && a <= 40) return { kind: "petyears", age: a, pet: /cat|kitten/.test(pet) ? "cat" : "dog" }; }
+  // --- round 9: generations and zodiac signs ---
+  m = low.match(/^(?:what|which) generation (?:is|was|am i|are you|do i belong to|does someone belong to|is someone|is a person|do people belong to)?(?: (?:someone|a person|somebody|people|i|you|if (?:i was|i am|you were|you are)))?(?: (?:born|from|who was born|who were born))?(?: (?:in|on))? (?:born in )?(?:the year )?(\d{4})$/)
+    || low.match(/^(?:the )?generation (?:for|of) (?:someone |a person |people )?(?:born in )?(\d{4})$/) || low.match(/^(?:born in |born )?(\d{4}) (?:is what generation|what generation|generation)$/);
+  if (m && +m[1] >= 1880 && +m[1] <= new Date().getUTCFullYear()) return { kind: "generation", year: +m[1] };
+  const MON = "(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sept?|oct|nov|dec)";
+  m = low.match(new RegExp("^(?:what is |whats |what's |which is )?(?:the |my )?(?:zodiac|star|astrological|astrology|horoscope|sun|birth)\\s?sign\\s+(?:is |for |of |if (?:i was |you were |someone was )?born on |for someone born on |for a birthday on |on )?(?:someone born on |a birthday on |born on |born |a )?" + MON + "\\.?\\s+(\\d{1,2})(?:st|nd|rd|th)?(?:,?\\s+\\d{4})?$"))
+    || low.match(new RegExp("^(?:what is |whats |what's |which is )?(?:the |my )?(?:zodiac|star|astrological|astrology|horoscope|sun|birth)\\s?sign\\s+(?:is |for |of |if (?:i was |you were |someone was )?born on |for someone born on |for a birthday on |on )?(?:someone born on |a birthday on |born on |born |the )?(\\d{1,2})(?:st|nd|rd|th)?(?: of)?\\s+" + MON + "(?:,?\\s+\\d{4})?$"))
+    || low.match(new RegExp("^(?:(?:i was |i'm |im |someone )?born (?:on )?|birthday (?:on |is )?|my birthday is )?" + MON + "\\.?\\s+(\\d{1,2})(?:st|nd|rd|th)?(?:,?\\s+\\d{4})?,?\\s+(?:what (?:is|s|'s) (?:my|the) |which |what )?(?:zodiac|star|astrological|astrology|horoscope|sun) ?sign(?: (?:am i|is that|is it))?$"));
+  if (m) { const monTxt = /^\d/.test(m[1]) ? m[2] : m[1], day = +(/^\d/.test(m[1]) ? m[1] : m[2]); const mon = MONTH_INDEX[monTxt.replace(/\.$/, "").slice(0, 3)]; if (mon && day >= 1 && day <= 31) return { kind: "zodiac", mon, day }; }
+  m = low.match(/^(?:what is |whats |what's |which is |what |which )?(?:the )?(?:chinese|lunar) (?:zodiac|zodiac sign|zodiac animal|animal|year|new year animal|calendar animal)(?: sign| animal)? (?:is |for |of |if (?:i was |you were |someone was )?born in |for someone born in |in |was )?(?:someone born in |born in |the year |a person born in )?(\d{4})$/)
+    || low.match(/^(\d{4}) (?:chinese|lunar) (?:zodiac|zodiac sign|zodiac animal|animal|new year animal)$/) || low.match(/^(?:what|which) (?:chinese |lunar )?(?:zodiac )?animal (?:is|was|for|represents) (?:the year )?(\d{4})$/)
+    || low.match(/^(?:year of the )?(?:what|which) animal is (\d{4})(?: in the chinese zodiac)?$/) || low.match(/^(\d{4}) (?:is )?(?:the )?year of (?:the|what|which) (?:animal)?$/);
+  if (m && +m[1] >= 1800 && +m[1] <= 2200) return { kind: "chinese", year: +m[1] };
+  // --- round 9: anagrams, acronyms and initials ---
+  m = low.match(/^(?:is |are |check )?(?:an )?anagram(?: check| test)? (?:of|for|between)?:? ?([a-z]+) (?:and|,|vs|with|&) ([a-z]+)$/) || low.match(/^(?:is |are )?([a-z]+) (?:an anagram (?:of|for)|anagram (?:of|for)|and) ([a-z]+)(?: anagrams(?: of each other)?)?$/) || low.match(/^(?:is |are )?(?:the words? |these )?([a-z]+) (?:and|,) ([a-z]+) anagrams(?: of each other)?$/) || low.match(/^anagram (?:check|test)?:? ?([a-z]+) (?:and|vs|,) ([a-z]+)$/);
+  if (m && /anagram/.test(low) && m[1] !== "an") return { kind: "anagram", a: m[1], b: m[2] };
+  m = low.match(/^(?:what is |whats |what's |give me |make |create |form )?(?:the |an )?(?:acronym|initialism|initials|abbreviation) (?:for|of|from) (?:the (?:phrase|words) )?(.+)$/) || low.match(/^(?:the )?first letters? of (?:each|every|the|all the) words? (?:in|of) (.+)$/) || low.match(/^(?:take |give me )?(?:the )?initial letters? of (.+)$/);
+  if (m) { const words = m[1].replace(/["'.,!?]/g, "").trim().split(/\s+/).filter(Boolean); if (words.length >= 2 && words.length <= 40) return { kind: "acronym", words }; }
+  // --- round 9: shoe sizes differ by brand and last, so there is no single right conversion ---
+  if (/\bshoe size\b|\bsize \d+(?:\.\d+)? (?:eu|us|uk|euro|european|american|british)\b|\b(?:eu|us|uk) (?:size )?\d+(?:\.\d+)? (?:in|to) (?:eu|us|uk)\b/.test(low) && /\d/.test(low)) return { kind: "noconv", what: "shoe sizes", why: "EU, US and UK shoe sizes are not defined by one formula: brands cut their lasts differently and men's, women's and children's scales are offset from each other, so any single conversion table would be a guess. A brand's own size chart is the reliable source." };
+  // --- round 9: pizzas for a group (a stated rule of thumb, not a guess) ---
+  m = low.match(/^how many (?:large |medium |small )?pizzas? (?:do i need |do we need |should i (?:order|get|buy) |should we (?:order|get|buy) |to order |to feed |for |needed for |will feed |are needed for |would feed )?(?:for |to feed )?(\d+) (?:people|guests|adults|persons|folks|kids|children|teenagers|teens|players|friends)$/);
+  if (m && +m[1] >= 1 && +m[1] <= 10000) return { kind: "pizzas", n: +m[1], kids: /kids|children/.test(low), size: /medium/.test(low) ? "medium" : /small/.test(low) ? "small" : "large" };
   // --- translation: DI carries an English dictionary only ---
   m = low.match(/^(?:how (?:do|would|can|to) (?:you|i|u|we|one) )?(?:say|translate|write)\s+(.+?)\s+(?:in|into|to)\s+(spanish|french|german|italian|portuguese|japanese|chinese|mandarin|korean|russian|arabic|hindi|dutch|swedish|latin|greek|turkish|polish|hebrew|vietnamese|thai|tagalog|filipino|indonesian|swahili)$/) || low.match(/^(?:what is|whats|what's) (?:the )?(?:word for |translation of )?(.+?) in (spanish|french|german|italian|portuguese|japanese|chinese|mandarin|korean|russian|arabic|hindi|dutch|swedish|latin|greek|turkish|polish|hebrew|vietnamese|thai|tagalog|filipino|indonesian|swahili)$/) || low.match(/^(spanish|french|german|italian|portuguese|japanese|chinese|mandarin|korean|russian|arabic|hindi|dutch|swedish|latin|greek|turkish|polish|hebrew|vietnamese|thai|tagalog|filipino|indonesian|swahili) (?:word |translation )?for (.+)$/);
   if (m) { const lang = /^(spanish|french|german|italian|portuguese|japanese|chinese|mandarin|korean|russian|arabic|hindi|dutch|swedish|latin|greek|turkish|polish|hebrew|vietnamese|thai|tagalog|filipino|indonesian|swahili)$/.test(m[1]) ? m[1] : m[2]; return { kind: "translate", lang, phrase: lang === m[1] ? m[2] : m[1] }; }
@@ -594,6 +664,85 @@ export function run(q) {
     }
     case "cidr": { const r = cidrInfo([0, 0, 0, 0], q.prefix); return { ok: true, kind: q.kind, prefix: q.prefix, value: r.mask, mask: r.mask, wildcard: r.wildcard, size: r.size, usable: r.usable, text: "/" + q.prefix + " = " + r.mask + ", " + r.size.toLocaleString("en-US") + " addresses, " + r.usable.toLocaleString("en-US") + " usable hosts" }; }
     case "httpstatus": { const e = HTTP_STATUS[q.code]; return { ok: true, kind: q.kind, code: q.code, value: e[0], name: e[0], meaning: e[1], cls: ["", "informational", "success", "redirection", "client error", "server error"][Math.floor(q.code / 100)], text: q.code + " " + e[0] + ": " + e[1] }; }
+    case "clockfmt": {
+      const h12 = q.h % 12 || 12, ap = q.h < 12 ? "AM" : "PM", t12 = h12 + ":" + String(q.mi).padStart(2, "0") + " " + ap, t24 = String(q.h).padStart(2, "0") + ":" + String(q.mi).padStart(2, "0"), mil = String(q.h).padStart(2, "0") + String(q.mi).padStart(2, "0");
+      const text = q.to === "12" ? "**" + t24 + "** is **" + t12 + "** in 12-hour time." : q.to === "24" ? "**" + t12 + "** is **" + t24 + "** in 24-hour time (**" + mil + " hours** in military time)." : "**" + mil + " hours** is **" + t12 + "** (" + t24 + " in 24-hour time).";
+      return { ok: true, kind: q.kind, value: q.to === "12" ? t12 : q.to === "24" ? t24 : t12, title: "Clock format", text, note: "12-hour: hours run 1 to 12 with AM before noon and PM after; 24-hour and military time count 00:00 to 23:59, military time drops the colon and says \"hours\"." };
+    }
+    case "fromnow": {
+      const now = new Date(), then = new Date(now.getTime() + q.delta * 60000), f = (d) => d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }) + (d.toDateString() === now.toDateString() ? "" : " on " + d.toLocaleDateString("en-CA"));
+      return { ok: true, kind: q.kind, value: f(then), title: "Time from now", text: "**" + fmtDur(Math.abs(q.delta)) + (q.delta >= 0 ? " from now" : " ago") + "** is **" + f(then) + "** (it is " + f(now) + " now).", note: "Read from this device's clock in its local time zone." };
+    }
+    case "pay": {
+      const H = 2080; let text, value;
+      if (q.mode === "hourly") { const yr = q.rate * H; const per = { year: yr, month: yr / 12, week: q.rate * 40, biweekly: q.rate * 80, day: q.rate * 8 }[q.per]; value = per; text = "**$" + fmt(q.rate) + " an hour is $" + usd(per) + " a " + (q.per === "biweekly" ? "fortnight (every two weeks)" : q.per) + "** before tax: " + (q.per === "year" ? "40 hours × 52 weeks = 2,080 hours × " + fmt(q.rate) : q.per === "month" ? "2,080 hours × " + fmt(q.rate) + " ÷ 12" : q.per === "week" ? "40 hours × " + fmt(q.rate) : q.per === "biweekly" ? "80 hours × " + fmt(q.rate) : "8 hours × " + fmt(q.rate)) + ". A year: $" + usd(yr) + "; a month: $" + usd(yr / 12) + "; a week: $" + usd(q.rate * 40) + "."; }
+      else if (q.mode === "annual") { const per = { hour: q.amount / H, month: q.amount / 12, week: q.amount / 52, biweekly: q.amount / 26, day: q.amount / 260 }[q.per]; value = per; text = "**$" + usd(q.amount) + " a year is $" + usd(per) + " " + (q.per === "hour" ? "an hour" : q.per === "biweekly" ? "every two weeks" : "a " + q.per) + "** before tax (" + (q.per === "hour" ? "÷ 2,080 working hours" : q.per === "month" ? "÷ 12" : q.per === "week" ? "÷ 52" : q.per === "biweekly" ? "÷ 26" : "÷ 260 working days") + "). Hourly: $" + usd(q.amount / H) + "; monthly: $" + usd(q.amount / 12) + "; weekly: $" + usd(q.amount / 52) + "; daily: $" + usd(q.amount / 260) + "."; }
+      else if (q.mode === "overtime") { value = q.rate * q.mult; text = "**" + q.word + " of $" + fmt(q.rate) + " is $" + usd(q.rate * q.mult) + " an hour** (" + fmt(q.rate) + " × " + q.mult + ")." + (/overtime/.test(q.word) ? " Overtime is taken as time and a half (1.5×), the usual rate; double time would be $" + usd(q.rate * 2) + "." : ""); }
+      else { value = q.hours * q.rate; text = "**" + fmt(q.hours) + " hours at $" + fmt(q.rate) + " an hour is $" + usd(q.hours * q.rate) + "** before tax (" + fmt(q.hours) + " × " + fmt(q.rate) + ")."; }
+      return { ok: true, kind: q.kind, value, title: "Pay", text, note: "Gross figures on a 40-hour week and a 52-week year (2,080 hours); tax, overtime and unpaid leave are not included." };
+    }
+    case "fuel": {
+      const km = q.dist * (/^mi/.test(q.du) ? 1.609344 : 1), liters = q.vol * (/imperial|uk/.test(q.vu) ? 4.54609 : /gal/.test(q.vu) ? 3.785411784 : 1);
+      if (!(km > 0) || !(liters > 0)) return { ok: false, error: "distance and fuel must both be positive" };
+      const l100 = liters / km * 100, kml = km / liters, mpgUS = (km / 1.609344) / (liters / 3.785411784), mpgUK = (km / 1.609344) / (liters / 4.54609);
+      return { ok: true, kind: q.kind, value: Math.round(l100 * 100) / 100, title: "Fuel economy", text: "**" + fmt(q.dist) + " " + q.du + " on " + fmt(q.vol) + " " + q.vu + " is " + fmt(Math.round(l100 * 100) / 100) + " L/100 km** = " + fmt(Math.round(kml * 100) / 100) + " km per litre = **" + fmt(Math.round(mpgUS * 10) / 10) + " mpg (US)** or " + fmt(Math.round(mpgUK * 10) / 10) + " mpg (UK).", note: (/gal/.test(q.vu) && !/uk|imperial/.test(q.vu) ? "Gallons read as US gallons (3.785 L); a UK gallon is 4.546 L. " : "") + "Lower L/100 km and higher mpg both mean less fuel." };
+    }
+    case "fuelconv": {
+      const kind = (u) => /mpg|gallon/.test(u) ? "mpg" : /100/.test(u) ? "l100" : "kml"; const gal = q.region === "uk" ? 4.54609 : 3.785411784, kf = kind(q.from), kt = kind(q.to);
+      if (!(q.value > 0)) return { ok: false, error: "the figure must be positive" };
+      if (kf === kt) return { ok: false, error: "those are the same measure" };
+      const l100 = kf === "l100" ? q.value : kf === "kml" ? 100 / q.value : 100 * gal / (q.value * 1.609344);
+      const out = kt === "l100" ? l100 : kt === "kml" ? 100 / l100 : 100 * gal / (l100 * 1.609344);
+      const lbl = { mpg: "mpg (" + q.region.toUpperCase() + " gallon)", l100: "L/100 km", kml: "km/L" };
+      return { ok: true, kind: q.kind, value: Math.round(out * 100) / 100, title: "Fuel economy", text: "**" + fmt(q.value) + " " + lbl[kf] + " is " + fmt(Math.round(out * 100) / 100) + " " + lbl[kt] + "**." + (kf === "mpg" || kt === "mpg" ? " With the " + (q.region === "uk" ? "US" : "UK") + " gallon it would be " + fmt(Math.round((kt === "mpg" ? 100 * (q.region === "uk" ? 3.785411784 : 4.54609) / (l100 * 1.609344) : (kt === "l100" ? 100 * (q.region === "uk" ? 3.785411784 : 4.54609) / (q.value * 1.609344) : q.value * 1.609344 / (q.region === "uk" ? 3.785411784 : 4.54609))) * 100) / 100) + "." : ""), note: "L/100 km = 235.215 ÷ mpg (US) or 282.481 ÷ mpg (UK); km/L = 100 ÷ L/100 km." };
+    }
+    case "pace": {
+      const km = q.dist * (/^(?:mi|mile)/.test(q.du) ? 1.609344 : /^(?:m|meter|metre)/.test(q.du) && !/^mi/.test(q.du) ? 0.001 : 1), mi = km / 1.609344;
+      const pk = q.secs / km, pm = q.secs / mi, f = (s) => Math.floor(s / 60) + ":" + String(Math.round(s % 60)).padStart(2, "0"), tot = q.secs >= 3600 ? Math.floor(q.secs / 3600) + ":" + String(Math.floor(q.secs % 3600 / 60)).padStart(2, "0") + ":" + String(q.secs % 60).padStart(2, "0") : f(q.secs);
+      return { ok: true, kind: q.kind, value: Math.round(pk), title: "Running pace", text: "**" + fmt(q.dist) + " " + (q.du === "k" ? "km" : q.du) + " in " + tot + " is " + f(pk) + " min/km** (" + f(pm) + " min/mile), an average speed of " + fmt(Math.round(km / q.secs * 3600 * 100) / 100) + " km/h (" + fmt(Math.round(mi / q.secs * 3600 * 100) / 100) + " mph).", note: "Pace = time ÷ distance; the seconds are rounded to the nearest second." };
+    }
+    case "finish": {
+      const units = q.perMile ? q.dist / (q.inKm ? 1.609344 : 1) : q.dist * (q.inKm ? 1 : 1.609344), secs = Math.round(units * q.paceSecs), h = Math.floor(secs / 3600), m2 = Math.floor(secs % 3600 / 60), s2 = secs % 60;
+      const f = (n) => String(n).padStart(2, "0"), tot = h ? h + ":" + f(m2) + ":" + f(s2) : m2 + ":" + f(s2);
+      return { ok: true, kind: q.kind, value: secs, title: "Finish time", text: "**" + fmt(q.dist) + (q.inKm ? " km" : " miles") + " at " + Math.floor(q.paceSecs / 60) + ":" + f(q.paceSecs % 60) + " per " + (q.perMile ? "mile" : "km") + " takes " + tot + "**" + (h ? " (" + tot + " as h:mm:ss)" : " (m:ss)") + ".", note: "Time = distance × pace" + (q.inKm === q.perMile ? ", converting between km and miles first (1 mile = 1.609344 km)" : "") + "." };
+    }
+    case "petyears": {
+      const dog = q.pet === "dog"; const human = q.age <= 0 ? 0 : q.age <= 1 ? Math.round(15 * q.age) : q.age <= 2 ? Math.round(15 + 9 * (q.age - 1)) : Math.round(24 + (dog ? 5 : 4) * (q.age - 2));
+      return { ok: true, kind: q.kind, value: human, title: (dog ? "Dog" : "Cat") + " years", text: "A **" + fmt(q.age) + "-year-old " + q.pet + " is about " + human + " in human years**: the first year counts as 15, the second adds 9, and each year after that adds " + (dog ? "5 (for a medium-sized dog)" : "4") + ".", note: dog ? "Veterinary guideline (AVMA): small dogs age a little slower and large breeds faster after year two. The old \"multiply by 7\" rule is a rough myth." : "The common veterinary guideline (15 + 9, then 4 a year); indoor and outdoor cats vary." };
+    }
+    case "generation": {
+      const G = [[1901, 1927, "Greatest Generation", "part of the Greatest Generation"], [1928, 1945, "Silent Generation", "part of the Silent Generation"], [1946, 1964, "Baby Boomers", "a Baby Boomer"], [1965, 1980, "Generation X", "Generation X (a Gen Xer)"], [1981, 1996, "Millennials", "a Millennial (Generation Y)"], [1997, 2012, "Generation Z", "Generation Z (a Gen Zer)"], [2013, 2024, "Generation Alpha", "Generation Alpha"], [2025, 2039, "Generation Beta", "Generation Beta"]];
+      const g = G.find((r) => q.year >= r[0] && q.year <= r[1]);
+      if (!g) return { ok: false, error: "no commonly used generation label covers " + q.year };
+      const edge = q.year === g[0] || q.year === g[1];
+      return { ok: true, kind: q.kind, value: g[2], title: "Generation", text: "Someone born in **" + q.year + " is " + g[3] + "** (born " + g[0] + " to " + g[1] + ")." + (edge ? " That is a boundary year, and sources place the cut-off differently." : ""), note: "Ranges follow the Pew Research Center definitions; other sources shift the boundaries by a year or two." };
+    }
+    case "zodiac": {
+      const Z = [["Capricorn", 1, 19], ["Aquarius", 2, 18], ["Pisces", 3, 20], ["Aries", 4, 19], ["Taurus", 5, 20], ["Gemini", 6, 20], ["Cancer", 7, 22], ["Leo", 8, 22], ["Virgo", 9, 22], ["Libra", 10, 22], ["Scorpio", 11, 21], ["Sagittarius", 12, 21], ["Capricorn", 12, 31]];
+      const DIM = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]; if (q.day > DIM[q.mon - 1]) return { ok: false, error: "that month has no day " + q.day };
+      const i = Z.findIndex((z) => q.mon < z[1] || (q.mon === z[1] && q.day <= z[2])), sign = Z[i][0], cusp = Z.some((z) => z[1] === q.mon && Math.abs(z[2] - q.day) <= 1);
+      const MN = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+      return { ok: true, kind: q.kind, value: sign, title: "Zodiac sign", text: "**" + MN[q.mon - 1] + " " + q.day + " is " + sign + "**." + (cusp ? " That date sits on the boundary between two signs, and the exact cut-off shifts by a day from year to year." : ""), note: "Western tropical zodiac dates (Aries starts at the March equinox); this is a calendar lookup, not a horoscope." };
+    }
+    case "chinese": {
+      const A = ["Rat", "Ox", "Tiger", "Rabbit", "Dragon", "Snake", "Horse", "Goat", "Monkey", "Rooster", "Dog", "Pig"], EL = ["Wood", "Fire", "Earth", "Metal", "Water"];
+      const idx = ((q.year - 1900) % 12 + 12) % 12, el = EL[Math.floor((((q.year - 1924) % 10) + 10) % 10 / 2)];
+      return { ok: true, kind: q.kind, value: A[idx], title: "Chinese zodiac", text: "**" + q.year + " is the year of the " + A[idx] + "** (" + el + " " + A[idx] + " in the 60-year cycle). The animals repeat every 12 years: the next " + A[idx] + " years are " + (q.year + 12) + " and " + (q.year + 24) + ".", note: "The Chinese year starts at Lunar New Year (late January to mid February), so a birthday in January or early February " + q.year + " may belong to the previous animal, the " + A[(idx + 11) % 12] + "." };
+    }
+    case "anagram": {
+      const key = (w) => w.replace(/[^a-z]/g, "").split("").sort().join(""), yes = key(q.a) === key(q.b) && q.a !== q.b;
+      return { ok: true, kind: q.kind, value: yes, title: "Anagram check", text: yes ? "**Yes: " + q.a + " and " + q.b + " are anagrams**; both use exactly the letters " + key(q.a).split("").join(", ") + "." : q.a === q.b ? "**" + q.a + " and " + q.b + " are the same word**, so not an anagram of each other." : "**No: " + q.a + " and " + q.b + " are not anagrams** (" + q.a + " sorts to " + key(q.a) + ", " + q.b + " to " + key(q.b) + ").", note: "Two words are anagrams when their letters, sorted, are identical." };
+    }
+    case "acronym": {
+      const all = q.words.map((w) => w[0].toUpperCase()).join(""), SMALL = new Set(["of", "the", "and", "for", "a", "an", "in", "on", "to", "by", "with", "at", "or", "de", "la", "du", "von", "van"]);
+      const big = q.words.filter((w) => !SMALL.has(w)).map((w) => w[0].toUpperCase()).join("");
+      return { ok: true, kind: q.kind, value: big, title: "Acronym", text: "**" + big + "** from \"" + q.words.join(" ") + "\"" + (big !== all ? " (dropping the small words; with every word it is " + all + ")" : "") + ".", note: "Built from the first letter of each word; real acronyms sometimes keep or drop small words differently (LASER keeps \"by\", NASA drops \"and\")." };
+    }
+    case "noconv": return { ok: true, kind: q.kind, value: null, title: "No fixed conversion for " + q.what, text: q.why, note: "Refused on purpose rather than answered from a rough table." };
+    case "pizzas": {
+      const slicesEach = q.kids ? 2 : 3, per = q.size === "large" ? 8 : q.size === "medium" ? 6 : 4, need = q.n * slicesEach, pies = Math.ceil(need / per);
+      return { ok: true, kind: q.kind, value: pies, title: "Pizzas to order", text: "**" + pies + " " + q.size + " pizza" + (pies === 1 ? "" : "s") + " for " + q.n + " " + (q.kids ? "kids" : "people") + "**: " + slicesEach + " slices each is " + need + " slices, and a " + q.size + " has " + per + ", so " + need + " ÷ " + per + " = " + fmt(Math.round(need / per * 100) / 100) + ", rounded up.", note: "A common rule of thumb (3 slices per adult, 2 per child; large 8 slices, medium 6, small 4). Hungry crowds or a main-meal setting want one more." };
+    }
     default: return { ok: false, error: "not an everyday request" };
   }
 }
@@ -650,6 +799,6 @@ export function say(res) {
     }
     case "cidr": return { title: "Subnet /" + res.prefix, body: "**/" + res.prefix + "** is subnet mask **" + res.mask + "**: " + res.size.toLocaleString("en-US") + " addresses, **" + res.usable.toLocaleString("en-US") + " usable hosts**" + (res.prefix >= 31 ? " (a /31 or /32 has no separate network and broadcast addresses)" : " (network and broadcast addresses excluded)") + ".", pre: "mask       " + res.mask + "\nwildcard   " + res.wildcard + "\naddresses  " + res.size.toLocaleString("en-US") + "\nusable     " + res.usable.toLocaleString("en-US"), result: res };
     case "httpstatus": return { title: "HTTP " + res.code + " " + res.name, body: "**" + res.code + " " + res.name + "** is a " + res.cls + " status: " + res.meaning + ".", note: "RFC 9110 (HTTP semantics) and the IANA status code registry.", result: res };
-    default: return { title: "Everyday tool", body: res.text || "", result: res };
+    default: return { title: res.title || "Everyday tool", body: res.text || "", note: res.note, result: res };
   }
 }

@@ -312,9 +312,11 @@ export function lookup(input) {
   if (GLOSSARY[low]) return { ok: true, term: low, text: GLOSSARY[low] };
   if (KB_ALIASES[low] && GLOSSARY[KB_ALIASES[low]]) return { ok: true, term: KB_ALIASES[low], text: GLOSSARY[KB_ALIASES[low]] };
   // keyword containment (longest matching key wins)
+  // keyword containment on whole words only: "anagram" must not resolve to the "ram" entry
   const keys = Object.keys(GLOSSARY).sort((a, b) => b.length - a.length);
-  for (const k of keys) if (low.includes(k)) return { ok: true, term: k, text: GLOSSARY[k] };
-  for (const alias in KB_ALIASES) if (low.includes(alias)) return { ok: true, term: KB_ALIASES[alias], text: GLOSSARY[KB_ALIASES[alias]] };
+  const hasWord = (k) => new RegExp("(?:^|[^a-z0-9])" + k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "(?![a-z0-9])").test(low);
+  for (const k of keys) if (hasWord(k)) return { ok: true, term: k, text: GLOSSARY[k] };
+  for (const alias in KB_ALIASES) if (hasWord(alias)) return { ok: true, term: KB_ALIASES[alias], text: GLOSSARY[KB_ALIASES[alias]] };
   return { ok: false, error: "no glossary entry for that", terms: Object.keys(GLOSSARY) };
 }
 
