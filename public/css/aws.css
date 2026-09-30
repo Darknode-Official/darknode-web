@@ -259,6 +259,19 @@ html body .aws-side-open:hover { background: color-mix(in srgb, var(--aws-side-t
 .aws-side-x::before { transform: rotate(45deg); }
 .aws-side-x::after { transform: rotate(-45deg); }
 .aws-side-open { display: none; }
+/* Collapsed: a thin rail (like a cloud console's collapsed side nav) holding the open button,
+   rather than a bare 40px gap. */
+body.app.aws-side-closed .app-shell::before {
+  content: "";
+  grid-column: 1;
+  grid-row: 2;
+  background: var(--aws-side-bg);
+  border-right: 1px solid var(--aws-side-line);
+}
+/* Backdrop behind the side drawer on narrow screens (console-nav.js unhides it). */
+.aws-side-bd { display: none; }
+/* Skip-link targets take programmatic focus; the ring belongs on controls, not the page. */
+body.app :is(#view, #app-content):focus { outline: none !important; box-shadow: none !important; }
 body.app.aws-side-closed .aws-side-open {
   display: block;
   grid-column: 1;
@@ -528,6 +541,9 @@ html:is([data-style=pro], [data-style=dark]):not(#aws-a):not(#aws-b) body.app {
     filter: none !important;
     background-image: none !important;
   }
+  /* The skins' focus ring for .btn is a box-shadow, which the pill reset above removes;
+     give keyboard users a real outline instead. */
+  & .btn:focus-visible { outline: 2px solid var(--acc) !important; outline-offset: 2px !important; }
   & .btn:not(.ghost, .danger, .github) {
     background: var(--aws-orange) !important;
     border-color: var(--aws-orange) !important;
@@ -643,14 +659,23 @@ body.app .awh-w .dg-bars { display: flex; flex-direction: column; gap: 4px; }
 /* ================= narrow screens ================= */
 @media (max-width: 900px) {
   body.app, body.app.aws-side-closed { --aws-side-w: 0px; }
+  body.app.aws-side-closed .app-shell::before { display: none; }
   body.app .app-main { grid-column: 1 / -1; padding: 12px 16px 20px; }
   .aws-side {
     position: fixed;
     left: 0;
     top: calc(var(--topbar-h) + var(--con-h2));
+    height: calc(100dvh - var(--topbar-h) - var(--con-h2));
     width: min(300px, 86vw);
     box-shadow: 8px 0 24px rgba(0, 7, 22, .3);
     z-index: 70;
+  }
+  body.app .aws-side-bd:not([hidden]) {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 69;
+    background: rgba(0, 7, 22, .45);
   }
   body.app.aws-side-closed .aws-side-open {
     position: fixed;
@@ -675,6 +700,27 @@ body.app .awh-w .dg-bars { display: flex; flex-direction: column; gap: 4px; }
   html body.app #topbar#topbar .tb-help-btn span { display: none; }
   body.app .svc-menu { left: 0; width: 100vw; }
 }
+/* Touch: every control in the chrome is at least 44px tall (WCAG 2.5.5); the header
+   bars grow with them so the sticky offsets (which read the variables) stay right. */
+@media (pointer: coarse) {
+  body.app { --topbar-h: 52px; --con-h1: 52px; --con-h2: 44px; }
+  html body.app #topbar#topbar :is(.con-services, .style-toggle, .icon-btn, .tb-help-btn, .profile-btn, .cmdk-btn) { height: 44px !important; min-width: 44px; }
+  html body.app #topbar#topbar .con-search input { height: 40px; }
+  body.app .con-favbar .con-chip, body.app .con-qbtn, body.app .con-catchip { min-height: 40px; }
+  html body .aws-side :is(.aws-sl, .aws-sg-h) { min-height: 44px; }
+  html body .aws-side .aws-side-x, html body .aws-side-open { width: 44px; height: 44px; }
+  .aws-side-x::before, .aws-side-x::after { left: 15px; top: 21px; }
+  .aws-side-open span { left: 15px; top: 21px; }
+  body.app .svc-menu :is(.svc-cat, .svc-card .side-item) { min-height: 44px; }
+  body.app .svc-menu .svc-star { min-width: 44px; min-height: 44px; }
+  body.app .crumbs .crumb { min-height: 32px; }
+  html body.app .app-main .ai2-hitem-t { min-height: 44px; }
+  html body.app .app-main .ai2-hitem-x { width: 32px; height: 32px; }
+}
+@media (max-width: 720px) {
+  /* clear the AI composer / bottom bars on phones */
+  body.app.aws-side-closed .aws-side-open { bottom: calc(52px + env(safe-area-inset-bottom, 0px)); }
+}
 @media print {
   .aws-side, .aws-side-open { display: none !important; }
   body.app .app-shell { display: block !important; }
@@ -697,9 +743,21 @@ html body.app .app-main .ai2-hist {
   position: absolute; left: 0; top: 0; bottom: 0; z-index: 6; width: 264px; height: auto;
   background: var(--card) !important; border: 1px solid var(--line); border-radius: 14px;
   box-shadow: 0 24px 60px rgba(0, 7, 22, .28);
-  transform: translateX(-112%); transition: transform .18s ease; will-change: transform;
+  /* hidden for real while closed (not only slid off-screen): visibility flips after the slide */
+  visibility: hidden;
+  transform: translateX(-112%); transition: transform .18s ease, visibility 0s linear .18s; will-change: transform;
 }
-html body.app .app-main .ai2-shell.hist-open .ai2-hist { transform: none; }
+html body.app .app-main .ai2-shell.hist-open .ai2-hist { transform: none; visibility: visible; transition: transform .18s ease, visibility 0s; }
+/* each saved chat is a button now: keep the row's look, drop the button chrome */
+html body.app .app-main .ai2-hitem { padding: 0; }
+html body.app .app-main .ai2-hitem-t {
+  flex: 1 1 auto; min-width: 0; text-align: left; cursor: pointer;
+  background: transparent !important; border: 0 !important; box-shadow: none !important; border-radius: 10px !important;
+  color: inherit !important; font: inherit; font-size: .82rem; line-height: 1.35; padding: 9px 10px !important;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transform: none !important;
+}
+html body.app .app-main .ai2-hitem-x { margin-right: 6px; }
+html body.app .app-main .ai2-hitem-x:focus-visible { opacity: 1; }
 html body.app .app-main .ai2-shell.hist-open::before {
   content: ""; position: absolute; inset: 0; z-index: 5; background: rgba(0, 7, 22, .18);
 }

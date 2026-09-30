@@ -437,7 +437,7 @@ export function renderAI(main) {
       </div>`;
   main.innerHTML = `
     <div class="ai2-shell">
-      <aside class="ai2-hist" id="aiHist">
+      <aside class="ai2-hist" id="aiHist" aria-label="Chat history" inert>
         <div class="ai2-hist-top">
           <button class="ai2-newchat" id="aiNew"><svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M10 4v12M4 10h12" stroke-linecap="round"/></svg>New chat</button>
         </div>
@@ -453,7 +453,7 @@ export function renderAI(main) {
             <textarea class="ai2-input" id="aiMsg" rows="1" placeholder="Message Darknode AI…" spellcheck="false"></textarea>
             <div class="ai2-bar">
               <div class="ai2-bar-l">
-                <button class="ai2-tool" id="aiHistBtn" title="Show / hide chat history" aria-label="Toggle chat history"><svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 5h12M4 10h12M4 15h8" stroke-linecap="round"/></svg></button>
+                <button class="ai2-tool" id="aiHistBtn" title="Show / hide chat history" aria-label="Chat history" aria-haspopup="true" aria-expanded="false" aria-controls="aiHist"><svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 5h12M4 10h12M4 15h8" stroke-linecap="round"/></svg></button>
                 <label class="ai2-modelwrap" title="Model">
                   <select class="ai2-model" id="aiModel" aria-label="AI model">${optionsHtml}</select>
                   <svg class="ai2-model-caret" viewBox="0 0 12 12" width="10" height="10" aria-hidden="true"><path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -580,7 +580,8 @@ export function renderAI(main) {
     const el = $("#aiHList"); if (!el) return;
     const convos = loadConvos();
     if (!convos.length) { el.innerHTML = `<div class="ai2-hist-empty">No saved chats yet. Your conversations are saved here automatically.</div>`; return; }
-    el.innerHTML = convos.map((c) => `<div class="ai2-hitem${c.id === curId ? " active" : ""}" data-load="${c.id}"><span class="ai2-hitem-t">${esc(c.title)}</span><button class="ai2-hitem-x" data-del-convo="${c.id}" title="Delete chat" aria-label="Delete chat">&times;</button></div>`).join("");
+    // Each chat is a real button (keyboard-reachable), with a separate delete button beside it.
+    el.innerHTML = convos.map((c) => `<div class="ai2-hitem${c.id === curId ? " active" : ""}"><button class="ai2-hitem-t" data-load="${c.id}"${c.id === curId ? ' aria-current="true"' : ""}>${esc(c.title)}</button><button class="ai2-hitem-x" data-del-convo="${c.id}" title="Delete chat" aria-label="Delete chat ${esc(c.title)}">&times;</button></div>`).join("");
   }
   function loadConvo(id) {
     if (busy && ctrl) ctrl.abort();
@@ -600,14 +601,29 @@ export function renderAI(main) {
     saveConvos(loadConvos().filter((c) => c.id !== id));
     if (id === curId) newChat(); else drawHistory();
   }
-  const closeHist = () => shell.classList.remove("hist-open");
-  $("#aiNew").onclick = () => { newChat(); closeHist(); };
-  $("#aiHistBtn").onclick = (e) => { e.stopPropagation(); shell.classList.toggle("hist-open"); };
-  // the rail is an overlay drawer: a click outside it (on the backdrop) closes it
-  shell.addEventListener("click", (e) => { if (shell.classList.contains("hist-open") && !e.target.closest("#aiHist") && !e.target.closest("#aiHistBtn")) closeHist(); });
-  $("#aiHist").addEventListener("click", (e) => {
+  // The history rail is an overlay drawer: inert (and hidden from assistive tech) while
+  // closed, focus moves in when it opens and back to the toggle when it closes, and Escape
+  // or a click on the backdrop closes it.
+  const histEl = $("#aiHist"), histBtn = $("#aiHistBtn");
+  const histOpen = () => shell.classList.contains("hist-open");
+  const setHist = (open, refocus = true) => {
+    if (open === histOpen()) return;
+    if (!open && refocus && histEl.contains(document.activeElement)) histBtn.focus();
+    shell.classList.toggle("hist-open", open);
+    histEl.toggleAttribute("inert", !open);
+    histBtn.setAttribute("aria-expanded", String(open));
+    if (open && refocus) { const t = histEl.querySelector(".ai2-hitem-t[aria-current]") || $("#aiNew"); if (t) t.focus(); }
+  };
+  const closeHist = (refocus) => setHist(false, refocus);
+  // Outside the console the rail can be a permanent column (styles.css); only an overlay is inert.
+  if (getComputedStyle(histEl).position !== "absolute") histEl.removeAttribute("inert");
+  $("#aiNew").onclick = () => { newChat(); closeHist(false); };
+  histBtn.onclick = (e) => { e.stopPropagation(); setHist(!histOpen()); };
+  shell.addEventListener("click", (e) => { if (histOpen() && !e.target.closest("#aiHist") && !e.target.closest("#aiHistBtn")) closeHist(); });
+  histEl.addEventListener("keydown", (e) => { if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); closeHist(true); } });
+  histEl.addEventListener("click", (e) => {
     const dx = e.target.closest("[data-del-convo]"); if (dx) { e.stopPropagation(); delConvo(dx.dataset.delConvo); return; }
-    const ld = e.target.closest("[data-load]"); if (ld) { loadConvo(ld.dataset.load); closeHist(); }
+    const ld = e.target.closest("[data-load]"); if (ld) { loadConvo(ld.dataset.load); closeHist(false); }
   });
 
   // ---- attachments: images + text/code files ----
