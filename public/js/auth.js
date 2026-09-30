@@ -1052,10 +1052,9 @@ function renderHome(main, user, isOwner, show) {
     </div>
     ${isOwner ? `<div class="admin-card"><strong>Owner controls</strong><p class="muted">You're the owner &mdash; admin features live under Admin in the sidebar.</p></div>` : ""}
     ${homeWidgetsHTML()}`;
-  main.addEventListener("click", (e) => {
-    if (e.target.closest("[data-open-services]")) { e.stopPropagation(); const sb = document.getElementById("conServices"); if (sb) sb.click(); return; }
-    const b = e.target.closest("[data-sec]"); if (b) show(b.dataset.sec, b.dataset.more || "");
-  });
+  // Card and widget clicks ([data-sec], [data-open-services]) are handled once by the
+  // delegated listener on #view in renderApp; a per-render listener here would stack up
+  // on the persistent #app-content and navigate twice.
   wireHome(main, show);
 
   // Live clock update
@@ -1505,14 +1504,20 @@ function renderApp(user) {
   }
 
   let _prevCleanup = null;
+  // Sections that are really another section (with an optional tab). Resolved here, before
+  // the URL is touched, so an alias pushes one history entry and Back never loops. The alias
+  // path stays in the URL, so /apikeys remains a working deep link.
+  const ALIAS = { arsenal: ["home"], apikeys: ["settings", "apikeys"], github: ["settings"], gmail: ["settings"] };
   function show(sec, more, skipPush) {
     if (_prevCleanup) { try { _prevCleanup(); } catch (_) {} _prevCleanup = null; }
-    curSec = sec; renderCrumbs(sec); renderIntro(sec); conNav.track(sec);
-    // Update browser URL
+    // Update browser URL (from the requested section, alias or not)
     const path = secToPath(sec);
     if (!skipPush && path !== location.pathname) {
       history.pushState({ sec }, "", path);
     }
+    const alias = ALIAS[sec];
+    if (alias) { sec = alias[0]; if (alias[1] !== undefined) more = alias[1]; }
+    curSec = sec; renderCrumbs(sec); renderIntro(sec); conNav.track(sec);
     view.querySelectorAll(".side-item").forEach((x) => x.classList.toggle("active", x.dataset.sec === sec));
     // Auto-expand the active tool's parent group, collapse others
     const activeItem = view.querySelector('.side-item[data-sec="' + sec + '"]');
@@ -1555,7 +1560,6 @@ function renderApp(user) {
     else if (sec === "report") { import("/js/report.js?v=20260924a").then(m => m.renderReport(main)); }
     else if (sec === "snippets") { import("/js/labs.js").then(m => m.renderSnippets(main)); }
     else if (sec === "refs") { import("/js/labs.js").then(m => m.renderRefs(main)); }
-    else if (sec === "arsenal") { show("home"); return; }
     else if (sec === "engines") { import("/js/arsenal.js?v=20260927b").then(m => m.renderEngines(main)); }
     else if (sec === "packetcraft") { import("/js/packet-crafter.js").then(m => m.renderPacketCrafter(main)); }
     else if (sec === "binanalyze") { import("/js/binary-analyzer.js?v=20260927b").then(m => m.renderBinaryAnalyzer(main)); }
@@ -1621,7 +1625,6 @@ function renderApp(user) {
     else if (sec === "ftimeline") { import("/js/forensic-timeline.js").then(m => m.renderForensicTimeline(main)); }
     else if (sec === "socialeng") { import("/js/social-engineering-sim.js").then(m => m.renderSocialEngSim(main)); }
     else if (sec === "training") { import("/js/arsenal.js?v=20260927b").then(m => m.renderTraining(main)); }
-    else if (sec === "apikeys") { show("settings", "apikeys"); return; }
     else if (sec === "cheats") renderCheats(main);
     else if (sec === "threat") renderThreat(main);
     else if (sec === "ipreputation") { import("/js/ip-reputation.js").then(m => m.renderIPReputation(main)); }
@@ -1684,9 +1687,7 @@ function renderApp(user) {
     else if (sec === "whoisrecon") { import("/js/whois-recon.js?v=20260927b").then(m => m.renderWhoisRecon(main)); }
     else if (sec === "learn") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Learn Hub...</p>"; loadLearnHub().then(m => m.renderLearnHub(main)); }
     else if (sec === "learndo") { import("/js/learndo.js").then(m => m.renderLearnDo(main)); }
-    else if (sec === "engine") { import("/js/engine-tab.js?v=20260929f").then(m => m.renderEngine(main)); }
-    else if (sec === "github") { show("settings"); return; }
-    else if (sec === "gmail") { show("settings"); return; }
+    else if (sec === "engine") { import("/js/engine-tab.js?v=20260929h").then(m => m.renderEngine(main)); }
     else if (sec === "coder") { import("/js/coder.js").then(m => m.renderCliCoder(main)); }
     else if (sec === "downloads") { import("/js/getapp.js?v=20260927g").then(m => m.renderDownloads(main)); }
     else if (sec === "dlguide") { import("/js/getapp.js?v=20260927g").then(m => m.renderDownloadDocs(main)); }
@@ -1697,8 +1698,8 @@ function renderApp(user) {
     else if (sec === "admin") { import("/js/admin.js?v=20260925j").then(m => m.renderAdmin(main, user)); }
     else if (sec === "contact") renderContact(main);
     else if (sec === "education") { main.innerHTML = `<div class="panel" style="max-width:800px;margin:40px auto"><div class="panel-h">About Darknode Education</div><div style="padding:18px;line-height:1.8;font-size:.9rem"><p><strong>Darknode is a cybersecurity education platform</strong> designed for students, educators, and security professionals to learn information security through hands-on practice in a safe, controlled environment.</p><p style="margin-top:16px"><strong>Our Mission:</strong> To make cybersecurity education accessible, interactive, and practical. Most tools run in your browser or on your own machine. Some features do send data out: AI chat goes through Darknode's server to the AI provider, some lookup pages query public services (for example NVD, crt.sh and DNS-over-HTTPS resolvers), and saved items and account data are stored in Google Firebase. Each page that contacts an outside service does so only when you run it.</p><p style="margin-top:16px"><strong>Who Uses Darknode:</strong></p><ul style="margin:8px 0 0 20px;line-height:2"><li>Computer science and cybersecurity students</li><li>IT professionals studying for certifications (CompTIA Security+, CISSP, CEH, OSCP)</li><li>University professors and instructors teaching security courses</li><li>Security operations center (SOC) analysts in training</li><li>Career changers learning cybersecurity fundamentals</li></ul><p style="margin-top:16px"><strong>Educational Standards:</strong> Our curriculum aligns with NIST NICE Framework, NSA CAE-CD requirements, and CompTIA Security+ objectives. All practice environments are isolated, legal, and designed for authorized educational use only.</p><p style="margin-top:16px"><strong>Responsible Use:</strong> Darknode tools are designed exclusively for educational purposes and authorized security testing. Users must comply with all applicable laws and obtain proper authorization before testing any system they do not own.</p><p style="margin-top:16px;color:var(--mut);font-size:.82rem">Darknode is a product of Darknode-Official. For questions about our educational programs, visit darknode.ai.</p></div></div>`; }
-    else if (sec === "toolbox") { import("/js/mini-tools.js?v=20260926h").then(m => m.renderToolbox(main, { onOpen: (id) => show("tool-" + id) })); }
-    else if (sec.indexOf("tool-") === 0) { const _tid = sec.slice(5); import("/js/mini-tools.js?v=20260926h").then(m => m.renderMiniTool(main, _tid, { onBack: () => show("toolbox") })); }
+    else if (sec === "toolbox") { import("/js/mini-tools.js?v=20260929h").then(m => m.renderToolbox(main, { onOpen: (id) => show("tool-" + id) })); }
+    else if (sec.indexOf("tool-") === 0) { const _tid = sec.slice(5); import("/js/mini-tools.js?v=20260929h").then(m => m.renderMiniTool(main, _tid, { onBack: () => show("toolbox") })); }
     else renderHome(main, user, isOwner, show);
     if (more === undefined) { try { localStorage.setItem("sw_last_sec", sec); } catch (_) {} }
     // Jump back to the top on every navigation. The page scrolls on the window
@@ -1747,10 +1748,12 @@ function renderApp(user) {
       }
     }
   };
-  // Handle data-sec clicks anywhere in the view (dashboard cards, hero buttons, etc.)
+  // Handle data-sec clicks anywhere in the view (dashboard cards, hero buttons, Home widgets).
+  // data-more carries a tab or scroll target (e.g. settings -> apikeys) through to show().
   view.addEventListener("click", (e) => {
+    if (e.target.closest("[data-open-services]")) { const sb = document.getElementById("conServices"); if (sb) sb.click(); return; }
     const sec = e.target.closest("[data-sec]");
-    if (sec && !sec.closest(".side-nav")) { show(sec.dataset.sec); }
+    if (sec && !sec.closest(".side-nav")) { show(sec.dataset.sec, sec.dataset.more || undefined); }
   });
 
   // Initialize collapsed groups (data-open not set = collapsed)

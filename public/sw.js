@@ -1,16 +1,12 @@
-const CACHE = 'darknode-v58';
-// DI's dictionary (about 4 MB) lives in its own cache so an app update does not download it again;
-// its URL carries a version, so a new word list is a new entry.
+const CACHE = 'darknode-v59';
+// DI's dictionary (11.8 MB, about 4 MB on the wire) lives in its own cache so an app update
+// does not download it again; its URL carries a version, so a new word list is a new entry.
 const LEXICON = 'darknode-lexicon';
+// Only the app shell and the always-unversioned icons are precached. CSS and JS carry ?v=
+// in the page, so they are cached at their exact versioned URL on first fetch (below);
+// precaching unversioned copies would never match a request and just waste ~1.5 MB.
 const STATIC = [
   '/',
-  '/css/styles.css',
-  '/css/pro-theme.css',
-  '/css/buttons.css',
-  '/js/auth.js',
-  '/js/firebase.js',
-  '/js/cyber.js',
-  '/js/toolkit.js',
   '/favicon.svg',
   '/logo-light.svg',
   '/logo-dark.svg',
@@ -30,6 +26,32 @@ self.addEventListener('activate', e => {
   );
   self.clients.claim();
 });
+
+// Hosting rewrites every unknown path to index.html with a 200, so a missing /js/x.js comes
+// back as HTML. Cache an asset only when its content type is what the URL promises;
+// otherwise a bad module would be pinned in the cache until the next CACHE bump.
+function cacheable(url, res) {
+  if (!res || !res.ok) return false;
+  const ct = (res.headers.get('content-type') || '').toLowerCase();
+  if (url.pathname.endsWith('.js') || url.pathname.endsWith('.mjs')) return ct.includes('javascript');
+  if (url.pathname.endsWith('.css')) return ct.includes('text/css');
+  return !ct.includes('text/html');
+}
+
+// Stale-while-revalidate at the exact (versioned) URL: serve the cached copy at once, refresh
+// it in the background, and fall back to the cache when the network fails. Never answers an
+// asset request with the app shell.
+function assetResponse(e, url) {
+  return caches.open(CACHE).then(c =>
+    c.match(e.request).then(cached => {
+      const fetched = fetch(e.request).then(res => {
+        if (cacheable(url, res)) c.put(e.request, res.clone());
+        return res;
+      }).catch(() => cached || Response.error());
+      return cached || fetched;
+    })
+  );
+}
 
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
@@ -67,18 +89,8 @@ self.addEventListener('fetch', e => {
     return;
   }
 
-  if (url.pathname.startsWith('/js/') || url.pathname.startsWith('/data/')) {
-    e.respondWith(
-      caches.open(CACHE).then(c =>
-        c.match(e.request).then(cached => {
-          const fetched = fetch(e.request).then(res => {
-            if (res.ok) c.put(e.request, res.clone());
-            return res;
-          }).catch(() => cached);
-          return cached || fetched;
-        })
-      )
-    );
+  if (url.pathname.startsWith('/js/') || url.pathname.startsWith('/css/') || url.pathname.startsWith('/data/')) {
+    e.respondWith(assetResponse(e, url));
     return;
   }
 
@@ -94,9 +106,10 @@ self.addEventListener('fetch', e => {
     return;
   }
 
-  e.respondWith(
-    fetch(e.request).catch(() =>
-      caches.match(e.request).then(cached => cached || caches.match('/') || Response.error())
-    )
-  );
+  // Anything else: network, then whatever the cache has for that exact request. A
+  // non-navigation request never gets the app shell as a stand-in.
+  e.respondWith((async () => {
+    try { return await fetch(e.request); }
+    catch (_) { return (await caches.match(e.request)) || Response.error(); }
+  })());
 });

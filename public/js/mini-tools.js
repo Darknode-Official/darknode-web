@@ -9,7 +9,8 @@ import { HELP } from "/js/tools/help/index.js?v=20260926a";
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-const byId = (id) => TOOLS.find((t) => t.id === id);
+const TOOL_BY_ID = new Map(TOOLS.map((t) => [t.id, t]));
+const byId = (id) => TOOL_BY_ID.get(id);
 // plain-English line for a tool: the help text when written, else the short description
 const plain = (t) => (HELP[t.id] && HELP[t.id].what) || t.desc || "";
 const outText = (res) => res == null ? "" : typeof res === "object" && "out" in res ? String(res.out) : String(res);
@@ -171,22 +172,36 @@ export function renderToolbox(main, opts = {}) {
   main.querySelector("#mtHubBody").addEventListener("click", (e) => {
     const b = e.target.closest("[data-open]"); if (b) open(b.dataset.open);
   });
-  const search = main.querySelector("#mtSearch");
-  search.addEventListener("input", () => {
-    const q = search.value.trim().toLowerCase();
+  // Search index built once per render: each section holds its cards with a prebuilt
+  // lowercase haystack, so a keystroke is one pass over ~840 strings, not a DOM walk plus
+  // a registry lookup per card. Input is debounced so fast typing filters once.
+  const index = Array.from(main.querySelectorAll(".mt-hub-cat")).map((sec) => ({
+    sec,
+    cards: Array.from(sec.querySelectorAll(".mt-card")).map((card) => {
+      const t = byId(card.dataset.open) || {};
+      const h = HELP[t.id] || {};
+      return { card, hay: [t.name, t.desc, h.what, h.when, ...(t.tags || [])].filter(Boolean).join(" ").toLowerCase() };
+    }),
+  }));
+  const noHits = main.querySelector("#mtNoHits");
+  const filter = (q) => {
     let any = false;
-    main.querySelectorAll(".mt-hub-cat").forEach((sec) => {
+    for (const { sec, cards } of index) {
       let shown = 0;
-      sec.querySelectorAll(".mt-card").forEach((card) => {
-        const t = byId(card.dataset.open);
-        const h = HELP[t.id] || {};
-        const hay = (t.name + " " + (t.desc || "") + " " + (h.what || "") + " " + (h.when || "") + " " + (t.tags || []).join(" ")).toLowerCase();
+      for (const { card, hay } of cards) {
         const hit = !q || hay.includes(q);
-        card.hidden = !hit; if (hit) { shown++; any = true; }
-      });
+        if (card.hidden === hit) card.hidden = !hit;
+        if (hit) { shown++; any = true; }
+      }
       sec.hidden = shown === 0;
-    });
-    main.querySelector("#mtNoHits").hidden = any;
+    }
+    noHits.hidden = any;
+  };
+  const search = main.querySelector("#mtSearch");
+  let timer = 0;
+  search.addEventListener("input", () => {
+    clearTimeout(timer);
+    timer = setTimeout(() => filter(search.value.trim().toLowerCase()), 120);
   });
   search.focus();
 }

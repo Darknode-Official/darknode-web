@@ -11,10 +11,24 @@ import { loadLexicon } from "/js/engine/lexicon.js";
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
-// tiny markdown: **bold**, `code`, "# heading" lines, newlines -> <br>, and
-// ```lang fenced blocks -> <pre> with a Copy button (Smart mode writes code)
-const mdInline = (s) => esc(s).replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>").replace(/`([^`]+)`/g, '<code>$1</code>')
-  .replace(/^#{1,6} +(.+)$/gm, "<b>$1</b>").replace(/\n/g, "<br>");
+// tiny markdown: **bold**, `code`, "# heading" lines, "- item" bullet lists, newlines -> <br>,
+// and ```lang fenced blocks -> <pre> with a Copy button (Smart mode writes code).
+// Text is escaped first, so write real characters in skill strings, never HTML entities.
+export const mdInline = (s) => {
+  const inline = (t) => t.replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>").replace(/`([^`]+)`/g, "<code>$1</code>")
+    .replace(/^#{1,6} +(.+)$/gm, "<b>$1</b>");
+  // consecutive "- item" / "* item" lines become one <ul>; everything else keeps <br> breaks
+  let html = "", items = [];
+  const flush = () => { if (items.length) { html += "<ul>" + items.map((i) => "<li>" + inline(i) + "</li>").join("") + "</ul>"; items = []; } };
+  for (const line of esc(s).split("\n")) {
+    const m = /^[-*] +(.+)$/.exec(line);
+    if (m) { items.push(m[1]); continue; }
+    flush();
+    html += (html && !html.endsWith("</ul>") ? "<br>" : "") + inline(line);
+  }
+  flush();
+  return html;
+};
 const md = (s) => {
   // split() with two groups yields [text, lang, code, text, lang, code, ..., text]
   const parts = String(s == null ? "" : s).split(/```([\w+#.-]*)[ \t]*\n?([\s\S]*?)(?:```|$)/);
@@ -150,6 +164,7 @@ export function renderEngine(main) {
     '.ue-me{align-self:flex-end;background:var(--acc);color:#04120a;border-color:transparent}' +
     '.ue-bot{align-self:flex-start;background:transparent}' +
     '.ue-bot .ue-title{font-weight:700;color:var(--acc);font-size:.8rem;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px}' +
+    '.ue-msg ul{margin:6px 0;padding-left:20px}.ue-msg li{margin:2px 0}' +
     '.ue-bot pre{background:rgba(127,127,127,.12);border:1px solid var(--line);border-radius:8px;padding:10px 12px;overflow:auto;margin:8px 0 4px;font-size:.82rem}' +
     '.ue-meta{font-size:.7rem;color:var(--mut);margin-top:6px}' +
     '.ue-code{margin:8px 0 4px}.ue-code pre{margin:0;border-top-left-radius:0;border-top-right-radius:0;white-space:pre}' +
@@ -343,5 +358,5 @@ export function renderEngine(main) {
   logEl.addEventListener("click", (e) => { const a = e.target.closest("[data-alt]"); if (a) { const last = log[log.length - 1]; if (last) renderBot(respond(last.q, model)); } });
 
   // greeting
-  renderBot({ title: "Deterministic Intelligence", body: "Ready. I am **DI** &mdash; I run entirely on your device with no AI. Try an example chip above, or type a request. As you type I will predict the next word from the corpus. Ask me to `complete:` a sentence to see prediction in full." });
+  renderBot({ title: "Deterministic Intelligence", body: "Ready. I am **DI** — I run entirely on your device with no AI. Try an example chip above, or type a request. As you type I will predict the next word from the corpus. Ask me to `complete:` a sentence to see prediction in full." });
 }
