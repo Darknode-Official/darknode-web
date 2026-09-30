@@ -71,7 +71,7 @@ export async function renderAdmin(main, user) {
           <div class="panel-h"><h2 class="pg-h2" style="margin:0">Email Users</h2></div>
           <p class="muted" style="font-size:.82rem;margin:0 0 10px">Send an email from contact@darknode.ai to one user or all registered users.</p>
           <div style="margin-bottom:10px">
-            <label class="set-row" style="border:none;padding:4px 18px;gap:12px">
+            <label class="set-row" style="border:none;padding:10px 18px;gap:12px">
               <span class="seg" id="emailTarget">
                 <button data-v="one" class="on">One user</button>
                 <button data-v="all">All users</button>
@@ -103,7 +103,7 @@ export async function renderAdmin(main, user) {
       <div class="adm-side">
         <div class="panel">
           <div class="panel-h"><h2 class="pg-h2" style="margin:0">Allow-list</h2></div>
-          <label class="set-row" style="border:none;padding:4px 18px">
+          <label class="set-row" style="border:none;padding:10px 18px">
             <span class="muted">Restrict sign-in to allow-listed emails</span>
             <input type="checkbox" id="wlEnforce" style="width:18px;height:18px;accent-color:var(--acc)">
           </label>

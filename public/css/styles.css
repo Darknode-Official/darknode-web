@@ -366,7 +366,7 @@ body.app #view{max-width:none;padding:0;margin:0}
   transition:border-color var(--dur) var(--ease),box-shadow var(--dur-slow) var(--ease)}
 .set-card:hover{border-color:var(--acc-line);box-shadow:var(--sh-2)}
 .set-lbl{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--mut);margin-bottom:12px}
-.set-row{display:flex;justify-content:space-between;gap:16px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);font-size:.85rem}
+.set-row{display:flex;justify-content:space-between;gap:16px;align-items:center;padding:8px 14px;border-bottom:1px solid var(--line);font-size:.85rem}
 .set-row:last-child{border-bottom:none}
 .set-btns{display:flex;gap:8px;flex-wrap:wrap}
 .mono{font-family:var(--font-mono);font-size:.76rem}
