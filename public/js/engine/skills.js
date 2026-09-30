@@ -183,6 +183,14 @@ export function calc(input) {
     const k = g(n0, d0) || 1, n = n0 / k, d = d0 / k;
     return { ok: true, value: d === 1 ? String(n) : n + "/" + d, expr: sf[1] + "/" + sf[2] + " simplified", gcd: k, already: k === 1 };
   }
+  // "percent change from 40 to 50", "percentage increase from 200 to 250", "% decrease from 80 to 60"
+  const pch = src.match(/^(?:what is |whats |find |calculate )?(?:the )?(?:percent(?:age)?|%) (change|increase|decrease|difference|growth|drop|rise|gain|loss) (?:from |between )?(-?\d+(?:\.\d+)?) (?:to|and) (-?\d+(?:\.\d+)?)$/) || src.match(/^(?:what is |whats |find |calculate )?(?:the )?(change|increase|decrease|difference|growth|drop|rise) (?:from |between )?(-?\d+(?:\.\d+)?) (?:to|and) (-?\d+(?:\.\d+)?) (?:as a |in )?(?:percent(?:age)?|%)$/);
+  if (pch) {
+    const a = parseFloat(pch[2]), b = parseFloat(pch[3]);
+    if (a === 0) return { ok: false, error: "a change from 0 has no percentage (division by zero)" };
+    const raw = (b - a) / Math.abs(a) * 100, v = Math.round(raw * 1e4) / 1e4;
+    return { ok: true, value: v + "%", expr: "from " + pch[2] + " to " + pch[3] + " percent change", from: a, to: b, exact: Math.abs(raw - v) < 1e-12, word: pch[1] };
+  }
   // "1/3 as a percent", "0.25 as a percentage", "3/8 to percent"
   const pc = src.match(/^(?:what is |whats |convert |write |express )?(-?\d*\.\d+|-?\d+(?:\.\d+)?\s*\/\s*\d+|-?\d+)\s+(?:as|to|in|into)\s+(?:a\s+)?percent(?:age)?\s*$/);
   if (pc) {
@@ -251,6 +259,14 @@ export function convert(input) {
     return { ok: true, value: Math.round(out * 1e6) / 1e6, dim: "temperature", from, to, input: val };
   }
   let a = findUnit(from), b = findUnit(to);
+  // a currency's own subunit is a fixed 100:1, no exchange rate involved ("15 dollars in cents")
+  const MAJOR = { usd: "US dollars", dollar: "dollars", dollars: "dollars", eur: "euros", euro: "euros", euros: "euros", gbp: "pounds sterling", aud: "Australian dollars", cad: "Canadian dollars", nzd: "New Zealand dollars", sgd: "Singapore dollars", hkd: "Hong Kong dollars", inr: "rupees", rupee: "rupees", rupees: "rupees", chf: "Swiss francs", franc: "francs", francs: "francs", mxn: "pesos", peso: "pesos", pesos: "pesos", brl: "reais", zar: "rand", rand: "rand", rub: "rubles", ruble: "rubles", rubles: "rubles", cny: "yuan", yuan: "yuan" };
+  const MINOR = { cent: "cents", cents: "cents", penny: "pence", pennies: "pence", pence: "pence", p: "pence", paisa: "paise", paise: "paise", centavo: "centavos", centavos: "centavos", kopek: "kopeks", kopeks: "kopeks", rappen: "rappen", fen: "fen" };
+  const majorOf = (u) => MAJOR[u] || (u === "pound" || u === "pounds" ? "pounds sterling" : null);
+  if ((majorOf(from) && MINOR[to]) || (MINOR[from] && majorOf(to))) {
+    const toMinor = !!majorOf(from); const value = toMinor ? val * 100 : val / 100;
+    return { ok: true, value: Math.round(value * 1e6) / 1e6, dim: "currency (subunit)", from, to, input: val, subunit: true };
+  }
   // currency needs a live exchange rate, which this offline engine does not have
   const cur = (!a && CURRENCY.has(from)) ? from : (!b && CURRENCY.has(to)) ? to : null;
   if (cur) return { ok: false, error: "currency conversion needs today's exchange rate, and this engine runs offline with no live data; a bank or exchange site will have the current " + (CURRENCY.has(from) && CURRENCY.has(to) ? from.toUpperCase() + " to " + to.toUpperCase() : cur.toUpperCase()) + " rate" };
@@ -559,8 +575,56 @@ export function datetime(input) {
   const nowY = new Date().getUTCFullYear();
   if (/^(?:what|which)\s+year\s+is\s+(?:it|this)(?:\s+now)?\s*$|^(?:what is |whats )?(?:the )?current year\s*$/.test(low.replace(/[?.!]/g, "").trim())) return { ok: true, kind: "year", text: "It is " + nowY + " (by this device's clock, UTC)" };
   if (/^(?:what is |whats |what's )?(?:the )?(?:date )?today(?:'s date)?\s*$|^(?:what is |whats |what's )(?:the )?date(?: today)?\s*$|^what day is (?:it|today)\s*$/.test(low.replace(/[?.!]/g, "").trim())) { const d = new Date(); return { ok: true, kind: "today", text: "Today is " + DAYNAMES[d.getUTCDay()] + ", " + d.toISOString().slice(0, 10) + " (UTC)" }; }
+  const bornOn = /\bborn (?:on )?(\d{4}-\d{1,2}-\d{1,2})\b/.exec(low);
+  if (bornOn && /how old|\bage\b|years old/.test(low)) {
+    const b = parseISO(bornOn[1]), now = new Date();
+    if (b.getTime() > Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())) return { ok: false, error: bornOn[1] + " is in the future" };
+    let a = now.getUTCFullYear() - b.getUTCFullYear();
+    const hadBirthday = now.getUTCMonth() > b.getUTCMonth() || (now.getUTCMonth() === b.getUTCMonth() && now.getUTCDate() >= b.getUTCDate());
+    if (!hadBirthday) a -= 1;
+    const next = new Date(Date.UTC(now.getUTCFullYear() + (hadBirthday ? 1 : 0), b.getUTCMonth(), b.getUTCDate()));
+    const toNext = Math.round((next.getTime() - Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())) / 86400000);
+    return { ok: true, kind: "age", value: a, text: "Someone born on " + bornOn[1] + " is " + a + " years old today (" + (toNext === 0 ? "it is their birthday today" : "turns " + (a + 1) + " in " + toNext + " day" + (toNext === 1 ? "" : "s")) + ")" };
+  }
   const born = low.match(/\bborn in (\d{4})\b/) || low.match(/\bage (?:of )?(?:someone |a person )?(?:born )?(?:in )?(\d{4})\b/);
   if (born && /how old|age/.test(low)) { const y = +born[1], a = nowY - y; if (a < 0) return { ok: false, error: y + " is in the future" }; return { ok: true, kind: "age", value: a, text: "Someone born in " + y + " is " + (a - 1) + " or " + a + " in " + nowY + " (" + a + " once their birthday has passed this year)" }; }
+  // today's place in the year, ISO week, quarter; unix time both ways; this device's zone
+  const trimmed = low.replace(/[?.!]/g, "").trim();
+  if (/^(?:how many )?days? (?:are )?(?:left|remaining|to go) (?:in|of) (?:the|this) year$|^days? (?:until|till) (?:the )?(?:end of (?:the|this) year|new year)$/.test(trimmed) || /^(?:how many )?days? (?:have )?(?:passed|gone|elapsed) (?:so far )?(?:this year|in the year)$|^(?:what|which) day of the year is (?:it|today)$|^day of (?:the )?year(?: today)?$/.test(trimmed)) {
+    const now = new Date(), y = now.getUTCFullYear(), today0 = Date.UTC(y, now.getUTCMonth(), now.getUTCDate());
+    const doy = Math.round((today0 - Date.UTC(y, 0, 0)) / 86400000), total = (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0 ? 366 : 365, left = total - doy;
+    const askLeft = /left|remaining|to go|until|till/.test(trimmed);
+    return { ok: true, kind: "yearpos", value: askLeft ? left : doy, text: askLeft ? left + " days left in " + y + " after today (today is day " + doy + " of " + total + ")" : "Today is day " + doy + " of " + y + " (" + (doy - 1) + " full days have passed, " + left + " remain after today)" };
+  }
+  if (/^(?:what|which) (?:iso )?week(?: number| of the year)? (?:is it|is this|are we in|is today)$|^(?:current |this )?(?:iso )?week number$/.test(trimmed)) {
+    const now = new Date(), d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+    const day = d.getUTCDay() || 7; d.setUTCDate(d.getUTCDate() + 4 - day); // Thursday of this week decides the ISO year
+    const y = d.getUTCFullYear(), wk = Math.ceil(((d - Date.UTC(y, 0, 1)) / 86400000 + 1) / 7);
+    return { ok: true, kind: "week", value: wk, text: "It is ISO week " + wk + " of " + y + " (weeks start on Monday; week 1 holds the year's first Thursday)" };
+  }
+  if (/^(?:what|which) (?:fiscal |calendar )?quarter (?:is it|is this|are we in|of the year is it)$|^(?:current |this )?quarter$/.test(trimmed)) {
+    const now = new Date(), q = Math.floor(now.getUTCMonth() / 3) + 1, ends = [[3, 31], [6, 30], [9, 30], [12, 31]][q - 1];
+    return { ok: true, kind: "quarter", value: q, text: "It is Q" + q + " of " + now.getUTCFullYear() + " (calendar quarters: Jan-Mar, Apr-Jun, Jul-Sep, Oct-Dec); this quarter ends " + now.getUTCFullYear() + "-" + String(ends[0]).padStart(2, "0") + "-" + ends[1] + ". A company's fiscal quarters may differ." };
+  }
+  if (/^(?:what is |whats |what's )?(?:the )?(?:current |present )?(?:unix|epoch|posix)(?: time(?:stamp)?| timestamp| seconds)?(?: now| right now)?$|^(?:what is |whats |what's )?(?:the )?(?:unix|epoch)?\s*timestamp(?: now| right now| for now)?$|^seconds since (?:the )?epoch$/.test(trimmed)) {
+    const t = Date.now(); return { ok: true, kind: "epoch", value: Math.floor(t / 1000), text: "Unix time is " + Math.floor(t / 1000) + " seconds (" + t + " ms) since 1970-01-01T00:00:00Z, which is " + new Date(t).toISOString().replace(/\.\d{3}Z$/, "Z") + " now" };
+  }
+  const ep = trimmed.match(/^(?:what (?:is|date is|time is) |whats |what's |convert )?(?:the )?(?:unix |epoch |posix )?(?:time(?:stamp)? |timestamp |epoch |unix time )?(\d{9,13})(?: (?:to|as|in) (?:a )?(?:date|datetime|human(?: readable)?(?: date| time)?|iso|utc|time|readable))?$/) || trimmed.match(/^(?:what (?:date|time) is |convert )?(?:epoch|unix(?: time(?:stamp)?)?|timestamp) (\d{9,13})$/);
+  if (ep) {
+    const n = +ep[1], ms = ep[1].length >= 12 ? n : n * 1000, d = new Date(ms);
+    return { ok: true, kind: "epoch", value: ms / 1000, text: (ep[1].length >= 12 ? "Unix time " + n + " ms" : "Unix time " + n) + " is " + d.toISOString().replace(/\.\d{3}Z$/, "Z") + " (" + DAYNAMES[d.getUTCDay()] + ", UTC)" + (ep[1].length >= 12 ? "" : "; read as seconds since 1970-01-01") };
+  }
+  const toEp = trimmed.match(/^(?:what is |whats |what's |convert )?(?:the )?(?:unix|epoch|posix)(?: time(?:stamp)?| timestamp)? (?:of|for) (\d{4}-\d{1,2}-\d{1,2})(?:[t ](\d{1,2}):(\d{2})(?::(\d{2}))?)?(?: utc| z)?$/) || trimmed.match(/^(\d{4}-\d{1,2}-\d{1,2})(?:[t ](\d{1,2}):(\d{2})(?::(\d{2}))?)? (?:to|as|in) (?:unix|epoch|posix|a timestamp|unix time|epoch time|unix timestamp)$/);
+  if (toEp) {
+    const d = parseISO(toEp[1]); if (!d) return { ok: false, error: toEp[1] + " is not a real calendar date" };
+    const t = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), +(toEp[2] || 0), +(toEp[3] || 0), +(toEp[4] || 0));
+    return { ok: true, kind: "epoch", value: t / 1000, text: new Date(t).toISOString().replace(/\.\d{3}Z$/, "Z") + " is Unix time " + t / 1000 + " (" + t + " ms), taking the time as UTC" };
+  }
+  if (/^(?:what is |whats |what's )?(?:my|the|this device'?s?|the current|the local) (?:time ?zone|tz)(?: here)?$|^(?:what|which) (?:time ?zone) am i in$|^(?:what is |whats |what's )?(?:my )?utc offset$/.test(trimmed)) {
+    let zone = ""; try { zone = Intl.DateTimeFormat().resolvedOptions().timeZone || ""; } catch (_) {}
+    const off = -new Date().getTimezoneOffset(), sign = off >= 0 ? "+" : "-", hh = String(Math.floor(Math.abs(off) / 60)).padStart(2, "0"), mm = String(Math.abs(off) % 60).padStart(2, "0");
+    return { ok: true, kind: "tz", value: zone || ("UTC" + sign + hh + ":" + mm), text: "This device's clock is set to " + (zone ? zone + " " : "") + "(UTC" + sign + hh + ":" + mm + " right now)" + (zone ? "" : "; the browser did not report a zone name") };
+  }
   // "how many days are in february 2024": month length, leap years included
   const MN = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
   const dim = low.match(/\bdays?\s+(?:are\s+|is\s+)?(?:there\s+)?in\s+(?:the\s+month\s+of\s+)?(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?(?:\s+(?:of\s+)?(\d{4}))?/);
@@ -597,9 +661,9 @@ export function datetime(input) {
     return { ok: true, kind: "weekday", text: rel[1].charAt(0).toUpperCase() + rel[1].slice(1) + " is " + DAYNAMES[d.getUTCDay()] + ", " + d.toISOString().slice(0, 10) + " (UTC)" };
   }
   // "how many days until christmas / until 2027-01-01" — counts from today (UTC).
-  const untilM = /days?\s+(?:until|till|til|to go until|left until|to go to|to go before)\s+(.+)$/.exec(low);
+  const untilM = /(days?|weeks?|months?)\s+(?:until|till|til|to go until|left until|to go to|to go before)\s+(.+)$/.exec(low);
   if (untilM) {
-    const target = untilM[1].replace(/[?.!]/g, "").trim();
+    const target = untilM[2].replace(/[?.!]/g, "").trim();
     let dest = null;
     const iso = target.match(/\d{4}-\d{1,2}-\d{1,2}/);
     if (iso) dest = parseISO(iso[0]);
@@ -616,7 +680,15 @@ export function datetime(input) {
       const now = new Date();
       const today0 = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
       const diff = Math.round((dest.getTime() - today0) / 86400000);
-      return { ok: true, kind: "until", value: diff, text: diff + " day" + (diff === 1 ? "" : "s") + " until " + dest.toISOString().slice(0, 10) + " (counted from today)" };
+      const iso2 = dest.toISOString().slice(0, 10);
+      if (/^week/.test(untilM[1])) { const w = Math.floor(Math.abs(diff) / 7), r = Math.abs(diff) % 7; return { ok: true, kind: "until", value: diff, weeks: w, text: (diff < 0 ? "-" : "") + w + " week" + (w === 1 ? "" : "s") + (r ? " and " + r + " day" + (r === 1 ? "" : "s") : "") + " until " + iso2 + " (" + diff + " days, counted from today)" }; }
+      if (/^month/.test(untilM[1])) {
+        let months = (dest.getUTCFullYear() - now.getUTCFullYear()) * 12 + dest.getUTCMonth() - now.getUTCMonth(); if (dest.getUTCDate() < now.getUTCDate()) months -= 1;
+        const anchor = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + months, Math.min(now.getUTCDate(), new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + months + 1, 0)).getUTCDate())));
+        const rd = Math.round((dest.getTime() - anchor.getTime()) / 86400000);
+        return { ok: true, kind: "until", value: diff, months, text: months + " month" + (months === 1 ? "" : "s") + (rd ? " and " + rd + " day" + (rd === 1 ? "" : "s") : "") + " until " + iso2 + " (" + diff + " days, counted from today; whole calendar months first)" };
+      }
+      return { ok: true, kind: "until", value: diff, text: diff + " day" + (diff === 1 ? "" : "s") + " until " + iso2 + " (counted from today)" };
     }
   }
   if (/days?\s+between/.test(low) && dates.length >= 2) {

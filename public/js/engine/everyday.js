@@ -134,6 +134,7 @@ const PORT_NAMES = [...PORT_BY_NAME.keys()].sort((a, b) => b.length - a.length);
 export const VOCAB = [...new Set([...ZONE_KEYS.flatMap((k) => k.split(" ")), ...PORT_NAMES.flatMap((k) => k.split(/[\s-]/)), "uuid", "guid", "uuids", "guids", "lorem", "ipsum", "bmi", "mortgage", "loan", "tip", "coin", "dice", "die", "d20", "d6", "d10", "d12", "d8", "d4", "d100", "steps", "noon", "midnight", "am", "pm", "utc", "gmt", "shuffle", "pick", "choose", "port", "ports", "https", "http", "ssh", "ftp", "smtp", "dns", "rdp", "vnc", "mysql", "postgres", "redis", "mongodb",
   "json", "cron", "crontab", "minify", "minified", "prettify", "validate", "weekday", "weekdays", "weekends", "hourly", "derivative", "integral", "antiderivative", "differentiate", "integrate", "wrt", "forecast", "bitcoin", "btc", "eth", "ethereum",
   "usd", "eur", "gbp", "jpy", "cny", "inr", "aud", "cad", "chf", "nzd", "sek", "nok", "dkk", "krw", "brl", "mxn", "zar", "sgd", "hkd", "rub", "pln", "thb", "idr", "php", "myr", "vnd", "aed", "sar", "ils", "czk", "huf", "euros", "rupees", "yen", "yuan", "pesos", "rubles",
+  "bitwise", "xor", "nand", "nor", "shl", "shr", "ascii", "unicode", "utf", "codepoint", "cidr", "subnet", "loopback", "localhost", "passphrase", "pwd", "entities", "unescape", "escape", "epoch", "unix", "posix", "timestamp", "iso", "multicast", "broadcast", "wildcard", "http", "https", "prime", "primes",
   "spanish", "french", "german", "italian", "portuguese", "japanese", "chinese", "mandarin", "korean", "russian", "arabic", "hindi", "dutch", "swedish", "latin", "greek", "turkish", "polish", "hebrew", "vietnamese", "thai", "tagalog", "filipino", "indonesian", "swahili"]).values()].filter((w) => w.length > 1);
 
 // ---------------------------------------------------------------------------
@@ -271,6 +272,55 @@ export function ask(input) {
   // --- live data this offline engine cannot have (weather, news, prices, scores) ---
   m = low.match(/\b(weather|forecast|temperature (?:outside|today|right now|tomorrow)|is it (?:raining|snowing|sunny|cold|hot|windy)(?: outside| today| now)?|(?:will|is) it (?:going to )?rain|news|headlines|stock price|share price|(?:price|value) of (?:bitcoin|btc|eth|ethereum|gold|silver|oil|a stock|[a-z]+ stock)|bitcoin price|exchange rate|(?:latest|current|live) (?:score|scores|results?|price|prices)|who won (?:the|last|yesterday'?s?)|traffic (?:right now|now|today))\b/);
   if (m && !/\bjson\b|\bapi\b|\bfetch\b|\bcode\b|\bpython\b|\bjavascript\b/.test(low)) return { kind: "nolive", topic: m[1].split(" ")[0].replace(/^(?:is|will)$/, "weather") };
+  // --- bitwise: xor / and / or / shifts on integers (round 8) ---
+  m = low.match(/^(?:what is |whats |compute |calculate )?(?:bitwise )?(xor|and|or|nand|nor)\s+(-?\d+|0x[0-9a-f]+|0b[01]+)\s+(?:and|with|,)\s+(-?\d+|0x[0-9a-f]+|0b[01]+)$/) || low.match(/^(?:what is |whats |compute |calculate )?(-?\d+|0x[0-9a-f]+|0b[01]+)\s+(?:bitwise )?(xor|and|or|nand|nor|<<|>>|shl|shr|left shift|right shift|shifted left(?: by)?|shifted right(?: by)?)\s+(-?\d+|0x[0-9a-f]+|0b[01]+)(?: bits?)?(?: bitwise)?$/) || low.match(/^(?:what is |whats )?(-?\d+|0x[0-9a-f]+|0b[01]+)\s*(\^|&|\|)\s*(-?\d+|0x[0-9a-f]+|0b[01]+)\s+(?:bitwise|as bits|in binary|xor|and|or)$/);
+  if (m) {
+    const opWord = /^(?:xor|and|or|nand|nor)$/.test(m[1]) ? m[1] : m[2], A = /^(?:xor|and|or|nand|nor)$/.test(m[1]) ? m[2] : m[1], B = m[3];
+    const op = ({ "^": "xor", "&": "and", "|": "or", "<<": "shl", ">>": "shr", "left shift": "shl", "right shift": "shr", "shifted left": "shl", "shifted left by": "shl", "shifted right": "shr", "shifted right by": "shr" })[opWord] || opWord;
+    // a bare "5 and 3" / "5 or 3" is English, not an operator: claim it only with "bitwise" or a hex/binary literal
+    if (!((op === "and" || op === "or") && !/\bbitwise\b|0x|0b/.test(low))) return { kind: "bitwise", op, a: A, b: B };
+  }
+  m = low.match(/^(?:what is |whats )?(?:bitwise )?not\s+(\d+|0x[0-9a-f]+|0b[01]+)(?: (?:as|in) (\d+)[- ]bits?)?$/) || low.match(/^(?:what is |whats )?~\s*(\d+|0x[0-9a-f]+|0b[01]+)(?: (?:as|in) (\d+)[- ]bits?)?$/);
+  if (m) return { kind: "bitwise", op: "not", a: m[1], b: m[2] || null };
+  // --- next / previous prime ---
+  m = low.match(/^(?:what is |whats |find )?(?:the )?(?:(?:next|first|smallest) )?prime (?:number )?(?:after|above|greater than|bigger than|larger than|following|from|>) (\d+)$/);
+  if (m && +m[1] <= 1e12) return { kind: "nearprime", dir: "next", n: +m[1] };
+  m = low.match(/^(?:what is |whats |find )?(?:the )?(?:(?:previous|last|largest|biggest|greatest) )?prime (?:number )?(?:before|below|under|less than|smaller than|<) (\d+)$/);
+  if (m && +m[1] <= 1e12) return { kind: "nearprime", dir: "prev", n: +m[1] };
+  m = low.match(/^(?:what is |whats |find )?(?:the )?(?:nearest|closest) prime (?:number )?to (\d+)$/);
+  if (m && +m[1] <= 1e12) return { kind: "nearprime", dir: "near", n: +m[1] };
+  // --- word and letter statistics on a phrase ---
+  m = low.match(/^(?:what is |whats |find |give me |tell me )?(?:the )?(longest|shortest) word (?:in|of) (?:the )?(?:sentence |text |phrase |string |following )?[:"']?\s*(.+?)["']?$/);
+  if (m) return { kind: "wordlen", which: m[1], text: s.slice(s.length - m[2].length).replace(/["']$/, "") };
+  m = low.match(/^(?:count |find )?how many (?:times )?(?:does |is |are )?(?:the )?letter ([a-z]) (?:appears?|occurs?|is there|are there|in|is in|shows? up)(?: in)? (?:the )?(?:word |sentence |text |phrase |string )?[:"']?\s*(.+?)["']?$/) || low.match(/^count (?:the )?(?:number of )?(?:letter )?([a-z])(?:'s|s)? (?:in|of) (?:the )?(?:word |sentence |text |phrase |string )?[:"']?\s*(.+?)["']?$/) || low.match(/^how many ([a-z])(?:'s|s)? (?:are |is )?(?:there )?in (?:the )?(?:word |sentence |text |phrase |string )?[:"']?\s*(.+?)["']?$/) || low.match(/^(?:number of|occurrences of) (?:the )?(?:letter )?([a-z])(?:'s|s)? in (?:the )?(?:word |sentence |text |phrase |string )?[:"']?\s*(.+?)["']?$/);
+  if (m && m[2].length > 1) return { kind: "lettercount", letter: m[1], text: s.slice(s.length - m[2].length).replace(/["']$/, "") };
+  // --- a plain number of seconds/minutes as a readable duration ---
+  m = low.match(/^(?:how long is |how long are |what is |whats |convert |express |write )?(\d[\d,]*(?:\.\d+)?)\s*(seconds?|secs?|s|minutes?|mins?|hours?|hrs?)(?: (?:to|in|into|as) (?:hours?,? ?minutes?(?:,? ?(?:and )?seconds?)?|hours and minutes|minutes and seconds|h:?m:?s|hms|hh:mm:ss|hh:mm|days,? ?hours,? ?(?:and )?minutes|days and hours|a (?:readable |human(?:-readable)? )?(?:duration|time)|(?:a )?(?:readable|human|human-readable) (?:form|format)|time|clock time))?$/);
+  if (m && (/^how long|^express|^write|(?:to|in|into|as) /.test(low)) && !/^(?:what is |whats |convert )\d[\d,]*(?:\.\d+)?\s*(?:seconds?|secs?|s|minutes?|mins?|hours?|hrs?)$/.test(low)) { const secs = money(m[1]) * (/^s/.test(m[2]) ? 1 : /^m/.test(m[2]) ? 60 : 3600); if (secs >= 0 && secs < 1e12) return { kind: "duration", secs, src: m[1] + " " + m[2] }; }
+  // --- random password (a real one; a password *generator* program stays with the code library) ---
+  m = low.match(/^(?:(?:generate|make|create|give me|suggest|i need|need|get me|pick|produce)\s+(?:me\s+)?)?(?:a\s+|an\s+)?(?:new\s+|random\s+|strong\s+|secure\s+|safe\s+|good\s+|long\s+)*(?:random\s+|strong\s+|secure\s+|safe\s+|good\s+)?(?:(\d{1,3})[- ](?:char(?:acter)?|letter|digit)s?\s+)?(?:pass(?:word|phrase|code)|pwd)(?:\s+(?:of|with|that is|thats|that's|which is)\s+(\d{1,3})\s*(?:char(?:acter)?s?|letters|digits|long)?(?:\s+long)?)?(?:\s+(?:please|for me|pls))?$/);
+  if (m && !/\b(?:generator|function|script|code|program|python|javascript|js|java|rust|bash|go|golang|how)\b/.test(low)) { const n = +(m[1] || m[2] || 20); if (n >= 8 && n <= 128) return { kind: "randpass", n, phrase: /passphrase/.test(low) }; }
+  // --- html escape / unescape ---
+  m = s.match(/^(?:html[- ]?)?(escape|unescape|encode|decode|entities for|entity encode|entity decode)\s+(?:(?:the|this|my)\s+)?(?:html\s+|as html\s+|for html\s+|html entities\s+)?(?:[:\-]\s*)?([\s\S]+)$/i) || s.match(/^(escape|unescape|encode|decode)\s+([\s\S]+?)\s+(?:as|for|to|from|into)\s+html(?:\s+entities)?$/i);
+  if (m && /\bhtml\b/i.test(s) && !/\b(?:in|with|using)\s+(?:python|javascript|js|php|java|c#|go|rust)\b/i.test(s)) { const op = /^(?:unescape|decode|entity decode)$/i.test(m[1]) ? "unescape" : "escape"; const pay = m[2].replace(/^(?:string|text|this|the following)\s*[:\-]?\s*/i, "").trim(); if (pay) return { kind: "html", op, payload: pay }; }
+  // --- character codes: ascii / unicode both ways ---
+  m = s.match(/^(?:what is |whats |what's |give me |find )?(?:the )?(?:ascii|unicode|utf-?8|char(?:acter)? code|code ?point|character number|ascii value|ascii code|unicode value|unicode code ?point|char code)(?: (?:code|value|number|point))?(?: (?:of|for))? (?:the )?(?:letter |character |char |symbol |sign )?["']?(\S)["']?$/i) || s.match(/^(?:what is |whats |what's )?(?:the )?(?:letter |character |char |symbol )?["']?(\S)["']? (?:in|as|to) (?:ascii|unicode|decimal|a char code|char code|code point|utf-?8|hex)$/i);
+  if (m) return { kind: "charcode", ch: m[1] };
+  // "unicode of the euro sign", "ascii code for tab": named characters from the small name table
+  m = low.match(/^(?:what is |whats |what's |give me |find )?(?:the )?(?:ascii|unicode|utf-?8|char(?:acter)? code|code ?point|ascii code|unicode value|unicode code ?point|char code)(?: (?:code|value|number|point))?(?: (?:of|for))? (?:the |a )?(.+?)(?: (?:character|symbol|char))?$/);
+  if (m) { const want = m[1].replace(/^(?:the |a )/, ""); for (const k in CHAR_NAMES) if (CHAR_NAMES[k] === want || CHAR_NAMES[k].replace(/ \(.*\)$/, "") === want || CHAR_NAMES[k].replace(/ sign$/, "") === want.replace(/ sign$/, "")) return { kind: "charcode", ch: String.fromCodePoint(+k) }; }
+  m = low.match(/^(?:what|which) (?:character|char|letter|symbol) (?:is|has|corresponds to|is at|for) (?:the )?(?:ascii|unicode|char(?:acter)? code|code ?point|code)? ?(?:code |value |number )?(?:u\+)?([0-9]{1,7}|u\+[0-9a-f]{4,6}|0x[0-9a-f]{1,6})$/) || low.match(/^(?:ascii|unicode|char(?:acter)?|chr|code ?point) (?:code |value |number )?(?:of |for )?(?:u\+)?([0-9]{1,7}|u\+[0-9a-f]{4,6}|0x[0-9a-f]{1,6})(?: (?:as|to|in) (?:a )?(?:char(?:acter)?|letter|text|symbol))?$/) || low.match(/^(u\+[0-9a-f]{4,6})$/);
+  if (m) { const t = m[1]; const cp = /^u\+/.test(t) ? parseInt(t.slice(2), 16) : /^0x/.test(t) ? parseInt(t.slice(2), 16) : +t; if (cp >= 0 && cp <= 0x10ffff) return { kind: "charfrom", cp, src: t }; }
+  // --- IP addresses and CIDR blocks ---
+  m = low.match(/(\b(?:\d{1,3}\.){3}\d{1,3}\b)(?:\/(\d{1,2})\b)?/);
+  const cidrOnly = low.match(/(?:^|\s|a )\/(\d{1,2})\b/);
+  if (m && /\b(?:ip|ips|address|addresses|private|public|loopback|localhost|subnet|mask|cidr|network|broadcast|range|hosts?|usable|what is|whats|what kind|what type|is)\b/.test(low) && !/\bport\b|\bping\b|\bcurl\b|\bssh\b|\bhttp/.test(low)) {
+    const oct = m[1].split(".").map(Number); if (oct.every((o) => o <= 255)) return { kind: "ip", ip: m[1], prefix: m[2] != null ? +m[2] : null, wantsRange: /\b(?:subnet|mask|cidr|network|broadcast|range|hosts?|usable|first|last)\b/.test(low) };
+  }
+  if (cidrOnly && /\b(?:subnet|mask|cidr|hosts?|addresses|ips|usable|network|block|prefix)\b/.test(low) && +cidrOnly[1] <= 32) return { kind: "cidr", prefix: +cidrOnly[1], wantsHosts: /\bhosts?\b|\baddresses\b|\bips\b|\busable\b|\bhow many\b/.test(low) };
+  // --- HTTP status codes ---
+  m = low.match(/^(?:what (?:is|does|do) |whats |what's |explain |meaning of |define )?(?:an? |the )?(?:http |https |http\/\d(?:\.\d)? |status |error |response )*(?:status |error |response |code |status code |error code |response code )*(\d{3})(?: (?:status|error|response|code|status code|error code|http|http status))*(?: mean| means| stand for| error| status| code| response)*$/);
+  if (m && HTTP_STATUS[+m[1]] !== undefined && /\b(?:http|status|error|response|code|mean)\b/.test(low)) return { kind: "httpstatus", code: +m[1] };
   // --- translation: DI carries an English dictionary only ---
   m = low.match(/^(?:how (?:do|would|can|to) (?:you|i|u|we|one) )?(?:say|translate|write)\s+(.+?)\s+(?:in|into|to)\s+(spanish|french|german|italian|portuguese|japanese|chinese|mandarin|korean|russian|arabic|hindi|dutch|swedish|latin|greek|turkish|polish|hebrew|vietnamese|thai|tagalog|filipino|indonesian|swahili)$/) || low.match(/^(?:what is|whats|what's) (?:the )?(?:word for |translation of )?(.+?) in (spanish|french|german|italian|portuguese|japanese|chinese|mandarin|korean|russian|arabic|hindi|dutch|swedish|latin|greek|turkish|polish|hebrew|vietnamese|thai|tagalog|filipino|indonesian|swahili)$/) || low.match(/^(spanish|french|german|italian|portuguese|japanese|chinese|mandarin|korean|russian|arabic|hindi|dutch|swedish|latin|greek|turkish|polish|hebrew|vietnamese|thai|tagalog|filipino|indonesian|swahili) (?:word |translation )?for (.+)$/);
   if (m) { const lang = /^(spanish|french|german|italian|portuguese|japanese|chinese|mandarin|korean|russian|arabic|hindi|dutch|swedish|latin|greek|turkish|polish|hebrew|vietnamese|thai|tagalog|filipino|indonesian|swahili)$/.test(m[1]) ? m[1] : m[2]; return { kind: "translate", lang, phrase: lang === m[1] ? m[2] : m[1] }; }
@@ -325,8 +375,50 @@ export function cronOf(p) {
   return null;
 }
 function hm(t) { return String(t.h).padStart(2, "0") + ":" + String(t.m).padStart(2, "0"); }
+// HTTP status codes (RFC 9110 and the common extras), for "what does 404 mean"
+export const HTTP_STATUS = {
+  100: ["Continue", "the server got the request headers and the client may send the body"], 101: ["Switching Protocols", "the server agreed to change protocol, e.g. to WebSocket"],
+  200: ["OK", "the request succeeded"], 201: ["Created", "the request succeeded and a new resource was created"], 202: ["Accepted", "the request was accepted for processing but is not finished"], 204: ["No Content", "success with nothing to send back"], 206: ["Partial Content", "a byte range of the resource, as asked for with a Range header"],
+  301: ["Moved Permanently", "the resource has a new permanent URL; update links and bookmarks"], 302: ["Found", "a temporary redirect; keep using the original URL"], 303: ["See Other", "fetch the result with a GET at another URL, typically after a POST"], 304: ["Not Modified", "the cached copy is still current, so no body is sent"], 307: ["Temporary Redirect", "like 302 but the method and body must not change"], 308: ["Permanent Redirect", "like 301 but the method and body must not change"],
+  400: ["Bad Request", "the server could not understand the request, usually malformed syntax or invalid parameters"], 401: ["Unauthorized", "authentication is required or the credentials were wrong (despite the name it means unauthenticated)"], 402: ["Payment Required", "reserved; some APIs use it for exhausted quotas or billing problems"], 403: ["Forbidden", "the server understood but refuses; being logged in will not help"], 404: ["Not Found", "no resource at that URL, or the server is hiding it"], 405: ["Method Not Allowed", "the URL exists but not for this HTTP method, e.g. POST to a read-only endpoint"], 406: ["Not Acceptable", "nothing matches the Accept headers the client sent"], 408: ["Request Timeout", "the server gave up waiting for the request"], 409: ["Conflict", "the request clashes with the current state, e.g. an edit on stale data"], 410: ["Gone", "the resource was removed on purpose and will not be back"], 411: ["Length Required", "a Content-Length header is required"], 412: ["Precondition Failed", "an If-Match or similar precondition was not met"], 413: ["Content Too Large", "the request body is bigger than the server allows"], 414: ["URI Too Long", "the URL is longer than the server will process"], 415: ["Unsupported Media Type", "the request body format is not supported"], 416: ["Range Not Satisfiable", "the requested byte range is outside the resource"], 418: ["I'm a teapot", "an April Fools joke from RFC 2324; some servers return it for requests they will not brew"], 422: ["Unprocessable Content", "well-formed but semantically invalid, common for validation errors"], 425: ["Too Early", "the server will not risk a replayed request"], 426: ["Upgrade Required", "switch to a different protocol, such as TLS"], 428: ["Precondition Required", "the request must be conditional to avoid lost updates"], 429: ["Too Many Requests", "rate limited; check the Retry-After header and slow down"], 431: ["Request Header Fields Too Large", "headers (often cookies) are too big"], 451: ["Unavailable For Legal Reasons", "blocked by a legal demand, named after Fahrenheit 451"],
+  500: ["Internal Server Error", "the server hit an unexpected error; the fault is on the server side"], 501: ["Not Implemented", "the server does not support that method"], 502: ["Bad Gateway", "a proxy or load balancer got an invalid response from the upstream server"], 503: ["Service Unavailable", "overloaded or down for maintenance; usually temporary"], 504: ["Gateway Timeout", "a proxy did not get a timely response from upstream"], 505: ["HTTP Version Not Supported", "the server refuses that HTTP version"], 507: ["Insufficient Storage", "the server is out of room to complete the request (WebDAV)"], 511: ["Network Authentication Required", "log in to the network first, e.g. a captive portal"],
+};
+const IP_SPECIAL = [
+  [[0, 0, 0, 0], 8, "the 'this network' range (0.0.0.0/8); 0.0.0.0 means 'any address' when binding a server"],
+  [[10, 0, 0, 0], 8, "a private address (RFC 1918, 10.0.0.0/8): used on LANs and not routed on the public internet"],
+  [[100, 64, 0, 0], 10, "a carrier-grade NAT address (RFC 6598, 100.64.0.0/10): shared address space inside an ISP"],
+  [[127, 0, 0, 0], 8, "a loopback address (127.0.0.0/8): it always points at this same machine; 127.0.0.1 is 'localhost'"],
+  [[169, 254, 0, 0], 16, "a link-local address (169.254.0.0/16): self-assigned when no DHCP server answered, so it usually means 'no network'"],
+  [[172, 16, 0, 0], 12, "a private address (RFC 1918, 172.16.0.0/12): used on LANs and not routed on the public internet"],
+  [[192, 0, 0, 0], 24, "an IETF protocol assignment (192.0.0.0/24)"],
+  [[192, 0, 2, 0], 24, "a documentation address (TEST-NET-1, 192.0.2.0/24): reserved for examples, never assigned"],
+  [[192, 88, 99, 0], 24, "the deprecated 6to4 relay anycast range (192.88.99.0/24)"],
+  [[192, 168, 0, 0], 16, "a private address (RFC 1918, 192.168.0.0/16): the usual home-router LAN range, not routed on the public internet"],
+  [[198, 18, 0, 0], 15, "a benchmarking range (198.18.0.0/15): reserved for network testing"],
+  [[198, 51, 100, 0], 24, "a documentation address (TEST-NET-2, 198.51.100.0/24): reserved for examples"],
+  [[203, 0, 113, 0], 24, "a documentation address (TEST-NET-3, 203.0.113.0/24): reserved for examples"],
+  [[224, 0, 0, 0], 4, "a multicast address (224.0.0.0/4): one sender to many subscribed receivers"],
+  [[240, 0, 0, 0], 4, "a reserved address (240.0.0.0/4, 'class E'); 255.255.255.255 is the limited broadcast address"],
+];
+const ip2n = (o) => ((o[0] << 24) >>> 0) + (o[1] << 16) + (o[2] << 8) + o[3];
+const n2ip = (n) => [n >>> 24, (n >>> 16) & 255, (n >>> 8) & 255, n & 255].join(".");
+function ipClass(oct) { const n = ip2n(oct); if (n === 0xffffffff) return "the limited broadcast address (255.255.255.255): every host on the local link"; for (const [base, len, what] of IP_SPECIAL) { const mask = len === 0 ? 0 : (0xffffffff << (32 - len)) >>> 0; if (((n & mask) >>> 0) === ip2n(base)) return what; } return "a public (globally routable) address"; }
+function cidrInfo(oct, prefix) {
+  const mask = prefix === 0 ? 0 : (0xffffffff << (32 - prefix)) >>> 0, n = ip2n(oct), net = (n & mask) >>> 0, bcast = (net | (~mask >>> 0)) >>> 0, size = 2 ** (32 - prefix);
+  const usable = prefix >= 31 ? size : size - 2;
+  return { mask: n2ip(mask), wildcard: n2ip(~mask >>> 0), network: n2ip(net), broadcast: n2ip(bcast), first: prefix >= 31 ? n2ip(net) : n2ip(net + 1), last: prefix >= 31 ? n2ip(bcast) : n2ip(bcast - 1), size, usable };
+}
+function fmtDurLong(secs) {
+  const d = Math.floor(secs / 86400), h = Math.floor((secs % 86400) / 3600), mi = Math.floor((secs % 3600) / 60), sec = Math.round((secs % 60) * 1000) / 1000;
+  const parts = []; if (d) parts.push(d + " day" + (d === 1 ? "" : "s")); if (h) parts.push(h + " hour" + (h === 1 ? "" : "s")); if (mi) parts.push(mi + " minute" + (mi === 1 ? "" : "s")); if (sec || !parts.length) parts.push(sec + " second" + (sec === 1 ? "" : "s"));
+  return parts.length > 1 ? parts.slice(0, -1).join(", ") + " and " + parts[parts.length - 1] : parts[0];
+}
+const HTML_ESC = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
+const HTML_NAMED = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: "\u00a0", copy: "\u00a9", reg: "\u00ae", trade: "\u2122", euro: "\u20ac", pound: "\u00a3", yen: "\u00a5", cent: "\u00a2", deg: "\u00b0", hellip: "\u2026", mdash: "\u2014", ndash: "\u2013", laquo: "\u00ab", raquo: "\u00bb", ldquo: "\u201c", rdquo: "\u201d", lsquo: "\u2018", rsquo: "\u2019", times: "\u00d7", divide: "\u00f7", plusmn: "\u00b1", para: "\u00b6", sect: "\u00a7", middot: "\u00b7", bull: "\u2022" };
+const isPrimeN = (n) => { if (n < 2) return false; if (n % 2 === 0) return n === 2; if (n % 3 === 0) return n === 3; for (let i = 5; i * i <= n; i += 6) if (n % i === 0 || n % (i + 2) === 0) return false; return true; };
+const CHAR_NAMES = { 32: "space", 9: "tab", 10: "line feed (newline)", 13: "carriage return", 0: "null", 27: "escape", 127: "delete", 160: "no-break space", 8364: "euro sign", 163: "pound sign", 165: "yen sign", 169: "copyright sign", 174: "registered sign", 8482: "trade mark sign", 176: "degree sign", 960: "greek small letter pi", 8734: "infinity", 8230: "horizontal ellipsis", 8212: "em dash", 8211: "en dash", 215: "multiplication sign", 247: "division sign", 177: "plus-minus sign", 8592: "leftwards arrow", 8594: "rightwards arrow", 8593: "upwards arrow", 8595: "downwards arrow", 9829: "black heart suit", 10003: "check mark", 10007: "ballot x", 64: "commercial at", 35: "number sign", 36: "dollar sign", 37: "percent sign", 38: "ampersand", 42: "asterisk", 43: "plus sign", 45: "hyphen-minus", 47: "solidus (slash)", 92: "reverse solidus (backslash)", 95: "low line (underscore)", 126: "tilde", 94: "circumflex accent", 96: "grave accent", 124: "vertical line (pipe)" };
 // kinds that are safe to answer even when the line also reads like a code request
-export const CODE_OK = new Set(["uuid", "lorem", "json", "cron", "calculus", "nolive", "translate", "randcolor"]);
+export const CODE_OK = new Set(["uuid", "lorem", "json", "cron", "calculus", "nolive", "translate", "randcolor", "randpass", "html", "charcode", "charfrom", "bitwise", "httpstatus", "ip", "cidr"]);
 
 // ---------------------------------------------------------------------------
 // run(): compute the answer for an ask() result
@@ -432,6 +524,76 @@ export function run(q) {
     case "calculus": return { ok: true, kind: q.kind, what: q.what, expr: q.expr, value: null, text: "Quelvra handles " + q.what + " problems", link: "/quelvra/?q=" + encodeURIComponent((q.what === "d/dx" ? "derivative of " : /^(differentiate|integrate)$/.test(q.what) ? q.what + " " : q.what + " of ") + q.expr) };
     case "nolive": return { ok: true, kind: q.kind, topic: q.topic, value: null, text: "no live " + q.topic + " data offline" };
     case "translate": return { ok: true, kind: q.kind, lang: q.lang, phrase: q.phrase, value: null, text: "no " + q.lang + " dictionary" };
+    case "bitwise": {
+      const parse = (t) => { try { return /^0x/.test(t) ? BigInt(t) : /^0b/.test(t) ? BigInt(t) : BigInt(t); } catch (_) { return null; } };
+      const a = parse(q.a), b = q.b == null ? null : parse(q.b);
+      if (a === null || (q.op !== "not" && b === null)) return { ok: false, error: "those are not integers" };
+      if (q.op === "not") {
+        const bits = b == null ? (a < 256n ? 8n : a < 65536n ? 16n : 32n) : b; if (bits < 1n || bits > 128n) return { ok: false, error: "bit width must be 1 to 128" };
+        const maskv = (1n << bits) - 1n, r = (~a) & maskv;
+        return { ok: true, kind: q.kind, op: "not", value: r.toString(), a: a.toString(), bits: Number(bits), text: "NOT " + a + " = " + r + " in " + bits + " bits (0b" + r.toString(2).padStart(Number(bits), "0") + "); as a signed two's-complement number it is " + (~a).toString(), abin: a.toString(2).padStart(Number(bits), "0"), rbin: r.toString(2).padStart(Number(bits), "0") };
+      }
+      if ((q.op === "shl" || q.op === "shr") && (b < 0n || b > 1024n)) return { ok: false, error: "shift count must be 0 to 1024" };
+      const r = q.op === "xor" ? a ^ b : q.op === "and" ? a & b : q.op === "or" ? a | b : q.op === "nand" ? ~(a & b) : q.op === "nor" ? ~(a | b) : q.op === "shl" ? a << b : a >> b;
+      const w = Math.max(a.toString(2).replace("-", "").length, (b || 0n).toString(2).replace("-", "").length, r.toString(2).replace("-", "").length);
+      const bin = (x) => (x < 0n ? "-" : "") + (x < 0n ? -x : x).toString(2).padStart(w, "0");
+      const sym = { xor: "XOR", and: "AND", or: "OR", nand: "NAND", nor: "NOR", shl: "<<", shr: ">>" }[q.op];
+      return { ok: true, kind: q.kind, op: q.op, value: r.toString(), a: a.toString(), b: b.toString(), text: a + " " + sym + " " + b + " = " + r, abin: bin(a), bbin: bin(b), rbin: bin(r), sym, hex: (r < 0n ? "-0x" + (-r).toString(16) : "0x" + r.toString(16)) };
+    }
+    case "nearprime": {
+      const n = q.n; let up = n + 1; while (!isPrimeN(up)) up++;
+      let down = n - 1; while (down >= 2 && !isPrimeN(down)) down--;
+      if (q.dir === "next") return { ok: true, kind: q.kind, value: up, text: "The next prime after " + n + " is " + up, n, dir: q.dir };
+      if (q.dir === "prev") { if (down < 2) return { ok: false, error: "there is no prime below " + n + " (2 is the smallest prime)" }; return { ok: true, kind: q.kind, value: down, text: "The largest prime below " + n + " is " + down, n, dir: q.dir }; }
+      const self = isPrimeN(n);
+      if (self) return { ok: true, kind: q.kind, value: n, text: n + " is itself prime; its neighbours are " + (down >= 2 ? down + " below and " : "") + up + " above", n, dir: q.dir };
+      const pick = down >= 2 && n - down <= up - n ? down : up;
+      return { ok: true, kind: q.kind, value: pick, text: "The nearest prime to " + n + " is " + pick + (down >= 2 && n - down === up - n ? " (tied with " + up + ", both " + (up - n) + " away)" : " (" + (down >= 2 ? down + " below, " : "") + up + " above)"), n, dir: q.dir };
+    }
+    case "wordlen": {
+      const words = q.text.split(/\s+/).map((w) => w.replace(/^[^a-z0-9']+|[^a-z0-9']+$/gi, "")).filter(Boolean);
+      if (!words.length) return { ok: false, error: "no words found" };
+      const best = words.reduce((a, w) => (q.which === "longest" ? w.length > a.length : w.length < a.length) ? w : a, words[0]);
+      const ties = [...new Set(words.filter((w) => w.length === best.length))];
+      return { ok: true, kind: q.kind, value: best, which: q.which, len: best.length, ties, count: words.length, text: best + " (" + best.length + " letters)" };
+    }
+    case "lettercount": {
+      const L = q.letter.toLowerCase(), t = q.text.toLowerCase(); let c = 0; for (const ch of t) if (ch === L) c++;
+      return { ok: true, kind: q.kind, value: c, letter: q.letter, text: c + " " + (c === 1 ? "time" : "times"), total: t.replace(/[^a-z]/g, "").length };
+    }
+    case "duration": return { ok: true, kind: q.kind, value: q.secs, text: fmtDurLong(q.secs), src: q.src, hms: (Math.floor(q.secs / 3600)) + ":" + String(Math.floor((q.secs % 3600) / 60)).padStart(2, "0") + ":" + String(Math.floor(q.secs % 60)).padStart(2, "0") };
+    case "randpass": {
+      if (q.phrase) {
+        const WORDS = "apple river stone cloud maple tiger lemon ocean pixel candle forest silver copper meadow falcon harbor velvet cactus marble thunder walnut ember lantern quartz saddle turnip anchor breeze cobalt dagger ferry garnet hazel iris jasper kettle lotus mango nectar orbit parrot quill raven sable tulip umber violet willow yarrow zephyr".split(" ");
+        const n = Math.max(4, Math.min(8, Math.round(q.n / 5))); const out = []; for (let i = 0; i < n; i++) out.push(WORDS[randInt(0, WORDS.length - 1)]);
+        return { ok: true, kind: q.kind, value: out.join("-"), text: out.join("-"), n, bits: Math.round(n * Math.log2(WORDS.length)), phrase: true };
+      }
+      const SETS = ["abcdefghijklmnopqrstuvwxyz", "ABCDEFGHIJKLMNOPQRSTUVWXYZ", "0123456789", "!@#$%^&*()-_=+[]{};:,.?/"];
+      const ALL = SETS.join(""); const chars = [];
+      for (const set of SETS) chars.push(set[randInt(0, set.length - 1)]); // at least one of each class
+      while (chars.length < q.n) chars.push(ALL[randInt(0, ALL.length - 1)]);
+      for (let i = chars.length - 1; i > 0; i--) { const j = randInt(0, i); [chars[i], chars[j]] = [chars[j], chars[i]]; }
+      const pw = chars.join("");
+      return { ok: true, kind: q.kind, value: pw, text: pw, n: q.n, bits: Math.round(q.n * Math.log2(ALL.length)), phrase: false };
+    }
+    case "html": {
+      const out = q.op === "escape" ? q.payload.replace(/[&<>"']/g, (c) => HTML_ESC[c]) : q.payload.replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (m0, e) => /^#x/i.test(e) ? String.fromCodePoint(parseInt(e.slice(2), 16)) : /^#/.test(e) ? String.fromCodePoint(+e.slice(1)) : (HTML_NAMED[e.toLowerCase()] !== undefined ? HTML_NAMED[e.toLowerCase()] : m0));
+      return { ok: true, kind: q.kind, op: q.op, value: out, text: out, payload: q.payload, changed: out !== q.payload };
+    }
+    case "charcode": { const cp = q.ch.codePointAt(0); return { ok: true, kind: q.kind, value: cp, ch: q.ch, hex: cp.toString(16).toUpperCase().padStart(4, "0"), bin: cp.toString(2).padStart(8, "0"), ascii: cp < 128, name: CHAR_NAMES[cp] || null, utf8: [...new TextEncoder().encode(q.ch)].map((b) => b.toString(16).toUpperCase().padStart(2, "0")).join(" "), text: String(cp) }; }
+    case "charfrom": {
+      if (q.cp >= 0xd800 && q.cp <= 0xdfff) return { ok: false, error: "U+" + q.cp.toString(16).toUpperCase() + " is a surrogate code unit, not a character" };
+      const ch = String.fromCodePoint(q.cp), ctrl = q.cp < 32 || q.cp === 127;
+      return { ok: true, kind: q.kind, value: ch, cp: q.cp, hex: q.cp.toString(16).toUpperCase().padStart(4, "0"), ctrl, ascii: q.cp < 128, name: CHAR_NAMES[q.cp] || null, text: ctrl ? (CHAR_NAMES[q.cp] || "control character") : ch };
+    }
+    case "ip": {
+      const oct = q.ip.split(".").map(Number);
+      const cls = ipClass(oct);
+      const r = q.prefix != null && q.prefix <= 32 ? cidrInfo(oct, q.prefix) : null;
+      return { ok: true, kind: q.kind, ip: q.ip, value: q.ip, cls, prefix: q.prefix, range: r, text: q.ip + " is " + cls, priv: /private/.test(cls) };
+    }
+    case "cidr": { const r = cidrInfo([0, 0, 0, 0], q.prefix); return { ok: true, kind: q.kind, prefix: q.prefix, value: r.mask, mask: r.mask, wildcard: r.wildcard, size: r.size, usable: r.usable, text: "/" + q.prefix + " = " + r.mask + ", " + r.size.toLocaleString("en-US") + " addresses, " + r.usable.toLocaleString("en-US") + " usable hosts" }; }
+    case "httpstatus": { const e = HTTP_STATUS[q.code]; return { ok: true, kind: q.kind, code: q.code, value: e[0], name: e[0], meaning: e[1], cls: ["", "informational", "success", "redirection", "client error", "server error"][Math.floor(q.code / 100)], text: q.code + " " + e[0] + ": " + e[1] }; }
     default: return { ok: false, error: "not an everyday request" };
   }
 }
@@ -471,6 +633,23 @@ export function say(res) {
     case "calculus": return { title: "Calculus", body: "DI's calculator does arithmetic, not symbolic calculus. **Quelvra**, the site's verified math engine, does: open [" + res.what + " of " + res.expr + "](" + res.link + ") in Quelvra and it will work it out and check the result.", note: "Quelvra runs offline in the browser too; every answer it gives is verified by a second method before it is shown.", result: res };
     case "nolive": return { title: "No live data", body: "I cannot answer that: **" + res.topic + "** needs live data, and this engine runs entirely offline with no network access, so anything I said would be made up.", note: "Fixed facts, arithmetic, conversions, dates and code are what I do have. A weather, news or market site has the live figures.", result: res };
     case "translate": return { title: "Translation", body: "I cannot translate **" + res.phrase + "** into " + res.lang.charAt(0).toUpperCase() + res.lang.slice(1) + ": the only dictionary built into this engine is English, and guessing a word in another language could be wrong or rude.", note: "An offline dictionary app or a translation service will have it.", result: res };
+    case "bitwise": return res.op === "not"
+      ? { title: "Bitwise NOT", body: "**" + res.text + "**.", pre: "  " + res.abin + "  (" + res.a + ")\n~ " + res.rbin + "  (" + res.value + ")", note: "NOT flips every bit, so the answer depends on the width; say “not 5 in 16 bits” to choose it.", result: res }
+      : { title: "Bitwise " + res.sym, body: "**" + res.text + "** (" + res.hex + ").", pre: "     " + res.abin + "  (" + res.a + ")\n" + res.sym.padEnd(5) + res.bbin + "  (" + res.b + ")\n=    " + res.rbin + "  (" + res.value + ")", note: "Exact integer arithmetic (arbitrary width); negative numbers use two's complement.", result: res };
+    case "nearprime": return { title: "Prime search", body: "**" + res.text + "**.", note: "Checked by trial division, so it is exact.", result: res };
+    case "wordlen": return { title: (res.which === "longest" ? "Longest" : "Shortest") + " word", body: "**" + res.value + "** (" + res.len + " letters" + (res.ties.length > 1 ? "; tied with " + res.ties.filter((w) => w !== res.value).join(", ") : "") + ") out of " + res.count + " words.", note: "Punctuation around words is ignored.", result: res };
+    case "lettercount": return { title: "Letter count", body: "The letter **" + res.letter + "** appears **" + res.value + " " + (res.value === 1 ? "time" : "times") + "** (case-insensitive, " + res.total + " letters in all).", result: res };
+    case "duration": return { title: "Duration", body: "**" + res.src + "** is **" + res.text + "** (" + res.hms + " as h:mm:ss).", note: "Plain arithmetic: 60 seconds a minute, 60 minutes an hour, 24 hours a day.", result: res };
+    case "randpass": return { title: res.phrase ? "Passphrase" : "Password", body: (res.phrase ? res.n + " random words, about " + res.bits + " bits of entropy:" : res.n + " characters with at least one lowercase, uppercase, digit and symbol, about " + res.bits + " bits of entropy:"), pre: res.value, note: "Made on this device from the cryptographic random source and never sent anywhere; DI does not keep a copy. Use a password manager to store it.", result: res };
+    case "html": return { title: res.op === "escape" ? "HTML escaped" : "HTML unescaped", body: res.changed ? (res.op === "escape" ? "With the five reserved characters (& < > \" ') replaced by entities:" : "With entities replaced by the characters they stand for:") : "Nothing to " + res.op + ": the text has no " + (res.op === "escape" ? "reserved characters" : "entities") + ".", pre: res.changed ? res.value : undefined, result: res };
+    case "charcode": return { title: "Character code", body: "**" + (res.value < 32 || res.value === 127 ? (res.name || "control character") : res.ch) + "** is code point **" + res.value + "** (U+" + res.hex + ", " + (res.ascii ? "ASCII, binary " + res.bin : "beyond ASCII, so not one byte") + ")" + (res.name ? ", the " + res.name : "") + ".", pre: "decimal  " + res.value + "\nhex      U+" + res.hex + "\nutf-8    " + res.utf8 + (res.ascii ? "\nbinary   " + res.bin : ""), result: res };
+    case "charfrom": return { title: "Character", body: "Code point **" + res.cp + "** (U+" + res.hex + ") is " + (res.ctrl ? "the **" + res.text + "** control character" : "**" + res.value + "**" + (res.name ? ", the " + res.name : "")) + (res.ascii ? " (ASCII)" : "") + ".", result: res };
+    case "ip": {
+      const r = res.range;
+      return { title: "IP address", body: "**" + res.ip + "** is " + res.cls + ".", pre: r ? "network    " + r.network + "/" + res.prefix + "\nmask       " + r.mask + "\nbroadcast  " + r.broadcast + "\nhosts      " + r.first + " - " + r.last + " (" + r.usable.toLocaleString("en-US") + " usable of " + r.size.toLocaleString("en-US") + ")" : undefined, note: "IANA special-purpose address registry (RFC 6890); add /24 or similar for the subnet range.", result: res };
+    }
+    case "cidr": return { title: "Subnet /" + res.prefix, body: "**/" + res.prefix + "** is subnet mask **" + res.mask + "**: " + res.size.toLocaleString("en-US") + " addresses, **" + res.usable.toLocaleString("en-US") + " usable hosts**" + (res.prefix >= 31 ? " (a /31 or /32 has no separate network and broadcast addresses)" : " (network and broadcast addresses excluded)") + ".", pre: "mask       " + res.mask + "\nwildcard   " + res.wildcard + "\naddresses  " + res.size.toLocaleString("en-US") + "\nusable     " + res.usable.toLocaleString("en-US"), result: res };
+    case "httpstatus": return { title: "HTTP " + res.code + " " + res.name, body: "**" + res.code + " " + res.name + "** is a " + res.cls + " status: " + res.meaning + ".", note: "RFC 9110 (HTTP semantics) and the IANA status code registry.", result: res };
     default: return { title: "Everyday tool", body: res.text || "", result: res };
   }
 }
