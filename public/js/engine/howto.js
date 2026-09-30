@@ -10,7 +10,7 @@ const add = (id, re, title, lang, code, body, note) => H.push({ id, re, title, l
 // ---------------------------------------------------------------------------
 // git
 // ---------------------------------------------------------------------------
-add("git-undo-commit", /\bgit\b.*\b(?:undo|revert|remove|cancel|uncommit|take back)\b.*\b(?:last|latest|previous|recent|my)\b.*\bcommit|\b(?:undo|uncommit|take back)\b.*\blast (?:git )?commit|\bgit (?:reset|undo) (?:the )?last commit/i, "Undo the last git commit", "bash",
+add("git-undo-commit", /\bgit\b.*\b(?:undo|revert|remove|cancel|uncommit|take back)\b.*\b(?:last|latest|previous|recent|my|a|the|that)\b.*\bcommit|\b(?:undo|uncommit|revert) (?:a |the |my |that )?(?:git )?commit\b|\b(?:undo|uncommit|take back)\b.*\blast (?:git )?commit|\bgit (?:reset|undo) (?:the )?last commit/i, "Undo the last git commit", "bash",
   "# keep the changes staged (soft)\ngit reset --soft HEAD~1\n\n# keep the changes in the working tree, unstaged (default, mixed)\ngit reset HEAD~1\n\n# throw the commit AND its changes away (hard, destructive)\ngit reset --hard HEAD~1\n\n# already pushed? make a new commit that reverses it instead\ngit revert HEAD",
   "`reset` rewrites local history; use `revert` for anything already pushed to a shared branch.");
 add("git-amend", /\bgit\b.*\b(?:amend|edit|change|fix|reword)\b.*\b(?:last |latest |previous )?commit(?: message)?|\bchange (?:the )?(?:last )?commit message/i, "Amend the last commit", "bash",

@@ -21,6 +21,7 @@ import { makeLexicon, withDictionary, withContext, rankFixes, isWord, correctTex
 import { words as englishWords, band as wordBand } from "/js/engine/words.js";
 import * as EV from "/js/engine/everyday.js";
 import * as HT from "/js/engine/howto.js";
+import * as K from "/js/engine/know.js";
 
 // --- typo tolerance: nudge a near-miss command word to its canonical spelling ---
 // This runs ONLY over the text used for routing, never over the payload a skill
@@ -64,7 +65,7 @@ function score(input) {
   // This is used only to DETECT intent; skills receive the original input.
   const low = normalizeTypos(synonyms(numberWords(naturalize(s))));
   const has = (re) => re.test(low);
-  const S0 = { calc: 0, convert: 0, codegen: 0, text: 0, regex: 0, datetime: 0, predict: 0, stats: 0, algebra: 0, numbertheory: 0, encode: 0, knowledge: 0, facts: 0, data: 0, base: 0, color: 0, jsonquery: 0, wordmath: 0, sequence: 0, logic: 0, setops: 0, matrix: 0, units: 0, combinatorics: 0, listops: 0, spelling: 0, dictionary: 0, inflect: 0, compare: 0, everyday: 0, howto: 0 };
+  const S0 = { calc: 0, convert: 0, codegen: 0, text: 0, regex: 0, datetime: 0, predict: 0, stats: 0, algebra: 0, numbertheory: 0, encode: 0, knowledge: 0, facts: 0, data: 0, base: 0, color: 0, jsonquery: 0, wordmath: 0, sequence: 0, logic: 0, setops: 0, matrix: 0, units: 0, combinatorics: 0, listops: 0, spelling: 0, dictionary: 0, inflect: 0, compare: 0, everyday: 0, howto: 0, know: 0 };
   const why = {};
   const add = (k, n, reason) => { S0[k] += n; if (reason && (!why[k] || n > 0)) why[k] = reason; };
   // a code request needs a real code verb or an explicit "in <language>" — NOT the
@@ -153,6 +154,8 @@ function score(input) {
   if (ev && (!codeAsk || EV.CODE_OK.has(ev.kind))) add("everyday", 10, "an everyday tool");
   // curated how-to snippets ("git undo last commit", "how do i center a div")
   if (HT.ask(s)) add("howto", 8, "a curated how-to");
+  // round 10: comparisons, who-invented / first / when / languages / legs, rhymes, phrase translation, "how does X work"
+  if (knowAsk(s)) add("know", 12, "curated knowledge");
   // fact packs: capitals, elements, constants — triggered by a domain keyword
   if (has(/\bcapital\b|\bcapital city\b/)) add("facts", 8, "country capital lookup");
   if (!codeAsk && F.trivia(s).ok) add("facts", 9, "a curated fact");
@@ -345,6 +348,7 @@ function say(skill, res, input, model) {
     case "inflect": return sayInflect(res);
     case "everyday": return EV.say(res);
     case "howto": return HT.say(res);
+    case "know": return sayKnow(res);
     case "compare":
       return res.ok
         ? { title: "Comparison", body: res.equal ? "They are **equal**: " + res.a.label + " = " + res.b.label + "." : "**" + res.winner.label + "** is " + res.rel + ". " + res.a.label + " = " + fmtNum(res.a.value) + " and " + res.b.label + " = " + fmtNum(res.b.value) + ".", note: "Compared as exact numeric values.", result: res }
@@ -469,6 +473,7 @@ function run(skill, input, model) {
     case "compare": return compareRun(input);
     case "everyday": return EV.run(EV.ask(input));
     case "howto": return HT.run(HT.ask(input));
+    case "know": return knowAsk(input) || { ok: false, kind: "none" };
     case "facts": return F.facts(input);
     case "listops": return listOps(input);
     case "spelling": return spelling(input, model);
@@ -649,7 +654,7 @@ const CAPITAL_CITIES = new Set(Object.values(F.CAPITALS).map((c) => c.toLowerCas
 // words from the program library ("tic tac toe", "todo", "pong") are real requests, not typos
 const PROGRAM_WORDS = ["todo", "todos", "pong", "tic", "tac", "toe", "hangman", "quicksort", "mergesort", "bst", "http", "https", "api", "stopwatch", "countdown", "portfolio", "dedupe", "caesar", "armstrong", "sieve", "anagram", "anagrams", "flatten", "argv", "cli", "bmi", "html", "css", "node", "nodejs", "golang", "cpp", "csharp", "ruby", "bash", "express", "flask"];
 const PROGRAM_SET = new Set([...PROGRAM_WORDS, "rest", "server", "servers", "game", "games", "app", "apps", "clock", "timer", "quiz", "queue", "stack", "tree", "list", "file", "files", "website", "page", "form", "login", "dice", "table", "tables"]);
-const DOMAIN_WORDS = [...PROGRAM_WORDS, ...Object.keys(A.GLOSSARY), ...Object.keys(F.CAPITALS), ...Object.values(F.CAPITALS), ...F.ELEMENTS.map((e) => e.name), ...Object.keys(F.CONSTANTS), ...EV.VOCAB, ...HT.VOCAB];
+const DOMAIN_WORDS = [...PROGRAM_WORDS, ...Object.keys(A.GLOSSARY), ...Object.keys(F.CAPITALS), ...Object.values(F.CAPITALS), ...F.ELEMENTS.map((e) => e.name), ...Object.keys(F.CONSTANTS), ...EV.VOCAB, ...HT.VOCAB, ...K.VOCAB];
 const lexCache = new WeakMap();
 let lexStatic = null;
 function lexicon(model) {
@@ -1204,6 +1209,70 @@ function compareRun(input) {
   return { ok: true, kind: "compare", winner, rel: "larger", a, b };
 }
 
+// Round 10 knowledge: each branch answers only from a curated table or a computation over
+// the word list, and returns null when the question is not one it can answer exactly.
+const TECH_CTX = /^(?:what(?:'s| is| are) (?:an? |the )?)(.+?) (?:in|for) (?:python|javascript|js|typescript|java|go|golang|rust|c\+\+|c#|programming|computing|networking|computer science|biology|chemistry|economics)$/;
+const RHYME_ASK = /^(?:what (?:words? )?rhymes? with|(?:what are |give me |list |find |show me )?(?:some )?(?:words? (?:that )?rhym(?:e|es|ing) with|rhym(?:es|ing words) (?:for|with|to)|rhyme for)) "?([a-z]+)"?$/;
+function knowAsk(input) {
+  const t = String(input || "").trim().toLowerCase().replace(/[?!.]+$/, "").replace(/\s+/g, " ");
+  if (!t || t.length > 160) return null;
+  const d = K.difference(t);
+  if (d && d.ok) return d;
+  if (d && /\bdifferences? between\b/.test(t)) {
+    // no side-by-side table for this pair: two exact glossary entries still answer it honestly
+    const a = A.lookup(d.a), b = A.lookup(d.b);
+    if (a.ok && b.ok && a.term !== b.term && (a.term === d.a || a.term === d.a.replace(/s$/, "")) && (b.term === d.b || b.term === d.b.replace(/s$/, ""))) return { ok: true, kind: "difference2", a, b };
+  }
+  const f = K.fact(t);
+  if (f.ok) return { ok: true, kind: "fact", text: f.text };
+  const r = t.match(RHYME_ASK);
+  if (r) return K.rhymes(r[1]);
+  const tr = K.translate(t);
+  if (tr && tr.ok) return tr;
+  const hw = t.match(/^how (?:does|do) (?:an? |the )?(.+?) work$/), w = hw || t.match(TECH_CTX);
+  if (w) { const g = A.lookup(w[1]); if (g.ok && (g.term === w[1] || g.term === w[1].replace(/s$/, ""))) return { ok: true, kind: "explain", how: !!hw, term: g.term, text: g.text }; }
+  return null;
+}
+function sayKnow(res) {
+  const src = "Source: DI curated knowledge (hand-written, not generated).";
+  if (!res || !res.ok) return { title: "Knowledge", body: (res && res.error) || "I do not have that in my curated knowledge, and I will not invent it.", result: res };
+  switch (res.kind) {
+    case "difference": {
+      const ACR = /^(?:tcp|udp|http|https|ram|rom|ipv4|ipv6|sql|nosql|ai)$/, nm = (x) => ACR.test(x) ? x.toUpperCase().replace("NOSQL", "NoSQL") : cap1(x);
+      const A1 = nm(res.a), B1 = nm(res.b);
+      const cell = (x) => x.replace(/\|/g, "\\|");
+      const table = "| | " + cell(A1) + " | " + cell(B1) + " |\n|---|---|---|\n" + res.rows.map(([k, x, y]) => "| **" + k + "** | " + cell(x) + " | " + cell(y) + " |").join("\n");
+      return { title: A1 + " vs " + B1, body: res.lead + "\n\n" + table, note: src, result: res };
+    }
+    case "difference2": {
+      const nm2 = (x) => x.length <= 4 && !/ /.test(x) ? x.toUpperCase() : cap1(x);
+      return { title: nm2(res.a.term) + " vs " + nm2(res.b.term), body: "**" + nm2(res.a.term) + "**: " + res.a.text + "\n\n**" + nm2(res.b.term) + "**: " + res.b.text, note: "I have no side-by-side table for this pair, so these are the two glossary definitions. Source: Universal Engine glossary (curated).", result: res };
+    }
+    case "fact": return { title: "Fact", body: res.text, note: src, result: res };
+    case "explain": return { title: (res.how ? "How it works: " : "Definition: ") + res.term, body: res.text, note: "Source: Universal Engine glossary (curated, not generated).", result: res };
+    case "rhymes":
+      if (res.none) return { title: "Rhymes for “" + res.word + "”", body: "“" + cap1(res.word) + "” famously has **no perfect rhyme** in common English. The closest options: " + res.words.join("; ") + ".", note: src, result: res };
+      return { title: "Rhymes for “" + res.word + "”", body: res.words.map((x) => "**" + x + "**").join(", ") + (res.total > res.words.length ? "\n\n" + res.total + " candidates in all; the most common words are shown first." : ""), note: "Matched by spelling (words ending in “-" + res.rime + "” with the same vowel group) across DI's 64,000-word list. English spelling is irregular, so say them aloud to check.", result: res };
+    case "phrase": {
+      const L = (x) => cap1(x);
+      return { title: L(res.lang) + ": “" + res.phrase + "”", body: "In **" + L(res.lang) + "**, “" + res.phrase + "” is **" + res.text + "**.\n\nIn other languages: " + res.others.map(([l, x]) => L(l) + " *" + x + "*").join(", ") + ".", note: "From DI's phrase table (common phrases in Spanish, French, German, Italian and Portuguese). It is not a general translator: for full sentences, turn on Smart mode.", result: res };
+    }
+  }
+  return { title: "Knowledge", body: "I do not have that in my curated knowledge.", result: res };
+}
+const cap1 = (x) => x.charAt(0).toUpperCase() + x.slice(1);
+const SUMMARIZE_ASK = /^\s*(?:please\s+)?(?:summari[sz]e|sum up|tl;?dr|give me (?:a |the )?(?:summary|gist|tl;?dr) of|make (?:this|it) shorter|shorten)(?:\s+(?:this|that|the following|this text|the text|this paragraph|this article|it))?\s*[:\-—]?\s*([\s\S]*)$/i;
+function summarizeReply(raw) {
+  const m = raw.match(SUMMARIZE_ASK);
+  if (!m) return null;
+  const text = m[1].trim();
+  // "summarize 3, 4, 5" or code is not prose; leave those to the other skills
+  if (!/[a-z]{3,}\s+[a-z]{2,}\s+[a-z]{2,}/i.test(text)) return text ? null : { skill: "know", confidence: 1, alternatives: [], title: "Summarize", body: "Paste the text after the word, for example: **summarize: <your paragraph>**. I pick out the sentences that carry the most frequent key words, keeping their original order." };
+  const res = K.summarize(text);
+  if (!res.ok) return { skill: "know", confidence: 1, alternatives: [], title: "Summarize", body: res.error, result: res };
+  return { skill: "know", confidence: 1, alternatives: [], title: "Summary", body: res.summary + (res.keywords.length ? "\n\n**Key words:** " + res.keywords.join(", ") : ""), note: "Extractive summary: kept " + res.kept + " of " + res.sentences + " sentences (" + res.outWords + " of " + res.inWords + " words), chosen by how many of the text's key words each one carries. Nothing is reworded or added.", result: res };
+}
+
 // A greeting or other pure conversational line ("hi", "thanks", "who are you", "what can you do").
 // Recognised as an intent, not guessed at — DI still answers only what it is sure of. Returns a
 // response object, or null when the line is a real request that just happens to start politely.
@@ -1235,6 +1304,12 @@ export function respond(input, model) {
   if (!raw) return { skill: null, confidence: 0, alternatives: [], title: "Engine", body: "Type a request: a calculation, a conversion, a code task, a text transform, a regex, date math, or ask me to complete a sentence." };
   const chat = smalltalk(raw);
   if (chat) return chat;
+  const sum = summarizeReply(raw);
+  if (sum) return sum;
+  if (!/\d/.test(raw)) {
+    const c = K.chat(raw);
+    if (c) return { skill: "smalltalk", confidence: 1, alternatives: [], ...c };
+  }
   // read through typos first. A code spec is identifiers, so it is never "corrected".
   const spec = parseSpec(raw) && !SOLVE_FOR.test(raw);
   let fx;

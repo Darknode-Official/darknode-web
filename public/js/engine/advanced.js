@@ -305,6 +305,25 @@ export const GLOSSARY = {
   "sql": "SQL (Structured Query Language) is the language for querying and changing data in relational databases, with statements such as SELECT, INSERT, UPDATE, and DELETE.",
   "url": "A URL (uniform resource locator) is a web address: a scheme, a host, and a path, such as https://example.com/page, naming where a resource lives.",
   "open source": "Open source software publishes its source code under a licence that lets anyone read, change, and share it.",
+  // round 10: everyday science and a few more computing terms
+  "dna": "DNA (deoxyribonucleic acid) is the molecule that carries genetic instructions in living things: two strands wound into a double helix, with the code written in four bases (A, T, C, G).",
+  "rna": "RNA (ribonucleic acid) is a single-stranded molecule, similar to DNA, that carries copies of genetic instructions (messenger RNA) and helps build proteins; it uses the base U in place of T.",
+  "gene": "A gene is a stretch of DNA that holds the instructions for one product, usually a protein; genes are the basic units of heredity.",
+  "protein": "A protein is a large molecule made of a chain of amino acids folded into a shape; proteins do most of the work in cells, as enzymes, structure, signals and transport.",
+  "photosynthesis": "Photosynthesis is how plants, algae and some bacteria turn light into chemical energy: carbon dioxide + water + light gives glucose + oxygen (6CO2 + 6H2O -> C6H12O6 + 6O2).",
+  "virus": "A virus is a tiny infectious agent (about 20 to 300 nanometres) made of genetic material in a protein coat; it can reproduce only inside a host cell. Antibiotics do not work on viruses.",
+  "bacteria": "Bacteria are single-celled microorganisms without a nucleus. Most are harmless or useful (such as gut bacteria); some cause disease and can be treated with antibiotics.",
+  "vaccine": "A vaccine trains the immune system to recognise a germ, using a harmless piece, a weakened or inactivated form, or instructions (mRNA) for one of its proteins, so the body can fight the real infection quickly.",
+  "udp": "UDP (User Datagram Protocol) is a connectionless transport protocol: it sends datagrams with no handshake, ordering or retransmission, trading reliability for low delay (DNS, games, video calls, QUIC).",
+  "router": "A router forwards packets between networks, choosing the next hop for each one from its routing table; a home router also joins your devices to the internet, usually with NAT and Wi-Fi.",
+  "cookie": "A cookie is a small piece of data a website asks the browser to store and send back with later requests, used for sessions, preferences and tracking.",
+  "kubernetes": "Kubernetes is an open-source system for running containers across a cluster of machines: it schedules them, restarts failed ones, scales them and routes traffic to them.",
+  "black hole": "A black hole is a region of space where gravity is so strong that nothing, not even light, can escape once past its boundary, the event horizon. Many form when massive stars collapse.",
+  "inflation": "Inflation is the rate at which prices rise across an economy over time, so each unit of money buys less; it is usually measured yearly with a consumer price index.",
+  "recession": "A recession is a significant, broad decline in economic activity lasting months; a common rule of thumb is two consecutive quarters of falling GDP.",
+  "climate change": "Climate change is the long-term shift in temperatures and weather patterns. Since the 1800s it has been driven mainly by burning fossil fuels, which adds heat-trapping greenhouse gases to the air.",
+  "democracy": "Democracy is a system of government in which power rests with the people, who rule directly or through representatives chosen in free and fair elections.",
+  "evolution": "Evolution is the change in the inherited traits of populations over generations. Natural selection, described by Darwin and Wallace, favours traits that help survival and reproduction.",
 };
 const KB_ALIASES = { xss: "cross site scripting", sqli: "sql injection", "ssl": "tls", "big o": "big o notation", "least privilege": "authorization", "asymmetric encryption": "public key cryptography", hash: "hash function", hashing: "hash function", hashes: "hash function", hashmap: "hash map" };
 export function lookup(input) {

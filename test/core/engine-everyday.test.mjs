@@ -295,8 +295,10 @@ group("everyday: round 7", () => {
   test("live data and translation are refused, not guessed", () => {
     assert.ok(/needs live data/.test(ask("what is the weather today")));
     assert.ok(/needs live data/.test(ask("bitcoin price")));
-    assert.ok(/cannot translate thank you into French/.test(ask("how do you say thank you in french")));
-    assert.ok(/cannot translate hello into Spanish/.test(ask("translate hello to spanish")));
+    // round 10: common phrases come from a curated table; anything else is still refused
+    assert.ok(/is merci/.test(ask("how do you say thank you in french")));
+    assert.ok(/is hola/.test(ask("translate hello to spanish")));
+    assert.ok(/cannot translate/.test(ask("translate the cat is sleeping on the sofa to spanish")));
     assert.equal(skill("what is 3 feet in cm"), "convert"); // "in <unit>" is not a language
   });
   test("random colour comes back as hex, rgb and hsl", () => {

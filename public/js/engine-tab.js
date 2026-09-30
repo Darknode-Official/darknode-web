@@ -22,17 +22,28 @@ export const mdInline = (s) => {
     let more = ""; if (q) { try { more = decodeURIComponent(q[1]); } catch (_) { more = ""; } }
     return '<a class="ue-link" href="' + href + '"' + (q ? ' data-sec="math" data-more="' + esc(more) + '"' : "") + ">" + text + "</a>";
   };
-  const inline = (t) => t.replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>").replace(/`([^`]+)`/g, "<code>$1</code>")
+  const inline = (t) => t.replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>").replace(/(^|[\s(])\*([^*\s][^*]*?)\*(?=[\s.,;:)!?]|$)/g, "$1<i>$2</i>").replace(/`([^`]+)`/g, "<code>$1</code>")
     .replace(/\[([^\]]+)\]\((\/(?!\/)[^\s)"']*)\)/g, link)
     .replace(/^#{1,6} +(.+)$/gm, "<b>$1</b>");
-  // consecutive "- item" / "* item" lines become one <ul>; everything else keeps <br> breaks
-  let html = "", items = [];
-  const flush = () => { if (items.length) { html += "<ul>" + items.map((i) => "<li>" + inline(i) + "</li>").join("") + "</ul>"; items = []; } };
+  // consecutive "- item" / "* item" lines become one <ul>; "| a | b |" lines become one table
+  // (a "|---|" row marks the header); everything else keeps <br> breaks
+  let html = "", items = [], rows = [];
+  const cells = (l) => l.replace(/^\||\|$/g, "").split(/(?<!\\)\|/).map((c) => inline(c.trim().replace(/\\\|/g, "|")));
+  const flush = () => {
+    if (items.length) { html += "<ul>" + items.map((i) => "<li>" + inline(i) + "</li>").join("") + "</ul>"; items = []; }
+    if (rows.length) {
+      const head = rows.length > 1 && /^\|?[\s:|-]+\|?$/.test(rows[1]) ? cells(rows.shift()) : null;
+      if (head) rows.shift();
+      html += '<div class="ue-table-wrap"><table class="ue-table">' + (head ? "<thead><tr>" + head.map((c) => "<th>" + c + "</th>").join("") + "</tr></thead>" : "") + "<tbody>" + rows.map((r) => "<tr>" + cells(r).map((c) => "<td>" + c + "</td>").join("") + "</tr>").join("") + "</tbody></table></div>";
+      rows = [];
+    }
+  };
   for (const line of esc(s).split("\n")) {
     const m = /^[-*] +(.+)$/.exec(line);
-    if (m) { items.push(m[1]); continue; }
+    if (m && !rows.length) { items.push(m[1]); continue; }
+    if (/^\|.*\|\s*$/.test(line)) { if (items.length) flush(); rows.push(line.trim()); continue; }
     flush();
-    html += (html && !html.endsWith("</ul>") ? "<br>" : "") + inline(line);
+    html += (html && !/<\/(?:ul|div)>$/.test(html) ? "<br>" : "") + inline(line);
   }
   flush();
   return html;
@@ -173,6 +184,11 @@ export function renderEngine(main) {
     '.ue-bot{align-self:flex-start;background:transparent}' +
     '.ue-bot .ue-title{font-weight:700;color:var(--acc);font-size:.8rem;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px}' +
     '.ue-bot a.ue-link{color:var(--acc);text-decoration:underline;text-underline-offset:2px}' +
+    '.ue-bot .ue-table-wrap{overflow-x:auto;margin:8px 0 4px;max-width:100%}' +
+    '.ue-bot .ue-table{border-collapse:collapse;font-size:.84rem;min-width:100%}' +
+    '.ue-bot .ue-table th,.ue-bot .ue-table td{border:1px solid var(--line);padding:6px 10px;text-align:left;vertical-align:top}' +
+    '.ue-bot .ue-table thead th{background:rgba(127,127,127,.12);font-weight:700}' +
+    '.ue-bot .ue-table td:first-child{white-space:nowrap}' +
     '.ue-msg ul{margin:6px 0;padding-left:20px}.ue-msg li{margin:2px 0}' +
     '.ue-bot pre{background:rgba(127,127,127,.12);border:1px solid var(--line);border-radius:8px;padding:10px 12px;overflow:auto;margin:8px 0 4px;font-size:.82rem}' +
     '.ue-meta{font-size:.7rem;color:var(--mut);margin-top:6px}' +

@@ -73,10 +73,14 @@ const RESULT_RULES = [
   { re: /\b(?:all|every one|each one)\b.*\b(?:is|are)\b|\bwhether all\b/, op: "all", on: "pred" },
   { re: /\bany\b.*\b(?:is|are)\b|\bwhether any\b|\bif any\b/, op: "any", on: "pred" },
 ];
+const NEGATE = /\b(?:filter(?:s|ed|ing)? out|remov(?:e|es|ed|ing)|delet(?:e|es|ed|ing)|drop(?:s|ped|ping)?|exclud(?:e|es|ed|ing)|without|except|but not|gets? rid of|getting rid of|discard(?:s|ed|ing)?|skip(?:s|ped|ping)?|ignor(?:e|es|ed|ing)|reject(?:s|ed|ing)?|strip(?:s|ped|ping)? out|throw(?:s|ing)? (?:out|away))(?: all)?(?: of)?(?: the| any)?(?: \w+)?\s*$/;
 const SEP_WORDS = { comma: ", ", space: " ", newline: "\n", dash: "-", hyphen: "-", underscore: "_", pipe: "|", semicolon: ";", colon: ":", nothing: "" };
 
 function detectSource(s) {
   let m;
+  if (/\bstrings? (?:in|from|of) (?:a |an |the )?(?:list|array|collection|vector|slice)\b/.test(s)) return { kind: "list", elem: "str", name: "strings" };
+  if (/\b(?:words?|characters?|letters?|vowels|consonants|digits) (?:in|of|from) (?:a |an |the |some |any )?(?:sentence|string|text|paragraph|line)\b/.test(s))
+    return { kind: "text", elem: "char", name: /\bsentence\b/.test(s) ? "sentence" : "text" };
   if ((m = s.match(new RegExp(String.raw`\b(?:numbers?|integers?|values?|counting|count(?:ing)?) (?:from|between) ${K} (?:to|and|through|up to) ${K}\b|\bfrom ${K} (?:to|through|up to) ${K}\b|\b${K} (?:to|through) ${K}\b`))))
     { const a = numOf(m[1] || m[3] || m[5]), b = numOf(m[2] || m[4] || m[6]); if (a !== null && b !== null) return { kind: "range", from: a, to: b, elem: "num" }; }
   if (/\b(?:list|array|sequence|collection|vector|slice)s? of (?:\w+ )?(?:strings?|words?|names?|lines?|texts?)\b|\b(?:strings|words|names|lines)\b/.test(s) && !/\blist of (?:\w+ )?(?:numbers?|integers?|ints?|floats?)\b/.test(s))
@@ -100,17 +104,21 @@ export function plan(input) {
   if (!source) return null;
   // the body after "that/which/to" is where the stages live; the head names the source
   const body = s;
+  const wordsOfText = source.kind === "text" && /\bwords?\b/.test(body);
+  const elemFor = wordsOfText ? "str" : source.elem;
   const found = [];
   const seen = new Set();
   for (const r of STAGE_RULES) {
     const m = r.re.exec(body); if (!m) continue;
-    if (r.on === "num" && source.elem !== "num" && !(source.kind === "text" && r.arg === "len")) continue;
-    if (r.on === "str" && source.elem !== "str") continue;
-    if (r.on === "char" && source.kind !== "text") continue;
+    if (r.on === "num" && elemFor !== "num" && !(source.kind === "text" && r.arg === "len")) continue;
+    if (r.on === "str" && elemFor !== "str") continue;
+    if (r.on === "char" && (source.kind !== "text" || wordsOfText)) continue;
     const key = r.op + ":" + (r.arg || "");
     if (seen.has(key)) continue;
     const arg = m.slice(1).find((g) => g !== undefined);
-    found.push({ op: r.op, arg: r.arg, k: arg !== undefined ? (numOf(arg) !== null ? numOf(arg) : arg) : undefined, at: m.index, rule: r });
+    // "filters out the negative numbers", "removes odd ones", "without the primes": keep the rest
+    const neg = r.op === "filter" && NEGATE.test(body.slice(Math.max(0, m.index - 40), m.index));
+    found.push({ op: r.op, arg: r.arg, not: neg || undefined, k: arg !== undefined ? (numOf(arg) !== null ? numOf(arg) : arg) : undefined, at: m.index, rule: r });
     seen.add(key);
   }
   // "not divisible by" wins over "divisible by"; "sort descending" wins over "sort"
@@ -120,7 +128,7 @@ export function plan(input) {
   for (const r of RESULT_RULES) {
     const m = r.re.exec(body); if (!m) continue;
     if (r.on === "num" && source.elem !== "num" && !stages.some((t) => t.arg === "len")) continue;
-    if (r.on === "str" && source.elem !== "str") continue;
+    if (r.on === "str" && elemFor !== "str") continue;
     if (r.on === "text" && source.kind !== "text") continue;
     if (r.on === "pred") continue; // all/any need a predicate stage; handled below
     result = { op: r.op, at: m.index, sep: r.op === "join" ? (m[1] !== undefined ? m[1] : m[2] ? SEP_WORDS[m[2]] : ", ") : undefined };
@@ -129,6 +137,7 @@ export function plan(input) {
   // "the sum of the squares of the even numbers": noun chains read inside-out
   const nounChain = /\b(?:sum|total|product|average|mean|count|number|largest|smallest|max|min|maximum|minimum) of\b/.test(body) && !/\bthen\b/.test(body);
   stages.sort((a, b) => (nounChain ? b.at - a.at : a.at - b.at));
+  if (wordsOfText) stages.unshift({ op: "words" });
   // "count the vowels" over a string is a filter then a count; "reverse a string" alone is a stage with no reduction
   if (source.kind === "text" && !stages.length && !result) {
     if (/\breverse/.test(body)) stages.push({ op: "reverse" });
@@ -146,14 +155,15 @@ export function plan(input) {
   const VERBS = /\b(?:shuffle|randomi[sz]e|rotate|flatten|zip|chunk|group|partition|split|encrypt|hash|encode|decode|download|upload|fetch|request|parse|render|draw|animate|schedule|thread|async|await|database|sql|regex|validate|email)\b/;
   if (VERBS.test(body)) return null;
   const name = sink === "print" ? "print_" + nameFor(source, stages, result).replace(/_?values$/, "") : nameFor(source, stages, result);
-  return { name, source, stages: stages.map(({ op, arg, k }) => ({ op, arg, k })), result: result ? { op: result.op, sep: result.sep } : null, sink, raw };
+  return { name, source, stages: stages.map(({ op, arg, k, not }) => (not ? { op, arg, k, not } : { op, arg, k })), result: result ? { op: result.op, sep: result.sep } : null, sink, raw };
 }
 
 function nameFor(source, stages, result) {
   const parts = [];
+  if (result && (result.op === "longest" || result.op === "shortest") && stages.every((t) => t.op === "words")) return result.op + "_word";
   if (result) parts.push({ sum: "sum_of", product: "product_of", average: "average_of", max: "largest", min: "smallest", count: "count", join: "join", longest: "longest", shortest: "shortest", palindrome: "is_palindrome" }[result.op]);
   for (const t of stages) {
-    if (t.op === "filter") parts.push({ even: "even", odd: "odd", positive: "positive", negative: "negative", prime: "prime", gt: "large", lt: "small", div: "multiples", ndiv: "non_multiples", nonempty: "nonempty", longer: "long", shorter: "short", starts: "starting", ends: "ending", contains: "matching", vowel: "vowels", consonant: "consonants", digit: "digits" }[t.arg]);
+    if (t.op === "filter") parts.push((t.not ? "non_" : "") + { even: "even", odd: "odd", positive: "positive", negative: "negative", prime: "prime", gt: "large", lt: "small", div: "multiples", ndiv: "non_multiples", nonempty: "nonempty", longer: "long", shorter: "short", starts: "starting", ends: "ending", contains: "matching", vowel: "vowels", consonant: "consonants", digit: "digits" }[t.arg]);
     else if (t.op === "map") parts.push({ square: "squares", cube: "cubes", double: "doubled", half: "halved", negate: "negated", abs: "abs", add: "shifted", sub: "shifted", mul: "scaled", divk: "scaled", upper: "upper", lower: "lower", trim: "trimmed", len: "lengths", reverse: "reversed" }[t.arg]);
     else parts.push({ unique: "unique", sort: "sorted", reverse: "reversed", take: t.arg, words: "words" }[t.op]);
   }
@@ -174,6 +184,18 @@ const isPrimeFn = {
 
 // the predicate / transform for one element, per language (x is the element)
 function pred(t, lang, elem) {
+  // a negated simple test is written as its opposite ("not negative" is x >= 0)
+  const INV = { even: "odd", odd: "even", div: "ndiv", ndiv: "div" };
+  if (t.not && INV[t.arg]) return predBase({ ...t, arg: INV[t.arg], not: false }, lang, elem);
+  if (t.not && /^(?:positive|negative|gt|lt)$/.test(t.arg)) {
+    const k = t.arg === "positive" || t.arg === "negative" ? 0 : t.k;
+    return t.arg === "positive" || t.arg === "gt" ? `x <= ${k}` : `x >= ${k}`;
+  }
+  const p = predBase(t, lang, elem);
+  if (!t.not || p === null) return p;
+  return lang === "python" ? `not (${p})` : `!(${p})`;
+}
+function predBase(t, lang, elem) {
   const eq = lang === "javascript" || lang === "typescript" ? "===" : "==";
   const neq = lang === "javascript" || lang === "typescript" ? "!==" : "!=";
   const k = t.k;
@@ -260,7 +282,7 @@ function emitPython(p) {
   return head + `def ${p.name}(${par.join(", ")}):\n` + body.map((b) => "    " + b).join("\n") + (body.length ? "\n" : "") + `    return ${ret}\n`;
 }
 function stageName(t, n) {
-  const base = t.op === "filter" ? { even: "evens", odd: "odds", positive: "positives", negative: "negatives", prime: "primes", gt: "large", lt: "small", div: "multiples", ndiv: "rest", nonempty: "nonempty", longer: "long_ones", shorter: "short_ones", starts: "matching", ends: "matching", contains: "matching", vowel: "vowels", consonant: "consonants", digit: "digits" }[t.arg]
+  const base = t.op === "filter" && t.not ? "kept" : t.op === "filter" ? { even: "evens", odd: "odds", positive: "positives", negative: "negatives", prime: "primes", gt: "large", lt: "small", div: "multiples", ndiv: "rest", nonempty: "nonempty", longer: "long_ones", shorter: "short_ones", starts: "matching", ends: "matching", contains: "matching", vowel: "vowels", consonant: "consonants", digit: "digits" }[t.arg]
     : t.op === "map" ? { square: "squares", cube: "cubes", double: "doubled", half: "halved", negate: "negated", abs: "magnitudes", add: "shifted", sub: "shifted", mul: "scaled", divk: "scaled", upper: "upper", lower: "lower", trim: "trimmed", len: "lengths", reverse: "reversed_items" }[t.arg]
     : { unique: "unique", sort: "ordered", reverse: "reversed_values", take: t.arg === "first" ? "head" : "tail", words: "words" }[t.op];
   return base || `step${n}`;
@@ -276,7 +298,7 @@ function emitJs(p, ts) {
   const body = [];
   let cur = src.kind === "range" ? `Array.from({ length: ${src.to - src.from + 1} }, (_, i) => i + ${src.from})` : src.kind === "text" ? `[...${camel(src.name)}]` : camel(src.name);
   const spreadText = src.kind === "text" && cur !== camel(src.name);
-  if (src.kind === "text" && !p.stages.some((t) => t.op === "filter" || t.op === "words" || t.op === "reverse" || t.op === "unique") && !(p.result && p.result.op === "palindrome")) cur = camel(src.name);
+  if (src.kind === "text" && !p.stages.some((t) => t.op === "filter" || t.op === "reverse" || t.op === "unique") && !(p.result && p.result.op === "palindrome")) cur = camel(src.name);
   let n = 0;
   for (const t of p.stages) {
     n++;
@@ -461,6 +483,7 @@ export function generate(input, lang) {
   return { ok: true, kind: "generated", lang: L, op: p.name, code, plan: p, steps: words, langs: LANGS };
 }
 function describe(t) {
+  if (t.op === "filter" && t.not) return "drop " + describe({ ...t, not: false }).replace(/^keep /, "");
   if (t.op === "filter") return { even: "keep the even ones", odd: "keep the odd ones", positive: "keep the positive ones", negative: "keep the negative ones", prime: "keep the primes", gt: `keep those greater than ${t.k}`, lt: `keep those less than ${t.k}`, div: `keep the multiples of ${t.k}`, ndiv: `drop the multiples of ${t.k}`, nonempty: "drop the empty ones", longer: `keep those longer than ${t.k} characters`, shorter: `keep those shorter than ${t.k} characters`, starts: `keep those starting with "${t.k}"`, ends: `keep those ending with "${t.k}"`, contains: `keep those containing "${t.k}"`, vowel: "keep the vowels", consonant: "keep the consonants", digit: "keep the digits" }[t.arg];
   if (t.op === "map") return { square: "square each one", cube: "cube each one", double: "double each one", half: "halve each one", negate: "negate each one", abs: "take absolute values", add: `add ${t.k} to each`, sub: `subtract ${t.k} from each`, mul: `multiply each by ${t.k}`, divk: `divide each by ${t.k}`, upper: "uppercase", lower: "lowercase", trim: "trim whitespace", len: "take each length", reverse: "reverse each one" }[t.arg];
   return { unique: "remove duplicates", sort: t.arg === "desc" ? "sort descending" : "sort ascending", reverse: "reverse the order", take: `take the ${t.arg} ${t.k}`, words: "split into words" }[t.op];
