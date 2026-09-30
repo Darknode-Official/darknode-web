@@ -58,3 +58,13 @@ group("engine tab markdown: links", () => {
     assert.equal(mdInline("[<b>](/docs)"), '<a class="ue-link" href="/docs">&lt;b&gt;</a>');
   });
 });
+
+group("engine tab markdown: tables and italics", () => {
+  test("pipe rows become one table with a header", () => {
+    const html = mdInline("Lead.\n| | TCP | UDP |\n|---|---|---|\n| **Delivery** | reliable | best effort \\| lossy |\nafter");
+    assert.equal(html, 'Lead.<div class="ue-table-wrap"><table class="ue-table"><thead><tr><th></th><th>TCP</th><th>UDP</th></tr></thead><tbody><tr><td><b>Delivery</b></td><td>reliable</td><td>best effort | lossy</td></tr></tbody></table></div>after');
+  });
+  test("single-asterisk italics, but multiplication is left alone", () => {
+    assert.equal(mdInline("French *bonjour*, 7 * 13 and 2*3*4"), "French <i>bonjour</i>, 7 * 13 and 2*3*4");
+  });
+});
