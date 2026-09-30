@@ -209,6 +209,17 @@ export function convert(input) {
   // find the "<number> <unit> to <unit>" pattern anywhere, so leading words
   // (including a misspelled "convert") do not block the parse.
   const src = String(input || "").toLowerCase().trim();
+  // "180 cm in feet and inches": a length asked as a mixed feet + inches figure
+  const fi = src.match(/(-?[0-9]*\.?[0-9]+)\s*([a-z°/]+)\s*(?:to|in|into|as)\s+(?:feet|ft|foot)\s+(?:and|&|\+)\s+(?:inches|inch|in)\b/);
+  if (fi) {
+    const a = findUnit(fi[2].replace("°", ""));
+    if (!a) return { ok: false, error: "unknown unit: " + fi[2] };
+    if (a.dim !== "length") return { ok: false, error: "cannot convert " + a.dim + " to length" };
+    const inches = parseFloat(fi[1]) * a.factor / 0.0254;
+    let ft = Math.floor(inches / 12), rem = Math.round((inches - ft * 12) * 100) / 100;
+    if (rem >= 12) { ft += 1; rem = 0; }
+    return { ok: true, value: ft + " ft " + rem + " in", dim: "length", from: fi[2], to: "feet and inches", input: parseFloat(fi[1]), feet: ft, inches: rem, totalInches: Math.round(inches * 1e6) / 1e6 };
+  }
   const m = src.match(/(-?[0-9]*\.?[0-9]+)\s*([a-z°/]+)\s*(?:to|in|into|as)\s+([a-z°/]+)/);
   if (!m) return { ok: false, error: "use the form: 12 km to miles" };
   const val = parseFloat(m[1]);
