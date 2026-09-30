@@ -89,6 +89,21 @@ function gcd(a, b) { a = Math.abs(Math.trunc(a)); b = Math.abs(Math.trunc(b)); w
 export function numberTheory(input) {
   const low = String(input || "").toLowerCase();
   const nums = (low.match(/\d+/g) || []).map(Number);
+  // "factors of 18" and "divisors of 18" list every divisor; "prime factors" stays the factorization
+  const dv = low.match(/\b(?:(?:list|find|what are)\s+(?:all\s+)?(?:the\s+)?)?(?:all\s+)?(?:factors|divisors)\s+of\s+(\d+)\b/);
+  if (dv && !/prime/.test(low) && +dv[1] >= 1 && +dv[1] <= 1e12) { const n = +dv[1], lo = [], hi = []; for (let d = 1; d * d <= n; d++) if (n % d === 0) { lo.push(d); if (d * d !== n) hi.unshift(n / d); }
+    const all = lo.concat(hi), f = factorize(n), g = {}; for (const p of f) g[p] = (g[p] || 0) + 1;
+    return { ok: true, kind: "divisors", text: all.join(", ") + " (" + all.length + " divisor" + (all.length === 1 ? "" : "s") + (f.length ? "; " + n + " = " + Object.entries(g).map(([p, e]) => e > 1 ? p + "^" + e : p).join(" * ") : "") + ")" }; }
+  const ps = low.match(/\bis\s+(\d+)\s+(?:a\s+)?perfect\s+(square|cube)\b/);
+  if (ps) { const n = +ps[1], cube = ps[2] === "cube", r = Math.round(cube ? Math.cbrt(n) : Math.sqrt(n)), pw = cube ? r ** 3 : r * r;
+    if (n <= 1e15) return { ok: true, kind: "perfectpower", text: pw === n ? "Yes: " + n + " = " + r + "^" + (cube ? 3 : 2) : "No: " + n + " is not a perfect " + ps[2] + " (the nearest is " + r + "^" + (cube ? 3 : 2) + " = " + pw + ")" }; }
+  const dby = low.match(/\bis\s+(\d+)\s+(?:evenly\s+)?divisible\s+by\s+(\d+)\b/);
+  if (dby && +dby[2] === 0) return { ok: true, kind: "divisible", text: "No: nothing is divisible by 0, because division by 0 is undefined" };
+  if (dby && +dby[2] > 0) { const a = +dby[1], b = +dby[2], r = a % b; return { ok: true, kind: "divisible", text: r === 0 ? "Yes: " + a + " = " + b + " x " + a / b : "No: " + a + " / " + b + " leaves remainder " + r }; }
+  const ds = low.match(/\b(?:sum of (?:the |its )?digits (?:of|in)|digit sum (?:of )?)\s*(\d+)\b/);
+  if (ds) { const d = ds[1].split(""); return { ok: true, kind: "digitsum", text: String(d.reduce((a, c) => a + +c, 0)) + " (" + d.join(" + ") + ")" }; }
+  const dc = low.match(/\bhow many digits (?:does|do|are (?:there )?in|in|are in)\s+(\d+)\b(?!\s*[\^*!])/);
+  if (dc) { const k = dc[1].replace(/^0+(?=\d)/, "").length; return { ok: true, kind: "digitcount", text: k + " digit" + (k === 1 ? "" : "s") }; }
   if (/factori[sz]e|prime factor|factors of/.test(low) && nums.length && nums[0] < 2) return { ok: true, kind: "factorize", n: nums[0], factors: [], text: nums[0] + " has no prime factorization (only whole numbers from 2 up have one)" };
   if (/factori[sz]e|prime factor|factors of/.test(low) && nums.length) {
     const f = factorize(nums[0]);
@@ -115,6 +130,10 @@ export function numberTheory(input) {
   const np = low.match(/(\d+)(?:st|nd|rd|th)?\s+prime/) || (/nth prime/.test(low) && nums.length ? [0, nums[0]] : null);
   if (np) return { ok: true, kind: "nthprime", text: "prime #" + np[1] + " is " + nthPrime(Number(np[1])) };
   if (/fib/.test(low) && /(?:^|\s)-\d/.test(low)) return { ok: false, error: "Fibonacci numbers are indexed from 0 up, so a negative position has no value here" };
+  // "first 8 fibonacci numbers": F(0) .. F(7)
+  const ff = low.match(/\b(?:first|list(?: the)?(?: first)?)\s+(\d+)\s+fib(?:onacci)?(?:\s+(?:numbers?|terms?|sequence))?\b/);
+  if (ff) { const k = Math.min(200, +ff[1]); const out = []; for (let i = 0; i < k; i++) out.push(String(nthFib(i)));
+    return { ok: true, kind: "fibs", text: (out.join(", ") || "none") + " (" + k + " Fibonacci numbers, starting from F(0) = 0" + (+ff[1] > 200 ? ", capped here to keep the answer readable" : "") + ")" }; }
   const nf = low.match(/(\d+)(?:st|nd|rd|th)?\s+fib/) || (/fibonacci/.test(low) && nums.length ? [0, nums[0]] : null);
   if (nf) return { ok: true, kind: "fib", text: "Fibonacci #" + nf[1] + " is " + nthFib(Number(nf[1])) };
   return { ok: false, error: "try: factorize 360, gcd 12 18, is 97 prime, 10th prime, 20th fibonacci" };

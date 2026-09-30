@@ -58,6 +58,224 @@ function repeatingDecimal(s) {
   return null;
 }
 
+// a count said in words: "a dozen", "a pair of", "one", "7"
+const WN = (s) => { const t = String(s || "").toLowerCase().trim(); if (/^(?:a|an|one|each)$/.test(t)) return 1; if (/^(?:a )?dozen$/.test(t)) return 12; if (/^(?:a )?pair(?: of)?$/.test(t)) return 2;
+  if (WORD_NUM[t] !== undefined) return WORD_NUM[t]; return /^\d+(?:\.\d+)?$/.test(t) ? Number(t) : null; };
+const FRACTION_WORD = { half: [1, 2], "a half": [1, 2], "one half": [1, 2], "a third": [1, 3], "one third": [1, 3], "two thirds": [2, 3], "a quarter": [1, 4], "one quarter": [1, 4], "three quarters": [3, 4], "a fourth": [1, 4], "a fifth": [1, 5], "two fifths": [2, 5], "three fifths": [3, 5], "a tenth": [1, 10] };
+const stem = (w) => String(w).toLowerCase().replace(/(?:es|s)$/, "");
+const AMT = String.raw`\$?(\d+(?:\.\d+)?)(?: dollars?| bucks| euros?| pounds?| usd)?`;
+const WNUM = String.raw`(-?\d+(?:\.\d+)?(?:\/\d+(?:\.\d+)?)?)`;
+const NUMERIC = (t) => !!t && !/[a-z=<>]/i.test(t.replace(/sqrt|pi|cbrt/g, ""));
+const isPrimeN = (n) => { if (n < 2) return false; for (let d = 2; d * d <= n; d++) if (n % d === 0) return false; return true; };
+const ROMAN = { i: 1, v: 5, x: 10, l: 50, c: 100, d: 500, m: 1000 };
+const SCALE_ZEROS = { ten: 1, hundred: 2, thousand: 3, million: 6, billion: 9, trillion: 12, quadrillion: 15 };
+function everydayPatterns({ E, out, WN }) {
+  const two = (a, b) => { const x = E(a), y = E(b); return NUMERIC(x) && NUMERIC(y) ? [x, y] : null; };
+  return [
+    // plain verbs over two numbers: "add 1/2 and 1/3", "subtract 1/4 from 3/4", "multiply 2/3 by 6", "divide 3 by 1/2"
+    { id: "verb-arith", re: /^(add|sum) (.+?) (?:and|to|with|plus) (.+)$/i, build: (m) => { const p = two(m[2], m[3]); return p ? out(`(${p[0]}) + (${p[1]})`, `${p[0]} + ${p[1]}`) : null; } },
+    { id: "verb-arith", re: /^(?:subtract|take|take away|deduct) (.+?) from (.+)$/i, build: (m) => { const p = two(m[1], m[2]); return p ? out(`(${p[1]}) - (${p[0]})`, `${p[1]} - ${p[0]}`) : null; } },
+    { id: "verb-arith", re: /^multiply (.+?) (?:by|and|with|times) (.+)$/i, build: (m) => { const p = two(m[1], m[2]); return p ? out(`(${p[0]}) * (${p[1]})`, `${p[0]} x ${p[1]}`) : null; } },
+    { id: "verb-arith", re: /^divide (.+?) by (.+)$/i, build: (m) => { const p = two(m[1], m[2]); return p ? out(`(${p[0]}) / (${p[1]})`, `${p[0]} / ${p[1]}`) : null; } },
+    { id: "fraction-of", re: new RegExp(String.raw`^(?:what is |find |calculate )?(\d+\/\d+) of ${WNUM}$`, "i"), build: (m) => out(`(${m[1]}) * (${m[2]})`, `${m[1]} of ${m[2]}: ${m[1]} x ${m[2]}`) },
+    { id: "compare", re: /^(?:which is (bigger|larger|greater|smaller|less|more)|which (?:number|fraction) is (bigger|larger|greater|smaller))[,:]? (.+?) or (.+)$/i,
+      build: (m) => { const p = two(m[3], m[4]); if (!p) return null; const big = /bigger|larger|greater|more/i.test(m[1] || m[2]);
+        return out(`${big ? "max" : "min"}(${p[0]}, ${p[1]})`, `the ${big ? "larger" : "smaller"} of ${p[0]} and ${p[1]}`); } },
+    { id: "mixed-number", re: /^(?:convert |write |express |change |turn )?(\d+) (\d+)\/(\d+) (?:to|as|into) (?:an )?(?:improper fraction|fraction|a fraction)$/i,
+      build: (m) => (+m[2] < +m[3] ? out(`${m[1]} + ${m[2]}/${m[3]}`, `${m[1]} ${m[2]}/${m[3]} = (${m[1]} x ${m[3]} + ${m[2]})/${m[3]}`) : null) },
+    // percent word forms
+    { id: "percent-whole", re: new RegExp(String.raw`^${WNUM} is ${WNUM} ?(?:%|percent) of what(?: number)?$`, "i"), build: (m) => (+m[2] ? out(`${m[1]}/(${m[2]}/100)`, `${m[1]} is ${m[2]}% of the whole: ${m[1]} / (${m[2]}/100)`) : null) },
+    { id: "out-of-percent", re: new RegExp(String.raw`^(?:what (?:percent|percentage) is |express )?${WNUM} out of ${WNUM}(?: as a (?:percent|percentage)| in percent| as percent)$`, "i"), build: (m) => out(`${m[1]}/${m[2]}*100`, `${m[1]} out of ${m[2]} as a percent`, { notes: ["The answer is in percent."] }) },
+    { id: "out-of-percent", re: new RegExp(String.raw`^what (?:percent|percentage) is ${WNUM} out of ${WNUM}$`, "i"), build: (m) => out(`${m[1]}/${m[2]}*100`, `${m[1]} out of ${m[2]} as a percent`, { notes: ["The answer is in percent."] }) },
+    { id: "out-of-percent", re: new RegExp(String.raw`^(?:i |you |she |he |they |we )?(?:scored|got|get|scores|gets|answered|made) ${WNUM} out of ${WNUM}(?: (?:on|in) (?:the |a |my )?(?:test|exam|quiz))?[,.]? what (?:percent|percentage)(?: is that| did (?:i|you|she|he|they|we) get)?$`, "i"),
+      build: (m) => (+m[1] <= +m[2] ? out(`${m[1]}/${m[2]}*100`, `${m[1]} out of ${m[2]} as a percent`, { notes: ["The answer is in percent."] }) : null) },
+    { id: "change-from-to", re: new RegExp(String.raw`^(?:an? |the )?[a-z ]*? (?:grows|grew|goes|went|rises|rose|increases|increased|falls|fell|drops|dropped|decreases|decreased|changes|changed) from ${WNUM} to ${WNUM}[,.]? what is the (?:percentage|percent) (increase|decrease|change)$`, "i"),
+      build: (m) => { const up = +m[2] > +m[1], k = m[3].toLowerCase(); if ((k === "increase" && !up) || (k === "decrease" && up)) return null;
+        return out(k === "decrease" ? `(${m[1]} - ${m[2]})/${m[1]}*100` : `(${m[2]} - ${m[1]})/${m[1]}*100`, `percent ${k} from ${m[1]} to ${m[2]}`, { notes: ["The answer is in percent."] }); } },
+    { id: "percent-chain", re: new RegExp(String.raw`^(?:an? |the )?(?:price|value|number|salary|amount|cost|population|wage) (?:of )?${WNUM} (?:is )?(increased|decreased|raised|reduced|cut|lowered) by ${WNUM} ?(?:%|percent)(?:,)? and then (increased|decreased|raised|reduced|cut|lowered) by ${WNUM} ?(?:%|percent)(?:[,.]? what is the (?:new|final|resulting) (?:price|value|number|amount|cost))?$`, "i"),
+      build: (m) => { const f = (w, p) => `(1 ${/increased|raised/i.test(w) ? "+" : "-"} ${p}/100)`; return out(`${m[1]}*${f(m[2], m[3])}*${f(m[4], m[5])}`, `${m[1]} x ${f(m[2], m[3])} x ${f(m[4], m[5])}: each change applies to the new value`); } },
+    // discount / sale price: "X% off Y", "Y with X% off", "sale price of $Y with X% discount"
+    { id: "percent-off", re: new RegExp(String.raw`^(?:what is |what's |find |calculate )?(?:the )?(?:sale |discounted |final )?price of \$?${WNUM} (?:with |at |after )?${WNUM} ?(?:%|percent) (?:off|discount)$`, "i"),
+      build: (m) => out(`${m[1]}*(1 - ${m[2]}/100)`, `${m[2]}% off ${m[1]}: ${m[1]} x (1 - ${m[2]}/100)`) },
+    { id: "percent-off", re: new RegExp(String.raw`^\$?${WNUM} (?:with |at |minus )${WNUM} ?(?:%|percent) (?:off|discount)$`, "i"),
+      build: (m) => out(`${m[1]}*(1 - ${m[2]}/100)`, `${m[2]}% off ${m[1]}: ${m[1]} x (1 - ${m[2]}/100)`) },
+    { id: "percent-off", re: new RegExp(String.raw`^(?:what is |what's )?${WNUM} ?(?:%|percent) (?:off|discount(?:ed)?(?: (?:from|on|off))?) \$?${WNUM}$`, "i"),
+      build: (m) => out(`${m[2]}*(1 - ${m[1]}/100)`, `${m[1]}% off ${m[2]}: ${m[2]} x (1 - ${m[1]}/100)`) },
+    // "what number added to 15 gives 42"
+    { id: "what-number", re: new RegExp(String.raw`^what number (added to|plus|subtracted from|multiplied by|times|divided by) ${WNUM} (?:gives|makes|equals|is|results in) ${WNUM}$`, "i"),
+      build: (m) => { const op = m[1].toLowerCase(), eq = /added|plus/.test(op) ? `x + ${m[2]} = ${m[3]}` : /subtracted/.test(op) ? `${m[2]} - x = ${m[3]}` : /multiplied|times/.test(op) ? `${m[2]}*x = ${m[3]}` : `x/${m[2]} = ${m[3]}`;
+        return { math: eq, goal: "solve", variable: "x", interpretation: `let x be the number: ${eq}` }; } },
+    { id: "solve-and", re: /^solve (.+?=.+?) and (.+?=.+?)(?: for ([a-z]))?$/i,
+      build: (m) => { const a = E(m[1]), b = E(m[2]); if (!a || !b || (a.match(/=/g) || []).length !== 1 || (b.match(/=/g) || []).length !== 1) return null;
+        return { math: `${a}, ${b}`, goal: "solve", ...(m[3] ? { variable: m[3] } : {}), interpretation: `the system ${a}, ${b}` }; } },
+    { id: "substitute", re: /^(?:if|given|given that|suppose) ([a-z]) ?= ?(.+?),? and ([a-z]) ?= ?(-?[\d./]+),? (?:then )?(?:what is|find|what's|evaluate|compute) \1$/i,
+      build: (m) => { const body = E(m[2]); if (!body || /[=<>]/.test(body) || m[1] === m[3]) return null; return out(body.replace(new RegExp(`(?<![A-Za-z_])${m[3]}(?![A-Za-z_(])`, "g"), `(${m[4]})`), `${m[1]} = ${body} with ${m[3]} = ${m[4]}`); } },
+    { id: "zeros-in", re: /^how many zeros? (?:are )?(?:there )?in (?:a |one )?(ten|hundred|thousand|million|billion|trillion|quadrillion)$/i,
+      build: (m) => out(String(SCALE_ZEROS[m[1].toLowerCase()]), `one ${m[1].toLowerCase()} is 1 followed by ${SCALE_ZEROS[m[1].toLowerCase()]} zeros (10^${SCALE_ZEROS[m[1].toLowerCase()]})`) },
+    // sequences given by first term and ratio / difference
+    { id: "seq-term", re: /^(?:what is |find )?(?:the )?(\d+)(?:st|nd|rd|th) term of (?:a|an|the) (geometric|arithmetic) (?:sequence|progression) (?:with|whose) first term (?:is )?(-?[\d./]+),? and (?:common )?(ratio|difference) (?:is )?(-?[\d./]+)$/i,
+      build: (m) => { const geo = /geo/i.test(m[2]); if (geo !== /ratio/i.test(m[4]) || +m[1] < 1) return null; return out(geo ? `${m[3]}*(${m[5]})^(${m[1]} - 1)` : `${m[3]} + (${m[1]} - 1)*(${m[5]})`, geo ? `a r^(n - 1) with a = ${m[3]}, r = ${m[5]}, n = ${m[1]}` : `a + (n - 1) d with a = ${m[3]}, d = ${m[5]}, n = ${m[1]}`); } },
+    // finite series written out: "2 + 5 + 8 + ... + 32", "1 + 2 + 4 + ... + 512"
+    { id: "finite-series", re: /^(?:(?:find |what is |compute |calculate )?(?:the )?sum of (?:the )?(?:finite )?(?:arithmetic |geometric )?(?:series|sequence)?:? ?)?((?:-?\d+(?:\.\d+)?\s*\+\s*){2,}-?\d+(?:\.\d+)?)\s*\+\s*(?:\.\.\.|…)\s*\+\s*(-?\d+(?:\.\d+)?)$/i,
+      build: (m) => { const t = m[1].split(/\s*\+\s*/).map(Number), L = +m[2]; if (t.length < 3 || !t.every(Number.isInteger) || !Number.isInteger(L)) return null;
+        const d = t[1] - t[0];
+        if (t.every((v, i) => i === 0 || v - t[i - 1] === d) && d !== 0) { const n = (L - t[0]) / d + 1; if (!Number.isInteger(n) || n < t.length) return null;
+          return out(`${n}*(${t[0]} + ${L})/2`, `arithmetic series: ${n} terms from ${t[0]} to ${L} with difference ${d}, sum n (first + last)/2`); }
+        if (t[0] !== 0 && t[1] % t[0] === 0) { const r = t[1] / t[0]; if (Math.abs(r) < 2 || !t.every((v, i) => i === 0 || v === t[i - 1] * r)) return null;
+          let n = 1, v = t[0]; while (v !== L && Math.abs(v) <= Math.abs(L) && n < 200) { v *= r; n++; } if (v !== L || n < t.length) return null;
+          return out(`sum(${t[0]}*(${r})^k, k, 0, ${n - 1})`, `geometric series: ${n} terms, first ${t[0]}, ratio ${r}, last ${L}`); }
+        return null; } },
+    { id: "sum-notation", re: /^(?:find |what is |compute |calculate |evaluate )?(?:the )?sum (?:of )?(.+?) (?:from|for) (?:([a-z]) ?= ?)?(-?\d+) to (infinity|oo|∞|-?\d+)$/i,
+      build: (m) => { const f = E(m[1]); if (!f) return null; const vs = [...new Set(f.replace(/sqrt|cbrt|sin|cos|tan|log|ln|exp|pi|abs/g, "").match(/[a-z]/g) || [])];
+        const v = m[2] || (vs.length === 1 ? vs[0] : null); if (!v || (vs.length && !vs.every((x) => x === v))) return null; const hi = /inf|oo|∞/i.test(m[4]) ? "oo" : m[4];
+        return out(`sum(${f}, ${v}, ${m[3]}, ${hi})`, `sum of ${f} for ${v} = ${m[3]} to ${hi === "oo" ? "infinity" : hi}`); } },
+    { id: "sum-notation", re: /^(?:find |what is |compute |calculate |evaluate )?(?:the )?sum (?:from|for) ([a-z]) ?= ?(-?\d+) to (infinity|oo|∞|-?\d+) of (.+)$/i,
+      build: (m) => { const f = E(m[4]); if (!f) return null; const hi = /inf|oo|∞/i.test(m[3]) ? "oo" : m[3]; return out(`sum(${f}, ${m[1]}, ${m[2]}, ${hi})`, `sum of ${f} for ${m[1]} = ${m[2]} to ${hi === "oo" ? "infinity" : hi}`); } },
+    // "lim x->infinity of (1 + 1/x)^x"
+    { id: "limit-arrow", re: /^lim(?:it)?_?\s*\(?([a-z])\s*(?:->|→|approaches|goes to|tends to)\s*(-?(?:\d+(?:\.\d+)?|infinity|inf|oo|∞|pi))\)?\s+(?:of\s+)?(.+)$/i,
+      build: (m) => { const f = E(m[3]); if (!f) return null; const a = /^(?:infinity|inf|oo|∞)$/i.test(m[2]) ? "oo" : /^-(?:infinity|inf|oo|∞)$/i.test(m[2]) ? "-oo" : m[2];
+        return { math: `lim_(${m[1]}->${a}) (${f})`, goal: "evaluate", interpretation: `limit of ${f} as ${m[1]} -> ${a}` }; } },
+    { id: "inverse-trig-degrees", re: /^(.+?) in degrees$/i,
+      build: (m) => { const f = E(m[1]); if (!f || !/^(?:arcsin|arccos|arctan|asin|acos|atan)\(/.test(f) || /[a-z]/i.test(f.replace(/arcsin|arccos|arctan|asin|acos|atan|sqrt|pi/g, ""))) return null;
+        return out(`(${f})*180/pi`, `${f} converted to degrees`, { notes: ["The answer is in degrees."] }); } },
+    { id: "double-time", re: /^how (?:long|many years) (?:does it take |will it take |would it take )?(?:for )?(?:money|an investment|my money|your money|a sum|savings|it)? ?to (double|triple|quadruple)(?: (?:money|an investment|your money|my money|it))? (?:at|with|earning) (\d+(?:\.\d+)?) ?(?:%|percent)(?: (?:interest|per year|a year|annually|per annum|annual interest))*(?:,? compounded (?:annually|yearly))?$/i,
+      build: (m) => { const k = { double: 2, triple: 3, quadruple: 4 }[m[1].toLowerCase()]; return +m[2] > 0 ? out(`ln(${k})/ln(1 + ${m[2]}/100)`, `(1 + ${m[2]}/100)^t = ${k}, so t = ln ${k} / ln(1 + ${m[2]}/100)`, { notes: ["Years, with interest compounded once a year."] }) : null; } },
+    { id: "vector-norm", re: /^(?:what is |find )?(?:the )?(?:magnitude|length|norm) of (?:the )?(?:vector )?[(<[]\s*(-?[\d.]+(?:\s*,\s*-?[\d.]+)+)\s*[)>\]]$/i,
+      build: (m) => { const xs = m[1].split(/\s*,\s*/); return out(`sqrt(${xs.map((x) => `(${x})^2`).join(" + ")})`, `|v| = sqrt(${xs.map((x) => `${x}^2`).join(" + ")})`); } },
+    { id: "perm-comb", re: /^(?:(?:the )?number of )?(permutations|combinations|arrangements|selections) of (\d+)(?: things| items| objects)? (?:taken|chosen|picked) (\d+)(?: at a time)?$/i,
+      build: (m) => (+m[3] <= +m[2] ? out(`${/perm|arrang/i.test(m[1]) ? "nPr" : "binomial"}(${m[2]}, ${m[3]})`, `${/perm|arrang/i.test(m[1]) ? "ordered" : "unordered"} choices of ${m[3]} from ${m[2]}`) : null) },
+    { id: "totient", re: /^(?:what is |find )?(?:the )?(?:euler(?:'s)? )?(?:totient|phi)(?: function)? of (\d+)$/i, build: (m) => out(`totient(${m[1]})`, `Euler's totient of ${m[1]}: how many of 1..${m[1]} are coprime to it`) },
+    { id: "base-to-decimal", re: /^(?:convert )?(?:the )?(?:binary|base 2)(?: number)? ([01]+) (?:to|in|into) (?:decimal|base 10|a number)$|^(?:convert )?([01]+) (?:from binary |in binary |base 2 )(?:to|into|in) (?:decimal|base 10)$/i,
+      build: (m) => out(`0b${m[1] || m[2]}`, `binary ${m[1] || m[2]} in decimal`) },
+    { id: "normal-z", re: /^(?:what is )?(?:the )?probability (?:that )?z (?:is )?(less than|below|under|<|greater than|above|over|more than|>) (-?\d+(?:\.\d+)?)$/i,
+      build: (m) => { const lt = /less|below|under|</i.test(m[1]); return out(lt ? `normalcdf(-oo, ${m[2]})` : `normalcdf(${m[2]}, oo)`, `standard normal: P(Z ${lt ? "<" : ">"} ${m[2]})`); } },
+    { id: "normal-z", re: /^(?:what is )?(?:the )?probability (?:that )?z (?:is )?between (-?\d+(?:\.\d+)?) and (-?\d+(?:\.\d+)?)$/i,
+      build: (m) => (+m[1] < +m[2] ? out(`normalcdf(${m[1]}, ${m[2]})`, `standard normal: P(${m[1]} < Z < ${m[2]})`) : null) },
+    // geometry
+    { id: "circle-radius", re: /^(?:what is |find )?(?:the )?(radius|diameter) of (?:a|the) circle (?:with|whose|of) (area|circumference)(?: is| of)? (\d+(?:\.\d+)?)$|^(?:a|the) circle has (?:an? )?(area|circumference) (?:of )?(\d+(?:\.\d+)?)[,.]? (?:find|what is) its (radius|diameter)$/i,
+      build: (m) => { const want = (m[1] || m[6]).toLowerCase(), have = (m[2] || m[4]).toLowerCase(), v = m[3] || m[5];
+        const r = have === "area" ? `sqrt(${v}/pi)` : `${v}/(2*pi)`; return out(want === "radius" ? r : `2*${r}`, `${have} ${v} gives r = ${r}${want === "diameter" ? ", d = 2r" : ""}`); } },
+    { id: "square-side", re: /^(?:a|the) square has (?:an? )?(area|perimeter) (?:of )?(\d+(?:\.\d+)?)[,.]? (?:find|what is) (?:its|the) (side|side length|length of a side)$/i,
+      build: (m) => out(/area/i.test(m[1]) ? `sqrt(${m[2]})` : `${m[2]}/4`, /area/i.test(m[1]) ? `side = sqrt(area ${m[2]})` : `side = perimeter ${m[2]} / 4`) },
+    { id: "equilateral", re: /^(?:what is |find )?(?:the )?(area|perimeter|height) of an equilateral triangle (?:with|of) side(?: length)?(?: of)? (\d+(?:\.\d+)?)$/i,
+      build: (m) => { const q = m[1].toLowerCase(), s = m[2]; return out(q === "area" ? `sqrt(3)/4*(${s})^2` : q === "perimeter" ? `3*${s}` : `sqrt(3)/2*${s}`, q === "area" ? "equilateral triangle area (sqrt 3 / 4) s^2" : q === "perimeter" ? "3 equal sides" : "height (sqrt 3 / 2) s"); } },
+    { id: "semicircle", re: /^(?:what is |find )?(?:the )?area of a semi-?circle (?:with|of) (radius|diameter)(?: of)? (\d+(?:\.\d+)?)$/i,
+      build: (m) => { const r = /diam/i.test(m[1]) ? `(${m[2]}/2)` : m[2]; return out(`pi*${r}^2/2`, "half of a circle's area: pi r^2 / 2"); } },
+    { id: "third-angle", re: /^(?:what is |find )?(?:the )?(?:third|missing|other|remaining) angle of a triangle (?:with|whose|if the other) (?:two )?angles (?:are )?(\d+(?:\.\d+)?)(?: degrees)? and (\d+(?:\.\d+)?)(?: degrees)?$/i,
+      build: (m) => (+m[1] + +m[2] < 180 ? out(`180 - ${m[1]} - ${m[2]}`, "the angles of a triangle add up to 180 degrees", { notes: ["Degrees."] }) : null) },
+    { id: "complement", re: /^(?:what is |find )?(?:the )?(complement|supplement)(?:ary angle)? (?:of|to) (?:an angle of )?(\d+(?:\.\d+)?)(?: degrees?| °)?$/i,
+      build: (m) => { const t = /comp/i.test(m[1]) ? 90 : 180; return +m[2] < t ? out(`${t} - ${m[2]}`, `${m[1].toLowerCase()}ary angles add up to ${t} degrees`, { notes: ["Degrees."] }) : null; } },
+    { id: "polygon-sides", re: /^how many (sides|vertices|corners|edges|angles) (?:does|do) (?:a|an) ([a-z-]+) have$/i,
+      build: (m) => { const n = sidesOf(m[2]); return n ? out(String(n), `a ${m[2].toLowerCase()} has ${n} ${m[1].toLowerCase()}`) : null; } },
+    // statistics
+    { id: "mean-first-n", re: /^(?:what is |find )?(?:the )?(?:mean|average) of the first (\d+) (?:natural|counting|positive whole) numbers$/i, build: (m) => (+m[1] >= 1 ? out(`(${m[1]} + 1)/2`, `(1 + ${m[1]})/2`) : null) },
+    { id: "needed-score", re: /^what (?:score|mark|grade) do (?:i|you|we) need on the (?:next|last|\d+(?:st|nd|rd|th)) (?:test|exam|quiz) to (?:average|get an average of|have an average of) (\d+(?:\.\d+)?) if (?:i|you|we) (?:got|scored|have|had) ((?:\d+(?:\.\d+)?(?:,? (?:and )?|\s+))+\d+(?:\.\d+)?)$/i,
+      build: (m) => { const xs = m[2].match(/\d+(?:\.\d+)?/g), n = xs.length + 1; return out(`${m[1]}*${n} - (${xs.join(" + ")})`, `average ${m[1]} over ${n} tests needs a total of ${m[1]} x ${n}; subtract ${xs.join(" + ")}`); } },
+    // rates
+    { id: "rate-time", re: /^(?:if )?(?:it takes )?(\d+(?:\.\d+)?) (hours|minutes|days) to ([a-z]+) (\d+(?:\.\d+)?) ([a-z]+),? how (?:long|many \2) (?:will it take |would it take |does it take |to [a-z]+ |for )?(?:to [a-z]+ )?(\d+(?:\.\d+)?) \5$/i,
+      build: (m) => out(`${m[1]}/${m[4]}*${m[6]}`, `${m[1]} ${m[2]} for ${m[4]} ${m[5]}, so ${m[1]}/${m[4]} each; for ${m[6]}: ${m[1]}/${m[4]} x ${m[6]}`, { notes: [`In ${m[2]}; assumes a steady rate.`] }) },
+    { id: "fill-time", re: /^(?:an? |the )?(?:tap|pump|hose|pipe|faucet|machine|printer|factory) (?:fills|pumps|delivers|makes|prints|produces) (\d+(?:\.\d+)?) ([a-z]+) (?:per|a|an|each) (minute|hour|second|day),? how long (?:will it take |does it take )?to (?:fill|pump|make|print|produce|deliver) (\d+(?:\.\d+)?) \2$/i,
+      build: (m) => out(`${m[4]}/${m[1]}`, `${m[4]} ${m[2]} at ${m[1]} per ${m[3]}: ${m[4]} / ${m[1]}`, { notes: [`In ${m[3]}s.`] }) },
+    { id: "pay-rate", re: new RegExp(String.raw`^(?:if (?:i|you|she|he|they) )?(?:earn|earning|earns|make|making|makes|get|paid|am paid|is paid|charging|charge) \$?(\d+(?:\.\d+)?)(?: dollars?| euros?| pounds?)? (?:an|per|a|each) (hour|day|week|month),? how much (?:(?:will|do|would|does) (?:i|you|she|he|they) (?:earn|make|get) )?(?:for|in|after|over) (\d+(?:\.\d+)?) \2s?$`, "i"),
+      build: (m) => out(`${m[1]}*${m[3]}`, `${m[1]} per ${m[2]} x ${m[3]} ${m[2]}s`) },
+    { id: "recipe-scale", re: /^(?:a|the) recipe (?:for|serves|that serves|feeding) (\d+) (?:people|servings|persons|guests)? ?(?:needs|uses|calls for|requires|takes) (\d+(?:\.\d+)?) ?([a-z]+)(?: of [a-z ]+)?,? how (?:much|many)(?: [a-z]+)? (?:is needed |do (?:i|you|we) need )?for (\d+) (?:people|servings|persons|guests)$/i,
+      build: (m) => out(`${m[2]}/${m[1]}*${m[4]}`, `${m[2]} ${m[3]} for ${m[1]}, scaled to ${m[4]}: ${m[2]} x ${m[4]}/${m[1]}`, { notes: [`In ${m[3]}.`] }) },
+    // number sense
+    { id: "perfect-square", re: /^is (\d+) a (perfect )?(square|cube)(?: number)?$/i,
+      build: (m) => { const n = +m[1], cube = /cube/i.test(m[3]), r = Math.round(cube ? Math.cbrt(n) : Math.sqrt(n)); if (n > 1e15) return null;
+        const hit = (cube ? r ** 3 : r * r) === n; return hit ? out(`${n} = ${r}^${cube ? 3 : 2}`, `${n} = ${r}^${cube ? 3 : 2}, so yes`) : out(`${n} = ${r}^${cube ? 3 : 2}`, `the nearest ${cube ? "cube" : "square"} is ${r}^${cube ? 3 : 2} = ${cube ? r ** 3 : r * r}, so no`); } },
+    { id: "divisible", re: /^is (\d+) divisible by (\d+)$/i, build: (m) => (+m[2] ? out(`${m[1]} mod ${m[2]} = 0`, `${m[1]} is divisible by ${m[2]} exactly when the remainder ${m[1]} mod ${m[2]} is 0`) : null) },
+    { id: "next-prime", re: /^(?:what is |find )?(?:the )?(?:smallest|first|next) prime (?:number )?(?:greater than|bigger than|larger than|after|above|over) (\d+)$/i,
+      build: (m) => { let n = +m[1] + 1; if (n > 1e9) return null; while (!isPrimeN(n)) n++; return out(`${n}`, `${n} is the first prime after ${m[1]} (${Array.from({ length: n - +m[1] - 1 }, (_, i) => +m[1] + 1 + i).join(", ") || "none"} ${n - +m[1] - 1 ? "are composite" : "in between"})`, { notes: ["Checked by trial division."] }); } },
+    { id: "digit-sum", re: /^(?:what is |find )?(?:the )?sum of (?:the |its )?digits (?:of|in) (\d+)$/i, build: (m) => out(m[1].split("").join(" + "), `digits of ${m[1]}: ${m[1].split("").join(" + ")}`) },
+    { id: "digit-count", re: /^how many digits (?:are )?(?:there )?(?:in|does) (\d+) ?\^ ?(\d+)(?: have)?$/i,
+      build: (m) => { const a = BigInt(m[1]), b = +m[2]; if (b > 20000 || a < 1n) return null; const d = (a ** BigInt(b)).toString().length; return out(String(d), `${m[1]}^${m[2]} has ${d} digits (computed exactly)`); } },
+    { id: "roman", re: /^(?:what is |convert )?(?:the )?(?:roman numeral )?([mdclxvi]+)(?: in roman numerals?| roman numerals?)?(?: (?:to|in|as) (?:a )?(?:number|decimal|arabic numerals?))?$/i,
+      build: (m) => { if (!/roman/i.test(m[0]) && !/(?:to|in|as) (?:a )?(?:number|decimal|arabic)/i.test(m[0])) return null; const s = m[1].toLowerCase();
+        if (!/^m{0,4}(cm|cd|d?c{0,3})(xc|xl|l?x{0,3})(ix|iv|v?i{0,3})$/.test(s)) return null;
+        const parts = []; for (let i = 0; i < s.length; i++) { const v = ROMAN[s[i]], nx = ROMAN[s[i + 1]] || 0; if (v < nx) { parts.push(`(${nx} - ${v})`); i++; } else parts.push(String(v)); }
+        return out(parts.join(" + "), `${m[1].toUpperCase()} = ${parts.join(" + ")}`); } },
+    // "what is 3 less than 20" is 17 ("is 3 less than 20" stays a comparison)
+    { id: "more-less-than", re: /^(?:what is|what number is|find|calculate|compute|work out) (.+?) (more|less|fewer) than (.+)$/i,
+      build: (m) => { if (/%|percent/i.test(m[1] + m[3])) return null; const a = E(m[1]), b = E(m[3]);
+        if (!a || !b || /[a-z=<>]/i.test(a.replace(/sqrt|pi/g, "") + b.replace(/sqrt|pi/g, ""))) return null;
+        const up = /more/i.test(m[2]); return out(`(${b}) ${up ? "+" : "-"} (${a})`, `${a} ${up ? "more" : "less"} than ${b}: ${b} ${up ? "+" : "-"} ${a}`); } },
+    { id: "square-cube-of", re: /^(?:what is |find |calculate )?(?:the )?(square|cube) of (-?\d+(?:\.\d+)?(?:\/\d+)?)$/i,
+      build: (m) => out(`(${m[2]})^${/cube/i.test(m[1]) ? 3 : 2}`, `the ${m[1].toLowerCase()} of ${m[2]}`) },
+    { id: "percent-of-percent", re: /^(?:what is |find |calculate )?((?:\d+(?:\.\d+)? ?(?:%|percent|per cent) of ){2,})(\d+(?:\.\d+)?)$/i,
+      build: (m) => { const ps = m[1].match(/\d+(?:\.\d+)?/g); return out(`${ps.map((p) => `${p}/100`).join(" * ")} * ${m[2]}`, ps.map((p) => `${p}%`).join(" of ") + ` of ${m[2]}`); } },
+    // sums of whole-number ranges: "sum of 1 through 100", "add all numbers from 1 to 50"
+    { id: "sum-range", re: /^(?:what is |find |calculate |compute )?(?:the )?(?:sum|total) of (?:all )?(?:the )?(?:(?:whole |natural |counting |positive )?(?:numbers|integers) )?(?:from )?(-?\d+) (?:to|through|thru|until|up to) (-?\d+)(?: inclusive)?$/i,
+      build: (m) => (+m[1] <= +m[2] ? out(`sum(k, k, ${m[1]}, ${m[2]})`, `${m[1]} + ${+m[1] + 1} + ... + ${m[2]}`) : null) },
+    { id: "sum-range", re: /^add (?:up )?(?:all )?(?:the )?(?:(?:whole |natural |counting |positive )?(?:numbers|integers) )?from (-?\d+) (?:to|through|thru|up to) (-?\d+)(?: inclusive)?$/i,
+      build: (m) => (+m[1] <= +m[2] ? out(`sum(k, k, ${m[1]}, ${m[2]})`, `${m[1]} + ${+m[1] + 1} + ... + ${m[2]}`) : null) },
+    { id: "sum-first-n", re: /^(?:what is |find |calculate )?(?:the )?sum of (?:the )?first (\d+) (odd|even|natural|counting|positive)? ?(?:whole )?(?:numbers|integers)$/i,
+      build: (m) => { const k = (m[2] || "natural").toLowerCase(), term = k === "odd" ? "2k - 1" : k === "even" ? "2k" : "k";
+        return +m[1] <= 1e6 ? out(`sum(${term}, k, 1, ${m[1]})`, `the first ${m[1]} ${k === "odd" || k === "even" ? k : "positive whole"} numbers: sum of ${term} for k = 1..${m[1]}`) : null; } },
+    { id: "goes-into", re: /^how many times (?:does|will|can|would) (\d+(?:\.\d+)?) (?:go|fit) into (\d+(?:\.\d+)?)$/i,
+      build: (m) => out(`${m[2]}/${m[1]}`, `${m[2]} / ${m[1]}`) },
+    // money
+    { id: "tip-on", re: new RegExp(String.raw`^(?:what is |how much is |calculate |find )?(?:an? |the )?(\d+(?:\.\d+)?) ?(?:%|percent|per cent) tip (?:on|for) (?:an? |the |my )?${AMT}(?: (?:bill|meal|check|tab|dinner|order))?$`, "i"),
+      build: (m) => out(`${m[1]}/100*${m[2]}`, `tip = ${m[1]}% of ${m[2]}`) },
+    { id: "split-among", re: new RegExp(String.raw`^(?:split|divide|share) ${AMT} (?:equally |evenly )?(?:among|between|amongst|by|with|into) (\d+)(?: (?:people|persons|friends|ways|kids|children|of us|workers|parts|groups))?$`, "i"),
+      build: (m) => out(`${m[1]}/${m[2]}`, `${m[1]} shared equally by ${m[2]}: ${m[1]} / ${m[2]}`) },
+    { id: "sale-price", re: new RegExp(String.raw`^(?:an? |the )?(?:\w+ )?(?:costs?|is priced at|priced at|is) ${AMT} and is (\d+(?:\.\d+)?) ?(?:%|percent) off,? (?:what is|what's|find|how much is) the (?:sale|new|final|discounted|reduced) price$`, "i"),
+      build: (m) => out(`${m[1]}*(1 - ${m[2]}/100)`, `${m[1]} less ${m[2]}%: ${m[1]} x (1 - ${m[2]}/100)`) },
+    { id: "original-price", re: new RegExp(String.raw`^(?:i |we |you |she |he |they )?(?:paid|pay|spent) ${AMT} (?:after|with) an? (\d+(?:\.\d+)?) ?(?:%|percent) (?:discount|reduction|markdown|off),? (?:what was|what is|find) the (?:original|regular|full|old) price$`, "i"),
+      build: (m) => (+m[2] < 100 ? out(`${m[1]}/(1 - ${m[2]}/100)`, `the paid price is (100 - ${m[2]})% of the original: ${m[1]} / (1 - ${m[2]}/100)`) : null) },
+    { id: "compound-amount", re: new RegExp(String.raw`^how much (?:is|will) ${AMT} (?:be )?(?:worth )?(?:after|in) (\d+(?:\.\d+)?) years? at (\d+(?:\.\d+)?) ?(?:%|percent)(?: (?:interest|per year|a year|annually|per annum))?,? compounded (annually|yearly)$`, "i"),
+      build: (m) => out(`${m[1]}*(1 + ${m[3]}/100)^${m[2]}`, `A = P (1 + r)^t with P = ${m[1]}, r = ${m[3]}%, t = ${m[2]}`) },
+    // "if i save 25 dollars a week how much in a year": only the fixed-length periods
+    { id: "save-per", re: new RegExp(String.raw`^(?:if )?(?:i |you |we |she |he |they )?(?:save|saves|earn|earns|make|makes|put away|puts away|spend|spends) ${AMT} (?:a|per|each|every) (day|week|hour),? how much (?:(?:will|do|would|does) (?:i|you|we|she|he|they) (?:have|save|earn|make|spend) |is that |in total )?(?:in|after|over) (?:a|one|1|(\d+)) (week|year|day)s?$`, "i"),
+      build: (m) => { const per = { "day-week": 7, "day-year": 365, "week-year": 52, "hour-day": 24, "hour-week": 168 }[`${m[2].toLowerCase()}-${m[4].toLowerCase()}`];
+        if (!per) return null; const k = m[3] || 1; return out(`${m[1]}*${per}*${k}`, `${m[1]} each ${m[2]}, ${per} ${m[2]}s in a ${m[4]}${k != 1 ? `, for ${k} ${m[4]}s` : ""}`, { notes: m[4] === "year" && m[2] === "week" ? ["Uses 52 weeks in a year."] : m[4] === "year" ? ["Uses 365 days in a year."] : [] }); } },
+    { id: "profit", re: new RegExp(String.raw`^(?:what is |find |calculate )?(?:the )?(profit|loss|gain)( percent(?:age)?| %)? (?:if|when) (?:it is |it was |an item is |an item was |something is )?(?:bought|purchased) (?:for|at) ${AMT} and sold (?:for|at) ${AMT}$`, "i"),
+      build: (m) => profitOf(m[1], !!m[2], m[3], m[4]) },
+    { id: "profit", re: new RegExp(String.raw`^(?:what is |find |calculate )?(?:the )?(profit|loss|gain)( percent(?:age)?| %)? (?:if|when) (?:the )?cost price is ${AMT},? and (?:the )?sell(?:ing)? price is ${AMT}$`, "i"),
+      build: (m) => profitOf(m[1], !!m[2], m[3], m[4]) },
+    // "3 apples cost 1.50, how much do 7 apples cost" / "if a dozen eggs cost 3 dollars how much is one egg"
+    { id: "unit-price", re: new RegExp(String.raw`^(?:if )?(a dozen|dozen|a pair of|a|an|one|two|three|four|five|six|seven|eight|nine|ten|\d+) ([a-z]+) costs? ${AMT},? (?:then )?how much (?:is|are|does|do|would|will) (a dozen|a pair of|a|an|one|two|three|four|five|six|seven|eight|nine|ten|\d+) ([a-z]+)(?: cost)?$`, "i"),
+      build: (m) => { const a = WN(m[1]), b = WN(m[4]); if (!a || !b || stem(m[2]) !== stem(m[5])) return null;
+        return out(`${m[3]}/${a}*${b}`, `${a} cost ${m[3]}, so one costs ${m[3]}/${a}; ${b} cost ${m[3]}/${a} x ${b}`); } },
+    // work shared by more hands: "if 5 workers take 8 days, how many days for 10 workers"
+    { id: "workers", re: /^(?:if )?(\d+) (workers|people|men|women|machines|painters|builders|pumps|robots|cooks|farmers)(?: can)? (?:take|need|finish (?:a |the )?(?:job|work|task|wall|house) in|do (?:a |the )?(?:job|work) in|complete (?:a |the )?(?:job|work|task) in|build (?:a |the )?(?:wall|house) in|paint (?:a |the )?(?:house|wall|fence) in) (\d+(?:\.\d+)?) (days|hours|minutes|weeks),? how (?:many (days|hours|minutes|weeks)|long) (?:will |would |does |do )?(?:it take )?(?:for )?(\d+) \2(?: take| need)?$/i,
+      build: (m) => { if (m[5] && m[5].toLowerCase() !== m[4].toLowerCase()) return null;
+        return out(`${m[1]}*${m[3]}/${m[6]}`, `the job is ${m[1]} x ${m[3]} ${m[2]}-${m[4]}; shared by ${m[6]}: ${m[1]} x ${m[3]} / ${m[6]}`, { notes: ["Assumes everyone works at the same steady rate."] }); } },
+    // "i have 3 boxes with 12 eggs each, how many eggs"
+    { id: "groups-each", re: /^(?:i have |we have |there are |you have |she has |he has |they have )?(\d+) ([a-z]+) (?:with|of|containing|holding|that hold|that each hold|each with|each holding|each containing) (\d+) ([a-z]+)(?: each| in each| apiece)?,? how many ([a-z]+)(?: are there| in total| altogether| total| do (?:i|we|you|they) have| are in all)?$/i,
+      build: (m) => { if (!/\beach\b|apiece/i.test(m[0]) || stem(m[4]) !== stem(m[5])) return null; return out(`${m[1]}*${m[3]}`, `${m[1]} ${m[2]} x ${m[3]} ${m[4]} each`); } },
+    // "there are 24 students and a third are boys, how many boys"
+    { id: "fraction-of-group", re: /^(?:there are |a class has |a group has |the class has |we have )?(\d+) ([a-z]+)(?: in (?:a|the) (?:class|group|room|school|team))? and (half|a half|one half|a third|one third|two thirds|a quarter|one quarter|three quarters|a fourth|a fifth|two fifths|three fifths|a tenth|(\d+(?:\.\d+)?) ?(?:%|percent)) (?:of them )?are ([a-z]+),? how many (?:are )?([a-z]+)(?: are there)?$/i,
+      build: (m) => { if (stem(m[5]) !== stem(m[6])) return null; const f = m[4] ? [+m[4], 100] : FRACTION_WORD[m[3].toLowerCase()]; if (!f) return null;
+        const v = +m[1] * f[0] / f[1]; if (!Number.isInteger(v)) return null; // a count of people has to be whole
+        return out(`${m[1]}*${f[0]}/${f[1]}`, `${m[3]} of ${m[1]}: ${m[1]} x ${f[0]}/${f[1]}`); } },
+    // "a pizza has 8 slices, 3 people eat 2 each, how many slices are left"
+    { id: "left-after-each", re: /^(?:a|an|the) ([a-z]+) (?:has|had|is cut into) (\d+) ([a-z]+),? (?:and )?(\d+) (?:people|friends|kids|children|of us|students|boys|girls) (?:each )?(?:eat|ate|take|took|get|got|have|had|use|used) (\d+)(?: \3)?(?: each)?,? how many (?:\3 )?(?:are|is) left(?: over)?$/i,
+      build: (m) => { if (!/\beach\b/i.test(m[0])) return null; const v = +m[2] - +m[4] * +m[5]; if (v < 0) return null;
+        return out(`${m[2]} - ${m[4]}*${m[5]}`, `${m[2]} ${m[3]} minus ${m[4]} x ${m[5]} eaten`); } },
+    // "ratio 3:5, total 40, what is the larger part"
+    { id: "ratio-part", re: /^(?:the )?ratio (?:is )?(\d+) ?: ?(\d+),? (?:and )?(?:the )?(?:total|sum)(?: is)? (\d+(?:\.\d+)?),? (?:what is|find) the (larger|smaller|bigger|greater|first|second) (?:part|share|number|amount)$/i,
+      build: (m) => { const a = +m[1], b = +m[2], k = m[4].toLowerCase(); if (a === b && !/first|second/.test(k)) return null;
+        const pick = k === "first" ? a : k === "second" ? b : /larger|bigger|greater/.test(k) ? Math.max(a, b) : Math.min(a, b);
+        return out(`${m[3]}*${pick}/(${a} + ${b})`, `${m[3]} split ${a}:${b}; the ${k} part is ${m[3]} x ${pick}/${a + b}`); } },
+    // "if 3x = 21 what is x"
+    { id: "solve-leading", re: /^(?:if|given|given that|suppose|when) (.+?=.+?),? (?:then )?(?:what is|what's|find|solve for|what does) ([a-z])(?: equal)?$/i,
+      build: (m) => { const t = E(m[1]); if (!t || (t.match(/=/g) || []).length !== 1 || !new RegExp(`(?<![A-Za-z_])${m[2]}(?![A-Za-z_(])`).test(t)) return null;
+        return { math: t, goal: "solve", variable: m[2], interpretation: `solve ${t} for ${m[2]}` }; } },
+    // "solve x^2 = 49 for positive x"
+    { id: "solve-sign", re: /^(?:solve )?(.+?=.+?) for (?:the )?(positive|negative) (?:value of )?([a-z])$/i,
+      build: (m) => { const t = E(m[1]); if (!t || (t.match(/=/g) || []).length !== 1) return null;
+        return { math: `${t}, ${m[3]} ${/pos/i.test(m[2]) ? ">" : "<"} 0`, goal: "solve", variable: m[3], interpretation: `solve ${t} with ${m[3]} ${/pos/i.test(m[2]) ? "> 0" : "< 0"}` }; } },
+  ];
+}
+function profitOf(kind, pct, cost, sell) {
+  const d = +sell - +cost, loss = /loss/i.test(kind);
+  if ((loss && d > 0) || (!loss && d < 0)) return null; // asked for a profit on a sale at a loss (or the reverse): do not flip the sign silently
+  const diff = loss ? `${cost} - ${sell}` : `${sell} - ${cost}`;
+  return pct ? { math: `(${diff})/${cost}*100`, interpretation: `${loss ? "loss" : "profit"} percent = (${diff}) / cost ${cost} x 100`, notes: ["The answer is in percent."] }
+    : { math: diff, interpretation: `${loss ? "loss" : "profit"} = ${diff}` };
+}
+
 export function morePatterns({ expr, mathOf, LEAD, re }) {
   const E = (s) => mathOf(s) || null;
   const out = (math, interpretation, extra = {}) => (math ? { math, interpretation, ...extra } : null);
@@ -70,6 +288,7 @@ export function morePatterns({ expr, mathOf, LEAD, re }) {
   const DIE = { even: [2, 4, 6], odd: [1, 3, 5], prime: [2, 3, 5] };
   return [
     // ---- everyday phrasings (plain percent changes, fraction forms, "evaluate ... when x = 4") ----
+    ...everydayPatterns({ E, out, WN }),
     { id: "percent-change-by", re: /^(?:what is |find |calculate )?(increase|raise|decrease|reduce|lower|cut|discount) \$?(\S+?) by (\S+?) ?(?:%|percent|per cent)$/i,
       build: (m) => { const x = E(m[2]), p = E(m[3]); if (!x || !p) return null; const up = /^(increase|raise)$/i.test(m[1]);
         return out(`${x}*(1 ${up ? "+" : "-"} ${p}/100)`, `${x} ${up ? "increased" : "decreased"} by ${p}%: ${x} x (1 ${up ? "+" : "-"} ${p}/100)`); } },
@@ -342,7 +561,7 @@ export function morePatterns({ expr, mathOf, LEAD, re }) {
         if (!(a + b > c && a + c > b && b + c > a)) return null;
         return out(`sqrt(((${m[1]}) + (${m[2]}) + (${m[3]}))/2 * (((${m[2]}) + (${m[3]}) - (${m[1]}))/2) * (((${m[1]}) + (${m[3]}) - (${m[2]}))/2) * (((${m[1]}) + (${m[2]}) - (${m[3]}))/2))`, `Heron's formula: sqrt(s(s - a)(s - b)(s - c)) with s the half perimeter`);
       } },
-    { id: "geo-solid", re: re(`^${LEAD}(volume|surface area) (?:of )?(?:a |the )?(sphere|ball|hemisphere) (?:with|of|whose) (radius|diameter|r|d)(?: is| of| =)? ?${num}(?: ?\\w+)?$`),
+    { id: "geo-solid", re: re(`^${LEAD}(volume|surface area) (?:of )?(?:a |the )?(sphere|ball|hemisphere),? (?:(?:with|of|whose|having) (?:a )?)?(radius|diameter|r|d)(?: is| of| =)? ?${num}(?: ?\\w+)?$`),
       build: (m) => {
         const r = /^d/i.test(m[3]) ? `(${m[4]})/2` : m[4], vol = /vol/i.test(m[1]), hemi = /hemi/i.test(m[2]);
         if (hemi) return out(vol ? `2*pi*(${r})^3/3` : `3*pi*(${r})^2`, vol ? "hemisphere volume (2/3) pi r^3" : "hemisphere total surface area 3 pi r^2 (curved 2 pi r^2 plus the flat disc)");
@@ -370,11 +589,14 @@ export function morePatterns({ expr, mathOf, LEAD, re }) {
       build: (m) => out(`sqrt((${m[1]})^2 + (${m[2]})^2)`, "Pythagoras: c = sqrt(a^2 + b^2)") },
     { id: "geo-leg", re: re(`^${LEAD}(?:other |missing |third )?(?:leg|side) (?:of )?(?:a |the )?right(?:[- ]angled)? triangle (?:with|whose) hypotenuse ${num}(?: ?\\w+)? and (?:one )?(?:leg|side) ${num}(?: ?\\w+)?$`),
       build: (m) => (+m[1] > +m[2] ? out(`sqrt((${m[1]})^2 - (${m[2]})^2)`, "Pythagoras: b = sqrt(c^2 - a^2)") : null) },
-    { id: "geo-angles", re: re(`^${LEAD}(sum of (?:the )?interior angles|interior angle sum|(?:each|one) interior angle|(?:each|one) exterior angle|sum of (?:the )?exterior angles) (?:of|in) (?:a |an |each |one )?(regular )?([\\w -]+?)$`),
+    { id: "geo-angles", re: re(`^${LEAD}(sum of (?:the )?(?:interior )?angles|(?:interior )?angle sum|(?:each|one) interior angle|(?:each|one) exterior angle|sum of (?:the )?exterior angles|how many degrees(?: are)?(?: there)?|(?:each|one) angle|(?:an |the )?interior angle|(?:an |the )?exterior angle|(?:the )?(?:measure|size) of (?:each|one) (?:interior )?angle) (?:of|in) (?:a |an |each |one )?(regular |equilateral )?([\\w -]+?)$`),
       build: (m) => {
         const n = sidesOf(m[3]);
         if (!n) return null;
-        const q = m[1].toLowerCase();
+        let q = m[1].toLowerCase();
+        if (/^how many degrees/.test(q)) q = "sum of interior angles";
+        // "each angle" / "the interior angle" only has one value when the polygon is regular
+        if (/^(?:(?:an |the )?(?:interior|exterior) angle|(?:each|one) angle|(?:the )?(?:measure|size) of)/.test(q)) { if (!m[2]) return null; q = /exterior/.test(q) ? "each exterior angle" : "each interior angle"; }
         if (/sum of (?:the )?exterior/.test(q)) return out("360", "the exterior angles of any convex polygon add up to 360 degrees", { notes: ["Degrees."] });
         if (/each|one/.test(q) && /exterior/.test(q)) return out(`360/${n}`, `regular polygon: each exterior angle is 360/${n} degrees`, { notes: ["Degrees; assumes a regular polygon."] });
         if (/each|one/.test(q)) return out(`(${n} - 2)*180/${n}`, `regular polygon: each interior angle (n - 2) 180 / n degrees with n = ${n}`, { notes: ["Degrees; assumes a regular polygon."] });
@@ -406,12 +628,15 @@ export function morePatterns({ expr, mathOf, LEAD, re }) {
       build: (m) => { const t = E(m[1]); return t && /log|ln/.test(t) ? out(t, `combine ${t} into a single logarithm`, { goal: "condense" }) : null; } },
     { id: "log-expand", re: /^(?:expand|write as a sum of logarithms)(?: the (?:logarithm|log|expression))?:? (.+)$/i,
       build: (m) => { const t = E(m[1]); return t && /log|ln/.test(t) ? out(t, `expand ${t} with the logarithm laws`, { goal: "expand" }) : null; } },
-    { id: "compound", re: /^(?:find (?:the )?)?compound interest(?: on)?:? \$?([\d,.]+) (?:dollars )?at ([\d.]+) ?%(?: (?:per year|a year|annually|p\.?a\.?))?(?: compounded (annually|yearly|semi-?annually|quarterly|monthly|weekly|daily|continuously))? for ([\d.]+) years?$/i,
+    { id: "compound", re: /^(?:find (?:the )?|what is (?:the )?|calculate (?:the )?)?compound interest( (?:earned )?on)?:? \$?([\d,.]+) (?:dollars )?at ([\d.]+) ?%(?: (?:per year|a year|annually|p\.?a\.?))?(?: compounded (annually|yearly|semi-?annually|quarterly|monthly|weekly|daily|continuously))? for ([\d.]+) years?$/i,
       build: (m) => {
-        const P = m[1].replace(/,/g, ""), r = m[2], t = m[4], how = (m[3] || "annually").toLowerCase();
-        if (how === "continuously") return out(`${P}*e^(${r}/100*${t})`, `continuous compounding: A = P e^(rt) with P = ${P}, r = ${r}%, t = ${t}`);
+        const on = !!m[1], P = m[2].replace(/,/g, ""), r = m[3], t = m[5], how = (m[4] || "annually").toLowerCase();
+        const A = how === "continuously" ? `${P}*e^(${r}/100*${t})` : null;
         const n = { annually: 1, yearly: 1, semiannually: 2, "semi-annually": 2, quarterly: 4, monthly: 12, weekly: 52, daily: 365 }[how];
-        return out(`${P}*(1 + ${r}/100/${n})^(${n}*${t})`, `A = P (1 + r/n)^(nt) with P = ${P}, r = ${r}%, n = ${n} per year, t = ${t}`, { notes: ["This is the final amount; the interest earned is this minus the principal."] });
+        const amt = A || `${P}*(1 + ${r}/100/${n})^(${n}*${t})`, how2 = A ? `continuous compounding: A = P e^(rt) with P = ${P}, r = ${r}%, t = ${t}` : `A = P (1 + r/n)^(nt) with P = ${P}, r = ${r}%, n = ${n} per year, t = ${t}`;
+        // "compound interest on P" asks for the interest earned, A - P
+        if (on) return out(`${amt} - ${P}`, `compound interest = A - P, ${how2}`, { notes: m[4] ? [] : ["Compounded once a year (no period was given)."] });
+        return out(amt, how2, { notes: ["This is the final amount; the interest earned is this minus the principal."] });
       } },
     { id: "half-life", re: /^(?:half[- ]life:? )?(?:a (?:sample|substance) of )?([\d.]+) ?(?:grams|g|mg|kg|units|atoms)?,? (?:with a |has a |and a )?half[- ]life (?:of |is )?([\d.]+) ?(years?|days?|hours?|minutes?|seconds?)?,? (?:how much (?:is left|remains) after|amount (?:left |remaining )?after|what remains after) ([\d.]+) ?(years?|days?|hours?|minutes?|seconds?)?$/i,
       build: (m) => out(`${m[1]}*(1/2)^(${m[4]}/${m[2]})`, `half-life decay: A = A0 (1/2)^(t / T) with A0 = ${m[1]}, T = ${m[2]}, t = ${m[4]}`) },

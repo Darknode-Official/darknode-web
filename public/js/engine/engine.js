@@ -14,6 +14,8 @@ import { synth, parseSpec } from "/js/engine/synth.js";
 import { findProgram, detectLang, program, PROGRAMS, LANG_NAMES, RUN_HINT, fenceLang } from "/js/engine/programs.js";
 import * as F from "/js/engine/facts.js";
 import * as H from "/js/engine/hash.js";
+import * as LX from "/js/engine/lexicon.js";
+import * as IN from "/js/engine/inflect.js";
 import { makeLexicon, withDictionary, withContext, rankFixes, isWord, correctText, correctWord, typoDistance, fuzzyPrefix } from "/js/engine/spell.js";
 import { words as englishWords, band as wordBand } from "/js/engine/words.js";
 
@@ -59,7 +61,7 @@ function score(input) {
   // This is used only to DETECT intent; skills receive the original input.
   const low = normalizeTypos(synonyms(numberWords(naturalize(s))));
   const has = (re) => re.test(low);
-  const S0 = { calc: 0, convert: 0, codegen: 0, text: 0, regex: 0, datetime: 0, predict: 0, stats: 0, algebra: 0, numbertheory: 0, encode: 0, knowledge: 0, facts: 0, data: 0, base: 0, color: 0, jsonquery: 0, wordmath: 0, sequence: 0, logic: 0, setops: 0, matrix: 0, units: 0, combinatorics: 0, listops: 0, spelling: 0 };
+  const S0 = { calc: 0, convert: 0, codegen: 0, text: 0, regex: 0, datetime: 0, predict: 0, stats: 0, algebra: 0, numbertheory: 0, encode: 0, knowledge: 0, facts: 0, data: 0, base: 0, color: 0, jsonquery: 0, wordmath: 0, sequence: 0, logic: 0, setops: 0, matrix: 0, units: 0, combinatorics: 0, listops: 0, spelling: 0, dictionary: 0, inflect: 0, compare: 0 };
   const why = {};
   const add = (k, n, reason) => { S0[k] += n; if (reason && (!why[k] || n > 0)) why[k] = reason; };
   // a code request needs a real code verb or an explicit "in <language>" — NOT the
@@ -87,7 +89,7 @@ function score(input) {
   else if (has(/\bcolou?r\b|to (rgb|hsl|hex)\b/)) add("color", 7, "color conversion");
   // JSON path query (a JSON blob plus a path or a get/query verb)
   if (/[[{][\s\S]*[\]}]/.test(s) && (has(/\b(get|query|path|value of|field|extract)\b/) || /\.[a-z_$]/i.test(s))) add("jsonquery", 8, "JSON path query");
-  if (has(/days? between|day of (the )?week|weekday|what day|add \d+ days?|leap\s*year|day of (the )?year|which day of|days?\s+(?:until|till|til|to go|left)/)) add("datetime", 6, "date arithmetic")
+  if (has(/days? between|day of (the )?week|weekday|what day|(?:add|subtract) \d+ (?:days?|weeks?)|leap\s*year|day of (the )?year|which day of|days?\s+(?:until|till|til|to go|left)/)) add("datetime", 6, "date arithmetic")
   if (has(/^(?:what|which)\s+year\s+is\s+(?:it|this)|\bcurrent year\b|\bborn in \d{4}\b|^(?:what is |whats |what's )?(?:the )?(?:date )?today(?:'s date)?\s*\??$|^(?:what is |whats |what's )(?:the )?date(?: today)?\s*\??$|^what day is (?:it|today)/)) add("datetime", 8, "today's date");
   if (has(/\bdays?\s+(?:are\s+|is\s+)?(?:there\s+)?in\s+(?:the\s+(?:month|year)\s+(?:of\s+)?)?(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|\d{4}\b)/)) add("datetime", 8, "days in a month or year");
   const algoKW = has(/factorial|fibonacci|fib|reverse|prime|palindrome|fizzbuzz|binary search|bubble sort|\bsort\b|\bsearch\b|\bgcd\b|average|function|func|method|class/);
@@ -95,14 +97,14 @@ function score(input) {
   // Route to code synthesis for an algorithm or a language-tagged function — but a
   // whole app/game noun without an algorithm keyword is out of scope, so skip it.
   // a complete program from the library ("make a snake game", "read a file in go")
-  if (findProgram(low) && (codeAsk || buildAsk || howTo || langKW || detectLang(low) || has(/\b(program|script|code|app|game)\b/)) && !(isDef && !codeAsk))
+  if (findProgram(low) && (codeAsk || buildAsk || howTo || langKW || detectLang(low) || has(/\b(program|script|code|app|game)\b/)) && !(isDef && !codeAsk) && !(!codeAsk && !buildAsk && (dictionaryAsk(s) || {}).kind === "isa"))
     add("codegen", 9, "a complete program from the library");
   else if ((codeAsk || buildAsk || howTo) && (algoKW || (langKW && !APP_NOUN.test(low))))
     add("codegen", 7, "asks to generate code");
   // a well-formed function spec ("name(args) = body", "... that returns <expr>")
   // is synthesizable on its own, even without a verb like "write" or "generate".
   else if (parseSpec(s)) add("codegen", 7, "a function specification to synthesize");
-  if (has(/uppercase|lowercase|\breverse\b|spell.*backwards|title case|camel ?case|snake ?case|kebab ?case|constant case|slug|word frequency|count (the )?words|word count|how many words|count (the )?(characters|letters)|how many (characters|letters|chars)|number of (characters|letters|words)|sort lines|dedupe|pretty ?print|format json|extract (emails?|urls?|links?|numbers?)|\bvowels?\b|\bconsonants?\b|^palindrome:/))
+  if (has(/uppercase|lowercase|\breverse\b|spell.*backwards|title case|camel ?case|snake ?case|kebab ?case|constant case|slug|word frequency|count (the )?words|word count|how many words|count (the )?(characters|letters)|how many (characters|letters|chars)|number of (characters|letters|words)|sort lines|dedupe|remove (?:the )?duplicates? from\s+\S|pretty ?print|format json|extract (emails?|urls?|links?|numbers?)|\bvowels?\b|\bconsonants?\b|^palindrome:/))
     add("text", 6, "text transform");
   if (has(/complete|continue|predict|next word|finish (this|the) sentence|autocomplete/)) add("predict", 6, "asks for a prediction");
   // statistics
@@ -110,13 +112,20 @@ function score(input) {
   // algebra: an equation with a variable (distinct from a bare calc assignment like x=5)
   if (!codeAsk && !has(/base64|\bencode|\bdecode|rot13|\bhex\b|\bhash\b|md5|\bsha/) && (has(/\bsolve\b/) || (has(/=/) && (has(/\d\s*[a-z]/) || has(/[a-z]\s*\^/))))) add("algebra", 8, "an equation to solve");
   // number theory (asking for a value, not code)
-  if (!codeAsk && has(/factori[sz]e|prime factor|\bfactors?\s+of\b|\bfactor\s+\d|\bgcd\b|\blcm\b|greatest common|least common|is\s+\d+\s+prime|\b(?:is|check (?:if|whether))\s+-?\d+\s+(?:an?\s+)?(?:even|odd)\b|\d+(?:st|nd|rd|th)\s+(?:prime|fib)|nth\s+(?:prime|fib)|\bfirst\s+\d+\s+primes?\b|\bprimes?\s+(?:below|under|less than|up to)\s+\d|is\s+-\d+\s+prime|\bfib(?:onacci)?\s+(?:of\s+|number\s+)?-?\d/)) add("numbertheory", 7, "number theory");
+  if (!codeAsk && has(/\bdivisors?\s+of\s+\d|\bis\s+\d+\s+(?:a\s+)?perfect\s+(?:square|cube)\b|\bis\s+\d+\s+(?:evenly\s+)?divisible\s+by\s+\d|\bsum of (?:the |its )?digits (?:of|in)\s+\d|\bdigit sum\b|\bhow many digits (?:does|do|are (?:there )?in|in|are in)\s+\d+\b(?!\s*[\^*!])|factori[sz]e|prime factor|\bfactors?\s+of\b|\bfactor\s+\d|\bgcd\b|\blcm\b|greatest common|least common|is\s+\d+\s+prime|\b(?:is|check (?:if|whether))\s+-?\d+\s+(?:an?\s+)?(?:even|odd)\b|\d+(?:st|nd|rd|th)\s+(?:prime|fib)|nth\s+(?:prime|fib)|\bfirst\s+\d+\s+primes?\b|\b(?:first|list(?: the)?(?: first)?)\s+\d+\s+fib|\bprimes?\s+(?:below|under|less than|up to)\s+\d|is\s+-\d+\s+prime|\bfib(?:onacci)?\s+(?:of\s+|number\s+)?-?\d/)) add("numbertheory", 7, "number theory");
   // encoding / hashing
   if (!isDef && has(/base64|\bhex\b|rot13|morse|url ?(en|de)code|to binary|from binary|crc32|fnv1a?|djb2|\bhash\b|\bmd5\b|\bsha-?(?:1|256)?\b/)) add("encode", 7, "encode / hash");
   // knowledge base (a definition question that is not math, code, or number theory)
   if (isDef && !codeAsk && !hasMathPhrase(low) && !has(/[-+*/^]/) && !has(/\d[a-z]/) && !has(/\b(sqrt|cbrt|max|min|round|abs|log|ln|sin|cos|tan)\s*\(/)) add("knowledge", 7, "a definition from the glossary");
+  // the English dictionary (WordNet): meanings, synonyms, opposites, "is a dog an animal"
+  if (!codeAsk && dictionaryAsk(s)) add("dictionary", /^(?:define|definition of)\b/i.test(s.trim()) ? 6 : 8, "the English dictionary");
+  // word grammar: plural/singular of a noun, tenses of a verb, comparative/superlative of an adjective
+  if (!codeAsk && IN.parseInflect(s)) add("inflect", 10, "an English word form");
+  // which of two numbers is larger/smaller (integers, decimals, fractions, percentages)
+  if (!codeAsk && compareAsk(s)) add("compare", 10, "comparing two numbers");
   // fact packs: capitals, elements, constants — triggered by a domain keyword
   if (has(/\bcapital\b|\bcapital city\b/)) add("facts", 8, "country capital lookup");
+  if (!codeAsk && F.trivia(s).ok) add("facts", 9, "a curated fact");
   if (has(/\belements?\b|\batomic\b|\bperiodic\b|\bchemical\b/) && !codeAsk) add("facts", 8, "periodic table lookup");
   if (has(/\bspeed of light\b|\bplanck\b|\bavogadro\b|\bboltzmann\b|\bgravitational constant\b|\bbohr\b|\bstefan.boltzmann\b|\bfine structure\b|\bearth mass\b|\bsolar mass\b|\blight year\b|\bparsec\b|\bstandard gravity\b|\bgas constant\b/)) add("facts", 9, "physical/mathematical constant");
   else if (has(/\bconstant\b/) && !has(/constant ?case/) && !codeAsk) add("facts", 7, "physical/mathematical constant");
@@ -279,13 +288,20 @@ function say(skill, res, input, model) {
       if (res.op === "probability") return { title: "Probability", body: res.text, note: "Stated with its assumption; give exact counts for an exact fraction.", result: res };
       return { title: "Combinatorics", body: "**" + res.value + "** (" + res.op + ")." + (res.formula ? " Using `" + res.formula + "`." : ""), result: res };
     }
+    case "dictionary": return sayDictionary(res);
+    case "inflect": return sayInflect(res);
+    case "compare":
+      return res.ok
+        ? { title: "Comparison", body: res.equal ? "They are **equal**: " + res.a.label + " = " + res.b.label + "." : "**" + res.winner.label + "** is " + res.rel + ". " + res.a.label + " = " + fmtNum(res.a.value) + " and " + res.b.label + " = " + fmtNum(res.b.value) + ".", note: "Compared as exact numeric values.", result: res }
+        : { title: "Comparison", body: res.error, result: res };
     case "knowledge":
+      if (res.kind === "dictionary") return sayDictionary(res);
       return res.ok ? { title: "Definition: " + res.term, body: res.text, note: "Source: Universal Engine glossary (curated, not generated). If a term is not covered I say so rather than invent an answer.", result: res }
         : { title: "Knowledge base", body: "I do not have a glossary entry for that, and I will not invent one. Covered terms include: " + (res.terms || []).slice(0, 12).join(", ") + ".", result: res };
     case "facts": {
       if (!res.ok) return { title: "Fact lookup", body: "I do not have that in my fact packs, and I will not invent it. I cover the **capital of every country**, all **118 elements**, and the main **physical, math, and astronomical constants**.", result: res };
       if (res.capital) return { title: "Capital of " + res.country, body: (res.reverse ? "**" + res.capital + "** is the capital of " + F.withThe(res.country).replace(res.country, "**" + res.country + "**") : "The capital of " + F.withThe(res.country).replace(res.country, "**" + res.country + "**") + " is **" + res.capital + "**") + (/\.$/.test(res.capital) ? "" : "."), note: "Source: Universal Engine curated fact pack (not generated).", result: res };
-      if (res.trivia === true) return { title: "Fact", body: res.text.replace(/(\d+) known elements/, "**$1** known elements"), note: "Source: Universal Engine periodic table (118 elements, curated).", result: res };
+      if (res.trivia === true) return { title: "Fact", body: res.text.replace(/(\d+) known elements/, "**$1** known elements"), note: /known elements/.test(res.text) ? "Source: Universal Engine periodic table (118 elements, curated)." : "Source: Universal Engine curated reference facts.", result: res };
       if (res.sym) return { title: "Element: " + res.name, body: (res.trivia ? "The " + res.trivia + " element is " : "") + "**" + res.name.charAt(0).toUpperCase() + res.name.slice(1) + "** (" + res.sym + "), atomic number " + res.z + ", atomic mass " + res.mass + " u. Category: " + res.cat + ".", note: "Source: Universal Engine periodic table (118 elements, curated).", result: res };
       if (res.unit) return { title: "Constant: " + res.name, body: "**" + F.sci(res.value) + (res.unit === "dimensionless" ? "" : " " + res.unit) + "** — " + res.desc, note: "Source: Universal Engine constants pack (curated reference values).", result: res };
       return { title: "Fact", body: JSON.stringify(res), result: res };
@@ -370,7 +386,7 @@ function run(skill, input, model) {
     }
     case "stats": return A.stats(input);
     case "algebra": return A.solveEquation(input);
-    case "numbertheory": return A.numberTheory(input.replace(/\bfactors?\s+(of\s+)?(?=\d)/i, "factorize ").replace(/\bfactor\s+(?=\d)/i, "factorize "));
+    case "numbertheory": return A.numberTheory(input.replace(/\bfactors?\s+(?=\d)/i, "factorize ").replace(/\bfactor\s+(?=\d)/i, "factorize "));
     case "wordmath": return A.wordMath(numberWords(input));
     case "sequence": return A.sequence(input);
     case "logic": return A.logic(input);
@@ -378,7 +394,16 @@ function run(skill, input, model) {
     case "matrix": return MX.linalg(input);
     case "units": return unitMath(input);
     case "combinatorics": return A.combinatorics(input);
-    case "knowledge": return A.lookup(input);
+    case "knowledge": {
+      const k = A.lookup(input);
+      if (k.ok) return k;
+      // not in the curated glossary: the dictionary has most ordinary words ("what is a platypus")
+      const d = dictionary("define " + String(input).replace(/^\s*(?:what\s+(?:is|are)|define|explain|tell me about)\s+(?:an?\s+|the\s+)?/i, "").replace(/[?.!]+$/, ""));
+      return d.ok || d.loading ? d : k;
+    }
+    case "dictionary": return dictionary(input);
+    case "inflect": return inflectRun(input);
+    case "compare": return compareRun(input);
     case "facts": return F.facts(input);
     case "listops": return listOps(input);
     case "spelling": return spelling(input, model);
@@ -398,7 +423,7 @@ function run(skill, input, model) {
       return { op: eop, value: A.encode(eop, payload || ""), payload: payload || "" };
     }
     case "text": {
-      const opMap = [["camel", /camel ?case/], ["snake", /snake ?case/], ["kebab", /kebab ?case/], ["constant", /constant case/], ["wordfreq", /word frequency|frequenc/], ["emails", /extract emails?|\bemails?\b/], ["urls", /extract (urls?|links?)|\burls?\b|\blinks?\b/], ["numbers", /extract numbers?|\bnumbers\b(?! in)/], ["vowels", /\bvowels?\b/], ["consonants", /\bconsonants?\b/], ["upper", /uppercase/], ["lower", /lowercase/], ["title", /title case/], ["slug", /slug/], ["palindrome", /palindrome/], ["reverse", /reverse|backwards/], ["chars", /count (the )?(characters|letters)|char count|how many (characters|letters|chars)|number of (characters|letters)/], ["words", /count (the )?words|word count|how many words|number of words/], ["sortlines", /sort lines/], ["dedupewords", /dedupe words|(?:duplicate|repeated) words/], ["dedupe", /dedupe|remove duplicate/], ["unbase64", /decode base64|from base64|unbase64/], ["json", /pretty ?print|format json/]];
+      const opMap = [["camel", /camel ?case/], ["snake", /snake ?case/], ["kebab", /kebab ?case/], ["constant", /constant case/], ["wordfreq", /word frequency|frequenc/], ["emails", /extract emails?|\bemails?\b/], ["urls", /extract (urls?|links?)|\burls?\b|\blinks?\b/], ["numbers", /extract numbers?|\bnumbers\b(?! in)/], ["vowels", /\bvowels?\b/], ["consonants", /\bconsonants?\b/], ["upper", /uppercase/], ["lower", /lowercase/], ["title", /title case/], ["slug", /slug/], ["palindrome", /palindrome/], ["reversewords", /reverse (?:the )?(?:order of (?:the )?)?words\b|\bwords? in reverse order|reverse word order/], ["reverse", /reverse|backwards/], ["letters", /count (?:the )?letters|how many letters|number of letters/], ["chars", /count (the )?(characters|letters)|char count|how many (characters|letters|chars)|number of (characters|letters)/], ["words", /count (the )?words|word count|how many words|number of words/], ["sortlines", /sort lines/], ["dedupewords", /dedupe words|(?:duplicate|repeated) words/], ["dedupe", /dedupe|remove duplicate/], ["unbase64", /decode base64|from base64|unbase64/], ["json", /pretty ?print|format json/]];
       let op = "words"; for (const [name, re] of opMap) if (re.test(low)) { op = name; break; }
       const scan = op === "emails" || op === "urls" || op === "numbers" || op === "wordfreq"; // scan whole input, do not strip content
       const q = input.match(/["']([^"']+)["']/); const c = input.indexOf(":");
@@ -406,6 +431,7 @@ function run(skill, input, model) {
       if (q) payload = q[1];
       else if (c >= 0) payload = input.slice(c + 1).trim();
       else if (scan) payload = input;
+      else if (/^(?:lowercase|lower case)\s+[A-Z]{2,}\b/.test(input.trim())) payload = input.trim().replace(/^(?:lowercase|lower case)\s+/i, ""); // "lowercase THIS IS LOUD"
       else if (/^(?:uppercase|lowercase|upper case|lower case|reverse|title ?case|camel ?case|snake ?case|kebab ?case|slugify)\s+(?!(?:the|this|these|that|it|my|a)\b)(?!(?:text|string|word|words|sentence|phrase|letters|characters)\b)\S/i.test(input.trim()) && !/\s(?:in|of|from|to|into|as)\s/i.test(input))
         payload = input.trim().replace(/^(?:uppercase|lowercase|upper case|lower case|reverse|title ?case|camel ?case|snake ?case|kebab ?case|slugify)\s+/i, ""); // "uppercase make it loud"
       else {
@@ -414,7 +440,7 @@ function run(skill, input, model) {
         const CMD = "reverse|backwards|the(?=\\s+(?:text|string|word|words|sentence|phrase|following|letters|characters|name|vowels|consonants)\\b)|text|sentence|phrase|vowels?|consonants?|camelcase|snakecase|kebabcase|titlecase|string|word|to|into|uppercase|lowercase|upper|lower|title|camel|snake|kebab|constant|case|slug|slugify|count|words?|characters?|letters?|chars?|frequency|sort|lines|dedupe|remove|duplicates?|please|make|convert|format|json|pretty|print|this|following|a|an|(?:can|could|would|will) (?:you|u)(?: please)?|how (?:do|can|would) (?:i|you|u)|how many|number of|i want to|i need to|help me";
         // if a command phrase ends in a boundary preposition, keep everything after it verbatim
         const pm = input.trim().match(new RegExp("^(?:(?:" + CMD + ")\\s+)*(?:in|of|from)\\s+(.+)$", "i"));
-        if (pm) payload = pm[1];
+        if (pm) payload = pm[1].replace(/^(?:the\s+)?(?:word|name|string|text|phrase|sentence)\s+(?=\S)/i, "");
         else { // otherwise strip only the leading run of command words (never eats content)
           const TSTRIP = new RegExp("^(?:" + CMD + "|in|of|from)\\b[\\s:]*", "i");
           let t = input.trim(), prev; do { prev = t; t = t.replace(TSTRIP, ""); } while (t !== prev);
@@ -571,6 +597,8 @@ function lexicon(model) {
 // skills that read meaning); `hybrid` fixes only command words and leaves the
 // user's own content verbatim (for skills that transform content, like reverse).
 export function fixTypos(input, model) {
+  // a question that already names a curated fact exactly ("who wrote romeo and juliet") is not a typo
+  if (F.trivia(input).ok) return { text: input, fixes: [], hybrid: input, hybridFixes: [] };
   const lex = lexicon(model);
   const full = correctText(lex, input);
   // content mode: a 3-letter token is too short to call a typo ("reverse abc" is not "reverse abs")
@@ -691,7 +719,8 @@ export function slang(input, all = true) {
     return map[k];
   });
   // "10 kg 2 lbs": a "2" between two units means "to"
-  if (all) t = t.replace(/(\d(?:\.\d+)?\s*([a-z°]+))\s+2\s+([a-z°]+)\b/gi, (m, q, u1, u2) => (UNIT_WORDS.has(u1.toLowerCase()) && UNIT_WORDS.has(u2.toLowerCase())) ? (fixes.push({ from: "2", to: "to" }), q + " to " + u2) : m);
+  // ...but "6 foot 2 in cm" is a height (feet and inches), and "2 in" followed by another target is a quantity
+  if (all) t = t.replace(/(\d(?:\.\d+)?\s*([a-z°]+))\s+2\s+([a-z°]+)\b(?!\s+(?:in|to|into|as)\s+[a-z°])/gi, (m, q, u1, u2) => (UNIT_WORDS.has(u1.toLowerCase()) && UNIT_WORDS.has(u2.toLowerCase()) && !(/^(?:foot|feet|ft)$/i.test(u1) && /^(?:in|inch|inches)$/i.test(u2))) ? (fixes.push({ from: "2", to: "to" }), q + " to " + u2) : m);
   t = t.replace(/^[\s,.!]+/, "").replace(/\s+([,?.!])/g, "$1").replace(/,\s*,/g, ",").replace(/\s{2,}/g, " ");
   return { text: (t + tail).trim(), fixes };
 }
@@ -717,6 +746,27 @@ const ORDINAL = { second: 2, third: 3, fourth: 4, fifth: 5, sixth: 6, seventh: 7
 const FRACTION_DEN = { third: 3, quarter: 4, fourth: 4, fifth: 5, sixth: 6, seventh: 7, eighth: 8, ninth: 9, tenth: 10, hundredth: 100, thousandth: 1000 };
 const ORDINAL_COUNT = { a: 1, an: 1, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9 };
 const REPHRASE = [
+  [/^(?:what's|whats)\s+(?=[-\d$(.]|(?:a|an|one|half|twice|double|triple)\s)/i, "what is "],
+  [new RegExp("^(?:how much is |how many is |what is |how many are )?(" + NUM + "|a|one|half a) dozen\\s*\\??$", "i"), (m, k) => (/^half/i.test(k) ? "0.5" : /^(?:a|one)$/i.test(k) ? "1" : k) + " * 12"],
+  [new RegExp("^(?:what is |whats |find )?(?:the |my |your )?average speed (?:if|when) (?:i|you|we|he|she|they|it|a car|the car|a train|the train|a bus|the bus) (?:drive|drives|drove|travel|travels|traveled|travelled|go|goes|went|walk|walks|walked|run|runs|ran|cycle|cycles|cycled|ride|rides|rode|cover|covers|covered) (" + NUM + ")\\s*(km|kilometers|kilometres|miles|mi|m|meters|metres) in (" + NUM + ")\\s*(?:hours?|hrs?|h)\\s*\\??$", "i"), "$1 $2 / $3 hours"],
+  [new RegExp("^how long (?:does it take |will it take |would it take |to it take )?(?:to )?(?:travel|drive|go|walk|run|cycle|ride|cover|fly) (" + NUM + ")\\s*(km|kilometers|kilometres|miles|mi) at (" + NUM + ")\\s*(km/h|kmh|kph|km per hour|kilometers per hour|kilometres per hour|mph|miles per hour|miles an hour|km an hour)\\s*\\??$", "i"), (m, d, du, v, vu) => (/^(?:km|kilomet)/i.test(du) === /^(?:k|km)/i.test(vu) ? d + " / " + v : m)],
+  [new RegExp("^how far (?:do|will|can|would|does) (?:i|you|we|he|she|they|it|a car|the car|a train|the train) (?:go|travel|drive|walk|run|cycle|ride|get|fly) in (" + NUM + ")\\s*(?:hours?|hrs?|h) at (" + NUM + ")\\s*(?:km/h|kmh|kph|km per hour|mph|miles per hour|miles an hour|km an hour)\\s*\\??$", "i"), "$2 * $1"],
+  [new RegExp("^how far (?:do|will|can|would|does) (?:i|you|we|he|she|they|it|a car|the car|a train|the train) (?:go|travel|drive|walk|run|cycle|ride|get|fly) at (" + NUM + ")\\s*(?:km/h|kmh|kph|km per hour|mph|miles per hour|miles an hour|km an hour) (?:in|for) (" + NUM + ")\\s*(?:hours?|hrs?|h)\\s*\\??$", "i"), "$1 * $2"],
+  [new RegExp("^how many times (?:does|will|can|would) (" + NUM + ") (?:go|fit) into (" + NUM + ")\\s*\\??$", "i"), "$2 / $1"],
+  // "what is 3 less than 20" is 17 ("is 3 less than 20" stays a comparison)
+  [new RegExp("^(?:what is |what's |find |calculate )(" + NUM + ") (less|fewer|more) than (" + NUM + ")\\s*\\??$", "i"), (m, a, w, b) => b + (/more/i.test(w) ? " + " : " - ") + a],
+  [new RegExp("^(?:what is |what's |find |calculate )?(?:the )?difference between (" + NUM + ") and (" + NUM + ")\\s*\\??$", "i"), "abs($1 - $2)"],
+  [new RegExp("(\\bround\\s+" + NUM + "\\s+to\\s+)(one|two|three|four|five|six)(?=\\s+(?:decimal|dp\\b|places?|digits?))", "i"), (m, a, w) => a + { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6 }[w.toLowerCase()]],
+  [/\bhalf of (a|one|two|three|four|five|six|seven|eight|nine|\d+) (halves|thirds|quarters|fourths|fifths|sixths|eighths|tenths)\b(?!\s+of)/gi, (m, k, part) => "(" + (ORDINAL_COUNT[k.toLowerCase()] || Number(k)) + " / " + { halves: 2, thirds: 3, quarters: 4, fourths: 4, fifths: 5, sixths: 6, eighths: 8, tenths: 10 }[part.toLowerCase()] + " / 2)"],
+  // "2 hours and 30 minutes in minutes": one quantity said in two units
+  [new RegExp("(" + NUM + ")\\s*([a-z]+)\\s+(?:and\\s+)?(" + NUM + ")\\s*([a-z]+)(?=\\s+(?:in|to|into)\\s+[a-z]+\\s*\\??$)", "i"), (m, a, u1, b, u2) => UNIT_WORDS.has(u1.toLowerCase()) && UNIT_WORDS.has(u2.toLowerCase()) && u1.toLowerCase() !== u2.toLowerCase() && !/^(?:foot|feet|ft)$/i.test(u1) ? a + " " + u1 + " + " + b + " " + u2 : m],
+  // dates: "90 days from 2025-01-01", "2025-01-01 + 2 weeks", "10 days before 2025-03-01"
+  [/^(?:what is |whats |what date is |which date is )?(\d+)\s+(days?|weeks?)\s+(?:from|after)\s+(\d{4}-\d{1,2}-\d{1,2})\s*\??$/i, "add $1 $2 to $3"],
+  [/^(?:what is |whats |what date is |which date is )?(\d+)\s+(days?|weeks?)\s+(?:before|prior to)\s+(\d{4}-\d{1,2}-\d{1,2})\s*\??$/i, "subtract $1 $2 from $3"],
+  [/^(?:what is |whats )?(\d{4}-\d{1,2}-\d{1,2})\s*(\+|plus|-|minus)\s*(\d+)\s+(days?|weeks?)\s*\??$/i, (m, d, op, n, u) => (/^(?:\+|plus)$/i.test(op) ? "add " + n + " " + u + " to " : "subtract " + n + " " + u + " from ") + d],
+  [/^(?:convert |what is |whats )?rgb\s*\(?\s*(\d{1,3})\s*[,\s]\s*(\d{1,3})\s*[,\s]\s*(\d{1,3})\s*\)?(?:\s+(?:to|in|into|as)\s+(hex(?:adecimal)?|hsl)(?:\s+(?:code|colou?r))?)?\s*\??$/i, (m, r, g, b, to) => "rgb(" + r + ", " + g + ", " + b + ")" + (to ? " to " + to.toLowerCase().replace("hexadecimal", "hex") : "")],
+  [/^(?:evaluate |what is |whats |is )?((?:not\s+)?(?:true|false)(?:\s+(?:and|or|xor)\s+(?:not\s+)?(?:true|false))+)\s*\??$/i, "truth table: $1"],
+  [/^(?:which|what) country is\s+([a-z][a-z .'-]*?)\s+in\s*\??$/i, (m, c) => CAPITAL_CITIES.has(c.toLowerCase()) ? c + " is the capital of which country" : m],
   // "2 hundred" -> 200 before any rule reads the number
   [new RegExp("\\b(\\d+) (hundred|thousand|million|billion)\\b(?=\\s*(?:$|[?.,!)+\\-*/^]|plus|minus|times|divided|and\\b))", "gi"), (m, n, sc) => String(Number(n) * { hundred: 100, thousand: 1e3, million: 1e6, billion: 1e9 }[sc.toLowerCase()])],
   // conversational lead-ins left after a thank-you ("ty, now whats 9 squared")
@@ -746,7 +796,9 @@ const REPHRASE = [
   // "convert celsius to fahrenheit 100": the number came last
   [new RegExp("^(?:convert\\s+)?([a-z]+)\\s+(?:to|in|into)\\s+([a-z]+)\\s*[:,]?\\s*(" + NUM + ")\\s*\\??$", "i"), (m, a, b, n) => UNIT_WORDS.has(a.toLowerCase()) && UNIT_WORDS.has(b.toLowerCase()) ? "convert " + n + " " + a + " to " + b : m],
   // money: tips and discounts
-  [new RegExp("(" + NUM + ")\\s*(?:%|percent)\\s+tip\\s+(?:on|for|of)\\s+\\$?(" + NUM + ")", "gi"), "$1% of $2"],
+  [new RegExp("(" + NUM + ")\\s*(?:%|percent)\\s+tip\\s+(?:on|for|of)\\s+(?:a\\s+|an\\s+|the\\s+|my\\s+)?\\$?(" + NUM + ")(?:\\s*(?:dollars?|bucks|usd|euros?|pounds?))?(?:\\s+(?:bill|meal|check|tab|dinner|order))?", "gi"), "$1% of $2"],
+  [new RegExp("^(?:what is |whats |calculate |how much is )?(?:the )?(?:sales )?tax (?:of|at) (" + NUM + ")\\s*(?:%|percent) (?:on|for) (?:a |an |the )?\\$?(" + NUM + ")(?:\\s*(?:dollars?|bucks|usd|euros?|pounds?))?\\s*\\??$", "i"), "$1% of $2"],
+  [new RegExp("^(?:what is |whats |calculate |how much is )?(?:the )?(?:sales )?tax (?:on|for) (?:a |an |the )?\\$?(" + NUM + ")(?:\\s*(?:dollars?|bucks|usd|euros?|pounds?))? (?:at|with) (?:a )?(" + NUM + ")\\s*(?:%|percent)(?: tax| rate| tax rate)?\\s*\\??$", "i"), "$2% of $1"],
   [new RegExp("\\btip\\s+(?:of\\s+)?(" + NUM + ")\\s*(?:%|percent)\\s+(?:on|for)\\s+(?:a\\s+|an\\s+|the\\s+|my\\s+)?\\$?(" + NUM + ")(?:\\s*(?:dollars?|bucks|usd|euros?|pounds?))?(?:\\s+(?:bill|meal|check|tab|dinner|order))?", "gi"), "$1% of $2"],
   [new RegExp("^(?:what is |whats |how much is )?\\$?(" + NUM + ")\\s*(?:dollars|bucks|usd|euros|pounds)?\\s+(?:with|at|after|minus|less)\\s+(?:a\\s+)?(" + NUM + ")\\s*(?:%|percent)\\s+(?:off|discount)\\s*\\??$", "i"), "$1 - $2% of $1"],
   // "200 + 10%" / "200 plus 10 percent" adds 10% OF 200 (the calculator convention), not 0.1
@@ -803,7 +855,9 @@ const REPHRASE = [
   [new RegExp("^(?:what is |whats |find )?(?:the )?remainder (?:of|when|after)\\s+(" + NUM + ")\\s+(?:is\\s+)?divided by\\s+(" + NUM + ")\\s*\\??$", "i"), "$1 mod $2"],
   [new RegExp("^(?:what is |whats |find )?(?:the )?sum of (?:all )?(?:the )?(?:numbers|integers|whole numbers)?\\s*(?:from )?(\\d+) (?:to|through|thru) (\\d+)\\s*\\??$", "i"), (m, a, b) => "(" + a + " + " + b + ") * (" + b + " - " + a + " + 1) / 2"],
   // bare hex digits: "what is ff in decimal"
-  [/^(?:what is |whats |convert )?(?:hex\s+)?([0-9a-f]*[a-f][0-9a-f]*)(?:\s+hex)?\s+(?:in|to|into|as)\s+(?:decimal|base 10|a number)\s*\??$/i, "0x$1 to decimal"],
+  [/^(?:what is |whats |convert )?(?:binary\s+)?0b([01]+)\s+(?:in|to|into|as)\s+(?:decimal|base 10|a number)\s*\??$/i, "0b$1 to decimal"],
+  [/^(?:what is |whats |convert )?([01]{2,})\s+from\s+binary\s+(?:in|to|into)\s+(?:decimal|base 10)\s*\??$/i, "0b$1 to decimal"],
+  [/^(?:what is |whats |convert )?(?:hex\s+)?(?!0b[01]+\s)([0-9a-f]*[a-f][0-9a-f]*)(?:\s+hex)?\s+(?:in|to|into|as)\s+(?:decimal|base 10|a number)\s*\??$/i, "0x$1 to decimal"],
   [/^(?:what is |whats |convert )?(?:binary\s+)?([01]{2,})(?:\s+binary)?\s+(?:in|to|into|as)\s+(?:decimal|base 10)\s*\??$/i, "0b$1 to decimal"],
   [new RegExp("(" + NUM + ")\\s*(?:°|degrees?|deg)\\s*(fahrenheit|celsius|centigrade|kelvin|f|c|k)\\b", "gi"), "$1 $2"],
   [/\b(to|in|into)\s+degrees?\s+(fahrenheit|celsius|centigrade|kelvin|f|c)\b/gi, "$1 $2"],
@@ -920,6 +974,150 @@ export function rephrase(input) {
 // Public: full response for an input. Always returns something (asks a question
 // when confidence is low), so the chat never dead-ends.
 const SOLVE_FOR = /^(?:find|solve for|get|what is)\s+[a-z]\s*[:,]/i; // "find x: x/2 = 8" is algebra, not a function spec
+// ---------------------------------------------------------------------------
+// Dictionary questions, answered from the built-in WordNet word list (lexicon.js).
+// ---------------------------------------------------------------------------
+const W = "([a-z][a-z'-]*(?: [a-z][a-z'-]*){0,2}?)";
+const DICT_FORMS = [
+  ["isa", new RegExp("^(?:is|are) (?:an? |the )?" + W + " (?:an? )?(?:kind|type|sort|form|species) of (?:an? |the )?" + W + "\\s*\\??$", "i")],
+  ["isa", /^is (?:an? )?([a-z]+) (?:an? )([a-z]+)\s*\??$/i],
+  ["isa", /^are ([a-z]+s) ([a-z]+s)\s*\??$/i],
+  ["syn", new RegExp("^(?:what(?:'s| is| are)? )?(?:the |some |a )?(?:synonyms?|other words?|another word|a different word|similar words?|words? that means?(?: the same as)?) (?:of |for |to |as )?(?:the word )?\"?" + W + "\"?\\s*\\??$", "i")],
+  ["syn", new RegExp("^(?:give me |list )(?:some |the )?synonyms? (?:of |for )?\"?" + W + "\"?\\s*\\??$", "i")],
+  ["ant", new RegExp("^(?:what(?:'s| is| are)? )?(?:the |an? )?(?:antonyms?|opposites?) (?:of |for |to )?(?:the word )?\"?" + W + "\"?\\s*\\??$", "i")],
+  ["def", new RegExp("^(?:what does|what do|whats|what's) (?:the word |the term )?\"?" + W + "\"? (?:mean|means|stand for)\\s*\\??$", "i")],
+  ["def", new RegExp("^(?:what(?:'s| is) )?(?:the )?(?:meaning|definition|meanings|definitions) of (?:the word |the term )?\"?" + W + "\"?\\s*\\??$", "i")],
+  ["def", new RegExp("^(?:define|definition|dictionary|look up|lookup) (?:the word |the term )?\"?" + W + "\"?\\s*\\??$", "i")],
+  ["def", new RegExp("^(?:what is|what's|whats) (?:an? )?\"?" + W + "\"?\\s*\\??$", "i")], // only reached through the glossary fallback
+];
+function dictionaryAsk(s) {
+  const t = String(s || "").trim();
+  if (/\d/.test(t)) return null;
+  for (const [kind, re] of DICT_FORMS.slice(0, -1)) {
+    const m = t.match(re); if (!m) continue;
+    const q = { kind, a: m[1].toLowerCase(), b: m[2] && m[2].toLowerCase() };
+    // "is it a joke" / "is this a test" are not word questions
+    if (kind === "isa" && (LX.isFunctionWord(q.a) || LX.isFunctionWord(q.b) || (LX.lexReady() && !(LX.lemmas(q.a).length && LX.lemmas(q.b).length)))) return null;
+    return q;
+  }
+  return null;
+}
+function dictionary(input) {
+  const q = dictionaryAsk(input) || (() => { const m = String(input || "").trim().match(DICT_FORMS[DICT_FORMS.length - 1][1]); return m ? { kind: "def", a: m[1].toLowerCase() } : null; })();
+  if (!q) return { ok: false, error: "Ask like: define serendipity, synonyms of happy, opposite of hot, is a whale a mammal" };
+  const tiny = (w) => !w || w.replace(/[^a-z]/g, "").length < 3 || LX.isFunctionWord(w);
+  if (tiny(q.a) || (q.kind === "isa" && tiny(q.b))) return { ok: false, error: "Ask about a real word, like: define serendipity, synonyms of happy, opposite of hot, is a whale a mammal" };
+  if (!LX.lexReady()) LX.loadLexicon();
+  if (!LX.lexReady()) return { ok: false, kind: "dictionary", loading: true, error: "My dictionary is still downloading (it loads once, then stays cached on this device). Ask again in a few seconds." };
+  if (q.kind === "isa") {
+    const one = (w) => (LX.lemmas(w).length ? w : w.replace(/s$/, ""));
+    const r = LX.isKindOf(one(q.a), one(q.b));
+    return r.ok ? { ok: true, kind: "dictionary", op: "isa", ...r } : { ok: false, error: "I do not know the word “" + r.unknown + "”" };
+  }
+  if (q.kind === "syn") { const r = LX.synonymsOf(q.a); return r.ok ? { ok: true, kind: "dictionary", op: "syn", ...r } : { ok: false, error: "I do not know the word “" + q.a + "”" }; }
+  if (q.kind === "ant") { const r = LX.antonymsOf(q.a); return r.ok ? { ok: true, kind: "dictionary", op: "ant", ...r } : { ok: false, error: "I do not know the word “" + q.a + "”" }; }
+  const r = LX.define(q.a);
+  return r.ok ? { ok: true, kind: "dictionary", op: "def", ...r } : { ok: false, error: "“" + q.a + "” is not in my dictionary (147,000 English words and phrases). Check the spelling, or it may be a name or a very new word." };
+}
+const DICT_NOTE = "Source: WordNet 3.0 (Princeton University), built into DI and read offline. Quoted, not generated.";
+function sayDictionary(res) {
+  if (!res.ok) return { title: "Dictionary", body: res.error, result: res };
+  if (res.op === "isa") {
+    const art = (w) => (res.proper && w === res.a ? res.display : (/^[aeiou]/i.test(w) ? "an " : "a ") + w);
+    return res.yes
+      ? { title: "Dictionary: " + (res.display || res.a), body: "**Yes" + (res.sense ? ", in one meaning" : "") + ".** " + art(res.a).replace(/^./, (c) => c.toUpperCase()) + (res.sense ? " (" + res.sense + ")" : "") + " is a kind of " + res.b + ": " + res.chain.join(" → ") + "." + (res.other ? " Another meaning: " + res.other + "." : ""), note: DICT_NOTE, result: res }
+      : { title: "Dictionary: " + res.a, body: "**No, not in my dictionary's categories.** " + (res.shared ? "It files " + art(res.a) + " as " + res.chain.join(" → ") + "; " + art(res.a) + " and " + art(res.b) + " are both kinds of " + res.shared + ", on different branches." : (res.chain.length > 1 ? "It files " + art(res.a) + " as " + res.chain.join(" \u2192 ") + " ..., on a different branch from " + res.b + "." : "It does not link " + res.a + " and " + res.b + " at all.")) + " (Everyday usage can differ from these categories; a tomato, for example, is filed as a vegetable.)", note: DICT_NOTE, result: res };
+  }
+  if (res.op === "syn") return { title: "Synonyms of " + res.word, body: res.groups.length ? res.groups.map((g) => "**" + g.words.join(", ") + "** \u2014 " + g.pos + ": " + g.gloss).join("\n") : "My dictionary lists no other word with the same meaning as **" + res.word + "**.", note: DICT_NOTE, result: res };
+  if (res.op === "ant") return { title: "Opposite of " + res.word, body: res.words.length ? res.words.map((w) => "**" + w + "**").join(", ") + "." : "My dictionary lists no direct opposite of **" + res.word + "**.", note: DICT_NOTE, result: res };
+  const lines = [];
+  if (res.word !== res.base) lines.push("**" + res.word + "** is a form of **" + res.base + "**.");
+  for (const g of res.groups) {
+    lines.push("**" + g.pos + "**" + (g.total > g.senses.length ? " (" + g.senses.length + " of " + g.total + " meanings)" : ""));
+    g.senses.forEach((s, i) => lines.push((i + 1) + ". " + s.gloss + (s.example ? " — “" + s.example + "”" : "") + (s.synonyms.length ? " (also: " + s.synonyms.slice(0, 5).join(", ") + ")" : "")));
+  }
+  if (res.formOf && res.formOf.length) lines.push("Also a form of " + res.formOf.map((f) => "**" + f + "**").join(", ") + ".");
+  return { title: "Dictionary: " + res.base, body: lines.join("\n"), note: DICT_NOTE, result: res };
+}
+
+// the first word of a request, when it is a verb DI does not act on but means one it does
+function commandSwap(raw) {
+  const m = String(raw || "").match(/^(\s*(?:please\s+|pls\s+|kindly\s+|(?:can|could|would|will) you\s+(?:please\s+)?)?)([A-Za-z]+)((?:\s+(?:up|out|together|over))?)(\s+.+)$/i);
+  if (!m) return null;
+  const to = LX.commandSynonym(m[2]);
+  // math verbs need numbers to work on; text verbs need something to transform
+  if (to && !/\d/.test(m[4]) && !/^(?:reverse|uppercase|lowercase|capitalize|sort|define|encode|decode)$/.test(to)) return null;
+  return to ? { from: m[2] + m[3], to, text: m[1] + to + m[4] } : null;
+}
+
+// ---------------------------------------------------------------------------
+// Word grammar (inflect.js): plural/singular, verb tenses, comparative/superlative.
+// ---------------------------------------------------------------------------
+const INFLECT_NOTE = "Regular English inflection rules plus a table of common irregular forms, applied offline.";
+function inflectRun(input) {
+  const q = IN.parseInflect(input);
+  if (!q) return { ok: false, error: "Ask like: plural of mouse, past tense of run, comparative of happy" };
+  const base = { ok: true, kind: "inflect", op: q.op, word: q.word };
+  if (q.op === "plural") { const r = IN.pluralize(q.word); return { ...base, out: r.word, rule: r.rule, irregular: r.irregular }; }
+  if (q.op === "singular") { const r = IN.singularize(q.word); return { ...base, out: r.word, rule: r.rule, irregular: r.irregular }; }
+  if (q.op === "comparative" || q.op === "superlative") {
+    const r = IN.compareForms(q.word);
+    return { ...base, out: q.op === "comparative" ? r.comparative : r.superlative, comparative: r.comparative, superlative: r.superlative, rule: r.rule || (r.irregular ? "irregular" : r.periphrastic ? "long word: uses more/most" : ""), irregular: r.irregular };
+  }
+  const v = IN.verbForms(q.word); // past / participle / gerund
+  const out = q.op === "past" ? v.past : q.op === "participle" ? v.participle : v.gerund;
+  return { ...base, out, forms: v, irregular: v.irregular };
+}
+function sayInflect(res) {
+  if (!res.ok) return { title: "Word forms", body: res.error, result: res };
+  const LABEL = { plural: "plural", singular: "singular", past: "past tense", participle: "past participle", gerund: "present participle (-ing form)", comparative: "comparative", superlative: "superlative" };
+  const title = { plural: "Plural of ", singular: "Singular of ", past: "Past tense of ", participle: "Participle of ", gerund: "-ing form of ", comparative: "Comparative of ", superlative: "Superlative of " }[res.op] + res.word;
+  let body = "The " + LABEL[res.op] + " of **" + res.word + "** is **" + res.out + "**.";
+  if ((res.op === "comparative" || res.op === "superlative") && res.comparative) body += "  (" + res.word + " → " + res.comparative + " → " + res.superlative + ")";
+  if (res.forms) body += "  Full set: " + res.forms.base + " / " + res.forms.past + " / " + res.forms.participle + " / " + res.forms.gerund + " / " + res.forms.present3 + ".";
+  return { title, body, note: (res.rule ? res.rule + ". " : "") + INFLECT_NOTE, result: res };
+}
+
+// ---------------------------------------------------------------------------
+// Numeric comparison: "which is bigger, 3/4 or 2/3" (ints, decimals, fractions, %).
+// ---------------------------------------------------------------------------
+const NUMRE = "(-?\\d+(?:\\.\\d+)?\\s*/\\s*-?\\d+(?:\\.\\d+)?|-?\\d+(?:\\.\\d+)?\\s*%?|-?\\.\\d+\\s*%?)";
+const CMP_WORDS = "(bigger|larger|greater|higher|more|smaller|lesser|less|lower|tinier)";
+const CMP_RE = new RegExp("^(?:which(?:\\s+one)?\\s+is|what(?:'s| is)|is)\\s+(?:the\\s+)?" + CMP_WORDS + "[,:]?\\s+" + NUMRE + "\\s+(?:or|than|,)\\s+" + NUMRE + "\\s*\\??$", "i");
+const CMP_RE2 = new RegExp("^" + NUMRE + "\\s+(?:vs\\.?|versus|or|compared to)\\s+" + NUMRE + "\\s*\\??$", "i");
+const CMP_RE3 = new RegExp("^is\\s+" + NUMRE + "\\s+or\\s+" + NUMRE + "\\s+" + CMP_WORDS + "\\s*\\??$", "i"); // "is 50% or 0.4 bigger"
+function compareAsk(s) {
+  const t = String(s || "").trim();
+  const m = t.match(CMP_RE); if (m) return { dir: /small|less|lower|tini/i.test(m[1]) ? "smaller" : "bigger", a: m[2], b: m[3] };
+  const m3 = t.match(CMP_RE3); if (m3) return { dir: /small|less|lower|tini/i.test(m3[3]) ? "smaller" : "bigger", a: m3[1], b: m3[2] };
+  const m2 = t.match(CMP_RE2); if (m2) return { dir: "bigger", a: m2[1], b: m2[2] };
+  return null;
+}
+function parseNumToken(tok) {
+  const t = String(tok).replace(/\s+/g, "");
+  const pct = /%$/.test(t);
+  const body = t.replace(/%$/, "");
+  let value, label = tok.trim();
+  if (body.includes("/")) { const [n, d] = body.split("/").map(Number); if (!d) return null; value = n / d; }
+  else value = Number(body);
+  if (!isFinite(value)) return null;
+  if (pct) value = value / 100;
+  return { value, label };
+}
+function compareRun(input) {
+  const q = compareAsk(input);
+  if (!q) return { ok: false, error: "Ask like: which is bigger, 3/4 or 2/3" };
+  const a = parseNumToken(q.a), b = parseNumToken(q.b);
+  if (!a || !b) return { ok: false, error: "I could not read both numbers." };
+  if (Math.abs(a.value - b.value) < 1e-12) return { ok: true, kind: "compare", equal: true, a, b };
+  const aBigger = a.value > b.value;
+  const winner = aBigger ? a : b;
+  const rel = q.dir === "smaller" ? (aBigger ? "the larger; the smaller is " + b.label : "the larger; the smaller is " + a.label) : "the larger";
+  // when they asked for the smaller, report the smaller as the winner
+  if (q.dir === "smaller") { const w = aBigger ? b : a; return { ok: true, kind: "compare", winner: w, rel: "smaller", a, b }; }
+  return { ok: true, kind: "compare", winner, rel: "larger", a, b };
+}
+
 export function respond(input, model) {
   const raw = String(input || "").trim();
   if (!raw) return { skill: null, confidence: 0, alternatives: [], title: "Engine", body: "Type a request: a calculation, a conversion, a code task, a text transform, a regex, date math, or ask me to complete a sentence." };
@@ -932,6 +1130,17 @@ export function respond(input, model) {
     const sa = slang(raw, true), sc = slang(raw, false);
     const f1 = fixTypos(sa.text, model), f2 = fixTypos(sc.text, model);
     fx = { text: rephrase(f1.text), fixes: [...sa.fixes, ...f1.fixes], hybrid: rephrase(f2.hybrid), hybridFixes: [...sc.fixes, ...f2.hybridFixes], plain: f1.text, plainHybrid: f2.hybrid };
+  }
+  // "tally up 3, 4 and 5": a verb DI does not act on, but the dictionary says means one it does
+  let swapped = null;
+  if (!spec && LX.lexReady() && !score(fx.text).length) {
+    const sw = commandSwap(raw);
+    if (sw) {
+      const sa = slang(sw.text, true), sc = slang(sw.text, false);
+      const f1 = fixTypos(sa.text, model), f2 = fixTypos(sc.text, model);
+      const alt = { text: rephrase(f1.text), fixes: [...sa.fixes, ...f1.fixes], hybrid: rephrase(f2.hybrid), hybridFixes: [...sc.fixes, ...f2.hybridFixes], plain: f1.text, plainHybrid: f2.hybrid };
+      if (score(alt.text).length) { fx = alt; swapped = sw; }
+    }
   }
   const s = fx.text;
   const ranked = score(s);
@@ -954,10 +1163,18 @@ export function respond(input, model) {
     const words = s.split(/\s+/).length;
     const midSentence = /(?:,|\b(?:the|a|an|of|to|and|or|but|in|on|with|for|is|are|was|that|which|because|as|by|from|my|your|their))$/i.test(s.trim()) && words >= 3 && !/\d/.test(s) && !BUILD_VERB.test(low) && !/^(calculate|convert|generate|reverse|solve|find|compute|show|give|list|sort|count|please|what|whats|how|define|explain|is|are|was|does|do|did|can|could|should|would|will|which|who|whom|whose|where|when|why|tell|put|flip|turn|change|make|meaning|symbol|value)\b/.test(low);
     const cont = (model && midSentence) ? complete(model, s, 16) : "";
+    const cov = LX.lexReady() ? LX.coverage(s) : null;
+    if (cov && cov.words >= 2 && !cov.unknown.length && !cont) return {
+      skill: null, confidence: 0, alternatives: [],
+      title: "Understood, but not something I can do",
+      body: "I know every word of that (all " + cov.words + " are in my dictionary), but it is not a task I have exact rules for, and I do not guess like a language model. " + recognized +
+        "Offline I can **calculate**, **convert**, **generate code**, **transform text**, **build a regex**, do **date math**, look up **facts**, and explain **any English word** (try: define " + (cov.words ? (s.match(/[A-Za-z]{4,}/g) || ["serendipity"]).sort((a, b) => b.length - a.length)[0].toLowerCase() : "serendipity") + "). For open-ended requests, turn on **Smart mode**.",
+    };
+    const unknownNote = cov && cov.unknown.length && cov.unknown.length <= 4 ? "\n\nWords I do not recognize: " + cov.unknown.map((w) => "\u201c" + w + "\u201d").join(", ") + " (a typo, a name, or a very new word?)." : "";
     return {
       skill: null, confidence: 0, alternatives: [],
       title: "Not sure yet",
-      body: recognized + "I could not confidently match that to one of my skills, and I do not guess like a language model. Tell me which you want: **calculate**, **convert**, **generate code**, **transform text**, **build a regex**, or **date math** — or turn on **Smart mode** to have a free-form request understood online." + (cont ? "\n\nYou seem mid-sentence; my statistical continuation is below." : ""),
+      body: recognized + "I could not confidently match that to one of my skills, and I do not guess like a language model. Tell me which you want: **calculate**, **convert**, **generate code**, **transform text**, **build a regex**, or **date math** — or turn on **Smart mode** to have a free-form request understood online." + unknownNote + (cont ? "\n\nYou seem mid-sentence; my statistical continuation is below." : ""),
       pre: cont || null,
     };
   }
@@ -974,6 +1191,7 @@ export function respond(input, model) {
   const composed = say(top.skill, res, inputFor, model);
   const before = useRaw ? inputFor : VERBATIM.has(top.skill) ? fx.plainHybrid : fx.plain;
   if (before != null && before !== inputFor) composed.note = "Understood as \u201c" + inputFor + "\u201d." + (composed.note ? " " + composed.note : "");
+  if (swapped) composed.note = "Read \u201c" + swapped.from + "\u201d as \u201c" + swapped.to + "\u201d (the same meaning in my dictionary)." + (composed.note ? " " + composed.note : "");
   if (applied.length) composed.note = "Read " + applied.map((f) => f.to === "(dropped)" ? "past \u201c" + f.from + "\u201d" : "\u201c" + f.from + "\u201d as \u201c" + f.to + "\u201d").join(", ") + "." + (composed.note ? " " + composed.note : "");
   return {
     skill: top.skill,
