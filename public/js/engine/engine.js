@@ -1118,9 +1118,37 @@ function compareRun(input) {
   return { ok: true, kind: "compare", winner, rel: "larger", a, b };
 }
 
+// A greeting or other pure conversational line ("hi", "thanks", "who are you", "what can you do").
+// Recognised as an intent, not guessed at — DI still answers only what it is sure of. Returns a
+// response object, or null when the line is a real request that just happens to start politely.
+const CAPS = "calculate, convert units, generate code, transform text, build a regex, do date math, look up facts, define any English word, give word forms (plurals, tenses), and compare numbers";
+function smalltalk(raw) {
+  const t = String(raw || "").trim().toLowerCase().replace(/[!.?,\s]+$/, "").replace(/\s+/g, " ");
+  if (!t || /\d/.test(t) || t.split(" ").length > 6) return null;
+  const reply = (title, body) => ({ skill: "smalltalk", confidence: 1, alternatives: [], title, body });
+  if (/^(?:hi+|hey+|hello+|yo+|sup|hiya|heya|howdy|greetings|gday|g'day|hi there|hey there|hello there|good (?:morning|afternoon|evening|day))$/.test(t))
+    return reply("Hello", "Hi. I am **DI**, an offline engine that gives exact, checkable answers with no AI model behind it. I can **" + CAPS + "**. What would you like to do? (For open-ended requests, turn on **Smart mode**.)");
+  if (/^(?:thanks?|thank you|thx|ty|cheers|much appreciated|appreciate it|thank you so much|thanks a lot)$/.test(t))
+    return reply("You're welcome", "You're welcome. Ask me anything I can compute or look up.");
+  if (/^(?:how are you|how are you doing|how's it going|hows it going|how do you do|what's up|whats up|how are things)$/.test(t))
+    return reply("Doing well", "Running fine and ready. I answer offline and show my work. I can **" + CAPS + "**.");
+  if (/^(?:who are you|what are you|what's your name|whats your name|your name|tell me about yourself|what do you do|introduce yourself)$/.test(t))
+    return reply("About DI", "I am **DI** (Deterministic Intelligence): a from-scratch, offline engine with **no language model**. I answer only what I can compute or look up, and I show the steps, so answers are exact and reproducible. I can **" + CAPS + "**. For free-form questions, there is **Smart mode**.");
+  if (/^(?:what can you do|what can you help(?: me)? with|help|what are your (?:skills|capabilities|features)|capabilities|options|commands)$/.test(t))
+    return reply("What I can do", "Offline, with exact and checkable results, I can:\n- **calculate** and solve equations\n- **convert** units, bases and colors\n- **generate code** from my program library\n- **transform text** and **build regexes**\n- do **date math** and look up **facts** and constants\n- **define** any English word and give **word forms** (plurals, tenses, comparatives)\n- **compare** numbers and fractions\n\nJust type what you want. For anything open-ended, turn on **Smart mode**.");
+  if (/^(?:bye+|goodbye|see ya|see you|cya|later|good ?night|farewell)$/.test(t))
+    return reply("Bye", "Bye — come back anytime.");
+  if (/^(?:ok|okay|okey|alright|cool|nice|great|awesome|perfect|got it|sounds good|k)$/.test(t))
+    return reply("Ready", "Ready when you are — type a calculation, conversion, code task, text transform, regex, date question, or a word to define.");
+  if (/^(?:yes|no|maybe|sure|yep|nope|yeah)$/.test(t)) return null; // an answer to something, not for me to field alone
+  return null;
+}
+
 export function respond(input, model) {
   const raw = String(input || "").trim();
   if (!raw) return { skill: null, confidence: 0, alternatives: [], title: "Engine", body: "Type a request: a calculation, a conversion, a code task, a text transform, a regex, date math, or ask me to complete a sentence." };
+  const chat = smalltalk(raw);
+  if (chat) return chat;
   // read through typos first. A code spec is identifiers, so it is never "corrected".
   const spec = parseSpec(raw) && !SOLVE_FOR.test(raw);
   let fx;
