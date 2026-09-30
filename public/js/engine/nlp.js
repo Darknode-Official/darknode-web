@@ -168,6 +168,8 @@ export function naturalize(text) {
   // "how many U1 (are there) in [N|a] U2"  ->  "N U2 in U1"  (only when both are real units)
   t = t.replace(/\bhow (?:many|much)\s+([a-z]+)\s+(?:are\s+)?(?:there\s+)?in\s+(?:a\s+|an\s+|one\s+|each\s+)?(\d+(?:\.\d+)?)?\s*([a-z]+)\b/g,
     (m, u1, n, u2) => (isUnit(u1) && isUnit(u2)) ? " " + (n || "1") + " " + u2 + " in " + u1 + " " : m);
+  // bare "seconds in a year" / "tablespoons in a cup" (the whole message is just the two units)
+  t = t.replace(/^\s*([a-z]+)\s+(?:in|per)\s+(?:a|an|one)\s+([a-z]+)\s*$/, (m, u1, u2) => (isUnit(u1) && isUnit(u2) && u1 !== u2) ? " 1 " + u2 + " in " + u1 + " " : m);
   t = t.replace(/\bhow (?:many|much)\s+([a-z]+)\s+(?:is|are|makes?|equals?)\s+(\d+(?:\.\d+)?)\s*([a-z]+)\b/g,
     (m, u1, n, u2) => (isUnit(u1) && isUnit(u2)) ? " " + n + " " + u2 + " in " + u1 + " " : m);
   // strip trailing politeness

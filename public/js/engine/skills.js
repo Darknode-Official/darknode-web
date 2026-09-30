@@ -191,6 +191,72 @@ export function calc(input) {
     const raw = (b - a) / Math.abs(a) * 100, v = Math.round(raw * 1e4) / 1e4;
     return { ok: true, value: v + "%", expr: "from " + pch[2] + " to " + pch[3] + " percent change", from: a, to: b, exact: Math.abs(raw - v) < 1e-12, word: pch[1] };
   }
+  // ---- round 9 everyday arithmetic forms; each returns its own title + note so say() prints them as written ----
+  const money = (x) => (Math.round(x * 100) / 100).toFixed(2).replace(/\.00$/, "");
+  const r6 = (x) => Math.round(x * 1e6) / 1e6;
+  // "12 divided by 5 remainder", "remainder of 17 divided by 5", "quotient and remainder of 17 and 5"
+  const dr = src.match(/^(?:what is |whats |find |calculate )?(-?\d+)\s*(?:divided by|÷|\/)\s*(\d+)\s+(?:with\s+)?(?:the\s+)?(?:remainder|and remainder|rem|r)$/) || src.match(/^(?:what is |whats |find |calculate )?(?:the )?(?:remainder|quotient and remainder|quotient and the remainder|remainder and quotient)\s+(?:of|when|from|for)\s+(-?\d+)\s+(?:is\s+)?(?:divided by|÷|\/|and)\s+(\d+)$/);
+  if (dr) {
+    const a = parseInt(dr[1], 10), b = parseInt(dr[2], 10);
+    if (b === 0) return { ok: false, error: "division by zero" };
+    const q = Math.trunc(a / b), r = a - q * b;
+    return { ok: true, value: q + " remainder " + r, expr: a + " divided by " + b, title: "Division with remainder", note: "**" + a + " ÷ " + b + " = " + q + " remainder " + r + "** (" + b + " × " + q + " + " + r + " = " + a + ")." + (a < 0 ? " The remainder takes the sign of the dividend (truncated division)." : "") };
+  }
+  // "price before tax if total is 54 at 8%", "original price if 80 after a 20% discount", "i paid 54 including 8% tax, what was the price"
+  if (/\b(?:before (?:tax|tip|vat|gst|discount|markup|the (?:increase|discount|raise|markup|tax|tip))|original (?:price|amount|cost|value)|pre-?(?:tax|tip|discount) (?:price|amount|cost)|starting price|list price|price before)\b/.test(src)) {
+    const pm = src.match(/(\d+(?:\.\d+)?)\s*(?:%|percent)/);
+    const others = (src.replace(/(\d+(?:\.\d+)?)\s*(?:%|percent)/, " ").match(/\d+(?:\.\d+)?/g) || []);
+    if (pm && others.length === 1) {
+      const p = parseFloat(pm[1]), t = parseFloat(others[0]);
+      const down = /\b(?:discount|off|sale|reduction|reduced|decrease|decreased|markdown|marked down|cheaper|drop)\b/.test(src);
+      if (down && p >= 100) return { ok: false, error: "a discount of " + p + "% or more leaves nothing to pay, so no original price can be recovered" };
+      const base = down ? t / (1 - p / 100) : t / (1 + p / 100);
+      const kind = down ? "discount" : (src.match(/\b(tax|tip|vat|gst|markup|increase|raise|fee|service charge)\b/) || [])[1] || "increase";
+      return { ok: true, value: money(base), expr: t + " before " + p + "% " + kind, title: "Price before " + kind, note: "**" + money(base) + "** is the amount before the " + p + "% " + kind + ": " + t + " ÷ (1 " + (down ? "− " : "+ ") + p + "/100) = " + t + " ÷ " + r6(down ? 1 - p / 100 : 1 + p / 100) + ". The " + kind + " itself is " + money(Math.abs(t - base)) + "." };
+    }
+    if (pm) return { ok: false, error: "I need the total that was paid and the percentage, for example: price before tax if the total is 54 at 8%" };
+  }
+  // "3 items at 4.99", "how much is 4 tickets at 12.50 each" (hours at a rate belong to the pay skill)
+  const ia = src.match(/^(?:how much (?:is|are|for|do i pay for|will i pay for) |what is |whats |what do |cost of |price of |total (?:for|of|cost of) |calculate )?(\d+(?:\.\d+)?)\s+(?!(?:hours?|hrs?|days?|weeks?|months?|years?|minutes?|mins?|percent|%)\b)([a-z]+)\s+(?:at|for|@|costing|priced at|x)\s+\$?(\d+(?:\.\d+)?)\s*(?:dollars?|bucks|usd|euros?|pounds?)?(?:\s+(?:each|apiece|a piece|per (?:item|unit|piece|ticket|one|[a-z]+)|a pop|every))?(?:\s+cost)?$/);
+  if (ia && !/^(?:to|in|into|as|by|times|plus|minus|and|or|of|the|a|an)$/.test(ia[2])) {
+    const n = parseFloat(ia[1]), each = parseFloat(ia[3]);
+    return { ok: true, value: money(n * each), expr: n + " × " + each, title: "Total cost", note: "**" + n + " " + ia[2] + " at " + each + " each cost " + money(n * each) + "** (" + n + " × " + each + ")." };
+  }
+  // "change from 20 for 13.45", "change out of 50 on a 32.10 bill"
+  const ch = src.match(/^(?:what is |whats |how much (?:is )?)?(?:the |my )?change (?:from|out of|on|for) (?:a |the )?\$?(\d+(?:\.\d+)?)(?: (?:bill|note|dollars?|bucks))? (?:for|on|if (?:it|the (?:bill|total|price|cost)) (?:is|costs?|was|comes to)|after (?:paying|spending|buying(?: something for)?)|when (?:i|you|we) (?:pay|spend|buy(?: something for)?)) (?:a |an |the )?\$?(\d+(?:\.\d+)?)(?: (?:bill|total|purchase|item|dollars?))?$/);
+  if (ch) {
+    const paid = parseFloat(ch[1]), cost = parseFloat(ch[2]);
+    if (cost > paid) return { ok: false, error: money(paid) + " does not cover " + money(cost) + "; " + money(cost - paid) + " short" };
+    return { ok: true, value: money(paid - cost), expr: paid + " − " + cost, title: "Change due", note: "**" + money(paid - cost) + "** change from " + money(paid) + " on " + money(cost) + " (" + paid + " − " + cost + ")." };
+  }
+  // "50 plus 8% tax", "add 20% tip to 45", "80 with 15% service charge", "120 including 10% vat" (the total, tax added)
+  const pt = src.match(/^(?:what is |whats |calculate )?\$?(\d+(?:\.\d+)?)\s+(?:plus|with|\+|including|incl\.?|after adding|and)\s+(?:a |an )?(\d+(?:\.\d+)?)\s*(?:%|percent)\s+(tax|sales tax|vat|gst|hst|tip|gratuity|service charge|service fee|fee|surcharge|markup)$/) || src.match(/^(?:add|apply|include)\s+(?:a |an )?(\d+(?:\.\d+)?)\s*(?:%|percent)\s+(tax|sales tax|vat|gst|hst|tip|gratuity|service charge|service fee|fee|surcharge|markup)\s+(?:to|on)\s+\$?(\d+(?:\.\d+)?)$/);
+  if (pt) {
+    const flip = /^(?:add|apply|include)/.test(src), base = parseFloat(flip ? pt[3] : pt[1]), p = parseFloat(flip ? pt[1] : pt[2]), kind = flip ? pt[2] : pt[3];
+    const extra = base * p / 100;
+    return { ok: true, value: money(base + extra), expr: base + " + " + p + "% " + kind, title: "Total with " + kind, note: "**" + money(base) + " plus " + p + "% " + kind + " is " + money(base + extra) + "** (the " + kind + " is " + money(extra) + ")." };
+  }
+  // "30 percent as a fraction", "12.5% as a fraction"
+  const pf = src.match(/^(?:what is |whats |write |express |convert )?(\d+(?:\.\d+)?)\s*(?:%|percent)\s+(?:as|to|in|into)\s+(?:a |its )?(?:simplest |lowest )?(?:fraction|fraction in lowest terms|ratio)$/);
+  if (pf) {
+    const p = parseFloat(pf[1]), { n, d } = toFraction(p / 100);
+    return { ok: true, value: d === 1 ? String(n) : n + "/" + d, expr: p + "% as a fraction", title: "Percent as a fraction", note: "**" + p + "% = " + (d === 1 ? n : n + "/" + d) + "** (" + p + "/100 in lowest terms)." };
+  }
+  // "scientific notation for 123000", "0.00045 in scientific notation"
+  const sn = src.match(/^(?:what is |whats |write |express |convert |put )?(-?\d+(?:\.\d+)?)\s+(?:in|as|to|into)\s+(?:scientific|standard index|exponential|e)\s+(?:notation|form)$/) || src.match(/^(?:what is |whats )?(?:the )?(?:scientific|standard index|exponential)\s+(?:notation|form)\s+(?:of|for)\s+(-?\d+(?:\.\d+)?)$/);
+  if (sn) {
+    const x = parseFloat(sn[1]); if (x === 0) return { ok: true, value: "0", expr: "0 in scientific notation", title: "Scientific notation", note: "**0** is written as 0 × 10^0 (zero has no exponent form)." };
+    const e = Math.floor(Math.log10(Math.abs(x))), mant = r6(x / Math.pow(10, e));
+    return { ok: true, value: mant + " × 10^" + e, expr: sn[1] + " in scientific notation", title: "Scientific notation", note: "**" + sn[1] + " = " + mant + " × 10^" + e + "** (" + mant + "e" + e + ")." };
+  }
+  // "1.5e6 as a number", "2.5e-3 in decimal"
+  const en = src.match(/^(?:what is |whats |write |expand |convert )?(-?\d+(?:\.\d+)?)\s*(?:e|×\s*10\^|x\s*10\^|\*\s*10\^)\s*([+-]?\d+)\s+(?:as|in|to|into)\s+(?:a |an |its )?(?:number|decimal|plain number|ordinary number|standard form|full form|digits)$/);
+  if (en) {
+    const mant = sn ? null : en[1], e = parseInt(en[2], 10); if (Math.abs(e) > 300) return { ok: false, error: "an exponent of " + e + " is beyond double precision" };
+    const x = parseFloat(mant) * Math.pow(10, e);
+    let plain; if (Number.isInteger(x) && Math.abs(x) < 1e21) plain = BigInt(Math.round(x)).toString(); else plain = x.toFixed(Math.max(0, -e + (mant.split(".")[1] || "").length)).replace(/\.?0+$/, "");
+    return { ok: true, value: plain, expr: mant + "e" + e + " as a number", title: "Plain number", note: "**" + mant + " × 10^" + e + " = " + plain + "**." };
+  }
   // "1/3 as a percent", "0.25 as a percentage", "3/8 to percent"
   const pc = src.match(/^(?:what is |whats |convert |write |express )?(-?\d*\.\d+|-?\d+(?:\.\d+)?\s*\/\s*\d+|-?\d+)\s+(?:as|to|in|into)\s+(?:a\s+)?percent(?:age)?\s*$/);
   if (pc) {
@@ -234,7 +300,12 @@ export const CURRENCY = new Set(["usd", "eur", "gbp", "jpy", "cny", "inr", "aud"
 export function convert(input) {
   // find the "<number> <unit> to <unit>" pattern anywhere, so leading words
   // (including a misspelled "convert") do not block the parse.
-  const src = String(input || "").toLowerCase().trim();
+  let src = String(input || "").toLowerCase().trim();
+  // amounts said as fractions or scale words: "1/3 cup", "2 1/2 cups", "1 million seconds", "5k" before a length unit
+  src = src.replace(/(?<![\d.])(\d+)\s+(\d+)\s*\/\s*(\d+)(?=\s*[a-z°])/g, (m, w, n, d) => +d ? String(+w + n / d) : m)
+    .replace(/(?<![\d.\/])(\d+)\s*\/\s*(\d+)(?=\s*[a-z°])/g, (m, n, d) => +d ? String(n / d) : m)
+    .replace(/(\d+(?:\.\d+)?)\s+(thousand|million|billion|trillion)\b/g, (m, n, w) => String(+n * { thousand: 1e3, million: 1e6, billion: 1e9, trillion: 1e12 }[w]))
+    .replace(/^((?:convert\s+|what is\s+|whats\s+|how far is\s+)?)(\d+(?:\.\d+)?)k\s+(?:to|in|into|as)\s+(miles?|mi|km|kilomet\w+|metres?|meters?|m|feet|ft|yards?)\b/, "$1$2 km to $3");
   // "180 cm in feet and inches": a length asked as a mixed feet + inches figure
   const fi = src.match(/(-?[0-9]*\.?[0-9]+)\s*([a-z°/]+)\s*(?:to|in|into|as)\s+(?:feet|ft|foot)\s+(?:and|&|\+)\s+(?:inches|inch|in)\b/);
   if (fi) {
@@ -565,7 +636,27 @@ export function regexTest(pattern, sample) {
 const DAYNAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 // a real calendar date only: "2024-02-30" and "2024-13-45" are rejected, not rolled over
 function parseISO(s) { const m = String(s).match(/(\d{4})-(\d{1,2})-(\d{1,2})/); if (!m) return null; const d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])); return d.getUTCMonth() === +m[2] - 1 && d.getUTCDate() === +m[3] ? d : null; }
-const HOLIDAYS = { "christmas eve": [12, 24], "christmas": [12, 25], "new year's eve": [12, 31], "new years eve": [12, 31], "new year's day": [1, 1], "new years day": [1, 1], "new year": [1, 1], "new years": [1, 1], "halloween": [10, 31], "valentine's day": [2, 14], "valentines day": [2, 14], "valentines": [2, 14], "april fools": [4, 1], "independence day": [7, 4], "thanksgiving": [11, 27] };
+// Holidays: fixed [month, day], or a rule for the movable ones (nth weekday of a month, last weekday, an offset from
+// Easter Sunday). US observances where countries differ; the answer says so. holidayDate(name, year) -> UTC Date or null.
+const HOLIDAYS = { "christmas eve": [12, 24], "christmas": [12, 25], "christmas day": [12, 25], "boxing day": [12, 26], "new year's eve": [12, 31], "new years eve": [12, 31], "new year's day": [1, 1], "new years day": [1, 1], "new year": [1, 1], "new years": [1, 1],
+  "halloween": [10, 31], "valentine's day": [2, 14], "valentines day": [2, 14], "valentines": [2, 14], "april fools": [4, 1], "april fools day": [4, 1], "independence day": [7, 4], "fourth of july": [7, 4], "4th of july": [7, 4],
+  "st patrick's day": [3, 17], "st patricks day": [3, 17], "saint patrick's day": [3, 17], "earth day": [4, 22], "juneteenth": [6, 19], "veterans day": [11, 11], "cinco de mayo": [5, 5], "pi day": [3, 14], "groundhog day": [2, 2], "leap day": [2, 29],
+  "thanksgiving": { nth: [11, 4, 4], note: "US" }, "thanksgiving day": { nth: [11, 4, 4], note: "US" }, "canadian thanksgiving": { nth: [10, 1, 2] }, "black friday": { nth: [11, 4, 4], plus: 1 }, "cyber monday": { nth: [11, 4, 4], plus: 4 },
+  "mother's day": { nth: [5, 0, 2], note: "US" }, "mothers day": { nth: [5, 0, 2], note: "US" }, "father's day": { nth: [6, 0, 3], note: "US" }, "fathers day": { nth: [6, 0, 3], note: "US" },
+  "labor day": { nth: [9, 1, 1], note: "US" }, "memorial day": { last: [5, 1] }, "mlk day": { nth: [1, 1, 3] }, "martin luther king day": { nth: [1, 1, 3] }, "presidents day": { nth: [2, 1, 3] }, "presidents' day": { nth: [2, 1, 3] }, "columbus day": { nth: [10, 1, 2] }, "indigenous peoples day": { nth: [10, 1, 2] },
+  "easter": { easter: 0 }, "easter sunday": { easter: 0 }, "good friday": { easter: -2 }, "easter monday": { easter: 1 }, "palm sunday": { easter: -7 }, "ash wednesday": { easter: -46 }, "mardi gras": { easter: -47 }, "shrove tuesday": { easter: -47 }, "pentecost": { easter: 49 }, "ascension day": { easter: 39 } };
+function easterSunday(y) { const a = y % 19, b = Math.floor(y / 100), c = y % 100, d = Math.floor(b / 4), e = b % 4, f = Math.floor((b + 8) / 25), g = Math.floor((b - f + 1) / 3), h = (19 * a + b - d - g + 15) % 30, i = Math.floor(c / 4), k = c % 4, l = (32 + 2 * e + 2 * i - h - k) % 7, m = Math.floor((a + 11 * h + 22 * l) / 451); const mo = Math.floor((h + l - 7 * m + 114) / 31), da = ((h + l - 7 * m + 114) % 31) + 1; return new Date(Date.UTC(y, mo - 1, da)); }
+export function holidayDate(name, year) {
+  const r = HOLIDAYS[String(name || "").toLowerCase()]; if (!r || !(year >= 1583 && year <= 9999)) return null;
+  if (Array.isArray(r)) { if (r[0] === 2 && r[1] === 29 && !(year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0))) return null; return new Date(Date.UTC(year, r[0] - 1, r[1])); }
+  let d = null;
+  if (r.nth) { const [mo, wd, n] = r.nth; const first = new Date(Date.UTC(year, mo - 1, 1)); d = new Date(Date.UTC(year, mo - 1, 1 + ((wd - first.getUTCDay() + 7) % 7) + 7 * (n - 1))); if (d.getUTCMonth() !== mo - 1) return null; }
+  else if (r.last) { const [mo, wd] = r.last; const last = new Date(Date.UTC(year, mo, 0)); d = new Date(Date.UTC(year, mo - 1, last.getUTCDate() - ((last.getUTCDay() - wd + 7) % 7))); }
+  else if (r.easter !== undefined) { d = easterSunday(year); d = new Date(d.getTime() + r.easter * 86400000); }
+  if (d && r.plus) d = new Date(d.getTime() + r.plus * 86400000);
+  return d;
+}
+export const holidayNote = (name) => { const r = HOLIDAYS[String(name || "").toLowerCase()]; return r && !Array.isArray(r) && r.note ? r.note : null; };
 export function datetime(input) {
   const low = String(input || "").toLowerCase();
   const isoAll = low.match(/\d{4}-\d{1,2}-\d{1,2}/g) || [];
@@ -575,6 +666,38 @@ export function datetime(input) {
   const nowY = new Date().getUTCFullYear();
   if (/^(?:what|which)\s+year\s+is\s+(?:it|this)(?:\s+now)?\s*$|^(?:what is |whats )?(?:the )?current year\s*$/.test(low.replace(/[?.!]/g, "").trim())) return { ok: true, kind: "year", text: "It is " + nowY + " (by this device's clock, UTC)" };
   if (/^(?:what is |whats |what's )?(?:the )?(?:date )?today(?:'s date)?\s*$|^(?:what is |whats |what's )(?:the )?date(?: today)?\s*$|^what day is (?:it|today)\s*$/.test(low.replace(/[?.!]/g, "").trim())) { const d = new Date(); return { ok: true, kind: "today", text: "Today is " + DAYNAMES[d.getUTCDay()] + ", " + d.toISOString().slice(0, 10) + " (UTC)" }; }
+  // "when is 2027-03-28" (the rephrase pass turns "easter 2027" into its date first): the weekday and how far away
+  const whenIso = /^(?:when (?:is|was|will be)|what date is)\s+(?:the )?(\d{4}-\d{1,2}-\d{1,2})\s*$/.exec(low.replace(/[?.!]/g, "").trim());
+  if (whenIso) {
+    const d = parseISO(whenIso[1]), now = new Date(), today0 = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()), diff = Math.round((d.getTime() - today0) / 86400000);
+    return { ok: true, kind: "holiday", date: whenIso[1], weekday: DAYNAMES[d.getUTCDay()], text: whenIso[1] + " is a " + DAYNAMES[d.getUTCDay()] + (diff === 0 ? " (today)" : diff > 0 ? " (in " + diff + " day" + (diff === 1 ? "" : "s") + ")" : " (" + -diff + " day" + (diff === -1 ? "" : "s") + " ago)") };
+  }
+  // "when is easter 2027" / "what day is thanksgiving" / "mother's day this year" -> the date, its weekday and (when no
+  // year was given) how far away it is. Movable feasts come from holidayDate(); the US ones say so.
+  const whenH = /^(?:when (?:is|was|will be|does|do)|what (?:day|date) (?:is|was|will be|does|do)|which day (?:is|was|does)|what is the date (?:of|for)|date of|date for)?\s*(?:the )?([a-z' ]+?)(?:\s+(?:fall|falls|land|lands|happen|happens|take place|occur|occurs))?(?:\s+(?:on|in))?(?:\s+(this year|next year|last year|(\d{4})))?\s*$/.exec(low.replace(/[?.!]/g, "").trim());
+  if (whenH && HOLIDAYS[whenH[1].trim()] && (whenH[0].includes(" is ") || whenH[0].includes(" was ") || whenH[2] || /^(?:when|what|which|date)/.test(low))) {
+    const name = whenH[1].trim(), now = new Date(), today0 = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+    let y = whenH[3] ? +whenH[3] : whenH[2] === "next year" ? nowY + 1 : whenH[2] === "last year" ? nowY - 1 : nowY, d = holidayDate(name, y);
+    if (!whenH[2] && d && d.getTime() < today0) { y += 1; d = holidayDate(name, y); }
+    if (!d && /leap day/.test(name)) { if (whenH[2]) return { ok: true, kind: "holiday", text: "There is no leap day in " + y + " (not a leap year)" }; for (let k = 1; k <= 8 && !d; k++) d = holidayDate(name, y + k); if (d) y = d.getUTCFullYear(); }
+    if (!d) return { ok: false, error: "no date for " + name + " in " + y };
+    const iso2 = d.toISOString().slice(0, 10), diff = Math.round((d.getTime() - today0) / 86400000), note = holidayNote(name);
+    const cap = name.replace(/\b\w/g, (c) => c.toUpperCase()).replace(/'S\b/g, "'s").replace(/\bMlk\b/, "MLK").replace(/\bSt\b/, "St.");
+    return { ok: true, kind: "holiday", name, date: iso2, weekday: DAYNAMES[d.getUTCDay()], text: cap + (whenH[3] ? " " + y : "") + " is on " + DAYNAMES[d.getUTCDay()] + ", " + iso2 + (whenH[2] ? "" : diff === 0 ? " (today)" : " (in " + diff + " day" + (diff === 1 ? "" : "s") + ")") + (note ? ". That is the " + note + " date; other countries differ" : "") };
+  }
+  // "how many working days in 2026" / "weekends in 2026": counted from the calendar, not estimated
+  const wk = /\b(working days|work days|business days|weekdays|weekend days|weekends|saturdays|sundays|mondays|tuesdays|wednesdays|thursdays|fridays)\b.*?\b(?:in|during|for)\s+(?:the year\s+)?(\d{4}|this year|next year|a year|the year)\b/.exec(low);
+  if (wk) {
+    const y = /\d{4}/.test(wk[2]) ? +wk[2] : wk[2] === "next year" ? nowY + 1 : nowY, days = (y % 4 === 0 && (y % 100 !== 0 || y % 400 === 0)) ? 366 : 365;
+    const counts = [0, 0, 0, 0, 0, 0, 0]; for (let i = 0; i < days; i++) counts[new Date(Date.UTC(y, 0, 1 + i)).getUTCDay()]++;
+    const what = wk[1]; const generic = /^(?:a year|the year)$/.test(wk[2]) ? " (using " + y + "; a year has 52 of each weekday plus 1 or 2 extra days)" : "";
+    const one = { saturdays: 6, sundays: 0, mondays: 1, tuesdays: 2, wednesdays: 3, thursdays: 4, fridays: 5 }[what];
+    if (one !== undefined) return { ok: true, kind: "yeardays", value: counts[one], text: y + " has " + counts[one] + " " + what + generic };
+    const wkd = counts[1] + counts[2] + counts[3] + counts[4] + counts[5], wke = counts[0] + counts[6];
+    if (/weekends$/.test(what)) return { ok: true, kind: "yeardays", value: counts[6], text: y + " has " + counts[6] + " weekends (" + counts[6] + " Saturdays and " + counts[0] + " Sundays, " + wke + " weekend days)" + generic };
+    if (/weekend days/.test(what)) return { ok: true, kind: "yeardays", value: wke, text: y + " has " + wke + " weekend days (" + counts[6] + " Saturdays and " + counts[0] + " Sundays)" + generic };
+    return { ok: true, kind: "yeardays", value: wkd, text: y + " has " + wkd + " weekdays (Monday to Friday) out of " + days + " days; public holidays are not subtracted, since they differ by country" + generic };
+  }
   const bornOn = /\bborn (?:on )?(\d{4}-\d{1,2}-\d{1,2})\b/.exec(low);
   if (bornOn && /how old|\bage\b|years old/.test(low)) {
     const b = parseISO(bornOn[1]), now = new Date();
@@ -668,12 +791,12 @@ export function datetime(input) {
     const iso = target.match(/\d{4}-\d{1,2}-\d{1,2}/);
     if (iso) dest = parseISO(iso[0]);
     else {
-      let md = null; for (const h of Object.keys(HOLIDAYS)) if (target.includes(h)) { md = HOLIDAYS[h]; break; }
-      if (md) {
+      const hname = Object.keys(HOLIDAYS).sort((a, b) => b.length - a.length).find((h) => target.includes(h));
+      if (hname) {
         const now = new Date();
-        dest = new Date(Date.UTC(now.getUTCFullYear(), md[0] - 1, md[1]));
         const today0 = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-        if (dest < today0) dest = new Date(Date.UTC(now.getUTCFullYear() + 1, md[0] - 1, md[1]));
+        dest = holidayDate(hname, now.getUTCFullYear());
+        if (!dest || dest < today0) dest = holidayDate(hname, now.getUTCFullYear() + 1) || holidayDate(hname, now.getUTCFullYear() + 2) || holidayDate(hname, now.getUTCFullYear() + 3) || holidayDate(hname, now.getUTCFullYear() + 4);
       }
     }
     if (dest) {

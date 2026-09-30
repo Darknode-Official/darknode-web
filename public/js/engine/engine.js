@@ -11,6 +11,7 @@ import { mathPhrase, hasMathPhrase, numberWords, numberToWords, synonyms, natura
 import * as MX from "/js/engine/matrix.js";
 import { unitMath } from "/js/engine/units.js";
 import { synth, parseSpec } from "/js/engine/synth.js";
+import { generate as genCode, plan as genPlan } from "/js/engine/gen.js";
 import { findProgram, detectLang, program, PROGRAMS, LANG_NAMES, RUN_HINT, fenceLang } from "/js/engine/programs.js";
 import * as F from "/js/engine/facts.js";
 import * as H from "/js/engine/hash.js";
@@ -83,7 +84,10 @@ function score(input) {
   else if (has(/\bconvert\b/) && !has(/\b(camel|snake|kebab|constant|title) ?case\b|uppercase|lowercase|\bslug/)) add("convert", 6, "looks like a unit conversion"); // "convert x to camel case" is a text transform
   if (has(/regex|regular expression|pattern for|pattern to match|test.*\/.*\/|\/.+\/\s+(on|against)/)) add("regex", 6, "asks for a regular expression");
   // number base + roman numerals (before convert, which is for physical units)
-  if (has(/\b(to|in|into|as)\s+(hex\w*|bin\w*|oct\w*|dec\w*|roman|base\s*\d+)\b/) || has(/roman numeral|\bfrom roman\b/)) add("base", 8, "number base conversion");
+  // a fraction "7/8 in decimal" is arithmetic, not a base change
+  const fracDec = has(/(?:^|\s)-?\d+\s*\/\s*\d+\s+(?:to|in|into|as)\s+(?:a\s+)?dec\w*/);
+  if (fracDec) add("calc", 9, "fraction to decimal");
+  else if (has(/\b(to|in|into|as)\s+(hex\w*|bin\w*|oct\w*|dec\w*|roman|base\s*\d+)\b/) || has(/roman numeral|\bfrom roman\b/)) add("base", 8, "number base conversion");
   // tabular data / CSV
   if (has(/\bcsv\b|\bdataset\b|analy[sz]e.*(data|table|csv|column)|per[- ]?column|columns?\b/) || (/\n/.test(s) && /,[^,\n]*,/.test(s.split("\n")[0]))) add("data", 7, "tabular data analysis");
   // color conversion — an explicit color literal outranks a plain "to hex" base request
@@ -98,12 +102,27 @@ function score(input) {
   if (has(/\b(?:weeks?|months?)\s+(?:until|till|til|left until|to go until)\s+\S/) || has(/\bborn (?:on )?\d{4}-\d{1,2}-\d{1,2}\b/) || has(/\bdays? (?:are )?(?:left|remaining|to go) (?:in|of) (?:the|this) year\b|\bdays? (?:have )?(?:passed|gone|elapsed) (?:so far )?(?:this year|in the year)\b|\bday of the year is (?:it|today)\b/)
     || has(/^(?:what|which) (?:iso )?week(?: number| of the year)? (?:is it|is this|are we in|is today)\b|^(?:current |this )?(?:iso )?week number\b|^(?:what|which) (?:fiscal |calendar )?quarter (?:is it|is this|are we in)\b/)
     || has(/\b(?:unix|epoch|posix)\b.*\b(?:time|timestamp|seconds)\b|\btimestamp\b|\bseconds since (?:the )?epoch\b|\b(?:unix|epoch)\b\s*\d{9,13}\b|\b\d{9,13}\s+(?:to|as|in)\s+(?:a )?(?:date|datetime|iso|utc|human)\b|\b\d{4}-\d{1,2}-\d{1,2}\b.*\b(?:to|as|in)\s+(?:unix|epoch|posix|a timestamp)\b|\bdate in \d+ (?:days?|weeks?|months?|years?)\b|\b(?:my|the|this device'?s?|the current|the local) (?:time ?zone|tz)\b|\btime ?zone am i in\b|\bmy utc offset\b/)) add("datetime", 8, "date and time");
+  // round 9 everyday arithmetic said in words: remainder, price before tax, items at a price, change, plus tax, percent as
+  // fraction, scientific notation (word problems and conversions must not claim these)
+  if (has(/\b\d+\s*(?:divided by|÷|\/)\s*\d+\s+(?:with\s+)?(?:the\s+)?(?:remainder|and remainder|rem|r)\s*\??$|^(?:what is |whats |find |calculate )?(?:the )?(?:remainder|quotient and (?:the )?remainder|remainder and quotient)\s+(?:of|when|from|for)\s+-?\d+/)
+    || (has(/\b(?:before (?:tax|tip|vat|gst|discount|markup|the (?:increase|discount|raise|markup|tax|tip))|original (?:price|amount|cost|value)|pre-?(?:tax|tip|discount) (?:price|amount|cost)|starting price|list price|price before)\b/) && has(/\d+(?:\.\d+)?\s*(?:%|percent)/))
+    || has(/^(?:how much (?:is|are|for|do i pay for|will i pay for) |what is |whats |what do |cost of |price of |total (?:for|of|cost of) |calculate )?\d+(?:\.\d+)?\s+(?!(?:hours?|hrs?|days?|weeks?|months?|years?|minutes?|mins?)\b)[a-z]+\s+(?:at|for|@|costing|priced at)\s+\$?\d+(?:\.\d+)?\s*(?:dollars?|bucks|usd|euros?|pounds?)?(?:\s+(?:each|apiece|a piece|per \w+|a pop|every))?(?:\s+cost)?\s*\??$/)
+    || has(/\bchange (?:from|out of|on|for) (?:a |the )?\$?\d+(?:\.\d+)?\b.*\b\d/)
+    || has(/^(?:what is |whats |calculate )?\$?\d+(?:\.\d+)?\s+(?:plus|with|\+|including|incl\.?|after adding|and)\s+(?:a |an )?\d+(?:\.\d+)?\s*(?:%|percent)\s+(?:tax|sales tax|vat|gst|hst|tip|gratuity|service charge|service fee|fee|surcharge|markup)\s*\??$|^(?:add|apply|include)\s+(?:a |an )?\d+(?:\.\d+)?\s*(?:%|percent)\s+(?:tax|sales tax|vat|gst|hst|tip|gratuity|service charge|service fee|fee|surcharge|markup)\s+(?:to|on)\s+\$?\d/)
+    || has(/\b\d+(?:\.\d+)?\s*(?:%|percent)\s+(?:as|to|in|into)\s+(?:a |its )?(?:simplest |lowest )?(?:fraction|ratio)\b/)
+    || has(/\b(?:scientific|standard index|exponential|e)\s+(?:notation|form)\b/) || has(/^(?:what is |whats |write |expand |convert )?-?\d+(?:\.\d+)?\s*(?:e|×\s*10\^|x\s*10\^|\*\s*10\^)\s*[+-]?\d+\s+(?:as|in|to|into)\s+(?:a |an |its )?(?:number|decimal|plain number|ordinary number|standard form|full form|digits)\s*\??$/)) { add("calc", 9, "everyday arithmetic"); why.__r9calc = true; }
+  // round 9: "when is easter 2027", "what day is thanksgiving", counted weekdays/weekends of a year
+  if (has(new RegExp("^(?:when|what (?:day|date)|which day|date (?:of|for))\\b.*\\b(?:" + HOLI_KEYS.join("|") + ")\\b")) || has(/^(?:when (?:is|was|will be)|what date is)\s+(?:the )?\d{4}-\d{1,2}-\d{1,2}\s*\??$/) || has(/\b(?:working days|work days|business days|weekdays|weekend days|weekends|saturdays|sundays|mondays|tuesdays|wednesdays|thursdays|fridays)\b.*\b(?:in|during|for)\s+(?:the year\s+)?(?:\d{4}|this year|next year|a year|the year)\b/)) add("datetime", 9, "holiday or year calendar");
   const algoKW = has(/factorial|fibonacci|fib|reverse|prime|palindrome|fizzbuzz|binary search|bubble sort|\bsort\b|\bsearch\b|\bgcd\b|average|function|func|method|class/);
   const langKW = has(/\b(python|javascript|js|typescript|ts|rust|go|golang|java|c)\b/);
   // Route to code synthesis for an algorithm or a language-tagged function — but a
   // whole app/game noun without an algorithm keyword is out of scope, so skip it.
   // a complete program from the library ("make a snake game", "read a file in go")
-  if (findProgram(low) && (codeAsk || buildAsk || howTo || langKW || detectLang(low) || has(/\b(program|script|code|app|game)\b/)) && !(isDef && !codeAsk) && !(!codeAsk && !buildAsk && (dictionaryAsk(s) || {}).kind === "isa"))
+  // a request the compositional generator can read completely ("function that keeps the
+  // even numbers, squares them and returns the sum") is built from parts, never looked up
+  const genOK = (codeAsk || buildAsk || has(/\b(python|javascript|js|typescript|ts|rust|golang|java)\b|\bin go\b/) || has(/\b(function|method|script|program|def|func)\b/)) && !has(/\bfrom [a-z0-9 ]{1,3}\b [a-z0-9 ]+$/) && !!genPlan(s);
+  if (genOK) add("codegen", 9, "code built from your description");
+  else if (findProgram(low) && (codeAsk || buildAsk || howTo || langKW || detectLang(low) || has(/\b(program|script|code|app|game)\b/)) && !(isDef && !codeAsk) && !(!codeAsk && !buildAsk && (dictionaryAsk(s) || {}).kind === "isa"))
     add("codegen", 9, "a complete program from the library");
   else if ((codeAsk || buildAsk || howTo) && (algoKW || (langKW && !APP_NOUN.test(low))))
     add("codegen", 7, "asks to generate code");
@@ -155,7 +174,7 @@ function score(input) {
   // spelling: "how do you spell recieve", "spell check: ...", "spell out 1234"
   if (has(/\bhow (?:do|would|should|can|is) (?:you |i |u |we |it )?spell|^(?:please )?spell\b|spell ?check|spellcheck|proofread|check (?:the |my )?spelling|fix (?:the |my )?spelling|correct (?:the )?spelling|\bspelling of\b|\bspell(?:ed|t) (?:right|correctly|properly|wrong)|\bspell out\b|^(?:is it|which is (?:correct|right|it))[,:]?\s+[a-z]+\s+or\s+[a-z]+\s*\??$/)) add("spelling", 9, "a spelling question");
   // sorting a list of values ("sort 5 3 9", "put these in order: 4 1 3", "alphabetize pear apple fig")
-  if (!codeAsk && !has(/ways to|\bsort lines\b/) && ((numCount >= 2 && has(/\b(sort|order|rank|arrange|ascending|descending)\b/)) || has(/\balphabeti[sz]e\b|\bsort (these |the |my )?(words|names|items|list)\b|alphabetical order/))) add("listops", 8, "sort a list");
+  if (!codeAsk && !has(/ways to|\bsort lines\b/) && ((numCount >= 2 && has(/\b(sort|order|rank|arrange|ascending|descending)\b/)) || has(/\balphabeti[sz]e\b|\bsort (these |the |my )?(words|names|items|list)\b|alphabetical order/) || has(/^(?:sort|order)\s+(?:[a-z]+\s*,\s*)+[a-z]+\s*$/))) add("listops", 8, "sort a list");
   // truth table (keyword-gated so boolean "and/or" in prose never triggers it)
   if (has(/truth table/)) add("logic", 9, "boolean truth table");
   // set operations on two explicit sets
@@ -188,6 +207,7 @@ function score(input) {
   if (has(/^[a-z_]\w*\s*=[^=]/)) add("calc", 4, "variable assignment");
   if (has(/\bsqrt|square root|factorial|\bpi\b|\bphi\b|\bsin\b|\bcos\b|\btan\b|\blog\b|\bgcd\(|\bmin\(|\bmax\(|\bround\(|\babs\(|\bcbrt\(|\bceil\(|\bfloor\(|\bexp\(|\bln\(/)) add("calc", 3, "math function");
 
+  if (why.__r9calc) { S0.wordmath = 0; S0.convert = 0; S0.knowledge = 0; S0.base = 0; S0.everyday = Math.min(S0.everyday, 8); delete why.__r9calc; }
   const ranked = Object.keys(S0).map((k) => ({ skill: k, score: S0[k], why: why[k] || "" }))
     .filter((r) => r.score > 0).sort((a, b) => b.score - a.score);
   return ranked;
@@ -201,7 +221,9 @@ function say(skill, res, input, model) {
   switch (skill) {
     case "calc":
       return res.ok
-        ? / as a fraction$/.test(res.expr || "")
+        ? res.title
+          ? { title: res.title, body: res.note, result: res }
+          : / as a fraction$/.test(res.expr || "")
           ? { title: "Fraction", body: "`" + res.expr.replace(/ as a fraction$/, "") + "` as a fraction is **" + res.value + "** (the simplest fraction, found by continued fractions).", result: res }
           : / simplified$/.test(res.expr || "")
           ? { title: "Simplified fraction", body: res.already ? "`" + res.expr.replace(/ simplified$/, "") + "` is already in lowest terms: the numerator and denominator share no factor but 1." : "`" + res.expr.replace(/ simplified$/, "") + "` simplifies to **" + res.value + "** (divide top and bottom by their greatest common divisor, " + res.gcd + ").", result: res }
@@ -217,12 +239,16 @@ function say(skill, res, input, model) {
       return res.ok
         ? res.subunit
           ? { title: "Currency subunit", body: "**" + res.input + " " + res.from + "** is **" + res.value + " " + res.to + "**: 100 of the minor unit make one of the major unit, a fixed ratio that needs no exchange rate.", result: res }
-          : { title: "Unit conversion", body: "**" + res.input + " " + res.from + "** equals **" + (res.feet != null ? res.value + "** (" + res.totalInches + " inches in all" : res.value + " " + res.to + "** (" + res.dim) + "). " + (/^(?:years?|yrs?|months?|decades?|centur(?:y|ies))$/.test(res.from) || /^(?:years?|yrs?|months?|decades?|centur(?:y|ies))$/.test(res.to) ? "This uses the average calendar year of 365.25 days (a month is a twelfth of that), so a particular year or month can differ slightly." : "This uses a fixed conversion factor, so it is precise."), result: res }
+          : { title: "Unit conversion", body: "**" + (Number.isFinite(res.input) ? Math.round(res.input * 1e6) / 1e6 : res.input) + " " + res.from + "** equals **" + (res.feet != null ? res.value + "** (" + res.totalInches + " inches in all" : res.value + " " + res.to + "** (" + res.dim) + "). " + (/^(?:years?|yrs?|months?|decades?|centur(?:y|ies))$/.test(res.from) || /^(?:years?|yrs?|months?|decades?|centur(?:y|ies))$/.test(res.to) ? "This uses the average calendar year of 365.25 days (a month is a twelfth of that), so a particular year or month can differ slightly." : "This uses a fixed conversion factor, so it is precise."), result: res }
         : { title: "Unit conversion", body: "I could not convert that: " + res.error + ".", result: res };
     case "codegen": {
       if (res.kind === "program") {
         const miss = res.missing ? " I do not have a " + (LANG_NAMES[res.missing] || res.missing) + " version of this one yet, so here it is in **" + LANG_NAMES[res.lang] + "**; turn on **Smart mode** to have it translated." : "";
         return { title: res.op + " \u00b7 " + LANG_NAMES[res.lang], body: "Here is a complete, runnable **" + res.op.toLowerCase() + "** in **" + LANG_NAMES[res.lang] + "**. It comes from DI's library of hand-written programs, each one compiled and run before it ships." + miss + "\n\n```" + fenceLang(res.lang) + "\n" + res.code + "\n```", lang: res.lang, note: res.note, result: res };
+      }
+      if (res.kind === "generated") {
+        const steps = res.steps.map((w, i) => (i === 0 ? "start from " + w : w)).join(", then ");
+        return { title: res.op + " \u00b7 " + (LANG_NAMES[res.lang] || res.lang), body: "I read your request as a plan: " + steps + ". Then I wrote `" + res.op + "` for **" + (LANG_NAMES[res.lang] || res.lang) + "** from that plan, stage by stage, with names taken from what each stage does. Nothing here is a stored snippet.", code: res.code, lang: res.lang, note: "Ask for the same thing in " + res.langs.filter((l) => l !== res.lang).slice(0, 3).map((l) => LANG_NAMES[l] || l).join(", ") + " or " + (LANG_NAMES[res.langs.filter((l) => l !== res.lang)[3]] || "Java") + " and it is rebuilt from the same plan.", result: res };
       }
       const lead = res.kind === "compiled"
         ? "I compiled `" + res.op + "` into **" + res.lang + "** from scratch — I parsed your spec into an abstract syntax tree and generated the code from it, so it is built for this request, not pasted from a snippet:"
@@ -387,6 +413,14 @@ function run(skill, input, model) {
           return { ok: true, kind: "compiled", lang, op: r.name + "(" + r.params.join(", ") + ")", code: built.code, note: "Parsed your spec to an AST and compiled it to " + lang + " from scratch (no stored snippet)." + shape + imp, result: r };
         }
       }
+      // compositional generation: the sentence becomes a plan (source, stages, result)
+      // and the plan is emitted for the requested language from grammar tables
+      {
+        const LM = { py: "python", python: "python", js: "javascript", javascript: "javascript", node: "javascript", ts: "typescript", typescript: "typescript", rs: "rust", rust: "rust", go: "go", golang: "go", java: "java" };
+        let lang = "python"; for (const k in LM) if (new RegExp("\\b" + k + "\\b").test(low)) { lang = LM[k]; break; }
+        const g = genCode(input, lang);
+        if (g) return g;
+      }
       // a whole program from the hand-tested library (games, apps, data structures,
       // file and network I/O, ...) takes precedence over single-function synthesis
       const prog = program(low);
@@ -449,7 +483,12 @@ function run(skill, input, model) {
       let payload;
       if (q) payload = q[1];
       else if (c >= 0) payload = input.slice(c + 1).trim();
-      else { let t = input.trim(), prev; do { prev = t; t = t.replace(STRIP, ""); } while (t !== prev); payload = t; }
+      else {
+        let t = input.trim(), prev; do { prev = t; t = t.replace(STRIP, ""); } while (t !== prev);
+        // a trailing "in morse" / "to base64" / "as hex" names the operation, it is not part of the payload
+        t = t.replace(/\s+(?:in|to|into|as)\s+(?:morse(?:\s+code)?|base64|hex(?:adecimal)?|binary|rot13|url(?:\s*encoding)?)\s*[?.!]*$/i, "");
+        payload = t;
+      }
       if (dg) return { op: dg, value: H[dg](payload || ""), payload: payload || "" };
       return { op: eop, value: A.encode(eop, payload || ""), payload: payload || "" };
     }
@@ -763,6 +802,9 @@ export function slang(input, all = true) {
 // the user, so the engine says how it read a request instead of guessing quietly.
 // ---------------------------------------------------------------------------
 const NUM = "-?\\d+(?:\\.\\d+)?";
+// a number or a simple fraction ("2/3"), and an optional trailing kitchen unit that "double 2/3 cup" may carry
+const NUMF = "-?\\d+(?:\\.\\d+)?(?:\\s*/\\s*\\d+)?";
+const COOK = "(?:\\s+(?:cups?|tbsp|tablespoons?|tsp|teaspoons?|ml|l|liters?|litres?|g|grams?|kg|oz|ounces?|lbs?|pounds?|sticks?|cloves?|eggs?|servings?|portions?|pinch(?:es)?|scoops?))?";
 const LIST = "(" + NUM + "(?:\\s*,?\\s*(?:and\\s+)?" + NUM + ")+)";
 const HOLI_KEYS = Object.keys(S.HOLIDAYS).sort((a, b) => b.length - a.length).map((k) => k.replace(/'/g, "'?"));
 const pad2 = (n) => String(n).padStart(2, "0");
@@ -906,16 +948,18 @@ const REPHRASE = [
   // dice: "odds of rolling two sixes"
   [/\b(?:odds|chance|chances|probability)\s+(?:of\s+)?(?:rolling|getting|throwing)\s+(two|2|double|three|3|four|4)\s+(?:sixes|6s|fives|5s|fours|4s|threes|3s|twos|2s|ones|1s)\b|\b(?:odds|chance|probability)\s+(?:of\s+)?(?:rolling\s+)?snake eyes\b/gi, (m, n) => "(1/6)^" + ({ two: 2, double: 2, three: 3, four: 4 }[String(n || "two").toLowerCase()] || n)],
   // fractions and multiples of a single number
-  [new RegExp("\\bhalf of (" + NUM + ")\\b", "gi"), "($1 / 2)"],
+  [new RegExp("(?<!time and a )\\bhalf of (" + NUM + ")\\b", "gi"), "($1 / 2)"],
+  // "hello backwards", "racecar reversed" -> the text tool's reverse
+  [/^([a-z][a-z' -]*?)\s+(?:backwards|reversed|in reverse|spelled backwards|spelt backwards)\s*\??$/i, (m, w) => (/^(?:is|what|how|why|count|reverse|spell|write|say|the|a|an)\b/i.test(w) ? m : "reverse " + w)],
   [new RegExp("\\b(?:(a|an|one|two|three|four|five|six|seven|eight|nine|\\d+)\\s+)?(thirds?|quarters?|fourths?|fifths?|sixths?|sevenths?|eighths?|ninths?|tenths?|hundredths?|thousandths?)\\s+of\\s+(" + NUM + ")\\b(?=\\s*(?:$|[?.,!)+\\-*/^]|plus|minus|times|divided|and\\b))", "gi"), (m, k, part, n) => {
     const d = FRACTION_DEN[part.toLowerCase().replace(/s$/, "")], num = k ? (ORDINAL_COUNT[k.toLowerCase()] || Number(k)) : 1;
     if (!d || !num || (num > 1 && !/s$/i.test(part))) return m; // "two third of" is not a fraction phrase
     return num === 1 ? "(" + n + " / " + d + ")" : "(" + n + " * " + num + " / " + d + ")";
   }],
-  [new RegExp("^((?:what is|whats|calculate)\\s+)?(?:double|twice) (" + NUM + ")\\s*\\??$", "i"), "$12 * $2"],
-  [new RegExp("^((?:what is|whats|calculate)\\s+)?triple (" + NUM + ")\\s*\\??$", "i"), "$13 * $2"],
-  [new RegExp("^((?:what is|whats|calculate)\\s+)?quadruple (" + NUM + ")\\s*\\??$", "i"), "$14 * $2"],
-  [new RegExp("^((?:what is|whats|calculate)\\s+)?halve (" + NUM + ")\\s*\\??$", "i"), "$1$2 / 2"],
+  [new RegExp("^((?:what is|whats|calculate)\\s+)?(?:double|twice) (" + NUMF + ")" + COOK + "\\s*\\??$", "i"), "$12 * $2"],
+  [new RegExp("^((?:what is|whats|calculate)\\s+)?triple (" + NUMF + ")" + COOK + "\\s*\\??$", "i"), "$13 * $2"],
+  [new RegExp("^((?:what is|whats|calculate)\\s+)?quadruple (" + NUMF + ")" + COOK + "\\s*\\??$", "i"), "$14 * $2"],
+  [new RegExp("^((?:what is|whats|calculate)\\s+)?halve (" + NUMF + ")" + COOK + "\\s*\\??$", "i"), "$1$2 / 2"],
   [new RegExp("^(?:what is |whats )?(\\d+)\\s*factorial\\s*\\??$", "i"), "$1!"],
   [/^(?:what is |whats )?factorial (\d+)\s*\??$/i, "$1!"],
   // largest / smallest of a list
@@ -932,7 +976,7 @@ const REPHRASE = [
   // sequences
   [/\b(?:what comes after|what(?:'s| is|s) next (?:after|in)|next (?:number )?after|continue)\s+(?=-?\d)/gi, "what comes next in "],
   // dates: "christmas 2026" -> an ISO date; "how long until" -> days until
-  [new RegExp("\\b(" + HOLI_KEYS.join("|") + ")(?:\\s+(?:of|in))?\\s+(\\d{4})\\b", "gi"), (m, h, y) => { const d = S.HOLIDAYS[h.toLowerCase()] || S.HOLIDAYS[h.toLowerCase().replace(/(\w)s\b/, "$1's")]; return d ? y + "-" + pad2(d[0]) + "-" + pad2(d[1]) : m; }],
+  [new RegExp("\\b(" + HOLI_KEYS.join("|") + ")(?:\\s+(?:of|in))?\\s+(\\d{4})\\b", "gi"), (m, h, y) => { const d = S.holidayDate(h.toLowerCase(), +y) || S.holidayDate(h.toLowerCase().replace(/(\w)s\b/, "$1's"), +y); return d ? d.toISOString().slice(0, 10) : m; }],
   [new RegExp("\\b(" + MONTHS + ")\\.?\\s+(\\d{1,2})(?:st|nd|rd|th)?,?\\s+(\\d{4})\\b", "gi"), (m, mo, d, y) => isoDate(y, mo, d) || m],
   [new RegExp("\\b(\\d{1,2})(?:st|nd|rd|th)?\\s+(?:of\\s+)?(" + MONTHS + ")\\.?,?\\s+(\\d{4})\\b", "gi"), (m, d, mo, y) => isoDate(y, mo, d) || m],
   [/\bhow (?:long|much time|many days)\s+(?:is it\s+|is there\s+|do (?:i|we) have\s+|left\s+)?(?:until|till|til|before|to)\b(?!\s+(?:travel|drive|go|walk|run|cycle|ride|cover|fly|sail|bike|get)\b)/gi, "how many days until"],

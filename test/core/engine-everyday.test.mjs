@@ -15,6 +15,7 @@ process.on("exit", () => { try { rmSync(dir, { recursive: true, force: true }); 
 
 const E = await import(pathToFileURL(join(dir, "engine.js")).href);
 const EV = await import(pathToFileURL(join(dir, "everyday.js")).href);
+const AD = await import(pathToFileURL(join(dir, "advanced.js")).href);
 const HT = await import(pathToFileURL(join(dir, "howto.js")).href);
 const { CORPUS } = await import(pathToFileURL(join(dir, "corpus.js")).href);
 const model = E.buildModel(CORPUS);
@@ -413,5 +414,117 @@ group("everyday: round 8", () => {
     assert.ok(/2\.5 dollars/.test(ask("250 cents in dollars")));
     assert.ok(/exchange rate/.test(ask("how many dollars in a euro")));
     assert.ok(/5f4dcc3b5aa765d61d8327deb882cf99/.test(ask("what is the md5 of password")));
+  });
+});
+
+group("everyday: round 9", () => {
+  test("movable holidays are computed, never hard-coded", () => {
+    assert.ok(/Thursday/.test(ask("what day is thanksgiving 2026")), "thanksgiving 2026");
+    assert.ok(/2027-03-28/.test(ask("when is easter 2027")), "easter 2027");
+    assert.ok(/2026-05-25/.test(ask("when is memorial day 2026")), "memorial day");
+    assert.ok(/2026-04-03/.test(ask("when is good friday 2026")), "good friday");
+    assert.ok(/Sunday, \d{4}-05-\d{2}/.test(ask("when is mothers day")), "mothers day");
+    assert.ok(/US date/.test(ask("when is thanksgiving this year")), "US note");
+    assert.ok(/12-25/.test(ask("when is christmas")) && /in \d+ days|today/.test(ask("when is christmas")), "days until");
+    assert.ok(/2028-02-29/.test(ask("when is leap day")), "leap day");
+  });
+  test("weekdays and weekends of a year are counted", () => {
+    assert.ok(/261 weekdays/.test(ask("how many working days in 2026")), "working days 2026");
+    assert.ok(/53 fridays/.test(ask("how many fridays in 2027")), "fridays 2027");
+    assert.ok(/52 weekends/.test(ask("how many weekends in 2026")), "weekends");
+  });
+  test("everyday arithmetic said in words", () => {
+    assert.ok(/2 remainder 2/.test(ask("12 divided by 5 remainder")));
+    assert.ok(/\b50\b is the amount/.test(ask("price before tax if total is 54 at 8%")));
+    assert.ok(/\b100\b is the amount/.test(ask("original price if 80 after a 20% discount")));
+    assert.ok(/\b50\b is the amount/.test(ask("i paid 54 including 8% tax, what was the price before tax")));
+    assert.ok(/14\.97/.test(ask("how much is 3 items at 4.99")));
+    assert.ok(/6\.55/.test(ask("change from 20 for 13.45")));
+    assert.ok(/is 54\b/.test(ask("50 plus 8% tax")));
+    assert.ok(/is 54\b/.test(ask("add 20% tip to 45")));
+    assert.ok(/3\/10/.test(ask("what is 30 percent as a fraction")));
+    assert.ok(/1\.23 × 10\^5/.test(ask("scientific notation for 123000")));
+    assert.ok(/4\.5 × 10\^-4/.test(ask("0.00045 in scientific notation")));
+    assert.ok(/1500000/.test(ask("1.5e6 as a number")));
+    assert.ok(/0\.875/.test(ask("7/8 in decimal")), "a fraction is not a base change");
+    assert.ok(/1\.3333/.test(ask("double 2/3 cup")), "double a fraction");
+  });
+  test("conversions read fractions, scale words and 5k", () => {
+    assert.ok(/5\.33333/.test(ask("1/3 cup in tablespoons")));
+    assert.ok(/591\.47/.test(ask("2 1/2 cups in ml")));
+    assert.ok(/11\.574/.test(ask("1 million seconds in days")));
+    assert.ok(/3\.10(?:68|7)/.test(ask("5k in miles")));
+    assert.ok(/31557600 seconds/.test(ask("seconds in a year")));
+    assert.ok(/16 tablespoons/.test(ask("tablespoons in a cup")));
+  });
+  test("clock formats and time from now", () => {
+    assert.ok(/2:30 PM/.test(ask("convert 14:30 to 12 hour time")));
+    assert.ok(/14:30/.test(ask("2:30 pm in 24 hour time")));
+    assert.ok(/6:30 PM/.test(ask("what is 1830 in military time")));
+    assert.ok(/from now is \d{1,2}:\d{2} [AP]M/.test(ask("what time is 90 minutes from now")));
+  });
+  test("pay, fuel, pace, pets, pizzas", () => {
+    assert.ok(/52,000\.00 a year/.test(ask("salary for 25 an hour")));
+    assert.ok(/5,833\.33 a month/.test(ask("70000 a year is how much per month")));
+    assert.ok(/28\.85 an hour/.test(ask("60000 a year to hourly")));
+    assert.ok(/\$30\.00 an hour/.test(ask("time and a half of 20")));
+    assert.ok(/\$600\.00/.test(ask("40 hours at 15 an hour")));
+    assert.ok(/7\.5 L\/100 km/.test(ask("fuel consumption 400 km on 30 liters")) && /31\.4 mpg \(US\)/.test(ask("fuel consumption 400 km on 30 liters")));
+    assert.ok(/7\.84 L\/100 km/.test(ask("30 mpg in l/100km")));
+    assert.ok(/29\.4 mpg/.test(ask("8 l/100km in mpg")));
+    assert.ok(/5:00 min\/km/.test(ask("pace for 5 km in 25 minutes")) && /8:03 min\/mile/.test(ask("pace for 5 km in 25 minutes")));
+    assert.ok(/takes 55:00/.test(ask("how long to run 10k at 5:30 pace")));
+    assert.ok(/about 39 in human years/.test(ask("dog years for a 5 year old dog")));
+    assert.ok(/about 28 in human years/.test(ask("cat years for a 3 year old cat")));
+    assert.ok(/5 large pizzas/.test(ask("how many pizzas for 12 people")));
+    assert.ok(/No fixed conversion/.test(ask("eu shoe size 42 in us")), "shoe sizes are refused with a reason");
+  });
+  test("generations, zodiacs, anagrams, acronyms", () => {
+    assert.ok(/a Millennial/.test(ask("what generation is someone born in 1990")));
+    assert.ok(/Baby Boomer/.test(ask("what generation is 1950")));
+    assert.ok(/year of the Horse/.test(ask("chinese zodiac for 1990")) && /Metal Horse/.test(ask("chinese zodiac for 1990")));
+    assert.ok(/year of the Dragon/.test(ask("what animal is 2024")));
+    assert.ok(/is Pisces/.test(ask("zodiac sign for march 15")));
+    assert.ok(/is Capricorn/.test(ask("star sign for december 25")));
+    assert.ok(/is Aquarius/.test(ask("what is my zodiac sign if i was born on january 20")));
+    assert.ok(/Yes: listen and silent/.test(ask("is listen an anagram of silent")));
+    assert.ok(/No: apple and pear/.test(ask("are apple and pear anagrams")));
+    assert.ok(/\bPNG\b from/.test(ask("acronym for portable network graphics")));
+    assert.ok(/olleh/.test(ask("hello backwards")));
+    assert.ok(/apple, banana, cherry/.test(ask("sort apple, cherry, banana")));
+    assert.ok(AD.lookup("what is an anagram").term !== "ram" && AD.lookup("what is a hash function").ok, "whole-word glossary match");
+    assert.ok(/^\.\.\. --- \.\.\.$/m.test(ask("sos in morse")) || /\.\.\. --- \.\.\.$/.test(ask("sos in morse").trim()), "in morse is not payload");
+  });
+});
+
+const GEN = await import(pathToFileURL(join(dir, "gen.js")).href);
+group("codegen: compositional generator", () => {
+  const code = (q) => E.respond(q, model).code || "";
+  test("a filter/map/reduce sentence becomes a plan and a function, in the asked language", () => {
+    const r = E.respond("write a python function that keeps the even numbers, squares them and returns the sum", model);
+    assert.equal(r.skill, "codegen");
+    assert.ok(/def sum_of_even_squares\(numbers\):/.test(r.code) && /x % 2 == 0/.test(r.code) && /x \* x/.test(r.code) && /return sum\(/.test(r.code), r.code);
+    const js = code("javascript function that returns the sum of the squares of the even numbers in a list");
+    assert.ok(/function sumOfEvenSquares\(numbers\)/.test(js) && /\.filter\(\(x\) => x % 2 === 0\)/.test(js) && /reduce\(\(a, b\) => a \+ b, 0\)/.test(js), js);
+  });
+  test("every target language is emitted from the same plan", () => {
+    const p = GEN.plan("function that removes duplicates from a list of strings and sorts them descending");
+    assert.ok(p && p.stages.map((t) => t.op).join(",") === "unique,sort" && p.stages[1].arg === "desc");
+    for (const l of ["python", "javascript", "typescript", "go", "rust", "java"]) assert.ok(GEN.emit(p, l) && GEN.emit(p, l).length > 40, l);
+    assert.ok(/fn unique_sorted_strings\(strings: &\[String\]\) -> Vec<String>/.test(GEN.emit(p, "rust")));
+    assert.ok(/static List<String> uniqueSortedStrings\(List<String> strings\)/.test(GEN.emit(p, "java")));
+    assert.ok(/func uniqueSortedStrings\(items \[\]string\) \[\]string/.test(GEN.emit(p, "go")), "Go renames a parameter that would shadow the strings package");
+  });
+  test("strings, ranges and print scripts", () => {
+    assert.ok(/def count_vowels\(text\):/.test(code("count the vowels in a string in python")));
+    assert.ok(/fn is_palindrome\(text: &str\) -> bool/.test(code("rust function that checks if a string is a palindrome")));
+    const g = code("print the numbers from 1 to 50 that are divisible by 7 in go");
+    assert.ok(/func main\(\)/.test(g) && /for i := 1; i <= 50; i\+\+/.test(g) && /x % 7 == 0/.test(g) && /fmt\.Println/.test(g), g);
+    assert.ok(/", "\.join\(/.test(code("python function that joins the names that start with a with commas")));
+  });
+  test("a sentence with a verb the generator cannot read is refused, not guessed", () => {
+    assert.equal(GEN.plan("function that shuffles a list of numbers"), null);
+    assert.equal(GEN.plan("write a snake game in python"), null);
+    assert.equal(GEN.plan("what is 2 + 2"), null);
   });
 });
