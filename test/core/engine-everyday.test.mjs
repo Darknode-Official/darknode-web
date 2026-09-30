@@ -233,3 +233,84 @@ group("howto: curated snippets", () => {
     assert.ok(/hand-written and reviewed, not generated/.test(E.respond("git undo last commit", model).note));
   });
 });
+
+// Round 7: relative dates, honest currency / live-data / translation refusals,
+// fraction and percentage forms, JSON and cron tools, and the calculus pointer.
+group("everyday: round 7", () => {
+  const iso = (off) => { const n = new Date(); return new Date(Date.UTC(n.getUTCFullYear(), n.getUTCMonth(), n.getUTCDate() + off)).toISOString().slice(0, 10); };
+  test("N days from today is an offset, not today", () => {
+    const r = E.respond("what day is 90 days from today", model);
+    assert.equal(r.skill, "datetime"); assert.ok(text(r).includes(iso(90)), text(r));
+    assert.ok(text(E.respond("what date is 3 weeks from now", model)).includes(iso(21)));
+    assert.ok(text(E.respond("what day was 10 days ago", model)).includes(iso(-10)));
+    assert.ok(text(E.respond("what day is it in 5 days", model)).includes(iso(5)));
+  });
+  test("month offsets clamp to the last day instead of overflowing", () => {
+    const d = new Date(Date.UTC(2026, 0, 31)); // Jan 31 + 1 month must be Feb 28, not Mar 3
+    const last = new Date(Date.UTC(2026, 2, 0)).getUTCDate(); assert.equal(Math.min(d.getUTCDate(), last), 28);
+    const r = E.respond("what day is 2 months from today", model); assert.equal(r.skill, "datetime"); assert.ok(/\d{4}-\d{2}-\d{2}/.test(text(r)));
+  });
+  test("currency is refused honestly, mass units still convert", () => {
+    assert.ok(/exchange rate/.test(ask("what is 100 usd in eur")));
+    assert.ok(/exchange rate.*DOLLARS to GBP/.test(ask("convert 50 dollars to gbp")));
+    assert.ok(/90\.7184 kg/.test(ask("200 pounds to kg")));
+    assert.ok(/exchange rate/.test(ask("100 pounds to dollars")));
+  });
+  test("fractions: simplify, lowest terms, as a percent", () => {
+    assert.ok(/simplifies to 3\/4/.test(ask("simplify 18/24")));
+    assert.ok(/simplifies to 2\/3/.test(ask("10/15 in lowest terms")));
+    assert.ok(/already in lowest terms/.test(ask("reduce 7/9")));
+    assert.ok(/33\.3333%/.test(ask("what is 1/3 as a percent")));
+    assert.ok(/25%/.test(ask("0.25 as a percentage")));
+    assert.ok(/37\.5%/.test(ask("3/8 to percent")));
+    assert.equal(skill("what is 15% of 80"), "calc"); // "of" is a percent-of calculation, untouched
+  });
+  test("json: format, minify, validate, and a located error", () => {
+    assert.ok(/"a": 1/.test(ask('json format {"a":1,"b":[1,2]}')));
+    assert.ok(/\{"a":1,"b":\[1,2\]\}/.test(ask('minify json { "a": 1, "b": [1, 2] }')));
+    assert.ok(/^Valid JSON/.test(ask('is this valid json {"ok":true}')));
+    assert.ok(/Invalid JSON.*line 1, column/.test(ask("validate json {'a': 1}")));
+    assert.equal(skill('pretty print json {"a":1}'), "everyday");
+    assert.equal(skill('write json {"a":1}'), "everyday"); // allowed past the code gate
+  });
+  test("cron: only when cron is named, exact five fields", () => {
+    const c = [["cron every monday at 9am", "0 9 * * 1"], ["crontab every 15 minutes", "*/15 * * * *"], ["cron job every day at 6:30pm", "30 18 * * *"],
+      ["cron expression for weekdays at 8am", "0 8 * * 1-5"], ["cron every hour", "0 * * * *"], ["cron at midnight", "0 0 * * *"],
+      ["cron monthly on the 1st at 3am", "0 3 1 * *"], ["cron every saturday and sunday at noon", "0 12 * * 0,6"], ["cron every 2 hours", "0 */2 * * *"]];
+    for (const [q, expr] of c) { const r = E.respond(q, model); assert.equal(r.skill, "everyday", q); assert.equal(r.result.expr, expr, q + " -> " + r.result.expr); }
+    assert.equal(EV.cronOf("every 90 minutes"), null); // not expressible in one line
+    assert.equal(EV.cronOf("every monday at 25:00"), null);
+    assert.notEqual(skill("run a script every day"), "everyday"); // no "cron": the how-to snippet handles it
+    assert.equal(skill("what is a cron job"), "knowledge");
+  });
+  test("calculus points at Quelvra with a prefilled link", () => {
+    const r = E.respond("derivative of x^2", model); assert.equal(r.skill, "everyday");
+    assert.ok(r.result.link.startsWith("/quelvra/?q=derivative%20of%20x%5E2"), r.result.link);
+    assert.ok(/Quelvra/.test(text(r)));
+    assert.equal(E.respond("integrate sin(x) dx", model).result.link, "/quelvra/?q=integrate%20sin(x)%20dx");
+    assert.equal(skill("what is 7!"), "calc");
+  });
+  test("live data and translation are refused, not guessed", () => {
+    assert.ok(/needs live data/.test(ask("what is the weather today")));
+    assert.ok(/needs live data/.test(ask("bitcoin price")));
+    assert.ok(/cannot translate thank you into French/.test(ask("how do you say thank you in french")));
+    assert.ok(/cannot translate hello into Spanish/.test(ask("translate hello to spanish")));
+    assert.equal(skill("what is 3 feet in cm"), "convert"); // "in <unit>" is not a language
+  });
+  test("random colour comes back as hex, rgb and hsl", () => {
+    const r = E.respond("pick a random color", model); assert.equal(r.skill, "everyday");
+    assert.ok(/^#[0-9a-f]{6}$/.test(r.result.hex)); assert.ok(/^rgb\(\d+, \d+, \d+\)$/.test(r.result.rgb)); assert.ok(/^hsl\(\d+, \d+%, \d+%\)$/.test(r.result.hsl));
+  });
+  test("base conversions name the source base", () => {
+    assert.ok(/0b1010 \(binary\) = 10 \(decimal\)/.test(ask("convert 1010 binary to decimal")));
+    assert.ok(/0xff \(hexadecimal\) = 255/.test(ask("hex ff to decimal")));
+    assert.ok(/255 = 0xff/.test(ask("255 to hex")));
+  });
+  test("new trivia and the calendar-average note", () => {
+    assert.ok(/384,400 km/.test(ask("how far is the moon")));
+    assert.ok(/8,848\.86 m/.test(ask("how tall is mount everest")));
+    assert.ok(/8 planets/.test(ask("how many planets are in the solar system")));
+    assert.ok(/average calendar year/.test(ask("how many seconds in a year")));
+    assert.ok(/fixed conversion factor/.test(ask("how many seconds in a day")));
+  });
+});

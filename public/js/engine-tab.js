@@ -15,7 +15,15 @@ const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) =>
 // and ```lang fenced blocks -> <pre> with a Copy button (Smart mode writes code).
 // Text is escaped first, so write real characters in skill strings, never HTML entities.
 export const mdInline = (s) => {
+  // "[text](/path)" becomes a same-origin link; a Quelvra link also carries the problem as
+  // data-sec/data-more so the console opens its Math section in place instead of leaving the page.
+  const link = (_, text, href) => {
+    const q = /^\/quelvra\/\?q=([^&]+)/.exec(href);
+    let more = ""; if (q) { try { more = decodeURIComponent(q[1]); } catch (_) { more = ""; } }
+    return '<a class="ue-link" href="' + href + '"' + (q ? ' data-sec="math" data-more="' + esc(more) + '"' : "") + ">" + text + "</a>";
+  };
   const inline = (t) => t.replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>").replace(/`([^`]+)`/g, "<code>$1</code>")
+    .replace(/\[([^\]]+)\]\((\/(?!\/)[^\s)"']*)\)/g, link)
     .replace(/^#{1,6} +(.+)$/gm, "<b>$1</b>");
   // consecutive "- item" / "* item" lines become one <ul>; everything else keeps <br> breaks
   let html = "", items = [];
@@ -164,6 +172,7 @@ export function renderEngine(main) {
     '.ue-me{align-self:flex-end;background:var(--acc);color:#04120a;border-color:transparent}' +
     '.ue-bot{align-self:flex-start;background:transparent}' +
     '.ue-bot .ue-title{font-weight:700;color:var(--acc);font-size:.8rem;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px}' +
+    '.ue-bot a.ue-link{color:var(--acc);text-decoration:underline;text-underline-offset:2px}' +
     '.ue-msg ul{margin:6px 0;padding-left:20px}.ue-msg li{margin:2px 0}' +
     '.ue-bot pre{background:rgba(127,127,127,.12);border:1px solid var(--line);border-radius:8px;padding:10px 12px;overflow:auto;margin:8px 0 4px;font-size:.82rem}' +
     '.ue-meta{font-size:.7rem;color:var(--mut);margin-top:6px}' +
@@ -347,6 +356,9 @@ export function renderEngine(main) {
 
   main.querySelector("#ueEx").addEventListener("click", (e) => { const b = e.target.closest("[data-ex]"); if (b) send(b.dataset.ex); });
   logEl.addEventListener("click", (e) => {
+    // inside the console the view-level [data-sec] handler opens the section; stop the page navigation
+    const ln = e.target.closest("a.ue-link[data-sec]");
+    if (ln && document.body.classList.contains("app")) { e.preventDefault(); return; }
     const sq = e.target.closest("[data-smartq]");
     if (sq) { sq.disabled = true; sq.textContent = "Sent to Smart mode"; smartRun(sq.dataset.smartq); return; }
     const c = e.target.closest(".ue-copy");

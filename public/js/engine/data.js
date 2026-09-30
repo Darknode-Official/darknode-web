@@ -75,7 +75,12 @@ export function numberBase(input) {
   if (/^hex/.test(tgt)) radix = 16; else if (/^bin/.test(tgt)) radix = 2; else if (/^oct/.test(tgt)) radix = 8;
   else if (/^dec/.test(tgt)) radix = 10; else { const bm = tgt.match(/base\s*(\d+)/); if (bm) radix = +bm[1]; }
   if (radix < 2 || radix > 36) return { ok: false, error: "base must be between 2 and 36" };
+  if (!Number.isFinite(v)) return { ok: false, error: "that number is not a valid " + (/^0x/.test(t) ? "hexadecimal" : /^0b/.test(t) ? "binary" : /^0o/.test(t) ? "octal" : "decimal") + " literal" };
+  if (v > Number.MAX_SAFE_INTEGER) return { ok: false, error: "that number is above 2^53, where this converter would lose digits" };
   const out = v.toString(radix);
   const pretty = radix === 16 ? "0x" + out : radix === 2 ? "0b" + out : radix === 8 ? "0o" + out : out;
-  return { ok: true, kind: "base", value: out, radix, text: v + " = " + pretty + (radix !== 10 ? " (base " + radix + ")" : "") };
+  // name the source base whenever the input was not plain decimal, so "0b1010 to decimal" reads as a conversion
+  const srcName = /^0x/.test(t) ? "hexadecimal" : /^0b/.test(t) ? "binary" : /^0o/.test(t) ? "octal" : null;
+  const lhs = srcName ? t + " (" + srcName + ")" : String(v);
+  return { ok: true, kind: "base", value: out, radix, text: lhs + " = " + pretty + (radix !== 10 ? " (base " + radix + ")" : radix === 10 && srcName ? " (decimal)" : "") };
 }

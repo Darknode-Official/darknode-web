@@ -44,3 +44,17 @@ group("engine tab markdown: escaping", () => {
     assert.equal(mdInline("- run `ls` **now**"), "<ul><li>run <code>ls</code> <b>now</b></li></ul>");
   });
 });
+
+group("engine tab markdown: links", () => {
+  test("a same-origin link renders, a Quelvra link carries the problem for the console router", () => {
+    assert.equal(mdInline("open [x^2](/quelvra/?q=derivative%20of%20x%5E2) now"),
+      'open <a class="ue-link" href="/quelvra/?q=derivative%20of%20x%5E2" data-sec="math" data-more="derivative of x^2">x^2</a> now');
+    assert.equal(mdInline("see [docs](/docs)"), 'see <a class="ue-link" href="/docs">docs</a>');
+  });
+  test("protocol-relative and external links stay as plain text", () => {
+    assert.equal(mdInline("[bad](//evil.example) [ext](https://x.example)"), "[bad](//evil.example) [ext](https://x.example)");
+  });
+  test("link text is escaped, not interpreted", () => {
+    assert.equal(mdInline("[<b>](/docs)"), '<a class="ue-link" href="/docs">&lt;b&gt;</a>');
+  });
+});
