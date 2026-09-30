@@ -680,14 +680,6 @@ body.app .awh-w .dg-bars { display: flex; flex-direction: column; gap: 4px; }
   body.app .app-shell { display: block !important; }
 }
 
-/* Landing page under the Command skin: the header is dark, so its text links must be light. */
-html[data-skin=command] body.landing #topbar .nav-link {
-  color: #e5e7eb !important;
-  border-color: rgba(255, 255, 255, .35) !important;
-  background: transparent !important;
-}
-html[data-skin=command] body.landing #topbar .nav-link:hover { color: #fff !important; border-color: #fff !important; }
-
 /* ============================================================
    Console AI chat — fit under the sticky header, and in the
    empty state center the greeting + composer as one group so

@@ -1,4 +1,4 @@
-const CACHE = 'darknode-v57';
+const CACHE = 'darknode-v58';
 // DI's dictionary (about 4 MB) lives in its own cache so an app update does not download it again;
 // its URL carries a version, so a new word list is a new entry.
 const LEXICON = 'darknode-lexicon';
@@ -6,7 +6,6 @@ const STATIC = [
   '/',
   '/css/styles.css',
   '/css/pro-theme.css',
-  '/css/theme-command.css',
   '/css/buttons.css',
   '/js/auth.js',
   '/js/firebase.js',

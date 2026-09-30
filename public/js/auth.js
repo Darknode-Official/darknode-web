@@ -5,8 +5,10 @@ import { auth, db, googleProvider, githubProvider, OWNER_EMAIL } from "/js/fireb
 import "/js/scroll-top.js?v=20260926a";
 import "/js/shortcuts.js";
 import "/js/mobile-nav.js";
-import { consoleHTML, directoryHTML, wireConsole, labelOf as navLabel, groupOf as navGroup, recentSecs as navRecent, favSecs as navFavs } from "/js/console-nav.js?v=20260927e";
-import { TOOLS as _MINI_TOOLS } from "/js/tools-registry.js?v=20260926h";
+import { consoleHTML, directoryHTML, wireConsole, labelOf as navLabel, groupOf as navGroup, recentSecs as navRecent, favSecs as navFavs } from "/js/console-nav.js?v=20260929g";
+// Only the tool count is needed here; the manifest carries ids/names/categories without the
+// tool code (js/tools/*), which loads when the Toolbox opens.
+import { TOOL_META as _MINI_TOOLS } from "/js/tools-manifest.js?v=20260929g";
 const MINI_COUNT = _MINI_TOOLS.length;
 import { showToast } from "/js/toast.js?v=20260924a";
 import { collection as fbCollection, addDoc as fbAddDoc, serverTimestamp as fbServerTimestamp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
@@ -272,16 +274,50 @@ import("/js/shell-bridge.js").then(m => {
 
 if (window.__boot) window.__boot.set(40);
 
-// While the boot screen is up, fetch DI's dictionary in the background so the Engine tab
-// answers word questions at once. Never blocks boot; skipped on data-saver and 2G links
-// (DI then downloads it the first time it is asked about a word).
-(function preloadDI() {
+const whenIdle = (fn, timeout = 4000) =>
+  ("requestIdleCallback" in window ? requestIdleCallback(fn, { timeout }) : setTimeout(fn, 1));
+
+// DI's dictionary is 11.8 MB (about 4 MB on the wire). It is fetched only for a signed-in
+// user, only after the shell is interactive and the browser is idle, and never on data-saver
+// or 2G/3G links, so a visitor on the landing page pays nothing for the Engine tab. DI still
+// downloads it on demand the first time it is asked about a word.
+let _diPreloaded = false;
+function preloadDictionary() {
+  if (_diPreloaded) return;
+  _diPreloaded = true;
   const c = navigator.connection || {};
-  if (c.saveData || /(^|-)2g$/.test(c.effectiveType || "")) return;
-  import("/js/engine/lexicon.js").then((m) => m.loadLexicon()).then((ok) => {
-    if (ok && window.__boot && document.getElementById("bootscreen")) window.__boot.set(55);
-  }).catch(() => {});
-})();
+  if (c.saveData || /(^|-)[23]g$/.test(c.effectiveType || "")) return;
+  whenIdle(() => import("/js/engine/lexicon.js").then((m) => m.loadLexicon()).catch(() => {}), 8000);
+}
+
+// The support chat (Botpress) is a third-party script; loaded only after boot and on idle so
+// a slow CDN can never hold up the app. Scripts are inserted with async=false so they run in
+// order: widget, then its config, then our bridge. Idempotent; also called by the Help button.
+let _chatLoaded = false;
+function loadSupportChat() {
+  if (_chatLoaded) return;
+  _chatLoaded = true;
+  for (const src of [
+    "https://cdn.botpress.cloud/webchat/v5.0/inject.js",
+    "https://files.bpcontent.cloud/2026/09/26/02/20260926024817-4GX9B5C4.js",
+    "/js/botpress-bridge.js?v=20260926b",
+  ]) {
+    const s = document.createElement("script");
+    s.src = src; s.async = false;
+    document.body.appendChild(s);
+  }
+}
+window.__loadSupportChat = loadSupportChat;
+// Help button: open the chat if it is ready, else load it now and open once the bridge
+// has registered openHelp (gives up quietly after 15 s if the CDN is blocked).
+window.__openHelp = function () {
+  const open = () => window.darknode && window.darknode.openHelp && (window.darknode.openHelp(), true);
+  if (open()) return;
+  loadSupportChat();
+  const t0 = Date.now();
+  const tick = () => { if (!open() && Date.now() - t0 < 15000) setTimeout(tick, 200); };
+  setTimeout(tick, 200);
+};
 
 const _errSeen = new Set();
 function _logError(data) {
@@ -312,16 +348,30 @@ const userSlot = document.getElementById("user-slot");
 const view = document.getElementById("view");
 let appShow = null;   // set by renderApp so the command palette can navigate
 const _bootStart = performance.now();
+// Work that should follow the shell, never precede it: the support chat for everyone and
+// the DI dictionary for signed-in users. Runs once, on idle, after the boot fade.
+let _afterBootDone = false;
+function afterBoot() {
+  if (_afterBootDone) return;
+  _afterBootDone = true;
+  whenIdle(loadSupportChat, 6000);
+  if (auth.currentUser) preloadDictionary();
+}
 function dismissBoot() {
   if (window.__boot) window.__boot.set(100);
-  const b = document.getElementById("bootscreen"); if (!b) return;
+  const b = document.getElementById("bootscreen"); if (!b) { afterBoot(); return; }
   const elapsed = performance.now() - _bootStart;
   const isPro = document.documentElement.getAttribute("data-boot") === "pro";
-  const delay = Math.max(0, (isPro ? 1200 : 2200) - elapsed);
+  // First visit keeps the full brand animation; a returning visitor gets the shell as
+  // soon as it is ready (a short floor so the fade never cuts a frame).
+  let returning = false;
+  try { returning = localStorage.getItem("sw_booted") === "1"; localStorage.setItem("sw_booted", "1"); } catch (_) {}
+  const floor = returning ? 250 : (isPro ? 1200 : 2200);
+  const delay = Math.max(0, floor - elapsed);
   setTimeout(() => {
     const inner = b.querySelector(".boot-inner"); if (inner) inner.classList.add("exit");
     setTimeout(() => { b.style.opacity = "0"; }, 150);
-    setTimeout(() => b.remove(), 650);
+    setTimeout(() => { b.remove(); afterBoot(); }, 650);
   }, delay);
 }
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
@@ -500,7 +550,7 @@ function showLanding() {
       </div>
     </div>
     <span class="nav-spacer"></span>
-    <a class="nav-link" id="nav-help" onclick="window.darknode&&window.darknode.openHelp&&window.darknode.openHelp()">Help</a>
+    <a class="nav-link" id="nav-help" onclick="window.__openHelp&&window.__openHelp()">Help</a>
     <a class="nav-link" id="nav-signin">Log in</a>
     <button class="btn" id="nav-start">Get Started</button>`;
   document.querySelectorAll(".nav-dd").forEach(dd => {
@@ -1793,7 +1843,7 @@ function renderApp(user) {
   userSlot.innerHTML = `
     <button class="style-toggle" id="styleToggle" data-style="${currentStyle()}" title="${currentStyle() === "dark" ? "Switch to light" : "Switch to dark"}" aria-label="${currentStyle() === "dark" ? "Switch to light theme" : "Switch to dark theme"}"><svg class="ic-sun" viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="3.2"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3 3l1.4 1.4M11.6 11.6L13 13M13 3l-1.4 1.4M4.4 11.6L3 13" stroke-linecap="round"/></svg><svg class="ic-moon" viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13.5 9.5A5.5 5.5 0 016.5 2.5a5.5 5.5 0 107 7z" stroke-linejoin="round"/></svg></button>
     <button class="cmdk-btn" id="cmdkBtn" title="Search (Ctrl+K)"><span>Search</span><kbd>Ctrl K</kbd></button>
-    <button class="tb-help-btn" id="helpBtn" title="Help &amp; support" aria-label="Help and support" onclick="window.darknode&&window.darknode.openHelp&&window.darknode.openHelp()"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg><span>Help</span></button>
+    <button class="tb-help-btn" id="helpBtn" title="Help &amp; support" aria-label="Help and support" onclick="window.__openHelp&&window.__openHelp()"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg><span>Help</span></button>
     <span id="cli-dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#71717a;margin:0 10px;cursor:pointer;vertical-align:middle;transition:background .3s" title="CLI not connected" onclick="window.dnPrompt('Connect Darknode CLI',{desc:'Paste the auth token shown in your terminal after you run the Darknode CLI. It links this browser to your local tools and models.',placeholder:'darknode auth token'}).then(function(t){if(t&&window._bridge)window._bridge.connect(t.trim()).then(function(r){var d=document.getElementById('cli-dot');if(d){d.style.background='#22c55e';d.title='CLI connected: '+(r.hostname||'local')}showToast('Connected to '+(r.hostname||'CLI')+' — '+((r.tools||[]).length)+' tools, '+((r.ollama||[]).length)+' AI models','success')}).catch(function(e){showToast('Failed: '+e.message,'error')})})"></span>
     <div class="tb-item">
       <button class="icon-btn" id="moreBtn" title="More" aria-label="More">&#8943;</button>

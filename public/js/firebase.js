@@ -7,7 +7,7 @@ if(!/^(darknode\.ai|www\.darknode\.ai|sentinel-b4194\.web\.app|sentinel-b4194-61
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-app.js";
 import { getAuth, GoogleAuthProvider, GithubAuthProvider } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-auth.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
-import { getStorage } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-storage.js";
+// No Storage SDK: nothing in public/js uses it, and it was a whole extra module on the boot path.
 
 const _authDomain = (location.hostname === "darknode.ai" || location.hostname === "www.darknode.ai")
   ? "darknode.ai" : "sentinel-b4194.firebaseapp.com";
@@ -34,6 +34,5 @@ export const GOOGLE_CLIENT_ID = "206219019752-er2rsbl36m32ct8f2gn2i46tbovvn7j1.a
 export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
-export const storage = getStorage(app);
 export const googleProvider = new GoogleAuthProvider();
 export const githubProvider = new GithubAuthProvider();
