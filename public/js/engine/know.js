@@ -109,7 +109,7 @@ const norm = (x) => { let t = clean(x).replace(/^(?:a|an|the) /, "").replace(/ (
 
 export function difference(input) {
   const t = clean(input);
-  const m = t.match(/^(?:what(?:'s|s| is| are)? (?:the )?|explain (?:the )?|tell me (?:the )?)?(?:main |key )?differences? between (.+?) and (.+)$/) || t.match(/^(.+?) (?:vs\.?|versus|or|compared to|compared with) (.+?)(?: difference| differences)?$/);
+  const m = t.match(/^(?:what(?:'s|s| is| are)? (?:the )?|explain (?:the )?|tell me (?:the )?)?(?:main |key )?differences? between (.+?) and (.+)$/) || t.match(/^(?:is it|should i (?:use|say|write)|when (?:do i|to) use) (.+?) or (.+)$/) || t.match(/^(.+?) (?:vs\.?|versus|or|compared to|compared with) (.+?)(?: difference| differences)?$/);
   if (!m) return null;
   const a = norm(m[1]), b = norm(m[2]);
   for (const [pair, lead, rows] of DIFFS) {
@@ -129,7 +129,7 @@ const MADE = {
   airplane: ["invented", "the Wright brothers (Orville and Wilbur)", "first powered, controlled flight on 17 December 1903"], aeroplane: ["invented", "the Wright brothers (Orville and Wilbur)", "first powered, controlled flight on 17 December 1903"],
   "printing press": ["invented", "Johannes Gutenberg", "movable-type press, around 1440"], "world wide web": ["invented", "Tim Berners-Lee", "proposed in 1989 at CERN, public in 1991"], web: ["invented", "Tim Berners-Lee", "proposed in 1989 at CERN, public in 1991"],
   internet: ["developed", "many people; Vint Cerf and Bob Kahn designed TCP/IP", "ARPANET switched to TCP/IP on 1 January 1983"],
-  penicillin: ["discovered", "Alexander Fleming", "1928"], gravity: ["described", "Isaac Newton", "law of universal gravitation, 1687; Einstein's general relativity (1915) refined it"],
+  penicillin: ["discovered", "Alexander Fleming", "1928"], gravity: ["described", "Isaac Newton", "his law of universal gravitation, 1687; Einstein's general relativity refined it in 1915"],
   relativity: ["developed", "Albert Einstein", "special relativity 1905, general relativity 1915"], evolution: ["proposed", "Charles Darwin (and independently Alfred Russel Wallace)", "natural selection; On the Origin of Species, 1859"],
   "theory of evolution": ["proposed", "Charles Darwin (and independently Alfred Russel Wallace)", "natural selection; On the Origin of Species, 1859"],
   radio: ["pioneered", "Guglielmo Marconi", "first long-distance radio transmissions in the 1890s, building on work by Hertz, Tesla and others"],
@@ -138,7 +138,7 @@ const MADE = {
   python: ["created", "Guido van Rossum", "first released in 1991"], javascript: ["created", "Brendan Eich", "at Netscape in 1995"], linux: ["created", "Linus Torvalds", "1991"], c: ["created", "Dennis Ritchie", "at Bell Labs, around 1972"],
   java: ["created", "James Gosling", "at Sun Microsystems, released in 1995"], git: ["created", "Linus Torvalds", "2005"], "c++": ["created", "Bjarne Stroustrup", "1985"],
   "mona lisa": ["painted", "Leonardo da Vinci", "around 1503-1519"], "the mona lisa": ["painted", "Leonardo da Vinci", "around 1503-1519"], "starry night": ["painted", "Vincent van Gogh", "1889"], "the starry night": ["painted", "Vincent van Gogh", "1889"],
-  "sistine chapel ceiling": ["painted", "Michelangelo", "1508-1512"], "the sistine chapel": ["painted", "Michelangelo (the ceiling, 1508-1512)", ""], "the last supper": ["painted", "Leonardo da Vinci", "1495-1498"],
+  "sistine chapel ceiling": ["painted", "Michelangelo", "1508-1512"], "the sistine chapel": ["painted", "Michelangelo", "the ceiling frescoes, 1508-1512, and later The Last Judgment, 1536-1541"], "the last supper": ["painted", "Leonardo da Vinci", "1495-1498"],
   microsoft: ["founded", "Bill Gates and Paul Allen", "1975"], apple: ["founded", "Steve Jobs, Steve Wozniak and Ronald Wayne", "1976"], google: ["founded", "Larry Page and Sergey Brin", "1998"],
   amazon: ["founded", "Jeff Bezos", "1994"], facebook: ["founded", "Mark Zuckerberg with Eduardo Saverin, Andrew McCollum, Dustin Moskovitz and Chris Hughes", "2004"],
   tesla: ["founded", "Martin Eberhard and Marc Tarpenning", "2003; Elon Musk joined as chairman and lead investor in 2004"], anthropic: ["founded", "Dario Amodei, Daniela Amodei and other former OpenAI researchers", "2021"],
@@ -165,8 +165,9 @@ const EVENTS = {
   "the titanic": "The Titanic struck an iceberg late on 14 April 1912 and sank early on 15 April 1912.",
   "the french revolution": "The French Revolution began in 1789 (the storming of the Bastille was on 14 July 1789) and is usually said to end in 1799.",
   "american independence": "The Declaration of Independence was adopted on 4 July 1776.",
+  "columbus discovering america": "Christopher Columbus reached the Caribbean (the island of Guanahani in the Bahamas) on 12 October 1492. Norse explorers led by Leif Erikson had reached North America around the year 1000.",
   "the declaration of independence": "The Declaration of Independence was adopted on 4 July 1776.",
-  "columbus": "Christopher Columbus reached the Caribbean on 12 October 1492.",
+  "columbus": "Christopher Columbus reached the Caribbean (the island of Guanahani in the Bahamas) on 12 October 1492. Norse explorers led by Leif Erikson had reached North America around the year 1000.",
   "9/11": "The September 11 attacks took place on 11 September 2001.",
   "the fall of rome": "The Western Roman Empire is traditionally said to have fallen in 476 AD; the Eastern (Byzantine) Empire lasted until 1453.",
   "the magna carta": "The Magna Carta was sealed on 15 June 1215.",
@@ -216,6 +217,7 @@ export function fact(input) {
       return { ok: true, text: `${cap(e[1])} ${e[0]} ${obj}${e[2] ? " (" + e[2] + ")" : ""}.` };
     }
   }
+  if (/^(?:when|what year|in what year) (?:did (?:christopher )?columbus (?:discover|find|reach|land in|arrive in|sail to) (?:america|the americas|the new world)|was america discovered)$/.test(t)) return { ok: true, text: EVENTS.columbus };
   m = t.match(/^(?:when|what year|in what year|which year) (?:did|was|were) (.+?) (?:end|finish|over|begin|start|happen|take place|occur|sink|fall|built|signed|adopted|released|come out|land)$/) || t.match(/^when (?:was|were|is) (.+?)$/) || t.match(/^(?:when did )?(.+?) (?:start|end) date$/);
   if (m) { const k = m[1].replace(/^(?:the )?(?:end|start|beginning) of /, ""); const key = EVENTS[k] ? k : EVENT_ALIAS[k] || EVENT_ALIAS[k.replace(/^the /, "")]; if (key && EVENTS[key]) return { ok: true, text: EVENTS[key] }; }
   m = t.match(/^(?:what|which) (?:language|languages) (?:is|are) (?:spoken|used|official) in (?:the )?(.+)$/) || t.match(/^(?:what|which) (?:is the )?(?:official |main |national )?languages? (?:of|in) (?:the )?(.+)$/) || t.match(/^what do (?:they|people) speak in (?:the )?(.+)$/);
