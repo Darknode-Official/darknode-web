@@ -5,7 +5,7 @@ import { auth, db, googleProvider, githubProvider, OWNER_EMAIL } from "/js/fireb
 import "/js/scroll-top.js?v=20260926a";
 import "/js/shortcuts.js";
 import "/js/mobile-nav.js";
-import { consoleHTML, directoryHTML, wireConsole, labelOf as navLabel, groupOf as navGroup, recentSecs as navRecent, favSecs as navFavs } from "/js/console-nav.js?v=20260929o";
+import { consoleHTML, directoryHTML, wireConsole, labelOf as navLabel, groupOf as navGroup, recentSecs as navRecent, favSecs as navFavs } from "/js/console-nav.js?v=20260929p";
 // Only the tool count is needed here; the manifest carries ids/names/categories without the
 // tool code (js/tools/*), which loads when the Toolbox opens.
 import { TOOL_META as _MINI_TOOLS } from "/js/tools-manifest.js?v=20260929g";
@@ -1556,7 +1556,7 @@ function renderApp(user) {
     if (sec && sec !== "home" && sec !== "settings") { try { let r = JSON.parse(localStorage.getItem("dn_recent")||"[]"); r = r.filter(s=>s!==sec); r.unshift(sec); r = r.slice(0,8); localStorage.setItem("dn_recent", JSON.stringify(r)); } catch(_){} }
     if (sec === "tools") { main.innerHTML = `<div class="pg-head"><div><h1 class="pg-h1">Tools</h1><p class="muted pg-sub">Search, filter, and open any tool in the catalog.</p></div></div><div id="tools"></div>`; import("/js/tools.js?v=20260924a").then(m => m.renderTools(document.getElementById("tools"))); }
     else if (sec === "utils") { import("/js/utils.js").then(m => m.renderUtils(main)); }
-    else if (sec === "ai") { import("/js/webai.js?v=20260929o").then(m => m.renderAI(main)); }
+    else if (sec === "ai") { import("/js/webai.js?v=20260929p").then(m => m.renderAI(main)); }
     else if (sec === "math") { _prevCleanup = renderQuelvra(main, more); }
     else if (sec === "payloads") { import("/js/labs.js").then(m => m.renderPayloads(main)); }
     else if (sec === "targets") { import("/js/labs.js").then(m => m.renderTargets(main)); }
@@ -1697,7 +1697,7 @@ function renderApp(user) {
     else if (sec === "whoisrecon") { import("/js/whois-recon.js?v=20260927b").then(m => m.renderWhoisRecon(main)); }
     else if (sec === "learn") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Learn Hub...</p>"; loadLearnHub().then(m => m.renderLearnHub(main)); }
     else if (sec === "learndo") { import("/js/learndo.js").then(m => m.renderLearnDo(main)); }
-    else if (sec === "engine") { import("/js/engine-tab.js?v=20260929o").then(m => m.renderEngine(main)); }
+    else if (sec === "engine") { import("/js/engine-tab.js?v=20260929p").then(m => m.renderEngine(main)); }
     else if (sec === "coder") { import("/js/coder.js").then(m => m.renderCliCoder(main)); }
     else if (sec === "downloads") { import("/js/getapp.js?v=20260927g").then(m => m.renderDownloads(main)); }
     else if (sec === "dlguide") { import("/js/getapp.js?v=20260927g").then(m => m.renderDownloadDocs(main)); }

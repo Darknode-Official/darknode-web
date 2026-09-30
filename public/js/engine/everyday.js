@@ -74,6 +74,15 @@ function zoneOf(place) {
   for (const k of ZONE_KEYS) if (new RegExp("(?:^|\\s)" + k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "(?:\\s|$)").test(p)) return { key: k, tz: ZONES[k] };
   return null;
 }
+// "what time zone is new york in": the IANA zone and today's UTC offset (daylight saving included)
+export function timeZoneOf(q) {
+  const m = String(q || "").toLowerCase().replace(/[?.!]+$/, "").trim().match(/^(?:what|which) (?:time ?zone|tz) (?:is|does|do) (?:the )?(.+?)(?: in| use| have| on)?$|^(?:what is |what's )?(?:the )?(?:time ?zone|utc offset) (?:of|for|in) (?:the )?(.+)$/);
+  if (!m) return null;
+  const z = zoneOf(m[1] || m[2]);
+  if (!z || !/\//.test(z.tz)) return null;
+  const n = nowIn(z.tz), place = (m[1] || m[2]).replace(/\b[a-z]/g, (c) => c.toUpperCase());
+  return { ok: true, kind: "kb", title: "Time zone: " + place, text: place + " uses the **" + z.tz + "** time zone, currently **" + n.offset + "** (local time now " + n.time + ", " + n.weekday + ").", note: "From DI's time-zone table; the offset is computed now by your device's clock, so it includes daylight saving." };
+}
 function nowIn(tz) {
   const d = new Date();
   const f = new Intl.DateTimeFormat("en-US", { timeZone: tz, weekday: "long", hour: "2-digit", minute: "2-digit", hour12: false, year: "numeric", month: "short", day: "numeric" });

@@ -22,6 +22,7 @@ import { words as englishWords, band as wordBand } from "/js/engine/words.js";
 import * as EV from "/js/engine/everyday.js";
 import * as HT from "/js/engine/howto.js";
 import * as K from "/js/engine/know.js";
+import * as KB from "/js/engine/kb.js";
 
 // --- typo tolerance: nudge a near-miss command word to its canonical spelling ---
 // This runs ONLY over the text used for routing, never over the payload a skill
@@ -654,7 +655,7 @@ const CAPITAL_CITIES = new Set(Object.values(F.CAPITALS).map((c) => c.toLowerCas
 // words from the program library ("tic tac toe", "todo", "pong") are real requests, not typos
 const PROGRAM_WORDS = ["todo", "todos", "pong", "tic", "tac", "toe", "hangman", "quicksort", "mergesort", "bst", "http", "https", "api", "stopwatch", "countdown", "portfolio", "dedupe", "caesar", "armstrong", "sieve", "anagram", "anagrams", "flatten", "argv", "cli", "bmi", "html", "css", "node", "nodejs", "golang", "cpp", "csharp", "ruby", "bash", "express", "flask"];
 const PROGRAM_SET = new Set([...PROGRAM_WORDS, "rest", "server", "servers", "game", "games", "app", "apps", "clock", "timer", "quiz", "queue", "stack", "tree", "list", "file", "files", "website", "page", "form", "login", "dice", "table", "tables"]);
-const DOMAIN_WORDS = [...PROGRAM_WORDS, ...Object.keys(A.GLOSSARY), ...Object.keys(F.CAPITALS), ...Object.values(F.CAPITALS), ...F.ELEMENTS.map((e) => e.name), ...Object.keys(F.CONSTANTS), ...EV.VOCAB, ...HT.VOCAB, ...K.VOCAB];
+const DOMAIN_WORDS = [...PROGRAM_WORDS, ...Object.keys(A.GLOSSARY), ...Object.keys(F.CAPITALS), ...Object.values(F.CAPITALS), ...F.ELEMENTS.map((e) => e.name), ...Object.keys(F.CONSTANTS), ...EV.VOCAB, ...HT.VOCAB, ...K.VOCAB, ...KB.KB_VOCAB];
 const lexCache = new WeakMap();
 let lexStatic = null;
 function lexicon(model) {
@@ -1225,12 +1226,26 @@ function knowAsk(input) {
   }
   const f = K.fact(t);
   if (f.ok) return { ok: true, kind: "fact", text: f.text };
+  const hw = t.match(/^how (?:does|do) (?:an? |the )?(.+?) work$/), w = hw || t.match(TECH_CTX);
+  if (w) { const g = A.lookup(w[1]); if (g.ok && (g.term === w[1] || g.term === w[1].replace(/s$/, ""))) return { ok: true, kind: "explain", how: !!hw, term: g.term, text: g.text }; }
+  const kb = KB.answer(input);
+  // a syntax card yields to real code: the generator's plan or a whole program from the library
+  const prog = kb && kb.kind === "syntax" ? findProgram(t) : null;
+  if (kb && !(kb.kind === "syntax" && (genPlan(t) || (prog && prog.langs[{ cpp: "cpp", csharp: "csharp" }[kb.lang] || kb.lang])))) return kb;
+  const tz = EV.timeZoneOf(t);
+  if (tz) return tz;
+  const ex = t.match(/^(?:use|put) (?:the word )?"?([a-z][a-z'-]+)"? in (?:a |an )?(?:sentence|example)$|^(?:give me |show me )?(?:an? )?(?:example )?sentences? (?:for|with|using|of) (?:the word )?"?([a-z][a-z'-]+)"?$|^(?:how (?:do|to) (?:i |you )?use) (?:the word )?"?([a-z][a-z'-]+)"?(?: in a sentence)?$/);
+  if (ex && LX.lexReady()) {
+    const w = ex[1] || ex[2] || ex[3], d = LX.define(w);
+    if (d.ok) {
+      const exs = []; for (const g of d.groups) for (const x of g.senses) if (x.example && exs.length < 4) exs.push([g.pos, x.gloss, x.example]);
+      return { ok: true, kind: "example", word: d.word, examples: exs, gloss: d.groups[0].senses[0].gloss, pos: d.groups[0].pos };
+    }
+  }
   const r = t.match(RHYME_ASK);
   if (r) return K.rhymes(r[1]);
   const tr = K.translate(t);
   if (tr && tr.ok) return tr;
-  const hw = t.match(/^how (?:does|do) (?:an? |the )?(.+?) work$/), w = hw || t.match(TECH_CTX);
-  if (w) { const g = A.lookup(w[1]); if (g.ok && (g.term === w[1] || g.term === w[1].replace(/s$/, ""))) return { ok: true, kind: "explain", how: !!hw, term: g.term, text: g.text }; }
   return null;
 }
 function sayKnow(res) {
@@ -1249,6 +1264,12 @@ function sayKnow(res) {
       return { title: nm2(res.a.term) + " vs " + nm2(res.b.term), body: "**" + nm2(res.a.term) + "**: " + res.a.text + "\n\n**" + nm2(res.b.term) + "**: " + res.b.text, note: "I have no side-by-side table for this pair, so these are the two glossary definitions. Source: Universal Engine glossary (curated).", result: res };
     }
     case "fact": return { title: "Fact", body: res.text, note: src, result: res };
+    case "example":
+      return res.examples.length
+        ? { title: "Using \u201c" + res.word + "\u201d", body: res.examples.map(([pos, g, e]) => "- \u201c" + e.replace(/^./, (c) => c.toUpperCase()).replace(/([^.!?])$/, "$1.") + "\u201d (" + pos + ": " + g + ")").join("\n"), note: DICT_NOTE, result: res }
+        : { title: "Using \u201c" + res.word + "\u201d", body: "My dictionary has no example sentence for **" + res.word + "**, and I will not make one up. Its meaning (" + res.pos + "): " + res.gloss + ".", note: DICT_NOTE, result: res };
+    case "kb": return { title: res.title, body: res.text, note: res.note || src, result: res };
+    case "syntax": return { title: res.title, body: (res.text ? res.text + "\n\n" : "") + "```" + res.lang + "\n" + res.code + "\n```", note: res.note, result: res };
     case "explain": return { title: (res.how ? "How it works: " : "Definition: ") + res.term, body: res.text, note: "Source: Universal Engine glossary (curated, not generated).", result: res };
     case "rhymes":
       if (res.none) return { title: "Rhymes for “" + res.word + "”", body: "“" + cap1(res.word) + "” famously has **no perfect rhyme** in common English. The closest options: " + res.words.join("; ") + ".", note: src, result: res };
@@ -1306,6 +1327,13 @@ export function respond(input, model) {
   if (chat) return chat;
   const sum = summarizeReply(raw);
   if (sum) return sum;
+  // curated knowledge reads the question as typed: the rephraser would turn "what does cpu stand for"
+  // into "define cpu" and lose the question's shape
+  const known = raw.length <= 200 ? knowAsk(raw) : null;
+  if (known && known.ok) {
+    const out = sayKnow(known);
+    return { skill: "know", confidence: 1, why: "curated knowledge", alternatives: [], ...out };
+  }
   if (!/\d/.test(raw)) {
     const c = K.chat(raw);
     if (c) return { skill: "smalltalk", confidence: 1, alternatives: [], ...c };

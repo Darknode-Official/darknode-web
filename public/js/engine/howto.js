@@ -8,6 +8,14 @@ const H = [];
 const add = (id, re, title, lang, code, body, note) => H.push({ id, re, title, lang, code, body: body || "", note: note || "" });
 
 // ---------------------------------------------------------------------------
+// install
+add("install-python", /\binstall(?:ing)? python\b|\bpython install(?:ation)?\b|\bget python\b/i, "Install Python", "bash",
+  "# Windows: download from https://www.python.org/downloads/ (tick \"Add python.exe to PATH\"), or\nwinget install Python.Python.3.13\n\n# macOS (Homebrew)\nbrew install python\n\n# Ubuntu / Debian\nsudo apt update && sudo apt install python3 python3-pip python3-venv\n\n# check it worked\npython3 --version",
+  "On Windows the command is usually `python` or `py` rather than `python3`.");
+add("install-node", /\binstall(?:ing)? (?:node(?:\.?js)?|npm)\b/i, "Install Node.js", "bash",
+  "# any OS: the LTS installer from https://nodejs.org, or a version manager:\ncurl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash\nnvm install --lts\n\n# macOS (Homebrew)\nbrew install node\n\n# Windows\nwinget install OpenJS.NodeJS.LTS\n\n# check\nnode --version && npm --version", "");
+add("install-git", /\binstall(?:ing)? git\b/i, "Install Git", "bash",
+  "# Windows\nwinget install Git.Git\n\n# macOS (also comes with the Xcode command line tools)\nbrew install git\n\n# Ubuntu / Debian\nsudo apt install git\n\n# first-time setup\ngit config --global user.name \"Your Name\"\ngit config --global user.email \"you@example.com\"", "");
 // git
 // ---------------------------------------------------------------------------
 add("git-undo-commit", /\bgit\b.*\b(?:undo|revert|remove|cancel|uncommit|take back)\b.*\b(?:last|latest|previous|recent|my|a|the|that)\b.*\bcommit|\b(?:undo|uncommit|revert) (?:a |the |my |that )?(?:git )?commit\b|\b(?:undo|uncommit|take back)\b.*\blast (?:git )?commit|\bgit (?:reset|undo) (?:the )?last commit/i, "Undo the last git commit", "bash",
