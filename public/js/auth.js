@@ -5,7 +5,7 @@ import { auth, db, googleProvider, githubProvider, OWNER_EMAIL } from "/js/fireb
 import "/js/scroll-top.js?v=20260926a";
 import "/js/shortcuts.js";
 import "/js/mobile-nav.js";
-import { consoleHTML, directoryHTML, wireConsole, labelOf as navLabel, groupOf as navGroup, recentSecs as navRecent, favSecs as navFavs } from "/js/console-nav.js?v=20260929g";
+import { consoleHTML, directoryHTML, wireConsole, labelOf as navLabel, groupOf as navGroup, recentSecs as navRecent, favSecs as navFavs } from "/js/console-nav.js?v=20260929i";
 // Only the tool count is needed here; the manifest carries ids/names/categories without the
 // tool code (js/tools/*), which loads when the Toolbox opens.
 import { TOOL_META as _MINI_TOOLS } from "/js/tools-manifest.js?v=20260929g";
@@ -515,6 +515,10 @@ function showLanding() {
   dismissBoot();
   document.body.classList.remove("app");
   document.body.classList.add("landing");
+  // The landing page has no <main> of its own, so #view is the main landmark here; the
+  // console renders its own <main class="app-main"> and takes the role off #view.
+  view.setAttribute("role", "main");
+  const skip = document.querySelector(".skip-link"); if (skip) skip.href = "#view";
   // Tear down the console's live ops strip so it can't overlap the landing nav.
   try {
     const tc = document.getElementById("topbar-center");
@@ -1278,9 +1282,11 @@ function renderSettingsPage(main, user, isOwner, initialTab) {
     segWire("#sw-topbar", "topbar", applyTopbarPref);
     const sidewSeg = main.querySelector("#sw-sidew");
     if (sidewSeg) {
-      let cur = "expanded"; try { cur = localStorage.getItem("sw_sidebar_collapsed") === "1" ? "rail" : "expanded"; } catch (_) {}
+      // Same preference the side navigation's own open/close buttons keep (console-nav.js
+      // sw_awsside): "rail" is the collapsed column, and the change applies at once.
+      let cur = "expanded"; try { cur = localStorage.getItem("sw_awsside") === "0" ? "rail" : "expanded"; } catch (_) {}
       sidewSeg.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b.dataset.sidew === cur));
-      sidewSeg.onclick = (e) => { const b = e.target.closest("button[data-sidew]"); if (!b) return; const rail = b.dataset.sidew === "rail"; try { localStorage.setItem("sw_sidebar_collapsed", rail ? "1" : "0"); } catch (_) {} const sb = document.getElementById("sidebar"); if (sb) sb.classList.toggle("collapsed", rail); sidewSeg.querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b)); };
+      sidewSeg.onclick = (e) => { const b = e.target.closest("button[data-sidew]"); if (!b) return; document.dispatchEvent(new CustomEvent("aws-side:set", { detail: { open: b.dataset.sidew !== "rail" } })); sidewSeg.querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b)); };
     }
     // Darknode API key controls
     const dnKeyEl = main.querySelector("#dn-key");
@@ -1376,10 +1382,14 @@ function renderApp(user) {
     : `<span class="p-avatar p-initials">${esc((user.email || "?")[0].toUpperCase())}</span>`;
   const name = user.displayName || user.email;
 
+  // One main landmark: the console's <main class="app-main">. The skip link lands on the
+  // section content itself (past the console bar, side nav and breadcrumbs).
+  view.removeAttribute("role");
+  { const skip = document.querySelector(".skip-link"); if (skip) skip.href = "#app-content"; }
   view.innerHTML = `
     <div class="app-shell">
       ${consoleHTML(isOwner)}
-      <main class="app-main" id="app-main" role="main"><div id="crumbs" class="crumbs" aria-label="Breadcrumb" role="navigation"></div><div id="secIntro" class="sec-intro" hidden></div><div id="app-content"></div>
+      <main class="app-main" id="app-main"><div id="crumbs" class="crumbs" aria-label="Breadcrumb" role="navigation"></div><div id="secIntro" class="sec-intro" hidden></div><div id="app-content" tabindex="-1"></div>
         <footer class="app-foot">
           <div class="app-foot-grid">
             <div class="app-foot-col app-foot-brandcol">
@@ -1546,7 +1556,7 @@ function renderApp(user) {
     if (sec && sec !== "home" && sec !== "settings") { try { let r = JSON.parse(localStorage.getItem("dn_recent")||"[]"); r = r.filter(s=>s!==sec); r.unshift(sec); r = r.slice(0,8); localStorage.setItem("dn_recent", JSON.stringify(r)); } catch(_){} }
     if (sec === "tools") { main.innerHTML = `<div class="pg-head"><div><h1 class="pg-h1">Tools</h1><p class="muted pg-sub">Search, filter, and open any tool in the catalog.</p></div></div><div id="tools"></div>`; import("/js/tools.js?v=20260924a").then(m => m.renderTools(document.getElementById("tools"))); }
     else if (sec === "utils") { import("/js/utils.js").then(m => m.renderUtils(main)); }
-    else if (sec === "ai") { import("/js/webai.js?v=20260927e").then(m => m.renderAI(main)); }
+    else if (sec === "ai") { import("/js/webai.js?v=20260929i").then(m => m.renderAI(main)); }
     else if (sec === "math") { _prevCleanup = renderQuelvra(main, more); }
     else if (sec === "payloads") { import("/js/labs.js").then(m => m.renderPayloads(main)); }
     else if (sec === "targets") { import("/js/labs.js").then(m => m.renderTargets(main)); }
@@ -1849,13 +1859,13 @@ function renderApp(user) {
     <button class="tb-help-btn" id="helpBtn" title="Help &amp; support" aria-label="Help and support" onclick="window.__openHelp&&window.__openHelp()"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg><span>Help</span></button>
     <span id="cli-dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#71717a;margin:0 10px;cursor:pointer;vertical-align:middle;transition:background .3s" title="CLI not connected" onclick="window.dnPrompt('Connect Darknode CLI',{desc:'Paste the auth token shown in your terminal after you run the Darknode CLI. It links this browser to your local tools and models.',placeholder:'darknode auth token'}).then(function(t){if(t&&window._bridge)window._bridge.connect(t.trim()).then(function(r){var d=document.getElementById('cli-dot');if(d){d.style.background='#22c55e';d.title='CLI connected: '+(r.hostname||'local')}showToast('Connected to '+(r.hostname||'CLI')+' — '+((r.tools||[]).length)+' tools, '+((r.ollama||[]).length)+' AI models','success')}).catch(function(e){showToast('Failed: '+e.message,'error')})})"></span>
     <div class="tb-item">
-      <button class="icon-btn" id="moreBtn" title="More" aria-label="More">&#8943;</button>
+      <button class="icon-btn" id="moreBtn" title="More" aria-label="More" aria-haspopup="true" aria-expanded="false" aria-controls="moreMenu">&#8943;</button>
       <div class="menu" id="moreMenu" hidden>
         ${MORE.map((m) => `<button class="menu-item col" data-more="${m.id}"><strong>${esc(m.name)}</strong><span class="menu-sub">${esc(m.desc)}</span></button>`).join("")}
       </div>
     </div>
     <div class="tb-item">
-      <button class="profile-btn" id="profileBtn">${avatar}<span class="p-email">${esc(user.email)}</span></button>
+      <button class="profile-btn" id="profileBtn" aria-label="Account menu, ${esc(user.email)}" aria-haspopup="true" aria-expanded="false" aria-controls="profileMenu">${avatar}<span class="p-email" aria-hidden="true">${esc(user.email)}</span></button>
       <div class="menu menu-wide" id="profileMenu" hidden>
         <div class="menu-prof">${avatar}<div style="min-width:0"><div class="su-name">${esc(name)}</div><div class="su-mail muted">${esc(user.email)}${isOwner ? ' <span class="owner-badge">OWNER</span>' : ""}</div></div></div>
         <div class="menu-lbl">Account</div>
@@ -1883,12 +1893,36 @@ function renderApp(user) {
     </div>`;
   const profileMenu = document.getElementById("profileMenu");
   const moreMenu = document.getElementById("moreMenu");
-  const closeMenus = () => { if (profileMenu) profileMenu.hidden = true; if (moreMenu) moreMenu.hidden = true; };
   const profileBtn = document.getElementById("profileBtn");
   const moreBtn = document.getElementById("moreBtn");
-  if (profileBtn) profileBtn.onclick = (e) => { e.stopPropagation(); const h = profileMenu.hidden; closeMenus(); profileMenu.hidden = !h; };
-  if (moreBtn) moreBtn.onclick = (e) => { e.stopPropagation(); const h = moreMenu.hidden; closeMenus(); moreMenu.hidden = !h; };
-  document.addEventListener("click", closeMenus);
+  const menuOf = (btn) => btn === profileBtn ? profileMenu : moreMenu;
+  // Escape closes an open topbar menu and puts focus back on its button; the menus are
+  // plain popovers, so arrow keys walk their items like a native menu.
+  const closeMenus = (refocus) => {
+    for (const btn of [profileBtn, moreBtn]) {
+      const m = menuOf(btn); if (!btn || !m || m.hidden) continue;
+      if (refocus || m.contains(document.activeElement)) btn.focus();
+      m.hidden = true; btn.setAttribute("aria-expanded", "false");
+    }
+  };
+  const toggleMenu = (btn) => (e) => {
+    e.stopPropagation();
+    const m = menuOf(btn), wasHidden = m.hidden;
+    closeMenus(false);
+    m.hidden = !wasHidden; btn.setAttribute("aria-expanded", String(wasHidden));
+  };
+  const menuKeys = (btn) => (e) => {
+    const m = menuOf(btn); if (!m || m.hidden) return;
+    const items = [...m.querySelectorAll("button:not([hidden])")];
+    if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); closeMenus(true); return; }
+    if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
+    e.preventDefault();
+    const i = items.indexOf(document.activeElement), d = e.key === "ArrowDown" ? 1 : -1;
+    (items[i < 0 ? (d > 0 ? 0 : items.length - 1) : (i + d + items.length) % items.length] || items[0]).focus();
+  };
+  if (profileBtn) { profileBtn.onclick = toggleMenu(profileBtn); profileBtn.parentElement.addEventListener("keydown", menuKeys(profileBtn)); }
+  if (moreBtn) { moreBtn.onclick = toggleMenu(moreBtn); moreBtn.parentElement.addEventListener("keydown", menuKeys(moreBtn)); }
+  document.addEventListener("click", () => closeMenus(false));
   if (profileMenu) profileMenu.onclick = (e) => {
     const nb = e.target.closest("[data-nav]"), lb = e.target.closest("[data-a]"); if (!nb && !lb) return;
     closeMenus();
@@ -1907,14 +1941,23 @@ function renderApp(user) {
   const styleToggle = document.getElementById("styleToggle");
   if (styleToggle) styleToggle.onclick = cycleStyle;
 
-  view.querySelectorAll("[data-foot]").forEach((a) => a.addEventListener("click", () => {
+  // Footer and quick-nav links ([data-goto], [data-foot]) are real anchors with the section's
+  // path, so they are keyboard-focusable and open in a new tab, and one delegated handler
+  // routes them in place, including links rendered later (e.g. "Get the CLI bundle" in Settings).
+  const footHref = (a) => a.dataset.goto ? secToPath(a.dataset.goto) : a.dataset.foot === "downloads" ? "/downloads" : a.dataset.foot === "docs" ? "/docs" : "/docs#doc-" + a.dataset.foot;
+  const linkify = (root) => root.querySelectorAll("a[data-goto]:not([href]), a[data-foot]:not([href])").forEach((a) => { a.href = footHref(a); });
+  linkify(view);
+  new MutationObserver((recs) => recs.forEach((r) => r.addedNodes.forEach((n) => { if (n.nodeType === 1) linkify(n); }))).observe(main, { childList: true, subtree: true });
+  view.addEventListener("click", (e) => {
+    const a = e.target.closest("[data-goto], [data-foot]"); if (!a || !view.contains(a)) return;
+    if (e.ctrlKey || e.metaKey || e.shiftKey || e.button !== 0) return;
+    e.preventDefault();
+    if (a.dataset.goto) return show(a.dataset.goto);
     const f = a.dataset.foot;
     if (f === "downloads") return show("downloads");
     show("docs");
     if (f !== "docs") setTimeout(() => { const t = document.getElementById("doc-" + f); if (t) t.scrollIntoView({ behavior: "smooth", block: "start" }); }, 60);
-  }));
-  // Quick-nav links (footer, topbar strip) that jump straight to a section.
-  view.querySelectorAll("[data-goto]").forEach((a) => a.addEventListener("click", () => show(a.dataset.goto)));
+  });
 
   // Topbar live ops strip — fills the empty center of the header with a status
   // line, a ticking UTC clock, headline threat metrics and quick launchers.

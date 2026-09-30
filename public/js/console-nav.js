@@ -74,10 +74,11 @@ export function consoleHTML(isOwner) {
   <div class="con-wrap">
   <div class="con-top">
     <div class="con-bar" role="navigation" aria-label="Console">
-      <button class="con-services" id="conServices" aria-expanded="false" aria-controls="sidebar"><span class="con-grid-ic" aria-hidden="true"></span>Services<span class="con-svc-count" aria-hidden="true">${total}</span><span class="con-caret" aria-hidden="true">▾</span></button>
+      <button class="con-services" id="conServices" aria-haspopup="true" aria-expanded="false" aria-controls="sidebar"><span class="con-grid-ic" aria-hidden="true"></span>Services<span class="con-svc-count" aria-hidden="true">${total}</span><span class="con-caret" aria-hidden="true">▾</span></button>
       <label class="con-search"><span class="sr-only">Find a service</span>
-        <input id="conSearch" type="search" placeholder="Search ${total} services — type a name, e.g. &quot;cve&quot;" autocomplete="off" spellcheck="false">
-        <kbd>/</kbd>
+        <input id="conSearch" type="search" placeholder="Search ${total} services — type a name, e.g. &quot;cve&quot;" autocomplete="off" spellcheck="false" aria-controls="sidebar" aria-describedby="conSearchHint">
+        <kbd aria-hidden="true">/</kbd>
+        <span class="sr-only" id="conSearchHint">Type to search, or press the down arrow to browse every service.</span>
       </label>
       <div class="con-quick" aria-label="Shortcuts">
         <button class="con-qbtn" data-sec="home">Dashboard</button>
@@ -105,7 +106,7 @@ export function consoleHTML(isOwner) {
         ${gs.map((g) => `<button class="svc-cat" data-cat="${g.id}" data-color="${g.color}"><span class="svc-dot"></span>${esc(g.name)} <span class="svc-n">${g.items.length}</span></button>`).join("")}
       </nav>
       <div class="svc-pane">
-        <div class="svc-hint" id="svcHint"></div>
+        <div class="svc-hint" id="svcHint" aria-live="polite"></div>
         <div class="svc-list" id="svcSpecial"></div>
         <div class="side-nav svc-groups" id="svcGroups">
           ${gs.map((g) => `<section class="svc-group" data-g="${g.id}" data-color="${g.color}"><div class="svc-gh" role="heading" aria-level="3"><span class="svc-dot"></span>${esc(g.name)}</div><div class="svc-items">
@@ -116,6 +117,7 @@ export function consoleHTML(isOwner) {
     </div>
   </aside>
   </div>
+  <div class="aws-side-bd" id="awsSideBd" hidden></div>
   <nav class="aws-side" id="awsSide" aria-label="Side navigation">
     <div class="aws-side-h"><button class="aws-side-title" data-sec="home">Darknode Console</button><button class="aws-side-x" id="awsSideClose" aria-label="Close side navigation" title="Close navigation"></button></div>
     <button class="aws-sl aws-sl-top" data-sec="home">Console home</button>
@@ -128,7 +130,7 @@ export function consoleHTML(isOwner) {
     <button class="aws-sl aws-sl-top" data-sec="settings">Settings</button>
     <button class="aws-sl aws-sl-top" data-sec="contact">Feedback</button>
   </nav>
-  <button class="aws-side-open" id="awsSideOpen" aria-label="Open side navigation" title="Open navigation"><span></span></button>`;
+  <button class="aws-side-open" id="awsSideOpen" aria-label="Open side navigation" title="Open navigation" aria-controls="awsSide" aria-expanded="true"><span></span></button>`;
 }
 
 export function directoryHTML(isOwner) {
@@ -154,7 +156,21 @@ export function wireConsole(root) {
   let cat = "recent";
 
   const isOpen = () => menu.classList.contains("open");
-  const setOpen = (o) => { menu.classList.toggle("open", o); btn.setAttribute("aria-expanded", String(o)); if (o) render(); };
+  // Closing the menu must not strand keyboard focus on a display:none element: if focus was
+  // inside, it goes back to the Services button (or to the search box when the user was typing).
+  const setOpen = (o, back) => {
+    if (!o && menu.contains(document.activeElement)) (back || btn).focus();
+    menu.classList.toggle("open", o); btn.setAttribute("aria-expanded", String(o));
+    if (o) render();
+  };
+  // Every visible control in the menu, in reading order: categories column, then the pane.
+  const menuStops = () => [...menu.querySelectorAll("button")].filter((b) => !b.hidden && b.offsetParent !== null && !b.closest("[hidden]"));
+  const moveFocus = (from, dir) => {
+    const stops = menuStops(); if (!stops.length) return;
+    let i = stops.indexOf(from);
+    i = i < 0 ? (dir > 0 ? 0 : stops.length - 1) : (i + dir + stops.length) % stops.length;
+    stops[i].focus();
+  };
   const renderBars = () => {
     const f = favs(), r = load(RECENT_KEY);
     root.querySelector("#conFavs").innerHTML = f.length ? f.map((s) => chip(s)).join("") : `<span class="con-empty">Open Services and click ☆ to pin tools here</span>`;
@@ -196,18 +212,30 @@ export function wireConsole(root) {
     if (i >= 0) f.splice(i, 1); else f.push(s.dataset.star);
     save(FAV_KEY, f); renderBars();
   });
-  search.addEventListener("focus", () => setOpen(true));
+  // Focusing the search box (Tab, or the "/" shortcut) no longer drops the whole mega-menu
+  // over the page; it opens when the user types, presses the down arrow, or clicks the box.
+  search.addEventListener("click", () => { if (!isOpen()) setOpen(true); });
   search.addEventListener("input", () => { if (!isOpen()) setOpen(true); else render(); });
   search.addEventListener("keydown", (e) => {
     if (e.key === "Enter") { const first = menu.querySelector(".svc-group:not([hidden]) .svc-card:not([hidden]) .side-item"); if (first) first.click(); }
-    if (e.key === "Escape") { search.value = ""; setOpen(false); search.blur(); }
+    else if (e.key === "ArrowDown") { e.preventDefault(); if (!isOpen()) setOpen(true); moveFocus(null, 1); }
+    else if (e.key === "Escape") { search.value = ""; setOpen(false); search.blur(); }
   });
+  // Arrow keys walk the open menu; Home/End jump; Escape closes and hands focus back.
+  menu.addEventListener("keydown", (e) => {
+    if (e.altKey || e.ctrlKey || e.metaKey) return;
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") { e.preventDefault(); moveFocus(e.target.closest("button"), e.key === "ArrowDown" ? 1 : -1); }
+    else if (e.key === "Home" || e.key === "End") { e.preventDefault(); moveFocus(null, e.key === "Home" ? 1 : -1); }
+  });
+  btn.addEventListener("keydown", (e) => { if (e.key === "ArrowDown") { e.preventDefault(); if (!isOpen()) setOpen(true); moveFocus(null, 1); } });
   document.addEventListener("keydown", (e) => {
     if (!document.body.contains(menu)) return;
-    if (e.key === "Escape" && isOpen()) setOpen(false);
+    if (e.key === "Escape" && isOpen()) { setOpen(false); return; }
     const t = e.target, typing = t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName));
     if (e.key === "/" && !typing && !e.ctrlKey && !e.metaKey) { e.preventDefault(); search.focus(); }
   });
+  // Tabbing out of the menu's last control closes it, like leaving a menubar.
+  menu.addEventListener("focusout", (e) => { if (isOpen() && e.relatedTarget && !menu.contains(e.relatedTarget) && !e.relatedTarget.closest(".con-bar, .con-catbar")) setOpen(false); });
   document.addEventListener("click", (e) => { if (isOpen() && !e.target.closest("#sidebar, .con-bar, .con-catbar, #hamburger")) setOpen(false); });
   renderBars();
 
@@ -222,14 +250,39 @@ export function wireConsole(root) {
     btn.addEventListener("click", pos); search.addEventListener("focus", pos);
   }
   const side = root.querySelector("#awsSide");
+  const sideBd = root.querySelector("#awsSideBd");
+  const sideOpenBtn = root.querySelector("#awsSideOpen");
   const SIDE_KEY = "sw_awsside";
-  const narrow = () => matchMedia("(max-width: 900px)").matches;
-  const setSide = (open, persist) => {
+  const narrowMq = matchMedia("(max-width: 900px)");
+  const narrow = () => narrowMq.matches;
+  // On narrow screens the side nav is a modal drawer: backdrop, Escape to close, focus moves
+  // in on open and back to the opener on close, and the page behind it is inert. On wide
+  // screens it is a plain collapsible column and the preference is remembered.
+  const focusables = (el) => [...el.querySelectorAll("button, [href], input, select, textarea, [tabindex]:not([tabindex='-1'])")].filter((b) => !b.hidden && !b.closest("[hidden]") && b.offsetParent !== null);
+  const setSide = (open, persist, opts = {}) => {
+    const wasDrawer = document.body.classList.contains("aws-drawer");
+    const drawer = open && narrow();
     document.body.classList.toggle("aws-side-closed", !open);
+    document.body.classList.toggle("aws-drawer", drawer);
+    if (sideBd) sideBd.hidden = !drawer;
+    if (sideOpenBtn) sideOpenBtn.setAttribute("aria-expanded", String(open));
+    const main = document.getElementById("app-main");
+    if (main) main.toggleAttribute("inert", drawer);
     if (persist && !narrow()) { try { localStorage.setItem(SIDE_KEY, open ? "1" : "0"); } catch (_) {} }
+    if (opts.focus === false) return;
+    if (drawer) { const t = side.querySelector(".aws-sl.on") || side.querySelector(".aws-side-title"); if (t) t.focus(); }
+    else if (!open && (wasDrawer || side.contains(document.activeElement)) && sideOpenBtn) sideOpenBtn.focus();
   };
   let sidePref = "1"; try { sidePref = localStorage.getItem(SIDE_KEY) || "1"; } catch (_) {}
-  setSide(sidePref === "1" && !narrow(), false);
+  setSide(sidePref === "1" && !narrow(), false, { focus: false });
+  // Crossing the breakpoint: a drawer left open becomes a column (drop the modal state), and
+  // a column becomes a closed drawer.
+  narrowMq.addEventListener("change", () => {
+    if (narrow()) setSide(false, false, { focus: false });
+    else { let p = "1"; try { p = localStorage.getItem(SIDE_KEY) || "1"; } catch (_) {} setSide(p === "1", false, { focus: false }); }
+  });
+  // Settings > Sidebar ("Expanded" / "Icon rail") drives the same state.
+  document.addEventListener("aws-side:set", (e) => setSide(!!(e.detail && e.detail.open), true, { focus: false }));
   const fillGroup = (sg) => {
     const box = sg.querySelector(".aws-sg-items");
     if (box.dataset.filled) return;
@@ -256,10 +309,20 @@ export function wireConsole(root) {
     side.addEventListener("click", (e) => {
       const h = e.target.closest(".aws-sg-h");
       if (h) { const sg = h.closest(".aws-sg"); openGroup(sg, h.getAttribute("aria-expanded") !== "true"); return; }
-      if (e.target.closest("[data-sec]") && narrow()) setSide(false, false);
+      if (e.target.closest("[data-sec]") && narrow()) setSide(false, false, { focus: false });
     });
+    side.addEventListener("keydown", (e) => {
+      if (!document.body.classList.contains("aws-drawer")) return;
+      if (e.key === "Escape") { e.preventDefault(); setSide(false, false); return; }
+      if (e.key !== "Tab") return;
+      const f = focusables(side); if (!f.length) return;
+      const first = f[0], last = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    });
+    if (sideBd) sideBd.addEventListener("click", () => setSide(false, false));
     root.querySelector("#awsSideClose").onclick = () => setSide(false, true);
-    root.querySelector("#awsSideOpen").onclick = () => setSide(true, true);
+    if (sideOpenBtn) sideOpenBtn.onclick = () => setSide(true, true);
   }
 
   return {
