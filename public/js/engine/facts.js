@@ -479,11 +479,39 @@ export function sci(v) {
   return m + " x 10^" + (+e);
 }
 
+// everyday reference facts, matched on the whole question so nothing nearby is misread
+const TRIVIA = [
+  [/^(?:how many|number of) continents(?: are there)?(?: in the world| on earth)?$/, "There are 7 continents by the most common count: Africa, Antarctica, Asia, Australia (Oceania), Europe, North America and South America."],
+  [/^(?:how many|number of) oceans(?: are there)?(?: in the world| on earth)?$/, "There are 5 oceans: Pacific, Atlantic, Indian, Southern and Arctic."],
+  [/^(?:how many|number of) planets(?: are there)?(?: in (?:the|our) solar system)?$/, "There are 8 planets in the solar system: Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus and Neptune."],
+  [/^(?:what is |whats )?(?:the )?(?:largest|biggest) planet(?: in (?:the|our) solar system)?$/, "Jupiter is the largest planet in the solar system."],
+  [/^(?:what is |whats )?(?:the )?(?:smallest) planet(?: in (?:the|our) solar system)?$/, "Mercury is the smallest planet in the solar system."],
+  [/^(?:how many|number of) bones(?: are there)? in (?:the|an?) (?:adult )?human(?: body)?$/, "An adult human body has 206 bones (babies are born with around 270, which fuse as they grow)."],
+  [/^(?:how many|number of) teeth(?: does)? (?:an? )?adults?(?: human)?(?: have)?$/, "An adult usually has 32 permanent teeth, including 4 wisdom teeth."],
+  [/^(?:what is |whats )?(?:the )?boiling point of (?:pure )?water$/, "Water boils at 100 degrees C (212 degrees F) at sea-level pressure; it boils at a lower temperature higher up."],
+  [/^(?:what is |whats )?(?:the )?(?:freezing|melting) point of (?:pure )?water$/, "Water freezes at 0 degrees C (32 degrees F) at sea-level pressure."],
+  [/^(?:how many|number of) days(?: are there)? in a leap year$/, "A leap year has 366 days (February has 29)."],
+  [/^(?:how many|number of) days(?: are there)? in a (?:common|normal|non leap|regular) year$/, "A common year has 365 days."],
+  [/^(?:what is |whats )?(?:the )?(?:tallest|highest) mountain(?: in the world| on earth)?$/, "Mount Everest is the highest mountain above sea level, about 8,849 m (29,032 ft)."],
+  [/^(?:what is |whats )?(?:the )?(?:largest|biggest) ocean(?: in the world| on earth)?$/, "The Pacific is the largest ocean."],
+  [/^(?:what is |whats )?(?:the )?(?:largest|biggest) continent$/, "Asia is the largest continent, by both area and population."],
+];
+const AUTHORS = { "romeo and juliet": "William Shakespeare", hamlet: "William Shakespeare", macbeth: "William Shakespeare", othello: "William Shakespeare", "king lear": "William Shakespeare", "a midsummer night dream": "William Shakespeare", "pride and prejudice": "Jane Austen", "emma": "Jane Austen", "1984": "George Orwell", "nineteen eighty four": "George Orwell", "animal farm": "George Orwell", "war and peace": "Leo Tolstoy", "anna karenina": "Leo Tolstoy", "the odyssey": "Homer", "the iliad": "Homer", "don quixote": "Miguel de Cervantes", "moby dick": "Herman Melville", "to kill a mockingbird": "Harper Lee", "the great gatsby": "F. Scott Fitzgerald", "on the origin of species": "Charles Darwin", "the origin of species": "Charles Darwin", "crime and punishment": "Fyodor Dostoevsky", "frankenstein": "Mary Shelley", "dracula": "Bram Stoker", "the hobbit": "J. R. R. Tolkien", "the lord of the rings": "J. R. R. Tolkien", "a tale of two cities": "Charles Dickens", "great expectations": "Charles Dickens", "oliver twist": "Charles Dickens", "the divine comedy": "Dante Alighieri", "les miserables": "Victor Hugo", "jane eyre": "Charlotte Bronte", "wuthering heights": "Emily Bronte", "the adventures of tom sawyer": "Mark Twain", "adventures of huckleberry finn": "Mark Twain", "the catcher in the rye": "J. D. Salinger", "brave new world": "Aldous Huxley", "the old man and the sea": "Ernest Hemingway", "one hundred years of solitude": "Gabriel Garcia Marquez" };
+export function trivia(input) {
+  const t = clean(input).trim().replace(/^(?:tell me |do you know )/, "");
+  for (const [re, text] of TRIVIA) if (re.test(t)) return { ok: true, trivia: true, text };
+  const w = t.match(/^who (?:wrote|is the author of|authored) (.+)$/) || t.match(/^(?:who is the |the )?author of (.+)$/);
+  if (w) { const k = w[1].replace(/^(?:the (?:book|novel|play|poem) )/, "").trim(); const a = AUTHORS[k] || AUTHORS["the " + k];
+    if (a) return { ok: true, trivia: true, text: titleCase(k).replace(/^[a-z]/, (c) => c.toUpperCase()) + " was written by " + a + "." }; }
+  return { ok: false, error: "no trivia found" };
+}
+
 // facts(input) — pick the pack from the question's wording, then fall through.
 // common chemical formulas, read case-insensitively ("what is h2o")
 const COMPOUNDS = { h2o: "water", co2: "carbon dioxide", co: "carbon monoxide", o2: "oxygen gas", o3: "ozone", n2: "nitrogen gas", h2: "hydrogen gas", nacl: "sodium chloride (table salt)", h2o2: "hydrogen peroxide", ch4: "methane", nh3: "ammonia", h2so4: "sulfuric acid", hcl: "hydrochloric acid", hno3: "nitric acid", naoh: "sodium hydroxide (lye)", c6h12o6: "glucose", c12h22o11: "sucrose (table sugar)", c2h5oh: "ethanol", c2h6o: "ethanol", caco3: "calcium carbonate (chalk, limestone)", nahco3: "sodium bicarbonate (baking soda)", so2: "sulfur dioxide", no2: "nitrogen dioxide", n2o: "nitrous oxide", fe2o3: "iron(III) oxide (rust)", sio2: "silicon dioxide (quartz, sand)", c8h10n4o2: "caffeine", ch3cooh: "acetic acid (vinegar)", kcl: "potassium chloride", mgso4: "magnesium sulfate (Epsom salt)" };
 const FORMULA_OF = Object.fromEntries(Object.entries(COMPOUNDS).map(([f, n]) => [n.replace(/ \(.*\)$/, ""), f]));
 export function facts(input) {
+  const tv = trivia(input); if (tv.ok) return tv;
   const t = clean(input);
   const cf = t.match(/^\s*(?:what is |whats |what's |define )?(?:the )?(?:formula )?([a-z0-9]+)\s*$/);
   if (cf && COMPOUNDS[cf[1]] && /\d/.test(cf[1])) return { ok: true, trivia: true, text: cf[1].toUpperCase() + " is " + COMPOUNDS[cf[1]] + "." };

@@ -5,6 +5,8 @@ export const CASES = [
   ["arith", "whats 15 percent of 80", 12], ["arith", "what is 3/4 plus 2/3", 17 / 12], ["arith", "how much is 7 times 8", 56],
   ["arith", "percent change from 50 to 75", 50], ["arith", "what percent of 80 is 20", 25], ["arith", "20 is what percent of 80", 25],
   ["arith", "increase 80 by 15%", 92], ["arith", "decrease 80 by 15 percent", 68], ["arith", "convert 0.75 to a fraction", { re: /3\/4|3 \/ 4/ }],
+  ["arith", "20% off 80", 64], ["arith", "sale price of 80 with 20% off", 64], ["arith", "$80 with 25% discount", 60],
+  ["arith", "std dev of 2,4,6", { re: /sqrt\(6\).*3|standard deviation/ }],
   ["arith", "write 5/8 as a decimal", 0.625], ["arith", "3/8 as a percent", 37.5], ["arith", "simplify 18/24", { re: /3\/4|3 \/ 4/ }],
   ["arith", "what's the square root of 50", Math.sqrt(50)], ["arith", "simplify sqrt(50)", { re: /5.*sqrt\(2\)|5√2/ }], ["arith", "cube root of 64", 4],
   ["arith", "what is 2 to the power of 10", 1024], ["arith", "log base 2 of 8", 3], ["arith", "natural log of e squared", 2],
@@ -59,4 +61,104 @@ export const CASES = [
   ["new", "if 4 notebooks cost 300 cents, how much do 6 notebooks cost?", 450], ["new", "volume of a cone radius 3 height 4", 12 * PI],
   ["new", "ella is 4 times as old as her daughter. in 20 years she will be twice as old. how old is the daughter now?", 10],
   ["new", "the log of 100 squared", 4], ["new", "square root of 3 squared", 3],
+  ["v2-arith", "what's twelve times eleven", 132], ["v2-arith", "one hundred divided by eight", 12.5], ["v2-arith", "seventeen squared", 289],
+  ["v2-arith", "the square of 13", 169], ["v2-arith", "cube of 4", 64], ["v2-arith", "what is 2 to the power of ten", 1024],
+  ["v2-arith", "difference between 85 and 38", 47], ["v2-arith", "the product of 12 and 15", 180], ["v2-arith", "quotient of 144 and 12", 12],
+  ["v2-arith", "sum of 1 through 100", 5050], ["v2-arith", "add all numbers from 1 to 50", 1275], ["v2-arith", "sum of the first 10 odd numbers", 100],
+  ["v2-arith", "remainder when 100 is divided by 7", 2], ["v2-arith", "100 mod 7", 2], ["v2-arith", "what is half of 3/4", 0.375],
+  ["v2-arith", "average of 4, 8 and 15", 9], ["v2-arith", "whats the mean of 3 7 8", 6], ["v2-arith", "range of 3 9 1 12", 11],
+  ["v2-arith", "mode of 1 2 2 3 3 3", 3], ["v2-arith", "factorial of 6", 720], ["v2-arith", "6 factorial", 720],
+  ["v2-arith", "gcd of 48 and 36", 12], ["v2-arith", "greatest common factor of 24 and 60", 12], ["v2-arith", "lowest common multiple of 4 and 6", 12],
+  ["v2-arith", "round 3.14159 to 2 decimal places", 3.14], ["v2-arith", "round 1234 to the nearest hundred", 1200], ["v2-arith", "absolute value of -17", 17],
+  ["v2-arith", "how many times does 7 go into 56", 8], ["v2-arith", "what number times 6 equals 42", 7], ["v2-arith", "what is 3 less than 20", 17],
+  ["v2-arith", "square root of 144 plus 5", 17], ["v2-arith", "10 percent of 10 percent of 1000", 10], ["v2-money", "what percent of 80 is 20", 25],
+  ["v2-money", "20 is what percent of 80", 25], ["v2-money", "30 is 15% of what number", 200], ["v2-money", "a shirt costs $40 and is 30% off, what is the sale price", 28],
+  ["v2-money", "i paid 45 after a 10% discount, what was the original price", 50], ["v2-money", "simple interest on 1000 at 5% for 3 years", 150], ["v2-money", "compound interest on 1000 at 10% for 2 years", 210],
+  ["v2-money", "how much is 1000 after 2 years at 10% compounded annually", 1210], ["v2-money", "if i save 25 dollars a week how much in a year", 1300], ["v2-money", "price went from 50 to 65, what is the percent increase", 30],
+  ["v2-money", "percent decrease from 80 to 60", 25], ["v2-money", "what is 15 percent tip on 60", 9], ["v2-money", "split 120 dollars among 5 people", 24],
+  ["v2-money", "3 apples cost 1.50, how much do 7 apples cost", 3.5], ["v2-money", "profit if bought for 80 and sold for 100", 20], ["v2-money", "profit percentage if cost price is 80 and selling price is 100", 25],
+  ["v2-alg", "solve 5x - 3 = 17", 4], ["v2-alg", "if 3x = 21 what is x", 7], ["v2-alg", "x/4 = 5", 20],
+  ["v2-alg", "find x if 2x + 3 = x + 10", 7], ["v2-alg", "a number plus 7 equals 19, what is the number", 12], ["v2-alg", "twice a number is 36, find the number", 18],
+  ["v2-alg", "the sum of two consecutive numbers is 41, what is the smaller", 20], ["v2-alg", "slope of the line through (1,2) and (3,8)", 3], ["v2-alg", "distance between (0,0) and (3,4)", 5],
+  ["v2-geo", "area of a circle with radius 3", 28.2743338823081], ["v2-geo", "circumference of a circle with diameter 10", 31.4159265358979], ["v2-geo", "area of a rectangle 5 by 8", 40],
+  ["v2-geo", "perimeter of a square with side 7", 28], ["v2-geo", "area of a triangle with base 10 and height 6", 30], ["v2-geo", "hypotenuse of a right triangle with legs 5 and 12", 13],
+  ["v2-geo", "volume of a cube with side 3", 27], ["v2-geo", "volume of a sphere radius 3", 113.097335529233], ["v2-geo", "area of a square with side 9", 81],
+  ["v2-geo", "how many degrees in a triangle", 180], ["v2-geo", "sum of interior angles of a hexagon", 720], ["v2-geo", "each angle of a regular pentagon", 108],
+  ["v2-geo", "diagonal of a square with side 1", 1.4142135623731], ["v2-geo", "surface area of a cube with side 2", 24], ["v2-geo", "area of a trapezoid with bases 4 and 6 and height 5", 25],
+  ["v2-word", "a car travels 150 miles in 3 hours, what is its speed", 50], ["v2-word", "how long to drive 240 km at 80 km/h", 3], ["v2-word", "how far do you go in 2 hours at 60 mph", 120],
+  ["v2-word", "if 5 workers take 8 days, how many days for 10 workers", 4], ["v2-word", "i have 3 boxes with 12 eggs each, how many eggs", 36], ["v2-word", "john has 5 apples and eats 2, how many are left", 3],
+  ["v2-word", "sarah had 20 dollars and spent 7, how much does she have left", 13], ["v2-word", "there are 24 students and a third are boys, how many boys", 8], ["v2-word", "a pizza has 8 slices, 3 people eat 2 each, how many slices are left", 2],
+  ["v2-word", "if a dozen eggs cost 3 dollars how much is one egg", 0.25], ["v2-word", "how many seconds in an hour", 3600], ["v2-word", "how many minutes in a day", 1440],
+  ["v2-word", "how many hours in a week", 168], ["v2-word", "convert 5 km to miles", 3.10685596118667], ["v2-word", "how many inches in 3 feet", 36],
+  ["v2-word", "what is 100 fahrenheit in celsius", 37.7777777777778], ["v2-word", "ratio 3:5, total 40, what is the larger part", 25], ["v2-calc", "what is the derivative of 3x^2 at x = 2", 12],
+  ["v2-calc", "integral of 2x from 0 to 3", 9], ["v2-calc", "limit of (x^2-1)/(x-1) as x approaches 1", 2], ["v2-calc", "log base 2 of 64", 6],
+  ["v2-calc", "log of 1000", 3], ["v2-calc", "e to the power 0", 1], ["v2-calc", "sin of 30 degrees", 0.5],
+  ["v2-calc", "cos 60 degrees", 0.5], ["v2-calc", "tan of 45 degrees", 1],
+  ["v2-alg", "solve x^2 = 49 for positive x", { re: /x = 7\b/ }], ["v2-word", "tom had 10 marbles and gave 3 to sam, how many does tom have", 7],
+  // round 3: everyday verbs, percent word forms, number facts, sequences, series, limits
+  ["v3-frac", "add 1/2 and 1/3", 0.833333333333333], ["v3-frac", "what is 2/3 of 3/4", 0.5], ["v3-frac", "1/2 divided by 1/4", 2],
+  ["v3-frac", "subtract 1/4 from 3/4", 0.5], ["v3-frac", "0.125 as a fraction", 0.125], ["v3-frac", "what is 1.5 times 4", 6],
+  ["v3-frac", "what is 3 and a half times 2", 7], ["v3-frac", "simplify 12/16", 0.75], ["v3-pct", "what is 25% of 25% of 400", 25],
+  ["v3-pct", "40 is 20 percent of what", 200], ["v3-pct", "15 out of 20 as a percent", 75], ["v3-pct", "what percentage is 45 out of 60", 75],
+  ["v3-pct", "i scored 18 out of 25, what percent is that", 72], ["v3-pct", "a population grows from 200 to 250, what is the percentage increase", 25], ["v3-pct", "a price of 80 is increased by 10% and then decreased by 10%", 79.2],
+  ["v3-pct", "what is 150% of 60", 90], ["v3-pct", "0.5% of 2000", 10], ["v3-alg", "solve for x: 4(x - 2) = 12", 5],
+  ["v3-alg", "3x + 2 = 2x + 9", 7], ["v3-alg", "if 2x - 7 = 11 find x", 9], ["v3-alg", "x + x + x = 27", 9],
+  ["v3-alg", "what number added to 15 gives 42", 27], ["v3-alg", "a number divided by 4 is 9, what is the number", 36], ["v3-alg", "three times a number minus 5 is 16", 7],
+  ["v3-alg", "the sum of three consecutive integers is 72, find the largest", 25], ["v3-alg", "solve 2x + y = 7 and x - y = 2 for x", 3], ["v3-alg", "if y = 3x + 2 and x = 4, what is y", 14],
+  ["v3-exp", "what is 2 cubed times 3 squared", 72], ["v3-exp", "10 to the 6th", 1000000], ["v3-exp", "square root of 2 times square root of 8", 4],
+  ["v3-exp", "4 to the half", 2], ["v3-exp", "what is 8 to the power of 1/3", 2], ["v3-exp", "5 squared minus 3 squared", 16],
+  ["v3-exp", "how many zeros in a million", 6], ["v3-seq", "next number in the sequence 3 6 9 12", 15], ["v3-seq", "10th term of 2, 5, 8, 11", 29],
+  ["v3-seq", "sum of the first 20 even numbers", 420], ["v3-seq", "what is the 5th term of a geometric sequence with first term 3 and ratio 2", 48], ["v3-geo", "area of a circle with diameter 10", 78.5398163397448],
+  ["v3-geo", "radius of a circle with area 50", 3.98942280401433], ["v3-geo", "perimeter of a rectangle 7 by 3", 20], ["v3-geo", "area of an equilateral triangle with side 6", 15.5884572681199],
+  ["v3-geo", "volume of a box 2 by 3 by 4", 24], ["v3-geo", "a square has area 64, what is its side", 8], ["v3-geo", "a circle has circumference 31.4, find its radius", 4.99746521308551],
+  ["v3-geo", "third angle of a triangle with angles 50 and 60", 70], ["v3-geo", "complement of 35 degrees", 55], ["v3-geo", "supplement of 110 degrees", 70],
+  ["v3-geo", "how many sides does a hexagon have", 6], ["v3-geo", "area of a semicircle with radius 4", 25.1327412287183], ["v3-stat", "average of 85, 90 and 95", 90],
+  ["v3-stat", "what score do i need on the 4th test to average 80 if i got 70 75 and 85", 90], ["v3-stat", "mean of the first 10 natural numbers", 5.5], ["v3-stat", "median of 7, 1, 3, 9", 5],
+  ["v3-stat", "range of the numbers 12 5 20 8", 15], ["v3-rate", "if i walk at 5 km/h how long to walk 12 km", 2.4], ["v3-rate", "a car uses 8 liters per 100 km, how many liters for 350 km", 28],
+  ["v3-rate", "it takes 3 hours to paint 2 rooms, how long for 5 rooms", 7.5], ["v3-rate", "a tap fills 10 liters per minute, how long to fill 250 liters", 25], ["v3-rate", "how many minutes is 2.5 hours", 150],
+  ["v3-rate", "how many hours is 150 minutes", 2.5], ["v3-rate", "earning 15 dollars an hour, how much for 40 hours", 600], ["v3-rate", "a recipe for 4 people needs 300 g of flour, how much for 6 people", 450],
+  ["v3-num", "how many factors does 36 have", 9], ["v3-num", "smallest prime greater than 50", 53], ["v3-num", "sum of digits of 4567", 22],
+  ["v3-num", "how many digits in 2^20", 7], ["v3-num", "10 factorial divided by 8 factorial", 90], ["v3-num", "roman numeral XIV", 14],
+  ["v3a-calc", "derivative of ln(x) at x = 2", 0.5], ["v3a-calc", "integrate x^2 from 0 to 3", 9], ["v3a-calc", "integral of 1/x from 1 to e", 1],
+  ["v3a-calc", "area under y = x^2 from 0 to 2", 2.66666666666667], ["v3a-calc", "limit of sin(x)/x as x goes to 0", 1], ["v3a-calc", "lim x->infinity of (1 + 1/x)^x", 2.71828182845905],
+  ["v3a-calc", "find the maximum of -x^2 + 4x + 1", 5], ["v3a-calc", "minimum value of x^2 - 6x + 10", 1], ["v3a-calc", "slope of the tangent to y = x^3 at x = 2", 12],
+  ["v3a-calc", "sum of 1/n^2 from 1 to infinity", 1.64493406684823], ["v3a-alg", "solve x^2 + 2x - 15 = 0", {"roots":[-5,3]}], ["v3a-alg", "roots of 2x^2 - 8", {"roots":[-2,2]}],
+  ["v3a-alg", "solve |x - 3| = 5", {"roots":[-2,8]}], ["v3a-alg", "solve 2^x = 32", 5], ["v3a-alg", "solve log(x) = 2", 100],
+  ["v3a-alg", "solve x^3 = 27", 3], ["v3a-alg", "discriminant of x^2 + 4x + 5", -4], ["v3a-trig", "sin 45 degrees", 0.707106781186548],
+  ["v3a-trig", "cos(pi/3)", 0.5], ["v3a-trig", "arcsin(1/2) in degrees", 30], ["v3a-trig", "convert 180 degrees to radians", 3.14159265358979],
+  ["v3a-trig", "convert pi/4 radians to degrees", 45], ["v3a-trig", "tan 60 degrees", 1.73205080756888], ["v3a-trig", "sec(0)", 1],
+  ["v3a-log", "ln e^3", 3], ["v3a-log", "log base 3 of 81", 4], ["v3a-log", "log 2 + log 5", 1],
+  ["v3a-log", "solve e^x = 10", 2.30258509299405], ["v3a-log", "how long to double money at 5% interest compounded annually", 14.2066990828905], ["v3a-cx", "modulus of 3 + 4i", 5],
+  ["v3a-cx", "i^2", -1], ["v3a-la", "determinant of [[1,2],[3,4]]", -2], ["v3a-la", "dot product of (1,2,3) and (4,5,6)", 32],
+  ["v3a-la", "magnitude of the vector (3, 4)", 5], ["v3a-comb", "how many ways can 5 people sit in a row", 120], ["v3a-comb", "8 choose 3", 56],
+  ["v3a-comb", "number of permutations of 5 taken 2", 20], ["v3a-comb", "how many subsets does a set of 4 elements have", 16], ["v3a-comb", "how many arrangements of the letters in APPLE", 60],
+  ["v3a-comb", "probability of rolling a sum of 7 with two dice", 0.166666666666667], ["v3a-comb", "probability of drawing an ace from a deck", 0.0769230769230769], ["v3a-comb", "expected value of a fair die", 3.5],
+  ["v3a-comb", "how many handshakes among 10 people", 45], ["v3a-nt", "gcd(84, 126)", 42], ["v3a-nt", "17 mod 5", 2],
+  ["v3a-nt", "3^100 mod 7", 4], ["v3a-nt", "last digit of 7^100", 1], ["v3a-nt", "number of divisors of 100", 9],
+  ["v3a-nt", "sum of divisors of 12", 28], ["v3a-nt", "euler totient of 36", 12], ["v3a-nt", "binary 101101 to decimal", 45],
+  ["v3a-st", "z score of 85 with mean 70 and standard deviation 10", 1.5], ["v3a-st", "probability that z is less than 1.96", 0.97500210485178], ["v3a-ser", "sum of the arithmetic series 2 + 5 + 8 + ... + 32", 187],
+  ["v3a-ser", "sum of 1 + 2 + 4 + ... + 512", 1023], ["v3a-ser", "20th term of the arithmetic sequence 5, 9, 13", 81], ["v3a-ser", "sum from k = 1 to 10 of k^2", 385],
+  ["v3-fix", "0b101101", 45], ["v3-fix", "0xff + 1", 256], ["v3-fix", "solve 2x + y = 7 and x - y = 2 for x", { re: /x = 3, y = 1/ }],
+  ["v3-fix", "sum of 1/2^n from 0 to infinity", 2], ["v3-fix", "is 145 a perfect square", { re: /false/ }], ["v3-fix", "roman numeral MCMXCIV", 1994],
+];
+// Phrasings that look everyday but have no single right answer from the words given: Quelvra must refuse them.
+export const TRAPS = [
+  "tom had 10 marbles and gave 3 to sam, how many does sam have", // the story tracks tom, not sam
+  "how many days in a year", // 365 or 366; the units engine's Julian year would say 365.25
+  "there are 25 students and a third are boys, how many boys", // not a whole number of people
+  "profit if bought for 100 and sold for 80", // that is a loss
+  "each angle of a pentagon", // only a regular pentagon has one angle size
+  "a pizza has 8 slices, 5 people eat 2 each, how many slices are left", // more than there is
+  "if 5 workers take 8 days, how many hours for 10 workers", // units disagree
+  "3 apples cost 1.50, how much do 7 pears cost", // a different item
+  "add x and 3", // "add" is a verb, not a*d*d
+  "mean of the first 0 natural numbers", // there are none
+  "what is the 0th term of a geometric sequence with first term 3 and ratio 2", // terms start at 1
+  "2 to the half of 8", // "to the half" is a power only when nothing follows
+  "i scored 30 out of 25, what percent is that", // more than the total
+  "a population grows from 250 to 200, what is the percentage increase", // that is a decrease
+  "third angle of a triangle with angles 100 and 90", // no such triangle
+  "complement of 95 degrees", // only angles below 90 have one
+  "permutations of 3 taken 5", // cannot take more than there are
+  "roman numeral IIII", // not a valid numeral
 ];
