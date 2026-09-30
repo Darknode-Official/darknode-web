@@ -94,6 +94,10 @@ function score(input) {
   if (has(/days? between|day of (the )?week|weekday|what day|(?:add|subtract) \d+ (?:days?|weeks?)|leap\s*year|day of (the )?year|which day of|days?\s+(?:until|till|til|to go|left)|\d+\s+(?:days?|weeks?|months?|years?)\s+(?:from|after|before)\s+(?:today|now)\b|(?:what|which)\s+(?:day|date)\s+(?:was|is|will)\b.*\b\d+\s+(?:days?|weeks?|months?|years?)\s+ago\b|^(?:what|which)\s+(?:day|date)\s+(?:is|will)\s+(?:it\s+)?in\s+\d+\s+(?:days?|weeks?|months?|years?)\b/)) add("datetime", 6, "date arithmetic")
   if (has(/^(?:what|which)\s+year\s+is\s+(?:it|this)|\bcurrent year\b|\bborn in \d{4}\b|^(?:what is |whats |what's )?(?:the )?(?:date )?today(?:'s date)?\s*\??$|^(?:what is |whats |what's )(?:the )?date(?: today)?\s*\??$|^what day is (?:it|today)|^(?:what is |whats |what's )?\d+\s+(?:days?|weeks?|months?|years?)\s+(?:from|after|before)\s+(?:today|now)\s*\??$/)) add("datetime", 8, "today's date");
   if (has(/\bdays?\s+(?:are\s+|is\s+)?(?:there\s+)?in\s+(?:the\s+(?:month|year)\s+(?:of\s+)?)?(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|\d{4}\b)/)) add("datetime", 8, "days in a month or year");
+  // round 8: counting to a date in weeks/months, an exact age from a birth date, today's place in the year, unix time, this zone
+  if (has(/\b(?:weeks?|months?)\s+(?:until|till|til|left until|to go until)\s+\S/) || has(/\bborn (?:on )?\d{4}-\d{1,2}-\d{1,2}\b/) || has(/\bdays? (?:are )?(?:left|remaining|to go) (?:in|of) (?:the|this) year\b|\bdays? (?:have )?(?:passed|gone|elapsed) (?:so far )?(?:this year|in the year)\b|\bday of the year is (?:it|today)\b/)
+    || has(/^(?:what|which) (?:iso )?week(?: number| of the year)? (?:is it|is this|are we in|is today)\b|^(?:current |this )?(?:iso )?week number\b|^(?:what|which) (?:fiscal |calendar )?quarter (?:is it|is this|are we in)\b/)
+    || has(/\b(?:unix|epoch|posix)\b.*\b(?:time|timestamp|seconds)\b|\btimestamp\b|\bseconds since (?:the )?epoch\b|\b(?:unix|epoch)\b\s*\d{9,13}\b|\b\d{9,13}\s+(?:to|as|in)\s+(?:a )?(?:date|datetime|iso|utc|human)\b|\b\d{4}-\d{1,2}-\d{1,2}\b.*\b(?:to|as|in)\s+(?:unix|epoch|posix|a timestamp)\b|\bdate in \d+ (?:days?|weeks?|months?|years?)\b|\b(?:my|the|this device'?s?|the current|the local) (?:time ?zone|tz)\b|\btime ?zone am i in\b|\bmy utc offset\b/)) add("datetime", 8, "date and time");
   const algoKW = has(/factorial|fibonacci|fib|reverse|prime|palindrome|fizzbuzz|binary search|bubble sort|\bsort\b|\bsearch\b|\bgcd\b|average|function|func|method|class/);
   const langKW = has(/\b(python|javascript|js|typescript|ts|rust|go|golang|java|c)\b/);
   // Route to code synthesis for an algorithm or a language-tagged function — but a
@@ -176,8 +180,11 @@ function score(input) {
   if (has(/\d\s+(?:as|to|in|into)\s+(?:a\s+|its\s+)?(?:simplest\s+)?fraction\s*\??$/)) add("calc", 9, "a decimal as a fraction");
   if (has(/^(?:simplify|reduce|simplest form of|lowest terms of)\s+-?\d+\s*\/\s*\d+\s*\??$|^-?\d+\s*\/\s*\d+\s+(?:in|to)\s+(?:its\s+)?(?:lowest|simplest)\s+(?:terms|form)\s*\??$/)) add("calc", 9, "a fraction to simplify");
   if (has(/\d\s+(?:as|to|in|into)\s+(?:a\s+)?percent(?:age)?\s*\??$/) && !has(/\bof\b/)) add("calc", 9, "a number as a percentage");
-  if (has(/[-+*/^]/) && has(/\d/)) add("calc", 5, "arithmetic expression");
-  if (has(/^(what\s+is|calc(ulate)?|compute|evaluate)\b/) && has(/\d/)) add("calc", 4, "arithmetic request");
+  // (the routing synonym pass turns "change" into "convert", so both spellings are listed)
+  if (has(/\b(?:percent(?:age)?|%) (?:change|convert|increase|decrease|difference|growth|drop|rise|gain|loss) (?:from |between )?-?\d/) || has(/\b(?:change|convert|increase|decrease|difference|growth|drop|rise) (?:from |between )?-?\d+(?:\.\d+)? (?:to|and) -?\d+(?:\.\d+)? (?:as a |in )?(?:percent(?:age)?|%)/)) { add("calc", 9, "a percentage change"); S0.convert = 0; }
+  const isoDate = has(/\b\d{4}-\d{1,2}-\d{1,2}\b/); // a date is not a subtraction
+  if (has(/[-+*/^]/) && has(/\d/) && !isoDate) add("calc", 5, "arithmetic expression");
+  if (has(/^(what\s+is|calc(ulate)?|compute|evaluate)\b/) && has(/\d/) && !isoDate) add("calc", 4, "arithmetic request");
   if (has(/^[a-z_]\w*\s*=[^=]/)) add("calc", 4, "variable assignment");
   if (has(/\bsqrt|square root|factorial|\bpi\b|\bphi\b|\bsin\b|\bcos\b|\btan\b|\blog\b|\bgcd\(|\bmin\(|\bmax\(|\bround\(|\babs\(|\bcbrt\(|\bceil\(|\bfloor\(|\bexp\(|\bln\(/)) add("calc", 3, "math function");
 
@@ -198,6 +205,8 @@ function say(skill, res, input, model) {
           ? { title: "Fraction", body: "`" + res.expr.replace(/ as a fraction$/, "") + "` as a fraction is **" + res.value + "** (the simplest fraction, found by continued fractions).", result: res }
           : / simplified$/.test(res.expr || "")
           ? { title: "Simplified fraction", body: res.already ? "`" + res.expr.replace(/ simplified$/, "") + "` is already in lowest terms: the numerator and denominator share no factor but 1." : "`" + res.expr.replace(/ simplified$/, "") + "` simplifies to **" + res.value + "** (divide top and bottom by their greatest common divisor, " + res.gcd + ").", result: res }
+          : / percent change$/.test(res.expr || "")
+          ? { title: "Percentage change", body: "From **" + res.from + "** to **" + res.to + "** is a change of **" + res.value + "**" + (res.exact ? "" : " (rounded to 4 decimal places)") + ", " + (res.to > res.from ? "an increase" : res.to < res.from ? "a decrease" : "no change") + ". Percent change = (new - old) / |old| x 100.", result: res }
           : / as a percent$/.test(res.expr || "")
           ? { title: "Percentage", body: "`" + res.expr.replace(/ as a percent$/, "") + "` is **" + res.value + "**" + (res.exact ? "" : " (rounded to 4 decimal places)") + ". Multiply by 100 to turn a fraction or decimal into a percentage.", result: res }
           : res.big
@@ -206,7 +215,9 @@ function say(skill, res, input, model) {
         : { title: "Calculation", body: "I could not evaluate that: " + res.error + ".", result: res };
     case "convert":
       return res.ok
-        ? { title: "Unit conversion", body: "**" + res.input + " " + res.from + "** equals **" + (res.feet != null ? res.value + "** (" + res.totalInches + " inches in all" : res.value + " " + res.to + "** (" + res.dim) + "). " + (/^(?:years?|yrs?|months?|decades?|centur(?:y|ies))$/.test(res.from) || /^(?:years?|yrs?|months?|decades?|centur(?:y|ies))$/.test(res.to) ? "This uses the average calendar year of 365.25 days (a month is a twelfth of that), so a particular year or month can differ slightly." : "This uses a fixed conversion factor, so it is precise."), result: res }
+        ? res.subunit
+          ? { title: "Currency subunit", body: "**" + res.input + " " + res.from + "** is **" + res.value + " " + res.to + "**: 100 of the minor unit make one of the major unit, a fixed ratio that needs no exchange rate.", result: res }
+          : { title: "Unit conversion", body: "**" + res.input + " " + res.from + "** equals **" + (res.feet != null ? res.value + "** (" + res.totalInches + " inches in all" : res.value + " " + res.to + "** (" + res.dim) + "). " + (/^(?:years?|yrs?|months?|decades?|centur(?:y|ies))$/.test(res.from) || /^(?:years?|yrs?|months?|decades?|centur(?:y|ies))$/.test(res.to) ? "This uses the average calendar year of 365.25 days (a month is a twelfth of that), so a particular year or month can differ slightly." : "This uses a fixed conversion factor, so it is precise."), result: res }
         : { title: "Unit conversion", body: "I could not convert that: " + res.error + ".", result: res };
     case "codegen": {
       if (res.kind === "program") {
@@ -767,6 +778,8 @@ const FRACTION_DEN = { third: 3, quarter: 4, fourth: 4, fifth: 5, sixth: 6, seve
 const ORDINAL_COUNT = { a: 1, an: 1, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9 };
 const REPHRASE = [
   [/^(?:what's|whats)\s+(?=[-\d$(.]|(?:a|an|one|half|twice|double|triple)\s)/i, "what is "],
+  // "what is the md5 of password" is a hash request, not a definition
+  [/^(?:what(?:'s| is)|whats|give me|compute|calculate)\s+(?:the\s+)?(md5|sha-?1|sha-?256|sha-?512|crc32|base64|hex|rot13|morse|fnv1a?|djb2)\s+(?:hash\s+|checksum\s+|encoding\s+|digest\s+)?(?:of|for)\s+(.+)$/i, (m, alg, rest) => alg.toLowerCase().replace(/^sha-/, "sha") + " of " + rest],
   [new RegExp("^(?:how much is |how many is |what is |how many are )?(" + NUM + "|a|one|half a) dozen\\s*\\??$", "i"), (m, k) => (/^half/i.test(k) ? "0.5" : /^(?:a|one)$/i.test(k) ? "1" : k) + " * 12"],
   [new RegExp("^(?:what is |whats |find )?(?:the |my |your )?average speed (?:if|when) (?:i|you|we|he|she|they|it|a car|the car|a train|the train|a bus|the bus) (?:drive|drives|drove|travel|travels|traveled|travelled|go|goes|went|walk|walks|walked|run|runs|ran|cycle|cycles|cycled|ride|rides|rode|cover|covers|covered) (" + NUM + ")\\s*(km|kilometers|kilometres|miles|mi|m|meters|metres) in (" + NUM + ")\\s*(?:hours?|hrs?|h)\\s*\\??$", "i"), "$1 $2 / $3 hours"],
   // "how long to travel 300 km at 60 km/h" is answered by the everyday travel tool
@@ -926,6 +939,8 @@ const REPHRASE = [
   // definitions
   [/^(?:what is |whats |tell me )?the (?:meaning|definition) of\s+(.+?)\s*\??$/i, "define $1"],
   [/^(?:meaning|definition|def) of\s+(.+?)\s*\??$/i, "define $1"],
+  // "what does 404 mean" / "what does http 503 mean" is an HTTP status lookup, not a dictionary definition
+  [/^what (?:does|do)\s+(?:an?\s+|the\s+)?(?:(?:http|https|status|error|response|code|status code|error code)\s+)*(\d{3})(?:\s+(?:status|error|code|response))*\s+(?:mean|stand for)\s*\??$/i, "http status $1"],
   [/^what (?:does|do)\s+(?:an?\s+|the\s+)?(.+?)\s+(?:mean|stand for)\s*\??$/i, "define $1"],
   [/^what do you mean by\s+(.+?)\s*\??$/i, "define $1"],
   // roman numerals read back to a number (uppercase only: "mix" is a word)

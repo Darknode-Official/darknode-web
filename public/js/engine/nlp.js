@@ -158,7 +158,9 @@ export function synonyms(text) {
 // the router keys on (like "what is", which definitions need).
 // ---------------------------------------------------------------------------
 const UNITS = new Set(["mm", "cm", "m", "km", "meter", "meters", "metre", "metres", "kilometer", "kilometers", "kilometre", "kilometres", "inch", "inches", "in", "ft", "foot", "feet", "yard", "yards", "yd", "mile", "miles", "mi", "kg", "g", "gram", "grams", "kilogram", "kilograms", "mg", "lb", "lbs", "pound", "pounds", "oz", "ounce", "ounces", "tonne", "tonnes", "ton", "tons", "second", "seconds", "sec", "secs", "minute", "minutes", "min", "mins", "hour", "hours", "hr", "hrs", "day", "days", "week", "weeks", "month", "months", "year", "years", "byte", "bytes", "kb", "mb", "gb", "tb", "kilobyte", "kilobytes", "megabyte", "megabytes", "gigabyte", "gigabytes", "celsius", "fahrenheit", "kelvin", "stone", "st", "ml", "milliliter", "milliliters", "millilitre", "millilitres", "l", "liter", "liters", "litre", "litres", "gallon", "gallons", "gal", "quart", "quarts", "pint", "pints", "cup", "cups", "tablespoon", "tablespoons", "tbsp", "teaspoon", "teaspoons", "tsp", "acre", "acres", "hectare", "hectares", "mph", "kph", "knots", "kms", "yds", "kilo", "kilos", "kgs", "gm", "gms", "wk", "wks", "fortnight", "fortnights", "yr", "yrs", "decade", "decades", "century", "centuries", "bit", "bits", "terabyte", "terabytes", "kmph", "kmh", "centigrade"]);
-const isUnit = (w) => UNITS.has(String(w || "").toLowerCase());
+// currency majors and their fixed subunits count as units only for the "how many X in a Y" rewrite
+const CURRENCY_SUB = new Set(["cent", "cents", "penny", "pennies", "pence", "dollar", "dollars", "euro", "euros", "usd", "eur", "gbp", "rupee", "rupees", "paisa", "paise", "peso", "pesos", "centavo", "centavos"]);
+const isUnit = (w) => UNITS.has(String(w || "").toLowerCase()) || CURRENCY_SUB.has(String(w || "").toLowerCase());
 export const UNIT_WORDS = UNITS;
 
 export function naturalize(text) {

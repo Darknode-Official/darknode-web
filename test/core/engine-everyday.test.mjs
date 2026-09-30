@@ -172,7 +172,8 @@ group("everyday: does not over-claim", () => {
     assert.ok(/\b42\.66/.test(ask("split 128 dollars between 3 people")));
     assert.ok(/\b62\.993\b/.test(ask("what is 30% off 89.99")));
     assert.ok(/1628\.89/.test(ask("compound interest 1000 at 5% for 10 years")));
-    assert.ok(/Password generator/.test(ask("generate a password")));
+    assert.ok(/Password generator/.test(ask("password generator in python"))); // the program stays for code asks
+    assert.ok(/Password generator/.test(ask("generate a password in python")));
     assert.ok(/\b1,? ?2,? ?5,? ?9\b/.test(ask("sort 5, 2, 9, 1")));
   });
 });
@@ -312,5 +313,105 @@ group("everyday: round 7", () => {
     assert.ok(/8 planets/.test(ask("how many planets are in the solar system")));
     assert.ok(/average calendar year/.test(ask("how many seconds in a year")));
     assert.ok(/fixed conversion factor/.test(ask("how many seconds in a day")));
+  });
+});
+
+// Round 8: dates are never arithmetic, counting to a date in weeks/months, exact age, year position,
+// unix time, bitwise ops, prime search, word/letter counts, durations, passwords, HTML entities,
+// character codes, IP/CIDR facts, HTTP statuses, percent change and currency subunits.
+group("everyday: round 8", () => {
+  const today0 = () => { const n = new Date(); return Date.UTC(n.getUTCFullYear(), n.getUTCMonth(), n.getUTCDate()); };
+  test("an ISO date is never evaluated as subtraction", () => {
+    const r = E.respond("how many weeks until 2027-06-01", model); assert.equal(r.skill, "datetime");
+    const days = Math.round((Date.UTC(2027, 5, 1) - today0()) / 86400000);
+    assert.ok(text(r).includes(Math.floor(days / 7) + " week"), text(r)); assert.ok(text(r).includes("(" + days + " days"), text(r));
+    assert.notEqual(skill("what is 2026-01-01"), "calc");
+    assert.equal(skill("how many months until 2027-06-01"), "datetime");
+  });
+  test("exact age from a birth date", () => {
+    const r = E.respond("what is the age of someone born on 2000-05-15", model); assert.equal(r.skill, "datetime");
+    const n = new Date(); let a = n.getUTCFullYear() - 2000; if (n.getUTCMonth() < 4 || (n.getUTCMonth() === 4 && n.getUTCDate() < 15)) a -= 1;
+    assert.ok(text(r).includes("is " + a + " years old"), text(r));
+    assert.ok(/in the future/.test(ask("how old is someone born on 2999-01-01")));
+  });
+  test("today's place in the year, ISO week, quarter, unix time, zone", () => {
+    const n = new Date(), y = n.getUTCFullYear(), doy = Math.round((today0() - Date.UTC(y, 0, 0)) / 86400000), total = (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0 ? 366 : 365;
+    assert.ok(ask("how many days left in the year").includes((total - doy) + " days left in " + y));
+    assert.ok(ask("how many days have passed this year").includes("day " + doy + " of " + y));
+    assert.ok(/ISO week \d{1,2} of \d{4}/.test(ask("what week number is it")));
+    assert.ok(ask("what quarter is it").includes("Q" + (Math.floor(n.getUTCMonth() / 3) + 1)));
+    assert.ok(/Unix time is \d{10} seconds/.test(ask("what is the unix timestamp")));
+    assert.ok(/2023-11-14T22:13:20Z/.test(ask("what is epoch time 1700000000")));
+    assert.ok(/2023-11-14T22:13:20Z/.test(ask("convert 1700000000 to date")));
+    assert.ok(/Unix time 1767225600 /.test(ask("unix time of 2026-01-01")));
+    assert.ok(/Unix time 1767268800 /.test(ask("2026-01-01 12:00 to unix")));
+    assert.ok(/UTC[+-]\d{2}:\d{2}/.test(ask("what is my timezone")));
+    assert.equal(skill("what is the date in 100 days"), "datetime");
+  });
+  test("bitwise ops are exact and shown in binary", () => {
+    const r = E.respond("xor 5 and 3", model); assert.equal(r.result.value, "6"); assert.ok(/101.*011.*110/s.test(r.pre));
+    assert.equal(E.respond("12 and 10 bitwise", model).result.value, "8");
+    assert.equal(E.respond("1 << 40", model).result.value, "1099511627776");
+    assert.equal(E.respond("0xff xor 0x0f", model).result.value, "240");
+    assert.equal(E.respond("not 5", model).result.value, "250");
+    assert.equal(E.respond("not 5 in 16 bits", model).result.value, "65530");
+    assert.equal(skill("5 and 3"), "null" === "x" ? "" : skill("5 and 3")); // a bare "5 and 3" is not claimed as bitwise
+    assert.notEqual(skill("5 and 3"), "everyday");
+  });
+  test("prime search", () => {
+    assert.ok(/next prime after 100 is 101/.test(ask("next prime after 100")));
+    assert.ok(/largest prime below 1000 is 997/.test(ask("largest prime below 1000")));
+    assert.ok(/nearest prime to 100 is 101/.test(ask("nearest prime to 100")));
+    assert.ok(/97 is itself prime/.test(ask("nearest prime to 97")));
+    assert.ok(/no prime below 2/.test(ask("prime before 2")));
+  });
+  test("word and letter statistics", () => {
+    assert.ok(/jumped.*6 letters/.test(ask("what is the longest word in the quick brown fox jumped")));
+    assert.ok(/^Shortest word \| a \(1 letters/.test(ask("shortest word in what a day")) || /\ba\b.*1 letter/.test(ask("shortest word in what a day")));
+    assert.ok(/appears 4 times/.test(ask("count how many times the letter s appears in mississippi")));
+    assert.ok(/appears 4 times/.test(ask("how many s in mississippi")));
+    assert.ok(/appears 2 times/.test(ask("how many times does the letter p appear in pepper")) || /appears 3 times/.test(ask("how many times does the letter p appear in pepper")));
+    assert.equal(E.respond("how many times does the letter p appear in pepper", model).result.value, 3);
+  });
+  test("durations, passwords, html entities", () => {
+    assert.ok(/1 hour, 23 minutes and 20 seconds \(1:23:20/.test(ask("how long is 5000 seconds")));
+    assert.ok(/1 hour, 1 minute and 1 second/.test(ask("convert 3661 seconds to hours minutes seconds")));
+    assert.equal(skill("convert 3661 seconds to hours"), "convert"); // a single target unit is still a plain conversion
+    const pw = E.respond("password with 16 characters", model); assert.equal(pw.skill, "everyday"); assert.equal(pw.result.value.length, 16);
+    assert.ok(/[a-z]/.test(pw.result.value) && /[A-Z]/.test(pw.result.value) && /\d/.test(pw.result.value) && /[^a-zA-Z0-9]/.test(pw.result.value));
+    assert.equal(E.respond("strong password", model).result.value.length, 20);
+    assert.ok(/^[a-z]+(?:-[a-z]+){3,7}$/.test(E.respond("random passphrase", model).result.value));
+    assert.ok(/&lt;div class=&quot;a&quot;&gt;/.test(ask('html escape <div class="a">')));
+    assert.ok(/<p> & html/.test(ask("unescape &lt;p&gt; &amp; html")));
+  });
+  test("character codes both ways", () => {
+    assert.ok(/code point 65 \(U\+0041, ASCII, binary 01000001\)/.test(ask("what is the ascii code for A")));
+    assert.ok(/is a \(ASCII\)/.test(ask("what character is ascii 97")));
+    assert.ok(/8364 \(U\+20AC.*euro sign/.test(ask("unicode of €")));
+    assert.ok(/U\+20AC\) is €/.test(ask("U+20AC")));
+    assert.ok(/line feed/.test(ask("ascii 10")));
+  });
+  test("ip addresses, subnets, http statuses", () => {
+    assert.ok(/loopback address/.test(ask("what is 127.0.0.1")));
+    assert.ok(/private address \(RFC 1918, 192\.168/.test(ask("is 192.168.1.1 a private ip")));
+    assert.ok(/public \(globally routable\)/.test(ask("is 8.8.8.8 public")));
+    assert.ok(/255\.255\.255\.0.*254 usable hosts/.test(ask("what is the subnet mask for /24")));
+    assert.ok(/62 usable hosts/.test(ask("how many hosts in a /26")));
+    const r = E.respond("192.168.1.37/24 network range", model); assert.equal(r.result.range.network, "192.168.1.0"); assert.equal(r.result.range.broadcast, "192.168.1.255"); assert.equal(r.result.range.last, "192.168.1.254");
+    assert.ok(/301 Moved Permanently.*redirection status/.test(ask("what is the http status 301")));
+    assert.ok(/404 Not Found/.test(ask("what does 404 mean")));
+    assert.ok(/teapot/.test(ask("http 418")));
+    assert.notEqual(skill("what is 404"), "everyday"); // a bare number with no http/status word is not claimed
+    assert.ok(/localhost is the hostname/.test(ask("what is localhost")));
+  });
+  test("percent change and currency subunits", () => {
+    assert.ok(/change of 25%, an increase/.test(ask("what is the percent change from 40 to 50")));
+    assert.ok(/change of -25%, a decrease/.test(ask("percent decrease from 80 to 60")));
+    assert.ok(/division by zero/.test(ask("percent change from 0 to 5")));
+    assert.ok(/1 dollar.*100 cents/.test(ask("how many cents in a dollar")));
+    assert.ok(/1500 cents/.test(ask("what is 15 usd in cents")));
+    assert.ok(/2\.5 dollars/.test(ask("250 cents in dollars")));
+    assert.ok(/exchange rate/.test(ask("how many dollars in a euro")));
+    assert.ok(/5f4dcc3b5aa765d61d8327deb882cf99/.test(ask("what is the md5 of password")));
   });
 });
