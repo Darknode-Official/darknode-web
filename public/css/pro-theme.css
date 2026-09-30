@@ -13680,7 +13680,8 @@ html[data-style="pro"] .empty-state {
 /* ====================================================================
    PROFESSIONAL (LIGHT) FIX-UPS — September 2026, pass 3
    Default pro style without a skin. Scoped with :not([data-skin="command"])
-   so the navy Command Center skin (theme-command.css) keeps its own rules.
+   (theme-command.css was the retired Command Center skin; data-skin is never set now, so these
+   :not([data-skin]) guards are inert and can be dropped in a later cleanup.)
    a. Sidebar group headers  b. Sidebar header  c. Dashboard hero  d. Stat row
    ==================================================================== */
 

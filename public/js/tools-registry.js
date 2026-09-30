@@ -1,8 +1,10 @@
 // Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 // Central registry for the mini-tools. TOOL_CATS defines the categories (name +
 // accent colour, matching the console colour system). Each category's tools live
-// in js/tools/<file>.js and are aggregated here. console-nav.js reads this to add
-// the tool categories to the Services menu; mini-tools.js reads it to render.
+// in js/tools/<file>.js and are aggregated here. mini-tools.js reads this to render.
+// The console shell (auth.js, console-nav.js) reads js/tools-manifest.js instead, a
+// generated id/name/cat list, so the ~780 KB of tool code loads only when the Toolbox
+// opens. After changing TOOL_CATS or any tool id/name: node tools/tools-manifest-build.mjs
 import { TOOLS as encoding } from "/js/tools/encoding.js?v=20260926h";
 import { TOOLS as hashing } from "/js/tools/hashing.js?v=20260926h";
 import { TOOLS as generators } from "/js/tools/generators.js?v=20260926h";
