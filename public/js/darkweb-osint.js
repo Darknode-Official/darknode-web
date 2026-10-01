@@ -236,7 +236,7 @@ export function renderDarkwebOsint(main) {
         tags += '<span class="dw-tag">' + esc(p.tags[t]) + '</span>';
       }
       items +=
-        '<div class="dw-paste-card">' +
+        '<div class="dw-paste-card" data-site="' + esc(p.site) + '">' +
         '<div class="dw-paste-header">' +
         '<strong>' + esc(p.title) + '</strong>' +
         '<span class="dw-paste-time">' + esc(p.time) + '</span>' +
@@ -249,8 +249,8 @@ export function renderDarkwebOsint(main) {
         '</div>';
     }
     return '<div class="dw-paste-controls">' +
-      '<input class="dw-input" placeholder="Search pastes (keyword, email, domain...)">' +
-      '<select class="dw-select"><option>All Sites</option><option>DeepPaste</option><option>PrivBin</option><option>ZeroPaste</option><option>OnionPaste</option></select>' +
+      '<input class="dw-input" id="dw-paste-q" placeholder="Search pastes (keyword, email, domain...)">' +
+      '<select class="dw-select" id="dw-paste-site"><option>All Sites</option><option>DeepPaste</option><option>PrivBin</option><option>ZeroPaste</option><option>OnionPaste</option></select>' +
       '</div>' +
       '<div class="dw-paste-list">' + items + '</div>';
   }
@@ -261,7 +261,7 @@ export function renderDarkwebOsint(main) {
       var s = ONION_SERVICES[i];
       var statusCls = s.status === "Online" ? "dw-online" : "dw-offline";
       rows +=
-        '<tr>' +
+        '<tr class="dw-onion-row" data-cat="' + esc(s.category) + '">' +
         '<td><strong>' + esc(s.name) + '</strong><div class="dw-onion-url mono">' + esc(s.url) + '</div></td>' +
         '<td>' + esc(s.category) + '</td>' +
         '<td><span class="' + statusCls + '">' + esc(s.status) + '</span></td>' +
@@ -270,8 +270,8 @@ export function renderDarkwebOsint(main) {
         '</tr>';
     }
     return '<div class="dw-onion-controls">' +
-      '<input class="dw-input" placeholder="Search .onion services...">' +
-      '<select class="dw-select"><option>All Categories</option><option>Forum</option><option>Market</option><option>Paste</option><option>Search</option><option>Leak Site</option></select>' +
+      '<input class="dw-input" id="dw-onion-q" placeholder="Search .onion services...">' +
+      '<select class="dw-select" id="dw-onion-cat"><option>All Categories</option><option>Forum</option><option>Market</option><option>Paste</option><option>Search</option><option>Leak Site</option></select>' +
       '</div>' +
       '<div class="dw-table-wrap"><table class="dw-table">' +
       '<thead><tr><th>Service</th><th>Category</th><th>Status</th><th>Last Seen</th><th>Description</th></tr></thead>' +
@@ -561,6 +561,43 @@ export function renderDarkwebOsint(main) {
     if (emailBtn) emailBtn.onclick = checkEmail;
     var cryptoBtn = main.querySelector("#dw-crypto-trace");
     if (cryptoBtn) cryptoBtn.onclick = traceCrypto;
+    // Submit email/crypto lookups on Enter, not just the button.
+    var emailInput = main.querySelector("#dw-email-input");
+    if (emailInput) emailInput.onkeydown = function(e) { if (e.key === "Enter") checkEmail(); };
+    var addrInput = main.querySelector("#dw-crypto-addr");
+    if (addrInput) addrInput.onkeydown = function(e) { if (e.key === "Enter") traceCrypto(); };
+
+    // Paste Monitor: live-filter the card list by keyword + site (controls were inert).
+    var pq = main.querySelector("#dw-paste-q"), ps = main.querySelector("#dw-paste-site");
+    if (pq || ps) {
+      var filterPastes = function() {
+        var q = (pq && pq.value || "").toLowerCase().trim();
+        var site = (ps && ps.value) || "All Sites";
+        main.querySelectorAll(".dw-paste-card").forEach(function(card) {
+          var matchQ = !q || card.textContent.toLowerCase().indexOf(q) >= 0;
+          var matchSite = site === "All Sites" || (card.getAttribute("data-site") === site);
+          card.style.display = (matchQ && matchSite) ? "" : "none";
+        });
+      };
+      if (pq) pq.oninput = filterPastes;
+      if (ps) ps.onchange = filterPastes;
+    }
+
+    // Onion Scanner: live-filter the service rows by keyword + category.
+    var oq = main.querySelector("#dw-onion-q"), oc = main.querySelector("#dw-onion-cat");
+    if (oq || oc) {
+      var filterOnion = function() {
+        var q = (oq && oq.value || "").toLowerCase().trim();
+        var cat = (oc && oc.value) || "All Categories";
+        main.querySelectorAll(".dw-onion-row").forEach(function(row) {
+          var matchQ = !q || row.textContent.toLowerCase().indexOf(q) >= 0;
+          var matchCat = cat === "All Categories" || (row.getAttribute("data-cat") === cat);
+          row.style.display = (matchQ && matchCat) ? "" : "none";
+        });
+      };
+      if (oq) oq.oninput = filterOnion;
+      if (oc) oc.onchange = filterOnion;
+    }
   }
 
   render();
