@@ -37,7 +37,7 @@ body.landing :is(code, kbd, pre, .mono, [class*="mono"]) {
 }
 
 /* ---- Primary CTAs -> AWS orange (matches the console) ---- */
-body.landing .btn:not(.ghost):not(.os-dl) {
+body.landing .btn:not(.ghost) {
   background: #ff9900 !important;
   border: 1px solid #ff9900 !important;
   color: #0f141a !important;
@@ -49,7 +49,7 @@ body.landing .btn:not(.ghost):not(.os-dl) {
   box-shadow: none !important;
   background-image: none !important;
 }
-body.landing .btn:not(.ghost):not(.os-dl):hover {
+body.landing .btn:not(.ghost):hover {
   background: #fa6f00 !important;
   border-color: #fa6f00 !important;
   color: #0f141a !important;
@@ -111,8 +111,13 @@ body.landing :is(.os-card, .bento-card, .price-card, .lab-card, .plab-card,
   box-shadow: 0 1px 4px rgba(0, 28, 36, .12) !important;
   transform: none !important;
 }
-/* featured price card keeps emphasis, AWS-style orange edge */
+/* featured price card keeps emphasis, AWS-style orange edge + matching badge */
 body.landing .price-card.featured {
+  border-color: #ff9900 !important;
+}
+body.landing .price-badge {
+  background: #ff9900 !important;
+  color: #0f141a !important;
   border-color: #ff9900 !important;
 }
 
