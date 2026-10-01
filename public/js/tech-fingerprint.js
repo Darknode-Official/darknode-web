@@ -39,7 +39,7 @@ export function renderTechFingerprint(container) {
   h += '<div style="background:#0c1020;border:1px solid #1a2a44;border-radius:6px;padding:16px;margin-bottom:16px;">';
   h += '<div style="display:flex;gap:8px;">';
   h += '<input id="tf-url" style="flex:1;background:#080c14;border:1px solid #1a2a44;border-radius:4px;color:#c8d6e5;font-family:monospace;font-size:12px;padding:8px 12px;" placeholder="https://example.com">';
-  h += '<button onclick="_tfScan()" style="background:#00aaff22;color:#00aaff;border:1px solid #00aaff44;padding:8px 20px;font-family:monospace;font-size:11px;cursor:pointer;border-radius:4px;">FINGERPRINT</button>';
+  h += '<button onclick="_tfScan()" style="background:#00aaff22;color:#00aaff;border:1px solid #00aaff44;padding:8px 20px;font-family:monospace;font-size:11px;cursor:pointer;border-radius:4px;">Fingerprint</button>';
   h += '</div>';
   h += '<div style="color:#3a5a7a;font-size:9px;margin-top:6px;">Analyzes HTTP response headers to detect technologies. Limited by CORS — works best with sites that allow cross-origin requests.</div>';
   h += '</div>';

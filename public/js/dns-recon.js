@@ -54,8 +54,8 @@ export function renderDNSRecon(container) {
   // Search
   h += '<div style="display:flex;gap:8px;margin-bottom:16px;">';
   h += '<input id="dns-domain" type="text" placeholder="Enter domain (e.g. example.com)" style="flex:1;background:#0c1525;border:1px solid #1a3a5c;border-radius:4px;padding:10px 14px;color:#c8d6e5;font-family:monospace;font-size:13px;outline:none;" onkeydown="if(event.key===\'Enter\')_dnsFullScan()">';
-  h += '<button onclick="_dnsFullScan()" style="background:#ffaa0022;color:#ffaa00;border:1px solid #ffaa0044;border-radius:4px;padding:10px 16px;font-family:monospace;font-size:12px;cursor:pointer;letter-spacing:1px;font-weight:bold;">ALL RECORDS</button>';
-  h += '<button onclick="_dnsSubBrute()" style="background:#aa66ff22;color:#aa66ff;border:1px solid #aa66ff44;border-radius:4px;padding:10px 16px;font-family:monospace;font-size:12px;cursor:pointer;letter-spacing:1px;font-weight:bold;">SUBDOMAIN SCAN</button>';
+  h += '<button onclick="_dnsFullScan()" style="background:#ffaa0022;color:#ffaa00;border:1px solid #ffaa0044;border-radius:4px;padding:10px 16px;font-family:monospace;font-size:12px;cursor:pointer;letter-spacing:1px;font-weight:bold;">All Records</button>';
+  h += '<button onclick="_dnsSubBrute()" style="background:#aa66ff22;color:#aa66ff;border:1px solid #aa66ff44;border-radius:4px;padding:10px 16px;font-family:monospace;font-size:12px;cursor:pointer;letter-spacing:1px;font-weight:bold;">Subdomain Scan</button>';
   h += '</div>';
 
   h += '<div id="dns-results" style="min-height:300px;">';
@@ -252,7 +252,7 @@ function _dnsRenderSubResults(container, domain, found) {
   h += '<div style="background:#0c1020;border:1px solid #1a2a44;border-radius:6px;padding:16px;">';
   h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">';
   h += '<div style="color:#aa66ff;font-size:12px;letter-spacing:1px;">' + found.length + ' SUBDOMAINS RESOLVED</div>';
-  h += '<button onclick="navigator.clipboard.writeText(\'' + found.map(function(f) { return f.name; }).join('\\n') + '\');this.textContent=\'COPIED!\';var b=this;setTimeout(function(){b.textContent=\'COPY ALL\';},1500);" style="background:#aa66ff22;color:#aa66ff;border:1px solid #aa66ff44;border-radius:4px;padding:4px 12px;font-family:monospace;font-size:10px;cursor:pointer;">COPY ALL</button>';
+  h += '<button onclick="navigator.clipboard.writeText(\'' + found.map(function(f) { return f.name; }).join('\\n') + '\');this.textContent=\'COPIED!\';var b=this;setTimeout(function(){b.textContent=\'COPY ALL\';},1500);" style="background:#aa66ff22;color:#aa66ff;border:1px solid #aa66ff44;border-radius:4px;padding:4px 12px;font-family:monospace;font-size:10px;cursor:pointer;">Copy All</button>';
   h += '</div>';
 
   h += '<div style="color:#556;font-size:9px;margin-bottom:10px;">' + COMMON_SUBDOMAINS.length + ' subdomains tested against ' + esc(domain) + ' via Google DoH</div>';

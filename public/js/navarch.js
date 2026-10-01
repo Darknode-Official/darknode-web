@@ -469,7 +469,7 @@ function panelAis(host) {
     <div class="muted" style="font-size:11.5px;margin-bottom:6px">Format: MMSI,LAT,LON,SOG(kn),COG,TIMESTAMP — one report per line</div>
     <textarea class="nv-ta" id="nv-ais-in">${esc(AIS_SAMPLE_CLEAN)}</textarea>
     <div style="display:flex;flex-wrap:wrap;gap:8px;margin:10px 0">
-      <button class="btn sm" id="nv-ais-scan">SCAN</button>
+      <button class="btn sm" id="nv-ais-scan">Scan</button>
       <button class="btn ghost sm" id="nv-ais-spoof">LOAD SPOOFED SAMPLE</button>
       <button class="btn ghost sm" id="nv-ais-clean">LOAD CLEAN SAMPLE</button>
     </div>

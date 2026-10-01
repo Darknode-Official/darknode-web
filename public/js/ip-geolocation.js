@@ -29,7 +29,7 @@ export function renderIPGeolocation(container) {
   h += '<h2 style="margin:0;font-size:20px;color:#ff6644;letter-spacing:2px;">IP GEOLOCATION</h2>';
   h += '<div style="color:#4a6a8a;font-size:11px;letter-spacing:1px;margin-top:4px;">Locate &bull; Hosting / Datacenter Check &bull; ASN Analysis &bull; Bulk Lookup</div>';
   h += '</div>';
-  h += '<button onclick="_ipLookupSelf()" style="background:#ff664422;color:#ff6644;border:1px solid #ff664444;border-radius:4px;padding:8px 16px;font-family:monospace;font-size:11px;cursor:pointer;letter-spacing:1px;">MY IP</button>';
+  h += '<button onclick="_ipLookupSelf()" style="background:#ff664422;color:#ff6644;border:1px solid #ff664444;border-radius:4px;padding:8px 16px;font-family:monospace;font-size:11px;cursor:pointer;letter-spacing:1px;">My IP</button>';
   h += '</div>';
 
   // Tabs
@@ -42,7 +42,7 @@ export function renderIPGeolocation(container) {
   h += '<div id="ip-single-panel">';
   h += '<div style="display:flex;gap:8px;margin-bottom:16px;">';
   h += '<input id="ip-input" type="text" placeholder="Enter IP address (e.g. 8.8.8.8)" style="flex:1;background:#0c1525;border:1px solid #1a3a5c;border-radius:4px;padding:10px 14px;color:#c8d6e5;font-family:monospace;font-size:13px;outline:none;" onkeydown="if(event.key===\'Enter\')_ipLookup()">';
-  h += '<button onclick="_ipLookup()" style="background:#ff664422;color:#ff6644;border:1px solid #ff664444;border-radius:4px;padding:10px 20px;font-family:monospace;font-size:12px;cursor:pointer;letter-spacing:1px;font-weight:bold;">LOCATE</button>';
+  h += '<button onclick="_ipLookup()" style="background:#ff664422;color:#ff6644;border:1px solid #ff664444;border-radius:4px;padding:10px 20px;font-family:monospace;font-size:12px;cursor:pointer;letter-spacing:1px;font-weight:bold;">Locate</button>';
   h += '</div>';
   h += '<div id="ip-result" style="min-height:300px;background:#0c1020;border:1px solid #1a2a44;border-radius:6px;padding:20px;">';
   h += '<div style="text-align:center;color:#4a6a8a;padding:60px 20px;"><div style="font-size:36px;margin-bottom:10px;opacity:0.3;"></div><div style="font-size:13px;">Enter an IP address to geolocate</div></div>';
@@ -51,7 +51,7 @@ export function renderIPGeolocation(container) {
   // Bulk lookup (hidden by default)
   h += '<div id="ip-bulk-panel" style="display:none;">';
   h += '<textarea id="ip-bulk-input" placeholder="Paste IPs — one per line (max 20)" style="width:100%;height:120px;background:#0c1525;border:1px solid #1a3a5c;border-radius:4px;padding:10px 14px;color:#c8d6e5;font-family:monospace;font-size:12px;outline:none;resize:vertical;margin-bottom:8px;box-sizing:border-box;"></textarea>';
-  h += '<button onclick="_ipBulkLookup()" style="background:#ff664422;color:#ff6644;border:1px solid #ff664444;border-radius:4px;padding:8px 20px;font-family:monospace;font-size:12px;cursor:pointer;letter-spacing:1px;margin-bottom:16px;">LOOKUP ALL</button>';
+  h += '<button onclick="_ipBulkLookup()" style="background:#ff664422;color:#ff6644;border:1px solid #ff664444;border-radius:4px;padding:8px 20px;font-family:monospace;font-size:12px;cursor:pointer;letter-spacing:1px;margin-bottom:16px;">Lookup All</button>';
   h += '<div id="ip-bulk-result"></div>';
   h += '</div>';
 

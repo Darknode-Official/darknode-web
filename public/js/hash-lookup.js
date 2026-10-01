@@ -65,7 +65,7 @@ function _hlTabIdentify(el) {
     '<div style="color:#00aaff;font-size:12px;margin-bottom:8px;">PASTE A HASH TO IDENTIFY</div>' +
     '<div style="display:flex;gap:8px;">' +
     '<input id="hl-hash-input" style="flex:1;background:#080c14;border:1px solid #1a2a44;border-radius:4px;color:#c8d6e5;font-family:monospace;font-size:12px;padding:8px 12px;" placeholder="e.g. 5d41402abc4b2a76b9719d911017c592">' +
-    '<button onclick="_hlIdentify()" style="background:#00aaff22;color:#00aaff;border:1px solid #00aaff44;padding:8px 14px;font-family:monospace;font-size:11px;cursor:pointer;border-radius:4px;">IDENTIFY</button>' +
+    '<button onclick="_hlIdentify()" style="background:#00aaff22;color:#00aaff;border:1px solid #00aaff44;padding:8px 14px;font-family:monospace;font-size:11px;cursor:pointer;border-radius:4px;">Identify</button>' +
     '</div></div>' +
     '<div id="hl-id-results" style="margin-top:12px;"></div>';
 }
@@ -108,7 +108,7 @@ function _hlTabCompute(el) {
     '<div style="background:#0c1020;border:1px solid #1a2a44;border-radius:6px;padding:16px;">' +
     '<div style="color:#00aaff;font-size:12px;margin-bottom:8px;">COMPUTE HASHES</div>' +
     '<textarea id="hl-text-input" style="width:100%;height:80px;background:#080c14;border:1px solid #1a2a44;border-radius:4px;color:#c8d6e5;font-family:monospace;font-size:12px;padding:10px;resize:vertical;box-sizing:border-box;" placeholder="Enter text to hash..."></textarea>' +
-    '<button onclick="_hlComputeAll()" style="background:#00aaff22;color:#00aaff;border:1px solid #00aaff44;padding:8px 14px;font-family:monospace;font-size:11px;cursor:pointer;border-radius:4px;margin-top:6px;">HASH IT</button>' +
+    '<button onclick="_hlComputeAll()" style="background:#00aaff22;color:#00aaff;border:1px solid #00aaff44;padding:8px 14px;font-family:monospace;font-size:11px;cursor:pointer;border-radius:4px;margin-top:6px;">Hash It</button>' +
     '</div>' +
     '<div id="hl-compute-results" style="margin-top:12px;"></div>';
 }
@@ -149,7 +149,7 @@ function _hlRenderComputed(el, input, hashes) {
     h += '<div style="color:#00aaff;font-size:10px;letter-spacing:1px;margin-bottom:2px;">' + esc(keys[i]) + '</div>';
     h += '<div style="display:flex;gap:6px;align-items:center;">';
     h += '<code style="flex:1;background:#080c14;border:1px solid #1a2a44;border-radius:3px;padding:6px 8px;font-size:11px;color:#00ff88;word-break:break-all;">' + esc(hashes[keys[i]]) + '</code>';
-    h += '<button onclick="navigator.clipboard.writeText(\'' + esc(hashes[keys[i]]) + '\')" style="background:#111a24;border:1px solid #1a3050;color:#4a6a8a;padding:4px 8px;font-family:monospace;font-size:9px;cursor:pointer;border-radius:4px;flex-shrink:0;">COPY</button>';
+    h += '<button onclick="navigator.clipboard.writeText(\'' + esc(hashes[keys[i]]) + '\')" style="background:#111a24;border:1px solid #1a3050;color:#4a6a8a;padding:4px 8px;font-family:monospace;font-size:9px;cursor:pointer;border-radius:4px;flex-shrink:0;">Copy</button>';
     h += '</div></div>';
   }
   h += '</div>';
@@ -210,7 +210,7 @@ window._hlHashFile = function(file) {
               h += '<div style="color:#00aaff;font-size:10px;letter-spacing:1px;margin-bottom:2px;">' + esc(keys[i]) + '</div>';
               h += '<div style="display:flex;gap:6px;align-items:center;">';
               h += '<code style="flex:1;background:#080c14;border:1px solid #1a2a44;border-radius:3px;padding:6px 8px;font-size:10px;color:#00ff88;word-break:break-all;">' + esc(hashes[keys[i]]) + '</code>';
-              h += '<button onclick="navigator.clipboard.writeText(\'' + esc(hashes[keys[i]]) + '\')" style="background:#111a24;border:1px solid #1a3050;color:#4a6a8a;padding:4px 8px;font-family:monospace;font-size:9px;cursor:pointer;border-radius:4px;flex-shrink:0;">COPY</button>';
+              h += '<button onclick="navigator.clipboard.writeText(\'' + esc(hashes[keys[i]]) + '\')" style="background:#111a24;border:1px solid #1a3050;color:#4a6a8a;padding:4px 8px;font-family:monospace;font-size:9px;cursor:pointer;border-radius:4px;flex-shrink:0;">Copy</button>';
               h += '</div></div>';
             }
             h += '</div>';
@@ -229,7 +229,7 @@ function _hlTabCompare(el) {
     '<div style="color:#00aaff;font-size:12px;margin-bottom:8px;">COMPARE HASHES</div>' +
     '<input id="hl-cmp-a" style="width:100%;background:#080c14;border:1px solid #1a2a44;border-radius:4px;color:#c8d6e5;font-family:monospace;font-size:11px;padding:8px 12px;margin-bottom:6px;box-sizing:border-box;" placeholder="Hash A">' +
     '<input id="hl-cmp-b" style="width:100%;background:#080c14;border:1px solid #1a2a44;border-radius:4px;color:#c8d6e5;font-family:monospace;font-size:11px;padding:8px 12px;margin-bottom:6px;box-sizing:border-box;" placeholder="Hash B">' +
-    '<button onclick="_hlCompare()" style="background:#00aaff22;color:#00aaff;border:1px solid #00aaff44;padding:8px 14px;font-family:monospace;font-size:11px;cursor:pointer;border-radius:4px;">COMPARE</button>' +
+    '<button onclick="_hlCompare()" style="background:#00aaff22;color:#00aaff;border:1px solid #00aaff44;padding:8px 14px;font-family:monospace;font-size:11px;cursor:pointer;border-radius:4px;">Compare</button>' +
     '</div>' +
     '<div id="hl-cmp-result" style="margin-top:12px;"></div>';
 }

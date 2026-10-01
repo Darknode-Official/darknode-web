@@ -29,7 +29,7 @@ export function renderSSLInspector(container) {
   // Search bar
   h += '<div style="display:flex;gap:8px;margin-bottom:20px;">';
   h += '<input id="ssl-domain" type="text" placeholder="Enter domain (e.g. example.com)" style="flex:1;background:#0c1525;border:1px solid #1a3a5c;border-radius:4px;padding:10px 14px;color:#c8d6e5;font-family:monospace;font-size:13px;outline:none;" onkeydown="if(event.key===\'Enter\')_sslSearch()">';
-  h += '<button onclick="_sslSearch()" style="background:#00d4ff22;color:#00d4ff;border:1px solid #00d4ff44;border-radius:4px;padding:10px 20px;font-family:monospace;font-size:12px;cursor:pointer;letter-spacing:1px;font-weight:bold;">SEARCH</button>';
+  h += '<button onclick="_sslSearch()" style="background:#00d4ff22;color:#00d4ff;border:1px solid #00d4ff44;border-radius:4px;padding:10px 20px;font-family:monospace;font-size:12px;cursor:pointer;letter-spacing:1px;font-weight:bold;">Search</button>';
   h += '</div>';
 
   // Tabs
@@ -179,7 +179,7 @@ function _sslRenderSubdomains(el) {
   var h = '';
   h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">';
   h += '<div style="color:#00ff88;font-size:12px;letter-spacing:1px;">' + subs.length + ' UNIQUE SUBDOMAINS DISCOVERED</div>';
-  h += '<button onclick="_sslCopySubdomains()" style="background:#00ff8822;color:#00ff88;border:1px solid #00ff8844;border-radius:4px;padding:4px 12px;font-family:monospace;font-size:10px;cursor:pointer;">COPY ALL</button>';
+  h += '<button onclick="_sslCopySubdomains()" style="background:#00ff8822;color:#00ff88;border:1px solid #00ff8844;border-radius:4px;padding:4px 12px;font-family:monospace;font-size:10px;cursor:pointer;">Copy All</button>';
   h += '</div>';
 
   if (subs.length === 0) {
@@ -298,7 +298,7 @@ function _sslCertStats() {
 }
 
 function _sslGraphBtnHTML() {
-  return '<button onclick="_sslToGraph(this)" style="background:#00aaff22;color:#00aaff;border:1px solid #00aaff44;border-radius:4px;padding:4px 12px;font-family:monospace;font-size:10px;cursor:pointer;letter-spacing:1px;">SEND TO SECURITY GRAPH</button>';
+  return '<button onclick="_sslToGraph(this)" style="background:#00aaff22;color:#00aaff;border:1px solid #00aaff44;border-radius:4px;padding:4px 12px;font-family:monospace;font-size:10px;cursor:pointer;letter-spacing:1px;">Send to Security Graph</button>';
 }
 
 // Live crt.sh data: root DOMAIN, currently valid certificates (newest 50) as CERTIFICATE

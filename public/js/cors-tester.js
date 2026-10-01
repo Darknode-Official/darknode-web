@@ -16,7 +16,7 @@ export function renderCorsTester(container) {
   h += '<select id="cors-method" style="background:#080c14;border:1px solid #1a2a44;border-radius:4px;color:#c8d6e5;font-family:monospace;font-size:11px;padding:8px;">';
   h += '<option value="GET">GET</option><option value="POST">POST</option><option value="PUT">PUT</option><option value="DELETE">DELETE</option><option value="OPTIONS">OPTIONS</option>';
   h += '</select>';
-  h += '<button onclick="_corsTest()" style="background:#00aaff22;color:#00aaff;border:1px solid #00aaff44;padding:8px 16px;font-family:monospace;font-size:11px;cursor:pointer;border-radius:4px;">TEST</button>';
+  h += '<button onclick="_corsTest()" style="background:#00aaff22;color:#00aaff;border:1px solid #00aaff44;padding:8px 16px;font-family:monospace;font-size:11px;cursor:pointer;border-radius:4px;">Test</button>';
   h += '</div>';
 
   h += '<div style="display:flex;gap:8px;margin-bottom:8px;">';

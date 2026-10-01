@@ -41,8 +41,8 @@ export function renderNetworkScanner(container) {
   h += '<div style="background:#0c1020;border:1px solid #1a2a44;border-radius:6px;padding:16px;margin-bottom:16px;">';
   h += '<div style="display:flex;gap:8px;margin-bottom:10px;">';
   h += '<input id="ns-target" style="flex:1;background:#080c14;border:1px solid #1a2a44;border-radius:4px;color:#c8d6e5;font-family:monospace;font-size:12px;padding:8px 12px;" placeholder="example.com or IP address">';
-  h += '<button onclick="_nsQuickScan()" style="background:#00aaff22;color:#00aaff;border:1px solid #00aaff44;padding:8px 16px;font-family:monospace;font-size:11px;cursor:pointer;border-radius:4px;">QUICK SCAN</button>';
-  h += '<button onclick="_nsFullScan()" style="background:#ff444422;color:#ff4444;border:1px solid #ff444444;padding:8px 16px;font-family:monospace;font-size:11px;cursor:pointer;border-radius:4px;">FULL SCAN</button>';
+  h += '<button onclick="_nsQuickScan()" style="background:#00aaff22;color:#00aaff;border:1px solid #00aaff44;padding:8px 16px;font-family:monospace;font-size:11px;cursor:pointer;border-radius:4px;">Quick Scan</button>';
+  h += '<button onclick="_nsFullScan()" style="background:#ff444422;color:#ff4444;border:1px solid #ff444444;padding:8px 16px;font-family:monospace;font-size:11px;cursor:pointer;border-radius:4px;">Full Scan</button>';
   h += '</div>';
   h += '<div style="color:#4a6a8a;font-size:9px;">Quick scan checks common web ports (80, 443, 8080, 8443). Full scan checks all 23 common ports. Uses HTTP/HTTPS fetch timing.</div>';
   h += '</div>';
