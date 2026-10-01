@@ -1524,7 +1524,7 @@ function renderApp(user) {
     else if (sec === "apitester") { import("/js/api-tester.js").then(m => m.renderAPITester(main)); }
     else if (sec === "sandbox") { import("/js/malware-sandbox.js").then(m => m.renderMalwareSandbox(main)); }
     else if (sec === "compliance") { import("/js/compliance-checker.js?v=20260924a").then(m => m.renderComplianceChecker(main)); }
-    else if (sec === "attacksim") { import("/js/attack-simulator.js").then(m => m.renderAttackSimulator(main)); }
+    else if (sec === "attacksim") { import("/js/attack-simulator.js?v=20261001a").then(m => m.renderAttackSimulator(main)); }
     else if (sec === "dns") { import("/js/dns-toolkit.js").then(m => m.renderDNSToolkit(main)); }
     else if (sec === "subdomains") { import("/js/subdomain-finder.js?v=20260923d").then(m => m.renderSubdomainFinder(main)); }
     else if (sec === "mobilesec") { import("/js/mobile-security-lab.js").then(m => m.renderMobileSecurityLab(main)); }
@@ -1532,7 +1532,7 @@ function renderApp(user) {
     else if (sec === "wirelesslab") { import("/js/wireless-lab.js").then(m => m.renderWirelessLab(main)); }
     else if (sec === "pentestconsole") { import("/js/pentest-console.js?v=20260928a").then(m => m.renderPentestConsole(main)); }
     else if (sec === "reveng") { import("/js/reverse-engineering.js").then(m => m.renderReverseEngineering(main)); }
-    else if (sec === "darkwebosint") { import("/js/darkweb-osint.js").then(m => m.renderDarkwebOsint(main)); }
+    else if (sec === "darkwebosint") { import("/js/darkweb-osint.js?v=20261001a").then(m => m.renderDarkwebOsint(main)); }
     else if (sec === "cyberrange") { import("/js/cyber-range.js").then(m => m.renderCyberRange(main)); }
     else if (sec === "prometheus") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading PROMETHEUS...</p>"; const _s=sec; import("/js/prometheus-web.js?v=20260924c").then(m => { if(curSec!==_s)return; m.renderPrometheus(main); _prevCleanup = m.cleanupPrometheus; }); }
     else if (sec === "sentineleye") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading SENTINEL EYE...</p>"; if(!document.querySelector('script[src="/js/threat-api.js"]')){var s1=document.createElement("script");s1.src="/js/threat-api.js";document.head.appendChild(s1)}if(!document.querySelector('script[src="/js/threat-map.js?v=20260930a"]')){var s2=document.createElement("script");s2.src="/js/threat-map.js?v=20260930a";document.head.appendChild(s2)} const _s=sec; import("/js/sentinel-eye.js?v=20260930a").then(m => { if(curSec!==_s)return; m.renderSentinelEye(main); _prevCleanup = m.cleanupSentinelEye; }); }

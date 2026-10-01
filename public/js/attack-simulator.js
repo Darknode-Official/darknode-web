@@ -413,6 +413,9 @@ function renderScenarioDetail(main, idx) {
     var linesDiv = main.querySelector('#as-exec-lines');
     var stepIdx = 0;
     function showStep() {
+      // If the view was re-rendered or navigated away from, linesDiv is detached;
+      // stop the chain so a stale timer can't clobber whatever now owns `main`.
+      if (!linesDiv.isConnected) return;
       if (stepIdx >= steps.length) {
         var doneDiv = document.createElement('div');
         doneDiv.className = 'as-exec-line as-exec-done';
@@ -420,7 +423,7 @@ function renderScenarioDetail(main, idx) {
         linesDiv.appendChild(doneDiv);
         executedPhases[phaseIdx] = true;
         executingPhase = -1;
-        setTimeout(function() { render(); }, 800);
+        setTimeout(function() { if (linesDiv.isConnected) render(); }, 800);
         return;
       }
       var lineDiv = document.createElement('div');
