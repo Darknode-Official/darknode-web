@@ -260,11 +260,14 @@ export const TOOLS = [
     inputs: [col(), { k: "mode", label: "Direction", type: "select", opts: ["RGB -> HSL", "HSL -> RGB"], value: "RGB -> HSL" }],
     run(v) {
       if (isEmpty(v.c)) return "";
-      const c = parse(v.c); if (!c) return { error: ERR };
       if (v.mode === "HSL -> RGB") {
-        const [h, s, l] = rgbToHsl(c.r, c.g, c.b);
-        return rgbStr(...hslToRgb(h, s, l));
+        // Input is HSL here (e.g. "210, 80, 50") — parse() only understands
+        // hex/rgb()/names, so parsing it as a color and round-tripping was a
+        // no-op. Read the three HSL numbers directly, like col-hsl-rgb does.
+        const n = nums(v.c); if (n.length < 3 || n.some(isNaN)) return { error: "Enter HSL like 210, 80, 50." };
+        return rgbStr(...hslToRgb(n[0], n[1], n[2]));
       }
+      const c = parse(v.c); if (!c) return { error: ERR };
       return hslStr(c.r, c.g, c.b);
     }
   },
