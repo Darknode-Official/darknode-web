@@ -28,7 +28,7 @@ export function renderHttpProbe(container) {
   h += '<div style="background:#0c1020;border:1px solid #1a2a44;border-radius:6px;padding:16px;margin-bottom:16px;">';
   h += '<div style="display:flex;gap:8px;margin-bottom:8px;">';
   h += '<input id="hp-url" style="flex:1;background:#080c14;border:1px solid #1a2a44;border-radius:4px;color:#c8d6e5;font-family:monospace;font-size:12px;padding:8px 12px;" placeholder="https://example.com">';
-  h += '<button onclick="_hpProbe()" style="background:#00aaff22;color:#00aaff;border:1px solid #00aaff44;padding:8px 16px;font-family:monospace;font-size:11px;cursor:pointer;border-radius:4px;">PROBE</button>';
+  h += '<button onclick="_hpProbe()" style="background:#00aaff22;color:#00aaff;border:1px solid #00aaff44;padding:8px 16px;font-family:monospace;font-size:11px;cursor:pointer;border-radius:4px;">Probe</button>';
   h += '</div>';
   h += '<div style="color:#ff664480;font-size:9px;">Note: Some sites block cross-origin requests (CORS). Results may be incomplete for those targets.</div>';
   h += '</div>';

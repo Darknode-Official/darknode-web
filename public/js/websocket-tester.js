@@ -17,8 +17,8 @@ export function renderWebSocketTester(container) {
   h += '<div style="background:#0c1020;border:1px solid #1a2a44;border-radius:6px;padding:16px;margin-bottom:12px;">';
   h += '<div style="display:flex;gap:8px;margin-bottom:8px;">';
   h += '<input id="ws-url" style="flex:1;background:#080c14;border:1px solid #1a2a44;border-radius:4px;color:#c8d6e5;font-family:monospace;font-size:12px;padding:8px 12px;" placeholder="wss://echo.websocket.org" value="wss://echo.websocket.org">';
-  h += '<button id="ws-connect-btn" onclick="_wsConnect()" style="background:#00ff8822;color:#00ff88;border:1px solid #00ff8844;padding:8px 16px;font-family:monospace;font-size:11px;cursor:pointer;border-radius:4px;">CONNECT</button>';
-  h += '<button onclick="_wsDisconnect()" style="background:#ff444422;color:#ff4444;border:1px solid #ff444444;padding:8px 12px;font-family:monospace;font-size:11px;cursor:pointer;border-radius:4px;">CLOSE</button>';
+  h += '<button id="ws-connect-btn" onclick="_wsConnect()" style="background:#00ff8822;color:#00ff88;border:1px solid #00ff8844;padding:8px 16px;font-family:monospace;font-size:11px;cursor:pointer;border-radius:4px;">Connect</button>';
+  h += '<button onclick="_wsDisconnect()" style="background:#ff444422;color:#ff4444;border:1px solid #ff444444;padding:8px 12px;font-family:monospace;font-size:11px;cursor:pointer;border-radius:4px;">Close</button>';
   h += '</div>';
   h += '<div id="ws-status" style="font-size:10px;color:#ff4444;">DISCONNECTED</div>';
   h += '</div>';
@@ -28,7 +28,7 @@ export function renderWebSocketTester(container) {
   h += '<div style="display:flex;gap:8px;">';
   h += '<textarea id="ws-message" style="flex:1;background:#080c14;border:1px solid #1a2a44;border-radius:4px;color:#c8d6e5;font-family:monospace;font-size:11px;padding:8px 10px;resize:vertical;height:60px;" placeholder="Message to send..."></textarea>';
   h += '<div style="display:flex;flex-direction:column;gap:4px;">';
-  h += '<button onclick="_wsSend()" style="background:#00aaff22;color:#00aaff;border:1px solid #00aaff44;padding:6px 14px;font-family:monospace;font-size:10px;cursor:pointer;border-radius:4px;">SEND</button>';
+  h += '<button onclick="_wsSend()" style="background:#00aaff22;color:#00aaff;border:1px solid #00aaff44;padding:6px 14px;font-family:monospace;font-size:10px;cursor:pointer;border-radius:4px;">Send</button>';
   h += '<button onclick="_wsSendJSON()" style="background:#aa66ff22;color:#aa66ff;border:1px solid #aa66ff44;padding:6px 14px;font-family:monospace;font-size:10px;cursor:pointer;border-radius:4px;">JSON</button>';
   h += '<button onclick="_wsClear()" style="background:#1a1a2a;color:#4a6a8a;border:1px solid #1a2a44;padding:6px 14px;font-family:monospace;font-size:10px;cursor:pointer;border-radius:4px;">CLEAR</button>';
   h += '</div></div></div>';

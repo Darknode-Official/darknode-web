@@ -274,8 +274,8 @@ export function renderCspEvaluator(container) {
     h += '<label style="color:#6a8aaa;font-size:10px;cursor:pointer;"><input type="checkbox" id="csp-gen-upgrade" checked style="margin-right:4px;">upgrade-insecure-requests</label>';
     h += '</div>';
     h += '<div style="display:flex;gap:8px;margin-top:12px;">';
-    h += '<button id="csp-gen-build" style="background:#aa66ff15;color:#aa66ff;border:1px solid #aa66ff44;padding:6px 16px;font-family:monospace;font-size:10px;cursor:pointer;border-radius:4px;">BUILD CSP</button>';
-    h += '<button id="csp-gen-copy" style="background:#00ff8815;color:#00ff88;border:1px solid #00ff8844;padding:6px 16px;font-family:monospace;font-size:10px;cursor:pointer;border-radius:4px;">COPY</button>';
+    h += '<button id="csp-gen-build" style="background:#aa66ff15;color:#aa66ff;border:1px solid #aa66ff44;padding:6px 16px;font-family:monospace;font-size:10px;cursor:pointer;border-radius:4px;">Build CSP</button>';
+    h += '<button id="csp-gen-copy" style="background:#00ff8815;color:#00ff88;border:1px solid #00ff8844;padding:6px 16px;font-family:monospace;font-size:10px;cursor:pointer;border-radius:4px;">Copy</button>';
     h += '</div>';
     h += '<pre id="csp-gen-output" style="background:#040810;border:1px solid #1a2a44;border-radius:4px;padding:10px;margin-top:10px;font-size:10px;color:#00ddff;white-space:pre-wrap;word-break:break-all;display:none;"></pre>';
     h += '</div>';
@@ -331,10 +331,10 @@ export function renderCspEvaluator(container) {
   html += '</div>';
 
   html += '<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">';
-  html += '<button id="csp-analyze-btn" style="background:#00aaff15;color:#00aaff;border:1px solid #00aaff44;padding:8px 20px;font-family:monospace;font-size:11px;font-weight:bold;cursor:pointer;border-radius:4px;letter-spacing:1px;">ANALYZE</button>';
+  html += '<button id="csp-analyze-btn" style="background:#00aaff15;color:#00aaff;border:1px solid #00aaff44;padding:8px 20px;font-family:monospace;font-size:11px;font-weight:bold;cursor:pointer;border-radius:4px;letter-spacing:1px;">Analyze</button>';
   html += '<div style="display:flex;gap:4px;flex:1;min-width:200px;">';
   html += '<input id="csp-url-input" type="text" placeholder="Or enter a URL to fetch CSP from..." style="flex:1;background:#060a14;border:1px solid #1a3050;border-radius:4px;color:#c8d6e5;font-family:monospace;font-size:10px;padding:8px;">';
-  html += '<button id="csp-fetch-btn" style="background:#aa66ff15;color:#aa66ff;border:1px solid #aa66ff44;padding:8px 14px;font-family:monospace;font-size:10px;cursor:pointer;border-radius:4px;">FETCH</button>';
+  html += '<button id="csp-fetch-btn" style="background:#aa66ff15;color:#aa66ff;border:1px solid #aa66ff44;padding:8px 14px;font-family:monospace;font-size:10px;cursor:pointer;border-radius:4px;">Fetch</button>';
   html += '</div></div>';
 
   html += '<div id="csp-status" style="display:none;padding:8px 12px;margin-bottom:12px;border-radius:4px;font-size:10px;"></div>';

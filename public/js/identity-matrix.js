@@ -191,7 +191,7 @@ export function renderIdentityMatrix(container) {
   h += '<div style="margin-bottom:12px;">';
   h += '<label style="color:#5a8aaa;font-size:11px;display:block;margin-bottom:4px;">PASTE SESSION TOKEN / API KEY / COOKIE VALUE:</label>';
   h += '<textarea id="im-entropy-input" rows="3" style="width:100%;background:#0f1218;border:1px solid #1a2a3a;color:#c8d6e5;padding:10px;font-family:monospace;font-size:11px;border-radius:3px;resize:vertical;box-sizing:border-box;" placeholder="eyJhbGciOiJSUzI1NiIs..."></textarea>';
-  h += '<button id="im-entropy-calc" style="background:#0a2a3a;border:1px solid #1a4a6a;color:#00d4ff;padding:6px 16px;font-family:monospace;font-size:11px;cursor:pointer;border-radius:4px;margin-top:6px;">ANALYZE</button>';
+  h += '<button id="im-entropy-calc" style="background:#0a2a3a;border:1px solid #1a4a6a;color:#00d4ff;padding:6px 16px;font-family:monospace;font-size:11px;cursor:pointer;border-radius:4px;margin-top:6px;">Analyze</button>';
   h += '</div>';
   h += '<div id="im-entropy-result"></div>';
   h += '</div>';

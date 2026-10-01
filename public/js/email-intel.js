@@ -56,7 +56,7 @@ function _eiRenderHeaders(el) {
   h += '<div style="background:#0c1020;border:1px solid #1a2a44;border-radius:6px;padding:16px;">';
   h += '<div style="color:#00aaff;font-size:12px;letter-spacing:1px;margin-bottom:10px;">PASTE EMAIL HEADERS</div>';
   h += '<textarea id="ei-raw-headers" style="width:100%;height:180px;background:#080c14;border:1px solid #1a2a44;border-radius:4px;color:#c8d6e5;font-family:monospace;font-size:11px;padding:10px;resize:vertical;box-sizing:border-box;" placeholder="Paste full email headers here...\n\nFrom: sender@example.com\nTo: recipient@example.com\nSubject: Test\nReceived: from mail.example.com..."></textarea>';
-  h += '<button onclick="_eiAnalyzeHeaders()" style="background:#00aaff22;color:#00aaff;border:1px solid #00aaff44;padding:8px 20px;font-family:monospace;font-size:11px;cursor:pointer;border-radius:4px;margin-top:8px;">ANALYZE HEADERS</button>';
+  h += '<button onclick="_eiAnalyzeHeaders()" style="background:#00aaff22;color:#00aaff;border:1px solid #00aaff44;padding:8px 20px;font-family:monospace;font-size:11px;cursor:pointer;border-radius:4px;margin-top:8px;">Analyze Headers</button>';
   h += '</div>';
   h += '<div id="ei-header-results" style="margin-top:16px;"></div>';
   el.innerHTML = h;
@@ -214,7 +214,7 @@ function _eiRenderSPF(el) {
   h += '<div style="color:#00aaff;font-size:12px;letter-spacing:1px;margin-bottom:10px;">CHECK SPF / DKIM / DMARC</div>';
   h += '<div style="display:flex;gap:8px;margin-bottom:12px;">';
   h += '<input id="ei-spf-domain" style="flex:1;background:#080c14;border:1px solid #1a2a44;border-radius:4px;color:#c8d6e5;font-family:monospace;font-size:12px;padding:8px 12px;" placeholder="example.com">';
-  h += '<button onclick="_eiCheckSPF()" style="background:#00aaff22;color:#00aaff;border:1px solid #00aaff44;padding:8px 16px;font-family:monospace;font-size:11px;cursor:pointer;border-radius:4px;">CHECK</button>';
+  h += '<button onclick="_eiCheckSPF()" style="background:#00aaff22;color:#00aaff;border:1px solid #00aaff44;padding:8px 16px;font-family:monospace;font-size:11px;cursor:pointer;border-radius:4px;">Check</button>';
   h += '</div>';
   h += '<div style="color:#4a6a8a;font-size:10px;margin-bottom:8px;">Uses Google DNS-over-HTTPS to query TXT records for SPF, DKIM, and DMARC policies.</div>';
   h += '</div>';
@@ -344,7 +344,7 @@ function _eiRenderPhishing(el) {
   h += '<div style="color:#ff4444;font-size:12px;letter-spacing:1px;margin-bottom:10px;">PHISHING URL ANALYZER</div>';
   h += '<div style="display:flex;gap:8px;margin-bottom:12px;">';
   h += '<input id="ei-phish-url" style="flex:1;background:#080c14;border:1px solid #1a2a44;border-radius:4px;color:#c8d6e5;font-family:monospace;font-size:12px;padding:8px 12px;" placeholder="https://suspicious-url.example.com/login">';
-  h += '<button onclick="_eiCheckPhishing()" style="background:#ff444422;color:#ff4444;border:1px solid #ff444444;padding:8px 16px;font-family:monospace;font-size:11px;cursor:pointer;border-radius:4px;">ANALYZE</button>';
+  h += '<button onclick="_eiCheckPhishing()" style="background:#ff444422;color:#ff4444;border:1px solid #ff444444;padding:8px 16px;font-family:monospace;font-size:11px;cursor:pointer;border-radius:4px;">Analyze</button>';
   h += '</div>';
   h += '</div>';
   h += '<div id="ei-phish-results" style="margin-top:12px;"></div>';

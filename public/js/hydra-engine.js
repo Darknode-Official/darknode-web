@@ -2710,7 +2710,7 @@ export function renderHydra(main) {
             '<span style="font-size:.72rem;font-weight:600">' + esc(r.title) + '</span>' +
             '<span style="font-size:.62rem;color:var(--acc)">' + esc(r.mitre) + '</span>' +
             '<span style="flex:1"></span>' +
-            '<button class="hy-btn hy-btn-ghost" data-copy="sigma-' + i + '" style="padding:3px 8px;font-size:.6rem">COPY</button>' +
+            '<button class="hy-btn hy-btn-ghost" data-copy="sigma-' + i + '" style="padding:3px 8px;font-size:.6rem">Copy</button>' +
           '</div>' +
           '<pre id="sigma-' + i + '" style="background:rgba(0,0,0,0.3);border:1px solid var(--line);border-radius:3px;padding:10px;font-size:.68rem;overflow-x:auto;color:var(--acc);margin:0">' + esc(r.rule) + '</pre>' +
         '</div>';
@@ -2725,7 +2725,7 @@ export function renderHydra(main) {
           '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">' +
             '<span style="font-size:.65rem;color:var(--acc)">' + esc(r.mitre) + '</span>' +
             '<span style="flex:1"></span>' +
-            '<button class="hy-btn hy-btn-ghost" data-copy="snort-' + i + '" style="padding:3px 8px;font-size:.6rem">COPY</button>' +
+            '<button class="hy-btn hy-btn-ghost" data-copy="snort-' + i + '" style="padding:3px 8px;font-size:.6rem">Copy</button>' +
           '</div>' +
           '<pre id="snort-' + i + '" style="background:rgba(0,0,0,0.3);border:1px solid var(--line);border-radius:3px;padding:10px;font-size:.68rem;overflow-x:auto;color:#ff9100;margin:0">' + esc(r.rule) + '</pre>' +
         '</div>';
@@ -2740,7 +2740,7 @@ export function renderHydra(main) {
           '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">' +
             '<span style="font-size:.65rem;color:var(--acc)">' + esc(r.mitre) + '</span>' +
             '<span style="flex:1"></span>' +
-            '<button class="hy-btn hy-btn-ghost" data-copy="yara-' + i + '" style="padding:3px 8px;font-size:.6rem">COPY</button>' +
+            '<button class="hy-btn hy-btn-ghost" data-copy="yara-' + i + '" style="padding:3px 8px;font-size:.6rem">Copy</button>' +
           '</div>' +
           '<pre id="yara-' + i + '" style="background:rgba(0,0,0,0.3);border:1px solid var(--line);border-radius:3px;padding:10px;font-size:.68rem;overflow-x:auto;color:#00e676;margin:0">' + esc(r.rule) + '</pre>' +
         '</div>';

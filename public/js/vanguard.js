@@ -1858,14 +1858,14 @@ function _vgRenderPhaseResults() {
   // Report export
   if (_vgState.results.report) {
     h += '<div style="margin-top:12px;display:flex;gap:8px;">';
-    h += '<button onclick="_vgCopyReport()" style="background:#ff660015;color:#ff6600;border:1px solid #ff660033;padding:8px 16px;font-family:monospace;font-size:10px;cursor:pointer;border-radius:4px;">COPY FULL REPORT (HTML)</button>';
-    h += '<button onclick="_vgExportJSON()" style="background:#00aaff15;color:#00aaff;border:1px solid #00aaff33;padding:8px 16px;font-family:monospace;font-size:10px;cursor:pointer;border-radius:4px;">EXPORT JSON</button>';
-    h += '<button onclick="_vgExportLog()" style="background:#aa66ff15;color:#aa66ff;border:1px solid #aa66ff33;padding:8px 16px;font-family:monospace;font-size:10px;cursor:pointer;border-radius:4px;">EXPORT LOG</button>';
+    h += '<button onclick="_vgCopyReport()" style="background:#ff660015;color:#ff6600;border:1px solid #ff660033;padding:8px 16px;font-family:monospace;font-size:10px;cursor:pointer;border-radius:4px;">Copy Full Report (HTML)</button>';
+    h += '<button onclick="_vgExportJSON()" style="background:#00aaff15;color:#00aaff;border:1px solid #00aaff33;padding:8px 16px;font-family:monospace;font-size:10px;cursor:pointer;border-radius:4px;">Export JSON</button>';
+    h += '<button onclick="_vgExportLog()" style="background:#aa66ff15;color:#aa66ff;border:1px solid #aa66ff33;padding:8px 16px;font-family:monospace;font-size:10px;cursor:pointer;border-radius:4px;">Export Log</button>';
     h += '</div>';
   } else {
     h += '<div style="margin-top:12px;display:flex;gap:8px;">';
-    h += '<button onclick="_vgExportJSON()" style="background:#00aaff15;color:#00aaff;border:1px solid #00aaff33;padding:8px 16px;font-family:monospace;font-size:10px;cursor:pointer;border-radius:4px;">EXPORT JSON</button>';
-    h += '<button onclick="_vgExportLog()" style="background:#aa66ff15;color:#aa66ff;border:1px solid #aa66ff33;padding:8px 16px;font-family:monospace;font-size:10px;cursor:pointer;border-radius:4px;">EXPORT LOG</button>';
+    h += '<button onclick="_vgExportJSON()" style="background:#00aaff15;color:#00aaff;border:1px solid #00aaff33;padding:8px 16px;font-family:monospace;font-size:10px;cursor:pointer;border-radius:4px;">Export JSON</button>';
+    h += '<button onclick="_vgExportLog()" style="background:#aa66ff15;color:#aa66ff;border:1px solid #aa66ff33;padding:8px 16px;font-family:monospace;font-size:10px;cursor:pointer;border-radius:4px;">Export Log</button>';
     h += '</div>';
   }
 

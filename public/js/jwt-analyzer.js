@@ -178,7 +178,7 @@ export function renderJwtAnalyzer(container) {
     h += '<div><div style="color:#aa66ff;font-size:10px;letter-spacing:1px;margin-bottom:4px;">TOKEN B</div>';
     h += '<textarea id="jwt-cmp-b" placeholder="Paste second JWT..." style="width:100%;height:70px;background:#060a14;color:#aa66ff;border:1px solid #1a3050;border-radius:4px;padding:8px;font-family:monospace;font-size:11px;resize:vertical;box-sizing:border-box;"></textarea></div>';
     h += '</div>';
-    h += '<button onclick="_jwtCompare()" style="background:#00aaff15;color:#00aaff;border:1px solid #00aaff33;padding:8px 20px;font-family:monospace;font-size:11px;cursor:pointer;border-radius:4px;margin-bottom:12px;">COMPARE TOKENS</button>';
+    h += '<button onclick="_jwtCompare()" style="background:#00aaff15;color:#00aaff;border:1px solid #00aaff33;padding:8px 20px;font-family:monospace;font-size:11px;cursor:pointer;border-radius:4px;margin-bottom:12px;">Compare Tokens</button>';
     h += '<div id="jwt-cmp-output"></div>';
   }
   else if (_jwtState.tab === 'builder') {
@@ -204,7 +204,7 @@ export function renderJwtAnalyzer(container) {
     h += '<div><div style="color:#4a6a8a;font-size:9px;letter-spacing:1px;margin-bottom:2px;">CUSTOM CLAIMS (JSON)</div>';
     h += '<input id="jwt-b-custom" placeholder=\'{"role":"admin","level":5}\' style="width:100%;background:#060a14;color:#c8d6e5;border:1px solid #1a3050;border-radius:3px;padding:6px 8px;font-family:monospace;font-size:11px;box-sizing:border-box;"/></div>';
     h += '</div>';
-    h += '<button onclick="_jwtBuild()" style="background:#ff660015;color:#ff6600;border:1px solid #ff660033;padding:8px 20px;font-family:monospace;font-size:11px;cursor:pointer;border-radius:4px;">BUILD UNSIGNED TOKEN</button>';
+    h += '<button onclick="_jwtBuild()" style="background:#ff660015;color:#ff6600;border:1px solid #ff660033;padding:8px 20px;font-family:monospace;font-size:11px;cursor:pointer;border-radius:4px;">Build Unsigned Token</button>';
     h += '<div style="color:#ff4444;font-size:9px;margin-top:6px;">Warning: This generates unsigned tokens (alg:none) for testing only. Never use in production.</div>';
     h += '</div>';
     h += '<div id="jwt-build-output"></div>';

@@ -205,7 +205,7 @@ export function renderFaviconHasher(container) {
       h += '<div style="color:#4a6a8a;font-size:9px;letter-spacing:1px;margin-bottom:4px;">SHODAN QUERY</div>';
       h += '<div style="display:flex;gap:8px;align-items:center;">';
       h += '<code style="color:#ffaa00;font-size:12px;flex:1;">http.favicon.hash:' + r.shodanHash + '</code>';
-      h += '<button onclick="navigator.clipboard.writeText(\'http.favicon.hash:' + r.shodanHash + '\')" style="background:#ffaa0015;border:1px solid #ffaa0033;color:#ffaa00;font-size:9px;padding:3px 8px;cursor:pointer;border-radius:4px;font-family:monospace;">COPY</button>';
+      h += '<button onclick="navigator.clipboard.writeText(\'http.favicon.hash:' + r.shodanHash + '\')" style="background:#ffaa0015;border:1px solid #ffaa0033;color:#ffaa00;font-size:9px;padding:3px 8px;cursor:pointer;border-radius:4px;font-family:monospace;">Copy</button>';
       h += '</div>';
       h += '</div>';
 
@@ -226,7 +226,7 @@ export function renderFaviconHasher(container) {
     + '<div style="color:#00aaff;font-size:11px;font-weight:bold;letter-spacing:1px;margin-bottom:10px;">FETCH FROM URL</div>'
     + '<div style="display:flex;gap:8px;">'
     + '<input id="fh-url" type="text" placeholder="https://example.com" style="flex:1;background:#060a14;border:1px solid #1a3050;border-radius:4px;color:#00ddff;font-family:monospace;font-size:13px;padding:10px 12px;">'
-    + '<button id="fh-fetch-btn" style="background:#00aaff15;border:1px solid #00aaff44;color:#00aaff;padding:10px 16px;cursor:pointer;border-radius:4px;font-family:monospace;font-size:11px;font-weight:bold;white-space:nowrap;">FETCH</button>'
+    + '<button id="fh-fetch-btn" style="background:#00aaff15;border:1px solid #00aaff44;color:#00aaff;padding:10px 16px;cursor:pointer;border-radius:4px;font-family:monospace;font-size:11px;font-weight:bold;white-space:nowrap;">Fetch</button>'
     + '</div>'
     + '<div id="fh-fetch-status" style="margin-top:6px;font-size:10px;color:#3a5a7a;min-height:14px;"></div>'
     + '</div>'
@@ -242,7 +242,7 @@ export function renderFaviconHasher(container) {
 
     + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">'
     + '<div style="color:#00aaff;font-size:12px;font-weight:bold;letter-spacing:1px;">RESULTS</div>'
-    + '<button id="fh-clear-btn" style="background:#ff444415;border:1px solid #ff444433;color:#ff4444;font-size:9px;padding:4px 10px;cursor:pointer;border-radius:4px;font-family:monospace;display:none;">CLEAR ALL</button>'
+    + '<button id="fh-clear-btn" style="background:#ff444415;border:1px solid #ff444433;color:#ff4444;font-size:9px;padding:4px 10px;cursor:pointer;border-radius:4px;font-family:monospace;display:none;">Clear All</button>'
     + '</div>'
 
     + '<div id="fh-results"><div style="color:#2a4a6a;text-align:center;padding:30px;font-size:12px;">Upload or fetch a favicon to begin analysis</div></div>'

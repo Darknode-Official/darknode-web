@@ -16,7 +16,7 @@ export function renderWaybackRecon(container) {
       '</div>' +
       '<div style="display:flex;gap:8px;margin-bottom:16px;">' +
         '<input id="wb-domain" placeholder="example.com" style="flex:1;background:#060a14;border:2px solid #1a3050;border-radius:6px;color:#00ddff;font-family:monospace;font-size:15px;padding:10px 14px;outline:none;" />' +
-        '<button id="wb-scan" style="background:#00aaff15;border:2px solid #00aaff;color:#00ddff;font-family:monospace;font-size:13px;font-weight:bold;letter-spacing:2px;padding:10px 22px;cursor:pointer;border-radius:6px;">SCAN</button>' +
+        '<button id="wb-scan" style="background:#00aaff15;border:2px solid #00aaff;color:#00ddff;font-family:monospace;font-size:13px;font-weight:bold;letter-spacing:2px;padding:10px 22px;cursor:pointer;border-radius:6px;">Scan</button>' +
       '</div>' +
       '<div id="wb-status" style="font-size:10px;color:#4a6a8a;margin-bottom:10px;"></div>' +
       '<div id="wb-summary" style="display:none;margin-bottom:16px;"></div>' +

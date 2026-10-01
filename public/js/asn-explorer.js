@@ -36,8 +36,8 @@ export function renderAsnExplorer(container) {
   h += '<div style="background:#0c1020;border:1px solid #1a2a44;border-radius:6px;padding:16px;margin-bottom:16px;">';
   h += '<div style="display:flex;gap:8px;">';
   h += '<input id="asn-input" style="flex:1;background:#080c14;border:1px solid #1a2a44;border-radius:4px;color:#c8d6e5;font-family:monospace;font-size:12px;padding:8px 12px;" placeholder="AS number (e.g. 13335) or org name (e.g. Cloudflare)">';
-  h += '<button onclick="_asnLookup()" style="background:#00aaff22;color:#00aaff;border:1px solid #00aaff44;padding:8px 16px;font-family:monospace;font-size:11px;cursor:pointer;border-radius:4px;">LOOKUP</button>';
-  h += '<button onclick="_asnSearch()" style="background:#ffaa0022;color:#ffaa00;border:1px solid #ffaa0044;padding:8px 16px;font-family:monospace;font-size:11px;cursor:pointer;border-radius:4px;">SEARCH</button>';
+  h += '<button onclick="_asnLookup()" style="background:#00aaff22;color:#00aaff;border:1px solid #00aaff44;padding:8px 16px;font-family:monospace;font-size:11px;cursor:pointer;border-radius:4px;">Lookup</button>';
+  h += '<button onclick="_asnSearch()" style="background:#ffaa0022;color:#ffaa00;border:1px solid #ffaa0044;padding:8px 16px;font-family:monospace;font-size:11px;cursor:pointer;border-radius:4px;">Search</button>';
   h += '</div>';
   h += '<div style="color:#3a5a7a;font-size:9px;margin-top:6px;">Data from BGPView API (api.bgpview.io) — free, no API key required</div>';
   h += '</div>';

@@ -2027,7 +2027,7 @@ export function renderAegis(main) {
         '<div class="ag-panel-b">' +
           '<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">' +
             '<input class="ag-inp" id="ag-dnsdomain" placeholder="Enter domain" style="flex:1">' +
-            '<button class="ag-btn" id="ag-dnslookup">LOOKUP</button>' +
+            '<button class="ag-btn" id="ag-dnslookup">Lookup</button>' +
           '</div>' +
           '<div id="ag-dnsresults"></div>' +
         '</div>' +
@@ -2049,7 +2049,7 @@ export function renderAegis(main) {
           '<div class="ag-panel-b">' +
             '<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">' +
               '<input class="ag-inp" id="ag-techdom" placeholder="Enter URL" style="flex:1">' +
-              '<button class="ag-btn" id="ag-techscan">FINGERPRINT</button>' +
+              '<button class="ag-btn" id="ag-techscan">Fingerprint</button>' +
             '</div>' +
             '<div id="ag-techresults"></div>' +
           '</div>' +
