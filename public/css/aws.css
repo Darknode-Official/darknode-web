@@ -707,6 +707,23 @@ html:is([data-style=pro], [data-style=dark]) body.app button[style*="background:
   color: var(--acc) !important;
 }
 
+/* Inline-styled tool FIELDS -> AWS field font (2026-09-30).
+   The app-main field rule above forces bg/border/radius/color but sets
+   font-family/font-size WITHOUT !important, so inline `font-family:monospace;
+   font-size:11px` wins -> tool inputs render tiny monospace. Normalize:
+   text-entry inputs + selects take the AWS system font; textareas keep
+   monospace (Cloudscape code/output is mono) but all three get a readable
+   14px. Scoped to the monospace inline signature so classed/intentional
+   fields elsewhere are untouched. */
+html:is([data-style=pro], [data-style=dark]) body.app .app-main input[style*="monospace"],
+html:is([data-style=pro], [data-style=dark]) body.app .app-main select[style*="monospace"] {
+  font-family: var(--aws-font) !important;
+  font-size: 14px !important;
+}
+html:is([data-style=pro], [data-style=dark]) body.app .app-main textarea[style*="monospace"] {
+  font-size: 14px !important;
+}
+
 /* ================= Console Home widgets ================= */
 body.app .awh-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin: 0 0 20px; }
 body.app .awh-head .pg-h1 { margin: 0 0 4px; }
