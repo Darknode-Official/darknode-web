@@ -236,7 +236,10 @@ export const TOOLS = [
     ],
     run(v, H) {
       const b = H.randBytes(6);
-      if (v.local) b[0] = (b[0] & 0xfc) | 0x02; else b[0] = b[0] & 0xfe;
+      // local: unicast + U/L set. universal: clear BOTH the multicast (0x01) and
+      // U/L (0x02) bits — clearing only 0x01 left U/L at its random value, so
+      // ~half of "universal" MACs were still locally administered.
+      if (v.local) b[0] = (b[0] & 0xfc) | 0x02; else b[0] = b[0] & 0xfc;
       const hex = Array.from(b, (x) => x.toString(16).padStart(2, "0"));
       return hex.join(v.sep);
     } },
