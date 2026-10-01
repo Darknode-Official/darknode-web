@@ -609,6 +609,20 @@ html:is([data-style=pro], [data-style=dark]):not(#aws-a):not(#aws-b) body.app {
   & .app-main .qa .qa-desc { color: var(--mut) !important; font-size: 14px !important; }
 }
 
+/* Many tool pages render their page title as a bare, inline-coloured heading
+   (e.g. a cyan, letter-spaced "CVE SEARCH ENGINE"). Normalise unclassed headings
+   in the content area to the AWS heading style - dark, no tracking. The #app-main
+   id gives this enough weight to beat pro-theme's inline-colour overrides. Classed
+   titles (.pm-title, .pg-h1 ...) and deliberate section headers are left alone, so
+   the flagship cyber dashboards keep their own identity. */
+html:is([data-style=pro], [data-style=dark]) body.app #app-main :is(h1, h2, h3):not([class]) {
+  color: var(--txt) !important;
+  -webkit-text-fill-color: var(--txt) !important;
+  letter-spacing: normal !important;
+  background: none !important;
+  font-family: var(--aws-font) !important;
+}
+
 /* ================= Console Home widgets ================= */
 body.app .awh-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin: 0 0 20px; }
 body.app .awh-head .pg-h1 { margin: 0 0 4px; }
