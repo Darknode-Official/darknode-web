@@ -129,6 +129,33 @@ body.landing .hero-badge {
   color: #033160 !important;
 }
 
+/* ---- Showcase workflow tabs: active was black (pro-theme) -> AWS blue
+   selected segment. Specificity beats pro-theme's [data-style=pro]
+   .showcase-tab.active (0,3,0). ---- */
+[data-style="pro"] body.landing .showcase-tab.active,
+[data-style="pro"] body.landing .rag-tab.active,
+[data-style="pro"] body.landing .ts-tab.on {
+  background: #0972d3 !important;
+  border-color: #0972d3 !important;
+  color: #ffffff !important;
+}
+[data-style="pro"] body.landing .showcase-tab.active:hover,
+[data-style="pro"] body.landing .rag-tab.active:hover,
+[data-style="pro"] body.landing .ts-tab.on:hover {
+  background: #033160 !important;
+  border-color: #033160 !important;
+  color: #ffffff !important;
+}
+
+/* ---- Tools-grid category tags: saturated rainbow (pro-theme) -> one
+   muted AWS chip. Scoped to .cat-* so the grey weight badge is untouched.
+   Specificity beats [data-style=pro] .ts-badge.cat-* (0,3,0). ---- */
+[data-style="pro"] body.landing .ts-badge[class*="cat-"] {
+  color: #4a5a6a !important;
+  background: #eef2f6 !important;
+  border: 1px solid #d5dde5 !important;
+}
+
 /* ---- Final CTA band -> AWS squid-ink navy (was bright blue) ---- */
 body.landing .cta-final {
   background: linear-gradient(135deg, #232f3e 0%, #161e2d 100%) !important;
