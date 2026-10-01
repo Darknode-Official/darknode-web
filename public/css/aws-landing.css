@@ -1,0 +1,137 @@
+/* ============================================================
+   AWS-style landing polish  (scoped to body.landing only)
+   Loaded last, after styles.css + pro-theme.css, so it wins by
+   order at equal specificity. Brings the logged-out marketing page
+   toward the AWS / Cloudscape look used by the console, while
+   keeping Darknode's content and identity:
+     - Amazon Ember system typography (the console font)
+     - AWS link blue (#0972d3) for accents/links
+     - AWS orange primary CTAs (matching the console's .btn)
+     - Cloudscape squared cards (8px, quiet borders)
+   Does NOT restructure any section or touch landing.js.
+   ============================================================ */
+
+/* ---- Palette: AWS link-blue accent on the landing ---- */
+[data-style="pro"] body.landing,
+body.landing {
+  --acc: #0972d3;      /* AWS link blue (was #2563eb) */
+  --acc-2: #033160;    /* AWS darker blue for hovers */
+  /* --aws-font / --aws-orange are defined under body.app (console only),
+     so redefine the font stack here for the landing. */
+  --aws-font: "Amazon Ember", "Helvetica Neue", Roboto, Arial, sans-serif;
+}
+
+/* ---- Typography: Amazon Ember everywhere (was Sora/system) ---- */
+body.landing,
+body.landing :is(p, li, a, span, strong, em, small, label, blockquote,
+                 th, td, input, textarea, select, button, code) {
+  font-family: var(--aws-font) !important;
+}
+body.landing :is(h1, h2, h3, h4, h5, h6, .hero-h1, .cta-final h2) {
+  font-family: var(--aws-font) !important;
+  letter-spacing: -0.012em;
+}
+/* keep inline/code samples monospace */
+body.landing :is(code, kbd, pre, .mono, [class*="mono"]) {
+  font-family: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace !important;
+}
+
+/* ---- Primary CTAs -> AWS orange (matches the console) ---- */
+body.landing .btn:not(.ghost):not(.os-dl) {
+  background: #ff9900 !important;
+  border: 1px solid #ff9900 !important;
+  color: #0f141a !important;
+  /* buttons.css ID-boosts border-radius: var(--btn-radius)!important; set the
+     var so its own rule yields 8px (same gotcha as the console buttons). */
+  --btn-radius: 8px !important;
+  border-radius: 8px !important;
+  font-weight: 700 !important;
+  box-shadow: none !important;
+  background-image: none !important;
+}
+body.landing .btn:not(.ghost):not(.os-dl):hover {
+  background: #fa6f00 !important;
+  border-color: #fa6f00 !important;
+  color: #0f141a !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+/* Top-nav CTA (#nav-start) is ID-styled black by pro-theme; match its
+   specificity (later in load order) so the nav CTA is AWS orange too. */
+[data-style="pro"] body.landing #nav-start,
+body.landing #nav-start.btn {
+  background: #ff9900 !important;
+  border: 1px solid #ff9900 !important;
+  color: #0f141a !important;
+  --btn-radius: 8px !important;
+  border-radius: 8px !important;
+}
+[data-style="pro"] body.landing #nav-start:hover,
+body.landing #nav-start.btn:hover {
+  background: #fa6f00 !important;
+  border-color: #fa6f00 !important;
+  color: #0f141a !important;
+}
+
+/* Secondary / ghost CTAs -> AWS outlined (blue) */
+body.landing .btn.ghost {
+  background: #ffffff !important;
+  border: 1px solid #0972d3 !important;
+  color: #0972d3 !important;
+  --btn-radius: 8px !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+}
+body.landing .btn.ghost:hover {
+  background: #f2f8fd !important;
+  border-color: #033160 !important;
+  color: #033160 !important;
+  transform: none !important;
+}
+
+/* ---- Links -> AWS blue, AWS underline-on-hover ---- */
+body.landing a:not(.btn):not(.os-card):not([class*="card"]) {
+  color: #0972d3;
+}
+body.landing a:not(.btn):not(.os-card):not([class*="card"]):hover {
+  color: #033160;
+  text-decoration: underline;
+}
+
+/* ---- Cards -> Cloudscape: 8px radius, quiet 1px border, flat ---- */
+body.landing :is(.os-card, .bento-card, .price-card, .lab-card, .plab-card,
+                 .rag-card, .testimonial-card, .ts-card, .gov-card) {
+  border-radius: 8px !important;
+  border: 1px solid #e9ebed !important;
+  box-shadow: none !important;
+}
+body.landing :is(.os-card, .bento-card, .price-card, .lab-card, .plab-card,
+                 .rag-card, .testimonial-card, .ts-card, .gov-card):hover {
+  border-color: #0972d3 !important;
+  box-shadow: 0 1px 4px rgba(0, 28, 36, .12) !important;
+  transform: none !important;
+}
+/* featured price card keeps emphasis, AWS-style orange edge */
+body.landing .price-card.featured {
+  border-color: #ff9900 !important;
+}
+
+/* ---- Hero badge / small pills -> AWS quiet chips ---- */
+body.landing .hero-badge {
+  border-radius: 16px !important;
+  border: 1px solid #b4d4f1 !important;
+  background: #f1f8fe !important;
+  color: #033160 !important;
+}
+
+/* ---- Final CTA band -> AWS squid-ink navy (was bright blue) ---- */
+body.landing .cta-final {
+  background: linear-gradient(135deg, #232f3e 0%, #161e2d 100%) !important;
+}
+body.landing .cta-final :is(h2, .cta-sub, .cta-reassure, p) {
+  color: #ffffff !important;
+}
+body.landing .cta-final .cta-reassure,
+body.landing .cta-final .cta-sub {
+  color: #d5dbdb !important;
+}
