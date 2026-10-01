@@ -917,3 +917,108 @@ html body.app .app-main .nx-highlights { grid-template-columns: repeat(auto-fill
 html body.app .app-main .mt-shell,
 html body.app .app-main .mt-hub,
 html body.app .app-main .sec-intro { padding-left: 0; padding-right: 0; }
+
+/* ============================================================
+   AWS Cloudscape checkboxes + radios  (console + landing)
+   The native/accent-color boxes rendered oversized (a flex item
+   stretched to ~30x22px) and clashed with the AWS look, and the
+   admin allow-list toggle overflowed onto its panel border.
+   Replace them with a clean 16px custom control. box-sizing +
+   !important + flex:0 0 auto beat pro-theme's own checkbox rules
+   and the inline width/height:18px on the admin inputs.
+   ============================================================ */
+body.app input[type="checkbox"]:not([role]),
+body.app input[type="radio"]:not([role]),
+body.landing input[type="checkbox"]:not([role]),
+body.landing input[type="radio"]:not([role]) {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  box-sizing: border-box !important;
+  width: 16px !important;
+  height: 16px !important;
+  min-width: 16px !important;
+  min-height: 16px !important;
+  flex: 0 0 auto !important;
+  margin: 0;
+  padding: 0 !important;
+  display: inline-grid !important;
+  place-content: center;
+  border: 2px solid #7d8998 !important;
+  background: #ffffff !important;
+  box-shadow: none !important;
+  cursor: pointer;
+  vertical-align: middle;
+  transition: background-color .12s ease, border-color .12s ease;
+}
+body.app input[type="checkbox"]:not([role]),
+body.landing input[type="checkbox"]:not([role]) { border-radius: 2px !important; }
+body.app input[type="radio"]:not([role]),
+body.landing input[type="radio"]:not([role]) { border-radius: 50% !important; }
+
+body.app :is(input[type="checkbox"], input[type="radio"]):not([role]):hover,
+body.landing :is(input[type="checkbox"], input[type="radio"]):not([role]):hover {
+  border-color: #0972d3 !important;
+}
+body.app input[type="checkbox"]:not([role]):checked,
+body.landing input[type="checkbox"]:not([role]):checked {
+  background: #0972d3 !important;
+  border-color: #0972d3 !important;
+}
+body.app input[type="radio"]:not([role]):checked,
+body.landing input[type="radio"]:not([role]):checked {
+  background: #ffffff !important;
+  border-color: #0972d3 !important;
+}
+/* checkmark (reset pro-theme's rotated-border glyph on the same ::after) */
+body.app input[type="checkbox"]:not([role]):checked::after,
+body.landing input[type="checkbox"]:not([role]):checked::after {
+  content: "";
+  position: static !important;
+  inset: auto !important;
+  transform: none !important;
+  border: 0 !important;
+  width: 12px !important; height: 12px !important;
+  background: center / 12px 12px no-repeat
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23fff' d='M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z'/%3E%3C/svg%3E") !important;
+}
+body.app input[type="radio"]:not([role]):checked::after,
+body.landing input[type="radio"]:not([role]):checked::after {
+  content: "";
+  position: static !important;
+  inset: auto !important;
+  transform: none !important;
+  border: 0 !important;
+  width: 8px !important; height: 8px !important;
+  border-radius: 50% !important;
+  background: #0972d3 !important;
+}
+body.app input[type="checkbox"]:not([role]):indeterminate,
+body.landing input[type="checkbox"]:not([role]):indeterminate {
+  background: #0972d3 !important;
+  border-color: #0972d3 !important;
+}
+body.app input[type="checkbox"]:not([role]):indeterminate::after,
+body.landing input[type="checkbox"]:not([role]):indeterminate::after {
+  content: "";
+  width: 8px; height: 2px; border-radius: 1px; background: #fff;
+}
+body.app :is(input[type="checkbox"], input[type="radio"]):not([role]):focus-visible,
+body.landing :is(input[type="checkbox"], input[type="radio"]):not([role]):focus-visible {
+  outline: 2px solid #0972d3 !important;
+  outline-offset: 1px;
+}
+body.app :is(input[type="checkbox"], input[type="radio"]):not([role]):disabled,
+body.landing :is(input[type="checkbox"], input[type="radio"]):not([role]):disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+/* ---- Panel body content must never touch the panel border.
+   pro-theme forces `[data-style] .set-row{padding:...0 !important}`,
+   which beat the inline 18px on the admin allow-list toggle and pushed
+   the checkbox onto the panel edge. Restore horizontal breathing room
+   on set-rows that sit directly inside a bordered panel card. ---- */
+html:is([data-style="pro"], [data-style="dark"]) body.app .panel > .set-row {
+  padding-left: 18px !important;
+  padding-right: 18px !important;
+}
