@@ -6,7 +6,7 @@ import "/js/scroll-top.js?v=20260926a";
 import "/js/shortcuts.js";
 import "/js/mobile-nav.js";
 import { consoleHTML, directoryHTML, wireConsole, labelOf as navLabel, groupOf as navGroup, recentSecs as navRecent, favSecs as navFavs } from "/js/console-nav.js?v=20260927e";
-import { TOOLS as _MINI_TOOLS } from "/js/tools-registry.js?v=20260926h";
+import { TOOLS as _MINI_TOOLS } from "/js/tools-registry.js?v=20261001b";
 const MINI_COUNT = _MINI_TOOLS.length;
 import { showToast } from "/js/toast.js?v=20260924a";
 import { collection as fbCollection, addDoc as fbAddDoc, serverTimestamp as fbServerTimestamp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
@@ -1411,7 +1411,7 @@ function renderApp(user) {
       const o = box.querySelector(".sec-intro-show"); if (o) o.onclick = () => { set(false); const b = box.querySelector(".sec-intro-x"); if (b) b.focus(); };
     };
     if (_secHelp) paint(_secHelp);
-    else import("/js/section-help.js?v=20260926h").then((m) => { _secHelp = m.SECTION_HELP; paint(_secHelp); }).catch(() => {});
+    else import("/js/section-help.js?v=20261001b").then((m) => { _secHelp = m.SECTION_HELP; paint(_secHelp); }).catch(() => {});
   }
   // URL path <-> section mapping
   const secToPath = (s) => s === "home" ? "/" : "/" + s.replace(/([A-Z])/g, "-$1").toLowerCase();
@@ -1647,8 +1647,8 @@ function renderApp(user) {
     else if (sec === "admin") { import("/js/admin.js?v=20260925j").then(m => m.renderAdmin(main, user)); }
     else if (sec === "contact") renderContact(main);
     else if (sec === "education") { main.innerHTML = `<div class="panel" style="max-width:800px;margin:40px auto"><div class="panel-h">About Darknode Education</div><div style="padding:18px;line-height:1.8;font-size:.9rem"><p><strong>Darknode is a cybersecurity education platform</strong> designed for students, educators, and security professionals to learn information security through hands-on practice in a safe, controlled environment.</p><p style="margin-top:16px"><strong>Our Mission:</strong> To make cybersecurity education accessible, interactive, and practical. Most tools run in your browser or on your own machine. Some features do send data out: AI chat goes through Darknode's server to the AI provider, some lookup pages query public services (for example NVD, crt.sh and DNS-over-HTTPS resolvers), and saved items and account data are stored in Google Firebase. Each page that contacts an outside service does so only when you run it.</p><p style="margin-top:16px"><strong>Who Uses Darknode:</strong></p><ul style="margin:8px 0 0 20px;line-height:2"><li>Computer science and cybersecurity students</li><li>IT professionals studying for certifications (CompTIA Security+, CISSP, CEH, OSCP)</li><li>University professors and instructors teaching security courses</li><li>Security operations center (SOC) analysts in training</li><li>Career changers learning cybersecurity fundamentals</li></ul><p style="margin-top:16px"><strong>Educational Standards:</strong> Our curriculum aligns with NIST NICE Framework, NSA CAE-CD requirements, and CompTIA Security+ objectives. All practice environments are isolated, legal, and designed for authorized educational use only.</p><p style="margin-top:16px"><strong>Responsible Use:</strong> Darknode tools are designed exclusively for educational purposes and authorized security testing. Users must comply with all applicable laws and obtain proper authorization before testing any system they do not own.</p><p style="margin-top:16px;color:var(--mut);font-size:.82rem">Darknode is a product of Darknode-Official. For questions about our educational programs, visit darknode.ai.</p></div></div>`; }
-    else if (sec === "toolbox") { import("/js/mini-tools.js?v=20260926h").then(m => m.renderToolbox(main, { onOpen: (id) => show("tool-" + id) })); }
-    else if (sec.indexOf("tool-") === 0) { const _tid = sec.slice(5); import("/js/mini-tools.js?v=20260926h").then(m => m.renderMiniTool(main, _tid, { onBack: () => show("toolbox") })); }
+    else if (sec === "toolbox") { import("/js/mini-tools.js?v=20261001b").then(m => m.renderToolbox(main, { onOpen: (id) => show("tool-" + id) })); }
+    else if (sec.indexOf("tool-") === 0) { const _tid = sec.slice(5); import("/js/mini-tools.js?v=20261001b").then(m => m.renderMiniTool(main, _tid, { onBack: () => show("toolbox") })); }
     else renderHome(main, user, isOwner, show);
     if (more === undefined) { try { localStorage.setItem("sw_last_sec", sec); } catch (_) {} }
     // Jump back to the top on every navigation. The page scrolls on the window

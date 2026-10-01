@@ -374,9 +374,25 @@ export const TOOLS = [
     run(v) {
       if (!v.mac) return "";
       const mac = parseMac(v.mac); if (!mac) return { error: "Enter a valid MAC address." }
-      const [g1, g2, g3, g4] = macToEui64Groups(mac);
-      let p = String(v.prefix || "fe80::").trim().replace(/:+$/, "");
-      return `${p}::${g1}:${g2}:${g3}:${g4}`;
+      const eui = macToEui64Groups(mac).map((h) => parseInt(h, 16));
+      // Normalize the /64 prefix to exactly 4 numeric groups (expand :: and
+      // zero-fill), then combine with the interface id and compress. Blindly
+      // joining prefix + "::" + id produced invalid IPv6 (8 groups AND a ::)
+      // whenever the prefix was a full 4-group /64 like 2001:db8:0:1.
+      let p = String(v.prefix || "fe80::").trim();
+      let pg;
+      if (p.includes("::")) {
+        const [head, tail] = p.split("::");
+        const h = head ? head.split(":").filter(Boolean) : [];
+        const t = tail ? tail.split(":").filter(Boolean) : [];
+        pg = h.concat(Array(Math.max(0, 4 - h.length - t.length)).fill("0"), t);
+      } else {
+        pg = p.split(":").filter(Boolean);
+      }
+      pg = pg.slice(0, 4);
+      while (pg.length < 4) pg.push("0");
+      const prefNums = pg.map((x) => parseInt(x, 16) || 0);
+      return compressIPv6(prefNums.concat(eui));
     } },
 
   { id: "n-mac-vendor", name: "MAC Vendor (OUI) Lookup", cat: "network", desc: "Look up the manufacturer for a MAC's OUI, against a local ~25-entry reference subset.", tags: ["mac", "oui", "vendor"],

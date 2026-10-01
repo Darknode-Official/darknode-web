@@ -263,7 +263,10 @@ export const TOOLS = [
       const base = parseSemver(m[2]);
       if (!base) return { error: "Range target is not valid semver." };
       let lo, hi; // [lo, hi)
-      const bstr = `${base.major}.${base.minor}.${base.patch}`;
+      // Keep the prerelease tag — dropping it made "=1.0.0-alpha" and the
+      // caret/tilde lower bounds compare against the release, which sorts above
+      // any prerelease, so a matching prerelease version wrongly failed.
+      const bstr = `${base.major}.${base.minor}.${base.patch}${base.prerelease ? "-" + base.prerelease : ""}`;
       if (op === "^") {
         lo = bstr;
         hi = base.major > 0 ? `${base.major + 1}.0.0` : base.minor > 0 ? `0.${base.minor + 1}.0` : `0.0.${base.patch + 1}`;
