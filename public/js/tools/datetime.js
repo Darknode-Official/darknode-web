@@ -1145,9 +1145,12 @@ const defs = [
       if (!s) return "";
       if (!/^-?\d+(\.\d+)?$/.test(s)) return { error: "Enter a number of milliseconds." };
       const ms = Math.floor(parseFloat(s));
-      const sec = Math.floor(ms / 1000);
-      const rem = Math.abs(ms % 1000);
-      return humanizeDuration(sec) + (rem ? " " + rem + "ms" : "");
+      // Split magnitude from the absolute value so negatives don't mix sign
+      // conventions (flooring a negative toward -inf overstated by ~1s).
+      const neg = ms < 0, abs = Math.abs(ms);
+      const sec = Math.floor(abs / 1000);
+      const rem = abs % 1000;
+      return (neg ? "-" : "") + humanizeDuration(sec) + (rem ? " " + rem + "ms" : "");
     }
   },
   {
