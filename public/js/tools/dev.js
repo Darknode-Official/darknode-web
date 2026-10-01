@@ -447,7 +447,10 @@ export const TOOLS = [
         if (!dayOk) { d.setDate(d.getDate() + 1); d.setHours(0, 0, 0, 0); continue; }
         if (!hrs.has(d.getHours())) { d.setHours(d.getHours() + 1, 0, 0, 0); continue; }
         if (!mins.has(d.getMinutes())) { d.setMinutes(d.getMinutes() + 1, 0, 0); continue; }
-        out.push(new Date(d).toISOString());
+        // Fields are matched in LOCAL time (getHours/getMinutes/…), so print in
+        // local time too — toISOString() emitted UTC, shifting every run time by
+        // the viewer's offset. Matches the dv-cron-next sibling's format.
+        out.push(new Date(d).toString().replace(/ \(.*\)$/, ""));
         d.setMinutes(d.getMinutes() + 1);
       }
       return out.length ? out.join("\n") : "No matching run times found (check field ranges).";
