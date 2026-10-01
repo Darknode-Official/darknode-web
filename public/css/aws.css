@@ -623,6 +623,90 @@ html:is([data-style=pro], [data-style=dark]) body.app #app-main :is(h1, h2, h3):
   font-family: var(--aws-font) !important;
 }
 
+/* Inline-styled tool ACTION BUTTONS -> AWS buttons (2026-09-30).
+   Older tool pages render primary/secondary/destructive actions as raw
+   inline cyber buttons (translucent accent bg + monospace). Upgrade every
+   <button> carrying one of those signature inline backgrounds to the AWS
+   pill shape, then map families to AWS roles: blue = primary (orange),
+   red = danger (outlined), other accents = ghost. Scoped to `button` so
+   the badge DIVs/SPANs that share these tints (and clickable divs in
+   flagship dashboards) are untouched. Specificity (html + :is + body +
+   .app + button + [style*]) beats pro-theme's (0,2,0) color recolour. */
+html:is([data-style=pro], [data-style=dark]) body.app button[style*="background:#00aaff22"],
+html:is([data-style=pro], [data-style=dark]) body.app button[style*="background:#00aaff15"],
+html:is([data-style=pro], [data-style=dark]) body.app button[style*="background:#00aaff20"],
+html:is([data-style=pro], [data-style=dark]) body.app button[style*="background:#00d4ff22"],
+html:is([data-style=pro], [data-style=dark]) body.app button[style*="background:#ff664422"],
+html:is([data-style=pro], [data-style=dark]) body.app button[style*="background:#ff660015"],
+html:is([data-style=pro], [data-style=dark]) body.app button[style*="background:#ff444422"],
+html:is([data-style=pro], [data-style=dark]) body.app button[style*="background:#ff444415"],
+html:is([data-style=pro], [data-style=dark]) body.app button[style*="background:#ff222215"],
+html:is([data-style=pro], [data-style=dark]) body.app button[style*="background:#ff174422"],
+html:is([data-style=pro], [data-style=dark]) body.app button[style*="background:#ff880022"],
+html:is([data-style=pro], [data-style=dark]) body.app button[style*="background:#aa66ff22"],
+html:is([data-style=pro], [data-style=dark]) body.app button[style*="background:#aa66ff15"],
+html:is([data-style=pro], [data-style=dark]) body.app button[style*="background:#ffaa0022"],
+html:is([data-style=pro], [data-style=dark]) body.app button[style*="background:#ffaa0015"],
+html:is([data-style=pro], [data-style=dark]) body.app button[style*="background:#00ff8822"],
+html:is([data-style=pro], [data-style=dark]) body.app button[style*="background:#00ff8815"] {
+  font-family: var(--aws-font) !important;
+  font-weight: 700 !important;
+  font-size: 14px !important;
+  letter-spacing: .01em !important;
+  text-transform: none !important;
+  padding: 4px 20px !important;
+  min-height: 32px !important;
+  /* buttons.css ID-boosts `border-radius: var(--btn-radius)!important` (2 IDs),
+     which outranks this rule; set the var so its own rule yields the pill. */
+  --btn-radius: 20px !important;
+  border-radius: 20px !important;
+  border-width: 2px !important;
+  border-style: solid !important;
+  box-shadow: none !important;
+  background-image: none !important;
+  cursor: pointer !important;
+}
+/* Primary (blue family) -> AWS orange */
+html:is([data-style=pro], [data-style=dark]) body.app button[style*="background:#00aaff22"],
+html:is([data-style=pro], [data-style=dark]) body.app button[style*="background:#00aaff15"],
+html:is([data-style=pro], [data-style=dark]) body.app button[style*="background:#00aaff20"],
+html:is([data-style=pro], [data-style=dark]) body.app button[style*="background:#00d4ff22"] {
+  background: var(--aws-orange) !important;
+  border-color: var(--aws-orange) !important;
+  color: #0f141a !important;
+}
+html:is([data-style=pro], [data-style=dark]) body.app button[style*="background:#00aaff22"]:hover,
+html:is([data-style=pro], [data-style=dark]) body.app button[style*="background:#00aaff15"]:hover,
+html:is([data-style=pro], [data-style=dark]) body.app button[style*="background:#00aaff20"]:hover,
+html:is([data-style=pro], [data-style=dark]) body.app button[style*="background:#00d4ff22"]:hover {
+  background: var(--aws-orange-2) !important;
+  border-color: var(--aws-orange-2) !important;
+  color: #0f141a !important;
+}
+/* Destructive (red family) -> AWS danger (outlined) */
+html:is([data-style=pro], [data-style=dark]) body.app button[style*="background:#ff664422"],
+html:is([data-style=pro], [data-style=dark]) body.app button[style*="background:#ff660015"],
+html:is([data-style=pro], [data-style=dark]) body.app button[style*="background:#ff444422"],
+html:is([data-style=pro], [data-style=dark]) body.app button[style*="background:#ff444415"],
+html:is([data-style=pro], [data-style=dark]) body.app button[style*="background:#ff222215"],
+html:is([data-style=pro], [data-style=dark]) body.app button[style*="background:#ff174422"],
+html:is([data-style=pro], [data-style=dark]) body.app button[style*="background:#ff880022"] {
+  background: var(--card) !important;
+  border-color: var(--bad) !important;
+  color: var(--bad) !important;
+}
+/* Other accents (purple/amber/green) -> AWS ghost (normal/secondary) */
+html:is([data-style=pro], [data-style=dark]) body.app button[style*="background:#aa66ff22"],
+html:is([data-style=pro], [data-style=dark]) body.app button[style*="background:#aa66ff15"],
+html:is([data-style=pro], [data-style=dark]) body.app button[style*="background:#ffaa0022"],
+html:is([data-style=pro], [data-style=dark]) body.app button[style*="background:#ffaa0015"],
+html:is([data-style=pro], [data-style=dark]) body.app button[style*="background:#00ff8822"],
+html:is([data-style=pro], [data-style=dark]) body.app button[style*="background:#00ff8815"] {
+  background: var(--card) !important;
+  border-color: var(--acc) !important;
+  color: var(--acc) !important;
+}
+
 /* ================= Console Home widgets ================= */
 body.app .awh-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin: 0 0 20px; }
 body.app .awh-head .pg-h1 { margin: 0 0 4px; }
