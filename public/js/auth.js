@@ -25,7 +25,7 @@ let MORE = [], CATALOG = [], CATEGORIES = [];
 import("/js/toolkit.js").then(m => { MORE = m.MORE; CATALOG = m.CATALOG; CATEGORIES = m.CATEGORIES; });
 import { startTour, tourDone } from "/js/tour.js";
 let _landing = null;
-async function loadLanding() { if (!_landing) _landing = await import("/js/landing.js?v=20261002b"); return _landing; }
+async function loadLanding() { if (!_landing) _landing = await import("/js/landing.js?v=20261003a"); return _landing; }
 
 // Plain-language, newbie-friendly one-liners for every sidebar item + group.
 // Surfaced as a hover tooltip so the sidebar stays visually neat while every
@@ -1697,9 +1697,9 @@ function renderApp(user) {
     else if (sec === "learn") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Learn Hub...</p>"; loadLearnHub().then(m => m.renderLearnHub(main)); }
     else if (sec === "learndo") { import("/js/learndo.js").then(m => m.renderLearnDo(main)); }
     else if (sec === "engine") { import("/js/engine-tab.js?v=20260929t").then(m => m.renderEngine(main)); }
-    else if (sec === "coder") { import("/js/coder.js").then(m => m.renderCliCoder(main)); }
-    else if (sec === "downloads") { import("/js/getapp.js?v=20261002b").then(m => m.renderDownloads(main)); }
-    else if (sec === "dlguide") { import("/js/getapp.js?v=20261002b").then(m => m.renderDownloadDocs(main)); }
+    else if (sec === "coder") { import("/js/coder.js?v=20261003a").then(m => m.renderCliCoder(main)); }
+    else if (sec === "downloads") { import("/js/getapp.js?v=20261003a").then(m => m.renderDownloads(main)); }
+    else if (sec === "dlguide") { import("/js/getapp.js?v=20261003a").then(m => m.renderDownloadDocs(main)); }
     else if (sec === "api") { import("/js/api.js?v=20261002b").then(m => m.renderAPI(main, user)); }
     else if (sec === "docs") { import("/js/docs.js?v=20260924b").then(m => m.renderDocs(main)); }
     else if (sec === "setup") renderSetup(main, more);

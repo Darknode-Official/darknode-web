@@ -1,4 +1,4 @@
-// Nexus — showcase page for `darknode nexus`, the terminal AI coding agent built
+// Nexus — showcase page for `nexus`, the terminal AI coding agent built
 // into the Darknode CLI: multi-engine (Claude / local Ollama / OpenCode), private,
 // git-native, security-aware, single dependency-free binary.
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
@@ -33,7 +33,7 @@ function terminalMock() {
   const line = (cls, html) => `<div class="l ${cls}">${html}</div>`;
   return `
   <div class="nx-term">
-    <div class="nx-term-bar"><span class="nx-dot r"></span><span class="nx-dot y"></span><span class="nx-dot g"></span><span class="nx-term-t">darknode nexus --tui</span></div>
+    <div class="nx-term-bar"><span class="nx-dot r"></span><span class="nx-dot y"></span><span class="nx-dot g"></span><span class="nx-term-t">nexus --tui</span></div>
     <div class="nx-term-body">
       ${line("", `<span class="nx-logo">███╗   ██╗███████╗██╗  ██╗██╗   ██╗███████╗</span>`)}
       ${line("", `<span class="nx-logo">██╔██╗ ██║█████╗   ╚███╔╝ ██║   ██║███████╗</span>`)}
@@ -58,7 +58,7 @@ function terminalMock() {
 export function renderCliCoder(main) {
   main.innerHTML = `
     <section class="nx-hero">
-      <span class="nx-badge">darknode nexus · terminal AI agent</span>
+      <span class="nx-badge">nexus · terminal AI agent</span>
       <h1 class="nx-title">Code with cloud and local AI —<br>on your terms.</h1>
       <p class="nx-sub">Nexus is a single dependency-free binary that drives <b>Claude</b>, your <b>local</b> models, or <b>OpenCode</b> from one terminal UI. It reads &amp; writes files, runs commands, checkpoints every change, shows your real cost live, and keeps your secrets off the cloud.</p>
       <div class="nx-cta">
@@ -111,10 +111,10 @@ export function renderCliCoder(main) {
     </div>
 
     <h2 class="nx-h2">Get started</h2>
-    <pre class="code-block"><button class="cb-copy">copy</button><code># download the Darknode CLI — it installs Ollama + local models for you:
-darknode init                    # scaffold .nexus/ (project context Nexus reads each session)
-darknode nexus --tui             # full-screen UI (Claude if installed, else local)
-darknode nexus --tui -e ollama   # drive a 100% local, private agent</code></pre>
+    <pre class="code-block"><button class="cb-copy">copy</button><code># install the Darknode CLI (npm i -g darknode-cli) — it installs Ollama + local models for you:
+nexus init                    # scaffold .nexus/ (project context Nexus reads each session)
+nexus                         # full-screen UI (Claude if installed, else local)
+nexus --tui -e ollama         # drive a 100% local, private agent</code></pre>
     <div class="btns" style="margin:12px 0;flex-wrap:wrap;gap:8px">
       <a class="btn" href="${REL}/Darknode-cli-linux" download>CLI · Linux</a>
       <a class="btn" href="${REL}/Darknode-cli-windows.exe" download>CLI · Windows</a>
@@ -123,10 +123,10 @@ darknode nexus --tui -e ollama   # drive a 100% local, private agent</code></pre
 
     <h2 class="nx-h2">Autonomous runs</h2>
     <p class="nx-lead">Give Nexus a big goal; it plans, executes, verifies and checkpoints so it can run for hours and resume.</p>
-    <pre class="code-block"><button class="cb-copy">copy</button><code>darknode nexus run "build a REST API with tests" --engine hybrid
-darknode nexus overnight "refactor and fix all failing tests" --until 07:00
-darknode nexus agents "add tests" "write docs" "fix lint"   # parallel
-darknode nexus run --resume                                  # continue where it left off</code></pre>
+    <pre class="code-block"><button class="cb-copy">copy</button><code>nexus run "build a REST API with tests" --engine hybrid
+nexus overnight "refactor and fix all failing tests" --until 07:00
+nexus agents "add tests" "write docs" "fix lint"   # parallel
+nexus run --resume                                  # continue where it left off</code></pre>
     <p class="muted" style="margin-top:16px">Prefer a GUI? The same agent — plus recon, exploitation and VM-lab tools — lives in the <button class="linklike" data-sec="downloads">desktop app</button>'s Assistant.</p>`;
 
   main.querySelectorAll(".cb-copy").forEach((b) => b.addEventListener("click", () => {

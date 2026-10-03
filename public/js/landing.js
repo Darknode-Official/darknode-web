@@ -108,7 +108,7 @@ export function renderLanding(view, actions) {
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
             </div>
             <h3>CLI</h3>
-            <p>One command: <code>npm i -g darknode-cli</code>. The full security toolset, AI agent, and the Nexus engine in your terminal.</p>
+            <p>One command: <code>npm i -g darknode-cli</code>. The full security toolset plus <code>nexus</code> — the AI agent — in your terminal.</p>
             <span class="bento-tag">npm install</span>
           </div>
           <div class="bento-card">
@@ -192,12 +192,12 @@ export function renderLanding(view, actions) {
           <div class="feature-row reverse">
             <div class="feature-text">
               <h3>AI that runs on your machine</h3>
-              <p>Nexus is a 59-module AI agent engine. It reads your code, runs commands, explains vulnerabilities, and writes scripts. Use free local models or bring your own API key. We never see your data.</p>
+              <p>Nexus is a 41-module AI agent engine. It reads your code, runs commands, explains vulnerabilities, and writes scripts. Use free local models or bring your own API key. We never see your data.</p>
             </div>
             <div class="feature-visual">
               <div class="term-window">
                 <div class="tw-bar"><span class="tw-dot r"></span><span class="tw-dot y"></span><span class="tw-dot g"></span><span class="tw-title">nexus</span></div>
-                <pre class="tw-body"><span class="c-pl">$</span> darknode nexus "explain CVE-2021-44228"\n\n<span class="c-acc">Nexus:</span> Log4Shell is a critical RCE\nin Apache Log4j. It exploits\nJNDI lookup string injection...\n\n<span class="c-mut">engine: ollama (local, free)</span></pre>
+                <pre class="tw-body"><span class="c-pl">$</span> nexus "explain CVE-2021-44228"\n\n<span class="c-acc">Nexus:</span> Log4Shell is a critical RCE\nin Apache Log4j. It exploits\nJNDI lookup string injection...\n\n<span class="c-mut">engine: ollama (local, free)</span></pre>
               </div>
             </div>
           </div>
@@ -248,12 +248,12 @@ export function renderLanding(view, actions) {
             <div class="tlv-body">
               <div class="tlv-text">
                 <h3>Launch Nexus AI</h3>
-                <p>Run <code>darknode</code> in your terminal. The AI agent starts with GPT-OSS 120B -- free, private, no API key needed.</p>
+                <p>Run <code>nexus</code> in your terminal. Pick a model: free local models run on your machine with no API key (downloaded on first use), or bring your own key for a cloud model.</p>
               </div>
               <div class="tlv-visual">
                 <div class="term-window demo-term">
-                  <div class="tw-bar"><span class="tw-dot r"></span><span class="tw-dot y"></span><span class="tw-dot g"></span><span class="tw-title">darknode</span></div>
-                  <pre class="tw-body"><span class="c-pl">$</span> darknode\n\n  <span class="c-acc">Darknode v2.14</span>\n  Engine: <span class="c-ok">GPT-OSS 120B</span> (local)\n  Status: <span class="c-ok">Ready</span>\n\n<span class="c-acc">nexus&gt;</span> <span class="tw-cursor">_</span></pre>
+                  <div class="tw-bar"><span class="tw-dot r"></span><span class="tw-dot y"></span><span class="tw-dot g"></span><span class="tw-title">nexus</span></div>
+                  <pre class="tw-body"><span class="c-pl">$</span> nexus\n\n  <span class="c-acc">Nexus v2.14</span>\n  Model: <span class="c-ok">local</span> (no key) or <span class="c-ok">BYOK cloud</span>\n  Status: <span class="c-ok">Ready</span>\n\n<span class="c-acc">nexus&gt;</span> <span class="tw-cursor">_</span></pre>
                 </div>
               </div>
             </div>
@@ -495,7 +495,7 @@ export function renderLanding(view, actions) {
         <div class="nx-arch" aria-label="Nexus architecture diagram">
           <div class="nx-arch-layer nx-arch-l1">
             <div class="nx-arch-header">
-              <span class="nx-arch-label">8 AI Engines</span>
+              <span class="nx-arch-label">6 AI Engines</span>
               <span class="nx-arch-tag">Layer 1</span>
             </div>
             <div class="nx-arch-pills">
@@ -505,8 +505,6 @@ export function renderLanding(view, actions) {
               <span class="nx-arch-pill">OpenCode</span>
               <span class="nx-arch-pill">Aider</span>
               <span class="nx-arch-pill">Ollama</span>
-              <span class="nx-arch-pill">GPT-OSS</span>
-              <span class="nx-arch-pill">API</span>
             </div>
           </div>
           <div class="nx-arch-connector"></div>
@@ -608,7 +606,7 @@ export function renderLanding(view, actions) {
             </div>
             <div class="nx-group">
               <h3>Infrastructure</h3>
-              <span>MCP Bridge</span><span>3D Modeler</span><span>Telemetry</span><span>Plugins</span><span>Git Intelligence</span><span>8 AI Engines</span>
+              <span>MCP Bridge</span><span>3D Modeler</span><span>Telemetry</span><span>Plugins</span><span>Git Intelligence</span><span>6 AI Engines</span>
             </div>
           </div>
         </details>
@@ -645,7 +643,7 @@ export function renderLanding(view, actions) {
 <span class="c-acc">[+] 5 open ports found on 10.10.14.7</span>
 <span class="c-mut">[*] OS detection: Linux 5.x (96% confidence)</span>
 <span class="c-mut">[*] Scan completed in 14.2s</span>
-<span class="c-acc">[+] Results saved to ./scans/10.10.14.7.json</span></span><span class="showcase-panel" id="stab-analysis" role="tabpanel" aria-labelledby="tab-analysis" hidden><span class="c-pl">$</span> darknode nexus "analyze the scan results for vulnerabilities"
+<span class="c-acc">[+] Results saved to ./scans/10.10.14.7.json</span></span><span class="showcase-panel" id="stab-analysis" role="tabpanel" aria-labelledby="tab-analysis" hidden><span class="c-pl">$</span> nexus "analyze the scan results for vulnerabilities"
 
 <span class="c-acc">Nexus:</span> Analyzing scan output for 10.10.14.7...
 
@@ -666,7 +664,7 @@ export function renderLanding(view, actions) {
    Check for CVE-2023-26048 (multipart DoS).
    Often fronts Jenkins, Nexus, or Solr instances.
 
-<span class="c-mut">engine: ollama/llama3 (local, free)</span></span><span class="showcase-panel" id="stab-exploit" role="tabpanel" aria-labelledby="tab-exploit" hidden><span class="c-pl">$</span> darknode nexus "suggest assessment approach"
+<span class="c-mut">engine: ollama/llama3 (local, free)</span></span><span class="showcase-panel" id="stab-exploit" role="tabpanel" aria-labelledby="tab-exploit" hidden><span class="c-pl">$</span> nexus "suggest assessment approach"
 
 <span class="c-acc">Nexus:</span> Based on the findings, here is a recommended
 testing methodology for 10.10.14.7:
@@ -1654,30 +1652,38 @@ testing methodology for 10.10.14.7:
     }
   }
 
-  // Parallax gradient shift on .section.alt backgrounds
+  // Top scroll-progress bar (body.landing::before reads --scrollp) + parallax on
+  // .section.alt backgrounds. Both are driven from one rAF-throttled scroll handler.
   (function() {
     let reduce = false; try { reduce = matchMedia("(prefers-reduced-motion:reduce)").matches; } catch (_) {}
-    if (reduce) return;
-    const altSections = view.querySelectorAll(".section.alt");
-    if (!altSections.length) return;
+    const altSections = reduce ? [] : view.querySelectorAll(".section.alt");
+    const bodyStyle = document.body.style;
     let ticking = false;
-    function updateParallax() {
-      const vh = window.innerHeight;
-      altSections.forEach(function(sec) {
-        const rect = sec.getBoundingClientRect();
-        const progress = (vh - rect.top) / (vh + rect.height);
-        const clamped = Math.max(0, Math.min(1, progress));
-        const x = (clamped - 0.5) * 80;
-        const y = (clamped - 0.5) * 60;
-        sec.style.setProperty("--px-x", x + "px");
-        sec.style.setProperty("--px-y", y + "px");
-      });
+    function updateScrollUi() {
+      // Scroll progress: fraction of the document scrolled. Recomputing scrollHeight
+      // every frame keeps the value correct when the page grows mid-scroll (images,
+      // reveals); the CSS transition smooths the resulting adjustment so it never
+      // visibly jumps backward.
+      const el = document.scrollingElement || document.documentElement;
+      const max = el.scrollHeight - el.clientHeight;
+      const p = max > 0 ? Math.min(1, Math.max(0, el.scrollTop / max)) : 0;
+      bodyStyle.setProperty("--scrollp", p.toFixed(4));
+      if (altSections.length) {
+        const vh = window.innerHeight;
+        altSections.forEach(function(sec) {
+          const rect = sec.getBoundingClientRect();
+          const progress = (vh - rect.top) / (vh + rect.height);
+          const clamped = Math.max(0, Math.min(1, progress));
+          sec.style.setProperty("--px-x", ((clamped - 0.5) * 80) + "px");
+          sec.style.setProperty("--px-y", ((clamped - 0.5) * 60) + "px");
+        });
+      }
       ticking = false;
     }
-    window.addEventListener("scroll", function() {
-      if (!ticking) { ticking = true; requestAnimationFrame(updateParallax); }
-    }, { passive: true });
-    updateParallax();
+    function onScroll() { if (!ticking) { ticking = true; requestAnimationFrame(updateScrollUi); } }
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll, { passive: true });
+    updateScrollUi();
   })();
 
   // Smooth scroll for anchor links within the landing page

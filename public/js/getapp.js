@@ -61,7 +61,7 @@ export function renderDownloads(main) {
     <div class="dl-hero-grid">
     <div class="card dl-hero" style="border-color:color-mix(in srgb,var(--acc) 45%,transparent)">
       <h2 class="pg-h2" style="margin:0 0 6px">Nexus &mdash; AI coding agent</h2>
-      <p class="muted" style="font-size:.85rem;margin:0 0 10px">A terminal AI coder (like Claude Code) built into the CLI: it edits files and runs commands using the AI engine you choose &mdash; local models through Ollama (nothing leaves your machine) or a cloud engine such as Claude. Download the CLI, then run <code data-cmd>darknode nexus</code>.</p>
+      <p class="muted" style="font-size:.85rem;margin:0 0 10px">A terminal AI coder (like Claude Code) built into the CLI: it edits files and runs commands using the AI engine you choose &mdash; local models through Ollama (nothing leaves your machine) or a cloud engine such as Claude. Install the CLI, then run <code data-cmd>nexus</code>.</p>
       <div class="dl-feat">
         <div class="dl-feat-i"><b>Edits your code</b><span>Reads, writes and refactors files across the repo, then runs the commands to verify.</span></div>
         <div class="dl-feat-i"><b>Local or cloud models</b><span>The Ollama engine runs fully on your machine with no API cost. The Claude engine is a cloud service: your prompts and code go to Anthropic.</span></div>
@@ -265,15 +265,15 @@ const CLI_DOCS = [
   { title: "Nexus / CLI — macOS binary", need: "cliBinaries", os: "macOS", fmt: "Apple Silicon + Intel",
     what: "The terminal edition + Nexus AI agent as a standalone macOS binary. Pick <code>Darknode-cli-macos-arm64</code> (Apple Silicon) or <code>-x64</code> (Intel).",
     best: "you want the CLI on a Mac without installing Node.",
-    req: "macOS 12+. The free <code>ollama</code> engine (default) needs Ollama (<code>brew install ollama</code>) — no API key, no cost.",
+    req: "macOS 12+. With no cloud CLI installed, Nexus defaults to the free local <code>ollama</code> engine (<code>brew install ollama</code>) — no API key, no cost.",
     steps: [ { t: "Download, make executable, ad-hoc sign (Apple Silicon requires it), then run:", cmd: `curl -L ${REL_DL}/Darknode-cli-macos-arm64 -o darknode && chmod +x darknode && codesign --sign - darknode && ./darknode nexus --tui` } ],
     note: "Prefer no binary? <code>git clone</code> below runs on macOS with Node — nothing to sign.",
     trouble: "\"killed\" / \"cannot be opened\": it needs the ad-hoc signature above (<code>codesign --sign - darknode</code>), then <code>xattr -d com.apple.quarantine darknode</code> if downloaded via a browser." },
   { title: "Nexus / CLI — npm install (any OS)", need: "npm", os: "Any", fmt: "npm package",
-    what: "Install the CLI globally via npm. Works on Linux, Windows, macOS — anywhere Node runs. Adds <code>darknode</code> to your PATH automatically.",
+    what: "Install the CLI globally via npm. Works on Linux, Windows, macOS — anywhere Node runs. Adds both <code>darknode</code> and <code>nexus</code> to your PATH automatically.",
     best: "you already have Node 18+ and want a one-command install that's easy to update.",
     req: "Node.js 18 or newer, npm.",
-    steps: [ { t: "Install globally:", cmd: `npm install -g darknode-cli` }, { t: "Run the AI coder:", cmd: `darknode nexus --tui` }, { t: "Run HYDRA pentest engine:", cmd: `darknode /pentest <target>` } ],
+    steps: [ { t: "Install globally:", cmd: `npm install -g darknode-cli` }, { t: "Run the AI coder:", cmd: `nexus` }, { t: "Run HYDRA pentest engine:", cmd: `darknode /pentest <target>` } ],
     note: "Update anytime with <code>npm update -g darknode-cli</code>." },
   { title: "Nexus / CLI — from source (git clone)", os: "Any", fmt: "~300 KB + Node",
     what: "Run the CLI straight from source with Node. Tiny footprint, and <code>git pull</code> keeps it current.",
@@ -307,7 +307,7 @@ export function renderDownloadDocs(main) {
     ${APP_DOCS.map(dlDoc).join("")}` : ``}
 
     <h2 class="pg-h2" style="margin-top:22px">Terminal edition &amp; Nexus</h2>
-    <p class="muted" style="font-size:.85rem;margin:-4px 0 12px">The full toolkit plus <b>Nexus</b> &mdash; the AI coding agent with a live token/cost meter, <code>/undo</code> checkpoints, and a hybrid local+cloud engine. Run <code data-cmd>darknode nexus --tui</code> after installing.</p>
+    <p class="muted" style="font-size:.85rem;margin:-4px 0 12px">The full toolkit plus <b>Nexus</b> &mdash; the AI coding agent with a live token/cost meter, <code>/undo</code> checkpoints, and a hybrid local+cloud engine. Run <code data-cmd>nexus</code> after installing.</p>
     ${CLI_DOCS.filter((d) => !d.need || PUBLISHED[d.need]).map(dlDoc).join("")}
 
     <h2 class="pg-h2" style="margin-top:22px">Setup editions (how much tooling)</h2>
@@ -321,9 +321,9 @@ export function renderDownloadDocs(main) {
     <div class="card" style="max-width:760px">
       <ol class="ed-steps">
         ${PUBLISHED.desktopApp ? `<li><b>Desktop app:</b> open it and pick a tool &mdash; anything not present auto-configures on first use.</li>` : ``}
-        <li><b>CLI:</b> scaffold a project with <code data-cmd>darknode init</code>, then start the agent with <code data-cmd>darknode nexus --tui</code>.</li>
-        <li><b>For free/local AI:</b> the Darknode CLI installs Ollama + local models for you on setup &mdash; then just <code data-cmd>darknode nexus --engine ollama</code>.</li>
-        <li><b>For the strongest AI:</b> install the Claude Code CLI and log in; Nexus's default <code>claude</code> engine drives it and shows your real token cost per turn.</li>
+        <li><b>CLI:</b> scaffold a project with <code data-cmd>nexus init</code>, then start the agent with <code data-cmd>nexus</code>.</li>
+        <li><b>For free/local AI:</b> the Darknode CLI installs Ollama + local models for you on setup &mdash; then just <code data-cmd>nexus --engine ollama</code>.</li>
+        <li><b>For the strongest AI:</b> install the Claude Code CLI and log in — Nexus then uses the <code>claude</code> engine by default and shows your real token cost per turn. Without it, Nexus defaults to free local models.</li>
       </ol>
     </div>
 
