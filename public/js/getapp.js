@@ -97,7 +97,7 @@ export function renderDownloads(main) {
         </div>
         <div class="os-ed os-ed-full">
           <div class="os-ed-h"><b>full</b><span class="os-ed-sz">~30&nbsp;GB</span><span class="os-ed-tag">everything</span></div>
-          <p class="muted os-ed-d">The complete workstation: desktop, cockpit app, Metasploit, SecLists, Exploit-DB, Docker, autonomous AI recon, honeypot &mdash; 80+ heavyweight tools pre-installed, on top of the full Darknode CLI (1,000+ tools).</p>
+          <p class="muted os-ed-d">The complete workstation: desktop, cockpit app, Metasploit, SecLists, Exploit-DB, Docker, autonomous AI recon, honeypot &mdash; 80+ heavyweight tools pre-installed, on top of the full Darknode CLI.</p>
           <div class="dlapp-cmd"><code data-cmd>./build.sh debian full &amp;&amp; ./export-vbox.sh full</code></div>
         </div>
       </div>
