@@ -1195,6 +1195,12 @@ export function renderDataViz(main) {
   const styleTag = document.createElement('style');
   styleTag.textContent = `
     .dv-grid { display:grid; grid-template-columns: 1fr; gap:16px; }
+    /* Grid items default to min-width:auto, so a wide chart/table won't shrink and
+       overflows the column. Let items shrink and keep their contents inside. */
+    .dv-grid > *, .dv-stat-row > * { min-width: 0; }
+    .dv-grid svg, .dv-grid canvas, .dv-grid img { max-width: 100%; height: auto; }
+    .dv-grid table { max-width: 100%; }
+    .dv-grid .dv-scroll, .dv-grid pre { max-width: 100%; overflow-x: auto; }
     .dv-stat-row { display:grid; grid-template-columns: repeat(4, 1fr); gap:12px; }
     @media (min-width: 900px) {
       .dv-grid { grid-template-columns: 1fr 1fr; }

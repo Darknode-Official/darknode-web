@@ -1,4 +1,4 @@
-const CACHE = 'darknode-v78';
+const CACHE = 'darknode-v79';
 // DI's dictionary (11.8 MB, about 4 MB on the wire) lives in its own cache so an app update
 // does not download it again; its URL carries a version, so a new word list is a new entry.
 const LEXICON = 'darknode-lexicon';
@@ -68,8 +68,13 @@ self.addEventListener('fetch', e => {
         const res = await fetch(e.request);
         if (res && res.ok) return res;           // real page (prod rewrites SPA routes to index.html)
       } catch (_) { /* offline / network error */ }
-      const shell = await caches.match('/');       // SPA route with no file → serve the app shell
-      return shell || (await caches.match(e.request)) || Response.error();
+      const shell = await caches.match('/') || await caches.match(e.request); // SPA route with no file → app shell
+      if (shell) return shell;
+      // Last resort (e.g. cache not yet populated during an update): fetch the
+      // shell directly so a navigation never resolves to Response.error(), which
+      // the browser logs as "FetchEvent ... resulted in a network error response".
+      try { const idx = await fetch('/'); if (idx && idx.ok) return idx; } catch (_) {}
+      return Response.error();
     })());
     return;
   }

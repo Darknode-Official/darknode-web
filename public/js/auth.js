@@ -1556,7 +1556,7 @@ function renderApp(user) {
     if (sec && sec !== "home" && sec !== "settings") { try { let r = JSON.parse(localStorage.getItem("dn_recent")||"[]"); r = r.filter(s=>s!==sec); r.unshift(sec); r = r.slice(0,8); localStorage.setItem("dn_recent", JSON.stringify(r)); } catch(_){} }
     if (sec === "tools") { main.innerHTML = `<div class="pg-head"><div><h1 class="pg-h1">Tools</h1><p class="muted pg-sub">Search, filter, and open any tool in the catalog.</p></div></div><div id="tools"></div>`; import("/js/tools.js?v=20260924a").then(m => m.renderTools(document.getElementById("tools"))); }
     else if (sec === "utils") { import("/js/utils.js").then(m => m.renderUtils(main)); }
-    else if (sec === "ai") { import("/js/webai.js?v=20260929t").then(m => m.renderAI(main)); }
+    else if (sec === "ai") { import("/js/webai.js?v=20260930b").then(m => m.renderAI(main)); }
     else if (sec === "math") { _prevCleanup = renderQuelvra(main, more); }
     else if (sec === "payloads") { import("/js/labs.js").then(m => m.renderPayloads(main)); }
     else if (sec === "targets") { import("/js/labs.js").then(m => m.renderTargets(main)); }
@@ -1661,7 +1661,7 @@ function renderApp(user) {
     else if (sec === "casemgmt") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Case Manager...</p>"; import("/js/case-manager.js?v=20260924b").then(m => m.renderCaseManager(main)); }
 
     else if (sec === "cvetimeline") { import("/js/cve-timeline.js?v=20260924b").then(m => m.renderCveTimeline(main)); }
-    else if (sec === "dataviz") { import("/js/data-viz.js?v=20260928a").then(m => m.renderDataViz(main)); }
+    else if (sec === "dataviz") { import("/js/data-viz.js?v=20260930b").then(m => m.renderDataViz(main)); }
     else if (sec === "forensicstoolkit") { import("/js/forensics-toolkit.js").then(m => m.renderForensicsToolkit(main)); }
     else if (sec === "hashsuite") { import("/js/hash-suite.js").then(m => m.renderHashSuite(main)); }
     else if (sec === "httpinspector") { import("/js/http-inspector.js?v=20260924b").then(m => m.renderHttpInspector(main)); }
