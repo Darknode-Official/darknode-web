@@ -385,7 +385,9 @@ export default {
       const opts = { cite, fetchedSources };
 
       if (provider === "darknode") return await handleDarknode(cfg, env, model, msgs, opts);
-      const key = env[cfg.envKey];
+      // Gemini chat falls back to SMART_KEY the same way /api/smart does, so one valid
+      // Google key powers both routes and the two secrets never have to stay in sync.
+      const key = env[cfg.envKey] || (provider === "gemini" ? env.SMART_KEY : undefined);
       if (!key && !cfg.optionalKey) return json({ error: "Server key not configured for " + provider }, 500);
       const { upstream, isGemini } = await callUpstream(cfg, env, model, msgs, key, { search: provider === "gemini" && env.GEMINI_SEARCH !== "0" });
       if (!upstream.ok) { const t = await upstream.text().catch(() => ""); return json({ error: "Upstream " + upstream.status + ": " + t.slice(0, 300) }, upstream.status); }
