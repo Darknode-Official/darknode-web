@@ -3,9 +3,9 @@
 // /js/tools/*.js. Each tool is { id, name, cat, desc, tags, inputs, run } and
 // runs entirely client-side. One engine renders every tool's form + live output,
 // so adding a tool is data, not UI. See js/tools/_schema.md for the contract.
-import { TOOLS, TOOL_CATS } from "/js/tools-registry.js?v=20261002a";
+import { TOOLS, TOOL_CATS } from "/js/tools-registry.js?v=20261003a";
 import { H } from "/js/tools/_helpers.js?v=20260925f";
-import { HELP } from "/js/tools/help/index.js?v=20261002a";
+import { HELP } from "/js/tools/help/index.js?v=20261003a";
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));

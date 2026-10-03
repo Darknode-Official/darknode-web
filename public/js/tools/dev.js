@@ -344,19 +344,6 @@ export const TOOLS = [
       return filtered.map(([a, b]) => `${a.padEnd(16)} ${b}`).join("\n");
     } },
 
-  { id: "d-contrast-checker", name: "Color Contrast Checker", cat: "dev", desc: "WCAG contrast ratio between two hex colors, with AA/AAA pass/fail.", tags: ["color", "wcag", "accessibility", "contrast"],
-    inputs: [{ k: "fg", label: "Foreground (hex)", type: "text", placeholder: "#000000" }, { k: "bg", label: "Background (hex)", type: "text", placeholder: "#ffffff" }],
-    run(v) {
-      const parse = (h) => { const m = S(h).trim().replace(/^#/, "").match(/^([0-9a-f]{3}|[0-9a-f]{6})$/i); if (!m) return null; let s = m[1]; if (s.length === 3) s = s.split("").map((c) => c + c).join(""); return [0, 2, 4].map((i) => parseInt(s.substr(i, 2), 16)); };
-      const fg = parse(v.fg), bg = parse(v.bg);
-      if (!fg || !bg) return { error: "Enter valid hex colors, e.g. #333 or #ff00aa." };
-      const lum = ([r, g, b]) => { const f = (c) => { c /= 255; return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); }; return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b); };
-      const L1 = lum(fg), L2 = lum(bg);
-      const ratio = (Math.max(L1, L2) + 0.05) / (Math.min(L1, L2) + 0.05);
-      const r2 = Math.round(ratio * 100) / 100;
-      return `Contrast ratio: ${r2}:1\nAA (normal text, 4.5:1): ${ratio >= 4.5 ? "PASS" : "FAIL"}\nAA (large text, 3:1): ${ratio >= 3 ? "PASS" : "FAIL"}\nAAA (normal text, 7:1): ${ratio >= 7 ? "PASS" : "FAIL"}\nAAA (large text, 4.5:1): ${ratio >= 4.5 ? "PASS" : "FAIL"}`;
-    } },
-
   { id: "d-md-to-html", name: "Markdown → HTML", cat: "dev", desc: "Convert basic Markdown (headings, bold, italic, code, links, lists) to HTML.", tags: ["markdown", "html"],
     inputs: [{ k: "md", label: "Markdown", type: "textarea", rows: 8, placeholder: "# Title\n\n**bold** and *italic*" }],
     run(v) { if (!v.md) return ""; return mdToHtml(v.md); } },
@@ -488,30 +475,6 @@ export const TOOLS = [
     } },
 
   
-
-  { id: "d-percentage-calc", name: "Percentage Calculator", cat: "dev", desc: "Compute 'x is what % of y' and 'x% of y'.", tags: ["percentage", "math"],
-    inputs: [{ k: "x", label: "X", type: "text", placeholder: "25" }, { k: "y", label: "Y", type: "text", placeholder: "80" }],
-    run(v) {
-      const x = parseFloat(v.x), y = parseFloat(v.y);
-      if (isNaN(x) || isNaN(y)) return { error: "Enter valid numbers for X and Y." };
-      const lines = [];
-      if (y !== 0) lines.push(`${x} is ${(x / y * 100).toFixed(4).replace(/\.?0+$/, "")}% of ${y}`);
-      else lines.push(`${x} is undefined % of 0`);
-      lines.push(`${x}% of ${y} = ${(x / 100 * y).toFixed(4).replace(/\.?0+$/, "")}`);
-      return lines.join("\n");
-    } },
-
-  { id: "d-aspect-ratio", name: "Aspect Ratio Calculator", cat: "dev", desc: "Simplify a width:height ratio and fit dimensions to a target width or height.", tags: ["aspect", "ratio", "resolution"],
-    inputs: [{ k: "w", label: "Width", type: "text", placeholder: "1920" }, { k: "h", label: "Height", type: "text", placeholder: "1080" }, { k: "targetW", label: "Fit to width (optional)", type: "text", placeholder: "800" }],
-    run(v) {
-      const w = parseFloat(v.w), h = parseFloat(v.h);
-      if (!w || !h) return { error: "Enter width and height." };
-      const gcd = (a, b) => b ? gcd(b, a % b) : a;
-      const g = gcd(Math.round(w), Math.round(h)) || 1;
-      const lines = [`Simplified ratio: ${Math.round(w) / g}:${Math.round(h) / g}`];
-      if (v.targetW) { const tw = parseFloat(v.targetW); if (!isNaN(tw)) lines.push(`At width ${tw}: height = ${(tw * h / w).toFixed(2)}`); }
-      return lines.join("\n");
-    } },
 
   { id: "d-text-templater", name: "Text Templater", cat: "dev", desc: "Fill {{placeholders}} in a template using JSON values.", tags: ["template", "mustache", "placeholder"],
     inputs: [{ k: "template", label: "Template", type: "textarea", rows: 5, placeholder: "Hello {{name}}, you are {{age}}." }, { k: "data", label: "JSON values", type: "textarea", rows: 4, placeholder: '{"name": "Alex", "age": 30}' }],

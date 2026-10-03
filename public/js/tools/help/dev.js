@@ -71,11 +71,6 @@ export const HELP = {
     when: "You are writing a regex and cannot remember the symbol for a digit, word boundary or lookahead.",
     example: { q: "group" },
   },
-  "d-contrast-checker": {
-    what: "Takes a text colour and a background colour as hex codes (like #333333) and calculates how readable the text is, with pass or fail for the WCAG accessibility levels AA and AAA.",
-    when: "You are choosing colours for a website or app and want to be sure text is easy to read for everyone, including people with low vision.",
-    example: { fg: "#555555", bg: "#ffffff" },
-  },
   "d-md-to-html": {
     what: "Converts basic Markdown (simple formatting like # headings, **bold**, *italic*, `code`, links and - lists) into HTML code.",
     when: "You wrote something in Markdown and need it as HTML for a web page or email. Tables, numbered lists and code blocks are not supported.",
@@ -115,16 +110,6 @@ export const HELP = {
     what: "Turns a flat JSON object into .env lines (KEY=value, the format apps use for settings). Values containing spaces are wrapped in quotes.",
     when: "You have settings in JSON and need a .env file for an app or deployment.",
     example: { json: '{"PORT":3000,"APP_NAME":"My App","DEBUG":false}' },
-  },
-  "d-percentage-calc": {
-    what: "Takes two numbers X and Y and answers two questions: what percent X is of Y, and what X percent of Y is.",
-    when: "You want quick percentage answers, like \"25 is what percent of 80\" or \"what is 15% of 240\".",
-    example: { x: "25", y: "80" },
-  },
-  "d-aspect-ratio": {
-    what: "Reduces a width and height to its simplest ratio, like 1920x1080 to 16:9, and can work out the matching height for a new width.",
-    when: "You are resizing an image or video and want to keep its shape without stretching it.",
-    example: { w: "1920", h: "1080", targetW: "800" },
   },
   "d-text-templater": {
     what: "Fills placeholders written like {{name}} in your text with values from JSON, including nested values like {{user.city}}.",
