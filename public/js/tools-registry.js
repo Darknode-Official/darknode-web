@@ -3,60 +3,40 @@
 // accent colour, matching the console colour system). Each category's tools live
 // in js/tools/<file>.js and are aggregated here. mini-tools.js reads this to render.
 // The console shell (auth.js, console-nav.js) reads js/tools-manifest.js instead, a
-// generated id/name/cat list, so the ~780 KB of tool code loads only when the Toolbox
-// opens. After changing TOOL_CATS or any tool id/name: node tools/tools-manifest-build.mjs
+// generated id/name/cat list, so the tool code loads only when the Toolbox opens.
+// After changing TOOL_CATS or any tool id/name: node tools/tools-manifest-build.mjs
+//
+// Scope: the Toolbox holds only security- and coding-relevant utilities. General
+// consumer utilities (color/design, date & time, math, generic text, generators,
+// unit/format converters) were removed on 2026-10-02 to keep the platform coherent.
 import { TOOLS as encoding } from "/js/tools/encoding.js?v=20260926h";
 import { TOOLS as hashing } from "/js/tools/hashing.js?v=20260926h";
-import { TOOLS as generators } from "/js/tools/generators.js?v=20260926h";
-import { TOOLS as converters } from "/js/tools/converters.js?v=20260926h";
 import { TOOLS as network } from "/js/tools/network.js?v=20260926h";
 import { TOOLS as websec } from "/js/tools/websec.js?v=20260926h";
-import { TOOLS as text } from "/js/tools/text.js?v=20260926h";
 import { TOOLS as dev } from "/js/tools/dev.js?v=20260926h";
-import { TOOLS as color } from "/js/tools/color.js?v=20260926h";
-import { TOOLS as datetime } from "/js/tools/datetime.js?v=20260926h";
-import { TOOLS as mathx } from "/js/tools/mathx.js?v=20260926h";
-import { TOOLS as datafmt } from "/js/tools/datafmt.js?v=20260926h";
 import { TOOLS as webhttp } from "/js/tools/webhttp.js?v=20260926h";
 import { TOOLS as appsec } from "/js/tools/appsec.js?v=20260926h";
-import { TOOLS as textx } from "/js/tools/textx.js?v=20260926h";
 import { TOOLS as devx } from "/js/tools/devx.js?v=20260926h";
 
 export const TOOL_CATS = {
   encoding: { name: "Encoding & Ciphers", color: "indigo" },
   hashing: { name: "Hashing & Checksums", color: "violet" },
-  generators: { name: "Generators", color: "emerald" },
-  converters: { name: "Converters & Formats", color: "cyan" },
   network: { name: "Network Utilities", color: "teal" },
-  websec: { name: "Web & AppSec Utilities", color: "red" },
-  text: { name: "Text Utilities", color: "orange" },
+  websec: { name: "Web Security", color: "red" },
+  web: { name: "HTTP & Web", color: "slate" },
+  appsec: { name: "Application Security", color: "red" },
   dev: { name: "Developer Utilities", color: "blue" },
-  color: { name: "Color & Design", color: "rose" },
-  datetime: { name: "Date & Time", color: "yellow" },
-  math: { name: "Math & Numbers", color: "green" },
-  data: { name: "Data & Formats", color: "purple" },
-  web: { name: "Web & HTTP", color: "slate" },
-  appsec: { name: "Security & AppSec", color: "red" },
-  textx: { name: "Text & Format", color: "orange" },
-  devx: { name: "Dev Toolbox", color: "blue" },
+  devx: { name: "Developer Toolbox", color: "blue" },
 };
 
 const _all = [].concat(
   encoding,
   hashing,
-  generators,
-  converters,
   network,
   websec,
-  text,
   dev,
-  color,
-  datetime,
-  mathx,
-  datafmt,
   webhttp,
   appsec,
-  textx,
   devx,
 );
 

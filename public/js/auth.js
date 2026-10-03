@@ -5,10 +5,10 @@ import { auth, db, googleProvider, githubProvider, OWNER_EMAIL } from "/js/fireb
 import "/js/scroll-top.js?v=20260926a";
 import "/js/shortcuts.js";
 import "/js/mobile-nav.js";
-import { consoleHTML, directoryHTML, wireConsole, labelOf as navLabel, groupOf as navGroup, recentSecs as navRecent, favSecs as navFavs } from "/js/console-nav.js?v=20260929t";
+import { consoleHTML, directoryHTML, wireConsole, labelOf as navLabel, groupOf as navGroup, recentSecs as navRecent, favSecs as navFavs } from "/js/console-nav.js?v=20261002a";
 // Only the tool count is needed here; the manifest carries ids/names/categories without the
 // tool code (js/tools/*), which loads when the Toolbox opens.
-import { TOOL_META as _MINI_TOOLS } from "/js/tools-manifest.js?v=20260929g";
+import { TOOL_META as _MINI_TOOLS } from "/js/tools-manifest.js?v=20261002a";
 const MINI_COUNT = _MINI_TOOLS.length;
 import { showToast } from "/js/toast.js?v=20260924a";
 import { collection as fbCollection, addDoc as fbAddDoc, serverTimestamp as fbServerTimestamp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
@@ -25,7 +25,7 @@ let MORE = [], CATALOG = [], CATEGORIES = [];
 import("/js/toolkit.js").then(m => { MORE = m.MORE; CATALOG = m.CATALOG; CATEGORIES = m.CATEGORIES; });
 import { startTour, tourDone } from "/js/tour.js";
 let _landing = null;
-async function loadLanding() { if (!_landing) _landing = await import("/js/landing.js?v=20260928m"); return _landing; }
+async function loadLanding() { if (!_landing) _landing = await import("/js/landing.js?v=20261002b"); return _landing; }
 
 // Plain-language, newbie-friendly one-liners for every sidebar item + group.
 // Surfaced as a hover tooltip so the sidebar stays visually neat while every
@@ -980,7 +980,7 @@ function renderHome(main, user, isOwner, show) {
   const svcRow = (sec) => `<button class="awh-link" data-sec="${esc(sec)}"><span class="awh-link-t">${esc(navLabel(sec))}</span><span class="awh-link-g">${esc(navGroup(sec))}</span></button>`;
   main.innerHTML = `
     <div class="awh-head">
-      <div><h1 class="pg-h1">Console Home</h1><p class="awh-sub">${name ? "Signed in as " + esc(name) + ". " : ""}${(CATALOG.length + MINI_COUNT).toLocaleString()} tools and utilities, live threat intel, Darknode AI and training labs.</p></div>
+      <div><h1 class="pg-h1">Console Home</h1><p class="awh-sub">${name ? "Signed in as " + esc(name) + ". " : ""}Offensive security, reconnaissance, OSINT, forensics, malware analysis, blue-team and threat intelligence in one console — with live threat intel, Darknode AI and hands-on training labs.</p></div>
       <div class="awh-actions"><button class="btn ghost" data-sec="docs">Documentation</button><button class="btn" data-sec="ai">Ask Darknode AI</button></div>
     </div>
     <div class="awh-grid">
@@ -1006,8 +1006,7 @@ function renderHome(main, user, isOwner, show) {
       <section class="panel awh-w">
         <div class="awh-wh"><h2>Platform at a glance</h2></div>
         <dl class="awh-kv">
-          <div><dt>Tools and utilities</dt><dd>${(CATALOG.length + MINI_COUNT).toLocaleString()}</dd></div>
-          <div><dt>Platforms</dt><dd>${CATALOG.length}</dd></div>
+          <div><dt>Security platforms</dt><dd>${CATALOG.length}</dd></div>
           <div><dt>In-browser utilities</dt><dd>${MINI_COUNT}</dd></div>
           <div><dt>Categories</dt><dd>${CATEGORIES.length}</dd></div>
           <div><dt>Cheat sheets</dt><dd>${COUNTS.cheats}</dd></div>
@@ -1168,7 +1167,7 @@ function renderSettingsPage(main, user, isOwner, initialTab) {
         </div>
       </div>`,
     darknode: `<h2 class="set-panel-h">Darknode API</h2>
-      <p class="muted" style="font-size:.84rem;margin-bottom:14px">Your personal Darknode API key. It lets the CLI, the MCP server, and your own scripts authenticate to this workspace and drive its 1,000+ tools. Generated and stored locally in your browser — never sent to our servers.</p>
+      <p class="muted" style="font-size:.84rem;margin-bottom:14px">Your personal Darknode API key. It lets the CLI, the MCP server, and your own scripts authenticate to this workspace and drive every tool in the workspace. Generated and stored locally in your browser — never sent to our servers.</p>
       <div class="dn-keycard">
         <div class="dn-keycard-top"><span class="dn-keycard-label">Secret key</span><span class="dn-keycard-scope">full-access</span></div>
         <div class="dn-key-row">
@@ -1394,7 +1393,7 @@ function renderApp(user) {
           <div class="app-foot-grid">
             <div class="app-foot-col app-foot-brandcol">
               <div class="app-foot-brandline"><span class="app-foot-brand">Darknode</span><span class="app-foot-ver">v3.1</span></div>
-              <p class="app-foot-tag">Unified cybersecurity operations platform — 1,000+ tools, live global intel, and AI in a single console.</p>
+              <p class="app-foot-tag">Unified cybersecurity operations platform — offensive, defensive and intelligence operations, with live global intel and AI in a single console.</p>
               <div class="app-foot-status"><span class="afs-dot"></span>All systems operational</div>
               <div class="app-foot-social">
                 <a data-goto="ai" class="afs-chip">Darknode AI</a>
@@ -1477,7 +1476,7 @@ function renderApp(user) {
   const pathToSec = (p) => {
     if (!p || p === "/") return "home";
     const raw = p.replace(/^\//, "");
-    // Toolbox mini-tool secs are literally hyphenated (e.g. tool-base64, tool-col-hex-rgb)
+    // Toolbox mini-tool secs are literally hyphenated (e.g. tool-base64, tool-sx-jwt-decode)
     // and must round-trip exactly — do NOT camelCase them (that yields an invalid sec and
     // falls back to home). secToPath leaves them unchanged, so pathToSec must too.
     if (raw.startsWith("tool-")) return raw;
@@ -1556,7 +1555,7 @@ function renderApp(user) {
     if (sec && sec !== "home" && sec !== "settings") { try { let r = JSON.parse(localStorage.getItem("dn_recent")||"[]"); r = r.filter(s=>s!==sec); r.unshift(sec); r = r.slice(0,8); localStorage.setItem("dn_recent", JSON.stringify(r)); } catch(_){} }
     if (sec === "tools") { main.innerHTML = `<div class="pg-head"><div><h1 class="pg-h1">Tools</h1><p class="muted pg-sub">Search, filter, and open any tool in the catalog.</p></div></div><div id="tools"></div>`; import("/js/tools.js?v=20260924a").then(m => m.renderTools(document.getElementById("tools"))); }
     else if (sec === "utils") { import("/js/utils.js").then(m => m.renderUtils(main)); }
-    else if (sec === "ai") { import("/js/webai.js?v=20260930b").then(m => m.renderAI(main)); }
+    else if (sec === "ai") { import("/js/webai.js?v=20261002b").then(m => m.renderAI(main)); }
     else if (sec === "math") { _prevCleanup = renderQuelvra(main, more); }
     else if (sec === "payloads") { import("/js/labs.js").then(m => m.renderPayloads(main)); }
     else if (sec === "targets") { import("/js/labs.js").then(m => m.renderTargets(main)); }
@@ -1699,17 +1698,17 @@ function renderApp(user) {
     else if (sec === "learndo") { import("/js/learndo.js").then(m => m.renderLearnDo(main)); }
     else if (sec === "engine") { import("/js/engine-tab.js?v=20260929t").then(m => m.renderEngine(main)); }
     else if (sec === "coder") { import("/js/coder.js").then(m => m.renderCliCoder(main)); }
-    else if (sec === "downloads") { import("/js/getapp.js?v=20260927g").then(m => m.renderDownloads(main)); }
-    else if (sec === "dlguide") { import("/js/getapp.js?v=20260927g").then(m => m.renderDownloadDocs(main)); }
-    else if (sec === "api") { import("/js/api.js?v=20260925j").then(m => m.renderAPI(main, user)); }
+    else if (sec === "downloads") { import("/js/getapp.js?v=20261002b").then(m => m.renderDownloads(main)); }
+    else if (sec === "dlguide") { import("/js/getapp.js?v=20261002b").then(m => m.renderDownloadDocs(main)); }
+    else if (sec === "api") { import("/js/api.js?v=20261002b").then(m => m.renderAPI(main, user)); }
     else if (sec === "docs") { import("/js/docs.js?v=20260924b").then(m => m.renderDocs(main)); }
     else if (sec === "setup") renderSetup(main, more);
     else if (sec === "settings") renderSettingsPage(main, user, isOwner, more);
-    else if (sec === "admin") { import("/js/admin.js?v=20260925j").then(m => m.renderAdmin(main, user)); }
+    else if (sec === "admin") { import("/js/admin.js?v=20261002a").then(m => m.renderAdmin(main, user)); }
     else if (sec === "contact") renderContact(main);
     else if (sec === "education") { main.innerHTML = `<div class="panel" style="max-width:800px;margin:40px auto"><div class="panel-h">About Darknode Education</div><div style="padding:18px;line-height:1.8;font-size:.9rem"><p><strong>Darknode is a cybersecurity education platform</strong> designed for students, educators, and security professionals to learn information security through hands-on practice in a safe, controlled environment.</p><p style="margin-top:16px"><strong>Our Mission:</strong> To make cybersecurity education accessible, interactive, and practical. Most tools run in your browser or on your own machine. Some features do send data out: AI chat goes through Darknode's server to the AI provider, some lookup pages query public services (for example NVD, crt.sh and DNS-over-HTTPS resolvers), and saved items and account data are stored in Google Firebase. Each page that contacts an outside service does so only when you run it.</p><p style="margin-top:16px"><strong>Who Uses Darknode:</strong></p><ul style="margin:8px 0 0 20px;line-height:2"><li>Computer science and cybersecurity students</li><li>IT professionals studying for certifications (CompTIA Security+, CISSP, CEH, OSCP)</li><li>University professors and instructors teaching security courses</li><li>Security operations center (SOC) analysts in training</li><li>Career changers learning cybersecurity fundamentals</li></ul><p style="margin-top:16px"><strong>Educational Standards:</strong> Our curriculum aligns with NIST NICE Framework, NSA CAE-CD requirements, and CompTIA Security+ objectives. All practice environments are isolated, legal, and designed for authorized educational use only.</p><p style="margin-top:16px"><strong>Responsible Use:</strong> Darknode tools are designed exclusively for educational purposes and authorized security testing. Users must comply with all applicable laws and obtain proper authorization before testing any system they do not own.</p><p style="margin-top:16px;color:var(--mut);font-size:.82rem">Darknode is a product of Darknode-Official. For questions about our educational programs, visit darknode.ai.</p></div></div>`; }
-    else if (sec === "toolbox") { import("/js/mini-tools.js?v=20260929h").then(m => m.renderToolbox(main, { onOpen: (id) => show("tool-" + id) })); }
-    else if (sec.indexOf("tool-") === 0) { const _tid = sec.slice(5); import("/js/mini-tools.js?v=20260929h").then(m => m.renderMiniTool(main, _tid, { onBack: () => show("toolbox") })); }
+    else if (sec === "toolbox") { import("/js/mini-tools.js?v=20261002a").then(m => m.renderToolbox(main, { onOpen: (id) => show("tool-" + id) })); }
+    else if (sec.indexOf("tool-") === 0) { const _tid = sec.slice(5); import("/js/mini-tools.js?v=20261002a").then(m => m.renderMiniTool(main, _tid, { onBack: () => show("toolbox") })); }
     else renderHome(main, user, isOwner, show);
     if (more === undefined) { try { localStorage.setItem("sw_last_sec", sec); } catch (_) {} }
     // Jump back to the top on every navigation. The page scrolls on the window
