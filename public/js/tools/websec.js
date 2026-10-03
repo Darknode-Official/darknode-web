@@ -297,9 +297,9 @@ export const TOOLS = [
         [1300, "SHA2-224"], [10800, "SHA2-384"], [5500, "NetNTLMv1"], [5600, "NetNTLMv2"],
         [13100, "Kerberos 5 TGS-REP etype 23"], [18200, "Kerberos 5 AS-REP etype 23"], [7500, "Kerberos 5 AS-REQ Pre-Auth"],
         [2500, "WPA-EAPOL-PBKDF2"], [22000, "WPA-PBKDF2-PMKID+EAPOL"], [400, "phpass (WordPress/Joomla)"],
-        [3717, "MySQL $A$"], [300, "MySQL4.1/MySQL5 (SHA1(SHA1))"], [131, "MSSQL(2000)"], [1731, "MSSQL(2012, 2014)"],
-        [1731, "MSSQL(2016)"], [111, "nsldap SHA-1"], [1421, "hMailServer"], [21, "osCommerce/xt:Commerce MD5"],
-        [124, "Django SHA-1"], [10000, "Django PBKDF2-SHA256"], [1000, "Windows NTLM"], [3000, "LM"],
+        [3717, "MySQL $A$"], [300, "MySQL4.1/MySQL5 (SHA1(SHA1))"], [131, "MSSQL(2000)"], [1731, "MSSQL(2012, 2014, 2016)"],
+        [111, "nsldap SHA-1"], [1421, "hMailServer"], [21, "osCommerce/xt:Commerce MD5"],
+        [124, "Django SHA-1"], [10000, "Django PBKDF2-SHA256"], [3000, "LM"],
         [11600, "7-Zip"], [12500, "RAR3-hp"], [13600, "WinZip"], [16800, "WPA-PMKID-PBKDF2"], [22, "Juniper NetScreen/SSG"],
         [6211, "TrueCrypt AES"], [8300, "DNSSEC (NSEC3)"], [12000, "PBKDF2-HMAC-SHA1"], [10900, "PBKDF2-HMAC-SHA256"],
       ];
@@ -334,7 +334,7 @@ export const TOOLS = [
         ["Q", "reject word if it contains no digit"],
         ["p", "pluralize (crude heuristic)"],
         ["M", "memorize word for later reuse in rule"],
-        ["Q", "duplicate first char N times: e.g. z3"],
+        ["zN", "duplicate first char N times: e.g. z3"],
       ];
       const q = (v.q || "").toLowerCase().trim();
       const filtered = q ? rules.filter(([r, d]) => r.toLowerCase().includes(q) || d.toLowerCase().includes(q)) : rules;
