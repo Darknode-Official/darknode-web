@@ -159,22 +159,116 @@
       setTimeout(function () { el.remove(); }, 2800);
     } catch (_) {}
   }
-  function handleOutgoing(text) {
-    var q = intentTarget(text);
-    if (!q) return false;
-    var hit = resolveSection(q);
-    var inApp = document.body.classList.contains("app");
-    if (!hit) {
-      var id = norm(q);
-      var el = id && document.getElementById(id);
-      if (el) { el.scrollIntoView({ behavior: "smooth", block: "start" }); return true; }
-      return false;
-    }
-    if (!inApp) { note("Sign in to open " + hit.label + "."); nav("signin"); return true; }
+  // Open a resolved section/tool, handling the signed-out case.
+  function executeHit(hit) {
+    if (!document.body.classList.contains("app")) { note("Sign in to open " + hit.label + "."); nav("signin"); return true; }
     var ok = nav(hit.sec);
     if (ok) note("Opened " + hit.label + ".");
     log("chat intent -> " + hit.sec, ok);
     return ok;
+  }
+
+  // ── Agentic layer: a Gemini "router" understands free-form action requests ──
+  // The fast regex path above handles obvious "open X" phrasing with zero latency.
+  // When a message instead *looks like* an action (contains an action verb) but the
+  // regex can't resolve it — e.g. "I need to check a JWT", "take me to the thing
+  // that scans ports", "show me the hashing stuff" — the page asks the free Gemini
+  // service (the same worker the AI tools use) to classify it into a single action,
+  // then executes it locally. Plain questions never enter this path, so general Q&A
+  // still flows untouched to the Botpress support bot.
+  function proxyUrl() { try { if (window.DARKNODE_PROXY_URL) return window.DARKNODE_PROXY_URL; } catch (_) {} return "/api/chat"; }
+  var ACTION_VERB = /\b(open|launch|start|run|go\s*to|goto|navigate|take\s+me|bring\s+(?:me|up)|show|pull\s+up|jump|switch|visit|find|search|scan|check|use|get\s+me|where\s+is|i\s+(?:want|need|wanna|would\s+like))\b/i;
+  var PURE_Q = /^\s*(?:who|what|why|when|how|which|is|are|does|do|can\s+you\s+(?:explain|tell)|explain|tell\s+me\s+about)\b/i;
+  function mightBeAction(text) {
+    var t = String(text || "").trim();
+    if (!t || t.length > 240) return false;
+    if (PURE_Q.test(t) && !ACTION_VERB.test(t)) return false; // a plain question → Botpress
+    return ACTION_VERB.test(t);
+  }
+  function mainSectionLabels() {
+    var list = Array.isArray(window.dnSections) ? window.dnSections : [];
+    return list.filter(function (s) { return !/^tool-/.test(s.sec); }).map(function (s) { return s.label; }).slice(0, 70);
+  }
+  function extractJson(s) {
+    if (!s) return null;
+    var m = s.replace(/```json|```/gi, "").match(/\{[\s\S]*\}/);
+    if (!m) return null;
+    try { return JSON.parse(m[0]); } catch (_) { return null; }
+  }
+  // Returns a Promise<{action,target,say}|null>. Times out gracefully.
+  function geminiRoute(text) {
+    var sys = "You are the navigation router for the Darknode security & coding platform's help assistant. " +
+      "Decide what the user wants and reply with ONLY one compact JSON object, no prose and no code fence:\n" +
+      '{"action":"open"|"search"|"none","target":"<short name or topic>","say":"<=6 word confirmation>"}\n' +
+      "- open: they want to go to / launch / use a specific page or tool (\"open citadel\", \"take me to the port scanner\", \"I need to check a JWT\" -> target \"jwt\").\n" +
+      "- search: they want to find or list tools about a topic (\"what hashing tools are there\") -> target is the topic.\n" +
+      "- none: a general question, greeting, or anything that is not a request to open/run/find something.\n" +
+      "target is the THING to open (never the verb), kept short. Prefer the specific tool or topic keyword (e.g. \"jwt\", \"port scan\", \"sql injection\", \"base64\") over a generic container like \"Toolbox\". " +
+      "Main sections include: " + mainSectionLabels().join(", ") + ". " +
+      "Hundreds of security and coding tools also exist; give a short target and the app resolves it.";
+    var body = { provider: "gemini", model: "gemini-flash-lite-latest", messages: [{ role: "system", content: sys }, { role: "user", content: String(text || "").slice(0, 240) }] };
+    var ctl = null; try { ctl = new AbortController(); } catch (_) {}
+    var timer = ctl ? setTimeout(function () { try { ctl.abort(); } catch (_) {} }, 6000) : null;
+    return fetch(proxyUrl(), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), signal: ctl ? ctl.signal : undefined })
+      .then(function (r) { if (!r.ok || !r.body) throw new Error("router " + r.status); return r.body.getReader(); })
+      .then(function (reader) {
+        var dec = new TextDecoder(), buf = "", out = "";
+        return (function pump() {
+          return reader.read().then(function (res) {
+            if (res.done) return out;
+            buf += dec.decode(res.value, { stream: true });
+            var nl; while ((nl = buf.indexOf("\n")) >= 0) {
+              var line = buf.slice(0, nl).trim(); buf = buf.slice(nl + 1);
+              if (!line.indexOf("data: ")) { var p = line.slice(6); if (p === "[DONE]") return out; try { var j = JSON.parse(p); var d = j.choices && j.choices[0] && j.choices[0].delta; if (d && d.content) out += d.content; } catch (_) {} }
+            }
+            return pump();
+          });
+        })();
+      })
+      .then(function (txt) { if (timer) clearTimeout(timer); return extractJson(txt); })
+      .catch(function () { if (timer) clearTimeout(timer); return null; });
+  }
+  function forwardToBotpress(text) {
+    try { if (window.botpress && typeof window.botpress.sendMessage === "function") { window.botpress.sendMessage(text); return true; } } catch (_) {}
+    try { if (window.botpress && typeof window.botpress.sendEvent === "function") { window.botpress.sendEvent({ type: "text", text: text }); return true; } } catch (_) {}
+    return false;
+  }
+  function routeWithGemini(text) {
+    var thinking = true;
+    var t0 = Date.now();
+    geminiRoute(text).then(function (res) {
+      var act = res && String(res.action || "").toLowerCase();
+      if (res && (act === "open" || act === "search") && res.target) {
+        var hit = resolveSection(res.target);
+        if (hit) { executeHit(hit); return; }
+        if (act === "search") { // topic with no exact tool → open the toolbox to browse
+          if (document.body.classList.contains("app")) { nav("toolbox"); note("Opened the toolbox — search " + String(res.target).slice(0, 24) + "."); } else { note("Sign in to browse the tools."); nav("signin"); }
+          return;
+        }
+        // "open" but unresolved → fall through to the support bot
+      }
+      // Not an action we can take → hand it to the Botpress support bot.
+      if (!forwardToBotpress(text)) note("Open the Help chat to ask that.");
+    }).catch(function () { if (!forwardToBotpress(text)) note("Open the Help chat to ask that."); });
+    log("gemini route (" + (Date.now() - t0) + "ms pending) for", text.slice(0, 60));
+    return thinking;
+  }
+
+  function handleOutgoing(text) {
+    // 1) Instant path: clear "open X" phrasing that resolves to a known section.
+    var q = intentTarget(text);
+    if (q) {
+      var hit = resolveSection(q);
+      if (hit) return executeHit(hit);
+      var id = norm(q), el = id && document.getElementById(id);
+      if (el) { el.scrollIntoView({ behavior: "smooth", block: "start" }); return true; }
+      // matched an open-intent but target unknown → let the Gemini router try below
+    }
+    // 2) Agentic path: looks like an action → classify with Gemini, then execute or
+    //    forward to Botpress. Swallow so the bot can't answer "I can't do that".
+    if (mightBeAction(text)) { routeWithGemini(text); return true; }
+    // 3) Everything else is a question → let Botpress handle it.
+    return false;
   }
   // A recognised request is handled here and never sent to the bot, so the bot
   // cannot answer "I can't open that" after the page already opened it.

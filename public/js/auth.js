@@ -300,7 +300,7 @@ function loadSupportChat() {
   for (const src of [
     "https://cdn.botpress.cloud/webchat/v5.0/inject.js",
     "https://files.bpcontent.cloud/2026/09/26/02/20260926024817-4GX9B5C4.js",
-    "/js/botpress-bridge.js?v=20260926b",
+    "/js/botpress-bridge.js?v=20261003a",
   ]) {
     const s = document.createElement("script");
     s.src = src; s.async = false;
