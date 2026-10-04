@@ -116,7 +116,9 @@ index.html
 This repo runs **no** AI agent. `coder.js` / `docs.js` showcase and document the
 **`darknode` / `nexus`** CLI, and the download pages (`getapp.js`, `landing.js`)
 link to its binaries. The agent runtime — the multi-engine, policy-gated Nexus
-(49 modules) — lives in the sibling **nexus** engine and the **darknode-cli**
-product shell, published to GitHub Releases under the **Darknode-Official** org.
+— lives in the sibling **nexus** engine (`nexus`, 61 `src/` modules) and the
+**darknode-cli** product shell (104 `lib/` modules, 44 of them in `lib/nexus`;
+counts measured 2026-10-04), published to GitHub Releases under the
+**Darknode-Official** org.
 Both share a local-first stance: the web `webai.js` and the CLI's Ollama client
 target `127.0.0.1:11434` so work can stay on-device.

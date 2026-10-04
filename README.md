@@ -59,7 +59,7 @@ firebase deploy --only firestore:rules,storage:rules
 |---|---|
 | **darknode-web** (this) | The website + serverless backend |
 | **darknode-app** | Electron desktop workstation (native scanners, terminals, VMs, AI) |
-| **nexus** / **darknode-cli** | The Nexus AI agent engine (49 modules) and the `darknode`/`nexus` CLI that ships it |
+| **nexus** / **darknode-cli** | The Nexus agent engine (`nexus`, 61 `src/` modules) and the `darknode`/`nexus` CLI shell that ships it (`darknode-cli`, 104 `lib/` modules — 44 of them in `lib/nexus`). Counts measured 2026-10-04 via `find … -name '*.js'`. |
 | **darknode-os** / **darknode-os-distro** | A from-scratch x86 kernel, and a cloud-init-provisioned security workstation image |
 | **darknode-api** | Standalone licensing/telemetry API (not used by the website) |
 
