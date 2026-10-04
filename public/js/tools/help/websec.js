@@ -2,25 +2,10 @@
 // Plain-English help for the websec.js mini-tools. See help/README.md for the contract.
 // These are for security testing of systems you are authorised to test.
 export const HELP = {
-  "w-jwt-decode": {
-    what: "Reads a JWT (a JSON Web Token, the signed login token many web apps put in a header or cookie) and shows the readable header and data inside it. It does not check the signature.",
-    when: "You have a login token and want to see what it claims (who the user is, when it expires). Anyone can read a JWT, so never put secrets in one.",
-    example: { token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c" },
-  },
-  "w-jwt-none": {
-    what: "Rebuilds a JWT so its algorithm says none and its signature is removed, to see if a server wrongly accepts unsigned tokens.",
-    when: "You are testing a web app you are authorised to test and want to check for the classic alg:none signature-bypass flaw. Only use it against systems you own or have permission to test.",
-    example: { token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIn0.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c", variant: "none" },
-  },
-  "w-jwt-hs256-verify": {
-    what: "Checks whether a JWT was signed with the secret you provide, using the HS256 method. It tells you if the secret matches.",
-    when: "You are auditing an app you are authorised to test and want to confirm whether a weak or guessed signing secret is in use. Authorised testing only.",
-    example: { token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c", secret: "your-256-bit-secret" },
-  },
-  "w-jwt-hs256-sign": {
-    what: "Builds a valid JWT from a header, a data (payload) section and a secret key, signing it with HS256. You get a complete token back.",
-    when: "You are testing how an app handles tokens and need to create your own valid token for a system you control or are authorised to test.",
-    example: { header: '{"alg":"HS256","typ":"JWT"}', payload: '{"sub":"1234567890","name":"tester","iat":1700000000}', secret: "your-256-bit-secret" },
+  "w-jwt-analyzer": {
+    what: "One flagship tool for JSON Web Tokens. Analyze mode decodes the header and data, turns the timestamps into real dates, and runs a full security audit - it flags alg:none, RS->HS key confusion, dangerous kid/jku/jwk headers, missing or far-off expiry, sensitive data in the payload, and even auto-tries a built-in list of weak secrets. Crack mode brute-forces the HMAC secret against your wordlist. Forge mode tampers with claims and re-signs (or strips the signature) so you can test how a server reacts.",
+    when: "You have a login token and want more than a decoder: to understand what it claims, grade how safely it was built, recover a weak signing secret, or craft a tampered token. For systems you own or are authorised to test - a JWT is base64, not encrypted, so never put secrets in one.",
+    example: { token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c", mode: "analyze" },
   },
   "w-csp-builder": {
     what: "Builds a Content-Security-Policy header (a browser rule that limits where a page may load scripts, images and other content from) out of the values you fill in per category.",

