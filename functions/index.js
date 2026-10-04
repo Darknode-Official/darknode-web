@@ -358,8 +358,34 @@ async function handleDarknode(cfg, model, messages, res, opts) {
   await streamBack(res, upstream, isGemini, opts);
 }
 
+// Browser origins allowed to call the proxy; a request carrying a different
+// Origin is rejected so a malicious site cannot ride a visitor's browser to
+// spend the server-side AI quota. No Origin (CLI/desktop app/curl) is allowed.
+const CHAT_ALLOWED_ORIGINS = [
+  "https://darknode.ai",
+  "https://www.darknode.ai",
+  "https://darknode-official.github.io",
+  "https://darknode-web-e1s2.onrender.com",
+];
+function chatOriginAllowed(origin) {
+  if (!origin) return true;
+  try { const h = new URL(origin).hostname; if (h === "localhost" || h === "127.0.0.1") return true; return CHAT_ALLOWED_ORIGINS.includes(origin); } catch (_) { return false; }
+}
+const _chatRlWindow = 60000, _chatRlMax = 40, _chatRlHits = new Map();
+function chatRateLimited(ip) {
+  const now = Date.now(); let arr = _chatRlHits.get(ip); if (!arr) { arr = []; _chatRlHits.set(ip, arr); }
+  while (arr.length && now - arr[0] > _chatRlWindow) arr.shift();
+  if (arr.length >= _chatRlMax) return true; arr.push(now);
+  if (_chatRlHits.size > 5000) { for (const [k, v] of _chatRlHits) { if (!v.length || now - v[v.length - 1] > _chatRlWindow) _chatRlHits.delete(k); } }
+  return false;
+}
+
 exports.chat = onRequest({ cors: true, region: "us-central1", timeoutSeconds: 120, memory: "512MiB" }, async (req, res) => {
   if (req.method !== "POST") { res.status(405).send("POST only"); return; }
+  const _origin = req.get && req.get("origin");
+  if (!chatOriginAllowed(_origin)) { res.status(403).json({ error: "Origin not allowed" }); return; }
+  const _ip = (req.get && (req.get("x-forwarded-for") || "").split(",")[0].trim()) || req.ip || "unknown";
+  if (chatRateLimited(_ip)) { res.status(429).json({ error: "Rate limit exceeded — slow down and retry shortly." }); return; }
 
   const { provider, model, messages } = req.body || {};
   if (!provider || !model || !messages) { res.status(400).json({ error: "Missing provider, model, or messages" }); return; }

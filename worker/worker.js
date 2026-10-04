@@ -42,6 +42,42 @@ const CORS = {
   "Access-Control-Allow-Headers": "Content-Type",
 };
 
+// Browser origins allowed to call the proxy. A request carrying an Origin that
+// is not on this list is rejected, so a malicious website cannot ride a visitor's
+// browser to burn the server-side AI quota. Requests with NO Origin (the CLI,
+// the desktop app, curl) are allowed — they are not a cross-site abuse vector.
+const ALLOWED_ORIGINS = [
+  "https://darknode.ai",
+  "https://www.darknode.ai",
+  "https://darknode-official.github.io",
+  "https://darknode-web-e1s2.onrender.com",
+];
+function originAllowed(origin) {
+  if (!origin) return true; // non-browser client
+  try {
+    const h = new URL(origin).hostname;
+    if (h === "localhost" || h === "127.0.0.1") return true;
+    return ALLOWED_ORIGINS.includes(origin);
+  } catch (_) { return false; }
+}
+
+// Best-effort in-memory per-IP rate limit. This worker has no KV/Durable Object
+// binding, so the counter resets when the isolate recycles and is per-PoP — it
+// blunts quota-drain abuse but is not a hard global guarantee. Bind a KV
+// namespace (or a Durable Object) for durable, global limits.
+const RL_WINDOW_MS = 60000, RL_MAX = 40;
+const rlHits = new Map(); // ip -> timestamps[]
+function rateLimited(ip) {
+  const now = Date.now();
+  let arr = rlHits.get(ip);
+  if (!arr) { arr = []; rlHits.set(ip, arr); }
+  while (arr.length && now - arr[0] > RL_WINDOW_MS) arr.shift();
+  if (arr.length >= RL_MAX) return true;
+  arr.push(now);
+  if (rlHits.size > 5000) { for (const [k, v] of rlHits) { if (!v.length || now - v[v.length - 1] > RL_WINDOW_MS) rlHits.delete(k); } }
+  return false;
+}
+
 const json = (obj, status = 200) => new Response(JSON.stringify(obj), { status, headers: { "Content-Type": "application/json", ...CORS } });
 
 function applyPersona(messages, persona) {
@@ -360,6 +396,12 @@ async function handleSmart(request, env) {
 export default {
   async fetch(request, env) {
     if (request.method === "OPTIONS") return new Response(null, { headers: CORS });
+    // Reject disallowed browser origins, then apply a per-IP rate limit, before
+    // any route reaches the upstream model (and spends the server-side key).
+    const origin = request.headers.get("Origin");
+    if (!originAllowed(origin)) return json({ error: "Origin not allowed" }, 403);
+    const ip = request.headers.get("cf-connecting-ip") || "unknown";
+    if (rateLimited(ip)) return json({ error: "Rate limit exceeded — slow down and retry shortly." }, 429);
     const { pathname } = new URL(request.url);
     if (pathname === "/api/smart" && request.method === "POST") return handleSmart(request, env);
     if (pathname !== "/api/chat") return json({ error: "Not found" }, 404);
