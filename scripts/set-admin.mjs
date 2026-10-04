@@ -70,8 +70,17 @@ async function main() {
 
   // Mirror onto the user doc so the owner-only admin UI can badge/exclude the row.
   // (The access decision itself relies on the token claim, not this field.)
+  //
+  // Also stamp the top entitlement tier. The web app has no functional paywall
+  // today — every tool is open to any signed-in user — but if one is ever added,
+  // the owner is already marked `enterprise` and keeps full access by default.
+  const del = admin.firestore.FieldValue.delete();
   await db.collection("users").doc(user.uid).set(
-    { admin: revoke ? admin.firestore.FieldValue.delete() : true },
+    {
+      admin: revoke ? del : true,
+      tier: revoke ? del : "enterprise",
+      entitlements: revoke ? del : { all: true, enterprise: true },
+    },
     { merge: true },
   );
 

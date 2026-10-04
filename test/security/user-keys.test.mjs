@@ -204,8 +204,9 @@ group("super-admin via custom claim (hardcoded owner email removed)", () => {
   test("Firestore rules gate the owner on the admin token claim and block self-promotion", () => {
     const r = readRoot("firebase/firestore.rules");
     assert.ok(/request\.auth\.token\.admin == true/.test(r), "isOwner() checks the admin claim");
-    assert.ok(/affectedKeys\(\)\.hasAny\(\['admin', 'role'\]\)/.test(r), "update blocks privilege-field escalation");
-    assert.ok(/!request\.resource\.data\.keys\(\)\.hasAny\(\['admin', 'role'\]\)/.test(r), "create blocks privilege fields");
+    assert.ok(/affectedKeys\(\)\.hasAny\(\['admin', 'role'(, '[a-z]+')*\]\)/.test(r), "update blocks privilege-field escalation");
+    assert.ok(/!request\.resource\.data\.keys\(\)\.hasAny\(\['admin', 'role'(, '[a-z]+')*\]\)/.test(r), "create blocks privilege fields");
+    assert.ok(/'tier'/.test(r) && /'entitlements'/.test(r), "tier/entitlements are also non-self-grantable");
   });
 
   test("auth.js resolves admin from the cached claim flag, not an email compare", () => {

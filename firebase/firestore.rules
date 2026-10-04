@@ -12,7 +12,7 @@ service cloud.firestore {
     function isOwner()  { return signedIn() && request.auth.token.admin == true; }
     // A non-owner client may never stamp privilege fields onto a user doc.
     function noPrivEscalation() {
-      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['admin', 'role']);
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['admin', 'role', 'tier', 'entitlements']);
     }
 
     // Each user reads/writes only their own doc; the owner can read/manage all.
@@ -22,7 +22,7 @@ service cloud.firestore {
       allow read:   if signedIn() && (request.auth.uid == uid || isOwner());
       allow create: if signedIn() && request.auth.uid == uid
                     && request.resource.data.email == email()
-                    && !request.resource.data.keys().hasAny(['admin', 'role']);
+                    && !request.resource.data.keys().hasAny(['admin', 'role', 'tier', 'entitlements']);
       allow update: if isOwner()
                     || (request.auth.uid == uid
                         && request.resource.data.email == email()
