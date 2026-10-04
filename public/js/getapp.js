@@ -3,7 +3,9 @@
 const REPO = "Darknode-Official/darknode-app";
 const TAG = "latest";
 const RELEASES = "https://github.com/" + REPO + "/releases";
-const REL_DL = RELEASES + "/download/" + TAG;
+// GitHub's direct-download URL for the newest release is /releases/latest/download/<file>,
+// NOT /releases/download/latest/<file> (which 404s to a GitHub page). Handle both forms.
+const REL_DL = TAG === "latest" ? RELEASES + "/latest/download" : RELEASES + "/download/" + TAG;
 
 // What is actually published right now. Flip a flag to true as each release goes
 // live so we never surface a link or command for a file that doesn't exist yet:
