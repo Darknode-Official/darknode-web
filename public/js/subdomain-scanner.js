@@ -1,5 +1,14 @@
 import { esc } from '/js/shared.js';
 
+// Real subdomain discovery — no fabricated data.
+//   * Passive:  crt.sh certificate-transparency logs (every name a CA ever signed).
+//   * Active:   DNS-over-HTTPS (dns.google) resolves each candidate to a real A record.
+// Both endpoints are in the site CSP. A browser cannot port-scan or read a remote
+// host's HTTP status/server header (no raw sockets, CORS), so this reports only
+// what is genuinely observable: the name, its resolved IP(s), and whether it is live
+// in DNS. crt.sh may be CORS-blocked from some networks; when it is, the wordlist is
+// still resolved over DoH, so the scan stays real either way.
+
 const SS_WORDLIST = ['www','mail','ftp','admin','blog','dev','staging','api','cdn','app','portal','vpn',
   'remote','webmail','ns1','ns2','mx','smtp','pop','imap','test','demo','beta','alpha','docs','wiki',
   'git','jenkins','ci','cd','grafana','kibana','elastic','prometheus','monitor','status','health',
@@ -12,46 +21,98 @@ const SS_WORDLIST = ['www','mail','ftp','admin','blog','dev','staging','api','cd
   'data','bigdata','ml','ai','lab','sandbox','stg','uat','qa','prod','production','edge','node',
   'proxy','gateway','lb','loadbalancer','waf','firewall','ids','ips','siem','soc','noc'];
 
-const SS_TECHS = ['Apache/2.4.57','nginx/1.24.0','Microsoft-IIS/10.0','LiteSpeed','Cloudflare','Express',
-  'Tomcat/9.0','Caddy','HAProxy','Varnish','Envoy','Traefik','OpenResty','Gunicorn','Uvicorn'];
+const MAX_CANDIDATES = 160; // cap work so a scan stays snappy and polite to the resolvers
+const DOH_CONCURRENCY = 8;
 
-const SS_STATUSES = [
-  { code: 200, label: 'OK', color: '#16a34a' },
-  { code: 301, label: 'Moved', color: '#eab308' },
-  { code: 302, label: 'Found', color: '#eab308' },
-  { code: 403, label: 'Forbidden', color: '#f97316' },
-  { code: 404, label: 'Not Found', color: '#dc2626' },
-  { code: 500, label: 'Error', color: '#dc2626' },
-  { code: 503, label: 'Unavailable', color: '#dc2626' }
-];
-
-function fakeIP() {
-  return [10 + Math.floor(Math.random() * 230), Math.floor(Math.random() * 256), Math.floor(Math.random() * 256), Math.floor(Math.random() * 254) + 1].join('.');
+// Passive discovery from certificate transparency. Best-effort: resolves to [] if
+// crt.sh is unreachable or blocks CORS, and the caller falls back to the wordlist.
+async function crtshNames(domain) {
+  try {
+    const ctrl = new AbortController();
+    const to = setTimeout(function () { ctrl.abort(); }, 12000);
+    const res = await fetch('https://crt.sh/?q=%25.' + encodeURIComponent(domain) + '&output=json', { signal: ctrl.signal, headers: { Accept: 'application/json' } });
+    clearTimeout(to);
+    if (!res.ok) return { names: [], wildcard: new Set(), ok: false };
+    const data = await res.json();
+    const set = new Set(), wildcard = new Set();
+    for (const row of (Array.isArray(data) ? data : [])) {
+      const raw = String(row.name_value || '').split(/\n+/).concat([String(row.common_name || '')]);
+      for (let n of raw) {
+        n = n.trim().toLowerCase();
+        if (!n) continue;
+        if (n.indexOf('*.') === 0) { n = n.slice(2); wildcard.add(n); }
+        if (n === domain || n.endsWith('.' + domain)) set.add(n);
+      }
+    }
+    return { names: [...set], wildcard: wildcard, ok: true };
+  } catch (_) { return { names: [], wildcard: new Set(), ok: false }; }
 }
 
-function fakeScan(domain) {
-  var results = [];
-  var count = 8 + Math.floor(Math.random() * 15);
-  var used = new Set();
-  for (var i = 0; i < count; i++) {
-    var sub;
-    do { sub = SS_WORDLIST[Math.floor(Math.random() * SS_WORDLIST.length)]; } while (used.has(sub));
-    used.add(sub);
-    var st = SS_STATUSES[Math.floor(Math.random() * SS_STATUSES.length)];
-    var tech = SS_TECHS[Math.floor(Math.random() * SS_TECHS.length)];
-    var ports = [80, 443];
-    if (Math.random() > 0.7) ports.push(8080);
-    if (Math.random() > 0.8) ports.push(8443);
-    if (Math.random() > 0.9) ports.push(22);
-    results.push({ subdomain: sub + '.' + domain, ip: fakeIP(), status: st.code, statusLabel: st.label, statusColor: st.color, server: tech, ports: ports, ssl: Math.random() > 0.3, wildcard: Math.random() > 0.85 });
+// Active resolution over DoH. Returns the first A record (real IP) or ''.
+async function resolveA(name) {
+  try {
+    const ctrl = new AbortController();
+    const to = setTimeout(function () { ctrl.abort(); }, 6000);
+    const r = await fetch('https://dns.google/resolve?name=' + encodeURIComponent(name) + '&type=A', { signal: ctrl.signal });
+    clearTimeout(to);
+    if (!r.ok) return '';
+    const j = await r.json();
+    const a = (j.Answer || []).filter(function (x) { return x.type === 1; }).map(function (x) { return x.data; });
+    return a[0] || '';
+  } catch (_) { return ''; }
+}
+
+// Resolve a list with bounded concurrency, calling onTick after each for progress.
+async function resolveAll(names, onTick) {
+  const results = new Array(names.length);
+  let i = 0, done = 0;
+  async function worker() {
+    while (i < names.length) {
+      const idx = i++;
+      results[idx] = await resolveA(names[idx]);
+      done++;
+      if (onTick) onTick(done, names.length);
+    }
   }
-  results.sort(function(a, b) { return a.subdomain.localeCompare(b.subdomain); });
+  const pool = [];
+  for (let w = 0; w < Math.min(DOH_CONCURRENCY, names.length); w++) pool.push(worker());
+  await Promise.all(pool);
   return results;
 }
 
+// The real scan: passive CT names ∪ wordlist, resolved over DoH. onProgress(pct, label).
+async function realScan(domain, onProgress) {
+  onProgress(5, 'Querying crt.sh certificate transparency…');
+  const ct = await crtshNames(domain);
+  const cand = new Set();
+  for (const n of ct.names) cand.add(n);
+  for (const w of SS_WORDLIST) cand.add(w + '.' + domain);
+  let names = [...cand];
+  if (names.length > MAX_CANDIDATES) names = names.slice(0, MAX_CANDIDATES);
+  onProgress(20, 'Resolving ' + names.length + ' candidates over DNS-over-HTTPS…');
+  const ips = await resolveAll(names, function (d, total) { onProgress(20 + Math.round(d / total * 78), 'Resolving ' + d + '/' + total + '…'); });
+  const ctSet = new Set(ct.names);
+  const results = [];
+  for (let k = 0; k < names.length; k++) {
+    const name = names[k], ip = ips[k];
+    const fromCT = ctSet.has(name);
+    // Keep anything that is live in DNS, plus CT-attested names even if they have no A record.
+    if (!ip && !fromCT) continue;
+    results.push({
+      subdomain: name,
+      ip: ip || '',
+      resolves: !!ip,
+      wildcard: ct.wildcard.has(name),
+      source: fromCT ? (ip ? 'crt.sh + dns' : 'crt.sh') : 'dns'
+    });
+  }
+  results.sort(function (a, b) { return a.subdomain.localeCompare(b.subdomain); });
+  onProgress(100, 'Done');
+  return { results: results, crtOk: ct.ok };
+}
+
 export function renderSubdomainScanner(container) {
-  var state = { tab: 'scan', domain: '', results: [], scanning: false, progress: 0, filter: 'all', sortBy: 'name' };
-  var scanTimer = null;
+  var state = { tab: 'scan', domain: '', results: [], scanning: false, progress: 0, progressLabel: '', filter: 'all', sortBy: 'name', crtOk: true, error: '' };
 
   var CSS = '<style>' +
     '.ss-wrap{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--txt,#c8d6e5)}' +
@@ -83,13 +144,13 @@ export function renderSubdomainScanner(container) {
     '.ss-table td{padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:middle}' +
     '.ss-table tr:hover td{background:rgba(255,255,255,.02)}' +
     '.ss-badge{display:inline-block;padding:2px 8px;border-radius:3px;font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.03em}' +
-    '.ss-port{display:inline-block;padding:1px 6px;border-radius:3px;font-size:.63rem;font-family:ui-monospace,monospace;background:rgba(37,99,235,.1);color:var(--acc);margin:1px 2px}' +
-    '.ss-ssl{display:inline-flex;align-items:center;gap:3px;font-size:.65rem;font-weight:600}' +
+    '.ss-src{display:inline-block;padding:1px 6px;border-radius:3px;font-size:.63rem;font-family:ui-monospace,monospace;background:rgba(37,99,235,.1);color:var(--acc)}' +
     '.ss-filters{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}' +
     '.ss-filter{padding:4px 10px;border:1px solid var(--line);border-radius:4px;background:transparent;color:var(--mut);cursor:pointer;font-size:.7rem;font-family:inherit;transition:all .15s}' +
     '.ss-filter:hover{border-color:var(--acc);color:var(--acc)}' +
     '.ss-filter.active{background:var(--acc);color:#fff;border-color:var(--acc)}' +
     '.ss-empty{text-align:center;padding:40px;color:var(--mut);font-size:.85rem}' +
+    '.ss-note{font-size:.7rem;color:var(--mut);margin-top:10px;line-height:1.5}' +
     '.ss-tree{font-size:.78rem}' +
     '.ss-tree-node{padding:4px 0 4px 20px;border-left:1px solid var(--line);margin-left:8px}' +
     '.ss-tree-root{font-weight:700;padding:6px 0;font-size:.85rem;color:var(--acc)}' +
@@ -120,7 +181,7 @@ export function renderSubdomainScanner(container) {
       { id: 'tree', label: 'Tree View' }
     ];
     var html = CSS + '<div class="ss-wrap">' +
-      '<div class="ss-header"><h1 class="ss-title">Subdomain Scanner</h1><p class="ss-sub">Enumerate and discover subdomains using simulated wordlist-based scanning</p></div>' +
+      '<div class="ss-header"><h1 class="ss-title">Subdomain Scanner</h1><p class="ss-sub">Real passive + active enumeration: crt.sh certificate transparency and live DNS-over-HTTPS resolution.</p></div>' +
       '<div class="ss-tabs">' + tabs.map(function(t) { return '<button class="ss-tab' + (state.tab === t.id ? ' active' : '') + '" data-tab="' + t.id + '">' + t.label + '</button>'; }).join('') + '</div>';
 
     if (state.tab === 'scan') html += renderScan();
@@ -134,38 +195,39 @@ export function renderSubdomainScanner(container) {
 
   function renderScan() {
     var h = '<div class="ss-panel">' +
-      '<div style="margin-bottom:10px;font-size:.78rem;color:var(--mut)">Enter a target domain to simulate subdomain enumeration</div>' +
+      '<div style="margin-bottom:10px;font-size:.78rem;color:var(--mut)">Enter a target domain. Queries public certificate-transparency logs and resolves candidates over DNS — use only on domains you are authorized to assess.</div>' +
       '<div class="ss-input-row">' +
       '<input class="ss-input" id="ss-domain" placeholder="example.com" value="' + esc(state.domain) + '">' +
-      '<button class="ss-btn" id="ss-scan"' + (state.scanning ? ' disabled' : '') + '>' + (state.scanning ? 'Scanning...' : 'Start Scan') + '</button></div>';
+      '<button class="ss-btn" id="ss-scan"' + (state.scanning ? ' disabled' : '') + '>' + (state.scanning ? 'Scanning…' : 'Start Scan') + '</button></div>';
     if (state.scanning) {
       h += '<div class="ss-progress"><div class="ss-progress-fill" style="width:' + state.progress + '%"></div></div>' +
-        '<div style="font-size:.72rem;color:var(--mut);text-align:center">Checking ' + SS_WORDLIST.length + ' subdomains... ' + state.progress + '%</div>';
+        '<div style="font-size:.72rem;color:var(--mut);text-align:center">' + esc(state.progressLabel) + '</div>';
     }
+    if (state.error) h += '<div class="ss-note" style="color:#dc2626">' + esc(state.error) + '</div>';
     h += '</div>';
 
     if (state.results.length) {
-      var live = state.results.filter(function(r) { return r.status === 200; }).length;
-      var ssl = state.results.filter(function(r) { return r.ssl; }).length;
-      var uniqueIPs = new Set(state.results.map(function(r) { return r.ip; })).size;
+      var live = state.results.filter(function(r) { return r.resolves; }).length;
+      var uniqueIPs = new Set(state.results.filter(function(r){ return r.ip; }).map(function(r) { return r.ip; })).size;
+      var wild = state.results.filter(function(r){ return r.wildcard; }).length;
       h += '<div class="ss-stat-grid">' +
-        '<div class="ss-stat"><div class="ss-stat-val">' + state.results.length + '</div><div class="ss-stat-lbl">Found</div></div>' +
-        '<div class="ss-stat"><div class="ss-stat-val" style="color:#16a34a">' + live + '</div><div class="ss-stat-lbl">Live (200)</div></div>' +
+        '<div class="ss-stat"><div class="ss-stat-val">' + state.results.length + '</div><div class="ss-stat-lbl">Discovered</div></div>' +
+        '<div class="ss-stat"><div class="ss-stat-val" style="color:#16a34a">' + live + '</div><div class="ss-stat-lbl">Resolving</div></div>' +
         '<div class="ss-stat"><div class="ss-stat-val">' + uniqueIPs + '</div><div class="ss-stat-lbl">Unique IPs</div></div>' +
-        '<div class="ss-stat"><div class="ss-stat-val">' + ssl + '</div><div class="ss-stat-lbl">SSL/TLS</div></div>' +
+        '<div class="ss-stat"><div class="ss-stat-val">' + wild + '</div><div class="ss-stat-lbl">Wildcards</div></div>' +
         '</div>';
+      if (!state.crtOk) h += '<div class="ss-note">Note: crt.sh was unreachable or CORS-blocked from this network — results are from live DNS resolution of the wordlist only. Passive CT discovery works best via the Darknode CLI (<code>darknode subs</code>).</div>';
     }
     return h;
   }
 
   function getFiltered() {
     var f = state.results;
-    if (state.filter === 'live') f = f.filter(function(r) { return r.status === 200; });
-    else if (state.filter === 'redirect') f = f.filter(function(r) { return r.status === 301 || r.status === 302; });
-    else if (state.filter === 'error') f = f.filter(function(r) { return r.status >= 400; });
-    else if (state.filter === 'ssl') f = f.filter(function(r) { return r.ssl; });
-    if (state.sortBy === 'status') f = f.slice().sort(function(a, b) { return a.status - b.status; });
-    else if (state.sortBy === 'ip') f = f.slice().sort(function(a, b) { return a.ip.localeCompare(b.ip); });
+    if (state.filter === 'resolving') f = f.filter(function(r) { return r.resolves; });
+    else if (state.filter === 'unresolved') f = f.filter(function(r) { return !r.resolves; });
+    else if (state.filter === 'wildcard') f = f.filter(function(r) { return r.wildcard; });
+    if (state.sortBy === 'ip') f = f.slice().sort(function(a, b) { return (a.ip || '').localeCompare(b.ip || ''); });
+    else if (state.sortBy === 'resolves') f = f.slice().sort(function(a, b) { return (b.resolves ? 1 : 0) - (a.resolves ? 1 : 0); });
     return f;
   }
 
@@ -173,20 +235,19 @@ export function renderSubdomainScanner(container) {
     if (!state.results.length) return '<div class="ss-empty">No results yet. Run a scan first.</div>';
     var filtered = getFiltered();
     var h = '<div class="ss-filters">' +
-      ['all', 'live', 'redirect', 'error', 'ssl'].map(function(f) {
-        var labels = { all: 'All', live: 'Live (200)', redirect: 'Redirects', error: 'Errors', ssl: 'SSL Only' };
+      ['all', 'resolving', 'unresolved', 'wildcard'].map(function(f) {
+        var labels = { all: 'All', resolving: 'Resolving', unresolved: 'No A record', wildcard: 'Wildcards' };
         return '<button class="ss-filter' + (state.filter === f ? ' active' : '') + '" data-filter="' + f + '">' + labels[f] + '</button>';
       }).join('') + '</div>';
 
     h += '<div class="ss-panel" style="overflow-x:auto"><table class="ss-table"><thead><tr>' +
-      '<th data-sort="name">Subdomain</th><th data-sort="ip">IP</th><th data-sort="status">Status</th><th>Server</th><th>Ports</th><th>SSL</th></tr></thead><tbody>';
+      '<th data-sort="name">Subdomain</th><th data-sort="ip">IP (A record)</th><th data-sort="resolves">DNS</th><th>Source</th></tr></thead><tbody>';
     filtered.forEach(function(r) {
+      var color = r.resolves ? '#16a34a' : '#64748b';
       h += '<tr><td style="font-family:ui-monospace,monospace;font-weight:600">' + esc(r.subdomain) + (r.wildcard ? ' <span style="color:#f97316;font-size:.6rem">WILDCARD</span>' : '') + '</td>' +
-        '<td style="font-family:ui-monospace,monospace">' + esc(r.ip) + '</td>' +
-        '<td><span class="ss-badge" style="background:' + r.statusColor + '22;color:' + r.statusColor + '">' + r.status + ' ' + esc(r.statusLabel) + '</span></td>' +
-        '<td style="font-size:.7rem;color:var(--mut)">' + esc(r.server) + '</td>' +
-        '<td>' + r.ports.map(function(p) { return '<span class="ss-port">' + p + '</span>'; }).join('') + '</td>' +
-        '<td><span class="ss-ssl" style="color:' + (r.ssl ? '#16a34a' : '#dc2626') + '">' + (r.ssl ? '&#9679; Yes' : '&#9675; No') + '</span></td></tr>';
+        '<td style="font-family:ui-monospace,monospace">' + (r.ip ? esc(r.ip) : '<span style="color:var(--mut)">—</span>') + '</td>' +
+        '<td><span class="ss-badge" style="background:' + color + '22;color:' + color + '">' + (r.resolves ? 'LIVE' : 'NO A') + '</span></td>' +
+        '<td><span class="ss-src">' + esc(r.source) + '</span></td></tr>';
     });
     h += '</tbody></table></div>';
     h += '<div style="display:flex;gap:8px"><button class="ss-btn-ghost ss-btn" id="ss-export">Copy Results</button></div>';
@@ -197,8 +258,9 @@ export function renderSubdomainScanner(container) {
     if (!state.results.length) return '<div class="ss-empty">No results to visualize.</div>';
     var byIP = {};
     state.results.forEach(function(r) {
-      if (!byIP[r.ip]) byIP[r.ip] = [];
-      byIP[r.ip].push(r);
+      var key = r.ip || '(unresolved)';
+      if (!byIP[key]) byIP[key] = [];
+      byIP[key].push(r);
     });
     var h = '<div class="ss-panel"><div class="ss-tree">';
     h += '<div class="ss-tree-root">' + esc(state.domain) + '</div>';
@@ -206,7 +268,8 @@ export function renderSubdomainScanner(container) {
       h += '<div class="ss-tree-node">';
       h += '<div style="font-weight:600;font-size:.78rem;margin-bottom:4px;color:var(--mut)">' + esc(ip) + ' (' + byIP[ip].length + ' hosts)</div>';
       byIP[ip].forEach(function(r) {
-        h += '<div class="ss-tree-sub"><div class="ss-tree-dot" style="background:' + r.statusColor + '"></div><span>' + esc(r.subdomain) + '</span><span class="ss-badge" style="background:' + r.statusColor + '22;color:' + r.statusColor + ';font-size:.6rem">' + r.status + '</span></div>';
+        var color = r.resolves ? '#16a34a' : '#64748b';
+        h += '<div class="ss-tree-sub"><div class="ss-tree-dot" style="background:' + color + '"></div><span>' + esc(r.subdomain) + '</span></div>';
       });
       h += '</div>';
     });
@@ -217,25 +280,35 @@ export function renderSubdomainScanner(container) {
   function startScan() {
     var el = container.querySelector('#ss-domain');
     if (!el || !el.value.trim()) return;
-    state.domain = el.value.trim();
+    // Accept a bare domain; strip scheme/path if pasted.
+    var dom = el.value.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, '').replace(/^\*?\.?/, '');
+    if (!/^[a-z0-9.-]+\.[a-z]{2,}$/.test(dom)) { state.error = 'Enter a valid domain, e.g. example.com'; render(); return; }
+    state.domain = dom;
     state.scanning = true;
     state.progress = 0;
+    state.progressLabel = 'Starting…';
+    state.error = '';
     state.results = [];
     render();
-    var steps = 20;
-    var step = 0;
-    scanTimer = setInterval(function() {
-      step++;
-      state.progress = Math.min(100, Math.round(step / steps * 100));
-      if (step >= steps) {
-        clearInterval(scanTimer);
-        scanTimer = null;
-        state.scanning = false;
-        state.results = fakeScan(state.domain);
-        state.tab = 'results';
+    realScan(dom, function (pct, label) {
+      state.progress = pct; state.progressLabel = label;
+      if (state.scanning) {
+        var fill = container.querySelector('.ss-progress-fill');
+        var lbl = fill && fill.parentElement ? fill.parentElement.nextElementSibling : null;
+        if (fill) { fill.style.width = pct + '%'; if (lbl) lbl.textContent = label; }
       }
+    }).then(function (out) {
+      state.scanning = false;
+      state.results = out.results;
+      state.crtOk = out.crtOk;
+      if (!out.results.length) state.error = 'No subdomains found that resolve, and no certificate-transparency records returned.';
+      state.tab = out.results.length ? 'results' : 'scan';
       render();
-    }, 150);
+    }).catch(function (e) {
+      state.scanning = false;
+      state.error = 'Scan failed: ' + (e && e.message ? e.message : 'network error');
+      render();
+    });
   }
 
   function wireEvents() {
@@ -254,8 +327,8 @@ export function renderSubdomainScanner(container) {
     });
     var exportBtn = container.querySelector('#ss-export');
     if (exportBtn) exportBtn.onclick = function() {
-      var lines = state.results.map(function(r) { return r.subdomain + ',' + r.ip + ',' + r.status + ',' + r.server + ',' + (r.ssl ? 'SSL' : 'No SSL'); });
-      lines.unshift('Subdomain,IP,Status,Server,SSL');
+      var lines = state.results.map(function(r) { return r.subdomain + ',' + (r.ip || '') + ',' + (r.resolves ? 'LIVE' : 'NO_A') + ',' + r.source; });
+      lines.unshift('Subdomain,IP,DNS,Source');
       if (navigator.clipboard) navigator.clipboard.writeText(lines.join('\n'));
       exportBtn.textContent = 'Copied!';
       setTimeout(function() { exportBtn.textContent = 'Copy Results'; }, 1500);

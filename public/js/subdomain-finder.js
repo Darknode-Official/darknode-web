@@ -176,47 +176,112 @@ function generatePermutations(domain) {
   return results.slice(0, 300);
 }
 
-function simulateScan(domain, words) {
-  const results = [];
-  const hash = (s) => { let h = 0; for (let i = 0; i < s.length; i++) { h = ((h << 5) - h + s.charCodeAt(i)) | 0; } return Math.abs(h); };
-  const ips = ['192.168.1.', '10.0.0.', '172.16.0.', '104.21.', '1.2.3.', '34.102.', '151.101.', '185.199.'];
-  const servers = ['nginx/1.24', 'Apache/2.4', 'cloudflare', 'AmazonS3', 'gws', 'Microsoft-IIS/10.0', 'LiteSpeed', 'openresty'];
-  const titles = ['Login', 'Dashboard', 'Admin Panel', 'Welcome', 'Portal', 'API Documentation', 'Status Page', 'Service'];
-  const portSets = [['80','443'], ['80','443','22'], ['443'], ['80','443','8080'], ['22','80','443'], ['80','443','3306'], ['80','443','8443']];
-  for (const w of words) {
-    const sub = w + '.' + domain;
-    const h = hash(sub);
-    if (h % 5 < 2) {
-      results.push({
-        subdomain: sub,
-        ip: ips[h % ips.length] + (h % 254 + 1),
-        status: (h % 10 === 0) ? 'Timeout' : 'Live',
-        title: titles[h % titles.length],
-        server: servers[h % servers.length],
-        ports: portSets[h % portSets.length],
-        records: { A: ips[h % ips.length] + (h % 254 + 1), CNAME: (h % 3 === 0) ? 'cdn.' + domain : '' }
-      });
+// Real enumeration — no fabricated data.
+//   * Passive:  crt.sh certificate-transparency logs (names a CA actually signed).
+//   * Active:   DNS-over-HTTPS (dns.google) resolves each candidate to a real A record.
+// Both endpoints are in the site CSP. A browser has no raw sockets and is bound by
+// CORS, so it cannot port-scan or read a remote host's HTTP status/server/title.
+// We therefore report only what is genuinely observable: the name, its resolved
+// IP(s), and whether it is live in DNS. If crt.sh is CORS-blocked from the current
+// network, the wordlist is still resolved over DoH, so the scan stays real.
+const DOH_CONCURRENCY = 8;
+const MAX_CANDIDATES = 200;
+
+async function crtshNames(domain) {
+  try {
+    const ctrl = new AbortController();
+    const to = setTimeout(function () { ctrl.abort(); }, 12000);
+    const res = await fetch('https://crt.sh/?q=%25.' + encodeURIComponent(domain) + '&output=json', { signal: ctrl.signal, headers: { Accept: 'application/json' } });
+    clearTimeout(to);
+    if (!res.ok) return { names: [], wildcard: new Set(), ok: false };
+    const data = await res.json();
+    const set = new Set(), wildcard = new Set();
+    for (const row of (Array.isArray(data) ? data : [])) {
+      const raw = String(row.name_value || '').split(/\n+/).concat([String(row.common_name || '')]);
+      for (let n of raw) {
+        n = n.trim().toLowerCase();
+        if (!n) continue;
+        if (n.indexOf('*.') === 0) { n = n.slice(2); wildcard.add(n); }
+        if (n === domain || n.endsWith('.' + domain)) set.add(n);
+      }
+    }
+    return { names: [...set], wildcard: wildcard, ok: true };
+  } catch (_) { return { names: [], wildcard: new Set(), ok: false }; }
+}
+
+async function resolveA(name) {
+  try {
+    const ctrl = new AbortController();
+    const to = setTimeout(function () { ctrl.abort(); }, 6000);
+    const r = await fetch('https://dns.google/resolve?name=' + encodeURIComponent(name) + '&type=A', { signal: ctrl.signal });
+    clearTimeout(to);
+    if (!r.ok) return '';
+    const j = await r.json();
+    const a = (j.Answer || []).filter(function (x) { return x.type === 1; }).map(function (x) { return x.data; });
+    return a[0] || '';
+  } catch (_) { return ''; }
+}
+
+async function resolveAll(names, onTick) {
+  const out = new Array(names.length);
+  let i = 0, done = 0;
+  async function worker() {
+    while (i < names.length) {
+      const idx = i++;
+      out[idx] = await resolveA(names[idx]);
+      done++;
+      if (onTick) onTick(done, names.length);
     }
   }
-  return results;
+  const pool = [];
+  for (let w = 0; w < Math.min(DOH_CONCURRENCY, names.length); w++) pool.push(worker());
+  await Promise.all(pool);
+  return out;
+}
+
+// Passive CT names ∪ wordlist, resolved live over DoH. onProgress(pct, label).
+async function realScan(domain, words, onProgress) {
+  onProgress(5, 'Querying crt.sh certificate transparency...');
+  const ct = await crtshNames(domain);
+  const cand = new Set();
+  for (const n of ct.names) cand.add(n);
+  for (const w of words) cand.add(w + '.' + domain);
+  let names = [...cand];
+  if (names.length > MAX_CANDIDATES) names = names.slice(0, MAX_CANDIDATES);
+  onProgress(20, 'Resolving ' + names.length + ' candidates over DNS-over-HTTPS...');
+  const ips = await resolveAll(names, function (d, total) { onProgress(20 + Math.round(d / total * 78), 'Resolving ' + d + '/' + total + '...'); });
+  const ctSet = new Set(ct.names);
+  const results = [];
+  for (let k = 0; k < names.length; k++) {
+    const sub = names[k], ip = ips[k];
+    const fromCT = ctSet.has(sub);
+    if (!ip && !fromCT) continue; // keep live hosts + CT-attested names
+    results.push({
+      subdomain: sub,
+      ip: ip || '',
+      resolves: !!ip,
+      wildcard: ct.wildcard.has(sub),
+      source: fromCT ? (ip ? 'crt.sh+dns' : 'crt.sh') : 'dns'
+    });
+  }
+  results.sort(function (a, b) { return a.subdomain.localeCompare(b.subdomain); });
+  return { results: results, crtOk: ct.ok };
 }
 
 function renderResultsTable(results) {
-  if (!results.length) return '<p style="color:var(--mut);padding:12px">No subdomains found with current wordlist.</p>';
+  if (!results.length) return '<p style="color:var(--mut);padding:12px">No subdomains found &mdash; nothing in crt.sh and no wordlist candidate resolved in DNS.</p>';
   var html = '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.78rem">';
   html += '<thead><tr style="border-bottom:2px solid var(--line);text-align:left">';
-  html += '<th style="padding:6px 8px">Subdomain</th><th style="padding:6px 8px">IP</th><th style="padding:6px 8px">Status</th>';
-  html += '<th style="padding:6px 8px">Title</th><th style="padding:6px 8px">Server</th><th style="padding:6px 8px">Ports</th></tr></thead><tbody>';
+  html += '<th style="padding:6px 8px">Subdomain</th><th style="padding:6px 8px">IP (A record)</th><th style="padding:6px 8px">DNS</th>';
+  html += '<th style="padding:6px 8px">Source</th></tr></thead><tbody>';
   for (var i = 0; i < results.length; i++) {
     var r = results[i];
-    var statusColor = r.status === 'Live' ? 'var(--acc)' : '#f59e0b';
+    var statusColor = r.resolves ? '#22c55e' : 'var(--mut)';
     html += '<tr style="border-bottom:1px solid var(--line)">';
-    html += '<td style="padding:6px 8px;font-family:var(--mono,monospace)">' + esc(r.subdomain) + '</td>';
-    html += '<td style="padding:6px 8px;font-family:var(--mono,monospace)">' + esc(r.ip) + '</td>';
-    html += '<td style="padding:6px 8px;color:' + statusColor + '">' + esc(r.status) + '</td>';
-    html += '<td style="padding:6px 8px">' + esc(r.title) + '</td>';
-    html += '<td style="padding:6px 8px;color:var(--mut)">' + esc(r.server) + '</td>';
-    html += '<td style="padding:6px 8px;font-family:var(--mono,monospace)">' + r.ports.join(', ') + '</td>';
+    html += '<td style="padding:6px 8px;font-family:var(--mono,monospace)">' + esc(r.subdomain) + (r.wildcard ? ' <span style="color:#f59e0b;font-size:.68rem">WILDCARD</span>' : '') + '</td>';
+    html += '<td style="padding:6px 8px;font-family:var(--mono,monospace)">' + (r.ip ? esc(r.ip) : '<span style="color:var(--mut)">&mdash;</span>') + '</td>';
+    html += '<td style="padding:6px 8px;color:' + statusColor + ';font-weight:600">' + (r.resolves ? 'LIVE' : 'NO A') + '</td>';
+    html += '<td style="padding:6px 8px;font-family:var(--mono,monospace);color:var(--mut);font-size:.72rem">' + esc(r.source) + '</td>';
     html += '</tr>';
   }
   html += '</tbody></table></div>';
@@ -228,7 +293,7 @@ export function renderSubdomainFinder(main) {
 
   main.innerHTML =
     '<h1 class="pg-h1">Subdomain Finder</h1>' +
-    '<p class="muted pg-sub">Subdomain enumeration, DNS reconnaissance, takeover detection, and typosquat generation. All analysis is client-side simulation.</p>' +
+    '<p class="muted pg-sub">Subdomain enumeration (live crt.sh CT logs + DNS-over-HTTPS), takeover fingerprints, and typosquat permutation generation.</p>' +
     '<div class="tab-bar" id="sf-tabs">' +
       '<button class="tab active" data-tab="enum">Enumeration</button>' +
       '<button class="tab" data-tab="takeover">Takeover Check</button>' +
@@ -260,29 +325,45 @@ export function renderSubdomainFinder(main) {
           '<button class="btn sm ghost" id="sf-export-json">Export JSON</button>' +
           '<button class="btn sm" id="sf-to-graph">Send to Security Graph</button>' +
         '</div>' +
-        '<div style="margin-top:6px;font-size:.75rem;color:var(--mut)">Uses a built-in wordlist of ' + WORDLIST.length + ' common subdomains. Results are simulated for educational purposes.</div>' +
+        '<div style="margin-top:6px;font-size:.75rem;color:var(--mut)">Passive discovery via crt.sh certificate-transparency logs, plus live DNS-over-HTTPS resolution of a ' + WORDLIST.length + '-entry wordlist. Real data &mdash; use only on domains you are authorized to assess.</div>' +
         '<div id="sf-results" style="margin-top:12px"></div>' +
         '<div id="sf-stats" style="margin-top:8px;font-size:.8rem;color:var(--mut)"></div>' +
       '</div>';
 
     main.querySelector('#sf-scan').onclick = function() {
-      var domain = main.querySelector('#sf-domain').value.trim();
-      if (!domain) return;
+      var raw = main.querySelector('#sf-domain').value.trim().toLowerCase();
+      var domain = raw.replace(/^https?:\/\//, '').replace(/\/.*$/, '').replace(/^\*?\.?/, '');
+      if (!domain || !/^[a-z0-9.-]+\.[a-z]{2,}$/.test(domain)) {
+        main.querySelector('#sf-results').innerHTML = '<p style="color:#f59e0b">Enter a valid domain, e.g. example.com</p>';
+        return;
+      }
+      var btn = this;
       var results = main.querySelector('#sf-results');
-      results.innerHTML = '<p style="color:var(--acc)">Scanning ' + esc(domain) + ' with ' + WORDLIST.length + ' subdomains...</p>';
-      setTimeout(function() {
-        scanResults = simulateScan(domain, WORDLIST);
+      var stats = main.querySelector('#sf-stats');
+      btn.disabled = true;
+      results.innerHTML = '<p style="color:var(--acc)" id="sf-prog">Starting...</p>';
+      realScan(domain, WORDLIST, function(pct, label) {
+        var p = main.querySelector('#sf-prog');
+        if (p) p.textContent = label + ' (' + pct + '%)';
+      }).then(function(out) {
+        scanResults = out.results;
         results.innerHTML = renderResultsTable(scanResults);
-        main.querySelector('#sf-stats').textContent = 'Found ' + scanResults.length + ' subdomains out of ' + WORDLIST.length + ' tested (' + ((scanResults.length / WORDLIST.length) * 100).toFixed(1) + '% hit rate)';
-      }, 500);
+        var live = scanResults.filter(function(r) { return r.resolves; }).length;
+        var ips = new Set(scanResults.filter(function(r) { return r.ip; }).map(function(r) { return r.ip; })).size;
+        stats.textContent = 'Discovered ' + scanResults.length + ' subdomains of ' + domain + ' — ' + live + ' live in DNS across ' + ips + ' unique IPs.' + (out.crtOk ? '' : ' (crt.sh unreachable/CORS-blocked; DNS resolution only — use the Darknode CLI for full CT discovery.)');
+        btn.disabled = false;
+      }).catch(function(e) {
+        results.innerHTML = '<p style="color:#ef4444">Scan failed: ' + esc(e && e.message ? e.message : 'network error') + '</p>';
+        btn.disabled = false;
+      });
     };
 
     main.querySelector('#sf-export-csv').onclick = function() {
       if (!scanResults.length) return;
-      var csv = 'Subdomain,IP,Status,Title,Server,Ports\n';
+      var csv = 'Subdomain,IP,DNS,Source\n';
       for (var i = 0; i < scanResults.length; i++) {
         var r = scanResults[i];
-        csv += r.subdomain + ',' + r.ip + ',' + r.status + ',' + r.title + ',' + r.server + ',"' + r.ports.join(';') + '"\n';
+        csv += r.subdomain + ',' + (r.ip || '') + ',' + (r.resolves ? 'LIVE' : 'NO_A') + ',' + r.source + '\n';
       }
       var el = document.createElement('textarea');
       el.value = csv; document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el);
@@ -293,24 +374,23 @@ export function renderSubdomainFinder(main) {
       var btn = this;
       if (!scanResults.length) { main.querySelector('#sf-stats').textContent = 'Run a scan first'; return; }
       var root = scanResults[0].subdomain.split('.').slice(1).join('.');
-      var meta = { simulated: true, scannedAt: new Date().toISOString() };
-      var tags = ['subdomain', 'simulated'];
+      var meta = { scannedAt: new Date().toISOString() };
+      var tags = ['subdomain', 'ct-log'];
       btn.disabled = true;
       import('/js/graph-bridge.js?v=20260923c').then(function(gb) {
         var rootEnt = gb.sendToGraph('Subdomain Finder', [{ type: 'DOMAIN', name: root, data: meta, opts: { tags: tags } }], undefined, true).entities[0];
         var created = 0, updated = 0;
         gb.batchGraph(function() { scanResults.forEach(function(r) {
-          var out = gb.sendToGraph('Subdomain Finder', [
-            { type: 'DOMAIN', name: r.subdomain, data: Object.assign({ ip: r.ip, status: r.status, server: r.server, ports: r.ports.join(',') }, meta), opts: { tags: tags } },
-            { type: 'IP', name: r.ip, data: Object.assign({ record: r.subdomain }, meta), opts: { tags: tags } }
-          ], undefined, true);
+          var items = [{ type: 'DOMAIN', name: r.subdomain, data: Object.assign({ ip: r.ip, dns: r.resolves ? 'live' : 'no-a', source: r.source }, meta), opts: { tags: tags } }];
+          if (r.ip) items.push({ type: 'IP', name: r.ip, data: Object.assign({ record: r.subdomain }, meta), opts: { tags: tags } });
+          var out = gb.sendToGraph('Subdomain Finder', items, undefined, true);
           created += out.created; updated += out.updated;
           var sub = out.entities[0], ip = out.entities[1];
           if (rootEnt && sub) gb.linkEntities(rootEnt.id, sub.id, 'related_to');
           if (sub && ip) gb.linkEntities(sub.id, ip.id, 'related_to');
         }); });
         btn.textContent = 'Sent: ' + created + ' new, ' + updated + ' merged';
-        gb.showGraphToast('Security Graph: ' + scanResults.length + ' subdomains of ' + root + ' (tagged simulated)');
+        gb.showGraphToast('Security Graph: ' + scanResults.length + ' subdomains of ' + root);
       }).catch(function() { btn.textContent = 'Security Graph unavailable'; btn.disabled = false; });
     };
 

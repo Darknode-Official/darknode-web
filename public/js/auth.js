@@ -1650,7 +1650,7 @@ function renderApp(user) {
     else if (sec === "compliance") { import("/js/compliance-checker.js?v=20260924a").then(m => m.renderComplianceChecker(main)); }
     else if (sec === "attacksim") { import("/js/attack-simulator.js").then(m => m.renderAttackSimulator(main)); }
     else if (sec === "dns") { import("/js/dns-toolkit.js").then(m => m.renderDNSToolkit(main)); }
-    else if (sec === "subdomains") { import("/js/subdomain-finder.js?v=20260923d").then(m => m.renderSubdomainFinder(main)); }
+    else if (sec === "subdomains") { import("/js/subdomain-finder.js?v=20261004a").then(m => m.renderSubdomainFinder(main)); }
     else if (sec === "mobilesec") { import("/js/mobile-security-lab.js").then(m => m.renderMobileSecurityLab(main)); }
     else if (sec === "apiscan") { import("/js/api-security-scanner.js?v=20260924b").then(m => m.renderAPISecurityScanner(main)); }
     else if (sec === "wirelesslab") { import("/js/wireless-lab.js").then(m => m.renderWirelessLab(main)); }
