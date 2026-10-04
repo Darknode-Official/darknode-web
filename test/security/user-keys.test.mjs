@@ -136,3 +136,35 @@ group("security regression guards (static source checks)", () => {
     assert.ok(uk < app, "user-keys.js loads before auth.js");
   });
 });
+
+group("Nexus CLI pairing (refresh-token login replaced)", () => {
+  const read = (p) => readFileSync(join(pub, p), "utf8");
+  const root = join(here, "..", "..");
+  const readRoot = (p) => readFileSync(join(root, p), "utf8");
+
+  test("auth.js no longer exposes the Firebase refresh token as a login code", () => {
+    const s = read("js/auth.js");
+    // The Nexus panel must not render user.refreshToken into any input value.
+    assert.ok(!/value="\$\{esc\(user\.refreshToken/.test(s), "refresh token must not be shown in the Nexus panel");
+    assert.ok(!/codeInput\.value\s*=\s*user\.refreshToken/.test(s), "refresh token must not be assigned into the code input");
+    // The pairing flow replaces it.
+    assert.ok(/_makePairingCode/.test(s), "pairing-code generator present");
+    assert.ok(/doc\(db, "pairings", code\)/.test(s), "writes to the pairings collection");
+  });
+
+  test("Firestore rules lock down the pairings collection", () => {
+    const r = readRoot("firebase/firestore.rules");
+    assert.ok(/match \/pairings\/\{code\}/.test(r), "pairings rule block exists");
+    assert.ok(/allow read, list, update: if false;/.test(r), "no client read/list/update of pairing codes");
+    assert.ok(/request\.resource\.data\.uid == request\.auth\.uid/.test(r), "a user may only create a pairing for their own uid");
+  });
+
+  test("functions expose the pair exchange endpoint, backed by the Admin SDK", () => {
+    const f = readRoot("functions/index.js");
+    assert.ok(/exports\.pair\s*=\s*onRequest/.test(f), "exports.pair endpoint present");
+    assert.ok(/admin\.initializeApp\(\)/.test(f), "firebase-admin initialized");
+    assert.ok(/collection\("pairings"\)\.doc\(code\)/.test(f), "looks up the code in the pairings collection");
+    assert.ok(/ref\.delete\(\)/.test(f), "single-use: the code is deleted on exchange");
+    assert.ok(/chatOriginAllowed\(_origin\)/.test(f) && /chatRateLimited\(_ip\)/.test(f), "pair endpoint is origin-gated and rate-limited");
+  });
+});

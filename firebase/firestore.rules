@@ -21,6 +21,18 @@ service cloud.firestore {
       allow delete: if isOwner();
     }
 
+    // Nexus CLI pairing codes: a signed-in user may create a one-time code ONLY
+    // for their own account. No client may read, list, or update a code — it is
+    // consumed server-side by the exchange endpoint (Admin SDK bypasses rules).
+    // The user may delete their own pending code (e.g. to cancel it).
+    match /pairings/{code} {
+      allow create: if signedIn()
+                    && request.resource.data.uid == request.auth.uid
+                    && request.resource.data.email == email();
+      allow read, list, update: if false;
+      allow delete: if signedIn() && resource.data.uid == request.auth.uid;
+    }
+
     // Announcements + settings: any signed-in user reads; only the owner writes.
     match /announcements/{docId} {
       allow read:  if signedIn();

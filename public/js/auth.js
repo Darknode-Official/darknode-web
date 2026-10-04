@@ -1100,6 +1100,36 @@ function renderSettingsPage(main, user, isOwner, initialTab) {
   // users on one browser never share a key. No shared constant fallback — if
   // storage is unavailable we mint a fresh in-memory key, never a fixed one.
   const _mintKey = () => { const b = new Uint8Array(24); (crypto || window.crypto).getRandomValues(b); return "dn_live_" + Array.from(b).map((x) => x.toString(16).padStart(2, "0")).join(""); };
+  // --- Nexus CLI pairing: a one-time, short-lived code that the exchange endpoint
+  // swaps for the user's revocable Darknode API key. The Firebase refresh token is
+  // never shown or handed out. Crockford-ish alphabet (no I/O/0/1) for clean typing.
+  const PAIR_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  const _genPairCode = () => { const b = new Uint8Array(16); (crypto || window.crypto).getRandomValues(b); let s = ""; for (const x of b) s += PAIR_ALPHABET[x & 31]; return s; };
+  const _groupPairCode = (s) => s.replace(/(.{4})(?=.)/g, "$1-");
+  const _getOrMintUserApiKey = async (uid) => {
+    const ref = doc(db, "users", uid); let apiKey = "";
+    try { const snap = await getDoc(ref); if (snap.exists()) apiKey = (snap.data() || {}).apiKey || ""; } catch (_) {}
+    if (!apiKey) {
+      const hex = Array.from((crypto || window.crypto).getRandomValues(new Uint8Array(16))).map((b) => b.toString(16).padStart(2, "0")).join("");
+      apiKey = "sk-darknode-" + hex;
+      try { await setDoc(ref, { apiKey }, { merge: true }); } catch (_) {}
+    }
+    return apiKey;
+  };
+  const _makePairingCode = async () => {
+    if (!user || !user.uid) throw new Error("not signed in");
+    const apiKey = await _getOrMintUserApiKey(user.uid);
+    const code = _genPairCode();
+    await setDoc(doc(db, "pairings", code), {
+      uid: user.uid,
+      email: user.email || "",
+      name: user.displayName || user.email || "",
+      apiKey,
+      createdAt: serverTimestamp(),
+      expiresAt: Date.now() + 5 * 60 * 1000,
+    });
+    return code;
+  };
   const dnKey = (() => {
     try {
       let k = window.dnKeys && window.dnKeys.get("dn_api_key");
@@ -1224,14 +1254,14 @@ function renderSettingsPage(main, user, isOwner, initialTab) {
       </div>
       <p class="muted" style="font-size:.72rem;margin-top:10px">The <span class="mono">@darknode/mcp</span> package ships with the Darknode CLI. It bridges to this workspace using the API key above, so the model acts with your access only.</p>`,
     nexus: `<h2 class="set-panel-h">Nexus CLI</h2>
-      <p class="muted">Sign in to the Nexus terminal agent with this code. In Nexus, run <span class="mono">/login</span> and paste it.</p>
-      <div class="set-row"><span class="muted">Your code</span>
+      <p class="muted">Sign in to the Nexus terminal agent. Generate a one-time code below, then in Nexus run <span class="mono">/login</span> and paste it.</p>
+      <div class="set-row"><span class="muted">Login code</span>
         <span class="nexus-code-row">
-          <input id="nexus-code" class="mono" type="password" readonly value="${esc(user.refreshToken || "")}" autocomplete="off" spellcheck="false">
-          <button class="btn ghost" id="nexus-reveal" type="button">Reveal</button>
+          <input id="nexus-code" class="mono" type="text" readonly value="" placeholder="Click Generate code" autocomplete="off" spellcheck="false">
+          <button class="btn" id="nexus-gen" type="button">Generate code</button>
           <button class="btn ghost" id="nexus-copy" type="button">Copy</button>
         </span></div>
-      <p class="muted" style="font-size:.75rem">Treat this like a password. Changing your password revokes it.</p>`,
+      <p class="muted" id="nexus-code-note" style="font-size:.75rem">The code is <b>one-time use</b> and expires in 5 minutes. It links the CLI to your account with a revocable API key &mdash; it is <b>not</b> your password and cannot change your account.</p>`,
     about: `<h2 class="set-panel-h">About</h2>
       <p class="muted">Darknode -- your security workspace. In-browser tools plus install commands for everything that runs on your machine.</p>
       <p class="muted" style="font-size:.75rem">Version 1.0</p>`,
@@ -1345,9 +1375,19 @@ function renderSettingsPage(main, user, isOwner, initialTab) {
     if (pwBtn) pwBtn.onclick = async () => { try { await sendPasswordResetEmail(auth, user.email, RESET_ACS); showToast("Password reset link sent to " + user.email, "success"); } catch (e) { showToast(errText(e), "error"); } };
     const codeInput = main.querySelector("#nexus-code");
     if (codeInput) {
-      if (!codeInput.value) { user.getIdToken().then(() => { codeInput.value = user.refreshToken || ""; }).catch(() => {}); }
-      const rev = main.querySelector("#nexus-reveal"); if (rev) rev.onclick = (e) => { const hidden = codeInput.type === "password"; codeInput.type = hidden ? "text" : "password"; e.target.textContent = hidden ? "Hide" : "Reveal"; };
-      const cp = main.querySelector("#nexus-copy"); if (cp) cp.onclick = async (e) => { try { await navigator.clipboard.writeText(codeInput.value); } catch (_) { const t = codeInput.type; codeInput.type = "text"; codeInput.select(); try { document.execCommand("copy"); } catch (__) {} codeInput.type = t; } const b = e.target, o = b.textContent; b.textContent = "Copied"; setTimeout(() => { b.textContent = o; }, 1200); };
+      const note = main.querySelector("#nexus-code-note");
+      const gen = main.querySelector("#nexus-gen");
+      if (gen) gen.onclick = async () => {
+        const o = gen.textContent; gen.disabled = true; gen.textContent = "Generating…";
+        try {
+          const code = await _makePairingCode();
+          codeInput.value = _groupPairCode(code);
+          if (note) note.innerHTML = "This code is <b>one-time use</b> and expires in <b>5 minutes</b>. Paste it into Nexus with <span class=\"mono\">/login</span>. It carries only a revocable API key &mdash; not your password.";
+        } catch (e) {
+          if (note) note.textContent = "Could not generate a code: " + ((e && e.message) || "please try again.");
+        } finally { gen.disabled = false; gen.textContent = o; }
+      };
+      const cp = main.querySelector("#nexus-copy"); if (cp) cp.onclick = async (e) => { if (!codeInput.value) { showToast("Generate a code first", "info"); return; } try { await navigator.clipboard.writeText(codeInput.value); } catch (_) { codeInput.select(); try { document.execCommand("copy"); } catch (__) {} } const b = e.target, o = b.textContent; b.textContent = "Copied"; setTimeout(() => { b.textContent = o; }, 1200); };
     }
   }
   main.querySelector(".set-nav").onclick = (e) => { const b = e.target.closest(".set-tab"); if (b) showSetTab(b.dataset.stab); };

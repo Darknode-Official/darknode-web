@@ -24,8 +24,11 @@
 // so the client has a single parser regardless of upstream format.
 
 const { onRequest } = require("firebase-functions/v2/https");
+const admin = require("firebase-admin");
 const dns = require("dns").promises;
 const net = require("net");
+
+if (!admin.apps.length) admin.initializeApp();
 
 const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
 
@@ -422,4 +425,38 @@ exports.chat = onRequest({ cors: true, region: "us-central1", timeoutSeconds: 12
     if (!res.headersSent) res.status(500).json({ error: e.message });
     else res.end();
   }
+});
+
+// ---------------------------------------------------------------------------
+// Nexus CLI pairing exchange. The website writes a one-time, 5-minute code to
+// Firestore `pairings/{code}` carrying the user's uid/email/name and their
+// REVOCABLE Darknode API key (never the Firebase refresh token). The CLI POSTs
+// the code here; we look it up with the Admin SDK (clients cannot read the
+// collection), delete it immediately (single-use, even on failure), check the
+// expiry, and return the account identity + API key. Origin-gated + rate-limited
+// like /chat; the CLI sends no Origin, which is allowed.
+// ---------------------------------------------------------------------------
+function normalizePairCode(raw) {
+  return String(raw || "").replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+}
+exports.pair = onRequest({ cors: true, region: "us-central1", timeoutSeconds: 20, memory: "256MiB" }, async (req, res) => {
+  if (req.method !== "POST") { res.status(405).json({ error: "POST only" }); return; }
+  const _origin = req.get && req.get("origin");
+  if (!chatOriginAllowed(_origin)) { res.status(403).json({ error: "Origin not allowed" }); return; }
+  const _ip = (req.get && (req.get("x-forwarded-for") || "").split(",")[0].trim()) || req.ip || "unknown";
+  if (chatRateLimited(_ip)) { res.status(429).json({ error: "Rate limit exceeded — slow down and retry shortly." }); return; }
+
+  const code = normalizePairCode((req.body || {}).code);
+  if (!code || code.length < 8 || code.length > 64) { res.status(400).json({ error: "Invalid code" }); return; }
+
+  const ref = admin.firestore().collection("pairings").doc(code);
+  let snap;
+  try { snap = await ref.get(); } catch (e) { res.status(500).json({ error: "Lookup failed" }); return; }
+  if (!snap.exists) { res.status(404).json({ error: "Invalid or expired code — generate a fresh one on the website (Settings → Nexus CLI)." }); return; }
+  const d = snap.data() || {};
+  // Single-use: consume the code regardless of whether it turns out valid.
+  try { await ref.delete(); } catch (_) {}
+  if (d.expiresAt && Date.now() > Number(d.expiresAt)) { res.status(410).json({ error: "Code expired — generate a fresh one on the website." }); return; }
+  if (!d.uid || !d.apiKey) { res.status(410).json({ error: "Code is no longer valid — generate a fresh one." }); return; }
+  res.status(200).json({ uid: d.uid, email: d.email || "", name: d.name || "", apiKey: d.apiKey });
 });
