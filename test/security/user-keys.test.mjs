@@ -120,6 +120,17 @@ group("security regression guards (static source checks)", () => {
     assert.ok(!/dn_live_0000000000000000000000000000000000000000000000/.test(s), "shared constant fallback key must be gone");
   });
 
+  test("no-account sessions use a random per-session uid, not a fixed shared one", () => {
+    const s = read("js/auth.js");
+    // The old fixed uids put every Test Mode / app-guest session into one shared
+    // dnk:<uid>:* key namespace. They must be generated per session instead.
+    assert.ok(!/uid:\s*"test-user"/.test(s), 'fixed "test-user" uid must be gone');
+    assert.ok(!/uid:\s*"app-guest"/.test(s), 'fixed "app-guest" uid must be gone');
+    assert.ok(!/__dnUid\s*=\s*"app-guest"/.test(s), 'fixed "app-guest" must not be written to __dnUid');
+    assert.ok(/_guestUid\("test"\)/.test(s), "Test Mode derives a per-session uid");
+    assert.ok(/_guestUid\("app-guest"\)/.test(s), "app guest derives a per-session uid");
+  });
+
   test("credential consumers route through window.dnKeys, not raw global localStorage", () => {
     for (const f of ["js/webai.js", "js/threat-api.js", "js/address-intel.js", "js/labs.js"]) {
       const s = read(f);

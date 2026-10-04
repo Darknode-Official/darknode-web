@@ -26,6 +26,19 @@ import("/js/toolkit.js").then(m => { MORE = m.MORE; CATALOG = m.CATALOG; CATEGOR
 import { startTour, tourDone } from "/js/tour.js";
 let _landing = null;
 async function loadLanding() { if (!_landing) _landing = await import("/js/landing.js?v=20261003a"); return _landing; }
+// No-account identities (Test Mode / app guest) get a RANDOM, per-session uid, not a
+// fixed shared one. The old fixed "test-user"/"app-guest" uids put every such session
+// into one shared dnk:<uid>:* key namespace, so two people could land on the same
+// stored API key. A fresh random uid per session isolates them; sessionStorage keeps
+// it stable across in-tab navigation and clears when the tab closes.
+function _guestUid(prefix) {
+  const ss = prefix + "_uid";
+  try { const v = sessionStorage.getItem(ss); if (v) return v; } catch (_) {}
+  const b = new Uint8Array(12); (crypto || window.crypto).getRandomValues(b);
+  const uid = prefix + "-" + Array.from(b).map((x) => x.toString(16).padStart(2, "0")).join("");
+  try { sessionStorage.setItem(ss, uid); } catch (_) {}
+  return uid;
+}
 
 // Plain-language, newbie-friendly one-liners for every sidebar item + group.
 // Surfaced as a hover tooltip so the sidebar stays visually neat while every
@@ -622,7 +635,7 @@ function renderAuth(mode = "signin") {
 
   const err = (m) => { document.getElementById("err").textContent = m; };
   document.getElementById("testMode").onclick = () => {
-    const fakeUser = { uid: "test-user", email: "test@darknode.ai", displayName: "Test User", providerData: [{ providerId: "test" }], metadata: { creationTime: new Date().toISOString() }, refreshToken: "", getIdToken: () => Promise.resolve("") };
+    const fakeUser = { uid: _guestUid("test"), email: "test@darknode.ai", displayName: "Test User", providerData: [{ providerId: "test" }], metadata: { creationTime: new Date().toISOString() }, refreshToken: "", getIdToken: () => Promise.resolve("") };
     renderApp(fakeUser);
   };
   document.getElementById("google").onclick = async () => {
@@ -2314,8 +2327,9 @@ onAuthStateChanged(auth, async (user) => {
     try { guest = new URLSearchParams(location.search).get("app") === "1" || sessionStorage.getItem("dn_guest") === "1"; } catch (_) {}
     if (guest) {
       try { sessionStorage.setItem("dn_guest", "1"); } catch (_) {}
-      try { window.__dnUid = "app-guest"; } catch (_) {}
-      renderApp({ uid: "app-guest", email: "guest@darknode.ai", displayName: "Guest", providerData: [{ providerId: "test" }], metadata: { creationTime: new Date().toISOString() }, refreshToken: "", getIdToken: () => Promise.resolve("") });
+      const guestUid = _guestUid("app-guest");
+      try { window.__dnUid = guestUid; } catch (_) {}
+      renderApp({ uid: guestUid, email: "guest@darknode.ai", displayName: "Guest", providerData: [{ providerId: "test" }], metadata: { creationTime: new Date().toISOString() }, refreshToken: "", getIdToken: () => Promise.resolve("") });
       return;
     }
     showLanding(); return;
