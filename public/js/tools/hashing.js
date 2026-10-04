@@ -67,6 +67,110 @@ function murmur3_32(str, seed, H) {
 const luhnSum = (digits) => { let sum = 0, alt = false; for (let i = digits.length - 1; i >= 0; i--) { let d = digits.charCodeAt(i) - 48; if (alt) { d *= 2; if (d > 9) d -= 9; } sum += d; alt = !alt; } return sum; };
 const gtinCheck = (payload) => { let sum = 0; for (let i = 0; i < payload.length; i++) { const posFromRight = payload.length - i; const w = (posFromRight % 2 === 1) ? 3 : 1; sum += payload[i] * w; } return (10 - (sum % 10)) % 10; };
 
+// ---------------- Hash Analyzer flagship: shared data ----------------
+// A compact, realistic common-password list used by the dictionary cracker.
+// Inline per the mini-tool contract (no external data / network).
+const HASH_WORDLIST = [
+  "password", "123456", "123456789", "12345678", "12345", "1234567", "qwerty",
+  "abc123", "password1", "password123", "admin", "administrator", "root", "toor",
+  "letmein", "welcome", "welcome1", "monkey", "dragon", "master", "login", "princess",
+  "qwerty123", "1q2w3e4r", "1qaz2wsx", "zaq12wsx", "iloveyou", "sunshine", "superman",
+  "football", "baseball", "soccer", "hockey", "hunter", "hunter2", "trustno1", "shadow",
+  "michael", "jennifer", "jordan", "harley", "ranger", "batman", "test", "test123",
+  "guest", "changeme", "default", "secret", "pass", "passw0rd", "p@ssw0rd", "P@ssw0rd",
+  "Password1", "Password123", "Passw0rd", "Welcome1", "Welcome123", "Admin123", "root123",
+  "qazwsx", "zxcvbnm", "asdfgh", "asdfghjkl", "qwertyuiop", "1234567890", "0000", "1111",
+  "1234", "4321", "121212", "696969", "666666", "888888", "7777777", "000000", "abcdef",
+  "abcd1234", "a1b2c3", " ", "", "ninja", "access", "flower", "whatever", "freedom",
+  "starwars", "cheese", "computer", "internet", "service", "google", "facebook", "mustang",
+  "pokemon", "charlie", "robert", "thomas", "daniel", "hannah", "summer", "winter", "spring",
+  "autumn", "orange", "purple", "silver", "golden", "diamond", "matrix", "hello", "hello123",
+  "love", "lovely", "angel", "angels", "bailey", "buster", "soccer1", "jesus", "nicole",
+  "amanda", "ashley", "michelle", "tigger", "chocolate", "snoopy", "maverick", "qwe123",
+  "123qwe", "asd123", "zxc123", "adminadmin", "rootroot", "passpass", "secret123", "god",
+  "money", "killer", "pepper", "ginger", "banana", "apple", "lemon", "cookie", "pizza",
+  "coffee", "temp", "temp123", "demo", "sample", "example", "user", "user123", "oracle",
+  "postgres", "mysql", "sqlserver", "redhat", "ubuntu", "centos", "debian", "nagios",
+  "cisco", "juniper", "vagrant", "raspberry", "pi", "server", "backup", "operator",
+];
+// length -> ranked hex candidates with hashcat mode + john format + note.
+const HASH_BY_LEN = {
+  8: [["CRC32", "11500", "crc32", "needs a :00000000 suffix in hashcat"], ["Adler-32", "-", "-", "checksum, not a password hash"], ["CRC32C", "-", "-", "Castagnoli checksum"], ["FNV-32", "-", "-", "non-crypto hash"]],
+  16: [["MySQL323", "200", "mysql", "pre-4.1 MySQL password()"], ["Half-MD5", "5100", "-", "first 16 hex of MD5"], ["DES(crypt) raw", "-", "-", "unsalted DES block"]],
+  32: [["MD5", "0", "raw-md5", "by far the most common 32-hex hash"], ["NTLM", "1000", "nt", "Windows account hash: MD4 of UTF-16LE"], ["MD4", "900", "raw-md4", "legacy"], ["LM", "3000", "lm", "only if uppercase and from a Windows SAM"], ["MD5(MD5())", "2600", "-", "double MD5"], ["RAdmin v2", "9900", "-", "if from RAdmin"]],
+  40: [["SHA-1", "100", "raw-sha1", "most common 40-hex hash"], ["MySQL4.1/5", "300", "mysql-sha1", "stored as *UPPERCASE with a leading *"], ["RIPEMD-160", "6000", "ripemd-160", "-"], ["SHA1(MD5())", "4700", "-", "nested"], ["Tiger-160", "-", "-", "-"]],
+  56: [["SHA-224", "1300", "raw-sha224", "-"], ["SHA3-224", "17300", "-", "-"], ["Keccak-224", "17700", "-", "-"]],
+  64: [["SHA-256", "1400", "raw-sha256", "most common 64-hex hash"], ["SHA3-256", "17400", "-", "-"], ["Keccak-256", "17800", "-", "Ethereum uses Keccak-256"], ["BLAKE2s-256", "-", "-", "-"], ["SM3", "-", "-", "Chinese national standard"], ["GOST R 34.11", "6900", "-", "-"]],
+  96: [["SHA-384", "10800", "raw-sha384", "-"], ["SHA3-384", "17500", "-", "-"]],
+  128: [["SHA-512", "1700", "raw-sha512", "most common 128-hex hash"], ["SHA3-512", "17600", "-", "-"], ["Whirlpool", "6100", "whirlpool", "-"], ["BLAKE2b-512", "600", "-", "-"], ["Keccak-512", "18000", "-", "-"]],
+};
+// Prefixed / structured formats (regex -> details).
+const HASH_PREFIXES = [
+  [/^\$2[abxy]?\$\d\d\$[./A-Za-z0-9]{53}$/, "bcrypt", "3200", "bcrypt", "slow + salted; dictionary-only, not crackable live here"],
+  [/^\$1\$[^$]+\$/, "md5crypt (Unix $1$)", "500", "md5crypt", "salted, slow"],
+  [/^\$apr1\$[^$]+\$/, "Apache md5 ($apr1$)", "1600", "-", "htpasswd MD5"],
+  [/^\$5\$(rounds=\d+\$)?[^$]+\$/, "sha256crypt (Unix $5$)", "7400", "sha256crypt", "salted, slow"],
+  [/^\$6\$(rounds=\d+\$)?[^$]+\$/, "sha512crypt (Unix $6$)", "1800", "sha512crypt", "salted, slow — common in /etc/shadow"],
+  [/^\$y\$/, "yescrypt", "-", "-", "modern Linux /etc/shadow default"],
+  [/^\$7\$/, "scrypt", "8900", "-", "memory-hard"],
+  [/^\$argon2(id|i|d)\$/, "Argon2", "-", "argon2", "modern memory-hard KDF"],
+  [/^\$pbkdf2(-sha(256|512))?\$/, "PBKDF2", "-", "-", "iterated KDF"],
+  [/^pbkdf2_sha256\$\d+\$/, "Django PBKDF2-SHA256", "10000", "django", "Django default"],
+  [/^\$P\$[./A-Za-z0-9]{31}$/, "phpass ($P$)", "400", "phpass", "WordPress / phpBB3"],
+  [/^\$H\$[./A-Za-z0-9]{31}$/, "phpass ($H$)", "400", "phpass", "older phpBB"],
+  [/^\{SSHA\}/, "LDAP {SSHA}", "111", "-", "salted SHA-1, base64"],
+  [/^\{SHA\}/, "LDAP {SHA}", "101", "-", "unsalted SHA-1, base64"],
+  [/^\{SSHA256\}/, "LDAP {SSHA256}", "1411", "-", "-"],
+  [/^\{MD5\}/, "LDAP {MD5}", "-", "-", "base64 MD5"],
+  [/^0x0100[0-9a-fA-F]{88}$/, "MSSQL 2005+", "132", "mssql05", "-"],
+  [/^0x0200[0-9a-fA-F]+$/, "MSSQL 2012+", "1731", "mssql12", "-"],
+  [/^sha1\$[^$]+\$[0-9a-f]{40}$/, "Django SHA-1", "124", "django", "-"],
+  [/^[0-9a-f]{32}:[0-9a-fA-F]+$/i, "md5($salt.$pass) or md5($pass.$salt)", "10/20", "-", "salted MD5 (hash:salt) — set the salt + mode below"],
+];
+
+function identifyHash(raw) {
+  const h = raw.trim();
+  const out = [];
+  for (const [re, name, hc, john, note] of HASH_PREFIXES) {
+    if (re.test(h)) out.push({ name, hc, john, note, kind: "prefix" });
+  }
+  const hexRe = /^[0-9a-fA-F]+$/;
+  if (hexRe.test(h) && HASH_BY_LEN[h.length]) {
+    const upper = h === h.toUpperCase() && /[A-F]/.test(h);
+    for (const [name, hc, john, note] of HASH_BY_LEN[h.length]) {
+      if (name === "LM" && !upper) continue; // LM is uppercase hex
+      out.push({ name, hc, john, note, kind: "hex" });
+    }
+  }
+  if (!out.length && /^[A-Za-z0-9+/]{16,}={0,2}$/.test(h) && h.length % 4 === 0) {
+    out.push({ name: "Base64-encoded digest or token", hc: "-", john: "-", note: "decode it first to see the raw bytes", kind: "b64" });
+  }
+  return out;
+}
+// Fast-hash constructions the live cracker can compute (no salt).
+async function hashCompute(alg, pass, H) {
+  switch (alg) {
+    case "MD5": return H.md5(pass);
+    case "MD4": return md4(H.bytes(pass));
+    case "NTLM": return md4(toUTF16LE(pass));
+    case "SHA-1": return await H.sha1(pass);
+    case "SHA-256": return await H.sha256(pass);
+    case "SHA-384": return await H.sha384(pass);
+    case "SHA-512": return await H.sha512(pass);
+    case "MD5(MD5())": return H.md5(H.md5(pass));
+    case "SHA1(MD5())": return await H.sha1(H.md5(pass));
+    default: return null;
+  }
+}
+// Which unsalted constructions to try for a given hex length.
+const HASH_CRACK_ALGS = { 32: ["MD5", "NTLM", "MD4", "MD5(MD5())"], 40: ["SHA-1", "SHA1(MD5())"], 64: ["SHA-256"], 96: ["SHA-384"], 128: ["SHA-512"] };
+// Salted constructions (needs a salt); label -> builder of the signing string.
+const HASH_SALT_BUILD = {
+  "md5(pass.salt)": (p, s) => ["MD5", p + s], "md5(salt.pass)": (p, s) => ["MD5", s + p],
+  "sha1(pass.salt)": (p, s) => ["SHA-1", p + s], "sha1(salt.pass)": (p, s) => ["SHA-1", s + p],
+  "sha256(pass.salt)": (p, s) => ["SHA-256", p + s], "sha256(salt.pass)": (p, s) => ["SHA-256", s + p],
+};
+
 export const TOOLS = [
   { id: "h-md5", name: "MD5 Hash", cat: "hashing", desc: "Compute the MD5 digest of text (RFC 1321).", tags: ["md5", "digest"],
     run(v, H) { return v.text ? H.md5(v.text) : ""; },
@@ -145,32 +249,81 @@ export const TOOLS = [
     inputs: [{ k: "text", label: "Input", type: "textarea", rows: 4 }, { k: "seed", label: "Seed", type: "text", inputType: "number", value: "0" }],
     run(v, H) { if (!v.text) return ""; const seed = H.clampInt(v.seed, 0, 0xffffffff, 0); return murmur3_32(v.text, seed, H); } },
 
-  { id: "h-hash-identifier", name: "Hash Type Identifier", cat: "hashing", desc: "Guess the likely algorithm(s) behind a hash string by its length, charset and prefix.", tags: ["identify", "guess"],
-    inputs: [{ k: "hash", label: "Hash", type: "text", placeholder: "5f4dcc3b5aa765d61d8327deb882cf99" }],
-    run(v) {
-      if (!v.hash) return "";
-      const h = v.hash.trim();
-      const hexRe = /^[a-fA-F0-9]+$/;
-      const candidates = [];
-      if (/^\$2[abxy]?\$/.test(h)) candidates.push("bcrypt");
-      else if (/^\$1\$/.test(h)) candidates.push("MD5 crypt (Unix)");
-      else if (/^\$5\$/.test(h)) candidates.push("SHA-256 crypt (Unix)");
-      else if (/^\$6\$/.test(h)) candidates.push("SHA-512 crypt (Unix)");
-      else if (!hexRe.test(h) && h.length % 4 === 0 && /^[A-Za-z0-9+/]{20,}={0,2}$/.test(h)) candidates.push("Base64-encoded digest");
-      if (hexRe.test(h)) {
-        switch (h.length) {
-          case 8: candidates.push("CRC32 / Adler-32"); break;
-          case 16: candidates.push("MySQL323 / Half MD5"); break;
-          case 32: candidates.push("MD5 / MD4 / NTLM / LM"); break;
-          case 40: candidates.push("SHA-1 / MySQL5 / RIPEMD-160"); break;
-          case 56: candidates.push("SHA-224 / SHA3-224"); break;
-          case 64: candidates.push("SHA-256 / SHA3-256 / BLAKE2s"); break;
-          case 96: candidates.push("SHA-384 / SHA3-384"); break;
-          case 128: candidates.push("SHA-512 / SHA3-512 / Whirlpool"); break;
+  { id: "h-hash-analyzer", name: "Hash Analyzer & Cracker", cat: "hashing",
+    desc: "Identify a hash (length, charset, prefix -> ranked candidates with hashcat -m and John formats), then dictionary-crack the fast unsalted ones (MD5, SHA-1/256/384/512, NTLM, MD4, double-MD5) and salted MD5/SHA variants — all in your browser, for authorized password audits.",
+    tags: ["identify", "hashcat", "john", "crack", "dictionary", "ntlm", "md5", "sha", "password", "recover"],
+    button: "Run",
+    inputs: [
+      { k: "hash", label: "Hash", type: "text", placeholder: "5f4dcc3b5aa765d61d8327deb882cf99" },
+      { k: "mode", label: "Mode", type: "select", value: "identify", opts: [["identify", "Identify — type + hashcat/John modes"], ["crack", "Crack — dictionary attack"]] },
+      { k: "wordlist", label: "Crack: extra passwords (one per line)", type: "textarea", rows: 3, placeholder: "candidate passwords, one per line — tried in addition to the built-in list" },
+      { k: "salt", label: "Crack: salt (optional)", type: "text", placeholder: "leave blank for unsalted" },
+      { k: "saltMode", label: "Crack: salted construction", type: "select", value: "none", opts: [["none", "none (unsalted)"], ["md5(pass.salt)", "md5(pass+salt)"], ["md5(salt.pass)", "md5(salt+pass)"], ["sha1(pass.salt)", "sha1(pass+salt)"], ["sha1(salt.pass)", "sha1(salt+pass)"], ["sha256(pass.salt)", "sha256(pass+salt)"], ["sha256(salt.pass)", "sha256(salt+pass)"]] },
+    ],
+    async run(v, H) {
+      const h = String(v.hash || "").trim();
+      if (!h) return "";
+      const cands = identifyHash(h);
+
+      if (v.mode === "identify") {
+        if (!cands.length) return { error: "Unrecognized format. Not hex of a known length, no known prefix, not base64." };
+        const L = [];
+        L.push("HASH IDENTIFICATION");
+        L.push("===================");
+        const charset = /^[0-9a-fA-F]+$/.test(h) ? (h === h.toUpperCase() && /[A-F]/.test(h) ? "hex (uppercase)" : /[A-F]/.test(h) ? "hex (mixed/upper)" : "hex (lowercase)") : /^[A-Za-z0-9+/=]+$/.test(h) ? "base64-ish" : "mixed";
+        L.push(`Input    : ${h.length} chars, ${charset}`);
+        L.push("");
+        L.push("Ranked candidates (most likely first):");
+        L.push("  ALGORITHM            HASHCAT -m   JOHN              NOTE");
+        for (const c of cands) {
+          L.push(`  ${c.name.padEnd(20)} ${String(c.hc).padEnd(12)} ${String(c.john).padEnd(17)} ${c.note}`);
         }
+        const crackable = /^[0-9a-fA-F]+$/.test(h) && HASH_CRACK_ALGS[h.length];
+        L.push("");
+        L.push(crackable
+          ? "This length has fast unsalted candidates — switch Mode to Crack to dictionary-attack it here."
+          : "Slow/salted or non-hex format — use hashcat/John offline with the mode above. The salted MD5/SHA cracker here can still try it if you supply the salt.");
+        return L.join("\n");
       }
-      if (!candidates.length) return { error: "Unrecognized hash format." };
-      return `Length: ${h.length} chars\nLikely: ${candidates.join(", ")}`;
+
+      // ---- CRACK MODE ----
+      const extra = String(v.wordlist || "").split(/\r?\n/).map((s) => s).filter((s) => s.length || s === "");
+      const words = Array.from(new Set([...HASH_WORDLIST, ...extra]));
+      const target = h.toLowerCase();
+
+      // Salted path (explicit construction)
+      if (v.saltMode && v.saltMode !== "none") {
+        const salt = String(v.salt || "");
+        if (!salt) return { error: "Choose a salted construction only after entering the salt." };
+        const build = HASH_SALT_BUILD[v.saltMode];
+        if (!build) return { error: "Unknown salted construction." };
+        let hit = null;
+        for (const w of words) {
+          const [alg, msg] = build(w, salt);
+          if ((await hashCompute(alg, msg, H)).toLowerCase() === target) { hit = w; break; }
+        }
+        const head = `CRACK (salted: ${v.saltMode}, salt=${JSON.stringify(salt)})\nTried ${words.length} passwords.\n`;
+        return hit !== null
+          ? `${head}\nPASSWORD FOUND:  ${JSON.stringify(hit)}\n\nThe salt does not help when the password is weak. Use a slow KDF (bcrypt/argon2/scrypt) instead of a plain salted digest.`
+          : `${head}\nNot found. Add a larger wordlist above.`;
+      }
+
+      // Unsalted path — only hex of a crackable length
+      if (!/^[0-9a-fA-F]+$/.test(h) || !HASH_CRACK_ALGS[h.length]) {
+        return { error: `No fast unsalted cracker for this format (${h.length} chars). Identify it first; for bcrypt/argon2/sha512crypt use hashcat/John offline. For salted MD5/SHA, set the salt + construction above.` };
+      }
+      const algs = HASH_CRACK_ALGS[h.length];
+      let hit = null, hitAlg = null;
+      for (const w of words) {
+        for (const alg of algs) {
+          if ((await hashCompute(alg, w, H)).toLowerCase() === target) { hit = w; hitAlg = alg; break; }
+        }
+        if (hit !== null) break;
+      }
+      const head = `CRACK (unsalted, trying: ${algs.join(", ")})\nTried ${words.length} passwords x ${algs.length} construction${algs.length === 1 ? "" : "s"}.\n`;
+      return hit !== null
+        ? `${head}\nPASSWORD FOUND:  ${JSON.stringify(hit)}\nConstruction  :  ${hitAlg}\n\nThis hash was guessable from a common-password list. Enforce stronger passwords and store them with a slow salted KDF (bcrypt/argon2), not a raw digest.`
+        : `${head}\nNot found in ${words.length} candidates. Paste a real wordlist above (one password per line) to go further. This is an online dictionary attack, not exhaustive brute force.`;
     } },
 
   { id: "h-bcrypt-info", name: "bcrypt Hash Parser", cat: "hashing", desc: "Parse a bcrypt hash ($2a$rounds$salt+hash) into its components.", tags: ["bcrypt", "parse"],

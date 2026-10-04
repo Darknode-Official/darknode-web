@@ -91,10 +91,10 @@ export const HELP = {
     when: "You need to reproduce a MurmurHash3 value used by databases, caches or sharding code. Fast but not for security.",
     example: { text: "hello world", seed: "42" },
   },
-  "h-hash-identifier": {
-    what: "Looks at a hash string (its length, characters and any $ prefix) and lists the algorithms that could have produced it.",
-    when: "You found a hash in a config or dump and want to know what kind it is before doing anything else. It is a best guess, not a certainty.",
-    example: { hash: "5f4dcc3b5aa765d61d8327deb882cf99" },
+  "h-hash-analyzer": {
+    what: "Two tools in one. Identify looks at a hash (length, characters, $ prefix) and lists the algorithms that could have produced it, each with the exact hashcat -m mode and John format so you can pivot to offline cracking. Crack then runs a dictionary attack in your browser against the fast unsalted hashes (MD5, SHA-1/256/384/512, NTLM, MD4, double-MD5) and, if you give it a salt, common salted MD5/SHA constructions, and tells you the plaintext if a common password matches.",
+    when: "You found a hash in a config, database dump or /etc/shadow and want to know what it is and whether it falls to a common password. Identification is a best guess; cracking only finds passwords in the list you provide. For your own systems / authorised audits only.",
+    example: { hash: "5f4dcc3b5aa765d61d8327deb882cf99", mode: "crack" },
   },
   "h-bcrypt-info": {
     what: "Splits a bcrypt password hash into its parts: the version, the cost factor (how slow it is on purpose), the salt and the hash itself.",
