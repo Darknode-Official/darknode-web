@@ -1,12 +1,14 @@
 rules_version = '2';
-// Sentinel Web - Storage access enforcement for gated downloads.
-// Only whitelisted ('allowed') users and the owner can read files under /downloads;
-// only the owner can upload. Reads the user's status from Firestore.
+// Darknode Web - Storage access enforcement, deny-by-default backstop.
+// The client ships no Firebase Storage SDK (installers live on GitHub Releases),
+// so this is a safety net: only the super-admin (identified by the `admin` custom
+// claim, same as Firestore) could ever read/write under /downloads. Reads the
+// user's status from Firestore.
 service firebase.storage {
   match /b/{bucket}/o {
 
     function signedIn() { return request.auth != null; }
-    function isOwner()  { return signedIn() && request.auth.token.email == 'cashzombs@gmail.com'; }
+    function isOwner()  { return signedIn() && request.auth.token.admin == true; }
     function isAllowed() {
       return isOwner() || (signedIn() &&
         firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.status == 'allowed');

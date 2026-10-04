@@ -41,7 +41,9 @@ in Firebase (Auth + Firestore) and `localStorage`.
 - **Auth & data.** Firebase Auth (Google + GitHub OAuth + email/password with
   verification) and Cloud Firestore. Per-user isolation is enforced by
   `firebase/firestore.rules` (each user owns `users/{uid}`; the one super-admin
-  `OWNER_EMAIL` is checked via `request.auth.token.email`). The client uses **no
+  is identified by a Firebase **custom claim** `admin:true` — set out-of-band by
+  `scripts/set-admin.mjs`, checked via `request.auth.token.admin`, with no owner
+  email hardcoded in the rules or the shipped client). The client uses **no
   Firebase Storage** (`js/firebase.js` omits the Storage SDK); installer
   downloads live on **GitHub Releases**, and `firebase/storage.rules` remains as
   a deny-by-default backstop.
@@ -59,7 +61,7 @@ public/
   index.html            app shell; loads js/auth.js as the ONLY entry <script>
   css/styles.css        core stylesheet (~9.6K lines); pro-theme.css adds the skin
   js/
-    firebase.js         [adapter] Firebase init/config; exports auth/db/providers/OWNER_EMAIL
+    firebase.js         [adapter] Firebase init/config; exports auth/db/providers + isAdminUser (admin-claim reader)
     user-keys.js        [core]    window.dnKeys — per-uid credential isolation
     auth.js             [core]    app entry + SPA router (~2.5K lines): auth flow,
                                   email/code verify, access gate, show(sec) dispatch,

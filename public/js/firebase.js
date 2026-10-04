@@ -21,8 +21,17 @@ export const firebaseConfig = {
   measurementId: "G-8QR8V3DLQX",
 };
 
-// The single super-admin. Enforced in the Security Rules via request.auth.token.email.
-export const OWNER_EMAIL = "cashzombs@gmail.com";
+// The single super-admin is identified by a Firebase custom claim (`admin: true`),
+// set out-of-band by scripts/set-admin.mjs — never by a hardcoded email in the
+// shipped bundle. The Security Rules enforce it via request.auth.token.admin, and
+// the client reads it from the signed ID token (which the client cannot forge).
+export async function isAdminUser(user) {
+  if (!user || typeof user.getIdTokenResult !== "function") return false;
+  try {
+    const res = await user.getIdTokenResult();
+    return !!(res && res.claims && res.claims.admin === true);
+  } catch (_) { return false; }
+}
 
 // PUBLIC Google OAuth client id (safe to commit).
 // NOTE: this is a "Desktop app" client. Browser sign-in needs a "Web application" client.

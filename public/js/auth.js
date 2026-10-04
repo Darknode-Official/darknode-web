@@ -1,7 +1,12 @@
 // Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
 // Source-available for learning only. Redistribution prohibited. See LICENSE.
 (function(){var _h=location.hostname,_a=["darknode.ai","www.darknode.ai","darknode-official.github.io","sentinel-b4194.web.app","sentinel-b4194-6173e.web.app","darknode-web-e1s2.onrender.com","localhost","127.0.0.1"];if(!_a.some(function(d){return _h===d}))throw document.body.innerHTML="",new Error("unlicensed")}());
-import { auth, db, googleProvider, githubProvider, OWNER_EMAIL } from "/js/firebase.js";
+import { auth, db, googleProvider, githubProvider, isAdminUser } from "/js/firebase.js";
+
+// Cached super-admin flag for the current session, read from the signed ID token
+// custom claim (set during the auth-state handler below). A guest/Test-Mode user
+// has no token, so this stays false. Never derived from a client-visible email.
+let _isAdmin = false;
 import "/js/scroll-top.js?v=20260926a";
 import "/js/shortcuts.js";
 import "/js/mobile-nav.js";
@@ -1431,7 +1436,7 @@ function renderApp(user) {
   dismissBoot();
   document.body.classList.remove("landing");
   document.body.classList.add("app");
-  const isOwner = user.email === OWNER_EMAIL;
+  const isOwner = _isAdmin;
   const avatar = user.photoURL
     ? `<img class="p-avatar" src="${esc(user.photoURL)}" alt="">`
     : `<span class="p-avatar p-initials">${esc((user.email || "?")[0].toUpperCase())}</span>`;
@@ -2195,7 +2200,7 @@ function openPalette() {
     { type: "action", id: "toggle-dark", name: "Toggle light / dark", desc: "Switch light and dark mode", action: () => { const cur = document.documentElement.getAttribute("data-theme") || "dark"; applyTheme(cur === "dark" ? "light" : "dark"); } },
     { type: "action", id: "toggle-crt", name: "Toggle CRT effect", desc: "Turn scanline overlay on or off", action: () => applyCrt(!crtOn()) },
     { type: "action", id: "copy-url", name: "Copy current URL", desc: "Copy page link to clipboard", action: () => { navigator.clipboard.writeText(location.href).then(() => showToast("URL copied", "success")).catch(() => {}); } },
-    { type: "action", id: "replay-tour", name: "Replay walkthrough", desc: "Start the guided tour again", action: () => startTour(tourSteps(auth.currentUser?.email === OWNER_EMAIL)) },
+    { type: "action", id: "replay-tour", name: "Replay walkthrough", desc: "Start the guided tour again", action: () => startTour(tourSteps(_isAdmin)) },
   ];
   const items = [
     ...actions,
@@ -2273,7 +2278,7 @@ function tourSteps(isOwner) {
 
 // Whitelist enforcement: if the owner turned it on, only allow-listed emails may use the site.
 async function accessAllowed(user) {
-  if (user.email === OWNER_EMAIL) return true;
+  if (_isAdmin) return true;
   try {
     const { getWhitelist } = await import("/js/admin.js");
     const wl = await getWhitelist();
@@ -2342,6 +2347,9 @@ onAuthStateChanged(auth, async (user) => {
       if (!(udoc && udoc.exists() && udoc.data().codeVerified)) { renderCodeVerify(user); return; }
     } else if (!user.emailVerified) { renderVerify(user); return; }
   }
+  // Resolve the super-admin claim once per session from the signed ID token.
+  _isAdmin = await isAdminUser(user);
+  try { window.__dnAdmin = _isAdmin; } catch (_) {}
   if (!(await accessAllowed(user))) {
     showToast("Access restricted — your email isn't on the allow-list. Contact the owner.", "error", 6000);
     await signOut(auth); return;

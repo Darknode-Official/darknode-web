@@ -49,7 +49,19 @@ export async function sendLoginAlert(toEmail, info) {
   } catch (err) { return { ok: false }; }
 }
 
-export function genCode() { return String(Math.floor(100000 + Math.random() * 900000)); }
+// Crypto-secure 6-digit code. Rejection-samples a 32-bit value to avoid modulo
+// bias across the 900000-wide range, falling back to Math.random only if the
+// Web Crypto API is somehow unavailable. (This path is dormant unless EmailJS is
+// configured — see emailConfigured() — but must not ship a predictable code.)
+export function genCode() {
+  try {
+    const span = 900000, max = Math.floor(0xffffffff / span) * span, u = new Uint32Array(1);
+    let r; do { crypto.getRandomValues(u); r = u[0]; } while (r >= max);
+    return String(100000 + (r % span));
+  } catch (_) {
+    return String(Math.floor(100000 + Math.random() * 900000));
+  }
+}
 
 export async function hashCode(code) {
   const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode("darknode:" + code));

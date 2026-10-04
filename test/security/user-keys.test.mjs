@@ -179,3 +179,53 @@ group("Nexus CLI pairing (refresh-token login replaced)", () => {
     assert.ok(/chatOriginAllowed\(_origin\)/.test(f) && /chatRateLimited\(_ip\)/.test(f), "pair endpoint is origin-gated and rate-limited");
   });
 });
+
+group("super-admin via custom claim (hardcoded owner email removed)", () => {
+  const read = (p) => readFileSync(join(pub, p), "utf8");
+  const root = join(here, "..", "..");
+  const readRoot = (p) => readFileSync(join(root, p), "utf8");
+
+  test("no personal owner email is shipped in the client bundle or rules", () => {
+    for (const p of ["js/firebase.js", "js/auth.js", "js/admin.js"]) {
+      assert.ok(!/cashzombs@gmail\.com/.test(read(p)), `${p} must not hardcode the owner email`);
+    }
+    assert.ok(!/cashzombs@gmail\.com/.test(readRoot("firebase/firestore.rules")),
+      "firestore.rules must not hardcode the owner email");
+  });
+
+  test("firebase.js exposes isAdminUser (claim reader), not an OWNER_EMAIL constant", () => {
+    const s = read("js/firebase.js");
+    assert.ok(!/export const OWNER_EMAIL/.test(s), "OWNER_EMAIL export removed");
+    assert.ok(/export async function isAdminUser/.test(s), "isAdminUser helper present");
+    assert.ok(/getIdTokenResult\(\)/.test(s), "reads the signed ID token claims");
+    assert.ok(/claims\.admin === true/.test(s), "checks the admin custom claim");
+  });
+
+  test("Firestore rules gate the owner on the admin token claim and block self-promotion", () => {
+    const r = readRoot("firebase/firestore.rules");
+    assert.ok(/request\.auth\.token\.admin == true/.test(r), "isOwner() checks the admin claim");
+    assert.ok(/affectedKeys\(\)\.hasAny\(\['admin', 'role'\]\)/.test(r), "update blocks privilege-field escalation");
+    assert.ok(/!request\.resource\.data\.keys\(\)\.hasAny\(\['admin', 'role'\]\)/.test(r), "create blocks privilege fields");
+  });
+
+  test("auth.js resolves admin from the cached claim flag, not an email compare", () => {
+    const s = read("js/auth.js");
+    assert.ok(/isAdminUser/.test(s), "imports/uses the claim reader");
+    assert.ok(/_isAdmin = await isAdminUser\(user\)/.test(s), "caches the admin flag from the token");
+    assert.ok(!/user\.email === OWNER_EMAIL/.test(s), "no email-based owner check remains");
+  });
+
+  test("feedback + errors rules bind uid and cap sizes", () => {
+    const r = readRoot("firebase/firestore.rules");
+    assert.ok(/request\.resource\.data\.message\.size\(\) <= 4001/.test(r), "feedback message is size-capped");
+    assert.ok(/hasOnly\(\s*\[?\s*'type','message','email','uid','ts','userAgent','url','resolved'\]?\)/.test(r.replace(/\s+/g, " ")),
+      "feedback doc shape is constrained");
+  });
+
+  test("set-admin script sets the custom claim via the Admin SDK", () => {
+    const s = readRoot("scripts/set-admin.mjs");
+    assert.ok(/setCustomUserClaims/.test(s), "sets the custom claim");
+    assert.ok(/claims\.admin = true/.test(s), "grants admin:true");
+    assert.ok(/--revoke/.test(s), "supports revoke");
+  });
+});

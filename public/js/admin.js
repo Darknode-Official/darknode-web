@@ -1,6 +1,12 @@
 // Owner-only admin console: live user management, an allow-list (with sign-in
 // enforcement), and site-wide announcements. All backed by Firestore.
-import { db, OWNER_EMAIL } from "/js/firebase.js";
+import { db } from "/js/firebase.js";
+
+// The super-admin is no longer a hardcoded email. The set-admin script stamps the
+// owner's own user doc with `admin: true` (alongside the Firebase custom claim),
+// so this owner-only panel can still badge/exclude that row. The access decision
+// itself is enforced by the ID-token claim + Security Rules, not by this flag.
+const isOwnerRow = (u) => !!u && (u.admin === true || u.role === "owner");
 import {
   collection, getDocs, doc, getDoc, setDoc, deleteDoc, serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
@@ -112,7 +118,7 @@ export async function renderAdmin(main, user) {
             <button class="btn sm" id="wlAdd">Add</button>
           </div>
           <div class="wl-list" id="wlList"></div>
-          <p class="muted" style="font-size:.72rem;margin:10px 0 0">The owner (${esc(OWNER_EMAIL)}) always has access.</p>
+          <p class="muted" style="font-size:.72rem;margin:10px 0 0">The owner account always has access.</p>
         </div>
 
         <div class="panel">
@@ -252,7 +258,7 @@ export async function renderAdmin(main, user) {
     const host = $("#uList");
     if (!rows.length) { host.innerHTML = `<p class="muted">No matching users.</p>`; return; }
     host.innerHTML = rows.map((u) => {
-      const isOwner = u.email === OWNER_EMAIL;
+      const isOwner = isOwnerRow(u);
       const listed = wl.emails.includes((u.email || "").toLowerCase());
       const prov = u.provider || "email";
       const provBadge = prov.includes("google") ? '<span class="ur-prov google">Google</span>'
@@ -458,7 +464,7 @@ export async function renderAdmin(main, user) {
   const dmsg = (t) => { const m = $("#dataMsg"); m.className = "adm-msg ok"; m.textContent = t; setTimeout(() => (m.textContent = ""), 2000); };
   const emailsOf = (list) => list.map((u) => u.email).filter(Boolean).join(", ");
   $("#copyEmails").onclick = () => { navigator.clipboard?.writeText(emailsOf(users)); dmsg(users.filter((u) => u.email).length + " emails copied"); };
-  $("#copyOwnerless").onclick = () => { const l = users.filter((u) => u.email !== OWNER_EMAIL); navigator.clipboard?.writeText(emailsOf(l)); dmsg(l.filter((u) => u.email).length + " emails copied"); };
+  $("#copyOwnerless").onclick = () => { const l = users.filter((u) => !isOwnerRow(u)); navigator.clipboard?.writeText(emailsOf(l)); dmsg(l.filter((u) => u.email).length + " emails copied"); };
   $("#expCsv").onclick = () => {
     const esc2 = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
     const rows = [["email", "name", "uid", "lastSeen", "allow-listed"]].concat(users.map((u) => [u.email, u.name, u.uid, fmtDate(u.lastSeen), wl.emails.includes((u.email || "").toLowerCase()) ? "yes" : "no"]));
@@ -550,7 +556,7 @@ export async function renderAdmin(main, user) {
     const toMs = (ts) => ts && ts.toMillis ? ts.toMillis() : (ts && ts.toDate ? ts.toDate().getTime() : 0);
     const inactive = users.filter(u => {
       const last = toMs(u.lastSeen) || toMs(u.created || u.createdAt);
-      return last && last < cutoff && u.email !== (OWNER_EMAIL || '');
+      return last && last < cutoff && !isOwnerRow(u);
     });
     if (!inactive.length) { if (msg) msg.textContent = 'No inactive users found.'; return; }
     if (!confirm('Remove ' + inactive.length + ' users inactive for 90+ days?')) return;
@@ -715,7 +721,7 @@ export async function renderAdmin(main, user) {
       to = ($("#emailTo")?.value || "").trim();
       if (!to) { if (emailMsg) emailMsg.textContent = "Enter a recipient email."; return; }
     } else {
-      const emails = users.filter((u) => u.email && u.email !== OWNER_EMAIL).map((u) => u.email);
+      const emails = users.filter((u) => u.email && !isOwnerRow(u)).map((u) => u.email);
       if (!emails.length) { if (emailMsg) emailMsg.textContent = "No users to email."; return; }
       to = emails.join(",");
     }
@@ -727,7 +733,7 @@ export async function renderAdmin(main, user) {
       + "&from=" + encodeURIComponent("contact@darknode.ai");
     window.open(gmailUrl, "_blank", "noopener,noreferrer");
     if (emailMsg) emailMsg.textContent = emailMode === "all"
-      ? "Opened Gmail with " + users.filter((u) => u.email && u.email !== OWNER_EMAIL).length + " recipients"
+      ? "Opened Gmail with " + users.filter((u) => u.email && !isOwnerRow(u)).length + " recipients"
       : "Opened Gmail draft to " + to;
   };
 
@@ -749,7 +755,7 @@ export async function renderAdmin(main, user) {
     if (prompt('Type DELETE to confirm:') !== 'DELETE') return;
     let count = 0;
     for (const u of users) {
-      if (u.email === OWNER_EMAIL) continue;
+      if (isOwnerRow(u)) continue;
       try { await deleteDoc(doc(db, "users", u.uid)); count++; } catch(_) {}
     }
     if (msg) msg.textContent = 'Purged ' + count + ' users.';
