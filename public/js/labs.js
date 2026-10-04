@@ -180,11 +180,11 @@ export function renderApiKeys(main) {
     <h1 class="pg-h1">API keys</h1>
     <p class="muted pg-sub">Store keys for the services you use. Saved only in this browser (localStorage) &mdash; never uploaded anywhere.</p>
     <div class="set-card" style="max-width:660px">
-      ${API_SERVICES.map(([id, name, desc]) => `<div class="set-row"><span><strong>${esc(name)}</strong> <span class="muted" style="font-size:.74rem">&middot; ${esc(desc)}</span></span><input class="tk-f" data-key="${id}" type="password" placeholder="paste key..." autocomplete="off" style="max-width:240px" value="${esc(localStorage.getItem("sw_key_" + id) || "")}"></div>`).join("")}
+      ${API_SERVICES.map(([id, name, desc]) => `<div class="set-row"><span><strong>${esc(name)}</strong> <span class="muted" style="font-size:.74rem">&middot; ${esc(desc)}</span></span><input class="tk-f" data-key="${id}" type="password" placeholder="paste key..." autocomplete="off" style="max-width:240px" value="${esc((window.dnKeys && window.dnKeys.get("sw_key_" + id)) || "")}"></div>`).join("")}
     </div>
     <div class="set-btns"><button class="btn" id="akSave">Save keys</button><button class="btn ghost" id="akShow">Show/hide</button><span id="akMsg" class="muted" style="font-size:.8rem;align-self:center"></span></div>`;
   main.querySelector("#akSave").onclick = () => {
-    main.querySelectorAll("[data-key]").forEach((i) => { try { localStorage.setItem("sw_key_" + i.dataset.key, i.value.trim()); } catch (_) {} });
+    main.querySelectorAll("[data-key]").forEach((i) => { try { if (window.dnKeys) window.dnKeys.set("sw_key_" + i.dataset.key, i.value.trim()); } catch (_) {} });
     const m = main.querySelector("#akMsg"); m.textContent = "saved to this browser"; setTimeout(() => (m.textContent = ""), 1600);
   };
   main.querySelector("#akShow").onclick = () => main.querySelectorAll("[data-key]").forEach((i) => (i.type = i.type === "password" ? "text" : "password"));

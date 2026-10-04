@@ -35,14 +35,14 @@ var ThreatAPI = (function() {
     });
   }
 
-  var _defaultKeys = {
-    virustotal: '0318a63efb0592db47a2bfbb3a7c16e42a7e1518b997f9ecf844f56c70cf1afd',
-    shodan: 'pwcTag6QwGPVBL0F7H8ky5C3c8HaOAim'
-  };
+  // No shared/default third-party keys: a key hardcoded here would be shipped in
+  // the public bundle and used by every user as if it were their own. Each user
+  // supplies their own key, stored per-account via window.dnKeys (user-keys.js).
+  var _defaultKeys = {};
 
   function getKey(service) {
     try {
-      var keys = JSON.parse(localStorage.getItem('dn_api_keys') || '{}');
+      var keys = window.dnKeys ? window.dnKeys.getJSON('dn_api_keys') : {};
       if (!keys[service] && _defaultKeys[service]) return _defaultKeys[service];
       return keys[service] || '';
     } catch (e) {
@@ -52,15 +52,15 @@ var ThreatAPI = (function() {
 
   function setKey(service, key) {
     try {
-      var keys = JSON.parse(localStorage.getItem('dn_api_keys') || '{}');
+      var keys = window.dnKeys ? window.dnKeys.getJSON('dn_api_keys') : {};
       keys[service] = key;
-      localStorage.setItem('dn_api_keys', JSON.stringify(keys));
+      if (window.dnKeys) window.dnKeys.setJSON('dn_api_keys', keys);
     } catch (e) {}
   }
 
   function getAllKeys() {
     try {
-      return JSON.parse(localStorage.getItem('dn_api_keys') || '{}');
+      return window.dnKeys ? window.dnKeys.getJSON('dn_api_keys') : {};
     } catch (e) {
       return {};
     }

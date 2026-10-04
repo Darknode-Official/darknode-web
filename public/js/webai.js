@@ -20,7 +20,8 @@ function proxyUrl() {
 const PROXY_PROVIDERS = new Set(["gemini"]);
 function _key(provider) {
   const map = { claude: "sw_claude_key", openai: "sw_openai_key", gemini: "sw_gemini_key", groq: "sw_groq_key", openrouter: "sw_openrouter_key", mistral: "sw_mistral_key" };
-  try { const u = (localStorage.getItem(map[provider]) || "").trim(); if (u) return u; } catch (_) {}
+  // Per-account storage (see user-keys.js): one user never reads another's key.
+  try { const u = (window.dnKeys ? (window.dnKeys.get(map[provider]) || "") : "").trim(); if (u) return u; } catch (_) {}
   return "";
 }
 

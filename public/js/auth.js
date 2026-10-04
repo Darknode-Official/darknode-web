@@ -1096,16 +1096,16 @@ function renderSettingsPage(main, user, isOwner, initialTab) {
   const startTab = SET_TABS.some(([k]) => k === initialTab) ? initialTab : "account";
   // Local Darknode API key — client-side generated token so tools, the CLI and
   // an MCP client can authenticate to this workspace. Stored only in this browser.
+  // Per-account key (see user-keys.js): stored under the signed-in uid so two
+  // users on one browser never share a key. No shared constant fallback — if
+  // storage is unavailable we mint a fresh in-memory key, never a fixed one.
+  const _mintKey = () => { const b = new Uint8Array(24); (crypto || window.crypto).getRandomValues(b); return "dn_live_" + Array.from(b).map((x) => x.toString(16).padStart(2, "0")).join(""); };
   const dnKey = (() => {
     try {
-      let k = localStorage.getItem("dn_api_key");
-      if (!k) {
-        const b = new Uint8Array(24); (crypto || window.crypto).getRandomValues(b);
-        k = "dn_live_" + Array.from(b).map((x) => x.toString(16).padStart(2, "0")).join("");
-        localStorage.setItem("dn_api_key", k);
-      }
+      let k = window.dnKeys && window.dnKeys.get("dn_api_key");
+      if (!k) { k = _mintKey(); if (window.dnKeys) window.dnKeys.set("dn_api_key", k); }
       return k;
-    } catch (_) { return "dn_live_0000000000000000000000000000000000000000000000"; }
+    } catch (_) { return _mintKey(); }
   })();
   const dnMask = dnKey.slice(0, 12) + "…" + dnKey.slice(-4);
   const curLogo = (() => { try { return localStorage.getItem("sw_logo") || "nested-accent"; } catch (_) { return "nested-accent"; } })();
@@ -1292,9 +1292,12 @@ function renderSettingsPage(main, user, isOwner, initialTab) {
     if (dnKeyEl) {
       const rev = main.querySelector("#dn-key-reveal"); if (rev) rev.onclick = () => { const h = dnKeyEl.type === "password"; dnKeyEl.type = h ? "text" : "password"; rev.textContent = h ? "Hide" : "Reveal"; };
       const cp = main.querySelector("#dn-key-copy"); if (cp) cp.onclick = async () => { try { await navigator.clipboard.writeText(dnKeyEl.value); } catch (_) {} const o = cp.textContent; cp.textContent = "Copied"; setTimeout(() => { cp.textContent = o; }, 1200); };
-      const rg = main.querySelector("#dn-key-regen"); if (rg) rg.onclick = () => {
-        if (!confirm("Regenerate your Darknode API key? The current key stops working immediately.")) return;
-        try { const b = new Uint8Array(24); crypto.getRandomValues(b); const nk = "dn_live_" + Array.from(b).map((x) => x.toString(16).padStart(2, "0")).join(""); localStorage.setItem("dn_api_key", nk); } catch (_) {}
+      const rg = main.querySelector("#dn-key-regen"); if (rg) rg.onclick = async () => {
+        const ok = window.dnConfirm
+          ? await window.dnConfirm("Regenerate Darknode API key?", "The current key stops working immediately.", { submitText: "Regenerate", danger: true })
+          : true;
+        if (!ok) return;
+        try { if (window.dnKeys) window.dnKeys.set("dn_api_key", _mintKey()); } catch (_) {}
         showSetTab("darknode");
       };
     }
@@ -1305,25 +1308,25 @@ function renderSettingsPage(main, user, isOwner, initialTab) {
     const akSave = main.querySelector("#ak-save");
     if (akSave) {
       const akFields = [["groq", "#ak-groq"], ["openrouter", "#ak-openrouter"], ["anthropic", "#ak-anthropic"], ["openai", "#ak-openai"], ["gemini", "#ak-gemini"], ["abuseipdb", "#ak-abuseipdb"], ["virustotal", "#ak-virustotal"], ["shodan", "#ak-shodan"], ["otx", "#ak-otx"]];
+      // All credentials are read/written per-account via window.dnKeys (see
+      // user-keys.js) so one user never sees another's keys on a shared browser.
       try {
-        const keys = JSON.parse(localStorage.getItem("dn_api_keys") || "{}");
+        const keys = window.dnKeys ? window.dnKeys.getJSON("dn_api_keys") : {};
         akFields.forEach(([svc, sel]) => { const el = main.querySelector(sel); if (el && keys[svc]) el.value = keys[svc]; });
-        const qk = (localStorage.getItem("sw_groq_key") || "").trim(); if (qk && !keys.groq) { const el = main.querySelector("#ak-groq"); if (el) el.value = qk; }
-        const ork = (localStorage.getItem("sw_openrouter_key") || "").trim(); if (ork && !keys.openrouter) { const el = main.querySelector("#ak-openrouter"); if (el) el.value = ork; }
-        const ck = (localStorage.getItem("sw_claude_key") || "").trim(); if (ck && !keys.anthropic) { const el = main.querySelector("#ak-anthropic"); if (el) el.value = ck; }
-        const ok = (localStorage.getItem("sw_openai_key") || "").trim(); if (ok && !keys.openai) { const el = main.querySelector("#ak-openai"); if (el) el.value = ok; }
-        const gk = (localStorage.getItem("sw_gemini_key") || "").trim(); if (gk && !keys.gemini) { const el = main.querySelector("#ak-gemini"); if (el) el.value = gk; }
       } catch (_) {}
       akSave.onclick = () => {
         try {
-          const keys = JSON.parse(localStorage.getItem("dn_api_keys") || "{}");
+          const keys = window.dnKeys ? window.dnKeys.getJSON("dn_api_keys") : {};
           akFields.forEach(([svc, sel]) => { const el = main.querySelector(sel); if (el) { const v = el.value.trim(); if (v) keys[svc] = v; else delete keys[svc]; } });
-          localStorage.setItem("dn_api_keys", JSON.stringify(keys));
-          if (keys.groq) localStorage.setItem("sw_groq_key", keys.groq); else localStorage.removeItem("sw_groq_key");
-          if (keys.openrouter) localStorage.setItem("sw_openrouter_key", keys.openrouter); else localStorage.removeItem("sw_openrouter_key");
-          if (keys.anthropic) localStorage.setItem("sw_claude_key", keys.anthropic); else localStorage.removeItem("sw_claude_key");
-          if (keys.openai) localStorage.setItem("sw_openai_key", keys.openai); else localStorage.removeItem("sw_openai_key");
-          if (keys.gemini) localStorage.setItem("sw_gemini_key", keys.gemini); else localStorage.removeItem("sw_gemini_key");
+          if (window.dnKeys) {
+            window.dnKeys.setJSON("dn_api_keys", keys);
+            // Mirror the AI-engine keys under the names webai.js reads (per-account).
+            window.dnKeys.set("sw_groq_key", keys.groq || "");
+            window.dnKeys.set("sw_openrouter_key", keys.openrouter || "");
+            window.dnKeys.set("sw_claude_key", keys.anthropic || "");
+            window.dnKeys.set("sw_openai_key", keys.openai || "");
+            window.dnKeys.set("sw_gemini_key", keys.gemini || "");
+          }
           const st = main.querySelector("#ak-status"); if (st) { st.textContent = "Keys saved."; st.style.color = "var(--ok,#3fb950)"; setTimeout(() => { st.textContent = ""; }, 2000); }
         } catch (e) { const st = main.querySelector("#ak-status"); if (st) { st.textContent = "Error: " + e.message; st.style.color = "var(--bad,red)"; } }
       };
@@ -1331,7 +1334,7 @@ function renderSettingsPage(main, user, isOwner, initialTab) {
     const akClear = main.querySelector("#ak-clear");
     if (akClear) {
       akClear.onclick = () => {
-        try { localStorage.removeItem("dn_api_keys"); localStorage.removeItem("sw_groq_key"); localStorage.removeItem("sw_openrouter_key"); localStorage.removeItem("sw_claude_key"); localStorage.removeItem("sw_openai_key"); localStorage.removeItem("sw_gemini_key"); } catch (_) {}
+        try { if (window.dnKeys) { ["dn_api_keys", "sw_groq_key", "sw_openrouter_key", "sw_claude_key", "sw_openai_key", "sw_gemini_key"].forEach((k) => window.dnKeys.del(k)); } } catch (_) {}
         const inputs = main.querySelectorAll("#set-apikeys-form input"); inputs.forEach((el) => { el.value = ""; });
         const st = main.querySelector("#ak-status"); if (st) { st.textContent = "All keys cleared."; st.style.color = "var(--ok,#3fb950)"; setTimeout(() => { st.textContent = ""; }, 2000); }
       };
@@ -1555,10 +1558,10 @@ function renderApp(user) {
     if (sec && sec !== "home" && sec !== "settings") { try { let r = JSON.parse(localStorage.getItem("dn_recent")||"[]"); r = r.filter(s=>s!==sec); r.unshift(sec); r = r.slice(0,8); localStorage.setItem("dn_recent", JSON.stringify(r)); } catch(_){} }
     if (sec === "tools") { main.innerHTML = `<div class="pg-head"><div><h1 class="pg-h1">Tools</h1><p class="muted pg-sub">Search, filter, and open any tool in the catalog.</p></div></div><div id="tools"></div>`; import("/js/tools.js?v=20260924a").then(m => m.renderTools(document.getElementById("tools"))); }
     else if (sec === "utils") { import("/js/utils.js").then(m => m.renderUtils(main)); }
-    else if (sec === "ai") { import("/js/webai.js?v=20261002b").then(m => m.renderAI(main)); }
+    else if (sec === "ai") { import("/js/webai.js?v=20261003a").then(m => m.renderAI(main)); }
     else if (sec === "math") { _prevCleanup = renderQuelvra(main, more); }
-    else if (sec === "payloads") { import("/js/labs.js").then(m => m.renderPayloads(main)); }
-    else if (sec === "targets") { import("/js/labs.js").then(m => m.renderTargets(main)); }
+    else if (sec === "payloads") { import("/js/labs.js?v=20261003a").then(m => m.renderPayloads(main)); }
+    else if (sec === "targets") { import("/js/labs.js?v=20261003a").then(m => m.renderTargets(main)); }
     else if (sec === "ghdb") { import("/js/ghdb.js").then(m => m.renderGHDB(main)); }
     else if (sec === "exploitdb") { import("/js/exploitdb.js").then(m => m.renderExploitDB(main)); }
     else if (sec === "vms") { import("/js/vms.js").then(m => m.renderVMs(main)); }
@@ -1567,8 +1570,8 @@ function renderApp(user) {
     else if (sec === "privatecloud") { import("/js/privatecloud.js").then(m => m.renderPrivateCloud(main)); }
     else if (sec === "saved") { import("/js/saved.js").then(m => m.renderSaved(main, show)); }
     else if (sec === "report") { import("/js/report.js?v=20260924a").then(m => m.renderReport(main)); }
-    else if (sec === "snippets") { import("/js/labs.js").then(m => m.renderSnippets(main)); }
-    else if (sec === "refs") { import("/js/labs.js").then(m => m.renderRefs(main)); }
+    else if (sec === "snippets") { import("/js/labs.js?v=20261003a").then(m => m.renderSnippets(main)); }
+    else if (sec === "refs") { import("/js/labs.js?v=20261003a").then(m => m.renderRefs(main)); }
     else if (sec === "engines") { import("/js/arsenal.js?v=20260927b").then(m => m.renderEngines(main)); }
     else if (sec === "packetcraft") { import("/js/packet-crafter.js").then(m => m.renderPacketCrafter(main)); }
     else if (sec === "binanalyze") { import("/js/binary-analyzer.js?v=20260927b").then(m => m.renderBinaryAnalyzer(main)); }
@@ -1581,7 +1584,7 @@ function renderApp(user) {
     else if (sec === "encoding") { import("/js/encoding-suite.js?v=20260924b").then(m => m.renderEncodingSuite(main)); }
     else if (sec === "threatmodel") { import("/js/threat-modeler.js?v=20260924b").then(m => m.renderThreatModeler(main)); }
     else if (sec === "osint") { import("/js/osint-dashboard.js?v=20260924a").then(m => m.renderOSINTDashboard(main)); }
-    else if (sec === "addressintel") { import("/js/address-intel.js?v=20260927a").then(m => m.renderAddressIntel(main)); }
+    else if (sec === "addressintel") { import("/js/address-intel.js?v=20261003a").then(m => m.renderAddressIntel(main)); }
     else if (sec === "incidents") { import("/js/incident-tracker.js").then(m => m.renderIncidentTracker(main)); }
     else if (sec === "firewall") { import("/js/firewall-builder.js").then(m => m.renderFirewallBuilder(main)); }
     else if (sec === "apitester") { import("/js/api-tester.js").then(m => m.renderAPITester(main)); }
@@ -1598,7 +1601,7 @@ function renderApp(user) {
     else if (sec === "darkwebosint") { import("/js/darkweb-osint.js").then(m => m.renderDarkwebOsint(main)); }
     else if (sec === "cyberrange") { import("/js/cyber-range.js").then(m => m.renderCyberRange(main)); }
     else if (sec === "prometheus") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading PROMETHEUS...</p>"; const _s=sec; import("/js/prometheus-web.js?v=20260924c").then(m => { if(curSec!==_s)return; m.renderPrometheus(main); _prevCleanup = m.cleanupPrometheus; }); }
-    else if (sec === "sentineleye") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading SENTINEL EYE...</p>"; if(!document.querySelector('script[src="/js/threat-api.js"]')){var s1=document.createElement("script");s1.src="/js/threat-api.js";document.head.appendChild(s1)}if(!document.querySelector('script[src="/js/threat-map.js"]')){var s2=document.createElement("script");s2.src="/js/threat-map.js";document.head.appendChild(s2)} const _s=sec; import("/js/sentinel-eye.js?v=20260927c").then(m => { if(curSec!==_s)return; m.renderSentinelEye(main); _prevCleanup = m.cleanupSentinelEye; }); }
+    else if (sec === "sentineleye") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading SENTINEL EYE...</p>"; if(!document.querySelector('script[src^="/js/threat-api.js"]')){var s1=document.createElement("script");s1.src="/js/threat-api.js?v=20261003a";document.head.appendChild(s1)}if(!document.querySelector('script[src="/js/threat-map.js"]')){var s2=document.createElement("script");s2.src="/js/threat-map.js";document.head.appendChild(s2)} const _s=sec; import("/js/sentinel-eye.js?v=20260927c").then(m => { if(curSec!==_s)return; m.renderSentinelEye(main); _prevCleanup = m.cleanupSentinelEye; }); }
     else if (sec === "exploitdev") { import("/js/exploit-writer.js").then(m => m.renderExploitWriter(main)); }
     else if (sec === "secdash") { import("/js/security-dashboard.js?v=20260924a").then(m => m.renderSecurityDashboard(main)); }
     else if (sec === "phishing") { import("/js/phishing-analyzer.js").then(m => m.renderPhishingAnalyzer(main)); }
@@ -2253,6 +2256,11 @@ getRedirectResult(auth).then((result) => {
 }).catch(() => {});
 onAuthStateChanged(auth, async (user) => {
   if (window.__boot) window.__boot.set(70);
+  // Scope every client-side credential to this account (see user-keys.js): the
+  // uid must be set before any key is read so one user never reads another's
+  // keys on a shared browser. Scrub legacy un-namespaced keys once per load.
+  try { window.__dnUid = user ? user.uid : null; } catch (_) {}
+  try { if (!window.__dnScrubbed && window.dnKeys) { window.dnKeys.scrubLegacy(); window.__dnScrubbed = true; } } catch (_) {}
   // license verification
   const _hn = [0x64,0x61,0x72,0x6b,0x6e,0x6f,0x64,0x65,0x2e,0x61,0x69].map(c=>String.fromCharCode(c)).join("");
   if(location.hostname!==_hn&&location.hostname!=="www."+_hn&&location.hostname!=="localhost"&&location.hostname!=="127.0.0.1"){document.body.innerHTML="";return}
@@ -2266,6 +2274,7 @@ onAuthStateChanged(auth, async (user) => {
     try { guest = new URLSearchParams(location.search).get("app") === "1" || sessionStorage.getItem("dn_guest") === "1"; } catch (_) {}
     if (guest) {
       try { sessionStorage.setItem("dn_guest", "1"); } catch (_) {}
+      try { window.__dnUid = "app-guest"; } catch (_) {}
       renderApp({ uid: "app-guest", email: "guest@darknode.ai", displayName: "Guest", providerData: [{ providerId: "test" }], metadata: { creationTime: new Date().toISOString() }, refreshToken: "", getIdToken: () => Promise.resolve("") });
       return;
     }

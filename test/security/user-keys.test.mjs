@@ -1,0 +1,138 @@
+// Account-isolation tests for the per-user credential store (public/js/user-keys.js)
+// and static regression guards for the Section-1 security fixes.
+//
+// The described bug: two different signed-in users on one browser could read the
+// same API key, each believing it was their own. These tests prove the storage
+// layer (window.dnKeys) never returns one account's key to another, that signed-out
+// callers get nothing, and that the previously hardcoded/shared secrets are gone.
+
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+import vm from "node:vm";
+import { test, assert, group } from "../harness.mjs";
+
+const here = dirname(fileURLToPath(import.meta.url));
+const pub = join(here, "..", "..", "public");
+
+// Load user-keys.js (a classic IIFE script) into an isolated VM context with a
+// minimal localStorage + window, exactly as a browser would provide them.
+function loadDnKeys() {
+  const src = readFileSync(join(pub, "js", "user-keys.js"), "utf8");
+  const store = new Map();
+  const localStorage = {
+    getItem: (k) => (store.has(k) ? store.get(k) : null),
+    setItem: (k, v) => { store.set(String(k), String(v)); },
+    removeItem: (k) => { store.delete(k); },
+    key: (i) => Array.from(store.keys())[i] ?? null,
+    get length() { return store.size; },
+  };
+  const sandbox = { window: {}, localStorage, console };
+  sandbox.window.localStorage = localStorage;
+  vm.createContext(sandbox);
+  vm.runInContext(src, sandbox, { filename: "user-keys.js" });
+  return { dnKeys: sandbox.window.dnKeys, win: sandbox.window, store };
+}
+
+group("user-keys: account isolation", () => {
+  test("a second user cannot read the first user's key", () => {
+    const { dnKeys, win } = loadDnKeys();
+    win.__dnUid = "userA";
+    dnKeys.set("dn_api_key", "dn_live_AAA");
+    assert.equal(dnKeys.get("dn_api_key"), "dn_live_AAA", "A reads its own key");
+
+    win.__dnUid = "userB";
+    assert.equal(dnKeys.get("dn_api_key"), null, "B must NOT read A's key");
+
+    dnKeys.set("dn_api_key", "dn_live_BBB");
+    assert.equal(dnKeys.get("dn_api_key"), "dn_live_BBB", "B reads its own key");
+
+    win.__dnUid = "userA";
+    assert.equal(dnKeys.get("dn_api_key"), "dn_live_AAA", "A still sees only A's key");
+  });
+
+  test("signed-out callers cannot read or persist keys", () => {
+    const { dnKeys, win, store } = loadDnKeys();
+    win.__dnUid = null;
+    assert.equal(dnKeys.get("dn_api_key"), null, "no uid -> no read");
+    assert.equal(dnKeys.set("dn_api_key", "leak"), false, "no uid -> write dropped");
+    assert.equal(store.size, 0, "nothing was persisted while signed out");
+  });
+
+  test("JSON key maps are isolated per account", () => {
+    const { dnKeys, win } = loadDnKeys();
+    win.__dnUid = "userA";
+    dnKeys.setJSON("dn_api_keys", { anthropic: "sk-ant-A", shodan: "shodanA" });
+    win.__dnUid = "userB";
+    assert.deepEqual(dnKeys.getJSON("dn_api_keys"), {}, "B sees an empty map, not A's providers");
+    dnKeys.setJSON("dn_api_keys", { openai: "sk-B" });
+    win.__dnUid = "userA";
+    assert.deepEqual(dnKeys.getJSON("dn_api_keys"), { anthropic: "sk-ant-A", shodan: "shodanA" }, "A's map is intact and unseen by B");
+  });
+
+  test("namespaced keys do not collide across the known credential names", () => {
+    const { dnKeys, win } = loadDnKeys();
+    const names = ["dn_api_key", "dn_api_keys", "sw_claude_key", "sw_openai_key", "sw_gemini_key", "sw_groq_key", "sw_openrouter_key", "sw_key_virustotal"];
+    win.__dnUid = "userA";
+    names.forEach((n, i) => dnKeys.set(n, "A" + i));
+    win.__dnUid = "userB";
+    names.forEach((n) => assert.equal(dnKeys.get(n), null, `B cannot read A's ${n}`));
+  });
+
+  test("clearForUid wipes only that account's keys", () => {
+    const { dnKeys, win } = loadDnKeys();
+    win.__dnUid = "userA"; dnKeys.set("dn_api_key", "A");
+    win.__dnUid = "userB"; dnKeys.set("dn_api_key", "B");
+    win.__dnUid = "userA"; dnKeys.clearForUid();
+    assert.equal(dnKeys.get("dn_api_key"), null, "A's key cleared");
+    win.__dnUid = "userB";
+    assert.equal(dnKeys.get("dn_api_key"), "B", "B's key untouched");
+  });
+
+  test("scrubLegacy removes old un-namespaced global credential keys", () => {
+    const { dnKeys, win, store } = loadDnKeys();
+    // Simulate a browser carrying another account's pre-fix global keys.
+    store.set("dn_api_key", "dn_live_OLD");
+    store.set("dn_api_keys", JSON.stringify({ anthropic: "sk-ant-OLD" }));
+    store.set("sw_claude_key", "sk-ant-OLD");
+    dnKeys.scrubLegacy();
+    assert.ok(!store.has("dn_api_key"), "legacy dn_api_key removed");
+    assert.ok(!store.has("dn_api_keys"), "legacy dn_api_keys removed");
+    assert.ok(!store.has("sw_claude_key"), "legacy sw_claude_key removed");
+    // After scrub, a signed-in user gets a clean slate, not the old global value.
+    win.__dnUid = "userNew";
+    assert.equal(dnKeys.get("dn_api_key"), null, "new user does not inherit the scrubbed global key");
+  });
+});
+
+group("security regression guards (static source checks)", () => {
+  const read = (p) => readFileSync(join(pub, p), "utf8");
+
+  test("threat-api.js no longer ships hardcoded VirusTotal/Shodan keys", () => {
+    const s = read("js/threat-api.js");
+    assert.ok(!/0318a63efb0592db47a2bfbb3a7c16e42a7e1518b997f9ecf844f56c70cf1afd/.test(s), "VirusTotal key literal must be gone");
+    assert.ok(!/pwcTag6QwGPVBL0F7H8ky5C3c8HaOAim/.test(s), "Shodan key literal must be gone");
+    assert.ok(/var _defaultKeys = \{\};/.test(s), "_defaultKeys is empty");
+  });
+
+  test("auth.js no longer returns a shared constant API key", () => {
+    const s = read("js/auth.js");
+    assert.ok(!/dn_live_0000000000000000000000000000000000000000000000/.test(s), "shared constant fallback key must be gone");
+  });
+
+  test("credential consumers route through window.dnKeys, not raw global localStorage", () => {
+    for (const f of ["js/webai.js", "js/threat-api.js", "js/address-intel.js", "js/labs.js"]) {
+      const s = read(f);
+      assert.ok(!/localStorage\.getItem\(\s*['"]sw_/.test(s), `${f}: no raw sw_ localStorage read`);
+      assert.ok(!/localStorage\.(get|set)Item\(\s*['"]dn_api_keys/.test(s), `${f}: no raw dn_api_keys localStorage access`);
+    }
+  });
+
+  test("user-keys.js loads before the app module in index.html", () => {
+    const html = read("index.html");
+    const uk = html.indexOf("/js/user-keys.js");
+    const app = html.indexOf('src="/js/auth.js');
+    assert.ok(uk > -1, "user-keys.js is referenced");
+    assert.ok(uk < app, "user-keys.js loads before auth.js");
+  });
+});

@@ -13,7 +13,8 @@ var HISTORY_KEY = "dn_address_intel_history";
 var API_KEYS_KEY = "dn_api_keys";
 
 function getApiKeys() {
-  try { return JSON.parse(localStorage.getItem(API_KEYS_KEY) || "{}"); }
+  // Per-account storage (see user-keys.js): isolated from other users' keys.
+  try { return window.dnKeys ? window.dnKeys.getJSON(API_KEYS_KEY) : {}; }
   catch(e) { return {}; }
 }
 
@@ -1292,7 +1293,7 @@ export function renderAddressIntel(main) {
     if (ab) keys.abuseipdb = ab; else delete keys.abuseipdb;
     if (sh) keys.shodan = sh; else delete keys.shodan;
     if (vt) keys.virustotal = vt; else delete keys.virustotal;
-    try { localStorage.setItem(API_KEYS_KEY, JSON.stringify(keys)); } catch(e) {}
+    try { if (window.dnKeys) window.dnKeys.setJSON(API_KEYS_KEY, keys); } catch(e) {}
     var saveBtn = document.getElementById("ai-keys-save");
     saveBtn.textContent = "Saved";
     setTimeout(function() { saveBtn.textContent = "Save Keys"; }, 1500);
