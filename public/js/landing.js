@@ -992,105 +992,31 @@ testing methodology for 10.10.14.7:
       </div>
     </section>
 
-    <!-- ====== COMPARISON TABLE ====== -->
+    <!-- ====== WHAT'S INCLUDED ====== -->
     <section class="section" id="compare" aria-labelledby="compare-title">
       <div class="wrap">
-        <div class="sec-label">How we compare</div>
-        <h2 class="sec-title" id="compare-title">Darknode vs. the alternatives</h2>
-        <p class="sec-sub">One platform. Zero compromises.</p>
+        <div class="sec-label">What's included</div>
+        <h2 class="sec-title" id="compare-title">Everything in one platform</h2>
+        <p class="sec-sub">Free and open source. Runs locally on your own machine.</p>
         <div class="cmp-scroll">
-          <table class="cmp-landing" aria-label="Feature comparison between Darknode and alternatives">
+          <table class="cmp-landing" aria-label="What Darknode includes">
             <thead>
               <tr>
-                <th class="cmp-feature-col">Feature</th>
+                <th class="cmp-feature-col">Capability</th>
                 <th class="cmp-dn-col">Darknode</th>
-                <th>Kali Linux</th>
-                <th>HackTheBox</th>
-                <th>TryHackMe</th>
-                <th>Burp Suite</th>
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <td>Price</td>
-                <td class="cmp-dn"><span class="cmp-highlight">Free forever</span></td>
-                <td>Free</td>
-                <td>$49/mo</td>
-                <td>$14/mo</td>
-                <td>$449/yr</td>
-              </tr>
-              <tr>
-                <td>AI security agent</td>
-                <td class="cmp-dn"><span class="cmp-check">&check;</span> 33 modules, 8 backends</td>
-                <td><span class="cmp-x">&mdash;</span></td>
-                <td><span class="cmp-x">&mdash;</span></td>
-                <td><span class="cmp-x">&mdash;</span></td>
-                <td><span class="cmp-x">&mdash;</span></td>
-              </tr>
-              <tr>
-                <td>100% local and private</td>
-                <td class="cmp-dn"><span class="cmp-check">&check;</span></td>
-                <td><span class="cmp-check">&check;</span></td>
-                <td><span class="cmp-x">&mdash;</span> Cloud only</td>
-                <td><span class="cmp-x">&mdash;</span> Cloud only</td>
-                <td>Local install</td>
-              </tr>
-              <tr>
-                <td>Security tools</td>
-                <td class="cmp-dn"><span class="cmp-check">&check;</span> Full suite built-in</td>
-                <td>600+ (CLI)</td>
-                <td>Limited</td>
-                <td>Limited</td>
-                <td>1 (proxy)</td>
-              </tr>
-              <tr>
-                <td>Interactive labs</td>
-                <td class="cmp-dn"><span class="cmp-check">&check;</span> Cyber Range</td>
-                <td><span class="cmp-x">&mdash;</span></td>
-                <td><span class="cmp-check">&check;</span></td>
-                <td><span class="cmp-check">&check;</span></td>
-                <td><span class="cmp-x">&mdash;</span></td>
-              </tr>
-              <tr>
-                <td>Threat intelligence</td>
-                <td class="cmp-dn"><span class="cmp-check">&check;</span> Live feeds</td>
-                <td><span class="cmp-x">&mdash;</span></td>
-                <td><span class="cmp-x">&mdash;</span></td>
-                <td><span class="cmp-x">&mdash;</span></td>
-                <td><span class="cmp-x">&mdash;</span></td>
-              </tr>
-              <tr>
-                <td>Report generation</td>
-                <td class="cmp-dn"><span class="cmp-check">&check;</span> AI-powered</td>
-                <td><span class="cmp-x">&mdash;</span></td>
-                <td><span class="cmp-x">&mdash;</span></td>
-                <td><span class="cmp-x">&mdash;</span></td>
-                <td><span class="cmp-check">&check;</span></td>
-              </tr>
-              <tr>
-                <td>Works offline</td>
-                <td class="cmp-dn"><span class="cmp-check">&check;</span></td>
-                <td><span class="cmp-check">&check;</span></td>
-                <td><span class="cmp-x">&mdash;</span></td>
-                <td><span class="cmp-x">&mdash;</span></td>
-                <td><span class="cmp-check">&check;</span></td>
-              </tr>
-              <tr>
-                <td>Custom OS</td>
-                <td class="cmp-dn"><span class="cmp-check">&check;</span> 2 editions</td>
-                <td><span class="cmp-check">&check;</span></td>
-                <td><span class="cmp-x">&mdash;</span></td>
-                <td><span class="cmp-x">&mdash;</span></td>
-                <td><span class="cmp-x">&mdash;</span></td>
-              </tr>
-              <tr>
-                <td>Web GUI</td>
-                <td class="cmp-dn"><span class="cmp-check">&check;</span> Full SPA</td>
-                <td><span class="cmp-x">&mdash;</span> CLI only</td>
-                <td><span class="cmp-check">&check;</span></td>
-                <td><span class="cmp-check">&check;</span></td>
-                <td><span class="cmp-check">&check;</span></td>
-              </tr>
+              <tr><td>Price</td><td class="cmp-dn"><span class="cmp-highlight">Free forever</span></td></tr>
+              <tr><td>AI security agent</td><td class="cmp-dn"><span class="cmp-check">&check;</span> Nexus &mdash; 33 modules, 8 backends (bring your own key or run Ollama locally)</td></tr>
+              <tr><td>Local and private</td><td class="cmp-dn"><span class="cmp-check">&check;</span> Runs on your machine, works offline</td></tr>
+              <tr><td>Security tools</td><td class="cmp-dn"><span class="cmp-check">&check;</span> Recon, scanning, exploitation support, forensics</td></tr>
+              <tr><td>Interactive labs</td><td class="cmp-dn"><span class="cmp-check">&check;</span> Cyber Range</td></tr>
+              <tr><td>Threat intelligence</td><td class="cmp-dn"><span class="cmp-check">&check;</span> Live feeds</td></tr>
+              <tr><td>Report generation</td><td class="cmp-dn"><span class="cmp-check">&check;</span> AI-assisted</td></tr>
+              <tr><td>Works offline</td><td class="cmp-dn"><span class="cmp-check">&check;</span></td></tr>
+              <tr><td>Custom OS</td><td class="cmp-dn"><span class="cmp-check">&check;</span> Research kernel + Linux desktop</td></tr>
+              <tr><td>Web GUI</td><td class="cmp-dn"><span class="cmp-check">&check;</span> Full single-page app</td></tr>
             </tbody>
           </table>
         </div>
@@ -1107,7 +1033,7 @@ testing methodology for 10.10.14.7:
           <div class="os-card">
             <div class="os-card-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
             <h3 class="os-card-title">Darknode OS — Custom Kernel</h3>
-            <p class="os-card-desc">Built from scratch. No Linux, no borrowed code. A real x86 operating system with its own kernel, shell, filesystem, and full TCP/IP networking stack.</p>
+            <p class="os-card-desc">Built from scratch &mdash; no Linux, no borrowed code. A from-scratch x86 research kernel with its own shell and filesystem that boots under QEMU. An ongoing systems-programming project, not a daily driver.</p>
             <ul class="os-features">
               <li>Multiboot2 boot &rarr; GRUB bootloader</li>
               <li>VGA console, PS/2 keyboard, PIT timer</li>
@@ -1373,7 +1299,7 @@ testing methodology for 10.10.14.7:
               <span class="faq-toggle" aria-hidden="true">+</span>
             </button>
             <div class="faq-a" hidden>
-              <div class="faq-a-inner">Kali Linux gives you a collection of pre-installed tools. Darknode gives you those same tools plus an AI agent (Nexus) that explains what each tool does, generates the right commands for your target, walks you through methodologies step by step, and writes professional reports from your findings. Darknode also includes a built-in learning hub with 1,400+ cybersecurity topics, interactive quizzes, practice labs, CTF challenges, and real-time threat intelligence feeds. Think of Kali as the toolbox and Darknode as the toolbox plus a mentor who teaches you how to use every tool in it.</div>
+              <div class="faq-a-inner">Kali Linux ships a large collection of pre-installed tools. Darknode wraps many of the same tools behind a web interface and adds an AI agent (Nexus) that explains what each tool does, generates the right commands for your target, walks you through methodologies step by step, and writes professional reports from your findings. Darknode also includes a built-in learning hub with 1,400+ cybersecurity topics, interactive quizzes, practice labs, CTF challenges, and real-time threat intelligence feeds. Think of Kali as the toolbox and Darknode as the toolbox plus a mentor who teaches you how to use every tool in it.</div>
             </div>
           </div>
 
