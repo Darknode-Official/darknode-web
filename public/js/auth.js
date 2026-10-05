@@ -788,6 +788,10 @@ async function checkLoginDevice(user) {
 const ACCENTS = ["#00d4ff", "#7c5cff", "#22c55e", "#f59e0b", "#ef4444", "#ec4899"];
 function applyAccent(c) {
   document.documentElement.style.setProperty("--acc", c);
+  // The pro/dark themes redefine --acc on `body.app` (aws.css), which shadows any
+  // value set on <html> for the whole console subtree; set it inline on <body>
+  // too so the user's chosen accent actually wins everywhere.
+  if (document.body) document.body.style.setProperty("--acc", c);
   try { localStorage.setItem("sw_accent", c); } catch (_) {}
 }
 (function () { let a = null; try { a = localStorage.getItem("sw_accent"); } catch (_) {} if (a) applyAccent(a); })();
