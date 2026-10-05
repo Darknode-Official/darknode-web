@@ -220,7 +220,7 @@ const AWS_MISCONFIGS = [
     misconfiguration: 'Lambda function not configured to run in a VPC',
     risk: 'Medium',
     impact: 'Lambda functions outside a VPC cannot access VPC resources directly and lack network-level isolation. They use public AWS networking and cannot benefit from security groups, NACLs, or VPC flow logs for traffic monitoring. Functions that need to access private resources (RDS, ElastiCache, internal APIs) in a VPC should be VPC-attached.',
-    detection: 'aws lambda list-functions --query "Functions[?VpcConfig.VpcId==null || VpcConfig.VpcId==\\'\\'].{Name:FunctionName,Runtime:Runtime}" --output table',
+    detection: 'aws lambda list-functions --query "Functions[?VpcConfig.VpcId==null || VpcConfig.VpcId==\'\'].{Name:FunctionName,Runtime:Runtime}" --output table',
     remediation: 'Configure VPC access for the function:\n  aws lambda update-function-configuration --function-name <func> --vpc-config SubnetIds=<subnet-1>,<subnet-2>,SecurityGroupIds=<sg-id>\nEnsure the execution role has the required VPC permissions:\n  aws iam attach-role-policy --role-name <role> --policy-arn arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole\nNote: VPC-attached Lambda functions need a NAT Gateway to access the internet. Place them in private subnets.\nConsole: Lambda > Function > Configuration > VPC > Edit.',
     compliance: 'AWS Well-Architected Framework - Security Pillar - SEC05-BP03'
   },

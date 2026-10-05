@@ -308,6 +308,22 @@ function preloadDictionary() {
   whenIdle(() => import("/js/engine/lexicon.js").then((m) => m.loadLexicon()).catch(() => {}), 8000);
 }
 
+// Prewarm the shared module spine that almost every tool imports (shared.js is
+// pulled in by ~25 tools; the core store + mode switcher + graph by many more).
+// Warming them on idle means a tool's first open no longer pays the full
+// dependency waterfall — the shared deps are already parsed and in the SW cache.
+// Bare URLs (no ?v=) so singletons like security-graph.js resolve to the same
+// instance the tools use; errors are swallowed; skipped on data-saver / slow links.
+let _spinePrewarmed = false;
+function prewarmCommon() {
+  if (_spinePrewarmed) return;
+  _spinePrewarmed = true;
+  const c = navigator.connection || {};
+  if (c.saveData || /(^|-)[23]g$/.test(c.effectiveType || "")) return;
+  const spine = ["/js/shared.js", "/js/core/store.js", "/js/core/tool-modes.js", "/js/security-graph.js", "/js/target.js"];
+  whenIdle(() => { spine.forEach((u) => { import(u).catch(() => {}); }); }, 6000);
+}
+
 // The support chat (Botpress) is a third-party script; loaded only after boot and on idle so
 // a slow CDN can never hold up the app. Scripts are inserted with async=false so they run in
 // order: widget, then its config, then our bridge. Idempotent; also called by the Help button.
@@ -373,7 +389,7 @@ function afterBoot() {
   if (_afterBootDone) return;
   _afterBootDone = true;
   whenIdle(loadSupportChat, 6000);
-  if (auth.currentUser) preloadDictionary();
+  if (auth.currentUser) { preloadDictionary(); prewarmCommon(); }
 }
 function dismissBoot() {
   if (window.__boot) window.__boot.set(100);
@@ -1671,7 +1687,7 @@ function renderApp(user) {
     else if (sec === "phantom") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading PHANTOM...</p>"; const _s=sec; import("/js/phantom.js?v=20260927b").then(m => { if(curSec!==_s)return; m.renderPhantom(main); _prevCleanup = m.cleanupPhantom; }); }
     else if (sec === "citadel") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading CITADEL...</p>"; const _s=sec; import("/js/citadel.js?v=20260924x").then(m => { if(curSec!==_s)return; m.renderCitadel(main); _prevCleanup = m.cleanupCitadel; }); }
     else if (sec === "oracle") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading ORACLE...</p>"; const _s=sec; import("/js/oracle.js?v=20260927a").then(m => { if(curSec!==_s)return; m.renderOracle(main); _prevCleanup = m.cleanupOracle; }); }
-    else if (sec === "spectre") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading SPECTRE...</p>"; const _s=sec; import("/js/spectre.js?v=20260927b").then(m => { if(curSec!==_s)return; m.renderSpectre(main); _prevCleanup = m.cleanupSpectre; }); }
+    else if (sec === "spectre") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading SPECTRE...</p>"; const _s=sec; import("/js/spectre.js?v=20261004b").then(m => { if(curSec!==_s)return; m.renderSpectre(main); _prevCleanup = m.cleanupSpectre; }); }
     else if (sec === "crucible") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading CRUCIBLE...</p>"; const _s=sec; import("/js/crucible.js?v=20260924w").then(m => { if(curSec!==_s)return; m.renderCrucible(main); _prevCleanup = m.cleanupCrucible; }); }
     else if (sec === "navarch") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading NAVARCH...</p>"; const _s=sec; import("/js/navarch.js?v=20260924w").then(m => { if(curSec!==_s)return; m.renderNavarch(main); _prevCleanup = m.cleanupNavarch; }); }
     else if (sec === "jwtanalyzer") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading JWT Analyzer...</p>"; import("/js/jwt-analyzer.js").then(m => m.renderJwtAnalyzer(main)); }

@@ -90,11 +90,18 @@ function injectCss() {
 .dn-modebtn:last-child{border-right:none}
 .dn-modebtn:hover{background:var(--hover,#f1f5f9);color:var(--txt,#0f172a)}
 .dn-modebtn .dn-modedot{width:8px;height:8px;border-radius:50%;background:currentColor;opacity:.5}
-.dn-modebtn.on{color:#fff}
 .dn-modebtn.on .dn-modedot{opacity:1;background:#fff}
-.dn-modebar[data-mode=scouting] .dn-modebtn.on{background:#f59e0b}
-.dn-modebar[data-mode=defensive] .dn-modebtn.on{background:#2563eb}
-.dn-modebar[data-mode=offensive] .dn-modebtn.on{background:#dc2626}
+/* The active button owns its own colours. These are raised to a higher
+   specificity than any per-tool [role=tab].on rule (e.g. aws.css tints an active
+   tab's text to var(--acc), which on the switcher's accent background made the
+   label unreadable) and marked !important so the white label always wins over the
+   coloured background. The switcher is shared across tools, so it defends itself
+   here rather than patching each tool's CSS. */
+html body .dn-modebar[data-mode] .dn-modebtn.on[role=tab][aria-selected=true]{color:#fff !important}
+html body .dn-modebar[data-mode] .dn-modebtn.on[role=tab][aria-selected=true] .dn-modedot{background:#fff !important}
+html body .dn-modebar[data-mode=scouting] .dn-modebtn.on[role=tab][aria-selected=true]{background:#f59e0b !important}
+html body .dn-modebar[data-mode=defensive] .dn-modebtn.on[role=tab][aria-selected=true]{background:#2563eb !important}
+html body .dn-modebar[data-mode=offensive] .dn-modebtn.on[role=tab][aria-selected=true]{background:#dc2626 !important}
 .dn-modenote{font-size:.72rem;color:var(--mut,#64748b);margin-left:10px}
 /* Phones: the 3-button bar (~360px) was wider than the tool headers it sits in
    and ran off-screen. Shrink it to fit and let the host headers wrap. */

@@ -1,0 +1,106 @@
+DARKNODE — VERSION LOG
+======================
+Last updated: 2026-10-04
+
+Plain text. One section per product. Dates are ISO (YYYY-MM-DD) and are taken
+from each repository's own version history (package manifest changes and release
+tags), not hand-written — so this log reflects what was actually shipped. Where a
+range of internal iterations was not tagged separately, that is stated rather
+than invented.
+
+
+-------------------------------------------------------------------------------
+DARKNODE WEB CONSOLE  (darknode.ai)
+-------------------------------------------------------------------------------
+Current: 3.1.0
+
+3.1.0    2026-09-23   Current web console release line. Full tool arsenal,
+                      threat intel, recon suite, Sentinel Eye, flagship
+                      platforms, Nexus AI integration.
+2.29.x   2026-08      Nexus multi-engine agent integration into the console.
+2.28.x   2026-08      Desktop assistant tie-in; CLI recon/exploit toolkit.
+2.2x     2026-08      First public web console: downloads, practice targets,
+                      vulnerable-VM runner, threat intel, private-cloud
+                      generator.
+
+Note: web console versions before 3.0 tracked the shared platform versioning
+and are recorded at milestone granularity in the in-app Docs > Changelog. The
+repository has shipped continuously since 2026-08-03.
+
+
+-------------------------------------------------------------------------------
+DARKNODE DESKTOP APP
+-------------------------------------------------------------------------------
+Current: 2.50.0
+
+2.50.0   2026-09-26
+2.49.0   2026-09-26
+2.48.0   2026-09-26
+2.47.0   2026-09-26
+2.46.0   2026-09-26
+2.45.0   2026-09-26
+2.44.0   2026-09-26
+2.43.0   2026-09-26
+2.42.0   2026-09-26
+2.41.0   2026-09-26
+2.40.0   2026-08-21
+2.39.0   2026-08-21   First recorded desktop app version.
+
+Note: the desktop app streams across local (Ollama) and hosted (Claude,
+OpenAI-compatible) engines; privileged work crosses a typed IPC boundary. First
+commit 2026-08-21.
+
+
+-------------------------------------------------------------------------------
+NEXUS — AGENT ENGINE / CLI  (bins: nexus, darknode)
+-------------------------------------------------------------------------------
+Current: 2.45.0
+
+2.45.0   2026-09-04   Current release.
+2.44.0   2026-09-01   (release tag: v2.44.0)
+2.43.0   2026-08-22
+2.42.0   2026-08-22
+2.30.0 - 2.41.0       Internal iterations; not tagged as separate releases.
+2.29.0   2026-08-09   Multi-engine agent: model tiering, local RAG indexing,
+                      race/ensemble/bench, worktree-isolated agents, governance
+                      (guard/secrets/scan/redact/offline), git checkpoints,
+                      MCP + hooks.
+2.28.0   2026-08-09
+2.27.0   2026-08-09
+2.26.0   2026-08-08
+2.25.0   2026-08-08
+2.24.0   2026-08-08
+2.23.0   2026-08-08
+2.22.0   2026-08-08
+2.21.0   2026-08-08
+2.20.0   2026-08-08
+2.19.0   2026-08-08
+2.18.0   2026-08-08
+2.17.0   2026-08-08   First recorded Nexus CLI version.
+
+Note: Nexus is a dependency-free Node CLI. The `nexus` and `darknode` commands
+ship from the same package. First commit 2026-08-08.
+
+
+-------------------------------------------------------------------------------
+DARKNODE OS  (bootable VM image / from-scratch x86 kernel)
+-------------------------------------------------------------------------------
+Current: 1.0.0
+
+1.0.0    2026-09-11   Release tag.
+0.1.0    2026-09-11   First tagged kernel.
+
+What currently boots (reproduced, not asserted): the kernel builds and links,
+produces a GRUB (multiboot2) rescue ISO, and boots under QEMU
+(qemu-system-i386) to a framebuffer GUI. Not yet verified: boot on real
+hardware, and on emulators other than QEMU. First commit 2026-09-10.
+
+
+-------------------------------------------------------------------------------
+NOTES
+-------------------------------------------------------------------------------
+- This page is served as plain text with no styling by design.
+- Each product versions independently; version numbers are not shared across
+  products.
+- The Nexus CLI bridge embedded in the web console (local execution server) is
+  not versioned separately from the web console.

@@ -69,7 +69,7 @@ export const XSS_PAYLOADS = [
   '"><script>alert(1)</script>',
   '"><img src=x onerror=alert(1)>',
   "'><script>alert(1)</script>",
-  "'>"><img src=x onerror=alert(1)>",
+  "'>\"><img src=x onerror=alert(1)>",
   '</script><script>alert(1)</script>',
   '</title><script>alert(1)</script>',
   '</textarea><script>alert(1)</script>',

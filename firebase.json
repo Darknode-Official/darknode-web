@@ -6,6 +6,7 @@
       "ignore": ["firebase/**", "**/.git/**", "**/node_modules/**", "**/*.exe", "**/*.deb", "**/*.AppImage", "**/*.dmg"],
       "rewrites": [
         { "source": "/api/chat", "function": { "functionId": "chat", "region": "us-central1" } },
+        { "source": "/version", "destination": "/version.txt" },
         { "source": "**", "destination": "/index.html" }
       ],
       "headers": [
@@ -35,6 +36,13 @@
           "headers": [
             { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" },
             { "key": "Content-Type", "value": "text/plain; charset=utf-8" }
+          ]
+        },
+        {
+          "source": "/version",
+          "headers": [
+            { "key": "Content-Type", "value": "text/plain; charset=utf-8" },
+            { "key": "Cache-Control", "value": "public, max-age=300, must-revalidate" }
           ]
         },
         {
@@ -57,6 +65,7 @@
       "ignore": ["firebase/**", "**/.git/**", "**/node_modules/**", "**/*.exe", "**/*.deb", "**/*.AppImage", "**/*.dmg"],
       "rewrites": [
         { "source": "/api/chat", "function": { "functionId": "chat", "region": "us-central1" } },
+        { "source": "/version", "destination": "/version.txt" },
         { "source": "**", "destination": "/index.html" }
       ],
       "headers": [
@@ -86,6 +95,13 @@
           "headers": [
             { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" },
             { "key": "Content-Type", "value": "text/plain; charset=utf-8" }
+          ]
+        },
+        {
+          "source": "/version",
+          "headers": [
+            { "key": "Content-Type", "value": "text/plain; charset=utf-8" },
+            { "key": "Cache-Control", "value": "public, max-age=300, must-revalidate" }
           ]
         },
         {

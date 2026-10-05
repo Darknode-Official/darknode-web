@@ -2650,3 +2650,4 @@ const AD_ATTACKS = [
       "https://www.thehacker.recipes/ad/movement/dacl/grant-rights"
     ]
   },
+];

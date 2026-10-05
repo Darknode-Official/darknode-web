@@ -638,19 +638,19 @@ export const GOOGLE_DORKS = [
     risk: "critical"
   },
   {
-    query: "site:example.com \"<STRIPE_SECRET_KEY>"",
+    query: "site:example.com \"<STRIPE_SECRET_KEY>\"",
     category: "api_keys",
     description: "Stripe live secret key exposed",
     risk: "critical"
   },
   {
-    query: "site:example.com \"<STRIPE_TEST_KEY>"",
+    query: "site:example.com \"<STRIPE_TEST_KEY>\"",
     category: "api_keys",
     description: "Stripe test secret key exposed",
     risk: "high"
   },
   {
-    query: "site:example.com \"<STRIPE_PUB_KEY>"",
+    query: "site:example.com \"<STRIPE_PUB_KEY>\"",
     category: "api_keys",
     description: "Stripe live publishable key",
     risk: "medium"
@@ -668,7 +668,7 @@ export const GOOGLE_DORKS = [
     risk: "critical"
   },
   {
-    query: "site:example.com \"<SLACK_BOT_TOKEN>" OR \"<SLACK_USER_TOKEN>"",
+    query: "site:example.com \"<SLACK_BOT_TOKEN>\" OR \"<SLACK_USER_TOKEN>\"",
     category: "api_keys",
     description: "Slack bot/user tokens",
     risk: "critical"

@@ -71,7 +71,7 @@ export const REGISTRY_FORENSICS = [
     forensicValue: "Userinit hijacking — should end with userinit.exe,",
     category: "persistence",
     artifacts: ["Userinit value"],
-    investigationSteps: ["Must be C:\Windows\system32\userinit.exe, — check for appended paths"]
+    investigationSteps: ["Must be C:\\Windows\\system32\\userinit.exe, — check for appended paths"]
   },
   {
     path: "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders",
