@@ -353,8 +353,10 @@ Rules:
 - Output JSON only: no code fences around the JSON, no extra prose.`;
 
 async function handleSmart(request, env) {
-  const key = env.SMART_KEY || env.GEMINI_KEY;
-  if (!key) return json({ error: "Smart mode is not configured on the server." }, 503);
+  // Try the dedicated Smart key first, then the shared Gemini key, so one valid
+  // Google key keeps Smart mode working even when SMART_KEY is stale or unset.
+  const keys = [...new Set([env.SMART_KEY, env.GEMINI_KEY].filter(Boolean))];
+  if (!keys.length) return json({ error: "Smart mode is not configured on the server." }, 503);
   let body;
   try { body = await request.json(); } catch (_) { return json({ error: "Invalid JSON body" }, 400); }
   const input = String((body && body.input) || "").slice(0, 6000).trim();
@@ -369,14 +371,21 @@ async function handleSmart(request, env) {
   const req = { systemInstruction: { parts: [{ text: SMART_SYS }] }, contents, generationConfig: { temperature: 0.2, responseMimeType: "application/json", maxOutputTokens: 8192 } };
   // Primary model, then fallbacks when one is overloaded, missing or unreachable.
   // Overload (503) and quota (429) are per model, so move down the chain on either.
-  const models = [...new Set([env.SMART_MODEL || "gemini-flash-latest", "gemini-3.8-flash", "gemini-3.5-flash",
-    env.SMART_FALLBACK_MODEL || "gemini-flash-lite-latest", "gemini-3.1-flash-lite", "gemini-2.5-flash-lite"])];
+  const models = [...new Set([env.SMART_MODEL || "gemini-flash-latest", "gemini-3.5-flash",
+    env.SMART_FALLBACK_MODEL || "gemini-flash-lite-latest", "gemini-3.1-flash-lite"])];
   let r = null, last = null;
-  for (const model of models) {
-    try { r = await fetch(`${GEMINI_BASE}/${encodeURIComponent(model)}:generateContent`, { method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": key }, body: JSON.stringify(req) }); }
-    catch (_) { r = null; continue; }
-    last = r;
-    if (r.ok || r.status === 400 || r.status === 401 || r.status === 403) break;
+  // Walk keys x models: a per-model fault (404 retired / 429 quota / 503 overload)
+  // moves to the next model; a bad key (401/403) moves to the next key; a 400 is a
+  // request fault no retry can fix, so stop.
+  outer:
+  for (const key of keys) {
+    for (const model of models) {
+      try { r = await fetch(`${GEMINI_BASE}/${encodeURIComponent(model)}:generateContent`, { method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": key }, body: JSON.stringify(req) }); }
+      catch (_) { r = null; continue; }
+      last = r;
+      if (r.ok || r.status === 400) break outer;
+      if (r.status === 401 || r.status === 403) break;
+    }
   }
   r = r || last;
   if (!r) return json({ error: "Smart mode could not be reached. Try again in a moment." }, 502);
@@ -431,7 +440,16 @@ export default {
       // Google key powers both routes and the two secrets never have to stay in sync.
       const key = env[cfg.envKey] || (provider === "gemini" ? env.SMART_KEY : undefined);
       if (!key && !cfg.optionalKey) return json({ error: "Server key not configured for " + provider }, 500);
-      const { upstream, isGemini } = await callUpstream(cfg, env, model, msgs, key, { search: provider === "gemini" && env.GEMINI_SEARCH !== "0" });
+      const search = provider === "gemini" && env.GEMINI_SEARCH !== "0";
+      let { upstream, isGemini } = await callUpstream(cfg, env, model, msgs, key, { search });
+      // A chosen Gemini model can be retired (404), rate-limited (429) or overloaded
+      // (503). Rather than fail the chat, transparently retry on the fast lite alias
+      // — the most available tier — so "Darknode Flash" never dead-ends while
+      // "Darknode Lite" would have answered.
+      if (provider === "gemini" && !upstream.ok && (upstream.status === 404 || upstream.status === 429 || upstream.status === 503)) {
+        const fb = "gemini-flash-lite-latest";
+        if (fb !== model) { try { ({ upstream, isGemini } = await callUpstream(cfg, env, fb, msgs, key, { search })); } catch (_) {} }
+      }
       if (!upstream.ok) { const t = await upstream.text().catch(() => ""); return json({ error: "Upstream " + upstream.status + ": " + t.slice(0, 300) }, upstream.status); }
       if (!upstream.body) return json({ error: "No upstream body" }, 502);
       return streamBack(upstream, isGemini, opts);

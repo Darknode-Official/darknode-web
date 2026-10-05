@@ -197,7 +197,7 @@ Windows: whoami /priv | wmic service get pathname (unquoted paths) | cmdkey /lis
 // the built-in key, so those are the tiers we expose, branded as Darknode.
 const DARKNODE_MODELS = [
   { id: "gemini-flash-latest", name: "Darknode Flash", provider: "gemini", group: "Darknode AI", sub: "recommended" },
-  { id: "gemini-3.8-flash", name: "Darknode Flash 3.8", provider: "gemini", group: "Darknode AI", sub: "newest" },
+  { id: "gemini-3.5-flash", name: "Darknode Flash 3.5", provider: "gemini", group: "Darknode AI", sub: "newest" },
   { id: "gemini-flash-lite-latest", name: "Darknode Lite", provider: "gemini", group: "Darknode AI", sub: "fastest" },
 ];
 

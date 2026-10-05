@@ -1632,7 +1632,7 @@ function renderApp(user) {
     if (sec && sec !== "home" && sec !== "settings") { try { let r = JSON.parse(localStorage.getItem("dn_recent")||"[]"); r = r.filter(s=>s!==sec); r.unshift(sec); r = r.slice(0,8); localStorage.setItem("dn_recent", JSON.stringify(r)); } catch(_){} }
     if (sec === "tools") { main.innerHTML = `<div class="pg-head"><div><h1 class="pg-h1">Tools</h1><p class="muted pg-sub">Search, filter, and open any tool in the catalog.</p></div></div><div id="tools"></div>`; import("/js/tools.js?v=20260924a").then(m => m.renderTools(document.getElementById("tools"))); }
     else if (sec === "utils") { import("/js/utils.js").then(m => m.renderUtils(main)); }
-    else if (sec === "ai") { import("/js/webai.js?v=20261003a").then(m => m.renderAI(main)); }
+    else if (sec === "ai") { import("/js/webai.js?v=20261005a").then(m => m.renderAI(main)); }
     else if (sec === "math") { _prevCleanup = renderQuelvra(main, more); }
     else if (sec === "payloads") { import("/js/labs.js?v=20261003a").then(m => m.renderPayloads(main)); }
     else if (sec === "targets") { import("/js/labs.js?v=20261003a").then(m => m.renderTargets(main)); }
@@ -1774,7 +1774,7 @@ function renderApp(user) {
     else if (sec === "learn") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Learn Hub...</p>"; loadLearnHub().then(m => m.renderLearnHub(main)); }
     else if (sec === "learndo") { import("/js/learndo.js").then(m => m.renderLearnDo(main)); }
     else if (sec === "engine") { import("/js/engine-tab.js?v=20260929t").then(m => m.renderEngine(main)); }
-    else if (sec === "coder") { import("/js/coder.js?v=20261003a").then(m => m.renderCliCoder(main)); }
+    else if (sec === "coder") { import("/js/coder.js?v=20261005a").then(m => m.renderCliCoder(main)); }
     else if (sec === "downloads") { import("/js/getapp.js?v=20261004a").then(m => m.renderDownloads(main)); }
     else if (sec === "dlguide") { import("/js/getapp.js?v=20261004a").then(m => m.renderDownloadDocs(main)); }
     else if (sec === "api") { import("/js/api.js?v=20261002b").then(m => m.renderAPI(main, user)); }
@@ -1837,7 +1837,7 @@ function renderApp(user) {
   // Handle data-sec clicks anywhere in the view (dashboard cards, hero buttons, Home widgets).
   // data-more carries a tab or scroll target (e.g. settings -> apikeys) through to show().
   view.addEventListener("click", (e) => {
-    if (e.target.closest("[data-open-services]")) { const sb = document.getElementById("conServices"); if (sb) sb.click(); return; }
+    if (e.target.closest("[data-open-services]")) { e.stopPropagation(); const sb = document.getElementById("conServices"); if (sb) sb.click(); return; }
     const sec = e.target.closest("[data-sec]");
     if (sec && !sec.closest(".side-nav")) { show(sec.dataset.sec, sec.dataset.more || undefined); }
   });
