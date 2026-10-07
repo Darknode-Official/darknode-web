@@ -17,6 +17,9 @@ const EMAILJS = {
   serviceId: "YOUR_SERVICE_ID",
   codeTemplate: "YOUR_CODE_TEMPLATE_ID",
   alertTemplate: "YOUR_ALERT_TEMPLATE_ID",
+  // Free-form announcement/outage notice. Template "To email" = {{to_email}};
+  // variables: {{name}}, {{subject}}, {{message}}. Used by sendAnnouncement().
+  announceTemplate: "YOUR_ANNOUNCE_TEMPLATE_ID",
 };
 
 export const emailConfigured = () =>
@@ -48,6 +51,22 @@ export async function sendLoginAlert(toEmail, info) {
     return { ok: true };
   } catch (err) { return { ok: false }; }
 }
+
+// Free-form announcement / outage notice (e.g. explaining an incident to a user).
+// Returns {ok,error}. Admin-only in practice; also exposed as window.dnSendEmail so
+// the owner can send a one-off from the console on the live site once configured.
+export async function sendAnnouncement(toEmail, subject, message, name) {
+  if (!emailConfigured() || !EMAILJS.announceTemplate || EMAILJS.announceTemplate.startsWith("YOUR_"))
+    return { ok: false, error: "announcement email not configured (set announceTemplate)" };
+  try {
+    const e = await lib();
+    await e.send(EMAILJS.serviceId, EMAILJS.announceTemplate, {
+      to_email: toEmail, email: toEmail, name: name || toEmail, subject: subject || "", message: message || "",
+    });
+    return { ok: true };
+  } catch (err) { return { ok: false, error: (err && err.text) || String(err) }; }
+}
+try { window.dnSendEmail = sendAnnouncement; } catch (_) {}
 
 // Crypto-secure 6-digit code. Rejection-samples a 32-bit value to avoid modulo
 // bias across the 900000-wide range, falling back to Math.random only if the
