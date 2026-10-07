@@ -463,6 +463,12 @@
     _tmInstances[containerId] = {
       cleanup: function() {
         animRunning = false;
+        // resizeHandler/resizeTimer are var-hoisted and assigned below; by the
+        // time cleanup runs they exist. Dropping the listener here is what stops
+        // each rebuild (and each SENTINEL EYE revisit) from stacking another
+        // resize handler and doubling the rebuild work on every resize.
+        if (resizeTimer) clearTimeout(resizeTimer);
+        window.removeEventListener('resize', resizeHandler);
         container.innerHTML = '';
       }
     };

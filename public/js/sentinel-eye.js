@@ -9012,6 +9012,12 @@ export function cleanupSentinelEye() {
   _seTimers = [];
   if (_seTrackingRefreshInterval) { clearInterval(_seTrackingRefreshInterval); _seTrackingRefreshInterval = null; }
   _gwCleanup();
+  // Tear down the D3 threat map too, otherwise its requestAnimationFrame loop
+  // keeps running (and its resize listener stays registered) after navigating
+  // away from SENTINEL EYE.
+  if (typeof window !== 'undefined' && typeof window.destroyThreatMap === 'function') {
+    window.destroyThreatMap('se-threat-map');
+  }
 }
 
 var _seRenderGeneration = 0;
