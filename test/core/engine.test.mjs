@@ -911,7 +911,9 @@ group("engine: agentic Smart mode + tab wiring (source level)", () => {
     assert.ok(/history: \(history \|\| \[\]\)\.slice\(-6\)/.test(smart));
     const worker = read("../../worker/worker.js");
     assert.ok(/"steps": \[<engine command strings>\]/.test(worker) && /pathname === "\/api\/smart"/.test(worker));
-    assert.ok(/env\.SMART_KEY \|\| env\.GEMINI_KEY/.test(worker) && !/AIza[0-9A-Za-z_-]{20,}/.test(worker)); // secret only
+    // Smart mode walks [SMART_KEY, GEMINI_KEY] so a valid GEMINI_KEY rescues a stale
+    // SMART_KEY (resilient form; replaced the old `SMART_KEY || GEMINI_KEY`).
+    assert.ok(/\[env\.SMART_KEY, env\.GEMINI_KEY\]/.test(worker) && !/AIza[0-9A-Za-z_-]{20,}/.test(worker)); // secret only
   });
   test("Smart mode's UI never names a vendor", () => {
     for (const f of [smart, tab, read("../../public/js/engine/engine.js")]) assert.ok(!/gemini/i.test(f.replace(/\/\/.*$/gm, "")));

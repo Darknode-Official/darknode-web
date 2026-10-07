@@ -160,7 +160,7 @@ body.app .con-favbar {
 }
 body.app .con-favlbl { display: inline-flex; align-items: center; height: 28px; color: var(--aws-hdr-mut); font-size: 12px; letter-spacing: .02em; margin: 0 6px 0 0; }
 body.app .con-favlbl.con-reclbl { margin-left: 14px; }
-body.app .con-favbar .con-favs { display: inline-flex; align-items: center; gap: 2px; }
+body.app .con-favbar .con-favs { display: inline-flex; align-items: center; gap: 6px; }
 body.app .con-favbar .con-chip {
   height: 28px;
   padding: 0 10px;

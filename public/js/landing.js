@@ -55,7 +55,7 @@ export function renderLanding(view, actions) {
       <div class="wrap hero-inner">
         <div class="hero-badge"><span class="badge-dot"></span> Source available &middot; Free forever</div>
         <h1 class="hero-h1">The AI&#8209;powered platform<br>for <span class="hero-rotate-wrap"><span class="hero-rotate" id="hero-rotate">cybersecurity</span></span></h1>
-        <p class="hero-sub">Tools, labs, and an AI agent to learn cybersecurity — running entirely on your machine. No cloud. No subscriptions. No data leaves your computer.</p>
+        <p class="hero-sub">Tools, labs, and an AI agent to learn cybersecurity — free and open-source, with a fully local, offline mode so your data can stay on your machine.</p>
         <div class="hero-cta">
           <button class="btn lg" id="cta-start">Get started &mdash; free</button>
           <a class="btn lg ghost" href="${GITHUB}/darknode-cli" target="_blank" rel="noopener">
@@ -66,13 +66,13 @@ export function renderLanding(view, actions) {
         <div class="hero-trust">
           <div class="trust-item"><span class="trust-n" data-count="480000" data-suffix="+" data-format="comma">0</span><span class="trust-l">Lines of code</span></div>
           <div class="trust-sep"></div>
-          <div class="trust-item"><span class="trust-n" data-count="1000" data-suffix="+" data-format="comma">0</span><span class="trust-l">Security tools</span></div>
+          <div class="trust-item"><span class="trust-n" data-count="150" data-suffix="+" data-format="comma">0</span><span class="trust-l">Security tools</span></div>
           <div class="trust-sep"></div>
           <div class="trust-item"><span class="trust-n" data-count="33">0</span><span class="trust-l">AI modules</span></div>
           <div class="trust-sep"></div>
           <div class="trust-item"><span class="trust-n" data-count="20">0</span><span class="trust-l">Sidebar groups</span></div>
           <div class="trust-sep"></div>
-          <div class="trust-item"><span class="trust-n trust-n-static">100%</span><span class="trust-l">Local &amp; private</span></div>
+          <div class="trust-item"><span class="trust-n trust-n-static">$0</span><span class="trust-l">Free forever</span></div>
         </div>
         <div class="hero-built-with">
           <span class="built-label">Built with</span>
@@ -300,7 +300,7 @@ export function renderLanding(view, actions) {
       <div class="wrap">
         <div class="sec-label">Toolkit</div>
         <h2 class="sec-title" id="tools-title">Purpose-built security tools for every discipline</h2>
-        <p class="sec-sub">Every tool built from scratch for Darknode. Not wrappers around other software — original security assessment and defense tooling.</p>
+        <p class="sec-sub">A broad toolkit across recon, offensive testing, defense, forensics and threat intelligence — original tooling built for Darknode alongside clean web interfaces over trusted public data sources and standard industry utilities.</p>
         <div class="ts-tabs" role="tablist" aria-label="Tool categories">
           <button class="ts-tab on" data-cat="all" role="tab" aria-selected="true">All</button>
           <button class="ts-tab" data-cat="recon" role="tab" aria-selected="false">Recon</button>
@@ -489,7 +489,7 @@ export function renderLanding(view, actions) {
       <div class="wrap">
         <div class="sec-label">AI Engine</div>
         <h2 class="sec-title" id="nexus-title">Nexus &mdash; the engine under the hood</h2>
-        <p class="sec-sub">Not a wrapper around ChatGPT. A full agentic platform with planning, multi-agent orchestration, self-evaluation, and 8 AI backends. Every layer built from scratch.</p>
+        <p class="sec-sub">More than a chat box: a genuine agentic platform &mdash; planning, multi-agent orchestration and self-evaluation &mdash; that runs on your choice of backend, from Claude, GPT, Gemini, Groq, Mistral and OpenRouter in the cloud to a fully local model via Ollama.</p>
 
         <!-- Architecture diagram -->
         <div class="nx-arch" aria-label="Nexus architecture diagram">
@@ -1090,65 +1090,6 @@ testing methodology for 10.10.14.7:
       </div>
     </section>
 
-    <!-- ====== TESTIMONIALS ====== -->
-    <section class="section" id="testimonials" aria-labelledby="testimonials-title">
-      <div class="wrap">
-        <div class="sec-label">Testimonials</div>
-        <h2 class="sec-title" id="testimonials-title">Trusted by security professionals</h2>
-        <p class="sec-sub">From students to red team leads, here is what people are saying about Darknode.</p>
-        <div class="testimonial-grid">
-          <div class="testimonial-card">
-            <div class="testimonial-quote">&ldquo;</div>
-            <blockquote class="testimonial-text">Finally a security platform that runs entirely on my machine. No cloud lock-in.</blockquote>
-            <div class="testimonial-author">
-              <div class="testimonial-role">Security Engineer</div>
-              <div class="testimonial-org">Enterprise Security</div>
-            </div>
-          </div>
-          <div class="testimonial-card">
-            <div class="testimonial-quote">&ldquo;</div>
-            <blockquote class="testimonial-text">The AI agent found a misconfigured S3 bucket in our staging environment within minutes.</blockquote>
-            <div class="testimonial-author">
-              <div class="testimonial-role">DevOps Lead</div>
-              <div class="testimonial-org">Cloud Infrastructure</div>
-            </div>
-          </div>
-          <div class="testimonial-card">
-            <div class="testimonial-quote">&ldquo;</div>
-            <blockquote class="testimonial-text">I passed my OSCP using Darknode's practice labs and AI-guided methodology.</blockquote>
-            <div class="testimonial-author">
-              <div class="testimonial-role">Security Professional</div>
-              <div class="testimonial-org">OSCP Certified</div>
-            </div>
-          </div>
-          <div class="testimonial-card">
-            <div class="testimonial-quote">&ldquo;</div>
-            <blockquote class="testimonial-text">The cheat sheets alone saved me hours. Having the AI explain each technique is next level.</blockquote>
-            <div class="testimonial-author">
-              <div class="testimonial-role">CS Student</div>
-              <div class="testimonial-org">University</div>
-            </div>
-          </div>
-          <div class="testimonial-card">
-            <div class="testimonial-quote">&ldquo;</div>
-            <blockquote class="testimonial-text">We replaced three commercial tools with Darknode. The fact that it's free is unreal.</blockquote>
-            <div class="testimonial-author">
-              <div class="testimonial-role">Red Team Lead</div>
-              <div class="testimonial-org">Security Consulting</div>
-            </div>
-          </div>
-          <div class="testimonial-card">
-            <div class="testimonial-quote">&ldquo;</div>
-            <blockquote class="testimonial-text">The Nexus AI agent writes better Nuclei templates than most of my team.</blockquote>
-            <div class="testimonial-author">
-              <div class="testimonial-role">Security Researcher</div>
-              <div class="testimonial-org">Vulnerability Research</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
     <!-- ====== PRICING ====== -->
     <section class="section alt" id="pricing" aria-labelledby="pricing-title">
       <div class="wrap">
@@ -1548,7 +1489,7 @@ testing methodology for 10.10.14.7:
   // with incremental delays (each child +0.07s after the previous, capped at 0.42s).
   if ("IntersectionObserver" in window) {
     let reduce = false; try { reduce = matchMedia("(prefers-reduced-motion:reduce)").matches; } catch (_) {}
-    const REVEAL_SEL = ".sec-label,.sec-title,.sec-sub,.bento-card,.price-card,.feature-row,.tlv-step,.nx-card,.gh-card,.pricing-note,.nx-details,.hero-trust,.hero-built-with,.testimonial-card,.faq-item,.cmp-landing,.ts-card,.ts-tabs,.nx-arch-layer,.nx-hl,.nx-arch,.metric-card,.rag-tabs,.rag-card,.showcase-tabs,.showcase-window,.showcase-hint,.plab-card,.plab-note,.os-card,.os-boot-preview";
+    const REVEAL_SEL = ".sec-label,.sec-title,.sec-sub,.bento-card,.price-card,.feature-row,.tlv-step,.nx-card,.gh-card,.pricing-note,.nx-details,.hero-trust,.hero-built-with,.faq-item,.cmp-landing,.ts-card,.ts-tabs,.nx-arch-layer,.nx-hl,.nx-arch,.metric-card,.rag-tabs,.rag-card,.showcase-tabs,.showcase-window,.showcase-hint,.plab-card,.plab-note,.os-card,.os-boot-preview";
     if (!reduce) {
       const sectionIO = new IntersectionObserver((entries) => {
         entries.forEach(entry => {

@@ -1254,7 +1254,7 @@ export const TOOLS = [
     },
   },
   {
-    id: 'wb-valid-url', name: 'Is Valid URL', cat: 'web',
+    id: 'wb-valid-url', name: 'URL Validator', cat: 'web',
     desc: 'Check whether a string is a valid absolute URL.',
     tags: ['url', 'validate'],
     inputs: [{ k: 'url', type: 'text', label: 'URL', ph: 'https://example.com', def: '' }],
@@ -1266,7 +1266,7 @@ export const TOOLS = [
     },
   },
   {
-    id: 'wb-valid-email', name: 'Is Valid Email', cat: 'web',
+    id: 'wb-valid-email', name: 'Email Validator', cat: 'web',
     desc: 'Check whether a string looks like a valid email address.',
     tags: ['email', 'validate'],
     inputs: [{ k: 'email', type: 'text', label: 'Email', ph: 'user@example.com', def: '' }],
@@ -1278,7 +1278,7 @@ export const TOOLS = [
     },
   },
   {
-    id: 'wb-valid-ipv4', name: 'Is Valid IPv4', cat: 'web',
+    id: 'wb-valid-ipv4', name: 'IPv4 Validator', cat: 'web',
     desc: 'Check whether a string is a valid IPv4 address.',
     tags: ['ip', 'ipv4', 'validate'],
     inputs: [{ k: 'ip', type: 'text', label: 'IPv4 address', ph: '192.168.0.1', def: '' }],

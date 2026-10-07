@@ -13,7 +13,7 @@ import "/js/mobile-nav.js";
 import { consoleHTML, directoryHTML, wireConsole, labelOf as navLabel, groupOf as navGroup, recentSecs as navRecent, favSecs as navFavs } from "/js/console-nav.js?v=20261003a";
 // Only the tool count is needed here; the manifest carries ids/names/categories without the
 // tool code (js/tools/*), which loads when the Toolbox opens.
-import { TOOL_META as _MINI_TOOLS } from "/js/tools-manifest.js?v=20261003a";
+import { TOOL_META as _MINI_TOOLS } from "/js/tools-manifest.js?v=20261006a";
 const MINI_COUNT = _MINI_TOOLS.length;
 import { showToast } from "/js/toast.js?v=20260924a";
 import { collection as fbCollection, addDoc as fbAddDoc, serverTimestamp as fbServerTimestamp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
@@ -30,7 +30,7 @@ let MORE = [], CATALOG = [], CATEGORIES = [];
 import("/js/toolkit.js").then(m => { MORE = m.MORE; CATALOG = m.CATALOG; CATEGORIES = m.CATEGORIES; });
 import { startTour, tourDone } from "/js/tour.js";
 let _landing = null;
-async function loadLanding() { if (!_landing) _landing = await import("/js/landing.js?v=20261005a"); return _landing; }
+async function loadLanding() { if (!_landing) _landing = await import("/js/landing.js?v=20261006a"); return _landing; }
 // No-account identities (Test Mode / app guest) get a RANDOM, per-session uid, not a
 // fixed shared one. The old fixed "test-user"/"app-guest" uids put every such session
 // into one shared dnk:<uid>:* key namespace, so two people could land on the same
@@ -1508,6 +1508,22 @@ function renderApp(user) {
     </div>`;
 
   const main = document.getElementById("app-content");
+  // Smooth view transitions: fade each new section in instead of letting the text
+  // "pop" into place. We watch only direct children of #app-content, so a full view
+  // swap (main.innerHTML = ...) animates once, while inner updates inside a tool do
+  // not. A short cooldown coalesces a render that sets innerHTML then appends a node.
+  // Honors prefers-reduced-motion.
+  const _reduceMotion = (() => { try { return matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (_) { return false; } })();
+  if (!_reduceMotion && typeof MutationObserver === "function" && main.animate) {
+    let _fadeAt = 0;
+    const fadeObs = new MutationObserver(() => {
+      const now = (performance && performance.now) ? performance.now() : Date.now();
+      if (now - _fadeAt < 220) return;
+      _fadeAt = now;
+      try { main.animate([{ opacity: 0, transform: "translateY(6px)" }, { opacity: 1, transform: "none" }], { duration: 170, easing: "cubic-bezier(.2,.6,.2,1)" }); } catch (_) {}
+    });
+    fadeObs.observe(main, { childList: true });
+  }
   const labelOf = navLabel;
   const conNav = wireConsole(view);
   let curSec = "home";
@@ -1636,7 +1652,7 @@ function renderApp(user) {
     if (sec && sec !== "home" && sec !== "settings") { try { let r = JSON.parse(localStorage.getItem("dn_recent")||"[]"); r = r.filter(s=>s!==sec); r.unshift(sec); r = r.slice(0,8); localStorage.setItem("dn_recent", JSON.stringify(r)); } catch(_){} }
     if (sec === "tools") { main.innerHTML = `<div class="pg-head"><div><h1 class="pg-h1">Tools</h1><p class="muted pg-sub">Search, filter, and open any tool in the catalog.</p></div></div><div id="tools"></div>`; import("/js/tools.js?v=20260924a").then(m => m.renderTools(document.getElementById("tools"))); }
     else if (sec === "utils") { import("/js/utils.js").then(m => m.renderUtils(main)); }
-    else if (sec === "ai") { import("/js/webai.js?v=20261005a").then(m => m.renderAI(main)); }
+    else if (sec === "ai") { import("/js/webai.js?v=20261006a").then(m => m.renderAI(main)); }
     else if (sec === "math") { _prevCleanup = renderQuelvra(main, more); }
     else if (sec === "payloads") { import("/js/labs.js?v=20261003a").then(m => m.renderPayloads(main)); }
     else if (sec === "targets") { import("/js/labs.js?v=20261003a").then(m => m.renderTargets(main)); }
@@ -1788,8 +1804,8 @@ function renderApp(user) {
     else if (sec === "admin") { import("/js/admin.js?v=20261002a").then(m => m.renderAdmin(main, user)); }
     else if (sec === "contact") renderContact(main);
     else if (sec === "education") { main.innerHTML = `<div class="panel" style="max-width:800px;margin:40px auto"><div class="panel-h">About Darknode Education</div><div style="padding:18px;line-height:1.8;font-size:.9rem"><p><strong>Darknode is a cybersecurity education platform</strong> designed for students, educators, and security professionals to learn information security through hands-on practice in a safe, controlled environment.</p><p style="margin-top:16px"><strong>Our Mission:</strong> To make cybersecurity education accessible, interactive, and practical. Most tools run in your browser or on your own machine. Some features do send data out: AI chat goes through Darknode's server to the AI provider, some lookup pages query public services (for example NVD, crt.sh and DNS-over-HTTPS resolvers), and saved items and account data are stored in Google Firebase. Each page that contacts an outside service does so only when you run it.</p><p style="margin-top:16px"><strong>Who Uses Darknode:</strong></p><ul style="margin:8px 0 0 20px;line-height:2"><li>Computer science and cybersecurity students</li><li>IT professionals studying for certifications (CompTIA Security+, CISSP, CEH, OSCP)</li><li>University professors and instructors teaching security courses</li><li>Security operations center (SOC) analysts in training</li><li>Career changers learning cybersecurity fundamentals</li></ul><p style="margin-top:16px"><strong>Educational Standards:</strong> Our curriculum aligns with NIST NICE Framework, NSA CAE-CD requirements, and CompTIA Security+ objectives. All practice environments are isolated, legal, and designed for authorized educational use only.</p><p style="margin-top:16px"><strong>Responsible Use:</strong> Darknode tools are designed exclusively for educational purposes and authorized security testing. Users must comply with all applicable laws and obtain proper authorization before testing any system they do not own.</p><p style="margin-top:16px;color:var(--mut);font-size:.82rem">Darknode is a product of Darknode-Official. For questions about our educational programs, visit darknode.ai.</p></div></div>`; }
-    else if (sec === "toolbox") { import("/js/mini-tools.js?v=20261003a").then(m => m.renderToolbox(main, { onOpen: (id) => show("tool-" + id) })); }
-    else if (sec.indexOf("tool-") === 0) { const _tid = sec.slice(5); import("/js/mini-tools.js?v=20261003a").then(m => m.renderMiniTool(main, _tid, { onBack: () => show("toolbox") })); }
+    else if (sec === "toolbox") { import("/js/mini-tools.js?v=20261006a").then(m => m.renderToolbox(main, { onOpen: (id) => show("tool-" + id) })); }
+    else if (sec.indexOf("tool-") === 0) { const _tid = sec.slice(5); import("/js/mini-tools.js?v=20261006a").then(m => m.renderMiniTool(main, _tid, { onBack: () => show("toolbox") })); }
     else renderHome(main, user, isOwner, show);
     if (more === undefined) { try { localStorage.setItem("sw_last_sec", sec); } catch (_) {} }
     // Jump back to the top on every navigation. The page scrolls on the window

@@ -100,6 +100,32 @@ function applyCiteDirective(messages, cite) {
   return arr;
 }
 
+// Google Search grounding roughly doubles time-to-first-token, so we only turn it
+// on when the latest user message actually looks time-sensitive — anything whose
+// answer depends on current/recent facts the model's training can't be trusted for
+// (a specific CVE id, "latest/newest/today/this year", prices, releases, news).
+// Explicit URLs are already handled by enrichWithWeb, so they don't count here.
+// Env override: GEMINI_SEARCH="1" forces grounding on, "0" forces it off.
+const SEARCH_HINTS = /\b(latest|newest|most recent|today|tonight|yesterday|this (week|month|year)|right now|current(ly)?|as of|up[- ]?to[- ]?date|breaking|news|just (announced|released|launched|dropped)|release[ds]?|changelog|price[sd]?|cost|in stock|who won|happening|trending|20(2[6-9]|[3-9]\d))\b|\bCVE-\d{4}-\d{3,}\b/i;
+function wantsWebSearch(messages) {
+  const arr = Array.isArray(messages) ? messages : [];
+  for (let i = arr.length - 1; i >= 0; i--) {
+    const m = arr[i];
+    if (m && m.role === "user") {
+      const txt = typeof m.content === "string" ? m.content
+        : Array.isArray(m.content) ? m.content.map((p) => (p && p.text) || "").join(" ") : "";
+      return SEARCH_HINTS.test(txt);
+    }
+  }
+  return false;
+}
+function geminiSearchOn(env, messages) {
+  const forced = env && env.GEMINI_SEARCH;
+  if (forced === "1") return true;
+  if (forced === "0") return false;
+  return wantsWebSearch(messages);
+}
+
 // ---- Web access (SSRF-guarded URL fetching) --------------------------------
 // Cloudflare Workers run on the edge and can't reach a private network, and
 // there's no `dns`/`net` module, so the guard is hostname/IP-literal based:
@@ -328,7 +354,7 @@ async function handleDarknode(cfg, env, model, messages, opts) {
   }
   if (!env.GEMINI_KEY) return json({ error: "Darknode GPU model is offline and no Gemini fallback key is configured (set GEMINI_KEY)." }, 503);
   const gModel = env.GEMINI_FALLBACK_MODEL || "gemini-flash-latest";
-  const { upstream, isGemini } = await callUpstream(PROVIDERS.gemini, env, gModel, msgs, env.GEMINI_KEY, { search: env.GEMINI_SEARCH !== "0" });
+  const { upstream, isGemini } = await callUpstream(PROVIDERS.gemini, env, gModel, msgs, env.GEMINI_KEY, { search: geminiSearchOn(env, msgs) });
   if (!upstream.ok) { const t = await upstream.text().catch(() => ""); return json({ error: "Gemini fallback " + upstream.status + ": " + t.slice(0, 300) }, upstream.status); }
   if (!upstream.body) return json({ error: "No upstream body" }, 502);
   return streamBack(upstream, isGemini, opts);
@@ -440,12 +466,16 @@ export default {
       // Google key powers both routes and the two secrets never have to stay in sync.
       const key = env[cfg.envKey] || (provider === "gemini" ? env.SMART_KEY : undefined);
       if (!key && !cfg.optionalKey) return json({ error: "Server key not configured for " + provider }, 500);
-      const search = provider === "gemini" && env.GEMINI_SEARCH !== "0";
+      // Google Search grounding roughly doubles time-to-first-token, so turn it on
+      // only when the question actually looks time-sensitive (see geminiSearchOn):
+      // fast for the common case, grounded when recency matters. GEMINI_SEARCH="1"
+      // forces it on, "0" off.
+      const search = provider === "gemini" && geminiSearchOn(env, msgs);
       let { upstream, isGemini } = await callUpstream(cfg, env, model, msgs, key, { search });
       // A chosen Gemini model can be retired (404), rate-limited (429) or overloaded
       // (503). Rather than fail the chat, transparently retry on the fast lite alias
-      // — the most available tier — so "Darknode Flash" never dead-ends while
-      // "Darknode Lite" would have answered.
+      // — the most available tier — so "Darknode Core" never dead-ends while
+      // "Darknode Swift" would have answered.
       if (provider === "gemini" && !upstream.ok && (upstream.status === 404 || upstream.status === 429 || upstream.status === 503)) {
         const fb = "gemini-flash-lite-latest";
         if (fb !== model) { try { ({ upstream, isGemini } = await callUpstream(cfg, env, fb, msgs, key, { search })); } catch (_) {} }

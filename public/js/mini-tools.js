@@ -3,7 +3,7 @@
 // /js/tools/*.js. Each tool is { id, name, cat, desc, tags, inputs, run } and
 // runs entirely client-side. One engine renders every tool's form + live output,
 // so adding a tool is data, not UI. See js/tools/_schema.md for the contract.
-import { TOOLS, TOOL_CATS } from "/js/tools-registry.js?v=20261003a";
+import { TOOLS, TOOL_CATS } from "/js/tools-registry.js?v=20261006a";
 import { H } from "/js/tools/_helpers.js?v=20260925f";
 import { HELP } from "/js/tools/help/index.js?v=20261003a";
 
@@ -160,9 +160,23 @@ export function renderToolbox(main, opts = {}) {
       <div class="mt-hub-body" id="mtHubBody">
         ${cats.filter((c) => byCat[c] && byCat[c].length).map((c) => {
           const cat = TOOL_CATS[c];
+          const list = byCat[c];
+          // Repeated leading words ("HTTP …", "URL …", "Cache-Control …") read as
+          // clutter in a long grid. Grey a lead word shared by 3+ tools in this
+          // category so the eye jumps straight to the distinctive part of each name.
+          // Purely presentational — the real t.name still backs search and the tool page.
+          const leadFreq = {};
+          list.forEach((t) => { const w = String(t.name).split(" ")[0]; leadFreq[w] = (leadFreq[w] || 0) + 1; });
+          const nameHTML = (t) => {
+            const nm = String(t.name), sp = nm.indexOf(" ");
+            const lead = sp > 0 ? nm.slice(0, sp) : nm;
+            return (sp > 0 && leadFreq[lead] >= 3)
+              ? `<span class="mt-card-lead">${esc(lead)}</span> ${esc(nm.slice(sp + 1))}`
+              : esc(nm);
+          };
           return `<section class="mt-hub-cat" data-color="${esc(cat.color)}" data-cat="${esc(c)}">
-            <div class="mt-hub-ch"><span class="svc-dot"></span>${esc(cat.name)}<span class="mt-hub-n">${byCat[c].length}</span></div>
-            <div class="mt-hub-grid">${byCat[c].map((t) => `<button class="mt-card" data-open="${esc(t.id)}" title="${esc(t.desc || "")}"><span class="mt-card-n">${esc(t.name)}</span><span class="mt-card-d">${esc(plain(t))}</span></button>`).join("")}</div>
+            <div class="mt-hub-ch"><span class="svc-dot"></span>${esc(cat.name)}<span class="mt-hub-n">${list.length}</span></div>
+            <div class="mt-hub-grid">${list.map((t) => `<button class="mt-card" data-open="${esc(t.id)}" title="${esc(t.desc || "")}"><span class="mt-card-n">${nameHTML(t)}</span><span class="mt-card-d">${esc(plain(t))}</span></button>`).join("")}</div>
           </section>`;
         }).join("")}
       </div>

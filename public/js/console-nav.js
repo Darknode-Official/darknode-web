@@ -6,7 +6,7 @@
 
 // The manifest has every tool's id, name and category and nothing else, so the shell never
 // loads the tool code (js/tools/*) just to build the Services menu.
-import { TOOL_META as MINI_TOOLS, TOOL_CATS } from "/js/tools-manifest.js?v=20261003a";
+import { TOOL_META as MINI_TOOLS, TOOL_CATS } from "/js/tools-manifest.js?v=20261006a";
 
 const G = (id, name, color, items) => ({ id, name, color, items: items.map(([sec, label, badge]) => ({ sec, label, badge: badge || null })) });
 
