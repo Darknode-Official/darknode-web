@@ -4,6 +4,8 @@
 // certificate transparency, reverse DNS.
 // All queries run in the browser via free CORS-friendly APIs
 
+import { dnFetch, proxyConfigured } from '/js/net.js';
+
 var esc = function(s) { return String(s != null ? s : '').replace(/[&<>"']/g, function(c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); };
 
 var _wrHistory = [];
@@ -50,11 +52,17 @@ function _wrGeoIP(ip) {
     .then(function(r) { return r.json(); });
 }
 
-// Certificate Transparency
+// Certificate Transparency — crt.sh does not reliably send CORS headers, so a
+// direct browser request is usually blocked. Route through the Darknode proxy
+// when available (real CT data), else best-effort direct fetch. Never fabricated.
 function _wrCertSearch(domain) {
-  return fetch('https://crt.sh/?q=%25.' + encodeURIComponent(domain) + '&output=json')
-    .then(function(r) { return r.json(); })
-    .catch(function() { return []; });
+  var url = 'https://crt.sh/?q=%25.' + encodeURIComponent(domain) + '&output=json';
+  if (proxyConfigured()) {
+    return dnFetch(url, { raw: true, timeout: 15000 })
+      .then(function(r) { return JSON.parse(r.body); })
+      .catch(function() { return []; });
+  }
+  return fetch(url).then(function(r) { return r.json(); }).catch(function() { return []; });
 }
 
 // RDAP (Registration Data Access Protocol) — the standardised, JSON replacement

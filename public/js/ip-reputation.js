@@ -1,4 +1,4 @@
-import { db, auth } from "/js/firebase.js";
+import { db, auth } from "/js/firebase.js?v=20261007a";
 import { collection, addDoc, getDocs, query, where, orderBy, limit, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
 
 var esc = function(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function(c) { return ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]; }); };

@@ -1,6 +1,8 @@
 // Threat Map — D3.js + TopoJSON interactive cyber threat world map
-// Renders an SVG world map with threat actors, attack arcs, IXPs, and cables
-// Inspired by qeeqbox/raven threat map approach
+// Renders an SVG world map and plots REAL points: IP addresses resolved to real
+// lat/lon/country/city/ISP via ip-api (through the Darknode SSRF-guarded proxy),
+// or caller-supplied points. No hardcoded country threat-level/attribution data —
+// the base map is neutral geography; every plotted point is resolved from input.
 
 (function() {
   'use strict';
@@ -11,67 +13,44 @@
   var _tmTopoReady = false;
   var _tmInstances = {};
 
-  var HOSTILE_COUNTRIES = {
-    643: '#2a0a0a', // Russia
-    156: '#2a0a0a', // China
-    408: '#2a0a0a', // North Korea
-    364: '#2a0a0a', // Iran
-    // 2nd tier hostile
-    112: '#1a0808', // Belarus
-    760: '#1a0808'  // Syria
-  };
-
-  var ALLIED_COUNTRIES = {
-    840: '#0a0a2a', // United States
-    826: '#0a0a2a', // United Kingdom
-    376: '#0a0a2a', // Israel
-    36:  '#0a0a2a', // Australia
-    124: '#0a0a2a', // Canada
-    554: '#0a0a2a', // New Zealand
-    // NATO / Five Eyes adjacent
-    276: '#080820', // Germany
-    250: '#080820', // France
-    528: '#080820', // Netherlands
-    380: '#080820', // Italy
-    724: '#080820', // Spain
-    616: '#080820', // Poland
-    392: '#080820', // Japan
-    410: '#080820', // South Korea
-    158: '#080820', // Taiwan
-    233: '#080820', // Estonia
-    428: '#080820', // Latvia
-    440: '#080820'  // Lithuania
-  };
-
-  var CONFLICT_COUNTRIES = {
-    804: '#2a1a0a' // Ukraine
-  };
-
-  var COUNTRY_NAMES = {
-    643: 'Russia', 156: 'China', 408: 'North Korea', 364: 'Iran',
-    840: 'United States', 826: 'United Kingdom', 376: 'Israel',
-    36: 'Australia', 124: 'Canada', 554: 'New Zealand',
-    276: 'Germany', 250: 'France', 528: 'Netherlands', 804: 'Ukraine',
-    380: 'Italy', 724: 'Spain', 616: 'Poland', 392: 'Japan',
-    410: 'South Korea', 158: 'Taiwan', 356: 'India', 586: 'Pakistan',
-    792: 'Turkey', 704: 'Vietnam', 702: 'Singapore', 76: 'Brazil',
-    233: 'Estonia', 112: 'Belarus', 760: 'Syria'
-  };
-
-  var COUNTRY_THREAT_INFO = {
-    643: { level: 'CRITICAL', apts: 'APT28, APT29, Sandworm, Turla, Gamaredon', incidents: 'SolarWinds, NotPetya, Ukraine grid attacks' },
-    156: { level: 'CRITICAL', apts: 'APT41, Volt Typhoon, Salt Typhoon, APT1, Hafnium', incidents: 'OPM breach, Volt Typhoon pre-positioning, Salt Typhoon telecom' },
-    408: { level: 'HIGH', apts: 'Lazarus, Kimsuky, Andariel, BlueNoroff', incidents: 'WannaCry, Sony Pictures, $3B+ crypto theft' },
-    364: { level: 'HIGH', apts: 'APT33, APT34, APT35, MuddyWater', incidents: 'Shamoon, Albania attack, Israeli water systems' },
-    840: { level: 'ALLIED', apts: 'NSA TAO, Equation Group', incidents: 'Stuxnet, Olympic Games' },
-    826: { level: 'ALLIED', apts: 'GCHQ/JTRIG', incidents: 'Counter-ISIS, Five Eyes ops' },
-    376: { level: 'ALLIED', apts: 'Unit 8200', incidents: 'Stuxnet, Duqu, Flame' },
-    804: { level: 'CONFLICT ZONE', apts: 'Target of Russian cyber ops', incidents: 'Ongoing grid/comms attacks since 2022' }
-  };
+  // Neutral land fill — no fabricated hostile/allied/conflict coloring.
+  var LAND_FILL = '#101820';
 
   function _esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) {
       return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+
+  // Resolve IP addresses to REAL coordinates via ip-api, through the Darknode
+  // proxy helper (net.js). Throws if the helper is unavailable; silently skips
+  // individual IPs that don't resolve (they simply aren't plotted — never faked).
+  function _dnFetchJSON() {
+    if (window.dnFetchJSON) return Promise.resolve(window.dnFetchJSON);
+    return import('/js/net.js').then(function(m) { return m.dnFetchJSON; });
+  }
+  function _resolveIPs(ips) {
+    return _dnFetchJSON().then(function(dnJSON) {
+      if (!dnJSON) throw new Error('Live IP resolution unavailable — the Darknode proxy is not configured.');
+      var seen = {};
+      var list = (ips || []).map(function(x) { return String(x).trim(); })
+        .filter(function(ip) { if (!ip || seen[ip]) return false; seen[ip] = 1; return true; });
+      var points = [];
+      var chain = Promise.resolve();
+      list.forEach(function(ip) {
+        chain = chain.then(function() {
+          return dnJSON('http://ip-api.com/json/' + encodeURIComponent(ip)).then(function(d) {
+            if (d && d.status === 'success' && typeof d.lat === 'number' && typeof d.lon === 'number') {
+              points.push({
+                id: ip, name: ip, ip: d.query || ip,
+                lon: d.lon, lat: d.lat,
+                country: d.country, city: d.city, isp: d.isp, org: d.org, as: d.as
+              });
+            }
+          }).catch(function() { /* unresolved IP: skip, do not fabricate */ });
+        });
+      });
+      return chain.then(function() { return points; });
     });
   }
 
@@ -123,12 +102,8 @@
       });
   }
 
-  function _getCountryFill(id) {
-    var numId = +id;
-    if (HOSTILE_COUNTRIES[numId]) return HOSTILE_COUNTRIES[numId];
-    if (ALLIED_COUNTRIES[numId]) return ALLIED_COUNTRIES[numId];
-    if (CONFLICT_COUNTRIES[numId]) return CONFLICT_COUNTRIES[numId];
-    return '#101820';
+  function _getCountryFill() {
+    return LAND_FILL;
   }
 
   function _buildThreatMap(containerId, opts) {
@@ -256,25 +231,17 @@
       .append('path')
       .attr('class', 'tm-country')
       .attr('d', path)
-      .attr('fill', function(d) { return _getCountryFill(d.id); })
+      .attr('fill', function() { return _getCountryFill(); })
       .attr('stroke', '#0a2a44')
       .attr('stroke-width', 0.5)
-      .style('cursor', 'pointer')
+      .style('cursor', 'default')
       .on('mouseover', function(event, d) {
         d3.select(this).attr('stroke', '#00aaff').attr('stroke-width', 1.2);
-        var numId = +d.id;
-        var name = COUNTRY_NAMES[numId] || ('Country ' + d.id);
-        var info = COUNTRY_THREAT_INFO[numId];
-        var html = '<div style="color:#00ddff;font-weight:bold;font-size:12px;margin-bottom:4px;letter-spacing:1px;">' + _esc(name) + '</div>';
-        if (info) {
-          var lvlColor = info.level === 'CRITICAL' ? '#ff2244' : info.level === 'HIGH' ? '#ff6622' : info.level === 'CONFLICT ZONE' ? '#ffaa00' : '#44aaff';
-          html += '<div style="margin:2px 0;"><span style="color:#4a7a9a;">THREAT:</span> <span style="color:' + lvlColor + ';font-weight:bold;">' + _esc(info.level) + '</span></div>';
-          html += '<div style="margin:2px 0;"><span style="color:#4a7a9a;">APT GROUPS:</span> <span style="color:#bbb;font-size:9px;">' + _esc(info.apts) + '</span></div>';
-          html += '<div style="margin:2px 0;"><span style="color:#4a7a9a;">RECENT:</span> <span style="color:#bbb;font-size:9px;">' + _esc(info.incidents) + '</span></div>';
-        } else {
-          html += '<div style="color:#4a6a8a;">No active threat intelligence</div>';
-        }
-        tooltip.html(html).style('display', 'block');
+        // Country name comes from the map dataset's own properties (factual
+        // geography), not from any hardcoded threat list.
+        var name = (d && d.properties && d.properties.name) ? d.properties.name : '';
+        if (!name) return;
+        tooltip.html('<div style="color:#00ddff;font-weight:bold;font-size:12px;letter-spacing:1px;">' + _esc(name) + '</div>').style('display', 'block');
         var pos = d3.pointer(event, container);
         tooltip.style('left', Math.min(pos[0] + 12, width - 290) + 'px')
                .style('top', Math.max(pos[1] - 60, 4) + 'px');
@@ -335,13 +302,30 @@
     var arcGroup = g.append('g').attr('class', 'tm-arcs');
     var arcPaths = [];
     arcs.forEach(function(arc) {
-      var fromActor = null;
-      for (var a = 0; a < actors.length; a++) {
-        if (actors[a].id === arc.from) { fromActor = actors[a]; break; }
+      var fromLon, fromLat, toLon, toLat;
+      // Explicit coordinate arcs (e.g. resolved IP -> IP) take precedence.
+      if (typeof arc.fromLon === 'number' && typeof arc.fromLat === 'number') {
+        fromLon = arc.fromLon; fromLat = arc.fromLat;
+      } else {
+        var fromActor = null;
+        for (var a = 0; a < actors.length; a++) {
+          if (actors[a].id === arc.from) { fromActor = actors[a]; break; }
+        }
+        if (!fromActor) return;
+        fromLon = fromActor.lon; fromLat = fromActor.lat;
       }
-      if (!fromActor) return;
+      if (typeof arc.toLon === 'number' && typeof arc.toLat === 'number') {
+        toLon = arc.toLon; toLat = arc.toLat;
+      } else if (arc.to) {
+        var toActor = null;
+        for (var b = 0; b < actors.length; b++) {
+          if (actors[b].id === arc.to) { toActor = actors[b]; break; }
+        }
+        if (!toActor) return;
+        toLon = toActor.lon; toLat = toActor.lat;
+      } else { return; }
 
-      var coords = [[fromActor.lon, fromActor.lat], [arc.toLon, arc.toLat]];
+      var coords = [[fromLon, fromLat], [toLon, toLat]];
       var geojson = { type: 'Feature', geometry: { type: 'LineString', coordinates: coords } };
       var lineGen = d3.geoPath().projection(projection);
 
@@ -367,7 +351,7 @@
       if (!pt) return;
 
       var isHostile = actor.alignment === 'hostile';
-      var color = isHostile ? '#ff3333' : '#4488ff';
+      var color = actor.color || (isHostile ? '#ff3333' : '#4488ff');
       var radius = actor.tier === 'TIER-1' ? 6 : 4;
 
       // Outer pulse ring
@@ -392,18 +376,28 @@
         .style('cursor', 'pointer')
         .on('click', function(event) {
           event.stopPropagation();
-          var alignClass = isHostile ? 'color:#ff4444' : 'color:#44aaff';
-          var tierColor = actor.tier === 'TIER-1' ? 'background:rgba(255,34,34,0.12);color:#ff4444;border:1px solid #ff2222' : 'background:rgba(255,136,0,0.12);color:#ffaa44;border:1px solid #ff8800';
+          // Field-driven: render only attributes actually present on the point.
+          // For resolved IPs these are real ip-api fields (IP, country, city,
+          // ISP, org, AS). Nothing is invented.
           var h = '<div style="position:absolute;top:6px;right:10px;color:#4a6a8a;cursor:pointer;font-size:16px;" onclick="document.getElementById(\'tm-popup\').style.display=\'none\'">x</div>';
-          h += '<div style="' + alignClass + ';font-weight:bold;font-size:13px;letter-spacing:1px;margin-bottom:6px;padding-right:20px;">' + _esc(actor.name) + '</div>';
-          h += '<div style="margin:3px 0;"><span style="color:#4a7a9a;">NATION:</span> ' + _esc(actor.nation) + '</div>';
-          h += '<div style="margin:3px 0;"><span style="color:#4a7a9a;">TIER:</span> <span style="display:inline-block;padding:1px 6px;border-radius:2px;font-size:10px;letter-spacing:1px;' + tierColor + ';">' + _esc(actor.tier) + '</span></div>';
-          h += '<div style="margin:3px 0;"><span style="color:#4a7a9a;">DESIGNATION:</span> <span style="' + alignClass + ';font-weight:bold;">' + (isHostile ? 'HOSTILE' : 'ALLIED') + '</span></div>';
-          h += '<div style="margin:3px 0;"><span style="color:#4a7a9a;">CITY:</span> ' + _esc(actor.city) + '</div>';
-          h += '<div style="margin:3px 0;"><span style="color:#4a7a9a;">APT GROUPS:</span> <span style="font-size:9px;color:#bbb;">' + _esc(actor.aptGroups) + '</span></div>';
-          h += '<div style="margin:3px 0;"><span style="color:#4a7a9a;">RECENT OPS:</span> <span style="font-size:9px;color:#bbb;">' + _esc(actor.recentOps) + '</span></div>';
-          h += '<div style="margin:3px 0;"><span style="color:#4a7a9a;">CAPABILITIES:</span> <span style="font-size:9px;color:#bbb;">' + _esc(actor.capabilities) + '</span></div>';
-          h += '<div style="margin-top:6px;border-top:1px solid #1a3a5a;padding-top:4px;"><span style="color:#4a7a9a;">SIGINT NOTE:</span> <span style="font-size:9px;color:#6a8aaa;">' + _esc(actor.notes) + '</span></div>';
+          h += '<div style="color:' + color + ';font-weight:bold;font-size:13px;letter-spacing:1px;margin-bottom:6px;padding-right:20px;">' + _esc(actor.name || actor.id || 'Point') + '</div>';
+          function row(label, val) {
+            if (val === undefined || val === null || val === '') return '';
+            return '<div style="margin:3px 0;"><span style="color:#4a7a9a;">' + _esc(label) + ':</span> <span style="color:#bbb;font-size:10px;">' + _esc(val) + '</span></div>';
+          }
+          h += row('IP', actor.ip);
+          h += row('COUNTRY', actor.country);
+          h += row('CITY', actor.city);
+          h += row('ISP', actor.isp);
+          h += row('ORG', actor.org);
+          h += row('AS', actor.as);
+          // Legacy caller-supplied fields (rendered only if provided).
+          h += row('NATION', actor.nation);
+          h += row('TIER', actor.tier);
+          h += row('APT GROUPS', actor.aptGroups);
+          h += row('RECENT OPS', actor.recentOps);
+          h += row('CAPABILITIES', actor.capabilities);
+          h += row('NOTE', actor.notes);
 
           popup.html(h).style('display', 'block');
           var pos = d3.pointer(event, container);
@@ -505,9 +499,38 @@
           container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-family:monospace;color:#ff4444;font-size:11px;">Failed to load world map data</div>';
           return;
         }
+        // Real-data path: resolve supplied IPs to real coordinates via ip-api
+        // before building. Each resolved point becomes a map marker.
+        if (opts.ips && opts.ips.length) {
+          container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-family:monospace;color:#00aaff;font-size:12px;letter-spacing:2px;">RESOLVING ' + opts.ips.length + ' IP ADDRESSES...</div>';
+          _resolveIPs(opts.ips).then(function(points) {
+            if (!points.length) {
+              container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-family:monospace;color:#ff9944;font-size:11px;text-align:center;padding:0 20px;">No IP addresses resolved to a location. Nothing is plotted — results are never fabricated.</div>';
+              return;
+            }
+            var merged = {};
+            merged.actors = (opts.actors || []).concat(points);
+            merged.arcs = opts.arcs || [];
+            merged.ixps = opts.ixps || [];
+            merged.cables = opts.cables || [];
+            merged.width = opts.width; merged.height = opts.height;
+            _buildThreatMap(containerId, merged);
+          }).catch(function(err) {
+            container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-family:monospace;color:#ff4444;font-size:11px;text-align:center;padding:0 20px;">' + _esc((err && err.message) ? err.message : 'IP resolution failed') + '</div>';
+          });
+          return;
+        }
         _buildThreatMap(containerId, opts);
       });
     });
+  };
+
+  // Convenience entry point: plot a list of IP addresses as real points.
+  //   window.plotThreatMapIPs('container-id', ['8.8.8.8','1.1.1.1'], { arcs: [...] })
+  window.plotThreatMapIPs = function(containerId, ips, opts) {
+    opts = opts || {};
+    opts.ips = ips || [];
+    return window.renderThreatMap(containerId, opts);
   };
 
   window.destroyThreatMap = function(containerId) {

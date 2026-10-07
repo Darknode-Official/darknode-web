@@ -1,5 +1,5 @@
 // Darknode API dashboard — key management, interactive docs, usage stats, code examples.
-import { db } from "/js/firebase.js";
+import { db } from "/js/firebase.js?v=20261007a";
 import { doc, getDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));

@@ -1,8 +1,16 @@
 /* ================================================================
    SIEM Dashboard  —  Security Information & Event Management
    Darknode  |  prefix: sd-
+
+   Operates on REAL logs the user pastes or uploads. Supported formats:
+   syslog / auth.log, Apache/Nginx access logs (common & combined),
+   and JSON lines. Every metric on this page — event counts, top source
+   IPs, status-code distribution, failed-auth spikes, time series — is
+   derived from the ACTUAL parsed input. There is no sample/random data.
    ================================================================ */
 import { esc } from "/js/shared.js";
+
+function sdToast(msg, type) { try { (window.showToast || function () {})(msg, type || "info"); } catch (_) {} }
 
 /* ---------- colour constants ---------- */
 const SEV_COLORS = {
@@ -21,102 +29,143 @@ const SEV_ICONS = {
 };
 const SEV_ORDER = ["critical", "high", "medium", "low", "info"];
 
-/* ---------- sample data generators ---------- */
-const IPS = [
-  "10.0.1.34","192.168.4.17","172.16.0.99","10.10.5.201","203.0.113.42",
-  "198.51.100.7","192.168.1.105","10.0.8.55","172.20.3.14","192.168.0.88",
-  "45.33.32.156","185.220.101.34","91.219.236.222","104.248.50.87","23.129.64.100",
-];
-const HOSTS = [
-  "dc01.corp.local","web-prod-01","db-master","fw-edge-01","vpn-gw-02",
-  "mail-relay","k8s-node-03","soc-analyst-ws","dev-ci-runner","file-srv-02",
-];
-const USERS = [
-  "admin","jdoe","svc_backup","root","analyst01",
-  "deploy-bot","k.chen","m.rodriguez","t.nakamura","ops-svc",
-];
-const PORTS = [22, 80, 443, 3389, 8080, 445, 3306, 5432, 8443, 1433, 53, 161, 25, 587, 636];
-const EVENT_TEMPLATES = [
-  { sev: "critical", type: "Malware Detection",    msgs: ["Trojan.GenericKD detected in memory on {host}","Ransomware payload intercepted — encrypted staging observed on {host}","Rootkit signature match (CVE-2025-31337) on {host}","Cobalt Strike beacon identified on {host} — PID {n}","Fileless malware via PowerShell on {host}"] },
-  { sev: "critical", type: "Privilege Escalation",  msgs: ["Unexpected SYSTEM token duplication by PID {n} on {host}","Local admin created via net.exe on {host}","Kernel exploit (CVE-2025-21310) privilege escalation on {host}","sudo to root by non-sudoer {user} on {host}"] },
-  { sev: "critical", type: "Data Breach Indicator", msgs: ["Large data export ({n} MB) to external IP {ip} from {host}","Credentials database accessed by {user} on {host}","PII exfiltration pattern detected — {n} records queried on {host}"] },
-  { sev: "high",     type: "Auth Failure Burst",    msgs: ["{n} failed SSH logins from {ip} in 30 s","Kerberos pre-auth failures spike — {n} attempts against {host}","RDP brute-force from {ip} — {n} failures","LDAP bind failures from {ip} — {n} attempts in 60 s"] },
-  { sev: "high",     type: "IDS Alert",             msgs: ["Snort SID:2024891 — ET EXPLOIT attempt from {ip}","Suricata alert: lateral movement indicator from {ip}","WAF blocked SQL injection from {ip} targeting {host}","XSS payload detected in POST from {ip}"] },
-  { sev: "high",     type: "Suspicious Process",    msgs: ["Mimikatz-like behavior detected on {host} by {user}","Reverse shell spawned on {host} — outbound to {ip}:443","Process hollowing detected on {host} — PID {n}"] },
-  { sev: "medium",   type: "Port Scan",             msgs: ["SYN scan detected from {ip} — {n} ports in 10 s","Stealth FIN scan from {ip} targeting {host}","UDP sweep from {ip} on ports 53,161,500","XMAS scan from {ip} — {n} hosts probed"] },
-  { sev: "medium",   type: "Policy Violation",      msgs: ["USB mass-storage mounted on {host} — policy block","Outbound DNS over HTTPS detected from {host}","Unauthorized VPN client on {host}","TOR exit node connection from {host}"] },
-  { sev: "medium",   type: "Anomalous Traffic",     msgs: ["Unusual outbound volume from {host} — {n} MB in 5 min","DNS tunneling pattern from {host} to {ip}","ICMP tunnel suspected from {host}","Encrypted traffic to known C2 IP {ip}"] },
-  { sev: "low",      type: "Config Change",         msgs: ["Firewall rule modified by admin@{host}","SNMP community string changed on {host}","SSH config modified on {host}","Audit policy changed by {user} on {host}"] },
-  { sev: "low",      type: "Account Activity",      msgs: ["Service account svc_backup logged in interactively on {host}","User password reset for {user} on {host}","New user {user} added to Domain Admins on {host}","Account lockout for {user} on {host}"] },
-  { sev: "info",     type: "System Event",          msgs: ["Agent heartbeat resumed on {host}","Log rotation completed on {host}","Certificate renewal succeeded for {host}","Patch scan completed on {host} — {n} updates available"] },
-  { sev: "info",     type: "Network Event",         msgs: ["VPN tunnel established from {ip}","DHCP lease renewed for {host}","NTP sync completed on {host}","BGP peer {ip} state change to Established"] },
-];
+const SAMPLE_LOGS = `Jan 15 09:21:44 web-prod-01 sshd[20481]: Failed password for invalid user admin from 203.0.113.42 port 55122 ssh2
+Jan 15 09:21:46 web-prod-01 sshd[20483]: Failed password for root from 203.0.113.42 port 55124 ssh2
+192.0.2.15 - - [15/Jan/2026:09:22:01 +0000] "GET /login HTTP/1.1" 200 1534 "-" "Mozilla/5.0"
+192.0.2.15 - - [15/Jan/2026:09:22:05 +0000] "POST /admin HTTP/1.1" 403 221 "-" "curl/8.0"
+198.51.100.7 - - [15/Jan/2026:09:22:09 +0000] "GET /../../etc/passwd HTTP/1.1" 404 0 "-" "nikto"
+{"time":"2026-01-15T09:22:12Z","src_ip":"198.51.100.7","status":500,"msg":"unhandled exception in /api/users","level":"error"}`;
 
-function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
-function randInt(a, b) { return a + Math.floor(Math.random() * (b - a + 1)); }
-function ts(d) {
-  const p = (v) => String(v).padStart(2, "0");
-  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+/* ================================================================
+   LOG PARSERS  — turn raw text into structured events
+   ================================================================ */
+const IPV4_RE = /\b(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\b/;
+const MONTHS = { Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5, Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11 };
+const ACCESS_RE = /^(\S+)\s+\S+\s+\S+\s+\[([^\]]+)\]\s+"(\S+)\s+(\S+)[^"]*"\s+(\d{3})\s+(\d+|-)/;
+const SYSLOG_RE = /^([A-Z][a-z]{2}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2})\s+(\S+)\s+([^:\[]+?)(?:\[(\d+)\])?:\s+(.*)$/;
+
+function parseAccessDate(s) {
+  // 15/Jan/2026:09:22:01 +0000
+  const m = /^(\d{1,2})\/([A-Za-z]{3})\/(\d{4}):(\d{2}):(\d{2}):(\d{2})/.exec(s);
+  if (!m) return null;
+  const d = new Date(Date.UTC(+m[3], MONTHS[m[2]] != null ? MONTHS[m[2]] : 0, +m[1], +m[4], +m[5], +m[6]));
+  return isNaN(d.getTime()) ? null : d;
+}
+function parseSyslogDate(s) {
+  // "Jan 15 09:21:44" — syslog omits the year; assume current year.
+  const m = /^([A-Za-z]{3})\s+(\d{1,2})\s+(\d{2}):(\d{2}):(\d{2})/.exec(s);
+  if (!m) return null;
+  const d = new Date(new Date().getFullYear(), MONTHS[m[1]] != null ? MONTHS[m[1]] : 0, +m[2], +m[3], +m[4], +m[5]);
+  return isNaN(d.getTime()) ? null : d;
+}
+function coerceTime(v) {
+  if (v == null) return null;
+  if (typeof v === "number") { const d = new Date(v > 1e12 ? v : v * 1000); return isNaN(d.getTime()) ? null : d; }
+  const d = new Date(v);
+  return isNaN(d.getTime()) ? null : d;
 }
 
-function genEvent() {
-  const tpl = pick(EVENT_TEMPLATES);
-  const ip = pick(IPS);
-  const host = pick(HOSTS);
-  const user = pick(USERS);
-  let msg = pick(tpl.msgs)
-    .replace("{ip}", ip)
-    .replace("{host}", host)
-    .replace("{user}", user)
-    .replace("{n}", String(randInt(5, 120)));
+function sevFromStatus(status) {
+  if (status >= 500) return "high";
+  if (status === 401 || status === 403) return "medium";
+  if (status >= 400) return "medium";
+  if (status >= 300) return "low";
+  return "info";
+}
+
+function parseLine(line) {
+  const raw = line;
+  line = line.trim();
+  if (!line) return null;
+
+  /* ---- JSON lines ---- */
+  if (line.charAt(0) === "{") {
+    try {
+      const o = JSON.parse(line);
+      const ip = o.src_ip || o.ip || o.clientip || o.client_ip || o.remote_addr || o.source || "";
+      const status = parseInt(o.status || o.status_code || o.response || o.statusCode, 10);
+      const level = String(o.level || o.severity || "").toLowerCase();
+      let sev = "info";
+      if (!isNaN(status)) sev = sevFromStatus(status);
+      if (level === "error" || level === "err" || level === "critical" || level === "crit") sev = "high";
+      else if (level === "warn" || level === "warning") sev = "medium";
+      const msg = String(o.msg || o.message || o.event || line);
+      const user = o.user || o.username || o.account || "";
+      const failedAuth = /fail|invalid|denied|unauthor/i.test(msg) && /login|auth|password|credential/i.test(msg);
+      if (failedAuth) sev = "high";
+      return {
+        time: coerceTime(o.time || o.timestamp || o["@timestamp"] || o.date || o.ts),
+        srcIp: ip ? String(ip).match(IPV4_RE) ? String(ip).match(IPV4_RE)[1] : String(ip) : "",
+        dstHost: o.host || o.hostname || o.server || "",
+        user: user ? String(user) : "",
+        method: o.method || "", path: o.path || o.url || o.uri || "",
+        status: isNaN(status) ? null : status,
+        process: "", sev: sev,
+        type: !isNaN(status) ? ("HTTP " + status) : (failedAuth ? "Auth Failure" : "JSON Event"),
+        msg: msg, failedAuth: failedAuth, format: "json", raw: raw,
+      };
+    } catch (_) { /* fall through to other parsers */ }
+  }
+
+  /* ---- Apache / Nginx access log ---- */
+  const am = ACCESS_RE.exec(line);
+  if (am) {
+    const status = parseInt(am[5], 10);
+    const sev = sevFromStatus(status);
+    return {
+      time: parseAccessDate(am[2]),
+      srcIp: am[1].match(IPV4_RE) ? am[1].match(IPV4_RE)[1] : am[1],
+      dstHost: "", user: "", method: am[3], path: am[4],
+      status: isNaN(status) ? null : status, bytes: am[6] === "-" ? 0 : +am[6],
+      process: "", sev: sev,
+      type: "HTTP " + status,
+      msg: am[3] + " " + am[4] + " -> " + status,
+      failedAuth: status === 401 || status === 403, format: "access", raw: raw,
+    };
+  }
+
+  /* ---- syslog / auth.log ---- */
+  const sm = SYSLOG_RE.exec(line);
+  if (sm) {
+    const msg = sm[5];
+    const proc = sm[3].trim();
+    const ipm = msg.match(/from\s+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})/) || msg.match(IPV4_RE);
+    const userm = msg.match(/(?:invalid user|user|for)\s+([A-Za-z0-9_.\-]+)\s+from/) || msg.match(/for\s+([A-Za-z0-9_.\-]+)/);
+    const failedAuth = /failed password|authentication failure|invalid user|failed publickey|failed login|auth(entication)? fail/i.test(msg);
+    let sev = "info";
+    if (failedAuth) sev = "high";
+    else if (/error|fatal|segfault|panic|denied|refused/i.test(msg)) sev = "medium";
+    else if (/accepted password|session opened|started|success/i.test(msg)) sev = "low";
+    return {
+      time: parseSyslogDate(sm[1]),
+      srcIp: ipm ? ipm[1] : "",
+      dstHost: sm[2], user: userm ? userm[1] : "",
+      method: "", path: "", status: null, process: proc, sev: sev,
+      type: failedAuth ? "Auth Failure" : (proc ? proc : "System"),
+      msg: msg, failedAuth: failedAuth, format: "syslog", raw: raw,
+    };
+  }
+
+  /* ---- generic fallback: keep the line, pull any IP ---- */
+  const gip = line.match(IPV4_RE);
+  const failedAuth = /failed password|authentication failure|invalid user|login failed/i.test(line);
   return {
-    id: crypto.randomUUID(),
-    time: new Date(),
-    sev: tpl.sev,
-    type: tpl.type,
-    srcIp: ip,
-    dstHost: host,
-    user,
-    msg,
+    time: null, srcIp: gip ? gip[1] : "", dstHost: "", user: "",
+    method: "", path: "", status: null, process: "",
+    sev: failedAuth ? "high" : (/error|fatal|denied/i.test(line) ? "medium" : "info"),
+    type: failedAuth ? "Auth Failure" : "Log Line",
+    msg: line, failedAuth: failedAuth, format: "raw", raw: raw,
   };
 }
 
-/* ---------- sample alerts ---------- */
-function sampleAlerts() {
-  const now = Date.now();
-  return [
-    { id: "A001", sev: "critical", host: "dc01.corp.local",   rule: "Ransomware Behavior",          created: new Date(now - 3600e3*2),  status: "new" },
-    { id: "A002", sev: "critical", host: "web-prod-01",       rule: "Web Shell Upload",              created: new Date(now - 3600e3*5),  status: "investigating" },
-    { id: "A003", sev: "high",     host: "vpn-gw-02",         rule: "Brute Force — SSH",             created: new Date(now - 3600e3*1),  status: "new" },
-    { id: "A004", sev: "high",     host: "k8s-node-03",       rule: "Container Escape Attempt",      created: new Date(now - 3600e3*8),  status: "investigating" },
-    { id: "A005", sev: "medium",   host: "mail-relay",        rule: "Outbound C2 Beacon",            created: new Date(now - 3600e3*12), status: "new" },
-    { id: "A006", sev: "medium",   host: "dev-ci-runner",     rule: "Secrets in Build Logs",         created: new Date(now - 3600e3*3),  status: "resolved" },
-    { id: "A007", sev: "low",      host: "file-srv-02",       rule: "Excessive File Access",         created: new Date(now - 3600e3*24), status: "resolved" },
-    { id: "A008", sev: "high",     host: "soc-analyst-ws",    rule: "Credential Dump — lsass",       created: new Date(now - 3600e3*0.5),status: "new" },
-  ];
+function parseLogs(text) {
+  const out = [];
+  String(text || "").split(/\r?\n/).forEach(function (ln) {
+    const e = parseLine(ln);
+    if (e) out.push(e);
+  });
+  return out;
 }
-
-/* ---------- correlation rules ---------- */
-const CORR_RULES = [
-  { id: "CR-01", name: "Brute Force Detection",         cond: "3+ failed logins from same IP in 60 s",          action: "Raise Brute Force Alert",   mitre: "T1110",  matches: 47,  last: "2 min ago",  enabled: true },
-  { id: "CR-02", name: "Port Scan Correlation",          cond: "Port scan from IP + auth failure within 5 min",  action: "Raise Recon Alert",         mitre: "T1046",  matches: 23,  last: "8 min ago",  enabled: true },
-  { id: "CR-03", name: "Privilege Escalation Chain",     cond: "Failed auth then privilege escalation in 10 min",action: "Raise Compromise Alert",    mitre: "T1068",  matches: 5,   last: "1 hr ago",   enabled: true },
-  { id: "CR-04", name: "Lateral Movement",               cond: "Login from internal IP to 3+ hosts in 5 min",   action: "Raise Lateral Mvmt Alert",  mitre: "T1021",  matches: 12,  last: "22 min ago", enabled: true },
-  { id: "CR-05", name: "Data Exfiltration",              cond: "Outbound > 500 MB to single IP in 15 min",      action: "Raise Exfil Alert",         mitre: "T1041",  matches: 3,   last: "3 hr ago",   enabled: false },
-  { id: "CR-06", name: "C2 Beacon Pattern",              cond: "Periodic outbound HTTP at fixed interval",       action: "Raise C2 Alert",            mitre: "T1071",  matches: 8,   last: "45 min ago", enabled: true },
-  { id: "CR-07", name: "Credential Stuffing",            cond: "50+ unique usernames from same IP in 2 min",     action: "Raise Credential Alert",    mitre: "T1110.004", matches: 2, last: "6 hr ago",  enabled: false },
-  { id: "CR-08", name: "DNS Tunneling Detection",        cond: "High-entropy DNS queries > 100/min from host",   action: "Raise Exfil Alert",         mitre: "T1048.003", matches: 6, last: "18 min ago", enabled: true },
-];
-
-/* ---------- log sources ---------- */
-const LOG_SOURCES = [
-  { name: "Firewall (pfSense)",    status: "connected", eps: 342,  lastEvt: "just now" },
-  { name: "IDS / IPS (Suricata)",  status: "connected", eps: 128,  lastEvt: "2 s ago" },
-  { name: "Active Directory",      status: "connected", eps: 56,   lastEvt: "5 s ago" },
-  { name: "Web Server (nginx)",    status: "degraded",  eps: 18,   lastEvt: "34 s ago" },
-  { name: "Endpoint Agent (EDR)",  status: "connected", eps: 210,  lastEvt: "1 s ago" },
-  { name: "Cloud Trail (AWS)",     status: "offline",   eps: 0,    lastEvt: "12 min ago" },
-];
 
 /* ---------- CSS ---------- */
 const STYLE = `
@@ -124,7 +173,6 @@ const STYLE = `
 .sd-wrap{font-family:system-ui,-apple-system,sans-serif;color:var(--txt,#c8d6e5);max-width:1100px;margin:0 auto;padding:20px 0}
 .sd-hdr{display:flex;align-items:center;gap:14px;margin-bottom:18px;flex-wrap:wrap}
 .sd-hdr h2{margin:0;font-size:1.45rem;font-weight:700;letter-spacing:-.02em}
-.sd-hdr .sd-sim-badge{background:#f59e0b;color:#1a1200;font-size:.65rem;padding:2px 8px;border-radius:4px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
 .sd-hdr .sd-sim-note{font-size:.75rem;color:var(--mut,#94a3b8)}
 .sd-hdr .sd-badge{background:var(--acc,#2563eb);color:#fff;font-size:.65rem;padding:2px 8px;border-radius:9999px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
 .sd-tabs{display:flex;gap:4px;margin-bottom:18px;border-bottom:1px solid var(--line,#1e293b);padding-bottom:0;flex-wrap:wrap}
@@ -139,6 +187,15 @@ const STYLE = `
 .sd-card h3{margin:0 0 10px;font-size:.95rem;font-weight:600}
 .sd-row{display:flex;gap:12px;flex-wrap:wrap}
 .sd-row>.sd-card{flex:1;min-width:220px}
+
+/* ingest */
+.sd-ingest-area{width:100%;min-height:200px;background:var(--card2,#080c14);color:var(--txt,#c8d6e5);border:1px solid var(--line,#1e293b);border-radius:6px;padding:12px;font-family:monospace;font-size:.76rem;line-height:1.5;resize:vertical}
+.sd-ingest-controls{display:flex;gap:10px;align-items:center;margin-top:12px;flex-wrap:wrap}
+.sd-ingest-controls button,.sd-ingest-controls label.sd-file{background:var(--card2,#080c14);color:var(--txt,#c8d6e5);border:1px solid var(--line,#1e293b);border-radius:4px;padding:7px 14px;font-size:.78rem;cursor:pointer}
+.sd-ingest-controls button:hover,.sd-ingest-controls label.sd-file:hover{border-color:var(--acc,#2563eb)}
+.sd-ingest-controls .sd-primary{background:var(--acc,#2563eb);color:#fff;border-color:var(--acc,#2563eb)}
+.sd-ingest-controls .sd-parsed{margin-left:auto;font-size:.75rem;color:var(--mut,#64748b)}
+.sd-hint{font-size:.74rem;color:var(--mut,#64748b);margin:8px 0 0;line-height:1.6}
 
 /* live feed */
 .sd-feed-controls{display:flex;gap:10px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
@@ -165,7 +222,6 @@ const STYLE = `
 .sd-alert-tbl th{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line,#1e293b);color:var(--mut,#64748b);font-weight:600;font-size:.72rem;text-transform:uppercase;letter-spacing:.04em}
 .sd-alert-tbl td{padding:8px 10px;border-bottom:1px solid var(--line,#1e293b)}
 .sd-alert-tbl tr:hover{background:var(--card2,#080c14)}
-.sd-status-sel{background:var(--card2,#080c14);color:var(--txt,#c8d6e5);border:1px solid var(--line,#1e293b);border-radius:4px;padding:3px 6px;font-size:.74rem;cursor:pointer}
 .sd-sev-pill{display:inline-block;padding:2px 10px;border-radius:9999px;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:#fff}
 
 /* correlation */
@@ -175,33 +231,26 @@ const STYLE = `
 .sd-rule-id{color:var(--mut,#64748b);font-size:.72rem;font-family:monospace}
 .sd-rule-cond{color:var(--mut,#64748b);font-size:.78rem;margin-top:4px}
 .sd-rule-action{color:var(--acc,#2563eb);font-size:.76rem;margin-top:2px}
-.sd-rule-stats{display:flex;gap:16px;font-size:.74rem;color:var(--mut,#64748b);margin-top:6px}
+.sd-rule-stats{display:flex;gap:16px;font-size:.74rem;color:var(--mut,#64748b);margin-top:6px;flex-wrap:wrap}
 .sd-rule-stats span{display:flex;align-items:center;gap:4px}
-.sd-toggle{position:relative;width:38px;height:20px;cursor:pointer}
-.sd-toggle input{opacity:0;width:0;height:0}
-.sd-toggle-track{position:absolute;inset:0;background:var(--line,#1e293b);border-radius:10px;transition:background .2s}
-.sd-toggle input:checked+.sd-toggle-track{background:var(--acc,#2563eb)}
-.sd-toggle-thumb{position:absolute;top:2px;left:2px;width:16px;height:16px;background:#fff;border-radius:50%;transition:transform .2s}
-.sd-toggle input:checked~.sd-toggle-thumb{transform:translateX(18px)}
+.sd-rule-match{font-size:1.25rem;font-weight:700;text-align:right;font-variant-numeric:tabular-nums}
 
 /* sources */
 .sd-src{display:grid;grid-template-columns:1fr 110px 90px 120px;gap:10px;align-items:center;padding:12px 16px;background:var(--card2,#080c14);border-radius:8px;margin-bottom:6px;font-size:.8rem;border:1px solid var(--line,#1e293b)}
 .sd-src-name{font-weight:600}
 .sd-src-status{display:flex;align-items:center;gap:6px;font-size:.76rem;font-weight:500}
-.sd-src-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-.sd-src-dot.connected{background:#22c55e}
-.sd-src-dot.degraded{background:#eab308}
-.sd-src-dot.offline{background:#dc2626}
 .sd-src-eps{font-family:monospace;text-align:right;font-size:.78rem}
 .sd-src-last{color:var(--mut,#64748b);font-size:.74rem;text-align:right}
+.sd-src-bar{height:4px;background:var(--line,#1e293b);border-radius:2px;margin-top:6px;overflow:hidden}
+.sd-src-bar-fill{height:100%;border-radius:2px;transition:width .5s}
 
 /* analytics */
 .sd-analytics-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 @media(max-width:700px){.sd-analytics-grid{grid-template-columns:1fr} .sd-evt{grid-template-columns:28px 1fr;} .sd-evt .sd-ts,.sd-evt .sd-ip,.sd-evt .sd-etype{display:none}}
-.sd-bar-chart{display:flex;align-items:flex-end;gap:6px;height:120px;padding-top:8px}
+.sd-bar-chart{display:flex;align-items:flex-end;gap:4px;height:120px;padding-top:8px}
 .sd-bar{flex:1;background:var(--acc,#2563eb);border-radius:4px 4px 0 0;min-width:0;position:relative;transition:height .3s;opacity:.75}
 .sd-bar:hover{opacity:1}
-.sd-bar-label{position:absolute;bottom:-20px;left:50%;transform:translateX(-50%);font-size:.6rem;color:var(--mut,#64748b);white-space:nowrap}
+.sd-bar-label{position:absolute;bottom:-20px;left:50%;transform:translateX(-50%);font-size:.56rem;color:var(--mut,#64748b);white-space:nowrap}
 .sd-bar-val{position:absolute;top:-18px;left:50%;transform:translateX(-50%);font-size:.62rem;color:var(--txt,#c8d6e5);white-space:nowrap}
 .sd-stat-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--line,#1e293b);font-size:.78rem}
 .sd-stat-row:last-child{border-bottom:none}
@@ -213,21 +262,14 @@ const STYLE = `
 .sd-summary-card{flex:1;min-width:130px;background:var(--card,#0d1117);border:1px solid var(--line,#1e293b);border-radius:8px;padding:12px 14px;text-align:center}
 .sd-summary-card .sd-sum-val{font-size:1.5rem;font-weight:700;line-height:1}
 .sd-summary-card .sd-sum-lbl{font-size:.7rem;color:var(--mut,#64748b);margin-top:4px;text-transform:uppercase;letter-spacing:.04em}
-.sd-live-dot{display:inline-block;width:8px;height:8px;background:#22c55e;border-radius:50%;margin-right:6px;animation:sd-pulse 1.5s infinite}
-@keyframes sd-pulse{0%,100%{opacity:1}50%{opacity:.3}}
 
 /* alert detail row */
-.sd-alert-notes{font-size:.72rem;color:var(--mut,#64748b);font-style:italic;margin-top:2px}
 .sd-alert-count{display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap}
 .sd-alert-count-item{display:flex;align-items:center;gap:6px;font-size:.78rem}
 .sd-alert-count-item .sd-count-num{font-weight:700;font-size:1.1rem}
 
-/* source detail */
-.sd-src-bar{height:4px;background:var(--line,#1e293b);border-radius:2px;margin-top:6px;overflow:hidden}
-.sd-src-bar-fill{height:100%;border-radius:2px;transition:width .5s}
-
 /* empty state */
-.sd-empty{text-align:center;padding:40px 20px;color:var(--mut,#64748b);font-size:.85rem}
+.sd-empty{text-align:center;padding:40px 20px;color:var(--mut,#64748b);font-size:.85rem;line-height:1.7}
 
 /* scrollbar styling */
 .sd-feed-log::-webkit-scrollbar{width:6px}
@@ -243,12 +285,11 @@ const STYLE = `
 [data-style="pro"] .sd-evt .sd-msg{color:#1e293b}
 [data-style="pro"] .sd-tab{color:#64748b}
 [data-style="pro"] .sd-tab.active{color:#2563eb;border-bottom-color:#2563eb}
-[data-style="pro"] .sd-feed-controls select,[data-style="pro"] .sd-feed-controls button{background:#fff;color:#1e293b;border-color:#e2e8f0}
+[data-style="pro"] .sd-feed-controls select,[data-style="pro"] .sd-feed-controls button,[data-style="pro"] .sd-ingest-area,[data-style="pro"] .sd-ingest-controls button,[data-style="pro"] .sd-ingest-controls label.sd-file{background:#fff;color:#1e293b;border-color:#e2e8f0}
+[data-style="pro"] .sd-ingest-controls .sd-primary{background:#2563eb;color:#fff}
 [data-style="pro"] .sd-alert-tbl tr:hover{background:#f1f5f9}
-[data-style="pro"] .sd-status-sel{background:#fff;color:#1e293b;border-color:#e2e8f0}
 [data-style="pro"] .sd-rule{background:#f8fafc;border-color:#e2e8f0}
 [data-style="pro"] .sd-src{background:#f8fafc;border-color:#e2e8f0}
-[data-style="pro"] .sd-toggle-track{background:#cbd5e1}
 [data-style="pro"] .sd-bar{background:#2563eb}
 [data-style="pro"] .sd-stat-bar-bg{background:#e2e8f0}
 [data-style="pro"] .sd-tabs{border-bottom-color:#e2e8f0}
@@ -261,15 +302,21 @@ const STYLE = `
 [data-style="pro"] .sd-alert-count-item{color:#334155}
 `;
 
+function fmtTs(d) {
+  if (!d) return "—";
+  const p = (v) => String(v).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+}
+
 /* ================================================================
    RENDER
    ================================================================ */
 export function renderSiemDash(container) {
-  /* cleanup previous intervals */
-  if (container._sdCleanup) { container._sdCleanup(); container._sdCleanup = null; }
-  else if (container._sdInterval) { clearInterval(container._sdInterval); clearInterval(container._sdEpmInterval); }
+  /* cleanup any legacy intervals from a previous build */
+  if (container._sdCleanup) { try { container._sdCleanup(); } catch (_) {} container._sdCleanup = null; }
 
   const TABS = [
+    { id: "ingest",      label: "Log Ingest" },
     { id: "feed",        label: "Event Feed" },
     { id: "alerts",      label: "Alerts" },
     { id: "correlation", label: "Correlation" },
@@ -277,33 +324,17 @@ export function renderSiemDash(container) {
     { id: "analytics",   label: "Analytics" },
   ];
 
-  /* ---- state ---- */
-  let activeTab = "feed";
-  let feedEvents = [];
-  let paused = false;
+  /* ---- state (all derived from real input) ---- */
+  let activeTab = "ingest";
+  let rawText = "";
+  let events = [];
   let filterSev = "all";
-  const alerts = sampleAlerts();
-  const corrRules = CORR_RULES.map(r => ({ ...r }));
-  const epmHistory = Array.from({ length: 10 }, () => randInt(12, 60));
-  const ipHits = {};
-  const ruleHits = {};
-  IPS.forEach(ip => { ipHits[ip] = randInt(2, 80); });
-  corrRules.forEach(r => { ruleHits[r.name] = r.matches; });
 
-  /* seed initial events */
-  for (let i = 0; i < 25; i++) {
-    const e = genEvent();
-    e.time = new Date(Date.now() - (25 - i) * 2500);
-    feedEvents.push(e);
-  }
-
-  /* ---- shell ---- */
   container.innerHTML = `<style>${STYLE}</style>
   <div class="sd-wrap">
     <div class="sd-hdr">
       <h2>SIEM Dashboard</h2>
-      <span class="sd-sim-badge" title="Every event, alert, source and metric on this page is randomly generated for demonstration. Nothing here comes from a real log source.">Simulated events</span>
-      <span class="sd-sim-note">Demo data: events are randomly generated, not collected from real systems.</span>
+      <span class="sd-sim-note">All metrics are derived from the logs you paste or upload — no sample or generated data.</span>
     </div>
     <div class="sd-tabs">${TABS.map(t => `<button class="sd-tab${t.id === activeTab ? " active" : ""}" data-tab="${t.id}">${esc(t.label)}</button>`).join("")}</div>
     <div id="sd-content"></div>
@@ -312,7 +343,6 @@ export function renderSiemDash(container) {
   const wrap = container.querySelector(".sd-wrap");
   const content = container.querySelector("#sd-content");
 
-  /* ---- tab switching ---- */
   wrap.querySelector(".sd-tabs").addEventListener("click", (e) => {
     const btn = e.target.closest(".sd-tab");
     if (!btn) return;
@@ -321,48 +351,81 @@ export function renderSiemDash(container) {
     renderTab();
   });
 
-  /* ---- render current tab ---- */
   function renderTab() {
-    if (activeTab === "feed") renderFeed();
+    if (activeTab === "ingest") renderIngest();
+    else if (activeTab === "feed") renderFeed();
     else if (activeTab === "alerts") renderAlerts();
     else if (activeTab === "correlation") renderCorrelation();
     else if (activeTab === "sources") renderSources();
     else if (activeTab === "analytics") renderAnalytics();
   }
 
-  /* ================ LIVE FEED ================ */
-  function feedSeverityCounts() {
-    const counts = { critical: 0, high: 0, medium: 0, low: 0, info: 0 };
-    feedEvents.forEach(e => { counts[e.sev]++; });
-    return counts;
+  function emptyState(msg) {
+    return `<div class="sd-card"><div class="sd-empty">${msg}</div></div>`;
+  }
+  const NO_DATA = 'No logs parsed yet. Open the <strong>Log Ingest</strong> tab and paste or upload logs to begin.';
+
+  /* ================ INGEST ================ */
+  function renderIngest() {
+    content.innerHTML = `
+      <div class="sd-card">
+        <h3>Ingest Logs</h3>
+        <p class="sd-hint" style="margin-top:0">Paste raw log text or upload a file. Supported: syslog / auth.log, Apache &amp; Nginx access logs (common/combined), and JSON lines. Everything stays in your browser.</p>
+        <textarea class="sd-ingest-area" id="sd-log-input" placeholder="Paste log lines here...">${esc(rawText)}</textarea>
+        <div class="sd-ingest-controls">
+          <button class="sd-primary" id="sd-parse">Parse Logs</button>
+          <label class="sd-file">Upload file<input type="file" id="sd-file" accept=".log,.txt,.json,.out,text/*" style="display:none"></label>
+          <button id="sd-sample">Load example</button>
+          <button id="sd-clear">Clear</button>
+          <span class="sd-parsed">${events.length ? events.length.toLocaleString() + " events parsed" : "no events yet"}</span>
+        </div>
+        <p class="sd-hint">Derived views: event feed, derived alerts (brute-force, HTTP error surges, path scanning), correlation matches, per-source breakdown, and analytics (time series, severity, top IPs, status codes).</p>
+      </div>`;
+
+    const ta = content.querySelector("#sd-log-input");
+    content.querySelector("#sd-parse").addEventListener("click", () => {
+      rawText = ta.value;
+      events = parseLogs(rawText);
+      if (!events.length) { sdToast("No log lines found to parse.", "error"); }
+      else { sdToast(events.length + " events parsed.", "success"); activeTab = "feed"; wrap.querySelectorAll(".sd-tab").forEach(b => b.classList.toggle("active", b.dataset.tab === activeTab)); }
+      renderTab();
+    });
+    content.querySelector("#sd-sample").addEventListener("click", () => { ta.value = SAMPLE_LOGS; });
+    content.querySelector("#sd-clear").addEventListener("click", () => { ta.value = ""; rawText = ""; events = []; renderIngest(); });
+    content.querySelector("#sd-file").addEventListener("change", (e) => {
+      const f = e.target.files && e.target.files[0];
+      if (!f) return;
+      const reader = new FileReader();
+      reader.onload = () => { ta.value = String(reader.result || ""); sdToast("File loaded — click Parse Logs.", "info"); };
+      reader.onerror = () => sdToast("Could not read that file.", "error");
+      reader.readAsText(f);
+    });
   }
 
+  function sevCounts() {
+    const c = { critical: 0, high: 0, medium: 0, low: 0, info: 0 };
+    events.forEach(e => { c[e.sev] = (c[e.sev] || 0) + 1; });
+    return c;
+  }
+  function uniqueIps() {
+    const s = {};
+    events.forEach(e => { if (e.srcIp) s[e.srcIp] = 1; });
+    return Object.keys(s);
+  }
+
+  /* ================ EVENT FEED ================ */
   function renderFeed() {
-    const filtered = filterSev === "all" ? feedEvents : feedEvents.filter(e => e.sev === filterSev);
-    const counts = feedSeverityCounts();
-    const totalEps = LOG_SOURCES.reduce((s, src) => s + src.eps, 0);
+    if (!events.length) { content.innerHTML = emptyState(NO_DATA); return; }
+    const counts = sevCounts();
+    const failed = events.filter(e => e.failedAuth).length;
+    const filtered = filterSev === "all" ? events : events.filter(e => e.sev === filterSev);
     content.innerHTML = `
       <div class="sd-summary">
-        <div class="sd-summary-card">
-          <div class="sd-sum-val">${feedEvents.length}</div>
-          <div class="sd-sum-lbl"><span class="sd-live-dot"></span>Total Events</div>
-        </div>
-        <div class="sd-summary-card">
-          <div class="sd-sum-val" style="color:${SEV_COLORS.critical}">${counts.critical}</div>
-          <div class="sd-sum-lbl">Critical</div>
-        </div>
-        <div class="sd-summary-card">
-          <div class="sd-sum-val" style="color:${SEV_COLORS.high}">${counts.high}</div>
-          <div class="sd-sum-lbl">High</div>
-        </div>
-        <div class="sd-summary-card">
-          <div class="sd-sum-val" style="color:${SEV_COLORS.medium}">${counts.medium}</div>
-          <div class="sd-sum-lbl">Medium</div>
-        </div>
-        <div class="sd-summary-card">
-          <div class="sd-sum-val">${totalEps.toLocaleString()}</div>
-          <div class="sd-sum-lbl">Events/sec</div>
-        </div>
+        <div class="sd-summary-card"><div class="sd-sum-val">${events.length.toLocaleString()}</div><div class="sd-sum-lbl">Total Events</div></div>
+        <div class="sd-summary-card"><div class="sd-sum-val" style="color:${SEV_COLORS.high}">${counts.high}</div><div class="sd-sum-lbl">High</div></div>
+        <div class="sd-summary-card"><div class="sd-sum-val" style="color:${SEV_COLORS.medium}">${counts.medium}</div><div class="sd-sum-lbl">Medium</div></div>
+        <div class="sd-summary-card"><div class="sd-sum-val" style="color:${SEV_COLORS.high}">${failed}</div><div class="sd-sum-lbl">Failed Auth</div></div>
+        <div class="sd-summary-card"><div class="sd-sum-val">${uniqueIps().length}</div><div class="sd-sum-lbl">Unique IPs</div></div>
       </div>
       <div class="sd-card">
         <div class="sd-feed-controls">
@@ -370,200 +433,153 @@ export function renderSiemDash(container) {
             <option value="all"${filterSev === "all" ? " selected" : ""}>All Severities</option>
             ${SEV_ORDER.map(s => `<option value="${s}"${filterSev === s ? " selected" : ""}>${s.charAt(0).toUpperCase() + s.slice(1)} (${counts[s]})</option>`).join("")}
           </select>
-          <button id="sd-pause">${paused ? "Resume" : "Pause"}</button>
-          <span class="sd-count">${filtered.length} events displayed</span>
+          <span class="sd-count">${filtered.length} of ${events.length} events</span>
         </div>
         <div class="sd-feed-log" id="sd-feed-log">
-          ${filtered.length === 0 ? '<div class="sd-empty">No events match the current filter.</div>' : filtered.slice().reverse().map(evtRow).join("")}
+          ${filtered.length === 0 ? '<div class="sd-empty">No events match the current filter.</div>' : filtered.slice(0, 500).map(evtRow).join("")}
         </div>
       </div>`;
-
     content.querySelector("#sd-sev-filter").addEventListener("change", (e) => { filterSev = e.target.value; renderFeed(); });
-    content.querySelector("#sd-pause").addEventListener("click", () => { paused = !paused; renderFeed(); });
   }
 
   function evtRow(e) {
     return `<div class="sd-evt sd-sev-${e.sev}">
       <span class="sd-sev-icon">${SEV_ICONS[e.sev]}</span>
-      <span class="sd-ts">${esc(ts(e.time))}</span>
-      <span class="sd-ip">${esc(e.srcIp)}</span>
+      <span class="sd-ts">${esc(fmtTs(e.time))}</span>
+      <span class="sd-ip">${esc(e.srcIp || "—")}</span>
       <span class="sd-etype" style="color:${SEV_COLORS[e.sev]}">${esc(e.type)}</span>
       <span class="sd-msg">${esc(e.msg)}</span>
     </div>`;
   }
 
-  function appendEvent(e) {
-    feedEvents.push(e);
-    if (feedEvents.length > 200) feedEvents = feedEvents.slice(-200);
-    /* update ip counter */
-    ipHits[e.srcIp] = (ipHits[e.srcIp] || 0) + 1;
-    /* update epm */
-    epmHistory[epmHistory.length - 1]++;
-
-    if (activeTab !== "feed") return;
-    if (filterSev !== "all" && e.sev !== filterSev) return;
-
-    const log = container.querySelector("#sd-feed-log");
-    if (!log) return;
-    const div = document.createElement("div");
-    div.innerHTML = evtRow(e);
-    const row = div.firstElementChild;
-    log.prepend(row);
-
-    /* trim DOM */
-    while (log.children.length > 150) log.removeChild(log.lastChild);
-
-    /* update count */
-    const cnt = container.querySelector(".sd-count");
-    if (cnt) {
-      const visCount = filterSev === "all" ? feedEvents.length : feedEvents.filter(ev => ev.sev === filterSev).length;
-      cnt.textContent = visCount + " events";
+  /* ================ DERIVED ALERTS ================ */
+  function deriveAlerts() {
+    const alerts = [];
+    // group helpers
+    const failedByIp = {}, status5xxByIp = {}, pathsByIp = {};
+    events.forEach(e => {
+      if (e.failedAuth && e.srcIp) (failedByIp[e.srcIp] = failedByIp[e.srcIp] || []).push(e);
+      if (e.status >= 500 && e.srcIp) (status5xxByIp[e.srcIp] = status5xxByIp[e.srcIp] || []).push(e);
+      if (e.status === 404 && e.srcIp) { (pathsByIp[e.srcIp] = pathsByIp[e.srcIp] || {}); if (e.path) pathsByIp[e.srcIp][e.path] = 1; }
+    });
+    function span(list) {
+      const ts = list.map(x => x.time).filter(Boolean).sort((a, b) => a - b);
+      return ts.length ? fmtTs(ts[0]) + " → " + fmtTs(ts[ts.length - 1]) : "no timestamps";
     }
+    Object.keys(failedByIp).forEach(ip => { if (failedByIp[ip].length >= 5) alerts.push({ sev: "high", host: ip, rule: "Failed-auth burst (" + failedByIp[ip].length + " failures)", mitre: "T1110", detail: span(failedByIp[ip]) }); });
+    Object.keys(status5xxByIp).forEach(ip => { if (status5xxByIp[ip].length >= 10) alerts.push({ sev: "medium", host: ip, rule: "HTTP 5xx surge (" + status5xxByIp[ip].length + " errors)", mitre: "T1499", detail: span(status5xxByIp[ip]) }); });
+    Object.keys(pathsByIp).forEach(ip => { const n = Object.keys(pathsByIp[ip]).length; if (n >= 15) alerts.push({ sev: "medium", host: ip, rule: "Path scanning (" + n + " distinct 404 paths)", mitre: "T1595", detail: "" }); });
+    alerts.sort((a, b) => SEV_ORDER.indexOf(a.sev) - SEV_ORDER.indexOf(b.sev));
+    return alerts;
   }
 
-  /* ================ ALERTS ================ */
   function renderAlerts() {
-    const statusColors = { new: "#dc2626", investigating: "#f97316", resolved: "#22c55e" };
-    const statusCounts = { new: 0, investigating: 0, resolved: 0 };
-    alerts.forEach(a => { statusCounts[a.status]++; });
+    if (!events.length) { content.innerHTML = emptyState(NO_DATA); return; }
+    const alerts = deriveAlerts();
+    const bySev = { critical: 0, high: 0, medium: 0, low: 0, info: 0 };
+    alerts.forEach(a => bySev[a.sev]++);
+    if (!alerts.length) {
+      content.innerHTML = emptyState('No correlation thresholds were crossed in this input.<br>Alerts are raised for failed-auth bursts (5+/IP), HTTP 5xx surges (10+/IP) and path scanning (15+ distinct 404s/IP).');
+      return;
+    }
     content.innerHTML = `
       <div class="sd-alert-count">
-        <div class="sd-alert-count-item">
-          <span class="sd-count-num" style="color:#dc2626">${statusCounts.new}</span>
-          <span>New</span>
-        </div>
-        <div class="sd-alert-count-item">
-          <span class="sd-count-num" style="color:#f97316">${statusCounts.investigating}</span>
-          <span>Investigating</span>
-        </div>
-        <div class="sd-alert-count-item">
-          <span class="sd-count-num" style="color:#22c55e">${statusCounts.resolved}</span>
-          <span>Resolved</span>
-        </div>
-        <div class="sd-alert-count-item" style="margin-left:auto">
-          <span class="sd-count-num">${alerts.length}</span>
-          <span>Total Alerts</span>
-        </div>
+        <div class="sd-alert-count-item"><span class="sd-count-num" style="color:#f97316">${bySev.high}</span><span>High</span></div>
+        <div class="sd-alert-count-item"><span class="sd-count-num" style="color:#eab308">${bySev.medium}</span><span>Medium</span></div>
+        <div class="sd-alert-count-item" style="margin-left:auto"><span class="sd-count-num">${alerts.length}</span><span>Total Derived Alerts</span></div>
       </div>
       <div class="sd-card">
-        <h3>Active Alerts</h3>
+        <h3>Derived Alerts</h3>
         <table class="sd-alert-tbl">
-          <thead><tr><th>ID</th><th>Severity</th><th>Host</th><th>Rule</th><th>Created</th><th>Status</th></tr></thead>
+          <thead><tr><th>Severity</th><th>Source</th><th>Correlation</th><th>MITRE</th><th>Window</th></tr></thead>
           <tbody>
-            ${alerts.map((a, i) => `<tr>
-              <td style="font-family:monospace;font-size:.74rem">${esc(a.id)}</td>
+            ${alerts.map(a => `<tr>
               <td><span class="sd-sev-pill" style="background:${SEV_COLORS[a.sev]}">${esc(a.sev)}</span></td>
               <td style="font-family:monospace;font-size:.76rem">${esc(a.host)}</td>
               <td>${esc(a.rule)}</td>
-              <td style="color:var(--mut,#64748b);font-size:.76rem">${esc(ts(a.created))}</td>
-              <td>
-                <select class="sd-status-sel" data-aidx="${i}" style="color:${statusColors[a.status] || "#64748b"}">
-                  <option value="new"${a.status === "new" ? " selected" : ""}>New</option>
-                  <option value="investigating"${a.status === "investigating" ? " selected" : ""}>Investigating</option>
-                  <option value="resolved"${a.status === "resolved" ? " selected" : ""}>Resolved</option>
-                </select>
-              </td>
+              <td style="color:var(--acc,#2563eb);font-size:.76rem">${esc(a.mitre)}</td>
+              <td style="color:var(--mut,#64748b);font-size:.74rem">${esc(a.detail)}</td>
             </tr>`).join("")}
           </tbody>
         </table>
       </div>`;
-
-    content.querySelectorAll(".sd-status-sel").forEach(sel => {
-      sel.addEventListener("change", (e) => {
-        const idx = parseInt(e.target.dataset.aidx, 10);
-        alerts[idx].status = e.target.value;
-        const colors = { new: "#dc2626", investigating: "#f97316", resolved: "#22c55e" };
-        e.target.style.color = colors[e.target.value] || "#64748b";
-      });
-    });
   }
 
   /* ================ CORRELATION ================ */
   function renderCorrelation() {
+    if (!events.length) { content.innerHTML = emptyState(NO_DATA); return; }
+    const failedByIp = {}, s5xxByIp = {}, p404ByIp = {};
+    let authFailTotal = 0;
+    events.forEach(e => {
+      if (e.failedAuth) { authFailTotal++; if (e.srcIp) failedByIp[e.srcIp] = (failedByIp[e.srcIp] || 0) + 1; }
+      if (e.status >= 500 && e.srcIp) s5xxByIp[e.srcIp] = (s5xxByIp[e.srcIp] || 0) + 1;
+      if (e.status === 404 && e.srcIp && e.path) { (p404ByIp[e.srcIp] = p404ByIp[e.srcIp] || {})[e.path] = 1; }
+    });
+    const bruteIps = Object.keys(failedByIp).filter(ip => failedByIp[ip] >= 5);
+    const surgeIps = Object.keys(s5xxByIp).filter(ip => s5xxByIp[ip] >= 10);
+    const scanIps = Object.keys(p404ByIp).filter(ip => Object.keys(p404ByIp[ip]).length >= 15);
+
+    const rules = [
+      { id: "CR-01", name: "Brute Force Detection", cond: "5+ failed authentications from the same source IP", mitre: "T1110", matches: bruteIps.length, hits: bruteIps },
+      { id: "CR-02", name: "Authentication Failure Volume", cond: "Total failed-auth events across all sources", mitre: "T1110.001", matches: authFailTotal, hits: [] },
+      { id: "CR-03", name: "HTTP Error Surge", cond: "10+ HTTP 5xx responses to the same source IP", mitre: "T1499", matches: surgeIps.length, hits: surgeIps },
+      { id: "CR-04", name: "Path Scanning / Enumeration", cond: "15+ distinct 404 paths from the same source IP", mitre: "T1595", matches: scanIps.length, hits: scanIps },
+    ];
+
     content.innerHTML = `
       <div class="sd-card">
-        <h3>Correlation Rules Engine</h3>
+        <h3>Correlation Engine — run against your parsed events</h3>
+        <p class="sd-hint" style="margin-top:0">Each rule is evaluated against the ${events.length.toLocaleString()} parsed events. Match counts are real.</p>
         <div id="sd-rules-list">
-          ${corrRules.map((r, i) => `
+          ${rules.map(r => `
             <div class="sd-rule">
               <div>
-                <div class="sd-rule-hdr">
-                  <span class="sd-rule-id">${esc(r.id)}</span>
-                  <span class="sd-rule-name">${esc(r.name)}</span>
-                </div>
+                <div class="sd-rule-hdr"><span class="sd-rule-id">${esc(r.id)}</span><span class="sd-rule-name">${esc(r.name)}</span></div>
                 <div class="sd-rule-cond">IF ${esc(r.cond)}</div>
-                <div class="sd-rule-action">THEN ${esc(r.action)}</div>
                 <div class="sd-rule-stats">
-                  <span>Matches: <strong>${r.matches}</strong></span>
-                  <span>Last: ${esc(r.last)}</span>
                   <span style="color:var(--acc,#2563eb)">MITRE: ${esc(r.mitre)}</span>
+                  ${r.hits && r.hits.length ? `<span>Matched: ${esc(r.hits.slice(0, 6).join(", "))}${r.hits.length > 6 ? " +" + (r.hits.length - 6) + " more" : ""}</span>` : ""}
                 </div>
               </div>
-              <label class="sd-toggle" title="${r.enabled ? "Enabled" : "Disabled"}">
-                <input type="checkbox" data-ridx="${i}" ${r.enabled ? "checked" : ""}>
-                <span class="sd-toggle-track"></span>
-                <span class="sd-toggle-thumb"></span>
-              </label>
+              <div class="sd-rule-match" style="color:${r.matches > 0 ? SEV_COLORS.high : "var(--mut,#64748b)"}">${r.matches}</div>
             </div>`).join("")}
         </div>
       </div>`;
-
-    content.querySelectorAll(".sd-toggle input").forEach(cb => {
-      cb.addEventListener("change", (e) => {
-        const idx = parseInt(e.target.dataset.ridx, 10);
-        corrRules[idx].enabled = e.target.checked;
-        e.target.closest(".sd-toggle").title = e.target.checked ? "Enabled" : "Disabled";
-      });
-    });
   }
 
   /* ================ SOURCES ================ */
   function renderSources() {
-    const maxEps = Math.max(...LOG_SOURCES.map(s => s.eps), 1);
-    const totalEps = LOG_SOURCES.reduce((s, src) => s + src.eps, 0);
-    const connectedCount = LOG_SOURCES.filter(s => s.status === "connected").length;
-    const degradedCount = LOG_SOURCES.filter(s => s.status === "degraded").length;
-    const offlineCount = LOG_SOURCES.filter(s => s.status === "offline").length;
+    if (!events.length) { content.innerHTML = emptyState(NO_DATA); return; }
+    const FORMAT_LABELS = { access: "Web Access Log (Apache/Nginx)", syslog: "Syslog / auth.log", json: "JSON Lines", raw: "Unstructured / Other" };
+    const groups = {};
+    events.forEach(e => {
+      const key = e.format || "raw";
+      const g = groups[key] || (groups[key] = { count: 0, last: null, sev: { critical: 0, high: 0, medium: 0, low: 0, info: 0 } });
+      g.count++; g.sev[e.sev]++;
+      if (e.time && (!g.last || e.time > g.last)) g.last = e.time;
+    });
+    const keys = Object.keys(groups).sort((a, b) => groups[b].count - groups[a].count);
+    const maxCount = Math.max(...keys.map(k => groups[k].count), 1);
     content.innerHTML = `
       <div class="sd-summary">
-        <div class="sd-summary-card">
-          <div class="sd-sum-val">${LOG_SOURCES.length}</div>
-          <div class="sd-sum-lbl">Total Sources</div>
-        </div>
-        <div class="sd-summary-card">
-          <div class="sd-sum-val" style="color:#22c55e">${connectedCount}</div>
-          <div class="sd-sum-lbl">Connected</div>
-        </div>
-        <div class="sd-summary-card">
-          <div class="sd-sum-val" style="color:#eab308">${degradedCount}</div>
-          <div class="sd-sum-lbl">Degraded</div>
-        </div>
-        <div class="sd-summary-card">
-          <div class="sd-sum-val" style="color:#dc2626">${offlineCount}</div>
-          <div class="sd-sum-lbl">Offline</div>
-        </div>
-        <div class="sd-summary-card">
-          <div class="sd-sum-val">${totalEps.toLocaleString()}</div>
-          <div class="sd-sum-lbl">Total EPS</div>
-        </div>
+        <div class="sd-summary-card"><div class="sd-sum-val">${keys.length}</div><div class="sd-sum-lbl">Log Formats</div></div>
+        <div class="sd-summary-card"><div class="sd-sum-val">${events.length.toLocaleString()}</div><div class="sd-sum-lbl">Total Events</div></div>
+        <div class="sd-summary-card"><div class="sd-sum-val">${uniqueIps().length}</div><div class="sd-sum-lbl">Unique IPs</div></div>
       </div>
       <div class="sd-card">
-        <h3>Connected Log Sources</h3>
+        <h3>Detected Log Sources</h3>
         <div class="sd-src" style="font-weight:600;background:transparent;border:none;color:var(--mut,#64748b);font-size:.72rem;text-transform:uppercase;letter-spacing:.04em">
-          <span>Source</span><span>Status</span><span style="text-align:right">Events/sec</span><span style="text-align:right">Last Event</span>
+          <span>Source Format</span><span>High/Med</span><span style="text-align:right">Events</span><span style="text-align:right">Last Event</span>
         </div>
-        ${LOG_SOURCES.map(s => {
-          const barColor = s.status === "connected" ? "#22c55e" : s.status === "degraded" ? "#eab308" : "#dc2626";
-          const barPct = ((s.eps / maxEps) * 100).toFixed(0);
-          return `
-          <div class="sd-src">
-            <div>
-              <span class="sd-src-name">${esc(s.name)}</span>
-              <div class="sd-src-bar"><div class="sd-src-bar-fill" style="width:${barPct}%;background:${barColor}"></div></div>
-            </div>
-            <span class="sd-src-status"><span class="sd-src-dot ${s.status}"></span>${esc(s.status.charAt(0).toUpperCase() + s.status.slice(1))}</span>
-            <span class="sd-src-eps">${s.eps.toLocaleString()} eps</span>
-            <span class="sd-src-last">${esc(s.lastEvt)}</span>
+        ${keys.map(k => {
+          const g = groups[k];
+          const pct = ((g.count / maxCount) * 100).toFixed(0);
+          return `<div class="sd-src">
+            <div><span class="sd-src-name">${esc(FORMAT_LABELS[k] || k)}</span>
+              <div class="sd-src-bar"><div class="sd-src-bar-fill" style="width:${pct}%;background:${SEV_COLORS.info}"></div></div></div>
+            <span class="sd-src-status"><span style="color:${SEV_COLORS.high}">${g.sev.high}</span> / <span style="color:${SEV_COLORS.medium}">${g.sev.medium}</span></span>
+            <span class="sd-src-eps">${g.count.toLocaleString()}</span>
+            <span class="sd-src-last">${esc(fmtTs(g.last))}</span>
           </div>`;
         }).join("")}
       </div>`;
@@ -571,41 +587,73 @@ export function renderSiemDash(container) {
 
   /* ================ ANALYTICS ================ */
   function renderAnalytics() {
-    const maxEpm = Math.max(...epmHistory, 1);
-    const sevCounts = { critical: 0, high: 0, medium: 0, low: 0, info: 0 };
-    feedEvents.forEach(e => { sevCounts[e.sev]++; });
-    const totalEvt = feedEvents.length || 1;
+    if (!events.length) { content.innerHTML = emptyState(NO_DATA); return; }
+    const sev = sevCounts();
+    const total = events.length;
+
+    // time series — bucket across the observed span (up to 24 buckets)
+    const times = events.map(e => e.time).filter(Boolean).sort((a, b) => a - b);
+    let seriesHtml;
+    if (times.length < 2) {
+      seriesHtml = '<div class="sd-empty" style="padding:20px">Not enough timestamps parsed to build a time series.</div>';
+    } else {
+      const t0 = times[0].getTime(), t1 = times[times.length - 1].getTime();
+      const N = 24, span = Math.max(1, t1 - t0), bw = span / N;
+      const buckets = new Array(N).fill(0);
+      events.forEach(e => { if (e.time) { let i = Math.floor((e.time.getTime() - t0) / bw); if (i >= N) i = N - 1; if (i < 0) i = 0; buckets[i]++; } });
+      const maxB = Math.max(...buckets, 1);
+      const p = (v) => String(v).padStart(2, "0");
+      seriesHtml = `<div class="sd-bar-chart">${buckets.map((v, i) => {
+        const h = Math.max(3, (v / maxB) * 100);
+        const bt = new Date(t0 + i * bw);
+        return `<div class="sd-bar" style="height:${h}%" title="${esc(fmtTs(bt))}: ${v} events"><span class="sd-bar-val">${v || ""}</span><span class="sd-bar-label">${p(bt.getHours())}:${p(bt.getMinutes())}</span></div>`;
+      }).join("")}</div>`;
+    }
+
+    // top IPs
+    const ipHits = {};
+    events.forEach(e => { if (e.srcIp) ipHits[e.srcIp] = (ipHits[e.srcIp] || 0) + 1; });
     const topIps = Object.entries(ipHits).sort((a, b) => b[1] - a[1]).slice(0, 10);
     const maxIp = topIps.length ? topIps[0][1] : 1;
-    const topRules = Object.entries(ruleHits).sort((a, b) => b[1] - a[1]).slice(0, 5);
-    const maxRule = topRules.length ? topRules[0][1] : 1;
+
+    // status codes
+    const statusHits = {};
+    events.forEach(e => { if (e.status != null) { const k = String(e.status); statusHits[k] = (statusHits[k] || 0) + 1; } });
+    const topStatus = Object.entries(statusHits).sort((a, b) => b[1] - a[1]).slice(0, 10);
+    const maxStatus = topStatus.length ? topStatus[0][1] : 1;
+    function statusColor(code) { const c = parseInt(code, 10); return c >= 500 ? SEV_COLORS.high : c >= 400 ? SEV_COLORS.medium : c >= 300 ? SEV_COLORS.low : SEV_COLORS.info; }
 
     content.innerHTML = `
+      <div class="sd-card">
+        <h3>Events over time (${times.length} timestamped events)</h3>
+        ${seriesHtml}
+      </div>
       <div class="sd-analytics-grid">
-        <div class="sd-card">
-          <h3>Events per Minute (last 10 min)</h3>
-          <div class="sd-bar-chart">
-            ${epmHistory.map((v, i) => {
-              const h = Math.max(4, (v / maxEpm) * 100);
-              const lbl = (i - 9) === 0 ? "now" : `${i - 9}m`;
-              return `<div class="sd-bar" style="height:${h}%"><span class="sd-bar-val">${v}</span><span class="sd-bar-label">${lbl}</span></div>`;
-            }).join("")}
-          </div>
-        </div>
         <div class="sd-card">
           <h3>Severity Distribution</h3>
           ${SEV_ORDER.map(s => {
-            const pct = ((sevCounts[s] / totalEvt) * 100).toFixed(1);
+            const pct = ((sev[s] / total) * 100).toFixed(1);
             return `<div class="sd-stat-row">
               <span><span class="sd-sev-dot" style="background:${SEV_COLORS[s]}"></span>${s.charAt(0).toUpperCase() + s.slice(1)}</span>
               <div class="sd-stat-bar-bg"><div class="sd-stat-bar-fill" style="width:${pct}%;background:${SEV_COLORS[s]}"></div></div>
-              <span>${sevCounts[s]} (${pct}%)</span>
+              <span>${sev[s]} (${pct}%)</span>
             </div>`;
           }).join("")}
         </div>
         <div class="sd-card">
-          <h3>Top 10 Source IPs</h3>
-          ${topIps.map(([ip, cnt]) => {
+          <h3>Status-Code Distribution</h3>
+          ${topStatus.length === 0 ? '<div class="sd-empty" style="padding:16px">No HTTP status codes in this input.</div>' : topStatus.map(([code, cnt]) => {
+            const pct = ((cnt / maxStatus) * 100).toFixed(0);
+            return `<div class="sd-stat-row">
+              <span style="font-family:monospace">${esc(code)}</span>
+              <div class="sd-stat-bar-bg"><div class="sd-stat-bar-fill" style="width:${pct}%;background:${statusColor(code)}"></div></div>
+              <span>${cnt}</span>
+            </div>`;
+          }).join("")}
+        </div>
+        <div class="sd-card">
+          <h3>Top Source IPs</h3>
+          ${topIps.length === 0 ? '<div class="sd-empty" style="padding:16px">No source IPs found in this input.</div>' : topIps.map(([ip, cnt]) => {
             const pct = ((cnt / maxIp) * 100).toFixed(0);
             return `<div class="sd-stat-row">
               <span style="font-family:monospace;font-size:.76rem">${esc(ip)}</span>
@@ -615,40 +663,26 @@ export function renderSiemDash(container) {
           }).join("")}
         </div>
         <div class="sd-card">
-          <h3>Most Triggered Rules</h3>
-          ${topRules.map(([name, cnt]) => {
-            const pct = ((cnt / maxRule) * 100).toFixed(0);
-            return `<div class="sd-stat-row">
-              <span style="font-size:.76rem">${esc(name)}</span>
-              <div class="sd-stat-bar-bg"><div class="sd-stat-bar-fill" style="width:${pct}%;background:var(--acc,#2563eb)"></div></div>
-              <span>${cnt}</span>
-            </div>`;
-          }).join("")}
+          <h3>Failed Authentications</h3>
+          ${(function () {
+            const fByIp = {};
+            events.forEach(e => { if (e.failedAuth && e.srcIp) fByIp[e.srcIp] = (fByIp[e.srcIp] || 0) + 1; });
+            const rows = Object.entries(fByIp).sort((a, b) => b[1] - a[1]).slice(0, 10);
+            if (!rows.length) return '<div class="sd-empty" style="padding:16px">No failed-auth events detected.</div>';
+            const mx = rows[0][1];
+            return rows.map(([ip, cnt]) => {
+              const pct = ((cnt / mx) * 100).toFixed(0);
+              return `<div class="sd-stat-row">
+                <span style="font-family:monospace;font-size:.76rem">${esc(ip)}</span>
+                <div class="sd-stat-bar-bg"><div class="sd-stat-bar-fill" style="width:${pct}%;background:${SEV_COLORS.high}"></div></div>
+                <span>${cnt}</span>
+              </div>`;
+            }).join("");
+          })()}
         </div>
       </div>`;
   }
 
   /* ---- initial render ---- */
   renderTab();
-
-  /* ---- live event generator ---- */
-  const feedIntervalId = setInterval(() => {
-    if (paused) return;
-    appendEvent(genEvent());
-  }, randInt(2000, 3000));
-
-  /* rotate epm bucket every 60 s */
-  const epmIntervalId = setInterval(() => {
-    epmHistory.shift();
-    epmHistory.push(0);
-    if (activeTab === "analytics") renderAnalytics();
-  }, 60000);
-
-  /* store interval IDs for cleanup on re-render */
-  container._sdInterval = feedIntervalId;
-  container._sdEpmInterval = epmIntervalId;
-  container._sdCleanup = () => {
-    clearInterval(feedIntervalId);
-    clearInterval(epmIntervalId);
-  };
 }

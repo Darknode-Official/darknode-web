@@ -1,5 +1,10 @@
 // Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
-// HTTP Probe — endpoint probing, method testing, header fingerprinting
+// HTTP Probe — REAL endpoint probing, header fingerprinting and redirect tracing.
+// Requests run through the Darknode SSRF-guarded /api/fetch proxy so we read the
+// genuine upstream status, headers, redirect chain and body (browser CORS cannot).
+// Nothing is fabricated: if a lookup fails, an honest error is shown.
+
+import { dnFetch, proxyConfigured } from '/js/net.js';
 
 var esc = function(s) { return String(s != null ? s : '').replace(/[&<>"']/g, function(c) {
   return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); };
@@ -18,6 +23,17 @@ var _hpSecurityHeaders = [
 ];
 
 var _hpMethods = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS', 'HEAD'];
+
+// Body-marker tech signatures, matched against the real returned HTML/JS.
+var _hpBodyTech = [
+  { name: 'WordPress', test: function(b) { return /\/wp-content\/|\/wp-json\//.test(b); } },
+  { name: 'Next.js', test: function(b) { return /__NEXT_DATA__|\/_next\/static\//.test(b); } },
+  { name: 'React', test: function(b) { return /data-reactroot|react-dom(\.production)?(\.min)?\.js/.test(b); } },
+  { name: 'Vue.js', test: function(b) { return /data-v-[0-9a-f]{8}|vue(\.runtime)?(\.min)?\.js/.test(b); } },
+  { name: 'Angular', test: function(b) { return /ng-version=|angular(\.min)?\.js/.test(b); } },
+  { name: 'jQuery', test: function(b) { return /jquery(-\d[\d.]*)?(\.slim)?(\.min)?\.js/i.test(b); } },
+  { name: 'Shopify', test: function(b) { return /cdn\.shopify\.com|myshopify\.com/.test(b); } }
+];
 
 export function renderHttpProbe(container) {
   var h = '';
@@ -42,79 +58,54 @@ export function renderHttpProbe(container) {
   });
 };
 
-window._hpProbe = function() {
+window._hpProbe = async function() {
   var url = (document.getElementById('hp-url') || {}).value;
   var results = document.getElementById('hp-results');
   if (!url || !results) return;
   url = url.trim();
   if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
 
-  results.innerHTML = '<div style="color:#ffaa00;font-size:11px;padding:16px;text-align:center;">Probing ' + esc(url) + '...</div>';
-
-  var probeResults = { url: url, methods: {}, headers: {}, timing: 0, status: 0, redirects: [], server: null, tech: [] };
-
-  // Main GET request
-  var start = performance.now();
-  fetch(url, { method: 'GET', mode: 'cors', redirect: 'follow' })
-    .then(function(resp) {
-      probeResults.timing = Math.round(performance.now() - start);
-      probeResults.status = resp.status;
-      probeResults.finalUrl = resp.url;
-      if (resp.url !== url) probeResults.redirects.push({ from: url, to: resp.url });
-
-      // Extract headers
-      resp.headers.forEach(function(value, key) {
-        probeResults.headers[key.toLowerCase()] = value;
-      });
-
-      // Server fingerprint
-      probeResults.server = probeResults.headers['server'] || null;
-      var xPowered = probeResults.headers['x-powered-by'];
-      if (xPowered) probeResults.tech.push(xPowered);
-      var via = probeResults.headers['via'];
-      if (via) probeResults.tech.push('Via: ' + via);
-
-      // Test methods
-      return _hpTestMethods(url);
-    })
-    .then(function(methodResults) {
-      probeResults.methods = methodResults;
-      _hpRenderResults(results, probeResults);
-    })
-    .catch(function(err) {
-      // Try no-cors mode
-      var start2 = performance.now();
-      fetch(url, { method: 'GET', mode: 'no-cors' })
-        .then(function() {
-          probeResults.timing = Math.round(performance.now() - start2);
-          probeResults.status = 0;
-          probeResults.corsBlocked = true;
-          _hpTestMethods(url).then(function(mr) { probeResults.methods = mr; _hpRenderResults(results, probeResults); });
-        })
-        .catch(function(err2) {
-          results.innerHTML = '<div style="background:#1a0a0a;border:1px solid #ff224433;border-radius:6px;padding:16px;text-align:center;">' +
-            '<div style="color:#ff4444;font-size:12px;font-weight:bold;">PROBE FAILED</div>' +
-            '<div style="color:#ff8866;font-size:10px;margin-top:4px;">' + esc(String(err2.message || err)) + '</div></div>';
-        });
-    });
-};
-
-function _hpTestMethods(url) {
-  var results = {};
-  var promises = [];
-
-  for (var i = 0; i < _hpMethods.length; i++) {
-    (function(method) {
-      promises.push(
-        fetch(url, { method: method, mode: 'cors' })
-          .then(function(resp) { results[method] = { status: resp.status, allowed: resp.status !== 405 && resp.status !== 501 && resp.status < 500 }; })
-          .catch(function() { results[method] = { status: 0, allowed: false }; })
-      );
-    })(_hpMethods[i]);
+  if (!proxyConfigured()) {
+    results.innerHTML = '<div style="background:#1a0a0a;border:1px solid #ff224433;border-radius:6px;padding:16px;text-align:center;">' +
+      '<div style="color:#ff4444;font-size:12px;font-weight:bold;">LIVE PROBE UNAVAILABLE</div>' +
+      '<div style="color:#ff8866;font-size:10px;margin-top:4px;">The Darknode fetch proxy is not configured, so the real response cannot be retrieved. No data is fabricated.</div></div>';
+    return;
   }
 
-  return Promise.all(promises).then(function() { return results; });
-}
+  results.innerHTML = '<div style="color:#ffaa00;font-size:11px;padding:16px;text-align:center;">Probing ' + esc(url) + '...</div>';
+
+  var start = performance.now();
+  try {
+    var resp = await dnFetch(url, { redirect: 'manual' });
+    var probeResults = { url: url, headers: {}, timing: Math.round(performance.now() - start), status: resp.status, statusText: resp.statusText || '', finalUrl: resp.finalUrl || url, redirects: resp.redirectChain || [], server: null, tech: [], allow: '', truncated: !!resp.truncated };
+
+    var rawHeaders = resp.headers || {};
+    Object.keys(rawHeaders).forEach(function(key) { probeResults.headers[key.toLowerCase()] = rawHeaders[key]; });
+
+    probeResults.server = probeResults.headers['server'] || null;
+    var xPowered = probeResults.headers['x-powered-by'];
+    if (xPowered) probeResults.tech.push(xPowered);
+    var via = probeResults.headers['via'];
+    if (via) probeResults.tech.push('Via: ' + via);
+
+    // Real allowed methods come only from an Allow / Access-Control-Allow-Methods
+    // header the server actually sent — never from guessing.
+    probeResults.allow = probeResults.headers['allow'] || probeResults.headers['access-control-allow-methods'] || '';
+
+    // Tech from the real body
+    var body = resp.body || '';
+    for (var bi = 0; bi < _hpBodyTech.length; bi++) {
+      try { if (_hpBodyTech[bi].test(body) && probeResults.tech.indexOf(_hpBodyTech[bi].name) === -1) probeResults.tech.push(_hpBodyTech[bi].name); } catch (e) {}
+    }
+
+    _hpRenderResults(results, probeResults);
+  } catch (err) {
+    results.innerHTML = '<div style="background:#1a0a0a;border:1px solid #ff224433;border-radius:6px;padding:16px;text-align:center;">' +
+      '<div style="color:#ff4444;font-size:12px;font-weight:bold;">PROBE FAILED</div>' +
+      '<div style="color:#ff8866;font-size:10px;margin-top:4px;">' + esc(String((err && err.message) || err)) + '</div>' +
+      '<div style="color:#4a6a8a;font-size:10px;margin-top:6px;">The target could not be reached through the Darknode proxy (host down, private, or blocking automated requests).</div></div>';
+  }
+};
 
 function _hpRenderResults(el, data) {
   var h = '';
@@ -126,9 +117,9 @@ function _hpRenderResults(el, data) {
   h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;">';
   h += '<div style="background:#080c14;border:1px solid #1a2a44;border-radius:3px;padding:6px 8px;text-align:center;">';
   h += '<div style="color:#3a5a7a;font-size:8px;letter-spacing:1px;">STATUS</div>';
-  h += '<div style="color:' + statusColor + ';font-size:18px;font-weight:bold;">' + (data.corsBlocked ? 'CORS' : data.status) + '</div></div>';
+  h += '<div style="color:' + statusColor + ';font-size:18px;font-weight:bold;">' + esc(String(data.status)) + '</div></div>';
   h += '<div style="background:#080c14;border:1px solid #1a2a44;border-radius:3px;padding:6px 8px;text-align:center;">';
-  h += '<div style="color:#3a5a7a;font-size:8px;letter-spacing:1px;">RESPONSE</div>';
+  h += '<div style="color:#3a5a7a;font-size:8px;letter-spacing:1px;">RESPONSE (VIA PROXY)</div>';
   h += '<div style="color:#00aaff;font-size:18px;font-weight:bold;">' + data.timing + 'ms</div></div>';
   h += '<div style="background:#080c14;border:1px solid #1a2a44;border-radius:3px;padding:6px 8px;text-align:center;">';
   h += '<div style="color:#3a5a7a;font-size:8px;letter-spacing:1px;">SERVER</div>';
@@ -137,32 +128,56 @@ function _hpRenderResults(el, data) {
   h += '<div style="color:#3a5a7a;font-size:8px;letter-spacing:1px;">TECH</div>';
   h += '<div style="color:#aa66ff;font-size:10px;">' + (data.tech.length > 0 ? esc(data.tech.join(', ')) : 'Unknown') + '</div></div>';
   h += '</div>';
-  if (data.corsBlocked) {
-    h += '<div style="color:#ff8844;font-size:10px;margin-top:8px;padding:6px;background:#1a120a;border:1px solid #ff884433;border-radius:3px;">&#9888; CORS blocked — headers not accessible. Method testing uses no-cors mode.</div>';
+  if (data.finalUrl && data.finalUrl !== data.url) {
+    h += '<div style="margin-top:8px;font-size:10px;"><span style="color:#4a7a9a;">FINAL URL:</span> <span style="color:#00ff88;word-break:break-all;">' + esc(data.finalUrl) + '</span></div>';
   }
-  if (data.redirects.length > 0) {
-    h += '<div style="margin-top:8px;font-size:10px;"><span style="color:#4a7a9a;">REDIRECT:</span> <span style="color:#ffaa00;">' + esc(data.redirects[0].from) + '</span> &#8594; <span style="color:#00ff88;">' + esc(data.redirects[0].to) + '</span></div>';
+  if (data.truncated) {
+    h += '<div style="color:#ff8844;font-size:9px;margin-top:6px;">Response body was large and truncated by the proxy; body-based detections may be partial.</div>';
   }
   h += '</div>';
 
-  // HTTP Methods
-  h += '<div style="background:#0c1020;border:1px solid #1a2a44;border-radius:6px;padding:14px;margin-bottom:12px;">';
-  h += '<div style="color:#ffaa00;font-size:12px;font-weight:bold;margin-bottom:10px;">HTTP METHODS</div>';
-  h += '<div style="display:flex;flex-wrap:wrap;gap:6px;">';
-  for (var m = 0; m < _hpMethods.length; m++) {
-    var method = _hpMethods[m];
-    var mr = data.methods[method];
-    var mColor = mr && mr.allowed ? '#00ff88' : '#ff4444';
-    var mStatus = mr ? mr.status : '?';
-    h += '<div style="background:' + mColor + '10;border:1px solid ' + mColor + '33;border-radius:4px;padding:6px 12px;text-align:center;min-width:70px;">';
-    h += '<div style="color:' + mColor + ';font-weight:bold;font-size:12px;">' + method + '</div>';
-    h += '<div style="color:#4a6a8a;font-size:9px;">' + (mr && mr.allowed ? mStatus : 'BLOCKED') + '</div>';
+  // Redirect chain (real, from the proxy)
+  if (data.redirects && data.redirects.length > 0) {
+    h += '<div style="background:#0c1020;border:1px solid #1a2a44;border-radius:6px;padding:14px;margin-bottom:12px;">';
+    h += '<div style="color:#ffaa00;font-size:12px;font-weight:bold;margin-bottom:10px;">REDIRECT CHAIN (' + data.redirects.length + ')</div>';
+    for (var rc = 0; rc < data.redirects.length; rc++) {
+      var hop = data.redirects[rc];
+      var hopFrom = typeof hop === 'string' ? hop : (hop.url || hop.from || '');
+      var hopStatus = hop && hop.status != null ? hop.status : '';
+      var hopTo = hop && (hop.location || hop.to) ? (hop.location || hop.to) : '';
+      h += '<div style="font-size:10px;margin:3px 0;word-break:break-all;">' +
+        '<span style="color:#ffaa00;">' + esc(String(hopStatus)) + '</span> ' +
+        '<span style="color:#8ab4d4;">' + esc(hopFrom) + '</span>' +
+        (hopTo ? ' &#8594; <span style="color:#00ff88;">' + esc(hopTo) + '</span>' : '') +
+        '</div>';
+    }
     h += '</div>';
   }
-  h += '</div></div>';
 
-  // Security Headers
-  if (!data.corsBlocked) {
+  // HTTP Methods — only from a real Allow header the server actually sent.
+  h += '<div style="background:#0c1020;border:1px solid #1a2a44;border-radius:6px;padding:14px;margin-bottom:12px;">';
+  h += '<div style="color:#ffaa00;font-size:12px;font-weight:bold;margin-bottom:10px;">HTTP METHODS (ADVERTISED)</div>';
+  if (data.allow) {
+    var allowed = data.allow.split(',').map(function(s) { return s.trim().toUpperCase(); }).filter(Boolean);
+    h += '<div style="display:flex;flex-wrap:wrap;gap:6px;">';
+    for (var m = 0; m < _hpMethods.length; m++) {
+      var method = _hpMethods[m];
+      var isOn = allowed.indexOf(method) !== -1;
+      var mColor = isOn ? '#00ff88' : '#4a6a8a';
+      h += '<div style="background:' + mColor + '10;border:1px solid ' + mColor + '33;border-radius:4px;padding:6px 12px;text-align:center;min-width:70px;">';
+      h += '<div style="color:' + mColor + ';font-weight:bold;font-size:12px;">' + method + '</div>';
+      h += '<div style="color:#4a6a8a;font-size:9px;">' + (isOn ? 'ALLOWED' : '--') + '</div>';
+      h += '</div>';
+    }
+    h += '</div>';
+    h += '<div style="color:#4a6a8a;font-size:9px;margin-top:8px;">From the <code>Allow</code> header: ' + esc(data.allow) + '</div>';
+  } else {
+    h += '<div style="color:#4a6a8a;font-size:10px;">The server did not advertise an <code>Allow</code> header on this response. Active per-method probing is not performed from the browser proxy, so no methods are guessed.</div>';
+  }
+  h += '</div>';
+
+  // Security Headers (always available — real headers via proxy)
+  {
     var maxScore = 0, score = 0;
     h += '<div style="background:#0c1020;border:1px solid #1a2a44;border-radius:6px;padding:14px;margin-bottom:12px;">';
     h += '<div style="color:#00ff88;font-size:12px;font-weight:bold;margin-bottom:10px;">SECURITY HEADERS</div>';

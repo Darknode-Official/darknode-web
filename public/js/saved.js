@@ -1,7 +1,7 @@
 // Saved workspace — bookmark tools/sections and keep engagement notes.
 // Signed-in: persisted per-user in Firestore (users/{uid}.workspace).
 // Signed-out: localStorage fallback. Same API either way.
-import { db } from "/js/firebase.js";
+import { db } from "/js/firebase.js?v=20261007a";
 import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>

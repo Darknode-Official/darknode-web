@@ -1,20 +1,30 @@
 // Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
-// Threat Feed Aggregator — multi-source threat intelligence viewer
-// Merges CISA KEV, IOCs, botnet C2, malware URLs, ransomware groups into unified timeline
+// Threat Feed Aggregator — a REAL, timestamped unified feed built live from three
+// keyless public sources, fetched through the Darknode proxy at view time:
+//   - CISA Known Exploited Vulnerabilities catalog (cisa.gov)
+//   - ransomware.live recent victims (api.ransomware.live)
+//   - Recently published CVEs from the NIST NVD (services.nvd.nist.gov)
+// There are no frozen local JSON snapshots and no "LIVE" badge over stale data:
+// the badge only reads LIVE after a successful fetch, and shows the fetch time.
+import { dnFetchJSON, proxyConfigured } from "/js/net.js";
 
 var esc = function(s) { return String(s != null ? s : '').replace(/[&<>"']/g, function(c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); };
 
+var KEV_URL = 'https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json';
+var RANSOM_URL = 'https://api.ransomware.live/v2/recentvictims';
+var NVD_URL = 'https://services.nvd.nist.gov/rest/json/cves/2.0';
+
 var _tfSources = [
-  { id: 'kev', name: 'CISA KEV', url: '/data/feeds/cisa-kev.json', color: '#ff4444', icon: '[KEV]' },
-  { id: 'ioc', name: 'Threat IOCs', url: '/data/feeds/threat-iocs.json', color: '#ff8800', icon: '[IOC]' },
-  { id: 'c2', name: 'Botnet C2', url: '/data/feeds/botnet-c2.json', color: '#aa44ff', icon: '[C2]' },
-  { id: 'malurl', name: 'Malware URLs', url: '/data/feeds/malware-urls.json', color: '#ff00aa', icon: '[URL]' },
-  { id: 'ransom', name: 'Ransomware', url: '/data/feeds/ransomware-groups.json', color: '#ff2222', icon: '[RW]' }
+  { id: 'kev', name: 'CISA KEV', color: '#ff4444', icon: '[KEV]', src: 'cisa.gov' },
+  { id: 'ransom', name: 'Ransomware', color: '#ff2222', icon: '[RW]', src: 'ransomware.live' },
+  { id: 'cve', name: 'New CVEs', color: '#00aaff', icon: '[CVE]', src: 'nvd.nist.gov' }
 ];
 
 var _tfData = [];
 var _tfFilter = 'all';
 var _tfLoading = false;
+var _tfErrors = [];
+var _tfFetchedAt = null;
 
 function _tfCopyToClipboard(text) {
   try { navigator.clipboard.writeText(text); } catch (_) {
@@ -22,105 +32,150 @@ function _tfCopyToClipboard(text) {
   }
 }
 
-function _tfNormalize(sourceId, rawData) {
-  var items = [];
-  var data = rawData.data || rawData;
-  if (!Array.isArray(data)) return items;
+// NVD wants "YYYY-MM-DDTHH:MM:SS.000" (UTC, no zone suffix).
+function _nvdDate(d) { return d.toISOString().slice(0, 19) + '.000'; }
 
-  for (var i = 0; i < data.length; i++) {
-    var d = data[i];
-    var item = { source: sourceId, raw: d };
+function _sevFromCvss(score) {
+  if (score == null) return 'medium';
+  if (score >= 9) return 'critical';
+  if (score >= 7) return 'high';
+  if (score >= 4) return 'medium';
+  return 'low';
+}
 
-    switch (sourceId) {
-      case 'kev':
-        item.title = d.cve || 'N/A';
-        item.subtitle = (d.vendor || '') + ' — ' + (d.product || '');
-        item.desc = d.name || d.description || '';
-        item.time = d.dateAdded || '';
-        item.severity = d.knownRansomware === 'Known' ? 'critical' : 'high';
-        item.tags = [d.vendor, d.knownRansomware === 'Known' ? 'RANSOMWARE' : null].filter(Boolean);
-        break;
-      case 'ioc':
-        item.title = d.iocValue || '';
-        item.subtitle = d.malware || '';
-        item.desc = d.iocType || '';
-        item.time = d.firstSeen || '';
-        item.severity = d.confidenceLevel > 90 ? 'critical' : d.confidenceLevel > 70 ? 'high' : 'medium';
-        item.tags = d.tags || [];
-        break;
-      case 'c2':
-        item.title = d.ip + ':' + d.port;
-        item.subtitle = d.malware || '';
-        item.desc = 'AS' + (d.asNumber || '?') + ' — ' + (d.asName || '');
-        item.time = d.firstSeen || '';
-        item.severity = d.status === 'online' ? 'critical' : 'low';
-        item.tags = [d.malware, d.country, d.status].filter(Boolean);
-        break;
-      case 'malurl':
-        item.title = d.url || '';
-        item.subtitle = d.threat || '';
-        item.desc = d.host || '';
-        item.time = d.dateAdded || '';
-        item.severity = d.status === 'online' ? 'high' : 'low';
-        item.tags = d.tags || [];
-        break;
-      case 'ransom':
-        item.title = d.name || '';
-        item.subtitle = 'Victims 2026: ' + (d.victimCount2026 || '?');
-        item.desc = 'Avg ransom: ' + (d.avgRansom || '?') + ' | ' + (d.language || '');
-        item.time = d.firstSeen || '';
-        item.severity = d.status === 'active' ? 'critical' : 'low';
-        item.tags = (d.targetSectors || []).slice(0, 3);
-        break;
-    }
-    items.push(item);
-  }
-  return items;
+function _nvdMetric(cve) {
+  var m = cve.metrics || {};
+  var pick = (m.cvssMetricV40 || [])[0] || (m.cvssMetricV31 || [])[0] || (m.cvssMetricV30 || [])[0] || (m.cvssMetricV2 || [])[0];
+  if (!pick || !pick.cvssData) return null;
+  return { score: pick.cvssData.baseScore, version: pick.cvssData.version || '' };
+}
+
+// ── Source fetchers (each returns normalized feed items or throws) ───────────
+
+async function _tfFetchKev() {
+  var data = await dnFetchJSON(KEV_URL, { timeout: 25000 });
+  var vulns = (data && data.vulnerabilities) || [];
+  return vulns.map(function(d) {
+    var ransom = d.knownRansomwareCampaignUse === 'Known';
+    return {
+      source: 'kev',
+      title: d.cveID || 'N/A',
+      subtitle: [d.vendorProject, d.product].filter(Boolean).join(' — '),
+      desc: d.vulnerabilityName || d.shortDescription || '',
+      time: d.dateAdded || '',
+      severity: ransom ? 'critical' : 'high',
+      tags: [d.vendorProject, ransom ? 'RANSOMWARE' : null].filter(Boolean),
+      raw: d
+    };
+  });
+}
+
+async function _tfFetchRansom() {
+  var victims = await dnFetchJSON(RANSOM_URL, { timeout: 25000 });
+  if (!Array.isArray(victims)) return [];
+  return victims.map(function(d) {
+    return {
+      source: 'ransom',
+      title: d.victim || '(unnamed victim)',
+      subtitle: d.group ? ('Group: ' + d.group) : '',
+      desc: d.description || d.activity || '',
+      time: d.discovered || d.attackdate || '',
+      severity: 'high',
+      tags: [d.group, d.activity, d.country].filter(Boolean),
+      raw: d
+    };
+  });
+}
+
+async function _tfFetchCves() {
+  var end = new Date();
+  var start = new Date(end.getTime() - 7 * 86400000);
+  var base = NVD_URL + '?pubStartDate=' + encodeURIComponent(_nvdDate(start)) +
+    '&pubEndDate=' + encodeURIComponent(_nvdDate(end)) + '&noRejected';
+  // Fetch a head record for the total, then the newest page.
+  var head = await dnFetchJSON(base + '&resultsPerPage=1', { timeout: 25000 });
+  var total = (head && head.totalResults) || 0;
+  if (!total) return [];
+  var perPage = 60;
+  var startIndex = Math.max(0, total - perPage);
+  var page = await dnFetchJSON(base + '&resultsPerPage=' + perPage + '&startIndex=' + startIndex, { timeout: 25000 });
+  var vulns = (page && page.vulnerabilities) || [];
+  return vulns.map(function(v) {
+    var cve = v.cve || {};
+    var desc = ((cve.descriptions || []).filter(function(x) { return x.lang === 'en'; })[0] || {}).value || '';
+    var metric = _nvdMetric(cve);
+    return {
+      source: 'cve',
+      title: cve.id || 'N/A',
+      subtitle: metric ? ('CVSS ' + metric.score + (metric.version ? ' (v' + metric.version + ')' : '')) : 'Not yet scored',
+      desc: desc,
+      time: (cve.published || '').slice(0, 19),
+      severity: metric ? _sevFromCvss(metric.score) : 'medium',
+      tags: [cve.vulnStatus].filter(Boolean),
+      raw: cve
+    };
+  }).filter(function(x) { return x.title && x.title !== 'N/A'; });
 }
 
 async function _tfFetchAll() {
   if (_tfLoading) return;
   _tfLoading = true;
+  _tfErrors = [];
   var statusEl = document.getElementById('tf-status');
-  if (statusEl) statusEl.textContent = 'FETCHING...';
+  if (statusEl) { statusEl.textContent = 'FETCHING...'; statusEl.style.background = '#ffaa0022'; statusEl.style.color = '#ffaa00'; statusEl.style.borderColor = '#ffaa0044'; }
+
+  if (!proxyConfigured()) {
+    _tfLoading = false;
+    _tfErrors.push('Darknode proxy not configured — live sources cannot be reached.');
+    _tfSetStatus(false);
+    _tfRenderFeed();
+    return;
+  }
 
   _tfData = [];
-  var promises = _tfSources.map(function(src) {
-    return fetch(src.url)
-      .then(function(r) { return r.json(); })
-      .then(function(json) {
-        var items = _tfNormalize(src.id, json);
-        _tfData = _tfData.concat(items);
-      })
-      .catch(function() {});
-  });
+  var fetchers = [
+    { id: 'CISA KEV', fn: _tfFetchKev },
+    { id: 'ransomware.live', fn: _tfFetchRansom },
+    { id: 'NVD', fn: _tfFetchCves }
+  ];
 
-  await Promise.all(promises);
+  var results = await Promise.all(fetchers.map(function(f) {
+    return f.fn().then(function(items) { return { ok: true, items: items }; })
+      .catch(function(err) { _tfErrors.push(f.id + ': ' + ((err && err.message) || err)); return { ok: false, items: [] }; });
+  }));
 
-  // Sort by time descending
-  _tfData.sort(function(a, b) {
-    return (b.time || '').localeCompare(a.time || '');
-  });
+  results.forEach(function(r) { if (r.ok) _tfData = _tfData.concat(r.items); });
+
+  // Sort by timestamp descending (ISO / YYYY-MM-DD strings sort lexically).
+  _tfData.sort(function(a, b) { return (b.time || '').localeCompare(a.time || ''); });
 
   _tfLoading = false;
-  if (statusEl) statusEl.textContent = 'LIVE';
+  _tfFetchedAt = new Date();
+  _tfSetStatus(_tfData.length > 0);
   _tfUpdateStats();
   _tfRenderFeed();
 }
 
+function _tfSetStatus(live) {
+  var statusEl = document.getElementById('tf-status');
+  if (!statusEl) return;
+  if (live) {
+    statusEl.textContent = 'LIVE ' + (_tfFetchedAt ? _tfFetchedAt.toLocaleTimeString() : '');
+    statusEl.style.background = '#00ff8822'; statusEl.style.color = '#00ff88'; statusEl.style.borderColor = '#00ff8844';
+  } else {
+    statusEl.textContent = 'FETCH FAILED';
+    statusEl.style.background = '#ff224422'; statusEl.style.color = '#ff4444'; statusEl.style.borderColor = '#ff224444';
+  }
+}
+
 function _tfUpdateStats() {
-  var stats = { total: _tfData.length, kev: 0, ioc: 0, c2: 0, malurl: 0, ransom: 0, critical: 0 };
+  var stats = { total: _tfData.length, kev: 0, ransom: 0, cve: 0, critical: 0 };
   for (var i = 0; i < _tfData.length; i++) {
     stats[_tfData[i].source] = (stats[_tfData[i].source] || 0) + 1;
     if (_tfData[i].severity === 'critical') stats.critical++;
   }
-
-  var ids = ['tf-total', 'tf-kev', 'tf-ioc', 'tf-c2', 'tf-malurl', 'tf-ransom', 'tf-critical'];
-  var vals = [stats.total, stats.kev, stats.ioc, stats.c2, stats.malurl, stats.ransom, stats.critical];
-  for (var s = 0; s < ids.length; s++) {
-    var el = document.getElementById(ids[s]);
-    if (el) el.textContent = vals[s];
-  }
+  var map = { 'tf-total': stats.total, 'tf-kev': stats.kev, 'tf-ransom': stats.ransom, 'tf-cve': stats.cve, 'tf-critical': stats.critical };
+  Object.keys(map).forEach(function(id) { var el = document.getElementById(id); if (el) el.textContent = map[id]; });
 }
 
 function _tfSevColor(s) {
@@ -131,41 +186,51 @@ function _tfSevColor(s) {
 }
 
 function _tfSourceInfo(id) {
-  for (var i = 0; i < _tfSources.length; i++) {
-    if (_tfSources[i].id === id) return _tfSources[i];
-  }
-  return { name: id, color: '#4a6a8a', icon: '[?]' };
+  for (var i = 0; i < _tfSources.length; i++) { if (_tfSources[i].id === id) return _tfSources[i]; }
+  return { name: id, color: '#4a6a8a', icon: '[?]', src: '' };
 }
 
 function _tfRenderFeed() {
   var el = document.getElementById('tf-feed');
   if (!el) return;
+
+  if (_tfLoading && _tfData.length === 0) {
+    el.innerHTML = '<div style="color:#4a6a8a;font-family:monospace;font-size:11px;text-align:center;padding:40px;">Fetching live threat intelligence&hellip;</div>';
+    return;
+  }
+
   var filtered = _tfFilter === 'all' ? _tfData : _tfData.filter(function(d) { return d.source === _tfFilter; });
 
-  if (filtered.length === 0) { el.innerHTML = '<div style="color:#4a6a8a;font-family:monospace;font-size:11px;text-align:center;padding:40px;">No items match the current filter.</div>'; return; }
-
   var h = '';
-  var maxItems = Math.min(filtered.length, 200);
+  if (_tfErrors.length) {
+    h += '<div style="background:#1a0a0a;border-bottom:1px solid #ff224433;padding:8px 14px;color:#ff8866;font-family:monospace;font-size:10px;">';
+    h += 'Some sources did not load: ' + esc(_tfErrors.join(' | ')) + '. Only successfully fetched data is shown below &mdash; nothing is substituted.';
+    h += '</div>';
+  }
+
+  if (filtered.length === 0) {
+    if (!_tfErrors.length) h += '<div style="color:#4a6a8a;font-family:monospace;font-size:11px;text-align:center;padding:40px;">No items. Click FETCH ALL to load live threat intelligence.</div>';
+    el.innerHTML = h;
+    return;
+  }
+
+  var maxItems = Math.min(filtered.length, 250);
   for (var i = 0; i < maxItems; i++) {
     var item = filtered[i];
     var src = _tfSourceInfo(item.source);
     var sevColor = _tfSevColor(item.severity);
 
     h += '<div style="padding:10px 14px;border-bottom:1px solid #0d1525;display:flex;gap:10px;align-items:flex-start;">';
-
-    // Source badge
     h += '<div style="flex-shrink:0;min-width:44px;">';
     h += '<div style="background:' + src.color + '22;color:' + src.color + ';font-size:8px;font-family:monospace;padding:2px 4px;border-radius:2px;border:1px solid ' + src.color + '33;text-align:center;font-weight:bold;letter-spacing:1px;white-space:nowrap;">' + esc(src.icon) + '</div>';
     h += '</div>';
-
-    // Content
     h += '<div style="flex:1;min-width:0;">';
     h += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;">';
-    h += '<span style="font-family:monospace;font-size:12px;color:#c8d6e5;font-weight:bold;word-break:break-all;">' + esc(item.title.substring(0, 80)) + '</span>';
+    h += '<span style="font-family:monospace;font-size:12px;color:#c8d6e5;font-weight:bold;word-break:break-all;">' + esc(String(item.title).substring(0, 90)) + '</span>';
     h += '<span style="background:' + sevColor + '22;color:' + sevColor + ';font-size:7px;font-family:monospace;padding:1px 4px;border-radius:2px;flex-shrink:0;">' + (item.severity || '').toUpperCase() + '</span>';
     h += '</div>';
     if (item.subtitle) h += '<div style="font-family:monospace;font-size:10px;color:#8ab4d4;margin-bottom:2px;">' + esc(item.subtitle) + '</div>';
-    if (item.desc) h += '<div style="font-family:monospace;font-size:9px;color:#4a6a8a;margin-bottom:3px;word-break:break-all;">' + esc(item.desc.substring(0, 200)) + '</div>';
+    if (item.desc) h += '<div style="font-family:monospace;font-size:9px;color:#4a6a8a;margin-bottom:3px;word-break:break-word;">' + esc(String(item.desc).substring(0, 240)) + '</div>';
     if (item.tags && item.tags.length > 0) {
       h += '<div style="display:flex;gap:3px;flex-wrap:wrap;">';
       for (var t = 0; t < item.tags.length; t++) {
@@ -174,10 +239,7 @@ function _tfRenderFeed() {
       h += '</div>';
     }
     h += '</div>';
-
-    // Time
-    h += '<div style="flex-shrink:0;font-family:monospace;font-size:9px;color:#3a5a7a;white-space:nowrap;">' + esc((item.time || '').substring(0, 16)) + '</div>';
-
+    h += '<div style="flex-shrink:0;font-family:monospace;font-size:9px;color:#3a5a7a;white-space:nowrap;">' + esc((item.time || '').replace('T', ' ').substring(0, 16)) + '</div>';
     h += '</div>';
   }
 
@@ -193,26 +255,24 @@ export function renderThreatFeedAggregator(container) {
   h += '<div style="padding:20px 24px;max-width:1100px;margin:0 auto;">';
 
   // Header
-  h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">';
+  h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;">';
   h += '<div>';
   h += '<h2 style="margin:0;font-size:20px;color:#ff8800;font-family:monospace;letter-spacing:2px;text-transform:uppercase;">THREAT FEED AGGREGATOR</h2>';
-  h += '<div style="color:#4a6a8a;font-size:11px;font-family:monospace;margin-top:4px;">Unified view of ' + _tfSources.length + ' threat intelligence sources</div>';
+  h += '<div style="color:#4a6a8a;font-size:11px;font-family:monospace;margin-top:4px;">Live feed from CISA KEV, ransomware.live and NIST NVD</div>';
   h += '</div>';
   h += '<div style="display:flex;gap:8px;align-items:center;">';
-  h += '<div id="tf-status" style="background:#00ff8822;color:#00ff88;font-size:10px;font-family:monospace;padding:4px 10px;border-radius:4px;border:1px solid #00ff8844;font-weight:bold;">READY</div>';
+  h += '<div id="tf-status" style="background:#1a2a44;color:#8ab4d4;font-size:10px;font-family:monospace;padding:4px 10px;border-radius:4px;border:1px solid #1a2a44;font-weight:bold;">READY</div>';
   h += '<button onclick="_tfFetchAll()" style="background:#ff880022;border:1px solid #ff880066;border-radius:4px;padding:6px 14px;color:#ff8800;font-family:monospace;font-size:11px;font-weight:bold;cursor:pointer;">Fetch All</button>';
   h += '<button onclick="_tfExport()" style="background:#0a1a28;border:1px solid #1a3050;border-radius:4px;padding:6px 14px;color:#5a8aaa;font-family:monospace;font-size:11px;cursor:pointer;">Export JSON</button>';
   h += '</div></div>';
 
   // Stats row
-  h += '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:14px;">';
+  h += '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:14px;">';
   var statDefs = [
     { id: 'tf-total', label: 'TOTAL', color: '#00aaff' },
     { id: 'tf-kev', label: 'CISA KEV', color: '#ff4444' },
-    { id: 'tf-ioc', label: 'IOCs', color: '#ff8800' },
-    { id: 'tf-c2', label: 'C2 SERVERS', color: '#aa44ff' },
-    { id: 'tf-malurl', label: 'MAL URLS', color: '#ff00aa' },
-    { id: 'tf-ransom', label: 'RANSOM', color: '#ff2222' },
+    { id: 'tf-ransom', label: 'RANSOM VICTIMS', color: '#ff2222' },
+    { id: 'tf-cve', label: 'NEW CVES', color: '#00ddff' },
     { id: 'tf-critical', label: 'CRITICAL', color: '#ff0000' }
   ];
   for (var si = 0; si < statDefs.length; si++) {
@@ -226,33 +286,44 @@ export function renderThreatFeedAggregator(container) {
 
   // Source filters
   h += '<div style="display:flex;gap:4px;margin-bottom:12px;flex-wrap:wrap;">';
-  h += '<button onclick="_tfSetFilter(\'all\')" style="background:' + (_tfFilter === 'all' ? '#00aaff22' : '#0a0e1a') + ';border:1px solid ' + (_tfFilter === 'all' ? '#00aaff66' : '#1a2a44') + ';border-radius:4px;padding:4px 10px;color:' + (_tfFilter === 'all' ? '#00ddff' : '#4a6a8a') + ';font-family:monospace;font-size:10px;cursor:pointer;">ALL</button>';
+  h += '<button onclick="_tfSetFilter(\'all\')" id="tf-filter-all" style="background:#00aaff22;border:1px solid #00aaff66;border-radius:4px;padding:4px 10px;color:#00ddff;font-family:monospace;font-size:10px;cursor:pointer;">ALL</button>';
   for (var fi = 0; fi < _tfSources.length; fi++) {
     var fs = _tfSources[fi];
-    var isActive = _tfFilter === fs.id;
-    h += '<button onclick="_tfSetFilter(\'' + fs.id + '\')" style="background:' + (isActive ? fs.color + '22' : '#0a0e1a') + ';border:1px solid ' + (isActive ? fs.color + '66' : '#1a2a44') + ';border-radius:4px;padding:4px 10px;color:' + (isActive ? fs.color : '#4a6a8a') + ';font-family:monospace;font-size:10px;cursor:pointer;">' + esc(fs.name) + '</button>';
+    h += '<button onclick="_tfSetFilter(\'' + fs.id + '\')" id="tf-filter-' + fs.id + '" style="background:#0a0e1a;border:1px solid #1a2a44;border-radius:4px;padding:4px 10px;color:#4a6a8a;font-family:monospace;font-size:10px;cursor:pointer;">' + esc(fs.name) + '</button>';
   }
   h += '</div>';
 
   // Feed area
   h += '<div id="tf-feed" style="background:#080c14;border:1px solid #1a2a44;border-radius:8px;max-height:600px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#1a3050 transparent;">';
-  h += '<div style="color:#4a6a8a;font-family:monospace;font-size:11px;text-align:center;padding:40px;">Click FETCH ALL to load threat intelligence from all sources.</div>';
+  h += '<div style="color:#4a6a8a;font-family:monospace;font-size:11px;text-align:center;padding:40px;">Loading live threat intelligence&hellip;</div>';
   h += '</div>';
+
+  h += '<div style="color:#3a5a7a;font-family:monospace;font-size:9px;margin-top:8px;line-height:1.6;">Sources: CISA Known Exploited Vulnerabilities (cisa.gov), ransomware.live recent victims, NIST NVD recently published CVEs. Fetched live through the Darknode proxy; timestamps are from the sources.</div>';
 
   h += '</div>';
 
   container.innerHTML = h;
+
+  // Auto-load on open.
+  _tfFetchAll();
 };
+
+function _tfUpdateFilterButtons() {
+  var all = document.getElementById('tf-filter-all');
+  var setBtn = function(el, active, color) {
+    if (!el) return;
+    el.style.background = active ? color + '22' : '#0a0e1a';
+    el.style.borderColor = active ? color + '66' : '#1a2a44';
+    el.style.color = active ? color : '#4a6a8a';
+  };
+  setBtn(all, _tfFilter === 'all', '#00aaff');
+  _tfSources.forEach(function(s) { setBtn(document.getElementById('tf-filter-' + s.id), _tfFilter === s.id, s.color); });
+}
 
 window._tfSetFilter = function(f) {
   _tfFilter = f;
+  _tfUpdateFilterButtons();
   _tfRenderFeed();
-  // Re-render to update button active states
-  var container = document.getElementById('tf-feed');
-  if (container && container.parentNode) {
-    var parent = container.parentNode;
-    // Just re-render the feed, don't re-render the whole UI
-  }
 };
 
 window._tfFetchAll = _tfFetchAll;
@@ -260,10 +331,17 @@ window._tfFetchAll = _tfFetchAll;
 window._tfExport = function() {
   var exportData = {
     exported: new Date().toISOString(),
+    fetchedAt: _tfFetchedAt ? _tfFetchedAt.toISOString() : null,
+    sources: _tfSources.map(function(s) { return { id: s.id, name: s.name, source: s.src }; }),
+    errors: _tfErrors,
     totalItems: _tfData.length,
-    items: _tfData.map(function(d) { return { source: d.source, title: d.title, severity: d.severity, time: d.time, tags: d.tags }; })
+    items: _tfData.map(function(d) { return { source: d.source, title: d.title, subtitle: d.subtitle, severity: d.severity, time: d.time, tags: d.tags }; })
   };
   _tfCopyToClipboard(JSON.stringify(exportData, null, 2));
   var statusEl = document.getElementById('tf-status');
-  if (statusEl) { statusEl.textContent = 'COPIED'; setTimeout(function() { statusEl.textContent = 'LIVE'; }, 2000); }
+  if (statusEl) {
+    var prev = statusEl.textContent;
+    statusEl.textContent = 'COPIED';
+    setTimeout(function() { statusEl.textContent = prev; }, 1500);
+  }
 };

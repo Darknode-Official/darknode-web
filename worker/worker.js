@@ -214,6 +214,62 @@ async function safeFetchUrl(rawUrl) {
   return { url: rawUrl, error: "too many redirects" };
 }
 
+// Generic SSRF-guarded fetch proxy for the browser tools (recon/OSINT/HTTP
+// inspection). Unlike safeFetchUrl (tuned for AI text enrichment) this preserves
+// the REAL response status + headers so tools like header-analyzer, http-probe
+// and tech-fingerprint can inspect them. Everything reaching here has already
+// cleared the origin allow-list and per-IP rate limit in the router.
+async function handleFetch(request) {
+  const u0 = new URL(request.url);
+  let target = u0.searchParams.get("url");
+  let raw = u0.searchParams.get("raw") === "1";
+  let follow = u0.searchParams.get("redirect") !== "manual";
+  let method = "GET";
+  if (request.method === "POST") {
+    try {
+      const b = await request.json();
+      if (b && b.url) target = b.url;
+      if (b && b.raw) raw = true;
+      if (b && b.redirect === "manual") follow = false;
+      if (b && b.method) method = String(b.method).toUpperCase();
+    } catch (_) {}
+  }
+  if (!target) return json({ error: "Missing url parameter" }, 400);
+  if (!["GET", "HEAD", "POST"].includes(method)) method = "GET";
+  let current = target;
+  const chain = [];
+  for (let hop = 0; hop < 5; hop++) {
+    let u; try { u = new URL(current); } catch (_) { return json({ error: "invalid URL" }, 400); }
+    if (!hostAllowed(u)) return json({ error: "blocked (non-public or reserved host)" }, 403);
+    const ctrl = new AbortController();
+    const to = setTimeout(() => ctrl.abort(), 10000);
+    let res;
+    try {
+      res = await fetch(u.href, { method, redirect: "manual", signal: ctrl.signal, headers: { "User-Agent": "DarknodeRecon/1.0 (+https://darknode.ai)", "Accept": "*/*" } });
+    } catch (e) { clearTimeout(to); return json({ error: String((e && e.message) || e) }, 502); }
+    clearTimeout(to);
+    const headers = {}; for (const [k, v] of res.headers) headers[k] = v;
+    if (res.status >= 300 && res.status < 400 && follow) {
+      const loc = res.headers.get("location");
+      if (loc) { chain.push({ url: u.href, status: res.status, location: loc }); try { current = new URL(loc, u.href).href; continue; } catch (_) {} }
+    }
+    const ct = (res.headers.get("content-type") || "").toLowerCase();
+    let body = "", bytes = 0, truncated = false;
+    try {
+      const reader = res.body && res.body.getReader(); const dec = new TextDecoder();
+      if (reader) for (;;) {
+        const { done, value } = await reader.read(); if (done) break;
+        bytes += value.length; body += dec.decode(value, { stream: true });
+        if (bytes > 1_000_000) { truncated = true; try { await reader.cancel(); } catch (_) {} break; }
+      }
+    } catch (_) {}
+    const text = raw ? body.slice(0, 200_000)
+      : (/json|xml|javascript|text|csv/.test(ct) ? body.slice(0, 200_000) : htmlToText(body).slice(0, 200_000));
+    return json({ url: u.href, finalUrl: u.href, status: res.status, statusText: res.statusText || "", contentType: ct, headers, redirectChain: chain, body: text, bytes, truncated });
+  }
+  return json({ error: "too many redirects" }, 502);
+}
+
 async function enrichWithWeb(messages) {
   const arr = Array.isArray(messages) ? messages : [];
   let idx = -1;
@@ -438,6 +494,7 @@ export default {
     const ip = request.headers.get("cf-connecting-ip") || "unknown";
     if (rateLimited(ip)) return json({ error: "Rate limit exceeded — slow down and retry shortly." }, 429);
     const { pathname } = new URL(request.url);
+    if (pathname === "/api/fetch" && (request.method === "GET" || request.method === "POST")) return handleFetch(request);
     if (pathname === "/api/smart" && request.method === "POST") return handleSmart(request, env);
     if (pathname !== "/api/chat") return json({ error: "Not found" }, 404);
     if (request.method !== "POST") return json({ error: "POST only" }, 405);

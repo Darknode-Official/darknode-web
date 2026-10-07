@@ -1,3 +1,5 @@
+import { dnFetch, proxyConfigured } from '/js/net.js';
+
 const esc = (s) => String(s != null ? s : '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 const WORDLIST = [
@@ -187,14 +189,27 @@ function generatePermutations(domain) {
 const DOH_CONCURRENCY = 8;
 const MAX_CANDIDATES = 200;
 
+// crt.sh does not reliably send CORS headers, so a direct browser fetch is
+// normally blocked. Route through the Darknode proxy when available (real CT
+// data, no CORS), and fall back to a direct best-effort fetch otherwise.
+async function crtshFetch(domain) {
+  const url = 'https://crt.sh/?q=%25.' + encodeURIComponent(domain) + '&output=json';
+  if (proxyConfigured()) {
+    const r = await dnFetch(url, { raw: true, timeout: 15000 });
+    return JSON.parse(r.body);
+  }
+  const ctrl = new AbortController();
+  const to = setTimeout(function () { ctrl.abort(); }, 12000);
+  try {
+    const res = await fetch(url, { signal: ctrl.signal, headers: { Accept: 'application/json' } });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    return await res.json();
+  } finally { clearTimeout(to); }
+}
+
 async function crtshNames(domain) {
   try {
-    const ctrl = new AbortController();
-    const to = setTimeout(function () { ctrl.abort(); }, 12000);
-    const res = await fetch('https://crt.sh/?q=%25.' + encodeURIComponent(domain) + '&output=json', { signal: ctrl.signal, headers: { Accept: 'application/json' } });
-    clearTimeout(to);
-    if (!res.ok) return { names: [], wildcard: new Set(), ok: false };
-    const data = await res.json();
+    const data = await crtshFetch(domain);
     const set = new Set(), wildcard = new Set();
     for (const row of (Array.isArray(data) ? data : [])) {
       const raw = String(row.name_value || '').split(/\n+/).concat([String(row.common_name || '')]);

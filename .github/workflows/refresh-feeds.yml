@@ -1,0 +1,44 @@
+name: Refresh threat feeds
+
+# Keeps the "live" threat feeds under public/data/feeds/ current by pulling
+# their real, public, keyless upstreams and committing any changes.
+on:
+  schedule:
+    # Daily at 05:20 UTC.
+    - cron: "20 5 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh-feeds
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Refresh feeds
+        run: node scripts/refresh-feeds.mjs
+
+      - name: Commit refreshed feeds
+        run: |
+          set -euo pipefail
+          git config user.name "Darknode-Official"
+          git config user.email "git@darknode.ai"
+          if git diff --quiet -- public/data/feeds; then
+            echo "No feed changes to commit."
+            exit 0
+          fi
+          git add public/data/feeds
+          git commit --no-verify -m "chore(feeds): refresh live threat feeds"
+          git push

@@ -1,4 +1,5 @@
 import { esc } from '/js/shared.js';
+import { dnFetch, proxyConfigured } from '/js/net.js';
 
 // Real subdomain discovery — no fabricated data.
 //   * Passive:  crt.sh certificate-transparency logs (every name a CA ever signed).
@@ -26,14 +27,27 @@ const DOH_CONCURRENCY = 8;
 
 // Passive discovery from certificate transparency. Best-effort: resolves to [] if
 // crt.sh is unreachable or blocks CORS, and the caller falls back to the wordlist.
+// crt.sh does not reliably send CORS headers, so a direct browser fetch is
+// normally blocked. Route through the Darknode proxy when available (real CT
+// data, no CORS), and fall back to a direct best-effort fetch otherwise.
+async function crtshFetch(domain) {
+  const url = 'https://crt.sh/?q=%25.' + encodeURIComponent(domain) + '&output=json';
+  if (proxyConfigured()) {
+    const r = await dnFetch(url, { raw: true, timeout: 15000 });
+    return JSON.parse(r.body);
+  }
+  const ctrl = new AbortController();
+  const to = setTimeout(function () { ctrl.abort(); }, 12000);
+  try {
+    const res = await fetch(url, { signal: ctrl.signal, headers: { Accept: 'application/json' } });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    return await res.json();
+  } finally { clearTimeout(to); }
+}
+
 async function crtshNames(domain) {
   try {
-    const ctrl = new AbortController();
-    const to = setTimeout(function () { ctrl.abort(); }, 12000);
-    const res = await fetch('https://crt.sh/?q=%25.' + encodeURIComponent(domain) + '&output=json', { signal: ctrl.signal, headers: { Accept: 'application/json' } });
-    clearTimeout(to);
-    if (!res.ok) return { names: [], wildcard: new Set(), ok: false };
-    const data = await res.json();
+    const data = await crtshFetch(domain);
     const set = new Set(), wildcard = new Set();
     for (const row of (Array.isArray(data) ? data : [])) {
       const raw = String(row.name_value || '').split(/\n+/).concat([String(row.common_name || '')]);

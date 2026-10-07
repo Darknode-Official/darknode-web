@@ -13,7 +13,7 @@
 //   4. Paste all four values below. Until then, the site falls back to Firebase's
 //      built-in email-verification link and skips login alerts.
 const EMAILJS = {
-  publicKey: "YOUR_PUBLIC_KEY",
+  publicKey: "wydk8Uuzp3W0WhbZj",
   serviceId: "YOUR_SERVICE_ID",
   codeTemplate: "YOUR_CODE_TEMPLATE_ID",
   alertTemplate: "YOUR_ALERT_TEMPLATE_ID",

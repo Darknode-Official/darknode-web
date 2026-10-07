@@ -1,6 +1,8 @@
 // OSINT Dashboard — research organizer, username checker, Google dork builder, tool directory
+import { dnFetch, dnFetchJSON, proxyConfigured } from "/js/net.js";
 const esc = (s) => String(s != null ? s : "").replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+function osToast(msg, type) { try { (window.showToast || function () {})(msg, type || "info"); } catch (_) {} }
 
 // ── Platform Database for Username Checking (200+) ──
 const PLATFORMS = {
@@ -600,15 +602,141 @@ function renderEmail(el) {
 }
 
 // ── Domain Intel Tab ──
+// Runs REAL passive lookups through the Darknode SSRF-guarded proxy:
+//   crt.sh (subdomains) · Google DoH (DNS) · rdap.org (registration) · HTTP headers.
+// No fabricated/sample data — each section shows real upstream results or an honest error.
 function renderDomain(el) {
   el.innerHTML =
     '<h2 class="pg-h2">Domain Intelligence</h2>' +
-    '<p class="muted" style="margin-bottom:16px">WHOIS, DNS, and infrastructure analysis techniques.</p>' +
-    '<div class="arse-card" style="cursor:default;margin-bottom:12px"><div class="an">WHOIS Data</div><div class="ad" style="font-size:.82rem;margin-top:6px">Key fields: Registrar, creation/expiry dates, name servers, registrant name/org/email (often privacy-protected). Historical WHOIS via SecurityTrails, DomainTools, or Wayback Machine WHOIS. <code>whois domain.com</code></div></div>' +
-    '<div class="arse-card" style="cursor:default;margin-bottom:12px"><div class="an">DNS Record Types</div><div class="ad" style="font-size:.82rem;margin-top:6px"><strong>A</strong> — IPv4 address<br><strong>AAAA</strong> — IPv6 address<br><strong>MX</strong> — Mail servers (reveals email provider)<br><strong>NS</strong> — Name servers (reveals DNS provider)<br><strong>TXT</strong> — SPF, DKIM, DMARC, domain verification tokens<br><strong>CNAME</strong> — Aliases (may reveal CDN/hosting)<br><strong>SOA</strong> — Zone authority and admin email<br><strong>SRV</strong> — Service records (may reveal internal services)<br><strong>CAA</strong> — Certificate authority authorization</div></div>' +
-    '<div class="arse-card" style="cursor:default;margin-bottom:12px"><div class="an">Certificate Transparency</div><div class="ad" style="font-size:.82rem;margin-top:6px">CT logs record every SSL certificate issued. Use <a href="https://crt.sh" target="_blank" rel="noopener" style="color:var(--acc)">crt.sh</a> to find subdomains: <code>%.domain.com</code> query reveals all certificates issued for subdomains. Also check <a href="https://transparencyreport.google.com/https/certificates" target="_blank" rel="noopener" style="color:var(--acc)">Google CT Report</a>.</div></div>' +
-    '<div class="arse-card" style="cursor:default;margin-bottom:12px"><div class="an">Subdomain Enumeration</div><div class="ad" style="font-size:.82rem;margin-top:6px">Methods: DNS brute force (use wordlist), CT log search, search engine dorks (site:*.domain.com), reverse IP lookup, ASN enumeration. Tools: Subfinder, Amass, Sublist3r, dnsx, MassDNS, Altdns.</div></div>' +
-    '<div class="arse-card" style="cursor:default;margin-bottom:12px"><div class="an">Reverse IP Lookup</div><div class="ad" style="font-size:.82rem;margin-top:6px">Find other domains hosted on the same IP. This can reveal related organizations or shared hosting. Tools: ViewDNS reverse IP, Bing "ip:x.x.x.x", SecurityTrails, HackerTarget.</div></div>';
+    '<p class="muted" style="margin-bottom:16px">Live passive recon on a domain — Certificate Transparency subdomains, DNS records, registration (RDAP) and HTTP response headers. All requests run through the Darknode proxy; results are real upstream data.</p>' +
+    '<div style="display:flex;gap:8px;margin-bottom:16px">' +
+      '<input id="di-domain" placeholder="Target domain (e.g., example.com)" style="flex:1;padding:8px 12px;background:var(--bg);border:1px solid var(--line);color:var(--txt);border-radius:2px;font-size:1rem">' +
+      '<button class="btn" id="di-run" style="padding:8px 20px">Run Lookups</button>' +
+    '</div>' +
+    '<div id="di-results"></div>';
+
+  var results = el.querySelector("#di-results");
+
+  function card(title, bodyHtml, note) {
+    return '<div class="arse-card" style="cursor:default;margin-bottom:12px">' +
+      '<div class="an">' + esc(title) + (note ? ' <span class="muted" style="font-size:.72rem;font-weight:400">' + esc(note) + '</span>' : '') + '</div>' +
+      '<div class="ad" style="font-size:.82rem;margin-top:6px">' + bodyHtml + '</div></div>';
+  }
+  function errLine(e) {
+    return '<span style="color:#f44336">Lookup failed: ' + esc((e && e.message) ? e.message : String(e)) + '</span>';
+  }
+  function cleanDomain(v) {
+    return String(v || "").trim().toLowerCase()
+      .replace(/^[a-z]+:\/\//, "").replace(/\/.*$/, "").replace(/^www\./, "").replace(/[^a-z0-9.\-]/g, "");
+  }
+
+  async function lookupSubdomains(domain) {
+    var host = results.querySelector("#di-subs");
+    try {
+      var data = await dnFetchJSON("https://crt.sh/?q=%25." + encodeURIComponent(domain) + "&output=json");
+      if (!Array.isArray(data)) throw new Error("Unexpected response from crt.sh");
+      var set = {};
+      data.forEach(function (row) {
+        String(row.name_value || "").split("\n").forEach(function (n) {
+          n = n.trim().toLowerCase().replace(/^\*\./, "");
+          if (n && n.indexOf(domain) !== -1) set[n] = 1;
+        });
+      });
+      var subs = Object.keys(set).sort();
+      if (!subs.length) { host.innerHTML = '<span class="muted">No certificates found in CT logs for this domain.</span>'; return; }
+      host.innerHTML = '<div style="margin-bottom:6px;color:var(--mut)">' + subs.length + ' unique names found in Certificate Transparency logs (crt.sh):</div>' +
+        '<div style="max-height:260px;overflow-y:auto;font-family:var(--mono,monospace);font-size:.78rem;line-height:1.6">' +
+        subs.map(function (s) { return esc(s); }).join("<br>") + '</div>';
+    } catch (e) { host.innerHTML = errLine(e); }
+  }
+
+  async function lookupDNS(domain) {
+    var host = results.querySelector("#di-dns");
+    var types = ["A", "AAAA", "MX", "NS", "TXT"];
+    try {
+      var out = "";
+      for (var i = 0; i < types.length; i++) {
+        var t = types[i];
+        try {
+          var d = await dnFetchJSON("https://dns.google/resolve?name=" + encodeURIComponent(domain) + "&type=" + t);
+          var ans = (d && d.Answer) ? d.Answer : [];
+          var vals = ans.map(function (a) { return a.data; }).filter(Boolean);
+          out += '<div style="padding:3px 0;border-bottom:1px solid var(--line)"><strong style="display:inline-block;min-width:54px">' + t + '</strong> ' +
+            (vals.length ? vals.map(function (v) { return '<code>' + esc(v) + '</code>'; }).join(" ") : '<span class="muted">no records</span>') + '</div>';
+        } catch (inner) {
+          out += '<div style="padding:3px 0;border-bottom:1px solid var(--line)"><strong style="display:inline-block;min-width:54px">' + t + '</strong> ' + errLine(inner) + '</div>';
+        }
+      }
+      host.innerHTML = '<div style="color:var(--mut);margin-bottom:6px">Resolved via Google DNS-over-HTTPS (dns.google):</div>' + out;
+    } catch (e) { host.innerHTML = errLine(e); }
+  }
+
+  async function lookupRDAP(domain) {
+    var host = results.querySelector("#di-rdap");
+    try {
+      var d = await dnFetchJSON("https://rdap.org/domain/" + encodeURIComponent(domain));
+      var rows = [];
+      if (d.ldhName) rows.push(["Domain", d.ldhName]);
+      if (Array.isArray(d.status) && d.status.length) rows.push(["Status", d.status.join(", ")]);
+      (d.events || []).forEach(function (ev) { rows.push([(ev.eventAction || "event"), ev.eventDate || ""]); });
+      if (Array.isArray(d.nameservers) && d.nameservers.length) {
+        rows.push(["Name servers", d.nameservers.map(function (n) { return n.ldhName || ""; }).filter(Boolean).join(", ")]);
+      }
+      (d.entities || []).forEach(function (ent) {
+        var roles = (ent.roles || []).join("/");
+        var name = "";
+        try {
+          var vcard = ent.vcardArray && ent.vcardArray[1];
+          if (vcard) vcard.forEach(function (f) { if (f[0] === "fn") name = f[3]; });
+        } catch (_) {}
+        if (name || ent.handle) rows.push([roles || "entity", name || ent.handle]);
+      });
+      if (!rows.length) { host.innerHTML = '<span class="muted">RDAP returned no structured fields for this domain.</span>'; return; }
+      host.innerHTML = '<div style="color:var(--mut);margin-bottom:6px">Registration data via rdap.org:</div>' +
+        rows.map(function (r) {
+          return '<div style="padding:3px 0;border-bottom:1px solid var(--line)"><strong style="display:inline-block;min-width:130px;text-transform:capitalize">' + esc(r[0]) + '</strong> ' + esc(r[1]) + '</div>';
+        }).join("");
+    } catch (e) { host.innerHTML = errLine(e); }
+  }
+
+  async function lookupHeaders(domain) {
+    var host = results.querySelector("#di-headers");
+    try {
+      var r = await dnFetch("https://" + domain);
+      var hdrs = r.headers || {};
+      var keys = Object.keys(hdrs).sort();
+      var statusLine = '<div style="padding:3px 0;border-bottom:1px solid var(--line)"><strong style="display:inline-block;min-width:150px">HTTP status</strong> ' + esc(String(r.status)) + ' ' + esc(r.statusText || "") + '</div>';
+      if (r.finalUrl && r.finalUrl !== r.url) {
+        statusLine += '<div style="padding:3px 0;border-bottom:1px solid var(--line)"><strong style="display:inline-block;min-width:150px">Final URL</strong> ' + esc(r.finalUrl) + '</div>';
+      }
+      host.innerHTML = '<div style="color:var(--mut);margin-bottom:6px">Real HTTP response from https://' + esc(domain) + ' (via proxy):</div>' +
+        statusLine +
+        (keys.length ? keys.map(function (k) {
+          return '<div style="padding:3px 0;border-bottom:1px solid var(--line);font-size:.78rem"><strong style="display:inline-block;min-width:150px">' + esc(k) + '</strong> <code>' + esc(String(hdrs[k])) + '</code></div>';
+        }).join("") : '<span class="muted">No response headers returned.</span>');
+    } catch (e) { host.innerHTML = errLine(e); }
+  }
+
+  function run() {
+    var domain = cleanDomain(el.querySelector("#di-domain").value);
+    if (!domain || domain.indexOf(".") === -1) { osToast("Enter a valid domain, e.g. example.com", "error"); return; }
+    if (!proxyConfigured()) {
+      results.innerHTML = card("Live lookups unavailable", 'The Darknode proxy is not configured, so passive lookups cannot run from this browser. Configure <code>window.DARKNODE_PROXY_URL</code> to enable crt.sh, DoH, RDAP and header lookups.');
+      return;
+    }
+    results.innerHTML =
+      card("Subdomains (Certificate Transparency)", '<div id="di-subs"><span class="muted">Querying crt.sh…</span></div>', domain) +
+      card("DNS Records", '<div id="di-dns"><span class="muted">Resolving…</span></div>', domain) +
+      card("Registration (RDAP / WHOIS)", '<div id="di-rdap"><span class="muted">Querying rdap.org…</span></div>', domain) +
+      card("HTTP Response Headers", '<div id="di-headers"><span class="muted">Fetching https://' + esc(domain) + '…</span></div>');
+    lookupSubdomains(domain);
+    lookupDNS(domain);
+    lookupRDAP(domain);
+    lookupHeaders(domain);
+  }
+
+  el.querySelector("#di-run").onclick = run;
+  el.querySelector("#di-domain").onkeydown = function (e) { if (e.key === "Enter") run(); };
 }
 
 // ── Social Media Tab ──

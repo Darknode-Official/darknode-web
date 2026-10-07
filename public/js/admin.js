@@ -1,6 +1,7 @@
-// Owner-only admin console: live user management, an allow-list (with sign-in
-// enforcement), and site-wide announcements. All backed by Firestore.
-import { db } from "/js/firebase.js";
+// Owner-only admin console: live user management, a ban-list (the site is open
+// to everyone; only banned emails are blocked at sign-in), and site-wide
+// announcements. All backed by Firestore.
+import { db } from "/js/firebase.js?v=20261007a";
 
 // The super-admin is no longer a hardcoded email. The set-admin script stamps the
 // owner's own user doc with `admin: true` (alongside the Firebase custom claim),
@@ -20,10 +21,13 @@ const fmtDate = (ts) => {
 const WL_REF = () => doc(db, "settings", "whitelist");
 const ANN_REF = () => doc(db, "announcements", "current");
 
-// Read the whitelist doc; used by auth.js for sign-in enforcement too.
+// Read the access-control doc (stored at settings/whitelist for history). It now
+// carries a `banned` list; auth.js denies only those emails. Everyone else is
+// allowed. The legacy `emails`/`enforce` allow-list fields are left untouched
+// for back-compat but are no longer enforced.
 export async function getWhitelist() {
-  try { const s = await getDoc(WL_REF()); return s.exists() ? s.data() : { emails: [], enforce: false }; }
-  catch (_) { return { emails: [], enforce: false }; }
+  try { const s = await getDoc(WL_REF()); return s.exists() ? s.data() : { emails: [], enforce: false, banned: [] }; }
+  catch (_) { return { emails: [], enforce: false, banned: [] }; }
 }
 
 export async function renderAdmin(main, user) {
@@ -35,7 +39,7 @@ export async function renderAdmin(main, user) {
       <div class="stat"><div class="stat-n" id="stUsers">…</div><div class="stat-l">users</div></div>
       <div class="stat"><div class="stat-n" id="stNew">…</div><div class="stat-l">new this week</div></div>
       <div class="stat"><div class="stat-n" id="stActive">…</div><div class="stat-l">active today</div></div>
-      <div class="stat"><div class="stat-n" id="stWl">…</div><div class="stat-l">allow-listed</div></div>
+      <div class="stat"><div class="stat-n" id="stWl">…</div><div class="stat-l">banned</div></div>
       <div class="stat"><div class="stat-n" id="stAnn">…</div><div class="stat-l">announcement</div></div>
     </div>
 
@@ -108,17 +112,14 @@ export async function renderAdmin(main, user) {
       </div>
       <div class="adm-side">
         <div class="panel">
-          <div class="panel-h"><h2 class="pg-h2" style="margin:0">Allow-list</h2></div>
-          <label class="set-row" style="border:none;padding:10px 18px">
-            <span class="muted">Restrict sign-in to allow-listed emails</span>
-            <input type="checkbox" id="wlEnforce" style="width:18px;height:18px;accent-color:var(--acc)">
-          </label>
+          <div class="panel-h"><h2 class="pg-h2" style="margin:0">Banned emails</h2></div>
+          <p class="muted" style="font-size:.78rem;margin:2px 18px 8px">The site is open to everyone. Add an email here to block that account from signing in.</p>
           <div class="row" style="margin:6px 0 10px">
             <input class="tk-f" id="wlEmail" placeholder="name@example.com" type="email">
-            <button class="btn sm" id="wlAdd">Add</button>
+            <button class="btn danger sm" id="wlAdd">Ban</button>
           </div>
           <div class="wl-list" id="wlList"></div>
-          <p class="muted" style="font-size:.72rem;margin:10px 0 0">The owner account always has access.</p>
+          <p class="muted" style="font-size:.72rem;margin:10px 0 0">The owner account can never be banned.</p>
         </div>
 
         <div class="panel">
@@ -225,7 +226,7 @@ export async function renderAdmin(main, user) {
 
   const $ = (id) => main.querySelector(id);
   let users = [];
-  let wl = { emails: [], enforce: false };
+  let wl = { emails: [], enforce: false, banned: [] };
 
   // ---- users ----
   async function loadUsers() {
@@ -259,7 +260,7 @@ export async function renderAdmin(main, user) {
     if (!rows.length) { host.innerHTML = `<p class="muted">No matching users.</p>`; return; }
     host.innerHTML = rows.map((u) => {
       const isOwner = isOwnerRow(u);
-      const listed = wl.emails.includes((u.email || "").toLowerCase());
+      const banned = (wl.banned || []).includes((u.email || "").toLowerCase());
       const prov = u.provider || "email";
       const provBadge = prov.includes("google") ? '<span class="ur-prov google">Google</span>'
         : prov.includes("github") ? '<span class="ur-prov github">GitHub</span>'
@@ -270,13 +271,13 @@ export async function renderAdmin(main, user) {
       return `<div class="user-row" data-uid="${esc(u.uid)}">
         ${avatar}
         <div class="ur-main">
-          <div class="ur-name">${esc(u.name || "(no name)")} ${provBadge}${isOwner ? '<span class="owner-badge">OWNER</span>' : ""}${listed ? '<span class="chip">allow-listed</span>' : ""}</div>
+          <div class="ur-name">${esc(u.name || "(no name)")} ${provBadge}${isOwner ? '<span class="owner-badge">OWNER</span>' : ""}${banned ? '<span class="chip chip-danger">banned</span>' : ""}</div>
           <div class="ur-mail muted">${esc(u.email || u.uid)}</div>
           <div class="ur-meta muted">last seen ${esc(fmtDate(u.lastSeen))}${u.createdAt ? " · joined " + esc(fmtDate(u.createdAt)) : ""}</div>
         </div>
         <div class="ur-actions">
           <button class="btn ghost sm ur-detail-btn" data-detail="${esc(u.uid)}">Details</button>
-          <button class="btn ghost sm" data-wl="${esc(u.email || "")}">${listed ? "Un-list" : "Allow-list"}</button>
+          ${isOwner ? "" : `<button class="btn ${banned ? "" : "ghost "}sm" data-wl="${esc(u.email || "")}">${banned ? "Unban" : "Ban"}</button>`}
           ${isOwner ? "" : `<button class="btn danger sm" data-del="${esc(u.uid)}" data-mail="${esc(u.email || "")}">Remove</button>`}
         </div>
       </div>
@@ -385,37 +386,42 @@ export async function renderAdmin(main, user) {
     }
   };
 
-  // ---- whitelist ----
+  // ---- ban-list (site is open to all; only these emails are blocked) ----
+  const notify = (m, t) => { try { (window.showToast || (() => {}))(m, t || "info"); } catch (_) {} };
   async function loadWl() {
     wl = await getWhitelist();
-    wl.emails = (wl.emails || []).map((x) => x.toLowerCase());
-    $("#wlEnforce").checked = !!wl.enforce;
-    $("#stWl").textContent = wl.emails.length;
+    wl.banned = (wl.banned || []).map((x) => String(x).toLowerCase());
+    $("#stWl").textContent = wl.banned.length;
     drawWl();
   }
   function drawWl() {
     const host = $("#wlList");
-    host.innerHTML = wl.emails.length
-      ? wl.emails.map((em) => `<div class="wl-item"><span class="mono">${esc(em)}</span><button class="wl-x" data-rm="${esc(em)}" title="remove">&times;</button></div>`).join("")
-      : `<p class="muted" style="font-size:.8rem">No emails yet. Add one above.</p>`;
+    host.innerHTML = wl.banned.length
+      ? wl.banned.map((em) => `<div class="wl-item"><span class="mono">${esc(em)}</span><button class="wl-x" data-rm="${esc(em)}" title="unban">&times;</button></div>`).join("")
+      : `<p class="muted" style="font-size:.8rem">No one is banned. Everyone can sign in.</p>`;
   }
   async function saveWl() {
     try {
-      await setDoc(WL_REF(), { emails: wl.emails, enforce: $("#wlEnforce").checked, updatedBy: user.email, updatedAt: serverTimestamp() }, { merge: true });
-      $("#stWl").textContent = wl.emails.length;
+      await setDoc(WL_REF(), { banned: wl.banned, enforce: false, updatedBy: user.email, updatedAt: serverTimestamp() }, { merge: true });
+      $("#stWl").textContent = wl.banned.length;
       return true;
-    } catch (e) { alert("Couldn't save allow-list: " + e.message); return false; }
+    } catch (e) { notify("Couldn't save ban-list: " + e.message, "error"); return false; }
   }
   async function toggleWl(email) {
     email = (email || "").toLowerCase().trim(); if (!email) return;
-    if (wl.emails.includes(email)) wl.emails = wl.emails.filter((x) => x !== email);
-    else wl.emails.push(email);
-    if (await saveWl()) { drawWl(); drawUsers(); }
+    // Never let the owner ban themselves or another owner out of the console.
+    const target = users.find((u) => (u.email || "").toLowerCase() === email);
+    if (!wl.banned.includes(email) && (email === (user.email || "").toLowerCase() || isOwnerRow(target))) {
+      notify("You can't ban an owner account.", "error"); return;
+    }
+    const banning = !wl.banned.includes(email);
+    if (banning) wl.banned.push(email);
+    else wl.banned = wl.banned.filter((x) => x !== email);
+    if (await saveWl()) { drawWl(); drawUsers(); notify(banning ? `Banned ${email}` : `Unbanned ${email}`, banning ? "warn" : "success"); }
   }
   $("#wlAdd").onclick = async () => { const v = $("#wlEmail").value.trim(); if (v) { await toggleWl(v); $("#wlEmail").value = ""; } };
   $("#wlEmail").onkeydown = (e) => { if (e.key === "Enter") $("#wlAdd").click(); };
   $("#wlList").onclick = (e) => { const b = e.target.closest("[data-rm]"); if (b) toggleWl(b.dataset.rm); };
-  $("#wlEnforce").onchange = saveWl;
 
   // ---- announcement ----
   let annType = "info";
@@ -467,7 +473,7 @@ export async function renderAdmin(main, user) {
   $("#copyOwnerless").onclick = () => { const l = users.filter((u) => !isOwnerRow(u)); navigator.clipboard?.writeText(emailsOf(l)); dmsg(l.filter((u) => u.email).length + " emails copied"); };
   $("#expCsv").onclick = () => {
     const esc2 = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
-    const rows = [["email", "name", "uid", "lastSeen", "allow-listed"]].concat(users.map((u) => [u.email, u.name, u.uid, fmtDate(u.lastSeen), wl.emails.includes((u.email || "").toLowerCase()) ? "yes" : "no"]));
+    const rows = [["email", "name", "uid", "lastSeen", "banned"]].concat(users.map((u) => [u.email, u.name, u.uid, fmtDate(u.lastSeen), (wl.banned || []).includes((u.email || "").toLowerCase()) ? "yes" : "no"]));
     const csv = rows.map((r) => r.map(esc2).join(",")).join("\n");
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
     const a = document.createElement("a"); a.href = url; a.download = "darknode-users.csv"; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);

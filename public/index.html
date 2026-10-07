@@ -66,18 +66,23 @@
   background:linear-gradient(135deg,var(--acc,#00d4ff),var(--acc-2,#7c5cff));-webkit-background-clip:text;background-clip:text;color:transparent;
   filter:drop-shadow(0 0 24px color-mix(in srgb,var(--acc,#00d4ff) 55%,transparent));animation:bootPulse 2.4s ease-in-out infinite}</style>
   <script>!function(){var b='pro';try{b=localStorage.getItem('sw_boot_theme')||'pro'}catch(_){}document.documentElement.setAttribute('data-boot',b);var s='pro';try{s=localStorage.getItem('sw_style')||'pro'}catch(_){}if(s==='command'){s='pro';try{localStorage.setItem('sw_style','pro')}catch(_){}}document.documentElement.setAttribute('data-style',s)}()</script>
-  <link rel="modulepreload" href="/js/auth.js?v=20261006a">
-  <link rel="modulepreload" href="/js/firebase.js">
+  <link rel="modulepreload" href="/js/auth.js?v=20261007a">
+  <link rel="modulepreload" href="/js/firebase.js?v=20261007a">
   <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/12.17.0/firebase-app.js" crossorigin>
   <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/12.17.0/firebase-auth.js" crossorigin>
   <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js" crossorigin>
   <link rel="stylesheet" href="/css/styles.css?v=20261003a" media="all" fetchpriority="high">
-  <link rel="stylesheet" href="/css/pro-theme.css?v=20260928m" media="all">
+  <link rel="stylesheet" href="/css/pro-theme.css?v=20261007a" media="all">
   <link rel="stylesheet" href="/css/buttons.css?v=20260928m" media="all">
   <link rel="stylesheet" href="/css/console.css?v=20261006a" media="all">
   <link rel="stylesheet" href="/css/aws.css?v=20261006a" media="all">
   <link rel="stylesheet" href="/css/aws-landing.css?v=20260929y" media="all">
-  <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Darknode","applicationCategory":"EducationalApplication","applicationSubCategory":"Cybersecurity Education","operatingSystem":"Web","description":"Cybersecurity education platform with interactive labs, AI tutoring, and study tools for students and professionals.","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"educationalUse":"Practice","learningResourceType":"Interactive Resource","audience":{"@type":"EducationalAudience","educationalRole":"student"}}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@graph":[
+  {"@type":"Organization","@id":"https://darknode.ai/#org","name":"Darknode","alternateName":"Darknode-Official","url":"https://darknode.ai/","logo":"https://darknode.ai/logo-dark.svg","description":"Darknode is a cybersecurity platform with 1,000+ interactive security tools, practice labs, AI tutoring, and the Nexus AI coding agent.","sameAs":["https://github.com/Darknode-Official"]},
+  {"@type":"WebSite","@id":"https://darknode.ai/#website","url":"https://darknode.ai/","name":"Darknode","publisher":{"@id":"https://darknode.ai/#org"}},
+  {"@type":"WebApplication","@id":"https://darknode.ai/#app","name":"Darknode","url":"https://darknode.ai/","applicationCategory":"SecurityApplication","applicationSubCategory":"Cybersecurity Platform","operatingSystem":"Web","description":"Cybersecurity platform with 1,000+ security tools, interactive practice labs, threat intelligence, and AI tutoring. Runs in your browser, private by default.","featureList":"Security tools, CTF practice labs, threat intelligence, OSINT, forensics, vulnerability management, AI security assistant","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"publisher":{"@id":"https://darknode.ai/#org"}},
+  {"@type":"SoftwareApplication","name":"Nexus","alternateName":"Darknode Nexus","url":"https://darknode.ai/","applicationCategory":"DeveloperApplication","operatingSystem":"Windows, macOS, Linux","description":"Nexus is Darknode's AI coding agent — a fast, private, terminal-native assistant for reading, writing, and refactoring code with real tools.","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"publisher":{"@id":"https://darknode.ai/#org"}}
+  ]}</script>
 </head>
 <body>
   <script>!function(){var a=["darknode.ai","www.darknode.ai","darknode-official.github.io","darknode-web-e1s2.onrender.com","localhost","127.0.0.1"],h=location.hostname;if(!a.some(function(d){return h===d||h.endsWith("."+d)})){document.documentElement.innerHTML="<body style='background:#0a0e16;color:#f44;font:600 1.2rem/2 system-ui;display:flex;align-items:center;justify-content:center;height:100vh;text-align:center;padding:2rem'><div><h1>Unauthorized</h1><p>This software is licensed exclusively to <b>darknode.ai</b>.<br>Redistribution and rehosting are prohibited.<br><br><a href=\x22https://darknode.ai\x22 style=\x22color:#00d4ff\x22>Visit the official site</a></p></div></body>";throw new Error("Unauthorized domain")}}()</script>
@@ -194,7 +199,7 @@
 
   <script>window.DARKNODE_PROXY_URL="https://darknode-proxy.darknode-ai.workers.dev/api/chat";</script>
   <script src="/js/user-keys.js?v=20261003a"></script>
-  <script type="module" src="/js/auth.js?v=20261006a"></script>
+  <script type="module" src="/js/auth.js?v=20261007a"></script>
   <script>if('serviceWorker' in navigator)addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})})</script>
   <!-- The Botpress support chat and its bridge are injected by auth.js after boot, on idle
        (loadSupportChat), so the third-party script can never delay the app. -->

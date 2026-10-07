@@ -7843,10 +7843,22 @@ html[data-style=dark].crt body::after {
 /* --- B5. Modal / Overlay Backdrop --- */
 [data-style=pro] .tk-modal,
 [data-style=pro] .cmdk,
+/* The walkthrough's dim/spotlight comes from .tour-hole's huge box-shadow, which
+   leaves a clear hole over the highlighted element. Putting a background or a
+   backdrop-filter ON the full-viewport overlay blurs the WHOLE page (the target
+   included) and can't be cut through — that's why the tour showed only the popup
+   with nothing highlighted. Keep the overlay transparent so the spotlight works. */
 [data-style=pro] .tour-overlay {
-  background: rgba(15, 23, 42, .45) !important;
-  backdrop-filter: blur(8px) saturate(1.2) !important;
-  -webkit-backdrop-filter: blur(8px) saturate(1.2) !important;
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+/* Brighten the callout for the light theme so it reads on the dimmed page. */
+[data-style=pro] .tour-callout {
+  background: #fff !important;
+  border: 1px solid var(--acc, #2563eb) !important;
+  color: #0f172a !important;
+  box-shadow: 0 25px 60px -12px rgba(0, 0, 0, .35) !important;
 }
 [data-style=pro] .tk-modal-box,
 [data-style=pro] .cmdk-box {
