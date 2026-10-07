@@ -12008,7 +12008,7 @@ _gwInitGlobe = function() {
 
       var _initProvider = new Cesium.UrlTemplateImageryProvider({
         url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-        maximumLevel: 19,
+        maximumLevel: 22,
         minimumLevel: 0,
         tileWidth: 256,
         tileHeight: 256,
@@ -12016,36 +12016,83 @@ _gwInitGlobe = function() {
         hasAlphaChannel: false
       });
       var _initLyr = _gwViewer.imageryLayers.addImageryProvider(_initProvider);
-      _initLyr.brightness = 0.75;
-      _initLyr.saturation = 0.85;
-      _initLyr.contrast = 1.15;
+      // Natural, crisp satellite look (previous values washed the globe out and made it
+      // read like a flat image). Slight saturation/contrast lift keeps it vivid without clipping.
+      _initLyr.brightness = 1.0;
+      _initLyr.saturation = 1.12;
+      _initLyr.contrast = 1.06;
+      _initLyr.gamma = 1.0;
       _initProvider.errorEvent.addEventListener(function(err) {
         if (err && err.timesRetried < 3) { err.retry = true; }
       });
 
-      _gwViewer.scene.backgroundColor = Cesium.Color.fromCssColorString('#000206');
-      if (_gwViewer.scene.skyBox) _gwViewer.scene.skyBox.show = false;
-      _gwViewer.scene.sun.show = false;
-      _gwViewer.scene.moon.show = false;
+      // Real 3D terrain from Esri's free WorldElevation3D service (no ion token needed).
+      // This is what turns the flat "image" sphere into Google-Earth-style relief with
+      // mountains, canyons and coastlines you can fly through.
+      try {
+        if (Cesium.ArcGISTiledElevationTerrainProvider && Cesium.ArcGISTiledElevationTerrainProvider.fromUrl) {
+          Cesium.ArcGISTiledElevationTerrainProvider.fromUrl(
+            'https://elevation3d.arcgis.com/arcgis/rest/services/WorldElevation3D/Terrain3D/ImageServer'
+          ).then(function(tp) {
+            if (_gwViewer && !_gwViewer.isDestroyed()) {
+              _gwViewer.terrainProvider = tp;
+              try { _gwViewer.scene.globe.depthTestAgainstTerrain = true; } catch (_) {}
+            }
+          }).catch(function() { /* keep ellipsoid fallback */ });
+        }
+      } catch (_) {}
+
+      _gwViewer.scene.backgroundColor = Cesium.Color.fromCssColorString('#01030a');
+      // Stars, sun, moon and atmosphere — the cues that read as "a planet in space"
+      // rather than a pasted texture. All were disabled before.
+      if (_gwViewer.scene.skyBox) _gwViewer.scene.skyBox.show = true;
+      _gwViewer.scene.sun.show = true;
+      _gwViewer.scene.moon.show = true;
       if (_gwViewer.scene.skyAtmosphere) {
-        _gwViewer.scene.skyAtmosphere.show = false;
+        _gwViewer.scene.skyAtmosphere.show = true;
+        try {
+          _gwViewer.scene.skyAtmosphere.saturationShift = 0.1;
+          _gwViewer.scene.skyAtmosphere.brightnessShift = 0.05;
+        } catch (_) {}
       }
       if (_gwViewer.scene.globe) {
+        // Keep the whole surface lit (this is a threat map — every region must stay
+        // readable, so no hard day/night terminator), but let the atmosphere glow track
+        // the sun so the limb reads as a real planet rather than a flat texture.
         _gwViewer.scene.globe.enableLighting = false;
-        _gwViewer.scene.globe.baseColor = Cesium.Color.fromCssColorString('#1a3a5c');
-        _gwViewer.scene.globe.showGroundAtmosphere = false;
-        _gwViewer.scene.globe.tileCacheSize = 1000;
-        _gwViewer.scene.globe.maximumScreenSpaceError = 2;
+        _gwViewer.scene.globe.dynamicAtmosphereLighting = true;
+        _gwViewer.scene.globe.atmosphereLightIntensity = 10.0;
+        _gwViewer.scene.globe.baseColor = Cesium.Color.fromCssColorString('#0b2135');
+        _gwViewer.scene.globe.showGroundAtmosphere = true;
+        _gwViewer.scene.globe.tileCacheSize = 1500;
+        // Lower screen-space error = sharper tiles loaded closer in (crisper zoom).
+        _gwViewer.scene.globe.maximumScreenSpaceError = 1.5;
         _gwViewer.scene.globe.preloadSiblings = true;
         _gwViewer.scene.globe.preloadAncestors = true;
+        try { _gwViewer.scene.globe.terrainExaggeration = 1.0; } catch (_) {}
       }
       if (_gwViewer.scene) {
         _gwViewer.scene.logarithmicDepthBuffer = true;
         _gwViewer.scene.fxaa = true;
+        try { _gwViewer.scene.highDynamicRange = false; } catch (_) {}
+        // Soft distance fog toward the horizon for depth; HDR off keeps city lights honest.
+        try {
+          _gwViewer.scene.fog.enabled = true;
+          _gwViewer.scene.fog.density = 0.00012;
+        } catch (_) {}
+        // Render at the device pixel ratio so imagery is sharp on hi-dpi/retina displays.
+        try { _gwViewer.resolutionScale = Math.min(window.devicePixelRatio || 1, 2); } catch (_) {}
       }
-      _gwViewer.scene.screenSpaceCameraController.minimumZoomDistance = 120;
-      _gwViewer.scene.screenSpaceCameraController.enableCollisionDetection = false;
-      _gwViewer.scene.screenSpaceCameraController.maximumZoomDistance = 50000000;
+      // Let the camera descend almost to the surface for true close-up zoom, and disable
+      // the inertia that made panning feel "glitchy".
+      _gwViewer.scene.screenSpaceCameraController.minimumZoomDistance = 8;
+      _gwViewer.scene.screenSpaceCameraController.enableCollisionDetection = true;
+      _gwViewer.scene.screenSpaceCameraController.maximumZoomDistance = 55000000;
+      try {
+        _gwViewer.scene.screenSpaceCameraController.inertiaSpin = 0.0;
+        _gwViewer.scene.screenSpaceCameraController.inertiaTranslate = 0.0;
+        _gwViewer.scene.screenSpaceCameraController.inertiaZoom = 0.0;
+      } catch (_) {}
 
       if (loadingEl) loadingEl.style.display = 'none';
 
