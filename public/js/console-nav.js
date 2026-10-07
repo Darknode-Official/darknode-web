@@ -43,7 +43,7 @@ for (const [cat, meta] of Object.entries(TOOL_CATS)) {
   if (items.length) NAV.push(G(`tg-${cat}`, meta.name, meta.color, items));
 }
 
-// Section directory for the support-chat bridge (botpress-bridge.js), so "open citadel"
+// Section directory for the Darknode Assistant (darknode-chat.js), so "open citadel"
 // typed in the chat resolves to a real section. Admin is deliberately left out.
 try { window.dnSections = NAV.flatMap((g) => g.items.map((i) => ({ sec: i.sec, label: i.label, group: g.name }))); } catch (_) {}
 

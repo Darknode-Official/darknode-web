@@ -294,7 +294,7 @@ export async function renderAdmin(main, user) {
           <div class="urd-item"><span class="muted">Learn XP</span><span>${u.learnXP || 0}</span></div>
           <div class="urd-item"><span class="muted">Topics completed</span><span>${(u.learnCompleted || []).length}</span></div>
           <div class="urd-item"><span class="muted">TOS accepted</span><span>${u.tosAccepted ? "Yes" : "No"}</span></div>
-          <div class="urd-item"><span class="muted">Allow-listed</span><span>${listed ? "Yes" : "No"}</span></div>
+          <div class="urd-item"><span class="muted">Access</span><span>${banned ? "Banned" : "Allowed"}</span></div>
         </div>
         ${(u.logins || []).length ? `<div style="margin-top:8px"><span class="muted" style="font-size:.72rem">Recent sign-ins:</span><div class="urd-logins">${(u.logins || []).slice(-5).reverse().map(l => `<div class="urd-login"><span>${esc(l.device || "unknown")}</span><span class="muted">${esc(fmtDate(l.ts))}</span></div>`).join("")}</div></div>` : ""}
       </div>`;

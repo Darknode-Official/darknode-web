@@ -342,22 +342,17 @@ function prewarmCommon() {
   whenIdle(() => { spine.forEach((u) => { import(u).catch(() => {}); }); }, 6000);
 }
 
-// The support chat (Botpress) is a third-party script; loaded only after boot and on idle so
-// a slow CDN can never hold up the app. Scripts are inserted with async=false so they run in
-// order: widget, then its config, then our bridge. Idempotent; also called by the Help button.
+// The support chat is the in-house Darknode Assistant (no third-party script, nothing leaves
+// darknode.ai). Loaded after boot on idle so it never holds up the app; idempotent; also
+// called by the Help button. It streams Q&A from the Darknode AI proxy and resolves
+// "open / go to X" requests locally through dnNavigate.
 let _chatLoaded = false;
 function loadSupportChat() {
   if (_chatLoaded) return;
   _chatLoaded = true;
-  for (const src of [
-    "https://cdn.botpress.cloud/webchat/v5.0/inject.js",
-    "https://files.bpcontent.cloud/2026/09/26/02/20260926024817-4GX9B5C4.js",
-    "/js/botpress-bridge.js?v=20261003a",
-  ]) {
-    const s = document.createElement("script");
-    s.src = src; s.async = false;
-    document.body.appendChild(s);
-  }
+  const s = document.createElement("script");
+  s.src = "/js/darknode-chat.js?v=20261007a"; s.async = false;
+  document.body.appendChild(s);
 }
 window.__loadSupportChat = loadSupportChat;
 // Help button: open the chat if it is ready, else load it now and open once the bridge
@@ -650,7 +645,7 @@ function renderAuth(mode = "signin") {
     <div class="auth-page">
       <section class="card auth-card">
         <a class="auth-back" id="authBack">&larr; Back</a>
-        <div class="auth-logo"><img src="/logo-dark.svg" alt=""></div>
+        <div class="auth-logo"><img src="/logo-dark.svg?v=20261007b" alt=""></div>
         <h1>${isSignup ? "Create your account" : "Welcome back"}</h1>
         <p class="auth-subtitle">${isSignup ? "Set up your Darknode console in seconds." : "Sign in to your Darknode console."}</p>
         <button class="btn google" id="google"><svg width="18" height="18" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18A10.96 10.96 0 001 12c0 1.77.42 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>Continue with Google</button>
@@ -752,7 +747,7 @@ function renderCodeVerify(user) {
   document.getElementById("signout").onclick = () => doLogout();
   view.innerHTML = `
     <section class="card auth-card">
-      <div class="auth-logo"><img src="/logo-dark.svg" alt=""></div>
+      <div class="auth-logo"><img src="/logo-dark.svg?v=20261007b" alt=""></div>
       <h1>Enter your code</h1>
       <p class="muted">We emailed a 6-digit code to <strong>${esc(user.email)}</strong>. Enter it to finish signing up.</p>
       <input id="code" inputmode="numeric" maxlength="6" placeholder="123456" autocomplete="one-time-code" style="text-align:center;letter-spacing:.4em;font-size:1.3rem">
@@ -1820,7 +1815,7 @@ function renderApp(user) {
     else if (sec === "docs") { import("/js/docs.js?v=20260924b").then(m => m.renderDocs(main)); }
     else if (sec === "setup") renderSetup(main, more);
     else if (sec === "settings") renderSettingsPage(main, user, isOwner, more);
-    else if (sec === "admin") { import("/js/admin.js?v=20261007a").then(m => m.renderAdmin(main, user)); }
+    else if (sec === "admin") { import("/js/admin.js?v=20261007b").then(m => m.renderAdmin(main, user)); }
     else if (sec === "contact") renderContact(main);
     else if (sec === "education") { main.innerHTML = `<div class="panel" style="max-width:800px;margin:40px auto"><div class="panel-h">About Darknode Education</div><div style="padding:18px;line-height:1.8;font-size:.9rem"><p><strong>Darknode is a cybersecurity education platform</strong> designed for students, educators, and security professionals to learn information security through hands-on practice in a safe, controlled environment.</p><p style="margin-top:16px"><strong>Our Mission:</strong> To make cybersecurity education accessible, interactive, and practical. Most tools run in your browser or on your own machine. Some features do send data out: AI chat goes through Darknode's server to the AI provider, some lookup pages query public services (for example NVD, crt.sh and DNS-over-HTTPS resolvers), and saved items and account data are stored in Google Firebase. Each page that contacts an outside service does so only when you run it.</p><p style="margin-top:16px"><strong>Who Uses Darknode:</strong></p><ul style="margin:8px 0 0 20px;line-height:2"><li>Computer science and cybersecurity students</li><li>IT professionals studying for certifications (CompTIA Security+, CISSP, CEH, OSCP)</li><li>University professors and instructors teaching security courses</li><li>Security operations center (SOC) analysts in training</li><li>Career changers learning cybersecurity fundamentals</li></ul><p style="margin-top:16px"><strong>Educational Standards:</strong> Our curriculum aligns with NIST NICE Framework, NSA CAE-CD requirements, and CompTIA Security+ objectives. All practice environments are isolated, legal, and designed for authorized educational use only.</p><p style="margin-top:16px"><strong>Responsible Use:</strong> Darknode tools are designed exclusively for educational purposes and authorized security testing. Users must comply with all applicable laws and obtain proper authorization before testing any system they do not own.</p><p style="margin-top:16px;color:var(--mut);font-size:.82rem">Darknode is a product of Darknode-Official. For questions about our educational programs, visit darknode.ai.</p></div></div>`; }
     else if (sec === "toolbox") { import("/js/mini-tools.js?v=20261006a").then(m => m.renderToolbox(main, { onOpen: (id) => show("tool-" + id) })); }

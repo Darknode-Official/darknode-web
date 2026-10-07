@@ -1,4 +1,5 @@
 import { esc } from '/js/shared.js';
+import { dnFetch, proxyConfigured } from '/js/net.js';
 
 var DEFAULT_WORDLIST = [
   'www', 'mail', 'api', 'dev', 'staging', 'admin', 'cdn', 'blog', 'shop',
@@ -16,48 +17,84 @@ var DEFAULT_WORDLIST = [
   'www2', 'www3', 'web', 'web01', 'web02', 'srv', 'server', 'host', 'node1'
 ];
 
-var SAMPLE_RESULTS = [
-  { sub: 'www.example.com', ip: '93.184.216.34', status: 200, tech: 'Nginx 1.25, TLS 1.3', live: true },
-  { sub: 'mail.example.com', ip: '93.184.216.40', status: 200, tech: 'Postfix, Dovecot', live: true },
-  { sub: 'api.example.com', ip: '93.184.216.50', status: 200, tech: 'Node.js, Express, Cloudflare', live: true },
-  { sub: 'dev.example.com', ip: '10.0.1.15', status: 403, tech: 'Apache 2.4, PHP 8.2', live: true },
-  { sub: 'staging.example.com', ip: '10.0.2.20', status: 401, tech: 'Nginx, Docker', live: true },
-  { sub: 'admin.example.com', ip: '93.184.216.55', status: 302, tech: 'React, Nginx', live: true },
-  { sub: 'cdn.example.com', ip: '104.18.32.7', status: 200, tech: 'Cloudflare CDN', live: true },
-  { sub: 'blog.example.com', ip: '93.184.216.60', status: 200, tech: 'WordPress 6.4, PHP 8.1', live: true },
-  { sub: 'shop.example.com', ip: '93.184.216.65', status: 200, tech: 'Shopify, TLS 1.3', live: true },
-  { sub: 'portal.example.com', ip: '93.184.216.70', status: 200, tech: 'Angular, .NET 8', live: true },
-  { sub: 'vpn.example.com', ip: '93.184.216.75', status: 200, tech: 'OpenVPN, Nginx', live: true },
-  { sub: 'ftp.example.com', ip: '93.184.216.80', status: 200, tech: 'vsftpd 3.0.5', live: true },
-  { sub: 'ns1.example.com', ip: '93.184.216.2', status: 0, tech: 'BIND 9.18', live: true },
-  { sub: 'ns2.example.com', ip: '93.184.216.3', status: 0, tech: 'BIND 9.18', live: true },
-  { sub: 'mx.example.com', ip: '93.184.216.41', status: 0, tech: 'Postfix MTA', live: true },
-  { sub: 'webmail.example.com', ip: '93.184.216.42', status: 200, tech: 'Roundcube 1.6, PHP 8.2', live: true },
-  { sub: 'test.example.com', ip: '192.168.1.100', status: 500, tech: 'Apache 2.4, Tomcat 10', live: true },
-  { sub: 'demo.example.com', ip: '93.184.216.85', status: 200, tech: 'Vue.js, Python Flask', live: true },
-  { sub: 'beta.example.com', ip: '93.184.216.90', status: 200, tech: 'Next.js 14, Vercel', live: true },
-  { sub: 'git.example.com', ip: '93.184.216.95', status: 200, tech: 'GitLab CE 16.8', live: true },
-  { sub: 'jenkins.example.com', ip: '10.0.3.10', status: 403, tech: 'Jenkins 2.440, Java 17', live: true },
-  { sub: 'grafana.example.com', ip: '10.0.3.20', status: 302, tech: 'Grafana 10.2, Go', live: true },
-  { sub: 'old.example.com', ip: '93.184.216.100', status: 301, tech: 'Apache 2.2, PHP 5.6', live: true },
-  { sub: 'backup.example.com', ip: '', status: 0, tech: '', live: false }
-];
+// Real enumeration — no fabricated data.
+//   * Passive:  crt.sh certificate-transparency logs (names a CA actually signed).
+//   * Active:   DNS-over-HTTPS (dns.google) resolves each candidate to a real A record.
+// A browser has no raw sockets and is bound by CORS, so it cannot port-scan or
+// read a remote host's HTTP status/server/title. We therefore report only what is
+// genuinely observable: the name, its resolved IP(s), and whether it is live in DNS.
+// If crt.sh is CORS-blocked from the current network, the wordlist is still resolved
+// over DoH, so the scan stays real.
+var DOH_CONCURRENCY = 8;
+var MAX_CANDIDATES = 250;
 
-function randomIP() {
-  return Math.floor(Math.random() * 223 + 1) + '.' +
-    Math.floor(Math.random() * 255) + '.' +
-    Math.floor(Math.random() * 255) + '.' +
-    Math.floor(Math.random() * 254 + 1);
+// crt.sh does not reliably send CORS headers, so a direct browser fetch is
+// normally blocked. Route through the Darknode proxy when available (real CT
+// data, no CORS), and fall back to a direct best-effort fetch otherwise.
+async function crtshFetch(domain) {
+  var url = 'https://crt.sh/?q=%25.' + encodeURIComponent(domain) + '&output=json';
+  if (proxyConfigured()) {
+    var r = await dnFetch(url, { raw: true, timeout: 15000 });
+    return JSON.parse(r.body);
+  }
+  var ctrl = new AbortController();
+  var to = setTimeout(function () { ctrl.abort(); }, 12000);
+  try {
+    var res = await fetch(url, { signal: ctrl.signal, headers: { Accept: 'application/json' } });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    return await res.json();
+  } finally { clearTimeout(to); }
 }
 
-var TECH_SAMPLES = [
-  'Nginx 1.25, TLS 1.3', 'Apache 2.4, PHP 8.2', 'Node.js, Express',
-  'Cloudflare', 'IIS 10, ASP.NET', 'Python Flask', 'Go, Caddy',
-  'Tomcat 10, Java 17', 'Nginx, Docker', 'LiteSpeed, WordPress',
-  'React, Vercel', 'Vue.js, Nginx', 'Ruby on Rails, Puma'
-];
+// Extract unique in-scope subdomain names from the CT JSON (name_value + common_name).
+async function crtshNames(domain) {
+  try {
+    var data = await crtshFetch(domain);
+    var set = {}, wildcard = {};
+    var rows = Array.isArray(data) ? data : [];
+    for (var i = 0; i < rows.length; i++) {
+      var raw = String(rows[i].name_value || '').split(/\n+/).concat([String(rows[i].common_name || '')]);
+      for (var j = 0; j < raw.length; j++) {
+        var n = raw[j].trim().toLowerCase();
+        if (!n) continue;
+        if (n.indexOf('*.') === 0) { n = n.slice(2); wildcard[n] = true; }
+        if (n === domain || n.endsWith('.' + domain)) set[n] = true;
+      }
+    }
+    return { names: Object.keys(set), wildcard: wildcard, ok: true };
+  } catch (_) { return { names: [], wildcard: {}, ok: false }; }
+}
 
-var STATUS_CODES = [200, 200, 200, 200, 301, 302, 403, 401, 500, 200];
+// Resolve A records for a name over DNS-over-HTTPS (CORS-OK, no proxy needed).
+async function resolveA(name) {
+  try {
+    var ctrl = new AbortController();
+    var to = setTimeout(function () { ctrl.abort(); }, 6000);
+    var r = await fetch('https://dns.google/resolve?name=' + encodeURIComponent(name) + '&type=A', { signal: ctrl.signal });
+    clearTimeout(to);
+    if (!r.ok) return [];
+    var j = await r.json();
+    return (j.Answer || []).filter(function (x) { return x.type === 1; }).map(function (x) { return x.data; });
+  } catch (_) { return []; }
+}
+
+// Resolve many names with a small concurrency pool. onTick(done, total, name, ips).
+async function resolveAll(names, onTick) {
+  var out = new Array(names.length);
+  var i = 0, done = 0;
+  async function worker() {
+    while (i < names.length) {
+      var idx = i++;
+      out[idx] = await resolveA(names[idx]);
+      done++;
+      if (onTick) onTick(done, names.length, names[idx], out[idx]);
+    }
+  }
+  var pool = [];
+  for (var w = 0; w < Math.min(DOH_CONCURRENCY, names.length); w++) pool.push(worker());
+  await Promise.all(pool);
+  return out;
+}
 
 export function renderSubdomainEnum(container) {
   var activeTab = 'enumerate';
@@ -66,6 +103,7 @@ export function renderSubdomainEnum(container) {
   var scanning = false;
   var scanProgress = 0;
   var scanTotal = 0;
+  var crtOk = true;
   var domain = '';
   var filterText = '';
   var filterStatus = 'all';
@@ -151,57 +189,51 @@ export function renderSubdomainEnum(container) {
     '[data-style=pro] .se-progress-wrap{background:#e2e8f0}' +
     '</style>';
 
-  function statusClass(code) {
-    if (!code || code === 0) return 'dead';
-    if (code >= 200 && code < 300) return 's2xx';
-    if (code >= 300 && code < 400) return 's3xx';
-    if (code >= 400 && code < 500) return 's4xx';
-    return 's5xx';
-  }
-
   function getFiltered() {
     var filtered = results.slice();
-    if (filterStatus !== 'all') {
-      if (filterStatus === 'live') filtered = filtered.filter(function(r) { return r.live; });
-      else if (filterStatus === 'dead') filtered = filtered.filter(function(r) { return !r.live; });
-      else if (filterStatus === '2xx') filtered = filtered.filter(function(r) { return r.status >= 200 && r.status < 300; });
-      else if (filterStatus === '3xx') filtered = filtered.filter(function(r) { return r.status >= 300 && r.status < 400; });
-      else if (filterStatus === '4xx') filtered = filtered.filter(function(r) { return r.status >= 400 && r.status < 500; });
-      else if (filterStatus === '5xx') filtered = filtered.filter(function(r) { return r.status >= 500; });
-    }
+    if (filterStatus === 'live') filtered = filtered.filter(function(r) { return r.live; });
+    else if (filterStatus === 'dead') filtered = filtered.filter(function(r) { return !r.live; });
     if (filterText) {
       var ft = filterText.toLowerCase();
       filtered = filtered.filter(function(r) {
         return r.sub.toLowerCase().indexOf(ft) !== -1 ||
-               r.ip.toLowerCase().indexOf(ft) !== -1 ||
-               r.tech.toLowerCase().indexOf(ft) !== -1;
+               (r.ip || '').toLowerCase().indexOf(ft) !== -1 ||
+               (r.source || '').toLowerCase().indexOf(ft) !== -1;
       });
     }
     filtered.sort(function(a, b) {
       var va, vb;
-      if (sortCol === 'sub') { va = a.sub; vb = b.sub; }
-      else if (sortCol === 'ip') { va = a.ip; vb = b.ip; }
-      else if (sortCol === 'status') { va = a.status; vb = b.status; }
-      else if (sortCol === 'tech') { va = a.tech; vb = b.tech; }
+      if (sortCol === 'ip') { va = a.ip; vb = b.ip; }
+      else if (sortCol === 'source') { va = a.source; vb = b.source; }
       else { va = a.sub; vb = b.sub; }
-      if (typeof va === 'number') return sortAsc ? va - vb : vb - va;
       va = va || ''; vb = vb || '';
       return sortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
     });
     return filtered;
   }
 
+  function scanSummaryText() {
+    if (!results.length && !domain) return '';
+    var live = results.filter(function(r) { return r.live; }).length;
+    var ipsSet = {};
+    results.forEach(function(r) { (r.ips || []).forEach(function(ip) { ipsSet[ip] = true; }); });
+    var k = Object.keys(ipsSet).length;
+    var s = 'Discovered ' + results.length + ' subdomains of ' + domain + ' — ' + live + ' live in DNS across ' + k + ' unique IPs.';
+    if (!crtOk) s += ' (crt.sh unavailable; DNS wordlist resolution only — use the Darknode CLI for full CT discovery.)';
+    return s;
+  }
+
   function generateCSV() {
-    var rows = ['Subdomain,IP,Status,Technology,Live'];
+    var rows = ['Subdomain,IP,DNS,Source'];
     results.forEach(function(r) {
-      rows.push('"' + r.sub + '","' + r.ip + '",' + r.status + ',"' + r.tech + '",' + r.live);
+      rows.push('"' + r.sub + '","' + (r.ips || []).join(' ') + '",' + (r.live ? 'LIVE' : 'NO_A') + ',' + r.source);
     });
     return rows.join('\n');
   }
 
   function generateJSON() {
     return JSON.stringify(results.map(function(r) {
-      return { subdomain: r.sub, ip: r.ip, status_code: r.status, technology: r.tech, live: r.live };
+      return { subdomain: r.sub, ip: r.ip, ips: r.ips || [], live: r.live, source: r.source };
     }), null, 2);
   }
 
@@ -217,11 +249,11 @@ export function renderSubdomainEnum(container) {
     return lines.join('\n');
   }
 
-  // Scan results are randomly generated (and "Load Sample" is fixed demo data),
-  // so everything sent to the graph is tagged simulated.
+  // Results are real (crt.sh CT logs + live DNS-over-HTTPS resolution), so
+  // everything sent to the graph is tagged live, with meta.simulated=false.
   function sendResultsToGraph(btn) {
-    var tags = ['subdomain-enum', 'simulated'];
-    var meta = { simulated: true, scannedAt: new Date().toISOString() };
+    var tags = ['subdomain-enum'];
+    var meta = { simulated: false, scannedAt: new Date().toISOString() };
     btn.disabled = true;
     import('/js/graph-bridge.js?v=20260923c').then(function(gb) {
       var root = gb.sendToGraph('Subdomain Enum', [{ type: 'DOMAIN', name: domain, data: Object.assign({ subdomainCount: results.length }, meta), opts: { tags: tags.concat('root-domain') } }], undefined, true).entities[0];
@@ -229,7 +261,7 @@ export function renderSubdomainEnum(container) {
       results.forEach(function(r) {
         var sr = gb.sendToGraph('Subdomain Enum', [{
           type: 'DOMAIN', name: r.sub,
-          data: Object.assign({ ip: r.ip || '', httpStatus: r.status, technology: r.tech || '', live: r.live, parent: domain }, meta),
+          data: Object.assign({ ip: r.ip || '', ips: r.ips || [], dns: r.live ? 'live' : 'no-a', source: r.source, live: r.live, parent: domain }, meta),
           opts: { tags: tags.concat('subdomain', r.live ? 'live' : 'down') }
         }], undefined, true);
         created += sr.created; updated += sr.updated;
@@ -243,12 +275,12 @@ export function renderSubdomainEnum(container) {
         }
       });
       btn.textContent = 'Sent: ' + created + ' new, ' + updated + ' merged';
-      gb.showGraphToast('Security Graph: ' + results.length + ' subdomains of ' + domain + ', ' + created + ' added, ' + links + ' links (tagged simulated)');
+      gb.showGraphToast('Security Graph: ' + results.length + ' subdomains of ' + domain + ', ' + created + ' added, ' + links + ' links');
     }).catch(function() { btn.textContent = 'Security Graph unavailable'; btn.disabled = false; });
   }
 
   function graphBtnHtml() {
-    return '<button class="se-btn ghost se-to-graph" title="Simulated results are tagged simulated">Send ' + results.length + ' subdomains to Security Graph</button>';
+    return '<button class="se-btn ghost se-to-graph" title="Send real results to Security Graph">Send ' + results.length + ' subdomains to Security Graph</button>';
   }
 
   function downloadFile(content, filename, mime) {
@@ -284,7 +316,6 @@ export function renderSubdomainEnum(container) {
           '</div>' +
           '<div style="display:flex;gap:8px;align-self:flex-end">' +
             '<button class="se-btn" id="se-start"' + (scanning ? ' disabled' : '') + '>' + (scanning ? 'Scanning...' : 'Start Enumeration') + '</button>' +
-            '<button class="se-btn ghost" id="se-sample"' + (scanning ? ' disabled' : '') + '>Load Sample</button>' +
           '</div>' +
         '</div>' +
       '</div>' +
@@ -323,17 +354,18 @@ export function renderSubdomainEnum(container) {
           '<div class="se-panel-title">Last Scan Summary</div>' +
           '<div class="se-stat-row">' +
             '<div class="se-stat"><span class="se-stat-n">' + results.length + '</span><span class="se-stat-l">Total Found</span></div>' +
-            '<div class="se-stat"><span class="se-stat-n" style="color:#16a34a">' + liveCount + '</span><span class="se-stat-l">Live</span></div>' +
-            '<div class="se-stat"><span class="se-stat-n" style="color:#dc2626">' + (results.length - liveCount) + '</span><span class="se-stat-l">Dead</span></div>' +
+            '<div class="se-stat"><span class="se-stat-n" style="color:#16a34a">' + liveCount + '</span><span class="se-stat-l">Live in DNS</span></div>' +
+            '<div class="se-stat"><span class="se-stat-n" style="color:#64748b">' + (results.length - liveCount) + '</span><span class="se-stat-l">No A Record</span></div>' +
             '<div class="se-stat"><span class="se-stat-n">' + wordlist.length + '</span><span class="se-stat-l">Wordlist Size</span></div>' +
           '</div>' +
+          '<p style="font-size:.8rem;color:var(--mut);margin:4px 0 0;line-height:1.5">' + esc(scanSummaryText()) + '</p>' +
         '</div>';
       }
 
     } else if (activeTab === 'results') {
       if (results.length === 0) {
         contentHtml = '<div class="se-panel" style="text-align:center;padding:40px">' +
-          '<p style="color:var(--mut);font-size:.85rem;margin:0">No results yet. Run an enumeration scan or load sample data first.</p>' +
+          '<p style="color:var(--mut);font-size:.85rem;margin:0">No results yet. Run an enumeration scan on the Enumerate tab first.</p>' +
         '</div>';
       } else {
         var filtered = getFiltered();
@@ -341,21 +373,19 @@ export function renderSubdomainEnum(container) {
 
         contentHtml = '<div class="se-stat-row">' +
           '<div class="se-stat"><span class="se-stat-n">' + results.length + '</span><span class="se-stat-l">Total</span></div>' +
-          '<div class="se-stat"><span class="se-stat-n" style="color:#16a34a">' + liveCount + '</span><span class="se-stat-l">Live</span></div>' +
-          '<div class="se-stat"><span class="se-stat-n" style="color:#dc2626">' + (results.length - liveCount) + '</span><span class="se-stat-l">Dead</span></div>' +
+          '<div class="se-stat"><span class="se-stat-n" style="color:#16a34a">' + liveCount + '</span><span class="se-stat-l">Live in DNS</span></div>' +
+          '<div class="se-stat"><span class="se-stat-n" style="color:#64748b">' + (results.length - liveCount) + '</span><span class="se-stat-l">No A Record</span></div>' +
           '<div class="se-stat"><span class="se-stat-n">' + filtered.length + '</span><span class="se-stat-l">Filtered</span></div>' +
         '</div>';
 
+        contentHtml += '<p style="font-size:.8rem;color:var(--mut);margin:0 0 16px;line-height:1.5">' + esc(scanSummaryText()) + '</p>';
+
         contentHtml += '<div class="se-filter-row">' +
-          '<input class="se-filter-input" id="se-filter-text" type="text" placeholder="Filter subdomains, IPs, tech..." value="' + esc(filterText) + '">' +
+          '<input class="se-filter-input" id="se-filter-text" type="text" placeholder="Filter subdomains, IPs, source..." value="' + esc(filterText) + '">' +
           '<select class="se-select" id="se-filter-status">' +
-            '<option value="all"' + (filterStatus === 'all' ? ' selected' : '') + '>All Status</option>' +
-            '<option value="live"' + (filterStatus === 'live' ? ' selected' : '') + '>Live Only</option>' +
-            '<option value="dead"' + (filterStatus === 'dead' ? ' selected' : '') + '>Dead Only</option>' +
-            '<option value="2xx"' + (filterStatus === '2xx' ? ' selected' : '') + '>2xx Success</option>' +
-            '<option value="3xx"' + (filterStatus === '3xx' ? ' selected' : '') + '>3xx Redirect</option>' +
-            '<option value="4xx"' + (filterStatus === '4xx' ? ' selected' : '') + '>4xx Client Error</option>' +
-            '<option value="5xx"' + (filterStatus === '5xx' ? ' selected' : '') + '>5xx Server Error</option>' +
+            '<option value="all"' + (filterStatus === 'all' ? ' selected' : '') + '>All</option>' +
+            '<option value="live"' + (filterStatus === 'live' ? ' selected' : '') + '>Live in DNS</option>' +
+            '<option value="dead"' + (filterStatus === 'dead' ? ' selected' : '') + '>No A Record</option>' +
           '</select>' +
           '<button class="se-btn ghost" id="se-clear-filters" style="font-size:.72rem">Clear Filters</button>' +
           graphBtnHtml() +
@@ -370,20 +400,18 @@ export function renderSubdomainEnum(container) {
           '<table class="se-table">' +
           '<thead><tr>' +
             '<th data-sort="sub" class="' + (sortCol === 'sub' ? 'sorted' : '') + '">Subdomain ' + sortArrow('sub') + '</th>' +
-            '<th data-sort="ip" class="' + (sortCol === 'ip' ? 'sorted' : '') + '">IP Address ' + sortArrow('ip') + '</th>' +
-            '<th data-sort="status" class="' + (sortCol === 'status' ? 'sorted' : '') + '">Status ' + sortArrow('status') + '</th>' +
-            '<th data-sort="tech" class="' + (sortCol === 'tech' ? 'sorted' : '') + '">Technology ' + sortArrow('tech') + '</th>' +
-            '<th>State</th>' +
+            '<th data-sort="ip" class="' + (sortCol === 'ip' ? 'sorted' : '') + '">IP (A record) ' + sortArrow('ip') + '</th>' +
+            '<th data-sort="source" class="' + (sortCol === 'source' ? 'sorted' : '') + '">Source ' + sortArrow('source') + '</th>' +
+            '<th>DNS</th>' +
           '</tr></thead><tbody>';
 
         filtered.forEach(function(r) {
-          var statusDisplay = r.status === 0 ? 'N/A' : String(r.status);
+          var ipDisplay = (r.ips && r.ips.length) ? r.ips.map(function(ip) { return esc(ip); }).join(', ') : '<span style="color:var(--mut)">--</span>';
           contentHtml += '<tr>' +
-            '<td class="se-mono">' + esc(r.sub) + '</td>' +
-            '<td class="se-mono">' + (r.ip ? esc(r.ip) : '<span style="color:var(--mut)">--</span>') + '</td>' +
-            '<td><span class="se-status ' + statusClass(r.status) + '">' + statusDisplay + '</span></td>' +
-            '<td>' + (r.tech ? esc(r.tech) : '<span style="color:var(--mut)">Unknown</span>') + '</td>' +
-            '<td><span class="se-badge ' + (r.live ? 'live' : 'down') + '">' + (r.live ? 'Live' : 'Down') + '</span></td>' +
+            '<td class="se-mono">' + esc(r.sub) + (r.wildcard ? ' <span style="color:#d97706;font-size:.65rem">WILDCARD</span>' : '') + '</td>' +
+            '<td class="se-mono">' + ipDisplay + '</td>' +
+            '<td class="se-mono" style="color:var(--mut);font-size:.72rem">' + esc(r.source || '') + '</td>' +
+            '<td><span class="se-badge ' + (r.live ? 'live' : 'down') + '">' + (r.live ? 'Live' : 'No A') + '</span></td>' +
           '</tr>';
         });
 
@@ -464,7 +492,7 @@ export function renderSubdomainEnum(container) {
     container.innerHTML = SE_CSS +
       '<div class="se-wrap">' +
         '<h1 class="se-title">Subdomain Enumerator</h1>' +
-        '<p class="se-sub">Passive subdomain enumeration and discovery. Input a root domain to discover subdomains, resolve IPs, and identify technology stacks.</p>' +
+        '<p class="se-sub">Real subdomain enumeration. Passive discovery via crt.sh certificate-transparency logs, merged with a wordlist and resolved live over DNS-over-HTTPS (dns.google). Reports only observable data: name, resolved IP(s), and whether it is live in DNS. Use only on domains you are authorized to assess.</p>' +
         '<div class="se-tabs">' + tabsHtml + '</div>' +
         contentHtml +
       '</div>';
@@ -486,14 +514,6 @@ export function renderSubdomainEnum(container) {
       settings.timeout = parseInt(container.querySelector('#se-timeout').value) || 5;
       settings.resolvers = container.querySelector('#se-resolvers').value || '8.8.8.8, 1.1.1.1';
       startScan();
-    };
-
-    var sampleBtn = container.querySelector('#se-sample');
-    if (sampleBtn) sampleBtn.onclick = function() {
-      domain = 'example.com';
-      results = SAMPLE_RESULTS.slice();
-      activeTab = 'results';
-      render();
     };
 
     /* Results tab */
@@ -620,61 +640,76 @@ export function renderSubdomainEnum(container) {
     });
   }
 
+  // Real scan: crt.sh CT logs (passive) merged with the wordlist, every candidate
+  // resolved live over DNS-over-HTTPS. No fabricated IPs, status codes, or tech.
   function startScan() {
     scanning = true;
     scanProgress = 0;
-    scanTotal = wordlist.length;
+    scanTotal = 0;
+    crtOk = true;
     results = [];
     render();
 
-    var logEl = container.querySelector('#se-log');
-    var idx = 0;
-    var batchSize = Math.max(1, Math.floor(wordlist.length / 30));
+    function log(cls, msg) {
+      var el = container.querySelector('#se-log');
+      if (el) { el.innerHTML += '<div class="' + cls + '">' + msg + '</div>'; el.scrollTop = el.scrollHeight; }
+    }
 
-    function tick() {
-      if (idx >= wordlist.length) {
+    log('info', '[*] Starting real subdomain enumeration for ' + esc(domain));
+    log('info', '[*] Querying crt.sh certificate transparency logs' + (proxyConfigured() ? ' (via Darknode proxy)' : ' (direct)') + '...');
+
+    crtshNames(domain).then(function(ct) {
+      crtOk = ct.ok;
+      if (ct.ok) log('info', '[*] crt.sh returned ' + ct.names.length + ' names from CT logs');
+      else log('info', '[!] crt.sh unavailable (CORS/proxy) — resolving wordlist over DNS-over-HTTPS only');
+
+      var cand = {};
+      ct.names.forEach(function(n) { cand[n] = true; });
+      wordlist.forEach(function(w) { cand[w + '.' + domain] = true; });
+      var names = Object.keys(cand);
+      if (names.length > MAX_CANDIDATES) names = names.slice(0, MAX_CANDIDATES);
+
+      scanTotal = names.length;
+      scanProgress = 0;
+      log('info', '[*] Resolving ' + names.length + ' candidates over DNS-over-HTTPS (dns.google)...');
+
+      var ctSet = {};
+      ct.names.forEach(function(n) { ctSet[n] = true; });
+
+      return resolveAll(names, function(doneN, total, name, ips) {
+        scanProgress = doneN;
+        var bar = container.querySelector('.se-progress-bar');
+        var text = container.querySelector('.se-progress-text');
+        var pct = Math.round((scanProgress / scanTotal) * 100);
+        if (bar) bar.style.width = pct + '%';
+        if (text) text.textContent = pct + '% (' + scanProgress + ' / ' + scanTotal + ')';
+        if (ips && ips.length) log('found', '[+] ' + esc(name) + ' -> ' + esc(ips.join(', ')));
+      }).then(function(ipsArr) {
+        for (var k = 0; k < names.length; k++) {
+          var sub = names[k];
+          var ips = ipsArr[k] || [];
+          var fromCT = !!ctSet[sub];
+          if (!ips.length && !fromCT) continue; // keep live hosts + CT-attested names
+          results.push({
+            sub: sub,
+            ip: ips[0] || '',
+            ips: ips,
+            live: ips.length > 0,
+            wildcard: !!ct.wildcard[sub],
+            source: fromCT ? (ips.length ? 'crt.sh+dns' : 'crt.sh') : 'dns'
+          });
+        }
+        results.sort(function(a, b) { return a.sub.localeCompare(b.sub); });
         scanning = false;
         activeTab = 'results';
         render();
-        return;
-      }
-
-      var end = Math.min(idx + batchSize, wordlist.length);
-      for (var i = idx; i < end; i++) {
-        var prefix = wordlist[i];
-        var sub = prefix + '.' + domain;
-        var found = Math.random() > 0.7;
-        if (found) {
-          var ip = randomIP();
-          var status = STATUS_CODES[Math.floor(Math.random() * STATUS_CODES.length)];
-          var tech = TECH_SAMPLES[Math.floor(Math.random() * TECH_SAMPLES.length)];
-          results.push({ sub: sub, ip: ip, status: status, tech: tech, live: true });
-          if (logEl) logEl.innerHTML += '<div class="found">[+] Found: ' + esc(sub) + ' -> ' + esc(ip) + ' [' + status + ']</div>';
-        } else {
-          if (logEl && Math.random() > 0.6) {
-            logEl.innerHTML += '<div class="notfound">[-] ' + esc(sub) + ' - NXDOMAIN</div>';
-          }
-        }
-      }
-
-      idx = end;
-      scanProgress = idx;
-
-      var bar = container.querySelector('.se-progress-bar');
-      var text = container.querySelector('.se-progress-text');
-      if (bar) bar.style.width = Math.round((scanProgress / scanTotal) * 100) + '%';
-      if (text) text.textContent = Math.round((scanProgress / scanTotal) * 100) + '% (' + scanProgress + ' / ' + scanTotal + ')';
-
-      if (logEl) logEl.scrollTop = logEl.scrollHeight;
-
-      setTimeout(tick, 60 + Math.floor(Math.random() * 80));
-    }
-
-    if (logEl) logEl.innerHTML = '<div class="info">[*] Starting subdomain enumeration for ' + esc(domain) + '</div>' +
-      '<div class="info">[*] Wordlist: ' + wordlist.length + ' entries | Threads: ' + settings.threads + ' | Timeout: ' + settings.timeout + 's</div>' +
-      '<div class="info">[*] Resolvers: ' + esc(settings.resolvers) + '</div>';
-
-    setTimeout(tick, 300);
+      });
+    }).catch(function(e) {
+      scanning = false;
+      crtOk = false;
+      log('info', '[!] Scan failed: ' + esc(e && e.message ? e.message : 'network error'));
+      render();
+    });
   }
 
   render();

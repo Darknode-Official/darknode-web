@@ -9575,10 +9575,9 @@ body.focus-mode .app-main { padding-left: 20px !important; padding-right: 20px !
   transition:border-color .15s,transform .15s}
 .integ-pill:hover{border-color:var(--acc-line);transform:translateY(-2px)}
 
-/* Botpress support agent: the whole webchat (FAB + chat window) lives inside
-   #fab-root's shadow DOM, so hiding #fab-root here would hide the chat window too.
-   The floating bubble is hidden instead by injecting a style INTO the shadow root
-   (.bpFabWrapper{display:none}) from botpress-bridge.js. Access is via the Help tab. */
+/* Darknode Assistant: the in-house support chat (darknode-chat.js) renders its own
+   launcher + panel (ids #dnchat-launch / #dnchat-panel) and styles itself. Nothing
+   external is loaded. The Help tab below also opens it via window.__openHelp. */
 /* Help tab in the topbar */
 .tb-help-btn{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 12px;border:1px solid var(--line);border-radius:var(--btn-radius,8px);
   background:var(--card2);color:var(--txt);font-family:inherit;font-size:.8rem;font-weight:600;cursor:pointer;transition:border-color .15s,background .15s,color .15s}
