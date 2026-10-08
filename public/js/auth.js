@@ -832,6 +832,10 @@ function cycleStyle() {
 function crtOn() { try { return localStorage.getItem("sw_crt") === "1"; } catch (_) { return false; } }
 function applyCrt(on) { document.documentElement.classList.toggle("crt", on); try { localStorage.setItem("sw_crt", on ? "1" : "0"); } catch (_) {} }
 applyCrt(crtOn());
+// Reading modes (normal / stupid / confusing) — rewrites UI wording in place.
+// Loaded lazily; the module is a singleton (keeps a MutationObserver) so it is
+// never cache-busted with ?v= (the service-worker cache version ships updates).
+(function () { import("/js/reading-modes.js").then((m) => { try { window.dnReading = m; m.initReadingModes(); } catch (_) {} }).catch(() => {}); })();
 // UI preference appliers (density / motion / live topbar) — set an attribute on
 // <html> so CSS can react, and persist the choice.
 function _pref(k, d) { try { return localStorage.getItem(k) || d; } catch (_) { return d; } }
@@ -1143,7 +1147,13 @@ function renderSettingsPage(main, user, isOwner, initialTab) {
   const providers = user.providerData.map((p) => p.providerId.replace(".com", "")).join(", ") || "password";
   const created = user.metadata?.creationTime ? new Date(user.metadata.creationTime).toLocaleDateString() : "—";
   const row = (k, v) => `<div class="set-row"><span class="muted">${k}</span><span>${v}</span></div>`;
-  const SET_TABS = [["account", "Account"], ["appearance", "Appearance"], ["security", "Security"], ["apikeys", "API Keys"], ["darknode", "Darknode API"], ["mcp", "MCP Server"], ["nexus", "Nexus CLI"], ["about", "About"]];
+  // Test Mode / guest: a local-only session with no real account behind it. It has
+  // no Darknode API key, no MCP credential and no Nexus CLI pairing (those bind to
+  // a real signed-in uid), so we hide those panels rather than show a key that
+  // authenticates nothing. Detected by the test provider or the fixed test email.
+  const isGuest = !!(user && (((user.providerData || []).some((p) => p && p.providerId === "test")) || user.email === "test@darknode.ai"));
+  let SET_TABS = [["account", "Account"], ["appearance", "Appearance"], ["security", "Security"], ["apikeys", "API Keys"], ["darknode", "Darknode API"], ["mcp", "MCP Server"], ["nexus", "Nexus CLI"], ["data", "Data &amp; privacy"], ["about", "About"]];
+  if (isGuest) SET_TABS = SET_TABS.filter(([k]) => !["darknode", "mcp", "nexus"].includes(k));
   const startTab = SET_TABS.some(([k]) => k === initialTab) ? initialTab : "account";
   // Local Darknode API key — client-side generated token so tools, the CLI and
   // an MCP client can authenticate to this workspace. Stored only in this browser.
@@ -1196,7 +1206,8 @@ function renderSettingsPage(main, user, isOwner, initialTab) {
       ${row("Email", esc(user.email) + (isOwner ? ' <span class="owner-badge">OWNER</span>' : ""))}
       ${row("Signed in via", esc(providers))}
       ${row("Member since", esc(created))}
-      ${row("User ID", '<span class="mono">' + esc(user.uid) + "</span>")}`,
+      ${row("User ID", '<span class="mono">' + esc(user.uid) + "</span>")}
+      ${isGuest ? '<p class="muted" style="font-size:.78rem;margin-top:14px">This is a local <b>Test Mode</b> session &mdash; nothing is saved to an account. There is no Darknode API key, MCP credential or Nexus CLI pairing in Test Mode (those bind to a real sign-in). Create an account to unlock them.</p>' : ""}`,
     appearance: `<h2 class="set-panel-h">Appearance</h2>
       <div class="set-row"><span class="muted">Style</span>
         <span class="seg" id="sw-style"><button data-style="pro">Light</button><button data-style="dark">Dark</button><button data-style="classic">Classic</button></span></div>
@@ -1220,12 +1231,16 @@ function renderSettingsPage(main, user, isOwner, initialTab) {
         <span class="seg" id="sw-motion"><button data-motion="on">On</button><button data-motion="off">Reduced</button></span></div>
       <div class="set-row"><span class="muted">Live topbar</span>
         <span class="seg" id="sw-topbar"><button data-topbar="on">Show</button><button data-topbar="off">Hide</button></span></div>
-      <p class="muted" style="font-size:.72rem;margin-top:4px">Compact tightens padding across the app. Icon rail starts the sidebar collapsed. Reduced turns off transitions and animations.</p>`,
+      <p class="muted" style="font-size:.72rem;margin-top:4px">Compact tightens padding across the app. Icon rail starts the sidebar collapsed. Reduced turns off transitions and animations.</p>
+      <h3 class="set-sub-h">Reading mode</h3>
+      <div class="set-row"><span class="muted">Wording</span>
+        <span class="seg" id="sw-read"><button data-read="normal">Normal</button><button data-read="stupid">Stupid</button><button data-read="confusing">Confusing</button></span></div>
+      <p class="muted" style="font-size:.72rem;margin-top:4px">Rewrites the interface wording live. <b>Stupid</b> uses plain, everyday words. <b>Confusing</b> uses dense technical jargon. <b>Normal</b> leaves every label exactly as written. Code, inputs and the terminal are never changed.</p>`,
     security: `<h2 class="set-panel-h">Security</h2>
       <div class="set-btns" style="margin-top:8px">
-        <button class="btn ghost" id="set-pw">Change password</button>
+        ${isGuest ? "" : '<button class="btn ghost" id="set-pw">Change password</button>'}
         <button class="btn ghost" id="set-tour">Replay walkthrough</button>
-        <button class="btn danger" id="set-out">Log out</button>
+        <button class="btn danger" id="set-out">${isGuest ? "Exit Test Mode" : "Log out"}</button>
       </div>`,
     apikeys: `<h2 class="set-panel-h">API Keys</h2>
       <p class="muted" style="font-size:.84rem;margin-bottom:16px">Add your own API keys to power AI and threat intelligence. Keys are stored locally in your browser — never sent to our servers.</p>
@@ -1313,6 +1328,23 @@ function renderSettingsPage(main, user, isOwner, initialTab) {
           <button class="btn ghost" id="nexus-copy" type="button">Copy</button>
         </span></div>
       <p class="muted" id="nexus-code-note" style="font-size:.75rem">The code is <b>one-time use</b> and expires in 5 minutes. It links the CLI to your account with a revocable API key &mdash; it is <b>not</b> your password and cannot change your account.</p>`,
+    data: `<h2 class="set-panel-h">Data &amp; privacy</h2>
+      <p class="muted" style="font-size:.84rem;margin-bottom:16px">Everything Darknode keeps for you lives in <b>this browser</b> &mdash; your settings, your saved API keys and your workspace preferences. Nothing here leaves your device unless you add a cloud key yourself. You control all of it from here.</p>
+      <div style="display:flex;flex-direction:column;gap:2px;max-width:660px">
+        <div class="set-row" style="align-items:center;gap:16px">
+          <span style="display:flex;flex-direction:column;gap:3px"><b>Export my data</b><span class="muted" style="font-size:.76rem">Download a JSON copy of your preferences and which services have a key set. Secret values are redacted.</span></span>
+          <button class="btn ghost" id="data-export" type="button" style="flex:none">Export JSON</button>
+        </div>
+        <div class="set-row" style="align-items:center;gap:16px">
+          <span style="display:flex;flex-direction:column;gap:3px"><b>Clear local data</b><span class="muted" style="font-size:.76rem">Wipe every Darknode setting and saved key from this browser and sign out of this device.</span></span>
+          <button class="btn ghost" id="data-clear" type="button" style="flex:none">Clear data</button>
+        </div>
+        ${isGuest ? "" : `<div class="set-row" style="align-items:center;gap:16px">
+          <span style="display:flex;flex-direction:column;gap:3px"><b>Delete my account</b><span class="muted" style="font-size:.76rem">Request permanent deletion of your Darknode account and its records. We confirm by email.</span></span>
+          <button class="btn danger" id="data-delete" type="button" style="flex:none">Request deletion</button>
+        </div>`}
+      </div>
+      <p class="muted" style="font-size:.72rem;margin-top:14px">Questions about your data? Email <a href="mailto:contact@darknode.ai" style="color:var(--acc)">contact@darknode.ai</a>.</p>`,
     about: `<h2 class="set-panel-h">About</h2>
       <p class="muted">Darknode -- your security workspace. In-browser tools plus install commands for everything that runs on your machine.</p>
       <p class="muted" style="font-size:.75rem">Version 1.0</p>`,
@@ -1368,6 +1400,42 @@ function renderSettingsPage(main, user, isOwner, initialTab) {
       sidewSeg.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b.dataset.sidew === cur));
       sidewSeg.onclick = (e) => { const b = e.target.closest("button[data-sidew]"); if (!b) return; document.dispatchEvent(new CustomEvent("aws-side:set", { detail: { open: b.dataset.sidew !== "rail" } })); sidewSeg.querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b)); };
     }
+    // Reading mode (normal / stupid / confusing) — applies live across the app.
+    const readSeg = main.querySelector("#sw-read");
+    if (readSeg) {
+      let cur = "normal"; try { cur = localStorage.getItem("dn_read_mode") || "normal"; } catch (_) {}
+      readSeg.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b.dataset.read === cur));
+      readSeg.onclick = (e) => {
+        const b = e.target.closest("button[data-read]"); if (!b) return;
+        try { if (window.dnReading) window.dnReading.setReadMode(b.dataset.read); else localStorage.setItem("dn_read_mode", b.dataset.read); } catch (_) {}
+        readSeg.querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b));
+      };
+    }
+    // Data & privacy controls
+    const dataExport = main.querySelector("#data-export");
+    if (dataExport) dataExport.onclick = () => {
+      const out = { exportedAt: new Date().toISOString(), account: { uid: user.uid, email: user.email || "", name: user.displayName || "" }, preferences: {}, apiKeysPresent: {} };
+      try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (!/^(sw_|dn_)/.test(k)) continue; let v = localStorage.getItem(k); if (/key|token|secret|api|pair/i.test(k)) v = v ? "[redacted]" : ""; out.preferences[k] = v; } } catch (_) {}
+      try { const keys = window.dnKeys ? window.dnKeys.getJSON("dn_api_keys") : {}; Object.keys(keys || {}).forEach((svc) => { out.apiKeysPresent[svc] = !!keys[svc]; }); } catch (_) {}
+      const blob = new Blob([JSON.stringify(out, null, 2)], { type: "application/json" });
+      const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "darknode-data.json";
+      document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+    };
+    const dataClear = main.querySelector("#data-clear");
+    if (dataClear) dataClear.onclick = async () => {
+      const ok = window.dnConfirm ? await window.dnConfirm("Clear all local data?", "This wipes every Darknode setting and saved key from this browser and signs you out of this device. It cannot be undone.", { submitText: "Clear everything", danger: true }) : true;
+      if (!ok) return;
+      try { const rm = []; for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (/^(sw_|dn_)/.test(k)) rm.push(k); } rm.forEach((k) => localStorage.removeItem(k)); } catch (_) {}
+      try { if (window.dnKeys && window.dnKeys.clearForUid) window.dnKeys.clearForUid(user.uid); } catch (_) {}
+      try { await doLogout(); } catch (_) { location.reload(); }
+    };
+    const dataDelete = main.querySelector("#data-delete");
+    if (dataDelete) dataDelete.onclick = async () => {
+      const ok = window.dnConfirm ? await window.dnConfirm("Request account deletion?", "We'll permanently delete your Darknode account and its records, then confirm by email to " + (user.email || "your address") + ".", { submitText: "Request deletion", danger: true }) : true;
+      if (!ok) return;
+      try { await setDoc(doc(db, "deletionRequests", user.uid), { uid: user.uid, email: user.email || "", requestedAt: serverTimestamp() }, { merge: true }); showToast("Deletion request received. We'll confirm by email.", "success"); }
+      catch (e) { showToast("Could not file the request: " + ((e && e.message) || "try emailing contact@darknode.ai"), "error"); }
+    };
     // Darknode API key controls
     const dnKeyEl = main.querySelector("#dn-key");
     if (dnKeyEl) {

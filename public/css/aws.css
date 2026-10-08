@@ -11,9 +11,9 @@ body.app {
   --con-h1: 48px;
   --con-h2: 36px;
   --aws-side-w: 264px;
-  --aws-hdr: #161d26;
-  --aws-hdr-2: #232f3e;
-  --aws-hdr-line: #414d5c;
+  --aws-hdr: #141b3a;
+  --aws-hdr-2: #202a55;
+  --aws-hdr-line: #3a4785;
   --aws-hdr-txt: #ffffff;
   --aws-hdr-mut: #b6bec9;
   --aws-orange: #ff9900;
@@ -44,9 +44,13 @@ html body.app #topbar#topbar {
   min-height: 0 !important;
   padding: 0 12px 0 16px !important;
   gap: 8px !important;
-  background: var(--aws-hdr) !important;
+  /* Brand header: deep indigo -> violet, not the old near-black, so it reads as
+     Darknode and the logo stands clear of it. A thin cyan accent line underneath
+     ties it to the platform accent (--acc). */
+  background: linear-gradient(90deg, #141b3a 0%, #1b2450 52%, #241a4d 100%) !important;
   border: 0 !important;
-  box-shadow: none !important;
+  border-bottom: 1px solid rgba(0, 212, 255, .38) !important;
+  box-shadow: 0 1px 0 rgba(124, 92, 255, .25) !important;
   backdrop-filter: none !important;
 }
 html body.app #topbar#topbar::before,

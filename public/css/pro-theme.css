@@ -13352,16 +13352,19 @@ html[data-style="pro"] .set-layout {
   border: 1px solid #eef2f7 !important;
   border-radius: 12px !important;
   overflow: hidden !important;
+  min-height: 560px !important;
 }
 html[data-style="pro"] .set-nav {
   background: #f8fafc !important;
   border-right: 1px solid #f1f5f9 !important;
+  min-width: 200px !important;
+  padding: 14px !important;
 }
 html[data-style="pro"] .set-tab {
   color: #64748b !important;
-  font-size: .82rem !important;
+  font-size: .86rem !important;
   font-weight: 500 !important;
-  padding: 8px 16px !important;
+  padding: 10px 16px !important;
   border-radius: 6px !important;
   transition: all .1s ease !important;
 }
@@ -13375,13 +13378,13 @@ html[data-style="pro"] .set-tab.active {
   font-weight: 600 !important;
 }
 html[data-style="pro"] .set-panel {
-  padding: 24px !important;
+  padding: 28px 32px !important;
 }
 html[data-style="pro"] .set-panel-h {
-  font-size: 1.05rem !important;
+  font-size: 1.2rem !important;
   font-weight: 700 !important;
   color: #0f172a !important;
-  margin: 0 0 16px !important;
+  margin: 0 0 18px !important;
 }
 html[data-style="pro"] .set-row {
   padding: 10px 0 !important;
