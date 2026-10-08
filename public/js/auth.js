@@ -48,7 +48,7 @@ let MORE = [], CATALOG = [], CATEGORIES = [];
 import("/js/toolkit.js").then(m => { MORE = m.MORE; CATALOG = m.CATALOG; CATEGORIES = m.CATEGORIES; });
 import { startTour, tourDone } from "/js/tour.js";
 let _landing = null;
-async function loadLanding() { if (!_landing) _landing = await import("/js/landing.js?v=20261007a"); return _landing; }
+async function loadLanding() { if (!_landing) _landing = await import("/js/landing.js?v=20261007e"); return _landing; }
 // No-account identities (Test Mode / app guest) get a RANDOM, per-session uid, not a
 // fixed shared one. The old fixed "test-user"/"app-guest" uids put every such session
 // into one shared dnk:<uid>:* key namespace, so two people could land on the same
@@ -351,7 +351,7 @@ function loadSupportChat() {
   if (_chatLoaded) return;
   _chatLoaded = true;
   const s = document.createElement("script");
-  s.src = "/js/darknode-chat.js?v=20261007d"; s.async = false;
+  s.src = "/js/darknode-chat.js?v=20261007e"; s.async = false;
   document.body.appendChild(s);
 }
 window.__loadSupportChat = loadSupportChat;
@@ -1665,7 +1665,7 @@ function renderApp(user) {
     if (sec && sec !== "home" && sec !== "settings") { try { let r = JSON.parse(localStorage.getItem("dn_recent")||"[]"); r = r.filter(s=>s!==sec); r.unshift(sec); r = r.slice(0,8); localStorage.setItem("dn_recent", JSON.stringify(r)); } catch(_){} }
     if (sec === "tools") { main.innerHTML = `<div class="pg-head"><div><h1 class="pg-h1">Tools</h1><p class="muted pg-sub">Search, filter, and open any tool in the catalog.</p></div></div><div id="tools"></div>`; import("/js/tools.js?v=20260924a").then(m => m.renderTools(document.getElementById("tools"))); }
     else if (sec === "utils") { import("/js/utils.js").then(m => m.renderUtils(main)); }
-    else if (sec === "ai") { import("/js/webai.js?v=20261006a").then(m => m.renderAI(main)); }
+    else if (sec === "ai") { import("/js/webai.js?v=20261007e").then(m => m.renderAI(main)); }
     else if (sec === "math") { _prevCleanup = renderQuelvra(main, more); }
     else if (sec === "payloads") { import("/js/labs.js?v=20261003a").then(m => m.renderPayloads(main)); }
     else if (sec === "targets") { import("/js/labs.js?v=20261003a").then(m => m.renderTargets(main)); }
@@ -1812,7 +1812,7 @@ function renderApp(user) {
     else if (sec === "downloads") { import("/js/getapp.js?v=20261004a").then(m => m.renderDownloads(main)); }
     else if (sec === "dlguide") { import("/js/getapp.js?v=20261004a").then(m => m.renderDownloadDocs(main)); }
     else if (sec === "api") { import("/js/api.js?v=20261007a").then(m => m.renderAPI(main, user)); }
-    else if (sec === "docs") { import("/js/docs.js?v=20260924b").then(m => m.renderDocs(main)); }
+    else if (sec === "docs") { import("/js/docs.js?v=20261007e").then(m => m.renderDocs(main)); }
     else if (sec === "setup") renderSetup(main, more);
     else if (sec === "settings") renderSettingsPage(main, user, isOwner, more);
     else if (sec === "admin") { import("/js/admin.js?v=20261007b").then(m => m.renderAdmin(main, user)); }

@@ -1,6 +1,6 @@
 DARKNODE — VERSION LOG
 ======================
-Last updated: 2026-10-04
+Last updated: 2026-10-07
 
 Plain text. One section per product. Dates are ISO (YYYY-MM-DD) and are taken
 from each repository's own version history (package manifest changes and release
@@ -31,8 +31,11 @@ repository has shipped continuously since 2026-08-03.
 -------------------------------------------------------------------------------
 DARKNODE DESKTOP APP
 -------------------------------------------------------------------------------
-Current: 2.50.0
+Current: 2.51.0
 
+2.51.0   2026-10-07   Keychain-backed secret vault with redaction and a
+                      secret-scanner; attested-authorization gate before
+                      privileged actions. Linux/Windows/macOS installers.
 2.50.0   2026-09-26
 2.49.0   2026-09-26
 2.48.0   2026-09-26
