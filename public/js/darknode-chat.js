@@ -202,12 +202,13 @@
 
   // ── UI ─────────────────────────────────────────────────────────────────────
   var CSS =
-    "#dnchat-launch{position:fixed;right:20px;bottom:20px;z-index:2147483640;display:inline-flex;align-items:center;gap:8px;" +
-      "background:#0f172a;color:#fff;border:1px solid #2563eb;border-radius:999px;padding:11px 18px;font:600 13px/1 system-ui,-apple-system,sans-serif;" +
-      "cursor:pointer;box-shadow:0 10px 30px rgba(2,6,23,.28);transition:transform .12s ease,box-shadow .12s ease}" +
-    "#dnchat-launch:hover{transform:translateY(-1px);box-shadow:0 14px 38px rgba(2,6,23,.34)}" +
-    "#dnchat-launch .dnchat-dot{width:8px;height:8px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.22)}" +
-    "#dnchat-panel{position:fixed;right:20px;bottom:20px;z-index:2147483641;width:380px;max-width:calc(100vw - 32px);height:560px;max-height:calc(100vh - 40px);" +
+    "#dnchat-launch{display:inline-flex;align-items:center;gap:7px;vertical-align:middle;margin-right:10px;" +
+      "background:#0f172a;color:#fff;border:1px solid #2563eb;border-radius:999px;padding:7px 14px;font:600 12.5px/1 system-ui,-apple-system,sans-serif;" +
+      "cursor:pointer;transition:transform .12s ease,box-shadow .12s ease}" +
+    "#dnchat-launch:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(2,6,23,.24)}" +
+    "#dnchat-launch .dnchat-dot{width:7px;height:7px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.22)}" +
+    "@media (max-width:640px){#dnchat-launch .dnchat-lbl{display:none}#dnchat-launch{padding:7px 10px}}" +
+    "#dnchat-panel{position:fixed;right:16px;top:62px;z-index:2147483641;width:380px;max-width:calc(100vw - 32px);height:560px;max-height:calc(100vh - 80px);" +
       "display:none;flex-direction:column;background:#fff;border:1px solid rgba(2,6,23,.12);border-radius:16px;overflow:hidden;" +
       "box-shadow:0 20px 56px rgba(2,6,23,.30),0 3px 12px rgba(2,6,23,.14);font:400 14px/1.5 system-ui,-apple-system,sans-serif}" +
     "#dnchat-panel.open{display:flex}" +
@@ -234,7 +235,7 @@
     "html[data-style=pro] .dnchat-msg.a,html[data-skin=command] .dnchat-msg.a{background:var(--card2,#0f1623);border-color:var(--line,#1e293b);color:var(--txt,#e2e8f0)}" +
     "html[data-style=pro] #dnchat-foot,html[data-skin=command] #dnchat-foot{background:var(--card,#0b0f17);border-color:var(--line,#1e293b)}" +
     "html[data-style=pro] #dnchat-in,html[data-skin=command] #dnchat-in{background:var(--card2,#0f1623);border-color:var(--line,#1e293b);color:var(--txt,#e2e8f0)}" +
-    "@media (max-width:480px){#dnchat-panel{right:8px;bottom:8px;width:calc(100vw - 16px);height:calc(100vh - 16px);max-height:none}}";
+    "@media (max-width:480px){#dnchat-panel{right:8px;top:56px;width:calc(100vw - 16px);height:calc(100vh - 64px);max-height:none}}";
 
   var panel, logEl, inputEl, sendBtn, launchBtn, built = false, busy = false;
   var history = []; // {role:'user'|'assistant', content}
@@ -258,9 +259,15 @@
     launchBtn = document.createElement("button");
     launchBtn.id = "dnchat-launch"; launchBtn.type = "button";
     launchBtn.setAttribute("aria-label", "Open the Darknode Assistant");
-    launchBtn.innerHTML = '<span class="dnchat-dot"></span>Ask Darknode';
+    launchBtn.innerHTML = '<span class="dnchat-dot"></span><span class="dnchat-lbl">Ask Darknode</span>';
     launchBtn.addEventListener("click", function () { openPanel(); });
-    document.body.appendChild(launchBtn);
+    // Mount in the top bar (left of the user/sign-in slot). Fall back to a
+    // floating button only if the topbar isn't present (e.g. a bare page).
+    var slot = document.getElementById("user-slot");
+    var bar = document.getElementById("topbar");
+    if (slot && slot.parentNode) slot.parentNode.insertBefore(launchBtn, slot);
+    else if (bar) bar.appendChild(launchBtn);
+    else { launchBtn.style.position = "fixed"; launchBtn.style.right = "16px"; launchBtn.style.top = "14px"; launchBtn.style.zIndex = "2147483640"; document.body.appendChild(launchBtn); }
 
     panel = document.createElement("div");
     panel.id = "dnchat-panel";

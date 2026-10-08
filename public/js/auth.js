@@ -351,7 +351,7 @@ function loadSupportChat() {
   if (_chatLoaded) return;
   _chatLoaded = true;
   const s = document.createElement("script");
-  s.src = "/js/darknode-chat.js?v=20261007a"; s.async = false;
+  s.src = "/js/darknode-chat.js?v=20261007d"; s.async = false;
   document.body.appendChild(s);
 }
 window.__loadSupportChat = loadSupportChat;
@@ -1825,10 +1825,16 @@ function renderApp(user) {
     // Jump back to the top on every navigation. The page scrolls on the window
     // (not #app-content), and several routes mount their content in an async
     // import().then() a frame or two later, so reset the window now and again
-    // after the new view has had a chance to mount.
-    main.scrollTop = 0;
-    window.scrollTo(0, 0);
-    requestAnimationFrame(() => window.scrollTo(0, 0));
+    // after the new view has had a chance to mount. Force an INSTANT jump:
+    // html has scroll-behavior:smooth, so a bare scrollTo(0,0) animates a long
+    // slow scroll up before the new view shows — exactly the jank we don't want.
+    const jumpTop = () => {
+      main.scrollTop = 0;
+      try { window.scrollTo({ top: 0, left: 0, behavior: "instant" }); }
+      catch (_) { window.scrollTo(0, 0); }
+    };
+    jumpTop();
+    requestAnimationFrame(jumpTop);
   }
   // Handle browser back/forward
   window.addEventListener("popstate", (e) => {
