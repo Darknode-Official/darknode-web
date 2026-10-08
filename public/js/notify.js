@@ -14,12 +14,12 @@
 //      built-in email-verification link and skips login alerts.
 const EMAILJS = {
   publicKey: "wydk8Uuzp3W0WhbZj",
-  serviceId: "YOUR_SERVICE_ID",
+  serviceId: "service_ghf1upo",
   codeTemplate: "YOUR_CODE_TEMPLATE_ID",
   alertTemplate: "YOUR_ALERT_TEMPLATE_ID",
   // Free-form announcement/outage notice. Template "To email" = {{to_email}};
   // variables: {{name}}, {{subject}}, {{message}}. Used by sendAnnouncement().
-  announceTemplate: "YOUR_ANNOUNCE_TEMPLATE_ID",
+  announceTemplate: "template_u8nmqoe",
 };
 
 export const emailConfigured = () =>

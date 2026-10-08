@@ -299,7 +299,7 @@ import {
 } from "/js/cyber.js";
 let _learnHub = null;
 async function loadLearnHub() { if (!_learnHub) { _learnHub = await import("/js/learn-hub.js"); } return _learnHub; }
-import { emailConfigured, sendCode, sendLoginAlert, genCode, hashCode, deviceInfo } from "/js/notify.js";
+import { emailConfigured, sendCode, sendLoginAlert, genCode, hashCode, deviceInfo } from "/js/notify.js?v=20261007c";
 import { initSaved } from "/js/saved.js";
 import("/js/shell-bridge.js").then(m => {
   window.shellIsConnected = m.shellIsConnected;
