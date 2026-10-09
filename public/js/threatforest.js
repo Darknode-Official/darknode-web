@@ -484,7 +484,7 @@ function paintTree(p) {
   }).join("");
   p.innerHTML = '<p class="tf-tag" style="margin:0 0 12px"><b>Goal:</b> ' + esc(S.tree.root) + " &mdash; click a path to collapse. Each leaf is a concrete weakness that advances that goal.</p>" +
     '<ul class="tf-tree">' + branches + "</ul>" +
-    '<div class="tf-row" style="margin-top:16px"><button class="tf-btn ghost" id="tf-graph"' + (S.sentGraph ? " disabled" : "") + ">" + (S.sentGraph ? "Sent to Security Graph ✓" : "Send to Security Graph") + "</button></div>";
+    '<div class="tf-row" style="margin-top:16px"><button class="tf-btn ghost" id="tf-graph"' + (S.sentGraph ? " disabled" : "") + ">" + (S.sentGraph ? "Sent to Security Graph" : "Send to Security Graph") + "</button></div>";
   p.querySelectorAll(".tf-tgoal").forEach((el) => el.onclick = () => {
     el.classList.toggle("col");
     const ul = el.nextElementSibling; if (ul) ul.style.display = el.classList.contains("col") ? "none" : "";
@@ -578,7 +578,7 @@ function paintReport(p) {
     '<textarea class="tf-ta" readonly style="min-height:340px">' + esc(md) + "</textarea>";
   p.querySelector("#tf-copy").onclick = () => {
     navigator.clipboard && navigator.clipboard.writeText(md);
-    const b = p.querySelector("#tf-copy"); b.textContent = "Copied ✓"; setTimeout(() => (b.textContent = "Copy Markdown"), 1200);
+    const b = p.querySelector("#tf-copy"); b.textContent = "Copied"; setTimeout(() => (b.textContent = "Copy Markdown"), 1200);
   };
   p.querySelector("#tf-json").onclick = () => download("threatforest-report.json", JSON.stringify({ risk: S.risk, result: S.result, tree: S.tree, ai: S.ai }, null, 2), "application/json");
   p.querySelector("#tf-md").onclick = () => download("threatforest-report.md", md, "text/markdown");
@@ -657,7 +657,7 @@ function sendGraph(btn) {
         }
       });
       S.sentGraph = true;
-      btn.textContent = "Sent to Security Graph ✓";
+      btn.textContent = "Sent to Security Graph";
       if (gb.showGraphToast) gb.showGraphToast("ThreatForest: " + S.result.findings.length + " weaknesses sent to the Security Graph.");
     } catch (e) {
       btn.disabled = false; btn.textContent = "Send to Security Graph";

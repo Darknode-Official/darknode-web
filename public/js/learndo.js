@@ -57,7 +57,7 @@ export function renderLearnDo(main) {
           '<span class="chip" style="font-size:.62rem">' + esc(a.level) + '</span>' +
           '<span style="color:var(--mut);font-size:.72rem">~' + a.mins + ' min</span>' +
           '<span style="flex:1"></span>' +
-          '<button class="ld-mark" data-id="' + esc(a.id) + '" style="font-size:.7rem;border:1px solid var(--line);background:transparent;color:' + (done ? "var(--acc)" : "var(--mut)") + ';border-radius:6px;padding:3px 9px;cursor:pointer">' + (done ? "Done ✓" : "Mark done") + '</button>' +
+          '<button class="ld-mark" data-id="' + esc(a.id) + '" style="font-size:.7rem;border:1px solid var(--line);background:transparent;color:' + (done ? "var(--acc)" : "var(--mut)") + ';border-radius:6px;padding:3px 9px;cursor:pointer">' + (done ? "Done" : "Mark done") + '</button>' +
         '</div>' +
       '</div>'
     );
