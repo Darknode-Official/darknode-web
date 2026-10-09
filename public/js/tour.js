@@ -13,6 +13,10 @@ export function startTour(steps) {
   let idx = 0;
   const has = (i) => { const s = steps[i]; return s && (!s.sel || document.querySelector(s.sel)); };
   const seek = (from, dir) => { let i = from; while (i >= 0 && i < steps.length) { if (has(i)) return i; i += dir; } return -1; };
+  // Steps whose target is absent are skipped, so number by position among the
+  // steps that will actually be SHOWN — otherwise the counter skips numbers
+  // (1, 3, 4...) and the total overcounts.
+  const visibleIdxs = () => { const out = []; for (let i = 0; i < steps.length; i++) if (has(i)) out.push(i); return out; };
 
   function end() {
     overlay.remove();
@@ -44,8 +48,10 @@ export function startTour(steps) {
     const s = steps[idx];
     const last = seek(idx + 1, 1) === -1;
     const first = seek(idx - 1, -1) === -1;
+    const vis = visibleIdxs();
+    const pos = vis.indexOf(idx) + 1;
     callout.innerHTML = `
-      <div class="tour-step">${idx + 1} / ${steps.length}</div>
+      <div class="tour-step">${pos} / ${vis.length}</div>
       <div class="tour-title">${s.title || ""}</div>
       <div class="tour-text">${s.text || ""}</div>
       <div class="tour-actions">

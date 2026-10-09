@@ -235,6 +235,13 @@ html[data-style=dark].crt body::after {
   content: url('/favicon.svg') !important;
   filter: none !important;
 }
+/* On the landing page the pro topbar is transparent over the dark hero
+   (body bg #070a12), so the dark-tile favicon disappears — it reads as a black
+   box on a black background. Use the light, transparent-background mark there,
+   matching what the in-app dark topbar already does (aws.css). */
+[data-style=pro] body.landing #topbar .brand-mark {
+  content: url('/logo-light.svg') !important;
+}
 
 /* Inputs */
 [data-style=pro] input[type=text],
