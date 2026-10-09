@@ -845,7 +845,7 @@ applyCrt(crtOn());
 // Reading modes (normal / stupid / confusing) — rewrites UI wording in place.
 // Loaded lazily; the module is a singleton (keeps a MutationObserver) so it is
 // never cache-busted with ?v= (the service-worker cache version ships updates).
-(function () { import("/js/reading-modes.js").then((m) => { try { window.dnReading = m; m.initReadingModes(); } catch (_) {} }).catch(() => {}); })();
+(function () { import("/js/reading-modes.js?v=20261008b").then((m) => { try { window.dnReading = m; m.initReadingModes(); } catch (_) {} }).catch(() => {}); })();
 // UI preference appliers (density / motion / live topbar) — set an attribute on
 // <html> so CSS can react, and persist the choice.
 function _pref(k, d) { try { return localStorage.getItem(k) || d; } catch (_) { return d; } }
