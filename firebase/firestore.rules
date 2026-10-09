@@ -98,5 +98,33 @@ service cloud.firestore {
                     && request.resource.data.email.size() < 256;
       allow read, update, delete: if isOwner();
     }
+
+    // Beta Lab demo tools: a PUBLIC catalogue of prototype/concept demos, published
+    // by the owner (normally via the Admin SDK, which bypasses rules) so new demos
+    // appear live without a site redeploy. Anyone may read; only the owner writes.
+    match /demoTools/{docId} {
+      allow read:  if true;
+      allow write: if isOwner();
+    }
+
+    // Beta Lab tool requests: a PUBLIC request board. Anyone (signed in or not) may
+    // post one idea; their name + idea are shown publicly. Shape + size are pinned
+    // so a doc can't be stuffed with extra fields or oversized payloads. Only the
+    // owner may edit or remove entries.
+    match /toolRequests/{docId} {
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasOnly(['name', 'idea', 'uid', 'ts', 'createdAt'])
+                    && request.resource.data.name is string
+                    && request.resource.data.name.size() > 0
+                    && request.resource.data.name.size() <= 60
+                    && request.resource.data.idea is string
+                    && request.resource.data.idea.size() >= 3
+                    && request.resource.data.idea.size() <= 280
+                    && request.resource.data.ts is int
+                    && (request.resource.data.uid == null
+                        || (request.resource.data.uid is string
+                            && request.resource.data.uid == request.auth.uid));
+      allow update, delete: if isOwner();
+    }
   }
 }
