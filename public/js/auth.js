@@ -601,7 +601,6 @@ function showLanding() {
       </div>
     </div>
     <span class="nav-spacer"></span>
-    <a class="nav-link" id="nav-help" onclick="window.__openHelp&&window.__openHelp()">Help</a>
     <a class="nav-link" id="nav-signin">Log in</a>
     <button class="btn" id="nav-start">Get Started</button>`;
   document.querySelectorAll(".nav-dd").forEach(dd => {
