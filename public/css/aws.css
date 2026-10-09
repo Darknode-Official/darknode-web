@@ -322,13 +322,19 @@ html body .aws-side :is(.aws-sl, .aws-sg-h) {
   padding: 4px 16px 4px 24px !important;
   cursor: pointer;
   transform: none !important;
+  white-space: nowrap;      /* a long tool name must never wrap to a second line */
+  overflow: hidden;         /* ... including when the active item turns bold (below) */
 }
 html body .aws-side .aws-sg-items .aws-sl { padding-left: 44px !important; }
 html body .aws-side .aws-sl:hover,
 html body .aws-side .aws-sg-h:hover { color: var(--aws-side-on) !important; text-decoration: underline; }
 html body .aws-side .aws-sl.on { color: var(--aws-side-on) !important; font-weight: 700; }
 html body .aws-side .aws-sg-h { font-weight: 400; }
-.aws-sg-name { flex: 1; min-width: 0; }
+/* The label is its own flex item so it truncates with an ellipsis instead of
+   wrapping — the extra width from the bold active state is absorbed here, not
+   pushed onto a new line. Any trailing badge stays visible beside it. */
+html body .aws-side .aws-sl .aws-sl-t { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.aws-sg-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .aws-sg-n { color: var(--aws-crumb-cur); font-size: 12px; }
 .aws-caret {
   position: relative;

@@ -122,15 +122,15 @@ export function consoleHTML(isOwner) {
   <div class="aws-side-bd" id="awsSideBd" hidden></div>
   <nav class="aws-side" id="awsSide" aria-label="Side navigation">
     <div class="aws-side-h"><button class="aws-side-title" data-sec="home">Darknode Console</button><button class="aws-side-x" id="awsSideClose" aria-label="Close side navigation" title="Close navigation"></button></div>
-    <button class="aws-sl aws-sl-top" data-sec="home">Console home</button>
-    <button class="aws-sl aws-sl-top" data-sec="ai">Darknode AI</button>
+    <button class="aws-sl aws-sl-top" data-sec="home"><span class="aws-sl-t">Console home</span></button>
+    <button class="aws-sl aws-sl-top" data-sec="ai"><span class="aws-sl-t">Darknode AI</span></button>
     <div class="aws-side-div"></div>
     <div class="aws-side-lbl">Categories</div>
     ${gs.map((g) => `<div class="aws-sg" data-g="${g.id}"><button class="aws-sg-h" aria-expanded="false"><span class="aws-caret" aria-hidden="true"></span><span class="aws-sg-name">${esc(g.name)}</span><span class="aws-sg-n">${g.items.length}</span></button><div class="aws-sg-items" hidden></div></div>`).join("")}
     <div class="aws-side-div"></div>
-    <button class="aws-sl aws-sl-top" data-sec="docs">Documentation</button>
-    <button class="aws-sl aws-sl-top" data-sec="settings">Settings</button>
-    <button class="aws-sl aws-sl-top" data-sec="contact">Feedback</button>
+    <button class="aws-sl aws-sl-top" data-sec="docs"><span class="aws-sl-t">Documentation</span></button>
+    <button class="aws-sl aws-sl-top" data-sec="settings"><span class="aws-sl-t">Settings</span></button>
+    <button class="aws-sl aws-sl-top" data-sec="contact"><span class="aws-sl-t">Feedback</span></button>
   </nav>
   <button class="aws-side-open" id="awsSideOpen" aria-label="Open side navigation" title="Open navigation" aria-controls="awsSide" aria-expanded="true"><span></span></button>`;
 }
@@ -289,7 +289,7 @@ export function wireConsole(root) {
     const box = sg.querySelector(".aws-sg-items");
     if (box.dataset.filled) return;
     const g = ALL.find((x) => x.id === sg.dataset.g); if (!g) return;
-    box.innerHTML = g.items.map((i) => `<button class="aws-sl" data-sec="${esc(i.sec)}">${esc(i.label)}${badgeHTML(i.sec)}</button>`).join("");
+    box.innerHTML = g.items.map((i) => `<button class="aws-sl" data-sec="${esc(i.sec)}"><span class="aws-sl-t">${esc(i.label)}</span>${badgeHTML(i.sec)}</button>`).join("");
     box.dataset.filled = "1";
   };
   const openGroup = (sg, open) => {
