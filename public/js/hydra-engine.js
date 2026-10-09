@@ -1331,8 +1331,8 @@ export function renderHydra(main) {
 
   var HY_CSS = '<style>' +
     '.hy-wrap{font-family:"JetBrains Mono",ui-monospace,monospace}' +
-    '.hy-header{display:flex;align-items:center;gap:16px;padding:20px 0;border-bottom:2px solid var(--acc);position:relative}' +
-    '.hy-header::after{content:"";position:absolute;bottom:-2px;left:0;width:100px;height:2px;background:var(--acc);box-shadow:0 0 12px var(--acc),0 0 30px color-mix(in srgb,var(--acc) 40%,transparent)}' +
+    '.hy-header{display:flex;align-items:center;gap:16px;padding:20px 24px;border-bottom:2px solid var(--acc);position:relative}' +
+    '.hy-header::after{content:"";position:absolute;bottom:-2px;left:24px;width:100px;height:2px;background:var(--acc);box-shadow:0 0 12px var(--acc),0 0 30px color-mix(in srgb,var(--acc) 40%,transparent)}' +
     '.hy-title{font-size:1.8rem;font-weight:800;letter-spacing:.12em;color:var(--acc);text-shadow:0 0 20px color-mix(in srgb,var(--acc) 50%,transparent);margin:0}' +
     '.hy-subtitle{color:var(--mut);font-size:.75rem;letter-spacing:.06em;text-transform:uppercase}' +
     '.hy-status-dot{width:8px;height:8px;border-radius:50%;display:inline-block}' +

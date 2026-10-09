@@ -1132,8 +1132,8 @@ export function renderCitadel(main) {
     main.innerHTML =
       '<style>' +
       '.ct-wrap{font-family:"JetBrains Mono",ui-monospace,monospace;position:relative}' +
-      '.ct-header{display:flex;align-items:center;gap:16px;padding:16px 0;border-bottom:2px solid var(--acc);position:relative}' +
-      '.ct-header::after{content:"";position:absolute;bottom:-2px;left:0;width:120px;height:2px;background:var(--acc);box-shadow:0 0 12px var(--acc)}' +
+      '.ct-header{display:flex;align-items:center;gap:16px;padding:16px 24px;border-bottom:2px solid var(--acc);position:relative}' +
+      '.ct-header::after{content:"";position:absolute;bottom:-2px;left:24px;width:120px;height:2px;background:var(--acc);box-shadow:0 0 12px var(--acc)}' +
       '.ct-title{font-size:1.6rem;font-weight:800;letter-spacing:.12em;color:var(--acc);text-shadow:0 0 20px color-mix(in srgb,var(--acc) 40%,transparent);margin:0}' +
       '.ct-sub{color:var(--mut);font-size:.7rem;letter-spacing:.05em;text-transform:uppercase}' +
       '.ct-dot{width:8px;height:8px;border-radius:50%;background:#00e676;box-shadow:0 0 8px #00e676;animation:ct-pulse 2s ease-in-out infinite}' +

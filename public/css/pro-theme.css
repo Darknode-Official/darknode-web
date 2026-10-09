@@ -4660,6 +4660,16 @@ html[data-style=dark].crt body::after {
 [data-style=pro] .ft-output { background: #1e293b !important; border-radius: 8px !important; }
 [data-style=pro] .ft-stat { background: #fff !important; border: 1px solid #e2e8f0 !important; border-radius: 8px !important; }
 
+/* ---------------------------------------------------------------------------
+   Padding safeguard — text must never touch its box border. A tool "header"
+   banner gets a card background in the pro theme, so its title can't sit flush
+   against the edge. Give every single-class *-header container horizontal
+   breathing room (vertical padding stays with each tool). The attribute-suffix
+   match only hits single-class headers, so sub-elements like -header-title,
+   -header-subtitle and -header-row are left alone.
+   --------------------------------------------------------------------------- */
+[data-style=pro] [class$="-header"] { padding-left: 24px !important; padding-right: 24px !important; }
+
 /* --- AEGIS (.ag-*) --- */
 [data-style=pro] .ag-wrap { background: #f8fafc !important; color: #0f172a !important; }
 [data-style=pro] .ag-header { background: #fff !important; border-bottom: 1px solid #e2e8f0 !important; }

@@ -884,7 +884,7 @@ export function renderPhantom(main) {
     main.innerHTML =
       '<style>' +
       '.ph-wrap{font-family:var(--font-body,system-ui,sans-serif);position:relative}' +
-      '.ph-header{display:flex;align-items:center;gap:16px;padding:16px 0;border-bottom:2px solid #06b6d4}' +
+      '.ph-header{display:flex;align-items:center;gap:16px;padding:16px 24px;border-bottom:2px solid #06b6d4}' +
       '.ph-title{font-size:1.5rem;font-weight:800;letter-spacing:.08em;color:#06b6d4;margin:0}' +
       '.ph-sub{color:var(--mut);font-size:.72rem;letter-spacing:.04em;text-transform:uppercase}' +
       '.ph-dot{width:8px;height:8px;border-radius:50%;background:#22c55e;box-shadow:0 0 8px #22c55e;animation:ph-pulse 2s ease-in-out infinite}' +

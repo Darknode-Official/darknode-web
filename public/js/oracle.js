@@ -751,7 +751,7 @@ export function renderOracle(main) {
     main.innerHTML =
       '<style>' +
       '.or-wrap{font-family:ui-sans-serif,system-ui,-apple-system,sans-serif;position:relative}' +
-      '.or-header{display:flex;align-items:center;gap:16px;padding:16px 0;border-bottom:2px solid var(--acc,#3b82f6)}' +
+      '.or-header{display:flex;align-items:center;gap:16px;padding:16px 24px;border-bottom:2px solid var(--acc,#3b82f6)}' +
       '.or-title{font-size:1.5rem;font-weight:800;letter-spacing:.06em;color:var(--acc,#3b82f6);margin:0}' +
       '.or-sub{color:var(--mut,#888);font-size:.72rem;letter-spacing:.04em;text-transform:uppercase}' +
       '.or-dot{width:8px;height:8px;border-radius:50%;background:#22c55e;box-shadow:0 0 8px #22c55e;animation:or-pulse 2s ease-in-out infinite}' +
