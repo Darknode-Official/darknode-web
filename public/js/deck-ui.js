@@ -1,5 +1,5 @@
 // ============================================================================
-// DarkDeck — a living command constellation (admin-only preview).
+// Darknode Command — a living command constellation (admin-only preview).
 //
 // NOT a desktop clone. The Deck is a spatial "connection hub": Darknode glows at
 // the core and the services it can work with — AI models and cybersecurity
@@ -13,6 +13,8 @@
 //     onOpen : (sec) => void   // navigate the real console to a tool
 //     onExit : () => void      // leave the deck
 // ============================================================================
+
+import { startOpenRouterConnect } from "/js/openrouter-connect.js?v=20261010c";
 
 const LS_CONN = "dn_deck_connections_v1";
 
@@ -32,6 +34,8 @@ const INTEGRATIONS = [
   { id: "deepseek",   name: "DeepSeek",      domain: "deepseek.com",       kind: "ai",  accent: "#4d6bfe", connect: "key", account: true,  blurb: "DeepSeek V3 / R1 reasoning models via API or your account." },
   { id: "cohere",     name: "Cohere",        domain: "cohere.com",         kind: "ai",  accent: "#ff7759", connect: "key",  blurb: "Enterprise LLMs with best-in-class embeddings and rerank." },
   { id: "together",   name: "Together AI",   domain: "together.ai",        kind: "ai",  accent: "#0f6fff", connect: "key",  blurb: "Serverless inference for 200+ open models." },
+  { id: "fireworks",  name: "Fireworks AI",  domain: "fireworks.ai",       kind: "ai",  accent: "#7c3aed", connect: "key",  blurb: "Fast, low-cost serving of open models (Llama, DeepSeek, Qwen)." },
+  { id: "cerebras",   name: "Cerebras",      domain: "cerebras.ai",        kind: "ai",  accent: "#f97316", connect: "key",  blurb: "The fastest inference on open models, on wafer-scale hardware." },
   // cybersecurity platforms / intel sources
   { id: "virustotal", name: "VirusTotal",    domain: "virustotal.com",     kind: "sec", accent: "#394eff", connect: "key",  blurb: "File, URL, domain and IP reputation across 70+ engines." },
   { id: "shodan",     name: "Shodan",        domain: "shodan.io",          kind: "sec", accent: "#e51e25", connect: "key",  blurb: "Internet-exposed host and service intelligence." },
@@ -39,7 +43,7 @@ const INTEGRATIONS = [
   { id: "hibp",       name: "Have I Been Pwned", domain: "haveibeenpwned.com", kind: "sec", accent: "#2a6bb3", connect: "key", blurb: "Breach and credential-exposure lookups." },
   { id: "greynoise",  name: "GreyNoise",     domain: "greynoise.io",       kind: "sec", accent: "#00c389", connect: "key",  blurb: "Context on internet background noise and mass scanners." },
   { id: "abuseipdb",  name: "AbuseIPDB",     domain: "abuseipdb.com",      kind: "sec", accent: "#1f9d55", connect: "key",  blurb: "Crowd-sourced IP abuse reporting and scoring." },
-  { id: "otx",        name: "AlienVault OTX",domain: "otx.alienvault.com", kind: "sec", accent: "#00a4e4", connect: "key",  blurb: "Open Threat Exchange pulses and indicators." },
+  { id: "otx",        name: "AlienVault OTX",domain: "otx.alienvault.com", fav: "alienvault.com", kind: "sec", accent: "#00a4e4", connect: "key",  blurb: "Open Threat Exchange pulses and indicators." },
   { id: "abusech",    name: "abuse.ch",      domain: "abuse.ch",           kind: "sec", accent: "#e2001a", connect: "link", blurb: "URLhaus, ThreatFox and MalwareBazaar feeds." },
   { id: "urlscan",    name: "urlscan.io",    domain: "urlscan.io",         kind: "sec", accent: "#5a67d8", connect: "key",  blurb: "Scan and dissect any URL in a sandbox." },
   { id: "mitre",      name: "MITRE ATT&CK",  domain: "attack.mitre.org",   kind: "sec", accent: "#d93a3a", connect: "link", blurb: "Adversary tactics & techniques knowledge base." },
@@ -49,6 +53,17 @@ const INTEGRATIONS = [
   { id: "ipinfo",     name: "IPinfo",        domain: "ipinfo.io",          kind: "sec", accent: "#1f8ceb", connect: "key",  blurb: "IP geolocation, ASN, company and privacy detection." },
   { id: "hybrid",     name: "Hybrid Analysis", domain: "hybrid-analysis.com", kind: "sec", accent: "#2b6cb0", connect: "key", blurb: "Free malware sandbox powered by CrowdStrike Falcon." },
   { id: "pulsedive",  name: "Pulsedive",     domain: "pulsedive.com",      kind: "sec", accent: "#5b53d6", connect: "key",  blurb: "Threat intelligence on indicators, feeds and risk scoring." },
+  { id: "zoomeye",    name: "ZoomEye",       domain: "zoomeye.org",        kind: "sec", accent: "#3b5bdb", connect: "key",  blurb: "Cyberspace search engine for exposed hosts, services and devices." },
+  { id: "binaryedge", name: "BinaryEdge",    domain: "binaryedge.io",      kind: "sec", accent: "#e8590c", connect: "key",  blurb: "Internet scanning data, exposed services and risk scoring." },
+  { id: "netlas",     name: "Netlas",        domain: "netlas.io",          kind: "sec", accent: "#1098ad", connect: "key",  blurb: "Attack-surface discovery over internet-wide scan data." },
+  { id: "fullhunt",   name: "FullHunt",      domain: "fullhunt.io",        kind: "sec", accent: "#f03e3e", connect: "key",  blurb: "Attack-surface management and exposure monitoring." },
+  { id: "intelx",     name: "Intelligence X",domain: "intelx.io",          kind: "sec", accent: "#364fc7", connect: "key",  blurb: "OSINT search across leaks, darkweb, document and selector data." },
+  { id: "hunter",     name: "Hunter",        domain: "hunter.io",          kind: "sec", accent: "#fd7e14", connect: "key",  blurb: "Find and verify professional email addresses for a domain." },
+  { id: "dehashed",   name: "DeHashed",      domain: "dehashed.com",       kind: "sec", accent: "#9c36b5", connect: "key",  blurb: "Credential and breach-record search across exposed datasets." },
+  { id: "anyrun",     name: "ANY.RUN",       domain: "any.run",            kind: "sec", accent: "#ff6b2c", connect: "key",  blurb: "Interactive malware sandbox for live behavioural analysis." },
+  { id: "maltego",    name: "Maltego",       domain: "maltego.com",        kind: "sec", accent: "#12b886", connect: "link", blurb: "Link-analysis and OSINT graphing across entities." },
+  { id: "misp",       name: "MISP",          domain: "misp-project.org",   kind: "sec", accent: "#2f7ed8", connect: "link", blurb: "Open threat-intelligence sharing platform and IOC feeds." },
+  { id: "exploitdb",  name: "Exploit-DB",    domain: "exploit-db.com",     kind: "sec", accent: "#d6336c", connect: "link", blurb: "Archive of public exploits and proof-of-concept code." },
 ];
 
 // Models each AI provider exposes. Picking one in the drawer stores its API model
@@ -65,7 +80,9 @@ const MODELS = {
   deepseek:   [{ label: "DeepSeek-V3", id: "deepseek-chat" }, { label: "DeepSeek-R1", id: "deepseek-reasoner" }],
   cohere:     [{ label: "Command A", id: "command-a-03-2025" }, { label: "Command R+", id: "command-r-plus" }, { label: "Command R", id: "command-r" }],
   together:   [{ label: "Llama 3.3 70B", id: "meta-llama/Llama-3.3-70B-Instruct-Turbo" }, { label: "Qwen2.5 72B", id: "Qwen/Qwen2.5-72B-Instruct-Turbo" }, { label: "Mixtral 8x22B", id: "mistralai/Mixtral-8x22B-Instruct-v0.1" }],
-  openrouter: [{ label: "Auto router (best available)", id: "openrouter/auto" }],
+  fireworks:  [{ label: "Llama 3.3 70B", id: "accounts/fireworks/models/llama-v3p3-70b-instruct" }, { label: "DeepSeek V3", id: "accounts/fireworks/models/deepseek-v3" }, { label: "Qwen2.5 72B", id: "accounts/fireworks/models/qwen2p5-72b-instruct" }],
+  cerebras:   [{ label: "Llama 3.3 70B", id: "llama-3.3-70b" }, { label: "Llama 3.1 8B", id: "llama3.1-8b" }],
+  openrouter: [{ label: "DeepSeek V3 (free)", id: "deepseek/deepseek-chat-v3-0324:free" }, { label: "Llama 3.3 70B (free)", id: "meta-llama/llama-3.3-70b-instruct:free" }, { label: "Auto router (best available)", id: "openrouter/auto" }],
   huggingface:[{ label: "Any Hub model", id: "" }],
   ollama:     [{ label: "Any locally pulled model (via CLI bridge)", id: "" }],
 };
@@ -86,8 +103,52 @@ const faviconURL = (domain) => `https://www.google.com/s2/favicons?domain=${doma
 
 // logo chip: live favicon with monogram fallback on error
 function logoHTML(it, cls){
-  return `<img class="${cls} logo" src="${faviconURL(it.domain)}" alt="" loading="lazy" referrerpolicy="no-referrer"
+  return `<img class="${cls} logo" src="${faviconURL(it.fav || it.domain)}" alt="" loading="lazy" referrerpolicy="no-referrer"
     onerror="this.outerHTML='<span class=\\'${cls} mono\\' style=\\'--a:${it.accent}\\'>${esc(monogram(it.name))}</span>'">`;
+}
+
+// Every tool gets a meaningful line-icon, routed from its label/category by
+// keyword. Keeps the gallery readable at a glance without a hand-kept icon map.
+const SVG = (p) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+const ICONS = {
+  network: SVG('<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18"/>'),
+  hash: SVG('<path d="M9 3 7 21M17 3l-2 18M4 8h16M3 16h16"/>'),
+  lock: SVG('<rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>'),
+  bug: SVG('<rect x="8" y="7" width="8" height="12" rx="4"/><path d="M12 7V4M5 9l3 1M19 9l-3 1M4 14h4M16 14h4M6 19l2-2M18 19l-2-2"/>'),
+  eye: SVG('<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/>'),
+  shield: SVG('<path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6l7-3Z"/><path d="m9 12 2 2 4-4"/>'),
+  mail: SVG('<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 7 8 6 8-6"/>'),
+  map: SVG('<path d="m9 4-6 2v14l6-2 6 2 6-2V4l-6 2-6-2Z"/><path d="M9 4v14M15 6v14"/>'),
+  cpu: SVG('<rect x="6" y="6" width="12" height="12" rx="2"/><rect x="9" y="9" width="6" height="6" rx="1"/><path d="M9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3"/>'),
+  file: SVG('<path d="M6 2h8l4 4v16H6Z"/><path d="M14 2v4h4M9 13h6M9 17h6"/>'),
+  graph: SVG('<circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="18" cy="17" r="2.5"/><path d="M8 16.5 16 7.5M8.3 17.3 15.6 16.6"/>'),
+  search: SVG('<circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/>'),
+  alert: SVG('<path d="M12 3 2 20h20L12 3Z"/><path d="M12 10v5M12 18h.01"/>'),
+  server: SVG('<rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/><path d="M7 7.5h.01M7 16.5h.01"/>'),
+  key: SVG('<circle cx="8" cy="8" r="4"/><path d="m11 11 9 9M17 17l2-2M15 19l2-2"/>'),
+  terminal: SVG('<rect x="3" y="4" width="18" height="16" rx="2"/><path d="m7 9 3 3-3 3M13 15h4"/>'),
+};
+const ICON_RULES = [
+  [/dns|domain|subnet|\bip\b|ipv|\basn\b|network|port|route|trace|cidr|whois|resolver|wifi|packet/i, "network"],
+  [/hash|md5|sha|crc|checksum|encode|decode|base64|cipher|entropy|hex/i, "hash"],
+  [/ssl|tls|cert|jwt|password|cred|login|auth|secret|pgp|rsa|vault/i, "lock"],
+  [/cve|vuln|exploit|malware|ransom|payload|attack|adversary|\bc2\b|shell|xss|injection|csp|firewall-rule/i, "bug"],
+  [/osint|recon|wayback|breach|leak|darkweb|dork|footprint|harvest|pwned/i, "eye"],
+  [/firewall|siem|\brule|defen|blue|hunt|incident|\bsoc\b|triage|forensic|detect|purple|vanguard/i, "shield"],
+  [/email|mail|spf|dmarc|dkim|phish/i, "mail"],
+  [/\bmap\b|geo|globe|sentinel|satellite|\bsat\b|track|location|navarch|maritime/i, "map"],
+  [/\bai\b|chat|assistant|oracle|prompt|\bllm\b|model|agent|spectre/i, "cpu"],
+  [/doc|report|checklist|playbook|note|policy|template|guide|crosswalk|case/i, "file"],
+  [/graph|visual|tree|chart|diagram|constellation|mapper/i, "graph"],
+  [/search|lookup|query|enrich|investig/i, "search"],
+  [/alert|risk|score|calc|cost|impact|cvss|severity/i, "alert"],
+  [/server|host|scan|infra|cloud|service|\bapi\b|network-map/i, "server"],
+  [/\bkey\b|token|crypto/i, "key"],
+];
+function toolIcon(label, group){
+  const s = ((label || "") + " " + (group || "")).toLowerCase();
+  for (let i = 0; i < ICON_RULES.length; i++) if (ICON_RULES[i][0].test(s)) return ICONS[ICON_RULES[i][1]];
+  return ICONS.terminal;
 }
 
 function loadConns(){ try { return JSON.parse(localStorage.getItem(LS_CONN) || "{}") || {}; } catch (_) { return {}; } }
@@ -127,17 +188,18 @@ const CSS = `
 .dk-links line{stroke-width:1.6;stroke-linecap:round;opacity:0;transition:opacity .5s}
 .dk-links line.on{opacity:.85;stroke-dasharray:5 7;animation:dkFlow 1.1s linear infinite}
 @keyframes dkFlow{to{stroke-dashoffset:-24}}
-.dk-core{position:absolute;z-index:3;left:50%;top:50%;transform:translate(-50%,-50%);width:120px;height:120px;border-radius:50%;
+.dk-core{position:absolute;z-index:3;left:50%;top:50%;transform:translate(-50%,-50%);width:152px;height:152px;border-radius:50%;
   display:grid;place-items:center;text-align:center;cursor:default;
   background:radial-gradient(circle at 38% 32%,#bfe0ff 0%,#4f86ff 34%,#1f3b96 70%,#0b1444 100%);
-  box-shadow:0 0 0 1px rgba(255,255,255,.2),0 0 60px rgba(63,120,255,.55),0 0 140px rgba(63,120,255,.3),inset 0 2px 14px rgba(255,255,255,.4)}
-.dk-core b{font-size:13px;font-weight:700;letter-spacing:.1em;color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.5)}
-.dk-core span{font-size:10px;color:rgba(255,255,255,.78);letter-spacing:.14em}
+  box-shadow:0 0 0 1px rgba(255,255,255,.2),0 0 70px rgba(63,120,255,.55),0 0 170px rgba(63,120,255,.3),inset 0 2px 16px rgba(255,255,255,.4)}
+.dk-core b{font-size:15px;font-weight:700;letter-spacing:.1em;color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.5)}
+.dk-core span{font-size:11px;color:rgba(255,255,255,.78);letter-spacing:.14em}
 .dk-core::after{content:"";position:absolute;inset:-18px;border-radius:50%;border:1px solid rgba(143,200,255,.3);animation:dkPulse 3.6s ease-out infinite}
 @keyframes dkPulse{0%{transform:scale(.86);opacity:.7}100%{transform:scale(1.5);opacity:0}}
-.dk-node{position:absolute;z-index:3;width:92px;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer;
-  transition:transform .25s cubic-bezier(.2,.9,.3,1.3)}
-.dk-node:hover{transform:translate(-50%,-50%) scale(1.14)}
+.dk-node{position:absolute;z-index:3;width:92px;opacity:0;transform:translate(-50%,calc(-50% + var(--rise,22px)));display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer;
+  transition:transform .55s cubic-bezier(.18,.74,.2,1),opacity .5s ease}
+.dk-node.in{opacity:1;--rise:0px}
+.dk-node:hover{transform:translate(-50%,calc(-50% + var(--rise,0px))) scale(1.13);transition:transform .2s cubic-bezier(.2,.9,.3,1.3)}
 .dk-chip{position:relative;width:64px;height:64px;border-radius:19px;display:grid;place-items:center;
   background:rgba(18,23,38,.72);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
   border:1px solid rgba(255,255,255,.12);box-shadow:0 10px 26px rgba(0,0,0,.5);overflow:hidden}
@@ -224,36 +286,49 @@ const CSS = `
 .dk-sr .ic .mono{width:100%;height:100%;display:grid;place-items:center}
 .dk-sr .l{font-size:13.5px}.dk-sr .g{margin-left:auto;font-size:11px;color:#8795b3}
 .dk-empty{padding:26px;text-align:center;color:#7e8aa6;font-size:13px}
-/* ---------- dock + fan-out (macOS-stack style) ---------- */
-.dk-dock{position:absolute;left:50%;bottom:20px;transform:translateX(-50%);z-index:22;display:flex;gap:13px;padding:11px 15px;border-radius:22px;
-  background:rgba(13,18,31,.6);backdrop-filter:blur(28px) saturate(170%);-webkit-backdrop-filter:blur(28px) saturate(170%);
-  border:1px solid rgba(255,255,255,.1);box-shadow:0 20px 56px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.09);max-width:94vw;overflow-x:auto;scrollbar-width:none}
-.dk-dock::-webkit-scrollbar{display:none}
-.dk-dock-hint{position:absolute;left:50%;bottom:92px;transform:translateX(-50%);z-index:21;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:rgba(190,205,230,.42);pointer-events:none;transition:opacity .3s}
-.dk-stack{flex:none;display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer;width:72px;transition:transform .2s cubic-bezier(.2,.9,.3,1.3)}
-.dk-stack:hover{transform:translateY(-6px)}
-.dk-stack .tile{position:relative;width:54px;height:54px;border-radius:15px;display:grid;place-items:center;font-weight:700;font-size:15px;color:#fff;letter-spacing:.02em;
-  background:var(--a,#5b6cf0);box-shadow:0 10px 24px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.26)}
-.dk-stack .tile::before,.dk-stack .tile::after{content:"";position:absolute;inset:0;border-radius:15px;background:inherit;z-index:-1}
-.dk-stack .tile::before{transform:translateY(5px) scale(.93);opacity:.5}
-.dk-stack .tile::after{transform:translateY(9px) scale(.85);opacity:.28}
-.dk-stack.open .tile{box-shadow:0 0 0 2px rgba(255,255,255,.34),0 10px 24px rgba(0,0,0,.5)}
-.dk-stack.open{transform:translateY(-6px)}
-.dk-stack .cnt{position:absolute;top:-6px;right:-6px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;background:#0a1020;border:1px solid rgba(255,255,255,.22);font-size:10px;font-weight:700;display:grid;place-items:center;color:#cdd8ec}
-.dk-stack .lbl{font-size:11px;color:#c3cde0;text-align:center;line-height:1.15;max-width:72px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.dk-fanback{position:absolute;inset:0;z-index:18;display:none}
-.dk-fanback.on{display:block}
-.dk-fan{position:absolute;inset:0;z-index:20;pointer-events:none}
-.dk-fanitem{position:absolute;width:72px;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;pointer-events:auto;
-  opacity:0;transform:translate(-50%,-50%) scale(.28);transition:transform .36s cubic-bezier(.16,.9,.3,1.25),opacity .22s ease}
-.dk-fanitem.in{opacity:1;transform:translate(-50%,-50%) scale(1)}
-.dk-fanitem .fi{position:relative;width:52px;height:52px;border-radius:14px;display:grid;place-items:center;font-weight:700;font-size:13px;color:#fff;
-  background:var(--a,#5b6cf0);box-shadow:0 14px 30px rgba(0,0,0,.62),inset 0 1px 0 rgba(255,255,255,.24);transition:transform .16s cubic-bezier(.2,.9,.3,1.3)}
-.dk-fanitem:hover{z-index:5}
-.dk-fanitem:hover .fi{transform:translateY(-5px) scale(1.09);box-shadow:0 18px 38px rgba(0,0,0,.6),0 0 0 2px rgba(255,255,255,.2)}
-.dk-fanitem .fi .live{position:absolute;top:5px;right:5px;width:7px;height:7px;border-radius:50%;background:#30d158;box-shadow:0 0 6px #30d158}
-.dk-fanitem.more .fi{background:linear-gradient(158deg,rgba(90,104,160,.6),rgba(0,0,0,.4));border:1px dashed rgba(255,255,255,.3)}
-.dk-fanitem .fl{font-size:10.5px;color:#dbe4f4;text-align:center;line-height:1.15;text-shadow:0 1px 4px rgba(0,0,0,.85);max-width:88px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+/* ---------- tools gallery (large, full-screen) ---------- */
+.dk-gal{overflow:auto;padding:36px 5vw 72px}
+.dk-gal .gcat{margin:0 0 36px}
+.dk-gal .ghead{display:flex;align-items:center;gap:11px;margin:0 0 17px}
+.dk-gal .ghead .gd{width:11px;height:11px;border-radius:3px;box-shadow:0 0 12px currentColor}
+.dk-gal .ghead h3{font-size:16.5px;font-weight:700;letter-spacing:-.01em}
+.dk-gal .ghead .gc{font-size:12px;color:#8795b3;font-weight:500}
+.dk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px}
+.dk-gcard{position:relative;display:flex;flex-direction:column;gap:12px;min-height:128px;padding:18px;border-radius:17px;cursor:pointer;
+  background:linear-gradient(165deg,rgba(255,255,255,.055),rgba(255,255,255,.018));border:1px solid rgba(255,255,255,.09);
+  box-shadow:0 8px 24px rgba(0,0,0,.26);opacity:0;transform:translateY(10px);
+  transition:transform .3s cubic-bezier(.2,.8,.2,1),opacity .3s ease,border-color .2s,box-shadow .2s}
+.dk-gcard.in{opacity:1;transform:none}
+.dk-gcard:hover{transform:translateY(-4px);border-color:var(--a,#5b6cf0);box-shadow:0 18px 40px rgba(0,0,0,.4),0 0 0 1px var(--a,#5b6cf0)}
+.dk-gcard .gi{width:46px;height:46px;border-radius:13px;display:grid;place-items:center;color:#fff;
+  background:linear-gradient(158deg,var(--a,#5b6cf0),rgba(0,0,0,.34));box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 6px 16px rgba(0,0,0,.3)}
+.dk-gcard .gi svg{width:23px;height:23px}
+.dk-gcard .gt{font-size:14px;font-weight:600;line-height:1.28;color:#eaf0fb}
+.dk-gcard .glive{position:absolute;top:15px;right:15px;width:7px;height:7px;border-radius:50%;background:#30d158;box-shadow:0 0 7px #30d158}
+.dk-gcard .garr{margin-top:auto;display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;color:#9fb0cc;opacity:0;transform:translateX(-4px);transition:opacity .2s,transform .2s}
+.dk-gcard .garr svg{width:13px;height:13px}
+.dk-gcard:hover .garr{opacity:1;transform:none;color:#cdd8ec}
+/* ---------- in-deck tool workspace ---------- */
+.dk-work{position:absolute;inset:56px 0 0;z-index:35;display:flex;flex-direction:column;background:#070b15}
+.dk-work[hidden]{display:none}
+.dk-work.opening{animation:dkWorkIn .34s cubic-bezier(.2,.8,.2,1)}
+@keyframes dkWorkIn{from{opacity:0;transform:scale(.99)}to{opacity:1;transform:none}}
+.dk-wbar{flex:none;display:flex;align-items:center;gap:14px;padding:12px 20px;border-bottom:1px solid rgba(255,255,255,.08);background:rgba(10,14,24,.72);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+.dk-wback{display:inline-flex;align-items:center;gap:7px;padding:8px 14px;border-radius:11px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:#dbe4f4;font:inherit;font-weight:600;font-size:13px;cursor:pointer}
+.dk-wback:hover{background:rgba(255,255,255,.1)}
+.dk-wback svg{width:15px;height:15px;transform:rotate(180deg)}
+.dk-wtitle{display:flex;align-items:center;gap:11px;font-weight:700;font-size:15px;min-width:0}
+.dk-wtitle .wi{flex:none;width:30px;height:30px;border-radius:9px;display:grid;place-items:center;color:#fff;background:linear-gradient(158deg,var(--a,#5b6cf0),rgba(0,0,0,.34))}
+.dk-wtitle .wi svg{width:16px;height:16px}
+.dk-wtitle .wt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dk-wfull{margin-left:auto;flex:none;font-size:12.5px;font-weight:600;color:#9fb0cc;cursor:pointer;padding:7px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.1)}
+.dk-wfull:hover{background:rgba(255,255,255,.07);color:#dbe4f4}
+.dk-wframe{flex:1;position:relative;overflow:hidden}
+.dk-wframe iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#070b15;opacity:0;transition:opacity .4s ease}
+.dk-wframe iframe.in{opacity:1}
+.dk-wload{position:absolute;inset:0;display:grid;place-items:center;color:#7e8aa6;font-size:13px;letter-spacing:.03em;pointer-events:none}
+.dk-wload .sp{width:30px;height:30px;border-radius:50%;border:2.5px solid rgba(255,255,255,.14);border-top-color:#4f86ff;animation:dkSpin .8s linear infinite;margin:0 auto 12px}
+@keyframes dkSpin{to{transform:rotate(360deg)}}
 `;
 const IC_SEARCH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/></svg>';
 const IC_CHEV = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>';
@@ -280,7 +355,7 @@ export function renderDeck(host, opts) {
     <div class="dk-sky"></div>
     <canvas class="dk-stars" id="dkStars"></canvas>
     <div class="dk-top">
-      <div class="dk-brand"><img src="/logo-light.svg" alt="">DarkDeck</div>
+      <div class="dk-brand"><img src="/logo-light.svg" alt="">Darknode</div>
       <div class="dk-seg">
         <button data-scene="con" class="on">Connections</button>
         <button data-scene="tools">Tools</button>
@@ -298,13 +373,18 @@ export function renderDeck(host, opts) {
         <div class="dk-core"><div><b>DARKNODE</b><br><span id="dkCoreCount"></span></div></div>
       </div>
       <div class="dk-conlist" id="dkConList"></div>
-      <div class="dk-fanback" id="dkFanBack"></div>
-      <div class="dk-fan" id="dkFan"></div>
-      <div class="dk-dock-hint" id="dkDockHint">Click a stack to fan out its tools</div>
-      <div class="dk-dock" id="dkDock"></div>
     </div>
 
-    <div class="dk-scene dk-tools" id="dkTools" hidden></div>
+    <div class="dk-scene dk-gal" id="dkTools" hidden></div>
+
+    <div class="dk-scene dk-work" id="dkWork" hidden>
+      <div class="dk-wbar">
+        <button class="dk-wback" id="dkWBack">${IC_CHEV}Back</button>
+        <div class="dk-wtitle" id="dkWTitle"></div>
+        <span class="dk-wfull" id="dkWFull">Open in full console</span>
+      </div>
+      <div class="dk-wframe" id="dkWFrame"></div>
+    </div>
 
     <aside class="dk-drawer" id="dkDrawer"><span class="x" id="dkDrawerX">&times;</span><div id="dkDrawerBody"></div></aside>
 
@@ -333,13 +413,15 @@ export function renderDeck(host, opts) {
   root.querySelectorAll(".dk-seg button").forEach((b) => b.onclick = () => {
     root.querySelectorAll(".dk-seg button").forEach((x) => x.classList.toggle("on", x === b));
     const s = b.dataset.scene;
-    closeFan();
+    sceneWork.hidden = true; wFrame.innerHTML = ""; curSec = null;
     sceneCon.hidden = s !== "con"; sceneTools.hidden = s !== "tools";
     if (s === "con") layoutConstellation();
+    if (s === "tools") revealGallery();
   });
 
   // ---------- constellation ----------
-  const canvas = $("#dkConCanvas"), links = $("#dkLinks"), coreCount = $("#dkCoreCount"), conList = $("#dkConList");
+  const canvas = $("#dkConCanvas"), links = $("#dkLinks"), coreCount = $("#dkCoreCount"), conList = $("#dkConList"), core = root.querySelector(".dk-core");
+  let fanBloomed = false;
   const ai = INTEGRATIONS.filter((i) => i.kind === "ai");
   const sec = INTEGRATIONS.filter((i) => i.kind === "sec");
 
@@ -360,25 +442,52 @@ export function renderDeck(host, opts) {
 
   function layoutConstellation(){
     const W = canvas.clientWidth, H = canvas.clientHeight;
-    const narrow = W < 720;
+    const narrow = W < 760;
     canvas.style.display = narrow ? "none" : "";
     conList.style.display = narrow ? "block" : "none";
     coreCount.textContent = `${countConnected()} linked`;
     if (narrow) { renderConList(); return; }
-    const cx = W/2, cy = H/2;
-    const R = Math.max(130, Math.min(W, H) * 0.5 - 90);
-    const r1 = Math.min(R*0.62, 260), r2 = R;
-    place(ai, r1, cx, cy); place(sec, r2, cx, cy);
-    drawLinks(cx, cy);
+    const cx = W/2, coreY = Math.round(H * 0.82);
+    if (core){ core.style.left = cx + "px"; core.style.top = coreY + "px"; }
+    // Casual upward "stack fan" (Mac-downloads feel): services spray up from the
+    // core in wide, shallow tiers with a little organic jitter — not a rigid orbit.
+    fanPlace(ai.concat(sec), cx, coreY, W, H);
+    drawLinks(cx, coreY);
+    revealFan();
   }
-  function place(list, r, cx, cy){
-    const n = list.length, start = -Math.PI/2;
-    list.forEach((it, i) => {
-      const ang = start + (i / n) * Math.PI * 2;
-      const x = cx + Math.cos(ang) * r, y = cy + Math.sin(ang) * r;
-      const el = canvas.querySelector(`.dk-node[data-id="${it.id}"]`);
-      if (el){ el.style.left = x + "px"; el.style.top = y + "px"; el.__x = x; el.__y = y; }
-    });
+  // deterministic per-id jitter in [-m, m] so the fan looks hand-placed, not mechanical
+  function jit(seed, m){ let h = 2166136261; for (let i = 0; i < seed.length; i++){ h ^= seed.charCodeAt(i); h = Math.imul(h, 16777619); } return (((h >>> 0) % 1000) / 1000 - 0.5) * 2 * m; }
+  function fanPlace(list, cx, coreY, W, H){
+    const span = 146 * Math.PI / 180;           // total fan width
+    const mid = -Math.PI / 2;                    // straight up
+    const a0 = mid - span / 2;
+    const rMin = 200, rStep = 132;
+    const rMax = Math.min(H * 0.88, W * 0.42);
+    const spacing = 116;                         // min arc gap between chips
+    let idx = 0, r = rMin, tier = 0;
+    while (idx < list.length){
+      const last = r + rStep > rMax;
+      let cap = Math.max(3, Math.round((r * span) / spacing));
+      if (last) cap = list.length - idx;         // remaining services ride the outer arc
+      const items = list.slice(idx, idx + cap);
+      const k = items.length;
+      items.forEach((it, i) => {
+        let ang = k === 1 ? mid : a0 + (i / (k - 1)) * span;
+        ang += jit(it.id + "a" + tier, 0.02);
+        const rr = r + jit(it.id + "r", 10);
+        const x = cx + Math.cos(ang) * rr, y = coreY + Math.sin(ang) * rr;
+        const el = canvas.querySelector(`.dk-node[data-id="${it.id}"]`);
+        if (el){ el.style.left = x + "px"; el.style.top = y + "px"; el.__x = x; el.__y = y; }
+      });
+      idx += k; r += rStep; tier++;
+      if (last) break;
+    }
+  }
+  function revealFan(){
+    const nodes = [...canvas.querySelectorAll(".dk-node")];
+    if (fanBloomed){ nodes.forEach((n) => n.classList.add("in")); return; }
+    fanBloomed = true;
+    nodes.forEach((n, i) => setTimeout(() => n.classList.add("in"), 50 + i * 20));
   }
   function drawLinks(cx, cy){
     links.setAttribute("viewBox", `0 0 ${canvas.clientWidth} ${canvas.clientHeight}`);
@@ -416,6 +525,11 @@ export function renderDeck(host, opts) {
     const kindTxt = it.kind === "ai" ? "AI Model" : "Cyber Intelligence";
     const methodTxt = method === "account" ? "Connected via your account" : method === "key" ? "Connected via API key" : "Connected";
     const keyForm = mode === "key" && !connected && it.connect === "key";
+    // OpenRouter is the one AI provider with a real browser account-link (PKCE):
+    // one login mints the user's own key, billed to their OpenRouter credits
+    // (free models available), reaching Claude/GPT/Gemini/Llama. Shown as the
+    // primary path; the raw API key is demoted to an advanced alternative.
+    const oauthProv = it.id === "openrouter";
     // Not-connected actions. For AI providers with a consumer plan, account sign-in
     // is the primary path (uses the user's existing subscription — no per-token API
     // billing); the API key is demoted to an advanced alternative. The key is entered
@@ -429,12 +543,15 @@ export function renderDeck(host, opts) {
              <div class="dk-formrow"><button type="submit" class="dk-b pri">Save &amp; connect</button><button type="button" class="dk-b" data-act="cancel">Cancel</button></div>
            </form>`
         : [
+            oauthProv ? `<button class="dk-b pri" data-act="oauth">Connect your ${esc(it.name)} account</button>` : "",
             it.account ? `<button class="dk-b pri" data-act="account">Connect your ${esc(it.name)} account</button>` : "",
-            it.connect === "key" ? `<button class="dk-b${it.account ? "" : " pri"}" data-act="keyform">${it.account ? "Use an API key instead (advanced)" : "Connect with API key"}</button>` : "",
+            it.connect === "key" ? `<button class="dk-b${(it.account || oauthProv) ? "" : " pri"}" data-act="keyform">${(it.account || oauthProv) ? "Use an API key instead (advanced)" : "Connect with API key"}</button>` : "",
             it.connect === "link" ? `<button class="dk-b${it.account ? "" : " pri"}" data-act="conn">Link to Darknode</button>` : "",
           ].join("");
     const note = keyForm
       ? "Your key is stored only in this browser (localStorage) and never leaves your device from here. Darknode routes calls through its own proxy."
+      : oauthProv
+      ? "Connect signs you in to OpenRouter and creates a key tied to YOUR OpenRouter account — one login reaches Claude, GPT, Gemini, Llama and more. Calls spend your OpenRouter credits; the default model here is free, so it can cost nothing. No provider lets another site charge your Claude/ChatGPT subscription — this is the honest, lowest-cost alternative."
       : it.account
         ? `Signing in links your ${esc(it.name)} account and saves it as a preference. To actually run ${esc(it.name)} inside Darknode's assistant, add an API key below — no provider lets another site bill your existing subscription. Darknode trims each request (short context, capped output) so key usage stays close to using ${esc(it.name)} directly.`
         : it.connect === "key"
@@ -461,6 +578,14 @@ export function renderDeck(host, opts) {
       <p class="dk-note">${note}</p>`;
     drawer.classList.add("on");
     drawerBody.querySelector('[data-act="open"]').onclick = () => window.open("https://" + it.domain, "_blank", "noopener");
+    const oauthBtn = drawerBody.querySelector('[data-act="oauth"]');
+    if (oauthBtn) oauthBtn.onclick = () => {
+      // Genuine browser account-link (OpenRouter PKCE). Full-page redirect to
+      // OpenRouter; on return, openrouter-connect finishes the handshake, stores
+      // the user's minted key, and this deck re-opens showing it connected.
+      oauthBtn.disabled = true; oauthBtn.textContent = "Opening OpenRouter…";
+      try { startOpenRouterConnect(); } catch (_) { oauthBtn.disabled = false; toast("Could not start OpenRouter connect"); }
+    };
     const accBtn = drawerBody.querySelector('[data-act="account"]');
     if (accBtn) accBtn.onclick = () => {
       // Open the provider sign-in so Darknode can link the existing account.
@@ -501,7 +626,7 @@ export function renderDeck(host, opts) {
         if (mlist && !(localStorage.getItem("dn_model_" + it.id) || "").trim()) localStorage.setItem("dn_model_" + it.id, mlist[0].id);
       } catch (_) {}
       toast(hasKey ? `Darknode AI will use your ${it.name} connection` : `Add a ${it.name} API key to run it — Darknode AI (free) stays active for now`);
-      teardown(); onOpen("ai");
+      openTool("ai", "Darknode AI");
     };
     const modelsEl = drawerBody.querySelector("#dkModels");
     if (modelsEl) {
@@ -522,82 +647,46 @@ export function renderDeck(host, opts) {
   }
   $("#dkDrawerX").onclick = () => drawer.classList.remove("on");
 
-  // ---------- tools scene ----------
+  // ---------- tools gallery (large, full-screen) ----------
   sceneTools.innerHTML = groups.map((g) => {
     const h = hexOf(g.color);
-    return `<div class="dk-cat"><h3><span class="d" style="background:${h}"></span>${esc(g.name)}<span class="c">${g.items.length}</span></h3>
-      <div class="dk-chiplist">${g.items.map((it) => `<span class="dk-tool" data-sec="${esc(it.sec)}">${it.badge === "live" ? '<span class="live"></span>' : ""}${esc(it.label)}</span>`).join("")}</div></div>`;
+    return `<section class="gcat"><div class="ghead"><span class="gd" style="background:${h};color:${h}"></span><h3>${esc(g.name)}</h3><span class="gc">${g.items.length} tools</span></div>
+      <div class="dk-grid">${g.items.map((it) => `<div class="dk-gcard" data-sec="${esc(it.sec)}" data-label="${esc(it.label)}" style="--a:${h}">
+        <span class="gi">${toolIcon(it.label, g.name)}</span>
+        ${it.badge === "live" ? '<span class="glive" title="Live data"></span>' : ""}
+        <span class="gt">${esc(it.label)}</span>
+        <span class="garr">Open${IC_CHEV}</span></div>`).join("")}</div></section>`;
   }).join("");
-  sceneTools.querySelectorAll(".dk-tool").forEach((t) => t.onclick = () => { teardown(); onOpen(t.dataset.sec); });
+  sceneTools.querySelectorAll(".dk-gcard").forEach((c) => c.onclick = () => openTool(c.dataset.sec, c.dataset.label, c.style.getPropertyValue("--a")));
+  function revealGallery(){
+    const cards = sceneTools.querySelectorAll(".dk-gcard");
+    cards.forEach((c, i) => { c.classList.remove("in"); });
+    requestAnimationFrame(() => cards.forEach((c, i) => setTimeout(() => c.classList.add("in"), Math.min(i, 26) * 20)));
+  }
 
-  // ---------- dock + fan-out (macOS-stack style) ----------
-  const dock = $("#dkDock"), fan = $("#dkFan"), fanBack = $("#dkFanBack"), dockHint = $("#dkDockHint");
-  const MAX_FAN = 12;
-  let openStack = -1;
-  function buildDock(){
-    dock.innerHTML = groups.map((g, i) => {
-      const h = hexOf(g.color);
-      return `<div class="dk-stack" data-i="${i}" title="${esc(g.name)}">
-        <div class="tile" style="--a:${h}">${esc(monogram(g.name))}<span class="cnt">${g.items.length}</span></div>
-        <div class="lbl">${esc(g.name)}</div></div>`;
-    }).join("");
-    dock.querySelectorAll(".dk-stack").forEach((s) => s.onclick = (e) => { e.stopPropagation(); toggleFan(+s.dataset.i); });
+  // ---------- in-deck tool workspace (tools open here, not the old console) ----------
+  const sceneWork = $("#dkWork"), wFrame = $("#dkWFrame"), wTitle = $("#dkWTitle");
+  let curSec = null;
+  function openTool(sec, label, accent){
+    if (!sec) return;
+    label = label || sec; curSec = sec;
+    wFrame.innerHTML = '<div class="dk-wload"><div><div class="sp"></div>Loading ' + esc(label) + '…</div></div>';
+    const f = document.createElement("iframe");
+    f.title = label; f.src = "/" + sec + "?embed=1"; f.loading = "eager"; f.setAttribute("allow", "clipboard-write; clipboard-read");
+    f.onload = () => { f.classList.add("in"); const l = wFrame.querySelector(".dk-wload"); if (l) setTimeout(() => l.remove(), 180); };
+    wFrame.appendChild(f);
+    wTitle.innerHTML = '<span class="wi"' + (accent ? ' style="--a:' + accent + '"' : "") + '>' + toolIcon(label) + '</span><span class="wt">' + esc(label) + '</span>';
+    drawer.classList.remove("on");
+    sceneCon.hidden = true; sceneTools.hidden = true; sceneWork.hidden = false;
+    sceneWork.classList.remove("opening"); void sceneWork.offsetWidth; sceneWork.classList.add("opening");
   }
-  function closeFan(){
-    openStack = -1; fan.innerHTML = ""; fanBack.classList.remove("on");
-    dock.querySelectorAll(".dk-stack").forEach((s) => s.classList.remove("open"));
-    if (dockHint) dockHint.style.opacity = "";
+  function closeTool(){
+    sceneWork.hidden = true; wFrame.innerHTML = ""; curSec = null;
+    sceneCon.hidden = true; sceneTools.hidden = false;
+    root.querySelectorAll(".dk-seg button").forEach((x) => x.classList.toggle("on", x.dataset.scene === "tools"));
   }
-  function toggleFan(i){
-    if (openStack === i) { closeFan(); return; }
-    closeFan();
-    openStack = i;
-    const g = groups[i], h = hexOf(g.color);
-    const stackEl = dock.querySelector(`.dk-stack[data-i="${i}"]`);
-    stackEl.classList.add("open");
-    if (dockHint) dockHint.style.opacity = "0";
-    const sRect = sceneCon.getBoundingClientRect();
-    const tile = stackEl.querySelector(".tile").getBoundingClientRect();
-    const ax = tile.left + tile.width / 2 - sRect.left;      // anchor x (tile centre)
-    const ay = tile.top - sRect.top - 10;                    // anchor y (just above tile)
-    const items = g.items;
-    const over = items.length > MAX_FAN ? items.length - (MAX_FAN - 1) : 0;
-    const show = over ? items.slice(0, MAX_FAN - 1) : items;
-    const n = show.length + (over ? 1 : 0);
-    const avail = ay - 20;                                    // vertical room to top of scene
-    const maxRad = Math.min(avail, 128 + n * 46);
-    const baseR = Math.min(96, Math.max(58, maxRad - 46));
-    const gap = n > 1 ? (maxRad - baseR) / (n - 1) : 0;
-    const W = sRect.width;
-    let html = "";
-    for (let k = 0; k < n; k++) {
-      const t = n > 1 ? k / (n - 1) : 0;
-      const ang = (92 - t * 60) * Math.PI / 180;             // straight up → up-right arc
-      const rad = baseR + k * gap;
-      let x = ax + Math.cos(ang) * rad;
-      const y = ay - Math.sin(ang) * rad;
-      x = Math.max(44, Math.min(W - 44, x));
-      const more = over && k === n - 1;
-      const it = more ? null : show[k];
-      const label = more ? `+${over} more` : it.label;
-      const sec = more ? "__more__" : it.sec;
-      const live = !more && it.badge === "live" ? '<span class="live"></span>' : "";
-      const glyph = more ? "+" : esc(monogram(label));
-      html += `<div class="dk-fanitem${more ? " more" : ""}" data-sec="${esc(sec)}" style="left:${x}px;top:${y}px;--a:${h};transition-delay:${k * 28}ms">
-        <div class="fi">${glyph}${live}</div><div class="fl">${esc(label)}</div></div>`;
-    }
-    fan.innerHTML = html;
-    fanBack.classList.add("on");
-    requestAnimationFrame(() => fan.querySelectorAll(".dk-fanitem").forEach((el) => el.classList.add("in")));
-    fan.querySelectorAll(".dk-fanitem").forEach((el) => el.onclick = (e) => {
-      e.stopPropagation();
-      const sec = el.dataset.sec;
-      if (sec === "__more__") { closeFan(); root.querySelector('.dk-seg button[data-scene="tools"]').click(); return; }
-      teardown(); onOpen(sec);
-    });
-  }
-  fanBack.onclick = closeFan;
-  buildDock();
+  $("#dkWBack").onclick = closeTool;
+  $("#dkWFull").onclick = () => { const s = curSec; teardown(); onOpen(s); };
 
   // ---------- spotlight ----------
   const spot = $("#dkSpot"), spotIn = $("#dkSpotIn"), spotRes = $("#dkSpotRes");
@@ -616,7 +705,7 @@ export function renderDeck(host, opts) {
       : `<div class="dk-empty">Nothing matches "${esc(q)}"</div>`;
     spotRes.querySelectorAll(".dk-sr").forEach((r) => r.onclick = () => chooseSpot(+r.dataset.i));
   }
-  function chooseSpot(i){ const m = matches[i]; if (!m) return; if (m.type === "conn") { closeSpot(); root.querySelector('.dk-seg button[data-scene="con"]').click(); openDrawer(m.it); } else { teardown(); onOpen(m.sec); } }
+  function chooseSpot(i){ const m = matches[i]; if (!m) return; if (m.type === "conn") { closeSpot(); root.querySelector('.dk-seg button[data-scene="con"]').click(); openDrawer(m.it); } else { closeSpot(); openTool(m.sec, m.label); } }
   function moveSel(d){ if (!matches.length) return; selIdx = (selIdx + d + matches.length) % matches.length; spotRes.querySelectorAll(".dk-sr").forEach((r, i) => r.classList.toggle("sel", i === selIdx)); spotRes.querySelector(".dk-sr.sel")?.scrollIntoView({ block: "nearest" }); }
   $("#dkFind").onclick = openSpot; spotIn.oninput = () => runSpot(spotIn.value);
   spot.addEventListener("click", (e) => { if (e.target === spot) closeSpot(); });
@@ -631,13 +720,13 @@ export function renderDeck(host, opts) {
       else if (e.key === "Enter") { e.preventDefault(); chooseSpot(selIdx); }
       return;
     }
-    if (e.key === "Escape") { if (openStack >= 0) { closeFan(); return; } if (drawer.classList.contains("on")) { drawer.classList.remove("on"); return; } teardown(); onExit(); }
+    if (e.key === "Escape") { if (!sceneWork.hidden) { closeTool(); return; } if (drawer.classList.contains("on")) { drawer.classList.remove("on"); return; } teardown(); onExit(); }
   }
   document.addEventListener("keydown", onKey);
   $("#dkQuit").onclick = () => { teardown(); onExit(); };
 
   // ---------- resize ----------
-  const onResize = () => { sizeStars(); closeFan(); if (!sceneCon.hidden) layoutConstellation(); };
+  const onResize = () => { sizeStars(); if (!sceneCon.hidden) layoutConstellation(); };
   window.addEventListener("resize", onResize);
   requestAnimationFrame(layoutConstellation);
 

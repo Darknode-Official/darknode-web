@@ -3,6 +3,12 @@
 (function(){var _h=location.hostname,_a=["darknode.ai","www.darknode.ai","darknode-official.github.io","sentinel-b4194.web.app","sentinel-b4194-6173e.web.app","darknode-web-e1s2.onrender.com","localhost","127.0.0.1"];if(!_a.some(function(d){return _h===d}))throw document.body.innerHTML="",new Error("unlicensed")}());
 import { auth, db, googleProvider, githubProvider, isAdminUser } from "/js/firebase.js?v=20261007a";
 
+// Finish an OpenRouter account-link if we've just returned from its consent page
+// (?code in the URL). Runs once on load, independent of auth; stores the user's
+// minted key before anything renders. The promise lets the deck re-open cleanly.
+window.__orConnect = import("/js/openrouter-connect.js?v=20261010c")
+  .then((m) => m.completeOpenRouterConnect()).catch(() => ({ done: false }));
+
 // Cached super-admin flag for the current session, read from the signed ID token
 // custom claim (set during the auth-state handler below). A guest/Test-Mode user
 // has no token, so this stays false. Never derived from a client-visible email.
@@ -25,7 +31,7 @@ import "/js/net.js?v=20261007a";
 import "/js/scroll-top.js?v=20260926a";
 import "/js/shortcuts.js";
 import "/js/mobile-nav.js";
-import { consoleHTML, directoryHTML, wireConsole, labelOf as navLabel, groupOf as navGroup, recentSecs as navRecent, favSecs as navFavs } from "/js/console-nav.js?v=20261009a";
+import { consoleHTML, directoryHTML, wireConsole, labelOf as navLabel, groupOf as navGroup, recentSecs as navRecent, favSecs as navFavs } from "/js/console-nav.js?v=20261010d";
 // Only the tool count is needed here; the manifest carries ids/names/categories without the
 // tool code (js/tools/*), which loads when the Toolbox opens.
 import { TOOL_META as _MINI_TOOLS } from "/js/tools-manifest.js?v=20261006a";
@@ -192,6 +198,12 @@ const SIDE_DESC = {
   emailheader: "Analyze email headers (SPF/DKIM/DMARC) to trace origin.",
   fedcompliance: "NIST, FedRAMP and FISMA compliance checklists.",
   iocextractor: "Pull indicators of compromise (IOCs) out of text and logs.",
+  dossier: "One-shot recon dossier: subdomains, DNS, certs, ASN and WHOIS in one exportable report.",
+  payloadstudio: "Chain encoders, hashes and reverse-shell templates into one build-and-export flow.",
+  sigma: "Build, validate and export Sigma detection rules with ATT&CK mapping.",
+  iocenrich: "Extract, defang, classify, score and enrich indicators of compromise, then export.",
+  embedsdk: "Generate an iframe or snippet to embed any Darknode tool in another site.",
+  mcpconnect: "Connect other apps and AI agents to Darknode tools via MCP, embeds and a read-only API.",
   zerotrust: "Plan a zero-trust security architecture.",
   // Crypto & Encoding
   credaudit: "Audit credentials against breach lists and password policy.",
@@ -825,7 +837,9 @@ async function checkLoginDevice(user) {
 }
 
 // ---------- appearance ----------
-const ACCENTS = ["#00d4ff", "#7c5cff", "#22c55e", "#f59e0b", "#ef4444", "#ec4899"];
+// Refreshed to match the modernized UI: a refined royal-blue lead (the Deck/core
+// accent) instead of the old neon cyan, with a cohesive indigo/sky/emerald set.
+const ACCENTS = ["#2563eb", "#0ea5e9", "#6467f2", "#10b981", "#f59e0b", "#f43f5e"];
 function applyAccent(c) {
   document.documentElement.style.setProperty("--acc", c);
   // The pro/dark themes redefine --acc on `body.app` (aws.css), which shadows any
@@ -862,7 +876,9 @@ applyCrt(crtOn());
 // Reading modes (normal / stupid / confusing) — rewrites UI wording in place.
 // Loaded lazily; the module is a singleton (keeps a MutationObserver) so it is
 // never cache-busted with ?v= (the service-worker cache version ships updates).
-(function () { import("/js/reading-modes.js?v=20261008b").then((m) => { try { window.dnReading = m; m.initReadingModes(); } catch (_) {} }).catch(() => {}); })();
+(function () { import("/js/reading-modes.js?v=20261010d").then((m) => { try { window.dnReading = m; m.initReadingModes(); } catch (_) {} }).catch(() => {}); })();
+// Troll mode (opt-in): self-registers window.dnTroll and re-applies itself if left on.
+(function () { import("/js/troll.js").then(() => {}).catch(() => {}); })();
 // UI preference appliers (density / motion / live topbar) — set an attribute on
 // <html> so CSS can react, and persist the choice.
 function _pref(k, d) { try { return localStorage.getItem(k) || d; } catch (_) { return d; } }
@@ -1236,8 +1252,6 @@ function renderSettingsPage(main, user, isOwner, initialTab) {
       ${row("User ID", '<span class="mono">' + esc(user.uid) + "</span>")}
       ${isGuest ? '<p class="muted" style="font-size:.78rem;margin-top:14px">This is a local <b>Test Mode</b> session &mdash; nothing is saved to an account. There is no Darknode API key, MCP credential or Nexus CLI pairing in Test Mode (those bind to a real sign-in). Create an account to unlock them.</p>' : ""}`,
     appearance: `<h2 class="set-panel-h">Appearance</h2>
-      <div class="set-row"><span class="muted">Style</span>
-        <span class="seg" id="sw-style"><button data-style="pro">Light</button><button data-style="dark">Dark</button><button data-style="classic">Classic</button></span></div>
       <div class="set-row"><span class="muted">Accent color</span>
         <span class="swatches" id="sw-acc">${ACCENTS.map((c) => `<button class="swatch" style="background:${c}" data-c="${c}" title="${c}"></button>`).join("")}</span></div>
       <div class="set-row"><span class="muted">Logo</span>
@@ -1262,7 +1276,11 @@ function renderSettingsPage(main, user, isOwner, initialTab) {
       <h3 class="set-sub-h">Reading mode</h3>
       <div class="set-row"><span class="muted">Wording</span>
         <span class="seg" id="sw-read"><button data-read="normal">Normal</button><button data-read="stupid">Stupid</button><button data-read="confusing">Confusing</button></span></div>
-      <p class="muted" style="font-size:.72rem;margin-top:4px">Rewrites the interface wording live. <b>Stupid</b> uses plain, everyday words. <b>Confusing</b> uses dense technical jargon. <b>Normal</b> leaves every label exactly as written. Code, inputs and the terminal are never changed.</p>`,
+      <p class="muted" style="font-size:.72rem;margin-top:4px">Rewrites the interface wording live. <b>Stupid</b> uses plain, everyday words. <b>Confusing</b> uses dense technical jargon. <b>Normal</b> leaves every label exactly as written. Code, inputs and the terminal are never changed.</p>
+      <h3 class="set-sub-h">Fun</h3>
+      <div class="set-row" data-troll-safe><span class="muted">Troll mode</span>
+        <span class="seg" id="sw-troll" data-troll-safe><button data-troll="off">Off</button><button data-troll="on">On</button></span></div>
+      <p class="muted" style="font-size:.72rem;margin-top:4px">Makes the whole app deliberately infuriating — everything tilts, wobbles, goes Comic Sans and flinches away from your cursor. This switch and a pinned button always turn it back off.</p>`,
     security: `<h2 class="set-panel-h">Security</h2>
       <div class="set-btns" style="margin-top:8px">
         ${isGuest ? "" : '<button class="btn ghost" id="set-pw">Change password</button>'}
@@ -1402,8 +1420,6 @@ function renderSettingsPage(main, user, isOwner, initialTab) {
     if (logoSeg) logoSeg.onclick = (e) => { const b = e.target.closest(".logo-pick"); if (!b) return; applyLogo(b.dataset.logo); logoSeg.querySelectorAll(".logo-pick").forEach((x) => x.classList.toggle("on", x === b)); };
     const themeSeg = main.querySelector("#sw-theme");
     if (themeSeg) { const curTheme = document.documentElement.getAttribute("data-theme") || "dark"; themeSeg.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b.dataset.t === curTheme)); themeSeg.onclick = (e) => { const b = e.target.closest("button[data-t]"); if (!b) return; applyTheme(b.dataset.t); themeSeg.querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b)); }; }
-    const styleSeg = main.querySelector("#sw-style");
-    if (styleSeg) { let curStyle = "pro"; try { curStyle = localStorage.getItem("sw_style") || "pro"; } catch (_) {} if (curStyle === "command") curStyle = "pro"; styleSeg.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b.dataset.style === curStyle)); styleSeg.onclick = (e) => { const b = e.target.closest("button[data-style]"); if (!b) return; setStyle(b.dataset.style); styleSeg.querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b)); }; }
     const bootSeg = main.querySelector("#sw-boot");
     if (bootSeg) { let curBoot = "pro"; try { curBoot = localStorage.getItem("sw_boot_theme") || "pro"; } catch (_) {} bootSeg.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b.dataset.boot === curBoot)); bootSeg.onclick = (e) => { const b = e.target.closest("button[data-boot]"); if (!b) return; try { localStorage.setItem("sw_boot_theme", b.dataset.boot); } catch (_) {} bootSeg.querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b)); }; }
     const crtSeg = main.querySelector("#sw-crt");
@@ -1437,6 +1453,13 @@ function renderSettingsPage(main, user, isOwner, initialTab) {
         try { if (window.dnReading) window.dnReading.setReadMode(b.dataset.read); else localStorage.setItem("dn_read_mode", b.dataset.read); } catch (_) {}
         readSeg.querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b));
       };
+    }
+    // Troll mode (opt-in chaos) — delegated to js/troll.js (window.dnTroll).
+    const trollSeg = main.querySelector("#sw-troll");
+    if (trollSeg) {
+      const cur = (window.dnTroll && window.dnTroll.isOn && window.dnTroll.isOn()) ? "on" : "off";
+      trollSeg.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b.dataset.troll === cur));
+      trollSeg.onclick = (e) => { const b = e.target.closest("button[data-troll]"); if (!b) return; try { if (window.dnTroll) window.dnTroll.set(b.dataset.troll === "on"); } catch (_) {} trollSeg.querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b)); };
     }
     // Data & privacy controls
     const dataExport = main.querySelector("#data-export");
@@ -1564,6 +1587,19 @@ function renderApp(user) {
   dismissBoot();
   document.body.classList.remove("landing");
   document.body.classList.add("app");
+  // Embed mode: when loaded as /<sec>?embed=1 (e.g. inside Darknode Command's
+  // in-deck workspace iframe), strip the console chrome so only the live tool
+  // shows, full-bleed and transparent. Reused by any host that frames a tool.
+  try {
+    if (new URLSearchParams(location.search).get("embed") === "1") {
+      document.body.classList.add("dn-embed");
+      if (!document.getElementById("dn-embed-css")) {
+        const st = document.createElement("style"); st.id = "dn-embed-css";
+        st.textContent = "body.dn-embed{background:transparent!important}body.dn-embed .app-shell{display:block!important}body.dn-embed .con-wrap,body.dn-embed #bootscreen,body.dn-embed .skip-link{display:none!important}body.dn-embed .app-main{margin:0!important;padding:16px!important;max-width:none!important;width:100%!important}body.dn-embed .crumbs,body.dn-embed #secIntro,body.dn-embed .app-foot{display:none!important}";
+        document.head.appendChild(st);
+      }
+    }
+  } catch (_) {}
   const isOwner = _isAdmin;
   const avatar = user.photoURL
     ? `<img class="p-avatar" src="${esc(user.photoURL)}" alt="">`
@@ -1760,7 +1796,7 @@ function renderApp(user) {
     if (sec && sec !== "home" && sec !== "settings") { try { let r = JSON.parse(localStorage.getItem("dn_recent")||"[]"); r = r.filter(s=>s!==sec); r.unshift(sec); r = r.slice(0,8); localStorage.setItem("dn_recent", JSON.stringify(r)); } catch(_){} }
     if (sec === "tools") { main.innerHTML = `<div class="pg-head"><div><h1 class="pg-h1">Tools</h1><p class="muted pg-sub">Search, filter, and open any tool in the catalog.</p></div></div><div id="tools"></div>`; import("/js/tools.js?v=20260924a").then(m => m.renderTools(document.getElementById("tools"))); }
     else if (sec === "utils") { import("/js/utils.js").then(m => m.renderUtils(main)); }
-    else if (sec === "ai") { import("/js/webai.js?v=20261007e").then(m => m.renderAI(main)); }
+    else if (sec === "ai") { import("/js/webai.js?v=20261010d").then(m => m.renderAI(main)); }
     else if (sec === "math") { _prevCleanup = renderQuelvra(main, more); }
     else if (sec === "payloads") { import("/js/labs.js?v=20261003a").then(m => m.renderPayloads(main)); }
     else if (sec === "targets") { import("/js/labs.js?v=20261003a").then(m => m.renderTargets(main)); }
@@ -1851,6 +1887,12 @@ function renderApp(user) {
     else if (sec === "adversaryplaybook") { import("/js/adversary-playbook.js?v=20260927a").then(m => m.renderAdversaryPlaybook(main)); }
     else if (sec === "emailheader") { import("/js/email-header.js?v=20260924b").then(m => m.renderEmailHeader(main)); }
     else if (sec === "iocextractor") { import("/js/ioc-extractor.js?v=20260924b").then(m => m.renderIOCExtractor(main)); }
+    else if (sec === "dossier") { import("/js/target-dossier.js").then(m => m.renderDossier(main)); }
+    else if (sec === "payloadstudio") { import("/js/payload-studio.js").then(m => m.renderPayloadStudio(main)); }
+    else if (sec === "sigma") { import("/js/sigma-builder.js").then(m => m.renderSigmaBuilder(main)); }
+    else if (sec === "iocenrich") { import("/js/ioc-enrichment.js").then(m => m.renderIocEnrichment(main)); }
+    else if (sec === "embedsdk") { import("/js/embed-sdk.js").then(m => m.renderEmbedSDK(main)); }
+    else if (sec === "mcpconnect") { import("/js/mcp-connector.js").then(m => m.renderMcpConnector(main)); }
     else if (sec === "reconplanner") { import("/js/recon-planner.js").then(m => m.renderReconPlanner(main)); }
     else if (sec === "packetinspector") { import("/js/packet-inspector.js?v=20260924b").then(m => m.renderPacketInspector(main)); }
     else if (sec === "siemdash") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading SIEM...</p>"; import("/js/siem-dash.js?v=20261007a").then(m => m.renderSiemDash(main)); }
@@ -1912,7 +1954,7 @@ function renderApp(user) {
     else if (sec === "docs") { import("/js/docs.js?v=20261007e").then(m => m.renderDocs(main)); }
     else if (sec === "setup") renderSetup(main, more);
     else if (sec === "settings") renderSettingsPage(main, user, isOwner, more);
-    else if (sec === "admin") { import("/js/admin.js?v=20261010b").then(m => m.renderAdmin(main, user)); }
+    else if (sec === "admin") { import("/js/admin.js?v=20261010d").then(m => m.renderAdmin(main, user)); }
     else if (sec === "contact") renderContact(main);
     else if (sec === "education") { main.innerHTML = `<div class="panel" style="max-width:800px;margin:40px auto"><div class="panel-h">About Darknode Education</div><div style="padding:18px;line-height:1.8;font-size:.9rem"><p><strong>Darknode is a cybersecurity education platform</strong> designed for students, educators, and security professionals to learn information security through hands-on practice in a safe, controlled environment.</p><p style="margin-top:16px"><strong>Our Mission:</strong> To make cybersecurity education accessible, interactive, and practical. Most tools run in your browser or on your own machine. Some features do send data out: AI chat goes through Darknode's server to the AI provider, some lookup pages query public services (for example NVD, crt.sh and DNS-over-HTTPS resolvers), and saved items and account data are stored in Google Firebase. Each page that contacts an outside service does so only when you run it.</p><p style="margin-top:16px"><strong>Who Uses Darknode:</strong></p><ul style="margin:8px 0 0 20px;line-height:2"><li>Computer science and cybersecurity students</li><li>IT professionals studying for certifications (CompTIA Security+, CISSP, CEH, OSCP)</li><li>University professors and instructors teaching security courses</li><li>Security operations center (SOC) analysts in training</li><li>Career changers learning cybersecurity fundamentals</li></ul><p style="margin-top:16px"><strong>Educational Standards:</strong> Our curriculum aligns with NIST NICE Framework, NSA CAE-CD requirements, and CompTIA Security+ objectives. All practice environments are isolated, legal, and designed for authorized educational use only.</p><p style="margin-top:16px"><strong>Responsible Use:</strong> Darknode tools are designed exclusively for educational purposes and authorized security testing. Users must comply with all applicable laws and obtain proper authorization before testing any system they do not own.</p><p style="margin-top:16px;color:var(--mut);font-size:.82rem">Darknode is a product of Darknode-Official. For questions about our educational programs, visit darknode.ai.</p></div></div>`; }
     else if (sec === "toolbox") { import("/js/mini-tools.js?v=20261006a").then(m => m.renderToolbox(main, { onOpen: (id) => show("tool-" + id) })); }

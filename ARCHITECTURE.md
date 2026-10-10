@@ -11,8 +11,9 @@ authorized pentesters and security learners.
 
 There is **no build step**: `public/index.html` loads a single ES-module entry
 (`js/auth.js`) which lazily imports the page controllers. `public/js` holds
-**216** modules (≈461K lines of JS; ≈488K lines across `public/`). State lives
-in Firebase (Auth + Firestore) and `localStorage`.
+**~300** ES modules (≈215K lines of JS, plus ≈25K lines of CSS; ≈492K lines
+across `public/` counting JS + CSS + HTML). State lives in Firebase
+(Auth + Firestore) and `localStorage`.
 
 > **README and this document agree.** (Earlier revisions of each described an
 > aspirational Cloudflare Pages + Fly.io stack and a product called "Sentinel";
@@ -21,9 +22,11 @@ in Firebase (Auth + Firestore) and `localStorage`.
 ## Hosting & backend
 
 - **Firebase Hosting.** `firebase.json` publishes `public/` with a strict
-  security header set — **CSP**, **HSTS** (`max-age=31536000; includeSubDomains;
-  preload`), `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`,
-  `Referrer-Policy`, and `Permissions-Policy` — plus an SPA fallback (all routes
+  security header set — **CSP** (`frame-ancestors 'self'`), **HSTS**
+  (`max-age=31536000; includeSubDomains; preload`), `X-Frame-Options: SAMEORIGIN`
+  (self-framing only — so the admin **Darknode Command** deck can embed its own
+  tool pages in-place via `?embed=1`; see below), `X-Content-Type-Options:
+  nosniff`, `Referrer-Policy`, and `Permissions-Policy` — plus an SPA fallback (all routes
   → `/index.html`) and a `/api/chat` rewrite to the `chat` Function. Domain:
   darknode.ai. `.firebaserc` pins project **`sentinel-b4194`** (the original
   project id; renaming a live Firebase project would require a full auth/data
@@ -73,7 +76,15 @@ public/
     toolkit.js          [data]    the 192-entry tool CATALOG + browser-tool engine
     tools-manifest.js   [data]    902 Toolbox mini-tool ids/names/cats (generated)
     tools/*.js          [tools]   mini-tool implementations + plain-English help
-    webai.js            [feature] AI assistant (hosted proxy or local Ollama)
+    webai.js            [feature] AI assistant (hosted proxy, local Ollama, or a
+                                  connected provider key, incl. OpenRouter)
+    deck-ui.js          [feature] Darknode Command — admin-only overlay: a
+                                  connection constellation + a tools gallery that
+                                  opens each tool INSIDE the deck in an iframe
+                                  (src="/<sec>?embed=1"), never leaving the deck
+    openrouter-connect.js [feature] one-click "connect your OpenRouter account"
+                                  (OAuth 2.0 PKCE, client-side, no secret/backend);
+                                  mints a user-owned key into dn_key_openrouter
     <~200 more>         page controllers + flagship tool apps (phantom, oracle, citadel,
                         spectre, navarch, crucible, sentinel-eye globe, …), data libs,
                         threat-intel, console nav, toasts, modals, core/ spine
@@ -110,6 +121,12 @@ index.html
   Ollama.
 - **Page controllers** each export a `render*()`; **shared data/util modules**
   (`toolkit.js`, `target.js`, `notify.js`, …) back them.
+- **Embed mode.** Any route loaded with `?embed=1` boots the full app but
+  `auth.js` adds `body.dn-embed`, which strips the console chrome (sidebar,
+  bootscreen, crumbs, intro, footer) and frees `.app-main`, so a single tool
+  renders standalone. Same-origin, so the iframe inherits the signed-in Firebase
+  session. Used by the Darknode Command deck to open tools in-place, and the
+  basis for embedding Darknode tools in other same-origin surfaces.
 
 ## Relationship to the CLI / Nexus
 

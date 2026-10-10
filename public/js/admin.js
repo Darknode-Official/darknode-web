@@ -48,10 +48,10 @@ export async function renderAdmin(main, user) {
       <div class="deck-promo-in">
         <div class="deck-promo-txt">
           <span class="deck-promo-tag">OWNER PREVIEW &mdash; EXPERIMENTAL</span>
-          <h2 class="pg-h2" style="margin:6px 0 4px">DarkDeck</h2>
+          <h2 class="pg-h2" style="margin:6px 0 4px">Darknode Command</h2>
           <p class="muted" style="margin:0;max-width:60ch">A spatial command hub: Darknode at the core with every AI model and security platform it connects to orbiting around it, Downloads-style stack fan-outs for the full toolbox, and Spotlight jump-to-anything (Ctrl&nbsp;K). Visible only to you.</p>
         </div>
-        <button class="btn" id="deckLaunch" style="flex:none">Launch DarkDeck</button>
+        <button class="btn" id="deckLaunch" style="flex:none">Launch Command</button>
       </div>
     </div>
 
@@ -244,12 +244,12 @@ export async function renderAdmin(main, user) {
   (function wireDeck() {
     const btn = main.querySelector("#deckLaunch");
     if (!btn) return;
-    btn.addEventListener("click", async () => {
+    async function launchDeck() {
       btn.disabled = true; const label = btn.textContent; btn.textContent = "Loading…";
       try {
         const [{ renderDeck }, nav] = await Promise.all([
-          import("/js/deck-ui.js?v=20261010b"),
-          import("/js/console-nav.js?v=20261009a"),
+          import("/js/deck-ui.js?v=20261010d"),
+          import("/js/console-nav.js?v=20261010d"),
         ]);
         const groups = (nav.NAV || []).map((g) => ({ id: g.id, name: g.name, color: g.color, items: g.items || [] }));
         renderDeck(document.body, {
@@ -260,7 +260,13 @@ export async function renderAdmin(main, user) {
       } catch (e) {
         try { window.showToast ? window.showToast("Deck failed to load: " + e.message, "err") : 0; } catch (_) {}
       } finally { btn.disabled = false; btn.textContent = label; }
-    });
+    }
+    btn.addEventListener("click", launchDeck);
+    // Returning from an OpenRouter account-link: finish the handshake, then re-open
+    // the deck so the user lands back where they started and sees it connected.
+    import("/js/openrouter-connect.js?v=20261010c").then(({ shouldReopenDeck }) => {
+      if (shouldReopenDeck()) Promise.resolve(window.__orConnect).finally(launchDeck);
+    }).catch(() => {});
   })();
 
   let users = [];

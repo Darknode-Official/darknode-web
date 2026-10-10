@@ -44,6 +44,8 @@ const CONN_PROVIDERS = {
   deepseek:   { name: "DeepSeek",     def: "deepseek-chat" },
   cohere:     { name: "Cohere",       def: "command-a-03-2025" },
   together:   { name: "Together AI",  def: "meta-llama/Llama-3.3-70B-Instruct-Turbo" },
+  fireworks:  { name: "Fireworks AI", def: "accounts/fireworks/models/llama-v3p3-70b-instruct" },
+  cerebras:   { name: "Cerebras",     def: "llama-3.3-70b" },
 };
 
 const DEFAULT_SYS = `You are Darknode AI — the built-in assistant for Darknode (darknode.ai), a cybersecurity education and operations platform spanning offensive security, defense, reconnaissance, OSINT, forensics and threat intelligence. You are an expert in both the platform itself and in offensive/defensive security. You know every tool on the platform and can guide users through them.
@@ -341,6 +343,8 @@ const OAI_COMPAT = {
   together:   "https://api.together.xyz/v1/chat/completions",
   xai:        "https://api.x.ai/v1/chat/completions",
   cohere:     "https://api.cohere.ai/compatibility/v1/chat/completions",
+  fireworks:  "https://api.fireworks.ai/inference/v1/chat/completions",
+  cerebras:   "https://api.cerebras.ai/v1/chat/completions",
 };
 
 function streamFor(provider, model, messages, onToken, signal) {

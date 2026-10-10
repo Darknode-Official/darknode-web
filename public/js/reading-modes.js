@@ -70,6 +70,14 @@ const SIMPLIFY = {
   "fundamental": "basic", "essential": "needed", "critical": "very important", "significant": "big", "minimal": "tiny",
   "advanced": "fancy", "comprehensive": "full", "capabilities": "powers", "capability": "power",
   "automatically": "on its own", "manually": "by hand", "simultaneously": "at the same time", "immediately": "right away",
+  // new UI terms (Deck overhaul + new tools) — keep them plain and literal
+  "dossier": "report file", "enrichment": "extra info", "enrich": "add extra info", "enriched": "info added",
+  "indicators of compromise": "signs of hacking", "indicator of compromise": "sign of hacking", "indicators": "signs", "indicator": "sign",
+  "detection rule": "alarm rule", "detection": "spotting", "constellation": "map of linked dots",
+  "embed": "drop into another site", "embedded": "dropped into another site", "snippet": "little bit of code",
+  "connector": "link-up tool", "integration": "link-up", "integrations": "link-ups",
+  "defang": "make safe to share", "normalize": "tidy up", "normalise": "tidy up",
+  "pipeline": "step-by-step flow", "aggregator": "collector", "orchestrate": "run in order", "interoperable": "works with other apps",
 };
 
 // plain -> jargon (confusing mode): swap every plain word for the most
@@ -107,6 +115,12 @@ const COMPLICATE = {
   "data": "informational payload corpus", "file": "serialized data artifact", "folder": "hierarchical storage container",
   "list": "enumerated manifest", "menu": "navigational affordance matrix", "button": "interactive actuation control",
   "name": "canonical designator", "question": "interrogative proposition", "answer": "dispositive resolution",
+  // new UI terms (Deck overhaul + new tools) — swap plain words for show-off jargon
+  "connection": "federated integration binding", "connections": "federated integration bindings",
+  "link": "hyperreferential binding", "links": "hyperreferential bindings", "embed": "inline-frame within",
+  "report file": "consolidated intelligence compendium", "sign": "forensic indicator", "signs": "forensic indicators",
+  "alarm rule": "codified detection heuristic", "collector": "aggregation subsystem", "map": "topological projection",
+  "extra info": "supplementary contextual enrichment", "step-by-step flow": "orchestrated processing pipeline",
 };
 
 function escRe(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
@@ -210,6 +224,27 @@ function startObserver() {
 
 function stopObserver() { if (observer) { try { observer.disconnect(); } catch (_) {} observer = null; } }
 
+// Keep the viewport visually still across a bulk rewrite: word-length changes
+// reflow the page and would otherwise jerk whatever you were reading up or down.
+// Anchor on the element currently near the top of the viewport, run the change,
+// then scroll by exactly how far that anchor moved — all before the next paint.
+function preserveScroll(fn) {
+  let anchor = null, top0 = 0;
+  try {
+    const x = Math.round(window.innerWidth / 2);
+    const y = Math.round(Math.min(160, window.innerHeight * 0.3));
+    anchor = document.elementFromPoint(x, y);
+    if (anchor) top0 = anchor.getBoundingClientRect().top;
+  } catch (_) {}
+  fn();
+  if (anchor && anchor.isConnected) {
+    try {
+      const dy = anchor.getBoundingClientRect().top - top0;
+      if (Math.abs(dy) > 0.5) window.scrollBy(0, dy);
+    } catch (_) {}
+  }
+}
+
 // --- public API --------------------------------------------------------------
 export function getReadMode() { return mode; }
 
@@ -218,8 +253,8 @@ export function setReadMode(next) {
   mode = next;
   try { localStorage.setItem(KEY, next); } catch (_) {}
   const root = rootEl();
-  if (mode === "normal") { stopObserver(); restoreAll(root); }
-  else { walkAndApply(root); startObserver(); }
+  if (mode === "normal") { stopObserver(); preserveScroll(() => restoreAll(root)); }
+  else { preserveScroll(() => walkAndApply(root)); startObserver(); }
   return mode;
 }
 
