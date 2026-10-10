@@ -36,7 +36,7 @@ import { showToast } from "/js/toast.js?v=20260924a";
 try { window.showToast = showToast; } catch (_) {}
 import { collection as fbCollection, addDoc as fbAddDoc, serverTimestamp as fbServerTimestamp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
 import {
-  onAuthStateChanged, signInWithRedirect, getRedirectResult, signOut,
+  onAuthStateChanged, signInWithRedirect, signInWithPopup, getRedirectResult, signOut,
   createUserWithEmailAndPassword, signInWithEmailAndPassword,
   sendEmailVerification, sendPasswordResetEmail, reload,
   setPersistence, browserLocalPersistence
@@ -676,8 +676,25 @@ function renderAuth(mode = "signin") {
   };
   document.getElementById("google").onclick = async () => {
     err("");
-    try { try { sessionStorage.setItem("sw_fresh_signin", "1"); } catch (_) {} await signInWithRedirect(auth, googleProvider); }
-    catch (e) { try { sessionStorage.removeItem("sw_fresh_signin"); } catch (_) {} err(errText(e)); }
+    // Sign in with a popup so the user stays on darknode.ai (Google's chooser
+    // opens as a window on top of the page) instead of being redirected away.
+    // If the popup is blocked or unsupported, fall back to the redirect flow.
+    try { sessionStorage.setItem("sw_fresh_signin", "1"); } catch (_) {}
+    try {
+      await signInWithPopup(auth, googleProvider);
+    } catch (e) {
+      const code = (e && e.code) || "";
+      const popupIssue = /popup-blocked|popup-closed-by-user|cancelled-popup-request|operation-not-supported-in-this-environment|web-storage-unsupported/.test(code);
+      if (popupIssue) {
+        if (code === "auth/popup-closed-by-user" || code === "auth/cancelled-popup-request") {
+          try { sessionStorage.removeItem("sw_fresh_signin"); } catch (_) {}
+          return; // user dismissed the chooser — do nothing
+        }
+        try { await signInWithRedirect(auth, googleProvider); return; } catch (e2) { e = e2; }
+      }
+      try { sessionStorage.removeItem("sw_fresh_signin"); } catch (_) {}
+      err(errText(e));
+    }
   };
   document.getElementById("github").onclick = async () => {
     err("");
@@ -1886,7 +1903,7 @@ function renderApp(user) {
     else if (sec === "websockettester") { import("/js/websocket-tester.js").then(m => m.renderWebSocketTester(main)); }
     else if (sec === "whoisrecon") { import("/js/whois-recon.js?v=20261007a").then(m => m.renderWhoisRecon(main)); }
     else if (sec === "learn") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Learn Hub...</p>"; loadLearnHub().then(m => m.renderLearnHub(main)); }
-    else if (sec === "learndo") { import("/js/learndo.js").then(m => m.renderLearnDo(main)); }
+    else if (sec === "learndo") { import("/js/learndo.js?v=20261009a").then(m => m.renderLearnDo(main)); }
     else if (sec === "engine") { import("/js/engine-tab.js?v=20260929t").then(m => m.renderEngine(main)); }
     else if (sec === "coder") { import("/js/coder.js?v=20261005a").then(m => m.renderCliCoder(main)); }
     else if (sec === "downloads") { import("/js/getapp.js?v=20261004a").then(m => m.renderDownloads(main)); }
@@ -1895,7 +1912,7 @@ function renderApp(user) {
     else if (sec === "docs") { import("/js/docs.js?v=20261007e").then(m => m.renderDocs(main)); }
     else if (sec === "setup") renderSetup(main, more);
     else if (sec === "settings") renderSettingsPage(main, user, isOwner, more);
-    else if (sec === "admin") { import("/js/admin.js?v=20261007b").then(m => m.renderAdmin(main, user)); }
+    else if (sec === "admin") { import("/js/admin.js?v=20261009a").then(m => m.renderAdmin(main, user)); }
     else if (sec === "contact") renderContact(main);
     else if (sec === "education") { main.innerHTML = `<div class="panel" style="max-width:800px;margin:40px auto"><div class="panel-h">About Darknode Education</div><div style="padding:18px;line-height:1.8;font-size:.9rem"><p><strong>Darknode is a cybersecurity education platform</strong> designed for students, educators, and security professionals to learn information security through hands-on practice in a safe, controlled environment.</p><p style="margin-top:16px"><strong>Our Mission:</strong> To make cybersecurity education accessible, interactive, and practical. Most tools run in your browser or on your own machine. Some features do send data out: AI chat goes through Darknode's server to the AI provider, some lookup pages query public services (for example NVD, crt.sh and DNS-over-HTTPS resolvers), and saved items and account data are stored in Google Firebase. Each page that contacts an outside service does so only when you run it.</p><p style="margin-top:16px"><strong>Who Uses Darknode:</strong></p><ul style="margin:8px 0 0 20px;line-height:2"><li>Computer science and cybersecurity students</li><li>IT professionals studying for certifications (CompTIA Security+, CISSP, CEH, OSCP)</li><li>University professors and instructors teaching security courses</li><li>Security operations center (SOC) analysts in training</li><li>Career changers learning cybersecurity fundamentals</li></ul><p style="margin-top:16px"><strong>Educational Standards:</strong> Our curriculum aligns with NIST NICE Framework, NSA CAE-CD requirements, and CompTIA Security+ objectives. All practice environments are isolated, legal, and designed for authorized educational use only.</p><p style="margin-top:16px"><strong>Responsible Use:</strong> Darknode tools are designed exclusively for educational purposes and authorized security testing. Users must comply with all applicable laws and obtain proper authorization before testing any system they do not own.</p><p style="margin-top:16px;color:var(--mut);font-size:.82rem">Darknode is a product of Darknode-Official. For questions about our educational programs, visit darknode.ai.</p></div></div>`; }
     else if (sec === "toolbox") { import("/js/mini-tools.js?v=20261006a").then(m => m.renderToolbox(main, { onOpen: (id) => show("tool-" + id) })); }

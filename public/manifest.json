@@ -1,8 +1,8 @@
 {
   "id": "/",
-  "name": "Darknode — Cybersecurity Platform",
+  "name": "Darknode — Agentic AI Security Platform",
   "short_name": "Darknode",
-  "description": "Cybersecurity education platform with 192+ interactive study tools, practice labs, AI tutoring, and compliance training for students and professionals",
+  "description": "Agentic AI security platform: autonomous AI agents, LLM & GenAI red-teaming, the OWASP GenAI risk crosswalk, prompt-injection and AI threat labs, and an AI security copilot.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
@@ -10,7 +10,7 @@
   "background_color": "#f8fafc",
   "theme_color": "#2563eb",
   "orientation": "any",
-  "categories": ["education", "security", "productivity"],
+  "categories": ["security", "productivity", "developer", "education"],
   "prefer_related_applications": false,
   "icons": [
     { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
@@ -19,7 +19,9 @@
   "shortcuts": [
     { "name": "Dashboard", "short_name": "Home", "description": "Home dashboard", "url": "/", "icons": [{ "src": "/favicon.svg", "sizes": "any" }] },
     { "name": "Tools", "short_name": "Tools", "description": "Security tools", "url": "/tools" },
-    { "name": "Darknode AI", "short_name": "AI", "description": "AI security assistant", "url": "/ai" },
+    { "name": "Darknode AI", "short_name": "AI", "description": "Agentic AI security copilot", "url": "/ai" },
+    { "name": "Nexus Agent", "short_name": "Nexus", "description": "Autonomous agentic AI agent", "url": "/coder" },
+    { "name": "GenAI Crosswalk", "short_name": "Crosswalk", "description": "OWASP GenAI risks mapped to 26 frameworks", "url": "/crosswalk" },
     { "name": "Settings", "short_name": "Settings", "description": "App settings", "url": "/settings" },
     { "name": "Threat Intel Feed", "short_name": "Threats", "description": "CVE advisory aggregator", "url": "/threatfeed" },
     { "name": "Security Checklist", "short_name": "Checklist", "description": "Compliance checklists", "url": "/secchecklist" }

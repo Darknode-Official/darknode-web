@@ -1,10 +1,36 @@
 User-agent: *
 Allow: /
+
+# AI answer engines & model crawlers — explicitly welcome, for discovery in
+# AI search and assistants (agentic / AI-security queries).
+User-agent: GPTBot
+Allow: /
+User-agent: OAI-SearchBot
+Allow: /
+User-agent: ChatGPT-User
+Allow: /
+User-agent: ClaudeBot
+Allow: /
+User-agent: Claude-Web
+Allow: /
+User-agent: anthropic-ai
+Allow: /
+User-agent: PerplexityBot
+Allow: /
+User-agent: Google-Extended
+Allow: /
+User-agent: Applebot-Extended
+Allow: /
+User-agent: CCBot
+Allow: /
+
 Sitemap: https://darknode.ai/sitemap.xml
 
-# Darknode — Cybersecurity Education Platform
+# Darknode — Agentic AI Security Platform
 # https://darknode.ai
-# Category: Education / Technology / Information Security Training
-# Audience: Students, educators, IT professionals, security analysts
-# Standards: NIST NICE Framework, NSA CAE-CD, CompTIA Security+
-# Contact: https://darknode.ai/education
+# Category: Artificial Intelligence / AI Security / Cybersecurity
+# Focus: agentic AI, autonomous AI agents, LLM & GenAI security, AI red-teaming,
+#        prompt injection, OWASP GenAI/LLM/Agentic Top 10, AI threat intelligence,
+#        Model Context Protocol (MCP), AI security copilot, AI governance
+# Audience: AI engineers, security engineers, red teamers, ML engineers, CISOs
+# Contact: https://darknode.ai/
