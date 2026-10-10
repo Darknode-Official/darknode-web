@@ -43,6 +43,18 @@ export async function renderAdmin(main, user) {
       <div class="stat"><div class="stat-n" id="stAnn">…</div><div class="stat-l">announcement</div></div>
     </div>
 
+    <div class="panel deck-promo" id="deckPromo">
+      <div class="deck-promo-glow"></div>
+      <div class="deck-promo-in">
+        <div class="deck-promo-txt">
+          <span class="deck-promo-tag">OWNER PREVIEW &mdash; EXPERIMENTAL</span>
+          <h2 class="pg-h2" style="margin:6px 0 4px">Darknode Deck</h2>
+          <p class="muted" style="margin:0;max-width:60ch">A spatial command UI: a Launchpad of every tool category, Spotlight jump-to-anything (Ctrl&nbsp;K), Downloads-style stack fan-outs, and free-floating windows with traffic-light chrome. Visible only to you.</p>
+        </div>
+        <button class="btn" id="deckLaunch" style="flex:none">Launch Deck</button>
+      </div>
+    </div>
+
     <div class="adm-cols">
       <div class="adm-main">
         <div class="panel">
@@ -225,6 +237,32 @@ export async function renderAdmin(main, user) {
     </div>`;
 
   const $ = (id) => main.querySelector(id);
+
+  // ---- Darknode Deck: owner-only spatial UI preview ----
+  // Lazy-loaded so the experimental module never ships to the normal console.
+  // Uses the live NAV taxonomy as the single source of truth for categories.
+  (function wireDeck() {
+    const btn = main.querySelector("#deckLaunch");
+    if (!btn) return;
+    btn.addEventListener("click", async () => {
+      btn.disabled = true; const label = btn.textContent; btn.textContent = "Loading…";
+      try {
+        const [{ renderDeck }, nav] = await Promise.all([
+          import("/js/deck-ui.js?v=20261009a"),
+          import("/js/console-nav.js?v=20261009a"),
+        ]);
+        const groups = (nav.NAV || []).map((g) => ({ id: g.id, name: g.name, color: g.color, items: g.items || [] }));
+        renderDeck(document.body, {
+          groups,
+          onOpen: (sec) => { try { window.dnNavigate ? window.dnNavigate(sec) : (location.href = "/" + sec); } catch (_) {} },
+          onExit: () => {},
+        });
+      } catch (e) {
+        try { window.showToast ? window.showToast("Deck failed to load: " + e.message, "err") : 0; } catch (_) {}
+      } finally { btn.disabled = false; btn.textContent = label; }
+    });
+  })();
+
   let users = [];
   let wl = { emails: [], enforce: false, banned: [] };
 
