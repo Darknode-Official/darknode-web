@@ -248,7 +248,7 @@ export async function renderAdmin(main, user) {
       btn.disabled = true; const label = btn.textContent; btn.textContent = "Loading…";
       try {
         const [{ renderDeck }, nav] = await Promise.all([
-          import("/js/deck-ui.js?v=20261009a"),
+          import("/js/deck-ui.js?v=20261010a"),
           import("/js/console-nav.js?v=20261009a"),
         ]);
         const groups = (nav.NAV || []).map((g) => ({ id: g.id, name: g.name, color: g.color, items: g.items || [] }));
