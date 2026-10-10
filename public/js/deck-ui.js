@@ -19,16 +19,16 @@ const LS_CONN = "dn_deck_connections_v1";
 // ---- the services Darknode can connect to. domain drives the live favicon ----
 const INTEGRATIONS = [
   // AI models / agents
-  { id: "claude",     name: "Claude",        domain: "claude.ai",          kind: "ai",  accent: "#d97757", connect: "key",  blurb: "Anthropic's Claude — reasoning, agentic coding, long-context analysis." },
-  { id: "openai",     name: "OpenAI",        domain: "openai.com",         kind: "ai",  accent: "#10a37f", connect: "key",  blurb: "GPT models via the OpenAI API for generation and tool use." },
-  { id: "gemini",     name: "Gemini",        domain: "gemini.google.com",  kind: "ai",  accent: "#4285f4", connect: "key",  blurb: "Google Gemini multimodal models through the Generative Language API." },
-  { id: "perplexity", name: "Perplexity",    domain: "perplexity.ai",      kind: "ai",  accent: "#20b8cd", connect: "key",  blurb: "Answer engine with live web grounding and citations." },
-  { id: "mistral",    name: "Mistral",       domain: "mistral.ai",         kind: "ai",  accent: "#fa5010", connect: "key",  blurb: "Open-weight European models via the Mistral API." },
+  { id: "claude",     name: "Claude",        domain: "claude.ai",          kind: "ai",  accent: "#d97757", connect: "key", account: true,  blurb: "Anthropic's Claude — reasoning, agentic coding, long-context analysis." },
+  { id: "openai",     name: "OpenAI",        domain: "openai.com",         kind: "ai",  accent: "#10a37f", connect: "key", account: true,  blurb: "GPT models via the OpenAI API for generation and tool use." },
+  { id: "gemini",     name: "Gemini",        domain: "gemini.google.com",  kind: "ai",  accent: "#4285f4", connect: "key", account: true,  blurb: "Google Gemini multimodal models through the Generative Language API." },
+  { id: "perplexity", name: "Perplexity",    domain: "perplexity.ai",      kind: "ai",  accent: "#20b8cd", connect: "key", account: true,  blurb: "Answer engine with live web grounding and citations." },
+  { id: "mistral",    name: "Mistral",       domain: "mistral.ai",         kind: "ai",  accent: "#fa5010", connect: "key", account: true,  blurb: "Open-weight European models via the Mistral API." },
   { id: "groq",       name: "Groq",          domain: "groq.com",           kind: "ai",  accent: "#f55036", connect: "key",  blurb: "Ultra-low-latency inference for open models." },
   { id: "openrouter", name: "OpenRouter",    domain: "openrouter.ai",      kind: "ai",  accent: "#6467f2", connect: "key",  blurb: "One key, hundreds of models routed on demand." },
   { id: "huggingface",name: "Hugging Face",  domain: "huggingface.co",     kind: "ai",  accent: "#ffcc4d", connect: "key",  blurb: "Open models and inference endpoints from the Hub." },
   { id: "ollama",     name: "Ollama",        domain: "ollama.com",         kind: "ai",  accent: "#ededed", connect: "link", blurb: "Run local open models through the Darknode CLI bridge." },
-  { id: "xai",        name: "xAI Grok",      domain: "x.ai",               kind: "ai",  accent: "#ffffff", connect: "key",  blurb: "xAI Grok models via API." },
+  { id: "xai",        name: "xAI Grok",      domain: "x.ai",               kind: "ai",  accent: "#ffffff", connect: "key", account: true,  blurb: "xAI Grok models via API." },
   // cybersecurity platforms / intel sources
   { id: "virustotal", name: "VirusTotal",    domain: "virustotal.com",     kind: "sec", accent: "#394eff", connect: "key",  blurb: "File, URL, domain and IP reputation across 70+ engines." },
   { id: "shodan",     name: "Shodan",        domain: "shodan.io",          kind: "sec", accent: "#e51e25", connect: "key",  blurb: "Internet-exposed host and service intelligence." },
@@ -331,33 +331,53 @@ export function renderDeck(host, opts) {
     if (!it) return;
     const rec = conns[it.id] || {};
     const connected = !!rec.connected;
+    const method = rec.method;
     const kindTxt = it.kind === "ai" ? "AI Model" : "Cyber Intelligence";
+    const methodTxt = method === "account" ? "Connected via your account" : method === "key" ? "Connected via API key" : "Connected";
+    // Not-connected actions. For AI providers with a consumer plan, account sign-in
+    // is the primary path (uses the user's existing subscription — no per-token API
+    // billing); the API key is demoted to an advanced alternative.
+    const actBtns = connected
+      ? `<button class="dk-b dis" data-act="disc">Disconnect</button>`
+      : [
+          it.account ? `<button class="dk-b pri" data-act="account">Connect your ${esc(it.name)} account</button>` : "",
+          it.connect === "key" ? `<button class="dk-b${it.account ? "" : " pri"}" data-act="conn">${it.account ? "Use an API key instead (advanced)" : "Connect with API key"}</button>` : "",
+          it.connect === "link" ? `<button class="dk-b${it.account ? "" : " pri"}" data-act="conn">Link to Darknode</button>` : "",
+        ].join("");
+    const note = it.account
+      ? `Connecting your account lets Darknode use your existing ${esc(it.name)} plan — no extra per-token API charges. An API key instead is billed per token by ${esc(it.name)} and usually costs much more for the same usage.`
+      : it.connect === "key"
+        ? "Your key is stored only in this browser (localStorage) and never leaves your device from here. Darknode routes calls through its own proxy."
+        : "Linking records this service as available to Darknode. No credentials are stored.";
     drawerBody.innerHTML = `
       <div class="dk-dhead">${logoHTML(it, "")}<div><h3>${esc(it.name)}</h3><div class="k">${kindTxt}</div></div></div>
-      <span class="dk-stat ${connected ? "on" : "off"}"><span class="d"></span>${connected ? "Connected" : "Not connected"}</span>
+      <span class="dk-stat ${connected ? "on" : "off"}"><span class="d"></span>${connected ? methodTxt : "Not connected"}</span>
       <p class="blurb">${esc(it.blurb)}</p>
       <div class="act">
-        ${connected
-          ? `<button class="dk-b dis" data-act="disc">Disconnect</button>`
-          : `<button class="dk-b pri" data-act="conn">${it.connect === "key" ? "Connect with API key" : "Link to Darknode"}</button>`}
+        ${actBtns}
         <button class="dk-b" data-act="open">Open ${esc(it.domain)}</button>
         ${it.kind === "ai" && connected ? `<button class="dk-b" data-act="use">Use in Darknode AI</button>` : ""}
       </div>
-      <p class="dk-note">${it.connect === "key"
-          ? "Your key is stored only in this browser (localStorage) and never leaves your device from here. Darknode routes model calls through its own proxy."
-          : "Linking records this service as available to Darknode. No credentials are stored."}</p>`;
+      <p class="dk-note">${note}</p>`;
     drawer.classList.add("on");
     drawerBody.querySelector('[data-act="open"]').onclick = () => window.open("https://" + it.domain, "_blank", "noopener");
+    const accBtn = drawerBody.querySelector('[data-act="account"]');
+    if (accBtn) accBtn.onclick = () => {
+      // Open the provider sign-in so Darknode can link the existing account.
+      try { window.open("https://" + it.domain, "_blank", "noopener"); } catch (_) {}
+      conns[it.id] = { connected: true, method: "account", at: Date.now() };
+      saveConns(conns); toast(`${it.name} account connected`); refreshConnState(it); openDrawer(it);
+    };
     const connBtn = drawerBody.querySelector('[data-act="conn"]');
     if (connBtn) connBtn.onclick = async () => {
       if (it.connect === "key") {
         let key = "";
         try { key = await (window.dnPrompt ? window.dnPrompt(`Paste your ${it.name} API key`, { title: `Connect ${it.name}`, password: true }) : Promise.resolve("")); } catch (_) { key = ""; }
         if (key === null || key === undefined) return;        // cancelled
-        conns[it.id] = { connected: true, hasKey: !!String(key).trim(), at: Date.now() };
+        conns[it.id] = { connected: true, method: "key", hasKey: !!String(key).trim(), at: Date.now() };
         if (String(key).trim()) { try { localStorage.setItem("dn_key_" + it.id, String(key).trim()); } catch (_) {} }
       } else {
-        conns[it.id] = { connected: true, at: Date.now() };
+        conns[it.id] = { connected: true, method: "link", at: Date.now() };
       }
       saveConns(conns); toast(`${it.name} connected`); refreshConnState(it); openDrawer(it);
     };
