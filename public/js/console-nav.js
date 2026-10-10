@@ -32,7 +32,7 @@ export const NAV = [
   // Learn & practice: training hub, ranges, references, and practice VMs.
   G("learn", "Learn & Practice", "emerald", [["beta","Beta Lab","beta"],["engine","Deterministic Intelligence","new"],["learndo","Learn & Do Hub"],["learn","Learn Hub"],["cyberrange","Cyber Range"],["securityquiz","Security Quiz"],["secquiz","Skill Assessments"],["targets","Practice Targets"],["training","Training Labs"],["cheats","Cheat Sheets"],["refs","Reference Library"],["snippets","Snippet Vault"],["utils","Toolbox"],["vms","Vulnerable VMs"],["vmlab","VM Lab"]]),
   // Platform: infrastructure, docs/downloads, plus compliance & GRC governance.
-  G("platform", "Platform & Governance", "slate", [["api","API"],["docs","Docs"],["education","Education"],["downloads","Darknode OS"],["dlguide","Download Guide"],["privatecloud","Private Cloud","beta"],["setup","Local Setup"],["compliance","Compliance Checker"],["cyberbriefing","Cyber Briefing"],["emailheader","Email Header Analyzer"],["fedcompliance","Federal Compliance"],["iocextractor","IOC Extractor"],["zerotrust","Zero Trust Planner"]]),
+  G("platform", "Platform & Governance", "slate", [["api","API"],["docs","Docs"],["education","Education"],["downloads","Darknode OS"],["dlguide","Download Guide"],["privatecloud","Private Cloud","beta"],["setup","Local Setup"],["compliance","Compliance Checker"],["crosswalk","GenAI Crosswalk"],["cyberbriefing","Cyber Briefing"],["emailheader","Email Header Analyzer"],["fedcompliance","Federal Compliance"],["iocextractor","IOC Extractor"],["zerotrust","Zero Trust Planner"]]),
 ];
 
 // Append the mini-tool categories (js/tools/*) as browsable, searchable service
