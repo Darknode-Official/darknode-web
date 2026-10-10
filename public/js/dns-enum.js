@@ -185,85 +185,85 @@ export function renderDNSEnum(container) {
   let scanLive = false;
 
   container.innerHTML = `<style>
-.de-wrap{font-family:'JetBrains Mono','Fira Code',monospace;background:#0a0e14;color:#c8d6e5;min-height:100vh;padding:24px}
-.de-header{display:flex;align-items:center;gap:16px;margin-bottom:24px;padding:20px 24px;background:linear-gradient(135deg,#0c1220 0%,#0f1a2e 100%);border:1px solid #1a2a44;border-radius:10px}
-.de-logo{width:48px;height:48px;border-radius:10px;background:linear-gradient(135deg,#00aaff,#0066cc);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:#fff}
-.de-title{font-size:22px;font-weight:700;color:#e2e8f0}
-.de-subtitle{font-size:13px;color:#4a7a9b;margin-top:2px}
+.de-wrap{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;background:var(--bg,#070a12);color:var(--txt,#e6eefc);min-height:100vh;padding:24px}
+.de-header{display:flex;align-items:center;gap:16px;margin-bottom:24px;padding:20px 24px;background:var(--card,#0f1726);border:1px solid var(--line,#283a5a);border-radius:10px}
+.de-logo{width:48px;height:48px;border-radius:10px;background:var(--acc,#2563eb);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:var(--on-acc,#fff)}
+.de-title{font-size:22px;font-weight:700;color:var(--txt,#e6eefc)}
+.de-subtitle{font-size:13px;color:var(--mut,#7a93b8);margin-top:2px}
 .de-input-row{display:flex;gap:12px;margin-bottom:20px;align-items:center;flex-wrap:wrap}
-.de-input{flex:1;min-width:240px;background:#0c1220;border:1px solid #1a2a44;color:#e2e8f0;padding:10px 16px;border-radius:8px;font-family:inherit;font-size:14px;outline:none;transition:border-color .2s}
-.de-input:focus{border-color:#00aaff}
-.de-input::placeholder{color:#3a5a7a}
+.de-input{flex:1;min-width:240px;background:var(--card,#0f1726);border:1px solid var(--line,#283a5a);color:var(--txt,#e6eefc);padding:10px 16px;border-radius:8px;font-family:inherit;font-size:14px;outline:none;transition:border-color .2s}
+.de-input:focus{border-color:var(--acc,#2563eb)}
+.de-input::placeholder{color:var(--mut,#7a93b8)}
 .de-btn{padding:10px 20px;border:none;border-radius:4px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s}
-.de-btn-primary{background:#00aaff;color:#0a0e14}
-.de-btn-primary:hover{background:#33bbff;transform:translateY(-1px)}
-.de-btn-secondary{background:#1a2a44;color:#c8d6e5;border:1px solid #283a5a}
-.de-btn-secondary:hover{background:#243448}
-.de-tabs{display:flex;gap:4px;margin-bottom:20px;background:#0c1220;padding:4px;border-radius:10px;border:1px solid #1a2a44;flex-wrap:wrap}
-.de-tab{padding:10px 20px;border:none;background:transparent;color:#4a7a9b;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;border-radius:4px;transition:all .2s}
-.de-tab:hover{color:#c8d6e5;background:#111828}
-.de-tab.active{background:#00aaff;color:#0a0e14}
-.de-panel{background:#0c1220;border:1px solid #1a2a44;border-radius:10px;padding:20px;margin-bottom:16px}
-.de-panel-title{font-size:15px;font-weight:700;color:#e2e8f0;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.de-btn-primary{background:var(--acc,#2563eb);color:var(--on-acc,#fff)}
+.de-btn-primary:hover{opacity:.9}
+.de-btn-secondary{background:var(--card2,#0a0e14);color:var(--txt,#e6eefc);border:1px solid var(--line,#283a5a)}
+.de-btn-secondary:hover{border-color:var(--acc,#2563eb)}
+.de-tabs{display:flex;gap:4px;margin-bottom:20px;background:var(--card,#0f1726);padding:4px;border-radius:10px;border:1px solid var(--line,#283a5a);flex-wrap:wrap}
+.de-tab{padding:10px 20px;border:none;background:transparent;color:var(--mut,#7a93b8);font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;border-radius:4px;transition:all .2s}
+.de-tab:hover{color:var(--txt,#e6eefc);background:color-mix(in srgb,var(--acc) 8%,transparent)}
+.de-tab.active{background:var(--acc,#2563eb);color:var(--on-acc,#fff)}
+.de-panel{background:var(--card,#0f1726);border:1px solid var(--line,#283a5a);border-radius:10px;padding:20px;margin-bottom:16px}
+.de-panel-title{font-size:15px;font-weight:700;color:var(--txt,#e6eefc);margin-bottom:14px;display:flex;align-items:center;gap:8px}
 .de-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700}
-.de-badge-ok{background:#00ff8820;color:#00ff88;border:1px solid #00ff8840}
-.de-badge-warn{background:#ffaa0020;color:#ffaa00;border:1px solid #ffaa0040}
-.de-badge-err{background:#ff444420;color:#ff4444;border:1px solid #ff444440}
-.de-badge-info{background:#00aaff20;color:#00aaff;border:1px solid #00aaff40}
+.de-badge-ok{background:rgba(22,163,74,.13);color:#16a34a;border:1px solid rgba(22,163,74,.25)}
+.de-badge-warn{background:rgba(217,119,6,.13);color:#d97706;border:1px solid rgba(217,119,6,.25)}
+.de-badge-err{background:rgba(220,38,38,.13);color:#dc2626;border:1px solid rgba(220,38,38,.25)}
+.de-badge-info{background:color-mix(in srgb,var(--acc) 13%,transparent);color:var(--acc,#2563eb);border:1px solid color-mix(in srgb,var(--acc) 25%,transparent)}
 .de-table{width:100%;border-collapse:collapse;font-size:13px}
-.de-table th{text-align:left;padding:10px 14px;background:#111828;color:#00aaff;font-weight:600;border-bottom:2px solid #1a2a44;white-space:nowrap}
-.de-table td{padding:9px 14px;border-bottom:1px solid #1a2a4480;color:#c8d6e5;word-break:break-all}
-.de-table tr:hover td{background:#111828}
-.de-record-type{display:inline-block;min-width:52px;text-align:center;padding:2px 8px;border-radius:4px;font-weight:700;font-size:11px;background:#00aaff15;color:#00aaff;border:1px solid #00aaff30}
-.de-type-A{color:#00ff88;background:#00ff8815;border-color:#00ff8830}
-.de-type-AAAA{color:#00ddff;background:#00ddff15;border-color:#00ddff30}
-.de-type-MX{color:#ff9f43;background:#ff9f4315;border-color:#ff9f4330}
-.de-type-NS{color:#a29bfe;background:#a29bfe15;border-color:#a29bfe30}
-.de-type-TXT{color:#ffeaa7;background:#ffeaa715;border-color:#ffeaa730}
-.de-type-CNAME{color:#fd79a8;background:#fd79a815;border-color:#fd79a830}
-.de-type-SOA{color:#636e72;background:#636e7215;border-color:#636e7230}
-.de-type-SRV{color:#e17055;background:#e1705515;border-color:#e1705530}
-.de-type-PTR{color:#74b9ff;background:#74b9ff15;border-color:#74b9ff30}
-.de-type-CAA{color:#55efc4;background:#55efc415;border-color:#55efc430}
-.de-found{color:#00ff88}
-.de-notfound{color:#ff4444}
-.de-progress{width:100%;height:6px;background:#1a2a44;border-radius:3px;margin:12px 0;overflow:hidden}
-.de-progress-bar{height:100%;background:linear-gradient(90deg,#00aaff,#00ff88);border-radius:3px;transition:width .3s}
-.de-status-line{font-size:12px;color:#4a7a9b;margin:8px 0}
+.de-table th{text-align:left;padding:10px 14px;background:var(--card2,#0a0e14);color:var(--acc,#2563eb);font-weight:600;border-bottom:2px solid var(--line,#283a5a);white-space:nowrap}
+.de-table td{padding:9px 14px;border-bottom:1px solid var(--line,#283a5a);color:var(--txt,#e6eefc);word-break:break-all}
+.de-table tr:hover td{background:var(--card2,#0a0e14)}
+.de-record-type{display:inline-block;min-width:52px;text-align:center;padding:2px 8px;border-radius:4px;font-weight:700;font-size:11px;background:color-mix(in srgb,var(--acc) 15%,transparent);color:var(--acc,#2563eb);border:1px solid color-mix(in srgb,var(--acc) 30%,transparent);font-family:var(--font-mono,ui-monospace,monospace)}
+.de-type-A{color:#16a34a;background:rgba(22,163,74,.1);border-color:rgba(22,163,74,.25)}
+.de-type-AAAA{color:#0891b2;background:rgba(8,145,178,.1);border-color:rgba(8,145,178,.25)}
+.de-type-MX{color:#ea8c3a;background:rgba(234,140,58,.1);border-color:rgba(234,140,58,.25)}
+.de-type-NS{color:#8b7cf6;background:rgba(139,124,246,.1);border-color:rgba(139,124,246,.25)}
+.de-type-TXT{color:#ca8a04;background:rgba(202,138,4,.1);border-color:rgba(202,138,4,.25)}
+.de-type-CNAME{color:#db5a97;background:rgba(219,90,151,.1);border-color:rgba(219,90,151,.25)}
+.de-type-SOA{color:#64748b;background:rgba(100,116,139,.1);border-color:rgba(100,116,139,.25)}
+.de-type-SRV{color:#d4603c;background:rgba(212,96,60,.1);border-color:rgba(212,96,60,.25)}
+.de-type-PTR{color:#3b82f6;background:rgba(59,130,246,.1);border-color:rgba(59,130,246,.25)}
+.de-type-CAA{color:#0d9488;background:rgba(13,148,136,.1);border-color:rgba(13,148,136,.25)}
+.de-found{color:#16a34a}
+.de-notfound{color:#dc2626}
+.de-progress{width:100%;height:6px;background:var(--line,#283a5a);border-radius:3px;margin:12px 0;overflow:hidden}
+.de-progress-bar{height:100%;background:var(--acc,#2563eb);border-radius:3px;transition:width .3s}
+.de-status-line{font-size:12px;color:var(--mut,#7a93b8);margin:8px 0}
 .de-chain{display:flex;flex-direction:column;gap:8px;margin-top:12px}
-.de-chain-node{display:flex;align-items:center;gap:12px;padding:12px 16px;background:#111828;border-radius:8px;border-left:3px solid #1a2a44}
-.de-chain-node.secure{border-left-color:#00ff88}
-.de-chain-node.insecure{border-left-color:#ff4444}
-.de-chain-node.bogus{border-left-color:#ffaa00}
-.de-chain-zone{font-weight:700;color:#e2e8f0;min-width:140px}
+.de-chain-node{display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--card2,#0a0e14);border-radius:8px;border-left:3px solid var(--line,#283a5a)}
+.de-chain-node.secure{border-left-color:#16a34a}
+.de-chain-node.insecure{border-left-color:#dc2626}
+.de-chain-node.bogus{border-left-color:#d97706}
+.de-chain-zone{font-weight:700;color:var(--txt,#e6eefc);min-width:140px}
 .de-chain-checks{display:flex;gap:8px;flex-wrap:wrap}
 .de-chain-check{font-size:11px;padding:2px 8px;border-radius:4px}
-.de-chain-check.pass{background:#00ff8815;color:#00ff88}
-.de-chain-check.fail{background:#ff444415;color:#ff4444}
-.de-zone-record{padding:6px 12px;background:#111828;border-radius:6px;margin-bottom:4px;font-size:13px;display:flex;gap:12px;align-items:center;border-left:2px solid #1a2a44}
-.de-zone-name{color:#00aaff;min-width:200px;word-break:break-all}
+.de-chain-check.pass{background:rgba(22,163,74,.12);color:#16a34a}
+.de-chain-check.fail{background:rgba(220,38,38,.12);color:#dc2626}
+.de-zone-record{padding:6px 12px;background:var(--card2,#0a0e14);border-radius:6px;margin-bottom:4px;font-size:13px;display:flex;gap:12px;align-items:center;border-left:2px solid var(--line,#283a5a)}
+.de-zone-name{color:var(--acc,#2563eb);min-width:200px;word-break:break-all}
 .de-zone-type{min-width:50px;font-weight:700}
-.de-zone-ttl{color:#4a7a9b;min-width:60px}
-.de-zone-value{color:#c8d6e5;word-break:break-all}
+.de-zone-ttl{color:var(--mut,#7a93b8);min-width:60px}
+.de-zone-value{color:var(--txt,#e6eefc);word-break:break-all}
 .de-ref-section{margin-bottom:20px}
-.de-ref-title{font-size:14px;font-weight:700;color:#00aaff;margin-bottom:10px}
-.de-ref-item{padding:10px 14px;background:#111828;border-radius:6px;margin-bottom:6px;border-left:3px solid #00aaff30}
-.de-ref-item-title{font-weight:600;color:#e2e8f0;margin-bottom:4px}
-.de-ref-item-desc{font-size:12px;color:#8ab4d0;line-height:1.6}
-.de-ref-code{font-family:inherit;background:#0a0e14;color:#00ff88;padding:2px 6px;border-radius:3px;font-size:12px}
-.de-empty{text-align:center;padding:40px 20px;color:#3a5a7a;font-size:14px}
+.de-ref-title{font-size:14px;font-weight:700;color:var(--acc,#2563eb);margin-bottom:10px}
+.de-ref-item{padding:10px 14px;background:var(--card2,#0a0e14);border-radius:6px;margin-bottom:6px;border-left:3px solid color-mix(in srgb,var(--acc) 30%,transparent)}
+.de-ref-item-title{font-weight:600;color:var(--txt,#e6eefc);margin-bottom:4px}
+.de-ref-item-desc{font-size:12px;color:var(--txt-2,#aebfdd);line-height:1.6}
+.de-ref-code{font-family:var(--font-mono,ui-monospace,monospace);background:var(--bg,#070a12);color:var(--acc,#2563eb);padding:2px 6px;border-radius:3px;font-size:12px}
+.de-empty{text-align:center;padding:40px 20px;color:var(--mut,#7a93b8);font-size:14px}
 .de-filter-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
-.de-filter{padding:4px 12px;border:1px solid #1a2a44;background:#0c1220;color:#4a7a9b;border-radius:4px;font-family:inherit;font-size:11px;cursor:pointer;transition:all .2s}
-.de-filter.active{background:#00aaff;color:#0a0e14;border-color:#00aaff}
-.de-filter:hover{border-color:#00aaff}
+.de-filter{padding:4px 12px;border:1px solid var(--line,#283a5a);background:var(--card,#0f1726);color:var(--mut,#7a93b8);border-radius:4px;font-family:inherit;font-size:11px;cursor:pointer;transition:all .2s}
+.de-filter.active{background:var(--acc,#2563eb);color:var(--on-acc,#fff);border-color:var(--acc,#2563eb)}
+.de-filter:hover{border-color:var(--acc,#2563eb)}
 .de-stats{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}
-.de-stat{background:#111828;padding:12px 18px;border-radius:8px;border:1px solid #1a2a44;min-width:120px}
-.de-stat-val{font-size:22px;font-weight:700;color:#00ff88}
-.de-stat-label{font-size:11px;color:#4a7a9b;margin-top:2px}
+.de-stat{background:var(--card2,#0a0e14);padding:12px 18px;border-radius:8px;border:1px solid var(--line,#283a5a);min-width:120px}
+.de-stat-val{font-size:22px;font-weight:700;color:#16a34a}
+.de-stat-label{font-size:11px;color:var(--mut,#7a93b8);margin-top:2px}
 .de-export-row{display:flex;gap:8px;justify-content:flex-end;margin-top:14px;flex-wrap:wrap}
 .de-vuln-banner{padding:14px 18px;border-radius:8px;margin-bottom:14px;display:flex;align-items:center;gap:12px;font-size:13px;font-weight:600}
-.de-vuln-banner.danger{background:#ff444418;border:1px solid #ff444440;color:#ff6b6b}
-.de-vuln-banner.safe{background:#00ff8818;border:1px solid #00ff8840;color:#00ff88}
+.de-vuln-banner.danger{background:rgba(220,38,38,.1);border:1px solid rgba(220,38,38,.25);color:#dc2626}
+.de-vuln-banner.safe{background:rgba(22,163,74,.1);border:1px solid rgba(22,163,74,.25);color:#16a34a}
 @media(max-width:768px){.de-wrap{padding:12px}.de-header{flex-direction:column;text-align:center}.de-input-row{flex-direction:column}.de-input{min-width:auto}.de-table td,.de-table th{padding:6px 8px;font-size:12px}.de-zone-record{flex-direction:column;gap:4px}.de-zone-name{min-width:auto}}
 </style>
 <div class="de-wrap">
@@ -484,10 +484,10 @@ export function renderDNSEnum(container) {
       if (activeFilter !== 'ALL' && activeFilter !== type) continue;
       for (const r of (recordsData[type]||[])) {
         let val = esc(r.value);
-        if (r.priority !== undefined) val = `<span style="color:#ff9f43">${r.priority}</span> ${val}`;
-        if (r.port !== undefined) val = `<span style="color:#4a7a9b">w:${r.weight} p:${r.port}</span> ${val}`;
-        if (r.tag) val = `<span style="color:#4a7a9b">${r.flag} ${esc(r.tag)}</span> ${esc(r.value)}`;
-        html += `<tr><td><span class="de-record-type de-type-${type}">${type}</span></td><td>${esc(r.name)}</td><td style="color:#4a7a9b">${_deFormatTTL(r.ttl)}</td><td>${val}</td></tr>`;
+        if (r.priority !== undefined) val = `<span style="color:#ea8c3a">${r.priority}</span> ${val}`;
+        if (r.port !== undefined) val = `<span style="color:var(--mut,#7a93b8)">w:${r.weight} p:${r.port}</span> ${val}`;
+        if (r.tag) val = `<span style="color:var(--mut,#7a93b8)">${r.flag} ${esc(r.tag)}</span> ${esc(r.value)}`;
+        html += `<tr><td><span class="de-record-type de-type-${type}">${type}</span></td><td>${esc(r.name)}</td><td style="color:var(--mut,#7a93b8)">${_deFormatTTL(r.ttl)}</td><td>${val}</td></tr>`;
       }
     }
     html += `</tbody></table></div>`;
@@ -523,8 +523,8 @@ export function renderDNSEnum(container) {
 
     let html = `<div class="de-stats">
       <div class="de-stat"><div class="de-stat-val">${subdomainData.length}</div><div class="de-stat-label">Tested</div></div>
-      <div class="de-stat"><div class="de-stat-val" style="color:#00ff88">${found.length}</div><div class="de-stat-label">Found</div></div>
-      <div class="de-stat"><div class="de-stat-val" style="color:#ff4444">${nf.length}</div><div class="de-stat-label">Not Found</div></div>
+      <div class="de-stat"><div class="de-stat-val" style="color:#16a34a">${found.length}</div><div class="de-stat-label">Found</div></div>
+      <div class="de-stat"><div class="de-stat-val" style="color:#dc2626">${nf.length}</div><div class="de-stat-label">Not Found</div></div>
     </div>`;
 
     html += `<div class="de-panel"><div class="de-panel-title">Discovered Subdomains <span class="de-badge de-badge-ok">${found.length} alive</span></div>
@@ -614,15 +614,15 @@ export function renderDNSEnum(container) {
 
     if (dnssecData.checked) {
       html += `<div class="de-stats">
-        <div class="de-stat"><div class="de-stat-val" style="font-size:14px;color:${dnssecData.ad?'#00ff88':'#ff9f43'}">${dnssecData.ad?'SET':'NOT SET'}</div><div class="de-stat-label">AD flag</div></div>
-        <div class="de-stat"><div class="de-stat-val" style="font-size:14px;color:#00aaff">${dnssecData.dsCount}</div><div class="de-stat-label">DS records</div></div>
-        <div class="de-stat"><div class="de-stat-val" style="font-size:14px;color:#00aaff">${dnssecData.dnskeyCount}</div><div class="de-stat-label">DNSKEY records</div></div>
+        <div class="de-stat"><div class="de-stat-val" style="font-size:14px;color:${dnssecData.ad?'#16a34a':'#ea8c3a'}">${dnssecData.ad?'SET':'NOT SET'}</div><div class="de-stat-label">AD flag</div></div>
+        <div class="de-stat"><div class="de-stat-val" style="font-size:14px;color:var(--acc,#2563eb)">${dnssecData.dsCount}</div><div class="de-stat-label">DS records</div></div>
+        <div class="de-stat"><div class="de-stat-val" style="font-size:14px;color:var(--acc,#2563eb)">${dnssecData.dnskeyCount}</div><div class="de-stat-label">DNSKEY records</div></div>
       </div>`;
       if (dnssecData.signed) {
         html += `<div class="de-stats">
-          <div class="de-stat"><div class="de-stat-val" style="font-size:14px;color:#00aaff">${esc(dnssecData.algorithm)}</div><div class="de-stat-label">Algorithm</div></div>
-          <div class="de-stat"><div class="de-stat-val" style="font-size:14px;color:#00aaff">${esc(dnssecData.keyTag)}</div><div class="de-stat-label">DS Key Tag</div></div>
-          <div class="de-stat"><div class="de-stat-val" style="font-size:14px;color:#00aaff">${esc(dnssecData.digestType)}</div><div class="de-stat-label">DS Digest</div></div>
+          <div class="de-stat"><div class="de-stat-val" style="font-size:14px;color:var(--acc,#2563eb)">${esc(dnssecData.algorithm)}</div><div class="de-stat-label">Algorithm</div></div>
+          <div class="de-stat"><div class="de-stat-val" style="font-size:14px;color:var(--acc,#2563eb)">${esc(dnssecData.keyTag)}</div><div class="de-stat-label">DS Key Tag</div></div>
+          <div class="de-stat"><div class="de-stat-val" style="font-size:14px;color:var(--acc,#2563eb)">${esc(dnssecData.digestType)}</div><div class="de-stat-label">DS Digest</div></div>
         </div>`;
       }
       html += `<div class="de-panel-title" style="margin-top:16px">Zone</div><div class="de-chain">`;

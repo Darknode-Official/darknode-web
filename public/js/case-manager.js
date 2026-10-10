@@ -134,8 +134,8 @@ html[data-style="dark"] .cm-textarea,html[data-style="classic"] .cm-textarea{bac
       card.onclick = () => { _detailId = card.dataset.cid; renderDetail(); };
     });
 
-    main.querySelector('#cm-new').onclick = () => {
-      const name = prompt((_tab === 'cases' ? 'Case' : 'Incident') + ' name:');
+    main.querySelector('#cm-new').onclick = async () => {
+      const name = await window.dnPrompt((_tab === 'cases' ? 'Case' : 'Incident') + ' name:', {});
       if (!name) return;
       const type = _tab === 'cases' ? 'CASE' : 'INCIDENT';
       const entity = createEntity(type, name.trim(), {
@@ -259,8 +259,8 @@ html[data-style="dark"] .cm-textarea,html[data-style="classic"] .cm-textarea{bac
       renderDetail();
     };
 
-    main.querySelector('#cm-delete').onclick = () => {
-      if (confirm('Delete this ' + item.type.toLowerCase() + '? This cannot be undone.')) {
+    main.querySelector('#cm-delete').onclick = async () => {
+      if (await window.dnConfirm('Delete ' + item.type.toLowerCase(), 'Delete this ' + item.type.toLowerCase() + '? This cannot be undone.', { danger: true })) {
         deleteEntity(_detailId);
         _detailId = null;
         renderList();

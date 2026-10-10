@@ -237,6 +237,11 @@ export function renderSubnetVisualizer(container) {
     wrap.__rmVlsm = (i) => { vlsmReqs.splice(i, 1); render(); };
     wrap.__setVlsmName = (i, v) => { vlsmReqs[i].name = v; };
     wrap.__setVlsmHosts = (i, v) => { vlsmReqs[i].hosts = parseInt(v, 10) || 1; };
+    const changeNet = wrap.querySelector("#sv-change-net");
+    if (changeNet) changeNet.addEventListener("click", async () => {
+      const c = await window.dnPrompt("Enter CIDR:", { value: currentCidr });
+      wrap.__setCidr(c || currentCidr);
+    });
   }
 
   function renderCalculator(s) {
@@ -335,7 +340,7 @@ Class:       ${ipClass} (${shortType})</div>
         </div>
         ${selectedSubnet !== null && subnets[selectedSubnet] ? renderSelectedDetail(selectedSubnet) : ""}
         <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
-          <button class="sv-btn sv-btn-sm" onclick="this.closest('.sv-wrap').__setCidr(prompt('Enter CIDR:') || '${currentCidr}')">Change Network</button>
+          <button class="sv-btn sv-btn-sm" id="sv-change-net">Change Network</button>
         </div>
       </div>`;
   }

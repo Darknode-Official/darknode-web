@@ -3754,7 +3754,7 @@ export function renderPrometheus(main) {
         var classification = classEl ? classEl.value : 'UNCLASSIFIED';
         var assessment = assessEl ? assessEl.value : '';
         if (!assessment.trim()) {
-          alert('Assessment text is required.');
+          window.showToast('Assessment text is required.', 'error');
           return;
         }
         var checked = main.querySelectorAll('.pm-checkbox:checked');
@@ -3762,7 +3762,7 @@ export function renderPrometheus(main) {
         for (var x = 0; x < checked.length; x++) {
           targets.push(checked[x].value);
         }
-        alert('Assessment published at ' + classification + ' to: ' + targets.join(', '));
+        window.showToast('Assessment published at ' + classification + ' to: ' + targets.join(', '), 'success');
         if (assessEl) assessEl.value = '';
       });
     }
@@ -5035,7 +5035,7 @@ export function renderPrometheus(main) {
       runBtn.addEventListener('click', function() {
         var nodeSelect = main.querySelector('#pm-cascade-node');
         if (!nodeSelect || !nodeSelect.value) {
-          alert('Select a target node first.');
+          window.showToast('Select a target node first.', 'error');
           return;
         }
         var typeRadios = main.querySelectorAll('input[name="pm-cascade-type"]');
@@ -5123,7 +5123,7 @@ export function renderPrometheus(main) {
         var compEl = main.querySelector('#pm-comparison');
         if (!compEl) return;
         if (!state.lastCascade || state.lastCascade.length === 0) {
-          alert('Run a primary cascade analysis first.');
+          window.showToast('Run a primary cascade analysis first.', 'error');
           return;
         }
 

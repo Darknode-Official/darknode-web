@@ -295,62 +295,62 @@ export function renderXSSLab(container) {
   const id = 'xl-' + Math.random().toString(36).slice(2, 8);
 
   container.innerHTML = `<style>
-.xl-wrap{background:#0a0e14;color:#c8d6e5;font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;padding:0}
-.xl-header{background:linear-gradient(135deg,#0d1117 0%,#1a0a2e 50%,#0d1117 100%);padding:20px 28px;border-bottom:1px solid #ff4444 40}
-.xl-header h2{margin:0;font-size:22px;color:#ff4444;letter-spacing:1px;font-weight:700}
-.xl-header p{margin:4px 0 0;font-size:13px;color:#8a8a8a}
-.xl-tabs{display:flex;gap:0;background:#111820;border-bottom:1px solid #1e2a3a;overflow-x:auto}
-.xl-tab{padding:10px 20px;background:none;border:none;color:#6a8a9a;cursor:pointer;font-size:13px;white-space:nowrap;border-bottom:2px solid transparent;transition:all .2s}
-.xl-tab:hover{color:#c8d6e5;background:#161e28}
-.xl-tab.active{color:#ff4444;border-bottom-color:#ff4444;background:#0f1520}
+.xl-wrap{background:var(--bg,#070a12);color:var(--txt,#e6eefc);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;min-height:100vh;padding:0}
+.xl-header{background:var(--card2,#0f1726);padding:20px 28px;border-bottom:1px solid var(--line,#283a5a)}
+.xl-header h2{margin:0;font-size:22px;color:var(--txt,#e6eefc);letter-spacing:1px;font-weight:700}
+.xl-header p{margin:4px 0 0;font-size:13px;color:var(--mut,#7a93b8)}
+.xl-tabs{display:flex;gap:0;background:var(--card2,#0f1726);border-bottom:1px solid var(--line,#283a5a);overflow-x:auto}
+.xl-tab{padding:10px 20px;background:none;border:none;color:var(--mut,#7a93b8);cursor:pointer;font-size:13px;white-space:nowrap;border-bottom:2px solid transparent;transition:all .2s}
+.xl-tab:hover{color:var(--txt,#e6eefc);background:color-mix(in srgb,var(--acc) 8%,transparent)}
+.xl-tab.active{color:var(--acc,#2563eb);border-bottom-color:var(--acc,#2563eb);background:color-mix(in srgb,var(--acc) 6%,transparent)}
 .xl-body{padding:20px 28px}
 .xl-panel{display:none}.xl-panel.active{display:block}
-.xl-card{background:#111820;border:1px solid #1e2a3a;border-radius:8px;padding:16px;margin-bottom:14px}
-.xl-card h3{margin:0 0 10px;font-size:15px;color:#e2e8f0}
-.xl-cat-btn{padding:6px 14px;background:#161e28;border:1px solid #1e2a3a;border-radius:4px;color:#8ab4d0;cursor:pointer;font-size:12px;margin:0 6px 6px 0;transition:all .2s}
-.xl-cat-btn:hover,.xl-cat-btn.active{background:#1a0a2e;border-color:#ff4444;color:#ff4444}
-.xl-payload{background:#0a0e14;border:1px solid #1e2a3a;border-radius:4px;padding:8px 12px;margin:4px 0;font-family:'JetBrains Mono',monospace;font-size:12px;color:#00ff88;display:flex;align-items:center;justify-content:space-between;word-break:break-all;gap:8px}
-.xl-payload:hover{border-color:#ff4444 60}
-.xl-copy-btn{padding:3px 10px;background:#1e2a3a;border:1px solid #2a3a4a;border-radius:3px;color:#8ab4d0;cursor:pointer;font-size:11px;white-space:nowrap;flex-shrink:0}
-.xl-copy-btn:hover{background:#ff4444;color:#fff;border-color:#ff4444}
-.xl-input,.xl-textarea,.xl-select{background:#0d1117;border:1px solid #1e2a3a;border-radius:6px;color:#c8d6e5;padding:8px 12px;font-size:13px;width:100%;box-sizing:border-box;font-family:'JetBrains Mono',monospace}
+.xl-card{background:var(--card,#0f1726);border:1px solid var(--line,#283a5a);border-radius:8px;padding:16px;margin-bottom:14px}
+.xl-card h3{margin:0 0 10px;font-size:15px;color:var(--txt,#e6eefc)}
+.xl-cat-btn{padding:6px 14px;background:var(--card2,#0a0e14);border:1px solid var(--line,#283a5a);border-radius:4px;color:var(--txt-2,#aebfdd);cursor:pointer;font-size:12px;margin:0 6px 6px 0;transition:all .2s}
+.xl-cat-btn:hover,.xl-cat-btn.active{background:color-mix(in srgb,var(--acc) 12%,transparent);border-color:var(--acc,#2563eb);color:var(--acc,#2563eb)}
+.xl-payload{background:var(--card2,#0a0e14);border:1px solid var(--line,#283a5a);border-radius:4px;padding:8px 12px;margin:4px 0;font-family:var(--font-mono,ui-monospace,monospace);font-size:12px;color:var(--txt,#e6eefc);display:flex;align-items:center;justify-content:space-between;word-break:break-all;gap:8px}
+.xl-payload:hover{border-color:var(--acc,#2563eb)}
+.xl-copy-btn{padding:3px 10px;background:var(--card,#0f1726);border:1px solid var(--line,#283a5a);border-radius:3px;color:var(--txt-2,#aebfdd);cursor:pointer;font-size:11px;white-space:nowrap;flex-shrink:0}
+.xl-copy-btn:hover{background:var(--acc,#2563eb);color:var(--on-acc,#fff);border-color:var(--acc,#2563eb)}
+.xl-input,.xl-textarea,.xl-select{background:var(--card2,#0a0e14);border:1px solid var(--line,#283a5a);border-radius:6px;color:var(--txt,#e6eefc);padding:8px 12px;font-size:13px;width:100%;box-sizing:border-box;font-family:var(--font-mono,ui-monospace,monospace)}
 .xl-textarea{min-height:100px;resize:vertical}
 .xl-select{cursor:pointer}
-.xl-input:focus,.xl-textarea:focus,.xl-select:focus{outline:none;border-color:#ff4444}
-.xl-btn{padding:8px 18px;background:#ff4444;border:none;border-radius:6px;color:#fff;cursor:pointer;font-size:13px;font-weight:600;transition:all .2s}
-.xl-btn:hover{background:#ff6666}
-.xl-btn.secondary{background:#1e2a3a;color:#c8d6e5}
-.xl-btn.secondary:hover{background:#2a3a5a}
-.xl-result{background:#0d1117;border:1px solid #1e2a3a;border-radius:6px;padding:14px;margin-top:12px;font-family:'JetBrains Mono',monospace;font-size:12px;color:#c8d6e5}
-.xl-danger{color:#ff4444;font-weight:600}
-.xl-safe{color:#00ff88;font-weight:600}
-.xl-warn{color:#ffd600;font-weight:600}
-.xl-finding{padding:6px 10px;margin:4px 0;background:#1a0a0a;border-left:3px solid #ff4444;border-radius:0 4px 4px 0;font-size:12px;color:#ff8888}
+.xl-input:focus,.xl-textarea:focus,.xl-select:focus{outline:none;border-color:var(--acc,#2563eb)}
+.xl-btn{padding:8px 18px;background:var(--acc,#2563eb);border:1px solid var(--acc,#2563eb);border-radius:6px;color:var(--on-acc,#fff);cursor:pointer;font-size:13px;font-weight:600;transition:all .2s}
+.xl-btn:hover{opacity:.9}
+.xl-btn.secondary{background:transparent;color:var(--acc,#2563eb);border:1px solid var(--line,#283a5a)}
+.xl-btn.secondary:hover{border-color:var(--acc,#2563eb);background:color-mix(in srgb,var(--acc) 8%,transparent)}
+.xl-result{background:var(--card2,#0a0e14);border:1px solid var(--line,#283a5a);border-radius:6px;padding:14px;margin-top:12px;font-family:var(--font-mono,ui-monospace,monospace);font-size:12px;color:var(--txt,#e6eefc)}
+.xl-danger{color:#dc2626;font-weight:600}
+.xl-safe{color:#16a34a;font-weight:600}
+.xl-warn{color:#d97706;font-weight:600}
+.xl-finding{padding:6px 10px;margin:4px 0;background:rgba(220,38,38,.1);border-left:3px solid #dc2626;border-radius:0 4px 4px 0;font-size:12px;color:#fca5a5}
 .xl-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.xl-context-card{background:#111820;border:1px solid #1e2a3a;border-radius:8px;padding:14px;cursor:pointer;transition:all .2s}
-.xl-context-card:hover,.xl-context-card.selected{border-color:#ff4444;background:#1a0a1e}
-.xl-context-card h4{margin:0 0 4px;color:#e2e8f0;font-size:14px}
-.xl-context-card p{margin:0;font-size:12px;color:#6a8a9a}
-.xl-context-card code{display:block;margin-top:8px;background:#0a0e14;padding:6px 10px;border-radius:4px;font-size:11px;color:#00aaff}
+.xl-context-card{background:var(--card,#0f1726);border:1px solid var(--line,#283a5a);border-radius:8px;padding:14px;cursor:pointer;transition:all .2s}
+.xl-context-card:hover,.xl-context-card.selected{border-color:var(--acc,#2563eb);background:color-mix(in srgb,var(--acc) 6%,transparent)}
+.xl-context-card h4{margin:0 0 4px;color:var(--txt,#e6eefc);font-size:14px}
+.xl-context-card p{margin:0;font-size:12px;color:var(--mut,#7a93b8)}
+.xl-context-card code{display:block;margin-top:8px;background:var(--card2,#0a0e14);padding:6px 10px;border-radius:4px;font-size:11px;color:var(--acc,#2563eb);font-family:var(--font-mono,ui-monospace,monospace)}
 .xl-encode-row{display:flex;gap:10px;margin-bottom:10px;align-items:center}
-.xl-encode-row label{font-size:13px;color:#8ab4d0;min-width:100px}
-.xl-prevention{background:#111820;border:1px solid #1e2a3a;border-radius:8px;padding:16px;margin-bottom:14px}
-.xl-prevention h4{margin:0 0 6px;color:#00aaff;font-size:14px}
-.xl-prevention p{margin:0 0 10px;font-size:13px;color:#8a8a8a}
-.xl-code-block{background:#0a0e14;border:1px solid #1e2a3a;border-radius:4px;padding:10px 14px;font-family:'JetBrains Mono',monospace;font-size:12px;margin:6px 0;overflow-x:auto;white-space:pre-wrap}
-.xl-code-block.safe{border-left:3px solid #00ff88;color:#00ff88}
-.xl-code-block.bad{border-left:3px solid #ff4444;color:#ff4444}
-.xl-code-block.lib{border-left:3px solid #00aaff;color:#00aaff}
+.xl-encode-row label{font-size:13px;color:var(--txt-2,#aebfdd);min-width:100px}
+.xl-prevention{background:var(--card,#0f1726);border:1px solid var(--line,#283a5a);border-radius:8px;padding:16px;margin-bottom:14px}
+.xl-prevention h4{margin:0 0 6px;color:var(--acc,#2563eb);font-size:14px}
+.xl-prevention p{margin:0 0 10px;font-size:13px;color:var(--mut,#7a93b8)}
+.xl-code-block{background:var(--card2,#0a0e14);border:1px solid var(--line,#283a5a);border-radius:4px;padding:10px 14px;font-family:var(--font-mono,ui-monospace,monospace);font-size:12px;margin:6px 0;overflow-x:auto;white-space:pre-wrap}
+.xl-code-block.safe{border-left:3px solid #16a34a;color:#16a34a}
+.xl-code-block.bad{border-left:3px solid #dc2626;color:#dc2626}
+.xl-code-block.lib{border-left:3px solid var(--acc,#2563eb);color:var(--acc,#2563eb)}
 .xl-badge{display:inline-block;padding:2px 8px;border-radius:3px;font-size:11px;font-weight:600}
-.xl-badge.danger{background:#ff4444 20;color:#ff4444}
-.xl-badge.info{background:#00aaff20;color:#00aaff}
-.xl-badge.ok{background:#00ff8820;color:#00ff88}
+.xl-badge.danger{background:rgba(220,38,38,.15);color:#dc2626}
+.xl-badge.info{background:color-mix(in srgb,var(--acc) 15%,transparent);color:var(--acc,#2563eb)}
+.xl-badge.ok{background:rgba(22,163,74,.15);color:#16a34a}
 .xl-search{margin-bottom:12px}
-.xl-count{font-size:12px;color:#6a8a9a;margin-bottom:10px}
+.xl-count{font-size:12px;color:var(--mut,#7a93b8);margin-bottom:10px}
 .xl-sb-output{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
-.xl-sb-pane{background:#0d1117;border:1px solid #1e2a3a;border-radius:6px;padding:12px}
-.xl-sb-pane h4{margin:0 0 8px;font-size:13px;color:#8ab4d0}
-.xl-sb-render{padding:10px;background:#0a0e14;border-radius:4px;min-height:40px;font-family:'JetBrains Mono',monospace;font-size:12px;word-break:break-all;color:#c8d6e5}
+.xl-sb-pane{background:var(--card2,#0a0e14);border:1px solid var(--line,#283a5a);border-radius:6px;padding:12px}
+.xl-sb-pane h4{margin:0 0 8px;font-size:13px;color:var(--txt-2,#aebfdd)}
+.xl-sb-render{padding:10px;background:var(--card,#0f1726);border-radius:4px;min-height:40px;font-family:var(--font-mono,ui-monospace,monospace);font-size:12px;word-break:break-all;color:var(--txt,#e6eefc)}
 @media(max-width:900px){.xl-grid,.xl-sb-output{grid-template-columns:1fr}.xl-encode-row{flex-direction:column;align-items:stretch}}
 </style>
 <div class="xl-wrap" id="${id}">
@@ -456,8 +456,8 @@ export function renderXSSLab(container) {
     panel.innerHTML = `
       <div class="xl-card">
         <h3>Interactive Sandbox <span class="xl-badge danger">SAFE MODE</span></h3>
-        <p style="font-size:12px;color:#6a8a9a;margin:0 0 12px">Payloads are displayed as text only — nothing is executed. This shows how input appears in different contexts.</p>
-        <label style="font-size:13px;color:#8ab4d0;display:block;margin-bottom:6px">Input Payload</label>
+        <p style="font-size:12px;color:var(--mut,#7a93b8);margin:0 0 12px">Payloads are displayed as text only — nothing is executed. This shows how input appears in different contexts.</p>
+        <label style="font-size:13px;color:var(--txt-2,#aebfdd);display:block;margin-bottom:6px">Input Payload</label>
         <textarea class="xl-textarea" id="${id}-sb-input" placeholder="Type or paste a payload...">&lt;img src=x onerror=alert(1)&gt;</textarea>
         <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
           <button class="xl-btn" id="${id}-sb-analyze">Analyze</button>
@@ -486,7 +486,7 @@ export function renderXSSLab(container) {
           return `<div class="xl-sb-pane">
             <h4>${esc(ctx.label)} ${analysis.dangerous ? '<span class="xl-badge danger">VULNERABLE</span>' : '<span class="xl-badge ok">SAFE</span>'}</h4>
             <div class="xl-sb-render">${esc(ctx.render)}</div>
-            ${analysis.findings && analysis.findings.length ? analysis.findings.map(f => `<div class="xl-finding">${esc(f)}</div>`).join('') : '<div style="font-size:12px;color:#00ff88;margin-top:6px">No injection vectors detected in this context</div>'}
+            ${analysis.findings && analysis.findings.length ? analysis.findings.map(f => `<div class="xl-finding">${esc(f)}</div>`).join('') : '<div style="font-size:12px;color:#16a34a;margin-top:6px">No injection vectors detected in this context</div>'}
           </div>`;
         }).join('')}</div>
       </div>`;
@@ -506,7 +506,7 @@ export function renderXSSLab(container) {
       panel.innerHTML = `
         <div class="xl-card">
           <h3>Select Injection Context</h3>
-          <p style="font-size:12px;color:#6a8a9a;margin:0 0 12px">Click a context to see relevant payloads and escape techniques</p>
+          <p style="font-size:12px;color:var(--mut,#7a93b8);margin:0 0 12px">Click a context to see relevant payloads and escape techniques</p>
           <div class="xl-grid">${Object.entries(XL_CONTEXTS).map(([k, v]) =>
             `<div class="xl-context-card ${selectedCtx === k ? 'selected' : ''}" data-ctx="${k}">
               <h4>${esc(v.name)}</h4>
@@ -537,7 +537,7 @@ export function renderXSSLab(container) {
       resultsEl.innerHTML = `
         <div class="xl-card">
           <h3>Payloads for ${esc(ctx.name)} Context <span class="xl-badge danger">${allPayloads.length}</span></h3>
-          <p style="font-size:12px;color:#6a8a9a;margin:0 0 8px">Relevant categories: ${catKeys.map(k => XL_PAYLOADS[k] ? esc(XL_PAYLOADS[k].name) : '').filter(Boolean).join(', ')}</p>
+          <p style="font-size:12px;color:var(--mut,#7a93b8);margin:0 0 8px">Relevant categories: ${catKeys.map(k => XL_PAYLOADS[k] ? esc(XL_PAYLOADS[k].name) : '').filter(Boolean).join(', ')}</p>
           ${allPayloads.map((p, i) =>
             `<div class="xl-payload"><code>${esc(p)}</code><button class="xl-copy-btn" data-cidx="${i}">Copy</button></div>`
           ).join('')}
@@ -562,7 +562,7 @@ export function renderXSSLab(container) {
     panel.innerHTML = `
       <div class="xl-card">
         <h3>XSS Encoding / Decoding Tools</h3>
-        <label style="font-size:13px;color:#8ab4d0;display:block;margin-bottom:6px">Input</label>
+        <label style="font-size:13px;color:var(--txt-2,#aebfdd);display:block;margin-bottom:6px">Input</label>
         <textarea class="xl-textarea" id="${id}-enc-input" placeholder="Enter text to encode/decode...">&lt;script&gt;alert(1)&lt;/script&gt;</textarea>
         <div style="margin:12px 0;display:flex;gap:8px;flex-wrap:wrap">
           <button class="xl-btn" data-enc="html-enc">HTML Encode</button>
@@ -584,16 +584,16 @@ export function renderXSSLab(container) {
       <div class="xl-card">
         <h3>Quick Reference: Encoding Cheat Sheet</h3>
         <div class="xl-result">
-<strong style="color:#00aaff">HTML Entities:</strong>
+<strong style="color:var(--acc,#2563eb)">HTML Entities:</strong>
 &lt;  →  &amp;lt;     &gt;  →  &amp;gt;     &amp;  →  &amp;amp;     "  →  &amp;quot;     '  →  &amp;#x27;
 
-<strong style="color:#00aaff">URL Encoding:</strong>
+<strong style="color:var(--acc,#2563eb)">URL Encoding:</strong>
 &lt;  →  %3C     &gt;  →  %3E     "  →  %22     '  →  %27     /  →  %2F     space  →  %20
 
-<strong style="color:#00aaff">Unicode:</strong>
+<strong style="color:var(--acc,#2563eb)">Unicode:</strong>
 &lt;  →  \\u003c     &gt;  →  \\u003e     /  →  \\u002f
 
-<strong style="color:#00aaff">Hex:</strong>
+<strong style="color:var(--acc,#2563eb)">Hex:</strong>
 &lt;  →  \\x3c     &gt;  →  \\x3e     '  →  \\x27     "  →  \\x22
         </div>
       </div>`;
@@ -635,17 +635,17 @@ export function renderXSSLab(container) {
     panel.innerHTML = `
       <div class="xl-card">
         <h3>XSS Prevention Reference</h3>
-        <p style="font-size:12px;color:#6a8a9a;margin:0 0 4px">Context-specific defenses against Cross-Site Scripting</p>
+        <p style="font-size:12px;color:var(--mut,#7a93b8);margin:0 0 4px">Context-specific defenses against Cross-Site Scripting</p>
       </div>
       ${XL_PREVENTION.map(item => `
         <div class="xl-prevention">
           <h4>${esc(item.title)}</h4>
           <p>${esc(item.desc)}</p>
-          <div style="font-size:12px;color:#00ff88;margin-bottom:4px;font-weight:600">&#x2713; Safe (Do This)</div>
+          <div style="font-size:12px;color:#16a34a;margin-bottom:4px;font-weight:600">&#x2713; Safe (Do This)</div>
           <div class="xl-code-block safe">${esc(item.safe)}</div>
-          <div style="font-size:12px;color:#ff4444;margin:8px 0 4px;font-weight:600">&#x2717; Vulnerable (Don't Do This)</div>
+          <div style="font-size:12px;color:#dc2626;margin:8px 0 4px;font-weight:600">&#x2717; Vulnerable (Don't Do This)</div>
           <div class="xl-code-block bad">${esc(item.bad)}</div>
-          <div style="font-size:12px;color:#00aaff;margin:8px 0 4px;font-weight:600">Library / Tool</div>
+          <div style="font-size:12px;color:var(--acc,#2563eb);margin:8px 0 4px;font-weight:600">Library / Tool</div>
           <div class="xl-code-block lib">${esc(item.lib)}</div>
         </div>
       `).join('')}
@@ -666,7 +666,7 @@ export function renderXSSLab(container) {
             'Use X-Content-Type-Options: nosniff header',
             'Regular security testing with automated scanners',
           ].map(item => `<label style="display:flex;gap:8px;align-items:center;cursor:pointer;color:#c8d6e5">
-            <input type="checkbox" style="accent-color:#00ff88"> ${esc(item)}
+            <input type="checkbox" style="accent-color:var(--acc,#2563eb)"> ${esc(item)}
           </label>`).join('')}
         </div>
       </div>`;

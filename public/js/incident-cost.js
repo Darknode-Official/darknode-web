@@ -251,50 +251,50 @@ function injectStyles() {
   _icStyled = true;
   var s = document.createElement('style');
   s.textContent =
-  '.ic-wrap { font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; color: #c8d6e5; max-width: 1300px; margin: 0 auto; }' +
-  '.ic-header { padding: 24px 0 20px; border-bottom: 1px solid #1a2a44; margin-bottom: 24px; }' +
+  '.ic-wrap { font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; color: var(--txt,#e7eefc); max-width: 1300px; margin: 0 auto; }' +
+  '.ic-header { padding: 24px 0 20px; border-bottom: 1px solid var(--line,#283a5a); margin-bottom: 24px; }' +
   '.ic-title { font-size: 24px; font-weight: 800; color: #fff; margin: 0 0 4px; letter-spacing: -0.02em; }' +
-  '.ic-subtitle { font-size: 13px; color: #667788; margin: 0; }' +
+  '.ic-subtitle { font-size: 13px; color: var(--mut,#7a93b8); margin: 0; }' +
   '.ic-grid { display: grid; grid-template-columns: 380px 1fr; gap: 24px; }' +
   '@media (max-width: 900px) { .ic-grid { grid-template-columns: 1fr; } }' +
 
   // Panel base
-  '.ic-panel { background: #0d1117; border: 1px solid #1a2332; border-radius: 10px; padding: 20px; margin-bottom: 20px; }' +
-  '.ic-panel-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: #00e5ff; margin: 0 0 16px; padding-bottom: 10px; border-bottom: 1px solid #1a2332; }' +
+  '.ic-panel { background: var(--card2,#0f1726); border: 1px solid var(--line,#283a5a); border-radius: 10px; padding: 20px; margin-bottom: 20px; }' +
+  '.ic-panel-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--acc,#2563eb); margin: 0 0 16px; padding-bottom: 10px; border-bottom: 1px solid var(--line,#283a5a); }' +
 
   // Hero cost
-  '.ic-hero { background: linear-gradient(135deg, #0d1117, #111d2b); border: 1px solid #1a3050; border-radius: 12px; padding: 28px 24px; margin-bottom: 24px; text-align: center; }' +
-  '.ic-hero-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; color: #667788; margin-bottom: 8px; }' +
-  '.ic-hero-cost { font-size: 48px; font-weight: 800; font-family: ui-monospace, monospace; color: #ff5c6c; margin: 0; letter-spacing: -2px; line-height: 1.1; }' +
-  '.ic-hero-range { font-size: 12px; color: #667788; margin-top: 6px; font-family: monospace; }' +
+  '.ic-hero { background: linear-gradient(135deg, var(--card2,#0f1726), var(--card,#0b1120)); border: 1px solid var(--line,#283a5a); border-radius: 12px; padding: 28px 24px; margin-bottom: 24px; text-align: center; }' +
+  '.ic-hero-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; color: var(--mut,#7a93b8); margin-bottom: 8px; }' +
+  '.ic-hero-cost { font-size: 48px; font-weight: 800; font-family: var(--font-mono, ui-monospace, monospace); color: #ff5c6c; margin: 0; letter-spacing: -2px; line-height: 1.1; }' +
+  '.ic-hero-range { font-size: 12px; color: var(--mut,#7a93b8); margin-top: 6px; font-family: var(--font-mono, ui-monospace, monospace); }' +
   '.ic-hero-per-record { font-size: 13px; color: #8899aa; margin-top: 10px; }' +
-  '.ic-hero-per-record span { color: #ffaa00; font-weight: 700; font-family: monospace; }' +
+  '.ic-hero-per-record span { color: #ffaa00; font-weight: 700; font-family: var(--font-mono, ui-monospace, monospace); }' +
 
   // Cost breakdown cards row
   '.ic-cost-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 20px; }' +
-  '.ic-cost-card { background: #111820; border: 1px solid #1a2332; border-radius: 8px; padding: 12px; text-align: center; }' +
-  '.ic-cost-card-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #667788; margin-bottom: 6px; }' +
-  '.ic-cost-card-val { font-size: 20px; font-weight: 700; font-family: monospace; }' +
-  '.ic-cost-card-pct { font-size: 10px; color: #667788; margin-top: 2px; }' +
+  '.ic-cost-card { background: var(--card2,#0f1726); border: 1px solid var(--line,#283a5a); border-radius: 8px; padding: 12px; text-align: center; }' +
+  '.ic-cost-card-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--mut,#7a93b8); margin-bottom: 6px; }' +
+  '.ic-cost-card-val { font-size: 20px; font-weight: 700; font-family: var(--font-mono, ui-monospace, monospace); }' +
+  '.ic-cost-card-pct { font-size: 10px; color: var(--mut,#7a93b8); margin-top: 2px; }' +
 
   // Form elements
   '.ic-form-group { margin-bottom: 14px; }' +
   '.ic-label { display: block; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: #8899aa; margin-bottom: 6px; }' +
-  '.ic-select { width: 100%; background: #111820; border: 1px solid #1a2332; border-radius: 6px; color: #c8d6e5; padding: 8px 10px; font-size: 13px; font-family: inherit; cursor: pointer; }' +
-  '.ic-select:focus { outline: none; border-color: #00e5ff; }' +
+  '.ic-select { width: 100%; background: var(--card2,#0f1726); border: 1px solid var(--line,#283a5a); border-radius: 6px; color: var(--txt,#e7eefc); padding: 8px 10px; font-size: 13px; font-family: inherit; cursor: pointer; }' +
+  '.ic-select:focus { outline: none; border-color: var(--acc,#2563eb); }' +
   '.ic-range-wrap { display: flex; align-items: center; gap: 10px; }' +
-  '.ic-range { flex: 1; accent-color: #00e5ff; }' +
-  '.ic-range-val { font-family: monospace; font-size: 13px; color: #00e5ff; font-weight: 700; min-width: 60px; text-align: right; }' +
+  '.ic-range { flex: 1; accent-color: var(--acc,#2563eb); }' +
+  '.ic-range-val { font-family: var(--font-mono, ui-monospace, monospace); font-size: 13px; color: var(--acc,#2563eb); font-weight: 700; min-width: 60px; text-align: right; }' +
   '.ic-checkbox-group { display: flex; flex-wrap: wrap; gap: 6px; }' +
-  '.ic-check { display: flex; align-items: center; gap: 5px; background: #111820; border: 1px solid #1a2332; border-radius: 4px; padding: 5px 10px; font-size: 11px; cursor: pointer; transition: all .15s; }' +
+  '.ic-check { display: flex; align-items: center; gap: 5px; background: var(--card2,#0f1726); border: 1px solid var(--line,#283a5a); border-radius: 4px; padding: 5px 10px; font-size: 11px; cursor: pointer; transition: all .15s; }' +
   '.ic-check:hover { border-color: #2a3a4a; }' +
-  '.ic-check.active { background: #0a2a3a; border-color: #00e5ff; color: #00e5ff; }' +
-  '.ic-check input { accent-color: #00e5ff; margin: 0; }' +
-  '.ic-toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #111820; }' +
+  '.ic-check.active { background: #0a2a3a; border-color: var(--acc,#2563eb); color: var(--acc,#2563eb); }' +
+  '.ic-check input { accent-color: var(--acc,#2563eb); margin: 0; }' +
+  '.ic-toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--card2,#0f1726); }' +
   '.ic-toggle-label { font-size: 12px; color: #aabbcc; }' +
-  '.ic-toggle-savings { font-size: 11px; color: #2ee6a6; font-family: monospace; }' +
-  '.ic-toggle { position: relative; width: 36px; height: 20px; background: #1a2332; border-radius: 10px; cursor: pointer; transition: background .2s; flex-shrink: 0; }' +
-  '.ic-toggle.on { background: #00e5ff; }' +
+  '.ic-toggle-savings { font-size: 11px; color: #2ee6a6; font-family: var(--font-mono, ui-monospace, monospace); }' +
+  '.ic-toggle { position: relative; width: 36px; height: 20px; background: var(--line,#283a5a); border-radius: 10px; cursor: pointer; transition: background .2s; flex-shrink: 0; }' +
+  '.ic-toggle.on { background: var(--acc,#2563eb); }' +
   '.ic-toggle::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: transform .2s; }' +
   '.ic-toggle.on::after { transform: translateX(16px); }' +
 
@@ -302,8 +302,8 @@ function injectStyles() {
   '.ic-bar-row { margin-bottom: 10px; }' +
   '.ic-bar-header { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px; }' +
   '.ic-bar-name { color: #aabbcc; }' +
-  '.ic-bar-val { font-family: monospace; font-weight: 700; }' +
-  '.ic-bar-track { height: 8px; background: #111820; border-radius: 4px; overflow: hidden; }' +
+  '.ic-bar-val { font-family: var(--font-mono, ui-monospace, monospace); font-weight: 700; }' +
+  '.ic-bar-track { height: 8px; background: var(--card2,#0f1726); border-radius: 4px; overflow: hidden; }' +
   '.ic-bar-fill { height: 100%; border-radius: 4px; transition: width .4s ease; }' +
   '.ic-bar-fill.red { background: linear-gradient(90deg, #ef4444, #ff6b6b); }' +
   '.ic-bar-fill.orange { background: linear-gradient(90deg, #f59e0b, #fbbf24); }' +
@@ -313,18 +313,18 @@ function injectStyles() {
   '.ic-bar-fill.cyan { background: linear-gradient(90deg, #06b6d4, #22d3ee); }' +
 
   // Amplifier / mitigator list
-  '.ic-factor-item { display: flex; align-items: center; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid #111820; font-size: 12px; }' +
+  '.ic-factor-item { display: flex; align-items: center; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid var(--card2,#0f1726); font-size: 12px; }' +
   '.ic-factor-name { color: #aabbcc; }' +
-  '.ic-factor-cost { font-family: monospace; font-weight: 700; }' +
+  '.ic-factor-cost { font-family: var(--font-mono, ui-monospace, monospace); font-weight: 700; }' +
   '.ic-factor-cost.amp { color: #ff5c6c; }' +
   '.ic-factor-cost.mit { color: #2ee6a6; }' +
 
   // Table
   '.ic-table { width: 100%; border-collapse: collapse; font-size: 12px; }' +
-  '.ic-table th { text-align: left; padding: 8px 10px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #667788; border-bottom: 2px solid #1a2332; }' +
-  '.ic-table td { padding: 8px 10px; border-bottom: 1px solid #111820; color: #aabbcc; }' +
-  '.ic-table tr:hover td { background: #111820; }' +
-  '.ic-table .mono { font-family: monospace; }' +
+  '.ic-table th { text-align: left; padding: 8px 10px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--mut,#7a93b8); border-bottom: 2px solid var(--line,#283a5a); }' +
+  '.ic-table td { padding: 8px 10px; border-bottom: 1px solid var(--card2,#0f1726); color: #aabbcc; }' +
+  '.ic-table tr:hover td { background: var(--card2,#0f1726); }' +
+  '.ic-table .mono { font-family: var(--font-mono, ui-monospace, monospace); }' +
 
   // Insurance
   '.ic-insurance-bar { display: flex; align-items: stretch; height: 32px; border-radius: 6px; overflow: hidden; margin-bottom: 8px; }' +
@@ -332,32 +332,32 @@ function injectStyles() {
   '.ic-ins-gap { background: #ef4444; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #fff; }' +
 
   // Revenue input
-  '.ic-input { width: 100%; background: #111820; border: 1px solid #1a2332; border-radius: 6px; color: #c8d6e5; padding: 8px 10px; font-size: 13px; font-family: monospace; }' +
-  '.ic-input:focus { outline: none; border-color: #00e5ff; }' +
+  '.ic-input { width: 100%; background: var(--card2,#0f1726); border: 1px solid var(--line,#283a5a); border-radius: 6px; color: var(--txt,#e7eefc); padding: 8px 10px; font-size: 13px; font-family: var(--font-mono, ui-monospace, monospace); }' +
+  '.ic-input:focus { outline: none; border-color: var(--acc,#2563eb); }' +
 
   // Tabs
-  '.ic-tabs { display: flex; gap: 2px; margin-bottom: 20px; background: #0a0e14; border-radius: 8px; padding: 3px; }' +
-  '.ic-tab { flex: 1; text-align: center; padding: 8px 12px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #667788; cursor: pointer; border-radius: 4px; transition: all .15s; border: none; background: none; font-family: inherit; }' +
+  '.ic-tabs { display: flex; gap: 2px; margin-bottom: 20px; background: var(--card,#0b1120); border-radius: 8px; padding: 3px; }' +
+  '.ic-tab { flex: 1; text-align: center; padding: 8px 12px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--mut,#7a93b8); cursor: pointer; border-radius: 4px; transition: all .15s; border: none; background: none; font-family: inherit; }' +
   '.ic-tab:hover { color: #aabbcc; }' +
-  '.ic-tab.active { background: #1a2332; color: #00e5ff; }' +
+  '.ic-tab.active { background: var(--line,#283a5a); color: var(--acc,#2563eb); }' +
 
   // Report button
-  '.ic-btn { display: inline-flex; align-items: center; gap: 6px; background: #00e5ff; color: #000; border: none; border-radius: 4px; padding: 8px 16px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; transition: all .15s; }' +
-  '.ic-btn:hover { background: #33eeff; transform: translateY(-1px); }' +
-  '.ic-btn.ghost { background: transparent; color: #c8d6e5; border: 1px solid #1a2332; }' +
-  '.ic-btn.ghost:hover { border-color: #00e5ff; color: #00e5ff; }' +
+  '.ic-btn { display: inline-flex; align-items: center; gap: 6px; background: var(--acc,#2563eb); color: var(--on-acc,#fff); border: none; border-radius: 4px; padding: 8px 16px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; transition: all .15s; }' +
+  '.ic-btn:hover { background: var(--acc,#2563eb); transform: translateY(-1px); }' +
+  '.ic-btn.ghost { background: transparent; color: var(--txt,#e7eefc); border: 1px solid var(--line,#283a5a); }' +
+  '.ic-btn.ghost:hover { border-color: var(--acc,#2563eb); color: var(--acc,#2563eb); }' +
 
   // Stat row
   '.ic-stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }' +
-  '.ic-stat { background: #111820; border: 1px solid #1a2332; border-radius: 8px; padding: 14px; text-align: center; }' +
-  '.ic-stat-val { font-size: 22px; font-weight: 800; font-family: monospace; }' +
-  '.ic-stat-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #667788; margin-top: 4px; }' +
+  '.ic-stat { background: var(--card2,#0f1726); border: 1px solid var(--line,#283a5a); border-radius: 8px; padding: 14px; text-align: center; }' +
+  '.ic-stat-val { font-size: 22px; font-weight: 800; font-family: var(--font-mono, ui-monospace, monospace); }' +
+  '.ic-stat-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--mut,#7a93b8); margin-top: 4px; }' +
   '@media (max-width: 700px) { .ic-stats-row { grid-template-columns: repeat(2, 1fr); } }' +
 
   // Fine tier
-  '.ic-fine-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: #111820; border: 1px solid #1a2332; border-radius: 6px; margin-bottom: 6px; }' +
-  '.ic-fine-reg { font-size: 12px; font-weight: 600; color: #c8d6e5; }' +
-  '.ic-fine-amount { font-size: 13px; font-family: monospace; font-weight: 700; color: #ff5c6c; }' +
+  '.ic-fine-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: var(--card2,#0f1726); border: 1px solid var(--line,#283a5a); border-radius: 6px; margin-bottom: 6px; }' +
+  '.ic-fine-reg { font-size: 12px; font-weight: 600; color: var(--txt,#e7eefc); }' +
+  '.ic-fine-amount { font-size: 13px; font-family: var(--font-mono, ui-monospace, monospace); font-weight: 700; color: #ff5c6c; }' +
 
   // Pro (light) theme overrides
   '[data-style=pro] .ic-wrap { color: #3f3f46; }' +
@@ -655,7 +655,7 @@ export function renderIncidentCost(container) {
       h += '</div>';
     }
     if (costs.amplifierTotal > 0) {
-      h += '<div style="text-align:right;padding-top:8px;font-family:monospace;font-size:13px;color:#ff5c6c;font-weight:700">Total amplification: +' + fmt$(costs.amplifierTotal) + '</div>';
+      h += '<div style="text-align:right;padding-top:8px;font-family:var(--font-mono, ui-monospace, monospace);font-size:13px;color:#ff5c6c;font-weight:700">Total amplification: +' + fmt$(costs.amplifierTotal) + '</div>';
     }
     h += '</div>';
 
@@ -674,7 +674,7 @@ export function renderIncidentCost(container) {
       h += '</div>';
     }
     if (costs.mitigatorTotal > 0) {
-      h += '<div style="text-align:right;padding-top:8px;font-family:monospace;font-size:13px;color:#2ee6a6;font-weight:700">Total savings: -' + fmt$(costs.mitigatorTotal) + '</div>';
+      h += '<div style="text-align:right;padding-top:8px;font-family:var(--font-mono, ui-monospace, monospace);font-size:13px;color:#2ee6a6;font-weight:700">Total savings: -' + fmt$(costs.mitigatorTotal) + '</div>';
     }
     h += '</div>';
 
@@ -685,11 +685,11 @@ export function renderIncidentCost(container) {
     var lifecycleColor = lifecycle < 200 ? '#2ee6a6' : lifecycle < 280 ? '#f59e0b' : '#ef4444';
     var lifecycleLabel = lifecycle < 200 ? 'FAST — saves ~23% vs average' : lifecycle < 280 ? 'AVERAGE — 277 day benchmark' : 'SLOW — adds 10-23% to cost';
     h += '<div style="text-align:center;padding:10px 0">';
-    h += '<div style="font-size:36px;font-weight:800;font-family:monospace;color:' + lifecycleColor + '">' + lifecycle + ' days</div>';
-    h += '<div style="font-size:11px;color:#667788;margin-top:4px">breach lifecycle (identify + contain)</div>';
+    h += '<div style="font-size:36px;font-weight:800;font-family:var(--font-mono, ui-monospace, monospace);color:' + lifecycleColor + '">' + lifecycle + ' days</div>';
+    h += '<div style="font-size:11px;color:var(--mut,#7a93b8);margin-top:4px">breach lifecycle (identify + contain)</div>';
     h += '<div style="font-size:12px;color:' + lifecycleColor + ';margin-top:8px;font-weight:600">' + lifecycleLabel + '</div>';
     h += '</div>';
-    h += '<div style="display:flex;justify-content:space-between;font-size:11px;color:#667788;margin-top:8px">';
+    h += '<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--mut,#7a93b8);margin-top:8px">';
     h += '<span>MTTI: ' + state.mtti + ' days (avg 204)</span>';
     h += '<span>MTTC: ' + state.mttc + ' days (avg 73)</span>';
     h += '</div>';
@@ -708,7 +708,7 @@ export function renderIncidentCost(container) {
     h += '<div class="ic-panel-title">Regulatory Fine Estimator</div>';
 
     if (costs.fineBreakdown.length === 0) {
-      h += '<div style="text-align:center;padding:30px;color:#667788">Select data types and toggle GDPR applicability in the Calculator tab to see fine estimates.</div>';
+      h += '<div style="text-align:center;padding:30px;color:var(--mut,#7a93b8)">Select data types and toggle GDPR applicability in the Calculator tab to see fine estimates.</div>';
     } else {
       h += '<div class="ic-stats-row">';
       h += '<div class="ic-stat"><div class="ic-stat-val" style="color:#ff5c6c">' + fmt$(costs.fines) + '</div><div class="ic-stat-label">Total Estimated Fines</div></div>';
@@ -745,7 +745,7 @@ export function renderIncidentCost(container) {
     ];
     for (var r = 0; r < regs.length; r++) {
       h += '<tr>';
-      h += '<td style="font-weight:600;color:#c8d6e5">' + regs[r][0] + '</td>';
+      h += '<td style="font-weight:600;color:var(--txt,#e7eefc)">' + regs[r][0] + '</td>';
       h += '<td>' + regs[r][1] + '</td>';
       h += '<td class="mono" style="color:#ff5c6c">' + regs[r][2] + '</td>';
       h += '<td>' + regs[r][3] + '</td>';
@@ -766,11 +766,11 @@ export function renderIncidentCost(container) {
     ];
     for (var ss = 0; ss < secSteps.length; ss++) {
       var dotColor = ss < 2 ? '#f59e0b' : ss === 2 ? '#ef4444' : '#3b82f6';
-      h += '<div style="display:flex;gap:14px;padding:10px 0;border-bottom:1px solid #111820">';
-      h += '<div style="min-width:70px;font-family:monospace;font-size:12px;font-weight:700;color:' + dotColor + '">' + secSteps[ss].day + '</div>';
+      h += '<div style="display:flex;gap:14px;padding:10px 0;border-bottom:1px solid var(--card2,#0f1726)">';
+      h += '<div style="min-width:70px;font-family:var(--font-mono, ui-monospace, monospace);font-size:12px;font-weight:700;color:' + dotColor + '">' + secSteps[ss].day + '</div>';
       h += '<div>';
-      h += '<div style="font-size:13px;font-weight:600;color:#c8d6e5">' + secSteps[ss].event + '</div>';
-      h += '<div style="font-size:11px;color:#667788;margin-top:2px">' + secSteps[ss].note + '</div>';
+      h += '<div style="font-size:13px;font-weight:600;color:var(--txt,#e7eefc)">' + secSteps[ss].event + '</div>';
+      h += '<div style="font-size:11px;color:var(--mut,#7a93b8);margin-top:2px">' + secSteps[ss].note + '</div>';
       h += '</div></div>';
     }
     h += '</div>';
@@ -825,7 +825,7 @@ export function renderIncidentCost(container) {
       var rec = tierCov >= 100 ? 'Full coverage' : tierCov >= 75 ? 'Good coverage' : tierCov >= 50 ? 'Partial — consider upgrading' : 'Insufficient';
       var recColor = tierCov >= 100 ? '#2ee6a6' : tierCov >= 75 ? '#3b82f6' : tierCov >= 50 ? '#f59e0b' : '#ef4444';
       h += '<tr>';
-      h += '<td class="mono" style="font-weight:700;color:#c8d6e5">' + INSURANCE_TIERS[tt].label + '</td>';
+      h += '<td class="mono" style="font-weight:700;color:var(--txt,#e7eefc)">' + INSURANCE_TIERS[tt].label + '</td>';
       h += '<td class="mono">' + fmt$(INSURANCE_TIERS[tt].premiumLow) + ' - ' + fmt$(INSURANCE_TIERS[tt].premiumHigh) + '</td>';
       h += '<td class="mono" style="color:#3b82f6">' + tierCov + '%</td>';
       h += '<td class="mono" style="color:' + (tierGap > 0 ? '#ef4444' : '#2ee6a6') + '">' + (tierGap > 0 ? fmt$(tierGap) : '—') + '</td>';
@@ -848,12 +848,12 @@ export function renderIncidentCost(container) {
     ];
     for (var ex = 0; ex < exclusions.length; ex++) {
       var riskColor = exclusions[ex].risk === 'HIGH' ? '#ef4444' : exclusions[ex].risk === 'MEDIUM' ? '#f59e0b' : '#3b82f6';
-      h += '<div style="padding:10px 0;border-bottom:1px solid #111820">';
+      h += '<div style="padding:10px 0;border-bottom:1px solid var(--card2,#0f1726)">';
       h += '<div style="display:flex;align-items:center;justify-content:space-between">';
-      h += '<span style="font-size:13px;font-weight:600;color:#c8d6e5">' + exclusions[ex].item + '</span>';
+      h += '<span style="font-size:13px;font-weight:600;color:var(--txt,#e7eefc)">' + exclusions[ex].item + '</span>';
       h += '<span style="font-size:10px;font-weight:700;color:' + riskColor + ';background:' + riskColor + '22;padding:2px 8px;border-radius:3px">' + exclusions[ex].risk + ' RISK</span>';
       h += '</div>';
-      h += '<div style="font-size:11px;color:#667788;margin-top:4px">' + exclusions[ex].note + '</div>';
+      h += '<div style="font-size:11px;color:var(--mut,#7a93b8);margin-top:4px">' + exclusions[ex].note + '</div>';
       h += '</div>';
     }
     h += '</div>';
@@ -867,15 +867,15 @@ export function renderIncidentCost(container) {
 
     h += '<div class="ic-panel">';
     h += '<div class="ic-panel-title">Historical Breach Cost Comparison</div>';
-    h += '<p style="font-size:12px;color:#667788;margin:0 0 16px">Your estimated cost of <span style="color:#ff5c6c;font-weight:700;font-family:monospace">' + fmt$(costs.total) + '</span> compared to notable breaches</p>';
+    h += '<p style="font-size:12px;color:var(--mut,#7a93b8);margin:0 0 16px">Your estimated cost of <span style="color:#ff5c6c;font-weight:700;font-family:var(--font-mono, ui-monospace, monospace)">' + fmt$(costs.total) + '</span> compared to notable breaches</p>';
 
     h += '<table class="ic-table">';
     h += '<thead><tr><th>Organization</th><th>Year</th><th>Records</th><th>Total Cost</th><th>Cost/Record</th><th>Sector</th><th>Attack Vector</th></tr></thead>';
     h += '<tbody>';
 
     // Add user's scenario
-    h += '<tr style="background:#00e5ff08;border-left:3px solid #00e5ff">';
-    h += '<td style="font-weight:700;color:#00e5ff">YOUR SCENARIO</td>';
+    h += '<tr style="background:#00e5ff08;border-left:3px solid var(--acc,#2563eb)">';
+    h += '<td style="font-weight:700;color:var(--acc,#2563eb)">YOUR SCENARIO</td>';
     h += '<td>2026</td>';
     h += '<td class="mono">' + fmtN(costs.records) + '</td>';
     h += '<td class="mono" style="color:#ff5c6c;font-weight:700">' + fmt$(costs.total) + '</td>';
@@ -890,7 +890,7 @@ export function renderIncidentCost(container) {
       var breach = sorted[hb];
       var perRec = breach.records > 0 ? breach.totalCost / breach.records : 0;
       h += '<tr>';
-      h += '<td style="font-weight:600;color:#c8d6e5">' + esc(breach.name) + '</td>';
+      h += '<td style="font-weight:600;color:var(--txt,#e7eefc)">' + esc(breach.name) + '</td>';
       h += '<td>' + breach.year + '</td>';
       h += '<td class="mono">' + (breach.records > 0 ? fmtN(breach.records) : 'N/A') + '</td>';
       h += '<td class="mono" style="font-weight:700">' + fmt$(breach.totalCost) + '</td>';
@@ -911,7 +911,7 @@ export function renderIncidentCost(container) {
       var isActive = SECTORS[sb].id === state.sectorId;
       var pctWidth = Math.round(SECTORS[sb].perRecord / maxPR * 100);
       h += '<div class="ic-bar-row">';
-      h += '<div class="ic-bar-header"><span class="ic-bar-name" style="' + (isActive ? 'color:#00e5ff;font-weight:700' : '') + '">' + esc(SECTORS[sb].name) + (isActive ? ' ←' : '') + '</span><span class="ic-bar-val" style="' + (isActive ? 'color:#00e5ff' : '') + '">' + fmt$(SECTORS[sb].perRecord) + '</span></div>';
+      h += '<div class="ic-bar-header"><span class="ic-bar-name" style="' + (isActive ? 'color:var(--acc,#2563eb);font-weight:700' : '') + '">' + esc(SECTORS[sb].name) + (isActive ? ' ←' : '') + '</span><span class="ic-bar-val" style="' + (isActive ? 'color:var(--acc,#2563eb)' : '') + '">' + fmt$(SECTORS[sb].perRecord) + '</span></div>';
       h += '<div class="ic-bar-track"><div class="ic-bar-fill ' + (isActive ? 'cyan' : 'blue') + '" style="width:' + pctWidth + '%"></div></div>';
       h += '</div>';
     }
@@ -990,7 +990,7 @@ export function renderIncidentCost(container) {
     report += '  vary based on specific circumstances, jurisdiction, and response.\n';
     report += '═══════════════════════════════════════════════════════════════\n';
 
-    h += '<pre style="font-family:ui-monospace,monospace;font-size:12px;line-height:1.6;white-space:pre-wrap;color:#c8d6e5;background:#0a0e14;border:1px solid #1a2332;border-radius:8px;padding:20px;overflow-x:auto" id="ic-report-text">' + esc(report) + '</pre>';
+    h += '<pre style="font-family:var(--font-mono, ui-monospace, monospace);font-size:12px;line-height:1.6;white-space:pre-wrap;color:var(--txt,#e7eefc);background:var(--card2,#0f1726);border:1px solid var(--line,#283a5a);border-radius:8px;padding:20px;overflow-x:auto" id="ic-report-text">' + esc(report) + '</pre>';
     h += '</div>';
 
     return h;

@@ -1,5 +1,5 @@
 // Darknode Security Tools Reference Database
-// Comprehensive reference for 200+ security tools
+// Comprehensive reference for 190+ security tools
 // Each entry: name, category, description, install, usage, advancedFlags, outputFormat, integrations, url
 
 export const SECURITY_TOOLS_REF = [

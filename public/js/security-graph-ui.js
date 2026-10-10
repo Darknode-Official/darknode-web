@@ -175,9 +175,9 @@ html[data-style="dark"] .sgu-select,html[data-style="classic"] .sgu-select{backg
     });
 
     main.querySelectorAll('[data-action="delete"]').forEach(btn => {
-      btn.onclick = (e) => {
+      btn.onclick = async (e) => {
         e.stopPropagation();
-        if (confirm('Delete this entity? This cannot be undone.')) {
+        if (await window.dnConfirm('Delete entity', 'Delete this entity? This cannot be undone.', { danger: true })) {
           deleteEntity(btn.dataset.eid);
           render();
         }

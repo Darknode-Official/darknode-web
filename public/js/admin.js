@@ -48,10 +48,10 @@ export async function renderAdmin(main, user) {
       <div class="deck-promo-in">
         <div class="deck-promo-txt">
           <span class="deck-promo-tag">OWNER PREVIEW &mdash; EXPERIMENTAL</span>
-          <h2 class="pg-h2" style="margin:6px 0 4px">Darknode Deck</h2>
-          <p class="muted" style="margin:0;max-width:60ch">A spatial command UI: a Launchpad of every tool category, Spotlight jump-to-anything (Ctrl&nbsp;K), Downloads-style stack fan-outs, and free-floating windows with traffic-light chrome. Visible only to you.</p>
+          <h2 class="pg-h2" style="margin:6px 0 4px">DarkDeck</h2>
+          <p class="muted" style="margin:0;max-width:60ch">A spatial command hub: Darknode at the core with every AI model and security platform it connects to orbiting around it, Downloads-style stack fan-outs for the full toolbox, and Spotlight jump-to-anything (Ctrl&nbsp;K). Visible only to you.</p>
         </div>
-        <button class="btn" id="deckLaunch" style="flex:none">Launch Deck</button>
+        <button class="btn" id="deckLaunch" style="flex:none">Launch DarkDeck</button>
       </div>
     </div>
 
@@ -248,7 +248,7 @@ export async function renderAdmin(main, user) {
       btn.disabled = true; const label = btn.textContent; btn.textContent = "Loading…";
       try {
         const [{ renderDeck }, nav] = await Promise.all([
-          import("/js/deck-ui.js?v=20261010a"),
+          import("/js/deck-ui.js?v=20261010b"),
           import("/js/console-nav.js?v=20261009a"),
         ]);
         const groups = (nav.NAV || []).map((g) => ({ id: g.id, name: g.name, color: g.color, items: g.items || [] }));
@@ -360,8 +360,8 @@ export async function renderAdmin(main, user) {
   $("#fbAdminList").onclick = async (e) => {
     const del = e.target.closest(".fb-del"); if (!del) return;
     const row = del.closest(".fb-row"); if (!row) return;
-    if (!confirm("Delete this feedback?")) return;
-    try { await deleteDoc(doc(db, "feedback", row.dataset.id)); row.remove(); } catch (err) { alert("delete failed: " + err.message); }
+    if (!(await window.dnConfirm("Delete feedback?", "This permanently removes this feedback entry.", { danger: true }))) return;
+    try { await deleteDoc(doc(db, "feedback", row.dataset.id)); row.remove(); } catch (err) { window.showToast("Delete failed: " + err.message, "error"); }
   };
   loadFeedback();
 
@@ -394,15 +394,15 @@ export async function renderAdmin(main, user) {
   $("#errAdminList").onclick = async (e) => {
     const del = e.target.closest(".fb-del"); if (!del) return;
     const row = del.closest(".fb-row"); if (!row) return;
-    if (!confirm("Delete this error?")) return;
-    try { await deleteDoc(doc(db, "errors", row.dataset.id)); row.remove(); } catch (err) { alert("delete failed: " + err.message); }
+    if (!(await window.dnConfirm("Delete error?", "This permanently removes this logged error.", { danger: true }))) return;
+    try { await deleteDoc(doc(db, "errors", row.dataset.id)); row.remove(); } catch (err) { window.showToast("Delete failed: " + err.message, "error"); }
   };
   $("#errClear").onclick = async () => {
-    if (!confirm("Clear all logged errors?")) return;
+    if (!(await window.dnConfirm("Clear all errors?", "This permanently deletes every logged client error.", { danger: true }))) return;
     try {
       const snap = await getDocs(collection(db, "errors"));
       for (const d of snap.docs) { try { await deleteDoc(doc(db, "errors", d.id)); } catch (_) {} }
-    } catch (err) { alert("clear failed: " + err.message); }
+    } catch (err) { window.showToast("Clear failed: " + err.message, "error"); }
     loadErrors();
   };
   loadErrors();
@@ -418,9 +418,9 @@ export async function renderAdmin(main, user) {
     const wlBtn = e.target.closest("[data-wl]"), delBtn = e.target.closest("[data-del]");
     if (wlBtn) { await toggleWl(wlBtn.dataset.wl); }
     else if (delBtn) {
-      if (!confirm(`Remove ${delBtn.dataset.mail || "this user"}? This deletes their Firestore record.`)) return;
+      if (!(await window.dnConfirm("Remove user?", `This deletes the Firestore record for ${delBtn.dataset.mail || "this user"}.`, { danger: true }))) return;
       try { await deleteDoc(doc(db, "users", delBtn.dataset.del)); users = users.filter((u) => u.uid !== delBtn.dataset.del); $("#stUsers").textContent = users.length; drawUsers(); }
-      catch (err) { alert("Delete failed: " + err.message); }
+      catch (err) { window.showToast("Delete failed: " + err.message, "error"); }
     }
   };
 
@@ -603,7 +603,7 @@ export async function renderAdmin(main, user) {
       return last && last < cutoff && !isOwnerRow(u);
     });
     if (!inactive.length) { if (msg) msg.textContent = 'No inactive users found.'; return; }
-    if (!confirm('Remove ' + inactive.length + ' users inactive for 90+ days?')) return;
+    if (!(await window.dnConfirm('Remove inactive users?', 'This deletes ' + inactive.length + ' users inactive for 90+ days.', { danger: true }))) return;
     let removed = 0;
     for (const u of inactive) {
       try { await deleteDoc(doc(db, "users", u.uid)); removed++; } catch(_) {}
@@ -691,16 +691,16 @@ export async function renderAdmin(main, user) {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a'); a.href = url; a.download = 'darknode-backup-' + new Date().toISOString().slice(0,10) + '.json'; a.click();
       URL.revokeObjectURL(url);
-    } catch(e) { alert('Backup failed: ' + e.message); }
+    } catch(e) { window.showToast('Backup failed: ' + e.message, "error"); }
   };
 
   const admMsgAll = $("#admMsgAll");
-  if (admMsgAll) admMsgAll.onclick = () => {
-    const msg = prompt('Message to all users (shown as announcement):');
+  if (admMsgAll) admMsgAll.onclick = async () => {
+    const msg = await window.dnPrompt('Message to all users', { desc: 'Shown as an announcement.', placeholder: 'Announcement text…', textarea: true });
     if (!msg) return;
     const annText = $("#annText");
     if (annText) { annText.value = msg; }
-    alert('Set the announcement text. Click Publish to send it.');
+    window.showToast('Announcement text set. Click Publish to send it.', "info");
   };
 
   // ---- Email panel ----
@@ -795,8 +795,8 @@ export async function renderAdmin(main, user) {
   const admPurge = $("#admPurgeData");
   if (admPurge) admPurge.onclick = async () => {
     const msg = $("#dangerMsg");
-    if (!confirm('DANGER: This permanently deletes ALL user data. Are you absolutely sure?')) return;
-    if (prompt('Type DELETE to confirm:') !== 'DELETE') return;
+    if (!(await window.dnConfirm('Delete ALL user data?', 'DANGER: this permanently deletes every non-owner user record. This cannot be undone.', { danger: true, submitText: 'Continue' }))) return;
+    if ((await window.dnPrompt('Type DELETE to confirm', { placeholder: 'DELETE' })) !== 'DELETE') return;
     let count = 0;
     for (const u of users) {
       if (isOwnerRow(u)) continue;

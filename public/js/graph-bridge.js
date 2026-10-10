@@ -214,8 +214,8 @@ export function openAddToInvestigationModal(entity) {
     };
   });
 
-  modal.querySelector('#sg-create-inv').onclick = () => {
-    const name = prompt('Investigation name:');
+  modal.querySelector('#sg-create-inv').onclick = async () => {
+    const name = await window.dnPrompt('Investigation name:', {});
     if (!name) return;
     const inv = createEntity('INVESTIGATION', name.trim(), {
       description: '',

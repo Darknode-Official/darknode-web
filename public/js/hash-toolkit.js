@@ -278,77 +278,77 @@ function _htIdentifyHash(hash) {
 }
 
 const HT_STYLE = `
-.ht-wrap{background:#0a0e14;color:#c8d6e5;font-family:'Segoe UI',system-ui,sans-serif;border-radius:8px;overflow:hidden;min-height:500px}
-.ht-header{background:linear-gradient(135deg,#0c1020 0%,#141e30 100%);padding:18px 24px;border-bottom:1px solid #1a2a44}
-.ht-header h2{margin:0;font-size:20px;color:#00aaff;letter-spacing:1px;display:flex;align-items:center;gap:10px}
+.ht-wrap{background:var(--card,#0f1726);color:var(--txt,#e7eefc);font-family:'Segoe UI',system-ui,sans-serif;border-radius:8px;overflow:hidden;min-height:500px}
+.ht-header{background:var(--card,#0f1726);padding:18px 24px;border-bottom:1px solid var(--line,#283a5a)}
+.ht-header h2{margin:0;font-size:20px;color:var(--acc,#2563eb);letter-spacing:1px;display:flex;align-items:center;gap:10px}
 .ht-header h2 svg{width:22px;height:22px}
-.ht-header p{margin:4px 0 0;font-size:12px;color:#6a8caa;letter-spacing:.5px}
-.ht-tabs{display:flex;background:#0c1020;border-bottom:1px solid #1a2a44;overflow-x:auto}
-.ht-tab{padding:10px 20px;background:none;border:none;color:#6a8caa;cursor:pointer;font-size:13px;white-space:nowrap;border-bottom:2px solid transparent;transition:.2s}
-.ht-tab:hover{color:#c8d6e5;background:rgba(0,170,255,.05)}
-.ht-tab.active{color:#00aaff;border-bottom-color:#00aaff;background:rgba(0,170,255,.08)}
+.ht-header p{margin:4px 0 0;font-size:12px;color:var(--mut,#7a93b8);letter-spacing:.5px}
+.ht-tabs{display:flex;background:var(--card,#0f1726);border-bottom:1px solid var(--line,#283a5a);overflow-x:auto}
+.ht-tab{padding:10px 20px;background:none;border:none;color:var(--mut,#7a93b8);cursor:pointer;font-size:13px;white-space:nowrap;border-bottom:2px solid transparent;transition:.2s}
+.ht-tab:hover{color:var(--txt,#e7eefc);background:rgba(37,99,235,.08)}
+.ht-tab.active{color:var(--acc,#2563eb);border-bottom-color:var(--acc,#2563eb);background:rgba(37,99,235,.1)}
 .ht-body{padding:20px}
-.ht-panel{background:#0f172a;border:1px solid #1a2a44;border-radius:8px;padding:18px;margin-bottom:16px}
-.ht-panel h3{margin:0 0 12px;font-size:15px;color:#e2e8f0}
+.ht-panel{background:var(--card,#0f1726);border:1px solid var(--line,#283a5a);border-radius:8px;padding:18px;margin-bottom:16px}
+.ht-panel h3{margin:0 0 12px;font-size:15px;color:var(--txt,#e7eefc)}
 .ht-row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px}
-.ht-label{display:block;font-size:11px;color:#6a8caa;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}
-.ht-input,.ht-select,.ht-textarea{background:#0a0e14;border:1px solid #1a2a44;border-radius:6px;color:#e2e8f0;padding:8px 12px;font-size:13px;font-family:inherit;width:100%;box-sizing:border-box}
-.ht-textarea{font-family:'JetBrains Mono','Fira Code',monospace;resize:vertical;min-height:80px}
-.ht-input:focus,.ht-select:focus,.ht-textarea:focus{outline:none;border-color:#00aaff;box-shadow:0 0 0 2px rgba(0,170,255,.15)}
+.ht-label{display:block;font-size:11px;color:var(--mut,#7a93b8);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}
+.ht-input,.ht-select,.ht-textarea{background:var(--card2,#0b1120);border:1px solid var(--line,#283a5a);border-radius:6px;color:var(--txt,#e7eefc);padding:8px 12px;font-size:13px;font-family:inherit;width:100%;box-sizing:border-box}
+.ht-textarea{font-family:var(--font-mono,ui-monospace,monospace);resize:vertical;min-height:80px}
+.ht-input:focus,.ht-select:focus,.ht-textarea:focus{outline:none;border-color:var(--acc,#2563eb);box-shadow:0 0 0 2px rgba(37,99,235,.2)}
 .ht-btn{padding:8px 18px;border:none;border-radius:4px;cursor:pointer;font-size:13px;font-weight:600;transition:.2s}
-.ht-btn-primary{background:#00aaff;color:#0a0e14}
-.ht-btn-primary:hover{background:#33bbff}
-.ht-btn-danger{background:#ff4444;color:#fff}
-.ht-btn-danger:hover{background:#ff6666}
-.ht-btn-ghost{background:transparent;border:1px solid #1a2a44;color:#c8d6e5}
-.ht-btn-ghost:hover{border-color:#00aaff;color:#00aaff}
-.ht-result{background:#0a0e14;border:1px solid #1a2a44;border-radius:6px;padding:14px;margin-top:12px;font-family:'JetBrains Mono','Fira Code',monospace;font-size:12px;word-break:break-all;line-height:1.7}
-.ht-result-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #1a2a4433}
+.ht-btn-primary{background:var(--acc,#2563eb);color:var(--on-acc,#fff)}
+.ht-btn-primary:hover{opacity:.9}
+.ht-btn-danger{background:#dc2626;color:#fff}
+.ht-btn-danger:hover{background:#b91c1c}
+.ht-btn-ghost{background:transparent;border:1px solid var(--line,#283a5a);color:var(--txt,#e7eefc)}
+.ht-btn-ghost:hover{border-color:var(--acc,#2563eb);color:var(--acc,#2563eb)}
+.ht-result{background:var(--card2,#0b1120);border:1px solid var(--line,#283a5a);border-radius:6px;padding:14px;margin-top:12px;font-family:var(--font-mono,ui-monospace,monospace);font-size:12px;word-break:break-all;line-height:1.7}
+.ht-result-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line,#283a5a)}
 .ht-result-row:last-child{border-bottom:none}
-.ht-result-algo{color:#00aaff;font-weight:600;min-width:110px}
-.ht-result-hash{color:#c8d6e5;flex:1;margin:0 12px;word-break:break-all}
-.ht-result-copy{background:none;border:1px solid #1a2a44;color:#6a8caa;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:11px}
-.ht-result-copy:hover{border-color:#00aaff;color:#00aaff}
+.ht-result-algo{color:var(--acc,#2563eb);font-weight:600;min-width:110px}
+.ht-result-hash{color:var(--txt,#e7eefc);flex:1;margin:0 12px;word-break:break-all}
+.ht-result-copy{background:none;border:1px solid var(--line,#283a5a);color:var(--mut,#7a93b8);padding:4px 10px;border-radius:4px;cursor:pointer;font-size:11px}
+.ht-result-copy:hover{border-color:var(--acc,#2563eb);color:var(--acc,#2563eb)}
 .ht-badge{display:inline-block;padding:3px 10px;border-radius:4px;font-size:11px;font-weight:600}
-.ht-badge-green{background:rgba(0,255,136,.12);color:#00ff88}
-.ht-badge-red{background:rgba(255,68,68,.12);color:#ff4444}
-.ht-badge-yellow{background:rgba(255,214,0,.12);color:#ffd600}
-.ht-badge-blue{background:rgba(0,170,255,.12);color:#00aaff}
-.ht-badge-purple{background:rgba(168,85,247,.12);color:#a855f7}
-.ht-drop-zone{border:2px dashed #1a2a44;border-radius:8px;padding:40px;text-align:center;color:#6a8caa;transition:.2s;cursor:pointer}
-.ht-drop-zone:hover,.ht-drop-zone.dragover{border-color:#00aaff;background:rgba(0,170,255,.05);color:#00aaff}
+.ht-badge-green{background:rgba(22,163,74,.14);color:#16a34a}
+.ht-badge-red{background:rgba(220,38,38,.14);color:#dc2626}
+.ht-badge-yellow{background:rgba(217,119,6,.14);color:#d97706}
+.ht-badge-blue{background:rgba(37,99,235,.14);color:var(--acc,#2563eb)}
+.ht-badge-purple{background:rgba(168,85,247,.14);color:#a855f7}
+.ht-drop-zone{border:2px dashed var(--line,#283a5a);border-radius:8px;padding:40px;text-align:center;color:var(--mut,#7a93b8);transition:.2s;cursor:pointer}
+.ht-drop-zone:hover,.ht-drop-zone.dragover{border-color:var(--acc,#2563eb);background:rgba(37,99,235,.06);color:var(--acc,#2563eb)}
 .ht-drop-zone svg{width:40px;height:40px;margin-bottom:8px;opacity:.5}
 .ht-table{width:100%;border-collapse:collapse;margin-top:12px;font-size:13px}
-.ht-table th{text-align:left;padding:10px 12px;background:#141e30;color:#6a8caa;font-size:11px;text-transform:uppercase;letter-spacing:.5px;border-bottom:2px solid #1a2a44}
-.ht-table td{padding:8px 12px;border-bottom:1px solid #1a2a4433;color:#c8d6e5}
-.ht-confidence{height:6px;border-radius:3px;background:#1a2a44;overflow:hidden;min-width:80px}
+.ht-table th{text-align:left;padding:10px 12px;background:var(--card2,#0b1120);color:var(--mut,#7a93b8);font-size:11px;text-transform:uppercase;letter-spacing:.5px;border-bottom:2px solid var(--line,#283a5a)}
+.ht-table td{padding:8px 12px;border-bottom:1px solid var(--line,#283a5a);color:var(--txt,#e7eefc)}
+.ht-confidence{height:6px;border-radius:3px;background:var(--card2,#0b1120);overflow:hidden;min-width:80px}
 .ht-confidence-fill{height:100%;border-radius:3px;transition:.3s}
-.ht-match{background:#0f172a;border:1px solid #1a2a44;border-radius:6px;padding:14px;margin-bottom:10px}
-.ht-match-name{font-size:15px;font-weight:600;color:#e2e8f0;margin-bottom:4px}
-.ht-match-meta{font-size:12px;color:#6a8caa}
+.ht-match{background:var(--card,#0f1726);border:1px solid var(--line,#283a5a);border-radius:6px;padding:14px;margin-bottom:10px}
+.ht-match-name{font-size:15px;font-weight:600;color:var(--txt,#e7eefc);margin-bottom:4px}
+.ht-match-meta{font-size:12px;color:var(--mut,#7a93b8)}
 .ht-compare-result{text-align:center;padding:24px;border-radius:8px;margin-top:16px;font-size:16px;font-weight:600}
-.ht-compare-match{background:rgba(0,255,136,.08);border:1px solid rgba(0,255,136,.3);color:#00ff88}
-.ht-compare-mismatch{background:rgba(255,68,68,.08);border:1px solid rgba(255,68,68,.3);color:#ff4444}
-.ht-rainbow-entry{display:flex;align-items:center;gap:12px;padding:6px 10px;border-bottom:1px solid #1a2a4433;font-size:12px}
-.ht-rainbow-plain{color:#00ff88;min-width:120px;font-family:'JetBrains Mono',monospace}
-.ht-rainbow-hash{color:#6a8caa;flex:1;font-family:'JetBrains Mono',monospace;word-break:break-all}
+.ht-compare-match{background:rgba(22,163,74,.08);border:1px solid rgba(22,163,74,.3);color:#16a34a}
+.ht-compare-mismatch{background:rgba(220,38,38,.08);border:1px solid rgba(220,38,38,.3);color:#dc2626}
+.ht-rainbow-entry{display:flex;align-items:center;gap:12px;padding:6px 10px;border-bottom:1px solid var(--line,#283a5a);font-size:12px}
+.ht-rainbow-plain{color:#16a34a;min-width:120px;font-family:var(--font-mono,ui-monospace,monospace)}
+.ht-rainbow-hash{color:var(--mut,#7a93b8);flex:1;font-family:var(--font-mono,ui-monospace,monospace);word-break:break-all}
 .ht-salt-demo{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
-.ht-salt-card{background:#0a0e14;border:1px solid #1a2a44;border-radius:6px;padding:12px}
-.ht-salt-card h4{margin:0 0 6px;font-size:13px;color:#00aaff}
-.ht-salt-card code{font-size:11px;color:#c8d6e5;word-break:break-all}
-.ht-cost-table td{font-family:'JetBrains Mono',monospace;font-size:12px}
+.ht-salt-card{background:var(--card2,#0b1120);border:1px solid var(--line,#283a5a);border-radius:6px;padding:12px}
+.ht-salt-card h4{margin:0 0 6px;font-size:13px;color:var(--acc,#2563eb)}
+.ht-salt-card code{font-size:11px;color:var(--txt,#e7eefc);word-break:break-all}
+.ht-cost-table td{font-family:var(--font-mono,ui-monospace,monospace);font-size:12px}
 .ht-ref-section{margin-bottom:20px}
-.ht-ref-section h3{color:#00aaff;font-size:14px;margin:0 0 10px;padding-bottom:6px;border-bottom:1px solid #1a2a44}
+.ht-ref-section h3{color:var(--acc,#2563eb);font-size:14px;margin:0 0 10px;padding-bottom:6px;border-bottom:1px solid var(--line,#283a5a)}
 .ht-ref-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
-.ht-ref-card{background:#0a0e14;border:1px solid #1a2a44;border-radius:6px;padding:14px}
-.ht-ref-card h4{margin:0 0 6px;font-size:13px;color:#e2e8f0}
-.ht-ref-card p{margin:0;font-size:12px;color:#6a8caa;line-height:1.5}
-.ht-progress{width:100%;height:4px;background:#1a2a44;border-radius:2px;overflow:hidden;margin-top:8px}
-.ht-progress-bar{height:100%;background:#00aaff;border-radius:2px;transition:width .3s}
+.ht-ref-card{background:var(--card2,#0b1120);border:1px solid var(--line,#283a5a);border-radius:6px;padding:14px}
+.ht-ref-card h4{margin:0 0 6px;font-size:13px;color:var(--txt,#e7eefc)}
+.ht-ref-card p{margin:0;font-size:12px;color:var(--mut,#7a93b8);line-height:1.5}
+.ht-progress{width:100%;height:4px;background:var(--card2,#0b1120);border-radius:2px;overflow:hidden;margin-top:8px}
+.ht-progress-bar{height:100%;background:var(--acc,#2563eb);border-radius:2px;transition:width .3s}
 .ht-checkboxes{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
-.ht-check-label{display:flex;align-items:center;gap:6px;padding:5px 12px;background:#0a0e14;border:1px solid #1a2a44;border-radius:4px;cursor:pointer;font-size:12px;transition:.2s}
-.ht-check-label:hover{border-color:#00aaff}
-.ht-check-label input:checked+span{color:#00aaff}
+.ht-check-label{display:flex;align-items:center;gap:6px;padding:5px 12px;background:var(--card2,#0b1120);border:1px solid var(--line,#283a5a);border-radius:4px;cursor:pointer;font-size:12px;transition:.2s}
+.ht-check-label:hover{border-color:var(--acc,#2563eb)}
+.ht-check-label input:checked+span{color:var(--acc,#2563eb)}
 @media(max-width:768px){.ht-body{padding:14px}.ht-salt-demo{grid-template-columns:1fr}.ht-ref-grid{grid-template-columns:1fr}.ht-row{flex-direction:column}}
 `;
 
@@ -416,7 +416,7 @@ export function renderHashToolkit(container) {
       </div>
       <div class="ht-panel">
         <h3>Salting Demonstrator</h3>
-        <p style="font-size:12px;color:#6a8caa;margin:0 0 12px">Same password with different salts produces completely different hashes</p>
+        <p style="font-size:12px;color:var(--mut,#7a93b8);margin:0 0 12px">Same password with different salts produces completely different hashes</p>
         <div class="ht-row">
           <div style="flex:1"><div class="ht-label">Password</div><input class="ht-input" id="htSaltPwd" placeholder="e.g. password123" value="password123"></div>
           <button class="ht-btn ht-btn-primary" id="htSaltBtn" style="align-self:flex-end">Demonstrate</button>
@@ -425,7 +425,7 @@ export function renderHashToolkit(container) {
       </div>
       <div class="ht-panel">
         <h3>Rainbow Table Simulator</h3>
-        <p style="font-size:12px;color:#6a8caa;margin:0 0 12px">Shows how dictionary attacks work by pre-computing hashes for common passwords</p>
+        <p style="font-size:12px;color:var(--mut,#7a93b8);margin:0 0 12px">Shows how dictionary attacks work by pre-computing hashes for common passwords</p>
         <div class="ht-row">
           <div style="flex:1"><div class="ht-label">Hash to Crack (SHA-256)</div><input class="ht-input" id="htRainbowHash" placeholder="Paste a SHA-256 hash..."></div>
           <button class="ht-btn ht-btn-danger" id="htRainbowBuildBtn" style="align-self:flex-end">Build Table</button>
@@ -475,7 +475,7 @@ export function renderHashToolkit(container) {
         const hmac = await _htComputeHMAC(algo, key, msg);
         el.querySelector('#htHmacResult').innerHTML = `<div class="ht-result"><div class="ht-result-row"><span class="ht-result-algo">HMAC-${esc(algo)}</span><span class="ht-result-hash">${esc(hmac)}</span><button class="ht-result-copy" onclick="navigator.clipboard.writeText('${esc(hmac)}');this.textContent='Copied!';setTimeout(()=>this.textContent='Copy',1500)">Copy</button></div></div>`;
       } catch (e) {
-        el.querySelector('#htHmacResult').innerHTML = `<div class="ht-result" style="color:#ff4444">Error: ${esc(e.message)}</div>`;
+        el.querySelector('#htHmacResult').innerHTML = `<div class="ht-result" style="color:#dc2626">Error: ${esc(e.message)}</div>`;
       }
     };
 
@@ -490,16 +490,16 @@ export function renderHashToolkit(container) {
       const unsalted = await _htComputeHash('sha256', pwd);
       el.querySelector('#htSaltResult').innerHTML = `
         <div style="margin-top:12px">
-          <div class="ht-panel" style="margin-bottom:8px;border-color:#ff444433">
+          <div class="ht-panel" style="margin-bottom:8px;border-color:#dc262633">
             <div class="ht-label">Unsalted SHA-256</div>
-            <code style="font-size:11px;color:#ff4444;word-break:break-all">${esc(unsalted)}</code>
+            <code style="font-size:11px;color:#dc2626;word-break:break-all">${esc(unsalted)}</code>
           </div>
           <div class="ht-salt-demo">${results.map(r => `
             <div class="ht-salt-card">
-              <h4>Salt: <span style="color:#00ff88">${esc(r.salt)}</span></h4>
+              <h4>Salt: <span style="color:#16a34a">${esc(r.salt)}</span></h4>
               <code>${esc(r.hash)}</code>
             </div>`).join('')}</div>
-          <p style="font-size:11px;color:#6a8caa;margin-top:10px">Each salt produces a completely different hash, making rainbow table attacks impractical</p>
+          <p style="font-size:11px;color:var(--mut,#7a93b8);margin-top:10px">Each salt produces a completely different hash, making rainbow table attacks impractical</p>
         </div>`;
     };
 
@@ -515,7 +515,7 @@ export function renderHashToolkit(container) {
         rainbowTable[hash] = HT_WORDLIST[i];
         await new Promise(r => setTimeout(r, 20));
       }
-      out.innerHTML = `<div class="ht-result"><div style="margin-bottom:8px;color:#00ff88;font-size:12px">Rainbow table built: ${HT_WORDLIST.length} entries</div>${HT_WORDLIST.map(w => {
+      out.innerHTML = `<div class="ht-result"><div style="margin-bottom:8px;color:#16a34a;font-size:12px">Rainbow table built: ${HT_WORDLIST.length} entries</div>${HT_WORDLIST.map(w => {
         const h = Object.entries(rainbowTable).find(([, v]) => v === w);
         return `<div class="ht-rainbow-entry"><span class="ht-rainbow-plain">${esc(w)}</span><span class="ht-rainbow-hash">${h ? esc(h[0]) : '...'}</span></div>`;
       }).join('')}</div>`;
@@ -524,11 +524,11 @@ export function renderHashToolkit(container) {
     el.querySelector('#htRainbowLookupBtn').onclick = () => {
       const hash = el.querySelector('#htRainbowHash').value.trim().toLowerCase();
       if (!hash) return;
-      if (!rainbowTable) { el.querySelector('#htRainbowResult').innerHTML = '<div class="ht-result" style="color:#ff4444">Build the rainbow table first</div>'; return; }
+      if (!rainbowTable) { el.querySelector('#htRainbowResult').innerHTML = '<div class="ht-result" style="color:#dc2626">Build the rainbow table first</div>'; return; }
       const found = rainbowTable[hash];
       el.querySelector('#htRainbowResult').innerHTML = found
-        ? `<div class="ht-compare-result ht-compare-mismatch" style="color:#ff4444">CRACKED: <span style="color:#00ff88;font-family:monospace">${esc(found)}</span></div>`
-        : `<div class="ht-compare-result ht-compare-match" style="color:#00ff88">Not found in rainbow table (${Object.keys(rainbowTable).length} entries checked)</div>`;
+        ? `<div class="ht-compare-result ht-compare-mismatch" style="color:#dc2626">CRACKED: <span style="color:#16a34a;font-family:var(--font-mono,ui-monospace,monospace)">${esc(found)}</span></div>`
+        : `<div class="ht-compare-result ht-compare-match" style="color:#16a34a">Not found in rainbow table (${Object.keys(rainbowTable).length} entries checked)</div>`;
     };
   }
 
@@ -536,7 +536,7 @@ export function renderHashToolkit(container) {
     body.innerHTML = `
       <div class="ht-panel">
         <h3>File Hash Calculator</h3>
-        <p style="font-size:12px;color:#6a8caa;margin:0 0 14px">Compute cryptographic hashes of files using Web Crypto API (SHA family)</p>
+        <p style="font-size:12px;color:var(--mut,#7a93b8);margin:0 0 14px">Compute cryptographic hashes of files using Web Crypto API (SHA family)</p>
         <div class="ht-drop-zone" id="htDropZone">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
           <div style="margin-top:4px">Drag &amp; drop a file here or click to browse</div>
@@ -554,7 +554,7 @@ export function renderHashToolkit(container) {
       </div>
       <div class="ht-panel">
         <h3>Verify File Integrity</h3>
-        <p style="font-size:12px;color:#6a8caa;margin:0 0 12px">Compare a file's hash against an expected value</p>
+        <p style="font-size:12px;color:var(--mut,#7a93b8);margin:0 0 12px">Compare a file's hash against an expected value</p>
         <div class="ht-row">
           <div style="flex:1"><div class="ht-label">Expected Hash</div><input class="ht-input" id="htVerifyExpected" placeholder="Paste expected hash..."></div>
         </div>
@@ -576,7 +576,7 @@ export function renderHashToolkit(container) {
     async function handleFile(file) {
       selectedFile = file;
       const sizeStr = file.size < 1024 ? `${file.size} B` : file.size < 1048576 ? `${(file.size / 1024).toFixed(1)} KB` : `${(file.size / 1048576).toFixed(2)} MB`;
-      el.querySelector('#htFileInfo').innerHTML = `<div style="display:flex;align-items:center;gap:10px;padding:10px;background:#0f172a;border-radius:6px;border:1px solid #1a2a44"><span style="color:#00aaff"></span><div><div style="font-size:13px;color:#e2e8f0">${esc(file.name)}</div><div style="font-size:11px;color:#6a8caa">${sizeStr} · ${esc(file.type || 'unknown type')}</div></div></div>`;
+      el.querySelector('#htFileInfo').innerHTML = `<div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--card,#0f1726);border-radius:6px;border:1px solid var(--line,#283a5a)"><span style="color:var(--acc,#2563eb)"></span><div><div style="font-size:13px;color:var(--txt,#e7eefc)">${esc(file.name)}</div><div style="font-size:11px;color:var(--mut,#7a93b8)">${sizeStr} · ${esc(file.type || 'unknown type')}</div></div></div>`;
 
       const algos = [...el.querySelectorAll('#htFileAlgos input:checked')].map(c => c.value);
       if (!algos.length) return;
@@ -622,7 +622,7 @@ export function renderHashToolkit(container) {
     body.innerHTML = `
       <div class="ht-panel">
         <h3>Hash Identifier</h3>
-        <p style="font-size:12px;color:#6a8caa;margin:0 0 12px">Paste an unknown hash to identify the algorithm</p>
+        <p style="font-size:12px;color:var(--mut,#7a93b8);margin:0 0 12px">Paste an unknown hash to identify the algorithm</p>
         <textarea class="ht-textarea" id="htIdInput" rows="3" placeholder="Paste hash here...&#10;e.g. 5d41402abc4b2a76b9719d911017c592"></textarea>
         <div class="ht-row" style="margin-top:12px">
           <button class="ht-btn ht-btn-primary" id="htIdBtn">Identify</button>
@@ -634,7 +634,7 @@ export function renderHashToolkit(container) {
         <h3>Hash Length Reference</h3>
         <table class="ht-table">
           <thead><tr><th>Algorithm</th><th>Bits</th><th>Hex Length</th><th>Native</th></tr></thead>
-          <tbody>${HT_ALGOS.map(a => `<tr><td style="color:#00aaff">${esc(a.name)}</td><td>${a.bits}</td><td>${a.hex}</td><td>${a.native ? '<span class="ht-badge ht-badge-green">SubtleCrypto</span>' : '<span class="ht-badge ht-badge-green">Pure JS</span>'}</td></tr>`).join('')}
+          <tbody>${HT_ALGOS.map(a => `<tr><td style="color:var(--acc,#2563eb)">${esc(a.name)}</td><td>${a.bits}</td><td>${a.hex}</td><td>${a.native ? '<span class="ht-badge ht-badge-green">SubtleCrypto</span>' : '<span class="ht-badge ht-badge-green">Pure JS</span>'}</td></tr>`).join('')}
           <tr><td style="color:#a855f7">bcrypt</td><td>184</td><td>60 chars</td><td><span class="ht-badge ht-badge-purple">Format</span></td></tr>
           <tr><td style="color:#a855f7">Argon2</td><td>Variable</td><td>Variable</td><td><span class="ht-badge ht-badge-purple">Format</span></td></tr>
           <tr><td style="color:#a855f7">NTLM</td><td>128</td><td>32</td><td><span class="ht-badge ht-badge-yellow">Simulated</span></td></tr>
@@ -654,7 +654,7 @@ export function renderHashToolkit(container) {
       const out = el.querySelector('#htIdResult');
       out.innerHTML = `<div style="margin-top:14px">${matches.map(m => {
         const pct = Math.round(m.confidence * 100);
-        const color = pct >= 90 ? '#00ff88' : pct >= 70 ? '#00aaff' : pct >= 50 ? '#ffd600' : '#ff4444';
+        const color = pct >= 90 ? '#16a34a' : pct >= 70 ? 'var(--acc,#2563eb)' : pct >= 50 ? '#d97706' : '#dc2626';
         return `<div class="ht-match">
           <div class="ht-match-name">${esc(m.name)}</div>
           <div class="ht-match-meta">
@@ -663,9 +663,9 @@ export function renderHashToolkit(container) {
           </div>
         </div>`;
       }).join('')}
-      <div style="margin-top:10px;font-size:12px;color:#6a8caa">
-        Input length: <span style="color:#e2e8f0">${input.length} characters</span> ·
-        Charset: <span style="color:#e2e8f0">${/^[a-fA-F0-9]+$/.test(input) ? 'Hexadecimal' : /^[A-Za-z0-9+/=]+$/.test(input) ? 'Base64' : 'Mixed'}</span>
+      <div style="margin-top:10px;font-size:12px;color:var(--mut,#7a93b8)">
+        Input length: <span style="color:var(--txt,#e7eefc)">${input.length} characters</span> ·
+        Charset: <span style="color:var(--txt,#e7eefc)">${/^[a-fA-F0-9]+$/.test(input) ? 'Hexadecimal' : /^[A-Za-z0-9+/=]+$/.test(input) ? 'Base64' : 'Mixed'}</span>
       </div></div>`;
     };
   }
@@ -674,32 +674,32 @@ export function renderHashToolkit(container) {
     body.innerHTML = `
       <div class="ht-panel">
         <h3>Hash Comparison</h3>
-        <p style="font-size:12px;color:#6a8caa;margin:0 0 12px">Timing-safe comparison of two hash values</p>
+        <p style="font-size:12px;color:var(--mut,#7a93b8);margin:0 0 12px">Timing-safe comparison of two hash values</p>
         <div class="ht-label">Hash A</div>
-        <input class="ht-input" id="htCmpA" placeholder="Paste first hash..." style="font-family:monospace;margin-bottom:10px">
+        <input class="ht-input" id="htCmpA" placeholder="Paste first hash..." style="font-family:var(--font-mono,ui-monospace,monospace);margin-bottom:10px">
         <div class="ht-label">Hash B</div>
-        <input class="ht-input" id="htCmpB" placeholder="Paste second hash..." style="font-family:monospace">
+        <input class="ht-input" id="htCmpB" placeholder="Paste second hash..." style="font-family:var(--font-mono,ui-monospace,monospace)">
         <div class="ht-row" style="margin-top:14px">
           <button class="ht-btn ht-btn-primary" id="htCmpBtn">Compare</button>
-          <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#6a8caa"><input type="checkbox" id="htCmpCase"><span>Case-sensitive</span></label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--mut,#7a93b8)"><input type="checkbox" id="htCmpCase"><span>Case-sensitive</span></label>
         </div>
         <div id="htCmpResult"></div>
       </div>
       <div class="ht-panel">
         <h3>Key Derivation Cost Estimator</h3>
-        <p style="font-size:12px;color:#6a8caa;margin:0 0 12px">Estimated computation time for password hashing algorithms</p>
+        <p style="font-size:12px;color:var(--mut,#7a93b8);margin:0 0 12px">Estimated computation time for password hashing algorithms</p>
         <table class="ht-table ht-cost-table">
           <thead><tr><th>Algorithm</th><th>Parameters</th><th>Time (est.)</th><th>Memory</th><th>Security</th></tr></thead>
           <tbody>
-            <tr><td style="color:#00aaff">bcrypt</td><td>cost=10</td><td>~100ms</td><td>4 KB</td><td><span class="ht-badge ht-badge-green">Good</span></td></tr>
-            <tr><td style="color:#00aaff">bcrypt</td><td>cost=12</td><td>~400ms</td><td>4 KB</td><td><span class="ht-badge ht-badge-green">Good</span></td></tr>
-            <tr><td style="color:#00aaff">bcrypt</td><td>cost=14</td><td>~1.6s</td><td>4 KB</td><td><span class="ht-badge ht-badge-green">Strong</span></td></tr>
+            <tr><td style="color:var(--acc,#2563eb)">bcrypt</td><td>cost=10</td><td>~100ms</td><td>4 KB</td><td><span class="ht-badge ht-badge-green">Good</span></td></tr>
+            <tr><td style="color:var(--acc,#2563eb)">bcrypt</td><td>cost=12</td><td>~400ms</td><td>4 KB</td><td><span class="ht-badge ht-badge-green">Good</span></td></tr>
+            <tr><td style="color:var(--acc,#2563eb)">bcrypt</td><td>cost=14</td><td>~1.6s</td><td>4 KB</td><td><span class="ht-badge ht-badge-green">Strong</span></td></tr>
             <tr><td style="color:#a855f7">scrypt</td><td>N=16384, r=8, p=1</td><td>~100ms</td><td>16 MB</td><td><span class="ht-badge ht-badge-green">Strong</span></td></tr>
             <tr><td style="color:#a855f7">scrypt</td><td>N=65536, r=8, p=1</td><td>~400ms</td><td>64 MB</td><td><span class="ht-badge ht-badge-blue">Very Strong</span></td></tr>
-            <tr><td style="color:#ff4444">Argon2id</td><td>t=3, m=64MB, p=4</td><td>~500ms</td><td>64 MB</td><td><span class="ht-badge ht-badge-blue">Very Strong</span></td></tr>
-            <tr><td style="color:#ff4444">Argon2id</td><td>t=4, m=256MB, p=8</td><td>~2s</td><td>256 MB</td><td><span class="ht-badge ht-badge-purple">Maximum</span></td></tr>
-            <tr><td style="color:#6a8caa">MD5</td><td>1 iteration</td><td>&lt;1μs</td><td>~0</td><td><span class="ht-badge ht-badge-red">Broken</span></td></tr>
-            <tr><td style="color:#6a8caa">SHA-256</td><td>1 iteration</td><td>&lt;1μs</td><td>~0</td><td><span class="ht-badge ht-badge-red">Not for passwords</span></td></tr>
+            <tr><td style="color:#dc2626">Argon2id</td><td>t=3, m=64MB, p=4</td><td>~500ms</td><td>64 MB</td><td><span class="ht-badge ht-badge-blue">Very Strong</span></td></tr>
+            <tr><td style="color:#dc2626">Argon2id</td><td>t=4, m=256MB, p=8</td><td>~2s</td><td>256 MB</td><td><span class="ht-badge ht-badge-purple">Maximum</span></td></tr>
+            <tr><td style="color:var(--mut,#7a93b8)">MD5</td><td>1 iteration</td><td>&lt;1μs</td><td>~0</td><td><span class="ht-badge ht-badge-red">Broken</span></td></tr>
+            <tr><td style="color:var(--mut,#7a93b8)">SHA-256</td><td>1 iteration</td><td>&lt;1μs</td><td>~0</td><td><span class="ht-badge ht-badge-red">Not for passwords</span></td></tr>
           </tbody>
         </table>
       </div>
@@ -721,7 +721,7 @@ export function renderHashToolkit(container) {
       el.querySelector('#htCmpResult').innerHTML = match
         ? `<div class="ht-compare-result ht-compare-match">MATCH — Hashes are identical</div>`
         : `<div class="ht-compare-result ht-compare-mismatch">MISMATCH — Hashes differ${diffIdx >= 0 ? ` at position ${diffIdx}` : ''}</div>
-           ${a.length !== b.length ? `<div style="margin-top:8px;font-size:12px;color:#6a8caa">Length difference: ${a.length} vs ${b.length} characters</div>` : ''}`;
+           ${a.length !== b.length ? `<div style="margin-top:8px;font-size:12px;color:var(--mut,#7a93b8)">Length difference: ${a.length} vs ${b.length} characters</div>` : ''}`;
     };
   }
 
@@ -798,21 +798,21 @@ export function renderHashToolkit(container) {
       <div class="ht-ref-section">
         <h3>CLI Quick Reference</h3>
         <div class="ht-result" style="font-size:12px;line-height:2">
-          <div><span style="color:#6a8caa"># Linux/macOS</span></div>
-          <div><span style="color:#00ff88">md5sum</span> file.txt</div>
-          <div><span style="color:#00ff88">sha256sum</span> file.txt</div>
-          <div><span style="color:#00ff88">sha512sum</span> file.txt</div>
-          <div><span style="color:#00ff88">openssl</span> dgst -sha256 file.txt</div>
-          <div><span style="color:#00ff88">openssl</span> dgst -sha3-256 file.txt</div>
-          <div style="margin-top:6px"><span style="color:#6a8caa"># macOS only</span></div>
-          <div><span style="color:#00ff88">shasum</span> -a 256 file.txt</div>
-          <div style="margin-top:6px"><span style="color:#6a8caa"># Windows (PowerShell)</span></div>
-          <div><span style="color:#00aaff">Get-FileHash</span> file.txt -Algorithm SHA256</div>
-          <div><span style="color:#00aaff">Get-FileHash</span> file.txt -Algorithm MD5</div>
-          <div style="margin-top:6px"><span style="color:#6a8caa"># HMAC</span></div>
-          <div><span style="color:#00ff88">echo</span> -n "message" | <span style="color:#00ff88">openssl</span> dgst -sha256 -hmac "key"</div>
-          <div style="margin-top:6px"><span style="color:#6a8caa"># Verify</span></div>
-          <div><span style="color:#00ff88">sha256sum</span> -c checksums.txt</div>
+          <div><span style="color:var(--mut,#7a93b8)"># Linux/macOS</span></div>
+          <div><span style="color:#16a34a">md5sum</span> file.txt</div>
+          <div><span style="color:#16a34a">sha256sum</span> file.txt</div>
+          <div><span style="color:#16a34a">sha512sum</span> file.txt</div>
+          <div><span style="color:#16a34a">openssl</span> dgst -sha256 file.txt</div>
+          <div><span style="color:#16a34a">openssl</span> dgst -sha3-256 file.txt</div>
+          <div style="margin-top:6px"><span style="color:var(--mut,#7a93b8)"># macOS only</span></div>
+          <div><span style="color:#16a34a">shasum</span> -a 256 file.txt</div>
+          <div style="margin-top:6px"><span style="color:var(--mut,#7a93b8)"># Windows (PowerShell)</span></div>
+          <div><span style="color:var(--acc,#2563eb)">Get-FileHash</span> file.txt -Algorithm SHA256</div>
+          <div><span style="color:var(--acc,#2563eb)">Get-FileHash</span> file.txt -Algorithm MD5</div>
+          <div style="margin-top:6px"><span style="color:var(--mut,#7a93b8)"># HMAC</span></div>
+          <div><span style="color:#16a34a">echo</span> -n "message" | <span style="color:#16a34a">openssl</span> dgst -sha256 -hmac "key"</div>
+          <div style="margin-top:6px"><span style="color:var(--mut,#7a93b8)"># Verify</span></div>
+          <div><span style="color:#16a34a">sha256sum</span> -c checksums.txt</div>
         </div>
       </div>
     `;

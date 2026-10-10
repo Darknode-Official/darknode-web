@@ -201,52 +201,52 @@ function injectStyles() {
   _vtStyled = true;
   var s = document.createElement('style');
   s.textContent =
-  '.vt-wrap { font-family: ui-sans-serif,system-ui,-apple-system,sans-serif; color: #c8d6e5; max-width: 1400px; margin: 0 auto; }' +
+  '.vt-wrap { font-family: ui-sans-serif,system-ui,-apple-system,sans-serif; color: var(--txt,#e7eefc); max-width: 1400px; margin: 0 auto; }' +
 
   '.vt-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }' +
   '.vt-title { font-size: 1.5rem; font-weight: 800; color: #fff; letter-spacing: -0.02em; margin: 0; }' +
-  '.vt-subtitle { font-size: 0.8rem; color: #6b7b8d; margin-top: 2px; }' +
-  '.vt-classification { font-family: monospace; font-size: 0.7rem; font-weight: 700; letter-spacing: 2px; padding: 6px 20px; border-radius: 4px; text-align: center; }' +
+  '.vt-subtitle { font-size: 0.8rem; color: var(--mut,#7a93b8); margin-top: 2px; }' +
+  '.vt-classification { font-family: var(--font-mono); font-size: 0.7rem; font-weight: 700; letter-spacing: 2px; padding: 6px 20px; border-radius: 4px; text-align: center; }' +
   '.vt-class-u { background: #166534; color: #4ade80; border: 1px solid #22c55e; }' +
   '.vt-class-cui { background: #1e3a5f; color: #60a5fa; border: 1px solid #3b82f6; }' +
   '.vt-class-s { background: #7f1d1d; color: #f87171; border: 1px solid #ef4444; }' +
   '.vt-class-ts { background: #7f1d1d; color: #fca5a5; border: 1px solid #ef4444; }' +
 
   '.vt-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 24px; }' +
-  '.vt-stat { background: #0d1117; border: 1px solid #1e293b; border-radius: 10px; padding: 16px; text-align: center; transition: border-color 0.2s; }' +
-  '.vt-stat:hover { border-color: #334155; }' +
-  '.vt-stat-n { font-size: 2rem; font-weight: 800; font-family: monospace; line-height: 1; margin-bottom: 4px; }' +
-  '.vt-stat-l { font-size: 0.72rem; color: #6b7b8d; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }' +
+  '.vt-stat { background: var(--card2,#0f1726); border: 1px solid var(--line,#283a5a); border-radius: 10px; padding: 16px; text-align: center; transition: border-color 0.2s; }' +
+  '.vt-stat:hover { border-color: var(--line,#283a5a); }' +
+  '.vt-stat-n { font-size: 2rem; font-weight: 800; font-family: var(--font-mono); line-height: 1; margin-bottom: 4px; }' +
+  '.vt-stat-l { font-size: 0.72rem; color: var(--mut,#7a93b8); text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }' +
 
-  '.vt-tabs { display: flex; gap: 2px; margin-bottom: 20px; background: #0d1117; border-radius: 10px; padding: 4px; border: 1px solid #1e293b; flex-wrap: wrap; }' +
-  '.vt-tab { padding: 8px 16px; border-radius: 4px; font-size: 0.78rem; font-weight: 600; cursor: pointer; background: transparent; border: none; color: #6b7b8d; transition: all 0.2s; font-family: inherit; }' +
-  '.vt-tab:hover { color: #c8d6e5; background: #1e293b; }' +
-  '.vt-tab.active { color: #fff; background: #1e293b; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }' +
+  '.vt-tabs { display: flex; gap: 2px; margin-bottom: 20px; background: var(--card2,#0f1726); border-radius: 10px; padding: 4px; border: 1px solid var(--line,#283a5a); flex-wrap: wrap; }' +
+  '.vt-tab { padding: 8px 16px; border-radius: 4px; font-size: 0.78rem; font-weight: 600; cursor: pointer; background: transparent; border: none; color: var(--mut,#7a93b8); transition: all 0.2s; font-family: inherit; }' +
+  '.vt-tab:hover { color: var(--txt,#e7eefc); background: var(--line,#283a5a); }' +
+  '.vt-tab.active { color: #fff; background: var(--line,#283a5a); box-shadow: 0 1px 3px rgba(0,0,0,0.3); }' +
 
-  '.vt-panel { background: #0d1117; border: 1px solid #1e293b; border-radius: 12px; padding: 20px; margin-bottom: 16px; }' +
-  '.vt-panel-title { font-size: 0.82rem; font-weight: 700; color: #e2e8f0; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid #1e293b; display: flex; align-items: center; gap: 8px; }' +
+  '.vt-panel { background: var(--card2,#0f1726); border: 1px solid var(--line,#283a5a); border-radius: 12px; padding: 20px; margin-bottom: 16px; }' +
+  '.vt-panel-title { font-size: 0.82rem; font-weight: 700; color: var(--txt,#e7eefc); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--line,#283a5a); display: flex; align-items: center; gap: 8px; }' +
   '.vt-panel-title .vt-icon { font-size: 1rem; }' +
 
   /* SSVC Decision Tree */
   '.vt-tree { display: flex; flex-direction: column; gap: 14px; }' +
-  '.vt-tree-node { background: #111827; border: 1px solid #1e293b; border-radius: 8px; padding: 14px; }' +
-  '.vt-tree-q { font-size: 0.82rem; font-weight: 700; color: #e2e8f0; margin-bottom: 10px; }' +
+  '.vt-tree-node { background: var(--card2,#0f1726); border: 1px solid var(--line,#283a5a); border-radius: 8px; padding: 14px; }' +
+  '.vt-tree-q { font-size: 0.82rem; font-weight: 700; color: var(--txt,#e7eefc); margin-bottom: 10px; }' +
   '.vt-tree-opts { display: flex; gap: 8px; flex-wrap: wrap; }' +
-  '.vt-tree-opt { padding: 6px 16px; border-radius: 4px; font-size: 0.78rem; font-weight: 600; cursor: pointer; border: 1px solid #334155; background: transparent; color: #94a3b8; transition: all 0.15s; font-family: inherit; }' +
+  '.vt-tree-opt { padding: 6px 16px; border-radius: 4px; font-size: 0.78rem; font-weight: 600; cursor: pointer; border: 1px solid var(--line,#283a5a); background: transparent; color: var(--txt-2,#9fb0cc); transition: all 0.15s; font-family: inherit; }' +
   '.vt-tree-opt:hover { border-color: #60a5fa; color: #93c5fd; }' +
   '.vt-tree-opt.selected { background: #1e40af; border-color: #3b82f6; color: #fff; }' +
 
   '.vt-tree-result { margin-top: 16px; padding: 16px; border-radius: 10px; text-align: center; }' +
-  '.vt-tree-result-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; margin-bottom: 4px; }' +
-  '.vt-tree-result-decision { font-size: 1.6rem; font-weight: 800; font-family: monospace; }' +
-  '.vt-tree-result-desc { font-size: 0.8rem; margin-top: 6px; color: #94a3b8; }' +
+  '.vt-tree-result-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1px; color: var(--txt-2,#9fb0cc); margin-bottom: 4px; }' +
+  '.vt-tree-result-decision { font-size: 1.6rem; font-weight: 800; font-family: var(--font-mono); }' +
+  '.vt-tree-result-desc { font-size: 0.8rem; margin-top: 6px; color: var(--txt-2,#9fb0cc); }' +
 
   /* Priority Queue Table */
   '.vt-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }' +
-  '.vt-table th { text-align: left; padding: 10px 12px; font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #6b7b8d; border-bottom: 2px solid #1e293b; position: sticky; top: 0; background: #0d1117; z-index: 1; }' +
-  '.vt-table td { padding: 10px 12px; border-bottom: 1px solid #111827; vertical-align: middle; }' +
+  '.vt-table th { text-align: left; padding: 10px 12px; font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--mut,#7a93b8); border-bottom: 2px solid var(--line,#283a5a); position: sticky; top: 0; background: var(--card2,#0f1726); z-index: 1; }' +
+  '.vt-table td { padding: 10px 12px; border-bottom: 1px solid var(--card2,#0f1726); vertical-align: middle; }' +
   '.vt-table tbody tr { transition: background 0.15s; }' +
-  '.vt-table tbody tr:hover { background: #111827; }' +
+  '.vt-table tbody tr:hover { background: var(--card2,#0f1726); }' +
   '.vt-table-wrap { max-height: 600px; overflow-y: auto; border-radius: 8px; }' +
 
   '.vt-row-overdue { border-left: 3px solid #ef4444; }' +
@@ -259,114 +259,114 @@ function injectStyles() {
   '.vt-badge-attend { background: rgba(245,158,11,0.15); color: #fbbf24; }' +
   '.vt-badge-trackstar { background: rgba(59,130,246,0.15); color: #60a5fa; }' +
   '.vt-badge-track { background: rgba(107,114,128,0.15); color: #9ca3af; }' +
-  '.vt-badge-kev { background: rgba(239,68,68,0.2); color: #f87171; font-family: monospace; }' +
-  '.vt-badge-nokev { background: rgba(107,114,128,0.1); color: #6b7280; font-family: monospace; }' +
+  '.vt-badge-kev { background: rgba(239,68,68,0.2); color: #f87171; font-family: var(--font-mono); }' +
+  '.vt-badge-nokev { background: rgba(107,114,128,0.1); color: #6b7280; font-family: var(--font-mono); }' +
   '.vt-badge-active { background: rgba(239,68,68,0.2); color: #f87171; }' +
   '.vt-badge-poc { background: rgba(245,158,11,0.2); color: #fbbf24; }' +
   '.vt-badge-none { background: rgba(107,114,128,0.1); color: #6b7280; }' +
 
-  '.vt-cvss { font-family: monospace; font-weight: 700; }' +
+  '.vt-cvss { font-family: var(--font-mono); font-weight: 700; }' +
   '.vt-cvss-crit { color: #ef4444; }' +
   '.vt-cvss-high { color: #f97316; }' +
   '.vt-cvss-med { color: #eab308; }' +
   '.vt-cvss-low { color: #22c55e; }' +
 
-  '.vt-epss-bar { display: inline-block; height: 6px; border-radius: 3px; background: #1e293b; width: 60px; vertical-align: middle; margin-right: 6px; }' +
+  '.vt-epss-bar { display: inline-block; height: 6px; border-radius: 3px; background: var(--line,#283a5a); width: 60px; vertical-align: middle; margin-right: 6px; }' +
   '.vt-epss-fill { height: 100%; border-radius: 3px; }' +
 
-  '.vt-days { font-family: monospace; font-weight: 700; }' +
+  '.vt-days { font-family: var(--font-mono); font-weight: 700; }' +
   '.vt-days-neg { color: #ef4444; }' +
   '.vt-days-warn { color: #f97316; }' +
   '.vt-days-ok { color: #22c55e; }' +
 
   /* Sector Threat Matrix */
   '.vt-sector-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; }' +
-  '.vt-sector-card { background: #111827; border: 1px solid #1e293b; border-radius: 8px; padding: 14px; transition: border-color 0.2s; }' +
-  '.vt-sector-card:hover { border-color: #334155; }' +
-  '.vt-sector-name { font-size: 0.82rem; font-weight: 700; color: #e2e8f0; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; }' +
-  '.vt-sector-level { padding: 2px 10px; border-radius: 4px; font-size: 0.65rem; font-weight: 700; letter-spacing: 1px; font-family: monospace; }' +
-  '.vt-sector-row { display: flex; justify-content: space-between; font-size: 0.75rem; color: #6b7b8d; padding: 3px 0; }' +
-  '.vt-sector-val { color: #94a3b8; font-family: monospace; }' +
+  '.vt-sector-card { background: var(--card2,#0f1726); border: 1px solid var(--line,#283a5a); border-radius: 8px; padding: 14px; transition: border-color 0.2s; }' +
+  '.vt-sector-card:hover { border-color: var(--line,#283a5a); }' +
+  '.vt-sector-name { font-size: 0.82rem; font-weight: 700; color: var(--txt,#e7eefc); margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; }' +
+  '.vt-sector-level { padding: 2px 10px; border-radius: 4px; font-size: 0.65rem; font-weight: 700; letter-spacing: 1px; font-family: var(--font-mono); }' +
+  '.vt-sector-row { display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--mut,#7a93b8); padding: 3px 0; }' +
+  '.vt-sector-val { color: var(--txt-2,#9fb0cc); font-family: var(--font-mono); }' +
   '.vt-sector-actors { font-size: 0.72rem; color: #ef4444; margin-top: 6px; font-style: italic; }' +
-  '.vt-compliance-bar { height: 4px; background: #1e293b; border-radius: 2px; margin-top: 8px; }' +
+  '.vt-compliance-bar { height: 4px; background: var(--line,#283a5a); border-radius: 2px; margin-top: 8px; }' +
   '.vt-compliance-fill { height: 100%; border-radius: 2px; transition: width 0.4s; }' +
 
   /* Patch Tuesday */
   '.vt-pt-stats { display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }' +
-  '.vt-pt-stat { background: #111827; border: 1px solid #1e293b; border-radius: 8px; padding: 10px 16px; text-align: center; flex: 1; min-width: 100px; }' +
-  '.vt-pt-n { font-size: 1.5rem; font-weight: 800; font-family: monospace; }' +
-  '.vt-pt-l { font-size: 0.68rem; color: #6b7b8d; text-transform: uppercase; letter-spacing: 0.5px; }' +
+  '.vt-pt-stat { background: var(--card2,#0f1726); border: 1px solid var(--line,#283a5a); border-radius: 8px; padding: 10px 16px; text-align: center; flex: 1; min-width: 100px; }' +
+  '.vt-pt-n { font-size: 1.5rem; font-weight: 800; font-family: var(--font-mono); }' +
+  '.vt-pt-l { font-size: 0.68rem; color: var(--mut,#7a93b8); text-transform: uppercase; letter-spacing: 0.5px; }' +
 
   '.vt-pt-list { display: flex; flex-direction: column; gap: 8px; }' +
-  '.vt-pt-item { background: #111827; border: 1px solid #1e293b; border-radius: 8px; padding: 12px 16px; display: flex; align-items: center; gap: 14px; }' +
-  '.vt-pt-cve { font-family: monospace; font-size: 0.78rem; color: #60a5fa; font-weight: 600; min-width: 140px; }' +
-  '.vt-pt-product { font-size: 0.78rem; color: #e2e8f0; flex: 1; }' +
+  '.vt-pt-item { background: var(--card2,#0f1726); border: 1px solid var(--line,#283a5a); border-radius: 8px; padding: 12px 16px; display: flex; align-items: center; gap: 14px; }' +
+  '.vt-pt-cve { font-family: var(--font-mono); font-size: 0.78rem; color: #60a5fa; font-weight: 600; min-width: 140px; }' +
+  '.vt-pt-product { font-size: 0.78rem; color: var(--txt,#e7eefc); flex: 1; }' +
   '.vt-pt-type { padding: 2px 8px; border-radius: 4px; font-size: 0.68rem; font-weight: 700; background: rgba(239,68,68,0.15); color: #f87171; }' +
-  '.vt-pt-desc { font-size: 0.75rem; color: #6b7b8d; flex: 2; }' +
+  '.vt-pt-desc { font-size: 0.75rem; color: var(--mut,#7a93b8); flex: 2; }' +
   '.vt-pt-exploited { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.65rem; font-weight: 700; background: #7f1d1d; color: #fca5a5; letter-spacing: 0.5px; }' +
 
   /* Input Form */
   '.vt-form { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }' +
   '.vt-form-full { grid-column: 1 / -1; }' +
-  '.vt-label { font-size: 0.72rem; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; display: block; }' +
-  '.vt-input { width: 100%; background: #111827; border: 1px solid #1e293b; color: #e2e8f0; padding: 8px 12px; border-radius: 6px; font-size: 0.82rem; font-family: monospace; outline: none; transition: border-color 0.15s; box-sizing: border-box; }' +
+  '.vt-label { font-size: 0.72rem; font-weight: 600; color: var(--txt-2,#9fb0cc); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; display: block; }' +
+  '.vt-input { width: 100%; background: var(--card2,#0f1726); border: 1px solid var(--line,#283a5a); color: var(--txt,#e7eefc); padding: 8px 12px; border-radius: 6px; font-size: 0.82rem; font-family: var(--font-mono); outline: none; transition: border-color 0.15s; box-sizing: border-box; }' +
   '.vt-input:focus { border-color: #3b82f6; }' +
-  '.vt-select { width: 100%; background: #111827; border: 1px solid #1e293b; color: #e2e8f0; padding: 8px 12px; border-radius: 6px; font-size: 0.82rem; font-family: inherit; outline: none; cursor: pointer; }' +
+  '.vt-select { width: 100%; background: var(--card2,#0f1726); border: 1px solid var(--line,#283a5a); color: var(--txt,#e7eefc); padding: 8px 12px; border-radius: 6px; font-size: 0.82rem; font-family: inherit; outline: none; cursor: pointer; }' +
   '.vt-slider-wrap { display: flex; align-items: center; gap: 10px; }' +
   '.vt-slider { flex: 1; accent-color: #3b82f6; }' +
-  '.vt-slider-val { font-family: monospace; font-weight: 700; color: #60a5fa; min-width: 24px; text-align: center; }' +
+  '.vt-slider-val { font-family: var(--font-mono); font-weight: 700; color: #60a5fa; min-width: 24px; text-align: center; }' +
 
   '.vt-sector-checks { display: flex; flex-wrap: wrap; gap: 8px; }' +
-  '.vt-sector-check { display: flex; align-items: center; gap: 4px; font-size: 0.75rem; color: #94a3b8; }' +
+  '.vt-sector-check { display: flex; align-items: center; gap: 4px; font-size: 0.75rem; color: var(--txt-2,#9fb0cc); }' +
   '.vt-sector-check input { accent-color: #3b82f6; }' +
 
   '.vt-btn { padding: 8px 20px; border-radius: 8px; font-size: 0.82rem; font-weight: 600; cursor: pointer; border: none; transition: all 0.15s; font-family: inherit; }' +
   '.vt-btn-primary { background: #2563eb; color: #fff; }' +
   '.vt-btn-primary:hover { background: #1d4ed8; }' +
-  '.vt-btn-ghost { background: transparent; color: #94a3b8; border: 1px solid #334155; }' +
+  '.vt-btn-ghost { background: transparent; color: var(--txt-2,#9fb0cc); border: 1px solid var(--line,#283a5a); }' +
   '.vt-btn-ghost:hover { border-color: #60a5fa; color: #93c5fd; }' +
   '.vt-btn-danger { background: #dc2626; color: #fff; }' +
   '.vt-btn-danger:hover { background: #b91c1c; }' +
 
   /* Risk Acceptance */
   '.vt-risk-chain { display: flex; align-items: center; gap: 8px; margin: 14px 0; flex-wrap: wrap; }' +
-  '.vt-risk-step { background: #111827; border: 1px solid #1e293b; border-radius: 8px; padding: 10px 16px; text-align: center; min-width: 100px; }' +
+  '.vt-risk-step { background: var(--card2,#0f1726); border: 1px solid var(--line,#283a5a); border-radius: 8px; padding: 10px 16px; text-align: center; min-width: 100px; }' +
   '.vt-risk-step.approved { border-color: #22c55e; background: rgba(34,197,94,0.05); }' +
   '.vt-risk-step.pending { border-color: #eab308; background: rgba(234,179,8,0.05); }' +
-  '.vt-risk-step-name { font-size: 0.72rem; color: #6b7b8d; text-transform: uppercase; letter-spacing: 0.5px; }' +
+  '.vt-risk-step-name { font-size: 0.72rem; color: var(--mut,#7a93b8); text-transform: uppercase; letter-spacing: 0.5px; }' +
   '.vt-risk-step-status { font-size: 0.78rem; font-weight: 700; margin-top: 2px; }' +
-  '.vt-risk-arrow { color: #334155; font-size: 1.2rem; }' +
+  '.vt-risk-arrow { color: var(--line,#283a5a); font-size: 1.2rem; }' +
 
   '.vt-checklist { display: flex; flex-direction: column; gap: 6px; }' +
-  '.vt-check-item { display: flex; align-items: center; gap: 8px; font-size: 0.78rem; color: #94a3b8; padding: 6px 10px; background: #111827; border-radius: 6px; cursor: pointer; transition: background 0.15s; }' +
-  '.vt-check-item:hover { background: #1e293b; }' +
+  '.vt-check-item { display: flex; align-items: center; gap: 8px; font-size: 0.78rem; color: var(--txt-2,#9fb0cc); padding: 6px 10px; background: var(--card2,#0f1726); border-radius: 6px; cursor: pointer; transition: background 0.15s; }' +
+  '.vt-check-item:hover { background: var(--line,#283a5a); }' +
   '.vt-check-item input { accent-color: #22c55e; }' +
 
   /* Compliance Dashboard */
   '.vt-compliance-ring { position: relative; width: 140px; height: 140px; margin: 0 auto 16px; }' +
   '.vt-compliance-ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }' +
-  '.vt-compliance-ring-bg { fill: none; stroke: #1e293b; stroke-width: 8; }' +
+  '.vt-compliance-ring-bg { fill: none; stroke: var(--line,#283a5a); stroke-width: 8; }' +
   '.vt-compliance-ring-fill { fill: none; stroke-width: 8; stroke-linecap: round; transition: stroke-dashoffset 0.6s; }' +
-  '.vt-compliance-pct { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-size: 1.8rem; font-weight: 800; font-family: monospace; }' +
+  '.vt-compliance-pct { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-size: 1.8rem; font-weight: 800; font-family: var(--font-mono); }' +
 
   '.vt-bar-chart { display: flex; align-items: flex-end; gap: 6px; height: 120px; padding-top: 10px; }' +
   '.vt-bar { flex: 1; border-radius: 4px 4px 0 0; min-width: 20px; transition: height 0.4s; position: relative; }' +
-  '.vt-bar-label { position: absolute; bottom: -18px; left: 50%; transform: translateX(-50%); font-size: 0.6rem; color: #6b7b8d; white-space: nowrap; }' +
-  '.vt-bar-val { position: absolute; top: -16px; left: 50%; transform: translateX(-50%); font-size: 0.65rem; color: #94a3b8; font-family: monospace; }' +
+  '.vt-bar-label { position: absolute; bottom: -18px; left: 50%; transform: translateX(-50%); font-size: 0.6rem; color: var(--mut,#7a93b8); white-space: nowrap; }' +
+  '.vt-bar-val { position: absolute; top: -16px; left: 50%; transform: translateX(-50%); font-size: 0.65rem; color: var(--txt-2,#9fb0cc); font-family: var(--font-mono); }' +
 
   '.vt-overdue-list { display: flex; flex-direction: column; gap: 6px; max-height: 200px; overflow-y: auto; }' +
-  '.vt-overdue-item { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: #111827; border-radius: 6px; border-left: 3px solid #ef4444; font-size: 0.78rem; }' +
-  '.vt-overdue-cve { font-family: monospace; color: #f87171; font-weight: 600; }' +
-  '.vt-overdue-system { color: #94a3b8; }' +
-  '.vt-overdue-days { font-family: monospace; font-weight: 700; color: #ef4444; }' +
+  '.vt-overdue-item { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: var(--card2,#0f1726); border-radius: 6px; border-left: 3px solid #ef4444; font-size: 0.78rem; }' +
+  '.vt-overdue-cve { font-family: var(--font-mono); color: #f87171; font-weight: 600; }' +
+  '.vt-overdue-system { color: var(--txt-2,#9fb0cc); }' +
+  '.vt-overdue-days { font-family: var(--font-mono); font-weight: 700; color: #ef4444; }' +
 
   /* SLA Calculator */
   '.vt-sla-result { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-top: 16px; }' +
-  '.vt-sla-card { background: #111827; border: 1px solid #1e293b; border-radius: 8px; padding: 14px; text-align: center; }' +
-  '.vt-sla-card-title { font-size: 0.68rem; color: #6b7b8d; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }' +
-  '.vt-sla-card-val { font-size: 1.3rem; font-weight: 800; font-family: monospace; }' +
+  '.vt-sla-card { background: var(--card2,#0f1726); border: 1px solid var(--line,#283a5a); border-radius: 8px; padding: 14px; text-align: center; }' +
+  '.vt-sla-card-title { font-size: 0.68rem; color: var(--mut,#7a93b8); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }' +
+  '.vt-sla-card-val { font-size: 1.3rem; font-weight: 800; font-family: var(--font-mono); }' +
 
-  '.vt-empty { text-align: center; padding: 40px 20px; color: #6b7b8d; font-size: 0.85rem; }' +
+  '.vt-empty { text-align: center; padding: 40px 20px; color: var(--mut,#7a93b8); font-size: 0.85rem; }' +
 
   '.vt-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }' +
   '.vt-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }' +
@@ -551,15 +551,15 @@ export function renderVulnTriage(container) {
       var daysClass = v.remaining < 0 ? 'neg' : v.remaining <= 7 ? 'warn' : 'ok';
 
       h += '<tr class="vt-row-' + st + '">';
-      h += '<td><span style="font-family:monospace;font-weight:700;color:#60a5fa">' + (i + 1) + '</span></td>';
-      h += '<td><span style="font-family:monospace;color:#60a5fa;font-weight:600">' + esc(v.cve) + '</span></td>';
+      h += '<td><span style="font-family:var(--font-mono);font-weight:700;color:#60a5fa">' + (i + 1) + '</span></td>';
+      h += '<td><span style="font-family:var(--font-mono);color:#60a5fa;font-weight:600">' + esc(v.cve) + '</span></td>';
       h += '<td style="max-width:200px;font-size:0.75rem">' + esc(v.product) + '</td>';
       h += '<td><span class="vt-cvss vt-cvss-' + cvssClass + '">' + v.cvss.toFixed(1) + '</span></td>';
       h += '<td><span class="vt-epss-bar"><span class="vt-epss-fill" style="width:' + (v.epss * 100) + '%;background:' + epssColor + '"></span></span>' + formatEPSS(v.epss) + '</td>';
       h += '<td><span class="vt-badge ' + (v.kev ? 'vt-badge-kev' : 'vt-badge-nokev') + '">' + (v.kev ? 'KEV' : '—') + '</span></td>';
       h += '<td><span class="vt-badge vt-badge-' + exploitClass + '">' + esc(v.exploitation.toUpperCase()) + '</span></td>';
       h += '<td><span class="vt-badge vt-badge-' + decisionClass + '">' + esc(v.decision) + '</span></td>';
-      h += '<td style="font-family:monospace">' + v.sla + 'd</td>';
+      h += '<td style="font-family:var(--font-mono)">' + v.sla + 'd</td>';
       h += '<td><span class="vt-days vt-days-' + daysClass + '">' + (v.remaining < 0 ? v.remaining + 'd' : v.remaining + 'd') + '</span></td>';
       h += '</tr>';
     }
@@ -616,9 +616,9 @@ export function renderVulnTriage(container) {
     h += '</div></div>';
 
     // Result
-    h += '<div class="vt-tree-result" id="vt-ssvc-result" style="background:#111827;border:1px solid #1e293b">';
+    h += '<div class="vt-tree-result" id="vt-ssvc-result" style="background:var(--card2,#0f1726);border:1px solid var(--line,#283a5a)">';
     h += '<div class="vt-tree-result-label">SSVC Decision</div>';
-    h += '<div class="vt-tree-result-decision" style="color:#6b7b8d">Select all factors above</div>';
+    h += '<div class="vt-tree-result-decision" style="color:var(--mut,#7a93b8)">Select all factors above</div>';
     h += '</div>';
 
     h += '</div></div>';
@@ -669,7 +669,7 @@ export function renderVulnTriage(container) {
     function updateSSVCResult() {
       var result = content.querySelector('#vt-ssvc-result');
       if (!ssvcState.exploitation || !ssvcState.impact || ssvcState.automatable === null || !ssvcState.prevalence) {
-        result.innerHTML = '<div class="vt-tree-result-label">SSVC Decision</div><div class="vt-tree-result-decision" style="color:#6b7b8d">Select all factors above</div>';
+        result.innerHTML = '<div class="vt-tree-result-label">SSVC Decision</div><div class="vt-tree-result-decision" style="color:var(--mut,#7a93b8)">Select all factors above</div>';
         return;
       }
       var decision = computeSSVC(ssvcState.exploitation, ssvcState.impact, ssvcState.automatable === 'true', ssvcState.prevalence);
@@ -782,7 +782,7 @@ export function renderVulnTriage(container) {
     h += '<div class="vt-pt-stat"><div class="vt-pt-n" style="color:#a855f7">' + pt.publiclyDisclosed + '</div><div class="vt-pt-l">Publicly Disclosed</div></div>';
     h += '</div>';
 
-    h += '<div style="font-size:0.82rem;font-weight:700;color:#e2e8f0;margin:18px 0 10px;text-transform:uppercase;letter-spacing:1px">Top Priority Patches</div>';
+    h += '<div style="font-size:0.82rem;font-weight:700;color:var(--txt,#e7eefc);margin:18px 0 10px;text-transform:uppercase;letter-spacing:1px">Top Priority Patches</div>';
     h += '<div class="vt-pt-list">';
     for (var p = 0; p < pt.patches.length; p++) {
       var patch = pt.patches[p];
@@ -801,19 +801,19 @@ export function renderVulnTriage(container) {
     h += '<div class="vt-panel-title"><span class="vt-icon">&#9888;</span> FEDERAL DEPLOYMENT GUIDANCE</div>';
     h += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">';
 
-    h += '<div style="background:#111827;border:1px solid #1e293b;border-radius:8px;padding:14px;border-left:3px solid #ef4444">';
+    h += '<div style="background:var(--card2,#0f1726);border:1px solid var(--line,#283a5a);border-radius:8px;padding:14px;border-left:3px solid #ef4444">';
     h += '<div style="font-size:0.72rem;color:#ef4444;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Immediate (48h)</div>';
-    h += '<div style="font-size:0.78rem;color:#94a3b8;line-height:1.6">' + pt.exploitedInWild + ' patches with active exploitation require emergency deployment per BOD 22-01. Test and deploy within 48 hours on internet-facing systems.</div>';
+    h += '<div style="font-size:0.78rem;color:var(--txt-2,#9fb0cc);line-height:1.6">' + pt.exploitedInWild + ' patches with active exploitation require emergency deployment per BOD 22-01. Test and deploy within 48 hours on internet-facing systems.</div>';
     h += '</div>';
 
-    h += '<div style="background:#111827;border:1px solid #1e293b;border-radius:8px;padding:14px;border-left:3px solid #f97316">';
+    h += '<div style="background:var(--card2,#0f1726);border:1px solid var(--line,#283a5a);border-radius:8px;padding:14px;border-left:3px solid #f97316">';
     h += '<div style="font-size:0.72rem;color:#f97316;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Priority (7 days)</div>';
-    h += '<div style="font-size:0.78rem;color:#94a3b8;line-height:1.6">' + pt.critical + ' critical-severity patches should be tested and deployed to production within 7 days. Coordinate with change advisory board for emergency change windows.</div>';
+    h += '<div style="font-size:0.78rem;color:var(--txt-2,#9fb0cc);line-height:1.6">' + pt.critical + ' critical-severity patches should be tested and deployed to production within 7 days. Coordinate with change advisory board for emergency change windows.</div>';
     h += '</div>';
 
-    h += '<div style="background:#111827;border:1px solid #1e293b;border-radius:8px;padding:14px;border-left:3px solid #3b82f6">';
+    h += '<div style="background:var(--card2,#0f1726);border:1px solid var(--line,#283a5a);border-radius:8px;padding:14px;border-left:3px solid #3b82f6">';
     h += '<div style="font-size:0.72rem;color:#3b82f6;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Standard (30 days)</div>';
-    h += '<div style="font-size:0.78rem;color:#94a3b8;line-height:1.6">' + (pt.important + pt.moderate) + ' important/moderate patches should be included in the next standard maintenance window. Validate in staging before production rollout.</div>';
+    h += '<div style="font-size:0.78rem;color:var(--txt-2,#9fb0cc);line-height:1.6">' + (pt.important + pt.moderate) + ' important/moderate patches should be included in the next standard maintenance window. Validate in staging before production rollout.</div>';
     h += '</div>';
 
     h += '</div></div>';
@@ -888,7 +888,7 @@ export function renderVulnTriage(container) {
     // POA&M Template
     h += '<div class="vt-panel">';
     h += '<div class="vt-panel-title"><span class="vt-icon">&#128196;</span> AUTO-GENERATED POA&M ENTRY</div>';
-    h += '<div style="background:#111827;border:1px solid #1e293b;border-radius:6px;padding:14px;font-family:monospace;font-size:0.75rem;color:#94a3b8;line-height:1.7;white-space:pre-wrap">';
+    h += '<div style="background:var(--card2,#0f1726);border:1px solid var(--line,#283a5a);border-radius:6px;padding:14px;font-family:var(--font-mono);font-size:0.75rem;color:var(--txt-2,#9fb0cc);line-height:1.7;white-space:pre-wrap">';
     h += 'POA&M ID:        POAM-2026-0147\n';
     h += 'Weakness:        [CVE ID] — [Description]\n';
     h += 'Point of Contact: [Risk Owner]\n';
@@ -936,11 +936,11 @@ export function renderVulnTriage(container) {
     h += '<circle class="vt-compliance-ring-fill" cx="60" cy="60" r="55" stroke="' + ringColor + '" stroke-dasharray="' + circumference + '" stroke-dashoffset="' + offset + '"/></svg>';
     h += '<div class="vt-compliance-pct" style="color:' + ringColor + '">' + compliancePct + '%</div>';
     h += '</div>';
-    h += '<div style="font-size:0.78rem;color:#6b7b8d;margin-top:8px">Overall KEV Remediation Compliance</div>';
+    h += '<div style="font-size:0.78rem;color:var(--mut,#7a93b8);margin-top:8px">Overall KEV Remediation Compliance</div>';
     h += '<div style="margin-top:12px;display:flex;justify-content:center;gap:16px;font-size:0.75rem">';
-    h += '<div><span style="color:#22c55e;font-weight:700">' + compliantKEV + '</span> <span style="color:#6b7b8d">Compliant</span></div>';
-    h += '<div><span style="color:#ef4444;font-weight:700">' + remediatedKEV + '</span> <span style="color:#6b7b8d">Overdue</span></div>';
-    h += '<div><span style="color:#60a5fa;font-weight:700">' + totalKEV + '</span> <span style="color:#6b7b8d">Total KEV</span></div>';
+    h += '<div><span style="color:#22c55e;font-weight:700">' + compliantKEV + '</span> <span style="color:var(--mut,#7a93b8)">Compliant</span></div>';
+    h += '<div><span style="color:#ef4444;font-weight:700">' + remediatedKEV + '</span> <span style="color:var(--mut,#7a93b8)">Overdue</span></div>';
+    h += '<div><span style="color:#60a5fa;font-weight:700">' + totalKEV + '</span> <span style="color:var(--mut,#7a93b8)">Total KEV</span></div>';
     h += '</div></div>';
 
     // Monthly remediation bar chart
@@ -962,13 +962,13 @@ export function renderVulnTriage(container) {
       h += '<div style="flex:1;display:flex;gap:2px;align-items:flex-end;position:relative">';
       h += '<div style="flex:1;height:' + remH + '%;background:#22c55e;border-radius:3px 3px 0 0;min-height:4px"></div>';
       h += '<div style="flex:1;height:' + newH + '%;background:#ef4444;border-radius:3px 3px 0 0;min-height:4px"></div>';
-      h += '<div style="position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);font-size:0.6rem;color:#6b7b8d">' + months[m].label + '</div>';
+      h += '<div style="position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);font-size:0.6rem;color:var(--mut,#7a93b8)">' + months[m].label + '</div>';
       h += '</div>';
     }
     h += '</div>';
     h += '<div style="display:flex;gap:16px;margin-top:24px;font-size:0.72rem">';
-    h += '<div style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:#22c55e;border-radius:2px;display:inline-block"></span> <span style="color:#6b7b8d">Remediated</span></div>';
-    h += '<div style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:#ef4444;border-radius:2px;display:inline-block"></span> <span style="color:#6b7b8d">New CVEs</span></div>';
+    h += '<div style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:#22c55e;border-radius:2px;display:inline-block"></span> <span style="color:var(--mut,#7a93b8)">Remediated</span></div>';
+    h += '<div style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:#ef4444;border-radius:2px;display:inline-block"></span> <span style="color:var(--mut,#7a93b8)">New CVEs</span></div>';
     h += '</div></div>';
 
     // Overdue items
@@ -1041,14 +1041,14 @@ export function renderVulnTriage(container) {
       h += '<tr>';
       h += '<td style="font-weight:600;white-space:nowrap">' + slaRef[r][0] + '</td>';
       for (var c = 1; c < slaRef[r].length; c++) {
-        h += '<td style="font-family:monospace">' + slaRef[r][c] + '</td>';
+        h += '<td style="font-family:var(--font-mono)">' + slaRef[r][c] + '</td>';
       }
       h += '</tr>';
     }
     h += '</tbody></table>';
 
     // BOD 22-01 summary
-    h += '<div style="margin-top:14px;padding:12px;background:#111827;border:1px solid #1e293b;border-radius:6px;font-size:0.75rem;color:#94a3b8;line-height:1.6">';
+    h += '<div style="margin-top:14px;padding:12px;background:var(--card2,#0f1726);border:1px solid var(--line,#283a5a);border-radius:6px;font-size:0.75rem;color:var(--txt-2,#9fb0cc);line-height:1.6">';
     h += '<div style="font-weight:700;color:#60a5fa;margin-bottom:4px">BOD 22-01 — Reducing the Significant Risk of Known Exploited Vulnerabilities</div>';
     h += 'All FCEB agencies must remediate KEV-listed vulnerabilities within the specified timeframe. For newly added KEVs, remediation is required within <span style="color:#ef4444;font-weight:700">14 calendar days</span> of being added to the catalog. Non-compliance must be reported to CISA with a POA&M.';
     h += '</div></div>';
@@ -1112,7 +1112,7 @@ export function renderVulnTriage(container) {
       rh += '<div class="vt-sla-card" style="border-left:3px solid ' + sevColor + '">';
       rh += '<div class="vt-sla-card-title">' + esc(cveId) + '</div>';
       rh += '<div class="vt-sla-card-val" style="color:' + sevColor + '">' + severity + '</div>';
-      rh += '<div style="font-size:0.75rem;color:#6b7b8d;margin-top:4px">' + esc(productName) + '</div>';
+      rh += '<div style="font-size:0.75rem;color:var(--mut,#7a93b8);margin-top:4px">' + esc(productName) + '</div>';
       rh += '</div>';
 
       rh += '<div class="vt-sla-card">';
@@ -1133,14 +1133,14 @@ export function renderVulnTriage(container) {
       rh += '<div class="vt-sla-card" style="border-left:3px solid #3b82f6">';
       rh += '<div class="vt-sla-card-title">Required SLA</div>';
       rh += '<div class="vt-sla-card-val" style="color:#60a5fa">' + sladays + ' days</div>';
-      rh += '<div style="font-size:0.72rem;color:#6b7b8d;margin-top:4px">' + (isKEV ? 'BOD 22-01 KEV mandate' : severity + ' severity policy') + '</div>';
+      rh += '<div style="font-size:0.72rem;color:var(--mut,#7a93b8);margin-top:4px">' + (isKEV ? 'BOD 22-01 KEV mandate' : severity + ' severity policy') + '</div>';
       rh += '</div>';
 
       var deadline = new Date();
       deadline.setDate(deadline.getDate() + sladays);
       rh += '<div class="vt-sla-card">';
       rh += '<div class="vt-sla-card-title">Deadline</div>';
-      rh += '<div class="vt-sla-card-val" style="color:#e2e8f0;font-size:1rem">' + deadline.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) + '</div>';
+      rh += '<div class="vt-sla-card-val" style="color:var(--txt,#e7eefc);font-size:1rem">' + deadline.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) + '</div>';
       rh += '</div>';
 
       rh += '</div>';

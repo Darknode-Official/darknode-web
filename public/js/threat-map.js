@@ -126,13 +126,13 @@
     container.innerHTML = '';
     container.style.position = 'relative';
     container.style.overflow = 'hidden';
-    container.style.background = '#0a0e14';
+    container.style.background = 'var(--card,#0b1120)';
 
     var svg = d3.select('#' + containerId)
       .append('svg')
       .attr('width', width)
       .attr('height', height)
-      .style('background', '#0a0e14')
+      .style('background', 'var(--card,#0b1120)')
       .style('display', 'block');
 
     var defs = svg.append('defs');
@@ -173,13 +173,13 @@
     var tooltip = d3.select('#' + containerId)
       .append('div')
       .style('position', 'absolute')
-      .style('background', 'rgba(8,12,20,0.95)')
-      .style('border', '1px solid #1a4a6a')
+      .style('background', 'var(--card2,#0f1726)')
+      .style('border', '1px solid var(--line,#283a5a)')
       .style('border-radius', '4px')
       .style('padding', '10px 14px')
-      .style('font-family', '"Courier New", monospace')
+      .style('font-family', "'Segoe UI',system-ui,sans-serif")
       .style('font-size', '10px')
-      .style('color', '#8ab4d4')
+      .style('color', 'var(--txt,#e7eefc)')
       .style('pointer-events', 'none')
       .style('z-index', '100')
       .style('max-width', '280px')
@@ -191,13 +191,13 @@
       .append('div')
       .attr('id', 'tm-popup')
       .style('position', 'absolute')
-      .style('background', 'rgba(8,12,20,0.96)')
-      .style('border', '1px solid #1a4a6a')
+      .style('background', 'var(--card2,#0f1726)')
+      .style('border', '1px solid var(--line,#283a5a)')
       .style('border-radius', '6px')
       .style('padding', '14px 18px')
-      .style('font-family', '"Courier New", monospace')
+      .style('font-family', "'Segoe UI',system-ui,sans-serif")
       .style('font-size', '11px')
-      .style('color', '#8ab4d4')
+      .style('color', 'var(--txt,#e7eefc)')
       .style('pointer-events', 'auto')
       .style('z-index', '200')
       .style('max-width', '360px')
@@ -236,12 +236,12 @@
       .attr('stroke-width', 0.5)
       .style('cursor', 'default')
       .on('mouseover', function(event, d) {
-        d3.select(this).attr('stroke', '#00aaff').attr('stroke-width', 1.2);
+        d3.select(this).attr('stroke', '#2563eb').attr('stroke-width', 1.2);
         // Country name comes from the map dataset's own properties (factual
         // geography), not from any hardcoded threat list.
         var name = (d && d.properties && d.properties.name) ? d.properties.name : '';
         if (!name) return;
-        tooltip.html('<div style="color:#00ddff;font-weight:bold;font-size:12px;letter-spacing:1px;">' + _esc(name) + '</div>').style('display', 'block');
+        tooltip.html('<div style="color:var(--acc,#2563eb);font-weight:bold;font-size:12px;letter-spacing:1px;">' + _esc(name) + '</div>').style('display', 'block');
         var pos = d3.pointer(event, container);
         tooltip.style('left', Math.min(pos[0] + 12, width - 290) + 'px')
                .style('top', Math.max(pos[1] - 60, 4) + 'px');
@@ -379,11 +379,11 @@
           // Field-driven: render only attributes actually present on the point.
           // For resolved IPs these are real ip-api fields (IP, country, city,
           // ISP, org, AS). Nothing is invented.
-          var h = '<div style="position:absolute;top:6px;right:10px;color:#4a6a8a;cursor:pointer;font-size:16px;" onclick="document.getElementById(\'tm-popup\').style.display=\'none\'">x</div>';
+          var h = '<div style="position:absolute;top:6px;right:10px;color:var(--mut,#7a93b8);cursor:pointer;font-size:16px;" onclick="document.getElementById(\'tm-popup\').style.display=\'none\'">x</div>';
           h += '<div style="color:' + color + ';font-weight:bold;font-size:13px;letter-spacing:1px;margin-bottom:6px;padding-right:20px;">' + _esc(actor.name || actor.id || 'Point') + '</div>';
           function row(label, val) {
             if (val === undefined || val === null || val === '') return '';
-            return '<div style="margin:3px 0;"><span style="color:#4a7a9a;">' + _esc(label) + ':</span> <span style="color:#bbb;font-size:10px;">' + _esc(val) + '</span></div>';
+            return '<div style="margin:3px 0;"><span style="color:var(--txt-2,#9fb0cc);">' + _esc(label) + ':</span> <span style="color:var(--txt,#e7eefc);font-size:10px;">' + _esc(val) + '</span></div>';
           }
           h += row('IP', actor.ip);
           h += row('COUNTRY', actor.country);
@@ -412,7 +412,7 @@
           .attr('y', pt[1] - radius - 4)
           .attr('text-anchor', 'middle')
           .attr('fill', color)
-          .attr('font-family', '"Courier New", monospace')
+          .attr('font-family', "'Segoe UI',system-ui,sans-serif")
           .attr('font-size', '8px')
           .attr('opacity', 0.7)
           .text(actor.id.toUpperCase());
@@ -487,25 +487,25 @@
     var container = document.getElementById(containerId);
     if (!container) return;
 
-    container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-family:monospace;color:#00aaff;font-size:12px;letter-spacing:2px;">LOADING THREAT MAP...</div>';
+    container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-family:system-ui,sans-serif;color:var(--acc,#2563eb);font-size:12px;letter-spacing:2px;">LOADING THREAT MAP...</div>';
 
     _ensureLibs(function() {
       if (!_tmD3Ready || !_tmTopoReady) {
-        container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-family:monospace;color:#ff4444;font-size:11px;">Failed to load D3.js or TopoJSON from CDN</div>';
+        container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-family:system-ui,sans-serif;color:var(--bad,#dc2626);font-size:11px;">Failed to load D3.js or TopoJSON from CDN</div>';
         return;
       }
       _loadWorldData(function(world) {
         if (!world) {
-          container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-family:monospace;color:#ff4444;font-size:11px;">Failed to load world map data</div>';
+          container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-family:system-ui,sans-serif;color:var(--bad,#dc2626);font-size:11px;">Failed to load world map data</div>';
           return;
         }
         // Real-data path: resolve supplied IPs to real coordinates via ip-api
         // before building. Each resolved point becomes a map marker.
         if (opts.ips && opts.ips.length) {
-          container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-family:monospace;color:#00aaff;font-size:12px;letter-spacing:2px;">RESOLVING ' + opts.ips.length + ' IP ADDRESSES...</div>';
+          container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-family:system-ui,sans-serif;color:var(--acc,#2563eb);font-size:12px;letter-spacing:2px;">RESOLVING ' + opts.ips.length + ' IP ADDRESSES...</div>';
           _resolveIPs(opts.ips).then(function(points) {
             if (!points.length) {
-              container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-family:monospace;color:#ff9944;font-size:11px;text-align:center;padding:0 20px;">No IP addresses resolved to a location. Nothing is plotted — results are never fabricated.</div>';
+              container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-family:system-ui,sans-serif;color:var(--warn,#d97706);font-size:11px;text-align:center;padding:0 20px;">No IP addresses resolved to a location. Nothing is plotted — results are never fabricated.</div>';
               return;
             }
             var merged = {};
@@ -516,7 +516,7 @@
             merged.width = opts.width; merged.height = opts.height;
             _buildThreatMap(containerId, merged);
           }).catch(function(err) {
-            container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-family:monospace;color:#ff4444;font-size:11px;text-align:center;padding:0 20px;">' + _esc((err && err.message) ? err.message : 'IP resolution failed') + '</div>';
+            container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-family:system-ui,sans-serif;color:var(--bad,#dc2626);font-size:11px;text-align:center;padding:0 20px;">' + _esc((err && err.message) ? err.message : 'IP resolution failed') + '</div>';
           });
           return;
         }

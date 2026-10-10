@@ -1311,7 +1311,7 @@ export function renderOracle(main) {
         stixBundle = JSON.parse(c.querySelector('#or-stix-input').value);
         selectedStixNode = null;
         renderSTIX(c);
-      } catch (e) { alert('Invalid JSON: ' + e.message); }
+      } catch (e) { window.showToast('Invalid JSON: ' + e.message, 'error'); }
     };
   }
 

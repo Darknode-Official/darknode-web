@@ -465,7 +465,7 @@ export function renderThreatHuntLab(main) {
       var nextHint = s.iocs.find(function(ioc, idx) { return !foundIOCs[idx]; });
       if (nextHint) {
         hintsUsed++;
-        alert('Hint: ' + nextHint.hint);
+        window.showToast('Hint: ' + nextHint.hint, 'info');
       }
     };
 
@@ -494,7 +494,7 @@ export function renderThreatHuntLab(main) {
 
     container.querySelector('#thl-solve').onclick = function() {
       s.iocs.forEach(function(_, idx) { foundIOCs[idx] = true; });
-      alert(s.explanation);
+      window.showToast(s.explanation, 'info');
       renderChallenge(container);
     };
 

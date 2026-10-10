@@ -260,18 +260,9 @@
     style.id = "dnchat-style"; style.textContent = CSS;
     document.head.appendChild(style);
 
-    launchBtn = document.createElement("button");
-    launchBtn.id = "dnchat-launch"; launchBtn.type = "button";
-    launchBtn.setAttribute("aria-label", "Open the Darknode Assistant");
-    launchBtn.innerHTML = '<span class="dnchat-dot"></span><span class="dnchat-lbl">Ask Darknode</span>';
-    launchBtn.addEventListener("click", function () { openPanel(); });
-    // Mount in the top bar (left of the user/sign-in slot). Fall back to a
-    // floating button only if the topbar isn't present (e.g. a bare page).
-    var slot = document.getElementById("user-slot");
-    var bar = document.getElementById("topbar");
-    if (slot && slot.parentNode) slot.parentNode.insertBefore(launchBtn, slot);
-    else if (bar) bar.appendChild(launchBtn);
-    else { launchBtn.style.position = "fixed"; launchBtn.style.right = "16px"; launchBtn.style.top = "14px"; launchBtn.style.zIndex = "2147483640"; document.body.appendChild(launchBtn); }
+    // The standalone "Ask Darknode" launch button was removed: the top-bar Help
+    // button (auth.js #helpBtn → window.__openHelp → openPanel) is the single entry
+    // point to this same assistant, so a second button was redundant.
 
     panel = document.createElement("div");
     panel.id = "dnchat-panel";
@@ -308,14 +299,14 @@
   function openPanel() {
     build();
     panel.classList.add("open");
-    launchBtn.style.display = "none";
+    if (launchBtn) launchBtn.style.display = "none";
     setTimeout(function () { try { inputEl.focus(); } catch (_) {} }, 40);
     return true;
   }
   function closePanel() {
     if (!panel) return false;
     panel.classList.remove("open");
-    launchBtn.style.display = "";
+    if (launchBtn) launchBtn.style.display = "";
     return true;
   }
 

@@ -178,63 +178,63 @@ export function renderRiskCalculator(container) {
 
     container.innerHTML =
       '<style>' +
-        '.rc{font-family:system-ui,sans-serif;color:var(--txt,#c8d6e5);max-width:1200px;margin:0 auto;padding:24px}' +
-        '.rc h2{color:var(--acc,#00d4ff);margin:0 0 6px}' +
-        '.rc-tabs{display:flex;gap:4px;margin:20px 0;border-bottom:1px solid var(--border,#21262d)}' +
-        '.rc-tab{padding:8px 18px;cursor:pointer;border-bottom:2px solid transparent;font-size:.85rem;color:var(--mut,#6b7280)}' +
+        '.rc{font-family:system-ui,sans-serif;color:var(--txt,#e7eefc);max-width:1200px;margin:0 auto;padding:24px}' +
+        '.rc h2{color:var(--acc,#2563eb);margin:0 0 6px}' +
+        '.rc-tabs{display:flex;gap:4px;margin:20px 0;border-bottom:1px solid var(--line,#283a5a)}' +
+        '.rc-tab{padding:8px 18px;cursor:pointer;border-bottom:2px solid transparent;font-size:.85rem;color:var(--mut,#7a93b8)}' +
         '.rc-tab:hover{color:var(--txt)}' +
-        '.rc-tab.active{color:var(--acc,#00d4ff);border-bottom-color:var(--acc,#00d4ff)}' +
+        '.rc-tab.active{color:var(--acc,#2563eb);border-bottom-color:var(--acc,#2563eb)}' +
         '.rc-matrix{display:grid;grid-template-columns:auto repeat(5,1fr);gap:2px;margin:20px 0}' +
         '@media(max-width:600px){.rc-matrix{grid-template-columns:auto repeat(5,minmax(0,1fr))}.rc-cell{padding:6px 2px;font-size:.68rem;overflow-wrap:anywhere}.rc-cell.header{font-size:.58rem}}' +
         '.rc-cell{padding:10px;text-align:center;font-size:.75rem;border-radius:4px;min-height:40px;display:flex;align-items:center;justify-content:center;flex-direction:column}' +
-        '.rc-cell.header{background:transparent;color:var(--mut,#6b7280);font-weight:700;font-size:.7rem}' +
+        '.rc-cell.header{background:transparent;color:var(--mut,#7a93b8);font-weight:700;font-size:.7rem}' +
         '.rc-cell.data{cursor:pointer;transition:transform .15s}' +
         '.rc-cell.data:hover{transform:scale(1.05)}' +
         '.rc-filter{display:flex;gap:12px;margin:16px 0;align-items:center}' +
-        '.rc-filter select{padding:6px 12px;background:var(--surface,#0d1117);border:1px solid var(--border,#21262d);border-radius:6px;color:inherit;font-size:.85rem}' +
+        '.rc-filter select{padding:6px 12px;background:var(--card,#0f1726);border:1px solid var(--line,#283a5a);border-radius:6px;color:inherit;font-size:.85rem}' +
         '.rc-tbl{width:100%;border-collapse:collapse;font-size:.82rem}' +
-        '.rc-tbl th{text-align:left;padding:8px 12px;border-bottom:1px solid var(--border,#21262d);cursor:pointer;user-select:none;color:var(--acc,#00d4ff);font-size:.75rem}' +
+        '.rc-tbl th{text-align:left;padding:8px 12px;border-bottom:1px solid var(--line,#283a5a);cursor:pointer;user-select:none;color:var(--acc,#2563eb);font-size:.75rem}' +
         '.rc-tbl th:hover{text-decoration:underline}' +
         '.rc-tbl td{padding:8px 12px;border-bottom:1px solid rgba(255,255,255,.04)}' +
         '.rc-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:.7rem;font-weight:700}' +
-        '.rc-ale{background:var(--surface,#0d1117);border:1px solid var(--border,#21262d);border-radius:10px;padding:20px;margin:20px 0}' +
+        '.rc-ale{background:var(--card,#0f1726);border:1px solid var(--line,#283a5a);border-radius:10px;padding:20px;margin:20px 0}' +
         '.rc-stat{display:flex;gap:20px;flex-wrap:wrap;margin:16px 0}' +
-        '.rc-stat-card{background:var(--surface,#0d1117);border:1px solid var(--border,#21262d);border-radius:8px;padding:16px;min-width:180px;flex:1}' +
-        '.rc-stat-card h4{margin:0;font-size:.75rem;color:var(--mut,#6b7280);text-transform:uppercase}' +
+        '.rc-stat-card{background:var(--card,#0f1726);border:1px solid var(--line,#283a5a);border-radius:8px;padding:16px;min-width:180px;flex:1}' +
+        '.rc-stat-card h4{margin:0;font-size:.75rem;color:var(--mut,#7a93b8);text-transform:uppercase}' +
         '.rc-stat-card .val{font-size:1.8rem;font-weight:800;margin:6px 0 0}' +
-        '.cvss-metric{background:var(--surface,#0d1117);border:1px solid var(--border,#21262d);border-radius:8px;padding:14px;margin-bottom:10px}' +
+        '.cvss-metric{background:var(--card,#0f1726);border:1px solid var(--line,#283a5a);border-radius:8px;padding:14px;margin-bottom:10px}' +
         '.cvss-metric-name{font-weight:600;font-size:.88rem;margin-bottom:2px}' +
-        '.cvss-metric-desc{font-size:.72rem;color:var(--mut,#6b7280);margin-bottom:8px}' +
+        '.cvss-metric-desc{font-size:.72rem;color:var(--mut,#7a93b8);margin-bottom:8px}' +
         '.cvss-btns{display:flex;gap:4px;flex-wrap:wrap}' +
-        '.cvss-btn{padding:6px 14px;border:1px solid var(--border,#21262d);border-radius:4px;background:var(--card,#161b22);color:var(--txt,#c8d6e5);cursor:pointer;font-size:.78rem;font-family:inherit;transition:all .12s}' +
-        '.cvss-btn:hover{border-color:var(--acc,#00d4ff)}' +
-        '.cvss-btn.sel{background:var(--acc,#00d4ff);color:#0d1117;border-color:var(--acc,#00d4ff);font-weight:700}' +
-        '.cvss-gauge{height:28px;border-radius:6px;background:var(--border,#21262d);position:relative;overflow:hidden;margin:12px 0}' +
+        '.cvss-btn{padding:6px 14px;border:1px solid var(--line,#283a5a);border-radius:4px;background:var(--card,#0f1726);color:var(--txt,#e7eefc);cursor:pointer;font-size:.78rem;font-family:inherit;transition:all .12s}' +
+        '.cvss-btn:hover{border-color:var(--acc,#2563eb)}' +
+        '.cvss-btn.sel{background:var(--acc,#2563eb);color:var(--on-acc,#fff);border-color:var(--acc,#2563eb);font-weight:700}' +
+        '.cvss-gauge{height:28px;border-radius:6px;background:var(--line,#283a5a);position:relative;overflow:hidden;margin:12px 0}' +
         '.cvss-gauge-fill{height:100%;border-radius:6px;transition:width .3s}' +
         '.cvss-gauge-label{position:absolute;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.9rem}' +
-        '.cvss-vector{font-family:monospace;font-size:.82rem;background:var(--surface,#0d1117);border:1px solid var(--border,#21262d);border-radius:6px;padding:10px 14px;margin:8px 0;word-break:break-all}' +
+        '.cvss-vector{font-family:var(--font-mono,ui-monospace,monospace);font-size:.82rem;background:var(--card,#0f1726);border:1px solid var(--line,#283a5a);border-radius:6px;padding:10px 14px;margin:8px 0;word-break:break-all}' +
         '.cvss-result{display:flex;gap:16px;margin-top:16px;flex-wrap:wrap}' +
-        '.cvss-result-card{background:var(--surface,#0d1117);border:1px solid var(--border,#21262d);border-radius:8px;padding:16px;flex:1;min-width:160px;text-align:center}' +
+        '.cvss-result-card{background:var(--card,#0f1726);border:1px solid var(--line,#283a5a);border-radius:8px;padding:16px;flex:1;min-width:160px;text-align:center}' +
         '.cvss-result-card .big{font-size:2.4rem;font-weight:800}' +
-        '.cvss-result-card .lbl{font-size:.72rem;color:var(--mut,#6b7280);text-transform:uppercase;margin-top:4px}' +
+        '.cvss-result-card .lbl{font-size:.72rem;color:var(--mut,#7a93b8);text-transform:uppercase;margin-top:4px}' +
         '.cvss-examples{margin-top:20px}' +
-        '.cvss-ex-card{background:var(--surface,#0d1117);border:1px solid var(--border,#21262d);border-radius:6px;padding:12px;margin-bottom:6px;display:flex;gap:12px;align-items:center}' +
+        '.cvss-ex-card{background:var(--card,#0f1726);border:1px solid var(--line,#283a5a);border-radius:6px;padding:12px;margin-bottom:6px;display:flex;gap:12px;align-items:center}' +
         '.cvss-ex-score{font-size:1.1rem;font-weight:800;min-width:50px;text-align:center}' +
         '.cvss-ex-info{flex:1}' +
-        '.cvss-ex-cve{font-family:monospace;font-size:.75rem;color:var(--acc,#00d4ff)}' +
+        '.cvss-ex-cve{font-family:var(--font-mono,ui-monospace,monospace);font-size:.75rem;color:var(--acc,#2563eb)}' +
         '.cvss-ex-name{font-weight:600;font-size:.85rem;margin-top:2px}' +
-        '.cvss-ex-desc{font-size:.75rem;color:var(--mut,#6b7280);margin-top:2px;line-height:1.4}' +
-        '.cvss-ex-vec{font-family:monospace;font-size:.65rem;color:var(--mut,#6b7280);margin-top:2px}' +
+        '.cvss-ex-desc{font-size:.75rem;color:var(--mut,#7a93b8);margin-top:2px;line-height:1.4}' +
+        '.cvss-ex-vec{font-family:var(--font-mono,ui-monospace,monospace);font-size:.65rem;color:var(--mut,#7a93b8);margin-top:2px}' +
         '.cvss-sev-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:.65rem;font-weight:700}' +
         '.cvss-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}' +
         '@media(max-width:800px){.cvss-grid{grid-template-columns:1fr}}' +
         '.cvss-filter-row{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}' +
-        '.cvss-filter-btn{padding:4px 12px;border:1px solid var(--border,#21262d);border-radius:4px;background:none;color:var(--txt,#c8d6e5);cursor:pointer;font-size:.72rem;font-family:inherit}' +
-        '.cvss-filter-btn.active{background:var(--acc,#00d4ff);color:#0d1117;border-color:var(--acc,#00d4ff)}' +
+        '.cvss-filter-btn{padding:4px 12px;border:1px solid var(--line,#283a5a);border-radius:4px;background:none;color:var(--txt,#e7eefc);cursor:pointer;font-size:.72rem;font-family:inherit}' +
+        '.cvss-filter-btn.active{background:var(--acc,#2563eb);color:var(--on-acc,#fff);border-color:var(--acc,#2563eb)}' +
       '</style>' +
       '<div class="rc">' +
         '<h2>Risk Assessment Calculator</h2>' +
-        '<p style="color:var(--mut,#6b7280);font-size:.85rem;margin:0 0 8px">' + THREAT_SCENARIOS.length + ' threat scenarios -- ALE calculator -- risk register -- CVSS v3.1 calculator</p>' +
+        '<p style="color:var(--mut,#7a93b8);font-size:.85rem;margin:0 0 8px">' + THREAT_SCENARIOS.length + ' threat scenarios -- ALE calculator -- risk register -- CVSS v3.1 calculator</p>' +
         '<div class="rc-tabs">' + tabsHtml + '</div>' +
         '<div id="rc-view"></div>' +
       '</div>';
@@ -311,13 +311,13 @@ export function renderRiskCalculator(container) {
       var t = sorted[ai];
       var ale = t.ale.sle * t.ale.aro;
       var pct = ((ale / totalALE) * 100).toFixed(1);
-      aleRows += '<tr><td>' + esc(t.name) + '</td><td>' + fmt$(t.ale.sle) + '</td><td>' + t.ale.aro + '</td><td style="font-weight:700;color:' + riskColor(ale>100000?15:ale>30000?10:5) + '">' + fmt$(ale) + '</td><td><div style="display:flex;align-items:center;gap:8px"><div style="width:80px;height:8px;background:var(--border,#21262d);border-radius:4px;overflow:hidden"><div style="width:' + pct + '%;height:100%;background:var(--acc,#00d4ff);border-radius:4px"></div></div>' + pct + '%</div></td></tr>';
+      aleRows += '<tr><td>' + esc(t.name) + '</td><td>' + fmt$(t.ale.sle) + '</td><td>' + t.ale.aro + '</td><td style="font-weight:700;color:' + riskColor(ale>100000?15:ale>30000?10:5) + '">' + fmt$(ale) + '</td><td><div style="display:flex;align-items:center;gap:8px"><div style="width:80px;height:8px;background:var(--line,#283a5a);border-radius:4px;overflow:hidden"><div style="width:' + pct + '%;height:100%;background:var(--acc,#2563eb);border-radius:4px"></div></div>' + pct + '%</div></td></tr>';
     }
     el.innerHTML =
       '<div class="rc-ale">' +
         '<h3 style="margin:0 0 12px;font-size:1rem">Annual Loss Expectancy Calculator</h3>' +
         '<p style="font-size:.85rem;color:var(--mut)">ALE = SLE x ARO (Single Loss Expectancy x Annual Rate of Occurrence)</p>' +
-        '<div class="rc-stat"><div class="rc-stat-card"><h4>Total ALE</h4><div class="val" style="color:#ef4444">' + fmt$(totalALE) + '</div></div><div class="rc-stat-card"><h4>Threats Assessed</h4><div class="val" style="color:var(--acc,#00d4ff)">' + THREAT_SCENARIOS.length + '</div></div><div class="rc-stat-card"><h4>Top Risk</h4><div class="val" style="color:#f97316;font-size:1rem">' + esc(sorted[0].name) + '</div></div></div>' +
+        '<div class="rc-stat"><div class="rc-stat-card"><h4>Total ALE</h4><div class="val" style="color:#ef4444">' + fmt$(totalALE) + '</div></div><div class="rc-stat-card"><h4>Threats Assessed</h4><div class="val" style="color:var(--acc,#2563eb)">' + THREAT_SCENARIOS.length + '</div></div><div class="rc-stat-card"><h4>Top Risk</h4><div class="val" style="color:#f97316;font-size:1rem">' + esc(sorted[0].name) + '</div></div></div>' +
         '<table class="rc-tbl" style="margin-top:16px"><thead><tr><th>Threat</th><th>SLE</th><th>ARO</th><th>ALE</th><th>% of Total</th></tr></thead><tbody>' + aleRows + '</tbody></table>' +
       '</div>';
   }
@@ -333,12 +333,12 @@ export function renderRiskCalculator(container) {
     for (var ci = 0; ci < catKeys.length; ci++) {
       var cat = catKeys[ci];
       var count = byCat[cat];
-      catBars += '<div style="display:flex;align-items:center;gap:12px;margin:6px 0"><span style="width:120px;font-size:.85rem">' + esc(cat) + '</span><div style="flex:1;height:20px;background:var(--border,#21262d);border-radius:4px;overflow:hidden"><div style="width:' + ((count/THREAT_SCENARIOS.length)*100) + '%;height:100%;background:var(--acc,#00d4ff);border-radius:4px"></div></div><span style="font-size:.85rem;width:30px;text-align:right">' + count + '</span></div>';
+      catBars += '<div style="display:flex;align-items:center;gap:12px;margin:6px 0"><span style="width:120px;font-size:.85rem">' + esc(cat) + '</span><div style="flex:1;height:20px;background:var(--line,#283a5a);border-radius:4px;overflow:hidden"><div style="width:' + ((count/THREAT_SCENARIOS.length)*100) + '%;height:100%;background:var(--acc,#2563eb);border-radius:4px"></div></div><span style="font-size:.85rem;width:30px;text-align:right">' + count + '</span></div>';
     }
     var treatmentCards = "";
     for (var ti = 0; ti < TREATMENT.length; ti++) {
       var tr = TREATMENT[ti];
-      treatmentCards += '<div style="background:var(--surface,#0d1117);border:1px solid var(--border,#21262d);border-radius:8px;padding:14px"><h4 style="margin:0 0 6px;color:var(--acc,#00d4ff);font-size:.9rem">' + esc(tr.name) + '</h4><p style="margin:0;font-size:.82rem;color:var(--mut,#6b7280)">' + esc(tr.desc) + '</p></div>';
+      treatmentCards += '<div style="background:var(--card,#0f1726);border:1px solid var(--line,#283a5a);border-radius:8px;padding:14px"><h4 style="margin:0 0 6px;color:var(--acc,#2563eb);font-size:.9rem">' + esc(tr.name) + '</h4><p style="margin:0;font-size:.82rem;color:var(--mut,#7a93b8)">' + esc(tr.desc) + '</p></div>';
     }
     el.innerHTML =
       '<div class="rc-stat">' +
@@ -385,12 +385,12 @@ export function renderRiskCalculator(container) {
             '<div class="cvss-gauge-fill" style="width:' + pctWidth + '%;background:' + sevCol + '"></div>' +
             '<div class="cvss-gauge-label" style="color:#fff">' + sc.toFixed(1) + ' ' + sevLabel + '</div>' +
           '</div>' +
-          '<div class="cvss-vector" style="color:var(--acc,#00d4ff)">' + esc(result.vector) + '</div>' +
+          '<div class="cvss-vector" style="color:var(--acc,#2563eb)">' + esc(result.vector) + '</div>' +
           '<div class="cvss-result">' +
             '<div class="cvss-result-card"><div class="big" style="color:' + sevCol + '">' + sc.toFixed(1) + '</div><div class="lbl">Base Score</div></div>' +
             '<div class="cvss-result-card"><div class="big" style="color:' + sevCol + '">' + sevLabel + '</div><div class="lbl">Severity</div></div>' +
-            '<div class="cvss-result-card"><div class="big" style="color:var(--acc,#00d4ff)">' + result.impact.toFixed(1) + '</div><div class="lbl">Impact</div></div>' +
-            '<div class="cvss-result-card"><div class="big" style="color:var(--acc,#00d4ff)">' + result.exploitability.toFixed(1) + '</div><div class="lbl">Exploitability</div></div>' +
+            '<div class="cvss-result-card"><div class="big" style="color:var(--acc,#2563eb)">' + result.impact.toFixed(1) + '</div><div class="lbl">Impact</div></div>' +
+            '<div class="cvss-result-card"><div class="big" style="color:var(--acc,#2563eb)">' + result.exploitability.toFixed(1) + '</div><div class="lbl">Exploitability</div></div>' +
           '</div>' +
         '</div>';
 
@@ -406,7 +406,7 @@ export function renderRiskCalculator(container) {
         '<div style="position:relative;height:12px;margin-top:4px"><div style="position:absolute;left:' + pctWidth + '%;transform:translateX(-50%);width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-bottom:8px solid ' + sevCol + '"></div></div>' +
       '</div>';
     } else {
-      scoreDisplay = '<div style="margin-top:16px;padding:24px;text-align:center;color:var(--mut,#6b7280);background:var(--surface,#0d1117);border:1px solid var(--border,#21262d);border-radius:8px">Select all 8 metrics above to calculate the CVSS v3.1 Base Score</div>';
+      scoreDisplay = '<div style="margin-top:16px;padding:24px;text-align:center;color:var(--mut,#7a93b8);background:var(--card,#0f1726);border:1px solid var(--line,#283a5a);border-radius:8px">Select all 8 metrics above to calculate the CVSS v3.1 Base Score</div>';
     }
 
     // CVE examples section
@@ -436,7 +436,7 @@ export function renderRiskCalculator(container) {
       '<div class="cvss-grid">' +
         '<div>' +
           '<h3 style="font-size:1rem;margin:0 0 12px">CVSS v3.1 Base Score Calculator</h3>' +
-          '<p style="font-size:.78rem;color:var(--mut,#6b7280);margin:0 0 12px">Select values for all 8 base metrics to calculate the CVSS v3.1 score using the official formula.</p>' +
+          '<p style="font-size:.78rem;color:var(--mut,#7a93b8);margin:0 0 12px">Select values for all 8 base metrics to calculate the CVSS v3.1 score using the official formula.</p>' +
           metricsHtml +
         '</div>' +
         '<div>' + scoreDisplay + examplesHtml + '</div>' +

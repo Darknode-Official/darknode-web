@@ -1123,8 +1123,8 @@ function _spRenderAudit(c, provider, checks) {
     sel.onchange = function() { _spSetAnswer(sel.dataset.id, sel.value); rerender(); };
   });
   var clearBtn = c.querySelector('#sp-clear-answers');
-  if (clearBtn) clearBtn.onclick = function() {
-    if (!confirm('Clear all ' + provider + ' checklist answers?')) return;
+  if (clearBtn) clearBtn.onclick = async function() {
+    if (!(await window.dnConfirm('Clear answers', 'Clear all ' + provider + ' checklist answers?', { danger: true }))) return;
     var ids = {};
     checks.forEach(function(ch) { ids[ch.id] = 1; });
     _spClearAnswers(function(k) { return !!ids[k]; });
@@ -1200,7 +1200,7 @@ function _spRenderIAM(c) {
       _spIamMatrix = _spBuildPermMatrix(policy);
       _spRender(c.closest('.sp-wrap').parentNode);
     } catch (e) {
-      alert('Invalid JSON. Please paste a valid IAM policy document.');
+      window.showToast('Invalid JSON. Please paste a valid IAM policy document.', 'error');
     }
   };
 }
@@ -1326,7 +1326,7 @@ function _spRenderTerraform(c) {
   c.querySelector('#sp-scan-tf').onclick = function() {
     var hcl = c.querySelector('#sp-tf-input').value;
     c._tfValue = hcl;
-    if (!hcl.trim()) { alert('Please paste a Terraform configuration first.'); return; }
+    if (!hcl.trim()) { window.showToast('Please paste a Terraform configuration first.', 'error'); return; }
     _spTfFindings = _spRunTfScan(hcl);
     _spTfSource = hcl;
     _spRender(c.closest('.sp-wrap').parentNode);

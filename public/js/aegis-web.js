@@ -4396,10 +4396,10 @@ export function renderAegis(main) {
     };
     c.querySelector('#ag-sexport').onclick = function() {
       var data = JSON.stringify({ missions: loadMissions(), settings: settings }, null, 2);
-      navigator.clipboard.writeText(data).then(function() { alert('Data copied to clipboard'); });
+      navigator.clipboard.writeText(data).then(function() { window.showToast('Data copied to clipboard', 'success'); });
     };
-    c.querySelector('#ag-sclear').onclick = function() {
-      if (confirm('Delete ALL mission data? This cannot be undone.')) {
+    c.querySelector('#ag-sclear').onclick = async function() {
+      if (await window.dnConfirm('Delete all mission data', 'Delete ALL mission data? This cannot be undone.', { danger: true })) {
         localStorage.removeItem(STORE_KEY);
         localStorage.removeItem('aegis_active');
         localStorage.removeItem('aegis_evidence');

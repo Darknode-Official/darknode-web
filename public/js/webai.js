@@ -22,8 +22,29 @@ function _key(provider) {
   const map = { claude: "sw_claude_key", openai: "sw_openai_key", gemini: "sw_gemini_key", groq: "sw_groq_key", openrouter: "sw_openrouter_key", mistral: "sw_mistral_key" };
   // Per-account storage (see user-keys.js): one user never reads another's key.
   try { const u = (window.dnKeys ? (window.dnKeys.get(map[provider]) || "") : "").trim(); if (u) return u; } catch (_) {}
+  // Keys connected through DarkDeck are stored as dn_key_<provider> (same provider ids).
+  try { const d = (localStorage.getItem("dn_key_" + provider) || "").trim(); if (d) return d; } catch (_) {}
   return "";
 }
+
+// DarkDeck connection hub stores: dn_deck_connections_v1 {id:{connected,method}},
+// dn_key_<id>, dn_model_<id> (chosen API model id). These let a connected provider
+// be used as a real model without any static BYOK list.
+const DECK_CONN_KEY = "dn_deck_connections_v1";
+function deckConns() { try { return JSON.parse(localStorage.getItem(DECK_CONN_KEY) || "{}") || {}; } catch (_) { return {}; } }
+// Provider display names + a safe default API model id for each connectable provider.
+const CONN_PROVIDERS = {
+  claude:     { name: "Claude",       def: "claude-sonnet-4-5" },
+  openai:     { name: "OpenAI",       def: "gpt-4.1" },
+  perplexity: { name: "Perplexity",   def: "sonar-pro" },
+  mistral:    { name: "Mistral",      def: "mistral-large-latest" },
+  groq:       { name: "Groq",         def: "llama-3.3-70b-versatile" },
+  openrouter: { name: "OpenRouter",   def: "openrouter/auto" },
+  xai:        { name: "xAI Grok",     def: "grok-3" },
+  deepseek:   { name: "DeepSeek",     def: "deepseek-chat" },
+  cohere:     { name: "Cohere",       def: "command-a-03-2025" },
+  together:   { name: "Together AI",  def: "meta-llama/Llama-3.3-70B-Instruct-Turbo" },
+};
 
 const DEFAULT_SYS = `You are Darknode AI — the built-in assistant for Darknode (darknode.ai), a cybersecurity education and operations platform spanning offensive security, defense, reconnaissance, OSINT, forensics and threat intelligence. You are an expert in both the platform itself and in offensive/defensive security. You know every tool on the platform and can guide users through them.
 
@@ -215,20 +236,13 @@ const DARKNODE_MODELS = [
 // The platform default every user gets until they pick something else.
 const DEFAULT_MODEL_ID = "gemini-flash-latest";
 
-// Darknode AI (above) runs free with no setup, served by the proxy. Every model
-// below is Bring-Your-Own-Key — it needs the user's own API key, entered in
-// Settings -> API Keys. No local/Ollama models: the site is cloud-only.
-const MODELS = [
-  ...DARKNODE_MODELS,
-  { id: "claude-sonnet-4-20250514", name: "Claude Sonnet 4", provider: "claude", group: "Bring Your Own Key" },
-  { id: "claude-opus-4-20250514", name: "Claude Opus 4", provider: "claude", group: "Bring Your Own Key" },
-  { id: "gpt-4o", name: "GPT-4o", provider: "openai", group: "Bring Your Own Key" },
-  { id: "gpt-4.1", name: "GPT-4.1", provider: "openai", group: "Bring Your Own Key" },
-  { id: "o4-mini", name: "o4-mini", provider: "openai", group: "Bring Your Own Key" },
-  { id: "llama-3.3-70b-specdec", name: "Llama 3.3 70B (Groq)", provider: "groq", group: "Bring Your Own Key", sub: "fastest" },
-  { id: "mistral-large-latest", name: "Mistral Large", provider: "mistral", group: "Bring Your Own Key" },
-  { id: "deepseek/deepseek-r1", name: "DeepSeek R1 (OpenRouter)", provider: "openrouter", group: "Bring Your Own Key", sub: "reasoning" },
-];
+// Darknode AI (above) is the only built-in model group: free, no setup, served by
+// the proxy (Gemini-backed). There is no static "bring your own key" list any more —
+// external providers are added by CONNECTING them in DarkDeck (the connection hub),
+// which stores a key/preference locally; connectedModels() turns those into usable
+// models at runtime. See streamFor() / OAI_COMPAT for how each connected provider
+// is reached.
+const MODELS = [...DARKNODE_MODELS];
 
 // --- streaming ---
 
@@ -238,7 +252,7 @@ function streamOpenAICompat(baseUrl, key, model, messages, onToken, signal, extr
     return { role: m.role, content: m.content };
   });
   return (async () => {
-    const r = await fetch(baseUrl, { method: "POST", signal, headers: { "Content-Type": "application/json", "Authorization": "Bearer " + key, ...extraHeaders }, body: JSON.stringify({ model, messages: msgs, stream: true }) });
+    const r = await fetch(baseUrl, { method: "POST", signal, headers: { "Content-Type": "application/json", "Authorization": "Bearer " + key, ...extraHeaders }, body: JSON.stringify({ model, messages: msgs, stream: true, max_tokens: 2048 }) });
     if (r.status === 401) throw new Error("Invalid API key.");
     if (r.status === 404) throw new Error("Model not available — it may have been deprecated. Try a different model.");
     if (r.status === 429) throw new Error("Rate limit reached — wait a moment or switch to a different model.");
@@ -315,19 +329,35 @@ async function streamProxy(provider, model, messages, onToken, signal) {
   for (;;) { const { done, value } = await reader.read(); if (done) break; buf += dec.decode(value, { stream: true }); let nl; while ((nl = buf.indexOf("\n")) >= 0) { const line = buf.slice(0, nl).trim(); buf = buf.slice(nl + 1); if (!line.startsWith("data: ")) continue; const payload = line.slice(6); if (payload === "[DONE]") return; try { const j = JSON.parse(payload); const delta = j.choices && j.choices[0] && j.choices[0].delta; if (delta && delta.content) onToken(delta.content); } catch (_) {} } }
 }
 
+// OpenAI-compatible chat endpoints for every provider Darknode can connect to.
+// (Claude and Gemini are handled separately below.)
+const OAI_COMPAT = {
+  openai:     "https://api.openai.com/v1/chat/completions",
+  groq:       "https://api.groq.com/openai/v1/chat/completions",
+  openrouter: "https://openrouter.ai/api/v1/chat/completions",
+  mistral:    "https://api.mistral.ai/v1/chat/completions",
+  perplexity: "https://api.perplexity.ai/chat/completions",
+  deepseek:   "https://api.deepseek.com/chat/completions",
+  together:   "https://api.together.xyz/v1/chat/completions",
+  xai:        "https://api.x.ai/v1/chat/completions",
+  cohere:     "https://api.cohere.ai/compatibility/v1/chat/completions",
+};
+
 function streamFor(provider, model, messages, onToken, signal) {
   // Darknode AI (gemini-backed) always runs through the server proxy: the key
   // lives only server-side, it is free with no setup, and this ignores any key
   // the user may have entered so it can never fail on a bad personal key.
   if (provider === "gemini") return streamProxy("gemini", model, messages, onToken, signal);
-  const key = _key(provider);
-  if (provider === "groq") return streamOpenAICompat("https://api.groq.com/openai/v1/chat/completions", key, model, messages, onToken, signal);
-  if (provider === "openrouter") return streamOpenAICompat("https://openrouter.ai/api/v1/chat/completions", key, model, messages, onToken, signal, { "HTTP-Referer": location.origin, "X-Title": "Darknode AI" });
-  if (provider === "mistral") return streamOpenAICompat("https://api.mistral.ai/v1/chat/completions", key, model, messages, onToken, signal);
-  if (provider === "openai") return streamOpenAICompat("https://api.openai.com/v1/chat/completions", key, model, messages, onToken, signal);
   if (provider === "claude") return streamClaude(model, messages, onToken, signal);
-  // BYOK providers reached here without a key: guide the user to add one.
-  return Promise.reject(new Error("This model needs your own API key — add it in Settings → API Keys, or switch to Darknode AI (free)."));
+  const url = OAI_COMPAT[provider];
+  if (url) {
+    const key = _key(provider);
+    if (!key) return Promise.reject(new Error("Connect " + ((CONN_PROVIDERS[provider] || {}).name || provider) + " in DarkDeck (add its API key) first, or switch to Darknode AI (free)."));
+    const extra = provider === "openrouter" ? { "HTTP-Referer": location.origin, "X-Title": "Darknode AI" } : undefined;
+    return streamOpenAICompat(url, key, model, messages, onToken, signal, extra);
+  }
+  // Unknown/unsupported provider (e.g. local Ollama via the CLI bridge).
+  return Promise.reject(new Error("This provider isn't available here — connect it in DarkDeck, or switch to Darknode AI (free)."));
 }
 
 // --- helpers ---
@@ -376,11 +406,30 @@ const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 
 // Files that are safe to read as text and attach inline.
 const TEXT_EXT = /\.(txt|text|md|markdown|log|csv|tsv|json|ya?ml|xml|svg|html?|css|scss|less|js|jsx|mjs|cjs|ts|tsx|py|rb|go|rs|c|h|cpp|hpp|cc|cxx|java|kt|kts|swift|php|pl|lua|r|sh|bash|zsh|fish|ps1|bat|sql|toml|ini|conf|cfg|env|properties|gradle|dockerfile|makefile|cmake|diff|patch|pcap|har|nmap|gnmap|asm|s)$/i;
 
+// Providers connected in DarkDeck become usable models at runtime. A provider
+// shows up once it is connected AND we can actually reach it (Gemini/Claude, or
+// an OpenAI-compatible endpoint with a stored key). The model id is the one the
+// user chose in DarkDeck (dn_model_<id>), else the provider's safe default.
+function connectedModels() {
+  const conns = deckConns();
+  const out = [];
+  for (const id of Object.keys(CONN_PROVIDERS)) {
+    const rec = conns[id];
+    if (!rec || !rec.connected) continue;
+    // Only surface providers we can really stream: needs a key for OAI-compat ones.
+    if (OAI_COMPAT[id] && !_key(id)) continue;      // connected by account only → no key to stream with
+    if (id === "claude" && !_key("claude")) continue;
+    let mid = "";
+    try { mid = (localStorage.getItem("dn_model_" + id) || "").trim(); } catch (_) {}
+    if (!mid) mid = CONN_PROVIDERS[id].def;
+    out.push({ id: mid, name: CONN_PROVIDERS[id].name, provider: id, group: "Connected", sub: "your account" });
+  }
+  return out;
+}
+
 function availableModels() {
-  // Show EVERY model. Ollama is local and proxy providers are free via the
-  // server; own-key (BYOK) models are listed too and marked "(BYOK)" in the
-  // dropdown — picking one prompts for that provider's key before it's used.
-  return MODELS.slice();
+  // Darknode AI (free, built-in) plus any providers connected through DarkDeck.
+  return MODELS.concat(connectedModels());
 }
 
 // Lightweight CSS modal (replaces native prompt()/confirm()). Resolves with an
@@ -424,8 +473,11 @@ function aiModal({ title, desc, fields = [], submitText = "Save", extra = [] } =
 export function renderAI(main) {
   const models = availableModels();
   const saved = (() => { try { return localStorage.getItem(MODEL_KEY) || ""; } catch (_) { return ""; } })();
+  // If the user picked a provider in DarkDeck ("Use in Darknode AI"), prefer it.
+  const prefProv = (() => { try { return localStorage.getItem("dn_ai_pref_provider") || ""; } catch (_) { return ""; } })();
   const defaultModel = models.find((m) => (m.provider + ":" + m.id) === saved)
     || models.find((m) => m.id === saved)  // back-compat: older builds stored id only
+    || (prefProv && models.find((m) => m.provider === prefProv && m.group === "Connected"))
     || models.find((m) => m.id === DEFAULT_MODEL_ID)
     || models[0];
 
@@ -433,19 +485,17 @@ export function renderAI(main) {
   const seen = new Set();
   models.forEach((m) => { if (!seen.has(m.group)) { seen.add(m.group); groups.push(m.group); } });
 
-  const byokProviders = new Set(["claude", "openai", "groq", "openrouter", "mistral"]);
   const optionsHtml = groups.map((g) => {
     const items = models.filter((m) => m.group === g);
     return `<optgroup label="${esc(g)}">${items.map((m) => {
-      const needsKey = byokProviders.has(m.provider) && !_key(m.provider);
-      return `<option value="${esc(m.provider + ":" + m.id)}"${m === defaultModel ? " selected" : ""}${needsKey ? ' class="ai-byok"' : ""}>${esc(m.name)}${m.sub ? " · " + esc(m.sub) : ""}${needsKey ? " (BYOK)" : ""}</option>`;
+      return `<option value="${esc(m.provider + ":" + m.id)}"${m === defaultModel ? " selected" : ""}>${esc(m.name)}${m.sub ? " · " + esc(m.sub) : ""}</option>`;
     }).join("")}</optgroup>`;
   }).join("");
 
   const welcomeHtml = `<div class="ai2-welcome ai-empty">
         <div class="ai2-logo" aria-hidden="true">◆</div>
         <h1 class="ai2-h1">Darknode AI</h1>
-        <p class="ai2-lead">Your security assistant. Ask about recon, exploitation, tooling, code, or defense — answers stream in real time, free with Darknode AI, or bring your own key.</p>
+        <p class="ai2-lead">Your security assistant. Ask about recon, exploitation, tooling, code, or defense — answers stream in real time, free with Darknode AI, or through a provider you connect in DarkDeck.</p>
         <div class="ai-presets" id="aiPresets"></div>
       </div>`;
   main.innerHTML = `
@@ -461,7 +511,7 @@ export function renderAI(main) {
         <div class="ai2-main" id="aiChat">${welcomeHtml}</div>
         <div class="ai2-dock">
           <div id="aiThumbs" class="ai-thumbs"></div>
-          <div id="aiByokHint" class="ai2-byok" style="display:none">Bring Your Own Key — add your API key in Settings → API Keys to use this model</div>
+          <div id="aiByokHint" class="ai2-byok" style="display:none">Connect this provider in DarkDeck to use it (add its API key there).</div>
           <div class="ai2-composer">
             <textarea class="ai2-input" id="aiMsg" rows="1" placeholder="Message Darknode AI…" spellcheck="false"></textarea>
             <div class="ai2-bar">
@@ -510,12 +560,16 @@ export function renderAI(main) {
 
   const byokHint = $("#aiByokHint");
   function updateByokHint() {
-    const m = MODELS.find((x) => sel.value === x.provider + ":" + x.id);
-    if (m && byokProviders.has(m.provider) && !_key(m.provider)) { byokHint.style.display = ""; sel.style.borderColor = "#ef4444"; sel.style.color = "#ef4444"; }
+    const v = sel.value; const c = v.indexOf(":"); const prov = v.slice(0, c);
+    // gemini is free via the proxy; everything else is a connected provider that
+    // should already have a key (connectedModels filters out keyless ones), but
+    // guard anyway so a selection without a key prompts the user to connect it.
+    const needsKey = prov && prov !== "gemini" && !_key(prov);
+    if (needsKey) { byokHint.style.display = ""; sel.style.borderColor = "#ef4444"; sel.style.color = "#ef4444"; }
     else { byokHint.style.display = "none"; sel.style.borderColor = ""; sel.style.color = ""; }
   }
   updateByokHint();
-  sel.onchange = () => { try { localStorage.setItem(MODEL_KEY, sel.value); } catch (_) {} const m = MODELS.find((x) => sel.value === x.provider + ":" + x.id); if (m) status.textContent = "Switched to " + m.name; updateByokHint(); };
+  sel.onchange = () => { try { localStorage.setItem(MODEL_KEY, sel.value); } catch (_) {} const m = availableModels().find((x) => sel.value === x.provider + ":" + x.id); if (m) status.textContent = "Switched to " + m.name; updateByokHint(); };
   $("#aiSys").onclick = () => {
     aiModal({ title: "System prompt", desc: "Controls how Darknode AI behaves for the whole conversation.", fields: [{ type: "textarea", value: localStorage.getItem(SYS_KEY) || DEFAULT_SYS, rows: 12 }], submitText: "Save", extra: [{ label: "Reset to default", value: "__reset__" }] }).then((v) => {
       if (!v) return;
@@ -537,13 +591,21 @@ export function renderAI(main) {
   const curModel = () => { const v = sel.value; const c = v.indexOf(":"); return { provider: v.slice(0, c), modelId: v.slice(c + 1) }; };
   // Fold attached text/code files into the message the model actually sees,
   // while the visible bubble keeps only what the user typed.
-  const wire = (h) => h.map((m) => {
-    if (m.files && m.files.length) {
-      const extra = m.files.map((f) => `\n\n--- Attached file: ${f.name} ---\n\`\`\`\n${f.content}\n\`\`\``).join("");
-      return { role: m.role, content: (m.content || "") + extra, images: m.images };
-    }
-    return m;
-  });
+  // Keep the request lean so a connected provider's API usage stays close to using
+  // that AI on its own site: send the system prompt plus only the most recent turns
+  // (long back-scroll rarely changes the next answer but costs tokens every call).
+  const MAX_TURNS = 20;
+  const wire = (h) => {
+    const head = h.length && h[0].role === "system" ? [h[0]] : [];
+    const rest = (head.length ? h.slice(1) : h).slice(-MAX_TURNS);
+    return head.concat(rest).map((m) => {
+      if (m.files && m.files.length) {
+        const extra = m.files.map((f) => `\n\n--- Attached file: ${f.name} ---\n\`\`\`\n${f.content}\n\`\`\``).join("");
+        return { role: m.role, content: (m.content || "") + extra, images: m.images };
+      }
+      return m;
+    });
+  };
 
   // ---- render the whole transcript from the history model ----
   function renderMessages() {

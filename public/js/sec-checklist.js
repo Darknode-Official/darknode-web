@@ -230,14 +230,14 @@ export function renderSecChecklist(main) {
       const btn = e.target.closest(".sc-tab");
       if (btn && btn.dataset.fw) { activeId = btn.dataset.fw; render(); }
     };
-    main.querySelector(".sc-toolbar").onclick = (e) => {
+    main.querySelector(".sc-toolbar").onclick = async (e) => {
       const btn = e.target.closest(".sc-btn");
       if (!btn) return;
       const action = btn.dataset.action;
       if (action === "export-json") exportJSON(fw, state);
       else if (action === "export-html") exportHTML(fw, state);
       else if (action === "reset") {
-        if (confirm("Reset all checklist progress for " + fw.name + "?")) {
+        if (await window.dnConfirm("Reset checklist", "Reset all checklist progress for " + fw.name + "?", { danger: true })) {
           states[activeId] = {};
           saveState(activeId, {});
           render();

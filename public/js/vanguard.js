@@ -136,7 +136,7 @@ function _vgLog(message, type) {
   var logEl = document.getElementById('vg-log');
   if (!logEl) return;
 
-  var colors = { info: '#8ab4d4', success: '#00ff88', warning: '#ffaa00', error: '#ff4444', phase: '#aa66ff', critical: '#ff2222', dim: '#4a6a8a', highlight: '#00ddff' };
+  var colors = { info: '#8ab4d4', success: '#00ff88', warning: '#ffaa00', error: '#ff4444', phase: '#aa66ff', critical: '#ff2222', dim: '#7a93b8', highlight: '#2563eb' };
   var color = colors[type] || colors.info;
 
   var line = document.createElement('div');
@@ -163,9 +163,9 @@ function _vgUpdatePhase(phaseNum, status) {
     var el = document.getElementById('vg-phase-' + i);
     if (!el) continue;
     var st = _vgState.phaseStatus[i] || 'pending';
-    var bgColor = st === 'complete' ? '#00ff8815' : st === 'running' ? '#00aaff15' : st === 'error' ? '#ff444415' : '#0a0e14';
-    var borderColor = st === 'complete' ? '#00ff88' : st === 'running' ? '#00aaff' : st === 'error' ? '#ff4444' : '#1a2a44';
-    var textColor = st === 'complete' ? '#00ff88' : st === 'running' ? '#00ddff' : st === 'error' ? '#ff4444' : '#3a5a7a';
+    var bgColor = st === 'complete' ? '#00ff8815' : st === 'running' ? '#2563eb15' : st === 'error' ? '#ff444415' : '#0f1726';
+    var borderColor = st === 'complete' ? '#00ff88' : st === 'running' ? '#2563eb' : st === 'error' ? '#ff4444' : '#283a5a';
+    var textColor = st === 'complete' ? '#00ff88' : st === 'running' ? '#2563eb' : st === 'error' ? '#ff4444' : '#7a93b8';
     var icon = st === 'complete' ? 'Y' : st === 'running' ? '▸' : st === 'error' ? 'N' : '○';
     el.style.background = bgColor;
     el.style.borderColor = borderColor;
@@ -242,16 +242,16 @@ export function renderVanguard(container) {
     panelHeaderBg: '#f9fafb', logBg: '#fff', findingsBg: '#fff',
     titleShadow: 'none', titleColor: '#18181b'
   } : {
-    bg: '#0a0e14', bg2: '#080c14', bg3: '#060a10', fg: '#c8d6e5', fg2: '#c8d6e5', mut: '#6a8aaa',
-    line: '#1a3a5a', line2: '#0f1a24', acc: '#00ddff', acc2: '#00aaff', warn: '#ff6600',
-    font: "'Courier New','JetBrains Mono',monospace",
-    inputBg: '#060a10', inputBorder: '#1a3a5a', inputColor: '#00ddff',
-    btnBg: 'linear-gradient(135deg,#00aaff22,#00aaff11)', btnColor: '#00ddff', btnBorder: '#00aaff',
+    bg: '#0b1120', bg2: '#0f1726', bg3: '#0b1120', fg: '#e7eefc', fg2: '#e7eefc', mut: '#9fb0cc',
+    line: '#283a5a', line2: '#1b2740', acc: '#2563eb', acc2: '#1d4ed8', warn: '#ff6600',
+    font: "var(--font-mono)",
+    inputBg: '#0b1120', inputBorder: '#283a5a', inputColor: '#e7eefc',
+    btnBg: 'linear-gradient(135deg,#2563eb22,#2563eb11)', btnColor: '#2563eb', btnBorder: '#2563eb',
     abortBg: '#ff444415', abortColor: '#ff4444', abortBorder: '#ff444444',
     noticeBg: '#ff444408', noticeBorder: '#ff444422', noticeColor: '#ff6644',
-    phaseBg: '#0a0e14', phaseBorder: '#1a2a44', phaseColor: '#3a5a7a',
-    panelHeaderBg: '#060a10', logBg: '#040810', findingsBg: '#050a10',
-    titleShadow: '0 0 30px rgba(0,212,255,0.3)', titleColor: '#00ddff'
+    phaseBg: '#0f1726', phaseBorder: '#283a5a', phaseColor: '#7a93b8',
+    panelHeaderBg: '#0f1726', logBg: '#0b1120', findingsBg: '#0b1120',
+    titleShadow: '0 0 30px rgba(37,99,235,0.25)', titleColor: '#2563eb'
   };
 
   var h = '';
@@ -392,7 +392,7 @@ window._vgLaunchRecon = function() {
   if (countEl) countEl.textContent = '0';
 
   var statusEl = document.getElementById('vg-status');
-  if (statusEl) { statusEl.textContent = 'SCANNING'; statusEl.style.color = '#00ddff'; }
+  if (statusEl) { statusEl.textContent = 'SCANNING'; statusEl.style.color = '#2563eb'; }
 
   // Disable launch button
   var btn = document.getElementById('vg-launch-btn');
@@ -1279,7 +1279,7 @@ function _vgPhase10_Report() {
     var infra = _vgState.results.infra || [];
 
     var report = '<!doctype html><html><head><meta charset="utf-8"><title>VANGUARD Report — ' + esc(_vgState.target) + '</title>';
-    report += '<style>body{background:#0a0e14;color:#c8d6e5;font-family:"Courier New",monospace;padding:30px;margin:0}h1{color:#00ddff;letter-spacing:3px}h2{color:#00aaff;border-bottom:1px solid #1a3a5a;padding-bottom:6px;margin-top:30px}';
+    report += '<style>body{background:#0b1120;color:#e7eefc;font-family:ui-monospace,monospace;padding:30px;margin:0}h1{color:#2563eb;letter-spacing:3px}h2{color:#1d4ed8;border-bottom:1px solid #283a5a;padding-bottom:6px;margin-top:30px}';
     report += '.card{background:#0c1020;border:1px solid #1a2a44;border-radius:6px;padding:14px;margin:10px 0}.crit{color:#ff2222}.high{color:#ff6600}.med{color:#ffaa00}.low{color:#00cc88}.info{color:#4a6a8a}';
     report += 'table{width:100%;border-collapse:collapse;font-size:11px}th{text-align:left;padding:6px;color:#00aaff;border-bottom:2px solid #1a3a5a}td{padding:5px 6px;border-bottom:1px solid #0d1525}';
     report += '.score{font-size:60px;font-weight:bold;text-align:center;padding:20px}</style></head><body>';
@@ -1731,7 +1731,7 @@ function _vgRenderPhaseResults() {
   var sec = _vgState.results.security || [];
 
   h += '<div style="padding-top:16px;">';
-  h += '<div style="font-size:14px;color:#00ddff;font-weight:bold;letter-spacing:2px;margin-bottom:12px;">RECONNAISSANCE SUMMARY</div>';
+  h += '<div style="font-size:14px;color:#2563eb;font-weight:bold;letter-spacing:2px;margin-bottom:12px;">RECONNAISSANCE SUMMARY</div>';
 
   // Stats row
   h += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:16px;">';
@@ -1816,7 +1816,7 @@ function _vgRenderPhaseResults() {
   var infra = _vgState.results.infra || [];
   if (infra.length > 0) {
     h += '<details style="margin-bottom:10px;">';
-    h += '<summary style="color:#00ddff;font-size:11px;cursor:pointer;padding:6px 0;font-weight:bold;">INFRASTRUCTURE (' + infra.length + ' IPs)</summary>';
+    h += '<summary style="color:#2563eb;font-size:11px;cursor:pointer;padding:6px 0;font-weight:bold;">INFRASTRUCTURE (' + infra.length + ' IPs)</summary>';
     h += '<div style="background:#050a10;border:1px solid #1a2a44;border-radius:4px;padding:8px;margin-top:4px;">';
     infra.forEach(function(ip) {
       h += '<div style="display:flex;gap:8px;margin:3px 0;font-size:10px;">';
@@ -1858,14 +1858,14 @@ function _vgRenderPhaseResults() {
   // Report export
   if (_vgState.results.report) {
     h += '<div style="margin-top:12px;display:flex;gap:8px;">';
-    h += '<button onclick="_vgCopyReport()" style="background:#ff660015;color:#ff6600;border:1px solid #ff660033;padding:8px 16px;font-family:monospace;font-size:10px;cursor:pointer;border-radius:4px;">Copy Full Report (HTML)</button>';
-    h += '<button onclick="_vgExportJSON()" style="background:#00aaff15;color:#00aaff;border:1px solid #00aaff33;padding:8px 16px;font-family:monospace;font-size:10px;cursor:pointer;border-radius:4px;">Export JSON</button>';
-    h += '<button onclick="_vgExportLog()" style="background:#aa66ff15;color:#aa66ff;border:1px solid #aa66ff33;padding:8px 16px;font-family:monospace;font-size:10px;cursor:pointer;border-radius:4px;">Export Log</button>';
+    h += '<button onclick="_vgCopyReport()" style="background:#ff660015;color:#ff6600;border:1px solid #ff660033;padding:8px 16px;font-family:var(--font-mono);font-size:10px;cursor:pointer;border-radius:4px;">Copy Full Report (HTML)</button>';
+    h += '<button onclick="_vgExportJSON()" style="background:#2563eb15;color:#2563eb;border:1px solid #2563eb33;padding:8px 16px;font-family:var(--font-mono);font-size:10px;cursor:pointer;border-radius:4px;">Export JSON</button>';
+    h += '<button onclick="_vgExportLog()" style="background:#aa66ff15;color:#aa66ff;border:1px solid #aa66ff33;padding:8px 16px;font-family:var(--font-mono);font-size:10px;cursor:pointer;border-radius:4px;">Export Log</button>';
     h += '</div>';
   } else {
     h += '<div style="margin-top:12px;display:flex;gap:8px;">';
-    h += '<button onclick="_vgExportJSON()" style="background:#00aaff15;color:#00aaff;border:1px solid #00aaff33;padding:8px 16px;font-family:monospace;font-size:10px;cursor:pointer;border-radius:4px;">Export JSON</button>';
-    h += '<button onclick="_vgExportLog()" style="background:#aa66ff15;color:#aa66ff;border:1px solid #aa66ff33;padding:8px 16px;font-family:monospace;font-size:10px;cursor:pointer;border-radius:4px;">Export Log</button>';
+    h += '<button onclick="_vgExportJSON()" style="background:#2563eb15;color:#2563eb;border:1px solid #2563eb33;padding:8px 16px;font-family:var(--font-mono);font-size:10px;cursor:pointer;border-radius:4px;">Export JSON</button>';
+    h += '<button onclick="_vgExportLog()" style="background:#aa66ff15;color:#aa66ff;border:1px solid #aa66ff33;padding:8px 16px;font-family:var(--font-mono);font-size:10px;cursor:pointer;border-radius:4px;">Export Log</button>';
     h += '</div>';
   }
 

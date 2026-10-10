@@ -628,11 +628,11 @@ export function renderNetworkMapper(main) {
       }
     };
     var addBtn = main.querySelector("#nm-add-host") || main.querySelector("#nm-add-host2");
-    if (addBtn) addBtn.onclick = function() {
-      var ip = prompt("IP:", "10.0.0." + (nodes.length + 1)); if (!ip) return;
-      var hostname = prompt("Hostname:", "host-" + (nodes.length + 1));
-      var os = prompt("OS (linux/windows/router/firewall/switch):", "linux");
-      var portsStr = prompt("Ports (comma-sep):", "22,80,443");
+    if (addBtn) addBtn.onclick = async function() {
+      var ip = await window.dnPrompt("IP:", { value: "10.0.0." + (nodes.length + 1) }); if (!ip) return;
+      var hostname = await window.dnPrompt("Hostname:", { value: "host-" + (nodes.length + 1) });
+      var os = await window.dnPrompt("OS (linux/windows/router/firewall/switch):", { value: "linux" });
+      var portsStr = await window.dnPrompt("Ports (comma-sep):", { value: "22,80,443" });
       nodes.push({ id: "m-" + Date.now(), ip: ip, hostname: hostname || "", os: os || "unknown", ports: portsStr ? portsStr.split(",").map(function(p) { return parseInt(p.trim()); }).filter(Boolean) : [], x: 100 + Math.random() * 500, y: 100 + Math.random() * 300 });
       render();
     };

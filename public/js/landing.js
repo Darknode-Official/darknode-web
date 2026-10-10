@@ -64,7 +64,7 @@ export function renderLanding(view, actions) {
           </a>
         </div>
         <div class="hero-trust">
-          <div class="trust-item"><span class="trust-n" data-count="750000" data-suffix="+" data-format="comma">0</span><span class="trust-l">Lines of code</span></div>
+          <div class="trust-item"><span class="trust-n" data-count="385000" data-suffix="+" data-format="comma">0</span><span class="trust-l">Lines of code</span></div>
           <div class="trust-sep"></div>
           <div class="trust-item"><span class="trust-n" data-count="900" data-suffix="+" data-format="comma">0</span><span class="trust-l">Security tools</span></div>
           <div class="trust-sep"></div>
@@ -555,7 +555,7 @@ export function renderLanding(view, actions) {
           </div>
           <div class="nx-arch-connector"></div>
           <div class="nx-arch-layer nx-arch-l5">
-            <div class="nx-arch-footer-band">33 modules &mdash; 750,000+ lines of code across the Darknode ecosystem</div>
+            <div class="nx-arch-footer-band">33 modules &mdash; 385,000+ lines of code across the Darknode ecosystem</div>
           </div>
         </div>
 

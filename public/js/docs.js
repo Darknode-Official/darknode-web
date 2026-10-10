@@ -50,7 +50,7 @@ const CMD_GROUPS = [
 ];
 
 const CHANGELOG = [
-  ["3.1.x", "Current web console line: flagship platforms (PHANTOM packet/network ops, CITADEL SOC console, ORACLE threat-intel engine, SPECTRE cloud posture, CRUCIBLE defensive wargaming, NAVARCH maritime defense), a platform-wide Security Graph that cross-links findings, the Sentinel Eye 3D threat globe, 190+ security tools plus 900+ quick utilities, the Professional theme, the Ask Darknode assistant in the top bar, and Nexus AI integration."],
+  ["3.1.x", "Current web console line: flagship platforms (PHANTOM packet/network ops, CITADEL SOC console, ORACLE threat-intel engine, SPECTRE cloud posture, CRUCIBLE defensive wargaming, NAVARCH maritime defense), a platform-wide Security Graph that cross-links findings, the Sentinel Eye 3D threat globe, 190+ security tools plus 900+ quick utilities, the Professional theme, the Darknode assistant (Help button in the top bar), and Nexus AI integration."],
   ["2.29.x", "Nexus multi-engine agent: /cowork model tiering, /lean /effort /cheap /estimate, local RAG (/index), /race /ensemble /bench, /plan /watch /agents (worktree-isolated), /guard /secrets /scan /redact /offline, git checkpoints (/undo /redo /rewind), MCP + hooks, ~56 commands. NEXUS.md now reaches the Claude engine; plan mode is truly read-only."],
   ["2.28.x", "Desktop Assistant: structured-output autonomous loop, permissions toggle, attack playbooks, MCP client, vision input. CLI recon/exploit toolkit."],
   ["2.2x", "Web console, downloads, practice targets, vulnerable-VM runner, threat intel, private-cloud generator."],

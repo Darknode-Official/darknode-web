@@ -351,19 +351,19 @@ export function renderDarkwebOsint(main) {
       '.dw-timeline-legend{display:flex;gap:16px;justify-content:center;margin-bottom:20px;font-size:.78rem;font-weight:600}' +
       '.dw-timeline-legend span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;background:currentColor}' +
       '.dw-timeline{position:relative;padding:10px 0}' +
-      '.dw-timeline::before{content:"";position:absolute;left:50%;top:0;bottom:0;width:2px;background:var(--line,#21262d);transform:translateX(-1px)}' +
+      '.dw-timeline::before{content:"";position:absolute;left:50%;top:0;bottom:0;width:2px;background:var(--line,#283a5a);transform:translateX(-1px)}' +
       '.dw-tl-item{position:relative;width:50%;padding:0 30px 24px}' +
       '.dw-tl-left{left:0;text-align:right}' +
       '.dw-tl-right{left:50%;text-align:left}' +
-      '.dw-tl-dot{position:absolute;top:4px;width:14px;height:14px;border-radius:50%;border:2px solid var(--bg,#0a0e1a);z-index:2}' +
+      '.dw-tl-dot{position:absolute;top:4px;width:14px;height:14px;border-radius:50%;border:2px solid var(--bg,#0b1120);z-index:2}' +
       '.dw-tl-left .dw-tl-dot{right:-7px}' +
       '.dw-tl-right .dw-tl-dot{left:-7px}' +
-      '.dw-tl-card{background:var(--card,#0d1117);border:1px solid var(--line,#21262d);border-radius:8px;padding:14px;text-align:left}' +
+      '.dw-tl-card{background:var(--card,#0f1726);border:1px solid var(--line,#283a5a);border-radius:8px;padding:14px;text-align:left}' +
       '.dw-tl-date{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px}' +
       '.dw-tl-name{font-size:.95rem;font-weight:700;margin-bottom:6px}' +
       '.dw-tl-type{display:inline-block;font-size:.65rem;font-weight:600;padding:2px 8px;border-radius:4px;text-transform:uppercase;letter-spacing:.03em;margin-bottom:8px}' +
-      '.dw-tl-impact{font-size:.78rem;color:var(--txt,#c8d6e5);margin-bottom:6px;line-height:1.4}' +
-      '.dw-tl-desc{font-size:.78rem;color:var(--mut,#6b7280);line-height:1.5}' +
+      '.dw-tl-impact{font-size:.78rem;color:var(--txt,#e7eefc);margin-bottom:6px;line-height:1.4}' +
+      '.dw-tl-desc{font-size:.78rem;color:var(--mut,#7a93b8);line-height:1.5}' +
       '@media(max-width:700px){.dw-timeline::before{left:20px}.dw-tl-item{width:100%;left:0;padding-left:50px;padding-right:10px;text-align:left}.dw-tl-left .dw-tl-dot,.dw-tl-right .dw-tl-dot{left:13px;right:auto}}' +
       '</style>';
     return html;
@@ -406,16 +406,16 @@ export function renderDarkwebOsint(main) {
       var sevColor = sevColors[br.severity] || "#6b7280";
       var exposedHtml = '';
       for (var e = 0; e < br.exposed.length; e++) {
-        exposedHtml += '<span style="display:inline-block;padding:2px 6px;margin:2px;font-size:.68rem;background:var(--line,#21262d);border-radius:3px">' + esc(br.exposed[e]) + '</span>';
+        exposedHtml += '<span style="display:inline-block;padding:2px 6px;margin:2px;font-size:.68rem;background:var(--line,#283a5a);border-radius:3px">' + esc(br.exposed[e]) + '</span>';
       }
-      listHtml += '<div style="background:var(--card,#0d1117);border:1px solid var(--line,#21262d);border-left:3px solid ' + sevColor + ';border-radius:6px;padding:14px;margin-bottom:8px">' +
+      listHtml += '<div style="background:var(--card,#0f1726);border:1px solid var(--line,#283a5a);border-left:3px solid ' + sevColor + ';border-radius:6px;padding:14px;margin-bottom:8px">' +
         '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">' +
           '<strong style="font-size:.88rem">' + esc(br.name) + '</strong>' +
           '<span style="font-size:.65rem;font-weight:700;padding:2px 8px;border-radius:3px;text-transform:uppercase;background:' + sevColor + '22;color:' + sevColor + '">' + esc(br.severity) + '</span>' +
         '</div>' +
         '<div class="dw-kv" style="margin-bottom:4px"><span>Date</span><span class="mono">' + esc(br.date) + '</span></div>' +
         '<div class="dw-kv" style="margin-bottom:4px"><span>Records Affected</span><span class="dw-bad mono">' + esc(br.records) + '</span></div>' +
-        '<div style="margin-top:6px"><div style="font-size:.72rem;color:var(--mut,#6b7280);margin-bottom:4px;font-weight:600">Data Exposed:</div>' + exposedHtml + '</div>' +
+        '<div style="margin-top:6px"><div style="font-size:.72rem;color:var(--mut,#7a93b8);margin-bottom:4px;font-weight:600">Data Exposed:</div>' + exposedHtml + '</div>' +
       '</div>';
     }
 
@@ -432,7 +432,7 @@ export function renderDarkwebOsint(main) {
     }
 
     resultDiv.innerHTML = summaryHtml +
-      '<div style="background:var(--card,#0d1117);border:1px solid var(--line,#21262d);border-radius:8px;padding:16px;margin-bottom:16px">' +
+      '<div style="background:var(--card,#0f1726);border:1px solid var(--line,#283a5a);border-radius:8px;padding:16px;margin-bottom:16px">' +
         '<div style="font-size:.82rem;font-weight:600;margin-bottom:8px">Aggregate Exposure Summary</div>' +
         '<div style="margin-bottom:8px">' + exposedSummary + '</div>' +
         '<div class="muted" style="font-size:.72rem">Your data types above were found across ' + found.length + ' separate incidents</div>' +
@@ -482,7 +482,7 @@ export function renderDarkwebOsint(main) {
     flowHtml += '<div style="display:flex;flex-direction:column;gap:6px;min-width:160px">';
     for (var s = 0; s < incomingSources.length; s++) {
       var src = incomingSources[s];
-      flowHtml += '<div style="background:var(--card,#0d1117);border:1px solid ' + riskColors[src.risk] + '44;border-radius:6px;padding:8px 10px;font-size:.72rem">' +
+      flowHtml += '<div style="background:var(--card,#0f1726);border:1px solid ' + riskColors[src.risk] + '44;border-radius:6px;padding:8px 10px;font-size:.72rem">' +
         '<div style="font-weight:600;color:' + riskColors[src.risk] + '">' + esc(src.label) + '</div>' +
         '<div class="mono" style="margin-top:2px">' + esc(src.amount) + ' BTC</div>' +
       '</div>';
@@ -491,12 +491,12 @@ export function renderDarkwebOsint(main) {
     // Arrows in
     flowHtml += '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 8px;min-width:40px">';
     for (var ai = 0; ai < 4; ai++) {
-      flowHtml += '<div style="color:var(--mut,#6b7280);font-size:.8rem;margin:8px 0">--&gt;</div>';
+      flowHtml += '<div style="color:var(--mut,#7a93b8);font-size:.8rem;margin:8px 0">--&gt;</div>';
     }
     flowHtml += '</div>';
     // Center node
-    flowHtml += '<div style="background:var(--card,#0d1117);border:2px solid ' + (risk > 70 ? '#ef4444' : risk > 40 ? '#f59e0b' : '#22c55e') + ';border-radius:10px;padding:16px;min-width:140px;text-align:center">' +
-      '<div style="font-size:.68rem;color:var(--mut,#6b7280);text-transform:uppercase;font-weight:600;margin-bottom:4px">Target Address</div>' +
+    flowHtml += '<div style="background:var(--card,#0f1726);border:2px solid ' + (risk > 70 ? '#ef4444' : risk > 40 ? '#f59e0b' : '#22c55e') + ';border-radius:10px;padding:16px;min-width:140px;text-align:center">' +
+      '<div style="font-size:.68rem;color:var(--mut,#7a93b8);text-transform:uppercase;font-weight:600;margin-bottom:4px">Target Address</div>' +
       '<div class="mono" style="font-size:.82rem;font-weight:700;margin-bottom:6px">' + esc(addrShort) + '</div>' +
       '<div style="font-size:1.1rem;font-weight:800">' + bal.toFixed(2) + ' BTC</div>' +
       '<div style="font-size:.68rem;margin-top:4px;color:' + (risk > 70 ? '#ef4444' : risk > 40 ? '#f59e0b' : '#22c55e') + ';font-weight:600">' + esc(riskLevel) + '</div>' +
@@ -504,14 +504,14 @@ export function renderDarkwebOsint(main) {
     // Arrows out
     flowHtml += '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 8px;min-width:40px">';
     for (var ao = 0; ao < 4; ao++) {
-      flowHtml += '<div style="color:var(--mut,#6b7280);font-size:.8rem;margin:8px 0">--&gt;</div>';
+      flowHtml += '<div style="color:var(--mut,#7a93b8);font-size:.8rem;margin:8px 0">--&gt;</div>';
     }
     flowHtml += '</div>';
     // Outgoing column
     flowHtml += '<div style="display:flex;flex-direction:column;gap:6px;min-width:160px">';
     for (var d = 0; d < outgoingSinks.length; d++) {
       var sink = outgoingSinks[d];
-      flowHtml += '<div style="background:var(--card,#0d1117);border:1px solid ' + riskColors[sink.risk] + '44;border-radius:6px;padding:8px 10px;font-size:.72rem">' +
+      flowHtml += '<div style="background:var(--card,#0f1726);border:1px solid ' + riskColors[sink.risk] + '44;border-radius:6px;padding:8px 10px;font-size:.72rem">' +
         '<div style="font-weight:600;color:' + riskColors[sink.risk] + '">' + esc(sink.label) + '</div>' +
         '<div class="mono" style="margin-top:2px">' + esc(sink.amount) + ' BTC</div>' +
       '</div>';

@@ -314,15 +314,16 @@ export function renderPurpleTeamOps(main) {
     });
 
     container.querySelectorAll('[data-detect]').forEach(function(btn) {
-      btn.onclick = function() {
+      btn.onclick = async function() {
         var id = btn.dataset.detect;
         var test = ATOMIC_TESTS.find(function(t) { return t.id === id; });
         if (!test) return;
         var execAt = executed[id] ? new Date(executed[id]).getTime() : NaN;
         var elapsed = isNaN(execAt) ? '' : String(Math.max(0, Math.round((Date.now() - execAt) / 60000)));
-        var mttdInput = prompt('Enter actual detection time in minutes (SLA target: ' + detectionSLA + ' min).\n' +
-          (elapsed !== '' ? 'Pre-filled with the minutes since you clicked Mark Executed.\n' : 'Run a purple team exercise to measure real MTTD.\n') +
-          'Leave blank if not measured.', elapsed);
+        var mttdInput = await window.dnPrompt('Enter actual detection time in minutes (SLA target: ' + detectionSLA + ' min).', {
+          desc: (elapsed !== '' ? 'Pre-filled with the minutes since you clicked Mark Executed.\n' : 'Run a purple team exercise to measure real MTTD.\n') +
+            'Leave blank if not measured.',
+          value: elapsed });
         if (mttdInput === null) return;
         var mttd = null;
         if (mttdInput.trim() !== '') {

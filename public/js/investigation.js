@@ -390,8 +390,8 @@ function renderOverviewTab(panel, inv, main, show) {
     renderDetailView(main, show);
   };
 
-  panel.querySelector('#inv-o-delete').onclick = () => {
-    if (!confirm('Delete this investigation and all related findings/events? This cannot be undone.')) return;
+  panel.querySelector('#inv-o-delete').onclick = async () => {
+    if (!(await window.dnConfirm('Delete investigation', 'Delete this investigation and all related findings/events? This cannot be undone.', { danger: true }))) return;
     const related = getRelated(inv.id);
     related.forEach(r => {
       if (r.type === 'EVENT' || r.type === 'FINDING') deleteEntity(r.id);

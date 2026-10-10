@@ -291,77 +291,77 @@ export function renderSSLCertAnalyzer(container) {
 
   const style = document.createElement('style');
   style.textContent = `
-    .sc-wrap{background:#0a0e14;color:#c8d6e5;font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;padding:0}
-    .sc-header{background:linear-gradient(135deg,#0c1220 0%,#0f1a2e 50%,#0a1628 100%);padding:20px 28px;border-bottom:1px solid #1a2a44}
-    .sc-header h2{margin:0;font-size:22px;font-weight:700;color:#00aaff;letter-spacing:1px;display:flex;align-items:center;gap:10px}
-    .sc-header h2 svg{width:24px;height:24px;fill:#00aaff}
-    .sc-subtitle{margin:4px 0 0;font-size:13px;color:#6a8aaa;font-weight:400}
-    .sc-tabs{display:flex;gap:0;background:#0c1220;border-bottom:1px solid #1a2a44;padding:0 20px;overflow-x:auto}
-    .sc-tab{padding:12px 20px;background:none;border:none;color:#6a8aaa;font-size:13px;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap;font-family:inherit}
-    .sc-tab:hover{color:#c8d6e5;background:rgba(0,170,255,0.05)}
-    .sc-tab.active{color:#00aaff;border-bottom-color:#00aaff;background:rgba(0,170,255,0.08)}
+    .sc-wrap{background:var(--card,#0b1120);color:var(--txt,#e7eefc);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;padding:0}
+    .sc-header{background:linear-gradient(135deg,var(--card,#0b1120) 0%,var(--card2,#0f1726) 50%,var(--card,#0b1120) 100%);padding:20px 28px;border-bottom:1px solid var(--line,#283a5a)}
+    .sc-header h2{margin:0;font-size:22px;font-weight:700;color:var(--acc,#2563eb);letter-spacing:1px;display:flex;align-items:center;gap:10px}
+    .sc-header h2 svg{width:24px;height:24px;fill:var(--acc,#2563eb)}
+    .sc-subtitle{margin:4px 0 0;font-size:13px;color:var(--txt-2,#9fb0cc);font-weight:400}
+    .sc-tabs{display:flex;gap:0;background:var(--card2,#0f1726);border-bottom:1px solid var(--line,#283a5a);padding:0 20px;overflow-x:auto}
+    .sc-tab{padding:12px 20px;background:none;border:none;color:var(--txt-2,#9fb0cc);font-size:13px;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap;font-family:inherit}
+    .sc-tab:hover{color:var(--txt,#e7eefc);background:rgba(0,170,255,0.05)}
+    .sc-tab.active{color:var(--acc,#2563eb);border-bottom-color:var(--acc,#2563eb);background:rgba(0,170,255,0.08)}
     .sc-content{padding:24px 28px}
-    .sc-panel{background:#0c1220;border:1px solid #1a2a44;border-radius:8px;padding:20px;margin-bottom:16px}
-    .sc-panel h3{margin:0 0 14px;font-size:15px;color:#00aaff;font-weight:600}
-    .sc-textarea{width:100%;min-height:160px;background:#080c14;border:1px solid #1a2a44;border-radius:6px;color:#c8d6e5;padding:12px;font-family:'JetBrains Mono','Fira Code',monospace;font-size:12px;resize:vertical;box-sizing:border-box}
-    .sc-textarea:focus{outline:none;border-color:#00aaff;box-shadow:0 0 0 2px rgba(0,170,255,0.15)}
-    .sc-textarea::placeholder{color:#3a5a7a}
-    .sc-btn{padding:10px 22px;background:#00aaff;color:#0a0e14;border:none;border-radius:4px;font-weight:600;font-size:13px;cursor:pointer;transition:all .2s;font-family:inherit}
-    .sc-btn:hover{background:#0088dd;transform:translateY(-1px)}
-    .sc-btn.secondary{background:transparent;border:1px solid #1a2a44;color:#c8d6e5}
-    .sc-btn.secondary:hover{border-color:#00aaff;color:#00aaff}
+    .sc-panel{background:var(--card2,#0f1726);border:1px solid var(--line,#283a5a);border-radius:8px;padding:20px;margin-bottom:16px}
+    .sc-panel h3{margin:0 0 14px;font-size:15px;color:var(--acc,#2563eb);font-weight:600}
+    .sc-textarea{width:100%;min-height:160px;background:var(--card2,#0f1726);border:1px solid var(--line,#283a5a);border-radius:6px;color:var(--txt,#e7eefc);padding:12px;font-family:var(--font-mono);font-size:12px;resize:vertical;box-sizing:border-box}
+    .sc-textarea:focus{outline:none;border-color:var(--acc,#2563eb);box-shadow:0 0 0 2px rgba(0,170,255,0.15)}
+    .sc-textarea::placeholder{color:var(--mut,#7a93b8)}
+    .sc-btn{padding:10px 22px;background:var(--acc,#2563eb);color:var(--on-acc,#fff);border:none;border-radius:4px;font-weight:600;font-size:13px;cursor:pointer;transition:all .2s;font-family:inherit}
+    .sc-btn:hover{background:var(--acc,#2563eb);transform:translateY(-1px)}
+    .sc-btn.secondary{background:transparent;border:1px solid var(--line,#283a5a);color:var(--txt,#e7eefc)}
+    .sc-btn.secondary:hover{border-color:var(--acc,#2563eb);color:var(--acc,#2563eb)}
     .sc-btn-row{display:flex;gap:10px;margin:14px 0}
-    .sc-field{display:grid;grid-template-columns:180px 1fr;gap:0;border-bottom:1px solid #111a2e;padding:10px 0;align-items:start}
+    .sc-field{display:grid;grid-template-columns:180px 1fr;gap:0;border-bottom:1px solid var(--line,#283a5a);padding:10px 0;align-items:start}
     .sc-field:last-child{border-bottom:none}
-    .sc-field-label{color:#6a8aaa;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;padding-top:2px}
-    .sc-field-value{color:#e2e8f0;font-size:13px;word-break:break-all}
+    .sc-field-label{color:var(--txt-2,#9fb0cc);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;padding-top:2px}
+    .sc-field-value{color:var(--txt,#e7eefc);font-size:13px;word-break:break-all}
     .sc-badge{display:inline-block;padding:3px 10px;border-radius:4px;font-size:11px;font-weight:600;letter-spacing:.5px}
     .sc-badge.green{background:rgba(0,255,136,0.12);color:#00ff88}
     .sc-badge.yellow{background:rgba(255,214,0,0.12);color:#ffd600}
     .sc-badge.red{background:rgba(255,68,68,0.12);color:#ff4444}
-    .sc-badge.blue{background:rgba(0,170,255,0.12);color:#00aaff}
+    .sc-badge.blue{background:rgba(0,170,255,0.12);color:var(--acc,#2563eb)}
     .sc-badge.purple{background:rgba(167,139,250,0.12);color:#a78bfa}
     .sc-grade-box{display:flex;align-items:center;gap:20px;padding:20px;border-radius:8px;margin-bottom:16px}
     .sc-grade-letter{font-size:56px;font-weight:800;line-height:1}
     .sc-grade-info{flex:1}
-    .sc-grade-label{font-size:12px;color:#6a8aaa;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
-    .sc-grade-score{font-size:20px;font-weight:700;color:#e2e8f0}
-    .sc-bar{height:6px;background:#111a2e;border-radius:3px;margin-top:8px;overflow:hidden}
+    .sc-grade-label{font-size:12px;color:var(--txt-2,#9fb0cc);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
+    .sc-grade-score{font-size:20px;font-weight:700;color:var(--txt,#e7eefc)}
+    .sc-bar{height:6px;background:var(--line,#283a5a);border-radius:3px;margin-top:8px;overflow:hidden}
     .sc-bar-fill{height:100%;border-radius:3px;transition:width .6s ease}
     .sc-expiry{display:flex;align-items:center;gap:12px;padding:14px 18px;border-radius:8px;margin:12px 0}
     .sc-expiry-days{font-size:28px;font-weight:800;line-height:1}
-    .sc-expiry-label{font-size:12px;color:#6a8aaa}
+    .sc-expiry-label{font-size:12px;color:var(--txt-2,#9fb0cc)}
     .sc-san-list{display:flex;flex-wrap:wrap;gap:6px}
-    .sc-san-item{background:#111a2e;padding:4px 12px;border-radius:4px;font-size:12px;color:#c8d6e5;border:1px solid #1a2a44;font-family:monospace}
-    .sc-ext-row{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:1px solid #111a2e}
+    .sc-san-item{background:var(--card2,#0f1726);padding:4px 12px;border-radius:4px;font-size:12px;color:var(--txt,#e7eefc);border:1px solid var(--line,#283a5a);font-family:var(--font-mono)}
+    .sc-ext-row{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:1px solid var(--line,#283a5a)}
     .sc-ext-row:last-child{border-bottom:none}
-    .sc-ext-name{color:#6a8aaa;font-size:12px;font-weight:600}
-    .sc-ext-val{color:#c8d6e5;font-size:12px;text-align:right;max-width:60%;word-break:break-all}
+    .sc-ext-name{color:var(--txt-2,#9fb0cc);font-size:12px;font-weight:600}
+    .sc-ext-val{color:var(--txt,#e7eefc);font-size:12px;text-align:right;max-width:60%;word-break:break-all}
     .sc-chain{display:flex;flex-direction:column;gap:0}
-    .sc-chain-cert{position:relative;padding:16px 20px;background:#0c1220;border:1px solid #1a2a44;border-radius:8px;margin-left:20px}
-    .sc-chain-cert::before{content:'';position:absolute;left:-16px;top:0;bottom:-16px;width:2px;background:#1a2a44}
-    .sc-chain-cert::after{content:'';position:absolute;left:-16px;top:24px;width:12px;height:2px;background:#1a2a44}
+    .sc-chain-cert{position:relative;padding:16px 20px;background:var(--card2,#0f1726);border:1px solid var(--line,#283a5a);border-radius:8px;margin-left:20px}
+    .sc-chain-cert::before{content:'';position:absolute;left:-16px;top:0;bottom:-16px;width:2px;background:var(--line,#283a5a)}
+    .sc-chain-cert::after{content:'';position:absolute;left:-16px;top:24px;width:12px;height:2px;background:var(--line,#283a5a)}
     .sc-chain-cert:last-child::before{bottom:50%}
-    .sc-chain-connector{text-align:center;padding:6px 0;color:#3a5a7a;font-size:18px;margin-left:20px}
-    .sc-chain-level{position:absolute;left:-60px;top:20px;font-size:10px;color:#3a5a7a;text-transform:uppercase;letter-spacing:1px;writing-mode:vertical-rl;transform:rotate(180deg)}
+    .sc-chain-connector{text-align:center;padding:6px 0;color:var(--mut,#7a93b8);font-size:18px;margin-left:20px}
+    .sc-chain-level{position:absolute;left:-60px;top:20px;font-size:10px;color:var(--mut,#7a93b8);text-transform:uppercase;letter-spacing:1px;writing-mode:vertical-rl;transform:rotate(180deg)}
     .sc-form-group{margin-bottom:16px}
-    .sc-form-group label{display:block;font-size:12px;color:#6a8aaa;margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
-    .sc-input{width:100%;padding:10px 14px;background:#080c14;border:1px solid #1a2a44;border-radius:6px;color:#c8d6e5;font-size:13px;box-sizing:border-box;font-family:inherit}
-    .sc-input:focus{outline:none;border-color:#00aaff}
-    .sc-select{width:100%;padding:10px 14px;background:#080c14;border:1px solid #1a2a44;border-radius:6px;color:#c8d6e5;font-size:13px;box-sizing:border-box;font-family:inherit}
+    .sc-form-group label{display:block;font-size:12px;color:var(--txt-2,#9fb0cc);margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+    .sc-input{width:100%;padding:10px 14px;background:var(--card2,#0f1726);border:1px solid var(--line,#283a5a);border-radius:6px;color:var(--txt,#e7eefc);font-size:13px;box-sizing:border-box;font-family:inherit}
+    .sc-input:focus{outline:none;border-color:var(--acc,#2563eb)}
+    .sc-select{width:100%;padding:10px 14px;background:var(--card2,#0f1726);border:1px solid var(--line,#283a5a);border-radius:6px;color:var(--txt,#e7eefc);font-size:13px;box-sizing:border-box;font-family:inherit}
     .sc-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-    .sc-code{background:#080c14;border:1px solid #1a2a44;border-radius:6px;padding:14px;font-family:'JetBrains Mono',monospace;font-size:12px;color:#c8d6e5;white-space:pre-wrap;overflow-x:auto;position:relative}
-    .sc-code .sc-copy-btn{position:absolute;top:8px;right:8px;padding:4px 10px;background:#1a2a44;border:none;color:#6a8aaa;border-radius:4px;cursor:pointer;font-size:11px}
-    .sc-code .sc-copy-btn:hover{color:#00aaff;background:#223355}
-    .sc-ref-card{background:#0c1220;border:1px solid #1a2a44;border-radius:8px;padding:16px;margin-bottom:12px}
-    .sc-ref-card h4{margin:0 0 8px;color:#00aaff;font-size:14px}
-    .sc-ref-card p{margin:0 0 8px;color:#8ab4d8;font-size:13px;line-height:1.5}
-    .sc-ref-card code{background:#080c14;padding:2px 8px;border-radius:3px;font-size:12px;color:#00ff88}
-    .sc-empty{text-align:center;padding:40px;color:#3a5a7a;font-size:14px}
+    .sc-code{background:var(--card2,#0f1726);border:1px solid var(--line,#283a5a);border-radius:6px;padding:14px;font-family:var(--font-mono);font-size:12px;color:var(--txt,#e7eefc);white-space:pre-wrap;overflow-x:auto;position:relative}
+    .sc-code .sc-copy-btn{position:absolute;top:8px;right:8px;padding:4px 10px;background:var(--line,#283a5a);border:none;color:var(--txt-2,#9fb0cc);border-radius:4px;cursor:pointer;font-size:11px}
+    .sc-code .sc-copy-btn:hover{color:var(--acc,#2563eb);background:var(--line,#283a5a)}
+    .sc-ref-card{background:var(--card2,#0f1726);border:1px solid var(--line,#283a5a);border-radius:8px;padding:16px;margin-bottom:12px}
+    .sc-ref-card h4{margin:0 0 8px;color:var(--acc,#2563eb);font-size:14px}
+    .sc-ref-card p{margin:0 0 8px;color:var(--txt-2,#9fb0cc);font-size:13px;line-height:1.5}
+    .sc-ref-card code{background:var(--card2,#0f1726);padding:2px 8px;border-radius:3px;font-size:12px;color:#00ff88}
+    .sc-empty{text-align:center;padding:40px;color:var(--mut,#7a93b8);font-size:14px}
     .sc-result-section{margin-top:20px}
     .sc-table{width:100%;border-collapse:collapse}
-    .sc-table th{text-align:left;padding:8px 12px;background:#080c14;color:#6a8aaa;font-size:11px;text-transform:uppercase;letter-spacing:.5px;border-bottom:2px solid #1a2a44}
-    .sc-table td{padding:8px 12px;border-bottom:1px solid #111a2e;font-size:13px;color:#c8d6e5}
+    .sc-table th{text-align:left;padding:8px 12px;background:var(--card2,#0f1726);color:var(--txt-2,#9fb0cc);font-size:11px;text-transform:uppercase;letter-spacing:.5px;border-bottom:2px solid var(--line,#283a5a)}
+    .sc-table td{padding:8px 12px;border-bottom:1px solid var(--line,#283a5a);font-size:13px;color:var(--txt,#e7eefc)}
     @media(max-width:768px){
       .sc-grid-2{grid-template-columns:1fr}
       .sc-field{grid-template-columns:1fr;gap:4px}
@@ -416,7 +416,7 @@ export function renderSSLCertAnalyzer(container) {
         <h3>Certificate Details</h3>
         <div class="sc-field"><span class="sc-field-label">Subject</span><span class="sc-field-value">${esc(cert.subject)}</span></div>
         <div class="sc-field"><span class="sc-field-label">Issuer</span><span class="sc-field-value">${esc(cert.issuer)}</span></div>
-        <div class="sc-field"><span class="sc-field-label">Serial Number</span><span class="sc-field-value" style="font-family:monospace">${esc(cert.serial)}</span></div>
+        <div class="sc-field"><span class="sc-field-label">Serial Number</span><span class="sc-field-value" style="font-family:var(--font-mono)">${esc(cert.serial)}</span></div>
         <div class="sc-field"><span class="sc-field-label">Valid From</span><span class="sc-field-value">${cert.notBefore.toISOString()}</span></div>
         <div class="sc-field"><span class="sc-field-label">Valid To</span><span class="sc-field-value">${cert.notAfter.toISOString()}</span></div>
         <div class="sc-field"><span class="sc-field-label">Signature Algorithm</span><span class="sc-field-value">${esc(cert.sigAlgoInfo.name)} <span class="sc-badge ${cert.sigAlgoInfo.strength === 'Strong' ? 'green' : cert.sigAlgoInfo.strength === 'Weak' ? 'yellow' : 'red'}">${cert.sigAlgoInfo.strength}</span></span></div>
@@ -458,7 +458,7 @@ export function renderSSLCertAnalyzer(container) {
     return `
       <div class="sc-panel">
         <h3>Certificate Chain Validator</h3>
-        <p style="color:#6a8aaa;font-size:13px;margin:0 0 14px">Paste the full PEM chain (multiple certificates). The tool will analyze the chain of trust from end-entity to root CA.</p>
+        <p style="color:var(--txt-2,#9fb0cc);font-size:13px;margin:0 0 14px">Paste the full PEM chain (multiple certificates). The tool will analyze the chain of trust from end-entity to root CA.</p>
         <textarea class="sc-textarea" id="sc-chain-input" style="min-height:200px" placeholder="-----BEGIN CERTIFICATE-----\n(End-entity certificate)\n-----END CERTIFICATE-----\n-----BEGIN CERTIFICATE-----\n(Intermediate CA)\n-----END CERTIFICATE-----\n-----BEGIN CERTIFICATE-----\n(Root CA)\n-----END CERTIFICATE-----"></textarea>
         <div class="sc-btn-row">
           <button class="sc-btn" id="sc-chain-btn">Validate Chain</button>
@@ -490,9 +490,9 @@ export function renderSSLCertAnalyzer(container) {
             <span class="sc-badge ${isRoot ? 'purple' : i === 0 ? 'blue' : 'green'}">${esc(level)}</span>
             <span class="sc-badge" style="background:${g.bg};color:${g.color}">${g.grade} (${cert.score}/100)</span>
           </div>
-          <div style="font-size:13px;color:#e2e8f0;margin-bottom:4px;font-weight:600">${esc(cnOf(cert.subject))}</div>
-          <div style="font-size:12px;color:#6a8aaa">Issuer: ${esc(cnOf(cert.issuer))}</div>
-          <div style="font-size:12px;color:#6a8aaa">${esc(cert.keyType)} ${cert.keySize}-bit &bull; ${esc(cert.sigAlgoInfo.name)}</div>
+          <div style="font-size:13px;color:var(--txt,#e7eefc);margin-bottom:4px;font-weight:600">${esc(cnOf(cert.subject))}</div>
+          <div style="font-size:12px;color:var(--txt-2,#9fb0cc)">Issuer: ${esc(cnOf(cert.issuer))}</div>
+          <div style="font-size:12px;color:var(--txt-2,#9fb0cc)">${esc(cert.keyType)} ${cert.keySize}-bit &bull; ${esc(cert.sigAlgoInfo.name)}</div>
           <div style="font-size:12px;color:${cert.daysLeft > 90 ? '#00ff88' : cert.daysLeft > 30 ? '#ffd600' : '#ff4444'}">${cert.daysLeft > 0 ? cert.daysLeft + ' days remaining' : 'EXPIRED'}</div>
         </div>
       `;
@@ -507,7 +507,7 @@ export function renderSSLCertAnalyzer(container) {
     const multi = certs.length >= 2;
     html += `<div style="margin-top:16px;padding:12px 16px;border-radius:6px;background:${linkOk ? 'rgba(0,255,136,0.08)' : 'rgba(255,214,0,0.08)'};border:1px solid ${linkOk ? '#00ff8830' : '#ffd60030'}">
       <span style="color:${linkOk ? '#00ff88' : '#ffd600'};font-weight:600">${!multi ? '&#x26A0; Single certificate — no chain to validate' : linkOk ? '&#x2713; Each issuer matches the next subject' : '&#x26A0; Chain order gap: an issuer does not match the next certificate subject'}</span>
-      <div style="color:#6a8aaa;font-size:12px;margin-top:4px">${multi ? `Trust path: ${certs.map(c => esc(cnOf(c.subject))).join(' &rarr; ')}` : 'Paste the full PEM chain (leaf + intermediates + root) to validate the chain of trust.'}</div>
+      <div style="color:var(--txt-2,#9fb0cc);font-size:12px;margin-top:4px">${multi ? `Trust path: ${certs.map(c => esc(cnOf(c.subject))).join(' &rarr; ')}` : 'Paste the full PEM chain (leaf + intermediates + root) to validate the chain of trust.'}</div>
     </div>`;
     html += '</div>';
     return html;
@@ -517,7 +517,7 @@ export function renderSSLCertAnalyzer(container) {
     return `
       <div class="sc-panel">
         <h3>CSR Decoder</h3>
-        <p style="color:#6a8aaa;font-size:13px;margin:0 0 14px">Paste a PEM-encoded Certificate Signing Request to decode its contents.</p>
+        <p style="color:var(--txt-2,#9fb0cc);font-size:13px;margin:0 0 14px">Paste a PEM-encoded Certificate Signing Request to decode its contents.</p>
         <textarea class="sc-textarea" id="sc-csr-input" placeholder="-----BEGIN CERTIFICATE REQUEST-----\nMIICYjCCAUoCAQAwHTELMA...\n-----END CERTIFICATE REQUEST-----"></textarea>
         <div class="sc-btn-row">
           <button class="sc-btn" id="sc-csr-btn">Decode CSR</button>
@@ -545,7 +545,7 @@ export function renderSSLCertAnalyzer(container) {
     return `
       <div class="sc-panel">
         <h3>Self-Signed Certificate Generator</h3>
-        <p style="color:#6a8aaa;font-size:13px;margin:0 0 16px">Configure parameters and generate OpenSSL commands for self-signed certificates.</p>
+        <p style="color:var(--txt-2,#9fb0cc);font-size:13px;margin:0 0 16px">Configure parameters and generate OpenSSL commands for self-signed certificates.</p>
         <div class="sc-grid-2">
           <div class="sc-form-group">
             <label>Common Name (CN)</label>
