@@ -188,6 +188,143 @@ const IC = {
 
 // Platform severity palette (same thresholds the Threat Feed uses).
 const SEV = { CRITICAL:{label:"Critical",color:"#f0484a"}, HIGH:{label:"High",color:"#ff7a2f"}, MEDIUM:{label:"Medium",color:"#f5b544"}, LOW:{label:"Low",color:"#38d99a"} };
+
+// ===================== built-in Toolkit (instant, client-side, private) =====================
+// Every tool is a pure function of (input, opts). Nothing leaves the browser — ideal for a
+// security console handling IOCs, tokens and samples. `run` returns a string or throws Error.
+const _te = (s) => new TextEncoder().encode(s);
+const _b64e = (s) => btoa(unescape(encodeURIComponent(s)));
+const _b64d = (s) => decodeURIComponent(escape(atob(s.replace(/\s+/g, ""))));
+const _b64urlToStd = (s) => s.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((s.length + 3) % 4);
+async function _digest(algo, s){ const b = await crypto.subtle.digest(algo, _te(s)); return [...new Uint8Array(b)].map((x) => x.toString(16).padStart(2, "0")).join(""); }
+function _htmlDecode(s){ const t = document.createElement("textarea"); t.innerHTML = s; return t.value; }
+function _ipToInt(ip){ const p = ip.split("."); return ((+p[0] << 24) >>> 0) + (+p[1] << 16) + (+p[2] << 8) + (+p[3]); }
+function _intToIp(n){ return [(n >>> 24) & 255, (n >>> 16) & 255, (n >>> 8) & 255, n & 255].join("."); }
+function _isIPv4(ip){ return /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.test(ip) && ip.split(".").every((o) => +o >= 0 && +o <= 255); }
+function _ipClass(n){ const a = (n >>> 24) & 255; if (a < 128) return "A"; if (a < 192) return "B"; if (a < 224) return "C"; if (a < 240) return "D (multicast)"; return "E (reserved)"; }
+function _ipScope(ip){
+  const o = ip.split(".").map(Number), n = _ipToInt(ip);
+  if (o[0] === 10) return "Private (RFC1918)";
+  if (o[0] === 172 && o[1] >= 16 && o[1] <= 31) return "Private (RFC1918)";
+  if (o[0] === 192 && o[1] === 168) return "Private (RFC1918)";
+  if (o[0] === 127) return "Loopback";
+  if (o[0] === 169 && o[1] === 254) return "Link-local (APIPA)";
+  if (o[0] === 100 && o[1] >= 64 && o[1] <= 127) return "Carrier-grade NAT (RFC6598)";
+  if (o[0] >= 224) return "Multicast/Reserved";
+  if (n === 0) return "\"This\" host (0.0.0.0)";
+  return "Public";
+}
+function _refang(s){
+  return s
+    .replace(/\[\.\]|\(\.\)|\{\.\}|\[dot\]|\s+dot\s+/gi, ".")
+    .replace(/\[:\/\/\]/g, "://")
+    .replace(/\[@\]|\[at\]/gi, "@")
+    .replace(/hxxp/gi, "http");
+}
+function _defang(s){ return s.replace(/:\/\//g, "[://]").replace(/\bhttp/gi, "hxxp").replace(/\./g, "[.]").replace(/@/g, "[@]"); }
+function _entropyBits(s){ if (!s) return 0; const f = {}; for (const c of s) f[c] = (f[c] || 0) + 1; let h = 0; for (const k in f){ const p = f[k] / s.length; h -= p * Math.log2(p); } return h * s.length; }
+
+const TK_CATS = [
+  { id: "encode", name: "Encoding", color: "#4f86ff" },
+  { id: "hash", name: "Hashing", color: "#9b5cf0" },
+  { id: "net", name: "Network & IOC", color: "#38d99a" },
+  { id: "parse", name: "Parsing", color: "#f5920b" },
+  { id: "text", name: "Text", color: "#7b61ff" },
+  { id: "gen", name: "Generators & Security", color: "#f0484a" },
+];
+const TOOLKIT = [
+  { id: "b64e", cat: "encode", name: "Base64 encode", desc: "UTF-8 text to Base64.", run: (s) => _b64e(s) },
+  { id: "b64d", cat: "encode", name: "Base64 decode", desc: "Base64 (or base64url) to text.", run: (s) => { try { return _b64d(s); } catch (_) { return _b64d(_b64urlToStd(s.trim())); } } },
+  { id: "urle", cat: "encode", name: "URL encode", desc: "Percent-encode a component.", run: (s) => encodeURIComponent(s) },
+  { id: "urld", cat: "encode", name: "URL decode", desc: "Decode percent-encoding.", run: (s) => decodeURIComponent(s.replace(/\+/g, " ")) },
+  { id: "hexe", cat: "encode", name: "Hex encode", desc: "UTF-8 bytes to hex.", run: (s) => [..._te(s)].map((b) => b.toString(16).padStart(2, "0")).join("") },
+  { id: "hexd", cat: "encode", name: "Hex decode", desc: "Hex to UTF-8 text.", run: (s) => { const h = s.replace(/[^0-9a-f]/gi, ""); if (!h) return ""; if (h.length % 2) throw new Error("Hex needs an even number of digits."); return new TextDecoder().decode(new Uint8Array(h.match(/../g).map((x) => parseInt(x, 16)))); } },
+  { id: "htmle", cat: "encode", name: "HTML entity encode", desc: "Escape &, <, >, \", '.", run: (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;") },
+  { id: "htmld", cat: "encode", name: "HTML entity decode", desc: "Decode HTML entities.", run: (s) => _htmlDecode(s) },
+  { id: "rot13", cat: "encode", name: "ROT13", desc: "Classic letter rotation (its own inverse).", run: (s) => s.replace(/[a-z]/gi, (c) => { const base = c <= "Z" ? 65 : 97; return String.fromCharCode((c.charCodeAt(0) - base + 13) % 26 + base); }) },
+  { id: "sha1", cat: "hash", name: "SHA-1", desc: "160-bit digest (hex).", async: true, run: (s) => _digest("SHA-1", s) },
+  { id: "sha256", cat: "hash", name: "SHA-256", desc: "256-bit digest (hex).", async: true, run: (s) => _digest("SHA-256", s) },
+  { id: "sha384", cat: "hash", name: "SHA-384", desc: "384-bit digest (hex).", async: true, run: (s) => _digest("SHA-384", s) },
+  { id: "sha512", cat: "hash", name: "SHA-512", desc: "512-bit digest (hex).", async: true, run: (s) => _digest("SHA-512", s) },
+  { id: "defang", cat: "net", name: "Defang IOCs", desc: "Make URLs/IPs safe to paste (hxxp, [.]).", run: (s) => _defang(s) },
+  { id: "refang", cat: "net", name: "Refang IOCs", desc: "Undo defanging back to live IOCs.", run: (s) => _refang(s) },
+  { id: "iocx", cat: "net", name: "Extract IOCs", desc: "Pull IPs, domains, URLs, emails, hashes and CVEs from text.", run: (s) => {
+      const t = _refang(s); const uniq = (a) => [...new Set(a)];
+      const grab = (re) => uniq((t.match(re) || []));
+      const ipv4 = grab(/\b(?:\d{1,3}\.){3}\d{1,3}\b/g).filter(_isIPv4);
+      const urls = grab(/\bhttps?:\/\/[^\s"'<>]+/gi);
+      const emails = grab(/\b[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}\b/gi);
+      const domains = grab(/\b(?:[a-z0-9-]+\.)+[a-z]{2,}\b/gi).filter((d) => !emails.some((e) => e.endsWith(d)) && !_isIPv4(d));
+      const md5 = grab(/\b[a-f0-9]{32}\b/gi), sha1 = grab(/\b[a-f0-9]{40}\b/gi), sha256 = grab(/\b[a-f0-9]{64}\b/gi);
+      const cves = grab(/\bCVE-\d{4}-\d{4,7}\b/gi);
+      const sec = (title, arr) => arr.length ? title + " (" + arr.length + "):\n" + arr.join("\n") + "\n\n" : "";
+      const out = sec("IPv4", ipv4) + sec("URLs", urls) + sec("Domains", domains) + sec("Emails", emails) + sec("MD5", md5) + sec("SHA-1", sha1) + sec("SHA-256", sha256) + sec("CVEs", cves);
+      return out.trim() || "No indicators found.";
+    } },
+  { id: "ipinfo", cat: "net", name: "IP address info", desc: "Scope, class, integer and reverse-DNS form.", run: (s) => {
+      const ip = s.trim(); if (!_isIPv4(ip)) throw new Error("Enter a valid IPv4 address, e.g. 10.0.0.1");
+      const n = _ipToInt(ip);
+      return `Address:    ${ip}\nScope:      ${_ipScope(ip)}\nClass:      ${_ipClass(n)}\nInteger:    ${n}\nHex:        0x${n.toString(16).toUpperCase()}\nBinary:     ${ip.split(".").map((o) => (+o).toString(2).padStart(8, "0")).join(".")}\nReverse:    ${ip.split(".").reverse().join(".")}.in-addr.arpa`;
+    } },
+  { id: "cidr", cat: "net", name: "CIDR calculator", desc: "Network, broadcast, host range and count.", run: (s) => {
+      const m = s.trim().match(/^(\d{1,3}(?:\.\d{1,3}){3})\/(\d{1,2})$/); if (!m || !_isIPv4(m[1]) || +m[2] > 32) throw new Error("Enter CIDR like 192.168.1.0/24");
+      const bits = +m[2], mask = bits === 0 ? 0 : (0xffffffff << (32 - bits)) >>> 0;
+      const net = (_ipToInt(m[1]) & mask) >>> 0, bc = (net | (~mask >>> 0)) >>> 0, total = Math.pow(2, 32 - bits);
+      const hosts = bits >= 31 ? total : total - 2;
+      return `CIDR:       ${_intToIp(net)}/${bits}\nNetmask:    ${_intToIp(mask)}\nWildcard:   ${_intToIp(~mask >>> 0)}\nNetwork:    ${_intToIp(net)}\nBroadcast:  ${_intToIp(bc)}\nFirst host: ${_intToIp(bits >= 31 ? net : net + 1)}\nLast host:  ${_intToIp(bits >= 31 ? bc : bc - 1)}\nTotal IPs:  ${total.toLocaleString()}\nUsable:     ${hosts.toLocaleString()}`;
+    } },
+  { id: "jwt", cat: "parse", name: "JWT decoder", desc: "Decode header + payload (no signature check).", run: (s) => {
+      const parts = s.trim().split("."); if (parts.length < 2) throw new Error("Not a JWT (needs header.payload.signature).");
+      const dec = (p) => JSON.stringify(JSON.parse(_b64d(_b64urlToStd(p))), null, 2);
+      let out = "HEADER:\n" + dec(parts[0]) + "\n\nPAYLOAD:\n" + dec(parts[1]);
+      try { const pl = JSON.parse(_b64d(_b64urlToStd(parts[1]))); if (pl.exp) out += "\n\nexp: " + new Date(pl.exp * 1000).toISOString() + (pl.exp * 1000 < Date.now() ? "  (EXPIRED)" : "  (valid)"); if (pl.iat) out += "\niat: " + new Date(pl.iat * 1000).toISOString(); } catch (_) {}
+      return out;
+    } },
+  { id: "jsonf", cat: "parse", name: "JSON format", desc: "Pretty-print and validate JSON.", run: (s) => JSON.stringify(JSON.parse(s), null, 2) },
+  { id: "jsonm", cat: "parse", name: "JSON minify", desc: "Strip whitespace from JSON.", run: (s) => JSON.stringify(JSON.parse(s)) },
+  { id: "ts", cat: "parse", name: "Timestamp convert", desc: "Epoch ⇄ ISO / local. Blank input = now.", run: (s) => {
+      s = s.trim(); let d;
+      if (!s) d = new Date();
+      else if (/^\d+$/.test(s)) d = new Date(+s * (s.length > 11 ? 1 : 1000));
+      else { d = new Date(s); if (isNaN(d)) throw new Error("Unrecognised date/time."); }
+      if (isNaN(d)) throw new Error("Invalid timestamp.");
+      return `Epoch (s):  ${Math.floor(d.getTime() / 1000)}\nEpoch (ms): ${d.getTime()}\nISO 8601:   ${d.toISOString()}\nUTC:        ${d.toUTCString()}\nLocal:      ${d.toString()}`;
+    } },
+  { id: "urlp", cat: "parse", name: "URL parser", desc: "Break a URL into its parts + query params.", run: (s) => {
+      const u = new URL(s.trim());
+      const q = [...u.searchParams.entries()].map(([k, v]) => "  " + k + " = " + v).join("\n");
+      return `Protocol: ${u.protocol}\nHost:     ${u.hostname}\nPort:     ${u.port || "(default)"}\nPath:     ${u.pathname}\nQuery:    ${u.search || "(none)"}\nHash:     ${u.hash || "(none)"}\nOrigin:   ${u.origin}${q ? "\n\nParams:\n" + q : ""}`;
+    } },
+  { id: "case", cat: "text", name: "Case converter", desc: "Every common case at once.", run: (s) => {
+      const words = s.trim().split(/[\s_-]+/).filter(Boolean);
+      const cap = (w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+      return `UPPER:   ${s.toUpperCase()}\nlower:   ${s.toLowerCase()}\nTitle:   ${words.map(cap).join(" ")}\nSentence:${s.charAt(0).toUpperCase() + s.slice(1).toLowerCase()}\nsnake:   ${words.map((w) => w.toLowerCase()).join("_")}\nkebab:   ${words.map((w) => w.toLowerCase()).join("-")}\ncamel:   ${words.map((w, i) => i ? cap(w) : w.toLowerCase()).join("")}\nPascal:  ${words.map(cap).join("")}`;
+    } },
+  { id: "lines", cat: "text", name: "Line tools", desc: "Sort, de-duplicate, reverse or trim lines.", opts: [{ id: "op", label: "Operation", type: "select", options: [["unique", "Unique"], ["sort", "Sort A→Z"], ["sortd", "Sort Z→A"], ["reverse", "Reverse order"], ["trim", "Trim each"], ["nonblank", "Drop blank lines"]] }], run: (s, o) => {
+      let L = s.replace(/\r/g, "").split("\n");
+      switch (o.op) { case "sort": L.sort(); break; case "sortd": L.sort().reverse(); break; case "reverse": L.reverse(); break; case "trim": L = L.map((x) => x.trim()); break; case "nonblank": L = L.filter((x) => x.trim()); break; default: L = [...new Set(L)]; }
+      return L.join("\n");
+    } },
+  { id: "count", cat: "text", name: "Count & stats", desc: "Characters, words, lines and byte size.", run: (s) => {
+      const bytes = _te(s).length, words = (s.match(/\S+/g) || []).length;
+      return `Characters:      ${s.length.toLocaleString()}\nNo whitespace:   ${s.replace(/\s/g, "").length.toLocaleString()}\nWords:           ${words.toLocaleString()}\nLines:           ${(s ? s.split(/\n/).length : 0).toLocaleString()}\nBytes (UTF-8):   ${bytes.toLocaleString()}`;
+    } },
+  { id: "uuid", cat: "gen", name: "UUID v4", desc: "Generate random UUIDs.", generate: true, opts: [{ id: "n", label: "How many", type: "select", options: [["1", "1"], ["5", "5"], ["10", "10"], ["25", "25"]] }], run: (_s, o) => Array.from({ length: +(o.n || 1) }, () => crypto.randomUUID()).join("\n") },
+  { id: "pwgen", cat: "gen", name: "Password generator", desc: "Cryptographically-random passwords.", generate: true, opts: [{ id: "len", label: "Length", type: "select", options: [["16", "16"], ["24", "24"], ["32", "32"], ["48", "48"], ["64", "64"]] }, { id: "sym", label: "Include symbols", type: "select", options: [["1", "Yes"], ["0", "No"]] }], run: (_s, o) => {
+      const base = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789", sym = "!@#$%^&*()-_=+[]{};:,.?";
+      const pool = base + (o.sym === "0" ? "" : sym), len = +(o.len || 24), a = new Uint32Array(len); crypto.getRandomValues(a);
+      const pw = Array.from(a, (x) => pool[x % pool.length]).join("");
+      return pw + "\n\nEntropy ≈ " + Math.round(len * Math.log2(pool.length)) + " bits";
+    } },
+  { id: "pwstr", cat: "gen", name: "Password strength", desc: "Entropy estimate and rating.", run: (s) => {
+      if (!s) throw new Error("Enter a password to analyse.");
+      let pool = 0; if (/[a-z]/.test(s)) pool += 26; if (/[A-Z]/.test(s)) pool += 26; if (/\d/.test(s)) pool += 10; if (/[^a-z0-9]/i.test(s)) pool += 32;
+      const guessBits = Math.round(s.length * Math.log2(pool || 1)), shannon = Math.round(_entropyBits(s));
+      const bits = Math.min(guessBits, shannon + 8);
+      const rate = bits < 40 ? "Very weak" : bits < 60 ? "Weak" : bits < 80 ? "Reasonable" : bits < 110 ? "Strong" : "Very strong";
+      return `Length:        ${s.length}\nCharset size:  ${pool}\nKeyspace bits: ~${guessBits}\nShannon bits:  ~${shannon}\nRating:        ${rate}`;
+    } },
+];
 const sevOf = (s) => s >= 9 ? "CRITICAL" : s >= 7 ? "HIGH" : s >= 4 ? "MEDIUM" : "LOW";
 
 // Live CVE intel from the NIST NVD API 2.0 (public, keyless, CSP-allowed — the same
@@ -411,11 +548,13 @@ const CSS = `
 .dk-wback{display:inline-flex;align-items:center;gap:7px;padding:8px 14px;border-radius:11px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:#dbe4f4;font:inherit;font-weight:600;font-size:13px;cursor:pointer}
 .dk-wback:hover{background:rgba(255,255,255,.1)}
 .dk-wback svg{width:15px;height:15px;transform:rotate(180deg)}
-.dk-wtitle{display:flex;align-items:center;gap:11px;font-weight:700;font-size:15px;min-width:0}
+.dk-wtitle{display:flex;align-items:center;gap:11px;font-weight:700;font-size:15px;min-width:0;flex:1}
 .dk-wtitle .wi{flex:none;width:30px;height:30px;border-radius:9px;display:grid;place-items:center;color:#fff;background:linear-gradient(158deg,var(--a,#5b6cf0),rgba(0,0,0,.34))}
 .dk-wtitle .wi svg{width:16px;height:16px}
 .dk-wtitle .wt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.dk-wfull{margin-left:auto;flex:none;font-size:12.5px;font-weight:600;color:#9fb0cc;cursor:pointer;padding:7px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.1)}
+.dk-wact{flex:none}
+.dk-wact.pinned{color:#f5c542;border-color:rgba(245,197,66,.4);background:rgba(245,197,66,.12)}
+.dk-wfull{margin-left:0;flex:none;font-size:12.5px;font-weight:600;color:#9fb0cc;cursor:pointer;padding:7px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.1)}
 .dk-wfull:hover{background:rgba(255,255,255,.07);color:#dbe4f4}
 .dk-wframe{flex:1;position:relative;overflow:hidden}
 .dk-wframe iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#070b15;opacity:0;transition:opacity .4s ease}
@@ -639,6 +778,59 @@ const CSS = `
 .dk-gcpin{position:absolute;top:10px;right:10px;z-index:2;appearance:none;border:0;background:rgba(6,10,20,.7);color:#64708c;cursor:pointer;width:24px;height:24px;border-radius:8px;display:grid;place-items:center;opacity:0;transition:opacity .12s,color .12s,background .12s}
 .dk-gcard:hover .dk-gcpin{opacity:1}.dk-gcpin.on{opacity:1;color:#f5c542}.dk-gcpin:hover{color:#f5c542;background:rgba(245,197,66,.16)}
 .dk-gcpin svg{width:14px;height:14px;fill:currentColor;stroke:none}
+/* ======================= Toolkit workspace ======================= */
+.dk-kit{position:absolute;inset:56px 0 0;display:flex;min-height:0}
+.dk-kitnav{flex:none;width:300px;display:flex;flex-direction:column;border-right:1px solid rgba(255,255,255,.08);padding:16px 12px 24px 4vw;overflow:auto}
+.dk-kitsearch{margin-bottom:12px}
+.dk-kitlist{display:flex;flex-direction:column;gap:2px}
+.dk-kitcat{margin-bottom:12px}
+.dk-kitcat .kc-h{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin:6px 6px}
+.dk-kitcat .kc-h .kc-d{width:8px;height:8px;border-radius:2px;background:currentColor;box-shadow:0 0 8px currentColor}
+.dk-kititem{display:block;width:100%;text-align:left;appearance:none;border:0;background:transparent;color:#aeb9d2;font:inherit;font-size:13px;padding:8px 11px;border-radius:9px;cursor:pointer;transition:background .14s,color .14s}
+.dk-kititem:hover{background:rgba(255,255,255,.05);color:#e4eaf7}
+.dk-kititem.on{background:rgba(47,95,255,.18);color:#fff;font-weight:600}
+.dk-kitmain{flex:1;min-width:0;display:flex;flex-direction:column;gap:14px;padding:22px 4vw 40px 26px;overflow:auto}
+@media(max-width:820px){.dk-kitnav{width:200px;padding-left:18px}.dk-kitmain{padding:18px}}
+.dk-kithead{display:flex;align-items:center;gap:14px}
+.dk-kithead .ki{flex:none;width:42px;height:42px;border-radius:12px;display:grid;place-items:center;color:var(--a,#4f86ff);background:color-mix(in srgb,var(--a,#4f86ff) 18%,transparent)}
+.dk-kithead .ki svg{width:21px;height:21px}
+.dk-kithead h2{font-size:18px;font-weight:800;color:#f3f7ff}
+.dk-kithead p{font-size:12.5px;color:#93a2c0;margin-top:3px}
+.dk-kopts{display:flex;flex-wrap:wrap;gap:12px}
+.dk-kopts:empty{display:none}
+.dk-kopt{display:flex;flex-direction:column;gap:5px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#8795b3;font-weight:600}
+.dk-kopt select{appearance:none;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);color:#eaf0fb;font:inherit;font-size:13px;padding:8px 30px 8px 12px;border-radius:9px;cursor:pointer;text-transform:none;letter-spacing:0}
+.dk-kiofield{display:flex;flex-direction:column;gap:7px;flex:1;min-height:0}
+.dk-klbl{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#8795b3;font-weight:600}
+.dk-kobar{display:flex;align-items:center;gap:14px}
+.dk-kcopy{font-size:12px;font-weight:600;color:#8aa0ff;cursor:pointer}
+.dk-kobar .dk-kcopy:first-of-type{margin-left:auto}
+.dk-kcopy:hover{color:#b9c8ff}
+.dk-kitio{width:100%;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.26);color:#e8eefb;font:13px/1.55 ui-monospace,"SF Mono",Menlo,Consolas,monospace;padding:13px 15px;outline:none;resize:vertical}
+.dk-kitio:focus{border-color:rgba(79,134,255,.55);background:rgba(10,16,30,.5)}
+textarea.dk-kitio{min-height:120px}
+.dk-kitout{min-height:120px;white-space:pre-wrap;word-break:break-word;overflow:auto;margin:0}
+.dk-kitout.err{color:#ff9b9b;border-color:rgba(240,72,74,.4);background:rgba(240,72,74,.08)}
+/* keyboard-shortcuts overlay */
+.dk-keys{position:absolute;inset:0;z-index:95;display:none;align-items:center;justify-content:center;padding:24px;background:rgba(3,6,13,.62)}
+.dk-keys.on{display:flex}
+.dk-keysbox{width:min(560px,94vw);max-height:84vh;overflow:auto;border-radius:18px;background:rgba(17,22,36,.96);backdrop-filter:blur(30px);-webkit-backdrop-filter:blur(30px);border:1px solid rgba(255,255,255,.14);box-shadow:0 40px 120px rgba(0,0,0,.7);padding:22px 24px 26px}
+.dk-keysbox h3{font-size:16px;font-weight:800;margin-bottom:4px}
+.dk-keysbox .sub{font-size:12.5px;color:#8795b3;margin-bottom:16px}
+.dk-keysgrp{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#7e8aa6;font-weight:700;margin:16px 0 8px}
+.dk-keyrow{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.055);font-size:13.5px;color:#dbe4f4}
+.dk-keyrow:last-child{border-bottom:0}
+.dk-keyrow .kb{display:flex;gap:5px;flex:none}
+.dk-keyrow kbd{font:inherit;font-size:11px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:6px;padding:2px 8px;color:#cdd8ec;font-weight:600}
+/* threat filter bar + export */
+.dk-sevfilter{appearance:none;cursor:pointer;font:inherit;text-align:left;transition:border-color .15s,background .15s}
+.dk-sevfilter:hover{border-color:rgba(255,255,255,.22)}
+.dk-sevfilter.on{border-color:rgba(79,134,255,.6);background:rgba(79,134,255,.12)}
+.dk-tibar{display:flex;align-items:center;gap:12px;margin:4px 0 16px;flex-wrap:wrap}
+.dk-tifind{flex:1;min-width:220px;max-width:460px}
+.dk-ticount{font-size:12.5px;color:#8795b3}
+.dk-tibtn{appearance:none;cursor:pointer;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);color:#dbe4f4;font:inherit;font-size:12.5px;font-weight:600;padding:9px 14px;border-radius:10px}
+.dk-tibtn:hover{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.24)}
 `;
 const IC_SEARCH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/></svg>';
 const IC_CHEV = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>';
@@ -671,6 +863,7 @@ export function renderDeck(host, opts) {
         <button class="dk-tab on" data-scene="overview">${IC.home}<span>Overview</span></button>
         <button class="dk-tab" data-scene="con">${IC.link}<span>Connections</span></button>
         <button class="dk-tab" data-scene="tools">${IC.grid}<span>Tools</span></button>
+        <button class="dk-tab" data-scene="toolkit">${IC.bolt}<span>Toolkit</span></button>
         <button class="dk-tab" data-scene="threat">${IC.radar}<span>Threat Intel</span></button>
         <button class="dk-tab" data-scene="invest">${IC.folder}<span>Investigations</span></button>
         <button class="dk-tab" data-scene="activity">${IC.pulse}<span>Activity</span></button>
@@ -702,6 +895,8 @@ export function renderDeck(host, opts) {
 
     <div class="dk-scene dk-tools2" id="dkTools" hidden></div>
 
+    <div class="dk-scene dk-kit" id="dkToolkit" hidden></div>
+
     <div class="dk-scene dk-ti" id="dkThreat" hidden></div>
 
     <div class="dk-scene dk-inv" id="dkInvest" hidden></div>
@@ -720,6 +915,9 @@ export function renderDeck(host, opts) {
       <div class="dk-wbar">
         <button class="dk-wback" id="dkWBack">${IC_CHEV}Back</button>
         <div class="dk-wtitle" id="dkWTitle"></div>
+        <button class="dk-icbtn dk-wact" id="dkWPin" title="Pin to overview" aria-label="Pin to overview">${IC.star}</button>
+        <button class="dk-icbtn dk-wact" id="dkWCopy" title="Copy tool link" aria-label="Copy tool link">${IC.link}</button>
+        <button class="dk-icbtn dk-wact" id="dkWTab" title="Open in a new tab" aria-label="Open in a new tab">${IC.ext}</button>
         <span class="dk-wfull" id="dkWFull">Open in full console</span>
       </div>
       <div class="dk-wframe" id="dkWFrame"></div>
@@ -733,7 +931,9 @@ export function renderDeck(host, opts) {
         <div class="dk-sres" id="dkSpotRes"></div>
         <div class="dk-sfoot"><span><kbd>↑</kbd><kbd>↓</kbd> navigate</span><span><kbd>↵</kbd> open</span><span><kbd>esc</kbd> close</span><span style="margin-left:auto"><b>Tools, services &amp; actions</b></span></div>
       </div>
-    </div>`;
+    </div>
+
+    <div class="dk-keys" id="dkKeys"></div>`;
   (host || document.body).appendChild(root);
   const $ = (s) => root.querySelector(s);
 
@@ -749,7 +949,7 @@ export function renderDeck(host, opts) {
   sizeStars(); drawStars();
 
   // ---------- workspace router ----------
-  const SCENES = { overview: "#dkOverview", con: "#dkCon", tools: "#dkTools", threat: "#dkThreat", invest: "#dkInvest", activity: "#dkActivity", assistant: "#dkAssistant" };
+  const SCENES = { overview: "#dkOverview", con: "#dkCon", tools: "#dkTools", toolkit: "#dkToolkit", threat: "#dkThreat", invest: "#dkInvest", activity: "#dkActivity", assistant: "#dkAssistant" };
   const sceneEls = {}; for (const k in SCENES) sceneEls[k] = $(SCENES[k]);
   const sceneCon = sceneEls.con, sceneTools = sceneEls.tools;   // kept for the constellation + tools code
   // sec -> label, for activity lines and quick-action titles
@@ -777,6 +977,7 @@ export function renderDeck(host, opts) {
     if (scene === "overview") renderOverview();
     else if (scene === "con") layoutConstellation();
     else if (scene === "tools") { buildTools(); applyTools(); revealGallery(); }
+    else if (scene === "toolkit") renderToolkit();
     else if (scene === "threat") renderThreat();
     else if (scene === "invest") renderInvest();
     else if (scene === "activity") renderActivity();
@@ -1141,6 +1342,7 @@ export function renderDeck(host, opts) {
     f.onload = () => { f.classList.add("in"); const l = wFrame.querySelector(".dk-wload"); if (l) setTimeout(() => l.remove(), 180); };
     wFrame.appendChild(f);
     wTitle.innerHTML = '<span class="wi"' + (accent ? ' style="--a:' + accent + '"' : "") + '>' + toolIcon(label) + '</span><span class="wt">' + esc(label) + '</span>';
+    const pinBtn = $("#dkWPin"); if (pinBtn) pinBtn.classList.toggle("pinned", pins.includes(sec));
     drawer.classList.remove("on"); closeAllMenus();
     for (const k in sceneEls) sceneEls[k].hidden = true;
     sceneWork.hidden = false;
@@ -1152,6 +1354,9 @@ export function renderDeck(host, opts) {
   }
   $("#dkWBack").onclick = closeTool;
   $("#dkWFull").onclick = () => { const s = curSec; teardown(); onOpen(s); };
+  $("#dkWPin").onclick = () => { if (!curSec) return; const on = togglePin(curSec); $("#dkWPin").classList.toggle("pinned", on); toast(on ? "Pinned to overview" : "Unpinned"); };
+  $("#dkWCopy").onclick = async () => { if (!curSec) return; try { await navigator.clipboard.writeText(location.origin + "/" + curSec); toast("Tool link copied"); } catch (_) { toast("Copy failed"); } };
+  $("#dkWTab").onclick = () => { if (curSec) window.open("/" + curSec, "_blank", "noopener"); };
 
   // ---------- spotlight ----------
   const spot = $("#dkSpot"), spotIn = $("#dkSpotIn"), spotRes = $("#dkSpotRes");
@@ -1232,15 +1437,48 @@ export function renderDeck(host, opts) {
     popAcct.innerHTML = `<div class="dk-acctcard"><b>${esc(nm)}</b><span>${esc(em)}</span></div>
       <button class="dk-mi" data-go="overview">${IC.home}<span>Command center home</span></button>
       <button class="dk-mi" data-tool="settings">${IC.gear}<span>Settings</span></button>
+      <button class="dk-mi" id="dkMiKeys">${IC.bolt}<span>Keyboard shortcuts<span class="sub">Press ? anytime</span></span></button>
+      <div class="dk-mi-div"></div>
+      <button class="dk-mi" id="dkMiExport">${IC.ext}<span>Export deck state<span class="sub">Connections, pins &amp; notes as JSON</span></span></button>
+      <button class="dk-mi" id="dkMiImport">${IC.folder}<span>Import deck state</span></button>
       <button class="dk-mi" id="dkMiConsole">${IC.ext}<span>Open full console</span></button>
       <div class="dk-mi-div"></div>
       <button class="dk-mi" id="dkMiExit">${IC.logout}<span>Exit command center</span></button>`;
     popAcct.querySelector("[data-go]").onclick = () => { closeAllMenus(); go("overview"); };
     popAcct.querySelector("[data-tool]").onclick = () => { closeAllMenus(); openTool("settings", "Settings"); };
+    popAcct.querySelector("#dkMiKeys").onclick = () => { closeAllMenus(); toggleKeys(true); };
+    popAcct.querySelector("#dkMiExport").onclick = () => { closeAllMenus(); exportDeckState(); };
+    popAcct.querySelector("#dkMiImport").onclick = () => { closeAllMenus(); importDeckState(); };
     popAcct.querySelector("#dkMiConsole").onclick = exitDeck;
     popAcct.querySelector("#dkMiExit").onclick = exitDeck;
   }
   function exitDeck(){ teardown(); onExit(); }
+  // Portable deck state: connections, pinned tools and notes (no secrets/API keys).
+  function exportDeckState(){
+    const state = { v: 1, exported: new Date().toISOString(), connections: conns, pins, notes: loadNotes() };
+    const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob), a = document.createElement("a"); a.href = url; a.download = "darknode-deck-state.json"; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+    toast("Deck state exported");
+  }
+  function importDeckState(){
+    const inp = document.createElement("input"); inp.type = "file"; inp.accept = "application/json,.json";
+    inp.onchange = () => {
+      const f = inp.files && inp.files[0]; if (!f) return;
+      const rd = new FileReader();
+      rd.onload = () => {
+        try {
+          const s = JSON.parse(rd.result);
+          if (s.connections && typeof s.connections === "object") { conns = s.connections; saveConns(conns); }
+          if (Array.isArray(s.pins)) { pins = s.pins.filter((x) => secLabel[x]).slice(0, 12); savePins(pins); }
+          if (typeof s.notes === "string") saveNotes(s.notes);
+          toast("Deck state imported");
+          go(curScene);
+        } catch (e) { toast("Import failed: " + (e.message || "bad file")); }
+      };
+      rd.readAsText(f);
+    };
+    inp.click();
+  }
 
   // avatar
   const avEl = $("#dkAvatar");
@@ -1396,6 +1634,7 @@ export function renderDeck(host, opts) {
   }
 
   // ---------- Threat Intel workspace ----------
+  let _tiCves = [], _tiSev = "", _tiQ = "";
   function renderThreat(){
     const el = sceneEls.threat;
     el.innerHTML = `<div class="dk-ti-head"><h1>Threat Intelligence</h1><span class="mo" id="dkTiFull">Open full Threat Feed ${IC.ext}</span></div>
@@ -1403,13 +1642,25 @@ export function renderDeck(host, opts) {
     el.querySelector("#dkTiFull").onclick = () => openTool("threatfeed", "Threat Intel Feed");
     fetchIntel(40).then((d) => {
       setHealth(true, "Threat feed live");
+      _tiCves = d.cves || []; _tiSev = ""; _tiQ = "";
       const c = d.counts || {};
-      const chips = ["CRITICAL", "HIGH", "MEDIUM", "LOW"].map((k) => `<div class="dk-sevchip"><div class="n" style="color:${SEV[k].color}">${c[k] || 0}</div><div class="l">${SEV[k].label}</div></div>`).join("")
+      const chips = ["CRITICAL", "HIGH", "MEDIUM", "LOW"].map((k) => `<button class="dk-sevchip dk-sevfilter" data-sev="${k}"><div class="n" style="color:${SEV[k].color}">${c[k] || 0}</div><div class="l">${SEV[k].label}</div></button>`).join("")
         + `<div class="dk-sevchip"><div class="n">${(d.total || 0).toLocaleString()}</div><div class="l">Published 7d</div></div>`;
-      const list = d.cves.map((v) => `<div class="dk-cve" data-id="${esc(v.id)}"><div class="sv" style="color:${SEV[v.severity].color}">${v.cvss == null ? "—" : v.cvss.toFixed(1)}<small>${SEV[v.severity].label}</small></div><div class="bd"><div class="id">${esc(v.id)}</div><div class="ti">${esc(v.title || "No description provided yet.")}</div><div class="dt">Published ${esc(v.date || "—")}</div></div></div>`).join("");
       const charts = buildThreatCharts(d.cves);
-      el.querySelector("#dkTiBody").innerHTML = `<div class="dk-sevchips">${chips}</div>${charts}${list || '<div class="dk-tnone">No CVEs returned for this window.</div>'}`;
-      el.querySelectorAll(".dk-cve").forEach((r) => r.onclick = () => window.open("https://nvd.nist.gov/vuln/detail/" + encodeURIComponent(r.dataset.id), "_blank", "noopener"));
+      el.querySelector("#dkTiBody").innerHTML = `<div class="dk-sevchips">${chips}</div>${charts}
+        <div class="dk-tibar">
+          <label class="dk-tsearch dk-tifind">${IC_SEARCH}<input id="dkTiSearch" type="search" placeholder="Filter ${_tiCves.length} CVEs by id or keyword…" autocomplete="off" spellcheck="false"></label>
+          <span class="dk-ticount" id="dkTiCount"></span>
+          <button class="dk-tibtn" id="dkTiCsv">Export CSV</button>
+          <button class="dk-tibtn" id="dkTiJson">Export JSON</button>
+        </div>
+        <div id="dkTiList"></div>`;
+      const search = el.querySelector("#dkTiSearch");
+      search.oninput = () => { _tiQ = search.value.trim().toLowerCase(); paintTiList(); };
+      el.querySelectorAll(".dk-sevfilter").forEach((b) => b.onclick = () => { _tiSev = _tiSev === b.dataset.sev ? "" : b.dataset.sev; el.querySelectorAll(".dk-sevfilter").forEach((x) => x.classList.toggle("on", x.dataset.sev === _tiSev)); paintTiList(); });
+      el.querySelector("#dkTiCsv").onclick = () => exportCves("csv");
+      el.querySelector("#dkTiJson").onclick = () => exportCves("json");
+      paintTiList();
     }).catch(() => {
       setHealth(false, "Threat feed delayed");
       el.querySelector("#dkTiBody").innerHTML = `<div class="dk-errbox">Couldn't reach the NVD CVE feed. Keyless requests are rate-limited to ~5 every 30 seconds — wait a moment and reopen this tab.<br><button class="dk-b" id="dkTiRetry" style="display:inline-flex;width:auto;margin-top:12px">Retry</button></div>`;
@@ -1444,6 +1695,24 @@ export function renderDeck(host, opts) {
       <div class="dk-tpanel"><div class="dk-chart"><div class="ct">${IC.radar} CVSS score distribution (${scored.length} scored)</div><div class="dk-bars">${barRows}</div></div></div>
     </div>`;
   }
+  const tiFiltered = () => _tiCves.filter((v) => (!_tiSev || v.severity === _tiSev) && (!_tiQ || (v.id + " " + (v.title || "")).toLowerCase().includes(_tiQ)));
+  function paintTiList(){
+    const box = root.querySelector("#dkTiList"); if (!box) return;
+    const rows = tiFiltered();
+    const cnt = root.querySelector("#dkTiCount"); if (cnt) cnt.textContent = rows.length + " of " + _tiCves.length;
+    box.innerHTML = rows.length
+      ? rows.map((v) => `<div class="dk-cve" data-id="${esc(v.id)}"><div class="sv" style="color:${SEV[v.severity].color}">${v.cvss == null ? "—" : v.cvss.toFixed(1)}<small>${SEV[v.severity].label}</small></div><div class="bd"><div class="id">${esc(v.id)}</div><div class="ti">${esc(v.title || "No description provided yet.")}</div><div class="dt">Published ${esc(v.date || "—")}</div></div></div>`).join("")
+      : `<div class="dk-tnone">No CVEs match the filter.</div>`;
+    box.querySelectorAll(".dk-cve").forEach((r) => r.onclick = () => window.open("https://nvd.nist.gov/vuln/detail/" + encodeURIComponent(r.dataset.id), "_blank", "noopener"));
+  }
+  function exportCves(fmt){
+    const rows = tiFiltered(); if (!rows.length) { toast("Nothing to export"); return; }
+    let blob, name;
+    if (fmt === "json") { blob = new Blob([JSON.stringify(rows, null, 2)], { type: "application/json" }); name = "darknode-cves.json"; }
+    else { const q = (x) => `"${String(x == null ? "" : x).replace(/"/g, '""')}"`; const lines = rows.map((v) => [v.id, v.cvss == null ? "" : v.cvss, v.severity, v.date || "", v.title || ""].map(q).join(",")); blob = new Blob(["id,cvss,severity,published,title\n" + lines.join("\n")], { type: "text/csv" }); name = "darknode-cves.csv"; }
+    const url = URL.createObjectURL(blob), a = document.createElement("a"); a.href = url; a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+    toast("Exported " + rows.length + " CVEs");
+  }
 
   // ---------- Investigations workspace ----------
   function renderInvest(){
@@ -1477,6 +1746,72 @@ export function renderDeck(host, opts) {
       <div class="dk-ovp"><h2>${IC.pulse} Event stream</h2><div class="dk-ovact">${rows}</div></div>`;
   }
 
+  // ---------- Toolkit workspace (instant client-side utilities) ----------
+  let kitBuilt = false, kitSel = null;
+  try { kitSel = localStorage.getItem("dn_deck_kit"); } catch (_) {}
+  if (!TOOLKIT.some((t) => t.id === kitSel)) kitSel = TOOLKIT[0].id;
+  function renderToolkit(){
+    const el = sceneEls.toolkit;
+    if (kitBuilt) return;
+    kitBuilt = true;
+    el.innerHTML = `
+      <div class="dk-kitnav">
+        <label class="dk-tsearch dk-kitsearch">${IC_SEARCH}<input id="dkKitSearch" type="search" placeholder="Search ${TOOLKIT.length} utilities…" autocomplete="off" spellcheck="false"></label>
+        <div id="dkKitList" class="dk-kitlist"></div>
+      </div>
+      <div class="dk-kitmain" id="dkKitMain"></div>`;
+    const search = el.querySelector("#dkKitSearch");
+    search.oninput = () => buildKitList(search.value.trim().toLowerCase());
+    buildKitList("");
+    selectKit(kitSel);
+  }
+  function buildKitList(q){
+    const box = root.querySelector("#dkKitList"); if (!box) return;
+    const html = TK_CATS.map((cat) => {
+      const tools = TOOLKIT.filter((t) => t.cat === cat.id && (!q || (t.name + " " + t.desc).toLowerCase().includes(q)));
+      if (!tools.length) return "";
+      return `<div class="dk-kitcat"><div class="kc-h" style="color:${cat.color}"><span class="kc-d"></span>${esc(cat.name)}</div>` +
+        tools.map((t) => `<button class="dk-kititem${t.id === kitSel ? " on" : ""}" data-tk="${t.id}">${esc(t.name)}</button>`).join("") + `</div>`;
+    }).join("");
+    box.innerHTML = html || `<div class="dk-nempty">No utilities match "${esc(q)}".</div>`;
+    box.querySelectorAll(".dk-kititem").forEach((b) => b.onclick = () => selectKit(b.dataset.tk));
+  }
+  function selectKit(id){
+    const t = TOOLKIT.find((x) => x.id === id); if (!t) return;
+    kitSel = id; try { localStorage.setItem("dn_deck_kit", id); } catch (_) {}
+    root.querySelectorAll(".dk-kititem").forEach((b) => b.classList.toggle("on", b.dataset.tk === id));
+    const main = root.querySelector("#dkKitMain"); if (!main) return;
+    const cat = TK_CATS.find((c) => c.id === t.cat) || {};
+    const optsHTML = (t.opts || []).map((o) => o.type === "select"
+      ? `<label class="dk-kopt">${esc(o.label)}<select data-opt="${o.id}">${o.options.map(([v, l]) => `<option value="${esc(v)}">${esc(l)}</option>`).join("")}</select></label>` : "").join("");
+    main.innerHTML = `
+      <div class="dk-kithead"><div class="ki" style="--a:${cat.color || "#4f86ff"}">${IC.bolt}</div><div><h2>${esc(t.name)}</h2><p>${esc(t.desc)}</p></div></div>
+      <div class="dk-kopts">${optsHTML}</div>
+      ${t.generate ? `<button class="dk-b pri" id="dkKitGen" style="width:auto;align-self:flex-start">${IC.bolt}Generate</button>`
+        : `<div class="dk-kiofield"><label class="dk-klbl">Input</label><textarea id="dkKitIn" class="dk-kitio" placeholder="Paste or type here…" spellcheck="false"></textarea></div>`}
+      <div class="dk-kiofield"><div class="dk-kobar"><label class="dk-klbl">Output</label><span class="dk-kcopy" id="dkKitCopy">Copy</span>${t.generate ? "" : `<span class="dk-kcopy" id="dkKitSwap">Use as input</span>`}<span class="dk-kcopy" id="dkKitClear">Clear</span></div><pre id="dkKitOut" class="dk-kitio dk-kitout" aria-live="polite"></pre></div>`;
+    const inEl = main.querySelector("#dkKitIn"), outEl = main.querySelector("#dkKitOut");
+    const getOpts = () => { const o = {}; main.querySelectorAll("[data-opt]").forEach((s) => o[s.dataset.opt] = s.value); return o; };
+    let rt = 0;
+    const runNow = async () => {
+      outEl.classList.remove("err");
+      try {
+        let res = t.run(inEl ? inEl.value : "", getOpts());
+        if (res && typeof res.then === "function") res = await res;
+        outEl.textContent = res;
+      } catch (e) { outEl.classList.add("err"); outEl.textContent = "Error: " + ((e && e.message) || e); }
+    };
+    const schedule = () => { clearTimeout(rt); rt = setTimeout(runNow, t.async ? 200 : 60); };
+    if (inEl) inEl.oninput = schedule;
+    main.querySelectorAll("[data-opt]").forEach((s) => s.onchange = runNow);
+    const gen = main.querySelector("#dkKitGen"); if (gen) gen.onclick = runNow;
+    main.querySelector("#dkKitCopy").onclick = async () => { try { await navigator.clipboard.writeText(outEl.textContent); toast("Copied to clipboard"); } catch (_) { toast("Copy failed"); } };
+    const clr = main.querySelector("#dkKitClear"); if (clr) clr.onclick = () => { if (inEl) inEl.value = ""; outEl.textContent = ""; outEl.classList.remove("err"); if (inEl) inEl.focus(); };
+    const sw = main.querySelector("#dkKitSwap"); if (sw) sw.onclick = () => { if (inEl && outEl.textContent && !outEl.classList.contains("err")) { inEl.value = outEl.textContent; runNow(); } };
+    if (t.generate) runNow();
+    else if (inEl) setTimeout(() => { try { inEl.focus(); } catch (_) {} }, 30);
+  }
+
   // ---------- Assistant workspace (embedded Darknode AI) ----------
   const asstFrame = $("#dkAsstFrame");
   let asstLoaded = false;
@@ -1498,7 +1833,26 @@ export function renderDeck(host, opts) {
     go("assistant");
   }
 
-  // ---------- keyboard ----------
+  // ---------- keyboard & shortcuts ----------
+  // Vim-style navigation: press "g" then a scene key. "?" opens the cheatsheet.
+  const GOTO = { o: "overview", c: "con", t: "tools", k: "toolkit", i: "threat", n: "invest", a: "activity", s: "assistant" };
+  const SCENE_TITLE = { overview: "Overview", con: "Connections", tools: "Tools", toolkit: "Toolkit", threat: "Threat Intel", invest: "Investigations", activity: "Activity", assistant: "Assistant" };
+  const keysEl = $("#dkKeys");
+  function buildKeysOverlay(){
+    const nav = Object.entries(GOTO).map(([k, sc]) => `<div class="dk-keyrow"><span>Go to ${esc(SCENE_TITLE[sc] || sc)}</span><span class="kb"><kbd>g</kbd><kbd>${esc(k)}</kbd></span></div>`).join("");
+    keysEl.innerHTML = `<div class="dk-keysbox">
+      <h3>Keyboard shortcuts</h3><div class="sub">The deck is fully keyboard-drivable. Press Esc to close.</div>
+      <div class="dk-keysgrp">Global</div>
+      <div class="dk-keyrow"><span>Command palette (tools, services, actions)</span><span class="kb"><kbd>Ctrl</kbd><kbd>K</kbd></span></div>
+      <div class="dk-keyrow"><span>Quick search</span><span class="kb"><kbd>/</kbd></span></div>
+      <div class="dk-keyrow"><span>This cheatsheet</span><span class="kb"><kbd>?</kbd></span></div>
+      <div class="dk-keyrow"><span>Close / back / exit</span><span class="kb"><kbd>Esc</kbd></span></div>
+      <div class="dk-keysgrp">Jump to workspace</div>${nav}</div>`;
+  }
+  const toggleKeys = (show) => { if (show && !keysEl.innerHTML) buildKeysOverlay(); keysEl.classList.toggle("on", show); };
+  keysEl.addEventListener("click", (e) => { if (e.target === keysEl) toggleKeys(false); });
+  const inTyping = (e) => { const t = e.target, n = t && t.tagName; return n === "INPUT" || n === "TEXTAREA" || n === "SELECT" || (t && t.isContentEditable); };
+  let gPending = 0, gTimer = 0;
   function onKey(e){
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); spot.classList.contains("on") ? closeSpot() : openSpot(); return; }
     if (spot.classList.contains("on")) {
@@ -1508,13 +1862,24 @@ export function renderDeck(host, opts) {
       else if (e.key === "Enter") { e.preventDefault(); chooseSpot(selIdx); }
       return;
     }
+    if (keysEl.classList.contains("on")) { if (e.key === "Escape") { e.preventDefault(); toggleKeys(false); } return; }
     if (e.key === "Escape") {
       if (popNew.classList.contains("on") || popBell.classList.contains("on") || popAcct.classList.contains("on")) { closeAllMenus(); return; }
       if (!sceneWork.hidden) { closeTool(); return; }
       if (drawer.classList.contains("on")) { drawer.classList.remove("on"); return; }
       if (curScene !== "overview") { go("overview"); return; }
-      exitDeck();
+      exitDeck(); return;
     }
+    if (e.ctrlKey || e.metaKey || e.altKey || inTyping(e)) return;   // don't hijack typing or combos
+    if (e.key === "?") { e.preventDefault(); toggleKeys(true); return; }
+    if (e.key === "/") { e.preventDefault(); openSpot(); return; }
+    if (gPending) {
+      gPending = 0; clearTimeout(gTimer);
+      const sc = GOTO[e.key.toLowerCase()];
+      if (sc) { e.preventDefault(); if (!sceneWork.hidden) closeTool(); go(sc); }
+      return;
+    }
+    if (e.key.toLowerCase() === "g") { gPending = 1; clearTimeout(gTimer); gTimer = setTimeout(() => gPending = 0, 900); }
   }
   document.addEventListener("keydown", onKey);
 
@@ -1528,7 +1893,7 @@ export function renderDeck(host, opts) {
   requestAnimationFrame(() => go(initial));
 
   function teardown(){
-    cancelAnimationFrame(rafId); clearInterval(clockId);
+    cancelAnimationFrame(rafId); clearInterval(clockId); clearTimeout(gTimer);
     busOffs.forEach((off) => { try { off(); } catch (_) {} }); busOffs = [];
     document.removeEventListener("keydown", onKey); window.removeEventListener("resize", onResize);
     root.remove();
