@@ -850,6 +850,47 @@ const CSS = `
 .dk-dfoot .cleanup b{color:#7fa0e8}
 .dk-dfoot .safety b{color:#f5b878}
 @media(max-width:900px){.dk-diary{flex-direction:column}.dk-dnav{width:auto;border-right:0;border-bottom:1px solid rgba(255,255,255,.08);padding-left:18px}.dk-dmeta{grid-template-columns:1fr}.dk-dstep{margin-left:6px}.dk-dhead .r{width:100%}}
+/* ---- investigations + activity (wave 2) ---- */
+.dk-invdash{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin:4px 0 18px}
+@media(max-width:1050px){.dk-invdash{grid-template-columns:1fr}}
+.dk-invb{background:#0d1320;border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:14px 16px}
+.dk-invb .t{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:#7e8aa6;font-weight:700;margin-bottom:10px}
+.dk-invb .track{display:flex;height:10px;border-radius:6px;overflow:hidden;background:rgba(255,255,255,.05)}
+.dk-invb .track span{display:block;min-width:2px}
+.dk-invb .leg{display:flex;flex-wrap:wrap;gap:8px 14px;margin-top:10px}
+.dk-invb .lg{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:#aeb9d2}
+.dk-invb .lg i{width:9px;height:9px;border-radius:2px;flex:none}
+.dk-invtypes2{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.dk-invtypes2 .it{background:rgba(255,255,255,.03);border-radius:8px;padding:8px 6px;text-align:center}
+.dk-invtypes2 .it b{display:block;font-size:17px;color:#eef3fb;font-variant-numeric:tabular-nums}
+.dk-invtypes2 .it span{font-size:10px;color:#8795b3;line-height:1.2;display:block;margin-top:2px}
+.dk-invbar{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:12px}
+.dk-isearch{display:flex;align-items:center;gap:8px;background:#111624;border:1px solid rgba(255,255,255,.1);border-radius:9px;padding:0 11px;height:38px;flex:1;min-width:180px}
+.dk-isearch svg{width:15px;height:15px;color:#8795b3;flex:none}
+.dk-isearch input{flex:1;min-width:0;background:transparent;border:0;outline:none;color:#e7edf8;font-size:12.5px}
+.dk-isel{height:38px;background:#111624;border:1px solid rgba(255,255,255,.1);border-radius:9px;color:#c3cde0;font-size:12.5px;padding:0 10px;outline:none;cursor:pointer;max-width:200px}
+.dk-itwrap{overflow:auto;border:1px solid rgba(255,255,255,.07);border-radius:12px}
+.dk-itable{width:100%;border-collapse:collapse;font-size:12.5px}
+.dk-itable th{text-align:left;font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:#7e8aa6;font-weight:700;padding:10px 14px;background:#0d1320;border-bottom:1px solid rgba(255,255,255,.08);position:sticky;top:0}
+.dk-itable td{padding:9px 14px;border-bottom:1px solid rgba(255,255,255,.05);color:#c3cde0}
+.dk-itable tr[data-eid]{cursor:pointer}
+.dk-itable tr[data-eid]:hover td{background:rgba(63,120,255,.08)}
+.dk-itable .nm{color:#eef3fb;font-weight:600}
+.dk-itable .num,.dk-itable .ag{color:#8795b3;font-variant-numeric:tabular-nums}
+.dk-itable .pill{display:inline-block;font-size:10.5px;font-weight:700;color:var(--c);border:1px solid color-mix(in srgb,var(--c) 45%,transparent);background:color-mix(in srgb,var(--c) 14%,transparent);border-radius:20px;padding:1px 9px}
+.dk-astats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:2px 0 16px}
+@media(max-width:760px){.dk-astats{grid-template-columns:1fr}.dk-invtypes2{grid-template-columns:repeat(2,1fr)}}
+.dk-astat{background:#0e1524;border:1px solid rgba(255,255,255,.08);border-left:3px solid var(--a,#4f86ff);border-radius:12px;padding:14px 16px}
+.dk-astat .n{font-size:24px;font-weight:700;color:#f3f7ff;line-height:1.1}
+.dk-astat .l{font-size:11.5px;color:#8795b3;margin-top:3px}
+.dk-afbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.dk-afch{display:inline-flex;align-items:center;gap:7px;background:#121a2a;border:1px solid rgba(255,255,255,.1);color:#aeb9d2;border-radius:20px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer}
+.dk-afch i{width:8px;height:8px;border-radius:50%;flex:none}
+.dk-afch span{color:#6f7b96;font-variant-numeric:tabular-nums}
+.dk-afch:hover{border-color:rgba(255,255,255,.22);color:#fff}
+.dk-afch.on{background:rgba(63,120,255,.16);border-color:#3f78ff;color:#fff}
+.dk-afch.on span{color:#9fb6e8}
+.dk-ovact .r .ct{font-size:10.5px;font-weight:700;letter-spacing:.03em;flex:none;margin-left:6px}
 .dk-chart{margin:6px 0 4px}
 .dk-chart .ct{font-size:12px;font-weight:600;color:#9aa7c4;margin-bottom:12px;display:flex;align-items:center;gap:8px}
 .dk-chart .ct svg{width:15px;height:15px;flex:none;color:#8aa0ff}
@@ -1829,35 +1870,159 @@ export function renderDeck(host, opts) {
   }
 
   // ---------- Investigations workspace ----------
+  // ---------- Investigations & Graph workspace ----------
+  // Reads the live security graph (singleton module — imported WITHOUT ?v=) and
+  // presents KPIs, severity/status distributions, and a filterable entity table.
+  let graphMod = null;
+  const invF = { q: "", type: "", sev: "", status: "" };
+  const capword = (s) => s ? s.charAt(0).toUpperCase() + s.slice(1) : "—";
+  function withGraph(cb){
+    if (graphMod) { cb(graphMod); return; }
+    import("/js/security-graph.js").then((m) => { graphMod = m; cb(m); }).catch(() => cb(null));
+  }
   function renderInvest(){
     const el = sceneEls.invest;
-    el.innerHTML = `<h1>Investigations &amp; Graph</h1><p class="sub">Your security graph, cases and entity intelligence — built up as you work across the tools.</p>
+    el.innerHTML = `
+      <div class="dk-ovhead"><div><h1>Investigations &amp; Graph</h1><p>Your security graph, cases and entity intelligence — built up as you work across the tools.</p></div>
+        <div class="when"><button class="dk-dbtn" id="dkInvExport">${IC.copy} Export graph</button></div></div>
       <div class="dk-kpis" id="dkInvKpis"><div class="dk-loading"><span class="sp"></span>Reading the security graph…</div></div>
-      <div class="dk-invtypes" id="dkInvTypes"></div>
-      <div class="dk-qa" style="max-width:720px;margin-top:8px">
+      <div class="dk-invdash" id="dkInvDash"></div>
+      <div class="dk-ovp">
+        <h2>${IC.folder} Entities <span class="mo" data-tool="secgraph">Open graph</span></h2>
+        <div class="dk-invbar">
+          <div class="dk-isearch">${IC_SEARCH}<input id="dkInvQ" placeholder="Search entities by name or tag…" value="${esc(invF.q)}" autocomplete="off" spellcheck="false"></div>
+          <select id="dkInvType" class="dk-isel"></select>
+          <select id="dkInvSev" class="dk-isel"></select>
+          <select id="dkInvStatus" class="dk-isel"></select>
+        </div>
+        <div id="dkInvTable"></div>
+      </div>
+      <div class="dk-qa" style="max-width:760px;margin-top:4px">
         <button class="dk-qacard" data-tool="investigation"><span class="qi" style="--a:#9b5cf0">${IC.folder}</span><b>Open Investigation Workspace</b><span>Build and track a full investigation.</span></button>
         <button class="dk-qacard" data-tool="secgraph"><span class="qi" style="--a:#4f86ff">${IC.grid}</span><b>Open Security Graph</b><span>Visualise entities and their links.</span></button>
         <button class="dk-qacard" data-tool="casemgmt"><span class="qi" style="--a:#f5920b">${IC.folder}</span><b>Case Manager</b><span>Track cases and their status.</span></button>
       </div>`;
     el.querySelectorAll(".dk-qacard[data-tool]").forEach((b) => b.onclick = () => openTool(b.dataset.tool, secLabel[b.dataset.tool] || b.dataset.tool));
-    import("/js/security-graph.js").then((m) => {
-      const st = m.getStats ? m.getStats() : { totalEntities: 0, totalRelationships: 0, byType: {} };
-      const label = m.getEntityTypeLabel || ((t) => t);
-      const kpi = (val, lab, accent) => `<div class="dk-kpi" style="--a:${accent};cursor:default"><div class="kn">${(val || 0).toLocaleString()}</div><div class="kl">${esc(lab)}</div></div>`;
-      el.querySelector("#dkInvKpis").innerHTML = kpi(st.totalEntities, "Entities", "#9b5cf0") + kpi(st.totalRelationships, "Relationships", "#4f86ff") + kpi((st.byType || {}).CASE, "Cases", "#f5920b") + kpi((st.byType || {}).INCIDENT, "Incidents", "#f0484a");
-      const types = Object.entries(st.byType || {}).sort((a, b) => b[1] - a[1]).slice(0, 12);
-      el.querySelector("#dkInvTypes").innerHTML = types.length ? types.map(([t, n]) => `<div class="dk-invtype"><div class="n">${n}</div><div class="l">${esc(label(t))}</div></div>`).join("") : `<div class="dk-nempty" style="grid-column:1/-1">The graph is empty. As recon, intel and forensic tools run, the entities they find are collected here.</div>`;
-    }).catch(() => { el.querySelector("#dkInvKpis").innerHTML = `<div class="dk-nempty" style="grid-column:1/-1">Security graph unavailable in this context.</div>`; });
+    el.querySelector("#dkInvExport").onclick = () => withGraph((m) => {
+      if (!m || !m.exportAll) { toast("Graph unavailable"); return; }
+      const data = m.exportAll(), n = (data.entities || []).length;
+      if (!n) { toast("Graph is empty"); return; }
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }));
+      a.download = "darknode-graph.json"; a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+      toast(n + " entities exported");
+    });
+    withGraph((m) => paintInv(m));
+  }
+  function paintInv(m){
+    const kpisEl = root.querySelector("#dkInvKpis"); if (!kpisEl) return;
+    if (!m || !m.getStats) { kpisEl.innerHTML = `<div class="dk-nempty" style="grid-column:1/-1">Security graph unavailable in this context.</div>`; return; }
+    const st = m.getStats();
+    const kpi = (val, lab, accent) => `<div class="dk-kpi" style="--a:${accent};cursor:default"><div class="kn">${(val || 0).toLocaleString()}</div><div class="kl">${esc(lab)}</div></div>`;
+    kpisEl.innerHTML = kpi(st.totalEntities, "Entities", "#9b5cf0") + kpi(st.totalRelationships, "Relationships", "#4f86ff") + kpi((st.byType || {}).CASE, "Cases", "#f5920b") + kpi((st.byType || {}).INCIDENT, "Incidents", "#f0484a");
+    const sevOrder = ["critical", "high", "medium", "low", "info", "none"];
+    const statusOrder = ["new", "open", "investigating", "resolved", "closed", "none"];
+    const sevColor = (k) => k === "none" ? "#4a5578" : (m.getSeverityColor ? m.getSeverityColor(k) : "#7d8aa8");
+    const stColor = (k) => k === "none" ? "#4a5578" : (m.getStatusColor ? m.getStatusColor(k) : "#7d8aa8");
+    const bar = (title, obj, order, colorFn, labelFn) => {
+      const total = Object.values(obj || {}).reduce((a, b) => a + b, 0);
+      if (!total) return "";
+      const keys = order.filter((k) => (obj || {})[k]);
+      const segs = keys.map((k) => `<span style="width:${((obj[k] / total) * 100).toFixed(1)}%;background:${colorFn(k)}" title="${esc(labelFn(k))}: ${obj[k]}"></span>`).join("");
+      const legend = keys.map((k) => `<span class="lg"><i style="background:${colorFn(k)}"></i>${esc(labelFn(k))} ${obj[k]}</span>`).join("");
+      return `<div class="dk-invb"><div class="t">${esc(title)}</div><div class="track">${segs}</div><div class="leg">${legend}</div></div>`;
+    };
+    const typeTop = Object.entries(st.byType || {}).sort((a, b) => b[1] - a[1]).slice(0, 8);
+    const typeHTML = typeTop.length ? `<div class="dk-invb"><div class="t">Top entity types</div><div class="dk-invtypes2">${typeTop.map(([t, n]) => `<div class="it"><b>${n}</b><span>${esc(m.getEntityTypeLabel ? m.getEntityTypeLabel(t) : t)}</span></div>`).join("")}</div></div>` : "";
+    root.querySelector("#dkInvDash").innerHTML = bar("By severity", st.bySeverity, sevOrder, sevColor, (k) => k === "none" ? "Unrated" : capword(k)) + bar("By status", st.byStatus, statusOrder, stColor, (k) => k === "none" ? "No status" : capword(k)) + typeHTML;
+    const typeSel = root.querySelector("#dkInvType");
+    typeSel.innerHTML = `<option value="">All types</option>` + Object.keys(st.byType || {}).sort().map((t) => `<option value="${esc(t)}"${invF.type === t ? " selected" : ""}>${esc(m.getEntityTypeLabel ? m.getEntityTypeLabel(t) : t)}</option>`).join("");
+    const sevSel = root.querySelector("#dkInvSev");
+    sevSel.innerHTML = `<option value="">All severities</option>` + sevOrder.filter((k) => k !== "none" && (st.bySeverity || {})[k]).map((k) => `<option value="${k}"${invF.sev === k ? " selected" : ""}>${capword(k)}</option>`).join("");
+    const statSel = root.querySelector("#dkInvStatus");
+    statSel.innerHTML = `<option value="">All statuses</option>` + statusOrder.filter((k) => k !== "none" && (st.byStatus || {})[k]).map((k) => `<option value="${k}"${invF.status === k ? " selected" : ""}>${capword(k)}</option>`).join("");
+    const q = root.querySelector("#dkInvQ");
+    q.oninput = () => { invF.q = q.value; paintInvTable(m); };
+    typeSel.onchange = () => { invF.type = typeSel.value; paintInvTable(m); };
+    sevSel.onchange = () => { invF.sev = sevSel.value; paintInvTable(m); };
+    statSel.onchange = () => { invF.status = statSel.value; paintInvTable(m); };
+    paintInvTable(m);
+  }
+  function paintInvTable(m){
+    const box = root.querySelector("#dkInvTable"); if (!box || !m || !m.listEntities) return;
+    const filter = { limit: 60 };
+    if (invF.type) filter.type = invF.type;
+    if (invF.sev) filter.severity = invF.sev;
+    if (invF.status) filter.status = invF.status;
+    if (invF.q.trim()) filter.search = invF.q.trim();
+    const rows = m.listEntities(filter);
+    if (!rows.length) {
+      const total = m.getStats().totalEntities;
+      box.innerHTML = `<div class="dk-nempty">${total ? "No entities match the filter." : "The graph is empty. As recon, intel and forensic tools run, the entities they find collect here."}</div>`;
+      return;
+    }
+    const sevColor = (k) => k ? (m.getSeverityColor ? m.getSeverityColor(k) : "#7d8aa8") : "#4a5578";
+    const stColor = (k) => k ? (m.getStatusColor ? m.getStatusColor(k) : "#7d8aa8") : "#4a5578";
+    box.innerHTML = `<div class="dk-itwrap"><table class="dk-itable"><thead><tr><th>Name</th><th>Type</th><th>Severity</th><th>Status</th><th>Links</th><th>Updated</th></tr></thead><tbody>${rows.map((e) => {
+      const rel = m.getRelationships ? m.getRelationships(e.id).length : 0;
+      const up = e.updatedAt ? timeAgo(new Date(e.updatedAt).getTime()) : "—";
+      return `<tr data-eid="${esc(e.id)}"><td class="nm">${esc(e.name || "—")}</td><td>${esc(m.getEntityTypeLabel ? m.getEntityTypeLabel(e.type) : e.type)}</td><td>${e.severity ? `<span class="pill" style="--c:${sevColor(e.severity)}">${capword(e.severity)}</span>` : "—"}</td><td>${e.status ? `<span class="pill" style="--c:${stColor(e.status)}">${capword(e.status)}</span>` : "—"}</td><td class="num">${rel || "—"}</td><td class="ag">${up}</td></tr>`;
+    }).join("")}</tbody></table></div>`;
+    box.querySelectorAll("tr[data-eid]").forEach((tr) => tr.onclick = () => openTool("secgraph", secLabel["secgraph"] || "Security Graph"));
   }
 
   // ---------- Activity workspace ----------
+  const ACT_CATS = { tool: { label: "Tools", color: "#4f86ff" }, connection: { label: "Connections", color: "#38d99a" }, graph: { label: "Graph", color: "#9b5cf0" }, ai: { label: "AI", color: "#3f78ff" }, deck: { label: "Deck", color: "#f5920b" } };
+  function activityCat(text){
+    const t = (text || "").toLowerCase();
+    if (/connect|provider|linked|api key|disconnect/.test(t)) return "connection";
+    if (/graph|entit|relationship|\bcase\b|incident/.test(t)) return "graph";
+    if (/assistant|prompt|\bchat\b|conversation|\bai\b/.test(t)) return "ai";
+    if (/pin|note|export|import/.test(t)) return "deck";
+    return "tool";
+  }
+  let actFilter = "", actQ = "";
   function renderActivity(){
     const el = sceneEls.activity;
-    const rows = notifs.length
-      ? notifs.map((x) => `<div class="r"><span class="dot"></span><span class="tx">${esc(x.text)}</span><span class="ag">${timeAgo(x.ts)}</span></div>`).join("")
-      : `<div class="dk-nempty">No activity recorded yet in this browser. As you run tools, add graph entities or connect providers, events stream in here live.</div>`;
-    el.innerHTML = `<div class="dk-ovhead"><div><h1>Activity</h1><p>A live stream of platform events in this session — tool results, graph changes and connections.</p></div></div>
-      <div class="dk-ovp"><h2>${IC.pulse} Event stream</h2><div class="dk-ovact">${rows}</div></div>`;
+    const all = notifs.map((x) => ({ text: x.text, ts: x.ts, cat: activityCat(x.text) }));
+    const counts = {}; for (const a of all) counts[a.cat] = (counts[a.cat] || 0) + 1;
+    const first = all.length ? all[all.length - 1].ts : null;
+    const chips = Object.keys(ACT_CATS).filter((c) => counts[c]).map((c) => `<button class="dk-afch${actFilter === c ? " on" : ""}" data-cat="${c}"><i style="background:${ACT_CATS[c].color}"></i>${ACT_CATS[c].label}<span>${counts[c]}</span></button>`).join("");
+    el.innerHTML = `
+      <div class="dk-ovhead"><div><h1>Activity</h1><p>A live stream of platform events in this session — tool results, graph changes, connections and AI.</p></div>
+        <div class="when"><button class="dk-dbtn" id="dkActExport">${IC.copy} Export log</button></div></div>
+      <div class="dk-astats">
+        <div class="dk-astat" style="--a:#4f86ff"><div class="n">${all.length}</div><div class="l">Events this session</div></div>
+        <div class="dk-astat" style="--a:#38d99a"><div class="n">${Object.keys(counts).length}</div><div class="l">Categories</div></div>
+        <div class="dk-astat" style="--a:#9b5cf0"><div class="n">${first ? timeAgo(first) : "—"}</div><div class="l">First event</div></div>
+      </div>
+      <div class="dk-afbar">
+        <button class="dk-afch${actFilter === "" ? " on" : ""}" data-cat="">All<span>${all.length}</span></button>${chips}
+        <div class="dk-isearch" style="margin-left:auto;max-width:280px"><input id="dkActQ" placeholder="Search events…" value="${esc(actQ)}" autocomplete="off" spellcheck="false"></div>
+      </div>
+      <div class="dk-ovp"><h2>${IC.pulse} Event stream</h2><div class="dk-ovact" id="dkActStream"></div></div>`;
+    el.querySelectorAll(".dk-afch").forEach((b) => b.onclick = () => { actFilter = b.dataset.cat; el.querySelectorAll(".dk-afch").forEach((x) => x.classList.toggle("on", x === b)); paintActStream(); });
+    const q = el.querySelector("#dkActQ"); q.oninput = () => { actQ = q.value; paintActStream(); };
+    el.querySelector("#dkActExport").onclick = () => {
+      if (!notifs.length) { toast("No events to export"); return; }
+      const data = notifs.map((x) => ({ ts: new Date(x.ts).toISOString(), category: activityCat(x.text), text: x.text }));
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }));
+      a.download = "darknode-activity.json"; a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+      toast(data.length + " events exported");
+    };
+    paintActStream();
+  }
+  function paintActStream(){
+    const box = root.querySelector("#dkActStream"); if (!box) return;
+    const ql = actQ.trim().toLowerCase();
+    const rows = notifs.map((x) => ({ text: x.text, ts: x.ts, cat: activityCat(x.text) }))
+      .filter((a) => (!actFilter || a.cat === actFilter) && (!ql || a.text.toLowerCase().includes(ql)));
+    box.innerHTML = rows.length
+      ? rows.map((a) => `<div class="r"><span class="dot" style="background:${(ACT_CATS[a.cat] || {}).color || "#4f86ff"}"></span><span class="tx">${esc(a.text)}</span><span class="ct" style="color:${(ACT_CATS[a.cat] || {}).color || "#7d8aa8"}">${esc((ACT_CATS[a.cat] || {}).label || a.cat)}</span><span class="ag">${timeAgo(a.ts)}</span></div>`).join("")
+      : `<div class="dk-nempty">${notifs.length ? "No events match the filter." : "No activity recorded yet in this browser. As you run tools, add graph entities or connect providers, events stream in here live."}</div>`;
   }
 
   // ---------- Toolkit workspace (instant client-side utilities) ----------
