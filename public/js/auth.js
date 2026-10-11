@@ -876,7 +876,7 @@ function cycleStyle() {
   const btn = document.getElementById("styleToggle");
   if (btn) { const lbl = next === "dark" ? "Switch to light" : "Switch to dark"; btn.title = lbl; btn.setAttribute("aria-label", lbl); btn.dataset.style = next; }
 }
-(function () { let t = "dark"; try { t = localStorage.getItem("sw_theme") || "dark"; } catch (_) {} try { if (new URLSearchParams(location.search).get("embed") === "1") t = "dark"; } catch (_) {} applyTheme(t); })();
+(function () { let embed = false; try { embed = new URLSearchParams(location.search).get("embed") === "1"; } catch (_) {} if (embed) { document.documentElement.setAttribute("data-theme", "light"); return; } /* embedded tools follow the light deck; set the attribute only, never persist into shared localStorage */ let t = "dark"; try { t = localStorage.getItem("sw_theme") || "dark"; } catch (_) {} applyTheme(t); })();
 function crtOn() { try { return localStorage.getItem("sw_crt") === "1"; } catch (_) { return false; } }
 function applyCrt(on) { document.documentElement.classList.toggle("crt", on); try { localStorage.setItem("sw_crt", on ? "1" : "0"); } catch (_) {} }
 applyCrt(crtOn());
