@@ -23,6 +23,8 @@ import { bus, EVENTS } from "/js/core/bus.js";
 const LS_CONN = "dn_deck_connections_v1";
 const LS_SCENE = "dn_deck_scene";          // last workspace the operator was on
 const LS_NOTIF_SEEN = "dn_deck_notif_seen"; // ts of the last notification they read
+const LS_PINS = "dn_deck_pins_v1";          // operator-pinned tools (sec ids) shown on the overview
+const LS_NOTES = "dn_deck_notes";           // operator scratchpad, persisted locally
 
 // ---- the services Darknode can connect to. domain drives the live favicon ----
 const INTEGRATIONS = [
@@ -159,6 +161,10 @@ function toolIcon(label, group){
 
 function loadConns(){ try { return JSON.parse(localStorage.getItem(LS_CONN) || "{}") || {}; } catch (_) { return {}; } }
 function saveConns(c){ try { localStorage.setItem(LS_CONN, JSON.stringify(c)); } catch (_) {} }
+function loadPins(){ try { const v = JSON.parse(localStorage.getItem(LS_PINS) || "[]"); return Array.isArray(v) ? v : []; } catch (_) { return []; } }
+function savePins(p){ try { localStorage.setItem(LS_PINS, JSON.stringify(p)); } catch (_) {} }
+function loadNotes(){ try { return localStorage.getItem(LS_NOTES) || ""; } catch (_) { return ""; } }
+function saveNotes(t){ try { localStorage.setItem(LS_NOTES, t); } catch (_) {} }
 
 // ---- top-bar + workspace icons (kept tiny, stroked, on-theme) ----
 const IC = {
@@ -175,6 +181,9 @@ const IC = {
   gear: SVG('<circle cx="12" cy="12" r="3.2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9 17 7M7 17l-2.1 2.1"/>'),
   logout: SVG('<path d="M15 4h4v16h-4"/><path d="M10 8l-4 4 4 4"/><path d="M6 12h9"/>'),
   ext: SVG('<path d="M14 4h6v6"/><path d="M20 4 11 13"/><path d="M19 14v5H5V5h5"/>'),
+  star: SVG('<path d="M12 3.5l2.6 5.27 5.82.85-4.21 4.1.99 5.78L12 16.77l-5.2 2.73.99-5.78-4.21-4.1 5.82-.85Z"/>'),
+  note: SVG('<path d="M5 3h10l4 4v14H5Z"/><path d="M15 3v4h4"/><path d="M9 12h6M9 16h4"/>'),
+  bolt: SVG('<path d="M13 3 4 14h6l-1 7 9-11h-6l1-7Z"/>'),
 };
 
 // Platform severity palette (same thresholds the Threat Feed uses).
@@ -415,7 +424,7 @@ const CSS = `
 .dk-wload .sp{width:30px;height:30px;border-radius:50%;border:2.5px solid rgba(255,255,255,.14);border-top-color:#4f86ff;animation:dkSpin .8s linear infinite;margin:0 auto 12px}
 @keyframes dkSpin{to{transform:rotate(360deg)}}
 /* ======================= command-center chrome ======================= */
-.dk-top{display:grid;grid-template-columns:1fr auto 1fr;gap:14px;padding:0 18px;border-bottom:1px solid rgba(255,255,255,.08);background:#0a0e17;box-shadow:0 1px 0 rgba(0,0,0,.4)}
+.dk-top{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:14px;padding:0 18px;border-bottom:1px solid rgba(255,255,255,.08);background:#0a0e17;box-shadow:0 1px 0 rgba(0,0,0,.4)}
 .dk-top>.dk-brand{justify-self:start}
 .dk-top>.dk-tabs{justify-self:center}
 .dk-top>.dk-right{justify-self:end;margin-left:0}
@@ -569,6 +578,67 @@ const CSS = `
 /* ======================= Assistant workspace ======================= */
 .dk-asst{position:absolute;inset:56px 0 0;display:flex;flex-direction:column}
 .dk-asst .dk-wframe{flex:1;position:relative}
+/* ======================= overview: added widgets ======================= */
+.dk-ask{display:flex;align-items:center;gap:10px;margin:0 0 22px;padding:6px 6px 6px 16px;border-radius:14px;background:rgba(123,97,255,.08);border:1px solid rgba(123,97,255,.26)}
+.dk-ask:focus-within{border-color:rgba(123,97,255,.6);background:rgba(123,97,255,.12)}
+.dk-ask .ai{flex:none;color:#b9a8ff;display:grid;place-items:center}.dk-ask .ai svg{width:18px;height:18px}
+.dk-ask input{flex:1;min-width:0;border:0;outline:0;background:transparent;color:#eef2ff;font:inherit;font-size:14px}
+.dk-ask input::placeholder{color:#8f93b8}
+.dk-ask button{flex:none;appearance:none;border:0;border-radius:10px;background:#7b61ff;color:#fff;font:inherit;font-weight:700;font-size:13px;padding:10px 16px;cursor:pointer;display:inline-flex;align-items:center;gap:7px}
+.dk-ask button:hover{background:#8f78ff}.dk-ask button svg{width:15px;height:15px}
+.dk-ovgrid3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-bottom:18px}
+@media(max-width:1100px){.dk-ovgrid3{grid-template-columns:1fr 1fr}}
+@media(max-width:720px){.dk-ovgrid3{grid-template-columns:1fr}}
+.dk-pins{display:flex;flex-direction:column;gap:7px}
+.dk-pin{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:11px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);cursor:pointer;transition:background .15s,border-color .15s}
+.dk-pin:hover{background:rgba(63,120,255,.14);border-color:rgba(63,120,255,.4)}
+.dk-pin .pi{flex:none;width:28px;height:28px;border-radius:8px;display:grid;place-items:center;color:var(--a,#4f86ff);background:color-mix(in srgb,var(--a,#4f86ff) 16%,transparent)}
+.dk-pin .pi svg{width:15px;height:15px}
+.dk-pin .pl{flex:1;min-width:0;font-size:13px;font-weight:600;color:#e4eaf7;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dk-pin .px{flex:none;appearance:none;border:0;background:transparent;color:#6f7b96;font-size:17px;line-height:1;cursor:pointer;padding:2px 4px;border-radius:6px}
+.dk-pin .px:hover{color:#ff9b9b;background:rgba(240,72,74,.14)}
+.dk-notes{width:100%;min-height:150px;resize:vertical;border-radius:12px;border:1px solid rgba(255,255,255,.1);background:rgba(0,0,0,.22);color:#e4eaf7;font:inherit;font-size:13px;line-height:1.55;padding:13px 14px;outline:none}
+.dk-notes:focus{border-color:rgba(79,134,255,.55);background:rgba(10,16,30,.5)}
+.dk-notes::placeholder{color:#6f7b96}
+.dk-notef{display:flex;align-items:center;justify-content:space-between;margin-top:9px;font-size:11.5px;color:#7e8aa6}
+.dk-sys{display:flex;flex-direction:column;gap:2px}
+.dk-sysrow{display:flex;align-items:center;gap:11px;padding:10px 2px;border-bottom:1px solid rgba(255,255,255,.055)}
+.dk-sysrow:last-child{border-bottom:0}
+.dk-sysrow .sd{flex:none;width:8px;height:8px;border-radius:50%;background:#54e3a6;box-shadow:0 0 7px rgba(84,227,166,.6)}
+.dk-sysrow.warn .sd{background:#f5b544;box-shadow:0 0 7px #f5b544}.dk-sysrow.off .sd{background:#6f7b96;box-shadow:none}
+.dk-sysrow .sl{flex:1;font-size:13px;color:#dbe4f4}
+.dk-sysrow .sv{flex:none;font-size:12px;font-weight:600;color:#9aa7c4;font-variant-numeric:tabular-nums}
+/* threat charts */
+.dk-chart{margin:6px 0 4px}
+.dk-chart .ct{font-size:12px;font-weight:600;color:#9aa7c4;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.dk-trend{display:flex;align-items:flex-end;gap:10px;min-height:150px;padding-top:6px}
+.dk-trend .col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:7px;min-width:0}
+.dk-trend .stk{width:100%;max-width:46px;display:flex;flex-direction:column-reverse;border-radius:5px 5px 0 0;overflow:hidden;background:rgba(255,255,255,.05)}
+.dk-trend .stk span{width:100%;display:block;transition:height .5s cubic-bezier(.2,.8,.2,1)}
+.dk-trend .cx{font-size:10.5px;color:#7e8aa6;white-space:nowrap}
+.dk-trend .cn{font-size:11px;font-weight:700;color:#cdd8ec;font-variant-numeric:tabular-nums}
+.dk-twrap{display:grid;grid-template-columns:1.4fr 1fr;gap:18px;margin-bottom:20px}
+@media(max-width:900px){.dk-twrap{grid-template-columns:1fr}}
+.dk-tpanel{border-radius:16px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);padding:16px 18px}
+.dk-bars{display:flex;flex-direction:column;gap:9px}
+.dk-barrow{display:grid;grid-template-columns:62px 1fr 34px;align-items:center;gap:10px;font-size:12px}
+.dk-barrow .bl{color:#9aa7c4}
+.dk-barrow .bt{height:9px;border-radius:5px;background:rgba(255,255,255,.06);overflow:hidden}
+.dk-barrow .bt i{display:block;height:100%;border-radius:5px;transition:width .5s cubic-bezier(.2,.8,.2,1)}
+.dk-barrow .bn{text-align:right;font-weight:700;color:#e4eaf7;font-variant-numeric:tabular-nums}
+/* spotlight: pin stars + actions + footer hint */
+.dk-sr .ic.act{background:color-mix(in srgb,#7b61ff 22%,transparent);color:#c3b4ff;display:grid;place-items:center}
+.dk-sr .ic.act svg{width:16px;height:16px}
+.dk-srpin{flex:none;appearance:none;border:0;background:transparent;color:#525d78;cursor:pointer;padding:5px;border-radius:7px;display:grid;place-items:center;opacity:0;transition:opacity .12s,color .12s}
+.dk-sr:hover .dk-srpin{opacity:1}.dk-srpin.on{opacity:1;color:#f5c542}.dk-srpin:hover{color:#f5c542;background:rgba(245,197,66,.14)}
+.dk-srpin svg{width:15px;height:15px;fill:currentColor;stroke:none}
+.dk-sfoot{display:flex;align-items:center;gap:16px;padding:10px 16px;border-top:1px solid rgba(255,255,255,.08);font-size:11.5px;color:#7e8aa6}
+.dk-sfoot b{color:#9aa7c4;font-weight:600}
+.dk-sfoot kbd{font:inherit;font-size:10.5px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);padding:1px 6px;border-radius:5px;color:#aab6cf;margin-right:3px}
+/* pin star on tool chips (tools scene) */
+.dk-gcpin{position:absolute;top:10px;right:10px;z-index:2;appearance:none;border:0;background:rgba(6,10,20,.7);color:#64708c;cursor:pointer;width:24px;height:24px;border-radius:8px;display:grid;place-items:center;opacity:0;transition:opacity .12s,color .12s,background .12s}
+.dk-gcard:hover .dk-gcpin{opacity:1}.dk-gcpin.on{opacity:1;color:#f5c542}.dk-gcpin:hover{color:#f5c542;background:rgba(245,197,66,.16)}
+.dk-gcpin svg{width:14px;height:14px;fill:currentColor;stroke:none}
 `;
 const IC_SEARCH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/></svg>';
 const IC_CHEV = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>';
@@ -586,6 +656,7 @@ export function renderDeck(host, opts) {
   for (const it of INTEGRATIONS) index.push({ type: "conn", id: it.id, label: it.name, group: it.kind === "ai" ? "AI model" : "Security", it });
 
   let conns = loadConns();
+  let pins = loadPins();
 
   if (!document.getElementById("dk-css")) { const st = document.createElement("style"); st.id = "dk-css"; st.textContent = CSS; document.head.appendChild(st); }
 
@@ -658,8 +729,9 @@ export function renderDeck(host, opts) {
 
     <div class="dk-spot" id="dkSpot">
       <div class="dk-sbox">
-        <div class="dk-srow">${IC_SEARCH}<input id="dkSpotIn" placeholder="Jump to a tool or a service…" autocomplete="off" spellcheck="false"></div>
+        <div class="dk-srow">${IC_SEARCH}<input id="dkSpotIn" placeholder="Search tools, services or run a command…" autocomplete="off" spellcheck="false"></div>
         <div class="dk-sres" id="dkSpotRes"></div>
+        <div class="dk-sfoot"><span><kbd>↑</kbd><kbd>↓</kbd> navigate</span><span><kbd>↵</kbd> open</span><span><kbd>esc</kbd> close</span><span style="margin-left:auto"><b>Tools, services &amp; actions</b></span></div>
       </div>
     </div>`;
   (host || document.body).appendChild(root);
@@ -682,6 +754,17 @@ export function renderDeck(host, opts) {
   const sceneCon = sceneEls.con, sceneTools = sceneEls.tools;   // kept for the constellation + tools code
   // sec -> label, for activity lines and quick-action titles
   const secLabel = {}; for (const g of groups) for (const it of g.items) secLabel[it.sec] = it.label;
+  pins = pins.filter((s) => secLabel[s]);   // drop pins whose tool no longer exists
+  // Toggle a tool's pinned state (shown on the overview). Returns the new state.
+  function togglePin(sec){
+    if (!sec) return false;
+    const i = pins.indexOf(sec);
+    if (i >= 0) pins.splice(i, 1); else pins.unshift(sec);
+    if (pins.length > 12) pins.length = 12;
+    savePins(pins);
+    if (curScene === "overview") renderPins();   // keep the overview widget in sync
+    return pins.includes(sec);
+  }
   let curScene = "overview";
   function go(scene){
     if (!SCENES[scene]) scene = "overview";
@@ -999,12 +1082,21 @@ export function renderDeck(host, opts) {
         <div class="dk-tmain" id="dkToolMain">
           ${groups.map((g) => { const h = hexOf(g.color); return `<section class="dk-tsec" data-g="${g.id}"><div class="th" style="color:${h}"><span class="d"></span><h3>${esc(g.name)}</h3><span class="c">${g.items.length} tools</span></div>
             <div class="dk-grid">${g.items.map((it) => `<div class="dk-gcard" data-sec="${esc(it.sec)}" data-label="${esc(it.label)}" data-txt="${esc((it.label + " " + g.name).toLowerCase())}" style="--a:${h}">
+              <button class="dk-gcpin${pins.includes(it.sec) ? " on" : ""}" data-pin="${esc(it.sec)}" title="Pin to overview" aria-label="Pin to overview">${IC.star}</button>
               <span class="gi">${toolIcon(it.label, g.name)}</span>${it.badge === "live" ? '<span class="glive" title="Live data"></span>' : ""}
               <span class="gt">${esc(it.label)}</span><span class="garr">Open${IC_CHEV}</span></div>`).join("")}</div></section>`; }).join("")}
           <div class="dk-tnone" id="dkToolNone" hidden>No tools match your search.</div>
         </div>
       </div>`;
-    sceneTools.querySelectorAll(".dk-gcard").forEach((c) => c.onclick = () => openTool(c.dataset.sec, c.dataset.label, c.style.getPropertyValue("--a")));
+    sceneTools.querySelectorAll(".dk-gcard").forEach((c) => c.onclick = (e) => {
+      if (e.target.closest(".dk-gcpin")) return;   // pin toggle handled separately
+      openTool(c.dataset.sec, c.dataset.label, c.style.getPropertyValue("--a"));
+    });
+    sceneTools.querySelectorAll(".dk-gcpin").forEach((b) => b.onclick = (e) => {
+      e.stopPropagation();
+      const on = togglePin(b.dataset.pin);
+      b.classList.toggle("on", on);
+    });
     sceneTools.querySelectorAll("#dkToolNav .dk-tcat").forEach((b) => b.onclick = () => {
       toolCat = b.dataset.cat; try { localStorage.setItem("dn_deck_toolcat", toolCat); } catch (_) {}
       const s = sceneTools.querySelector("#dkToolSearch"); if (s) s.value = ""; toolQ = "";
@@ -1066,19 +1158,37 @@ export function renderDeck(host, opts) {
   let selIdx = 0, matches = [];
   const openSpot = () => { spot.classList.add("on"); spotIn.value = ""; runSpot(""); spotIn.focus(); };
   const closeSpot = () => spot.classList.remove("on");
+  // Runnable commands in the palette (not just navigation) — these run an action
+  // rather than opening a tool, so Ctrl+K is a true command palette.
+  const ACTIONS = [
+    { type: "action", label: "Ask Darknode AI", group: "Action", icon: IC.spark, run: () => askAI("") },
+    { type: "action", label: "Connect a provider", group: "Action", icon: IC.link, run: () => go("con") },
+    { type: "action", label: "New investigation", group: "Action", icon: IC.folder, run: () => openTool("investigation", secLabel["investigation"] || "Investigation") },
+    { type: "action", label: "Open security graph", group: "Action", icon: IC.grid, run: () => openTool("secgraph", secLabel["secgraph"] || "Security Graph") },
+    { type: "action", label: "Open full console", group: "Action", icon: IC.ext, run: () => exitDeck() },
+    { type: "action", label: "Go to Overview", group: "Navigate", icon: IC.home, run: () => go("overview") },
+    { type: "action", label: "Go to Connections", group: "Navigate", icon: IC.link, run: () => go("con") },
+    { type: "action", label: "Go to Tools", group: "Navigate", icon: IC.grid, run: () => go("tools") },
+    { type: "action", label: "Go to Threat Intel", group: "Navigate", icon: IC.radar, run: () => go("threat") },
+    { type: "action", label: "Go to Investigations", group: "Navigate", icon: IC.folder, run: () => go("invest") },
+    { type: "action", label: "Go to Activity", group: "Navigate", icon: IC.pulse, run: () => go("activity") },
+  ];
   function spotIcon(m){
     if (m.type === "conn") return `<span class="ic">${logoHTML(m.it, "")}</span>`;
+    if (m.type === "action") return `<span class="ic act">${m.icon || IC.bolt}</span>`;
     return `<span class="ic" style="--a:${hexOf(m.color)}">${esc(monogram(m.label))}</span>`;
   }
   function runSpot(q){
     q = q.trim().toLowerCase();
-    matches = (q ? index.filter((t) => t.label.toLowerCase().includes(q) || (t.group||"").toLowerCase().includes(q)) : index).slice(0, 60);
+    const pool = ACTIONS.concat(index);
+    matches = (q ? pool.filter((t) => t.label.toLowerCase().includes(q) || (t.group||"").toLowerCase().includes(q)) : pool).slice(0, 80);
     selIdx = 0;
-    spotRes.innerHTML = matches.length ? matches.map((m, i) => `<div class="dk-sr${i===0?" sel":""}" data-i="${i}">${spotIcon(m)}<span class="l">${esc(m.label)}</span><span class="g">${esc(m.group||"")}</span></div>`).join("")
+    spotRes.innerHTML = matches.length ? matches.map((m, i) => `<div class="dk-sr${i===0?" sel":""}" data-i="${i}">${spotIcon(m)}<span class="l">${esc(m.label)}</span><span class="g">${esc(m.group||"")}</span>${m.type === "tool" ? `<button class="dk-srpin${pins.includes(m.sec) ? " on" : ""}" data-pin="${esc(m.sec)}" title="Pin to overview" aria-label="Pin to overview">${IC.star}</button>` : ""}</div>`).join("")
       : `<div class="dk-empty">Nothing matches "${esc(q)}"</div>`;
-    spotRes.querySelectorAll(".dk-sr").forEach((r) => r.onclick = () => chooseSpot(+r.dataset.i));
+    spotRes.querySelectorAll(".dk-sr").forEach((r) => r.onclick = (e) => { if (e.target.closest(".dk-srpin")) return; chooseSpot(+r.dataset.i); });
+    spotRes.querySelectorAll(".dk-srpin").forEach((b) => b.onclick = (e) => { e.stopPropagation(); b.classList.toggle("on", togglePin(b.dataset.pin)); });
   }
-  function chooseSpot(i){ const m = matches[i]; if (!m) return; if (m.type === "conn") { closeSpot(); go("con"); openDrawer(m.it); } else { closeSpot(); openTool(m.sec, m.label); } }
+  function chooseSpot(i){ const m = matches[i]; if (!m) return; if (m.type === "action") { closeSpot(); try { m.run(); } catch (_) {} } else if (m.type === "conn") { closeSpot(); go("con"); openDrawer(m.it); } else { closeSpot(); openTool(m.sec, m.label); } }
   function moveSel(d){ if (!matches.length) return; selIdx = (selIdx + d + matches.length) % matches.length; spotRes.querySelectorAll(".dk-sr").forEach((r, i) => r.classList.toggle("sel", i === selIdx)); spotRes.querySelector(".dk-sr.sel")?.scrollIntoView({ block: "nearest" }); }
   $("#dkFindBtn").onclick = openSpot; spotIn.oninput = () => runSpot(spotIn.value);
   spot.addEventListener("click", (e) => { if (e.target === spot) closeSpot(); });
@@ -1169,6 +1279,11 @@ export function renderDeck(host, opts) {
         <div><h1>${esc(greet)}, ${esc(first)}</h1><p>${linked.length} of ${INTEGRATIONS.length} integrations linked &middot; ${TOTAL_TOOLS.toLocaleString()} tools ready &middot; live threat feed from NVD</p></div>
         <div class="when">${now.toLocaleDateString([], { weekday: "long", month: "long", day: "numeric" })}<br>${now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>
       </div>
+      <form class="dk-ask" id="dkAsk">
+        <span class="ai">${IC.spark}</span>
+        <input id="dkAskIn" placeholder="Ask Darknode AI — triage a CVE, draft a playbook, explain a finding…" autocomplete="off" spellcheck="false">
+        <button type="submit">${IC.bolt}Ask</button>
+      </form>
       <div class="dk-kpis">
         ${kpi("conn", linked.length, "Integrations linked", IC.link, "#38d99a", "con", "of " + INTEGRATIONS.length)}
         ${kpi("tools", TOTAL_TOOLS, "Tools available", IC.grid, "#4f86ff", "tools")}
@@ -1176,6 +1291,13 @@ export function renderDeck(host, opts) {
         ${kpi("cve", "—", "New CVEs (7d)", IC.radar, "#f0484a", "threat")}
         ${kpi("tused", s.toolsUsed, "Tools used", IC.pulse, "#f5920b", null, "this browser")}
         ${kpi("ai", s.aiConvos, "AI conversations", IC.spark, "#7b61ff", "assistant", "this browser")}
+      </div>
+      <div class="dk-ovgrid3">
+        <div class="dk-ovp"><h2>${IC.star} Pinned tools <span class="mo" data-scene="tools">All tools</span></h2><div id="dkPins" class="dk-pins"></div></div>
+        <div class="dk-ovp"><h2>${IC.radar} System status</h2><div id="dkSys" class="dk-sys"></div></div>
+        <div class="dk-ovp"><h2>${IC.link} Connections <span class="mo" data-scene="con">Manage</span></h2>
+          <div class="dk-gauge"><div class="ring" style="--p:${pct};--c:#38d99a"><i>${linked.length}</i></div><div class="gmeta"><b>${linked.length} of ${INTEGRATIONS.length} linked</b><p>${linked.length ? esc(linked.slice(0, 5).map((i) => i.name).join(", ")) + (linked.length > 5 ? "…" : "") : "Connect AI models and threat-intel sources to power the console."}</p></div></div>
+        </div>
       </div>
       <div class="dk-ovgrid">
         <div>
@@ -1189,12 +1311,30 @@ export function renderDeck(host, opts) {
         </div>
         <div>
           <div class="dk-ovp"><h2>${IC.radar} Threat level <span class="mo" data-scene="threat">Threat intel</span></h2><div id="dkOvThreat"><div class="dk-loading"><span class="sp"></span>Loading live CVE feed…</div></div></div>
-          <div class="dk-ovp"><h2>${IC.link} Connections <span class="mo" data-scene="con">Manage</span></h2>
-            <div class="dk-gauge"><div class="ring" style="--p:${pct};--c:#38d99a"><i>${linked.length}</i></div><div class="gmeta"><b>${linked.length} of ${INTEGRATIONS.length} linked</b><p>${linked.length ? esc(linked.slice(0, 5).map((i) => i.name).join(", ")) + (linked.length > 5 ? "…" : "") : "Connect AI models and threat-intel sources to power the console."}</p></div></div>
+          <div class="dk-ovp"><h2>${IC.note} Notes <span class="mo" id="dkNotesClear">Clear</span></h2>
+            <textarea class="dk-notes" id="dkNotes" placeholder="Operator scratchpad — jot an IP, a hypothesis, a to-do. Saved on this device."></textarea>
+            <div class="dk-notef"><span id="dkNotesSaved">Saved on this device</span><span id="dkNotesCount"></span></div>
           </div>
         </div>
       </div>`;
     el.querySelectorAll(".dk-qacard[data-tool]").forEach((b) => b.onclick = () => openTool(b.dataset.tool, secLabel[b.dataset.tool] || b.dataset.tool));
+    // quick AI ask bar -> prefill + open the assistant
+    const askForm = el.querySelector("#dkAsk"), askIn = el.querySelector("#dkAskIn");
+    if (askForm) askForm.onsubmit = (e) => { e.preventDefault(); askAI(askIn.value); };
+    // pinned tools + live system status
+    renderPins();
+    renderSystem();
+    // notes scratchpad (debounced autosave)
+    const notesEl = el.querySelector("#dkNotes"), savedEl = el.querySelector("#dkNotesSaved"), cntEl = el.querySelector("#dkNotesCount");
+    if (notesEl) {
+      notesEl.value = loadNotes();
+      const setCount = () => { if (cntEl) cntEl.textContent = notesEl.value.length ? notesEl.value.length + " chars" : ""; };
+      setCount();
+      let nt = 0;
+      notesEl.oninput = () => { if (savedEl) savedEl.textContent = "Saving…"; clearTimeout(nt); nt = setTimeout(() => { saveNotes(notesEl.value); if (savedEl) savedEl.textContent = "Saved on this device"; setCount(); }, 450); };
+      const clr = el.querySelector("#dkNotesClear");
+      if (clr) clr.onclick = async () => { if (!notesEl.value.trim()) return; const ok = await (window.dnConfirm ? window.dnConfirm("Clear the scratchpad?") : Promise.resolve(true)); if (!ok) return; notesEl.value = ""; saveNotes(""); setCount(); if (savedEl) savedEl.textContent = "Cleared"; };
+    }
     // async: graph entity count
     import("/js/security-graph.js").then((m) => {
       if (!m.getStats) return;
@@ -1204,6 +1344,7 @@ export function renderDeck(host, opts) {
     // async: live threat level + CVE KPI
     fetchIntel(30).then((d) => {
       setHealth(true, "Threat feed live");
+      sysSet("feed", "", "Live");
       const kn = el.querySelector('[data-k="cve"] .kn'); if (kn) kn.textContent = (d.total || 0).toLocaleString();
       const box = el.querySelector("#dkOvThreat"); if (!box) return;
       const c = d.counts || {}, order = ["CRITICAL", "HIGH", "MEDIUM", "LOW"];
@@ -1217,9 +1358,41 @@ export function renderDeck(host, opts) {
       box.innerHTML = `<div class="dk-gauge"><div class="ring" style="--p:${p};--c:${col}"><i>${p}%</i></div><div class="gmeta"><b>${level} — ${hot} critical/high</b><p>Across the ${d.cves.length} most-recent CVEs (NVD, last ${d.days} days).</p></div></div><div class="dk-sevbar">${bar}</div><div class="dk-sevleg">${leg}</div>`;
     }).catch(() => {
       setHealth(false, "Threat feed delayed");
+      sysSet("feed", "warn", "Delayed");
       const box = el.querySelector("#dkOvThreat"); if (box) box.innerHTML = `<div class="dk-errbox">Couldn't reach the live CVE feed (NVD rate-limits keyless requests to ~5 / 30s). It refreshes automatically — try again shortly.</div>`;
       const kn = el.querySelector('[data-k="cve"] .kn'); if (kn) kn.textContent = "—";
     });
+  }
+  // update one System-status row (feed/graph/int/ai) by state class + value
+  function sysSet(key, cls, val){
+    const row = root.querySelector(`#dkSys [data-sys="${key}"]`); if (!row) return;
+    row.classList.remove("warn", "off"); if (cls) row.classList.add(cls);
+    const sv = row.querySelector(".sv"); if (sv) sv.textContent = val;
+  }
+  // Pinned-tools overview widget: launch on click, unpin via the ×.
+  function renderPins(){
+    const box = root.querySelector("#dkPins"); if (!box) return;
+    if (!pins.length) { box.innerHTML = `<div class="dk-nempty">No pinned tools yet. Hover any tool in the <b data-scene="tools" style="cursor:pointer;color:#8aa0ff">Tools</b> tab and tap the star, or pin from the command palette (Ctrl K).</div>`; return; }
+    box.innerHTML = pins.map((sec) => `<div class="dk-pin" data-sec="${esc(sec)}"><span class="pi">${toolIcon(secLabel[sec] || sec)}</span><span class="pl">${esc(secLabel[sec] || sec)}</span><button class="px" data-unpin="${esc(sec)}" title="Unpin" aria-label="Unpin">&times;</button></div>`).join("");
+    box.querySelectorAll(".dk-pin").forEach((r) => r.onclick = (e) => { if (e.target.closest(".px")) return; openTool(r.dataset.sec, secLabel[r.dataset.sec] || r.dataset.sec); });
+    box.querySelectorAll(".px").forEach((b) => b.onclick = (e) => { e.stopPropagation(); togglePin(b.dataset.unpin); });
+  }
+  // Live System-status widget: feed, graph, integrations, assistant.
+  function renderSystem(){
+    const box = root.querySelector("#dkSys"); if (!box) return;
+    const linkedN = INTEGRATIONS.filter((i) => conns[i.id] && conns[i.id].connected).length;
+    const prov = (() => { try { return localStorage.getItem("dn_ai_pref_provider") || ""; } catch (_) { return ""; } })();
+    const aiName = prov ? (INTEGRATIONS.find((i) => i.id === prov) || {}).name || prov : "Darknode AI (free)";
+    const row = (key, cls, label, val) => `<div class="dk-sysrow ${cls}" data-sys="${key}"><span class="sd"></span><span class="sl">${esc(label)}</span><span class="sv">${esc(val)}</span></div>`;
+    box.innerHTML =
+      row("feed", "warn", "Threat feed (NVD)", "Checking…") +
+      row("graph", "off", "Security graph", "—") +
+      row("int", linkedN ? "" : "off", "Integrations", linkedN + " / " + INTEGRATIONS.length) +
+      row("ai", "", "Assistant", aiName);
+    import("/js/security-graph.js").then((m) => {
+      const n = m.getStats ? (m.getStats().totalEntities || 0) : 0;
+      sysSet("graph", n ? "" : "off", n ? n.toLocaleString() + " entities" : "Empty");
+    }).catch(() => sysSet("graph", "off", "N/A"));
   }
 
   // ---------- Threat Intel workspace ----------
@@ -1234,13 +1407,42 @@ export function renderDeck(host, opts) {
       const chips = ["CRITICAL", "HIGH", "MEDIUM", "LOW"].map((k) => `<div class="dk-sevchip"><div class="n" style="color:${SEV[k].color}">${c[k] || 0}</div><div class="l">${SEV[k].label}</div></div>`).join("")
         + `<div class="dk-sevchip"><div class="n">${(d.total || 0).toLocaleString()}</div><div class="l">Published 7d</div></div>`;
       const list = d.cves.map((v) => `<div class="dk-cve" data-id="${esc(v.id)}"><div class="sv" style="color:${SEV[v.severity].color}">${v.cvss == null ? "—" : v.cvss.toFixed(1)}<small>${SEV[v.severity].label}</small></div><div class="bd"><div class="id">${esc(v.id)}</div><div class="ti">${esc(v.title || "No description provided yet.")}</div><div class="dt">Published ${esc(v.date || "—")}</div></div></div>`).join("");
-      el.querySelector("#dkTiBody").innerHTML = `<div class="dk-sevchips">${chips}</div>${list || '<div class="dk-tnone">No CVEs returned for this window.</div>'}`;
+      const charts = buildThreatCharts(d.cves);
+      el.querySelector("#dkTiBody").innerHTML = `<div class="dk-sevchips">${chips}</div>${charts}${list || '<div class="dk-tnone">No CVEs returned for this window.</div>'}`;
       el.querySelectorAll(".dk-cve").forEach((r) => r.onclick = () => window.open("https://nvd.nist.gov/vuln/detail/" + encodeURIComponent(r.dataset.id), "_blank", "noopener"));
     }).catch(() => {
       setHealth(false, "Threat feed delayed");
       el.querySelector("#dkTiBody").innerHTML = `<div class="dk-errbox">Couldn't reach the NVD CVE feed. Keyless requests are rate-limited to ~5 every 30 seconds — wait a moment and reopen this tab.<br><button class="dk-b" id="dkTiRetry" style="display:inline-flex;width:auto;margin-top:12px">Retry</button></div>`;
       const rt = el.querySelector("#dkTiRetry"); if (rt) rt.onclick = () => { _cveCache = null; _cveAt = 0; renderThreat(); };
     });
+  }
+  // Charts built purely from the fetched CVE set: a 7-day stacked-severity trend
+  // and a CVSS-band distribution. No extra network calls, no fabricated data.
+  function buildThreatCharts(cves){
+    cves = cves || [];
+    const ORD = ["CRITICAL", "HIGH", "MEDIUM", "LOW"];
+    // 7-day trend
+    const days = [];
+    for (let i = 6; i >= 0; i--) { const dt = new Date(Date.now() - i * 86400000); days.push(dt.toISOString().slice(0, 10)); }
+    const byDay = {}; days.forEach((k) => byDay[k] = { CRITICAL: 0, HIGH: 0, MEDIUM: 0, LOW: 0, total: 0 });
+    cves.forEach((v) => { const b = byDay[v.date]; if (b) { b[v.severity] = (b[v.severity] || 0) + 1; b.total++; } });
+    const maxDay = Math.max(1, ...days.map((k) => byDay[k].total));
+    const cols = days.map((k) => {
+      const b = byDay[k], barPx = Math.round(b.total / maxDay * 108);
+      const segs = ORD.map((s) => b[s] ? `<span style="height:${(b[s] / b.total * 100).toFixed(1)}%;background:${SEV[s].color}"></span>` : "").join("");
+      const dow = new Date(k + "T00:00:00").toLocaleDateString([], { weekday: "short" });
+      return `<div class="col"><span class="cn">${b.total || ""}</span><div class="stk" style="height:${Math.max(b.total ? 6 : 2, barPx)}px">${segs}</div><span class="cx">${esc(dow)}</span></div>`;
+    }).join("");
+    // CVSS bands
+    const bands = [{ l: "9.0–10", lo: 9, hi: 10.1, c: SEV.CRITICAL.color }, { l: "7.0–8.9", lo: 7, hi: 9, c: SEV.HIGH.color }, { l: "4.0–6.9", lo: 4, hi: 7, c: SEV.MEDIUM.color }, { l: "0.1–3.9", lo: 0, hi: 4, c: SEV.LOW.color }];
+    const scored = cves.filter((v) => v.cvss != null);
+    bands.forEach((bd) => bd.n = scored.filter((v) => v.cvss >= bd.lo && v.cvss < bd.hi).length);
+    const maxBand = Math.max(1, ...bands.map((b) => b.n));
+    const barRows = bands.map((b) => `<div class="dk-barrow"><span class="bl">${b.l}</span><span class="bt"><i style="width:${(b.n / maxBand * 100).toFixed(1)}%;background:${b.c}"></i></span><span class="bn">${b.n}</span></div>`).join("");
+    return `<div class="dk-twrap">
+      <div class="dk-tpanel"><div class="dk-chart"><div class="ct">${IC.pulse} New CVEs by severity — last 7 days</div><div class="dk-trend">${cols}</div></div></div>
+      <div class="dk-tpanel"><div class="dk-chart"><div class="ct">${IC.radar} CVSS score distribution (${scored.length} scored)</div><div class="dk-bars">${barRows}</div></div></div>
+    </div>`;
   }
 
   // ---------- Investigations workspace ----------
@@ -1288,6 +1490,13 @@ export function renderDeck(host, opts) {
     asstFrame.appendChild(f);
   }
   $("#dkAsstFull").onclick = () => { teardown(); onOpen("ai"); };
+  // Prefill the embedded assistant with a question and open it. webai.js reads
+  // sw_ai_prefill on load, so we reload the iframe to deliver a fresh prompt.
+  function askAI(text){
+    text = String(text || "").trim();
+    if (text) { try { sessionStorage.setItem("sw_ai_prefill", text); } catch (_) {} asstLoaded = false; asstFrame.innerHTML = ""; }
+    go("assistant");
+  }
 
   // ---------- keyboard ----------
   function onKey(e){
