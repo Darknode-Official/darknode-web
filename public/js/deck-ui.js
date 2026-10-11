@@ -102,8 +102,8 @@ function monogram(name) {
   if (w.length === 1) return w[0].slice(0, 2).toUpperCase();
   return (w[0][0] + w[1][0]).toUpperCase();
 }
-const COLORS = { blue:"#3f78ff", cyan:"#19b6d8", orange:"#f5920b", red:"#ef4444", green:"#22b765", purple:"#9b5cf0", violet:"#7b61ff", emerald:"#10b981", slate:"#6b7a90", teal:"#14b8a6", pink:"#ec4899", amber:"#f59e0b", indigo:"#5b6cf0", rose:"#f4466b", lime:"#84cc16", sky:"#0ea5e9" };
-const hexOf = (c) => COLORS[c] || "#5b6cf0";
+const COLORS = { blue:"#3f78ff", cyan:"#19b6d8", orange:"#f5920b", red:"#ef4444", green:"#22b765", purple:"#7d6fae", violet:"#6a74b8", emerald:"#10b981", slate:"#6b7a90", teal:"#14b8a6", pink:"#c75a9a", amber:"#f59e0b", indigo:"#3f78ff", rose:"#d05574", lime:"#84cc16", sky:"#0ea5e9" };
+const hexOf = (c) => COLORS[c] || "#3f78ff";
 function shade(hex, pct){ const n=parseInt(hex.slice(1),16); let r=(n>>16)&255,g=(n>>8)&255,b=n&255; const f=pct/100; r=Math.round(r+(f<0?r:255-r)*f); g=Math.round(g+(f<0?g:255-g)*f); b=Math.round(b+(f<0?b:255-b)*f); return "#"+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1); }
 // Google's favicon service has far wider coverage than DuckDuckGo's ip3 (which
 // 404s on shodan.io and others) and returns crisp PNGs; monogram still covers misses.
@@ -229,7 +229,7 @@ const TK_CATS = [
   { id: "hash", name: "Hashing", color: "#9b5cf0" },
   { id: "net", name: "Network & IOC", color: "#38d99a" },
   { id: "parse", name: "Parsing", color: "#f5920b" },
-  { id: "text", name: "Text", color: "#7b61ff" },
+  { id: "text", name: "Text", color: "#5e9ed6" },
   { id: "gen", name: "Generators & Security", color: "#f0484a" },
 ];
 const TOOLKIT = [
@@ -388,7 +388,7 @@ const CSS = `
   background:
     radial-gradient(135% 95% at 50% -15%, #0f1724 0%, rgba(15,23,36,0) 58%),
     #080b12}
-.dk-stars{position:absolute;inset:0;z-index:0;pointer-events:none;opacity:.28}
+.dk-stars{display:none}
 /* ---------- top chrome ---------- */
 .dk-top{position:absolute;top:0;left:0;right:0;height:56px;z-index:40;display:flex;align-items:center;gap:20px;padding:0 24px}
 .dk-brand{display:flex;align-items:center;gap:10px;color:#f3f7ff}
@@ -396,7 +396,7 @@ const CSS = `
 .dk-brand .dk-wm{height:15px;width:auto;display:block;opacity:.96}
 .dk-seg{display:flex;gap:4px;padding:4px;border-radius:13px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08)}
 .dk-seg button{appearance:none;border:0;background:transparent;color:#aab6cf;font:inherit;font-size:13px;font-weight:600;padding:6px 16px;border-radius:9px;cursor:pointer;letter-spacing:.02em}
-.dk-seg button.on{background:#2f5fff;color:#fff;box-shadow:0 4px 14px rgba(47,99,255,.32)}
+.dk-seg button.on{background:#2d4e86;color:#fff}
 .dk-right{margin-left:auto;display:flex;align-items:center;gap:11px}
 .dk-find{display:flex;align-items:center;gap:9px;padding:8px 14px;border-radius:11px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#94a3bd;font-size:13px;cursor:pointer;min-width:220px}
 .dk-find:hover{border-color:rgba(255,255,255,.22)}
@@ -411,29 +411,27 @@ const CSS = `
 .dk-con{position:absolute;inset:0;overflow:hidden}
 .dk-links{position:absolute;inset:0;z-index:1;pointer-events:none}
 .dk-links line{stroke-width:1.6;stroke-linecap:round;opacity:0;transition:opacity .5s}
-.dk-links line.on{opacity:.85;stroke-dasharray:5 7;animation:dkFlow 1.1s linear infinite}
-@keyframes dkFlow{to{stroke-dashoffset:-24}}
+.dk-links line.on{opacity:.45}
 .dk-core{position:absolute;z-index:3;left:50%;top:50%;transform:translate(-50%,-50%);width:152px;height:152px;border-radius:50%;
   display:grid;place-items:center;text-align:center;cursor:default;
   background:radial-gradient(circle at 50% 40%,#1c2942 0%,#141d31 56%,#0c1322 100%);
-  box-shadow:0 0 0 1px rgba(255,255,255,.12),0 0 0 7px rgba(79,134,255,.06),0 12px 42px rgba(0,0,0,.5),inset 0 1px 10px rgba(255,255,255,.1)}
+  box-shadow:0 0 0 1px rgba(255,255,255,.1),0 10px 28px rgba(0,0,0,.5)}
 .dk-core b{font-size:15px;font-weight:700;letter-spacing:.1em;color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.5)}
 .dk-core span{font-size:11px;color:rgba(255,255,255,.78);letter-spacing:.14em}
-.dk-core::after{content:"";position:absolute;inset:-18px;border-radius:50%;border:1px solid rgba(120,150,210,.16);animation:dkPulse 4.4s ease-out infinite}
-@keyframes dkPulse{0%{transform:scale(.86);opacity:.7}100%{transform:scale(1.5);opacity:0}}
+.dk-core::after{content:"";position:absolute;inset:-12px;border-radius:50%;border:1px solid rgba(120,150,210,.1)}
 .dk-node{position:absolute;z-index:3;width:92px;opacity:0;transform:translate(-50%,calc(-50% + var(--rise,22px)));display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer;
   transition:transform .55s cubic-bezier(.18,.74,.2,1),opacity .5s ease}
 .dk-node.in{opacity:1;--rise:0px}
 .dk-node:hover{transform:translate(-50%,calc(-50% + var(--rise,0px))) scale(1.13);transition:transform .2s cubic-bezier(.2,.9,.3,1.3)}
-.dk-chip{position:relative;width:64px;height:64px;border-radius:19px;display:grid;place-items:center;
-  background:rgba(18,23,38,.72);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
-  border:1px solid rgba(255,255,255,.12);box-shadow:0 10px 26px rgba(0,0,0,.5);overflow:hidden}
+.dk-chip{position:relative;width:64px;height:64px;border-radius:14px;display:grid;place-items:center;
+  background:#0e1524;
+  border:1px solid rgba(255,255,255,.12);box-shadow:0 6px 16px rgba(0,0,0,.45);overflow:hidden}
 .dk-chip .logo{width:36px;height:36px;border-radius:9px;object-fit:contain;background:#fff;padding:3px}
 .dk-chip .mono{width:40px;height:40px;border-radius:11px;display:grid;place-items:center;font-weight:700;font-size:15px;color:#fff;
-  background:linear-gradient(160deg,var(--a,#5b6cf0),rgba(0,0,0,.35))}
-.dk-node.conn .dk-chip{border-color:rgba(120,220,170,.75);box-shadow:0 0 0 1px rgba(120,220,170,.5),0 10px 30px rgba(20,160,110,.35),0 0 22px rgba(40,200,140,.4)}
+  background:linear-gradient(160deg,var(--a,#3f78ff),rgba(0,0,0,.35))}
+.dk-node.conn .dk-chip{border-color:rgba(90,190,140,.8);box-shadow:0 0 0 1px rgba(90,190,140,.45),0 6px 16px rgba(0,0,0,.45)}
 .dk-node .nm{font-size:11.5px;font-weight:500;color:#cdd8ec;text-align:center;text-shadow:0 1px 4px rgba(0,0,0,.7);line-height:1.2}
-.dk-node .st{position:absolute;top:-5px;left:9px;width:14px;height:14px;border-radius:50%;background:#15c47e;border:2px solid #0a1220;display:none;box-shadow:0 0 8px #15c47e}
+.dk-node .st{position:absolute;top:-5px;left:9px;width:13px;height:13px;border-radius:50%;background:#15c47e;border:2px solid #0a1220;display:none}
 .dk-node.conn .st{display:block}
 .dk-ringlbl{position:absolute;z-index:2;left:50%;transform:translateX(-50%);font-size:10.5px;letter-spacing:.3em;text-transform:uppercase;color:rgba(190,205,230,.4);font-weight:600}
 /* mobile fallback list */
@@ -441,18 +439,18 @@ const CSS = `
 .dk-conlist h4{margin:14px 6px 8px;font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:#8795b3}
 .dk-conlist .row{display:flex;align-items:center;gap:13px;padding:12px;border-radius:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);margin-bottom:8px;cursor:pointer}
 .dk-conlist .row .logo{width:34px;height:34px;border-radius:9px;background:#fff;padding:3px;object-fit:contain}
-.dk-conlist .row .mono{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;font-weight:700;color:#fff;background:linear-gradient(160deg,var(--a,#5b6cf0),rgba(0,0,0,.35))}
+.dk-conlist .row .mono{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;font-weight:700;color:#fff;background:linear-gradient(160deg,var(--a,#3f78ff),rgba(0,0,0,.35))}
 .dk-conlist .row .meta{flex:1;min-width:0}
 .dk-conlist .row .meta b{font-size:14px}.dk-conlist .row .meta p{font-size:11.5px;color:#93a0bb;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* ---------- detail drawer ---------- */
 .dk-drawer{position:absolute;top:0;right:0;bottom:0;width:360px;max-width:90vw;z-index:30;transform:translateX(104%);transition:transform .34s cubic-bezier(.2,.9,.3,1.1);
-  background:rgba(13,17,28,.9);backdrop-filter:blur(34px) saturate(170%);-webkit-backdrop-filter:blur(34px) saturate(170%);
-  border-left:1px solid rgba(255,255,255,.12);box-shadow:-30px 0 80px rgba(0,0,0,.55);padding:26px 24px;overflow:auto}
+  background:#0d111c;
+  border-left:1px solid rgba(255,255,255,.12);box-shadow:-24px 0 60px rgba(0,0,0,.5);padding:26px 24px;overflow:auto}
 .dk-drawer.on{transform:none}
 .dk-drawer .x{position:absolute;top:16px;right:18px;cursor:pointer;color:#9fb0cc;font-size:20px;line-height:1}
 .dk-dhead{display:flex;align-items:center;gap:14px;margin:6px 0 16px}
 .dk-dhead .logo{width:54px;height:54px;border-radius:14px;background:#fff;padding:5px;object-fit:contain}
-.dk-dhead .mono{width:54px;height:54px;border-radius:14px;display:grid;place-items:center;font-weight:700;font-size:20px;color:#fff;background:linear-gradient(160deg,var(--a,#5b6cf0),rgba(0,0,0,.4))}
+.dk-dhead .mono{width:54px;height:54px;border-radius:14px;display:grid;place-items:center;font-weight:700;font-size:20px;color:#fff;background:linear-gradient(160deg,var(--a,#3f78ff),rgba(0,0,0,.4))}
 .dk-dhead h3{font-size:19px}.dk-dhead .k{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#8795b3}
 .dk-drawer p.blurb{font-size:13px;color:#aeb9d2;margin-bottom:18px}
 .dk-stat{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;padding:6px 12px;border-radius:999px;margin-bottom:18px}
@@ -505,14 +503,14 @@ const CSS = `
 /* ---------- spotlight ---------- */
 .dk-spot{position:absolute;inset:0;z-index:90;display:none;align-items:flex-start;justify-content:center;padding-top:15vh;background:rgba(3,6,13,.5)}
 .dk-spot.on{display:flex}
-.dk-sbox{width:min(640px,92vw);border-radius:18px;overflow:hidden;background:rgba(17,22,36,.92);backdrop-filter:blur(40px) saturate(180%);-webkit-backdrop-filter:blur(40px) saturate(180%);border:1px solid rgba(255,255,255,.14);box-shadow:0 40px 120px rgba(0,0,0,.7)}
+.dk-sbox{width:min(640px,92vw);border-radius:14px;overflow:hidden;background:#111624;border:1px solid rgba(255,255,255,.14);box-shadow:0 30px 80px rgba(0,0,0,.6)}
 .dk-srow{display:flex;align-items:center;gap:12px;padding:16px 18px;border-bottom:1px solid rgba(255,255,255,.1)}
 .dk-srow svg{width:20px;height:20px;opacity:.55}
 .dk-sbox input{flex:1;border:0;outline:0;background:transparent;color:#fff;font:inherit;font-size:19px}
 .dk-sres{max-height:48vh;overflow:auto;padding:6px}
 .dk-sr{display:flex;align-items:center;gap:12px;padding:9px 12px;border-radius:11px;cursor:pointer}
 .dk-sr.sel,.dk-sr:hover{background:rgba(63,120,255,.26)}
-.dk-sr .ic{width:30px;height:30px;border-radius:8px;flex:none;display:grid;place-items:center;font-size:11px;font-weight:700;color:#fff;background:linear-gradient(160deg,var(--a,#5b6cf0),rgba(0,0,0,.35));overflow:hidden}
+.dk-sr .ic{width:30px;height:30px;border-radius:8px;flex:none;display:grid;place-items:center;font-size:11px;font-weight:700;color:#fff;background:linear-gradient(160deg,var(--a,#3f78ff),rgba(0,0,0,.35));overflow:hidden}
 .dk-sr .ic img{width:22px;height:22px;object-fit:contain;background:#fff;border-radius:5px;padding:2px}
 .dk-sr .ic .mono{width:100%;height:100%;display:grid;place-items:center}
 .dk-sr .l{font-size:13.5px}.dk-sr .g{margin-left:auto;font-size:11px;color:#8795b3}
@@ -530,9 +528,9 @@ const CSS = `
   box-shadow:0 8px 24px rgba(0,0,0,.26);opacity:0;transform:translateY(10px);
   transition:transform .3s cubic-bezier(.2,.8,.2,1),opacity .3s ease,border-color .2s,box-shadow .2s}
 .dk-gcard.in{opacity:1;transform:none}
-.dk-gcard:hover{transform:translateY(-4px);border-color:var(--a,#5b6cf0);box-shadow:0 18px 40px rgba(0,0,0,.4),0 0 0 1px var(--a,#5b6cf0)}
+.dk-gcard:hover{transform:translateY(-4px);border-color:var(--a,#3f78ff);box-shadow:0 18px 40px rgba(0,0,0,.4),0 0 0 1px var(--a,#3f78ff)}
 .dk-gcard .gi{width:46px;height:46px;border-radius:13px;display:grid;place-items:center;color:#fff;
-  background:linear-gradient(158deg,var(--a,#5b6cf0),rgba(0,0,0,.34));box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 6px 16px rgba(0,0,0,.3)}
+  background:linear-gradient(158deg,var(--a,#3f78ff),rgba(0,0,0,.34));box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 6px 16px rgba(0,0,0,.3)}
 .dk-gcard .gi svg{width:23px;height:23px}
 .dk-gcard .gt{font-size:14px;font-weight:600;line-height:1.28;color:#eaf0fb}
 .dk-gcard .glive{position:absolute;top:15px;right:15px;width:7px;height:7px;border-radius:50%;background:#30d158;box-shadow:0 0 7px #30d158}
@@ -544,12 +542,12 @@ const CSS = `
 .dk-work[hidden]{display:none}
 .dk-work.opening{animation:dkWorkIn .34s cubic-bezier(.2,.8,.2,1)}
 @keyframes dkWorkIn{from{opacity:0;transform:scale(.99)}to{opacity:1;transform:none}}
-.dk-wbar{flex:none;display:flex;align-items:center;gap:14px;padding:12px 20px;border-bottom:1px solid rgba(255,255,255,.08);background:rgba(10,14,24,.72);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+.dk-wbar{flex:none;display:flex;align-items:center;gap:14px;padding:12px 20px;border-bottom:1px solid rgba(255,255,255,.08);background:#0a0e18}
 .dk-wback{display:inline-flex;align-items:center;gap:7px;padding:8px 14px;border-radius:11px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:#dbe4f4;font:inherit;font-weight:600;font-size:13px;cursor:pointer}
 .dk-wback:hover{background:rgba(255,255,255,.1)}
 .dk-wback svg{width:15px;height:15px;transform:rotate(180deg)}
 .dk-wtitle{display:flex;align-items:center;gap:11px;font-weight:700;font-size:15px;min-width:0;flex:1}
-.dk-wtitle .wi{flex:none;width:30px;height:30px;border-radius:9px;display:grid;place-items:center;color:#fff;background:linear-gradient(158deg,var(--a,#5b6cf0),rgba(0,0,0,.34))}
+.dk-wtitle .wi{flex:none;width:30px;height:30px;border-radius:9px;display:grid;place-items:center;color:#fff;background:linear-gradient(158deg,var(--a,#3f78ff),rgba(0,0,0,.34))}
 .dk-wtitle .wi svg{width:16px;height:16px}
 .dk-wtitle .wt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dk-wact{flex:none}
@@ -591,13 +589,13 @@ const CSS = `
 @media(max-width:1420px){.dk-health .t,.dk-tab span{display:none}.dk-tab{padding:7px 9px}}
 .dk-acct{appearance:none;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);cursor:pointer;height:34px;padding:0 8px 0 5px;border-radius:999px;display:inline-flex;align-items:center;gap:5px;flex:none}
 .dk-acct:hover{background:rgba(255,255,255,.1)}
-.dk-acct .av{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:700;color:#fff;background:linear-gradient(150deg,#4f86ff,#7b61ff);overflow:hidden}
+.dk-acct .av{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:700;color:#fff;background:#2f4a7a;overflow:hidden}
 .dk-acct .av img{width:100%;height:100%;object-fit:cover;border-radius:50%}
 .dk-acct svg{width:14px;height:14px;color:#8795b3}
 /* popover menus (notifications / create / account) */
 .dk-pop{position:absolute;top:52px;z-index:120;min-width:240px;max-width:360px;border-radius:15px;overflow:hidden;
-  background:rgba(15,20,33,.96);backdrop-filter:blur(30px) saturate(170%);-webkit-backdrop-filter:blur(30px) saturate(170%);
-  border:1px solid rgba(255,255,255,.12);box-shadow:0 30px 90px rgba(0,0,0,.6);display:none}
+  background:#0f1421;
+  border:1px solid rgba(255,255,255,.12);box-shadow:0 20px 60px rgba(0,0,0,.55);display:none}
 .dk-pop.on{display:block;animation:dkPop .18s ease}
 @keyframes dkPop{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
 .dk-pop-h{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;border-bottom:1px solid rgba(255,255,255,.08);font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#aab6cf}
@@ -718,13 +716,13 @@ const CSS = `
 .dk-asst{position:absolute;inset:56px 0 0;display:flex;flex-direction:column}
 .dk-asst .dk-wframe{flex:1;position:relative}
 /* ======================= overview: added widgets ======================= */
-.dk-ask{display:flex;align-items:center;gap:10px;margin:0 0 22px;padding:6px 6px 6px 16px;border-radius:14px;background:rgba(123,97,255,.08);border:1px solid rgba(123,97,255,.26)}
-.dk-ask:focus-within{border-color:rgba(123,97,255,.6);background:rgba(123,97,255,.12)}
-.dk-ask .ai{flex:none;color:#b9a8ff;display:grid;place-items:center}.dk-ask .ai svg{width:18px;height:18px}
+.dk-ask{display:flex;align-items:center;gap:10px;margin:0 0 22px;padding:6px 6px 6px 16px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1)}
+.dk-ask:focus-within{border-color:rgba(63,120,255,.5);background:rgba(63,120,255,.07)}
+.dk-ask .ai{flex:none;color:#7fa0e8;display:grid;place-items:center}.dk-ask .ai svg{width:18px;height:18px}
 .dk-ask input{flex:1;min-width:0;border:0;outline:0;background:transparent;color:#eef2ff;font:inherit;font-size:14px}
 .dk-ask input::placeholder{color:#8f93b8}
-.dk-ask button{flex:none;appearance:none;border:0;border-radius:10px;background:#7b61ff;color:#fff;font:inherit;font-weight:700;font-size:13px;padding:10px 16px;cursor:pointer;display:inline-flex;align-items:center;gap:7px}
-.dk-ask button:hover{background:#8f78ff}.dk-ask button svg{width:15px;height:15px}
+.dk-ask button{flex:none;appearance:none;border:0;border-radius:9px;background:#2f6bff;color:#fff;font:inherit;font-weight:700;font-size:13px;padding:10px 16px;cursor:pointer;display:inline-flex;align-items:center;gap:7px}
+.dk-ask button:hover{background:#3f78ff}.dk-ask button svg{width:15px;height:15px}
 .dk-ovgrid3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-bottom:18px}
 @media(max-width:1100px){.dk-ovgrid3{grid-template-columns:1fr 1fr}}
 @media(max-width:720px){.dk-ovgrid3{grid-template-columns:1fr}}
@@ -766,7 +764,7 @@ const CSS = `
 .dk-barrow .bt i{display:block;height:100%;border-radius:5px;transition:width .5s cubic-bezier(.2,.8,.2,1)}
 .dk-barrow .bn{text-align:right;font-weight:700;color:#e4eaf7;font-variant-numeric:tabular-nums}
 /* spotlight: pin stars + actions + footer hint */
-.dk-sr .ic.act{background:color-mix(in srgb,#7b61ff 22%,transparent);color:#c3b4ff;display:grid;place-items:center}
+.dk-sr .ic.act{background:color-mix(in srgb,#3f78ff 22%,transparent);color:#9fc0ff;display:grid;place-items:center}
 .dk-sr .ic.act svg{width:16px;height:16px}
 .dk-srpin{flex:none;appearance:none;border:0;background:transparent;color:#525d78;cursor:pointer;padding:5px;border-radius:7px;display:grid;place-items:center;opacity:0;transition:opacity .12s,color .12s}
 .dk-sr:hover .dk-srpin{opacity:1}.dk-srpin.on{opacity:1;color:#f5c542}.dk-srpin:hover{color:#f5c542;background:rgba(245,197,66,.14)}
@@ -814,7 +812,7 @@ textarea.dk-kitio{min-height:120px}
 /* keyboard-shortcuts overlay */
 .dk-keys{position:absolute;inset:0;z-index:95;display:none;align-items:center;justify-content:center;padding:24px;background:rgba(3,6,13,.62)}
 .dk-keys.on{display:flex}
-.dk-keysbox{width:min(560px,94vw);max-height:84vh;overflow:auto;border-radius:18px;background:rgba(17,22,36,.96);backdrop-filter:blur(30px);-webkit-backdrop-filter:blur(30px);border:1px solid rgba(255,255,255,.14);box-shadow:0 40px 120px rgba(0,0,0,.7);padding:22px 24px 26px}
+.dk-keysbox{width:min(560px,94vw);max-height:84vh;overflow:auto;border-radius:14px;background:#111624;border:1px solid rgba(255,255,255,.14);box-shadow:0 30px 80px rgba(0,0,0,.6);padding:22px 24px 26px}
 .dk-keysbox h3{font-size:16px;font-weight:800;margin-bottom:4px}
 .dk-keysbox .sub{font-size:12.5px;color:#8795b3;margin-bottom:16px}
 .dk-keysgrp{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#7e8aa6;font-weight:700;margin:16px 0 8px}
@@ -943,10 +941,11 @@ export function renderDeck(host, opts) {
   tick(); const clockId = setInterval(tick, 20000);
 
   // starfield
-  const stars = $("#dkStars"); const sctx = stars.getContext("2d"); let pts = [], rafId = 0;
-  function sizeStars(){ stars.width = root.clientWidth; stars.height = root.clientHeight; pts = Array.from({length: Math.min(140, Math.round(stars.width*stars.height/16000))}, () => ({ x: Math.random()*stars.width, y: Math.random()*stars.height, r: Math.random()*1.3+.2, a: Math.random()*6.28, s: Math.random()*.02+.004 })); }
-  function drawStars(){ sctx.clearRect(0,0,stars.width,stars.height); for (const p of pts){ p.a += p.s; const a = .35 + Math.abs(Math.sin(p.a))*.5; sctx.beginPath(); sctx.arc(p.x,p.y,p.r,0,7); sctx.fillStyle = `rgba(180,210,255,${a})`; sctx.fill(); } rafId = requestAnimationFrame(drawStars); }
-  sizeStars(); drawStars();
+  // Decorative animated starfield removed — a flat dark surface reads as an ops
+  // console, not an AI landing page. Kept as no-ops so resize/teardown stay valid.
+  let rafId = 0;
+  function sizeStars(){}
+  function drawStars(){}
 
   // ---------- workspace router ----------
   const SCENES = { overview: "#dkOverview", con: "#dkCon", tools: "#dkTools", toolkit: "#dkToolkit", threat: "#dkThreat", invest: "#dkInvest", activity: "#dkActivity", assistant: "#dkAssistant" };
@@ -1115,7 +1114,7 @@ export function renderDeck(host, opts) {
     const connected = !!rec.connected;
     const method = rec.method;
     const kindTxt = it.kind === "ai" ? "AI Model" : "Cyber Intelligence";
-    const methodTxt = method === "account" ? "Connected via your account" : method === "key" ? "Connected via API key" : "Connected";
+    const methodTxt = method === "account" ? "Signed in — add an API key to run" : method === "key" ? "Connected via API key" : "Connected";
     const keyForm = mode === "key" && !connected && it.connect === "key";
     // OpenRouter is the one AI provider with a real browser account-link (PKCE):
     // one login mints the user's own key, billed to their OpenRouter credits
@@ -1135,9 +1134,14 @@ export function renderDeck(host, opts) {
              <div class="dk-formrow"><button type="submit" class="dk-b pri">Save &amp; connect</button><button type="button" class="dk-b" data-act="cancel">Cancel</button></div>
            </form>`
         : [
+            // OpenRouter is the one real browser account-link (PKCE) and reaches
+            // Claude/GPT/Gemini/Llama with one login, so it stays the primary path.
+            // For direct providers an API key is the ONLY thing that can actually run
+            // the model (no provider bills your subscription via API), so the key is
+            // primary and the "account" button is demoted to an honest sign-in opener.
             oauthProv ? `<button class="dk-b pri" data-act="oauth">Connect your ${esc(it.name)} account</button>` : "",
-            it.account ? `<button class="dk-b pri" data-act="account">Connect your ${esc(it.name)} account</button>` : "",
-            it.connect === "key" ? `<button class="dk-b${(it.account || oauthProv) ? "" : " pri"}" data-act="keyform">${(it.account || oauthProv) ? "Use an API key instead (advanced)" : "Connect with API key"}</button>` : "",
+            it.connect === "key" ? `<button class="dk-b${oauthProv ? "" : " pri"}" data-act="keyform">${oauthProv ? "Use an API key instead (advanced)" : "Connect with API key"}</button>` : "",
+            it.account ? `<button class="dk-b" data-act="account">Open ${esc(it.name)} to sign in</button>` : "",
             it.connect === "link" ? `<button class="dk-b${it.account ? "" : " pri"}" data-act="conn">Link to Darknode</button>` : "",
           ].join("");
     const note = keyForm
@@ -1145,7 +1149,7 @@ export function renderDeck(host, opts) {
       : oauthProv
       ? "Connect signs you in to OpenRouter and creates a key tied to YOUR OpenRouter account — one login reaches Claude, GPT, Gemini, Llama and more. Calls spend your OpenRouter credits; the default model here is free, so it can cost nothing. No provider lets another site charge your Claude/ChatGPT subscription — this is the honest, lowest-cost alternative."
       : it.account
-        ? `Signing in links your ${esc(it.name)} account and saves it as a preference. To actually run ${esc(it.name)} inside Darknode's assistant, add an API key below — no provider lets another site bill your existing subscription. Darknode trims each request (short context, capped output) so key usage stays close to using ${esc(it.name)} directly.`
+        ? `Darknode runs ${esc(it.name)} with your own API key — add one above. No provider lets another site bill your existing ${esc(it.name)} subscription, so the "Open to sign in" button only opens ${esc(it.name)}; it can't grant API access on its own. Tip: connect OpenRouter once to reach ${esc(it.name)}, GPT, Gemini and more through a single login.`
         : it.connect === "key"
           ? "Your key is stored only in this browser (localStorage) and never leaves your device from here. Darknode routes calls through its own proxy."
           : "Linking records this service as available to Darknode. No credentials are stored.";
@@ -1193,7 +1197,7 @@ export function renderDeck(host, opts) {
       // Open the provider sign-in so Darknode can link the existing account.
       try { window.open("https://" + it.domain, "_blank", "noopener"); } catch (_) {}
       conns[it.id] = { connected: true, method: "account", at: Date.now() };
-      saveConns(conns); toast(`${it.name} account connected`); refreshConnState(it); openDrawer(it);
+      saveConns(conns); toast(`${it.name} sign-in opened — add an API key to run it here`); refreshConnState(it); openDrawer(it);
     };
     const keyFormBtn = drawerBody.querySelector('[data-act="keyform"]');
     if (keyFormBtn) keyFormBtn.onclick = () => openDrawer(it, "key");
@@ -1325,9 +1329,8 @@ export function renderDeck(host, opts) {
     const none = sceneTools.querySelector("#dkToolNone"); if (none) none.hidden = shown > 0;
   }
   function revealGallery(){
-    const cards = [...sceneTools.querySelectorAll(".dk-gcard")].filter((c) => c.style.display !== "none" && !c.closest(".dk-tsec").hidden);
-    cards.forEach((c) => c.classList.remove("in"));
-    requestAnimationFrame(() => cards.forEach((c, i) => setTimeout(() => c.classList.add("in"), Math.min(i, 24) * 16)));
+    // Instant render — no staggered entrance animation (reads as a real tool index).
+    sceneTools.querySelectorAll(".dk-gcard").forEach((c) => c.classList.add("in"));
   }
 
   // ---------- in-deck tool workspace (tools open here, not the old console) ----------
@@ -1528,7 +1531,7 @@ export function renderDeck(host, opts) {
         ${kpi("graph", "—", "Graph entities", IC.folder, "#9b5cf0", "invest")}
         ${kpi("cve", "—", "New CVEs (7d)", IC.radar, "#f0484a", "threat")}
         ${kpi("tused", s.toolsUsed, "Tools used", IC.pulse, "#f5920b", null, "this browser")}
-        ${kpi("ai", s.aiConvos, "AI conversations", IC.spark, "#7b61ff", "assistant", "this browser")}
+        ${kpi("ai", s.aiConvos, "AI conversations", IC.spark, "#3f78ff", "assistant", "this browser")}
       </div>
       <div class="dk-ovgrid3">
         <div class="dk-ovp"><h2>${IC.star} Pinned tools <span class="mo" data-scene="tools">All tools</span></h2><div id="dkPins" class="dk-pins"></div></div>
@@ -1541,7 +1544,7 @@ export function renderDeck(host, opts) {
         <div>
           <div class="dk-ovp"><h2>${IC.pulse} Recent activity <span class="mo" data-scene="activity">View all</span></h2><div class="dk-ovact">${actRows}</div></div>
           <div class="dk-ovp"><h2>${IC.grid} Quick actions</h2><div class="dk-qa">
-            <button class="dk-qacard" data-scene="assistant"><span class="qi" style="--a:#7b61ff">${IC.spark}</span><b>Ask Darknode AI</b><span>Investigate with the assistant.</span></button>
+            <button class="dk-qacard" data-scene="assistant"><span class="qi" style="--a:#3f78ff">${IC.spark}</span><b>Ask Darknode AI</b><span>Investigate with the assistant.</span></button>
             <button class="dk-qacard" data-scene="con"><span class="qi" style="--a:#38d99a">${IC.link}</span><b>Connect a provider</b><span>Link an AI model or intel source.</span></button>
             <button class="dk-qacard" data-tool="investigation"><span class="qi" style="--a:#9b5cf0">${IC.folder}</span><b>New investigation</b><span>Open the investigation workspace.</span></button>
             <button class="dk-qacard" data-tool="secgraph"><span class="qi" style="--a:#4f86ff">${IC.grid}</span><b>Security graph</b><span>Entities and their relationships.</span></button>
