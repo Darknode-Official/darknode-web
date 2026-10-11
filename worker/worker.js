@@ -227,6 +227,11 @@ async function handleFetch(request) {
   let raw = u0.searchParams.get("raw") === "1";
   let follow = u0.searchParams.get("redirect") !== "manual";
   let method = "GET";
+  // Optional opt-in User-Agent override. Default stays DarknodeRecon so existing
+  // callers (header-analyzer, http-probe, tech-fingerprint) are unaffected; some
+  // public sites (e.g. Ahmia) deflect bot UAs with a 302, so a caller may request
+  // a browser-like UA. Capped in length; never trusted beyond a header value.
+  let ua = u0.searchParams.get("ua") || "";
   if (request.method === "POST") {
     try {
       const b = await request.json();
@@ -234,10 +239,15 @@ async function handleFetch(request) {
       if (b && b.raw) raw = true;
       if (b && b.redirect === "manual") follow = false;
       if (b && b.method) method = String(b.method).toUpperCase();
+      if (b && b.ua) ua = String(b.ua);
     } catch (_) {}
   }
   if (!target) return json({ error: "Missing url parameter" }, 400);
   if (!["GET", "HEAD", "POST"].includes(method)) method = "GET";
+  ua = ua ? ua.slice(0, 256).replace(/[\r\n]/g, "") : "";
+  const reqHeaders = ua
+    ? { "User-Agent": ua, "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", "Accept-Language": "en-US,en;q=0.9" }
+    : { "User-Agent": "DarknodeRecon/1.0 (+https://darknode.ai)", "Accept": "*/*" };
   let current = target;
   const chain = [];
   for (let hop = 0; hop < 5; hop++) {
@@ -247,7 +257,7 @@ async function handleFetch(request) {
     const to = setTimeout(() => ctrl.abort(), 10000);
     let res;
     try {
-      res = await fetch(u.href, { method, redirect: "manual", signal: ctrl.signal, headers: { "User-Agent": "DarknodeRecon/1.0 (+https://darknode.ai)", "Accept": "*/*" } });
+      res = await fetch(u.href, { method, redirect: "manual", signal: ctrl.signal, headers: reqHeaders });
     } catch (e) { clearTimeout(to); return json({ error: String((e && e.message) || e) }, 502); }
     clearTimeout(to);
     const headers = {}; for (const [k, v] of res.headers) headers[k] = v;

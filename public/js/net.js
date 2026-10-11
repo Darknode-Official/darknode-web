@@ -29,6 +29,7 @@ export async function dnFetch(url, opts = {}) {
   const qs = new URLSearchParams({ url: String(url) });
   if (opts.raw) qs.set("raw", "1");
   if (opts.redirect === "manual") qs.set("redirect", "manual");
+  if (opts.ua) qs.set("ua", String(opts.ua));
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), opts.timeout || 15000);
   let res;

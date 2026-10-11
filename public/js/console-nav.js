@@ -31,6 +31,8 @@ export const NAV = [
   G("ai", "Darknode AI", "violet", [["ai","AI Chat"],["math","Quelvra Math"],["coder","Nexus Agent","ai"],["dataviz","Data Visualization"],["engines","Security Engines"],["report","Report Generator"]]),
   // Learn & practice: training hub, ranges, references, and practice VMs.
   G("learn", "Learn & Practice", "emerald", [["beta","Beta Lab","beta"],["engine","Deterministic Intelligence","new"],["learndo","Learn & Do Hub"],["learn","Learn Hub"],["cyberrange","Cyber Range"],["securityquiz","Security Quiz"],["secquiz","Skill Assessments"],["targets","Practice Targets"],["training","Training Labs"],["cheats","Cheat Sheets"],["refs","Reference Library"],["snippets","Snippet Vault"],["utils","Toolbox"],["vms","Vulnerable VMs"],["vmlab","VM Lab"]]),
+  // Labs: experimental, opt-in builds that run real cryptography in your browser.
+  G("labs", "Labs", "teal", [["veil","Veil","new"]]),
   // Platform: infrastructure, docs/downloads, plus compliance & GRC governance.
   G("platform", "Platform & Governance", "slate", [["api","API"],["docs","Docs"],["education","Education"],["downloads","Darknode OS"],["dlguide","Download Guide"],["privatecloud","Private Cloud","beta"],["setup","Local Setup"],["compliance","Compliance Checker"],["crosswalk","GenAI Crosswalk"],["cyberbriefing","Cyber Briefing"],["emailheader","Email Header Analyzer"],["fedcompliance","Federal Compliance"],["iocextractor","IOC Extractor"],["zerotrust","Zero Trust Planner"],["embedsdk","Embed SDK","new"],["mcpconnect","MCP Connector","new"],["securitytxt","security.txt Studio","new"]]),
 ];

@@ -27,11 +27,11 @@ async function doLogout() {
   if (!hadSession || (auth && auth.currentUser)) { location.href = location.origin + "/"; }
 }
 
-import "/js/net.js?v=20261007a";
+import "/js/net.js?v=20261011a";
 import "/js/scroll-top.js?v=20260926a";
 import "/js/shortcuts.js";
 import "/js/mobile-nav.js";
-import { consoleHTML, directoryHTML, wireConsole, labelOf as navLabel, groupOf as navGroup, recentSecs as navRecent, favSecs as navFavs } from "/js/console-nav.js?v=20261010e";
+import { consoleHTML, directoryHTML, wireConsole, labelOf as navLabel, groupOf as navGroup, recentSecs as navRecent, favSecs as navFavs } from "/js/console-nav.js?v=20261011a";
 // Only the tool count is needed here; the manifest carries ids/names/categories without the
 // tool code (js/tools/*), which loads when the Toolbox opens.
 import { TOOL_META as _MINI_TOOLS } from "/js/tools-manifest.js?v=20261006a";
@@ -246,6 +246,7 @@ const SIDE_DESC = {
   // Infrastructure
   api: "Your Darknode API keys and usage.",
   docs: "Documentation.",
+  veil: "Hands-on onion-routing demo running real in-browser crypto.",
   education: "Learning resources and courses.",
   downloads: "Get the Darknode OS and desktop app.",
   dlguide: "A step-by-step install guide.",
@@ -273,6 +274,7 @@ const GROUP_DESC = {
   "Labs & VMs": "Practice virtual machines.",
   "Investigations": "Case management and link analysis.",
   "Infrastructure": "Account, docs, downloads and setup.",
+  "Labs": "Experimental, opt-in builds that run real cryptography in your browser.",
   "Admin": "Owner-only controls.",
 };
 function applySidebarHelp(view) {
@@ -1913,7 +1915,7 @@ function renderApp(user) {
     else if (sec === "reverseshell") { import("/js/reverse-shell.js?v=20260928m").then(m => m.renderReverseShell(main)); }
     else if (sec === "xsslab") { import("/js/xss-lab.js?v=20260928m").then(m => m.renderXSSLab(main)); }
     else if (sec === "osintemail") { import("/js/osint-email.js?v=20260928m").then(m => m.renderOSINTEmail(main)); }
-    else if (sec === "threatfeed") { import("/js/threat-feed.js?v=20260928m").then(m => m.renderThreatFeed(main)); }
+    else if (sec === "threatfeed") { import("/js/threat-feed.js?v=20261011a").then(m => m.renderThreatFeed(main)); }
     else if (sec === "secchecklist") { import("/js/sec-checklist.js?v=20260928m").then(m => m.renderSecChecklist(main)); }
     else if (sec === "investigation") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Investigation Workspace...</p>"; const _s=sec; import("/js/investigation.js?v=20260924w").then(m => { if(curSec!==_s)return; m.renderInvestigation(main); _prevCleanup = m.cleanupInvestigation; }); }
     else if (sec === "secgraph") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Security Graph...</p>"; import("/js/security-graph-ui.js?v=20260924b").then(m => m.renderSecurityGraphUI(main)); }
@@ -1962,9 +1964,10 @@ function renderApp(user) {
     else if (sec === "dlguide") { import("/js/getapp.js?v=20261004a").then(m => m.renderDownloadDocs(main)); }
     else if (sec === "api") { import("/js/api.js?v=20261007a").then(m => m.renderAPI(main, user)); }
     else if (sec === "docs") { import("/js/docs.js?v=20261007e").then(m => m.renderDocs(main)); }
+    else if (sec === "veil") { import("/js/labs/veil.js?v=20261011a").then(m => m.renderVeil(main)); }
     else if (sec === "setup") renderSetup(main, more);
     else if (sec === "settings") renderSettingsPage(main, user, isOwner, more);
-    else if (sec === "admin") { import("/js/admin.js?v=20261011c").then(m => m.renderAdmin(main, user)); }
+    else if (sec === "admin") { import("/js/admin.js?v=20261011d").then(m => m.renderAdmin(main, user)); }
     else if (sec === "contact") renderContact(main);
     else if (sec === "education") { main.innerHTML = `<div class="panel" style="max-width:800px;margin:40px auto"><div class="panel-h">About Darknode Education</div><div style="padding:18px;line-height:1.8;font-size:.9rem"><p><strong>Darknode is a cybersecurity education platform</strong> designed for students, educators, and security professionals to learn information security through hands-on practice in a safe, controlled environment.</p><p style="margin-top:16px"><strong>Our Mission:</strong> To make cybersecurity education accessible, interactive, and practical. Most tools run in your browser or on your own machine. Some features do send data out: AI chat goes through Darknode's server to the AI provider, some lookup pages query public services (for example NVD, crt.sh and DNS-over-HTTPS resolvers), and saved items and account data are stored in Google Firebase. Each page that contacts an outside service does so only when you run it.</p><p style="margin-top:16px"><strong>Who Uses Darknode:</strong></p><ul style="margin:8px 0 0 20px;line-height:2"><li>Computer science and cybersecurity students</li><li>IT professionals studying for certifications (CompTIA Security+, CISSP, CEH, OSCP)</li><li>University professors and instructors teaching security courses</li><li>Security operations center (SOC) analysts in training</li><li>Career changers learning cybersecurity fundamentals</li></ul><p style="margin-top:16px"><strong>Educational Standards:</strong> Our curriculum aligns with NIST NICE Framework, NSA CAE-CD requirements, and CompTIA Security+ objectives. All practice environments are isolated, legal, and designed for authorized educational use only.</p><p style="margin-top:16px"><strong>Responsible Use:</strong> Darknode tools are designed exclusively for educational purposes and authorized security testing. Users must comply with all applicable laws and obtain proper authorization before testing any system they do not own.</p><p style="margin-top:16px;color:var(--mut);font-size:.82rem">Darknode is a product of Darknode-Official. For questions about our educational programs, visit darknode.ai.</p></div></div>`; }
     else if (sec === "toolbox") { import("/js/mini-tools.js?v=20261006a").then(m => m.renderToolbox(main, { onOpen: (id) => show("tool-" + id) })); }
@@ -2029,6 +2032,27 @@ function renderApp(user) {
     if (e.target.closest("[data-open-services]")) { e.stopPropagation(); const sb = document.getElementById("conServices"); if (sb) sb.click(); return; }
     const sec = e.target.closest("[data-sec]");
     if (sec && !sec.closest(".side-nav")) { show(sec.dataset.sec, sec.dataset.more || undefined); }
+  });
+  // Keep internal navigation inside the SPA. A plain <a href="/section"> rendered by
+  // any feature would otherwise do a full page reload — which replays the boot screen
+  // and briefly throws the user off the app. Route same-tab, same-origin path links
+  // through show() instead. External links, new-tab (_blank), downloads, in-page
+  // anchors and explicit opt-outs (data-full / data-nav-skip) are left untouched so
+  // genuine off-site actions (connections, manual logins, file downloads) still work.
+  view.addEventListener("click", (e) => {
+    if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    const a = e.target.closest("a[href]");
+    if (!a || (a.target && a.target !== "_self")) return;
+    if (a.hasAttribute("download") || a.dataset.full === "1" || a.dataset.navSkip === "1") return;
+    const href = a.getAttribute("href") || "";
+    if (!href.startsWith("/") || href.startsWith("//")) return;   // only same-origin absolute paths
+    let url; try { url = new URL(href, location.origin); } catch (_) { return; }
+    if (url.origin !== location.origin) return;
+    if (url.pathname === location.pathname && url.hash) return;   // in-page hash anchor
+    const target = pathToSec(url.pathname);
+    if (!target) return;
+    e.preventDefault();
+    show(target);
   });
 
   // Initialize collapsed groups (data-open not set = collapsed)

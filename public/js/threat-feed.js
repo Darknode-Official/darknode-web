@@ -146,6 +146,10 @@ function injectStyles() {
   letter-spacing:.04em;margin-bottom:4px}
 .tf-detail a{color:var(--acc);text-decoration:none;word-break:break-all}
 .tf-detail a:hover{text-decoration:underline}
+.tf-ref{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+.tf-ref-url{flex:1;min-width:0;color:var(--acc);font-size:.8rem;word-break:break-all;line-height:1.4}
+.tf-ref-copy{flex:none;cursor:pointer;border:1px solid var(--line);background:transparent;color:var(--txt-2);font:inherit;font-size:.7rem;font-weight:600;padding:3px 9px;border-radius:6px}
+.tf-ref-copy:hover{color:var(--txt);border-color:var(--acc)}
 .tf-empty{text-align:center;padding:40px;color:var(--txt-2);font-size:.88rem}
 .tf-count{font-size:.78rem;color:var(--txt-2);margin-bottom:8px}
 .tf-source{font-size:.76rem;color:var(--txt-2);margin:-8px 0 16px;line-height:1.5}
@@ -260,7 +264,7 @@ export function renderThreatFeed(main) {
           </div>` : ""}
           <div class="tf-detail-section">
             <div class="tf-detail-label">References</div>
-            ${c.references.map(r => `<div><a href="${esc(r)}" target="_blank" rel="noopener">${esc(r)}</a></div>`).join("")}
+            ${c.references.map(r => `<div class="tf-ref"><span class="tf-ref-url">${esc(r)}</span><button type="button" class="tf-ref-copy" data-copy="${esc(r)}" aria-label="Copy reference URL">Copy</button></div>`).join("")}
           </div>
         </div>
       </div>`;
@@ -361,6 +365,17 @@ export function renderThreatFeed(main) {
   main.querySelector("#tf-refresh").addEventListener("click", load);
 
   main.querySelector(".tf-list").addEventListener("click", (e) => {
+    // Reference URLs are copy-to-clipboard, not links — never navigate the user off-site.
+    const cp = e.target.closest(".tf-ref-copy");
+    if (cp) {
+      e.stopPropagation();
+      const url = cp.dataset.copy || "";
+      navigator.clipboard?.writeText(url).then(
+        () => { try { (window.dnToast || window.showToast || (() => {}))("Reference URL copied"); } catch (_) {} cp.textContent = "Copied"; setTimeout(() => { cp.textContent = "Copy"; }, 1100); },
+        () => { try { (window.dnToast || window.showToast || (() => {}))("Copy failed"); } catch (_) {} }
+      );
+      return;
+    }
     const card = e.target.closest(".tf-card");
     if (!card) return;
     const id = card.dataset.id;
