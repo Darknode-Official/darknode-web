@@ -1715,7 +1715,7 @@ function renderApp(user) {
       const o = box.querySelector(".sec-intro-show"); if (o) o.onclick = () => { set(false); const b = box.querySelector(".sec-intro-x"); if (b) b.focus(); };
     };
     if (_secHelp) paint(_secHelp);
-    else import("/js/section-help.js?v=20260926h").then((m) => { _secHelp = m.SECTION_HELP; paint(_secHelp); }).catch(() => {});
+    else import("/js/section-help.js?v=20261010j").then((m) => { _secHelp = m.SECTION_HELP; paint(_secHelp); }).catch(() => {});
   }
   // URL path <-> section mapping
   const secToPath = (s) => s === "home" ? "/" : "/" + s.replace(/([A-Z])/g, "-$1").toLowerCase();
