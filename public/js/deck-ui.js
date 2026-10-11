@@ -15,6 +15,10 @@
 // ============================================================================
 
 import { startOpenRouterConnect } from "/js/openrouter-connect.js?v=20261010c";
+// Hacking diaries — offline playbook library (recon → exploit → post-ex → blue team),
+// each a sequence of real terminal commands. Data-only module; bump its ?v= when the
+// playbook content changes.
+import { DIARIES, DIARY_CATS } from "/js/diaries-data.js?v=20261011a";
 // Platform event bus (singleton — never version its import, or a second instance
 // would miss every event the rest of the app emits). Drives the live Activity
 // stream and the notifications bell.
@@ -184,6 +188,9 @@ const IC = {
   star: SVG('<path d="M12 3.5l2.6 5.27 5.82.85-4.21 4.1.99 5.78L12 16.77l-5.2 2.73.99-5.78-4.21-4.1 5.82-.85Z"/>'),
   note: SVG('<path d="M5 3h10l4 4v14H5Z"/><path d="M15 3v4h4"/><path d="M9 12h6M9 16h4"/>'),
   bolt: SVG('<path d="M13 3 4 14h6l-1 7 9-11h-6l1-7Z"/>'),
+  book: SVG('<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5Z"/><path d="M4 20.5A2.5 2.5 0 0 1 6.5 18H20v3H6.5A2.5 2.5 0 0 1 4 20.5Z"/><path d="M8 7h8M8 10.5h6"/>'),
+  copy: SVG('<rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>'),
+  term: SVG('<rect x="3" y="4" width="18" height="16" rx="2"/><path d="m7 9 3 3-3 3M13 15h4"/>'),
 };
 
 // Platform severity palette (same thresholds the Threat Feed uses).
@@ -561,10 +568,14 @@ const CSS = `
 .dk-wload .sp{width:30px;height:30px;border-radius:50%;border:2.5px solid rgba(255,255,255,.14);border-top-color:#4f86ff;animation:dkSpin .8s linear infinite;margin:0 auto 12px}
 @keyframes dkSpin{to{transform:rotate(360deg)}}
 /* ======================= command-center chrome ======================= */
-.dk-top{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:14px;padding:0 18px;border-bottom:1px solid rgba(255,255,255,.08);background:#0a0e17;box-shadow:0 1px 0 rgba(0,0,0,.4)}
-.dk-top>.dk-brand{justify-self:start}
-.dk-top>.dk-tabs{justify-self:center}
-.dk-top>.dk-right{justify-self:end;margin-left:0}
+.dk-top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 18px;border-bottom:1px solid rgba(255,255,255,.08);background:#0a0e17;box-shadow:0 1px 0 rgba(0,0,0,.4)}
+.dk-top>.dk-brand{flex:none}
+/* tab strip is absolutely centered on the whole bar so the asymmetric brand/right
+   clusters can never push it off-centre; max-width reserves room for both so it never
+   overlaps them, and it scrolls within that bound when labels don't fit. */
+.dk-top>.dk-tabs{position:absolute;left:50%;transform:translateX(-50%);max-width:calc(100% - 880px)}
+.dk-top>.dk-right{flex:none;margin-left:0}
+@media(max-width:1040px){.dk-top>.dk-tabs{position:static;transform:none;max-width:100%;margin:0 auto}}
 .dk-brand{appearance:none;border:0;background:transparent;cursor:pointer;flex:none}
 .dk-brand .dk-wsname{margin-left:9px;padding-left:10px;border-left:1px solid rgba(255,255,255,.14);font-family:system-ui,sans-serif;font-weight:600;font-size:12px;letter-spacing:.02em;color:#93a2c0}
 /* primary tab bar */
@@ -586,7 +597,7 @@ const CSS = `
 .dk-health.warn{border-color:rgba(245,181,68,.35);background:rgba(245,181,68,.12);color:#f5cf86}
 .dk-health.warn .d{background:#f5b544;box-shadow:0 0 8px #f5b544}
 @media(max-width:1510px){.dk-brand .dk-wsname{display:none}}
-@media(max-width:1420px){.dk-health .t,.dk-tab span{display:none}.dk-tab{padding:7px 9px}}
+@media(max-width:1600px){.dk-health .t,.dk-tab span{display:none}.dk-tab{padding:7px 9px}}
 .dk-acct{appearance:none;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);cursor:pointer;height:34px;padding:0 8px 0 5px;border-radius:999px;display:inline-flex;align-items:center;gap:5px;flex:none}
 .dk-acct:hover{background:rgba(255,255,255,.1)}
 .dk-acct .av{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:700;color:#fff;background:#2f4a7a;overflow:hidden}
@@ -746,8 +757,102 @@ const CSS = `
 .dk-sysrow .sl{flex:1;font-size:13px;color:#dbe4f4}
 .dk-sysrow .sv{flex:none;font-size:12px;font-weight:600;color:#9aa7c4;font-variant-numeric:tabular-nums}
 /* threat charts */
+/* ---- hacking diaries ---- */
+.dk-diary{position:absolute;inset:56px 0 0;display:flex;min-height:0}
+.dk-dnav{flex:none;width:322px;display:flex;flex-direction:column;border-right:1px solid rgba(255,255,255,.08);overflow:auto;padding:16px 10px 30px 2vw}
+.dk-dsearch{display:flex;align-items:center;gap:8px;background:#111624;border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:0 12px;height:40px;flex:none}
+.dk-dsearch svg{width:16px;height:16px;color:#8795b3;flex:none}
+.dk-dsearch input{flex:1;min-width:0;background:transparent;border:0;outline:none;color:#e7edf8;font-size:13px}
+.dk-dfinder{margin-top:14px;background:#0e1524;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:12px;flex:none}
+.dk-dfinder .t{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:700;color:#cdd8ec;margin-bottom:8px}
+.dk-dfinder .t svg{width:15px;height:15px;color:#7fa0e8;flex:none}
+.dk-dfinder textarea{width:100%;box-sizing:border-box;resize:vertical;min-height:56px;background:#0a0f1b;border:1px solid rgba(255,255,255,.1);border-radius:9px;color:#e7edf8;font:inherit;font-size:12.5px;line-height:1.45;padding:8px 10px;outline:none}
+.dk-dfinder textarea:focus{border-color:#3f78ff}
+.dk-dfbtns{display:flex;gap:7px;margin-top:8px}
+.dk-dfbtns button{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid rgba(255,255,255,.12);background:#141b2c;color:#cdd8ec;border-radius:8px;padding:8px;font-size:11.5px;font-weight:600;cursor:pointer}
+.dk-dfbtns button svg{width:14px;height:14px;flex:none}
+.dk-dfbtns button:hover{border-color:rgba(255,255,255,.25);color:#fff}
+.dk-dfbtns .pri{background:#2f5fd0;border-color:#2f5fd0;color:#fff}
+.dk-dfbtns .pri:hover{background:#3f78ff}
+.dk-dfres{display:flex;flex-direction:column;gap:5px;margin-top:9px}
+.dk-dfres:empty{margin-top:0}
+.dk-dfr{display:flex;flex-direction:column;align-items:flex-start;gap:1px;text-align:left;background:#131a2a;border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:7px 10px;cursor:pointer}
+.dk-dfr:hover{border-color:#3f78ff}
+.dk-dfr b{font-size:12.5px;color:#e7edf8;font-weight:600}
+.dk-dfr span{font-size:10.5px;color:#8795b3}
+.dk-dfnone{font-size:12px;color:#8795b3;padding:8px 2px;line-height:1.5}
+.dk-dcats{margin-top:16px;display:flex;flex-direction:column;gap:14px}
+.dk-dcat{display:flex;flex-direction:column;gap:1px}
+.dk-dcath{display:flex;align-items:center;justify-content:space-between;font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:#7e8aa6;font-weight:700;padding:0 6px 5px}
+.dk-dcath span{color:#5d6782;font-weight:600}
+.dk-dpb{display:flex;align-items:center;gap:9px;text-align:left;background:transparent;border:0;border-radius:8px;padding:7px 8px;cursor:pointer;color:#c3cde0;width:100%}
+.dk-dpb:hover{background:rgba(255,255,255,.05)}
+.dk-dpb.on{background:rgba(63,120,255,.16);color:#fff}
+.dk-dpb .tt{font-size:12.5px;line-height:1.25;min-width:0}
+.rk{width:8px;height:8px;border-radius:50%;flex:none;background:#38d99a}
+.rk-medium{background:#f5b544}
+.rk-high{background:#f0484a}
+.dk-dmain{flex:1;min-width:0;overflow:auto;padding:26px 4vw 64px}
+.dk-dhero h1,.dk-dhead h1{font-size:24px;margin:0;color:#f3f7ff}
+.dk-dhero h1{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.dk-dhero h1 svg{width:22px;height:22px;color:#7fa0e8}
+.dk-dhero p{max-width:740px;color:#9aa7c4;font-size:13.5px;line-height:1.6;margin:0 0 22px}
+.dk-dgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(248px,1fr));gap:14px}
+.dk-dcard{display:flex;flex-direction:column;align-items:flex-start;gap:7px;text-align:left;background:#0e1524;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:15px 16px;cursor:pointer;transition:border-color .15s,transform .15s}
+.dk-dcard:hover{border-color:#3f78ff;transform:translateY(-1px)}
+.dk-dcard .h{display:flex;align-items:center;gap:8px}
+.dk-dcard .h b{font-size:13.5px;color:#eef3fb}
+.dk-dcard .c{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#7fa0e8;font-weight:700}
+.dk-dcard p{font-size:12px;color:#9aa7c4;line-height:1.5;margin:0}
+.dk-dcard .m{font-size:11px;color:#6f7b96}
+.dk-dhead{display:flex;justify-content:space-between;gap:18px;align-items:flex-start;flex-wrap:wrap;margin-bottom:16px}
+.dk-dhead .bc{display:flex;align-items:center;gap:9px;margin-bottom:8px}
+.dk-dhead .cat{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:#7fa0e8;font-weight:700}
+.rk.lbl{width:auto;height:auto;border-radius:20px;padding:2px 9px;font-size:10px;font-weight:700;color:#0a0e17;background:#38d99a;text-transform:uppercase;letter-spacing:.04em}
+.rk-medium.lbl{background:#f5b544}
+.rk-high.lbl{background:#f0484a;color:#fff}
+.dk-dhead h1{margin-bottom:6px}
+.dk-dhead .goal{font-size:14px;color:#aeb9d2;margin:0;max-width:760px;line-height:1.5}
+.dk-dhead .r{display:flex;gap:8px;flex:none}
+.dk-dbtn{display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(255,255,255,.14);background:#141b2c;color:#cdd8ec;border-radius:9px;padding:9px 12px;font-size:12.5px;font-weight:600;cursor:pointer}
+.dk-dbtn svg{width:15px;height:15px;flex:none}
+.dk-dbtn:hover{border-color:#3f78ff;color:#fff}
+.dk-dmeta{display:grid;grid-template-columns:1fr 1fr;gap:11px 22px;background:#0d1320;border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:14px 16px;margin-bottom:14px}
+.dk-dmeta .mi{display:flex;flex-direction:column;gap:5px;min-width:0}
+.dk-dmeta .mi.wide{grid-column:1 / -1}
+.dk-dmeta .k{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:#6f7b96;font-weight:700}
+.dk-dmeta .v{font-size:12.5px;color:#c3cde0;line-height:1.5}
+.dk-dmeta .chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:11px;background:#1a2237;border:1px solid rgba(255,255,255,.1);color:#b9c6e0;border-radius:6px;padding:3px 8px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.chip.att{font-family:inherit;color:#9fb0cc}
+.dk-dsafety{display:flex;align-items:flex-start;gap:9px;font-size:12.5px;color:#e9c9a0;background:rgba(245,146,11,.08);border:1px solid rgba(245,146,11,.3);border-left-width:3px;border-radius:8px;padding:10px 14px;margin-bottom:18px;line-height:1.5}
+.dk-dsafety .i{flex:none;width:7px;height:7px;border-radius:50%;background:#f5b544;margin-top:5px}
+.dk-dsafety b{color:#f5b878}
+.dk-dcount{font-size:11px;color:#6f7b96;margin-bottom:14px;letter-spacing:.03em}
+.dk-dphase{margin-bottom:22px}
+.dk-dphase h3{display:flex;align-items:center;gap:10px;font-size:15px;color:#eef3fb;margin:0 0 12px;padding-bottom:9px;border-bottom:1px solid rgba(255,255,255,.08)}
+.dk-dphase h3 .n{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:#2f5fd0;color:#fff;font-size:12px;font-weight:700;flex:none}
+.dk-dstep{margin:0 0 12px 32px;padding-left:14px;border-left:2px solid rgba(255,255,255,.07)}
+.dk-dstep .do{font-size:13px;color:#cdd8ec;margin-bottom:6px;line-height:1.5}
+.dk-dstep .cmd{display:flex;align-items:flex-start;gap:8px;background:#0a0f1b;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:9px 10px}
+.dk-dstep .cmd code{flex:1;min-width:0;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;color:#8ff0c8;white-space:pre-wrap;word-break:break-word;line-height:1.5}
+.dk-dstep .cmd .cp{flex:none;background:transparent;border:0;color:#6f7b96;cursor:pointer;padding:2px;border-radius:5px;line-height:0}
+.dk-dstep .cmd .cp:hover{color:#cdd8ec}
+.dk-dstep .cmd .cp.ok{color:#38d99a}
+.dk-dstep .cmd .cp svg{width:15px;height:15px;display:block}
+.dk-dstep .nt{font-size:12px;color:#8795b3;margin-top:6px;line-height:1.5}
+.dk-dstep .nt::before{content:"▸ ";color:#5d6782}
+.dk-dfoot{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:26px}
+.dk-dfoot .ff{background:#0d1320;border:1px solid rgba(255,255,255,.07);border-radius:11px;padding:13px 15px}
+.dk-dfoot .ff b{display:block;font-size:11px;letter-spacing:.05em;text-transform:uppercase;margin-bottom:6px}
+.dk-dfoot .ff span{font-size:12.5px;color:#aeb9d2;line-height:1.5}
+.dk-dfoot .verify b{color:#38d99a}
+.dk-dfoot .cleanup b{color:#7fa0e8}
+.dk-dfoot .safety b{color:#f5b878}
+@media(max-width:900px){.dk-diary{flex-direction:column}.dk-dnav{width:auto;border-right:0;border-bottom:1px solid rgba(255,255,255,.08);padding-left:18px}.dk-dmeta{grid-template-columns:1fr}.dk-dstep{margin-left:6px}.dk-dhead .r{width:100%}}
 .dk-chart{margin:6px 0 4px}
 .dk-chart .ct{font-size:12px;font-weight:600;color:#9aa7c4;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.dk-chart .ct svg{width:15px;height:15px;flex:none;color:#8aa0ff}
 .dk-trend{display:flex;align-items:flex-end;gap:10px;min-height:150px;padding-top:6px}
 .dk-trend .col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:7px;min-width:0}
 .dk-trend .stk{width:100%;max-width:46px;display:flex;flex-direction:column-reverse;border-radius:5px 5px 0 0;overflow:hidden;background:rgba(255,255,255,.05)}
@@ -858,14 +963,15 @@ export function renderDeck(host, opts) {
     <div class="dk-top">
       <button class="dk-brand" id="dkBrand" title="Open full console"><img class="dk-mark" src="/logo-light.svg?v=20261007b" alt=""><img class="dk-wm" src="/wordmark.svg" alt="Darknode"><span class="dk-wsname">Command Center</span></button>
       <nav class="dk-tabs" id="dkTabs" aria-label="Workspaces">
-        <button class="dk-tab on" data-scene="overview">${IC.home}<span>Overview</span></button>
-        <button class="dk-tab" data-scene="con">${IC.link}<span>Connections</span></button>
-        <button class="dk-tab" data-scene="tools">${IC.grid}<span>Tools</span></button>
-        <button class="dk-tab" data-scene="toolkit">${IC.bolt}<span>Toolkit</span></button>
-        <button class="dk-tab" data-scene="threat">${IC.radar}<span>Threat Intel</span></button>
-        <button class="dk-tab" data-scene="invest">${IC.folder}<span>Investigations</span></button>
-        <button class="dk-tab" data-scene="activity">${IC.pulse}<span>Activity</span></button>
-        <button class="dk-tab" data-scene="assistant">${IC.spark}<span>Assistant</span></button>
+        <button class="dk-tab on" data-scene="overview" title="Overview">${IC.home}<span>Overview</span></button>
+        <button class="dk-tab" data-scene="con" title="Connections">${IC.link}<span>Connections</span></button>
+        <button class="dk-tab" data-scene="tools" title="Tools">${IC.grid}<span>Tools</span></button>
+        <button class="dk-tab" data-scene="toolkit" title="Toolkit">${IC.bolt}<span>Toolkit</span></button>
+        <button class="dk-tab" data-scene="diary" title="Diaries">${IC.book}<span>Diaries</span></button>
+        <button class="dk-tab" data-scene="threat" title="Threat Intel">${IC.radar}<span>Threat Intel</span></button>
+        <button class="dk-tab" data-scene="invest" title="Investigations">${IC.folder}<span>Investigations</span></button>
+        <button class="dk-tab" data-scene="activity" title="Activity">${IC.pulse}<span>Activity</span></button>
+        <button class="dk-tab" data-scene="assistant" title="Assistant">${IC.spark}<span>Assistant</span></button>
       </nav>
       <div class="dk-right">
         <button class="dk-health" id="dkHealth" title="Live CVE feed status"><span class="d"></span><span class="t">Threat feed live</span></button>
@@ -894,6 +1000,8 @@ export function renderDeck(host, opts) {
     <div class="dk-scene dk-tools2" id="dkTools" hidden></div>
 
     <div class="dk-scene dk-kit" id="dkToolkit" hidden></div>
+
+    <div class="dk-scene dk-diary" id="dkDiary" hidden></div>
 
     <div class="dk-scene dk-ti" id="dkThreat" hidden></div>
 
@@ -948,7 +1056,7 @@ export function renderDeck(host, opts) {
   function drawStars(){}
 
   // ---------- workspace router ----------
-  const SCENES = { overview: "#dkOverview", con: "#dkCon", tools: "#dkTools", toolkit: "#dkToolkit", threat: "#dkThreat", invest: "#dkInvest", activity: "#dkActivity", assistant: "#dkAssistant" };
+  const SCENES = { overview: "#dkOverview", con: "#dkCon", tools: "#dkTools", toolkit: "#dkToolkit", diary: "#dkDiary", threat: "#dkThreat", invest: "#dkInvest", activity: "#dkActivity", assistant: "#dkAssistant" };
   const sceneEls = {}; for (const k in SCENES) sceneEls[k] = $(SCENES[k]);
   const sceneCon = sceneEls.con, sceneTools = sceneEls.tools;   // kept for the constellation + tools code
   // sec -> label, for activity lines and quick-action titles
@@ -977,6 +1085,7 @@ export function renderDeck(host, opts) {
     else if (scene === "con") layoutConstellation();
     else if (scene === "tools") { buildTools(); applyTools(); revealGallery(); }
     else if (scene === "toolkit") renderToolkit();
+    else if (scene === "diary") renderDiaries();
     else if (scene === "threat") renderThreat();
     else if (scene === "invest") renderInvest();
     else if (scene === "activity") renderActivity();
@@ -1532,6 +1641,7 @@ export function renderDeck(host, opts) {
         ${kpi("cve", "—", "New CVEs (7d)", IC.radar, "#f0484a", "threat")}
         ${kpi("tused", s.toolsUsed, "Tools used", IC.pulse, "#f5920b", null, "this browser")}
         ${kpi("ai", s.aiConvos, "AI conversations", IC.spark, "#3f78ff", "assistant", "this browser")}
+        ${kpi("diary", DIARIES.length, "Playbooks", IC.book, "#2bb673", "diary", "field diaries")}
       </div>
       <div class="dk-ovgrid3">
         <div class="dk-ovp"><h2>${IC.star} Pinned tools <span class="mo" data-scene="tools">All tools</span></h2><div id="dkPins" class="dk-pins"></div></div>
@@ -1548,6 +1658,7 @@ export function renderDeck(host, opts) {
             <button class="dk-qacard" data-scene="con"><span class="qi" style="--a:#38d99a">${IC.link}</span><b>Connect a provider</b><span>Link an AI model or intel source.</span></button>
             <button class="dk-qacard" data-tool="investigation"><span class="qi" style="--a:#9b5cf0">${IC.folder}</span><b>New investigation</b><span>Open the investigation workspace.</span></button>
             <button class="dk-qacard" data-tool="secgraph"><span class="qi" style="--a:#4f86ff">${IC.grid}</span><b>Security graph</b><span>Entities and their relationships.</span></button>
+            <button class="dk-qacard" data-scene="diary"><span class="qi" style="--a:#2bb673">${IC.book}</span><b>Open a field diary</b><span>Step-by-step hacking playbooks.</span></button>
           </div></div>
         </div>
         <div>
@@ -1818,6 +1929,156 @@ export function renderDeck(host, opts) {
   // ---------- Assistant workspace (embedded Darknode AI) ----------
   const asstFrame = $("#dkAsstFrame");
   let asstLoaded = false;
+  // ---------- hacking diaries ----------
+  // DIARIES + DIARY_CATS are imported from diaries-data.js. Each diary is a
+  // playbook: phases -> steps -> {do, cmd, note}. Everything renders offline;
+  // the finder matches locally and can also hand the goal to Darknode AI.
+  const RISK_LABEL = { low: "Low profile", medium: "Moderate noise", high: "Loud / high-impact" };
+  let diarySel = null, diaryQ = "";
+  try { diarySel = localStorage.getItem("dn_deck_diary") || null; } catch (_) {}
+  const diaryById = (id) => DIARIES.find((d) => d.id === id) || null;
+
+  function diaryScore(d, toks){
+    const title = d.title.toLowerCase(), cat = (d.cat || "").toLowerCase();
+    const gw = ((d.goal || "") + " " + (d.when || "")).toLowerCase();
+    const tools = (d.tools || []).join(" ").toLowerCase();
+    const body = (d.phases || []).map((p) => (p.name || "") + " " + (p.steps || []).map((s) => (s.do || "") + " " + (s.cmd || "") + " " + (s.note || "")).join(" ")).join(" ").toLowerCase();
+    let s = 0;
+    for (const t of toks){ if (title.includes(t)) s += 6; if (cat.includes(t)) s += 4; if (tools.includes(t)) s += 3; if (gw.includes(t)) s += 2; if (body.includes(t)) s += 1; }
+    return s;
+  }
+  const tokenize = (q) => [...new Set((String(q || "").toLowerCase().match(/[a-z0-9]{3,}/g) || []))];
+  function diaryFind(goal){
+    const toks = tokenize(goal); if (!toks.length) return [];
+    return DIARIES.map((d) => ({ d, s: diaryScore(d, toks) })).filter((x) => x.s > 0).sort((a, b) => b.s - a.s).slice(0, 6);
+  }
+  const diaryStepCount = (d) => (d.phases || []).reduce((n, p) => n + (p.steps ? p.steps.length : 0), 0);
+
+  function diaryAskPrompt(goal){
+    const catalog = DIARY_CATS.map((c) => c + ": " + DIARIES.filter((d) => d.cat === c).map((d) => d.title).join("; ")).filter((l) => !l.endsWith(": ")).join("\n");
+    return "I'm on an AUTHORIZED security engagement using the Darknode console. Which Darknode hacking diary (playbook) should I use for this goal, and what are the first steps?\n\nGoal: " + goal + "\n\nAvailable diaries by category:\n" + catalog + "\n\nRecommend the best one or two by name, say why, and outline the first three commands. Remind me to stay in scope.";
+  }
+
+  function renderDiaries(){
+    const el = sceneEls.diary;
+    el.innerHTML = `
+      <div class="dk-dnav">
+        <div class="dk-dsearch">${IC_SEARCH}<input id="dkDQ" placeholder="Search ${DIARIES.length} playbooks, tools, commands…" autocomplete="off" spellcheck="false" value="${esc(diaryQ)}"></div>
+        <div class="dk-dfinder">
+          <div class="t">${IC.spark} Not sure where to start?</div>
+          <textarea id="dkDGoal" placeholder="Describe your goal — e.g. open a backdoor on a Linux box, crack a WPA2 handshake, dump Windows credentials…"></textarea>
+          <div class="dk-dfbtns"><button id="dkDFind" class="pri">${IC.book} Match a playbook</button><button id="dkDAsk">${IC.spark} Ask Darknode AI</button></div>
+          <div id="dkDFres" class="dk-dfres"></div>
+        </div>
+        <div class="dk-dcats" id="dkDCats"></div>
+      </div>
+      <div class="dk-dmain" id="dkDMain"></div>`;
+    buildDiaryNav();
+    const q = el.querySelector("#dkDQ");
+    q.oninput = () => { diaryQ = q.value; buildDiaryNav(); };
+    q.onkeydown = (e) => { if (e.key === "Escape") { q.value = ""; diaryQ = ""; buildDiaryNav(); } };
+    const goal = el.querySelector("#dkDGoal"), fres = el.querySelector("#dkDFres");
+    const runFind = () => {
+      if (!goal.value.trim()) { fres.innerHTML = ""; return; }
+      const res = diaryFind(goal.value);
+      fres.innerHTML = res.length
+        ? res.map((x) => `<button class="dk-dfr" data-did="${esc(x.d.id)}"><b>${esc(x.d.title)}</b><span>${esc(x.d.cat)}</span></button>`).join("")
+        : `<div class="dk-dfnone">No local match — try “Ask Darknode AI”.</div>`;
+      fres.querySelectorAll(".dk-dfr").forEach((b) => b.onclick = () => selectDiary(b.dataset.did));
+    };
+    el.querySelector("#dkDFind").onclick = runFind;
+    goal.onkeydown = (e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); runFind(); } };
+    el.querySelector("#dkDAsk").onclick = () => { const g = goal.value.trim(); if (!g) { goal.focus(); return; } askAI(diaryAskPrompt(g)); };
+    if (diarySel && diaryById(diarySel)) selectDiary(diarySel); else renderDiaryEmpty();
+  }
+
+  function buildDiaryNav(){
+    const box = root.querySelector("#dkDCats"); if (!box) return;
+    const toks = tokenize(diaryQ);
+    const match = (d) => !toks.length || diaryScore(d, toks) > 0;
+    let html = "", shown = 0;
+    for (const c of DIARY_CATS){
+      const items = DIARIES.filter((d) => d.cat === c && match(d));
+      if (!items.length) continue;
+      html += `<div class="dk-dcat"><div class="dk-dcath">${esc(c)}<span>${items.length}</span></div>` +
+        items.map((d) => `<button class="dk-dpb${d.id === diarySel ? " on" : ""}" data-did="${esc(d.id)}"><span class="rk rk-${esc(d.risk || "low")}" title="${esc(RISK_LABEL[d.risk] || "")}"></span><span class="tt">${esc(d.title)}</span></button>`).join("") +
+        `</div>`;
+      shown += items.length;
+    }
+    box.innerHTML = shown ? html : `<div class="dk-dfnone">No playbook matches that search.</div>`;
+    box.querySelectorAll(".dk-dpb").forEach((b) => b.onclick = () => selectDiary(b.dataset.did));
+  }
+
+  function diaryCardHTML(d){
+    return `<button class="dk-dcard" data-did="${esc(d.id)}">
+      <div class="h"><span class="rk rk-${esc(d.risk || "low")}"></span><b>${esc(d.title)}</b></div>
+      <span class="c">${esc(d.cat)}</span>
+      <p>${esc(d.goal || "")}</p>
+      <div class="m">${(d.phases || []).length} phases · ${diaryStepCount(d)} commands</div>
+    </button>`;
+  }
+  function renderDiaryEmpty(){
+    const main = root.querySelector("#dkDMain"); if (!main) return;
+    main.innerHTML = `<div class="dk-dhero">
+        <h1>${IC.book} Field diaries</h1>
+        <p>${DIARIES.length} step-by-step playbooks across ${DIARY_CATS.length} disciplines — reconnaissance through exploitation, post-exploitation and blue-team response. Every step is a real, copy-ready terminal command. Pick a category on the left, search, or describe your goal and let Darknode match a playbook.</p>
+      </div>
+      <div class="dk-dgrid">${DIARIES.slice(0, 8).map((d) => diaryCardHTML(d)).join("")}</div>`;
+    main.querySelectorAll("[data-did]").forEach((b) => b.onclick = () => selectDiary(b.dataset.did));
+    main.scrollTop = 0;
+  }
+
+  function selectDiary(id){
+    const d = diaryById(id); if (!d) { renderDiaryEmpty(); return; }
+    diarySel = id;
+    try { localStorage.setItem("dn_deck_diary", id); } catch (_) {}
+    root.querySelectorAll(".dk-dpb").forEach((b) => b.classList.toggle("on", b.dataset.did === id));
+    const main = root.querySelector("#dkDMain"); if (!main) return;
+    const phasesHTML = (d.phases || []).map((p, pi) => `
+      <section class="dk-dphase">
+        <h3><span class="n">${pi + 1}</span>${esc(p.name || "")}</h3>
+        ${(p.steps || []).map((st) => `
+          <div class="dk-dstep">
+            <div class="do">${esc(st.do || "")}</div>
+            ${st.cmd ? `<div class="cmd"><code>${esc(st.cmd)}</code><button class="cp" data-cmd="${esc(st.cmd)}" title="Copy command" aria-label="Copy command">${IC.copy}</button></div>` : ""}
+            ${st.note ? `<div class="nt">${esc(st.note)}</div>` : ""}
+          </div>`).join("")}
+      </section>`).join("");
+    main.innerHTML = `
+      <div class="dk-dhead">
+        <div class="l">
+          <div class="bc"><span class="cat">${esc(d.cat)}</span><span class="rk rk-${esc(d.risk || "low")} lbl">${esc(RISK_LABEL[d.risk] || d.risk || "")}</span></div>
+          <h1>${esc(d.title)}</h1>
+          <p class="goal">${esc(d.goal || "")}</p>
+        </div>
+        <div class="r">
+          <button id="dkDCopyAll" class="dk-dbtn">${IC.copy} Copy all commands</button>
+          <button id="dkDAsk2" class="dk-dbtn">${IC.spark} Ask AI about this</button>
+        </div>
+      </div>
+      <div class="dk-dmeta">
+        <div class="mi"><span class="k">When to use</span><span class="v">${esc(d.when || "—")}</span></div>
+        <div class="mi"><span class="k">Done when</span><span class="v">${esc(d.verify || "—")}</span></div>
+        <div class="mi wide"><span class="k">Tools</span><span class="v chips">${(d.tools || []).map((t) => `<span class="chip">${esc(t)}</span>`).join("") || "—"}</span></div>
+        <div class="mi wide"><span class="k">ATT&amp;CK</span><span class="v chips">${(d.mitre || []).map((m) => `<span class="chip att">${esc(m)}</span>`).join("") || "—"}</span></div>
+      </div>
+      <div class="dk-dsafety"><span class="i"></span><b>Authorized use only.</b> ${esc(d.safety || "Only run against systems you own or are explicitly contracted to test.")}</div>
+      <div class="dk-dcount">${(d.phases || []).length} phases · ${diaryStepCount(d)} commands</div>
+      ${phasesHTML}
+      <div class="dk-dfoot">
+        <div class="ff verify"><b>Done when</b><span>${esc(d.verify || "—")}</span></div>
+        <div class="ff cleanup"><b>Cleanup</b><span>${esc(d.cleanup || "—")}</span></div>
+        <div class="ff safety"><b>Scope &amp; safety</b><span>${esc(d.safety || "—")}</span></div>
+      </div>`;
+    main.querySelectorAll(".cp").forEach((b) => b.onclick = async () => {
+      try { await navigator.clipboard.writeText(b.dataset.cmd); toast("Command copied"); b.classList.add("ok"); setTimeout(() => b.classList.remove("ok"), 900); } catch (_) { toast("Copy failed"); }
+    });
+    const allCmds = (d.phases || []).flatMap((p) => (p.steps || []).map((s) => s.cmd).filter(Boolean)).join("\n");
+    main.querySelector("#dkDCopyAll").onclick = async () => { try { await navigator.clipboard.writeText(allCmds); toast(allCmds.split("\n").filter(Boolean).length + " commands copied"); } catch (_) { toast("Copy failed"); } };
+    main.querySelector("#dkDAsk2").onclick = () => askAI("Walk me through the Darknode \"" + d.title + "\" diary (" + d.cat + ") for an authorized engagement. Explain each phase, when to deviate, and what to watch for. The goal: " + (d.goal || "") + ".");
+    main.scrollTop = 0;
+  }
+
   function openAssistant(){
     if (asstLoaded) return;
     asstLoaded = true;
@@ -1838,8 +2099,8 @@ export function renderDeck(host, opts) {
 
   // ---------- keyboard & shortcuts ----------
   // Vim-style navigation: press "g" then a scene key. "?" opens the cheatsheet.
-  const GOTO = { o: "overview", c: "con", t: "tools", k: "toolkit", i: "threat", n: "invest", a: "activity", s: "assistant" };
-  const SCENE_TITLE = { overview: "Overview", con: "Connections", tools: "Tools", toolkit: "Toolkit", threat: "Threat Intel", invest: "Investigations", activity: "Activity", assistant: "Assistant" };
+  const GOTO = { o: "overview", c: "con", t: "tools", k: "toolkit", d: "diary", i: "threat", n: "invest", a: "activity", s: "assistant" };
+  const SCENE_TITLE = { overview: "Overview", con: "Connections", tools: "Tools", toolkit: "Toolkit", diary: "Diaries", threat: "Threat Intel", invest: "Investigations", activity: "Activity", assistant: "Assistant" };
   const keysEl = $("#dkKeys");
   function buildKeysOverlay(){
     const nav = Object.entries(GOTO).map(([k, sc]) => `<div class="dk-keyrow"><span>Go to ${esc(SCENE_TITLE[sc] || sc)}</span><span class="kb"><kbd>g</kbd><kbd>${esc(k)}</kbd></span></div>`).join("");
