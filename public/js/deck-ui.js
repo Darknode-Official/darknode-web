@@ -568,14 +568,16 @@ const CSS = `
 .dk-wload .sp{width:30px;height:30px;border-radius:50%;border:2.5px solid rgba(255,255,255,.14);border-top-color:#4f86ff;animation:dkSpin .8s linear infinite;margin:0 auto 12px}
 @keyframes dkSpin{to{transform:rotate(360deg)}}
 /* ======================= command-center chrome ======================= */
-.dk-top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 18px;border-bottom:1px solid rgba(255,255,255,.08);background:#0a0e17;box-shadow:0 1px 0 rgba(0,0,0,.4)}
-.dk-top>.dk-brand{flex:none}
-/* tab strip is absolutely centered on the whole bar so the asymmetric brand/right
-   clusters can never push it off-centre; max-width reserves room for both so it never
-   overlaps them, and it scrolls within that bound when labels don't fit. */
-.dk-top>.dk-tabs{position:absolute;left:50%;transform:translateX(-50%);max-width:calc(100% - 880px)}
-.dk-top>.dk-right{flex:none;margin-left:0}
-@media(max-width:1040px){.dk-top>.dk-tabs{position:static;transform:none;max-width:100%;margin:0 auto}}
+/* Three real columns: the brand and right clusters each keep their own space
+   (minmax(max-content,1fr) — the two 1fr tracks stay equal, so the centre track
+   is viewport-centred), and the tab strip lives in the middle auto track. When
+   the tabs don't fit they scroll inside that track (min-width:0 + overflow on
+   .dk-tabs) instead of spilling over and overlapping the right-side controls. */
+.dk-top{display:grid;grid-template-columns:minmax(max-content,1fr) auto minmax(max-content,1fr);align-items:center;gap:12px;padding:0 18px;border-bottom:1px solid rgba(255,255,255,.08);background:#0a0e17;box-shadow:0 1px 0 rgba(0,0,0,.4)}
+.dk-top>.dk-brand{flex:none;justify-self:start;min-width:0}
+.dk-top>.dk-tabs{justify-self:center;min-width:0;max-width:100%}
+.dk-top>.dk-right{flex:none;justify-self:end;margin-left:0;min-width:0}
+@media(max-width:1040px){.dk-top{grid-template-columns:auto 1fr auto}}
 .dk-brand{appearance:none;border:0;background:transparent;cursor:pointer;flex:none}
 .dk-brand .dk-wsname{margin-left:9px;padding-left:10px;border-left:1px solid rgba(255,255,255,.14);font-family:system-ui,sans-serif;font-weight:600;font-size:12px;letter-spacing:.02em;color:#93a2c0}
 /* primary tab bar */
