@@ -746,35 +746,49 @@ export function renderDeck(host, opts) {
   // deterministic per-id jitter in [-m, m] so the fan looks hand-placed, not mechanical
   function jit(seed, m){ let h = 2166136261; for (let i = 0; i < seed.length; i++){ h ^= seed.charCodeAt(i); h = Math.imul(h, 16777619); } return (((h >>> 0) % 1000) / 1000 - 0.5) * 2 * m; }
   function fanPlace(list, cx, coreY, W, H){
-    const span = 128 * Math.PI / 180;            // total fan width (narrower = no edge spill)
+    const N = list.length; if (!N) return;
+    const span = 132 * Math.PI / 180;            // total fan width
     const mid = -Math.PI / 2;                    // straight up
     const a0 = mid - span / 2;
-    const margin = 92;                           // keep chips (incl. label) off the viewport edges
-    const rMin = 190, rStep = 126;
+    const margin = 88;                           // keep chips (incl. label) off the viewport edges
+    const chipGap = 80;                          // min arc distance between chip centres (chip is 64px)
+    const rMin = 168;
     // cap the radius so the widest/topmost chips can never reach past the margins
     const rMaxX = (W / 2 - margin) / Math.max(0.2, Math.sin(span / 2));
     const rMaxY = coreY - margin;
-    const rMax = Math.min(rMaxY, rMaxX, W * 0.46);
-    const spacing = 118;                         // min arc gap between chips
-    let idx = 0, r = rMin, tier = 0;
-    while (idx < list.length){
-      const last = r + rStep > rMax;
-      let cap = Math.max(3, Math.round((r * span) / spacing));
-      if (last) cap = list.length - idx;         // remaining services ride the outer arc
-      const items = list.slice(idx, idx + cap);
-      const k = items.length;
-      items.forEach((it, i) => {
-        let ang = k === 1 ? mid : a0 + (i / (k - 1)) * span;
-        ang += jit(it.id + "a" + tier, 0.02);
-        const rr = r + jit(it.id + "r", 10);
-        let x = cx + Math.cos(ang) * rr, y = coreY + Math.sin(ang) * rr;
-        x = Math.max(margin, Math.min(W - margin, x));   // belt-and-suspenders: never spill off-screen
-        y = Math.max(margin, Math.min(coreY - 24, y));
-        const el = canvas.querySelector(`.dk-node[data-id="${it.id}"]`);
-        if (el){ el.style.left = x + "px"; el.style.top = y + "px"; el.__x = x; el.__y = y; }
-      });
-      idx += k; r += rStep; tier++;
-      if (last) break;
+    const rMax = Math.max(rMin + 140, Math.min(rMaxY, rMaxX, W * 0.47));
+    // how many chips a ring at radius r can hold without crowding
+    const capAt = (r) => Math.max(3, Math.floor((r * span) / chipGap));
+    // pick the fewest evenly-spaced rings that together can hold everything —
+    // this is what stops the outer ring from being overloaded (the old overlap).
+    let radii = [rMin];
+    for (let K = 2; K <= 12; K++){
+      radii = Array.from({ length: K }, (_, k) => rMin + (rMax - rMin) * k / (K - 1));
+      if (radii.reduce((s, r) => s + capAt(r), 0) >= N) break;
+    }
+    const place = (it, ang, rr) => {
+      ang += jit(it.id + "a", 0.015);
+      rr += jit(it.id + "r", 7);
+      let x = cx + Math.cos(ang) * rr, y = coreY + Math.sin(ang) * rr;
+      x = Math.max(margin, Math.min(W - margin, x));   // never spill off-screen
+      y = Math.max(margin, Math.min(coreY - 24, y));
+      const el = canvas.querySelector(`.dk-node[data-id="${it.id}"]`);
+      if (el){ el.style.left = x + "px"; el.style.top = y + "px"; el.__x = x; el.__y = y; }
+    };
+    // fill rings inside-out, balanced across the remaining rings, never past a ring's capacity
+    let idx = 0;
+    radii.forEach((r, k) => {
+      if (idx >= N) return;
+      const ringsLeft = radii.length - k;
+      const want = Math.min(capAt(r), Math.ceil((N - idx) / ringsLeft));
+      const items = list.slice(idx, idx + want); idx += want;
+      const n = items.length;
+      items.forEach((it, i) => place(it, n === 1 ? mid : a0 + (i / (n - 1)) * span, r));
+    });
+    // safety: any leftover (shouldn't happen — total capacity >= N) rides just past the outer ring
+    if (idx < N){
+      const items = list.slice(idx), n = items.length;
+      items.forEach((it, i) => place(it, n === 1 ? mid : a0 + (i / (n - 1)) * span, rMax + 44));
     }
   }
   function revealFan(){
