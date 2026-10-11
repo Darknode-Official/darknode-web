@@ -248,12 +248,13 @@ export async function renderAdmin(main, user) {
       btn.disabled = true; const label = btn.textContent; btn.textContent = "Loading…";
       try {
         const [{ renderDeck }, nav] = await Promise.all([
-          import("/js/deck-ui.js?v=20261010d"),
-          import("/js/console-nav.js?v=20261010d"),
+          import("/js/deck-ui.js?v=20261010e"),
+          import("/js/console-nav.js?v=20261010e"),
         ]);
         const groups = (nav.NAV || []).map((g) => ({ id: g.id, name: g.name, color: g.color, items: g.items || [] }));
         renderDeck(document.body, {
           groups,
+          user: user ? { displayName: user.displayName || "", email: user.email || "", photoURL: user.photoURL || "" } : null,
           onOpen: (sec) => { try { window.dnNavigate ? window.dnNavigate(sec) : (location.href = "/" + sec); } catch (_) {} },
           onExit: () => {},
         });

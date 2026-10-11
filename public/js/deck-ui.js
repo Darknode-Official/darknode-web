@@ -15,8 +15,14 @@
 // ============================================================================
 
 import { startOpenRouterConnect } from "/js/openrouter-connect.js?v=20261010c";
+// Platform event bus (singleton — never version its import, or a second instance
+// would miss every event the rest of the app emits). Drives the live Activity
+// stream and the notifications bell.
+import { bus, EVENTS } from "/js/core/bus.js";
 
 const LS_CONN = "dn_deck_connections_v1";
+const LS_SCENE = "dn_deck_scene";          // last workspace the operator was on
+const LS_NOTIF_SEEN = "dn_deck_notif_seen"; // ts of the last notification they read
 
 // ---- the services Darknode can connect to. domain drives the live favicon ----
 const INTEGRATIONS = [
@@ -154,10 +160,84 @@ function toolIcon(label, group){
 function loadConns(){ try { return JSON.parse(localStorage.getItem(LS_CONN) || "{}") || {}; } catch (_) { return {}; } }
 function saveConns(c){ try { localStorage.setItem(LS_CONN, JSON.stringify(c)); } catch (_) {} }
 
+// ---- top-bar + workspace icons (kept tiny, stroked, on-theme) ----
+const IC = {
+  grid: SVG('<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>'),
+  home: SVG('<path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>'),
+  link: SVG('<path d="M9 12h6"/><path d="M8 8H6a4 4 0 0 0 0 8h2"/><path d="M16 8h2a4 4 0 0 1 0 8h-2"/>'),
+  radar: SVG('<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><path d="M12 12 19 7"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/>'),
+  folder: SVG('<path d="M3 6h6l2 3h10v10H3Z"/><path d="M3 9h18"/>'),
+  pulse: SVG('<path d="M3 12h4l2 6 4-14 2 8h6"/>'),
+  spark: SVG('<path d="M12 3v4M12 17v4M3 12h4M17 12h4"/><path d="M12 8l1.4 2.6L16 12l-2.6 1.4L12 16l-1.4-2.6L8 12l2.6-1.4Z"/>'),
+  bell: SVG('<path d="M18 8a6 6 0 1 0-12 0c0 7-3 8-3 8h18s-3-1-3-8"/><path d="M10.5 21a2 2 0 0 0 3 0"/>'),
+  plus: SVG('<path d="M12 5v14M5 12h14"/>'),
+  chevd: SVG('<path d="m6 9 6 6 6-6"/>'),
+  gear: SVG('<circle cx="12" cy="12" r="3.2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9 17 7M7 17l-2.1 2.1"/>'),
+  logout: SVG('<path d="M15 4h4v16h-4"/><path d="M10 8l-4 4 4 4"/><path d="M6 12h9"/>'),
+  ext: SVG('<path d="M14 4h6v6"/><path d="M20 4 11 13"/><path d="M19 14v5H5V5h5"/>'),
+};
+
+// Platform severity palette (same thresholds the Threat Feed uses).
+const SEV = { CRITICAL:{label:"Critical",color:"#f0484a"}, HIGH:{label:"High",color:"#ff7a2f"}, MEDIUM:{label:"Medium",color:"#f5b544"}, LOW:{label:"Low",color:"#38d99a"} };
+const sevOf = (s) => s >= 9 ? "CRITICAL" : s >= 7 ? "HIGH" : s >= 4 ? "MEDIUM" : "LOW";
+
+// Live CVE intel from the NIST NVD API 2.0 (public, keyless, CSP-allowed — the same
+// source the Threat Feed tool uses). Cached per session so switching scenes doesn't
+// re-hit NVD's 5-req/30s limit. Returns the newest `n` CVEs + a severity tally.
+const NVD_API = "https://services.nvd.nist.gov/rest/json/cves/2.0";
+let _cveCache = null, _cveAt = 0, _cvePromise = null;
+function _nvdDate(d){ return d.toISOString().slice(0, 19) + ".000"; }
+async function _nvdJSON(days, startIndex, perPage){
+  const end = new Date(), start = new Date(end.getTime() - days * 86400000);
+  const url = NVD_API + "?pubStartDate=" + encodeURIComponent(_nvdDate(start)) + "&pubEndDate=" + encodeURIComponent(_nvdDate(end)) + "&noRejected&resultsPerPage=" + perPage + "&startIndex=" + startIndex;
+  const r = await fetch(url);
+  if (!r.ok) throw new Error("NVD HTTP " + r.status);
+  return r.json();
+}
+function _mapCVE(v){
+  const cve = v.cve || {}, m = cve.metrics || {};
+  const pick = (m.cvssMetricV31 || [])[0] || (m.cvssMetricV30 || [])[0] || (m.cvssMetricV40 || [])[0] || (m.cvssMetricV2 || [])[0];
+  const score = pick && pick.cvssData ? pick.cvssData.baseScore : null;
+  const d = ((cve.descriptions || []).find((x) => x.lang === "en") || {}).value || "";
+  const first = (d.split(/(?<=\.)\s/)[0] || d);
+  return { id: cve.id, cvss: score, severity: score == null ? "LOW" : sevOf(score), title: first.length > 150 ? first.slice(0, 147) + "…" : first, date: String(cve.published || "").slice(0, 10) };
+}
+async function fetchIntel(n){
+  n = n || 30;
+  if (_cveCache && Date.now() - _cveAt < 600000) return _cveCache;  // 10-min cache
+  if (_cvePromise) return _cvePromise;
+  _cvePromise = (async () => {
+    const days = 7;
+    const head = await _nvdJSON(days, 0, 1);
+    const total = head.totalResults || 0;
+    if (!total) { const r = { cves: [], total: 0, counts: {} }; _cveCache = r; _cveAt = Date.now(); return r; }
+    const page = await _nvdJSON(days, Math.max(0, total - 60), 60);
+    const cves = (page.vulnerabilities || []).map(_mapCVE).filter((c) => c.id)
+      .sort((a, b) => b.date.localeCompare(a.date) || String(b.id).localeCompare(String(a.id))).slice(0, n);
+    const counts = cves.reduce((o, c) => (o[c.severity] = (o[c.severity] || 0) + 1, o), {});
+    const r = { cves, total, counts, days }; _cveCache = r; _cveAt = Date.now(); return r;
+  })().catch((e) => { _cvePromise = null; throw e; });
+  return _cvePromise;
+}
+
+// Read-only views of the real usage counters the console home writes (auth.js).
+function readStats(){
+  const int = (k) => { try { return parseInt(localStorage.getItem(k) || "0", 10) || 0; } catch (_) { return 0; } };
+  return { sessions: int("dn_stat_sessions"), aiConvos: int("dn_stat_ai_convos"), toolsUsed: int("dn_stat_tools_used") };
+}
+function readRecentActivity(){
+  const SEED = new Set(["Scanned 10.10.14.7", "Queried CVE-2024-1234", "Generated report"]);
+  let items = []; try { items = JSON.parse(localStorage.getItem("dn_recent_activity")) || []; } catch (_) {}
+  return (Array.isArray(items) ? items : []).filter((i) => i && i.text && !SEED.has(i.text)).slice(0, 8);
+}
+function readNavRecent(){ try { const v = JSON.parse(localStorage.getItem("sw_recent") || "[]"); return Array.isArray(v) ? v : []; } catch (_) { return []; } }
+const timeAgo = (ts) => { const d = Date.now() - ts; return d < 60000 ? "just now" : d < 3600000 ? Math.floor(d / 60000) + "m ago" : d < 86400000 ? Math.floor(d / 3600000) + "h ago" : Math.floor(d / 86400000) + "d ago"; };
+
 const CSS = `
 .dk{position:fixed;inset:0;z-index:99999;overflow:hidden;isolation:isolate;color:#eaf0fb;background:#060912;
   font:14px/1.55 'Sora',-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;-webkit-font-smoothing:antialiased;user-select:none}
 .dk *{box-sizing:border-box;margin:0}
+.dk h1,.dk h2,.dk h3,.dk h4{color:#eef3ff !important}
 .dk-sky{position:absolute;inset:0;z-index:0;pointer-events:none;
   background:
     radial-gradient(90% 60% at 50% 42%, #10203f 0%, rgba(16,32,63,0) 60%),
@@ -172,7 +252,7 @@ const CSS = `
 .dk-seg{display:flex;gap:4px;padding:4px;border-radius:13px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08)}
 .dk-seg button{appearance:none;border:0;background:transparent;color:#aab6cf;font:inherit;font-size:13px;font-weight:600;padding:6px 16px;border-radius:9px;cursor:pointer;letter-spacing:.02em}
 .dk-seg button.on{background:#2f5fff;color:#fff;box-shadow:0 4px 14px rgba(47,99,255,.32)}
-.dk-right{margin-left:auto;display:flex;align-items:center;gap:14px}
+.dk-right{margin-left:auto;display:flex;align-items:center;gap:11px}
 .dk-find{display:flex;align-items:center;gap:9px;padding:8px 14px;border-radius:11px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#94a3bd;font-size:13px;cursor:pointer;min-width:220px}
 .dk-find:hover{border-color:rgba(255,255,255,.22)}
 .dk-find kbd{margin-left:auto;font:inherit;font-size:11px;background:rgba(255,255,255,.1);padding:2px 7px;border-radius:6px}
@@ -329,6 +409,158 @@ const CSS = `
 .dk-wload{position:absolute;inset:0;display:grid;place-items:center;color:#7e8aa6;font-size:13px;letter-spacing:.03em;pointer-events:none}
 .dk-wload .sp{width:30px;height:30px;border-radius:50%;border:2.5px solid rgba(255,255,255,.14);border-top-color:#4f86ff;animation:dkSpin .8s linear infinite;margin:0 auto 12px}
 @keyframes dkSpin{to{transform:rotate(360deg)}}
+/* ======================= command-center chrome ======================= */
+.dk-top{gap:10px;padding:0 16px;border-bottom:1px solid rgba(255,255,255,.07);background:rgba(7,11,22,.55);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px)}
+.dk-brand{appearance:none;border:0;background:transparent;cursor:pointer;flex:none}
+.dk-brand .dk-wsname{margin-left:9px;padding-left:10px;border-left:1px solid rgba(255,255,255,.14);font-family:system-ui,sans-serif;font-weight:600;font-size:12px;letter-spacing:.02em;color:#93a2c0}
+/* primary tab bar */
+.dk-tabs{display:flex;gap:2px;align-items:center;overflow-x:auto;scrollbar-width:none;margin:0 2px}
+.dk-tabs::-webkit-scrollbar{display:none}
+.dk-tab{appearance:none;border:0;background:transparent;color:#9aa7c4;font:inherit;font-size:12.5px;font-weight:600;letter-spacing:.01em;padding:7px 10px;border-radius:9px;cursor:pointer;display:inline-flex;align-items:center;gap:7px;white-space:nowrap;position:relative;transition:color .15s,background .15s}
+.dk-tab svg{width:15px;height:15px;opacity:.8}
+.dk-tab:hover{color:#dbe4f4;background:rgba(255,255,255,.05)}
+.dk-tab.on{color:#fff;background:rgba(47,95,255,.18)}
+.dk-tab.on svg{opacity:1}
+.dk-tab.on::after{content:"";position:absolute;left:13px;right:13px;bottom:-9px;height:2px;border-radius:2px;background:#4f86ff;box-shadow:0 0 10px #4f86ff}
+/* right-side controls */
+.dk-icbtn{appearance:none;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:#c3cde0;width:34px;height:34px;border-radius:10px;display:grid;place-items:center;cursor:pointer;position:relative;flex:none;transition:background .15s,border-color .15s}
+.dk-icbtn:hover{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2);color:#fff}
+.dk-icbtn svg{width:17px;height:17px}
+.dk-badge{position:absolute;top:-4px;right:-4px;min-width:16px;height:16px;padding:0 4px;border-radius:9px;background:#f0484a;color:#fff;font-size:10px;font-weight:700;display:grid;place-items:center;box-shadow:0 0 0 2px #0a0f1c}
+.dk-health{appearance:none;cursor:default;border:1px solid rgba(56,217,154,.3);background:rgba(56,217,154,.1);color:#7df0c0;font:inherit;font-size:12px;font-weight:600;padding:7px 12px;border-radius:999px;display:inline-flex;align-items:center;gap:8px;flex:none}
+.dk-health .d{width:7px;height:7px;border-radius:50%;background:#38d99a;box-shadow:0 0 8px #38d99a}
+.dk-health.warn{border-color:rgba(245,181,68,.35);background:rgba(245,181,68,.12);color:#f5cf86}
+.dk-health.warn .d{background:#f5b544;box-shadow:0 0 8px #f5b544}
+@media(max-width:1510px){.dk-brand .dk-wsname{display:none}}
+@media(max-width:1420px){.dk-health .t,.dk-tab span{display:none}.dk-tab{padding:7px 9px}}
+.dk-acct{appearance:none;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);cursor:pointer;height:34px;padding:0 8px 0 5px;border-radius:999px;display:inline-flex;align-items:center;gap:5px;flex:none}
+.dk-acct:hover{background:rgba(255,255,255,.1)}
+.dk-acct .av{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:700;color:#fff;background:linear-gradient(150deg,#4f86ff,#7b61ff);overflow:hidden}
+.dk-acct .av img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.dk-acct svg{width:14px;height:14px;color:#8795b3}
+/* popover menus (notifications / create / account) */
+.dk-pop{position:absolute;top:52px;z-index:120;min-width:240px;max-width:360px;border-radius:15px;overflow:hidden;
+  background:rgba(15,20,33,.96);backdrop-filter:blur(30px) saturate(170%);-webkit-backdrop-filter:blur(30px) saturate(170%);
+  border:1px solid rgba(255,255,255,.12);box-shadow:0 30px 90px rgba(0,0,0,.6);display:none}
+.dk-pop.on{display:block;animation:dkPop .18s ease}
+@keyframes dkPop{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.dk-pop-h{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;border-bottom:1px solid rgba(255,255,255,.08);font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#aab6cf}
+.dk-pop-h button{appearance:none;border:0;background:transparent;color:#7e8aa6;font:inherit;font-size:11px;cursor:pointer;text-transform:none;letter-spacing:0}
+.dk-pop-h button:hover{color:#cdd8ec}
+.dk-mi{display:flex;align-items:center;gap:11px;width:100%;padding:11px 16px;background:transparent;border:0;color:#dbe4f4;font:inherit;font-size:13.5px;cursor:pointer;text-align:left}
+.dk-mi:hover{background:rgba(63,120,255,.16)}
+.dk-mi svg{width:16px;height:16px;color:#9fb0cc;flex:none}
+.dk-mi .sub{display:block;font-size:11.5px;color:#8795b3;margin-top:1px}
+.dk-mi-div{height:1px;background:rgba(255,255,255,.08);margin:4px 0}
+.dk-acctcard{padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.08)}
+.dk-acctcard b{font-size:14px;color:#eaf0fb}.dk-acctcard span{display:block;font-size:12px;color:#8795b3;margin-top:2px;word-break:break-all}
+.dk-notif{max-height:60vh;overflow:auto}
+.dk-nrow{display:flex;gap:11px;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.05)}
+.dk-nrow .nd{width:8px;height:8px;border-radius:50%;background:#4f86ff;flex:none;margin-top:5px;box-shadow:0 0 7px #4f86ff}
+.dk-nrow.seen .nd{background:rgba(255,255,255,.18);box-shadow:none}
+.dk-nrow .nt{font-size:13px;color:#dbe4f4;line-height:1.35}
+.dk-nrow .na{font-size:11px;color:#7e8aa6;margin-top:2px}
+.dk-nempty{padding:26px 16px;text-align:center;color:#7e8aa6;font-size:13px}
+/* ======================= Overview workspace ======================= */
+.dk-ov{position:absolute;inset:56px 0 0;overflow:auto;padding:26px 4vw 60px}
+.dk-ovhead{display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:14px;margin-bottom:22px}
+.dk-ovhead h1{font-family:'Sora',system-ui,sans-serif;font-size:26px;font-weight:800;letter-spacing:-.02em;color:#f3f7ff}
+.dk-ovhead p{font-size:13.5px;color:#93a2c0;margin-top:5px;max-width:620px}
+.dk-ovhead .when{font-size:12.5px;color:#7e8aa6;text-align:right}
+.dk-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:14px;margin-bottom:22px}
+.dk-kpi{position:relative;padding:16px 16px 15px 18px;border-radius:12px;background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.08);cursor:pointer;transition:transform .16s,border-color .16s,background .16s;overflow:hidden;text-align:left}
+.dk-kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--a,#4f86ff)}
+.dk-kpi:hover{transform:translateY(-2px);border-color:color-mix(in srgb,var(--a,#4f86ff) 55%,rgba(255,255,255,.08));background:rgba(255,255,255,.045)}
+.dk-kpi .ki{position:absolute;top:13px;right:13px;width:25px;height:25px;border-radius:7px;display:grid;place-items:center;color:var(--a,#4f86ff);background:color-mix(in srgb,var(--a,#4f86ff) 16%,transparent)}
+.dk-kpi .ki svg{width:14px;height:14px}
+.dk-kpi .kn{font-size:28px;font-weight:800;line-height:1;letter-spacing:-.02em;color:#f3f7ff;font-variant-numeric:tabular-nums}
+.dk-kpi .kl{font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:#8795b3;margin-top:9px;font-weight:600}
+.dk-kpi .ks{font-size:11px;font-weight:500;color:#6f7b96;margin-top:4px}
+.dk-ovgrid{display:grid;grid-template-columns:1.5fr 1fr;gap:18px}
+@media(max-width:900px){.dk-ovgrid{grid-template-columns:1fr}.dk-ov{padding:24px 18px 56px}}
+.dk-ovp{border-radius:18px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);padding:18px 20px;box-shadow:0 10px 30px rgba(0,0,0,.3);margin-bottom:18px}
+.dk-ovp h2{font-size:15px;font-weight:700;margin:0 0 14px;display:flex;align-items:center;gap:9px}
+.dk-ovp h2 svg{width:17px;height:17px;flex:none;color:#8aa0ff}
+.dk-ovp h2 .mo{margin-left:auto;font-size:12px;font-weight:600;color:#8aa0ff;cursor:pointer;white-space:nowrap}
+.dk-ovp h2 .mo:hover{color:#b9c8ff}
+.dk-ovact .r{display:flex;align-items:center;gap:11px;padding:9px 0;border-top:1px solid rgba(255,255,255,.055)}
+.dk-ovact .r:first-child{border-top:0}
+.dk-ovact .r .dot{width:7px;height:7px;border-radius:50%;background:#4f86ff;flex:none}
+.dk-ovact .r .tx{font-size:13px;color:#cdd8ec;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dk-ovact .r .ag{font-size:11.5px;color:#7e8aa6;flex:none}
+.dk-qa{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.dk-qacard{display:flex;flex-direction:column;gap:7px;padding:15px;border-radius:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);cursor:pointer;transition:transform .18s,border-color .18s,background .18s}
+.dk-qacard:hover{transform:translateY(-2px);background:rgba(63,120,255,.14);border-color:rgba(63,120,255,.4)}
+.dk-qacard .qi{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;color:var(--a,#4f86ff);background:color-mix(in srgb,var(--a,#4f86ff) 16%,transparent)}
+.dk-qacard .qi svg{width:16px;height:16px}
+.dk-qacard b{font-size:13.5px;color:#eaf0fb}
+.dk-qacard span{font-size:11.5px;color:#8795b3;line-height:1.35}
+.dk-gauge{display:flex;align-items:center;gap:16px}
+.dk-gauge .ring{--p:0;--c:#38d99a;width:92px;height:92px;border-radius:50%;flex:none;display:grid;place-items:center;
+  background:conic-gradient(var(--c) calc(var(--p)*1%),rgba(255,255,255,.08) 0)}
+.dk-gauge .ring i{width:72px;height:72px;border-radius:50%;background:#0b1120;display:grid;place-items:center;font-style:normal;font-size:19px;font-weight:800;color:#f3f7ff}
+.dk-gauge .gmeta b{font-size:15px;color:#eaf0fb}.dk-gauge .gmeta p{font-size:12px;color:#8795b3;margin-top:4px;line-height:1.4}
+.dk-sevbar{display:flex;height:10px;border-radius:6px;overflow:hidden;margin:12px 0 10px;background:rgba(255,255,255,.06)}
+.dk-sevbar span{height:100%}
+.dk-sevleg{display:flex;flex-wrap:wrap;gap:12px;font-size:11.5px;color:#9aa7c4}
+.dk-sevleg i{width:9px;height:9px;border-radius:2px;display:inline-block;margin-right:5px;vertical-align:-1px}
+/* ======================= Tools workspace (rail + search) ======================= */
+.dk-tools2{position:absolute;inset:56px 0 0;display:flex;flex-direction:column}
+.dk-tbar{flex:none;display:flex;align-items:center;gap:14px;padding:18px 4vw 14px}
+.dk-tsearch{flex:1;max-width:520px;display:flex;align-items:center;gap:10px;padding:11px 15px;border-radius:13px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1)}
+.dk-tsearch:focus-within{border-color:rgba(79,134,255,.6);background:rgba(79,134,255,.08)}
+.dk-tsearch svg{width:17px;height:17px;color:#8795b3;flex:none}
+.dk-tsearch input{flex:1;border:0;outline:0;background:transparent;color:#fff;font:inherit;font-size:14px}
+.dk-tcount{font-size:12.5px;color:#8795b3;margin-left:auto;flex:none}
+.dk-tbody{flex:1;display:flex;min-height:0}
+.dk-tnav{flex:none;width:232px;overflow:auto;padding:4px 10px 30px 4vw}
+.dk-tcat{display:flex;align-items:center;gap:9px;width:100%;padding:9px 12px;margin-bottom:3px;border:0;border-radius:11px;background:transparent;color:#9aa7c4;font:inherit;font-size:13px;font-weight:600;cursor:pointer;text-align:left;transition:background .15s,color .15s}
+.dk-tcat:hover{background:rgba(255,255,255,.05);color:#dbe4f4}
+.dk-tcat.on{background:rgba(47,95,255,.16);color:#fff}
+.dk-tcat .cd{width:9px;height:9px;border-radius:3px;flex:none;box-shadow:0 0 8px currentColor}
+.dk-tcat .n{margin-left:auto;font-size:11.5px;font-weight:600;color:#7e8aa6;background:rgba(255,255,255,.06);padding:1px 8px;border-radius:999px}
+.dk-tcat.on .n{color:#cdd8ec;background:rgba(255,255,255,.12)}
+.dk-tmain{flex:1;overflow:auto;padding:4px 4vw 60px 24px}
+@media(max-width:820px){.dk-tnav{display:none}.dk-tmain{padding:4px 18px 56px}}
+.dk-tsec{margin:0 0 30px}
+.dk-tsec .th{display:flex;align-items:center;gap:10px;margin:0 0 14px}
+.dk-tsec .th .d{width:10px;height:10px;border-radius:3px;box-shadow:0 0 10px currentColor}
+.dk-tsec .th h3{font-size:15px;font-weight:700;letter-spacing:-.01em}
+.dk-tsec .th .c{font-size:12px;color:#8795b3;font-weight:500}
+.dk-tnone{padding:40px;text-align:center;color:#7e8aa6;font-size:14px}
+/* ======================= Threat Intel workspace ======================= */
+.dk-ti{position:absolute;inset:56px 0 0;overflow:auto;padding:26px 4vw 60px}
+.dk-ti-head{display:flex;align-items:center;flex-wrap:wrap;gap:14px;margin-bottom:18px}
+.dk-ti-head h1{font-family:'Sora',system-ui,sans-serif;font-size:22px;font-weight:800;letter-spacing:-.02em;color:#f3f7ff}
+.dk-ti-head .mo{margin-left:auto;font-size:12.5px;font-weight:600;color:#8aa0ff;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.dk-ti-head .mo svg{width:14px;height:14px}
+.dk-sevchips{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:18px}
+.dk-sevchip{padding:12px 16px;border-radius:13px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.08);min-width:104px}
+.dk-sevchip .n{font-size:22px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+.dk-sevchip .l{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#8795b3;margin-top:6px}
+.dk-cve{display:flex;gap:13px;padding:13px 16px;border-radius:13px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);margin-bottom:9px;cursor:pointer;transition:border-color .15s,background .15s}
+.dk-cve:hover{background:rgba(255,255,255,.055);border-color:rgba(255,255,255,.18)}
+.dk-cve .sv{flex:none;width:52px;text-align:center;font-weight:800;font-size:15px;font-variant-numeric:tabular-nums}
+.dk-cve .sv small{display:block;font-size:9.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-top:3px}
+.dk-cve .bd{min-width:0}
+.dk-cve .bd .id{font-size:13px;font-weight:700;color:#eaf0fb}
+.dk-cve .bd .ti{font-size:12.5px;color:#aeb9d2;margin-top:3px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.dk-cve .bd .dt{font-size:11px;color:#7e8aa6;margin-top:5px}
+.dk-loading{display:flex;align-items:center;gap:12px;color:#8795b3;font-size:13.5px;padding:30px 4px}
+.dk-loading .sp{width:22px;height:22px;border-radius:50%;border:2.5px solid rgba(255,255,255,.14);border-top-color:#4f86ff;animation:dkSpin .8s linear infinite}
+.dk-errbox{padding:22px;border-radius:14px;background:rgba(240,72,74,.1);border:1px solid rgba(240,72,74,.3);color:#ffb3b4;font-size:13px;line-height:1.5}
+.dk-errbox button{margin-top:12px}
+/* ======================= Investigations workspace ======================= */
+.dk-inv{position:absolute;inset:56px 0 0;overflow:auto;padding:26px 4vw 60px}
+.dk-inv h1{font-family:'Sora',system-ui,sans-serif;font-size:22px;font-weight:800;letter-spacing:-.02em;color:#f3f7ff;margin-bottom:6px}
+.dk-inv .sub{font-size:13px;color:#93a2c0;margin-bottom:20px}
+.dk-invtypes{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin:14px 0 8px}
+.dk-invtype{padding:14px 16px;border-radius:13px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.08)}
+.dk-invtype .n{font-size:24px;font-weight:800;color:#f3f7ff;font-variant-numeric:tabular-nums}
+.dk-invtype .l{font-size:12px;color:#9aa7c4;margin-top:4px;text-transform:capitalize}
+/* ======================= Assistant workspace ======================= */
+.dk-asst{position:absolute;inset:56px 0 0;display:flex;flex-direction:column}
+.dk-asst .dk-wframe{flex:1;position:relative}
 `;
 const IC_SEARCH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/></svg>';
 const IC_CHEV = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>';
@@ -355,19 +587,33 @@ export function renderDeck(host, opts) {
     <div class="dk-sky"></div>
     <canvas class="dk-stars" id="dkStars"></canvas>
     <div class="dk-top">
-      <div class="dk-brand"><img src="/logo-light.svg" alt="">Darknode</div>
-      <div class="dk-seg">
-        <button data-scene="con" class="on">Connections</button>
-        <button data-scene="tools">Tools</button>
-      </div>
+      <button class="dk-brand" id="dkBrand" title="Open full console"><img src="/logo-light.svg" alt="">Darknode<span class="dk-wsname">Command Center</span></button>
+      <nav class="dk-tabs" id="dkTabs" aria-label="Workspaces">
+        <button class="dk-tab on" data-scene="overview">${IC.home}<span>Overview</span></button>
+        <button class="dk-tab" data-scene="con">${IC.link}<span>Connections</span></button>
+        <button class="dk-tab" data-scene="tools">${IC.grid}<span>Tools</span></button>
+        <button class="dk-tab" data-scene="threat">${IC.radar}<span>Threat Intel</span></button>
+        <button class="dk-tab" data-scene="invest">${IC.folder}<span>Investigations</span></button>
+        <button class="dk-tab" data-scene="activity">${IC.pulse}<span>Activity</span></button>
+        <button class="dk-tab" data-scene="assistant">${IC.spark}<span>Assistant</span></button>
+      </nav>
       <div class="dk-right">
-        <div class="dk-find" id="dkFind">${IC_SEARCH}<span>Search tools &amp; services</span><kbd>Ctrl K</kbd></div>
+        <button class="dk-health" id="dkHealth"><span class="d"></span><span class="t">Systems operational</span></button>
+        <button class="dk-icbtn" id="dkFindBtn" title="Search (Ctrl K)" aria-label="Search">${IC_SEARCH}</button>
+        <button class="dk-icbtn" id="dkNew" title="Quick create" aria-label="Quick create">${IC.plus}</button>
+        <button class="dk-icbtn" id="dkBell" title="Notifications" aria-label="Notifications">${IC.bell}<span class="dk-badge" id="dkBadge" hidden></span></button>
         <span class="dk-clock" id="dkClock"></span>
-        <span class="dk-quit" id="dkQuit">Exit</span>
+        <button class="dk-acct" id="dkAcct" aria-label="Account"><span class="av" id="dkAvatar">DN</span>${IC.chevd}</button>
       </div>
     </div>
 
-    <div class="dk-scene" id="dkCon">
+    <div class="dk-pop" id="dkNewPop"></div>
+    <div class="dk-pop" id="dkBellPop"></div>
+    <div class="dk-pop" id="dkAcctPop"></div>
+
+    <div class="dk-scene dk-ov" id="dkOverview"></div>
+
+    <div class="dk-scene" id="dkCon" hidden>
       <div class="dk-con" id="dkConCanvas">
         <svg class="dk-links" id="dkLinks"></svg>
         <div class="dk-core"><div><b>DARKNODE</b><br><span id="dkCoreCount"></span></div></div>
@@ -375,7 +621,21 @@ export function renderDeck(host, opts) {
       <div class="dk-conlist" id="dkConList"></div>
     </div>
 
-    <div class="dk-scene dk-gal" id="dkTools" hidden></div>
+    <div class="dk-scene dk-tools2" id="dkTools" hidden></div>
+
+    <div class="dk-scene dk-ti" id="dkThreat" hidden></div>
+
+    <div class="dk-scene dk-inv" id="dkInvest" hidden></div>
+
+    <div class="dk-scene dk-ov" id="dkActivity" hidden></div>
+
+    <div class="dk-scene dk-asst" id="dkAssistant" hidden>
+      <div class="dk-wbar">
+        <div class="dk-wtitle"><span class="wi">${IC.spark}</span><span class="wt">Darknode AI</span></div>
+        <span class="dk-wfull" id="dkAsstFull">Open in full console</span>
+      </div>
+      <div class="dk-wframe" id="dkAsstFrame"></div>
+    </div>
 
     <div class="dk-scene dk-work" id="dkWork" hidden>
       <div class="dk-wbar">
@@ -408,15 +668,35 @@ export function renderDeck(host, opts) {
   function drawStars(){ sctx.clearRect(0,0,stars.width,stars.height); for (const p of pts){ p.a += p.s; const a = .35 + Math.abs(Math.sin(p.a))*.5; sctx.beginPath(); sctx.arc(p.x,p.y,p.r,0,7); sctx.fillStyle = `rgba(180,210,255,${a})`; sctx.fill(); } rafId = requestAnimationFrame(drawStars); }
   sizeStars(); drawStars();
 
-  // ---------- scene switching ----------
-  const sceneCon = $("#dkCon"), sceneTools = $("#dkTools");
-  root.querySelectorAll(".dk-seg button").forEach((b) => b.onclick = () => {
-    root.querySelectorAll(".dk-seg button").forEach((x) => x.classList.toggle("on", x === b));
-    const s = b.dataset.scene;
+  // ---------- workspace router ----------
+  const SCENES = { overview: "#dkOverview", con: "#dkCon", tools: "#dkTools", threat: "#dkThreat", invest: "#dkInvest", activity: "#dkActivity", assistant: "#dkAssistant" };
+  const sceneEls = {}; for (const k in SCENES) sceneEls[k] = $(SCENES[k]);
+  const sceneCon = sceneEls.con, sceneTools = sceneEls.tools;   // kept for the constellation + tools code
+  // sec -> label, for activity lines and quick-action titles
+  const secLabel = {}; for (const g of groups) for (const it of g.items) secLabel[it.sec] = it.label;
+  let curScene = "overview";
+  function go(scene){
+    if (!SCENES[scene]) scene = "overview";
+    curScene = scene;
+    try { localStorage.setItem(LS_SCENE, scene); } catch (_) {}
+    closeAllMenus();
     sceneWork.hidden = true; wFrame.innerHTML = ""; curSec = null;
-    sceneCon.hidden = s !== "con"; sceneTools.hidden = s !== "tools";
-    if (s === "con") layoutConstellation();
-    if (s === "tools") revealGallery();
+    root.querySelectorAll(".dk-tab").forEach((t) => t.classList.toggle("on", t.dataset.scene === scene));
+    for (const k in sceneEls) sceneEls[k].hidden = k !== scene;
+    if (scene === "overview") renderOverview();
+    else if (scene === "con") layoutConstellation();
+    else if (scene === "tools") { buildTools(); applyTools(); revealGallery(); }
+    else if (scene === "threat") renderThreat();
+    else if (scene === "invest") renderInvest();
+    else if (scene === "activity") renderActivity();
+    else if (scene === "assistant") openAssistant();
+  }
+  root.querySelectorAll(".dk-tab").forEach((b) => b.onclick = () => go(b.dataset.scene));
+  // Any element carrying data-scene (KPI cards, "view all" links, quick actions)
+  // routes to that workspace; data-sec opens a tool in the in-deck workspace.
+  root.addEventListener("click", (e) => {
+    const nav = e.target.closest("[data-scene]");
+    if (nav && !nav.classList.contains("dk-tab") && nav.dataset.scene) { go(nav.dataset.scene); return; }
   });
 
   // ---------- constellation ----------
@@ -647,21 +927,62 @@ export function renderDeck(host, opts) {
   }
   $("#dkDrawerX").onclick = () => drawer.classList.remove("on");
 
-  // ---------- tools gallery (large, full-screen) ----------
-  sceneTools.innerHTML = groups.map((g) => {
-    const h = hexOf(g.color);
-    return `<section class="gcat"><div class="ghead"><span class="gd" style="background:${h};color:${h}"></span><h3>${esc(g.name)}</h3><span class="gc">${g.items.length} tools</span></div>
-      <div class="dk-grid">${g.items.map((it) => `<div class="dk-gcard" data-sec="${esc(it.sec)}" data-label="${esc(it.label)}" style="--a:${h}">
-        <span class="gi">${toolIcon(it.label, g.name)}</span>
-        ${it.badge === "live" ? '<span class="glive" title="Live data"></span>' : ""}
-        <span class="gt">${esc(it.label)}</span>
-        <span class="garr">Open${IC_CHEV}</span></div>`).join("")}</div></section>`;
-  }).join("");
-  sceneTools.querySelectorAll(".dk-gcard").forEach((c) => c.onclick = () => openTool(c.dataset.sec, c.dataset.label, c.style.getPropertyValue("--a")));
+  // ---------- Tools workspace: AWS-style category rail + live search ----------
+  const TOTAL_TOOLS = groups.reduce((n, g) => n + g.items.length, 0);
+  let toolCat = "all", toolQ = "", toolsBuilt = false;
+  try { toolCat = localStorage.getItem("dn_deck_toolcat") || "all"; } catch (_) {}
+  if (toolCat !== "all" && !groups.some((g) => g.id === toolCat)) toolCat = "all";
+  function buildTools(){
+    if (toolsBuilt) return; toolsBuilt = true;
+    sceneTools.innerHTML = `
+      <div class="dk-tbar">
+        <label class="dk-tsearch">${IC_SEARCH}<input id="dkToolSearch" type="search" placeholder="Search ${TOTAL_TOOLS} tools by name…" autocomplete="off" spellcheck="false"></label>
+        <span class="dk-tcount" id="dkToolCount"></span>
+      </div>
+      <div class="dk-tbody">
+        <nav class="dk-tnav" id="dkToolNav" aria-label="Tool categories">
+          <button class="dk-tcat" data-cat="all"><span class="cd" style="background:#9aa7c4;color:#9aa7c4"></span>All tools<span class="n">${TOTAL_TOOLS}</span></button>
+          ${groups.map((g) => { const h = hexOf(g.color); return `<button class="dk-tcat" data-cat="${g.id}"><span class="cd" style="background:${h};color:${h}"></span>${esc(g.name)}<span class="n">${g.items.length}</span></button>`; }).join("")}
+        </nav>
+        <div class="dk-tmain" id="dkToolMain">
+          ${groups.map((g) => { const h = hexOf(g.color); return `<section class="dk-tsec" data-g="${g.id}"><div class="th" style="color:${h}"><span class="d"></span><h3>${esc(g.name)}</h3><span class="c">${g.items.length} tools</span></div>
+            <div class="dk-grid">${g.items.map((it) => `<div class="dk-gcard" data-sec="${esc(it.sec)}" data-label="${esc(it.label)}" data-txt="${esc((it.label + " " + g.name).toLowerCase())}" style="--a:${h}">
+              <span class="gi">${toolIcon(it.label, g.name)}</span>${it.badge === "live" ? '<span class="glive" title="Live data"></span>' : ""}
+              <span class="gt">${esc(it.label)}</span><span class="garr">Open${IC_CHEV}</span></div>`).join("")}</div></section>`; }).join("")}
+          <div class="dk-tnone" id="dkToolNone" hidden>No tools match your search.</div>
+        </div>
+      </div>`;
+    sceneTools.querySelectorAll(".dk-gcard").forEach((c) => c.onclick = () => openTool(c.dataset.sec, c.dataset.label, c.style.getPropertyValue("--a")));
+    sceneTools.querySelectorAll("#dkToolNav .dk-tcat").forEach((b) => b.onclick = () => {
+      toolCat = b.dataset.cat; try { localStorage.setItem("dn_deck_toolcat", toolCat); } catch (_) {}
+      const s = sceneTools.querySelector("#dkToolSearch"); if (s) s.value = ""; toolQ = "";
+      applyTools(); revealGallery();
+      sceneTools.querySelector("#dkToolMain").scrollTop = 0;
+    });
+    const search = sceneTools.querySelector("#dkToolSearch");
+    search.oninput = () => { toolQ = search.value.trim().toLowerCase(); applyTools(); revealGallery(); };
+  }
+  function applyTools(){
+    const q = toolQ; let shown = 0;
+    sceneTools.querySelectorAll("#dkToolNav .dk-tcat").forEach((b) => b.classList.toggle("on", !q && b.dataset.cat === toolCat));
+    sceneTools.querySelectorAll(".dk-tsec").forEach((sec) => {
+      const inCat = !!q || toolCat === "all" || sec.dataset.g === toolCat;
+      let any = false;
+      sec.querySelectorAll(".dk-gcard").forEach((c) => {
+        const hit = inCat && (!q || c.dataset.txt.includes(q));
+        c.style.display = hit ? "" : "none";
+        if (hit) { any = true; shown++; }
+      });
+      sec.hidden = !any;
+    });
+    const countEl = sceneTools.querySelector("#dkToolCount");
+    if (countEl) countEl.textContent = q ? `${shown} match${shown === 1 ? "" : "es"}` : `${shown} tool${shown === 1 ? "" : "s"}`;
+    const none = sceneTools.querySelector("#dkToolNone"); if (none) none.hidden = shown > 0;
+  }
   function revealGallery(){
-    const cards = sceneTools.querySelectorAll(".dk-gcard");
-    cards.forEach((c, i) => { c.classList.remove("in"); });
-    requestAnimationFrame(() => cards.forEach((c, i) => setTimeout(() => c.classList.add("in"), Math.min(i, 26) * 20)));
+    const cards = [...sceneTools.querySelectorAll(".dk-gcard")].filter((c) => c.style.display !== "none" && !c.closest(".dk-tsec").hidden);
+    cards.forEach((c) => c.classList.remove("in"));
+    requestAnimationFrame(() => cards.forEach((c, i) => setTimeout(() => c.classList.add("in"), Math.min(i, 24) * 16)));
   }
 
   // ---------- in-deck tool workspace (tools open here, not the old console) ----------
@@ -676,14 +997,14 @@ export function renderDeck(host, opts) {
     f.onload = () => { f.classList.add("in"); const l = wFrame.querySelector(".dk-wload"); if (l) setTimeout(() => l.remove(), 180); };
     wFrame.appendChild(f);
     wTitle.innerHTML = '<span class="wi"' + (accent ? ' style="--a:' + accent + '"' : "") + '>' + toolIcon(label) + '</span><span class="wt">' + esc(label) + '</span>';
-    drawer.classList.remove("on");
-    sceneCon.hidden = true; sceneTools.hidden = true; sceneWork.hidden = false;
+    drawer.classList.remove("on"); closeAllMenus();
+    for (const k in sceneEls) sceneEls[k].hidden = true;
+    sceneWork.hidden = false;
     sceneWork.classList.remove("opening"); void sceneWork.offsetWidth; sceneWork.classList.add("opening");
   }
   function closeTool(){
     sceneWork.hidden = true; wFrame.innerHTML = ""; curSec = null;
-    sceneCon.hidden = true; sceneTools.hidden = false;
-    root.querySelectorAll(".dk-seg button").forEach((x) => x.classList.toggle("on", x.dataset.scene === "tools"));
+    go("tools");
   }
   $("#dkWBack").onclick = closeTool;
   $("#dkWFull").onclick = () => { const s = curSec; teardown(); onOpen(s); };
@@ -705,10 +1026,216 @@ export function renderDeck(host, opts) {
       : `<div class="dk-empty">Nothing matches "${esc(q)}"</div>`;
     spotRes.querySelectorAll(".dk-sr").forEach((r) => r.onclick = () => chooseSpot(+r.dataset.i));
   }
-  function chooseSpot(i){ const m = matches[i]; if (!m) return; if (m.type === "conn") { closeSpot(); root.querySelector('.dk-seg button[data-scene="con"]').click(); openDrawer(m.it); } else { closeSpot(); openTool(m.sec, m.label); } }
+  function chooseSpot(i){ const m = matches[i]; if (!m) return; if (m.type === "conn") { closeSpot(); go("con"); openDrawer(m.it); } else { closeSpot(); openTool(m.sec, m.label); } }
   function moveSel(d){ if (!matches.length) return; selIdx = (selIdx + d + matches.length) % matches.length; spotRes.querySelectorAll(".dk-sr").forEach((r, i) => r.classList.toggle("sel", i === selIdx)); spotRes.querySelector(".dk-sr.sel")?.scrollIntoView({ block: "nearest" }); }
-  $("#dkFind").onclick = openSpot; spotIn.oninput = () => runSpot(spotIn.value);
+  $("#dkFindBtn").onclick = openSpot; spotIn.oninput = () => runSpot(spotIn.value);
   spot.addEventListener("click", (e) => { if (e.target === spot) closeSpot(); });
+
+  // ---------- command-center chrome: status, quick-create, notifications, account ----------
+  const popNew = $("#dkNewPop"), popBell = $("#dkBellPop"), popAcct = $("#dkAcctPop"), badge = $("#dkBadge"), health = $("#dkHealth");
+  const user = opts.user || {};
+  let notifs = readRecentActivity().map((a) => ({ text: a.text, ts: a.ts }));
+  let notifSeen = 0, busOffs = [];
+  try { notifSeen = parseInt(localStorage.getItem(LS_NOTIF_SEEN) || "0", 10) || 0; } catch (_) {}
+
+  function closeAllMenus(){ [popNew, popBell, popAcct].forEach((p) => p && p.classList.remove("on")); }
+  function toggleMenu(pop, btn, build){
+    const open = pop.classList.contains("on");
+    closeAllMenus();
+    if (open) return;
+    build();
+    try { pop.style.right = Math.max(10, window.innerWidth - btn.getBoundingClientRect().right) + "px"; } catch (_) {}
+    pop.classList.add("on");
+  }
+  function setHealth(ok, text){ health.classList.toggle("warn", !ok); const t = health.querySelector(".t"); if (t) t.textContent = text; }
+  function updateBadge(){ const n = notifs.filter((x) => x.ts > notifSeen).length; if (n > 0) { badge.hidden = false; badge.textContent = n > 9 ? "9+" : String(n); } else badge.hidden = true; }
+  function pushNotif(text){ if (!text) return; notifs.unshift({ text: String(text), ts: Date.now() }); if (notifs.length > 40) notifs.length = 40; updateBadge(); if (popBell.classList.contains("on")) buildBellMenu(); if (curScene === "activity") renderActivity(); }
+  function buildNewMenu(){
+    popNew.innerHTML = `<div class="dk-pop-h">Quick create</div>
+      <button class="dk-mi" data-go="assistant">${IC.spark}<span>Ask Darknode AI<span class="sub">Open the assistant</span></span></button>
+      <button class="dk-mi" data-go="con">${IC.link}<span>Connect a provider<span class="sub">Link an AI model or intel source</span></span></button>
+      <button class="dk-mi" data-tool="investigation">${IC.folder}<span>New investigation<span class="sub">Start an investigation workspace</span></span></button>
+      <button class="dk-mi" data-tool="secgraph">${IC.grid}<span>Open security graph<span class="sub">Entities &amp; relationships</span></span></button>`;
+    popNew.querySelectorAll("[data-go]").forEach((b) => b.onclick = () => { closeAllMenus(); go(b.dataset.go); });
+    popNew.querySelectorAll("[data-tool]").forEach((b) => b.onclick = () => { closeAllMenus(); openTool(b.dataset.tool, secLabel[b.dataset.tool] || b.dataset.tool); });
+  }
+  function buildBellMenu(){
+    popBell.innerHTML = `<div class="dk-pop-h">Notifications <button id="dkNClear">Mark all read</button></div>
+      <div class="dk-notif">${notifs.length ? notifs.map((x) => `<div class="dk-nrow${x.ts <= notifSeen ? " seen" : ""}"><span class="nd"></span><div><div class="nt">${esc(x.text)}</div><div class="na">${timeAgo(x.ts)}</div></div></div>`).join("") : `<div class="dk-nempty">No notifications yet. Platform events — tools run, graph entities added, providers connected — stream in here live.</div>`}</div>`;
+    const clr = popBell.querySelector("#dkNClear");
+    if (clr) clr.onclick = () => { notifSeen = Date.now(); try { localStorage.setItem(LS_NOTIF_SEEN, String(notifSeen)); } catch (_) {} updateBadge(); buildBellMenu(); };
+  }
+  function buildAcctMenu(){
+    const nm = user.displayName || user.email || "Operator", em = user.email || "Signed in to Darknode";
+    popAcct.innerHTML = `<div class="dk-acctcard"><b>${esc(nm)}</b><span>${esc(em)}</span></div>
+      <button class="dk-mi" data-go="overview">${IC.home}<span>Command center home</span></button>
+      <button class="dk-mi" data-tool="settings">${IC.gear}<span>Settings</span></button>
+      <button class="dk-mi" id="dkMiConsole">${IC.ext}<span>Open full console</span></button>
+      <div class="dk-mi-div"></div>
+      <button class="dk-mi" id="dkMiExit">${IC.logout}<span>Exit command center</span></button>`;
+    popAcct.querySelector("[data-go]").onclick = () => { closeAllMenus(); go("overview"); };
+    popAcct.querySelector("[data-tool]").onclick = () => { closeAllMenus(); openTool("settings", "Settings"); };
+    popAcct.querySelector("#dkMiConsole").onclick = exitDeck;
+    popAcct.querySelector("#dkMiExit").onclick = exitDeck;
+  }
+  function exitDeck(){ teardown(); onExit(); }
+
+  // avatar
+  const avEl = $("#dkAvatar");
+  if (avEl) { if (user.photoURL) avEl.innerHTML = `<img src="${esc(user.photoURL)}" alt="" referrerpolicy="no-referrer">`; else avEl.textContent = monogram(user.displayName || user.email || "Darknode"); }
+
+  $("#dkNew").onclick = (e) => { e.stopPropagation(); toggleMenu(popNew, $("#dkNew"), buildNewMenu); };
+  $("#dkBell").onclick = (e) => { e.stopPropagation(); const willOpen = !popBell.classList.contains("on"); toggleMenu(popBell, $("#dkBell"), buildBellMenu); if (willOpen) { notifSeen = Date.now(); try { localStorage.setItem(LS_NOTIF_SEEN, String(notifSeen)); } catch (_) {} updateBadge(); } };
+  $("#dkAcct").onclick = (e) => { e.stopPropagation(); toggleMenu(popAcct, $("#dkAcct"), buildAcctMenu); };
+  $("#dkBrand").onclick = exitDeck;
+  root.addEventListener("pointerdown", (e) => { if (!e.target.closest(".dk-pop, .dk-icbtn, .dk-acct")) closeAllMenus(); });
+  updateBadge();
+
+  // live platform events -> notifications (and the Activity stream)
+  busOffs.push(bus.on(EVENTS.ENTITY_CREATED, (p) => pushNotif(`Entity added to the graph${p && (p.label || p.name) ? `: ${p.label || p.name}` : p && p.type ? `: ${p.type}` : ""}`)));
+  busOffs.push(bus.on(EVENTS.RELATIONSHIP_CREATED, () => pushNotif("New relationship created in the security graph")));
+  busOffs.push(bus.on(EVENTS.TOOL_RESULT, (p) => pushNotif(`Result captured${p && p.tool ? ` from ${p.tool}` : ""}`)));
+  busOffs.push(bus.on(EVENTS.NOTIFY, (p) => pushNotif(typeof p === "string" ? p : (p && p.message) || "")));
+
+  // ---------- Overview workspace ----------
+  function renderOverview(){
+    const el = sceneEls.overview;
+    const s = readStats();
+    const linked = INTEGRATIONS.filter((i) => conns[i.id] && conns[i.id].connected);
+    const kpi = (id, val, label, icon, accent, scene, sub) => `<button class="dk-kpi" data-k="${id}"${scene ? ` data-scene="${scene}"` : ""} style="--a:${accent}"><span class="ki">${icon}</span><div class="kn">${val}</div><div class="kl">${esc(label)}</div>${sub ? `<div class="ks">${esc(sub)}</div>` : ""}</button>`;
+    const acts = notifs.slice(0, 6);
+    const actRows = acts.length
+      ? acts.map((a) => `<div class="r"><span class="dot"></span><span class="tx">${esc(a.text)}</span><span class="ag">${timeAgo(a.ts)}</span></div>`).join("")
+      : `<div class="dk-nempty">No activity yet. Open a tool or connect a provider and it shows up here.</div>`;
+    const pct = INTEGRATIONS.length ? Math.round(linked.length / INTEGRATIONS.length * 100) : 0;
+    const now = new Date();
+    const first = ((user.displayName || "").trim().split(/\s+/)[0]) || (user.email || "").split("@")[0] || "operator";
+    const hr = now.getHours();
+    const greet = hr < 5 ? "Still running" : hr < 12 ? "Good morning" : hr < 18 ? "Good afternoon" : "Good evening";
+    el.innerHTML = `
+      <div class="dk-ovhead">
+        <div><h1>${esc(greet)}, ${esc(first)}</h1><p>${linked.length} of ${INTEGRATIONS.length} integrations linked &middot; ${TOTAL_TOOLS.toLocaleString()} tools ready &middot; live threat feed from NVD</p></div>
+        <div class="when">${now.toLocaleDateString([], { weekday: "long", month: "long", day: "numeric" })}<br>${now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>
+      </div>
+      <div class="dk-kpis">
+        ${kpi("conn", linked.length, "Integrations linked", IC.link, "#38d99a", "con", "of " + INTEGRATIONS.length)}
+        ${kpi("tools", TOTAL_TOOLS, "Tools available", IC.grid, "#4f86ff", "tools")}
+        ${kpi("graph", "—", "Graph entities", IC.folder, "#9b5cf0", "invest")}
+        ${kpi("cve", "—", "New CVEs (7d)", IC.radar, "#f0484a", "threat")}
+        ${kpi("tused", s.toolsUsed, "Tools used", IC.pulse, "#f5920b", null, "this browser")}
+        ${kpi("ai", s.aiConvos, "AI conversations", IC.spark, "#7b61ff", "assistant", "this browser")}
+      </div>
+      <div class="dk-ovgrid">
+        <div>
+          <div class="dk-ovp"><h2>${IC.pulse} Recent activity <span class="mo" data-scene="activity">View all</span></h2><div class="dk-ovact">${actRows}</div></div>
+          <div class="dk-ovp"><h2>${IC.grid} Quick actions</h2><div class="dk-qa">
+            <button class="dk-qacard" data-scene="assistant"><span class="qi" style="--a:#7b61ff">${IC.spark}</span><b>Ask Darknode AI</b><span>Investigate with the assistant.</span></button>
+            <button class="dk-qacard" data-scene="con"><span class="qi" style="--a:#38d99a">${IC.link}</span><b>Connect a provider</b><span>Link an AI model or intel source.</span></button>
+            <button class="dk-qacard" data-tool="investigation"><span class="qi" style="--a:#9b5cf0">${IC.folder}</span><b>New investigation</b><span>Open the investigation workspace.</span></button>
+            <button class="dk-qacard" data-tool="secgraph"><span class="qi" style="--a:#4f86ff">${IC.grid}</span><b>Security graph</b><span>Entities and their relationships.</span></button>
+          </div></div>
+        </div>
+        <div>
+          <div class="dk-ovp"><h2>${IC.radar} Threat level <span class="mo" data-scene="threat">Threat intel</span></h2><div id="dkOvThreat"><div class="dk-loading"><span class="sp"></span>Loading live CVE feed…</div></div></div>
+          <div class="dk-ovp"><h2>${IC.link} Connections <span class="mo" data-scene="con">Manage</span></h2>
+            <div class="dk-gauge"><div class="ring" style="--p:${pct};--c:#38d99a"><i>${linked.length}</i></div><div class="gmeta"><b>${linked.length} of ${INTEGRATIONS.length} linked</b><p>${linked.length ? esc(linked.slice(0, 5).map((i) => i.name).join(", ")) + (linked.length > 5 ? "…" : "") : "Connect AI models and threat-intel sources to power the console."}</p></div></div>
+          </div>
+        </div>
+      </div>`;
+    el.querySelectorAll(".dk-qacard[data-tool]").forEach((b) => b.onclick = () => openTool(b.dataset.tool, secLabel[b.dataset.tool] || b.dataset.tool));
+    // async: graph entity count
+    import("/js/security-graph.js").then((m) => {
+      if (!m.getStats) return;
+      const st = m.getStats();
+      const kn = el.querySelector('[data-k="graph"] .kn'); if (kn) kn.textContent = (st.totalEntities || 0).toLocaleString();
+    }).catch(() => { const kn = el.querySelector('[data-k="graph"] .kn'); if (kn) kn.textContent = "0"; });
+    // async: live threat level + CVE KPI
+    fetchIntel(30).then((d) => {
+      setHealth(true, "Systems operational");
+      const kn = el.querySelector('[data-k="cve"] .kn'); if (kn) kn.textContent = (d.total || 0).toLocaleString();
+      const box = el.querySelector("#dkOvThreat"); if (!box) return;
+      const c = d.counts || {}, order = ["CRITICAL", "HIGH", "MEDIUM", "LOW"];
+      const sum = order.reduce((n, k) => n + (c[k] || 0), 0) || 1;
+      const bar = order.map((k) => `<span style="width:${(c[k] || 0) / sum * 100}%;background:${SEV[k].color}"></span>`).join("");
+      const leg = order.map((k) => `<span><i style="background:${SEV[k].color}"></i>${SEV[k].label} ${c[k] || 0}</span>`).join("");
+      const hot = (c.CRITICAL || 0) + (c.HIGH || 0);
+      const p = Math.round(hot / sum * 100);
+      const level = p >= 50 ? "Elevated" : p >= 25 ? "Guarded" : "Low";
+      const col = p >= 50 ? "#f0484a" : p >= 25 ? "#f5b544" : "#38d99a";
+      box.innerHTML = `<div class="dk-gauge"><div class="ring" style="--p:${p};--c:${col}"><i>${p}%</i></div><div class="gmeta"><b>${level} — ${hot} critical/high</b><p>Across the ${d.cves.length} most-recent CVEs (NVD, last ${d.days} days).</p></div></div><div class="dk-sevbar">${bar}</div><div class="dk-sevleg">${leg}</div>`;
+    }).catch(() => {
+      setHealth(false, "Threat feed delayed");
+      const box = el.querySelector("#dkOvThreat"); if (box) box.innerHTML = `<div class="dk-errbox">Couldn't reach the live CVE feed (NVD rate-limits keyless requests to ~5 / 30s). It refreshes automatically — try again shortly.</div>`;
+      const kn = el.querySelector('[data-k="cve"] .kn'); if (kn) kn.textContent = "—";
+    });
+  }
+
+  // ---------- Threat Intel workspace ----------
+  function renderThreat(){
+    const el = sceneEls.threat;
+    el.innerHTML = `<div class="dk-ti-head"><h1>Threat Intelligence</h1><span class="mo" id="dkTiFull">Open full Threat Feed ${IC.ext}</span></div>
+      <div id="dkTiBody"><div class="dk-loading"><span class="sp"></span>Fetching the latest CVEs from the NVD…</div></div>`;
+    el.querySelector("#dkTiFull").onclick = () => openTool("threatfeed", "Threat Intel Feed");
+    fetchIntel(40).then((d) => {
+      setHealth(true, "Systems operational");
+      const c = d.counts || {};
+      const chips = ["CRITICAL", "HIGH", "MEDIUM", "LOW"].map((k) => `<div class="dk-sevchip"><div class="n" style="color:${SEV[k].color}">${c[k] || 0}</div><div class="l">${SEV[k].label}</div></div>`).join("")
+        + `<div class="dk-sevchip"><div class="n">${(d.total || 0).toLocaleString()}</div><div class="l">Published 7d</div></div>`;
+      const list = d.cves.map((v) => `<div class="dk-cve" data-id="${esc(v.id)}"><div class="sv" style="color:${SEV[v.severity].color}">${v.cvss == null ? "—" : v.cvss.toFixed(1)}<small>${SEV[v.severity].label}</small></div><div class="bd"><div class="id">${esc(v.id)}</div><div class="ti">${esc(v.title || "No description provided yet.")}</div><div class="dt">Published ${esc(v.date || "—")}</div></div></div>`).join("");
+      el.querySelector("#dkTiBody").innerHTML = `<div class="dk-sevchips">${chips}</div>${list || '<div class="dk-tnone">No CVEs returned for this window.</div>'}`;
+      el.querySelectorAll(".dk-cve").forEach((r) => r.onclick = () => window.open("https://nvd.nist.gov/vuln/detail/" + encodeURIComponent(r.dataset.id), "_blank", "noopener"));
+    }).catch(() => {
+      setHealth(false, "Threat feed delayed");
+      el.querySelector("#dkTiBody").innerHTML = `<div class="dk-errbox">Couldn't reach the NVD CVE feed. Keyless requests are rate-limited to ~5 every 30 seconds — wait a moment and reopen this tab.<br><button class="dk-b" id="dkTiRetry" style="display:inline-flex;width:auto;margin-top:12px">Retry</button></div>`;
+      const rt = el.querySelector("#dkTiRetry"); if (rt) rt.onclick = () => { _cveCache = null; _cveAt = 0; renderThreat(); };
+    });
+  }
+
+  // ---------- Investigations workspace ----------
+  function renderInvest(){
+    const el = sceneEls.invest;
+    el.innerHTML = `<h1>Investigations &amp; Graph</h1><p class="sub">Your security graph, cases and entity intelligence — built up as you work across the tools.</p>
+      <div class="dk-kpis" id="dkInvKpis"><div class="dk-loading"><span class="sp"></span>Reading the security graph…</div></div>
+      <div class="dk-invtypes" id="dkInvTypes"></div>
+      <div class="dk-qa" style="max-width:720px;margin-top:8px">
+        <button class="dk-qacard" data-tool="investigation"><span class="qi" style="--a:#9b5cf0">${IC.folder}</span><b>Open Investigation Workspace</b><span>Build and track a full investigation.</span></button>
+        <button class="dk-qacard" data-tool="secgraph"><span class="qi" style="--a:#4f86ff">${IC.grid}</span><b>Open Security Graph</b><span>Visualise entities and their links.</span></button>
+        <button class="dk-qacard" data-tool="casemgmt"><span class="qi" style="--a:#f5920b">${IC.folder}</span><b>Case Manager</b><span>Track cases and their status.</span></button>
+      </div>`;
+    el.querySelectorAll(".dk-qacard[data-tool]").forEach((b) => b.onclick = () => openTool(b.dataset.tool, secLabel[b.dataset.tool] || b.dataset.tool));
+    import("/js/security-graph.js").then((m) => {
+      const st = m.getStats ? m.getStats() : { totalEntities: 0, totalRelationships: 0, byType: {} };
+      const label = m.getEntityTypeLabel || ((t) => t);
+      const kpi = (val, lab, accent) => `<div class="dk-kpi" style="--a:${accent};cursor:default"><div class="kn">${(val || 0).toLocaleString()}</div><div class="kl">${esc(lab)}</div></div>`;
+      el.querySelector("#dkInvKpis").innerHTML = kpi(st.totalEntities, "Entities", "#9b5cf0") + kpi(st.totalRelationships, "Relationships", "#4f86ff") + kpi((st.byType || {}).CASE, "Cases", "#f5920b") + kpi((st.byType || {}).INCIDENT, "Incidents", "#f0484a");
+      const types = Object.entries(st.byType || {}).sort((a, b) => b[1] - a[1]).slice(0, 12);
+      el.querySelector("#dkInvTypes").innerHTML = types.length ? types.map(([t, n]) => `<div class="dk-invtype"><div class="n">${n}</div><div class="l">${esc(label(t))}</div></div>`).join("") : `<div class="dk-nempty" style="grid-column:1/-1">The graph is empty. As recon, intel and forensic tools run, the entities they find are collected here.</div>`;
+    }).catch(() => { el.querySelector("#dkInvKpis").innerHTML = `<div class="dk-nempty" style="grid-column:1/-1">Security graph unavailable in this context.</div>`; });
+  }
+
+  // ---------- Activity workspace ----------
+  function renderActivity(){
+    const el = sceneEls.activity;
+    const rows = notifs.length
+      ? notifs.map((x) => `<div class="r"><span class="dot"></span><span class="tx">${esc(x.text)}</span><span class="ag">${timeAgo(x.ts)}</span></div>`).join("")
+      : `<div class="dk-nempty">No activity recorded yet in this browser. As you run tools, add graph entities or connect providers, events stream in here live.</div>`;
+    el.innerHTML = `<div class="dk-ovhead"><div><h1>Activity</h1><p>A live stream of platform events in this session — tool results, graph changes and connections.</p></div></div>
+      <div class="dk-ovp"><h2>${IC.pulse} Event stream</h2><div class="dk-ovact">${rows}</div></div>`;
+  }
+
+  // ---------- Assistant workspace (embedded Darknode AI) ----------
+  const asstFrame = $("#dkAsstFrame");
+  let asstLoaded = false;
+  function openAssistant(){
+    if (asstLoaded) return;
+    asstLoaded = true;
+    asstFrame.innerHTML = '<div class="dk-wload"><div><div class="sp"></div>Loading Darknode AI…</div></div>';
+    const f = document.createElement("iframe");
+    f.title = "Darknode AI"; f.src = "/ai?embed=1"; f.loading = "eager"; f.setAttribute("allow", "clipboard-write; clipboard-read");
+    f.onload = () => { f.classList.add("in"); const l = asstFrame.querySelector(".dk-wload"); if (l) setTimeout(() => l.remove(), 180); };
+    asstFrame.appendChild(f);
+  }
+  $("#dkAsstFull").onclick = () => { teardown(); onOpen("ai"); };
 
   // ---------- keyboard ----------
   function onKey(e){
@@ -720,16 +1247,30 @@ export function renderDeck(host, opts) {
       else if (e.key === "Enter") { e.preventDefault(); chooseSpot(selIdx); }
       return;
     }
-    if (e.key === "Escape") { if (!sceneWork.hidden) { closeTool(); return; } if (drawer.classList.contains("on")) { drawer.classList.remove("on"); return; } teardown(); onExit(); }
+    if (e.key === "Escape") {
+      if (popNew.classList.contains("on") || popBell.classList.contains("on") || popAcct.classList.contains("on")) { closeAllMenus(); return; }
+      if (!sceneWork.hidden) { closeTool(); return; }
+      if (drawer.classList.contains("on")) { drawer.classList.remove("on"); return; }
+      if (curScene !== "overview") { go("overview"); return; }
+      exitDeck();
+    }
   }
   document.addEventListener("keydown", onKey);
-  $("#dkQuit").onclick = () => { teardown(); onExit(); };
 
   // ---------- resize ----------
-  const onResize = () => { sizeStars(); if (!sceneCon.hidden) layoutConstellation(); };
+  const onResize = () => { sizeStars(); if (!sceneCon.hidden) layoutConstellation(); try { closeAllMenus(); } catch (_) {} };
   window.addEventListener("resize", onResize);
-  requestAnimationFrame(layoutConstellation);
 
-  function teardown(){ cancelAnimationFrame(rafId); clearInterval(clockId); document.removeEventListener("keydown", onKey); window.removeEventListener("resize", onResize); root.remove(); }
+  // ---------- boot: restore the last workspace ----------
+  let initial = "overview";
+  try { const sv = localStorage.getItem(LS_SCENE); if (sv && SCENES[sv]) initial = sv; } catch (_) {}
+  requestAnimationFrame(() => go(initial));
+
+  function teardown(){
+    cancelAnimationFrame(rafId); clearInterval(clockId);
+    busOffs.forEach((off) => { try { off(); } catch (_) {} }); busOffs = [];
+    document.removeEventListener("keydown", onKey); window.removeEventListener("resize", onResize);
+    root.remove();
+  }
   return teardown;
 }

@@ -31,7 +31,7 @@ import "/js/net.js?v=20261007a";
 import "/js/scroll-top.js?v=20260926a";
 import "/js/shortcuts.js";
 import "/js/mobile-nav.js";
-import { consoleHTML, directoryHTML, wireConsole, labelOf as navLabel, groupOf as navGroup, recentSecs as navRecent, favSecs as navFavs } from "/js/console-nav.js?v=20261010d";
+import { consoleHTML, directoryHTML, wireConsole, labelOf as navLabel, groupOf as navGroup, recentSecs as navRecent, favSecs as navFavs } from "/js/console-nav.js?v=20261010e";
 // Only the tool count is needed here; the manifest carries ids/names/categories without the
 // tool code (js/tools/*), which loads when the Toolbox opens.
 import { TOOL_META as _MINI_TOOLS } from "/js/tools-manifest.js?v=20261006a";
@@ -202,6 +202,11 @@ const SIDE_DESC = {
   payloadstudio: "Chain encoders, hashes and reverse-shell templates into one build-and-export flow.",
   sigma: "Build, validate and export Sigma detection rules with ATT&CK mapping.",
   iocenrich: "Extract, defang, classify, score and enrich indicators of compromise, then export.",
+  cvsscalc: "Interactive CVSS 3.1 base-score calculator with live vector string and severity rating.",
+  yarabuilder: "Build, validate and export YARA detection rules with strings, modifiers and conditions.",
+  emailauth: "Analyze a domain's SPF, DMARC and DKIM records live over DNS-over-HTTPS and grade them.",
+  cookieinspect: "Parse and grade Set-Cookie headers for Secure, HttpOnly, SameSite and prefix issues.",
+  securitytxt: "Generate and validate an RFC 9116 security.txt disclosure file.",
   embedsdk: "Generate an iframe or snippet to embed any Darknode tool in another site.",
   mcpconnect: "Connect other apps and AI agents to Darknode tools via MCP, embeds and a read-only API.",
   zerotrust: "Plan a zero-trust security architecture.",
@@ -1893,6 +1898,11 @@ function renderApp(user) {
     else if (sec === "iocenrich") { import("/js/ioc-enrichment.js").then(m => m.renderIocEnrichment(main)); }
     else if (sec === "embedsdk") { import("/js/embed-sdk.js").then(m => m.renderEmbedSDK(main)); }
     else if (sec === "mcpconnect") { import("/js/mcp-connector.js").then(m => m.renderMcpConnector(main)); }
+    else if (sec === "cvsscalc") { import("/js/cvss-calculator.js").then(m => m.renderCvssCalculator(main)); }
+    else if (sec === "yarabuilder") { import("/js/yara-builder.js").then(m => m.renderYaraBuilder(main)); }
+    else if (sec === "emailauth") { import("/js/email-auth.js").then(m => m.renderEmailAuth(main)); }
+    else if (sec === "cookieinspect") { import("/js/cookie-inspector.js").then(m => m.renderCookieInspector(main)); }
+    else if (sec === "securitytxt") { import("/js/security-txt.js").then(m => m.renderSecurityTxt(main)); }
     else if (sec === "reconplanner") { import("/js/recon-planner.js").then(m => m.renderReconPlanner(main)); }
     else if (sec === "packetinspector") { import("/js/packet-inspector.js?v=20260924b").then(m => m.renderPacketInspector(main)); }
     else if (sec === "siemdash") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading SIEM...</p>"; import("/js/siem-dash.js?v=20261007a").then(m => m.renderSiemDash(main)); }
@@ -1954,7 +1964,7 @@ function renderApp(user) {
     else if (sec === "docs") { import("/js/docs.js?v=20261007e").then(m => m.renderDocs(main)); }
     else if (sec === "setup") renderSetup(main, more);
     else if (sec === "settings") renderSettingsPage(main, user, isOwner, more);
-    else if (sec === "admin") { import("/js/admin.js?v=20261010d").then(m => m.renderAdmin(main, user)); }
+    else if (sec === "admin") { import("/js/admin.js?v=20261010e").then(m => m.renderAdmin(main, user)); }
     else if (sec === "contact") renderContact(main);
     else if (sec === "education") { main.innerHTML = `<div class="panel" style="max-width:800px;margin:40px auto"><div class="panel-h">About Darknode Education</div><div style="padding:18px;line-height:1.8;font-size:.9rem"><p><strong>Darknode is a cybersecurity education platform</strong> designed for students, educators, and security professionals to learn information security through hands-on practice in a safe, controlled environment.</p><p style="margin-top:16px"><strong>Our Mission:</strong> To make cybersecurity education accessible, interactive, and practical. Most tools run in your browser or on your own machine. Some features do send data out: AI chat goes through Darknode's server to the AI provider, some lookup pages query public services (for example NVD, crt.sh and DNS-over-HTTPS resolvers), and saved items and account data are stored in Google Firebase. Each page that contacts an outside service does so only when you run it.</p><p style="margin-top:16px"><strong>Who Uses Darknode:</strong></p><ul style="margin:8px 0 0 20px;line-height:2"><li>Computer science and cybersecurity students</li><li>IT professionals studying for certifications (CompTIA Security+, CISSP, CEH, OSCP)</li><li>University professors and instructors teaching security courses</li><li>Security operations center (SOC) analysts in training</li><li>Career changers learning cybersecurity fundamentals</li></ul><p style="margin-top:16px"><strong>Educational Standards:</strong> Our curriculum aligns with NIST NICE Framework, NSA CAE-CD requirements, and CompTIA Security+ objectives. All practice environments are isolated, legal, and designed for authorized educational use only.</p><p style="margin-top:16px"><strong>Responsible Use:</strong> Darknode tools are designed exclusively for educational purposes and authorized security testing. Users must comply with all applicable laws and obtain proper authorization before testing any system they do not own.</p><p style="margin-top:16px;color:var(--mut);font-size:.82rem">Darknode is a product of Darknode-Official. For questions about our educational programs, visit darknode.ai.</p></div></div>`; }
     else if (sec === "toolbox") { import("/js/mini-tools.js?v=20261006a").then(m => m.renderToolbox(main, { onOpen: (id) => show("tool-" + id) })); }
