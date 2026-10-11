@@ -76,9 +76,9 @@ const INTEGRATIONS = [
 // id as Darknode's preferred model for that provider (dn_model_<id>); webai uses it
 // verbatim when the provider is connected. Top models per tier; {label, id}.
 const MODELS = {
-  claude:     [{ label: "Claude Opus 4.1", id: "claude-opus-4-1" }, { label: "Claude Sonnet 4.5", id: "claude-sonnet-4-5" }, { label: "Claude Haiku 4.5", id: "claude-haiku-4-5" }],
-  openai:     [{ label: "GPT-5", id: "gpt-5" }, { label: "GPT-5 mini", id: "gpt-5-mini" }, { label: "GPT-4.1", id: "gpt-4.1" }, { label: "o4-mini", id: "o4-mini" }],
-  gemini:     [{ label: "Gemini 2.5 Pro", id: "gemini-2.5-pro" }, { label: "Gemini 2.5 Flash", id: "gemini-2.5-flash" }, { label: "Gemini 2.0 Flash", id: "gemini-2.0-flash" }],
+  claude:     [{ label: "Claude Opus 5.5", id: "claude-opus-5-5" }, { label: "Claude Sonnet 5.5", id: "claude-sonnet-5-5" }, { label: "Claude Haiku 5.5", id: "claude-haiku-5-5" }, { label: "Claude Fable 5.1", id: "claude-fable-5-1" }, { label: "Claude Opus 4.1", id: "claude-opus-4-1" }, { label: "Claude Sonnet 4.5", id: "claude-sonnet-4-5" }, { label: "Claude Haiku 4.5", id: "claude-haiku-4-5" }],
+  openai:     [{ label: "GPT-5", id: "gpt-5" }, { label: "GPT-5 mini", id: "gpt-5-mini" }, { label: "GPT-5 nano", id: "gpt-5-nano" }, { label: "GPT-4.1", id: "gpt-4.1" }, { label: "GPT-4.1 mini", id: "gpt-4.1-mini" }, { label: "GPT-4o", id: "gpt-4o" }, { label: "o4-mini", id: "o4-mini" }, { label: "o3", id: "o3" }],
+  gemini:     [{ label: "Gemini 2.5 Pro", id: "gemini-2.5-pro" }, { label: "Gemini 2.5 Flash", id: "gemini-2.5-flash" }, { label: "Gemini 2.5 Flash-Lite", id: "gemini-2.5-flash-lite" }, { label: "Gemini 2.0 Flash", id: "gemini-2.0-flash" }],
   perplexity: [{ label: "Sonar Pro", id: "sonar-pro" }, { label: "Sonar", id: "sonar" }, { label: "Sonar Reasoning", id: "sonar-reasoning" }],
   mistral:    [{ label: "Mistral Large", id: "mistral-large-latest" }, { label: "Mistral Medium", id: "mistral-medium-latest" }, { label: "Codestral", id: "codestral-latest" }],
   groq:       [{ label: "Llama 3.3 70B", id: "llama-3.3-70b-versatile" }, { label: "DeepSeek R1 Distill", id: "deepseek-r1-distill-llama-70b" }, { label: "Gemma 2 9B", id: "gemma2-9b-it" }],
@@ -235,20 +235,19 @@ const timeAgo = (ts) => { const d = Date.now() - ts; return d < 60000 ? "just no
 
 const CSS = `
 .dk{position:fixed;inset:0;z-index:99999;overflow:hidden;isolation:isolate;color:#eaf0fb;background:#060912;
-  font:14px/1.55 'Sora',-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;-webkit-font-smoothing:antialiased;user-select:none}
+  font:14px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;user-select:none}
 .dk *{box-sizing:border-box;margin:0}
 .dk h1,.dk h2,.dk h3,.dk h4{color:#eef3ff !important}
 .dk-sky{position:absolute;inset:0;z-index:0;pointer-events:none;
   background:
-    radial-gradient(90% 60% at 50% 42%, #10203f 0%, rgba(16,32,63,0) 60%),
-    radial-gradient(60% 50% at 82% 88%, #241048 0%, rgba(36,16,72,0) 55%),
-    radial-gradient(60% 50% at 14% 12%, #07323f 0%, rgba(7,50,63,0) 55%),
-    linear-gradient(160deg,#070b16,#05070f 72%,#04050b)}
-.dk-stars{position:absolute;inset:0;z-index:0;pointer-events:none;opacity:.6}
+    radial-gradient(135% 95% at 50% -15%, #0f1724 0%, rgba(15,23,36,0) 58%),
+    #080b12}
+.dk-stars{position:absolute;inset:0;z-index:0;pointer-events:none;opacity:.28}
 /* ---------- top chrome ---------- */
 .dk-top{position:absolute;top:0;left:0;right:0;height:56px;z-index:40;display:flex;align-items:center;gap:20px;padding:0 24px}
-.dk-brand{display:flex;align-items:center;gap:9px;font-family:'Sora',system-ui,sans-serif;font-weight:800;letter-spacing:-.02em;font-size:18px;color:#f3f7ff}
-.dk-brand img{height:20px;width:auto;display:block}
+.dk-brand{display:flex;align-items:center;gap:10px;color:#f3f7ff}
+.dk-brand .dk-mark{height:22px;width:22px;display:block;flex:none}
+.dk-brand .dk-wm{height:15px;width:auto;display:block;opacity:.96}
 .dk-seg{display:flex;gap:4px;padding:4px;border-radius:13px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08)}
 .dk-seg button{appearance:none;border:0;background:transparent;color:#aab6cf;font:inherit;font-size:13px;font-weight:600;padding:6px 16px;border-radius:9px;cursor:pointer;letter-spacing:.02em}
 .dk-seg button.on{background:#2f5fff;color:#fff;box-shadow:0 4px 14px rgba(47,99,255,.32)}
@@ -270,11 +269,11 @@ const CSS = `
 @keyframes dkFlow{to{stroke-dashoffset:-24}}
 .dk-core{position:absolute;z-index:3;left:50%;top:50%;transform:translate(-50%,-50%);width:152px;height:152px;border-radius:50%;
   display:grid;place-items:center;text-align:center;cursor:default;
-  background:radial-gradient(circle at 38% 32%,#bfe0ff 0%,#4f86ff 34%,#1f3b96 70%,#0b1444 100%);
-  box-shadow:0 0 0 1px rgba(255,255,255,.2),0 0 70px rgba(63,120,255,.55),0 0 170px rgba(63,120,255,.3),inset 0 2px 16px rgba(255,255,255,.4)}
+  background:radial-gradient(circle at 50% 40%,#1c2942 0%,#141d31 56%,#0c1322 100%);
+  box-shadow:0 0 0 1px rgba(255,255,255,.12),0 0 0 7px rgba(79,134,255,.06),0 12px 42px rgba(0,0,0,.5),inset 0 1px 10px rgba(255,255,255,.1)}
 .dk-core b{font-size:15px;font-weight:700;letter-spacing:.1em;color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.5)}
 .dk-core span{font-size:11px;color:rgba(255,255,255,.78);letter-spacing:.14em}
-.dk-core::after{content:"";position:absolute;inset:-18px;border-radius:50%;border:1px solid rgba(143,200,255,.3);animation:dkPulse 3.6s ease-out infinite}
+.dk-core::after{content:"";position:absolute;inset:-18px;border-radius:50%;border:1px solid rgba(120,150,210,.16);animation:dkPulse 4.4s ease-out infinite}
 @keyframes dkPulse{0%{transform:scale(.86);opacity:.7}100%{transform:scale(1.5);opacity:0}}
 .dk-node{position:absolute;z-index:3;width:92px;opacity:0;transform:translate(-50%,calc(-50% + var(--rise,22px)));display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer;
   transition:transform .55s cubic-bezier(.18,.74,.2,1),opacity .5s ease}
@@ -337,7 +336,13 @@ const CSS = `
 .dk-mrow:hover{background:rgba(63,120,255,.16)}
 .dk-mrow .dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.22);flex:none}
 .dk-mrow.sel{color:#fff}.dk-mrow.sel .dot{background:#38d99a;box-shadow:0 0 7px #38d99a}
-.dk-mrow .tag{margin-left:auto;font-size:10px;font-weight:600;color:#54e3a6;letter-spacing:.04em}
+.dk-mrow .tag{margin-left:auto;font-size:10px;font-weight:600;color:#54e3a6;letter-spacing:.04em;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dk-mcustom{display:flex;gap:8px;padding:10px 14px;border-top:1px solid rgba(255,255,255,.06)}
+.dk-mcustom[hidden]{display:none}
+.dk-mcustom input{flex:1;min-width:0;padding:8px 11px;border-radius:9px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);color:#eaf0fb;font:inherit;font-size:12.5px;outline:none}
+.dk-mcustom input:focus{border-color:#3f78ff;background:rgba(63,120,255,.1)}
+.dk-mcset{appearance:none;border:1px solid #2f6bff;background:#2f6bff;color:#fff;font:inherit;font-weight:600;font-size:12.5px;padding:0 14px;border-radius:9px;cursor:pointer;flex:none}
+.dk-mcset:hover{background:#3f78ff}
 /* ---------- tools scene ---------- */
 .dk-tools{position:absolute;inset:0;overflow:auto;padding:30px 5vw 60px;column-count:3;column-gap:22px}
 @media(max-width:1100px){.dk-tools{column-count:2}}
@@ -410,7 +415,10 @@ const CSS = `
 .dk-wload .sp{width:30px;height:30px;border-radius:50%;border:2.5px solid rgba(255,255,255,.14);border-top-color:#4f86ff;animation:dkSpin .8s linear infinite;margin:0 auto 12px}
 @keyframes dkSpin{to{transform:rotate(360deg)}}
 /* ======================= command-center chrome ======================= */
-.dk-top{gap:10px;padding:0 16px;border-bottom:1px solid rgba(255,255,255,.07);background:rgba(7,11,22,.55);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px)}
+.dk-top{display:grid;grid-template-columns:1fr auto 1fr;gap:14px;padding:0 18px;border-bottom:1px solid rgba(255,255,255,.08);background:#0a0e17;box-shadow:0 1px 0 rgba(0,0,0,.4)}
+.dk-top>.dk-brand{justify-self:start}
+.dk-top>.dk-tabs{justify-self:center}
+.dk-top>.dk-right{justify-self:end;margin-left:0}
 .dk-brand{appearance:none;border:0;background:transparent;cursor:pointer;flex:none}
 .dk-brand .dk-wsname{margin-left:9px;padding-left:10px;border-left:1px solid rgba(255,255,255,.14);font-family:system-ui,sans-serif;font-weight:600;font-size:12px;letter-spacing:.02em;color:#93a2c0}
 /* primary tab bar */
@@ -427,8 +435,8 @@ const CSS = `
 .dk-icbtn:hover{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2);color:#fff}
 .dk-icbtn svg{width:17px;height:17px}
 .dk-badge{position:absolute;top:-4px;right:-4px;min-width:16px;height:16px;padding:0 4px;border-radius:9px;background:#f0484a;color:#fff;font-size:10px;font-weight:700;display:grid;place-items:center;box-shadow:0 0 0 2px #0a0f1c}
-.dk-health{appearance:none;cursor:default;border:1px solid rgba(56,217,154,.3);background:rgba(56,217,154,.1);color:#7df0c0;font:inherit;font-size:12px;font-weight:600;padding:7px 12px;border-radius:999px;display:inline-flex;align-items:center;gap:8px;flex:none}
-.dk-health .d{width:7px;height:7px;border-radius:50%;background:#38d99a;box-shadow:0 0 8px #38d99a}
+.dk-health{appearance:none;cursor:default;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:#9fb0cc;font:inherit;font-size:12px;font-weight:600;padding:7px 12px;border-radius:999px;display:inline-flex;align-items:center;gap:8px;flex:none}
+.dk-health .d{width:7px;height:7px;border-radius:50%;background:#38d99a;box-shadow:0 0 6px rgba(56,217,154,.55)}
 .dk-health.warn{border-color:rgba(245,181,68,.35);background:rgba(245,181,68,.12);color:#f5cf86}
 .dk-health.warn .d{background:#f5b544;box-shadow:0 0 8px #f5b544}
 @media(max-width:1510px){.dk-brand .dk-wsname{display:none}}
@@ -464,7 +472,7 @@ const CSS = `
 /* ======================= Overview workspace ======================= */
 .dk-ov{position:absolute;inset:56px 0 0;overflow:auto;padding:26px 4vw 60px}
 .dk-ovhead{display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:14px;margin-bottom:22px}
-.dk-ovhead h1{font-family:'Sora',system-ui,sans-serif;font-size:26px;font-weight:800;letter-spacing:-.02em;color:#f3f7ff}
+.dk-ovhead h1{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif;font-size:26px;font-weight:800;letter-spacing:-.02em;color:#f3f7ff}
 .dk-ovhead p{font-size:13.5px;color:#93a2c0;margin-top:5px;max-width:620px}
 .dk-ovhead .when{font-size:12.5px;color:#7e8aa6;text-align:right}
 .dk-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:14px;margin-bottom:22px}
@@ -531,7 +539,7 @@ const CSS = `
 /* ======================= Threat Intel workspace ======================= */
 .dk-ti{position:absolute;inset:56px 0 0;overflow:auto;padding:26px 4vw 60px}
 .dk-ti-head{display:flex;align-items:center;flex-wrap:wrap;gap:14px;margin-bottom:18px}
-.dk-ti-head h1{font-family:'Sora',system-ui,sans-serif;font-size:22px;font-weight:800;letter-spacing:-.02em;color:#f3f7ff}
+.dk-ti-head h1{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif;font-size:22px;font-weight:800;letter-spacing:-.02em;color:#f3f7ff}
 .dk-ti-head .mo{margin-left:auto;font-size:12.5px;font-weight:600;color:#8aa0ff;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
 .dk-ti-head .mo svg{width:14px;height:14px}
 .dk-sevchips{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:18px}
@@ -552,7 +560,7 @@ const CSS = `
 .dk-errbox button{margin-top:12px}
 /* ======================= Investigations workspace ======================= */
 .dk-inv{position:absolute;inset:56px 0 0;overflow:auto;padding:26px 4vw 60px}
-.dk-inv h1{font-family:'Sora',system-ui,sans-serif;font-size:22px;font-weight:800;letter-spacing:-.02em;color:#f3f7ff;margin-bottom:6px}
+.dk-inv h1{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif;font-size:22px;font-weight:800;letter-spacing:-.02em;color:#f3f7ff;margin-bottom:6px}
 .dk-inv .sub{font-size:13px;color:#93a2c0;margin-bottom:20px}
 .dk-invtypes{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin:14px 0 8px}
 .dk-invtype{padding:14px 16px;border-radius:13px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.08)}
@@ -587,7 +595,7 @@ export function renderDeck(host, opts) {
     <div class="dk-sky"></div>
     <canvas class="dk-stars" id="dkStars"></canvas>
     <div class="dk-top">
-      <button class="dk-brand" id="dkBrand" title="Open full console"><img src="/logo-light.svg" alt="">Darknode<span class="dk-wsname">Command Center</span></button>
+      <button class="dk-brand" id="dkBrand" title="Open full console"><img class="dk-mark" src="/logo-light.svg?v=20261007b" alt=""><img class="dk-wm" src="/wordmark.svg" alt="Darknode"><span class="dk-wsname">Command Center</span></button>
       <nav class="dk-tabs" id="dkTabs" aria-label="Workspaces">
         <button class="dk-tab on" data-scene="overview">${IC.home}<span>Overview</span></button>
         <button class="dk-tab" data-scene="con">${IC.link}<span>Connections</span></button>
@@ -598,7 +606,7 @@ export function renderDeck(host, opts) {
         <button class="dk-tab" data-scene="assistant">${IC.spark}<span>Assistant</span></button>
       </nav>
       <div class="dk-right">
-        <button class="dk-health" id="dkHealth"><span class="d"></span><span class="t">Systems operational</span></button>
+        <button class="dk-health" id="dkHealth" title="Live CVE feed status"><span class="d"></span><span class="t">Threat feed live</span></button>
         <button class="dk-icbtn" id="dkFindBtn" title="Search (Ctrl K)" aria-label="Search">${IC_SEARCH}</button>
         <button class="dk-icbtn" id="dkNew" title="Quick create" aria-label="Quick create">${IC.plus}</button>
         <button class="dk-icbtn" id="dkBell" title="Notifications" aria-label="Notifications">${IC.bell}<span class="dk-badge" id="dkBadge" hidden></span></button>
@@ -738,12 +746,16 @@ export function renderDeck(host, opts) {
   // deterministic per-id jitter in [-m, m] so the fan looks hand-placed, not mechanical
   function jit(seed, m){ let h = 2166136261; for (let i = 0; i < seed.length; i++){ h ^= seed.charCodeAt(i); h = Math.imul(h, 16777619); } return (((h >>> 0) % 1000) / 1000 - 0.5) * 2 * m; }
   function fanPlace(list, cx, coreY, W, H){
-    const span = 146 * Math.PI / 180;           // total fan width
+    const span = 128 * Math.PI / 180;            // total fan width (narrower = no edge spill)
     const mid = -Math.PI / 2;                    // straight up
     const a0 = mid - span / 2;
-    const rMin = 200, rStep = 132;
-    const rMax = Math.min(H * 0.88, W * 0.42);
-    const spacing = 116;                         // min arc gap between chips
+    const margin = 92;                           // keep chips (incl. label) off the viewport edges
+    const rMin = 190, rStep = 126;
+    // cap the radius so the widest/topmost chips can never reach past the margins
+    const rMaxX = (W / 2 - margin) / Math.max(0.2, Math.sin(span / 2));
+    const rMaxY = coreY - margin;
+    const rMax = Math.min(rMaxY, rMaxX, W * 0.46);
+    const spacing = 118;                         // min arc gap between chips
     let idx = 0, r = rMin, tier = 0;
     while (idx < list.length){
       const last = r + rStep > rMax;
@@ -755,7 +767,9 @@ export function renderDeck(host, opts) {
         let ang = k === 1 ? mid : a0 + (i / (k - 1)) * span;
         ang += jit(it.id + "a" + tier, 0.02);
         const rr = r + jit(it.id + "r", 10);
-        const x = cx + Math.cos(ang) * rr, y = coreY + Math.sin(ang) * rr;
+        let x = cx + Math.cos(ang) * rr, y = coreY + Math.sin(ang) * rr;
+        x = Math.max(margin, Math.min(W - margin, x));   // belt-and-suspenders: never spill off-screen
+        y = Math.max(margin, Math.min(coreY - 24, y));
         const el = canvas.querySelector(`.dk-node[data-id="${it.id}"]`);
         if (el){ el.style.left = x + "px"; el.style.top = y + "px"; el.__x = x; el.__y = y; }
       });
@@ -840,10 +854,20 @@ export function renderDeck(host, opts) {
     const mlist = it.kind === "ai" && MODELS[it.id] ? MODELS[it.id] : null;
     let curModel = "";
     if (mlist) { try { curModel = localStorage.getItem("dn_model_" + it.id) || ""; } catch (_) {} }
+    // Custom = a model id the operator typed that isn't one of our presets. BYOK means
+    // their own plan may unlock models we don't list, so any id is allowed.
+    const isCustom = !!curModel && mlist && !mlist.some((m) => m.id === curModel);
     const modelsHTML = mlist ? `
       <div class="dk-models open" id="dkModels">
         <div class="dk-mhead" data-act="mtoggle"><span>Models</span><span class="cnt">${mlist.length}</span><span class="arw">${IC_CHEV}</span></div>
-        <div class="dk-mbody">${mlist.map((m) => `<div class="dk-mrow${m.id === curModel ? " sel" : ""}" data-model="${esc(m.id)}"><span class="dot"></span>${esc(m.label)}${m.id === curModel ? '<span class="tag">Selected</span>' : ""}</div>`).join("")}</div>
+        <div class="dk-mbody">
+          ${mlist.map((m) => `<div class="dk-mrow${m.id === curModel ? " sel" : ""}" data-model="${esc(m.id)}"><span class="dot"></span>${esc(m.label)}${m.id === curModel ? '<span class="tag">Selected</span>' : ""}</div>`).join("")}
+          <div class="dk-mrow mcustomrow${isCustom ? " sel" : ""}" data-act="mcustomrow"><span class="dot"></span>Custom model id…${isCustom ? `<span class="tag">${esc(curModel)}</span>` : ""}</div>
+          <div class="dk-mcustom" id="dkMCustom"${isCustom ? "" : " hidden"}>
+            <input id="dkModelCustom" placeholder="model id your plan unlocks" value="${isCustom ? esc(curModel) : ""}" autocomplete="off" spellcheck="false">
+            <button type="button" class="dk-mcset" data-act="mcustomset">Set</button>
+          </div>
+        </div>
       </div>` : "";
     drawerBody.innerHTML = `
       <div class="dk-dhead">${logoHTML(it, "")}<div><h3>${esc(it.name)}</h3><div class="k">${kindTxt}</div></div></div>
@@ -911,18 +935,32 @@ export function renderDeck(host, opts) {
     const modelsEl = drawerBody.querySelector("#dkModels");
     if (modelsEl) {
       modelsEl.querySelector('[data-act="mtoggle"]').onclick = () => modelsEl.classList.toggle("open");
-      modelsEl.querySelectorAll(".dk-mrow").forEach((r) => r.onclick = () => {
-        const m = r.dataset.model;
-        try { localStorage.setItem("dn_model_" + it.id, m); } catch (_) {}
-        modelsEl.querySelectorAll(".dk-mrow").forEach((x) => {
+      const customRow = modelsEl.querySelector(".mcustomrow");
+      const customBox = modelsEl.querySelector("#dkMCustom");
+      const customIn = modelsEl.querySelector("#dkModelCustom");
+      // Re-paint which row is selected. A preset id highlights its row; any other id
+      // (a custom/paid-plan model) highlights the custom row and shows the id as its tag.
+      const mark = (m) => {
+        const preset = mlist.some((x) => x.id === m);
+        modelsEl.querySelectorAll(".dk-mrow[data-model]").forEach((x) => {
           const on = x.dataset.model === m;
           x.classList.toggle("sel", on);
           const tag = x.querySelector(".tag");
           if (on && !tag) x.insertAdjacentHTML("beforeend", '<span class="tag">Selected</span>');
           else if (!on && tag) tag.remove();
         });
-        toast(`${it.name}: ${m} selected`);
-      });
+        if (customRow) {
+          customRow.classList.toggle("sel", !preset && !!m);
+          const ct = customRow.querySelector(".tag");
+          if (!preset && m) { if (ct) ct.textContent = m; else customRow.insertAdjacentHTML("beforeend", `<span class="tag">${esc(m)}</span>`); }
+          else if (ct) ct.remove();
+        }
+      };
+      const setModel = (m) => { try { localStorage.setItem("dn_model_" + it.id, m); } catch (_) {} mark(m); toast(`${it.name}: ${m} selected`); };
+      modelsEl.querySelectorAll(".dk-mrow[data-model]").forEach((r) => r.onclick = () => setModel(r.dataset.model));
+      if (customRow && customBox) customRow.onclick = () => { customBox.hidden = !customBox.hidden; if (!customBox.hidden) setTimeout(() => { try { customIn.focus(); } catch (_) {} }, 20); };
+      const applyCustom = () => { const m = String(customIn.value || "").trim(); if (!m) { toast("Enter a model id"); return; } setModel(m); };
+      if (customIn) { modelsEl.querySelector('[data-act="mcustomset"]').onclick = applyCustom; customIn.onkeydown = (e) => { if (e.key === "Enter") { e.preventDefault(); applyCustom(); } }; }
     }
   }
   $("#dkDrawerX").onclick = () => drawer.classList.remove("on");
@@ -1151,7 +1189,7 @@ export function renderDeck(host, opts) {
     }).catch(() => { const kn = el.querySelector('[data-k="graph"] .kn'); if (kn) kn.textContent = "0"; });
     // async: live threat level + CVE KPI
     fetchIntel(30).then((d) => {
-      setHealth(true, "Systems operational");
+      setHealth(true, "Threat feed live");
       const kn = el.querySelector('[data-k="cve"] .kn'); if (kn) kn.textContent = (d.total || 0).toLocaleString();
       const box = el.querySelector("#dkOvThreat"); if (!box) return;
       const c = d.counts || {}, order = ["CRITICAL", "HIGH", "MEDIUM", "LOW"];
@@ -1177,7 +1215,7 @@ export function renderDeck(host, opts) {
       <div id="dkTiBody"><div class="dk-loading"><span class="sp"></span>Fetching the latest CVEs from the NVD…</div></div>`;
     el.querySelector("#dkTiFull").onclick = () => openTool("threatfeed", "Threat Intel Feed");
     fetchIntel(40).then((d) => {
-      setHealth(true, "Systems operational");
+      setHealth(true, "Threat feed live");
       const c = d.counts || {};
       const chips = ["CRITICAL", "HIGH", "MEDIUM", "LOW"].map((k) => `<div class="dk-sevchip"><div class="n" style="color:${SEV[k].color}">${c[k] || 0}</div><div class="l">${SEV[k].label}</div></div>`).join("")
         + `<div class="dk-sevchip"><div class="n">${(d.total || 0).toLocaleString()}</div><div class="l">Published 7d</div></div>`;
