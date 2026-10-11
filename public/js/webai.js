@@ -420,13 +420,15 @@ function connectedModels() {
   for (const id of Object.keys(CONN_PROVIDERS)) {
     const rec = conns[id];
     if (!rec || !rec.connected) continue;
-    // Only surface providers we can really stream: needs a key for OAI-compat ones.
-    if (OAI_COMPAT[id] && !_key(id)) continue;      // connected by account only → no key to stream with
-    if (id === "claude" && !_key("claude")) continue;
     let mid = "";
     try { mid = (localStorage.getItem("dn_model_" + id) || "").trim(); } catch (_) {}
     if (!mid) mid = CONN_PROVIDERS[id].def;
-    out.push({ id: mid, name: CONN_PROVIDERS[id].name, provider: id, group: "Connected", sub: "your account" });
+    // Surface every provider the user connected so the picker mirrors DarkDeck.
+    // gemini runs free via the proxy; the rest need a browser-side key to stream —
+    // if one is connected by account only (no key yet), still list it but flag that
+    // a key is required, so selecting it prompts for one instead of hiding it.
+    const hasKey = id === "gemini" || !!_key(id);
+    out.push({ id: mid, name: CONN_PROVIDERS[id].name, provider: id, group: "Connected", sub: hasKey ? "your account" : "needs API key" });
   }
   return out;
 }
@@ -515,7 +517,7 @@ export function renderAI(main) {
         <div class="ai2-main" id="aiChat">${welcomeHtml}</div>
         <div class="ai2-dock">
           <div id="aiThumbs" class="ai-thumbs"></div>
-          <div id="aiByokHint" class="ai2-byok" style="display:none">Connect this provider in DarkDeck to use it (add its API key there).</div>
+          <button type="button" id="aiByokHint" class="ai2-byok" style="display:none"></button>
           <div class="ai2-composer">
             <textarea class="ai2-input" id="aiMsg" rows="1" placeholder="Message Darknode AI…" spellcheck="false"></textarea>
             <div class="ai2-bar">
@@ -565,13 +567,34 @@ export function renderAI(main) {
   const byokHint = $("#aiByokHint");
   function updateByokHint() {
     const v = sel.value; const c = v.indexOf(":"); const prov = v.slice(0, c);
-    // gemini is free via the proxy; everything else is a connected provider that
-    // should already have a key (connectedModels filters out keyless ones), but
-    // guard anyway so a selection without a key prompts the user to connect it.
+    // gemini is free via the proxy; a connected provider needs a browser-side key
+    // to actually stream. If the current pick has none (e.g. connected by account
+    // only), show an actionable hint — clicking it adds the key here and now.
     const needsKey = prov && prov !== "gemini" && !_key(prov);
-    if (needsKey) { byokHint.style.display = ""; sel.style.borderColor = "#ef4444"; sel.style.color = "#ef4444"; }
-    else { byokHint.style.display = "none"; sel.style.borderColor = ""; sel.style.color = ""; }
+    if (needsKey) {
+      const nm = (CONN_PROVIDERS[prov] || {}).name || prov;
+      byokHint.textContent = "Add your " + nm + " API key to run it — click to paste it now.";
+      byokHint.style.display = ""; sel.style.borderColor = "#ef4444"; sel.style.color = "#ef4444";
+    } else { byokHint.style.display = "none"; sel.style.borderColor = ""; sel.style.color = ""; }
   }
+  byokHint.onclick = () => {
+    const v = sel.value; const c = v.indexOf(":"); const prov = v.slice(0, c);
+    if (!prov || prov === "gemini") return;
+    const nm = (CONN_PROVIDERS[prov] || {}).name || prov;
+    aiModal({ title: "Add " + nm + " API key", desc: "Stored only in this browser (localStorage), never sent anywhere except " + nm + "'s own API.", fields: [{ label: nm + " API key", inputType: "password", placeholder: "paste key" }], submitText: "Save key" }).then((val) => {
+      if (!val) return;
+      const key = String(val[0] || "").trim();
+      if (!key) return;
+      try {
+        localStorage.setItem("dn_key_" + prov, key);
+        const conns = JSON.parse(localStorage.getItem("dn_deck_connections_v1") || "{}") || {};
+        conns[prov] = Object.assign({}, conns[prov], { connected: true, method: "key", hasKey: true, at: Date.now() });
+        localStorage.setItem("dn_deck_connections_v1", JSON.stringify(conns));
+      } catch (_) {}
+      updateByokHint();
+      status.textContent = nm + " key saved — ready.";
+    });
+  };
   updateByokHint();
   sel.onchange = () => { try { localStorage.setItem(MODEL_KEY, sel.value); } catch (_) {} const m = availableModels().find((x) => sel.value === x.provider + ":" + x.id); if (m) status.textContent = "Switched to " + m.name; updateByokHint(); };
   $("#aiSys").onclick = () => {
