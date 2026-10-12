@@ -43,6 +43,8 @@ function injectStyle() {
   .vlt .vkpi{border:1px solid var(--bd,#e3e8ef);border-radius:12px;padding:12px 14px;background:var(--card,#fff);min-width:0}
   .vlt .vkpi .k{font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;color:var(--mut,#8893a7);font-weight:600}
   .vlt .vkpi .v{font-size:1.25rem;font-weight:800;margin-top:3px;overflow-wrap:anywhere}
+  .vlt .vkpi .ksub{font-size:.68rem;color:var(--mut,#98a2b3);margin-top:3px;line-height:1.3}
+  .vlt .vmut{font-weight:400;font-size:.8rem;color:var(--mut,#98a2b3)}
   .vlt table{width:100%;border-collapse:collapse;font-size:.86rem}
   .vlt th,.vlt td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--bd,#eef1f6);vertical-align:top}
   .vlt th{font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;color:var(--mut,#8893a7)}
@@ -79,11 +81,13 @@ export function renderVault(main) {
     main.innerHTML = `
     <div class="vlt">
       <div class="vhd"><h1>VAULT</h1><span class="vtag">Treasury &amp; Safeguarding</span></div>
-      <div class="vsub">The control &amp; record layer for funds your company holds at its own regulated, insured bank.
-        Every movement is double-entry, enforced in exact cents, dual-approved, and written to a tamper-evident hash chain.</div>
-      <div class="vbanner"><b>VAULT is not a bank and does not hold your money.</b> It safeguards the <i>record and the controls</i> for
-        money that lives in your real bank account(s); settlement happens there, and VAULT reconciles against it. It never collects deposits.
-        For production use the ledger must be stored server-side — this build persists locally in your browser so you can evaluate it.</div>
+      <div class="vsub">A record-keeping and controls tool for a company's treasury: a double-entry ledger with dual approvals and a
+        tamper-evident audit chain. You type the figures in; VAULT keeps them honest and lets you reconcile them against statements you import.</div>
+      <div class="vbad"><b>These are figures you type in — not real money, and not a live bank balance.</b></div>
+      <div class="vbanner">VAULT holds no money, is <b>connected to no bank</b>, and reads no account. Everything below is a
+        bookkeeping entry you (or your team) typed on this device, stored only in this browser. A figure stays an unverified <b>book</b>
+        entry until you reconcile it against a real bank statement you import on the Reconcile tab. VAULT is not a bank, custodian, or
+        money transmitter and never collects deposits. For production the ledger must live server-side — this build is local for evaluation.</div>
       <div class="vtabs" id="vtabs">
         ${["overview:Overview", "move:Move funds", "approvals:Approvals", "audit:Audit log", "reconcile:Reconcile", "setup:Setup"].map((t) => {
           const [id, label] = t.split(":"); return `<button class="vtab${id === tab ? " on" : ""}" data-tab="${id}">${esc(label)}</button>`; }).join("")}
@@ -112,20 +116,23 @@ export function renderVault(main) {
     const accts = [...L.accounts.values()];
     const total = accts.filter((a) => a.normal === "debit").reduce((s, a) => s + L.balance(a.id).balance, 0n);
     const pending = [...L.transfers.values()].filter((t) => t.status === "pending" || t.status === "approved");
+    const movements = [...L.transfers.values()].filter((t) => t.status !== "rejected");
+    const settled = movements.filter((t) => t.status === "settled");
     let html = "";
-    if (!chain.ok) html += `<div class="vbad">INTEGRITY ALERT: the audit chain failed verification at entry #${chain.brokenAt}. The ledger may have been altered outside VAULT. Do not trust these balances until investigated.</div>`;
+    if (!chain.ok) html += `<div class="vbad">INTEGRITY ALERT: the audit chain failed verification at entry #${chain.brokenAt}. The ledger may have been altered outside VAULT. Do not trust these figures until investigated.</div>`;
     html += `<div class="vkpis">
-      ${kpi("Assets on ledger", fmtCents(total))}
+      ${kpi("Book value (unverified)", fmtCents(total), "figures you entered")}
+      ${kpi("Bank-confirmed", movements.length ? `${settled.length}/${movements.length}` : "0", "movements reconciled to a statement")}
       ${kpi("Accounts", String(accts.length))}
       ${kpi("Journal entries", String(L.journal.length))}
       ${kpi("Pending movements", String(pending.length))}
-      ${kpi("Trial balance", tb.balanced ? `<span class="vok">Balanced</span>` : `<span style="color:#b00020">OFF by ${esc(fmtCents(tb.debits - tb.credits))}</span>`)}
+      ${kpi("Trial balance", tb.balanced ? `<span class="vok">Balanced</span>` : `<span style="color:#b00020">OFF by ${esc(fmtCents(tb.debits - tb.credits))}</span>`, "internal consistency, not bank truth")}
       ${kpi("Audit chain", chain.ok ? `<span class="vok">Verified</span>` : `<span style="color:#b00020">BROKEN</span>`)}
     </div>`;
-    html += `<div class="vcard"><h3>Account balances</h3>${accts.length ? `<table><thead><tr><th>Account</th><th>Type</th><th class="num">Debits</th><th class="num">Credits</th><th class="num">Balance</th></tr></thead><tbody>${accts.map((a) => { const b = L.balance(a.id); return `<tr><td>${esc(a.name)}</td><td>${esc(a.type)}</td><td class="num">${esc(fmtCents(b.debits))}</td><td class="num">${esc(fmtCents(b.credits))}</td><td class="num"><b>${esc(fmtCents(b.balance))}</b></td></tr>`; }).join("")}</tbody></table>` : `<div class="empty">No accounts.</div>`}</div>`;
+    html += `<div class="vcard"><h3>Book balances <span class="vmut">— entered figures, not confirmed against any bank</span></h3>${accts.length ? `<table><thead><tr><th>Account</th><th>Type</th><th class="num">Debits</th><th class="num">Credits</th><th class="num">Book balance</th></tr></thead><tbody>${accts.map((a) => { const b = L.balance(a.id); return `<tr><td>${esc(a.name)}</td><td>${esc(a.type)}</td><td class="num">${esc(fmtCents(b.debits))}</td><td class="num">${esc(fmtCents(b.credits))}</td><td class="num"><b>${esc(fmtCents(b.balance))}</b></td></tr>`; }).join("")}</tbody></table>` : `<div class="empty">No accounts.</div>`}</div>`;
     host.innerHTML = html;
   }
-  const kpi = (k, v) => `<div class="vkpi"><div class="k">${esc(k)}</div><div class="v">${v}</div></div>`;
+  const kpi = (k, v, sub) => `<div class="vkpi"><div class="k">${esc(k)}</div><div class="v">${v}</div>${sub ? `<div class="ksub">${esc(sub)}</div>` : ""}</div>`;
 
   // --- Move funds (create a transfer instruction) ---
   function renderMove(host) {
@@ -142,7 +149,7 @@ export function renderVault(main) {
       </div>
       <div class="row"><button class="btn2 pri" id="mCreate">Create movement (requires approval)</button></div>
       <div class="flags" id="mScreen"></div>
-      <div class="vsub" style="margin-top:8px">A movement posts nothing until ${L.policy.minApprovers} distinct people (never the initiator) approve it and it is released. VAULT refuses to release more than the source account holds.</div>
+      <div class="vsub" style="margin-top:8px">A movement records a ledger entry only — no real money moves. It posts nothing until ${L.policy.minApprovers} distinct people (never the initiator) approve it and it is released, and VAULT refuses to release more than the source account's book balance shows.</div>
     </div>`;
     const $ = (id) => host.querySelector("#" + id);
     // live screen preview
@@ -228,8 +235,8 @@ export function renderVault(main) {
   function renderSetup(host) {
     const have = !!L;
     host.innerHTML = `
-    ${!have ? `<div class="vcard"><h3>Quick start</h3><div class="vsub" style="margin:0 0 8px">Create a standard treasury: an Operating (bank) asset, an Opening equity account, and an Outgoing clearing account, with an opening balance.</div>
-      <div class="vgrid"><label class="f">Opening balance (USD)<input id="qOpen" placeholder="100000.00" inputmode="decimal"></label></div>
+    ${!have ? `<div class="vcard"><h3>Quick start</h3><div class="vsub" style="margin:0 0 8px">Create a standard chart of accounts: an Operating account (asset), an Opening equity account, and an Outgoing clearing account. The opening balance is a <b>book figure you type in</b> to start the ledger — not real money and not pulled from any bank.</div>
+      <div class="vgrid"><label class="f">Opening book balance (USD)<input id="qOpen" placeholder="100000.00" inputmode="decimal"></label></div>
       <div class="row"><button class="btn2 pri" id="qInit">Initialize treasury</button></div></div>` : ""}
     <div class="vcard"><h3>Add account</h3>
       <div class="vgrid">
@@ -255,7 +262,7 @@ export function renderVault(main) {
       try {
         const open = $("qOpen").value.trim(); const cents = toCents(open || "0");
         L = new Ledger({ policy: { minApprovers: 2, dualControl: true, tiers: [["25000.00", 3]] } });
-        L.openAccount({ id: "bank", name: "Operating (bank)", type: "asset" });
+        L.openAccount({ id: "bank", name: "Operating account", type: "asset" });
         L.openAccount({ id: "equity", name: "Opening equity", type: "equity" });
         L.openAccount({ id: "clearing", name: "Outgoing clearing", type: "clearing" });
         if (cents > 0n) L.post({ memo: "opening balance", by: "setup", postings: [{ account: "bank", side: "debit", amount: cents }, { account: "equity", side: "credit", amount: cents }] });
