@@ -126,5 +126,78 @@ service cloud.firestore {
                             && request.resource.data.uid == request.auth.uid));
       allow update, delete: if isOwner();
     }
+
+    // VAULT team vaults. Firestore holds WHO is in a vault and their role; the money
+    // itself (ledger, transfers, approvals, audit) lives in the worker's VaultDO, which
+    // reads the caller's member doc with the caller's own token. So these rules are what
+    // stop anyone granting themselves a role:
+    //   - a vault is founded in one batch: vault doc + founder's owner member doc + log;
+    //   - after that only an owner writes member docs, never their own;
+    //   - every member write carries a logId, and the matching memberLog entry must be
+    //     written in the same batch (create-only), so role changes always leave a trail;
+    //   - nothing is ever deleted; removal is role 'removed'.
+    function vPath(vid)      { return /databases/$(database)/documents/vaults/$(vid); }
+    function vRole(vid)      { return get(/databases/$(database)/documents/vaults/$(vid)/members/$(request.auth.uid)).data.role; }
+    function vMember(vid)    { return signedIn() && exists(/databases/$(database)/documents/vaults/$(vid)/members/$(request.auth.uid)) && vRole(vid) != 'removed'; }
+    function vOwner(vid)     { return vMember(vid) && vRole(vid) == 'owner'; }
+    function vFounding(vid)  { return !exists(vPath(vid)) && getAfter(vPath(vid)).data.createdBy == request.auth.uid; }
+
+    match /vaults/{vid} {
+      allow read: if vMember(vid);
+      allow create: if signedIn()
+                    && vid.matches('^[A-Za-z0-9_-]{8,40}$')
+                    && request.resource.data.keys().hasOnly(['name', 'createdBy', 'createdAt'])
+                    && request.resource.data.name is string
+                    && request.resource.data.name.size() > 0
+                    && request.resource.data.name.size() <= 80
+                    && request.resource.data.createdBy == request.auth.uid
+                    && request.resource.data.createdAt == request.time
+                    && getAfter(/databases/$(database)/documents/vaults/$(vid)/members/$(request.auth.uid)).data.role == 'owner';
+      allow update: if vOwner(vid)
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name'])
+                    && request.resource.data.name is string
+                    && request.resource.data.name.size() > 0
+                    && request.resource.data.name.size() <= 80;
+      allow delete: if false;
+
+      match /members/{uid} {
+        allow read: if vMember(vid) || (signedIn() && request.auth.uid == uid);
+        allow create, update: if signedIn()
+                    && request.resource.data.keys().hasOnly(['uid', 'role', 'by', 'ts', 'logId', 'label'])
+                    && request.resource.data.uid == uid
+                    && (!('label' in request.resource.data)
+                        || (request.resource.data.label is string && request.resource.data.label.size() <= 120))
+                    && request.resource.data.by == request.auth.uid
+                    && request.resource.data.ts == request.time
+                    && request.resource.data.role in ['owner', 'admin', 'initiator', 'approver', 'auditor', 'viewer', 'removed']
+                    && request.resource.data.logId is string
+                    && request.resource.data.logId.size() <= 40
+                    && !exists(/databases/$(database)/documents/vaults/$(vid)/memberLog/$(request.resource.data.logId))
+                    && getAfter(/databases/$(database)/documents/vaults/$(vid)/memberLog/$(request.resource.data.logId)).data.by == request.auth.uid
+                    && getAfter(/databases/$(database)/documents/vaults/$(vid)/memberLog/$(request.resource.data.logId)).data.uid == uid
+                    && getAfter(/databases/$(database)/documents/vaults/$(vid)/memberLog/$(request.resource.data.logId)).data.role == request.resource.data.role
+                    && ((vFounding(vid) && uid == request.auth.uid && request.resource.data.role == 'owner')
+                        || (vOwner(vid) && uid != request.auth.uid));
+        allow delete: if false;
+      }
+
+      match /memberLog/{logId} {
+        allow read: if vMember(vid);
+        allow create: if signedIn()
+                    && logId.matches('^[A-Za-z0-9_-]{8,40}$')
+                    && !exists(/databases/$(database)/documents/vaults/$(vid)/memberLog/$(logId))
+                    && request.resource.data.keys().hasOnly(['uid', 'role', 'by', 'ts'])
+                    && request.resource.data.by == request.auth.uid
+                    && request.resource.data.ts == request.time
+                    && getAfter(/databases/$(database)/documents/vaults/$(vid)/members/$(request.resource.data.uid)).data.logId == logId;
+        allow update, delete: if false;
+      }
+    }
+
+    // "Which vaults am I in?" — a collection-group query over member docs, limited to
+    // the caller's own entries.
+    match /{path=**}/members/{uid} {
+      allow read: if signedIn() && resource.data.uid == request.auth.uid;
+    }
   }
 }

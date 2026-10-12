@@ -111,7 +111,7 @@ export function fmtCents(c) {
 }
 
 // Canonical, deterministic JSON (sorted keys, BigInt -> "<n>c") for hashing.
-function canon(obj) {
+export function canon(obj) {
   if (typeof obj === "bigint") return JSON.stringify(obj.toString() + "c");
   if (Array.isArray(obj)) return "[" + obj.map(canon).join(",") + "]";
   if (obj && typeof obj === "object") {

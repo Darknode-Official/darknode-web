@@ -12,11 +12,16 @@
 //
 //   renderVault(main) -> void
 
-import { Ledger, toCents, fmtCents, screenTransfer } from "/js/vault/ledger.js?v=20261011a";
+import { Ledger, toCents, fmtCents, screenTransfer } from "/js/vault/ledger.js?v=20261012e";
+import { canDo, ROLES, ROLE_HELP } from "/js/vault/roles.js?v=20261012e";
+import * as remote from "/js/vault/remote.js?v=20261012e";
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const toast = (m) => { try { (window.dnToast || window.showToast || (() => {}))(m); } catch (_) {} };
 const STORE = "dn_vault_v1";
+const WS = "dn_vault_ws";
+const lsGet = (k) => { try { return localStorage.getItem(k); } catch (_) { return null; } };
+const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (_) {} };
 
 function loadLedger() {
   try { const raw = localStorage.getItem(STORE); if (raw) return Ledger.load(JSON.parse(raw)); } catch (_) {}
@@ -66,6 +71,14 @@ function injectStyle() {
   .vlt .mono{font-family:ui-monospace,monospace;font-size:11.5px;color:var(--mut,#8893a7);word-break:break-all}
   .vlt .flags{font-size:.76rem;color:#8a5a00;margin-top:4px}
   .vlt .empty{text-align:center;color:var(--mut,#8893a7);padding:28px 10px;font-size:.88rem}
+  .vlt .vws{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px;margin:12px 0 4px}
+  .vlt .vws label.f{flex:1 1 260px;max-width:420px}
+  .vlt .venf{font-size:.74rem;font-weight:700;border-radius:999px;padding:5px 11px;align-self:center}
+  .vlt .venf.on{color:#11643a;background:rgba(26,127,55,.12);border:1px solid rgba(26,127,55,.35)}
+  .vlt .venf.off{color:#7a5b00;background:rgba(245,158,11,.14);border:1px solid #f0c36d}
+  .vlt .vnew{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;margin:6px 0}
+  .vlt .vnew label.f{flex:1 1 240px;max-width:360px}
+  .vlt .vok2{color:#1a7f37}.vlt .vno{color:#b00020}
   `;
   document.head.appendChild(s);
 }
@@ -74,38 +87,117 @@ const STATUS_COLOR = { pending: "#b58100", approved: "#2b6cb0", released: "#6b46
 
 export function renderVault(main) {
   injectStyle();
-  let L = loadLedger();
-  let tab = "overview";
+  // Workspace: "local" (this browser, controls not enforced) or a team vault id, whose
+  // every operation is checked by the Darknode server.
+  let ws = lsGet(WS) || "local";
+  let L = null, team = null, vaults = [], tab = "overview", busy = false;
+  let navTok = null;
+
+  const who = (uid) => {
+    if (!team) return uid;
+    const m = team.members.find((x) => x.uid === uid);
+    const label = m && m.label ? m.label : uid ? uid.slice(0, 8) + "…" : "";
+    return label + (uid === team.uid ? " (you)" : "");
+  };
+  const may = (op) => !team || canDo(team.role, op);
+
+  async function load() {
+    const my = navTok = {};
+    try { vaults = await remote.myVaults(); } catch (_) { vaults = []; }
+    if (ws !== "local" && !vaults.some((v) => v.vid === ws)) ws = "local";
+    if (ws === "local") { L = loadLedger(); team = null; }
+    else {
+      try {
+        const [st, mem] = await Promise.all([remote.vaultState(ws), remote.listMembers(ws).catch(() => ({ members: [], log: [] }))]);
+        if (my !== navTok) return;
+        L = st.ledger ? Ledger.load(st.ledger) : null;
+        const meta = vaults.find((v) => v.vid === ws);
+        team = { vid: ws, name: meta ? meta.name : ws, role: st.role, uid: st.uid, audit: st.audit || [], auditCount: st.auditCount || 0, auditHead: st.auditHead || "", members: mem.members, log: mem.log };
+      } catch (e) {
+        toast("Could not open the team vault: " + e.message);
+        ws = "local"; L = loadLedger(); team = null;
+      }
+    }
+    if (my !== navTok) return;
+    if (!team && tab === "team") tab = "overview";
+    shell();
+  }
+
+  // Runs one operation: on the server for a team vault, in this browser otherwise.
+  async function act(op, args, local, okMsg, nextTab) {
+    if (busy) return;
+    if (team) {
+      busy = true;
+      try { const r = await remote.vaultOp(team.vid, op, args); if (okMsg) toast(okMsg); if (nextTab) tab = nextTab; await load(); return r.result; }
+      catch (e) { toast(e.message); }
+      finally { busy = false; }
+      return;
+    }
+    try { const r = local(); saveLedger(L); if (okMsg) toast(okMsg); if (nextTab) tab = nextTab; shell(); return r; }
+    catch (e) { toast(e.message); }
+  }
 
   const shell = () => {
+    if (!main.isConnected) return;
+    const tabs = ["overview:Overview", "move:Move funds", "approvals:Approvals", "audit:Audit log", "reconcile:Reconcile", "setup:Setup"];
+    if (team) tabs.push("team:Team");
     main.innerHTML = `
     <div class="vlt">
       <div class="vhd"><h1>VAULT</h1><span class="vtag">Treasury &amp; Safeguarding</span></div>
       <div class="vsub">A record-keeping and controls tool for a company's treasury: a double-entry ledger with dual approvals and a
         tamper-evident audit chain. You type the figures in; VAULT keeps them honest and lets you reconcile them against statements you import.</div>
+      <div class="vws">
+        <label class="f">Workspace<select id="vWs">
+          <option value="local"${ws === "local" ? " selected" : ""}>This browser only (local)</option>
+          ${vaults.map((v) => `<option value="${esc(v.vid)}"${v.vid === ws ? " selected" : ""}>${esc(v.name)} (team, ${esc(v.role)})</option>`).join("")}
+        </select></label>
+        <button class="btn2" id="vNew">New team vault</button>
+        ${team ? `<span class="venf on">Server-enforced</span>` : `<span class="venf off">Local only: controls not enforced</span>`}
+      </div>
+      <div class="vnew" id="vNewForm" hidden>
+        <label class="f">Team vault name<input id="vNewName" maxlength="80" placeholder="e.g. Operating treasury"></label>
+        <button class="btn2 pri" id="vNewGo">Create</button>
+      </div>
       <div class="vbad"><b>These are figures you type in — not real money, and not a live bank balance.</b></div>
-      <div class="vbanner">VAULT holds no money, is <b>connected to no bank</b>, and reads no account. Everything below is a
-        bookkeeping entry you (or your team) typed on this device, stored only in this browser. A figure stays an unverified <b>book</b>
-        entry until you reconcile it against a real bank statement you import on the Reconcile tab. VAULT is not a bank, custodian, or
-        money transmitter and never collects deposits. For production the ledger must live server-side — this build is local for evaluation.</div>
+      ${team ? `<div class="vbanner">Team vault <b>${esc(team.name)}</b>. You are signed in as <b>${esc(who(team.uid))}</b> with the <b>${esc(team.role)}</b> role.
+        Every movement, approval, release and posting is checked by the Darknode server: your identity comes from your sign-in, the
+        approval and no-overdraft rules run on the server, and every attempt (allowed or refused) is written to a tamper-evident audit
+        chain. VAULT still holds no money and is <b>connected to no bank</b>; a figure stays an unverified <b>book</b> entry until you
+        reconcile it against a bank statement you import.</div>`
+      : `<div class="vbanner">VAULT holds no money, is <b>connected to no bank</b>, and reads no account. Everything below is a
+        bookkeeping entry you typed on this device, stored only in this browser, where anyone with the device can change it: the approval
+        rules here are a preview, not a control. A figure stays an unverified <b>book</b> entry until you reconcile it against a real bank
+        statement you import on the Reconcile tab. VAULT is not a bank, custodian, or money transmitter and never collects deposits.
+        For enforced controls, create a <b>team vault</b>.</div>`}
       <div class="vtabs" id="vtabs">
-        ${["overview:Overview", "move:Move funds", "approvals:Approvals", "audit:Audit log", "reconcile:Reconcile", "setup:Setup"].map((t) => {
-          const [id, label] = t.split(":"); return `<button class="vtab${id === tab ? " on" : ""}" data-tab="${id}">${esc(label)}</button>`; }).join("")}
+        ${tabs.map((t) => { const [id, label] = t.split(":"); return `<button class="vtab${id === tab ? " on" : ""}" data-tab="${id}">${esc(label)}</button>`; }).join("")}
       </div>
       <div id="vbody"></div>
     </div>`;
     main.querySelectorAll(".vtab").forEach((b) => b.onclick = () => { tab = b.dataset.tab; shell(); });
+    main.querySelector("#vWs").onchange = (e) => { ws = e.target.value; lsSet(WS, ws); tab = "overview"; main.querySelector("#vbody").innerHTML = `<div class="vcard"><div class="empty">Loading…</div></div>`; load(); };
+    main.querySelector("#vNew").onclick = () => {
+      if (!remote.me()) return toast("Sign in to create a team vault.");
+      const f = main.querySelector("#vNewForm"); f.hidden = !f.hidden; if (!f.hidden) main.querySelector("#vNewName").focus();
+    };
+    main.querySelector("#vNewGo").onclick = async () => {
+      const name = main.querySelector("#vNewName").value.trim();
+      if (!name) return toast("Name the vault");
+      try { ws = await remote.createVault(name); lsSet(WS, ws); tab = "setup"; toast("Team vault created. Initialize it to start."); await load(); }
+      catch (e) { toast("Could not create the vault: " + e.message); }
+    };
     body();
   };
 
   const body = () => {
     const host = main.querySelector("#vbody");
-    if (!L && tab !== "setup") { host.innerHTML = `<div class="vcard"><div class="empty">No treasury initialized yet. Go to <b>Setup</b> to create accounts and opening balances.</div></div>`; return; }
+    if (!L && tab !== "setup" && tab !== "team") { host.innerHTML = `<div class="vcard"><div class="empty">This vault is not initialized yet. Go to <b>Setup</b> to create accounts and opening balances.</div></div>`; return; }
     if (tab === "overview") renderOverview(host);
     else if (tab === "move") renderMove(host);
     else if (tab === "approvals") renderApprovals(host);
     else if (tab === "audit") renderAudit(host);
     else if (tab === "reconcile") renderReconcile(host);
+    else if (tab === "team") renderTeam(host);
     else renderSetup(host);
   };
 
@@ -128,6 +220,7 @@ export function renderVault(main) {
       ${kpi("Pending movements", String(pending.length))}
       ${kpi("Trial balance", tb.balanced ? `<span class="vok">Balanced</span>` : `<span style="color:#b00020">OFF by ${esc(fmtCents(tb.debits - tb.credits))}</span>`, "internal consistency, not bank truth")}
       ${kpi("Audit chain", chain.ok ? `<span class="vok">Verified</span>` : `<span style="color:#b00020">BROKEN</span>`)}
+      ${team ? kpi("Enforcement", `<span class="vok">Server</span>`, team.auditCount + " audited actions") : kpi("Enforcement", `<span style="color:#8a5a00">Local only</span>`, "controls not enforced")}
     </div>`;
     html += `<div class="vcard"><h3>Book balances <span class="vmut">— entered figures, not confirmed against any bank</span></h3>${accts.length ? `<table><thead><tr><th>Account</th><th>Type</th><th class="num">Debits</th><th class="num">Credits</th><th class="num">Book balance</th></tr></thead><tbody>${accts.map((a) => { const b = L.balance(a.id); return `<tr><td>${esc(a.name)}</td><td>${esc(a.type)}</td><td class="num">${esc(fmtCents(b.debits))}</td><td class="num">${esc(fmtCents(b.credits))}</td><td class="num"><b>${esc(fmtCents(b.balance))}</b></td></tr>`; }).join("")}</tbody></table>` : `<div class="empty">No accounts.</div>`}</div>`;
     host.innerHTML = html;
@@ -136,6 +229,7 @@ export function renderVault(main) {
 
   // --- Move funds (create a transfer instruction) ---
   function renderMove(host) {
+    if (!may("createTransfer")) { host.innerHTML = `<div class="vcard"><div class="empty">Your role (${esc(team.role)}) cannot create movements.</div></div>`; return; }
     const accts = [...L.accounts.values()];
     const opt = (a) => `<option value="${esc(a.id)}">${esc(a.name)} (${esc(a.type)})</option>`;
     host.innerHTML = `<div class="vcard"><h3>New fund movement</h3>
@@ -144,25 +238,23 @@ export function renderVault(main) {
         <label class="f">To account<select id="mTo">${accts.map(opt).join("")}</select></label>
         <label class="f">Amount (USD)<input id="mAmt" placeholder="0.00" inputmode="decimal"></label>
         <label class="f">Payee (optional)<input id="mPayee" placeholder="vendor / beneficiary"></label>
-        <label class="f">Initiated by<input id="mBy" placeholder="your user id"></label>
+        ${team ? "" : `<label class="f">Initiated by<input id="mBy" placeholder="your user id"></label>`}
         <label class="f">Memo<input id="mMemo" placeholder="what is this for"></label>
       </div>
       <div class="row"><button class="btn2 pri" id="mCreate">Create movement (requires approval)</button></div>
       <div class="flags" id="mScreen"></div>
-      <div class="vsub" style="margin-top:8px">A movement records a ledger entry only — no real money moves. It posts nothing until ${L.policy.minApprovers} distinct people (never the initiator) approve it and it is released, and VAULT refuses to release more than the source account's book balance shows.</div>
+      <div class="vsub" style="margin-top:8px">A movement records a ledger entry only — no real money moves. It posts nothing until ${L.policy.minApprovers} distinct people (never the initiator) approve it and it is released, and VAULT refuses to release more than the source account's book balance shows.${team ? " You are recorded as the initiator from your sign-in." : ""}</div>
     </div>`;
     const $ = (id) => host.querySelector("#" + id);
+    const by = () => team ? team.uid : $("mBy").value.trim();
     // live screen preview
     const preview = () => {
-      try { const amt = toCents($("mAmt").value || "0"); const s = screenTransfer(L, { from: $("mFrom").value, amount: amt, payee: $("mPayee").value, by: $("mBy").value }); $("mScreen").innerHTML = s.flags.length ? "Pre-flight screen (" + s.level + "): " + s.flags.map(esc).join(" · ") : ""; } catch (_) { $("mScreen").innerHTML = ""; }
+      try { const amt = toCents($("mAmt").value || "0"); const s = screenTransfer(L, { from: $("mFrom").value, amount: amt, payee: $("mPayee").value, by: by() }); $("mScreen").innerHTML = s.flags.length ? "Pre-flight screen (" + s.level + "): " + s.flags.map(esc).join(" · ") : ""; } catch (_) { $("mScreen").innerHTML = ""; }
     };
     ["mAmt", "mPayee", "mFrom"].forEach((id) => $(id).addEventListener("input", preview));
     $("mCreate").onclick = () => {
-      try {
-        const id = "t" + Date.now().toString(36);
-        L.createTransfer({ id, from: $("mFrom").value, to: $("mTo").value, amount: $("mAmt").value, payee: $("mPayee").value.trim(), by: $("mBy").value.trim(), memo: $("mMemo").value.trim(), ts: Date.now() });
-        saveLedger(L); toast("Movement created — awaiting approval"); tab = "approvals"; shell();
-      } catch (e) { toast(e.message); }
+      const a = { from: $("mFrom").value, to: $("mTo").value, amount: $("mAmt").value, payee: $("mPayee").value.trim(), memo: $("mMemo").value.trim() };
+      act("createTransfer", a, () => L.createTransfer({ id: "t" + Date.now().toString(36), ...a, by: by(), ts: Date.now() }), "Movement created — awaiting approval", "approvals");
     };
   }
 
@@ -172,42 +264,58 @@ export function renderVault(main) {
     if (!open.length) { host.innerHTML = `<div class="vcard"><div class="empty">No movements awaiting approval or release.</div></div>`; return; }
     host.innerHTML = open.map((t) => {
       const c = STATUS_COLOR[t.status];
+      const mine = team && t.by === team.uid;
+      const canAp = t.status === "pending" && may("approve") && !mine && !(team && t.approvers.includes(team.uid));
+      const canRl = t.status === "approved" && may("release") && !mine;
       return `<div class="vcard" data-t="${esc(t.id)}">
         <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:baseline">
           <span class="pill" style="background:${c}">${esc(t.status)}</span>
           <b>${esc(fmtCents(t.amount))}</b>
           <span class="vsub" style="margin:0">${esc(L.accounts.get(t.from).name)} &rarr; ${esc(L.accounts.get(t.to).name)}${t.payee ? " · " + esc(t.payee) : ""}</span>
-          <span class="vsub" style="margin:0 0 0 auto">by ${esc(t.by)} · approvals ${t.approvers.length}/${t.required}</span>
+          <span class="vsub" style="margin:0 0 0 auto">by ${esc(who(t.by))} · approvals ${t.approvers.length}/${t.required}</span>
         </div>
         ${t.memo ? `<div class="vsub" style="margin:4px 0">${esc(t.memo)}</div>` : ""}
         ${t.screen && t.screen.flags.length ? `<div class="flags">Screen (${esc(t.screen.level)}): ${t.screen.flags.map(esc).join(" · ")}</div>` : ""}
-        ${t.approvers.length ? `<div class="vsub" style="margin:4px 0">Approved by: ${t.approvers.map(esc).join(", ")}</div>` : ""}
+        ${t.approvers.length ? `<div class="vsub" style="margin:4px 0">Approved by: ${t.approvers.map((a) => esc(who(a))).join(", ")}</div>` : ""}
+        ${mine ? `<div class="vsub" style="margin:4px 0">You created this movement, so someone else must approve and release it.</div>` : ""}
         <div class="row">
-          <input placeholder="approver / releaser id" class="apId" style="max-width:220px">
-          ${t.status === "pending" ? `<button class="btn2 aApprove">Approve</button>` : ""}
-          ${t.status === "approved" ? `<button class="btn2 pri aRelease">Release (post)</button>` : ""}
-          <button class="btn2 danger aReject">Reject</button>
+          ${team ? "" : `<input placeholder="approver / releaser id" class="apId" style="max-width:220px">`}
+          ${canAp || (!team && t.status === "pending") ? `<button class="btn2 aApprove">Approve</button>` : ""}
+          ${canRl || (!team && t.status === "approved") ? `<button class="btn2 pri aRelease">Release (post)</button>` : ""}
+          ${may("reject") ? `<button class="btn2 danger aReject">Reject</button>` : ""}
         </div>
       </div>`;
     }).join("");
     host.querySelectorAll("[data-t]").forEach((card) => {
       const id = card.dataset.t;
-      const who = () => (card.querySelector(".apId").value || "").trim();
-      const ap = card.querySelector(".aApprove"); if (ap) ap.onclick = () => { try { if (!who()) return toast("Enter the approver id"); L.approve(id, who()); saveLedger(L); shell(); } catch (e) { toast(e.message); } };
-      const rl = card.querySelector(".aRelease"); if (rl) rl.onclick = () => { try { if (!who()) return toast("Enter the releaser id"); L.release(id, who(), Date.now()); saveLedger(L); toast("Released and posted to the ledger"); shell(); } catch (e) { toast(e.message); } };
-      const rj = card.querySelector(".aReject"); if (rj) rj.onclick = () => { try { L.reject(id, who(), ""); saveLedger(L); shell(); } catch (e) { toast(e.message); } };
+      const who2 = () => team ? team.uid : (card.querySelector(".apId").value || "").trim();
+      const need = (m) => { if (!who2()) { toast(m); return false; } return true; };
+      const ap = card.querySelector(".aApprove"); if (ap) ap.onclick = () => need("Enter the approver id") && act("approve", { id }, () => L.approve(id, who2()), "Approval recorded");
+      const rl = card.querySelector(".aRelease"); if (rl) rl.onclick = () => need("Enter the releaser id") && act("release", { id }, () => L.release(id, who2(), Date.now()), "Released and posted to the ledger");
+      const rj = card.querySelector(".aReject"); if (rj) rj.onclick = () => act("reject", { id, reason: "" }, () => L.reject(id, who2(), ""), "Movement rejected");
     });
   }
 
   // --- Audit log ---
   function renderAudit(host) {
     const chain = L.verifyChain();
+    const ok = (n) => `<span class="vok">Verified — ${n} entries, intact.</span>`;
     let html = `<div class="vcard"><h3>Tamper-evident audit chain</h3>
-      <div class="row"><button class="btn2" id="aVerify">Verify chain now</button>
-      <span id="aVerOut">${chain.ok ? `<span class="vok">Verified — ${L.journal.length} entries, intact.</span>` : `<span style="color:#b00020">BROKEN at entry #${chain.brokenAt}.</span>`}</span></div></div>`;
-    html += `<div class="vcard"><h3>Journal (append-only)</h3>${L.journal.length ? `<table><thead><tr><th>#</th><th>Memo</th><th>Postings</th><th class="num">Amount</th><th>Hash</th></tr></thead><tbody>${L.journal.map((e) => `<tr><td>${e.seq}</td><td>${esc(e.memo)}</td><td class="mono">${e.postings.map((p) => `${esc(p.side === "debit" ? "DR" : "CR")} ${esc(L.accounts.get(p.account) ? L.accounts.get(p.account).name : p.account)}`).join("<br>")}</td><td class="num">${esc(fmtCents(e.postings.filter((p) => p.side === "debit").reduce((s, p) => s + p.amount, 0n)))}</td><td class="mono">${esc(e.hash.slice(0, 12))}…</td></tr>`).join("")}</tbody></table>` : `<div class="empty">No entries yet.</div>`}</div>`;
+      <div class="row"><button class="btn2" id="aVerify">${team ? "Verify on the server" : "Verify chain now"}</button>
+      <span id="aVerOut">${chain.ok ? ok(L.journal.length) : `<span style="color:#b00020">BROKEN at entry #${chain.brokenAt}.</span>`}</span></div></div>`;
+    if (team) html += `<div class="vcard"><h3>Server audit log <span class="vmut">— every attempt, allowed or refused (latest ${team.audit.length} of ${team.auditCount})</span></h3>${team.audit.length ? `<table><thead><tr><th>#</th><th>When</th><th>Who</th><th>Action</th><th>Result</th><th>Hash</th></tr></thead><tbody>${team.audit.map((a) => `<tr><td>${a.n}</td><td>${esc(new Date(a.ts).toLocaleString())}</td><td>${esc(who(a.by))}<div class="vmut">${esc(a.role)}</div></td><td>${esc(a.op)}</td><td>${a.ok ? `<span class="vok2">Allowed</span>` : `<span class="vno">Refused</span><div class="vmut">${esc(a.error || "")}</div>`}</td><td class="mono">${esc(String(a.hash).slice(0, 12))}…</td></tr>`).join("")}</tbody></table>` : `<div class="empty">No actions yet.</div>`}</div>`;
+    html += `<div class="vcard"><h3>Journal (append-only)</h3>${L.journal.length ? `<table><thead><tr><th>#</th><th>Memo</th><th>Postings</th><th class="num">Amount</th><th>Hash</th></tr></thead><tbody>${L.journal.map((e) => `<tr><td>${e.seq}</td><td>${esc(e.memo)}${team && e.by ? `<div class="vmut">by ${esc(who(e.by))}</div>` : ""}</td><td class="mono">${e.postings.map((p) => `${esc(p.side === "debit" ? "DR" : "CR")} ${esc(L.accounts.get(p.account) ? L.accounts.get(p.account).name : p.account)}`).join("<br>")}</td><td class="num">${esc(fmtCents(e.postings.filter((p) => p.side === "debit").reduce((s, p) => s + p.amount, 0n)))}</td><td class="mono">${esc(e.hash.slice(0, 12))}…</td></tr>`).join("")}</tbody></table>` : `<div class="empty">No entries yet.</div>`}</div>`;
     host.innerHTML = html;
-    host.querySelector("#aVerify").onclick = () => { const v = L.verifyChain(); host.querySelector("#aVerOut").innerHTML = v.ok ? `<span class="vok">Verified — ${L.journal.length} entries, intact.</span>` : `<span style="color:#b00020">BROKEN at entry #${v.brokenAt}.</span>`; };
+    host.querySelector("#aVerify").onclick = async () => {
+      const out = host.querySelector("#aVerOut");
+      if (!team) { const v = L.verifyChain(); out.innerHTML = v.ok ? ok(L.journal.length) : `<span style="color:#b00020">BROKEN at entry #${v.brokenAt}.</span>`; return; }
+      out.textContent = "Verifying…";
+      try {
+        const v = await remote.vaultVerify(team.vid);
+        out.innerHTML = (v.ledger && v.ledger.ok ? `<span class="vok">Ledger chain intact.</span>` : `<span style="color:#b00020">Ledger chain BROKEN${v.ledger ? " at entry #" + v.ledger.brokenAt : ""}.</span>`) + " " +
+          (v.audit.ok ? `<span class="vok">Audit chain intact (${v.audit.entries} entries).</span>` : `<span style="color:#b00020">Audit chain BROKEN at #${v.audit.brokenAt}.</span>`);
+      } catch (e) { out.textContent = e.message; }
+    };
   }
 
   // --- Reconcile ---
@@ -215,25 +323,74 @@ export function renderVault(main) {
     host.innerHTML = `<div class="vcard"><h3>Reconcile against your bank statement</h3>
       <div class="vsub" style="margin:0 0 8px">Paste bank lines as <code>amount,reference</code> (one per line). VAULT matches released movements to real bank debits and flags anything unmatched on either side — the gap where fraud and errors hide.</div>
       <textarea id="rLines" placeholder="2500.00,ACME WIRE REF t1&#10;264000.00,INITECH PMT"></textarea>
-      <div class="row"><button class="btn2 pri" id="rRun">Reconcile</button></div>
+      <div class="row"><button class="btn2 pri" id="rRun" ${may("reconcile") ? "" : "disabled"}>Reconcile</button>${may("reconcile") ? "" : `<span class="vmut">Your role cannot reconcile.</span>`}</div>
       <div id="rOut" style="margin-top:12px"></div>
     </div>`;
-    host.querySelector("#rRun").onclick = () => {
+    host.querySelector("#rRun").onclick = async () => {
       const lines = host.querySelector("#rLines").value.trim().split(/\n+/).filter(Boolean).map((l) => { const [amt, ...ref] = l.split(","); return { amount: amt.trim(), ref: ref.join(",").trim() }; });
-      let res; try { res = L.reconcile(lines); } catch (e) { return toast(e.message); }
-      saveLedger(L);
+      let res;
+      if (team) {
+        try { res = (await remote.vaultOp(team.vid, "reconcile", { lines })).result; } catch (e) { return toast(e.message); }
+      } else {
+        try { res = L.reconcile(lines); } catch (e) { return toast(e.message); }
+        saveLedger(L);
+      }
       host.querySelector("#rOut").innerHTML = `
         <div class="vkpis"><div class="vkpi"><div class="k">Matched</div><div class="v vok">${res.matched.length}</div></div>
         <div class="vkpi"><div class="k">Unmatched (bank)</div><div class="v" style="${res.unmatchedBank.length ? "color:#b00020" : ""}">${res.unmatchedBank.length}</div></div>
         <div class="vkpi"><div class="k">Unmatched (ledger)</div><div class="v" style="${res.unmatchedLedger.length ? "color:#b00020" : ""}">${res.unmatchedLedger.length}</div></div></div>
         ${res.unmatchedBank.length ? `<div class="vcard"><h3>On the bank, not matched in VAULT</h3><table><tbody>${res.unmatchedBank.map((b) => `<tr><td class="num">${esc(b.amount)}</td><td class="mono">${esc(b.ref)}</td></tr>`).join("")}</tbody></table></div>` : ""}
         ${res.unmatchedLedger.length ? `<div class="vcard"><h3>Released in VAULT, not seen at the bank</h3><table><tbody>${res.unmatchedLedger.map((t) => `<tr><td>${esc(t.id)}</td><td class="num">${esc(t.amount)}</td></tr>`).join("")}</tbody></table></div>` : ""}`;
+      if (team) { const keep = host.querySelector("#rOut").innerHTML; await load(); if (tab === "reconcile") main.querySelector("#rOut").innerHTML = keep; }
+    };
+  }
+
+  // --- Team (server-enforced vaults only) ---
+  function renderTeam(host) {
+    const owner = team.role === "owner";
+    const roleOpts = (sel) => ROLES.map((r) => `<option value="${r}"${r === sel ? " selected" : ""}>${r}</option>`).join("");
+    host.innerHTML = `
+    <div class="vcard"><h3>Your sign-in</h3>
+      <div class="vsub" style="margin:0 0 8px">To be added to a team vault, give its owner your user id.</div>
+      <div class="row" style="margin:0"><span class="mono" id="tMe">${esc(team.uid)}</span><button class="btn2" id="tCopy">Copy user id</button></div>
+    </div>
+    <div class="vcard"><h3>Members</h3>
+      <table><thead><tr><th>Member</th><th>User id</th><th>Role</th>${owner ? "<th></th>" : ""}</tr></thead><tbody>
+      ${team.members.map((m) => `<tr data-uid="${esc(m.uid)}"><td>${esc(m.label || "—")}${m.uid === team.uid ? ` <span class="vmut">(you)</span>` : ""}</td><td class="mono">${esc(m.uid)}</td>
+        <td>${owner && m.uid !== team.uid ? `<select class="tRole">${roleOpts(m.role)}<option value="removed"${m.role === "removed" ? " selected" : ""}>removed</option></select>` : esc(m.role)}</td>
+        ${owner ? `<td>${m.uid !== team.uid ? `<button class="btn2 tSave">Save</button>` : ""}</td>` : ""}</tr>`).join("")}
+      </tbody></table>
+      ${owner ? `<div class="vgrid" style="margin-top:12px">
+        <label class="f">User id<input id="tUid" placeholder="their user id" maxlength="128"></label>
+        <label class="f">Name or email (shown to the team)<input id="tLabel" maxlength="120" placeholder="e.g. Sam, finance"></label>
+        <label class="f">Role<select id="tNewRole">${roleOpts("approver")}</select></label>
+      </div>
+      <div class="row"><button class="btn2 pri" id="tAdd">Add member</button></div>
+      <div class="vsub" style="margin-top:6px">Membership is enforced by the database rules: only an owner can change roles, never their own, and every change is logged below.</div>` : ""}
+    </div>
+    <div class="vcard"><h3>What each role can do</h3><table><tbody>${ROLES.map((r) => `<tr><td><b>${r}</b></td><td>${esc(ROLE_HELP[r])}</td></tr>`).join("")}</tbody></table></div>
+    <div class="vcard"><h3>Membership log <span class="vmut">— append-only</span></h3>${team.log.length ? `<table><thead><tr><th>When</th><th>Changed by</th><th>Member</th><th>New role</th></tr></thead><tbody>${team.log.map((l) => `<tr><td>${l.ts ? esc(new Date(l.ts).toLocaleString()) : ""}</td><td>${esc(who(l.by))}</td><td>${esc(who(l.uid))}</td><td>${esc(l.role)}</td></tr>`).join("")}</tbody></table>` : `<div class="empty">No changes yet.</div>`}</div>`;
+    host.querySelector("#tCopy").onclick = () => { try { navigator.clipboard.writeText(team.uid); toast("User id copied"); } catch (_) {} };
+    const save = async (uid, role, label) => {
+      try { await remote.setMember(team.vid, uid, role, label); toast("Membership updated"); await load(); }
+      catch (e) { toast("Not allowed: " + e.message); }
+    };
+    host.querySelectorAll("tr[data-uid] .tSave").forEach((b) => b.onclick = () => {
+      const tr = b.closest("tr"); const m = team.members.find((x) => x.uid === tr.dataset.uid);
+      save(m.uid, tr.querySelector(".tRole").value, m.label);
+    });
+    const add = host.querySelector("#tAdd");
+    if (add) add.onclick = () => {
+      const uid = host.querySelector("#tUid").value.trim();
+      if (!/^[A-Za-z0-9_-]{6,128}$/.test(uid)) return toast("Enter the person's user id (they can copy it from this tab)");
+      save(uid, host.querySelector("#tNewRole").value, host.querySelector("#tLabel").value.trim());
     };
   }
 
   // --- Setup ---
   function renderSetup(host) {
     const have = !!L;
+    if (team) return renderTeamSetup(host);
     host.innerHTML = `
     ${!have ? `<div class="vcard"><h3>Quick start</h3><div class="vsub" style="margin:0 0 8px">Create a standard chart of accounts: an Operating account (asset), an Opening equity account, and an Outgoing clearing account. The opening balance is a <b>book figure you type in</b> to start the ledger — not real money and not pulled from any bank.</div>
       <div class="vgrid"><label class="f">Opening book balance (USD)<input id="qOpen" placeholder="100000.00" inputmode="decimal"></label></div>
@@ -241,7 +398,7 @@ export function renderVault(main) {
     <div class="vcard"><h3>Add account</h3>
       <div class="vgrid">
         <label class="f">Name<input id="aName" placeholder="e.g. Payroll (bank)"></label>
-        <label class="f">Type<select id="aType"><option value="asset">asset (bank / cash)</option><option value="clearing">clearing</option><option value="liability">liability</option><option value="customer">customer balance</option><option value="equity">equity</option><option value="income">income</option><option value="expense">expense</option></select></label>
+        <label class="f">Type<select id="aType">${ACCT_TYPES}</select></label>
       </div>
       <div class="row"><button class="btn2" id="aAdd" ${have ? "" : "disabled"}>Add account</button></div>
     </div>
@@ -273,10 +430,46 @@ export function renderVault(main) {
       try { const name = $("aName").value.trim(); if (!name) return toast("Name required"); const id = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") + "-" + Math.random().toString(36).slice(2, 6); L.openAccount({ id, name, type: $("aType").value }); saveLedger(L); toast("Account added"); shell(); } catch (e) { toast(e.message); }
     };
     const pSave = $("pSave"); if (pSave) pSave.onclick = () => { try { const n = Math.max(1, parseInt($("pMin").value, 10) || 1); L.policy.minApprovers = n; saveLedger(L); toast("Policy saved"); } catch (e) { toast(e.message); } };
-    const bExport = $("bExport"); if (bExport) bExport.onclick = () => { const blob = new Blob([JSON.stringify(L.snapshot(), null, 2)], { type: "application/json" }); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = "vault-snapshot.json"; document.body.appendChild(a); a.click(); setTimeout(() => { a.remove(); URL.revokeObjectURL(url); }, 100); };
+    const bExport = $("bExport"); if (bExport) bExport.onclick = () => exportSnap();
     const bImport = $("bImport"); if (bImport) bImport.onchange = (e) => { const f = e.target.files[0]; if (!f) return; const fr = new FileReader(); fr.onload = () => { try { const snap = JSON.parse(fr.result); const test = Ledger.load(snap); if (!test.verifyChain().ok) return toast("Refused: imported snapshot failed chain verification (tampered)."); L = test; saveLedger(L); toast("Imported and verified"); tab = "overview"; shell(); } catch (err) { toast("Import failed: " + err.message); } }; fr.readAsText(f); };
     const bReset = $("bReset"); if (bReset) bReset.onclick = () => { try { localStorage.removeItem(STORE); } catch (_) {} L = null; toast("VAULT reset"); tab = "setup"; shell(); };
   }
+  const exportSnap = () => { const blob = new Blob([JSON.stringify(L.snapshot(), null, 2)], { type: "application/json" }); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = "vault-snapshot.json"; document.body.appendChild(a); a.click(); setTimeout(() => { a.remove(); URL.revokeObjectURL(url); }, 100); };
 
-  shell();
+  function renderTeamSetup(host) {
+    const have = !!L;
+    const tiers = have ? L.policy.tiers.map((t) => t[0] + ":" + t[1]).join(", ") : "";
+    host.innerHTML = `
+    ${!have ? `<div class="vcard"><h3>Initialize this team vault</h3>${may("init") ? `<div class="vsub" style="margin:0 0 8px">Creates an Operating account (asset), an Opening equity account and an Outgoing clearing account on the server. The opening balance is a <b>book figure you type in</b>, not real money.</div>
+      <div class="vgrid"><label class="f">Opening book balance (USD)<input id="qOpen" placeholder="100000.00" inputmode="decimal"></label></div>
+      <div class="row"><button class="btn2 pri" id="qInit">Initialize on the server</button></div>` : `<div class="empty">Waiting for an owner to initialize this vault.</div>`}</div>` : ""}
+    ${have && may("openAccount") ? `<div class="vcard"><h3>Add account</h3>
+      <div class="vgrid">
+        <label class="f">Name<input id="aName" maxlength="80" placeholder="e.g. Payroll (bank)"></label>
+        <label class="f">Type<select id="aType">${ACCT_TYPES}</select></label>
+      </div>
+      <div class="row"><button class="btn2" id="aAdd">Add account</button></div></div>` : ""}
+    ${have ? `<div class="vcard"><h3>Approval policy</h3>
+      <div class="vgrid">
+        <label class="f">Minimum approvers<input id="pMin" type="number" min="1" max="10" value="${L.policy.minApprovers}" ${may("setPolicy") ? "" : "disabled"}></label>
+        <label class="f">Higher tiers (amount:approvers)<input id="pTiers" value="${esc(tiers)}" placeholder="25000:3, 100000:4" ${may("setPolicy") ? "" : "disabled"}></label>
+      </div>
+      ${may("setPolicy") ? `<div class="row"><button class="btn2" id="pSave">Save policy</button></div>` : ""}
+      <div class="vsub" style="margin-top:6px">Dual control is always on for a team vault: the person who creates a movement can never approve or release it.</div></div>` : ""}
+    ${have ? `<div class="vcard"><h3>Export</h3><div class="vsub" style="margin:0 0 8px">Download the ledger as JSON. The hash chain lets anyone check it was not altered.</div>
+      <div class="row"><button class="btn2" id="bExport">Export snapshot (JSON)</button></div></div>` : ""}`;
+    const $ = (id) => host.querySelector("#" + id);
+    const qInit = $("qInit"); if (qInit) qInit.onclick = () => act("init", { opening: $("qOpen").value.trim() }, null, "Team vault initialized", "overview");
+    const aAdd = $("aAdd"); if (aAdd) aAdd.onclick = () => { const name = $("aName").value.trim(); if (!name) return toast("Name required"); act("openAccount", { name, type: $("aType").value }, null, "Account added"); };
+    const pSave = $("pSave"); if (pSave) pSave.onclick = () => {
+      const parsed = $("pTiers").value.split(",").map((x) => x.trim()).filter(Boolean).map((x) => { const [a, n] = x.split(":"); return [String(a || "").trim(), parseInt(n, 10)]; });
+      act("setPolicy", { minApprovers: parseInt($("pMin").value, 10), tiers: parsed }, null, "Policy saved");
+    };
+    const bExport = $("bExport"); if (bExport) bExport.onclick = () => exportSnap();
+  }
+
+  main.innerHTML = `<div class="vlt"><div class="vcard"><div class="empty">Loading VAULT…</div></div></div>`;
+  load();
 }
+
+const ACCT_TYPES = `<option value="asset">asset (bank / cash)</option><option value="clearing">clearing</option><option value="liability">liability</option><option value="customer">customer balance</option><option value="equity">equity</option><option value="income">income</option><option value="expense">expense</option>`;

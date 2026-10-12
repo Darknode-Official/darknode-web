@@ -17,6 +17,9 @@
 // Free on Cloudflare's Workers plan (no card): 100k requests/day, native
 // streaming. Deploy: `cd worker && npx wrangler deploy`.
 
+import { handleVault } from "./vault.js";
+export { VaultDO } from "./vault.js";
+
 const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
 
 // Server-enforced persona for the flagship `darknode` provider — a
@@ -40,8 +43,8 @@ const PROVIDERS = {
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
 };
 
 // Browser origins allowed to call the proxy. A request carrying an Origin that
@@ -520,6 +523,7 @@ export default {
     const { pathname } = new URL(request.url);
     if (pathname === "/api/fetch" && (request.method === "GET" || request.method === "POST")) return handleFetch(request);
     if (pathname === "/api/smart" && request.method === "POST") return handleSmart(request, env);
+    if (pathname.startsWith("/api/vault/")) return handleVault(request, env, pathname.slice(11), json);
     if (pathname !== "/api/chat") return json({ error: "Not found" }, 404);
     if (request.method !== "POST") return json({ error: "POST only" }, 405);
 

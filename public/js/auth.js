@@ -1979,7 +1979,7 @@ function renderApp(user) {
     else if (sec === "docs") { import("/js/docs.js?v=20261011a").then(m => live() && m.renderDocs(main)); }
     else if (sec === "veil") { import("/js/labs/veil.js?v=20261011a").then(m => live() && m.renderVeil(main)); }
     else if (sec === "strongroom") { import("/js/strongroom.js?v=20261011a").then(m => live() && m.renderStrongroom(main)); }
-    else if (sec === "vault") { import("/js/vault.js?v=20261011b").then(m => live() && m.renderVault(main)); }
+    else if (sec === "vault") { import("/js/vault.js?v=20261012f").then(m => live() && m.renderVault(main)); }
     else if (sec === "setup") renderSetup(main, more);
     else if (sec === "settings") renderSettingsPage(main, user, isOwner, more);
     else if (sec === "admin") { import("/js/admin.js?v=20261012e").then(m => live() && m.renderAdmin(main, user)); }
