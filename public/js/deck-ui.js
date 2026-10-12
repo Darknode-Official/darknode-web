@@ -27,7 +27,8 @@ import * as surface from "/js/deck-surface.js?v=20261011b";
 // stream and the notifications bell.
 import { bus, EVENTS } from "/js/core/bus.js";
 import { isSimulated } from "/js/core/posture.js";
-import { attachExplain, EXPLAIN, explainEnabled, setExplainEnabled } from "/js/ui/explain.js?v=20261012d";
+import * as findings from "/js/core/findings.js?v=20261012e";
+import { attachExplain, EXPLAIN, explainEnabled, setExplainEnabled } from "/js/ui/explain.js?v=20261012e";
 
 const LS_CONN = "dn_deck_connections_v1";
 const LS_SCENE = "dn_deck_scene";          // last workspace selected
@@ -657,6 +658,42 @@ const CSS = `
 @media(min-width:2800px){.dk{--dkz:1.3}}
 .dk.dense{zoom:calc(var(--dkz,1) * .9)}
 .dk td,.dk th{overflow-wrap:anywhere}
+.dk-nvhb{appearance:none;border:0;background:none;font-family:inherit;cursor:pointer;width:100%;display:flex;align-items:center;gap:6px;text-align:left;border-radius:8px}
+.dk-nvhb .ov{margin-left:auto;font-size:10px;font-weight:600;letter-spacing:0;text-transform:none;opacity:0;transition:opacity .15s}
+.dk-nvhb:hover,.dk-nvhb.on,.dk-nvhb:focus-visible{color:#2552c6}
+.dk-nvhb:hover .ov,.dk-nvhb.on .ov,.dk-nvhb:focus-visible .ov{opacity:1}
+.dk.nav-rail .dk-nvhb{pointer-events:none}.dk.nav-rail .dk-nvhb .ov{display:none}
+.dk-acts{display:flex;flex-direction:column;gap:8px}
+.dk-act{display:flex;align-items:center;gap:14px;padding:12px 14px;border-radius:12px;background:#fff;border:1px solid rgba(23,33,56,.08)}
+.dk-act .bar{width:4px;align-self:stretch;border-radius:4px;background:var(--c);flex:none}
+.dk-act .tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.dk-act .tx b{font-size:13.5px;color:#141c2e;overflow-wrap:anywhere}
+.dk-act .tx span{font-size:12.5px;color:#5a6680;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.dk-act>.dk-tibtn{flex:none;height:34px}
+.dk-actform{display:flex;gap:8px;flex-wrap:wrap;flex:none;align-items:center}
+.dk-actform .dk-tibtn{height:34px}
+.dk .dk-actform input{height:34px;border-radius:8px;border:1px solid rgba(23,33,56,.16);padding:0 10px;font:inherit;font-size:13px;width:190px;background:#fff;color:#1a2233;outline:none}
+.dk .dk-actform input:focus{border-color:#4f86ff}
+@media(max-width:720px){.dk-act{flex-wrap:wrap}.dk-actform{width:100%}.dk .dk-actform input{flex:1;width:auto;min-width:0}}
+.dk-fndbulk{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 12px;margin-bottom:10px;border-radius:10px;background:rgba(79,134,255,.08);border:1px solid rgba(79,134,255,.22);font-size:13px;color:#38435c}
+.dk-fndbulk .dk-tibtn{height:32px}
+.dk-fndt th.ck,.dk-fndt td.ck{width:36px}
+.dk-fndt td.nm{cursor:pointer}
+.dk-onb{padding:14px 2px}
+.dk-onb>b{display:block;font-size:15px;color:#141c2e}
+.dk-onb>p{color:#5a6680;font-size:13px;line-height:1.55;margin:6px 0 14px}
+.dk-onb .dk-qa{grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
+.dk-sectgrid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:18px;align-items:start}
+@media(max-width:1100px){.dk-sectgrid{grid-template-columns:1fr}}
+.dk-sect .dk-qa{grid-template-columns:repeat(auto-fill,minmax(230px,1fr))}
+.dk-srcs{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px}
+.dk-src{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;padding:10px 12px;border-radius:10px;border:1px dashed rgba(23,33,56,.18);background:rgba(23,33,56,.02);color:#8a93a6;min-height:48px}
+.dk-src .nm{flex:1 1 100%;min-width:0;font-weight:600;font-size:13px;overflow-wrap:break-word}
+.dk-src .st{font-size:11.5px;flex:1}
+.dk-srcpub{font-size:12.5px;color:#5a6680;line-height:1.55;margin:12px 0 0;overflow-wrap:break-word}.dk-srcpub b{color:#38435c}
+.dk-src .dk-tibtn{height:30px;padding:0 10px;font-size:12px}
+.dk-src.on{border-style:solid;border-color:rgba(18,168,95,.35);background:rgba(18,168,95,.06);color:#1a2233}
+.dk-src.on .st{color:#12a85f;font-weight:700}
 .dk[data-ui=deck] .dk-scene{top:56px;left:var(--dk-sw);transition:left .18s ease}
 .dk-sbtog{border-color:transparent;background:transparent}
 .dk-crumb{min-width:0;display:flex;align-items:center;gap:8px;font-size:13px;color:#6a7488;white-space:nowrap;overflow:hidden;padding-left:6px}
@@ -742,7 +779,7 @@ const CSS = `
 .dk-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:14px;margin-bottom:12px}
 .dk-ov .dk-kpis:not(#dkInvKpis){grid-template-columns:repeat(4,minmax(0,1fr))}
 @media(min-width:1600px){.dk-ov .dk-kpis:not(#dkInvKpis){grid-template-columns:repeat(7,minmax(0,1fr))}}
-@media(max-width:720px){.dk-ov .dk-kpis:not(#dkInvKpis){grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:720px){.dk-kpis,.dk-ov .dk-kpis:not(#dkInvKpis){grid-template-columns:repeat(2,minmax(0,1fr))}}
 .dk-expnote{font-size:12px;color:#5a6680;line-height:1.5;margin:0 0 22px;padding:9px 13px;background:rgba(23,33,56,.03);border:1px solid rgba(23,33,56,.08);border-radius:9px}
 .dk-expnote b{color:#141c2e;font-weight:700}
 .dk-kpi{position:relative;padding:16px 16px 15px 18px;border-radius:12px;background:rgba(23,33,56,.025);border:1px solid rgba(23,33,56,.08);cursor:pointer;transition:transform .16s,border-color .16s,background .16s;overflow:hidden;text-align:left}
@@ -1216,6 +1253,10 @@ export function renderDeck(host, opts) {
 
     <div class="dk-scene dk-inv" id="dkInvest" hidden></div>
 
+    <div class="dk-scene dk-inv dk-fnd" id="dkFindings" hidden></div>
+
+    <div class="dk-scene dk-inv dk-sect" id="dkSection" hidden></div>
+
     <div class="dk-scene dk-ov" id="dkActivity" hidden></div>
 
     <div class="dk-scene dk-asst" id="dkAssistant" hidden>
@@ -1265,7 +1306,7 @@ export function renderDeck(host, opts) {
   function drawStars(){}
 
   // ---------- workspace router ----------
-  const SCENES = { overview: "#dkOverview", surface: "#dkSurface", threat: "#dkThreat", cloud: "#dkCloud", compliance: "#dkCompliance", invest: "#dkInvest", con: "#dkCon", tools: "#dkTools", toolkit: "#dkToolkit", activity: "#dkActivity", assistant: "#dkAssistant" };
+  const SCENES = { overview: "#dkOverview", surface: "#dkSurface", threat: "#dkThreat", cloud: "#dkCloud", compliance: "#dkCompliance", invest: "#dkInvest", findings: "#dkFindings", section: "#dkSection", con: "#dkCon", tools: "#dkTools", toolkit: "#dkToolkit", activity: "#dkActivity", assistant: "#dkAssistant" };
   const sceneEls = {}; for (const k in SCENES) sceneEls[k] = $(SCENES[k]);
   const sceneTools = sceneEls.tools;   // kept for the tools gallery code
   // sec -> label, for activity lines and quick-action titles
@@ -1290,14 +1331,15 @@ export function renderDeck(host, opts) {
     if (!primary) return;
     try { if (location.pathname !== path) history.replaceState(history.state, "", path + location.search); } catch (_) {}
   }
-  function go(scene){
+  function go(scene, arg){
     if (!SCENES[scene]) scene = "overview";
     curScene = scene;
+    if (scene === "section") { if (SECTIONS[arg]) curSect = arg; try { localStorage.setItem("dn_deck_sect", curSect); } catch (_) {} }
     syncUrl("/");
     try { localStorage.setItem(LS_SCENE, scene); } catch (_) {}
     closeAllMenus();
     sceneWork.hidden = true; wFrame.innerHTML = ""; curSec = null;
-    setNav("scene:" + scene);
+    setNav(scene === "section" ? "section:" + curSect : "scene:" + scene);
     for (const k in sceneEls) sceneEls[k].hidden = k !== scene;
     if (scene === "overview") renderOverview();
     else if (scene === "surface") renderSurface();
@@ -1308,6 +1350,8 @@ export function renderDeck(host, opts) {
     else if (scene === "tools") { buildTools(); applyTools(); revealGallery(); }
     else if (scene === "toolkit") renderToolkit();
     else if (scene === "invest") renderInvest();
+    else if (scene === "findings") renderFindings();
+    else if (scene === "section") renderSection();
     else if (scene === "activity") renderActivity();
     else if (scene === "assistant") openAssistant();
   }
@@ -1315,7 +1359,7 @@ export function renderDeck(host, opts) {
   // routes to that workspace; data-sec opens a tool in the in-deck workspace.
   root.addEventListener("click", (e) => {
     const nav = e.target.closest("[data-scene]");
-    if (nav && !nav.classList.contains("dk-tab") && nav.dataset.scene) { go(nav.dataset.scene); return; }
+    if (nav && !nav.classList.contains("dk-tab") && nav.dataset.scene) { go(nav.dataset.scene, nav.dataset.sect); return; }
     const tl = e.target.closest("span[data-tool],a[data-tool],.dk-nv[data-tool]");
     if (tl && tl.dataset.tool) { e.preventDefault(); openTool(tl.dataset.tool, secLabel[tl.dataset.tool] || tl.textContent.trim()); }
   });
@@ -1612,6 +1656,7 @@ export function renderDeck(host, opts) {
     { type: "action", label: "Go to Threats & Vulnerabilities", group: "Navigate", icon: IC.alert, run: () => go("threat") },
     { type: "action", label: "Go to Cloud Posture", group: "Navigate", icon: IC.cloud, run: () => go("cloud") },
     { type: "action", label: "Go to Compliance", group: "Navigate", icon: IC.shield, run: () => go("compliance") },
+    { type: "action", label: "Go to Findings", group: "Navigate", icon: IC.alert, run: () => go("findings") },
     { type: "action", label: "Go to Investigations", group: "Navigate", icon: IC.search, run: () => go("invest") },
     { type: "action", label: "Go to Integrations", group: "Navigate", icon: IC.plug, run: () => go("con") },
     { type: "action", label: "Go to Tool Library", group: "Navigate", icon: IC.grid, run: () => go("tools") },
@@ -1760,6 +1805,8 @@ export function renderDeck(host, opts) {
       if (curScene === "overview") renderOverview();
       else if (curScene === "invest") renderInvest();
       else if (curScene === "activity") renderActivity();
+      else if (curScene === "findings") withGraph(paintFindings);
+      else if (curScene === "section") renderSection();
     }, 400);
   };
   window.addEventListener("storage", onStorage);
@@ -1792,7 +1839,7 @@ export function renderDeck(host, opts) {
       </form>
       <div class="dk-askhint">Triage a CVE, draft a runbook, explain a finding or review a config.</div>
       <div class="dk-kpis">
-        ${kpi("exposure", "—", "Your exposure", IC.radar, "#f0484a", "invest", "out of 100 · your real findings")}
+        ${kpi("exposure", "—", "Your exposure", IC.radar, "#f0484a", "findings", "out of 100 · your real findings")}
         ${kpi("climate", "—", "Threat climate", IC.pulse, "#f5920b", "threat", "out of 100 · global CVE/KEV feeds")}
         ${kpi("conn", linked.length, "Integrations connected", IC.link, "#12a85f", "con", "of " + INTEGRATIONS.length)}
         ${kpi("tools", TOTAL_TOOLS.toLocaleString(), "Tools available", IC.grid, "#4f86ff", "tools", "curated catalog")}
@@ -1801,6 +1848,7 @@ export function renderDeck(host, opts) {
         ${kpi("kev", "—", "Known-exploited (KEV)", IC.radar, "#e0383a", "threat", "CISA catalog")}
       </div>
       <div class="dk-expnote" id="dkExpNote" hidden></div>
+      <div class="dk-ovp"><h2 data-explain="panel.actions">${IC.bolt} Top actions <span class="mo" data-scene="findings">All findings</span></h2><div class="dk-acts" id="dkTopAct"><div class="dk-loading"><span class="sp"></span>Ranking what needs attention…</div></div></div>
       <div class="dk-ovgrid3">
         <div class="dk-ovp"><h2 data-explain="panel.pins">${IC.star} Pinned tools <span class="mo" data-scene="tools">All tools</span></h2><div id="dkPins" class="dk-pins"></div></div>
         <div class="dk-ovp"><h2 data-explain="panel.system">${IC.radar} System status</h2><div id="dkSys" class="dk-sys"></div></div>
@@ -1837,6 +1885,7 @@ export function renderDeck(host, opts) {
     // pinned tools + live system status
     renderPins();
     renderSystem();
+    renderTopActions();
     // notes scratchpad (debounced autosave)
     const notesEl = el.querySelector("#dkNotes"), savedEl = el.querySelector("#dkNotesSaved"), cntEl = el.querySelector("#dkNotesCount");
     if (notesEl) {
@@ -2374,8 +2423,172 @@ export function renderDeck(host, opts) {
     box.querySelectorAll("tr[data-eid]").forEach((tr) => tr.onclick = () => openTool("secgraph", secLabel["secgraph"] || "Security Graph"));
   }
 
+  // ---------- Findings workspace: every real finding across tools, one triage queue ----------
+  const fndF = { q: "", severity: "", status: "open", source: "", sim: false };
+  const fndSel = new Set();
+  let fndRows = [];
+  const SEV_C = { critical: "#e0383a", high: "#f5920b", medium: "#d9a400", low: "#4f86ff", info: "#8a93a6" };
+  const ST_C = { new: "#4f86ff", open: "#f5920b", investigating: "#9b5cf0", resolved: "#12a85f", closed: "#8a93a6" };
+  const agoISO = (s) => s ? timeAgo(new Date(s).getTime()) : "—";
+  function dl(name, text, type){
+    const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name;
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }
+  const ONBOARD = `<div class="dk-onb"><b>No findings recorded yet</b><p>Findings appear here when a tool records them in the security graph. Start with one of these:</p><div class="dk-qa">
+      <button class="dk-qacard" data-tool="codescan"><span class="qi" style="--a:#3f78ff">${IC.code}</span><b>Scan a codebase</b><span>Scan a GitHub repository, then choose Add to graph.</span></button>
+      <button class="dk-qacard" data-scene="surface"><span class="qi" style="--a:#f0484a">${IC.radar}</span><b>Map your attack surface</b><span>Enter a domain and add what it finds to the graph.</span></button>
+      <button class="dk-qacard" data-tool="cvesearch"><span class="qi" style="--a:#f5920b">${IC.alert}</span><b>Record a CVE you run</b><span>Look it up and send it to the graph to track the fix.</span></button>
+    </div></div>`;
+  function renderFindings(){
+    const el = sceneEls.findings;
+    el.innerHTML = `
+      <div class="dk-ovhead"><div><h1>Findings</h1><p>Every finding and vulnerability your tools have recorded, in one queue. Select rows to change their status; sample data is excluded unless you include it.</p></div>
+        <div class="when"><button class="dk-tibtn" id="dkFndCsv">${IC.copy} Export CSV</button> <button class="dk-tibtn" id="dkFndJson">${IC.copy} Export JSON</button></div></div>
+      <div class="dk-kpis" id="dkFndKpis"></div>
+      <div class="dk-ovp">
+        <h2 data-explain="panel.findings">${IC.alert} Finding queue <span class="mo" data-tool="secgraph">Open graph</span></h2>
+        <div class="dk-invbar">
+          <div class="dk-isearch">${IC_SEARCH}<input id="dkFndQ" placeholder="Search findings" value="${esc(fndF.q)}" autocomplete="off" spellcheck="false"></div>
+          <select id="dkFndSev" class="dk-isel" aria-label="Severity"></select>
+          <select id="dkFndStatus" class="dk-isel" aria-label="Status"></select>
+          <select id="dkFndSrc" class="dk-isel" aria-label="Source"></select>
+          <label class="dk-invsim" data-explain="inv.sim"><input type="checkbox" id="dkFndSim"${fndF.sim ? " checked" : ""}> Include simulated / sample</label>
+        </div>
+        <div class="dk-fndbulk" id="dkFndBulk" hidden></div>
+        <div id="dkFndTable"><div class="dk-loading"><span class="sp"></span>Reading the security graph…</div></div>
+      </div>`;
+    const q = el.querySelector("#dkFndQ"); let qT = 0;
+    q.oninput = () => { clearTimeout(qT); qT = setTimeout(() => { fndF.q = q.value; withGraph(paintFindings); }, 150); };
+    el.querySelector("#dkFndSev").onchange = (e) => { fndF.severity = e.target.value; withGraph(paintFindings); };
+    el.querySelector("#dkFndStatus").onchange = (e) => { fndF.status = e.target.value; withGraph(paintFindings); };
+    el.querySelector("#dkFndSrc").onchange = (e) => { fndF.source = e.target.value; withGraph(paintFindings); };
+    el.querySelector("#dkFndSim").onchange = (e) => { fndF.sim = e.target.checked; withGraph(paintFindings); };
+    const stamp = new Date().toISOString().slice(0, 10);
+    el.querySelector("#dkFndCsv").onclick = () => { if (!fndRows.length) return toast("No findings to export"); dl("darknode-findings-" + stamp + ".csv", findings.toCSV(fndRows), "text/csv"); };
+    el.querySelector("#dkFndJson").onclick = () => { if (!fndRows.length) return toast("No findings to export"); dl("darknode-findings-" + stamp + ".json", JSON.stringify(fndRows, null, 2), "application/json"); };
+    withGraph(paintFindings);
+  }
+  function paintFindings(m){
+    const el = sceneEls.findings, box = el.querySelector("#dkFndTable"); if (!box) return;
+    const all = m && m.listEntities ? findings.collectFindings(m.listEntities(), { includeSim: fndF.sim }) : [];
+    const c = findings.findingCounts(all.filter((r) => !r.sim));
+    el.querySelector("#dkFndKpis").innerHTML = [[c.critical, "Open critical", SEV_C.critical, "fnd.critical"], [c.high, "Open high", SEV_C.high, "fnd.high"], [c.open, "Open findings", "#4f86ff", "fnd.open"], [c.resolved, "Resolved or closed", "#12a85f", "fnd.resolved"]]
+      .map(([v, l, a, x]) => `<div class="dk-kpi" data-explain="${x}" style="--a:${a};cursor:default"><div class="kn">${v.toLocaleString()}</div><div class="kl">${esc(l)}</div></div>`).join("");
+    const opt = (v, l, cur) => `<option value="${esc(v)}"${v === cur ? " selected" : ""}>${esc(l)}</option>`;
+    el.querySelector("#dkFndSev").innerHTML = opt("", "All severities", fndF.severity) + ["critical", "high", "medium", "low", "info"].map((s) => opt(s, capword(s), fndF.severity)).join("");
+    el.querySelector("#dkFndStatus").innerHTML = opt("", "Any status", fndF.status) + opt("open", "Open", fndF.status) + ["new", "investigating", "resolved", "closed"].map((s) => opt(s, capword(s), fndF.status)).join("");
+    const srcs = [...new Set(all.map((r) => r.source))].sort();
+    if (fndF.source && !srcs.includes(fndF.source)) fndF.source = "";
+    el.querySelector("#dkFndSrc").innerHTML = opt("", "All sources", fndF.source) + srcs.map((s) => opt(s, s, fndF.source)).join("");
+    fndRows = findings.filterFindings(all, fndF);
+    for (const id of [...fndSel]) if (!fndRows.some((r) => r.id === id)) fndSel.delete(id);
+    paintBulk(m);
+    if (!all.length) { box.innerHTML = ONBOARD; box.querySelectorAll(".dk-qacard[data-tool]").forEach((b) => b.onclick = () => openTool(b.dataset.tool, secLabel[b.dataset.tool] || b.querySelector("b").textContent)); return; }
+    if (!fndRows.length) { box.innerHTML = `<div class="dk-nempty">No findings match these filters.</div>`; return; }
+    const shown = fndRows.slice(0, 500);
+    box.innerHTML = `<div class="dk-itwrap"><table class="dk-itable dk-fndt"><thead><tr><th class="ck"><input type="checkbox" id="dkFndAll" aria-label="Select all shown"></th><th>Severity</th><th>Finding</th><th>Type</th><th>Source</th><th>Status</th><th>First seen</th><th>Updated</th></tr></thead><tbody>${shown.map((r) =>
+      `<tr data-eid="${esc(r.id)}"><td class="ck"><input type="checkbox" data-sel="${esc(r.id)}"${fndSel.has(r.id) ? " checked" : ""} aria-label="Select finding"></td><td>${r.severity ? `<span class="pill" style="--c:${SEV_C[r.severity] || "#8a93a6"}">${capword(r.severity)}</span>` : "—"}</td><td class="nm">${esc(r.name)}${r.sim ? ' <span class="dk-simchip">Sample</span>' : ""}</td><td>${r.type === "VULNERABILITY" ? "Vulnerability" : "Finding"}</td><td>${esc(r.source)}</td><td><span class="pill" style="--c:${ST_C[r.status] || "#8a93a6"}">${capword(r.status)}</span></td><td class="ag">${agoISO(r.createdAt)}</td><td class="ag">${agoISO(r.updatedAt)}</td></tr>`).join("")}</tbody></table></div>${fndRows.length > shown.length ? `<div class="dk-nempty">Showing ${shown.length} of ${fndRows.length.toLocaleString()}. Narrow the filters, or export to get them all.</div>` : ""}`;
+    const all1 = box.querySelector("#dkFndAll");
+    all1.checked = shown.every((r) => fndSel.has(r.id));
+    all1.onchange = () => { shown.forEach((r) => all1.checked ? fndSel.add(r.id) : fndSel.delete(r.id)); box.querySelectorAll("[data-sel]").forEach((x) => x.checked = all1.checked); paintBulk(m); };
+    box.querySelectorAll("[data-sel]").forEach((x) => x.onchange = () => { x.checked ? fndSel.add(x.dataset.sel) : fndSel.delete(x.dataset.sel); paintBulk(m); });
+    box.querySelectorAll("tr[data-eid] td.nm").forEach((td) => td.onclick = () => openTool("secgraph", secLabel["secgraph"] || "Security Graph"));
+  }
+  function paintBulk(m){
+    const bar = sceneEls.findings.querySelector("#dkFndBulk"); if (!bar) return;
+    bar.hidden = !fndSel.size; if (!fndSel.size) return;
+    bar.innerHTML = `<b>${fndSel.size} selected</b><span>Set status:</span>${["open", "investigating", "resolved", "closed"].map((s) => `<button class="dk-tibtn" data-st="${s}">${capword(s)}</button>`).join("")}<button class="dk-tibtn" data-st="">Clear selection</button>`;
+    bar.querySelectorAll("[data-st]").forEach((b) => b.onclick = () => {
+      const st = b.dataset.st;
+      if (st && m && m.updateEntity) { const ids = [...fndSel]; m.batch(() => ids.forEach((id) => m.updateEntity(id, { status: st }))); toast(ids.length + " finding" + (ids.length === 1 ? "" : "s") + " set to " + st); }
+      fndSel.clear(); withGraph(paintFindings);
+    });
+  }
+
+  // ---------- Section overview pages (one per sidebar group) ----------
+  // What each section covers in the graph, and which integrations feed it. Coverage is
+  // shown honestly: unconnected sources are listed greyed out with a Connect action.
+  const SECTIONS = {
+    exposure: { title: "Exposure", blurb: "What attackers can see and reach: your external footprint, cloud configuration and the vulnerabilities that matter this week.", types: ["ASSET", "DOMAIN", "IP", "PORT", "SERVICE", "CERTIFICATE", "ENDPOINT"], match: /attack surface|vanguard|subdomain|dns|ssl|http|exposure/i, ints: ["shodan", "censys", "securitytrails", "zoomeye", "binaryedge", "netlas", "fullhunt", "ipinfo", "hibp"], pub: "Certificate transparency (crt.sh), public DNS, RDAP registries and BGP routing data for Attack Surface; NVD, CISA KEV and FIRST EPSS for Threats & Vulnerabilities." },
+    code: { title: "Code & Supply Chain", blurb: "Secrets, risky code and vulnerable dependencies in the software you build, and the attack paths they open.", types: ["SOFTWARE"], match: /code scanner|supply|threatforest|attack tree|\bcode\b/i, ints: [], pub: "The GitHub API for repository contents and OSV.dev for dependency advisories, both used by the Code Scanner." },
+    detect: { title: "Detect & Investigate", blurb: "Alerts, indicators, incidents and cases: everything your tools have recorded, and the work to run it down.", types: ["ALERT", "INCIDENT", "CASE", "INVESTIGATION", "INDICATOR", "EVIDENCE", "THREAT_ACTOR", "MALWARE", "CAMPAIGN", "DETECTION", "EVENT", "FINDING", "VULNERABILITY"], ints: ["virustotal", "greynoise", "abuseipdb", "otx", "abusech", "urlscan", "pulsedive", "misp", "mitre", "hybrid", "anyrun", "intelx"] },
+    finsec: { title: "Financial Security", blurb: "Controls over money movement: fraud screening on your ledgers and a tamper-evident record of treasury approvals.", types: [], match: /strongroom|fund protection|vault|treasury/i, ints: [] },
+    compliance: { title: "Compliance & Trust", blurb: "Framework mappings and self-assessments. Self-reported: they reflect what you enter, not an automated audit.", types: ["CONTROL", "REPORT"], match: /compliance|crosswalk/i, ints: [] },
+  };
+  let curSect = "exposure";
+  try { const v = localStorage.getItem("dn_deck_sect"); if (v && SECTIONS[v]) curSect = v; } catch (_) {}
+  function renderSection(){
+    const id = curSect, S = SECTIONS[id], el = sceneEls.section;
+    const grp = NAV_DEF.find((g) => g.id === id) || { items: [] };
+    // Only key-based services can be "not connected"; free public feeds need no setup.
+    const ints = S.ints.map((i) => INTEGRATIONS.find((x) => x.id === i)).filter((x) => x && x.connect !== "link");
+    const live = ints.filter((i) => conns[i.id] && conns[i.id].connected);
+    const cards = grp.items.map(([kind, tid, label, icon]) => {
+      const ex = kind === "scene" ? EXPLAIN["scene." + tid] : (EXPLAIN["tool." + tid] || toolExplain(tid, label));
+      return `<button class="dk-qacard" data-${kind}="${esc(tid)}"><span class="qi" style="--a:#2552c6">${icon}</span><b>${esc(label)}</b><span>${esc(ex ? ex.body : "")}</span></button>`;
+    }).join("");
+    const srcs = ints.length
+      ? `<div class="dk-srcs">${ints.map((i) => { const c = live.includes(i); return `<div class="dk-src${c ? " on" : ""}"><span class="nm">${esc(i.name)}</span><span class="st">${c ? "Connected" : "Not connected"}</span>${c ? "" : `<button class="dk-tibtn" data-scene="con">Connect</button>`}</div>`; }).join("")}</div>`
+      : S.pub ? "" : `<div class="dk-nempty">No external connections needed. These tools run on data you provide, in your browser.</div>`;
+    const pubHTML = S.pub ? `<p class="dk-srcpub"><b>Public sources, no key needed:</b> ${esc(S.pub)}</p>` : "";
+    el.innerHTML = `
+      <div class="dk-ovhead"><div><h1>${esc(S.title)}</h1><p>${esc(S.blurb)}</p></div></div>
+      <div class="dk-kpis" id="dkSectKpis"><div class="dk-loading"><span class="sp"></span>Reading the security graph…</div></div>
+      <div class="dk-sectgrid">
+        <div class="dk-ovp"><h2 data-explain="panel.sectools">${IC.grid} Tools in this section</h2><div class="dk-qa">${cards}</div></div>
+        <div>
+          <div class="dk-ovp"><h2 data-explain="panel.latest">${IC.pulse} Latest results</h2><div class="dk-ovact" id="dkSectLatest"></div></div>
+          <div class="dk-ovp"><h2 data-explain="panel.sources">${IC.plug} Data sources <span class="mo" data-scene="con">Manage</span></h2>${srcs}${pubHTML}</div>
+        </div>
+      </div>`;
+    el.querySelectorAll("button[data-tool]").forEach((b) => b.onclick = () => openTool(b.dataset.tool, secLabel[b.dataset.tool] || b.querySelector("b").textContent));
+    withGraph((m) => {
+      if (curScene !== "section" || curSect !== id) return;
+      const ents = m && m.listEntities ? findings.sectionEntities(m.listEntities(), S).sort((a, b) => String(b.updatedAt || "").localeCompare(String(a.updatedAt || ""))) : [];
+      const hot = ents.filter((e) => /^(critical|high)$/i.test(e.severity || "") && !/^(resolved|closed)$/i.test(e.status || "")).length;
+      const kpiS = (v, l, a, x) => `<div class="dk-kpi" data-explain="${x}" style="--a:${a};cursor:default"><div class="kn">${v}</div><div class="kl">${esc(l)}</div></div>`;
+      el.querySelector("#dkSectKpis").innerHTML = kpiS(ents.length.toLocaleString(), "Records", "#9b5cf0", "sect.records") + kpiS(hot.toLocaleString(), "Open critical / high", "#e0383a", "sect.hot")
+        + kpiS(ints.length ? live.length + " / " + ints.length : S.pub ? "Public" : "Local", "Data sources connected", "#12a85f", "sect.sources") + kpiS(grp.items.length, "Tools", "#4f86ff", "sect.tools");
+      const lat = el.querySelector("#dkSectLatest");
+      const first = grp.items[0];
+      lat.innerHTML = ents.length
+        ? ents.slice(0, 8).map((e) => `<div class="r"><span class="dot" style="--bg:${SEV_C[String(e.severity || "").toLowerCase()] || "#9aa4ba"}"></span><span class="tx">${esc(e.name || "—")}</span><span class="ct">${esc(m.getEntityTypeLabel ? m.getEntityTypeLabel(e.type) : e.type)}</span><span class="ag">${agoISO(e.updatedAt)}</span></div>`).join("")
+        : `<div class="dk-onb"><p>Nothing recorded in this section yet. Results appear here when its tools add them to the security graph.</p>${first ? `<button class="dk-tibtn on" data-${first[0]}="${esc(first[1])}">Start with ${esc(first[2])}</button>` : ""}</div>`;
+      lat.querySelectorAll("button[data-tool]").forEach((b) => b.onclick = () => openTool(b.dataset.tool, secLabel[b.dataset.tool] || b.dataset.tool));
+    });
+  }
+
+  // ---------- Overview "Top actions": ranked, real, each with a next step ----------
+  function renderTopActions(){
+    const box = sceneEls.overview.querySelector("#dkTopAct"); if (!box) return;
+    Promise.allSettled([new Promise((r) => withGraph(r)), fetchIntel(30), fetchKev()]).then(([g, iv, kv]) => {
+      if (!box.isConnected) return;
+      const m = g.value;
+      const acts = findings.topActions({
+        findings: m && m.listEntities ? findings.collectFindings(m.listEntities(), { includeSim: true }) : [],
+        cves: iv.status === "fulfilled" ? iv.value.cves : [],
+        kev: kv.status === "fulfilled" ? kv.value.set : new Set(),
+        connected: new Set(INTEGRATIONS.filter((x) => conns[x.id] && conns[x.id].connected).map((x) => x.id)),
+        integrations: INTEGRATIONS,
+      });
+      const go1 = (a) => a.kind === "finding" ? `<button class="dk-tibtn" data-scene="findings">Triage</button>`
+        : a.kind === "cve" ? `<button class="dk-tibtn" data-scene="threat">Review</button>`
+        : a.kind === "connect" ? `<button class="dk-tibtn" data-scene="con">Connect</button>`
+        : `<form class="dk-actform"><input placeholder="yourdomain.com" aria-label="Domain to map" autocomplete="off" spellcheck="false"><button class="dk-tibtn on" type="submit">Map surface</button><button class="dk-tibtn" type="button" data-tool="codescan">Scan code</button></form>`;
+      const feedNote = iv.status === "rejected" && kv.status === "rejected" ? `<div class="dk-nempty">Live CVE feeds are unavailable right now, so this list uses your security graph only.</div>` : "";
+      box.innerHTML = (acts.length
+        ? acts.map((a) => `<div class="dk-act" style="--c:${SEV_C[a.sev] || "#4f86ff"}"><span class="bar"></span><div class="tx"><b>${esc(a.title)}</b><span>${esc(a.detail)}</span></div>${go1(a)}</div>`).join("")
+        : `<div class="dk-nempty">Nothing urgent: no open critical or high findings and no known-exploited CVEs in this week's feed.</div>`) + feedNote;
+      const f = box.querySelector(".dk-actform");
+      if (f) {
+        f.onsubmit = (e) => { e.preventDefault(); const d = f.querySelector("input").value.trim(); if (!d) return toast("Enter a domain you own, e.g. example.com"); go("surface"); renderSurface(d); };
+        f.querySelector("[data-tool]").onclick = () => openTool("codescan", secLabel.codescan || "Code Scanner");
+      }
+    });
+  }
+
   // ---------- Activity workspace ----------
-  const ACT_CATS = { tool: { label: "Tools", color: "#4f86ff" }, connection: { label: "Connections", color: "#12a85f" }, graph: { label: "Graph", color: "#9b5cf0" }, ai: { label: "AI", color: "#3f78ff" }, deck: { label: "Deck", color: "#f5920b" } };
+  const ACT_CATS ={ tool: { label: "Tools", color: "#4f86ff" }, connection: { label: "Connections", color: "#12a85f" }, graph: { label: "Graph", color: "#9b5cf0" }, ai: { label: "AI", color: "#3f78ff" }, deck: { label: "Deck", color: "#f5920b" } };
   function activityCat(text){
     const t = (text || "").toLowerCase();
     if (/connect|provider|linked|api key|disconnect/.test(t)) return "connection";
@@ -2517,7 +2730,7 @@ export function renderDeck(host, opts) {
   // ---------- keyboard & shortcuts ----------
   // Vim-style navigation: press "g" then a scene key. "?" opens the cheatsheet.
   const GOTO = { o: "overview", e: "surface", i: "threat", l: "cloud", m: "compliance", n: "invest", c: "con", t: "tools", k: "toolkit", a: "activity", s: "assistant" };
-  const SCENE_TITLE = { overview: "Security Overview", surface: "Attack Surface", threat: "Threat & Vulnerabilities", cloud: "Cloud Posture", compliance: "Compliance", invest: "Investigations", con: "Integrations", tools: "Tool Library", toolkit: "Toolkit", activity: "Activity", assistant: "AI Assistant" };
+  const SCENE_TITLE = { overview: "Security Overview", surface: "Attack Surface", threat: "Threat & Vulnerabilities", cloud: "Cloud Posture", compliance: "Compliance", invest: "Investigations", findings: "Findings", section: "Section overview", con: "Integrations", tools: "Tool Library", toolkit: "Toolkit", activity: "Activity", assistant: "AI Assistant" };
   const keysEl = $("#dkKeys");
   function buildKeysOverlay(){
     const nav = Object.entries(GOTO).map(([k, sc]) => `<div class="dk-keyrow"><span>Go to ${esc(SCENE_TITLE[sc] || sc)}</span><span class="kb"><kbd>g</kbd><kbd>${esc(k)}</kbd></span></div>`).join("");
@@ -2575,22 +2788,22 @@ export function renderDeck(host, opts) {
   const LS_NAV = "dn_deck_nav";
   const NAV_DEF = [
     { g: "", items: [["scene", "overview", "Security Overview", IC.home]] },
-    { g: "Exposure", items: [["scene", "surface", "Attack Surface", IC.radar], ["scene", "cloud", "Cloud Posture", IC.cloud], ["scene", "threat", "Threats & Vulnerabilities", IC.alert]] },
-    { g: "Code & Supply Chain", items: [["tool", "codescan", "Code Scanner", IC.code], ["tool", "supplychain", "Supply Chain", IC.branch], ["tool", "threatforest", "Attack Tree Builder", IC.tree]] },
-    { g: "Detect & Investigate", items: [["scene", "invest", "Investigations", IC.search], ["tool", "secgraph", "Security Graph", IC.nodes], ["tool", "incidents", "Incident Tracker", IC.shield], ["tool", "casemgmt", "Case Manager", IC.brief], ["scene", "activity", "Activity", IC.pulse]] },
-    { g: "Financial Security", items: [["tool", "strongroom", "Fund Protection", IC.coins], ["tool", "vault", "Treasury Vault", IC.lock]] },
-    { g: "Compliance & Trust", items: [["scene", "compliance", "Compliance", IC.check], ["tool", "crosswalk", "GenAI Crosswalk", IC.map]] },
+    { id: "exposure", g: "Exposure", items: [["scene", "surface", "Attack Surface", IC.radar], ["scene", "cloud", "Cloud Posture", IC.cloud], ["scene", "threat", "Threats & Vulnerabilities", IC.alert]] },
+    { id: "code", g: "Code & Supply Chain", items: [["tool", "codescan", "Code Scanner", IC.code], ["tool", "supplychain", "Supply Chain", IC.branch], ["tool", "threatforest", "Attack Tree Builder", IC.tree]] },
+    { id: "detect", g: "Detect & Investigate", items: [["scene", "findings", "Findings", IC.alert], ["scene", "invest", "Investigations", IC.search], ["tool", "secgraph", "Security Graph", IC.nodes], ["tool", "incidents", "Incident Tracker", IC.shield], ["tool", "casemgmt", "Case Manager", IC.brief], ["scene", "activity", "Activity", IC.pulse]] },
+    { id: "finsec", g: "Financial Security", items: [["tool", "strongroom", "Fund Protection", IC.coins], ["tool", "vault", "Treasury Vault", IC.lock]] },
+    { id: "compliance", g: "Compliance & Trust", items: [["scene", "compliance", "Compliance", IC.check], ["tool", "crosswalk", "GenAI Crosswalk", IC.map]] },
     { g: "Platform", items: [["scene", "con", "Integrations", IC.plug], ["scene", "tools", "Tool Library", IC.grid], ["scene", "toolkit", "Toolkit", IC.wrench], ["scene", "assistant", "AI Assistant", IC.spark], ["tool", "settings", "Settings", IC.gear]].concat(opts.isOwner ? [["tool", "admin", "Admin", IC.key]] : []) },
   ];
   const navIndex = {};
-  NAV_DEF.forEach((grp) => grp.items.forEach(([kind, id, label]) => { navIndex[kind + ":" + id] = { group: grp.g || "Home", label }; }));
+  NAV_DEF.forEach((grp) => { if (grp.id) navIndex["section:" + grp.id] = { group: grp.g, label: "Overview" }; grp.items.forEach(([kind, id, label]) => { navIndex[kind + ":" + id] = { group: grp.g || "Home", label }; }); });
   let navKey = "scene:overview", navLabel = "";
   function navBtn(kind, id, label, icon, extra){
     return `<button class="dk-nv${navKey === kind + ":" + id ? " on" : ""}" data-${kind}="${esc(id)}" data-l="${esc(label)}"${navKey === kind + ":" + id ? ' aria-current="page"' : ""}>${icon}<span class="nl">${esc(label)}</span>${extra || ""}</button>`;
   }
   function buildSideNav(){
     const nav = $("#dkSbNav"); if (!nav) return;
-    let html = NAV_DEF.map((grp) => (grp.g ? `<div class="dk-nvh">${esc(grp.g)}</div>` : "") + grp.items.map(([kind, id, label, icon]) =>
+    let html = NAV_DEF.map((grp) => (grp.g ? (SECTIONS[grp.id] ? `<button class="dk-nvh dk-nvhb${navKey === "section:" + grp.id ? " on" : ""}" data-scene="section" data-sect="${grp.id}" data-explain="nav.section">${esc(grp.g)}<span class="ov">Overview</span></button>` : `<div class="dk-nvh">${esc(grp.g)}</div>`) : "") + grp.items.map(([kind, id, label, icon]) =>
       navBtn(kind, id, label, icon, id === "tools" ? `<span class="nc">${TOTAL_TOOLS.toLocaleString()}</span>` : "")).join("")).join("");
     const pinned = pins.filter((sec) => secLabel[sec]);
     if (pinned.length) html += `<div class="dk-nvh">Pinned</div>` + pinned.map((sec) => navBtn("tool", sec, secLabel[sec], toolIcon(secLabel[sec]))).join("");
@@ -2602,6 +2815,7 @@ export function renderDeck(host, opts) {
       const on = (b.dataset.scene ? "scene:" + b.dataset.scene : "tool:" + b.dataset.tool) === key;
       b.classList.toggle("on", on); if (on) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current");
     });
+    root.querySelectorAll("#dkSbNav .dk-nvhb").forEach((b) => b.classList.toggle("on", key === "section:" + b.dataset.sect));
     const meta = navIndex[key] || { group: key.indexOf("tool:") === 0 ? "Tools" : "Home", label: navLabel || key.split(":")[1] };
     const crumb = $("#dkCrumb");
     if (crumb) crumb.innerHTML = `<span class="cg">${esc(meta.group)}</span><span class="cs" aria-hidden="true">/</span><b>${esc(meta.label)}</b>`;

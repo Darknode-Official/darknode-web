@@ -71,6 +71,27 @@ export const EXPLAIN = {
   "panel.threat": { title: "Threat level", body: "How many of the 30 most recent CVEs are critical or high, split by severity.", src: "NVD, fetched live." },
   "panel.notes": { title: "Notes", body: "A scratchpad for IPs, hypotheses and to-dos. Saved in this browser only." },
 
+  "panel.actions": { title: "Top actions", body: "The most important things to do next, ranked: open critical findings, known-exploited CVEs published this week, open high findings, critical CVEs, then gaps in your connected sources.", src: "Your security graph (sample data excluded), NVD and CISA KEV, fetched live." },
+
+  // ---- Findings ----
+  "scene.findings": { title: "Findings", body: "Every finding and vulnerability your tools have recorded, in one queue you can filter, triage and export." },
+  "scene.section": { title: "Section overview", body: "A summary of one sidebar section: its records, its tools, its latest results and which data sources are connected." },
+  "panel.findings": { title: "Finding queue", body: "Findings sorted by severity, then by most recent update. Select rows to set their status for all of them at once. Click a name to open it in the Security Graph." },
+  "fnd.critical": { title: "Open critical", body: "Critical-severity findings that are new, open or being investigated. Fix these first." },
+  "fnd.high": { title: "Open high", body: "High-severity findings that are new, open or being investigated." },
+  "fnd.open": { title: "Open findings", body: "All findings not yet resolved or closed, at any severity." },
+  "fnd.resolved": { title: "Resolved or closed", body: "Findings you have marked resolved or closed. They stay in the graph as a record." },
+
+  // ---- Section pages ----
+  "nav.section": { title: "Section overview", body: "Open a summary of this section: what it has recorded, its tools, its latest results and its connected data sources." },
+  "panel.sectools": { title: "Tools in this section", body: "Every tool in this part of the sidebar, with what each one does." },
+  "panel.latest": { title: "Latest results", body: "The most recently updated records that belong to this section, from the security graph. Sample data is excluded." },
+  "panel.sources": { title: "Data sources", body: "External services that feed this section. Greyed-out sources are not connected, so their data is not available yet." },
+  "sect.records": { title: "Records", body: "Real entities in the security graph that belong to this section, by type or by the tool that recorded them." },
+  "sect.hot": { title: "Open critical / high", body: "Records in this section with critical or high severity that are not resolved or closed." },
+  "sect.sources": { title: "Data sources connected", body: "How many of this section's key-based services you have connected. \"Public\" means it uses only free public sources that need no key; \"Local\" means its tools run in your browser on data you provide." },
+  "sect.tools": { title: "Tools", body: "The number of tools listed under this section in the sidebar." },
+
   // ---- Badges and controls ----
   "badge.sample": { title: "Sample data", body: "Created by a simulation, war-game or built-in demo. Shown for context, excluded from every posture number." },
   "badge.kev": { title: "Known exploited", body: "On the CISA Known Exploited Vulnerabilities catalog: attackers are using it now. Patch it first.", src: "CISA KEV." },

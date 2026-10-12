@@ -321,6 +321,7 @@ export function renderCodeScanner(main) {
         <span class="cs-score" title="100 means no findings. Each finding lowers the score by its severity.">${score}<small>/ 100</small></span>
         <button class="cs-btn sm" id="csSarif" type="button">Export SARIF</button>
         <button class="cs-btn sm" id="csCsv" type="button">Export CSV</button>
+        ${s.findings.length ? `<button class="cs-btn sm" id="csGraph" type="button" title="Record these findings in the Security Graph so they appear in Findings and your exposure score">Add ${fmt(s.findings.length)} to graph</button>` : ""}
         <button class="cs-btn sm pri" id="csNew" type="button">New scan</button>
       </div>
       ${!s.deps && !s.depNote ? `<p class="cs-help" style="margin:-4px 0 12px">No lockfile or pinned dependency versions were found, so dependencies were not checked against advisories.</p>` : ""}
@@ -338,6 +339,22 @@ export function renderCodeScanner(main) {
     body.querySelector("#csNew").onclick = () => renderStart();
     body.querySelector("#csSarif").onclick = () => download(s.full.replace(/\W+/g, "-") + ".sarif", JSON.stringify(toSarif(s.findings, { repo: s.github ? s.full : "", sha: s.sha }), null, 2), "application/json");
     body.querySelector("#csCsv").onclick = () => download(s.full.replace(/\W+/g, "-") + "-findings.csv", toCsv(s.findings), "text/csv");
+    const gb = body.querySelector("#csGraph");
+    if (gb) gb.onclick = () => {
+      // One entity per finding (repo + file + line + rule), so a re-scan updates rather
+      // than duplicates. Secret values are never written, only where they are.
+      const items = s.findings.slice(0, 2000).map((f) => ({
+        type: f.kind === "dep" ? "VULNERABILITY" : "FINDING",
+        name: (f.kind === "dep" ? f.pkg + " " + f.version + ": " + (f.advisory || f.title) : f.title) + " (" + s.full + ":" + f.path + ":" + f.line + ")",
+        data: { repo: s.full, sha: s.sha || "", path: f.path, line: f.line, rule: f.ruleId || "", cwe: f.cwe || "", advisory: f.advisory || "", cve: f.cve || "", fixedIn: f.fixed || "", kind: f.kind },
+        opts: { severity: f.sev, status: "open", tags: ["code", f.kind] },
+      }));
+      import("/js/graph-bridge.js?v=20261012a").then((m) => {
+        const r = m.sendToGraph("Code Scanner", items);
+        gb.textContent = "Added to graph"; gb.disabled = true;
+        try { window.showToast && window.showToast("Security Graph: " + (r.created || 0) + " added, " + (r.updated || 0) + " updated"); } catch (_) {}
+      }).catch(() => { try { window.showToast && window.showToast("Couldn't reach the Security Graph", "err"); } catch (_) {} });
+    };
     body.querySelectorAll("[data-sev]").forEach((b) => b.onclick = () => { toggle(st.sevOn, b.dataset.sev); st.idx = 0; renderWorkspace(); });
     body.querySelectorAll("[data-kind]").forEach((b) => b.onclick = () => { toggle(st.kindOn, b.dataset.kind); st.idx = 0; renderWorkspace(); });
     if (!s.findings.length) return;
