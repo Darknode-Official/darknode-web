@@ -2949,12 +2949,12 @@ export function renderAegis(main) {
       if (!flagged.length) { if (msg) msg.textContent = 'No flagged flows to push.'; return; }
       var items = flagged.map(function (r) {
         return { type: 'FINDING', name: 'Suspect flow ' + r.conn.src + ' -> ' + r.conn.dst + ':' + r.conn.port + ' (' + r.flags.join('/') + ')',
-          data: { src: r.conn.src, dst: r.conn.dst, port: r.conn.port, proto: r.conn.proto, policy: r.res.action, flags: r.flags.join(',') },
-          opts: { tags: ['aegis', 'firewall', 'flow'], severity: (r.external || r.broadOnly) ? 'high' : 'medium' } };
+          data: { src: r.conn.src, dst: r.conn.dst, port: r.conn.port, proto: r.conn.proto, policy: r.res.action, flags: r.flags.join(','), simulated: true },
+          opts: { tags: ['aegis', 'firewall', 'flow', 'sample', 'simulated'], severity: (r.external || r.broadOnly) ? 'high' : 'medium' } };
       });
       if (msg) msg.textContent = 'Pushing ' + items.length + ' flagged flow(s)...';
-      import('/js/graph-bridge.js?v=20260923c').then(function (gb) {
-        try { gb.sendToGraph('AEGIS', items, undefined, true); if (msg) msg.textContent = items.length + ' flow(s) sent to Security Graph.'; }
+      import('/js/graph-bridge.js?v=20261012a').then(function (gb) {
+        try { gb.sendToGraph('AEGIS', items, undefined, true); if (msg) msg.textContent = items.length + ' sample flow(s) sent to Security Graph, tagged "simulated" so they never count toward your real posture.'; }
         catch (_) { if (msg) msg.textContent = 'Graph unavailable.'; }
       }).catch(function () { if (msg) msg.textContent = 'Graph unavailable.'; });
     };

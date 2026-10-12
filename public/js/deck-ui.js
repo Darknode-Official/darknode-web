@@ -109,7 +109,7 @@ function monogram(name) {
   if (w.length === 1) return w[0].slice(0, 2).toUpperCase();
   return (w[0][0] + w[1][0]).toUpperCase();
 }
-const COLORS = { blue:"#3f78ff", cyan:"#19b6d8", orange:"#f5920b", red:"#ef4444", green:"#22b765", purple:"#7d6fae", violet:"#6a74b8", emerald:"#10b981", slate:"#6b7a90", teal:"#14b8a6", pink:"#c75a9a", amber:"#f59e0b", indigo:"#3f78ff", rose:"#d05574", lime:"#84cc16", sky:"#0ea5e9" };
+const COLORS = { blue:"#3f78ff", cyan:"#19b6d8", orange:"#f5920b", red:"#ef4444", green:"#22b765", purple:"#7d6fae", violet:"#6a74b8", emerald:"#10b981", slate:"#6b7a90", teal:"#14b8a6", pink:"#c75a9a", amber:"#f59e0b", indigo:"#3f78ff", rose:"#d05574", lime:"#84cc16", sky:"#0ea5e9", yellow:"#d9a400" };
 const hexOf = (c) => COLORS[c] || "#3f78ff";
 function shade(hex, pct){ const n=parseInt(hex.slice(1),16); let r=(n>>16)&255,g=(n>>8)&255,b=n&255; const f=pct/100; r=Math.round(r+(f<0?r:255-r)*f); g=Math.round(g+(f<0?g:255-g)*f); b=Math.round(b+(f<0?b:255-b)*f); return "#"+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1); }
 // Google's favicon service has far wider coverage than DuckDuckGo's ip3 (which
@@ -438,7 +438,7 @@ function readStats(){
 function readRecentActivity(){
   const SEED = new Set(["Scanned 10.10.14.7", "Queried CVE-2024-1234", "Generated report"]);
   let items = []; try { items = JSON.parse(localStorage.getItem("dn_recent_activity")) || []; } catch (_) {}
-  return (Array.isArray(items) ? items : []).filter((i) => i && i.text && !SEED.has(i.text)).slice(0, 8);
+  return (Array.isArray(items) ? items : []).filter((i) => i && i.text && !SEED.has(i.text)).slice(0, 20);
 }
 function readNavRecent(){ try { const v = JSON.parse(localStorage.getItem("sw_recent") || "[]"); return Array.isArray(v) ? v : []; } catch (_) { return []; } }
 const timeAgo = (ts) => { const d = Date.now() - ts; return d < 60000 ? "just now" : d < 3600000 ? Math.floor(d / 60000) + "m ago" : d < 86400000 ? Math.floor(d / 3600000) + "h ago" : Math.floor(d / 86400000) + "d ago"; };
@@ -830,6 +830,10 @@ const CSS = `
 .dk .dk-isearch input{flex:1;min-width:0;width:auto;height:100%;min-height:0!important;margin:0!important;padding:0!important;border:0!important;border-radius:0!important;box-shadow:none!important;background:transparent!important;outline:none;color:#1a2233;font:inherit;font-size:12.5px;-webkit-appearance:none;appearance:none}
 .dk-isel{height:38px;background:#ffffff;border:1px solid rgba(23,33,56,.1);border-radius:9px;color:#44506a;font-size:12.5px;padding:0 10px;outline:none;cursor:pointer;max-width:200px}
 .dk-itwrap{overflow:auto;border:1px solid rgba(23,33,56,.07);border-radius:12px}
+.dk-simchip{display:inline-block;margin-left:6px;font-size:10px;font-weight:700;letter-spacing:.03em;color:#6a7488;background:rgba(23,33,56,.07);border-radius:20px;padding:1px 7px;vertical-align:1px}
+.dk-invsim{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:#5a6680;white-space:nowrap;cursor:pointer}
+.dk-invsim input{width:15px;height:15px;margin:0;accent-color:#3f78ff}
+.dk-invsimnote{font-size:12px;color:#5a6680;margin:-2px 0 10px;padding:7px 11px;background:rgba(23,33,56,.035);border-radius:8px}
 .dk-itable{width:100%;border-collapse:collapse;font-size:12.5px}
 .dk-itable th{text-align:left;font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:#6a7488;font-weight:700;padding:10px 14px;background:#ffffff;border-bottom:1px solid rgba(23,33,56,.08);position:sticky;top:0}
 .dk-itable td{padding:9px 14px;border-bottom:1px solid rgba(23,33,56,.05);color:#44506a}
@@ -1028,6 +1032,14 @@ textarea.dk-kitio{min-height:120px}
 .dk-intcard .dk-stat.on{color:#0d7a44;background:rgba(18,168,95,.12)}.dk-intcard .dk-stat.on .d{background:#12a85f}
 .dk-intcard .dk-stat.ref{color:#8a5a00;background:rgba(245,146,11,.12)}.dk-intcard .dk-stat.ref .d{background:#f5920b}
 .dk-intcard .dk-stat.off{color:#687388;background:rgba(23,33,56,.06)}.dk-intcard .dk-stat.off .d{background:#9aa3b5}
+/* Isolation from legacy pro-theme.css hacks. Those rules match raw inline text such as
+   [style*="background:#0"] / [style*="color:#e"] and class suffixes like [class$="-tabs"],
+   recolouring/re-spacing Deck elements. So data colours are passed as --bg / --fg custom
+   properties (never matched), and suffix-sensitive elements carry a trailing "dkx" class. */
+.dk [style*="--bg:"]{background:var(--bg)!important}
+.dk [style*="--fg:"]{color:var(--fg)!important}
+.dk[data-ui=deck] tbody tr:nth-child(even) td:not([style*="background"]){background:transparent!important}
+.dk[data-ui=deck] tbody tr:hover td:not([style*="background"]){background:rgba(63,120,255,.06)!important}
 `;
 const IC_SEARCH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/></svg>';
 const IC_CHEV = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>';
@@ -1082,32 +1094,32 @@ export function renderDeck(host, opts) {
   if (!document.getElementById("dk-css")) { const st = document.createElement("style"); st.id = "dk-css"; st.textContent = CSS; document.head.appendChild(st); }
 
   const root = document.createElement("div");
-  root.className = "dk";
+  root.className = "dk"; root.dataset.ui = "deck";
   root.innerHTML = `
     <div class="dk-sky"></div>
     <canvas class="dk-stars" id="dkStars"></canvas>
     <div class="dk-top">
       <button class="dk-brand" id="dkBrand" title="Open full console"><img class="dk-mark" src="/logo-dark.svg?v=20261007b" alt=""><img class="dk-wm" src="/wordmark.svg" alt="Darknode"><span class="dk-wsname">Command Center</span></button>
-      <nav class="dk-tabs" id="dkTabs" aria-label="Workspaces">
-        <button class="dk-tab on" data-scene="overview" title="Posture">${IC.home}<span>Posture</span></button>
-        <button class="dk-tab" data-scene="surface" title="Attack Surface">${IC.radar}<span>Attack Surface</span></button>
-        <button class="dk-tab" data-tool="codescan" title="Code Scanner">${IC.term}<span>Code</span></button>
-        <button class="dk-tab" data-tool="strongroom" title="Fund Protection">${IC.bolt}<span>Funds</span></button>
-        <button class="dk-tab" data-tool="vault" title="Treasury Vault">${IC.star}<span>Treasury</span></button>
-        <button class="dk-tab" data-scene="threat" title="Threat & Vulns">${IC.radar}<span>Threat &amp; Vulns</span></button>
-        <button class="dk-tab" data-scene="cloud" title="Cloud">${IC.grid}<span>Cloud</span></button>
-        <button class="dk-tab" data-scene="compliance" title="Compliance">${IC.folder}<span>Compliance</span></button>
-        <button class="dk-tab" data-scene="invest" title="Investigations">${IC.folder}<span>Investigations</span></button>
-        <button class="dk-tab" data-scene="con" title="Integrations">${IC.link}<span>Integrations</span></button>
-        <button class="dk-tab" data-scene="tools" title="Tools">${IC.grid}<span>Tools</span></button>
-        <button class="dk-tab" data-scene="activity" title="Activity">${IC.pulse}<span>Activity</span></button>
+      <nav class="dk-tabs dkx" id="dkTabs" aria-label="Workspaces">
+        <button class="dk-tab dkx on" data-scene="overview" title="Posture">${IC.home}<span>Posture</span></button>
+        <button class="dk-tab dkx" data-scene="surface" title="Attack Surface">${IC.radar}<span>Attack Surface</span></button>
+        <button class="dk-tab dkx" data-tool="codescan" title="Code Scanner">${IC.term}<span>Code</span></button>
+        <button class="dk-tab dkx" data-tool="strongroom" title="Fund Protection">${IC.bolt}<span>Funds</span></button>
+        <button class="dk-tab dkx" data-tool="vault" title="Treasury Vault">${IC.star}<span>Treasury</span></button>
+        <button class="dk-tab dkx" data-scene="threat" title="Threat & Vulns">${IC.radar}<span>Threat &amp; Vulns</span></button>
+        <button class="dk-tab dkx" data-scene="cloud" title="Cloud">${IC.grid}<span>Cloud</span></button>
+        <button class="dk-tab dkx" data-scene="compliance" title="Compliance">${IC.folder}<span>Compliance</span></button>
+        <button class="dk-tab dkx" data-scene="invest" title="Investigations">${IC.folder}<span>Investigations</span></button>
+        <button class="dk-tab dkx" data-scene="con" title="Integrations">${IC.link}<span>Integrations</span></button>
+        <button class="dk-tab dkx" data-scene="tools" title="Tools">${IC.grid}<span>Tools</span></button>
+        <button class="dk-tab dkx" data-scene="activity" title="Activity">${IC.pulse}<span>Activity</span></button>
       </nav>
       <div class="dk-right">
         <button class="dk-health" id="dkHealth" title="Live CVE feed status"><span class="d"></span><span class="t">Threat feed live</span></button>
         <button class="dk-icbtn" id="dkAsstBtn" title="Darknode AI assistant" aria-label="Darknode AI assistant">${IC.spark}</button>
         <button class="dk-icbtn" id="dkFindBtn" title="Search (Ctrl K)" aria-label="Search">${IC_SEARCH}</button>
         <button class="dk-icbtn" id="dkNew" title="Quick create" aria-label="Quick create">${IC.plus}</button>
-        <button class="dk-icbtn" id="dkBell" title="Notifications" aria-label="Notifications">${IC.bell}<span class="dk-badge" id="dkBadge" hidden></span></button>
+        <button class="dk-icbtn" id="dkBell" title="Notifications" aria-label="Notifications">${IC.bell}<span class="dk-badge dkx" id="dkBadge" hidden></span></button>
         <span class="dk-clock" id="dkClock"></span>
         <button class="dk-acct" id="dkAcct" aria-label="Account"><span class="av" id="dkAvatar">DN</span>${IC.chevd}</button>
       </div>
@@ -1201,9 +1213,17 @@ export function renderDeck(host, opts) {
     return pins.includes(sec);
   }
   let curScene = "overview";
+  // Keep the address bar on what is actually showing, so a reload or a re-mount of
+  // the Deck never reopens a stale tool (e.g. /admin). Scenes live at "/" (the scene
+  // itself is restored from LS_SCENE); an open tool lives at "/<sec>".
+  function syncUrl(path){
+    if (!primary) return;
+    try { if (location.pathname !== path) history.replaceState(history.state, "", path + location.search); } catch (_) {}
+  }
   function go(scene){
     if (!SCENES[scene]) scene = "overview";
     curScene = scene;
+    syncUrl("/");
     try { localStorage.setItem(LS_SCENE, scene); } catch (_) {}
     closeAllMenus();
     sceneWork.hidden = true; wFrame.innerHTML = ""; curSec = null;
@@ -1227,6 +1247,8 @@ export function renderDeck(host, opts) {
   root.addEventListener("click", (e) => {
     const nav = e.target.closest("[data-scene]");
     if (nav && !nav.classList.contains("dk-tab") && nav.dataset.scene) { go(nav.dataset.scene); return; }
+    const tl = e.target.closest("span[data-tool],a[data-tool]");
+    if (tl && tl.dataset.tool) { e.preventDefault(); openTool(tl.dataset.tool, secLabel[tl.dataset.tool] || tl.textContent.trim()); }
   });
 
   // ---------- integrations ----------
@@ -1415,12 +1437,12 @@ export function renderDeck(host, opts) {
       </div>
       <div class="dk-tbody">
         <nav class="dk-tnav" id="dkToolNav" aria-label="Tool categories">
-          <button class="dk-tcat" data-cat="all"><span class="cd" style="background:#5a6680;color:#5a6680"></span><span class="tl">All tools</span><span class="n">${TOTAL_TOOLS.toLocaleString()}</span></button>
-          ${groups.map((g) => { const h = hexOf(g.color); return `<button class="dk-tcat" data-cat="${g.id}" title="${esc(g.name)}"><span class="cd" style="background:${h};color:${h}"></span><span class="tl">${esc(g.name)}</span><span class="n">${g.items.length}</span></button>`; }).join("")}
+          <button class="dk-tcat" data-cat="all"><span class="cd" style="--bg:#5a6680;--fg:#5a6680"></span><span class="tl">All tools</span><span class="n">${TOTAL_TOOLS.toLocaleString()}</span></button>
+          ${groups.map((g) => { const h = hexOf(g.color); return `<button class="dk-tcat" data-cat="${g.id}" title="${esc(g.name)}"><span class="cd" style="--bg:${h};--fg:${h}"></span><span class="tl">${esc(g.name)}</span><span class="n">${g.items.length}</span></button>`; }).join("")}
         </nav>
         <div class="dk-tmain" id="dkToolMain">
-          ${groups.map((g) => { const h = hexOf(g.color); return `<section class="dk-tsec" data-g="${g.id}"><div class="th" style="color:${h}"><span class="d"></span><h3>${esc(g.name)}</h3><span class="c">${g.items.length} tools</span></div>
-            <div class="dk-grid">${g.items.map((it) => `<div class="dk-gcard" data-sec="${esc(it.sec)}" data-label="${esc(it.label)}" data-txt="${esc((it.label + " " + g.name).toLowerCase())}" style="--a:${h}">
+          ${groups.map((g) => { const h = hexOf(g.color); return `<section class="dk-tsec" data-g="${g.id}"><div class="th" style="--fg:${h}"><span class="d"></span><h3>${esc(g.name)}</h3><span class="c">${g.items.length} tools</span></div>
+            <div class="dk-grid dkx">${g.items.map((it) => `<div class="dk-gcard" data-sec="${esc(it.sec)}" data-label="${esc(it.label)}" data-txt="${esc((it.label + " " + g.name).toLowerCase())}" style="--a:${h}">
               <button class="dk-gcpin${pins.includes(it.sec) ? " on" : ""}" data-pin="${esc(it.sec)}" title="Pin to overview" aria-label="Pin to overview">${IC.star}</button>
               <span class="gi">${toolIcon(it.label, g.name)}</span>${it.badge === "live" ? '<span class="glive" title="Live data"></span>' : ""}
               <span class="gt">${esc(it.label)}</span><span class="garr">Open${IC_CHEV}</span></div>`).join("")}</div></section>`; }).join("")}
@@ -1474,6 +1496,7 @@ export function renderDeck(host, opts) {
   function openTool(sec, label, accent){
     if (!sec) return;
     label = label || sec; curSec = sec;
+    syncUrl("/" + sec);
     wFrame.innerHTML = '<div class="dk-wload"><div><div class="sp"></div>Loading ' + esc(label) + '…</div></div>';
     const f = document.createElement("iframe");
     f.title = label; f.src = "/" + sec + "?embed=1"; f.loading = "eager"; f.setAttribute("allow", "clipboard-write; clipboard-read");
@@ -1550,7 +1573,7 @@ export function renderDeck(host, opts) {
   // ---------- command-center chrome: status, quick-create, notifications, account ----------
   const popNew = $("#dkNewPop"), popBell = $("#dkBellPop"), popAcct = $("#dkAcctPop"), badge = $("#dkBadge"), health = $("#dkHealth");
   const user = opts.user || {};
-  let notifs = readRecentActivity().map((a) => ({ text: a.text, ts: a.ts }));
+  let notifs = readRecentActivity().map((a) => ({ text: a.text, ts: a.ts, sim: !!a.sim }));
   let notifSeen = 0, busOffs = [];
   try { notifSeen = parseInt(localStorage.getItem(LS_NOTIF_SEEN) || "0", 10) || 0; } catch (_) {}
 
@@ -1646,6 +1669,28 @@ export function renderDeck(host, opts) {
   busOffs.push(bus.on(EVENTS.RELATIONSHIP_CREATED, () => pushNotif("New relationship created in the security graph")));
   busOffs.push(bus.on(EVENTS.TOOL_RESULT, (p) => pushNotif(`Result captured${p && p.tool ? ` from ${p.tool}` : ""}`)));
   busOffs.push(bus.on(EVENTS.NOTIFY, (p) => pushNotif(typeof p === "string" ? p : (p && p.message) || "")));
+  // Tools run in iframes (/<sec>?embed=1), so their graph writes reach this window only as
+  // `storage` events. Pull new activity rows in and refresh whichever view shows the graph.
+  let syncT = 0;
+  const onStorage = (e) => {
+    if (e.key !== "dn_recent_activity" && e.key !== "dn_security_graph") return;
+    clearTimeout(syncT);
+    syncT = setTimeout(() => {
+      if (e.key === "dn_recent_activity") {
+        const newest = notifs.reduce((n, x) => Math.max(n, x.ts || 0), 0);
+        const fresh = readRecentActivity().filter((a) => a.ts > newest).map((a) => ({ text: a.text, ts: a.ts, sim: !!a.sim }));
+        if (fresh.length) { notifs = fresh.concat(notifs).slice(0, 40); updateBadge(); if (popBell.classList.contains("on")) buildBellMenu(); }
+      }
+      if (!sceneWork.hidden) return;   // a tool is open; scenes refresh when the user returns
+      const typing = document.activeElement && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName) && root.contains(document.activeElement);
+      if (typing) return;              // never re-render under the user's cursor
+      if (curScene === "overview") renderOverview();
+      else if (curScene === "invest") renderInvest();
+      else if (curScene === "activity") renderActivity();
+    }, 400);
+  };
+  window.addEventListener("storage", onStorage);
+  busOffs.push(() => { clearTimeout(syncT); window.removeEventListener("storage", onStorage); });
 
   // ---------- Overview workspace ----------
   function renderOverview(){
@@ -1655,7 +1700,7 @@ export function renderDeck(host, opts) {
     const kpi = (id, val, label, icon, accent, scene, sub) => `<button class="dk-kpi" data-k="${id}"${scene ? ` data-scene="${scene}"` : ""} style="--a:${accent}"><span class="ki">${icon}</span><div class="kn">${val}</div><div class="kl">${esc(label)}</div>${sub ? `<div class="ks">${esc(sub)}</div>` : ""}</button>`;
     const acts = notifs.slice(0, 6);
     const actRows = acts.length
-      ? acts.map((a) => `<div class="r"><span class="dot"></span><span class="tx">${esc(a.text)}</span><span class="ag">${timeAgo(a.ts)}</span></div>`).join("")
+      ? acts.map((a) => `<div class="r"><span class="dot"></span><span class="tx">${esc(a.text)}${a.sim ? ' <span class="dk-simchip">Sample</span>' : ""}</span><span class="ag">${timeAgo(a.ts)}</span></div>`).join("")
       : `<div class="dk-nempty">No activity yet. Open a tool or connect a provider and it shows up here.</div>`;
     const pct = INTEGRATIONS.length ? Math.round(linked.length / INTEGRATIONS.length * 100) : 0;
     const now = new Date();
@@ -1674,10 +1719,11 @@ export function renderDeck(host, opts) {
       </form>
       <div class="dk-askhint">Triage a CVE, draft a runbook, explain a finding or review a config.</div>
       <div class="dk-kpis">
-        ${kpi("exposure", "—", "Exposure score", IC.radar, "#f0484a", null, "out of 100 · indicative")}
+        ${kpi("exposure", "—", "Your exposure", IC.radar, "#f0484a", "invest", "out of 100 · your real findings")}
+        ${kpi("climate", "—", "Threat climate", IC.pulse, "#f5920b", "threat", "out of 100 · global CVE/KEV feeds")}
         ${kpi("conn", linked.length, "Integrations connected", IC.link, "#12a85f", "con", "of " + INTEGRATIONS.length)}
         ${kpi("tools", TOTAL_TOOLS.toLocaleString(), "Tools available", IC.grid, "#4f86ff", "tools", "curated catalog")}
-        ${kpi("graph", "—", "Graph entities", IC.folder, "#9b5cf0", "invest", "this workspace")}
+        ${kpi("graph", "—", "Graph entities", IC.folder, "#9b5cf0", "invest", "real data · sample excluded")}
         ${kpi("cve", "—", "New CVEs", IC.radar, "#f5920b", "threat", "NVD · last 7 days")}
         ${kpi("kev", "—", "Known-exploited (KEV)", IC.radar, "#e0383a", "threat", "CISA catalog")}
       </div>
@@ -1729,45 +1775,47 @@ export function renderDeck(host, opts) {
       const clr = el.querySelector("#dkNotesClear");
       if (clr) clr.onclick = async () => { if (!notesEl.value.trim()) return; const ok = await (window.dnConfirm ? window.dnConfirm("Clear the scratchpad?") : Promise.resolve(true)); if (!ok) return; notesEl.value = ""; saveNotes(""); setCount(); if (savedEl) savedEl.textContent = "Cleared"; };
     }
-    // Signals feeding the exposure score; each resolves independently and the score
-    // is (re)computed from whatever has arrived. Nothing is fabricated on failure.
-    const sig = { cveHot: null, cveTotal: null, graphHot: null, kevTotal: null, intCov: Math.round((linked.length / (INTEGRATIONS.length || 1)) * 100), ready: {} };
-    // Exposure score — 0..100, indicative only, inputs shown. Weighted blend of the
-    // live critical/high share of the NVD 7-day feed, the KEV catalog size (scaled),
-    // the share of high/critical entities in the local graph, and integration coverage
-    // (more coverage lowers exposure). Never a grade or certification.
+    // Two separate, honest scores (inputs always shown):
+    //  - Your exposure: ONLY this workspace's real data — open critical/high findings in the
+    //    security graph (simulated/sample entities excluded) and integration coverage. With no
+    //    real findings yet it shows "—" rather than inventing a number.
+    //  - Threat climate: global pressure from the live NVD 7-day feed and the CISA KEV catalog.
+    //    The same for every organisation; it is context, not your posture.
+    const sig = { cveHot: null, cveTotal: null, kevTotal: null, real: null, hot: null, sim: 0, intCov: Math.round((linked.length / (INTEGRATIONS.length || 1)) * 100) };
     function recomputeExposure(){
-      const parts = [], notes = [];
-      if (sig.cveHot != null && sig.cveTotal != null) {
-        const share = sig.cveTotal ? sig.cveHot / sig.cveTotal : 0;
-        parts.push({ w: 0.4, v: Math.min(1, share) });
-        notes.push(`${sig.cveHot} of the ${sig.cveTotal} most recent CVEs rated critical/high`);
+      const note = el.querySelector("#dkExpNote"), lines = [];
+      const kn = el.querySelector('[data-k="exposure"] .kn');
+      if (sig.real != null) {
+        if (!sig.real) {
+          if (kn) kn.textContent = "—";
+          lines.push(`<b>Your exposure: not measured yet</b> — no real findings in this workspace. Map your attack surface or scan a codebase to measure it.`);
+        } else {
+          const score = Math.round((0.65 * Math.min(1, sig.hot / 25) + 0.35 * (1 - Math.min(1, sig.intCov / 100))) * 100);
+          if (kn) kn.textContent = String(score);
+          lines.push(`<b>Your exposure ${score}/100</b> (higher is worse) — ${sig.hot} open critical/high finding${sig.hot === 1 ? "" : "s"} of ${sig.real.toLocaleString()} real entities &middot; ${sig.intCov}% integration coverage. Indicative, not an audit.`);
+        }
+        if (sig.sim) lines.push(`${sig.sim.toLocaleString()} simulated/sample entities (CRUCIBLE, demos) are excluded from every metric.`);
       }
-      if (sig.kevTotal != null) {
-        parts.push({ w: 0.25, v: Math.min(1, sig.kevTotal / 1400) });
-        notes.push(`${sig.kevTotal.toLocaleString()} on the CISA KEV catalog`);
+      const parts = [], cn = [];
+      if (sig.cveHot != null && sig.cveTotal != null) { parts.push({ w: 0.6, v: Math.min(1, sig.cveTotal ? sig.cveHot / sig.cveTotal : 0) }); cn.push(`${sig.cveHot} of the ${sig.cveTotal} newest CVEs are critical/high`); }
+      if (sig.kevTotal != null) { parts.push({ w: 0.4, v: Math.min(1, sig.kevTotal / 1400) }); cn.push(`${sig.kevTotal.toLocaleString()} on the CISA KEV catalog`); }
+      if (parts.length) {
+        const wsum = parts.reduce((n, p) => n + p.w, 0);
+        const c = Math.round((parts.reduce((n, p) => n + p.w * p.v, 0) / wsum) * 100);
+        const ck = el.querySelector('[data-k="climate"] .kn'); if (ck) ck.textContent = String(c);
+        lines.push(`<b>Threat climate ${c}/100</b> — global, the same for everyone: ${cn.map(esc).join(" &middot; ")}.`);
       }
-      if (sig.graphHot != null) {
-        parts.push({ w: 0.2, v: Math.min(1, sig.graphHot / 25) });
-        notes.push(`${sig.graphHot} high-severity graph entities`);
-      }
-      parts.push({ w: 0.15, v: 1 - Math.min(1, sig.intCov / 100) });
-      notes.push(`${sig.intCov}% integration coverage`);
-      const wsum = parts.reduce((n, p) => n + p.w, 0) || 1;
-      const score = Math.round((parts.reduce((n, p) => n + p.w * p.v, 0) / wsum) * 100);
-      const kn = el.querySelector('[data-k="exposure"] .kn'); if (kn) kn.textContent = String(score);
-      const note = el.querySelector("#dkExpNote");
-      if (note) { note.hidden = false; note.innerHTML = `<b>Exposure ${score}/100</b> — indicative, computed from live signals, not an audit. Inputs: ${notes.map(esc).join(" &middot; ")}.`; }
+      if (note && lines.length) { note.hidden = false; note.innerHTML = lines.join("<br>"); }
     }
-    // async: graph entity count + high-severity tally
-    import("/js/security-graph.js").then((m) => {
-      if (!m.getStats) return;
-      const st = m.getStats();
-      const kn = el.querySelector('[data-k="graph"] .kn'); if (kn) kn.textContent = (st.totalEntities || 0).toLocaleString();
-      const bs = st.bySeverity || {};
-      sig.graphHot = (bs.critical || bs.CRITICAL || 0) + (bs.high || bs.HIGH || 0);
+    // async: real graph entities (simulated/sample excluded) + open high-severity findings
+    Promise.all([import("/js/security-graph.js"), import("/js/core/posture.js")]).then(([m, P]) => {
+      const all = m.exportAll ? (m.exportAll().entities || []) : [];
+      const real = P.realEntities(all);
+      const kn = el.querySelector('[data-k="graph"] .kn'); if (kn) kn.textContent = real.length.toLocaleString();
+      sig.real = real.length; sig.sim = all.length - real.length;
+      sig.hot = real.filter((e) => /^(critical|high)$/i.test(e.severity || "") && !/^(resolved|closed)$/i.test(e.status || "")).length;
       recomputeExposure();
-    }).catch(() => { const kn = el.querySelector('[data-k="graph"] .kn'); if (kn) kn.textContent = "0"; sig.graphHot = 0; recomputeExposure(); });
+    }).catch(() => { const kn = el.querySelector('[data-k="graph"] .kn'); if (kn) kn.textContent = "0"; sig.real = 0; recomputeExposure(); });
     // async: CISA KEV catalog size
     fetchKev().then((k) => {
       const kn = el.querySelector('[data-k="kev"] .kn'); if (kn) kn.textContent = (k.total || 0).toLocaleString();
@@ -1783,8 +1831,8 @@ export function renderDeck(host, opts) {
       const hot = (c.CRITICAL || 0) + (c.HIGH || 0);
       sig.cveHot = hot; sig.cveTotal = (d.cves || []).length; recomputeExposure();
       const box = el.querySelector("#dkOvThreat"); if (!box) return;
-      const bar = order.map((k) => `<span style="width:${(c[k] || 0) / sum * 100}%;background:${SEV[k].color}"></span>`).join("");
-      const leg = order.map((k) => `<span><i style="background:${SEV[k].color}"></i>${SEV[k].label} ${c[k] || 0}</span>`).join("");
+      const bar = order.map((k) => `<span style="width:${(c[k] || 0) / sum * 100}%;--bg:${SEV[k].color}"></span>`).join("");
+      const leg = order.map((k) => `<span><i style="--bg:${SEV[k].color}"></i>${SEV[k].label} ${c[k] || 0}</span>`).join("");
       const p = Math.round(hot / sum * 100);
       const level = p >= 50 ? "Elevated" : p >= 25 ? "Guarded" : "Low";
       const col = p >= 50 ? "#f0484a" : p >= 25 ? "#b7791f" : "#12a85f";
@@ -1805,7 +1853,7 @@ export function renderDeck(host, opts) {
   // Pinned-tools overview widget: launch on click, unpin via the ×.
   function renderPins(){
     const box = root.querySelector("#dkPins"); if (!box) return;
-    if (!pins.length) { box.innerHTML = `<div class="dk-nempty">No pinned tools yet. Hover any tool in the <b data-scene="tools" style="cursor:pointer;color:#2552c6">Tools</b> tab and tap the star, or pin from the command palette (Ctrl K).</div>`; return; }
+    if (!pins.length) { box.innerHTML = `<div class="dk-nempty">No pinned tools yet. Hover any tool in the <b data-scene="tools" style="cursor:pointer;--fg:#2552c6">Tools</b> tab and tap the star, or pin from the command palette (Ctrl K).</div>`; return; }
     box.innerHTML = pins.map((sec) => `<div class="dk-pin" data-sec="${esc(sec)}"><span class="pi">${toolIcon(secLabel[sec] || sec)}</span><span class="pl">${esc(secLabel[sec] || sec)}</span><button class="px" data-unpin="${esc(sec)}" title="Unpin" aria-label="Unpin">&times;</button></div>`).join("");
     box.querySelectorAll(".dk-pin").forEach((r) => r.onclick = (e) => { if (e.target.closest(".px")) return; openTool(r.dataset.sec, secLabel[r.dataset.sec] || r.dataset.sec); });
     box.querySelectorAll(".px").forEach((b) => b.onclick = (e) => { e.stopPropagation(); togglePin(b.dataset.unpin); });
@@ -1822,8 +1870,8 @@ export function renderDeck(host, opts) {
       row("graph", "off", "Security graph", "—") +
       row("int", linkedN ? "" : "off", "Integrations", linkedN + " / " + INTEGRATIONS.length) +
       row("ai", "", "Assistant", aiName);
-    import("/js/security-graph.js").then((m) => {
-      const n = m.getStats ? (m.getStats().totalEntities || 0) : 0;
+    Promise.all([import("/js/security-graph.js"), import("/js/core/posture.js")]).then(([m, P]) => {
+      const n = m.exportAll ? P.realEntities(m.exportAll().entities).length : 0;
       sysSet("graph", n ? "" : "off", n ? n.toLocaleString() + " entities" : "Empty");
     }).catch(() => sysSet("graph", "off", "N/A"));
   }
@@ -1843,9 +1891,9 @@ export function renderDeck(host, opts) {
       setHealth(true, "Threat feed live");
       _tiCves = d.cves || []; _tiSev = ""; _tiQ = ""; _tiKev = new Set(); _tiEpss = {}; _tiPrio = true;
       const c = d.counts || {};
-      const chips = ["CRITICAL", "HIGH", "MEDIUM", "LOW"].map((k) => `<button class="dk-sevchip dk-sevfilter" data-sev="${k}"><div class="n" style="color:${SEV[k].color}">${c[k] || 0}</div><div class="l">${SEV[k].label}</div></button>`).join("")
+      const chips = ["CRITICAL", "HIGH", "MEDIUM", "LOW"].map((k) => `<button class="dk-sevchip dk-sevfilter" data-sev="${k}"><div class="n" style="--fg:${SEV[k].color}">${c[k] || 0}</div><div class="l">${SEV[k].label}</div></button>`).join("")
         + `<div class="dk-sevchip"><div class="n">${(d.total || 0).toLocaleString()}</div><div class="l">Published 7d</div></div>`
-        + `<div class="dk-sevchip" id="dkTiKevChip"><div class="n" style="color:#e0383a">—</div><div class="l">Known-exploited</div></div>`;
+        + `<div class="dk-sevchip" id="dkTiKevChip"><div class="n" style="--fg:#e0383a">—</div><div class="l">Known-exploited</div></div>`;
       const charts = buildThreatCharts(d.cves);
       el.querySelector("#dkTiBody").innerHTML = `<div class="dk-sublede">Severity counts and charts cover the ${_tiCves.length} most recent CVEs; ${(d.total || 0).toLocaleString()} were published to NVD in the last 7 days.</div><div class="dk-sevchips">${chips}</div>${charts}
         <div id="dkTiRansom"></div>
@@ -1897,7 +1945,7 @@ export function renderDeck(host, opts) {
     const maxDay = Math.max(1, ...days.map((k) => byDay[k].total));
     const cols = days.map((k) => {
       const b = byDay[k], barPx = Math.round(b.total / maxDay * 108);
-      const segs = ORD.map((s) => b[s] ? `<span style="height:${(b[s] / b.total * 100).toFixed(1)}%;background:${SEV[s].color}"></span>` : "").join("");
+      const segs = ORD.map((s) => b[s] ? `<span style="height:${(b[s] / b.total * 100).toFixed(1)}%;--bg:${SEV[s].color}"></span>` : "").join("");
       const dow = new Date(k + "T00:00:00").toLocaleDateString([], { weekday: "short" });
       return `<div class="col"><span class="cn">${b.total || ""}</span><div class="stk" style="height:${Math.max(b.total ? 6 : 2, barPx)}px">${segs}</div><span class="cx">${esc(dow)}</span></div>`;
     }).join("");
@@ -1906,7 +1954,7 @@ export function renderDeck(host, opts) {
     const scored = cves.filter((v) => v.cvss != null);
     bands.forEach((bd) => bd.n = scored.filter((v) => v.cvss >= bd.lo && v.cvss < bd.hi).length);
     const maxBand = Math.max(1, ...bands.map((b) => b.n));
-    const barRows = bands.map((b) => `<div class="dk-barrow"><span class="bl">${b.l}</span><span class="bt"><i style="width:${(b.n / maxBand * 100).toFixed(1)}%;background:${b.c}"></i></span><span class="bn">${b.n}</span></div>`).join("");
+    const barRows = bands.map((b) => `<div class="dk-barrow"><span class="bl">${b.l}</span><span class="bt"><i style="width:${(b.n / maxBand * 100).toFixed(1)}%;--bg:${b.c}"></i></span><span class="bn">${b.n}</span></div>`).join("");
     // A day-by-day trend only means something when the sample spans several days;
     // otherwise the distribution gets the full width instead of six empty columns.
     const spread = days.filter((k) => byDay[k].total).length > 1;
@@ -1933,7 +1981,7 @@ export function renderDeck(host, opts) {
           const ep = _tiEpss[v.id];
           const badges = (kev ? `<span class="dk-kevb" title="On the CISA Known Exploited Vulnerabilities catalog">Known exploited</span>` : "")
             + (ep != null ? `<span class="dk-epssb" title="FIRST EPSS exploit probability (30-day)">EPSS ${(ep * 100).toFixed(1)}%</span>` : "");
-          return `<div class="dk-cve${kev ? " kev" : ""}" data-id="${esc(v.id)}"><div class="sv" style="color:${SEV[v.severity].color}">${v.cvss == null ? "—" : v.cvss.toFixed(1)}<small>${SEV[v.severity].label}</small></div><div class="bd"><div class="id">${esc(v.id)}${badges}</div><div class="ti">${esc(v.title || "No description provided yet.")}</div><div class="dt">Published ${esc(v.date || "—")}</div></div></div>`;
+          return `<div class="dk-cve${kev ? " kev" : ""}" data-id="${esc(v.id)}"><div class="sv" style="--fg:${SEV[v.severity].color}">${v.cvss == null ? "—" : v.cvss.toFixed(1)}<small>${SEV[v.severity].label}</small></div><div class="bd"><div class="id">${esc(v.id)}${badges}</div><div class="ti">${esc(v.title || "No description provided yet.")}</div><div class="dt">Published ${esc(v.date || "—")}</div></div></div>`;
         }).join("")
       : `<div class="dk-tnone">No CVEs match the filter.</div>`;
     box.querySelectorAll(".dk-cve").forEach((r) => r.onclick = () => window.open("https://nvd.nist.gov/vuln/detail/" + encodeURIComponent(r.dataset.id), "_blank", "noopener"));
@@ -1991,7 +2039,7 @@ export function renderDeck(host, opts) {
     const addGraphBtn = (id, items, linkName) => {
       const hx = grid.querySelector("#surfx-" + id); if (!hx || !items.length) return;
       hx.innerHTML = `<button class="dk-graphadd">Add ${items.length} to graph</button>`;
-      hx.querySelector("button").onclick = () => import("/js/graph-bridge.js?v=20260923c").then((gb) => { const r = gb.sendToGraph("Attack Surface — " + linkName, items); toast("Security Graph: " + (r.created || 0) + " added, " + (r.updated || 0) + " updated"); }).catch(() => toast("Couldn't reach the Security Graph"));
+      hx.querySelector("button").onclick = () => import("/js/graph-bridge.js?v=20261012a").then((gb) => { const r = gb.sendToGraph("Attack Surface — " + linkName, items); toast("Security Graph: " + (r.created || 0) + " added, " + (r.updated || 0) + " updated"); }).catch(() => toast("Couldn't reach the Security Graph"));
     };
     // Subdomains (crt.sh)
     surface.subdomains(d).then((subs) => {
@@ -2145,11 +2193,12 @@ export function renderDeck(host, opts) {
   // Reads the live security graph (singleton module — imported WITHOUT ?v=) and
   // presents KPIs, severity/status distributions, and a filterable entity table.
   let graphMod = null;
-  const invF = { q: "", type: "", sev: "", status: "" };
+  const invF = { q: "", type: "", sev: "", status: "", sim: false };
+  let postureMod = null;
   const capword = (s) => s ? s.charAt(0).toUpperCase() + s.slice(1) : "—";
   function withGraph(cb){
     if (graphMod) { cb(graphMod); return; }
-    import("/js/security-graph.js").then((m) => { graphMod = m; cb(m); }).catch(() => cb(null));
+    Promise.all([import("/js/security-graph.js"), import("/js/core/posture.js")]).then(([m, P]) => { graphMod = m; postureMod = P; cb(m); }).catch(() => cb(null));
   }
   function renderInvest(){
     const el = sceneEls.invest;
@@ -2165,7 +2214,9 @@ export function renderDeck(host, opts) {
           <select id="dkInvType" class="dk-isel"></select>
           <select id="dkInvSev" class="dk-isel"></select>
           <select id="dkInvStatus" class="dk-isel"></select>
+          <label class="dk-invsim"><input type="checkbox" id="dkInvSim"${invF.sim ? " checked" : ""}> Include simulated / sample</label>
         </div>
+        <div class="dk-invsimnote" id="dkInvSimNote" hidden></div>
         <div id="dkInvTable"></div>
       </div>
       <div class="dk-qa" style="max-width:760px;margin-top:4px">
@@ -2188,8 +2239,12 @@ export function renderDeck(host, opts) {
   }
   function paintInv(m){
     const kpisEl = root.querySelector("#dkInvKpis"); if (!kpisEl) return;
-    if (!m || !m.getStats) { kpisEl.innerHTML = `<div class="dk-nempty" style="grid-column:1/-1">Security graph unavailable in this context.</div>`; return; }
-    const st = m.getStats();
+    if (!m || !m.getStats || !m.exportAll || !postureMod) { kpisEl.innerHTML = `<div class="dk-nempty" style="grid-column:1/-1">Security graph unavailable in this context.</div>`; return; }
+    // Real data by default; simulated/sample entities (CRUCIBLE, demos) only on request.
+    const g = m.exportAll(), ps = postureMod.postureStats(g.entities, g.relationships);
+    const st = invF.sim ? m.getStats() : ps;
+    const simNote = root.querySelector("#dkInvSimNote");
+    if (simNote) { simNote.hidden = !ps.simulated; simNote.textContent = invF.sim ? `Showing ${ps.simulated.toLocaleString()} simulated/sample entities alongside real data. They never count toward posture scores.` : `${ps.simulated.toLocaleString()} simulated/sample entities (CRUCIBLE, demos) are hidden. Tick "Include simulated / sample" to see them.`; }
     const kpi = (val, lab, accent) => `<div class="dk-kpi" style="--a:${accent};cursor:default"><div class="kn">${(val || 0).toLocaleString()}</div><div class="kl">${esc(lab)}</div></div>`;
     kpisEl.innerHTML = kpi(st.totalEntities, "Entities", "#9b5cf0") + kpi(st.totalRelationships, "Relationships", "#4f86ff") + kpi((st.byType || {}).CASE, "Cases", "#f5920b") + kpi((st.byType || {}).INCIDENT, "Incidents", "#f0484a");
     const sevOrder = ["critical", "high", "medium", "low", "info", "none"];
@@ -2200,8 +2255,8 @@ export function renderDeck(host, opts) {
       const total = Object.values(obj || {}).reduce((a, b) => a + b, 0);
       if (!total) return "";
       const keys = order.filter((k) => (obj || {})[k]);
-      const segs = keys.map((k) => `<span style="width:${((obj[k] / total) * 100).toFixed(1)}%;background:${colorFn(k)}" title="${esc(labelFn(k))}: ${obj[k]}"></span>`).join("");
-      const legend = keys.map((k) => `<span class="lg"><i style="background:${colorFn(k)}"></i>${esc(labelFn(k))} ${obj[k]}</span>`).join("");
+      const segs = keys.map((k) => `<span style="width:${((obj[k] / total) * 100).toFixed(1)}%;--bg:${colorFn(k)}" title="${esc(labelFn(k))}: ${obj[k]}"></span>`).join("");
+      const legend = keys.map((k) => `<span class="lg"><i style="--bg:${colorFn(k)}"></i>${esc(labelFn(k))} ${obj[k]}</span>`).join("");
       return `<div class="dk-invb"><div class="t">${esc(title)}</div><div class="track">${segs}</div><div class="leg">${legend}</div></div>`;
     };
     const typeTop = Object.entries(st.byType || {}).sort((a, b) => b[1] - a[1]).slice(0, 8);
@@ -2218,18 +2273,21 @@ export function renderDeck(host, opts) {
     typeSel.onchange = () => { invF.type = typeSel.value; paintInvTable(m); };
     sevSel.onchange = () => { invF.sev = sevSel.value; paintInvTable(m); };
     statSel.onchange = () => { invF.status = statSel.value; paintInvTable(m); };
+    const simBox = root.querySelector("#dkInvSim");
+    if (simBox) simBox.onchange = () => { invF.sim = simBox.checked; paintInv(m); };
     paintInvTable(m);
   }
   function paintInvTable(m){
     const box = root.querySelector("#dkInvTable"); if (!box || !m || !m.listEntities) return;
-    const filter = { limit: 60 };
+    const filter = {};
     if (invF.type) filter.type = invF.type;
     if (invF.sev) filter.severity = invF.sev;
     if (invF.status) filter.status = invF.status;
     if (invF.q.trim()) filter.search = invF.q.trim();
-    const rows = m.listEntities(filter);
+    const isSim = postureMod ? postureMod.isSimulated : () => false;
+    const rows = m.listEntities(filter).filter((e) => invF.sim || !isSim(e)).slice(0, 60);
     if (!rows.length) {
-      const total = m.getStats().totalEntities;
+      const total = invF.sim ? m.getStats().totalEntities : postureMod.realEntities(m.exportAll().entities).length;
       box.innerHTML = `<div class="dk-nempty">${total ? "No entities match the filter." : "The graph is empty. As recon, intel and forensic tools run, the entities they find collect here."}</div>`;
       return;
     }
@@ -2238,7 +2296,7 @@ export function renderDeck(host, opts) {
     box.innerHTML = `<div class="dk-itwrap"><table class="dk-itable"><thead><tr><th>Name</th><th>Type</th><th>Severity</th><th>Status</th><th>Links</th><th>Updated</th></tr></thead><tbody>${rows.map((e) => {
       const rel = m.getRelationships ? m.getRelationships(e.id).length : 0;
       const up = e.updatedAt ? timeAgo(new Date(e.updatedAt).getTime()) : "—";
-      return `<tr data-eid="${esc(e.id)}"><td class="nm">${esc(e.name || "—")}</td><td>${esc(m.getEntityTypeLabel ? m.getEntityTypeLabel(e.type) : e.type)}</td><td>${e.severity ? `<span class="pill" style="--c:${sevColor(e.severity)}">${capword(e.severity)}</span>` : "—"}</td><td>${e.status ? `<span class="pill" style="--c:${stColor(e.status)}">${capword(e.status)}</span>` : "—"}</td><td class="num">${rel || "—"}</td><td class="ag">${up}</td></tr>`;
+      return `<tr data-eid="${esc(e.id)}"><td class="nm">${esc(e.name || "—")}${isSim(e) ? ` <span class="pill" style="--c:#8a93a6">Sample</span>` : ""}</td><td>${esc(m.getEntityTypeLabel ? m.getEntityTypeLabel(e.type) : e.type)}</td><td>${e.severity ? `<span class="pill" style="--c:${sevColor(e.severity)}">${capword(e.severity)}</span>` : "—"}</td><td>${e.status ? `<span class="pill" style="--c:${stColor(e.status)}">${capword(e.status)}</span>` : "—"}</td><td class="num">${rel || "—"}</td><td class="ag">${up}</td></tr>`;
     }).join("")}</tbody></table></div>`;
     box.querySelectorAll("tr[data-eid]").forEach((tr) => tr.onclick = () => openTool("secgraph", secLabel["secgraph"] || "Security Graph"));
   }
@@ -2259,7 +2317,7 @@ export function renderDeck(host, opts) {
     const all = notifs.map((x) => ({ text: x.text, ts: x.ts, cat: activityCat(x.text) }));
     const counts = {}; for (const a of all) counts[a.cat] = (counts[a.cat] || 0) + 1;
     const first = all.length ? all[all.length - 1].ts : null;
-    const chips = Object.keys(ACT_CATS).filter((c) => counts[c]).map((c) => `<button class="dk-afch${actFilter === c ? " on" : ""}" data-cat="${c}"><i style="background:${ACT_CATS[c].color}"></i>${ACT_CATS[c].label}<span>${counts[c]}</span></button>`).join("");
+    const chips = Object.keys(ACT_CATS).filter((c) => counts[c]).map((c) => `<button class="dk-afch${actFilter === c ? " on" : ""}" data-cat="${c}"><i style="--bg:${ACT_CATS[c].color}"></i>${ACT_CATS[c].label}<span>${counts[c]}</span></button>`).join("");
     el.innerHTML = `
       <div class="dk-ovhead"><div><h1>Activity</h1><p>A live stream of platform events in this session — tool results, graph changes, connections and AI.</p></div>
         <div class="when"><button class="dk-tibtn" id="dkActExport">${IC.copy} Export log</button></div></div>
@@ -2289,10 +2347,10 @@ export function renderDeck(host, opts) {
   function paintActStream(){
     const box = root.querySelector("#dkActStream"); if (!box) return;
     const ql = actQ.trim().toLowerCase();
-    const rows = notifs.map((x) => ({ text: x.text, ts: x.ts, cat: activityCat(x.text) }))
+    const rows = notifs.map((x) => ({ text: x.text, ts: x.ts, sim: x.sim, cat: activityCat(x.text) }))
       .filter((a) => (!actFilter || a.cat === actFilter) && (!ql || a.text.toLowerCase().includes(ql)));
     box.innerHTML = rows.length
-      ? rows.map((a) => `<div class="r"><span class="dot" style="background:${(ACT_CATS[a.cat] || {}).color || "#4f86ff"}"></span><span class="tx">${esc(a.text)}</span><span class="ct" style="color:${(ACT_CATS[a.cat] || {}).color || "#6a7488"}">${esc((ACT_CATS[a.cat] || {}).label || a.cat)}</span><span class="ag">${timeAgo(a.ts)}</span></div>`).join("")
+      ? rows.map((a) => `<div class="r"><span class="dot" style="--bg:${(ACT_CATS[a.cat] || {}).color || "#4f86ff"}"></span><span class="tx">${esc(a.text)}${a.sim ? ' <span class="dk-simchip">Sample</span>' : ""}</span><span class="ct" style="--fg:${(ACT_CATS[a.cat] || {}).color || "#6a7488"}">${esc((ACT_CATS[a.cat] || {}).label || a.cat)}</span><span class="ag">${timeAgo(a.ts)}</span></div>`).join("")
       : `<div class="dk-nempty">${notifs.length ? "No events match the filter." : "No activity recorded yet in this browser. As you run tools, add graph entities or connect providers, events stream in here live."}</div>`;
   }
 
@@ -2320,7 +2378,7 @@ export function renderDeck(host, opts) {
     const html = TK_CATS.map((cat) => {
       const tools = TOOLKIT.filter((t) => t.cat === cat.id && (!q || (t.name + " " + t.desc).toLowerCase().includes(q)));
       if (!tools.length) return "";
-      return `<div class="dk-kitcat"><div class="kc-h" style="color:${cat.color}"><span class="kc-d"></span>${esc(cat.name)}</div>` +
+      return `<div class="dk-kitcat"><div class="kc-h" style="--fg:${cat.color}"><span class="kc-d"></span>${esc(cat.name)}</div>` +
         tools.map((t) => `<button class="dk-kititem${t.id === kitSel ? " on" : ""}" data-tk="${t.id}">${esc(t.name)}</button>`).join("") + `</div>`;
     }).join("");
     box.innerHTML = html || `<div class="dk-nempty">No utilities match "${esc(q)}".</div>`;

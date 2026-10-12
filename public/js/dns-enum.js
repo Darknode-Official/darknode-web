@@ -444,7 +444,7 @@ export function renderDNSEnum(container) {
     }
     const axfrOpen = zoneData && zoneData.success && zoneData.records.length;
     btn.disabled = true;
-    import('/js/graph-bridge.js?v=20260923c').then(gb => {
+    import('/js/graph-bridge.js?v=20261012a').then(gb => {
       const root = gb.sendToGraph('DNS Enum', [{ type: 'DOMAIN', name: currentDomain, data: { ...meta, axfrOpen: !!axfrOpen }, opts: { tags, severity: axfrOpen ? 'high' : null } }], undefined, true).entities[0];
       const r = gb.sendToGraph('DNS Enum', items, undefined, true);
       if (root) {

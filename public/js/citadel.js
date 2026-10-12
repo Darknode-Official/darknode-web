@@ -980,9 +980,10 @@ function ctHostItem(v, tags) {
 
 function ctSendAlertsToGraph(btn, alerts) {
   btn.disabled = true;
-  import('/js/graph-bridge.js?v=20260923c').then(function(gb) {
+  import('/js/graph-bridge.js?v=20261012a').then(function(gb) {
     var sim = alerts.some(function(a){ return a.example; });
-    var tags = sim ? ['citadel','soc','simulated'] : ['citadel','soc'];
+    // Tag per alert: one example alert in a batch must not mark the real ones simulated.
+    var tagsFor = function(a) { return a.example ? ['citadel','soc','simulated'] : ['citadel','soc']; };
     var created = 0, updated = 0, links = 0, incidents = 0;
     var one = function(item) {
       var r = gb.sendToGraph('CITADEL', [item], undefined, true);
@@ -991,6 +992,7 @@ function ctSendAlertsToGraph(btn, alerts) {
     };
     var link = function(from, to, rel) { if (from && to && gb.linkEntities(from.id, to.id, rel)) links++; };
     alerts.forEach(function(a) {
+      var tags = tagsFor(a);
       var alert = one({
         type:'ALERT', name:a.id + ': ' + a.title,
         data:{alertId:a.id,rule:a.rule,source:a.source,timestamp:a.timestamp,srcIp:a.srcIp||'',dstIp:a.dstIp||'',eventCount:a.count,mitre:a.mitre,analyst:a.analyst||'',triageStatus:a.status,simulated:!!a.example},

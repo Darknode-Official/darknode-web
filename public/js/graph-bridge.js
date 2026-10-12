@@ -6,6 +6,7 @@ const { createEntity, getEntity, updateEntity, listEntities, createRelationship 
 const batch = SG.batch || ((fn) => fn());
 const findEntity = SG.findEntity || ((type, key) => listEntities({ type }).find(e => e.name.toLowerCase() === key) || null);
 import { getActiveContext } from '/js/context-bar.js';
+import { isSimulated } from '/js/core/posture.js';
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -22,7 +23,7 @@ const TYPE_COLORS = {
 
 export function addToGraph(type, name, data, opts) {
   const entity = createEntity(type, name, data, opts);
-  _trackActivity('Created ' + type + ': ' + name);
+  _trackActivity('Created ' + type + ': ' + name, isSimulated({ tags: (opts || {}).tags, data }));
   return entity;
 }
 
@@ -37,9 +38,13 @@ export function addToolResult(toolName, resultType, name, data, opts) {
 export function upsertToolResult(toolName, type, name, data, opts) {
   const key = String(name || '').trim().toLowerCase();
   if (!key) return { entity: null, created: false };
-  const existing = findEntity(type, key);
+  const o = opts || {};
+  // Simulated/sample writes never merge into a real entity (or vice versa): merging would
+  // union the tags and taint real data as simulated, or let sample data move real posture.
+  const sim = isSimulated({ tags: o.tags, data });
+  let existing = findEntity(type, key);
+  if (existing && isSimulated(existing) !== sim) existing = listEntities({ type }).find((e) => e.name.toLowerCase() === key && isSimulated(e) === sim) || null;
   if (existing) {
-    const o = opts || {};
     const tags = Array.from(new Set([...(existing.tags || []), ...(o.tags || [])]));
     const updates = { data: { ...(data || {}), _toolSource: toolName }, tags };
     if (o.severity) updates.severity = o.severity;
@@ -227,11 +232,11 @@ export function openAddToInvestigationModal(entity) {
   };
 }
 
-function _trackActivity(text) {
+function _trackActivity(text, sim) {
   try {
     const KEY = 'dn_recent_activity';
     let items = JSON.parse(localStorage.getItem(KEY) || '[]');
-    items.unshift({ text, ts: Date.now() });
+    items.unshift(sim ? { text, ts: Date.now(), sim: true } : { text, ts: Date.now() });
     items = items.slice(0, 20);
     localStorage.setItem(KEY, JSON.stringify(items));
   } catch (_) {}

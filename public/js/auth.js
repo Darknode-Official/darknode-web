@@ -44,8 +44,7 @@ import { collection as fbCollection, addDoc as fbAddDoc, serverTimestamp as fbSe
 import {
   onAuthStateChanged, signInWithRedirect, signInWithPopup, getRedirectResult, signOut,
   createUserWithEmailAndPassword, signInWithEmailAndPassword,
-  sendEmailVerification, sendPasswordResetEmail, reload,
-  setPersistence, browserLocalPersistence
+  sendEmailVerification, sendPasswordResetEmail, reload
 } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-auth.js";
 import {
   doc, getDoc, setDoc, serverTimestamp
@@ -1593,7 +1592,16 @@ function playAccessGranted(name, cb) {
   setTimeout(() => { try { o.remove(); } catch (_) {} }, 1800); // remove after it fades
 }
 
+// Which account the app is currently rendered for (see the onAuthStateChanged guard),
+// whether that is a no-Firebase guest/Test session, and the mounted Deck's teardown.
+let _appUid = null, _appGuest = false, _deckOff = null;
+// Bumped on every show(): a lazy tool module that resolves after the user has already
+// moved on must not paint over the newer section.
+let _navTok = 0;
+const _appH = { on: false, show: () => {}, saveFrame: () => {}, hasTyped: () => false };
 function renderApp(user) {
+  _appUid = user && user.uid || null;
+  _appGuest = !auth.currentUser;
   dismissBoot();
   document.body.classList.remove("landing");
   document.body.classList.add("app");
@@ -1769,6 +1777,7 @@ function renderApp(user) {
   // path stays in the URL, so /apikeys remains a working deep link.
   const ALIAS = { arsenal: ["home"], apikeys: ["settings", "apikeys"], github: ["settings"], gmail: ["settings"] };
   function show(sec, more, skipPush) {
+    const _tok = ++_navTok, live = () => _tok === _navTok;
     if (_prevCleanup) { try { _prevCleanup(); } catch (_) {} _prevCleanup = null; }
     // Update browser URL (from the requested section, alias or not)
     const path = secToPath(sec);
@@ -1804,62 +1813,62 @@ function renderApp(user) {
     if (prevH > 200) main.style.minHeight = prevH + "px";
     requestAnimationFrame(() => { main.style.minHeight = ""; });
     if (sec && sec !== "home" && sec !== "settings") { try { let r = JSON.parse(localStorage.getItem("dn_recent")||"[]"); r = r.filter(s=>s!==sec); r.unshift(sec); r = r.slice(0,8); localStorage.setItem("dn_recent", JSON.stringify(r)); } catch(_){} }
-    if (sec === "tools") { main.innerHTML = `<div class="pg-head"><div><h1 class="pg-h1">Tools</h1><p class="muted pg-sub">Search, filter, and open any tool in the catalog.</p></div></div><div id="tools"></div>`; import("/js/tools.js?v=20260924a").then(m => m.renderTools(document.getElementById("tools"))); }
-    else if (sec === "utils") { import("/js/utils.js").then(m => m.renderUtils(main)); }
-    else if (sec === "ai") { import("/js/webai.js?v=20261011a").then(m => m.renderAI(main)); }
+    if (sec === "tools") { main.innerHTML = `<div class="pg-head"><div><h1 class="pg-h1">Tools</h1><p class="muted pg-sub">Search, filter, and open any tool in the catalog.</p></div></div><div id="tools"></div>`; import("/js/tools.js?v=20260924a").then(m => live() && m.renderTools(document.getElementById("tools"))); }
+    else if (sec === "utils") { import("/js/utils.js").then(m => live() && m.renderUtils(main)); }
+    else if (sec === "ai") { import("/js/webai.js?v=20261011a").then(m => live() && m.renderAI(main)); }
     else if (sec === "math") { _prevCleanup = renderQuelvra(main, more); }
-    else if (sec === "payloads") { import("/js/labs.js?v=20261003a").then(m => m.renderPayloads(main)); }
-    else if (sec === "targets") { import("/js/labs.js?v=20261003a").then(m => m.renderTargets(main)); }
-    else if (sec === "ghdb") { import("/js/ghdb.js").then(m => m.renderGHDB(main)); }
-    else if (sec === "exploitdb") { import("/js/exploitdb.js").then(m => m.renderExploitDB(main)); }
-    else if (sec === "vms") { import("/js/vms.js").then(m => m.renderVMs(main)); }
-    else if (sec === "webshell") { import("/js/webshell.js").then(m => m.renderWebshell(main)); }
-    else if (sec === "vmlab") { import("/js/vmlab.js").then(m => m.renderVMLab(main)); }
-    else if (sec === "privatecloud") { import("/js/privatecloud.js").then(m => m.renderPrivateCloud(main)); }
-    else if (sec === "saved") { import("/js/saved.js").then(m => m.renderSaved(main, show)); }
-    else if (sec === "report") { import("/js/report.js?v=20260924a").then(m => m.renderReport(main)); }
-    else if (sec === "snippets") { import("/js/labs.js?v=20261003a").then(m => m.renderSnippets(main)); }
-    else if (sec === "refs") { import("/js/labs.js?v=20261003a").then(m => m.renderRefs(main)); }
-    else if (sec === "engines") { import("/js/arsenal.js?v=20260927b").then(m => m.renderEngines(main)); }
-    else if (sec === "packetcraft") { import("/js/packet-crafter.js").then(m => m.renderPacketCrafter(main)); }
-    else if (sec === "binanalyze") { import("/js/binary-analyzer.js?v=20260927b").then(m => m.renderBinaryAnalyzer(main)); }
-    else if (sec === "netmap") { import("/js/network-mapper.js").then(m => m.renderNetworkMapper(main)); }
-    else if (sec === "loganalyze") { import("/js/log-analyzer.js").then(m => m.renderLogAnalyzer(main)); }
-    else if (sec === "credaudit") { import("/js/credential-auditor.js?v=20260928n").then(m => m.renderCredentialAuditor(main)); }
-    else if (sec === "memforensics") { import("/js/memory-forensics.js?v=20260924b").then(m => m.renderMemoryForensics(main)); }
-    else if (sec === "stego") { import("/js/steganography.js").then(m => m.renderSteganography(main)); }
-    else if (sec === "regexlab") { import("/js/regex-lab.js").then(m => m.renderRegexLab(main)); }
-    else if (sec === "encoding") { import("/js/encoding-suite.js?v=20260924b").then(m => m.renderEncodingSuite(main)); }
-    else if (sec === "threatmodel") { import("/js/threat-modeler.js?v=20260924b").then(m => m.renderThreatModeler(main)); }
-    else if (sec === "osint") { import("/js/osint-dashboard.js?v=20261007a").then(m => m.renderOSINTDashboard(main)); }
-    else if (sec === "addressintel") { import("/js/address-intel.js?v=20261003a").then(m => m.renderAddressIntel(main)); }
-    else if (sec === "incidents") { import("/js/incident-tracker.js").then(m => m.renderIncidentTracker(main)); }
-    else if (sec === "firewall") { import("/js/firewall-builder.js").then(m => m.renderFirewallBuilder(main)); }
-    else if (sec === "apitester") { import("/js/api-tester.js").then(m => m.renderAPITester(main)); }
-    else if (sec === "sandbox") { import("/js/malware-sandbox.js").then(m => m.renderMalwareSandbox(main)); }
-    else if (sec === "compliance") { import("/js/compliance-checker.js?v=20260924a").then(m => m.renderComplianceChecker(main)); }
-    else if (sec === "attacksim") { import("/js/attack-simulator.js").then(m => m.renderAttackSimulator(main)); }
-    else if (sec === "dns") { import("/js/dns-toolkit.js").then(m => m.renderDNSToolkit(main)); }
-    else if (sec === "subdomains") { import("/js/subdomain-finder.js?v=20261007a").then(m => m.renderSubdomainFinder(main)); }
-    else if (sec === "mobilesec") { import("/js/mobile-security-lab.js").then(m => m.renderMobileSecurityLab(main)); }
-    else if (sec === "apiscan") { import("/js/api-security-scanner.js?v=20260924b").then(m => m.renderAPISecurityScanner(main)); }
-    else if (sec === "wirelesslab") { import("/js/wireless-lab.js").then(m => m.renderWirelessLab(main)); }
-    else if (sec === "pentestconsole") { import("/js/pentest-console.js?v=20260928a").then(m => m.renderPentestConsole(main)); }
-    else if (sec === "reveng") { import("/js/reverse-engineering.js").then(m => m.renderReverseEngineering(main)); }
-    else if (sec === "darkwebosint") { import("/js/darkweb-osint.js").then(m => m.renderDarkwebOsint(main)); }
-    else if (sec === "cyberrange") { import("/js/cyber-range.js").then(m => m.renderCyberRange(main)); }
+    else if (sec === "payloads") { import("/js/labs.js?v=20261003a").then(m => live() && m.renderPayloads(main)); }
+    else if (sec === "targets") { import("/js/labs.js?v=20261003a").then(m => live() && m.renderTargets(main)); }
+    else if (sec === "ghdb") { import("/js/ghdb.js").then(m => live() && m.renderGHDB(main)); }
+    else if (sec === "exploitdb") { import("/js/exploitdb.js").then(m => live() && m.renderExploitDB(main)); }
+    else if (sec === "vms") { import("/js/vms.js").then(m => live() && m.renderVMs(main)); }
+    else if (sec === "webshell") { import("/js/webshell.js").then(m => live() && m.renderWebshell(main)); }
+    else if (sec === "vmlab") { import("/js/vmlab.js").then(m => live() && m.renderVMLab(main)); }
+    else if (sec === "privatecloud") { import("/js/privatecloud.js").then(m => live() && m.renderPrivateCloud(main)); }
+    else if (sec === "saved") { import("/js/saved.js").then(m => live() && m.renderSaved(main, show)); }
+    else if (sec === "report") { import("/js/report.js?v=20260924a").then(m => live() && m.renderReport(main)); }
+    else if (sec === "snippets") { import("/js/labs.js?v=20261003a").then(m => live() && m.renderSnippets(main)); }
+    else if (sec === "refs") { import("/js/labs.js?v=20261003a").then(m => live() && m.renderRefs(main)); }
+    else if (sec === "engines") { import("/js/arsenal.js?v=20260927b").then(m => live() && m.renderEngines(main)); }
+    else if (sec === "packetcraft") { import("/js/packet-crafter.js").then(m => live() && m.renderPacketCrafter(main)); }
+    else if (sec === "binanalyze") { import("/js/binary-analyzer.js?v=20260927b").then(m => live() && m.renderBinaryAnalyzer(main)); }
+    else if (sec === "netmap") { import("/js/network-mapper.js").then(m => live() && m.renderNetworkMapper(main)); }
+    else if (sec === "loganalyze") { import("/js/log-analyzer.js").then(m => live() && m.renderLogAnalyzer(main)); }
+    else if (sec === "credaudit") { import("/js/credential-auditor.js?v=20260928n").then(m => live() && m.renderCredentialAuditor(main)); }
+    else if (sec === "memforensics") { import("/js/memory-forensics.js?v=20260924b").then(m => live() && m.renderMemoryForensics(main)); }
+    else if (sec === "stego") { import("/js/steganography.js").then(m => live() && m.renderSteganography(main)); }
+    else if (sec === "regexlab") { import("/js/regex-lab.js").then(m => live() && m.renderRegexLab(main)); }
+    else if (sec === "encoding") { import("/js/encoding-suite.js?v=20260924b").then(m => live() && m.renderEncodingSuite(main)); }
+    else if (sec === "threatmodel") { import("/js/threat-modeler.js?v=20260924b").then(m => live() && m.renderThreatModeler(main)); }
+    else if (sec === "osint") { import("/js/osint-dashboard.js?v=20261007a").then(m => live() && m.renderOSINTDashboard(main)); }
+    else if (sec === "addressintel") { import("/js/address-intel.js?v=20261003a").then(m => live() && m.renderAddressIntel(main)); }
+    else if (sec === "incidents") { import("/js/incident-tracker.js").then(m => live() && m.renderIncidentTracker(main)); }
+    else if (sec === "firewall") { import("/js/firewall-builder.js").then(m => live() && m.renderFirewallBuilder(main)); }
+    else if (sec === "apitester") { import("/js/api-tester.js").then(m => live() && m.renderAPITester(main)); }
+    else if (sec === "sandbox") { import("/js/malware-sandbox.js").then(m => live() && m.renderMalwareSandbox(main)); }
+    else if (sec === "compliance") { import("/js/compliance-checker.js?v=20260924a").then(m => live() && m.renderComplianceChecker(main)); }
+    else if (sec === "attacksim") { import("/js/attack-simulator.js").then(m => live() && m.renderAttackSimulator(main)); }
+    else if (sec === "dns") { import("/js/dns-toolkit.js").then(m => live() && m.renderDNSToolkit(main)); }
+    else if (sec === "subdomains") { import("/js/subdomain-finder.js?v=20261007a").then(m => live() && m.renderSubdomainFinder(main)); }
+    else if (sec === "mobilesec") { import("/js/mobile-security-lab.js").then(m => live() && m.renderMobileSecurityLab(main)); }
+    else if (sec === "apiscan") { import("/js/api-security-scanner.js?v=20260924b").then(m => live() && m.renderAPISecurityScanner(main)); }
+    else if (sec === "wirelesslab") { import("/js/wireless-lab.js").then(m => live() && m.renderWirelessLab(main)); }
+    else if (sec === "pentestconsole") { import("/js/pentest-console.js?v=20260928a").then(m => live() && m.renderPentestConsole(main)); }
+    else if (sec === "reveng") { import("/js/reverse-engineering.js").then(m => live() && m.renderReverseEngineering(main)); }
+    else if (sec === "darkwebosint") { import("/js/darkweb-osint.js").then(m => live() && m.renderDarkwebOsint(main)); }
+    else if (sec === "cyberrange") { import("/js/cyber-range.js").then(m => live() && m.renderCyberRange(main)); }
     else if (sec === "prometheus") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading…</p>"; const _s=sec; import("/js/prometheus-web.js?v=20260924c").then(m => { if(curSec!==_s)return; m.renderPrometheus(main); _prevCleanup = m.cleanupPrometheus; }); }
-    else if (sec === "sentineleye") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading…</p>"; if(!document.querySelector('script[src^="/js/threat-api.js"]')){var s1=document.createElement("script");s1.src="/js/threat-api.js?v=20261007a";document.head.appendChild(s1)}if(!document.querySelector('script[src="/js/threat-map.js"]')){var s2=document.createElement("script");s2.src="/js/threat-map.js";document.head.appendChild(s2)} const _s=sec; import("/js/sentinel-eye.js?v=20261006a").then(m => { if(curSec!==_s)return; m.renderSentinelEye(main); _prevCleanup = m.cleanupSentinelEye; }); }
-    else if (sec === "exploitdev") { import("/js/exploit-writer.js").then(m => m.renderExploitWriter(main)); }
-    else if (sec === "secdash") { import("/js/security-dashboard.js?v=20260924a").then(m => m.renderSecurityDashboard(main)); }
-    else if (sec === "phishing") { import("/js/phishing-analyzer.js").then(m => m.renderPhishingAnalyzer(main)); }
-    else if (sec === "containers") { import("/js/container-security.js").then(m => m.renderContainerSecurity(main)); }
-    else if (sec === "cracklab") { import("/js/password-cracking-lab.js").then(m => m.renderPasswordCrackingLab(main)); }
-    else if (sec === "hydra") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading…</p>"; import("/js/hydra-engine.js?v=20261008b").then(m => m.renderHydra(main)); }
-    else if (sec === "aegis") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading…</p>"; import("/js/aegis-web.js?v=20261008b").then(m => m.renderAegis(main)); }
-    else if (sec === "vanguard") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading…</p>"; import("/js/vanguard.js?v=20260924c").then(m => m.renderVanguard(main)); }
+    else if (sec === "sentineleye") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading…</p>"; if(!document.querySelector('script[src^="/js/threat-api.js"]')){var s1=document.createElement("script");s1.src="/js/threat-api.js?v=20261007a";document.head.appendChild(s1)}if(!document.querySelector('script[src="/js/threat-map.js"]')){var s2=document.createElement("script");s2.src="/js/threat-map.js";document.head.appendChild(s2)} const _s=sec; import("/js/sentinel-eye.js?v=20261012a").then(m => { if(curSec!==_s)return; m.renderSentinelEye(main); _prevCleanup = m.cleanupSentinelEye; }); }
+    else if (sec === "exploitdev") { import("/js/exploit-writer.js").then(m => live() && m.renderExploitWriter(main)); }
+    else if (sec === "secdash") { import("/js/security-dashboard.js?v=20260924a").then(m => live() && m.renderSecurityDashboard(main)); }
+    else if (sec === "phishing") { import("/js/phishing-analyzer.js").then(m => live() && m.renderPhishingAnalyzer(main)); }
+    else if (sec === "containers") { import("/js/container-security.js").then(m => live() && m.renderContainerSecurity(main)); }
+    else if (sec === "cracklab") { import("/js/password-cracking-lab.js").then(m => live() && m.renderPasswordCrackingLab(main)); }
+    else if (sec === "hydra") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading…</p>"; import("/js/hydra-engine.js?v=20261008b").then(m => live() && m.renderHydra(main)); }
+    else if (sec === "aegis") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading…</p>"; import("/js/aegis-web.js?v=20261012a").then(m => live() && m.renderAegis(main)); }
+    else if (sec === "vanguard") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading…</p>"; import("/js/vanguard.js?v=20261012a").then(m => live() && m.renderVanguard(main)); }
     else if (sec === "phantom") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading…</p>"; const _s=sec; import("/js/phantom.js?v=20261008b").then(m => { if(curSec!==_s)return; m.renderPhantom(main); _prevCleanup = m.cleanupPhantom; }); }
-    else if (sec === "citadel") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading…</p>"; const _s=sec; import("/js/citadel.js?v=20261008b").then(m => { if(curSec!==_s)return; m.renderCitadel(main); _prevCleanup = m.cleanupCitadel; }); }
+    else if (sec === "citadel") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading…</p>"; const _s=sec; import("/js/citadel.js?v=20261012a").then(m => { if(curSec!==_s)return; m.renderCitadel(main); _prevCleanup = m.cleanupCitadel; }); }
     else if (sec === "oracle") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading…</p>"; const _s=sec; import("/js/oracle.js?v=20261008b").then(m => { if(curSec!==_s)return; m.renderOracle(main); _prevCleanup = m.cleanupOracle; }); }
     else if (sec === "spectre") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading…</p>"; const _s=sec; import("/js/spectre.js?v=20261004b").then(m => { if(curSec!==_s)return; m.renderSpectre(main); _prevCleanup = m.cleanupSpectre; }); }
     else if (sec === "crucible") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading…</p>"; const _s=sec; import("/js/crucible.js?v=20260924w").then(m => { if(curSec!==_s)return; m.renderCrucible(main); _prevCleanup = m.cleanupCrucible; }); }
@@ -1867,117 +1876,117 @@ function renderApp(user) {
     else if (sec === "threatforest") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading…</p>"; const _s=sec; import("/js/threatforest.js?v=20261008b").then(m => { if(curSec!==_s)return; m.renderThreatforest(main); _prevCleanup = m.cleanupThreatforest; }); }
     else if (sec === "beta") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Beta Lab...</p>"; const _s=sec; import("/js/beta-lab.js?v=20261008b").then(m => { if(curSec!==_s)return; m.renderBetaLab(main); _prevCleanup = m.cleanupBetaLab; }); }
     else if (sec === "crosswalk") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading GenAI Security Crosswalk...</p>"; const _s=sec; import("/js/crosswalk.js?v=20261009a").then(m => { if(curSec!==_s)return; m.renderCrosswalk(main); _prevCleanup = m.cleanupCrosswalk; }); }
-    else if (sec === "jwtanalyzer") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading JWT Analyzer...</p>"; import("/js/jwt-analyzer.js").then(m => m.renderJwtAnalyzer(main)); }
-    else if (sec === "cspevaluator") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading CSP Evaluator...</p>"; import("/js/csp-evaluator.js?v=20260924b").then(m => m.renderCspEvaluator(main)); }
-    else if (sec === "wayback") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Wayback Recon...</p>"; import("/js/wayback-recon.js").then(m => m.renderWaybackRecon(main)); }
-    else if (sec === "urldissect") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading URL Dissector...</p>"; import("/js/url-dissector.js").then(m => m.renderUrlDissector(main)); }
-    else if (sec === "favicon") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Favicon Hasher...</p>"; import("/js/favicon-hasher.js?v=20260924b").then(m => m.renderFaviconHasher(main)); }
-    else if (sec === "adversary") { import("/js/adversary-ai.js").then(m => m.renderAdversaryAI(main)); }
-    else if (sec === "breachsim") { import("/js/breach-simulator.js").then(m => m.renderBreachSimulator(main)); }
-    else if (sec === "huntlab") { import("/js/threat-hunt-lab.js").then(m => m.renderThreatHuntLab(main)); }
-    else if (sec === "attacksurf") { import("/js/attack-surface-mapper.js").then(m => m.renderAttackSurfaceMapper(main)); }
-    else if (sec === "deception") { import("/js/deception-architect.js").then(m => m.renderDeceptionArchitect(main)); }
-    else if (sec === "purpleteam") { import("/js/purple-team-ops.js?v=20260927b").then(m => m.renderPurpleTeamOps(main)); }
-    else if (sec === "malclass") { import("/js/malware-classifier.js").then(m => m.renderMalwareClassifier(main)); }
-    else if (sec === "zerotrust") { import("/js/zero-trust-designer.js?v=20260924b").then(m => m.renderZeroTrustDesigner(main)); }
-    else if (sec === "vulnprio") { import("/js/vulnerability-prioritizer.js").then(m => m.renderVulnPrioritizer(main)); }
-    else if (sec === "vulntriage") { import("/js/vuln-triage.js?v=20260924b").then(m => m.renderVulnTriage(main)); }
-    else if (sec === "secquiz") { import("/js/security-awareness-quiz.js?v=20260924b").then(m => m.renderSecurityQuiz(main)); }
-    else if (sec === "supplychain") { import("/js/supply-chain-analyzer.js").then(m => m.renderSupplyChainAnalyzer(main)); }
-    else if (sec === "cryptotools") { import("/js/crypto-tools.js").then(m => m.renderCryptoTools(main)); }
-    else if (sec === "ftimeline") { import("/js/forensic-timeline.js").then(m => m.renderForensicTimeline(main)); }
-    else if (sec === "socialeng") { import("/js/social-engineering-sim.js").then(m => m.renderSocialEngSim(main)); }
-    else if (sec === "training") { import("/js/arsenal.js?v=20260927b").then(m => m.renderTraining(main)); }
+    else if (sec === "jwtanalyzer") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading JWT Analyzer...</p>"; import("/js/jwt-analyzer.js").then(m => live() && m.renderJwtAnalyzer(main)); }
+    else if (sec === "cspevaluator") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading CSP Evaluator...</p>"; import("/js/csp-evaluator.js?v=20260924b").then(m => live() && m.renderCspEvaluator(main)); }
+    else if (sec === "wayback") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Wayback Recon...</p>"; import("/js/wayback-recon.js").then(m => live() && m.renderWaybackRecon(main)); }
+    else if (sec === "urldissect") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading URL Dissector...</p>"; import("/js/url-dissector.js").then(m => live() && m.renderUrlDissector(main)); }
+    else if (sec === "favicon") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Favicon Hasher...</p>"; import("/js/favicon-hasher.js?v=20260924b").then(m => live() && m.renderFaviconHasher(main)); }
+    else if (sec === "adversary") { import("/js/adversary-ai.js").then(m => live() && m.renderAdversaryAI(main)); }
+    else if (sec === "breachsim") { import("/js/breach-simulator.js").then(m => live() && m.renderBreachSimulator(main)); }
+    else if (sec === "huntlab") { import("/js/threat-hunt-lab.js").then(m => live() && m.renderThreatHuntLab(main)); }
+    else if (sec === "attacksurf") { import("/js/attack-surface-mapper.js").then(m => live() && m.renderAttackSurfaceMapper(main)); }
+    else if (sec === "deception") { import("/js/deception-architect.js").then(m => live() && m.renderDeceptionArchitect(main)); }
+    else if (sec === "purpleteam") { import("/js/purple-team-ops.js?v=20260927b").then(m => live() && m.renderPurpleTeamOps(main)); }
+    else if (sec === "malclass") { import("/js/malware-classifier.js").then(m => live() && m.renderMalwareClassifier(main)); }
+    else if (sec === "zerotrust") { import("/js/zero-trust-designer.js?v=20260924b").then(m => live() && m.renderZeroTrustDesigner(main)); }
+    else if (sec === "vulnprio") { import("/js/vulnerability-prioritizer.js").then(m => live() && m.renderVulnPrioritizer(main)); }
+    else if (sec === "vulntriage") { import("/js/vuln-triage.js?v=20260924b").then(m => live() && m.renderVulnTriage(main)); }
+    else if (sec === "secquiz") { import("/js/security-awareness-quiz.js?v=20260924b").then(m => live() && m.renderSecurityQuiz(main)); }
+    else if (sec === "supplychain") { import("/js/supply-chain-analyzer.js").then(m => live() && m.renderSupplyChainAnalyzer(main)); }
+    else if (sec === "cryptotools") { import("/js/crypto-tools.js").then(m => live() && m.renderCryptoTools(main)); }
+    else if (sec === "ftimeline") { import("/js/forensic-timeline.js").then(m => live() && m.renderForensicTimeline(main)); }
+    else if (sec === "socialeng") { import("/js/social-engineering-sim.js").then(m => live() && m.renderSocialEngSim(main)); }
+    else if (sec === "training") { import("/js/arsenal.js?v=20260927b").then(m => live() && m.renderTraining(main)); }
     else if (sec === "cheats") renderCheats(main);
     else if (sec === "threat") renderThreat(main);
-    else if (sec === "ipreputation") { import("/js/ip-reputation.js").then(m => m.renderIPReputation(main)); }
-    else if (sec === "cyberbriefing") { import("/js/cyber-briefing.js?v=20261007a").then(m => m.renderCyberBriefing(main)); }
-    else if (sec === "incidentcost") { import("/js/incident-cost.js?v=20260924b").then(m => m.renderIncidentCost(main)); }
-    else if (sec === "fedcompliance") { import("/js/fed-compliance.js").then(m => m.renderFedCompliance(main)); }
-    else if (sec === "adversaryplaybook") { import("/js/adversary-playbook.js?v=20260927a").then(m => m.renderAdversaryPlaybook(main)); }
-    else if (sec === "emailheader") { import("/js/email-header.js?v=20260924b").then(m => m.renderEmailHeader(main)); }
-    else if (sec === "iocextractor") { import("/js/ioc-extractor.js?v=20260924b").then(m => m.renderIOCExtractor(main)); }
-    else if (sec === "dossier") { import("/js/target-dossier.js").then(m => m.renderDossier(main)); }
-    else if (sec === "payloadstudio") { import("/js/payload-studio.js").then(m => m.renderPayloadStudio(main)); }
-    else if (sec === "sigma") { import("/js/sigma-builder.js").then(m => m.renderSigmaBuilder(main)); }
-    else if (sec === "iocenrich") { import("/js/ioc-enrichment.js").then(m => m.renderIocEnrichment(main)); }
-    else if (sec === "embedsdk") { import("/js/embed-sdk.js").then(m => m.renderEmbedSDK(main)); }
-    else if (sec === "mcpconnect") { import("/js/mcp-connector.js").then(m => m.renderMcpConnector(main)); }
-    else if (sec === "cvsscalc") { import("/js/cvss-calculator.js").then(m => m.renderCvssCalculator(main)); }
-    else if (sec === "yarabuilder") { import("/js/yara-builder.js").then(m => m.renderYaraBuilder(main)); }
-    else if (sec === "emailauth") { import("/js/email-auth.js").then(m => m.renderEmailAuth(main)); }
-    else if (sec === "cookieinspect") { import("/js/cookie-inspector.js").then(m => m.renderCookieInspector(main)); }
-    else if (sec === "securitytxt") { import("/js/security-txt.js").then(m => m.renderSecurityTxt(main)); }
-    else if (sec === "codescan") { import("/js/code-scanner.js?v=20261011a").then(m => m.renderCodeScanner(main)); }
-    else if (sec === "reconplanner") { import("/js/recon-planner.js").then(m => m.renderReconPlanner(main)); }
-    else if (sec === "packetinspector") { import("/js/packet-inspector.js?v=20260924b").then(m => m.renderPacketInspector(main)); }
-    else if (sec === "siemdash") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading SIEM...</p>"; import("/js/siem-dash.js?v=20261007a").then(m => m.renderSiemDash(main)); }
-    else if (sec === "apifuzzer") { import("/js/api-fuzzer.js?v=20260927b").then(m => m.renderAPIFuzzer(main)); }
-    else if (sec === "incidentresponse") { import("/js/incident-response.js").then(m => m.renderIncidentResponse(main)); }
-    else if (sec === "networktraffic") { import("/js/network-traffic.js?v=20260928m").then(m => m.renderNetworkTraffic(main)); }
-    else if (sec === "privesc") { import("/js/privesc-toolkit.js?v=20260928m").then(m => m.renderPrivescToolkit(main)); }
-    else if (sec === "reverseshell") { import("/js/reverse-shell.js?v=20260928m").then(m => m.renderReverseShell(main)); }
-    else if (sec === "xsslab") { import("/js/xss-lab.js?v=20260928m").then(m => m.renderXSSLab(main)); }
-    else if (sec === "osintemail") { import("/js/osint-email.js?v=20260928m").then(m => m.renderOSINTEmail(main)); }
-    else if (sec === "threatfeed") { import("/js/threat-feed.js?v=20261011a").then(m => m.renderThreatFeed(main)); }
-    else if (sec === "secchecklist") { import("/js/sec-checklist.js?v=20260928m").then(m => m.renderSecChecklist(main)); }
-    else if (sec === "investigation") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Investigation Workspace...</p>"; const _s=sec; import("/js/investigation.js?v=20260924w").then(m => { if(curSec!==_s)return; m.renderInvestigation(main); _prevCleanup = m.cleanupInvestigation; }); }
-    else if (sec === "secgraph") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Security Graph...</p>"; import("/js/security-graph-ui.js?v=20260924b").then(m => m.renderSecurityGraphUI(main)); }
-    else if (sec === "casemgmt") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Case Manager...</p>"; import("/js/case-manager.js?v=20260924b").then(m => m.renderCaseManager(main)); }
+    else if (sec === "ipreputation") { import("/js/ip-reputation.js").then(m => live() && m.renderIPReputation(main)); }
+    else if (sec === "cyberbriefing") { import("/js/cyber-briefing.js?v=20261007a").then(m => live() && m.renderCyberBriefing(main)); }
+    else if (sec === "incidentcost") { import("/js/incident-cost.js?v=20260924b").then(m => live() && m.renderIncidentCost(main)); }
+    else if (sec === "fedcompliance") { import("/js/fed-compliance.js").then(m => live() && m.renderFedCompliance(main)); }
+    else if (sec === "adversaryplaybook") { import("/js/adversary-playbook.js?v=20260927a").then(m => live() && m.renderAdversaryPlaybook(main)); }
+    else if (sec === "emailheader") { import("/js/email-header.js?v=20260924b").then(m => live() && m.renderEmailHeader(main)); }
+    else if (sec === "iocextractor") { import("/js/ioc-extractor.js?v=20260924b").then(m => live() && m.renderIOCExtractor(main)); }
+    else if (sec === "dossier") { import("/js/target-dossier.js").then(m => live() && m.renderDossier(main)); }
+    else if (sec === "payloadstudio") { import("/js/payload-studio.js").then(m => live() && m.renderPayloadStudio(main)); }
+    else if (sec === "sigma") { import("/js/sigma-builder.js").then(m => live() && m.renderSigmaBuilder(main)); }
+    else if (sec === "iocenrich") { import("/js/ioc-enrichment.js").then(m => live() && m.renderIocEnrichment(main)); }
+    else if (sec === "embedsdk") { import("/js/embed-sdk.js").then(m => live() && m.renderEmbedSDK(main)); }
+    else if (sec === "mcpconnect") { import("/js/mcp-connector.js").then(m => live() && m.renderMcpConnector(main)); }
+    else if (sec === "cvsscalc") { import("/js/cvss-calculator.js").then(m => live() && m.renderCvssCalculator(main)); }
+    else if (sec === "yarabuilder") { import("/js/yara-builder.js").then(m => live() && m.renderYaraBuilder(main)); }
+    else if (sec === "emailauth") { import("/js/email-auth.js").then(m => live() && m.renderEmailAuth(main)); }
+    else if (sec === "cookieinspect") { import("/js/cookie-inspector.js").then(m => live() && m.renderCookieInspector(main)); }
+    else if (sec === "securitytxt") { import("/js/security-txt.js").then(m => live() && m.renderSecurityTxt(main)); }
+    else if (sec === "codescan") { import("/js/code-scanner.js?v=20261011a").then(m => live() && m.renderCodeScanner(main)); }
+    else if (sec === "reconplanner") { import("/js/recon-planner.js").then(m => live() && m.renderReconPlanner(main)); }
+    else if (sec === "packetinspector") { import("/js/packet-inspector.js?v=20260924b").then(m => live() && m.renderPacketInspector(main)); }
+    else if (sec === "siemdash") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading SIEM...</p>"; import("/js/siem-dash.js?v=20261007a").then(m => live() && m.renderSiemDash(main)); }
+    else if (sec === "apifuzzer") { import("/js/api-fuzzer.js?v=20260927b").then(m => live() && m.renderAPIFuzzer(main)); }
+    else if (sec === "incidentresponse") { import("/js/incident-response.js").then(m => live() && m.renderIncidentResponse(main)); }
+    else if (sec === "networktraffic") { import("/js/network-traffic.js?v=20260928m").then(m => live() && m.renderNetworkTraffic(main)); }
+    else if (sec === "privesc") { import("/js/privesc-toolkit.js?v=20260928m").then(m => live() && m.renderPrivescToolkit(main)); }
+    else if (sec === "reverseshell") { import("/js/reverse-shell.js?v=20260928m").then(m => live() && m.renderReverseShell(main)); }
+    else if (sec === "xsslab") { import("/js/xss-lab.js?v=20260928m").then(m => live() && m.renderXSSLab(main)); }
+    else if (sec === "osintemail") { import("/js/osint-email.js?v=20260928m").then(m => live() && m.renderOSINTEmail(main)); }
+    else if (sec === "threatfeed") { import("/js/threat-feed.js?v=20261011a").then(m => live() && m.renderThreatFeed(main)); }
+    else if (sec === "secchecklist") { import("/js/sec-checklist.js?v=20260928m").then(m => live() && m.renderSecChecklist(main)); }
+    else if (sec === "investigation") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Investigation Workspace...</p>"; const _s=sec; import("/js/investigation.js?v=20261012a").then(m => { if(curSec!==_s)return; m.renderInvestigation(main); _prevCleanup = m.cleanupInvestigation; }); }
+    else if (sec === "secgraph") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Security Graph...</p>"; import("/js/security-graph-ui.js?v=20260924b").then(m => live() && m.renderSecurityGraphUI(main)); }
+    else if (sec === "casemgmt") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Case Manager...</p>"; import("/js/case-manager.js?v=20260924b").then(m => live() && m.renderCaseManager(main)); }
 
-    else if (sec === "cvetimeline") { import("/js/cve-timeline.js?v=20261007a").then(m => m.renderCveTimeline(main)); }
-    else if (sec === "dataviz") { import("/js/data-viz.js?v=20260930b").then(m => m.renderDataViz(main)); }
-    else if (sec === "forensicstoolkit") { import("/js/forensics-toolkit.js").then(m => m.renderForensicsToolkit(main)); }
-    else if (sec === "hashsuite") { import("/js/hash-suite.js").then(m => m.renderHashSuite(main)); }
-    else if (sec === "httpinspector") { import("/js/http-inspector.js?v=20260924b").then(m => m.renderHttpInspector(main)); }
-    else if (sec === "iptools") { import("/js/ip-tools.js").then(m => m.renderIPTools(main)); }
-    else if (sec === "networktools") { import("/js/network-tools.js").then(m => m.renderNetworkTools(main)); }
-    else if (sec === "packetanalyzer") { import("/js/packet-analyzer.js?v=20260924b").then(m => m.renderPacketAnalyzer(main)); }
-    else if (sec === "passwordtools") { import("/js/password-tools.js?v=20260924b").then(m => m.renderPasswordTools(main)); }
-    else if (sec === "payloadgen") { import("/js/payload-gen.js?v=20260924b").then(m => m.renderPayloadGen(main)); }
-    else if (sec === "riskcalculator") { import("/js/risk-calculator.js?v=20260924b").then(m => m.renderRiskCalculator(main)); }
-    else if (sec === "securityquiz") { import("/js/security-quiz.js?v=20260928a").then(m => m.renderSecurityQuiz(main)); }
-    else if (sec === "securityscanner") { import("/js/security-scanner.js?v=20260929a").then(m => m.renderSecurityScanner(main)); }
-    else if (sec === "subnetvisualizer") { import("/js/subnet-visualizer.js?v=20260929a").then(m => m.renderSubnetVisualizer(main)); }
-    else if (sec === "threatdashboard") { import("/js/threat-dashboard.js?v=20260927a").then(m => m.renderThreatDashboard(main)); }
-    else if (sec === "timelineviz") { import("/js/timeline-viz.js").then(m => m.renderTimelineViz(main)); }
-    else if (sec === "vulndb") { import("/js/vulnerability-db.js?v=20260924b").then(m => m.renderVulnerabilityDB(main)); }
-    else if (sec === "asnexplorer") { import("/js/asn-explorer.js?v=20260924b").then(m => m.renderAsnExplorer(main)); }
-    else if (sec === "breachlookup") { import("/js/breach-lookup.js").then(m => m.renderBreachLookup(main)); }
-    else if (sec === "corstester") { import("/js/cors-tester.js?v=20260924b").then(m => m.renderCorsTester(main)); }
-    else if (sec === "cvesearch") { import("/js/cve-search.js?v=20261007a").then(m => m.renderCveSearch(main)); }
-    else if (sec === "darknetradar") { import("/js/darknet-radar.js").then(m => m.renderDarknetRadar(main)); }
-    else if (sec === "dnsenum") { import("/js/dns-enum.js?v=20260927b").then(m => m.renderDNSEnum(main)); }
-    else if (sec === "dnsrecon") { import("/js/dns-recon.js").then(m => m.renderDNSRecon(main)); }
-    else if (sec === "emailintel") { import("/js/email-intel.js").then(m => m.renderEmailIntel(main)); }
-    else if (sec === "headeranalyzer") { import("/js/header-analyzer.js?v=20261007a").then(m => m.renderHeaderAnalyzer(main)); }
-    else if (sec === "httpprobe") { import("/js/http-probe.js").then(m => m.renderHttpProbe(main)); }
-    else if (sec === "identitymatrix") { import("/js/identity-matrix.js?v=20260924b").then(m => m.renderIdentityMatrix(main)); }
-    else if (sec === "ipgeolocation") { import("/js/ip-geolocation.js?v=20260927b").then(m => m.renderIPGeolocation(main)); }
-    else if (sec === "networkscanner") { import("/js/network-scanner.js").then(m => m.renderNetworkScanner(main)); }
-    else if (sec === "sslinspector") { import("/js/ssl-inspector.js?v=20260923c").then(m => m.renderSSLInspector(main)); }
-    else if (sec === "techfingerprint") { import("/js/tech-fingerprint.js").then(m => m.renderTechFingerprint(main)); }
-    else if (sec === "trafficanalyzer") { import("/js/traffic-analyzer.js?v=20260927b").then(m => m.renderTrafficAnalyzer(main)); }
-    else if (sec === "websockettester") { import("/js/websocket-tester.js").then(m => m.renderWebSocketTester(main)); }
-    else if (sec === "whoisrecon") { import("/js/whois-recon.js?v=20261007a").then(m => m.renderWhoisRecon(main)); }
-    else if (sec === "learn") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Learn Hub...</p>"; loadLearnHub().then(m => m.renderLearnHub(main)); }
-    else if (sec === "learndo") { import("/js/learndo.js?v=20261009a").then(m => m.renderLearnDo(main)); }
-    else if (sec === "engine") { import("/js/engine-tab.js?v=20260929t").then(m => m.renderEngine(main)); }
-    else if (sec === "coder") { import("/js/coder.js?v=20261005a").then(m => m.renderCliCoder(main)); }
-    else if (sec === "downloads") { import("/js/getapp.js?v=20261004a").then(m => m.renderDownloads(main)); }
-    else if (sec === "dlguide") { import("/js/getapp.js?v=20261004a").then(m => m.renderDownloadDocs(main)); }
-    else if (sec === "api") { import("/js/api.js?v=20261007a").then(m => m.renderAPI(main, user)); }
-    else if (sec === "docs") { import("/js/docs.js?v=20261011a").then(m => m.renderDocs(main)); }
-    else if (sec === "veil") { import("/js/labs/veil.js?v=20261011a").then(m => m.renderVeil(main)); }
-    else if (sec === "strongroom") { import("/js/strongroom.js?v=20261011a").then(m => m.renderStrongroom(main)); }
-    else if (sec === "vault") { import("/js/vault.js?v=20261011b").then(m => m.renderVault(main)); }
+    else if (sec === "cvetimeline") { import("/js/cve-timeline.js?v=20261007a").then(m => live() && m.renderCveTimeline(main)); }
+    else if (sec === "dataviz") { import("/js/data-viz.js?v=20260930b").then(m => live() && m.renderDataViz(main)); }
+    else if (sec === "forensicstoolkit") { import("/js/forensics-toolkit.js").then(m => live() && m.renderForensicsToolkit(main)); }
+    else if (sec === "hashsuite") { import("/js/hash-suite.js").then(m => live() && m.renderHashSuite(main)); }
+    else if (sec === "httpinspector") { import("/js/http-inspector.js?v=20260924b").then(m => live() && m.renderHttpInspector(main)); }
+    else if (sec === "iptools") { import("/js/ip-tools.js").then(m => live() && m.renderIPTools(main)); }
+    else if (sec === "networktools") { import("/js/network-tools.js").then(m => live() && m.renderNetworkTools(main)); }
+    else if (sec === "packetanalyzer") { import("/js/packet-analyzer.js?v=20260924b").then(m => live() && m.renderPacketAnalyzer(main)); }
+    else if (sec === "passwordtools") { import("/js/password-tools.js?v=20260924b").then(m => live() && m.renderPasswordTools(main)); }
+    else if (sec === "payloadgen") { import("/js/payload-gen.js?v=20260924b").then(m => live() && m.renderPayloadGen(main)); }
+    else if (sec === "riskcalculator") { import("/js/risk-calculator.js?v=20260924b").then(m => live() && m.renderRiskCalculator(main)); }
+    else if (sec === "securityquiz") { import("/js/security-quiz.js?v=20260928a").then(m => live() && m.renderSecurityQuiz(main)); }
+    else if (sec === "securityscanner") { import("/js/security-scanner.js?v=20260929a").then(m => live() && m.renderSecurityScanner(main)); }
+    else if (sec === "subnetvisualizer") { import("/js/subnet-visualizer.js?v=20260929a").then(m => live() && m.renderSubnetVisualizer(main)); }
+    else if (sec === "threatdashboard") { import("/js/threat-dashboard.js?v=20260927a").then(m => live() && m.renderThreatDashboard(main)); }
+    else if (sec === "timelineviz") { import("/js/timeline-viz.js").then(m => live() && m.renderTimelineViz(main)); }
+    else if (sec === "vulndb") { import("/js/vulnerability-db.js?v=20260924b").then(m => live() && m.renderVulnerabilityDB(main)); }
+    else if (sec === "asnexplorer") { import("/js/asn-explorer.js?v=20260924b").then(m => live() && m.renderAsnExplorer(main)); }
+    else if (sec === "breachlookup") { import("/js/breach-lookup.js").then(m => live() && m.renderBreachLookup(main)); }
+    else if (sec === "corstester") { import("/js/cors-tester.js?v=20260924b").then(m => live() && m.renderCorsTester(main)); }
+    else if (sec === "cvesearch") { import("/js/cve-search.js?v=20261007a").then(m => live() && m.renderCveSearch(main)); }
+    else if (sec === "darknetradar") { import("/js/darknet-radar.js").then(m => live() && m.renderDarknetRadar(main)); }
+    else if (sec === "dnsenum") { import("/js/dns-enum.js?v=20260927b").then(m => live() && m.renderDNSEnum(main)); }
+    else if (sec === "dnsrecon") { import("/js/dns-recon.js").then(m => live() && m.renderDNSRecon(main)); }
+    else if (sec === "emailintel") { import("/js/email-intel.js").then(m => live() && m.renderEmailIntel(main)); }
+    else if (sec === "headeranalyzer") { import("/js/header-analyzer.js?v=20261007a").then(m => live() && m.renderHeaderAnalyzer(main)); }
+    else if (sec === "httpprobe") { import("/js/http-probe.js").then(m => live() && m.renderHttpProbe(main)); }
+    else if (sec === "identitymatrix") { import("/js/identity-matrix.js?v=20260924b").then(m => live() && m.renderIdentityMatrix(main)); }
+    else if (sec === "ipgeolocation") { import("/js/ip-geolocation.js?v=20260927b").then(m => live() && m.renderIPGeolocation(main)); }
+    else if (sec === "networkscanner") { import("/js/network-scanner.js").then(m => live() && m.renderNetworkScanner(main)); }
+    else if (sec === "sslinspector") { import("/js/ssl-inspector.js?v=20260923c").then(m => live() && m.renderSSLInspector(main)); }
+    else if (sec === "techfingerprint") { import("/js/tech-fingerprint.js").then(m => live() && m.renderTechFingerprint(main)); }
+    else if (sec === "trafficanalyzer") { import("/js/traffic-analyzer.js?v=20260927b").then(m => live() && m.renderTrafficAnalyzer(main)); }
+    else if (sec === "websockettester") { import("/js/websocket-tester.js").then(m => live() && m.renderWebSocketTester(main)); }
+    else if (sec === "whoisrecon") { import("/js/whois-recon.js?v=20261007a").then(m => live() && m.renderWhoisRecon(main)); }
+    else if (sec === "learn") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Learn Hub...</p>"; loadLearnHub().then(m => live() && m.renderLearnHub(main)); }
+    else if (sec === "learndo") { import("/js/learndo.js?v=20261009a").then(m => live() && m.renderLearnDo(main)); }
+    else if (sec === "engine") { import("/js/engine-tab.js?v=20260929t").then(m => live() && m.renderEngine(main)); }
+    else if (sec === "coder") { import("/js/coder.js?v=20261005a").then(m => live() && m.renderCliCoder(main)); }
+    else if (sec === "downloads") { import("/js/getapp.js?v=20261004a").then(m => live() && m.renderDownloads(main)); }
+    else if (sec === "dlguide") { import("/js/getapp.js?v=20261004a").then(m => live() && m.renderDownloadDocs(main)); }
+    else if (sec === "api") { import("/js/api.js?v=20261007a").then(m => live() && m.renderAPI(main, user)); }
+    else if (sec === "docs") { import("/js/docs.js?v=20261011a").then(m => live() && m.renderDocs(main)); }
+    else if (sec === "veil") { import("/js/labs/veil.js?v=20261011a").then(m => live() && m.renderVeil(main)); }
+    else if (sec === "strongroom") { import("/js/strongroom.js?v=20261011a").then(m => live() && m.renderStrongroom(main)); }
+    else if (sec === "vault") { import("/js/vault.js?v=20261011b").then(m => live() && m.renderVault(main)); }
     else if (sec === "setup") renderSetup(main, more);
     else if (sec === "settings") renderSettingsPage(main, user, isOwner, more);
-    else if (sec === "admin") { import("/js/admin.js?v=20261011e").then(m => m.renderAdmin(main, user)); }
+    else if (sec === "admin") { import("/js/admin.js?v=20261011e").then(m => live() && m.renderAdmin(main, user)); }
     else if (sec === "contact") renderContact(main);
     else if (sec === "education") { main.innerHTML = `<div class="panel" style="max-width:800px;margin:40px auto"><div class="panel-h">About Darknode Education</div><div style="padding:18px;line-height:1.8;font-size:.9rem"><p><strong>Darknode is a cybersecurity education platform</strong> designed for students, educators, and security professionals to learn information security through hands-on practice in a safe, controlled environment.</p><p style="margin-top:16px"><strong>Our Mission:</strong> To make cybersecurity education accessible, interactive, and practical. Most tools run in your browser or on your own machine. Some features do send data out: AI chat goes through Darknode's server to the AI provider, some lookup pages query public services (for example NVD, crt.sh and DNS-over-HTTPS resolvers), and saved items and account data are stored in Google Firebase. Each page that contacts an outside service does so only when you run it.</p><p style="margin-top:16px"><strong>Who Uses Darknode:</strong></p><ul style="margin:8px 0 0 20px;line-height:2"><li>Computer science and cybersecurity students</li><li>IT professionals studying for certifications (CompTIA Security+, CISSP, CEH, OSCP)</li><li>University professors and instructors teaching security courses</li><li>Security operations center (SOC) analysts in training</li><li>Career changers learning cybersecurity fundamentals</li></ul><p style="margin-top:16px"><strong>Educational Standards:</strong> Our curriculum aligns with NIST NICE Framework, NSA CAE-CD requirements, and CompTIA Security+ objectives. All practice environments are isolated, legal, and designed for authorized educational use only.</p><p style="margin-top:16px"><strong>Responsible Use:</strong> Darknode tools are designed exclusively for educational purposes and authorized security testing. Users must comply with all applicable laws and obtain proper authorization before testing any system they do not own.</p><p style="margin-top:16px;color:var(--mut);font-size:.82rem">Darknode is a product of Darknode-Official. For questions about our educational programs, visit darknode.ai.</p></div></div>`; }
-    else if (sec === "toolbox") { import("/js/mini-tools.js?v=20261006a").then(m => m.renderToolbox(main, { onOpen: (id) => show("tool-" + id) })); }
-    else if (sec.indexOf("tool-") === 0) { const _tid = sec.slice(5); import("/js/mini-tools.js?v=20261006a").then(m => m.renderMiniTool(main, _tid, { onBack: () => show("toolbox") })); }
+    else if (sec === "toolbox") { import("/js/mini-tools.js?v=20261006a").then(m => live() && m.renderToolbox(main, { onOpen: (id) => show("tool-" + id) })); }
+    else if (sec.indexOf("tool-") === 0) { const _tid = sec.slice(5); import("/js/mini-tools.js?v=20261006a").then(m => live() && m.renderMiniTool(main, _tid, { onBack: () => show("toolbox") })); }
     else renderHome(main, user, isOwner, show);
     if (more === undefined) { try { localStorage.setItem("sw_last_sec", sec); } catch (_) {} }
     // Jump back to the top on every navigation. The page scrolls on the window
@@ -1994,13 +2003,26 @@ function renderApp(user) {
     jumpTop();
     requestAnimationFrame(jumpTop);
   }
-  // Handle browser back/forward
-  window.addEventListener("popstate", (e) => {
-    const sec = (e.state && e.state.sec) || pathToSec(location.pathname);
-    show(sec, undefined, true);
-  });
-  // Handle keyboard shortcut navigation (from shortcuts.js)
-  document.addEventListener("dn:navigate", (e) => { if (e.detail) show(e.detail); });
+  // Window/document listeners are registered ONCE per page and always dispatch to the
+  // latest render's functions — a re-render must not leave stale handlers driving old DOM.
+  _appH.show = show;
+  if (!_appH.on) {
+    _appH.on = true;
+    // Handle browser back/forward
+    window.addEventListener("popstate", (e) => {
+      const sec = (e.state && e.state.sec) || pathToSec(location.pathname);
+      _appH.show(sec, undefined, true);
+    });
+    // Handle keyboard shortcut navigation (from shortcuts.js)
+    document.addEventListener("dn:navigate", (e) => { if (e.detail) _appH.show(e.detail); });
+    document.addEventListener("keydown", (e) => {
+      if ((e.metaKey || e.ctrlKey) && (e.key === "s" || e.key === "S") && document.body.classList.contains("app")) { e.preventDefault(); _appH.saveFrame(); }
+    });
+    // gentle exit-intent hint (once per session) + native unsaved-changes guard
+    let exitHinted = false;
+    document.addEventListener("mouseout", (e) => { if (e.clientY <= 0 && !exitHinted && _appH.hasTyped()) { exitHinted = true; toast("Leaving? Press Ctrl+S to save this exact frame so you resume right here.", 5000); } });
+    window.addEventListener("beforeunload", (e) => { if (_appH.hasTyped()) { e.preventDefault(); e.returnValue = ""; } });
+  }
 
   view.querySelector(".side-nav").onclick = (e) => {
     const b = e.target.closest(".side-item");
@@ -2378,13 +2400,7 @@ function renderApp(user) {
     try { localStorage.setItem(FRAME, JSON.stringify({ sec: curSec, fields, ts: Date.now() })); } catch (_) {}
     toast("Frame saved — you'll resume right here.");
   }
-  document.addEventListener("keydown", (e) => {
-    if ((e.metaKey || e.ctrlKey) && (e.key === "s" || e.key === "S") && document.body.classList.contains("app")) { e.preventDefault(); saveFrame(); }
-  });
-  // gentle exit-intent hint (once per session) + native unsaved-changes guard
-  let exitHinted = false;
-  document.addEventListener("mouseout", (e) => { if (e.clientY <= 0 && !exitHinted && hasTyped()) { exitHinted = true; toast("Leaving? Press Ctrl+S to save this exact frame so you resume right here.", 5000); } });
-  window.addEventListener("beforeunload", (e) => { if (hasTyped()) { e.preventDefault(); e.returnValue = ""; } });
+  _appH.saveFrame = saveFrame; _appH.hasTyped = hasTyped;
 
   // ---- restore last frame (section + typed text), else last section ----
   let frame = null; try { frame = JSON.parse(localStorage.getItem(FRAME)); } catch (_) {}
@@ -2405,8 +2421,11 @@ function renderApp(user) {
   // every tool the Deck opens is this same page in embed mode (/<sec>?embed=1).
   if (!document.body.classList.contains("dn-embed")) {
     view.hidden = true;
-    Promise.all([import("/js/deck-ui.js?v=20261011g"), import("/js/console-nav.js?v=20261011c")]).then(([{ renderDeck }, nav]) => {
-      renderDeck(document.body, {
+    Promise.all([import("/js/deck-ui.js?v=20261012a"), import("/js/console-nav.js?v=20261011c")]).then(([{ renderDeck }, nav]) => {
+      // Never stack Decks: dispose the previous mount (root + listeners) first.
+      if (_deckOff) { try { _deckOff(); } catch (_) {} _deckOff = null; }
+      document.querySelectorAll("body > .dk").forEach((n) => n.remove());
+      _deckOff = renderDeck(document.body, {
         groups: (nav.NAV || []).map((g) => ({ id: g.id, name: g.name, color: g.color, items: g.items || [] })),
         user: { displayName: user.displayName || "", email: user.email || "", photoURL: user.photoURL || "" },
         isOwner,
@@ -2568,13 +2587,26 @@ async function loadAnnouncement() {
 }
 
 // ---------- boot ----------
-setPersistence(auth, browserLocalPersistence).catch(() => {});
+// No setPersistence() here: the default (IndexedDB) already keeps users signed in.
+// Calling it on every load migrated the session localStorage<->IndexedDB, and every
+// embedded tool iframe (/<sec>?embed=1) is a full load — the resulting `storage`
+// events flipped the TOP window's auth state null->user, flashing the landing page
+// and re-mounting the Deck on a stale route (the "bounces back to Admin" bug).
 getRedirectResult(auth).then((result) => {
   if (result && result.user) {
     try { sessionStorage.setItem("sw_fresh_signin", "1"); } catch (_) {}
   }
 }).catch(() => {});
 onAuthStateChanged(auth, async (user) => {
+  // Idempotent: the same signed-in user while the app is up is a no-op (no re-render),
+  // and a transient null (a cross-window storage sync) is re-checked before tearing
+  // the app down to the landing page.
+  if (user && _appUid === user.uid) return;
+  if (!user && _appUid) {
+    await new Promise((r) => setTimeout(r, 300));
+    if (auth.currentUser || _appGuest) return;
+    _appUid = null;
+  }
   if (window.__boot) window.__boot.set(70);
   // Scope every client-side credential to this account (see user-keys.js): the
   // uid must be set before any key is read so one user never reads another's

@@ -8996,13 +8996,15 @@ window._seExpGraph = function() {
   if (!apts.length) { _seExpStatus('No actor data to push.'); return; }
   var items = apts.map(function(a) {
     var m = _seActorMetrics(a);
-    return { id: 'apt:' + a.id, label: a.name, type: 'threat-actor',
-             nation: _seAttrToken(a.nationState), active: !!a.active, threatIndex: m.index };
+    // Built-in public reference profiles, not observations from this environment.
+    return { type: 'THREAT_ACTOR', name: a.name,
+             data: { aptId: a.id, nation: _seAttrToken(a.nationState), active: !!a.active, threatIndex: m.index },
+             opts: { tags: ['sentinel', 'reference'] } };
   });
   _seExpStatus('Pushing ' + items.length + ' actors to Security Graph...');
-  import('/js/graph-bridge.js?v=20260923c').then(function(gb) {
-    gb.sendToGraph('SENTINEL', items, undefined, true);
-    _seExpStatus('Pushed ' + items.length + ' actors to Security Graph.');
+  import('/js/graph-bridge.js?v=20261012a').then(function(gb) {
+    var r = gb.sendToGraph('SENTINEL', items, undefined, true);
+    _seExpStatus('Security Graph: ' + r.created + ' actors added, ' + r.updated + ' updated.');
   }).catch(function() { _seExpStatus('Security Graph bridge unavailable.'); });
 };
 

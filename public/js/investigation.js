@@ -184,7 +184,7 @@ function renderListView(main, show) {
         </div>
         <p class="inv-card-desc">${esc(inv.data.description || 'No description')}</p>
         <div class="inv-card-meta">
-          <span class="inv-status-badge inv-badge">${esc(inv.status || 'OPEN')}</span>
+          <span class="inv-status-badge inv-badge">${esc(inv.status || 'open')}</span>
           <span>${entityCount} entities</span>
           <span>${findingCount} findings</span>
           <span>${timeAgo(inv.updatedAt)}</span>
@@ -212,14 +212,9 @@ function renderListView(main, show) {
   renderList();
 
   main.querySelector('#inv-new').onclick = () => {
-    const inv = createEntity({
-      type: 'INVESTIGATION',
-      name: 'New Investigation — ' + shortDate(Date.now()),
-      data: { description: '', notes: [], owner: getAuthor() },
-      severity: 'MEDIUM',
-      status: 'OPEN',
-      source: 'manual'
-    });
+    const inv = createEntity('INVESTIGATION', 'New Investigation — ' + shortDate(Date.now()),
+      { description: '', notes: [], owner: getAuthor() },
+      { severity: 'medium', status: 'open', source: 'manual' });
     _currentInvId = inv.id;
     _currentView = 'detail';
     _currentTab = 'overview';
@@ -259,7 +254,7 @@ function renderDetailView(main, show) {
         <button class="inv-back" id="inv-back-btn">&larr; Investigations</button>
         <h1 style="flex:1;margin:0;font-size:1.1rem">${esc(inv.name)}</h1>
         ${sevBadge(inv.severity)}
-        <span class="inv-status-badge inv-badge">${esc(inv.status || 'OPEN')}</span>
+        <span class="inv-status-badge inv-badge">${esc(inv.status || 'open')}</span>
       </div>
       <div class="inv-tabs" id="inv-tabs">
         ${TABS.map(t => `<button class="inv-tab${t === _currentTab ? ' active' : ''}" data-tab="${t}">${t.charAt(0).toUpperCase() + t.slice(1)}</button>`).join('')}
@@ -547,13 +542,7 @@ function renderTimelineTab(panel, inv, main, show) {
     const desc = panel.querySelector('#inv-tl-desc').value.trim();
     if (!desc) return;
     const eventType = panel.querySelector('#inv-tl-type').value;
-    const event = createEntity({
-      type: 'EVENT',
-      name: desc,
-      data: { eventType },
-      source: getAuthor(),
-      status: 'OPEN'
-    });
+    const event = createEntity('EVENT', desc, { eventType }, { source: getAuthor(), status: 'open' });
     createRelationship(inv.id, event.id, 'contains');
     renderTimelineTab(panel, getEntity(inv.id), main, show);
   };
@@ -619,7 +608,7 @@ function renderFindingsTab(panel, inv, main, show) {
         <div class="inv-field" style="flex:0 0 120px">
           <label>Severity</label>
           <select class="inv-select" id="inv-f-sev" style="width:100%">
-            ${SEVERITIES.map(s => `<option value="${esc(s)}"${s === 'MEDIUM' ? ' selected' : ''}>${esc(s)}</option>`).join('')}
+            ${SEVERITIES.map(s => `<option value="${esc(s)}"${s === 'medium' ? ' selected' : ''}>${esc(s)}</option>`).join('')}
           </select>
         </div>
       </div>
@@ -650,17 +639,10 @@ function renderFindingsTab(panel, inv, main, show) {
   panel.querySelector('#inv-f-create').onclick = () => {
     const title = panel.querySelector('#inv-f-title').value.trim();
     if (!title) return;
-    const finding = createEntity({
-      type: 'FINDING',
-      name: title,
-      severity: panel.querySelector('#inv-f-sev').value,
-      data: {
+    const finding = createEntity('FINDING', title, {
         description: panel.querySelector('#inv-f-desc').value.trim(),
         remediation: panel.querySelector('#inv-f-remediation').value.trim()
-      },
-      source: getAuthor(),
-      status: 'OPEN'
-    });
+      }, { severity: panel.querySelector('#inv-f-sev').value, source: getAuthor(), status: 'open' });
     createRelationship(inv.id, finding.id, 'contains');
     renderFindingsTab(panel, getEntity(inv.id), main, show);
   };
@@ -841,7 +823,7 @@ export function openAddToInvestigation(entity) {
             return `<div class="inv-modal-item">
               <span class="inv-type-dot" style="background:#2563eb"></span>
               <span class="inv-modal-item-name">${esc(inv.name)}</span>
-              <span class="inv-modal-item-meta">${esc(inv.status || 'OPEN')}</span>
+              <span class="inv-modal-item-meta">${esc(inv.status || 'open')}</span>
               ${alreadyIn
                 ? '<span style="font-size:.72rem;color:var(--ok,#22c55e);font-weight:600">ADDED</span>'
                 : `<button class="inv-btn inv-btn-primary inv-btn-sm" data-ati-inv="${esc(inv.id)}">Add</button>`}
@@ -873,14 +855,9 @@ export function openAddToInvestigation(entity) {
   };
 
   overlay.querySelector('#inv-ati-new').onclick = () => {
-    const inv = createEntity({
-      type: 'INVESTIGATION',
-      name: 'Investigation — ' + shortDate(Date.now()),
-      data: { description: '', notes: [], owner: getAuthor() },
-      severity: 'MEDIUM',
-      status: 'OPEN',
-      source: 'manual'
-    });
+    const inv = createEntity('INVESTIGATION', 'Investigation — ' + shortDate(Date.now()),
+      { description: '', notes: [], owner: getAuthor() },
+      { severity: 'medium', status: 'open', source: 'manual' });
     createRelationship(inv.id, entity.id, 'contains');
     close();
   };

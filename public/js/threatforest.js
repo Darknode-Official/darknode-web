@@ -631,7 +631,7 @@ async function runAI(p) {
 function sendGraph(btn) {
   if (S.sentGraph || !S.result) return;
   btn.disabled = true; btn.textContent = "Sending…";
-  import("/js/graph-bridge.js?v=20260923c").then((gb) => {
+  import("/js/graph-bridge.js?v=20261012a").then((gb) => {
     try {
       const sevMap = { 5: "critical", 4: "high", 3: "medium", 2: "low", 1: "info" };
       const asset = gb.sendToGraph("ThreatForest", [{

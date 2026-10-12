@@ -1935,10 +1935,10 @@ window._vgSendRiskToGraph = function() {
   var rows = _vgComputeHostRisk();
   if (!rows.length) { _vgLog('No live host data to send to Security Graph', 'warning'); return; }
   var items = rows.map(function(r) {
-    return { id: r.host, label: r.host, type: 'host', risk: r.risk, band: r.band, grade: r.grade || null, source: 'VANGUARD' };
+    return { type: 'ASSET', name: r.host, data: { risk: r.risk, band: r.band, grade: r.grade || null }, opts: { tags: ['vanguard', 'host'] } };
   });
-  import('/js/graph-bridge.js?v=20260923c').then(function(gb) {
-    gb.sendToGraph('VANGUARD', items, undefined, true);
-    _vgLog('Sent ' + items.length + ' host(s) to Security Graph', 'success');
+  import('/js/graph-bridge.js?v=20261012a').then(function(gb) {
+    var res = gb.sendToGraph('VANGUARD', items, undefined, true);
+    _vgLog('Security Graph: ' + res.created + ' host(s) added, ' + res.updated + ' updated', 'success');
   }).catch(function() { _vgLog('Security Graph bridge unavailable', 'dim'); });
 };

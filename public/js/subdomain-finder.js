@@ -392,7 +392,7 @@ export function renderSubdomainFinder(main) {
       var meta = { scannedAt: new Date().toISOString() };
       var tags = ['subdomain', 'ct-log'];
       btn.disabled = true;
-      import('/js/graph-bridge.js?v=20260923c').then(function(gb) {
+      import('/js/graph-bridge.js?v=20261012a').then(function(gb) {
         var rootEnt = gb.sendToGraph('Subdomain Finder', [{ type: 'DOMAIN', name: root, data: meta, opts: { tags: tags } }], undefined, true).entities[0];
         var created = 0, updated = 0;
         gb.batchGraph(function() { scanResults.forEach(function(r) {

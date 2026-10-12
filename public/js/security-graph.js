@@ -48,6 +48,18 @@ function _load() {
   _index = true;
 }
 
+// Another tab, or a tool running in an embedded iframe, wrote the graph: drop the
+// in-memory copy so the next read reloads it. Otherwise this document keeps serving
+// stale counts and its next save would overwrite the other document's entities.
+try {
+  window.addEventListener('storage', (e) => {
+    if (e.key !== STORAGE_KEY && e.key !== null) return;
+    if (_batchDepth) return;
+    _index = null; _entities = {}; _relationships = {};
+    _emit('secgraph:sync', {});
+  });
+} catch (_) {}
+
 let _batchDepth = 0;
 let _dirty = false;
 
