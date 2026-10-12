@@ -26,6 +26,7 @@ import * as surface from "/js/deck-surface.js?v=20261011b";
 // would miss every event the rest of the app emits). Drives the live Activity
 // stream and the notifications bell.
 import { bus, EVENTS } from "/js/core/bus.js";
+import { isSimulated } from "/js/core/posture.js";
 
 const LS_CONN = "dn_deck_connections_v1";
 const LS_SCENE = "dn_deck_scene";          // last workspace selected
@@ -194,6 +195,25 @@ const IC = {
   book: SVG('<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5Z"/><path d="M4 20.5A2.5 2.5 0 0 1 6.5 18H20v3H6.5A2.5 2.5 0 0 1 4 20.5Z"/><path d="M8 7h8M8 10.5h6"/>'),
   copy: SVG('<rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>'),
   term: SVG('<rect x="3" y="4" width="18" height="16" rx="2"/><path d="m7 9 3 3-3 3M13 15h4"/>'),
+  // Shell navigation: one distinct glyph per destination.
+  menu: SVG('<path d="M4 6h16M4 12h16M4 18h16"/>'),
+  rail: SVG('<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/><path d="m15 10-2 2 2 2"/>'),
+  cloud: SVG('<path d="M7 18a4.5 4.5 0 0 1-.6-8.96A6 6 0 0 1 18 9.5a4 4 0 0 1-.5 8.5Z"/>'),
+  alert: SVG('<path d="M12 3 2.5 20h19Z"/><path d="M12 10v4M12 17.2v.3"/>'),
+  code: SVG('<path d="m8 8-4 4 4 4M16 8l4 4-4 4M14 5l-4 14"/>'),
+  branch: SVG('<circle cx="6" cy="5" r="2"/><circle cx="6" cy="19" r="2"/><circle cx="18" cy="7" r="2"/><path d="M6 7v10M18 9c0 5-6 4-12 8"/>'),
+  tree: SVG('<circle cx="12" cy="4.5" r="2"/><circle cx="5" cy="19" r="2"/><circle cx="12" cy="19" r="2"/><circle cx="19" cy="19" r="2"/><path d="M12 6.5V17M12 11H5v6M12 11h7v6"/>'),
+  search: SVG('<circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/><path d="M8.5 11h5M11 8.5v5"/>'),
+  nodes: SVG('<circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="8" r="2.5"/><circle cx="9" cy="18" r="2.5"/><path d="M8.3 7 15.6 7.6M7 8.3l1.4 7.3M16.5 10.1 10.8 16"/>'),
+  shield: SVG('<path d="M12 3 4.5 6v6c0 4.5 3.2 7.6 7.5 9 4.3-1.4 7.5-4.5 7.5-9V6Z"/><path d="M12 8v5M12 15.8v.3"/>'),
+  brief: SVG('<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5h6v2M3 12h18"/>'),
+  coins: SVG('<ellipse cx="9" cy="7" rx="6" ry="3"/><path d="M3 7v5c0 1.7 2.7 3 6 3s6-1.3 6-3V7"/><path d="M15 11.2c3.4.2 6 1.4 6 2.8v4c0 1.7-2.7 3-6 3-2.3 0-4.3-.6-5.3-1.6"/>'),
+  lock: SVG('<rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/><path d="M12 14.5v2.5"/>'),
+  check: SVG('<path d="M12 3 4.5 6v6c0 4.5 3.2 7.6 7.5 9 4.3-1.4 7.5-4.5 7.5-9V6Z"/><path d="m8.8 12 2.2 2.2 4.4-4.4"/>'),
+  map: SVG('<path d="M9 4 3 6.5v13.5L9 17.5l6 2.5 6-2.5V4L15 6.5Z"/><path d="M9 4v13.5M15 6.5V20"/>'),
+  plug: SVG('<path d="M9 3v5M15 3v5"/><path d="M6 8h12v3a6 6 0 0 1-12 0Z"/><path d="M12 17v4"/>'),
+  wrench: SVG('<path d="M14.7 6.3a4 4 0 0 0-5.2 5.2L3.5 17.5 6.5 20.5l6-6a4 4 0 0 0 5.2-5.2l-2.6 2.6-2.4-.6-.6-2.4Z"/>'),
+  key: SVG('<circle cx="8" cy="15" r="4"/><path d="m11 12 9-9M17 6l3 3M14.5 8.5 17 11"/>'),
 };
 
 // Platform severity palette (same thresholds the Threat Feed uses).
@@ -438,7 +458,18 @@ function readStats(){
 function readRecentActivity(){
   const SEED = new Set(["Scanned 10.10.14.7", "Queried CVE-2024-1234", "Generated report"]);
   let items = []; try { items = JSON.parse(localStorage.getItem("dn_recent_activity")) || []; } catch (_) {}
-  return (Array.isArray(items) ? items : []).filter((i) => i && i.text && !SEED.has(i.text)).slice(0, 20);
+  items = (Array.isArray(items) ? items : []).filter((i) => i && i.text && !SEED.has(i.text)).slice(0, 20);
+  // Entries written before activity carried a sim flag: recover it from the graph. A name
+  // counts as sample only when every entity with that name is simulated.
+  if (items.some((i) => i.sim === undefined)) {
+    const sim = new Map();
+    try {
+      const ents = (JSON.parse(localStorage.getItem("dn_security_graph")) || {}).entities || {};
+      for (const e of Object.values(ents)) { const k = (e.type || "") + ": " + e.name; sim.set(k, (sim.get(k) ?? true) && isSimulated(e)); }
+    } catch (_) {}
+    items = items.map((i) => { if (i.sim !== undefined) return i; const m = /^Created (.+)$/.exec(i.text); return { ...i, sim: !!(m && sim.get(m[1])) }; });
+  }
+  return items;
 }
 function readNavRecent(){ try { const v = JSON.parse(localStorage.getItem("sw_recent") || "[]"); return Array.isArray(v) ? v : []; } catch (_) { return []; } }
 const timeAgo = (ts) => { const d = Date.now() - ts; return d < 60000 ? "just now" : d < 3600000 ? Math.floor(d / 60000) + "m ago" : d < 86400000 ? Math.floor(d / 3600000) + "h ago" : Math.floor(d / 86400000) + "d ago"; };
@@ -596,22 +627,13 @@ const CSS = `
    is viewport-centred), and the tab strip lives in the middle auto track. When
    the tabs don't fit they scroll inside that track (min-width:0 + overflow on
    .dk-tabs) instead of spilling over and overlapping the right-side controls. */
-.dk-top{display:grid;grid-template-columns:minmax(max-content,1fr) auto minmax(max-content,1fr);align-items:center;gap:12px;padding:0 18px;border-bottom:1px solid rgba(23,33,56,.08);background:#eef1f7}
+/* Header: [nav toggle][brand][breadcrumb .... ][search][controls]. Every track can
+   shrink (minmax(0,…)) and the search field gives way first, so nothing ever overlaps. */
+.dk-top{display:grid;grid-template-columns:auto auto minmax(0,1fr) minmax(0,440px) auto;align-items:center;gap:14px;padding:0 16px 0 11px;border-bottom:1px solid rgba(23,33,56,.09);background:#fff}
 .dk-top>.dk-brand{flex:none;justify-self:start;min-width:0}
-.dk-top>.dk-tabs{justify-self:center;min-width:0;max-width:100%}
 .dk-top>.dk-right{flex:none;justify-self:end;margin-left:0;min-width:0}
-@media(max-width:1040px){.dk-top{grid-template-columns:auto 1fr auto}}
 .dk-brand{appearance:none;border:0;background:transparent;cursor:pointer;flex:none}
 .dk-brand .dk-wsname{margin-left:9px;padding-left:10px;border-left:1px solid rgba(23,33,56,.14);font-family:system-ui,sans-serif;font-weight:600;font-size:12px;letter-spacing:.02em;color:#687388}
-/* primary tab bar */
-.dk-tabs{display:flex;gap:2px;align-items:center;overflow-x:auto;scrollbar-width:none;margin:0 2px}
-.dk-tabs::-webkit-scrollbar{display:none}
-.dk-tab{appearance:none;border:0;background:transparent;color:#5a6680;font:inherit;font-size:12.5px;font-weight:600;letter-spacing:.01em;padding:7px 10px;border-radius:9px;cursor:pointer;display:inline-flex;align-items:center;gap:7px;white-space:nowrap;position:relative;transition:color .15s,background .15s}
-.dk-tab svg{width:15px;height:15px;opacity:.8}
-.dk-tab:hover{color:#38435c;background:rgba(23,33,56,.05)}
-.dk-tab.on{color:#2552c6;background:rgba(47,95,255,.18)}
-.dk-tab.on svg{opacity:1}
-.dk-tab.on::after{content:"";position:absolute;left:13px;right:13px;bottom:-9px;height:2px;border-radius:2px;background:#4f86ff}
 /* right-side controls */
 .dk-icbtn{appearance:none;border:1px solid rgba(23,33,56,.1);background:rgba(23,33,56,.04);color:#44506a;width:34px;height:34px;border-radius:10px;display:grid;place-items:center;cursor:pointer;position:relative;flex:none;transition:background .15s,border-color .15s}
 .dk-icbtn:hover{background:rgba(23,33,56,.1);border-color:rgba(23,33,56,.2);color:#141c2e}
@@ -622,17 +644,64 @@ const CSS = `
 .dk-health.warn{border-color:rgba(245,181,68,.35);background:rgba(245,181,68,.12);color:#c99320}
 .dk-health.warn .d{background:#b7791f}
 @media(max-width:1510px){.dk-brand .dk-wsname{display:none}}
-@media(max-width:1600px){.dk-health .t,.dk-clock,.dk-tab svg{display:none}.dk-tab{padding:7px 11px}}
-@media(max-width:1439px){.dk-tab svg{display:inline}.dk-tab span{display:none}.dk-tab{padding:7px 9px}}
-/* Phones: two-row bar so the workspaces stay reachable — brand + controls on top,
-   a full-width swipeable tab strip below; every scene starts under both rows. */
+@media(max-width:1600px){.dk-clock{display:none}}
+@media(max-width:1180px){.dk-health .t{display:none}.dk-crumb .cg,.dk-crumb .cs{display:none}}
+/* ---------- application shell: sidebar, breadcrumb, header search ---------- */
+.dk{--dk-sw:248px;zoom:var(--dkz,1)}
+.dk.nav-rail{--dk-sw:64px}
+.dk.nav-phone{--dk-sw:0px}
+/* Larger screens get proportionally larger type and spacing instead of empty margins. */
+@media(min-width:1800px){.dk{--dkz:1.08}}
+@media(min-width:2200px){.dk{--dkz:1.18}}
+@media(min-width:2800px){.dk{--dkz:1.3}}
+.dk.dense{zoom:calc(var(--dkz,1) * .9)}
+.dk td,.dk th{overflow-wrap:anywhere}
+.dk[data-ui=deck] .dk-scene{top:56px;left:var(--dk-sw);transition:left .18s ease}
+.dk-sbtog{border-color:transparent;background:transparent}
+.dk-crumb{min-width:0;display:flex;align-items:center;gap:8px;font-size:13px;color:#6a7488;white-space:nowrap;overflow:hidden;padding-left:6px}
+.dk-crumb b{color:#141c2e;font-weight:650;overflow:hidden;text-overflow:ellipsis}
+.dk-crumb .cs{color:#b3bac8}
+.dk-hsearch{appearance:none;display:flex;align-items:center;gap:10px;width:100%;min-width:0;height:36px;padding:0 10px 0 12px;border:1px solid rgba(23,33,56,.13);background:#f6f8fb;color:#6a7488;font:inherit;font-size:13px;cursor:pointer;transition:border-color .15s,background .15s}
+.dk-hsearch:hover{border-color:rgba(47,99,224,.45);background:#fff}
+.dk-hsearch svg{width:15px;height:15px;flex:none}
+.dk-hsearch .hs{flex:1;min-width:0;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dk-hsearch kbd{flex:none;font:inherit;font-size:11px;font-weight:600;color:#5a6680;background:rgba(23,33,56,.07);border:1px solid rgba(23,33,56,.1);padding:1px 6px;border-radius:5px}
+#dkFindBtn{display:none}
+.dk-sidebar{position:absolute;top:56px;left:0;bottom:0;width:var(--dk-sw);z-index:35;display:flex;flex-direction:column;background:#fff;border-right:1px solid rgba(23,33,56,.09);transition:width .18s ease,transform .2s ease}
+.dk-sbnav{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;padding:10px 12px 12px;scrollbar-width:thin}
+.dk-nvh{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#8a93a6;padding:18px 10px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dk-nv{appearance:none;border:0;background:transparent;width:100%;min-height:36px;display:flex;align-items:center;gap:11px;padding:7px 10px;margin:1px 0;color:#38435c;font:inherit;font-size:13.5px;font-weight:550;cursor:pointer;text-align:left;position:relative;transition:background .12s,color .12s}
+.dk-nv svg{width:18px;height:18px;flex:none;color:#6a7488}
+.dk-nv .nl{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dk-nv .nc{flex:none;font-size:11px;font-weight:700;color:#5a6680;background:rgba(23,33,56,.06);border-radius:20px;padding:1px 8px}
+.dk-nv:hover{background:rgba(23,33,56,.05);color:#141c2e}
+.dk-nv:hover svg{color:#38435c}
+.dk-nv:focus-visible{outline:2px solid #2f63e0;outline-offset:-2px}
+.dk-nv.on{background:rgba(47,99,224,.1);color:#1f4fc4;font-weight:650}
+.dk-nv.on svg{color:#2f63e0}
+.dk-nv.on::before{content:"";position:absolute;left:-12px;top:6px;bottom:6px;width:3px;border-radius:0 3px 3px 0;background:#2f63e0}
+.dk-sbfoot{flex:none;border-top:1px solid rgba(23,33,56,.08);padding:8px 12px}
+.dk-sbfoot .dk-nv{color:#5a6680;font-size:12.5px}
+/* icon rail */
+.dk.nav-rail .dk-sbnav,.dk.nav-rail .dk-sbfoot{padding-left:10px;padding-right:10px}
+.dk.nav-rail .dk-nv{justify-content:center;padding:9px 0}
+.dk.nav-rail .dk-nv .nl,.dk.nav-rail .dk-nv .nc{display:none}
+.dk.nav-rail .dk-nv.on::before{left:-10px}
+.dk.nav-rail .dk-nvh{font-size:0;padding:9px 6px}
+.dk.nav-rail .dk-nvh::after{content:"";display:block;height:1px;background:rgba(23,33,56,.1)}
+.dk-fly{position:fixed;z-index:200;pointer-events:none;background:#141c2e;color:#fff;font-size:12.5px;font-weight:600;padding:6px 10px;border-radius:6px;white-space:nowrap;opacity:0;transform:translate(-4px,-50%);transition:opacity .12s,transform .12s}
+.dk-fly.on{opacity:1;transform:translate(0,-50%)}
+/* phones: off-canvas drawer */
+.dk-sbshade{display:none}
+.dk.nav-phone .dk-sidebar{top:0;width:min(290px,86vw);z-index:130;transform:translateX(-102%);box-shadow:0 16px 40px rgba(16,24,40,.22)}
+.dk.nav-phone.nav-open .dk-sidebar{transform:none}
+.dk.nav-phone.nav-open .dk-sbshade{display:block;position:absolute;inset:0;z-index:125;background:rgba(16,24,40,.38)}
+.dk.nav-phone .dk-sbfoot{display:none}
 @media(max-width:720px){
-  .dk-top{height:100px;grid-template-columns:1fr auto;grid-template-rows:56px 44px;row-gap:0;padding:0 16px}
-  .dk-top>.dk-tabs{grid-column:1/-1;grid-row:2;justify-self:stretch;margin:0 -16px;padding:0 12px;border-top:1px solid rgba(23,33,56,.06)}
-  .dk-tab span{display:inline}.dk-tab svg{display:none}.dk-tab{padding:7px 11px}
-  .dk-tab.on::after{bottom:-6px}
-  .dk-health,#dkNew{display:none}
-  .dk .dk-scene{top:100px}
+  .dk-top{grid-template-columns:auto auto 1fr auto;gap:8px;padding:0 10px}
+  .dk-crumb,.dk-hsearch,.dk-health,#dkNew{display:none}
+  #dkFindBtn{display:grid}
+  .dk-right{gap:7px}
 }
 .dk-acct{appearance:none;border:1px solid rgba(23,33,56,.1);background:rgba(23,33,56,.04);cursor:pointer;height:34px;padding:0 8px 0 5px;border-radius:999px;display:inline-flex;align-items:center;gap:5px;flex:none}
 .dk-acct:hover{background:rgba(23,33,56,.1)}
@@ -663,7 +732,7 @@ const CSS = `
 .dk-nrow .na{font-size:11px;color:#6a7488;margin-top:2px}
 .dk-nempty{padding:26px 16px;text-align:center;color:#6a7488;font-size:13px}
 /* ======================= Overview workspace ======================= */
-.dk-ov,.dk-surf,.dk-cloud,.dk-comp,.dk-con2,.dk-ti,.dk-inv{position:absolute;inset:56px 0 0;overflow:auto;padding:26px 4vw 60px}
+.dk-ov,.dk-surf,.dk-cloud,.dk-comp,.dk-con2,.dk-ti,.dk-inv{position:absolute;inset:56px 0 0;overflow:auto;padding:26px clamp(20px,2.6vw,44px) 60px}
 .dk-ovhead{display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:14px;margin-bottom:22px}
 .dk-ovhead h1{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif;font-size:26px;font-weight:800;letter-spacing:-.02em;color:#141c2e}
 .dk-ovhead p{font-size:13.5px;color:#687388;margin-top:5px;max-width:620px}
@@ -1099,21 +1168,10 @@ export function renderDeck(host, opts) {
     <div class="dk-sky"></div>
     <canvas class="dk-stars" id="dkStars"></canvas>
     <div class="dk-top">
+      <button class="dk-icbtn dk-sbtog" id="dkSbTog" aria-label="Toggle navigation" aria-controls="dkSide">${IC.menu}</button>
       <button class="dk-brand" id="dkBrand" title="Open full console"><img class="dk-mark" src="/logo-dark.svg?v=20261007b" alt=""><img class="dk-wm" src="/wordmark.svg" alt="Darknode"><span class="dk-wsname">Command Center</span></button>
-      <nav class="dk-tabs dkx" id="dkTabs" aria-label="Workspaces">
-        <button class="dk-tab dkx on" data-scene="overview" title="Posture">${IC.home}<span>Posture</span></button>
-        <button class="dk-tab dkx" data-scene="surface" title="Attack Surface">${IC.radar}<span>Attack Surface</span></button>
-        <button class="dk-tab dkx" data-tool="codescan" title="Code Scanner">${IC.term}<span>Code</span></button>
-        <button class="dk-tab dkx" data-tool="strongroom" title="Fund Protection">${IC.bolt}<span>Funds</span></button>
-        <button class="dk-tab dkx" data-tool="vault" title="Treasury Vault">${IC.star}<span>Treasury</span></button>
-        <button class="dk-tab dkx" data-scene="threat" title="Threat & Vulns">${IC.radar}<span>Threat &amp; Vulns</span></button>
-        <button class="dk-tab dkx" data-scene="cloud" title="Cloud">${IC.grid}<span>Cloud</span></button>
-        <button class="dk-tab dkx" data-scene="compliance" title="Compliance">${IC.folder}<span>Compliance</span></button>
-        <button class="dk-tab dkx" data-scene="invest" title="Investigations">${IC.folder}<span>Investigations</span></button>
-        <button class="dk-tab dkx" data-scene="con" title="Integrations">${IC.link}<span>Integrations</span></button>
-        <button class="dk-tab dkx" data-scene="tools" title="Tools">${IC.grid}<span>Tools</span></button>
-        <button class="dk-tab dkx" data-scene="activity" title="Activity">${IC.pulse}<span>Activity</span></button>
-      </nav>
+      <div class="dk-crumb" id="dkCrumb" aria-live="polite"></div>
+      <button class="dk-hsearch" id="dkHSearch" aria-label="Search">${IC_SEARCH}<span class="hs">Search tools, scenes and actions</span><kbd>Ctrl K</kbd></button>
       <div class="dk-right">
         <button class="dk-health" id="dkHealth" title="Live CVE feed status"><span class="d"></span><span class="t">Threat feed live</span></button>
         <button class="dk-icbtn" id="dkAsstBtn" title="Darknode AI assistant" aria-label="Darknode AI assistant">${IC.spark}</button>
@@ -1124,6 +1182,13 @@ export function renderDeck(host, opts) {
         <button class="dk-acct" id="dkAcct" aria-label="Account"><span class="av" id="dkAvatar">DN</span>${IC.chevd}</button>
       </div>
     </div>
+
+    <aside class="dk-sidebar" id="dkSide" aria-label="Main navigation">
+      <nav class="dk-sbnav" id="dkSbNav"></nav>
+      <div class="dk-sbfoot"><button class="dk-nv" id="dkSbCollapse" data-l="Expand navigation">${IC.rail}<span class="nl">Collapse</span></button></div>
+    </aside>
+    <div class="dk-sbshade" id="dkSbShade"></div>
+    <div class="dk-fly" id="dkFly" role="tooltip"></div>
 
     <div class="dk-pop" id="dkNewPop"></div>
     <div class="dk-pop" id="dkBellPop"></div>
@@ -1210,6 +1275,7 @@ export function renderDeck(host, opts) {
     if (pins.length > 12) pins.length = 12;
     savePins(pins);
     if (curScene === "overview") renderPins();   // keep the overview widget in sync
+    buildSideNav();
     return pins.includes(sec);
   }
   let curScene = "overview";
@@ -1227,7 +1293,7 @@ export function renderDeck(host, opts) {
     try { localStorage.setItem(LS_SCENE, scene); } catch (_) {}
     closeAllMenus();
     sceneWork.hidden = true; wFrame.innerHTML = ""; curSec = null;
-    root.querySelectorAll(".dk-tab").forEach((t) => t.classList.toggle("on", t.dataset.scene === scene));
+    setNav("scene:" + scene);
     for (const k in sceneEls) sceneEls[k].hidden = k !== scene;
     if (scene === "overview") renderOverview();
     else if (scene === "surface") renderSurface();
@@ -1241,13 +1307,12 @@ export function renderDeck(host, opts) {
     else if (scene === "activity") renderActivity();
     else if (scene === "assistant") openAssistant();
   }
-  root.querySelectorAll(".dk-tab").forEach((b) => b.onclick = () => b.dataset.tool ? openTool(b.dataset.tool, secLabel[b.dataset.tool] || b.title) : go(b.dataset.scene));
   // Any element carrying data-scene (KPI cards, "view all" links, quick actions)
   // routes to that workspace; data-sec opens a tool in the in-deck workspace.
   root.addEventListener("click", (e) => {
     const nav = e.target.closest("[data-scene]");
     if (nav && !nav.classList.contains("dk-tab") && nav.dataset.scene) { go(nav.dataset.scene); return; }
-    const tl = e.target.closest("span[data-tool],a[data-tool]");
+    const tl = e.target.closest("span[data-tool],a[data-tool],.dk-nv[data-tool]");
     if (tl && tl.dataset.tool) { e.preventDefault(); openTool(tl.dataset.tool, secLabel[tl.dataset.tool] || tl.textContent.trim()); }
   });
 
@@ -1505,7 +1570,7 @@ export function renderDeck(host, opts) {
     wTitle.innerHTML = '<span class="wi"' + (accent ? ' style="--a:' + accent + '"' : "") + '>' + toolIcon(label) + '</span><span class="wt">' + esc(label) + '</span>';
     const pinBtn = $("#dkWPin"); if (pinBtn) pinBtn.classList.toggle("pinned", pins.includes(sec));
     drawer.classList.remove("on"); closeAllMenus();
-    root.querySelectorAll(".dk-tab").forEach((t) => t.classList.toggle("on", t.dataset.tool === sec));
+    setNav("tool:" + sec, label);
     for (const k in sceneEls) sceneEls[k].hidden = true;
     sceneWork.hidden = false;
     sceneWork.classList.remove("opening"); void sceneWork.offsetWidth; sceneWork.classList.add("opening");
@@ -1538,14 +1603,14 @@ export function renderDeck(host, opts) {
     { type: "action", label: "New investigation", group: "Action", icon: IC.folder, run: () => openTool("investigation", secLabel["investigation"] || "Investigation") },
     { type: "action", label: "Open security graph", group: "Action", icon: IC.grid, run: () => openTool("secgraph", secLabel["secgraph"] || "Security Graph") },
     ...(primary ? [] : [{ type: "action", label: "Open full console", group: "Action", icon: IC.ext, run: () => exitDeck() }]),
-    { type: "action", label: "Go to Posture", group: "Navigate", icon: IC.home, run: () => go("overview") },
+    { type: "action", label: "Go to Security Overview", group: "Navigate", icon: IC.home, run: () => go("overview") },
     { type: "action", label: "Go to Attack Surface", group: "Navigate", icon: IC.radar, run: () => go("surface") },
-    { type: "action", label: "Go to Threat & Vulns", group: "Navigate", icon: IC.radar, run: () => go("threat") },
-    { type: "action", label: "Go to Cloud", group: "Navigate", icon: IC.grid, run: () => go("cloud") },
-    { type: "action", label: "Go to Compliance", group: "Navigate", icon: IC.folder, run: () => go("compliance") },
-    { type: "action", label: "Go to Investigations", group: "Navigate", icon: IC.folder, run: () => go("invest") },
-    { type: "action", label: "Go to Integrations", group: "Navigate", icon: IC.link, run: () => go("con") },
-    { type: "action", label: "Go to Tools", group: "Navigate", icon: IC.grid, run: () => go("tools") },
+    { type: "action", label: "Go to Threats & Vulnerabilities", group: "Navigate", icon: IC.alert, run: () => go("threat") },
+    { type: "action", label: "Go to Cloud Posture", group: "Navigate", icon: IC.cloud, run: () => go("cloud") },
+    { type: "action", label: "Go to Compliance", group: "Navigate", icon: IC.shield, run: () => go("compliance") },
+    { type: "action", label: "Go to Investigations", group: "Navigate", icon: IC.search, run: () => go("invest") },
+    { type: "action", label: "Go to Integrations", group: "Navigate", icon: IC.plug, run: () => go("con") },
+    { type: "action", label: "Go to Tool Library", group: "Navigate", icon: IC.grid, run: () => go("tools") },
     { type: "action", label: "Go to Activity", group: "Navigate", icon: IC.pulse, run: () => go("activity") },
     { type: "action", label: "Go to Assistant", group: "Navigate", icon: IC.spark, run: () => go("assistant") },
   ];
@@ -1566,7 +1631,7 @@ export function renderDeck(host, opts) {
   }
   function chooseSpot(i){ const m = matches[i]; if (!m) return; if (m.type === "action") { closeSpot(); try { m.run(); } catch (_) {} } else if (m.type === "conn") { closeSpot(); go("con"); openDrawer(m.it); } else { closeSpot(); openTool(m.sec, m.label); } }
   function moveSel(d){ if (!matches.length) return; selIdx = (selIdx + d + matches.length) % matches.length; spotRes.querySelectorAll(".dk-sr").forEach((r, i) => r.classList.toggle("sel", i === selIdx)); spotRes.querySelector(".dk-sr.sel")?.scrollIntoView({ block: "nearest" }); }
-  $("#dkFindBtn").onclick = openSpot; spotIn.oninput = () => runSpot(spotIn.value);
+  $("#dkFindBtn").onclick = openSpot; $("#dkHSearch").onclick = openSpot; spotIn.oninput = () => runSpot(spotIn.value);
   $("#dkAsstBtn").onclick = () => go("assistant");
   spot.addEventListener("click", (e) => { if (e.target === spot) closeSpot(); });
 
@@ -1583,7 +1648,7 @@ export function renderDeck(host, opts) {
     closeAllMenus();
     if (open) return;
     build();
-    try { pop.style.right = Math.max(10, window.innerWidth - btn.getBoundingClientRect().right) + "px"; } catch (_) {}
+    try { pop.style.right = Math.max(10, (window.innerWidth - btn.getBoundingClientRect().right) / zoomOf()) + "px"; } catch (_) {}
     pop.classList.add("on");
   }
   function setHealth(ok, text){ health.classList.toggle("warn", !ok); const t = health.querySelector(".t"); if (t) t.textContent = text; }
@@ -1610,6 +1675,7 @@ export function renderDeck(host, opts) {
       <button class="dk-mi" data-go="overview">${IC.home}<span>Command center home</span></button>
       <button class="dk-mi" data-tool="settings">${IC.gear}<span>Settings</span></button>
       <button class="dk-mi" id="dkMiKeys">${IC.bolt}<span>Keyboard shortcuts<span class="sub">Press ? anytime</span></span></button>
+      <button class="dk-mi" id="dkMiDense">${IC.grid}<span>Density: ${root.classList.contains("dense") ? "Compact" : "Comfortable"}<span class="sub">Switch to ${root.classList.contains("dense") ? "comfortable" : "compact"} layout</span></span></button>
       <div class="dk-mi-div"></div>
       <button class="dk-mi" id="dkMiExport">${IC.ext}<span>Export deck state<span class="sub">Connections, pins &amp; notes as JSON</span></span></button>
       <button class="dk-mi" id="dkMiImport">${IC.folder}<span>Import deck state</span></button>
@@ -1619,6 +1685,7 @@ export function renderDeck(host, opts) {
     popAcct.querySelector("[data-go]").onclick = () => { closeAllMenus(); go("overview"); };
     popAcct.querySelector("[data-tool]").onclick = () => { closeAllMenus(); openTool("settings", "Settings"); };
     popAcct.querySelector("#dkMiKeys").onclick = () => { closeAllMenus(); toggleKeys(true); };
+    popAcct.querySelector("#dkMiDense").onclick = () => { closeAllMenus(); const d = root.classList.toggle("dense"); try { localStorage.setItem("dn_deck_density", d ? "compact" : "comfortable"); } catch (_) {} };
     popAcct.querySelector("#dkMiExport").onclick = () => { closeAllMenus(); exportDeckState(); };
     popAcct.querySelector("#dkMiImport").onclick = () => { closeAllMenus(); importDeckState(); };
     const miCon = popAcct.querySelector("#dkMiConsole"); if (miCon) miCon.onclick = exitDeck;
@@ -1853,7 +1920,7 @@ export function renderDeck(host, opts) {
   // Pinned-tools overview widget: launch on click, unpin via the ×.
   function renderPins(){
     const box = root.querySelector("#dkPins"); if (!box) return;
-    if (!pins.length) { box.innerHTML = `<div class="dk-nempty">No pinned tools yet. Hover any tool in the <b data-scene="tools" style="cursor:pointer;--fg:#2552c6">Tools</b> tab and tap the star, or pin from the command palette (Ctrl K).</div>`; return; }
+    if (!pins.length) { box.innerHTML = `<div class="dk-nempty">No pinned tools yet. Hover any tool in the <b data-scene="tools" style="cursor:pointer;--fg:#2552c6">Tool Library</b> and tap the star, or pin from the command palette (Ctrl K).</div>`; return; }
     box.innerHTML = pins.map((sec) => `<div class="dk-pin" data-sec="${esc(sec)}"><span class="pi">${toolIcon(secLabel[sec] || sec)}</span><span class="pl">${esc(secLabel[sec] || sec)}</span><button class="px" data-unpin="${esc(sec)}" title="Unpin" aria-label="Unpin">&times;</button></div>`).join("");
     box.querySelectorAll(".dk-pin").forEach((r) => r.onclick = (e) => { if (e.target.closest(".px")) return; openTool(r.dataset.sec, secLabel[r.dataset.sec] || r.dataset.sec); });
     box.querySelectorAll(".px").forEach((b) => b.onclick = (e) => { e.stopPropagation(); togglePin(b.dataset.unpin); });
@@ -2444,7 +2511,7 @@ export function renderDeck(host, opts) {
   // ---------- keyboard & shortcuts ----------
   // Vim-style navigation: press "g" then a scene key. "?" opens the cheatsheet.
   const GOTO = { o: "overview", e: "surface", i: "threat", l: "cloud", m: "compliance", n: "invest", c: "con", t: "tools", k: "toolkit", a: "activity", s: "assistant" };
-  const SCENE_TITLE = { overview: "Posture", surface: "Attack Surface", threat: "Threat & Vulnerabilities", cloud: "Cloud", compliance: "Compliance", invest: "Investigations", con: "Integrations", tools: "Tools", toolkit: "Toolkit", activity: "Activity", assistant: "Assistant" };
+  const SCENE_TITLE = { overview: "Security Overview", surface: "Attack Surface", threat: "Threat & Vulnerabilities", cloud: "Cloud Posture", compliance: "Compliance", invest: "Investigations", con: "Integrations", tools: "Tool Library", toolkit: "Toolkit", activity: "Activity", assistant: "AI Assistant" };
   const keysEl = $("#dkKeys");
   function buildKeysOverlay(){
     const nav = Object.entries(GOTO).map(([k, sc]) => `<div class="dk-keyrow"><span>Go to ${esc(SCENE_TITLE[sc] || sc)}</span><span class="kb"><kbd>g</kbd><kbd>${esc(k)}</kbd></span></div>`).join("");
@@ -2492,8 +2559,88 @@ export function renderDeck(host, opts) {
   document.addEventListener("keydown", onKey);
 
   // ---------- resize ----------
-  const onResize = () => { sizeStars(); try { closeAllMenus(); } catch (_) {} };
+  const onResize = () => { sizeStars(); applyNav(); try { closeAllMenus(); } catch (_) {} };
   window.addEventListener("resize", onResize);
+
+  // ---------- shell: grouped left navigation + breadcrumb ----------
+  // Job-named groups (how security teams think about the work), each entry an existing
+  // scene or an in-deck tool. The sidebar is 248px, a 64px icon rail (auto below 1056px or
+  // by choice, remembered), and an off-canvas drawer on phones.
+  const LS_NAV = "dn_deck_nav";
+  const NAV_DEF = [
+    { g: "", items: [["scene", "overview", "Security Overview", IC.home]] },
+    { g: "Exposure", items: [["scene", "surface", "Attack Surface", IC.radar], ["scene", "cloud", "Cloud Posture", IC.cloud], ["scene", "threat", "Threats & Vulnerabilities", IC.alert]] },
+    { g: "Code & Supply Chain", items: [["tool", "codescan", "Code Scanner", IC.code], ["tool", "supplychain", "Supply Chain", IC.branch], ["tool", "threatforest", "Attack Tree Builder", IC.tree]] },
+    { g: "Detect & Investigate", items: [["scene", "invest", "Investigations", IC.search], ["tool", "secgraph", "Security Graph", IC.nodes], ["tool", "incidents", "Incident Tracker", IC.shield], ["tool", "casemgmt", "Case Manager", IC.brief], ["scene", "activity", "Activity", IC.pulse]] },
+    { g: "Financial Security", items: [["tool", "strongroom", "Fund Protection", IC.coins], ["tool", "vault", "Treasury Vault", IC.lock]] },
+    { g: "Compliance & Trust", items: [["scene", "compliance", "Compliance", IC.check], ["tool", "crosswalk", "GenAI Crosswalk", IC.map]] },
+    { g: "Platform", items: [["scene", "con", "Integrations", IC.plug], ["scene", "tools", "Tool Library", IC.grid], ["scene", "toolkit", "Toolkit", IC.wrench], ["scene", "assistant", "AI Assistant", IC.spark], ["tool", "settings", "Settings", IC.gear]].concat(opts.isOwner ? [["tool", "admin", "Admin", IC.key]] : []) },
+  ];
+  const navIndex = {};
+  NAV_DEF.forEach((grp) => grp.items.forEach(([kind, id, label]) => { navIndex[kind + ":" + id] = { group: grp.g || "Home", label }; }));
+  let navKey = "scene:overview", navLabel = "";
+  function navBtn(kind, id, label, icon, extra){
+    return `<button class="dk-nv${navKey === kind + ":" + id ? " on" : ""}" data-${kind}="${esc(id)}" data-l="${esc(label)}"${navKey === kind + ":" + id ? ' aria-current="page"' : ""}>${icon}<span class="nl">${esc(label)}</span>${extra || ""}</button>`;
+  }
+  function buildSideNav(){
+    const nav = $("#dkSbNav"); if (!nav) return;
+    let html = NAV_DEF.map((grp) => (grp.g ? `<div class="dk-nvh">${esc(grp.g)}</div>` : "") + grp.items.map(([kind, id, label, icon]) =>
+      navBtn(kind, id, label, icon, id === "tools" ? `<span class="nc">${TOTAL_TOOLS.toLocaleString()}</span>` : "")).join("")).join("");
+    const pinned = pins.filter((sec) => secLabel[sec]);
+    if (pinned.length) html += `<div class="dk-nvh">Pinned</div>` + pinned.map((sec) => navBtn("tool", sec, secLabel[sec], toolIcon(secLabel[sec]))).join("");
+    nav.innerHTML = html;
+  }
+  function setNav(key, label){
+    navKey = key; navLabel = label || "";
+    root.querySelectorAll("#dkSbNav .dk-nv").forEach((b) => {
+      const on = (b.dataset.scene ? "scene:" + b.dataset.scene : "tool:" + b.dataset.tool) === key;
+      b.classList.toggle("on", on); if (on) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current");
+    });
+    const meta = navIndex[key] || { group: key.indexOf("tool:") === 0 ? "Tools" : "Home", label: navLabel || key.split(":")[1] };
+    const crumb = $("#dkCrumb");
+    if (crumb) crumb.innerHTML = `<span class="cg">${esc(meta.group)}</span><span class="cs" aria-hidden="true">/</span><b>${esc(meta.label)}</b>`;
+    if (root.classList.contains("nav-open")) root.classList.remove("nav-open");
+  }
+  // Effective CSS zoom of the Deck (it scales up on large screens): convert viewport
+  // pixels from getBoundingClientRect() into the Deck's own CSS pixels.
+  function zoomOf(){ const z = parseFloat(getComputedStyle(root).zoom); return z > 0 ? z : 1; }
+  let navPref = "auto";
+  try { navPref = localStorage.getItem(LS_NAV) || "auto"; } catch (_) {}
+  try { root.classList.toggle("dense", localStorage.getItem("dn_deck_density") === "compact"); } catch (_) {}
+  function applyNav(){
+    const w = window.innerWidth, phone = w <= 720;
+    const rail = !phone && (navPref === "rail" || (navPref === "auto" && w <= 1056));
+    root.classList.toggle("nav-phone", phone);
+    root.classList.toggle("nav-rail", rail);
+    if (!phone) root.classList.remove("nav-open");
+    const cb = $("#dkSbCollapse");
+    if (cb) { cb.querySelector(".nl").textContent = rail ? "Expand" : "Collapse"; cb.dataset.l = rail ? "Expand navigation" : "Collapse navigation"; }
+  }
+  function toggleNav(){
+    if (root.classList.contains("nav-phone")) { root.classList.toggle("nav-open"); return; }
+    navPref = root.classList.contains("nav-rail") ? "full" : "rail";
+    try { localStorage.setItem(LS_NAV, navPref); } catch (_) {}
+    applyNav();
+  }
+  $("#dkSbTog").onclick = toggleNav;
+  $("#dkSbCollapse").onclick = toggleNav;
+  $("#dkSbShade").onclick = () => root.classList.remove("nav-open");
+  // Rail mode: an immediate label flyout beside each icon (the sidebar scrolls, so a CSS
+  // ::after would be clipped; one fixed element is positioned instead).
+  const fly = $("#dkFly");
+  const side = $("#dkSide");
+  side.addEventListener("pointerover", (e) => {
+    const b = e.target.closest(".dk-nv"); if (!b || !root.classList.contains("nav-rail")) { fly.classList.remove("on"); return; }
+    const r = b.getBoundingClientRect(), z = zoomOf();
+    fly.textContent = b.dataset.l || "";
+    fly.style.left = (r.right / z + 10) + "px";
+    fly.style.top = ((r.top + r.height / 2) / z) + "px";
+    fly.classList.add("on");
+  });
+  side.addEventListener("pointerleave", () => fly.classList.remove("on"));
+  side.addEventListener("scroll", () => fly.classList.remove("on"), true);
+  buildSideNav();
+  applyNav();
 
   // ---------- boot: restore the last workspace ----------
   let initial = "overview";

@@ -2421,7 +2421,7 @@ function renderApp(user) {
   // every tool the Deck opens is this same page in embed mode (/<sec>?embed=1).
   if (!document.body.classList.contains("dn-embed")) {
     view.hidden = true;
-    Promise.all([import("/js/deck-ui.js?v=20261012a"), import("/js/console-nav.js?v=20261011c")]).then(([{ renderDeck }, nav]) => {
+    Promise.all([import("/js/deck-ui.js?v=20261012b"), import("/js/console-nav.js?v=20261011c")]).then(([{ renderDeck }, nav]) => {
       // Never stack Decks: dispose the previous mount (root + listeners) first.
       if (_deckOff) { try { _deckOff(); } catch (_) {} _deckOff = null; }
       document.querySelectorAll("body > .dk").forEach((n) => n.remove());
