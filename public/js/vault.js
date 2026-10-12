@@ -409,7 +409,10 @@ export function renderVault(main) {
     if (team) return renderTeamSetup(host);
     host.innerHTML = `
     ${!have ? `<div class="vcard"><h3>Quick start</h3><div class="vsub" style="margin:0 0 8px">Create a standard chart of accounts: an Operating account (asset), an Opening equity account, and an Outgoing clearing account. The opening balance is a <b>book figure you type in</b> to start the ledger — not real money and not pulled from any bank.</div>
-      <div class="vgrid"><label class="f">Opening book balance (USD)<input id="qOpen" placeholder="Amount" inputmode="decimal"></label></div>
+      <div class="vgrid"><label class="f">Opening book balance (USD)<input id="qOpen" placeholder="Amount" inputmode="decimal"></label>
+        <label class="f">Minimum approvers<input id="pMin" type="number" min="1" max="10" inputmode="numeric" placeholder="1 to 10"></label>
+        <label class="f">Higher tiers (optional)<input id="pTiers" placeholder="amount:approvers"></label></div>
+      <div class="vsub" style="margin:6px 0 8px">Approvers: how many different people must approve each movement. Tiers, if any, raise that for larger amounts (amount:approvers, separated by commas).</div>
       <div class="row"><button class="btn2 pri" id="qInit">Initialize treasury</button></div></div>` : ""}
     <div class="vcard"><h3>Add account</h3>
       <div class="vgrid">
@@ -418,12 +421,13 @@ export function renderVault(main) {
       </div>
       <div class="row"><button class="btn2" id="aAdd" ${have ? "" : "disabled"}>Add account</button></div>
     </div>
-    <div class="vcard"><h3>Policy</h3>
+    ${have ? `<div class="vcard"><h3>Policy</h3>
       <div class="vgrid">
-        <label class="f">Minimum approvers<input id="pMin" type="number" min="1" value="${have ? L.policy.minApprovers : 2}"></label>
+        <label class="f">Minimum approvers<input id="pMin" type="number" min="1" max="10" value="${L.policy.minApprovers}"></label>
+        <label class="f">Higher tiers (optional)<input id="pTiers" value="${esc(tierText(L))}" placeholder="amount:approvers"></label>
       </div>
-      <div class="row"><button class="btn2" id="pSave" ${have ? "" : "disabled"}>Save policy</button></div>
-    </div>
+      <div class="row"><button class="btn2" id="pSave">Save policy</button></div>
+    </div>` : ""}
     <div class="vcard"><h3>Backup &amp; restore</h3>
       <div class="vsub" style="margin:0 0 8px">This evaluation build stores the ledger in your browser. Export a signed snapshot for safekeeping; the hash chain lets anyone verify it wasn't altered.</div>
       <div class="row"><button class="btn2" id="bExport" ${have ? "" : "disabled"}>Export snapshot (JSON)</button>
@@ -434,7 +438,7 @@ export function renderVault(main) {
     const qInit = $("qInit"); if (qInit) qInit.onclick = () => {
       try {
         const open = $("qOpen").value.trim(); const cents = toCents(open || "0");
-        L = new Ledger({ policy: { minApprovers: 2, dualControl: true, tiers: [["25000.00", 3]] } });
+        L = new Ledger({ policy: { ...readPolicy(host), dualControl: true } });
         L.openAccount({ id: "bank", name: "Operating account", type: "asset" });
         L.openAccount({ id: "equity", name: "Opening equity", type: "equity" });
         L.openAccount({ id: "clearing", name: "Outgoing clearing", type: "clearing" });
@@ -445,7 +449,7 @@ export function renderVault(main) {
     const aAdd = $("aAdd"); if (aAdd) aAdd.onclick = () => {
       try { const name = $("aName").value.trim(); if (!name) return toast("Name required"); const id = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") + "-" + Math.random().toString(36).slice(2, 6); L.openAccount({ id, name, type: $("aType").value }); saveLedger(L); toast("Account added"); shell(); } catch (e) { toast(e.message); }
     };
-    const pSave = $("pSave"); if (pSave) pSave.onclick = () => { try { const n = Math.max(1, parseInt($("pMin").value, 10) || 1); L.policy.minApprovers = n; saveLedger(L); toast("Policy saved"); } catch (e) { toast(e.message); } };
+    const pSave = $("pSave"); if (pSave) pSave.onclick = () => { try { Object.assign(L.policy, readPolicy(host)); saveLedger(L); toast("Policy saved"); } catch (e) { toast(e.message); } };
     const bExport = $("bExport"); if (bExport) bExport.onclick = () => exportSnap();
     const bImport = $("bImport"); if (bImport) bImport.onchange = (e) => { const f = e.target.files[0]; if (!f) return; const fr = new FileReader(); fr.onload = () => { try { const snap = JSON.parse(fr.result); const test = Ledger.load(snap); if (!test.verifyChain().ok) return toast("Refused: imported snapshot failed chain verification (tampered)."); L = test; saveLedger(L); toast("Imported and verified"); tab = "overview"; shell(); } catch (err) { toast("Import failed: " + err.message); } }; fr.readAsText(f); };
     const bReset = $("bReset"); if (bReset) bReset.onclick = () => { try { localStorage.removeItem(STORE); } catch (_) {} L = null; toast("VAULT reset"); tab = "setup"; shell(); };
@@ -454,10 +458,13 @@ export function renderVault(main) {
 
   function renderTeamSetup(host) {
     const have = !!L;
-    const tiers = have ? L.policy.tiers.map((t) => t[0] + ":" + t[1]).join(", ") : "";
+    const tiers = have ? tierText(L) : "";
     host.innerHTML = `
     ${!have ? `<div class="vcard"><h3>Initialize this team vault</h3>${may("init") ? `<div class="vsub" style="margin:0 0 8px">Creates an Operating account (asset), an Opening equity account and an Outgoing clearing account on the server. The opening balance is a <b>book figure you type in</b>, not real money.</div>
-      <div class="vgrid"><label class="f">Opening book balance (USD)<input id="qOpen" placeholder="Amount" inputmode="decimal"></label></div>
+      <div class="vgrid"><label class="f">Opening book balance (USD)<input id="qOpen" placeholder="Amount" inputmode="decimal"></label>
+        <label class="f">Minimum approvers<input id="pMin" type="number" min="1" max="10" inputmode="numeric" placeholder="1 to 10"></label>
+        <label class="f">Higher tiers (optional)<input id="pTiers" placeholder="amount:approvers"></label></div>
+      <div class="vsub" style="margin:6px 0 8px">Approvers: how many different people, never the initiator, must approve each movement. Tiers, if any, raise that for larger amounts (amount:approvers, separated by commas).</div>
       <div class="row"><button class="btn2 pri" id="qInit">Initialize on the server</button></div>` : `<div class="empty">Waiting for an owner to initialize this vault.</div>`}</div>` : ""}
     ${have && may("openAccount") ? `<div class="vcard"><h3>Add account</h3>
       <div class="vgrid">
@@ -475,17 +482,33 @@ export function renderVault(main) {
     ${have ? `<div class="vcard"><h3>Export</h3><div class="vsub" style="margin:0 0 8px">Download the ledger as JSON. The hash chain lets anyone check it was not altered.</div>
       <div class="row"><button class="btn2" id="bExport">Export snapshot (JSON)</button></div></div>` : ""}`;
     const $ = (id) => host.querySelector("#" + id);
-    const qInit = $("qInit"); if (qInit) qInit.onclick = () => act("init", { opening: $("qOpen").value.trim() }, null, "Team vault initialized", "overview");
+    const qInit = $("qInit"); if (qInit) qInit.onclick = () => { let policy; try { policy = readPolicy(host); } catch (e) { return toast(e.message); } act("init", { opening: $("qOpen").value.trim(), policy }, null, "Team vault initialized", "overview"); };
     const aAdd = $("aAdd"); if (aAdd) aAdd.onclick = () => { const name = $("aName").value.trim(); if (!name) return toast("Name required"); act("openAccount", { name, type: $("aType").value }, null, "Account added"); };
     const pSave = $("pSave"); if (pSave) pSave.onclick = () => {
-      const parsed = $("pTiers").value.split(",").map((x) => x.trim()).filter(Boolean).map((x) => { const [a, n] = x.split(":"); return [String(a || "").trim(), parseInt(n, 10)]; });
-      act("setPolicy", { minApprovers: parseInt($("pMin").value, 10), tiers: parsed }, null, "Policy saved");
+      let policy; try { policy = readPolicy(host); } catch (e) { return toast(e.message); }
+      act("setPolicy", policy, null, "Policy saved");
     };
     const bExport = $("bExport"); if (bExport) bExport.onclick = () => exportSnap();
   }
 
   main.innerHTML = `<div class="vlt"><div class="vcard"><div class="empty">Loading VAULT…</div></div></div>`;
   load();
+}
+
+const tierText = (L) => (L.policy.tiers || []).map((t) => t[0] + ":" + t[1]).join(", ");
+
+// Reads the approval policy the user typed. Nothing is assumed: approvers must be entered.
+function readPolicy(host) {
+  const n = Number(host.querySelector("#pMin").value.trim() || NaN);
+  if (!Number.isInteger(n) || n < 1 || n > 10) throw new Error("Enter the minimum number of approvers (1 to 10)");
+  const tiers = host.querySelector("#pTiers").value.split(",").map((x) => x.trim()).filter(Boolean).map((x) => {
+    const [a, r] = x.split(":").map((y) => (y || "").trim());
+    const req = Number(r);
+    if (!a || toCents(a) <= 0n || !Number.isInteger(req) || req < 1 || req > 10) throw new Error("Each tier is amount:approvers, e.g. a positive amount and 1 to 10 approvers");
+    return [a, req];
+  });
+  if (tiers.length > 10) throw new Error("At most 10 tiers");
+  return { minApprovers: n, tiers };
 }
 
 const ACCT_TYPES = `<option value="asset">asset (bank / cash)</option><option value="clearing">clearing</option><option value="liability">liability</option><option value="customer">customer balance</option><option value="equity">equity</option><option value="income">income</option><option value="expense">expense</option>`;

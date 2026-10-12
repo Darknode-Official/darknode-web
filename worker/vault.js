@@ -57,7 +57,9 @@ export function applyOp(L, op, a, actor, now) {
   let result = null, detail = {};
   if (op === "init") {
     if (L) throw new Error("vault already initialized");
-    L = new Ledger({ currency: "USD", policy: checkPolicy(a.policy || { minApprovers: 2, tiers: [["25000.00", 3]] }) });
+    // No default policy: the owner chooses the approval rules; nothing is preset.
+    if (!a.policy) throw new Error("choose the minimum number of approvers");
+    L = new Ledger({ currency: "USD", policy: checkPolicy(a.policy) });
     L.openAccount({ id: "bank", name: str(a.bankName, 80, "account name") || "Operating account", type: "asset" });
     L.openAccount({ id: "equity", name: "Opening equity", type: "equity" });
     L.openAccount({ id: "clearing", name: "Outgoing clearing", type: "clearing" });

@@ -25,6 +25,7 @@ class MemStorage {
   }
 }
 const mkDO = (storage = new MemStorage()) => new VaultDO({ storage, blockConcurrencyWhile: (fn) => fn() });
+const POL = { minApprovers: 2, tiers: [] };
 const call = async (d, uid, role, op, args) => {
   const r = await d.fetch(new Request("https://vault/", { method: "POST", headers: { "x-vault-uid": uid, "x-vault-role": role }, body: JSON.stringify({ op, args }) }));
   return { status: r.status, body: await r.json() };
@@ -43,9 +44,9 @@ group("vault server: roles", () => {
 group("vault server: durable object enforcement", () => {
   test("full flow with segregation of duties, all server-side", async () => {
     const d = mkDO();
-    assert.equal((await call(d, "adm", "admin", "init", { opening: "1000.00" })).status, 403);
-    assert.equal((await call(d, "own", "owner", "init", { opening: "1000.00" })).status, 200);
-    assert.equal((await call(d, "own", "owner", "init", {})).status, 409, "second init refused");
+    assert.equal((await call(d, "adm", "admin", "init", { opening: "1000.00", policy: POL })).status, 403);
+    assert.equal((await call(d, "own", "owner", "init", { opening: "1000.00", policy: POL })).status, 200);
+    assert.equal((await call(d, "own", "owner", "init", { policy: POL })).status, 409, "second init refused");
     const c = await call(d, "ini", "initiator", "createTransfer", { from: "bank", to: "clearing", amount: "250.00", payee: "Acme" });
     assert.equal(c.status, 200);
     const id = c.body.result.id;
@@ -67,7 +68,7 @@ group("vault server: durable object enforcement", () => {
 
   test("overdraft and bad amounts are refused and nothing is written", async () => {
     const d = mkDO();
-    await call(d, "own", "owner", "init", { opening: "100.00" });
+    await call(d, "own", "owner", "init", { opening: "100.00", policy: POL });
     const id = (await call(d, "own", "owner", "createTransfer", { from: "bank", to: "clearing", amount: "500.00" })).body.result.id;
     await call(d, "a", "approver", "approve", { id }); await call(d, "b", "approver", "approve", { id });
     const r = await call(d, "a", "approver", "release", { id });
@@ -81,7 +82,9 @@ group("vault server: durable object enforcement", () => {
 
   test("server policy keeps dual control on and validates input", async () => {
     const d = mkDO();
-    await call(d, "own", "owner", "init", {});
+    assert.equal((await call(d, "own", "owner", "init", { opening: "10" })).status, 409, "no preset policy: init needs one");
+    assert.equal((await view(d)).ledger, null);
+    await call(d, "own", "owner", "init", { policy: POL });
     assert.equal((await call(d, "own", "owner", "setPolicy", { minApprovers: 0 })).status, 409);
     assert.equal((await call(d, "own", "owner", "setPolicy", { minApprovers: 3, dualControl: false, tiers: [["10000", 4]] })).status, 200);
     const v = await view(d);
@@ -92,7 +95,7 @@ group("vault server: durable object enforcement", () => {
   test("state survives a restart and every attempt is in a verifiable audit chain", async () => {
     const st = new MemStorage();
     const d = mkDO(st);
-    await call(d, "own", "owner", "init", { opening: "50.00" });
+    await call(d, "own", "owner", "init", { opening: "50.00", policy: POL });
     await call(d, "own", "owner", "openAccount", { name: "Payroll", type: "asset" });
     await call(d, "vw", "viewer", "createTransfer", { from: "bank", to: "clearing", amount: "1" });
     const d2 = mkDO(st);
@@ -107,18 +110,18 @@ group("vault server: durable object enforcement", () => {
 
   test("a tampered journal entry is detected after reload", async () => {
     const st = new MemStorage();
-    await call(mkDO(st), "own", "owner", "init", { opening: "50.00" });
+    await call(mkDO(st), "own", "owner", "init", { opening: "50.00", policy: POL });
     st.m.get("j:0000000000").postings[0].amount = "999";
     assert.equal((await view(mkDO(st))).chain.ok, false);
   });
 
   test("requests without a server-set identity are refused", async () => {
-    assert.equal((await call(mkDO(), "", "owner", "init", {})).status, 403);
-    assert.equal((await call(mkDO(), "x", "superuser", "init", {})).status, 403);
+    assert.equal((await call(mkDO(), "", "owner", "init", { policy: POL })).status, 403);
+    assert.equal((await call(mkDO(), "x", "superuser", "init", { policy: POL })).status, 403);
   });
 
   test("applyOp audit detail never needs the client's clock or name", () => {
-    const { L } = applyOp(null, "init", { opening: "5" }, { uid: "u1" }, 1234);
+    const { L } = applyOp(null, "init", { opening: "5", policy: POL }, { uid: "u1" }, 1234);
     assert.equal(L.journal[0].ts, 1234);
     assert.equal(L.journal[0].by, "u1");
     assert.ok(hashStr("x|" + canon({ a: 1n })).length === 64);
