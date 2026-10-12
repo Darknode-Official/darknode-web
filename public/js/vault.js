@@ -191,7 +191,7 @@ export function renderVault(main) {
 
   const body = () => {
     const host = main.querySelector("#vbody");
-    if (!L && tab !== "setup" && tab !== "team") { host.innerHTML = `<div class="vcard"><div class="empty">This vault is not initialized yet. Go to <b>Setup</b> to create accounts and opening balances.</div></div>`; return; }
+    if (!L && tab !== "setup" && tab !== "team" && tab !== "overview") { host.innerHTML = `<div class="vcard"><div class="empty">This vault is not initialized yet. Go to <b>Setup</b> to create accounts and opening balances.</div></div>`; return; }
     if (tab === "overview") renderOverview(host);
     else if (tab === "move") renderMove(host);
     else if (tab === "approvals") renderApprovals(host);
@@ -203,6 +203,22 @@ export function renderVault(main) {
 
   // --- Overview ---
   function renderOverview(host) {
+    const D = "\u2014";
+    if (!L || !L.journal.length) {
+      const accts = L ? L.accounts.size : 0;
+      host.innerHTML = `<div class="vkpis">
+        ${kpi("Book value (unverified)", D, "nothing entered yet")}
+        ${kpi("Bank-confirmed", D)}
+        ${kpi("Accounts", accts ? String(accts) : D)}
+        ${kpi("Journal entries", D)}
+        ${kpi("Pending movements", L && L.transfers.size ? String([...L.transfers.values()].filter((t) => t.status === "pending" || t.status === "approved").length) : D)}
+        ${kpi("Trial balance", D)}
+        ${kpi("Audit chain", D)}
+        ${team ? kpi("Enforcement", `<span class="vok">Server</span>`, team.auditCount + " audited actions") : kpi("Enforcement", `<span style="color:#8a5a00">Local only</span>`, "controls not enforced")}
+      </div>
+      <div class="vcard"><div class="empty">No figures yet. ${L ? "Record an opening entry or a movement to see balances here." : "Go to <b>Setup</b> to create your accounts and enter your own opening balance."}</div></div>`;
+      return;
+    }
     const tb = L.trialBalance();
     const chain = L.verifyChain();
     const accts = [...L.accounts.values()];
@@ -214,10 +230,10 @@ export function renderVault(main) {
     if (!chain.ok) html += `<div class="vbad">INTEGRITY ALERT: the audit chain failed verification at entry #${chain.brokenAt}. The ledger may have been altered outside VAULT. Do not trust these figures until investigated.</div>`;
     html += `<div class="vkpis">
       ${kpi("Book value (unverified)", fmtCents(total), "figures you entered")}
-      ${kpi("Bank-confirmed", movements.length ? `${settled.length}/${movements.length}` : "0", "movements reconciled to a statement")}
+      ${kpi("Bank-confirmed", movements.length ? `${settled.length}/${movements.length}` : D, "movements reconciled to a statement")}
       ${kpi("Accounts", String(accts.length))}
       ${kpi("Journal entries", String(L.journal.length))}
-      ${kpi("Pending movements", String(pending.length))}
+      ${kpi("Pending movements", pending.length ? String(pending.length) : D)}
       ${kpi("Trial balance", tb.balanced ? `<span class="vok">Balanced</span>` : `<span style="color:#b00020">OFF by ${esc(fmtCents(tb.debits - tb.credits))}</span>`, "internal consistency, not bank truth")}
       ${kpi("Audit chain", chain.ok ? `<span class="vok">Verified</span>` : `<span style="color:#b00020">BROKEN</span>`)}
       ${team ? kpi("Enforcement", `<span class="vok">Server</span>`, team.auditCount + " audited actions") : kpi("Enforcement", `<span style="color:#8a5a00">Local only</span>`, "controls not enforced")}
@@ -236,7 +252,7 @@ export function renderVault(main) {
       <div class="vgrid">
         <label class="f">From account<select id="mFrom">${accts.map(opt).join("")}</select></label>
         <label class="f">To account<select id="mTo">${accts.map(opt).join("")}</select></label>
-        <label class="f">Amount (USD)<input id="mAmt" placeholder="0.00" inputmode="decimal"></label>
+        <label class="f">Amount (USD)<input id="mAmt" placeholder="Amount" inputmode="decimal"></label>
         <label class="f">Payee (optional)<input id="mPayee" placeholder="vendor / beneficiary"></label>
         ${team ? "" : `<label class="f">Initiated by<input id="mBy" placeholder="your user id"></label>`}
         <label class="f">Memo<input id="mMemo" placeholder="what is this for"></label>
@@ -322,7 +338,7 @@ export function renderVault(main) {
   function renderReconcile(host) {
     host.innerHTML = `<div class="vcard"><h3>Reconcile against your bank statement</h3>
       <div class="vsub" style="margin:0 0 8px">Paste bank lines as <code>amount,reference</code> (one per line). VAULT matches released movements to real bank debits and flags anything unmatched on either side — the gap where fraud and errors hide.</div>
-      <textarea id="rLines" placeholder="2500.00,ACME WIRE REF t1&#10;264000.00,INITECH PMT"></textarea>
+      <textarea id="rLines" placeholder="amount,reference (one bank line per row)"></textarea>
       <div class="row"><button class="btn2 pri" id="rRun" ${may("reconcile") ? "" : "disabled"}>Reconcile</button>${may("reconcile") ? "" : `<span class="vmut">Your role cannot reconcile.</span>`}</div>
       <div id="rOut" style="margin-top:12px"></div>
     </div>`;
@@ -393,7 +409,7 @@ export function renderVault(main) {
     if (team) return renderTeamSetup(host);
     host.innerHTML = `
     ${!have ? `<div class="vcard"><h3>Quick start</h3><div class="vsub" style="margin:0 0 8px">Create a standard chart of accounts: an Operating account (asset), an Opening equity account, and an Outgoing clearing account. The opening balance is a <b>book figure you type in</b> to start the ledger — not real money and not pulled from any bank.</div>
-      <div class="vgrid"><label class="f">Opening book balance (USD)<input id="qOpen" placeholder="100000.00" inputmode="decimal"></label></div>
+      <div class="vgrid"><label class="f">Opening book balance (USD)<input id="qOpen" placeholder="Amount" inputmode="decimal"></label></div>
       <div class="row"><button class="btn2 pri" id="qInit">Initialize treasury</button></div></div>` : ""}
     <div class="vcard"><h3>Add account</h3>
       <div class="vgrid">
@@ -441,7 +457,7 @@ export function renderVault(main) {
     const tiers = have ? L.policy.tiers.map((t) => t[0] + ":" + t[1]).join(", ") : "";
     host.innerHTML = `
     ${!have ? `<div class="vcard"><h3>Initialize this team vault</h3>${may("init") ? `<div class="vsub" style="margin:0 0 8px">Creates an Operating account (asset), an Opening equity account and an Outgoing clearing account on the server. The opening balance is a <b>book figure you type in</b>, not real money.</div>
-      <div class="vgrid"><label class="f">Opening book balance (USD)<input id="qOpen" placeholder="100000.00" inputmode="decimal"></label></div>
+      <div class="vgrid"><label class="f">Opening book balance (USD)<input id="qOpen" placeholder="Amount" inputmode="decimal"></label></div>
       <div class="row"><button class="btn2 pri" id="qInit">Initialize on the server</button></div>` : `<div class="empty">Waiting for an owner to initialize this vault.</div>`}</div>` : ""}
     ${have && may("openAccount") ? `<div class="vcard"><h3>Add account</h3>
       <div class="vgrid">
@@ -452,7 +468,7 @@ export function renderVault(main) {
     ${have ? `<div class="vcard"><h3>Approval policy</h3>
       <div class="vgrid">
         <label class="f">Minimum approvers<input id="pMin" type="number" min="1" max="10" value="${L.policy.minApprovers}" ${may("setPolicy") ? "" : "disabled"}></label>
-        <label class="f">Higher tiers (amount:approvers)<input id="pTiers" value="${esc(tiers)}" placeholder="25000:3, 100000:4" ${may("setPolicy") ? "" : "disabled"}></label>
+        <label class="f">Higher tiers (amount:approvers)<input id="pTiers" value="${esc(tiers)}" placeholder="amount:approvers" ${may("setPolicy") ? "" : "disabled"}></label>
       </div>
       ${may("setPolicy") ? `<div class="row"><button class="btn2" id="pSave">Save policy</button></div>` : ""}
       <div class="vsub" style="margin-top:6px">Dual control is always on for a team vault: the person who creates a movement can never approve or release it.</div></div>` : ""}
