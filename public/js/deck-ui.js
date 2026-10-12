@@ -27,6 +27,7 @@ import * as surface from "/js/deck-surface.js?v=20261011b";
 // stream and the notifications bell.
 import { bus, EVENTS } from "/js/core/bus.js";
 import { isSimulated } from "/js/core/posture.js";
+import { attachExplain, EXPLAIN, explainEnabled, setExplainEnabled } from "/js/ui/explain.js?v=20261012d";
 
 const LS_CONN = "dn_deck_connections_v1";
 const LS_SCENE = "dn_deck_scene";          // last workspace selected
@@ -739,6 +740,9 @@ const CSS = `
 .dk-ovhead .when{font-size:12.5px;color:#6a7488;text-align:right}
 @media(max-width:720px){.dk-ovhead .when{text-align:left}.dk-kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.dk-kpi .kn{font-size:24px}}
 .dk-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:14px;margin-bottom:12px}
+.dk-ov .dk-kpis:not(#dkInvKpis){grid-template-columns:repeat(4,minmax(0,1fr))}
+@media(min-width:1600px){.dk-ov .dk-kpis:not(#dkInvKpis){grid-template-columns:repeat(7,minmax(0,1fr))}}
+@media(max-width:720px){.dk-ov .dk-kpis:not(#dkInvKpis){grid-template-columns:repeat(2,minmax(0,1fr))}}
 .dk-expnote{font-size:12px;color:#5a6680;line-height:1.5;margin:0 0 22px;padding:9px 13px;background:rgba(23,33,56,.03);border:1px solid rgba(23,33,56,.08);border-radius:9px}
 .dk-expnote b{color:#141c2e;font-weight:700}
 .dk-kpi{position:relative;padding:16px 16px 15px 18px;border-radius:12px;background:rgba(23,33,56,.025);border:1px solid rgba(23,33,56,.08);cursor:pointer;transition:transform .16s,border-color .16s,background .16s;overflow:hidden;text-align:left}
@@ -1168,24 +1172,24 @@ export function renderDeck(host, opts) {
     <div class="dk-sky"></div>
     <canvas class="dk-stars" id="dkStars"></canvas>
     <div class="dk-top">
-      <button class="dk-icbtn dk-sbtog" id="dkSbTog" aria-label="Toggle navigation" aria-controls="dkSide">${IC.menu}</button>
-      <button class="dk-brand" id="dkBrand" title="Open full console"><img class="dk-mark" src="/logo-dark.svg?v=20261007b" alt=""><img class="dk-wm" src="/wordmark.svg" alt="Darknode"><span class="dk-wsname">Command Center</span></button>
+      <button class="dk-icbtn dk-sbtog" id="dkSbTog" data-explain="hdr.menu" aria-label="Toggle navigation" aria-controls="dkSide">${IC.menu}</button>
+      <button class="dk-brand" id="dkBrand" data-explain="hdr.brand" title="Open full console"><img class="dk-mark" src="/logo-dark.svg?v=20261007b" alt=""><img class="dk-wm" src="/wordmark.svg" alt="Darknode"><span class="dk-wsname">Command Center</span></button>
       <div class="dk-crumb" id="dkCrumb" aria-live="polite"></div>
-      <button class="dk-hsearch" id="dkHSearch" aria-label="Search">${IC_SEARCH}<span class="hs">Search tools, scenes and actions</span><kbd>Ctrl K</kbd></button>
+      <button class="dk-hsearch" id="dkHSearch" data-explain="hdr.search" aria-label="Search">${IC_SEARCH}<span class="hs">Search tools, scenes and actions</span><kbd>Ctrl K</kbd></button>
       <div class="dk-right">
-        <button class="dk-health" id="dkHealth" title="Live CVE feed status"><span class="d"></span><span class="t">Threat feed live</span></button>
-        <button class="dk-icbtn" id="dkAsstBtn" title="Darknode AI assistant" aria-label="Darknode AI assistant">${IC.spark}</button>
-        <button class="dk-icbtn" id="dkFindBtn" title="Search (Ctrl K)" aria-label="Search">${IC_SEARCH}</button>
-        <button class="dk-icbtn" id="dkNew" title="Quick create" aria-label="Quick create">${IC.plus}</button>
-        <button class="dk-icbtn" id="dkBell" title="Notifications" aria-label="Notifications">${IC.bell}<span class="dk-badge dkx" id="dkBadge" hidden></span></button>
+        <button class="dk-health" id="dkHealth" data-explain="hdr.health" title="Live CVE feed status"><span class="d"></span><span class="t">Threat feed live</span></button>
+        <button class="dk-icbtn" id="dkAsstBtn" data-explain="hdr.assistant" title="Darknode AI assistant" aria-label="Darknode AI assistant">${IC.spark}</button>
+        <button class="dk-icbtn" id="dkFindBtn" data-explain="hdr.search" title="Search (Ctrl K)" aria-label="Search">${IC_SEARCH}</button>
+        <button class="dk-icbtn" id="dkNew" data-explain="hdr.new" title="Quick create" aria-label="Quick create">${IC.plus}</button>
+        <button class="dk-icbtn" id="dkBell" data-explain="hdr.bell" title="Notifications" aria-label="Notifications">${IC.bell}<span class="dk-badge dkx" id="dkBadge" hidden></span></button>
         <span class="dk-clock" id="dkClock"></span>
-        <button class="dk-acct" id="dkAcct" aria-label="Account"><span class="av" id="dkAvatar">DN</span>${IC.chevd}</button>
+        <button class="dk-acct" id="dkAcct" data-explain="hdr.account" aria-label="Account"><span class="av" id="dkAvatar">DN</span>${IC.chevd}</button>
       </div>
     </div>
 
     <aside class="dk-sidebar" id="dkSide" aria-label="Main navigation">
       <nav class="dk-sbnav" id="dkSbNav"></nav>
-      <div class="dk-sbfoot"><button class="dk-nv" id="dkSbCollapse" data-l="Expand navigation">${IC.rail}<span class="nl">Collapse</span></button></div>
+      <div class="dk-sbfoot"><button class="dk-nv" id="dkSbCollapse" data-explain="hdr.collapse" data-l="Expand navigation">${IC.rail}<span class="nl">Collapse</span></button></div>
     </aside>
     <div class="dk-sbshade" id="dkSbShade"></div>
     <div class="dk-fly" id="dkFly" role="tooltip"></div>
@@ -1226,9 +1230,9 @@ export function renderDeck(host, opts) {
       <div class="dk-wbar">
         <button class="dk-wback" id="dkWBack">${IC_CHEV}Back</button>
         <div class="dk-wtitle" id="dkWTitle"></div>
-        <button class="dk-icbtn dk-wact" id="dkWPin" title="Pin to overview" aria-label="Pin to overview">${IC.star}</button>
-        <button class="dk-icbtn dk-wact" id="dkWCopy" title="Copy tool link" aria-label="Copy tool link">${IC.link}</button>
-        <button class="dk-icbtn dk-wact" id="dkWTab" title="Open in a new tab" aria-label="Open in a new tab">${IC.ext}</button>
+        <button class="dk-icbtn dk-wact" id="dkWPin" data-explain="btn.pin" title="Pin to overview" aria-label="Pin to overview">${IC.star}</button>
+        <button class="dk-icbtn dk-wact" id="dkWCopy" data-explain="btn.copy" title="Copy tool link" aria-label="Copy tool link">${IC.link}</button>
+        <button class="dk-icbtn dk-wact" id="dkWTab" data-explain="btn.newtab" title="Open in a new tab" aria-label="Open in a new tab">${IC.ext}</button>
         <span class="dk-wfull" id="dkWFull">Open in full console</span>
       </div>
       <div class="dk-wframe" id="dkWFrame"></div>
@@ -1508,8 +1512,8 @@ export function renderDeck(host, opts) {
         <div class="dk-tmain" id="dkToolMain">
           ${groups.map((g) => { const h = hexOf(g.color); return `<section class="dk-tsec" data-g="${g.id}"><div class="th" style="--fg:${h}"><span class="d"></span><h3>${esc(g.name)}</h3><span class="c">${g.items.length} tools</span></div>
             <div class="dk-grid dkx">${g.items.map((it) => `<div class="dk-gcard" data-sec="${esc(it.sec)}" data-label="${esc(it.label)}" data-txt="${esc((it.label + " " + g.name).toLowerCase())}" style="--a:${h}">
-              <button class="dk-gcpin${pins.includes(it.sec) ? " on" : ""}" data-pin="${esc(it.sec)}" title="Pin to overview" aria-label="Pin to overview">${IC.star}</button>
-              <span class="gi">${toolIcon(it.label, g.name)}</span>${it.badge === "live" ? '<span class="glive" title="Live data"></span>' : ""}
+              <button class="dk-gcpin${pins.includes(it.sec) ? " on" : ""}" data-pin="${esc(it.sec)}" data-explain="btn.pin" title="Pin to overview" aria-label="Pin to overview">${IC.star}</button>
+              <span class="gi">${toolIcon(it.label, g.name)}</span>${it.badge === "live" ? '<span class="glive" data-explain="badge.live" title="Live data"></span>' : ""}
               <span class="gt">${esc(it.label)}</span><span class="garr">Open${IC_CHEV}</span></div>`).join("")}</div></section>`; }).join("")}
           <div class="dk-tnone" id="dkToolNone" hidden>No tools match your search.</div>
         </div>
@@ -1676,6 +1680,7 @@ export function renderDeck(host, opts) {
       <button class="dk-mi" data-tool="settings">${IC.gear}<span>Settings</span></button>
       <button class="dk-mi" id="dkMiKeys">${IC.bolt}<span>Keyboard shortcuts<span class="sub">Press ? anytime</span></span></button>
       <button class="dk-mi" id="dkMiDense">${IC.grid}<span>Density: ${root.classList.contains("dense") ? "Compact" : "Comfortable"}<span class="sub">Switch to ${root.classList.contains("dense") ? "comfortable" : "compact"} layout</span></span></button>
+      <button class="dk-mi" id="dkMiExplain">${IC.spark}<span>Hover explanations: ${explainEnabled() ? "On" : "Off"}<span class="sub">Rest on anything for 3 seconds to see what it means</span></span></button>
       <div class="dk-mi-div"></div>
       <button class="dk-mi" id="dkMiExport">${IC.ext}<span>Export deck state<span class="sub">Connections, pins &amp; notes as JSON</span></span></button>
       <button class="dk-mi" id="dkMiImport">${IC.folder}<span>Import deck state</span></button>
@@ -1686,6 +1691,7 @@ export function renderDeck(host, opts) {
     popAcct.querySelector("[data-tool]").onclick = () => { closeAllMenus(); openTool("settings", "Settings"); };
     popAcct.querySelector("#dkMiKeys").onclick = () => { closeAllMenus(); toggleKeys(true); };
     popAcct.querySelector("#dkMiDense").onclick = () => { closeAllMenus(); const d = root.classList.toggle("dense"); try { localStorage.setItem("dn_deck_density", d ? "compact" : "comfortable"); } catch (_) {} };
+    popAcct.querySelector("#dkMiExplain").onclick = () => { closeAllMenus(); const on = !explainEnabled(); setExplainEnabled(on); toast("Hover explanations " + (on ? "on" : "off")); };
     popAcct.querySelector("#dkMiExport").onclick = () => { closeAllMenus(); exportDeckState(); };
     popAcct.querySelector("#dkMiImport").onclick = () => { closeAllMenus(); importDeckState(); };
     const miCon = popAcct.querySelector("#dkMiConsole"); if (miCon) miCon.onclick = exitDeck;
@@ -1796,16 +1802,16 @@ export function renderDeck(host, opts) {
       </div>
       <div class="dk-expnote" id="dkExpNote" hidden></div>
       <div class="dk-ovgrid3">
-        <div class="dk-ovp"><h2>${IC.star} Pinned tools <span class="mo" data-scene="tools">All tools</span></h2><div id="dkPins" class="dk-pins"></div></div>
-        <div class="dk-ovp"><h2>${IC.radar} System status</h2><div id="dkSys" class="dk-sys"></div></div>
-        <div class="dk-ovp"><h2>${IC.link} Integrations <span class="mo" data-scene="con">Manage</span></h2>
+        <div class="dk-ovp"><h2 data-explain="panel.pins">${IC.star} Pinned tools <span class="mo" data-scene="tools">All tools</span></h2><div id="dkPins" class="dk-pins"></div></div>
+        <div class="dk-ovp"><h2 data-explain="panel.system">${IC.radar} System status</h2><div id="dkSys" class="dk-sys"></div></div>
+        <div class="dk-ovp"><h2 data-explain="panel.integrations">${IC.link} Integrations <span class="mo" data-scene="con">Manage</span></h2>
           <div class="dk-gauge"><div class="ring" style="--p:${pct};--c:#12a85f"><i>${linked.length}</i></div><div class="gmeta"><b>${linked.length} of ${INTEGRATIONS.length} linked</b><p>${linked.length ? esc(linked.slice(0, 5).map((i) => i.name).join(", ")) + (linked.length > 5 ? "…" : "") : "Connect AI models and threat-intel sources to power the console."}</p></div></div>
         </div>
       </div>
       <div class="dk-ovgrid">
         <div>
-          <div class="dk-ovp"><h2>${IC.pulse} Recent activity <span class="mo" data-scene="activity">View all</span></h2><div class="dk-ovact">${actRows}</div></div>
-          <div class="dk-ovp"><h2>${IC.grid} Quick actions</h2><div class="dk-qa">
+          <div class="dk-ovp"><h2 data-explain="panel.activity">${IC.pulse} Recent activity <span class="mo" data-scene="activity">View all</span></h2><div class="dk-ovact">${actRows}</div></div>
+          <div class="dk-ovp"><h2 data-explain="panel.quick">${IC.grid} Quick actions</h2><div class="dk-qa">
             <button class="dk-qacard" data-tool="codescan"><span class="qi" style="--a:#3f78ff">${IC.term}</span><b>Scan a codebase</b><span>Connect GitHub and jump to each vulnerable line.</span></button>
             <button class="dk-qacard" data-tool="strongroom"><span class="qi" style="--a:#f59e0b">${IC.bolt}</span><b>Protect the funds</b><span>Screen a ledger for fraud and intrusion-to-theft chains.</span></button>
             <button class="dk-qacard" data-tool="vault"><span class="qi" style="--a:#f59e0b">${IC.star}</span><b>Treasury vault</b><span>Controls and a tamper-evident ledger for funds at your bank.</span></button>
@@ -1817,8 +1823,8 @@ export function renderDeck(host, opts) {
           </div></div>
         </div>
         <div>
-          <div class="dk-ovp"><h2>${IC.radar} Threat level <span class="mo" data-scene="threat">Threat &amp; vulns</span></h2><div id="dkOvThreat"><div class="dk-loading"><span class="sp"></span>Loading live CVE feed…</div></div></div>
-          <div class="dk-ovp"><h2>${IC.note} Notes <span class="mo" id="dkNotesClear">Clear</span></h2>
+          <div class="dk-ovp"><h2 data-explain="panel.threat">${IC.radar} Threat level <span class="mo" data-scene="threat">Threat &amp; vulns</span></h2><div id="dkOvThreat"><div class="dk-loading"><span class="sp"></span>Loading live CVE feed…</div></div></div>
+          <div class="dk-ovp"><h2 data-explain="panel.notes">${IC.note} Notes <span class="mo" id="dkNotesClear">Clear</span></h2>
             <textarea class="dk-notes" id="dkNotes" placeholder="Notes — jot an IP, a hypothesis, a to-do. Saved on this device."></textarea>
             <div class="dk-notef"><span id="dkNotesSaved">Saved on this device</span><span id="dkNotesCount"></span></div>
           </div>
@@ -1967,7 +1973,7 @@ export function renderDeck(host, opts) {
         <div class="dk-tibar">
           <label class="dk-tsearch dk-tifind">${IC_SEARCH}<input id="dkTiSearch" type="search" placeholder="Filter CVEs…" autocomplete="off" spellcheck="false"></label>
           <span class="dk-ticount" id="dkTiCount"></span>
-          <button class="dk-tibtn on" id="dkTiPrio" title="Order by exploitation risk: KEV, then EPSS, then CVSS">Prioritize</button>
+          <button class="dk-tibtn on" id="dkTiPrio" data-explain="btn.prioritize" title="Order by exploitation risk: KEV, then EPSS, then CVSS">Prioritize</button>
           <button class="dk-tibtn" id="dkTiCsv">Export CSV</button>
           <button class="dk-tibtn" id="dkTiJson">Export JSON</button>
         </div>
@@ -2281,7 +2287,7 @@ export function renderDeck(host, opts) {
           <select id="dkInvType" class="dk-isel"></select>
           <select id="dkInvSev" class="dk-isel"></select>
           <select id="dkInvStatus" class="dk-isel"></select>
-          <label class="dk-invsim"><input type="checkbox" id="dkInvSim"${invF.sim ? " checked" : ""}> Include simulated / sample</label>
+          <label class="dk-invsim" data-explain="inv.sim"><input type="checkbox" id="dkInvSim"${invF.sim ? " checked" : ""}> Include simulated / sample</label>
         </div>
         <div class="dk-invsimnote" id="dkInvSimNote" hidden></div>
         <div id="dkInvTable"></div>
@@ -2641,6 +2647,27 @@ export function renderDeck(host, opts) {
   side.addEventListener("scroll", () => fly.classList.remove("on"), true);
   buildSideNav();
   applyNav();
+
+  // ---------- hover explainers (3s dwell; ui/explain.js) ----------
+  // KPIs, nav scenes and badges come from the EXPLAIN registry; tools fall back to the
+  // console's plain-English section help.
+  let secHelp = null;
+  import("/js/section-help.js?v=20261010j").then((m) => { secHelp = m.SECTION_HELP; }).catch(() => {});
+  const toolExplain = (sec, label) => {
+    const h = secHelp && secHelp[sec]; if (!h) return null;
+    return { title: label || secLabel[sec] || sec, body: [h.what, h.when].filter(Boolean).join(" "), src: h.note || "" };
+  };
+  busOffs.push(attachExplain(root, { resolve: (el) => {
+    const d = el.dataset || {};
+    if (el.classList.contains("dk-kpi") && d.k) return EXPLAIN["kpi." + d.k] || null;
+    if (el.classList.contains("dk-simchip")) return EXPLAIN["badge.sample"];
+    if (el.classList.contains("dk-kevb")) return EXPLAIN["badge.kev"];
+    if (el.classList.contains("dk-epssb")) return EXPLAIN["badge.epss"];
+    if (el.matches(".dk-nv[data-scene],.dk-qacard[data-scene]")) return EXPLAIN["scene." + d.scene] || null;
+    if (el.matches(".dk-nv[data-tool],.dk-qacard[data-tool]")) return EXPLAIN["tool." + d.tool] || toolExplain(d.tool, d.l) || EXPLAIN["scene." + d.tool] || null;
+    if (el.matches(".dk-gcard[data-sec],.dk-pin[data-sec],.dk-compcard[data-sec]")) return EXPLAIN["tool." + d.sec] || toolExplain(d.sec, d.label);
+    return null;
+  } }));
 
   // ---------- boot: restore the last workspace ----------
   let initial = "overview";
