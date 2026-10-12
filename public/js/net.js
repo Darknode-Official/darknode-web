@@ -30,6 +30,7 @@ export async function dnFetch(url, opts = {}) {
   if (opts.raw) qs.set("raw", "1");
   if (opts.redirect === "manual") qs.set("redirect", "manual");
   if (opts.ua) qs.set("ua", String(opts.ua));
+  if (opts.max) qs.set("max", String(opts.max));
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), opts.timeout || 15000);
   let res;
@@ -49,7 +50,10 @@ export async function dnFetch(url, opts = {}) {
 export async function dnFetchJSON(url, opts = {}) {
   const r = await dnFetch(url, { ...opts, raw: true });
   try { return JSON.parse(r.body); }
-  catch (_) { throw new Error("Upstream did not return valid JSON."); }
+  catch (_) {
+    if (r.truncated || (r.bytes && r.body && r.bytes > r.body.length)) throw new Error("The source returned more data than the proxy size limit allows — try a narrower query.");
+    throw new Error("Upstream did not return valid JSON" + (r.status && r.status !== 200 ? " (HTTP " + r.status + ")." : "."));
+  }
 }
 
 try {

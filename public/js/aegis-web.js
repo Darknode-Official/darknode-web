@@ -385,24 +385,6 @@ const NOC_TOPOLOGY = [
   { id: 'ep-wifi', type: 'endpoint', label: 'WIFI-CORP', ip: '172.16.0.0/16', status: 'online', cpu: 0, mem: 0, x: 750, y: 480 },
 ];
 
-const NOC_LINKS = [
-  { from: 'fw-01', to: 'rtr-core', bw: 10000, used: 3200, proto: '10GbE' },
-  { from: 'fw-02', to: 'rtr-core', bw: 10000, used: 2800, proto: '10GbE' },
-  { from: 'rtr-core', to: 'sw-dist-1', bw: 10000, used: 4500, proto: '10GbE' },
-  { from: 'rtr-core', to: 'sw-dist-2', bw: 10000, used: 5200, proto: '10GbE' },
-  { from: 'rtr-core', to: 'sw-dist-3', bw: 10000, used: 8900, proto: '10GbE' },
-  { from: 'sw-dist-1', to: 'srv-dc01', bw: 1000, used: 340, proto: '1GbE' },
-  { from: 'sw-dist-1', to: 'srv-dc02', bw: 1000, used: 280, proto: '1GbE' },
-  { from: 'sw-dist-2', to: 'srv-web01', bw: 1000, used: 780, proto: '1GbE' },
-  { from: 'sw-dist-2', to: 'srv-web02', bw: 1000, used: 950, proto: '1GbE' },
-  { from: 'sw-dist-3', to: 'srv-db01', bw: 1000, used: 620, proto: '1GbE' },
-  { from: 'sw-dist-3', to: 'srv-db02', bw: 1000, used: 480, proto: '1GbE' },
-  { from: 'sw-dist-3', to: 'srv-mail', bw: 1000, used: 190, proto: '1GbE' },
-  { from: 'sw-dist-1', to: 'ep-vlan10', bw: 1000, used: 210, proto: '1GbE' },
-  { from: 'sw-dist-1', to: 'ep-vlan20', bw: 1000, used: 340, proto: '1GbE' },
-  { from: 'sw-dist-2', to: 'ep-vlan30', bw: 1000, used: 560, proto: '1GbE' },
-  { from: 'sw-dist-3', to: 'ep-wifi', bw: 1000, used: 720, proto: '1GbE' },
-];
 
 const NOC_CONNECTIONS = [
   { src: '10.0.100.45', dst: '10.0.20.1', proto: 'HTTPS', port: 443, bytes: 1245780, state: 'ESTABLISHED', duration: '02:14:33' },
@@ -419,16 +401,6 @@ const NOC_CONNECTIONS = [
   { src: '10.0.300.90', dst: '10.0.30.1', proto: 'PostgreSQL', port: 5432, bytes: 4567890, state: 'ESTABLISHED', duration: '00:22:10' },
 ];
 
-const NOC_ANOMALIES = [
-  { time: '14:32:18', severity: 'Critical', type: 'Port Scan', src: '185.220.101.34', detail: 'Sequential port scan detected: ports 1-1024 on 10.0.20.1', mitre: 'T1595' },
-  { time: '14:28:05', severity: 'High', type: 'Data Exfiltration', src: '10.0.300.15', detail: 'Unusual outbound transfer: 450MB to external IP 45.154.255.10', mitre: 'T1048' },
-  { time: '14:25:44', severity: 'High', type: 'Beaconing', src: '10.0.100.78', detail: 'Regular interval connections every 60s to 104.244.72.15:443', mitre: 'T1071.001' },
-  { time: '14:22:10', severity: 'Medium', type: 'DNS Tunnel', src: '10.0.200.12', detail: 'High entropy DNS queries to suspicious domain (avg length: 54 chars)', mitre: 'T1572' },
-  { time: '14:18:33', severity: 'Medium', type: 'Brute Force', src: '45.33.32.100', detail: '47 failed SSH login attempts to 10.0.10.1 in 5 minutes', mitre: 'T1110' },
-  { time: '14:15:00', severity: 'Low', type: 'New Service', src: '10.0.20.2', detail: 'Unknown service started on port 4444 (potential reverse shell)', mitre: 'T1059' },
-  { time: '14:10:22', severity: 'Critical', type: 'C2 Communication', src: '10.0.100.45', detail: 'JA3 fingerprint matches known Cobalt Strike beacon profile', mitre: 'T1071.001' },
-  { time: '14:05:11', severity: 'High', type: 'Lateral Movement', src: '10.0.100.78', detail: 'SMB connection to ADMIN$ on 10.0.10.1, 10.0.10.2, 10.0.20.1', mitre: 'T1021.002' },
-];
 
 // ============================================================================
 // FIREWALL RULE BASE + SEGMENTATION ZONES
@@ -558,20 +530,6 @@ const ROP_GADGETS = [
 // ============================================================================
 // ACTIVE DIRECTORY ATTACK PLANNER DATA
 // ============================================================================
-const AD_SIM_USERS = [
-  { sam: 'admin', dn: 'CN=Administrator,CN=Users,DC=corp,DC=local', groups: ['Domain Admins','Enterprise Admins','Schema Admins'], spn: false, asrep: false, desc: 'Built-in administrator account' },
-  { sam: 'j.smith', dn: 'CN=John Smith,OU=IT,DC=corp,DC=local', groups: ['Domain Admins','IT Staff'], spn: false, asrep: false, desc: 'IT Administrator' },
-  { sam: 'svc_sql', dn: 'CN=SQL Service,OU=Service Accounts,DC=corp,DC=local', groups: ['Service Accounts'], spn: true, asrep: false, desc: 'SQL Server service account - SPN: MSSQLSvc/sql01.corp.local:1433' },
-  { sam: 'svc_web', dn: 'CN=Web Service,OU=Service Accounts,DC=corp,DC=local', groups: ['Service Accounts'], spn: true, asrep: false, desc: 'IIS service account - SPN: HTTP/web01.corp.local' },
-  { sam: 'svc_backup', dn: 'CN=Backup Service,OU=Service Accounts,DC=corp,DC=local', groups: ['Backup Operators','Service Accounts'], spn: true, asrep: false, desc: 'Backup service - SPN: HOST/backup01.corp.local' },
-  { sam: 'm.jones', dn: 'CN=Mary Jones,OU=HR,DC=corp,DC=local', groups: ['HR Staff'], spn: false, asrep: true, desc: 'HR Manager - PREAUTH DISABLED' },
-  { sam: 'k.wilson', dn: 'CN=Kevin Wilson,OU=Finance,DC=corp,DC=local', groups: ['Finance Staff'], spn: false, asrep: true, desc: 'Finance Analyst - PREAUTH DISABLED' },
-  { sam: 'helpdesk', dn: 'CN=Help Desk,OU=IT,DC=corp,DC=local', groups: ['Account Operators','IT Staff'], spn: false, asrep: false, desc: 'Help desk - can reset passwords' },
-  { sam: 'svc_exchange', dn: 'CN=Exchange Service,OU=Service Accounts,DC=corp,DC=local', groups: ['Exchange Servers','Organization Management'], spn: true, asrep: false, desc: 'Exchange service - WriteDACL on domain' },
-  { sam: 'd.chen', dn: 'CN=David Chen,OU=IT,DC=corp,DC=local', groups: ['Server Operators','IT Staff'], spn: false, asrep: false, desc: 'Server admin - GenericAll on DC' },
-  { sam: 'svc_adfs', dn: 'CN=ADFS Service,OU=Service Accounts,DC=corp,DC=local', groups: ['Service Accounts'], spn: true, asrep: false, desc: 'ADFS service - constrained delegation to DC' },
-  { sam: 'p.garcia', dn: 'CN=Paula Garcia,OU=Engineering,DC=corp,DC=local', groups: ['Engineering','GPO Admins'], spn: false, asrep: false, desc: 'Engineer - GPO edit rights' },
-];
 
 const AD_ATTACK_PATHS = [
   { name: 'Kerberoasting to Domain Admin', severity: 'Critical', steps: ['Enumerate SPNs: Get-ADUser -Filter {ServicePrincipalName -ne "$null"}','Request TGS ticket: Add-Type -AssemblyName System.IdentityModel; New-Object System.IdentityModel.Tokens.KerberosRequestorSecurityToken -ArgumentList "MSSQLSvc/sql01.corp.local:1433"','Extract ticket from memory: Invoke-Mimikatz -Command \'"kerberos::list /export"\'','Crack offline with hashcat: hashcat -m 13100 ticket.kirbi wordlist.txt','Use svc_sql credentials to access SQL Server','Execute xp_cmdshell for OS command execution','Escalate via linked servers or impersonation','Lateral movement to Domain Controller'], from: 'Any Domain User', to: 'Domain Admin', technique: 'T1558.003', likelihood: 'High' },
@@ -596,40 +554,6 @@ const AD_ATTACKS_DB = [
 // ============================================================================
 // CLOUD ATTACK SURFACE DATA
 // ============================================================================
-const CLOUD_ASSETS = {
-  aws: [
-    { type: 'EC2', name: 'web-prod-01', region: 'us-east-1', status: 'running', public: true, risk: 'High', issue: 'Security group allows 0.0.0.0/0 on ports 22, 80, 443, 3389' },
-    { type: 'EC2', name: 'db-prod-01', region: 'us-east-1', status: 'running', public: false, risk: 'Medium', issue: 'IMDSv1 enabled (SSRF risk)' },
-    { type: 'S3', name: 'corp-backups-2024', region: 'us-east-1', status: 'active', public: true, risk: 'Critical', issue: 'Bucket ACL allows public read/write' },
-    { type: 'S3', name: 'app-static-assets', region: 'us-east-1', status: 'active', public: true, risk: 'Low', issue: 'Public read only (static content)' },
-    { type: 'S3', name: 'customer-data-exports', region: 'us-west-2', status: 'active', public: false, risk: 'Critical', issue: 'No server-side encryption, no versioning' },
-    { type: 'Lambda', name: 'data-processor', region: 'us-east-1', status: 'active', public: false, risk: 'High', issue: 'Function has AdministratorAccess IAM role' },
-    { type: 'Lambda', name: 'api-handler', region: 'us-east-1', status: 'active', public: true, risk: 'Medium', issue: 'Environment variables contain database credentials' },
-    { type: 'RDS', name: 'prod-mysql', region: 'us-east-1', status: 'available', public: true, risk: 'Critical', issue: 'Publicly accessible, no SSL enforcement' },
-    { type: 'IAM', name: 'dev-user-01', region: 'global', status: 'active', public: false, risk: 'High', issue: 'Long-lived access keys (320 days old), PowerUserAccess' },
-    { type: 'IAM', name: 'ci-cd-role', region: 'global', status: 'active', public: false, risk: 'Critical', issue: 'AdministratorAccess with no condition constraints' },
-    { type: 'EKS', name: 'prod-cluster', region: 'us-east-1', status: 'active', public: true, risk: 'High', issue: 'API server publicly accessible, RBAC misconfigured' },
-  ],
-  azure: [
-    { type: 'VM', name: 'dc-azure-01', region: 'eastus', status: 'running', public: true, risk: 'Critical', issue: 'RDP exposed to internet, NSG allows 0.0.0.0/0:3389' },
-    { type: 'VM', name: 'web-azure-01', region: 'eastus', status: 'running', public: true, risk: 'Medium', issue: 'No disk encryption, managed identity overprivileged' },
-    { type: 'Blob', name: 'logs-container', region: 'eastus', status: 'active', public: true, risk: 'High', issue: 'Container public access level: Blob (anonymous read)' },
-    { type: 'Blob', name: 'config-backups', region: 'westus', status: 'active', public: false, risk: 'High', issue: 'SAS token in source code with full permissions, no expiry' },
-    { type: 'SQL', name: 'prod-sqldb', region: 'eastus', status: 'online', public: true, risk: 'Critical', issue: 'Allow Azure services and resources to access server enabled' },
-    { type: 'App Service', name: 'api-webapp', region: 'eastus', status: 'running', public: true, risk: 'Medium', issue: 'FTP deployment enabled, HTTP not redirected to HTTPS' },
-    { type: 'Key Vault', name: 'prod-secrets', region: 'eastus', status: 'active', public: false, risk: 'High', issue: 'Overly permissive access policies, no private endpoint' },
-    { type: 'AKS', name: 'prod-k8s', region: 'eastus', status: 'running', public: true, risk: 'High', issue: 'Dashboard exposed, default namespace has cluster-admin binding' },
-  ],
-  gcp: [
-    { type: 'GCE', name: 'web-prod', region: 'us-central1', status: 'running', public: true, risk: 'Medium', issue: 'Default service account with project editor role' },
-    { type: 'GCS', name: 'user-uploads', region: 'us-central1', status: 'active', public: true, risk: 'Critical', issue: 'Bucket is publicly accessible via allUsers permission' },
-    { type: 'GCS', name: 'terraform-state', region: 'us-central1', status: 'active', public: false, risk: 'Critical', issue: 'Contains infrastructure secrets, no object versioning' },
-    { type: 'Cloud SQL', name: 'prod-postgres', region: 'us-central1', status: 'running', public: true, risk: 'High', issue: 'Authorized networks includes 0.0.0.0/0' },
-    { type: 'GKE', name: 'app-cluster', region: 'us-central1', status: 'running', public: true, risk: 'High', issue: 'Legacy ABAC enabled, metadata concealment not configured' },
-    { type: 'Cloud Function', name: 'data-pipeline', region: 'us-central1', status: 'active', public: true, risk: 'High', issue: 'Invokable by allUsers, has BigQuery admin role' },
-    { type: 'IAM', name: 'service-account-1', region: 'global', status: 'active', public: false, risk: 'Critical', issue: 'Owner role on project, key exported 180 days ago' },
-  ],
-};
 
 const CLOUD_PRIVESC_PATHS = [
   { cloud: 'AWS', name: 'Lambda Function to Admin', risk: 'Critical', steps: ['Compromise Lambda with AdministratorAccess role','Use boto3 to create new IAM user with admin privileges','Generate access keys for the new user','Pivot to full account control'] },
@@ -704,16 +628,6 @@ const STIX_FEEDS = [
   { name: 'Mandiant Advantage', url: 'https://api.intelligence.mandiant.com/', type: 'REST API', status: 'Configured', iocs: 0, lastSync: 'N/A', categories: ['APT','Malware','CVE'] },
 ];
 
-const DARKWEB_MENTIONS = [
-  { time: '2026-09-13 13:45', source: 'BreachForums', type: 'Data Leak', content: 'New database dump posted: "corp_employees_2026.sql" - 50K records with emails and hashed passwords', severity: 'Critical', relevance: 'High' },
-  { time: '2026-09-13 12:20', source: 'Telegram Channel', type: 'Credential Sale', content: 'Selling RDP access to US financial institution - Domain Admin credentials available', severity: 'High', relevance: 'Medium' },
-  { time: '2026-09-13 10:15', source: 'Russian Forum', type: 'Zero-Day Sale', content: 'Selling Windows kernel 0-day LPE - PoC available, works on latest Windows 11', severity: 'Critical', relevance: 'High' },
-  { time: '2026-09-12 22:30', source: 'BreachForums', type: 'Tool Release', content: 'New evasion tool released: bypasses CrowdStrike Falcon and SentinelOne', severity: 'High', relevance: 'Medium' },
-  { time: '2026-09-12 18:45', source: 'Tor Marketplace', type: 'Ransomware-as-a-Service', content: 'LockBit 4.0 affiliate program launched with improved encryption and Linux support', severity: 'High', relevance: 'Medium' },
-  { time: '2026-09-12 15:00', source: 'Paste Site', type: 'Leaked Credentials', content: 'Paste containing 10K email:password pairs from unknown source - multiple corporate domains', severity: 'Medium', relevance: 'Medium' },
-  { time: '2026-09-12 09:30', source: 'Chinese Forum', type: 'Exploit Trade', content: 'Discussion of new Fortinet FortiGate vulnerability with working PoC - CVE pending', severity: 'High', relevance: 'High' },
-  { time: '2026-09-11 20:00', source: 'BreachForums', type: 'Initial Access Broker', content: 'Selling VPN access to healthcare org in Texas - Citrix NetScaler, 500+ endpoints', severity: 'Critical', relevance: 'Medium' },
-];
 
 
 // ============================================================================
@@ -1636,11 +1550,11 @@ const SECURITY_TOOLS_CATEGORIES = [
 // END OF REFERENCE DATABASES
 // Total databases: CVE_DB, DEFAULT_CREDS, APT_DB, MITRE_MATRIX, THREAT_IPS,
 // THREAT_DOMAINS, DGA_PATTERNS, SIGMA_TEMPLATES, SNORT_TEMPLATES,
-// IR_PLAYBOOKS, NOC_TOPOLOGY, NOC_LINKS, NOC_CONNECTIONS, NOC_ANOMALIES,
-// SHELLCODE_TEMPLATES, ROP_GADGETS, AD_SIM_USERS, AD_ATTACK_PATHS,
-// AD_ATTACKS_DB, CLOUD_ASSETS, CLOUD_PRIVESC_PATHS, CONTAINER_ESCAPES,
+// IR_PLAYBOOKS, NOC_TOPOLOGY, NOC_CONNECTIONS,
+// SHELLCODE_TEMPLATES, ROP_GADGETS, AD_ATTACK_PATHS,
+// AD_ATTACKS_DB, CLOUD_PRIVESC_PATHS, CONTAINER_ESCAPES,
 // HUNT_HYPOTHESES, HUNT_PLAYBOOKS, WARROOM_TEMPLATES, EVIDENCE_TYPES,
-// STIX_FEEDS, DARKWEB_MENTIONS, YARA_RULES, PORT_REFERENCE,
+// STIX_FEEDS, YARA_RULES, PORT_REFERENCE,
 // FORENSIC_ARTIFACTS, OSINT_TOOLS, PROTOCOL_SIGNATURES,
 // PERSISTENCE_MECHANISMS, VULNERABLE_CONFIGS, MALWARE_FAMILIES,
 // HASH_TYPES, WINDOWS_EVENTS, LATERAL_MOVEMENT_TECHNIQUES,
@@ -1675,10 +1589,18 @@ function genId() { return Date.now().toString(36) + Math.random().toString(36).s
 // SETTINGS
 // ============================================================================
 function loadSettings() {
-  try { return JSON.parse(localStorage.getItem('aegis_settings')) || { operator: 'Operator', callsign: 'AEGIS-1', classification: 'UNCLASSIFIED', theme: 'cyan' }; }
-  catch (_) { return { operator: 'Operator', callsign: 'AEGIS-1', classification: 'UNCLASSIFIED', theme: 'cyan' }; }
+  try { return JSON.parse(localStorage.getItem('aegis_settings')) || { operator: '', callsign: '', classification: 'UNCLASSIFIED', theme: 'cyan' }; }
+  catch (_) { return { operator: '', callsign: '', classification: 'UNCLASSIFIED', theme: 'cyan' }; }
 }
 function saveSettings(s) { try { localStorage.setItem('aegis_settings', JSON.stringify(s)); } catch (_) {} }
+
+// Cloud asset inventory is user-entered; it starts empty.
+function loadCloudAssets() {
+  var empty = { aws: [], azure: [], gcp: [] };
+  try { var v = JSON.parse(localStorage.getItem('aegis_cloud_assets')); return v && typeof v === 'object' ? Object.assign(empty, v) : empty; }
+  catch (_) { return empty; }
+}
+function saveCloudAssets(a) { try { localStorage.setItem('aegis_cloud_assets', JSON.stringify(a)); } catch (_) {} }
 
 // ============================================================================
 // MAIN RENDER
@@ -1835,7 +1757,10 @@ export function renderAegis(main) {
 
     // Fleet health requires the AEGIS VM agent for real metrics
     var fleetHealth = [];
-    var topAlerts = NOC_ANOMALIES.slice(0, 10);
+    // Top alerts come only from the active mission's Critical/High findings.
+    var topAlerts = findings.filter(function(f){return f.severity==='Critical'||f.severity==='High'})
+      .slice().sort(function(a,b){return (b.cvss||0)-(a.cvss||0)}).slice(0, 10)
+      .map(function(f){return { severity: f.severity, time: f.cvss ? 'CVSS ' + f.cvss : '', type: f.title || '', detail: f.detail || '' };});
 
     c.innerHTML =
       '<div class="ag-grid3" style="margin-bottom:10px">' +
@@ -1869,7 +1794,7 @@ export function renderAegis(main) {
         '<div class="ag-panel">' +
           '<div class="ag-panel-h"><span style="color:var(--acc)">SECURITY POSTURE</span></div>' +
           '<div class="ag-panel-b" style="text-align:center">' +
-            '<div style="font-size:2.5rem;font-weight:800;color:' + (score >= 80 ? '#00e676' : score >= 50 ? '#ffd600' : '#ff1744') + '">' + score + '</div>' +
+            '<div style="font-size:2.5rem;font-weight:800;color:' + (!mission ? 'var(--mut)' : score >= 80 ? '#00e676' : score >= 50 ? '#ffd600' : '#ff1744') + '">' + (mission ? score : '&mdash;') + '</div>' +
             '<div style="font-size:.65rem;color:var(--mut);text-transform:uppercase;letter-spacing:.05em">out of 100</div>' +
             '<div style="height:6px;background:var(--line);border-radius:3px;margin-top:8px;overflow:hidden"><div style="height:100%;width:' + score + '%;background:' + (score >= 80 ? '#00e676' : score >= 50 ? '#ffd600' : '#ff1744') + ';border-radius:3px;transition:width .5s"></div></div>' +
           '</div>' +
@@ -1901,6 +1826,7 @@ export function renderAegis(main) {
         '<div class="ag-panel">' +
           '<div class="ag-panel-h"><span style="color:#ff1744">TOP ALERTS</span><span style="flex:1"></span><span style="color:var(--mut)">' + topAlerts.length + ' active</span></div>' +
           '<div class="ag-panel-b" style="max-height:200px;overflow-y:auto">' +
+            (topAlerts.length ? '' : '<div style="color:var(--mut);font-size:.72rem;text-align:center;padding:16px">No alerts. Create a mission or add findings.<div style="margin-top:10px"><button class="ag-btn" id="ag-cc-newmission">' + (mission ? 'Run Reconnaissance' : 'Create Mission') + '</button></div></div>') +
             topAlerts.map(function(a) {
               var aCls = a.severity === 'Critical' ? 'ag-crit' : a.severity === 'High' ? 'ag-high' : a.severity === 'Medium' ? 'ag-med' : 'ag-low';
               return '<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid var(--line);font-size:.68rem">' +
@@ -1937,6 +1863,8 @@ export function renderAegis(main) {
           '</div>' +
         '</div>' +
       '</div>';
+    var ccNew = c.querySelector('#ag-cc-newmission');
+    if (ccNew) ccNew.onclick = function() { activeTab = mission ? 'recon' : 'missions'; render(); };
   }
 
   // ========== MISSIONS ==========
@@ -2557,23 +2485,8 @@ export function renderAegis(main) {
       } else if (tab === 'darkweb') {
         ic.innerHTML =
           '<div class="ag-panel">' +
-            '<div class="ag-panel-h"><span style="color:#ff1744">DARK WEB INTELLIGENCE MONITOR</span><span style="flex:1"></span><span style="color:var(--mut)">' + DARKWEB_MENTIONS.length + ' mentions</span></div>' +
-            '<div class="ag-panel-b">' +
-              DARKWEB_MENTIONS.map(function(m) {
-                var sCls = m.severity === 'Critical' ? 'ag-crit' : m.severity === 'High' ? 'ag-high' : 'ag-med';
-                return '<div style="border-bottom:1px solid var(--line);padding:10px 0">' +
-                  '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">' +
-                    '<span class="ag-badge ' + sCls + '">' + esc(m.severity) + '</span>' +
-                    '<span style="color:var(--acc);font-weight:600;font-size:.72rem">' + esc(m.type) + '</span>' +
-                    '<span style="color:var(--mut);font-size:.62rem">' + esc(m.source) + '</span>' +
-                    '<span style="flex:1"></span>' +
-                    '<span style="color:var(--mut);font-size:.62rem">' + esc(m.time) + '</span>' +
-                    '<span class="ag-badge ' + (m.relevance === 'High' ? 'ag-high' : 'ag-med') + '" style="font-size:.5rem">REL: ' + esc(m.relevance) + '</span>' +
-                  '</div>' +
-                  '<div style="font-size:.72rem;color:var(--txt)">' + esc(m.content) + '</div>' +
-                '</div>';
-              }).join('') +
-            '</div>' +
+            '<div class="ag-panel-h"><span style="color:#ff1744">DARK WEB INTELLIGENCE MONITOR</span><span style="flex:1"></span><span style="color:var(--mut)">0 mentions</span></div>' +
+            '<div class="ag-panel-b"><div style="color:var(--mut);font-size:.72rem;text-align:center;padding:20px">No dark web mentions. No dark web monitoring feed is connected.</div></div>' +
           '</div>';
       }
     }
@@ -2725,134 +2638,14 @@ export function renderAegis(main) {
 
   // ========== NETWORK OPERATIONS CENTER (NOC) ==========
   function renderNOC(c) {
-    var nocTab = 'topology';
+    // No network telemetry source is connected in the browser, so show an honest
+    // empty state instead of a fabricated network.
     c.innerHTML =
-      '<div style="display:flex;gap:4px;margin-bottom:10px;flex-wrap:wrap">' +
-        ['topology:Network Topology','traffic:Traffic Analysis','connections:Active Connections','anomalies:Anomaly Detection'].map(function(t) {
-          var p = t.split(':');
-          return '<button class="ag-btn' + (nocTab === p[0] ? '' : ' ag-btn-ghost') + '" data-nt="' + p[0] + '">' + p[1] + '</button>';
-        }).join('') +
-      '</div>' +
-      '<div id="ag-noccontent"></div>';
-
-    function renderNOCContent(tab) {
-      var nc = c.querySelector('#ag-noccontent');
-      if (tab === 'topology') {
-        var statusColors = { online: '#00e676', warning: '#ffd600', critical: '#ff1744', offline: '#666' };
-        var typeIcons = { firewall: 'FW', router: 'RTR', switch: 'SW', server: 'SRV', endpoint: 'EP' };
-        nc.innerHTML =
-          '<div class="ag-panel">' +
-            '<div class="ag-panel-h"><span style="color:var(--acc)">NETWORK TOPOLOGY MAP</span><span style="flex:1"></span>' +
-              '<span class="ag-badge ag-low" style="font-size:.5rem">ONLINE: ' + NOC_TOPOLOGY.filter(function(n){return n.status==='online'}).length + '</span>' +
-              '<span class="ag-badge ag-med" style="font-size:.5rem">WARNING: ' + NOC_TOPOLOGY.filter(function(n){return n.status==='warning'}).length + '</span>' +
-              '<span class="ag-badge ag-crit" style="font-size:.5rem">CRITICAL: ' + NOC_TOPOLOGY.filter(function(n){return n.status==='critical'}).length + '</span>' +
-            '</div>' +
-            '<div class="ag-panel-b" style="position:relative;height:540px;overflow:hidden;background:rgba(0,0,0,.2)">' +
-              // Draw SVG lines for links
-              '<svg style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none">' +
-                NOC_LINKS.map(function(link) {
-                  var fromNode = NOC_TOPOLOGY.find(function(n){return n.id === link.from});
-                  var toNode = NOC_TOPOLOGY.find(function(n){return n.id === link.to});
-                  if (!fromNode || !toNode) return '';
-                  var util = link.used / link.bw;
-                  var color = util > 0.8 ? '#ff1744' : util > 0.5 ? '#ffd600' : '#00e676';
-                  return '<line x1="' + fromNode.x + '" y1="' + (fromNode.y + 20) + '" x2="' + toNode.x + '" y2="' + toNode.y + '" stroke="' + color + '" stroke-width="' + (util > 0.8 ? 2 : 1) + '" opacity="' + (0.3 + util * 0.5) + '"/>';
-                }).join('') +
-              '</svg>' +
-              // Draw nodes
-              NOC_TOPOLOGY.map(function(node) {
-                var stColor = statusColors[node.status] || '#666';
-                return '<div class="ag-topo-node" style="left:' + (node.x - 40) + 'px;top:' + node.y + 'px;background:rgba(0,0,0,.6);border-color:' + stColor + ';min-width:80px">' +
-                  '<div style="color:' + stColor + ';font-size:.55rem;margin-bottom:2px">' + (typeIcons[node.type] || '?') + '</div>' +
-                  '<div style="font-size:.52rem;color:var(--txt)">' + esc(node.label) + '</div>' +
-                  '<div style="font-size:.48rem;color:var(--mut)">' + esc(node.ip) + '</div>' +
-                  (node.cpu > 0 ? '<div style="font-size:.45rem;color:' + (node.cpu > 80 ? '#ff1744' : 'var(--mut)') + '">CPU:' + node.cpu + '% MEM:' + node.mem + '%</div>' : '') +
-                '</div>';
-              }).join('') +
-            '</div>' +
-          '</div>';
-      } else if (tab === 'traffic') {
-        nc.innerHTML =
-          '<div class="ag-panel">' +
-            '<div class="ag-panel-h"><span style="color:var(--acc)">BANDWIDTH UTILIZATION BY SEGMENT</span></div>' +
-            '<div class="ag-panel-b">' +
-              '<table class="ag-tbl"><thead><tr><th>Link</th><th>Protocol</th><th>Capacity</th><th>Used</th><th>Utilization</th><th>Status</th></tr></thead><tbody>' +
-              NOC_LINKS.map(function(link) {
-                var util = ((link.used / link.bw) * 100).toFixed(1);
-                var utilColor = util > 80 ? '#ff1744' : util > 50 ? '#ffd600' : '#00e676';
-                var fromNode = NOC_TOPOLOGY.find(function(n){return n.id === link.from});
-                var toNode = NOC_TOPOLOGY.find(function(n){return n.id === link.to});
-                return '<tr>' +
-                  '<td style="font-size:.65rem">' + (fromNode ? esc(fromNode.label) : '') + ' -> ' + (toNode ? esc(toNode.label) : '') + '</td>' +
-                  '<td style="color:var(--mut)">' + esc(link.proto) + '</td>' +
-                  '<td style="font-variant-numeric:tabular-nums">' + (link.bw >= 10000 ? (link.bw/1000) + ' Gbps' : link.bw + ' Mbps') + '</td>' +
-                  '<td style="font-variant-numeric:tabular-nums">' + (link.used >= 1000 ? (link.used/1000).toFixed(1) + ' Gbps' : link.used + ' Mbps') + '</td>' +
-                  '<td><div style="display:flex;align-items:center;gap:4px"><div class="ag-health-bar" style="width:80px"><div class="ag-health-fill" style="width:' + Math.min(util,100) + '%;background:' + utilColor + '"></div></div><span style="color:' + utilColor + ';font-size:.62rem;font-weight:600">' + util + '%</span></div></td>' +
-                  '<td><span class="ag-badge ' + (util > 80 ? 'ag-crit' : util > 50 ? 'ag-med' : 'ag-low') + '">' + (util > 80 ? 'OVERLOADED' : util > 50 ? 'ELEVATED' : 'NORMAL') + '</span></td>' +
-                '</tr>';
-              }).join('') +
-              '</tbody></table>' +
-            '</div>' +
-          '</div>' +
-          '<div class="ag-grid4" style="margin-top:10px">' +
-            '<div class="ag-stat"><div class="ag-stat-v" style="color:var(--acc)">' + NOC_LINKS.length + '</div><div class="ag-stat-l">Active Links</div></div>' +
-            '<div class="ag-stat"><div class="ag-stat-v" style="color:#ff1744">' + NOC_LINKS.filter(function(l){return l.used/l.bw > 0.8}).length + '</div><div class="ag-stat-l">Overloaded</div></div>' +
-            '<div class="ag-stat"><div class="ag-stat-v" style="color:#00e676">' + (NOC_LINKS.reduce(function(s,l){return s+l.bw},0)/1000).toFixed(0) + ' Gbps</div><div class="ag-stat-l">Total Capacity</div></div>' +
-            '<div class="ag-stat"><div class="ag-stat-v" style="color:#ffd600">' + (NOC_LINKS.reduce(function(s,l){return s+l.used},0)/1000).toFixed(1) + ' Gbps</div><div class="ag-stat-l">Total Used</div></div>' +
-          '</div>';
-      } else if (tab === 'connections') {
-        nc.innerHTML =
-          '<div class="ag-panel">' +
-            '<div class="ag-panel-h"><span style="color:var(--acc)">ACTIVE CONNECTIONS</span><span style="flex:1"></span><span style="color:var(--mut)">' + NOC_CONNECTIONS.length + ' connections</span></div>' +
-            '<div class="ag-panel-b">' +
-              '<table class="ag-tbl"><thead><tr><th>Source</th><th>Destination</th><th>Protocol</th><th>Port</th><th>Bytes</th><th>State</th><th>Duration</th></tr></thead><tbody>' +
-              NOC_CONNECTIONS.map(function(conn) {
-                var isExternal = !conn.src.startsWith('10.') && !conn.src.startsWith('172.16.');
-                var isSuspicious = isExternal || conn.state === 'SYN_RECV' || conn.state === 'SYN_SENT';
-                return '<tr style="' + (isSuspicious ? 'background:rgba(255,23,68,.05)' : '') + '">' +
-                  '<td style="font-size:.65rem;color:' + (isExternal ? '#ff1744' : 'var(--txt)') + '">' + esc(conn.src) + (isExternal ? ' <span style="color:#ff1744;font-size:.5rem">EXT</span>' : '') + '</td>' +
-                  '<td style="font-size:.65rem">' + esc(conn.dst) + '</td>' +
-                  '<td style="color:var(--acc)">' + esc(conn.proto) + '</td>' +
-                  '<td>' + conn.port + '</td>' +
-                  '<td style="font-variant-numeric:tabular-nums;color:var(--mut)">' + (conn.bytes > 1000000 ? (conn.bytes/1000000).toFixed(1) + ' MB' : (conn.bytes/1000).toFixed(0) + ' KB') + '</td>' +
-                  '<td><span class="ag-badge ' + (conn.state === 'ESTABLISHED' ? 'ag-low' : conn.state === 'SYN_RECV' ? 'ag-crit' : conn.state === 'SYN_SENT' ? 'ag-high' : 'ag-med') + '">' + esc(conn.state) + '</span></td>' +
-                  '<td style="color:var(--mut);font-size:.65rem">' + esc(conn.duration) + '</td>' +
-                '</tr>';
-              }).join('') +
-              '</tbody></table>' +
-            '</div>' +
-          '</div>';
-      } else if (tab === 'anomalies') {
-        nc.innerHTML =
-          '<div class="ag-panel">' +
-            '<div class="ag-panel-h"><span style="color:#ff1744">ANOMALY DETECTION ALERTS</span><span style="flex:1"></span><span style="color:var(--mut)">' + NOC_ANOMALIES.length + ' alerts</span></div>' +
-            '<div class="ag-panel-b">' +
-              NOC_ANOMALIES.map(function(a) {
-                var aCls = a.severity === 'Critical' ? 'ag-crit' : a.severity === 'High' ? 'ag-high' : a.severity === 'Medium' ? 'ag-med' : 'ag-low';
-                return '<div style="border-bottom:1px solid var(--line);padding:10px 0">' +
-                  '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">' +
-                    '<span class="ag-badge ' + aCls + '">' + esc(a.severity) + '</span>' +
-                    '<span style="font-weight:600;font-size:.72rem;color:var(--txt)">' + esc(a.type) + '</span>' +
-                    '<span style="flex:1"></span>' +
-                    '<span style="color:var(--acc);font-size:.62rem">' + esc(a.mitre) + '</span>' +
-                    '<span style="color:var(--mut);font-size:.62rem">' + esc(a.time) + '</span>' +
-                  '</div>' +
-                  '<div style="font-size:.68rem;color:var(--mut)"><span style="color:var(--txt)">Source:</span> ' + esc(a.src) + '</div>' +
-                  '<div style="font-size:.68rem;color:var(--mut);margin-top:2px">' + esc(a.detail) + '</div>' +
-                '</div>';
-              }).join('') +
-            '</div>' +
-          '</div>';
-      }
-    }
-    renderNOCContent(nocTab);
-    c.querySelectorAll('[data-nt]').forEach(function(b) {
-      b.onclick = function() {
-        nocTab = b.dataset.nt;
-        c.querySelectorAll('[data-nt]').forEach(function(x) { x.classList.toggle('ag-btn-ghost', x.dataset.nt !== nocTab); });
-        renderNOCContent(nocTab);
-      };
-    });
+      '<div class="ag-panel"><div class="ag-panel-h"><span style="color:var(--acc)">NETWORK OPERATIONS CENTER</span></div>' +
+        '<div class="ag-panel-b" style="text-align:center;padding:24px;font-size:.72rem">' +
+          '<div style="color:var(--mut);margin-bottom:8px">No network data. NOC monitoring requires the AEGIS VM agent.</div>' +
+          '<div style="color:var(--acc);font-size:.65rem">Run: <code style="background:rgba(0,0,0,.3);padding:2px 6px;border-radius:3px">aegis --module fleet/health-monitor</code></div>' +
+        '</div></div>';
   }
 
   // ========== FIREWALL RULE BASE ANALYZER ==========
@@ -3480,28 +3273,8 @@ export function renderAegis(main) {
       if (tab === 'enum') {
         ac.innerHTML =
           '<div class="ag-panel">' +
-            '<div class="ag-panel-h"><span style="color:var(--acc)">DOMAIN ENUMERATION - CORP.LOCAL</span><span style="flex:1"></span><span style="color:var(--mut)">' + AD_SIM_USERS.length + ' accounts</span></div>' +
-            '<div class="ag-panel-b">' +
-              '<div class="ag-grid4" style="margin-bottom:10px">' +
-                '<div class="ag-stat"><div class="ag-stat-v" style="color:var(--acc);font-size:1rem">' + AD_SIM_USERS.length + '</div><div class="ag-stat-l">Users</div></div>' +
-                '<div class="ag-stat"><div class="ag-stat-v" style="color:#ff1744;font-size:1rem">' + AD_SIM_USERS.filter(function(u){return u.groups.indexOf('Domain Admins')>=0}).length + '</div><div class="ag-stat-l">Domain Admins</div></div>' +
-                '<div class="ag-stat"><div class="ag-stat-v" style="color:#ff9100;font-size:1rem">' + AD_SIM_USERS.filter(function(u){return u.spn}).length + '</div><div class="ag-stat-l">SPN Accounts</div></div>' +
-                '<div class="ag-stat"><div class="ag-stat-v" style="color:#ffd600;font-size:1rem">' + AD_SIM_USERS.filter(function(u){return u.asrep}).length + '</div><div class="ag-stat-l">AS-REP Vuln</div></div>' +
-              '</div>' +
-              '<table class="ag-tbl"><thead><tr><th>SAMAccountName</th><th>DN</th><th>Groups</th><th>SPN</th><th>AS-REP</th><th>Notes</th></tr></thead><tbody>' +
-              AD_SIM_USERS.map(function(u) {
-                var isDAdmin = u.groups.indexOf('Domain Admins') >= 0;
-                return '<tr style="' + (isDAdmin ? 'background:rgba(255,23,68,.05)' : u.spn ? 'background:rgba(255,145,0,.05)' : u.asrep ? 'background:rgba(255,214,0,.05)' : '') + '">' +
-                  '<td style="color:var(--acc);font-weight:600">' + esc(u.sam) + '</td>' +
-                  '<td style="font-size:.6rem;color:var(--mut)">' + esc(u.dn) + '</td>' +
-                  '<td style="font-size:.6rem">' + u.groups.map(function(g) { return '<span class="ag-badge ' + (g === 'Domain Admins' || g === 'Enterprise Admins' ? 'ag-crit' : g.indexOf('Operators') >= 0 ? 'ag-high' : 'ag-info') + '" style="font-size:.5rem;margin:1px">' + esc(g) + '</span>'; }).join(' ') + '</td>' +
-                  '<td>' + (u.spn ? '<span class="ag-badge ag-high" style="font-size:.5rem">YES</span>' : '-') + '</td>' +
-                  '<td>' + (u.asrep ? '<span class="ag-badge ag-crit" style="font-size:.5rem">VULN</span>' : '-') + '</td>' +
-                  '<td style="font-size:.6rem;color:var(--mut)">' + esc(u.desc) + '</td>' +
-                '</tr>';
-              }).join('') +
-              '</tbody></table>' +
-            '</div>' +
+            '<div class="ag-panel-h"><span style="color:var(--acc)">DOMAIN ENUMERATION</span><span style="flex:1"></span><span style="color:var(--mut)">0 accounts</span></div>' +
+            '<div class="ag-panel-b"><div style="color:var(--mut);font-size:.72rem;text-align:center;padding:20px">No domain data. AEGIS has no directory connection in the browser; enumerate an authorized domain with BloodHound/SharpHound or ldapdomaindump and use the LDAP Builder tab for queries.</div></div>' +
           '</div>';
       } else if (tab === 'paths') {
         ac.innerHTML =
@@ -3682,6 +3455,7 @@ export function renderAegis(main) {
   // ========== CLOUD ATTACK SURFACE ==========
   function renderCloudAttack(c) {
     var cloudTab = 'inventory';
+    var cloudAssets = loadCloudAssets();
     c.innerHTML =
       '<div style="display:flex;gap:4px;margin-bottom:10px;flex-wrap:wrap">' +
         ['inventory:Asset Inventory','misconfig:Misconfigurations','iam:IAM Analyzer','privesc:Privilege Escalation','containers:Container Escape'].map(function(t) {
@@ -3696,7 +3470,7 @@ export function renderAegis(main) {
       if (tab === 'inventory') {
         var allAssets = [];
         ['aws','azure','gcp'].forEach(function(provider) {
-          (CLOUD_ASSETS[provider] || []).forEach(function(a) {
+          (cloudAssets[provider] || []).forEach(function(a) {
             allAssets.push({ provider: provider.toUpperCase(), type: a.type, name: a.name, region: a.region, status: a.status, public: a.public, risk: a.risk, issue: a.issue });
           });
         });
@@ -3711,15 +3485,31 @@ export function renderAegis(main) {
             '<div class="ag-stat"><div class="ag-stat-v" style="color:#ff9100">' + highCount + '</div><div class="ag-stat-l">High Risk</div></div>' +
             '<div class="ag-stat"><div class="ag-stat-v" style="color:#ffd600">' + publicCount + '</div><div class="ag-stat-l">Public Facing</div></div>' +
           '</div>' +
-          ['aws','azure','gcp'].map(function(provider) {
-            var assets = CLOUD_ASSETS[provider] || [];
+          '<div class="ag-panel" style="margin-bottom:10px">' +
+            '<div class="ag-panel-h"><span style="color:var(--acc)">ADD ASSET</span></div>' +
+            '<div class="ag-panel-b">' +
+              '<div class="ag-grid4" style="margin-bottom:8px">' +
+                '<select class="ag-sel" id="ag-ca-prov"><option value="aws">AWS</option><option value="azure">Azure</option><option value="gcp">GCP</option></select>' +
+                '<input class="ag-inp" id="ag-ca-type" placeholder="Type (EC2, S3...)">' +
+                '<input class="ag-inp" id="ag-ca-name" placeholder="Resource name">' +
+                '<input class="ag-inp" id="ag-ca-region" placeholder="Region">' +
+                '<select class="ag-sel" id="ag-ca-risk"><option>Critical</option><option>High</option><option selected>Medium</option><option>Low</option></select>' +
+                '<label style="font-size:.68rem;color:var(--mut);display:flex;align-items:center;gap:6px"><input type="checkbox" id="ag-ca-public"> Public facing</label>' +
+              '</div>' +
+              '<input class="ag-inp" id="ag-ca-issue" placeholder="Issue / misconfiguration (optional)" style="margin-bottom:8px">' +
+              '<button class="ag-btn" id="ag-ca-add">ADD ASSET</button> <span id="ag-ca-err" style="color:#ff1744;font-size:.65rem"></span>' +
+            '</div>' +
+          '</div>' +
+          (allAssets.length ? '' : '<div class="ag-panel"><div class="ag-panel-b" style="color:var(--mut);font-size:.72rem;text-align:center;padding:20px">No cloud assets. Add assets manually.</div></div>') +
+          ['aws','azure','gcp'].filter(function(provider) { return (cloudAssets[provider] || []).length; }).map(function(provider) {
+            var assets = cloudAssets[provider] || [];
             var providerColors = { aws: '#ff9100', azure: '#2196f3', gcp: '#00e676' };
             var providerNames = { aws: 'AMAZON WEB SERVICES', azure: 'MICROSOFT AZURE', gcp: 'GOOGLE CLOUD PLATFORM' };
             return '<div class="ag-panel" style="margin-bottom:10px">' +
               '<div class="ag-panel-h"><span style="color:' + providerColors[provider] + '">' + providerNames[provider] + '</span><span style="flex:1"></span><span style="color:var(--mut)">' + assets.length + ' resources</span></div>' +
               '<div class="ag-panel-b">' +
-                '<table class="ag-tbl"><thead><tr><th>Type</th><th>Name</th><th>Region</th><th>Public</th><th>Risk</th><th>Issue</th></tr></thead><tbody>' +
-                assets.map(function(a) {
+                '<table class="ag-tbl"><thead><tr><th>Type</th><th>Name</th><th>Region</th><th>Public</th><th>Risk</th><th>Issue</th><th></th></tr></thead><tbody>' +
+                assets.map(function(a, ai) {
                   var rCls = a.risk === 'Critical' ? 'ag-crit' : a.risk === 'High' ? 'ag-high' : a.risk === 'Medium' ? 'ag-med' : 'ag-low';
                   return '<tr>' +
                     '<td style="color:' + providerColors[provider] + ';font-size:.65rem;font-weight:600">' + esc(a.type) + '</td>' +
@@ -3728,16 +3518,35 @@ export function renderAegis(main) {
                     '<td>' + (a.public ? '<span class="ag-badge ag-high" style="font-size:.5rem">PUBLIC</span>' : '<span style="color:var(--mut);font-size:.62rem">Private</span>') + '</td>' +
                     '<td><span class="ag-badge ' + rCls + '">' + esc(a.risk) + '</span></td>' +
                     '<td style="font-size:.62rem;color:var(--mut)">' + esc(a.issue) + '</td>' +
+                    '<td><button class="ag-btn ag-btn-ghost" style="padding:2px 8px;font-size:.55rem" data-ca-del="' + provider + ':' + ai + '">Remove</button></td>' +
                   '</tr>';
                 }).join('') +
                 '</tbody></table>' +
               '</div>' +
             '</div>';
           }).join('');
+        cc.querySelector('#ag-ca-add').onclick = function() {
+          var name = cc.querySelector('#ag-ca-name').value.trim();
+          var type = cc.querySelector('#ag-ca-type').value.trim();
+          if (!name || !type) { cc.querySelector('#ag-ca-err').textContent = 'Type and name are required.'; return; }
+          var prov = cc.querySelector('#ag-ca-prov').value;
+          cloudAssets[prov] = cloudAssets[prov] || [];
+          cloudAssets[prov].push({ type: type, name: name, region: cc.querySelector('#ag-ca-region').value.trim(), status: '', public: cc.querySelector('#ag-ca-public').checked, risk: cc.querySelector('#ag-ca-risk').value, issue: cc.querySelector('#ag-ca-issue').value.trim() });
+          saveCloudAssets(cloudAssets);
+          renderCloudContent('inventory');
+        };
+        cc.querySelectorAll('[data-ca-del]').forEach(function(btn) {
+          btn.onclick = function() {
+            var parts = btn.getAttribute('data-ca-del').split(':');
+            (cloudAssets[parts[0]] || []).splice(+parts[1], 1);
+            saveCloudAssets(cloudAssets);
+            renderCloudContent('inventory');
+          };
+        });
       } else if (tab === 'misconfig') {
         var misconfigs = [];
         ['aws','azure','gcp'].forEach(function(provider) {
-          (CLOUD_ASSETS[provider] || []).forEach(function(a) {
+          (cloudAssets[provider] || []).forEach(function(a) {
             if (a.risk === 'Critical' || a.risk === 'High') {
               misconfigs.push({ provider: provider.toUpperCase(), type: a.type, name: a.name, risk: a.risk, issue: a.issue });
             }
@@ -3747,6 +3556,7 @@ export function renderAegis(main) {
           '<div class="ag-panel">' +
             '<div class="ag-panel-h"><span style="color:#ff1744">MISCONFIGURATION SCANNER</span><span style="flex:1"></span><span style="color:var(--mut)">' + misconfigs.length + ' findings</span></div>' +
             '<div class="ag-panel-b">' +
+              (misconfigs.length ? '' : '<div style="color:var(--mut);font-size:.72rem;text-align:center;padding:20px">No Critical/High assets. Add assets in Asset Inventory.</div>') +
               misconfigs.sort(function(a,b) { return a.risk === 'Critical' ? -1 : b.risk === 'Critical' ? 1 : 0; }).map(function(m) {
                 var rCls = m.risk === 'Critical' ? 'ag-crit' : 'ag-high';
                 return '<div style="border-bottom:1px solid var(--line);padding:8px 0;display:flex;align-items:flex-start;gap:8px">' +
@@ -3762,7 +3572,7 @@ export function renderAegis(main) {
       } else if (tab === 'iam') {
         var iamIssues = [];
         ['aws','azure','gcp'].forEach(function(provider) {
-          (CLOUD_ASSETS[provider] || []).forEach(function(a) {
+          (cloudAssets[provider] || []).forEach(function(a) {
             if (a.type === 'IAM' || a.type === 'Lambda' || a.issue.toLowerCase().indexOf('iam') >= 0 || a.issue.toLowerCase().indexOf('admin') >= 0 || a.issue.toLowerCase().indexOf('role') >= 0 || a.issue.toLowerCase().indexOf('service account') >= 0) {
               iamIssues.push({ provider: provider.toUpperCase(), type: a.type, name: a.name, risk: a.risk, issue: a.issue });
             }
@@ -3774,6 +3584,7 @@ export function renderAegis(main) {
             '<div class="ag-panel-b">' +
               '<p style="font-size:.7rem;color:var(--mut);margin:0 0 10px">Identifies overly permissive IAM policies, long-lived credentials, and privilege escalation risks across cloud providers.</p>' +
               '<table class="ag-tbl"><thead><tr><th>Provider</th><th>Resource</th><th>Name</th><th>Risk</th><th>Finding</th></tr></thead><tbody>' +
+              (iamIssues.length ? '' : '<div style="color:var(--mut);font-size:.72rem;text-align:center;padding:20px">No IAM issues. Add assets in Asset Inventory.</div>') +
               iamIssues.map(function(i) {
                 var rCls = i.risk === 'Critical' ? 'ag-crit' : i.risk === 'High' ? 'ag-high' : 'ag-med';
                 return '<tr><td style="font-weight:600;font-size:.65rem">' + esc(i.provider) + '</td><td style="color:var(--acc);font-size:.65rem">' + esc(i.type) + '</td><td style="font-size:.68rem">' + esc(i.name) + '</td><td><span class="ag-badge ' + rCls + '">' + esc(i.risk) + '</span></td><td style="font-size:.62rem;color:var(--mut)">' + esc(i.issue) + '</td></tr>';
@@ -4202,7 +4013,7 @@ export function renderAegis(main) {
           review += 'Incident: ' + title + '\n';
           review += 'Date: ' + date + '\n';
           review += 'Review Date: ' + new Date().toISOString().split('T')[0] + '\n';
-          review += 'Prepared By: ' + (settings.operator || 'Unknown') + ' (' + (settings.callsign || '') + ')\n\n';
+          review += 'Prepared By: ' + (settings.operator || 'Unknown') + (settings.callsign ? ' (' + settings.callsign + ')' : '') + '\n\n';
           review += '1. INCIDENT SUMMARY\n';
           review += '   ' + title + '\n\n';
           review += '2. ROOT CAUSE ANALYSIS\n';
@@ -4255,7 +4066,7 @@ export function renderAegis(main) {
     var report = '=== AEGIS PENETRATION TEST REPORT ===\n';
     report += 'Classification: ' + (settings.classification || 'UNCLASSIFIED') + '\n';
     report += 'Generated: ' + new Date().toISOString() + '\n';
-    report += 'Operator: ' + (settings.operator || 'Unknown') + ' (' + (settings.callsign || '') + ')\n\n';
+    report += 'Operator: ' + (settings.operator || 'Unknown') + (settings.callsign ? ' (' + settings.callsign + ')' : '') + '\n\n';
     report += '--- EXECUTIVE SUMMARY ---\n';
     report += 'Mission: ' + mission.name + '\n';
     report += 'Target: ' + mission.target + '\n';
@@ -4334,8 +4145,8 @@ export function renderAegis(main) {
         '<div class="ag-panel-h"><span style="color:var(--acc)">OPERATOR SETTINGS</span></div>' +
         '<div class="ag-panel-b">' +
           '<div class="ag-grid2" style="gap:8px;margin-bottom:10px">' +
-            '<div><label style="font-size:.62rem;color:var(--mut);text-transform:uppercase">Operator Name</label><input class="ag-inp" id="ag-sname" value="' + esc(settings.operator) + '"></div>' +
-            '<div><label style="font-size:.62rem;color:var(--mut);text-transform:uppercase">Callsign</label><input class="ag-inp" id="ag-scallsign" value="' + esc(settings.callsign) + '"></div>' +
+            '<div><label style="font-size:.62rem;color:var(--mut);text-transform:uppercase">Operator Name</label><input class="ag-inp" id="ag-sname" placeholder="Your name" value="' + esc(settings.operator) + '"></div>' +
+            '<div><label style="font-size:.62rem;color:var(--mut);text-transform:uppercase">Callsign</label><input class="ag-inp" id="ag-scallsign" placeholder="e.g. BLUE-1" value="' + esc(settings.callsign) + '"></div>' +
           '</div>' +
           '<div class="ag-grid2" style="gap:8px;margin-bottom:10px">' +
             '<div><label style="font-size:.62rem;color:var(--mut);text-transform:uppercase">Classification Level</label>' +

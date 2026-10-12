@@ -472,9 +472,12 @@ function renderProcessTab(container) {
   container.innerHTML =
     '<div class="mf-section">' +
       '<h3 class="mf-sh">Process Tree Viewer</h3>' +
-      '<p class="mf-desc">Visualize process parent-child relationships. Loaded with sample Windows process data — paste your own pslist output.</p>' +
+      '<p class="mf-desc">Visualize process parent-child relationships from your own Volatility pslist output.</p>' +
+      '<textarea id="mf-proc-input" class="mf-textarea" rows="6" placeholder="Paste pslist output..." spellcheck="false"></textarea>' +
+      '<p class="mf-muted" style="font-size:.75rem;margin:-4px 0 8px">Include the header row (needs PID, PPID and Name or ImageFileName columns). Volatility 2 and 3 text or CSV output both work.</p>' +
       '<div class="mf-btn-row">' +
-        '<button class="mf-btn" id="mf-proc-sample">Load Sample</button>' +
+        '<button class="mf-btn" id="mf-proc-parse">Build Tree</button>' +
+        '<button class="mf-btn mf-btn-sec" id="mf-proc-sample">Load Example Data</button>' +
         '<button class="mf-btn mf-btn-sec" id="mf-proc-clear">Clear</button>' +
       '</div>' +
       '<div id="mf-proc-tree" class="mf-tree-container"></div>' +
@@ -520,12 +523,47 @@ function renderProcessTab(container) {
       }).join("");
     }
   }
-  container.querySelector("#mf-proc-sample").onclick = function() { render(SAMPLE_PROCESSES); };
-  container.querySelector("#mf-proc-clear").onclick = function() {
-    container.querySelector("#mf-proc-tree").innerHTML = "";
-    container.querySelector("#mf-proc-alerts").innerHTML = "";
+  // Parse Volatility 2/3 pslist text or CSV using the header row to locate columns.
+  function parsePslist(text) {
+    var lines = text.split(/\r?\n/).map(function(l) { return l.trim(); }).filter(Boolean);
+    var hi = lines.findIndex(function(l) { return /\bPPID\b/i.test(l) && /\bPID\b/i.test(l); });
+    if (hi < 0) return [];
+    var cols = lines[hi].split(/[\s,\t]+/).map(function(c) { return c.replace(/"/g, "").toLowerCase(); });
+    var iPid = cols.indexOf("pid"), iPpid = cols.indexOf("ppid");
+    var iName = cols.indexOf("imagefilename"); if (iName < 0) iName = cols.indexOf("name");
+    if (iPid < 0 || iPpid < 0 || iName < 0) return [];
+    var out = [];
+    for (var i = hi + 1; i < lines.length; i++) {
+      if (/^[-*=\s]+$/.test(lines[i])) continue;
+      var f = lines[i].split(/[\s,\t]+/).map(function(c) { return c.replace(/"/g, ""); });
+      var pid = parseInt(f[iPid], 10), ppid = parseInt(f[iPpid], 10);
+      if (isNaN(pid) || isNaN(ppid) || !f[iName]) continue;
+      out.push({ pid: pid, ppid: ppid, name: f[iName], user: "", cmdline: "" });
+    }
+    return out;
+  }
+  container.querySelector("#mf-proc-parse").onclick = function() {
+    var procs = parsePslist(container.querySelector("#mf-proc-input").value);
+    if (!procs.length) {
+      container.querySelector("#mf-proc-tree").innerHTML = '<p class="mf-muted">No processes found. Paste pslist output including its header row.</p>';
+      container.querySelector("#mf-proc-alerts").innerHTML = "";
+      return;
+    }
+    render(procs);
   };
-  render(SAMPLE_PROCESSES);
+  container.querySelector("#mf-proc-sample").onclick = function() {
+    render(SAMPLE_PROCESSES);
+    container.querySelector("#mf-proc-tree").insertAdjacentHTML("afterbegin", '<p class="mf-muted">Example data for learning, not from your system.</p>');
+  };
+  container.querySelector("#mf-proc-clear").onclick = function() {
+    container.querySelector("#mf-proc-input").value = "";
+    showEmpty();
+  };
+  function showEmpty() {
+    container.querySelector("#mf-proc-tree").innerHTML = '<p class="mf-muted">No processes loaded yet. Paste pslist output and click Build Tree.</p>';
+    container.querySelector("#mf-proc-alerts").innerHTML = "";
+  }
+  showEmpty();
 }
 
 function renderVolatilityTab(container) {

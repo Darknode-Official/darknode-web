@@ -74,6 +74,10 @@ export function renderSecurityDashboard(main) {
     score = Math.max(0, Math.min(100, score));
     var scoreColor = score >= 80 ? '#22c55e' : score >= 60 ? '#f59e0b' : '#ef4444';
     var scoreLabel = score >= 80 ? 'Good' : score >= 60 ? 'Fair' : 'Critical';
+    // No inputs yet: a score would be invented, so show a neutral placeholder.
+    if (!(data.assets.length + data.vulns.length + data.risks.length + data.patches.length)) {
+      score = '&mdash;'; scoreColor = 'var(--mut)'; scoreLabel = 'No data yet';
+    }
 
     var metric = function(val, label, color, sub) {
       return '<div style="background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px 14px;min-width:0">' +

@@ -232,6 +232,11 @@ async function handleFetch(request) {
   // public sites (e.g. Ahmia) deflect bot UAs with a 302, so a caller may request
   // a browser-like UA. Capped in length; never trusted beyond a header value.
   let ua = u0.searchParams.get("ua") || "";
+  // Optional opt-in body size cap (bytes). Default is unchanged (200 KB sliced,
+  // 1 MB read ceiling) so existing callers behave identically; a caller that
+  // genuinely needs a large JSON feed (e.g. the full CISA KEV catalog, ~1.8 MB)
+  // may request more, clamped to 4 MB.
+  let maxBytes = parseInt(u0.searchParams.get("max") || "", 10);
   if (request.method === "POST") {
     try {
       const b = await request.json();
@@ -240,8 +245,11 @@ async function handleFetch(request) {
       if (b && b.redirect === "manual") follow = false;
       if (b && b.method) method = String(b.method).toUpperCase();
       if (b && b.ua) ua = String(b.ua);
+      if (b && b.max) maxBytes = parseInt(b.max, 10);
     } catch (_) {}
   }
+  const cap = Math.min(Math.max(Number.isFinite(maxBytes) ? maxBytes : 200000, 1), 4000000);
+  const readCap = Math.max(cap, 1000000);
   if (!target) return json({ error: "Missing url parameter" }, 400);
   if (!["GET", "HEAD", "POST"].includes(method)) method = "GET";
   ua = ua ? ua.slice(0, 256).replace(/[\r\n]/g, "") : "";
@@ -272,11 +280,11 @@ async function handleFetch(request) {
       if (reader) for (;;) {
         const { done, value } = await reader.read(); if (done) break;
         bytes += value.length; body += dec.decode(value, { stream: true });
-        if (bytes > 1_000_000) { truncated = true; try { await reader.cancel(); } catch (_) {} break; }
+        if (bytes > readCap) { truncated = true; try { await reader.cancel(); } catch (_) {} break; }
       }
     } catch (_) {}
-    const text = raw ? body.slice(0, 200_000)
-      : (/json|xml|javascript|text|csv/.test(ct) ? body.slice(0, 200_000) : htmlToText(body).slice(0, 200_000));
+    const text = raw ? body.slice(0, cap)
+      : (/json|xml|javascript|text|csv/.test(ct) ? body.slice(0, cap) : htmlToText(body).slice(0, cap));
     return json({ url: u.href, finalUrl: u.href, status: res.status, statusText: res.statusText || "", contentType: ct, headers, redirectChain: chain, body: text, bytes, truncated });
   }
   return json({ error: "too many redirects" }, 502);
@@ -420,9 +428,13 @@ async function handleDarknode(cfg, env, model, messages, opts) {
       if (upstream.ok && upstream.body) return streamBack(upstream, isGemini, opts);
     } catch (_) { /* fall through to Gemini */ }
   }
-  if (!env.GEMINI_KEY) return json({ error: "Darknode GPU model is offline and no Gemini fallback key is configured (set GEMINI_KEY)." }, 503);
+  const gKey = env.GEMINI_KEY || env.GEMINI_KEY_2;
+  if (!gKey) return json({ error: "Darknode GPU model is offline and no Gemini fallback key is configured (set GEMINI_KEY)." }, 503);
   const gModel = env.GEMINI_FALLBACK_MODEL || "gemini-flash-latest";
-  const { upstream, isGemini } = await callUpstream(PROVIDERS.gemini, env, gModel, msgs, env.GEMINI_KEY, { search: geminiSearchOn(env, msgs) });
+  let { upstream, isGemini } = await callUpstream(PROVIDERS.gemini, env, gModel, msgs, gKey, { search: geminiSearchOn(env, msgs) });
+  if (!upstream.ok && [401, 403, 429].includes(upstream.status) && env.GEMINI_KEY_2 && gKey !== env.GEMINI_KEY_2) {
+    try { ({ upstream, isGemini } = await callUpstream(PROVIDERS.gemini, env, gModel, msgs, env.GEMINI_KEY_2, { search: geminiSearchOn(env, msgs) })); } catch (_) {}
+  }
   if (!upstream.ok) { const t = await upstream.text().catch(() => ""); return json({ error: "Gemini fallback " + upstream.status + ": " + t.slice(0, 300) }, upstream.status); }
   if (!upstream.body) return json({ error: "No upstream body" }, 502);
   return streamBack(upstream, isGemini, opts);
@@ -449,7 +461,7 @@ Rules:
 async function handleSmart(request, env) {
   // Try the dedicated Smart key first, then the shared Gemini key, so one valid
   // Google key keeps Smart mode working even when SMART_KEY is stale or unset.
-  const keys = [...new Set([env.SMART_KEY, env.GEMINI_KEY].filter(Boolean))];
+  const keys = [...new Set([env.SMART_KEY, env.GEMINI_KEY, env.GEMINI_KEY_2].filter(Boolean))];
   if (!keys.length) return json({ error: "Smart mode is not configured on the server." }, 503);
   let body;
   try { body = await request.json(); } catch (_) { return json({ error: "Invalid JSON body" }, 400); }
@@ -533,7 +545,7 @@ export default {
       if (provider === "darknode") return await handleDarknode(cfg, env, model, msgs, opts);
       // Gemini chat falls back to SMART_KEY the same way /api/smart does, so one valid
       // Google key powers both routes and the two secrets never have to stay in sync.
-      const key = env[cfg.envKey] || (provider === "gemini" ? env.SMART_KEY : undefined);
+      let key = env[cfg.envKey] || (provider === "gemini" ? env.SMART_KEY || env.GEMINI_KEY_2 : undefined);
       if (!key && !cfg.optionalKey) return json({ error: "Server key not configured for " + provider }, 500);
       // Google Search grounding roughly doubles time-to-first-token, so turn it on
       // only when the question actually looks time-sensitive (see geminiSearchOn):
@@ -541,6 +553,13 @@ export default {
       // forces it on, "0" off.
       const search = provider === "gemini" && geminiSearchOn(env, msgs);
       let { upstream, isGemini } = await callUpstream(cfg, env, model, msgs, key, { search });
+      // A spent or rejected primary Google key (quota 429, 401/403, or a model not yet
+      // rolled out to that key's project: 404) retries the same model once on the
+      // backup key (GEMINI_KEY_2 secret) before any model downgrade.
+      if (provider === "gemini" && !upstream.ok && [401, 403, 404, 429].includes(upstream.status) && env.GEMINI_KEY_2 && key !== env.GEMINI_KEY_2) {
+        key = env.GEMINI_KEY_2;
+        try { ({ upstream, isGemini } = await callUpstream(cfg, env, model, msgs, key, { search })); } catch (_) {}
+      }
       // A chosen Gemini model can be retired (404), rate-limited (429) or overloaded
       // (503). Rather than fail the chat, transparently retry on the fast lite alias
       // — the most available tier — so "Darknode Core" never dead-ends while

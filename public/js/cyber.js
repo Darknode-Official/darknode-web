@@ -1,18 +1,9 @@
 // Cybersecurity content for the Darknode console: notable CVEs, cheat sheets,
 // a common-ports reference, learning resources, and a security-posture checklist.
-import { getTarget, setTarget } from "/js/target.js";
+import { setTarget } from "/js/target.js";
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
-// "of the day" rotations — seeded by date so they're stable within a day.
-const DAILY_DORKS = [
-  "intitle:\"index of\" \"parent directory\"", "filetype:env DB_PASSWORD", "inurl:wp-config.php",
-  "intitle:\"index of\" \"id_rsa\"", "inurl:/.git -github", "site:s3.amazonaws.com", "intext:\"sql syntax near\"",
-];
-const DAILY_PAYLOADS = [
-  "' OR '1'='1", "<script>alert(document.domain)</script>", "../../../../etc/passwd", "{{7*7}}", "; id", "${jndi:ldap://x}",
-];
-const daySeed = () => { const d = new Date(); return Math.floor((d - new Date(d.getFullYear(), 0, 0)) / 864e5); };
 
 // ---------- data ----------
 export const CVE_FEED = [
@@ -240,19 +231,11 @@ export function homeWidgetsHTML() {
   const topCves = CVE_FEED.slice(0, 5);
   const featCheats = CHEATS.slice(0, 4);
   const featRes = RESOURCES.slice(0, 6);
-  const seed = daySeed();
-  const dork = DAILY_DORKS[seed % DAILY_DORKS.length], payload = DAILY_PAYLOADS[seed % DAILY_PAYLOADS.length];
   return `
-    <div class="target-bar">
-      <span class="tb-label">TARGET</span>
-      <input class="tk-f" id="homeTarget" placeholder="set a domain or IP — dorks & exploit DBs use it" spellcheck="false" value="${esc(getTarget())}">
-      <button class="btn ghost sm" data-go="ghdb">Dorks →</button>
-      <button class="btn ghost sm" data-go="exploitdb">Exploit DBs →</button>
-    </div>
     <div class="home-cols">
       <div class="hc-main">
         <div class="panel">
-          <div class="panel-h"><h2 class="pg-h2" style="margin:0">Threat intel</h2><button class="link-btn" data-go="threat">View all →</button></div>
+          <div class="panel-h"><h2 class="pg-h2" style="margin:0">Notable CVEs</h2><button class="link-btn" data-go="threat">View all →</button></div>
           <div class="feed-list">
             ${topCves.map((c) => `<a class="feed-row" href="${cveUrl(c.id)}" target="_blank" rel="noopener">
               ${sevBadge(c.sev)}<span class="fr-id mono">${esc(c.id)}</span><span class="fr-name">${esc(c.name)}</span><span class="fr-tag muted">${esc(c.tag)}</span></a>`).join("")}
@@ -277,11 +260,6 @@ export function homeWidgetsHTML() {
         <div class="panel">
           <div class="panel-h"><h2 class="pg-h2" style="margin:0">Your network</h2></div>
           <div class="ip-widget" id="ipWidget"><span class="muted">looking up public IP…</span></div>
-        </div>
-        <div class="panel">
-          <div class="panel-h"><h2 class="pg-h2" style="margin:0">Today's picks</h2></div>
-          <div class="daily-item"><div class="di-label">Dork of the day</div><code class="di-code">${esc(dork)}</code><button class="link-btn" data-dork="${esc(dork)}">Search →</button></div>
-          <div class="daily-item"><div class="di-label">Payload of the day</div><code class="di-code">${esc(payload)}</code><button class="link-btn" data-copyv="${esc(payload)}">copy</button></div>
         </div>
         <div class="panel">
           <div class="panel-h"><h2 class="pg-h2" style="margin:0">Resources</h2><button class="link-btn" data-go="learn">Explore →</button></div>
@@ -309,6 +287,8 @@ export function wireHome(main, show) {
     fetch("https://ipapi.co/json/", { signal: ctrl.signal })
       .then((r) => r.json())
       .then((d) => { if (!d || !d.ip) throw 0; ipw.innerHTML = `<div class="ip-row"><span class="muted">IP</span><code>${esc(d.ip)}</code></div><div class="ip-row"><span class="muted">Location</span><span>${esc([d.city, d.region, d.country_name].filter(Boolean).join(", ") || "—")}</span></div><div class="ip-row"><span class="muted">ISP</span><span>${esc(d.org || "—")}</span></div>`; })
+      // ipapi.co rate-limits busy networks; ipify still gives the address (no location).
+      .catch(() => fetch("https://api.ipify.org?format=json").then((r) => r.json()).then((d) => { if (!d || !d.ip) throw 0; ipw.innerHTML = `<div class="ip-row"><span class="muted">IP</span><code>${esc(d.ip)}</code></div>`; }))
       .catch(() => { ipw.innerHTML = `<span class="muted">Couldn't look up your IP (offline or blocked).</span>`; });
   }
   const list = main.querySelector("#posList");

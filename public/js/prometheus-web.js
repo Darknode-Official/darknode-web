@@ -1018,6 +1018,7 @@ export function renderPrometheus(main) {
     selectedNode: null,
     selectedScenario: null,
     exerciseRunning: false,
+    ccExercise: false, // Command Center synthetic exercise feed; starts idle, user must start it
     exerciseSpeed: 1,
     exerciseTime: 0,
     cascadeRunning: false,
@@ -2298,6 +2299,8 @@ export function renderPrometheus(main) {
       [0.83,0.72],[0.80,0.70],[0.78,0.65],[0.77,0.62]
     ]);
 
+    // Threat source markers are exercise visuals only; idle shows the base map.
+    if (!state.ccExercise) return;
     // Plot threat sources from APT_GROUPS
     var now = Date.now();
     var aptCoords = [
@@ -2434,7 +2437,7 @@ export function renderPrometheus(main) {
     var ts = String(now.getUTCHours()).replace(/^(\d)$/, '0$1') + ':' +
              String(now.getUTCMinutes()).replace(/^(\d)$/, '0$1') + ':' +
              String(now.getUTCSeconds()).replace(/^(\d)$/, '0$1') + 'Z';
-    return { time: ts, severity: severity, message: msg, id: 'ALT-' + Math.floor(Math.random() * 99999) };
+    return { time: ts, severity: severity, message: msg, id: 'EXERCISE-' + Math.floor(Math.random() * 99999) };
   }
 
   function addAlert(alert) {
@@ -2442,6 +2445,8 @@ export function renderPrometheus(main) {
     if (state.alerts.length > 50) state.alerts.length = 50;
     var feed = main.querySelector('#pm-alert-feed');
     if (!feed) return;
+    var emptyRow = feed.querySelector('#pm-alert-empty');
+    if (emptyRow) emptyRow.parentNode.removeChild(emptyRow);
     var sevColorMap = { CRITICAL: '#ff0040', HIGH: '#ff6600', MEDIUM: '#ffcc00', LOW: '#00cc66', INFO: '#4488ff' };
     var col = sevColorMap[alert.severity] || '#4488ff';
     var row = '<div class="pm-alert-row" style="border-left:3px solid ' + col + '">' +
@@ -2471,6 +2476,14 @@ export function renderPrometheus(main) {
 
   function renderCommandCenter() {
     var html = '';
+
+    // Exercise control: nothing synthetic is generated until the user starts it.
+    html += '<div class="pm-panel" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px">';
+    html += '<span style="font-family:monospace;font-size:12px">EXERCISE: <b style="color:' + (state.ccExercise ? '#ffcc00' : '#88aa88') + '">' + (state.ccExercise ? 'RUNNING (SYNTHETIC DATA)' : 'IDLE') + '</b></span>';
+    html += '<button class="pm-btn" id="pm-cc-exercise">' + (state.ccExercise ? 'Stop exercise' : 'Start exercise') + '</button>';
+    if (state.alerts.length) html += '<button class="pm-btn" id="pm-cc-clear">Clear exercise data</button>';
+    html += '<span style="font-size:11px;color:#88aa88">' + (state.ccExercise ? 'Alerts, metrics, missions and sector status below are generated exercise data, not live telemetry.' : 'No live data source is connected. Start an exercise to generate labelled synthetic alerts.') + '</span>';
+    html += '</div>';
 
     // Top row: DEFCON gauge + Threat Map
     html += '<div class="pm-cc-top">';
@@ -2503,6 +2516,7 @@ export function renderPrometheus(main) {
     html += '<div class="pm-panel pm-alerts-panel">';
     html += '<div class="pm-panel-hdr">EXERCISE ALERT FEED <span class="pm-alert-count">' + state.alerts.length + ' EVENTS</span></div>';
     html += '<div id="pm-alert-feed" class="pm-alert-feed">';
+    if (!state.alerts.length) html += '<div class="pm-alert-row" id="pm-alert-empty" style="color:#88aa88">No alerts. Start an exercise to generate synthetic exercise alerts.</div>';
     var sevColorMap = { CRITICAL: '#ff0040', HIGH: '#ff6600', MEDIUM: '#ffcc00', LOW: '#00cc66', INFO: '#4488ff' };
     var ai;
     for (ai = 0; ai < Math.min(state.alerts.length, 20); ai++) {
@@ -2524,8 +2538,8 @@ export function renderPrometheus(main) {
     html += '<div class="pm-domain-grid">';
     var dsi;
     for (dsi = 0; dsi < domainStatuses.length; dsi++) {
-      var ds = domainStatuses[dsi];
-      var dotColor = ds.status === 'green' ? '#00ff66' : (ds.status === 'yellow' ? '#ffcc00' : '#ff0040');
+      var ds = state.ccExercise ? domainStatuses[dsi] : { name: domainStatuses[dsi].name, status: 'none', text: 'No data' };
+      var dotColor = ds.status === 'none' ? '#556655' : ds.status === 'green' ? '#00ff66' : (ds.status === 'yellow' ? '#ffcc00' : '#ff0040');
       html += '<div class="pm-domain-card">';
       html += '<div class="pm-domain-dot" style="background:' + dotColor + ';box-shadow:0 0 6px ' + dotColor + '"></div>';
       html += '<div class="pm-domain-info">';
@@ -2544,9 +2558,10 @@ export function renderPrometheus(main) {
 
     // Active missions
     html += '<div class="pm-panel pm-missions-panel">';
-    html += '<div class="pm-panel-hdr">ACTIVE MISSIONS</div>';
+    html += '<div class="pm-panel-hdr">ACTIVE MISSIONS' + (state.ccExercise ? ' (EXERCISE)' : '') + '</div>';
+    if (!state.ccExercise) html += '<div style="font-size:11px;color:#88aa88;padding:8px 0">No active missions.</div>';
     var mi;
-    for (mi = 0; mi < activeMissions.length; mi++) {
+    for (mi = 0; state.ccExercise && mi < activeMissions.length; mi++) {
       var m = activeMissions[mi];
       var mColor = m.status === 'ACTIVE' ? '#00ff66' : (m.status === 'STANDBY' ? '#ffcc00' : '#4488ff');
       html += '<div class="pm-mission-row">';
@@ -2565,7 +2580,8 @@ export function renderPrometheus(main) {
 
     // System health sparklines
     html += '<div class="pm-panel pm-health-panel">';
-    html += '<div class="pm-panel-hdr">SYSTEM HEALTH</div>';
+    html += '<div class="pm-panel-hdr">SYSTEM HEALTH' + (state.ccExercise ? ' (EXERCISE)' : '') + '</div>';
+    if (!state.ccExercise) html += '<div style="font-size:11px;color:#88aa88;padding:4px 0">No telemetry source connected.</div>';
     var healthItems = [
       { id: 'pm-spark-cpu', label: 'CPU', color: '#00ff66', key: 'cpu' },
       { id: 'pm-spark-mem', label: 'MEMORY', color: '#4488ff', key: 'mem' },
@@ -2640,13 +2656,28 @@ export function renderPrometheus(main) {
       });
     }
 
-    // Alert generation
-    var alertInterval = setInterval(function() {
-      if (state.activeTab !== 'command') return;
-      var alert = generateAlert();
-      addAlert(alert);
-    }, 4000);
-    state.intervals.push(alertInterval);
+    // Exercise start/stop. Synthetic generators below run only while started.
+    var exBtn = main.querySelector('#pm-cc-exercise');
+    if (exBtn) exBtn.addEventListener('click', function() {
+      state.ccExercise = !state.ccExercise;
+      render();
+    });
+    var clrBtn = main.querySelector('#pm-cc-clear');
+    if (clrBtn) clrBtn.addEventListener('click', function() {
+      state.alerts = [];
+      sparkData.cpu = []; sparkData.mem = []; sparkData.disk = []; sparkData.net = [];
+      render();
+    });
+
+    // Exercise alert generation (synthetic, labelled EXERCISE)
+    if (state.ccExercise) {
+      var alertInterval = setInterval(function() {
+        if (state.activeTab !== 'command') return;
+        var alert = generateAlert();
+        addAlert(alert);
+      }, 4000);
+      state.intervals.push(alertInterval);
+    }
 
     // Sparkline data generation and drawing
     function updateSparklines() {
@@ -2666,12 +2697,14 @@ export function renderPrometheus(main) {
         drawSparkline(ids[ki], arr, colors[ki]);
       }
     }
-    updateSparklines();
-    var sparkInterval = setInterval(function() {
-      if (state.activeTab !== 'command') return;
+    if (state.ccExercise) {
       updateSparklines();
-    }, 2000);
-    state.intervals.push(sparkInterval);
+      var sparkInterval = setInterval(function() {
+        if (state.activeTab !== 'command') return;
+        updateSparklines();
+      }, 2000);
+      state.intervals.push(sparkInterval);
+    }
 
     // Clock updates
     function updateClocks() {
@@ -2694,32 +2727,6 @@ export function renderPrometheus(main) {
       updateClocks();
     }, 1000);
     state.intervals.push(clockInterval);
-
-    // Initial seed of alerts
-    if (state.alerts.length === 0) {
-      var si;
-      for (si = 0; si < 8; si++) {
-        var seedAlert = generateAlert();
-        state.alerts.push(seedAlert);
-      }
-      var feed = main.querySelector('#pm-alert-feed');
-      if (feed) {
-        var feedHtml = '';
-        var sevColorMap2 = { CRITICAL: '#ff0040', HIGH: '#ff6600', MEDIUM: '#ffcc00', LOW: '#00cc66', INFO: '#4488ff' };
-        var fi;
-        for (fi = 0; fi < state.alerts.length; fi++) {
-          var fa = state.alerts[fi];
-          var fc = sevColorMap2[fa.severity] || '#4488ff';
-          feedHtml += '<div class="pm-alert-row" style="border-left:3px solid ' + fc + '">';
-          feedHtml += '<span class="pm-alert-time">' + esc(fa.time) + '</span>';
-          feedHtml += '<span class="pm-alert-sev" style="background:' + fc + '">' + esc(fa.severity) + '</span>';
-          feedHtml += '<span class="pm-alert-id">' + esc(fa.id) + '</span>';
-          feedHtml += '<span class="pm-alert-msg">' + esc(fa.message) + '</span>';
-          feedHtml += '</div>';
-        }
-        feed.innerHTML = feedHtml;
-      }
-    }
   }
 
   // =========================================================================
@@ -3178,7 +3185,7 @@ export function renderPrometheus(main) {
     else base += 10;
     if (node.status === 'degraded') base += 15;
     if (node.status === 'offline') base += 25;
-    base += Math.floor(Math.random() * 20);
+    if (node.type === 'web_server') base += 15; // internet-facing
     return Math.min(100, base);
   }
 
@@ -3240,7 +3247,8 @@ export function renderPrometheus(main) {
 
     // Network topology table
     html += '<div class="pm-panel">';
-    html += '<div class="pm-panel-hdr">NETWORK TOPOLOGY — ASSET INVENTORY</div>';
+    html += '<div class="pm-panel-hdr">NETWORK TOPOLOGY — ASSET INVENTORY (EXERCISE SCENARIO)</div>';
+    html += '<div style="font-size:11px;color:#88aa88;margin:0 0 8px">Assets come from the built-in exercise scenario. Exposure is derived from each asset\'s criticality, status and type; no vulnerability scan has been run, so VULNS shows no data.</div>';
     html += '<div class="pm-table-wrap">';
     html += '<table class="pm-table" id="pm-topo-table">';
     html += '<thead><tr>';
@@ -3260,7 +3268,6 @@ export function renderPrometheus(main) {
       var ip = generateIP(ti);
       var os = generateOS(tn);
       var services = generateServices(tn);
-      var vulnCount = Math.floor(Math.random() * 12);
       var exposure = generateExposureScore(tn);
       var expClr = exposure >= 70 ? '#ff0040' : exposure >= 40 ? '#ffcc00' : '#00ff66';
       var selClass = (terrainState.selectedAsset === tn.id) ? ' pm-row-selected' : '';
@@ -3275,7 +3282,7 @@ export function renderPrometheus(main) {
         html += '<span class="pm-svc-badge">' + esc(services[svi]) + '</span>';
       }
       html += '</td>';
-      html += '<td style="color:' + (vulnCount > 5 ? '#ff0040' : vulnCount > 2 ? '#ffcc00' : '#00ff66') + '">' + vulnCount + '</td>';
+      html += '<td style="color:#88aa88">&mdash;</td>';
       html += '<td>';
       html += '<div class="pm-exposure-bar-wrap">';
       html += '<div class="pm-exposure-bar" style="width:' + exposure + '%;background:' + expClr + '"></div>';
@@ -3426,11 +3433,10 @@ export function renderPrometheus(main) {
       var selAsset = getNodeById(terrainState.selectedAsset);
       if (selAsset) {
         var factors = [
-          { name: 'Open Ports', score: 10 + Math.floor(Math.random() * 30), max: 25 },
-          { name: 'Known Vulnerabilities', score: 5 + Math.floor(Math.random() * 35), max: 30 },
+          { name: 'Exposed Services', score: Math.min(25, generateServices(selAsset).length * 5), max: 25 },
+          { name: 'Criticality', score: selAsset.criticality === 'critical' ? 30 : selAsset.criticality === 'high' ? 20 : 10, max: 30 },
           { name: 'Internet Exposure', score: selAsset.type === 'web_server' ? 20 : 5, max: 20 },
-          { name: 'Patch Status', score: Math.floor(Math.random() * 15), max: 15 },
-          { name: 'Encryption', score: Math.floor(Math.random() * 10), max: 10 }
+          { name: 'Operational Status', score: selAsset.status === 'offline' ? 25 : selAsset.status === 'degraded' ? 15 : 0, max: 25 }
         ];
 
         html += '<div class="pm-panel">';

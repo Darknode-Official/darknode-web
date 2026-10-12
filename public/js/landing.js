@@ -53,11 +53,11 @@ export function renderLanding(view, actions) {
       <div class="hero-mesh"></div>
       <div class="hero-grain"></div>
       <div class="wrap hero-inner">
-        <div class="hero-badge"><span class="badge-dot"></span> Source available &middot; Free forever</div>
-        <h1 class="hero-h1">The AI&#8209;powered platform<br>for <span class="hero-rotate-wrap"><span class="hero-rotate" id="hero-rotate">cybersecurity</span></span></h1>
-        <p class="hero-sub">Tools, labs, and an AI agent to learn cybersecurity — free and open-source, with a fully local, offline mode so your data can stay on your machine.</p>
+        <div class="hero-badge"><span class="badge-dot"></span> Self-hostable &middot; Deterministic &middot; Your data stays yours</div>
+        <h1 class="hero-h1">Find the real risks in your<br><span class="hero-rotate-wrap"><span class="hero-rotate" id="hero-rotate">code</span></span></h1>
+        <p class="hero-sub">Darknode scans your code, cloud, dependencies, configs and records for real vulnerabilities and risks — with accurate, explainable, deterministic engines that run on your own infrastructure. No black-box AI deciding severity, no data leaving your estate.</p>
         <div class="hero-cta">
-          <button class="btn lg" id="cta-start">Get started &mdash; free</button>
+          <button class="btn lg" id="cta-start">Scan your first repo &mdash; free</button>
           <a class="btn lg ghost" href="${GITHUB}/darknode-cli" target="_blank" rel="noopener">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="margin-right:8px"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.44 9.8 8.2 11.39.6.11.82-.26.82-.58v-2.23c-3.34.73-4.04-1.42-4.04-1.42-.55-1.39-1.34-1.76-1.34-1.76-1.08-.74.08-.73.08-.73 1.2.08 1.84 1.23 1.84 1.23 1.07 1.83 2.81 1.3 3.5 1 .1-.78.42-1.3.76-1.6-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.14-.3-.54-1.52.1-3.18 0 0 1-.32 3.3 1.23a11.5 11.5 0 016.02 0c2.28-1.55 3.29-1.23 3.29-1.23.64 1.66.24 2.88.12 3.18.77.84 1.23 1.91 1.23 3.22 0 4.61-2.8 5.63-5.48 5.92.42.37.81 1.1.81 2.22v3.29c0 .32.22.7.82.58A12.01 12.01 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
             Star on GitHub
@@ -68,11 +68,11 @@ export function renderLanding(view, actions) {
           <div class="trust-sep"></div>
           <div class="trust-item"><span class="trust-n" data-count="900" data-suffix="+" data-format="comma">0</span><span class="trust-l">Security tools</span></div>
           <div class="trust-sep"></div>
-          <div class="trust-item"><span class="trust-n" data-count="33">0</span><span class="trust-l">AI modules</span></div>
+          <div class="trust-item"><span class="trust-n" data-count="33">0</span><span class="trust-l">Analysis engines</span></div>
           <div class="trust-sep"></div>
-          <div class="trust-item"><span class="trust-n" data-count="20">0</span><span class="trust-l">Sidebar groups</span></div>
+          <div class="trust-item"><span class="trust-n" data-count="20">0</span><span class="trust-l">Tool categories</span></div>
           <div class="trust-sep"></div>
-          <div class="trust-item"><span class="trust-n trust-n-static">$0</span><span class="trust-l">Free forever</span></div>
+          <div class="trust-item"><span class="trust-n trust-n-static">$0</span><span class="trust-l">Open-core</span></div>
         </div>
         <div class="hero-built-with">
           <span class="built-label">Built with</span>
@@ -93,14 +93,14 @@ export function renderLanding(view, actions) {
       <div class="wrap">
         <div class="sec-label">Products</div>
         <h2 class="sec-title" id="products-title">One platform. Every surface.</h2>
-        <p class="sec-sub">Web, desktop, terminal, cloud, and a programmable API — all free, all yours.</p>
+        <p class="sec-sub">Web, desktop, terminal, cloud, and a programmable API — deploy it wherever your security and engineering teams already work.</p>
         <div class="bento">
           <div class="bento-card">
             <div class="bento-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M7 8h10M7 12h6M7 16h8"/></svg>
             </div>
             <h3>Web App</h3>
-            <p>Open darknode.ai in your browser. Security tools, cheat sheets, CVE lookup, practice labs, and the learning hub — zero install.</p>
+            <p>Open darknode.ai in your browser. Scan code and cloud, triage CVEs, map compliance, and run investigations from one command center — zero install.</p>
             <span class="bento-tag">No install needed</span>
           </div>
           <div class="bento-card">
@@ -108,7 +108,7 @@ export function renderLanding(view, actions) {
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
             </div>
             <h3>CLI</h3>
-            <p>One command: <code>npm i -g darknode-cli</code>. The full security toolset plus <code>nexus</code> — the AI agent — in your terminal.</p>
+            <p>One command: <code>npm i -g darknode-cli</code>. Run the full scanning and analysis toolset in CI/CD, fail builds on real findings, and ship results as artifacts.</p>
             <span class="bento-tag">npm install</span>
           </div>
           <div class="bento-card">
@@ -116,7 +116,7 @@ export function renderLanding(view, actions) {
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M8 21h8M12 18v3"/><path d="M7 9l2.5 2L7 13M13 13h4"/></svg>
             </div>
             <h3>Desktop App</h3>
-            <p>Native app for macOS, Windows, and Linux. The full workspace, offline-first, with system-level scanning and a built-in agent.</p>
+            <p>Native app for macOS, Windows, and Linux. The full workspace, offline-first, with system-level scanning for teams that keep sensitive code off the cloud.</p>
             ${APP_DL_LIVE ? `<div class="bento-dl">
               <a class="btn sm" id="app-dl" href="${APP_RELEASES}" target="_blank" rel="noopener">Download the app</a>
               <a class="bento-dl-alt" id="app-dl-alt" href="${APP_RELEASES}" target="_blank" rel="noopener">Other platforms</a>
@@ -127,7 +127,7 @@ export function renderLanding(view, actions) {
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></svg>
             </div>
             <h3>REST API</h3>
-            <p>Every tool and the AI agent behind a clean HTTP API. Generate a key, ship a request, integrate Darknode into your pipeline.</p>
+            <p>Every scanning and analysis engine behind a clean HTTP API. Generate a key, ship a request, wire Darknode into your pipelines and dashboards.</p>
             <span class="bento-tag">API keys &middot; webhooks</span>
           </div>
           <div class="bento-card">
@@ -135,7 +135,7 @@ export function renderLanding(view, actions) {
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 7l8-4 8 4v10l-8 4-8-4z"/><path d="M4 7l8 4 8-4M12 11v10"/></svg>
             </div>
             <h3>MCP Server</h3>
-            <p>Plug Darknode into Claude, Cursor, and any MCP client. Your agent gets the full security toolset as native, callable functions.</p>
+            <p>Plug Darknode into Claude, Cursor, and any MCP client. Give your team's assistants the full security toolset as native, callable functions.</p>
             <span class="bento-tag">Model Context Protocol</span>
           </div>
           <div class="bento-card">
@@ -143,7 +143,7 @@ export function renderLanding(view, actions) {
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 8h20"/><circle cx="5" cy="6" r=".5" fill="currentColor"/><circle cx="7.5" cy="6" r=".5" fill="currentColor"/></svg>
             </div>
             <h3>Cloud VM</h3>
-            <p>A full security workstation. Like Kali, but with Darknode and Nexus AI built in. Runs in VirtualBox, QEMU, or the cloud.</p>
+            <p>A full, self-hostable security workstation with every Darknode engine built in. Runs in VirtualBox, QEMU, or your own cloud — including air-gapped.</p>
             <span class="bento-tag">VirtualBox &middot; cloud</span>
           </div>
         </div>
@@ -175,12 +175,12 @@ export function renderLanding(view, actions) {
     <section class="section alt" id="features" aria-labelledby="features-title">
       <div class="wrap">
         <div class="sec-label">Capabilities</div>
-        <h2 class="sec-title" id="features-title">Everything you need to learn security</h2>
+        <h2 class="sec-title" id="features-title">Everything your security team needs in one place</h2>
         <div class="feature-rows">
           <div class="feature-row">
             <div class="feature-text">
-              <h3>Every security discipline, one command away</h3>
-              <p>Nmap, Nuclei, Gobuster, Nikto, and more — pre-configured with copy-paste install commands. Search, filter, and launch from the web or CLI.</p>
+              <h3>Scan code, cloud, and dependencies — one command away</h3>
+              <p>Static analysis, dependency and SBOM checks, secret detection, and cloud-config review — pre-configured and ready to run. Search, filter, and launch from the web or CLI.</p>
             </div>
             <div class="feature-visual">
               <div class="term-window">
@@ -191,8 +191,8 @@ export function renderLanding(view, actions) {
           </div>
           <div class="feature-row reverse">
             <div class="feature-text">
-              <h3>AI that runs on your machine</h3>
-              <p>Nexus is a 41-module AI agent engine. It reads your code, runs commands, explains vulnerabilities, and writes scripts. Use free local models or bring your own API key. We never see your data.</p>
+              <h3>Deterministic engines, with AI only to explain</h3>
+              <p>The engines that find and rank risk are deterministic — no model decides severity. Nexus, the optional assistant, only reads the findings to explain them and draft remediation. Run it on local models or your own key. We never see your data.</p>
             </div>
             <div class="feature-visual">
               <div class="term-window">
@@ -203,8 +203,8 @@ export function renderLanding(view, actions) {
           </div>
           <div class="feature-row">
             <div class="feature-text">
-              <h3>Practice labs for hands-on learning</h3>
-              <p>Launch DVWA, Juice Shop, WebGoat, and more with one click. They run locally in Docker — legal, safe, isolated. Test, learn, and reset in a safe environment.</p>
+              <h3>Safe sandboxes to validate your controls</h3>
+              <p>Launch DVWA, Juice Shop, WebGoat, and more with one click. They run locally in Docker — legal, safe, isolated. Validate detections, train your team, and reset in a controlled environment.</p>
             </div>
             <div class="feature-visual">
               <div class="lab-grid">
@@ -223,8 +223,8 @@ export function renderLanding(view, actions) {
     <section class="section" id="how" aria-labelledby="how-title">
       <div class="wrap">
         <div class="sec-label">How it works</div>
-        <h2 class="sec-title" id="how-title">Up and running in four steps</h2>
-        <p class="sec-sub">From install to your first scan in under five minutes.</p>
+        <h2 class="sec-title" id="how-title">From repo to findings in four steps</h2>
+        <p class="sec-sub">From install to your first scan of real code in under five minutes.</p>
         <div class="timeline-v">
 
           <div class="tlv-step">
@@ -247,8 +247,8 @@ export function renderLanding(view, actions) {
             <div class="tlv-num">2</div>
             <div class="tlv-body">
               <div class="tlv-text">
-                <h3>Launch Nexus AI</h3>
-                <p>Run <code>nexus</code> in your terminal. Pick a model: free local models run on your machine with no API key (downloaded on first use), or bring your own key for a cloud model.</p>
+                <h3>Point it at your code or cloud</h3>
+                <p>Connect a repository, cloud account, or dependency manifest. Everything runs on your infrastructure — nothing leaves your estate without your say-so.</p>
               </div>
               <div class="tlv-visual">
                 <div class="term-window demo-term">
@@ -263,8 +263,8 @@ export function renderLanding(view, actions) {
             <div class="tlv-num">3</div>
             <div class="tlv-body">
               <div class="tlv-text">
-                <h3>Ask it anything</h3>
-                <p>Describe what you want to do in plain English. Nexus reads your code, runs scans, writes scripts, and explains every step.</p>
+                <h3>Run the scan</h3>
+                <p>Deterministic engines find vulnerabilities, risky dependencies, exposed secrets, and misconfigurations — each with the exact file and line, ranked by real severity.</p>
               </div>
               <div class="tlv-visual">
                 <div class="term-window demo-term">
@@ -279,8 +279,8 @@ export function renderLanding(view, actions) {
             <div class="tlv-num">4</div>
             <div class="tlv-body">
               <div class="tlv-text">
-                <h3>Learn by doing</h3>
-                <p>Practice on local labs, study the AI's methodology, and build real security skills. Everything runs on your machine.</p>
+                <h3>Fix, track, and report</h3>
+                <p>Jump straight to the vulnerable line, apply the suggested fix, gate your CI on findings, and export audit-ready reports. Everything runs on your machine.</p>
               </div>
               <div class="tlv-visual">
                 <div class="term-window demo-term">
@@ -487,9 +487,9 @@ export function renderLanding(view, actions) {
     <section class="section nx-section" id="nexus" aria-labelledby="nexus-title">
       <div class="nx-section-glow"></div>
       <div class="wrap">
-        <div class="sec-label">AI Engine</div>
-        <h2 class="sec-title" id="nexus-title">Nexus &mdash; the engine under the hood</h2>
-        <p class="sec-sub">More than a chat box: a genuine agentic platform &mdash; planning, multi-agent orchestration and self-evaluation &mdash; that runs on your choice of backend, from Claude, GPT, Gemini, Groq, Mistral and OpenRouter in the cloud to a fully local model via Ollama.</p>
+        <div class="sec-label">AI Assistant</div>
+        <h2 class="sec-title" id="nexus-title">Nexus &mdash; the assistant on top of your findings</h2>
+        <p class="sec-sub">The deterministic engines do the finding and ranking; Nexus turns those results into plain-English explanations, remediation steps, and draft reports. It runs on your choice of backend &mdash; Claude, GPT, Gemini, Groq, Mistral and OpenRouter in the cloud, or a fully local model via Ollama for teams that keep everything in-house.</p>
 
         <!-- Architecture diagram -->
         <div class="nx-arch" aria-label="Nexus architecture diagram">
@@ -617,8 +617,8 @@ export function renderLanding(view, actions) {
     <section class="section alt" id="demo" aria-labelledby="demo-title">
       <div class="wrap">
         <div class="sec-label">See it in action</div>
-        <h2 class="sec-title" id="demo-title">From recon to report in one workflow</h2>
-        <p class="sec-sub">Four steps. One tool. Watch Darknode and Nexus AI take a target from unknown to fully documented.</p>
+        <h2 class="sec-title" id="demo-title">From scan to audit-ready report in one workflow</h2>
+        <p class="sec-sub">Four steps. One tool. Watch Darknode assess an asset in your own estate and document every finding for the team and the auditors.</p>
         <div class="showcase-tabs" role="tablist" aria-label="Demo tabs">
           <button class="showcase-tab active" role="tab" aria-selected="true" aria-controls="stab-recon" id="tab-recon" data-tab="recon">Recon scan</button>
           <button class="showcase-tab" role="tab" aria-selected="false" aria-controls="stab-analysis" id="tab-analysis" data-tab="analysis">AI analysis</button>
@@ -726,9 +726,9 @@ testing methodology for 10.10.14.7:
     <!-- ====== SECURITY KNOWLEDGE ====== -->
     <section class="section" id="security-knowledge" aria-labelledby="rag-title">
       <div class="wrap">
-        <div class="sec-label">Security RAG</div>
-        <h2 class="sec-title" id="rag-title">Built-in security knowledge</h2>
-        <p class="sec-sub">Not a generic chatbot. Nexus ships with a deep, structured knowledge base covering real-world security techniques, OWASP standards, and professional tooling.</p>
+        <div class="sec-label">Knowledge base</div>
+        <h2 class="sec-title" id="rag-title">Every finding comes with the context to fix it</h2>
+        <p class="sec-sub">A deep, structured knowledge base covering OWASP standards, real-world attack patterns, and remediation guidance — so your engineers understand each finding and know exactly how to close it.</p>
         <div class="rag-tabs" role="tablist" aria-label="Knowledge categories">
           <button class="rag-tab active" role="tab" aria-selected="true" data-rag="owasp">OWASP Top 10</button>
           <button class="rag-tab" role="tab" aria-selected="false" data-rag="attacks">Security Patterns</button>
@@ -911,9 +911,9 @@ testing methodology for 10.10.14.7:
     <!-- ====== PRACTICE LABS ====== -->
     <section class="section alt" id="labs" aria-labelledby="labs-title">
       <div class="wrap">
-        <div class="sec-label">Hands-on training</div>
-        <h2 class="sec-title" id="labs-title">Practice on real vulnerable apps</h2>
-        <p class="sec-sub">Spin up intentionally vulnerable environments and test them safely. Reset anytime. Learn by finding and understanding real flaws.</p>
+        <div class="sec-label">Validation &amp; training</div>
+        <h2 class="sec-title" id="labs-title">Validate detections and level up your team</h2>
+        <p class="sec-sub">Spin up intentionally vulnerable environments to confirm your scanners catch what they should and to train analysts and developers safely. Reset anytime.</p>
         <div class="plab-grid">
           <div class="plab-card">
             <div class="plab-top">
@@ -997,7 +997,7 @@ testing methodology for 10.10.14.7:
       <div class="wrap">
         <div class="sec-label">What's included</div>
         <h2 class="sec-title" id="compare-title">Everything in one platform</h2>
-        <p class="sec-sub">Free and open source. Runs locally on your own machine.</p>
+        <p class="sec-sub">Open-core and self-hostable. Runs on your own infrastructure.</p>
         <div class="cmp-scroll">
           <table class="cmp-landing" aria-label="What Darknode includes">
             <thead>
@@ -1007,10 +1007,10 @@ testing methodology for 10.10.14.7:
               </tr>
             </thead>
             <tbody>
-              <tr><td>Price</td><td class="cmp-dn"><span class="cmp-highlight">Free forever</span></td></tr>
-              <tr><td>AI security agent</td><td class="cmp-dn"><span class="cmp-check">&check;</span> Nexus &mdash; 33 modules, 8 backends (bring your own key or run Ollama locally)</td></tr>
-              <tr><td>Local and private</td><td class="cmp-dn"><span class="cmp-check">&check;</span> Runs on your machine, works offline</td></tr>
-              <tr><td>Security tools</td><td class="cmp-dn"><span class="cmp-check">&check;</span> Recon, scanning, exploitation support, forensics</td></tr>
+              <tr><td>Price</td><td class="cmp-dn"><span class="cmp-highlight">Open-core &mdash; free to self-host</span></td></tr>
+              <tr><td>AI assistant</td><td class="cmp-dn"><span class="cmp-check">&check;</span> Nexus &mdash; 33 modules, 8 backends (bring your own key or run Ollama locally)</td></tr>
+              <tr><td>Private and self-hosted</td><td class="cmp-dn"><span class="cmp-check">&check;</span> Runs on your infrastructure, works offline and air-gapped</td></tr>
+              <tr><td>Scanning engines</td><td class="cmp-dn"><span class="cmp-check">&check;</span> Code, cloud, dependencies, secrets, forensics</td></tr>
               <tr><td>Interactive labs</td><td class="cmp-dn"><span class="cmp-check">&check;</span> Cyber Range</td></tr>
               <tr><td>Threat intelligence</td><td class="cmp-dn"><span class="cmp-check">&check;</span> Live feeds</td></tr>
               <tr><td>Report generation</td><td class="cmp-dn"><span class="cmp-check">&check;</span> AI-assisted</td></tr>
@@ -1028,7 +1028,7 @@ testing methodology for 10.10.14.7:
       <div class="wrap">
         <div class="sec-label">Darknode OS</div>
         <h2 class="sec-title" id="os-title">Your own security operating system</h2>
-        <p class="sec-sub">Two editions — a custom x86 kernel built from scratch, and a full Linux desktop. Both free and open source.</p>
+        <p class="sec-sub">Two editions — a custom x86 kernel built from scratch, and a full Linux desktop. Both open-core and self-hostable, ideal for locked-down and air-gapped environments.</p>
         <div class="os-grid">
           <div class="os-card">
             <div class="os-card-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
@@ -1105,13 +1105,13 @@ testing methodology for 10.10.14.7:
         <div class="pricing-grid" id="pricing-grid">
           <div class="price-card">
             <div class="price-tier">Free</div>
-            <div class="price-amount">$0<span class="price-period">/forever</span></div>
-            <p class="price-desc">The full platform. No limits, no trials, no paywalls.</p>
+            <div class="price-amount">$0<span class="price-period">/self-hosted</span></div>
+            <p class="price-desc">The full open-core platform. No limits, no trials, no paywalls.</p>
             <ul class="price-features">
-              <li>Every security tool (no limits)</li>
+              <li>Every scanning and analysis tool (no limits)</li>
               <li>PROMETHEUS, SENTINEL EYE, HYDRA, AEGIS &mdash; full access</li>
-              <li>Nexus AI agent (BYOK &mdash; Claude, GPT, Gemini, Ollama)</li>
-              <li>Learn Hub with 1,400+ topics and quizzes</li>
+              <li>Nexus AI assistant (BYOK &mdash; Claude, GPT, Gemini, Ollama)</li>
+              <li>Security knowledge base: 1,400+ topics and references</li>
               <li>CLI, desktop app, and Darknode OS</li>
               <li>Live threat intelligence feeds</li>
               <li>Unlimited scans and analysis</li>
@@ -1145,7 +1145,7 @@ testing methodology for 10.10.14.7:
             <div class="price-tier">Team</div>
             <div class="price-amount price-monthly" data-monthly="$25" data-annual="$199">$25<span class="price-period">/user/month</span></div>
             <div class="price-amount price-annual" data-monthly="$25" data-annual="$199">$199<span class="price-period">/user/year</span> <span class="price-saved">Save $101</span></div>
-            <p class="price-desc">Collaborate, compete, and train as a team.</p>
+            <p class="price-desc">Shared findings and workflow for a security team.</p>
             <ul class="price-features compact">
               <li>Everything in Pro, plus:</li>
               <li>Shared workspace and findings</li>
@@ -1183,7 +1183,7 @@ testing methodology for 10.10.14.7:
             <button class="btn lg ghost" id="price-enterprise">Contact sales</button>
           </div>
         </div>
-        <p class="pricing-note">Every tool on the platform is <strong>free forever</strong> &mdash; every security tool, the command centers, the CLI, desktop app, Darknode OS, and live threat feeds. You never pay for AI tokens &mdash; bring your own key or run Ollama locally for free. Paid plans add <strong>professional-grade features</strong> like automated scan scheduling, vulnerability tracking, AI report generation, credential leak monitoring, and team collaboration. No hidden fees, no usage caps, cancel anytime.</p>
+        <p class="pricing-note">The open-core platform is <strong>free to self-host</strong> &mdash; every scanning and analysis tool, the command centers, the CLI, desktop app, Darknode OS, and live threat feeds. You never pay for AI tokens &mdash; bring your own key or run Ollama locally for free. Paid plans add <strong>team and enterprise features</strong> like automated scan scheduling, vulnerability tracking, report generation, credential leak monitoring, and collaboration. No hidden fees, no usage caps, cancel anytime.</p>
       </div>
     </section>
 
@@ -1196,21 +1196,21 @@ testing methodology for 10.10.14.7:
 
           <div class="faq-item">
             <button class="faq-q" aria-expanded="false">
-              <span class="faq-q-text">Is Darknode really free?</span>
+              <span class="faq-q-text">Is Darknode really free to self-host?</span>
               <span class="faq-toggle" aria-hidden="true">+</span>
             </button>
             <div class="faq-a" hidden>
-              <div class="faq-a-inner">Yes. Every tool on the platform &mdash; HYDRA, AEGIS, SENTINEL EYE, PROMETHEUS, PHANTOM, CITADEL, ORACLE, SPECTRE, the Security Assessment Console, Cyber Range, every security tool, the CLI, the desktop app, and Darknode OS &mdash; is free with no time limits, no trials, and no paywalls. You also get full access to the Nexus AI agent on any plan using your own API key or a free local model like Ollama. Paid plans (coming soon) will add professional extras like automated scan scheduling, AI report generation, and team collaboration, but the core platform stays free forever.</div>
+              <div class="faq-a-inner">Yes. The open-core platform &mdash; HYDRA, AEGIS, SENTINEL EYE, PROMETHEUS, PHANTOM, CITADEL, ORACLE, SPECTRE, the Security Assessment Console, every scanning and analysis tool, the CLI, the desktop app, and Darknode OS &mdash; is free to run on your own infrastructure with no time limits, no trials, and no paywalls. You also get full access to the Nexus AI assistant using your own API key or a free local model like Ollama. Paid Team and Enterprise plans (coming soon) add features like automated scan scheduling, vulnerability tracking, report generation, and collaboration, but the core platform stays free to self-host.</div>
             </div>
           </div>
 
           <div class="faq-item">
             <button class="faq-q" aria-expanded="false">
-              <span class="faq-q-text">Does my data leave my computer?</span>
+              <span class="faq-q-text">Does our code or data ever leave our environment?</span>
               <span class="faq-toggle" aria-hidden="true">+</span>
             </button>
             <div class="faq-a" hidden>
-              <div class="faq-a-inner">No. Darknode is designed with privacy at its core. All scans, analysis, and practice labs run entirely on your machine. If you use the Nexus AI agent with a local model (via Ollama), everything stays offline. If you bring a cloud API key (OpenAI, Anthropic, Google), your queries go directly to that provider &mdash; Darknode never proxies, logs, or stores your prompts or results. Your scan data, saved findings, credentials, and wordlists are stored locally and never transmitted anywhere.</div>
+              <div class="faq-a-inner">No. Darknode is designed to run on your own infrastructure, including fully air-gapped. All scans and analysis run inside your environment. If you use the Nexus AI assistant with a local model (via Ollama), everything stays offline. If you bring a cloud API key (OpenAI, Anthropic, Google), your queries go directly to that provider &mdash; Darknode never proxies, logs, or stores your prompts or results. Your source code, scan data, saved findings, and secrets stay in your environment and are never transmitted anywhere.</div>
             </div>
           </div>
 
@@ -1230,17 +1230,17 @@ testing methodology for 10.10.14.7:
               <span class="faq-toggle" aria-hidden="true">+</span>
             </button>
             <div class="faq-a" hidden>
-              <div class="faq-a-inner">Yes. Darknode is an educational platform built for learning cybersecurity through hands-on practice. All practice labs and vulnerable environments run locally in Docker containers on your own machine &mdash; you're never testing external systems without authorization. The tools are the same ones used by professional security assessors and researchers worldwide (nmap, nuclei, Burp Suite, etc.). If you use Darknode to test real systems, always ensure you have explicit written authorization from the system owner. Unauthorized testing of systems you don't own is illegal regardless of the tools used.</div>
+              <div class="faq-a-inner">Yes. Darknode is built for assessing systems you own or are authorized to assess &mdash; your own code, cloud accounts, dependencies, and infrastructure. Any practice labs and vulnerable environments run locally in Docker containers on your own machine. The underlying tools are the same ones used by professional security teams worldwide (nmap, nuclei, Burp Suite, etc.). Always ensure you have authorization for the systems you scan; unauthorized testing of systems you don't own is illegal regardless of the tools used.</div>
             </div>
           </div>
 
           <div class="faq-item">
             <button class="faq-q" aria-expanded="false">
-              <span class="faq-q-text">How is this different from Kali Linux?</span>
+              <span class="faq-q-text">How is this different from a standalone scanner?</span>
               <span class="faq-toggle" aria-hidden="true">+</span>
             </button>
             <div class="faq-a" hidden>
-              <div class="faq-a-inner">Kali Linux ships a large collection of pre-installed tools. Darknode wraps many of the same tools behind a web interface and adds an AI agent (Nexus) that explains what each tool does, generates the right commands for your target, walks you through methodologies step by step, and writes professional reports from your findings. Darknode also includes a built-in learning hub with 1,400+ cybersecurity topics, interactive quizzes, practice labs, CTF challenges, and real-time threat intelligence feeds. Think of Kali as the toolbox and Darknode as the toolbox plus a mentor who teaches you how to use every tool in it.</div>
+              <div class="faq-a-inner">Most tools cover one surface &mdash; code, or dependencies, or cloud. Darknode brings code, cloud, dependencies, secrets, configs, and threat intelligence into one command center, links every finding to the exact file and line, ranks it by real severity with deterministic engines, and then lets the optional Nexus assistant explain it and draft remediation. It runs entirely on your own infrastructure, exposes a REST API and CLI for your pipelines, and exports audit-ready reports &mdash; so one platform covers scanning, triage, compliance, and reporting instead of five.</div>
             </div>
           </div>
 
@@ -1270,7 +1270,7 @@ testing methodology for 10.10.14.7:
               <span class="faq-toggle" aria-hidden="true">+</span>
             </button>
             <div class="faq-a" hidden>
-              <div class="faq-a-inner">Paid plans (coming soon) add professional features on top of the free platform. The core platform, every tool, and the CLI stay free forever. Pro and Team tiers unlock extras like automated scan scheduling, vulnerability tracking, AI report generation, and team collaboration.</div>
+              <div class="faq-a-inner">Paid plans (coming soon) add team and enterprise features on top of the open-core platform. The core platform, every tool, and the CLI stay free to self-host. Pro, Team, and Enterprise tiers unlock extras like automated scan scheduling, vulnerability tracking, report generation, collaboration, SSO/RBAC, and air-gapped deployment.</div>
             </div>
           </div>
 
@@ -1302,8 +1302,8 @@ testing methodology for 10.10.14.7:
     <section class="section gov-section" id="government" aria-labelledby="gov-title">
       <div class="wrap">
         <div class="sec-label">Government &amp; Enterprise</div>
-        <h2 class="sec-title" id="gov-title">Purpose-built for federal cyber defense</h2>
-        <p class="sec-sub">Tools designed for SOC analysts, intelligence officers, and CISOs. From PDB-style briefings to NIST compliance mapping.</p>
+        <h2 class="sec-title" id="gov-title">Built for government and regulated industries</h2>
+        <p class="sec-sub">Tools designed for SOC analysts, CISOs, and GRC teams. From executive briefings to NIST, FedRAMP, and HIPAA compliance mapping.</p>
         <div class="gov-grid">
           <div class="gov-card">
             <div class="gov-icon">[B]</div>
@@ -1344,8 +1344,8 @@ testing methodology for 10.10.14.7:
       <div class="cta-mesh"></div>
       <div class="cta-grid-bg"></div>
       <div class="wrap cta-inner">
-        <h2>Start learning security today.</h2>
-        <p class="cta-sub">Free forever. 100% private. Runs entirely on your machine.</p>
+        <h2>Find your real risks today.</h2>
+        <p class="cta-sub">Open-core. 100% private. Runs entirely on your own infrastructure.</p>
         <button class="btn lg" id="cta-signup">Get started &rarr;</button>
         <div class="cta-divider"></div>
         <div class="cta-notify">
@@ -1364,7 +1364,7 @@ testing methodology for 10.10.14.7:
       <div class="wrap land-footer-inner">
         <div class="land-footer-left">
           <span class="land-footer-brand">Darknode</span>
-          <p style="font-size:.72rem;color:inherit;opacity:.5;margin:0 0 4px">Cybersecurity education platform for students and professionals. All tools are for authorized educational use only.</p>
+          <p style="font-size:.72rem;color:inherit;opacity:.5;margin:0 0 4px">Security and data-integrity platform for companies &mdash; scan your code, cloud, dependencies, and records. For authorized use on systems you own or are permitted to assess.</p>
           <span class="land-footer-copy">&copy; 2026 Darknode-Official. All rights reserved.</span>
         </div>
         <div class="land-footer-links">
@@ -1455,7 +1455,7 @@ testing methodology for 10.10.14.7:
   }
 
   // Hero text rotation
-  const words = ["cybersecurity", "security research", "defense training", "threat analysis", "security operations"];
+  const words = ["code", "cloud", "dependencies", "configs", "records"];
   let wordIdx = 0;
   const rotateEl = $("hero-rotate");
   if (rotateEl) {

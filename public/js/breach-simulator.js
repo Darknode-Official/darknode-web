@@ -157,7 +157,7 @@ function calculateFinancialImpact(breachType, industry, size, recordCount) {
 // ============================================================================
 export function renderBreachSimulator(main) {
   var activeTab = 'scenario';
-  var simConfig = { breachType: 'ransomware', industry: 'tech', size: 'medium', records: 0, dataTypes: [] };
+  var simConfig = { breachType: '', industry: '', size: '', records: 0, dataTypes: [] };
   var simResults = null;
   var timeline = null;
   var financials = null;
@@ -249,20 +249,23 @@ export function renderBreachSimulator(main) {
       '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px">' +
         '<div><label style="font-size:.82rem;font-weight:600;display:block;margin-bottom:6px">Industry</label>' +
           '<select class="bs-select" id="bs-industry">' +
+            '<option value="">Select industry…</option>' +
             Object.keys(INDUSTRY_DATA).map(function(k) {
               return '<option value="' + k + '"' + (simConfig.industry === k ? ' selected' : '') + '>' + esc(INDUSTRY_DATA[k].name) + '</option>';
             }).join('') +
           '</select></div>' +
         '<div><label style="font-size:.82rem;font-weight:600;display:block;margin-bottom:6px">Company Size</label>' +
           '<select class="bs-select" id="bs-size">' +
+            '<option value="">Select size…</option>' +
             Object.keys(SIZE_DATA).map(function(k) {
               return '<option value="' + k + '"' + (simConfig.size === k ? ' selected' : '') + '>' + esc(SIZE_DATA[k].name) + '</option>';
             }).join('') +
           '</select></div>' +
         '<div><label style="font-size:.82rem;font-weight:600;display:block;margin-bottom:6px">Records Affected (0 = auto)</label>' +
-          '<input type="number" class="bs-select" id="bs-records" value="' + simConfig.records + '" min="0"></div>' +
+          '<input type="number" class="bs-select" id="bs-records" value="' + (simConfig.records || '') + '" min="0" placeholder="Auto"></div>' +
       '</div>' +
 
+      '<div id="bs-missing" role="alert" style="display:none;color:#ff8a9a;font-size:.8rem;margin-bottom:10px"></div>' +
       '<button class="bs-btn" id="bs-run">Simulate Breach Impact</button>';
 
     container.querySelectorAll('.bs-breach-card').forEach(function(card) {
@@ -276,6 +279,18 @@ export function renderBreachSimulator(main) {
       simConfig.industry = container.querySelector('#bs-industry').value;
       simConfig.size = container.querySelector('#bs-size').value;
       simConfig.records = parseInt(container.querySelector('#bs-records').value) || 0;
+      var missing = [];
+      if (!simConfig.breachType) missing.push('Breach Type');
+      if (!simConfig.industry) missing.push('Industry');
+      if (!simConfig.size) missing.push('Company Size');
+      var missEl = container.querySelector('#bs-missing');
+      if (missing.length) {
+        missEl.textContent = 'Please choose: ' + missing.join(', ') + '.';
+        missEl.style.display = '';
+        try { (window.dnToast || window.showToast || function() {})('Fill in the required fields first', 'error'); } catch (_) {}
+        return;
+      }
+      missEl.style.display = 'none';
       runSimulation();
       activeTab = 'timeline';
       render();

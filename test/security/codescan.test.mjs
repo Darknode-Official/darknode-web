@@ -1,0 +1,126 @@
+// Code Scanner rule tests (public/js/codescan/rules.js): every rule family gets a
+// positive case (must fire, on the right line) and a negative case (must stay quiet),
+// plus manifest parsing, CVSS scoring and SARIF shape.
+
+import { test, assert, group } from "../harness.mjs";
+import { scanFile, parseManifest, cvssBase, osvSeverity, osvFixed, toSarif, langOf, repoScore } from "../../public/js/codescan/rules.js";
+
+const ids = (path, src) => scanFile(path, src).map((f) => f.ruleId);
+const hit = (path, src, id) => assert.ok(ids(path, src).includes(id), id + " should fire on: " + src);
+const miss = (path, src, id) => assert.ok(!ids(path, src).includes(id), id + " should NOT fire on: " + src);
+
+group("codescan: secrets", () => {
+  test("AWS key id fires and is masked", () => {
+    const f = scanFile("src/a.js", 'const k = "AKIAQ3EGRT7XZPLM4NHA";');
+    assert.equal(f[0].ruleId, "secret.aws-access-key");
+    assert.ok(!f[0].snippet.includes("AKIAQ3EGRT7XZPLM4NHA"), "raw secret must not appear in snippet");
+  });
+  test("placeholder AWS key ignored", () => miss("src/a.js", 'k = "AKIAIOSFODNN7EXAMPLE"', "secret.aws-access-key"));
+  test("GitHub token", () => hit("x.py", "t = 'ghp_" + "a1B2c3D4e5F6g7H8i9J0k1L2m3N4o5P6q7R8'", "secret.github-token"));
+  test("private key block", () => hit("id_rsa", "-----BEGIN OPENSSH PRIVATE KEY-----", "secret.private-key"));
+  test("generic needs entropy", () => {
+    hit("cfg.js", 'const apiKey = "q8Zr2LmX9vT4kP1sW7yB";', "secret.generic");
+    miss("cfg.js", 'const password = "aaaaaaaaaaaaaaaa";', "secret.generic");
+    miss("cfg.js", "const token = process.env.TOKEN_VALUE_HERE;", "secret.generic");
+    miss("seed.js", '"password" : "$2a$10$8Zo/1e8KM8QzqOKqbDlYlONBOzukWXrM.IiyzqHRYDXqwB3gzDsba",', "secret.generic");
+  });
+  test("db url with password", () => hit("app.py", 'DB = "postgres://admin:S3cr3tPw@db.internal:5432/app"', "secret.db-url"));
+  test("secrets in test paths are downgraded to low", () => {
+    const f = scanFile("test/fixtures/keys.js", 'const k = "AKIAQ3EGRT7XZPLM4NHA";');
+    assert.equal(f[0].sev, "low");
+  });
+  test("darknode-ignore suppresses", () => miss("a.js", 'const k = "AKIAQ3EGRT7XZPLM4NHA"; // darknode-ignore', "secret.aws-access-key"));
+});
+
+group("codescan: javascript", () => {
+  test("eval with variable", () => { hit("a.js", "eval(userInput)", "js.eval"); miss("a.js", 'eval("1+1")', "js.eval"); });
+  test("child_process exec concat", () => {
+    hit("a.js", 'const { exec } = require("child_process");\nexec("ls " + dir);', "js.child-process-exec");
+    miss("a.js", 'db.exec("ls " + dir);', "js.child-process-exec");
+  });
+  test("innerHTML", () => {
+    hit("a.js", "el.innerHTML = data.name;", "js.inner-html");
+    miss("a.js", 'el.innerHTML = "<b>hi</b>";', "js.inner-html");
+    miss("a.js", "el.innerHTML = DOMPurify.sanitize(x);", "js.inner-html");
+  });
+  test("commented code ignored", () => miss("a.js", "// el.innerHTML = data.name;", "js.inner-html"));
+  test("block comment ignored", () => miss("a.js", "/*\n el.innerHTML = data.name;\n*/", "js.inner-html"));
+  test("sql concat", () => {
+    hit("a.js", "db.query(`SELECT * FROM u WHERE id=${id}`)", "js.sql-concat");
+    miss("a.js", "db.query('SELECT * FROM u WHERE id=$1', [id])", "js.sql-concat");
+  });
+  test("tls disabled", () => hit("a.js", "agent = new https.Agent({ rejectUnauthorized: false })", "js.tls-disabled"));
+  test("insecure random near token", () => {
+    hit("a.js", "const token = Math.random().toString(36);", "js.insecure-random");
+    miss("a.js", "const x = Math.random() * width;", "js.insecure-random");
+  });
+  test("open redirect", () => hit("a.js", "res.redirect(req.query.next)", "js.open-redirect"));
+  test("postMessage *", () => hit("a.js", 'w.postMessage(data, "*")', "js.postmessage-wildcard"));
+});
+
+group("codescan: python / go / php / java / infra", () => {
+  test("yaml.load", () => { hit("a.py", "yaml.load(f)", "py.yaml-load"); miss("a.py", "yaml.load(f, Loader=yaml.SafeLoader)", "py.yaml-load"); });
+  test("pickle", () => hit("a.py", "obj = pickle.loads(blob)", "py.pickle"));
+  test("shell=True", () => hit("a.py", "subprocess.run(cmd, shell=True)", "py.shell-true"));
+  test("sql f-string", () => { hit("a.py", 'cur.execute(f"SELECT * FROM t WHERE id={i}")', "py.sql-format"); miss("a.py", 'cur.execute("SELECT * FROM t WHERE id=%s", (i,))', "py.sql-format"); });
+  test("verify=False", () => hit("a.py", "requests.get(u, verify=False)", "py.tls-disabled"));
+  test("python comment ignored", () => miss("a.py", "# requests.get(u, verify=False)", "py.tls-disabled"));
+  test("go InsecureSkipVerify", () => hit("a.go", "cfg := &tls.Config{InsecureSkipVerify: true}", "go.tls-skip-verify"));
+  test("go sprintf sql", () => hit("a.go", 'rows, _ := db.Query(fmt.Sprintf("SELECT * FROM u WHERE n=%s", n))', "go.sql-sprintf"));
+  test("php exec input", () => hit("a.php", "system($_GET['cmd']);", "php.exec-input"));
+  test("php include input", () => hit("a.php", "include($_GET['page']);", "php.include-input"));
+  test("java concat sql", () => hit("A.java", 'stmt.executeQuery("SELECT * FROM u WHERE id=" + id);', "java.sql-concat"));
+  test("java weak crypto", () => { hit("A.java", 'Cipher.getInstance("AES/ECB/PKCS5Padding")', "java.weak-crypto"); miss("A.java", 'Cipher.getInstance("AES/GCM/NoPadding")', "java.weak-crypto"); });
+  test("dockerfile root + curl|sh", () => {
+    const f = ids("Dockerfile", "FROM node:20\nRUN curl -sL https://x.sh | bash\nCMD node app.js");
+    assert.ok(f.includes("docker.runs-as-root") && f.includes("docker.curl-pipe-shell"));
+    miss("Dockerfile", "FROM node:20\nUSER app\nCMD node app.js", "docker.runs-as-root");
+  });
+  test("GitHub Actions script injection", () => hit(".github/workflows/ci.yml", "    steps:\n      - run: echo \"${{ github.event.issue.title }}\"", "gha.script-injection"));
+  test("langOf", () => { assert.equal(langOf("a/b/Dockerfile"), "docker"); assert.equal(langOf(".github/workflows/x.yml"), "gha"); assert.equal(langOf("x.tsx"), "js"); });
+});
+
+group("codescan: manifests + scoring", () => {
+  test("package-lock v3", () => {
+    const src = JSON.stringify({ lockfileVersion: 3, packages: { "": { name: "app" }, "node_modules/lodash": { version: "4.17.20" }, "node_modules/@scope/x": { version: "1.0.0" } } }, null, 2);
+    const d = parseManifest("package-lock.json", src);
+    assert.equal(d.length, 2);
+    assert.equal(d[0].name, "lodash");
+    assert.ok(d[0].line > 1);
+    assert.equal(d[1].name, "@scope/x");
+  });
+  test("yarn.lock v1", () => {
+    const d = parseManifest("yarn.lock", '"@babel/core@^7.0.0", "@babel/core@^7.1.0":\n  version "7.22.5"\n\nlodash@^4.17.0:\n  version "4.17.21"\n');
+    assert.deepEqual(d.map((x) => x.name + "@" + x.version), ["@babel/core@7.22.5", "lodash@4.17.21"]);
+  });
+  test("requirements pins only", () => {
+    const d = parseManifest("requirements.txt", "django==3.2.0\nrequests>=2.0\nflask[async]==2.0.1 # web\n");
+    assert.deepEqual(d.map((x) => x.name), ["django", "flask"]);
+    assert.equal(d[1].line, 3);
+  });
+  test("go.mod", () => {
+    const d = parseManifest("go.mod", "module x\n\nrequire (\n\tgithub.com/gin-gonic/gin v1.7.0\n\tgolang.org/x/net v0.0.1 // indirect\n)\n");
+    assert.equal(d.length, 2); assert.equal(d[0].version, "1.7.0"); assert.equal(d[0].ecosystem, "Go");
+  });
+  test("Cargo.lock + Gemfile.lock", () => {
+    assert.equal(parseManifest("Cargo.lock", '[[package]]\nname = "serde"\nversion = "1.0.100"\n')[0].ecosystem, "crates.io");
+    assert.equal(parseManifest("Gemfile.lock", "GEM\n  remote: x\n  specs:\n    rails (6.0.0)\n      actionpack (= 6.0.0)\n")[0].name, "rails");
+  });
+  test("CVSS 3.1 base scores", () => {
+    assert.equal(cvssBase("CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"), 9.8);
+    assert.equal(cvssBase("CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H"), 10);
+    assert.equal(cvssBase("CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N"), 6.1);
+  });
+  test("OSV severity + fixed version", () => {
+    assert.equal(osvSeverity({ database_specific: { severity: "MODERATE" } }), "medium");
+    assert.equal(osvSeverity({ severity: [{ type: "CVSS_V3", score: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H" }] }), "critical");
+    assert.equal(osvFixed({ affected: [{ package: { name: "lodash" }, ranges: [{ events: [{ introduced: "0" }, { fixed: "4.17.21" }] }] }] }, "lodash"), "4.17.21");
+  });
+  test("score + SARIF", () => {
+    assert.equal(repoScore([]), 100);
+    assert.ok(repoScore([{ sev: "critical" }]) < 100);
+    const s = toSarif([{ ruleId: "js.eval", title: "x", sev: "high", path: "a.js", line: 3, col: 1 }], { repo: "o/r", sha: "abc" });
+    assert.equal(s.version, "2.1.0");
+    assert.equal(s.runs[0].results[0].locations[0].physicalLocation.region.startLine, 3);
+  });
+});

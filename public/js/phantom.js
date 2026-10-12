@@ -429,7 +429,8 @@ function phParsePcap(buf) {
 // ============================================================================
 // PHANTOM has no live capture path. Packets come either from the demo dataset
 // (tagged simulated) or from a user-imported classic pcap file (tagged imported).
-// The anomaly list is always demo data, so it is always tagged simulated.
+// Anomalies follow their source: demo samples are tagged simulated, heuristic
+// findings from an imported capture are tagged pcap-import.
 var PH_SEV = { CRITICAL: 'critical', HIGH: 'high', MEDIUM: 'medium', LOW: 'low', INFO: 'info' };
 var PH_IP_RE = /\b\d{1,3}(?:\.\d{1,3}){3}\b/g;
 var PH_DOMAIN_RE = /\b(?:[a-z0-9-]+\.)+[a-z]{2,}\b/gi;
@@ -481,7 +482,7 @@ function phSendHosts(btn, packets, imported) {
 }
 
 // Anomalies -> ALERT (with severity), linked to the IPs/domains named in their evidence.
-function phSendAnomalies(btn, anomalies) {
+function phSendAnomalies(btn, anomalies, imported) {
   phSendGraph(btn, function(gb) {
     var created = 0, updated = 0, links = 0;
     anomalies.forEach(function(a) {
@@ -490,13 +491,13 @@ function phSendAnomalies(btn, anomalies) {
       var domains = phUnique((text.match(PH_DOMAIN_RE) || []).filter(function(d) { return !/^\d+(\.\d+)+$/.test(d); }));
       var ar = gb.sendToGraph('PHANTOM', [{
         type: 'ALERT', name: 'PHANTOM: ' + a.type,
-        data: { description: a.description, evidence: a.evidence, recommendation: a.recommendation, involvedIPs: ips.join(', '), simulated: true },
-        opts: { tags: ['phantom', 'anomaly', 'simulated'], severity: PH_SEV[a.severity] || null }
+        data: { description: a.description, evidence: a.evidence, recommendation: a.recommendation, involvedIPs: ips.join(', '), simulated: !imported },
+        opts: { tags: ['phantom', 'anomaly', imported ? 'pcap-import' : 'simulated'], severity: PH_SEV[a.severity] || null }
       }], undefined, true);
       created += ar.created; updated += ar.updated;
       var alert = ar.entities[0];
-      var rr = gb.sendToGraph('PHANTOM', ips.map(function(ip) { return phHostItem(ip, { seenIn: a.type }); }).concat(domains.map(function(d) {
-        return { type: 'DOMAIN', name: d.toLowerCase(), data: { seenIn: a.type, simulated: true }, opts: { tags: ['phantom', 'network', 'simulated'] } };
+      var rr = gb.sendToGraph('PHANTOM', ips.map(function(ip) { return phHostItem(ip, { seenIn: a.type }, imported); }).concat(domains.map(function(d) {
+        return { type: 'DOMAIN', name: d.toLowerCase(), data: { seenIn: a.type, simulated: !imported }, opts: { tags: ['phantom', 'network', imported ? 'pcap-import' : 'simulated'] } };
       })), undefined, true);
       created += rr.created; updated += rr.updated;
       if (alert) rr.entities.forEach(function(e) {
@@ -504,7 +505,7 @@ function phSendAnomalies(btn, anomalies) {
       });
     });
     return { created: created, updated: updated, summary: anomalies.length + ' alerts, ' + created + ' added, ' + links + ' links' };
-  });
+  }, imported ? 'tagged pcap-import' : 'tagged simulated');
 }
 
 // ============================================================================
@@ -1020,48 +1021,68 @@ export function renderPhantom(main) {
   // TAB 1: DASHBOARD
   // ========================================================================
   function renderDashboard(c) {
-    var conns = [];
-    var states = ['ESTABLISHED', 'TIME_WAIT', 'CLOSE_WAIT', 'SYN_SENT', 'FIN_WAIT', 'LISTENING'];
-    var protos = ['TCP', 'UDP', 'HTTP', 'TLS', 'DNS', 'ICMP'];
-    for (var i = 0; i < 30; i++) {
-      var proto = protos[Math.floor(Math.random() * protos.length)];
-      conns.push({
-        srcIP: '10.0.0.' + (Math.floor(Math.random() * 50) + 1),
-        dstIP: [
-          '93.184.216.34', '140.82.121.5', '172.217.14.99', '104.16.85.20',
-          '185.199.108.153', '151.101.1.140', '13.107.42.14', '198.51.100.44'
-        ][Math.floor(Math.random() * 8)],
-        port: [80, 443, 53, 22, 8080, 3389, 445, 8443, 3306, 5432][Math.floor(Math.random() * 10)],
-        protocol: proto,
-        bytes: Math.floor(Math.random() * 500000) + 100,
-        state: states[Math.floor(Math.random() * states.length)],
-      });
+    if (packets.length === 0) {
+      c.innerHTML =
+        '<div class="ph-grid">' +
+          '<div class="ph-stat"><div class="ph-stat-n">0</div><div class="ph-stat-l">Conversations</div></div>' +
+          '<div class="ph-stat"><div class="ph-stat-n">0</div><div class="ph-stat-l">Protocols Detected</div></div>' +
+          '<div class="ph-stat"><div class="ph-stat-n">0 B</div><div class="ph-stat-l">Total Data Transfer</div></div>' +
+          '<div class="ph-stat"><div class="ph-stat-n">&mdash;</div><div class="ph-stat-l">Average Throughput</div></div>' +
+        '</div>' +
+        '<div class="ph-empty">No capture loaded. Import a .pcap file.<div style="margin-top:12px"><button class="ph-btn" id="ph-dash-import">Import PCAP</button></div></div>';
+      var di = c.querySelector('#ph-dash-import');
+      if (di) di.onclick = function() {
+        activeTab = 'capture';
+        render();
+        var inp = main.querySelector('#ph-pcap-input');
+        if (inp) inp.click();
+      };
+      return;
     }
+    // Conversations (src -> dst:port/proto) aggregated from the loaded capture.
+    var convMap = {};
+    packets.forEach(function(p) {
+      var k = p.srcIP + '>' + p.dstIP + ':' + p.dstPort + '/' + p.protocol;
+      var cv = convMap[k] || (convMap[k] = { srcIP: p.srcIP, dstIP: p.dstIP, port: p.dstPort, protocol: p.protocol, bytes: 0, pkts: 0, flags: '' });
+      cv.bytes += p.length || 0;
+      cv.pkts++;
+      if (p.flags) cv.flags = p.flags;
+    });
+    var conns = Object.keys(convMap).map(function(k) { return convMap[k]; })
+      .sort(function(a, b) { return b.bytes - a.bytes; });
+    conns.forEach(function(cn) {
+      var f = cn.flags;
+      cn.state = !f ? '-' : f.indexOf('RST') >= 0 ? 'RESET' : f.indexOf('FIN') >= 0 ? 'CLOSING' : f === 'SYN' ? 'SYN_SENT' : 'ESTABLISHED';
+    });
+    conns = conns.slice(0, 100);
 
     var protoCounts = {};
-    conns.forEach(function(cn) { protoCounts[cn.protocol] = (protoCounts[cn.protocol] || 0) + 1; });
-    var total = conns.length;
+    packets.forEach(function(p) { protoCounts[p.protocol] = (protoCounts[p.protocol] || 0) + 1; });
+    var total = packets.length;
 
     var topTalkers = {};
-    conns.forEach(function(cn) {
-      topTalkers[cn.srcIP] = topTalkers[cn.srcIP] || { packets: 0, bytes: 0, proto: {} };
-      topTalkers[cn.srcIP].packets++;
-      topTalkers[cn.srcIP].bytes += cn.bytes;
-      topTalkers[cn.srcIP].proto[cn.protocol] = true;
+    var totalBytes = 0;
+    packets.forEach(function(p) {
+      topTalkers[p.srcIP] = topTalkers[p.srcIP] || { packets: 0, bytes: 0, proto: {} };
+      topTalkers[p.srcIP].packets++;
+      topTalkers[p.srcIP].bytes += p.length || 0;
+      topTalkers[p.srcIP].proto[p.protocol] = true;
+      totalBytes += p.length || 0;
     });
     var talkerArr = Object.entries(topTalkers).map(function(e) {
       return { ip: e[0], packets: e[1].packets, bytes: e[1].bytes, protocols: Object.keys(e[1].proto).join(', ') };
     }).sort(function(a, b) { return b.bytes - a.bytes; }).slice(0, 10);
 
-    var bwMbps = (Math.random() * 80 + 20).toFixed(1);
+    var span = packets.length > 1 ? packets[packets.length - 1].ts - packets[0].ts : 0;
+    var bwMbps = span > 0 ? (totalBytes * 8 / span / 1e6).toFixed(2) + ' Mbps' : '&mdash;';
 
     c.innerHTML =
-      '<div class="ph-src-banner demo" style="margin:0 0 12px"><b>Demo data</b> - this dashboard shows randomly generated sample connections. A browser page cannot see your machine\'s live connections; import a .pcap in the Capture tab to analyze real traffic.</div>' +
+      sourceBanner() +
       '<div class="ph-grid">' +
-        '<div class="ph-stat"><div class="ph-stat-n">' + conns.length + '</div><div class="ph-stat-l">Active Connections</div></div>' +
+        '<div class="ph-stat"><div class="ph-stat-n">' + Object.keys(convMap).length + '</div><div class="ph-stat-l">Conversations</div></div>' +
         '<div class="ph-stat"><div class="ph-stat-n">' + Object.keys(protoCounts).length + '</div><div class="ph-stat-l">Protocols Detected</div></div>' +
-        '<div class="ph-stat"><div class="ph-stat-n">' + fmtBytes(conns.reduce(function(s, cn) { return s + cn.bytes; }, 0)) + '</div><div class="ph-stat-l">Total Data Transfer</div></div>' +
-        '<div class="ph-stat"><div class="ph-stat-n">' + bwMbps + ' Mbps</div><div class="ph-stat-l">Bandwidth (simulated)</div></div>' +
+        '<div class="ph-stat"><div class="ph-stat-n">' + fmtBytes(totalBytes) + '</div><div class="ph-stat-l">Total Data Transfer</div></div>' +
+        '<div class="ph-stat"><div class="ph-stat-n">' + bwMbps + '</div><div class="ph-stat-l">Average Throughput</div></div>' +
       '</div>' +
 
       '<div class="ph-panel"><div class="ph-panel-h">Protocol Distribution</div><div class="ph-panel-body">' +
@@ -1080,7 +1101,7 @@ export function renderPhantom(main) {
         '</div>' +
       '</div></div>' +
 
-      '<div class="ph-panel"><div class="ph-panel-h">Active Connections<span class="ph-demo-tag">Demo data</span></div><div class="ph-panel-body">' +
+      '<div class="ph-panel"><div class="ph-panel-h">Conversations (top ' + conns.length + ' by bytes)</div><div class="ph-panel-body">' +
         '<div class="ph-scroll">' +
           '<table class="ph-table"><thead><tr><th>#</th><th>Source</th><th>Destination</th><th>Port</th><th>Protocol</th><th>Bytes</th><th>State</th></tr></thead><tbody>' +
           conns.map(function(cn, idx) {
@@ -1095,7 +1116,7 @@ export function renderPhantom(main) {
         '</div>' +
       '</div></div>' +
 
-      '<div class="ph-panel"><div class="ph-panel-h">Top Talkers<span class="ph-demo-tag">Demo data</span></div><div class="ph-panel-body">' +
+      '<div class="ph-panel"><div class="ph-panel-h">Top Talkers</div><div class="ph-panel-body">' +
         '<table class="ph-table"><thead><tr><th>#</th><th>IP Address</th><th>Packets</th><th>Bytes</th><th>Protocols</th></tr></thead><tbody>' +
         talkerArr.map(function(t, i) {
           return '<tr><td>' + (i + 1) + '</td><td style="font-family:var(--font-mono,monospace)">' + esc(t.ip) + '</td><td>' + t.packets + '</td><td>' + fmtBytes(t.bytes) + '</td><td>' + esc(t.protocols) + '</td></tr>';
@@ -1116,7 +1137,7 @@ export function renderPhantom(main) {
         (packets.length ? '<button class="ph-btn ghost" id="ph-hosts-graph" title="' + (isImported() ? 'Hosts from the imported capture are tagged pcap-import' : 'Demo capture data is tagged simulated') + '">Send hosts to Security Graph</button>' : '') +
       '</div>' +
       (packets.length === 0 ?
-        '<div class="ph-empty">No capture loaded. Click "Load Demo Capture" to explore sample network traffic, or import a classic .pcap file (parsed locally in your browser).</div>' :
+        '<div class="ph-empty">No capture loaded. Import a .pcap file (classic libpcap, parsed locally in your browser). The demo capture is available as an explicit example.</div>' :
         '<div style="margin-bottom:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">' +
           '<input id="ph-filter" type="text" placeholder="Filter by IP, protocol, or keyword..." style="flex:1;min-width:200px;padding:6px 10px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--txt);font-size:.78rem;font-family:inherit">' +
           '<select id="ph-proto-filter" style="padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--txt);font-size:.76rem;font-family:inherit"><option value="">All Protocols</option><option>TCP</option><option>UDP</option><option>DNS</option><option>HTTP</option><option>TLS</option><option>ICMP</option><option>ARP</option></select>' +
@@ -1484,10 +1505,16 @@ export function renderPhantom(main) {
   // TAB 5: ANOMALY DETECTION
   // ========================================================================
   function renderAnomaly(c) {
-    var anomalies = SAMPLE_ANOMALIES;
-    if (packets.length > 0) {
+    // No capture: nothing to analyze. Demo capture: its matching built-in sample
+    // findings (labelled demo). Imported capture: only findings computed from it.
+    var anomalies = [];
+    if (packets.length > 0 && dataSource && dataSource.demo) {
+      anomalies = SAMPLE_ANOMALIES;
+    } else if (packets.length > 0) {
       var shellPkts = packets.filter(function(p) { return p.info.indexOf('reverse shell') >= 0 || p.info.indexOf('/bin/sh') >= 0; });
       var dnsTunnel = packets.filter(function(p) { return p.protocol === 'DNS' && p.info.length > 40 && (p.info.indexOf('TXT') >= 0 || p.info.indexOf('.c2.') >= 0); });
+      if (shellPkts.length) anomalies.push({ severity: 'CRITICAL', type: 'Shell Payload', description: 'Packet payload or info references a shell (/bin/sh or reverse shell).', evidence: 'Packets #' + shellPkts.slice(0, 10).map(function(p) { return p.id; }).join(', ') + ' (' + shellPkts.length + ' total)', recommendation: 'Inspect the stream in Follow Stream and isolate the source host if unauthorized.' });
+      if (dnsTunnel.length) anomalies.push({ severity: 'HIGH', type: 'Possible DNS Tunneling', description: 'Long DNS query names with TXT records or c2-style labels.', evidence: 'Packets #' + dnsTunnel.slice(0, 10).map(function(p) { return p.id; }).join(', ') + ' (' + dnsTunnel.length + ' total)', recommendation: 'Review the queried domains in the DNS Inspector and block confirmed tunnels.' });
     }
 
     var sevCounts = { CRITICAL: 0, HIGH: 0, MEDIUM: 0, LOW: 0, INFO: 0 };
@@ -1500,9 +1527,14 @@ export function renderPhantom(main) {
         '<div class="ph-stat"><div class="ph-stat-n" style="color:#eab308">' + sevCounts.MEDIUM + '</div><div class="ph-stat-l">Medium</div></div>' +
         '<div class="ph-stat"><div class="ph-stat-n" style="color:#22c55e">' + sevCounts.LOW + '</div><div class="ph-stat-l">Low / Info</div></div>' +
       '</div>' +
-      '<div class="ph-src-banner demo" style="margin:0 0 12px"><b>Demo data</b> - the findings below are built-in sample anomalies. They are not computed from ' + (isImported() ? 'your imported capture' : 'the loaded packets') + '.</div>' +
-      '<div style="margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap">' + (packets.length === 0 ? '<button class="ph-btn" id="ph-run-anomaly">Load Demo Capture</button>' : '') +
-        '<button class="ph-btn ghost" id="ph-anomaly-graph" title="Demo anomaly data is tagged simulated">Send ' + anomalies.length + ' anomalies to Security Graph</button></div>' +
+      (packets.length === 0 ?
+        '<div class="ph-empty">No capture loaded. Import a .pcap file.<div style="margin-top:12px"><button class="ph-btn" id="ph-run-anomaly">Import PCAP</button></div></div>' :
+      (dataSource && dataSource.demo ?
+        '<div class="ph-src-banner demo" style="margin:0 0 12px"><b>Demo data</b> - the findings below are built-in sample anomalies for the demo capture.</div>' :
+        '<div class="ph-src-banner real" style="margin:0 0 12px"><b>Imported capture</b> - findings below are computed from your capture by simple payload/DNS heuristics.</div>') +
+      (anomalies.length ?
+        '<div style="margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap"><button class="ph-btn ghost" id="ph-anomaly-graph" title="' + (dataSource && dataSource.demo ? 'Demo anomaly data is tagged simulated' : 'Anomalies from the imported capture') + '">Send ' + anomalies.length + ' anomalies to Security Graph</button></div>' :
+        '<div class="ph-empty">No anomalies detected in this capture.</div>')) +
       anomalies.map(function(a) {
         return '<div class="ph-alert">' +
           '<div class="ph-alert-head">' +
@@ -1516,11 +1548,13 @@ export function renderPhantom(main) {
       }).join('');
 
     var anomGraphBtn = c.querySelector('#ph-anomaly-graph');
-    if (anomGraphBtn) anomGraphBtn.onclick = function() { phSendAnomalies(anomGraphBtn, anomalies); };
+    if (anomGraphBtn) anomGraphBtn.onclick = function() { phSendAnomalies(anomGraphBtn, anomalies, isImported()); };
     var runBtn = c.querySelector('#ph-run-anomaly');
     if (runBtn) runBtn.onclick = function() {
-      if (packets.length === 0) { loadDemo(); }
+      activeTab = 'capture';
       render();
+      var inp = main.querySelector('#ph-pcap-input');
+      if (inp) inp.click();
     };
   }
 

@@ -60,20 +60,8 @@ const RISK_MATRIX = {
     12: "#ef6c00", 15: "#e65100", 16: "#d84315", 20: "#c62828", 25: "#b71c1c" }
 };
 
-const SAMPLE_INCIDENT = [
-  { time: "2026-03-15 02:14:33", event: "Anomalous DNS query to c2.evil.xyz from 10.0.5.22", severity: "medium", phase: "c2" },
-  { time: "2026-03-15 02:14:35", event: "IDS alert: Cobalt Strike beacon pattern detected", severity: "high", phase: "c2" },
-  { time: "2026-03-15 02:15:01", event: "Process notepad.exe spawned cmd.exe on 10.0.5.22", severity: "high", phase: "exploit" },
-  { time: "2026-03-15 02:15:12", event: "Lateral movement: SMB connection from 10.0.5.22 to 10.0.5.50", severity: "critical", phase: "actions" },
-  { time: "2026-03-15 02:15:30", event: "Credential dump: lsass.exe memory access on 10.0.5.50", severity: "critical", phase: "actions" },
-  { time: "2026-03-15 02:16:00", event: "New admin account 'svc_backup' created on DC01", severity: "critical", phase: "install" },
-  { time: "2026-03-15 02:17:22", event: "Large data transfer (2.3 GB) to external IP 185.x.x.x", severity: "critical", phase: "actions" },
-  { time: "2026-03-15 02:18:00", event: "Scheduled task created for persistence on DC01", severity: "high", phase: "install" },
-  { time: "2026-03-15 02:20:00", event: "SOC analyst acknowledged alert, began investigation", severity: "info", phase: "response" },
-  { time: "2026-03-15 02:25:00", event: "Network segment 10.0.5.0/24 isolated", severity: "info", phase: "response" },
-  { time: "2026-03-15 02:30:00", event: "Forensic image capture initiated on 10.0.5.22", severity: "info", phase: "response" },
-  { time: "2026-03-15 03:00:00", event: "C2 domain sinkholed via DNS", severity: "info", phase: "response" },
-];
+const tvEsc = (v) => String(v == null ? "" : v).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const tvToast = (m, t) => { try { (window.dnToast || window.showToast || (() => {}))(m, t); } catch (_) {} };
 
 const SEV_COLORS = { critical: "#ff1744", high: "#ff6d00", medium: "#ffd600", low: "#00e676", info: "#448aff" };
 
@@ -124,6 +112,32 @@ export function renderTimelineViz(container) {
   `;
 
   const panel = container.querySelector("#viz-panel");
+  const incident = [];
+
+  async function addEvent() {
+    if (!window.dnModal) { tvToast("Dialog unavailable, reload the page", "error"); return; }
+    const r = await window.dnModal({
+      title: "Add Event",
+      desc: "Severity: critical, high, medium, low or info. Leave time blank to use now.",
+      fields: [
+        { label: "Time", placeholder: "YYYY-MM-DD HH:MM:SS" },
+        { label: "Event", placeholder: "What happened" },
+        { label: "Severity", placeholder: "e.g. high" },
+        { label: "Phase (optional)", placeholder: "e.g. c2, response" }
+      ],
+      submitText: "Add"
+    });
+    if (!r) return;
+    const event = r[1].trim(), severity = r[2].trim().toLowerCase();
+    if (!event || !SEV_COLORS[severity]) {
+      tvToast(!event ? "Event needs a description" : "Severity must be critical, high, medium, low or info", "error");
+      return;
+    }
+    const time = r[0].trim() || new Date().toISOString().replace("T", " ").slice(0, 19);
+    incident.push({ time, event, severity, phase: r[3].trim() });
+    incident.sort((x, y) => String(x.time).localeCompare(String(y.time)));
+    showTab("timeline");
+  }
   const tabs = container.querySelectorAll(".viz-tab");
 
   function showTab(tab) {
@@ -227,8 +241,11 @@ export function renderTimelineViz(container) {
       `;
     } else if (tab === "timeline") {
       panel.innerHTML = `
-        <h3 style="font-size:1.1rem;font-weight:600;margin:0 0 4px;">Incident Timeline</h3>
-        <p style="font-size:.78rem;color:var(--txt-dim,#888);margin:0 0 16px;">Sample incident: Cobalt Strike intrusion with lateral movement and data exfiltration.</p>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin:0 0 4px;">
+          <h3 style="font-size:1.1rem;font-weight:600;margin:0;">Incident Timeline</h3>
+          <button id="tv-add-event" class="btn sm">Add Event</button>
+        </div>
+        <p style="font-size:.78rem;color:var(--txt-dim,#888);margin:0 0 16px;">Build your incident timeline event by event. Events are sorted by time.</p>
         <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
           <span style="font-size:.68rem;display:flex;align-items:center;gap:4px;"><span style="width:8px;height:8px;border-radius:50%;background:#ff1744;"></span> Critical</span>
           <span style="font-size:.68rem;display:flex;align-items:center;gap:4px;"><span style="width:8px;height:8px;border-radius:50%;background:#ff6d00;"></span> High</span>
@@ -237,21 +254,23 @@ export function renderTimelineViz(container) {
         </div>
         <div style="position:relative;padding-left:40px;">
           <div style="position:absolute;left:19px;top:0;bottom:0;width:2px;background:var(--border,#333);"></div>
-          ${SAMPLE_INCIDENT.map((e, i) => `
+          ${incident.length ? "" : `<p style="font-size:.85rem;color:var(--txt-dim,#888);margin:0;padding:6px 0;">No events yet. Add an event.</p>`}
+          ${incident.map((e, i) => `
             <div style="position:relative;margin-bottom:16px;animation:fadeInUp .3s ease ${i * 0.05}s both;">
               <div style="position:absolute;left:-29px;top:4px;width:12px;height:12px;border-radius:50%;background:${SEV_COLORS[e.severity]};border:2px solid var(--bg,#0a0e16);z-index:1;"></div>
               <div style="background:var(--bg-alt,#111);border:1px solid var(--border,#222);border-radius:8px;padding:10px 14px;border-left:3px solid ${SEV_COLORS[e.severity]};">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-                  <code style="font-size:.72rem;color:var(--txt-dim,#888);">${e.time}</code>
-                  <span style="font-size:.65rem;padding:2px 6px;border-radius:4px;background:${SEV_COLORS[e.severity]}22;color:${SEV_COLORS[e.severity]};text-transform:uppercase;font-weight:600;">${e.severity}</span>
+                  <code style="font-size:.72rem;color:var(--txt-dim,#888);">${tvEsc(e.time)}</code>
+                  <span style="font-size:.65rem;padding:2px 6px;border-radius:4px;background:${SEV_COLORS[e.severity]}22;color:${SEV_COLORS[e.severity]};text-transform:uppercase;font-weight:600;">${tvEsc(e.severity)}</span>
                 </div>
-                <p style="font-size:.82rem;color:var(--txt,#fff);margin:0;">${e.event}</p>
-                <span style="font-size:.65rem;color:var(--txt-dim,#666);margin-top:4px;display:inline-block;">Phase: ${e.phase}</span>
+                <p style="font-size:.82rem;color:var(--txt,#fff);margin:0;">${tvEsc(e.event)}</p>
+                ${e.phase ? `<span style="font-size:.65rem;color:var(--txt-dim,#666);margin-top:4px;display:inline-block;">Phase: ${tvEsc(e.phase)}</span>` : ""}
               </div>
             </div>
           `).join("")}
         </div>
       `;
+      panel.querySelector("#tv-add-event").onclick = addEvent;
     }
   }
 

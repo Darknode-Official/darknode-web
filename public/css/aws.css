@@ -457,13 +457,14 @@ html:is([data-style=pro], [data-style=dark]) body.app {
   & .app-main :is(input:is([type=text], [type=search], [type=url], [type=email], [type=number], [type=password], [type=date], [type=time], :not([type])), select, textarea) {
     background-color: var(--aws-in-bg) !important;
     border: 1px solid var(--aws-in-line) !important;
-    border-radius: 8px !important;
+    border-radius: var(--btn-radius) !important;
     color: var(--txt) !important;
     font-family: var(--aws-font);
     font-size: 14px;
     box-shadow: none !important;
   }
-  & .app-main :is(input, select):not([type=checkbox], [type=radio], [type=range], [type=color], [type=file]) { min-height: 32px; }
+  /* One control height everywhere: inputs and selects line up with .btn (36px). */
+  & .app-main :is(input, select):not([type=checkbox], [type=radio], [type=range], [type=color], [type=file]) { min-height: 36px; padding-block: 0 !important; }
   & .app-main :is(input, select, textarea):focus {
     border-color: var(--acc) !important;
     box-shadow: 0 0 0 1px var(--acc) !important;
@@ -537,17 +538,22 @@ html:is([data-style=pro], [data-style=dark]):not(#aws-a):not(#aws-b) body.app {
     box-shadow: var(--aws-shadow) !important;
   }
 
-  /* buttons: pill shape; plain .btn is primary (orange), .ghost is the outlined normal button */
+  /* buttons: one shape and size scale (4px corners from buttons.css; 30 / 36 / 40px
+     tall); plain .btn is primary (orange), .ghost is the outlined normal button */
   & .btn {
-    --btn-radius: 20px;
     font-family: var(--aws-font) !important;
     font-weight: 700 !important;
     font-size: 14px !important;
     letter-spacing: .01em !important;
     text-transform: none !important;
-    padding: 4px 20px !important;
-    min-height: 32px;
-    border-width: 2px !important;
+    padding: 0 16px !important;
+    min-height: 36px;
+    line-height: 1.2 !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    border-width: 1px !important;
     border-style: solid !important;
     box-shadow: none !important;
     transform: none !important;
@@ -578,8 +584,8 @@ html:is([data-style=pro], [data-style=dark]):not(#aws-a):not(#aws-b) body.app {
     color: var(--aws-ghost-txt-h) !important;
   }
   & .btn.danger { background: var(--card) !important; border-color: var(--bad) !important; color: var(--bad) !important; }
-  & .btn.sm { padding: 2px 14px !important; min-height: 28px; font-size: 13px !important; }
-  & .btn.lg { padding: 6px 24px !important; min-height: 36px; }
+  & .btn.sm { padding: 0 12px !important; min-height: 30px; font-size: 13px !important; }
+  & .btn.lg { padding: 0 22px !important; min-height: 40px; }
   & .btn:disabled { background: var(--card2) !important; border-color: var(--line) !important; color: var(--mut) !important; }
 
   & .app-main .panel > .panel-h {

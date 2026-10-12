@@ -667,7 +667,9 @@ export function cleanupOracle() {
 
 export function renderOracle(main) {
   var activeTab = 'dashboard';
-  var iocs = IOC_DB.map(function(i) { return Object.assign({}, i); });
+  // The user's working IOC list starts empty; it is filled only by Add IOC /
+  // Bulk Import. IOC_DB remains a read-only reference used for attribution.
+  var iocs = [];
   var feedData = FALLBACK_FEED.slice();
   var feedIsFallback = true;   // true while feedData holds the built-in example rows
 
@@ -907,15 +909,23 @@ export function renderOracle(main) {
   // ========== TAB 1: INTEL DASHBOARD ==========
   function renderDashboard(c) {
     var critIOCs = iocs.filter(function(i) { return i.severity === 'Critical'; }).length;
-    var activeCampaigns = CAMPAIGN_DB.filter(function(c) { return c.status === 'Active'; }).length;
+    // Reference campaigns whose actor matches a tag on one of the user's IOCs.
+    var iocActors = {};
+    iocs.forEach(function(i) { (i.tags || []).forEach(function(t) { var a = _orFindActor(t); if (a) iocActors[a.name.toLowerCase()] = 1; }); });
+    var linkedCampaigns = CAMPAIGN_DB.filter(function(cp) { var a = _orFindActor(cp.actor); return !!(a && iocActors[a.name.toLowerCase()]); }).length;
+    var timeline = _genTimeline();
     var regions = {};
     APT_DB.forEach(function(a) {
       var r = a.nation; regions[r] = (regions[r] || 0) + 1;
     });
 
     c.innerHTML =
+      (iocs.length ? '' : '<div class="or-panel"><div class="or-panel-b" style="text-align:center;color:var(--mut,#888);font-size:.78rem;padding:22px">' +
+        '<div style="margin-bottom:10px">No indicators yet. Add or import IOCs to populate your intel dashboard.</div>' +
+        '<button class="or-btn fill" data-or-goto="iocs">Add or import IOCs</button>' +
+      '</div></div>') +
       '<div class="or-grid4" style="margin-bottom:14px">' +
-        '<div class="or-stat"><div class="or-stat-v" style="color:#22c55e">' + activeCampaigns + '</div><div class="or-stat-l">Active Campaigns</div></div>' +
+        '<div class="or-stat"><div class="or-stat-v" style="color:#22c55e">' + linkedCampaigns + '</div><div class="or-stat-l">Campaigns Linked to Your IOCs</div></div>' +
         '<div class="or-stat"><div class="or-stat-v" style="color:#3b82f6">' + APT_DB.length + '</div><div class="or-stat-l">Tracked Actors</div></div>' +
         '<div class="or-stat"><div class="or-stat-v" style="color:#8b5cf6">' + iocs.length + '</div><div class="or-stat-l">Total IOCs</div></div>' +
         '<div class="or-stat"><div class="or-stat-v" style="color:#ff1744">' + critIOCs + '</div><div class="or-stat-l">Critical Indicators</div></div>' +
@@ -933,8 +943,9 @@ export function renderOracle(main) {
           '</div>' +
         '</div>' +
         '<div class="or-panel">' +
-          '<div class="or-panel-h">Trending IOCs</div>' +
+          '<div class="or-panel-h">Recent IOCs</div>' +
           '<div class="or-panel-b">' +
+            (iocs.length ? '' : '<div style="text-align:center;color:var(--mut,#888);font-size:.74rem;padding:16px">No indicators yet</div>') +
             iocs.slice(0, 10).map(function(i) {
               return '<div class="or-feed-item">' +
                 '<span class="or-badge" style="background:' + _orSevBg(i.severity) + ';color:' + _orSevColor(i.severity) + '">' + esc(i.severity) + '</span>' +
@@ -951,18 +962,21 @@ export function renderOracle(main) {
         '<div class="or-panel-h">Activity Timeline</div>' +
         '<div class="or-panel-b">' +
           '<div>' +
-            _genTimeline().map(function(ev) {
+            (timeline.length ? '' : '<div style="text-align:center;color:var(--mut,#888);font-size:.74rem;padding:16px">No activity yet. Indicators you add and feed snapshots you load appear here.</div>') +
+            timeline.map(function(ev) {
               return '<div class="or-timeline-item"><span class="or-feed-time">' + esc(ev.time) + '</span> ' + esc(ev.text) + '</div>';
             }).join('') +
           '</div>' +
         '</div>' +
       '</div>';
+    c.querySelectorAll('[data-or-goto]').forEach(function(b) {
+      b.onclick = function() { activeTab = b.dataset.orGoto; paintTabs(); paintContent(); };
+    });
   }
 
   function _genTimeline() {
     var events = [];
     iocs.slice(0, 8).forEach(function(i) { events.push({ time: _orTimeAgo(i.added), text: 'New ' + i.type + ' IOC added: ' + i.value.substring(0, 30) + (i.value.length > 30 ? '...' : '') }); });
-    CAMPAIGN_DB.filter(function(c) { return c.status === 'Active'; }).forEach(function(c) { events.push({ time: _orTimeAgo(c.start), text: 'Campaign active: ' + c.name + ' (' + c.actor + ')' }); });
     FEED_SOURCES.forEach(function(f) {
       if (f.status === 'loaded' && f.updated) events.push({ time: _orTimeAgo(f.updated), text: 'Feed snapshot: ' + f.name + ' (' + f.count + ' entries)' });
     });
@@ -1016,7 +1030,11 @@ export function renderOracle(main) {
       '<div class="or-panel">' +
         '<div class="or-panel-h">IOC Database <span style="font-weight:400;color:var(--txt)">' + filtered.length + ' indicators</span></div>' +
         '<div style="overflow-x:auto">' +
-          '<table class="or-tbl"><thead><tr><th>Type</th><th>Value</th><th>Severity</th><th>Conf</th><th>Tags</th><th>Source</th><th>Added</th><th>Actions</th></tr></thead><tbody>' +
+          (iocs.length ? '' : '<div style="text-align:center;color:var(--mut,#888);font-size:.78rem;padding:22px">' +
+            '<div style="margin-bottom:10px">No indicators yet. Add or import IOCs.</div>' +
+            '<button class="or-btn fill sm" id="or-empty-add">Add IOC</button> <button class="or-btn sm" id="or-empty-bulk">Bulk Import</button>' +
+          '</div>') +
+          '<table class="or-tbl"' + (iocs.length ? '' : ' style="display:none"') + '><thead><tr><th>Type</th><th>Value</th><th>Severity</th><th>Conf</th><th>Tags</th><th>Source</th><th>Added</th><th>Actions</th></tr></thead><tbody>' +
           filtered.slice(0, 50).map(function(i) {
             return '<tr>' +
               '<td><span class="or-badge" style="background:rgba(59,130,246,.1);color:' + _orTypeColor(i.type) + '">' + esc(i.type) + '</span></td>' +
@@ -1038,6 +1056,10 @@ export function renderOracle(main) {
       var a = c.querySelector('#or-bulk-area');
       a.style.display = a.style.display === 'none' ? 'block' : 'none';
     };
+    var emptyAdd = c.querySelector('#or-empty-add');
+    if (emptyAdd) emptyAdd.onclick = function() { c.querySelector('#or-ioc-value').focus(); };
+    var emptyBulk = c.querySelector('#or-empty-bulk');
+    if (emptyBulk) emptyBulk.onclick = function() { c.querySelector('#or-bulk-area').style.display = 'block'; c.querySelector('#or-bulk-csv').focus(); };
     c.querySelector('#or-ioc-add').onclick = function() {
       var type = c.querySelector('#or-ioc-type').value;
       var value = c.querySelector('#or-ioc-value').value.trim();
@@ -1168,7 +1190,7 @@ export function renderOracle(main) {
 
     c.innerHTML =
       '<div class="or-search-row">' +
-        '<span class="or-sub">' + CAMPAIGN_DB.length + ' campaigns</span>' +
+        '<span class="or-sub">' + CAMPAIGN_DB.length + ' reference campaigns (public reporting, not your environment)</span>' +
         '<span style="flex:1"></span>' +
         '<button class="or-btn sm fill" id="or-camp-graph" title="Built-in campaign data is tagged simulated">Send ' + CAMPAIGN_DB.length + ' campaigns to Security Graph</button>' +
       '</div>' +
@@ -1465,7 +1487,7 @@ export function renderOracle(main) {
       return '<h2>Threat Intelligence Executive Brief</h2>' +
         '<p><strong>Generated:</strong> ' + now + ' | <strong>Classification:</strong> TLP:AMBER | <strong>Platform:</strong> Darknode ORACLE</p>' +
         '<h3>Threat Landscape Summary</h3>' +
-        '<p>ORACLE is tracking <strong>' + APT_DB.length + ' threat actor groups</strong> across ' + Object.keys(APT_DB.reduce(function(m,a){m[a.nation]=1;return m;},{})).length + ' nation-states, with <strong>' + activeCampaigns.length + ' active campaigns</strong> currently in progress. The IOC database contains <strong>' + iocs.length + ' indicators</strong>, of which ' + critIOCs.length + ' are classified as Critical severity.</p>' +
+        '<p>ORACLE is tracking <strong>' + APT_DB.length + ' threat actor groups</strong> across ' + Object.keys(APT_DB.reduce(function(m,a){m[a.nation]=1;return m;},{})).length + ' nation-states, with <strong>' + activeCampaigns.length + ' reference campaigns</strong> marked active in public reporting. Your IOC list contains <strong>' + iocs.length + ' indicators</strong>, of which ' + critIOCs.length + ' are classified as Critical severity.</p>' +
         '<h3>Top Risks</h3>' +
         '<ul>' +
           '<li><strong>Critical Infrastructure Pre-positioning:</strong> Volt Typhoon and Salt Typhoon continue targeting US telecom and energy sectors with living-off-the-land techniques that evade traditional detection.</li>' +
@@ -1502,6 +1524,7 @@ export function renderOracle(main) {
     if (type === 'ioc-report') {
       return '<h2>Indicator of Compromise Report</h2>' +
         '<p><strong>Generated:</strong> ' + now + ' | <strong>Total IOCs:</strong> ' + iocs.length + '</p>' +
+        (iocs.length ? '' : '<p>No indicators yet. Add or import IOCs in the IOC Manager to build this report.</p>') +
         '<h3>Distribution by Type</h3>' +
         '<ul>' + ['IP', 'Domain', 'Hash-MD5', 'Hash-SHA256', 'URL', 'Email', 'CVE'].map(function(t) { var n = iocs.filter(function(i){return i.type===t;}).length; return '<li>' + t + ': ' + n + ' indicators</li>'; }).join('') + '</ul>' +
         '<h3>Distribution by Severity</h3>' +
@@ -1513,7 +1536,7 @@ export function renderOracle(main) {
     }
 
     return '<h2>Campaign Intelligence Report</h2>' +
-      '<p><strong>Generated:</strong> ' + now + ' | <strong>Active Campaigns:</strong> ' + activeCampaigns.length + '</p>' +
+      '<p><strong>Generated:</strong> ' + now + ' | <strong>Active Reference Campaigns:</strong> ' + activeCampaigns.length + ' (public reporting)</p>' +
       '<h3>Active Campaign Summary</h3>' +
       activeCampaigns.map(function(camp) {
         return '<h3>' + esc(camp.name) + ' (' + esc(camp.actor) + ')</h3>' +

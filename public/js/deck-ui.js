@@ -1,12 +1,12 @@
 // ============================================================================
-// Darknode Command — a living command constellation (admin-only preview).
+// Darknode Command Center — the admin operations console (enterprise preview).
 //
-// NOT a desktop clone. The Deck is a spatial "connection hub": Darknode glows at
-// the core and the services it can work with — AI models and cybersecurity
-// platforms — orbit it as real-logo chips. Connect one and a luminous energy
-// link is drawn to the core; the connection persists locally. A second scene
-// organises every internal Darknode tool, and Spotlight (Ctrl/Cmd+K) jumps to
-// anything. Self-contained, dependency-free, no emojis.
+// A professional security command center: an executive posture home, external
+// attack-surface mapping, live threat & vulnerability intelligence, cloud-posture
+// checks, compliance frameworks, the investigation graph, the tool registry, and
+// an embedded AI assistant. Every signal is traceable to a real source or is
+// honestly labelled "coming" — nothing is simulated. Spotlight (Ctrl/Cmd+K) jumps
+// to anything. Self-contained, dependency-free, no emojis.
 //
 //   renderDeck(host, { groups, onOpen, onExit }) -> teardown()
 //     groups : [{ name, color, items:[{sec,label,badge}] }]  (internal tools)
@@ -15,20 +15,23 @@
 // ============================================================================
 
 import { startOpenRouterConnect } from "/js/openrouter-connect.js?v=20261010c";
-// Hacking diaries — offline playbook library (recon → exploit → post-ex → blue team),
-// each a sequence of real terminal commands. Data-only module; bump its ?v= when the
-// playbook content changes.
-import { DIARIES, DIARY_CATS } from "/js/diaries-data.js?v=20261011a";
+// Live-data layer: the SSRF-guarded worker proxy. dnFetchJSON routes keyless public
+// feeds (CISA KEV, FIRST EPSS, ransomware.live, crt.sh, DoH, RDAP, BGPView) through
+// /api/fetch; it throws on failure and never fabricates. net.js is stateless.
+import { dnFetch, dnFetchJSON, proxyConfigured } from "/js/net.js";
+// Attack-surface data wrappers (crt.sh / DoH / RDAP / Team Cymru ASN / HTTP probe),
+// all through the proxy above. Data-only module; bump its ?v= when it changes.
+import * as surface from "/js/deck-surface.js?v=20261011b";
 // Platform event bus (singleton — never version its import, or a second instance
 // would miss every event the rest of the app emits). Drives the live Activity
 // stream and the notifications bell.
 import { bus, EVENTS } from "/js/core/bus.js";
 
 const LS_CONN = "dn_deck_connections_v1";
-const LS_SCENE = "dn_deck_scene";          // last workspace the operator was on
+const LS_SCENE = "dn_deck_scene";          // last workspace selected
 const LS_NOTIF_SEEN = "dn_deck_notif_seen"; // ts of the last notification they read
-const LS_PINS = "dn_deck_pins_v1";          // operator-pinned tools (sec ids) shown on the overview
-const LS_NOTES = "dn_deck_notes";           // operator scratchpad, persisted locally
+const LS_PINS = "dn_deck_pins_v1";          // user-pinned tools (sec ids) shown on the overview
+const LS_NOTES = "dn_deck_notes";           // notes scratchpad, persisted locally
 
 // ---- the services Darknode can connect to. domain drives the live favicon ----
 const INTEGRATIONS = [
@@ -84,7 +87,7 @@ const INTEGRATIONS = [
 const MODELS = {
   claude:     [{ label: "Claude Opus 5.5", id: "claude-opus-5-5" }, { label: "Claude Sonnet 5.5", id: "claude-sonnet-5-5" }, { label: "Claude Haiku 5.5", id: "claude-haiku-5-5" }, { label: "Claude Fable 5.1", id: "claude-fable-5-1" }, { label: "Claude Opus 4.1", id: "claude-opus-4-1" }, { label: "Claude Sonnet 4.5", id: "claude-sonnet-4-5" }, { label: "Claude Haiku 4.5", id: "claude-haiku-4-5" }],
   openai:     [{ label: "GPT-5", id: "gpt-5" }, { label: "GPT-5 mini", id: "gpt-5-mini" }, { label: "GPT-5 nano", id: "gpt-5-nano" }, { label: "GPT-4.1", id: "gpt-4.1" }, { label: "GPT-4.1 mini", id: "gpt-4.1-mini" }, { label: "GPT-4o", id: "gpt-4o" }, { label: "o4-mini", id: "o4-mini" }, { label: "o3", id: "o3" }],
-  gemini:     [{ label: "Gemini 2.5 Pro", id: "gemini-2.5-pro" }, { label: "Gemini 2.5 Flash", id: "gemini-2.5-flash" }, { label: "Gemini 2.5 Flash-Lite", id: "gemini-2.5-flash-lite" }, { label: "Gemini 2.0 Flash", id: "gemini-2.0-flash" }],
+  gemini:     [{ label: "Gemini 3.8 Flash", id: "gemini-3.8-flash" }, { label: "Gemini 3.5 Flash", id: "gemini-3.5-flash" }, { label: "Gemini 3.1 Pro", id: "gemini-3.1-pro-preview" }, { label: "Gemini 3.1 Flash-Lite", id: "gemini-3.1-flash-lite" }],
   perplexity: [{ label: "Sonar Pro", id: "sonar-pro" }, { label: "Sonar", id: "sonar" }, { label: "Sonar Reasoning", id: "sonar-reasoning" }],
   mistral:    [{ label: "Mistral Large", id: "mistral-large-latest" }, { label: "Mistral Medium", id: "mistral-medium-latest" }, { label: "Codestral", id: "codestral-latest" }],
   groq:       [{ label: "Llama 3.3 70B", id: "llama-3.3-70b-versatile" }, { label: "DeepSeek R1 Distill", id: "deepseek-r1-distill-llama-70b" }, { label: "Gemma 2 9B", id: "gemma2-9b-it" }],
@@ -373,6 +376,60 @@ async function fetchIntel(n){
   return _cvePromise;
 }
 
+// ---- live exploitation intel: CISA KEV, FIRST EPSS, ransomware.live ----
+// All through the worker proxy (dnFetchJSON); the exact URLs the Cyber Briefing and
+// Threat Feed Aggregator tools already use, so this reuses proven, real sources.
+const KEV_URL = "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json";
+const EPSS_URL = "https://api.first.org/data/v1/epss?cve=";
+const RANSOM_URL = "https://api.ransomware.live/v2/recentvictims";
+let _kevCache = null, _kevAt = 0, _kevPromise = null;
+// Returns { set:Set<cveID>, list:[...], total:N } or throws. 10-min cache.
+async function fetchKev(){
+  if (_kevCache && Date.now() - _kevAt < 600000) return _kevCache;
+  if (_kevPromise) return _kevPromise;
+  _kevPromise = (async () => {
+    // The full catalog is ~1.8 MB, so request the proxy's large-body cap.
+    let list = [], total = 0;
+    try {
+      const d = await dnFetchJSON(KEV_URL, { timeout: 30000, max: 4000000 });
+      list = (d && d.vulnerabilities) || [];
+      total = parseInt(d && d.count, 10) || list.length;
+    } catch (_) {
+      // Proxy without the large-body cap truncates the catalog, so the JSON won't
+      // parse. Recover the real total from the "count" field near the top and any
+      // whole CVE ids present — never fabricate; throw if nothing real is readable.
+      const rawr = await dnFetch(KEV_URL, { raw: true, timeout: 30000, max: 4000000 });
+      const body = String(rawr.body || "");
+      total = parseInt((body.match(/"count"\s*:\s*(\d+)/) || [])[1] || "0", 10);
+      const ids = [...new Set((body.match(/CVE-\d{4}-\d+/g) || []))];
+      if (!total && !ids.length) throw new Error("KEV catalog unavailable");
+      list = ids.map((id) => ({ cveID: id }));
+    }
+    const set = new Set(list.map((v) => v.cveID).filter(Boolean));
+    const r = { set, list, total: total || set.size }; _kevCache = r; _kevAt = Date.now(); return r;
+  })().catch((e) => { _kevPromise = null; throw e; });
+  return _kevPromise;
+}
+// EPSS exploit-probability (0..1) keyed by CVE id, for up to ~100 ids. Never throws
+// into the caller's critical path — returns {} if the feed is unavailable.
+async function fetchEpss(ids){
+  ids = (ids || []).filter(Boolean).slice(0, 100);
+  if (!ids.length) return {};
+  try {
+    const er = await dnFetchJSON(EPSS_URL + encodeURIComponent(ids.join(",")), { timeout: 25000 });
+    const out = {}; ((er && er.data) || []).forEach((d) => { if (d && d.cve) out[d.cve] = parseFloat(d.epss) || 0; });
+    return out;
+  } catch (_) { return {}; }
+}
+// Recent ransomware-leak victims (honest live feed). Returns [] on failure.
+async function fetchRansom(limit){
+  try {
+    const d = await dnFetchJSON(RANSOM_URL, { timeout: 25000 });
+    const arr = Array.isArray(d) ? d : (d && d.data) || [];
+    return arr.slice(0, limit || 12);
+  } catch (_) { return []; }
+}
+
 // Read-only views of the real usage counters the console home writes (auth.js).
 function readStats(){
   const int = (k) => { try { return parseInt(localStorage.getItem(k) || "0", 10) || 0; } catch (_) { return 0; } };
@@ -390,6 +447,7 @@ const CSS = `
 .dk{position:fixed;inset:0;z-index:99999;overflow:hidden;isolation:isolate;color:#1a2233;background:#f4f6fa;
   font:14px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;user-select:none}
 .dk *{box-sizing:border-box;margin:0}
+:where(.dk) :where(button,input,select,textarea){font-family:inherit}
 .dk h1,.dk h2,.dk h3,.dk h4{color:#141c2e !important}
 .dk-sky{position:absolute;inset:0;z-index:0;pointer-events:none;
   background:
@@ -414,46 +472,11 @@ const CSS = `
 .dk-quit:hover{background:rgba(23,33,56,.08)}
 .dk-scene{position:absolute;inset:56px 0 0;z-index:10}
 .dk-scene[hidden]{display:none}
-/* ---------- constellation ---------- */
-.dk-con{position:absolute;inset:0;overflow:hidden}
-.dk-links{position:absolute;inset:0;z-index:1;pointer-events:none}
-.dk-links line{stroke-width:1.6;stroke-linecap:round;opacity:0;transition:opacity .5s}
-.dk-links line.on{opacity:.45}
-.dk-core{position:absolute;z-index:3;left:50%;top:50%;transform:translate(-50%,-50%);width:152px;height:152px;border-radius:50%;
-  display:grid;place-items:center;text-align:center;cursor:default;
-  background:radial-gradient(circle at 50% 40%,#ffffff 0%,#e8eef9 56%,#dbe6f7 100%);
-  box-shadow:0 0 0 1px rgba(23,33,56,.12),0 14px 34px rgba(23,33,56,.14)}
-.dk-core b{font-size:15px;font-weight:700;letter-spacing:.1em;color:#141c2e}
-.dk-core span{font-size:11px;color:#5a6680;letter-spacing:.14em}
-.dk-core::after{content:"";position:absolute;inset:-12px;border-radius:50%;border:1px solid rgba(63,120,255,.14)}
-.dk-node{position:absolute;z-index:3;width:92px;opacity:0;transform:translate(-50%,calc(-50% + var(--rise,22px)));display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer;
-  transition:transform .55s cubic-bezier(.18,.74,.2,1),opacity .5s ease}
-.dk-node.in{opacity:1;--rise:0px}
-.dk-node:hover{transform:translate(-50%,calc(-50% + var(--rise,0px))) scale(1.13);transition:transform .2s cubic-bezier(.2,.9,.3,1.3)}
-.dk-chip{position:relative;width:64px;height:64px;border-radius:14px;display:grid;place-items:center;
-  background:#ffffff;
-  border:1px solid rgba(23,33,56,.12);box-shadow:0 6px 16px rgba(0,0,0,.45);overflow:hidden}
-.dk-chip .logo{width:36px;height:36px;border-radius:9px;object-fit:contain;background:#fff;padding:3px}
-.dk-chip .mono{width:40px;height:40px;border-radius:11px;display:grid;place-items:center;font-weight:700;font-size:15px;color:#fff;
-  background:linear-gradient(160deg,var(--a,#3f78ff),rgba(0,0,0,.35))}
-.dk-node.conn .dk-chip{border-color:rgba(90,190,140,.8);box-shadow:0 0 0 1px rgba(90,190,140,.45),0 6px 16px rgba(0,0,0,.45)}
-.dk-node .nm{font-size:11.5px;font-weight:500;color:#1a2233;text-align:center;line-height:1.2}
-.dk-node .st{position:absolute;top:-5px;left:9px;width:13px;height:13px;border-radius:50%;background:#12a85f;border:2px solid #ffffff;display:none}
-.dk-node.conn .st{display:block}
-.dk-ringlbl{position:absolute;z-index:2;left:50%;transform:translateX(-50%);font-size:10.5px;letter-spacing:.3em;text-transform:uppercase;color:rgba(190,205,230,.4);font-weight:600}
-/* mobile fallback list */
-.dk-conlist{display:none;position:absolute;inset:0;overflow:auto;padding:18px}
-.dk-conlist h4{margin:14px 6px 8px;font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:#687388}
-.dk-conlist .row{display:flex;align-items:center;gap:13px;padding:12px;border-radius:14px;background:rgba(23,33,56,.04);border:1px solid rgba(23,33,56,.08);margin-bottom:8px;cursor:pointer}
-.dk-conlist .row .logo{width:34px;height:34px;border-radius:9px;background:#fff;padding:3px;object-fit:contain}
-.dk-conlist .row .mono{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;font-weight:700;color:#fff;background:linear-gradient(160deg,var(--a,#3f78ff),rgba(0,0,0,.35))}
-.dk-conlist .row .meta{flex:1;min-width:0}
-.dk-conlist .row .meta b{font-size:14px}.dk-conlist .row .meta p{font-size:11.5px;color:#93a0bb;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* ---------- detail drawer ---------- */
-.dk-drawer{position:absolute;top:0;right:0;bottom:0;width:360px;max-width:90vw;z-index:30;transform:translateX(104%);transition:transform .34s cubic-bezier(.2,.9,.3,1.1);
+.dk-drawer{position:absolute;top:0;right:0;bottom:0;width:360px;max-width:90vw;z-index:30;transform:translateX(104%);visibility:hidden;transition:transform .34s cubic-bezier(.2,.9,.3,1.1),visibility 0s linear .34s,box-shadow .34s;
   background:#ffffff;
-  border-left:1px solid rgba(23,33,56,.12);box-shadow:-24px 0 60px rgba(0,0,0,.5);padding:26px 24px;overflow:auto}
-.dk-drawer.on{transform:none}
+  border-left:1px solid rgba(23,33,56,.12);box-shadow:none;padding:26px 24px;overflow:auto}
+.dk-drawer.on{transform:none;visibility:visible;transition:transform .34s cubic-bezier(.2,.9,.3,1.1),visibility 0s,box-shadow .34s;box-shadow:-12px 0 32px rgba(16,24,40,.12)}
 .dk-drawer .x{position:absolute;top:16px;right:18px;cursor:pointer;color:#5a6680;font-size:20px;line-height:1}
 .dk-dhead{display:flex;align-items:center;gap:14px;margin:6px 0 16px}
 .dk-dhead .logo{width:54px;height:54px;border-radius:14px;background:#fff;padding:5px;object-fit:contain}
@@ -486,7 +509,7 @@ const CSS = `
 .dk-mrow{display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;border-top:1px solid rgba(23,33,56,.06);font-size:13px;color:#38435c}
 .dk-mrow:hover{background:rgba(63,120,255,.16)}
 .dk-mrow .dot{width:7px;height:7px;border-radius:50%;background:rgba(23,33,56,.22);flex:none}
-.dk-mrow.sel{color:#2552c6}.dk-mrow.sel .dot{background:#12a85f;box-shadow:0 0 7px #12a85f}
+.dk-mrow.sel{color:#2552c6}.dk-mrow.sel .dot{background:#12a85f}
 .dk-mrow .tag{margin-left:auto;font-size:10px;font-weight:600;color:#17a86a;letter-spacing:.04em;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dk-mcustom{display:flex;gap:8px;padding:10px 14px;border-top:1px solid rgba(23,33,56,.06)}
 .dk-mcustom[hidden]{display:none}
@@ -499,18 +522,18 @@ const CSS = `
 @media(max-width:1100px){.dk-tools{column-count:2}}
 @media(max-width:720px){.dk-tools{column-count:1}}
 .dk-cat{break-inside:avoid;margin-bottom:22px;border-radius:18px;padding:18px 18px 14px;
-  background:rgba(23,33,56,.035);border:1px solid rgba(23,33,56,.08);box-shadow:0 10px 30px rgba(0,0,0,.35)}
+  background:rgba(23,33,56,.035);border:1px solid rgba(23,33,56,.08);box-shadow:0 1px 2px rgba(16,24,40,.05)}
 .dk-cat h3{display:flex;align-items:center;gap:10px;font-size:14px;margin-bottom:14px}
 .dk-cat h3 .d{width:10px;height:10px;border-radius:3px}
 .dk-cat h3 .c{margin-left:auto;font-size:11px;color:#6a7488;font-weight:500}
 .dk-chiplist{display:flex;flex-wrap:wrap;gap:8px}
 .dk-tool{font-size:12.5px;padding:7px 12px;border-radius:9px;background:rgba(23,33,56,.05);border:1px solid rgba(23,33,56,.08);cursor:pointer;color:#44506a;display:inline-flex;align-items:center;gap:6px}
 .dk-tool:hover{background:rgba(63,120,255,.22);border-color:rgba(63,120,255,.5)}
-.dk-tool .live{width:6px;height:6px;border-radius:50%;background:#15a34a;box-shadow:0 0 6px #15a34a}
+.dk-tool .live{width:6px;height:6px;border-radius:50%;background:#15a34a}
 /* ---------- spotlight ---------- */
 .dk-spot{position:absolute;inset:0;z-index:90;display:none;align-items:flex-start;justify-content:center;padding-top:15vh;background:rgba(3,6,13,.5)}
 .dk-spot.on{display:flex}
-.dk-sbox{width:min(640px,92vw);border-radius:14px;overflow:hidden;background:#ffffff;border:1px solid rgba(23,33,56,.14);box-shadow:0 30px 80px rgba(0,0,0,.6)}
+.dk-sbox{width:min(640px,92vw);border-radius:14px;overflow:hidden;background:#ffffff;border:1px solid rgba(23,33,56,.14);box-shadow:0 24px 56px rgba(16,24,40,.18)}
 .dk-srow{display:flex;align-items:center;gap:12px;padding:16px 18px;border-bottom:1px solid rgba(23,33,56,.1)}
 .dk-srow svg{width:20px;height:20px;opacity:.55}
 .dk-sbox input{flex:1;border:0;outline:0;background:transparent;color:#1a2233;font:inherit;font-size:19px}
@@ -526,22 +549,22 @@ const CSS = `
 .dk-gal{overflow:auto;padding:36px 5vw 72px}
 .dk-gal .gcat{margin:0 0 36px}
 .dk-gal .ghead{display:flex;align-items:center;gap:11px;margin:0 0 17px}
-.dk-gal .ghead .gd{width:11px;height:11px;border-radius:3px;box-shadow:0 0 12px currentColor}
+.dk-gal .ghead .gd{width:11px;height:11px;border-radius:3px}
 .dk-gal .ghead h3{font-size:16.5px;font-weight:700;letter-spacing:-.01em}
 .dk-gal .ghead .gc{font-size:12px;color:#687388;font-weight:500}
-.dk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px}
-.dk-gcard{position:relative;display:flex;flex-direction:column;gap:12px;min-height:128px;padding:18px;border-radius:17px;cursor:pointer;
-  background:linear-gradient(165deg,rgba(23,33,56,.055),rgba(23,33,56,.018));border:1px solid rgba(23,33,56,.09);
-  box-shadow:0 8px 24px rgba(0,0,0,.26);opacity:0;transform:translateY(10px);
+.dk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(236px,1fr));gap:10px}
+.dk-gcard{position:relative;display:flex;flex-direction:row;align-items:center;gap:12px;min-height:60px;padding:11px 42px 11px 12px;border-radius:12px;cursor:pointer;
+  background:#fff;border:1px solid rgba(23,33,56,.08);
+  box-shadow:none;opacity:0;transform:translateY(6px);
   transition:transform .3s cubic-bezier(.2,.8,.2,1),opacity .3s ease,border-color .2s,box-shadow .2s}
 .dk-gcard.in{opacity:1;transform:none}
-.dk-gcard:hover{transform:translateY(-4px);border-color:var(--a,#3f78ff);box-shadow:0 18px 40px rgba(0,0,0,.4),0 0 0 1px var(--a,#3f78ff)}
-.dk-gcard .gi{width:46px;height:46px;border-radius:13px;display:grid;place-items:center;color:#fff;
-  background:linear-gradient(158deg,var(--a,#3f78ff),rgba(0,0,0,.34));box-shadow:inset 0 1px 0 rgba(23,33,56,.22),0 6px 16px rgba(0,0,0,.3)}
-.dk-gcard .gi svg{width:23px;height:23px}
-.dk-gcard .gt{font-size:14px;font-weight:600;line-height:1.28;color:#1a2233}
-.dk-gcard .glive{position:absolute;top:15px;right:15px;width:7px;height:7px;border-radius:50%;background:#15a34a;box-shadow:0 0 7px #15a34a}
-.dk-gcard .garr{margin-top:auto;display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;color:#5a6680;opacity:0;transform:translateX(-4px);transition:opacity .2s,transform .2s}
+.dk-gcard:hover{transform:translateY(-1px);border-color:var(--a,#3f78ff);box-shadow:0 4px 12px rgba(16,24,40,.06)}
+.dk-gcard .gi{flex:none;width:34px;height:34px;border-radius:9px;display:grid;place-items:center;color:#fff;
+  background:var(--a,#3f78ff)}
+.dk-gcard .gi svg{width:18px;height:18px}
+.dk-gcard .gt{min-width:0;font-size:13.5px;font-weight:600;line-height:1.3;color:#1a2233}
+.dk-gcard .glive{position:absolute;top:8px;left:40px;width:8px;height:8px;border-radius:50%;background:#15a34a;box-shadow:0 0 0 2px #fff}
+.dk-gcard .garr{display:none;align-items:center;gap:5px;font-size:11.5px;font-weight:600;color:#5a6680;opacity:0;transform:translateX(-4px);transition:opacity .2s,transform .2s}
 .dk-gcard .garr svg{width:13px;height:13px}
 .dk-gcard:hover .garr{opacity:1;transform:none;color:#38435c}
 /* ---------- in-deck tool workspace ---------- */
@@ -573,7 +596,7 @@ const CSS = `
    is viewport-centred), and the tab strip lives in the middle auto track. When
    the tabs don't fit they scroll inside that track (min-width:0 + overflow on
    .dk-tabs) instead of spilling over and overlapping the right-side controls. */
-.dk-top{display:grid;grid-template-columns:minmax(max-content,1fr) auto minmax(max-content,1fr);align-items:center;gap:12px;padding:0 18px;border-bottom:1px solid rgba(23,33,56,.08);background:#eef1f7;box-shadow:0 1px 0 rgba(0,0,0,.4)}
+.dk-top{display:grid;grid-template-columns:minmax(max-content,1fr) auto minmax(max-content,1fr);align-items:center;gap:12px;padding:0 18px;border-bottom:1px solid rgba(23,33,56,.08);background:#eef1f7}
 .dk-top>.dk-brand{flex:none;justify-self:start;min-width:0}
 .dk-top>.dk-tabs{justify-self:center;min-width:0;max-width:100%}
 .dk-top>.dk-right{flex:none;justify-self:end;margin-left:0;min-width:0}
@@ -588,18 +611,29 @@ const CSS = `
 .dk-tab:hover{color:#38435c;background:rgba(23,33,56,.05)}
 .dk-tab.on{color:#2552c6;background:rgba(47,95,255,.18)}
 .dk-tab.on svg{opacity:1}
-.dk-tab.on::after{content:"";position:absolute;left:13px;right:13px;bottom:-9px;height:2px;border-radius:2px;background:#4f86ff;box-shadow:0 0 10px #4f86ff}
+.dk-tab.on::after{content:"";position:absolute;left:13px;right:13px;bottom:-9px;height:2px;border-radius:2px;background:#4f86ff}
 /* right-side controls */
 .dk-icbtn{appearance:none;border:1px solid rgba(23,33,56,.1);background:rgba(23,33,56,.04);color:#44506a;width:34px;height:34px;border-radius:10px;display:grid;place-items:center;cursor:pointer;position:relative;flex:none;transition:background .15s,border-color .15s}
 .dk-icbtn:hover{background:rgba(23,33,56,.1);border-color:rgba(23,33,56,.2);color:#141c2e}
 .dk-icbtn svg{width:17px;height:17px}
 .dk-badge{position:absolute;top:-4px;right:-4px;min-width:16px;height:16px;padding:0 4px;border-radius:9px;background:#f0484a;color:#fff;font-size:10px;font-weight:700;display:grid;place-items:center;box-shadow:0 0 0 2px #f4f6fa}
 .dk-health{appearance:none;cursor:default;border:1px solid rgba(23,33,56,.1);background:rgba(23,33,56,.04);color:#5a6680;font:inherit;font-size:12px;font-weight:600;padding:7px 12px;border-radius:999px;display:inline-flex;align-items:center;gap:8px;flex:none}
-.dk-health .d{width:7px;height:7px;border-radius:50%;background:#12a85f;box-shadow:0 0 6px rgba(56,217,154,.55)}
+.dk-health .d{width:7px;height:7px;border-radius:50%;background:#12a85f}
 .dk-health.warn{border-color:rgba(245,181,68,.35);background:rgba(245,181,68,.12);color:#c99320}
-.dk-health.warn .d{background:#b7791f;box-shadow:0 0 8px #b7791f}
+.dk-health.warn .d{background:#b7791f}
 @media(max-width:1510px){.dk-brand .dk-wsname{display:none}}
-@media(max-width:1600px){.dk-health .t,.dk-tab span{display:none}.dk-tab{padding:7px 9px}}
+@media(max-width:1600px){.dk-health .t,.dk-clock,.dk-tab svg{display:none}.dk-tab{padding:7px 11px}}
+@media(max-width:1439px){.dk-tab svg{display:inline}.dk-tab span{display:none}.dk-tab{padding:7px 9px}}
+/* Phones: two-row bar so the workspaces stay reachable — brand + controls on top,
+   a full-width swipeable tab strip below; every scene starts under both rows. */
+@media(max-width:720px){
+  .dk-top{height:100px;grid-template-columns:1fr auto;grid-template-rows:56px 44px;row-gap:0;padding:0 16px}
+  .dk-top>.dk-tabs{grid-column:1/-1;grid-row:2;justify-self:stretch;margin:0 -16px;padding:0 12px;border-top:1px solid rgba(23,33,56,.06)}
+  .dk-tab span{display:inline}.dk-tab svg{display:none}.dk-tab{padding:7px 11px}
+  .dk-tab.on::after{bottom:-6px}
+  .dk-health,#dkNew{display:none}
+  .dk .dk-scene{top:100px}
+}
 .dk-acct{appearance:none;border:1px solid rgba(23,33,56,.1);background:rgba(23,33,56,.04);cursor:pointer;height:34px;padding:0 8px 0 5px;border-radius:999px;display:inline-flex;align-items:center;gap:5px;flex:none}
 .dk-acct:hover{background:rgba(23,33,56,.1)}
 .dk-acct .av{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:700;color:#fff;background:#2f63e0;overflow:hidden}
@@ -608,7 +642,7 @@ const CSS = `
 /* popover menus (notifications / create / account) */
 .dk-pop{position:absolute;top:52px;z-index:120;min-width:240px;max-width:360px;border-radius:15px;overflow:hidden;
   background:#ffffff;
-  border:1px solid rgba(23,33,56,.12);box-shadow:0 20px 60px rgba(0,0,0,.55);display:none}
+  border:1px solid rgba(23,33,56,.12);box-shadow:0 12px 32px rgba(16,24,40,.14);display:none}
 .dk-pop.on{display:block;animation:dkPop .18s ease}
 @keyframes dkPop{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
 .dk-pop-h{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;border-bottom:1px solid rgba(23,33,56,.08);font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#5a6680}
@@ -623,18 +657,21 @@ const CSS = `
 .dk-acctcard b{font-size:14px;color:#1a2233}.dk-acctcard span{display:block;font-size:12px;color:#687388;margin-top:2px;word-break:break-all}
 .dk-notif{max-height:60vh;overflow:auto}
 .dk-nrow{display:flex;gap:11px;padding:12px 16px;border-bottom:1px solid rgba(23,33,56,.05)}
-.dk-nrow .nd{width:8px;height:8px;border-radius:50%;background:#4f86ff;flex:none;margin-top:5px;box-shadow:0 0 7px #4f86ff}
+.dk-nrow .nd{width:8px;height:8px;border-radius:50%;background:#4f86ff;flex:none;margin-top:5px}
 .dk-nrow.seen .nd{background:rgba(23,33,56,.18);box-shadow:none}
 .dk-nrow .nt{font-size:13px;color:#38435c;line-height:1.35}
 .dk-nrow .na{font-size:11px;color:#6a7488;margin-top:2px}
 .dk-nempty{padding:26px 16px;text-align:center;color:#6a7488;font-size:13px}
 /* ======================= Overview workspace ======================= */
-.dk-ov{position:absolute;inset:56px 0 0;overflow:auto;padding:26px 4vw 60px}
+.dk-ov,.dk-surf,.dk-cloud,.dk-comp,.dk-con2,.dk-ti,.dk-inv{position:absolute;inset:56px 0 0;overflow:auto;padding:26px 4vw 60px}
 .dk-ovhead{display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:14px;margin-bottom:22px}
 .dk-ovhead h1{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif;font-size:26px;font-weight:800;letter-spacing:-.02em;color:#141c2e}
 .dk-ovhead p{font-size:13.5px;color:#687388;margin-top:5px;max-width:620px}
 .dk-ovhead .when{font-size:12.5px;color:#6a7488;text-align:right}
-.dk-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:14px;margin-bottom:22px}
+@media(max-width:720px){.dk-ovhead .when{text-align:left}.dk-kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.dk-kpi .kn{font-size:24px}}
+.dk-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:14px;margin-bottom:12px}
+.dk-expnote{font-size:12px;color:#5a6680;line-height:1.5;margin:0 0 22px;padding:9px 13px;background:rgba(23,33,56,.03);border:1px solid rgba(23,33,56,.08);border-radius:9px}
+.dk-expnote b{color:#141c2e;font-weight:700}
 .dk-kpi{position:relative;padding:16px 16px 15px 18px;border-radius:12px;background:rgba(23,33,56,.025);border:1px solid rgba(23,33,56,.08);cursor:pointer;transition:transform .16s,border-color .16s,background .16s;overflow:hidden;text-align:left}
 .dk-kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--a,#4f86ff)}
 .dk-kpi:hover{transform:translateY(-2px);border-color:color-mix(in srgb,var(--a,#4f86ff) 55%,rgba(23,33,56,.08));background:rgba(23,33,56,.045)}
@@ -643,9 +680,10 @@ const CSS = `
 .dk-kpi .kn{font-size:28px;font-weight:800;line-height:1;letter-spacing:-.02em;color:#141c2e;font-variant-numeric:tabular-nums}
 .dk-kpi .kl{font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:#687388;margin-top:9px;font-weight:600}
 .dk-kpi .ks{font-size:11px;font-weight:500;color:#8a93a6;margin-top:4px}
-.dk-ovgrid{display:grid;grid-template-columns:1.5fr 1fr;gap:18px}
-@media(max-width:900px){.dk-ovgrid{grid-template-columns:1fr}.dk-ov{padding:24px 18px 56px}}
-.dk-ovp{border-radius:18px;background:rgba(23,33,56,.03);border:1px solid rgba(23,33,56,.08);padding:18px 20px;box-shadow:0 10px 30px rgba(0,0,0,.3);margin-bottom:18px}
+.dk-ovgrid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:18px}
+.dk-ovgrid>*{min-width:0}
+@media(max-width:900px){.dk-ovgrid{grid-template-columns:1fr}.dk-ov,.dk-surf,.dk-cloud,.dk-comp,.dk-con2,.dk-ti,.dk-inv{padding:24px 16px 56px}}
+.dk-ovp{border-radius:18px;background:rgba(23,33,56,.03);border:1px solid rgba(23,33,56,.08);padding:18px 20px;box-shadow:0 1px 2px rgba(16,24,40,.05);margin-bottom:18px}
 .dk-ovp h2{font-size:15px;font-weight:700;margin:0 0 14px;display:flex;align-items:center;gap:9px}
 .dk-ovp h2 svg{width:17px;height:17px;flex:none;color:#2552c6}
 .dk-ovp h2 .mo{margin-left:auto;font-size:12px;font-weight:600;color:#2552c6;cursor:pointer;white-space:nowrap}
@@ -656,7 +694,7 @@ const CSS = `
 .dk-ovact .r .tx{font-size:13px;color:#38435c;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dk-ovact .r .ag{font-size:11.5px;color:#6a7488;flex:none}
 .dk-qa{display:grid;grid-template-columns:1fr 1fr;gap:11px}
-.dk-qacard{display:flex;flex-direction:column;gap:7px;padding:15px;border-radius:14px;background:rgba(23,33,56,.04);border:1px solid rgba(23,33,56,.08);cursor:pointer;transition:transform .18s,border-color .18s,background .18s}
+.dk-qacard{appearance:none;font:inherit;text-align:left;align-items:flex-start;display:flex;flex-direction:column;gap:7px;padding:15px;border-radius:14px;background:rgba(23,33,56,.04);border:1px solid rgba(23,33,56,.08);cursor:pointer;transition:transform .18s,border-color .18s,background .18s}
 .dk-qacard:hover{transform:translateY(-2px);background:rgba(63,120,255,.14);border-color:rgba(63,120,255,.4)}
 .dk-qacard .qi{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;color:var(--a,#4f86ff);background:color-mix(in srgb,var(--a,#4f86ff) 16%,transparent)}
 .dk-qacard .qi svg{width:16px;height:16px}
@@ -674,29 +712,31 @@ const CSS = `
 /* ======================= Tools workspace (rail + search) ======================= */
 .dk-tools2{position:absolute;inset:56px 0 0;display:flex;flex-direction:column}
 .dk-tbar{flex:none;display:flex;align-items:center;gap:14px;padding:18px 4vw 14px}
-.dk-tsearch{flex:1;max-width:520px;display:flex;align-items:center;gap:10px;padding:11px 15px;border-radius:13px;background:rgba(23,33,56,.05);border:1px solid rgba(23,33,56,.1)}
+.dk-tsearch{flex:1;max-width:520px;height:40px;display:flex;align-items:center;gap:10px;padding:0 14px;border-radius:10px;background:rgba(23,33,56,.05);border:1px solid rgba(23,33,56,.1)}
 .dk-tsearch:focus-within{border-color:rgba(79,134,255,.6);background:rgba(79,134,255,.08)}
 .dk-tsearch svg{width:17px;height:17px;color:#687388;flex:none}
-.dk-tsearch input{flex:1;border:0;outline:0;background:transparent;color:#1a2233;font:inherit;font-size:14px}
+.dk .dk-tsearch input{flex:1;min-width:0;width:auto;height:100%;min-height:0!important;margin:0!important;padding:0!important;border:0!important;border-radius:0!important;outline:0;box-shadow:none!important;background:transparent!important;color:#1a2233;font:inherit;font-size:14px;-webkit-appearance:none;appearance:none}
+.dk .dk-tsearch input::-webkit-search-decoration{-webkit-appearance:none}
+@media(max-width:640px){.dk-tbar{padding:14px 16px 10px;gap:10px}.dk-tsearch{max-width:none}}
 .dk-tcount{font-size:12.5px;color:#687388;margin-left:auto;flex:none}
 .dk-tbody{flex:1;display:flex;min-height:0}
-.dk-tnav{flex:none;width:232px;overflow:auto;padding:4px 10px 30px 4vw}
-.dk-tcat{display:flex;align-items:center;gap:9px;width:100%;padding:9px 12px;margin-bottom:3px;border:0;border-radius:11px;background:transparent;color:#5a6680;font:inherit;font-size:13px;font-weight:600;cursor:pointer;text-align:left;transition:background .15s,color .15s}
+.dk-tnav{flex:none;width:calc(236px + 4vw);overflow-x:hidden;overflow-y:auto;padding:4px 12px 30px 4vw;scrollbar-width:thin;scrollbar-color:rgba(23,33,56,.16) transparent}
+.dk-tcat{display:flex;align-items:center;gap:9px;width:100%;white-space:nowrap;padding:9px 12px;margin-bottom:3px;border:0;border-radius:11px;background:transparent;color:#5a6680;font:inherit;font-size:13px;font-weight:600;cursor:pointer;text-align:left;transition:background .15s,color .15s}
 .dk-tcat:hover{background:rgba(23,33,56,.05);color:#38435c}
 .dk-tcat.on{background:rgba(47,95,255,.16);color:#2552c6}
-.dk-tcat .cd{width:9px;height:9px;border-radius:3px;flex:none;box-shadow:0 0 8px currentColor}
-.dk-tcat .n{margin-left:auto;font-size:11.5px;font-weight:600;color:#6a7488;background:rgba(23,33,56,.06);padding:1px 8px;border-radius:999px}
+.dk-tcat .cd{width:9px;height:9px;border-radius:3px;flex:none}
+.dk-tcat .tl{min-width:0;white-space:normal;overflow-wrap:anywhere;line-height:1.25}
+.dk-tcat .n{flex:none;margin-left:auto;font-size:11.5px;font-weight:600;color:#6a7488;background:rgba(23,33,56,.06);padding:1px 8px;border-radius:999px}
 .dk-tcat.on .n{color:#38435c;background:rgba(23,33,56,.12)}
-.dk-tmain{flex:1;overflow:auto;padding:4px 4vw 60px 24px}
+.dk-tmain{flex:1;overflow:auto;padding:4px 4vw 60px 24px;scrollbar-width:thin;scrollbar-color:rgba(23,33,56,.16) transparent}
 @media(max-width:820px){.dk-tnav{display:none}.dk-tmain{padding:4px 18px 56px}}
 .dk-tsec{margin:0 0 30px}
 .dk-tsec .th{display:flex;align-items:center;gap:10px;margin:0 0 14px}
-.dk-tsec .th .d{width:10px;height:10px;border-radius:3px;box-shadow:0 0 10px currentColor}
+.dk-tsec .th .d{flex:none;width:10px;height:10px;border-radius:3px;background:currentColor}
 .dk-tsec .th h3{font-size:15px;font-weight:700;letter-spacing:-.01em}
 .dk-tsec .th .c{font-size:12px;color:#687388;font-weight:500}
 .dk-tnone{padding:40px;text-align:center;color:#6a7488;font-size:14px}
 /* ======================= Threat Intel workspace ======================= */
-.dk-ti{position:absolute;inset:56px 0 0;overflow:auto;padding:26px 4vw 60px}
 .dk-ti-head{display:flex;align-items:center;flex-wrap:wrap;gap:14px;margin-bottom:18px}
 .dk-ti-head h1{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif;font-size:22px;font-weight:800;letter-spacing:-.02em;color:#141c2e}
 .dk-ti-head .mo{margin-left:auto;font-size:12.5px;font-weight:600;color:#2552c6;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
@@ -710,15 +750,24 @@ const CSS = `
 .dk-cve .sv{flex:none;width:52px;text-align:center;font-weight:800;font-size:15px;font-variant-numeric:tabular-nums}
 .dk-cve .sv small{display:block;font-size:9.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-top:3px}
 .dk-cve .bd{min-width:0}
-.dk-cve .bd .id{font-size:13px;font-weight:700;color:#1a2233}
+.dk-cve.kev{border-color:rgba(224,56,58,.35);background:rgba(224,56,58,.045)}
+.dk-cve .bd .id{font-size:13px;font-weight:700;color:#1a2233;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.dk-kevb{font-size:10px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:#fff;background:#e0383a;padding:2px 7px;border-radius:5px}
+.dk-epssb{font-size:10.5px;font-weight:700;color:#8a5a00;background:rgba(245,146,11,.14);border:1px solid rgba(245,146,11,.3);padding:1px 7px;border-radius:5px}
+.dk-ransom{margin:4px 0 18px}
+.dk-ransom .ct .src{font-size:10.5px;font-weight:600;color:#12a85f;margin-left:8px;text-transform:none;letter-spacing:0}
+.dk-rtab{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:10px}
+.dk-rtab th{text-align:left;padding:7px 10px;color:#6a7488;font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;border-bottom:1px solid rgba(23,33,56,.1)}
+.dk-rtab td{padding:8px 10px;border-bottom:1px solid rgba(23,33,56,.06);color:#38435c}
+.dk-rtab tr:last-child td{border-bottom:0}
 .dk-cve .bd .ti{font-size:12.5px;color:#5a6680;margin-top:3px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .dk-cve .bd .dt{font-size:11px;color:#6a7488;margin-top:5px}
 .dk-loading{display:flex;align-items:center;gap:12px;color:#687388;font-size:13.5px;padding:30px 4px}
 .dk-loading .sp{width:22px;height:22px;border-radius:50%;border:2.5px solid rgba(23,33,56,.14);border-top-color:#4f86ff;animation:dkSpin .8s linear infinite}
 .dk-errbox{padding:22px;border-radius:14px;background:rgba(240,72,74,.1);border:1px solid rgba(240,72,74,.3);color:#c0282a;font-size:13px;line-height:1.5}
 .dk-errbox button{margin-top:12px}
+.dk-surfp .dk-errbox{padding:12px 14px;border-radius:10px;font-size:12.5px}
 /* ======================= Investigations workspace ======================= */
-.dk-inv{position:absolute;inset:56px 0 0;overflow:auto;padding:26px 4vw 60px}
 .dk-inv h1{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif;font-size:22px;font-weight:800;letter-spacing:-.02em;color:#141c2e;margin-bottom:6px}
 .dk-inv .sub{font-size:13px;color:#687388;margin-bottom:20px}
 .dk-invtypes{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin:14px 0 8px}
@@ -729,14 +778,16 @@ const CSS = `
 .dk-asst{position:absolute;inset:56px 0 0;display:flex;flex-direction:column}
 .dk-asst .dk-wframe{flex:1;position:relative}
 /* ======================= overview: added widgets ======================= */
-.dk-ask{display:flex;align-items:center;gap:10px;margin:0 0 22px;padding:6px 6px 6px 16px;border-radius:12px;background:rgba(23,33,56,.04);border:1px solid rgba(23,33,56,.1)}
+.dk-ask{display:flex;align-items:center;gap:10px;margin:0 0 8px;padding:6px 6px 6px 16px;border-radius:12px;background:rgba(23,33,56,.04);border:1px solid rgba(23,33,56,.1)}
+.dk-askhint{font-size:12px;color:#6a7488;line-height:1.5;margin:0 0 22px 2px}
 .dk-ask:focus-within{border-color:rgba(63,120,255,.5);background:rgba(63,120,255,.07)}
 .dk-ask .ai{flex:none;color:#2552c6;display:grid;place-items:center}.dk-ask .ai svg{width:18px;height:18px}
 .dk-ask input{flex:1;min-width:0;border:0;outline:0;background:transparent;color:#141c2e;font:inherit;font-size:14px}
 .dk-ask input::placeholder{color:#8a93a6}
 .dk-ask button{flex:none;appearance:none;border:0;border-radius:9px;background:#2f6bff;color:#fff;font:inherit;font-weight:700;font-size:13px;padding:10px 16px;cursor:pointer;display:inline-flex;align-items:center;gap:7px}
 .dk-ask button:hover{background:#3f78ff}.dk-ask button svg{width:15px;height:15px}
-.dk-ovgrid3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-bottom:18px}
+.dk-ovgrid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin-bottom:18px}
+.dk-ovgrid3>*{min-width:0}
 @media(max-width:1100px){.dk-ovgrid3{grid-template-columns:1fr 1fr}}
 @media(max-width:720px){.dk-ovgrid3{grid-template-columns:1fr}}
 .dk-pins{display:flex;flex-direction:column;gap:7px}
@@ -747,111 +798,18 @@ const CSS = `
 .dk-pin .pl{flex:1;min-width:0;font-size:13px;font-weight:600;color:#1a2233;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dk-pin .px{flex:none;appearance:none;border:0;background:transparent;color:#8a93a6;font-size:17px;line-height:1;cursor:pointer;padding:2px 4px;border-radius:6px}
 .dk-pin .px:hover{color:#c0282a;background:rgba(240,72,74,.14)}
-.dk-notes{width:100%;min-height:150px;resize:vertical;border-radius:12px;border:1px solid rgba(23,33,56,.1);background:#f5f7fb;color:#1a2233;font:inherit;font-size:13px;line-height:1.55;padding:13px 14px;outline:none}
+.dk .dk-notes{display:block;box-sizing:border-box;width:100%!important;max-width:100%;margin:0!important;min-height:150px;resize:vertical;border-radius:12px;border:1px solid rgba(23,33,56,.1);background:#f5f7fb;color:#1a2233;font:inherit;font-size:13px;line-height:1.55;padding:13px 14px!important;outline:none}
 .dk-notes:focus{border-color:rgba(79,134,255,.55);background:#eef1f7}
 .dk-notes::placeholder{color:#8a93a6}
 .dk-notef{display:flex;align-items:center;justify-content:space-between;margin-top:9px;font-size:11.5px;color:#6a7488}
 .dk-sys{display:flex;flex-direction:column;gap:2px}
 .dk-sysrow{display:flex;align-items:center;gap:11px;padding:10px 2px;border-bottom:1px solid rgba(23,33,56,.055)}
 .dk-sysrow:last-child{border-bottom:0}
-.dk-sysrow .sd{flex:none;width:8px;height:8px;border-radius:50%;background:#17a86a;box-shadow:0 0 7px rgba(84,227,166,.6)}
-.dk-sysrow.warn .sd{background:#b7791f;box-shadow:0 0 7px #b7791f}.dk-sysrow.off .sd{background:#8a93a6;box-shadow:none}
+.dk-sysrow .sd{flex:none;width:8px;height:8px;border-radius:50%;background:#17a86a}
+.dk-sysrow.warn .sd{background:#b7791f}.dk-sysrow.off .sd{background:#8a93a6;box-shadow:none}
 .dk-sysrow .sl{flex:1;font-size:13px;color:#38435c}
 .dk-sysrow .sv{flex:none;font-size:12px;font-weight:600;color:#5a6680;font-variant-numeric:tabular-nums}
 /* threat charts */
-/* ---- hacking diaries ---- */
-.dk-diary{position:absolute;inset:56px 0 0;display:flex;min-height:0}
-.dk-dnav{flex:none;width:322px;display:flex;flex-direction:column;border-right:1px solid rgba(23,33,56,.08);overflow:auto;padding:16px 10px 30px 2vw}
-.dk-dsearch{display:flex;align-items:center;gap:8px;background:#ffffff;border:1px solid rgba(23,33,56,.1);border-radius:10px;padding:0 12px;height:40px;flex:none}
-.dk-dsearch svg{width:16px;height:16px;color:#687388;flex:none}
-.dk-dsearch input{flex:1;min-width:0;background:transparent;border:0;outline:none;color:#1a2233;font-size:13px}
-.dk-dfinder{margin-top:14px;background:#ffffff;border:1px solid rgba(23,33,56,.08);border-radius:12px;padding:12px;flex:none}
-.dk-dfinder .t{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:700;color:#38435c;margin-bottom:8px}
-.dk-dfinder .t svg{width:15px;height:15px;color:#2552c6;flex:none}
-.dk-dfinder textarea{width:100%;box-sizing:border-box;resize:vertical;min-height:56px;background:#ffffff;border:1px solid rgba(23,33,56,.1);border-radius:9px;color:#1a2233;font:inherit;font-size:12.5px;line-height:1.45;padding:8px 10px;outline:none}
-.dk-dfinder textarea:focus{border-color:#3f78ff}
-.dk-dfbtns{display:flex;gap:7px;margin-top:8px}
-.dk-dfbtns button{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid rgba(23,33,56,.12);background:#f5f7fb;color:#38435c;border-radius:8px;padding:8px;font-size:11.5px;font-weight:600;cursor:pointer}
-.dk-dfbtns button svg{width:14px;height:14px;flex:none}
-.dk-dfbtns button:hover{border-color:rgba(23,33,56,.25);color:#141c2e}
-.dk-dfbtns .pri{background:#2f5fd0;border-color:#2f5fd0;color:#fff}
-.dk-dfbtns .pri:hover{background:#3f78ff}
-.dk-dfres{display:flex;flex-direction:column;gap:5px;margin-top:9px}
-.dk-dfres:empty{margin-top:0}
-.dk-dfr{display:flex;flex-direction:column;align-items:flex-start;gap:1px;text-align:left;background:#f5f7fb;border:1px solid rgba(23,33,56,.08);border-radius:8px;padding:7px 10px;cursor:pointer}
-.dk-dfr:hover{border-color:#3f78ff}
-.dk-dfr b{font-size:12.5px;color:#1a2233;font-weight:600}
-.dk-dfr span{font-size:10.5px;color:#687388}
-.dk-dfnone{font-size:12px;color:#687388;padding:8px 2px;line-height:1.5}
-.dk-dcats{margin-top:16px;display:flex;flex-direction:column;gap:14px}
-.dk-dcat{display:flex;flex-direction:column;gap:1px}
-.dk-dcath{display:flex;align-items:center;justify-content:space-between;font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:#6a7488;font-weight:700;padding:0 6px 5px}
-.dk-dcath span{color:#8a93a6;font-weight:600}
-.dk-dpb{display:flex;align-items:center;gap:9px;text-align:left;background:transparent;border:0;border-radius:8px;padding:7px 8px;cursor:pointer;color:#44506a;width:100%}
-.dk-dpb:hover{background:rgba(23,33,56,.05)}
-.dk-dpb.on{background:rgba(63,120,255,.16);color:#2552c6}
-.dk-dpb .tt{font-size:12.5px;line-height:1.25;min-width:0}
-.rk{width:8px;height:8px;border-radius:50%;flex:none;background:#12a85f}
-.rk-medium{background:#b7791f}
-.rk-high{background:#f0484a}
-.dk-dmain{flex:1;min-width:0;overflow:auto;padding:26px 4vw 64px}
-.dk-dhero h1,.dk-dhead h1{font-size:24px;margin:0;color:#141c2e}
-.dk-dhero h1{display:flex;align-items:center;gap:10px;margin-bottom:8px}
-.dk-dhero h1 svg{width:22px;height:22px;color:#2552c6}
-.dk-dhero p{max-width:740px;color:#5a6680;font-size:13.5px;line-height:1.6;margin:0 0 22px}
-.dk-dgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(248px,1fr));gap:14px}
-.dk-dcard{display:flex;flex-direction:column;align-items:flex-start;gap:7px;text-align:left;background:#ffffff;border:1px solid rgba(23,33,56,.08);border-radius:14px;padding:15px 16px;cursor:pointer;transition:border-color .15s,transform .15s}
-.dk-dcard:hover{border-color:#3f78ff;transform:translateY(-1px)}
-.dk-dcard .h{display:flex;align-items:center;gap:8px}
-.dk-dcard .h b{font-size:13.5px;color:#141c2e}
-.dk-dcard .c{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#2552c6;font-weight:700}
-.dk-dcard p{font-size:12px;color:#5a6680;line-height:1.5;margin:0}
-.dk-dcard .m{font-size:11px;color:#8a93a6}
-.dk-dhead{display:flex;justify-content:space-between;gap:18px;align-items:flex-start;flex-wrap:wrap;margin-bottom:16px}
-.dk-dhead .bc{display:flex;align-items:center;gap:9px;margin-bottom:8px}
-.dk-dhead .cat{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:#2552c6;font-weight:700}
-.rk.lbl{width:auto;height:auto;border-radius:20px;padding:2px 9px;font-size:10px;font-weight:700;color:#eef1f7;background:#12a85f;text-transform:uppercase;letter-spacing:.04em}
-.rk-medium.lbl{background:#b7791f}
-.rk-high.lbl{background:#f0484a;color:#fff}
-.dk-dhead h1{margin-bottom:6px}
-.dk-dhead .goal{font-size:14px;color:#5a6680;margin:0;max-width:760px;line-height:1.5}
-.dk-dhead .r{display:flex;gap:8px;flex:none}
-.dk-dbtn{display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(23,33,56,.14);background:#f5f7fb;color:#38435c;border-radius:9px;padding:9px 12px;font-size:12.5px;font-weight:600;cursor:pointer}
-.dk-dbtn svg{width:15px;height:15px;flex:none}
-.dk-dbtn:hover{border-color:#3f78ff;color:#141c2e}
-.dk-dmeta{display:grid;grid-template-columns:1fr 1fr;gap:11px 22px;background:#ffffff;border:1px solid rgba(23,33,56,.07);border-radius:12px;padding:14px 16px;margin-bottom:14px}
-.dk-dmeta .mi{display:flex;flex-direction:column;gap:5px;min-width:0}
-.dk-dmeta .mi.wide{grid-column:1 / -1}
-.dk-dmeta .k{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:#8a93a6;font-weight:700}
-.dk-dmeta .v{font-size:12.5px;color:#44506a;line-height:1.5}
-.dk-dmeta .chips{display:flex;flex-wrap:wrap;gap:6px}
-.chip{font-size:11px;background:#eef1f7;border:1px solid rgba(23,33,56,.1);color:#44506a;border-radius:6px;padding:3px 8px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
-.chip.att{font-family:inherit;color:#5a6680}
-.dk-dsafety{display:flex;align-items:flex-start;gap:9px;font-size:12.5px;color:#8a5a1a;background:rgba(245,146,11,.08);border:1px solid rgba(245,146,11,.3);border-left-width:3px;border-radius:8px;padding:10px 14px;margin-bottom:18px;line-height:1.5}
-.dk-dsafety .i{flex:none;width:7px;height:7px;border-radius:50%;background:#b7791f;margin-top:5px}
-.dk-dsafety b{color:#b7791f}
-.dk-dcount{font-size:11px;color:#8a93a6;margin-bottom:14px;letter-spacing:.03em}
-.dk-dphase{margin-bottom:22px}
-.dk-dphase h3{display:flex;align-items:center;gap:10px;font-size:15px;color:#141c2e;margin:0 0 12px;padding-bottom:9px;border-bottom:1px solid rgba(23,33,56,.08)}
-.dk-dphase h3 .n{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:#2f5fd0;color:#fff;font-size:12px;font-weight:700;flex:none}
-.dk-dstep{margin:0 0 12px 32px;padding-left:14px;border-left:2px solid rgba(23,33,56,.07)}
-.dk-dstep .do{font-size:13px;color:#38435c;margin-bottom:6px;line-height:1.5}
-.dk-dstep .cmd{display:flex;align-items:flex-start;gap:8px;background:#ffffff;border:1px solid rgba(23,33,56,.1);border-radius:8px;padding:9px 10px}
-.dk-dstep .cmd code{flex:1;min-width:0;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;color:#0f8a56;white-space:pre-wrap;word-break:break-word;line-height:1.5}
-.dk-dstep .cmd .cp{flex:none;background:transparent;border:0;color:#8a93a6;cursor:pointer;padding:2px;border-radius:5px;line-height:0}
-.dk-dstep .cmd .cp:hover{color:#38435c}
-.dk-dstep .cmd .cp.ok{color:#12a85f}
-.dk-dstep .cmd .cp svg{width:15px;height:15px;display:block}
-.dk-dstep .nt{font-size:12px;color:#687388;margin-top:6px;line-height:1.5}
-.dk-dstep .nt::before{content:"▸ ";color:#8a93a6}
-.dk-dfoot{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:26px}
-.dk-dfoot .ff{background:#ffffff;border:1px solid rgba(23,33,56,.07);border-radius:11px;padding:13px 15px}
-.dk-dfoot .ff b{display:block;font-size:11px;letter-spacing:.05em;text-transform:uppercase;margin-bottom:6px}
-.dk-dfoot .ff span{font-size:12.5px;color:#5a6680;line-height:1.5}
-.dk-dfoot .verify b{color:#12a85f}
-.dk-dfoot .cleanup b{color:#2552c6}
-.dk-dfoot .safety b{color:#b7791f}
-@media(max-width:900px){.dk-diary{flex-direction:column}.dk-dnav{width:auto;border-right:0;border-bottom:1px solid rgba(23,33,56,.08);padding-left:18px}.dk-dmeta{grid-template-columns:1fr}.dk-dstep{margin-left:6px}.dk-dhead .r{width:100%}}
 /* ---- investigations + activity (wave 2) ---- */
 .dk-invdash{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin:4px 0 18px}
 @media(max-width:1050px){.dk-invdash{grid-template-columns:1fr}}
@@ -869,7 +827,7 @@ const CSS = `
 .dk-invbar{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:12px}
 .dk-isearch{display:flex;align-items:center;gap:8px;background:#ffffff;border:1px solid rgba(23,33,56,.1);border-radius:9px;padding:0 11px;height:38px;flex:1;min-width:180px}
 .dk-isearch svg{width:15px;height:15px;color:#687388;flex:none}
-.dk-isearch input{flex:1;min-width:0;background:transparent;border:0;outline:none;color:#1a2233;font-size:12.5px}
+.dk .dk-isearch input{flex:1;min-width:0;width:auto;height:100%;min-height:0!important;margin:0!important;padding:0!important;border:0!important;border-radius:0!important;box-shadow:none!important;background:transparent!important;outline:none;color:#1a2233;font:inherit;font-size:12.5px;-webkit-appearance:none;appearance:none}
 .dk-isel{height:38px;background:#ffffff;border:1px solid rgba(23,33,56,.1);border-radius:9px;color:#44506a;font-size:12.5px;padding:0 10px;outline:none;cursor:pointer;max-width:200px}
 .dk-itwrap{overflow:auto;border:1px solid rgba(23,33,56,.07);border-radius:12px}
 .dk-itable{width:100%;border-collapse:collapse;font-size:12.5px}
@@ -894,8 +852,8 @@ const CSS = `
 .dk-afch.on span{color:#2552c6}
 .dk-ovact .r .ct{font-size:10.5px;font-weight:700;letter-spacing:.03em;flex:none;margin-left:6px}
 .dk-chart{margin:6px 0 4px}
-.dk-chart .ct{font-size:12px;font-weight:600;color:#5a6680;margin-bottom:12px;display:flex;align-items:center;gap:8px}
-.dk-chart .ct svg{width:15px;height:15px;flex:none;color:#2552c6}
+.dk-chart .ct,.dk-ransom .ct{font-size:12px;font-weight:600;color:#5a6680;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.dk-chart .ct svg,.dk-ransom .ct svg{width:15px;height:15px;flex:none;color:#2552c6}
 .dk-trend{display:flex;align-items:flex-end;gap:10px;min-height:150px;padding-top:6px}
 .dk-trend .col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:7px;min-width:0}
 .dk-trend .stk{width:100%;max-width:46px;display:flex;flex-direction:column-reverse;border-radius:5px 5px 0 0;overflow:hidden;background:rgba(23,33,56,.05)}
@@ -921,7 +879,7 @@ const CSS = `
 .dk-sfoot b{color:#5a6680;font-weight:600}
 .dk-sfoot kbd{font:inherit;font-size:10.5px;background:rgba(23,33,56,.08);border:1px solid rgba(23,33,56,.12);padding:1px 6px;border-radius:5px;color:#5a6680;margin-right:3px}
 /* pin star on tool chips (tools scene) */
-.dk-gcpin{position:absolute;top:10px;right:10px;z-index:2;appearance:none;border:0;background:rgba(23,33,56,.08);color:#8a93a6;cursor:pointer;width:24px;height:24px;border-radius:8px;display:grid;place-items:center;opacity:0;transition:opacity .12s,color .12s,background .12s}
+.dk-gcpin{position:absolute;top:50%;margin-top:-12px;right:10px;z-index:2;appearance:none;border:0;background:rgba(23,33,56,.08);color:#8a93a6;cursor:pointer;width:24px;height:24px;border-radius:8px;display:grid;place-items:center;opacity:0;transition:opacity .12s,color .12s,background .12s}
 .dk-gcard:hover .dk-gcpin{opacity:1}.dk-gcpin.on{opacity:1;color:#b7791f}.dk-gcpin:hover{color:#b7791f;background:rgba(245,197,66,.16)}
 .dk-gcpin svg{width:14px;height:14px;fill:currentColor;stroke:none}
 /* ======================= Toolkit workspace ======================= */
@@ -931,7 +889,7 @@ const CSS = `
 .dk-kitlist{display:flex;flex-direction:column;gap:2px}
 .dk-kitcat{margin-bottom:12px}
 .dk-kitcat .kc-h{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin:6px 6px}
-.dk-kitcat .kc-h .kc-d{width:8px;height:8px;border-radius:2px;background:currentColor;box-shadow:0 0 8px currentColor}
+.dk-kitcat .kc-h .kc-d{width:8px;height:8px;border-radius:2px;background:currentColor}
 .dk-kititem{display:block;width:100%;text-align:left;appearance:none;border:0;background:transparent;color:#5a6680;font:inherit;font-size:13px;padding:8px 11px;border-radius:9px;cursor:pointer;transition:background .14s,color .14s}
 .dk-kititem:hover{background:rgba(23,33,56,.05);color:#1a2233}
 .dk-kititem.on{background:rgba(47,95,255,.18);color:#2552c6;font-weight:600}
@@ -960,7 +918,7 @@ textarea.dk-kitio{min-height:120px}
 /* keyboard-shortcuts overlay */
 .dk-keys{position:absolute;inset:0;z-index:95;display:none;align-items:center;justify-content:center;padding:24px;background:rgba(3,6,13,.62)}
 .dk-keys.on{display:flex}
-.dk-keysbox{width:min(560px,94vw);max-height:84vh;overflow:auto;border-radius:14px;background:#ffffff;border:1px solid rgba(23,33,56,.14);box-shadow:0 30px 80px rgba(0,0,0,.6);padding:22px 24px 26px}
+.dk-keysbox{width:min(560px,94vw);max-height:84vh;overflow:auto;border-radius:14px;background:#ffffff;border:1px solid rgba(23,33,56,.14);box-shadow:0 24px 56px rgba(16,24,40,.18);padding:22px 24px 26px}
 .dk-keysbox h3{font-size:16px;font-weight:800;margin-bottom:4px}
 .dk-keysbox .sub{font-size:12.5px;color:#687388;margin-bottom:16px}
 .dk-keysgrp{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#6a7488;font-weight:700;margin:16px 0 8px}
@@ -973,19 +931,144 @@ textarea.dk-kitio{min-height:120px}
 .dk-sevfilter:hover{border-color:rgba(23,33,56,.22)}
 .dk-sevfilter.on{border-color:rgba(79,134,255,.6);background:rgba(79,134,255,.12)}
 .dk-tibar{display:flex;align-items:center;gap:12px;margin:4px 0 16px;flex-wrap:wrap}
-.dk-tifind{flex:1;min-width:220px;max-width:460px}
+.dk-tifind{flex:1;min-width:220px;max-width:460px;height:40px;padding-top:0;padding-bottom:0;border-radius:10px}
 .dk-ticount{font-size:12.5px;color:#687388}
-.dk-tibtn{appearance:none;cursor:pointer;border:1px solid rgba(23,33,56,.14);background:rgba(23,33,56,.05);color:#38435c;font:inherit;font-size:12.5px;font-weight:600;padding:9px 14px;border-radius:10px}
+.dk-tibtn{appearance:none;cursor:pointer;border:1px solid rgba(23,33,56,.14);background:rgba(23,33,56,.05);color:#38435c;font:inherit;font-size:12.5px;font-weight:600;height:40px;padding:0 14px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.dk-tibtn svg{width:15px;height:15px;flex:none}
 .dk-tibtn:hover{background:rgba(23,33,56,.1);border-color:rgba(23,33,56,.24)}
+.dk-tibtn.on{background:#2f5fd0;border-color:#2f5fd0;color:#fff}
+.dk-tibtn.on:hover{background:#3f78ff;border-color:#3f78ff}
+/* shared lede + section intros */
+.dk-sublede{font-size:13px;color:#5a6680;line-height:1.55;max-width:860px;margin:-6px 0 18px}
+/* attack surface */
+.dk-surfbar{display:flex;gap:10px;margin-bottom:8px;max-width:620px}
+.dk-surfbar input{flex:1;min-width:0;height:40px;padding:0 15px;border-radius:10px;border:1px solid rgba(23,33,56,.14);background:#fff;color:#141c2e;font:inherit;font-size:14px;outline:none}
+.dk-surfbar input:focus{border-color:#3f78ff}
+.dk-surfbar button{flex:none}
+.dk-surfhint{font-size:12px;color:#6a7488;margin-bottom:20px;line-height:1.5;max-width:720px}
+.dk-surfgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px;align-items:start}
+.dk-surfp{background:#fff;border:1px solid rgba(23,33,56,.08);border-radius:14px;padding:16px 17px;min-width:0}
+.dk-surfp .hd{display:flex;align-items:center;gap:10px;margin-bottom:12px;min-height:26px}
+.dk-surfp .hd h2{font-size:14px;font-weight:700;color:#141c2e;margin:0}
+.dk-surfp .hd .hx{margin-left:auto}
+.dk-surfp .hd .mo{cursor:pointer;font-size:11.5px;color:#2552c6;font-weight:600}
+.dk-surfp .hd .hx+.mo{margin-left:10px}
+.dk-graphadd{appearance:none;cursor:pointer;border:1px solid rgba(18,168,95,.4);background:rgba(18,168,95,.1);color:#0d7a44;font:inherit;font-size:11px;font-weight:700;padding:3px 9px;line-height:1.4;border-radius:7px}
+.dk-graphadd:hover{background:rgba(18,168,95,.18)}
+.dk-surfcount{font-size:12px;color:#6a7488;margin-bottom:9px}
+.dk-chipv{font-size:11.5px;color:#38435c;background:rgba(23,33,56,.05);border:1px solid rgba(23,33,56,.08);border-radius:6px;padding:3px 8px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.dk-chipv.more{color:#687388;font-weight:600}
+.dk-dnsrow{display:flex;gap:12px;padding:7px 0;border-bottom:1px solid rgba(23,33,56,.06);font-size:12.5px}
+.dk-dnsrow:last-child{border-bottom:0}
+.dk-dnsrow .t{flex:none;width:48px;font-weight:700;color:#2552c6}
+.dk-dnsrow .v{flex:1;min-width:0;color:#38435c;overflow-wrap:anywhere;line-height:1.5}
+.dk-dnsrow .v .ln{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dk-kv{display:flex;flex-direction:column;gap:0}
+.dk-kv>div{display:flex;gap:12px;padding:7px 0;border-bottom:1px solid rgba(23,33,56,.06);font-size:12.5px}
+.dk-kv>div:last-child{border-bottom:0}
+.dk-kv span{flex:none;width:96px;color:#6a7488}
+.dk-kv b{color:#141c2e;font-weight:600;overflow-wrap:anywhere;min-width:0}
+.dk-shlist{display:flex;flex-direction:column;gap:3px;margin-top:4px}
+.dk-shrow{display:flex;align-items:center;gap:9px;font-size:12.5px;padding:5px 0}
+.dk-shrow .d{flex:none;width:8px;height:8px;border-radius:50%}
+.dk-shrow.ok .d{background:#12a85f}.dk-shrow.no .d{background:#e0383a}
+.dk-shrow .l{color:#38435c;font-weight:600}
+.dk-shrow .v{margin-left:auto;font-size:11.5px;color:#6a7488}
+.dk-shrow.ok .v{color:#0d7a44}.dk-shrow.no .v{color:#c0352f}
+.dk-techline{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+.dk-rec{font-size:11px;color:#5a6680;background:rgba(23,33,56,.04);border-radius:7px;padding:7px 10px;margin-top:8px;overflow-wrap:anywhere;line-height:1.5;font-variant-numeric:tabular-nums}
+/* cloud */
+.dk-cloudtop{display:grid;grid-template-columns:1.4fr 1fr;gap:16px;margin-bottom:24px}
+@media(max-width:900px){.dk-cloudtop{grid-template-columns:1fr}.dk-surfbar{max-width:none}}
+.dk-cloudwb,.dk-cloudconn{background:#fff;border:1px solid rgba(23,33,56,.08);border-radius:14px;padding:18px}
+.dk-cloudwb .wbh h2,.dk-cloudconn h2{font-size:15px;font-weight:700;color:#141c2e;margin:0 0 12px}
+.dk-cloudsel{width:100%;height:40px;border-radius:9px;border:1px solid rgba(23,33,56,.14);background:#fff;color:#141c2e;font:inherit;font-size:13px;padding:0 12px;cursor:pointer}
+.dk-clouddesc{font-size:12px;color:#6a7488;line-height:1.5;margin:9px 0}
+.dk-cloudin{width:100%;box-sizing:border-box;min-height:150px;resize:vertical;border-radius:10px;border:1px solid rgba(23,33,56,.12);background:#fbfcfe;color:#141c2e;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;line-height:1.5;padding:11px 13px;outline:none}
+.dk-cloudin:focus{border-color:#3f78ff}
+.dk-cloudbtns{display:flex;align-items:center;gap:14px;margin-top:11px}
+.dk-cloudbtns .mo{cursor:pointer;font-size:12px;color:#2552c6;font-weight:600}
+.dk-cloudout{white-space:pre-wrap;word-break:break-word;background:#0f1626;color:#d7e2f2;border-radius:10px;padding:14px;margin-top:13px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;line-height:1.55;max-height:360px;overflow:auto}
+.dk-cloudconn{position:relative}
+.dk-cloudconn .cc-badge{position:absolute;top:16px;right:16px;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#8a5a00;background:rgba(245,146,11,.14);border:1px solid rgba(245,146,11,.3);border-radius:6px;padding:3px 8px}
+.dk-cloudconn p{font-size:12.5px;color:#5a6680;line-height:1.55;margin:0 0 13px}
+.dk-cloudconn .cc-list{display:flex;flex-direction:column;gap:7px;margin-bottom:14px}
+.dk-cloudconn .cc-list span{font-size:12.5px;color:#38435c;padding:8px 11px;background:rgba(23,33,56,.035);border:1px solid rgba(23,33,56,.07);border-radius:8px}
+.dk-cloudgridh{font-size:15px;font-weight:700;color:#141c2e;margin:4px 0 14px;display:flex;align-items:baseline;gap:10px}
+.dk-cloudgridh span{font-size:12px;font-weight:600;color:#6a7488}
+.dk-cloudgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.dk-cloudcard{appearance:none;font:inherit;display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start;text-align:left;cursor:pointer;background:#fff;border:1px solid rgba(23,33,56,.08);border-radius:12px;padding:13px 15px;transition:border-color .15s,transform .15s}
+.dk-cloudcard:hover{border-color:#3f78ff;transform:translateY(-1px)}
+.dk-cloudcard b{display:block;font-size:13px;font-weight:700;color:#141c2e;margin-bottom:4px}
+.dk-cloudcard span{display:-webkit-box;align-self:stretch;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:11.5px;color:#687388;line-height:1.45}
+/* compliance */
+.dk-compnote{font-size:12.5px;color:#5a6680;line-height:1.55;padding:11px 14px;background:rgba(79,134,255,.06);border:1px solid rgba(79,134,255,.16);border-radius:10px;margin-bottom:20px;max-width:900px}
+.dk-compgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.dk-compcard{appearance:none;font:inherit;display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start;position:relative;text-align:left;cursor:pointer;background:#fff;border:1px solid rgba(23,33,56,.08);border-radius:14px;padding:17px 18px;transition:border-color .15s,transform .15s}
+.dk-compcard:hover{border-color:#3f78ff;transform:translateY(-1px)}
+.dk-compcard b{display:block;font-size:14.5px;font-weight:700;color:#141c2e;margin-bottom:6px}
+.dk-compcard>span{display:block;font-size:12.5px;color:#5a6680;line-height:1.5}
+.dk-compcard .go{margin-top:auto;padding-top:11px;color:#2552c6;font-weight:600;font-size:12px;display:inline-flex;align-items:center;gap:5px}
+.dk-compcard .go svg{width:13px;height:13px}
+/* integrations grid */
+.dk-intmeta{font-size:12.5px;color:#687388}
+.dk-intgrp{margin-bottom:24px}
+.dk-intgrp h2{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#6a7488;font-weight:700;margin:0 0 11px;display:flex;align-items:center;gap:8px}
+.dk-intgrp h2 span{color:#9aa3b5;font-weight:600}
+.dk-intcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.dk-intcard{appearance:none;font:inherit;display:flex;align-items:center;gap:13px;text-align:left;cursor:pointer;background:#fff;border:1px solid rgba(23,33,56,.08);border-radius:13px;padding:13px 15px;transition:border-color .15s,transform .15s}
+.dk-intcard:hover{border-color:#3f78ff;transform:translateY(-1px)}
+.dk-intcard .ic{flex:none;width:34px;height:34px;border-radius:9px;object-fit:contain;background:rgba(23,33,56,.04)}
+.dk-intcard .ic.mono{display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;background:var(--a,#3f78ff)}
+.dk-intcard .meta{min-width:0;flex:1}
+.dk-intcard .meta b{display:block;font-size:13.5px;font-weight:700;color:#141c2e}
+.dk-intcard .meta p{font-size:11.5px;color:#687388;line-height:1.4;margin:2px 0 0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.dk-intcard .dk-stat{flex:none;display:inline-flex;align-items:center;gap:6px;font-size:10.5px;font-weight:700;padding:4px 9px;border-radius:20px;white-space:nowrap}
+.dk-intcard .dk-stat .d{width:7px;height:7px;border-radius:50%}
+.dk-intcard .dk-stat.on{color:#0d7a44;background:rgba(18,168,95,.12)}.dk-intcard .dk-stat.on .d{background:#12a85f}
+.dk-intcard .dk-stat.ref{color:#8a5a00;background:rgba(245,146,11,.12)}.dk-intcard .dk-stat.ref .d{background:#f5920b}
+.dk-intcard .dk-stat.off{color:#687388;background:rgba(23,33,56,.06)}.dk-intcard .dk-stat.off .d{background:#9aa3b5}
 `;
 const IC_SEARCH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/></svg>';
 const IC_CHEV = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>';
 
 export function renderDeck(host, opts) {
   opts = opts || {};
-  const groups = (opts.groups || []).filter((g) => g.items && g.items.length);
+  // Enterprise curation: the simulated themed dashboards and the script-kiddie
+  // offensive toys stay in the codebase/NAV but are never surfaced in the business
+  // Deck. This single filter cascades to the spotlight index, secLabel, TOTAL_TOOLS
+  // and the Tools gallery, all of which read the filtered `groups` below.
+  // Business focus: education/practice content, consumer extras, generic developer
+  // utilities and simulated dashboards are left out; so are near-duplicate tools
+  // (the kept one covers the job: dns covers dnsenum/dnsrecon, osint covers the
+  // email/geo variants, threatfeed covers the static threat snapshots).
+  // Generic developer/format toolkits (encoding, hashing, subnet math, packet decoders,
+  // HTTP reference) hold no standalone value for a security team, so whole groups go.
+  const DECK_DENY_GROUPS = new Set(["flagships", "learn", "labs", "tg-dev", "tg-devx", "tg-coding", "tg-encoding", "tg-web", "tg-network", "tg-hashing", "tg-netproto"]);
+  // Within the groups we keep, drop the single-purpose converters, decoders, parsers,
+  // calculators, generators and reference/cheat-sheet lookups — things a company can't
+  // act on — plus offensive toys (payloads, forgers, crackers). Only tools that DO
+  // something to the company's own estate (scanners, linters, builders, analyzers)
+  // remain. DECK_KEEP_LABEL rescues the few business deliverables the broad rule catches.
+  const DECK_DENY_LABEL = /payload|cheat ?sheet|forge|attack lab|cracker|hashcat|john the ripper|\bconvert(er)?\b|\bencoder\b|\bdecoder\b|pretty-?print|formatter|minif|beautif|\bescaper?\b|unescape|→|\bto (json|yaml|toml|xml|csv|pem|jwk|integer|ipv4|ipv6|cidr|table|fetch)\b|\breference\b|\bexplainer\b|\bcalculator\b|\bparser\b/i;
+  const DECK_KEEP_LABEL = /\breport\b/i;
+  const DECK_DENY_SECS = new Set([
+    "attacksim", "reverseshell", "webshell", "wirelesslab", "socialeng", "exploitdev",
+    "payloads", "payloadgen", "payloadstudio", "packetcraft", "privesc", "cracklab",
+    "xsslab", "pentestconsole",
+    "favicon", "iptools", "reconplanner", "netmap", "dnsenum", "dnsrecon", "osintemail", "emailintel", "ipgeolocation", "addressintel",
+    "darkwebosint", "threatdashboard", "threat", "breachsim", "networktraffic", "trafficanalyzer", "apiscan", "stego",
+    "math", "dataviz", "engines", "education", "downloads", "dlguide", "setup", "privatecloud"
+  ]);
+  const groups = (opts.groups || [])
+    .filter((g) => g.items && g.items.length && !DECK_DENY_GROUPS.has(g.id))
+    .map((g) => ({ ...g, items: g.items.filter((it) => !DECK_DENY_SECS.has(it.sec) && (DECK_KEEP_LABEL.test(it.label || "") || !DECK_DENY_LABEL.test(it.label || ""))) }))
+    .filter((g) => g.items.length);
   const onOpen = typeof opts.onOpen === "function" ? opts.onOpen : () => {};
   const onExit = typeof opts.onExit === "function" ? opts.onExit : () => {};
+  // Primary mode: the Deck IS the signed-in UI (no older console to fall back to),
+  // so "exit" entries become sign-out and "full console" links open a new tab.
+  const primary = typeof opts.onSignOut === "function";
   const toast = (m) => { try { (window.showToast || window.dnToast)?.(m); } catch (_) {} };
 
   // flat index for spotlight: tools + integrations
@@ -1006,18 +1089,22 @@ export function renderDeck(host, opts) {
     <div class="dk-top">
       <button class="dk-brand" id="dkBrand" title="Open full console"><img class="dk-mark" src="/logo-dark.svg?v=20261007b" alt=""><img class="dk-wm" src="/wordmark.svg" alt="Darknode"><span class="dk-wsname">Command Center</span></button>
       <nav class="dk-tabs" id="dkTabs" aria-label="Workspaces">
-        <button class="dk-tab on" data-scene="overview" title="Overview">${IC.home}<span>Overview</span></button>
-        <button class="dk-tab" data-scene="con" title="Connections">${IC.link}<span>Connections</span></button>
-        <button class="dk-tab" data-scene="tools" title="Tools">${IC.grid}<span>Tools</span></button>
-        <button class="dk-tab" data-scene="toolkit" title="Toolkit">${IC.bolt}<span>Toolkit</span></button>
-        <button class="dk-tab" data-scene="diary" title="Diaries">${IC.book}<span>Diaries</span></button>
-        <button class="dk-tab" data-scene="threat" title="Threat Intel">${IC.radar}<span>Threat Intel</span></button>
+        <button class="dk-tab on" data-scene="overview" title="Posture">${IC.home}<span>Posture</span></button>
+        <button class="dk-tab" data-scene="surface" title="Attack Surface">${IC.radar}<span>Attack Surface</span></button>
+        <button class="dk-tab" data-tool="codescan" title="Code Scanner">${IC.term}<span>Code</span></button>
+        <button class="dk-tab" data-tool="strongroom" title="Fund Protection">${IC.bolt}<span>Funds</span></button>
+        <button class="dk-tab" data-tool="vault" title="Treasury Vault">${IC.star}<span>Treasury</span></button>
+        <button class="dk-tab" data-scene="threat" title="Threat & Vulns">${IC.radar}<span>Threat &amp; Vulns</span></button>
+        <button class="dk-tab" data-scene="cloud" title="Cloud">${IC.grid}<span>Cloud</span></button>
+        <button class="dk-tab" data-scene="compliance" title="Compliance">${IC.folder}<span>Compliance</span></button>
         <button class="dk-tab" data-scene="invest" title="Investigations">${IC.folder}<span>Investigations</span></button>
+        <button class="dk-tab" data-scene="con" title="Integrations">${IC.link}<span>Integrations</span></button>
+        <button class="dk-tab" data-scene="tools" title="Tools">${IC.grid}<span>Tools</span></button>
         <button class="dk-tab" data-scene="activity" title="Activity">${IC.pulse}<span>Activity</span></button>
-        <button class="dk-tab" data-scene="assistant" title="Assistant">${IC.spark}<span>Assistant</span></button>
       </nav>
       <div class="dk-right">
         <button class="dk-health" id="dkHealth" title="Live CVE feed status"><span class="d"></span><span class="t">Threat feed live</span></button>
+        <button class="dk-icbtn" id="dkAsstBtn" title="Darknode AI assistant" aria-label="Darknode AI assistant">${IC.spark}</button>
         <button class="dk-icbtn" id="dkFindBtn" title="Search (Ctrl K)" aria-label="Search">${IC_SEARCH}</button>
         <button class="dk-icbtn" id="dkNew" title="Quick create" aria-label="Quick create">${IC.plus}</button>
         <button class="dk-icbtn" id="dkBell" title="Notifications" aria-label="Notifications">${IC.bell}<span class="dk-badge" id="dkBadge" hidden></span></button>
@@ -1032,19 +1119,17 @@ export function renderDeck(host, opts) {
 
     <div class="dk-scene dk-ov" id="dkOverview"></div>
 
-    <div class="dk-scene" id="dkCon" hidden>
-      <div class="dk-con" id="dkConCanvas">
-        <svg class="dk-links" id="dkLinks"></svg>
-        <div class="dk-core"><div><b>DARKNODE</b><br><span id="dkCoreCount"></span></div></div>
-      </div>
-      <div class="dk-conlist" id="dkConList"></div>
-    </div>
+    <div class="dk-scene dk-con2" id="dkCon" hidden></div>
 
     <div class="dk-scene dk-tools2" id="dkTools" hidden></div>
 
     <div class="dk-scene dk-kit" id="dkToolkit" hidden></div>
 
-    <div class="dk-scene dk-diary" id="dkDiary" hidden></div>
+    <div class="dk-scene dk-surf" id="dkSurface" hidden></div>
+
+    <div class="dk-scene dk-cloud" id="dkCloud" hidden></div>
+
+    <div class="dk-scene dk-comp" id="dkCompliance" hidden></div>
 
     <div class="dk-scene dk-ti" id="dkThreat" hidden></div>
 
@@ -1099,9 +1184,9 @@ export function renderDeck(host, opts) {
   function drawStars(){}
 
   // ---------- workspace router ----------
-  const SCENES = { overview: "#dkOverview", con: "#dkCon", tools: "#dkTools", toolkit: "#dkToolkit", diary: "#dkDiary", threat: "#dkThreat", invest: "#dkInvest", activity: "#dkActivity", assistant: "#dkAssistant" };
+  const SCENES = { overview: "#dkOverview", surface: "#dkSurface", threat: "#dkThreat", cloud: "#dkCloud", compliance: "#dkCompliance", invest: "#dkInvest", con: "#dkCon", tools: "#dkTools", toolkit: "#dkToolkit", activity: "#dkActivity", assistant: "#dkAssistant" };
   const sceneEls = {}; for (const k in SCENES) sceneEls[k] = $(SCENES[k]);
-  const sceneCon = sceneEls.con, sceneTools = sceneEls.tools;   // kept for the constellation + tools code
+  const sceneTools = sceneEls.tools;   // kept for the tools gallery code
   // sec -> label, for activity lines and quick-action titles
   const secLabel = {}; for (const g of groups) for (const it of g.items) secLabel[it.sec] = it.label;
   pins = pins.filter((s) => secLabel[s]);   // drop pins whose tool no longer exists
@@ -1125,16 +1210,18 @@ export function renderDeck(host, opts) {
     root.querySelectorAll(".dk-tab").forEach((t) => t.classList.toggle("on", t.dataset.scene === scene));
     for (const k in sceneEls) sceneEls[k].hidden = k !== scene;
     if (scene === "overview") renderOverview();
-    else if (scene === "con") layoutConstellation();
+    else if (scene === "surface") renderSurface();
+    else if (scene === "threat") renderThreat();
+    else if (scene === "cloud") renderCloud();
+    else if (scene === "compliance") renderCompliance();
+    else if (scene === "con") renderIntegrations();
     else if (scene === "tools") { buildTools(); applyTools(); revealGallery(); }
     else if (scene === "toolkit") renderToolkit();
-    else if (scene === "diary") renderDiaries();
-    else if (scene === "threat") renderThreat();
     else if (scene === "invest") renderInvest();
     else if (scene === "activity") renderActivity();
     else if (scene === "assistant") openAssistant();
   }
-  root.querySelectorAll(".dk-tab").forEach((b) => b.onclick = () => go(b.dataset.scene));
+  root.querySelectorAll(".dk-tab").forEach((b) => b.onclick = () => b.dataset.tool ? openTool(b.dataset.tool, secLabel[b.dataset.tool] || b.title) : go(b.dataset.scene));
   // Any element carrying data-scene (KPI cards, "view all" links, quick actions)
   // routes to that workspace; data-sec opens a tool in the in-deck workspace.
   root.addEventListener("click", (e) => {
@@ -1142,120 +1229,15 @@ export function renderDeck(host, opts) {
     if (nav && !nav.classList.contains("dk-tab") && nav.dataset.scene) { go(nav.dataset.scene); return; }
   });
 
-  // ---------- constellation ----------
-  const canvas = $("#dkConCanvas"), links = $("#dkLinks"), coreCount = $("#dkCoreCount"), conList = $("#dkConList"), core = root.querySelector(".dk-core");
-  let fanBloomed = false;
+  // ---------- integrations ----------
   const ai = INTEGRATIONS.filter((i) => i.kind === "ai");
   const sec = INTEGRATIONS.filter((i) => i.kind === "sec");
-
-  function nodeHTML(it){
-    const c = conns[it.id]?.connected;
-    return `<div class="dk-node${c ? " conn" : ""}" data-id="${it.id}">
-      <div class="dk-chip">${logoHTML(it, "")}</div><span class="st"></span>
-      <div class="nm">${esc(it.name)}</div>
-    </div>`;
-  }
-  function buildNodes(){
-    canvas.querySelectorAll(".dk-node,.dk-ringlbl").forEach((n) => n.remove());
-    const frag = document.createElement("div"); frag.innerHTML = ai.concat(sec).map(nodeHTML).join("");
-    while (frag.firstChild) canvas.appendChild(frag.firstChild);
-    canvas.querySelectorAll(".dk-node").forEach((n) => n.onclick = () => openDrawer(INTEGRATIONS.find((i) => i.id === n.dataset.id)));
-  }
-  buildNodes();
-
-  function layoutConstellation(){
-    const W = canvas.clientWidth, H = canvas.clientHeight;
-    const narrow = W < 760;
-    canvas.style.display = narrow ? "none" : "";
-    conList.style.display = narrow ? "block" : "none";
-    coreCount.textContent = `${countConnected()} linked`;
-    if (narrow) { renderConList(); return; }
-    const cx = W/2, coreY = Math.round(H * 0.82);
-    if (core){ core.style.left = cx + "px"; core.style.top = coreY + "px"; }
-    // Casual upward "stack fan" (Mac-downloads feel): services spray up from the
-    // core in wide, shallow tiers with a little organic jitter — not a rigid orbit.
-    fanPlace(ai.concat(sec), cx, coreY, W, H);
-    drawLinks(cx, coreY);
-    revealFan();
-  }
-  // deterministic per-id jitter in [-m, m] so the fan looks hand-placed, not mechanical
-  function jit(seed, m){ let h = 2166136261; for (let i = 0; i < seed.length; i++){ h ^= seed.charCodeAt(i); h = Math.imul(h, 16777619); } return (((h >>> 0) % 1000) / 1000 - 0.5) * 2 * m; }
-  function fanPlace(list, cx, coreY, W, H){
-    const N = list.length; if (!N) return;
-    const span = 132 * Math.PI / 180;            // total fan width
-    const mid = -Math.PI / 2;                    // straight up
-    const a0 = mid - span / 2;
-    const margin = 88;                           // keep chips (incl. label) off the viewport edges
-    const chipGap = 80;                          // min arc distance between chip centres (chip is 64px)
-    const rMin = 168;
-    // cap the radius so the widest/topmost chips can never reach past the margins
-    const rMaxX = (W / 2 - margin) / Math.max(0.2, Math.sin(span / 2));
-    const rMaxY = coreY - margin;
-    const rMax = Math.max(rMin + 140, Math.min(rMaxY, rMaxX, W * 0.47));
-    // how many chips a ring at radius r can hold without crowding
-    const capAt = (r) => Math.max(3, Math.floor((r * span) / chipGap));
-    // pick the fewest evenly-spaced rings that together can hold everything —
-    // this is what stops the outer ring from being overloaded (the old overlap).
-    let radii = [rMin];
-    for (let K = 2; K <= 12; K++){
-      radii = Array.from({ length: K }, (_, k) => rMin + (rMax - rMin) * k / (K - 1));
-      if (radii.reduce((s, r) => s + capAt(r), 0) >= N) break;
-    }
-    const place = (it, ang, rr) => {
-      ang += jit(it.id + "a", 0.015);
-      rr += jit(it.id + "r", 7);
-      let x = cx + Math.cos(ang) * rr, y = coreY + Math.sin(ang) * rr;
-      x = Math.max(margin, Math.min(W - margin, x));   // never spill off-screen
-      y = Math.max(margin, Math.min(coreY - 24, y));
-      const el = canvas.querySelector(`.dk-node[data-id="${it.id}"]`);
-      if (el){ el.style.left = x + "px"; el.style.top = y + "px"; el.__x = x; el.__y = y; }
-    };
-    // fill rings inside-out, balanced across the remaining rings, never past a ring's capacity
-    let idx = 0;
-    radii.forEach((r, k) => {
-      if (idx >= N) return;
-      const ringsLeft = radii.length - k;
-      const want = Math.min(capAt(r), Math.ceil((N - idx) / ringsLeft));
-      const items = list.slice(idx, idx + want); idx += want;
-      const n = items.length;
-      items.forEach((it, i) => place(it, n === 1 ? mid : a0 + (i / (n - 1)) * span, r));
-    });
-    // safety: any leftover (shouldn't happen — total capacity >= N) rides just past the outer ring
-    if (idx < N){
-      const items = list.slice(idx), n = items.length;
-      items.forEach((it, i) => place(it, n === 1 ? mid : a0 + (i / (n - 1)) * span, rMax + 44));
-    }
-  }
-  function revealFan(){
-    const nodes = [...canvas.querySelectorAll(".dk-node")];
-    if (fanBloomed){ nodes.forEach((n) => n.classList.add("in")); return; }
-    fanBloomed = true;
-    nodes.forEach((n, i) => setTimeout(() => n.classList.add("in"), 50 + i * 20));
-  }
-  function drawLinks(cx, cy){
-    links.setAttribute("viewBox", `0 0 ${canvas.clientWidth} ${canvas.clientHeight}`);
-    links.innerHTML = INTEGRATIONS.map((it) => {
-      const el = canvas.querySelector(`.dk-node[data-id="${it.id}"]`); if (!el) return "";
-      const on = conns[it.id]?.connected;
-      return `<line x1="${cx}" y1="${cy}" x2="${el.__x}" y2="${el.__y}" class="${on ? "on" : ""}" stroke="${on ? "#12a85f" : "rgba(23,33,56,.12)"}"/>`;
-    }).join("");
-  }
-  function renderConList(){
-    const grp = (title, list) => `<h4>${title}</h4>` + list.map((it) => {
-      const c = conns[it.id]?.connected;
-      return `<div class="row" data-id="${it.id}">${logoHTML(it, "")}<div class="meta"><b>${esc(it.name)}</b><p>${esc(it.blurb)}</p></div><span class="dk-stat ${c?"on":"off"}"><span class="d"></span>${c?"Linked":"Connect"}</span></div>`;
-    }).join("");
-    conList.innerHTML = grp("AI Models", ai) + grp("Cyber Intelligence", sec);
-    conList.querySelectorAll(".row").forEach((r) => r.onclick = () => openDrawer(INTEGRATIONS.find((i) => i.id === r.dataset.id)));
-  }
   const countConnected = () => INTEGRATIONS.reduce((a, i) => a + (conns[i.id]?.connected ? 1 : 0), 0);
-
-  function refreshConnState(it){
-    const c = conns[it.id]?.connected;
-    const node = canvas.querySelector(`.dk-node[data-id="${it.id}"]`);
-    if (node) node.classList.toggle("conn", !!c);
-    coreCount.textContent = `${countConnected()} linked`;
-    if (!sceneCon.hidden) { if (canvas.style.display === "none") renderConList(); else layoutConstellation(); }
+  // Re-render the grid in place after a connect/disconnect and keep the Posture
+  // KPI honest without a full scene rebuild.
+  function refreshConnState(){
+    if (curScene === "con") renderIntegrations();
+    const k = root.querySelector('[data-k="conn"] .kn'); if (k) k.textContent = String(countConnected());
   }
 
   // ---------- drawer ----------
@@ -1308,7 +1290,7 @@ export function renderDeck(host, opts) {
     const mlist = it.kind === "ai" && MODELS[it.id] ? MODELS[it.id] : null;
     let curModel = "";
     if (mlist) { try { curModel = localStorage.getItem("dn_model_" + it.id) || ""; } catch (_) {} }
-    // Custom = a model id the operator typed that isn't one of our presets. BYOK means
+    // Custom = a model id the user typed that isn't one of our presets. BYOK means
     // their own plan may unlock models we don't list, so any id is allowed.
     const isCustom = !!curModel && mlist && !mlist.some((m) => m.id === curModel);
     const modelsHTML = mlist ? `
@@ -1428,13 +1410,13 @@ export function renderDeck(host, opts) {
     if (toolsBuilt) return; toolsBuilt = true;
     sceneTools.innerHTML = `
       <div class="dk-tbar">
-        <label class="dk-tsearch">${IC_SEARCH}<input id="dkToolSearch" type="search" placeholder="Search ${TOTAL_TOOLS} tools by name…" autocomplete="off" spellcheck="false"></label>
+        <label class="dk-tsearch">${IC_SEARCH}<input id="dkToolSearch" type="search" placeholder="Search tools…" autocomplete="off" spellcheck="false"></label>
         <span class="dk-tcount" id="dkToolCount"></span>
       </div>
       <div class="dk-tbody">
         <nav class="dk-tnav" id="dkToolNav" aria-label="Tool categories">
-          <button class="dk-tcat" data-cat="all"><span class="cd" style="background:#5a6680;color:#5a6680"></span>All tools<span class="n">${TOTAL_TOOLS}</span></button>
-          ${groups.map((g) => { const h = hexOf(g.color); return `<button class="dk-tcat" data-cat="${g.id}"><span class="cd" style="background:${h};color:${h}"></span>${esc(g.name)}<span class="n">${g.items.length}</span></button>`; }).join("")}
+          <button class="dk-tcat" data-cat="all"><span class="cd" style="background:#5a6680;color:#5a6680"></span><span class="tl">All tools</span><span class="n">${TOTAL_TOOLS.toLocaleString()}</span></button>
+          ${groups.map((g) => { const h = hexOf(g.color); return `<button class="dk-tcat" data-cat="${g.id}" title="${esc(g.name)}"><span class="cd" style="background:${h};color:${h}"></span><span class="tl">${esc(g.name)}</span><span class="n">${g.items.length}</span></button>`; }).join("")}
         </nav>
         <div class="dk-tmain" id="dkToolMain">
           ${groups.map((g) => { const h = hexOf(g.color); return `<section class="dk-tsec" data-g="${g.id}"><div class="th" style="color:${h}"><span class="d"></span><h3>${esc(g.name)}</h3><span class="c">${g.items.length} tools</span></div>
@@ -1455,6 +1437,7 @@ export function renderDeck(host, opts) {
       b.classList.toggle("on", on);
     });
     sceneTools.querySelectorAll("#dkToolNav .dk-tcat").forEach((b) => b.onclick = () => {
+      if (b.dataset.cat === "__toolkit") { go("toolkit"); return; }   // instant utilities live in their own scene
       toolCat = b.dataset.cat; try { localStorage.setItem("dn_deck_toolcat", toolCat); } catch (_) {}
       const s = sceneTools.querySelector("#dkToolSearch"); if (s) s.value = ""; toolQ = "";
       applyTools(); revealGallery();
@@ -1499,16 +1482,18 @@ export function renderDeck(host, opts) {
     wTitle.innerHTML = '<span class="wi"' + (accent ? ' style="--a:' + accent + '"' : "") + '>' + toolIcon(label) + '</span><span class="wt">' + esc(label) + '</span>';
     const pinBtn = $("#dkWPin"); if (pinBtn) pinBtn.classList.toggle("pinned", pins.includes(sec));
     drawer.classList.remove("on"); closeAllMenus();
+    root.querySelectorAll(".dk-tab").forEach((t) => t.classList.toggle("on", t.dataset.tool === sec));
     for (const k in sceneEls) sceneEls[k].hidden = true;
     sceneWork.hidden = false;
     sceneWork.classList.remove("opening"); void sceneWork.offsetWidth; sceneWork.classList.add("opening");
   }
   function closeTool(){
     sceneWork.hidden = true; wFrame.innerHTML = ""; curSec = null;
-    go("tools");
+    go(curScene || "overview");
   }
   $("#dkWBack").onclick = closeTool;
-  $("#dkWFull").onclick = () => { const s = curSec; teardown(); onOpen(s); };
+  $("#dkWFull").onclick = () => { const s = curSec; if (primary) { window.open("/" + s, "_blank", "noopener"); return; } teardown(); onOpen(s); };
+  if (primary) { $("#dkWFull").hidden = true; $("#dkBrand").title = "Home"; $("#dkAsstFull").textContent = "Open in new tab"; }
   $("#dkWPin").onclick = () => { if (!curSec) return; const on = togglePin(curSec); $("#dkWPin").classList.toggle("pinned", on); toast(on ? "Pinned to overview" : "Unpinned"); };
   $("#dkWCopy").onclick = async () => { if (!curSec) return; try { await navigator.clipboard.writeText(location.origin + "/" + curSec); toast("Tool link copied"); } catch (_) { toast("Copy failed"); } };
   $("#dkWTab").onclick = () => { if (curSec) window.open("/" + curSec, "_blank", "noopener"); };
@@ -1522,16 +1507,24 @@ export function renderDeck(host, opts) {
   // rather than opening a tool, so Ctrl+K is a true command palette.
   const ACTIONS = [
     { type: "action", label: "Ask Darknode AI", group: "Action", icon: IC.spark, run: () => askAI("") },
+    { type: "action", label: "Scan a codebase", group: "Action", icon: IC.term, run: () => openTool("codescan", secLabel["codescan"] || "Code Scanner") },
+    { type: "action", label: "Protect the funds (analyze a ledger)", group: "Action", icon: IC.bolt, run: () => openTool("strongroom", secLabel["strongroom"] || "Fund Protection") },
+    { type: "action", label: "Open the treasury vault", group: "Action", icon: IC.star, run: () => openTool("vault", secLabel["vault"] || "Treasury Vault") },
+    { type: "action", label: "Map an attack surface", group: "Action", icon: IC.radar, run: () => go("surface") },
     { type: "action", label: "Connect a provider", group: "Action", icon: IC.link, run: () => go("con") },
     { type: "action", label: "New investigation", group: "Action", icon: IC.folder, run: () => openTool("investigation", secLabel["investigation"] || "Investigation") },
     { type: "action", label: "Open security graph", group: "Action", icon: IC.grid, run: () => openTool("secgraph", secLabel["secgraph"] || "Security Graph") },
-    { type: "action", label: "Open full console", group: "Action", icon: IC.ext, run: () => exitDeck() },
-    { type: "action", label: "Go to Overview", group: "Navigate", icon: IC.home, run: () => go("overview") },
-    { type: "action", label: "Go to Connections", group: "Navigate", icon: IC.link, run: () => go("con") },
-    { type: "action", label: "Go to Tools", group: "Navigate", icon: IC.grid, run: () => go("tools") },
-    { type: "action", label: "Go to Threat Intel", group: "Navigate", icon: IC.radar, run: () => go("threat") },
+    ...(primary ? [] : [{ type: "action", label: "Open full console", group: "Action", icon: IC.ext, run: () => exitDeck() }]),
+    { type: "action", label: "Go to Posture", group: "Navigate", icon: IC.home, run: () => go("overview") },
+    { type: "action", label: "Go to Attack Surface", group: "Navigate", icon: IC.radar, run: () => go("surface") },
+    { type: "action", label: "Go to Threat & Vulns", group: "Navigate", icon: IC.radar, run: () => go("threat") },
+    { type: "action", label: "Go to Cloud", group: "Navigate", icon: IC.grid, run: () => go("cloud") },
+    { type: "action", label: "Go to Compliance", group: "Navigate", icon: IC.folder, run: () => go("compliance") },
     { type: "action", label: "Go to Investigations", group: "Navigate", icon: IC.folder, run: () => go("invest") },
+    { type: "action", label: "Go to Integrations", group: "Navigate", icon: IC.link, run: () => go("con") },
+    { type: "action", label: "Go to Tools", group: "Navigate", icon: IC.grid, run: () => go("tools") },
     { type: "action", label: "Go to Activity", group: "Navigate", icon: IC.pulse, run: () => go("activity") },
+    { type: "action", label: "Go to Assistant", group: "Navigate", icon: IC.spark, run: () => go("assistant") },
   ];
   function spotIcon(m){
     if (m.type === "conn") return `<span class="ic">${logoHTML(m.it, "")}</span>`;
@@ -1551,6 +1544,7 @@ export function renderDeck(host, opts) {
   function chooseSpot(i){ const m = matches[i]; if (!m) return; if (m.type === "action") { closeSpot(); try { m.run(); } catch (_) {} } else if (m.type === "conn") { closeSpot(); go("con"); openDrawer(m.it); } else { closeSpot(); openTool(m.sec, m.label); } }
   function moveSel(d){ if (!matches.length) return; selIdx = (selIdx + d + matches.length) % matches.length; spotRes.querySelectorAll(".dk-sr").forEach((r, i) => r.classList.toggle("sel", i === selIdx)); spotRes.querySelector(".dk-sr.sel")?.scrollIntoView({ block: "nearest" }); }
   $("#dkFindBtn").onclick = openSpot; spotIn.oninput = () => runSpot(spotIn.value);
+  $("#dkAsstBtn").onclick = () => go("assistant");
   spot.addEventListener("click", (e) => { if (e.target === spot) closeSpot(); });
 
   // ---------- command-center chrome: status, quick-create, notifications, account ----------
@@ -1588,7 +1582,7 @@ export function renderDeck(host, opts) {
     if (clr) clr.onclick = () => { notifSeen = Date.now(); try { localStorage.setItem(LS_NOTIF_SEEN, String(notifSeen)); } catch (_) {} updateBadge(); buildBellMenu(); };
   }
   function buildAcctMenu(){
-    const nm = user.displayName || user.email || "Operator", em = user.email || "Signed in to Darknode";
+    const nm = user.displayName || user.email || "Account", em = user.email || "Signed in to Darknode";
     popAcct.innerHTML = `<div class="dk-acctcard"><b>${esc(nm)}</b><span>${esc(em)}</span></div>
       <button class="dk-mi" data-go="overview">${IC.home}<span>Command center home</span></button>
       <button class="dk-mi" data-tool="settings">${IC.gear}<span>Settings</span></button>
@@ -1596,16 +1590,17 @@ export function renderDeck(host, opts) {
       <div class="dk-mi-div"></div>
       <button class="dk-mi" id="dkMiExport">${IC.ext}<span>Export deck state<span class="sub">Connections, pins &amp; notes as JSON</span></span></button>
       <button class="dk-mi" id="dkMiImport">${IC.folder}<span>Import deck state</span></button>
-      <button class="dk-mi" id="dkMiConsole">${IC.ext}<span>Open full console</span></button>
+      ${primary ? (opts.isOwner ? `<button class="dk-mi" id="dkMiAdmin">${IC.gear}<span>Admin</span></button>` : "") : `<button class="dk-mi" id="dkMiConsole">${IC.ext}<span>Open full console</span></button>`}
       <div class="dk-mi-div"></div>
-      <button class="dk-mi" id="dkMiExit">${IC.logout}<span>Exit command center</span></button>`;
+      <button class="dk-mi" id="dkMiExit">${IC.logout}<span>${primary ? "Sign out" : "Exit command center"}</span></button>`;
     popAcct.querySelector("[data-go]").onclick = () => { closeAllMenus(); go("overview"); };
     popAcct.querySelector("[data-tool]").onclick = () => { closeAllMenus(); openTool("settings", "Settings"); };
     popAcct.querySelector("#dkMiKeys").onclick = () => { closeAllMenus(); toggleKeys(true); };
     popAcct.querySelector("#dkMiExport").onclick = () => { closeAllMenus(); exportDeckState(); };
     popAcct.querySelector("#dkMiImport").onclick = () => { closeAllMenus(); importDeckState(); };
-    popAcct.querySelector("#dkMiConsole").onclick = exitDeck;
-    popAcct.querySelector("#dkMiExit").onclick = exitDeck;
+    const miCon = popAcct.querySelector("#dkMiConsole"); if (miCon) miCon.onclick = exitDeck;
+    const miAdm = popAcct.querySelector("#dkMiAdmin"); if (miAdm) miAdm.onclick = () => { closeAllMenus(); openTool("admin", "Admin"); };
+    popAcct.querySelector("#dkMiExit").onclick = primary ? () => { closeAllMenus(); opts.onSignOut(); } : exitDeck;
   }
   function exitDeck(){ teardown(); onExit(); }
   // Portable deck state: connections, pinned tools and notes (no secrets/API keys).
@@ -1642,7 +1637,7 @@ export function renderDeck(host, opts) {
   $("#dkNew").onclick = (e) => { e.stopPropagation(); toggleMenu(popNew, $("#dkNew"), buildNewMenu); };
   $("#dkBell").onclick = (e) => { e.stopPropagation(); const willOpen = !popBell.classList.contains("on"); toggleMenu(popBell, $("#dkBell"), buildBellMenu); if (willOpen) { notifSeen = Date.now(); try { localStorage.setItem(LS_NOTIF_SEEN, String(notifSeen)); } catch (_) {} updateBadge(); } };
   $("#dkAcct").onclick = (e) => { e.stopPropagation(); toggleMenu(popAcct, $("#dkAcct"), buildAcctMenu); };
-  $("#dkBrand").onclick = exitDeck;
+  $("#dkBrand").onclick = () => { if (!primary) return exitDeck(); if (!sceneWork.hidden) closeTool(); go("overview"); };
   root.addEventListener("pointerdown", (e) => { if (!e.target.closest(".dk-pop, .dk-icbtn, .dk-acct")) closeAllMenus(); });
   updateBadge();
 
@@ -1664,32 +1659,33 @@ export function renderDeck(host, opts) {
       : `<div class="dk-nempty">No activity yet. Open a tool or connect a provider and it shows up here.</div>`;
     const pct = INTEGRATIONS.length ? Math.round(linked.length / INTEGRATIONS.length * 100) : 0;
     const now = new Date();
-    const first = ((user.displayName || "").trim().split(/\s+/)[0]) || (user.email || "").split("@")[0] || "operator";
+    const first = ((user.displayName || "").trim().split(/\s+/)[0]) || (user.email || "").split("@")[0] || "there";
     const hr = now.getHours();
-    const greet = hr < 5 ? "Still running" : hr < 12 ? "Good morning" : hr < 18 ? "Good afternoon" : "Good evening";
+    const greet = hr < 12 ? "Good morning" : hr < 18 ? "Good afternoon" : "Good evening";
     el.innerHTML = `
       <div class="dk-ovhead">
-        <div><h1>${esc(greet)}, ${esc(first)}</h1><p>${linked.length} of ${INTEGRATIONS.length} integrations linked &middot; ${TOTAL_TOOLS.toLocaleString()} tools ready &middot; live threat feed from NVD</p></div>
+        <div><h1>${esc(greet)}, ${esc(first)}</h1><p>${linked.length} of ${INTEGRATIONS.length} integrations connected &middot; ${TOTAL_TOOLS.toLocaleString()} tools &middot; live vulnerability intel (NVD, CISA KEV, EPSS)</p></div>
         <div class="when">${now.toLocaleDateString([], { weekday: "long", month: "long", day: "numeric" })}<br>${now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>
       </div>
       <form class="dk-ask" id="dkAsk">
         <span class="ai">${IC.spark}</span>
-        <input id="dkAskIn" placeholder="Ask Darknode AI — triage a CVE, draft a playbook, explain a finding…" autocomplete="off" spellcheck="false">
+        <input id="dkAskIn" placeholder="Ask Darknode AI…" autocomplete="off" spellcheck="false">
         <button type="submit">${IC.bolt}Ask</button>
       </form>
+      <div class="dk-askhint">Triage a CVE, draft a runbook, explain a finding or review a config.</div>
       <div class="dk-kpis">
-        ${kpi("conn", linked.length, "Integrations linked", IC.link, "#12a85f", "con", "of " + INTEGRATIONS.length)}
-        ${kpi("tools", TOTAL_TOOLS, "Tools available", IC.grid, "#4f86ff", "tools")}
-        ${kpi("graph", "—", "Graph entities", IC.folder, "#9b5cf0", "invest")}
-        ${kpi("cve", "—", "New CVEs (7d)", IC.radar, "#f0484a", "threat")}
-        ${kpi("tused", s.toolsUsed, "Tools used", IC.pulse, "#f5920b", null, "this browser")}
-        ${kpi("ai", s.aiConvos, "AI conversations", IC.spark, "#3f78ff", "assistant", "this browser")}
-        ${kpi("diary", DIARIES.length, "Playbooks", IC.book, "#12935a", "diary", "field diaries")}
+        ${kpi("exposure", "—", "Exposure score", IC.radar, "#f0484a", null, "out of 100 · indicative")}
+        ${kpi("conn", linked.length, "Integrations connected", IC.link, "#12a85f", "con", "of " + INTEGRATIONS.length)}
+        ${kpi("tools", TOTAL_TOOLS.toLocaleString(), "Tools available", IC.grid, "#4f86ff", "tools", "curated catalog")}
+        ${kpi("graph", "—", "Graph entities", IC.folder, "#9b5cf0", "invest", "this workspace")}
+        ${kpi("cve", "—", "New CVEs", IC.radar, "#f5920b", "threat", "NVD · last 7 days")}
+        ${kpi("kev", "—", "Known-exploited (KEV)", IC.radar, "#e0383a", "threat", "CISA catalog")}
       </div>
+      <div class="dk-expnote" id="dkExpNote" hidden></div>
       <div class="dk-ovgrid3">
         <div class="dk-ovp"><h2>${IC.star} Pinned tools <span class="mo" data-scene="tools">All tools</span></h2><div id="dkPins" class="dk-pins"></div></div>
         <div class="dk-ovp"><h2>${IC.radar} System status</h2><div id="dkSys" class="dk-sys"></div></div>
-        <div class="dk-ovp"><h2>${IC.link} Connections <span class="mo" data-scene="con">Manage</span></h2>
+        <div class="dk-ovp"><h2>${IC.link} Integrations <span class="mo" data-scene="con">Manage</span></h2>
           <div class="dk-gauge"><div class="ring" style="--p:${pct};--c:#12a85f"><i>${linked.length}</i></div><div class="gmeta"><b>${linked.length} of ${INTEGRATIONS.length} linked</b><p>${linked.length ? esc(linked.slice(0, 5).map((i) => i.name).join(", ")) + (linked.length > 5 ? "…" : "") : "Connect AI models and threat-intel sources to power the console."}</p></div></div>
         </div>
       </div>
@@ -1697,17 +1693,20 @@ export function renderDeck(host, opts) {
         <div>
           <div class="dk-ovp"><h2>${IC.pulse} Recent activity <span class="mo" data-scene="activity">View all</span></h2><div class="dk-ovact">${actRows}</div></div>
           <div class="dk-ovp"><h2>${IC.grid} Quick actions</h2><div class="dk-qa">
-            <button class="dk-qacard" data-scene="assistant"><span class="qi" style="--a:#3f78ff">${IC.spark}</span><b>Ask Darknode AI</b><span>Investigate with the assistant.</span></button>
+            <button class="dk-qacard" data-tool="codescan"><span class="qi" style="--a:#3f78ff">${IC.term}</span><b>Scan a codebase</b><span>Connect GitHub and jump to each vulnerable line.</span></button>
+            <button class="dk-qacard" data-tool="strongroom"><span class="qi" style="--a:#f59e0b">${IC.bolt}</span><b>Protect the funds</b><span>Screen a ledger for fraud and intrusion-to-theft chains.</span></button>
+            <button class="dk-qacard" data-tool="vault"><span class="qi" style="--a:#f59e0b">${IC.star}</span><b>Treasury vault</b><span>Controls and a tamper-evident ledger for funds at your bank.</span></button>
             <button class="dk-qacard" data-scene="con"><span class="qi" style="--a:#12a85f">${IC.link}</span><b>Connect a provider</b><span>Link an AI model or intel source.</span></button>
             <button class="dk-qacard" data-tool="investigation"><span class="qi" style="--a:#9b5cf0">${IC.folder}</span><b>New investigation</b><span>Open the investigation workspace.</span></button>
             <button class="dk-qacard" data-tool="secgraph"><span class="qi" style="--a:#4f86ff">${IC.grid}</span><b>Security graph</b><span>Entities and their relationships.</span></button>
-            <button class="dk-qacard" data-scene="diary"><span class="qi" style="--a:#12935a">${IC.book}</span><b>Open a field diary</b><span>Step-by-step hacking playbooks.</span></button>
+            <button class="dk-qacard" data-scene="surface"><span class="qi" style="--a:#f0484a">${IC.radar}</span><b>Map an attack surface</b><span>Enter a domain for a real external footprint.</span></button>
+            <button class="dk-qacard" data-scene="cloud"><span class="qi" style="--a:#12935a">${IC.grid}</span><b>Run a cloud posture check</b><span>Lint IAM, buckets, security groups, K8s and Dockerfiles.</span></button>
           </div></div>
         </div>
         <div>
-          <div class="dk-ovp"><h2>${IC.radar} Threat level <span class="mo" data-scene="threat">Threat intel</span></h2><div id="dkOvThreat"><div class="dk-loading"><span class="sp"></span>Loading live CVE feed…</div></div></div>
+          <div class="dk-ovp"><h2>${IC.radar} Threat level <span class="mo" data-scene="threat">Threat &amp; vulns</span></h2><div id="dkOvThreat"><div class="dk-loading"><span class="sp"></span>Loading live CVE feed…</div></div></div>
           <div class="dk-ovp"><h2>${IC.note} Notes <span class="mo" id="dkNotesClear">Clear</span></h2>
-            <textarea class="dk-notes" id="dkNotes" placeholder="Operator scratchpad — jot an IP, a hypothesis, a to-do. Saved on this device."></textarea>
+            <textarea class="dk-notes" id="dkNotes" placeholder="Notes — jot an IP, a hypothesis, a to-do. Saved on this device."></textarea>
             <div class="dk-notef"><span id="dkNotesSaved">Saved on this device</span><span id="dkNotesCount"></span></div>
           </div>
         </div>
@@ -1730,23 +1729,62 @@ export function renderDeck(host, opts) {
       const clr = el.querySelector("#dkNotesClear");
       if (clr) clr.onclick = async () => { if (!notesEl.value.trim()) return; const ok = await (window.dnConfirm ? window.dnConfirm("Clear the scratchpad?") : Promise.resolve(true)); if (!ok) return; notesEl.value = ""; saveNotes(""); setCount(); if (savedEl) savedEl.textContent = "Cleared"; };
     }
-    // async: graph entity count
+    // Signals feeding the exposure score; each resolves independently and the score
+    // is (re)computed from whatever has arrived. Nothing is fabricated on failure.
+    const sig = { cveHot: null, cveTotal: null, graphHot: null, kevTotal: null, intCov: Math.round((linked.length / (INTEGRATIONS.length || 1)) * 100), ready: {} };
+    // Exposure score — 0..100, indicative only, inputs shown. Weighted blend of the
+    // live critical/high share of the NVD 7-day feed, the KEV catalog size (scaled),
+    // the share of high/critical entities in the local graph, and integration coverage
+    // (more coverage lowers exposure). Never a grade or certification.
+    function recomputeExposure(){
+      const parts = [], notes = [];
+      if (sig.cveHot != null && sig.cveTotal != null) {
+        const share = sig.cveTotal ? sig.cveHot / sig.cveTotal : 0;
+        parts.push({ w: 0.4, v: Math.min(1, share) });
+        notes.push(`${sig.cveHot} of the ${sig.cveTotal} most recent CVEs rated critical/high`);
+      }
+      if (sig.kevTotal != null) {
+        parts.push({ w: 0.25, v: Math.min(1, sig.kevTotal / 1400) });
+        notes.push(`${sig.kevTotal.toLocaleString()} on the CISA KEV catalog`);
+      }
+      if (sig.graphHot != null) {
+        parts.push({ w: 0.2, v: Math.min(1, sig.graphHot / 25) });
+        notes.push(`${sig.graphHot} high-severity graph entities`);
+      }
+      parts.push({ w: 0.15, v: 1 - Math.min(1, sig.intCov / 100) });
+      notes.push(`${sig.intCov}% integration coverage`);
+      const wsum = parts.reduce((n, p) => n + p.w, 0) || 1;
+      const score = Math.round((parts.reduce((n, p) => n + p.w * p.v, 0) / wsum) * 100);
+      const kn = el.querySelector('[data-k="exposure"] .kn'); if (kn) kn.textContent = String(score);
+      const note = el.querySelector("#dkExpNote");
+      if (note) { note.hidden = false; note.innerHTML = `<b>Exposure ${score}/100</b> — indicative, computed from live signals, not an audit. Inputs: ${notes.map(esc).join(" &middot; ")}.`; }
+    }
+    // async: graph entity count + high-severity tally
     import("/js/security-graph.js").then((m) => {
       if (!m.getStats) return;
       const st = m.getStats();
       const kn = el.querySelector('[data-k="graph"] .kn'); if (kn) kn.textContent = (st.totalEntities || 0).toLocaleString();
-    }).catch(() => { const kn = el.querySelector('[data-k="graph"] .kn'); if (kn) kn.textContent = "0"; });
+      const bs = st.bySeverity || {};
+      sig.graphHot = (bs.critical || bs.CRITICAL || 0) + (bs.high || bs.HIGH || 0);
+      recomputeExposure();
+    }).catch(() => { const kn = el.querySelector('[data-k="graph"] .kn'); if (kn) kn.textContent = "0"; sig.graphHot = 0; recomputeExposure(); });
+    // async: CISA KEV catalog size
+    fetchKev().then((k) => {
+      const kn = el.querySelector('[data-k="kev"] .kn'); if (kn) kn.textContent = (k.total || 0).toLocaleString();
+      sig.kevTotal = k.total || 0; recomputeExposure();
+    }).catch(() => { const kn = el.querySelector('[data-k="kev"] .kn'); if (kn) kn.textContent = "—"; });
     // async: live threat level + CVE KPI
     fetchIntel(30).then((d) => {
       setHealth(true, "Threat feed live");
       sysSet("feed", "", "Live");
       const kn = el.querySelector('[data-k="cve"] .kn'); if (kn) kn.textContent = (d.total || 0).toLocaleString();
-      const box = el.querySelector("#dkOvThreat"); if (!box) return;
       const c = d.counts || {}, order = ["CRITICAL", "HIGH", "MEDIUM", "LOW"];
       const sum = order.reduce((n, k) => n + (c[k] || 0), 0) || 1;
+      const hot = (c.CRITICAL || 0) + (c.HIGH || 0);
+      sig.cveHot = hot; sig.cveTotal = (d.cves || []).length; recomputeExposure();
+      const box = el.querySelector("#dkOvThreat"); if (!box) return;
       const bar = order.map((k) => `<span style="width:${(c[k] || 0) / sum * 100}%;background:${SEV[k].color}"></span>`).join("");
       const leg = order.map((k) => `<span><i style="background:${SEV[k].color}"></i>${SEV[k].label} ${c[k] || 0}</span>`).join("");
-      const hot = (c.CRITICAL || 0) + (c.HIGH || 0);
       const p = Math.round(hot / sum * 100);
       const level = p >= 50 ? "Elevated" : p >= 25 ? "Guarded" : "Low";
       const col = p >= 50 ? "#f0484a" : p >= 25 ? "#b7791f" : "#12a85f";
@@ -1790,24 +1828,31 @@ export function renderDeck(host, opts) {
     }).catch(() => sysSet("graph", "off", "N/A"));
   }
 
-  // ---------- Threat Intel workspace ----------
-  let _tiCves = [], _tiSev = "", _tiQ = "";
+  // ---------- Threat & Vulnerabilities workspace ----------
+  // Live NVD CVE feed, cross-referenced with the CISA KEV catalog (known-exploited)
+  // and FIRST EPSS exploit-probability, plus a ransomware.live recent-victims panel.
+  // Prioritisation is a real SSVC-style order on the LIVE set: KEV first, then EPSS,
+  // then CVSS — never a hardcoded CVE map.
+  let _tiCves = [], _tiSev = "", _tiQ = "", _tiKev = new Set(), _tiEpss = {}, _tiPrio = false;
   function renderThreat(){
     const el = sceneEls.threat;
-    el.innerHTML = `<div class="dk-ti-head"><h1>Threat Intelligence</h1><span class="mo" id="dkTiFull">Open full Threat Feed ${IC.ext}</span></div>
+    el.innerHTML = `<div class="dk-ti-head"><h1>Threat &amp; Vulnerabilities</h1><span class="mo" id="dkTiFull">Open full Threat Feed ${IC.ext}</span></div>
       <div id="dkTiBody"><div class="dk-loading"><span class="sp"></span>Fetching the latest CVEs from the NVD…</div></div>`;
     el.querySelector("#dkTiFull").onclick = () => openTool("threatfeed", "Threat Intel Feed");
     fetchIntel(40).then((d) => {
       setHealth(true, "Threat feed live");
-      _tiCves = d.cves || []; _tiSev = ""; _tiQ = "";
+      _tiCves = d.cves || []; _tiSev = ""; _tiQ = ""; _tiKev = new Set(); _tiEpss = {}; _tiPrio = true;
       const c = d.counts || {};
       const chips = ["CRITICAL", "HIGH", "MEDIUM", "LOW"].map((k) => `<button class="dk-sevchip dk-sevfilter" data-sev="${k}"><div class="n" style="color:${SEV[k].color}">${c[k] || 0}</div><div class="l">${SEV[k].label}</div></button>`).join("")
-        + `<div class="dk-sevchip"><div class="n">${(d.total || 0).toLocaleString()}</div><div class="l">Published 7d</div></div>`;
+        + `<div class="dk-sevchip"><div class="n">${(d.total || 0).toLocaleString()}</div><div class="l">Published 7d</div></div>`
+        + `<div class="dk-sevchip" id="dkTiKevChip"><div class="n" style="color:#e0383a">—</div><div class="l">Known-exploited</div></div>`;
       const charts = buildThreatCharts(d.cves);
-      el.querySelector("#dkTiBody").innerHTML = `<div class="dk-sevchips">${chips}</div>${charts}
+      el.querySelector("#dkTiBody").innerHTML = `<div class="dk-sublede">Severity counts and charts cover the ${_tiCves.length} most recent CVEs; ${(d.total || 0).toLocaleString()} were published to NVD in the last 7 days.</div><div class="dk-sevchips">${chips}</div>${charts}
+        <div id="dkTiRansom"></div>
         <div class="dk-tibar">
-          <label class="dk-tsearch dk-tifind">${IC_SEARCH}<input id="dkTiSearch" type="search" placeholder="Filter ${_tiCves.length} CVEs by id or keyword…" autocomplete="off" spellcheck="false"></label>
+          <label class="dk-tsearch dk-tifind">${IC_SEARCH}<input id="dkTiSearch" type="search" placeholder="Filter CVEs…" autocomplete="off" spellcheck="false"></label>
           <span class="dk-ticount" id="dkTiCount"></span>
+          <button class="dk-tibtn on" id="dkTiPrio" title="Order by exploitation risk: KEV, then EPSS, then CVSS">Prioritize</button>
           <button class="dk-tibtn" id="dkTiCsv">Export CSV</button>
           <button class="dk-tibtn" id="dkTiJson">Export JSON</button>
         </div>
@@ -1815,9 +1860,24 @@ export function renderDeck(host, opts) {
       const search = el.querySelector("#dkTiSearch");
       search.oninput = () => { _tiQ = search.value.trim().toLowerCase(); paintTiList(); };
       el.querySelectorAll(".dk-sevfilter").forEach((b) => b.onclick = () => { _tiSev = _tiSev === b.dataset.sev ? "" : b.dataset.sev; el.querySelectorAll(".dk-sevfilter").forEach((x) => x.classList.toggle("on", x.dataset.sev === _tiSev)); paintTiList(); });
+      el.querySelector("#dkTiPrio").onclick = (e) => { _tiPrio = !_tiPrio; e.currentTarget.classList.toggle("on", _tiPrio); paintTiList(); };
       el.querySelector("#dkTiCsv").onclick = () => exportCves("csv");
       el.querySelector("#dkTiJson").onclick = () => exportCves("json");
       paintTiList();
+      // Enrich with KEV + EPSS, then repaint so badges/ordering appear live.
+      fetchKev().then((k) => {
+        _tiKev = k.set || new Set();
+        const n = _tiCves.filter((v) => _tiKev.has(v.id)).length;
+        const chip = el.querySelector("#dkTiKevChip .n"); if (chip) chip.textContent = String(n);
+        paintTiList();
+      }).catch(() => { const chip = el.querySelector("#dkTiKevChip .n"); if (chip) chip.textContent = "—"; });
+      fetchEpss(_tiCves.map((v) => v.id)).then((m) => { _tiEpss = m || {}; paintTiList(); });
+      // Recent ransomware-leak activity — honest live feed, hidden if unavailable.
+      fetchRansom(8).then((vics) => {
+        const box = el.querySelector("#dkTiRansom"); if (!box || !vics.length) return;
+        const rows = vics.map((v) => { const name = esc(v.victim || v.post_title || v.title || "—"); const grp = esc(v.group_name || v.group || "—"); const when = esc(String(v.discovered || v.published || v.attackdate || "").slice(0, 10)); return `<tr><td>${name}</td><td>${grp}</td><td>${when}</td></tr>`; }).join("");
+        box.innerHTML = `<div class="dk-tpanel dk-ransom"><div class="ct">${IC.radar} Recent ransomware activity <span class="src">live · ransomware.live</span></div><table class="dk-rtab"><thead><tr><th>Organisation</th><th>Group</th><th>Listed</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+      }).catch(() => {});
     }).catch(() => {
       setHealth(false, "Threat feed delayed");
       el.querySelector("#dkTiBody").innerHTML = `<div class="dk-errbox">Couldn't reach the NVD CVE feed. Keyless requests are rate-limited to ~5 every 30 seconds — wait a moment and reopen this tab.<br><button class="dk-b" id="dkTiRetry" style="display:inline-flex;width:auto;margin-top:12px">Retry</button></div>`;
@@ -1847,28 +1907,237 @@ export function renderDeck(host, opts) {
     bands.forEach((bd) => bd.n = scored.filter((v) => v.cvss >= bd.lo && v.cvss < bd.hi).length);
     const maxBand = Math.max(1, ...bands.map((b) => b.n));
     const barRows = bands.map((b) => `<div class="dk-barrow"><span class="bl">${b.l}</span><span class="bt"><i style="width:${(b.n / maxBand * 100).toFixed(1)}%;background:${b.c}"></i></span><span class="bn">${b.n}</span></div>`).join("");
-    return `<div class="dk-twrap">
-      <div class="dk-tpanel"><div class="dk-chart"><div class="ct">${IC.pulse} New CVEs by severity — last 7 days</div><div class="dk-trend">${cols}</div></div></div>
+    // A day-by-day trend only means something when the sample spans several days;
+    // otherwise the distribution gets the full width instead of six empty columns.
+    const spread = days.filter((k) => byDay[k].total).length > 1;
+    return `<div class="dk-twrap"${spread ? "" : ' style="grid-template-columns:1fr"'}>
+      ${spread ? `<div class="dk-tpanel"><div class="dk-chart"><div class="ct">${IC.pulse} Latest ${cves.length} CVEs by publish day and severity</div><div class="dk-trend">${cols}</div></div></div>` : ""}
       <div class="dk-tpanel"><div class="dk-chart"><div class="ct">${IC.radar} CVSS score distribution (${scored.length} scored)</div><div class="dk-bars">${barRows}</div></div></div>
     </div>`;
   }
-  const tiFiltered = () => _tiCves.filter((v) => (!_tiSev || v.severity === _tiSev) && (!_tiQ || (v.id + " " + (v.title || "")).toLowerCase().includes(_tiQ)));
+  // Exploitation-priority rank for a CVE on the LIVE set: KEV membership dominates,
+  // then EPSS probability, then CVSS. Higher = patch sooner.
+  const tiRank = (v) => (_tiKev.has(v.id) ? 1e6 : 0) + (_tiEpss[v.id] || 0) * 1000 + (v.cvss || 0);
+  const tiFiltered = () => {
+    let rows = _tiCves.filter((v) => (!_tiSev || v.severity === _tiSev) && (!_tiQ || (v.id + " " + (v.title || "")).toLowerCase().includes(_tiQ)));
+    if (_tiPrio) rows = rows.slice().sort((a, b) => tiRank(b) - tiRank(a));
+    return rows;
+  };
   function paintTiList(){
     const box = root.querySelector("#dkTiList"); if (!box) return;
     const rows = tiFiltered();
     const cnt = root.querySelector("#dkTiCount"); if (cnt) cnt.textContent = rows.length + " of " + _tiCves.length;
     box.innerHTML = rows.length
-      ? rows.map((v) => `<div class="dk-cve" data-id="${esc(v.id)}"><div class="sv" style="color:${SEV[v.severity].color}">${v.cvss == null ? "—" : v.cvss.toFixed(1)}<small>${SEV[v.severity].label}</small></div><div class="bd"><div class="id">${esc(v.id)}</div><div class="ti">${esc(v.title || "No description provided yet.")}</div><div class="dt">Published ${esc(v.date || "—")}</div></div></div>`).join("")
+      ? rows.map((v) => {
+          const kev = _tiKev.has(v.id);
+          const ep = _tiEpss[v.id];
+          const badges = (kev ? `<span class="dk-kevb" title="On the CISA Known Exploited Vulnerabilities catalog">Known exploited</span>` : "")
+            + (ep != null ? `<span class="dk-epssb" title="FIRST EPSS exploit probability (30-day)">EPSS ${(ep * 100).toFixed(1)}%</span>` : "");
+          return `<div class="dk-cve${kev ? " kev" : ""}" data-id="${esc(v.id)}"><div class="sv" style="color:${SEV[v.severity].color}">${v.cvss == null ? "—" : v.cvss.toFixed(1)}<small>${SEV[v.severity].label}</small></div><div class="bd"><div class="id">${esc(v.id)}${badges}</div><div class="ti">${esc(v.title || "No description provided yet.")}</div><div class="dt">Published ${esc(v.date || "—")}</div></div></div>`;
+        }).join("")
       : `<div class="dk-tnone">No CVEs match the filter.</div>`;
     box.querySelectorAll(".dk-cve").forEach((r) => r.onclick = () => window.open("https://nvd.nist.gov/vuln/detail/" + encodeURIComponent(r.dataset.id), "_blank", "noopener"));
   }
   function exportCves(fmt){
-    const rows = tiFiltered(); if (!rows.length) { toast("Nothing to export"); return; }
+    const base = tiFiltered(); if (!base.length) { toast("Nothing to export"); return; }
+    const rows = base.map((v) => ({ ...v, kev: _tiKev.has(v.id), epss: _tiEpss[v.id] != null ? _tiEpss[v.id] : null }));
     let blob, name;
     if (fmt === "json") { blob = new Blob([JSON.stringify(rows, null, 2)], { type: "application/json" }); name = "darknode-cves.json"; }
-    else { const q = (x) => `"${String(x == null ? "" : x).replace(/"/g, '""')}"`; const lines = rows.map((v) => [v.id, v.cvss == null ? "" : v.cvss, v.severity, v.date || "", v.title || ""].map(q).join(",")); blob = new Blob(["id,cvss,severity,published,title\n" + lines.join("\n")], { type: "text/csv" }); name = "darknode-cves.csv"; }
+    else { const q = (x) => `"${String(x == null ? "" : x).replace(/"/g, '""')}"`; const lines = rows.map((v) => [v.id, v.cvss == null ? "" : v.cvss, v.severity, v.kev ? "yes" : "no", v.epss == null ? "" : v.epss, v.date || "", v.title || ""].map(q).join(",")); blob = new Blob(["id,cvss,severity,kev,epss,published,title\n" + lines.join("\n")], { type: "text/csv" }); name = "darknode-cves.csv"; }
     const url = URL.createObjectURL(blob), a = document.createElement("a"); a.href = url; a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
     toast("Exported " + rows.length + " CVEs");
+  }
+
+  // ---------- Attack Surface workspace (real external recon via the proxy) ----------
+  let _surfLast = "";
+  const surfClean = (d) => String(d || "").trim().toLowerCase().replace(/^https?:\/\//, "").replace(/\/.*$/, "").replace(/^\*\./, "");
+  function renderSurface(dom){
+    const el = sceneEls.surface;
+    const d0 = (typeof dom === "string" && dom) ? dom : _surfLast;
+    el.innerHTML = `
+      <div class="dk-ti-head"><h1>Attack Surface</h1><span class="mo" id="dkSurfFull">Open Exposure Mapping ${IC.ext}</span></div>
+      <p class="dk-sublede">Enter a domain to map its real external footprint — certificate-transparency subdomains, DNS, registration, owning network, HTTP security headers, email authentication and security.txt. Everything is fetched live through the Darknode proxy; nothing is simulated.</p>
+      <form class="dk-surfbar" id="dkSurfForm">
+        <input id="dkSurfIn" placeholder="example.com" autocomplete="off" spellcheck="false" value="${esc(d0)}">
+        <button type="submit" class="dk-tibtn on">Map surface</button>
+      </form>
+      <div class="dk-surfhint">Use a domain you own or are authorised to assess. Lookups use authoritative public records (certificate transparency, DNS, RDAP registries, BGP origin data) and a single read-only HTTP GET.</div>
+      <div class="dk-surfgrid" id="dkSurfGrid" hidden></div>`;
+    el.querySelector("#dkSurfFull").onclick = () => openTool("attacksurf", "Exposure Mapping");
+    const form = el.querySelector("#dkSurfForm"), input = el.querySelector("#dkSurfIn");
+    form.onsubmit = (e) => { e.preventDefault(); runSurface(input.value); };
+    if (d0) runSurface(d0);
+  }
+  function runSurface(raw){
+    const el = sceneEls.surface;
+    const d = surfClean(raw);
+    if (!d || !/^[a-z0-9.-]+\.[a-z]{2,}$/.test(d)) { toast("Enter a valid domain, e.g. example.com"); return; }
+    if (!proxyConfigured()) { el.querySelector("#dkSurfGrid").hidden = false; el.querySelector("#dkSurfGrid").innerHTML = `<div class="dk-errbox">Live lookups are unavailable — the Darknode proxy is not configured in this environment.</div>`; return; }
+    _surfLast = d;
+    const grid = el.querySelector("#dkSurfGrid"); grid.hidden = false;
+    const P = [
+      { id: "subs", title: "Subdomains", tool: "subdomains", label: "Subdomain Enum" },
+      { id: "dns", title: "DNS records", tool: "dns", label: "DNS Toolkit" },
+      { id: "reg", title: "Registration (RDAP)", tool: "whoisrecon", label: "WHOIS Recon" },
+      { id: "net", title: "Owning network", tool: "asnexplorer", label: "ASN Explorer" },
+      { id: "http", title: "HTTP & security headers", tool: "headeranalyzer", label: "Header Analyzer" },
+      { id: "email", title: "Email authentication", tool: "emailauth", label: "Email Auth Analyzer" },
+      { id: "stxt", title: "security.txt", tool: "securitytxt", label: "security.txt Studio" }
+    ];
+    grid.innerHTML = P.map((p) => `<div class="dk-surfp" id="surf-${p.id}"><div class="hd"><h2>${esc(p.title)}</h2><span class="hx" id="surfx-${p.id}"></span><span class="mo" data-opensec="${p.tool}" data-openlabel="${esc(p.label)}">Open tool</span></div><div class="bd" id="surfb-${p.id}"><div class="dk-loading"><span class="sp"></span>Looking up ${esc(d)}…</div></div></div>`).join("");
+    grid.querySelectorAll("[data-opensec]").forEach((s) => s.onclick = () => openTool(s.dataset.opensec, s.dataset.openlabel));
+    const bd = (id) => grid.querySelector("#surfb-" + id);
+    const errHTML = (e) => `<div class="dk-errbox">${esc((e && e.message) || "Lookup failed.")}</div>`;
+    const addGraphBtn = (id, items, linkName) => {
+      const hx = grid.querySelector("#surfx-" + id); if (!hx || !items.length) return;
+      hx.innerHTML = `<button class="dk-graphadd">Add ${items.length} to graph</button>`;
+      hx.querySelector("button").onclick = () => import("/js/graph-bridge.js?v=20260923c").then((gb) => { const r = gb.sendToGraph("Attack Surface — " + linkName, items); toast("Security Graph: " + (r.created || 0) + " added, " + (r.updated || 0) + " updated"); }).catch(() => toast("Couldn't reach the Security Graph"));
+    };
+    // Subdomains (crt.sh)
+    surface.subdomains(d).then((subs) => {
+      bd("subs").innerHTML = subs.length
+        ? `<div class="dk-surfcount">${subs.length} unique names from certificate transparency</div><div class="dk-chiplist">${subs.slice(0, 60).map((s) => `<span class="dk-chipv">${esc(s)}</span>`).join("")}${subs.length > 60 ? `<span class="dk-chipv more">+${subs.length - 60} more</span>` : ""}</div>`
+        : `<div class="dk-tnone">No subdomains found in certificate transparency logs.</div>`;
+      addGraphBtn("subs", subs.slice(0, 200).map((s) => ({ type: "DOMAIN", name: s, data: { source: "crt.sh", parent: d } })), "Subdomains");
+    }).catch((e) => bd("subs").innerHTML = errHTML(e));
+    // DNS
+    surface.dns(d).then((rec) => {
+      const row = (k) => (rec[k] && rec[k].length) ? `<div class="dk-dnsrow"><span class="t">${k}</span><span class="v">${rec[k].slice(0, 8).map((x) => `<span class="ln" title="${esc(x)}">${esc(x)}</span>`).join("")}</span></div>` : "";
+      const html = ["A", "AAAA", "MX", "NS", "TXT"].map(row).join("");
+      bd("dns").innerHTML = html || `<div class="dk-tnone">No DNS records resolved.</div>`;
+      const ips = [].concat(rec.A || [], rec.AAAA || []);
+      addGraphBtn("dns", ips.map((ip) => ({ type: "IP", name: ip, data: { source: "DoH", domain: d } })), "DNS");
+      // Owning network for the first address (BGP origin + registry netblock)
+      const ip0 = ips[0];
+      if (ip0) {
+        Promise.allSettled([surface.asn(ip0), surface.netblock(ip0)]).then(([a, n]) => {
+          const asn = a.status === "fulfilled" ? a.value : null;
+          const nb = n.status === "fulfilled" ? n.value : null;
+          if (!asn && !nb) { bd("net").innerHTML = errHTML(a.reason || n.reason); return; }
+          const kv = (k, v) => v ? `<div><span>${k}</span><b>${esc(v)}</b></div>` : "";
+          bd("net").innerHTML = `<div class="dk-kv">${kv("IP", ip0)}${asn ? kv("ASN", asn.asn + " — " + asn.name) + kv("BGP prefix", asn.prefix) + kv("Registry", [asn.registry, asn.country].filter(Boolean).join(" · ")) : ""}${nb ? kv("Netblock", nb.name + (nb.handle ? " (" + nb.handle + ")" : "")) + kv("Allocation", nb.cidr || nb.range) : ""}</div>`;
+        });
+      } else { bd("net").innerHTML = `<div class="dk-tnone">No A or AAAA record to attribute to a network.</div>`; }
+    }).catch((e) => { bd("dns").innerHTML = errHTML(e); bd("net").innerHTML = errHTML(e); });
+    // Registration
+    surface.rdap(d).then((r) => {
+      bd("reg").innerHTML = `<div class="dk-kv"><div><span>Registrar</span><b>${esc(r.registrar)}</b></div><div><span>Registered</span><b>${esc(r.registered)}</b></div><div><span>Updated</span><b>${esc(r.updated)}</b></div><div><span>Expires</span><b>${esc(r.expires)}</b></div>${r.nameservers.length ? `<div><span>Nameservers</span><b>${esc(r.nameservers.slice(0, 6).join(", "))}</b></div>` : ""}${r.status.length ? `<div><span>Status</span><b>${esc(r.status.slice(0, 4).join(", "))}</b></div>` : ""}</div>`;
+    }).catch((e) => bd("reg").innerHTML = errHTML(e));
+    // HTTP + security headers
+    surface.httpProbe(d).then((h) => {
+      const sh = h.secHeaders.map((s) => `<div class="dk-shrow ${s.present ? "ok" : "no"}"><span class="d"></span><span class="l">${esc(s.label)}</span><span class="v">${s.present ? "present" : "missing"}</span></div>`).join("");
+      const tech = h.tech.length ? `<div class="dk-techline">${h.tech.map((t) => `<span class="dk-chipv">${esc(t.k)}: ${esc(t.v)}</span>`).join("")}</div>` : "";
+      bd("http").innerHTML = `<div class="dk-kv"><div><span>Status</span><b>${esc(String(h.status) + " " + h.statusText)}</b></div><div><span>Final URL</span><b>${esc(h.finalUrl)}</b></div><div><span>Server</span><b>${esc(h.server)}</b></div></div>${tech}<div class="dk-shlist">${sh}</div>`;
+    }).catch((e) => bd("http").innerHTML = errHTML(e));
+    // Email auth
+    surface.emailAuth(d).then((m) => {
+      const line = (lbl, o, extra) => `<div class="dk-shrow ${o.present ? "ok" : "no"}"><span class="d"></span><span class="l">${esc(lbl)}</span><span class="v">${o.present ? (extra || "configured") : "missing"}</span></div>`;
+      bd("email").innerHTML = `<div class="dk-shlist">${line("SPF", m.spf)}${line("DMARC", m.dmarc, m.dmarc.policy ? "p=" + m.dmarc.policy : "")}</div>${m.spf.record ? `<div class="dk-rec">${esc(m.spf.record)}</div>` : ""}${m.dmarc.record ? `<div class="dk-rec">${esc(m.dmarc.record)}</div>` : ""}`;
+    }).catch((e) => bd("email").innerHTML = errHTML(e));
+    // security.txt
+    surface.securityTxt(d).then((s) => {
+      bd("stxt").innerHTML = s.found
+        ? `<div class="dk-shrow ok"><span class="d"></span><span class="l">security.txt</span><span class="v">found</span></div>${s.contact ? `<div class="dk-rec">Contact: ${esc(s.contact)}</div>` : ""}`
+        : `<div class="dk-shrow no"><span class="d"></span><span class="l">security.txt</span><span class="v">not found (HTTP ${esc(String(s.status))})</span></div>`;
+    }).catch((e) => bd("stxt").innerHTML = errHTML(e));
+  }
+
+  // ---------- Cloud Security workspace ----------
+  // Phase-1 value is real and offline: the deterministic cloud/K8s/Docker linters in
+  // tools/cloud.js run entirely in the browser. Read-only cloud account connectors are
+  // on the roadmap and are represented honestly — never faked.
+  const CLOUD_WB = ["cl-iam-policy-lint", "cl-s3-bucket-policy-explain", "cl-sg-audit", "cl-dockerfile-lint", "cl-compose-lint"];
+  let _cloudTools = null;
+  function renderCloud(){
+    const el = sceneEls.cloud;
+    el.innerHTML = `
+      <div class="dk-ti-head"><h1>Cloud Security</h1></div>
+      <p class="dk-sublede">Posture checks that run entirely in your browser — paste a config and lint it; nothing is uploaded. Read-only AWS, Azure and GCP account connectors are on the roadmap below.</p>
+      <div class="dk-cloudtop">
+        <div class="dk-cloudwb">
+          <div class="wbh"><h2>Posture workbench</h2></div>
+          <select id="dkCloudSel" class="dk-cloudsel"></select>
+          <div id="dkCloudDesc" class="dk-clouddesc"></div>
+          <textarea id="dkCloudIn" class="dk-cloudin" spellcheck="false"></textarea>
+          <div class="dk-cloudbtns"><button id="dkCloudRun" class="dk-tibtn on">Run check</button><span class="mo" id="dkCloudOpen">Open full tool</span></div>
+          <pre id="dkCloudOut" class="dk-cloudout" hidden></pre>
+        </div>
+        <div class="dk-cloudconn">
+          <div class="cc-badge">Roadmap</div>
+          <h2>Connect a cloud account</h2>
+          <p>Read-only AWS, Azure and GCP connectors will pull live posture — public buckets, over-broad IAM, open security groups, unencrypted volumes — using scoped read-only credentials. No write access, ever.</p>
+          <div class="cc-list"><span>AWS (read-only) — coming</span><span>Azure (read-only) — coming</span><span>GCP (read-only) — coming</span></div>
+          <button id="dkCloudRoadmap" class="dk-tibtn">See the plan</button>
+        </div>
+      </div>
+      <h2 class="dk-cloudgridh">All cloud &amp; container checks <span id="dkCloudN">loading…</span></h2>
+      <div class="dk-cloudgrid" id="dkCloudGrid"><div class="dk-loading"><span class="sp"></span>Loading the cloud toolset…</div></div>`;
+    const sel = el.querySelector("#dkCloudSel"), descEl = el.querySelector("#dkCloudDesc"), inEl = el.querySelector("#dkCloudIn"), outEl = el.querySelector("#dkCloudOut"), runBtn = el.querySelector("#dkCloudRun"), grid = el.querySelector("#dkCloudGrid");
+    el.querySelector("#dkCloudRoadmap").onclick = () => { if (window.dnModal) window.dnModal({ title: "Cloud connectors — the plan", desc: "Phase 1 (now): paste-and-lint posture checks for IAM, S3, security groups, Dockerfiles, docker-compose and Kubernetes — 69 deterministic checks that run in your browser.\n\nPhase 2 (next): read-only AWS, Azure and GCP connectors using scoped, read-only credentials (e.g. an AWS SecurityAudit role). They will inventory assets and surface public buckets, over-broad IAM, open security groups and unencrypted storage against live configuration.\n\nPrinciple: read-only only, no write access, and findings are always from real configuration — never simulated.", submitText: "Got it", cancelText: "" }); else toast("Read-only cloud connectors are on the roadmap."); };
+    el.querySelector("#dkCloudOpen").onclick = () => { const t = _cloudTools && _cloudTools.find((x) => x.id === sel.value); if (sel.value) openTool("tool-" + sel.value, t ? t.name : sel.value); };
+    import("/js/tools/cloud.js").then((m) => {
+      _cloudTools = (m.TOOLS || []).filter((t) => t.cat === "cloud");
+      const nEl = el.querySelector("#dkCloudN"); if (nEl) nEl.textContent = _cloudTools.length + " offline tools";
+      const wb = CLOUD_WB.map((id) => _cloudTools.find((t) => t.id === id)).filter(Boolean);
+      sel.innerHTML = wb.map((t) => `<option value="${t.id}">${esc(t.name)}</option>`).join("");
+      const syncSel = () => { const t = wb.find((x) => x.id === sel.value) || wb[0]; if (!t) return; descEl.textContent = t.desc || ""; const inp = (t.inputs || [])[0] || {}; inEl.placeholder = inp.placeholder || "Paste configuration…"; inEl.value = ""; outEl.hidden = true; };
+      sel.onchange = syncSel; syncSel();
+      runBtn.onclick = () => {
+        const t = wb.find((x) => x.id === sel.value); if (!t) return;
+        const inp = (t.inputs || [])[0] || { k: "text" };
+        let r; try { r = t.run({ [inp.k]: inEl.value }); } catch (e) { r = { error: (e && e.message) || "Error" }; }
+        outEl.hidden = false;
+        outEl.textContent = (r && r.error) ? ("Error: " + r.error) : (typeof r === "string" ? (r || "No output — check your input.") : JSON.stringify(r, null, 2));
+      };
+      grid.innerHTML = _cloudTools.map((t) => `<button class="dk-cloudcard" data-id="${t.id}"><b>${esc(t.name)}</b><span>${esc(t.desc || "")}</span></button>`).join("");
+      grid.querySelectorAll(".dk-cloudcard").forEach((b) => b.onclick = () => { const t = _cloudTools.find((x) => x.id === b.dataset.id); openTool("tool-" + b.dataset.id, t ? t.name : b.dataset.id); });
+    }).catch(() => { grid.innerHTML = `<div class="dk-errbox">Couldn't load the cloud toolset.</div>`; });
+  }
+
+  // ---------- Compliance & Posture workspace ----------
+  const COMPLIANCE = [
+    { sec: "compliance", name: "Compliance Checker", desc: "Assess controls against CIS, ISO 27001, SOC 2, PCI DSS, HIPAA, GDPR and NIST CSF." },
+    { sec: "fedcompliance", name: "Federal Compliance (NIST 800-53)", desc: "Map and track NIST SP 800-53 control families for FedRAMP and FISMA." },
+    { sec: "zerotrust", name: "Zero Trust Planner", desc: "Design a zero-trust architecture across identity, device, network and workload pillars." },
+    { sec: "crosswalk", name: "GenAI Security Crosswalk", desc: "Map 51 OWASP GenAI risks across 26 frameworks — 3,771 real, sourced mappings." },
+    { sec: "secchecklist", name: "Security Checklist", desc: "Work through a structured security self-assessment checklist." },
+    { sec: "supplychain", name: "Supply Chain Analyzer", desc: "Assess third-party and software-supply-chain risk." }
+  ];
+  function renderCompliance(){
+    const el = sceneEls.compliance;
+    el.innerHTML = `
+      <div class="dk-ti-head"><h1>Compliance &amp; Posture</h1></div>
+      <div class="dk-compnote">Self-reported — these are frameworks and self-assessment tools, not an automated audit. Answers and mappings reflect what you enter and the frameworks' published control sets.</div>
+      <div class="dk-compgrid">${COMPLIANCE.map((c) => `<button class="dk-compcard" data-sec="${esc(c.sec)}" data-label="${esc(c.name)}"><b>${esc(c.name)}</b><span>${esc(c.desc)}</span><span class="go">Open ${IC.ext}</span></button>`).join("")}</div>`;
+    el.querySelectorAll(".dk-compcard").forEach((b) => b.onclick = () => openTool(b.dataset.sec, b.dataset.label));
+  }
+
+  // ---------- Integrations workspace (professional grid; honest status) ----------
+  const INT_GROUPS = [
+    { title: "AI Models", ids: ai.map((i) => i.id) },
+    { title: "Threat Intelligence", ids: ["virustotal", "greynoise", "abuseipdb", "otx", "abusech", "urlscan", "pulsedive", "intelx", "misp", "mitre"] },
+    { title: "Attack Surface & Recon", ids: ["shodan", "censys", "securitytrails", "zoomeye", "binaryedge", "netlas", "fullhunt", "ipinfo", "hunter", "maltego"] },
+    { title: "Exposure & Breach", ids: ["hibp", "dehashed"] },
+    { title: "Malware Sandbox", ids: ["hybrid", "anyrun"] },
+    { title: "Vulnerability", ids: ["nvd", "circl", "exploitdb"] }
+  ];
+  function renderIntegrations(){
+    const el = sceneEls.con;
+    const byId = {}; INTEGRATIONS.forEach((i) => byId[i.id] = i);
+    const card = (it) => {
+      const rec = conns[it.id] || {};
+      const live = rec.connected && rec.method === "key";
+      const refOnly = rec.connected && rec.method !== "key";
+      const cls = live ? "on" : refOnly ? "ref" : "off";
+      const label = live ? "Connected" : refOnly ? "Reference only" : "Connect";
+      return `<button class="dk-intcard" data-id="${esc(it.id)}">${logoHTML(it, "ic")}<div class="meta"><b>${esc(it.name)}</b><p>${esc(it.blurb)}</p></div><span class="dk-stat ${cls}"><span class="d"></span>${label}</span></button>`;
+    };
+    const groups = INT_GROUPS.map((g) => { const items = g.ids.map((id) => byId[id]).filter(Boolean); return items.length ? `<div class="dk-intgrp"><h2>${esc(g.title)} <span>${items.length}</span></h2><div class="dk-intcards">${items.map(card).join("")}</div></div>` : ""; }).join("");
+    el.innerHTML = `
+      <div class="dk-ti-head"><h1>Integrations</h1><span class="dk-intmeta">${countConnected()} connected of ${INTEGRATIONS.length}</span></div>
+      <p class="dk-sublede">Connect AI models and threat-intelligence providers. API-key connections are live; providers shown as “reference” are directory entries you open and sign in to directly — Darknode does not stream their data on your behalf.</p>
+      ${groups}`;
+    el.querySelectorAll(".dk-intcard").forEach((b) => b.onclick = () => openDrawer(INTEGRATIONS.find((i) => i.id === b.dataset.id)));
   }
 
   // ---------- Investigations workspace ----------
@@ -1886,13 +2155,13 @@ export function renderDeck(host, opts) {
     const el = sceneEls.invest;
     el.innerHTML = `
       <div class="dk-ovhead"><div><h1>Investigations &amp; Graph</h1><p>Your security graph, cases and entity intelligence — built up as you work across the tools.</p></div>
-        <div class="when"><button class="dk-dbtn" id="dkInvExport">${IC.copy} Export graph</button></div></div>
+        <div class="when"><button class="dk-tibtn" id="dkInvExport">${IC.copy} Export graph</button></div></div>
       <div class="dk-kpis" id="dkInvKpis"><div class="dk-loading"><span class="sp"></span>Reading the security graph…</div></div>
       <div class="dk-invdash" id="dkInvDash"></div>
       <div class="dk-ovp">
         <h2>${IC.folder} Entities <span class="mo" data-tool="secgraph">Open graph</span></h2>
         <div class="dk-invbar">
-          <div class="dk-isearch">${IC_SEARCH}<input id="dkInvQ" placeholder="Search entities by name or tag…" value="${esc(invF.q)}" autocomplete="off" spellcheck="false"></div>
+          <div class="dk-isearch">${IC_SEARCH}<input id="dkInvQ" placeholder="Search entities…" value="${esc(invF.q)}" autocomplete="off" spellcheck="false"></div>
           <select id="dkInvType" class="dk-isel"></select>
           <select id="dkInvSev" class="dk-isel"></select>
           <select id="dkInvStatus" class="dk-isel"></select>
@@ -1993,7 +2262,7 @@ export function renderDeck(host, opts) {
     const chips = Object.keys(ACT_CATS).filter((c) => counts[c]).map((c) => `<button class="dk-afch${actFilter === c ? " on" : ""}" data-cat="${c}"><i style="background:${ACT_CATS[c].color}"></i>${ACT_CATS[c].label}<span>${counts[c]}</span></button>`).join("");
     el.innerHTML = `
       <div class="dk-ovhead"><div><h1>Activity</h1><p>A live stream of platform events in this session — tool results, graph changes, connections and AI.</p></div>
-        <div class="when"><button class="dk-dbtn" id="dkActExport">${IC.copy} Export log</button></div></div>
+        <div class="when"><button class="dk-tibtn" id="dkActExport">${IC.copy} Export log</button></div></div>
       <div class="dk-astats">
         <div class="dk-astat" style="--a:#4f86ff"><div class="n">${all.length}</div><div class="l">Events this session</div></div>
         <div class="dk-astat" style="--a:#12a85f"><div class="n">${Object.keys(counts).length}</div><div class="l">Categories</div></div>
@@ -2096,156 +2365,6 @@ export function renderDeck(host, opts) {
   // ---------- Assistant workspace (embedded Darknode AI) ----------
   const asstFrame = $("#dkAsstFrame");
   let asstLoaded = false;
-  // ---------- hacking diaries ----------
-  // DIARIES + DIARY_CATS are imported from diaries-data.js. Each diary is a
-  // playbook: phases -> steps -> {do, cmd, note}. Everything renders offline;
-  // the finder matches locally and can also hand the goal to Darknode AI.
-  const RISK_LABEL = { low: "Low profile", medium: "Moderate noise", high: "Loud / high-impact" };
-  let diarySel = null, diaryQ = "";
-  try { diarySel = localStorage.getItem("dn_deck_diary") || null; } catch (_) {}
-  const diaryById = (id) => DIARIES.find((d) => d.id === id) || null;
-
-  function diaryScore(d, toks){
-    const title = d.title.toLowerCase(), cat = (d.cat || "").toLowerCase();
-    const gw = ((d.goal || "") + " " + (d.when || "")).toLowerCase();
-    const tools = (d.tools || []).join(" ").toLowerCase();
-    const body = (d.phases || []).map((p) => (p.name || "") + " " + (p.steps || []).map((s) => (s.do || "") + " " + (s.cmd || "") + " " + (s.note || "")).join(" ")).join(" ").toLowerCase();
-    let s = 0;
-    for (const t of toks){ if (title.includes(t)) s += 6; if (cat.includes(t)) s += 4; if (tools.includes(t)) s += 3; if (gw.includes(t)) s += 2; if (body.includes(t)) s += 1; }
-    return s;
-  }
-  const tokenize = (q) => [...new Set((String(q || "").toLowerCase().match(/[a-z0-9]{3,}/g) || []))];
-  function diaryFind(goal){
-    const toks = tokenize(goal); if (!toks.length) return [];
-    return DIARIES.map((d) => ({ d, s: diaryScore(d, toks) })).filter((x) => x.s > 0).sort((a, b) => b.s - a.s).slice(0, 6);
-  }
-  const diaryStepCount = (d) => (d.phases || []).reduce((n, p) => n + (p.steps ? p.steps.length : 0), 0);
-
-  function diaryAskPrompt(goal){
-    const catalog = DIARY_CATS.map((c) => c + ": " + DIARIES.filter((d) => d.cat === c).map((d) => d.title).join("; ")).filter((l) => !l.endsWith(": ")).join("\n");
-    return "I'm on an AUTHORIZED security engagement using the Darknode console. Which Darknode hacking diary (playbook) should I use for this goal, and what are the first steps?\n\nGoal: " + goal + "\n\nAvailable diaries by category:\n" + catalog + "\n\nRecommend the best one or two by name, say why, and outline the first three commands. Remind me to stay in scope.";
-  }
-
-  function renderDiaries(){
-    const el = sceneEls.diary;
-    el.innerHTML = `
-      <div class="dk-dnav">
-        <div class="dk-dsearch">${IC_SEARCH}<input id="dkDQ" placeholder="Search ${DIARIES.length} playbooks, tools, commands…" autocomplete="off" spellcheck="false" value="${esc(diaryQ)}"></div>
-        <div class="dk-dfinder">
-          <div class="t">${IC.spark} Not sure where to start?</div>
-          <textarea id="dkDGoal" placeholder="Describe your goal — e.g. open a backdoor on a Linux box, crack a WPA2 handshake, dump Windows credentials…"></textarea>
-          <div class="dk-dfbtns"><button id="dkDFind" class="pri">${IC.book} Match a playbook</button><button id="dkDAsk">${IC.spark} Ask Darknode AI</button></div>
-          <div id="dkDFres" class="dk-dfres"></div>
-        </div>
-        <div class="dk-dcats" id="dkDCats"></div>
-      </div>
-      <div class="dk-dmain" id="dkDMain"></div>`;
-    buildDiaryNav();
-    const q = el.querySelector("#dkDQ");
-    q.oninput = () => { diaryQ = q.value; buildDiaryNav(); };
-    q.onkeydown = (e) => { if (e.key === "Escape") { q.value = ""; diaryQ = ""; buildDiaryNav(); } };
-    const goal = el.querySelector("#dkDGoal"), fres = el.querySelector("#dkDFres");
-    const runFind = () => {
-      if (!goal.value.trim()) { fres.innerHTML = ""; return; }
-      const res = diaryFind(goal.value);
-      fres.innerHTML = res.length
-        ? res.map((x) => `<button class="dk-dfr" data-did="${esc(x.d.id)}"><b>${esc(x.d.title)}</b><span>${esc(x.d.cat)}</span></button>`).join("")
-        : `<div class="dk-dfnone">No local match — try “Ask Darknode AI”.</div>`;
-      fres.querySelectorAll(".dk-dfr").forEach((b) => b.onclick = () => selectDiary(b.dataset.did));
-    };
-    el.querySelector("#dkDFind").onclick = runFind;
-    goal.onkeydown = (e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); runFind(); } };
-    el.querySelector("#dkDAsk").onclick = () => { const g = goal.value.trim(); if (!g) { goal.focus(); return; } askAI(diaryAskPrompt(g)); };
-    if (diarySel && diaryById(diarySel)) selectDiary(diarySel); else renderDiaryEmpty();
-  }
-
-  function buildDiaryNav(){
-    const box = root.querySelector("#dkDCats"); if (!box) return;
-    const toks = tokenize(diaryQ);
-    const match = (d) => !toks.length || diaryScore(d, toks) > 0;
-    let html = "", shown = 0;
-    for (const c of DIARY_CATS){
-      const items = DIARIES.filter((d) => d.cat === c && match(d));
-      if (!items.length) continue;
-      html += `<div class="dk-dcat"><div class="dk-dcath">${esc(c)}<span>${items.length}</span></div>` +
-        items.map((d) => `<button class="dk-dpb${d.id === diarySel ? " on" : ""}" data-did="${esc(d.id)}"><span class="rk rk-${esc(d.risk || "low")}" title="${esc(RISK_LABEL[d.risk] || "")}"></span><span class="tt">${esc(d.title)}</span></button>`).join("") +
-        `</div>`;
-      shown += items.length;
-    }
-    box.innerHTML = shown ? html : `<div class="dk-dfnone">No playbook matches that search.</div>`;
-    box.querySelectorAll(".dk-dpb").forEach((b) => b.onclick = () => selectDiary(b.dataset.did));
-  }
-
-  function diaryCardHTML(d){
-    return `<button class="dk-dcard" data-did="${esc(d.id)}">
-      <div class="h"><span class="rk rk-${esc(d.risk || "low")}"></span><b>${esc(d.title)}</b></div>
-      <span class="c">${esc(d.cat)}</span>
-      <p>${esc(d.goal || "")}</p>
-      <div class="m">${(d.phases || []).length} phases · ${diaryStepCount(d)} commands</div>
-    </button>`;
-  }
-  function renderDiaryEmpty(){
-    const main = root.querySelector("#dkDMain"); if (!main) return;
-    main.innerHTML = `<div class="dk-dhero">
-        <h1>${IC.book} Field diaries</h1>
-        <p>${DIARIES.length} step-by-step playbooks across ${DIARY_CATS.length} disciplines — reconnaissance through exploitation, post-exploitation and blue-team response. Every step is a real, copy-ready terminal command. Pick a category on the left, search, or describe your goal and let Darknode match a playbook.</p>
-      </div>
-      <div class="dk-dgrid">${DIARIES.slice(0, 8).map((d) => diaryCardHTML(d)).join("")}</div>`;
-    main.querySelectorAll("[data-did]").forEach((b) => b.onclick = () => selectDiary(b.dataset.did));
-    main.scrollTop = 0;
-  }
-
-  function selectDiary(id){
-    const d = diaryById(id); if (!d) { renderDiaryEmpty(); return; }
-    diarySel = id;
-    try { localStorage.setItem("dn_deck_diary", id); } catch (_) {}
-    root.querySelectorAll(".dk-dpb").forEach((b) => b.classList.toggle("on", b.dataset.did === id));
-    const main = root.querySelector("#dkDMain"); if (!main) return;
-    const phasesHTML = (d.phases || []).map((p, pi) => `
-      <section class="dk-dphase">
-        <h3><span class="n">${pi + 1}</span>${esc(p.name || "")}</h3>
-        ${(p.steps || []).map((st) => `
-          <div class="dk-dstep">
-            <div class="do">${esc(st.do || "")}</div>
-            ${st.cmd ? `<div class="cmd"><code>${esc(st.cmd)}</code><button class="cp" data-cmd="${esc(st.cmd)}" title="Copy command" aria-label="Copy command">${IC.copy}</button></div>` : ""}
-            ${st.note ? `<div class="nt">${esc(st.note)}</div>` : ""}
-          </div>`).join("")}
-      </section>`).join("");
-    main.innerHTML = `
-      <div class="dk-dhead">
-        <div class="l">
-          <div class="bc"><span class="cat">${esc(d.cat)}</span><span class="rk rk-${esc(d.risk || "low")} lbl">${esc(RISK_LABEL[d.risk] || d.risk || "")}</span></div>
-          <h1>${esc(d.title)}</h1>
-          <p class="goal">${esc(d.goal || "")}</p>
-        </div>
-        <div class="r">
-          <button id="dkDCopyAll" class="dk-dbtn">${IC.copy} Copy all commands</button>
-          <button id="dkDAsk2" class="dk-dbtn">${IC.spark} Ask AI about this</button>
-        </div>
-      </div>
-      <div class="dk-dmeta">
-        <div class="mi"><span class="k">When to use</span><span class="v">${esc(d.when || "—")}</span></div>
-        <div class="mi"><span class="k">Done when</span><span class="v">${esc(d.verify || "—")}</span></div>
-        <div class="mi wide"><span class="k">Tools</span><span class="v chips">${(d.tools || []).map((t) => `<span class="chip">${esc(t)}</span>`).join("") || "—"}</span></div>
-        <div class="mi wide"><span class="k">ATT&amp;CK</span><span class="v chips">${(d.mitre || []).map((m) => `<span class="chip att">${esc(m)}</span>`).join("") || "—"}</span></div>
-      </div>
-      <div class="dk-dsafety"><span class="i"></span><b>Authorized use only.</b> ${esc(d.safety || "Only run against systems you own or are explicitly contracted to test.")}</div>
-      <div class="dk-dcount">${(d.phases || []).length} phases · ${diaryStepCount(d)} commands</div>
-      ${phasesHTML}
-      <div class="dk-dfoot">
-        <div class="ff verify"><b>Done when</b><span>${esc(d.verify || "—")}</span></div>
-        <div class="ff cleanup"><b>Cleanup</b><span>${esc(d.cleanup || "—")}</span></div>
-        <div class="ff safety"><b>Scope &amp; safety</b><span>${esc(d.safety || "—")}</span></div>
-      </div>`;
-    main.querySelectorAll(".cp").forEach((b) => b.onclick = async () => {
-      try { await navigator.clipboard.writeText(b.dataset.cmd); toast("Command copied"); b.classList.add("ok"); setTimeout(() => b.classList.remove("ok"), 900); } catch (_) { toast("Copy failed"); }
-    });
-    const allCmds = (d.phases || []).flatMap((p) => (p.steps || []).map((s) => s.cmd).filter(Boolean)).join("\n");
-    main.querySelector("#dkDCopyAll").onclick = async () => { try { await navigator.clipboard.writeText(allCmds); toast(allCmds.split("\n").filter(Boolean).length + " commands copied"); } catch (_) { toast("Copy failed"); } };
-    main.querySelector("#dkDAsk2").onclick = () => askAI("Walk me through the Darknode \"" + d.title + "\" diary (" + d.cat + ") for an authorized engagement. Explain each phase, when to deviate, and what to watch for. The goal: " + (d.goal || "") + ".");
-    main.scrollTop = 0;
-  }
-
   function openAssistant(){
     if (asstLoaded) return;
     asstLoaded = true;
@@ -2255,7 +2374,7 @@ export function renderDeck(host, opts) {
     f.onload = () => { f.classList.add("in"); const l = asstFrame.querySelector(".dk-wload"); if (l) setTimeout(() => l.remove(), 180); };
     asstFrame.appendChild(f);
   }
-  $("#dkAsstFull").onclick = () => { teardown(); onOpen("ai"); };
+  $("#dkAsstFull").onclick = () => { if (primary) { window.open("/ai", "_blank", "noopener"); return; } teardown(); onOpen("ai"); };
   // Prefill the embedded assistant with a question and open it. webai.js reads
   // sw_ai_prefill on load, so we reload the iframe to deliver a fresh prompt.
   function askAI(text){
@@ -2266,8 +2385,8 @@ export function renderDeck(host, opts) {
 
   // ---------- keyboard & shortcuts ----------
   // Vim-style navigation: press "g" then a scene key. "?" opens the cheatsheet.
-  const GOTO = { o: "overview", c: "con", t: "tools", k: "toolkit", d: "diary", i: "threat", n: "invest", a: "activity", s: "assistant" };
-  const SCENE_TITLE = { overview: "Overview", con: "Connections", tools: "Tools", toolkit: "Toolkit", diary: "Diaries", threat: "Threat Intel", invest: "Investigations", activity: "Activity", assistant: "Assistant" };
+  const GOTO = { o: "overview", e: "surface", i: "threat", l: "cloud", m: "compliance", n: "invest", c: "con", t: "tools", k: "toolkit", a: "activity", s: "assistant" };
+  const SCENE_TITLE = { overview: "Posture", surface: "Attack Surface", threat: "Threat & Vulnerabilities", cloud: "Cloud", compliance: "Compliance", invest: "Investigations", con: "Integrations", tools: "Tools", toolkit: "Toolkit", activity: "Activity", assistant: "Assistant" };
   const keysEl = $("#dkKeys");
   function buildKeysOverlay(){
     const nav = Object.entries(GOTO).map(([k, sc]) => `<div class="dk-keyrow"><span>Go to ${esc(SCENE_TITLE[sc] || sc)}</span><span class="kb"><kbd>g</kbd><kbd>${esc(k)}</kbd></span></div>`).join("");
@@ -2299,7 +2418,7 @@ export function renderDeck(host, opts) {
       if (!sceneWork.hidden) { closeTool(); return; }
       if (drawer.classList.contains("on")) { drawer.classList.remove("on"); return; }
       if (curScene !== "overview") { go("overview"); return; }
-      exitDeck(); return;
+      if (!primary) exitDeck(); return;
     }
     if (e.ctrlKey || e.metaKey || e.altKey || inTyping(e)) return;   // don't hijack typing or combos
     if (e.key === "?") { e.preventDefault(); toggleKeys(true); return; }
@@ -2315,13 +2434,13 @@ export function renderDeck(host, opts) {
   document.addEventListener("keydown", onKey);
 
   // ---------- resize ----------
-  const onResize = () => { sizeStars(); if (!sceneCon.hidden) layoutConstellation(); try { closeAllMenus(); } catch (_) {} };
+  const onResize = () => { sizeStars(); try { closeAllMenus(); } catch (_) {} };
   window.addEventListener("resize", onResize);
 
   // ---------- boot: restore the last workspace ----------
   let initial = "overview";
   try { const sv = localStorage.getItem(LS_SCENE); if (sv && SCENES[sv]) initial = sv; } catch (_) {}
-  requestAnimationFrame(() => go(initial));
+  requestAnimationFrame(() => { go(initial); if (opts.startSec) openTool(opts.startSec, secLabel[opts.startSec] || opts.startSec); });
 
   function teardown(){
     cancelAnimationFrame(rafId); clearInterval(clockId); clearTimeout(gTimer);

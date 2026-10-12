@@ -89,12 +89,12 @@ export function renderAdversaryAI(main) {
   var abortCtl = null;
   var config = {
     services: [],
-    architecture: 'ad',
+    architecture: '',
     controls: [],
-    awareness: 'medium',
-    industry: 'tech',
-    budget: 'medium',
-    employees: 200,
+    awareness: '',
+    industry: '',
+    budget: '',
+    employees: '',
     weaknesses: '',
   };
 
@@ -170,6 +170,7 @@ export function renderAdversaryAI(main) {
       '<div class="adv-form-group">' +
         '<label class="adv-label">Industry</label>' +
         '<select class="adv-select" id="adv-industry">' +
+          '<option value="">Select industry…</option>' +
           '<option value="healthcare"' + (config.industry === 'healthcare' ? ' selected' : '') + '>Healthcare</option>' +
           '<option value="finance"' + (config.industry === 'finance' ? ' selected' : '') + '>Finance / Banking</option>' +
           '<option value="tech"' + (config.industry === 'tech' ? ' selected' : '') + '>Technology</option>' +
@@ -194,6 +195,7 @@ export function renderAdversaryAI(main) {
       '<div class="adv-form-group">' +
         '<label class="adv-label">Internal Architecture</label>' +
         '<select class="adv-select" id="adv-arch">' +
+          '<option value="">Select architecture…</option>' +
           '<option value="ad"' + (config.architecture === 'ad' ? ' selected' : '') + '>Active Directory (On-Premises)</option>' +
           '<option value="cloud"' + (config.architecture === 'cloud' ? ' selected' : '') + '>Cloud-Native (AWS/Azure/GCP)</option>' +
           '<option value="hybrid"' + (config.architecture === 'hybrid' ? ' selected' : '') + '>Hybrid (AD + Cloud)</option>' +
@@ -215,11 +217,12 @@ export function renderAdversaryAI(main) {
       '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">' +
         '<div class="adv-form-group">' +
           '<label class="adv-label">Employee Count</label>' +
-          '<input type="number" class="adv-select" id="adv-employees" value="' + config.employees + '" min="1" max="100000">' +
+          '<input type="number" class="adv-select" id="adv-employees" value="' + esc(config.employees) + '" min="1" max="100000" placeholder="e.g. 250">' +
         '</div>' +
         '<div class="adv-form-group">' +
           '<label class="adv-label">Security Awareness</label>' +
           '<select class="adv-select" id="adv-awareness">' +
+            '<option value="">Select level…</option>' +
             '<option value="low"' + (config.awareness === 'low' ? ' selected' : '') + '>Low (no training)</option>' +
             '<option value="medium"' + (config.awareness === 'medium' ? ' selected' : '') + '>Medium (annual training)</option>' +
             '<option value="high"' + (config.awareness === 'high' ? ' selected' : '') + '>High (regular phishing simulations)</option>' +
@@ -228,6 +231,7 @@ export function renderAdversaryAI(main) {
         '<div class="adv-form-group">' +
           '<label class="adv-label">Budget Tier</label>' +
           '<select class="adv-select" id="adv-budget">' +
+            '<option value="">Select tier…</option>' +
             '<option value="startup"' + (config.budget === 'startup' ? ' selected' : '') + '>Startup (minimal security budget)</option>' +
             '<option value="small"' + (config.budget === 'small' ? ' selected' : '') + '>Small ($50-200K/yr)</option>' +
             '<option value="medium"' + (config.budget === 'medium' ? ' selected' : '') + '>Medium ($200K-1M/yr)</option>' +
@@ -241,6 +245,7 @@ export function renderAdversaryAI(main) {
         '<textarea class="adv-select" id="adv-weaknesses" rows="3" style="resize:vertical;max-width:100%">' + esc(config.weaknesses) + '</textarea>' +
       '</div>' +
 
+      '<div id="adv-missing" role="alert" style="display:none;color:#ff8a9a;font-size:.8rem;margin-bottom:10px"></div>' +
       '<button class="adv-btn" id="adv-predict">Analyze with Darknode AI</button>';
 
     // Wire service checkboxes
@@ -267,10 +272,25 @@ export function renderAdversaryAI(main) {
     container.querySelector('#adv-predict').onclick = function () {
       config.industry = container.querySelector('#adv-industry').value;
       config.architecture = container.querySelector('#adv-arch').value;
-      config.employees = parseInt(container.querySelector('#adv-employees').value) || 200;
+      var emp = parseInt(container.querySelector('#adv-employees').value, 10);
+      config.employees = emp > 0 ? emp : '';
       config.awareness = container.querySelector('#adv-awareness').value;
       config.budget = container.querySelector('#adv-budget').value;
       config.weaknesses = container.querySelector('#adv-weaknesses').value;
+      var missing = [];
+      if (!config.industry) missing.push('Industry');
+      if (!config.architecture) missing.push('Internal Architecture');
+      if (!config.employees) missing.push('Employee Count');
+      if (!config.awareness) missing.push('Security Awareness');
+      if (!config.budget) missing.push('Budget Tier');
+      var missEl = container.querySelector('#adv-missing');
+      if (missing.length) {
+        missEl.textContent = 'Please fill in: ' + missing.join(', ') + '.';
+        missEl.style.display = '';
+        advToast('Fill in the required fields first', 'error');
+        return;
+      }
+      missEl.style.display = 'none';
       activeTab = 'analysis';
       render();
       runAnalysis();

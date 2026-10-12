@@ -56,7 +56,6 @@ export const ACTIVITIES = [
   { id: "d-subs", title: "Enumerate subdomains of a target", desc: "Expand the attack surface from one root domain.", sec: "subdomains", cat: "recon", level: "core", mins: 12 },
   { id: "d-whois", title: "Run a WHOIS + registration lookup", desc: "Ownership, dates, and pivot points.", sec: "whoisrecon", cat: "recon", level: "intro", mins: 6 },
   { id: "d-osint", title: "Build an OSINT profile", desc: "Pull threads together in the OSINT dashboard.", sec: "osint", cat: "recon", level: "core", mins: 20 },
-  { id: "d-ghdb", title: "Find exposures with Google dorks", desc: "Search operators that surface what shouldn't be public.", sec: "ghdb", cat: "recon", level: "core", mins: 10 },
   { id: "d-wayback", title: "Dig through the Wayback Machine", desc: "Recover old endpoints, keys, and pages.", sec: "wayback", cat: "recon", level: "core", mins: 10 },
   { id: "d-tech", title: "Fingerprint a site's tech stack", desc: "Identify frameworks, servers, and versions.", sec: "techfingerprint", cat: "recon", level: "intro", mins: 6 },
   { id: "d-asn", title: "Explore an ASN's IP space", desc: "Understand who owns what on the internet.", sec: "asnexplorer", cat: "recon", level: "advanced", mins: 12 },
@@ -64,7 +63,6 @@ export const ACTIVITIES = [
 
   // --- Offense & Exploitation ---
   { id: "d-attacksim", title: "Run a threat simulation", desc: "Play out an attack chain step by step.", sec: "attacksim", cat: "offense", level: "core", mins: 20 },
-  { id: "d-payloadgen", title: "Generate a test payload", desc: "Build safe test scripts for a chosen scenario.", sec: "payloadgen", cat: "offense", level: "core", mins: 10 },
   { id: "d-pentest", title: "Work a security assessment console", desc: "Structure an engagement from scoping to findings.", sec: "pentestconsole", cat: "offense", level: "advanced", mins: 25 },
   { id: "d-crack", title: "Test password strength in the lab", desc: "See how fast weak credentials fall.", sec: "cracklab", cat: "offense", level: "core", mins: 12 },
   { id: "d-privesc", title: "Analyze a privilege-escalation path", desc: "Spot the misconfig that hands over root.", sec: "privesc", cat: "offense", level: "advanced", mins: 15 },

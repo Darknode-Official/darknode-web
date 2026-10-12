@@ -1,9 +1,11 @@
 // navarch.js — NAVARCH flagship: Naval & maritime cyber-defense command console.
-// Vanilla JS ES module, no network calls; all data simulated/hardcoded.
+// Vanilla JS ES module, no network calls. The fleet is user-entered (persisted
+// via core/store); chokepoint/cable/technique tables are reference catalogs.
 // Operates in three postures (SCOUTING / DEFENSIVE / OFFENSIVE) via the shared
 // core/tool-modes switcher. Uses site design tokens + utility classes.
 
 import { mountModeSwitcher } from '/js/core/tool-modes.js';
+import { store } from '/js/core/store.js';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -54,21 +56,18 @@ function badge(text, kind) {
 
 const SYSTEMS = ['ECDIS', 'Radar', 'Propulsion/IMS', 'Cargo/Ballast SCADA', 'VSAT', 'IBS'];
 
-function randomPosture(seed) {
-  const states = ['SECURE', 'SECURE', 'DEGRADED', 'EXPOSED'];
-  return states[seed % states.length];
-}
+const POSTURES = ['UNASSESSED', 'SECURE', 'DEGRADED', 'EXPOSED'];
+const VESSEL_CLASSES = ['Destroyer', 'Frigate', 'Cruiser', 'Carrier', 'Submarine', 'Container', 'Tanker', 'Bulk Carrier', 'Other'];
+const VESSEL_STATUS = ['UNDERWAY', 'MOORED', 'DARK'];
 
-const FLEET = [
-  { name: 'DDG-71 Ranger', cls: 'Destroyer', mmsi: '366982140', flag: 'US', status: 'UNDERWAY', readiness: 91 },
-  { name: 'CVN Meridian', cls: 'Carrier', mmsi: '338771902', flag: 'US', status: 'UNDERWAY', readiness: 88 },
-  { name: 'MV Atlas Crest', cls: 'Container', mmsi: '477553210', flag: 'HK', status: 'MOORED', readiness: 62 },
-  { name: 'MT Nordic Falcon', cls: 'Tanker', mmsi: '257884001', flag: 'NO', status: 'UNDERWAY', readiness: 74 },
-  { name: 'SSN Silent Tide', cls: 'Submarine', mmsi: '369104558', flag: 'US', status: 'DARK', readiness: 96 },
-  { name: 'MV Cape Horizon', cls: 'Bulk Carrier', mmsi: '636019887', flag: 'LR', status: 'UNDERWAY', readiness: 55 },
-  { name: 'MT Gulf Sentinel', cls: 'Tanker', mmsi: '470112003', flag: 'AE', status: 'MOORED', readiness: 68 },
-  { name: 'MV Ghost Marlin', cls: 'Container', mmsi: '000445', flag: '??', status: 'DARK', readiness: 34 }
-];
+// The fleet is user-entered and persisted; it starts empty.
+const _fleetNs = () => store.namespace('navarch');
+const FLEET = (() => {
+  try { const v = _fleetNs().get('fleet', []); return Array.isArray(v) ? v : []; } catch (_) { return []; }
+})();
+function saveFleet() {
+  try { _fleetNs().set('fleet', FLEET); } catch (_) { if (window.dnToast) window.dnToast('Could not save fleet (storage full or unavailable).'); }
+}
 
 const CHOKEPOINTS = [
   { name: 'Strait of Hormuz', volume: 21, tension: 88, jamming: 72, piracy: 40, altRoute: 15, lat: 26.57, lon: 56.25 },
@@ -378,7 +377,7 @@ function injectStyle() {
 function panelFleet(host) {
   const underway = FLEET.filter(v => v.status === 'UNDERWAY').length;
   const dark = FLEET.filter(v => v.status === 'DARK').length;
-  const avg = Math.round(FLEET.reduce((a, v) => a + v.readiness, 0) / FLEET.length);
+  const avg = FLEET.length ? Math.round(FLEET.reduce((a, v) => a + v.readiness, 0) / FLEET.length) : '—';
 
   host.innerHTML = `
     <div class="stat-row" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px">
@@ -387,10 +386,50 @@ function panelFleet(host) {
       <div class="stat card" style="padding:12px 16px;flex:1;min-width:120px"><div class="muted" style="font-size:11px">DARK SHIPS</div><div class="nv-score" style="color:#ff6b5e">${dark}</div></div>
       <div class="stat card" style="padding:12px 16px;flex:1;min-width:120px"><div class="muted" style="font-size:11px">AVG READINESS</div><div class="nv-score">${avg}</div></div>
     </div>
-    <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:14px" class="nv-fleet-layout">
+    <div style="display:flex;justify-content:flex-end;margin-bottom:10px"><button class="btn sm" id="nv-add-btn">Add vessel</button></div>
+    <div class="card panel" id="nv-add-form" style="padding:14px;margin-bottom:14px;display:none">
+      <div class="pg-h2" style="font-size:13px;margin-bottom:8px">ADD VESSEL</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+        <label style="flex:2;min-width:160px"><div class="nv-note" style="margin:0 0 4px">Name</div><input id="nv-f-name" class="nv-select" style="width:100%" maxlength="60" placeholder="Vessel name"></label>
+        <label style="flex:1;min-width:140px"><div class="nv-note" style="margin:0 0 4px">Class</div><select id="nv-f-cls" class="nv-select" style="width:100%">${VESSEL_CLASSES.map(c => `<option>${esc(c)}</option>`).join('')}</select></label>
+        <label style="flex:1;min-width:140px"><div class="nv-note" style="margin:0 0 4px">MMSI</div><input id="nv-f-mmsi" class="nv-select" style="width:100%" maxlength="9" placeholder="9 digits"></label>
+        <label style="flex:0 0 90px"><div class="nv-note" style="margin:0 0 4px">Flag</div><input id="nv-f-flag" class="nv-select" style="width:100%;min-width:0" maxlength="3" placeholder="US"></label>
+        <label style="flex:1;min-width:120px"><div class="nv-note" style="margin:0 0 4px">Status</div><select id="nv-f-status" class="nv-select" style="width:100%">${VESSEL_STATUS.map(c => `<option>${c}</option>`).join('')}</select></label>
+        <label style="flex:0 0 110px"><div class="nv-note" style="margin:0 0 4px">Readiness 0-100</div><input id="nv-f-ready" type="number" min="0" max="100" class="nv-select" style="width:100%;min-width:0" placeholder="0-100"></label>
+        <button class="btn sm" id="nv-f-save">Save vessel</button>
+      </div>
+      <div class="nv-note" id="nv-f-err" style="color:#ff6b5e;margin:6px 0 0"></div>
+    </div>
+    ${FLEET.length ? `<div style="display:grid;grid-template-columns:1.3fr 1fr;gap:14px" class="nv-fleet-layout">
       <div><div class="nv-grid" id="nv-fleet-grid"></div></div>
       <div><div class="card panel" id="nv-fleet-detail" style="padding:16px">${fleetOverviewHtml()}</div></div>
-    </div>`;
+    </div>` : `<div class="card panel" style="padding:28px;text-align:center"><div class="muted" style="font-size:13px;margin-bottom:10px">No vessels yet. Add a vessel.</div><button class="btn sm" id="nv-empty-add">Add vessel</button></div>`}`;
+
+  const form = host.querySelector('#nv-add-form');
+  const openForm = () => { form.style.display = ''; host.querySelector('#nv-f-name').focus(); };
+  host.querySelector('#nv-add-btn').onclick = openForm;
+  const emptyAdd = host.querySelector('#nv-empty-add');
+  if (emptyAdd) emptyAdd.onclick = openForm;
+  host.querySelector('#nv-f-save').onclick = () => {
+    const err = host.querySelector('#nv-f-err');
+    const name = host.querySelector('#nv-f-name').value.trim();
+    const mmsi = host.querySelector('#nv-f-mmsi').value.trim();
+    const readiness = parseInt(host.querySelector('#nv-f-ready').value, 10);
+    if (!name) { err.textContent = 'Enter a vessel name.'; return; }
+    if (!/^\d{9}$/.test(mmsi)) { err.textContent = 'MMSI must be 9 digits.'; return; }
+    if (FLEET.some(v => v.mmsi === mmsi)) { err.textContent = 'A vessel with this MMSI already exists.'; return; }
+    if (!(readiness >= 0 && readiness <= 100)) { err.textContent = 'Readiness must be a number from 0 to 100.'; return; }
+    FLEET.push({
+      name, mmsi, readiness,
+      cls: host.querySelector('#nv-f-cls').value,
+      flag: host.querySelector('#nv-f-flag').value.trim().toUpperCase() || '??',
+      status: host.querySelector('#nv-f-status').value,
+      systems: {}
+    });
+    saveFleet();
+    panelFleet(host);
+  };
+  if (!FLEET.length) return;
 
   const grid = host.querySelector('#nv-fleet-grid');
   const statusKind = { UNDERWAY: 'ok', MOORED: 'info', DARK: 'bad' };
@@ -419,6 +458,7 @@ function panelFleet(host) {
 // Default right-hand panel: a plain-language overview so the space isn't empty
 // and a newcomer immediately understands what this board is for.
 function fleetOverviewHtml() {
+  if (!FLEET.length) return '';
   const avg = Math.round(FLEET.reduce((a, v) => a + v.readiness, 0) / FLEET.length);
   const col = avg >= 80 ? '#3ddc84' : avg >= 60 ? '#f1c40f' : '#ff6b5e';
   const worst = FLEET.slice().sort((a, b) => a.readiness - b.readiness)[0];
@@ -442,11 +482,12 @@ function fleetOverviewHtml() {
 
 function showVesselDetail(host, v) {
   const box = host.querySelector('#nv-fleet-detail');
-  const pk = { SECURE: 'ok', DEGRADED: 'warn', EXPOSED: 'bad' };
-  const seed = parseInt(v.mmsi.replace(/\D/g, '').slice(-3) || '0', 10);
-  const rows = SYSTEMS.map((sys, i) => {
-    const posture = v.status === 'DARK' && sys === 'VSAT' ? 'DEGRADED' : randomPosture(seed + i * 3 + v.name.length);
-    return `<div class="nv-row"><span>${esc(sys)}</span>${badge(posture, pk[posture])}</div>`;
+  const pk = { SECURE: 'ok', DEGRADED: 'warn', EXPOSED: 'bad', UNASSESSED: 'mut' };
+  v.systems = v.systems || {};
+  // Posture per system is whatever the operator recorded; unassessed by default.
+  const rows = SYSTEMS.map((sys) => {
+    const posture = v.systems[sys] || 'UNASSESSED';
+    return `<div class="nv-row"><span>${esc(sys)}</span><span style="display:flex;gap:6px;align-items:center">${badge(posture, pk[posture])}<select class="nv-select nv-sys" data-sys="${esc(sys)}" style="min-width:0;padding:3px 6px;font-size:11.5px">${POSTURES.map(p => `<option${p === posture ? ' selected' : ''}>${p}</option>`).join('')}</select></span></div>`;
   }).join('');
   box.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
@@ -458,7 +499,21 @@ function showVesselDetail(host, v) {
     <div class="nv-kv" style="margin-bottom:8px"><span>Cyber readiness</span><b>${v.readiness}/100</b></div>
     <div class="pg-h2" style="font-size:13px;margin:10px 0 4px">ONBOARD SYSTEMS</div>
     ${rows}
-    <div class="nv-note">OT/IT convergence on modern hulls means a compromised VSAT or ECDIS can cascade into propulsion and cargo control. Segment IT from OT and monitor the bridge network.</div>`;
+    <div class="nv-note">OT/IT convergence on modern hulls means a compromised VSAT or ECDIS can cascade into propulsion and cargo control. Segment IT from OT and monitor the bridge network.</div>
+    <div style="margin-top:10px"><button class="btn sm ghost" id="nv-del-vessel">Remove vessel</button></div>`;
+  box.querySelectorAll('.nv-sys').forEach(sel => sel.addEventListener('change', () => {
+    if (sel.value === 'UNASSESSED') delete v.systems[sel.dataset.sys]; else v.systems[sel.dataset.sys] = sel.value;
+    saveFleet();
+    showVesselDetail(host, v);
+  }));
+  box.querySelector('#nv-del-vessel').onclick = async () => {
+    const ok = window.dnConfirm ? await window.dnConfirm('Remove vessel?', 'Remove ' + v.name + ' from the fleet.', { danger: true }) : true;
+    if (!ok) return;
+    const i = FLEET.indexOf(v);
+    if (i >= 0) FLEET.splice(i, 1);
+    saveFleet();
+    panelFleet(host);
+  };
 }
 
 function panelAis(host) {
@@ -721,7 +776,7 @@ function panelConvoy(host) {
   const WARSHIP = ['Destroyer', 'Carrier', 'Submarine', 'Frigate', 'Cruiser'];
   const isWarship = v => WARSHIP.includes(v.cls);
   const THRESH = 60;
-  const sel = new Set([0, 2, 7]); // a warship, a soft merchant, a dark ship
+  const sel = new Set();
   const statusKind = { UNDERWAY: 'ok', MOORED: 'info', DARK: 'bad' };
 
   host.innerHTML = `
@@ -739,6 +794,7 @@ function panelConvoy(host) {
   const out = host.querySelector('#nv-cv-out');
 
   function drawList() {
+    if (!FLEET.length) { list.innerHTML = `<div class="nv-note">No vessels yet. Add a vessel in Fleet Command.</div>`; return; }
     list.innerHTML = FLEET.map((v, i) => {
       const on = sel.has(i);
       return `<label class="nv-check"><input type="checkbox" data-i="${i}"${on ? ' checked' : ''}>
@@ -855,7 +911,7 @@ function panelRecon(host) {
       <td>${badge(r.band.t, r.band.k)} <b>${r.surface}</b>/100</td>
       <td class="nv-note" style="max-width:280px">${r.exposed.map((s) => esc(s.svc)).join(', ')}</td>
     </tr>`;
-  }).join('');
+  }).join('') || `<tr><td colspan="5" class="nv-note" style="text-align:center;padding:16px">No vessels yet. Add a vessel in Fleet Command.</td></tr>`;
 
   host.innerHTML = `
     <div class="pg-h2" style="font-size:13px;margin-bottom:6px">MARITIME RECON — ATTACK-SURFACE ENUMERATION</div>
@@ -938,7 +994,7 @@ function emulateOutcome(play, v) {
 
 function panelRedcell(host) {
   let selPlay = ADVERSARY_PLAYS[0].id;
-  let selTarget = FLEET[0].mmsi;
+  let selTarget = FLEET[0] ? FLEET[0].mmsi : '';
 
   host.innerHTML = `
     <div class="pg-h2" style="font-size:13px;margin-bottom:6px">ADVERSARY EMULATION — SIMULATED RED CELL</div>
@@ -989,7 +1045,10 @@ function panelRedcell(host) {
           : 'Defensive controls would catch and contain this technique on this hull. Good posture; keep it exercised.'}</div>
       </div>`;
   };
-  host.querySelector('#nv-rc-run').click();
+  if (!FLEET.length) {
+    host.querySelector('#nv-rc-run').disabled = true;
+    out.innerHTML = `<div class="nv-note">No vessels yet. Add a vessel in Fleet Command to choose a target hull.</div>`;
+  }
 }
 
 const TABS = [

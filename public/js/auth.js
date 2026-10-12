@@ -31,7 +31,7 @@ import "/js/net.js?v=20261011a";
 import "/js/scroll-top.js?v=20260926a";
 import "/js/shortcuts.js";
 import "/js/mobile-nav.js";
-import { consoleHTML, directoryHTML, wireConsole, labelOf as navLabel, groupOf as navGroup, recentSecs as navRecent, favSecs as navFavs } from "/js/console-nav.js?v=20261011a";
+import { consoleHTML, directoryHTML, wireConsole, labelOf as navLabel, groupOf as navGroup, recentSecs as navRecent, favSecs as navFavs } from "/js/console-nav.js?v=20261011c";
 // Only the tool count is needed here; the manifest carries ids/names/categories without the
 // tool code (js/tools/*), which loads when the Toolbox opens.
 import { TOOL_META as _MINI_TOOLS } from "/js/tools-manifest.js?v=20261006a";
@@ -54,7 +54,7 @@ let MORE = [], CATALOG = [], CATEGORIES = [];
 import("/js/toolkit.js").then(m => { MORE = m.MORE; CATALOG = m.CATALOG; CATEGORIES = m.CATEGORIES; });
 import { startTour, tourDone } from "/js/tour.js";
 let _landing = null;
-async function loadLanding() { if (!_landing) _landing = await import("/js/landing.js?v=20261007e"); return _landing; }
+async function loadLanding() { if (!_landing) _landing = await import("/js/landing.js?v=20261011a"); return _landing; }
 // No-account identities (Test Mode / app guest) get a RANDOM, per-session uid, not a
 // fixed shared one. The old fixed "test-user"/"app-guest" uids put every such session
 // into one shared dnk:<uid>:* key namespace, so two people could land on the same
@@ -162,7 +162,7 @@ const SIDE_DESC = {
   cvesearch: "Search the CVE vulnerability database.",
   cvetimeline: "Browse CVEs on an interactive timeline.",
   darknetradar: "Monitor dark-web chatter and marketplaces.",
-  darkwebosint: "Investigate .onion sites and deep-web sources.",
+  darkwebosint: "Reference profiles of threat actors, public breaches and known .onion services.",
   ipreputation: "Check an IP address against threat blocklists.",
   threat: "A live, aggregated threat feed.",
   threatdashboard: "A visual overview of the current threat landscape.",
@@ -207,6 +207,7 @@ const SIDE_DESC = {
   emailauth: "Analyze a domain's SPF, DMARC and DKIM records live over DNS-over-HTTPS and grade them.",
   cookieinspect: "Parse and grade Set-Cookie headers for Secure, HttpOnly, SameSite and prefix issues.",
   securitytxt: "Generate and validate an RFC 9116 security.txt disclosure file.",
+  codescan: "Scan a GitHub repository or local folder for leaked secrets, risky code and vulnerable dependencies, then jump to the exact line.",
   embedsdk: "Generate an iframe or snippet to embed any Darknode tool in another site.",
   mcpconnect: "Connect other apps and AI agents to Darknode tools via MCP, embeds and a read-only API.",
   zerotrust: "Plan a zero-trust security architecture.",
@@ -247,6 +248,8 @@ const SIDE_DESC = {
   api: "Your Darknode API keys and usage.",
   docs: "Documentation.",
   veil: "Hands-on onion-routing demo running real in-browser crypto.",
+  strongroom: "Fund Protection — deterministic fraud screens on your ledger, plus cyber-financial fusion to catch intrusion-to-theft chains. Runs in your browser.",
+  vault: "Treasury Vault — the control and record layer for funds held at your regulated bank: double-entry ledger, dual approvals, tamper-evident audit chain, and reconciliation. Not a bank; holds no money.",
   education: "Learning resources and courses.",
   downloads: "Get the Darknode OS and desktop app.",
   dlguide: "A step-by-step install guide.",
@@ -1097,7 +1100,7 @@ function renderHome(main, user, isOwner, show) {
         <div class="awh-wh"><h2>Welcome to Darknode</h2></div>
         <div class="awh-list">
           <button class="awh-item" data-sec="engine"><b>Deterministic Intelligence (DI)</b><span>The deterministic counterpart to AI: answers and generates code with no AI, on your device. Try it in a chat.</span></button>
-          <button class="awh-item" data-sec="learndo"><b>Learn &amp; Do</b><span>71 hands-on activities in 12 collections. Pick one and check it off.</span></button>
+          <button class="awh-item" data-sec="learndo"><b>Learn &amp; Do</b><span>69 hands-on activities in 12 collections. Pick one and check it off.</span></button>
           <button class="awh-item" data-sec="learn"><b>Getting started</b><span>Learn the basics with curated guides and references.</span></button>
           <button class="awh-item" data-sec="training"><b>Training labs</b><span>Practice defensive skills in guided, hands-on labs.</span></button>
           <button class="awh-item" data-sec="setup" data-more="aicoding"><b>Run AI locally</b><span>Set up Ollama so the AI runs on your own machine.</span></button>
@@ -1634,12 +1637,12 @@ function renderApp(user) {
               </div>
             </div>
             <div class="app-foot-col">
-              <h4>Mission Control</h4>
-              <a data-goto="home">Dashboard</a><a data-goto="sentineleye">Sentinel Eye</a><a data-goto="prometheus">Prometheus</a><a data-goto="crucible">Crucible</a><a data-goto="vanguard">Vanguard</a>
+              <h4>Monitoring</h4>
+              <a data-goto="home">Dashboard</a><a data-goto="sentineleye">Global Threat Map</a><a data-goto="vanguard">Attack Surface Scanner</a><a data-goto="cvesearch">CVE Search</a><a data-goto="crucible">Cyber Exercise Range</a>
             </div>
             <div class="app-foot-col">
-              <h4>Flagships</h4>
-              <a data-goto="citadel">Citadel SOC</a><a data-goto="phantom">Phantom</a><a data-goto="oracle">Oracle</a><a data-goto="spectre">Spectre</a><a data-goto="hydra">Hydra Engine</a>
+              <h4>Command Centers</h4>
+              <a data-goto="citadel">SOC Console</a><a data-goto="phantom">Network Traffic Analyzer</a><a data-goto="oracle">Threat Intel Workbench</a><a data-goto="spectre">Cloud Posture Manager</a><a data-goto="codescan">Code Scanner</a>
             </div>
             <div class="app-foot-col">
               <h4>Workspace</h4>
@@ -1845,23 +1848,23 @@ function renderApp(user) {
     else if (sec === "reveng") { import("/js/reverse-engineering.js").then(m => m.renderReverseEngineering(main)); }
     else if (sec === "darkwebosint") { import("/js/darkweb-osint.js").then(m => m.renderDarkwebOsint(main)); }
     else if (sec === "cyberrange") { import("/js/cyber-range.js").then(m => m.renderCyberRange(main)); }
-    else if (sec === "prometheus") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading PROMETHEUS...</p>"; const _s=sec; import("/js/prometheus-web.js?v=20260924c").then(m => { if(curSec!==_s)return; m.renderPrometheus(main); _prevCleanup = m.cleanupPrometheus; }); }
-    else if (sec === "sentineleye") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading SENTINEL EYE...</p>"; if(!document.querySelector('script[src^="/js/threat-api.js"]')){var s1=document.createElement("script");s1.src="/js/threat-api.js?v=20261007a";document.head.appendChild(s1)}if(!document.querySelector('script[src="/js/threat-map.js"]')){var s2=document.createElement("script");s2.src="/js/threat-map.js";document.head.appendChild(s2)} const _s=sec; import("/js/sentinel-eye.js?v=20261006a").then(m => { if(curSec!==_s)return; m.renderSentinelEye(main); _prevCleanup = m.cleanupSentinelEye; }); }
+    else if (sec === "prometheus") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading…</p>"; const _s=sec; import("/js/prometheus-web.js?v=20260924c").then(m => { if(curSec!==_s)return; m.renderPrometheus(main); _prevCleanup = m.cleanupPrometheus; }); }
+    else if (sec === "sentineleye") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading…</p>"; if(!document.querySelector('script[src^="/js/threat-api.js"]')){var s1=document.createElement("script");s1.src="/js/threat-api.js?v=20261007a";document.head.appendChild(s1)}if(!document.querySelector('script[src="/js/threat-map.js"]')){var s2=document.createElement("script");s2.src="/js/threat-map.js";document.head.appendChild(s2)} const _s=sec; import("/js/sentinel-eye.js?v=20261006a").then(m => { if(curSec!==_s)return; m.renderSentinelEye(main); _prevCleanup = m.cleanupSentinelEye; }); }
     else if (sec === "exploitdev") { import("/js/exploit-writer.js").then(m => m.renderExploitWriter(main)); }
     else if (sec === "secdash") { import("/js/security-dashboard.js?v=20260924a").then(m => m.renderSecurityDashboard(main)); }
     else if (sec === "phishing") { import("/js/phishing-analyzer.js").then(m => m.renderPhishingAnalyzer(main)); }
     else if (sec === "containers") { import("/js/container-security.js").then(m => m.renderContainerSecurity(main)); }
     else if (sec === "cracklab") { import("/js/password-cracking-lab.js").then(m => m.renderPasswordCrackingLab(main)); }
-    else if (sec === "hydra") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading HYDRA...</p>"; import("/js/hydra-engine.js?v=20261008b").then(m => m.renderHydra(main)); }
-    else if (sec === "aegis") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading AEGIS...</p>"; import("/js/aegis-web.js?v=20261008b").then(m => m.renderAegis(main)); }
-    else if (sec === "vanguard") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading VANGUARD...</p>"; import("/js/vanguard.js?v=20260924c").then(m => m.renderVanguard(main)); }
-    else if (sec === "phantom") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading PHANTOM...</p>"; const _s=sec; import("/js/phantom.js?v=20261008b").then(m => { if(curSec!==_s)return; m.renderPhantom(main); _prevCleanup = m.cleanupPhantom; }); }
-    else if (sec === "citadel") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading CITADEL...</p>"; const _s=sec; import("/js/citadel.js?v=20261008b").then(m => { if(curSec!==_s)return; m.renderCitadel(main); _prevCleanup = m.cleanupCitadel; }); }
-    else if (sec === "oracle") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading ORACLE...</p>"; const _s=sec; import("/js/oracle.js?v=20261008b").then(m => { if(curSec!==_s)return; m.renderOracle(main); _prevCleanup = m.cleanupOracle; }); }
-    else if (sec === "spectre") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading SPECTRE...</p>"; const _s=sec; import("/js/spectre.js?v=20261004b").then(m => { if(curSec!==_s)return; m.renderSpectre(main); _prevCleanup = m.cleanupSpectre; }); }
-    else if (sec === "crucible") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading CRUCIBLE...</p>"; const _s=sec; import("/js/crucible.js?v=20260924w").then(m => { if(curSec!==_s)return; m.renderCrucible(main); _prevCleanup = m.cleanupCrucible; }); }
-    else if (sec === "navarch") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading NAVARCH...</p>"; const _s=sec; import("/js/navarch.js?v=20260924w").then(m => { if(curSec!==_s)return; m.renderNavarch(main); _prevCleanup = m.cleanupNavarch; }); }
-    else if (sec === "threatforest") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading THREATFOREST...</p>"; const _s=sec; import("/js/threatforest.js?v=20261008b").then(m => { if(curSec!==_s)return; m.renderThreatforest(main); _prevCleanup = m.cleanupThreatforest; }); }
+    else if (sec === "hydra") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading…</p>"; import("/js/hydra-engine.js?v=20261008b").then(m => m.renderHydra(main)); }
+    else if (sec === "aegis") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading…</p>"; import("/js/aegis-web.js?v=20261008b").then(m => m.renderAegis(main)); }
+    else if (sec === "vanguard") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading…</p>"; import("/js/vanguard.js?v=20260924c").then(m => m.renderVanguard(main)); }
+    else if (sec === "phantom") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading…</p>"; const _s=sec; import("/js/phantom.js?v=20261008b").then(m => { if(curSec!==_s)return; m.renderPhantom(main); _prevCleanup = m.cleanupPhantom; }); }
+    else if (sec === "citadel") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading…</p>"; const _s=sec; import("/js/citadel.js?v=20261008b").then(m => { if(curSec!==_s)return; m.renderCitadel(main); _prevCleanup = m.cleanupCitadel; }); }
+    else if (sec === "oracle") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading…</p>"; const _s=sec; import("/js/oracle.js?v=20261008b").then(m => { if(curSec!==_s)return; m.renderOracle(main); _prevCleanup = m.cleanupOracle; }); }
+    else if (sec === "spectre") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading…</p>"; const _s=sec; import("/js/spectre.js?v=20261004b").then(m => { if(curSec!==_s)return; m.renderSpectre(main); _prevCleanup = m.cleanupSpectre; }); }
+    else if (sec === "crucible") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading…</p>"; const _s=sec; import("/js/crucible.js?v=20260924w").then(m => { if(curSec!==_s)return; m.renderCrucible(main); _prevCleanup = m.cleanupCrucible; }); }
+    else if (sec === "navarch") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading…</p>"; const _s=sec; import("/js/navarch.js?v=20260924w").then(m => { if(curSec!==_s)return; m.renderNavarch(main); _prevCleanup = m.cleanupNavarch; }); }
+    else if (sec === "threatforest") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading…</p>"; const _s=sec; import("/js/threatforest.js?v=20261008b").then(m => { if(curSec!==_s)return; m.renderThreatforest(main); _prevCleanup = m.cleanupThreatforest; }); }
     else if (sec === "beta") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Beta Lab...</p>"; const _s=sec; import("/js/beta-lab.js?v=20261008b").then(m => { if(curSec!==_s)return; m.renderBetaLab(main); _prevCleanup = m.cleanupBetaLab; }); }
     else if (sec === "crosswalk") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading GenAI Security Crosswalk...</p>"; const _s=sec; import("/js/crosswalk.js?v=20261009a").then(m => { if(curSec!==_s)return; m.renderCrosswalk(main); _prevCleanup = m.cleanupCrosswalk; }); }
     else if (sec === "jwtanalyzer") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading JWT Analyzer...</p>"; import("/js/jwt-analyzer.js").then(m => m.renderJwtAnalyzer(main)); }
@@ -1905,6 +1908,7 @@ function renderApp(user) {
     else if (sec === "emailauth") { import("/js/email-auth.js").then(m => m.renderEmailAuth(main)); }
     else if (sec === "cookieinspect") { import("/js/cookie-inspector.js").then(m => m.renderCookieInspector(main)); }
     else if (sec === "securitytxt") { import("/js/security-txt.js").then(m => m.renderSecurityTxt(main)); }
+    else if (sec === "codescan") { import("/js/code-scanner.js?v=20261011a").then(m => m.renderCodeScanner(main)); }
     else if (sec === "reconplanner") { import("/js/recon-planner.js").then(m => m.renderReconPlanner(main)); }
     else if (sec === "packetinspector") { import("/js/packet-inspector.js?v=20260924b").then(m => m.renderPacketInspector(main)); }
     else if (sec === "siemdash") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading SIEM...</p>"; import("/js/siem-dash.js?v=20261007a").then(m => m.renderSiemDash(main)); }
@@ -1963,11 +1967,13 @@ function renderApp(user) {
     else if (sec === "downloads") { import("/js/getapp.js?v=20261004a").then(m => m.renderDownloads(main)); }
     else if (sec === "dlguide") { import("/js/getapp.js?v=20261004a").then(m => m.renderDownloadDocs(main)); }
     else if (sec === "api") { import("/js/api.js?v=20261007a").then(m => m.renderAPI(main, user)); }
-    else if (sec === "docs") { import("/js/docs.js?v=20261007e").then(m => m.renderDocs(main)); }
+    else if (sec === "docs") { import("/js/docs.js?v=20261011a").then(m => m.renderDocs(main)); }
     else if (sec === "veil") { import("/js/labs/veil.js?v=20261011a").then(m => m.renderVeil(main)); }
+    else if (sec === "strongroom") { import("/js/strongroom.js?v=20261011a").then(m => m.renderStrongroom(main)); }
+    else if (sec === "vault") { import("/js/vault.js?v=20261011a").then(m => m.renderVault(main)); }
     else if (sec === "setup") renderSetup(main, more);
     else if (sec === "settings") renderSettingsPage(main, user, isOwner, more);
-    else if (sec === "admin") { import("/js/admin.js?v=20261011d").then(m => m.renderAdmin(main, user)); }
+    else if (sec === "admin") { import("/js/admin.js?v=20261011e").then(m => m.renderAdmin(main, user)); }
     else if (sec === "contact") renderContact(main);
     else if (sec === "education") { main.innerHTML = `<div class="panel" style="max-width:800px;margin:40px auto"><div class="panel-h">About Darknode Education</div><div style="padding:18px;line-height:1.8;font-size:.9rem"><p><strong>Darknode is a cybersecurity education platform</strong> designed for students, educators, and security professionals to learn information security through hands-on practice in a safe, controlled environment.</p><p style="margin-top:16px"><strong>Our Mission:</strong> To make cybersecurity education accessible, interactive, and practical. Most tools run in your browser or on your own machine. Some features do send data out: AI chat goes through Darknode's server to the AI provider, some lookup pages query public services (for example NVD, crt.sh and DNS-over-HTTPS resolvers), and saved items and account data are stored in Google Firebase. Each page that contacts an outside service does so only when you run it.</p><p style="margin-top:16px"><strong>Who Uses Darknode:</strong></p><ul style="margin:8px 0 0 20px;line-height:2"><li>Computer science and cybersecurity students</li><li>IT professionals studying for certifications (CompTIA Security+, CISSP, CEH, OSCP)</li><li>University professors and instructors teaching security courses</li><li>Security operations center (SOC) analysts in training</li><li>Career changers learning cybersecurity fundamentals</li></ul><p style="margin-top:16px"><strong>Educational Standards:</strong> Our curriculum aligns with NIST NICE Framework, NSA CAE-CD requirements, and CompTIA Security+ objectives. All practice environments are isolated, legal, and designed for authorized educational use only.</p><p style="margin-top:16px"><strong>Responsible Use:</strong> Darknode tools are designed exclusively for educational purposes and authorized security testing. Users must comply with all applicable laws and obtain proper authorization before testing any system they do not own.</p><p style="margin-top:16px;color:var(--mut);font-size:.82rem">Darknode is a product of Darknode-Official. For questions about our educational programs, visit darknode.ai.</p></div></div>`; }
     else if (sec === "toolbox") { import("/js/mini-tools.js?v=20261006a").then(m => m.renderToolbox(main, { onOpen: (id) => show("tool-" + id) })); }
@@ -2395,6 +2401,21 @@ function renderApp(user) {
   // loading heavy WebGL unprompted — but an explicit deep-link (pathSec, e.g. the app embed
   // opening /prometheus) is a direct request for that tool, so honor it.
   const okSec = startSec && startSec !== "setup" && validToolSec && (startSec !== "admin" || isOwner) && (pathSec === startSec || !HEAVY.has(startSec));
+  // The Deck is the signed-in UI. The console above still renders (hidden) because
+  // every tool the Deck opens is this same page in embed mode (/<sec>?embed=1).
+  if (!document.body.classList.contains("dn-embed")) {
+    view.hidden = true;
+    Promise.all([import("/js/deck-ui.js?v=20261011g"), import("/js/console-nav.js?v=20261011c")]).then(([{ renderDeck }, nav]) => {
+      renderDeck(document.body, {
+        groups: (nav.NAV || []).map((g) => ({ id: g.id, name: g.name, color: g.color, items: g.items || [] })),
+        user: { displayName: user.displayName || "", email: user.email || "", photoURL: user.photoURL || "" },
+        isOwner,
+        startSec: pathSec && pathSec !== "home" && validToolSec && (pathSec !== "admin" || isOwner) ? pathSec : "",
+        onSignOut: async () => { await doLogout(); location.replace(location.origin + "/"); },
+      });
+    }).catch((e) => { view.hidden = false; show("home"); toast("Command center failed to load: " + e.message); });
+    return;
+  }
   show(okSec ? startSec : "home");
   if (frame && frame.fields && frame.sec === startSec) {
     setTimeout(() => { Object.entries(frame.fields).forEach(([id, v]) => { const el = main.querySelector("#" + (window.CSS && CSS.escape ? CSS.escape(id) : id)); if (el && v != null) { el.value = v; el.dispatchEvent(new Event("input", { bubbles: true })); el.dispatchEvent(new Event("change", { bubbles: true })); } }); }, 120);
@@ -2575,7 +2596,7 @@ onAuthStateChanged(auth, async (user) => {
       try { sessionStorage.setItem("dn_guest", "1"); } catch (_) {}
       const guestUid = _guestUid("app-guest");
       try { window.__dnUid = guestUid; } catch (_) {}
-      renderApp({ uid: guestUid, email: "guest@darknode.ai", displayName: "Guest", providerData: [{ providerId: "test" }], metadata: { creationTime: new Date().toISOString() }, refreshToken: "", getIdToken: () => Promise.resolve("") });
+      renderApp({ uid: guestUid, email: "test@darknode.ai", displayName: "Guest", providerData: [{ providerId: "test" }], metadata: { creationTime: new Date().toISOString() }, refreshToken: "", getIdToken: () => Promise.resolve("") });
       return;
     }
     showLanding(); return;
@@ -2608,28 +2629,33 @@ onAuthStateChanged(auth, async (user) => {
         <p style="color:var(--mut,#888);margin-bottom:20px">Please read and accept before continuing.</p>
         <div style="background:var(--card,#1a1a1a);border:1px solid var(--line,#333);padding:20px;max-height:400px;overflow-y:auto;font-size:.85rem;line-height:1.7;margin-bottom:20px;border-radius:4px" id="tosBox">
           <h3>Darknode Terms of Service</h3>
-          <p><strong>Last updated:</strong> September 21, 2026</p>
-          <p>By using Darknode ("the Platform"), including darknode.ai, Darknode CLI, Nexus AI agent, Darknode OS, and all associated tools, you agree to these terms. If you do not agree, do not use the Platform.</p>
+          <p><strong>Last updated:</strong> October 11, 2026</p>
+          <p>By using Darknode ("the Platform"), including darknode.ai, the Darknode command center, the code, cloud, dependency and financial-integrity analysis engines, the Darknode CLI, the Nexus agent, Darknode OS, the API and MCP server, and all associated tools, you (and, where you act for an organization, that organization) agree to these terms. If you do not agree, do not use the Platform.</p>
 
-          <h4>1. Ethical Use Only</h4>
-          <p>Darknode is built for <strong>ethical hacking, authorized penetration testing, cybersecurity education, and legitimate security research</strong>. All tools, intelligence data, exploit references, payloads, and operational platforms (including AEGIS, PROMETHEUS, HYDRA, and all CLI/VM tools) are designed to help security professionals protect systems — not attack them illegally.</p>
+          <h4>1. Authorized Use Only</h4>
+          <p>Darknode is a platform for <strong>authorized security operations, vulnerability assessment, compliance review, financial-integrity analysis, and legitimate security research</strong> — used by and for organizations on their own code, systems, data, and finances, or on those of clients who have authorized the work in writing. Its tools are designed to help you find and fix problems in environments you are permitted to assess, not to attack systems you are not.</p>
           <p><strong>You MUST have explicit written authorization before testing any system, network, or application you do not own.</strong> This includes but is not limited to: penetration tests, vulnerability scans, social engineering assessments, wireless audits, and red team engagements. Unauthorized access to computer systems is a criminal offense under the Computer Fraud and Abuse Act (CFAA), the Computer Misuse Act, and equivalent laws worldwide.</p>
 
-          <h4>2. Disclaimer of Warranties &amp; Limitation of Liability</h4>
-          <p>The Platform is provided <strong>"as-is" and "as-available"</strong> without warranties of any kind, express or implied, including but not limited to merchantability, fitness for a particular purpose, non-infringement, accuracy, or availability.</p>
-          <p><strong>Darknode, its creators, owners, contributors, affiliates, and partners are NOT liable for any damages, losses, legal consequences, criminal charges, civil actions, fines, penalties, or harm of any kind</strong> resulting from your use or misuse of the Platform. This includes but is not limited to:</p>
-          <ul>
-            <li>Unauthorized access to systems, networks, or data</li>
-            <li>Data loss, corruption, theft, or exposure</li>
-            <li>Criminal prosecution or legal action taken against you</li>
-            <li>Damage to hardware, software, infrastructure, or third-party systems</li>
-            <li>Consequences of AI-generated code, commands, exploits, or recommendations</li>
-            <li>Actions taken by the Nexus AI agent, AEGIS, PROMETHEUS, or any automated tool</li>
-            <li>Financial losses, business disruption, or reputational harm</li>
-            <li>Use of real CVE data, exploit code, or vulnerability information provided by the platform</li>
-          </ul>
-          <p><strong>To the maximum extent permitted by law, Darknode's total aggregate liability for any claim is limited to the amount you paid to Darknode in the 12 months before the claim arose, or $50 USD, whichever is greater.</strong> This cap applies regardless of the legal theory (contract, tort, strict liability, or otherwise).</p>
-          <p>By using Darknode, you agree to <strong>indemnify and hold harmless</strong> Darknode and its team from any claims, damages, or expenses (including reasonable legal fees) arising from your use of the platform or violation of these terms.</p>
+          <h4>2. No Guarantee of Security, Detection, or Compliance</h4>
+          <p>Darknode's tools perform <strong>automated analysis</strong> of code, dependencies, cloud configuration, systems and records. They identify <em>some</em> potential issues; they <strong>do not and cannot detect all vulnerabilities, misconfigurations, weaknesses, errors, or wrongdoing</strong>, and may produce both false positives and false negatives.</p>
+          <p><strong>A clean, passing, or "no findings" result is NOT a certification, warranty, or representation that your code, systems, data, or finances are secure, correct, compliant, or free of defects or fraud.</strong> Severity scores, risk ratings and compliance or framework mappings are informational aids only and are not a certification of compliance with any law, standard, or framework. The tools are an aid to — never a substitute for — qualified human review, professional penetration testing, and independent audit. <strong>You remain solely responsible for the security, correctness, and compliance of your own code, systems, data, and finances, and for any decision to act or not act on any result.</strong></p>
+
+          <h4>3. Financial &amp; Forensic Analysis Disclaimer</h4>
+          <p>The financial-integrity and forensic-analytics features apply statistical and rule-based <strong>screens</strong> (including techniques such as Benford's Law, duplicate-payment and anomaly detection, sequence and reconciliation checks). <strong>These are investigative screening aids that highlight items for your review. They are NOT an audit; NOT a determination, allegation, or accusation of fraud, error, or wrongdoing; and NOT accounting, tax, legal, financial, or investment advice.</strong> A flagged item means only that it warrants a closer look by a qualified professional; an unflagged item is not assurance of correctness. No audit, fiduciary, or advisory relationship is created. You and your qualified professionals are solely responsible for interpreting results and for any decision made in reliance on them.</p>
+
+          <h4>4. No Professional Advice</h4>
+          <p>Nothing Darknode provides — including scan results, findings, scores, compliance mappings, financial analyses, reports, or recommendations — constitutes legal, accounting, tax, financial, audit, regulatory, or other professional advice, or a certification of compliance. You are responsible for obtaining independent professional advice before relying on any output.</p>
+
+          <h4>5. Disclaimer of Warranties</h4>
+          <p>The Platform is provided <strong>"as is" and "as available"</strong> without warranties of any kind, express, implied, or statutory, including but not limited to merchantability, fitness for a particular purpose, title, non-infringement, accuracy, completeness, reliability, security, or availability. Darknode does not warrant that the Platform will be uninterrupted or error-free, that defects will be corrected, or that results will be accurate or complete.</p>
+
+          <h4>6. Limitation of Liability</h4>
+          <p><strong>To the maximum extent permitted by applicable law, Darknode, its owners, creators, contributors, affiliates, and suppliers shall NOT be liable for any indirect, incidental, special, consequential, exemplary, or punitive damages, or for any loss of profits, revenue, data, goodwill, or business, business interruption, security breach, or third-party claim, arising out of or relating to the Platform or any result it produces — even if advised of the possibility of such damages, and regardless of the legal theory (contract, tort, negligence, strict liability, statute, or otherwise).</strong> This includes, without limitation, damages arising from: any undetected vulnerability, misconfiguration, error, or fraud; reliance on, or any action or inaction based on, any finding or the absence of a finding; any security incident, breach, or loss affecting your systems or data; any financial loss or decision; and the output or behavior of any automated tool or AI feature.</p>
+          <p><strong>In all cases, Darknode's total aggregate liability for all claims arising out of or relating to the Platform shall not exceed the greater of (a) the total fees you actually paid to Darknode for the Platform in the twelve (12) months immediately before the event giving rise to the claim, or (b) one hundred U.S. dollars (US$100).</strong> Some jurisdictions do not allow certain exclusions or limitations; in those jurisdictions the above applies to the maximum extent permitted, and nothing here limits liability that cannot lawfully be limited.</p>
+          <p><strong>Indemnification.</strong> You agree to defend, indemnify, and hold harmless Darknode, its owners, creators, contributors, and affiliates from and against any and all claims, liabilities, damages, losses, and expenses (including reasonable legal fees) arising out of or related to: your use of the Platform; your reliance on any result; your code, systems, data, or finances; or your violation of these terms or of any law or third-party right.</p>
+
+          <h4>7. Self-Hosted and On-Premises Use</h4>
+          <p>Where you install or run Darknode in your own browser, infrastructure, or environment (including self-hosted, on-premises, or air-gapped deployments), <strong>you alone control and are responsible for that deployment</strong> — its configuration, access controls, updates, and all data processed within it. Darknode has no access to, and accepts no responsibility or liability for, your self-hosted instance, its security, or the data you process with it. Darknode does not receive, store, or have access to the source code, systems, or financial data you analyze client-side or in your own environment.
 
           <h4>3. Real Security Data</h4>
           <p>Darknode provides real-world security intelligence including CVE databases, exploit references, MITRE ATT&amp;CK mappings, APT group profiles, vulnerability data, and penetration testing methodologies. This information is sourced from publicly available databases and is provided for <strong>defensive security, education, and authorized testing purposes only</strong>. Darknode does not create exploits — it references publicly known vulnerabilities to help defenders understand and mitigate threats.</p>
@@ -2665,8 +2691,8 @@ onAuthStateChanged(auth, async (user) => {
           <p><strong>Your content:</strong> You retain all rights to data, reports, scan results, and other outputs you create using the Platform. By using collaborative or cloud features, you grant Darknode a limited, non-exclusive license to process that content solely to provide the service.</p>
           <p>The Platform incorporates open-source components distributed under their respective licenses. A list is available in the project repository.</p>
 
-          <h4>8. Educational Purpose</h4>
-          <p>Darknode is fundamentally a cybersecurity <strong>education and training platform</strong>. Tools, labs, simulations, and resources exist to train the next generation of ethical hackers, penetration testers, incident responders, and security engineers. We do not endorse, encourage, or condone any illegal activity whatsoever.</p>
+          <h4>8. Intended Users</h4>
+          <p>Darknode is intended for organizations and security, engineering, compliance, and finance professionals operating on systems, code, data, and records they own or are authorized to assess. Training, lab, and simulation features are provided for skills development within that authorized context. We do not endorse, encourage, or condone any unlawful activity.</p>
 
           <h4>9. Data &amp; Privacy</h4>
           <p>We store minimal user data in Firebase (Google Cloud):</p>
@@ -2709,6 +2735,9 @@ onAuthStateChanged(auth, async (user) => {
 
           <h4>Contact</h4>
           <p>Questions about these terms? Email <strong>contact@darknode.ai</strong>.</p>
+
+          <!-- The pointing-up emoji below is the one emoji the owner explicitly asked to keep here (points up at the terms); no other emojis in the UI. -->
+          <p style="margin-top:18px;opacity:.8;font-style:italic">Our lawyers made us say all of that. <span aria-hidden="true">&#9757;&#65039;</span> They were, regrettably, correct. The short version, which changes none of the legally binding version above: the tools help, they are not magic, nothing here is a guarantee, and you are responsible for your own systems, data, and decisions. Read a real audit before you bet the company on anything.</p>
 
           <p style="margin-top:20px"><strong>By clicking "I Agree" below, you acknowledge that you have read, understood, and agree to be bound by these terms.</strong></p>
         </div>
