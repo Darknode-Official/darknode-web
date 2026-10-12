@@ -30,6 +30,7 @@ export async function getWhitelist() {
   catch (_) { return { emails: [], enforce: false, banned: [] }; }
 }
 
+let _deckOff = null; // teardown of the mounted Deck, so relaunching never stacks two
 export async function renderAdmin(main, user) {
   main.innerHTML = `
     <h1 class="pg-h1">Admin</h1>
@@ -41,6 +42,15 @@ export async function renderAdmin(main, user) {
       <div class="stat"><div class="stat-n" id="stActive">…</div><div class="stat-l">active today</div></div>
       <div class="stat"><div class="stat-n" id="stWl">…</div><div class="stat-l">banned</div></div>
       <div class="stat"><div class="stat-n" id="stAnn">…</div><div class="stat-l">announcement</div></div>
+    </div>
+
+    <div class="panel" id="deckPromo" style="display:flex;align-items:center;gap:18px;flex-wrap:wrap">
+      <div style="flex:1;min-width:240px">
+        <span class="muted" style="font-size:11px;font-weight:700;letter-spacing:.06em">OWNER ONLY</span>
+        <h2 class="pg-h2" style="margin:6px 0 4px">Darknode Command Center</h2>
+        <p class="muted" style="margin:0;max-width:70ch">The Deck: grouped sidebar, posture overview, attack surface, investigations and every tool in one workspace, with Ctrl&nbsp;K search. Visible only to you.</p>
+      </div>
+      <button class="btn" id="deckLaunch" style="flex:none">Open Command Center</button>
     </div>
 
     <div class="adm-cols">
@@ -225,6 +235,40 @@ export async function renderAdmin(main, user) {
     </div>`;
 
   const $ = (id) => main.querySelector(id);
+
+  // ---- Darknode Deck: owner-only command center, launched from here ----
+  // Lazy-loaded so the module never ships to the normal console. Uses the live NAV
+  // taxonomy as the single source of truth for categories.
+  (function wireDeck() {
+    const btn = main.querySelector("#deckLaunch");
+    if (!btn) return;
+    async function launchDeck() {
+      btn.disabled = true; const label = btn.textContent; btn.textContent = "Loading…";
+      try {
+        const [{ renderDeck }, nav] = await Promise.all([
+          import("/js/deck-ui.js?v=20261012c"),
+          import("/js/console-nav.js?v=20261011c"),
+        ]);
+        // Never stack Decks: dispose the previous mount (root + listeners) first.
+        if (_deckOff) { try { _deckOff(); } catch (_) {} _deckOff = null; }
+        document.querySelectorAll("body > .dk").forEach((n) => n.remove());
+        _deckOff = renderDeck(document.body, {
+          groups: (nav.NAV || []).map((g) => ({ id: g.id, name: g.name, color: g.color, items: g.items || [] })),
+          user: user ? { displayName: user.displayName || "", email: user.email || "", photoURL: user.photoURL || "" } : null,
+          isOwner: true,
+          onExit: () => { _deckOff = null; },
+        });
+      } catch (e) {
+        try { window.showToast ? window.showToast("Command center failed to load: " + e.message, "err") : 0; } catch (_) {}
+      } finally { btn.disabled = false; btn.textContent = label; }
+    }
+    btn.addEventListener("click", launchDeck);
+    // Returning from an OpenRouter account-link: finish the handshake, then re-open
+    // the deck so the user lands back where they started and sees it connected.
+    import("/js/openrouter-connect.js?v=20261010c").then(({ shouldReopenDeck }) => {
+      if (shouldReopenDeck()) Promise.resolve(window.__orConnect).finally(launchDeck);
+    }).catch(() => {});
+  })();
 
   let users = [];
   let wl = { emails: [], enforce: false, banned: [] };

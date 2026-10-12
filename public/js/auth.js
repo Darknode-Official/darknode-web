@@ -1593,8 +1593,8 @@ function playAccessGranted(name, cb) {
 }
 
 // Which account the app is currently rendered for (see the onAuthStateChanged guard),
-// whether that is a no-Firebase guest/Test session, and the mounted Deck's teardown.
-let _appUid = null, _appGuest = false, _deckOff = null;
+// and whether that is a no-Firebase guest/Test session.
+let _appUid = null, _appGuest = false;
 // Bumped on every show(): a lazy tool module that resolves after the user has already
 // moved on must not paint over the newer section.
 let _navTok = 0;
@@ -1982,7 +1982,7 @@ function renderApp(user) {
     else if (sec === "vault") { import("/js/vault.js?v=20261011b").then(m => live() && m.renderVault(main)); }
     else if (sec === "setup") renderSetup(main, more);
     else if (sec === "settings") renderSettingsPage(main, user, isOwner, more);
-    else if (sec === "admin") { import("/js/admin.js?v=20261011e").then(m => live() && m.renderAdmin(main, user)); }
+    else if (sec === "admin") { import("/js/admin.js?v=20261012c").then(m => live() && m.renderAdmin(main, user)); }
     else if (sec === "contact") renderContact(main);
     else if (sec === "education") { main.innerHTML = `<div class="panel" style="max-width:800px;margin:40px auto"><div class="panel-h">About Darknode Education</div><div style="padding:18px;line-height:1.8;font-size:.9rem"><p><strong>Darknode is a cybersecurity education platform</strong> designed for students, educators, and security professionals to learn information security through hands-on practice in a safe, controlled environment.</p><p style="margin-top:16px"><strong>Our Mission:</strong> To make cybersecurity education accessible, interactive, and practical. Most tools run in your browser or on your own machine. Some features do send data out: AI chat goes through Darknode's server to the AI provider, some lookup pages query public services (for example NVD, crt.sh and DNS-over-HTTPS resolvers), and saved items and account data are stored in Google Firebase. Each page that contacts an outside service does so only when you run it.</p><p style="margin-top:16px"><strong>Who Uses Darknode:</strong></p><ul style="margin:8px 0 0 20px;line-height:2"><li>Computer science and cybersecurity students</li><li>IT professionals studying for certifications (CompTIA Security+, CISSP, CEH, OSCP)</li><li>University professors and instructors teaching security courses</li><li>Security operations center (SOC) analysts in training</li><li>Career changers learning cybersecurity fundamentals</li></ul><p style="margin-top:16px"><strong>Educational Standards:</strong> Our curriculum aligns with NIST NICE Framework, NSA CAE-CD requirements, and CompTIA Security+ objectives. All practice environments are isolated, legal, and designed for authorized educational use only.</p><p style="margin-top:16px"><strong>Responsible Use:</strong> Darknode tools are designed exclusively for educational purposes and authorized security testing. Users must comply with all applicable laws and obtain proper authorization before testing any system they do not own.</p><p style="margin-top:16px;color:var(--mut);font-size:.82rem">Darknode is a product of Darknode-Official. For questions about our educational programs, visit darknode.ai.</p></div></div>`; }
     else if (sec === "toolbox") { import("/js/mini-tools.js?v=20261006a").then(m => live() && m.renderToolbox(main, { onOpen: (id) => show("tool-" + id) })); }
@@ -2417,24 +2417,8 @@ function renderApp(user) {
   // loading heavy WebGL unprompted — but an explicit deep-link (pathSec, e.g. the app embed
   // opening /prometheus) is a direct request for that tool, so honor it.
   const okSec = startSec && startSec !== "setup" && validToolSec && (startSec !== "admin" || isOwner) && (pathSec === startSec || !HEAVY.has(startSec));
-  // The Deck is the signed-in UI. The console above still renders (hidden) because
-  // every tool the Deck opens is this same page in embed mode (/<sec>?embed=1).
-  if (!document.body.classList.contains("dn-embed")) {
-    view.hidden = true;
-    Promise.all([import("/js/deck-ui.js?v=20261012b"), import("/js/console-nav.js?v=20261011c")]).then(([{ renderDeck }, nav]) => {
-      // Never stack Decks: dispose the previous mount (root + listeners) first.
-      if (_deckOff) { try { _deckOff(); } catch (_) {} _deckOff = null; }
-      document.querySelectorAll("body > .dk").forEach((n) => n.remove());
-      _deckOff = renderDeck(document.body, {
-        groups: (nav.NAV || []).map((g) => ({ id: g.id, name: g.name, color: g.color, items: g.items || [] })),
-        user: { displayName: user.displayName || "", email: user.email || "", photoURL: user.photoURL || "" },
-        isOwner,
-        startSec: pathSec && pathSec !== "home" && validToolSec && (pathSec !== "admin" || isOwner) ? pathSec : "",
-        onSignOut: async () => { await doLogout(); location.replace(location.origin + "/"); },
-      });
-    }).catch((e) => { view.hidden = false; show("home"); toast("Command center failed to load: " + e.message); });
-    return;
-  }
+  // The console is the signed-in UI; the Deck is an owner-only command center launched
+  // from Admin (admin.js).
   show(okSec ? startSec : "home");
   if (frame && frame.fields && frame.sec === startSec) {
     setTimeout(() => { Object.entries(frame.fields).forEach(([id, v]) => { const el = main.querySelector("#" + (window.CSS && CSS.escape ? CSS.escape(id) : id)); if (el && v != null) { el.value = v; el.dispatchEvent(new Event("input", { bubbles: true })); el.dispatchEvent(new Event("change", { bubbles: true })); } }); }, 120);
