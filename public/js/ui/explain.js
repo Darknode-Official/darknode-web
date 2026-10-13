@@ -55,7 +55,6 @@ export const EXPLAIN = {
   // ---- Header ----
   "hdr.menu": { title: "Navigation", body: "Show or hide the sidebar. On small screens it opens as a drawer." },
   "hdr.collapse": { title: "Collapse navigation", body: "Shrink the sidebar to icons to give the workspace more room. Your choice is remembered." },
-  "hdr.scheme": { title: "Colour scheme", body: "Switch the Deck between the warm ink scheme and a cool navy cyber scheme. Your choice is remembered on this device." },
   "hdr.brand": { title: "Darknode", body: "Back to the Security Overview from anywhere in the Deck." },
   "hdr.search": { title: "Search", body: "Jump to any tool, page or action by typing part of its name. Shortcut: Ctrl K." },
   "hdr.health": { title: "Threat feed status", body: "Green when the live vulnerability feed loaded. If it is down, threat numbers show a dash rather than stale values." },

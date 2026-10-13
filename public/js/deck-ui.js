@@ -28,7 +28,7 @@ import * as surface from "/js/deck-surface.js?v=20261011b";
 import { bus, EVENTS } from "/js/core/bus.js";
 import { isSimulated } from "/js/core/posture.js";
 import * as findings from "/js/core/findings.js?v=20261013e";
-import { attachExplain, EXPLAIN, explainEnabled, setExplainEnabled } from "/js/ui/explain.js?v=20261013g";
+import { attachExplain, EXPLAIN, explainEnabled, setExplainEnabled } from "/js/ui/explain.js?v=20261013i";
 
 const LS_CONN = "dn_deck_connections_v1";
 const LS_SCENE = "dn_deck_scene";          // last workspace selected
@@ -618,7 +618,8 @@ const CSS = `
 .dk-wfull{margin-left:0;flex:none;font-size:12.5px;font-weight:600;color:#5a6680;cursor:pointer;padding:7px 12px;border-radius:10px;border:1px solid rgba(23,33,56,.1)}
 .dk-wfull:hover{background:rgba(23,33,56,.07);color:#38435c}
 .dk-wframe{flex:1;position:relative;overflow:hidden}
-.dk-wframe iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#f4f6fa;opacity:0;transition:opacity .4s ease}
+.dk-wframe iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#f4f6fa;opacity:0;transition:opacity .15s ease}
+.dk-wframe iframe.off{visibility:hidden;pointer-events:none}
 .dk-wframe iframe.in{opacity:1}
 .dk-wload{position:absolute;inset:0;display:grid;place-items:center;color:#6a7488;font-size:13px;letter-spacing:.03em;pointer-events:none}
 .dk-wload .sp{width:30px;height:30px;border-radius:50%;border:2.5px solid rgba(23,33,56,.14);border-top-color:#4f86ff;animation:dkSpin .8s linear infinite;margin:0 auto 12px}
@@ -1349,26 +1350,6 @@ textarea.dk-kitio{min-height:120px}
 .dk[data-ui=deck] .dk-astat{border-left-width:1px!important}
 /* tool pages are transparent in embed mode; let the scene tone (ink or cyber) show behind them */
 .dk[data-ui=deck] .dk-wframe iframe{background:transparent}
-/* ======================= Cyber scheme (opt-in, header switch) =======================
-   A cool navy-black with one cyan accent, for teams that want a classic security-operations
-   look. Same layout and rules as the ink scheme; only tokens change. Main-area values are
-   PRE-inversion (see the ink layer): #eef2f8 renders as #0a0e14, #0072ad as cyan #43b5f0. */
-.dk[data-ui=deck][data-scheme=cyber]{--dk-bg:#eef2f8;--dk-surf:#e5ebf6;--dk-line:#cfd9e7;--dk-line2:#dbe3ef;--dk-tx:#0d141c;--dk-tx2:#3f4c5c;--dk-mut:#748297;--dk-acc:#0072ad;--dk-accbg:rgba(0,114,173,.12);background:#0a0e14}
-.dk[data-ui=deck][data-scheme=cyber] .dk-sky{background:#0a0e14}
-.dk[data-ui=deck][data-scheme=cyber] .dk-sidebar{--ix-bg:#07090e;--ix-tx:#c9d3df;--ix-mut:#7d8a9b;--ix-dim:#4b5768;--ix-line:rgba(148,178,214,.12);--ix-mark:#38bdf8}
-.dk[data-ui=deck][data-scheme=cyber] :is(.dk-icbtn:hover,.dk-qacard .qi,.dk-gcard .gi,.dk-wtitle .wi){background:#d3ddec}
-.dk[data-ui=deck][data-scheme=cyber] .dk-hsearch{background:#dde5f1}
-.dk[data-ui=deck][data-scheme=cyber] .dk-hsearch:hover{background:#d3ddec}
-.dk[data-ui=deck][data-scheme=cyber] .dk-qacard:hover{background:#dde5f1}
-.dk[data-ui=deck][data-scheme=cyber] :is(.dk-kpi,.dk-qacard,.dk-gcard,.dk-intcard):hover{border-color:#b9c8de}
-.dk[data-ui=deck][data-scheme=cyber] .dk-tcat.on{background:rgba(0,114,173,.12)}
-.dk[data-ui=deck][data-scheme=cyber] :is(.dk-icbtn.dk-lbtn.ai,.dk-ask button,.dk-b.pri,.dk-tibtn.on){background:var(--dk-acc)!important;border-color:var(--dk-acc)!important;color:#fff!important}
-.dk[data-ui=deck][data-scheme=cyber] .dk-icbtn.dk-lbtn.ai:hover{background:#005f91!important}
-/* the switch itself: a swatch of the scheme it switches to */
-.dk[data-ui=deck] .dk-schbtn{display:inline-flex;align-items:center;gap:8px;width:auto;padding:0 10px;font-size:13px;font-weight:500;color:var(--dk-tx2)}
-.dk[data-ui=deck] .dk-schbtn .sw{width:12px;height:12px;border-radius:50%;flex:none;background:#0072ad;box-shadow:0 0 0 1px var(--dk-line)!important}
-.dk[data-ui=deck][data-scheme=cyber] .dk-schbtn .sw{background:#2e2a20}
-@media(max-width:860px){.dk[data-ui=deck] .dk-schbtn .lb{display:none}.dk[data-ui=deck] .dk-schbtn{padding:0;width:34px;justify-content:center}}
 @media(max-width:520px){.dk[data-ui=deck] .dk-natbl thead{display:none}.dk[data-ui=deck] .dk-natbl td.sv{padding-right:2px}.dk[data-ui=deck] .dk-natbl .dk-sev{font-size:0;gap:0}}
 `;
 const IC_SEARCH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/></svg>';
@@ -1426,8 +1407,6 @@ export function renderDeck(host, opts) {
 
   const root = document.createElement("div");
   root.className = "dk"; root.dataset.ui = "deck";
-  let scheme = "ink"; try { if (localStorage.getItem("dn_deck_scheme") === "cyber") scheme = "cyber"; } catch (_) {}
-  root.dataset.scheme = scheme;
   root.innerHTML = `
     <div class="dk-sky"></div>
     <canvas class="dk-stars" id="dkStars"></canvas>
@@ -1438,7 +1417,6 @@ export function renderDeck(host, opts) {
       <button class="dk-hsearch" id="dkHSearch" data-explain="hdr.search" aria-label="Search">${IC_SEARCH}<span class="hs">Search tools, scenes and actions</span><kbd>Ctrl K</kbd></button>
       <div class="dk-right">
         <button class="dk-health" id="dkHealth" data-explain="hdr.health" title="Live CVE feed status"><span class="d"></span><span class="t">Threat feed live</span></button>
-        <button class="dk-icbtn dk-schbtn" id="dkScheme" data-explain="hdr.scheme" aria-label="Switch colour scheme"><i class="sw"></i><span class="lb"></span></button>
         <button class="dk-icbtn dk-lbtn ai" id="dkAsstBtn" data-explain="hdr.assistant" title="Darknode AI assistant" aria-label="Darknode AI assistant">${IC.spark}<span class="lb">Ask AI</span></button>
         <button class="dk-icbtn" id="dkFindBtn" data-explain="hdr.search" title="Search (Ctrl K)" aria-label="Search">${IC_SEARCH}</button>
         <button class="dk-icbtn dk-lbtn" id="dkNew" data-explain="hdr.new" title="Quick create" aria-label="Quick create">${IC.plus}<span class="lb">New</span></button>
@@ -1562,7 +1540,7 @@ export function renderDeck(host, opts) {
     syncUrl("/");
     try { localStorage.setItem(LS_SCENE, scene); } catch (_) {}
     closeAllMenus();
-    sceneWork.hidden = true; wFrame.innerHTML = ""; curSec = null;
+    sceneWork.hidden = true; hideTools();
     setNav(scene === "section" ? "section:" + curSect : "scene:" + scene);
     for (const k in sceneEls) sceneEls[k].hidden = k !== scene;
     if (scene === "overview") renderOverview();
@@ -1830,15 +1808,39 @@ export function renderDeck(host, opts) {
   // ---------- in-deck tool workspace (tools open here, not the old console) ----------
   const sceneWork = $("#dkWork"), wFrame = $("#dkWFrame"), wTitle = $("#dkWTitle");
   let curSec = null;
+  // Tools stay alive after you leave them (the KEEP most recent), so going back to one is
+  // instant and keeps its state. Resting the pointer on a tool starts it loading early.
+  const KEEP = 5, live = new Map(); // sec -> iframe, least recently used first
+  const wLoad = document.createElement("div"); wLoad.className = "dk-wload";
+  function toolFrame(sec, label){
+    let f = live.get(sec);
+    if (f) { live.delete(sec); live.set(sec, f); return f; }
+    f = document.createElement("iframe");
+    f.title = label; f.src = "/" + sec + "?embed=1&ink=1"; f.loading = "eager"; f.setAttribute("allow", "clipboard-write; clipboard-read");
+    f.className = "off";
+    f.onload = () => { f.dataset.ready = "1"; f.classList.add("in"); if (curSec === sec) wLoad.remove(); };
+    wFrame.appendChild(f); live.set(sec, f);
+    for (const [k, old] of live) { if (live.size <= KEEP) break; if (k !== sec && k !== curSec) { old.remove(); live.delete(k); } }
+    return f;
+  }
+  function hideTools(){ live.forEach((x) => x.classList.add("off")); wLoad.remove(); curSec = null; }
+  let warmT = 0;
+  root.addEventListener("pointerover", (e) => {
+    const t = e.target.closest("[data-tool],.dk-gcard[data-sec],.dk-pin[data-sec],.dk-compcard[data-sec]");
+    clearTimeout(warmT);
+    const sec = t && (t.dataset.tool || t.dataset.sec);
+    if (!sec || live.has(sec) || !secLabel[sec]) return;
+    // one background load at a time, so sweeping the pointer across a grid stays cheap
+    warmT = setTimeout(() => { for (const x of live.values()) if (!x.dataset.ready) return; toolFrame(sec, secLabel[sec] || t.dataset.label || sec); }, 300);
+  });
   function openTool(sec, label, accent){
     if (!sec) return;
     label = label || sec; curSec = sec;
     syncUrl("/" + sec);
-    wFrame.innerHTML = '<div class="dk-wload"><div><div class="sp"></div>Loading ' + esc(label) + '…</div></div>';
-    const f = document.createElement("iframe");
-    f.title = label; f.src = "/" + sec + "?embed=1&ink=1"; f.loading = "eager"; f.setAttribute("allow", "clipboard-write; clipboard-read");
-    f.onload = () => { f.classList.add("in"); const l = wFrame.querySelector(".dk-wload"); if (l) setTimeout(() => l.remove(), 180); };
-    wFrame.appendChild(f);
+    const f = toolFrame(sec, label);
+    live.forEach((x) => x.classList.toggle("off", x !== f));
+    if (f.dataset.ready) wLoad.remove();
+    else { wLoad.innerHTML = '<div><div class="sp"></div>Loading ' + esc(label) + '…</div>'; wFrame.appendChild(wLoad); }
     wTitle.innerHTML = '<span class="wi"' + (accent ? ' style="--a:' + accent + '"' : "") + '>' + toolIcon(label) + '</span><span class="wt">' + esc(label) + '</span>';
     const pinBtn = $("#dkWPin"); if (pinBtn) pinBtn.classList.toggle("pinned", pins.includes(sec));
     drawer.classList.remove("on"); closeAllMenus();
@@ -1848,7 +1850,7 @@ export function renderDeck(host, opts) {
     sceneWork.classList.remove("opening"); void sceneWork.offsetWidth; sceneWork.classList.add("opening");
   }
   function closeTool(){
-    sceneWork.hidden = true; wFrame.innerHTML = ""; curSec = null;
+    sceneWork.hidden = true; hideTools();
     go(curScene || "overview");
   }
   $("#dkWBack").onclick = closeTool;
@@ -2002,9 +2004,6 @@ export function renderDeck(host, opts) {
   $("#dkNew").onclick = (e) => { e.stopPropagation(); toggleMenu(popNew, $("#dkNew"), buildNewMenu); };
   $("#dkBell").onclick = (e) => { e.stopPropagation(); const willOpen = !popBell.classList.contains("on"); toggleMenu(popBell, $("#dkBell"), buildBellMenu); if (willOpen) { notifSeen = Date.now(); try { localStorage.setItem(LS_NOTIF_SEEN, String(notifSeen)); } catch (_) {} updateBadge(); } };
   $("#dkAcct").onclick = (e) => { e.stopPropagation(); toggleMenu(popAcct, $("#dkAcct"), buildAcctMenu); };
-  const showScheme = () => { const b = $("#dkScheme"); b.querySelector(".lb").textContent = scheme === "cyber" ? "Ink theme" : "Cyber theme"; b.setAttribute("aria-pressed", String(scheme === "cyber")); };
-  showScheme();
-  $("#dkScheme").onclick = () => { scheme = scheme === "cyber" ? "ink" : "cyber"; root.dataset.scheme = scheme; try { localStorage.setItem("dn_deck_scheme", scheme); } catch (_) {} showScheme(); };
   $("#dkBrand").onclick = () => { if (!sceneWork.hidden) closeTool(); go("overview"); };
   root.addEventListener("pointerdown", (e) => { if (!e.target.closest(".dk-pop, .dk-icbtn, .dk-acct")) closeAllMenus(); });
   updateBadge();
