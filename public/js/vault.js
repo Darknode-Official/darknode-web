@@ -62,7 +62,9 @@ function injectStyle() {
   .vlt label.f{display:flex;flex-direction:column;gap:4px;font-size:.78rem;color:var(--mut,#667085)}
   .vlt input,.vlt select{font:inherit;font-size:.86rem;border:1px solid var(--bd,#d7deea);border-radius:8px;padding:8px 10px;background:var(--bg2,#fafbfc);color:inherit;width:100%;box-sizing:border-box}
   .vlt textarea{font-family:ui-monospace,monospace;font-size:12px;width:100%;box-sizing:border-box;min-height:100px;border:1px solid var(--bd,#d7deea);border-radius:8px;padding:9px 10px;background:var(--bg2,#fafbfc);color:inherit}
-  .vlt .btn2{appearance:none;font:inherit;font-size:.82rem;font-weight:600;border:1px solid var(--bd,#d7deea);background:var(--card,#fff);color:inherit;border-radius:8px;padding:8px 13px;cursor:pointer}
+  .vlt .btn2{appearance:none;font:inherit;font-size:.82rem;font-weight:600;border:1px solid var(--bd,#d7deea);background:var(--card,#fff);color:inherit;border-radius:8px;padding:0 13px;cursor:pointer;height:36px;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;line-height:1.2;white-space:nowrap;margin:0}
+  .vlt input:not([type=checkbox]):not([type=radio]):not([type=file]),.vlt select{height:36px;min-height:36px;padding-block:0;margin:0!important}
+  .vlt label.f,.vlt label.btn2{margin:0!important}.vlt label.btn2{letter-spacing:normal}
   .vlt .btn2:hover{background:rgba(47,95,255,.06);border-color:#9db4ff}
   .vlt .btn2.pri{background:#2552c6;border-color:#2552c6;color:#fff}.vlt .btn2.pri:hover{background:#1c45ad}
   .vlt .btn2.danger{color:#b00020;border-color:#e0a7b0}.vlt .btn2.danger:hover{background:rgba(176,0,32,.06)}
@@ -73,7 +75,7 @@ function injectStyle() {
   .vlt .empty{text-align:center;color:var(--mut,#8893a7);padding:28px 10px;font-size:.88rem}
   .vlt .vws{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px;margin:12px 0 4px}
   .vlt .vws label.f{flex:1 1 260px;max-width:420px}
-  .vlt .venf{font-size:.74rem;font-weight:700;border-radius:999px;padding:5px 11px;align-self:center}
+  .vlt .venf{font-size:.74rem;font-weight:700;border-radius:999px;padding:0 11px;height:36px;display:inline-flex;align-items:center;box-sizing:border-box}
   .vlt .venf.on{color:#11643a;background:rgba(26,127,55,.12);border:1px solid rgba(26,127,55,.35)}
   .vlt .venf.off{color:#7a5b00;background:rgba(245,158,11,.14);border:1px solid #f0c36d}
   .vlt .vnew{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;margin:6px 0}
