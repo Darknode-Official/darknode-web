@@ -28,7 +28,7 @@ import * as surface from "/js/deck-surface.js?v=20261011b";
 import { bus, EVENTS } from "/js/core/bus.js";
 import { isSimulated } from "/js/core/posture.js";
 import * as findings from "/js/core/findings.js?v=20261013e";
-import { attachExplain, EXPLAIN, explainEnabled, setExplainEnabled } from "/js/ui/explain.js?v=20261013e";
+import { attachExplain, EXPLAIN, explainEnabled, setExplainEnabled } from "/js/ui/explain.js?v=20261013g";
 
 const LS_CONN = "dn_deck_connections_v1";
 const LS_SCENE = "dn_deck_scene";          // last workspace selected
@@ -1315,6 +1315,61 @@ textarea.dk-kitio{min-height:120px}
 .dk[data-ui=deck] .dk-wbar{background:var(--dk-bg)}
 .dk[data-ui=deck] :is(.dk-gcard,.dk-intcard,.dk-act,.dk-qacard){background:var(--dk-surf)}
 .dk[data-ui=deck] .dk-spot{background:rgba(0,0,0,.55)}
+/* ======================= Polish =======================
+   Fields sit inset on the page tone instead of glaring pure black; quick actions are
+   compact two-line rows; empty states read as a quiet sentence, not a centred banner;
+   integrations show a slim meter instead of a large ring. Tokens only, no new colours. */
+.dk[data-ui=deck] :is(.dk-actform input,.dk-notes){background:var(--dk-bg)!important;border:1px solid var(--dk-line)!important;color:var(--dk-tx)!important;border-radius:8px}
+.dk[data-ui=deck] :is(.dk-actform input,.dk-notes):focus{border-color:var(--dk-acc)!important;box-shadow:0 0 0 3px var(--dk-accbg)!important}
+.dk[data-ui=deck] :is(.dk-actform input,.dk-notes)::placeholder{color:var(--dk-mut)}
+.dk[data-ui=deck] .dk-notes{min-height:112px}
+.dk[data-ui=deck] .dk-notef{color:var(--dk-mut);font-size:12px}
+.dk[data-ui=deck] .dk-qa{grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px}
+.dk[data-ui=deck] .dk-qacard{display:grid;grid-template-columns:30px minmax(0,1fr);column-gap:12px;row-gap:1px;align-items:center;padding:11px 14px}
+.dk[data-ui=deck] .dk-qacard .qi{grid-row:span 2;width:30px;height:30px;border-radius:7px;background:var(--dk-bg)}
+.dk[data-ui=deck] .dk-qacard b{font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dk[data-ui=deck] .dk-qacard span:not(.qi){font-size:12px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.dk[data-ui=deck] .dk-nempty{text-align:left;padding:2px 0;color:var(--dk-mut);font-size:13px;line-height:1.55}
+.dk[data-ui=deck] .dk-nempty b{color:var(--dk-tx);font-weight:500;text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--dk-line)}
+.dk[data-ui=deck] :is(.dk-sysrow,.dk-ovact .r){border-color:var(--dk-line2)}
+.dk[data-ui=deck] :is(.dk-sysrow .sl,.dk-ovact .r .tx){color:var(--dk-tx2)}
+.dk[data-ui=deck] .dk-sysrow .sv{color:var(--dk-tx2);font-weight:500}
+.dk[data-ui=deck] .dk-ovact .r .ag{color:var(--dk-mut)}
+.dk[data-ui=deck] .dk-intg{display:block}
+.dk[data-ui=deck] .dk-intg .gmeta b{display:block;font-size:22px;font-weight:500;letter-spacing:-.01em;color:var(--dk-tx)}
+.dk[data-ui=deck] .dk-intg .gmeta b small{font-size:13px;font-weight:400;color:var(--dk-mut);margin-left:4px;letter-spacing:0}
+.dk[data-ui=deck] .dk-meter{height:6px;border-radius:3px;background:var(--dk-bg);margin:12px 0 10px;overflow:hidden}
+.dk[data-ui=deck] .dk-meter i{display:block;height:100%;width:var(--p);min-width:2px;border-radius:3px;background:var(--dk-tx2)}
+.dk[data-ui=deck] .dk-intg .gmeta p{font-size:12.5px;color:var(--dk-mut);margin:0;line-height:1.5}
+.dk[data-ui=deck] .dk-ovgrid3>.dk-ovp,.dk[data-ui=deck] .dk-ovgrid .dk-ovp{margin-bottom:0}
+.dk[data-ui=deck] .dk-ovgrid>div{display:flex;flex-direction:column;gap:18px}
+.dk[data-ui=deck] :is(.dk-cloudcard,.dk-compcard,.dk-astat,.dk-cloudwb,.dk-cloudconn){background:var(--dk-surf)!important;border-color:var(--dk-line)!important}
+.dk[data-ui=deck] :is(.dk-isel,.dk-isearch,.dk-isearch input,.dk-inv input,.dk-kitio,.dk-cloudin,.dk-cloudsel){background:var(--dk-bg)!important;border-color:var(--dk-line)!important;color:var(--dk-tx)!important}
+.dk[data-ui=deck] .dk-isearch input{border:0!important}
+.dk[data-ui=deck] .dk-astat{border-left-width:1px!important}
+/* tool pages are transparent in embed mode; let the scene tone (ink or cyber) show behind them */
+.dk[data-ui=deck] .dk-wframe iframe{background:transparent}
+/* ======================= Cyber scheme (opt-in, header switch) =======================
+   A cool navy-black with one cyan accent, for teams that want a classic security-operations
+   look. Same layout and rules as the ink scheme; only tokens change. Main-area values are
+   PRE-inversion (see the ink layer): #eef2f8 renders as #0a0e14, #0072ad as cyan #43b5f0. */
+.dk[data-ui=deck][data-scheme=cyber]{--dk-bg:#eef2f8;--dk-surf:#e5ebf6;--dk-line:#cfd9e7;--dk-line2:#dbe3ef;--dk-tx:#0d141c;--dk-tx2:#3f4c5c;--dk-mut:#748297;--dk-acc:#0072ad;--dk-accbg:rgba(0,114,173,.12);background:#0a0e14}
+.dk[data-ui=deck][data-scheme=cyber] .dk-sky{background:#0a0e14}
+.dk[data-ui=deck][data-scheme=cyber] .dk-sidebar{--ix-bg:#07090e;--ix-tx:#c9d3df;--ix-mut:#7d8a9b;--ix-dim:#4b5768;--ix-line:rgba(148,178,214,.12);--ix-mark:#38bdf8}
+.dk[data-ui=deck][data-scheme=cyber] :is(.dk-icbtn:hover,.dk-qacard .qi,.dk-gcard .gi,.dk-wtitle .wi){background:#d3ddec}
+.dk[data-ui=deck][data-scheme=cyber] .dk-hsearch{background:#dde5f1}
+.dk[data-ui=deck][data-scheme=cyber] .dk-hsearch:hover{background:#d3ddec}
+.dk[data-ui=deck][data-scheme=cyber] .dk-qacard:hover{background:#dde5f1}
+.dk[data-ui=deck][data-scheme=cyber] :is(.dk-kpi,.dk-qacard,.dk-gcard,.dk-intcard):hover{border-color:#b9c8de}
+.dk[data-ui=deck][data-scheme=cyber] .dk-tcat.on{background:rgba(0,114,173,.12)}
+.dk[data-ui=deck][data-scheme=cyber] :is(.dk-icbtn.dk-lbtn.ai,.dk-ask button,.dk-b.pri,.dk-tibtn.on){background:var(--dk-acc)!important;border-color:var(--dk-acc)!important;color:#fff!important}
+.dk[data-ui=deck][data-scheme=cyber] .dk-icbtn.dk-lbtn.ai:hover{background:#005f91!important}
+/* the switch itself: a swatch of the scheme it switches to */
+.dk[data-ui=deck] .dk-schbtn{display:inline-flex;align-items:center;gap:8px;width:auto;padding:0 10px;font-size:13px;font-weight:500;color:var(--dk-tx2)}
+.dk[data-ui=deck] .dk-schbtn .sw{width:12px;height:12px;border-radius:50%;flex:none;background:#0072ad;box-shadow:0 0 0 1px var(--dk-line)!important}
+.dk[data-ui=deck][data-scheme=cyber] .dk-schbtn .sw{background:#2e2a20}
+@media(max-width:860px){.dk[data-ui=deck] .dk-schbtn .lb{display:none}.dk[data-ui=deck] .dk-schbtn{padding:0;width:34px;justify-content:center}}
+@media(max-width:520px){.dk[data-ui=deck] .dk-natbl thead{display:none}.dk[data-ui=deck] .dk-natbl td.sv{padding-right:2px}.dk[data-ui=deck] .dk-natbl .dk-sev{font-size:0;gap:0}}
 `;
 const IC_SEARCH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/></svg>';
 const IC_CHEV = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>';
@@ -1371,16 +1426,19 @@ export function renderDeck(host, opts) {
 
   const root = document.createElement("div");
   root.className = "dk"; root.dataset.ui = "deck";
+  let scheme = "ink"; try { if (localStorage.getItem("dn_deck_scheme") === "cyber") scheme = "cyber"; } catch (_) {}
+  root.dataset.scheme = scheme;
   root.innerHTML = `
     <div class="dk-sky"></div>
     <canvas class="dk-stars" id="dkStars"></canvas>
     <div class="dk-top">
       <button class="dk-icbtn dk-sbtog" id="dkSbTog" data-explain="hdr.menu" aria-label="Toggle navigation" aria-controls="dkSide">${IC.menu}</button>
-      <button class="dk-brand" id="dkBrand" data-explain="hdr.brand" title="Open full console"><img class="dk-mark" src="/logo-dark.svg?v=20261007b" alt=""><img class="dk-wm" src="/wordmark.svg" alt="Darknode"><span class="dk-wsname">Command Center</span></button>
+      <button class="dk-brand" id="dkBrand" data-explain="hdr.brand" title="Home"><img class="dk-mark" src="/logo-dark.svg?v=20261007b" alt=""><img class="dk-wm" src="/wordmark.svg" alt="Darknode"><span class="dk-wsname">Command Center</span></button>
       <div class="dk-crumb" id="dkCrumb" aria-live="polite"></div>
       <button class="dk-hsearch" id="dkHSearch" data-explain="hdr.search" aria-label="Search">${IC_SEARCH}<span class="hs">Search tools, scenes and actions</span><kbd>Ctrl K</kbd></button>
       <div class="dk-right">
         <button class="dk-health" id="dkHealth" data-explain="hdr.health" title="Live CVE feed status"><span class="d"></span><span class="t">Threat feed live</span></button>
+        <button class="dk-icbtn dk-schbtn" id="dkScheme" data-explain="hdr.scheme" aria-label="Switch colour scheme"><i class="sw"></i><span class="lb"></span></button>
         <button class="dk-icbtn dk-lbtn ai" id="dkAsstBtn" data-explain="hdr.assistant" title="Darknode AI assistant" aria-label="Darknode AI assistant">${IC.spark}<span class="lb">Ask AI</span></button>
         <button class="dk-icbtn" id="dkFindBtn" data-explain="hdr.search" title="Search (Ctrl K)" aria-label="Search">${IC_SEARCH}</button>
         <button class="dk-icbtn dk-lbtn" id="dkNew" data-explain="hdr.new" title="Quick create" aria-label="Quick create">${IC.plus}<span class="lb">New</span></button>
@@ -1944,7 +2002,10 @@ export function renderDeck(host, opts) {
   $("#dkNew").onclick = (e) => { e.stopPropagation(); toggleMenu(popNew, $("#dkNew"), buildNewMenu); };
   $("#dkBell").onclick = (e) => { e.stopPropagation(); const willOpen = !popBell.classList.contains("on"); toggleMenu(popBell, $("#dkBell"), buildBellMenu); if (willOpen) { notifSeen = Date.now(); try { localStorage.setItem(LS_NOTIF_SEEN, String(notifSeen)); } catch (_) {} updateBadge(); } };
   $("#dkAcct").onclick = (e) => { e.stopPropagation(); toggleMenu(popAcct, $("#dkAcct"), buildAcctMenu); };
-  $("#dkBrand").onclick = () => { if (!primary) return exitDeck(); if (!sceneWork.hidden) closeTool(); go("overview"); };
+  const showScheme = () => { const b = $("#dkScheme"); b.querySelector(".lb").textContent = scheme === "cyber" ? "Ink theme" : "Cyber theme"; b.setAttribute("aria-pressed", String(scheme === "cyber")); };
+  showScheme();
+  $("#dkScheme").onclick = () => { scheme = scheme === "cyber" ? "ink" : "cyber"; root.dataset.scheme = scheme; try { localStorage.setItem("dn_deck_scheme", scheme); } catch (_) {} showScheme(); };
+  $("#dkBrand").onclick = () => { if (!sceneWork.hidden) closeTool(); go("overview"); };
   root.addEventListener("pointerdown", (e) => { if (!e.target.closest(".dk-pop, .dk-icbtn, .dk-acct")) closeAllMenus(); });
   updateBadge();
 
@@ -2021,7 +2082,7 @@ export function renderDeck(host, opts) {
         <div class="dk-ovp"><h2 data-explain="panel.pins">${IC.star} Pinned tools <span class="mo" data-scene="tools">All tools</span></h2><div id="dkPins" class="dk-pins"></div></div>
         <div class="dk-ovp"><h2 data-explain="panel.system">${IC.radar} System status</h2><div id="dkSys" class="dk-sys"></div></div>
         <div class="dk-ovp"><h2 data-explain="panel.integrations">${IC.link} Integrations <span class="mo" data-scene="con">Manage</span></h2>
-          <div class="dk-gauge"><div class="ring" style="--p:${pct};--c:#12a85f"><i>${linked.length}</i></div><div class="gmeta"><b>${linked.length} of ${INTEGRATIONS.length} linked</b><p>${linked.length ? esc(linked.slice(0, 5).map((i) => i.name).join(", ")) + (linked.length > 5 ? "…" : "") : "Connect AI models and threat-intel sources to power the console."}</p></div></div>
+          <div class="dk-gauge dk-intg"><div class="gmeta"><b>${linked.length}<small>of ${INTEGRATIONS.length} linked</small></b><div class="dk-meter"><i style="--p:${pct}%"></i></div><p>${linked.length ? esc(linked.slice(0, 5).map((i) => i.name).join(", ")) + (linked.length > 5 ? "…" : "") : "Connect AI models and threat-intel sources to power the console."}</p></div></div>
         </div>
       </div>
       <div class="dk-ovgrid">
@@ -2041,7 +2102,7 @@ export function renderDeck(host, opts) {
         <div>
           <div class="dk-ovp"><h2 data-explain="panel.threat">${IC.radar} Threat level <span class="mo" data-scene="threat">Threat &amp; vulns</span></h2><div id="dkOvThreat"><div class="dk-loading"><span class="sp"></span>Loading live CVE feed…</div></div></div>
           <div class="dk-ovp"><h2 data-explain="panel.notes">${IC.note} Notes <span class="mo" id="dkNotesClear">Clear</span></h2>
-            <textarea class="dk-notes" id="dkNotes" placeholder="Notes — jot an IP, a hypothesis, a to-do. Saved on this device."></textarea>
+            <textarea class="dk-notes" id="dkNotes" placeholder="Jot an IP, a hypothesis, a to-do"></textarea>
             <div class="dk-notef"><span id="dkNotesSaved">Saved on this device</span><span id="dkNotesCount"></span></div>
           </div>
         </div>

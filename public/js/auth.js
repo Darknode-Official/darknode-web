@@ -1620,8 +1620,18 @@ function renderApp(user) {
       // ink theme. Flip photos, video and map imagery back so they don't render as negatives.
       if (new URLSearchParams(location.search).get("ink") === "1" && !document.getElementById("dn-ink-css")) {
         const st = document.createElement("style"); st.id = "dn-ink-css";
-        st.textContent = 'body.dn-embed :is(img:not([src$=".svg"]),video,.cesium-widget canvas,.leaflet-tile-pane,.maplibregl-canvas,.mapboxgl-canvas){filter:invert(1) hue-rotate(180deg)}';
+        st.textContent = 'body.dn-embed :is(img:not([src$=".svg"]),video,.cesium-widget canvas,.leaflet-tile-pane,.maplibregl-canvas,.mapboxgl-canvas){filter:invert(1) hue-rotate(180deg)}'
+          // one typeface with the Deck around it; every tool inherits the body font
+          + 'body.dn-embed{font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif!important;font-feature-settings:"cv11","ss01"}'
+          // no console (AWS-style) colours inside the Deck: primary actions take the Deck's ink
+          // button and its single accent instead of AWS orange and Cloudscape blue
+          + 'html[data-style=pro] body.app.dn-embed{--acc:#2552c6;--acc-soft:rgba(37,82,198,.08);--aws-orange:#161514;--aws-orange-2:#000;--aws-crumb:#2552c6;--aws-side-on:#2552c6}'
+          + 'html[data-embed] body.app.dn-embed :is(.btn:not(.ghost,.danger,.github),button[style*="background:#00aaff"],button[style*="background:#00d4ff"]):not(#dn-x):not(#dn-y):not(#dn-z){color:#fff!important}'
+          // (three id-not()s outrank aws.css, which pins its skin with two)
+          // let the Deck's own page tone show through behind every tool (ink or cyber)
+          + 'html[data-embed] body.app.dn-embed:not(#dn-x):not(#dn-y):not(#dn-z),html[data-embed] body.app.dn-embed :is(#app,#view,.app-shell,.app-main):not(#dn-x):not(#dn-y):not(#dn-z){background:transparent!important}';
         document.head.appendChild(st);
+        const fl = document.createElement("link"); fl.rel = "stylesheet"; fl.href = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"; document.head.appendChild(fl);
       }
     }
   } catch (_) {}
@@ -1989,7 +1999,7 @@ function renderApp(user) {
     else if (sec === "vault") { import("/js/vault.js?v=20261013d").then(m => live() && m.renderVault(main)); }
     else if (sec === "setup") renderSetup(main, more);
     else if (sec === "settings") renderSettingsPage(main, user, isOwner, more);
-    else if (sec === "admin") { import("/js/admin.js?v=20261013f").then(m => live() && m.renderAdmin(main, user)); }
+    else if (sec === "admin") { import("/js/admin.js?v=20261013g").then(m => live() && m.renderAdmin(main, user)); }
     else if (sec === "contact") renderContact(main);
     else if (sec === "education") { main.innerHTML = `<div class="panel" style="max-width:800px;margin:40px auto"><div class="panel-h">About Darknode Education</div><div style="padding:18px;line-height:1.8;font-size:.9rem"><p><strong>Darknode is a cybersecurity education platform</strong> designed for students, educators, and security professionals to learn information security through hands-on practice in a safe, controlled environment.</p><p style="margin-top:16px"><strong>Our Mission:</strong> To make cybersecurity education accessible, interactive, and practical. Most tools run in your browser or on your own machine. Some features do send data out: AI chat goes through Darknode's server to the AI provider, some lookup pages query public services (for example NVD, crt.sh and DNS-over-HTTPS resolvers), and saved items and account data are stored in Google Firebase. Each page that contacts an outside service does so only when you run it.</p><p style="margin-top:16px"><strong>Who Uses Darknode:</strong></p><ul style="margin:8px 0 0 20px;line-height:2"><li>Computer science and cybersecurity students</li><li>IT professionals studying for certifications (CompTIA Security+, CISSP, CEH, OSCP)</li><li>University professors and instructors teaching security courses</li><li>Security operations center (SOC) analysts in training</li><li>Career changers learning cybersecurity fundamentals</li></ul><p style="margin-top:16px"><strong>Educational Standards:</strong> Our curriculum aligns with NIST NICE Framework, NSA CAE-CD requirements, and CompTIA Security+ objectives. All practice environments are isolated, legal, and designed for authorized educational use only.</p><p style="margin-top:16px"><strong>Responsible Use:</strong> Darknode tools are designed exclusively for educational purposes and authorized security testing. Users must comply with all applicable laws and obtain proper authorization before testing any system they do not own.</p><p style="margin-top:16px;color:var(--mut);font-size:.82rem">Darknode is a product of Darknode-Official. For questions about our educational programs, visit darknode.ai.</p></div></div>`; }
     else if (sec === "toolbox") { import("/js/mini-tools.js?v=20261013c").then(m => live() && m.renderToolbox(main, { onOpen: (id) => show("tool-" + id) })); }
