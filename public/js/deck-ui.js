@@ -1295,6 +1295,26 @@ textarea.dk-kitio{min-height:120px}
 .dk[data-ui=deck] td{border-bottom-color:var(--dk-line2)!important}
 .dk[data-ui=deck] .dk-tcat{font-weight:400;border-radius:7px}
 .dk[data-ui=deck] .dk-tcat.on{background:rgba(29,28,26,.07);color:var(--dk-tx);font-weight:500}
+/* ======================= Ink main screen =======================
+   The main area matches the index sidebar's dark ink. Rather than re-colour hundreds of
+   light rules (and every embedded tool page) one by one, the header, scenes, menus and the
+   tool frame render their light design through invert + hue-rotate: lightness flips while
+   hues (severity red, accent blue) stay put. The --dk-* tokens are therefore the PRE-inversion
+   values, tuned so the result lands on the sidebar ink (#1a1917); photos and logos are
+   flipped back so they look normal. */
+.dk[data-ui=deck]{--dk-bg:#e6e5e2;--dk-surf:#dcdbd7;--dk-line:#cbc9c4;--dk-line2:#d5d3cf;--dk-tx:#161514;--dk-tx2:#3f3d3a;--dk-mut:#716e68;background:#1a1917}
+.dk[data-ui=deck] .dk-sky{background:#1a1917}
+.dk[data-ui=deck] :is(.dk-top,.dk-scene,.dk-pop,.dk-drawer,.dk-spot .dk-sbox){filter:invert(1) hue-rotate(180deg)}
+.dk[data-ui=deck] .dk-scene,.dk[data-ui=deck] .dk-top,.dk[data-ui=deck] .dk-wframe iframe{background:var(--dk-bg)}
+.dk[data-ui=deck] :is(.dk-pop,.dk-drawer,.dk-spot .dk-sbox){background:var(--dk-surf);border-color:var(--dk-line);box-shadow:none}
+.dk[data-ui=deck] .dk-top{border-bottom-color:var(--dk-line)}
+.dk[data-ui=deck] :is(.dk-scene,.dk-top,.dk-pop,.dk-drawer,.dk-spot) img:not(.dk-mark):not(.dk-wm),.dk[data-ui=deck] .dk-scene video{filter:invert(1) hue-rotate(180deg)}
+.dk[data-ui=deck] .dk-brand .dk-wm{filter:brightness(0)}
+.dk[data-ui=deck] .dk-scene *{box-shadow:none!important}
+.dk[data-ui=deck] .dk-wframe iframe{filter:brightness(.92)}
+.dk[data-ui=deck] .dk-wbar{background:var(--dk-bg)}
+.dk[data-ui=deck] :is(.dk-gcard,.dk-intcard,.dk-act,.dk-qacard){background:var(--dk-surf)}
+.dk[data-ui=deck] .dk-spot{background:rgba(0,0,0,.55)}
 `;
 const IC_SEARCH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/></svg>';
 const IC_CHEV = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>';
@@ -1758,7 +1778,7 @@ export function renderDeck(host, opts) {
     syncUrl("/" + sec);
     wFrame.innerHTML = '<div class="dk-wload"><div><div class="sp"></div>Loading ' + esc(label) + '…</div></div>';
     const f = document.createElement("iframe");
-    f.title = label; f.src = "/" + sec + "?embed=1"; f.loading = "eager"; f.setAttribute("allow", "clipboard-write; clipboard-read");
+    f.title = label; f.src = "/" + sec + "?embed=1&ink=1"; f.loading = "eager"; f.setAttribute("allow", "clipboard-write; clipboard-read");
     f.onload = () => { f.classList.add("in"); const l = wFrame.querySelector(".dk-wload"); if (l) setTimeout(() => l.remove(), 180); };
     wFrame.appendChild(f);
     wTitle.innerHTML = '<span class="wi"' + (accent ? ' style="--a:' + accent + '"' : "") + '>' + toolIcon(label) + '</span><span class="wt">' + esc(label) + '</span>';
@@ -2872,7 +2892,7 @@ export function renderDeck(host, opts) {
     asstLoaded = true;
     asstFrame.innerHTML = '<div class="dk-wload"><div><div class="sp"></div>Loading Darknode AI…</div></div>';
     const f = document.createElement("iframe");
-    f.title = "Darknode AI"; f.src = "/ai?embed=1"; f.loading = "eager"; f.setAttribute("allow", "clipboard-write; clipboard-read");
+    f.title = "Darknode AI"; f.src = "/ai?embed=1&ink=1"; f.loading = "eager"; f.setAttribute("allow", "clipboard-write; clipboard-read");
     f.onload = () => { f.classList.add("in"); const l = asstFrame.querySelector(".dk-wload"); if (l) setTimeout(() => l.remove(), 180); };
     asstFrame.appendChild(f);
   }

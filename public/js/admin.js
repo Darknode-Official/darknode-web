@@ -246,7 +246,7 @@ export async function renderAdmin(main, user) {
       btn.disabled = true; const label = btn.textContent; btn.textContent = "Loading…";
       try {
         const [{ renderDeck }, nav] = await Promise.all([
-          import("/js/deck-ui.js?v=20261013e"),
+          import("/js/deck-ui.js?v=20261013f"),
           import("/js/console-nav.js?v=20261013b"),
         ]);
         // Never stack Decks: dispose the previous mount (root + listeners) first.
