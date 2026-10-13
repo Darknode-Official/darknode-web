@@ -3,6 +3,7 @@
 // plus manifest parsing, CVSS scoring and SARIF shape.
 
 import { test, assert, group } from "../harness.mjs";
+import { ignoreMatcher } from "../../public/js/codescan/github.js";
 import { scanFile, parseManifest, cvssBase, osvSeverity, osvFixed, toSarif, langOf, repoScore } from "../../public/js/codescan/rules.js";
 
 const ids = (path, src) => scanFile(path, src).map((f) => f.ruleId);
@@ -169,5 +170,17 @@ app.get("/p", (req, res) => {
     hit("a.js", 'jwt.verify(t, key, { algorithms: ["HS256", "none"] })', "js.jwt-none");
     hit("a.py", 'jwt.decode(t, key, algorithms=["none"])', "js.jwt-none");
     miss("a.js", 'return { algorithm: header.alg || "none" };', "js.jwt-none");
+  });
+  test("public test vectors, sample JWTs and game randomness are not findings", () => {
+    miss("a.js", 'example: { secret: "GEZDGNBVGY3TQOJQ", counter: "0" }', "secret.generic");
+    miss("a.js", 'example: { token: "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.abc" }', "secret.generic");
+    miss("a.js", "const secret = Math.floor(Math.random() * 100) + 1;", "js.insecure-random");
+    hit("a.js", "const token = Math.random().toString(36).slice(2);", "js.insecure-random");
+    hit("a.js", "const otp = Math.floor(Math.random() * 1000000);", "js.insecure-random");
+  });
+  test(".darknodeignore follows gitignore path rules", () => {
+    const g = ignoreMatcher("# reference data\npublic/data/\n*.fixture.js\n/top.js\n**/samples/**\n!keep.js");
+    for (const p of ["public/data/x.js", "a/b/c.fixture.js", "top.js", "samples/a.js", "deep/samples/z/a.js"]) assert.ok(g.test(p), p);
+    for (const p of ["src/public/data/x.js", "x/top.js", "public/database.js", "keep.js"]) assert.ok(!g.test(p), p);
   });
 });

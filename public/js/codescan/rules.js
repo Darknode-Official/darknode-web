@@ -39,7 +39,7 @@ export function mask(s) {
   const v = String(s || "");
   return v.length <= 10 ? v.slice(0, 2) + "…" : v.slice(0, 4) + "…" + v.slice(-4);
 }
-const PLACEHOLDER = /(example|sample|dummy|placeholder|changeme|change_me|your[_-]?|xxxx|\*\*\*\*|<[^>]*>|\$\{[^}]*\}|\{\{[^}]*\}\}|process\.env|os\.environ|getenv|redacted|test[_-]?key|fake|1234567890|0123456789|abcdefghij|SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c)/i; // last one: the public jwt.io sample token
+const PLACEHOLDER = /(example|sample|dummy|placeholder|changeme|change_me|your[_-]?|xxxx|\*\*\*\*|<[^>]*>|\$\{[^}]*\}|\{\{[^}]*\}\}|process\.env|os\.environ|getenv|redacted|test[_-]?key|fake|1234567890|0123456789|abcdefghij|SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c|GEZDGNBVGY3TQOJQ)/i; // public samples: the jwt.io token, the RFC 4226 test secret
 const PLACEHOLDER_PASS = /^(?:pass(?:word)?|secret|pwd|root|admin|user|test|changeme|\*+|x+)$/i; // user:pass@host in docs and examples
 const KEY_BODY = /[A-Za-z0-9+/=]{40,}|\\n[A-Za-z0-9+/]{20,}/; // a real key block carries base64 material
 const TESTY_PATH = /(^|\/)(tests?|__tests__|spec|specs|fixtures?|examples?|samples?|docs?|mocks?)(\/|$)|\.(md|rst|txt|example|sample|template|dist)$|\.(test|spec)\.[a-z]+$/i;
@@ -147,7 +147,7 @@ export const CODE_RULES = [
     why: "Anyone who reads the secret can mint valid tokens for any user.",
     fix: "Load the signing key from the environment or a KMS and rotate the current one." }),
   R({ id: "js.jwt-none", langs: ["js", "py", "java", "go"], title: "JWT 'none' algorithm accepted", sev: "high", cwe: 347,
-    re: /algorithms\s*[:=]\s*\[[^\]\n]*["']none["']|UnsafeAllowNoneSignatureType/i, // the verify allowlist; a decoder showing alg "none" is not acceptance
+    re: /algorithms\s*[:=]\s*\[[^\]\n]*["']none["']|UnsafeAllowNoneSignatureType/i, // darknode-ignore: this is the detector. Fires on the verify allowlist; a decoder showing alg "none" is not acceptance
     why: "Accepting alg=none means tokens are trusted without any signature.",
     fix: "Pin the expected algorithm (e.g. ['RS256']) and never allow 'none'." }),
   R({ id: "js.weak-hash-password", langs: ["js"], title: "Weak hash used for passwords", sev: "medium", cwe: 916,
@@ -156,6 +156,7 @@ export const CODE_RULES = [
     fix: "Use bcrypt, scrypt or Argon2 with a per-user salt." }),
   R({ id: "js.insecure-random", langs: ["js"], title: "Math.random used for a security value", sev: "medium", cwe: 338,
     re: /Math\.random\s*\(/, near: /\b(?:token|secret|nonce|salt|password|otp|session|apikey|api_key)\b/i, win: 2,
+    unless: /Math\.floor\s*\(\s*Math\.random\s*\(\s*\)\s*\*\s*\d{1,3}\s*\)/, // a pick from at most 999 values (a game, a delay) is not a secret
     why: "Math.random is predictable; values derived from it can be guessed.",
     fix: "Use crypto.randomUUID() or crypto.getRandomValues()/randomBytes()." }),
   R({ id: "js.open-redirect", langs: ["js"], title: "Redirect to a user-supplied URL", sev: "medium", cwe: 601,
@@ -341,7 +342,7 @@ export function scanFile(path, text) {
       if (rule.id === "secret.private-key" && !KEY_BODY.test(raw.slice(m.index)) && !KEY_BODY.test(lines[i + 1] || "")) continue; // a marker in a detector or a doc, no key
       if (rule.id === "secret.db-url" && PLACEHOLDER_PASS.test(val)) continue;
       if (rule.id === "secret.google-api-key" && /authDomain|firebaseapp\.com/.test(lines.slice(Math.max(0, i - 6), i + 7).join("\n"))) continue; // Firebase web config keys are public by design
-      if (rule.id === "secret.generic" && (/^[a-z]+(?:[-_.][a-z]+)+$/.test(val) || SECRET_RULES.some((r) => r.id !== "secret.generic" && r.re.test(val)))) continue; // a word, not a credential; or a specific rule owns this value
+      if (rule.id === "secret.generic" && (/^[a-z]+(?:[-_.][a-z]+)+$/.test(val) || /^eyJ/.test(val) || SECRET_RULES.some((r) => r.id !== "secret.generic" && r.re.test(val)))) continue; // a word, not a credential; or a specific rule owns this value
       if (rule.id === "secret.generic" && /^\$(?:2[abxy]?|argon2(?:id|i|d)|scrypt|pbkdf2[\w-]*|[156])\$/.test(val)) continue; // a password HASH, not a secret
       push(rule, i, m.index, raw.trim().replace(val, mask(val)), { secret: mask(val) });
     }

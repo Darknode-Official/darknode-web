@@ -9,7 +9,7 @@
 // here: nothing is uploaded to Darknode, and no AI is involved.
 
 import { scanFile, parseManifest, isManifest, osvSeverity, osvFixed, repoScore, toSarif, SEV_ORDER, langOf } from "/js/codescan/rules.js?v=20261013a";
-import * as gh from "/js/codescan/github.js?v=20261011a";
+import * as gh from "/js/codescan/github.js?v=20261013a";
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const fmt = (n) => Number(n || 0).toLocaleString();
@@ -284,27 +284,37 @@ export function renderCodeScanner(main) {
     return { ...meta, findings, texts, scanned: done, failed, deps: deps.length, depNote, at: Date.now() };
   }
 
+  // Drop the paths the repository's own .darknodeignore lists; the count is shown with the results.
+  async function applyIgnore(all, read) {
+    const f = all.find((x) => x.path === gh.IGNORE_FILE);
+    if (!f) return { kept: all, ignored: 0 };
+    let m;
+    try { m = gh.ignoreMatcher(await read(f)); } catch (_) { return { kept: all, ignored: 0 }; }
+    const kept = all.filter((x) => !m.test(x.path));
+    return { kept, ignored: all.length - kept.length };
+  }
+
   async function runGitHub(p) {
     const ui = progress("Scanning " + p.owner + "/" + p.repo);
     try {
       ui.set(0, 1, "Reading repository…");
       const r = await gh.resolveRepo(p);
-      const all = await gh.listFiles(r);
-      const { chosen, skipped } = gh.pickFiles(all, isManifest);
+      const { kept, ignored } = await applyIgnore(await gh.listFiles(r), (f) => gh.fileText(r, f.path));
+      const { chosen, skipped } = gh.pickFiles(kept, isManifest);
       if (!ui.alive()) return;
       if (!chosen.length) throw new Error("No scannable source files were found in this repository.");
-      const res = await scanAll(chosen, (f) => gh.fileText(r, f.path), ui, { github: true, full: r.full, sha: r.sha, branch: r.branch, skipped, url: r.htmlUrl });
+      const res = await scanAll(chosen, (f) => gh.fileText(r, f.path), ui, { github: true, full: r.full, sha: r.sha, branch: r.branch, skipped, ignored, url: r.htmlUrl });
       if (res) finish(res);
     } catch (e) { if (ui.alive()) renderStart(e.message); }
   }
 
   async function runLocal(fileList) {
     const root = (fileList[0].webkitRelativePath || "").split("/")[0] || "folder";
-    const all = fileList.map((f) => ({ path: (f.webkitRelativePath || f.name).split("/").slice(1).join("/") || f.name, size: f.size, file: f }));
-    const { chosen, skipped } = gh.pickFiles(all, isManifest);
+    const { kept, ignored } = await applyIgnore(fileList.map((f) => ({ path: (f.webkitRelativePath || f.name).split("/").slice(1).join("/") || f.name, size: f.size, file: f })), (f) => f.file.text());
+    const { chosen, skipped } = gh.pickFiles(kept, isManifest);
     const ui = progress("Scanning " + root);
     if (!chosen.length) return renderStart("No scannable source files were found in that folder.");
-    const res = await scanAll(chosen, (f) => f.file.text(), ui, { github: false, full: root, sha: "", skipped });
+    const res = await scanAll(chosen, (f) => f.file.text(), ui, { github: false, full: root, sha: "", skipped, ignored });
     if (res) finish(res);
   }
 
@@ -328,7 +338,7 @@ export function renderCodeScanner(main) {
     const toGraph = s.findings.filter((f) => f.sev !== "info");
     body.innerHTML = `<div class="cs-sum">
         <span class="repo">${esc(s.full)}</span>${s.sha ? `<span class="sha">${esc(s.branch || "")} @ ${esc(s.sha.slice(0, 7))}</span>` : ""}
-        <span class="cs-pill">${fmt(s.scanned)} files scanned</span>${s.skipped ? `<span class="cs-pill" title="Binary, vendored, generated or oversized files are skipped">${fmt(s.skipped)} skipped</span>` : ""}
+        <span class="cs-pill">${fmt(s.scanned)} files scanned</span>${s.skipped ? `<span class="cs-pill" title="Binary, vendored, generated or oversized files are skipped">${fmt(s.skipped)} skipped</span>` : ""}${s.ignored ? `<span class="cs-pill" title="The repository's .darknodeignore file lists these paths as not production code, so they were not scanned">${fmt(s.ignored)} excluded by .darknodeignore</span>` : ""}
         <span class="sp"></span>
         <span class="cs-score" title="100 means no findings. Each finding lowers the score by its severity; review items do not count.">${score}<small>/ 100</small></span>
         <button class="cs-btn sm" id="csSarif" type="button">Export SARIF</button>
@@ -443,7 +453,7 @@ export function renderCodeScanner(main) {
     const adv = x.advisory ? `<a href="https://osv.dev/vulnerability/${encodeURIComponent(x.advisory)}" target="_blank" rel="noopener">${esc(x.advisory)}</a>${x.cve ? " · " + esc(x.cve) : ""}` : "";
     return `<div class="cs-note" data-k="${esc(x.ruleId + "|" + x.line)}" style="${sevVar(x.sev)}"><div class="tt"><span class="cs-sev">${SEV_LABEL[x.sev]}</span><span>${esc(x.kind === "dep" ? x.pkg + " " + x.version + ": " + x.title : x.title)}</span></div>
       <p><b>Why it matters.</b> ${esc(x.why)}</p>${x.flow ? `<p><b>Data flow.</b> How the input reaches this line:</p><ol class="cs-flow">${x.flow.map((t) => `<li><button type="button" data-goto="${t.line}" title="Show line ${t.line}">L${t.line}</button>${esc(t.label)}</li>`).join("")}</ol>` : ""}<p><b>How to fix.</b> ${esc(x.fix)}</p>
-      <p>${[cwe, adv, x.secret && x.ruleId !== "secret.private-key" ? "Value: " + esc(x.secret) : "", x.kind !== "dep" ? `Rule ${esc(x.ruleId)}` : ""].filter(Boolean).join(" · ")}</p></div>`;
+      <p>${[cwe, adv, x.secret && x.ruleId !== "secret.private-key" ? "Value: " + esc(x.secret) : "", x.kind !== "dep" ? `Rule ${esc(x.ruleId)}` : ""].filter(Boolean).join(" · ")}</p>${x.kind !== "dep" ? `<p>Not a real problem here? Put a <b>darknode-ignore</b> comment on the line (or <b>darknode-ignore-next-line</b> above it) with the reason, or list the path in a <b>.darknodeignore</b> file at the repository root.</p>` : ""}</div>`;
   }
 
   // Never render a detected secret in full, even in the code view.

@@ -130,6 +130,26 @@ const BINARY = /\.(png|jpe?g|gif|webp|ico|bmp|tiff?|svg|pdf|zip|gz|tgz|bz2|xz|7z
 const MINIFIED = /\.min\.(js|css)$|\.bundle\.js$|-bundle\.js$|\.map$/i;
 export const MAX_FILE = 600 * 1024;
 
+// .darknodeignore: gitignore-style paths a repository declares are not production
+// code (reference data, fixtures, deliberately vulnerable samples). Supports comments,
+// `dir/`, `*`, `?`, `**` and a leading `/` to anchor at the root; `!` lines are ignored.
+export const IGNORE_FILE = ".darknodeignore";
+export function ignoreMatcher(text) {
+  const res = [];
+  for (const raw of String(text || "").split(/\r?\n/)) {
+    const line = raw.trim();
+    if (!line || line.startsWith("#") || line.startsWith("!")) continue;
+    let p = line.replace(/^\//, "");
+    const dir = p.endsWith("/");
+    if (dir) p = p.slice(0, -1);
+    if (!p) continue;
+    const anchored = line.startsWith("/") || p.includes("/");
+    const body = p.split("**/").map((part) => part.split("**").map((q) => q.replace(/[.+^${}()|[\]\\]/g, "\\$&").replace(/\*/g, "[^/]*").replace(/\?/g, "[^/]")).join(".*")).join("(?:.*/)?");
+    res.push(new RegExp((anchored ? "^" : "(?:^|/)") + body + (dir ? "/" : "(?:/|$)")));
+  }
+  return { size: res.length, test: (path) => res.some((r) => r.test(path)) };
+}
+
 export function pickFiles(files, isManifest, cap = 1500) {
   const keep = files.filter((f) => !SKIP_DIR.test(f.path) && !BINARY.test(f.path) && !MINIFIED.test(f.path) && f.size <= MAX_FILE);
   const manifests = keep.filter((f) => isManifest(f.path));

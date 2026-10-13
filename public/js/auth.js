@@ -1040,7 +1040,7 @@ function renderContact(main) {
       const res = await fetch("https://api.web3forms.com/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ access_key: "f64b2617-cee3-4a87-b94c-fb667baab7cc", name, email, subject, message, from_name: "Darknode Contact Form" })
+        body: JSON.stringify({ access_key: "f64b2617-cee3-4a87-b94c-fb667baab7cc", name, email, subject, message, from_name: "Darknode Contact Form" }) // darknode-ignore: Web3Forms access keys are public by design; they only submit this form
       });
       const data = await res.json();
       if (data.success) {

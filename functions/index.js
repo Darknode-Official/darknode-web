@@ -24,11 +24,12 @@
 // so the client has a single parser regardless of upstream format.
 
 const { onRequest } = require("firebase-functions/v2/https");
-const admin = require("firebase-admin");
+const { initializeApp, getApps } = require("firebase-admin/app");
+const { getFirestore } = require("firebase-admin/firestore");
 const dns = require("dns").promises;
 const net = require("net");
 
-if (!admin.apps.length) admin.initializeApp();
+if (!getApps().length) initializeApp();
 
 const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
 
@@ -449,7 +450,7 @@ exports.pair = onRequest({ cors: true, region: "us-central1", timeoutSeconds: 20
   const code = normalizePairCode((req.body || {}).code);
   if (!code || code.length < 8 || code.length > 64) { res.status(400).json({ error: "Invalid code" }); return; }
 
-  const ref = admin.firestore().collection("pairings").doc(code);
+  const ref = getFirestore().collection("pairings").doc(code);
   let snap;
   try { snap = await ref.get(); } catch (e) { res.status(500).json({ error: "Lookup failed" }); return; }
   if (!snap.exists) { res.status(404).json({ error: "Invalid or expired code — generate a fresh one on the website (Settings → Nexus CLI)." }); return; }

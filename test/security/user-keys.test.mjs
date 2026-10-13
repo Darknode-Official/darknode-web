@@ -173,7 +173,7 @@ group("Nexus CLI pairing (refresh-token login replaced)", () => {
   test("functions expose the pair exchange endpoint, backed by the Admin SDK", () => {
     const f = readRoot("functions/index.js");
     assert.ok(/exports\.pair\s*=\s*onRequest/.test(f), "exports.pair endpoint present");
-    assert.ok(/admin\.initializeApp\(\)/.test(f), "firebase-admin initialized");
+    assert.ok(/\binitializeApp\(\)/.test(f) && /require\("firebase-admin\/app"\)/.test(f), "firebase-admin initialized");
     assert.ok(/collection\("pairings"\)\.doc\(code\)/.test(f), "looks up the code in the pairings collection");
     assert.ok(/ref\.delete\(\)/.test(f), "single-use: the code is deleted on exchange");
     assert.ok(/chatOriginAllowed\(_origin\)/.test(f) && /chatRateLimited\(_ip\)/.test(f), "pair endpoint is origin-gated and rate-limited");

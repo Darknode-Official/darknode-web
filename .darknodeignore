@@ -1,0 +1,4 @@
+# Paths the Darknode Code Scanner skips (gitignore-style).
+# public/data is the security knowledge base: attack payloads, deliberately
+# vulnerable code samples and documented default credentials ARE its content.
+public/data/
