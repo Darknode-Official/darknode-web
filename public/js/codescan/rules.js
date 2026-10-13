@@ -39,7 +39,9 @@ export function mask(s) {
   const v = String(s || "");
   return v.length <= 10 ? v.slice(0, 2) + "…" : v.slice(0, 4) + "…" + v.slice(-4);
 }
-const PLACEHOLDER = /(example|sample|dummy|placeholder|changeme|change_me|your[_-]?|xxxx|\*\*\*\*|<[^>]*>|\$\{[^}]*\}|\{\{[^}]*\}\}|process\.env|os\.environ|getenv|redacted|test[_-]?key|fake|1234567890)/i;
+const PLACEHOLDER = /(example|sample|dummy|placeholder|changeme|change_me|your[_-]?|xxxx|\*\*\*\*|<[^>]*>|\$\{[^}]*\}|\{\{[^}]*\}\}|process\.env|os\.environ|getenv|redacted|test[_-]?key|fake|1234567890|0123456789|abcdefghij|SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c)/i; // last one: the public jwt.io sample token
+const PLACEHOLDER_PASS = /^(?:pass(?:word)?|secret|pwd|root|admin|user|test|changeme|\*+|x+)$/i; // user:pass@host in docs and examples
+const KEY_BODY = /[A-Za-z0-9+/=]{40,}|\\n[A-Za-z0-9+/]{20,}/; // a real key block carries base64 material
 const TESTY_PATH = /(^|\/)(tests?|__tests__|spec|specs|fixtures?|examples?|samples?|docs?|mocks?)(\/|$)|\.(md|rst|txt|example|sample|template|dist)$|\.(test|spec)\.[a-z]+$/i;
 const SKIP_LINE = 2000; // ignore pathological minified lines (regex cost + noise)
 
@@ -92,7 +94,7 @@ export const SECRET_RULES = [
   { id: "secret.db-url", title: "Database URL with password", re: /\b((?:postgres(?:ql)?|mysql|mongodb(?:\+srv)?|redis|amqp):\/\/[^\s:@"'\/]+:([^\s@"'\/]{4,})@[^\s"']+)/, g: 2, sev: "high", cwe: 798,
     why: "Connection strings with an inline password give direct database access to anyone who reads the repo.",
     fix: "Move the connection string to an environment variable or secrets manager and rotate the password." },
-  { id: "secret.generic", title: "Hardcoded credential", re: /\b(?:secret|token|passw(?:or)?d|pwd|api[_-]?key|access[_-]?key|auth[_-]?key|client[_-]?secret)["']?\s*[:=]\s*["']([^"'\s]{12,})["']/i, g: 1, sev: "medium", cwe: 798, minEntropy: 3.5,
+  { id: "secret.generic", title: "Hardcoded credential", re: /(?<![-\w])(?:secret|token|passw(?:or)?d|pwd|api[_-]?key|access[_-]?key|auth[_-]?key|client[_-]?secret)["']?\s*[:=]\s*["']([^"'\s]{12,})["']/i, g: 1, sev: "medium", cwe: 798, minEntropy: 3.5,
     why: "Credentials embedded in source are readable by everyone with repo access and persist in git history.",
     fix: "Load the value from the environment or a secrets manager, rotate it, and purge it from history." }
 ];
@@ -145,7 +147,7 @@ export const CODE_RULES = [
     why: "Anyone who reads the secret can mint valid tokens for any user.",
     fix: "Load the signing key from the environment or a KMS and rotate the current one." }),
   R({ id: "js.jwt-none", langs: ["js", "py", "java", "go"], title: "JWT 'none' algorithm accepted", sev: "high", cwe: 347,
-    re: /algorithms?\s*[:=]\s*\[?[^\]\n]*["']none["']/i,
+    re: /algorithms\s*[:=]\s*\[[^\]\n]*["']none["']|UnsafeAllowNoneSignatureType/i, // the verify allowlist; a decoder showing alg "none" is not acceptance
     why: "Accepting alg=none means tokens are trusted without any signature.",
     fix: "Pin the expected algorithm (e.g. ['RS256']) and never allow 'none'." }),
   R({ id: "js.weak-hash-password", langs: ["js"], title: "Weak hash used for passwords", sev: "medium", cwe: 916,
@@ -307,6 +309,7 @@ function stripComment(line, lang) {
 }
 
 const IGNORE = /darknode-ignore|nosec\b/;
+const FLOW_COVERED = new Set(["js.eval", "js.child-process-exec", "js.inner-html", "js.document-write", "js.dangerously-set-html", "js.sql-concat"]);
 
 // scanFile(path, text) → [{ ruleId, title, sev, cwe, line, col, snippet, why, fix, kind, secret? }]
 export function scanFile(path, text) {
@@ -335,6 +338,10 @@ export function scanFile(path, text) {
       const val = m[rule.g] || m[0];
       if (rule.id !== "secret.private-key" && PLACEHOLDER.test(val)) continue;
       if (rule.minEntropy && entropy(val) < rule.minEntropy) continue;
+      if (rule.id === "secret.private-key" && !KEY_BODY.test(raw.slice(m.index)) && !KEY_BODY.test(lines[i + 1] || "")) continue; // a marker in a detector or a doc, no key
+      if (rule.id === "secret.db-url" && PLACEHOLDER_PASS.test(val)) continue;
+      if (rule.id === "secret.google-api-key" && /authDomain|firebaseapp\.com/.test(lines.slice(Math.max(0, i - 6), i + 7).join("\n"))) continue; // Firebase web config keys are public by design
+      if (rule.id === "secret.generic" && (/^[a-z]+(?:[-_.][a-z]+)+$/.test(val) || SECRET_RULES.some((r) => r.id !== "secret.generic" && r.re.test(val)))) continue; // a word, not a credential; or a specific rule owns this value
       if (rule.id === "secret.generic" && /^\$(?:2[abxy]?|argon2(?:id|i|d)|scrypt|pbkdf2[\w-]*|[156])\$/.test(val)) continue; // a password HASH, not a secret
       push(rule, i, m.index, raw.trim().replace(val, mask(val)), { secret: mask(val) });
     }
@@ -360,7 +367,7 @@ export function scanFile(path, text) {
   }
   for (const f of fileChecks(lang, lines)) push(f.rule, Math.max(0, f.line - 1), 0, f.snippet || lines[Math.max(0, f.line - 1)].trim());
   // Data flow (JS/TS): a traced source-to-sink path replaces a pattern hit with the same CWE on that line.
-  if (lang === "js" && !/\.(vue|svelte)$/i.test(path)) {
+  if (lang === "js" && !/\.(vue|svelte)$/i.test(path) && String(text || "").length <= 600000) {
     let flows = [];
     try { flows = taintScan(text); } catch (_) { /* never let the flow engine break a scan */ }
     for (const t of flows) {
@@ -369,6 +376,9 @@ export function scanFile(path, text) {
       for (let k = out.length - 1; k >= 0; k--) if (out[k].line === t.line && out[k].cwe === t.cwe && out[k].kind === "code") out.splice(k, 1);
       push({ id: t.ruleId, title: t.title, sev: t.sev, cwe: t.cwe, why: t.why, fix: t.fix }, i, t.col - 1, raw.trim(), { flow: t.flow, confidence: "high" });
     }
+    // A sink pattern the flow engine could not connect to any untrusted input is a review
+    // item, not a vulnerability: it stays listed but does not count against the score.
+    for (const f of out) if (FLOW_COVERED.has(f.ruleId)) { f.sev = "info"; f.confidence = "review"; f.why = "No untrusted input was traced to this line, so check where the value comes from. " + f.why; }
   }
   return out;
 }

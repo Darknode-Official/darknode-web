@@ -177,4 +177,7 @@ list.innerHTML = rows.map((r) => r.name + r.value).join("");`);
   });
   test("elements of a constant list are clean", () => quiet(`const { exec } = require("child_process");
 ["a", "b"].forEach((x) => exec("echo " + x));`));
+  test("command-line arguments are not a trust boundary", () => quiet(`const fs = require("fs");
+const dir = process.argv[2];
+fs.readFileSync(dir + "/a.json");`));
 });

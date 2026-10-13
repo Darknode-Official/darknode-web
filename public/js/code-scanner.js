@@ -13,15 +13,15 @@ import * as gh from "/js/codescan/github.js?v=20261011a";
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const fmt = (n) => Number(n || 0).toLocaleString();
-const SEVS = ["critical", "high", "medium", "low"];
-const SEV_LABEL = { critical: "Critical", high: "High", medium: "Medium", low: "Low", info: "Info" };
+const SEVS = ["critical", "high", "medium", "low", "info"];
+const SEV_LABEL = { critical: "Critical", high: "High", medium: "Medium", low: "Low", info: "Review" };
 const KIND_LABEL = { secret: "Secrets", code: "Code", dep: "Dependencies" };
 const HIST_KEY = "dn_codescan_recent";
 const toast = (m, t) => { try { (window.dnToast || window.showToast || (() => {}))(m, t); } catch (_) {} };
 
 const CSS = `<style id="cs-css">
 .cs{--cs-line:var(--line,#e4e7ec);--cs-card:var(--card,#fff);--cs-txt:var(--txt,#101828);--cs-mut:var(--mut,#5f6b7a);--cs-acc:var(--acc,#0972d3);
-  --sev-critical:#b42318;--sev-high:#d92d20;--sev-medium:#b54708;--sev-low:#475467;color:var(--cs-txt);--cs-font:inherit}
+  --sev-critical:#b42318;--sev-high:#d92d20;--sev-medium:#b54708;--sev-low:#475467;--sev-info:#98a2b3;color:var(--cs-txt);--cs-font:inherit}
 .cs *{box-sizing:border-box}
 .cs-note,.cs-note *{font-family:var(--cs-font)}
 .cs .pg-sub{max-width:760px}
@@ -309,7 +309,7 @@ export function renderCodeScanner(main) {
   }
 
   function finish(res) {
-    st.scan = res; st.file = ""; st.idx = -1; st.sevOn = new Set(SEVS); st.kindOn = new Set(["secret", "code", "dep"]);
+    st.scan = res; st.file = ""; st.idx = -1; st.sevOn = new Set(res.findings.some((f) => f.sev !== "info") ? SEVS.filter((v) => v !== "info") : SEVS); st.kindOn = new Set(["secret", "code", "dep"]);
     const counts = Object.fromEntries(SEVS.map((s) => [s, res.findings.filter((f) => f.sev === s).length]));
     saveRecent({ full: res.full, sha: res.sha.slice(0, 7), at: res.at, total: res.findings.length, score: repoScore(res.findings), counts });
     if (res.findings.length) st.idx = 0;
@@ -325,14 +325,15 @@ export function renderCodeScanner(main) {
     const counts = Object.fromEntries(SEVS.map((v) => [v, s.findings.filter((f) => f.sev === v).length]));
     const kinds = Object.fromEntries(Object.keys(KIND_LABEL).map((k) => [k, s.findings.filter((f) => f.kind === k).length]));
     const score = repoScore(s.findings);
+    const toGraph = s.findings.filter((f) => f.sev !== "info");
     body.innerHTML = `<div class="cs-sum">
         <span class="repo">${esc(s.full)}</span>${s.sha ? `<span class="sha">${esc(s.branch || "")} @ ${esc(s.sha.slice(0, 7))}</span>` : ""}
         <span class="cs-pill">${fmt(s.scanned)} files scanned</span>${s.skipped ? `<span class="cs-pill" title="Binary, vendored, generated or oversized files are skipped">${fmt(s.skipped)} skipped</span>` : ""}
         <span class="sp"></span>
-        <span class="cs-score" title="100 means no findings. Each finding lowers the score by its severity.">${score}<small>/ 100</small></span>
+        <span class="cs-score" title="100 means no findings. Each finding lowers the score by its severity; review items do not count.">${score}<small>/ 100</small></span>
         <button class="cs-btn sm" id="csSarif" type="button">Export SARIF</button>
         <button class="cs-btn sm" id="csCsv" type="button">Export CSV</button>
-        ${s.findings.length ? `<button class="cs-btn sm" id="csGraph" type="button" title="Record these findings in the Security Graph so they appear in Findings and your exposure score">Add ${fmt(s.findings.length)} to graph</button>` : ""}
+        ${toGraph.length ? `<button class="cs-btn sm" id="csGraph" type="button" title="Record these findings in the Security Graph so they appear in Findings and your exposure score. Review items are left out.">Add ${fmt(toGraph.length)} to graph</button>` : ""}
         <button class="cs-btn sm pri" id="csNew" type="button">New scan</button>
       </div>
       ${!s.deps && !s.depNote ? `<p class="cs-help" style="margin:-4px 0 12px">No lockfile or pinned dependency versions were found, so dependencies were not checked against advisories.</p>` : ""}
@@ -354,7 +355,7 @@ export function renderCodeScanner(main) {
     if (gb) gb.onclick = () => {
       // One entity per finding (repo + file + line + rule), so a re-scan updates rather
       // than duplicates. Secret values are never written, only where they are.
-      const items = s.findings.slice(0, 2000).map((f) => ({
+      const items = toGraph.slice(0, 2000).map((f) => ({
         type: f.kind === "dep" ? "VULNERABILITY" : "FINDING",
         name: (f.kind === "dep" ? f.pkg + " " + f.version + ": " + (f.advisory || f.title) : f.title) + " (" + s.full + ":" + f.path + ":" + f.line + ")",
         data: { repo: s.full, sha: s.sha || "", path: f.path, line: f.line, rule: f.ruleId || "", cwe: f.cwe || "", advisory: f.advisory || "", cve: f.cve || "", fixedIn: f.fixed || "", kind: f.kind },
@@ -416,7 +417,7 @@ export function renderCodeScanner(main) {
       const LIMIT = 20000;
       // A private key's body sits on the lines after the BEGIN marker: hide them all.
       const hidden = new Set();
-      for (const [n, m] of marks) if (m.some((x) => x.ruleId === "secret.private-key")) for (let k = n + 1; k <= lines.length && !/-----END /.test(lines[k - 1]); k++) hidden.add(k);
+      for (const [n, m] of marks) if (m.some((x) => x.ruleId === "secret.private-key") && !/-----END /.test(lines[n - 1])) for (let k = n + 1; k <= lines.length && !/-----END /.test(lines[k - 1]); k++) hidden.add(k);
       let html = "";
       for (let n = 1; n <= Math.min(lines.length, LIMIT); n++) {
         const m = marks.get(n);

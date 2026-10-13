@@ -17,7 +17,18 @@ group("codescan: secrets", () => {
   });
   test("placeholder AWS key ignored", () => miss("src/a.js", 'k = "AKIAIOSFODNN7EXAMPLE"', "secret.aws-access-key"));
   test("GitHub token", () => hit("x.py", "t = 'ghp_" + "a1B2c3D4e5F6g7H8i9J0k1L2m3N4o5P6q7R8'", "secret.github-token"));
-  test("private key block", () => hit("id_rsa", "-----BEGIN OPENSSH PRIVATE KEY-----", "secret.private-key"));
+  test("private key block", () => {
+    hit("id_rsa", "-----BEGIN OPENSSH PRIVATE KEY-----\nb3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW", "secret.private-key");
+    miss("detect.js", "const re = /-----BEGIN OPENSSH PRIVATE KEY-----/;", "secret.private-key"); // a detector's pattern, no key
+  });
+  test("teaching examples and public values are not secrets", () => {
+    miss("a.js", 'x = "ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef1234"', "secret.github-token");
+    miss("a.js", 'u = "postgres://user:pass@host:5432/db"', "secret.db-url");
+    hit("a.js", 'u = "postgres://app:Vq7rT2xK9m@db.internal:5432/prod"', "secret.db-url");
+    miss("firebase.js", 'const cfg = {\n  apiKey: "AIzaSyD3CJO7PLQdRvPOWDqehSlRwEeA5odCTDE",\n  authDomain: "x.firebaseapp.com" };', "secret.google-api-key");
+    miss("firebase.js", 'const cfg = {\n  apiKey: "AIzaSyD3CJO7PLQdRvPOWDqehSlRwEeA5odCTDE",\n  authDomain: "x.firebaseapp.com" };', "secret.generic");
+    miss("a.js", '<input autocomplete="${s ? "new-password" : "current-password"}">', "secret.generic");
+  });
   test("generic needs entropy", () => {
     hit("cfg.js", 'const apiKey = "q8Zr2LmX9vT4kP1sW7yB";', "secret.generic");
     miss("cfg.js", 'const password = "aaaaaaaaaaaaaaaa";', "secret.generic");
@@ -147,4 +158,16 @@ app.get("/p", (req, res) => {
     assert.ok(scanFile("a.js", src.replace(" // darknode-ignore", "")).some((x) => x.ruleId === "js.taint.redirect"));
   });
   test("data flow is not run on non-JS files", () => assert.ok(!scanFile("a.py", "x = req.query.h").some((x) => x.flow)));
+  test("an HTML sink with no traced input becomes a review item that does not cost score", () => {
+    const f = scanFile("a.js", "el.innerHTML = `<b>${count}</b>`;").find((x) => x.ruleId === "js.inner-html");
+    assert.equal(f.sev, "info");
+    assert.equal(f.confidence, "review");
+    assert.equal(repoScore([f]), 100);
+    assert.equal(scanFile("a.vue", "el.innerHTML = `<b>${count}</b>`;").find((x) => x.ruleId === "js.inner-html").sev, "high");
+  });
+  test("JWT none is flagged only where verification accepts it", () => {
+    hit("a.js", 'jwt.verify(t, key, { algorithms: ["HS256", "none"] })', "js.jwt-none");
+    hit("a.py", 'jwt.decode(t, key, algorithms=["none"])', "js.jwt-none");
+    miss("a.js", 'return { algorithm: header.alg || "none" };', "js.jwt-none");
+  });
 });

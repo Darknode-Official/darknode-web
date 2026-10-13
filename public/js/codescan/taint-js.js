@@ -2,7 +2,7 @@
 // Code Scanner: JavaScript / TypeScript data-flow (taint) engine. Pure, DOM-free, no network.
 //
 // Line rules can only say "this line looks risky". This engine follows untrusted input
-// (request parameters, URL parts, postMessage data, argv) through variables, object
+// (request parameters, URL parts, postMessage data) through variables, object
 // paths, destructuring, string building and same-file function calls, and reports a
 // sink only when it can show every step of the path. Validation, numeric conversion
 // and the right escaping function stop the flow, so properly guarded code stays quiet.
@@ -206,7 +206,6 @@ function sourceOf(path, isCall, ctx) {
   if (SERVER_SRC.test(path)) return { side: "server" };
   if (isCall && SERVER_SRC_CALL.test(path)) return { side: "server" };
   if (ctx.lambda && LAMBDA_SRC.test(path)) return { side: "server" };
-  if (path === "process.argv" || path.startsWith("process.argv.")) return { side: "server" };
   if (CLIENT_SRC.test(path) || /^router\.(?:query|asPath)(?:\.|$)/.test(path)) return { side: "client" };
   if (isCall && /^(?:useParams|useSearchParams|useLocation)$/.test(path)) return { side: "client" };
   if (ctx.messages && MSG_SRC.test(path)) return { side: "client" };
