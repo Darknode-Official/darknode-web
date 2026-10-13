@@ -54,6 +54,8 @@ const TOTAL_XP=TOPICS.reduce((s,t)=>s+t.xp,0);
 
 const prog=loadP();
 let fCat='',fDiff=0,search='';
+// Show the grid a page at a time; 1,400+ cards at once made an 80-screen page.
+const PAGE=48;let shown=PAGE;
 function renderMain(){
 const fl=TOPICS.filter(t=>{
 if(fCat&&t.cat!==fCat)return false;
@@ -98,20 +100,21 @@ ${CATS.map(c=>`<button class="lh-ch${fCat===c?' on':''}" data-cat="${esc(c)}">${
 <button class="lh-ch${fDiff===4?' on':''}" data-diff="4" style="border-color:#bc4dff60">Expert</button>
 <button class="lh-ch${fDiff===5?' on':''}" data-diff="5" style="border-color:#ff4d4d60">Master</button>
 </div>
-<div class="lh-cnt">${fl.length} topics</div>
+<div class="lh-cnt">${fl.length>shown?`Showing ${shown} of ${fl.length} topics`:`${fl.length} topics`}</div>
 <div class="lh-grid">
-${fl.map(t=>{const d=prog.completedTopics.includes(t.id);return`<div class="lh-c${d?' done':''}" data-tid="${esc(t.id)}">
+${fl.slice(0,shown).map(t=>{const d=prog.completedTopics.includes(t.id);return`<div class="lh-c${d?' done':''}" data-tid="${esc(t.id)}">
 ${d?'<span class="lh-ck" style="color:#3fb950">done</span>':''}
 <span class="cat">${CAT_EMOJI[t.cat]||''} ${esc(t.cat)}</span>
 <h4>${esc(t.title)}</h4>
 <div class="intro">${esc(t.intro)}</div>
 <div class="ft"><span class="lh-df" style="color:${DIFF_COLOR[t.diff]};border:1px solid ${DIFF_COLOR[t.diff]}30">${DIFF_LABEL[t.diff]}</span><span class="lh-xp">${t.xp} XP</span></div>
 </div>`;}).join('')}
-</div></div>`;
-const _s=main.querySelector('#lhS');if(_s)_s.oninput=e=>{search=e.target.value;renderMain();};
-main.querySelectorAll('[data-cat]').forEach(b=>b.onclick=()=>{fCat=b.dataset.cat;renderMain();});
-main.querySelectorAll('[data-pathcat]').forEach(b=>b.onclick=()=>{fCat=b.dataset.pathcat;renderMain();});
-main.querySelectorAll('[data-diff]').forEach(b=>b.onclick=()=>{fDiff=+b.dataset.diff;renderMain();});
+</div>${fl.length>shown?`<div style="text-align:center;margin:16px 0"><button class="btn" id="lhMore">Show ${Math.min(PAGE,fl.length-shown)} more</button></div>`:''}</div>`;
+const _s=main.querySelector('#lhS');if(_s)_s.oninput=e=>{search=e.target.value;shown=PAGE;renderMain();const n=main.querySelector('#lhS');if(n){n.focus();n.setSelectionRange(n.value.length,n.value.length);}};
+const _m=main.querySelector('#lhMore');if(_m)_m.onclick=()=>{shown+=PAGE;renderMain();};
+main.querySelectorAll('[data-cat]').forEach(b=>b.onclick=()=>{fCat=b.dataset.cat;shown=PAGE;renderMain();});
+main.querySelectorAll('[data-pathcat]').forEach(b=>b.onclick=()=>{fCat=b.dataset.pathcat;shown=PAGE;renderMain();});
+main.querySelectorAll('[data-diff]').forEach(b=>b.onclick=()=>{fDiff=+b.dataset.diff;shown=PAGE;renderMain();});
 main.querySelectorAll('[data-tid]').forEach(c=>c.onclick=()=>openTopic(c.dataset.tid));
 }
 function openTopic(tid){

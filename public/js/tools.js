@@ -40,6 +40,9 @@ export function renderTools(el) {
   const cats = el.querySelector("#tk-cats");
   const countEl = el.querySelector("#tk-count");
   let curTerm = "", curKind = "", curCat = "";
+  // With no search or category picked, each category shows its first rows; all 192 at once was a 13-screen page.
+  const PEEK = 3;
+  const openCats = new Set();
 
   const row = (t) => `
     <div class="tk-item" data-id="${t.id}">
@@ -63,7 +66,9 @@ export function renderTools(el) {
     cats.innerHTML = shownCats.map((c) => {
       const list = items.filter((t) => t.cat === c);
       if (!list.length) return "";
-      return `<div class="tk-cat"><div class="tk-cat-h">${esc(c)} <span class="tk-cat-n">${list.length}</span></div>${list.map(row).join("")}</div>`;
+      const peek = !term && !curCat && !openCats.has(c) && list.length > PEEK + 1;
+      const more = peek ? `<button type="button" class="tk-more" data-more="${esc(c)}">Show all ${list.length}</button>` : "";
+      return `<div class="tk-cat"><div class="tk-cat-h">${esc(c)} <span class="tk-cat-n">${list.length}</span></div>${(peek ? list.slice(0, PEEK) : list).map(row).join("")}${more}</div>`;
     }).join("") || `<p class="muted tk-empty">No tools match your filters.</p>`;
     countEl.textContent = `Showing ${items.length} of ${CATALOG.length} tools` +
       (curCat ? ` in ${curCat}` : "") + (curKind ? ` (${curKind === "browser" ? "web" : "local"} only)` : "");
@@ -83,6 +88,8 @@ export function renderTools(el) {
   }
 
   cats.onclick = (e) => {
+    const more = e.target.closest(".tk-more");
+    if (more) { openCats.add(more.dataset.more); draw(); return; }
     const star = e.target.closest(".tk-star");
     if (star) { e.stopPropagation(); toggleBookmark({ id: star.dataset.star, label: star.dataset.label, sec: "tools" }); const on = isBookmarked(star.dataset.star); star.classList.toggle("on", on); star.textContent = on ? "*" : "-"; return; }
     const head = e.target.closest(".tk-head"); if (!head) return;

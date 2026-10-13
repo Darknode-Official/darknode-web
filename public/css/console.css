@@ -235,3 +235,8 @@ body.app .svc-menu .svc-card .side-item.active{color:var(--txt)!important;font-w
 .sec-intro-x:hover,.sec-intro-show:hover{color:var(--txt);border-color:var(--acc)}
 .sec-intro-show{margin:0}
 @media (max-width:640px){.sec-intro-card{flex-direction:column}.sec-intro-x{align-self:flex-end}}
+/* Toolbox: each category shows its first 8 tools until "Show all"; a search shows every hit. */
+.mt-hub-body:not(.q) .mt-hub-cat:not(.all) .mt-card:nth-child(n+9){display:none}
+.mt-hub-body.q .mt-more{display:none}
+.mt-more{margin-left:auto;font-family:inherit;font-weight:600;font-size:.72rem;line-height:1;letter-spacing:0;text-transform:none;color:var(--acc);background:none;border:1px solid var(--line);border-radius:999px;padding:5px 11px;cursor:pointer}
+.mt-more:hover{border-color:var(--acc)}

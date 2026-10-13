@@ -65,13 +65,14 @@ const CSS = `
 .cw-item .cw-nm{flex:1;font-size:.88rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .cw-item .cw-cnt{font-size:.74rem;color:var(--mut);flex:none}
 .cw-sev{width:9px;height:9px;border-radius:50%;flex:none}
-.cw-detail{border:1px solid var(--line);border-radius:12px;background:var(--card);padding:0;min-height:300px;overflow:hidden}
+.cw-detail{border:1px solid var(--line);border-radius:12px;background:var(--card);padding:0;min-height:300px;max-height:72vh;overflow:hidden;display:flex;flex-direction:column}
 .cw-dhead{padding:16px 20px;border-bottom:1px solid var(--line);background:var(--bg2,var(--card2,transparent))}
 .cw-dhead h2{margin:0 0 6px;font-size:1.15rem;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .cw-badges{display:flex;gap:7px;flex-wrap:wrap;margin-top:6px}
 .cw-b{font-size:.72rem;padding:3px 9px;border-radius:999px;border:1px solid var(--line);color:var(--mut)}
 .cw-b.sev{color:#fff;border:0}
-.cw-dbody{padding:6px 0}
+.cw-dbody{padding:6px 0;overflow:auto;flex:1;min-height:0}
+.cw-xall{margin-left:auto;font-size:.74rem;background:none;border:1px solid var(--line);color:var(--acc);border-radius:999px;padding:3px 10px;cursor:pointer}
 .cw-fw{border-bottom:1px solid var(--line)}
 .cw-fw:last-child{border-bottom:0}
 .cw-fwh{display:flex;align-items:center;gap:10px;padding:11px 20px;cursor:pointer;user-select:none}
@@ -91,7 +92,7 @@ const CSS = `
 .cw-empty{padding:48px 20px;text-align:center;color:var(--mut)}
 .cw-link{color:var(--acc);text-decoration:none;font-size:.74rem}
 .cw-link:hover{text-decoration:underline}
-@media(max-width:860px){.cw-cols{grid-template-columns:1fr}.cw-list{max-height:none}}
+@media(max-width:860px){.cw-cols{grid-template-columns:1fr}.cw-list{max-height:45vh}.cw-detail{max-height:none}}
 /* Colours come in as --c, not an inline background: the pro theme whitens inline backgrounds that start with #0/#1. */
 .cw-dot,.cw-id,.cw-sev,.cw-b.sev{background:var(--c)}
 `;
@@ -268,10 +269,11 @@ export async function renderCrosswalk(main) {
             ${r.aivss != null ? `<span class="cw-b">AIVSS ${esc(r.aivss)}</span>` : ""}
             ${r.ver ? `<span class="cw-b">${esc(r.ver)}</span>` : ""}
             <span class="cw-b">${maps.length} mapping${maps.length === 1 ? "" : "s"} · ${fwOrder.length} framework${fwOrder.length === 1 ? "" : "s"}</span>
+            ${fwOrder.length > 1 ? xallBtn() : ""}
           </div>
           ${aud ? `<div class="cw-badges" style="margin-top:7px">${aud}</div>` : ""}
         </div>
-        <div class="cw-dbody">${fwOrder.map((f) => fwBlock(f, byFw.get(f))).join("") || `<div class="cw-empty">No mappings for this filter.</div>`}</div>`;
+        <div class="cw-dbody">${fwOrder.map((f) => fwBlock(f, byFw.get(f), fwOrder.length === 1)).join("") || `<div class="cw-empty">No mappings for this filter.</div>`}</div>`;
       wireFwBlocks();
     } else {
       const f = state.selFw;
@@ -289,9 +291,10 @@ export async function renderCrosswalk(main) {
             ${fwVer[f] ? `<span class="cw-b">${esc(fwVer[f])}</span>` : ""}
             <span class="cw-b">${rows.length} mapping${rows.length === 1 ? "" : "s"} · ${groups.length} risk${groups.length === 1 ? "" : "s"}</span>
             ${fwUrl[f] ? `<a class="cw-link" href="${esc(fwUrl[f])}" target="_blank" rel="noopener">Source ↗</a>` : ""}
+            ${groups.length > 1 ? xallBtn() : ""}
           </div>
         </div>
-        <div class="cw-dbody">${groups.map((g) => riskBlock(g)).join("") || `<div class="cw-empty">No risks for this filter.</div>`}</div>`;
+        <div class="cw-dbody">${groups.map((g) => riskBlock(g, groups.length === 1)).join("") || `<div class="cw-empty">No risks for this filter.</div>`}</div>`;
       wireFwBlocks();
     }
   }
@@ -302,15 +305,23 @@ export async function renderCrosswalk(main) {
     if (m.s) tags.push(`<span class="cw-tag">${esc(m.s)}</span>`);
     return `<div class="cw-ctrl"><span class="cw-cid">${esc(m.c || "—")}</span><span class="cw-cn">${esc(m.n || "")}</span><span class="cw-meta">${tags.join("")}</span></div>`;
   }
-  function fwBlock(f, maps) {
-    return `<div class="cw-fw open"><div class="cw-fwh"><span class="cw-caret">▶</span><span class="cw-fwn">${esc(f)}</span>${fwVer[f] ? `<span class="cw-fwv">${esc(fwVer[f])}</span>` : ""}<span class="cw-pill">${maps.length}</span>${fwUrl[f] ? `<a class="cw-link" href="${esc(fwUrl[f])}" target="_blank" rel="noopener" onclick="event.stopPropagation()">↗</a>` : ""}</div><div class="cw-ctrls">${maps.map(ctrlRow).join("")}</div></div>`;
+  function fwBlock(f, maps, open) {
+    return `<div class="cw-fw${open ? " open" : ""}"><div class="cw-fwh"><span class="cw-caret">▶</span><span class="cw-fwn">${esc(f)}</span>${fwVer[f] ? `<span class="cw-fwv">${esc(fwVer[f])}</span>` : ""}<span class="cw-pill">${maps.length}</span>${fwUrl[f] ? `<a class="cw-link" href="${esc(fwUrl[f])}" target="_blank" rel="noopener" onclick="event.stopPropagation()">↗</a>` : ""}</div><div class="cw-ctrls">${maps.map(ctrlRow).join("")}</div></div>`;
   }
-  function riskBlock(g) {
+  function riskBlock(g, open) {
     const meta = LIST_META[g.risk.list] || {};
-    return `<div class="cw-fw open"><div class="cw-fwh"><span class="cw-caret">▶</span><span class="cw-id" style="--c:${meta.color || "var(--acc)"}">${esc(g.risk.id)}</span><span class="cw-fwn">${esc(g.risk.name)}</span><span class="cw-sev" style="--c:${sevColor(g.risk.sev)}"></span><span class="cw-pill">${g.maps.length}</span></div><div class="cw-ctrls">${g.maps.map(ctrlRow).join("")}</div></div>`;
+    return `<div class="cw-fw${open ? " open" : ""}"><div class="cw-fwh"><span class="cw-caret">▶</span><span class="cw-id" style="--c:${meta.color || "var(--acc)"}">${esc(g.risk.id)}</span><span class="cw-fwn">${esc(g.risk.name)}</span><span class="cw-sev" style="--c:${sevColor(g.risk.sev)}"></span><span class="cw-pill">${g.maps.length}</span></div><div class="cw-ctrls">${g.maps.map(ctrlRow).join("")}</div></div>`;
   }
+  // Sections start collapsed (each header shows its control count) so one risk is not a page of ~100 rows.
+  function xallBtn() { return `<button type="button" class="cw-xall" id="cwXall">Expand all</button>`; }
   function wireFwBlocks() {
     detailEl.querySelectorAll(".cw-fwh").forEach((h) => h.onclick = () => h.parentElement.classList.toggle("open"));
+    const x = detailEl.querySelector("#cwXall");
+    if (x) x.onclick = () => {
+      const open = x.textContent === "Expand all";
+      detailEl.querySelectorAll(".cw-fw").forEach((b) => b.classList.toggle("open", open));
+      x.textContent = open ? "Collapse all" : "Expand all";
+    };
   }
 
   // ---- export current view as CSV ----

@@ -42,11 +42,20 @@ function _drLoading() {
 
 // ── Renderers for each real source ───────────────────────────────────────────
 
+// Each list shows a page at a time; 100+ cards at once made a 12-screen page.
+var DR_PAGE = 20;
+var _drShown = { victims: DR_PAGE, groups: DR_PAGE, kev: DR_PAGE };
+function _drMore(key, max, total) {
+  if (total <= max) return '';
+  return '<div style="text-align:center;padding:10px;color:#4a6a8a;font-size:10px;">Showing ' + max + ' of ' + total +
+    ' <button type="button" class="dr-more" data-dr-more="' + key + '" style="margin-left:8px;background:#0f1218;border:1px solid #1a2a3a;color:#8ab4d4;padding:4px 10px;border-radius:3px;cursor:pointer;font-family:inherit;font-size:10px;">Show ' + Math.min(DR_PAGE, total - max) + ' more</button></div>';
+}
+
 function _drRenderVictims(list) {
   if (!Array.isArray(list) || !list.length) return '<div style="color:#4a6a8a;font-size:11px;padding:20px;">No recent victims returned.</div>';
   var h = '<h3 style="color:#ff6644;font-size:13px;letter-spacing:2px;margin:0 0 10px;border-bottom:1px solid #3a1a1a;padding-bottom:6px;">RECENT RANSOMWARE VICTIMS (' + list.length + ')</h3>';
   h += '<div style="color:#4a6a8a;font-size:10px;margin-bottom:10px;">Organisations recently published on ransomware leak sites. Source: ransomware.live</div>';
-  var max = Math.min(list.length, 150);
+  var max = Math.min(list.length, _drShown.victims);
   for (var i = 0; i < max; i++) {
     var v = list[i];
     h += '<div style="background:#0f1218;padding:12px 16px;margin-bottom:8px;border-radius:4px;border-left:3px solid #ff2244;">';
@@ -64,7 +73,7 @@ function _drRenderVictims(list) {
     if (v.description) h += '<div style="font-size:10px;color:#6a8aaa;margin-top:4px;">' + esc(String(v.description).substring(0, 300)) + '</div>';
     h += '</div>';
   }
-  if (list.length > max) h += '<div style="text-align:center;padding:10px;color:#4a6a8a;font-size:10px;">Showing ' + max + ' of ' + list.length + '</div>';
+  h += _drMore('victims', max, list.length);
   return h;
 }
 
@@ -73,7 +82,7 @@ function _drRenderGroups(list) {
   var groups = list.slice().sort(function(a, b) { return String(a.name || '').localeCompare(String(b.name || '')); });
   var h = '<h3 style="color:#ff2244;font-size:13px;letter-spacing:2px;margin:0 0 10px;border-bottom:1px solid #3a1a1a;padding-bottom:6px;">TRACKED RANSOMWARE GROUPS (' + groups.length + ')</h3>';
   h += '<div style="color:#4a6a8a;font-size:10px;margin-bottom:10px;">Ransomware / extortion groups tracked by ransomware.live, with data-leak-site mirror counts.</div>';
-  var max = Math.min(groups.length, 250);
+  var max = Math.min(groups.length, _drShown.groups);
   for (var i = 0; i < max; i++) {
     var g = groups[i];
     var dls = Array.isArray(g.locations) ? g.locations.length : 0;
@@ -86,14 +95,14 @@ function _drRenderGroups(list) {
     if (g.description) h += '<div style="font-size:10px;color:#8ab4d4;line-height:1.5;">' + esc(String(g.description).substring(0, 320)) + '</div>';
     h += '</div>';
   }
-  if (groups.length > max) h += '<div style="text-align:center;padding:10px;color:#4a6a8a;font-size:10px;">Showing ' + max + ' of ' + groups.length + '</div>';
+  h += _drMore('groups', max, groups.length);
   return h;
 }
 
 function _drRenderKev(vulns) {
   if (!Array.isArray(vulns) || !vulns.length) return '<div style="color:#4a6a8a;font-size:11px;padding:20px;">No KEV entries returned.</div>';
   var sorted = vulns.slice().sort(function(a, b) { return String(b.dateAdded || '').localeCompare(String(a.dateAdded || '')); });
-  var max = Math.min(sorted.length, 120);
+  var max = Math.min(sorted.length, _drShown.kev);
   var h = '<h3 style="color:#ffaa22;font-size:13px;letter-spacing:2px;margin:0 0 10px;border-bottom:1px solid #3a2a0a;padding-bottom:6px;">KNOWN EXPLOITED VULNERABILITIES (' + vulns.length + ' total, newest ' + max + ')</h3>';
   h += '<div style="color:#4a6a8a;font-size:10px;margin-bottom:10px;">CVEs confirmed exploited in the wild. Source: CISA Known Exploited Vulnerabilities catalog.</div>';
   for (var i = 0; i < max; i++) {
@@ -110,6 +119,7 @@ function _drRenderKev(vulns) {
     if (ransom) h += '<div style="font-size:9px;color:#ff2244;margin-top:4px;">Known use in ransomware campaigns</div>';
     h += '</div>';
   }
+  h += _drMore('kev', max, sorted.length);
   return h;
 }
 
@@ -194,6 +204,8 @@ export function renderDarknetRadar(container) {
 
   // Tab switching + lazy load
   el.addEventListener('click', function(e) {
+    var more = e.target.closest('.dr-more');
+    if (more) { var mk = more.getAttribute('data-dr-more'); _drShown[mk] += DR_PAGE; _drPaintTab(mk); return; }
     var tabBtn = e.target.closest('.dr-tab');
     if (!tabBtn) return;
     var key = tabBtn.getAttribute('data-dr-tab');

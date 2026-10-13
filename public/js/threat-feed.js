@@ -119,7 +119,7 @@ function injectStyles() {
 .tf-search{flex:1;min-width:200px;padding:8px 12px;border-radius:6px;border:1px solid var(--line);
   background:var(--card);color:var(--txt);font-size:.82rem;outline:none;transition:border-color .15s}
 .tf-search:focus{border-color:var(--acc)}
-.tf-select{padding:8px 12px;border-radius:6px;border:1px solid var(--line);background:var(--card);
+.tf-select{width:auto;padding:8px 12px;border-radius:6px;border:1px solid var(--line);background:var(--card);
   color:var(--txt);font-size:.82rem;cursor:pointer;outline:none}
 .tf-stats{display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap}
 .tf-stat{padding:10px 16px;border-radius:8px;background:var(--card);border:1px solid var(--line);
@@ -176,6 +176,9 @@ export function renderThreatFeed(main) {
   let expanded = new Set();
   let autoRefresh = false;
   let autoTimer = null;
+  // The list shows a page at a time; all 200 cards at once made a 24-screen page.
+  const PAGE = 25;
+  let limit = PAGE;
 
   const RANGE_DAYS = { "7d": 7, "30d": 30, "90d": 90 };
 
@@ -231,9 +234,10 @@ export function renderThreatFeed(main) {
       return;
     }
 
-    if (countEl) countEl.textContent = `Showing ${filtered.length} of ${cves.length} CVEs` + (loadError ? ` (last refresh failed: ${loadError})` : "");
+    const page = filtered.slice(0, limit);
+    if (countEl) countEl.textContent = `Showing ${page.length} of ${filtered.length}` + (filtered.length !== cves.length ? ` matching (${cves.length} loaded)` : " CVEs") + (loadError ? ` (last refresh failed: ${loadError})` : "");
 
-    listEl.innerHTML = filtered.map(c => {
+    listEl.innerHTML = page.map(c => {
       const sev = SEV[c.severity];
       const isOpen = expanded.has(c.id);
       return `<div class="tf-card${isOpen ? " open" : ""}" data-id="${esc(c.id)}">
@@ -268,7 +272,8 @@ export function renderThreatFeed(main) {
           </div>
         </div>
       </div>`;
-    }).join("");
+    }).join("") + (filtered.length > page.length
+      ? `<div style="text-align:center;margin:14px 0"><button type="button" class="tf-btn tf-more">Show ${Math.min(PAGE, filtered.length - page.length)} more</button></div>` : "");
   }
 
   function exportJSON() {
@@ -359,13 +364,14 @@ export function renderThreatFeed(main) {
   const searchEl = main.querySelector(".tf-search");
   const sevEl = main.querySelector("#tf-sev-filter");
   const rangeEl = main.querySelector("#tf-range-filter");
-  searchEl.addEventListener("input", render);
-  sevEl.addEventListener("change", render);
-  rangeEl.addEventListener("change", () => { cves = []; expanded = new Set(); load(); });
+  searchEl.addEventListener("input", () => { limit = PAGE; render(); });
+  sevEl.addEventListener("change", () => { limit = PAGE; render(); });
+  rangeEl.addEventListener("change", () => { cves = []; expanded = new Set(); limit = PAGE; load(); });
   main.querySelector("#tf-refresh").addEventListener("click", load);
 
   main.querySelector(".tf-list").addEventListener("click", (e) => {
     // Reference URLs are copy-to-clipboard, not links — never navigate the user off-site.
+    if (e.target.closest(".tf-more")) { limit += PAGE; render(); return; }
     const cp = e.target.closest(".tf-ref-copy");
     if (cp) {
       e.stopPropagation();

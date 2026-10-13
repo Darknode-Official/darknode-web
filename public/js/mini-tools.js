@@ -175,7 +175,7 @@ export function renderToolbox(main, opts = {}) {
               : esc(nm);
           };
           return `<section class="mt-hub-cat" data-color="${esc(cat.color)}" data-cat="${esc(c)}">
-            <div class="mt-hub-ch"><span class="svc-dot"></span>${esc(cat.name)}<span class="mt-hub-n">${list.length}</span></div>
+            <div class="mt-hub-ch"><span class="svc-dot"></span>${esc(cat.name)}<span class="mt-hub-n">${list.length}</span>${list.length > 8 ? `<button type="button" class="mt-more" data-more="${list.length}">Show all ${list.length}</button>` : ""}</div>
             <div class="mt-hub-grid">${list.map((t) => `<button class="mt-card" data-open="${esc(t.id)}" title="${esc(t.desc || "")}"><span class="mt-card-n">${nameHTML(t)}</span><span class="mt-card-d">${esc(plain(t))}</span></button>`).join("")}</div>
           </section>`;
         }).join("")}
@@ -184,6 +184,8 @@ export function renderToolbox(main, opts = {}) {
     </div>`;
   const open = (id) => { if (opts.onOpen) opts.onOpen(id); else if (window.__show) window.__show("tool-" + id); };
   main.querySelector("#mtHubBody").addEventListener("click", (e) => {
+    const m = e.target.closest("[data-more]");
+    if (m) { const all = m.closest(".mt-hub-cat").classList.toggle("all"); m.textContent = all ? "Show fewer" : "Show all " + m.dataset.more; return; }
     const b = e.target.closest("[data-open]"); if (b) open(b.dataset.open);
   });
   // Search index built once per render: each section holds its cards with a prebuilt
@@ -198,8 +200,10 @@ export function renderToolbox(main, opts = {}) {
     }),
   }));
   const noHits = main.querySelector("#mtNoHits");
+  const body = main.querySelector("#mtHubBody");
   const filter = (q) => {
     let any = false;
+    body.classList.toggle("q", !!q); // a search shows every hit, not just each category's first rows
     for (const { sec, cards } of index) {
       let shown = 0;
       for (const { card, hay } of cards) {

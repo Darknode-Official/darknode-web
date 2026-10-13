@@ -9600,3 +9600,13 @@ body.focus-mode .app-main { padding-left: 20px !important; padding-right: 20px !
 :is([style*="display:flex"],[style*="display: flex"]) > input:is([style*="flex:1"],[style*="flex: 1"]){min-width:min(180px,100%)}
 /* Long filter chips (e.g. example queries) wrap instead of running off a phone screen. */
 .cs-filter .chip{max-width:100%;white-space:normal;text-align:left}
+/* Tools catalog: "Show all N" under a category that is showing its first rows. */
+.tk-more{display:block;margin:2px 0 0;background:none;border:0;color:var(--acc);font:inherit;font-size:.8rem;font-weight:600;cursor:pointer;padding:6px 2px}
+.tk-more:hover{text-decoration:underline}
+/* Tools catalog: each category is one joined list (rows share borders) instead of
+   separate spaced cards, so the catalog reads like a table and takes far less height. */
+.tk-cat > .tk-item{margin-bottom:0;border-radius:0;border-top-width:0}
+.tk-cat > .tk-cat-h + .tk-item{border-top-width:1px;border-radius:9px 9px 0 0}
+.tk-cat > .tk-item:last-of-type{border-radius:0 0 9px 9px}
+.tk-cat > .tk-cat-h + .tk-item:last-of-type{border-radius:9px}
+.tk-cat > .tk-item > .tk-head{padding:8px 14px;border-radius:0}
