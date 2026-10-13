@@ -851,9 +851,24 @@ body.app .awh-w .dg-bars { display: flex; flex-direction: column; gap: 4px; }
   html body.app .app-main .ai2-hitem-t { min-height: 44px; }
   html body.app .app-main .ai2-hitem-x { width: 32px; height: 32px; }
 }
-@media (max-width: 720px) {
-  /* clear the AI composer / bottom bars on phones */
-  body.app.aws-side-closed .aws-side-open { bottom: calc(52px + env(safe-area-inset-bottom, 0px)); }
+/* Narrow windows: the side-nav opener sits at the start of the favourites bar instead of
+   floating over page content (it used to cover tables and KPI labels bottom-left). */
+@media (max-width: 900px) {
+  html body.app.aws-side-closed .aws-side-open {
+    position: fixed;
+    top: calc(var(--topbar-h) + 4px);
+    bottom: auto;
+    left: 6px;
+    z-index: 60;
+    width: 36px;
+    height: 36px;
+    background: transparent !important;
+    color: var(--aws-hdr-txt);
+    border-radius: 6px !important;
+    box-shadow: none !important;
+  }
+  html body.app.aws-side-closed .aws-side-open span { left: 11px; top: 17px; }
+  html body.app.aws-side-closed .con-favbar { padding-left: 46px !important; }
 }
 @media print {
   .aws-side, .aws-side-open { display: none !important; }

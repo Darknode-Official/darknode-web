@@ -509,9 +509,61 @@ export function renderAI(main) {
   const welcomeHtml = `<div class="ai2-welcome ai-empty">
         <div class="ai2-logo" aria-hidden="true">◆</div>
         <h1 class="ai2-h1">Darknode AI</h1>
-        <p class="ai2-lead">Your security assistant. Ask about recon, exploitation, tooling, code, or defense — answers stream in real time, free with Darknode AI, or through a provider you connect in DarkDeck.</p>
+        <p class="ai2-lead">Your security assistant. Ask about a CVE, a log, a config or a piece of code. Answers stream in real time, free with Darknode AI or through a provider you connect.</p>
         <div class="ai-presets" id="aiPresets"></div>
       </div>`;
+  // Inside the admin Deck (embed mode) the assistant takes the familiar chat-app layout:
+  // one centred reading column, a serif greeting, a single rounded composer, user turns as
+  // right-aligned bubbles and replies as plain text. Translucent fills keep it right under
+  // both Deck colour schemes. Three id-not()s outrank the console skins' pinned selectors.
+  if (document.documentElement.hasAttribute("data-embed") && !document.getElementById("ai-deck-css")) {
+    const E = "html[data-embed] body:not(#dn-a):not(#dn-b):not(#dn-c)";
+    const st = document.createElement("style"); st.id = "ai-deck-css";
+    st.textContent = `
+${E} .ai2-shell{max-width:none;gap:16px;height:calc(100vh - 40px)}
+${E} :is(.ai2,.ai2-hist){height:calc(100vh - 40px)!important;min-height:0!important}
+${E} .ai2-hist{background:rgba(0,0,0,.025)!important;border:1px solid rgba(0,0,0,.1)!important;border-radius:14px!important;box-shadow:none!important}
+${E} .ai2-shell .ai2>:is(.ai2-main,.ai2-dock){max-width:760px}
+${E} .ai2-shell:has(.ai-empty) .ai2{justify-content:center}
+${E} .ai2-shell:has(.ai-empty) .ai2-main{flex:0 0 auto;overflow:visible;padding:0!important}
+${E} .ai2-welcome{min-height:0!important;padding:0 0 26px!important;gap:0!important}
+${E} .ai2-logo{display:none!important}
+${E} .ai2-h1{font-family:"Source Serif 4",Georgia,serif!important;font-weight:400!important;font-size:34px!important;letter-spacing:-.015em!important;color:#1d1c1a!important;line-height:1.2!important}
+${E} .ai2-lead{font-size:14.5px!important;color:#6b6862!important;max-width:520px!important;margin:10px 0 0!important;line-height:1.55!important}
+${E} .ai2-welcome .ai-presets{margin:22px 0 0!important;gap:8px!important;max-width:680px!important}
+${E} .ai-presets :is(.chip,button){text-transform:none!important;letter-spacing:0!important;font-size:13px!important;font-weight:500!important;border-radius:999px!important;padding:7px 14px!important;height:auto!important;background:transparent!important;border:1px solid rgba(0,0,0,.13)!important;color:#3f3d3a!important;box-shadow:none!important}
+${E} .ai-presets :is(.chip,button):hover{background:rgba(0,0,0,.05)!important;color:#1d1c1a!important}
+${E} .ai2-composer{border-radius:26px!important;border:1px solid rgba(0,0,0,.13)!important;background:rgba(0,0,0,.03)!important;padding:14px 12px 10px 20px!important;box-shadow:none!important}
+${E} .ai2-composer:focus-within{border-color:rgba(0,0,0,.26)!important;box-shadow:none!important}
+${E} .ai2-input{font-size:15.5px!important;line-height:1.55!important;padding:2px 0!important;min-height:26px!important;color:#1d1c1a!important;border:0!important;background:transparent!important;box-shadow:none!important;outline:none!important}
+${E} .ai2-input::placeholder{color:#8a877f!important;font-style:normal!important}
+${E} .ai2-bar{margin-top:10px!important}
+${E} .ai2-tool{width:34px;height:34px!important;min-width:34px!important;padding:0!important;border-radius:50%!important;border:0!important;color:#5f5c56!important;background:transparent!important;box-shadow:none!important}
+${E} .ai2-tool-txt{width:auto;border-radius:999px!important;padding:0 12px!important;font-size:13px!important;font-weight:500!important;text-transform:none!important;letter-spacing:0!important}
+${E} :is(.ai2-tool,.ai2-model):hover{background:rgba(0,0,0,.06)!important;color:#1d1c1a!important}
+${E} .ai2-model{border:0!important;background:transparent!important;font-size:13px!important;font-weight:500!important;color:#3f3d3a!important;padding:0 26px 0 10px!important;height:34px!important;border-radius:999px!important;max-width:240px;box-shadow:none!important}
+${E} .ai2-send{width:36px!important;height:36px!important;border-radius:50%!important;background:#1d1c1a!important;color:#fff!important;border:0!important;box-shadow:none!important}
+${E} .ai2-send:hover,${E} .ai2-send.is-stop{background:#000!important}
+${E} .ai2-status{font-size:12px!important;color:#8a877f!important;padding-top:10px!important}
+${E} .ai2-main{padding:24px 4px!important}
+${E} .ai2-main .msg{padding:0!important;border:0!important;background:transparent!important;box-shadow:none!important;font-size:15.5px!important;line-height:1.7!important;color:#1d1c1a!important;margin:0 0 28px!important;border-radius:0!important}
+${E} .ai2-main .msg{max-width:100%!important;width:100%!important}
+${E} .ai2-main .msg :is(p,ul,ol){margin:0 0 12px!important}
+${E} .ai2-main .msg :is(p,ul,ol):last-child{margin-bottom:0!important}
+${E} .ai2-main .msg.you{display:flex;flex-direction:column;align-items:flex-end}
+${E} .ai2-main .msg.you .msg-body{background:rgba(0,0,0,.06);border-radius:20px;padding:10px 16px;max-width:80%}
+${E} .ai2-main .msg pre{background:rgba(0,0,0,.045)!important;border:1px solid rgba(0,0,0,.08)!important;border-radius:12px!important;padding:14px 16px!important;font-size:13.5px!important}
+${E} .ai2-main .msg pre{position:relative;margin:4px 0 14px!important;padding-right:64px!important;overflow-x:auto}
+${E} .ai2-main .msg pre code{color:#1d1c1a!important;background:transparent!important;font-family:ui-monospace,"JetBrains Mono",SFMono-Regular,Menlo,monospace!important}
+${E} .ai2-main .cb-copy{position:absolute;top:8px;right:8px;text-transform:none!important;letter-spacing:0!important;font-size:12px!important;font-weight:500!important;color:#6b6862!important;background:transparent!important;border:0!important;border-radius:6px!important;padding:3px 8px!important;box-shadow:none!important}
+${E} .ai2-main .cb-copy:hover{background:rgba(0,0,0,.06)!important;color:#1d1c1a!important}
+${E} .ai2-main .msg :not(pre)>code{background:rgba(0,0,0,.06)!important;border-radius:5px!important;padding:1px 5px!important}
+${E} .msg-tools{margin-top:6px!important;gap:2px!important}
+${E} .mt{border:0!important;background:transparent!important;color:#8a877f!important;font-size:12px!important;padding:4px 8px!important;border-radius:6px!important}
+${E} .mt:hover{background:rgba(0,0,0,.06)!important;color:#1d1c1a!important}
+@media(max-width:720px){${E} .ai2-h1{font-size:28px!important}${E} .ai2-composer{padding:12px 10px 8px 16px!important}${E} .ai2-model{max-width:150px}}`;
+    document.head.appendChild(st);
+  }
   main.innerHTML = `
     <div class="ai2-shell">
       <aside class="ai2-hist" id="aiHist" aria-label="Chat history" inert>
