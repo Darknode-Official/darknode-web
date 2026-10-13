@@ -264,7 +264,7 @@ export function renderUtils(main) {
       <div class="util-kv"><span>Scope</span><code id="ipcscope" class="util-val">—</code></div>
       <div class="util-kv"><span>Routable</span><code id="ipcrout" class="util-val">—</code></div>
       <div class="util-kv"><span>Reverse</span><code id="ipcptr" class="util-val">—</code></div>`),
-    card("Luhn checksum", "Validate", `<input class="in mono" id="luhnin" placeholder="4539 1488 0343 6467  ·  end with ? for check digit">
+    card("Luhn checksum", "Validate", `<input class="in mono" id="luhnin" placeholder="Card number, or end with ?">
       <div class="util-kv"><span>Result</span><code id="luhnout" class="util-val">—</code></div>`),
     card("XOR cipher", "Crypto", `<input class="in mono" id="xorkey" placeholder="key">
       <textarea class="in mono" id="xorin" rows="2" placeholder="text to encrypt, or hex to decrypt"></textarea>

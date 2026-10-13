@@ -85,7 +85,7 @@ function gamegenSection() {
     <div class="beta-gen">
       <div class="beta-gen-controls">
         <input id="bgPrompt" class="beta-input" type="text" autocomplete="off"
-          placeholder="e.g. a shooter where I fire homing balls at bouncing squares" />
+          placeholder="Describe a game" />
         <div class="beta-gen-row">
           <button id="bgBuild" class="btn">Build it</button>
           <button id="bgSource" class="btn btn-ghost" type="button">View source</button>

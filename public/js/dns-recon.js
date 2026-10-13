@@ -60,7 +60,6 @@ export function renderDNSRecon(container) {
 
   h += '<div id="dns-results" style="min-height:300px;">';
   h += '<div style="background:#0c1020;border:1px solid #1a2a44;border-radius:6px;padding:40px;text-align:center;color:#4a6a8a;">';
-  h += '<div style="font-size:36px;margin-bottom:10px;opacity:0.3;">&#x1F310;</div>';
   h += '<div style="font-size:13px;">Enter a domain to enumerate all DNS records</div>';
   h += '<div style="font-size:10px;color:#3a5a7a;margin-top:6px;">Uses Google &amp; Cloudflare DNS-over-HTTPS — no API keys required</div>';
   h += '</div></div>';

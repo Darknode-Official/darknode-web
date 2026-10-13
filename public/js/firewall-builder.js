@@ -568,7 +568,7 @@ export function renderFirewallBuilder(main) {
           '<div><label style="font-size:.72rem;color:var(--mut)">Dest IP/CIDR</label><input class="tk-f" id="fw-dst" placeholder="any"></div>' +
           '<div><label style="font-size:.72rem;color:var(--mut)">Port/Range</label><input class="tk-f" id="fw-port" placeholder="80,443"></div>' +
           '<div><label style="font-size:.72rem;color:var(--mut)">Action</label><select class="tk-f" id="fw-action">' + actionOptions + '</select></div>' +
-          '<div><label style="font-size:.72rem;color:var(--mut)">Comment</label><input class="tk-f" id="fw-comment" placeholder="Rule description"></div>' +
+          '<div><label style="font-size:.72rem;color:var(--mut)">Comment</label><input class="tk-f" id="fw-comment" placeholder="Description"></div>' +
           '<div style="display:flex;align-items:end;gap:8px"><label style="font-size:.72rem;color:var(--mut);display:flex;align-items:center;gap:4px"><input type="checkbox" id="fw-log"> Log</label></div>' +
         '</div>' +
         '<button class="btn sm" id="fw-add">Add Rule</button>' +

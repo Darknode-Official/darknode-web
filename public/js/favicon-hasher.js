@@ -225,7 +225,7 @@ export function renderFaviconHasher(container) {
     + '<div style="background:#0c1020;border:1px solid #1a2a44;border-radius:8px;padding:16px;">'
     + '<div style="color:#00aaff;font-size:11px;font-weight:bold;letter-spacing:1px;margin-bottom:10px;">FETCH FROM URL</div>'
     + '<div style="display:flex;gap:8px;">'
-    + '<input id="fh-url" type="text" placeholder="https://example.com" style="flex:1;background:#060a14;border:1px solid #1a3050;border-radius:4px;color:#00ddff;font-family:monospace;font-size:13px;padding:10px 12px;">'
+    + '<input id="fh-url" type="text" placeholder="Site URL" style="flex:1;background:#060a14;border:1px solid #1a3050;border-radius:4px;color:#00ddff;font-family:monospace;font-size:13px;padding:10px 12px;">'
     + '<button id="fh-fetch-btn" style="background:#00aaff15;border:1px solid #00aaff44;color:#00aaff;padding:10px 16px;cursor:pointer;border-radius:4px;font-family:monospace;font-size:11px;font-weight:bold;white-space:nowrap;">Fetch</button>'
     + '</div>'
     + '<div id="fh-fetch-status" style="margin-top:6px;font-size:10px;color:#3a5a7a;min-height:14px;"></div>'

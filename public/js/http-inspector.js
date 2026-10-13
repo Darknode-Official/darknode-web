@@ -281,7 +281,7 @@ export function renderHttpInspector(container) {
 
   function renderHeaderRef() {
     panelsEl.innerHTML = `<div class="hti-panel active">
-      <input class="hti-input" id="hti-hdr-filter" placeholder="Filter headers... (e.g. CSP, cookie, security)">
+      <input class="hti-input" id="hti-hdr-filter" placeholder="Filter headers">
       <div id="hti-hdr-table"></div></div>`;
     const filter = panelsEl.querySelector("#hti-hdr-filter");
     const table = panelsEl.querySelector("#hti-hdr-table");

@@ -247,7 +247,7 @@ export async function renderAdmin(main, user) {
       try {
         const [{ renderDeck }, nav] = await Promise.all([
           import("/js/deck-ui.js?v=20261013a"),
-          import("/js/console-nav.js?v=20261011c"),
+          import("/js/console-nav.js?v=20261013b"),
         ]);
         // Never stack Decks: dispose the previous mount (root + listeners) first.
         if (_deckOff) { try { _deckOff(); } catch (_) {} _deckOff = null; }

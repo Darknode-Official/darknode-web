@@ -28,7 +28,7 @@ export function renderSSLInspector(container) {
 
   // Search bar
   h += '<div style="display:flex;gap:8px;margin-bottom:20px;">';
-  h += '<input id="ssl-domain" type="text" placeholder="Enter domain (e.g. example.com)" style="flex:1;background:#0c1525;border:1px solid #1a3a5c;border-radius:4px;padding:10px 14px;color:#c8d6e5;font-family:monospace;font-size:13px;outline:none;" onkeydown="if(event.key===\'Enter\')_sslSearch()">';
+  h += '<input id="ssl-domain" type="text" placeholder="Domain" style="flex:1;background:#0c1525;border:1px solid #1a3a5c;border-radius:4px;padding:10px 14px;color:#c8d6e5;font-family:monospace;font-size:13px;outline:none;" onkeydown="if(event.key===\'Enter\')_sslSearch()">';
   h += '<button onclick="_sslSearch()" style="background:#00d4ff22;color:#00d4ff;border:1px solid #00d4ff44;border-radius:4px;padding:10px 20px;font-family:monospace;font-size:12px;cursor:pointer;letter-spacing:1px;font-weight:bold;">Search</button>';
   h += '</div>';
 
@@ -49,7 +49,6 @@ export function renderSSLInspector(container) {
   // Results
   h += '<div id="ssl-results" style="background:#0c1020;border:1px solid #1a2a44;border-radius:6px;padding:20px;min-height:300px;">';
   h += '<div style="text-align:center;color:#4a6a8a;padding:60px 20px;">';
-  h += '<div style="font-size:40px;margin-bottom:12px;opacity:0.3;">&#x1F50D;</div>';
   h += '<div style="font-size:13px;">Enter a domain to search Certificate Transparency logs</div>';
   h += '<div style="font-size:10px;color:#3a5a7a;margin-top:6px;">Discovers subdomains, certificate history, and SSL chain information</div>';
   h += '</div></div>';

@@ -1209,7 +1209,7 @@ export function renderAddressIntel(main) {
       '<div class="ai-input-section">' +
         '<div class="ai-input-row">' +
           '<div class="ai-input-wrap">' +
-            '<input class="ai-input" id="ai-input-field" type="text" placeholder="Enter IP address, domain, or URL..." spellcheck="false" autocomplete="off">' +
+            '<input class="ai-input" id="ai-input-field" type="text" placeholder="IP, domain or URL" spellcheck="false" autocomplete="off">' +
             '<span class="ai-type-indicator" id="ai-type-indicator"></span>' +
           '</div>' +
           '<button class="ai-btn-investigate" id="ai-btn-go">Investigate</button>' +

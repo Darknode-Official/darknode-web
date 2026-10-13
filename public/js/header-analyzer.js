@@ -167,7 +167,7 @@ export function renderHeaderAnalyzer(container) {
     '<div style="color:#4a6a8a;font-size:11px;font-family:monospace;margin-bottom:16px;">Analyze any URL for security header compliance — grades A through F</div>' +
 
     '<div style="display:flex;gap:8px;margin-bottom:12px;">' +
-    '<input id="ha-input" type="text" placeholder="Enter URL (e.g. https://github.com)" ' +
+    '<input id="ha-input" type="text" placeholder="URL to analyze" ' +
     'style="flex:1;background:#0a0e1a;border:1px solid #1a2a44;border-radius:6px;padding:10px 14px;color:#c8d6e5;font-family:monospace;font-size:13px;outline:none;" ' +
     'onkeydown="if(event.key===\'Enter\')_haAnalyze(this.value)">' +
     '<button onclick="_haAnalyze(document.getElementById(\'ha-input\').value)" ' +

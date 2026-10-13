@@ -41,7 +41,7 @@ export function renderIPGeolocation(container) {
   // Single lookup
   h += '<div id="ip-single-panel">';
   h += '<div style="display:flex;gap:8px;margin-bottom:16px;">';
-  h += '<input id="ip-input" type="text" placeholder="Enter IP address (e.g. 8.8.8.8)" style="flex:1;background:#0c1525;border:1px solid #1a3a5c;border-radius:4px;padding:10px 14px;color:#c8d6e5;font-family:monospace;font-size:13px;outline:none;" onkeydown="if(event.key===\'Enter\')_ipLookup()">';
+  h += '<input id="ip-input" type="text" placeholder="IP address" style="flex:1;background:#0c1525;border:1px solid #1a3a5c;border-radius:4px;padding:10px 14px;color:#c8d6e5;font-family:monospace;font-size:13px;outline:none;" onkeydown="if(event.key===\'Enter\')_ipLookup()">';
   h += '<button onclick="_ipLookup()" style="background:#ff664422;color:#ff6644;border:1px solid #ff664444;border-radius:4px;padding:10px 20px;font-family:monospace;font-size:12px;cursor:pointer;letter-spacing:1px;font-weight:bold;">Locate</button>';
   h += '</div>';
   h += '<div id="ip-result" style="min-height:300px;background:#0c1020;border:1px solid #1a2a44;border-radius:6px;padding:20px;">';

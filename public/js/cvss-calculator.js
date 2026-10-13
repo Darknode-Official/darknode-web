@@ -396,7 +396,7 @@ export function renderCvssCalculator(main) {
     '</div></div>' +
     '<div class="cv-vecbox" id="cv-vector"></div>' +
     '<div class="cv-field"><label class="cv-lbl" for="cv-load">Load a vector string</label>' +
-    '<div class="cv-row"><input class="cv-in" id="cv-load" aria-describedby="cv-load-err" placeholder="CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H">' +
+    '<div class="cv-row"><input class="cv-in" id="cv-load" aria-describedby="cv-load-err" placeholder="Paste a CVSS vector">' +
     '<button class="btn ghost cv-mini" id="cv-load-btn" type="button">Load</button></div>' +
     '<p class="cv-err" id="cv-load-err" role="alert"></p>' +
     '<p class="cv-hint">Paste a CVSS:3.1 vector to set all metrics at once.</p></div>' +

@@ -200,7 +200,7 @@ export function renderOSINTEmail(container) {
       <div class="oe-panel">
         <div class="oe-panel-title">Email Address Analyzer</div>
         <div class="oe-row">
-          <input class="oe-input" id="oe-email-input" placeholder="Enter email address (e.g. user@example.com)" />
+          <input class="oe-input" id="oe-email-input" placeholder="Email address" />
           <button class="oe-btn" id="oe-analyze-btn">Analyze</button>
         </div>
         <div id="oe-analyze-result"></div>

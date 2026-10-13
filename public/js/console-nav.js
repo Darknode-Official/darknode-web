@@ -92,7 +92,7 @@ export function consoleHTML(isOwner) {
     <div class="con-bar" role="navigation" aria-label="Console">
       <button class="con-services" id="conServices" aria-haspopup="true" aria-expanded="false" aria-controls="sidebar"><span class="con-grid-ic" aria-hidden="true"></span>Services<span class="con-svc-count" aria-hidden="true">${total}</span><span class="con-caret" aria-hidden="true">▾</span></button>
       <label class="con-search"><span class="sr-only">Find a service</span>
-        <input id="conSearch" type="search" placeholder="Search services — type a name, e.g. &quot;cve&quot;" autocomplete="off" spellcheck="false" aria-controls="sidebar" aria-describedby="conSearchHint">
+        <input id="conSearch" type="search" placeholder="Search services" autocomplete="off" spellcheck="false" aria-controls="sidebar" aria-describedby="conSearchHint">
         <kbd aria-hidden="true">/</kbd>
         <span class="sr-only" id="conSearchHint">Type to search, or press the down arrow to browse every service.</span>
       </label>

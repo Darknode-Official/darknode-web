@@ -333,7 +333,7 @@ export function renderWhoisRecon(container) {
 
     // Input
     '<div style="display:flex;gap:8px;margin-bottom:16px;">' +
-    '<input id="wr-input" type="text" placeholder="Enter domain or IP (e.g. example.com or 8.8.8.8)" ' +
+    '<input id="wr-input" type="text" placeholder="Domain or IP" ' +
     'style="flex:1;background:#0a0e1a;border:1px solid #1a2a44;border-radius:6px;padding:10px 14px;color:#c8d6e5;font-family:monospace;font-size:13px;outline:none;" ' +
     'onkeydown="if(event.key===\'Enter\')_wrRunLookup(this.value)">' +
     '<button onclick="_wrRunLookup(document.getElementById(\'wr-input\').value)" ' +

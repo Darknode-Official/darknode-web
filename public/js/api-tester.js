@@ -198,7 +198,7 @@ export function renderAPITester(main) {
       content.innerHTML =
         '<div style="display:flex;gap:8px;margin-bottom:12px">' +
           '<select class="tk-f" id="at-method" style="max-width:120px">' + methodOpts + '</select>' +
-          '<input class="tk-f" id="at-url" placeholder="https://api.example.com/endpoint" style="flex:1">' +
+          '<input class="tk-f" id="at-url" placeholder="API URL" style="flex:1">' +
           '<button class="btn sm" id="at-send">Send</button>' +
         '</div>' +
         '<div style="margin-bottom:12px">' +
@@ -233,7 +233,7 @@ export function renderAPITester(main) {
       function renderHeaders() {
         headerContainer.innerHTML = headerList.map(function(h, i) {
           return '<div style="display:flex;gap:6px;margin-bottom:4px">' +
-            '<input class="tk-f at-hk" data-idx="' + i + '" placeholder="Header name" value="' + esc(h.key) + '" style="flex:1">' +
+            '<input class="tk-f at-hk" data-idx="' + i + '" placeholder="Header" value="' + esc(h.key) + '" style="flex:1">' +
             '<input class="tk-f at-hv" data-idx="' + i + '" placeholder="Value" value="' + esc(h.value) + '" style="flex:2">' +
             '<button class="btn sm danger at-hdel" data-idx="' + i + '" style="padding:2px 6px">X</button>' +
           '</div>';

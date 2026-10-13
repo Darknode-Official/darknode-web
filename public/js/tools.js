@@ -21,7 +21,7 @@ export function renderTools(el) {
       <div class="tk-toolbar-row">
         <div class="tk-search-wrap">
           <span class="tk-search-ico" aria-hidden="true"></span>
-          <input class="tk-search" id="tk-search" placeholder="Search ${CATALOG.length} tools by name, category, or what they do...">
+          <input class="tk-search" id="tk-search" placeholder="Search ${CATALOG.length} tools">
         </div>
         <div class="tk-kind" id="tk-kind">
           <button class="tk-kchip on" data-kind="">All <span class="tk-kn">${CATALOG.length}</span></button>

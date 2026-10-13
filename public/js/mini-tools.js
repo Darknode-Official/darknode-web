@@ -156,7 +156,7 @@ export function renderToolbox(main, opts = {}) {
         <h1 class="pg-h2" style="margin:0">Toolbox</h1>
         <span class="muted">${TOOLS.length} small tools that each do one job. Pick one to see what it does, with a worked example. Everything runs in your browser.</span>
       </div>
-      <div class="mt-hub-search"><input id="mtSearch" type="search" placeholder="Search by name or by what you want to do, e.g. &quot;decode&quot; or &quot;compare two texts&quot;" autocomplete="off" spellcheck="false"></div>
+      <div class="mt-hub-search"><input id="mtSearch" type="search" placeholder="Search tools" autocomplete="off" spellcheck="false"></div>
       <div class="mt-hub-body" id="mtHubBody">
         ${cats.filter((c) => byCat[c] && byCat[c].length).map((c) => {
           const cat = TOOL_CATS[c];

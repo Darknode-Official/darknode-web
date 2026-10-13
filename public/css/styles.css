@@ -9590,3 +9590,13 @@ body.focus-mode .app-main { padding-left: 20px !important; padding-right: 20px !
 .qv-band-row{display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap;margin-top:24px}
 .qv-band-note{color:var(--muted,#8a8f98);font-size:14px}
 .qv-band-row .btn{text-decoration:none}
+
+/* Tool input rows (an input with flex:1 beside a select or buttons): the global
+   select{width:100%} made the select take the whole row and squeeze the input to a
+   sliver, and on phones the buttons did the same. Controls keep their natural width,
+   the input keeps a usable minimum, and the row wraps when it runs out of room. */
+:is([style*="display:flex"],[style*="display: flex"]):has(> input:is([style*="flex:1"],[style*="flex: 1"])){flex-wrap:wrap}
+:is([style*="display:flex"],[style*="display: flex"]) > select{width:auto}
+:is([style*="display:flex"],[style*="display: flex"]) > input:is([style*="flex:1"],[style*="flex: 1"]){min-width:min(180px,100%)}
+/* Long filter chips (e.g. example queries) wrap instead of running off a phone screen. */
+.cs-filter .chip{max-width:100%;white-space:normal;text-align:left}

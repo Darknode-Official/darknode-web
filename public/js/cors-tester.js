@@ -21,7 +21,7 @@ export function renderCorsTester(container) {
 
   h += '<div style="display:flex;gap:8px;margin-bottom:8px;">';
   h += '<input id="cors-origin" style="flex:1;background:#080c14;border:1px solid #1a2a44;border-radius:4px;color:#c8d6e5;font-family:monospace;font-size:11px;padding:6px 10px;" placeholder="Custom Origin header (optional)" value="https://darknode.ai">';
-  h += '<input id="cors-header" style="flex:1;background:#080c14;border:1px solid #1a2a44;border-radius:4px;color:#c8d6e5;font-family:monospace;font-size:11px;padding:6px 10px;" placeholder="Custom header to test (e.g. Authorization)">';
+  h += '<input id="cors-header" style="flex:1;background:#080c14;border:1px solid #1a2a44;border-radius:4px;color:#c8d6e5;font-family:monospace;font-size:11px;padding:6px 10px;" placeholder="Header to test">';
   h += '</div>';
   h += '<div style="color:#3a5a7a;font-size:9px;">Tests CORS preflight and actual request. Shows Access-Control-* response headers.</div>';
   h += '</div>';

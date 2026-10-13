@@ -324,7 +324,7 @@ export function renderAPIFuzzer(container) {
           <select class="af-select" id="af-method" style="min-width:120px">
             ${['GET','POST','PUT','DELETE','PATCH','OPTIONS','HEAD'].map(m => `<option value="${m}"${state.method===m?' selected':''}>${m}</option>`).join('')}
           </select>
-          <input class="af-input" id="af-url" placeholder="https://api.example.com/v1/users" value="${esc(state.url)}" style="flex:1">
+          <input class="af-input" id="af-url" placeholder="API URL" value="${esc(state.url)}" style="flex:1">
           <button class="af-btn" id="af-send">Send Request</button>
         </div>
         <div style="font-size:11px;color:#4a6a8a;margin-top:4px">Sends a real request from your browser. Cross-origin targets may be blocked by CORS or this site’s security policy.</div>
@@ -336,7 +336,7 @@ export function renderAPIFuzzer(container) {
         <h3>Headers</h3>
         ${state.headers.map((h, i) => `
           <div class="af-header-row">
-            <input class="af-input" placeholder="Header name" value="${esc(h.key)}" data-hidx="${i}" data-hfield="key">
+            <input class="af-input" placeholder="Header" value="${esc(h.key)}" data-hidx="${i}" data-hfield="key">
             <input class="af-input" placeholder="Value" value="${esc(h.val)}" data-hidx="${i}" data-hfield="val">
             <button class="af-remove-btn" data-hremove="${i}">&times;</button>
           </div>`).join('')}
@@ -403,7 +403,7 @@ export function renderAPIFuzzer(container) {
         <div class="af-fuzz-config">
           <div>
             <div class="af-label">Target URL</div>
-            <input class="af-input" id="af-fuzz-url" placeholder="https://api.example.com/v1/users?id=FUZZ" value="${esc(state.url)}">
+            <input class="af-input" id="af-fuzz-url" placeholder="API URL" value="${esc(state.url)}">
           </div>
           <div>
             <div class="af-label">Injection Point</div>

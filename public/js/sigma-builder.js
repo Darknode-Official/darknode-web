@@ -454,7 +454,7 @@ export function renderSigmaBuilder(main) {
           return '<option value="' + o[0] + '"' + (o[0] === r.op ? " selected" : "") + '>' + esc(o[1]) + '</option>';
         }).join("");
         return '<div class="sg-detrow" data-si="' + si + '" data-ri="' + ri + '">' +
-          '<input class="sg-in sg-f-field" placeholder="field (e.g. Image)" value="' + esc(r.field) + '">' +
+          '<input class="sg-in sg-f-field" placeholder="Field" value="' + esc(r.field) + '">' +
           '<select class="sg-sel sg-f-op">' + ops + '</select>' +
           '<textarea class="sg-ta sg-f-value" placeholder="value (one per line = list)" style="min-height:38px">' + esc(r.value) + '</textarea>' +
           '<button class="sg-iconbtn sg-del-row" type="button" title="Remove field">Remove</button>' +

@@ -299,7 +299,7 @@ function fwRenderBuilder(wrap) {
         <label class="fw-label">Dest Port<input class="fw-input fw-dst-port" placeholder="Any"></label>
       </div>
       <div class="fw-form-row">
-        <label class="fw-label" style="flex:1">Comment<input class="fw-input fw-comment" placeholder="Rule description" style="width:100%"></label>
+        <label class="fw-label" style="flex:1">Comment<input class="fw-input fw-comment" placeholder="Description" style="width:100%"></label>
         <button class="fw-btn fw-add-btn">+ Add Rule</button>
       </div>
     </div>

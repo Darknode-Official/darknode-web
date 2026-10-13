@@ -63,7 +63,7 @@ export function renderGHDB(main) {
     <h1 class="pg-h1">Google Hacking DB</h1>
     <p class="muted pg-sub">${total} curated Google dorks for recon and exposure discovery. Set a target to scope every search to one domain. For authorized testing and research only.</p>
     <div class="ghdb-bar">
-      <input class="tk-f" id="ghDomain" placeholder="scope to domain (optional) — e.g. example.com" spellcheck="false" autocomplete="off">
+      <input class="tk-f" id="ghDomain" placeholder="Domain (optional)" spellcheck="false" autocomplete="off">
       <span class="muted" id="ghScope">searching all of Google</span>
     </div>
     <div class="cs-filter" id="ghFilter"><button class="chip on" data-c="all">All</button>${cats.map((c) => `<button class="chip" data-c="${esc(c)}">${esc(c)}</button>`).join("")}</div>

@@ -54,7 +54,7 @@ export function renderReport(main) {
           <div class="card">
             <div class="lbl">Add a finding</div>
             <div class="pb-fields" style="display:grid;grid-template-columns:2fr 1fr;gap:10px">
-              <input class="tk-f" id="fTitle" placeholder="Finding title (e.g. SQL injection in login)">
+              <input class="tk-f" id="fTitle" placeholder="Finding title">
               <select class="tk-f" id="fSev">${SEV.map((s) => `<option>${s}</option>`).join("")}</select>
             </div>
             <input class="tk-f" id="fTarget" placeholder="Target (URL / host / param)" style="margin-top:8px">

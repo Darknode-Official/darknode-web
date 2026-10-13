@@ -942,7 +942,7 @@ function renderPasswordTab(container) {
       '<h3 class="ca-sh">Password Strength Analyzer</h3>' +
       '<p class="ca-desc">All analysis runs locally in your browser. Nothing is sent anywhere.</p>' +
       '<div class="ca-input-row">' +
-        '<input type="text" id="ca-pw-input" class="ca-input" placeholder="Enter password to analyze..." autocomplete="off" spellcheck="false">' +
+        '<input type="text" id="ca-pw-input" class="ca-input" placeholder="Password to check" autocomplete="off" spellcheck="false">' +
         '<button class="ca-btn" id="ca-pw-btn">Analyze</button>' +
       '</div>' +
       '<div id="ca-pw-result" class="ca-result"></div>' +

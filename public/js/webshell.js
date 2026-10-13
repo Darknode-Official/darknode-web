@@ -531,7 +531,7 @@ export function renderWebshell(main) {
     '.ws-line.sys{color:#6f88ab;font-style:italic}' +
     '.ws-line.ansi{}' +
     '.ws-input-row{display:flex;gap:0;border-top:1px solid #1e2a44;background:#080a0f;flex:none}' +
-    '.ws-prompt-label{padding:8px 0 8px 14px;color:#2ee6a6;font-family:var(--font-mono);font-size:.82rem;white-space:nowrap;flex:none}' +
+    '.ws-prompt-label{padding:8px 0 8px 14px;color:#2ee6a6;font-family:var(--font-mono);font-size:.82rem;white-space:nowrap;flex:0 1 auto;min-width:0;max-width:60%;overflow:hidden;text-overflow:ellipsis}' +
     '#ws-input{flex:1;background:transparent;border:none;color:#e6eefc;font-family:var(--font-mono);font-size:.82rem;padding:8px 14px 8px 6px;outline:none;caret-color:var(--acc)}' +
     '.ws-foot{padding:8px 14px;background:var(--card);border:1px solid var(--line);border-radius:0 0 var(--radius) var(--radius);border-top:none;font-size:.72rem;color:var(--mut);flex:none;display:flex;gap:16px;flex-wrap:wrap}' +
     '.ws-foot kbd{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);padding:1px 5px;border-radius:3px;font-family:var(--font-mono);font-size:.7rem}' +
@@ -566,7 +566,7 @@ export function renderWebshell(main) {
       '<div id="ws-output" class="ws-glow"></div>' +
       '<div class="ws-input-row">' +
         '<span class="ws-prompt-label ws-glow">' + promptStr() + '&nbsp;</span>' +
-        '<input id="ws-input" spellcheck="false" autocomplete="off" placeholder="type a command...">' +
+        '<input id="ws-input" spellcheck="false" autocomplete="off" placeholder="Command">' +
       '</div>' +
     '</div>' +
 

@@ -156,7 +156,7 @@ export async function renderCrosswalk(main) {
           <button data-m="risk" class="on">By Risk</button>
           <button data-m="framework">By Framework</button>
         </span>
-        <input class="cw-search" id="cwSearch" placeholder="Search risks, frameworks, controls…" autocomplete="off" spellcheck="false">
+        <input class="cw-search" id="cwSearch" placeholder="Search risks or controls" autocomplete="off" spellcheck="false">
         <button class="cw-export" id="cwExport">Export CSV</button>
       </div>
 

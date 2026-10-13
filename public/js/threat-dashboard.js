@@ -312,8 +312,8 @@ export function renderThreatDashboard(container) {
       '.td-kpi{background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:14px;text-align:center}' +
       '.td-kpi-n{font-size:1.6rem;font-weight:700;color:#00d4ff}' +
       '.td-kpi-l{font-size:.7rem;color:#64748b;text-transform:uppercase;letter-spacing:.05em}' +
-      '.td-grid{display:grid;grid-template-columns:1fr 320px;gap:16px}' +
-      '@media(max-width:1000px){.td-grid{grid-template-columns:1fr}}' +
+      '.td-grid{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:16px}' +
+      '@media(max-width:1000px){.td-grid{grid-template-columns:minmax(0,1fr)}}' +
       '.td-map-wrap{background:#0a1020;border:1px solid #1e293b;border-radius:12px;overflow:hidden;position:relative}' +
       '.td-map-wrap canvas{width:100%;height:auto;display:block}' +
       '.td-panels{display:flex;flex-direction:column;gap:12px}' +
@@ -327,14 +327,14 @@ export function renderThreatDashboard(container) {
       '.td-log{max-height:200px;overflow-y:auto;font-family:\'JetBrains Mono\',monospace;font-size:.68rem}' +
       '.td-log::-webkit-scrollbar{width:4px}' +
       '.td-log::-webkit-scrollbar-thumb{background:#334155;border-radius:2px}' +
-      '.td-log-entry{padding:3px 0;border-bottom:1px solid #0f172a;display:flex;gap:8px;flex-wrap:wrap}' +
+      '.td-log-entry{padding:3px 0;border-bottom:1px solid #0f172a;display:flex;gap:8px;flex-wrap:wrap;overflow-wrap:anywhere}' +
       '.td-log-ts{color:#475569;flex-shrink:0}' +
       '.td-log-sev{padding:0 5px;border-radius:3px;font-size:.6rem;font-weight:600;flex-shrink:0}' +
       '.td-log-sev.high{background:#7f1d1d;color:#fca5a5}' +
       '.td-log-sev.medium{background:#713f12;color:#fde047}' +
       '.td-log-sev.critical{background:#581c87;color:#d8b4fe}' +
-      '.td-bottom{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}' +
-      '@media(max-width:700px){.td-bottom{grid-template-columns:1fr}}' +
+      '.td-bottom{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:16px}' +
+      '@media(max-width:700px){.td-bottom{grid-template-columns:minmax(0,1fr)}}' +
       '</style>';
 
     html += '<div class="td-wrap">' +

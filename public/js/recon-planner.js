@@ -40,7 +40,7 @@ const RP_PHASES = [
   { id: 'scope', label: 'Scope', icon: '&#9678;' },
   { id: 'recon', label: 'Recon', icon: '&#9673;' },
   { id: 'enumerate', label: 'Enumerate', icon: '&#9638;' },
-  { id: 'exploit', label: 'Exploit', icon: '&#9889;' },
+  { id: 'exploit', label: 'Exploit', icon: '&#9650;' },
   { id: 'post', label: 'Post-Exploit', icon: '&#9733;' },
   { id: 'report', label: 'Report', icon: '&#9998;' }
 ];

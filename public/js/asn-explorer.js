@@ -70,7 +70,7 @@ export function renderAsnExplorer(container) {
 
   h += '<div class="asn-bar">';
   h += '<div style="display:flex;gap:8px;">';
-  h += '<input id="asn-input" class="asn-input" placeholder="AS number (e.g. 13335) or org name (e.g. Cloudflare)">';
+  h += '<input id="asn-input" class="asn-input" placeholder="ASN or org name">';
   h += '<button onclick="_asnLookup()" class="asn-btn">Lookup</button>';
   h += '<button onclick="_asnSearch()" class="asn-btn warn">Search</button>';
   h += '</div>';

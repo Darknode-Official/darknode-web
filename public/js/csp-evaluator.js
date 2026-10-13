@@ -350,7 +350,7 @@ export function renderCspEvaluator(container) {
   html += '<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">';
   html += '<button id="csp-analyze-btn" style="background:#00aaff15;color:#00aaff;border:1px solid #00aaff44;padding:8px 20px;font-family:monospace;font-size:11px;font-weight:bold;cursor:pointer;border-radius:4px;letter-spacing:1px;">Analyze</button>';
   html += '<div style="display:flex;gap:4px;flex:1;min-width:200px;">';
-  html += '<input id="csp-url-input" type="text" placeholder="Or enter a URL to fetch CSP from..." style="flex:1;background:#060a14;border:1px solid #1a3050;border-radius:4px;color:#c8d6e5;font-family:monospace;font-size:10px;padding:8px;">';
+  html += '<input id="csp-url-input" type="text" placeholder="Or fetch from a URL" style="flex:1;background:#060a14;border:1px solid #1a3050;border-radius:4px;color:#c8d6e5;font-family:monospace;font-size:10px;padding:8px;">';
   html += '<button id="csp-fetch-btn" style="background:#aa66ff15;color:#aa66ff;border:1px solid #aa66ff44;padding:8px 14px;font-family:monospace;font-size:10px;cursor:pointer;border-radius:4px;">Fetch</button>';
   html += '</div></div>';
 
