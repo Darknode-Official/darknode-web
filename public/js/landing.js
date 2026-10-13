@@ -1784,4 +1784,22 @@ testing methodology for 10.10.14.7:
     document.title = (PAGE_TITLES[location.pathname] || "Darknode") + " — Darknode";
     window.scrollTo(0, 0);
   }
+
+  // Public tool pages: published open data that needs no account. The sitemap and the app
+  // manifest link these, so a signed-out visitor must get the tool, not the home page.
+  const PUBLIC_TOOLS = { "/crosswalk": { title: "GenAI Security Crosswalk", load: () => import("/js/crosswalk.js?v=20261013a").then((m) => m.renderCrosswalk) } };
+  const pub = PUBLIC_TOOLS[location.pathname];
+  if (pub) {
+    view.querySelectorAll(".section, .hero, .cta-final").forEach((sec) => { sec.hidden = true; });
+    const page = document.createElement("section");
+    page.className = "section dn-pubtool";
+    page.innerHTML = '<div class="wrap"><div class="dedicated-page-header dn-pubbar"><a class="dedicated-back" href="/"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg> Back to home</a><span class="dn-pubnote">Free to use, no account needed.</span><button class="btn sm" type="button">Sign in for the full platform</button></div><div class="dn-pubmain"></div></div>';
+    page.querySelector(".dedicated-back").addEventListener("click", (e) => { e.preventDefault(); window.location.href = "/"; });
+    page.querySelector(".dn-pubbar .btn").addEventListener("click", () => actions && actions.onSignIn && actions.onSignIn());
+    view.prepend(page);
+    const mount = page.querySelector(".dn-pubmain");
+    pub.load().then((render) => render(mount)).catch(() => { mount.textContent = "Couldn't load this tool. Check your connection and reload."; });
+    document.title = pub.title + " — Darknode";
+    window.scrollTo(0, 0);
+  }
 }

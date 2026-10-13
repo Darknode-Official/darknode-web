@@ -2,3 +2,6 @@
 # public/data is the security knowledge base: attack payloads, deliberately
 # vulnerable code samples and documented default credentials ARE its content.
 public/data/
+# The scanner's own rule tests: each line is a deliberately vulnerable sample.
+test/security/codescan.test.mjs
+test/security/taint-js.test.mjs

@@ -92,6 +92,8 @@ const CSS = `
 .cw-link{color:var(--acc);text-decoration:none;font-size:.74rem}
 .cw-link:hover{text-decoration:underline}
 @media(max-width:860px){.cw-cols{grid-template-columns:1fr}.cw-list{max-height:none}}
+/* Colours come in as --c, not an inline background: the pro theme whitens inline backgrounds that start with #0/#1. */
+.cw-dot,.cw-id,.cw-sev,.cw-b.sev{background:var(--c)}
 `;
 
 export function cleanupCrosswalk() { _alive = false; }
@@ -175,10 +177,10 @@ export async function renderCrosswalk(main) {
     if (state.mode === "risk") {
       const listChips = (data.meta.lists || []).map((l) => {
         const meta = LIST_META[l.id] || {};
-        return `<button class="cw-chip list ${state.lists.has(l.id) ? "on" : ""}" data-list="${esc(l.id)}"><span class="cw-dot" style="background:${meta.color || "var(--mut)"}"></span>${esc(l.label)} <span style="color:var(--mut)">${l.count}</span></button>`;
+        return `<button class="cw-chip list ${state.lists.has(l.id) ? "on" : ""}" data-list="${esc(l.id)}"><span class="cw-dot" style="--c:${meta.color || "var(--mut)"}"></span>${esc(l.label)} <span style="color:var(--mut)">${l.count}</span></button>`;
       }).join("");
       const sevChips = ["Critical", "High", "Medium", "Low"].map((s) =>
-        `<button class="cw-chip sev ${state.sevs.has(s) ? "on" : ""}" data-sev="${s}"><span class="cw-dot" style="background:${sevColor(s)}"></span>${s}</button>`).join("");
+        `<button class="cw-chip sev ${state.sevs.has(s) ? "on" : ""}" data-sev="${s}"><span class="cw-dot" style="--c:${sevColor(s)}"></span>${s}</button>`).join("");
       const fwOpts = `<option value="">All frameworks</option>` + frameworks.map((f) => `<option value="${esc(f.name)}" ${state.fw === f.name ? "selected" : ""}>${esc(f.name)}</option>`).join("");
       filtersEl.innerHTML = `<span class="cw-flabel">List</span>${listChips}<span class="cw-flabel" style="margin-left:6px">Severity</span>${sevChips}<select class="cw-sel" id="cwFwFilter" style="margin-left:6px">${fwOpts}</select>`;
       filtersEl.querySelectorAll("[data-list]").forEach((b) => b.onclick = () => { toggle(state.lists, b.dataset.list); drawFilters(); drawList(); });
@@ -186,7 +188,7 @@ export async function renderCrosswalk(main) {
       $("#cwFwFilter").onchange = (e) => { state.fw = e.target.value; drawList(); if (state.selRisk) drawDetail(); };
     } else {
       filtersEl.innerHTML = `<span class="cw-flabel">Severity</span>` + ["Critical", "High", "Medium", "Low"].map((s) =>
-        `<button class="cw-chip sev ${state.sevs.has(s) ? "on" : ""}" data-sev="${s}"><span class="cw-dot" style="background:${sevColor(s)}"></span>${s}</button>`).join("");
+        `<button class="cw-chip sev ${state.sevs.has(s) ? "on" : ""}" data-sev="${s}"><span class="cw-dot" style="--c:${sevColor(s)}"></span>${s}</button>`).join("");
       filtersEl.querySelectorAll("[data-sev]").forEach((b) => b.onclick = () => { toggle(state.sevs, b.dataset.sev); drawFilters(); if (state.selFw) drawDetail(); });
     }
   }
@@ -219,9 +221,9 @@ export async function renderCrosswalk(main) {
           const meta = LIST_META[r.list] || {};
           const shown = state.fw ? r.maps.filter((m) => m.f === state.fw).length : r.maps.length;
           return `<div class="cw-item ${state.selRisk === r.id ? "on" : ""}" data-risk="${esc(r.id)}">
-            <span class="cw-id" style="background:${meta.color || "var(--acc)"}">${esc(r.id)}</span>
+            <span class="cw-id" style="--c:${meta.color || "var(--acc)"}">${esc(r.id)}</span>
             <span class="cw-nm" title="${esc(r.name)}">${esc(r.name)}</span>
-            <span class="cw-sev" style="background:${sevColor(r.sev)}" title="${esc(r.sev)}"></span>
+            <span class="cw-sev" style="--c:${sevColor(r.sev)}" title="${esc(r.sev)}"></span>
             <span class="cw-cnt">${shown}</span>
           </div>`;
         }).join("");
@@ -259,9 +261,9 @@ export async function renderCrosswalk(main) {
       const aud = (r.aud || []).map((a) => `<span class="cw-b">${esc(a)}</span>`).join("");
       detailEl.innerHTML = `
         <div class="cw-dhead">
-          <h2><span class="cw-id" style="background:${meta.color || "var(--acc)"}">${esc(r.id)}</span>${esc(r.name)}</h2>
+          <h2><span class="cw-id" style="--c:${meta.color || "var(--acc)"}">${esc(r.id)}</span>${esc(r.name)}</h2>
           <div class="cw-badges">
-            <span class="cw-b sev" style="background:${sevColor(r.sev)}">${esc(r.sev)}</span>
+            <span class="cw-b sev" style="--c:${sevColor(r.sev)}">${esc(r.sev)}</span>
             <span class="cw-b">${esc(listLabel)}</span>
             ${r.aivss != null ? `<span class="cw-b">AIVSS ${esc(r.aivss)}</span>` : ""}
             ${r.ver ? `<span class="cw-b">${esc(r.ver)}</span>` : ""}
@@ -305,7 +307,7 @@ export async function renderCrosswalk(main) {
   }
   function riskBlock(g) {
     const meta = LIST_META[g.risk.list] || {};
-    return `<div class="cw-fw open"><div class="cw-fwh"><span class="cw-caret">▶</span><span class="cw-id" style="background:${meta.color || "var(--acc)"}">${esc(g.risk.id)}</span><span class="cw-fwn">${esc(g.risk.name)}</span><span class="cw-sev" style="background:${sevColor(g.risk.sev)}"></span><span class="cw-pill">${g.maps.length}</span></div><div class="cw-ctrls">${g.maps.map(ctrlRow).join("")}</div></div>`;
+    return `<div class="cw-fw open"><div class="cw-fwh"><span class="cw-caret">▶</span><span class="cw-id" style="--c:${meta.color || "var(--acc)"}">${esc(g.risk.id)}</span><span class="cw-fwn">${esc(g.risk.name)}</span><span class="cw-sev" style="--c:${sevColor(g.risk.sev)}"></span><span class="cw-pill">${g.maps.length}</span></div><div class="cw-ctrls">${g.maps.map(ctrlRow).join("")}</div></div>`;
   }
   function wireFwBlocks() {
     detailEl.querySelectorAll(".cw-fwh").forEach((h) => h.onclick = () => h.parentElement.classList.toggle("open"));

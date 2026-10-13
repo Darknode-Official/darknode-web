@@ -3557,6 +3557,10 @@ html[data-style=dark].crt body::after {
 .dedicated-back:hover {
   color: var(--txt, #18181b);
 }
+/* Public tool page (e.g. /crosswalk signed out): full width, with a sign-in prompt. */
+.dn-pubtool { padding-top: 0 !important; }
+.dn-pubtool .dedicated-page-header.dn-pubbar { max-width: none; display: flex; align-items: center; flex-wrap: wrap; gap: 10px 16px; padding: 24px 0 8px; }
+.dn-pubbar .dn-pubnote { margin-left: auto; font-size: .875rem; color: var(--mut, #71717a); }
 
 /* ============================================================
    GLOBAL POLISH — smoother interactions across pro theme

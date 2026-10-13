@@ -640,6 +640,11 @@ const CSS = `
 .dk-icbtn{appearance:none;border:1px solid rgba(23,33,56,.1);background:rgba(23,33,56,.04);color:#44506a;width:34px;height:34px;border-radius:10px;display:grid;place-items:center;cursor:pointer;position:relative;flex:none;transition:background .15s,border-color .15s}
 .dk-icbtn:hover{background:rgba(23,33,56,.1);border-color:rgba(23,33,56,.2);color:#141c2e}
 .dk-icbtn svg{width:17px;height:17px}
+.dk-icbtn.dk-lbtn{width:auto;padding:0 12px 0 9px;display:inline-flex;align-items:center;gap:6px;font:inherit;font-size:13px;font-weight:600;color:#26324a}
+.dk-icbtn.dk-lbtn svg{width:16px;height:16px}
+.dk-icbtn.dk-lbtn.ai{color:#1f5fd6;background:rgba(47,111,235,.08);border-color:rgba(47,111,235,.28)}
+.dk-icbtn.dk-lbtn.ai:hover{background:rgba(47,111,235,.15);border-color:rgba(47,111,235,.45);color:#1748a8}
+@media(max-width:1180px){.dk-icbtn.dk-lbtn{width:34px;padding:0;display:grid}.dk-icbtn.dk-lbtn .lb{display:none}}
 .dk-badge{position:absolute;top:-4px;right:-4px;min-width:16px;height:16px;padding:0 4px;border-radius:9px;background:#f0484a;color:#fff;font-size:10px;font-weight:700;display:grid;place-items:center;box-shadow:0 0 0 2px #f4f6fa}
 .dk-health{appearance:none;cursor:default;border:1px solid rgba(23,33,56,.1);background:rgba(23,33,56,.04);color:#5a6680;font:inherit;font-size:12px;font-weight:600;padding:7px 12px;border-radius:999px;display:inline-flex;align-items:center;gap:8px;flex:none}
 .dk-health .d{width:7px;height:7px;border-radius:50%;background:#12a85f}
@@ -779,6 +784,8 @@ const CSS = `
 .dk-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:14px;margin-bottom:12px}
 .dk-ov .dk-kpis:not(#dkInvKpis){grid-template-columns:repeat(4,minmax(0,1fr))}
 @media(min-width:1600px){.dk-ov .dk-kpis:not(#dkInvKpis){grid-template-columns:repeat(7,minmax(0,1fr))}}
+@media(min-width:721px) and (max-width:1599px){.dk-ov .dk-kpis:not(#dkInvKpis)>.dk-kpi:first-child{grid-row:span 2;display:flex;flex-direction:column;justify-content:center}.dk-ov .dk-kpis:not(#dkInvKpis)>.dk-kpi:first-child .kn{font-size:46px}}
+@media(max-width:720px){.dk-ov .dk-kpis:not(#dkInvKpis)>.dk-kpi:first-child{grid-column:span 2}}
 @media(max-width:720px){.dk-kpis,.dk-ov .dk-kpis:not(#dkInvKpis){grid-template-columns:repeat(2,minmax(0,1fr))}}
 .dk-expnote{font-size:12px;color:#5a6680;line-height:1.5;margin:0 0 22px;padding:9px 13px;background:rgba(23,33,56,.03);border:1px solid rgba(23,33,56,.08);border-radius:9px}
 .dk-expnote b{color:#141c2e;font-weight:700}
@@ -1215,9 +1222,9 @@ export function renderDeck(host, opts) {
       <button class="dk-hsearch" id="dkHSearch" data-explain="hdr.search" aria-label="Search">${IC_SEARCH}<span class="hs">Search tools, scenes and actions</span><kbd>Ctrl K</kbd></button>
       <div class="dk-right">
         <button class="dk-health" id="dkHealth" data-explain="hdr.health" title="Live CVE feed status"><span class="d"></span><span class="t">Threat feed live</span></button>
-        <button class="dk-icbtn" id="dkAsstBtn" data-explain="hdr.assistant" title="Darknode AI assistant" aria-label="Darknode AI assistant">${IC.spark}</button>
+        <button class="dk-icbtn dk-lbtn ai" id="dkAsstBtn" data-explain="hdr.assistant" title="Darknode AI assistant" aria-label="Darknode AI assistant">${IC.spark}<span class="lb">Ask AI</span></button>
         <button class="dk-icbtn" id="dkFindBtn" data-explain="hdr.search" title="Search (Ctrl K)" aria-label="Search">${IC_SEARCH}</button>
-        <button class="dk-icbtn" id="dkNew" data-explain="hdr.new" title="Quick create" aria-label="Quick create">${IC.plus}</button>
+        <button class="dk-icbtn dk-lbtn" id="dkNew" data-explain="hdr.new" title="Quick create" aria-label="Quick create">${IC.plus}<span class="lb">New</span></button>
         <button class="dk-icbtn" id="dkBell" data-explain="hdr.bell" title="Notifications" aria-label="Notifications">${IC.bell}<span class="dk-badge dkx" id="dkBadge" hidden></span></button>
         <span class="dk-clock" id="dkClock"></span>
         <button class="dk-acct" id="dkAcct" data-explain="hdr.account" aria-label="Account"><span class="av" id="dkAvatar">DN</span>${IC.chevd}</button>
@@ -1839,12 +1846,12 @@ export function renderDeck(host, opts) {
       </form>
       <div class="dk-askhint">Triage a CVE, draft a runbook, explain a finding or review a config.</div>
       <div class="dk-kpis">
-        ${kpi("exposure", "—", "Your exposure", IC.radar, "#f0484a", "findings", "out of 100 · your real findings")}
+        ${kpi("exposure", "—", "Your exposure", IC.shield, "#f0484a", "findings", "out of 100 · your real findings")}
         ${kpi("climate", "—", "Threat climate", IC.pulse, "#f5920b", "threat", "out of 100 · global CVE/KEV feeds")}
         ${kpi("conn", linked.length, "Integrations connected", IC.link, "#12a85f", "con", "of " + INTEGRATIONS.length)}
         ${kpi("tools", TOTAL_TOOLS.toLocaleString(), "Tools available", IC.grid, "#4f86ff", "tools", "curated catalog")}
         ${kpi("graph", "—", "Graph entities", IC.folder, "#9b5cf0", "invest", "real data · sample excluded")}
-        ${kpi("cve", "—", "New CVEs", IC.radar, "#f5920b", "threat", "NVD · last 7 days")}
+        ${kpi("cve", "—", "New CVEs", IC.alert, "#f5920b", "threat", "NVD · last 7 days")}
         ${kpi("kev", "—", "Known-exploited (KEV)", IC.radar, "#e0383a", "threat", "CISA catalog")}
       </div>
       <div class="dk-expnote" id="dkExpNote" hidden></div>

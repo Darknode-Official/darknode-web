@@ -53,7 +53,7 @@ let MORE = [], CATALOG = [], CATEGORIES = [];
 import("/js/toolkit.js").then(m => { MORE = m.MORE; CATALOG = m.CATALOG; CATEGORIES = m.CATEGORIES; });
 import { startTour, tourDone } from "/js/tour.js";
 let _landing = null;
-async function loadLanding() { if (!_landing) _landing = await import("/js/landing.js?v=20261011a"); return _landing; }
+async function loadLanding() { if (!_landing) _landing = await import("/js/landing.js?v=20261013a"); return _landing; }
 // No-account identities (Test Mode / app guest) get a RANDOM, per-session uid, not a
 // fixed shared one. The old fixed "test-user"/"app-guest" uids put every such session
 // into one shared dnk:<uid>:* key namespace, so two people could land on the same
@@ -1875,7 +1875,7 @@ function renderApp(user) {
     else if (sec === "navarch") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading…</p>"; const _s=sec; import("/js/navarch.js?v=20260924w").then(m => { if(curSec!==_s)return; m.renderNavarch(main); _prevCleanup = m.cleanupNavarch; }); }
     else if (sec === "threatforest") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading…</p>"; const _s=sec; import("/js/threatforest.js?v=20261008b").then(m => { if(curSec!==_s)return; m.renderThreatforest(main); _prevCleanup = m.cleanupThreatforest; }); }
     else if (sec === "beta") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Beta Lab...</p>"; const _s=sec; import("/js/beta-lab.js?v=20261008b").then(m => { if(curSec!==_s)return; m.renderBetaLab(main); _prevCleanup = m.cleanupBetaLab; }); }
-    else if (sec === "crosswalk") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading GenAI Security Crosswalk...</p>"; const _s=sec; import("/js/crosswalk.js?v=20261009a").then(m => { if(curSec!==_s)return; m.renderCrosswalk(main); _prevCleanup = m.cleanupCrosswalk; }); }
+    else if (sec === "crosswalk") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading GenAI Security Crosswalk...</p>"; const _s=sec; import("/js/crosswalk.js?v=20261013a").then(m => { if(curSec!==_s)return; m.renderCrosswalk(main); _prevCleanup = m.cleanupCrosswalk; }); }
     else if (sec === "jwtanalyzer") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading JWT Analyzer...</p>"; import("/js/jwt-analyzer.js").then(m => live() && m.renderJwtAnalyzer(main)); }
     else if (sec === "cspevaluator") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading CSP Evaluator...</p>"; import("/js/csp-evaluator.js?v=20260924b").then(m => live() && m.renderCspEvaluator(main)); }
     else if (sec === "wayback") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Wayback Recon...</p>"; import("/js/wayback-recon.js").then(m => live() && m.renderWaybackRecon(main)); }
@@ -1982,7 +1982,7 @@ function renderApp(user) {
     else if (sec === "vault") { import("/js/vault.js?v=20261012h").then(m => live() && m.renderVault(main)); }
     else if (sec === "setup") renderSetup(main, more);
     else if (sec === "settings") renderSettingsPage(main, user, isOwner, more);
-    else if (sec === "admin") { import("/js/admin.js?v=20261012e").then(m => live() && m.renderAdmin(main, user)); }
+    else if (sec === "admin") { import("/js/admin.js?v=20261013a").then(m => live() && m.renderAdmin(main, user)); }
     else if (sec === "contact") renderContact(main);
     else if (sec === "education") { main.innerHTML = `<div class="panel" style="max-width:800px;margin:40px auto"><div class="panel-h">About Darknode Education</div><div style="padding:18px;line-height:1.8;font-size:.9rem"><p><strong>Darknode is a cybersecurity education platform</strong> designed for students, educators, and security professionals to learn information security through hands-on practice in a safe, controlled environment.</p><p style="margin-top:16px"><strong>Our Mission:</strong> To make cybersecurity education accessible, interactive, and practical. Most tools run in your browser or on your own machine. Some features do send data out: AI chat goes through Darknode's server to the AI provider, some lookup pages query public services (for example NVD, crt.sh and DNS-over-HTTPS resolvers), and saved items and account data are stored in Google Firebase. Each page that contacts an outside service does so only when you run it.</p><p style="margin-top:16px"><strong>Who Uses Darknode:</strong></p><ul style="margin:8px 0 0 20px;line-height:2"><li>Computer science and cybersecurity students</li><li>IT professionals studying for certifications (CompTIA Security+, CISSP, CEH, OSCP)</li><li>University professors and instructors teaching security courses</li><li>Security operations center (SOC) analysts in training</li><li>Career changers learning cybersecurity fundamentals</li></ul><p style="margin-top:16px"><strong>Educational Standards:</strong> Our curriculum aligns with NIST NICE Framework, NSA CAE-CD requirements, and CompTIA Security+ objectives. All practice environments are isolated, legal, and designed for authorized educational use only.</p><p style="margin-top:16px"><strong>Responsible Use:</strong> Darknode tools are designed exclusively for educational purposes and authorized security testing. Users must comply with all applicable laws and obtain proper authorization before testing any system they do not own.</p><p style="margin-top:16px;color:var(--mut);font-size:.82rem">Darknode is a product of Darknode-Official. For questions about our educational programs, visit darknode.ai.</p></div></div>`; }
     else if (sec === "toolbox") { import("/js/mini-tools.js?v=20261006a").then(m => live() && m.renderToolbox(main, { onOpen: (id) => show("tool-" + id) })); }
@@ -2423,7 +2423,7 @@ function renderApp(user) {
   if (frame && frame.fields && frame.sec === startSec) {
     setTimeout(() => { Object.entries(frame.fields).forEach(([id, v]) => { const el = main.querySelector("#" + (window.CSS && CSS.escape ? CSS.escape(id) : id)); if (el && v != null) { el.value = v; el.dispatchEvent(new Event("input", { bubbles: true })); el.dispatchEvent(new Event("change", { bubbles: true })); } }); }, 120);
   }
-  if (!tourDone()) setTimeout(() => startTour(tourSteps(isOwner)), 450);
+  if (!tourDone() && !document.documentElement.hasAttribute("data-embed")) setTimeout(() => startTour(tourSteps(isOwner)), 450);
 }
 
 // ---- command palette (Ctrl/Cmd+K) ----
