@@ -17,6 +17,7 @@ const LS_OFF = "dn_explain";
 
 export const EXPLAIN = {
   // ---- Overview KPIs ----
+  "kpi.hot": { title: "Open critical and high", body: "How many critical or high severity findings in your security graph are still open (not resolved or closed). These drive most of the exposure score. Shows a dash until you have real findings.", src: "Your security graph. Sample and simulated data is excluded." },
   "kpi.exposure": { title: "Your exposure", body: "How exposed this workspace looks, from 0 to 100 (higher is worse). 65% comes from open critical and high findings in your security graph (25 or more counts as the maximum), 35% from how few integrations are connected. Shows a dash until you have real findings.", src: "Your security graph and integrations. Sample and simulated data is excluded. An indicator, not an audit." },
   "kpi.climate": { title: "Threat climate", body: "Global vulnerability pressure, the same for every customer: 60% is the share of the newest CVEs rated critical or high, 40% is the size of the CISA Known Exploited catalog. It does not describe your systems.", src: "NVD (latest 30 CVEs) and CISA KEV, fetched live." },
   "kpi.conn": { title: "Integrations connected", body: "How many AI models and threat-intelligence sources you have linked. More connections means more enrichment and better coverage in the exposure score.", src: "Your connections, stored in this browser." },

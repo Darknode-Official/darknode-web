@@ -67,7 +67,7 @@ export function topActions(inp, limit = 6) {
   const kev = inp.kev || new Set();
   for (const c of inp.cves || []) {
     if (kev.has(c.id)) out.push({ score: 90, kind: "cve", sev: "critical", id: c.id, title: c.id + " is being exploited", detail: "New this week and on the CISA KEV catalog. Check whether you run it: " + (c.title || "") });
-    else if (c.cvss != null && c.cvss >= 9) out.push({ score: 60, kind: "cve", sev: "high", id: c.id, title: c.id + " (CVSS " + c.cvss + ")", detail: c.title || "" });
+    else if (!inp.kevOnly && c.cvss != null && c.cvss >= 9) out.push({ score: 60, kind: "cve", sev: "high", id: c.id, title: c.id + " (CVSS " + c.cvss + ")", detail: c.title || "" });
   }
   const conn = inp.connected || new Set(), ints = inp.integrations || [];
   const has = (kind) => ints.some((i) => i.kind === kind && conn.has(i.id));

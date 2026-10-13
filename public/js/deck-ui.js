@@ -27,8 +27,8 @@ import * as surface from "/js/deck-surface.js?v=20261011b";
 // stream and the notifications bell.
 import { bus, EVENTS } from "/js/core/bus.js";
 import { isSimulated } from "/js/core/posture.js";
-import * as findings from "/js/core/findings.js?v=20261012e";
-import { attachExplain, EXPLAIN, explainEnabled, setExplainEnabled } from "/js/ui/explain.js?v=20261012e";
+import * as findings from "/js/core/findings.js?v=20261013e";
+import { attachExplain, EXPLAIN, explainEnabled, setExplainEnabled } from "/js/ui/explain.js?v=20261013e";
 
 const LS_CONN = "dn_deck_connections_v1";
 const LS_SCENE = "dn_deck_scene";          // last workspace selected
@@ -1157,6 +1157,144 @@ textarea.dk-kitio{min-height:120px}
 .dk [style*="--fg:"]{color:var(--fg)!important}
 .dk[data-ui=deck] tbody tr:nth-child(even) td:not([style*="background"]){background:transparent!important}
 .dk[data-ui=deck] tbody tr:hover td:not([style*="background"]){background:rgba(63,120,255,.06)!important}
+/* ======================= Design system (final layer) =======================
+   Restrained by intent: warm neutral surfaces, one accent (--dk-acc), colour reserved
+   for meaning (severity, status), regular-weight navigation, sentence-case labels and a
+   serif display face for page titles. Declared last so it settles the older layers above. */
+.dk[data-ui=deck]{--dk-bg:#f7f7f4;--dk-surf:#fff;--dk-line:#e6e4de;--dk-line2:#efeee9;--dk-tx:#1d1c1a;--dk-tx2:#56544f;--dk-mut:#86837c;--dk-acc:#2552c6;--dk-accbg:rgba(37,82,198,.08);
+  background:var(--dk-bg);color:var(--dk-tx);font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;font-feature-settings:"cv11","ss01";letter-spacing:-.003em}
+.dk[data-ui=deck] .dk-sky{background:var(--dk-bg)}
+.dk[data-ui=deck] h1,.dk[data-ui=deck] h2,.dk[data-ui=deck] h3,.dk[data-ui=deck] h4{color:var(--dk-tx)!important}
+.dk[data-ui=deck] .dk-ovhead h1,.dk[data-ui=deck] .dk-lede h1,.dk[data-ui=deck] .dk-ti h1,.dk[data-ui=deck] .dk-inv h1,.dk[data-ui=deck] .dk-surf h1,.dk[data-ui=deck] .dk-cloud h1,.dk[data-ui=deck] .dk-comp h1,.dk[data-ui=deck] .dk-con2 h1{font-family:"Source Serif 4",Georgia,"Times New Roman",serif;font-weight:500;font-size:32px;letter-spacing:-.015em;line-height:1.15}
+.dk[data-ui=deck] .dk-ovhead p{color:var(--dk-tx2);font-size:14px;max-width:none}
+.dk[data-ui=deck] .dk-ovhead .when{color:var(--dk-mut);font-size:13px}
+/* header: search, Ask AI, create, notifications, account. Nothing else. */
+.dk[data-ui=deck] .dk-top{background:var(--dk-surf);border-bottom:1px solid var(--dk-line)}
+.dk[data-ui=deck] .dk-clock,.dk[data-ui=deck] .dk-health,.dk[data-ui=deck] .dk-brand .dk-wsname{display:none}
+.dk[data-ui=deck] #dkNew .lb{display:none}.dk[data-ui=deck] #dkNew{width:34px;padding:0;display:grid}
+.dk[data-ui=deck] .dk-icbtn{background:transparent;border-color:transparent;color:var(--dk-tx2);border-radius:8px}
+.dk[data-ui=deck] .dk-icbtn:hover{background:#f1f0ec;color:var(--dk-tx)}
+.dk[data-ui=deck] .dk-icbtn.dk-lbtn.ai{background:var(--dk-tx);border-color:var(--dk-tx);color:#fff;font-weight:500;border-radius:8px}
+.dk[data-ui=deck] .dk-icbtn.dk-lbtn.ai:hover{background:#000;color:#fff}
+.dk[data-ui=deck] .dk-hsearch{background:#f4f3ef;border-color:transparent;border-radius:8px;color:var(--dk-mut)}
+.dk[data-ui=deck] .dk-hsearch:hover{background:#efeee9;border-color:var(--dk-line)}
+.dk[data-ui=deck] .dk-hsearch kbd{background:var(--dk-surf);border-color:var(--dk-line);color:var(--dk-mut);font-weight:500}
+.dk[data-ui=deck] .dk-acct{background:transparent;border-color:transparent}
+.dk[data-ui=deck] .dk-acct .av{background:var(--dk-tx)}
+.dk[data-ui=deck] .dk-crumb{color:var(--dk-mut)}.dk[data-ui=deck] .dk-crumb b{color:var(--dk-tx);font-weight:500}
+/* sidebar: the Deck's own "index". A dark ink panel laid out like a book's contents:
+   numbered chapters (mono numerals, serif titles), items hanging off a hairline guide,
+   and the current page marked on that guide rather than with a filled pill. */
+.dk[data-ui=deck]:not(.nav-rail):not(.nav-phone){--dk-sw:268px}
+.dk[data-ui=deck] .dk-sidebar{--ix-bg:#1a1917;--ix-tx:#d9d5cb;--ix-mut:#8c887e;--ix-dim:#5f5b53;--ix-line:rgba(255,255,255,.1);--ix-mark:#9db8ff;
+  background:var(--ix-bg);border-right:0;color:var(--ix-tx)}
+.dk[data-ui=deck] .dk-sbnav{padding:14px 14px 18px;scrollbar-color:rgba(255,255,255,.14) transparent}
+.dk[data-ui=deck] .dk-nvg{margin:0 0 6px}
+.dk[data-ui=deck] .dk-nvg0{padding-bottom:10px;margin-bottom:8px;border-bottom:1px solid var(--ix-line)}
+.dk[data-ui=deck] .dk-nvh{display:flex;align-items:baseline;gap:10px;text-transform:none;letter-spacing:0;padding:16px 8px 8px;color:var(--ix-tx);font-size:15px;font-weight:400;font-family:"Source Serif 4",Georgia,serif;white-space:nowrap;overflow:hidden}
+.dk[data-ui=deck] .dk-nvh .no{flex:none;width:18px;font:500 10.5px/1 ui-monospace,"JetBrains Mono",SFMono-Regular,Menlo,monospace;color:var(--ix-dim);letter-spacing:.04em}
+.dk[data-ui=deck] .dk-nvh .gt{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.dk[data-ui=deck] .dk-nvhb{position:relative}
+.dk[data-ui=deck] .dk-nvhb .ov{position:absolute;right:8px;top:19px;font-family:"Inter",system-ui,sans-serif;font-size:11px;color:var(--ix-mut);background:var(--ix-bg);padding-left:8px}
+.dk[data-ui=deck] .dk-nvhb:hover,.dk[data-ui=deck] .dk-nvhb.on,.dk[data-ui=deck] .dk-nvhb:focus-visible{color:#fff}
+.dk[data-ui=deck] .dk-nvhb.on .no{color:var(--ix-mark)}
+.dk[data-ui=deck] .dk-nvi{margin-left:16px;padding-left:12px;border-left:1px solid var(--ix-line)}
+.dk[data-ui=deck] .dk-nv{position:relative;font-weight:400;font-size:13.5px;color:var(--ix-mut);border-radius:6px;min-height:32px;padding:5px 8px;gap:10px;margin:0}
+.dk[data-ui=deck] .dk-nv svg{color:var(--ix-dim);width:16px;height:16px}
+.dk[data-ui=deck] .dk-nv:hover{background:rgba(255,255,255,.05);color:var(--ix-tx)}
+.dk[data-ui=deck] .dk-nv:hover svg{color:var(--ix-mut)}
+.dk[data-ui=deck] .dk-nv.on{background:transparent;color:#fff;font-weight:500}
+.dk[data-ui=deck] .dk-nv.on svg{color:var(--ix-mark)}
+.dk[data-ui=deck] .dk-nv.on::before{display:block;left:-13px;top:7px;bottom:7px;width:2px;border-radius:2px;background:var(--ix-mark)}
+.dk[data-ui=deck] .dk-nvg0 .dk-nv.on{background:rgba(255,255,255,.07)}
+.dk[data-ui=deck] .dk-nvg0 .dk-nv.on::before{display:none}
+.dk[data-ui=deck] .dk-nv:focus-visible{outline:2px solid var(--ix-mark);outline-offset:-2px}
+.dk[data-ui=deck] .dk-nv .nc{font:500 11px/1 ui-monospace,"JetBrains Mono",monospace;background:transparent;color:var(--ix-dim);padding:0}
+.dk[data-ui=deck] .dk-sbfoot{border-top:1px solid var(--ix-line);padding:8px 14px}
+.dk[data-ui=deck] .dk-sbfoot .dk-nv{color:var(--ix-mut)}
+/* icon rail + phone drawer keep the index colours; the guide and numerals fold away in the rail */
+.dk[data-ui=deck].nav-rail .dk-sbnav{padding:12px 10px}
+.dk[data-ui=deck].nav-rail .dk-nvi{margin:0;padding:0;border:0}
+.dk[data-ui=deck].nav-rail .dk-nvh{padding:9px 4px;font-size:0}
+.dk[data-ui=deck].nav-rail .dk-nvh .no,.dk[data-ui=deck].nav-rail .dk-nvh .gt{display:none}
+.dk[data-ui=deck].nav-rail .dk-nvh::after{flex:1;background:var(--ix-line)}
+.dk[data-ui=deck].nav-rail .dk-nv.on{background:rgba(255,255,255,.08)}
+.dk[data-ui=deck].nav-rail .dk-nv.on::before{display:none}
+/* metrics: white tiles, label above a large tabular number, no stripes or icon chips */
+.dk[data-ui=deck] .dk-ov .dk-kpis.dk-kpis4{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:12px;margin-bottom:12px}
+@media(max-width:1100px){.dk[data-ui=deck] .dk-ov .dk-kpis.dk-kpis4{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+@media(max-width:520px){.dk[data-ui=deck] .dk-ov .dk-kpis.dk-kpis4{grid-template-columns:1fr!important}.dk[data-ui=deck] .dk-kpis4>*{grid-column:auto!important}}
+@media(max-width:1000px){.dk[data-ui=deck] .dk-crumb{display:none}}
+@media(max-width:480px){.dk[data-ui=deck] .dk-brand .dk-wm{display:none}}
+.dk[data-ui=deck] .dk-kpis4>.dk-kpi:first-child .kn{font-size:30px}
+.dk[data-ui=deck] .dk-kpi{display:flex;flex-direction:column;background:var(--dk-surf);border:1px solid var(--dk-line);border-radius:10px;padding:16px 18px;grid-row:auto!important;justify-content:flex-start!important}
+.dk[data-ui=deck] .dk-kpi[hidden]{display:none}
+.dk[data-ui=deck] .dk-kpi::before,.dk[data-ui=deck] .dk-kpi .ki{display:none}
+.dk[data-ui=deck] .dk-kpi:hover{transform:none;border-color:#d3d0c8;background:var(--dk-surf)}
+.dk[data-ui=deck] .dk-kpi .kl{order:-1;margin:0 0 10px;text-transform:none;letter-spacing:0;font-size:13px;font-weight:500;color:var(--dk-tx2)}
+.dk[data-ui=deck] .dk-kpi .kn{font-size:30px!important;font-weight:500;letter-spacing:-.02em;color:var(--dk-tx)}
+.dk[data-ui=deck] .dk-kpi .ks{margin-top:8px;font-size:12px;color:var(--dk-mut);font-weight:400}
+.dk[data-ui=deck] .dk-start{grid-column:span 2;background:var(--dk-surf);border:1px solid var(--dk-line);border-radius:10px;padding:16px 18px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.dk[data-ui=deck] .dk-start[hidden]{display:none}
+.dk[data-ui=deck] .dk-start b{font-size:15px;font-weight:600}
+.dk[data-ui=deck] .dk-start p{font-size:13px;color:var(--dk-tx2);line-height:1.5;margin:0 0 6px}
+@media(max-width:520px){.dk[data-ui=deck] .dk-start{grid-column:auto}.dk[data-ui=deck] .dk-start .dk-actform input{flex:1 1 100%;width:100%}}
+.dk[data-ui=deck] .dk-expnote{background:transparent;border:0;padding:0 2px;color:var(--dk-mut);font-size:12.5px}
+.dk[data-ui=deck] .dk-expnote b{color:var(--dk-tx2);font-weight:600}
+/* panels: flat white, quiet titles, no decorative icons */
+.dk[data-ui=deck] .dk-ovp{background:var(--dk-surf);border:1px solid var(--dk-line);border-radius:10px;box-shadow:none;padding:18px 20px}
+.dk[data-ui=deck] .dk-ovp h2{font-size:15px;font-weight:600}
+.dk[data-ui=deck] .dk-ovp h2>svg{display:none}
+.dk[data-ui=deck] .dk-ovp h2 .mo{color:var(--dk-acc);font-weight:500;font-size:13px}
+.dk[data-ui=deck] .dk-qacard{background:transparent;border:1px solid var(--dk-line);border-radius:9px}
+.dk[data-ui=deck] .dk-qacard:hover{transform:none;background:#faf9f6;border-color:#d3d0c8}
+.dk[data-ui=deck] .dk-qacard .qi{color:var(--dk-tx2);background:#f1f0ec}
+.dk[data-ui=deck] .dk-qacard b{font-weight:600;color:var(--dk-tx)}
+.dk[data-ui=deck] .dk-qacard span{color:var(--dk-mut)}
+.dk[data-ui=deck] .dk-ask{background:var(--dk-surf);border:1px solid var(--dk-line);border-radius:10px}
+.dk[data-ui=deck] .dk-ask:focus-within{border-color:var(--dk-acc);background:var(--dk-surf);box-shadow:0 0 0 3px var(--dk-accbg)}
+.dk[data-ui=deck] .dk-ask .ai{color:var(--dk-mut)}
+.dk[data-ui=deck] .dk-ask button{background:var(--dk-tx)!important;border-color:var(--dk-tx)!important;color:#fff!important;font-weight:500;box-shadow:none!important}
+.dk[data-ui=deck] .dk-askhint{color:var(--dk-mut)}
+/* buttons */
+.dk[data-ui=deck] .dk-tibtn{font-weight:500;border-radius:7px}
+.dk[data-ui=deck] .dk-tibtn.on{background:var(--dk-tx);border-color:var(--dk-tx);color:#fff}
+.dk[data-ui=deck] .dk-b{font-weight:500;border-radius:8px}
+.dk[data-ui=deck] .dk-b.pri{background:var(--dk-tx);border-color:var(--dk-tx);box-shadow:none}
+/* needs-attention table */
+.dk[data-ui=deck] .dk-natbl{width:100%;border-collapse:collapse;font-size:13.5px}
+.dk[data-ui=deck] .dk-natbl th{font-size:12px;font-weight:500;color:var(--dk-mut);text-align:left;padding:0 12px 8px;border-bottom:1px solid var(--dk-line);text-transform:none;letter-spacing:0;white-space:nowrap}
+.dk[data-ui=deck] .dk-natbl,.dk[data-ui=deck] .dk-natbl thead,.dk[data-ui=deck] .dk-natbl tr,.dk[data-ui=deck] .dk-natbl th,.dk[data-ui=deck] .dk-natbl td{background:transparent!important;box-shadow:none!important}
+.dk[data-ui=deck] .dk-natbl td{padding:12px;border-bottom:1px solid var(--dk-line2);vertical-align:middle}
+.dk[data-ui=deck] .dk-natbl tr:last-child td{border-bottom:0}
+.dk[data-ui=deck] .dk-natbl th:first-child,.dk[data-ui=deck] .dk-natbl td:first-child{padding-left:0}
+.dk[data-ui=deck] .dk-natbl th:last-child,.dk[data-ui=deck] .dk-natbl td:last-child{padding-right:0}
+.dk[data-ui=deck] .dk-natbl td.sv{width:1%;white-space:nowrap}
+.dk[data-ui=deck] .dk-natbl td.it b{display:block;font-weight:500;color:var(--dk-tx);overflow-wrap:anywhere}
+.dk[data-ui=deck] .dk-natbl td.it span{display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden;color:var(--dk-mut);font-size:12.5px;margin-top:2px}
+.dk[data-ui=deck] .dk-natbl td.so{width:1%;white-space:nowrap;color:var(--dk-tx2);font-size:12.5px}
+.dk[data-ui=deck] .dk-natbl td.ac{width:1%;text-align:right;white-space:nowrap}
+.dk[data-ui=deck] .dk-natbl .dk-tibtn{height:30px}
+.dk[data-ui=deck] .dk-sev{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:500;color:var(--dk-tx2)}
+.dk[data-ui=deck] .dk-sev i{width:8px;height:8px;border-radius:50%;background:var(--c)}
+@media(max-width:720px){.dk[data-ui=deck] .dk-natbl th:nth-child(3),.dk[data-ui=deck] .dk-natbl td.so{display:none}}
+/* other scenes: neutral icon tiles and sentence-case labels */
+.dk[data-ui=deck] .dk-gcard{border-color:var(--dk-line);border-radius:9px}
+.dk[data-ui=deck] .dk-gcard:hover{border-color:#d3d0c8;transform:none;box-shadow:none}
+.dk[data-ui=deck] .dk-gcard .gi,.dk[data-ui=deck] .dk-wtitle .wi{background:#f1f0ec;color:var(--dk-tx2)}
+.dk[data-ui=deck] .dk-gcard .gt{font-weight:500}
+.dk[data-ui=deck] .dk-wbar{background:var(--dk-surf);border-bottom-color:var(--dk-line)}
+.dk[data-ui=deck] .dk-wtitle{font-weight:600}
+.dk[data-ui=deck] .dk-wback{background:transparent;border-color:var(--dk-line);font-weight:500;border-radius:8px}
+.dk[data-ui=deck] .dk-pop-h,.dk[data-ui=deck] .dk-intgrp h2,.dk[data-ui=deck] .dk-keyform label,.dk[data-ui=deck] .dk-dhead .k{text-transform:none;letter-spacing:0;font-weight:500}
+.dk[data-ui=deck] .dk-intcard{border-color:var(--dk-line);border-radius:9px}
+.dk[data-ui=deck] .dk-intcard:hover{border-color:#d3d0c8;transform:none}
+.dk[data-ui=deck] .dk-intcard .meta b{font-weight:600}
+.dk[data-ui=deck] :is(.dk-sevchip .l,.dk-invb .t,.dk-kitcat .kc-h,.dk-kopt,.dk-klbl,.dk-keysgrp){text-transform:none;letter-spacing:0;font-weight:500}
+.dk[data-ui=deck] th{text-transform:none!important;letter-spacing:0!important;font-size:12.5px!important;font-weight:500!important;color:var(--dk-mut)!important;background:transparent!important;border-bottom:1px solid var(--dk-line)!important}
+.dk[data-ui=deck] td{border-bottom-color:var(--dk-line2)!important}
+.dk[data-ui=deck] .dk-tcat{font-weight:400;border-radius:7px}
+.dk[data-ui=deck] .dk-tcat.on{background:rgba(29,28,26,.07);color:var(--dk-tx);font-weight:500}
 `;
 const IC_SEARCH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/></svg>';
 const IC_CHEV = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>';
@@ -1209,6 +1347,7 @@ export function renderDeck(host, opts) {
   let pins = loadPins();
 
   if (!document.getElementById("dk-css")) { const st = document.createElement("style"); st.id = "dk-css"; st.textContent = CSS; document.head.appendChild(st); }
+  if (!document.getElementById("dk-font")) { const fl = document.createElement("link"); fl.id = "dk-font"; fl.rel = "stylesheet"; fl.href = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&display=swap"; document.head.appendChild(fl); }
 
   const root = document.createElement("div");
   root.className = "dk"; root.dataset.ui = "deck";
@@ -1824,7 +1963,7 @@ export function renderDeck(host, opts) {
     const el = sceneEls.overview;
     const s = readStats();
     const linked = INTEGRATIONS.filter((i) => conns[i.id] && conns[i.id].connected);
-    const kpi = (id, val, label, icon, accent, scene, sub) => `<button class="dk-kpi" data-k="${id}"${scene ? ` data-scene="${scene}"` : ""} style="--a:${accent}"><span class="ki">${icon}</span><div class="kn">${val}</div><div class="kl">${esc(label)}</div>${sub ? `<div class="ks">${esc(sub)}</div>` : ""}</button>`;
+    const kpi = (id, val, label, icon, accent, scene, sub) => `<button class="dk-kpi" data-k="${id}"${scene ? ` data-scene="${scene}"` : ""}${accent ? ` style="--a:${accent}"` : ""}><span class="ki">${icon}</span><div class="kn">${val}</div><div class="kl">${esc(label)}</div>${sub ? `<div class="ks">${esc(sub)}</div>` : ""}</button>`;
     const acts = notifs.slice(0, 6);
     const actRows = acts.length
       ? acts.map((a) => `<div class="r"><span class="dot"></span><span class="tx">${esc(a.text)}${a.sim ? ' <span class="dk-simchip">Sample</span>' : ""}</span><span class="ag">${timeAgo(a.ts)}</span></div>`).join("")
@@ -1836,8 +1975,8 @@ export function renderDeck(host, opts) {
     const greet = hr < 12 ? "Good morning" : hr < 18 ? "Good afternoon" : "Good evening";
     el.innerHTML = `
       <div class="dk-ovhead">
-        <div><h1>${esc(greet)}, ${esc(first)}</h1><p>${linked.length} of ${INTEGRATIONS.length} integrations connected &middot; ${TOTAL_TOOLS.toLocaleString()} tools &middot; live vulnerability intel (NVD, CISA KEV, EPSS)</p></div>
-        <div class="when">${now.toLocaleDateString([], { weekday: "long", month: "long", day: "numeric" })}<br>${now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>
+        <div><h1>${esc(greet)}, ${esc(first)}</h1><p>Your security posture, with live vulnerability intelligence from NVD, CISA KEV and FIRST EPSS.</p></div>
+        <div class="when">${now.toLocaleDateString([], { weekday: "long", month: "long", day: "numeric" })}</div>
       </div>
       <form class="dk-ask" id="dkAsk">
         <span class="ai">${IC.spark}</span>
@@ -1845,17 +1984,19 @@ export function renderDeck(host, opts) {
         <button type="submit">${IC.bolt}Ask</button>
       </form>
       <div class="dk-askhint">Triage a CVE, draft a runbook, explain a finding or review a config.</div>
-      <div class="dk-kpis">
-        ${kpi("exposure", "—", "Your exposure", IC.shield, "#f0484a", "findings", "out of 100 · your real findings")}
-        ${kpi("climate", "—", "Threat climate", IC.pulse, "#f5920b", "threat", "out of 100 · global CVE/KEV feeds")}
-        ${kpi("conn", linked.length, "Integrations connected", IC.link, "#12a85f", "con", "of " + INTEGRATIONS.length)}
-        ${kpi("tools", TOTAL_TOOLS.toLocaleString(), "Tools available", IC.grid, "#4f86ff", "tools", "curated catalog")}
-        ${kpi("graph", "—", "Graph entities", IC.folder, "#9b5cf0", "invest", "real data · sample excluded")}
-        ${kpi("cve", "—", "New CVEs", IC.alert, "#f5920b", "threat", "NVD · last 7 days")}
-        ${kpi("kev", "—", "Known-exploited (KEV)", IC.radar, "#e0383a", "threat", "CISA catalog")}
+      <div class="dk-kpis dk-kpis4">
+        <div class="dk-start" id="dkStart" hidden>
+          <b>Measure your exposure</b>
+          <p>There are no real findings in this workspace yet, so there is nothing to score. Map a domain you own or scan a codebase to get a baseline.</p>
+          <form class="dk-actform" id="dkStartForm"><input placeholder="yourdomain.com" aria-label="Domain to map" autocomplete="off" spellcheck="false"><button class="dk-tibtn on" type="submit">Map surface</button><button class="dk-tibtn" type="button" data-tool="codescan">Scan code</button></form>
+        </div>
+        ${kpi("exposure", "—", "Your exposure", IC.shield, "", "findings", "Out of 100, higher is worse")}
+        ${kpi("hot", "—", "Open critical and high", IC.alert, "", "findings", "Real findings, samples excluded")}
+        ${kpi("cve", "—", "New CVEs", IC.alert, "", "threat", "NVD, last 7 days")}
+        ${kpi("kev", "—", "Known exploited", IC.radar, "", "threat", "CISA KEV catalog")}
       </div>
       <div class="dk-expnote" id="dkExpNote" hidden></div>
-      <div class="dk-ovp"><h2 data-explain="panel.actions">${IC.bolt} Top actions <span class="mo" data-scene="findings">All findings</span></h2><div class="dk-acts" id="dkTopAct"><div class="dk-loading"><span class="sp"></span>Ranking what needs attention…</div></div></div>
+      <div class="dk-ovp"><h2 data-explain="panel.actions">${IC.bolt} Needs attention <span class="mo" data-scene="findings">All findings</span></h2><div id="dkTopAct"><div class="dk-loading"><span class="sp"></span>Ranking what needs attention…</div></div></div>
       <div class="dk-ovgrid3">
         <div class="dk-ovp"><h2 data-explain="panel.pins">${IC.star} Pinned tools <span class="mo" data-scene="tools">All tools</span></h2><div id="dkPins" class="dk-pins"></div></div>
         <div class="dk-ovp"><h2 data-explain="panel.system">${IC.radar} System status</h2><div id="dkSys" class="dk-sys"></div></div>
@@ -1889,6 +2030,11 @@ export function renderDeck(host, opts) {
     // quick AI ask bar -> prefill + open the assistant
     const askForm = el.querySelector("#dkAsk"), askIn = el.querySelector("#dkAskIn");
     if (askForm) askForm.onsubmit = (e) => { e.preventDefault(); askAI(askIn.value); };
+    const sf = el.querySelector("#dkStartForm");
+    if (sf) {
+      sf.onsubmit = (e) => { e.preventDefault(); const d = sf.querySelector("input").value.trim(); if (!d) return toast("Enter a domain you own, e.g. example.com"); go("surface"); renderSurface(d); };
+      sf.querySelector("[data-tool]").onclick = () => openTool("codescan", secLabel.codescan || "Code Scanner");
+    }
     // pinned tools + live system status
     renderPins();
     renderSystem();
@@ -1943,6 +2089,9 @@ export function renderDeck(host, opts) {
       const kn = el.querySelector('[data-k="graph"] .kn'); if (kn) kn.textContent = real.length.toLocaleString();
       sig.real = real.length; sig.sim = all.length - real.length;
       sig.hot = real.filter((e) => /^(critical|high)$/i.test(e.severity || "") && !/^(resolved|closed)$/i.test(e.status || "")).length;
+      const hk = el.querySelector('[data-k="hot"] .kn'); if (hk) hk.textContent = real.length ? sig.hot.toLocaleString() : "—";
+      // Nothing real to score yet: one get-started card replaces the two empty posture tiles.
+      const st = el.querySelector("#dkStart"); if (st) { st.hidden = !!real.length; el.querySelectorAll('[data-k="exposure"],[data-k="hot"]').forEach((k) => { k.hidden = !real.length; }); }
       recomputeExposure();
     }).catch(() => { const kn = el.querySelector('[data-k="graph"] .kn'); if (kn) kn.textContent = "0"; sig.real = 0; recomputeExposure(); });
     // async: CISA KEV catalog size
@@ -2577,14 +2726,16 @@ export function renderDeck(host, opts) {
         kev: kv.status === "fulfilled" ? kv.value.set : new Set(),
         connected: new Set(INTEGRATIONS.filter((x) => conns[x.id] && conns[x.id].connected).map((x) => x.id)),
         integrations: INTEGRATIONS,
-      });
+        kevOnly: true,
+      }).filter((a) => a.kind !== "start");
       const go1 = (a) => a.kind === "finding" ? `<button class="dk-tibtn" data-scene="findings">Triage</button>`
         : a.kind === "cve" ? `<button class="dk-tibtn" data-scene="threat">Review</button>`
         : a.kind === "connect" ? `<button class="dk-tibtn" data-scene="con">Connect</button>`
         : `<form class="dk-actform"><input placeholder="yourdomain.com" aria-label="Domain to map" autocomplete="off" spellcheck="false"><button class="dk-tibtn on" type="submit">Map surface</button><button class="dk-tibtn" type="button" data-tool="codescan">Scan code</button></form>`;
       const feedNote = iv.status === "rejected" && kv.status === "rejected" ? `<div class="dk-nempty">Live CVE feeds are unavailable right now, so this list uses your security graph only.</div>` : "";
+      const SRC = { finding: "Your findings", cve: "Global feed", connect: "Setup" };
       box.innerHTML = (acts.length
-        ? acts.map((a) => `<div class="dk-act" style="--c:${SEV_C[a.sev] || "#4f86ff"}"><span class="bar"></span><div class="tx"><b>${esc(a.title)}</b><span>${esc(a.detail)}</span></div>${go1(a)}</div>`).join("")
+        ? `<table class="dk-natbl"><thead><tr><th>Severity</th><th>Item</th><th>Source</th><th></th></tr></thead><tbody>${acts.map((a) => `<tr><td class="sv"><span class="dk-sev" style="--c:${SEV_C[a.sev] || "#8a93a6"}"><i></i>${esc(a.sev.charAt(0).toUpperCase() + a.sev.slice(1))}</span></td><td class="it"><b>${esc(a.title)}</b><span>${esc(a.detail)}</span></td><td class="so">${esc(SRC[a.kind] || "")}</td><td class="ac">${go1(a)}</td></tr>`).join("")}</tbody></table>`
         : `<div class="dk-nempty">Nothing urgent: no open critical or high findings and no known-exploited CVEs in this week's feed.</div>`) + feedNote;
       const f = box.querySelector(".dk-actform");
       if (f) {
@@ -2810,10 +2961,18 @@ export function renderDeck(host, opts) {
   }
   function buildSideNav(){
     const nav = $("#dkSbNav"); if (!nav) return;
-    let html = NAV_DEF.map((grp) => (grp.g ? (SECTIONS[grp.id] ? `<button class="dk-nvh dk-nvhb${navKey === "section:" + grp.id ? " on" : ""}" data-scene="section" data-sect="${grp.id}" data-explain="nav.section">${esc(grp.g)}<span class="ov">Overview</span></button>` : `<div class="dk-nvh">${esc(grp.g)}</div>`) : "") + grp.items.map(([kind, id, label, icon]) =>
-      navBtn(kind, id, label, icon, id === "tools" ? `<span class="nc">${TOTAL_TOOLS.toLocaleString()}</span>` : "")).join("")).join("");
+    // Index layout: each group is a numbered chapter (01, 02 ...) whose items hang off a guide line.
+    let no = 0;
+    const chap = (n) => `<span class="no">${n}</span>`;
+    let html = NAV_DEF.map((grp) => {
+      const items = grp.items.map(([kind, id, label, icon]) => navBtn(kind, id, label, icon, id === "tools" ? `<span class="nc">${TOTAL_TOOLS.toLocaleString()}</span>` : "")).join("");
+      if (!grp.g) return `<div class="dk-nvg dk-nvg0">${items}</div>`;
+      const n = String(++no).padStart(2, "0");
+      const head = SECTIONS[grp.id] ? `<button class="dk-nvh dk-nvhb${navKey === "section:" + grp.id ? " on" : ""}" data-scene="section" data-sect="${grp.id}" data-explain="nav.section">${chap(n)}<span class="gt">${esc(grp.g)}</span><span class="ov">Overview</span></button>` : `<div class="dk-nvh">${chap(n)}<span class="gt">${esc(grp.g)}</span></div>`;
+      return `<div class="dk-nvg">${head}<div class="dk-nvi">${items}</div></div>`;
+    }).join("");
     const pinned = pins.filter((sec) => secLabel[sec]);
-    if (pinned.length) html += `<div class="dk-nvh">Pinned</div>` + pinned.map((sec) => navBtn("tool", sec, secLabel[sec], toolIcon(secLabel[sec]))).join("");
+    if (pinned.length) html += `<div class="dk-nvg"><div class="dk-nvh">${chap("P")}<span class="gt">Pinned</span></div><div class="dk-nvi">${pinned.map((sec) => navBtn("tool", sec, secLabel[sec], toolIcon(secLabel[sec]))).join("")}</div></div>`;
     nav.innerHTML = html;
   }
   function setNav(key, label){
