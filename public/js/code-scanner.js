@@ -8,7 +8,7 @@
 // come from OSV.dev. Code is fetched straight from GitHub into this tab and scanned
 // here: nothing is uploaded to Darknode, and no AI is involved.
 
-import { scanFile, parseManifest, isManifest, osvSeverity, osvFixed, repoScore, toSarif, SEV_ORDER, langOf } from "/js/codescan/rules.js?v=20261011a";
+import { scanFile, parseManifest, isManifest, osvSeverity, osvFixed, repoScore, toSarif, SEV_ORDER, langOf } from "/js/codescan/rules.js?v=20261013a";
 import * as gh from "/js/codescan/github.js?v=20261011a";
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -102,6 +102,17 @@ const CSS = `<style id="cs-css">
 .cs-note .tt{display:flex;align-items:center;gap:8px;font-weight:650;margin-bottom:4px;flex-wrap:wrap}
 .cs-note p{margin:4px 0 0;color:var(--cs-mut);font-size:12.5px}
 .cs-note p b{color:var(--cs-txt);font-weight:600}
+.cs-note:not(.open) .cs-flow{display:none}
+.cs-flow{list-style:none;margin:8px 0 2px;padding:0;counter-reset:fl}
+.cs-flow li{position:relative;padding:0 0 8px 26px;font-size:12.5px;color:var(--cs-txt);counter-increment:fl}
+.cs-flow li::before{content:counter(fl);position:absolute;left:0;top:1px;width:18px;height:18px;border-radius:50%;background:color-mix(in srgb,var(--sev,#d92d20) 14%,var(--cs-card));color:var(--sev,#d92d20);font-size:10.5px;font-weight:700;display:grid;place-items:center}
+.cs-flow li:not(:last-child)::after{content:"";position:absolute;left:8.5px;top:21px;bottom:1px;border-left:1px dashed color-mix(in srgb,var(--sev,#d92d20) 45%,transparent)}
+.cs-flow li:last-child{padding-bottom:0}
+.cs-flow button{border:0;background:none;padding:0 4px 0 0;font:600 12px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--cs-acc);cursor:pointer}
+.cs-flow button:hover{text-decoration:underline}
+.cs-df{font-family:var(--aws-font,system-ui,sans-serif);display:inline-flex;align-items:center;height:18px;padding:0 6px;border-radius:4px;border:1px solid var(--cs-line);font-size:10.5px;font-weight:650;color:var(--cs-mut);margin-right:6px}
+.cs-ln.flash{animation:csflash 1.2s ease-out}
+@keyframes csflash{from{background:color-mix(in srgb,var(--cs-acc) 22%,transparent)}to{background:transparent}}
 .cs-sev{display:inline-flex;align-items:center;height:20px;padding:0 7px;border-radius:4px;font-size:11px;font-weight:700;color:#fff;background:var(--sev,#d92d20)}
 .cs-fd{display:block;width:100%;text-align:left;border:0;border-bottom:1px solid var(--cs-line);background:none;padding:10px 12px;font:inherit;cursor:pointer;color:var(--cs-txt)}
 .cs-fd:hover{background:color-mix(in srgb,var(--cs-txt) 4%,transparent)}
@@ -379,7 +390,7 @@ export function renderCodeScanner(main) {
   function drawFindings() {
     const el = body.querySelector("#csFind");
     const v = visible();
-    el.innerHTML = v.length ? v.slice(0, 1500).map((f, i) => `<button class="cs-fd ${i === st.idx ? "on" : ""}" data-i="${i}" style="${sevVar(f.sev)}" type="button"><div class="t1"><span class="cs-sev">${SEV_LABEL[f.sev]}</span><span>${esc(f.kind === "dep" ? f.pkg + " " + f.version : f.title)}</span></div><div class="t2">${f.advisory ? esc(f.advisory) + " · " : ""}${esc(f.path)}:${f.line}</div></button>`).join("") : `<div class="cs-empty">No findings match the selected filters.</div>`;
+    el.innerHTML = v.length ? v.slice(0, 1500).map((f, i) => `<button class="cs-fd ${i === st.idx ? "on" : ""}" data-i="${i}" style="${sevVar(f.sev)}" type="button"><div class="t1"><span class="cs-sev">${SEV_LABEL[f.sev]}</span><span>${esc(f.kind === "dep" ? f.pkg + " " + f.version : f.title)}</span></div><div class="t2">${f.flow ? `<span class="cs-df" title="Traced from where the input enters to where it is used">Data flow</span>` : ""}${f.advisory ? esc(f.advisory) + " · " : ""}${esc(f.path)}:${f.line}</div></button>`).join("") : `<div class="cs-empty">No findings match the selected filters.</div>`;
     el.querySelectorAll(".cs-fd").forEach((b) => b.onclick = () => select(+b.dataset.i));
   }
 
@@ -418,7 +429,10 @@ export function renderCodeScanner(main) {
     }
     code.querySelectorAll(".cs-ln.cur").forEach((e) => e.classList.remove("cur"));
     code.querySelectorAll(".cs-note").forEach((e) => e.classList.toggle("open", e.dataset.k === f.ruleId + "|" + f.line));
-    code.onclick = (e) => { const n = e.target.closest(".cs-note:not(.open)"); if (!n) return; const j = visible().findIndex((x) => x.path === st.file && x.ruleId + "|" + x.line === n.dataset.k); if (j >= 0) select(j); };
+    code.onclick = (e) => {
+      const g = e.target.closest("[data-goto]");
+      if (g) { const t = code.querySelector("#csL" + g.dataset.goto); if (t) { code.scrollTop = Math.max(0, t.offsetTop - code.clientHeight / 3); t.classList.remove("flash"); void t.offsetWidth; t.classList.add("flash"); } return; }
+      const n = e.target.closest(".cs-note:not(.open)"); if (!n) return; const j = visible().findIndex((x) => x.path === st.file && x.ruleId + "|" + x.line === n.dataset.k); if (j >= 0) select(j); };
     const ln = code.querySelector("#csL" + f.line);
     if (ln) { ln.classList.add("cur"); code.scrollTop = Math.max(0, ln.offsetTop - code.clientHeight / 3); }
   }
@@ -427,7 +441,7 @@ export function renderCodeScanner(main) {
     const cwe = x.cwe ? `<a href="https://cwe.mitre.org/data/definitions/${x.cwe}.html" target="_blank" rel="noopener">CWE-${x.cwe}</a>` : "";
     const adv = x.advisory ? `<a href="https://osv.dev/vulnerability/${encodeURIComponent(x.advisory)}" target="_blank" rel="noopener">${esc(x.advisory)}</a>${x.cve ? " · " + esc(x.cve) : ""}` : "";
     return `<div class="cs-note" data-k="${esc(x.ruleId + "|" + x.line)}" style="${sevVar(x.sev)}"><div class="tt"><span class="cs-sev">${SEV_LABEL[x.sev]}</span><span>${esc(x.kind === "dep" ? x.pkg + " " + x.version + ": " + x.title : x.title)}</span></div>
-      <p><b>Why it matters.</b> ${esc(x.why)}</p><p><b>How to fix.</b> ${esc(x.fix)}</p>
+      <p><b>Why it matters.</b> ${esc(x.why)}</p>${x.flow ? `<p><b>Data flow.</b> How the input reaches this line:</p><ol class="cs-flow">${x.flow.map((t) => `<li><button type="button" data-goto="${t.line}" title="Show line ${t.line}">L${t.line}</button>${esc(t.label)}</li>`).join("")}</ol>` : ""}<p><b>How to fix.</b> ${esc(x.fix)}</p>
       <p>${[cwe, adv, x.secret && x.ruleId !== "secret.private-key" ? "Value: " + esc(x.secret) : "", x.kind !== "dep" ? `Rule ${esc(x.ruleId)}` : ""].filter(Boolean).join(" · ")}</p></div>`;
   }
 
@@ -452,8 +466,8 @@ function toggle(set, v) { if (set.has(v) && set.size > 1) set.delete(v); else se
 
 function toCsv(findings) {
   const q = (v) => '"' + String(v ?? "").replace(/"/g, '""') + '"';
-  const rows = [["severity", "type", "title", "file", "line", "rule", "cwe", "package", "version", "advisory", "fixed_in"]];
-  for (const f of findings) rows.push([f.sev, f.kind, f.title, f.path, f.line, f.ruleId, f.cwe || "", f.pkg || "", f.version || "", f.advisory || "", f.fixed || ""]);
+  const rows = [["severity", "type", "title", "file", "line", "rule", "cwe", "package", "version", "advisory", "fixed_in", "data_flow"]];
+  for (const f of findings) rows.push([f.sev, f.kind, f.title, f.path, f.line, f.ruleId, f.cwe || "", f.pkg || "", f.version || "", f.advisory || "", f.fixed || "", f.flow ? f.flow.map((t) => "L" + t.line + " " + t.label).join(" > ") : ""]);
   return rows.map((r) => r.map(q).join(",")).join("\n");
 }
 

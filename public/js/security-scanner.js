@@ -265,9 +265,11 @@ function analyzeCookies() {
   if (!raw) return [];
   return raw.split(";").map(c => {
     const [name, ...rest] = c.trim().split("=");
-    return { name: name.trim(), value: rest.join("=").substring(0, 40) + (rest.join("=").length > 40 ? "..." : "") };
+    return { name: esc(name.trim()), value: esc(rest.join("=").substring(0, 40) + (rest.join("=").length > 40 ? "..." : "")) };
   });
 }
+// Cookie text is rendered as HTML below, so escape it.
+const esc = (s) => String(s).replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch]);
 
 export function renderSecurityScanner(container) {
   const categories = { transport: "Transport Security", injection: "Injection Prevention", clickjacking: "Clickjacking",

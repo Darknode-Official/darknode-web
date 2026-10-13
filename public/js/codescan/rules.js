@@ -7,6 +7,8 @@
 // parseManifest(path, text) extracts pinned dependencies (with their declaring line)
 // for the OSV.dev lookup. No AI is involved in detection or ranking.
 
+import { taintScan } from "./taint-js.js?v=20261013a";
+
 export const SEV_ORDER = { critical: 0, high: 1, medium: 2, low: 3, info: 4 };
 
 // ── Language detection ─────────────────────────────────────────────────────────
@@ -357,6 +359,17 @@ export function scanFile(path, text) {
     }
   }
   for (const f of fileChecks(lang, lines)) push(f.rule, Math.max(0, f.line - 1), 0, f.snippet || lines[Math.max(0, f.line - 1)].trim());
+  // Data flow (JS/TS): a traced source-to-sink path replaces a pattern hit with the same CWE on that line.
+  if (lang === "js" && !/\.(vue|svelte)$/i.test(path)) {
+    let flows = [];
+    try { flows = taintScan(text); } catch (_) { /* never let the flow engine break a scan */ }
+    for (const t of flows) {
+      const i = t.line - 1, raw = lines[i] || "";
+      if (IGNORE.test(raw) || (i > 0 && /darknode-ignore-next-line/.test(lines[i - 1]))) continue;
+      for (let k = out.length - 1; k >= 0; k--) if (out[k].line === t.line && out[k].cwe === t.cwe && out[k].kind === "code") out.splice(k, 1);
+      push({ id: t.ruleId, title: t.title, sev: t.sev, cwe: t.cwe, why: t.why, fix: t.fix }, i, t.col - 1, raw.trim(), { flow: t.flow, confidence: "high" });
+    }
+  }
   return out;
 }
 
@@ -514,6 +527,7 @@ export function toSarif(findings, meta = {}) {
     runs: [{ tool: { driver: { name: "Darknode Code Scanner", informationUri: "https://darknode.ai", rules: [...rules.values()] } },
       versionControlProvenance: meta.repo ? [{ repositoryUri: "https://github.com/" + meta.repo, revisionId: meta.sha || undefined }] : undefined,
       results: findings.map((f) => ({ ruleId: f.ruleId, level: level(f.sev), message: { text: f.title + (f.secret ? " (" + f.secret + ")" : "") + (f.pkg ? ": " + f.pkg + "@" + f.version + " " + f.advisory : "") },
-        locations: [{ physicalLocation: { artifactLocation: { uri: f.path }, region: { startLine: f.line, startColumn: f.col || 1 } } }] })) }]
+        locations: [{ physicalLocation: { artifactLocation: { uri: f.path }, region: { startLine: f.line, startColumn: f.col || 1 } } }],
+        codeFlows: f.flow && f.flow.length ? [{ threadFlows: [{ locations: f.flow.map((s) => ({ location: { physicalLocation: { artifactLocation: { uri: f.path }, region: { startLine: s.line, startColumn: s.col || 1 } }, message: { text: s.label } } })) }] }] : undefined })) }]
   };
 }

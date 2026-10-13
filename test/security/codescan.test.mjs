@@ -54,7 +54,10 @@ group("codescan: javascript", () => {
     hit("a.js", "const token = Math.random().toString(36);", "js.insecure-random");
     miss("a.js", "const x = Math.random() * width;", "js.insecure-random");
   });
-  test("open redirect", () => hit("a.js", "res.redirect(req.query.next)", "js.open-redirect"));
+  test("open redirect", () => {
+    hit("a.vue", "res.redirect(req.query.next)", "js.open-redirect"); // pattern rule still covers files the flow engine skips
+    hit("a.js", "res.redirect(req.query.next)", "js.taint.redirect"); // a traced flow supersedes the pattern hit
+  });
   test("postMessage *", () => hit("a.js", 'w.postMessage(data, "*")', "js.postmessage-wildcard"));
 });
 
@@ -123,4 +126,25 @@ group("codescan: manifests + scoring", () => {
     assert.equal(s.version, "2.1.0");
     assert.equal(s.runs[0].results[0].locations[0].physicalLocation.region.startLine, 3);
   });
+  test("data-flow findings replace a pattern hit on the same line and carry a SARIF code flow", () => {
+    const src = `const { exec } = require("child_process");
+app.get("/p", (req, res) => {
+  const h = req.query.h;
+  exec("ping " + h);
+});`;
+    const f = scanFile("src/a.js", src).filter((x) => x.line === 4 && x.cwe === 78);
+    assert.equal(f.length, 1);
+    assert.equal(f[0].ruleId, "js.taint.cmd");
+    assert.equal(f[0].confidence, "high");
+    assert.deepEqual(f[0].flow.map((s) => s.line), [3, 3, 4]);
+    const flow = toSarif(f.map((x) => ({ ...x, path: "src/a.js" }))).runs[0].results[0].codeFlows[0].threadFlows[0].locations;
+    assert.equal(flow.length, 3);
+    assert.equal(flow[2].location.physicalLocation.region.startLine, 4);
+  });
+  test("darknode-ignore silences a data-flow finding", () => {
+    const src = `app.get("/", (req, res) => { res.redirect(req.query.next); }); // darknode-ignore`;
+    assert.ok(!scanFile("a.js", src).some((x) => x.ruleId.startsWith("js.taint.")));
+    assert.ok(scanFile("a.js", src.replace(" // darknode-ignore", "")).some((x) => x.ruleId === "js.taint.redirect"));
+  });
+  test("data flow is not run on non-JS files", () => assert.ok(!scanFile("a.py", "x = req.query.h").some((x) => x.flow)));
 });

@@ -1917,7 +1917,7 @@ function renderApp(user) {
     else if (sec === "emailauth") { import("/js/email-auth.js").then(m => live() && m.renderEmailAuth(main)); }
     else if (sec === "cookieinspect") { import("/js/cookie-inspector.js").then(m => live() && m.renderCookieInspector(main)); }
     else if (sec === "securitytxt") { import("/js/security-txt.js").then(m => live() && m.renderSecurityTxt(main)); }
-    else if (sec === "codescan") { import("/js/code-scanner.js?v=20261012d").then(m => live() && m.renderCodeScanner(main)); }
+    else if (sec === "codescan") { import("/js/code-scanner.js?v=20261013a").then(m => live() && m.renderCodeScanner(main)); }
     else if (sec === "reconplanner") { import("/js/recon-planner.js").then(m => live() && m.renderReconPlanner(main)); }
     else if (sec === "packetinspector") { import("/js/packet-inspector.js?v=20260924b").then(m => live() && m.renderPacketInspector(main)); }
     else if (sec === "siemdash") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading SIEM...</p>"; import("/js/siem-dash.js?v=20261007a").then(m => live() && m.renderSiemDash(main)); }
@@ -1946,7 +1946,7 @@ function renderApp(user) {
     else if (sec === "payloadgen") { import("/js/payload-gen.js?v=20260924b").then(m => live() && m.renderPayloadGen(main)); }
     else if (sec === "riskcalculator") { import("/js/risk-calculator.js?v=20260924b").then(m => live() && m.renderRiskCalculator(main)); }
     else if (sec === "securityquiz") { import("/js/security-quiz.js?v=20260928a").then(m => live() && m.renderSecurityQuiz(main)); }
-    else if (sec === "securityscanner") { import("/js/security-scanner.js?v=20260929a").then(m => live() && m.renderSecurityScanner(main)); }
+    else if (sec === "securityscanner") { import("/js/security-scanner.js?v=20261013a").then(m => live() && m.renderSecurityScanner(main)); }
     else if (sec === "subnetvisualizer") { import("/js/subnet-visualizer.js?v=20260929a").then(m => live() && m.renderSubnetVisualizer(main)); }
     else if (sec === "threatdashboard") { import("/js/threat-dashboard.js?v=20260927a").then(m => live() && m.renderThreatDashboard(main)); }
     else if (sec === "timelineviz") { import("/js/timeline-viz.js").then(m => live() && m.renderTimelineViz(main)); }
