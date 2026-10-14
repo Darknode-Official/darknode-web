@@ -253,6 +253,7 @@ const SIDE_DESC = {
   dlp: "Data Protection Scanner — find exposed secrets (API keys, tokens, private keys, connection strings) and personal data (cards, IBANs, SSNs, emails) in text, logs, config and exports. Runs entirely in your browser and produces a redacted copy; nothing is uploaded.",
   posture: "External Posture Scorecard — enter one domain to run live HTTPS, security-header, SPF/DMARC, certificate and security.txt checks, rolled into one executive posture grade with prioritised fixes. Reads only publicly observable signals.",
   tlsfleet: "Certificate & TLS Fleet Monitor — paste a list of domains and track certificate expiry, issuer and HSTS across all of them from certificate transparency logs. Keeps a persistent watchlist and flags certificates nearing expiry.",
+  phishtriage: "Phishing & URL Triage — paste a suspicious link or a full email to get a risk read-out: live redirect unfurling, domain age, lookalike/homograph and obfuscation detection, SPF/DKIM/DMARC alignment and IOC extraction. Links are fetched server-side, never in your browser.",
   vault: "Treasury Vault — the control and record layer for funds held at your regulated bank: double-entry ledger, dual approvals, tamper-evident audit chain, and reconciliation. Not a bank; holds no money.",
   education: "Learning resources and courses.",
   downloads: "Get the Darknode OS and desktop app.",
@@ -2007,6 +2008,7 @@ function renderApp(user) {
     else if (sec === "dlp") { import("/js/dataprotect/dlp.js?v=20261013i").then(m => live() && m.renderDlp(main)); }
     else if (sec === "posture") { import("/js/dataprotect/posture.js?v=20261013i").then(m => live() && m.renderPosture(main)); }
     else if (sec === "tlsfleet") { import("/js/dataprotect/tlsfleet.js?v=20261013i").then(m => live() && m.renderTlsFleet(main)); }
+    else if (sec === "phishtriage") { import("/js/dataprotect/phish.js?v=20261013i").then(m => live() && m.renderPhish(main)); }
     else if (sec === "setup") renderSetup(main, more);
     else if (sec === "settings") renderSettingsPage(main, user, isOwner, more);
     else if (sec === "admin") { import("/js/admin.js?v=20261013i").then(m => live() && m.renderAdmin(main, user)); }
