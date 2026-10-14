@@ -9,6 +9,7 @@
 //   renderTlsFleet(main) -> void
 
 import { parseDomains, buildEntry, summarizeFleet, BANDS } from "/js/dataprotect/tls-engine.js?v=20261013i";
+import { fetchCertRows } from "/js/dataprotect/ct-fetch.js?v=20261013i";
 import { dnFetch } from "/js/net.js";
 
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) =>
@@ -141,8 +142,7 @@ export function renderTlsFleet(main) {
   };
 
   async function fetchCrt(domain) {
-    const r = await dnFetch("https://crt.sh/?output=json&exclude=expired&q=" + encodeURIComponent(domain), { raw: true, timeout: 15000 });
-    return JSON.parse(r.body);
+    return fetchCertRows(domain);
   }
   async function fetchHsts(domain) {
     try {

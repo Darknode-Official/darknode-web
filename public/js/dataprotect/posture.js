@@ -9,6 +9,7 @@
 //   renderPosture(main) -> void
 
 import { scorePosture, newestCert } from "/js/dataprotect/posture-engine.js?v=20261013i";
+import { fetchCertRows } from "/js/dataprotect/ct-fetch.js?v=20261013i";
 import { dnFetch } from "/js/net.js";
 
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) =>
@@ -93,11 +94,8 @@ async function dohTXT(name) {
 }
 
 async function fetchCert(domain) {
-  try {
-    const r = await dnFetch("https://crt.sh/?output=json&exclude=expired&q=" + encodeURIComponent(domain), { raw: true, timeout: 15000 });
-    const arr = JSON.parse(r.body);
-    return newestCert(arr);
-  } catch (_) { return null; }
+  const rows = await fetchCertRows(domain);
+  return rows.length ? newestCert(rows) : null;
 }
 
 async function fetchSecurityTxt(domain) {
