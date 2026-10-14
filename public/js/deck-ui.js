@@ -448,6 +448,30 @@ async function fetchEpss(ids){
     return out;
   } catch (_) { return {}; }
 }
+// Full detail for one CVE (NVD single-id query), parsed for in-app display so a
+// CVE opens inside Darknode instead of redirecting to nvd.nist.gov. Cached per id.
+const _cveOne = new Map();
+async function fetchCveDetail(id){
+  if (_cveOne.has(id)) return _cveOne.get(id);
+  const p = (async () => {
+    const r = await fetch(NVD_API + "?cveId=" + encodeURIComponent(id));
+    if (!r.ok) throw new Error("NVD HTTP " + r.status);
+    const j = await r.json();
+    const v = (j.vulnerabilities || [])[0];
+    if (!v || !v.cve) throw new Error("CVE not found");
+    const cve = v.cve, m = cve.metrics || {}, metrics = [];
+    [["cvssMetricV40", "4.0"], ["cvssMetricV31", "3.1"], ["cvssMetricV30", "3.0"], ["cvssMetricV2", "2.0"]].forEach(([k, ver]) => {
+      (m[k] || []).forEach((e) => { const d = e.cvssData || {}; metrics.push({ version: d.version || ver, vector: d.vectorString || "", score: d.baseScore == null ? null : d.baseScore, severity: d.baseSeverity || (d.baseScore != null ? sevOf(d.baseScore) : "") }); });
+    });
+    const desc = ((cve.descriptions || []).find((x) => x.lang === "en") || {}).value || "";
+    const cwes = [...new Set([].concat(...(cve.weaknesses || []).map((w) => (w.description || []).filter((x) => x.lang === "en").map((x) => x.value))))].filter((c) => c && c !== "NVD-CWE-noinfo" && c !== "NVD-CWE-Other");
+    const refs = (cve.references || []).map((x) => ({ url: x.url, tags: x.tags || [] })).slice(0, 40);
+    const cpes = [...new Set([].concat(...(cve.configurations || []).map((cf) => [].concat(...(cf.nodes || []).map((n) => (n.cpeMatch || []).filter((c) => c.vulnerable).map((c) => c.criteria))))))].slice(0, 60);
+    return { id: cve.id, published: String(cve.published || "").slice(0, 10), modified: String(cve.lastModified || "").slice(0, 10), desc, metrics, cwes, refs, cpes };
+  })().catch((e) => { _cveOne.delete(id); throw e; });
+  _cveOne.set(id, p); return p;
+}
+
 // Recent ransomware-leak victims (honest live feed). Returns [] on failure.
 async function fetchRansom(limit){
   try {
@@ -2336,6 +2360,61 @@ export function renderDeck(host, opts) {
     if (_tiPrio) rows = rows.slice().sort((a, b) => tiRank(b) - tiRank(a));
     return rows;
   };
+  function ensureCveCss(){
+    if (document.getElementById("dk-cveov-css")) return;
+    const st = document.createElement("style"); st.id = "dk-cveov-css";
+    st.textContent = ".dk-cveov{position:fixed;inset:0;z-index:4000;background:rgba(10,14,22,.55);display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;overflow:auto}"
+      + ".dk-cveov-card{background:var(--card,#fff);color:var(--txt,#141c2e);border:1px solid var(--line,#e2e6ef);border-radius:12px;max-width:820px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.28)}"
+      + ".dk-cveov-top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line,#e2e6ef);position:sticky;top:0;background:var(--card,#fff);border-radius:12px 12px 0 0}"
+      + ".dk-cveov-top .t{font-weight:800;font-size:16px}"
+      + ".dk-cveov-x{border:1px solid var(--line);background:transparent;color:var(--mut);border-radius:6px;padding:5px 12px;cursor:pointer;font:inherit}.dk-cveov-x:hover{color:var(--txt)}"
+      + ".dk-cveov-body{padding:16px 18px}"
+      + ".dk-cveov-body h3{font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--mut);margin:18px 0 7px}"
+      + ".dk-cveov-hd{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:4px}"
+      + ".dk-cveov-hd .sv{font-size:26px;font-weight:800;display:flex;flex-direction:column;line-height:1}.dk-cveov-hd .sv small{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-top:3px}"
+      + ".dk-cveov-hd .dt{font-size:12px;color:var(--mut);margin-top:6px}"
+      + ".dk-cveov-desc{font-size:14px;line-height:1.6;margin:0}"
+      + ".dk-cveov-m{width:100%;border-collapse:collapse;font-size:13px}.dk-cveov-m th{text-align:left;color:var(--mut);font-weight:600;padding:5px 8px;border-bottom:1px solid var(--line)}.dk-cveov-m td{padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}"
+      + ".dk-cveov-m .vec{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11.5px;color:var(--mut);word-break:break-all}"
+      + ".dk-cveov-refs{margin:0;padding-left:18px;font-size:13px}.dk-cveov-refs li{margin:3px 0;word-break:break-all}.dk-cveov-refs a{color:var(--acc)}"
+      + ".dk-cveov-cpe{margin-top:14px;font-size:13px}.dk-cveov-cpe summary{cursor:pointer;color:var(--mut)}.dk-cveov-cpe ul{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11.5px;color:var(--mut);max-height:220px;overflow:auto;margin:8px 0 0;padding-left:16px}"
+      + ".dk-cveov-tags{display:flex;flex-wrap:wrap;gap:6px}.dk-cveov-tag{border:1px solid var(--line);border-radius:4px;padding:2px 8px;font-size:12px;color:var(--txt)}";
+    document.head.appendChild(st);
+  }
+  // Open one CVE inside Darknode: fetch the full NVD record and render it in a
+  // themed overlay (description, every CVSS metric + vector, CWEs, affected CPEs,
+  // references, and the KEV/EPSS the list already carries). No external redirect.
+  function openCveDetail(id){
+    if (!id) return;
+    ensureCveCss();
+    const old = root.querySelector("#dkCveOv"); if (old) old.remove();
+    const ov = document.createElement("div"); ov.id = "dkCveOv"; ov.className = "dk-cveov";
+    ov.innerHTML = `<div class="dk-cveov-card" role="dialog" aria-modal="true" aria-label="${esc(id)} details"><div class="dk-cveov-top"><span class="t">${esc(id)}</span><button class="dk-cveov-x" type="button">Close</button></div><div class="dk-cveov-body"><div class="dk-loading"><span class="sp"></span>Loading ${esc(id)} from the NVD…</div></div></div>`;
+    root.appendChild(ov);
+    const close = () => { ov.remove(); document.removeEventListener("keydown", onKey); };
+    const onKey = (e) => { if (e.key === "Escape") close(); };
+    document.addEventListener("keydown", onKey);
+    ov.addEventListener("click", (e) => { if (e.target === ov) close(); });
+    ov.querySelector(".dk-cveov-x").onclick = close;
+    const body = ov.querySelector(".dk-cveov-body");
+    fetchCveDetail(id).then((c) => {
+      const kev = _tiKev.has(id), ep = _tiEpss[id];
+      const best = c.metrics[0];
+      const sevKey = best && best.severity ? String(best.severity).toUpperCase() : (best && best.score != null ? sevOf(best.score) : "LOW");
+      const sv = SEV[sevKey] || SEV.LOW;
+      const badges = (kev ? `<span class="dk-kevb" title="On the CISA Known Exploited Vulnerabilities catalog">Known exploited</span>` : "") + (ep != null ? `<span class="dk-epssb" title="FIRST EPSS exploit probability (30-day)">EPSS ${(ep * 100).toFixed(1)}%</span>` : "");
+      const metricRows = c.metrics.length ? c.metrics.map((mt) => { const mc = SEV[String(mt.severity || "").toUpperCase()] || sv; return `<tr><td>CVSS ${esc(mt.version)}</td><td><b style="--c:${mc.color};color:var(--c)">${mt.score == null ? "—" : mt.score}${mt.severity ? " " + esc(mt.severity) : ""}</b></td><td class="vec">${esc(mt.vector || "—")}</td></tr>`; }).join("") : `<tr><td colspan="3" style="color:var(--mut)">No CVSS metrics have been published for this CVE yet.</td></tr>`;
+      const cweHtml = c.cwes.length ? c.cwes.map((w) => `<span class="dk-cveov-tag">${esc(w)}</span>`).join("") : `<span style="color:var(--mut)">None listed</span>`;
+      const refHtml = c.refs.length ? `<ul class="dk-cveov-refs">` + c.refs.map((x) => `<li><a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.url)}</a>${x.tags.length ? ` <span style="color:var(--mut)">(${esc(x.tags.join(", "))})</span>` : ""}</li>`).join("") + `</ul>` : `<p style="color:var(--mut)">No references published.</p>`;
+      const cpeHtml = c.cpes.length ? `<details class="dk-cveov-cpe"><summary>${c.cpes.length} affected product${c.cpes.length > 1 ? "s" : ""} (CPE match strings)</summary><ul>` + c.cpes.map((cp) => `<li>${esc(cp)}</li>`).join("") + `</ul></details>` : "";
+      body.innerHTML = `<div class="dk-cveov-hd"><div class="sv" style="--c:${sv.color};color:var(--c)">${best && best.score != null ? best.score : "—"}<small>${esc(sv.label)}</small></div><div><div>${badges}</div><div class="dt">Published ${esc(c.published || "—")} · Updated ${esc(c.modified || "—")}</div></div></div>`
+        + `<h3>Description</h3><p class="dk-cveov-desc">${esc(c.desc || "No description provided.")}</p>`
+        + `<h3>Severity metrics</h3><div class="dk-tscroll"><table class="dk-cveov-m"><thead><tr><th>Standard</th><th>Base score</th><th>Vector</th></tr></thead><tbody>${metricRows}</tbody></table></div>`
+        + `<h3>Weaknesses (CWE)</h3><div class="dk-cveov-tags">${cweHtml}</div>`
+        + (cpeHtml ? `<h3>Affected products</h3>${cpeHtml}` : "")
+        + `<h3>References</h3>${refHtml}`;
+    }).catch((e) => { body.innerHTML = `<div class="dk-errbox">Couldn't load ${esc(id)} from the NVD (${esc((e && e.message) || "error")}). Keyless NVD requests are rate-limited to ~5 every 30 seconds — wait a moment and try again.</div>`; });
+  }
   function paintTiList(){
     const box = root.querySelector("#dkTiList"); if (!box) return;
     const rows = tiFiltered();
@@ -2349,7 +2428,7 @@ export function renderDeck(host, opts) {
           return `<div class="dk-cve${kev ? " kev" : ""}" data-id="${esc(v.id)}"><div class="sv" style="--fg:${SEV[v.severity].color}">${v.cvss == null ? "—" : v.cvss.toFixed(1)}<small>${SEV[v.severity].label}</small></div><div class="bd"><div class="id">${esc(v.id)}${badges}</div><div class="ti">${esc(v.title || "No description provided yet.")}</div><div class="dt">Published ${esc(v.date || "—")}</div></div></div>`;
         }).join("")
       : `<div class="dk-tnone">No CVEs match the filter.</div>`;
-    box.querySelectorAll(".dk-cve").forEach((r) => r.onclick = () => window.open("https://nvd.nist.gov/vuln/detail/" + encodeURIComponent(r.dataset.id), "_blank", "noopener"));
+    box.querySelectorAll(".dk-cve").forEach((r) => r.onclick = () => openCveDetail(r.dataset.id));
   }
   function exportCves(fmt){
     const base = tiFiltered(); if (!base.length) { toast("Nothing to export"); return; }
