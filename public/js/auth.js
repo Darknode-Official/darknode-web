@@ -31,7 +31,7 @@ import "/js/net.js?v=20261011a";
 import "/js/scroll-top.js?v=20260926a";
 import "/js/shortcuts.js";
 import "/js/mobile-nav.js";
-import { consoleHTML, directoryHTML, wireConsole, labelOf as navLabel, groupOf as navGroup, recentSecs as navRecent, favSecs as navFavs } from "/js/console-nav.js?v=20261013j";
+import { consoleHTML, directoryHTML, wireConsole, labelOf as navLabel, groupOf as navGroup, recentSecs as navRecent, favSecs as navFavs } from "/js/console-nav.js?v=20261013k";
 // Only the tool count is needed here; the manifest carries ids/names/categories without the
 // tool code (js/tools/*), which loads when the Toolbox opens.
 import { TOOL_META as _MINI_TOOLS } from "/js/tools-manifest.js?v=20261006a";
@@ -254,6 +254,7 @@ const SIDE_DESC = {
   posture: "External Posture Scorecard — enter one domain to run live HTTPS, security-header, SPF/DMARC, certificate and security.txt checks, rolled into one executive posture grade with prioritised fixes. Reads only publicly observable signals.",
   tlsfleet: "Certificate & TLS Fleet Monitor — paste a list of domains and track certificate expiry, issuer and HSTS across all of them from certificate transparency logs. Keeps a persistent watchlist and flags certificates nearing expiry.",
   phishtriage: "Phishing & URL Triage — paste a suspicious link or a full email to get a risk read-out: live redirect unfurling, domain age, lookalike/homograph and obfuscation detection, SPF/DKIM/DMARC alignment and IOC extraction. Links are fetched server-side, never in your browser.",
+  leakprobe: "Secret Exposure & Backend Leak Scanner — point it at a property you own to prove whether an API key or token (e.g. your Gemini key) is reachable from the browser or kept server-side. It scans the page's scripts, module graph, source maps and config for secrets, then GET-probes your backend endpoints, their error pages and common debug routes, and returns a placement verdict: client-exposed, backend-leaked, or server-side only. Secrets are masked; no key is ever spent to test it.",
   vault: "Treasury Vault — the control and record layer for funds held at your regulated bank: double-entry ledger, dual approvals, tamper-evident audit chain, and reconciliation. Not a bank; holds no money.",
   education: "Learning resources and courses.",
   downloads: "Get the Darknode OS and desktop app.",
@@ -2009,6 +2010,7 @@ function renderApp(user) {
     else if (sec === "posture") { import("/js/dataprotect/posture.js?v=20261013i").then(m => live() && m.renderPosture(main)); }
     else if (sec === "tlsfleet") { import("/js/dataprotect/tlsfleet.js?v=20261013i").then(m => live() && m.renderTlsFleet(main)); }
     else if (sec === "phishtriage") { import("/js/dataprotect/phish.js?v=20261013i").then(m => live() && m.renderPhish(main)); }
+    else if (sec === "leakprobe") { import("/js/dataprotect/leakprobe.js?v=20261013k").then(m => live() && m.renderLeakprobe(main)); }
     else if (sec === "setup") renderSetup(main, more);
     else if (sec === "settings") renderSettingsPage(main, user, isOwner, more);
     else if (sec === "admin") { import("/js/admin.js?v=20261013i").then(m => live() && m.renderAdmin(main, user)); }
