@@ -78,7 +78,7 @@ function injectStyle() {
   .lp h2{font-size:1.02rem;margin:18px 0 9px}
   .lp table{width:100%;border-collapse:collapse;font-size:.82rem}
   .lp th,.lp td{text-align:left;padding:7px 9px;border-bottom:1px solid var(--line,#eef0f5);vertical-align:top;overflow-wrap:anywhere}
-  .lp th{font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;color:var(--mut,#667085);font-weight:700}
+  .lp th{font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;color:var(--mut,#667085);font-weight:700;white-space:nowrap}
   .lp .lp-pill{display:inline-block;padding:1px 8px;border-radius:999px;font-size:.7rem;font-weight:700;color:#fff}
   .lp code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.78rem;background:var(--bg,#f3f5f9);padding:1px 5px;border-radius:5px}
   .lp .lp-empty{color:var(--mut,#667085);font-size:.85rem;padding:6px 2px}

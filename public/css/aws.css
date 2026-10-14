@@ -11,11 +11,17 @@ body.app {
   --con-h1: 48px;
   --con-h2: 36px;
   --aws-side-w: 264px;
-  --aws-hdr: #161d26;
-  --aws-hdr-2: #232f3e;
-  --aws-hdr-line: #414d5c;
-  --aws-hdr-txt: #ffffff;
-  --aws-hdr-mut: #b6bec9;
+  /* Professional (default) chrome: a clean white header. The dark/classic styles
+     restore the original dark header below. */
+  --aws-hdr: #ffffff;
+  --aws-hdr-2: #f2f3f3;
+  --aws-hdr-line: #e4e7ea;
+  --aws-hdr-txt: #0f1b2a;
+  --aws-hdr-mut: #5f6b7a;
+  --aws-hdr-hover: rgba(0, 7, 22, .06);
+  --aws-hdr-chip: #16191f;
+  --aws-hdr-input-bg: #ffffff;
+  --aws-hdr-input-line: #d5dbdb;
   --aws-orange: #ff9900;
   --aws-orange-2: #fa6f00;
   --aws-font: "Amazon Ember", "Helvetica Neue", Roboto, Arial, sans-serif;
@@ -29,6 +35,15 @@ body.app {
 }
 html[data-style=dark] body.app,
 html[data-style=classic] body.app {
+  --aws-hdr: #161d26;
+  --aws-hdr-2: #232f3e;
+  --aws-hdr-line: #414d5c;
+  --aws-hdr-txt: #ffffff;
+  --aws-hdr-mut: #b6bec9;
+  --aws-hdr-hover: rgba(255, 255, 255, .1);
+  --aws-hdr-chip: #eaeded;
+  --aws-hdr-input-bg: #0f141a;
+  --aws-hdr-input-line: #5f6b7a;
   --aws-side-bg: #161d26;
   --aws-side-line: #414d5c;
   --aws-side-txt: #d1d5db;
@@ -46,17 +61,24 @@ html body.app #topbar#topbar {
   gap: 8px !important;
   background: var(--aws-hdr) !important;
   border: 0 !important;
+  border-bottom: 1px solid var(--aws-hdr-line) !important;
   box-shadow: none !important;
   backdrop-filter: none !important;
 }
 html body.app #topbar#topbar::before,
 html body.app #topbar#topbar::after { display: none !important; }
 html body.app #topbar#topbar .brand { flex: none; margin-right: 6px; }
-/* the wordmark is drawn dark and is whitened for the dark header; the mark is not filtered,
-   because a filter would also whiten its yellow dot. The light-stroke logo is used instead. */
-html body.app #topbar#topbar .brand-wordmark { filter: brightness(0) invert(1) !important; }
+/* the wordmark is drawn dark; it is whitened only for the dark header. The mark is never
+   filtered (a filter would whiten its yellow dot), so the dark header swaps in the light-stroke
+   logo instead. The Professional white header keeps the dark wordmark and the normal logo. */
 html body.app #topbar#topbar .brand-mark { filter: none !important; }
-html body.app #topbar#topbar .brand-mark:not([src^="data:"]) { content: url('/logo-light.svg') !important; }
+/* pro-theme.css inverts the wordmark to white for the (old) dark header; the white header
+   needs the dark wordmark instead. Landing keeps its invert (transparent bar over a dark hero). */
+html[data-style=pro] body.app #topbar#topbar .brand-wordmark { filter: none !important; }
+html[data-style=dark] body.app #topbar#topbar .brand-wordmark,
+html[data-style=classic] body.app #topbar#topbar .brand-wordmark { filter: brightness(0) invert(1) !important; }
+html[data-style=dark] body.app #topbar#topbar .brand-mark:not([src^="data:"]),
+html[data-style=classic] body.app #topbar#topbar .brand-mark:not([src^="data:"]) { content: url('/logo-light.svg') !important; }
 html body.app #topbar#topbar #topbar-center,
 html body.app #topbar#topbar #cmdkBtn,
 html body.app #topbar#topbar #cli-dot { display: none !important; }
@@ -85,30 +107,30 @@ html body.app #topbar#topbar .con-services {
   border-radius: 8px !important;
 }
 html body.app #topbar#topbar .con-services:hover,
-html body.app #topbar#topbar .con-services[aria-expanded=true] { background: rgba(255, 255, 255, .1); border-color: transparent; }
+html body.app #topbar#topbar .con-services[aria-expanded=true] { background: var(--aws-hdr-hover); border-color: transparent; }
 html body.app #topbar#topbar .con-svc-count { display: none; }
 html body.app #topbar#topbar .con-caret { color: var(--aws-hdr-mut); }
 html body.app #topbar#topbar .con-grid-ic {
   background:
-    linear-gradient(#fff, #fff) 0 0/6px 6px no-repeat,
-    linear-gradient(#fff, #fff) 100% 0/6px 6px no-repeat,
-    linear-gradient(#fff, #fff) 0 100%/6px 6px no-repeat,
-    linear-gradient(#fff, #fff) 100% 100%/6px 6px no-repeat;
+    linear-gradient(var(--aws-hdr-txt), var(--aws-hdr-txt)) 0 0/6px 6px no-repeat,
+    linear-gradient(var(--aws-hdr-txt), var(--aws-hdr-txt)) 100% 0/6px 6px no-repeat,
+    linear-gradient(var(--aws-hdr-txt), var(--aws-hdr-txt)) 0 100%/6px 6px no-repeat,
+    linear-gradient(var(--aws-hdr-txt), var(--aws-hdr-txt)) 100% 100%/6px 6px no-repeat;
 }
 html body.app #topbar#topbar .con-search { max-width: 560px; }
 html body.app #topbar#topbar .con-search input {
   height: 32px;
   padding: 0 44px 0 12px;
-  background: #0f141a;
-  border: 1px solid #5f6b7a;
+  background: var(--aws-hdr-input-bg);
+  border: 1px solid var(--aws-hdr-input-line);
   border-radius: 8px;
-  color: #fff;
+  color: var(--aws-hdr-txt);
   font-family: var(--aws-font);
   font-size: 14px;
 }
-html body.app #topbar#topbar .con-search input::placeholder { color: #8d99a8; }
+html body.app #topbar#topbar .con-search input::placeholder { color: var(--aws-hdr-mut); }
 html body.app #topbar#topbar .con-search input:focus { border-color: #539fe5; box-shadow: 0 0 0 1px #539fe5; }
-html body.app #topbar#topbar .con-search kbd { color: #8d99a8; border-color: #5f6b7a; background: transparent; }
+html body.app #topbar#topbar .con-search kbd { color: var(--aws-hdr-mut); border-color: var(--aws-hdr-input-line); background: transparent; }
 html body.app #topbar#topbar .con-quick { display: none; }
 
 /* right-hand icons: help, style, more, profile */
@@ -124,7 +146,7 @@ html body.app #topbar#topbar :is(.style-toggle, .icon-btn, .tb-help-btn) {
   font-family: var(--aws-font);
   font-size: 14px;
 }
-html body.app #topbar#topbar :is(.style-toggle, .icon-btn, .tb-help-btn):hover { background: rgba(255, 255, 255, .1) !important; }
+html body.app #topbar#topbar :is(.style-toggle, .icon-btn, .tb-help-btn):hover { background: var(--aws-hdr-hover) !important; }
 html body.app #topbar#topbar .tb-help-btn svg,
 html body.app #topbar#topbar .icon-btn svg,
 html body.app #topbar#topbar .style-toggle svg { color: var(--aws-hdr-txt); stroke: currentColor; }
@@ -141,7 +163,7 @@ html body.app #topbar#topbar .profile-btn {
   border-radius: 8px !important;
   padding: 0 6px !important;
 }
-html body.app #topbar#topbar .profile-btn:hover { background: rgba(255, 255, 255, .1) !important; }
+html body.app #topbar#topbar .profile-btn:hover { background: var(--aws-hdr-hover) !important; }
 html body.app #topbar#topbar .p-initials { background: var(--aws-orange) !important; color: #0f141a !important; font-weight: 700; }
 
 /* ================= favorites bar ================= */
@@ -167,13 +189,13 @@ body.app .con-favbar .con-chip {
   background: transparent !important;
   border: 0 !important;
   box-shadow: none !important;
-  color: #eaeded !important;
+  color: var(--aws-hdr-chip) !important;
   font-family: var(--aws-font);
   font-size: 13px;
   font-weight: 400;
   border-radius: 6px !important;
 }
-body.app .con-favbar .con-chip:hover { background: rgba(255, 255, 255, .1) !important; color: #fff !important; }
+body.app .con-favbar .con-chip:hover { background: var(--aws-hdr-hover) !important; color: var(--aws-hdr-txt) !important; }
 body.app .con-favbar .con-empty { color: var(--aws-hdr-mut); font-size: 12px; }
 body.app .con-catbar { display: none !important; }
 
@@ -816,7 +838,7 @@ body.app .awh-w .dg-bars { display: flex; flex-direction: column; gap: 4px; }
     width: 44px;
     height: 44px;
     background: var(--aws-hdr) !important;
-    color: #fff;
+    color: var(--aws-hdr-txt);
     border-radius: 22px !important;
     box-shadow: 0 4px 12px rgba(0, 7, 22, .35) !important;
   }

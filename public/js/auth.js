@@ -588,6 +588,7 @@ function openFeedback(user) {
 }
 
 function showLanding() {
+  try { window.__dnCurrentUser = null; } catch (_) {}
   dismissBoot();
   document.body.classList.remove("app");
   document.body.classList.add("landing");
@@ -1609,6 +1610,10 @@ const _appH = { on: false, show: () => {}, saveFrame: () => {}, hasTyped: () => 
 function renderApp(user) {
   _appUid = user && user.uid || null;
   _appGuest = !auth.currentUser;
+  // Expose the live, authenticated user so an embedded tool frame (/<sec>?embed=1 inside
+  // the Deck) can adopt the parent tab's session when its own Firebase persistence resolves
+  // to null — otherwise every Deck tool paints the public landing page instead of the tool.
+  try { window.__dnCurrentUser = user || null; } catch (_) {}
   dismissBoot();
   document.body.classList.remove("landing");
   document.body.classList.add("app");
@@ -2010,7 +2015,7 @@ function renderApp(user) {
     else if (sec === "posture") { import("/js/dataprotect/posture.js?v=20261013i").then(m => live() && m.renderPosture(main)); }
     else if (sec === "tlsfleet") { import("/js/dataprotect/tlsfleet.js?v=20261013i").then(m => live() && m.renderTlsFleet(main)); }
     else if (sec === "phishtriage") { import("/js/dataprotect/phish.js?v=20261013i").then(m => live() && m.renderPhish(main)); }
-    else if (sec === "leakprobe") { import("/js/dataprotect/leakprobe.js?v=20261013k").then(m => live() && m.renderLeakprobe(main)); }
+    else if (sec === "leakprobe") { import("/js/dataprotect/leakprobe.js?v=20261013l").then(m => live() && m.renderLeakprobe(main)); }
     else if (sec === "setup") renderSetup(main, more);
     else if (sec === "settings") renderSettingsPage(main, user, isOwner, more);
     else if (sec === "admin") { import("/js/admin.js?v=20261013i").then(m => live() && m.renderAdmin(main, user)); }
@@ -2633,7 +2638,23 @@ onAuthStateChanged(auth, async (user) => {
   if(location.hostname!==_hn&&location.hostname!=="www."+_hn&&location.hostname!=="localhost"&&location.hostname!=="127.0.0.1"){document.body.innerHTML="";return}
   let fresh = false; try { fresh = sessionStorage.getItem("sw_fresh_signin") === "1"; if (fresh) sessionStorage.removeItem("sw_fresh_signin"); } catch (_) {}
   if (!user) {
-    try { sessionStorage.removeItem("dn_gate"); } catch (_) {}
+    // Embedded tool frame (/<sec>?embed=1 inside the Deck): the parent tab is signed in,
+    // but this child frame's own Firebase persistence can resolve to null (the default
+    // IndexedDB session is not reliably inherited into an iframe). Adopt the parent tab's
+    // live user object — same-origin, so its methods (getIdToken, etc.) work here — so the
+    // tool renders instead of the public landing page on every Deck tab.
+    try {
+      if (document.documentElement.hasAttribute("data-embed") && window.parent && window.parent !== window) {
+        const pu = window.parent.__dnCurrentUser;
+        if (pu && pu.uid) {
+          try { _isAdmin = !!window.parent.__dnAdmin; } catch (_) { _isAdmin = false; }
+          try { window.__dnAdmin = _isAdmin; window.__dnUid = pu.uid; } catch (_) {}
+          renderApp(pu); return;
+        }
+      }
+    } catch (_) {}
+    // Only the top window owns dn_gate; an embedded frame's transient null must not wipe it.
+    try { if (!document.documentElement.hasAttribute("data-embed")) sessionStorage.removeItem("dn_gate"); } catch (_) {}
     // Desktop-app embed / guest deep-link: the Darknode app embeds tools in a webview and
     // cannot sign in. A `?app=1` param (persisted to sessionStorage so in-console navigation
     // keeps it) enters the same public Test Mode the sign-in page offers and routes straight
