@@ -249,6 +249,10 @@ const SIDE_DESC = {
   veil: "Hands-on onion-routing demo running real in-browser crypto.",
   strongroom: "Fund Protection — deterministic fraud screens on your ledger, plus cyber-financial fusion to catch intrusion-to-theft chains. Runs in your browser.",
   sanctions: "Sanctions Screening — screen payees and vendors against the live OFAC SDN list (names + aliases). Matching runs in your browser; names are never uploaded.",
+  signins: "Sign-in Forensics: load your Entra ID, Google Workspace or Okta sign-in export and find password spraying, impossible travel, legacy authentication and admins signing in without MFA. Runs in your browser; the log is never uploaded.",
+  accessreview: "Access Review: reconcile your HR roster against your directory export to find leavers still enabled, stale logins, admins without MFA and accounts that belong to nobody on payroll. Produces the sign-off packet auditors ask for. Runs in your browser.",
+  fwaudit: "Firewall Rule Audit: paste an iptables, Cisco ASA, pfSense, FortiGate or Windows Firewall export and get shadowed rules, any-to-any permits, exposed admin ports and missing default-deny, each with the fix. Runs in your browser.",
+  loghunt: "Log Threat Hunter: paste web server, SSH or Windows Security logs and surface brute force, credential stuffing, scanner and injection probes, web shells, new admin accounts and cleared logs, mapped to MITRE ATT&CK. Runs in your browser.",
   payees: "Payee Control — a vendor register with real bank-detail validation (IBAN/ABA/BIC) and bank-change control: a second approver, a recorded callback and a new-account hold stop vendor-bank-change (BEC) fraud.",
   dlp: "Data Protection Scanner — find exposed secrets (API keys, tokens, private keys, connection strings) and personal data (cards, IBANs, SSNs, emails) in text, logs, config and exports. Runs entirely in your browser and produces a redacted copy; nothing is uploaded.",
   posture: "External Posture Scorecard — enter one domain to run live HTTPS, security-header, SPF/DMARC, certificate and security.txt checks, rolled into one executive posture grade with prioritised fixes. Reads only publicly observable signals.",
@@ -2010,6 +2014,10 @@ function renderApp(user) {
     else if (sec === "strongroom") { import("/js/strongroom.js?v=20261013m").then(m => live() && m.renderStrongroom(main)); }
     else if (sec === "vault") { import("/js/vault.js?v=20261013m").then(m => live() && m.renderVault(main)); }
     else if (sec === "sanctions") { import("/js/finsec/sanctions.js?v=20261013m").then(m => live() && m.renderSanctions(main)); }
+    else if (sec === "signins") { import("/js/identity/signin-forensics.js?v=20261014a").then(m => live() && m.renderSigninForensics(main)); }
+    else if (sec === "accessreview") { import("/js/identity/access-review.js?v=20261014a").then(m => live() && m.renderAccessReview(main)); }
+    else if (sec === "fwaudit") { import("/js/infra/firewall-audit.js?v=20261014a").then(m => live() && m.renderFirewallAudit(main)); }
+    else if (sec === "loghunt") { import("/js/ops/log-hunter.js?v=20261014a").then(m => live() && m.renderLogHunter(main)); }
     else if (sec === "payees") { import("/js/finsec/vendors.js?v=20261013m").then(m => live() && m.renderVendors(main)); }
     else if (sec === "dlp") { import("/js/dataprotect/dlp.js?v=20261013m").then(m => live() && m.renderDlp(main)); }
     else if (sec === "posture") { import("/js/dataprotect/posture.js?v=20261013m").then(m => live() && m.renderPosture(main)); }
