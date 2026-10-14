@@ -21,6 +21,7 @@ import {
   scanBytes, classifyPlacement, gradeCors, gradeErrorLeak,
   commonDebugRoutes, gradeRouteResponse, scoreExposure,
   BUNDLE_DETECTORS, BACKEND_DETECTORS,
+  detectServices, mergeServices, parseFirebaseConfig, classifyKey,
 } from "/js/dataprotect/leakprobe-engine.js?v=20261013k";
 import { dnFetch } from "/js/net.js";
 
@@ -136,7 +137,9 @@ export function renderLeakprobe(main) {
       <div class="lp-bar">
         <button class="lp-btn" id="lpRun" disabled>Run exposure scan</button>
         <button class="lp-btn lp-ghost" id="lpRoutes" disabled title="Also probe a small safe wordlist of debug/config routes on the target and backend origins">Include debug-route probe</button>
+        <button class="lp-btn lp-ghost" id="lpCapture" disabled data-explain="lp.capture" title="Load this site in a sandboxed frame, exercise it (send a message to the AI, open tools) and capture every real backend request + response to inspect for leaked secrets">Capture live backend traffic</button>
       </div>
+      <p class="lp-help">Live capture drives the site in a frame — it sends a benign message to the assistant so the real /api/chat request fires, and opens tools to trigger their backend calls — then scans every captured request and response. Runs only against this origin (${esc(locOrigin())}); destructive controls (delete, logout, pay, transfer) are never clicked.</p>
       <div class="lp-prog" id="lpProg" hidden></div>
     </div>
 
@@ -145,9 +148,9 @@ export function renderLeakprobe(main) {
   </div>`;
 
   const $ = (id) => main.querySelector(id);
-  const consent = $("#lpConsent"), runBtn = $("#lpRun"), routeBtn = $("#lpRoutes");
+  const consent = $("#lpConsent"), runBtn = $("#lpRun"), routeBtn = $("#lpRoutes"), captureBtn = $("#lpCapture");
   const prog = $("#lpProg"), out = $("#lpOut");
-  consent.onchange = () => { runBtn.disabled = routeBtn.disabled = !consent.checked; };
+  consent.onchange = () => { runBtn.disabled = routeBtn.disabled = captureBtn.disabled = !consent.checked; };
 
   let busy = false;
   const log = (m) => { prog.hidden = false; prog.textContent += (prog.textContent ? "\n" : "") + m; prog.scrollTop = prog.scrollHeight; };
@@ -159,12 +162,18 @@ export function renderLeakprobe(main) {
     const endpoints = ($("#lpEndpoints").value || "").split(/\n+/).map((s) => s.trim()).filter((s) => /^https?:\/\//i.test(s));
     const needles = ($("#lpSecrets").value || "").split(/\n+/).map((s) => s.trim()).filter((s) => s.length >= 8);
 
-    busy = true; runBtn.disabled = routeBtn.disabled = true; prog.textContent = ""; out.innerHTML = "";
+    busy = true; runBtn.disabled = routeBtn.disabled = captureBtn.disabled = true; prog.textContent = ""; out.innerHTML = "";
     runBtn.textContent = "Scanning…";
     const findings = [];    // all findings tagged with .where and .source
     const assetRows = [];   // {url, status, kind, n}
     const backendRows = []; // {url, status, cors, err, n}
     const routeHits = [];
+    const services = new Map();  // name -> {name, category, implication, sources:Set}
+    let firebase = null;         // parsed firebaseConfig + enabled products
+    const noteBody = (text, source) => {
+      mergeServices(services, detectServices(text, source));
+      if (!firebase) { const fb = parseFirebaseConfig(text); if (fb) firebase = { ...fb, source }; }
+    };
 
     try {
       // ---- Phase A: static client-exposure ----
@@ -177,8 +186,9 @@ export function renderLeakprobe(main) {
       if (doc && doc.body) {
         // scan the document itself + inline scripts
         pushFindings(findings, scanBytes(doc.body, "client-asset", needles, { detectors: BUNDLE_DETECTORS }), base + " (document)");
+        noteBody(doc.body, base + " (document)");
         graph = assetGraph(doc.body, base);
-        for (const inl of graph.inline) pushFindings(findings, scanBytes(inl.text, "client-asset", needles, { detectors: BUNDLE_DETECTORS }), base + " (inline script)");
+        for (const inl of graph.inline) { pushFindings(findings, scanBytes(inl.text, "client-asset", needles, { detectors: BUNDLE_DETECTORS }), base + " (inline script)"); noteBody(inl.text, base + " (inline script)"); }
       }
       // collect the asset URLs (same-origin + cross-origin), de-duped, capped
       const assetUrls = dedupe([
@@ -196,6 +206,7 @@ export function renderLeakprobe(main) {
         const body = r.body || "";
         const before = findings.length;
         pushFindings(findings, scanBytes(body, "client-asset", needles, { detectors: BUNDLE_DETECTORS }), url);
+        noteBody(body, url);
         // follow a source map if present, and the conventional <url>.map
         const smRef = extractSourceMapUrl(body, url);
         const smUrl = smRef && smRef.url ? smRef.url : (/\.(?:js|mjs|css)$/i.test(url) ? url + ".map" : null);
@@ -245,21 +256,23 @@ export function renderLeakprobe(main) {
         });
       }
 
+      log("Phase S — " + services.size + " service(s)/integration(s) detected" + (firebase ? ", Firebase project " + (firebase.config.projectId || "?") : ""));
       log("Done. " + findings.length + " finding(s) across " + (assetRows.length) + " asset(s) and " + backendRows.length + " endpoint(s).");
-      renderReport(out, { target, needles, findings, assetRows, backendRows, routeHits });
+      renderReport(out, { target, needles, findings, assetRows, backendRows, routeHits, services: [...services.values()], firebase, auth: currentAuthIntel() });
     } finally {
-      busy = false; runBtn.textContent = "Run exposure scan"; runBtn.disabled = routeBtn.disabled = !consent.checked;
+      busy = false; runBtn.textContent = "Run exposure scan"; runBtn.disabled = routeBtn.disabled = captureBtn.disabled = !consent.checked;
     }
   }
 
   runBtn.onclick = () => run(false);
   routeBtn.onclick = () => run(true);
+  captureBtn.onclick = () => captureLive({ needles: ($("#lpSecrets").value || "").split(/\n+/).map((s) => s.trim()).filter((s) => s.length >= 8), out, log, setBusy: (b) => { busy = b; captureBtn.disabled = runBtn.disabled = routeBtn.disabled = b || !consent.checked; captureBtn.textContent = b ? "Capturing…" : "Capture live backend traffic"; }, isBusy: () => busy, progReset: () => { prog.textContent = ""; } });
 }
 
 /* ------------------------------------------------------------- rendering */
 
 function renderReport(out, R) {
-  const { target, needles, findings, assetRows, backendRows, routeHits } = R;
+  const { target, needles, findings, assetRows, backendRows, routeHits, services = [], firebase = null, auth = null } = R;
   const score = scoreExposure(findings);
   const secretFindings = findings.filter((f) => f.kind === "secret");
 
@@ -312,6 +325,52 @@ function renderReport(out, R) {
     ${kpi(assetRows.length, "Assets scanned")}
     ${kpi(routeHits.length, "Debug-route hits")}
   </div>`;
+
+  // ---- Services & integrations (what backends/services are wired in) ----
+  if (services.length) {
+    html += `<h2>Services &amp; integrations detected (${services.length})</h2>`;
+    html += `<div class="lp-card" style="padding:0;overflow:hidden"><table><thead><tr><th>Service</th><th>Category</th><th>What it means</th></tr></thead><tbody>${
+      services.slice().sort((a, b) => a.category.localeCompare(b.category) || a.name.localeCompare(b.name)).map((s) =>
+        `<tr><td><b>${esc(s.name)}</b></td><td>${esc(s.category)}</td><td>${esc(s.implication)}</td></tr>`).join("")}</tbody></table></div>`;
+  }
+
+  // ---- Firebase project detail (exact backend config from the bundle) ----
+  if (firebase) {
+    const c = firebase.config;
+    const rows = [["Project ID", c.projectId], ["Auth domain", c.authDomain], ["Storage bucket", c.storageBucket], ["Messaging sender ID", c.messagingSenderId], ["App ID", c.appId], ["Analytics", c.measurementId]]
+      .filter((r) => r[1]).map((r) => `<tr><td>${esc(r[0])}</td><td><code>${esc(r[1])}</code></td></tr>`).join("");
+    html += `<h2>Firebase backend</h2><div class="lp-card"><p style="margin:0 0 10px">Enabled products (from the client config): <b>${esc(firebase.products.join(", ") || "—")}</b>. These values are public by design; access must be enforced by Firebase Security Rules and API-key restrictions, never by client code.</p><table style="width:auto">${rows}</table></div>`;
+  }
+
+  // ---- API key / credential intelligence ----
+  const keyFindings = secretFindings.filter((f) => f.id !== "high-entropy");
+  if (keyFindings.length) {
+    // de-dup identical masked+id+where
+    const seen = new Set(); const rows = [];
+    for (const f of keyFindings.slice().sort((a, b) => sevRank(b.severity) - sevRank(a.severity))) {
+      const k = f.id + "|" + f.masked + "|" + f.where; if (seen.has(k)) continue; seen.add(k);
+      const cl = classifyKey(f);
+      const expPill = cl.insecure ? pill("critical") : cl.exposure === "secret" ? pill("high") : cl.exposure === "public" ? pill("pass") : pill("medium");
+      rows.push(`<tr><td>${esc(cl.provider)}</td><td><code>${esc(f.masked || "")}</code></td><td>${esc(whereLabel(f.where))}</td><td>${expPill} ${esc(cl.insecure ? "Insecure" : cl.exposure)}</td><td>${esc(cl.note)}</td></tr>`);
+    }
+    html += `<h2>API keys &amp; credentials (${rows.length})</h2><div class="lp-card" style="padding:0;overflow:hidden"><table><thead><tr><th>Provider</th><th>Value (masked)</th><th>Where</th><th>Exposure</th><th>Guidance</th></tr></thead><tbody>${rows.join("")}</tbody></table></div>`;
+  }
+
+  // ---- Auth / session intelligence (honest about limits) ----
+  if (auth) {
+    html += `<h2>Authentication &amp; sign-in</h2><div class="lp-card">`;
+    if (auth.signedIn) {
+      html += `<p style="margin:0 0 8px">Current session (this browser): <b>${esc(auth.email || "signed in")}</b>${auth.emailVerified ? "" : " (email not verified)"}.</p>
+        <table style="width:auto">
+        <tr><td>Sign-in providers</td><td><code>${esc((auth.providers || []).join(", ") || "password")}</code></td></tr>
+        ${auth.lastSignIn ? `<tr><td>Last sign-in</td><td><code>${esc(auth.lastSignIn)}</code></td></tr>` : ""}
+        ${auth.created ? `<tr><td>Account created</td><td><code>${esc(auth.created)}</code></td></tr>` : ""}
+        </table>`;
+    } else {
+      html += `<p style="margin:0 0 8px">No user is signed in to this session.</p>`;
+    }
+    html += `<p class="lp-help" style="margin-top:10px">The enabled sign-in providers are detected from the bundle/session above. <b>Full login history across all users is not readable from the browser</b> — listing recent logins, failed attempts or per-user activity requires server-side access (Firebase Admin SDK / Cloud Identity audit logs). LEAKPROBE will not fabricate it.</p></div>`;
+  }
 
   // client assets with findings
   html += `<h2>Client bundle</h2>`;
@@ -378,8 +437,185 @@ function renderVerdict(title, label, reason, level) {
   return `<div class="lp-verdict"><div class="lp-vchip" style="background:${v.c}">${esc(v.t)}</div><div class="lp-vbody"><b>${esc(title)}: ${esc(label)}</b><span>${esc(reason)}</span></div></div>`;
 }
 
+/* -------------------------------------------------- live traffic capture */
+
+// Destructive / financial / auth controls we must NEVER auto-click.
+const UNSAFE_CLICK = /\b(delete|remove|logout|log ?out|sign ?out|deploy|pay|transfer|withdraw|wipe|reset|destroy|revoke|disconnect|unlink|cancel|buy|purchase|charge|send money|clear|release|approve|confirm|submit payment)\b/i;
+
+// Load this origin in a sandboxed frame, instrument fetch/XHR BEFORE interaction,
+// drive the site (message the AI, open tools) and capture every real backend
+// request + response to scan for leaked secrets. Same-origin only.
+async function captureLive(ctx) {
+  const { needles, out, log, setBusy, isBusy } = ctx;
+  if (isBusy()) return;
+  setBusy(true); ctx.progReset(); out.innerHTML = "";
+  log("Live capture — loading " + locOrigin() + " in a sandboxed frame");
+
+  const frame = document.createElement("iframe");
+  frame.setAttribute("title", "LEAKPROBE capture frame");
+  frame.style.cssText = "position:fixed;left:-9999px;top:0;width:1200px;height:900px;border:0;visibility:hidden";
+  const records = [];
+  const findings = [];
+
+  const headersToObj = (h) => {
+    const o = {};
+    try {
+      if (!h) return o;
+      if (typeof h.forEach === "function") { h.forEach((v, k) => { o[k] = v; }); return o; }
+      if (Array.isArray(h)) { for (const [k, v] of h) o[k] = v; return o; }
+      return { ...h };
+    } catch (_) { return o; }
+  };
+
+  function instrument(win) {
+    try {
+      const of = win.fetch;
+      if (of && !of.__lp) {
+        const wrapped = function (input, init) {
+          const url = typeof input === "string" ? input : (input && input.url) || String(input);
+          const method = ((init && init.method) || (input && input.method) || "GET").toUpperCase();
+          const reqHeaders = headersToObj((init && init.headers) || (input && input.headers));
+          const reqBody = init && init.body ? safeBody(init.body) : "";
+          const rec = { method, url, reqHeaders, reqBody, status: null, respHeaders: {}, respBody: "" };
+          records.push(rec);
+          return of.apply(this, arguments).then((res) => {
+            try { rec.status = res.status; res.headers.forEach((v, k) => { rec.respHeaders[k] = v; }); } catch (_) {}
+            try { const c = res.clone(); withTimeout(c.text(), 9000).then((t) => { rec.respBody = String(t || "").slice(0, 200000); }).catch(() => {}); } catch (_) {}
+            return res;
+          }).catch((e) => { rec.error = String((e && e.message) || e); throw e; });
+        };
+        wrapped.__lp = true; win.fetch = wrapped;
+      }
+      const XP = win.XMLHttpRequest && win.XMLHttpRequest.prototype;
+      if (XP && !XP.__lp) {
+        const open = XP.open, send = XP.send;
+        XP.open = function (m, u) { this.__lp = { method: (m || "GET").toUpperCase(), url: u, reqHeaders: {}, reqBody: "", status: null, respHeaders: {}, respBody: "" }; return open.apply(this, arguments); };
+        const setH = XP.setRequestHeader;
+        XP.setRequestHeader = function (k, v) { try { if (this.__lp) this.__lp.reqHeaders[k] = v; } catch (_) {} return setH.apply(this, arguments); };
+        XP.send = function (b) {
+          const rec = this.__lp; if (rec) { rec.reqBody = b ? safeBody(b) : ""; records.push(rec); this.addEventListener("loadend", () => { try { rec.status = this.status; rec.respBody = String(this.responseText || "").slice(0, 200000); } catch (_) {} }); }
+          return send.apply(this, arguments);
+        };
+        XP.__lp = true;
+      }
+    } catch (e) { log("  ! could not instrument frame (likely cross-origin): " + ((e && e.message) || e)); }
+  }
+
+  const done = new Promise((resolve) => {
+    let settled = false;
+    frame.onload = async () => {
+      try {
+        const win = frame.contentWindow;
+        instrument(win);
+        log("Live capture — frame loaded, driving the site");
+        await sleep(600);
+        // 1) message the AI assistant so the real /api/chat request fires
+        try {
+          const doc = win.document;
+          if (typeof win.__openHelp === "function") win.__openHelp();
+          else if (win.darknode && win.darknode.openHelp) win.darknode.openHelp();
+          await sleep(500);
+          const input = doc.querySelector("#dnchat-in, textarea[aria-label='Message'], textarea");
+          const send = doc.querySelector("#dnchat-send");
+          if (input && send) {
+            input.value = "LEAKPROBE backend check: please reply OK.";
+            input.dispatchEvent(new win.Event("input", { bubbles: true }));
+            send.click();
+            log("  ↳ sent a probe message to the assistant (/api/chat)");
+          } else { log("  ↳ assistant input not found in frame"); }
+        } catch (e) { log("  ! assistant drive failed: " + ((e && e.message) || e)); }
+        // 2) click a bounded set of SAFE interactive elements to trigger backend calls
+        try {
+          const doc = win.document;
+          const els = [...doc.querySelectorAll('button, [role="button"], [data-tool], [data-sec], [data-scene], .dk-navbtn')];
+          let clicks = 0;
+          for (const el of els) {
+            if (clicks >= 24) break;
+            const label = (el.getAttribute("aria-label") || el.textContent || el.getAttribute("data-tool") || el.getAttribute("data-sec") || "").trim();
+            if (!label || UNSAFE_CLICK.test(label)) continue;
+            try { el.click(); clicks++; await sleep(280); } catch (_) {}
+          }
+          log("  ↳ exercised " + clicks + " safe control(s)");
+        } catch (_) {}
+        await sleep(2500); // let late responses land
+      } finally {
+        if (!settled) { settled = true; resolve(); }
+      }
+    };
+    setTimeout(() => { if (!settled) { settled = true; resolve(); } }, 30000);
+  });
+
+  frame.src = locOrigin() + "/";
+  document.body.appendChild(frame);
+  try { await done; } catch (_) {}
+  // let any in-flight clone .text() reads finish
+  await sleep(1200);
+  try { frame.remove(); } catch (_) {}
+
+  // scan every captured request/response
+  for (const rec of records) {
+    const reqText = rec.method + " " + rec.url + "\n" + hdrLines(rec.reqHeaders) + "\n" + (rec.reqBody || "");
+    const rf = scanBytes(reqText, "client-request", needles, { detectors: BACKEND_DETECTORS });
+    const respText = hdrLines(rec.respHeaders) + "\n" + (rec.respBody || "");
+    const pf = scanBytes(respText, "backend-response", needles, { detectors: BACKEND_DETECTORS });
+    rec.reqHits = rf.length; rec.respHits = pf.length;
+    rec.cors = gradeCors(rec.respHeaders || {}, locOrigin());
+    pushFindings(findings, rf, rec.method + " " + rec.url + " (request)");
+    pushFindings(findings, pf, rec.method + " " + rec.url + " (response)");
+  }
+  log("Live capture — " + records.length + " request(s) captured, " + findings.length + " finding(s)");
+  renderCapture(out, { records, findings, needles });
+  setBusy(false);
+}
+
+function renderCapture(out, { records, findings }) {
+  // JWTs, high-entropy blobs, Google API keys and generic api-key assignments in
+  // live traffic are normally session/auth tokens (e.g. the Firebase ID token on
+  // a Firestore call) — expected, not a leak. Only a provider SECRET key or a
+  // tracked needle drives a critical verdict.
+  const AMBIG = new Set(["jwt", "high-entropy", "gcp-key", "pat-assignment"]);
+  const isHard = (f) => f.kind === "secret" && (f.id === "owner-secret" || !AMBIG.has(f.id));
+  const reqLeak = findings.filter((f) => f.where === "client-request" && isHard(f));
+  const respLeak = findings.filter((f) => f.where === "backend-response" && isHard(f));
+  const sessionTokens = findings.filter((f) => f.kind === "secret" && AMBIG.has(f.id));
+  let html = "";
+  const lvl = reqLeak.length || respLeak.length ? "critical" : "pass";
+  const reason = reqLeak.length
+    ? "A provider key appears in a request the browser SENT — the client is transmitting a secret. Move it server-side."
+    : respLeak.length
+      ? "A provider key appears in a backend RESPONSE the browser received — the backend is echoing a secret."
+      : "Across " + records.length + " captured request(s) — including the assistant /api/chat call — no API key or tracked secret was seen in any request the client sent or any response it received." + (sessionTokens.length ? " " + sessionTokens.length + " session/auth token(s) (JWTs / high-entropy) were present, which is expected on authenticated requests." : "") + " The backend keeps its provider keys server-side.";
+  html += renderVerdict("Live backend traffic", lvl === "pass" ? "No key leaked in captured traffic" : "Key leaked in captured traffic", reason, lvl);
+
+  html += `<div class="lp-kpis">
+    ${kpi(records.length, "Requests captured")}
+    ${kpi(new Set(records.map((r) => originOf(r.url)).filter(Boolean)).size, "Backend origins")}
+    ${kpi(reqLeak.length, "Keys client sent")}
+    ${kpi(respLeak.length, "Keys echoed back")}
+    ${kpi(sessionTokens.length, "Session tokens")}
+  </div>`;
+
+  if (records.length) {
+    html += `<h2>Captured requests</h2><div class="lp-card" style="padding:0;overflow:hidden"><table><thead><tr><th>Method</th><th>URL</th><th>Status</th><th>CORS</th><th>Req / Resp secrets</th></tr></thead><tbody>${
+      records.slice(0, 200).map((r) => `<tr><td>${esc(r.method)}</td><td><code>${esc(short(r.url, 64))}</code></td><td>${esc(String(r.status == null ? (r.error ? "ERR" : "—") : r.status))}</td><td>${r.cors ? pill(r.cors.level) + " " + esc(r.cors.label) : "—"}</td><td>${(r.reqHits || 0)} / ${(r.respHits || 0)}</td></tr>`).join("")}</tbody></table></div>`;
+  } else {
+    html += `<div class="lp-empty">No requests were captured. Live capture only works on this origin (${esc(locOrigin())}); open LEAKPROBE on the site you want to capture.</div>`;
+  }
+
+  if (findings.length) {
+    const evid = findings.slice().sort((a, b) => sevRank(b.severity) - sevRank(a.severity)).slice(0, 120);
+    html += `<h2>Findings in captured traffic</h2><div class="lp-card" style="padding:0;overflow:hidden"><table><thead><tr><th>Severity</th><th>Type</th><th>Where</th><th>Value (masked)</th><th>Source</th></tr></thead><tbody>${
+      evid.map((f) => `<tr><td>${pill(f.severity)}</td><td>${esc(f.label)}</td><td>${esc(whereLabel(f.where))}</td><td><code>${esc(f.masked || "")}</code></td><td><code>${esc(short(f.source || "", 50))}</code></td></tr>`).join("")}</tbody></table></div>`;
+  }
+  out.innerHTML = html;
+}
+
 /* --------------------------------------------------------------- helpers */
 
+function safeBody(b) { try { if (typeof b === "string") return b.slice(0, 50000); if (b instanceof URLSearchParams) return b.toString().slice(0, 50000); return ""; } catch (_) { return ""; } }
+function withTimeout(p, ms) { return Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), ms))]); }
+function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
+function hdrLines(h) { try { return Object.keys(h || {}).map((k) => k + ": " + h[k]).join("\n"); } catch (_) { return ""; } }
 function pushFindings(bucket, list, source) { for (const f of list) bucket.push({ ...f, source }); }
 function dedupe(a) { return [...new Set(a.filter(Boolean))]; }
 function kpi(n, l) { return `<div class="lp-kpi"><div class="n">${n}</div><div class="l">${esc(l)}</div></div>`; }
@@ -391,6 +627,26 @@ function whereLabel(w) {
   return { "client-asset": "Client bundle", "source-map": "Source map", "client-request": "Client request", "backend-response": "Backend response", "backend-error": "Backend error", "debug-route": "Debug route", "config-route": "Config route" }[w] || (w || "—");
 }
 function gradeLabel(g) { return { critical: "Critical exposure", high: "High exposure", elevated: "Elevated", low: "Low", clean: "No exposure found" }[g] || g; }
+function locOrigin() { try { return location.origin; } catch (_) { return ""; } }
+
+// Real auth intelligence for the CURRENT session only. Full per-user login
+// history needs server / Admin-SDK access and is NOT readable from the browser.
+function currentAuthIntel() {
+  try {
+    const auth = (window.firebase && window.firebase.auth && window.firebase.auth()) || window.__dnAuth || null;
+    const u = (auth && auth.currentUser) || (window.__dnUser) || null;
+    if (!u) return { signedIn: false };
+    const providers = (u.providerData || []).map((p) => p && p.providerId).filter(Boolean);
+    return {
+      signedIn: true,
+      email: u.email || null,
+      providers,
+      emailVerified: !!u.emailVerified,
+      lastSignIn: (u.metadata && (u.metadata.lastSignInTime || u.metadata.lastLoginAt)) || null,
+      created: (u.metadata && (u.metadata.creationTime || u.metadata.createdAt)) || null,
+    };
+  } catch (_) { return { signedIn: false, error: true }; }
+}
 function gradeReason(score) {
   if (score.clientExposed) return "A secret was found in the client bundle — readable by anyone loading the site. Rotate it and move it server-side.";
   if (score.backendLeaked) return "A secret was returned by a backend response. Rotate it and stop the backend echoing it.";

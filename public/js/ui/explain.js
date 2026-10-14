@@ -61,6 +61,7 @@ export const EXPLAIN = {
   "lp.target": { title: "Target URL", body: "The page whose client bundle LEAKPROBE will fetch and scan — scripts, modules, source maps and config." },
   "lp.endpoints": { title: "Backend endpoints", body: "Backend URLs that get a bounded GET probe for echoed secrets, verbose errors and CORS exposure. Pre-filled with this site's AI backend when it is known." },
   "lp.secrets": { title: "Secrets to track", body: "Exact-match needles — paste a specific key (e.g. your Gemini key) to hunt for it everywhere. Kept in memory only and masked in the report; generic AI keys are detected automatically regardless." },
+  "lp.capture": { title: "Capture live backend traffic", body: "Loads this site in a sandboxed frame, instruments fetch/XHR, sends a benign message to the assistant so the real /api/chat request fires, and opens tools to trigger their backend calls — then scans every captured request and response for leaked secrets. Runs only against this origin; destructive controls (delete, logout, pay, transfer) are never clicked." },
 
   // ---- Header ----
   "hdr.menu": { title: "Navigation", body: "Show or hide the sidebar. On small screens it opens as a drawer." },

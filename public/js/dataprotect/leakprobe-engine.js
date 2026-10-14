@@ -268,6 +268,107 @@ export function gradeErrorLeak(body) {
   return { level, signals };
 }
 
+/* --------------------------------------------- service / integration intel */
+
+// Signatures for third-party services and backends a site commonly wires in.
+// Detected from the client bundle — this is the "what is enabled" inventory a
+// business wants, derived from exact client-side evidence (no guessing).
+const SERVICE_SIGS = [
+  { name: "Firebase", category: "Backend (BaaS)", re: /firebaseConfig|firebaseapp\.com|firebaseio\.com|firebasestorage\.googleapis|firebase\/(?:app|auth|firestore)/i, implication: "Google Firebase backend. Inspect the firebaseConfig to see which products are enabled; secure with Firebase Security Rules and API-key restrictions." },
+  { name: "Firebase Auth", category: "Identity", re: /identitytoolkit|authDomain\s*[:=]|firebase\/auth|signInWith/i, implication: "User sign-in is handled by Firebase Authentication. Review enabled providers and authorized domains." },
+  { name: "Cloud Firestore", category: "Database", re: /firestore\.googleapis|firebaseio\.com|firebase\/firestore|collection\(/i, implication: "Firestore database in use. Everything is exposed to the client, so access MUST be enforced by Security Rules, not client code." },
+  { name: "Firebase Storage", category: "Storage", re: /storageBucket\s*[:=]|firebasestorage\.googleapis/i, implication: "Firebase Cloud Storage bucket referenced. Lock down with Storage Security Rules." },
+  { name: "Firebase Cloud Messaging", category: "Messaging", re: /messagingSenderId\s*[:=]|fcm\.googleapis/i, implication: "Push messaging (FCM) is configured." },
+  { name: "Google OAuth / Sign-In", category: "Identity", re: /\.apps\.googleusercontent\.com|accounts\.google\.com\/gsi|google\.accounts\.oauth2/i, implication: "Google OAuth / Google Sign-In is enabled. The client_id is public; the client SECRET (GOCSPX-) must never appear client-side." },
+  { name: "Stripe", category: "Payments", re: /js\.stripe\.com|\bpk_(?:live|test)_|Stripe\(/i, implication: "Stripe payments. The publishable key (pk_) is public; a secret key (sk_) client-side is a critical leak." },
+  { name: "Sentry", category: "Observability", re: /@o\d+\.ingest(?:\.[a-z]+)?\.sentry\.io|sentry\.io\/\d|Sentry\.init/i, implication: "Sentry error monitoring. The DSN is semi-public; ensure it is not a server/auth token." },
+  { name: "Google Analytics / Tag Manager", category: "Analytics", re: /googletagmanager\.com|\bG-[A-Z0-9]{8,}\b|\bGTM-[A-Z0-9]+\b|gtag\(/i, implication: "Google Analytics / GTM tracking is loaded." },
+  { name: "reCAPTCHA", category: "Anti-abuse", re: /recaptcha|grecaptcha|\b6L[0-9A-Za-z_-]{20,}\b/i, implication: "Google reCAPTCHA. The site key is public by design." },
+  { name: "Cloudflare", category: "CDN / Edge", re: /challenges\.cloudflare\.com|\/cdn-cgi\/|workers\.dev/i, implication: "Fronted by Cloudflare (CDN / Workers / Turnstile)." },
+  { name: "Supabase", category: "Backend (BaaS)", re: /supabase\.co|supabaseKey|createClient\(\s*["']https?:\/\/[a-z0-9]+\.supabase/i, implication: "Supabase backend. The anon key is public but RLS policies must enforce access; a service_role key client-side is critical." },
+  { name: "Auth0", category: "Identity", re: /\.auth0\.com|auth0-spa-js|@auth0\//i, implication: "Auth0 identity provider." },
+  { name: "AWS Amplify / Cognito", category: "Backend (BaaS)", re: /cognito-idp\.|amazon(?:aws)?\.com\/.*cognito|aws-amplify|amplifyconfiguration/i, implication: "AWS Amplify / Cognito. Check user-pool and identity-pool exposure." },
+  { name: "Mapbox", category: "Maps", re: /api\.mapbox\.com|\bpk\.eyJ[\w-]+/i, implication: "Mapbox. The public token (pk.) should be URL-restricted; a secret token (sk.) is a leak." },
+  { name: "Algolia", category: "Search", re: /algolia(?:net)?\.com|algoliasearch|X-Algolia-API-Key/i, implication: "Algolia search. The search-only API key is public; an admin key client-side is critical." },
+  { name: "Segment", category: "Analytics", re: /cdn\.segment\.com|analytics\.(?:track|identify)\(/i, implication: "Segment analytics pipeline." },
+  { name: "Mixpanel", category: "Analytics", re: /cdn\.mxpnl\.com|mixpanel\.init/i, implication: "Mixpanel analytics." },
+  { name: "Intercom", category: "Support", re: /widget\.intercom\.io|intercomSettings/i, implication: "Intercom messaging widget." },
+  { name: "Datadog", category: "Observability", re: /datadoghq|DD_RUM|datadog-rum/i, implication: "Datadog RUM / monitoring." },
+  { name: "PostHog", category: "Analytics", re: /posthog\.(?:com|init)|ph_project_api_key/i, implication: "PostHog product analytics." },
+  { name: "OpenAI (client-side)", category: "AI", re: /api\.openai\.com/i, implication: "The browser talks to the OpenAI API directly — the key would be exposed. AI calls should be proxied server-side." },
+  { name: "Anthropic (client-side)", category: "AI", re: /api\.anthropic\.com/i, implication: "The browser talks to the Anthropic API directly — the key would be exposed. AI calls should be proxied server-side." },
+  { name: "Google Generative Language (client-side)", category: "AI", re: /generativelanguage\.googleapis\.com/i, implication: "The browser talks to the Gemini / Generative Language API directly — the key would be exposed. Proxy AI calls server-side." },
+];
+
+// Detect services referenced in one chunk of client text. `source` is where it
+// came from (for evidence). Returns [{name, category, implication, source}].
+export function detectServices(text, source) {
+  const t = String(text || "");
+  const out = [];
+  for (const s of SERVICE_SIGS) { if (s.re.test(t)) out.push({ name: s.name, category: s.category, implication: s.implication, source: source || "" }); }
+  return out;
+}
+
+// Merge detections (from many assets) into a map keyed by service name,
+// collecting the distinct sources that evidenced each.
+export function mergeServices(map, detections) {
+  for (const d of detections || []) {
+    const cur = map.get(d.name) || { name: d.name, category: d.category, implication: d.implication, sources: new Set() };
+    if (d.source) cur.sources.add(d.source);
+    map.set(d.name, cur);
+  }
+  return map;
+}
+
+// Parse a firebaseConfig-style object literal out of bundle text and report
+// which Firebase products are enabled from the fields present.
+export function parseFirebaseConfig(text) {
+  const t = String(text || "");
+  const grab = (k) => { const m = t.match(new RegExp(k + "\\s*[:=]\\s*[\"']([^\"']+)[\"']")); return m ? m[1] : null; };
+  const cfg = {
+    apiKey: grab("apiKey"), authDomain: grab("authDomain"), projectId: grab("projectId"),
+    storageBucket: grab("storageBucket"), messagingSenderId: grab("messagingSenderId"),
+    appId: grab("appId"), measurementId: grab("measurementId"),
+  };
+  if (!cfg.projectId && !cfg.authDomain && !cfg.apiKey) return null;
+  const products = [];
+  if (cfg.authDomain) products.push("Authentication");
+  if (cfg.projectId) products.push("Cloud Firestore / Realtime DB");
+  if (cfg.storageBucket) products.push("Cloud Storage");
+  if (cfg.messagingSenderId) products.push("Cloud Messaging (FCM)");
+  if (cfg.measurementId) products.push("Analytics");
+  return { config: cfg, products };
+}
+
+// Classify a secret/key finding: which provider, is it meant to be public,
+// and is this placement insecure. Drives the "API keys" intelligence table.
+export function classifyKey(finding) {
+  const id = finding.id, v = String(finding.value || finding.masked || "");
+  const onClient = finding.where === "client-asset" || finding.where === "source-map" || finding.where === "client-request";
+  const SECRET = (provider, note) => ({ provider, exposure: "secret", insecure: onClient, note: note || "Secret-type key. If it is in the client bundle it is exposed to everyone — rotate and move server-side." });
+  const PUBLIC = (provider, note) => ({ provider, exposure: "public", insecure: false, note: note || "Public/publishable identifier — safe client-side when properly restricted." });
+  const REVIEW = (provider, note) => ({ provider, exposure: "review", insecure: false, note });
+  switch (id) {
+    case "aws-secret": return SECRET("AWS");
+    case "aws-key": return SECRET("AWS", "AWS access key id. Treat as secret; should not be client-side.");
+    case "openai-key": return SECRET("OpenAI");
+    case "anthropic-key": return SECRET("Anthropic");
+    case "google-oauth": return SECRET("Google OAuth client secret");
+    case "github-token": case "github-pat-fine": return SECRET("GitHub");
+    case "slack-token": case "slack-webhook": return SECRET("Slack");
+    case "stripe-key": return /^sk_/.test(v) ? SECRET("Stripe", "Stripe SECRET key — critical if client-side.") : PUBLIC("Stripe", "Stripe publishable key (pk_) — public by design.");
+    case "twilio-key": return SECRET("Twilio");
+    case "sendgrid-key": return SECRET("SendGrid");
+    case "private-key": return SECRET("Private key", "A private key block. Must never be client-side.");
+    case "conn-string": return SECRET("Database", "Database connection string with embedded credentials.");
+    case "gcp-key": return REVIEW("Google", "Google API key (AIza…). Public identifier, but INSECURE if unrestricted — lock it to HTTP referrers and specific APIs in the Cloud console. If it is a Gemini/Generative-Language key, it must be server-side only.");
+    case "jwt": return REVIEW("JWT", "A JSON Web Token. May be a public anon key (e.g. Supabase) or a leaked session/service token — verify its claims and role.");
+    case "pat-assignment": return REVIEW("Generic", "An api-key / token / password assignment. Confirm whether the value is a real secret or a public config key.");
+    case "owner-secret": return SECRET("Tracked secret", "A secret you asked to track. Must never be client-reachable.");
+    default: return REVIEW("Unknown", "High-entropy value — confirm whether it is a secret.");
+  }
+}
+
 // Small, SAFE wordlist of routes that commonly leak config/secrets if present.
 // GET-only, bounded; the UI rate-limits and the consent gate precedes it.
 export function commonDebugRoutes() {
@@ -404,6 +505,16 @@ export function selfTest() {
     return f.some((x) => x.id === "gcp-key" && x.where === "client-asset") && f.some((x) => x.id === "owner-secret");
   })());
 
+  const svc = detectServices("const firebaseConfig={apiKey:'x',authDomain:'a.firebaseapp.com'}; js.stripe.com; accounts.google.com/gsi", "app.js");
+  T("detectServices finds firebase, stripe, google-oauth", svc.some((s) => s.name === "Firebase") && svc.some((s) => s.name === "Stripe") && svc.some((s) => /Google OAuth/.test(s.name)));
+  const smap = mergeServices(new Map(), svc); mergeServices(smap, detectServices("firebaseapp.com", "b.js"));
+  T("mergeServices unions sources", smap.get("Firebase").sources.size === 2);
+  const fb = parseFirebaseConfig("firebaseConfig = { apiKey: \"AIzaX\", authDomain: \"p.firebaseapp.com\", projectId: \"p\", storageBucket: \"p.appspot.com\", messagingSenderId: \"123\" }");
+  T("parseFirebaseConfig lists enabled products", !!fb && fb.products.includes("Authentication") && fb.products.includes("Cloud Storage") && fb.config.projectId === "p");
+  T("classifyKey: openai client-side = insecure secret", (() => { const c = classifyKey({ id: "openai-key", where: "client-asset" }); return c.exposure === "secret" && c.insecure === true; })());
+  T("classifyKey: stripe pk public vs sk secret", classifyKey({ id: "stripe-key", value: "pk_live_x", where: "client-asset" }).exposure === "public" && classifyKey({ id: "stripe-key", value: "sk_live_x", where: "client-asset" }).insecure === true);
+  T("classifyKey: gcp-key ambiguous review", classifyKey({ id: "gcp-key", where: "client-asset" }).exposure === "review");
+
   return { pass: tests.every((t) => t.pass), tests };
 }
 
@@ -412,4 +523,5 @@ export default {
   needleScan, scanBytes, classifyPlacement, gradeCors, gradeErrorLeak,
   commonDebugRoutes, gradeRouteResponse, scoreExposure, selfTest,
   BUNDLE_DETECTORS, BACKEND_DETECTORS, AMBIGUOUS_CLIENT,
+  detectServices, mergeServices, parseFirebaseConfig, classifyKey,
 };

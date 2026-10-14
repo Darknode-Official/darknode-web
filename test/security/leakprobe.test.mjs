@@ -7,6 +7,7 @@ import {
   assetGraph, extractImports, extractSourceMapUrl, parseSourceMap,
   needleScan, scanBytes, classifyPlacement, gradeCors, gradeErrorLeak,
   commonDebugRoutes, gradeRouteResponse, scoreExposure, selfTest,
+  detectServices, mergeServices, parseFirebaseConfig, classifyKey,
 } from "../../public/js/dataprotect/leakprobe-engine.js";
 
 group("leakprobe: engine self-test", () => {
@@ -159,5 +160,41 @@ group("leakprobe: exposure score", () => {
   test("counts by where", () => {
     const s = scoreExposure([{ kind: "pii", severity: "low", where: "client-asset" }, { kind: "pii", severity: "low", where: "client-asset" }]);
     assert.equal(s.byWhere["client-asset"], 2);
+  });
+});
+
+group("leakprobe: service & key intelligence", () => {
+  test("detectServices identifies common integrations", () => {
+    const svc = detectServices("firebaseConfig={}; js.stripe.com; accounts.google.com/gsi; googletagmanager.com; GOCSPX-abc", "app.js");
+    const names = svc.map((s) => s.name);
+    assert.ok(names.includes("Firebase"));
+    assert.ok(names.includes("Stripe"));
+    assert.ok(names.some((n) => /Google OAuth/.test(n)));
+    assert.ok(names.some((n) => /Analytics/.test(n)));
+  });
+  test("mergeServices unions evidence sources", () => {
+    const m = mergeServices(new Map(), detectServices("firebaseapp.com", "a.js"));
+    mergeServices(m, detectServices("firebaseio.com", "b.js"));
+    assert.equal(m.get("Firebase").sources.size, 2);
+  });
+  test("parseFirebaseConfig maps fields to enabled products", () => {
+    const fb = parseFirebaseConfig(`firebaseConfig={apiKey:"AIzaX",authDomain:"p.firebaseapp.com",projectId:"p",storageBucket:"p.appspot.com",messagingSenderId:"1",measurementId:"G-X"}`);
+    assert.ok(fb);
+    assert.equal(fb.config.projectId, "p");
+    assert.ok(fb.products.includes("Authentication"));
+    assert.ok(fb.products.includes("Cloud Storage"));
+    assert.ok(fb.products.includes("Cloud Messaging (FCM)"));
+    assert.ok(fb.products.includes("Analytics"));
+  });
+  test("parseFirebaseConfig returns null without config", () => {
+    assert.equal(parseFirebaseConfig("just some code"), null);
+  });
+  test("classifyKey distinguishes secret vs public vs review", () => {
+    assert.equal(classifyKey({ id: "openai-key", where: "client-asset" }).exposure, "secret");
+    assert.ok(classifyKey({ id: "openai-key", where: "client-asset" }).insecure);
+    assert.equal(classifyKey({ id: "stripe-key", value: "pk_live_x", where: "client-asset" }).exposure, "public");
+    assert.ok(classifyKey({ id: "stripe-key", value: "sk_live_x", where: "client-asset" }).insecure);
+    assert.equal(classifyKey({ id: "gcp-key", where: "client-asset" }).exposure, "review");
+    assert.notOk(classifyKey({ id: "openai-key", where: "backend-response" }).insecure === undefined);
   });
 });
