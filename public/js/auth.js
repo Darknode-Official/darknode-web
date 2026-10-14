@@ -251,6 +251,7 @@ const SIDE_DESC = {
   sanctions: "Sanctions Screening — screen payees and vendors against the live OFAC SDN list (names + aliases). Matching runs in your browser; names are never uploaded.",
   payees: "Payee Control — a vendor register with real bank-detail validation (IBAN/ABA/BIC) and bank-change control: a second approver, a recorded callback and a new-account hold stop vendor-bank-change (BEC) fraud.",
   dlp: "Data Protection Scanner — find exposed secrets (API keys, tokens, private keys, connection strings) and personal data (cards, IBANs, SSNs, emails) in text, logs, config and exports. Runs entirely in your browser and produces a redacted copy; nothing is uploaded.",
+  posture: "External Posture Scorecard — enter one domain to run live HTTPS, security-header, SPF/DMARC, certificate and security.txt checks, rolled into one executive posture grade with prioritised fixes. Reads only publicly observable signals.",
   vault: "Treasury Vault — the control and record layer for funds held at your regulated bank: double-entry ledger, dual approvals, tamper-evident audit chain, and reconciliation. Not a bank; holds no money.",
   education: "Learning resources and courses.",
   downloads: "Get the Darknode OS and desktop app.",
@@ -2003,6 +2004,7 @@ function renderApp(user) {
     else if (sec === "sanctions") { import("/js/finsec/sanctions.js?v=20261013i").then(m => live() && m.renderSanctions(main)); }
     else if (sec === "payees") { import("/js/finsec/vendors.js?v=20261013i").then(m => live() && m.renderVendors(main)); }
     else if (sec === "dlp") { import("/js/dataprotect/dlp.js?v=20261013i").then(m => live() && m.renderDlp(main)); }
+    else if (sec === "posture") { import("/js/dataprotect/posture.js?v=20261013i").then(m => live() && m.renderPosture(main)); }
     else if (sec === "setup") renderSetup(main, more);
     else if (sec === "settings") renderSettingsPage(main, user, isOwner, more);
     else if (sec === "admin") { import("/js/admin.js?v=20261013i").then(m => live() && m.renderAdmin(main, user)); }
