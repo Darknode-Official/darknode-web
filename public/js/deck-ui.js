@@ -953,6 +953,8 @@ const CSS = `
 .dk .dk-isearch input{flex:1;min-width:0;width:auto;height:100%;min-height:0!important;margin:0!important;padding:0!important;border:0!important;border-radius:0!important;box-shadow:none!important;background:transparent!important;outline:none;color:#1a2233;font:inherit;font-size:12.5px;-webkit-appearance:none;appearance:none}
 .dk-isel{height:38px;background:#ffffff;border:1px solid rgba(23,33,56,.1);border-radius:9px;color:#44506a;font-size:12.5px;padding:0 10px;outline:none;cursor:pointer;max-width:200px}
 .dk-itwrap{overflow:auto;border:1px solid rgba(23,33,56,.07);border-radius:12px}
+/* borderless horizontal scroll for tables that already sit inside a padded card */
+.dk-tscroll{overflow-x:auto;overflow-y:hidden;max-width:100%}
 .dk-simchip{display:inline-block;margin-left:6px;font-size:10px;font-weight:700;letter-spacing:.03em;color:#6a7488;background:rgba(23,33,56,.07);border-radius:20px;padding:1px 7px;vertical-align:1px}
 .dk-invsim{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:#5a6680;white-space:nowrap;cursor:pointer}
 .dk-invsim input{width:15px;height:15px;margin:0;accent-color:#3f78ff}
@@ -2287,7 +2289,7 @@ export function renderDeck(host, opts) {
       fetchRansom(8).then((vics) => {
         const box = el.querySelector("#dkTiRansom"); if (!box || !vics.length) return;
         const rows = vics.map((v) => { const name = esc(v.victim || v.post_title || v.title || "—"); const grp = esc(v.group_name || v.group || "—"); const when = esc(String(v.discovered || v.published || v.attackdate || "").slice(0, 10)); return `<tr><td>${name}</td><td>${grp}</td><td>${when}</td></tr>`; }).join("");
-        box.innerHTML = `<div class="dk-tpanel dk-ransom"><div class="ct">${IC.radar} Recent ransomware activity <span class="src">live · ransomware.live</span></div><table class="dk-rtab"><thead><tr><th>Organisation</th><th>Group</th><th>Listed</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+        box.innerHTML = `<div class="dk-tpanel dk-ransom"><div class="ct">${IC.radar} Recent ransomware activity <span class="src">live · ransomware.live</span></div><div class="dk-tscroll"><table class="dk-rtab"><thead><tr><th>Organisation</th><th>Group</th><th>Listed</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
       }).catch(() => {});
     }).catch(() => {
       setHealth(false, "Threat feed delayed");
@@ -2820,7 +2822,7 @@ export function renderDeck(host, opts) {
       const feedNote = iv.status === "rejected" && kv.status === "rejected" ? `<div class="dk-nempty">Live CVE feeds are unavailable right now, so this list uses your security graph only.</div>` : "";
       const SRC = { finding: "Your findings", cve: "Global feed", connect: "Setup" };
       box.innerHTML = (acts.length
-        ? `<table class="dk-natbl"><thead><tr><th>Severity</th><th>Item</th><th>Source</th><th></th></tr></thead><tbody>${acts.map((a) => `<tr><td class="sv"><span class="dk-sev" style="--c:${SEV_C[a.sev] || "#8a93a6"}"><i></i>${esc(a.sev.charAt(0).toUpperCase() + a.sev.slice(1))}</span></td><td class="it"><b>${esc(a.title)}</b><span>${esc(a.detail)}</span></td><td class="so">${esc(SRC[a.kind] || "")}</td><td class="ac">${go1(a)}</td></tr>`).join("")}</tbody></table>`
+        ? `<div class="dk-tscroll"><table class="dk-natbl"><thead><tr><th>Severity</th><th>Item</th><th>Source</th><th></th></tr></thead><tbody>${acts.map((a) => `<tr><td class="sv"><span class="dk-sev" style="--c:${SEV_C[a.sev] || "#8a93a6"}"><i></i>${esc(a.sev.charAt(0).toUpperCase() + a.sev.slice(1))}</span></td><td class="it"><b>${esc(a.title)}</b><span>${esc(a.detail)}</span></td><td class="so">${esc(SRC[a.kind] || "")}</td><td class="ac">${go1(a)}</td></tr>`).join("")}</tbody></table></div>`
         : `<div class="dk-nempty">Nothing urgent: no open critical or high findings and no known-exploited CVEs in this week's feed.</div>`) + feedNote;
       const f = box.querySelector(".dk-actform");
       if (f) {
