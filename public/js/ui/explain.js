@@ -50,6 +50,7 @@ export const EXPLAIN = {
   "tool.casemgmt": { title: "Case Manager", body: "Organise investigations into case files with evidence, notes and status." },
   "tool.strongroom": { title: "Fund Protection", body: "Screen a ledger for fraud patterns and link them to cyber events, to catch intrusion-to-theft chains. Runs in your browser.", src: "Deterministic rules on the data you load. A screening aid, not an audit." },
   "tool.vault": { title: "Treasury Vault", body: "The control and record layer for funds held at your bank: a double-entry ledger, dual approvals, a tamper-evident audit chain and reconciliation.", src: "Holds no money. Figures are the book values you enter." },
+  "tool.sanctions": { title: "Sanctions Screening", body: "Screen payees, vendors and counterparties against the official OFAC SDN list (names and aliases), with fuzzy matching for spelling variants.", src: "Live OFAC export, matched in your browser. A screening aid, not a compliance determination." },
   "tool.crosswalk": { title: "GenAI Crosswalk", body: "Map the OWASP GenAI security risks to 26 security and compliance frameworks.", src: "OWASP GenAI Security Project data, CC BY-SA 4.0." },
 
   // ---- Header ----

@@ -248,6 +248,7 @@ const SIDE_DESC = {
   docs: "Documentation.",
   veil: "Hands-on onion-routing demo running real in-browser crypto.",
   strongroom: "Fund Protection — deterministic fraud screens on your ledger, plus cyber-financial fusion to catch intrusion-to-theft chains. Runs in your browser.",
+  sanctions: "Sanctions Screening — screen payees and vendors against the live OFAC SDN list (names + aliases). Matching runs in your browser; names are never uploaded.",
   vault: "Treasury Vault — the control and record layer for funds held at your regulated bank: double-entry ledger, dual approvals, tamper-evident audit chain, and reconciliation. Not a bank; holds no money.",
   education: "Learning resources and courses.",
   downloads: "Get the Darknode OS and desktop app.",
@@ -1997,6 +1998,7 @@ function renderApp(user) {
     else if (sec === "veil") { import("/js/labs/veil.js?v=20261011a").then(m => live() && m.renderVeil(main)); }
     else if (sec === "strongroom") { import("/js/strongroom.js?v=20261011a").then(m => live() && m.renderStrongroom(main)); }
     else if (sec === "vault") { import("/js/vault.js?v=20261013d").then(m => live() && m.renderVault(main)); }
+    else if (sec === "sanctions") { import("/js/finsec/sanctions.js?v=20261013i").then(m => live() && m.renderSanctions(main)); }
     else if (sec === "setup") renderSetup(main, more);
     else if (sec === "settings") renderSettingsPage(main, user, isOwner, more);
     else if (sec === "admin") { import("/js/admin.js?v=20261013i").then(m => live() && m.renderAdmin(main, user)); }

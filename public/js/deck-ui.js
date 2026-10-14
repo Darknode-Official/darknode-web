@@ -210,6 +210,7 @@ const IC = {
   shield: SVG('<path d="M12 3 4.5 6v6c0 4.5 3.2 7.6 7.5 9 4.3-1.4 7.5-4.5 7.5-9V6Z"/><path d="M12 8v5M12 15.8v.3"/>'),
   brief: SVG('<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5h6v2M3 12h18"/>'),
   coins: SVG('<ellipse cx="9" cy="7" rx="6" ry="3"/><path d="M3 7v5c0 1.7 2.7 3 6 3s6-1.3 6-3V7"/><path d="M15 11.2c3.4.2 6 1.4 6 2.8v4c0 1.7-2.7 3-6 3-2.3 0-4.3-.6-5.3-1.6"/>'),
+  scale: SVG('<path d="M12 3v18M7 21h10"/><path d="M12 6 5 8l-2.5 6a3 3 0 0 0 5 0L5 8M19 8l-7-2M19 8l-2.5 6a3 3 0 0 0 5 0L19 8"/>'),
   lock: SVG('<rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/><path d="M12 14.5v2.5"/>'),
   check: SVG('<path d="M12 3 4.5 6v6c0 4.5 3.2 7.6 7.5 9 4.3-1.4 7.5-4.5 7.5-9V6Z"/><path d="m8.8 12 2.2 2.2 4.4-4.4"/>'),
   map: SVG('<path d="M9 4 3 6.5v13.5L9 17.5l6 2.5 6-2.5V4L15 6.5Z"/><path d="M9 4v13.5M15 6.5V20"/>'),
@@ -2748,7 +2749,7 @@ export function renderDeck(host, opts) {
     exposure: { title: "Exposure", blurb: "What attackers can see and reach: your external footprint, cloud configuration and the vulnerabilities that matter this week.", types: ["ASSET", "DOMAIN", "IP", "PORT", "SERVICE", "CERTIFICATE", "ENDPOINT"], match: /attack surface|vanguard|subdomain|dns|ssl|http|exposure/i, ints: ["shodan", "censys", "securitytrails", "zoomeye", "binaryedge", "netlas", "fullhunt", "ipinfo", "hibp"], pub: "Certificate transparency (crt.sh), public DNS, RDAP registries and BGP routing data for Attack Surface; NVD, CISA KEV and FIRST EPSS for Threats & Vulnerabilities." },
     code: { title: "Code & Supply Chain", blurb: "Secrets, risky code and vulnerable dependencies in the software you build, and the attack paths they open.", types: ["SOFTWARE"], match: /code scanner|supply|threatforest|attack tree|\bcode\b/i, ints: [], pub: "The GitHub API for repository contents and OSV.dev for dependency advisories, both used by the Code Scanner." },
     detect: { title: "Detect & Investigate", blurb: "Alerts, indicators, incidents and cases: everything your tools have recorded, and the work to run it down.", types: ["ALERT", "INCIDENT", "CASE", "INVESTIGATION", "INDICATOR", "EVIDENCE", "THREAT_ACTOR", "MALWARE", "CAMPAIGN", "DETECTION", "EVENT", "FINDING", "VULNERABILITY"], ints: ["virustotal", "greynoise", "abuseipdb", "otx", "abusech", "urlscan", "pulsedive", "misp", "mitre", "hybrid", "anyrun", "intelx"] },
-    finsec: { title: "Financial Security", blurb: "Controls over money movement: fraud screening on your ledgers and a tamper-evident record of treasury approvals.", types: [], match: /strongroom|fund protection|vault|treasury/i, ints: [] },
+    finsec: { title: "Financial Security", blurb: "Controls over money movement: fraud screening on your ledgers, sanctions screening of payees, and a tamper-evident record of treasury approvals.", types: [], match: /strongroom|fund protection|vault|treasury|sanction/i, ints: [] },
     compliance: { title: "Compliance & Trust", blurb: "Framework mappings and self-assessments. Self-reported: they reflect what you enter, not an automated audit.", types: ["CONTROL", "REPORT"], match: /compliance|crosswalk/i, ints: [] },
   };
   let curSect = "exposure";
@@ -3029,7 +3030,7 @@ export function renderDeck(host, opts) {
     { id: "exposure", g: "Exposure", items: [["scene", "surface", "Attack Surface", IC.radar], ["scene", "cloud", "Cloud Posture", IC.cloud], ["scene", "threat", "Threats & Vulnerabilities", IC.alert]] },
     { id: "code", g: "Code & Supply Chain", items: [["tool", "codescan", "Code Scanner", IC.code], ["tool", "supplychain", "Supply Chain", IC.branch], ["tool", "threatforest", "Attack Tree Builder", IC.tree]] },
     { id: "detect", g: "Detect & Investigate", items: [["scene", "findings", "Findings", IC.alert], ["scene", "invest", "Investigations", IC.search], ["tool", "secgraph", "Security Graph", IC.nodes], ["tool", "incidents", "Incident Tracker", IC.shield], ["tool", "casemgmt", "Case Manager", IC.brief], ["scene", "activity", "Activity", IC.pulse]] },
-    { id: "finsec", g: "Financial Security", items: [["tool", "strongroom", "Fund Protection", IC.coins], ["tool", "vault", "Treasury Vault", IC.lock]] },
+    { id: "finsec", g: "Financial Security", items: [["tool", "strongroom", "Fund Protection", IC.coins], ["tool", "vault", "Treasury Vault", IC.lock], ["tool", "sanctions", "Sanctions Screening", IC.scale]] },
     { id: "compliance", g: "Compliance & Trust", items: [["scene", "compliance", "Compliance", IC.check], ["tool", "crosswalk", "GenAI Crosswalk", IC.map]] },
     { g: "Platform", items: [["scene", "con", "Integrations", IC.plug], ["scene", "tools", "Tool Library", IC.grid], ["scene", "toolkit", "Toolkit", IC.wrench], ["scene", "assistant", "AI Assistant", IC.spark], ["tool", "settings", "Settings", IC.gear]].concat(opts.isOwner ? [["tool", "admin", "Admin", IC.key]] : []) },
   ];

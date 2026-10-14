@@ -18,13 +18,13 @@
  * Usage:   node scripts/refresh-feeds.mjs
  */
 
-import { readFileSync, writeFileSync, existsSync } from "node:fs";
+import { writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const FEEDS_DIR = join(HERE, "..", "public", "data", "feeds");
-const FETCH_TIMEOUT_MS = 30000;
+const FETCH_TIMEOUT_MS = 60000;
 const UA = "darknode-feed-refresher/1.0 (+https://darknode.ai)";
 
 const nowIso = () => new Date().toISOString();
@@ -85,6 +85,50 @@ function transformIpsum(body) {
   return { updated: nowIso(), source: "FireHOL + stamparm IPSUM", count: data.length, data };
 }
 
+// US Treasury OFAC Specially Designated Nationals (SDN) list + alias export.
+// Two public, keyless CSVs: SDN.CSV (primary names, no header) and ALT.CSV
+// (a.k.a. / f.k.a. aliases). Reshaped into one entry per designated party with
+// all its names folded in, for the browser-side Sanctions Screening tool.
+// `altBody` is passed through transformOfac via a closure set up in refreshOne.
+function makeOfacTransform(altGetter) {
+  const cell = (line) => {
+    const out = []; let f = "", q = false;
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (q) { if (c === '"') { if (line[i + 1] === '"') { f += '"'; i++; } else q = false; } else f += c; }
+      else if (c === '"') q = true;
+      else if (c === ",") { out.push(f); f = ""; }
+      else f += c;
+    }
+    out.push(f);
+    return out.map((x) => { const t = x.trim(); return t === "-0-" ? "" : t; });
+  };
+  return function transformOfac(body) {
+    const byId = new Map();
+    for (const line of body.split(/\r?\n/)) {
+      if (!line.trim()) continue;
+      const c = cell(line);
+      if (c.length < 4 || !/^\d+$/.test(c[0])) continue;
+      // remarks (c[11]) are not used by the screening tool and nearly double the
+      // on-disk size, so they are intentionally omitted to keep the daily commit small.
+      byId.set(c[0], { uid: c[0], name: c[1], type: c[2] || "", program: c[3] || "", names: [c[1]].filter(Boolean) });
+    }
+    if (!byId.size) throw new Error("OFAC SDN: no entries parsed");
+    const altBody = altGetter();
+    if (altBody) {
+      for (const line of altBody.split(/\r?\n/)) {
+        if (!line.trim()) continue;
+        const c = cell(line);
+        if (c.length < 4) continue;
+        const ent = byId.get(c[0]);
+        if (ent && c[3]) ent.names.push(c[3]);
+      }
+    }
+    const data = [...byId.values()];
+    return { updated: nowIso(), source: "US Treasury OFAC SDN", count: data.length, data };
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Feed map. Only feeds with a clear public keyless upstream appear here.
 //
@@ -104,6 +148,12 @@ const FEEDS = [
     file: "malicious-ips.json",
     url: "https://raw.githubusercontent.com/stamparm/ipsum/master/ipsum.txt",
     transform: transformIpsum,
+  },
+  {
+    file: "ofac-sdn.json",
+    url: "https://sanctionslistservice.ofac.treas.gov/api/PublicationPreview/exports/SDN.CSV",
+    alt: "https://sanctionslistservice.ofac.treas.gov/api/PublicationPreview/exports/ALT.CSV",
+    makeTransform: makeOfacTransform,
   },
 ];
 
@@ -125,14 +175,23 @@ async function fetchText(url) {
 
 async function refreshOne(feed) {
   const dest = join(FEEDS_DIR, feed.file);
-  if (!existsSync(dest)) throw new Error(`target feed file not found: ${dest}`);
   const body = await fetchText(feed.url);
-  const out = feed.transform(body);
+  // A feed may carry an auxiliary file (e.g. OFAC aliases) and build its transform
+  // from it. The aux fetch is best-effort: aliases improve recall but are not required.
+  let transform = feed.transform;
+  if (feed.makeTransform) {
+    let altBody = "";
+    if (feed.alt) { try { altBody = await fetchText(feed.alt); } catch (e) { console.error(`[warn] ${feed.file}: alias fetch failed (${e && e.message}); continuing without aliases`); } }
+    transform = feed.makeTransform(() => altBody);
+  }
+  const out = transform(body);
   if (!out || !Array.isArray(out.data) || !out.data.length) {
     throw new Error("transform produced no data");
   }
-  // Validate the serialized form round-trips as JSON before touching disk.
-  const serialized = JSON.stringify(out, null, 1) + "\n";
+  // Validate the serialized form round-trips as JSON before touching disk. Large
+  // feeds (thousands of rows) are stored compact to keep the daily commit small;
+  // small feeds stay pretty-printed for readable diffs.
+  const serialized = (out.data.length > 2000 ? JSON.stringify(out) : JSON.stringify(out, null, 1)) + "\n";
   JSON.parse(serialized);
   writeFileSync(dest, serialized);
   return out.count;
