@@ -159,12 +159,30 @@ app.get("/p", (req, res) => {
     assert.ok(scanFile("a.js", src.replace(" // darknode-ignore", "")).some((x) => x.ruleId === "js.taint.redirect"));
   });
   test("data flow is not run on non-JS files", () => assert.ok(!scanFile("a.py", "x = req.query.h").some((x) => x.flow)));
-  test("an HTML sink with no traced input becomes a review item that does not cost score", () => {
+  test("an HTML sink with no traced input stays visible as a needs-review item, never hidden", () => {
     const f = scanFile("a.js", "el.innerHTML = `<b>${count}</b>`;").find((x) => x.ruleId === "js.inner-html");
-    assert.equal(f.sev, "info");
-    assert.equal(f.confidence, "review");
-    assert.equal(repoScore([f]), 100);
+    assert.equal(f.sev, "high"); // keeps its real severity — not demoted to "info" and hidden
+    assert.equal(f.confidence, "review"); // but clearly labelled lower-confidence
+    assert.ok(repoScore([f]) < 100, "a needs-review finding still costs score"); // not silently free
+    assert.ok(repoScore([f]) > repoScore([{ sev: "high" }]), "but it costs less than a confirmed high"); // discounted
+    // Same code where the flow engine never runs (.vue) must look the same, not worse.
     assert.equal(scanFile("a.vue", "el.innerHTML = `<b>${count}</b>`;").find((x) => x.ruleId === "js.inner-html").sev, "high");
+  });
+  test("a dangerous dynamic sink the flow engine cannot trace is never silently dropped", () => {
+    // eval of a computed (non-constant) value: real bug, but no known taint source → review.
+    const f = scanFile("a.js", "const r = eval(buildExpr(a, b));").find((x) => x.ruleId === "js.eval");
+    assert.ok(f, "js.eval must still be reported when the engine can't trace a source");
+    assert.equal(f.sev, "high"); // real severity preserved
+    assert.equal(f.confidence, "review");
+    assert.ok(repoScore([f]) < 100); // and it counts against the score
+    // A constant argument is still correctly not a finding at all.
+    assert.ok(!scanFile("a.js", 'eval("1+1")').some((x) => x.ruleId === "js.eval"));
+  });
+  test("a taint-confirmed finding supersedes the pattern hit and is not marked review", () => {
+    const src = `app.get("/p", (req, res) => { res.redirect(req.query.next); });`;
+    const f = scanFile("a.js", src).find((x) => x.ruleId === "js.taint.redirect");
+    assert.ok(f && f.confidence === "high", "confirmed flow keeps high confidence");
+    assert.ok(!scanFile("a.js", src).some((x) => x.confidence === "review" && x.cwe === 601));
   });
   test("JWT none is flagged only where verification accepts it", () => {
     hit("a.js", 'jwt.verify(t, key, { algorithms: ["HS256", "none"] })', "js.jwt-none");

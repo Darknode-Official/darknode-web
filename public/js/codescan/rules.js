@@ -377,9 +377,17 @@ export function scanFile(path, text) {
       for (let k = out.length - 1; k >= 0; k--) if (out[k].line === t.line && out[k].cwe === t.cwe && out[k].kind === "code") out.splice(k, 1);
       push({ id: t.ruleId, title: t.title, sev: t.sev, cwe: t.cwe, why: t.why, fix: t.fix }, i, t.col - 1, raw.trim(), { flow: t.flow, confidence: "high" });
     }
-    // A sink pattern the flow engine could not connect to any untrusted input is a review
-    // item, not a vulnerability: it stays listed but does not count against the score.
-    for (const f of out) if (FLOW_COVERED.has(f.ruleId)) { f.sev = "info"; f.confidence = "review"; f.why = "No untrusted input was traced to this line, so check where the value comes from. " + f.why; }
+    // A sink pattern the flow engine could not connect to any untrusted input is a
+    // *needs-review* item: the dangerous call is genuine (a non-constant value reaches a
+    // code/command/HTML/SQL sink), but no untrusted source was proven to flow in. It keeps
+    // its real severity so it is never silently hidden — it is only labelled lower
+    // confidence, and repoScore counts it less than a taint-confirmed finding. Demoting
+    // these to "info" (score weight 0, hidden by default) used to drop real bugs the
+    // engine simply could not trace, and was inconsistent with files where taint never runs.
+    for (const f of out) if (FLOW_COVERED.has(f.ruleId) && f.confidence !== "high") {
+      f.confidence = "review";
+      f.why = "No untrusted input was traced to this line, so confirm where the value comes from before treating it as exploitable. " + f.why;
+    }
   }
   return out;
 }
@@ -524,7 +532,9 @@ export function osvFixed(v, name) {
 // each finding subtracts by severity, with diminishing returns.
 export function repoScore(findings) {
   const w = { critical: 25, high: 10, medium: 4, low: 1, info: 0 };
-  const pen = findings.reduce((s, f) => s + (w[f.sev] || 0), 0);
+  // Needs-review findings (a dangerous sink with no traced untrusted source) still count,
+  // but at a fraction of a taint-confirmed finding of the same severity — present, never free.
+  const pen = findings.reduce((s, f) => s + (w[f.sev] || 0) * (f.confidence === "review" ? 0.4 : 1), 0);
   return Math.max(0, Math.round(100 * Math.exp(-pen / 120)));
 }
 

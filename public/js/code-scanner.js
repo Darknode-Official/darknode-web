@@ -13,7 +13,7 @@ import * as gh from "/js/codescan/github.js?v=20261013a";
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const fmt = (n) => Number(n || 0).toLocaleString();
-const SEVS = ["critical", "high", "medium", "low", "info"];
+const SEVS = ["critical", "high", "medium", "low"];
 const SEV_LABEL = { critical: "Critical", high: "High", medium: "Medium", low: "Low", info: "Review" };
 const KIND_LABEL = { secret: "Secrets", code: "Code", dep: "Dependencies" };
 const HIST_KEY = "dn_codescan_recent";
@@ -111,6 +111,7 @@ const CSS = `<style id="cs-css">
 .cs-flow button{border:0;background:none;padding:0 4px 0 0;font:600 12px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--cs-acc);cursor:pointer}
 .cs-flow button:hover{text-decoration:underline}
 .cs-df{font-family:var(--aws-font,system-ui,sans-serif);display:inline-flex;align-items:center;height:18px;padding:0 6px;border-radius:4px;border:1px solid var(--cs-line);font-size:10.5px;font-weight:650;color:var(--cs-mut);margin-right:6px}
+.cs-rev{display:inline-flex;align-items:center;height:18px;padding:0 6px;border-radius:4px;border:1px dashed var(--cs-line);font-size:10.5px;font-weight:650;letter-spacing:.02em;color:var(--cs-mut);background:none;margin-right:6px}
 .cs-ln.flash{animation:csflash 1.2s ease-out}
 @keyframes csflash{from{background:color-mix(in srgb,var(--cs-acc) 22%,transparent)}to{background:transparent}}
 .cs-sev{display:inline-flex;align-items:center;height:20px;padding:0 7px;border-radius:4px;font-size:11px;font-weight:700;color:#fff;background:var(--sev,#d92d20)}
@@ -319,7 +320,7 @@ export function renderCodeScanner(main) {
   }
 
   function finish(res) {
-    st.scan = res; st.file = ""; st.idx = -1; st.sevOn = new Set(res.findings.some((f) => f.sev !== "info") ? SEVS.filter((v) => v !== "info") : SEVS); st.kindOn = new Set(["secret", "code", "dep"]);
+    st.scan = res; st.file = ""; st.idx = -1; st.sevOn = new Set(SEVS); st.kindOn = new Set(["secret", "code", "dep"]);
     const counts = Object.fromEntries(SEVS.map((s) => [s, res.findings.filter((f) => f.sev === s).length]));
     saveRecent({ full: res.full, sha: res.sha.slice(0, 7), at: res.at, total: res.findings.length, score: repoScore(res.findings), counts });
     if (res.findings.length) st.idx = 0;
@@ -335,12 +336,12 @@ export function renderCodeScanner(main) {
     const counts = Object.fromEntries(SEVS.map((v) => [v, s.findings.filter((f) => f.sev === v).length]));
     const kinds = Object.fromEntries(Object.keys(KIND_LABEL).map((k) => [k, s.findings.filter((f) => f.kind === k).length]));
     const score = repoScore(s.findings);
-    const toGraph = s.findings.filter((f) => f.sev !== "info");
+    const toGraph = s.findings.filter((f) => f.confidence !== "review");
     body.innerHTML = `<div class="cs-sum">
         <span class="repo">${esc(s.full)}</span>${s.sha ? `<span class="sha">${esc(s.branch || "")} @ ${esc(s.sha.slice(0, 7))}</span>` : ""}
         <span class="cs-pill">${fmt(s.scanned)} files scanned</span>${s.skipped ? `<span class="cs-pill" title="Binary, vendored, generated or oversized files are skipped">${fmt(s.skipped)} skipped</span>` : ""}${s.ignored ? `<span class="cs-pill" title="The repository's .darknodeignore file lists these paths as not production code, so they were not scanned">${fmt(s.ignored)} excluded by .darknodeignore</span>` : ""}
         <span class="sp"></span>
-        <span class="cs-score" title="100 means no findings. Each finding lowers the score by its severity; review items do not count.">${score}<small>/ 100</small></span>
+        <span class="cs-score" title="100 means no findings. Each finding lowers the score by its severity; unconfirmed needs-review items still count, but less than a data-flow-confirmed finding.">${score}<small>/ 100</small></span>
         <button class="cs-btn sm" id="csSarif" type="button">Export SARIF</button>
         <button class="cs-btn sm" id="csCsv" type="button">Export CSV</button>
         ${toGraph.length ? `<button class="cs-btn sm" id="csGraph" type="button" title="Record these findings in the Security Graph so they appear in Findings and your exposure score. Review items are left out.">Add ${fmt(toGraph.length)} to graph</button>` : ""}
@@ -401,7 +402,7 @@ export function renderCodeScanner(main) {
   function drawFindings() {
     const el = body.querySelector("#csFind");
     const v = visible();
-    el.innerHTML = v.length ? v.slice(0, 1500).map((f, i) => `<button class="cs-fd ${i === st.idx ? "on" : ""}" data-i="${i}" style="${sevVar(f.sev)}" type="button"><div class="t1"><span class="cs-sev">${SEV_LABEL[f.sev]}</span><span>${esc(f.kind === "dep" ? f.pkg + " " + f.version : f.title)}</span></div><div class="t2">${f.flow ? `<span class="cs-df" title="Traced from where the input enters to where it is used">Data flow</span>` : ""}${f.advisory ? esc(f.advisory) + " · " : ""}${esc(f.path)}:${f.line}</div></button>`).join("") : `<div class="cs-empty">No findings match the selected filters.</div>`;
+    el.innerHTML = v.length ? v.slice(0, 1500).map((f, i) => `<button class="cs-fd ${i === st.idx ? "on" : ""}" data-i="${i}" style="${sevVar(f.sev)}" type="button"><div class="t1"><span class="cs-sev">${SEV_LABEL[f.sev]}</span><span>${esc(f.kind === "dep" ? f.pkg + " " + f.version : f.title)}</span></div><div class="t2">${f.flow ? `<span class="cs-df" title="Traced from where the input enters to where it is used">Data flow</span>` : ""}${f.confidence === "review" ? `<span class="cs-rev" title="The dangerous call is real, but no untrusted input was traced to it — confirm the source before acting">Needs review</span>` : ""}${f.advisory ? esc(f.advisory) + " · " : ""}${esc(f.path)}:${f.line}</div></button>`).join("") : `<div class="cs-empty">No findings match the selected filters.</div>`;
     el.querySelectorAll(".cs-fd").forEach((b) => b.onclick = () => select(+b.dataset.i));
   }
 
@@ -451,7 +452,7 @@ export function renderCodeScanner(main) {
   function noteHtml(x, s) {
     const cwe = x.cwe ? `<a href="https://cwe.mitre.org/data/definitions/${x.cwe}.html" target="_blank" rel="noopener">CWE-${x.cwe}</a>` : "";
     const adv = x.advisory ? `<a href="https://osv.dev/vulnerability/${encodeURIComponent(x.advisory)}" target="_blank" rel="noopener">${esc(x.advisory)}</a>${x.cve ? " · " + esc(x.cve) : ""}` : "";
-    return `<div class="cs-note" data-k="${esc(x.ruleId + "|" + x.line)}" style="${sevVar(x.sev)}"><div class="tt"><span class="cs-sev">${SEV_LABEL[x.sev]}</span><span>${esc(x.kind === "dep" ? x.pkg + " " + x.version + ": " + x.title : x.title)}</span></div>
+    return `<div class="cs-note" data-k="${esc(x.ruleId + "|" + x.line)}" style="${sevVar(x.sev)}"><div class="tt"><span class="cs-sev">${SEV_LABEL[x.sev]}</span>${x.confidence === "review" ? `<span class="cs-rev">Needs review</span>` : x.flow ? `<span class="cs-rev">Confirmed by data flow</span>` : ""}<span>${esc(x.kind === "dep" ? x.pkg + " " + x.version + ": " + x.title : x.title)}</span></div>
       <p><b>Why it matters.</b> ${esc(x.why)}</p>${x.flow ? `<p><b>Data flow.</b> How the input reaches this line:</p><ol class="cs-flow">${x.flow.map((t) => `<li><button type="button" data-goto="${t.line}" title="Show line ${t.line}">L${t.line}</button>${esc(t.label)}</li>`).join("")}</ol>` : ""}<p><b>How to fix.</b> ${esc(x.fix)}</p>
       <p>${[cwe, adv, x.secret && x.ruleId !== "secret.private-key" ? "Value: " + esc(x.secret) : "", x.kind !== "dep" ? `Rule ${esc(x.ruleId)}` : ""].filter(Boolean).join(" · ")}</p>${x.kind !== "dep" ? `<p>Not a real problem here? Put a <b>darknode-ignore</b> comment on the line (or <b>darknode-ignore-next-line</b> above it) with the reason, or list the path in a <b>.darknodeignore</b> file at the repository root.</p>` : ""}</div>`;
   }
