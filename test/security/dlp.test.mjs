@@ -91,6 +91,14 @@ group("dlp: detectors", () => {
     assert.ok(emails.includes("bob@corp.com"));
     assert.notOk(emails.some((e) => e.endsWith(".png")));
   });
+  test("us-phone matches a valid NANP number but not an arbitrary digit run", () => {
+    assert.ok(scan("call 415 555 0172 today").findings.some((f) => f.id === "us-phone"));
+    assert.ok(scan("call (415) 555-0172 today").findings.some((f) => f.id === "us-phone"));
+    // area code starting with 1 is not a valid NANP area code
+    assert.notOk(scan("ref 123 456 7890 end").findings.some((f) => f.id === "us-phone"));
+    // exchange starting with 0/1 is invalid
+    assert.notOk(scan("ref 415 055 0172 end").findings.some((f) => f.id === "us-phone"));
+  });
   test("line and column are reported", () => {
     const f = scan("line one\nline two AKIAIOSFODNN7EXAMPLE here").findings.find((x) => x.id === "aws-key");
     assert.equal(f.line, 2);

@@ -7,7 +7,7 @@
 //
 //   renderDlp(main) -> void
 
-import { scan, redact } from "/js/dataprotect/dlp-engine.js?v=20261013i";
+import { scan, redact } from "/js/dataprotect/dlp-engine.js?v=20261013m";
 
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));

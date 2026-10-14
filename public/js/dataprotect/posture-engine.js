@@ -70,13 +70,18 @@ function headerLower(headers) {
 export function gradeTransport(input) {
   const h = headerLower(input.headers);
   const checks = [];
-  const finalHttps = /^https:/i.test(input.finalUrl || "");
-  const startedHttp = /^http:/i.test(input.requestedUrl || "");
-  checks.push(finalHttps
+  // Whether HTTPS works and whether plain HTTP redirects to it are two distinct
+  // signals: a site can serve HTTPS fine yet not redirect its HTTP endpoint.
+  // Prefer the explicit flags from the probe; fall back to the finalUrl regex so
+  // older callers/tests still behave.
+  const httpsOk = input.httpsOk != null ? !!input.httpsOk : /^https:/i.test(input.finalUrl || "");
+  const httpTested = input.httpTested != null ? !!input.httpTested : /^http:/i.test(input.requestedUrl || "");
+  const httpRedirects = input.httpRedirectsToHttps != null ? !!input.httpRedirectsToHttps : /^https:/i.test(input.finalUrl || "");
+  checks.push(httpsOk
     ? { name: "HTTPS", status: "pass", detail: "The site is served over HTTPS." }
-    : { name: "HTTPS", status: "fail", detail: "The site did not resolve to an HTTPS URL.", advice: "Serve all traffic over TLS and redirect HTTP to HTTPS." });
-  if (startedHttp) {
-    checks.push(finalHttps
+    : { name: "HTTPS", status: "fail", detail: "The site did not respond over HTTPS.", advice: "Serve all traffic over TLS and redirect HTTP to HTTPS." });
+  if (httpTested) {
+    checks.push(httpRedirects
       ? { name: "HTTP to HTTPS redirect", status: "pass", detail: "Plain HTTP redirects to HTTPS." }
       : { name: "HTTP to HTTPS redirect", status: "fail", detail: "Plain HTTP was not redirected to HTTPS.", advice: "Add a 301 redirect from http:// to https://." });
   }

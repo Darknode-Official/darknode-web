@@ -17,12 +17,12 @@
 //   renderLeakprobe(main) -> void
 
 import {
-  assetGraph, extractSourceMapUrl, parseSourceMap,
+  assetGraph, extractImports, extractSourceMapUrl, parseSourceMap,
   scanBytes, classifyPlacement, gradeCors, gradeErrorLeak,
   commonDebugRoutes, gradeRouteResponse, scoreExposure,
   BUNDLE_DETECTORS, BACKEND_DETECTORS,
   detectServices, mergeServices, parseFirebaseConfig, classifyKey,
-} from "/js/dataprotect/leakprobe-engine.js?v=20261013k";
+} from "/js/dataprotect/leakprobe-engine.js?v=20261013m";
 import { dnFetch } from "/js/net.js";
 
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) =>
@@ -203,6 +203,7 @@ export function renderLeakprobe(main) {
       log("Phase A — " + assetUrls.length + " asset(s) to fetch (cap " + MAX_ASSETS + ")");
 
       const fetched = new Set();
+      const discovered = new Set(); // ES-module imports found inside fetched JS, walked transitively below
       const scanAsset = async (url) => {
         if (fetched.has(url)) return; fetched.add(url);
         let r;
@@ -212,6 +213,10 @@ export function renderLeakprobe(main) {
         const before = findings.length;
         pushFindings(findings, scanBytes(body, "client-asset", needles, { detectors: BUNDLE_DETECTORS }), url);
         noteBody(body, url);
+        // follow the ES-module import graph: queue string-literal import targets of JS/modules
+        if (/\.(?:js|mjs)(?:\?|$)/i.test(url) || /javascript|ecmascript/i.test((r.headers && (r.headers["content-type"] || r.headers["Content-Type"])) || "")) {
+          for (const iu of extractImports(body, url)) if (!fetched.has(iu)) discovered.add(iu);
+        }
         // follow a source map if present, and the conventional <url>.map
         const smRef = extractSourceMapUrl(body, url);
         const smUrl = smRef && smRef.url ? smRef.url : (/\.(?:js|mjs|css)$/i.test(url) ? url + ".map" : null);
@@ -220,14 +225,24 @@ export function renderLeakprobe(main) {
             const sm = await dnFetch(smUrl, { raw: true, timeout: 12000, max: ASSET_MAX_BYTES });
             if (sm && sm.body && sm.body.trim().startsWith("{")) {
               const srcs = parseSourceMap(sm.body);
-              for (const s of srcs) pushFindings(findings, scanBytes(s.content, "source-map", needles, { detectors: BUNDLE_DETECTORS }), smUrl + " ‹" + s.source + "›");
-              if (srcs.length) log("  ↳ source map: " + srcs.length + " original source(s) in " + short(smUrl));
+              for (const s of srcs) pushFindings(findings, scanBytes(s.content, "source-map", needles, { detectors: BUNDLE_DETECTORS }), smUrl + " [" + s.source + "]");
+              if (srcs.length) log("  -> source map: " + srcs.length + " original source(s) in " + short(smUrl));
             }
           } catch (_) {}
         }
         assetRows.push({ url, status: r.status, n: findings.length - before });
       };
       await pool(assetUrls, MAX_CONCURRENCY, scanAsset);
+      // Transitively walk imported modules the HTML never declared, up to the asset cap.
+      let impDepth = 0;
+      while (discovered.size && fetched.size < MAX_ASSETS && impDepth < 4) {
+        impDepth++;
+        const next = dedupe([...discovered]).filter((u) => !fetched.has(u)).slice(0, MAX_ASSETS - fetched.size);
+        discovered.clear();
+        if (!next.length) break;
+        log("Phase A — following " + next.length + " imported module(s) (depth " + impDepth + ")");
+        await pool(next, MAX_CONCURRENCY, scanAsset);
+      }
 
       // ---- Phase C/B2: backend probing ----
       if (endpoints.length) log("Backend — probing " + endpoints.length + " endpoint(s)");
@@ -526,8 +541,8 @@ async function captureLive(ctx) {
             input.value = "LEAKPROBE backend check: please reply OK.";
             input.dispatchEvent(new win.Event("input", { bubbles: true }));
             send.click();
-            log("  ↳ sent a probe message to the assistant (/api/chat)");
-          } else { log("  ↳ assistant input not found in frame"); }
+            log("  -> sent a probe message to the assistant (/api/chat)");
+          } else { log("  -> assistant input not found in frame"); }
         } catch (e) { log("  ! assistant drive failed: " + ((e && e.message) || e)); }
         // 2) click a bounded set of SAFE interactive elements to trigger backend calls
         try {
@@ -540,7 +555,7 @@ async function captureLive(ctx) {
             if (!label || UNSAFE_CLICK.test(label)) continue;
             try { el.click(); clicks++; await sleep(280); } catch (_) {}
           }
-          log("  ↳ exercised " + clicks + " safe control(s)");
+          log("  -> exercised " + clicks + " safe control(s)");
         } catch (_) {}
         await sleep(2500); // let late responses land
       } finally {

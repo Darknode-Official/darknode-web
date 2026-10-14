@@ -3,8 +3,24 @@
 
 import { test, assert, group } from "../harness.mjs";
 import {
-  scorePosture, parseHSTS, parseSPF, parseDMARC, certDaysLeft, newestCert, letterGrade, selfTest,
+  scorePosture, parseHSTS, parseSPF, parseDMARC, certDaysLeft, newestCert, letterGrade, selfTest, gradeTransport,
 } from "../../public/js/dataprotect/posture-engine.js";
+
+group("posture: HTTPS vs HTTP-redirect are distinct signals", () => {
+  test("working HTTPS with a non-redirecting HTTP endpoint still passes HTTPS", () => {
+    const r = gradeTransport({ requestedUrl: "http://x.test", httpsOk: true, httpTested: true, httpRedirectsToHttps: false, finalUrl: "https://x.test", headers: {} });
+    assert.equal(r.checks.find((c) => c.name === "HTTPS").status, "pass");
+    assert.equal(r.checks.find((c) => c.name === "HTTP to HTTPS redirect").status, "fail");
+  });
+  test("HTTPS unreachable fails the HTTPS check", () => {
+    const r = gradeTransport({ requestedUrl: "https://x.test", httpsOk: false, httpTested: false, finalUrl: "", headers: {} });
+    assert.equal(r.checks.find((c) => c.name === "HTTPS").status, "fail");
+  });
+  test("legacy finalUrl-only callers still grade HTTPS from the URL", () => {
+    const r = gradeTransport({ requestedUrl: "https://x.test", finalUrl: "https://x.test", headers: {} });
+    assert.equal(r.checks.find((c) => c.name === "HTTPS").status, "pass");
+  });
+});
 
 group("posture: engine self-test", () => {
   test("all in-engine self-test checks pass", () => {

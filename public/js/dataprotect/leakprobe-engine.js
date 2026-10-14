@@ -74,7 +74,7 @@ export function assetGraph(html, baseUrl) {
     if (rel.includes("modulepreload")) add("modules", u);
     else if (rel.includes("stylesheet")) add("styles", u);
     else if (rel.includes("preload")) add("links", u);
-    else if (rel.includes("manifest")) add("configs", u) || out.configs.push(u);
+    else if (rel.includes("manifest")) add("configs", u);
   }
 
   // service-worker registration in inline/linked scripts

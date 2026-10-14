@@ -10,7 +10,7 @@
 
 import {
   analyzeUrl, triageEmail, extractIOCs, parseEmailHeaders, registrableDomain, lookalike,
-} from "/js/dataprotect/phish-engine.js?v=20261013i";
+} from "/js/dataprotect/phish-engine.js?v=20261013m";
 import { dnFetch, dnFetchJSON } from "/js/net.js";
 
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) =>

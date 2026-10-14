@@ -209,6 +209,9 @@ export const DETECTORS = [
   {
     id: 'us-phone', label: 'US phone number', kind: 'pii', severity: 'low',
     re: /(?:\+?1[ .-]?)?\(?\d{3}\)?[ .-]\d{3}[ .-]\d{4}\b/g,
+    // NANP sanity: 10 digits (or 11 with a leading 1); area-code and exchange
+    // first digits must be 2-9. Rejects arbitrary \d{3}-\d{3}-\d{4} digit runs.
+    validate: (m) => { let n = m.replace(/\D/g, ''); if (n.length === 11 && n[0] === '1') n = n.slice(1); return n.length === 10 && n[0] >= '2' && n[3] >= '2'; },
     advice: 'Phone numbers are personal data; mask where not needed.',
   },
   {
@@ -303,7 +306,7 @@ export function scan(text, opts = {}) {
   }
 
   // de-dup overlapping named hits: keep the higher-severity / longer one
-  found.sort((a, b) => a.start - b.start || b.severity.length - a.severity.length);
+  found.sort((a, b) => a.start - b.start || (SEV_RANK[b.severity] || 0) - (SEV_RANK[a.severity] || 0));
   const kept = [];
   for (const f of found) {
     const clash = kept.find((k) => f.start < k.end && f.end > k.start);

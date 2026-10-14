@@ -18,6 +18,9 @@ group("phish: domain helpers", () => {
     assert.equal(registrableDomain("a.b.example.co.uk"), "example.co.uk");
     assert.equal(registrableDomain("mail.google.com"), "google.com");
     assert.equal(registrableDomain("example.com"), "example.com");
+    assert.equal(registrableDomain("www.naver.co.kr"), "naver.co.kr");
+    assert.equal(registrableDomain("shop.alibaba.com.cn"), "alibaba.com.cn");
+    assert.equal(registrableDomain("a.b.site.com.br"), "site.com.br");
   });
   test("levenshtein", () => {
     assert.equal(levenshtein("paypal", "paypa1"), 1);
@@ -40,6 +43,14 @@ group("phish: URL analysis", () => {
     const a = analyzeUrl("https://paypa1.com");
     assert.ok(a.lookalike.near);
     assert.equal(a.lookalike.brand, "paypal");
+  });
+  test("Plain HTTP is only flagged when the user actually typed http://", () => {
+    // scheme-less input is auto-prefixed with http:// for parsing — do not flag it
+    assert.notOk(analyzeUrl("example.com/login").reasons.some((r) => /Plain HTTP/.test(r.t)));
+    // an explicit http:// URL is flagged
+    assert.ok(analyzeUrl("http://example.com/login").reasons.some((r) => /Plain HTTP/.test(r.t)));
+    // https is never flagged
+    assert.notOk(analyzeUrl("https://example.com").reasons.some((r) => /Plain HTTP/.test(r.t)));
   });
   test("userinfo obfuscation + raw IP", () => {
     const a = analyzeUrl("http://support@198.51.100.9/login");

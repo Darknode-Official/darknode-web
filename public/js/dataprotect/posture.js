@@ -8,7 +8,7 @@
 //
 //   renderPosture(main) -> void
 
-import { scorePosture, newestCert } from "/js/dataprotect/posture-engine.js?v=20261013i";
+import { scorePosture, newestCert } from "/js/dataprotect/posture-engine.js?v=20261013m";
 import { fetchCertRows } from "/js/dataprotect/ct-fetch.js?v=20261013i";
 import { dnFetch } from "/js/net.js";
 
@@ -152,10 +152,17 @@ export function renderPosture(main) {
 
     const headers = (https && https.headers) || (http && http.headers) || {};
     const httpReached = !!http;
+    const httpFinal = http ? (http.finalUrl || http.url || "") : "";
+    const httpsFinal = https ? (https.finalUrl || https.url || "") : "";
     const input = {
       domain,
       requestedUrl: httpReached ? "http://" + domain : "https://" + domain,
-      finalUrl: httpReached ? (http.finalUrl || http.url) : (https.finalUrl || https.url),
+      // Grade HTTPS on whether the HTTPS endpoint actually responded, and the
+      // redirect separately on where the HTTP endpoint ended up.
+      httpsOk: !!https,
+      httpTested: httpReached,
+      httpRedirectsToHttps: httpReached ? /^https:/i.test(httpFinal) : false,
+      finalUrl: httpsFinal || httpFinal,
       headers,
       spfTxts: val(spfP) || [], dmarcTxts: val(dmarcP) || [],
       cert: val(certP), securityTxt: val(stxtP) || { present: false },

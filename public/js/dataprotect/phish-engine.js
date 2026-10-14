@@ -38,10 +38,41 @@ export const RISKY_TLDS = new Set([
   "stream", "download", "win", "bid", "party", "science", "cam", "rest", "quest",
 ]);
 
-// A short list of multi-label public suffixes so eTLD+1 is sane for the common cases.
+// A curated list of common multi-label public suffixes so eTLD+1 is sane for
+// the ccTLDs most often seen in phishing. (Not the full Public Suffix List — the
+// goal is sensible registrable-domain extraction without shipping ~200 KB.)
 const TWO_LEVEL = new Set([
-  "co.uk", "org.uk", "gov.uk", "ac.uk", "com.au", "net.au", "org.au", "co.nz",
-  "co.jp", "com.br", "com.mx", "co.in", "co.za", "com.sg", "com.hk", "com.tr",
+  // UK
+  "co.uk", "org.uk", "gov.uk", "ac.uk", "me.uk", "net.uk", "ltd.uk", "plc.uk", "sch.uk", "nhs.uk", "police.uk",
+  // Australia / NZ
+  "com.au", "net.au", "org.au", "edu.au", "gov.au", "id.au", "asn.au",
+  "co.nz", "net.nz", "org.nz", "govt.nz", "ac.nz", "geek.nz",
+  // Japan / Korea / China / HK / TW / SG / India
+  "co.jp", "or.jp", "ne.jp", "go.jp", "ac.jp", "ad.jp", "gr.jp",
+  "co.kr", "or.kr", "ne.kr", "go.kr", "re.kr", "pe.kr",
+  "com.cn", "net.cn", "org.cn", "gov.cn", "edu.cn", "ac.cn",
+  "com.hk", "org.hk", "net.hk", "edu.hk", "gov.hk", "idv.hk",
+  "com.tw", "org.tw", "net.tw", "gov.tw", "edu.tw", "idv.tw",
+  "com.sg", "org.sg", "net.sg", "edu.sg", "gov.sg", "per.sg",
+  "co.in", "net.in", "org.in", "gen.in", "firm.in", "ind.in", "gov.in", "ac.in", "edu.in", "res.in",
+  // Latin America
+  "com.br", "net.br", "org.br", "gov.br", "edu.br",
+  "com.mx", "org.mx", "gob.mx", "edu.mx",
+  "com.ar", "net.ar", "org.ar", "gob.ar", "edu.ar",
+  "com.co", "net.co", "org.co", "gov.co", "edu.co",
+  // Europe
+  "co.za", "org.za", "net.za", "gov.za", "ac.za",
+  "com.tr", "net.tr", "org.tr", "gov.tr", "edu.tr",
+  "com.ua", "net.ua", "org.ua", "gov.ua",
+  "com.ru", "net.ru", "org.ru", "gov.ru", "edu.ru",
+  "com.pl", "net.pl", "org.pl", "gov.pl", "edu.pl",
+  "co.il", "org.il", "net.il", "gov.il", "ac.il",
+  "com.es", "org.es", "edu.es", "gob.es",
+  "com.ph", "net.ph", "org.ph", "gov.ph", "edu.ph",
+  "com.my", "net.my", "org.my", "gov.my", "edu.my",
+  "co.id", "or.id", "web.id", "go.id", "ac.id",
+  "com.vn", "net.vn", "org.vn", "gov.vn", "edu.vn",
+  "com.sa", "net.sa", "org.sa", "gov.sa", "edu.sa",
 ]);
 
 // Known URL-shortener hosts (unfurl recommended).
@@ -66,7 +97,8 @@ export function analyzeUrl(raw) {
   const out = { input: raw, host: "", scheme: "", reasons: [], severity: "info" };
   let u;
   let s = String(raw || "").trim();
-  if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(s)) s = "http://" + s; // tolerate scheme-less
+  const hadScheme = /^[a-z][a-z0-9+.-]*:\/\//i.test(s);
+  if (!hadScheme) s = "http://" + s; // tolerate scheme-less
   try { u = new URL(s); } catch (_) { out.reasons.push({ w: 3, t: "Unparseable URL." }); out.severity = "medium"; return out; }
   out.scheme = u.protocol.replace(":", "");
   out.host = u.hostname.toLowerCase();
@@ -75,7 +107,7 @@ export function analyzeUrl(raw) {
   const reg = registrableDomain(out.host);
   out.registrable = reg;
 
-  if (out.scheme === "http") out.reasons.push({ w: 1, t: "Plain HTTP (not encrypted)." });
+  if (hadScheme && out.scheme === "http") out.reasons.push({ w: 1, t: "Plain HTTP (not encrypted)." });
   if (u.username || u.password) out.reasons.push({ w: 4, t: `Embedded credentials in the URL (userinfo before @). The real host is "${out.host}".` });
   if (/^\d{1,3}(\.\d{1,3}){3}$/.test(out.host)) out.reasons.push({ w: 3, t: "The link points at a raw IP address, not a domain." });
   if (out.host.startsWith("xn--") || out.host.includes(".xn--")) out.reasons.push({ w: 4, t: "Punycode host (xn--): possible homograph/lookalike domain." });
@@ -215,7 +247,6 @@ export function triageEmail(raw) {
   if (fromReg && replyTo && registrableDomain(replyTo) !== fromReg) add(2, `Reply-To domain (${replyTo}) differs from From (${fromReg}) — replies would go elsewhere.`);
 
   // display-name spoofing
-  const nameLook = lookalike(name.toLowerCase().replace(/[^a-z0-9.]/g, ""));
   const brandInName = BRANDS.find((b) => name.toLowerCase().includes(b));
   if (brandInName && fromReg && !fromReg.includes(brandInName)) add(4, `Display name mentions "${brandInName}" but the sending domain is ${fromReg || "unknown"}.`);
   const fromLook = fromReg ? lookalike(fromDomain) : { near: false, impersonation: false };
