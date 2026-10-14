@@ -16,7 +16,7 @@ export function renderWebSocketTester(container) {
   // Connection
   h += '<div style="background:#0c1020;border:1px solid #1a2a44;border-radius:6px;padding:16px;margin-bottom:12px;">';
   h += '<div style="display:flex;gap:8px;margin-bottom:8px;">';
-  h += '<input id="ws-url" style="flex:1;background:#080c14;border:1px solid #1a2a44;border-radius:4px;color:#c8d6e5;font-family:monospace;font-size:12px;padding:8px 12px;" placeholder="wss://echo.websocket.org" value="wss://echo.websocket.org">';
+  h += '<input id="ws-url" style="flex:1;background:#080c14;border:1px solid #1a2a44;border-radius:4px;color:#c8d6e5;font-family:monospace;font-size:12px;padding:8px 12px;" placeholder="wss://echo.websocket.org">';
   h += '<button id="ws-connect-btn" onclick="_wsConnect()" style="background:#00ff8822;color:#00ff88;border:1px solid #00ff8844;padding:8px 16px;font-family:monospace;font-size:11px;cursor:pointer;border-radius:4px;">Connect</button>';
   h += '<button onclick="_wsDisconnect()" style="background:#ff444422;color:#ff4444;border:1px solid #ff444444;padding:8px 12px;font-family:monospace;font-size:11px;cursor:pointer;border-radius:4px;">Close</button>';
   h += '</div>';

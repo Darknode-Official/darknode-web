@@ -347,7 +347,7 @@ export function renderWirelessLab(main) {
       '<div class="wl-form-group"><label class="wl-label">Captive Portal</label>' +
       '<select class="wl-select" id="wl-rogue-portal"><option>None</option><option>Login page clone</option><option>Firmware update</option><option>Terms of service</option><option>OAuth phishing</option></select></div>' +
       '<div class="wl-form-group"><label class="wl-label">DHCP Range</label>' +
-      '<input class="wl-input" id="wl-rogue-dhcp" value="192.168.1.100-200"></div>' +
+      '<input class="wl-input" id="wl-rogue-dhcp" placeholder="e.g. 192.168.1.100-200"></div>' +
       '<div class="wl-form-group"><label class="wl-label">DNS Spoofing</label>' +
       '<select class="wl-select" id="wl-rogue-dns"><option>Off</option><option>Redirect all to captive portal</option><option>Selective domain spoofing</option></select></div>' +
       '</div>' +

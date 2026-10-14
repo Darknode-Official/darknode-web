@@ -6206,7 +6206,7 @@ export function renderPrometheus(main) {
     h += '</div>';
     h += '<div class="pm-form-group">';
     h += '<label class="pm-label">DATE</label>';
-    h += '<input id="pmBdaDate" class="pm-input" type="text" value="2026-09-13">';
+    h += '<input id="pmBdaDate" class="pm-input" type="text" placeholder="YYYY-MM-DD">';
     h += '</div>';
     h += '</div>';
     h += '<div class="pm-form-row">';
@@ -7253,7 +7253,7 @@ export function renderPrometheus(main) {
     html += '<div class="pm-mono" style="margin-bottom:10px">Assemble a formatted intelligence product from live dataset aggregates and export it as JSON or CSV (client-side, no network).</div>';
     html += '<div class="pm-grid-2">';
     html += '<div class="pm-card"><div class="pm-card-title">REPORT PARAMETERS</div>';
-    html += '<div class="pm-form-group"><div class="pm-label">TITLE</div><input type="text" class="pm-input" id="pm-rep-title" value="THREAT INTELLIGENCE SUMMARY"></div>';
+    html += '<div class="pm-form-group"><div class="pm-label">TITLE</div><input type="text" class="pm-input" id="pm-rep-title" placeholder="Report title"></div>';
     html += '<div class="pm-form-group"><div class="pm-label">CLASSIFICATION</div><select class="pm-select" id="pm-rep-class"><option>UNCLASSIFIED</option><option>CONFIDENTIAL</option><option>SECRET</option><option selected>TOP SECRET // SCI</option></select></div>';
     html += '<div class="pm-label">SECTIONS</div><div class="pm-checkbox-group">';
     for (var i = 0; i < secs.length; i++) html += '<label class="pm-checkbox-label"><input type="checkbox" data-rep-sec="' + secs[i][0] + '" checked> ' + esc(secs[i][1]) + '</label>';

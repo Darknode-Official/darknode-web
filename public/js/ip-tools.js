@@ -315,7 +315,7 @@ export function renderIPTools(container) {
         <div class="ip-card">
           <h3>IPv4 Subnet Calculator</h3>
           <div style="display:flex;gap:8px;align-items:end;flex-wrap:wrap;">
-            <div style="flex:1;min-width:180px;"><label class="ip-label">IPv4 Address</label><input class="ip-input" id="sub-ip" placeholder="192.168.1.0" value="192.168.1.100"></div>
+            <div style="flex:1;min-width:180px;"><label class="ip-label">IPv4 Address</label><input class="ip-input" id="sub-ip" placeholder="192.168.1.0"></div>
             <div style="width:100px;"><label class="ip-label">CIDR (/)</label><input class="ip-input" id="sub-cidr" placeholder="24" value="24" type="number" min="0" max="32"></div>
             <button class="ip-btn" id="sub-calc">Calculate</button>
           </div>

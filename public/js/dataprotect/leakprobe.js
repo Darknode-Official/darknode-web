@@ -121,18 +121,18 @@ export function renderLeakprobe(main) {
       </div>
       <div class="lp-row">
         <label class="lp-lab" for="lpUrl" data-explain="lp.target">Target URL</label>
-        <input id="lpUrl" type="text" placeholder="https://your-site.example" value="https://darknode.ai" spellcheck="false" autocapitalize="off">
-        <p class="lp-help">The page whose client bundle will be scanned.</p>
+        <input id="lpUrl" type="text" placeholder="https://your-site.example" spellcheck="false" autocapitalize="off">
+        <p class="lp-help">The page whose client bundle will be scanned. Leave blank to scan this site.</p>
       </div>
       <div class="lp-row">
         <label class="lp-lab" for="lpEndpoints" data-explain="lp.endpoints">Backend endpoints (optional, one per line)</label>
-        <textarea id="lpEndpoints" placeholder="https://api.example.com/chat" spellcheck="false">${esc(defaultEndpoints)}</textarea>
-        <p class="lp-help">GET-probed for echoed secrets, verbose errors and CORS exposure. Pre-filled with this site's AI backend when known.</p>
+        <textarea id="lpEndpoints" placeholder="https://api.example.com/chat" spellcheck="false"></textarea>
+        <p class="lp-help">GET-probed for echoed secrets, verbose errors and CORS exposure. When you scan this site, its AI backend is included automatically.</p>
       </div>
       <div class="lp-row">
-        <label class="lp-lab" for="lpSecrets" data-explain="lp.secrets">Secrets to track (optional, one per line)</label>
-        <textarea id="lpSecrets" placeholder="Paste a specific key to hunt for, e.g. your Gemini key" spellcheck="false"></textarea>
-        <p class="lp-help">Exact-match needles. Kept in memory only, masked in the report, never stored or sent anywhere but your own proxy to your own target. Generic AI keys (AIza…, sk-…, sk-ant-…) are detected automatically regardless.</p>
+        <label class="lp-lab" for="lpSecrets" data-explain="lp.secrets">Secrets to track (optional)</label>
+        <textarea id="lpSecrets" placeholder="Optional — paste a key to confirm by exact match" spellcheck="false"></textarea>
+        <p class="lp-help">You do not need to paste anything. The scan already detects every API key on its own — Google (AIza…), OpenAI (sk-…), Anthropic (sk-ant-…), AWS, Stripe, GitHub, Slack, Twilio, SendGrid, private keys and JWTs — without you knowing or entering the key. This field only adds an exact-match needle for one specific key you want confirmed by name; it is kept in memory, masked in the report, and never stored or sent anywhere but your own proxy to your own target.</p>
       </div>
       <div class="lp-bar">
         <button class="lp-btn" id="lpRun" disabled>Run exposure scan</button>
@@ -157,9 +157,14 @@ export function renderLeakprobe(main) {
 
   async function run(withRoutes) {
     if (busy) return;
-    const target = ($("#lpUrl").value || "").trim();
+    let target = ($("#lpUrl").value || "").trim();
+    if (!target) target = locOrigin();   // blank = scan this site
     if (!/^https?:\/\//i.test(target)) { toast("Enter a full target URL starting with http(s)://"); return; }
-    const endpoints = ($("#lpEndpoints").value || "").split(/\n+/).map((s) => s.trim()).filter((s) => /^https?:\/\//i.test(s));
+    let endpoints = ($("#lpEndpoints").value || "").split(/\n+/).map((s) => s.trim()).filter((s) => /^https?:\/\//i.test(s));
+    // When scanning this site and no endpoints were given, include its known AI backend
+    // automatically — no need to paste anything for the common case.
+    const sameSite = (() => { try { return new URL(target).origin === locOrigin(); } catch (_) { return false; } })();
+    if (!endpoints.length && sameSite && defaultEndpoints) endpoints = defaultEndpoints.split(/\n+/).map((s) => s.trim()).filter((s) => /^https?:\/\//i.test(s));
     const needles = ($("#lpSecrets").value || "").split(/\n+/).map((s) => s.trim()).filter((s) => s.length >= 8);
 
     busy = true; runBtn.disabled = routeBtn.disabled = captureBtn.disabled = true; prog.textContent = ""; out.innerHTML = "";

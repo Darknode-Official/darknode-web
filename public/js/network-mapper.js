@@ -491,7 +491,7 @@ export function renderNetworkMapper(main) {
 
   function renderVLSMTab() {
     var html = '<div class="nm-vlsm"><h3>VLSM Calculator</h3>';
-    html += '<div class="nm-vlsm-input"><label class="pc-label">Base Network</label><input class="pc-input" id="nm-vlsm-base" value="192.168.1.0/24">';
+    html += '<div class="nm-vlsm-input"><label class="pc-label">Base Network</label><input class="pc-input" id="nm-vlsm-base" placeholder="e.g. 192.168.1.0/24">';
     html += '<h4>Subnets</h4><div id="nm-vlsm-list">';
     for (var i = 0; i < vlsmInput.length; i++) {
       html += '<div class="nm-vlsm-row"><input class="pc-input" value="' + esc(vlsmInput[i].name) + '" data-idx="' + i + '" data-field="name"><input class="pc-input" type="number" value="' + vlsmInput[i].hosts + '" data-idx="' + i + '" data-field="hosts" min="1" style="width:80px"><button class="btn nm-vlsm-del" data-idx="' + i + '">X</button></div>';

@@ -1843,7 +1843,7 @@ function renderApp(user) {
     requestAnimationFrame(() => { main.style.minHeight = ""; });
     if (sec && sec !== "home" && sec !== "settings") { try { let r = JSON.parse(localStorage.getItem("dn_recent")||"[]"); r = r.filter(s=>s!==sec); r.unshift(sec); r = r.slice(0,8); localStorage.setItem("dn_recent", JSON.stringify(r)); } catch(_){} }
     if (sec === "tools") { main.innerHTML = `<div class="pg-head"><div><h1 class="pg-h1">Tools</h1><p class="muted pg-sub">Search, filter, and open any tool in the catalog.</p></div></div><div id="tools"></div>`; import("/js/tools.js?v=20261013c").then(m => live() && m.renderTools(document.getElementById("tools"))); }
-    else if (sec === "utils") { import("/js/utils.js?v=20261013b").then(m => live() && m.renderUtils(main)); }
+    else if (sec === "utils") { import("/js/utils.js?v=20261013m").then(m => live() && m.renderUtils(main)); }
     else if (sec === "ai") { import("/js/webai.js?v=20261013h").then(m => live() && m.renderAI(main)); }
     else if (sec === "math") { _prevCleanup = renderQuelvra(main, more); }
     else if (sec === "payloads") { import("/js/labs.js?v=20261003a").then(m => live() && m.renderPayloads(main)); }
@@ -1861,9 +1861,9 @@ function renderApp(user) {
     else if (sec === "engines") { import("/js/arsenal.js?v=20260927b").then(m => live() && m.renderEngines(main)); }
     else if (sec === "packetcraft") { import("/js/packet-crafter.js").then(m => live() && m.renderPacketCrafter(main)); }
     else if (sec === "binanalyze") { import("/js/binary-analyzer.js?v=20260927b").then(m => live() && m.renderBinaryAnalyzer(main)); }
-    else if (sec === "netmap") { import("/js/network-mapper.js").then(m => live() && m.renderNetworkMapper(main)); }
+    else if (sec === "netmap") { import("/js/network-mapper.js?v=20261013m").then(m => live() && m.renderNetworkMapper(main)); }
     else if (sec === "loganalyze") { import("/js/log-analyzer.js").then(m => live() && m.renderLogAnalyzer(main)); }
-    else if (sec === "credaudit") { import("/js/credential-auditor.js?v=20261013b").then(m => live() && m.renderCredentialAuditor(main)); }
+    else if (sec === "credaudit") { import("/js/credential-auditor.js?v=20261013m").then(m => live() && m.renderCredentialAuditor(main)); }
     else if (sec === "memforensics") { import("/js/memory-forensics.js?v=20260924b").then(m => live() && m.renderMemoryForensics(main)); }
     else if (sec === "stego") { import("/js/steganography.js").then(m => live() && m.renderSteganography(main)); }
     else if (sec === "regexlab") { import("/js/regex-lab.js").then(m => live() && m.renderRegexLab(main)); }
@@ -1873,7 +1873,7 @@ function renderApp(user) {
     else if (sec === "addressintel") { import("/js/address-intel.js?v=20261013b").then(m => live() && m.renderAddressIntel(main)); }
     else if (sec === "incidents") { import("/js/incident-tracker.js").then(m => live() && m.renderIncidentTracker(main)); }
     else if (sec === "firewall") { import("/js/firewall-builder.js?v=20261013b").then(m => live() && m.renderFirewallBuilder(main)); }
-    else if (sec === "apitester") { import("/js/api-tester.js?v=20261013b").then(m => live() && m.renderAPITester(main)); }
+    else if (sec === "apitester") { import("/js/api-tester.js?v=20261013m").then(m => live() && m.renderAPITester(main)); }
     else if (sec === "sandbox") { import("/js/malware-sandbox.js").then(m => live() && m.renderMalwareSandbox(main)); }
     else if (sec === "compliance") { import("/js/compliance-checker.js?v=20260924a").then(m => live() && m.renderComplianceChecker(main)); }
     else if (sec === "attacksim") { import("/js/attack-simulator.js").then(m => live() && m.renderAttackSimulator(main)); }
@@ -1881,12 +1881,12 @@ function renderApp(user) {
     else if (sec === "subdomains") { import("/js/subdomain-finder.js?v=20261007a").then(m => live() && m.renderSubdomainFinder(main)); }
     else if (sec === "mobilesec") { import("/js/mobile-security-lab.js").then(m => live() && m.renderMobileSecurityLab(main)); }
     else if (sec === "apiscan") { import("/js/api-security-scanner.js?v=20260924b").then(m => live() && m.renderAPISecurityScanner(main)); }
-    else if (sec === "wirelesslab") { import("/js/wireless-lab.js").then(m => live() && m.renderWirelessLab(main)); }
+    else if (sec === "wirelesslab") { import("/js/wireless-lab.js?v=20261013m").then(m => live() && m.renderWirelessLab(main)); }
     else if (sec === "pentestconsole") { import("/js/pentest-console.js?v=20261013b").then(m => live() && m.renderPentestConsole(main)); }
     else if (sec === "reveng") { import("/js/reverse-engineering.js").then(m => live() && m.renderReverseEngineering(main)); }
     else if (sec === "darkwebosint") { import("/js/darkweb-osint.js").then(m => live() && m.renderDarkwebOsint(main)); }
     else if (sec === "cyberrange") { import("/js/cyber-range.js").then(m => live() && m.renderCyberRange(main)); }
-    else if (sec === "prometheus") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading…</p>"; const _s=sec; import("/js/prometheus-web.js?v=20260924c").then(m => { if(curSec!==_s)return; m.renderPrometheus(main); _prevCleanup = m.cleanupPrometheus; }); }
+    else if (sec === "prometheus") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading…</p>"; const _s=sec; import("/js/prometheus-web.js?v=20261013m").then(m => { if(curSec!==_s)return; m.renderPrometheus(main); _prevCleanup = m.cleanupPrometheus; }); }
     else if (sec === "sentineleye") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading…</p>"; if(!document.querySelector('script[src^="/js/threat-api.js"]')){var s1=document.createElement("script");s1.src="/js/threat-api.js?v=20261007a";document.head.appendChild(s1)}if(!document.querySelector('script[src="/js/threat-map.js"]')){var s2=document.createElement("script");s2.src="/js/threat-map.js";document.head.appendChild(s2)} const _s=sec; import("/js/sentinel-eye.js?v=20261012a").then(m => { if(curSec!==_s)return; m.renderSentinelEye(main); _prevCleanup = m.cleanupSentinelEye; }); }
     else if (sec === "exploitdev") { import("/js/exploit-writer.js").then(m => live() && m.renderExploitWriter(main)); }
     else if (sec === "secdash") { import("/js/security-dashboard.js?v=20260924a").then(m => live() && m.renderSecurityDashboard(main)); }
@@ -1894,7 +1894,7 @@ function renderApp(user) {
     else if (sec === "containers") { import("/js/container-security.js").then(m => live() && m.renderContainerSecurity(main)); }
     else if (sec === "cracklab") { import("/js/password-cracking-lab.js").then(m => live() && m.renderPasswordCrackingLab(main)); }
     else if (sec === "hydra") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading…</p>"; import("/js/hydra-engine.js?v=20261008b").then(m => live() && m.renderHydra(main)); }
-    else if (sec === "aegis") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading…</p>"; import("/js/aegis-web.js?v=20261012a").then(m => live() && m.renderAegis(main)); }
+    else if (sec === "aegis") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading…</p>"; import("/js/aegis-web.js?v=20261013m").then(m => live() && m.renderAegis(main)); }
     else if (sec === "vanguard") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading…</p>"; import("/js/vanguard.js?v=20261012a").then(m => live() && m.renderVanguard(main)); }
     else if (sec === "phantom") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading…</p>"; const _s=sec; import("/js/phantom.js?v=20261008b").then(m => { if(curSec!==_s)return; m.renderPhantom(main); _prevCleanup = m.cleanupPhantom; }); }
     else if (sec === "citadel") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading…</p>"; const _s=sec; import("/js/citadel.js?v=20261012a").then(m => { if(curSec!==_s)return; m.renderCitadel(main); _prevCleanup = m.cleanupCitadel; }); }
@@ -1936,7 +1936,7 @@ function renderApp(user) {
     else if (sec === "emailheader") { import("/js/email-header.js?v=20260924b").then(m => live() && m.renderEmailHeader(main)); }
     else if (sec === "iocextractor") { import("/js/ioc-extractor.js?v=20260924b").then(m => live() && m.renderIOCExtractor(main)); }
     else if (sec === "dossier") { import("/js/target-dossier.js").then(m => live() && m.renderDossier(main)); }
-    else if (sec === "payloadstudio") { import("/js/payload-studio.js").then(m => live() && m.renderPayloadStudio(main)); }
+    else if (sec === "payloadstudio") { import("/js/payload-studio.js?v=20261013m").then(m => live() && m.renderPayloadStudio(main)); }
     else if (sec === "sigma") { import("/js/sigma-builder.js?v=20261013b").then(m => live() && m.renderSigmaBuilder(main)); }
     else if (sec === "iocenrich") { import("/js/ioc-enrichment.js").then(m => live() && m.renderIocEnrichment(main)); }
     else if (sec === "embedsdk") { import("/js/embed-sdk.js").then(m => live() && m.renderEmbedSDK(main)); }
@@ -1968,7 +1968,7 @@ function renderApp(user) {
     else if (sec === "forensicstoolkit") { import("/js/forensics-toolkit.js").then(m => live() && m.renderForensicsToolkit(main)); }
     else if (sec === "hashsuite") { import("/js/hash-suite.js").then(m => live() && m.renderHashSuite(main)); }
     else if (sec === "httpinspector") { import("/js/http-inspector.js?v=20261013b").then(m => live() && m.renderHttpInspector(main)); }
-    else if (sec === "iptools") { import("/js/ip-tools.js").then(m => live() && m.renderIPTools(main)); }
+    else if (sec === "iptools") { import("/js/ip-tools.js?v=20261013m").then(m => live() && m.renderIPTools(main)); }
     else if (sec === "networktools") { import("/js/network-tools.js").then(m => live() && m.renderNetworkTools(main)); }
     else if (sec === "packetanalyzer") { import("/js/packet-analyzer.js?v=20260924b").then(m => live() && m.renderPacketAnalyzer(main)); }
     else if (sec === "passwordtools") { import("/js/password-tools.js?v=20260924b").then(m => live() && m.renderPasswordTools(main)); }
@@ -1976,13 +1976,13 @@ function renderApp(user) {
     else if (sec === "riskcalculator") { import("/js/risk-calculator.js?v=20260924b").then(m => live() && m.renderRiskCalculator(main)); }
     else if (sec === "securityquiz") { import("/js/security-quiz.js?v=20260928a").then(m => live() && m.renderSecurityQuiz(main)); }
     else if (sec === "securityscanner") { import("/js/security-scanner.js?v=20261013a").then(m => live() && m.renderSecurityScanner(main)); }
-    else if (sec === "subnetvisualizer") { import("/js/subnet-visualizer.js?v=20260929a").then(m => live() && m.renderSubnetVisualizer(main)); }
+    else if (sec === "subnetvisualizer") { import("/js/subnet-visualizer.js?v=20261013m").then(m => live() && m.renderSubnetVisualizer(main)); }
     else if (sec === "threatdashboard") { import("/js/threat-dashboard.js?v=20261013b").then(m => live() && m.renderThreatDashboard(main)); }
     else if (sec === "timelineviz") { import("/js/timeline-viz.js").then(m => live() && m.renderTimelineViz(main)); }
     else if (sec === "vulndb") { import("/js/vulnerability-db.js?v=20260924b").then(m => live() && m.renderVulnerabilityDB(main)); }
     else if (sec === "asnexplorer") { import("/js/asn-explorer.js?v=20261013b").then(m => live() && m.renderAsnExplorer(main)); }
     else if (sec === "breachlookup") { import("/js/breach-lookup.js").then(m => live() && m.renderBreachLookup(main)); }
-    else if (sec === "corstester") { import("/js/cors-tester.js?v=20261013b").then(m => live() && m.renderCorsTester(main)); }
+    else if (sec === "corstester") { import("/js/cors-tester.js?v=20261013m").then(m => live() && m.renderCorsTester(main)); }
     else if (sec === "cvesearch") { import("/js/cve-search.js?v=20261013b").then(m => live() && m.renderCveSearch(main)); }
     else if (sec === "darknetradar") { import("/js/darknet-radar.js?v=20261013c").then(m => live() && m.renderDarknetRadar(main)); }
     else if (sec === "dnsenum") { import("/js/dns-enum.js?v=20260927b").then(m => live() && m.renderDNSEnum(main)); }
@@ -1996,7 +1996,7 @@ function renderApp(user) {
     else if (sec === "sslinspector") { import("/js/ssl-inspector.js?v=20261013b").then(m => live() && m.renderSSLInspector(main)); }
     else if (sec === "techfingerprint") { import("/js/tech-fingerprint.js").then(m => live() && m.renderTechFingerprint(main)); }
     else if (sec === "trafficanalyzer") { import("/js/traffic-analyzer.js?v=20260927b").then(m => live() && m.renderTrafficAnalyzer(main)); }
-    else if (sec === "websockettester") { import("/js/websocket-tester.js").then(m => live() && m.renderWebSocketTester(main)); }
+    else if (sec === "websockettester") { import("/js/websocket-tester.js?v=20261013m").then(m => live() && m.renderWebSocketTester(main)); }
     else if (sec === "whoisrecon") { import("/js/whois-recon.js?v=20261013b").then(m => live() && m.renderWhoisRecon(main)); }
     else if (sec === "learn") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Learn Hub...</p>"; loadLearnHub().then(m => live() && m.renderLearnHub(main)); }
     else if (sec === "learndo") { import("/js/learndo.js?v=20261009a").then(m => live() && m.renderLearnDo(main)); }
@@ -2006,7 +2006,7 @@ function renderApp(user) {
     else if (sec === "dlguide") { import("/js/getapp.js?v=20261004a").then(m => live() && m.renderDownloadDocs(main)); }
     else if (sec === "api") { import("/js/api.js?v=20261007a").then(m => live() && m.renderAPI(main, user)); }
     else if (sec === "docs") { import("/js/docs.js?v=20261011a").then(m => live() && m.renderDocs(main)); }
-    else if (sec === "veil") { import("/js/labs/veil.js?v=20261011a").then(m => live() && m.renderVeil(main)); }
+    else if (sec === "veil") { import("/js/labs/veil.js?v=20261013m").then(m => live() && m.renderVeil(main)); }
     else if (sec === "strongroom") { import("/js/strongroom.js?v=20261011a").then(m => live() && m.renderStrongroom(main)); }
     else if (sec === "vault") { import("/js/vault.js?v=20261013d").then(m => live() && m.renderVault(main)); }
     else if (sec === "sanctions") { import("/js/finsec/sanctions.js?v=20261013i").then(m => live() && m.renderSanctions(main)); }
@@ -2015,7 +2015,7 @@ function renderApp(user) {
     else if (sec === "posture") { import("/js/dataprotect/posture.js?v=20261013i").then(m => live() && m.renderPosture(main)); }
     else if (sec === "tlsfleet") { import("/js/dataprotect/tlsfleet.js?v=20261013i").then(m => live() && m.renderTlsFleet(main)); }
     else if (sec === "phishtriage") { import("/js/dataprotect/phish.js?v=20261013i").then(m => live() && m.renderPhish(main)); }
-    else if (sec === "leakprobe") { import("/js/dataprotect/leakprobe.js?v=20261013l").then(m => live() && m.renderLeakprobe(main)); }
+    else if (sec === "leakprobe") { import("/js/dataprotect/leakprobe.js?v=20261013m").then(m => live() && m.renderLeakprobe(main)); }
     else if (sec === "setup") renderSetup(main, more);
     else if (sec === "settings") renderSettingsPage(main, user, isOwner, more);
     else if (sec === "admin") { import("/js/admin.js?v=20261013i").then(m => live() && m.renderAdmin(main, user)); }

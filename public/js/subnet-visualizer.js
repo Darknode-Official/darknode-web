@@ -419,7 +419,7 @@ Class:       ${ipClass} (${shortType})</div>
       <div class="sv-card">
         <h3>Supernetting / Aggregation</h3>
         <p style="color:#888;font-size:.8rem;margin:0 0 12px">Enter multiple CIDR ranges (one per line) to find the smallest supernet that covers all of them.</p>
-        <textarea class="sv-input" id="sv-supernet-input" rows="4" placeholder="192.168.1.0/24&#10;192.168.2.0/24&#10;192.168.3.0/24">192.168.0.0/24\n192.168.1.0/24</textarea>
+        <textarea class="sv-input" id="sv-supernet-input" rows="4" placeholder="192.168.1.0/24&#10;192.168.2.0/24&#10;192.168.3.0/24"></textarea>
         <button class="sv-btn" style="margin-top:8px" onclick="(function(){
           const ta = document.getElementById('sv-supernet-input');
           const cidrs = ta.value.split(/[\\n,]+/).map(s=>s.trim()).filter(Boolean);

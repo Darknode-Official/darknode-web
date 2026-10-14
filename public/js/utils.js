@@ -210,7 +210,7 @@ export function renderUtils(main) {
       <div class="util-kv"><span>SHA-512</span><code id="h512" class="util-val"></code></div>`),
     card("JWT decoder", "Decode", `<textarea class="in" id="jwtin" rows="2" placeholder="paste a JWT (eyJ...)"></textarea>
       <pre class="out" id="jwtout" style="margin-top:8px">header + payload appear here</pre>`),
-    card("Reverse shell", "Generate", `<div class="util-row"><input class="in mono" id="rsip" value="10.0.0.1" placeholder="LHOST"><input class="in mono" id="rsport" value="4444" placeholder="LPORT" style="max-width:90px">
+    card("Reverse shell", "Generate", `<div class="util-row"><input class="in mono" id="rsip" placeholder="LHOST e.g. 10.0.0.1"><input class="in mono" id="rsport" value="4444" placeholder="LPORT" style="max-width:90px">
       <select class="in" id="rslang">${["bash", "python3", "nc", "nc-mkfifo", "php", "powershell"].map((l) => `<option>${l}</option>`).join("")}</select></div>
       <div class="util-btns"><button class="btn ghost sm" data-copytarget="rsout">copy</button></div>
       <textarea class="in mono" id="rsout" rows="2" readonly></textarea>`),

@@ -63,7 +63,7 @@ const B = {
 
   revshell: (r) => {
     r.innerHTML = `
-      <div class="tk-row"><input class="tk-f" id="rs-ip" placeholder="LHOST e.g. 10.0.0.1" value="10.0.0.1">
+      <div class="tk-row"><input class="tk-f" id="rs-ip" placeholder="LHOST e.g. 10.0.0.1">
       <input class="tk-f" id="rs-port" placeholder="LPORT" value="4444" style="max-width:110px"></div>
       <div class="tk-btns" id="rs-langs"></div><pre class="tk-out" id="rs-out"></pre>`;
     const langs = {

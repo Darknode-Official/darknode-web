@@ -278,7 +278,7 @@ export function renderPayloadStudio(main) {
         '<div class="panel-h"><h2 class="pg-h2">Reverse shell / one-liner</h2></div>' +
         '<div class="ps-row ps-field">' +
           "<div><label for='ps-shell'>Shell</label><select id='ps-shell' class='ps-sel'>" + shellOpts + "</select></div>" +
-          "<div><label for='ps-lhost'>LHOST</label><input id='ps-lhost' class='ps-sel' value='10.10.14.1' spellcheck='false'></div>" +
+          "<div><label for='ps-lhost'>LHOST</label><input id='ps-lhost' class='ps-sel' placeholder='LHOST' spellcheck='false'></div>" +
           "<div><label for='ps-lport'>LPORT</label><input id='ps-lport' class='ps-sel' value='4444' spellcheck='false'></div>" +
         "</div>" +
         '<div class="ps-actions" style="margin-top:0;margin-bottom:12px">' +

@@ -239,7 +239,7 @@ function renderOnionLab(main) {
         <h2>Compose</h2>
         <div class="vl-field">
           <label for="vlMsg">Message</label>
-          <textarea id="vlMsg" placeholder="Type a secret to route…" spellcheck="false">meet at the safehouse at 0200</textarea>
+          <textarea id="vlMsg" placeholder="Type a secret to route…" spellcheck="false"></textarea>
           <small class="vl-hint">Padded into a fixed ${CELL}-byte cell so its length is hidden on the wire.</small>
         </div>
         <div class="vl-row">

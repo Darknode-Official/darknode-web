@@ -1292,7 +1292,7 @@ function renderPolicyTab(container) {
       '<h3 class="ca-sh">Password Policy Builder</h3>' +
       '<p class="ca-desc">Configure a password policy and generate a validation regex + compliance document.</p>' +
       '<div class="ca-policy-form">' +
-        '<label class="ca-pol-row"><span>Policy name:</span><input type="text" id="ca-pol-name" value="Corporate Password Policy" class="ca-input"></label>' +
+        '<label class="ca-pol-row"><span>Policy name:</span><input type="text" id="ca-pol-name" placeholder="Policy name" class="ca-input"></label>' +
         '<label class="ca-pol-row"><span>Min length:</span><input type="number" id="ca-pol-minlen" value="12" min="1" max="128" class="ca-input-sm"></label>' +
         '<label class="ca-pol-row"><span>Max length:</span><input type="number" id="ca-pol-maxlen" value="128" min="1" max="1024" class="ca-input-sm"></label>' +
         '<label class="ca-pol-check"><input type="checkbox" id="ca-pol-upper" checked> Require uppercase</label>' +

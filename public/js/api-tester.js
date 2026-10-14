@@ -258,7 +258,7 @@ export function renderAPITester(main) {
         } else if (type === "basic") {
           authFields.innerHTML = '<div style="display:flex;gap:6px;margin-top:4px"><input class="tk-f" id="at-auth-user" placeholder="Username"><input class="tk-f" id="at-auth-pass" placeholder="Password" type="password"></div>';
         } else if (type === "apikey-header" || type === "apikey-query") {
-          authFields.innerHTML = '<div style="display:flex;gap:6px;margin-top:4px"><input class="tk-f" id="at-auth-key-name" placeholder="Key name (e.g. X-API-Key)" value="X-API-Key"><input class="tk-f" id="at-auth-key-val" placeholder="Key value"></div>';
+          authFields.innerHTML = '<div style="display:flex;gap:6px;margin-top:4px"><input class="tk-f" id="at-auth-key-name" placeholder="Key name (e.g. X-API-Key)"><input class="tk-f" id="at-auth-key-val" placeholder="Key value"></div>';
         }
       }
       authType.onchange = renderAuthFields;

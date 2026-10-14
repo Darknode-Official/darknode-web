@@ -180,7 +180,7 @@ export function renderCryptoPlayground(container) {
       <div class="cp-card">
         <h3>Caesar Cipher</h3>
         <p style="color:#888;font-size:.82rem;margin:0 0 10px">Each letter is shifted by a fixed number of positions in the alphabet. One of the oldest known ciphers, used by Julius Caesar.</p>
-        <textarea class="cp-input" id="cp-caesar-input" rows="2" placeholder="Enter plaintext...">The quick brown fox jumps over the lazy dog</textarea>
+        <textarea class="cp-input" id="cp-caesar-input" rows="2" placeholder="Enter plaintext..."></textarea>
         <div style="display:flex;align-items:center;gap:12px;margin:10px 0">
           <label style="color:#888;font-size:.82rem">Shift:</label>
           <input type="range" id="cp-caesar-shift" min="0" max="25" value="13" style="flex:1">
@@ -217,7 +217,7 @@ export function renderCryptoPlayground(container) {
       <div class="cp-card">
         <h3>Vigenère Cipher</h3>
         <p style="color:#888;font-size:.82rem;margin:0 0 10px">A polyalphabetic cipher that uses a keyword to shift each letter by a different amount, making frequency analysis harder.</p>
-        <textarea class="cp-input" id="cp-vig-input" rows="2" placeholder="Enter text...">Attack at dawn</textarea>
+        <textarea class="cp-input" id="cp-vig-input" rows="2" placeholder="Enter text..."></textarea>
         <div style="margin:8px 0"><input class="cp-input" id="cp-vig-key" placeholder="Key (e.g. SECRET)" value="LEMON" style="max-width:300px"></div>
         <div style="display:flex;gap:8px">
           <button class="cp-btn" id="cp-vig-enc">Encrypt</button>
@@ -243,7 +243,7 @@ export function renderCryptoPlayground(container) {
       <div class="cp-card">
         <h3>XOR Cipher</h3>
         <p style="color:#888;font-size:.82rem;margin:0 0 10px">XOR is symmetric — encrypting twice with the same key returns the original. Widely used as a building block in modern encryption.</p>
-        <textarea class="cp-input" id="cp-xor-input" rows="2" placeholder="Enter plaintext...">Hello World</textarea>
+        <textarea class="cp-input" id="cp-xor-input" rows="2" placeholder="Enter plaintext..."></textarea>
         <div style="margin:8px 0"><input class="cp-input" id="cp-xor-key" placeholder="Key (text or hex like 0x41)" value="K" style="max-width:300px"></div>
         <button class="cp-btn" id="cp-xor-btn">XOR Encrypt/Decrypt</button>
         <div class="cp-result" id="cp-xor-result"></div>
@@ -397,7 +397,7 @@ export function renderCryptoPlayground(container) {
       <div class="cp-card">
         <h3>Hash Functions</h3>
         <p style="color:#888;font-size:.82rem;margin:0 0 10px">Hash functions map arbitrary input to a fixed-size output. Even a tiny change in input completely changes the hash (avalanche effect).</p>
-        <textarea class="cp-input" id="cp-hash-input" rows="2" placeholder="Enter text to hash...">Hello World</textarea>
+        <textarea class="cp-input" id="cp-hash-input" rows="2" placeholder="Enter text to hash..."></textarea>
         <button class="cp-btn" style="margin-top:8px" id="cp-hash-btn">Compute Hashes</button>
         <div id="cp-hash-result"></div>
       </div>
@@ -442,7 +442,7 @@ export function renderCryptoPlayground(container) {
       <div class="cp-card">
         <h3>Frequency Analysis</h3>
         <p style="color:#888;font-size:.82rem;margin:0 0 10px">Compare letter frequencies in ciphertext to standard English. Peaks that don't align with E-T-A-O suggest substitution.</p>
-        <textarea class="cp-input" id="cp-freq-input" rows="4" placeholder="Paste ciphertext here...">Gur dhvpx oebja sbk whzcf bire gur ynml qbt</textarea>
+        <textarea class="cp-input" id="cp-freq-input" rows="4" placeholder="Paste ciphertext here..."></textarea>
         <button class="cp-btn" style="margin-top:8px" id="cp-freq-btn">Analyze</button>
         <div id="cp-freq-result"></div>
       </div>`;

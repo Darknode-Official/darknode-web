@@ -2715,8 +2715,8 @@ export function renderAegis(main) {
         '<div class="ag-panel-h"><span style="color:var(--acc)">PACKET POLICY SIMULATOR</span><span style="flex:1"></span><span style="color:var(--mut)">evaluated against ' + FW_RULEBASE.filter(function (r) { return r.enabled; }).length + ' enabled rules</span></div>' +
         '<div class="ag-panel-b">' +
           '<div class="ag-grid4">' +
-            '<div><div class="ag-stat-l" style="margin-bottom:3px">Source IP</div><input class="ag-inp" id="ag-sim-src" value="185.220.101.34"></div>' +
-            '<div><div class="ag-stat-l" style="margin-bottom:3px">Destination IP</div><input class="ag-inp" id="ag-sim-dst" value="10.0.20.1"></div>' +
+            '<div><div class="ag-stat-l" style="margin-bottom:3px">Source IP</div><input class="ag-inp" id="ag-sim-src" placeholder="e.g. 185.220.101.34"></div>' +
+            '<div><div class="ag-stat-l" style="margin-bottom:3px">Destination IP</div><input class="ag-inp" id="ag-sim-dst" placeholder="e.g. 10.0.20.1"></div>' +
             '<div><div class="ag-stat-l" style="margin-bottom:3px">Protocol</div><select class="ag-sel" id="ag-sim-proto" style="width:100%"><option value="tcp">TCP</option><option value="udp">UDP</option><option value="any">ANY</option></select></div>' +
             '<div><div class="ag-stat-l" style="margin-bottom:3px">Dest Port</div><input class="ag-inp" id="ag-sim-port" value="443"></div>' +
           '</div>' +
@@ -2988,7 +2988,7 @@ export function renderAegis(main) {
                   '<select class="ag-sel" id="ag-scfmt" style="width:100%"><option>C Array</option><option>Python</option><option>Raw Hex</option><option>PowerShell</option><option>Bash</option></select></div>' +
               '</div>' +
               '<div class="ag-grid2" style="margin-bottom:10px">' +
-                '<div><label style="font-size:.62rem;color:var(--mut);text-transform:uppercase">LHOST</label><input class="ag-inp" id="ag-sclhost" value="10.0.0.1"></div>' +
+                '<div><label style="font-size:.62rem;color:var(--mut);text-transform:uppercase">LHOST</label><input class="ag-inp" id="ag-sclhost" placeholder="LHOST"></div>' +
                 '<div><label style="font-size:.62rem;color:var(--mut);text-transform:uppercase">LPORT</label><input class="ag-inp" id="ag-sclport" value="4444"></div>' +
               '</div>' +
               '<button class="ag-btn" id="ag-scgen">GENERATE SHELLCODE</button>' +
