@@ -217,6 +217,7 @@ const IC = {
   plug: SVG('<path d="M9 3v5M15 3v5"/><path d="M6 8h12v3a6 6 0 0 1-12 0Z"/><path d="M12 17v4"/>'),
   wrench: SVG('<path d="M14.7 6.3a4 4 0 0 0-5.2 5.2L3.5 17.5 6.5 20.5l6-6a4 4 0 0 0 5.2-5.2l-2.6 2.6-2.4-.6-.6-2.4Z"/>'),
   key: SVG('<circle cx="8" cy="15" r="4"/><path d="m11 12 9-9M17 6l3 3M14.5 8.5 17 11"/>'),
+  eye: SVG('<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>'),
 };
 
 // Platform severity palette (same thresholds the Threat Feed uses).
@@ -2750,7 +2751,7 @@ export function renderDeck(host, opts) {
     code: { title: "Code & Supply Chain", blurb: "Secrets, risky code and vulnerable dependencies in the software you build, and the attack paths they open.", types: ["SOFTWARE"], match: /code scanner|supply|threatforest|attack tree|\bcode\b/i, ints: [], pub: "The GitHub API for repository contents and OSV.dev for dependency advisories, both used by the Code Scanner." },
     detect: { title: "Detect & Investigate", blurb: "Alerts, indicators, incidents and cases: everything your tools have recorded, and the work to run it down.", types: ["ALERT", "INCIDENT", "CASE", "INVESTIGATION", "INDICATOR", "EVIDENCE", "THREAT_ACTOR", "MALWARE", "CAMPAIGN", "DETECTION", "EVENT", "FINDING", "VULNERABILITY"], ints: ["virustotal", "greynoise", "abuseipdb", "otx", "abusech", "urlscan", "pulsedive", "misp", "mitre", "hybrid", "anyrun", "intelx"] },
     finsec: { title: "Financial Security", blurb: "Controls over money movement: fraud screening on your ledgers, payee bank-change control, sanctions screening, and a tamper-evident record of treasury approvals.", types: [], match: /strongroom|fund protection|vault|treasury|sanction|payee|vendor/i, ints: [] },
-    compliance: { title: "Compliance & Trust", blurb: "Framework mappings and self-assessments. Self-reported: they reflect what you enter, not an automated audit.", types: ["CONTROL", "REPORT"], match: /compliance|crosswalk/i, ints: [] },
+    compliance: { title: "Compliance & Trust", blurb: "Framework mappings, self-assessments and data-protection scanning. Self-reported findings reflect what you enter or paste, not an automated audit.", types: ["CONTROL", "REPORT"], match: /compliance|crosswalk|data protection|dlp/i, ints: [] },
   };
   let curSect = "exposure";
   try { const v = localStorage.getItem("dn_deck_sect"); if (v && SECTIONS[v]) curSect = v; } catch (_) {}
@@ -3031,7 +3032,7 @@ export function renderDeck(host, opts) {
     { id: "code", g: "Code & Supply Chain", items: [["tool", "codescan", "Code Scanner", IC.code], ["tool", "supplychain", "Supply Chain", IC.branch], ["tool", "threatforest", "Attack Tree Builder", IC.tree]] },
     { id: "detect", g: "Detect & Investigate", items: [["scene", "findings", "Findings", IC.alert], ["scene", "invest", "Investigations", IC.search], ["tool", "secgraph", "Security Graph", IC.nodes], ["tool", "incidents", "Incident Tracker", IC.shield], ["tool", "casemgmt", "Case Manager", IC.brief], ["scene", "activity", "Activity", IC.pulse]] },
     { id: "finsec", g: "Financial Security", items: [["tool", "strongroom", "Fund Protection", IC.coins], ["tool", "vault", "Treasury Vault", IC.lock], ["tool", "payees", "Payee Control", IC.shield], ["tool", "sanctions", "Sanctions Screening", IC.scale]] },
-    { id: "compliance", g: "Compliance & Trust", items: [["scene", "compliance", "Compliance", IC.check], ["tool", "crosswalk", "GenAI Crosswalk", IC.map]] },
+    { id: "compliance", g: "Compliance & Trust", items: [["scene", "compliance", "Compliance", IC.check], ["tool", "crosswalk", "GenAI Crosswalk", IC.map], ["tool", "dlp", "Data Protection", IC.eye]] },
     { g: "Platform", items: [["scene", "con", "Integrations", IC.plug], ["scene", "tools", "Tool Library", IC.grid], ["scene", "toolkit", "Toolkit", IC.wrench], ["scene", "assistant", "AI Assistant", IC.spark], ["tool", "settings", "Settings", IC.gear]].concat(opts.isOwner ? [["tool", "admin", "Admin", IC.key]] : []) },
   ];
   const navIndex = {};
