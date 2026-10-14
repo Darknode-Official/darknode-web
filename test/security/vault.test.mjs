@@ -108,6 +108,16 @@ group("vault: segregation of duties + idempotency", () => {
     L.createTransfer({ id: "t", from: "bank", to: "out", amount: "100.00", by: "alice" });
     assert.throws(() => L.approve("t", "alice"));
   });
+  test("initiator can never release own transfer", () => {
+    const L = new Ledger({ policy: { minApprovers: 1, dualControl: true } });
+    L.openAccount({ id: "bank", type: "asset" }); L.openAccount({ id: "eq", type: "equity" }); L.openAccount({ id: "out", type: "clearing" });
+    L.post({ postings: [{ account: "bank", side: "debit", amount: "500.00" }, { account: "eq", side: "credit", amount: "500.00" }] });
+    L.createTransfer({ id: "t", from: "bank", to: "out", amount: "100.00", by: "alice" });
+    L.approve("t", "bob");
+    assert.throws(() => L.release("t", "alice"), "initiator cannot release own transfer");
+    L.release("t", "carol");
+    assert.equal(L.transfers.get("t").status, "released");
+  });
   test("released transfer cannot double-post (idempotent)", () => {
     const L = new Ledger({ policy: { minApprovers: 1, dualControl: true } });
     L.openAccount({ id: "bank", type: "asset" }); L.openAccount({ id: "eq", type: "equity" }); L.openAccount({ id: "out", type: "clearing" });

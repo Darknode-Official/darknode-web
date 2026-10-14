@@ -269,6 +269,13 @@ export class Ledger {
     const t = this.transfers.get(id);
     if (!t) throw new Error("no such transfer: " + id);
     if (t.status !== "approved") throw new Error("transfer must be approved before release (is " + t.status + ")");
+    // Separation of duties on release, enforced at the ledger so it holds in local
+    // mode and everywhere else, not only in the worker: the initiator cannot be the
+    // one who releases their own transfer.
+    if (this.policy.dualControl) {
+      if (!by) throw new Error("releaser required");
+      if (by === t.by) throw new Error("segregation of duties: initiator cannot release own transfer");
+    }
     const fromAcct = this.accounts.get(t.from);
     if (fromAcct.noOverdraft) {
       const bal = this.balance(t.from).balance;

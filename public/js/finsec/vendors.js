@@ -17,7 +17,7 @@ import {
   validateBank, bankKey, bankLabel, createVendor, proposeChange, recordCallback,
   approveChange, rejectChange, refresh, canPay, screenFlags, markPaid, selfTest,
   HOLD_HOURS, WATCH_DAYS,
-} from "/js/finsec/vendor-engine.js?v=20261013i";
+} from "/js/finsec/vendor-engine.js?v=20261013m";
 
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -272,16 +272,15 @@ export function renderVendors(main) {
     q("vnClose").addEventListener("click", closeDrawer);
 
     if (q("vnPay")) q("vnPay").addEventListener("click", () => { markPaid(v); save(list); toast("Payment recorded."); render(); openDrawer(id); });
-    if (q("vnDel")) q("vnDel").addEventListener("click", () => {
-      (window.dnConfirm || ((m, cb) => cb(confirm(m))))("Delete payee “" + v.name + "” and its control history?", (yes) => {
-        if (!yes) return; list = list.filter((x) => x.id !== id); save(list); closeDrawer(); render();
-      });
+    if (q("vnDel")) q("vnDel").addEventListener("click", async () => {
+      const yes = await window.dnConfirm("Delete payee", "Delete “" + v.name + "” and its control history? This cannot be undone.", { danger: true, submitText: "Delete" });
+      if (!yes) return;
+      list = list.filter((x) => x.id !== id); save(list); closeDrawer(); render();
     });
 
     if (q("vnCbSave")) q("vnCbSave").addEventListener("click", () => {
       const r = recordCallback(v, { by: q("vnCbBy").value.trim(), phone: q("vnCbPhone").value.trim(), note: q("vnCbNote").value.trim() });
       if (!r.ok) return q("vnDrErr").textContent = r.errors.join("\n");
-      if (!q("vnCbBy").value.trim()) return q("vnDrErr").textContent = "Enter who made the call.";
       save(list); openDrawer(id);
     });
     if (q("vnApprove")) q("vnApprove").addEventListener("click", () => {

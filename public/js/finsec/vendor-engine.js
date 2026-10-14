@@ -134,9 +134,17 @@ export function proposeChange(v, { bank, by, at }) {
 // what was confirmed). Required before approval.
 export function recordCallback(v, { by, note, phone, at }) {
   if (!v.change) return { ok: false, errors: ["No change is pending."] };
+  const caller = String(by || "").trim();
+  const num = String(phone || "").trim();
+  const errs = [];
+  // This is the single most important anti-BEC control, so it must have substance:
+  // an empty "callback" can no longer satisfy the approval gate.
+  if (!caller) errs.push("Record who made the verification call.");
+  if (!num) errs.push("Record the phone number that was called (the vendor's known-good number, not one from the change request).");
+  if (errs.length) return { ok: false, errors: errs };
   const now = at || Date.now();
-  v.change.callback = { by: by || null, note: String(note || "").trim(), phone: String(phone || "").trim(), at: now };
-  pushAudit(v, "callback-recorded", by, now, { phone: v.change.callback.phone });
+  v.change.callback = { by: caller, note: String(note || "").trim(), phone: num, at: now };
+  pushAudit(v, "callback-recorded", caller, now, { phone: num });
   return { ok: true };
 }
 
@@ -148,7 +156,7 @@ export function approveChange(v, { by, at }) {
   if (!v.change) return { ok: false, errors: ["No change is pending."] };
   if (!by) return { ok: false, errors: ["An approver is required."] };
   if (v.change.by && by === v.change.by) return { ok: false, errors: ["The approver must be different from the person who proposed the change (separation of duties)."] };
-  if (!v.change.callback) return { ok: false, errors: ["Record the out-of-band callback verification before approving."] };
+  if (!v.change.callback || !v.change.callback.by || !v.change.callback.phone) return { ok: false, errors: ["Record the out-of-band callback verification (caller and number) before approving."] };
   if (v.bank) v.history.push({ bank: v.bank, retiredAt: now, label: bankLabel(v.bank) });
   v.change.approvedBy = by;
   v.bank = v.change.bank;
@@ -256,7 +264,7 @@ export function selfTest() {
   ok("audit trail recorded", v.audit.some((a) => a.action === "change-approved") && v.audit.length >= 6);
 
   // determinism
-  const run = () => { const x = createVendor({ id: "d", name: "D", bank: { kind: "aba", account: "123456789", routing: "021000021" }, by: "a", at: t0 }); recordCallback(x, { by: "b", note: "n", at: t0 + 1 }); approveChange(x, { by: "b", at: t0 + 2 }); refresh(x, t0 + H + 1); return JSON.stringify(x); };
+  const run = () => { const x = createVendor({ id: "d", name: "D", bank: { kind: "aba", account: "123456789", routing: "021000021" }, by: "a", at: t0 }); recordCallback(x, { by: "b", note: "n", phone: "+1-555-0100", at: t0 + 1 }); approveChange(x, { by: "b", at: t0 + 2 }); refresh(x, t0 + H + 1); return JSON.stringify(x); };
   ok("deterministic", run() === run());
 
   return { pass: results.every((r) => r.pass), results };

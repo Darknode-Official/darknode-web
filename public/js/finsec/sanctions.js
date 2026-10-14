@@ -11,7 +11,7 @@
 // compliance determination. Hits must be verified against the official source,
 // and blocking / reporting decisions are a human + legal responsibility.
 
-import { buildIndex, screenName, screenBatch, selfTest } from "/js/finsec/sanctions-engine.js?v=20261013i";
+import { buildIndex, screenName, screenBatch, selfTest } from "/js/finsec/sanctions-engine.js?v=20261013m";
 
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));

@@ -97,7 +97,11 @@ function scorePair(qToks, eToks) {
   const coverage = sum / qToks.length;          // quality-weighted query coverage
   const specificity = matched / Math.max(qToks.length, eToks.length);
   // Blend: coverage dominates, specificity trims long-entry false hits.
-  const score = Math.round(100 * (0.7 * coverage + 0.3 * specificity));
+  let score = Math.round(100 * (0.7 * coverage + 0.3 * specificity));
+  // A single-token query (e.g. a lone surname) is inherently low-specificity and
+  // matches many multi-word entries; damp it below the "strong" band so it still
+  // surfaces for review (recall preserved) without raising a strong-match alert.
+  if (qToks.length === 1 && eToks.length > 1) score = Math.min(score, 78);
   return { score, hits };
 }
 

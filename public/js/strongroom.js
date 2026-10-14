@@ -14,7 +14,7 @@
 //
 //   renderStrongroom(main) -> void
 
-import { analyze, selfTest } from "/js/strongroom/engine.js?v=20261011a";
+import { analyze, selfTest } from "/js/strongroom/engine.js?v=20261013m";
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const toast = (m) => { try { (window.dnToast || window.showToast || (() => {}))(m); } catch (_) {} };

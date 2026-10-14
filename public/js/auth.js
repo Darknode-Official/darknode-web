@@ -2007,10 +2007,10 @@ function renderApp(user) {
     else if (sec === "api") { import("/js/api.js?v=20261007a").then(m => live() && m.renderAPI(main, user)); }
     else if (sec === "docs") { import("/js/docs.js?v=20261011a").then(m => live() && m.renderDocs(main)); }
     else if (sec === "veil") { import("/js/labs/veil.js?v=20261013m").then(m => live() && m.renderVeil(main)); }
-    else if (sec === "strongroom") { import("/js/strongroom.js?v=20261011a").then(m => live() && m.renderStrongroom(main)); }
-    else if (sec === "vault") { import("/js/vault.js?v=20261013d").then(m => live() && m.renderVault(main)); }
-    else if (sec === "sanctions") { import("/js/finsec/sanctions.js?v=20261013i").then(m => live() && m.renderSanctions(main)); }
-    else if (sec === "payees") { import("/js/finsec/vendors.js?v=20261013i").then(m => live() && m.renderVendors(main)); }
+    else if (sec === "strongroom") { import("/js/strongroom.js?v=20261013m").then(m => live() && m.renderStrongroom(main)); }
+    else if (sec === "vault") { import("/js/vault.js?v=20261013m").then(m => live() && m.renderVault(main)); }
+    else if (sec === "sanctions") { import("/js/finsec/sanctions.js?v=20261013m").then(m => live() && m.renderSanctions(main)); }
+    else if (sec === "payees") { import("/js/finsec/vendors.js?v=20261013m").then(m => live() && m.renderVendors(main)); }
     else if (sec === "dlp") { import("/js/dataprotect/dlp.js?v=20261013m").then(m => live() && m.renderDlp(main)); }
     else if (sec === "posture") { import("/js/dataprotect/posture.js?v=20261013m").then(m => live() && m.renderPosture(main)); }
     else if (sec === "tlsfleet") { import("/js/dataprotect/tlsfleet.js?v=20261013m").then(m => live() && m.renderTlsFleet(main)); }

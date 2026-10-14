@@ -60,20 +60,34 @@ group("vendor: change control", () => {
   test("approval requires a recorded callback", () => {
     const v = mk();
     assert.ok(!approveChange(v, { by: "bob", at: t0 + 1 }).ok);
-    recordCallback(v, { by: "bob", note: "called known number", at: t0 + 2 });
+    recordCallback(v, { by: "bob", note: "called known number", phone: "+1-555-0100", at: t0 + 2 });
     assert.ok(approveChange(v, { by: "bob", at: t0 + 3 }).ok);
+  });
+
+  test("the callback gate has substance: empty caller or number is rejected", () => {
+    const v = mk();
+    // an empty callback must NOT satisfy the gate (anti-BEC)
+    assert.ok(!recordCallback(v, {}).ok, "empty callback rejected");
+    assert.ok(!recordCallback(v, { by: "bob" }).ok, "caller without a number rejected");
+    assert.ok(!recordCallback(v, { phone: "+1-555-0100" }).ok, "number without a caller rejected");
+    // the change is still pending and unapprovable while the callback is unrecorded
+    assert.ok(!v.change.callback, "no callback recorded");
+    assert.ok(!approveChange(v, { by: "bob", at: t0 + 2 }).ok, "cannot approve without a real callback");
+    // a complete callback unlocks approval
+    assert.ok(recordCallback(v, { by: "bob", phone: "+1-555-0100", note: "verified", at: t0 + 3 }).ok);
+    assert.ok(approveChange(v, { by: "bob", at: t0 + 4 }).ok);
   });
 
   test("approver must differ from proposer (separation of duties)", () => {
     const v = mk();
-    recordCallback(v, { by: "alice", note: "n", at: t0 + 1 });
+    recordCallback(v, { by: "alice", note: "n", phone: "+1-555-0100", at: t0 + 1 });
     assert.ok(!approveChange(v, { by: "alice", at: t0 + 2 }).ok);
     assert.ok(approveChange(v, { by: "bob", at: t0 + 3 }).ok);
   });
 
   test("approved account is held then becomes active after the cool-down", () => {
     const v = mk();
-    recordCallback(v, { by: "bob", note: "n", at: t0 + 1 });
+    recordCallback(v, { by: "bob", note: "n", phone: "+1-555-0100", at: t0 + 1 });
     approveChange(v, { by: "bob", at: t0 + 2 });
     assert.equal(v.status, "held");
     assert.ok(!canPay(v, t0 + 3).ok);
@@ -84,12 +98,12 @@ group("vendor: change control", () => {
 
   test("a later bank change archives the old account and re-holds", () => {
     const v = mk();
-    recordCallback(v, { by: "bob", note: "n", at: t0 + 1 });
+    recordCallback(v, { by: "bob", note: "n", phone: "+1-555-0100", at: t0 + 1 });
     approveChange(v, { by: "bob", at: t0 + 2 });
     refresh(v, t0 + H + 10);
     assert.ok(proposeChange(v, { bank: { kind: "iban", iban: "DE89370400440532013000" }, by: "alice", at: t0 + H + 11 }).ok);
     assert.ok(!canPay(v, t0 + H + 12).ok); // blocked while pending
-    recordCallback(v, { by: "carol", note: "n", at: t0 + H + 13 });
+    recordCallback(v, { by: "carol", note: "n", phone: "+1-555-0100", at: t0 + H + 13 });
     approveChange(v, { by: "carol", at: t0 + H + 14 });
     assert.equal(v.history.length, 1);
     assert.equal(v.status, "held");
@@ -97,7 +111,7 @@ group("vendor: change control", () => {
 
   test("duplicate bank details are rejected", () => {
     const v = mk();
-    recordCallback(v, { by: "bob", note: "n", at: t0 + 1 });
+    recordCallback(v, { by: "bob", note: "n", phone: "+1-555-0100", at: t0 + 1 });
     approveChange(v, { by: "bob", at: t0 + 2 });
     refresh(v, t0 + H + 10);
     const r = proposeChange(v, { bank: { kind: "aba", account: "123456789", routing: "021000021" }, by: "alice", at: t0 + H + 11 });
@@ -106,7 +120,7 @@ group("vendor: change control", () => {
 
   test("reject leaves the live bank unchanged", () => {
     const v = mk();
-    recordCallback(v, { by: "bob", note: "n", at: t0 + 1 });
+    recordCallback(v, { by: "bob", note: "n", phone: "+1-555-0100", at: t0 + 1 });
     approveChange(v, { by: "bob", at: t0 + 2 });
     refresh(v, t0 + H + 10);
     const before = bankKey(v.bank);
@@ -118,7 +132,7 @@ group("vendor: change control", () => {
 
   test("screen flags: first-payment and recently-changed", () => {
     const v = mk();
-    recordCallback(v, { by: "bob", note: "n", at: t0 + 1 });
+    recordCallback(v, { by: "bob", note: "n", phone: "+1-555-0100", at: t0 + 1 });
     approveChange(v, { by: "bob", at: t0 + 2 });
     refresh(v, t0 + H + 10);
     let flags = screenFlags(v, t0 + H + 10).map((f) => f.code);
@@ -134,7 +148,7 @@ group("vendor: change control", () => {
 
   test("audit log is append-only and records every transition", () => {
     const v = mk();
-    recordCallback(v, { by: "bob", note: "n", at: t0 + 1 });
+    recordCallback(v, { by: "bob", note: "n", phone: "+1-555-0100", at: t0 + 1 });
     approveChange(v, { by: "bob", at: t0 + 2 });
     const actions = v.audit.map((a) => a.action);
     assert.ok(actions.includes("vendor-created"));

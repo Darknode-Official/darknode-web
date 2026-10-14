@@ -45,6 +45,13 @@ group("sanctions: matching", () => {
     const r = screenName("Ivan Petrovich Ivanov", idx);
     assert.ok(r.some((m) => m.uid === "2"));
   });
+  test("a lone surname surfaces for review but not as a strong match", () => {
+    const r = screenName("Ivanov", idx, { minScore: 60 });
+    const m = r.find((x) => x.uid === "2");
+    assert.ok(m, "single-token surname still surfaces (recall preserved)");
+    assert.ok(m.score <= 78, "but it is damped below the strong band, got " + m.score);
+    assert.ok(m.band === "possible" || m.band === "weak");
+  });
   test("unrelated name returns clear", () => {
     assert.equal(screenName("Pacific Green Energy", idx).length, 0);
   });

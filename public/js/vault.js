@@ -12,7 +12,7 @@
 //
 //   renderVault(main) -> void
 
-import { Ledger, toCents, fmtCents, screenTransfer } from "/js/vault/ledger.js?v=20261012e";
+import { Ledger, toCents, fmtCents, screenTransfer } from "/js/vault/ledger.js?v=20261013m";
 import { canDo, ROLES, ROLE_HELP } from "/js/vault/roles.js?v=20261012e";
 import * as remote from "/js/vault/remote.js?v=20261012e";
 
@@ -224,7 +224,10 @@ export function renderVault(main) {
     const tb = L.trialBalance();
     const chain = L.verifyChain();
     const accts = [...L.accounts.values()];
-    const total = accts.filter((a) => a.normal === "debit").reduce((s, a) => s + L.balance(a.id).balance, 0n);
+    // Book value = funds held per the books: asset + omnibus balances only.
+    // Expense (a cost, not value held) and clearing (in-transit) are debit-normal
+    // too but must not inflate the headline position.
+    const total = accts.filter((a) => a.type === "asset" || a.type === "omnibus").reduce((s, a) => s + L.balance(a.id).balance, 0n);
     const pending = [...L.transfers.values()].filter((t) => t.status === "pending" || t.status === "approved");
     const movements = [...L.transfers.values()].filter((t) => t.status !== "rejected");
     const settled = movements.filter((t) => t.status === "settled");

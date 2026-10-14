@@ -46,6 +46,15 @@ const ACCESS = [
   "2026-01-02,,vendor_bank_change,Acme,IBAN changed",
 ].join("\n");
 
+group("strongroom: money totals are cent-exact", () => {
+  test("summing many 0.01 amounts does not drift", () => {
+    const rows = ["date,vendor,amount,invoice,approver,initiator"];
+    for (let i = 0; i < 1000; i++) rows.push(`2026-01-0${(i % 9) + 1},V${i},0.01,INV-${i},a,b`);
+    const r = analyze(rows.join("\n"), "");
+    assert.equal(r.summary.totalValue, 10); // 1000 * 0.01 exactly, no float tail
+  });
+});
+
 group("strongroom: financial detections", () => {
   test("exact duplicate payment fires", () => assert.ok(rules(analyze(PAY, "")).includes("duplicate-payment")));
   test("segregation-of-duties fires on self-approval", () => assert.ok(rules(analyze(PAY, "")).includes("segregation-of-duties")));

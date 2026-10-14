@@ -179,6 +179,10 @@ export function loadAccessEvents(csvText) {
 const SEV_RANK = { critical: 4, high: 3, medium: 2, low: 1, info: 0 };
 function round2(x) { return Math.round((x + Number.EPSILON) * 100) / 100; }
 function sum(arr) { return arr.reduce((a, b) => a + (isFinite(b) ? b : 0), 0); }
+// Sum currency in integer cents so many amounts don't accumulate float drift,
+// then return dollars. (STRONGROOM is a screening aid, but its totals should not
+// drift a cent on large files.)
+function sumMoney(arr) { let c = 0; for (const b of arr) if (isFinite(b)) c += Math.round(b * 100); return c / 100; }
 function median(nums) {
   const a = nums.filter(isFinite).slice().sort((x, y) => x - y);
   if (!a.length) return NaN;
@@ -431,15 +435,16 @@ export function analyze(paymentsCSV, accessCSV) {
   const summary = {
     payments: records.length,
     accessEvents: events.length,
-    totalValue: round2(sum(amts)),
+    totalValue: sumMoney(amts),
     vendors: new Set(records.map((r) => r.vkey).filter(Boolean)).size,
     dateRange: (() => { const ds = records.map((r) => r.day).filter((d) => d != null); return ds.length ? [dayToISO(Math.min(...ds)), dayToISO(Math.max(...ds))] : null; })(),
     counts: { critical: 0, high: 0, medium: 0, low: 0, info: 0 },
     moneyAtRisk: 0,
     fusionChains: findings.filter((f) => f.rule.startsWith("fusion-")).length,
   };
-  for (const f of findings) { summary.counts[f.severity]++; if (SEV_RANK[f.severity] >= 2) summary.moneyAtRisk += f.money; }
-  summary.moneyAtRisk = round2(summary.moneyAtRisk);
+  let riskCents = 0;
+  for (const f of findings) { summary.counts[f.severity]++; if (SEV_RANK[f.severity] >= 2) riskCents += Math.round((f.money || 0) * 100); }
+  summary.moneyAtRisk = riskCents / 100;
 
   return { findings, summary, warnings: warnings.concat(accessWarn), map };
 }
