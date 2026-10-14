@@ -1871,7 +1871,7 @@ function renderApp(user) {
     else if (sec === "threatmodel") { import("/js/threat-modeler.js?v=20260924b").then(m => live() && m.renderThreatModeler(main)); }
     else if (sec === "osint") { import("/js/osint-dashboard.js?v=20261007a").then(m => live() && m.renderOSINTDashboard(main)); }
     else if (sec === "addressintel") { import("/js/address-intel.js?v=20261013b").then(m => live() && m.renderAddressIntel(main)); }
-    else if (sec === "incidents") { import("/js/incident-tracker.js").then(m => live() && m.renderIncidentTracker(main)); }
+    else if (sec === "incidents") { import("/js/incident-tracker.js?v=20261013m").then(m => live() && m.renderIncidentTracker(main)); }
     else if (sec === "firewall") { import("/js/firewall-builder.js?v=20261013b").then(m => live() && m.renderFirewallBuilder(main)); }
     else if (sec === "apitester") { import("/js/api-tester.js?v=20261013m").then(m => live() && m.renderAPITester(main)); }
     else if (sec === "sandbox") { import("/js/malware-sandbox.js").then(m => live() && m.renderMalwareSandbox(main)); }
@@ -1960,8 +1960,8 @@ function renderApp(user) {
     else if (sec === "threatfeed") { import("/js/threat-feed.js?v=20261013c").then(m => live() && m.renderThreatFeed(main)); }
     else if (sec === "secchecklist") { import("/js/sec-checklist.js?v=20260928m").then(m => live() && m.renderSecChecklist(main)); }
     else if (sec === "investigation") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Investigation Workspace...</p>"; const _s=sec; import("/js/investigation.js?v=20261012a").then(m => { if(curSec!==_s)return; m.renderInvestigation(main); _prevCleanup = m.cleanupInvestigation; }); }
-    else if (sec === "secgraph") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Security Graph...</p>"; import("/js/security-graph-ui.js?v=20260924b").then(m => live() && m.renderSecurityGraphUI(main)); }
-    else if (sec === "casemgmt") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Case Manager...</p>"; import("/js/case-manager.js?v=20260924b").then(m => live() && m.renderCaseManager(main)); }
+    else if (sec === "secgraph") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Security Graph...</p>"; import("/js/security-graph-ui.js?v=20261013m").then(m => live() && m.renderSecurityGraphUI(main)); }
+    else if (sec === "casemgmt") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Case Manager...</p>"; import("/js/case-manager.js?v=20261013m").then(m => live() && m.renderCaseManager(main)); }
 
     else if (sec === "cvetimeline") { import("/js/cve-timeline.js?v=20261007a").then(m => live() && m.renderCveTimeline(main)); }
     else if (sec === "dataviz") { import("/js/data-viz.js?v=20260930b").then(m => live() && m.renderDataViz(main)); }

@@ -113,7 +113,7 @@ function renderList(el) {
       var realIdx = incidents.indexOf(inc);
       return '<div class="arse-card" style="cursor:default;margin-bottom:8px">' +
         '<div style="display:flex;align-items:center;gap:8px">' +
-          '<span style="color:' + (SEV_COLORS[inc.severity] || "var(--mut)") + ';font-weight:700;font-size:.8rem;min-width:28px">' + esc(inc.severity.split(" ")[0]) + '</span>' +
+          '<span style="color:' + (SEV_COLORS[inc.severity] || "var(--mut)") + ';font-weight:700;font-size:.8rem;min-width:28px">' + esc((inc.severity || "—").split(" ")[0]) + '</span>' +
           '<span style="font-weight:600;font-size:.9rem;flex:1">' + esc(inc.title) + '</span>' +
           '<span style="padding:2px 8px;border-radius:2px;font-size:.7rem;font-weight:600;color:#fff;background:' + (STATUS_COLORS[inc.status] || "var(--mut)") + '">' + esc(inc.status) + '</span>' +
           '<span style="font-size:.72rem;color:var(--mut)">' + esc(inc.type) + '</span>' +
@@ -309,11 +309,28 @@ function renderIOCs(el) {
     var csv = "Type,Value,Verdict,Note,Added\n" + iocs.map(function(i) {
       return [i.type, i.value, i.verdict, i.note || "", i.added].map(function(f) { return '"' + String(f).replace(/"/g, '""') + '"'; }).join(",");
     }).join("\n");
-    navigator.clipboard.writeText(csv).then(function() {
-      el.querySelector("#ioc-export").textContent = "Copied!";
-      setTimeout(function() { el.querySelector("#ioc-export").textContent = "Copy CSV"; }, 2000);
+    copyText(csv, function(ok) {
+      var btn = el.querySelector("#ioc-export");
+      if (ok) { btn.textContent = "Copied!"; setTimeout(function() { btn.textContent = "Copy CSV"; }, 2000); }
+      else if (window.showToast) window.showToast("error", "Could not copy to clipboard");
     });
   };
+}
+
+// Clipboard copy with a textarea fallback for non-secure contexts / denied permission.
+function copyText(text, cb) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(function() { cb(true); }, function() { cb(fallbackCopy(text)); });
+  } else { cb(fallbackCopy(text)); }
+}
+function fallbackCopy(text) {
+  try {
+    var ta = document.createElement("textarea");
+    ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta); ta.select();
+    var ok = document.execCommand("copy");
+    document.body.removeChild(ta); return ok;
+  } catch (_) { return false; }
 }
 
 // ── MITRE ATT&CK Map Tab ──
@@ -330,11 +347,11 @@ function renderMitre(el) {
   var cards = MITRE_TACTICS.map(function(tactic) {
     var count = coverage[tactic] ? coverage[tactic].length : 0;
     var incidents_list = coverage[tactic] ? coverage[tactic].map(function(t) { return '<div style="font-size:.72rem;color:var(--mut);padding:1px 0">• ' + esc(t) + '</div>'; }).join("") : '<div style="font-size:.72rem;color:var(--mut)">No incidents mapped</div>';
-    var bgIntensity = count === 0 ? "00" : count < 3 ? "20" : count < 5 ? "40" : "60";
+    var bgPct = count === 0 ? 0 : count < 3 ? 13 : count < 5 ? 25 : 38;
     return '<div class="arse-card" style="cursor:default;margin-bottom:6px;border-left:4px solid ' + (count > 0 ? "var(--acc)" : "var(--line)") + '">' +
       '<div style="display:flex;justify-content:space-between;align-items:center">' +
         '<span style="font-weight:600;font-size:.82rem">' + esc(tactic) + '</span>' +
-        '<span style="padding:2px 8px;border-radius:2px;font-size:.72rem;font-weight:700;background:var(--acc)' + bgIntensity + ';color:' + (count > 0 ? "var(--acc)" : "var(--mut)") + '">' + count + '</span>' +
+        '<span style="padding:2px 8px;border-radius:2px;font-size:.72rem;font-weight:700;background:color-mix(in srgb, var(--acc) ' + bgPct + '%, transparent);color:' + (count > 0 ? "var(--acc)" : "var(--mut)") + '">' + count + '</span>' +
       '</div>' +
       (count > 0 ? '<div style="margin-top:6px">' + incidents_list + '</div>' : '') +
     '</div>';
@@ -386,7 +403,7 @@ function renderMetrics(el) {
   STATUSES.forEach(function(s) { byStatus[s] = 0; });
   incidents.forEach(function(i) { if (byStatus[i.status] !== undefined) byStatus[i.status]++; });
 
-  // MTTD/MTTR (simulated — based on created to closed)
+  // Avg MTTR — mean time to resolve, measured from each incident's created time to its closedAt time.
   var closedIncs = incidents.filter(function(i) { return i.closedAt; });
   var avgResolveHrs = 0;
   if (closedIncs.length) {
@@ -427,7 +444,7 @@ function renderMetrics(el) {
     var pct = total ? Math.round(count / total * 100) : 0;
     return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">' +
       '<span style="min-width:140px;font-size:.78rem;color:var(--mut)">' + esc(t) + '</span>' +
-      '<div style="flex:1;background:var(--bg);border-radius:2px;height:18px;overflow:hidden"><div style="height:100%;width:' + pct + '%;background:var(--acc)30"></div></div>' +
+      '<div style="flex:1;background:var(--bg);border-radius:2px;height:18px;overflow:hidden"><div style="height:100%;width:' + pct + '%;background:color-mix(in srgb, var(--acc) 19%, transparent)"></div></div>' +
       '<span style="min-width:30px;text-align:right;font-size:.78rem;font-weight:600">' + count + '</span>' +
     '</div>';
   }).join("");

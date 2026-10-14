@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
-import { createEntity, getEntity, updateEntity, deleteEntity, listEntities, createRelationship, getRelated, ENTITY_TYPES, SEVERITIES, STATUSES } from '/js/security-graph.js';
+import { createEntity, getEntity, updateEntity, deleteEntity, listEntities, createRelationship, deleteRelationship, getRelationships, getRelated, ENTITY_TYPES, RELATIONSHIP_TYPES, SEVERITIES, STATUSES } from '/js/security-graph.js';
 import { esc } from '/js/shared.js';
 
 const TYPE_COLORS = {
@@ -44,8 +44,9 @@ export function renderCaseManager(main) {
 .cm-row{display:flex;gap:12px;flex-wrap:wrap}.cm-row>*{flex:1;min-width:150px}
 .cm-related{margin-top:20px;border-top:1px solid var(--brd,#e2e8f0);padding-top:16px}
 .cm-related-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
-.cm-related-tag{padding:4px 10px;border-radius:4px;font-size:.78rem;font-weight:600;background:var(--bg-2,#f1f5f9);color:var(--txt,#0f172a);cursor:pointer}
-.cm-related-tag:hover{background:var(--acc,#2563eb);color:#fff}
+.cm-related-tag{display:inline-flex;align-items:center;gap:6px;padding:4px 6px 4px 10px;border-radius:4px;font-size:.78rem;font-weight:600;background:var(--bg-2,#f1f5f9);color:var(--txt,#0f172a)}
+.cm-unlink{border:0;background:transparent;color:inherit;cursor:pointer;font-size:1rem;line-height:1;padding:0 4px;border-radius:3px;opacity:.55}
+.cm-unlink:hover{opacity:1;background:rgba(220,38,38,.15);color:#dc2626}
 .cm-actions{display:flex;gap:8px;margin-top:16px;padding-top:12px;border-top:1px solid var(--brd,#e2e8f0)}
 .cm-btn{padding:6px 16px;border-radius:6px;font-size:.82rem;font-weight:600;cursor:pointer;border:1px solid var(--brd,#e2e8f0);background:var(--card-bg,#fff);color:var(--txt,#0f172a)}
 .cm-btn:hover{background:var(--acc,#2563eb);color:#fff;border-color:var(--acc,#2563eb)}
@@ -155,6 +156,8 @@ html[data-style="dark"] .cm-textarea,html[data-style="classic"] .cm-textarea{bac
     if (!item) { _detailId = null; renderList(); return; }
     const color = TYPE_COLORS[item.type] || '#64748b';
     const related = getRelated(item.id);
+    const relatedIds = new Set(related.map(r => r.id));
+    const candidates = listEntities().filter(e => e.id !== item.id && !relatedIds.has(e.id));
     const data = item.data || {};
     const timeline = data.timeline || [];
 
@@ -186,6 +189,7 @@ html[data-style="dark"] .cm-textarea,html[data-style="classic"] .cm-textarea{bac
             <div class="cm-field">
               <div class="cm-label">Severity</div>
               <select class="cm-input" id="cm-severity">
+                <option value=""${!item.severity ? ' selected' : ''}>None</option>
                 ${SEVERITIES.filter(Boolean).map(s => `<option value="${s}"${item.severity === s ? ' selected' : ''}>${s.charAt(0).toUpperCase() + s.slice(1)}</option>`).join('')}
               </select>
             </div>
@@ -210,15 +214,28 @@ html[data-style="dark"] .cm-textarea,html[data-style="classic"] .cm-textarea{bac
             <button class="cm-btn danger" id="cm-delete">Delete</button>
           </div>
           <div class="cm-related">
-            <div class="cm-label">Related Entities (${related.length})</div>
+            <div class="cm-label" style="display:flex;align-items:center;justify-content:space-between">
+              <span>Related Entities (${related.length})</span>
+              ${candidates.length ? '<button class="cm-btn" id="cm-link-toggle" style="font-size:.76rem;padding:3px 10px">Link entity</button>' : ''}
+            </div>
             ${related.length ? `
               <div class="cm-related-list">
                 ${related.map(r => {
-                  const rc = TYPE_COLORS[r.type] || '#64748b';
-                  return `<span class="cm-related-tag" title="${esc(r.type)}: ${esc(r.name)}">${esc(r.type)} - ${esc(r.name)}</span>`;
+                  return `<span class="cm-related-tag" title="${esc(r.type)}: ${esc(r.name)}">${esc(r.type)} - ${esc(r.name)}<button class="cm-unlink" data-rid="${esc(r.id)}" title="Unlink" aria-label="Unlink ${esc(r.name)}">&times;</button></span>`;
                 }).join('')}
               </div>
-            ` : '<p class="muted" style="font-size:.82rem;margin-top:8px">No related entities. Link entities from the Security Graph or Investigation Workspace.</p>'}
+            ` : '<p class="muted" style="font-size:.82rem;margin-top:8px">No related entities yet. Use "Link entity" to connect this case to an asset, finding, incident, or indicator in the Security Graph.</p>'}
+            ${candidates.length ? `
+              <div id="cm-link-form" style="display:none;margin-top:10px;gap:8px;flex-wrap:wrap;align-items:center">
+                <select class="cm-input" id="cm-link-rel" style="width:auto;min-width:140px">
+                  ${RELATIONSHIP_TYPES.map(t => `<option value="${t}"${t === 'related_to' ? ' selected' : ''}>${t.replace(/_/g, ' ')}</option>`).join('')}
+                </select>
+                <select class="cm-input" id="cm-link-target" style="width:auto;min-width:200px;flex:1">
+                  ${candidates.map(e => `<option value="${esc(e.id)}">${esc(e.type)} - ${esc(e.name)}</option>`).join('')}
+                </select>
+                <button class="cm-btn primary" id="cm-link-add" style="font-size:.76rem;padding:3px 12px">Link</button>
+              </div>
+            ` : ''}
           </div>
           ${timeline.length ? `
             <div class="cm-related" style="margin-top:16px">
@@ -252,8 +269,16 @@ html[data-style="dark"] .cm-textarea,html[data-style="classic"] .cm-textarea{bac
           team: main.querySelector('#cm-team').value.trim(),
         },
       };
+      const changes = [];
+      if ((item.name || '') !== updates.name) changes.push('renamed');
+      if ((item.status || '') !== updates.status) changes.push('status → ' + (updates.status || 'none'));
+      if ((item.severity || '') !== updates.severity) changes.push('severity → ' + (updates.severity || 'none'));
+      if ((data.priority || '') !== updates.data.priority) changes.push('priority → ' + (updates.data.priority || 'none'));
+      if ((data.owner || '') !== updates.data.owner) changes.push('owner changed');
+      if ((data.team || '') !== updates.data.team) changes.push('notes changed');
+      if ((data.description || '') !== updates.data.description) changes.push('description edited');
       const newTimeline = [...(data.timeline || [])];
-      newTimeline.push({ ts: Date.now(), text: 'Case updated' });
+      if (changes.length) newTimeline.push({ ts: Date.now(), text: changes.join(', ') });
       updates.data.timeline = newTimeline;
       updateEntity(_detailId, updates);
       renderDetail();
@@ -266,6 +291,38 @@ html[data-style="dark"] .cm-textarea,html[data-style="classic"] .cm-textarea{bac
         renderList();
       }
     };
+
+    const linkToggle = main.querySelector('#cm-link-toggle');
+    if (linkToggle) linkToggle.onclick = () => {
+      const f = main.querySelector('#cm-link-form');
+      if (f) f.style.display = f.style.display === 'flex' ? 'none' : 'flex';
+    };
+    const linkAdd = main.querySelector('#cm-link-add');
+    if (linkAdd) linkAdd.onclick = () => {
+      const targetId = main.querySelector('#cm-link-target').value;
+      const relType = main.querySelector('#cm-link-rel').value;
+      if (!targetId) return;
+      const rel = createRelationship(item.id, targetId, relType);
+      if (rel) {
+        const tgt = getEntity(targetId);
+        const tl = [...((getEntity(_detailId).data || {}).timeline || [])];
+        tl.push({ ts: Date.now(), text: 'linked ' + relType.replace(/_/g, ' ') + ' ' + (tgt ? tgt.name : targetId) });
+        updateEntity(_detailId, { data: { ...(getEntity(_detailId).data || {}), timeline: tl } });
+        renderDetail();
+      } else if (window.showToast) {
+        window.showToast('error', 'Could not create the link');
+      }
+    };
+    main.querySelectorAll('.cm-unlink').forEach(btn => {
+      btn.onclick = (e) => {
+        e.stopPropagation();
+        const otherId = btn.dataset.rid;
+        getRelationships(item.id)
+          .filter(r => r.fromId === otherId || r.toId === otherId)
+          .forEach(r => deleteRelationship(r.id));
+        renderDetail();
+      };
+    });
   }
 
   renderList();

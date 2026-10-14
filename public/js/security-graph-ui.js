@@ -174,6 +174,15 @@ html[data-style="dark"] .sgu-select,html[data-style="classic"] .sgu-select{backg
       btn.onclick = (e) => { e.stopPropagation(); const entity = getEntity(btn.dataset.eid); if (entity) openEntityModal(entity); };
     });
 
+    // The whole card is signalled clickable (cursor:pointer); open the entity on a
+    // click anywhere on it that isn't one of the action buttons.
+    main.querySelectorAll('.sgu-card').forEach(card => {
+      card.onclick = (e) => {
+        if (e.target.closest('.sgu-card-btn')) return;
+        const entity = getEntity(card.dataset.eid); if (entity) openEntityModal(entity);
+      };
+    });
+
     main.querySelectorAll('[data-action="delete"]').forEach(btn => {
       btn.onclick = async (e) => {
         e.stopPropagation();
