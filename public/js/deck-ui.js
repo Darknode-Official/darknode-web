@@ -1258,9 +1258,11 @@ textarea.dk-kitio{min-height:120px}
 .dk[data-ui=deck] .dk-nvh{display:flex;align-items:baseline;gap:10px;text-transform:none;letter-spacing:0;padding:16px 8px 8px;color:var(--ix-tx);font-size:15px;font-weight:400;font-family:"Source Serif 4",Georgia,serif;white-space:nowrap;overflow:hidden}
 .dk[data-ui=deck] .dk-nvh .no{flex:none;width:18px;font:500 10.5px/1 ui-monospace,"JetBrains Mono",SFMono-Regular,Menlo,monospace;color:var(--ix-dim);letter-spacing:.04em}
 .dk[data-ui=deck] .dk-nvh .gt{min-width:0;overflow:hidden;text-overflow:ellipsis}
-.dk[data-ui=deck] .dk-nvhb{position:relative}
-.dk[data-ui=deck] .dk-nvhb .ov{position:absolute;right:8px;top:19px;font-family:"Inter",system-ui,sans-serif;font-size:11px;color:var(--ix-mut);background:var(--ix-bg);padding-left:8px}
-.dk[data-ui=deck] .dk-nvhb:hover,.dk[data-ui=deck] .dk-nvhb.on,.dk[data-ui=deck] .dk-nvhb:focus-visible{color:#fff}
+.dk[data-ui=deck] .dk-nvhb{position:relative;transition:padding-right .15s}
+.dk[data-ui=deck] .dk-nvhb .ov{position:absolute;right:8px;top:19px;font-family:"Inter",system-ui,sans-serif;font-size:11px;color:var(--ix-mut);pointer-events:none}
+/* Reserve real room for "Overview" on hover so the title ellipsizes beside it
+   instead of being overlaid — nothing in the Deck should overlap. */
+.dk[data-ui=deck] .dk-nvhb:hover,.dk[data-ui=deck] .dk-nvhb.on,.dk[data-ui=deck] .dk-nvhb:focus-visible{color:#fff;padding-right:70px}
 .dk[data-ui=deck] .dk-nvhb.on .no{color:var(--ix-mark)}
 .dk[data-ui=deck] .dk-nvi{margin-left:16px;padding-left:12px;border-left:1px solid var(--ix-line)}
 .dk[data-ui=deck] .dk-nv{position:relative;font-weight:400;font-size:13.5px;color:var(--ix-mut);border-radius:6px;min-height:32px;padding:5px 8px;gap:10px;margin:0}
