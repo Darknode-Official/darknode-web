@@ -746,7 +746,9 @@ ${E} .mt:hover{background:rgba(0,0,0,.06)!important;color:#1d1c1a!important}
     el.innerHTML = convos.map((c) => `<div class="ai2-hitem${c.id === curId ? " active" : ""}"><button class="ai2-hitem-t" data-load="${c.id}"${c.id === curId ? ' aria-current="true"' : ""}>${esc(c.title)}</button><button class="ai2-hitem-x" data-del-convo="${c.id}" title="Delete chat" aria-label="Delete chat ${esc(c.title)}">&times;</button></div>`).join("");
   }
   function loadConvo(id) {
-    if (busy && ctrl) ctrl.abort();
+    // Abort any in-flight stream and mark it discarded, so its async completion
+    // doesn't push the old reply onto (and persist it into) the chat we switch to.
+    if (busy && ctrl) { ctrl.discarded = true; ctrl.abort(); }
     const c = loadConvos().find((x) => x.id === id); if (!c) return;
     curId = id; try { localStorage.setItem(CUR_KEY, id); } catch (_) {}
     history.length = 1;
@@ -754,7 +756,7 @@ ${E} .mt:hover{background:rgba(0,0,0,.06)!important;color:#1d1c1a!important}
     renderMessages(); drawHistory(); status.textContent = "";
   }
   function newChat() {
-    if (busy && ctrl) ctrl.abort();
+    if (busy && ctrl) { ctrl.discarded = true; ctrl.abort(); }
     curId = null; try { localStorage.removeItem(CUR_KEY); } catch (_) {}
     history.length = 1; renderMessages(); drawHistory();
     const b = $("#aiMsg"); if (b) b.focus();
@@ -838,6 +840,7 @@ ${E} .mt:hover{background:rgba(0,0,0,.06)!important;color:#1d1c1a!important}
     if (!_key(provider) && !PROXY_PROVIDERS.has(provider)) { status.textContent = "No API key for " + provider + " — add one in Settings → API Keys."; return; }
     const lastUser = [...history].reverse().find((m) => m.role === "user");
     busy = true; ctrl = new AbortController(); setSend(true);
+    const myCtrl = ctrl;
     const out = appendStreaming(); let acc = "";
     try {
       await streamFor(provider, modelId, wire(history), (t) => { acc += t; out.innerHTML = mdToHtml(acc); chatEl.scrollTop = chatEl.scrollHeight; }, ctrl.signal);
@@ -845,7 +848,10 @@ ${E} .mt:hover{background:rgba(0,0,0,.06)!important;color:#1d1c1a!important}
       persist(); renderMessages();
       if (looksLikeRefusal(acc)) { const last = chatEl.querySelector(".msg.ai:last-child .msg-body"); if (last) offerReframe(last, lastUser && lastUser.content); }
     } catch (e) {
-      if (e.name === "AbortError") { history.push({ role: "assistant", content: acc || "", stopped: true }); persist(); renderMessages(); }
+      // Discarded = we navigated to another chat; the history is no longer this
+      // run's, so don't push the partial reply onto (or persist) the wrong chat.
+      if (e.name === "AbortError" && myCtrl.discarded) { /* dropped on purpose */ }
+      else if (e.name === "AbortError") { history.push({ role: "assistant", content: acc || "", stopped: true }); persist(); renderMessages(); }
       else { out.innerHTML = `<span class="err">Error: ${esc(e.message)}</span>`; status.textContent = "Error — " + e.message; }
     } finally { busy = false; ctrl = null; setSend(false); const b = $("#aiMsg"); if (b) b.focus(); }
   }
@@ -872,12 +878,16 @@ ${E} .mt:hover{background:rgba(0,0,0,.06)!important;color:#1d1c1a!important}
     const base = history[i].content || "";
     const msgs = wire(history).concat([{ role: "user", content: "Continue exactly where you left off. Do not repeat anything you have already written." }]);
     busy = true; ctrl = new AbortController(); setSend(true);
+    const myCtrl = ctrl;
     const out = appendStreaming(); let acc = "";
     try {
       await streamFor(provider, modelId, msgs, (t) => { acc += t; out.innerHTML = mdToHtml(base + "\n\n" + acc); chatEl.scrollTop = chatEl.scrollHeight; }, ctrl.signal);
       history[i].content = base + (acc ? "\n\n" + acc : ""); persist(); renderMessages();
     } catch (e) {
-      if (e.name === "AbortError") { history[i].content = base + (acc ? "\n\n" + acc : ""); persist(); renderMessages(); }
+      // Discarded = switched chats mid-stream; history[i] now belongs to another
+      // chat (or is gone), so don't write the partial continuation into it.
+      if (e.name === "AbortError" && myCtrl.discarded) { /* dropped on purpose */ }
+      else if (e.name === "AbortError") { history[i].content = base + (acc ? "\n\n" + acc : ""); persist(); renderMessages(); }
       else { out.innerHTML = `<span class="err">Error: ${esc(e.message)}</span>`; }
     } finally { busy = false; ctrl = null; setSend(false); }
   }
