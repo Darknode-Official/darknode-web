@@ -10,6 +10,7 @@
 
 import { scanFile, parseManifest, isManifest, osvSeverity, osvFixed, repoScore, toSarif, SEV_ORDER, langOf } from "/js/codescan/rules.js?v=20261013a";
 import * as gh from "/js/codescan/github.js?v=20261013a";
+import { findingKey, serializeBaseline, diffFindings, baselineKeySet } from "/js/codescan/baseline.js?v=20261014a";
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const fmt = (n) => Number(n || 0).toLocaleString();
@@ -17,7 +18,11 @@ const SEVS = ["critical", "high", "medium", "low"];
 const SEV_LABEL = { critical: "Critical", high: "High", medium: "Medium", low: "Low", info: "Review" };
 const KIND_LABEL = { secret: "Secrets", code: "Code", dep: "Dependencies" };
 const HIST_KEY = "dn_codescan_recent";
+const BASE_KEY = "dn_codescan_baseline:"; // + target ref; one saved baseline per target, this browser only
+const DIFF_FILTERS = [["all", "All"], ["new", "New"], ["fixed", "Fixed"], ["unchanged", "Unchanged"]];
 const toast = (m, t) => { try { (window.dnToast || window.showToast || (() => {}))(m, t); } catch (_) {} };
+const fmtWhen = (ms) => { try { return new Date(ms).toLocaleString(); } catch (_) { return ""; } };
+function loadBaseline(ref) { try { const j = JSON.parse(localStorage.getItem(BASE_KEY + ref) || "null"); return j && Array.isArray(j.items) ? j : null; } catch (_) { return null; } }
 
 const CSS = `<style id="cs-css">
 .cs{--cs-line:var(--line,#e4e7ec);--cs-card:var(--card,#fff);--cs-txt:var(--txt,#101828);--cs-mut:var(--mut,#5f6b7a);--cs-acc:var(--acc,#0972d3);
@@ -122,6 +127,20 @@ const CSS = `<style id="cs-css">
 .cs-fd .t1 span:last-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .cs-fd .t2{font:11.5px ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--cs-mut);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .cs-kbd{font:11px ui-monospace,monospace;border:1px solid var(--cs-line);border-radius:4px;padding:0 4px;color:var(--cs-mut)}
+/* Baseline & diff */
+.cs-band{display:flex;align-items:center;gap:10px;flex-wrap:wrap;border:1px solid var(--cs-line);border-radius:8px;background:color-mix(in srgb,var(--cs-txt) 2%,var(--cs-card));padding:8px 12px;margin:0 0 12px}
+.cs-diffsum{font-size:13px;font-weight:600}
+.cs-diffsum b{font-weight:700}
+.cs-diffsum .dn{color:var(--sev-high)}
+.cs-diffsum .df{color:#067647}
+.cs-diffsum .du{color:var(--cs-mut)}
+.cs-diffseg{margin-bottom:12px}
+.cs-fixhd{padding:12px 14px;border-bottom:1px solid var(--cs-line);font-size:12.5px;color:var(--cs-mut);line-height:1.5}
+.cs-fix{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--cs-line);font-size:13px}
+.cs-fix:last-child{border-bottom:0}
+.cs-fix .nm{font-weight:600;min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cs-fix .pth{font:11.5px ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--cs-mut);min-width:0;max-width:40%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;direction:rtl;text-align:left}
+.cs-newb{display:inline-flex;align-items:center;height:18px;padding:0 6px;border-radius:4px;font-size:10.5px;font-weight:700;letter-spacing:.02em;color:#fff;background:var(--sev-high);margin-right:6px}
 </style>`;
 
 const sevVar = (s) => `--sev:var(--sev-${s in SEV_LABEL ? s : "low"})`;
@@ -132,7 +151,7 @@ function saveRecent(entry) {
 }
 
 export function renderCodeScanner(main) {
-  const st = { mode: "github", repos: null, filter: "", scan: null, sevOn: new Set(SEVS), kindOn: new Set(["secret", "code", "dep"]), file: "", idx: -1, fileFilter: "", busy: false };
+  const st = { mode: "github", repos: null, filter: "", scan: null, sevOn: new Set(SEVS), kindOn: new Set(["secret", "code", "dep"]), file: "", idx: -1, fileFilter: "", busy: false, baseline: null, baseSet: null, diffCounts: null, fixedItems: [], diffOn: "all" };
   let token = 0; // render token: stale async work checks this before touching the DOM
 
   const pageFont = (() => { try { return getComputedStyle(main).fontFamily; } catch (_) { return ""; } })();
@@ -320,15 +339,62 @@ export function renderCodeScanner(main) {
   }
 
   function finish(res) {
-    st.scan = res; st.file = ""; st.idx = -1; st.sevOn = new Set(SEVS); st.kindOn = new Set(["secret", "code", "dep"]);
+    // Stable target ref for the baseline: the repo+branch (or folder), never the SHA,
+    // so two scans of the same branch at different commits diff against each other.
+    res.ref = res.github ? "gh:" + res.full + (res.branch ? "@" + res.branch : "") : "local:" + res.full;
+    st.scan = res; st.file = ""; st.idx = -1; st.sevOn = new Set(SEVS); st.kindOn = new Set(["secret", "code", "dep"]); st.diffOn = "all";
     const counts = Object.fromEntries(SEVS.map((s) => [s, res.findings.filter((f) => f.sev === s).length]));
     saveRecent({ full: res.full, sha: res.sha.slice(0, 7), at: res.at, total: res.findings.length, score: repoScore(res.findings), counts });
+    st.baseline = loadBaseline(res.ref);
+    recomputeDiff();
     if (res.findings.length) st.idx = 0;
     renderWorkspace();
   }
 
+  // Classify the current findings against the saved baseline (if any).
+  function recomputeDiff() {
+    if (!st.baseline) { st.baseSet = null; st.diffCounts = null; st.fixedItems = []; return; }
+    st.baseSet = baselineKeySet(st.baseline);
+    const d = diffFindings(st.baseSet, st.scan.findings);
+    const fixed = new Set(d.fixedKeys);
+    st.diffCounts = { new: d.newFindings.length, fixed: d.fixedKeys.length, unchanged: d.unchanged.length };
+    st.fixedItems = (st.baseline.items || []).filter((it) => fixed.has(it.k));
+  }
+  const keyOf = (f) => findingKey(f);
+  const isNew = (f) => !!st.baseSet && !st.baseSet.has(keyOf(f));
+
+  // Baselines are a local snapshot stored in THIS browser only — nothing is uploaded.
+  async function saveBaseline(replace) {
+    const s = st.scan;
+    if (!s) return;
+    if (replace && st.baseline && !(window.dnConfirm ? await window.dnConfirm("Replace baseline?", "Overwrite the saved baseline for " + s.full + " with this scan. The diff resets, so nothing counts as new or fixed until the next scan of the same target.") : true)) return;
+    const b = serializeBaseline(s.findings, { ref: s.ref, full: s.full, sha: s.sha, branch: s.branch, at: Date.now() });
+    try { localStorage.setItem(BASE_KEY + s.ref, JSON.stringify(b)); }
+    catch (_) { toast("Couldn't save the baseline in this browser", "error"); return; }
+    st.baseline = b; st.diffOn = "all"; st.idx = 0; recomputeDiff();
+    toast("Baseline saved for " + s.full, "ok");
+    renderWorkspace();
+  }
+  async function clearBaseline() {
+    const s = st.scan;
+    if (!s || !st.baseline) return;
+    if (!(window.dnConfirm ? await window.dnConfirm("Clear baseline?", "Remove the saved baseline for " + s.full + " from this browser. The scan results are not affected.") : true)) return;
+    try { localStorage.removeItem(BASE_KEY + s.ref); } catch (_) {}
+    st.baseline = null; st.diffOn = "all"; st.idx = 0; recomputeDiff();
+    toast("Baseline cleared", "ok");
+    renderWorkspace();
+  }
+
   // ── Workspace ───────────────────────────────────────────────────────────────
-  const visible = () => st.scan.findings.filter((f) => st.sevOn.has(f.sev) && st.kindOn.has(f.kind));
+  const visible = () => st.scan.findings.filter((f) => st.sevOn.has(f.sev) && st.kindOn.has(f.kind) && diffMatch(f));
+  // Diff filter over CURRENT findings. "fixed" resolves to baseline-only items shown
+  // separately (no current finding is "fixed"), so it filters everything out here.
+  function diffMatch(f) {
+    if (!st.baseSet || st.diffOn === "all") return true;
+    if (st.diffOn === "new") return isNew(f);
+    if (st.diffOn === "unchanged") return !isNew(f);
+    return false;
+  }
 
   function renderWorkspace() {
     ++token;
@@ -337,6 +403,10 @@ export function renderCodeScanner(main) {
     const kinds = Object.fromEntries(Object.keys(KIND_LABEL).map((k) => [k, s.findings.filter((f) => f.kind === k).length]));
     const score = repoScore(s.findings);
     const toGraph = s.findings.filter((f) => f.confidence !== "review");
+    const hasBase = !!st.baseSet;
+    const showFixed = hasBase && st.diffOn === "fixed";
+    const bandHtml = baselineBand(s);
+    const fixedHtml = () => fixedListHtml();
     body.innerHTML = `<div class="cs-sum">
         <span class="repo">${esc(s.full)}</span>${s.sha ? `<span class="sha">${esc(s.branch || "")} @ ${esc(s.sha.slice(0, 7))}</span>` : ""}
         <span class="cs-pill">${fmt(s.scanned)} files scanned</span>${s.skipped ? `<span class="cs-pill" title="Binary, vendored, generated or oversized files are skipped">${fmt(s.skipped)} skipped</span>` : ""}${s.ignored ? `<span class="cs-pill" title="The repository's .darknodeignore file lists these paths as not production code, so they were not scanned">${fmt(s.ignored)} excluded by .darknodeignore</span>` : ""}
@@ -349,12 +419,13 @@ export function renderCodeScanner(main) {
       </div>
       ${!s.deps && !s.depNote ? `<p class="cs-help" style="margin:-4px 0 12px">No lockfile or pinned dependency versions were found, so dependencies were not checked against advisories.</p>` : ""}
       ${s.depNote ? `<div class="cs-err" style="margin:0 0 12px">${esc(s.depNote)}</div>` : ""}
+      ${bandHtml}
       <div class="cs-chips">
         ${SEVS.map((v) => `<button class="cs-chip ${st.sevOn.has(v) ? "on" : ""}" data-sev="${v}" type="button"><span class="d" style="background:var(--sev-${v})"></span>${SEV_LABEL[v]} ${fmt(counts[v])}</button>`).join("")}
         <span style="width:8px"></span>
         ${Object.keys(KIND_LABEL).map((k) => `<button class="cs-chip ${st.kindOn.has(k) ? "on" : ""}" data-kind="${k}" type="button">${KIND_LABEL[k]} ${fmt(kinds[k])}</button>`).join("")}
       </div>
-      ${s.findings.length ? `<div class="cs-ws">
+      ${showFixed ? fixedHtml() : s.findings.length ? `<div class="cs-ws">
         <div class="cs-side l"><div class="hd"><input class="cs-in" id="csFF" placeholder="Filter files" value="${esc(st.fileFilter)}"></div><div class="cs-scroll" id="csFiles"></div></div>
         <div class="cs-mid"><div class="cs-codehd" id="csCodeHd"></div><div class="cs-code" id="csCode"></div></div>
         <div class="cs-side r"><div class="hd"><span style="flex:1">Findings</span><span class="cs-kbd" title="Next / previous finding">J</span><span class="cs-kbd">K</span></div><div class="cs-scroll" id="csFind"></div></div>
@@ -380,13 +451,48 @@ export function renderCodeScanner(main) {
     };
     body.querySelectorAll("[data-sev]").forEach((b) => b.onclick = () => { toggle(st.sevOn, b.dataset.sev); st.idx = 0; renderWorkspace(); });
     body.querySelectorAll("[data-kind]").forEach((b) => b.onclick = () => { toggle(st.kindOn, b.dataset.kind); st.idx = 0; renderWorkspace(); });
-    if (!s.findings.length) return;
+    const save = body.querySelector("#csBaseSave"); if (save) save.onclick = () => saveBaseline(false);
+    const upd = body.querySelector("#csBaseUpd"); if (upd) upd.onclick = () => saveBaseline(true);
+    const clr = body.querySelector("#csBaseClr"); if (clr) clr.onclick = () => clearBaseline();
+    body.querySelectorAll("[data-diff]").forEach((b) => b.onclick = () => { st.diffOn = b.dataset.diff; st.idx = 0; renderWorkspace(); });
+    if (!s.findings.length || showFixed) return;
     const ff = body.querySelector("#csFF");
     ff.oninput = () => { st.fileFilter = ff.value; drawFiles(); };
     drawFiles(); drawFindings();
     const v = visible();
     if (v.length) select(Math.min(Math.max(st.idx, 0), v.length - 1));
     else { body.querySelector("#csCode").innerHTML = `<div class="cs-empty">No findings match the selected filters.</div>`; body.querySelector("#csCodeHd").innerHTML = ""; }
+  }
+
+  // Baseline summary + diff filter band. Honest: a baseline is a local snapshot.
+  function baselineBand(s) {
+    if (!st.baseline) {
+      return `<div class="cs-band"><span class="cs-help" style="margin:0">No baseline saved for this target. Save the current findings to see what is new or fixed on the next scan — stored in this browser only, nothing is uploaded.</span>
+        <span class="sp" style="flex:1"></span><button class="cs-btn sm" id="csBaseSave" type="button">Save baseline</button></div>`;
+    }
+    const c = st.diffCounts || { new: 0, fixed: 0, unchanged: 0 };
+    const seg = DIFF_FILTERS.map(([v, label]) => {
+      const n = v === "new" ? c.new : v === "fixed" ? c.fixed : v === "unchanged" ? c.unchanged : 0;
+      return `<button data-diff="${v}" class="${st.diffOn === v ? "on" : ""}" type="button">${label}${v === "all" ? "" : " " + fmt(n)}</button>`;
+    }).join("");
+    return `<div class="cs-band">
+        <span class="cs-diffsum"><b class="dn">+${fmt(c.new)} new</b> · <b class="df">${fmt(c.fixed)} fixed</b> · <b class="du">${fmt(c.unchanged)} unchanged</b></span>
+        <span class="cs-help" style="margin:0">Baseline from ${esc(fmtWhen(st.baseline.at))}${st.baseline.sha ? " · " + esc(st.baseline.sha.slice(0, 7)) : ""} · stored in this browser only</span>
+        <span class="sp" style="flex:1"></span>
+        <button class="cs-btn sm" id="csBaseUpd" type="button">Update baseline</button>
+        <button class="cs-btn sm" id="csBaseClr" type="button">Clear baseline</button>
+      </div>
+      <div class="cs-seg cs-diffseg" role="tablist">${seg}</div>`;
+  }
+
+  // FIXED findings have no current location, so they are a plain resolved list.
+  function fixedListHtml() {
+    const items = st.fixedItems.filter((it) => st.sevOn.has(it.sev) && st.kindOn.has(it.kind));
+    if (!items.length) return `<div class="cs-card cs-empty" style="padding:48px 12px"><h2 class="cs-h2">Nothing fixed</h2><p class="cs-p" style="margin:0">No baseline finding is absent from this scan under the current filters.</p></div>`;
+    return `<div class="cs-card" style="padding:0">
+      <div class="cs-fixhd">Resolved since the baseline — present in the baseline, absent from this scan. These have no current location in the code.</div>
+      ${items.map((it) => `<div class="cs-fix" style="${sevVar(it.sev)}"><span class="cs-sev">${SEV_LABEL[it.sev] || "Review"}</span><span class="nm">${esc(it.label || "(finding)")}</span><span class="pth" title="${esc(it.path || "")}">${esc(it.path || "")}</span></div>`).join("")}
+      </div>`;
   }
 
   function drawFiles() {
@@ -402,7 +508,7 @@ export function renderCodeScanner(main) {
   function drawFindings() {
     const el = body.querySelector("#csFind");
     const v = visible();
-    el.innerHTML = v.length ? v.slice(0, 1500).map((f, i) => `<button class="cs-fd ${i === st.idx ? "on" : ""}" data-i="${i}" style="${sevVar(f.sev)}" type="button"><div class="t1"><span class="cs-sev">${SEV_LABEL[f.sev]}</span><span>${esc(f.kind === "dep" ? f.pkg + " " + f.version : f.title)}</span></div><div class="t2">${f.flow ? `<span class="cs-df" title="Traced from where the input enters to where it is used">Data flow</span>` : ""}${f.confidence === "review" ? `<span class="cs-rev" title="The dangerous call is real, but no untrusted input was traced to it — confirm the source before acting">Needs review</span>` : ""}${f.advisory ? esc(f.advisory) + " · " : ""}${esc(f.path)}:${f.line}</div></button>`).join("") : `<div class="cs-empty">No findings match the selected filters.</div>`;
+    el.innerHTML = v.length ? v.slice(0, 1500).map((f, i) => `<button class="cs-fd ${i === st.idx ? "on" : ""}" data-i="${i}" style="${sevVar(f.sev)}" type="button"><div class="t1"><span class="cs-sev">${SEV_LABEL[f.sev]}</span><span>${esc(f.kind === "dep" ? f.pkg + " " + f.version : f.title)}</span></div><div class="t2">${st.baseSet && isNew(f) ? `<span class="cs-newb" title="Not in the saved baseline">New</span>` : ""}${f.flow ? `<span class="cs-df" title="Traced from where the input enters to where it is used">Data flow</span>` : ""}${f.confidence === "review" ? `<span class="cs-rev" title="The dangerous call is real, but no untrusted input was traced to it — confirm the source before acting">Needs review</span>` : ""}${f.advisory ? esc(f.advisory) + " · " : ""}${esc(f.path)}:${f.line}</div></button>`).join("") : `<div class="cs-empty">No findings match the selected filters.</div>`;
     el.querySelectorAll(".cs-fd").forEach((b) => b.onclick = () => select(+b.dataset.i));
   }
 
