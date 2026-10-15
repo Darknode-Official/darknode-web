@@ -1962,11 +1962,21 @@ export function renderDeck(host, opts) {
   // instant and keeps its state. Resting the pointer on a tool starts it loading early.
   const KEEP = 5, live = new Map(); // sec -> iframe, least recently used first
   const wLoad = document.createElement("div"); wLoad.className = "dk-wload";
+  // "Cool UI" skin — an opt-in, more visual restyle of the tool chrome (same colour
+  // scheme). The flag is set from Deck Settings (gated per account); embedded tool
+  // pages read ?cool=1 and inject their cool stylesheet. Kept iframes are rebuilt when
+  // it changes so the skin applies without a manual reload.
+  function coolOn(){ try { return localStorage.getItem("dn_cool_ui") === "1"; } catch (_) { return false; } }
+  function frameSrc(sec){ return "/" + sec + "?embed=1&ink=1" + (coolOn() ? "&cool=1" : ""); }
+  function reloadToolsForCool(){
+    live.forEach((f, sec) => { f.dataset.ready = ""; f.classList.remove("in"); f.src = frameSrc(sec); });
+    toast("Cool tool UI " + (coolOn() ? "on" : "off"));
+  }
   function toolFrame(sec, label){
     let f = live.get(sec);
     if (f) { live.delete(sec); live.set(sec, f); return f; }
     f = document.createElement("iframe");
-    f.title = label; f.src = "/" + sec + "?embed=1&ink=1"; f.loading = "eager"; f.setAttribute("allow", "clipboard-write; clipboard-read");
+    f.title = label; f.src = frameSrc(sec); f.loading = "eager"; f.setAttribute("allow", "clipboard-write; clipboard-read");
     f.className = "off";
     f.onload = () => { f.dataset.ready = "1"; f.classList.add("in"); if (curSec === sec) wLoad.remove(); };
     wFrame.appendChild(f); live.set(sec, f);
@@ -2169,6 +2179,7 @@ export function renderDeck(host, opts) {
   // `storage` events. Pull new activity rows in and refresh whichever view shows the graph.
   let syncT = 0;
   const onStorage = (e) => {
+    if (e.key === "dn_cool_ui") { reloadToolsForCool(); return; }
     if (e.key !== "dn_recent_activity" && e.key !== "dn_security_graph") return;
     clearTimeout(syncT);
     syncT = setTimeout(() => {

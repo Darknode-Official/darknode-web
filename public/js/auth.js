@@ -1311,6 +1311,10 @@ function renderSettingsPage(main, user, isOwner, initialTab) {
       <div class="set-row"><span class="muted">Live topbar</span>
         <span class="seg" id="sw-topbar"><button data-topbar="on">Show</button><button data-topbar="off">Hide</button></span></div>
       <p class="muted" style="font-size:.72rem;margin-top:4px">Compact tightens padding across the app. Icon rail starts the sidebar collapsed. Reduced turns off transitions and animations.</p>
+      ${isOwner ? `<h3 class="set-sub-h">Deck (beta)</h3>
+      <div class="set-row"><span class="muted">Cool tool UI</span>
+        <span class="seg" id="sw-coolui"><button data-coolui="1">On</button><button data-coolui="0">Off</button></span></div>
+      <p class="muted" style="font-size:.72rem;margin-top:4px">A more visual restyle of the tools inside the Deck — same colour scheme, with depth, rounded controls and a little motion. Open Deck tools reload to apply.</p>` : ""}
       <h3 class="set-sub-h">Reading mode</h3>
       <div class="set-row"><span class="muted">Wording</span>
         <span class="seg" id="sw-read"><button data-read="normal">Normal</button><button data-read="stupid">Stupid</button><button data-read="confusing">Confusing</button></span></div>
@@ -1473,6 +1477,19 @@ function renderSettingsPage(main, user, isOwner, initialTab) {
     segWire("#sw-density", "density", applyDensity);
     segWire("#sw-motion", "motion", applyMotion);
     segWire("#sw-topbar", "topbar", applyTopbarPref);
+    const coolSeg = main.querySelector("#sw-coolui");
+    if (coolSeg) {
+      // Writing dn_cool_ui fires a storage event in the parent Deck window, which
+      // reloads its open tool frames with (or without) the cool skin. No console effect.
+      let cur = "0"; try { cur = localStorage.getItem("dn_cool_ui") === "1" ? "1" : "0"; } catch (_) {}
+      coolSeg.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b.dataset.coolui === cur));
+      coolSeg.onclick = (e) => {
+        const b = e.target.closest("button[data-coolui]"); if (!b) return;
+        try { localStorage.setItem("dn_cool_ui", b.dataset.coolui); } catch (_) {}
+        coolSeg.querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b));
+        try { showToast("Cool tool UI " + (b.dataset.coolui === "1" ? "on" : "off") + " — open Deck tools will reload", "success"); } catch (_) {}
+      };
+    }
     const sidewSeg = main.querySelector("#sw-sidew");
     if (sidewSeg) {
       // Same preference the side navigation's own open/close buttons keep (console-nav.js
@@ -1665,6 +1682,27 @@ function renderApp(user) {
           + 'html[data-embed] body.app.dn-embed:not(#dn-x):not(#dn-y):not(#dn-z),html[data-embed] body.app.dn-embed :is(#app,#view,.app-shell,.app-main):not(#dn-x):not(#dn-y):not(#dn-z){background:transparent!important}';
         document.head.appendChild(st);
         const fl = document.createElement("link"); fl.rel = "stylesheet"; fl.href = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&display=swap"; document.head.appendChild(fl);
+      }
+      // cool=1: an opt-in "cool UI" skin (set from Deck Settings) that keeps the colour
+      // scheme but makes the tool chrome more visual — depth from gradients and borders
+      // (box-shadow is stripped inside the Deck's invert layer), rounded controls, an
+      // accent strip on cards and a little motion. Scoped to body.dn-cool so it only ever
+      // touches framed tools that were opened with the flag on.
+      if (new URLSearchParams(location.search).get("cool") === "1") {
+        document.body.classList.add("dn-cool");
+        if (!document.getElementById("dn-cool-css")) {
+          const st = document.createElement("style"); st.id = "dn-cool-css";
+          st.textContent =
+            'body.dn-embed.dn-cool :is(input[type=text],input[type=search],input[type=url],input[type=email],input[type=number],input[type=password],input:not([type]),textarea,select){border-radius:10px!important;border:1.5px solid rgba(23,33,56,.16)!important;background:linear-gradient(180deg,rgba(255,255,255,.78),rgba(244,247,252,.55))!important;transition:border-color .15s ease,background .15s ease!important}'
+            + 'body.dn-embed.dn-cool :is(input,textarea,select):focus{border-color:var(--acc)!important;outline:2px solid color-mix(in srgb,var(--acc) 45%,transparent)!important;outline-offset:1px!important}'
+            + 'body.dn-embed.dn-cool :is(.btn,button):not(.ghost):not(.danger):not(.link):not(.github){border-radius:10px!important;transition:transform .12s ease,filter .15s ease!important}'
+            + 'body.dn-embed.dn-cool :is(.btn,button):not(.ghost):not(.danger):not(.link):not(.github):hover{transform:translateY(-1px)!important;filter:brightness(1.07)!important}'
+            + 'body.dn-embed.dn-cool :is(.btn,button):not(.ghost):not(.danger):not(.link):not(.github):active{transform:translateY(0)!important}'
+            + 'body.dn-embed.dn-cool :is(.card,.panel,.box,.tool-card,.result-card,.sec-card,.pm-card,.dash-card){border-radius:14px!important;border:1px solid rgba(23,33,56,.1)!important;background:linear-gradient(180deg,rgba(255,255,255,.72),rgba(246,248,252,.5))!important;position:relative!important}'
+            + 'body.dn-embed.dn-cool :is(.card,.panel,.box,.tool-card,.result-card,.sec-card,.pm-card,.dash-card)::before{content:""!important;position:absolute!important;left:0;right:0;top:0;height:3px!important;border-radius:14px 14px 0 0!important;background:linear-gradient(90deg,var(--acc),color-mix(in srgb,var(--acc) 35%,transparent))!important;pointer-events:none}'
+            + 'body.dn-embed.dn-cool pre{border-radius:12px!important;border:1px solid rgba(23,33,56,.12)!important;background:linear-gradient(180deg,rgba(248,250,253,.92),rgba(238,242,249,.82))!important;padding:14px!important}';
+          document.head.appendChild(st);
+        }
       }
     }
   } catch (_) {}
