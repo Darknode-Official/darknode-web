@@ -1032,6 +1032,10 @@ const CSS = `
 .dk-trend .stk span{width:100%;display:block;transition:height .5s cubic-bezier(.2,.8,.2,1)}
 .dk-trend .cx{font-size:10.5px;color:#6a7488;white-space:nowrap}
 .dk-trend .cn{font-size:11px;font-weight:700;color:#38435c;font-variant-numeric:tabular-nums}
+.dk-spark{display:inline-flex;align-items:center;gap:8px;margin-top:4px}
+.dk-spark svg{display:block;opacity:.9}
+.dk-spark .dk-sparkl{font-size:11px;color:#6a7488;white-space:nowrap}
+.dk-spark .dk-sparkl b{font-weight:700;font-variant-numeric:tabular-nums}
 .dk-twrap{display:grid;grid-template-columns:1.4fr 1fr;gap:18px;margin-bottom:20px}
 @media(max-width:900px){.dk-twrap{grid-template-columns:1fr}}
 .dk-tpanel{border-radius:16px;background:rgba(23,33,56,.03);border:1px solid rgba(23,33,56,.08);padding:16px 18px}
@@ -2262,6 +2266,31 @@ export function renderDeck(host, opts) {
     //  - Threat climate: global pressure from the live NVD 7-day feed and the CISA KEV catalog.
     //    The same for every organisation; it is context, not your posture.
     const sig = { cveHot: null, cveTotal: null, kevTotal: null, real: null, hot: null, sim: 0, intCov: Math.round((linked.length / (INTEGRATIONS.length || 1)) * 100) };
+    // Honest exposure trend: record one real snapshot per day (today's value is
+    // overwritten as it recomputes) and draw a sparkline only once there are at
+    // least two recorded days. No history is ever invented.
+    function recordExpSnapshot(score){
+      try {
+        const key = "dn_deck_exphist"; let h = [];
+        try { h = JSON.parse(localStorage.getItem(key) || "[]"); } catch (_) { h = []; }
+        if (!Array.isArray(h)) h = [];
+        const d = new Date().toISOString().slice(0, 10);
+        if (h.length && h[h.length - 1].d === d) h[h.length - 1].s = score; else h.push({ d, s: score });
+        if (h.length > 30) h = h.slice(-30);
+        localStorage.setItem(key, JSON.stringify(h));
+        return h;
+      } catch (_) { return []; }
+    }
+    function expSpark(h){
+      if (!h || h.length < 2) return "";
+      const w = 128, ht = 26, pad = 2, ys = h.map((p) => p.s);
+      const min = Math.min(...ys), max = Math.max(...ys), rng = (max - min) || 1;
+      const pts = h.map((p, i) => (pad + (i / (h.length - 1)) * (w - 2 * pad)).toFixed(1) + "," + (pad + (1 - (p.s - min) / rng) * (ht - 2 * pad)).toFixed(1)).join(" ");
+      const first = ys[0], last = ys[ys.length - 1];
+      const col = last > first ? "#e0383a" : last < first ? "#12a85f" : "#8a93a6"; // exposure rising = worse (red), falling = better (green)
+      const word = last > first ? "up" : last < first ? "down" : "flat";
+      return `<span class="dk-spark" title="Your exposure over the last ${h.length} recorded days"><svg viewBox="0 0 ${w} ${ht}" width="${w}" height="${ht}" preserveAspectRatio="none" aria-hidden="true"><polyline points="${pts}" fill="none" stroke="${col}" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/></svg><span class="dk-sparkl">${h.length}-day trend <b style="color:${col}">${last}${word === "flat" ? "" : word === "up" ? " ▲" : " ▼"}</b></span></span>`;
+    }
     function recomputeExposure(){
       const note = el.querySelector("#dkExpNote"), lines = [];
       const kn = el.querySelector('[data-k="exposure"] .kn');
@@ -2272,7 +2301,8 @@ export function renderDeck(host, opts) {
         } else {
           const score = Math.round((0.65 * Math.min(1, sig.hot / 25) + 0.35 * (1 - Math.min(1, sig.intCov / 100))) * 100);
           if (kn) kn.textContent = String(score);
-          lines.push(`<b>Your exposure ${score}/100</b> (higher is worse) — ${sig.hot} open critical/high finding${sig.hot === 1 ? "" : "s"} of ${sig.real.toLocaleString()} real entities &middot; ${sig.intCov}% integration coverage. Indicative, not an audit.`);
+          const spark = expSpark(recordExpSnapshot(score));
+          lines.push(`<b>Your exposure ${score}/100</b> (higher is worse) — ${sig.hot} open critical/high finding${sig.hot === 1 ? "" : "s"} of ${sig.real.toLocaleString()} real entities &middot; ${sig.intCov}% integration coverage. Indicative, not an audit.` + (spark ? "<br>" + spark : ""));
         }
         if (sig.sim) lines.push(`${sig.sim.toLocaleString()} simulated/sample entities (CRUCIBLE, demos) are excluded from every metric.`);
       }
