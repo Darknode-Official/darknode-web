@@ -1,4 +1,6 @@
 // Incident Tracker — security incident management dashboard with localStorage persistence
+import { createEntity as sgCreate, updateEntity as sgUpdate, deleteEntity as sgDelete, getEntity as sgGet } from "/js/security-graph.js";
+
 const esc = (s) => String(s != null ? s : "").replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 
@@ -34,8 +36,31 @@ function saveIncidents(list) { try { localStorage.setItem("ir_incidents", JSON.s
 function loadIOCs() { try { return JSON.parse(localStorage.getItem("ir_iocs") || "[]"); } catch (_) { return []; } }
 function saveIOCs(list) { try { localStorage.setItem("ir_iocs", JSON.stringify(list)); } catch (_) {} }
 
+// ── Security-graph mirror ──────────────────────────────────────────────
+// Incidents used to live only in localStorage, invisible to the rest of the
+// platform. Mirror each one into the shared security graph as an INCIDENT
+// entity (stable graphId per incident, so edits update rather than duplicate)
+// so it shows up in Findings, Investigations, Activity and the graph.
+const IR_SEV = { "P1 — Critical": "critical", "P2 — High": "high", "P3 — Medium": "medium", "P4 — Low": "low" };
+const IR_STATUS = { New: "new", Triage: "investigating", Investigating: "investigating", Contained: "investigating", Eradicated: "investigating", Recovered: "resolved", Closed: "closed" };
+function mirrorToGraph(inc) {
+  try {
+    const data = { incidentId: inc.id, incidentType: inc.type, affected: inc.affected, mitre: (inc.mitre || []).join(", "), description: inc.description, _toolSource: "incident-tracker" };
+    const sev = IR_SEV[inc.severity] || null;
+    const status = IR_STATUS[inc.status] || "new";
+    if (inc.graphId && sgGet(inc.graphId)) { sgUpdate(inc.graphId, { name: inc.title, data, severity: sev, status }); }
+    else { const e = sgCreate("INCIDENT", inc.title, data, { source: "incident-tracker", severity: sev, status }); if (e) inc.graphId = e.id; }
+  } catch (_) {}
+}
+function unmirrorFromGraph(inc) { try { if (inc && inc.graphId) sgDelete(inc.graphId); } catch (_) {} }
+
 // ── Main Render ──
 export function renderIncidentTracker(main) {
+  // One-time: surface any incidents created before graph-mirroring into the graph.
+  (function backfillGraph() {
+    try { var list = loadIncidents(), changed = false; list.forEach(function (inc) { if (!inc.graphId) { mirrorToGraph(inc); changed = true; } }); if (changed) saveIncidents(list); } catch (_) {}
+  })();
+
   var tabs = [
     { id: "list", label: "Incidents" },
     { id: "create", label: "New Incident" },
@@ -151,6 +176,7 @@ function renderList(el) {
       var idel = parseInt(e.target.dataset.idel);
       window.dnConfirm("Delete incident?", "This removes the incident and its timeline. This cannot be undone.").then(function(ok) {
         if (!ok) return;
+        unmirrorFromGraph(incidents[idel]);
         incidents.splice(idel, 1);
         saveIncidents(incidents);
         renderFiltered();
@@ -173,6 +199,7 @@ function renderList(el) {
       var idx = parseInt(e.target.dataset.sidx);
       incidents[idx].status = e.target.value;
       if (e.target.value === "Closed" && !incidents[idx].closedAt) incidents[idx].closedAt = new Date().toISOString();
+      mirrorToGraph(incidents[idx]);
       saveIncidents(incidents);
       renderFiltered();
     }
@@ -227,6 +254,7 @@ function renderCreate(el) {
     };
     var incidents = loadIncidents();
     incidents.unshift(incident);
+    mirrorToGraph(incident);
     saveIncidents(incidents);
     el.querySelector("#ic-msg").textContent = "Incident " + incident.id + " created.";
     el.querySelector("#ic-msg").style.color = "#4caf50";

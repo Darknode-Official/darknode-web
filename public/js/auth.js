@@ -1875,7 +1875,7 @@ function renderApp(user) {
     else if (sec === "threatmodel") { import("/js/threat-modeler.js?v=20260924b").then(m => live() && m.renderThreatModeler(main)); }
     else if (sec === "osint") { import("/js/osint-dashboard.js?v=20261007a").then(m => live() && m.renderOSINTDashboard(main)); }
     else if (sec === "addressintel") { import("/js/address-intel.js?v=20261013b").then(m => live() && m.renderAddressIntel(main)); }
-    else if (sec === "incidents") { import("/js/incident-tracker.js?v=20261014c").then(m => live() && m.renderIncidentTracker(main)); }
+    else if (sec === "incidents") { import("/js/incident-tracker.js?v=20261014e").then(m => live() && m.renderIncidentTracker(main)); }
     else if (sec === "firewall") { import("/js/firewall-builder.js?v=20261013b").then(m => live() && m.renderFirewallBuilder(main)); }
     else if (sec === "apitester") { import("/js/api-tester.js?v=20261013m").then(m => live() && m.renderAPITester(main)); }
     else if (sec === "sandbox") { import("/js/malware-sandbox.js").then(m => live() && m.renderMalwareSandbox(main)); }
