@@ -28,7 +28,7 @@ import * as surface from "/js/deck-surface.js?v=20261011b";
 import { bus, EVENTS } from "/js/core/bus.js";
 import { isSimulated } from "/js/core/posture.js";
 import * as findings from "/js/core/findings.js?v=20261013e";
-import { attachExplain, EXPLAIN, explainEnabled, setExplainEnabled } from "/js/ui/explain.js?v=20261014c";
+import { attachExplain, EXPLAIN, explainEnabled, setExplainEnabled } from "/js/ui/explain.js?v=20261014h";
 
 const LS_CONN = "dn_deck_connections_v1";
 const LS_SCENE = "dn_deck_scene";          // last workspace selected
@@ -749,8 +749,9 @@ const CSS = `
 .dk-src .dk-tibtn{height:30px;padding:0 10px;font-size:12px}
 .dk-src.on{border-style:solid;border-color:rgba(18,168,95,.35);background:rgba(18,168,95,.06);color:#1a2233}
 .dk-src.on .st{color:#12a85f;font-weight:700}
-.dk[data-ui=deck] .dk-scene{top:56px;left:var(--dk-sw);transition:left .18s ease}
+.dk[data-ui=deck] .dk-scene{top:56px;left:var(--dk-sw)}
 .dk-sbtog{border-color:transparent;background:transparent}
+.dk:not(.nav-phone) .dk-sbtog{display:none}
 .dk-crumb{min-width:0;display:flex;align-items:center;gap:8px;font-size:13px;color:#6a7488;white-space:nowrap;overflow:hidden;padding-left:6px}
 .dk-crumb b{color:#141c2e;font-weight:650;overflow:hidden;text-overflow:ellipsis}
 .dk-crumb .cs{color:#b3bac8}
@@ -760,7 +761,7 @@ const CSS = `
 .dk-hsearch .hs{flex:1;min-width:0;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dk-hsearch kbd{flex:none;font:inherit;font-size:11px;font-weight:600;color:#5a6680;background:rgba(23,33,56,.07);border:1px solid rgba(23,33,56,.1);padding:1px 6px;border-radius:5px}
 #dkFindBtn{display:none}
-.dk-sidebar{position:absolute;top:56px;left:0;bottom:0;width:var(--dk-sw);z-index:35;display:flex;flex-direction:column;background:#fff;border-right:1px solid rgba(23,33,56,.09);transition:width .18s ease,transform .2s ease}
+.dk-sidebar{position:absolute;top:56px;left:0;bottom:0;width:var(--dk-sw);z-index:35;display:flex;flex-direction:column;background:#fff;border-right:1px solid rgba(23,33,56,.09);transition:transform .2s ease}
 .dk-sbnav{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;padding:10px 12px 12px;scrollbar-width:thin}
 .dk-nvh{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#8a93a6;padding:18px 10px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dk-nv{appearance:none;border:0;background:transparent;width:100%;min-height:36px;display:flex;align-items:center;gap:11px;padding:7px 10px;margin:1px 0;color:#38435c;font:inherit;font-size:13.5px;font-weight:550;cursor:pointer;text-align:left;position:relative;transition:background .12s,color .12s}
@@ -1188,6 +1189,23 @@ textarea.dk-kitio{min-height:120px}
 .dk-cloudcard span{display:-webkit-box;align-self:stretch;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:11.5px;color:#687388;line-height:1.45}
 /* compliance */
 .dk-compnote{font-size:12.5px;color:#5a6680;line-height:1.55;padding:11px 14px;background:rgba(79,134,255,.06);border:1px solid rgba(79,134,255,.16);border-radius:10px;margin-bottom:20px;max-width:900px}
+.dk-plangrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(248px,1fr));gap:16px;margin-bottom:22px}
+.dk-plancard{position:relative;display:flex;flex-direction:column;padding:22px 20px;border-radius:14px;background:rgba(23,33,56,.025);border:1px solid rgba(23,33,56,.1)}
+.dk-plancard.feat{border-color:var(--a);box-shadow:0 0 0 1px var(--a)}
+.dk-plantag{position:absolute;top:-10px;left:20px;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#fff;background:var(--a);padding:4px 9px;border-radius:7px}
+.dk-planname{font-size:13px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--a)}
+.dk-planprice{font-size:30px;font-weight:800;color:#141c2e;margin:6px 0 2px;line-height:1}
+.dk-planprice span{font-size:12.5px;font-weight:600;color:#6b7589;margin-left:4px}
+.dk-planblurb{font-size:12.8px;color:#5a6680;line-height:1.5;margin:8px 0 14px;min-height:38px}
+.dk-planbtn{width:100%;padding:10px;border-radius:9px;border:1px solid var(--a);background:var(--a);color:#fff;font-weight:700;font-size:13px;cursor:pointer}
+.dk-planbtn:hover{filter:brightness(1.07)}
+.dk-planbtn.cur{background:transparent;color:#6b7589;border-color:rgba(23,33,56,.18);cursor:default}
+.dk-planfeats{list-style:none;margin:16px 0 0;padding:0;display:flex;flex-direction:column;gap:9px}
+.dk-planfeats li{display:flex;gap:9px;align-items:flex-start;font-size:12.6px;color:#3b445a;line-height:1.4}
+.dk-planfeats li svg{width:15px;height:15px;flex:none;color:var(--a);margin-top:1px}
+.dk-planincl{display:flex;flex-wrap:wrap;gap:10px 22px}
+.dk-planincl span{display:flex;gap:7px;align-items:center;font-size:12.8px;color:#3b445a}
+.dk-planincl span svg{width:15px;height:15px;color:#2552c6}
 .dk-compgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
 .dk-compcard{appearance:none;font:inherit;display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start;position:relative;text-align:left;cursor:pointer;background:#fff;border:1px solid rgba(23,33,56,.08);border-radius:14px;padding:17px 18px;transition:border-color .15s,transform .15s}
 .dk-compcard:hover{border-color:#3f78ff;transform:translateY(-1px)}
@@ -1532,6 +1550,8 @@ export function renderDeck(host, opts) {
 
     <div class="dk-scene dk-ov" id="dkActivity" hidden></div>
 
+    <div class="dk-scene dk-plans" id="dkPlans" hidden></div>
+
     <div class="dk-scene dk-asst" id="dkAssistant" hidden>
       <div class="dk-wbar">
         <div class="dk-wtitle"><span class="wi">${IC.spark}</span><span class="wt">Darknode AI</span></div>
@@ -1579,7 +1599,7 @@ export function renderDeck(host, opts) {
   function drawStars(){}
 
   // ---------- workspace router ----------
-  const SCENES = { overview: "#dkOverview", surface: "#dkSurface", threat: "#dkThreat", cloud: "#dkCloud", compliance: "#dkCompliance", invest: "#dkInvest", findings: "#dkFindings", section: "#dkSection", con: "#dkCon", tools: "#dkTools", toolkit: "#dkToolkit", activity: "#dkActivity", assistant: "#dkAssistant" };
+  const SCENES = { overview: "#dkOverview", surface: "#dkSurface", threat: "#dkThreat", cloud: "#dkCloud", compliance: "#dkCompliance", invest: "#dkInvest", findings: "#dkFindings", section: "#dkSection", con: "#dkCon", tools: "#dkTools", toolkit: "#dkToolkit", activity: "#dkActivity", assistant: "#dkAssistant", plans: "#dkPlans" };
   const sceneEls = {}; for (const k in SCENES) sceneEls[k] = $(SCENES[k]);
   const sceneTools = sceneEls.tools;   // kept for the tools gallery code
   // sec -> label, for activity lines and quick-action titles
@@ -1626,6 +1646,7 @@ export function renderDeck(host, opts) {
     else if (scene === "findings") renderFindings();
     else if (scene === "section") renderSection();
     else if (scene === "activity") renderActivity();
+    else if (scene === "plans") renderPlans();
     else if (scene === "assistant") openAssistant();
   }
   // Any element carrying data-scene (KPI cards, "view all" links, quick actions)
@@ -2078,9 +2099,10 @@ export function renderDeck(host, opts) {
     popAcct.innerHTML = `<div class="dk-acctcard"><b>${esc(nm)}</b><span>${esc(em)}</span></div>
       <button class="dk-mi" data-go="overview">${IC.home}<span>Command center home</span></button>
       <button class="dk-mi" data-tool="settings">${IC.gear}<span>Settings</span></button>
+      <button class="dk-mi" id="dkMiPlans">${IC.star}<span>Plans &amp; billing<span class="sub">Compare Darknode plans</span></span></button>
       <button class="dk-mi" id="dkMiKeys">${IC.bolt}<span>Keyboard shortcuts<span class="sub">Press ? anytime</span></span></button>
       <button class="dk-mi" id="dkMiDense">${IC.grid}<span>Density: ${root.classList.contains("dense") ? "Compact" : "Comfortable"}<span class="sub">Switch to ${root.classList.contains("dense") ? "comfortable" : "compact"} layout</span></span></button>
-      <button class="dk-mi" id="dkMiExplain">${IC.spark}<span>Hover explanations: ${explainEnabled() ? "On" : "Off"}<span class="sub">Rest on anything for 3 seconds to see what it means</span></span></button>
+      <button class="dk-mi" id="dkMiExplain">${IC.spark}<span>Hover explanations: ${explainEnabled() ? "On" : "Off"}<span class="sub">Rest on anything for 2 seconds to see what it means</span></span></button>
       <div class="dk-mi-div"></div>
       <button class="dk-mi" id="dkMiExport">${IC.ext}<span>Export deck state<span class="sub">Connections, pins &amp; notes as JSON</span></span></button>
       <button class="dk-mi" id="dkMiImport">${IC.folder}<span>Import deck state</span></button>
@@ -2089,6 +2111,7 @@ export function renderDeck(host, opts) {
       <button class="dk-mi" id="dkMiExit">${IC.logout}<span>${primary ? "Sign out" : "Exit command center"}</span></button>`;
     popAcct.querySelector("[data-go]").onclick = () => { closeAllMenus(); go("overview"); };
     popAcct.querySelector("[data-tool]").onclick = () => { closeAllMenus(); openTool("settings", "Settings"); };
+    popAcct.querySelector("#dkMiPlans").onclick = () => { closeAllMenus(); go("plans"); };
     popAcct.querySelector("#dkMiKeys").onclick = () => { closeAllMenus(); toggleKeys(true); };
     popAcct.querySelector("#dkMiDense").onclick = () => { closeAllMenus(); const d = root.classList.toggle("dense"); try { localStorage.setItem("dn_deck_density", d ? "compact" : "comfortable"); } catch (_) {} };
     popAcct.querySelector("#dkMiExplain").onclick = () => { closeAllMenus(); const on = !explainEnabled(); setExplainEnabled(on); toast("Hover explanations " + (on ? "on" : "off")); };
@@ -3135,6 +3158,47 @@ export function renderDeck(host, opts) {
     return "tool";
   }
   let actFilter = "", actQ = "";
+  function renderPlans(){
+    const el = sceneEls.plans;
+    const PLANS = [
+      { id: "free", name: "Free", price: "$0", unit: "forever", tag: "", a: "#64748b",
+        blurb: "The full browser toolbox for solo practitioners and evaluation.",
+        feats: ["Every browser-based security tool", "Local-only security graph & cases", "Darknode AI assistant", "1 workspace, 1 seat"],
+        cta: "Current plan", cur: true },
+      { id: "pro", name: "Pro", price: "$29", unit: "per user / month", tag: "Popular", a: "#2552c6",
+        blurb: "For professionals who need history, exports and priority AI.",
+        feats: ["Everything in Free", "Unlimited saved findings & reports", "Priority Darknode AI — faster, higher limits", "Cloud sync across devices", "Email support"],
+        cta: "Upgrade to Pro" },
+      { id: "team", name: "Team", price: "$79", unit: "per user / month", tag: "", a: "#7c3aed",
+        blurb: "Shared workspaces, roles and server-enforced Treasury controls.",
+        feats: ["Everything in Pro", "Shared team workspaces & roles", "Server-enforced VAULT approvals & audit", "Integrations (SIEM, ticketing, chat)", "Google SSO & activity log"],
+        cta: "Start Team trial" },
+      { id: "enterprise", name: "Enterprise", price: "Custom", unit: "", tag: "", a: "#0f766e",
+        blurb: "Scale, compliance and deployment on your terms.",
+        feats: ["Everything in Team", "Self-hosted / private deployment", "SAML SSO, SCIM, custom roles", "Compliance pack & DPA", "Dedicated support & SLA"],
+        cta: "Contact sales" },
+    ];
+    el.innerHTML = `
+      <div class="dk-ti-head"><h1>Plans &amp; billing</h1></div>
+      <div class="dk-compnote">Preview pricing. Checkout isn't live yet — these buttons start a conversation, they don't take payment. Your current access is the Free tier.</div>
+      <div class="dk-plangrid">${PLANS.map((p) => `
+        <div class="dk-plancard${p.tag ? " feat" : ""}" style="--a:${p.a}" data-explain="plan.${p.id}">
+          ${p.tag ? `<span class="dk-plantag">${esc(p.tag)}</span>` : ""}
+          <div class="dk-planname">${esc(p.name)}</div>
+          <div class="dk-planprice">${esc(p.price)}${p.unit ? `<span>${esc(p.unit)}</span>` : ""}</div>
+          <div class="dk-planblurb">${esc(p.blurb)}</div>
+          <button class="dk-planbtn${p.cur ? " cur" : ""}" data-plan="${esc(p.id)}" data-cta="${esc(p.cta)}"${p.cur ? " disabled" : ""}>${esc(p.cta)}</button>
+          <ul class="dk-planfeats">${p.feats.map((f) => `<li>${IC.check}<span>${esc(f)}</span></li>`).join("")}</ul>
+        </div>`).join("")}
+      </div>
+      <div class="dk-ovp"><h2>${IC.shield} Every plan includes</h2>
+        <div class="dk-planincl">${["Private by default — your data stays yours", "No telemetry on your findings", "Honest tooling — no simulated results", "Export everything, any time"].map((x) => `<span>${IC.check}${esc(x)}</span>`).join("")}</div>
+      </div>`;
+    el.querySelectorAll(".dk-planbtn:not(.cur)").forEach((b) => b.onclick = () => {
+      if (b.dataset.plan === "enterprise") { try { window.open("mailto:sales@darknode.ai?subject=" + encodeURIComponent("Darknode Enterprise enquiry"), "_blank", "noopener"); } catch (_) {} return; }
+      toast(b.dataset.cta + " — billing isn't live yet. We'll reach out about early access.");
+    });
+  }
   function renderActivity(){
     const el = sceneEls.activity;
     const all = notifs.map((x) => ({ text: x.text, ts: x.ts, cat: activityCat(x.text) }));
@@ -3331,7 +3395,7 @@ export function renderDeck(host, opts) {
     { id: "detect", g: "Security Operations", items: [["scene", "findings", "Findings", IC.alert], ["scene", "invest", "Investigations", IC.search], ["tool", "secgraph", "Security Graph", IC.nodes], ["tool", "incidents", "Incident Tracker", IC.shield], ["tool", "casemgmt", "Case Manager", IC.brief], ["tool", "phishtriage", "Phishing & URL Triage", IC.hook], ["tool", "loghunt", "Log Threat Hunter", IC.term], ["scene", "activity", "Activity", IC.pulse]] },
     { id: "finsec", g: "Financial Controls", items: [["tool", "strongroom", "Fund Protection", IC.coins], ["tool", "vault", "Treasury Vault", IC.lock], ["tool", "payees", "Payee Control", IC.shield], ["tool", "sanctions", "Sanctions Screening", IC.scale]] },
     { id: "compliance", g: "Compliance", items: [["scene", "compliance", "Frameworks", IC.check], ["tool", "crosswalk", "GenAI Crosswalk", IC.map], ["tool", "dlp", "Data Protection", IC.eye], ["tool", "leakprobe", "Secret Exposure", IC.key]] },
-    { g: "Platform", items: [["scene", "con", "Integrations", IC.plug], ["scene", "tools", "Tool Library", IC.grid], ["scene", "toolkit", "Toolkit", IC.wrench], ["scene", "assistant", "AI Assistant", IC.spark], ["tool", "settings", "Settings", IC.gear]].concat(opts.isOwner ? [["tool", "admin", "Admin", IC.key]] : []) },
+    { g: "Platform", items: [["scene", "con", "Integrations", IC.plug], ["scene", "tools", "Tool Library", IC.grid], ["scene", "toolkit", "Toolkit", IC.wrench], ["scene", "assistant", "AI Assistant", IC.spark], ["scene", "plans", "Plans", IC.star]].concat(opts.isOwner ? [["tool", "admin", "Admin", IC.key]] : []) },
   ];
   const navIndex = {};
   NAV_DEF.forEach((grp) => { if (grp.id) navIndex["section:" + grp.id] = { group: grp.g, label: "Overview" }; grp.items.forEach(([kind, id, label]) => { navIndex[kind + ":" + id] = { group: grp.g || "Home", label }; }); });

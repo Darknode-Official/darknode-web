@@ -1,6 +1,6 @@
 // Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
 // Hover explainers: rest the pointer (or keyboard focus) on a meaningful element for
-// three seconds and a card says what it is, how it is worked out and where the data
+// two seconds and a card says what it is, how it is worked out and where the data
 // comes from. Only elements that resolve to an explanation ever trigger, so blank
 // space and decoration stay quiet.
 //
@@ -12,10 +12,15 @@
 // The card is appended to <body> with position:fixed, outside any zoomed container, so
 // getBoundingClientRect() coordinates can be used as-is.
 
-export const EXPLAIN_DELAY = 3000;
+export const EXPLAIN_DELAY = 2000;
 const LS_OFF = "dn_explain";
 
 export const EXPLAIN = {
+  // ---- Plans ----
+  "plan.free": { title: "Free", body: "The full browser toolbox at no cost, for solo practitioners and evaluation. Data stays local to this browser. This is your current tier.", src: "Preview pricing — checkout is not live yet." },
+  "plan.pro": { title: "Pro", body: "For professionals who need saved history, unlimited exports, cloud sync and priority access to Darknode AI.", src: "Preview pricing — checkout is not live yet." },
+  "plan.team": { title: "Team", body: "Shared workspaces with roles, server-enforced Treasury Vault approvals and audit, integrations and Google SSO.", src: "Preview pricing — checkout is not live yet." },
+  "plan.enterprise": { title: "Enterprise", body: "Self-hosted or private deployment, SAML SSO and SCIM, a compliance pack with DPA, and a dedicated support SLA. Priced per engagement.", src: "Contact sales — mailto link." },
   // ---- Overview KPIs ----
   "kpi.hot": { title: "Open critical and high", body: "How many critical or high severity findings in your security graph are still open (not resolved or closed). These drive most of the exposure score. Shows a dash until you have real findings.", src: "Your security graph. Sample and simulated data is excluded." },
   "kpi.exposure": { title: "Your exposure", body: "How exposed this workspace looks, from 0 to 100 (higher is worse). 65% comes from open critical and high findings in your security graph (25 or more counts as the maximum), 35% from how few integrations are connected. Shows a dash until you have real findings.", src: "Your security graph and integrations. Sample and simulated data is excluded. An indicator, not an audit." },
@@ -27,6 +32,7 @@ export const EXPLAIN = {
 
   // ---- Navigation scenes ----
   "scene.overview": { title: "Security Overview", body: "Your home page: exposure, global threat climate, connected integrations, pinned tools and recent activity in one place." },
+  "scene.plans": { title: "Plans & billing", body: "Compare the Darknode plans — Free, Pro, Team and Enterprise — and what each includes. Preview pricing; checkout is not live yet.", src: "Preview pricing." },
   "scene.surface": { title: "Attack Surface", body: "Enter a domain to map what the internet can see: DNS records, subdomains from certificate logs, mail security and web headers.", src: "Live public DNS and certificate-transparency lookups." },
   "scene.cloud": { title: "Cloud Posture", body: "Paste IAM policies, bucket policies, security groups, Kubernetes manifests or Dockerfiles and get misconfigurations with fixes. Runs in your browser." },
   "scene.threat": { title: "Threats & Vulnerabilities", body: "The newest CVEs with severity, CISA known-exploited status and EPSS exploit probability, ranked so you can see what to patch first.", src: "NVD, CISA KEV and FIRST EPSS, fetched live." },
