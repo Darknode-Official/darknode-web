@@ -553,6 +553,26 @@ const CSS = `
 .dk-b:hover{background:rgba(23,33,56,.12)}
 .dk-b.pri{background:#2f6bff;border-color:#2f6bff;color:#fff;box-shadow:0 8px 20px rgba(47,95,255,.3)}
 .dk-b.pri:hover{background:#3f78ff}
+/* entity / finding drill-down drawer content */
+.dk-drwpills{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:2px 0 10px}
+.dk-drwpills .pill{display:inline-block;font-size:10.5px;font-weight:700;color:var(--c);border:1px solid color-mix(in srgb,var(--c) 45%,transparent);background:color-mix(in srgb,var(--c) 14%,transparent);border-radius:20px;padding:2px 10px}
+.dk-drwsrc{font-size:11.5px;color:#687388}
+.dk-drwmeta{font-size:11.5px;color:#8a93a6;margin-bottom:16px}
+.dk-dl{display:flex;flex-direction:column;gap:1px;margin-bottom:18px;border:1px solid rgba(23,33,56,.1);border-radius:10px;overflow:hidden}
+.dk-dlr{display:grid;grid-template-columns:38% 1fr;gap:10px;padding:8px 12px;font-size:12.5px;background:rgba(23,33,56,.025)}
+.dk-dlr:nth-child(even){background:rgba(23,33,56,.05)}
+.dk-dlr .k{color:#687388;font-weight:600}.dk-dlr .v{color:#1a2233;overflow-wrap:anywhere}
+.dk-drwsec{margin-bottom:18px}
+.dk-drwsec .hd{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#687388;font-weight:700;margin-bottom:8px}
+.dk-drwsec .hd .n{margin-left:6px;color:#8a93a6}
+.dk-relr{display:flex;align-items:center;gap:9px;width:100%;text-align:left;padding:9px 11px;margin-bottom:6px;border:1px solid rgba(23,33,56,.12);border-radius:10px;background:rgba(23,33,56,.03);cursor:pointer;font:inherit}
+.dk-relr:hover{background:rgba(63,120,255,.1);border-color:rgba(63,120,255,.4)}
+.dk-relr .pdot{width:8px;height:8px;border-radius:50%;background:var(--c);flex:0 0 auto}
+.dk-relr .rn{font-size:13px;font-weight:600;color:#1a2233;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dk-relr .rt{margin-left:auto;font-size:11px;color:#8a93a6;white-space:nowrap;flex:0 0 auto}
+.dk-drwstatus{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.dk-drwstatus label{font-size:12px;font-weight:600;color:#687388}
+.dk-drwstatus select{flex:1}
 .dk-keyform{display:flex;flex-direction:column;gap:9px}
 .dk-keyform label{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#687388}
 .dk-keyform input{width:100%;padding:11px 13px;border-radius:11px;border:1px solid rgba(23,33,56,.16);background:rgba(23,33,56,.06);color:#1a2233;font:inherit;font-size:13.5px;outline:none}
@@ -1782,6 +1802,65 @@ export function renderDeck(host, opts) {
   }
   $("#dkDrawerX").onclick = () => drawer.classList.remove("on");
 
+  // ---------- Entity / finding drill-down (reuses the drawer shell) ----------
+  // Clicking a finding or an entity opens this inspector instead of jumping to the
+  // raw graph: it shows the record's fields, its linked entities across tools (each
+  // one clickable to walk the graph), and lets you retriage the status in place.
+  const _prettyKey = (k) => String(k).replace(/[_-]+/g, " ").replace(/([a-z])([A-Z])/g, "$1 $2").replace(/^./, (c) => c.toUpperCase());
+  const _clipStr = (s, n) => (s.length > n ? s.slice(0, n - 1) + "…" : s);
+  const _relLabel = (t) => String(t || "related to").replace(/_/g, " ");
+  function openEntityDrawer(id){
+    withGraph((m) => {
+      if (!m || !m.getEntity) { toast("The security graph is still loading — try again in a moment"); return; }
+      const e = m.getEntity(id);
+      if (!e) { toast("This record is no longer in the security graph"); return; }
+      const sev = String(e.severity || "").toLowerCase();
+      const typeLabel = m.getEntityTypeLabel ? m.getEntityTypeLabel(e.type) : e.type;
+      const sim = isSimulated ? isSimulated(e) : (e.tags || []).includes("simulated");
+      const dataRows = Object.entries(e.data || {})
+        .filter(([, v]) => v != null && typeof v !== "object" && String(v).length)
+        .slice(0, 12)
+        .map(([k, v]) => `<div class="dk-dlr"><span class="k">${esc(_prettyKey(k))}</span><span class="v">${esc(_clipStr(String(v), 220))}</span></div>`).join("");
+      const rels = m.getRelationships ? m.getRelationships(id) : [];
+      const relRows = rels.map((r) => {
+        const otherId = r.fromId === id ? r.toId : r.fromId;
+        const o = m.getEntity(otherId); if (!o) return "";
+        const dir = r.fromId === id ? "→" : "←";
+        const osev = String(o.severity || "").toLowerCase();
+        const olabel = m.getEntityTypeLabel ? m.getEntityTypeLabel(o.type) : o.type;
+        return `<button class="dk-relr" data-eid="${esc(otherId)}"><span class="pdot" style="--c:${SEV_C[osev] || "#8a93a6"}"></span><span class="rn">${esc(o.name || "—")}</span><span class="rt">${esc(_relLabel(r.type))} ${dir} ${esc(olabel)}</span></button>`;
+      }).filter(Boolean).join("");
+      const statusOpts = ["new", "open", "investigating", "resolved", "closed"].map((s) => `<option value="${s}"${e.status === s ? " selected" : ""}>${capword(s)}</option>`).join("");
+      drawerBody.innerHTML = `
+        <div class="dk-dhead"><div><h3>${esc(e.name || "—")}</h3><div class="k">${esc(typeLabel)}${sim ? ' · <span class="dk-simchip">Sample</span>' : ""}</div></div></div>
+        <div class="dk-drwpills">
+          ${e.severity ? `<span class="pill" style="--c:${SEV_C[sev] || "#8a93a6"}">${capword(e.severity)}</span>` : ""}
+          <span class="pill" style="--c:${ST_C[e.status] || "#8a93a6"}">${capword(e.status || "new")}</span>
+          <span class="dk-drwsrc">Source: ${esc(e.source || "manual")}</span>
+        </div>
+        <div class="dk-drwmeta">First seen ${agoISO(e.createdAt)} · Updated ${agoISO(e.updatedAt)}</div>
+        ${dataRows ? `<div class="dk-dl">${dataRows}</div>` : ""}
+        <div class="dk-drwsec"><div class="hd">Linked entities <span class="n">${rels.length}</span></div>
+          ${relRows || `<div class="dk-nempty">No linked entities yet. As tools cross-reference this record, the connections appear here.</div>`}</div>
+        <div class="dk-drwstatus"><label for="dkDrwStatus">Status</label><select id="dkDrwStatus" class="dk-isel" aria-label="Finding status">${statusOpts}</select></div>
+        <div class="act">
+          <button class="dk-b pri" data-act="graph">Open in graph</button>
+          <button class="dk-b" data-act="close">Close</button>
+        </div>`;
+      drawer.classList.add("on");
+      drawerBody.querySelector("#dkDrwStatus").onchange = (ev) => {
+        if (!m.updateEntity) return;
+        m.updateEntity(id, { status: ev.target.value });
+        toast("Status set to " + ev.target.value);
+        if (curScene === "findings") withGraph(paintFindings);
+        else if (curScene === "invest") withGraph(paintInvTable);
+      };
+      drawerBody.querySelector('[data-act="graph"]').onclick = () => { drawer.classList.remove("on"); openTool("secgraph", secLabel["secgraph"] || "Security Graph"); };
+      drawerBody.querySelector('[data-act="close"]').onclick = () => drawer.classList.remove("on");
+      drawerBody.querySelectorAll(".dk-relr[data-eid]").forEach((b) => b.onclick = () => openEntityDrawer(b.dataset.eid));
+    });
+  }
+
   // ---------- Tools workspace: AWS-style category rail + live search ----------
   const TOTAL_TOOLS = groups.reduce((n, g) => n + g.items.length, 0);
   let toolCat = "all", toolQ = "", toolsBuilt = false;
@@ -2843,7 +2922,7 @@ export function renderDeck(host, opts) {
       const up = e.updatedAt ? timeAgo(new Date(e.updatedAt).getTime()) : "—";
       return `<tr data-eid="${esc(e.id)}"><td class="nm">${esc(e.name || "—")}${isSim(e) ? ` <span class="pill" style="--c:#8a93a6">Sample</span>` : ""}</td><td>${esc(m.getEntityTypeLabel ? m.getEntityTypeLabel(e.type) : e.type)}</td><td>${e.severity ? `<span class="pill" style="--c:${sevColor(e.severity)}">${capword(e.severity)}</span>` : "—"}</td><td>${e.status ? `<span class="pill" style="--c:${stColor(e.status)}">${capword(e.status)}</span>` : "—"}</td><td class="num">${rel || "—"}</td><td class="ag">${up}</td></tr>`;
     }).join("")}</tbody></table></div>`;
-    box.querySelectorAll("tr[data-eid]").forEach((tr) => tr.onclick = () => openTool("secgraph", secLabel["secgraph"] || "Security Graph"));
+    box.querySelectorAll("tr[data-eid]").forEach((tr) => tr.onclick = (ev) => { if (ev.target.closest("input,button,a")) return; openEntityDrawer(tr.dataset.eid); });
   }
 
   // ---------- Findings workspace: every real finding across tools, one triage queue ----------
@@ -2915,7 +2994,7 @@ export function renderDeck(host, opts) {
     all1.checked = shown.every((r) => fndSel.has(r.id));
     all1.onchange = () => { shown.forEach((r) => all1.checked ? fndSel.add(r.id) : fndSel.delete(r.id)); box.querySelectorAll("[data-sel]").forEach((x) => x.checked = all1.checked); paintBulk(m); };
     box.querySelectorAll("[data-sel]").forEach((x) => x.onchange = () => { x.checked ? fndSel.add(x.dataset.sel) : fndSel.delete(x.dataset.sel); paintBulk(m); });
-    box.querySelectorAll("tr[data-eid] td.nm").forEach((td) => td.onclick = () => openTool("secgraph", secLabel["secgraph"] || "Security Graph"));
+    box.querySelectorAll("tr[data-eid] td.nm").forEach((td) => td.onclick = () => openEntityDrawer(td.closest("tr").dataset.eid));
   }
   function paintBulk(m){
     const bar = sceneEls.findings.querySelector("#dkFndBulk"); if (!bar) return;
