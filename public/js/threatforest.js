@@ -16,7 +16,11 @@
 // Pure analysis logic lives in threatforest-engine.js (unit-tested under Node); this
 // file is the UI. Analysis is heuristic and advisory: it flags patterns that are
 // commonly dangerous. Confidence is shown per finding; treat high-confidence findings
-// first. Source->sink labels report LEXICAL co-location, not call-graph reachability.
+// first. For JavaScript/TypeScript, a reused inter-procedural data-flow (taint) engine
+// CONFIRMS which source->sink paths are actually reachable and cites the traced path;
+// those nodes are marked "confirmed reachable". For every other language, and for
+// categories the taint engine does not model, source->sink labels report LEXICAL
+// co-location only, NOT call-graph reachability.
 
 import { GOALS, RULES, SEV_LABEL, analyze, buildTree, riskScore } from "./threatforest-engine.js";
 
@@ -90,6 +94,10 @@ const CSS = `
 .tf-s2{color:var(--mut);border-color:var(--line)}
 .tf-s1{color:var(--mut);border-color:var(--line)}
 .tf-conf{font-size:.66rem;color:var(--mut)}
+.tf-confirmed{display:inline-block;font-size:.6rem;font-weight:800;letter-spacing:.06em;padding:2px 7px;border-radius:4px;color:#b00020;border:1px solid color-mix(in srgb,#b00020 55%,var(--line));background:color-mix(in srgb,#b00020 7%,transparent);white-space:nowrap}
+.tf-flow{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:.68rem;color:var(--mut);margin-top:3px;line-height:1.5;word-break:break-word}
+.tf-flow b{color:var(--txt)}
+.tf-weight{font-size:.64rem;color:var(--mut);white-space:nowrap}
 .tf-code{font-family:ui-monospace,"JetBrains Mono",monospace;font-size:.74rem;color:var(--mut);background:var(--card,#fff);padding:2px 5px;border-radius:3px;display:inline-block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tf-ref{font-size:.68rem;color:var(--mut)}
 .tf-ref a,.tf-ref span{color:var(--tf-acc)}
@@ -194,27 +202,42 @@ function summaryHTML() {
     '<div class="tf-kpi"><div class="tf-kpi-v">' + res.findings.length + '</div><div class="tf-kpi-l">Weaknesses</div></div>' +
     '<div class="tf-kpi"><div class="tf-kpi-v" style="color:' + chColor + '">' + (r.by[5] + r.by[4]) + '</div><div class="tf-kpi-l">Critical + High</div></div>' +
     '<div class="tf-kpi"><div class="tf-kpi-v">' + (S.tree ? S.tree.branches.length : 0) + '</div><div class="tf-kpi-l">Attack paths</div></div>' +
+    '<div class="tf-kpi"><div class="tf-kpi-v" style="color:' + (res.confirmed ? "#b00020" : "var(--mut)") + '">' + (res.confirmed || 0) + '</div><div class="tf-kpi-l">Confirmed flows</div></div>' +
     "</div>" +
     '<p class="tf-note">Analyzed ' + res.loc + " lines" + (res.langs.length ? " (" + esc(res.langs.join(", ")) + ")" : "") +
-    (S._ms ? " in " + S._ms + " ms" : "") + ". Findings are heuristic and advisory &mdash; verify high-confidence findings first.</p>";
+    (S._ms ? " in " + S._ms + " ms" : "") + ". " +
+    (res.confirmed ? res.confirmed + " path(s) were <b>confirmed reachable</b> by the JS/TS data-flow engine (traced source&rarr;sink); " : "") +
+    "other findings are heuristic and advisory &mdash; verify high-confidence findings first.</p>";
 }
 
 // ---- Attack tree tab ----
 function paintTree(p) {
   if (!S.tree.branches.length) { p.innerHTML = '<p class="tf-empty">No attack paths found. Either the code is clean of the patterns ThreatForest checks, or paste more of it.</p>'; return; }
   const branches = S.tree.branches.map((b) => {
-    const leaves = b.leaves.map((l) =>
-      '<li class="tf-tleaf"><span class="tf-dot" style="--c:' + SEV_COLOR[l.sev] + '"></span>' +
-      "<div><div><b>" + esc(l.title) + '</b> <span class="tf-pill ' + sevClass(l.sev) + '">' + SEV_LABEL[l.sev] + "</span>" +
-      (l.coloc ? ' <span class="tf-conf">&middot; ' + esc(l.coloc.text) + "</span>" : "") + "</div>" +
-      '<div class="tf-ref">line ' + l.line + " &middot; " + esc(l.cwe) + " &middot; " + esc((l.att[0] || "")) + "</div></div></li>"
-    ).join("");
+    const leaves = b.leaves.map((l) => {
+      const label = l.reach
+        ? '<span class="tf-confirmed">CONFIRMED REACHABLE</span>'
+        : (l.coloc ? '<span class="tf-conf">&middot; ' + esc(l.coloc.text) + "</span>" : "");
+      const path = l.reach && l.reach.flow && l.reach.flow.length
+        ? '<div class="tf-flow">Traced path: ' + l.reach.flow.map((s, i, a) =>
+            (i === 0 || i === a.length - 1 ? "<b>" + esc(s.label) + "</b>" : esc(s.label)) + " (line " + s.line + ")"
+          ).join(" &rarr; ") + "</div>"
+        : "";
+      return '<li class="tf-tleaf"><span class="tf-dot" style="--c:' + SEV_COLOR[l.sev] + '"></span>' +
+        "<div><div><b>" + esc(l.title) + '</b> <span class="tf-pill ' + sevClass(l.sev) + '">' + SEV_LABEL[l.sev] + "</span> " + label + "</div>" +
+        '<div class="tf-ref">line ' + l.line + " &middot; " + esc(l.cwe) + " &middot; " + esc((l.att[0] || "")) +
+        ' &middot; <span class="tf-weight">likelihood ~' + Math.round((l.weight ? l.weight.p : 0) * 100) + "% (heuristic)</span></div>" + path + "</div></li>";
+    }).join("");
+    const bw = b.weight ? ' <span class="tf-weight">&middot; path likelihood ~' + Math.round(b.weight.p * 100) + "% (heuristic)</span>" : "";
     return '<li class="tf-tnode"><div class="tf-tgoal" data-g="' + esc(b.goal) + '">' +
       '<span class="tf-caret">&#9660;</span><span class="tf-dot" style="--c:' + SEV_COLOR[b.sev] + '"></span>' +
-      "<b>" + esc(b.name) + '</b> <span class="tf-tag">(' + b.leaves.length + ")</span></div><ul>" + leaves + "</ul></li>";
+      "<b>" + esc(b.name) + '</b> <span class="tf-tag">(' + b.leaves.length + ")</span>" +
+      (b.confirmed ? ' <span class="tf-confirmed">HAS CONFIRMED PATH</span>' : "") + bw + "</div><ul>" + leaves + "</ul></li>";
   }).join("");
   p.innerHTML = '<p class="tf-tag" style="margin:0 0 6px"><b>Goal:</b> ' + esc(S.tree.root) + " &mdash; click a path to collapse. Each leaf is a concrete weakness that advances that goal.</p>" +
-    '<p class="tf-tag" style="margin:0 0 12px">Co-location labels (&ldquo;untrusted input used on this line&rdquo; / &ldquo;near untrusted input&rdquo;) are lexical heuristics, not proven call-graph reachability &mdash; confirm the data flow before acting.</p>' +
+    '<p class="tf-tag" style="margin:0 0 6px"><span class="tf-confirmed">CONFIRMED REACHABLE</span> nodes (JavaScript/TypeScript) were traced end-to-end by the data-flow engine &mdash; the exact path is shown. Act on these first.</p>' +
+    '<p class="tf-tag" style="margin:0 0 6px">Co-location labels (&ldquo;untrusted input used on this line&rdquo; / &ldquo;near untrusted input&rdquo;) are lexical heuristics for the regex-derived nodes, NOT proven call-graph reachability &mdash; confirm the data flow before acting.</p>' +
+    '<p class="tf-tag" style="margin:0 0 12px">Likelihood percentages are a transparent ranking heuristic (from severity + evidence strength), not measured exploit probabilities.</p>' +
     '<ul class="tf-tree">' + branches + "</ul>" +
     '<div class="tf-row" style="margin-top:16px"><button class="tf-btn ghost" id="tf-graph"' + (S.sentGraph ? " disabled" : "") + ">" + (S.sentGraph ? "Sent to Security Graph" : "Send to Security Graph") + "</button></div>";
   p.querySelectorAll(".tf-tgoal").forEach((el) => el.onclick = () => {
@@ -227,13 +250,17 @@ function paintTree(p) {
 // ---- Findings tab ----
 function paintFindings(p) {
   if (!S.result.findings.length) { p.innerHTML = '<p class="tf-empty">No weaknesses detected.</p>'; return; }
-  const rows = S.result.findings.map((f) =>
-    "<tr><td><span class=\"tf-pill " + sevClass(f.sev) + '">' + SEV_LABEL[f.sev] + "</span></td>" +
-    "<td><b>" + esc(f.title) + '</b><br><span class="tf-conf">confidence: ' + esc(f.confidence) + (f.coloc ? " &middot; " + esc(f.coloc.text) : "") + "</span></td>" +
-    "<td>" + f.line + "</td>" +
-    '<td><span class="tf-code">' + esc(f.excerpt) + "</span></td>" +
-    '<td class="tf-ref">' + esc(f.cwe) + "<br>" + esc(f.capec) + "</td></tr>"
-  ).join("");
+  const rows = S.result.findings.map((f) => {
+    const sub = f.reach
+      ? '<span class="tf-confirmed">CONFIRMED REACHABLE</span> <span class="tf-conf">&middot; ' + esc(f.reach.text) + "</span>" +
+        (f.reach.flow && f.reach.flow.length ? '<div class="tf-flow">' + f.reach.flow.map((s) => esc(s.label) + " (L" + s.line + ")").join(" &rarr; ") + "</div>" : "")
+      : '<span class="tf-conf">confidence: ' + esc(f.confidence) + (f.coloc ? " &middot; " + esc(f.coloc.text) : "") + "</span>";
+    return "<tr><td><span class=\"tf-pill " + sevClass(f.sev) + '">' + SEV_LABEL[f.sev] + "</span></td>" +
+      "<td><b>" + esc(f.title) + "</b><br>" + sub + "</td>" +
+      "<td>" + f.line + "</td>" +
+      '<td><span class="tf-code">' + esc(f.excerpt) + "</span></td>" +
+      '<td class="tf-ref">' + esc(f.cwe) + "<br>" + esc(f.capec) + "</td></tr>";
+  }).join("");
   p.innerHTML = '<table class="tf-tbl"><thead><tr><th>Severity</th><th>Weakness</th><th>Line</th><th>Evidence</th><th>Refs</th></tr></thead><tbody>' + rows + "</tbody></table>";
 }
 
@@ -289,8 +316,12 @@ function toMarkdown() {
   md += "- **Weaknesses:** " + res.findings.length + " (critical " + r.by[5] + ", high " + r.by[4] + ", medium " + r.by[3] + ", low " + r.by[2] + ")\n\n";
   md += "## Attack tree\n\nGoal: " + S.tree.root + "\n\n";
   for (const b of S.tree.branches) {
-    md += "- **" + b.name + "**\n";
-    for (const l of b.leaves) md += "  - " + l.title + " (" + SEV_LABEL[l.sev] + ", line " + l.line + ", " + l.cwe + ", " + (l.att[0] || "") + ")\n";
+    md += "- **" + b.name + "**" + (b.weight ? " _(path likelihood ~" + Math.round(b.weight.p * 100) + "%, heuristic)_" : "") + "\n";
+    for (const l of b.leaves) {
+      md += "  - " + l.title + " (" + SEV_LABEL[l.sev] + ", line " + l.line + ", " + l.cwe + ", " + (l.att[0] || "") + ")";
+      md += l.reach ? " — CONFIRMED REACHABLE: " + l.reach.flow.map((s) => s.label + " (L" + s.line + ")").join(" -> ") + "\n"
+                    : (l.coloc ? " — " + l.coloc.text + "\n" : "\n");
+    }
   }
   md += "\n## Findings\n\n| Sev | Weakness | Line | CWE | CAPEC |\n|---|---|---|---|---|\n";
   for (const f of res.findings) md += "| " + SEV_LABEL[f.sev] + " | " + f.title + " | " + f.line + " | " + f.cwe + " | " + f.capec + " |\n";
@@ -298,7 +329,7 @@ function toMarkdown() {
   const seen = {};
   for (const f of res.findings) { if (seen[f.rid]) continue; seen[f.rid] = 1; md += "- **" + f.title + ":** " + f.fix + "\n"; }
   if (S.ai) md += "\n## AI deep-dive\n\n" + S.ai + "\n";
-  md += "\n---\n_ThreatForest (Darknode). Heuristic static analysis; source->sink labels are lexical co-location, not call-graph reachability. Verify before acting._\n";
+  md += "\n---\n_ThreatForest (Darknode). For JavaScript/TypeScript, nodes marked CONFIRMED REACHABLE were traced end-to-end by the data-flow engine; all other source->sink labels are lexical co-location, not call-graph reachability. Likelihood percentages are a ranking heuristic, not measured probabilities. Verify before acting._\n";
   return md;
 }
 function paintReport(p) {
@@ -374,7 +405,7 @@ function sendGraph(btn) {
       gb.batchGraph(() => {
         const findItems = S.result.findings.slice(0, 60).map((f) => ({
           type: "VULNERABILITY", name: f.title + " @ line " + f.line,
-          data: { cwe: f.cwe, capec: f.capec, attack: (f.att[0] || ""), stride: f.stride, confidence: f.confidence, evidence: f.excerpt, _goal: f.goal },
+          data: { cwe: f.cwe, capec: f.capec, attack: (f.att[0] || ""), stride: f.stride, confidence: f.confidence, reachable: !!f.reach, evidence: f.excerpt, _goal: f.goal },
           opts: { tags: ["threatforest", f.goal], severity: sevMap[f.sev] },
         }));
         const out = gb.sendToGraph("ThreatForest", findItems, undefined, true);

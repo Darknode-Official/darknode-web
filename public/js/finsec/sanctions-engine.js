@@ -112,6 +112,29 @@ export function band(score) {
   return "weak";
 }
 
+// ------------------------------- list-field filters -------------------------------
+
+// Collapse OFAC's SDN_Type into a stable class. A blank type in the SDN file means an
+// entity (the common case), so "" maps to "entity"; individuals/vessels/aircraft keep
+// their own class. Used by the entity-type filter so a dropdown stays tiny and honest.
+export function entityClass(t) {
+  const s = String(t == null ? "" : t).trim().toLowerCase();
+  if (!s) return "entity";
+  if (s.startsWith("indiv")) return "individual";
+  if (s.startsWith("vessel")) return "vessel";
+  if (s.startsWith("aircraft")) return "aircraft";
+  return s;
+}
+
+// Normalize a caller's entity-type filter (string | string[] | "all" | null) into a Set
+// of classes to keep, or null for "no filter". Empty / "all" means no filter.
+function normalizeTypeFilter(types) {
+  if (!types) return null;
+  const arr = Array.isArray(types) ? types : [types];
+  const set = new Set(arr.map((t) => String(t).trim().toLowerCase()).filter((t) => t && t !== "all"));
+  return set.size ? set : null;
+}
+
 // ------------------------------- list shape -------------------------------
 
 // Normalized list entry: { uid, name, type, program, remarks, names:[all names] }.
@@ -125,37 +148,70 @@ export function buildIndex(entries) {
 
 // Screen one query name against a built index. Returns matches >= minScore,
 // best first, capped at `limit`.
+// opts: { minScore, limit, types, program }
+//   minScore  minimum match score to report (default 70)
+//   limit     cap on matches returned, best first (default 20)
+//   types     entity-type filter: class name | class[] | "all" | null (no filter)
+//   program   case-insensitive substring an entry's program must contain (optional)
 export function screenName(query, index, opts = {}) {
   const minScore = opts.minScore == null ? 70 : opts.minScore;
   const limit = opts.limit == null ? 20 : opts.limit;
+  const typeFilter = normalizeTypeFilter(opts.types);
+  const progFilter = opts.program ? String(opts.program).trim().toLowerCase() : "";
   const qToks = tokens(query);
   if (!qToks.length) return [];
   const out = [];
   for (const e of index) {
+    // Pre-filter on list fields the feed actually carries, before the (costly) scoring.
+    if (typeFilter && !typeFilter.has(entityClass(e.type))) continue;
+    if (progFilter && !String(e.program || "").toLowerCase().includes(progFilter)) continue;
     let best = 0, bestName = e.name, bestHits = [];
     for (const nm of e._toks) {
       const { score, hits } = scorePair(qToks, nm.t);
       if (score > best) { best = score; bestName = nm.raw; bestHits = hits; }
     }
     if (best >= minScore) {
+      // Secondary identifiers (program, type, and — only if the loaded list carries
+      // them — DOB / nationality) ride along so common names can be disambiguated.
       out.push({ uid: e.uid, name: e.name, matchedName: bestName, type: e.type,
-        program: e.program, remarks: e.remarks, score: best, band: band(best), hits: bestHits });
+        program: e.program, remarks: e.remarks || "", dob: e.dob || "", nationality: e.nationality || "",
+        score: best, band: band(best), hits: bestHits });
     }
   }
   out.sort((a, b) => b.score - a.score || String(a.name).localeCompare(String(b.name)));
   return out.slice(0, limit);
 }
 
+function screenRow(r, i, index, opts) {
+  const name = typeof r === "string" ? r : (r && r.name) || "";
+  const id = (r && r.id) != null ? r.id : i + 1;
+  const matches = screenName(name, index, opts);
+  const top = matches[0] || null;
+  return { id, name, matches, hit: !!top, topScore: top ? top.score : 0, topBand: top ? top.band : "clear" };
+}
+
 // Screen a batch of { id?, name } rows. Returns one result row per input, each
 // with its matches (empty when clear). Deterministic order = input order.
 export function screenBatch(rows, index, opts = {}) {
-  return (rows || []).map((r, i) => {
-    const name = typeof r === "string" ? r : (r && r.name) || "";
-    const id = (r && r.id) != null ? r.id : i + 1;
-    const matches = screenName(name, index, opts);
-    const top = matches[0] || null;
-    return { id, name, matches, hit: !!top, topScore: top ? top.score : 0, topBand: top ? top.band : "clear" };
-  });
+  return (rows || []).map((r, i) => screenRow(r, i, index, opts));
+}
+
+// Async batch: identical output to screenBatch but yields to the event loop every
+// `opts.chunk` rows (default 25) so screening a long name list against the ~19k-entry
+// OFAC index never blocks the UI thread. `onProgress(done, total)` is optional.
+export async function screenBatchAsync(rows, index, opts = {}, onProgress) {
+  const list = rows || [];
+  const chunk = opts.chunk && opts.chunk > 0 ? opts.chunk : 25;
+  const out = [];
+  for (let i = 0; i < list.length; i++) {
+    out.push(screenRow(list[i], i, index, opts));
+    if ((i + 1) % chunk === 0) {
+      if (typeof onProgress === "function") onProgress(i + 1, list.length);
+      await new Promise((res) => setTimeout(res, 0)); // hand the frame back
+    }
+  }
+  if (typeof onProgress === "function") onProgress(list.length, list.length);
+  return out;
 }
 
 // --------------------------- OFAC export parsing ---------------------------
@@ -165,6 +221,20 @@ export function screenBatch(rows, index, opts = {}) {
 // Tonnage, GRT, Vess_flag, Vess_owner, Remarks. The sentinel "-0- " means empty.
 // An optional ALT.CSV body (ent_num, alt_num, alt_type, alt_name, remarks) folds
 // aliases into the matching entry's name list.
+// OFAC embeds DOB / nationality (and much else) inside the free-text Remarks field,
+// e.g. "DOB 05 Dec 1960; nationality Iran; Gender Male". Pull those two out so common
+// personal names can be disambiguated. Returns {} values when absent — never fabricated.
+// (The daily same-origin JSON mirror drops Remarks for size, so these are populated only
+// when a raw OFAC export WITH remarks is parsed; the UI shows only what is present.)
+export function secondaryIds(remarks) {
+  const s = String(remarks == null ? "" : remarks);
+  const grab = (re) => { const m = [...s.matchAll(re)].map((x) => x[1].trim()).filter(Boolean); return [...new Set(m)].join("; "); };
+  return {
+    dob: grab(/\bDOB\s+([^;]+)/gi),
+    nationality: grab(/\bnationalit(?:y|ies)\s+([^;]+)/gi),
+  };
+}
+
 export function parseOfac(sdnBody, altBody) {
   const cells = (line) => {
     const out = []; let f = "", q = false;
@@ -185,8 +255,11 @@ export function parseOfac(sdnBody, altBody) {
     if (c.length < 4) continue;
     const uid = c[0];
     if (!/^\d+$/.test(uid)) continue;
+    const remarks = c[11] || "";
+    const sec = secondaryIds(remarks);
     byId.set(uid, {
-      uid, name: c[1], type: c[2] || "", program: c[3] || "", remarks: c[11] || "",
+      uid, name: c[1], type: c[2] || "", program: c[3] || "", remarks,
+      dob: sec.dob, nationality: sec.nationality,
       names: [c[1]].filter(Boolean),
     });
   }
@@ -249,6 +322,25 @@ export function selfTest() {
   ok("parseOfac reads SDN rows", parsed.length === 2 && parsed[0].name === "AEROCARIBBEAN AIRLINES");
   ok("parseOfac folds aliases", parsed[0].names.includes("AERO-CARIBBEAN"));
   ok("parseOfac empties -0- sentinel", parsed[0].type === "");
+
+  // entity-type filter: PUTIN is an individual, ACME SHIPPING an entity (blank type).
+  const indivOnly = screenName("Acme Shipping LLC", list, { types: ["individual"], minScore: 60 });
+  ok("entity-type filter excludes non-matching class", !indivOnly.some((m) => m.uid === "2"));
+  const entityOnly = screenName("Acme Shipping LLC", list, { types: ["entity"], minScore: 60 });
+  ok("entity-type filter keeps matching class", entityOnly.some((m) => m.uid === "2"));
+
+  // program filter: only entries whose program contains the substring survive.
+  const narco = screenName("John Smith", list, { program: "narco", minScore: 60 });
+  ok("program filter keeps matching program", narco.some((m) => m.uid === "3"));
+  ok("program filter drops non-matching program", screenName("John Smith", list, { program: "russia", minScore: 60 }).length === 0);
+
+  // secondary identifiers pulled from remarks (never fabricated when absent).
+  const sec = secondaryIds("DOB 05 Dec 1960; POB Tehran; nationality Iran; Gender Male");
+  ok("secondaryIds extracts DOB", sec.dob === "05 Dec 1960");
+  ok("secondaryIds extracts nationality", sec.nationality === "Iran");
+  ok("secondaryIds empty when absent", secondaryIds("").dob === "" && secondaryIds("").nationality === "");
+
+  ok("entityClass maps blank type to entity", entityClass("") === "entity" && entityClass("Individual") === "individual");
 
   return { pass: results.every((r) => r.pass), results };
 }

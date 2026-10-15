@@ -8,7 +8,7 @@
 //
 //   renderPosture(main) -> void
 
-import { scorePosture, newestCert } from "/js/dataprotect/posture-engine.js?v=20261013m";
+import { scorePosture, newestCert } from "/js/dataprotect/posture-engine.js?v=20261014d";
 import { fetchCertRows } from "/js/dataprotect/ct-fetch.js?v=20261013i";
 import { dnFetch } from "/js/net.js";
 
@@ -108,6 +108,39 @@ async function fetchSecurityTxt(domain) {
   return { present: false };
 }
 
+// Common DKIM selectors used by major mail providers / ESPs. We can only probe
+// well-known names over DoH — a miss is NOT proof that DKIM is absent (selectors
+// are arbitrary), which the engine reports honestly as "unknown".
+const DKIM_SELECTORS = [
+  "google", "default", "selector1", "selector2", "k1", "k2", "k3",
+  "dkim", "mail", "s1", "s2", "mandrill", "mxvault", "zoho", "fm1",
+  "fm2", "fm3", "protonmail", "scph0920", "pm", "amazonses", "sig1",
+];
+async function probeDkim(domain) {
+  const out = await Promise.all(DKIM_SELECTORS.map(async (selector) => {
+    try {
+      const txts = await dohTXT(selector + "._domainkey." + domain);
+      const present = txts.some((t) => /v\s*=\s*dkim1|(^|;)\s*k\s*=|(^|;)\s*p\s*=/i.test(String(t)));
+      return { selector, present };
+    } catch (_) { return { selector, present: false }; }
+  }));
+  return out;
+}
+
+// MTA-STS: the _mta-sts TXT record plus the policy file served from the
+// mta-sts.<domain> host (/.well-known/mta-sts.txt).
+async function fetchMtaSts(domain) {
+  const txts = await dohTXT("_mta-sts." + domain);
+  let policy = null;
+  if (txts.some((t) => /^v=stsv1\b/i.test(String(t).trim()))) {
+    try {
+      const r = await dnFetch("https://mta-sts." + domain + "/.well-known/mta-sts.txt", { raw: true, timeout: 12000 });
+      if (r.status === 200 && /mode\s*:/i.test(r.body || "")) policy = r.body;
+    } catch (_) {}
+  }
+  return { txts, policy };
+}
+
 export function renderPosture(main) {
   injectStyle();
   main.innerHTML = `
@@ -134,13 +167,16 @@ export function renderPosture(main) {
     btn.disabled = true;
     out.innerHTML = `<div class="ps-card"><span class="ps-spin"></span>Running live checks against <b>${esc(domain)}</b>…</div>`;
 
-    const [httpsP, httpP, spfP, dmarcP, certP, stxtP] = await Promise.allSettled([
+    const [httpsP, httpP, spfP, dmarcP, certP, stxtP, dkimP, mtaP, tlsRptP] = await Promise.allSettled([
       dnFetch("https://" + domain, { timeout: 14000 }),
       dnFetch("http://" + domain, { timeout: 12000 }),
       dohTXT(domain),
       dohTXT("_dmarc." + domain),
       fetchCert(domain),
       fetchSecurityTxt(domain),
+      probeDkim(domain),
+      fetchMtaSts(domain),
+      dohTXT("_smtp._tls." + domain),
     ]);
     const val = (p) => (p.status === "fulfilled" ? p.value : null);
     const https = val(httpsP), http = val(httpP);
@@ -164,7 +200,12 @@ export function renderPosture(main) {
       httpRedirectsToHttps: httpReached ? /^https:/i.test(httpFinal) : false,
       finalUrl: httpsFinal || httpFinal,
       headers,
+      // Set-Cookie flags come straight off the real response headers (the proxy
+      // preserves them); the engine folds cookie security into the headers score.
       spfTxts: val(spfP) || [], dmarcTxts: val(dmarcP) || [],
+      dkimSelectors: val(dkimP) || [],
+      mtaStsTxts: (val(mtaP) && val(mtaP).txts) || [], mtaStsPolicy: (val(mtaP) && val(mtaP).policy) || null,
+      tlsRptTxts: val(tlsRptP) || [],
       cert: val(certP), securityTxt: val(stxtP) || { present: false },
       now: Date.now(),
     };

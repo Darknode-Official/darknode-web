@@ -1906,7 +1906,7 @@ function renderApp(user) {
     else if (sec === "spectre") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading…</p>"; const _s=sec; import("/js/spectre.js?v=20261004b").then(m => { if(curSec!==_s)return; m.renderSpectre(main); _prevCleanup = m.cleanupSpectre; }); }
     else if (sec === "crucible") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading…</p>"; const _s=sec; import("/js/crucible.js?v=20260924w").then(m => { if(curSec!==_s)return; m.renderCrucible(main); _prevCleanup = m.cleanupCrucible; }); }
     else if (sec === "navarch") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading…</p>"; const _s=sec; import("/js/navarch.js?v=20260924w").then(m => { if(curSec!==_s)return; m.renderNavarch(main); _prevCleanup = m.cleanupNavarch; }); }
-    else if (sec === "threatforest") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading…</p>"; const _s=sec; import("/js/threatforest.js?v=20261013m").then(m => { if(curSec!==_s)return; m.renderThreatforest(main); _prevCleanup = m.cleanupThreatforest; }); }
+    else if (sec === "threatforest") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading…</p>"; const _s=sec; import("/js/threatforest.js?v=20261014d").then(m => { if(curSec!==_s)return; m.renderThreatforest(main); _prevCleanup = m.cleanupThreatforest; }); }
     else if (sec === "beta") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Beta Lab...</p>"; const _s=sec; import("/js/beta-lab.js?v=20261013b").then(m => { if(curSec!==_s)return; m.renderBetaLab(main); _prevCleanup = m.cleanupBetaLab; }); }
     else if (sec === "crosswalk") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading GenAI Security Crosswalk...</p>"; const _s=sec; import("/js/crosswalk.js?v=20261013c").then(m => { if(curSec!==_s)return; m.renderCrosswalk(main); _prevCleanup = m.cleanupCrosswalk; }); }
     else if (sec === "jwtanalyzer") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading JWT Analyzer...</p>"; import("/js/jwt-analyzer.js").then(m => live() && m.renderJwtAnalyzer(main)); }
@@ -1925,7 +1925,7 @@ function renderApp(user) {
     else if (sec === "vulnprio") { import("/js/vulnerability-prioritizer.js?v=20261013b").then(m => live() && m.renderVulnPrioritizer(main)); }
     else if (sec === "vulntriage") { import("/js/vuln-triage.js?v=20260924b").then(m => live() && m.renderVulnTriage(main)); }
     else if (sec === "secquiz") { import("/js/security-awareness-quiz.js?v=20260924b").then(m => live() && m.renderSecurityQuiz(main)); }
-    else if (sec === "supplychain") { import("/js/supply-chain-analyzer.js").then(m => live() && m.renderSupplyChainAnalyzer(main)); }
+    else if (sec === "supplychain") { import("/js/supply-chain-analyzer.js?v=20261014d").then(m => live() && m.renderSupplyChainAnalyzer(main)); }
     else if (sec === "cryptotools") { import("/js/crypto-tools.js").then(m => live() && m.renderCryptoTools(main)); }
     else if (sec === "ftimeline") { import("/js/forensic-timeline.js").then(m => live() && m.renderForensicTimeline(main)); }
     else if (sec === "socialeng") { import("/js/social-engineering-sim.js").then(m => live() && m.renderSocialEngSim(main)); }
@@ -2011,16 +2011,16 @@ function renderApp(user) {
     else if (sec === "api") { import("/js/api.js?v=20261007a").then(m => live() && m.renderAPI(main, user)); }
     else if (sec === "docs") { import("/js/docs.js?v=20261011a").then(m => live() && m.renderDocs(main)); }
     else if (sec === "veil") { import("/js/labs/veil.js?v=20261013m").then(m => live() && m.renderVeil(main)); }
-    else if (sec === "strongroom") { import("/js/strongroom.js?v=20261014c").then(m => live() && m.renderStrongroom(main)); }
+    else if (sec === "strongroom") { import("/js/strongroom.js?v=20261014d").then(m => live() && m.renderStrongroom(main)); }
     else if (sec === "vault") { import("/js/vault.js?v=20261014c").then(m => live() && m.renderVault(main)); }
-    else if (sec === "sanctions") { import("/js/finsec/sanctions.js?v=20261014c").then(m => live() && m.renderSanctions(main)); }
+    else if (sec === "sanctions") { import("/js/finsec/sanctions.js?v=20261014d").then(m => live() && m.renderSanctions(main)); }
     else if (sec === "signins") { import("/js/identity/signin-forensics.js?v=20261014a").then(m => live() && m.renderSigninForensics(main)); }
     else if (sec === "accessreview") { import("/js/identity/access-review.js?v=20261014a").then(m => live() && m.renderAccessReview(main)); }
     else if (sec === "fwaudit") { import("/js/infra/firewall-audit.js?v=20261014a").then(m => live() && m.renderFirewallAudit(main)); }
     else if (sec === "loghunt") { import("/js/ops/log-hunter.js?v=20261014a").then(m => live() && m.renderLogHunter(main)); }
     else if (sec === "payees") { import("/js/finsec/vendors.js?v=20261014c").then(m => live() && m.renderVendors(main)); }
-    else if (sec === "dlp") { import("/js/dataprotect/dlp.js?v=20261014c").then(m => live() && m.renderDlp(main)); }
-    else if (sec === "posture") { import("/js/dataprotect/posture.js?v=20261014c").then(m => live() && m.renderPosture(main)); }
+    else if (sec === "dlp") { import("/js/dataprotect/dlp.js?v=20261014d").then(m => live() && m.renderDlp(main)); }
+    else if (sec === "posture") { import("/js/dataprotect/posture.js?v=20261014d").then(m => live() && m.renderPosture(main)); }
     else if (sec === "tlsfleet") { import("/js/dataprotect/tlsfleet.js?v=20261014c").then(m => live() && m.renderTlsFleet(main)); }
     else if (sec === "phishtriage") { import("/js/dataprotect/phish.js?v=20261014c").then(m => live() && m.renderPhish(main)); }
     else if (sec === "leakprobe") { import("/js/dataprotect/leakprobe.js?v=20261014c").then(m => live() && m.renderLeakprobe(main)); }

@@ -5,9 +5,19 @@
 // under plain Node (`node test/run.mjs`).
 //
 // Analysis is heuristic and advisory: it flags patterns that are commonly dangerous.
-// Confidence is shown per finding; treat high-confidence findings first. The
-// source->sink relationship reported here is CO-LOCATION (lexical), NOT call-graph
-// reachability — see the co-location heuristic in analyze() below.
+// Confidence is shown per finding; treat high-confidence findings first.
+//
+// Two tiers of evidence, kept honestly distinct:
+//   1. CONFIRMED (JavaScript/TypeScript only): the Code Scanner's inter-procedural
+//      data-flow (taint) engine is reused here. When it can trace every step of a path
+//      from an untrusted source into a sink, that finding is marked `reach` (confirmed
+//      reachable) and cites the traced path. This is real reachability, not proximity.
+//   2. LEXICAL (all other languages, and categories taint doesn't model): a regex hit
+//      whose source->sink relationship is CO-LOCATION only — NOT call-graph reachability.
+//      See the co-location heuristic in analyze() below; it is never inflated to a
+//      reachability claim.
+
+import { taintScan } from "./codescan/taint-js.js?v=20261013a";
 
 // ---- Attack goals: the top level of every tree -----------------------------
 export const GOALS = {
@@ -209,6 +219,58 @@ export const SEV_LABEL = { 5: "Critical", 4: "High", 3: "Medium", 2: "Low", 1: "
 // from "a source merely sits a few lines away" (weak).
 const SRC_TOKEN = /\b(?:req|request|params|query|body|getParameter)\b|\$_(?:GET|POST|REQUEST|COOKIE)|process\.argv|sys\.argv/;
 
+// ---- Data-flow (taint) confirmation for JS/TS ------------------------------
+// The taint engine reports sink kinds (code|cmd|sql|nosql|xss|redirect|path|ssrf|
+// regex|module) with a numeric CWE and a traced flow. This maps each kind onto a
+// ThreatForest goal and the standard refs the regex rules also carry, so a confirmed
+// flow slots into the same attack tree. The CWE/title/fix come from the taint finding.
+const SEV_FROM_STR = { critical: 5, high: 4, medium: 3, low: 2, info: 1 };
+const FLOW_MAP = {
+  code:     { goal: "rce",    capec: "CAPEC-242", att: ["T1059 Command & Scripting Interpreter"], stride: "E" },
+  cmd:      { goal: "rce",    capec: "CAPEC-248", att: ["T1059 Command & Scripting Interpreter"], stride: "E" },
+  sql:      { goal: "sqli",   capec: "CAPEC-66",  att: ["T1190 Exploit Public-Facing Application"], stride: "T" },
+  nosql:    { goal: "sqli",   capec: "CAPEC-676", att: ["T1190 Exploit Public-Facing Application"], stride: "T" },
+  xss:      { goal: "xss",    capec: "CAPEC-63",  att: ["T1059.007 JavaScript"], stride: "T" },
+  redirect: { goal: "config", capec: "CAPEC-194", att: ["T1566 Phishing"], stride: "T" },
+  path:     { goal: "path",   capec: "CAPEC-126", att: ["T1083 File and Directory Discovery"], stride: "I" },
+  ssrf:     { goal: "ssrf",   capec: "CAPEC-664", att: ["T1090 Proxy"], stride: "I" },
+  regex:    { goal: "dos",    capec: "CAPEC-492", att: ["T1499 Endpoint Denial of Service"], stride: "D" },
+  module:   { goal: "rce",    capec: "CAPEC-175", att: ["T1059 Command & Scripting Interpreter"], stride: "E" },
+};
+const cweNum = (s) => parseInt(String(s).replace(/\D/g, ""), 10);
+
+// Run the taint engine and turn every CONFIRMED source->sink flow into a finding.
+// These are the only findings allowed to claim reachability — each one carries the
+// actual traced path. Pure/DOM-free; failures degrade to [] (regex analysis still runs).
+export function flowFindings(code) {
+  let flows = [];
+  try { flows = taintScan(code); } catch (_) { return []; }
+  const lines = String(code || "").split("\n");
+  const out = [];
+  for (const t of flows) {
+    const map = FLOW_MAP[t.kind];
+    if (!map) continue;
+    const flow = Array.isArray(t.flow) ? t.flow : [];
+    const src = (flow[0] && flow[0].label ? flow[0].label : "untrusted input").replace(/^untrusted input:\s*/, "");
+    const steps = Math.max(1, flow.length - 1);
+    out.push({
+      rid: "flow." + t.kind, title: t.title, goal: map.goal, kind: "sink",
+      sev: SEV_FROM_STR[t.sev] || 3, cwe: "CWE-" + t.cwe, capec: map.capec, att: map.att, stride: map.stride,
+      fix: t.fix, line: t.line, excerpt: (lines[t.line - 1] || "").trim().slice(0, 160), idx: 0,
+      confidence: "high",
+      reach: {
+        level: "confirmed", source: src, steps,
+        // Honest: the taint engine traced every step, so "reachable" is earned here
+        // (unlike the lexical co-location labels, which never make this claim).
+        text: "confirmed reachable — data flow traced from " + src + " (" + steps + " step" + (steps === 1 ? "" : "s") + ")",
+        flow: flow.map((s) => ({ line: s.line, label: s.label })),
+        why: t.why,
+      },
+    });
+  }
+  return out;
+}
+
 // ---- Static analysis engine -------------------------------------------------
 export function detectLangs(code) {
   const langs = new Set();
@@ -272,9 +334,42 @@ export function analyze(code) {
   }
   // CSRF rule is noisy: only keep it if there are also input sources (a real app surface).
   const hasSrc = sources.length > 0;
-  const kept = findings.filter((f) => f.rid !== "csrf-missing" || hasSrc);
+  let kept = findings.filter((f) => f.rid !== "csrf-missing" || hasSrc);
+  const langs = detectLangs(code);
+
+  // Data-flow confirmation (JS/TS): a traced source->sink path is strictly better than
+  // lexical co-location, so it SUPERSEDES a regex sink hit of the same CWE on the same
+  // line and is added as a confirmed-reachable node. Regex hits the taint engine did not
+  // (or could not) confirm stay exactly as detected — weak, honest "near"/"input" nodes.
+  let confirmed = [];
+  if (langs.includes("JavaScript")) {
+    confirmed = flowFindings(code);
+    if (confirmed.length) {
+      const drop = new Set();
+      for (const c of confirmed) for (const f of kept) {
+        if (f.kind === "sink" && f.line === c.line && cweNum(f.cwe) === cweNum(c.cwe)) drop.add(f);
+      }
+      kept = kept.filter((f) => !drop.has(f)).concat(confirmed);
+    }
+  }
   kept.sort((a, b) => b.sev - a.sev || a.line - b.line);
-  return { findings: kept, sources, langs: detectLangs(code), loc: code.split("\n").length };
+  return { findings: kept, sources, langs, loc: code.split("\n").length, confirmed: confirmed.length };
+}
+
+// ---- Attack-tree edge weighting (HEURISTIC) ---------------------------------
+// Real attack-tree tools rank paths. We attach a rough likelihood `p` (0..1) and an
+// effort `cost` (1 easy .. 5 hard) to each leaf so paths can be ordered. This is a
+// transparent heuristic derived from severity and evidence strength — a confirmed
+// data-flow weighs most, then a same-line input, then mere proximity. It is NOT a
+// measured exploit probability; it only orders what to look at first.
+export function edgeWeight(f) {
+  const base = { 5: 0.55, 4: 0.4, 3: 0.25, 2: 0.12, 1: 0.05 }[f.sev] || 0.1;
+  let p = base;
+  if (f.reach) p = Math.min(0.95, base + 0.4);                               // taint traced the flow
+  else if (f.coloc && f.coloc.level === "input") p = Math.min(0.8, base + 0.2);
+  else if (f.coloc && f.coloc.level === "near") p = Math.min(0.6, base + 0.08);
+  const cost = f.reach ? Math.max(1, 6 - f.sev) : Math.max(1, 7 - f.sev);    // lower = easier for the attacker
+  return { p: Math.round(p * 100) / 100, cost, heuristic: true };
 }
 
 // ---- Attack-tree synthesis --------------------------------------------------
@@ -282,13 +377,21 @@ export function buildTree(findings) {
   const byGoal = {};
   for (const f of findings) (byGoal[f.goal] = byGoal[f.goal] || []).push(f);
   const branches = Object.keys(byGoal).map((g) => {
-    const items = byGoal[g];
+    // Within a branch, confirmed-reachable leaves lead, then by severity.
+    const items = byGoal[g].slice().sort((a, b) => (b.reach ? 1 : 0) - (a.reach ? 1 : 0) || b.sev - a.sev || a.line - b.line);
+    const leaves = items.map((f) => ({ ...f, confirmed: !!f.reach, weight: edgeWeight(f) }));
     const maxSev = Math.max.apply(null, items.map((i) => i.sev));
+    // OR-node: any leaf achieves the goal, so the path likelihood is their union (heuristic).
+    const p = 1 - leaves.reduce((acc, l) => acc * (1 - l.weight.p), 1);
+    const minCost = Math.min.apply(null, leaves.map((l) => l.weight.cost));
     return {
       goal: g, name: (GOALS[g] || { name: g }).name, short: (GOALS[g] || {}).short || g,
-      sev: maxSev, leaves: items,
+      sev: maxSev, confirmed: leaves.some((l) => l.confirmed), leaves,
+      weight: { p: Math.round(p * 100) / 100, minCost, heuristic: true },
     };
-  }).sort((a, b) => b.sev - a.sev);
+  // Severity stays the primary order (preserves the documented invariant); a confirmed
+  // branch, then a higher heuristic likelihood, break ties.
+  }).sort((a, b) => b.sev - a.sev || (b.confirmed ? 1 : 0) - (a.confirmed ? 1 : 0) || b.weight.p - a.weight.p);
   return { root: "Compromise the application", branches };
 }
 
@@ -296,7 +399,9 @@ export function buildTree(findings) {
 export function riskScore(findings) {
   const w = { 5: 28, 4: 15, 3: 7, 2: 3, 1: 1 };
   let raw = 0; const by = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
-  for (const f of findings) { raw += w[f.sev] * (f.confidence === "high" ? 1.25 : 1); by[f.sev]++; }
+  // A taint-confirmed flow is the strongest evidence, so it weighs most; a high-confidence
+  // lexical hit next; everything else at face value.
+  for (const f of findings) { raw += w[f.sev] * (f.reach ? 1.5 : f.confidence === "high" ? 1.25 : 1); by[f.sev]++; }
   const score = Math.min(100, Math.round(raw));
   const grade = score >= 75 ? "F" : score >= 55 ? "D" : score >= 35 ? "C" : score >= 15 ? "B" : score > 0 ? "A" : "A+";
   return { score, grade, by };

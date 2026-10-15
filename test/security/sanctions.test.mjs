@@ -4,7 +4,8 @@
 
 import { test, assert, group } from "../harness.mjs";
 import {
-  normName, tokens, levenshtein, band, buildIndex, screenName, screenBatch, parseOfac, selfTest,
+  normName, tokens, levenshtein, band, buildIndex, screenName, screenBatch, screenBatchAsync,
+  parseOfac, secondaryIds, entityClass, selfTest,
 } from "../../public/js/finsec/sanctions-engine.js";
 
 group("sanctions: engine self-test", () => {
@@ -113,5 +114,80 @@ group("sanctions: OFAC parsing", () => {
     const p = parseOfac('notanum,"X",-0- ,"Y"\n7,"REAL ENTRY",-0- ,"Z"', "");
     assert.equal(p.length, 1);
     assert.equal(p[0].uid, "7");
+  });
+});
+
+group("sanctions: list-field filters", () => {
+  const idx = buildIndex([
+    { uid: "1", name: "JOHN SMITH", type: "individual", program: "NARCO", names: ["JOHN SMITH"] },
+    { uid: "2", name: "JOHN SMITH TRADING", type: "", program: "RUSSIA", names: ["JOHN SMITH TRADING"] },
+    { uid: "3", name: "JOHN SMITH SHIPPING", type: "vessel", program: "IRAN", names: ["JOHN SMITH SHIPPING"] },
+  ]);
+  test("entity-type filter keeps only the requested class", () => {
+    const r = screenName("John Smith", idx, { types: "individual", minScore: 60 });
+    assert.ok(r.every((m) => m.uid === "1"));
+    assert.ok(r.some((m) => m.uid === "1"));
+  });
+  test("blank OFAC type is treated as entity", () => {
+    const r = screenName("John Smith", idx, { types: ["entity"], minScore: 60 });
+    assert.ok(r.some((m) => m.uid === "2"));
+    assert.ok(!r.some((m) => m.uid === "1" || m.uid === "3"));
+  });
+  test("program substring filter is case-insensitive", () => {
+    const r = screenName("John Smith", idx, { program: "russ", minScore: 60 });
+    assert.ok(r.length === 1 && r[0].uid === "2");
+  });
+  test("no filter (all) returns every class", () => {
+    const r = screenName("John Smith", idx, { types: "all", minScore: 60 });
+    assert.ok(r.length === 3);
+  });
+  test("entityClass collapses blank/individual/vessel/aircraft", () => {
+    assert.equal(entityClass(""), "entity");
+    assert.equal(entityClass("Individual"), "individual");
+    assert.equal(entityClass("vessel"), "vessel");
+    assert.equal(entityClass("aircraft"), "aircraft");
+  });
+});
+
+group("sanctions: async batch", () => {
+  const idx = buildIndex([{ uid: "9", name: "ACME SHIPPING LLC", type: "entity", program: "SDGT", names: ["ACME SHIPPING LLC"] }]);
+  test("screenBatchAsync yields the same result as screenBatch", async () => {
+    const names = [];
+    for (let i = 0; i < 60; i++) names.push(i % 2 ? "Acme Shipping LLC" : "Clean Vendor " + i);
+    const sync = screenBatch(names, idx, { chunk: 10 });
+    const asyncRes = await screenBatchAsync(names, idx, { chunk: 10 });
+    assert.equal(JSON.stringify(asyncRes), JSON.stringify(sync));
+  });
+  test("onProgress reports completion", async () => {
+    let last = 0;
+    await screenBatchAsync(["Acme Shipping LLC", "x", "y"], idx, { chunk: 1 }, (done, tot) => { last = done === tot ? tot : last; });
+    assert.equal(last, 3);
+  });
+});
+
+group("sanctions: secondary identifiers", () => {
+  test("secondaryIds pulls DOB and nationality from remarks", () => {
+    const s = secondaryIds("DOB 05 Dec 1960; POB Tehran, Iran; nationality Iran; Gender Male");
+    assert.equal(s.dob, "05 Dec 1960");
+    assert.equal(s.nationality, "Iran");
+  });
+  test("secondaryIds returns empty strings when absent (never fabricated)", () => {
+    const s = secondaryIds("");
+    assert.equal(s.dob, "");
+    assert.equal(s.nationality, "");
+  });
+  test("parseOfac surfaces DOB/nationality from the SDN Remarks column", () => {
+    const sdn = '100,"DOE, John","individual","SDGT",-0- ,-0- ,-0- ,-0- ,-0- ,-0- ,-0- ,"DOB 01 Jan 1970; nationality Iran"';
+    const p = parseOfac(sdn, "");
+    assert.equal(p[0].dob, "01 Jan 1970");
+    assert.equal(p[0].nationality, "Iran");
+    const hit = screenName("John Doe", buildIndex(p), { minScore: 60 })[0];
+    assert.ok(hit && hit.dob === "01 Jan 1970" && hit.nationality === "Iran");
+  });
+  test("hits carry empty identifiers when the list omits remarks", () => {
+    const idx = buildIndex([{ uid: "1", name: "ACME LLC", type: "", program: "X", names: ["ACME LLC"] }]);
+    const hit = screenName("Acme LLC", idx)[0];
+    assert.equal(hit.dob, "");
+    assert.equal(hit.nationality, "");
   });
 });

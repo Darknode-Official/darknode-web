@@ -1,13 +1,35 @@
 // Supply Chain Risk Analyzer — map and score software supply chain risk.
-// Vulnerabilities come live from OSV.dev (version-accurate), typosquats from real
-// edit-distance against popular names, severity from the CVSS v3 base formula.
-// Pure logic lives in supply-chain-engine.js (tested); this file is the UI.
+// Vulnerabilities come live from OSV.dev (version-accurate) across the FULL
+// resolved tree (direct + transitive) when a lockfile is supplied, typosquats
+// from real edit-distance against popular names, severity from the CVSS v3 base
+// formula, and exploitation intel from the mirrored CISA KEV catalog + live FIRST
+// EPSS. Pure logic lives in supply-chain-engine.js (tested); this file is the UI.
 // Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
 
 import {
   OSV_ECOSYSTEM, autoDetectAndParse, typosquat, summarizeVuln, scoreRisk, generateSBOM,
+  kevCveSet, parseEpss,
 } from "./supply-chain-engine.js";
 import { osvQuery, osvVuln, pool } from "./codescan/github.js";
+
+// Live exploitation probability from FIRST EPSS. CORS-enabled; batched (the API
+// caps the cve= list, so we chunk). Returns a merged CVE -> {epss,percentile} Map
+// or null on total failure (the caller then scores on CVSS/KEV alone).
+async function fetchEpss(cves) {
+  const map = new Map();
+  let anyOk = false;
+  for (let i = 0; i < cves.length; i += 90) {
+    const chunk = cves.slice(i, i + 90);
+    try {
+      const r = await fetch("https://api.first.org/data/v1/epss?pretty=false&cve=" + chunk.map(encodeURIComponent).join(","));
+      if (!r.ok) continue;
+      const part = parseEpss(await r.json());
+      anyOk = true;
+      part.forEach((v, k) => map.set(k, v));
+    } catch (_) { /* skip this chunk; partial intel is still useful */ }
+  }
+  return anyOk ? map : null;
+}
 
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 // Severity as text colour only (no inline background: the pro-theme catch-all
@@ -120,8 +142,8 @@ export function renderSupplyChainAnalyzer(main) {
       '<div style="margin-bottom:6px">' +
         '<label style="font-size:.8rem;color:var(--mut);display:block;margin-bottom:4px">Dependency manifest or lockfile</label>' +
         '<textarea class="tk-in" id="sca-input" rows="8" placeholder="Paste a dependency file here"></textarea>' +
-        '<p style="font-size:.72rem;color:var(--mut);margin:4px 0 0;line-height:1.5">Supports package.json, package-lock.json, requirements.txt, Gemfile, go.mod and pom.xml. ' +
-          'A lockfile (pinned versions) gives exact results; a manifest with version ranges is scanned at the lower bound of each range.</p>' +
+        '<p style="font-size:.72rem;color:var(--mut);margin:4px 0 0;line-height:1.5">Supports package.json, package-lock.json, yarn.lock, requirements.txt, poetry.lock, Gemfile, Gemfile.lock, go.mod, go.sum and pom.xml. ' +
+          'A lockfile pins the FULL resolved tree — direct and transitive dependencies are all scanned; a bare manifest covers only direct deps, and version ranges are scanned at the lower bound of each range.</p>' +
       '</div>' +
       '<div class="tk-btns" style="margin-top:10px">' +
         '<button class="btn sm" id="sca-analyze">Analyze dependencies</button>' +
@@ -148,7 +170,8 @@ export function renderSupplyChainAnalyzer(main) {
       }
       deps = parsed;
       const btn = this; btn.disabled = true;
-      results.innerHTML = '<p class="muted">Querying OSV.dev for ' + deps.length + ' dependencies…</p>';
+      const transitiveNote = deps.some((d) => d.direct === false) ? " (direct + transitive)" : "";
+      results.innerHTML = '<p class="muted">Querying OSV.dev for ' + deps.length + ' dependencies' + transitiveNote + '…</p>';
 
       // Build OSV queries; keep a back-reference to the rich dep on each.
       const queryable = deps.filter((d) => d.version && OSV_ECOSYSTEM[d.ecosystem]);
@@ -181,25 +204,50 @@ export function renderSupplyChainAnalyzer(main) {
         if (ts) rows.push({ dep: d, f: { type: "typosquat", severity: "high", desc: 'Name is edit-distance ' + ts.distance + ' from the popular package "' + ts.real + '". Confirm this is the package you intend.', fix: 'Verify, or use "' + ts.real + '"' } });
       }
 
+      // Enrich vulnerability findings with real-world exploitation intel: the
+      // mirrored CISA KEV catalog (same-origin) and live FIRST EPSS. This runs
+      // BEFORE scoring so KEV/EPSS raise the risk weight of exploited flaws.
+      const cves = [...new Set(rows.filter((r) => r.f.type === "vulnerability" && /^CVE-/i.test(r.f.cve || "")).map((r) => r.f.cve.toUpperCase()))];
+      let kevSet = null, epssMap = null, intelNote = "";
+      if (cves.length) {
+        try { const kr = await fetch("/data/feeds/cisa-kev.json"); if (kr.ok) kevSet = kevCveSet(await kr.json()); } catch (_) {}
+        try { epssMap = await fetchEpss(cves); } catch (_) {}
+        rows.forEach((r) => {
+          const cve = (r.f.cve || "").toUpperCase();
+          if (r.f.type !== "vulnerability" || !/^CVE-/.test(cve)) return;
+          if (kevSet && kevSet.has(cve)) r.f.kev = true;
+          if (epssMap && epssMap.has(cve)) { r.f.epss = epssMap.get(cve).epss; r.f.epssPct = epssMap.get(cve).percentile; }
+        });
+        if (!kevSet && !epssMap) intelNote = "Exploitation intel (CISA KEV / FIRST EPSS) was unavailable; risk reflects CVSS severity only. ";
+      }
+
       const flat = rows.map((r) => r.f);
       const riskScore = scoreRisk(flat);
       const count = { critical: 0, high: 0, medium: 0, low: 0 };
       flat.forEach((f) => { count[f.severity] = (count[f.severity] || 0) + 1; });
       const anyRange = deps.some((d) => d.version && !d.exact);
       const unversioned = deps.filter((d) => !d.version).length;
+      const directCount = deps.filter((d) => d.direct === true).length;
+      const transitiveCount = deps.filter((d) => d.direct === false).length;
+      const kevCount = flat.filter((f) => f.kev).length;
+      const manifestOnly = deps.length > 0 && transitiveCount === 0 && deps.every((d) => d.direct === true);
 
       let html = '<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px">' +
         kpi(riskScore + "/100", "RISK SCORE", scoreColor(riskScore)) +
         kpi(deps.length, "DEPENDENCIES") +
+        (transitiveCount > 0 ? kpi(directCount + " / " + transitiveCount, "DIRECT / TRANSITIVE") : "") +
         kpi(count.critical, "CRITICAL", SEV.critical) +
         kpi(count.high, "HIGH", SEV.high) +
-        kpi(count.medium, "MEDIUM", SEV.medium) +
+        (kevCount > 0 ? kpi(kevCount, "KNOWN EXPLOITED", SEV.critical) : kpi(count.medium, "MEDIUM", SEV.medium)) +
       '</div>';
 
       html += '<p style="font-size:.72rem;color:var(--mut);margin:0 0 12px;line-height:1.5">Advisories from OSV.dev, matched against each version server-side. ' +
-        (anyRange ? 'Some versions are ranges; those were scanned at the range lower bound — paste a lockfile for exact results. ' : "") +
+        (transitiveCount > 0 ? "Full resolved tree scanned: " + directCount + " direct, " + transitiveCount + " transitive. " : "") +
+        (manifestOnly ? "Direct dependencies only — add a lockfile (package-lock.json, yarn.lock, poetry.lock, Gemfile.lock, go.sum) for the full transitive tree. " : "") +
+        (anyRange ? "Some versions are ranges; those were scanned at the range lower bound — paste a lockfile for exact results. " : "") +
         (unversioned ? unversioned + " dependency(ies) had no resolvable version and were not scanned. " : "") +
-        'Typosquat suspicion is a name-similarity heuristic, not proof.</p>';
+        intelNote +
+        "Known-exploited status is from the CISA KEV catalog; EPSS is the FIRST probability of exploitation within 30 days. Typosquat suspicion is a name-similarity heuristic, not proof.</p>";
 
       if (osvError) html += '<p style="color:' + SEV.high + ';font-size:.78rem">Live advisory lookup failed: ' + esc(osvError) + ' Dependencies were parsed but not scanned for vulnerabilities.</p>';
 
@@ -209,14 +257,25 @@ export function renderSupplyChainAnalyzer(main) {
           '<thead><tr style="border-bottom:2px solid var(--line)">' +
           ["Package", "Version", "Severity", "Type", "Issue", "Fix"].map((h) => '<th style="padding:6px;text-align:left;color:var(--mut)">' + h + "</th>").join("") +
           "</tr></thead><tbody>";
-        rows.sort((a, b) => sevRank(b.f.severity) - sevRank(a.f.severity));
+        rows.sort((a, b) => (sevRank(b.f.severity) + (b.f.kev ? 5 : 0)) - (sevRank(a.f.severity) + (a.f.kev ? 5 : 0)));
         rows.forEach((r) => {
           const f = r.f, c = SEV[f.severity] || "var(--mut)";
           const ref = f.id ? '<a href="https://osv.dev/vulnerability/' + encodeURIComponent(f.id) + '" target="_blank" rel="noopener" style="color:var(--acc)">' + esc(f.cve || f.id) + "</a>" : "";
+          // Direct vs transitive label (only when the source recorded it).
+          const origin = r.dep.direct === true ? '<div style="font-size:.62rem;color:var(--mut);text-transform:uppercase;letter-spacing:.03em">direct</div>'
+            : r.dep.direct === false ? '<div style="font-size:.62rem;color:var(--mut);text-transform:uppercase;letter-spacing:.03em">transitive</div>' : "";
+          // Exploitation badges — text colour only (no inline background chips).
+          let badges = "";
+          if (f.kev) badges += '<span style="color:' + SEV.critical + ';font-weight:700;font-size:.62rem;text-transform:uppercase;letter-spacing:.03em">Known exploited</span>';
+          if (typeof f.epss === "number") {
+            const pct = Math.round(f.epss * 100);
+            const ec = f.epss >= 0.5 ? SEV.critical : f.epss >= 0.1 ? SEV.high : SEV.medium;
+            badges += (badges ? '<span style="color:var(--mut)"> · </span>' : "") + '<span style="color:' + ec + ';font-weight:600;font-size:.62rem" title="FIRST EPSS: probability of exploitation in 30 days">EPSS ' + pct + "%</span>";
+          }
           html += '<tr style="border-bottom:1px solid var(--line)">' +
-            '<td style="padding:6px;font-weight:600;overflow-wrap:anywhere">' + esc(r.dep.name) + "</td>" +
+            '<td style="padding:6px;font-weight:600;overflow-wrap:anywhere">' + esc(r.dep.name) + origin + "</td>" +
             '<td style="padding:6px;color:var(--mut)">' + esc(r.dep.version || "—") + (r.dep.exact ? "" : ' <span title="lower bound of a range">~</span>') + "</td>" +
-            '<td style="padding:6px"><span style="color:' + c + ';font-weight:600;text-transform:uppercase;font-size:.7rem">' + esc(f.severity) + (f.cvss != null ? " " + f.cvss : "") + "</span></td>" +
+            '<td style="padding:6px"><span style="color:' + c + ';font-weight:600;text-transform:uppercase;font-size:.7rem">' + esc(f.severity) + (f.cvss != null ? " " + f.cvss : "") + "</span>" + (badges ? '<div style="margin-top:3px">' + badges + "</div>" : "") + "</td>" +
             '<td style="padding:6px;font-size:.72rem">' + esc(f.type) + (ref ? " (" + ref + ")" : "") + "</td>" +
             '<td style="padding:6px;overflow-wrap:anywhere">' + esc(f.desc) + "</td>" +
             '<td style="padding:6px;color:' + SEV.low + ';overflow-wrap:anywhere">' + esc(f.fix) + "</td>" +

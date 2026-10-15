@@ -4,6 +4,7 @@
 import { test, assert, group } from "../harness.mjs";
 import {
   scorePosture, parseHSTS, parseSPF, parseDMARC, certDaysLeft, newestCert, letterGrade, selfTest, gradeTransport,
+  spfLookupCount, parseSetCookie, certCoversDomain, parseMtaSts, parseCSP, gradeCSPDeep, gradeHeaders, gradeEmail, gradeTls,
 } from "../../public/js/dataprotect/posture-engine.js";
 
 group("posture: HTTPS vs HTTP-redirect are distinct signals", () => {
@@ -78,12 +79,17 @@ group("posture: scoring", () => {
     domain: "example.com", requestedUrl: "https://example.com", finalUrl: "https://example.com",
     headers: {
       "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
-      "Content-Security-Policy": "default-src 'self'",
+      "Content-Security-Policy": "default-src 'none'; script-src 'self'; style-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests",
       "X-Content-Type-Options": "nosniff", "X-Frame-Options": "DENY",
       "Referrer-Policy": "strict-origin-when-cross-origin", "Permissions-Policy": "geolocation=()",
+      "Cross-Origin-Opener-Policy": "same-origin", "Cross-Origin-Embedder-Policy": "require-corp",
+      "Cross-Origin-Resource-Policy": "same-origin",
     },
-    spfTxts: ["v=spf1 include:_spf.example.com -all"], dmarcTxts: ["v=DMARC1; p=reject"],
-    cert: { issuer: "CN=E5, O=Let's Encrypt", notAfter: new Date(Date.now() + 60 * 86400000).toISOString() },
+    spfTxts: ["v=spf1 include:_spf.example.com -all"], dmarcTxts: ["v=DMARC1; p=reject; rua=mailto:dmarc@example.com"],
+    dkimSelectors: [{ selector: "google", present: true }],
+    mtaStsTxts: ["v=STSv1; id=20260101"], mtaStsPolicy: "version: STSv1\nmode: enforce\nmax_age: 604800",
+    tlsRptTxts: ["v=TLSRPTv1; rua=mailto:tlsrpt@example.com"],
+    cert: { issuer: "CN=E5, O=Let's Encrypt", notAfter: new Date(Date.now() + 60 * 86400000).toISOString(), names: "example.com\nwww.example.com" },
     securityTxt: { present: true },
   };
 
@@ -110,7 +116,9 @@ group("posture: scoring", () => {
   });
 
   test("CSP with unsafe-inline warns not passes", () => {
-    const r = scorePosture({ ...strongInput, headers: { ...strongInput.headers, "Content-Security-Policy": "default-src 'self' 'unsafe-inline'" } });
+    // Otherwise well-formed CSP whose only flaw is unsafe-inline in script-src:
+    // deep grading keeps it out of "pass" because of the critical finding.
+    const r = scorePosture({ ...strongInput, headers: { ...strongInput.headers, "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'" } });
     const csp = r.categories.find((c) => c.key === "headers").checks.find((c) => c.name === "Content-Security-Policy");
     assert.equal(csp.status, "warn");
   });
@@ -131,5 +139,148 @@ group("posture: scoring", () => {
   test("category weights sum to 100", () => {
     const r = scorePosture(strongInput);
     assert.equal(r.categories.reduce((a, c) => a + c.weight, 0), 100);
+  });
+});
+
+group("posture: deep CSP grading", () => {
+  test("parseCSP keeps the first occurrence of a directive", () => {
+    const d = parseCSP("default-src 'self'; script-src 'self'; script-src 'unsafe-inline'");
+    assert.equal(d["script-src"].join(" "), "'self'");
+  });
+  test("a locked-down CSP grades A", () => {
+    const g = gradeCSPDeep("default-src 'none'; script-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'");
+    assert.equal(g.grade, "A");
+  });
+  test("unsafe-inline / unsafe-eval are flagged as critical", () => {
+    const g = gradeCSPDeep("default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'");
+    assert.ok(g.findings.some((f) => /unsafe-inline/.test(f.msg) && f.sev === "critical"));
+    assert.ok(g.findings.some((f) => /unsafe-eval/.test(f.msg)));
+    assert.ok(g.grade === "D" || g.grade === "F");
+  });
+  test("wildcard script-src and missing object-src/base-uri are caught", () => {
+    const g = gradeCSPDeep("default-src 'self'; script-src *");
+    assert.ok(g.findings.some((f) => /wildcard/.test(f.msg)));
+    assert.ok(g.findings.some((f) => /object-src/.test(f.msg)));
+    assert.ok(g.findings.some((f) => /base-uri/.test(f.msg)));
+  });
+  test("absent CSP reports N/A, not a crash", () => {
+    assert.equal(gradeCSPDeep("").grade, "N/A");
+    assert.equal(gradeCSPDeep(null).present, false);
+  });
+  test("a deeply weak CSP header fails the headers category check", () => {
+    const r = gradeHeaders({ headers: { "content-security-policy": "default-src *; script-src * 'unsafe-inline'" } });
+    const csp = r.checks.find((c) => c.name === "Content-Security-Policy");
+    assert.equal(csp.status, "fail");
+  });
+});
+
+group("posture: cookie flags", () => {
+  test("parseSetCookie reads Secure/HttpOnly/SameSite", () => {
+    const c = parseSetCookie("sid=abc; Path=/; Secure; HttpOnly; SameSite=Lax")[0];
+    assert.ok(c.secure && c.httpOnly);
+    assert.equal(c.sameSite, "lax");
+  });
+  test("parseSetCookie splits multiple cookies without breaking on Expires commas", () => {
+    const list = parseSetCookie("a=1; Expires=Wed, 09 Jun 2025 10:18:14 GMT; Secure, b=2; HttpOnly");
+    assert.equal(list.length, 2);
+    assert.equal(list[0].name, "a");
+    assert.ok(list[0].secure);
+    assert.equal(list[1].name, "b");
+    assert.ok(list[1].httpOnly);
+  });
+  test("a cookie missing Secure fails the headers cookie check", () => {
+    const r = gradeHeaders({ headers: { "set-cookie": "sid=abc; Path=/; HttpOnly" } });
+    const ck = r.checks.find((c) => c.name === "Cookie security");
+    assert.equal(ck.status, "fail");
+  });
+  test("secure cookie missing HttpOnly/SameSite only warns", () => {
+    const r = gradeHeaders({ headers: { "set-cookie": "sid=abc; Secure" } });
+    const ck = r.checks.find((c) => c.name === "Cookie security");
+    assert.equal(ck.status, "warn");
+  });
+  test("no Set-Cookie means no cookie check at all", () => {
+    const r = gradeHeaders({ headers: {} });
+    assert.notOk(r.checks.some((c) => c.name === "Cookie security"));
+  });
+});
+
+group("posture: cross-origin headers", () => {
+  test("COOP/COEP/CORP pass when set correctly", () => {
+    const r = gradeHeaders({ headers: { "cross-origin-opener-policy": "same-origin", "cross-origin-embedder-policy": "require-corp", "cross-origin-resource-policy": "same-origin" } });
+    for (const name of ["Cross-Origin-Opener-Policy", "Cross-Origin-Embedder-Policy", "Cross-Origin-Resource-Policy"]) {
+      assert.equal(r.checks.find((c) => c.name === name).status, "pass");
+    }
+  });
+  test("missing cross-origin headers warn (not fail)", () => {
+    const r = gradeHeaders({ headers: {} });
+    for (const name of ["Cross-Origin-Opener-Policy", "Cross-Origin-Embedder-Policy", "Cross-Origin-Resource-Policy"]) {
+      assert.equal(r.checks.find((c) => c.name === name).status, "warn");
+    }
+  });
+});
+
+group("posture: email auth depth", () => {
+  test("parseDMARC extracts rua, sp and pct", () => {
+    const d = parseDMARC(["v=DMARC1; p=reject; sp=none; pct=25; rua=mailto:a@b.com; adkim=s"]);
+    assert.equal(d.rua, "mailto:a@b.com");
+    assert.equal(d.sp, "none");
+    assert.equal(d.pct, 25);
+    assert.equal(d.adkim, "s");
+  });
+  test("spfLookupCount tallies lookup mechanisms", () => {
+    assert.equal(spfLookupCount("v=spf1 include:_spf.google.com a mx -all"), 3);
+    assert.equal(spfLookupCount("v=spf1 ip4:1.2.3.4 -all"), 0);
+    assert.equal(spfLookupCount("v=spf1 " + Array(11).fill("include:x.com").join(" ") + " -all"), 11);
+  });
+  test("SPF over the 10-lookup budget fails", () => {
+    const r = gradeEmail({ spfTxts: ["v=spf1 " + Array(12).fill("include:x.com").join(" ") + " -all"], dmarcTxts: ["v=DMARC1; p=reject; rua=mailto:a@b.com"] });
+    assert.equal(r.checks.find((c) => c.name === "SPF lookup budget").status, "fail");
+  });
+  test("DMARC pct<100 and missing rua warn", () => {
+    const r = gradeEmail({ spfTxts: ["v=spf1 -all"], dmarcTxts: ["v=DMARC1; p=reject; pct=50"] });
+    assert.equal(r.checks.find((c) => c.name === "DMARC coverage (pct)").status, "warn");
+    assert.equal(r.checks.find((c) => c.name === "DMARC reporting (rua)").status, "warn");
+  });
+  test("DKIM found on a probed selector passes; none probed is N/A", () => {
+    const found = gradeEmail({ spfTxts: ["v=spf1 -all"], dmarcTxts: ["v=DMARC1; p=reject; rua=mailto:a@b.com"], dkimSelectors: [{ selector: "s1", present: false }, { selector: "s2", present: true }] });
+    assert.equal(found.checks.find((c) => c.name === "DKIM").status, "pass");
+    const none = gradeEmail({ spfTxts: ["v=spf1 -all"], dmarcTxts: ["v=DMARC1; p=reject; rua=mailto:a@b.com"], dkimSelectors: [{ selector: "s1", present: false }] });
+    assert.equal(none.checks.find((c) => c.name === "DKIM").status, "na");
+  });
+  test("MTA-STS enforce passes; testing warns; absent warns", () => {
+    const pass = parseMtaSts(["v=STSv1; id=1"], "version: STSv1\nmode: enforce\nmax_age: 604800");
+    assert.equal(pass.mode, "enforce");
+    const r = gradeEmail({ spfTxts: ["v=spf1 -all"], dmarcTxts: ["v=DMARC1; p=reject; rua=mailto:a@b.com"], mtaStsTxts: ["v=STSv1; id=1"], mtaStsPolicy: "mode: testing" });
+    assert.equal(r.checks.find((c) => c.name === "MTA-STS").status, "warn");
+    const absent = gradeEmail({ spfTxts: ["v=spf1 -all"], dmarcTxts: ["v=DMARC1; p=reject; rua=mailto:a@b.com"] });
+    assert.equal(absent.checks.find((c) => c.name === "MTA-STS").status, "warn");
+  });
+  test("TLS-RPT present passes", () => {
+    const r = gradeEmail({ spfTxts: ["v=spf1 -all"], dmarcTxts: ["v=DMARC1; p=reject; rua=mailto:a@b.com"], tlsRptTxts: ["v=TLSRPTv1; rua=mailto:t@b.com"] });
+    assert.equal(r.checks.find((c) => c.name === "TLS-RPT").status, "pass");
+  });
+});
+
+group("posture: certificate SAN coverage", () => {
+  test("certCoversDomain handles exact, wildcard and apex", () => {
+    assert.equal(certCoversDomain("example.com\nwww.example.com", "example.com"), true);
+    assert.equal(certCoversDomain("*.example.com", "api.example.com"), true);
+    assert.equal(certCoversDomain("*.example.com", "a.b.example.com"), false);
+    assert.equal(certCoversDomain("other.com", "example.com"), false);
+    assert.equal(certCoversDomain(null, "example.com"), null);
+  });
+  test("a cert that does not cover the domain warns", () => {
+    const r = gradeTls({ domain: "example.com", cert: { issuer: "CN=E5", notAfter: new Date(Date.now() + 90 * 86400000).toISOString(), names: "other.com\nwww.other.com" }, now: Date.now() });
+    assert.equal(r.checks.find((c) => c.name === "Name coverage").status, "warn");
+  });
+  test("the validity label is honest about CT-vs-served-leaf", () => {
+    const r = gradeTls({ domain: "example.com", cert: { issuer: "CN=E5", notAfter: new Date(Date.now() + 90 * 86400000).toISOString(), names: "example.com" }, now: Date.now() });
+    const v = r.checks.find((c) => c.name === "Certificate validity");
+    assert.ok(/newest issued certificate/i.test(v.detail));
+    assert.ok(/not necessarily the served leaf/i.test(v.detail));
+  });
+  test("weak SHA-1 signature fails when a CT source supplies it", () => {
+    const r = gradeTls({ domain: "example.com", cert: { issuer: "CN=E5", notAfter: new Date(Date.now() + 90 * 86400000).toISOString(), names: "example.com", sigAlg: "sha1WithRSAEncryption" }, now: Date.now() });
+    assert.equal(r.checks.find((c) => c.name === "Signature algorithm").status, "fail");
   });
 });

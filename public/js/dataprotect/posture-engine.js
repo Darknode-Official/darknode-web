@@ -31,9 +31,103 @@ export function parseSPF(txts) {
 export function parseDMARC(txts) {
   const rec = (txts || []).find((t) => /^v=dmarc1\b/i.test(String(t).trim()));
   if (!rec) return { present: false };
-  const m = String(rec).match(/\bp\s*=\s*(none|quarantine|reject)\b/i);
-  const pct = String(rec).match(/\bpct\s*=\s*(\d+)\b/i);
-  return { present: true, record: rec, policy: m ? m[1].toLowerCase() : "none", pct: pct ? parseInt(pct[1], 10) : 100 };
+  const s = String(rec);
+  const m = s.match(/\bp\s*=\s*(none|quarantine|reject)\b/i);
+  const spM = s.match(/\bsp\s*=\s*(none|quarantine|reject)\b/i);
+  const pct = s.match(/\bpct\s*=\s*(\d+)\b/i);
+  const rua = s.match(/\brua\s*=\s*([^;]+)/i);
+  const ruf = s.match(/\bruf\s*=\s*([^;]+)/i);
+  const adkim = s.match(/\badkim\s*=\s*([rs])\b/i);
+  const aspf = s.match(/\baspf\s*=\s*([rs])\b/i);
+  return {
+    present: true, record: rec,
+    policy: m ? m[1].toLowerCase() : "none",
+    sp: spM ? spM[1].toLowerCase() : null,
+    pct: pct ? parseInt(pct[1], 10) : 100,
+    rua: rua ? rua[1].trim() : null,
+    ruf: ruf ? ruf[1].trim() : null,
+    adkim: adkim ? adkim[1].toLowerCase() : null,
+    aspf: aspf ? aspf[1].toLowerCase() : null,
+  };
+}
+
+// Count the DNS-lookup-causing mechanisms in an SPF record. RFC 7208 §4.6.4
+// caps these at 10; exceeding it is a permerror (SPF stops evaluating).
+// include / a / mx / ptr / exists and the redirect modifier each cost a lookup.
+export function spfLookupCount(record) {
+  if (!record) return 0;
+  const toks = String(record).trim().split(/\s+/);
+  let n = 0;
+  for (const raw of toks) {
+    const t = raw.replace(/^[-~?+]/, "").toLowerCase();
+    if (/^(include:|a(:|$|\/)|mx(:|$|\/)|ptr(:|$)|exists:|redirect=)/.test(t)) n++;
+  }
+  return n;
+}
+
+// Parse one or more Set-Cookie header values. The proxy collapses multiple
+// Set-Cookie headers into one comma-joined string (standard Headers iteration),
+// so accept a string or an array and split on commas that start a new cookie
+// pair — while leaving the comma inside an Expires date untouched.
+export function parseSetCookie(value) {
+  if (!value) return [];
+  const parts = Array.isArray(value) ? value.slice() : splitCookieHeader(String(value));
+  const out = [];
+  for (const raw of parts) {
+    const str = String(raw).trim();
+    if (!str) continue;
+    const segs = str.split(";").map((x) => x.trim());
+    const nameVal = segs[0] || "";
+    const name = nameVal.split("=")[0].trim();
+    if (!name) continue;
+    const attrs = segs.slice(1).map((x) => x.toLowerCase());
+    const ss = segs.slice(1).find((x) => /^samesite\s*=/i.test(x));
+    out.push({
+      name,
+      secure: attrs.includes("secure"),
+      httpOnly: attrs.some((x) => x === "httponly"),
+      sameSite: ss ? ss.split("=")[1].trim().toLowerCase() : null,
+    });
+  }
+  return out;
+}
+
+function splitCookieHeader(s) {
+  // Split only on a comma that is followed by a cookie-name token and '=',
+  // so "Expires=Wed, 09 Jun 2025 ..." stays in one piece.
+  return s.split(/,(?=\s*[A-Za-z0-9!#$%&'*+\-.^_`|~]+\s*=)/);
+}
+
+// Is a domain covered by a cert's Subject Alternative Names? name_value from
+// crt.sh/certspotter is a newline-joined list that may contain wildcards.
+export function certCoversDomain(names, domain) {
+  if (!names || !domain) return null; // unknown
+  const d = String(domain).toLowerCase().replace(/\.$/, "");
+  const list = String(names).split(/[\s,]+/).map((n) => n.trim().toLowerCase().replace(/\.$/, "")).filter(Boolean);
+  if (!list.length) return null;
+  for (const n of list) {
+    if (n === d) return true;
+    if (n.startsWith("*.")) {
+      const base = n.slice(2);
+      // A wildcard covers exactly one label: a.base matches *.base, a.b.base does not.
+      if (d.endsWith("." + base) && d.slice(0, d.length - base.length - 1).indexOf(".") === -1) return true;
+      if (d === base) return true; // many issuers also list the apex alongside *.
+    }
+  }
+  return false;
+}
+
+// Parse an _mta-sts TXT record and (optionally) the fetched policy file body.
+export function parseMtaSts(txts, policyBody) {
+  const rec = (txts || []).find((t) => /^v=stsv1\b/i.test(String(t).trim()));
+  const res = { present: !!rec, record: rec || null, mode: null, maxAge: null };
+  if (policyBody) {
+    const m = String(policyBody).match(/mode\s*:\s*(enforce|testing|none)/i);
+    const ma = String(policyBody).match(/max_age\s*:\s*(\d+)/i);
+    if (m) res.mode = m[1].toLowerCase();
+    if (ma) res.maxAge = parseInt(ma[1], 10);
+  }
+  return res;
 }
 
 // Days until expiry from an ISO/parseable date string (floor, can be negative).
@@ -52,10 +146,68 @@ export function newestCert(rows, now = Date.now()) {
     notAfter: r.not_after || r.notAfter || "",
     notBefore: r.not_before || r.notBefore || "",
     names: r.name_value || r.common_name || "",
+    // CT JSON rarely carries these; pass them through only when a source provides them.
+    keySize: r.key_size || r.keySize || null,
+    sigAlg: r.signature_algorithm || r.sigAlg || null,
+    serial: r.serial_number || null,
     t: new Date(r.not_after || r.notAfter || 0).getTime() || 0,
   }));
   parsed.sort((a, b) => b.t - a.t);
   return parsed[0];
+}
+
+// ---- deep CSP grading (shared logic with the standalone CSP Evaluator) -----
+
+export function parseCSP(raw) {
+  const directives = {};
+  String(raw || "").split(";").forEach((part) => {
+    const trimmed = part.trim();
+    if (!trimmed) return;
+    const tokens = trimmed.split(/\s+/);
+    const name = tokens[0].toLowerCase();
+    // CSP L3: the FIRST occurrence of a directive wins; later copies are ignored.
+    if (!Object.prototype.hasOwnProperty.call(directives, name)) directives[name] = tokens.slice(1);
+  });
+  return directives;
+}
+
+// Deep, Observatory/CSP-Evaluator-style grade for a CSP string. Pure + tested.
+export function gradeCSPDeep(raw) {
+  if (!raw || !String(raw).trim()) return { present: false, score: null, grade: "N/A", findings: [], directives: {} };
+  const dirs = parseCSP(raw);
+  let score = 100;
+  const findings = [];
+  const add = (sev, msg) => findings.push({ sev, msg });
+  const ss = (dirs["script-src"] || dirs["default-src"] || []).map((s) => s.toLowerCase());
+
+  if (!dirs["default-src"]) { score -= 15; add("high", "Missing default-src — no fallback policy."); }
+  if (ss.indexOf("'unsafe-inline'") >= 0) { score -= 25; add("critical", "script-src allows 'unsafe-inline' — XSS protection nullified."); }
+  if (ss.indexOf("'unsafe-eval'") >= 0) { score -= 20; add("critical", "script-src allows 'unsafe-eval' — code injection possible."); }
+  if (ss.indexOf("*") >= 0) { score -= 20; add("critical", "script-src allows the * wildcard — any origin can run scripts."); }
+  if (ss.indexOf("data:") >= 0) { score -= 15; add("high", "script-src allows data: — XSS via data: URIs."); }
+  if (ss.indexOf("https:") >= 0) { score -= 10; add("high", "script-src allows any HTTPS source — too broad."); }
+  if (ss.indexOf("http:") >= 0) { score -= 10; add("high", "script-src allows plain http: sources."); }
+
+  if (!dirs["frame-ancestors"]) { score -= 10; add("high", "Missing frame-ancestors — no clickjacking protection."); }
+  const objSrc = (dirs["object-src"] || dirs["default-src"] || []).map((s) => s.toLowerCase());
+  if (!objSrc.length || objSrc[0] !== "'none'") { score -= 10; add("high", "Missing or permissive object-src — plugin-based XSS possible (set object-src 'none')."); }
+  if (!dirs["base-uri"]) { score -= 8; add("medium", "Missing base-uri — <base> tag injection possible."); }
+  if (!dirs["form-action"]) { score -= 5; add("medium", "Missing form-action — forms can submit anywhere."); }
+  if ((dirs["style-src"] || dirs["default-src"] || []).map((s) => s.toLowerCase()).indexOf("'unsafe-inline'") >= 0) { score -= 5; add("medium", "style-src allows 'unsafe-inline'."); }
+
+  // Broad connect-src = exfiltration path.
+  const cs = (dirs["connect-src"] || dirs["default-src"] || []).map((s) => s.toLowerCase());
+  if (cs.indexOf("*") >= 0 || cs.indexOf("https:") >= 0) { score -= 5; add("medium", "connect-src is wildcard/https: — broad exfiltration surface."); }
+  // strict-dynamic without a nonce/hash is a no-op.
+  const hasNonceHash = ss.some((s) => s.indexOf("'nonce-") === 0 || /^'sha(256|384|512)-/.test(s));
+  if (ss.indexOf("'strict-dynamic'") >= 0 && !hasNonceHash) { score -= 5; add("high", "strict-dynamic without a nonce/hash is meaningless."); }
+
+  if (dirs["upgrade-insecure-requests"]) score += 3;
+  if (dirs["require-trusted-types-for"]) score += 5;
+
+  score = Math.max(0, Math.min(100, score));
+  const grade = score >= 90 ? "A" : score >= 75 ? "B" : score >= 60 ? "C" : score >= 40 ? "D" : "F";
+  return { present: true, score, grade, findings, directives: dirs };
 }
 
 // ---- category graders -----------------------------------------------------
@@ -100,9 +252,23 @@ export function gradeHeaders(input) {
   const h = headerLower(input.headers);
   const checks = [];
   const csp = h["content-security-policy"];
-  checks.push(csp
-    ? { name: "Content-Security-Policy", status: /unsafe-inline|unsafe-eval/i.test(csp) ? "warn" : "pass", detail: /unsafe-inline|unsafe-eval/i.test(csp) ? "CSP present but allows unsafe-inline/unsafe-eval." : "CSP is set.", advice: /unsafe-inline|unsafe-eval/i.test(csp) ? "Remove unsafe-inline/unsafe-eval; use nonces or hashes." : undefined }
-    : { name: "Content-Security-Policy", status: "fail", detail: "No Content-Security-Policy header.", advice: "Add a CSP to limit script/style/connect sources." });
+  if (!csp) {
+    checks.push({ name: "Content-Security-Policy", status: "fail", detail: "No Content-Security-Policy header.", advice: "Add a CSP to limit script/style/connect sources." });
+  } else {
+    const g = gradeCSPDeep(csp);
+    // A/B pass, C/D warn, F fail — present-but-weak never scores like absent.
+    // Map the deep grade to a status, but never let a CSP with a critical flaw
+    // (unsafe-inline/unsafe-eval/wildcard in script-src) read as a clean pass.
+    const hasCritical = g.findings.some((f) => f.sev === "critical");
+    const st = g.grade === "F" ? "fail" : (g.grade === "A" || g.grade === "B") ? (hasCritical ? "warn" : "pass") : "warn";
+    const top = g.findings.slice(0, 3).map((f) => f.msg).join(" ");
+    checks.push({
+      name: "Content-Security-Policy",
+      status: st,
+      detail: `CSP present — deep grade ${g.grade} (${g.score}/100).${top ? " " + top : ""}`,
+      advice: st === "pass" ? undefined : "Tighten the CSP: remove unsafe-inline/unsafe-eval and wildcards; set object-src 'none' and base-uri 'self'; add frame-ancestors.",
+    });
+  }
   checks.push(/nosniff/i.test(h["x-content-type-options"] || "")
     ? { name: "X-Content-Type-Options", status: "pass", detail: "nosniff is set." }
     : { name: "X-Content-Type-Options", status: "fail", detail: "Missing nosniff.", advice: "Send X-Content-Type-Options: nosniff." });
@@ -116,6 +282,41 @@ export function gradeHeaders(input) {
   checks.push(h["permissions-policy"]
     ? { name: "Permissions-Policy", status: "pass", detail: "Permissions-Policy is set." }
     : { name: "Permissions-Policy", status: "warn", detail: "No Permissions-Policy.", advice: "Restrict powerful features (camera, geolocation, etc.) with Permissions-Policy." });
+
+  // Cross-origin isolation headers (origin-isolation / Spectre hardening).
+  const coop = String(h["cross-origin-opener-policy"] || "").toLowerCase();
+  checks.push(/same-origin|same-origin-allow-popups/.test(coop)
+    ? { name: "Cross-Origin-Opener-Policy", status: "pass", detail: `COOP: ${coop.slice(0, 40)}.` }
+    : { name: "Cross-Origin-Opener-Policy", status: "warn", detail: coop ? `COOP is '${coop}', not same-origin.` : "No Cross-Origin-Opener-Policy.", advice: "Set Cross-Origin-Opener-Policy: same-origin to isolate your browsing context." });
+  const coep = String(h["cross-origin-embedder-policy"] || "").toLowerCase();
+  checks.push(/require-corp|credentialless/.test(coep)
+    ? { name: "Cross-Origin-Embedder-Policy", status: "pass", detail: `COEP: ${coep.slice(0, 40)}.` }
+    : { name: "Cross-Origin-Embedder-Policy", status: "warn", detail: coep ? `COEP is '${coep}'.` : "No Cross-Origin-Embedder-Policy.", advice: "Set Cross-Origin-Embedder-Policy: require-corp to enable cross-origin isolation." });
+  const corp = String(h["cross-origin-resource-policy"] || "").toLowerCase();
+  checks.push(/same-origin|same-site|cross-origin/.test(corp)
+    ? { name: "Cross-Origin-Resource-Policy", status: "pass", detail: `CORP: ${corp.slice(0, 40)}.` }
+    : { name: "Cross-Origin-Resource-Policy", status: "warn", detail: "No Cross-Origin-Resource-Policy.", advice: "Set Cross-Origin-Resource-Policy: same-origin to stop other sites embedding your resources." });
+
+  // Cookie flags on the response (Secure / HttpOnly / SameSite).
+  const cookies = parseSetCookie(input.setCookie != null ? input.setCookie : h["set-cookie"]);
+  if (cookies.length) {
+    const noSecure = cookies.filter((c) => !c.secure).map((c) => c.name);
+    const sameSiteNoneInsecure = cookies.filter((c) => c.sameSite === "none" && !c.secure).map((c) => c.name);
+    const noHttpOnly = cookies.filter((c) => !c.httpOnly).map((c) => c.name);
+    const noSameSite = cookies.filter((c) => !c.sameSite).map((c) => c.name);
+    const trunc = (arr) => arr.slice(0, 4).join(", ") + (arr.length > 4 ? ", …" : "");
+    if (noSecure.length) {
+      checks.push({ name: "Cookie security", status: "fail", detail: `${noSecure.length} of ${cookies.length} cookie(s) lack the Secure flag: ${trunc(noSecure)}.${sameSiteNoneInsecure.length ? " SameSite=None without Secure is rejected by browsers." : ""}`, advice: "Set Secure (and HttpOnly where the cookie is not read by JS, plus SameSite) on every cookie." });
+    } else if (noHttpOnly.length || noSameSite.length) {
+      const parts = [];
+      if (noHttpOnly.length) parts.push(`${noHttpOnly.length} without HttpOnly (${trunc(noHttpOnly)})`);
+      if (noSameSite.length) parts.push(`${noSameSite.length} without SameSite (${trunc(noSameSite)})`);
+      checks.push({ name: "Cookie security", status: "warn", detail: `All cookies are Secure, but ${parts.join("; ")}.`, advice: "Add HttpOnly to session cookies and SameSite=Lax/Strict to mitigate CSRF." });
+    } else {
+      checks.push({ name: "Cookie security", status: "pass", detail: `All ${cookies.length} cookie(s) set Secure, HttpOnly and SameSite.` });
+    }
+  }
+
   const server = h["server"] || h["x-powered-by"];
   if (server && /\d/.test(server)) {
     checks.push({ name: "Version disclosure", status: "warn", detail: `Server banner reveals a version: ${String(server).slice(0, 40)}.`, advice: "Suppress version numbers in Server / X-Powered-By." });
@@ -133,16 +334,72 @@ export function gradeEmail(input) {
   } else {
     checks.push({ name: "SPF", status: "warn", detail: `SPF present but ends in ${spf.qualifier || "?"}all (not -all).`, advice: "Tighten SPF to -all once senders are enumerated." });
   }
+  // SPF DNS-lookup budget: RFC 7208 caps lookup mechanisms at 10 (permerror).
+  // This counts only the record's own mechanisms, not nested includes, so it is
+  // a floor — labelled honestly as an estimate.
+  if (spf.present) {
+    const n = spfLookupCount(spf.record);
+    if (n > 10) {
+      checks.push({ name: "SPF lookup budget", status: "fail", detail: `SPF uses at least ${n} lookup mechanisms (RFC 7208 limit is 10) — likely permerror.`, advice: "Flatten includes or drop mechanisms to stay at or under 10 DNS lookups." });
+    } else if (n >= 8) {
+      checks.push({ name: "SPF lookup budget", status: "warn", detail: `SPF already uses ${n} of 10 lookup mechanisms (nested includes may push it over).`, advice: "Audit nested includes; the real total counts those too." });
+    } else {
+      checks.push({ name: "SPF lookup budget", status: "pass", detail: `SPF uses ${n} direct lookup mechanism(s) (estimate; nested includes not counted).` });
+    }
+  }
   const dmarc = parseDMARC(input.dmarcTxts);
   if (!dmarc.present) {
     checks.push({ name: "DMARC", status: "fail", detail: "No DMARC record.", advice: "Publish _dmarc with p=quarantine or p=reject." });
-  } else if (dmarc.policy === "reject") {
-    checks.push({ name: "DMARC", status: "pass", detail: "DMARC p=reject (strongest)." });
-  } else if (dmarc.policy === "quarantine") {
-    checks.push({ name: "DMARC", status: "warn", detail: "DMARC p=quarantine.", advice: "Move to p=reject once reports are clean." });
   } else {
-    checks.push({ name: "DMARC", status: "warn", detail: "DMARC p=none (monitor only).", advice: "Enforce with p=quarantine then p=reject." });
+    if (dmarc.policy === "reject") {
+      checks.push({ name: "DMARC", status: "pass", detail: "DMARC p=reject (strongest)." });
+    } else if (dmarc.policy === "quarantine") {
+      checks.push({ name: "DMARC", status: "warn", detail: "DMARC p=quarantine.", advice: "Move to p=reject once reports are clean." });
+    } else {
+      checks.push({ name: "DMARC", status: "warn", detail: "DMARC p=none (monitor only).", advice: "Enforce with p=quarantine then p=reject." });
+    }
+    // pct<100 only enforces on a fraction of mail.
+    if (dmarc.pct != null && dmarc.pct < 100) {
+      checks.push({ name: "DMARC coverage (pct)", status: "warn", detail: `DMARC pct=${dmarc.pct} — the policy applies to only ${dmarc.pct}% of failing mail.`, advice: "Raise pct to 100 once confident." });
+    }
+    // Subdomain policy: without sp, subdomains inherit p (fine); flag only if weaker.
+    if (dmarc.sp && dmarc.sp === "none" && dmarc.policy !== "none") {
+      checks.push({ name: "DMARC subdomain policy", status: "warn", detail: `sp=none weakens enforcement for subdomains despite p=${dmarc.policy}.`, advice: "Set sp=reject (or drop sp to inherit p)." });
+    }
+    // Aggregate reporting (rua) is how you actually see SPF/DKIM alignment.
+    checks.push(dmarc.rua
+      ? { name: "DMARC reporting (rua)", status: "pass", detail: "Aggregate report address (rua) is configured." }
+      : { name: "DMARC reporting (rua)", status: "warn", detail: "No rua= aggregate report address.", advice: "Add rua=mailto:dmarc@yourdomain to receive alignment reports." });
   }
+
+  // DKIM: we can only probe common selectors over DoH; absence is NOT proof of
+  // no DKIM (selectors are arbitrary), so a miss is reported as unknown (na).
+  const dkim = Array.isArray(input.dkimSelectors) ? input.dkimSelectors : [];
+  const found = dkim.filter((d) => d && d.present);
+  if (found.length) {
+    checks.push({ name: "DKIM", status: "pass", detail: `DKIM key published on selector(s): ${found.map((d) => d.selector).slice(0, 6).join(", ")}.` });
+  } else if (dkim.length) {
+    checks.push({ name: "DKIM", status: "na", detail: `No DKIM key on the ${dkim.length} common selector(s) probed (${dkim.map((d) => d.selector).slice(0, 8).join(", ")}). DKIM may still exist on a custom selector.`, advice: "Confirm your DKIM selector and publish a key if mail is not signed." });
+  }
+
+  // MTA-STS: enforces TLS for inbound SMTP.
+  const mta = parseMtaSts(input.mtaStsTxts, input.mtaStsPolicy);
+  if (!mta.present) {
+    checks.push({ name: "MTA-STS", status: "warn", detail: "No _mta-sts TXT record.", advice: "Publish MTA-STS (TXT + /.well-known/mta-sts.txt policy) to require TLS for inbound mail." });
+  } else if (mta.mode === "enforce") {
+    checks.push({ name: "MTA-STS", status: "pass", detail: "MTA-STS policy present in enforce mode." });
+  } else if (mta.mode) {
+    checks.push({ name: "MTA-STS", status: "warn", detail: `MTA-STS present but mode=${mta.mode} (not enforce).`, advice: "Move the policy to mode: enforce once validated." });
+  } else {
+    checks.push({ name: "MTA-STS", status: "warn", detail: "MTA-STS TXT present but the policy file could not be read.", advice: "Serve /.well-known/mta-sts.txt with mode: enforce." });
+  }
+
+  // TLS-RPT: SMTP TLS failure reporting.
+  const hasTlsRpt = (input.tlsRptTxts || []).some((t) => /^v=tlsrptv1\b/i.test(String(t).trim()));
+  checks.push(hasTlsRpt
+    ? { name: "TLS-RPT", status: "pass", detail: "SMTP TLS reporting (_smtp._tls TXT) is configured." }
+    : { name: "TLS-RPT", status: "warn", detail: "No TLS-RPT record.", advice: "Publish _smtp._tls TXT (v=TLSRPTv1; rua=…) to receive SMTP TLS failure reports." });
+
   return { key: "email", label: "Email authentication", weight: 20, checks };
 }
 
@@ -153,18 +410,43 @@ export function gradeTls(input) {
     checks.push({ name: "Certificate", status: "na", detail: "No certificate transparency data was available." });
     return { key: "tls", label: "Certificate", weight: 20, checks };
   }
+  // Honesty: CT shows the newest certificate ISSUED for the domain, which is not
+  // guaranteed to be the leaf the server is serving right now. Label it as such.
+  const note = " (newest issued certificate from CT logs — not necessarily the served leaf)";
   const days = certDaysLeft(cert.notAfter, input.now);
   if (days == null) {
-    checks.push({ name: "Certificate expiry", status: "na", detail: "Certificate expiry could not be read." });
+    checks.push({ name: "Certificate validity", status: "na", detail: "Certificate expiry could not be read." });
   } else if (days < 0) {
-    checks.push({ name: "Certificate expiry", status: "fail", detail: `Newest known certificate expired ${-days} day(s) ago.`, advice: "Renew the certificate immediately." });
+    checks.push({ name: "Certificate validity", status: "fail", detail: `Newest issued certificate expired ${-days} day(s) ago${note}. The live leaf may differ.`, advice: "Confirm the served certificate and renew immediately." });
   } else if (days < 14) {
-    checks.push({ name: "Certificate expiry", status: "fail", detail: `Certificate expires in ${days} day(s).`, advice: "Renew now; automate renewal (ACME)." });
+    checks.push({ name: "Certificate validity", status: "fail", detail: `Newest issued certificate expires in ${days} day(s)${note}.`, advice: "Renew now; automate renewal (ACME)." });
   } else if (days < 30) {
-    checks.push({ name: "Certificate expiry", status: "warn", detail: `Certificate expires in ${days} day(s).`, advice: "Renew soon and automate renewal." });
+    checks.push({ name: "Certificate validity", status: "warn", detail: `Newest issued certificate expires in ${days} day(s)${note}.`, advice: "Renew soon and automate renewal." });
   } else {
-    checks.push({ name: "Certificate expiry", status: "pass", detail: `Certificate valid for ${days} more day(s).` });
+    checks.push({ name: "Certificate validity", status: "pass", detail: `Newest issued certificate valid for ${days} more day(s)${note}.` });
   }
+
+  // SAN coverage: does the newest issued cert actually name this domain?
+  const covers = certCoversDomain(cert.names, input.domain);
+  if (input.domain && cert.names) {
+    checks.push(covers
+      ? { name: "Name coverage", status: "pass", detail: `The certificate's SANs cover ${input.domain}.` }
+      : { name: "Name coverage", status: "warn", detail: `The newest issued certificate's SANs do not appear to cover ${input.domain} (names: ${String(cert.names).split(/[\s,]+/).filter(Boolean).slice(0, 4).join(", ")}).`, advice: "Ensure the served certificate includes this hostname (or a covering wildcard)." });
+  }
+
+  // Key size / signature algorithm — only when a CT source supplied them.
+  if (cert.keySize) {
+    const k = parseInt(cert.keySize, 10);
+    checks.push(k && k < 2048
+      ? { name: "Key strength", status: "warn", detail: `Public key is ${k}-bit (RSA under 2048-bit is deprecated).`, advice: "Reissue with a 2048-bit+ RSA or an ECDSA P-256 key." }
+      : { name: "Key strength", status: "pass", detail: `Public key size: ${cert.keySize}-bit.` });
+  }
+  if (cert.sigAlg) {
+    checks.push(/sha1|md5/i.test(cert.sigAlg)
+      ? { name: "Signature algorithm", status: "fail", detail: `Weak signature algorithm: ${cert.sigAlg}.`, advice: "Reissue with SHA-256 or stronger." }
+      : { name: "Signature algorithm", status: "pass", detail: `Signature algorithm: ${String(cert.sigAlg).slice(0, 40)}.` });
+  }
+
   checks.push(cert.issuer
     ? { name: "Issuer", status: "info", detail: `Issued by ${String(cert.issuer).replace(/.*?CN\s*=\s*/i, "").slice(0, 60) || cert.issuer}.` }
     : { name: "Issuer", status: "na", detail: "Issuer not available." });
@@ -246,14 +528,23 @@ export function selfTest() {
     domain: "example.com", requestedUrl: "https://example.com", finalUrl: "https://example.com",
     headers: {
       "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
-      "content-security-policy": "default-src 'self'", "x-content-type-options": "nosniff",
-      "x-frame-options": "DENY", "referrer-policy": "strict-origin", "permissions-policy": "geolocation=()",
+      "content-security-policy": "default-src 'none'; script-src 'self'; style-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests",
+      "x-content-type-options": "nosniff", "x-frame-options": "DENY", "referrer-policy": "strict-origin",
+      "permissions-policy": "geolocation=()", "cross-origin-opener-policy": "same-origin",
+      "cross-origin-embedder-policy": "require-corp", "cross-origin-resource-policy": "same-origin",
     },
-    spfTxts: ["v=spf1 -all"], dmarcTxts: ["v=DMARC1; p=reject"],
-    cert: { issuer: "CN=E5", notAfter: new Date(Date.now() + 60 * 86400000).toISOString() },
+    spfTxts: ["v=spf1 -all"], dmarcTxts: ["v=DMARC1; p=reject; rua=mailto:d@example.com"],
+    dkimSelectors: [{ selector: "default", present: true }],
+    mtaStsTxts: ["v=STSv1; id=1"], mtaStsPolicy: "version: STSv1\nmode: enforce\nmax_age: 604800",
+    tlsRptTxts: ["v=TLSRPTv1; rua=mailto:t@example.com"],
+    cert: { issuer: "CN=E5", notAfter: new Date(Date.now() + 60 * 86400000).toISOString(), names: "example.com\nwww.example.com" },
     securityTxt: { present: true },
   });
   T("strong scores A", strong.grade === "A");
+  T("spfLookupCount counts mechanisms", spfLookupCount("v=spf1 include:a include:b mx -all") === 3);
+  T("parseSetCookie flags", parseSetCookie("id=1; Path=/; Secure; HttpOnly; SameSite=Lax")[0].secure === true);
+  T("certCoversDomain wildcard", certCoversDomain("*.example.com", "a.example.com") === true);
+  T("gradeCSPDeep penalises unsafe-inline", gradeCSPDeep("script-src 'self' 'unsafe-inline'").score < 90);
 
   const weak = scorePosture({
     domain: "weak.test", requestedUrl: "http://weak.test", finalUrl: "http://weak.test",
@@ -265,4 +556,7 @@ export function selfTest() {
   return { pass: out.every((t) => t.pass), tests: out };
 }
 
-export default { scorePosture, parseHSTS, parseSPF, parseDMARC, certDaysLeft, newestCert, letterGrade, selfTest };
+export default {
+  scorePosture, parseHSTS, parseSPF, parseDMARC, certDaysLeft, newestCert, letterGrade, selfTest,
+  spfLookupCount, parseSetCookie, certCoversDomain, parseMtaSts, parseCSP, gradeCSPDeep,
+};

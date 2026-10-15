@@ -78,3 +78,70 @@ group("strongroom: determinism & safety", () => {
   });
   test("empty input is safe", () => assert.equal(analyze("", "").findings.length, 0));
 });
+
+// Typo-squatted / shell vendors and a bank account shared across payees.
+const AP_FRAUD = [
+  "date,vendor,amount,invoice,account,approver,initiator",
+  "2026-03-01,Northwind Traders,5000,INV-1,DE89 3704 0044 0532,alice,bob",
+  "2026-03-02,Northwind Tradrs,5200,INV-2,FR14 2004 1010 0505,carol,dave",   // 1-char typo-squat
+  "2026-03-03,Globex Incorporated,7000,INV-3,GB29 NWBK 6016 1331,erin,frank",
+  "2026-03-04,Initech LLC,8000,INV-4,GB29 NWBK 6016 1331,grace,heidi",        // same account, different vendor
+].join("\n");
+
+group("strongroom: AP-fraud structural detections", () => {
+  test("near-duplicate vendor names cluster", () => {
+    const r = analyze(AP_FRAUD, "");
+    const f = r.findings.find((x) => x.rule === "duplicate-vendor-cluster");
+    assert.ok(f, "expected a duplicate-vendor-cluster finding");
+    assert.ok(/northwind/i.test(f.evidence.join(" ")), "cluster should name the typo-squatted pair");
+  });
+  test("shared bank account across vendors fires", () => {
+    const r = analyze(AP_FRAUD, "");
+    const f = r.findings.find((x) => x.rule === "shared-bank-account");
+    assert.ok(f, "expected a shared-bank-account finding");
+    assert.ok(f.rows.length >= 2);
+  });
+  test("distinct vendors + distinct/short accounts stay quiet", () => {
+    const clean = "date,vendor,amount,invoice,account\n2026-03-01,Apple,5,INV-1,A1\n2026-03-02,Microsoft,6,INV-2,B2";
+    const got = analyze(clean, "").findings.map((f) => f.rule);
+    assert.ok(!got.includes("duplicate-vendor-cluster"));
+    assert.ok(!got.includes("shared-bank-account"));
+  });
+  test("same vendor repeated does not self-cluster", () => {
+    const same = "date,vendor,amount,invoice,account\n2026-03-01,Acme Supply Co,100,INV-1,ACCT-1\n2026-03-02,Acme Supply Co,200,INV-2,ACCT-2";
+    assert.ok(!analyze(same, "").findings.some((f) => f.rule === "duplicate-vendor-cluster"));
+  });
+});
+
+group("strongroom: Benford second-digit test", () => {
+  const rows = ["date,vendor,amount,invoice"];
+  for (let i = 0; i < 300; i++) rows.push(`2026-01-01,V,${((i * 37 + 100) % 9000) + 100}.${(i % 90) + 10},INV-${i}`);
+  const r = analyze(rows.join("\n"), "");
+  test("first-digit screen present on a large sample", () => {
+    assert.ok(r.findings.some((f) => f.rule === "benford-first-digit"));
+  });
+  test("second-digit screen present on a large sample", () => {
+    assert.ok(r.findings.some((f) => f.rule === "benford-second-digit"));
+  });
+  test("no Benford screen below the 200-amount floor", () => {
+    const small = ["date,vendor,amount,invoice"];
+    for (let i = 0; i < 50; i++) small.push(`2026-01-01,V,${i + 100}.50,INV-${i}`);
+    assert.ok(!analyze(small.join("\n"), "").findings.some((f) => f.rule.startsWith("benford-")));
+  });
+});
+
+group("strongroom: per-finding money is integer-cents exact", () => {
+  test("a summed finding's money carries no float tail", () => {
+    // three weekend payments; their float sum (910.1+920.2+930.3) has a tail — money must not.
+    const pay = [
+      "date,vendor,amount,invoice",
+      "2026-01-03,Acme,910.10,INV-1", // 2026-01-03 is a Saturday
+      "2026-01-03,Acme,920.20,INV-2",
+      "2026-01-03,Acme,930.30,INV-3",
+    ].join("\n");
+    const f = analyze(pay, "").findings.find((x) => x.rule === "weekend-payment");
+    assert.ok(f, "expected a weekend-payment finding");
+    assert.equal(f.money, 2760.6);
+    assert.equal(Math.round(f.money * 100), 276060); // cent-exact, no drift
+  });
+});

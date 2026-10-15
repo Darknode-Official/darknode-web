@@ -7,7 +7,7 @@
 //
 //   renderDlp(main) -> void
 
-import { scan, redact } from "/js/dataprotect/dlp-engine.js?v=20261013m";
+import { scan, redact, DETECTORS } from "/js/dataprotect/dlp-engine.js?v=20261014d";
 
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -72,6 +72,20 @@ function injectStyle() {
   .dlp .dlp-type b{font-weight:700}
   .dlp .dlp-clean{text-align:center;padding:26px 12px;color:#2f9e56;font-weight:600}
   .dlp select{font:inherit;font-size:.82rem;padding:6px 9px;border:1px solid var(--line,#d7dbe3);border-radius:8px;background:var(--card,#fff);color:var(--tx,#1a2230)}
+  .dlp .dlp-opts{padding:0}
+  .dlp .dlp-opts summary{cursor:pointer;font-weight:700;font-size:.9rem;padding:14px 18px;list-style:none}
+  .dlp .dlp-opts summary::-webkit-details-marker{display:none}
+  .dlp .dlp-opts summary::before{content:"\\25B6";font-size:.68rem;margin-right:8px;color:var(--mut,#667085)}
+  .dlp .dlp-opts[open] summary::before{content:"\\25BC"}
+  .dlp .dlp-optbar{display:flex;gap:8px;padding:0 18px 10px;flex-wrap:wrap}
+  .dlp .dlp-optgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px;padding:0 18px 16px}
+  .dlp .dlp-optgroup h4{margin:0 0 8px;font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;color:var(--mut,#667085);font-weight:700}
+  .dlp .dlp-checks{display:flex;flex-direction:column;gap:6px}
+  .dlp .dlp-check{display:flex;align-items:flex-start;gap:7px;font-size:.82rem;cursor:pointer;line-height:1.35}
+  .dlp .dlp-check input[type=checkbox]{margin:2px 0 0}
+  .dlp .dlp-check.dlp-num{flex-wrap:wrap;gap:7px;align-items:center}
+  .dlp .dlp-check.dlp-num input[type=number]{width:72px;font:inherit;font-size:.82rem;padding:4px 7px;border:1px solid var(--line,#d7dbe3);border-radius:6px;background:var(--card,#fff);color:var(--tx,#1a2230)}
+  .dlp .dlp-opthint{color:var(--mut,#667085);font-size:.74rem;margin:2px 2px 0}
   `;
   document.head.appendChild(st);
 }
@@ -89,6 +103,32 @@ const SAMPLE = [
   "  iban: DE89 3704 0044 0532 0130 00",
 ].join("\n");
 
+function optionsHtml() {
+  const groups = {};
+  for (const d of DETECTORS) (groups[d.kind] || (groups[d.kind] = [])).push(d);
+  const box = (id, label) => `<label class="dlp-check"><input type="checkbox" class="dlp-det" value="${esc(id)}" checked> <span>${esc(label)}</span></label>`;
+  const secretBoxes = (groups.secret || []).map((d) => box(d.id, d.label)).join("");
+  const piiBoxes = (groups.pii || []).map((d) => box(d.id, d.label)).join("");
+  return `
+  <details class="dlp-card dlp-opts">
+    <summary>Detectors &amp; options</summary>
+    <div class="dlp-optbar">
+      <button type="button" class="dlp-btn sm" id="dlpSelAll">Enable all</button>
+      <button type="button" class="dlp-btn sm" id="dlpSelNone">Disable all</button>
+    </div>
+    <div class="dlp-optgrid">
+      <div class="dlp-optgroup"><h4>Secrets</h4><div class="dlp-checks">${secretBoxes}</div></div>
+      <div class="dlp-optgroup"><h4>Personal data (PII)</h4><div class="dlp-checks">${piiBoxes}</div></div>
+      <div class="dlp-optgroup"><h4>Heuristics</h4><div class="dlp-checks">
+        ${box("high-entropy", "High-entropy token sweep")}
+        <label class="dlp-check"><input type="checkbox" id="dlpExclPriv"> <span>Skip private, loopback, link-local IPs and version strings</span></label>
+        <label class="dlp-check dlp-num"><span>Entropy threshold</span><input type="number" id="dlpEntropy" min="2.5" max="6" step="0.1" value="4.2"></label>
+        <p class="dlp-opthint">Higher = fewer high-entropy guesses. Default 4.2 bits/char.</p>
+      </div></div>
+    </div>
+  </details>`;
+}
+
 export function renderDlp(main) {
   injectStyle();
   main.innerHTML = `
@@ -103,6 +143,7 @@ export function renderDlp(main) {
       </div>
     </div>
     <p class="dlp-hint">Files are read locally as text (no upload). Large inputs scan in one pass; binary files may show noise.</p>
+    ${optionsHtml()}
     <div class="dlp-row">
       <button class="dlp-btn pri" id="dlpRun">Scan</button>
       <button class="dlp-btn" id="dlpSample">Load example</button>
@@ -125,16 +166,30 @@ export function renderDlp(main) {
   };
   ta.addEventListener("input", setMeta);
 
+  const collectOpts = () => {
+    const ids = Array.from(main.querySelectorAll(".dlp-det:checked")).map((c) => c.value);
+    const opts = { detectors: ids };
+    const th = parseFloat($("#dlpEntropy").value);
+    if (Number.isFinite(th)) opts.entropyThreshold = th;
+    if ($("#dlpExclPriv").checked) opts.excludePrivateIp = true;
+    return opts;
+  };
+
   const run = () => {
     const text = ta.value;
     if (!text.trim()) { out.innerHTML = ""; toast("Paste or drop something to scan first."); return; }
-    last = scan(text);
+    last = scan(text, collectOpts());
     renderReport(out, text, last, run);
   };
 
   $("#dlpRun").addEventListener("click", run);
   $("#dlpSample").addEventListener("click", () => { ta.value = SAMPLE; setMeta(); run(); });
   $("#dlpClear").addEventListener("click", () => { ta.value = ""; out.innerHTML = ""; setMeta(); ta.focus(); });
+
+  const rescanIfReady = () => { if (last && ta.value.trim()) run(); };
+  $("#dlpSelAll").addEventListener("click", () => { main.querySelectorAll(".dlp-det").forEach((c) => (c.checked = true)); rescanIfReady(); });
+  $("#dlpSelNone").addEventListener("click", () => { main.querySelectorAll(".dlp-det").forEach((c) => (c.checked = false)); rescanIfReady(); });
+  main.querySelector(".dlp-opts").addEventListener("change", rescanIfReady);
 
   const file = $("#dlpFile");
   $("#dlpPick").addEventListener("click", () => file.click());
@@ -220,6 +275,7 @@ function renderReport(out, text, res, rerun) {
       <button class="dlp-btn sm" id="dlpCopy">Copy</button>
       <button class="dlp-btn sm" id="dlpDl">Download .txt</button>
       <button class="dlp-btn sm" id="dlpJson">Export report (JSON)</button>
+      <button class="dlp-btn sm" id="dlpCsv">Export findings (CSV)</button>
     </div>
     <div class="dlp-red" id="dlpRedOut"></div>
   </div>`;
@@ -244,6 +300,15 @@ function renderReport(out, text, res, rerun) {
       note: "Values are masked. Scan ran client-side; no data was uploaded.",
     };
     download("dlp-report.json", JSON.stringify(report, null, 2), "application/json");
+  });
+  out.querySelector("#dlpCsv").addEventListener("click", () => {
+    const head = ["severity", "type", "label", "kind", "line", "col", "detail", "masked"];
+    const cell = (v) => { const s = String(v == null ? "" : v); return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+    const lines = [head.join(",")];
+    for (const f of res.findings) {
+      lines.push([f.severity, f.id, f.label, f.kind, f.line, f.col, f.detail || "", f.masked].map(cell).join(","));
+    }
+    download("dlp-findings.csv", lines.join("\r\n"), "text/csv");
   });
 }
 

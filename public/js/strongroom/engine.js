@@ -189,6 +189,27 @@ function median(nums) {
   const m = Math.floor(a.length / 2);
   return a.length % 2 ? a[m] : (a[m - 1] + a[m]) / 2;
 }
+// Levenshtein edit distance (iterative two-row) — used to cluster near-duplicate vendor names.
+function lev(a, b) {
+  a = String(a); b = String(b);
+  if (a === b) return 0;
+  if (!a.length) return b.length;
+  if (!b.length) return a.length;
+  let prev = new Array(b.length + 1);
+  for (let j = 0; j <= b.length; j++) prev[j] = j;
+  for (let i = 1; i <= a.length; i++) {
+    let cur = [i];
+    for (let j = 1; j <= b.length; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + cost);
+    }
+    prev = cur;
+  }
+  return prev[b.length];
+}
+// Normalize a bank account / IBAN / routing string for equality: upper-case, keep only
+// alphanumerics and the mask char so "DE89 1234" and "de89-1234" collide but "" / junk don't.
+function nacct(s) { return String(s == null ? "" : s).toUpperCase().replace(/[^A-Z0-9*]/g, ""); }
 // deterministic 32-bit FNV-1a fingerprint of a finding's identity
 function fp(str) {
   let h = 0x811c9dc5;
@@ -216,7 +237,7 @@ function detDuplicatePayments(recs) {
   }
   for (const [k, grp] of seen) {
     if (grp.length < 2) continue;
-    const money = sum(grp.slice(1).map((g) => g.amount)); // the duplicates beyond the first
+    const money = sumMoney(grp.slice(1).map((g) => g.amount)); // the duplicates beyond the first
     out.push(finding({ rule: "duplicate-payment", title: "Exact duplicate payment", severity: money >= 10000 ? "high" : "medium",
       soundness: "exact", money, vendor: grp[0].vendor, key: k, rows: grp.map((g) => g._row),
       why: grp.length + " payments share the same vendor, amount and invoice reference — classic double-payment.",
@@ -269,10 +290,42 @@ function detBenford(recs) {
   else if (mad < 0.012) { verdict = "acceptable conformity"; sev = "info"; }
   else if (mad < 0.015) { verdict = "marginal conformity"; sev = "low"; }
   else { verdict = "nonconformity"; sev = "medium"; }
-  return [finding({ rule: "benford-first-digit", title: "Benford first-digit screen: " + verdict, severity: sev,
+  const out = [finding({ rule: "benford-first-digit", title: "Benford first-digit screen: " + verdict, severity: sev,
     soundness: "screen", money: 0, key: "benford", rows: [],
     why: `MAD ${mad.toFixed(4)} across ${total} amounts (Nigrini first-digit thresholds). A screen only — nonconformity warrants review, it is NOT evidence of fraud.`,
     evidence: table.map((t) => `digit ${t.d}: actual ${t.actual}% vs expected ${t.expected}%`) })];
+
+  // Nigrini second-digit test. The second significant digit follows its own expected
+  // distribution; it catches rounding/fabrication the first digit alone can miss.
+  const sc = new Array(10).fill(0);
+  let st = 0;
+  for (const a of amts) {
+    const ds = String(a).replace(/[^0-9]/g, "").replace(/^0+/, "");
+    if (ds.length >= 2) { const d = +ds[1]; if (d >= 0 && d <= 9) { sc[d]++; st++; } }
+  }
+  if (st >= 200) {
+    let mad2 = 0;
+    const t2 = [];
+    for (let d = 0; d <= 9; d++) {
+      let expected = 0;
+      for (let j = 1; j <= 9; j++) expected += Math.log10(1 + 1 / (10 * j + d));
+      const actual = sc[d] / st;
+      mad2 += Math.abs(actual - expected);
+      t2.push({ d, actual: round2(actual * 100), expected: round2(expected * 100) });
+    }
+    mad2 = mad2 / 10;
+    // Nigrini MAD thresholds (second digit): <.008 close, <.010 acceptable, <.012 marginal, else nonconforming
+    let v2, s2;
+    if (mad2 < 0.008) { v2 = "close conformity"; s2 = "info"; }
+    else if (mad2 < 0.010) { v2 = "acceptable conformity"; s2 = "info"; }
+    else if (mad2 < 0.012) { v2 = "marginal conformity"; s2 = "low"; }
+    else { v2 = "nonconformity"; s2 = "medium"; }
+    out.push(finding({ rule: "benford-second-digit", title: "Benford second-digit screen: " + v2, severity: s2,
+      soundness: "screen", money: 0, key: "benford2", rows: [],
+      why: `Second-digit MAD ${mad2.toFixed(4)} across ${st} amounts (Nigrini second-digit thresholds). A screen only — nonconformity warrants review, it is NOT evidence of fraud.`,
+      evidence: t2.map((t) => `digit ${t.d}: actual ${t.actual}% vs expected ${t.expected}%`) }));
+  }
+  return out;
 }
 
 function detUnderThreshold(recs) {
@@ -286,7 +339,7 @@ function detUnderThreshold(recs) {
       const near = grp.filter((r) => r.amount >= t * 0.9 && r.amount < t);
       if (near.length >= 3) {
         out.push(finding({ rule: "under-threshold-structuring", title: `Payments clustered just below ${t.toLocaleString()}`,
-          severity: near.length >= 5 ? "high" : "medium", soundness: "heuristic", money: sum(near.map((r) => r.amount)),
+          severity: near.length >= 5 ? "high" : "medium", soundness: "heuristic", money: sumMoney(near.map((r) => r.amount)),
           vendor: near[0].vendor, key: vk + "|" + t, rows: near.map((r) => r._row),
           why: `${near.length} payments to this vendor sit within 10% below the ${t.toLocaleString()} approval threshold — possible structuring to avoid review.`,
           evidence: near.slice(0, 8).map((r) => `row ${r._row}: ${round2(r.amount)} ${r.date}`) }));
@@ -304,7 +357,7 @@ function detRoundNumber(recs) {
   const frac = round.length / amts.length;
   if (frac < 0.12) return [];
   return [finding({ rule: "round-number-cluster", title: "High share of round-number amounts", severity: frac > 0.25 ? "medium" : "low",
-    soundness: "screen", money: sum(round.map((r) => r.amount)), key: "round", rows: round.slice(0, 20).map((r) => r._row),
+    soundness: "screen", money: sumMoney(round.map((r) => r.amount)), key: "round", rows: round.slice(0, 20).map((r) => r._row),
     why: `${(frac * 100).toFixed(1)}% of payments are exact multiples of 1,000. Round numbers rarely arise from genuine invoices at this rate — a screen for estimated/fabricated amounts.`,
     evidence: round.slice(0, 8).map((r) => `row ${r._row}: ${r.vendor} ${round2(r.amount)}`) })];
 }
@@ -329,11 +382,82 @@ function detVendorOutlier(recs) {
   return out;
 }
 
+// Near-duplicate vendor names (typo-squatted / shell vendors). Clusters distinct vendor
+// names whose normalized keys are within a couple of edits of each other — a classic way
+// to split spend or slip a fake payee past a vendor master. Same-vendor repeats don't fire
+// (identical keys are never clustered); only genuinely different names that look alike.
+function detVendorCluster(recs) {
+  const out = [];
+  const byV = new Map();
+  for (const r of recs) {
+    if (!r.vkey) continue;
+    if (!byV.has(r.vkey)) byV.set(r.vkey, { vkey: r.vkey, name: r.vendor, rows: [], amts: [] });
+    const g = byV.get(r.vkey);
+    g.rows.push(r._row);
+    if (isFinite(r.amount)) g.amts.push(r.amount);
+  }
+  const vendors = [...byV.values()];
+  if (vendors.length < 2) return out;
+  // union-find over near-duplicate vendor keys
+  const parent = vendors.map((_, i) => i);
+  const find = (x) => { while (parent[x] !== x) { parent[x] = parent[parent[x]]; x = parent[x]; } return x; };
+  for (let i = 0; i < vendors.length; i++) {
+    for (let j = i + 1; j < vendors.length; j++) {
+      const a = vendors[i].vkey, b = vendors[j].vkey;
+      if (a === b) continue;
+      const m = Math.max(a.length, b.length);
+      if (m < 4) continue;                 // too short to tell a typo from a real difference
+      const d = lev(a, b);
+      if (d >= 1 && d <= 2 && 1 - d / m >= 0.82) parent[find(i)] = find(j);
+    }
+  }
+  const clusters = new Map();
+  for (let i = 0; i < vendors.length; i++) { const r = find(i); if (!clusters.has(r)) clusters.set(r, []); clusters.get(r).push(vendors[i]); }
+  for (const grp of clusters.values()) {
+    if (grp.length < 2) continue;
+    grp.sort((x, y) => (x.name < y.name ? -1 : x.name > y.name ? 1 : 0));
+    const rows = [], amtAll = [];
+    for (const v of grp) { for (const rw of v.rows) rows.push(rw); for (const am of v.amts) amtAll.push(am); }
+    out.push(finding({ rule: "duplicate-vendor-cluster", title: "Near-duplicate vendor names", severity: "medium",
+      soundness: "heuristic", money: sumMoney(amtAll), vendor: grp[0].name, key: grp.map((v) => v.vkey).join("~"),
+      rows: rows.sort((a, b) => a - b),
+      why: `${grp.length} vendor names differ by only a character or two. Typo-squatted or near-identical payees are used to split spend below review or slip a shell vendor past the master file.`,
+      evidence: grp.map((v) => `${v.name || "(blank)"}: ${v.rows.length} payment(s), ${round2(sumMoney(v.amts))}`) }));
+  }
+  return out;
+}
+
+// One bank account paid under two or more vendor names. A shared IBAN/ABA behind
+// different payees is a high-yield shell-vendor / redirected-payment indicator.
+function detSharedBank(recs) {
+  const out = [];
+  const byA = new Map();
+  for (const r of recs) {
+    const a = nacct(r.account);
+    if (!a || a.length < 4) continue;
+    if (!byA.has(a)) byA.set(a, []);
+    byA.get(a).push(r);
+  }
+  for (const [a, grp] of byA) {
+    const vks = new Set(grp.map((r) => r.vkey).filter(Boolean));
+    if (vks.size < 2) continue;
+    const names = [...new Set(grp.map((r) => r.vendor).filter(Boolean))].sort();
+    const money = sumMoney(grp.map((r) => r.amount));
+    const masked = /\*/.test(a);
+    out.push(finding({ rule: "shared-bank-account", title: "One bank account paid under multiple vendor names",
+      severity: money >= 10000 ? "high" : "medium", soundness: "heuristic", money, vendor: names[0] || "",
+      key: "acct|" + a, rows: grp.map((r) => r._row).sort((x, y) => x - y),
+      why: `Account ${a} received payments booked to ${vks.size} different vendor names (${names.join(", ")}). One account behind several payees is a classic shell-vendor / redirected-payment pattern.${masked ? " This account value is masked/truncated, so coincidental collisions are possible — verify the full number." : ""}`,
+      evidence: grp.slice(0, 8).map((r) => `row ${r._row}: ${r.vendor} ${round2(r.amount)} ${r.date} acct ${r.account}`) }));
+  }
+  return out;
+}
+
 function detWeekend(recs) {
   const wk = recs.filter((r) => r.day != null && isWeekend(r.day) && isFinite(r.amount));
   if (!wk.length) return [];
   return [finding({ rule: "weekend-payment", title: `${wk.length} payment(s) dated on a weekend`, severity: "info",
-    soundness: "heuristic", money: sum(wk.map((r) => r.amount)), key: "weekend", rows: wk.slice(0, 30).map((r) => r._row),
+    soundness: "heuristic", money: sumMoney(wk.map((r) => r.amount)), key: "weekend", rows: wk.slice(0, 30).map((r) => r._row),
     why: "Payments dated Saturday/Sunday can indicate out-of-process disbursement. Informational — confirm against your payment calendar.",
     evidence: wk.slice(0, 8).map((r) => `row ${r._row}: ${r.vendor} ${round2(r.amount)} ${r.date}`) })];
 }
@@ -343,7 +467,7 @@ function detLoneApprover(recs) {
   const same = recs.filter((r) => r.approver && r.initiator && norm(r.approver) === norm(r.initiator) && isFinite(r.amount) && r.amount >= 5000);
   if (!same.length) return [];
   return [finding({ rule: "segregation-of-duties", title: "Same person initiated and approved", severity: "medium",
-    soundness: "precise", money: sum(same.map((r) => r.amount)), key: "sod", rows: same.slice(0, 30).map((r) => r._row),
+    soundness: "precise", money: sumMoney(same.map((r) => r.amount)), key: "sod", rows: same.slice(0, 30).map((r) => r._row),
     why: "The initiator and approver are the same identity on payments >= 5,000 — a segregation-of-duties failure and a classic single-point fraud enabler.",
     evidence: same.slice(0, 8).map((r) => `row ${r._row}: ${r.vendor} ${round2(r.amount)} by ${r.initiator}`) })];
 }
@@ -368,7 +492,7 @@ function detFusion(recs, events) {
       if (!ev.vkey) continue;
       const pays = paymentsForVendorAfter(recs, ev.vkey, ev.day, 30);
       if (pays.length) {
-        const money = sum(pays.map((p) => p.amount));
+        const money = sumMoney(pays.map((p) => p.amount));
         out.push(finding({ rule: "fusion-bec-payment-redirect", title: "BEC payment-redirect chain", severity: money >= 25000 ? "critical" : "high",
           soundness: "heuristic", money, vendor: ev.vendor, key: "bec|" + ev.vkey + "|" + ev._row, rows: pays.map((p) => p._row),
           why: `A ${ev.type.replace(/_/g, " ")} for ${ev.vendor || "a vendor"} (${ev.date}) was followed within 30 days by ${pays.length} payment(s) to that vendor. Neither the email layer nor the ERP raises this alone — the fused chain does.`,
@@ -381,7 +505,7 @@ function detFusion(recs, events) {
       const pays = recs.filter((r) => isFinite(r.amount) && r.day != null && r.day >= ev.day && r.day - ev.day <= 2 &&
         (norm(r.approver) === ev.akey || norm(r.initiator) === ev.akey));
       if (pays.length) {
-        const money = sum(pays.map((p) => p.amount));
+        const money = sumMoney(pays.map((p) => p.amount));
         out.push(finding({ rule: "fusion-ato-disbursement", title: "Account-takeover disbursement chain", severity: money >= 25000 ? "critical" : "high",
           soundness: "heuristic", money, vendor: "", key: "ato|" + ev.akey + "|" + ev._row, rows: pays.map((p) => p._row),
           why: `A ${ev.type.replace(/_/g, " ")} for ${ev.actor} (${ev.date}) was followed within 48h by ${pays.length} payment(s) that same identity approved or initiated.`,
@@ -397,7 +521,7 @@ function detFusion(recs, events) {
       for (const r of recs) { if (r.day != null && r.vkey) { const f = firstDay.get(r.vkey); if (f == null || r.day < f) firstDay.set(r.vkey, r.day); } }
       const newPays = pays.filter((r) => r.vkey && firstDay.get(r.vkey) >= ev.day);
       if (newPays.length) {
-        const money = sum(newPays.map((p) => p.amount));
+        const money = sumMoney(newPays.map((p) => p.amount));
         out.push(finding({ rule: "fusion-insider-export-newvendor", title: "Data-export then new-vendor payment", severity: "high",
           soundness: "heuristic", money, vendor: "", key: "exp|" + ev._row, rows: newPays.map((p) => p._row),
           why: `A ${ev.type.replace(/_/g, " ")} by ${ev.actor || "an insider"} (${ev.date}) preceded payment(s) to vendor(s) first seen after that export, within 90 days.`,
@@ -422,6 +546,8 @@ export function analyze(paymentsCSV, accessCSV) {
   findings = findings.concat(detUnderThreshold(records));
   findings = findings.concat(detRoundNumber(records));
   findings = findings.concat(detVendorOutlier(records));
+  findings = findings.concat(detVendorCluster(records));
+  findings = findings.concat(detSharedBank(records));
   findings = findings.concat(detWeekend(records));
   findings = findings.concat(detLoneApprover(records));
   if (events.length) findings = findings.concat(detFusion(records, events));
@@ -482,6 +608,27 @@ export function selfTest() {
   check("parseAmount handles ($1,234.50)", parseAmount("($1,234.50)") === -1234.5);
   check("parseDay ISO == US", parseDay("2026-01-05") === parseDay("1/5/2026"));
   check("empty input is safe", analyze("", "").findings.length === 0);
+
+  // Duplicate/shell-vendor cluster + shared bank account.
+  const apFraud = [
+    "date,vendor,amount,invoice,account,approver,initiator",
+    "2026-03-01,Northwind Traders,5000,INV-1,DE111,alice,bob",
+    "2026-03-02,Northwind Tradrs,5200,INV-2,DE222,carol,dave",   // typo-squat of the above
+    "2026-03-03,Globex Inc,7000,INV-3,GB999,erin,frank",
+    "2026-03-04,Initech LLC,8000,INV-4,GB999,grace,heidi",        // same account, different vendor
+  ].join("\n");
+  const rap = analyze(apFraud, "");
+  check("duplicate-vendor-cluster detected", rap.findings.some((f) => f.rule === "duplicate-vendor-cluster"));
+  check("shared-bank-account detected", rap.findings.some((f) => f.rule === "shared-bank-account"));
+  check("distinct vendors + short accounts stay quiet", !analyze("date,vendor,amount,invoice,account\n2026-03-01,Apple,5,INV-1,A1\n2026-03-02,Microsoft,6,INV-2,B2", "").findings.some((f) => f.rule === "duplicate-vendor-cluster" || f.rule === "shared-bank-account"));
+  check("new rules deterministic", JSON.stringify(analyze(apFraud, "").findings) === JSON.stringify(rap.findings));
+
+  // Benford second-digit test fires alongside the first-digit screen on a large sample.
+  const many = ["date,vendor,amount,invoice"];
+  for (let i = 0; i < 300; i++) many.push(`2026-01-01,V,${((i * 37 + 100) % 9000) + 100}.${(i % 90) + 10},INV-${i}`);
+  const rb = analyze(many.join("\n"), "");
+  check("benford first-digit screen present on >=200 amounts", rb.findings.some((f) => f.rule === "benford-first-digit"));
+  check("benford second-digit screen present on >=200 amounts", rb.findings.some((f) => f.rule === "benford-second-digit"));
 
   const pass = results.every((r) => r.pass);
   return { pass, results };

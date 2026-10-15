@@ -203,7 +203,26 @@ export const DETECTORS = [
   {
     id: 'ipv4', label: 'IPv4 address', kind: 'pii', severity: 'low',
     re: /\b(?:(?:25[0-5]|2[0-4]\d|1?\d?\d)\.){3}(?:25[0-5]|2[0-4]\d|1?\d?\d)\b/g,
-    validate: (m) => { const o = m.split('.'); return o[0] !== '0' && !(o[0] === '127'); },
+    validate: (m, _whole, ctx) => {
+      const o = m.split('.');
+      if (o[0] === '0' || o[0] === '127') return false; // always skip these (current behavior)
+      const opts = (ctx && ctx.opts) || {};
+      if (!opts.excludePrivateIp) return true; // default: flag everything else
+      // opted in to noise reduction: ignore version strings and private ranges
+      if (ctx && typeof ctx.index === 'number' && typeof ctx.text === 'string') {
+        const before = ctx.text.slice(Math.max(0, ctx.index - 12), ctx.index);
+        const after = ctx.text.slice(ctx.index + m.length, ctx.index + m.length + 2);
+        if (/\b(?:version|ver|rev|release|build)\s*$/i.test(before)) return false;
+        if (before.endsWith('.')) return false;      // continuation of a longer dotted number
+        if (/^\.\d/.test(after)) return false;        // more octets follow → not an IPv4
+      }
+      const a = +o[0], b = +o[1];
+      if (a === 10) return false;                       // 10.0.0.0/8
+      if (a === 172 && b >= 16 && b <= 31) return false; // 172.16.0.0/12
+      if (a === 192 && b === 168) return false;         // 192.168.0.0/16
+      if (a === 169 && b === 254) return false;         // 169.254.0.0/16 link-local
+      return true;
+    },
     advice: 'Internal IPs can reveal topology; redact in public documents.',
   },
   {
@@ -220,6 +239,72 @@ export const DETECTORS = [
     mask: (m) => m.replace(/:\/\/([^:]+):[^@]+@/, '://$1:••••••@'),
     advice: 'Embedded DB credentials are exposed; rotate and use a secrets store.',
   },
+  {
+    id: 'azure-storage-key', label: 'Azure Storage account key', kind: 'secret', severity: 'critical',
+    re: /AccountKey=([A-Za-z0-9+/]{86}==)/g,
+    group: 1,
+    advice: 'Rotate the storage account key in the Azure portal; it grants full access.',
+  },
+  {
+    id: 'azure-sas', label: 'Azure SAS token', kind: 'secret', severity: 'high',
+    re: /[?&]sv=\d{4}-\d{2}-\d{2}&[^\s"'<>]*?sig=[A-Za-z0-9%]{10,}/gi,
+    mask: () => '[AZURE SAS TOKEN]',
+    advice: 'Revoke the shared access signature; anyone with the URL has the granted access.',
+  },
+  {
+    id: 'azure-ad-secret', label: 'Azure AD client secret', kind: 'secret', severity: 'critical',
+    re: /\b[A-Za-z0-9_~.]{3}\dQ~[A-Za-z0-9_~.-]{31,34}\b/g,
+    advice: 'Rotate the app registration client secret in Entra ID / Azure AD.',
+  },
+  {
+    id: 'gitlab-pat', label: 'GitLab personal access token', kind: 'secret', severity: 'critical',
+    re: /\bglpat-[A-Za-z0-9_-]{20,}\b/g,
+    advice: 'Revoke the GitLab token under User Settings → Access Tokens.',
+  },
+  {
+    id: 'npm-token', label: 'npm access token', kind: 'secret', severity: 'high',
+    re: /\bnpm_[A-Za-z0-9]{36}\b/g,
+    advice: 'Revoke the npm token with `npm token revoke` or in your npm account.',
+  },
+  {
+    id: 'gcp-service-account', label: 'GCP service-account key', kind: 'secret', severity: 'critical',
+    re: /-----BEGIN PRIVATE KEY-----[\s\S]{0,4000}?\.iam\.gserviceaccount\.com/g,
+    mask: () => '[GCP SERVICE ACCOUNT KEY]',
+    advice: 'Delete this service-account key in IAM and generate a fresh one; it grants API access.',
+  },
+  {
+    id: 'heroku-key', label: 'Heroku API key', kind: 'secret', severity: 'high',
+    re: /\bheroku[^\n]{0,40}?([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\b/gi,
+    group: 1,
+    advice: 'Regenerate the Heroku API key with `heroku authorizations:rotate`.',
+  },
+  {
+    id: 'digitalocean-token', label: 'DigitalOcean token', kind: 'secret', severity: 'critical',
+    re: /\bdo[opr]_v1_[a-f0-9]{64}\b/g,
+    advice: 'Revoke the DigitalOcean token in the API section of the control panel.',
+  },
+  {
+    id: 'bearer-auth', label: 'Bearer / Authorization token', kind: 'secret', severity: 'high',
+    re: /\b(?:Authorization:\s*)?(?:Bearer|Basic)\s+([A-Za-z0-9._~+/=-]{16,})/g,
+    group: 1,
+    validate: (m) => !/^(?:your|example|placeholder|token|changeme|xxx|redacted)/i.test(m) && !/^(.)\1+$/.test(m),
+    advice: 'Treat this header credential as live; rotate it and do not log Authorization headers.',
+  },
+  {
+    id: 'mailgun-key', label: 'Mailgun API key', kind: 'secret', severity: 'high',
+    re: /\bkey-[0-9a-f]{32}\b/gi,
+    advice: 'Rotate the Mailgun API key in the control panel.',
+  },
+  {
+    id: 'planetscale-token', label: 'PlanetScale token', kind: 'secret', severity: 'critical',
+    re: /\bpscale_(?:tkn|pw|oauth)_[A-Za-z0-9._-]{32,}/g,
+    advice: 'Revoke the PlanetScale password/token in the database settings.',
+  },
+  {
+    id: 'slack-app-token', label: 'Slack app-level token', kind: 'secret', severity: 'high',
+    re: /\bxapp-\d-[A-Za-z0-9]+-\d+-[a-z0-9]+\b/gi,
+    advice: 'Revoke the Slack app-level token in the app management console.',
+  },
 ];
 
 // ---- generic high-entropy sweep (after the named detectors) ---------------
@@ -233,9 +318,10 @@ function looksLikeWords(tok) {
   return /^[A-Za-z]+$/.test(tok) || /^[A-Za-z]+(?:[._-][A-Za-z]+)+$/.test(tok);
 }
 
-export function scanEntropy(text, alreadyFound) {
+export function scanEntropy(text, alreadyFound, opts = {}) {
   const hits = [];
   const taken = alreadyFound || [];
+  const b64Need = Number.isFinite(opts.entropyThreshold) ? opts.entropyThreshold : ENTROPY_B64;
   const covers = (i, j) => taken.some((f) => i < f.end && j > f.start);
   const re = /[A-Za-z0-9+/=_-]{24,}/g;
   let m;
@@ -245,7 +331,7 @@ export function scanEntropy(text, alreadyFound) {
     if (tok.length < ENTROPY_MIN_LEN) continue;
     const isHex = /^[a-f0-9]+$/i.test(tok);
     const H = shannonEntropy(tok);
-    const need = isHex ? ENTROPY_HEX : ENTROPY_B64;
+    const need = isHex ? ENTROPY_HEX : b64Need;
     if (H < need) continue;
     if (isHex && tok.length < 32) continue; // short hex is often an id, not a secret
     const start = m.index, end = m.index + tok.length;
@@ -289,11 +375,11 @@ export function scan(text, opts = {}) {
       const whole = m[0];
       const value = det.group ? m[det.group] : whole;
       if (!value) { if (m.index === det.re.lastIndex) det.re.lastIndex++; continue; }
-      if (det.validate && !det.validate(value, whole)) continue;
       // anchor on the captured value's position within the match
       const vOff = det.group ? whole.indexOf(value) : 0;
       const start = m.index + (vOff < 0 ? 0 : vOff);
       const end = start + value.length;
+      if (det.validate && !det.validate(value, whole, { opts, text, index: start })) continue;
       found.push({
         id: det.id, label: det.label, kind: det.kind, severity: det.severity,
         value, masked: det.mask ? det.mask(value) : maskValue(value),
@@ -319,7 +405,7 @@ export function scan(text, opts = {}) {
 
   let all = kept;
   if (!enabled || enabled.has('high-entropy')) {
-    all = kept.concat(scanEntropy(text, kept));
+    all = kept.concat(scanEntropy(text, kept, opts));
   }
   all.sort((a, b) => a.start - b.start);
 
@@ -399,6 +485,26 @@ export function selfTest() {
   T('found private key', r.findings.some((f) => f.id === 'private-key'));
   T('found github token', r.findings.some((f) => f.id === 'github-token'));
   T('critical counted', r.bySeverity.critical >= 1);
+
+  const r2 = scan([
+    'glpat-ABCDEFGHIJ0123456789',
+    'npm_' + 'a'.repeat(36),
+    'dop_v1_' + 'a'.repeat(64),
+    'Authorization: Bearer abcDEF123ghiJKL456mno',
+    'AccountKey=' + 'A'.repeat(86) + '==',
+    'mykey=key-' + '0123456789abcdef'.repeat(2),
+    'xapp-1-ABC123-1234567890-abcdef0123456789',
+  ].join('\n'));
+  T('found gitlab pat', r2.findings.some((f) => f.id === 'gitlab-pat'));
+  T('found npm token', r2.findings.some((f) => f.id === 'npm-token'));
+  T('found digitalocean token', r2.findings.some((f) => f.id === 'digitalocean-token'));
+  T('found bearer token', r2.findings.some((f) => f.id === 'bearer-auth'));
+  T('found azure storage key', r2.findings.some((f) => f.id === 'azure-storage-key'));
+  T('found mailgun key', r2.findings.some((f) => f.id === 'mailgun-key'));
+  T('found slack app token', r2.findings.some((f) => f.id === 'slack-app-token'));
+  T('private-ip allowlist drops 10/8', !scan('host 10.1.2.3 here', { excludePrivateIp: true }).findings.some((f) => f.id === 'ipv4'));
+  T('private-ip allowlist keeps public', scan('host 8.8.8.8 here', { excludePrivateIp: true }).findings.some((f) => f.id === 'ipv4'));
+  T('ipv4 flagged by default', scan('host 10.1.2.3 here').findings.some((f) => f.id === 'ipv4'));
   T('redaction removes card', !redact('card 4111 1111 1111 1111', scan('card 4111 1111 1111 1111').findings).includes('4111 1111 1111 1111'));
 
   return { pass: out.every((t) => t.pass), tests: out };

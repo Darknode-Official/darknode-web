@@ -114,6 +114,116 @@ group("dlp: detectors", () => {
   });
 });
 
+group("dlp: new secret detectors", () => {
+  const has = (text, id, opts) => scan(text, opts).findings.some((f) => f.id === id);
+
+  test("Azure storage account key — positive and negative", () => {
+    const key = "A".repeat(86) + "==";
+    assert.ok(has("DefaultEndpointsProtocol=https;AccountKey=" + key + ";", "azure-storage-key"));
+    assert.notOk(has("AccountKey=tooShortForARealKey==", "azure-storage-key"));
+  });
+  test("Azure SAS token — positive and negative", () => {
+    assert.ok(has("https://a.blob.core.windows.net/c/b?sv=2021-08-06&sp=r&sig=aB3dEf9GhiJkl012MnO%3D", "azure-sas"));
+    // sv date present but no sig param => not a SAS token
+    assert.notOk(has("endpoint?sv=2021-08-06&sp=rwl", "azure-sas"));
+  });
+  test("Azure AD client secret — positive and negative", () => {
+    assert.ok(has("CLIENT_SECRET=abc8Q~" + "a".repeat(34), "azure-ad-secret"));
+    assert.notOk(has("just a normal sentence with no secret here at all", "azure-ad-secret"));
+  });
+  test("GitLab PAT — positive and negative", () => {
+    assert.ok(has("token=glpat-ABCDEFGHIJ0123456789", "gitlab-pat"));
+    assert.notOk(has("token=glpat-short", "gitlab-pat"));
+  });
+  test("npm token — positive and negative", () => {
+    assert.ok(has("//registry.npmjs.org/:_authToken=npm_" + "a".repeat(36), "npm-token"));
+    assert.notOk(has("npm_tooshort", "npm-token"));
+  });
+  test("GCP service-account key — positive and negative", () => {
+    const json = '{"type":"service_account","private_key":"-----BEGIN PRIVATE KEY-----\\nMIIBVAIBADANBgkq\\n-----END PRIVATE KEY-----\\n","client_email":"svc@proj.iam.gserviceaccount.com"}';
+    assert.ok(has(json, "gcp-service-account"));
+    // a private key with no gserviceaccount context is NOT a GCP SA key (falls to private-key)
+    assert.notOk(has("-----BEGIN PRIVATE KEY-----\nMIIBVAIBADANBgkq\n-----END PRIVATE KEY-----", "gcp-service-account"));
+  });
+  test("Heroku API key — positive and negative", () => {
+    assert.ok(has("HEROKU_API_KEY=12345678-1234-1234-1234-123456789abc", "heroku-key"));
+    // a bare UUID with no heroku context is not flagged as a Heroku key
+    assert.notOk(has("request id 12345678-1234-1234-1234-123456789abc done", "heroku-key"));
+  });
+  test("DigitalOcean token — positive and negative", () => {
+    assert.ok(has("DO_TOKEN=dop_v1_" + "a".repeat(64), "digitalocean-token"));
+    assert.notOk(has("dop_v1_deadbeef", "digitalocean-token"));
+  });
+  test("Bearer / Authorization token — positive and negative", () => {
+    assert.ok(has("Authorization: Bearer abcDEF123ghiJKL456mnoP", "bearer-auth"));
+    assert.notOk(has("Authorization: Bearer short", "bearer-auth"));
+    assert.notOk(has("Authorization: Bearer your-token-goes-here", "bearer-auth"));
+  });
+  test("Mailgun key — positive and negative", () => {
+    assert.ok(has("MAILGUN=key-" + "0123456789abcdef".repeat(2), "mailgun-key"));
+    assert.notOk(has("key-nothex-value-here", "mailgun-key"));
+  });
+  test("PlanetScale token — positive and negative", () => {
+    assert.ok(has("DATABASE_PASSWORD=pscale_pw_" + "aB3dEf".repeat(6), "planetscale-token"));
+    assert.notOk(has("pscale_pw_short", "planetscale-token"));
+  });
+  test("Slack app-level token — positive and negative", () => {
+    assert.ok(has("SLACK_APP_TOKEN=xapp-1-A01234ABCDE-1234567890-abcdef0123456789", "slack-app-token"));
+    assert.notOk(has("xapp-notarealapptoken", "slack-app-token"));
+  });
+});
+
+group("dlp: ipv4 private-IP allowlist", () => {
+  const hasIp = (text, opts) => scan(text, opts).findings.some((f) => f.id === "ipv4");
+
+  test("default flags private and public IPs (current behavior)", () => {
+    assert.ok(hasIp("internal host 10.1.2.3"));
+    assert.ok(hasIp("router 192.168.0.1"));
+    assert.ok(hasIp("resolver 8.8.8.8"));
+  });
+  test("allowlist drops RFC1918, loopback-equivalent and link-local", () => {
+    const o = { excludePrivateIp: true };
+    assert.notOk(hasIp("internal host 10.1.2.3", o));
+    assert.notOk(hasIp("router 192.168.0.1", o));
+    assert.notOk(hasIp("nat 172.16.5.9", o));
+    assert.notOk(hasIp("apipa 169.254.1.1", o));
+  });
+  test("allowlist keeps genuine public IPs", () => {
+    assert.ok(hasIp("resolver 8.8.8.8", { excludePrivateIp: true }));
+    assert.ok(hasIp("edge 203.0.113.42", { excludePrivateIp: true }));
+  });
+  test("allowlist ignores IPs inside version strings", () => {
+    const o = { excludePrivateIp: true };
+    assert.notOk(hasIp("running version 11.22.33.44 of the agent", o));
+    assert.notOk(hasIp("build 200.100.50.25 shipped", o));
+  });
+  test("172.x outside the private block is still flagged with allowlist on", () => {
+    assert.ok(scan("public 172.32.0.1 host", { excludePrivateIp: true }).findings.some((f) => f.id === "ipv4"));
+  });
+});
+
+group("dlp: detector toggles and entropy threshold", () => {
+  test("opts.detectors filters to only the enabled ids", () => {
+    const text = "glpat-ABCDEFGHIJ0123456789 and bob@corp.com and AKIAIOSFODNN7EXAMPLE";
+    const r = scan(text, { detectors: ["gitlab-pat", "email"] });
+    assert.ok(r.findings.length > 0);
+    assert.ok(r.findings.every((f) => f.id === "gitlab-pat" || f.id === "email"));
+    assert.notOk(r.findings.some((f) => f.id === "aws-key"));
+  });
+  test("disabling high-entropy suppresses the sweep", () => {
+    const blob = "config dGhpc0lzQVZlcnlMb25nUmFuZG9tQmFzZTY0VG9rZW5YWVo=";
+    assert.ok(scan(blob).findings.some((f) => f.id === "high-entropy"));
+    assert.notOk(scan(blob, { detectors: ["email"] }).findings.some((f) => f.id === "high-entropy"));
+  });
+  test("raising the entropy threshold suppresses borderline tokens", () => {
+    const blob = "token dGhpc0lzQVZlcnlMb25nUmFuZG9tQmFzZTY0VG9rZW5YWVo=";
+    const low = scan(blob, { entropyThreshold: 3.5 }).findings.filter((f) => f.id === "high-entropy").length;
+    const high = scan(blob, { entropyThreshold: 5.9 }).findings.filter((f) => f.id === "high-entropy").length;
+    assert.ok(low >= 1);
+    assert.ok(high < low);
+  });
+});
+
 group("dlp: redaction and summary", () => {
   test("redaction removes every finding value", () => {
     const text = "card 4111 1111 1111 1111 ssn 123-45-6789 key AKIAIOSFODNN7EXAMPLE";
