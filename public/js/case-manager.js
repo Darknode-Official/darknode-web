@@ -310,7 +310,7 @@ html[data-style="dark"] .cm-textarea,html[data-style="classic"] .cm-textarea{bac
         updateEntity(_detailId, { data: { ...(getEntity(_detailId).data || {}), timeline: tl } });
         renderDetail();
       } else if (window.showToast) {
-        window.showToast('error', 'Could not create the link');
+        window.showToast('Could not create the link', 'error');
       }
     };
     main.querySelectorAll('.cm-unlink').forEach(btn => {
