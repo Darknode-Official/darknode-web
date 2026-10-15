@@ -35,7 +35,7 @@ function injectStyle() {
   if (injected) return; injected = true;
   const st = document.createElement("style"); st.id = "sanc-css";
   st.textContent = `
-  .sanc{max-width:1100px;margin:0 auto;font-size:14px;line-height:1.5}
+  .sanc{width:100%;font-size:14px;line-height:1.5}
   .sanc .snc-hd{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
   .sanc h1{font-size:1.7rem;margin:0;letter-spacing:-.01em}
   .sanc .snc-tag{font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#fff;background:#2552c6;padding:3px 9px;border-radius:999px}

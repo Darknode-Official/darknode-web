@@ -138,6 +138,21 @@ group("phish: email parsing and triage", () => {
     ].join("\n"));
     assert.equal(r.verdict.level, "likely-legitimate");
   });
+  test("DMARC pass does NOT whitewash a message linking to a lookalike domain", () => {
+    // The From domain is clean and passes its own DMARC, but the body links to a
+    // typosquat of a real brand. A medium-severity lookalike link does not lift the
+    // numeric score, so the old `dmarc=pass && weight<3` shortcut wrongly called this
+    // "likely legitimate". The spoof veto must prevent that.
+    const r = triageEmail([
+      "From: Support <support@example.com>",
+      "Return-Path: <support@example.com>",
+      "Authentication-Results: mx; spf=pass; dkim=pass; dmarc=pass",
+      "Subject: Please confirm", "", "Sign in at https://paypa1.com/login to continue.",
+    ].join("\n"));
+    assert.equal(r.auth.dmarc, "pass");
+    assert.ok(r.spoof, "a lookalike link should set the spoof veto");
+    assert.notEqual(r.verdict.level, "likely-legitimate");
+  });
   test("display-name brand spoof with mismatched domain flagged", () => {
     const r = triageEmail([
       'From: "Microsoft Account Team" <no-reply@account-security-check.com>',

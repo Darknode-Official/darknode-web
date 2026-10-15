@@ -10,7 +10,7 @@
 
 import {
   analyzeUrl, triageEmail, extractIOCs, parseEmailHeaders, registrableDomain, lookalike,
-} from "/js/dataprotect/phish-engine.js?v=20261013m";
+} from "/js/dataprotect/phish-engine.js?v=20261014c";
 import { dnFetch, dnFetchJSON } from "/js/net.js";
 
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) =>
@@ -24,7 +24,7 @@ function injectStyle() {
   if (injected) return; injected = true;
   const st = document.createElement("style"); st.id = "phx-css";
   st.textContent = `
-  .phx{max-width:1100px;margin:0 auto;font-size:14px;line-height:1.5}
+  .phx{width:100%;font-size:14px;line-height:1.5}
   .phx .phx-hd{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
   .phx h1{font-size:1.7rem;margin:0;letter-spacing:-.01em}
   .phx .phx-tag{font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#fff;background:#2552c6;padding:3px 9px;border-radius:999px}

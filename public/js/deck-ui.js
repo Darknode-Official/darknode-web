@@ -28,7 +28,7 @@ import * as surface from "/js/deck-surface.js?v=20261011b";
 import { bus, EVENTS } from "/js/core/bus.js";
 import { isSimulated } from "/js/core/posture.js";
 import * as findings from "/js/core/findings.js?v=20261013e";
-import { attachExplain, EXPLAIN, explainEnabled, setExplainEnabled } from "/js/ui/explain.js?v=20261014a";
+import { attachExplain, EXPLAIN, explainEnabled, setExplainEnabled } from "/js/ui/explain.js?v=20261014c";
 
 const LS_CONN = "dn_deck_connections_v1";
 const LS_SCENE = "dn_deck_scene";          // last workspace selected
@@ -814,7 +814,6 @@ const CSS = `
 .dk-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:14px;margin-bottom:12px}
 .dk-ov .dk-kpis:not(#dkInvKpis){grid-template-columns:repeat(4,minmax(0,1fr))}
 @media(min-width:1600px){.dk-ov .dk-kpis:not(#dkInvKpis){grid-template-columns:repeat(7,minmax(0,1fr))}}
-@media(min-width:721px) and (max-width:1599px){.dk-ov .dk-kpis:not(#dkInvKpis)>.dk-kpi:first-child{grid-row:span 2;display:flex;flex-direction:column;justify-content:center}.dk-ov .dk-kpis:not(#dkInvKpis)>.dk-kpi:first-child .kn{font-size:46px}}
 @media(max-width:720px){.dk-ov .dk-kpis:not(#dkInvKpis)>.dk-kpi:first-child{grid-column:span 2}}
 @media(max-width:720px){.dk-kpis,.dk-ov .dk-kpis:not(#dkInvKpis){grid-template-columns:repeat(2,minmax(0,1fr))}}
 .dk-expnote{font-size:12px;color:#5a6680;line-height:1.5;margin:0 0 22px;padding:9px 13px;background:rgba(23,33,56,.03);border:1px solid rgba(23,33,56,.08);border-radius:9px}
@@ -1141,7 +1140,16 @@ textarea.dk-kitio{min-height:120px}
 .dk-cloudin:focus{border-color:#3f78ff}
 .dk-cloudbtns{display:flex;align-items:center;gap:14px;margin-top:11px}
 .dk-cloudbtns .mo{cursor:pointer;font-size:12px;color:#2552c6;font-weight:600}
-.dk-cloudout{white-space:pre-wrap;word-break:break-word;background:#0f1626;color:#d7e2f2;border-radius:10px;padding:14px;margin-top:13px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;line-height:1.55;max-height:360px;overflow:auto}
+.dk-cloudres{margin-top:13px}
+.dk[data-ui=deck] .dk-cfband{display:flex;flex-wrap:wrap;gap:8px}
+.dk[data-ui=deck] .dk-cfcount{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:500;color:var(--dk-tx2);border:1px solid var(--dk-line);border-radius:20px;padding:4px 12px}
+.dk[data-ui=deck] .dk-cfcount i{width:8px;height:8px;border-radius:50%;background:var(--c)}
+.dk[data-ui=deck] .dk-cfcount b{color:var(--dk-tx);font-weight:700}
+.dk[data-ui=deck] .dk-cfcount.z{opacity:.4}
+.dk[data-ui=deck] .dk-cflist{display:flex;flex-direction:column;gap:8px;margin-top:12px;max-height:360px;overflow:auto}
+.dk[data-ui=deck] .dk-cfitem,.dk[data-ui=deck] .dk-cfclean{display:flex;gap:12px;align-items:flex-start;padding:11px 13px;border:1px solid var(--dk-line);border-left:3px solid var(--c);border-radius:9px;background:var(--dk-surf)}
+.dk[data-ui=deck] .dk-cfitem .sv,.dk[data-ui=deck] .dk-cfclean .sv{flex:0 0 auto;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--c);padding-top:1px;min-width:52px}
+.dk[data-ui=deck] .dk-cfitem .tx,.dk[data-ui=deck] .dk-cfclean .tx{font-size:13px;line-height:1.5;color:var(--dk-tx);overflow-wrap:anywhere;white-space:pre-wrap}
 .dk-cloudconn{position:relative}
 .dk-cloudconn .cc-badge{position:absolute;top:16px;right:16px;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#8a5a00;background:rgba(245,146,11,.14);border:1px solid rgba(245,146,11,.3);border-radius:6px;padding:3px 8px}
 .dk-cloudconn p{font-size:12.5px;color:#5a6680;line-height:1.55;margin:0 0 13px}
@@ -1253,12 +1261,13 @@ textarea.dk-kitio{min-height:120px}
 .dk[data-ui=deck].nav-rail .dk-nv.on{background:rgba(255,255,255,.08)}
 .dk[data-ui=deck].nav-rail .dk-nv.on::before{display:none}
 /* metrics: white tiles, label above a large tabular number, no stripes or icon chips */
-.dk[data-ui=deck] .dk-ov .dk-kpis.dk-kpis4{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:12px;margin-bottom:12px}
-@media(max-width:1100px){.dk[data-ui=deck] .dk-ov .dk-kpis.dk-kpis4{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
-@media(max-width:520px){.dk[data-ui=deck] .dk-ov .dk-kpis.dk-kpis4{grid-template-columns:1fr!important}.dk[data-ui=deck] .dk-kpis4>*{grid-column:auto!important}}
+.dk[data-ui=deck] .dk-ov .dk-kpis.dk-kpis6{grid-template-columns:repeat(6,minmax(0,1fr))!important;gap:12px;margin-bottom:12px}
+@media(max-width:1300px){.dk[data-ui=deck] .dk-ov .dk-kpis.dk-kpis6{grid-template-columns:repeat(3,minmax(0,1fr))!important}}
+@media(max-width:720px){.dk[data-ui=deck] .dk-ov .dk-kpis.dk-kpis6{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+@media(max-width:520px){.dk[data-ui=deck] .dk-ov .dk-kpis.dk-kpis6{grid-template-columns:1fr!important}.dk[data-ui=deck] .dk-kpis6>*{grid-column:auto!important}}
 @media(max-width:1000px){.dk[data-ui=deck] .dk-crumb{display:none}}
 @media(max-width:480px){.dk[data-ui=deck] .dk-brand .dk-wm{display:none}}
-.dk[data-ui=deck] .dk-kpis4>.dk-kpi:first-child .kn{font-size:30px}
+.dk[data-ui=deck] .dk-kpis6>.dk-kpi:first-child .kn{font-size:30px}
 .dk[data-ui=deck] .dk-kpi{display:flex;flex-direction:column;background:var(--dk-surf);border:1px solid var(--dk-line);border-radius:10px;padding:16px 18px;grid-row:auto!important;justify-content:flex-start!important}
 .dk[data-ui=deck] .dk-kpi[hidden]{display:none}
 .dk[data-ui=deck] .dk-kpi::before,.dk[data-ui=deck] .dk-kpi .ki{display:none}
@@ -1601,11 +1610,10 @@ export function renderDeck(host, opts) {
   const ai = INTEGRATIONS.filter((i) => i.kind === "ai");
   const sec = INTEGRATIONS.filter((i) => i.kind === "sec");
   const countConnected = () => INTEGRATIONS.reduce((a, i) => a + (conns[i.id]?.connected ? 1 : 0), 0);
-  // Re-render the grid in place after a connect/disconnect and keep the Posture
-  // KPI honest without a full scene rebuild.
+  // Re-render the grid in place after a connect/disconnect. Integration coverage
+  // surfaces in the overview Integrations gauge, so there is no standalone KPI tile.
   function refreshConnState(){
     if (curScene === "con") renderIntegrations();
-    const k = root.querySelector('[data-k="conn"] .kn'); if (k) k.textContent = String(countConnected());
   }
 
   // ---------- drawer ----------
@@ -2095,7 +2103,7 @@ export function renderDeck(host, opts) {
         <button type="submit">${IC.bolt}Ask</button>
       </form>
       <div class="dk-askhint">Triage a CVE, draft a runbook, explain a finding or review a config.</div>
-      <div class="dk-kpis dk-kpis4">
+      <div class="dk-kpis dk-kpis6">
         <div class="dk-start" id="dkStart" hidden>
           <b>Measure your exposure</b>
           <p>There are no real findings in this workspace yet, so there is nothing to score. Map a domain you own or scan a codebase to get a baseline.</p>
@@ -2105,6 +2113,8 @@ export function renderDeck(host, opts) {
         ${kpi("hot", "—", "Open critical and high", IC.alert, "", "findings", "Real findings, samples excluded")}
         ${kpi("cve", "—", "New CVEs", IC.alert, "", "threat", "NVD, last 7 days")}
         ${kpi("kev", "—", "Known exploited", IC.radar, "", "threat", "CISA KEV catalog")}
+        ${kpi("climate", "—", "Threat climate", IC.pulse, "", "threat", "Global, same for everyone")}
+        ${kpi("graph", "—", "Graph entities", IC.grid, "", "invest", "Real entities, samples excluded")}
       </div>
       <div class="dk-expnote" id="dkExpNote" hidden></div>
       <div class="dk-ovp"><h2 data-explain="panel.actions">${IC.bolt} Needs attention <span class="mo" data-scene="findings">All findings</span></h2><div id="dkTopAct"><div class="dk-loading"><span class="sp"></span>Ranking what needs attention…</div></div></div>
@@ -2540,6 +2550,58 @@ export function renderDeck(host, opts) {
   // on the roadmap and are represented honestly — never faked.
   const CLOUD_WB = ["cl-iam-policy-lint", "cl-s3-bucket-policy-explain", "cl-sg-audit", "cl-dockerfile-lint", "cl-compose-lint"];
   let _cloudTools = null;
+  // Cloud workbench severity palette. Colours are applied through the --c custom
+  // property (border + text), never an inline background, per the Deck theme rules.
+  const CLOUD_SEV = { critical: { c: "#e0383a", l: "Critical" }, high: { c: "#f5920b", l: "High" }, medium: { c: "#d9a400", l: "Medium" }, low: { c: "#4f86ff", l: "Low" }, info: { c: "#8a93a6", l: "Info" }, good: { c: "#12a85f", l: "OK" } };
+  // Parse a workbench linter's text output into severity-tagged findings. The linters
+  // emit either "[SEV] …" lines, "line N: …" / "Statement … [PUBLIC …]" entries, or a
+  // single "No … found" clean message. Continuation lines fold into the entry above.
+  function cloudFindings(r) {
+    if (r && typeof r === "object") { if (r.error) return { error: String(r.error) }; r = JSON.stringify(r, null, 2); }
+    const text = String(r == null ? "" : r).trim();
+    if (!text) return { empty: true };
+    const sevMap = { CRITICAL: "critical", HIGH: "high", MED: "medium", MEDIUM: "medium", LOW: "low", GOOD: "good", INFO: "info" };
+    const sevOf = (line) => {
+      const m = line.match(/^\[(\w+)\]/i);
+      if (m) return sevMap[m[1].toUpperCase()] || "medium";
+      if (/\[PUBLIC\b/i.test(line)) return /restricted by condition/i.test(line) ? "medium" : "high";
+      if (/all ports open/i.test(line) || /\bcritical\b/i.test(line)) return "critical";
+      if (/open to internet/i.test(line)) return /verify intentional/i.test(line) ? "medium" : "high";
+      return "info";
+    };
+    const isEntryStart = (l) => /^\[\w+\]/.test(l) || /^line \d+:/i.test(l) || /^statement /i.test(l);
+    const lines = text.split(/\r?\n/);
+    const entries = [];
+    let clean = null;
+    for (const raw of lines) {
+      const l = raw.replace(/\s+$/, "");
+      if (!l.trim()) continue;
+      if (!entries.length && /^no\b.*(found|matches|rules|issues|settings)/i.test(l.trim())) { clean = l.trim(); continue; }
+      if (/^\d+\s+(finding|internet-exposed|rule|match|statement)/i.test(l.trim()) && !isEntryStart(l.trim())) continue; // count header
+      if (isEntryStart(l.trim()) || !entries.length) entries.push({ sev: sevOf(l.trim()), text: l.trim().replace(/^\[\w+\]\s*/i, "") });
+      else entries[entries.length - 1].text += "\n" + l; // continuation keeps indentation
+    }
+    const counts = { critical: 0, high: 0, medium: 0, low: 0, good: 0, info: 0 };
+    for (const e of entries) counts[e.sev] = (counts[e.sev] || 0) + 1;
+    if (!entries.length && clean) counts.good = 1; // the clean verdict is one OK result
+    return { entries, counts, clean };
+  }
+  function renderCloudResult(r) {
+    const f = cloudFindings(r);
+    if (f.empty) return `<div class="dk-nempty">Paste a configuration above, then run the check.</div>`;
+    if (f.error) return `<div class="dk-errbox">${esc(f.error)}</div>`;
+    const order = ["critical", "high", "medium", "low", "good"];
+    const extra = f.counts.info ? ["info"] : [];
+    const band = `<div class="dk-cfband">${[...order, ...extra].map((s) => { const n = f.counts[s] || 0; return `<span class="dk-cfcount${n ? "" : " z"}" style="--c:${CLOUD_SEV[s].c}"><i></i><b>${n}</b> ${esc(CLOUD_SEV[s].l)}</span>`; }).join("")}</div>`;
+    if (!f.entries.length) {
+      const msg = f.clean || "No issues found by this heuristic check.";
+      return band + `<div class="dk-cflist"><div class="dk-cfclean" style="--c:${CLOUD_SEV.good.c}"><span class="sv">OK</span><span class="tx">${esc(msg)}</span></div></div>`;
+    }
+    const rank = { critical: 0, high: 1, medium: 2, low: 3, info: 4, good: 5 };
+    const items = f.entries.slice().sort((a, b) => (rank[a.sev] ?? 9) - (rank[b.sev] ?? 9))
+      .map((e) => `<div class="dk-cfitem" style="--c:${CLOUD_SEV[e.sev].c}"><span class="sv">${esc(CLOUD_SEV[e.sev].l)}</span><span class="tx">${esc(e.text)}</span></div>`).join("");
+    return band + `<div class="dk-cflist">${items}</div>`;
+  }
   function renderCloud(){
     const el = sceneEls.cloud;
     el.innerHTML = `
@@ -2552,7 +2614,7 @@ export function renderDeck(host, opts) {
           <div id="dkCloudDesc" class="dk-clouddesc"></div>
           <textarea id="dkCloudIn" class="dk-cloudin" spellcheck="false"></textarea>
           <div class="dk-cloudbtns"><button id="dkCloudRun" class="dk-tibtn on">Run check</button><span class="mo" id="dkCloudOpen">Open full tool</span></div>
-          <pre id="dkCloudOut" class="dk-cloudout" hidden></pre>
+          <div id="dkCloudOut" class="dk-cloudres" hidden></div>
         </div>
         <div class="dk-cloudconn">
           <div class="cc-badge">Roadmap</div>
@@ -2579,7 +2641,7 @@ export function renderDeck(host, opts) {
         const inp = (t.inputs || [])[0] || { k: "text" };
         let r; try { r = t.run({ [inp.k]: inEl.value }); } catch (e) { r = { error: (e && e.message) || "Error" }; }
         outEl.hidden = false;
-        outEl.textContent = (r && r.error) ? ("Error: " + r.error) : (typeof r === "string" ? (r || "No output — check your input.") : JSON.stringify(r, null, 2));
+        outEl.innerHTML = renderCloudResult(r);
       };
       grid.innerHTML = _cloudTools.map((t) => `<button class="dk-cloudcard" data-id="${t.id}"><b>${esc(t.name)}</b><span>${esc(t.desc || "")}</span></button>`).join("");
       grid.querySelectorAll(".dk-cloudcard").forEach((b) => b.onclick = () => { const t = _cloudTools.find((x) => x.id === b.dataset.id); openTool("tool-" + b.dataset.id, t ? t.name : b.dataset.id); });
@@ -2595,13 +2657,47 @@ export function renderDeck(host, opts) {
     { sec: "secchecklist", name: "Security Checklist", desc: "Work through a structured security self-assessment checklist." },
     { sec: "supplychain", name: "Supply Chain Analyzer", desc: "Assess third-party and software-supply-chain risk." }
   ];
+  // Distinct frameworks a CONTROL/REPORT entity references, from explicit fields
+  // or recognisable names/tags. Deterministic; no guessing beyond the known list.
+  const FW_RE = /\b(nist(?:\s*(?:csf|800-53|800-171))?|iso\s?27001|iso27001|soc\s?2|soc2|pci(?:[ -]?dss)?|\bcis\b|hipaa|gdpr|\bcsf\b|800-53|800-171|fedramp|fisma|owasp|\bccm\b|essential\s?(?:8|eight))\b/gi;
+  function complianceFrameworks(ents){
+    const fw = new Set();
+    for (const e of ents) {
+      const d = e.data || {};
+      for (const v of [d.framework, d.standard, d.spec, d.profile]) if (v) fw.add(String(v).trim().toLowerCase().replace(/[\s-]+/g, ""));
+      const hay = [e.name || "", (e.tags || []).join(" "), e.source || ""].join(" ");
+      for (const m of hay.matchAll(FW_RE)) fw.add(m[1].toLowerCase().replace(/[\s-]+/g, ""));
+    }
+    return fw.size;
+  }
   function renderCompliance(){
     const el = sceneEls.compliance;
     el.innerHTML = `
       <div class="dk-ti-head"><h1>Compliance &amp; Posture</h1></div>
       <div class="dk-compnote">Self-reported — these are frameworks and self-assessment tools, not an automated audit. Answers and mappings reflect what you enter and the frameworks' published control sets.</div>
-      <div class="dk-compgrid">${COMPLIANCE.map((c) => `<button class="dk-compcard" data-sec="${esc(c.sec)}" data-label="${esc(c.name)}"><b>${esc(c.name)}</b><span>${esc(c.desc)}</span><span class="go">Open ${IC.ext}</span></button>`).join("")}</div>`;
+      <div class="dk-kpis" id="dkCompKpis"><div class="dk-loading"><span class="sp"></span>Reading the security graph…</div></div>
+      <div class="dk-ovp"><h2 data-explain="panel.latest">${IC.pulse} Recorded controls &amp; reports</h2><div class="dk-ovact" id="dkCompRoll"></div></div>
+      <div class="dk-ovp"><h2 data-explain="panel.sectools">${IC.grid} Framework tools</h2>
+        <div class="dk-compgrid">${COMPLIANCE.map((c) => `<button class="dk-compcard" data-sec="${esc(c.sec)}" data-label="${esc(c.name)}"><b>${esc(c.name)}</b><span>${esc(c.desc)}</span><span class="go">Open ${IC.ext}</span></button>`).join("")}</div>
+      </div>`;
     el.querySelectorAll(".dk-compcard").forEach((b) => b.onclick = () => openTool(b.dataset.sec, b.dataset.label));
+    withGraph((m) => {
+      if (curScene !== "compliance") return;
+      // Real CONTROL/REPORT entities only — simulated/sample data never counts.
+      const ents = m && m.listEntities ? findings.sectionEntities(m.listEntities(), SECTIONS.compliance).sort((a, b) => String(b.updatedAt || "").localeCompare(String(a.updatedAt || ""))) : [];
+      const controls = ents.filter((e) => e.type === "CONTROL").length;
+      const frameworks = complianceFrameworks(ents);
+      const gaps = ents.filter((e) => /^(critical|high)$/i.test(e.severity || "") && !/^(resolved|closed)$/i.test(e.status || "")).length;
+      const kpiC = (v, l, a, x) => `<div class="dk-kpi" data-explain="${x}" style="--a:${a};cursor:default"><div class="kn">${v}</div><div class="kl">${esc(l)}</div></div>`;
+      const kEl = el.querySelector("#dkCompKpis");
+      if (kEl) kEl.innerHTML = kpiC(controls.toLocaleString(), "Controls assessed", "#2552c6", "comp.controls")
+        + kpiC(frameworks.toLocaleString(), "Frameworks mapped", "#12a85f", "comp.frameworks")
+        + kpiC(gaps.toLocaleString(), "Open gaps", gaps ? "#e0383a" : "#8a93a6", "comp.gaps");
+      const roll = el.querySelector("#dkCompRoll");
+      if (roll) roll.innerHTML = ents.length
+        ? ents.slice(0, 8).map((e) => `<div class="r"><span class="dot" style="--bg:${SEV_C[String(e.severity || "").toLowerCase()] || "#9aa4ba"}"></span><span class="tx">${esc(e.name || "—")}</span><span class="ct">${esc(m.getEntityTypeLabel ? m.getEntityTypeLabel(e.type) : e.type)}</span><span class="ag">${agoISO(e.updatedAt)}</span></div>`).join("")
+        : `<div class="dk-onb"><p>No controls or reports recorded yet. Run a self-assessment or framework mapping below and its results show up here, feeding the counts above.</p></div>`;
+    });
   }
 
   // ---------- Integrations workspace (professional grid; honest status) ----------
@@ -2888,7 +2984,7 @@ export function renderDeck(host, opts) {
       if (!box.isConnected) return;
       const m = g.value;
       const acts = findings.topActions({
-        findings: m && m.listEntities ? findings.collectFindings(m.listEntities(), { includeSim: true }) : [],
+        findings: m && m.listEntities ? findings.collectFindings(m.listEntities(), { includeSim: false }) : [],
         cves: iv.status === "fulfilled" ? iv.value.cves : [],
         kev: kv.status === "fulfilled" ? kv.value.set : new Set(),
         connected: new Set(INTEGRATIONS.filter((x) => conns[x.id] && conns[x.id].connected).map((x) => x.id)),

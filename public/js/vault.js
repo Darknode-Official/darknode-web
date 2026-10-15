@@ -33,7 +33,7 @@ function injectStyle() {
   if (document.getElementById("vlt-style")) return;
   const s = document.createElement("style"); s.id = "vlt-style";
   s.textContent = `
-  .vlt{max-width:1180px;margin:0 auto;padding:4px 2px 48px;min-width:0;width:100%;box-sizing:border-box}
+  .vlt{width:100%;padding:4px 2px 48px;min-width:0;box-sizing:border-box}
   .vlt .vhd{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px;margin:8px 0 4px}
   .vlt .vhd h1{font-size:1.5rem;margin:0;font-weight:800;letter-spacing:-.01em}
   .vlt .vtag{display:inline-block;font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#8a5a00;background:rgba(245,158,11,.16);padding:3px 9px;border-radius:999px}
@@ -69,7 +69,7 @@ function injectStyle() {
   .vlt .btn2.pri{background:#2552c6;border-color:#2552c6;color:#fff}.vlt .btn2.pri:hover{background:#1c45ad}
   .vlt .btn2.danger{color:#b00020;border-color:#e0a7b0}.vlt .btn2.danger:hover{background:rgba(176,0,32,.06)}
   .vlt .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
-  .vlt .pill{font-size:.72rem;font-weight:700;border-radius:999px;padding:2px 9px;color:#fff;display:inline-block}
+  .vlt .pill{font-size:.72rem;font-weight:700;border-radius:999px;padding:2px 9px;color:#fff;display:inline-block;background:var(--c,#667085)}
   .vlt .mono{font-family:ui-monospace,monospace;font-size:11.5px;color:var(--mut,#8893a7);word-break:break-all}
   .vlt .flags{font-size:.76rem;color:#8a5a00;margin-top:4px}
   .vlt .empty{text-align:center;color:var(--mut,#8893a7);padding:28px 10px;font-size:.88rem}
@@ -290,7 +290,7 @@ export function renderVault(main) {
       const canRl = t.status === "approved" && may("release") && !mine;
       return `<div class="vcard" data-t="${esc(t.id)}">
         <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:baseline">
-          <span class="pill" style="background:${c}">${esc(t.status)}</span>
+          <span class="pill" style="--c:${c}">${esc(t.status)}</span>
           <b>${esc(fmtCents(t.amount))}</b>
           <span class="vsub" style="margin:0">${esc(L.accounts.get(t.from).name)} &rarr; ${esc(L.accounts.get(t.to).name)}${t.payee ? " · " + esc(t.payee) : ""}</span>
           <span class="vsub" style="margin:0 0 0 auto">by ${esc(who(t.by))} · approvals ${t.approvers.length}/${t.required}</span>

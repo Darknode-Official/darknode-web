@@ -70,7 +70,7 @@ function injectStyle() {
   const s = document.createElement("style");
   s.id = "sr-style";
   s.textContent = `
-  .sr{max-width:1180px;margin:0 auto;padding:4px 2px 48px}
+  .sr{width:100%;padding:4px 2px 48px}
   .sr .sr-hd{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px;margin:8px 0 6px}
   .sr .sr-hd h1{font-size:1.5rem;margin:0;font-weight:800;letter-spacing:-.01em}
   .sr .sr-hd .sr-sub{color:var(--mut,#667085);font-size:.9rem;max-width:720px;line-height:1.5}

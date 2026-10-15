@@ -39,7 +39,7 @@ function injectStyle() {
   if (injected) return; injected = true;
   const st = document.createElement("style"); st.id = "vn-css";
   st.textContent = `
-  .vn{max-width:1100px;margin:0 auto;font-size:14px;line-height:1.5}
+  .vn{width:100%;font-size:14px;line-height:1.5}
   .vn .vn-hd{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
   .vn h1{font-size:1.7rem;margin:0;letter-spacing:-.01em}
   .vn .vn-tag{font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#fff;background:#2552c6;padding:3px 9px;border-radius:999px}

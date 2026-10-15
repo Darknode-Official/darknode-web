@@ -263,21 +263,30 @@ export function triageEmail(raw) {
   if (fromReg && linkRegs.length && !linkRegs.includes(fromReg) && brandInName) add(2, "None of the links point to the brand's own domain.");
 
   const weight = findings.reduce((a, f) => a + Math.max(0, f.w), 0);
+  // A domain can pass its OWN DMARC and still be a spoof: a lookalike / typosquat /
+  // homograph signal must veto the "likely legitimate" DMARC-pass shortcut, even when
+  // the signal's own weight is too low (e.g. a medium-severity link) to lift the score.
+  const spoof =
+    fromLook.impersonation || fromLook.near ||
+    !!(brandInName && fromReg && !fromReg.includes(brandInName)) ||
+    urlAnalyses.some((u) => u.lookalike && (u.lookalike.impersonation || u.lookalike.near)) ||
+    urlAnalyses.some((u) => (u.reasons || []).some((r) => /homograph|Punycode|Non-ASCII/.test(r.t)));
   return {
     mode: "email",
     from, fromDomain, fromReg, returnPath, replyTo, name, auth,
     subject: get("subject"), messageId: get("message-id"),
-    iocs, urlAnalyses,
+    iocs, urlAnalyses, spoof,
     findings: findings.sort((a, b) => b.w - a.w),
-    verdict: verdictFromWeight(weight, auth),
+    verdict: verdictFromWeight(weight, auth, spoof),
   };
 }
 
-export function verdictFromWeight(weight, auth) {
-  if (auth && auth.dmarc === "pass" && weight < 3) return { level: "likely-legitimate", label: "Likely legitimate", c: "#2f9e56" };
+export function verdictFromWeight(weight, auth, spoof) {
+  if (!spoof && auth && auth.dmarc === "pass" && weight < 3) return { level: "likely-legitimate", label: "Likely legitimate", c: "#2f9e56" };
   if (weight >= 8) return { level: "high-risk", label: "High risk — likely phishing", c: "#b00020" };
   if (weight >= 4) return { level: "suspicious", label: "Suspicious", c: "#d9480f" };
   if (weight >= 2) return { level: "caution", label: "Treat with caution", c: "#b58100" };
+  if (spoof) return { level: "caution", label: "Treat with caution — lookalike domain", c: "#b58100" };
   return { level: "low", label: "Low risk on observable signals", c: "#2f9e56" };
 }
 

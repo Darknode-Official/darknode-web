@@ -20,7 +20,6 @@ export const EXPLAIN = {
   "kpi.hot": { title: "Open critical and high", body: "How many critical or high severity findings in your security graph are still open (not resolved or closed). These drive most of the exposure score. Shows a dash until you have real findings.", src: "Your security graph. Sample and simulated data is excluded." },
   "kpi.exposure": { title: "Your exposure", body: "How exposed this workspace looks, from 0 to 100 (higher is worse). 65% comes from open critical and high findings in your security graph (25 or more counts as the maximum), 35% from how few integrations are connected. Shows a dash until you have real findings.", src: "Your security graph and integrations. Sample and simulated data is excluded. An indicator, not an audit." },
   "kpi.climate": { title: "Threat climate", body: "Global vulnerability pressure, the same for every customer: 60% is the share of the newest CVEs rated critical or high, 40% is the size of the CISA Known Exploited catalog. It does not describe your systems.", src: "NVD (latest 30 CVEs) and CISA KEV, fetched live." },
-  "kpi.conn": { title: "Integrations connected", body: "How many AI models and threat-intelligence sources you have linked. More connections means more enrichment and better coverage in the exposure score.", src: "Your connections, stored in this browser." },
   "kpi.tools": { title: "Tools available", body: "The number of tools in the Darknode catalog you can open from the Tool Library or Ctrl K search.", src: "The built-in tool catalog." },
   "kpi.graph": { title: "Graph entities", body: "Assets, findings, indicators and other records your tools have written to the security graph. Simulated and sample entities are not counted.", src: "The security graph in this browser." },
   "kpi.cve": { title: "New CVEs", body: "Vulnerabilities published to the National Vulnerability Database in the last 7 days.", src: "NVD, fetched live." },
@@ -107,6 +106,11 @@ export const EXPLAIN = {
   "sect.hot": { title: "Open critical / high", body: "Records in this section with critical or high severity that are not resolved or closed." },
   "sect.sources": { title: "Data sources connected", body: "How many of this section's key-based services you have connected. \"Public\" means it uses only free public sources that need no key; \"Local\" means its tools run in your browser on data you provide." },
   "sect.tools": { title: "Tools", body: "The number of tools listed under this section in the sidebar." },
+
+  // ---- Compliance dashboard ----
+  "comp.controls": { title: "Controls assessed", body: "How many control records your framework and self-assessment tools have written to the security graph. Each one is a control you have evaluated. Simulated and sample entities are excluded.", src: "The security graph in this browser. Self-reported, not an automated audit." },
+  "comp.frameworks": { title: "Frameworks mapped", body: "The number of distinct frameworks (such as NIST CSF, ISO 27001, SOC 2, PCI DSS, HIPAA or GDPR) referenced by your recorded controls and reports.", src: "Derived from your control and report records. Sample data is excluded." },
+  "comp.gaps": { title: "Open gaps", body: "Controls or reports with critical or high severity that are not yet resolved or closed — the compliance findings to close first.", src: "Your security graph. Sample and simulated data is excluded." },
 
   // ---- Badges and controls ----
   "badge.sample": { title: "Sample data", body: "Created by a simulation, war-game or built-in demo. Shown for context, excluded from every posture number." },

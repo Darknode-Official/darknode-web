@@ -148,9 +148,13 @@ function renderList(el) {
 
   el.querySelector("#il-list").onclick = function(e) {
     if (e.target.dataset.idel !== undefined) {
-      incidents.splice(parseInt(e.target.dataset.idel), 1);
-      saveIncidents(incidents);
-      renderFiltered();
+      var idel = parseInt(e.target.dataset.idel);
+      window.dnConfirm("Delete incident?", "This removes the incident and its timeline. This cannot be undone.").then(function(ok) {
+        if (!ok) return;
+        incidents.splice(idel, 1);
+        saveIncidents(incidents);
+        renderFiltered();
+      });
     }
     if (e.target.classList.contains("ev-add")) {
       var idx = parseInt(e.target.dataset.evidx);
@@ -300,9 +304,13 @@ function renderIOCs(el) {
   el.querySelector("#ioc-search").oninput = renderIOCList;
   el.querySelector("#ioc-list").onclick = function(e) {
     if (e.target.dataset.iocdel !== undefined) {
-      iocs.splice(parseInt(e.target.dataset.iocdel), 1);
-      saveIOCs(iocs);
-      renderIOCList();
+      var iocdel = parseInt(e.target.dataset.iocdel);
+      window.dnConfirm("Delete indicator?", "This removes the IOC from the list. This cannot be undone.").then(function(ok) {
+        if (!ok) return;
+        iocs.splice(iocdel, 1);
+        saveIOCs(iocs);
+        renderIOCList();
+      });
     }
   };
   el.querySelector("#ioc-export").onclick = function() {
@@ -527,9 +535,13 @@ function renderLessons(el) {
   };
   el.querySelector("#ll-list").onclick = function(e) {
     if (e.target.dataset.lldel !== undefined) {
-      lessons.splice(parseInt(e.target.dataset.lldel), 1);
-      try { localStorage.setItem("ir_lessons", JSON.stringify(lessons)); } catch (_) {}
-      renderLessonList();
+      var lldel = parseInt(e.target.dataset.lldel);
+      window.dnConfirm("Delete lesson?", "This removes the lessons-learned entry. This cannot be undone.").then(function(ok) {
+        if (!ok) return;
+        lessons.splice(lldel, 1);
+        try { localStorage.setItem("ir_lessons", JSON.stringify(lessons)); } catch (_) {}
+        renderLessonList();
+      });
     }
   };
 }
