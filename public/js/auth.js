@@ -2018,7 +2018,7 @@ function renderApp(user) {
     else if (sec === "accessreview") { import("/js/identity/access-review.js?v=20261014a").then(m => live() && m.renderAccessReview(main)); }
     else if (sec === "fwaudit") { import("/js/infra/firewall-audit.js?v=20261014a").then(m => live() && m.renderFirewallAudit(main)); }
     else if (sec === "loghunt") { import("/js/ops/log-hunter.js?v=20261014a").then(m => live() && m.renderLogHunter(main)); }
-    else if (sec === "payees") { import("/js/finsec/vendors.js?v=20261014c").then(m => live() && m.renderVendors(main)); }
+    else if (sec === "payees") { import("/js/finsec/vendors.js?v=20261014e").then(m => live() && m.renderVendors(main)); }
     else if (sec === "dlp") { import("/js/dataprotect/dlp.js?v=20261014d").then(m => live() && m.renderDlp(main)); }
     else if (sec === "posture") { import("/js/dataprotect/posture.js?v=20261014d").then(m => live() && m.renderPosture(main)); }
     else if (sec === "tlsfleet") { import("/js/dataprotect/tlsfleet.js?v=20261014c").then(m => live() && m.renderTlsFleet(main)); }

@@ -18,6 +18,26 @@ import {
   approveChange, rejectChange, refresh, canPay, screenFlags, markPaid, selfTest,
   HOLD_HOURS, WATCH_DAYS,
 } from "/js/finsec/vendor-engine.js?v=20261013m";
+import { buildIndex, screenName } from "/js/finsec/sanctions-engine.js?v=20261014d";
+
+// ── OFAC sanctions screening of payee names ──────────────────────────────
+// A payee register that doesn't check names against the sanctions list is a
+// control gap, so screen each payee against the same real OFAC SDN feed the
+// Sanctions tool uses. The index is large (~19k), so it loads once per session
+// and screening runs async; a hit shows as a flag (informational — it does not
+// auto-block payment, which stays a human decision, same honesty as the tool).
+let _sncIndex = null, _sncPromise = null;
+const _sncCache = new Map();
+const sancKey = (n) => String(n == null ? "" : n).trim().toLowerCase();
+function loadSncIndex() {
+  if (_sncIndex) return Promise.resolve(_sncIndex);
+  if (_sncPromise) return _sncPromise;
+  _sncPromise = fetch("/data/feeds/ofac-sdn.json", { cache: "default" })
+    .then((r) => (r.ok ? r.json() : null))
+    .then((feed) => { const e = feed && Array.isArray(feed.data) ? feed.data : null; _sncIndex = e && e.length ? buildIndex(e) : null; return _sncIndex; })
+    .catch(() => null);
+  return _sncPromise;
+}
 
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -182,12 +202,36 @@ export function renderVendors(main) {
       <thead><tr><th>Payee</th><th>Status</th><th class="vn-hide">Bank account</th><th>Can pay?</th><th>Flags</th></tr></thead>
       <tbody>${list.map(rowHtml).join("")}</tbody></table></div>`;
     body.querySelectorAll("tr[data-id]").forEach((tr) => tr.addEventListener("click", () => openDrawer(tr.dataset.id)));
+    ensureSanctions();
   }
+
+  // Screen any not-yet-screened payees against the OFAC SDN index, then re-render
+  // once so the hits appear. Re-entry is safe: once every name is cached, nothing
+  // new is added and the re-render is skipped (no loop).
+  async function ensureSanctions() {
+    try {
+      const idx = await loadSncIndex(); if (!idx) return;
+      let added = false;
+      for (const v of list) {
+        const k = sancKey(v.name); if (_sncCache.has(k)) continue;
+        const m = screenName(v.name, idx, { minScore: 70, limit: 1 })[0] || null;
+        let flag = null;
+        if (m) {
+          const level = m.band === "exact" ? "block" : m.band === "strong" ? "high" : "medium";
+          const word = m.band === "exact" ? "exact" : m.band === "strong" ? "strong" : "possible";
+          flag = { code: "ofac", level, text: "OFAC " + word + " match: " + (m.matchedName || m.name) + (m.program ? " (" + m.program + ")" : "") };
+        }
+        _sncCache.set(k, flag); added = true;
+      }
+      if (added) render();
+    } catch (_) {}
+  }
+  const withSanc = (v, flags) => { const f = _sncCache.get(sancKey(v.name)); return f ? flags.concat([f]) : flags; };
 
   function rowHtml(v) {
     const s = STATUS[v.status] || STATUS.pending;
     const pay = canPay(v);
-    const flags = screenFlags(v);
+    const flags = withSanc(v, screenFlags(v));
     return `<tr class="vn-clk" data-id="${esc(v.id)}">
       <td><b>${esc(v.name)}</b></td>
       <td><span class="vn-pill" style="background:${s.c}">${s.label}</span></td>
@@ -205,7 +249,7 @@ export function renderVendors(main) {
     refresh(v);
     const s = STATUS[v.status] || STATUS.pending;
     const pay = canPay(v);
-    const flags = screenFlags(v);
+    const flags = withSanc(v, screenFlags(v));
     const wrap = document.createElement("div"); wrap.className = "vn-draw"; wrap.id = "vnDraw";
     const pendingChange = v.change;
     wrap.innerHTML = `<div class="vn-drbox">
