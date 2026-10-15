@@ -61,7 +61,11 @@ export function showToast(message, type = "info", duration = 4000) {
   }
 
   // Cap the stack so it never runs off the screen.
-  while (container.children.length >= MAX_TOASTS) container.firstElementChild.remove();
+  while (container.children.length >= MAX_TOASTS) {
+    const victim = container.firstElementChild;
+    if (victim && victim._t) clearTimeout(victim._t);
+    victim.remove();
+  }
 
   const c = COLORS[type] || COLORS.info;
   const el = document.createElement("div");

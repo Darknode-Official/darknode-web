@@ -36,7 +36,7 @@ import { consoleHTML, directoryHTML, wireConsole, labelOf as navLabel, groupOf a
 // tool code (js/tools/*), which loads when the Toolbox opens.
 import { TOOL_META as _MINI_TOOLS } from "/js/tools-manifest.js?v=20261006a";
 const MINI_COUNT = _MINI_TOOLS.length;
-import { showToast } from "/js/toast.js?v=20260924a";
+import { showToast } from "/js/toast.js?v=20261014h";
 // Expose the toast helper globally: inline handlers and dynamically-imported
 // tool modules call window.showToast rather than importing it.
 try { window.showToast = showToast; } catch (_) {}
@@ -1865,7 +1865,7 @@ function renderApp(user) {
     if (sec && sec !== "home" && sec !== "settings") { try { let r = JSON.parse(localStorage.getItem("dn_recent")||"[]"); r = r.filter(s=>s!==sec); r.unshift(sec); r = r.slice(0,8); localStorage.setItem("dn_recent", JSON.stringify(r)); } catch(_){} }
     if (sec === "tools") { main.innerHTML = `<div class="pg-head"><div><h1 class="pg-h1">Tools</h1><p class="muted pg-sub">Search, filter, and open any tool in the catalog.</p></div></div><div id="tools"></div>`; import("/js/tools.js?v=20261013c").then(m => live() && m.renderTools(document.getElementById("tools"))); }
     else if (sec === "utils") { import("/js/utils.js?v=20261013m").then(m => live() && m.renderUtils(main)); }
-    else if (sec === "ai") { import("/js/webai.js?v=20261013h").then(m => live() && m.renderAI(main)); }
+    else if (sec === "ai") { import("/js/webai.js?v=20261014h").then(m => live() && m.renderAI(main)); }
     else if (sec === "math") { _prevCleanup = renderQuelvra(main, more); }
     else if (sec === "payloads") { import("/js/labs.js?v=20261003a").then(m => live() && m.renderPayloads(main)); }
     else if (sec === "targets") { import("/js/labs.js?v=20261003a").then(m => live() && m.renderTargets(main)); }
@@ -2004,7 +2004,7 @@ function renderApp(user) {
     else if (sec === "asnexplorer") { import("/js/asn-explorer.js?v=20261013b").then(m => live() && m.renderAsnExplorer(main)); }
     else if (sec === "breachlookup") { import("/js/breach-lookup.js").then(m => live() && m.renderBreachLookup(main)); }
     else if (sec === "corstester") { import("/js/cors-tester.js?v=20261013m").then(m => live() && m.renderCorsTester(main)); }
-    else if (sec === "cvesearch") { import("/js/cve-search.js?v=20261013b").then(m => live() && m.renderCveSearch(main)); }
+    else if (sec === "cvesearch") { import("/js/cve-search.js?v=20261014h").then(m => live() && m.renderCveSearch(main)); }
     else if (sec === "darknetradar") { import("/js/darknet-radar.js?v=20261013c").then(m => live() && m.renderDarknetRadar(main)); }
     else if (sec === "dnsenum") { import("/js/dns-enum.js?v=20260927b").then(m => live() && m.renderDNSEnum(main)); }
     else if (sec === "dnsrecon") { import("/js/dns-recon.js?v=20261013b").then(m => live() && m.renderDNSRecon(main)); }
@@ -2350,17 +2350,15 @@ function renderApp(user) {
   });
 
   // Topbar live ops strip — fills the empty center of the header with a status
-  // line, a ticking UTC clock, headline threat metrics and quick launchers.
+  // line, a ticking UTC clock, real security-graph posture metrics and quick launchers.
   const tbCenter = document.getElementById("topbar-center");
   if (tbCenter) {
     tbCenter.innerHTML = `
       <span class="tbx tbx-status" title="All systems operational"><span class="tbx-dot"></span>OPERATIONAL</span>
       <span class="tbx-sep tbx-amb"></span>
       <span class="tbx tbx-clock tbx-amb" id="tb-clock" title="System time (UTC)">--:--:-- UTC</span>
-      <span class="tbx-sep tbx-amb"></span>
-      <span class="tbx tbx-amb" title="Active threats being tracked"><b>17</b>&nbsp;threats</span>
-      <span class="tbx tbx-amb" title="Advanced Persistent Threat groups monitored"><b>38</b>&nbsp;APTs</span>
-      <span class="tbx tbx-defcon tbx-amb" title="Current defense readiness posture">DEFCON 3</span>
+      <span class="tbx-sep tbx-amb" id="tb-posture-sep" hidden></span>
+      <span class="tbx tbx-amb" id="tb-posture" title="Open findings in your security graph (real data only)" hidden></span>
       <span class="tbx-sep"></span>
       <div class="tb-pop-wrap">
         <button class="tbx tbx-btn tb-pop-btn" data-pop="tbCreate" title="Quick create" aria-haspopup="true">+ New</button>
@@ -2374,14 +2372,10 @@ function renderApp(user) {
         </div>
       </div>
       <div class="tb-pop-wrap">
-        <button class="tbx tbx-btn tb-pop-btn" data-pop="tbAlerts" title="Live alerts" aria-haspopup="true">Alerts <span class="tb-badge" id="tbAlertBadge">3</span></button>
+        <button class="tbx tbx-btn tb-pop-btn" data-pop="tbAlerts" title="High-severity findings in your security graph" aria-haspopup="true">Alerts <span class="tb-badge" id="tbAlertBadge" style="display:none"></span></button>
         <div class="tb-pop tb-pop-wide" id="tbAlerts" hidden>
-          <div class="tb-pop-h">Live alerts <button class="tb-pop-clear" id="tbAlertClear">Mark all read</button></div>
-          <div id="tbAlertList">
-            <button class="tb-alert" data-goto="networktraffic"><span class="tb-alert-sev high">HIGH</span><div><b>Anomalous outbound traffic</b><span>198.51.100.23 &middot; 3 min ago</span></div></button>
-            <button class="tb-alert" data-goto="vulntriage"><span class="tb-alert-sev med">MED</span><div><b>New CVE affecting a tracked stack</b><span>CVE-2026-38292 &middot; 21 min ago</span></div></button>
-            <button class="tb-alert" data-goto="citadel"><span class="tb-alert-sev low">LOW</span><div><b>Failed-auth burst auto-mitigated</b><span>auth-gateway &middot; 1 hr ago</span></div></button>
-          </div>
+          <div class="tb-pop-h">High-severity findings <button class="tb-pop-clear" id="tbAlertClear">Mark all read</button></div>
+          <div id="tbAlertList"></div>
         </div>
       </div>
       <button class="tbx tbx-btn" id="tbFocus" title="Focus mode — hide the sidebar &amp; chrome" aria-pressed="false">Focus</button>
@@ -2404,6 +2398,60 @@ function renderApp(user) {
     try { if (window._tbClock) clearInterval(window._tbClock); } catch (_) {}
     const tick = () => { const el = document.getElementById("tb-clock"); if (el) el.textContent = new Date().toISOString().slice(11, 19) + " UTC"; };
     tick(); try { window._tbClock = setInterval(tick, 1000); } catch (_) {}
+
+    // Posture metric + alerts come from the real security graph (posture.js excludes
+    // simulated/sample entities). No hardcoded numbers — empty graph shows nothing.
+    const tbRelTime = (iso) => {
+      const t = Date.parse(iso); if (!isFinite(t)) return "";
+      const d = Date.now() - t;
+      if (d < 60000) return "just now";
+      if (d < 3600000) return Math.floor(d / 60000) + "m ago";
+      if (d < 86400000) return Math.floor(d / 3600000) + "h ago";
+      return Math.floor(d / 86400000) + "d ago";
+    };
+    const refreshTbOps = () => {
+      Promise.all([import("/js/security-graph.js"), import("/js/core/posture.js")]).then(([sg, P]) => {
+        let list; try { list = sg.listEntities(); } catch (_) { list = []; }
+        const st = P.postureStats(list);
+        const sev = st.bySeverity || {};
+        const crit = sev.critical || 0, high = sev.high || 0, open = crit + high;
+        const postEl = document.getElementById("tb-posture");
+        const postSep = document.getElementById("tb-posture-sep");
+        if (postEl) {
+          if (st.totalEntities === 0) { postEl.hidden = true; if (postSep) postSep.hidden = true; }
+          else {
+            postEl.hidden = false; if (postSep) postSep.hidden = false;
+            postEl.innerHTML = "<b>" + open + "</b>&nbsp;open &middot; <b>" + st.totalEntities + "</b> tracked";
+            postEl.title = open + " open findings (critical " + crit + ", high " + high + ") across " + st.totalEntities + " real entities in your security graph";
+          }
+        }
+        const alerts = P.realEntities(list)
+          .filter((e) => e.severity === "critical" || e.severity === "high")
+          .sort((a, b) => String(b.updatedAt || "").localeCompare(String(a.updatedAt || "")))
+          .slice(0, 8);
+        const listEl = document.getElementById("tbAlertList");
+        const badge = document.getElementById("tbAlertBadge");
+        if (listEl) {
+          if (!alerts.length) {
+            listEl.innerHTML = '<div class="tb-alert-empty">No open high-severity findings. Run a scan or open an investigation to populate this.</div>';
+          } else {
+            listEl.innerHTML = alerts.map((e) => {
+              const cls = e.severity === "critical" ? "high" : "med";
+              const lbl = e.severity === "critical" ? "CRIT" : "HIGH";
+              const when = tbRelTime(e.updatedAt);
+              return '<button class="tb-alert" data-goto="secgraph"><span class="tb-alert-sev ' + cls + '">' + lbl + "</span><div><b>" + esc(e.name || e.type) + "</b><span>" + esc(e.type) + (when ? " &middot; " + when : "") + "</span></div></button>";
+            }).join("");
+            listEl.querySelectorAll("[data-goto]").forEach((b) => b.addEventListener("click", () => { closeTbPops(); show(b.dataset.goto); }));
+          }
+        }
+        if (badge) { if (alerts.length) { badge.textContent = String(alerts.length); badge.style.display = ""; } else { badge.style.display = "none"; } }
+      }).catch(() => {});
+    };
+    refreshTbOps();
+    try { if (window._tbOpsHandler) ["secgraph:entity:created", "secgraph:entity:updated", "secgraph:entity:deleted"].forEach((n) => document.removeEventListener(n, window._tbOpsHandler)); } catch (_) {}
+    let tbOpsT = 0;
+    window._tbOpsHandler = () => { clearTimeout(tbOpsT); tbOpsT = setTimeout(refreshTbOps, 400); };
+    ["secgraph:entity:created", "secgraph:entity:updated", "secgraph:entity:deleted"].forEach((n) => document.addEventListener(n, window._tbOpsHandler));
   }
 
   appShow = show;

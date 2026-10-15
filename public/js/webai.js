@@ -523,6 +523,7 @@ export function renderAI(main) {
 ${E} .ai2-shell{max-width:none;gap:16px;height:calc(100vh - 40px)}
 ${E} :is(.ai2,.ai2-hist){height:calc(100vh - 40px)!important;min-height:0!important}
 ${E} .ai2-hist{background:rgba(0,0,0,.025)!important;border:1px solid rgba(0,0,0,.1)!important;border-radius:14px!important;box-shadow:none!important}
+${E} .ai2-shell.hist-open::before{display:none!important}
 ${E} .ai2-shell .ai2>:is(.ai2-main,.ai2-dock){max-width:760px}
 ${E} .ai2-shell:has(.ai-empty) .ai2{justify-content:center}
 ${E} .ai2-shell:has(.ai-empty) .ai2-main{flex:0 0 auto;overflow:visible;padding:0!important}
