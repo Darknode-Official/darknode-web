@@ -324,7 +324,7 @@ function toOpenAiBody(model, messages) {
   return { model, messages: msgs, stream: true };
 }
 
-function toGeminiBody(messages, useSearch) {
+function toGeminiBody(messages, useSearch, thinkingBudget) {
   const sys = (messages || []).find((m) => m.role === "system");
   const contents = (messages || []).filter((m) => m.role !== "system").map((m) => {
     const parts = [];
@@ -335,6 +335,12 @@ function toGeminiBody(messages, useSearch) {
   const body = { contents };
   if (sys && sys.content) body.systemInstruction = { parts: [{ text: sys.content }] };
   if (useSearch) body.tools = [{ google_search: {} }];
+  // Newer Gemini Flash models run a "thinking" pass by default that adds several
+  // seconds before the first token — too slow for conversational chat. A budget of
+  // 0 turns it off; a negative budget means "omit this and let the model decide".
+  if (typeof thinkingBudget === "number" && thinkingBudget >= 0) {
+    body.generationConfig = { thinkingConfig: { thinkingBudget } };
+  }
   return body;
 }
 
@@ -351,7 +357,15 @@ async function callUpstream(cfg, env, model, messages, key, opts = {}) {
   if (!isGemini && key) headers["Authorization"] = "Bearer " + key;
   if (cfg.headers) Object.assign(headers, cfg.headers);
   let search = isGemini && opts.search !== false;
-  const build = () => JSON.stringify(isGemini ? toGeminiBody(messages, search) : toOpenAiBody(model, messages));
+  // Keep chat snappy: disable Gemini's default "thinking" pass (seconds of latency
+  // before the first token) for plain replies. Grounded answers keep thinking since
+  // recency questions benefit from it. Owner can override with GEMINI_THINKING_BUDGET
+  // (a token budget; a negative value restores the model's own dynamic thinking).
+  const envBudget = env && env.GEMINI_THINKING_BUDGET != null && env.GEMINI_THINKING_BUDGET !== ""
+    ? parseInt(env.GEMINI_THINKING_BUDGET, 10) : 0;
+  let budget = Number.isFinite(envBudget) ? envBudget : 0;
+  if (search) budget = -1;
+  const build = () => JSON.stringify(isGemini ? toGeminiBody(messages, search, budget) : toOpenAiBody(model, messages));
   let upstream;
   for (let attempt = 0; attempt < 3; attempt++) {
     upstream = await fetch(url, { method: "POST", headers, body: build() });
@@ -359,6 +373,8 @@ async function callUpstream(cfg, env, model, messages, key, opts = {}) {
     // 400/403 or 429 (RESOURCE_EXHAUSTED). Drop the tool and retry plain so the
     // answer still comes back; it activates automatically on a grounding-capable key.
     if (!upstream.ok && search && (upstream.status === 400 || upstream.status === 403 || upstream.status === 429)) { search = false; continue; }
+    // A model that doesn't accept thinkingConfig rejects with 400; drop it and retry.
+    if (!upstream.ok && isGemini && budget >= 0 && upstream.status === 400) { budget = -1; continue; }
     const retriable = upstream.status === 429 || upstream.status === 503;
     if (upstream.ok || !retriable) break;
     await new Promise((r) => setTimeout(r, 700 * (attempt + 1)));
