@@ -1745,11 +1745,13 @@ testing methodology for 10.10.14.7:
           createdAt: serverTimestamp()
         });
         notifyMsg.textContent = "You are on the list. We will email you when Pro launches.";
+        notifyMsg.classList.remove("cta-reassure-err");
         notifyMsg.classList.add("cta-reassure-ok");
         notifyEmail.value = "";
         notifyBtn.textContent = "Done";
       } catch (err) {
         notifyMsg.textContent = "Something went wrong. Please try again.";
+        notifyMsg.classList.remove("cta-reassure-ok");
         notifyMsg.classList.add("cta-reassure-err");
         notifyBtn.disabled = false;
         notifyBtn.textContent = "Notify me";
