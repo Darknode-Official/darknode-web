@@ -462,6 +462,7 @@ const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
 // confirm, or null on cancel.
 function dnModal({ title, desc, fields = [], submitText = "Confirm", cancelText = "Cancel", danger = false } = {}) {
   return new Promise((resolve) => {
+    const prevFocus = document.activeElement;
     const ov = document.createElement("div");
     ov.className = "dn-modal-ov";
     ov.innerHTML = `<div class="dn-modal" role="dialog" aria-modal="true" aria-label="${esc(title || "Dialog")}">
@@ -481,13 +482,29 @@ function dnModal({ title, desc, fields = [], submitText = "Confirm", cancelText 
     document.body.appendChild(ov);
     requestAnimationFrame(() => ov.classList.add("open"));
     const vals = () => fields.map((_, i) => { const el = ov.querySelector(`[data-f="${i}"]`); return el ? el.value : ""; });
-    const close = (r) => { ov.classList.remove("open"); document.removeEventListener("keydown", onKey); setTimeout(() => ov.remove(), 150); resolve(r); };
+    const close = (r) => { ov.classList.remove("open"); document.removeEventListener("keydown", onKey); setTimeout(() => ov.remove(), 150); if (prevFocus && typeof prevFocus.focus === "function" && document.contains(prevFocus)) { try { prevFocus.focus(); } catch (_) {} } resolve(r); };
     ov.querySelector("[data-ok]").onclick = () => close(fields.length ? vals() : true);
     ov.querySelector("[data-cancel]").onclick = () => close(fields.length ? null : false);
     ov.addEventListener("mousedown", (e) => { if (e.target === ov) close(fields.length ? null : false); });
-    const onKey = (e) => { if (e.key === "Escape") close(fields.length ? null : false); if (e.key === "Enter" && (e.metaKey || e.ctrlKey || !fields.some((f) => f.type === "textarea"))) { if (e.key === "Enter") { e.preventDefault(); close(fields.length ? vals() : true); } } };
+    // Only the topmost modal reacts to keys, so a stacked dialog's Escape/Enter never
+    // dismisses the one beneath it. Tab is trapped inside the dialog (it is aria-modal).
+    const onKey = (e) => {
+      const all = document.querySelectorAll(".dn-modal-ov");
+      if (all.length && all[all.length - 1] !== ov) return;
+      if (e.key === "Escape") { close(fields.length ? null : false); return; }
+      if (e.key === "Tab") {
+        const f = [...ov.querySelectorAll("button, input, textarea, select")].filter((el) => !el.disabled && el.offsetParent !== null);
+        if (!f.length) return;
+        const first = f[0], last = f[f.length - 1];
+        if (!ov.contains(document.activeElement)) { e.preventDefault(); first.focus(); }
+        else if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+        return;
+      }
+      if (e.key === "Enter" && (e.metaKey || e.ctrlKey || !fields.some((f) => f.type === "textarea"))) { e.preventDefault(); close(fields.length ? vals() : true); }
+    };
     document.addEventListener("keydown", onKey);
-    const first = ov.querySelector("[data-f]"); if (first) { first.focus(); try { first.setSelectionRange(first.value.length, first.value.length); } catch (_) {} }
+    const first = ov.querySelector("[data-f]") || ov.querySelector("[data-ok]"); if (first) { first.focus(); try { first.setSelectionRange(first.value.length, first.value.length); } catch (_) {} }
   });
 }
 try {
