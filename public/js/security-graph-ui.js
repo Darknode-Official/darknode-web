@@ -67,7 +67,9 @@ export function renderSecurityGraphUI(main) {
 .sgu-empty-title{font-size:1.1rem;font-weight:700;margin-bottom:8px;color:var(--txt,#0f172a)}
 .sgu-pagination{display:flex;justify-content:center;gap:8px;margin-top:20px}
 .sgu-page-btn{padding:6px 14px;border:1px solid var(--brd,#e2e8f0);border-radius:6px;font-size:.82rem;cursor:pointer;background:var(--card-bg,#fff);color:var(--txt,#0f172a)}
-.sgu-page-btn:hover,.sgu-page-btn.active{background:var(--acc,#2563eb);color:#fff;border-color:var(--acc,#2563eb)}
+.sgu-page-btn:hover:not([disabled]),.sgu-page-btn.active{background:var(--acc,#2563eb);color:#fff;border-color:var(--acc,#2563eb)}
+.sgu-page-btn[disabled]{opacity:.45;cursor:default}
+.sgu-page-of{display:flex;align-items:center;font-size:.78rem;color:var(--mut,#64748b);margin-left:4px}
 .sgu-type-grid{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
 .sgu-type-pill{padding:4px 12px;border-radius:4px;font-size:.74rem;font-weight:600;cursor:pointer;border:1px solid var(--brd,#e2e8f0);background:var(--card-bg,#fff);color:var(--txt,#0f172a);transition:all .15s}
 .sgu-type-pill:hover,.sgu-type-pill.active{color:#fff}
@@ -217,13 +219,19 @@ html[data-style="dark"] .sgu-select,html[data-style="classic"] .sgu-select{backg
                 </div>`;
             }).join('')}
           </div>
-          ${totalPages > 1 ? `
-            <div class="sgu-pagination">
-              ${Array.from({ length: Math.min(totalPages, 10) }, (_, i) =>
-                `<button class="sgu-page-btn${i === _page ? ' active' : ''}" data-page="${i}">${i + 1}</button>`
-              ).join('')}
-            </div>
-          ` : ''}
+          ${totalPages > 1 ? (() => {
+            // Sliding window of page buttons + Prev/Next, so every page stays
+            // reachable even past 10 (a fixed cap used to strand later pages).
+            const WIN = 9;
+            let start = Math.max(0, Math.min(_page - Math.floor(WIN / 2), totalPages - WIN));
+            const end = Math.min(totalPages, start + WIN);
+            const btn = (p, label, on, dis) =>
+              `<button class="sgu-page-btn${on ? ' active' : ''}" data-page="${p}"${dis ? ' disabled' : ''}>${label}</button>`;
+            let b = btn(_page - 1, 'Prev', false, _page === 0);
+            for (let i = start; i < end; i++) b += btn(i, i + 1, i === _page, false);
+            b += btn(_page + 1, 'Next', false, _page >= totalPages - 1);
+            return `<div class="sgu-pagination">${b}<span class="sgu-page-of">Page ${_page + 1} of ${totalPages}</span></div>`;
+          })() : ''}
         `)}
       </div>`;
 
@@ -244,7 +252,7 @@ html[data-style="dark"] .sgu-select,html[data-style="classic"] .sgu-select{backg
     });
 
     main.querySelectorAll('.sgu-page-btn').forEach(btn => {
-      btn.onclick = () => { _page = parseInt(btn.dataset.page); render(); };
+      btn.onclick = () => { if (btn.disabled) return; _page = Math.max(0, Math.min(totalPages - 1, parseInt(btn.dataset.page) || 0)); render(); };
     });
 
     main.querySelectorAll('[data-action="view"]').forEach(btn => {

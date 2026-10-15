@@ -292,7 +292,7 @@ export function renderVault(main) {
         <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:baseline">
           <span class="pill" style="--c:${c}">${esc(t.status)}</span>
           <b>${esc(fmtCents(t.amount))}</b>
-          <span class="vsub" style="margin:0">${esc(L.accounts.get(t.from).name)} &rarr; ${esc(L.accounts.get(t.to).name)}${t.payee ? " · " + esc(t.payee) : ""}</span>
+          <span class="vsub" style="margin:0">${esc(L.accounts.get(t.from) ? L.accounts.get(t.from).name : t.from)} &rarr; ${esc(L.accounts.get(t.to) ? L.accounts.get(t.to).name : t.to)}${t.payee ? " · " + esc(t.payee) : ""}</span>
           <span class="vsub" style="margin:0 0 0 auto">by ${esc(who(t.by))} · approvals ${t.approvers.length}/${t.required}</span>
         </div>
         ${t.memo ? `<div class="vsub" style="margin:4px 0">${esc(t.memo)}</div>` : ""}
