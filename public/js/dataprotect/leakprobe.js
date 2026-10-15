@@ -81,6 +81,13 @@ function injectStyle() {
   .lp th{font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;color:var(--mut,#667085);font-weight:700;white-space:nowrap}
   .lp .lp-pill{display:inline-block;padding:1px 8px;border-radius:999px;font-size:.7rem;font-weight:700;color:#fff}
   .lp code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.78rem;background:var(--bg,#f3f5f9);padding:1px 5px;border-radius:5px}
+  .lp .lp-secret{display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap;max-width:100%}
+  .lp .lp-sv{word-break:break-all;max-width:46ch;overflow-wrap:anywhere}
+  .lp .lp-rv,.lp .lp-cp{font:inherit;font-size:.7rem;line-height:1;padding:3px 7px;border:1px solid var(--line,#d7dbe6);border-radius:5px;background:transparent;color:var(--mut,#667085);cursor:pointer}
+  .lp .lp-rv:hover,.lp .lp-cp:hover{color:var(--txt,#141c2e);border-color:var(--acc,#2552c6)}
+  .lp .lp-keylist{margin:8px 0 2px;display:flex;flex-direction:column;gap:6px}
+  .lp .lp-keylist>div{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .lp .lp-kw{font-size:.72rem;color:var(--mut,#667085)}
   .lp .lp-empty{color:var(--mut,#667085);font-size:.85rem;padding:6px 2px}
   .lp .lp-note{font-size:.78rem;color:var(--mut,#667085);margin-top:14px;line-height:1.5;border-top:1px solid var(--line,#eef0f5);padding-top:12px}
   `;
@@ -112,7 +119,7 @@ export function renderLeakprobe(main) {
   main.innerHTML = `
   <div class="lp">
     <div class="lp-hd"><h1>Secret Exposure &amp; Backend Leak Scanner</h1><span class="lp-tag">LEAKPROBE</span></div>
-    <p class="lp-sub">Prove whether a real secret — an API key, a token, your Gemini key — can be reached from the browser, or is kept server-side. It fetches everything the page downloads (scripts, module graph, source maps, config, service worker), scans each for secrets, then GET-probes your backend endpoints, their error pages and common debug routes. Secrets are masked; nothing is uploaded and no key is ever spent to test it.</p>
+    <p class="lp-sub">Prove whether a real secret — an API key, a token, your Gemini key — can be reached from the browser, or is kept server-side. It fetches everything the page downloads (scripts, module graph, source maps, config, service worker), scans each for secrets, then GET-probes your backend endpoints, their error pages and common debug routes. The exact key values it finds are shown here (this is your own property); use Hide for screenshots. Nothing is uploaded, downloaded reports keep only a masked value, and no key is ever spent to test it.</p>
 
     <div class="lp-card">
       <div class="lp-consent">
@@ -132,7 +139,7 @@ export function renderLeakprobe(main) {
       <div class="lp-row">
         <label class="lp-lab" for="lpSecrets" data-explain="lp.secrets">Secrets to track (optional)</label>
         <textarea id="lpSecrets" placeholder="Optional — paste a key to confirm by exact match" spellcheck="false"></textarea>
-        <p class="lp-help">You do not need to paste anything. The scan already detects every API key on its own — Google (AIza…), OpenAI (sk-…), Anthropic (sk-ant-…), AWS, Stripe, GitHub, Slack, Twilio, SendGrid, private keys and JWTs — without you knowing or entering the key. This field only adds an exact-match needle for one specific key you want confirmed by name; it is kept in memory, masked in the report, and never stored or sent anywhere but your own proxy to your own target.</p>
+        <p class="lp-help">You do not need to paste anything. The scan already detects every API key on its own — Google (AIza…), OpenAI (sk-…), Anthropic (sk-ant-…), AWS, Stripe, GitHub, Slack, Twilio, SendGrid, private keys and JWTs — without you knowing or entering the key. This field only adds an exact-match needle for one specific key you want confirmed by name; it is kept in memory, shown here in full with a one-click Hide, masked only in the downloaded report, and never stored or sent anywhere but your own proxy to your own target.</p>
       </div>
       <div class="lp-bar">
         <button class="lp-btn" id="lpRun" disabled>Run exposure scan</button>
@@ -291,7 +298,29 @@ export function renderLeakprobe(main) {
 
 /* ------------------------------------------------------------- rendering */
 
+// One delegated listener per results container: Hide/Reveal a secret value and
+// Copy the exact value. Bound once; survives the innerHTML swaps on each run.
+function bindSecretToggles(out) {
+  if (out.__lpBound) return;
+  out.__lpBound = true;
+  out.addEventListener("click", (e) => {
+    const rv = e.target.closest(".lp-rv");
+    if (rv) {
+      const c = out.querySelector("#" + rv.dataset.t);
+      if (c) { const shown = c.dataset.shown === "1"; c.textContent = shown ? c.dataset.masked : c.dataset.full; c.dataset.shown = shown ? "0" : "1"; rv.textContent = shown ? "Reveal" : "Hide"; }
+      return;
+    }
+    const cp = e.target.closest(".lp-cp");
+    if (cp) {
+      const c = out.querySelector("#" + cp.dataset.t);
+      if (c && navigator.clipboard) navigator.clipboard.writeText(c.dataset.full).then(() => toast("Copied the exact value"), () => {});
+      return;
+    }
+  });
+}
+
 function renderReport(out, R) {
+  bindSecretToggles(out);
   const { target, needles, findings, assetRows, backendRows, routeHits, services = [], firebase = null, auth = null } = R;
   const score = scoreExposure(findings);
   const secretFindings = findings.filter((f) => f.kind === "secret");
@@ -318,7 +347,7 @@ function renderReport(out, R) {
   const hardAiClient = hardAiKeys.filter(onClient);
   if (hardAiKeys.length) {
     const v = classifyPlacement(hardAiKeys);
-    html += renderVerdict("AI / model API keys", v.label, hardAiKeys.length + " key value(s) observed (OpenAI / Anthropic / Google OAuth). " + v.reason, v.level);
+    html += renderVerdict("AI / model API keys", v.label, hardAiKeys.length + " key value(s) observed (OpenAI / Anthropic / Google OAuth):" + keyList(hardAiKeys) + " " + v.reason, v.level);
   } else {
     html += renderVerdict("AI / model API keys", "None exposed", "No OpenAI (sk-…), Anthropic (sk-ant-…) or Google OAuth client secret was observed in the client bundle or any backend response.", "pass");
   }
@@ -330,7 +359,7 @@ function renderReport(out, R) {
       "Google API key (AIza…)",
       client ? "In client bundle — review" : "Observed server-side",
       client
-        ? (client + " Google API key(s) in the client bundle. If this is your Firebase Web config key it is expected and public — restrict it by HTTP referrer and enabled APIs in the Cloud console. If it is a Gemini / Generative Language key, it must move server-side and be rotated. Paste your exact Gemini key in “Secrets to track” to resolve this definitively.")
+        ? (client + " Google API key(s) in the client bundle:" + keyList(googleKeys.filter(onClient)) + " If this is your Firebase Web config key it is expected and public — restrict it by HTTP referrer and enabled APIs in the Cloud console. If it is a Gemini / Generative Language key, it must move server-side and be rotated.")
         : "A Google API key was seen only in a backend response, not the client bundle.",
       client ? "warning" : "pass",
     );
@@ -371,9 +400,9 @@ function renderReport(out, R) {
       const k = f.id + "|" + f.masked + "|" + f.where; if (seen.has(k)) continue; seen.add(k);
       const cl = classifyKey(f);
       const expPill = cl.insecure ? pill("critical") : cl.exposure === "secret" ? pill("high") : cl.exposure === "public" ? pill("pass") : pill("medium");
-      rows.push(`<tr><td>${esc(cl.provider)}</td><td><code>${esc(f.masked || "")}</code></td><td>${esc(whereLabel(f.where))}</td><td>${expPill} ${esc(cl.insecure ? "Insecure" : cl.exposure)}</td><td>${esc(cl.note)}</td></tr>`);
+      rows.push(`<tr><td>${esc(cl.provider)}</td><td>${secretCell(f)}</td><td>${esc(whereLabel(f.where))}</td><td>${expPill} ${esc(cl.insecure ? "Insecure" : cl.exposure)}</td><td>${esc(cl.note)}</td></tr>`);
     }
-    html += `<h2>API keys &amp; credentials (${rows.length})</h2><div class="lp-card" style="padding:0;overflow:hidden"><table><thead><tr><th>Provider</th><th>Value (masked)</th><th>Where</th><th>Exposure</th><th>Guidance</th></tr></thead><tbody>${rows.join("")}</tbody></table></div>`;
+    html += `<h2>API keys &amp; credentials (${rows.length})</h2><div class="lp-card" style="padding:0;overflow:hidden"><table><thead><tr><th>Provider</th><th>Value</th><th>Where</th><th>Exposure</th><th>Guidance</th></tr></thead><tbody>${rows.join("")}</tbody></table></div>`;
   }
 
   // ---- Auth / session intelligence (honest about limits) ----
@@ -404,8 +433,8 @@ function renderReport(out, R) {
   const evid = findings.slice().sort((a, b) => sevRank(b.severity) - sevRank(a.severity)).slice(0, 200);
   if (evid.length) {
     html += `<h2>Evidence (${findings.length} finding${findings.length === 1 ? "" : "s"}${findings.length > 200 ? ", showing 200" : ""})</h2>`;
-    html += `<div class="lp-card" style="padding:0;overflow:hidden"><table><thead><tr><th>Severity</th><th>Type</th><th>Where</th><th>Value (masked)</th><th>Location</th></tr></thead><tbody>${
-      evid.map((f) => `<tr><td>${pill(f.severity)}</td><td>${esc(f.label)}</td><td>${esc(whereLabel(f.where))}</td><td><code>${esc(f.masked || "")}</code></td><td><code>${esc(short(f.source || "", 48))}${f.line ? ":" + f.line : ""}</code></td></tr>`).join("")}</tbody></table></div>`;
+    html += `<div class="lp-card" style="padding:0;overflow:hidden"><table><thead><tr><th>Severity</th><th>Type</th><th>Where</th><th>Value</th><th>Location</th></tr></thead><tbody>${
+      evid.map((f) => `<tr><td>${pill(f.severity)}</td><td>${esc(f.label)}</td><td>${esc(whereLabel(f.where))}</td><td>${secretCell(f)}</td><td><code>${esc(short(f.source || "", 48))}${f.line ? ":" + f.line : ""}</code></td></tr>`).join("")}</tbody></table></div>`;
   }
 
   // backend
@@ -624,8 +653,8 @@ function renderCapture(out, { records, findings }) {
 
   if (findings.length) {
     const evid = findings.slice().sort((a, b) => sevRank(b.severity) - sevRank(a.severity)).slice(0, 120);
-    html += `<h2>Findings in captured traffic</h2><div class="lp-card" style="padding:0;overflow:hidden"><table><thead><tr><th>Severity</th><th>Type</th><th>Where</th><th>Value (masked)</th><th>Source</th></tr></thead><tbody>${
-      evid.map((f) => `<tr><td>${pill(f.severity)}</td><td>${esc(f.label)}</td><td>${esc(whereLabel(f.where))}</td><td><code>${esc(f.masked || "")}</code></td><td><code>${esc(short(f.source || "", 50))}</code></td></tr>`).join("")}</tbody></table></div>`;
+    html += `<h2>Findings in captured traffic</h2><div class="lp-card" style="padding:0;overflow:hidden"><table><thead><tr><th>Severity</th><th>Type</th><th>Where</th><th>Value</th><th>Source</th></tr></thead><tbody>${
+      evid.map((f) => `<tr><td>${pill(f.severity)}</td><td>${esc(f.label)}</td><td>${esc(whereLabel(f.where))}</td><td>${secretCell(f)}</td><td><code>${esc(short(f.source || "", 50))}</code></td></tr>`).join("")}</tbody></table></div>`;
   }
   out.innerHTML = html;
 }
@@ -641,6 +670,27 @@ function dedupe(a) { return [...new Set(a.filter(Boolean))]; }
 function kpi(n, l) { return `<div class="lp-kpi"><div class="n">${n}</div><div class="l">${esc(l)}</div></div>`; }
 function sevRank(s) { return { critical: 4, high: 3, medium: 2, low: 1 }[s] || 0; }
 function short(s, n = 56) { s = String(s || ""); return s.length > n ? s.slice(0, n - 1) + "…" : s; }
+
+// Renders a secret value shown in full (this is an admin-only scan of your own
+// property — the whole point is to prove the exact key is reachable) with a
+// one-click Hide toggle and Copy. The masked form is kept so Hide can restore it,
+// and exported reports still carry only the masked value.
+let _lpSn = 0;
+function secretCell(f) {
+  const full = String(f.value || f.masked || "");
+  const masked = String(f.masked || full);
+  const id = "lps" + (++_lpSn);
+  const hasMask = masked && masked !== full;
+  return '<span class="lp-secret"><code class="lp-sv" id="' + id + '" data-full="' + esc(full) + '" data-masked="' + esc(masked) + '" data-shown="1">' + esc(full) + '</code>'
+    + (hasMask ? ' <button type="button" class="lp-rv" data-t="' + id + '">Hide</button>' : '')
+    + ' <button type="button" class="lp-cp" data-t="' + id + '">Copy</button></span>';
+}
+
+// A short inline list of exact key values for a headline card (one reveal cell each).
+function keyList(items) {
+  if (!items || !items.length) return "";
+  return '<div class="lp-keylist">' + items.map((f) => '<div>' + secretCell(f) + ' <span class="lp-kw">' + esc(whereLabel(f.where)) + '</span></div>').join("") + '</div>';
+}
 function originOf(u) { try { return new URL(u).origin; } catch (_) { return null; } }
 function pathOf(u) { try { const x = new URL(u); return x.pathname + x.search; } catch (_) { return u; } }
 function whereLabel(w) {
