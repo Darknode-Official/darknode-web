@@ -528,7 +528,7 @@ export async function renderCrosswalk(main) {
     a.download = "crosswalk-" + (state.mode === "risk" ? (state.selRisk || "risk") : (state.selFw || "framework").replace(/[^\w-]+/g, "-")) + ".csv";
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-    try { window.showToast && window.showToast("Exported " + (rows.length - 1) + " mappings", "ok"); } catch (_) {}
+    try { window.showToast && window.showToast("Exported " + (rows.length - 1) + " mappings", "success"); } catch (_) {}
   }
 
   // ---- wire top controls ----

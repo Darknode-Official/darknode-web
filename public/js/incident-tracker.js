@@ -348,7 +348,7 @@ function renderIOCs(el) {
     copyText(csv, function(ok) {
       var btn = el.querySelector("#ioc-export");
       if (ok) { btn.textContent = "Copied!"; setTimeout(function() { btn.textContent = "Copy CSV"; }, 2000); }
-      else if (window.showToast) window.showToast("error", "Could not copy to clipboard");
+      else if (window.showToast) window.showToast("Could not copy to clipboard", "error");
     });
   };
 }

@@ -70,6 +70,7 @@ const SAMPLE_URL = "http://paypal.com.account-verify.ru/login?id=1";
 
 export function renderPhish(main) {
   injectStyle();
+  MODE = "auto"; // match the segmented control, which always renders with Auto-detect active
   main.innerHTML = `
   <div class="phx">
     <div class="phx-hd"><h1>Phishing &amp; URL Triage</h1><span class="phx-tag">TRIAGE</span></div>

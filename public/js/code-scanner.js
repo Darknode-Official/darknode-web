@@ -447,7 +447,7 @@ export function renderCodeScanner(main) {
         const r = m.sendToGraph("Code Scanner", items);
         gb.textContent = "Added to graph"; gb.disabled = true;
         try { window.showToast && window.showToast("Security Graph: " + (r.created || 0) + " added, " + (r.updated || 0) + " updated"); } catch (_) {}
-      }).catch(() => { try { window.showToast && window.showToast("Couldn't reach the Security Graph", "err"); } catch (_) {} });
+      }).catch(() => { try { window.showToast && window.showToast("Couldn't reach the Security Graph", "error"); } catch (_) {} });
     };
     body.querySelectorAll("[data-sev]").forEach((b) => b.onclick = () => { toggle(st.sevOn, b.dataset.sev); st.idx = 0; renderWorkspace(); });
     body.querySelectorAll("[data-kind]").forEach((b) => b.onclick = () => { toggle(st.kindOn, b.dataset.kind); st.idx = 0; renderWorkspace(); });
