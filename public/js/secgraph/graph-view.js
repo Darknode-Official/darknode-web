@@ -73,6 +73,11 @@ export function layout(nodes, edges, opts = {}) {
   const k = Math.sqrt(area / n); // ideal edge length
   let temp = Math.max(width, height) * 0.1;
   const cool = temp / (iterations + 1);
+  // Mild gravity toward the centre. Without it, repulsion in a small graph
+  // pushes every node to the walls and leaves the middle empty; this pulls the
+  // cluster back in while staying deterministic and bounded.
+  const grav = opts.gravity == null ? 0.045 : opts.gravity;
+  const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
 
   const disp = {};
   for (let iter = 0; iter < iterations; iter++) {
@@ -102,6 +107,13 @@ export function layout(nodes, edges, opts = {}) {
       const ux = dx / dist, uy = dy / dist;
       disp[a].x -= ux * att; disp[a].y -= uy * att;
       disp[b].x += ux * att; disp[b].y += uy * att;
+    }
+
+    // Gravity: pull every free node gently toward the centre.
+    for (const id of ids) {
+      if (pos[id].fixed) continue;
+      disp[id].x += (cx - pos[id].x) * grav * k * 0.05;
+      disp[id].y += (cy - pos[id].y) * grav * k * 0.05;
     }
 
     // Apply, bounded by the current temperature, then clamp to bounds.
