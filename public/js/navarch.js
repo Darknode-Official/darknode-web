@@ -66,7 +66,7 @@ const FLEET = (() => {
   try { const v = _fleetNs().get('fleet', []); return Array.isArray(v) ? v : []; } catch (_) { return []; }
 })();
 function saveFleet() {
-  try { _fleetNs().set('fleet', FLEET); } catch (_) { if (window.dnToast) window.dnToast('Could not save fleet (storage full or unavailable).'); }
+  try { _fleetNs().set('fleet', FLEET); } catch (_) { try { (window.showToast || window.dnToast)?.('Could not save fleet (storage full or unavailable).', 'error'); } catch (_e) {} }
 }
 
 const CHOKEPOINTS = [
