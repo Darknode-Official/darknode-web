@@ -1390,6 +1390,11 @@ textarea.dk-kitio{min-height:120px}
 .dk[data-ui=deck] .dk-astat{border-left-width:1px!important}
 /* tool pages are transparent in embed mode; let the scene tone (ink or cyber) show behind them */
 .dk[data-ui=deck] .dk-wframe iframe{background:transparent}
+/* The Assistant is a near-empty chat canvas, so the default scene tone (--dk-bg, which inverts
+   to a hard near-black) reads as a harsh black void. Match it to the Deck's own panel/surface
+   tone (--dk-surf, the same grey used for every Deck card) so the chat canvas is the Deck's
+   colour, not a darker void. */
+.dk[data-ui=deck] #dkAssistant{background:var(--dk-surf)}
 @media(max-width:520px){.dk[data-ui=deck] .dk-natbl thead{display:none}.dk[data-ui=deck] .dk-natbl td.sv{padding-right:2px}.dk[data-ui=deck] .dk-natbl .dk-sev{font-size:0;gap:0}}
 `;
 const IC_SEARCH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/></svg>';
