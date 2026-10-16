@@ -488,10 +488,10 @@ export function {{fn}}(main) {
   ].join("");
 
   const $ = (id) => main.querySelector("#" + P + "-" + id);
-  let rows = [], result = null, fileName = "";
+  let rows = [], result = null, fileName = "", isExample = false;
 
-  const setRows = (r, name) => {
-    rows = r; fileName = name;
+  const setRows = (r, name, example = false) => {
+    rows = r; fileName = name; isExample = example;
     $("file").textContent = r.length ? name + ": " + r.length + " rows" : "";
     $("run").disabled = !r.length;
   };
@@ -510,7 +510,7 @@ export function {{fn}}(main) {
 
   $("example").addEventListener("click", () => {
     const ex = exampleDataset();
-    setRows(ex.rows, ex.label);
+    setRows(ex.rows, ex.label, true);
   });
 
   const opts = () => {
@@ -545,7 +545,7 @@ export function {{fn}}(main) {
     ex.querySelector('[data-x="csv"]').addEventListener("click", () => download(TOOL_ID + "-" + fileStamp() + ".csv", findingsToCsv(r.findings), "text/csv"));
     ex.querySelector('[data-x="json"]').addEventListener("click", () => download(TOOL_ID + "-" + fileStamp() + ".json", toJson(r), "application/json"));
     ex.querySelector('[data-x="txt"]').addEventListener("click", () => download(TOOL_ID + "-" + fileStamp() + ".txt", summaryText(r, sum), "text/plain"));
-    attachSinkButton(ex, () => ({ findings: r.findings, sample: rows.slice(0, 5) }), TOOL_ID, { dataset: fileName });
+    attachSinkButton(ex, () => ({ findings: r.findings, sample: isExample }), TOOL_ID, { dataset: fileName });
     const list = $("list");
     if (!r.findings.length) { list.innerHTML = '<div class="' + P + '-empty">No findings for the current thresholds.</div>'; return; }
     list.innerHTML = "<table><thead><tr><th>Severity</th><th>Finding</th><th>Confidence</th><th>Controls</th><th>Evidence</th></tr></thead><tbody>" +
