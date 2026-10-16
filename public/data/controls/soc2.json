@@ -1,0 +1,637 @@
+{
+ "framework": "SOC 2 Trust Services Criteria",
+ "version": "TSC 2017 (2022 revised points of focus)",
+ "updated": "2026-10-16",
+ "license": "AICPA Trust Services Criteria text is copyrighted by the AICPA. This file contains criterion identifiers and short original paraphrases only; it is not a reproduction of the criteria or points of focus. Obtain the TSC from the AICPA for authoritative wording.",
+ "notes": "Common Criteria CC1-CC9 (Security) plus the Availability (A1), Confidentiality (C1), Processing Integrity (PI1) and Privacy (P1-P8) category criteria. defaultFrequency is a practical evidence-collection cadence suggested by Darknode, not an AICPA requirement; SOC 2 lets management define control frequency. Adjust per engagement with the service auditor.",
+ "sourceUrl": "https://www.aicpa-cima.com/resources/download/2017-trust-services-criteria-with-revised-points-of-focus-2022",
+ "data": [
+  {
+   "id": "CC1.1",
+   "title": "Commitment to integrity and ethical values",
+   "domain": "Control Environment",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Code of conduct acknowledgements",
+    "Ethics policy review record",
+    "Whistleblower channel evidence"
+   ]
+  },
+  {
+   "id": "CC1.2",
+   "title": "Board independence and oversight of internal control",
+   "domain": "Control Environment",
+   "defaultFrequency": "quarterly",
+   "evidenceHints": [
+    "Board or security committee minutes",
+    "Charter showing oversight responsibilities"
+   ]
+  },
+  {
+   "id": "CC1.3",
+   "title": "Structures, reporting lines, authorities and responsibilities",
+   "domain": "Control Environment",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Org chart",
+    "RACI for security functions",
+    "Job descriptions"
+   ]
+  },
+  {
+   "id": "CC1.4",
+   "title": "Attract, develop and retain competent people",
+   "domain": "Control Environment",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Background-check records",
+    "Training completion",
+    "Performance review cadence"
+   ]
+  },
+  {
+   "id": "CC1.5",
+   "title": "Individuals held accountable for internal control responsibilities",
+   "domain": "Control Environment",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Policy acknowledgement tracking",
+    "Sanctions or disciplinary procedure"
+   ]
+  },
+  {
+   "id": "CC2.1",
+   "title": "Relevant, quality information used to support internal control",
+   "domain": "Communication and Information",
+   "defaultFrequency": "quarterly",
+   "evidenceHints": [
+    "Data classification policy",
+    "Monitoring dashboards used by management"
+   ]
+  },
+  {
+   "id": "CC2.2",
+   "title": "Internal communication of control objectives and responsibilities",
+   "domain": "Communication and Information",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Security awareness communications",
+    "Policy publication records",
+    "Onboarding materials"
+   ]
+  },
+  {
+   "id": "CC2.3",
+   "title": "External communication about internal control matters",
+   "domain": "Communication and Information",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Customer-facing security page or trust portal",
+    "Incident notification procedure",
+    "Terms and SLAs"
+   ]
+  },
+  {
+   "id": "CC3.1",
+   "title": "Objectives specified clearly enough to identify risks",
+   "domain": "Risk Assessment",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Documented security objectives",
+    "Risk assessment scope statement"
+   ]
+  },
+  {
+   "id": "CC3.2",
+   "title": "Risks to objectives identified and analysed",
+   "domain": "Risk Assessment",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Risk register with likelihood and impact",
+    "Risk assessment report and sign-off"
+   ]
+  },
+  {
+   "id": "CC3.3",
+   "title": "Potential for fraud considered in risk assessment",
+   "domain": "Risk Assessment",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Fraud risk section of the risk assessment",
+    "Segregation of duties review"
+   ]
+  },
+  {
+   "id": "CC3.4",
+   "title": "Changes that could affect internal control identified and assessed",
+   "domain": "Risk Assessment",
+   "defaultFrequency": "quarterly",
+   "evidenceHints": [
+    "Change-driven risk reassessment records",
+    "Vendor and architecture change reviews"
+   ]
+  },
+  {
+   "id": "CC4.1",
+   "title": "Ongoing and separate evaluations of controls",
+   "domain": "Monitoring Activities",
+   "defaultFrequency": "quarterly",
+   "evidenceHints": [
+    "Internal audit or control self-assessment results",
+    "Penetration test and vulnerability scan reports"
+   ]
+  },
+  {
+   "id": "CC4.2",
+   "title": "Control deficiencies evaluated and communicated for remediation",
+   "domain": "Monitoring Activities",
+   "defaultFrequency": "quarterly",
+   "evidenceHints": [
+    "Issue tracker for control deficiencies",
+    "Remediation status reporting to management"
+   ]
+  },
+  {
+   "id": "CC5.1",
+   "title": "Control activities selected and developed to mitigate risk",
+   "domain": "Control Activities",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Risk-to-control mapping",
+    "Control matrix"
+   ]
+  },
+  {
+   "id": "CC5.2",
+   "title": "General controls over technology selected and developed",
+   "domain": "Control Activities",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "IT general controls inventory",
+    "Infrastructure and access control design documents"
+   ]
+  },
+  {
+   "id": "CC5.3",
+   "title": "Control activities deployed through policies and procedures",
+   "domain": "Control Activities",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Approved policy set with version history",
+    "Procedure documents and owners"
+   ]
+  },
+  {
+   "id": "CC6.1",
+   "title": "Logical access security software, infrastructure and architecture",
+   "domain": "Logical and Physical Access",
+   "defaultFrequency": "quarterly",
+   "evidenceHints": [
+    "Identity provider configuration",
+    "Encryption at rest and in transit evidence",
+    "Network segmentation diagrams"
+   ]
+  },
+  {
+   "id": "CC6.2",
+   "title": "User registration, authorisation and de-provisioning",
+   "domain": "Logical and Physical Access",
+   "defaultFrequency": "event",
+   "evidenceHints": [
+    "Access request and approval tickets",
+    "Joiner workflow evidence",
+    "Termination checklist with timestamps"
+   ]
+  },
+  {
+   "id": "CC6.3",
+   "title": "Access modified or removed based on roles and least privilege",
+   "domain": "Logical and Physical Access",
+   "defaultFrequency": "quarterly",
+   "evidenceHints": [
+    "User access review sign-offs",
+    "Role definitions",
+    "Privileged access list"
+   ]
+  },
+  {
+   "id": "CC6.4",
+   "title": "Physical access to facilities and protected assets restricted",
+   "domain": "Logical and Physical Access",
+   "defaultFrequency": "semiannual",
+   "evidenceHints": [
+    "Badge access logs and reviews",
+    "Data-centre provider SOC report",
+    "Visitor logs"
+   ]
+  },
+  {
+   "id": "CC6.5",
+   "title": "Protected assets disposed of only after data is removed",
+   "domain": "Logical and Physical Access",
+   "defaultFrequency": "event",
+   "evidenceHints": [
+    "Media sanitisation certificates",
+    "Asset disposal records"
+   ]
+  },
+  {
+   "id": "CC6.6",
+   "title": "Protection against threats from outside system boundaries",
+   "domain": "Logical and Physical Access",
+   "defaultFrequency": "continuous",
+   "evidenceHints": [
+    "Firewall and WAF configuration",
+    "IDS or IPS alerts",
+    "MFA enforcement evidence"
+   ]
+  },
+  {
+   "id": "CC6.7",
+   "title": "Transmission, movement and removal of information restricted and protected",
+   "domain": "Logical and Physical Access",
+   "defaultFrequency": "continuous",
+   "evidenceHints": [
+    "TLS configuration scans",
+    "DLP policy and alerts",
+    "Removable media restrictions"
+   ]
+  },
+  {
+   "id": "CC6.8",
+   "title": "Unauthorised or malicious software prevented and detected",
+   "domain": "Logical and Physical Access",
+   "defaultFrequency": "continuous",
+   "evidenceHints": [
+    "Endpoint protection coverage report",
+    "Application allowlisting configuration",
+    "Patch compliance report"
+   ]
+  },
+  {
+   "id": "CC7.1",
+   "title": "Detect and monitor configuration changes and new vulnerabilities",
+   "domain": "System Operations",
+   "defaultFrequency": "monthly",
+   "evidenceHints": [
+    "Vulnerability scan reports",
+    "Configuration drift alerts",
+    "File-integrity monitoring"
+   ]
+  },
+  {
+   "id": "CC7.2",
+   "title": "Monitor system components for anomalies indicating malicious acts or errors",
+   "domain": "System Operations",
+   "defaultFrequency": "continuous",
+   "evidenceHints": [
+    "SIEM alert rules and tuning",
+    "Log review records",
+    "Monitoring coverage list"
+   ]
+  },
+  {
+   "id": "CC7.3",
+   "title": "Evaluate security events to determine whether they are incidents",
+   "domain": "System Operations",
+   "defaultFrequency": "event",
+   "evidenceHints": [
+    "Triage records",
+    "Incident classification criteria",
+    "Escalation logs"
+   ]
+  },
+  {
+   "id": "CC7.4",
+   "title": "Respond to identified security incidents",
+   "domain": "System Operations",
+   "defaultFrequency": "event",
+   "evidenceHints": [
+    "Incident response plan",
+    "Incident tickets and timelines",
+    "Annual tabletop exercise results"
+   ]
+  },
+  {
+   "id": "CC7.5",
+   "title": "Recover from identified security incidents",
+   "domain": "System Operations",
+   "defaultFrequency": "event",
+   "evidenceHints": [
+    "Post-incident reviews",
+    "Restoration evidence",
+    "Lessons-learned action items"
+   ]
+  },
+  {
+   "id": "CC8.1",
+   "title": "Changes to infrastructure, data, software and procedures authorised, tested and approved",
+   "domain": "Change Management",
+   "defaultFrequency": "continuous",
+   "evidenceHints": [
+    "Change tickets with approval and test evidence",
+    "Branch protection and code review settings",
+    "Deployment logs"
+   ]
+  },
+  {
+   "id": "CC9.1",
+   "title": "Risk mitigation for business disruption",
+   "domain": "Risk Mitigation",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Business continuity and DR plan",
+    "DR test results",
+    "Insurance coverage review"
+   ]
+  },
+  {
+   "id": "CC9.2",
+   "title": "Vendor and business partner risk assessed and managed",
+   "domain": "Risk Mitigation",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Vendor inventory with risk tiers",
+    "Vendor SOC reports or questionnaires",
+    "Contract security clauses"
+   ]
+  },
+  {
+   "id": "A1.1",
+   "title": "Capacity demand monitored and managed to meet availability commitments",
+   "domain": "Availability",
+   "defaultFrequency": "monthly",
+   "evidenceHints": [
+    "Capacity dashboards",
+    "Autoscaling configuration",
+    "Capacity planning reviews"
+   ]
+  },
+  {
+   "id": "A1.2",
+   "title": "Environmental protections, backups and recovery infrastructure in place",
+   "domain": "Availability",
+   "defaultFrequency": "quarterly",
+   "evidenceHints": [
+    "Backup job success reports",
+    "Backup configuration",
+    "Cloud provider resilience attestations"
+   ]
+  },
+  {
+   "id": "A1.3",
+   "title": "Recovery plan procedures tested",
+   "domain": "Availability",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Restore test records",
+    "DR exercise report"
+   ]
+  },
+  {
+   "id": "C1.1",
+   "title": "Confidential information identified and maintained",
+   "domain": "Confidentiality",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Data inventory and classification",
+    "Retention schedule"
+   ]
+  },
+  {
+   "id": "C1.2",
+   "title": "Confidential information disposed of when no longer needed",
+   "domain": "Confidentiality",
+   "defaultFrequency": "quarterly",
+   "evidenceHints": [
+    "Deletion job evidence",
+    "Retention enforcement reports",
+    "Customer data deletion confirmations"
+   ]
+  },
+  {
+   "id": "PI1.1",
+   "title": "Definitions of data processing and reporting specifications available",
+   "domain": "Processing Integrity",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Data processing specifications",
+    "Product documentation of inputs and outputs"
+   ]
+  },
+  {
+   "id": "PI1.2",
+   "title": "System inputs complete and accurate",
+   "domain": "Processing Integrity",
+   "defaultFrequency": "continuous",
+   "evidenceHints": [
+    "Input validation controls",
+    "Reconciliation reports"
+   ]
+  },
+  {
+   "id": "PI1.3",
+   "title": "System processing complete, accurate, timely and authorised",
+   "domain": "Processing Integrity",
+   "defaultFrequency": "continuous",
+   "evidenceHints": [
+    "Job monitoring",
+    "Error-handling and exception logs"
+   ]
+  },
+  {
+   "id": "PI1.4",
+   "title": "System outputs complete, accurate and delivered as specified",
+   "domain": "Processing Integrity",
+   "defaultFrequency": "continuous",
+   "evidenceHints": [
+    "Output reconciliation",
+    "Delivery confirmations"
+   ]
+  },
+  {
+   "id": "PI1.5",
+   "title": "Inputs, items in processing and outputs stored completely and accurately",
+   "domain": "Processing Integrity",
+   "defaultFrequency": "quarterly",
+   "evidenceHints": [
+    "Storage integrity checks",
+    "Backup and archive verification"
+   ]
+  },
+  {
+   "id": "P1.1",
+   "title": "Notice about privacy practices provided to data subjects",
+   "domain": "Privacy",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Published privacy notice with version history",
+    "Notice review record"
+   ]
+  },
+  {
+   "id": "P2.1",
+   "title": "Choice and consent communicated and obtained",
+   "domain": "Privacy",
+   "defaultFrequency": "continuous",
+   "evidenceHints": [
+    "Consent capture records",
+    "Preference management evidence"
+   ]
+  },
+  {
+   "id": "P3.1",
+   "title": "Personal information collected consistent with objectives",
+   "domain": "Privacy",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Data inventory showing purpose",
+    "Collection point review"
+   ]
+  },
+  {
+   "id": "P3.2",
+   "title": "Explicit consent obtained for sensitive personal information",
+   "domain": "Privacy",
+   "defaultFrequency": "continuous",
+   "evidenceHints": [
+    "Consent records for sensitive data categories"
+   ]
+  },
+  {
+   "id": "P4.1",
+   "title": "Personal information used only for identified purposes",
+   "domain": "Privacy",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Purpose limitation review",
+    "Access and use policies"
+   ]
+  },
+  {
+   "id": "P4.2",
+   "title": "Personal information retained consistent with objectives",
+   "domain": "Privacy",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Retention schedule",
+    "Retention enforcement evidence"
+   ]
+  },
+  {
+   "id": "P4.3",
+   "title": "Personal information securely disposed of",
+   "domain": "Privacy",
+   "defaultFrequency": "quarterly",
+   "evidenceHints": [
+    "Deletion and anonymisation records"
+   ]
+  },
+  {
+   "id": "P5.1",
+   "title": "Data subjects can access their personal information",
+   "domain": "Privacy",
+   "defaultFrequency": "event",
+   "evidenceHints": [
+    "Data subject request log with response times"
+   ]
+  },
+  {
+   "id": "P5.2",
+   "title": "Corrections and updates to personal information handled",
+   "domain": "Privacy",
+   "defaultFrequency": "event",
+   "evidenceHints": [
+    "Correction request records",
+    "Denial explanations"
+   ]
+  },
+  {
+   "id": "P6.1",
+   "title": "Personal information disclosed to third parties only with consent",
+   "domain": "Privacy",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Third-party disclosure register",
+    "Consent evidence"
+   ]
+  },
+  {
+   "id": "P6.2",
+   "title": "Record of authorised disclosures maintained",
+   "domain": "Privacy",
+   "defaultFrequency": "continuous",
+   "evidenceHints": [
+    "Disclosure log"
+   ]
+  },
+  {
+   "id": "P6.3",
+   "title": "Record of unauthorised disclosures maintained",
+   "domain": "Privacy",
+   "defaultFrequency": "event",
+   "evidenceHints": [
+    "Privacy incident log"
+   ]
+  },
+  {
+   "id": "P6.4",
+   "title": "Third parties bound by privacy commitments",
+   "domain": "Privacy",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Data processing agreements",
+    "Vendor privacy assessments"
+   ]
+  },
+  {
+   "id": "P6.5",
+   "title": "Third-party unauthorised disclosures identified and addressed",
+   "domain": "Privacy",
+   "defaultFrequency": "event",
+   "evidenceHints": [
+    "Vendor incident notifications",
+    "Response records"
+   ]
+  },
+  {
+   "id": "P6.6",
+   "title": "Breach and incident notifications provided to affected parties",
+   "domain": "Privacy",
+   "defaultFrequency": "event",
+   "evidenceHints": [
+    "Notification templates",
+    "Notification records with timing"
+   ]
+  },
+  {
+   "id": "P6.7",
+   "title": "Accounting of disclosures provided on request",
+   "domain": "Privacy",
+   "defaultFrequency": "event",
+   "evidenceHints": [
+    "Disclosure accounting responses"
+   ]
+  },
+  {
+   "id": "P7.1",
+   "title": "Personal information kept accurate, complete and relevant",
+   "domain": "Privacy",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Data quality checks",
+    "Correction process evidence"
+   ]
+  },
+  {
+   "id": "P8.1",
+   "title": "Privacy inquiries, complaints and disputes handled",
+   "domain": "Privacy",
+   "defaultFrequency": "event",
+   "evidenceHints": [
+    "Complaint log and resolutions",
+    "Escalation procedure"
+   ]
+  }
+ ]
+}

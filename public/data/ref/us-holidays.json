@@ -1,0 +1,426 @@
+{
+ "version": "2026-10",
+ "updated": "2026-10-16",
+ "verifyWithCounsel": true,
+ "sources": [
+  "https://www.opm.gov/policy-data-oversight/pay-leave/federal-holidays/",
+  "https://www.law.cornell.edu/uscode/text/5/6103",
+  "https://www.sec.gov/submit-filings/filer-support-resources/how-do-i-file-edgar#edgar-hours",
+  "https://www.nyse.com/markets/hours-calendars"
+ ],
+ "notes": "US federal holidays under 5 U.S.C. 6103 for 2025-2030, listed on the date the federal government observes them (a holiday falling on Saturday is observed the preceding Friday; on Sunday, the following Monday). observedFor gives the statutory date when it differs. The 2025-01-09 national day of mourning is a one-off executive closure that EDGAR honoured; later one-off closures will not appear here until the file is regenerated. For SEC 'four business days' math (Form 8-K Item 1.05 and similar), a business day is any day EDGAR is open: Monday-Friday excluding these dates. Inauguration Day (2029-01-20, a Saturday) is a holiday only for federal employees in the Washington DC area and is not included. nyseHolidays lists NYSE full-day closures 2025-2027 (no Columbus Day or Veterans Day; Good Friday added; early-close half days not listed). This file is reference data; confirm against the OPM and NYSE calendars before relying on it.",
+ "data": [
+  {
+   "date": "2025-01-01",
+   "name": "New Year's Day"
+  },
+  {
+   "date": "2025-01-09",
+   "name": "National Day of Mourning (President Carter)",
+   "oneOff": true,
+   "notes": "Executive order closure of federal offices; SEC EDGAR treated 2025-01-09 as a federal holiday for filing deadlines."
+  },
+  {
+   "date": "2025-01-20",
+   "name": "Birthday of Martin Luther King, Jr."
+  },
+  {
+   "date": "2025-02-17",
+   "name": "Washington's Birthday"
+  },
+  {
+   "date": "2025-05-26",
+   "name": "Memorial Day"
+  },
+  {
+   "date": "2025-06-19",
+   "name": "Juneteenth National Independence Day"
+  },
+  {
+   "date": "2025-07-04",
+   "name": "Independence Day"
+  },
+  {
+   "date": "2025-09-01",
+   "name": "Labor Day"
+  },
+  {
+   "date": "2025-10-13",
+   "name": "Columbus Day"
+  },
+  {
+   "date": "2025-11-11",
+   "name": "Veterans Day"
+  },
+  {
+   "date": "2025-11-27",
+   "name": "Thanksgiving Day"
+  },
+  {
+   "date": "2025-12-25",
+   "name": "Christmas Day"
+  },
+  {
+   "date": "2026-01-01",
+   "name": "New Year's Day"
+  },
+  {
+   "date": "2026-01-19",
+   "name": "Birthday of Martin Luther King, Jr."
+  },
+  {
+   "date": "2026-02-16",
+   "name": "Washington's Birthday"
+  },
+  {
+   "date": "2026-05-25",
+   "name": "Memorial Day"
+  },
+  {
+   "date": "2026-06-19",
+   "name": "Juneteenth National Independence Day"
+  },
+  {
+   "date": "2026-07-03",
+   "name": "Independence Day",
+   "observedFor": "2026-07-04"
+  },
+  {
+   "date": "2026-09-07",
+   "name": "Labor Day"
+  },
+  {
+   "date": "2026-10-12",
+   "name": "Columbus Day"
+  },
+  {
+   "date": "2026-11-11",
+   "name": "Veterans Day"
+  },
+  {
+   "date": "2026-11-26",
+   "name": "Thanksgiving Day"
+  },
+  {
+   "date": "2026-12-25",
+   "name": "Christmas Day"
+  },
+  {
+   "date": "2027-01-01",
+   "name": "New Year's Day"
+  },
+  {
+   "date": "2027-01-18",
+   "name": "Birthday of Martin Luther King, Jr."
+  },
+  {
+   "date": "2027-02-15",
+   "name": "Washington's Birthday"
+  },
+  {
+   "date": "2027-05-31",
+   "name": "Memorial Day"
+  },
+  {
+   "date": "2027-06-18",
+   "name": "Juneteenth National Independence Day",
+   "observedFor": "2027-06-19"
+  },
+  {
+   "date": "2027-07-05",
+   "name": "Independence Day",
+   "observedFor": "2027-07-04"
+  },
+  {
+   "date": "2027-09-06",
+   "name": "Labor Day"
+  },
+  {
+   "date": "2027-10-11",
+   "name": "Columbus Day"
+  },
+  {
+   "date": "2027-11-11",
+   "name": "Veterans Day"
+  },
+  {
+   "date": "2027-11-25",
+   "name": "Thanksgiving Day"
+  },
+  {
+   "date": "2027-12-24",
+   "name": "Christmas Day",
+   "observedFor": "2027-12-25"
+  },
+  {
+   "date": "2027-12-31",
+   "name": "New Year's Day",
+   "observedFor": "2028-01-01"
+  },
+  {
+   "date": "2028-01-17",
+   "name": "Birthday of Martin Luther King, Jr."
+  },
+  {
+   "date": "2028-02-21",
+   "name": "Washington's Birthday"
+  },
+  {
+   "date": "2028-05-29",
+   "name": "Memorial Day"
+  },
+  {
+   "date": "2028-06-19",
+   "name": "Juneteenth National Independence Day"
+  },
+  {
+   "date": "2028-07-04",
+   "name": "Independence Day"
+  },
+  {
+   "date": "2028-09-04",
+   "name": "Labor Day"
+  },
+  {
+   "date": "2028-10-09",
+   "name": "Columbus Day"
+  },
+  {
+   "date": "2028-11-10",
+   "name": "Veterans Day",
+   "observedFor": "2028-11-11"
+  },
+  {
+   "date": "2028-11-23",
+   "name": "Thanksgiving Day"
+  },
+  {
+   "date": "2028-12-25",
+   "name": "Christmas Day"
+  },
+  {
+   "date": "2029-01-01",
+   "name": "New Year's Day"
+  },
+  {
+   "date": "2029-01-15",
+   "name": "Birthday of Martin Luther King, Jr."
+  },
+  {
+   "date": "2029-02-19",
+   "name": "Washington's Birthday"
+  },
+  {
+   "date": "2029-05-28",
+   "name": "Memorial Day"
+  },
+  {
+   "date": "2029-06-19",
+   "name": "Juneteenth National Independence Day"
+  },
+  {
+   "date": "2029-07-04",
+   "name": "Independence Day"
+  },
+  {
+   "date": "2029-09-03",
+   "name": "Labor Day"
+  },
+  {
+   "date": "2029-10-08",
+   "name": "Columbus Day"
+  },
+  {
+   "date": "2029-11-12",
+   "name": "Veterans Day",
+   "observedFor": "2029-11-11"
+  },
+  {
+   "date": "2029-11-22",
+   "name": "Thanksgiving Day"
+  },
+  {
+   "date": "2029-12-25",
+   "name": "Christmas Day"
+  },
+  {
+   "date": "2030-01-01",
+   "name": "New Year's Day"
+  },
+  {
+   "date": "2030-01-21",
+   "name": "Birthday of Martin Luther King, Jr."
+  },
+  {
+   "date": "2030-02-18",
+   "name": "Washington's Birthday"
+  },
+  {
+   "date": "2030-05-27",
+   "name": "Memorial Day"
+  },
+  {
+   "date": "2030-06-19",
+   "name": "Juneteenth National Independence Day"
+  },
+  {
+   "date": "2030-07-04",
+   "name": "Independence Day"
+  },
+  {
+   "date": "2030-09-02",
+   "name": "Labor Day"
+  },
+  {
+   "date": "2030-10-14",
+   "name": "Columbus Day"
+  },
+  {
+   "date": "2030-11-11",
+   "name": "Veterans Day"
+  },
+  {
+   "date": "2030-11-28",
+   "name": "Thanksgiving Day"
+  },
+  {
+   "date": "2030-12-25",
+   "name": "Christmas Day"
+  }
+ ],
+ "nyseHolidays": {
+  "confidence": "curated",
+  "sourceUrl": "https://www.nyse.com/markets/hours-calendars",
+  "data": [
+   {
+    "date": "2025-01-01",
+    "name": "New Year's Day"
+   },
+   {
+    "date": "2025-01-09",
+    "name": "National Day of Mourning (President Carter)",
+    "oneOff": true
+   },
+   {
+    "date": "2025-01-20",
+    "name": "Martin Luther King, Jr. Day"
+   },
+   {
+    "date": "2025-02-17",
+    "name": "Washington's Birthday"
+   },
+   {
+    "date": "2025-04-18",
+    "name": "Good Friday"
+   },
+   {
+    "date": "2025-05-26",
+    "name": "Memorial Day"
+   },
+   {
+    "date": "2025-06-19",
+    "name": "Juneteenth National Independence Day"
+   },
+   {
+    "date": "2025-07-04",
+    "name": "Independence Day"
+   },
+   {
+    "date": "2025-09-01",
+    "name": "Labor Day"
+   },
+   {
+    "date": "2025-11-27",
+    "name": "Thanksgiving Day"
+   },
+   {
+    "date": "2025-12-25",
+    "name": "Christmas Day"
+   },
+   {
+    "date": "2026-01-01",
+    "name": "New Year's Day"
+   },
+   {
+    "date": "2026-01-19",
+    "name": "Martin Luther King, Jr. Day"
+   },
+   {
+    "date": "2026-02-16",
+    "name": "Washington's Birthday"
+   },
+   {
+    "date": "2026-04-03",
+    "name": "Good Friday"
+   },
+   {
+    "date": "2026-05-25",
+    "name": "Memorial Day"
+   },
+   {
+    "date": "2026-06-19",
+    "name": "Juneteenth National Independence Day"
+   },
+   {
+    "date": "2026-07-03",
+    "name": "Independence Day",
+    "observedFor": "2026-07-04"
+   },
+   {
+    "date": "2026-09-07",
+    "name": "Labor Day"
+   },
+   {
+    "date": "2026-11-26",
+    "name": "Thanksgiving Day"
+   },
+   {
+    "date": "2026-12-25",
+    "name": "Christmas Day"
+   },
+   {
+    "date": "2027-01-01",
+    "name": "New Year's Day"
+   },
+   {
+    "date": "2027-01-18",
+    "name": "Martin Luther King, Jr. Day"
+   },
+   {
+    "date": "2027-02-15",
+    "name": "Washington's Birthday"
+   },
+   {
+    "date": "2027-03-26",
+    "name": "Good Friday"
+   },
+   {
+    "date": "2027-05-31",
+    "name": "Memorial Day"
+   },
+   {
+    "date": "2027-06-18",
+    "name": "Juneteenth National Independence Day",
+    "observedFor": "2027-06-19"
+   },
+   {
+    "date": "2027-07-05",
+    "name": "Independence Day",
+    "observedFor": "2027-07-04"
+   },
+   {
+    "date": "2027-09-06",
+    "name": "Labor Day"
+   },
+   {
+    "date": "2027-11-25",
+    "name": "Thanksgiving Day"
+   },
+   {
+    "date": "2027-12-24",
+    "name": "Christmas Day",
+    "observedFor": "2027-12-25"
+   }
+  ]
+ }
+}

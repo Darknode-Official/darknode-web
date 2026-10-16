@@ -1,0 +1,242 @@
+{
+ "version": "2026-10",
+ "updated": "2026-10-16",
+ "verifyWithCounsel": true,
+ "sources": [
+  "https://commission.europa.eu/law/law-topic/data-protection/international-dimension-data-protection/adequacy-decisions_en",
+  "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32021D0914",
+  "https://www.edpb.europa.eu/our-work-tools/our-documents/other/report-first-review-functioning-adequacy-decisions-adopted-pursuant_en",
+  "https://ico.org.uk/for-organisations/data-protection-and-the-eu/data-protection-and-the-eu-in-detail/adequacy/"
+ ],
+ "notes": "European Commission adequacy decisions under GDPR Art. 45 (and, for the UK and US, the parallel Law Enforcement Directive / DPF instruments). An entry means transfers to that destination, within the stated scope, need no additional safeguard. Transfers to destinations not listed require an Art. 46 mechanism (SCCs, BCRs, approved codes or certification) with a transfer impact assessment, or an Art. 49 derogation. The UK, US and Brazil entries are time-sensitive and marked confidence 'verify'. ukAdequacy lists the destinations the UK itself treats as adequate under the UK GDPR (Data Protection Act 2018, s.17A regulations). This file is reference data, not legal advice.",
+ "data": [
+  {
+   "country": "Andorra",
+   "code": "AD",
+   "scope": "All transfers",
+   "decisionDate": "2010-10-19",
+   "reviewed": "Confirmed in the Commission's January 2024 review of the eleven pre-GDPR decisions",
+   "notes": "Decision 2010/625/EU.",
+   "confidence": "curated",
+   "sourceUrl": "https://commission.europa.eu/law/law-topic/data-protection/international-dimension-data-protection/adequacy-decisions_en"
+  },
+  {
+   "country": "Argentina",
+   "code": "AR",
+   "scope": "All transfers",
+   "decisionDate": "2003-06-30",
+   "reviewed": "Confirmed in the January 2024 review",
+   "notes": "Decision 2003/490/EC.",
+   "confidence": "curated",
+   "sourceUrl": "https://commission.europa.eu/law/law-topic/data-protection/international-dimension-data-protection/adequacy-decisions_en"
+  },
+  {
+   "country": "Canada",
+   "code": "CA",
+   "scope": "Commercial organisations subject to PIPEDA only",
+   "decisionDate": "2001-12-20",
+   "reviewed": "Confirmed in the January 2024 review",
+   "notes": "Decision 2002/2/EC. Does not cover public bodies or organisations outside PIPEDA's scope.",
+   "confidence": "curated",
+   "sourceUrl": "https://commission.europa.eu/law/law-topic/data-protection/international-dimension-data-protection/adequacy-decisions_en"
+  },
+  {
+   "country": "Faroe Islands",
+   "code": "FO",
+   "scope": "All transfers",
+   "decisionDate": "2010-03-05",
+   "reviewed": "Confirmed in the January 2024 review",
+   "notes": "Decision 2010/146/EU.",
+   "confidence": "curated",
+   "sourceUrl": "https://commission.europa.eu/law/law-topic/data-protection/international-dimension-data-protection/adequacy-decisions_en"
+  },
+  {
+   "country": "Guernsey",
+   "code": "GG",
+   "scope": "All transfers",
+   "decisionDate": "2003-11-21",
+   "reviewed": "Confirmed in the January 2024 review",
+   "notes": "Decision 2003/821/EC.",
+   "confidence": "curated",
+   "sourceUrl": "https://commission.europa.eu/law/law-topic/data-protection/international-dimension-data-protection/adequacy-decisions_en"
+  },
+  {
+   "country": "Israel",
+   "code": "IL",
+   "scope": "Automated international transfers and non-automated transfers subject to further automated processing",
+   "decisionDate": "2011-01-31",
+   "reviewed": "Confirmed in the January 2024 review",
+   "notes": "Decision 2011/61/EU.",
+   "confidence": "curated",
+   "sourceUrl": "https://commission.europa.eu/law/law-topic/data-protection/international-dimension-data-protection/adequacy-decisions_en"
+  },
+  {
+   "country": "Isle of Man",
+   "code": "IM",
+   "scope": "All transfers",
+   "decisionDate": "2004-04-28",
+   "reviewed": "Confirmed in the January 2024 review",
+   "notes": "Decision 2004/411/EC.",
+   "confidence": "curated",
+   "sourceUrl": "https://commission.europa.eu/law/law-topic/data-protection/international-dimension-data-protection/adequacy-decisions_en"
+  },
+  {
+   "country": "Japan",
+   "code": "JP",
+   "scope": "Private-sector operators subject to the APPI (supplementary rules apply)",
+   "decisionDate": "2019-01-23",
+   "reviewed": "First review concluded April 2023; mutual arrangement with Japan's recognition of the EU",
+   "notes": "Decision (EU) 2019/419. Public sector and academic/medical research exemptions excluded.",
+   "confidence": "curated",
+   "sourceUrl": "https://commission.europa.eu/law/law-topic/data-protection/international-dimension-data-protection/adequacy-decisions_en"
+  },
+  {
+   "country": "Jersey",
+   "code": "JE",
+   "scope": "All transfers",
+   "decisionDate": "2008-05-08",
+   "reviewed": "Confirmed in the January 2024 review",
+   "notes": "Decision 2008/393/EC.",
+   "confidence": "curated",
+   "sourceUrl": "https://commission.europa.eu/law/law-topic/data-protection/international-dimension-data-protection/adequacy-decisions_en"
+  },
+  {
+   "country": "New Zealand",
+   "code": "NZ",
+   "scope": "All transfers",
+   "decisionDate": "2012-12-19",
+   "reviewed": "Confirmed in the January 2024 review",
+   "notes": "Decision 2013/65/EU.",
+   "confidence": "curated",
+   "sourceUrl": "https://commission.europa.eu/law/law-topic/data-protection/international-dimension-data-protection/adequacy-decisions_en"
+  },
+  {
+   "country": "Republic of Korea",
+   "code": "KR",
+   "scope": "Private and public sector controllers subject to PIPA (with exceptions)",
+   "decisionDate": "2021-12-17",
+   "reviewed": "Periodic review due; first review expected three years after adoption",
+   "notes": "Decision (EU) 2022/254. Excludes religious organisations and political parties in some processing contexts; check the decision text.",
+   "confidence": "curated",
+   "sourceUrl": "https://commission.europa.eu/law/law-topic/data-protection/international-dimension-data-protection/adequacy-decisions_en"
+  },
+  {
+   "country": "Switzerland",
+   "code": "CH",
+   "scope": "All transfers",
+   "decisionDate": "2000-07-26",
+   "reviewed": "Confirmed in the January 2024 review",
+   "notes": "Decision 2000/518/EC.",
+   "confidence": "curated",
+   "sourceUrl": "https://commission.europa.eu/law/law-topic/data-protection/international-dimension-data-protection/adequacy-decisions_en"
+  },
+  {
+   "country": "United Kingdom",
+   "code": "GB",
+   "scope": "All transfers under UK GDPR; separate decision under the Law Enforcement Directive",
+   "decisionDate": "2021-06-28",
+   "reviewed": "Original decisions sunset 2025-06-27, extended by six months to 2025-12-27; the Commission proposed renewed decisions in July 2025 and adopted them in the second half of 2025. Confirm the current decision reference and any sunset clause.",
+   "notes": "Decisions (EU) 2021/1772 (GDPR) and 2021/1773 (LED). Renewed decisions take account of the UK Data (Use and Access) Act 2025.",
+   "confidence": "verify",
+   "sourceUrl": "https://commission.europa.eu/law/law-topic/data-protection/international-dimension-data-protection/adequacy-decisions_en"
+  },
+  {
+   "country": "Uruguay",
+   "code": "UY",
+   "scope": "All transfers",
+   "decisionDate": "2012-08-21",
+   "reviewed": "Confirmed in the January 2024 review",
+   "notes": "Decision 2012/484/EU.",
+   "confidence": "curated",
+   "sourceUrl": "https://commission.europa.eu/law/law-topic/data-protection/international-dimension-data-protection/adequacy-decisions_en"
+  },
+  {
+   "country": "United States",
+   "code": "US",
+   "scope": "Organisations certified under the EU-US Data Privacy Framework only",
+   "decisionDate": "2023-07-10",
+   "reviewed": "First periodic review concluded October 2024 (next due 2027); General Court dismissed the Latombe challenge in September 2025 (appeal possible)",
+   "notes": "Decision (EU) 2023/1795. Transfers to non-certified US organisations need SCCs or another Art. 46 mechanism plus a transfer impact assessment; Executive Order 14086 redress mechanism applies regardless.",
+   "confidence": "verify",
+   "sourceUrl": "https://commission.europa.eu/law/law-topic/data-protection/international-dimension-data-protection/adequacy-decisions_en"
+  },
+  {
+   "country": "Brazil",
+   "code": "BR",
+   "scope": "Proposed: controllers and processors subject to the LGPD",
+   "decisionDate": null,
+   "reviewed": "Not adopted as of this file's update: the Commission launched the adoption procedure and published a draft decision in September 2025 (EDPB opinion and Member State committee vote required). Treat Brazil as NOT adequate until a decision is published in the Official Journal.",
+   "notes": "Status: proposed. Mutual recognition expected with Brazil's ANPD recognising the EU.",
+   "confidence": "verify",
+   "sourceUrl": "https://commission.europa.eu/law/law-topic/data-protection/international-dimension-data-protection/adequacy-decisions_en"
+  }
+ ],
+ "ukAdequacy": {
+  "notes": "Destinations the UK treats as adequate for UK GDPR transfers. The UK inherited the EU list on exit and has since added the Republic of Korea (2022), the US via the UK Extension to the EU-US DPF (the 'data bridge', in force 2023-10-12) and all EU/EEA states. Gibraltar is covered by UK legislation. The UK Data (Use and Access) Act 2025 replaces the adequacy test with a 'data protection test'; verify the current regulations.",
+  "sourceUrl": "https://ico.org.uk/for-organisations/data-protection-and-the-eu/data-protection-and-the-eu-in-detail/adequacy/",
+  "confidence": "verify",
+  "destinations": [
+   "EU member states",
+   "EEA states (Iceland, Liechtenstein, Norway)",
+   "Gibraltar",
+   "Andorra",
+   "Argentina",
+   "Canada (commercial organisations under PIPEDA)",
+   "Faroe Islands",
+   "Guernsey",
+   "Israel",
+   "Isle of Man",
+   "Japan (private sector)",
+   "Jersey",
+   "New Zealand",
+   "Republic of Korea",
+   "Switzerland",
+   "Uruguay",
+   "United States (UK Extension to the EU-US Data Privacy Framework, certified organisations only)"
+  ]
+ },
+ "transferMechanisms": [
+  {
+   "id": "adequacy",
+   "basis": "GDPR Art. 45",
+   "name": "Adequacy decision",
+   "notes": "No further safeguard needed for transfers within the decision's scope. Still subject to the rest of the GDPR (lawful basis, transparency)."
+  },
+  {
+   "id": "scc-2021",
+   "basis": "GDPR Art. 46(2)(c); Commission Implementing Decision (EU) 2021/914",
+   "name": "Standard Contractual Clauses (2021 modules)",
+   "notes": "Four modules (C2C, C2P, P2P, P2C). Adopted 2021-06-04; old 2001/2010 SCCs invalid for new contracts from 2021-09-27 and for all contracts from 2022-12-27. A transfer impact assessment (Schrems II, EDPB Recommendations 01/2020) is expected alongside."
+  },
+  {
+   "id": "uk-idta",
+   "basis": "UK GDPR Art. 46; ICO International Data Transfer Agreement and Addendum",
+   "name": "UK IDTA / UK Addendum to the EU SCCs",
+   "notes": "In force 2022-03-21. Contracts on the old EU SCCs stopped being valid for UK transfers on 2024-03-21."
+  },
+  {
+   "id": "bcr",
+   "basis": "GDPR Art. 47",
+   "name": "Binding Corporate Rules",
+   "notes": "Intra-group transfers; approved by the lead supervisory authority after the Art. 63 consistency mechanism. Controller and processor BCRs are separate instruments."
+  },
+  {
+   "id": "codes-certification",
+   "basis": "GDPR Art. 46(2)(e) and (f)",
+   "name": "Approved codes of conduct or certification mechanisms",
+   "notes": "Must be combined with binding and enforceable commitments by the importer. Few have been approved for transfers so far."
+  },
+  {
+   "id": "ad-hoc-clauses",
+   "basis": "GDPR Art. 46(3)(a)",
+   "name": "Ad hoc contractual clauses",
+   "notes": "Bespoke clauses authorised by the competent supervisory authority."
+  },
+  {
+   "id": "derogations",
+   "basis": "GDPR Art. 49",
+   "name": "Derogations for specific situations",
+   "notes": "Explicit consent, contract performance, important public interest, legal claims, vital interests, public register, or (last resort) compelling legitimate interests for non-repetitive limited transfers. Occasional use only; not a basis for systematic transfers (EDPB Guidelines 2/2018)."
+  }
+ ]
+}

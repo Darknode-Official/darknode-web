@@ -1,0 +1,1081 @@
+{
+ "framework": "PCI DSS",
+ "version": "v4.0.1 (June 2024); future-dated requirements became mandatory 2025-03-31",
+ "updated": "2026-10-16",
+ "license": "PCI DSS is copyrighted by PCI Security Standards Council, LLC. This file contains requirement identifiers and short original paraphrases only, not the requirement text, testing procedures or guidance. Download the standard from the PCI SSC Document Library for authoritative wording.",
+ "notes": "level 'requirement' = the 12 principal requirements; 'sub' = x.y sub-requirement groups; 'req' = selected x.y.z requirements with a cadence the standard itself prescribes (daily log review 10.4.1, weekly FIM 11.5.2, quarterly scans 11.3.1/11.3.2, semiannual NSC review 1.2.7 and access review 7.2.4, annual pentest 11.4.2/11.4.3, annual training 12.6.3 and risk analyses 12.3.1). For 'requirement' and 'sub' rows defaultFrequency is Darknode's evidence cadence suggestion. Appendix A1 (multi-tenant providers), A2 (SSL/early TLS on POS POI) and A3 (designated entities) are not included.",
+ "sourceUrl": "https://www.pcisecuritystandards.org/document_library/",
+ "data": [
+  {
+   "id": "1",
+   "title": "Install and maintain network security controls",
+   "domain": "Network Security Controls",
+   "defaultFrequency": "continuous",
+   "evidenceHints": [
+    "NSC inventory",
+    "Configuration standards"
+   ],
+   "level": "requirement"
+  },
+  {
+   "id": "1.1",
+   "title": "Processes and mechanisms for network security controls defined and understood",
+   "domain": "Network Security Controls",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Documented NSC policies and procedures",
+    "Assigned roles"
+   ],
+   "level": "sub"
+  },
+  {
+   "id": "1.2",
+   "title": "Network security controls configured and maintained",
+   "domain": "Network Security Controls",
+   "defaultFrequency": "semiannual",
+   "evidenceHints": [
+    "Change records for NSC rules",
+    "Rule-set review evidence",
+    "Network diagrams and data-flow diagrams"
+   ],
+   "level": "sub"
+  },
+  {
+   "id": "1.2.7",
+   "title": "NSC configurations reviewed at least once every six months",
+   "domain": "Network Security Controls",
+   "defaultFrequency": "semiannual",
+   "evidenceHints": [
+    "Dated rule-set review with findings and sign-off"
+   ],
+   "level": "req"
+  },
+  {
+   "id": "1.3",
+   "title": "Network access to and from the cardholder data environment restricted",
+   "domain": "Network Security Controls",
+   "defaultFrequency": "quarterly",
+   "evidenceHints": [
+    "Inbound and outbound rule justification",
+    "Segmentation evidence"
+   ],
+   "level": "sub"
+  },
+  {
+   "id": "1.4",
+   "title": "Connections between trusted and untrusted networks controlled",
+   "domain": "Network Security Controls",
+   "defaultFrequency": "quarterly",
+   "evidenceHints": [
+    "DMZ configuration",
+    "Anti-spoofing rules",
+    "Private IP disclosure controls"
+   ],
+   "level": "sub"
+  },
+  {
+   "id": "1.5",
+   "title": "Risks from devices connecting to both untrusted networks and the CDE mitigated",
+   "domain": "Network Security Controls",
+   "defaultFrequency": "quarterly",
+   "evidenceHints": [
+    "Host firewall or equivalent configuration on portable devices"
+   ],
+   "level": "sub"
+  },
+  {
+   "id": "2",
+   "title": "Apply secure configurations to all system components",
+   "domain": "Secure Configuration",
+   "defaultFrequency": "continuous",
+   "evidenceHints": [
+    "Hardening standards",
+    "Build records"
+   ],
+   "level": "requirement"
+  },
+  {
+   "id": "2.1",
+   "title": "Processes and mechanisms for secure configurations defined and understood",
+   "domain": "Secure Configuration",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Configuration management policy"
+   ],
+   "level": "sub"
+  },
+  {
+   "id": "2.2",
+   "title": "System components configured and managed securely",
+   "domain": "Secure Configuration",
+   "defaultFrequency": "quarterly",
+   "evidenceHints": [
+    "Configuration standards per platform",
+    "Default credential change evidence",
+    "One primary function per server"
+   ],
+   "level": "sub"
+  },
+  {
+   "id": "2.3",
+   "title": "Wireless environments configured and managed securely",
+   "domain": "Secure Configuration",
+   "defaultFrequency": "quarterly",
+   "evidenceHints": [
+    "Wireless defaults changed",
+    "Wireless encryption configuration"
+   ],
+   "level": "sub"
+  },
+  {
+   "id": "3",
+   "title": "Protect stored account data",
+   "domain": "Account Data Protection",
+   "defaultFrequency": "continuous",
+   "evidenceHints": [
+    "Data retention policy",
+    "Encryption evidence"
+   ],
+   "level": "requirement"
+  },
+  {
+   "id": "3.1",
+   "title": "Processes and mechanisms for protecting stored account data defined and understood",
+   "domain": "Account Data Protection",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Data protection policy"
+   ],
+   "level": "sub"
+  },
+  {
+   "id": "3.2",
+   "title": "Storage of account data kept to a minimum",
+   "domain": "Account Data Protection",
+   "defaultFrequency": "quarterly",
+   "evidenceHints": [
+    "Retention schedule",
+    "Quarterly purge evidence"
+   ],
+   "level": "sub"
+  },
+  {
+   "id": "3.2.1",
+   "title": "Account data retention minimised with a process run at least every three months to delete data beyond retention",
+   "domain": "Account Data Protection",
+   "defaultFrequency": "quarterly",
+   "evidenceHints": [
+    "Dated purge job evidence",
+    "Data discovery scan results"
+   ],
+   "level": "req"
+  },
+  {
+   "id": "3.3",
+   "title": "Sensitive authentication data not stored after authorisation",
+   "domain": "Account Data Protection",
+   "defaultFrequency": "quarterly",
+   "evidenceHints": [
+    "SAD discovery scans",
+    "Log and database checks"
+   ],
+   "level": "sub"
+  },
+  {
+   "id": "3.4",
+   "title": "Access to displays of full PAN and ability to copy PAN restricted",
+   "domain": "Account Data Protection",
+   "defaultFrequency": "quarterly",
+   "evidenceHints": [
+    "Masking configuration",
+    "Role-based need for full PAN",
+    "Copy or relocate controls on remote access"
+   ],
+   "level": "sub"
+  },
+  {
+   "id": "3.5",
+   "title": "Primary account number secured wherever it is stored",
+   "domain": "Account Data Protection",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Rendering method (hash, truncation, tokenisation, encryption)",
+    "Disk encryption limitations"
+   ],
+   "level": "sub"
+  },
+  {
+   "id": "3.6",
+   "title": "Cryptographic keys protecting stored account data secured",
+   "domain": "Account Data Protection",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Key custodian forms",
+    "Key storage and access records"
+   ],
+   "level": "sub"
+  },
+  {
+   "id": "3.7",
+   "title": "Key management processes and procedures defined and implemented",
+   "domain": "Account Data Protection",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Key generation, distribution, rotation and retirement records"
+   ],
+   "level": "sub"
+  },
+  {
+   "id": "4",
+   "title": "Protect cardholder data with strong cryptography during transmission over open, public networks",
+   "domain": "Transmission Security",
+   "defaultFrequency": "continuous",
+   "evidenceHints": [
+    "TLS configuration",
+    "Certificate inventory"
+   ],
+   "level": "requirement"
+  },
+  {
+   "id": "4.1",
+   "title": "Processes and mechanisms for protecting transmitted cardholder data defined and understood",
+   "domain": "Transmission Security",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Transmission security policy"
+   ],
+   "level": "sub"
+  },
+  {
+   "id": "4.2",
+   "title": "PAN protected with strong cryptography during transmission",
+   "domain": "Transmission Security",
+   "defaultFrequency": "quarterly",
+   "evidenceHints": [
+    "Inventory of trusted keys and certificates",
+    "Protocol and cipher scans",
+    "Wireless and messaging encryption"
+   ],
+   "level": "sub"
+  },
+  {
+   "id": "5",
+   "title": "Protect all systems and networks from malicious software",
+   "domain": "Malware Protection",
+   "defaultFrequency": "continuous",
+   "evidenceHints": [
+    "Anti-malware coverage report"
+   ],
+   "level": "requirement"
+  },
+  {
+   "id": "5.1",
+   "title": "Processes and mechanisms for malware protection defined and understood",
+   "domain": "Malware Protection",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Anti-malware policy"
+   ],
+   "level": "sub"
+  },
+  {
+   "id": "5.2",
+   "title": "Malicious software prevented, or detected and addressed",
+   "domain": "Malware Protection",
+   "defaultFrequency": "continuous",
+   "evidenceHints": [
+    "Deployment coverage",
+    "Systems-not-at-risk evaluation (periodic)"
+   ],
+   "level": "sub"
+  },
+  {
+   "id": "5.3",
+   "title": "Anti-malware mechanisms and processes active, maintained and monitored",
+   "domain": "Malware Protection",
+   "defaultFrequency": "continuous",
+   "evidenceHints": [
+    "Signature update status",
+    "Scan schedules",
+    "Tamper protection"
+   ],
+   "level": "sub"
+  },
+  {
+   "id": "5.4",
+   "title": "Anti-phishing mechanisms protect users against phishing attacks",
+   "domain": "Malware Protection",
+   "defaultFrequency": "continuous",
+   "evidenceHints": [
+    "Email security controls",
+    "DMARC, SPF, DKIM configuration"
+   ],
+   "level": "sub"
+  },
+  {
+   "id": "6",
+   "title": "Develop and maintain secure systems and software",
+   "domain": "Secure Development",
+   "defaultFrequency": "continuous",
+   "evidenceHints": [
+    "SDLC documentation",
+    "Patch records"
+   ],
+   "level": "requirement"
+  },
+  {
+   "id": "6.1",
+   "title": "Processes and mechanisms for secure systems and software defined and understood",
+   "domain": "Secure Development",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Secure development policy"
+   ],
+   "level": "sub"
+  },
+  {
+   "id": "6.2",
+   "title": "Bespoke and custom software developed securely",
+   "domain": "Secure Development",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Secure coding training (annual)",
+    "Code review records",
+    "Common-vulnerability prevention techniques"
+   ],
+   "level": "sub"
+  },
+  {
+   "id": "6.3",
+   "title": "Security vulnerabilities identified and addressed",
+   "domain": "Secure Development",
+   "defaultFrequency": "monthly",
+   "evidenceHints": [
+    "Vulnerability intelligence sources",
+    "Software inventory including third-party components",
+    "Critical patch records"
+   ],
+   "level": "sub"
+  },
+  {
+   "id": "6.3.3",
+   "title": "Critical or high-security patches installed within one month of release",
+   "domain": "Secure Development",
+   "defaultFrequency": "monthly",
+   "evidenceHints": [
+    "Patch deployment reports with dates against release dates"
+   ],
+   "level": "req"
+  },
+  {
+   "id": "6.4",
+   "title": "Public-facing web applications protected against attacks",
+   "domain": "Secure Development",
+   "defaultFrequency": "continuous",
+   "evidenceHints": [
+    "WAF or automated technical solution configuration",
+    "Script inventory and authorisation for payment pages"
+   ],
+   "level": "sub"
+  },
+  {
+   "id": "6.5",
+   "title": "Changes to all system components managed securely",
+   "domain": "Secure Development",
+   "defaultFrequency": "continuous",
+   "evidenceHints": [
+    "Change records with approval, impact and back-out",
+    "Separation of environments",
+    "Live PAN not used in test"
+   ],
+   "level": "sub"
+  },
+  {
+   "id": "7",
+   "title": "Restrict access to system components and cardholder data by business need to know",
+   "domain": "Access Control",
+   "defaultFrequency": "continuous",
+   "evidenceHints": [
+    "Access control model",
+    "Access review records"
+   ],
+   "level": "requirement"
+  },
+  {
+   "id": "7.1",
+   "title": "Processes and mechanisms for restricting access defined and understood",
+   "domain": "Access Control",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Access control policy"
+   ],
+   "level": "sub"
+  },
+  {
+   "id": "7.2",
+   "title": "Access to system components and data appropriately defined and assigned",
+   "domain": "Access Control",
+   "defaultFrequency": "semiannual",
+   "evidenceHints": [
+    "Role definitions",
+    "Approval records",
+    "Semiannual access reviews"
+   ],
+   "level": "sub"
+  },
+  {
+   "id": "7.2.4",
+   "title": "All user accounts and access privileges reviewed at least once every six months",
+   "domain": "Access Control",
+   "defaultFrequency": "semiannual",
+   "evidenceHints": [
+    "Dated access review with remediation sign-off"
+   ],
+   "level": "req"
+  },
+  {
+   "id": "7.3",
+   "title": "Access managed via access control systems",
+   "domain": "Access Control",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Access control system configuration (default deny)"
+   ],
+   "level": "sub"
+  },
+  {
+   "id": "8",
+   "title": "Identify users and authenticate access to system components",
+   "domain": "Identification and Authentication",
+   "defaultFrequency": "continuous",
+   "evidenceHints": [
+    "Account inventory",
+    "MFA configuration"
+   ],
+   "level": "requirement"
+  },
+  {
+   "id": "8.1",
+   "title": "Processes and mechanisms for identification and authentication defined and understood",
+   "domain": "Identification and Authentication",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Authentication policy"
+   ],
+   "level": "sub"
+  },
+  {
+   "id": "8.2",
+   "title": "User identification and related accounts strictly managed",
+   "domain": "Identification and Authentication",
+   "defaultFrequency": "quarterly",
+   "evidenceHints": [
+    "Unique ID enforcement",
+    "Termination revocation evidence",
+    "Inactive account removal within 90 days"
+   ],
+   "level": "sub"
+  },
+  {
+   "id": "8.3",
+   "title": "Strong authentication for users and administrators established and managed",
+   "domain": "Identification and Authentication",
+   "defaultFrequency": "quarterly",
+   "evidenceHints": [
+    "Password policy settings",
+    "Lockout configuration",
+    "Credential reset procedures"
+   ],
+   "level": "sub"
+  },
+  {
+   "id": "8.3.9",
+   "title": "Passwords changed at least every 90 days or dynamic risk analysis applied, where passwords are the only factor",
+   "domain": "Identification and Authentication",
+   "defaultFrequency": "quarterly",
+   "evidenceHints": [
+    "Password age configuration evidence"
+   ],
+   "level": "req"
+  },
+  {
+   "id": "8.4",
+   "title": "Multi-factor authentication implemented to secure access into the CDE",
+   "domain": "Identification and Authentication",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "MFA for admin access",
+    "MFA for remote access",
+    "MFA for all CDE access (effective 2025-03-31)"
+   ],
+   "level": "sub"
+  },
+  {
+   "id": "8.5",
+   "title": "MFA systems configured to prevent misuse",
+   "domain": "Identification and Authentication",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Replay resistance",
+    "No bypass without exception approval",
+    "Independent factors"
+   ],
+   "level": "sub"
+  },
+  {
+   "id": "8.6",
+   "title": "Application and system accounts and their authentication factors strictly managed",
+   "domain": "Identification and Authentication",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Service account inventory",
+    "Interactive-use restrictions",
+    "Credential rotation evidence"
+   ],
+   "level": "sub"
+  },
+  {
+   "id": "9",
+   "title": "Restrict physical access to cardholder data",
+   "domain": "Physical Security",
+   "defaultFrequency": "continuous",
+   "evidenceHints": [
+    "Facility access controls",
+    "Media logs"
+   ],
+   "level": "requirement"
+  },
+  {
+   "id": "9.1",
+   "title": "Processes and mechanisms for restricting physical access defined and understood",
+   "domain": "Physical Security",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Physical security policy"
+   ],
+   "level": "sub"
+  },
+  {
+   "id": "9.2",
+   "title": "Physical access controls manage entry into facilities and systems containing cardholder data",
+   "domain": "Physical Security",
+   "defaultFrequency": "quarterly",
+   "evidenceHints": [
+    "Badge access reviews",
+    "Camera retention (90 days)",
+    "Network jack restrictions"
+   ],
+   "level": "sub"
+  },
+  {
+   "id": "9.3",
+   "title": "Physical access for personnel and visitors authorised and managed",
+   "domain": "Physical Security",
+   "defaultFrequency": "quarterly",
+   "evidenceHints": [
+    "Visitor logs retained 3 months",
+    "Badge revocation on termination"
+   ],
+   "level": "sub"
+  },
+  {
+   "id": "9.4",
+   "title": "Media with cardholder data securely stored, accessed, distributed and destroyed",
+   "domain": "Physical Security",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Media inventory (annual)",
+    "Destruction certificates",
+    "Courier tracking"
+   ],
+   "level": "sub"
+  },
+  {
+   "id": "9.4.5.1",
+   "title": "Inventories of electronic media with cardholder data conducted at least once every 12 months",
+   "domain": "Physical Security",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Dated media inventory with reconciliation"
+   ],
+   "level": "req"
+  },
+  {
+   "id": "9.5",
+   "title": "Point-of-interaction devices protected from tampering and substitution",
+   "domain": "Physical Security",
+   "defaultFrequency": "quarterly",
+   "evidenceHints": [
+    "POI device inventory",
+    "Periodic inspection records",
+    "Staff training on tampering"
+   ],
+   "level": "sub"
+  },
+  {
+   "id": "10",
+   "title": "Log and monitor all access to system components and cardholder data",
+   "domain": "Logging and Monitoring",
+   "defaultFrequency": "continuous",
+   "evidenceHints": [
+    "Log source coverage",
+    "Daily review evidence"
+   ],
+   "level": "requirement"
+  },
+  {
+   "id": "10.1",
+   "title": "Processes and mechanisms for logging and monitoring defined and understood",
+   "domain": "Logging and Monitoring",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Logging policy"
+   ],
+   "level": "sub"
+  },
+  {
+   "id": "10.2",
+   "title": "Audit logs implemented to support detection of anomalies and forensic analysis",
+   "domain": "Logging and Monitoring",
+   "defaultFrequency": "continuous",
+   "evidenceHints": [
+    "Logged event types per requirement",
+    "Log record content"
+   ],
+   "level": "sub"
+  },
+  {
+   "id": "10.3",
+   "title": "Audit logs protected from destruction and unauthorised modification",
+   "domain": "Logging and Monitoring",
+   "defaultFrequency": "continuous",
+   "evidenceHints": [
+    "Log access restrictions",
+    "File integrity monitoring on logs",
+    "Central log server"
+   ],
+   "level": "sub"
+  },
+  {
+   "id": "10.4",
+   "title": "Audit logs reviewed to identify anomalies or suspicious activity",
+   "domain": "Logging and Monitoring",
+   "defaultFrequency": "daily",
+   "evidenceHints": [
+    "Daily review records or automated alerting evidence",
+    "Exception follow-up"
+   ],
+   "level": "sub"
+  },
+  {
+   "id": "10.4.1",
+   "title": "Security event logs, CDE component logs, critical system logs and NSC logs reviewed at least once daily",
+   "domain": "Logging and Monitoring",
+   "defaultFrequency": "daily",
+   "evidenceHints": [
+    "Automated log review tool output",
+    "Daily review sign-off or alert triage records"
+   ],
+   "level": "req"
+  },
+  {
+   "id": "10.5",
+   "title": "Audit log history retained and available for analysis",
+   "domain": "Logging and Monitoring",
+   "defaultFrequency": "quarterly",
+   "evidenceHints": [
+    "12-month retention evidence",
+    "3 months immediately available"
+   ],
+   "level": "sub"
+  },
+  {
+   "id": "10.6",
+   "title": "Time-synchronisation mechanisms support consistent time settings",
+   "domain": "Logging and Monitoring",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "NTP configuration",
+    "Time source restrictions"
+   ],
+   "level": "sub"
+  },
+  {
+   "id": "10.7",
+   "title": "Failures of critical security control systems detected, reported and responded to promptly",
+   "domain": "Logging and Monitoring",
+   "defaultFrequency": "event",
+   "evidenceHints": [
+    "Alerting on control failures",
+    "Failure response records"
+   ],
+   "level": "sub"
+  },
+  {
+   "id": "11",
+   "title": "Test security of systems and networks regularly",
+   "domain": "Security Testing",
+   "defaultFrequency": "quarterly",
+   "evidenceHints": [
+    "Scan and test schedule"
+   ],
+   "level": "requirement"
+  },
+  {
+   "id": "11.1",
+   "title": "Processes and mechanisms for regular security testing defined and understood",
+   "domain": "Security Testing",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Security testing policy"
+   ],
+   "level": "sub"
+  },
+  {
+   "id": "11.2",
+   "title": "Wireless access points identified and monitored, unauthorised ones addressed",
+   "domain": "Security Testing",
+   "defaultFrequency": "quarterly",
+   "evidenceHints": [
+    "Wireless scan or detection results",
+    "Authorised AP inventory"
+   ],
+   "level": "sub"
+  },
+  {
+   "id": "11.2.1",
+   "title": "Authorised and unauthorised wireless access points managed at least once every three months",
+   "domain": "Security Testing",
+   "defaultFrequency": "quarterly",
+   "evidenceHints": [
+    "Dated wireless scan results"
+   ],
+   "level": "req"
+  },
+  {
+   "id": "11.3",
+   "title": "External and internal vulnerabilities regularly identified, prioritised and addressed",
+   "domain": "Security Testing",
+   "defaultFrequency": "quarterly",
+   "evidenceHints": [
+    "Internal scan reports",
+    "ASV external scan reports",
+    "Rescans after remediation",
+    "Scans after significant change"
+   ],
+   "level": "sub"
+  },
+  {
+   "id": "11.3.1",
+   "title": "Internal vulnerability scans performed at least once every three months with rescans until high-risk and critical issues resolved",
+   "domain": "Security Testing",
+   "defaultFrequency": "quarterly",
+   "evidenceHints": [
+    "Four passing quarterly internal scan reports"
+   ],
+   "level": "req"
+  },
+  {
+   "id": "11.3.2",
+   "title": "External vulnerability scans by an Approved Scanning Vendor at least once every three months",
+   "domain": "Security Testing",
+   "defaultFrequency": "quarterly",
+   "evidenceHints": [
+    "Four passing quarterly ASV scan reports"
+   ],
+   "level": "req"
+  },
+  {
+   "id": "11.4",
+   "title": "External and internal penetration testing regularly performed and findings corrected",
+   "domain": "Security Testing",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Pentest methodology",
+    "Internal and external pentest reports",
+    "Segmentation test results",
+    "Remediation evidence"
+   ],
+   "level": "sub"
+  },
+  {
+   "id": "11.4.2",
+   "title": "Internal penetration test at least once every 12 months and after significant changes",
+   "domain": "Security Testing",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Dated internal pentest report"
+   ],
+   "level": "req"
+  },
+  {
+   "id": "11.4.3",
+   "title": "External penetration test at least once every 12 months and after significant changes",
+   "domain": "Security Testing",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Dated external pentest report"
+   ],
+   "level": "req"
+  },
+  {
+   "id": "11.4.5",
+   "title": "Segmentation controls tested by penetration test at least once every 12 months (every six months for service providers under 11.4.6)",
+   "domain": "Security Testing",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Segmentation test report"
+   ],
+   "level": "req"
+  },
+  {
+   "id": "11.5",
+   "title": "Network intrusions and unexpected file changes detected and responded to",
+   "domain": "Security Testing",
+   "defaultFrequency": "weekly",
+   "evidenceHints": [
+    "IDS or IPS configuration and alerts",
+    "Change-detection (FIM) reports"
+   ],
+   "level": "sub"
+  },
+  {
+   "id": "11.5.2",
+   "title": "Change-detection mechanism alerts on unauthorised modification of critical files; comparisons at least once weekly",
+   "domain": "Security Testing",
+   "defaultFrequency": "weekly",
+   "evidenceHints": [
+    "FIM configuration and weekly comparison evidence"
+   ],
+   "level": "req"
+  },
+  {
+   "id": "11.6",
+   "title": "Unauthorised changes on payment pages detected and responded to",
+   "domain": "Security Testing",
+   "defaultFrequency": "weekly",
+   "evidenceHints": [
+    "Payment page change-and-tamper detection evaluation records (at least every seven days or per targeted risk analysis)"
+   ],
+   "level": "sub"
+  },
+  {
+   "id": "12",
+   "title": "Support information security with organisational policies and programs",
+   "domain": "Governance",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Policy set",
+    "Risk analyses",
+    "Training records"
+   ],
+   "level": "requirement"
+  },
+  {
+   "id": "12.1",
+   "title": "Comprehensive information security policy established and maintained",
+   "domain": "Governance",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Policy with annual review",
+    "Executive assignment of security responsibility"
+   ],
+   "level": "sub"
+  },
+  {
+   "id": "12.1.2",
+   "title": "Information security policy reviewed at least once every 12 months and updated as needed",
+   "domain": "Governance",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Dated policy review and approval"
+   ],
+   "level": "req"
+  },
+  {
+   "id": "12.2",
+   "title": "Acceptable use policies for end-user technologies defined and implemented",
+   "domain": "Governance",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Acceptable use policy acknowledgements"
+   ],
+   "level": "sub"
+  },
+  {
+   "id": "12.3",
+   "title": "Risks to the cardholder data environment formally identified, evaluated and managed",
+   "domain": "Governance",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Targeted risk analyses",
+    "Cryptographic cipher and protocol review",
+    "Technology review"
+   ],
+   "level": "sub"
+  },
+  {
+   "id": "12.3.1",
+   "title": "Targeted risk analyses performed and reviewed at least once every 12 months for each flexible-frequency requirement",
+   "domain": "Governance",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Documented targeted risk analyses with review dates"
+   ],
+   "level": "req"
+  },
+  {
+   "id": "12.3.4",
+   "title": "Hardware and software technologies in use reviewed at least once every 12 months",
+   "domain": "Governance",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Technology review records including end-of-life analysis"
+   ],
+   "level": "req"
+  },
+  {
+   "id": "12.4",
+   "title": "PCI DSS compliance managed",
+   "domain": "Governance",
+   "defaultFrequency": "quarterly",
+   "evidenceHints": [
+    "Executive responsibility documented",
+    "Service provider quarterly reviews of personnel performing security tasks"
+   ],
+   "level": "sub"
+  },
+  {
+   "id": "12.4.2",
+   "title": "Service providers: reviews at least once every three months confirming personnel perform required tasks",
+   "domain": "Governance",
+   "defaultFrequency": "quarterly",
+   "evidenceHints": [
+    "Dated quarterly review records and sign-off"
+   ],
+   "level": "req"
+  },
+  {
+   "id": "12.5",
+   "title": "PCI DSS scope documented and validated",
+   "domain": "Governance",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "System component inventory",
+    "Scope confirmation (annual; every six months for service providers)"
+   ],
+   "level": "sub"
+  },
+  {
+   "id": "12.5.2",
+   "title": "PCI DSS scope documented and confirmed at least once every 12 months and upon significant change",
+   "domain": "Governance",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Dated scoping exercise results"
+   ],
+   "level": "req"
+  },
+  {
+   "id": "12.6",
+   "title": "Security awareness education is an ongoing activity",
+   "domain": "Governance",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Awareness program review",
+    "Training completion records",
+    "Acknowledgements"
+   ],
+   "level": "sub"
+  },
+  {
+   "id": "12.6.2",
+   "title": "Security awareness program reviewed at least once every 12 months",
+   "domain": "Governance",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Dated program review"
+   ],
+   "level": "req"
+  },
+  {
+   "id": "12.6.3",
+   "title": "Personnel receive security awareness training upon hire and at least once every 12 months",
+   "domain": "Governance",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Training completion report",
+    "Signed acknowledgements"
+   ],
+   "level": "req"
+  },
+  {
+   "id": "12.7",
+   "title": "Personnel screened to reduce risks from insider threats",
+   "domain": "Governance",
+   "defaultFrequency": "event",
+   "evidenceHints": [
+    "Background check records for CDE-access roles"
+   ],
+   "level": "sub"
+  },
+  {
+   "id": "12.8",
+   "title": "Risk to information assets associated with third-party service providers managed",
+   "domain": "Governance",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "TPSP list with services",
+    "Written agreements",
+    "Due diligence",
+    "Annual compliance monitoring"
+   ],
+   "level": "sub"
+  },
+  {
+   "id": "12.8.4",
+   "title": "TPSP PCI DSS compliance status monitored at least once every 12 months",
+   "domain": "Governance",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "AOC collection records",
+    "Responsibility matrix"
+   ],
+   "level": "req"
+  },
+  {
+   "id": "12.9",
+   "title": "Third-party service providers support their customers' PCI DSS compliance",
+   "domain": "Governance",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Written acknowledgements to customers",
+    "Responsibility matrices"
+   ],
+   "level": "sub"
+  },
+  {
+   "id": "12.10",
+   "title": "Suspected and confirmed security incidents responded to immediately",
+   "domain": "Governance",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Incident response plan",
+    "Annual plan review and test",
+    "24/7 personnel",
+    "Training"
+   ],
+   "level": "sub"
+  },
+  {
+   "id": "12.10.2",
+   "title": "Incident response plan reviewed and tested at least once every 12 months",
+   "domain": "Governance",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Dated plan review and exercise report"
+   ],
+   "level": "req"
+  }
+ ]
+}

@@ -1,0 +1,935 @@
+{
+ "framework": "ISO/IEC 27001 Annex A",
+ "version": "ISO/IEC 27001:2022 (Annex A aligned to ISO/IEC 27002:2022)",
+ "updated": "2026-10-16",
+ "license": "ISO/IEC 27001 and 27002 are copyrighted standards sold by ISO and national bodies. This file lists control identifiers with short descriptive titles and original evidence hints only; it does not reproduce control text, purpose statements or implementation guidance. Buy the standards for authoritative wording.",
+ "notes": "93 controls in four themes (Organizational 37, People 8, Physical 14, Technological 34). defaultFrequency is Darknode's suggested evidence cadence; ISO 27001 does not prescribe control frequencies beyond the clause-level requirements (e.g. internal audit and management review at planned intervals).",
+ "sourceUrl": "https://www.iso.org/standard/27001",
+ "data": [
+  {
+   "id": "5.1",
+   "title": "Information security policies",
+   "domain": "Organizational",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Approved policy set",
+    "Management review minutes"
+   ]
+  },
+  {
+   "id": "5.2",
+   "title": "Security roles and responsibilities",
+   "domain": "Organizational",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Role matrix",
+    "Appointment records"
+   ]
+  },
+  {
+   "id": "5.3",
+   "title": "Segregation of duties",
+   "domain": "Organizational",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "SoD matrix",
+    "Conflict review results"
+   ]
+  },
+  {
+   "id": "5.4",
+   "title": "Management responsibilities for security",
+   "domain": "Organizational",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Management communications",
+    "Policy enforcement records"
+   ]
+  },
+  {
+   "id": "5.5",
+   "title": "Contact with authorities",
+   "domain": "Organizational",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Authority contact list",
+    "Reporting procedure"
+   ]
+  },
+  {
+   "id": "5.6",
+   "title": "Contact with special interest groups",
+   "domain": "Organizational",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Memberships",
+    "Threat-sharing group participation"
+   ]
+  },
+  {
+   "id": "5.7",
+   "title": "Threat intelligence",
+   "domain": "Organizational",
+   "defaultFrequency": "monthly",
+   "evidenceHints": [
+    "Threat intel feed subscriptions",
+    "Analysis and dissemination records"
+   ]
+  },
+  {
+   "id": "5.8",
+   "title": "Security in project management",
+   "domain": "Organizational",
+   "defaultFrequency": "event",
+   "evidenceHints": [
+    "Project security checklists",
+    "Risk assessments per project"
+   ]
+  },
+  {
+   "id": "5.9",
+   "title": "Inventory of information and associated assets",
+   "domain": "Organizational",
+   "defaultFrequency": "quarterly",
+   "evidenceHints": [
+    "Asset register with owners",
+    "Reconciliation evidence"
+   ]
+  },
+  {
+   "id": "5.10",
+   "title": "Acceptable use of information and assets",
+   "domain": "Organizational",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Acceptable use policy acknowledgements"
+   ]
+  },
+  {
+   "id": "5.11",
+   "title": "Return of assets",
+   "domain": "Organizational",
+   "defaultFrequency": "event",
+   "evidenceHints": [
+    "Offboarding checklists",
+    "Asset return records"
+   ]
+  },
+  {
+   "id": "5.12",
+   "title": "Classification of information",
+   "domain": "Organizational",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Classification scheme",
+    "Classified data inventory"
+   ]
+  },
+  {
+   "id": "5.13",
+   "title": "Labelling of information",
+   "domain": "Organizational",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Labelling procedure",
+    "Sample labelled documents or tags"
+   ]
+  },
+  {
+   "id": "5.14",
+   "title": "Information transfer",
+   "domain": "Organizational",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Transfer policy",
+    "Secure transfer tooling configuration",
+    "Agreements with external parties"
+   ]
+  },
+  {
+   "id": "5.15",
+   "title": "Access control",
+   "domain": "Organizational",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Access control policy",
+    "Access rules per system"
+   ]
+  },
+  {
+   "id": "5.16",
+   "title": "Identity management",
+   "domain": "Organizational",
+   "defaultFrequency": "quarterly",
+   "evidenceHints": [
+    "Identity lifecycle records",
+    "Unique ID enforcement"
+   ]
+  },
+  {
+   "id": "5.17",
+   "title": "Authentication information",
+   "domain": "Organizational",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Password and secret management policy",
+    "Credential issuance records"
+   ]
+  },
+  {
+   "id": "5.18",
+   "title": "Access rights",
+   "domain": "Organizational",
+   "defaultFrequency": "quarterly",
+   "evidenceHints": [
+    "Access provisioning and review records",
+    "Revocation evidence"
+   ]
+  },
+  {
+   "id": "5.19",
+   "title": "Security in supplier relationships",
+   "domain": "Organizational",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Supplier security policy",
+    "Supplier risk assessments"
+   ]
+  },
+  {
+   "id": "5.20",
+   "title": "Security requirements in supplier agreements",
+   "domain": "Organizational",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Contract clauses",
+    "Signed agreements"
+   ]
+  },
+  {
+   "id": "5.21",
+   "title": "Security in the ICT supply chain",
+   "domain": "Organizational",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Supply chain risk assessment",
+    "Component provenance checks"
+   ]
+  },
+  {
+   "id": "5.22",
+   "title": "Monitoring and review of supplier services",
+   "domain": "Organizational",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Supplier performance reviews",
+    "SOC report reviews",
+    "Change notifications"
+   ]
+  },
+  {
+   "id": "5.23",
+   "title": "Security for use of cloud services",
+   "domain": "Organizational",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Cloud usage policy",
+    "Cloud provider assessments",
+    "Shared-responsibility documentation"
+   ]
+  },
+  {
+   "id": "5.24",
+   "title": "Incident management planning and preparation",
+   "domain": "Organizational",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Incident response plan",
+    "Roles and contact lists"
+   ]
+  },
+  {
+   "id": "5.25",
+   "title": "Assessment and decision on security events",
+   "domain": "Organizational",
+   "defaultFrequency": "event",
+   "evidenceHints": [
+    "Event triage records",
+    "Classification criteria"
+   ]
+  },
+  {
+   "id": "5.26",
+   "title": "Response to security incidents",
+   "domain": "Organizational",
+   "defaultFrequency": "event",
+   "evidenceHints": [
+    "Incident tickets",
+    "Response timelines"
+   ]
+  },
+  {
+   "id": "5.27",
+   "title": "Learning from security incidents",
+   "domain": "Organizational",
+   "defaultFrequency": "event",
+   "evidenceHints": [
+    "Post-incident reviews",
+    "Improvement actions"
+   ]
+  },
+  {
+   "id": "5.28",
+   "title": "Collection of evidence",
+   "domain": "Organizational",
+   "defaultFrequency": "event",
+   "evidenceHints": [
+    "Evidence handling procedure",
+    "Chain-of-custody records"
+   ]
+  },
+  {
+   "id": "5.29",
+   "title": "Security during disruption",
+   "domain": "Organizational",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Business continuity plans with security requirements",
+    "Exercise results"
+   ]
+  },
+  {
+   "id": "5.30",
+   "title": "ICT readiness for business continuity",
+   "domain": "Organizational",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "BIA and RTO/RPO targets",
+    "DR test records"
+   ]
+  },
+  {
+   "id": "5.31",
+   "title": "Legal, statutory, regulatory and contractual requirements",
+   "domain": "Organizational",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Compliance obligations register",
+    "Legal review records"
+   ]
+  },
+  {
+   "id": "5.32",
+   "title": "Intellectual property rights",
+   "domain": "Organizational",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Software licence inventory",
+    "IP policy"
+   ]
+  },
+  {
+   "id": "5.33",
+   "title": "Protection of records",
+   "domain": "Organizational",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Records retention schedule",
+    "Integrity and storage controls"
+   ]
+  },
+  {
+   "id": "5.34",
+   "title": "Privacy and protection of PII",
+   "domain": "Organizational",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Privacy policy",
+    "PII inventory",
+    "DPIA records"
+   ]
+  },
+  {
+   "id": "5.35",
+   "title": "Independent review of information security",
+   "domain": "Organizational",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Internal audit reports",
+    "External assessment reports"
+   ]
+  },
+  {
+   "id": "5.36",
+   "title": "Compliance with policies, rules and standards",
+   "domain": "Organizational",
+   "defaultFrequency": "quarterly",
+   "evidenceHints": [
+    "Compliance check results",
+    "Non-conformity records"
+   ]
+  },
+  {
+   "id": "5.37",
+   "title": "Documented operating procedures",
+   "domain": "Organizational",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Procedure library with review dates"
+   ]
+  },
+  {
+   "id": "6.1",
+   "title": "Screening",
+   "domain": "People",
+   "defaultFrequency": "event",
+   "evidenceHints": [
+    "Background check records",
+    "Screening policy"
+   ]
+  },
+  {
+   "id": "6.2",
+   "title": "Terms and conditions of employment",
+   "domain": "People",
+   "defaultFrequency": "event",
+   "evidenceHints": [
+    "Signed contracts with security clauses"
+   ]
+  },
+  {
+   "id": "6.3",
+   "title": "Security awareness, education and training",
+   "domain": "People",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Training completion records",
+    "Awareness campaign materials"
+   ]
+  },
+  {
+   "id": "6.4",
+   "title": "Disciplinary process",
+   "domain": "People",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Documented disciplinary procedure",
+    "Case records (redacted)"
+   ]
+  },
+  {
+   "id": "6.5",
+   "title": "Responsibilities after termination or change of employment",
+   "domain": "People",
+   "defaultFrequency": "event",
+   "evidenceHints": [
+    "Offboarding records",
+    "Continuing-obligation reminders"
+   ]
+  },
+  {
+   "id": "6.6",
+   "title": "Confidentiality or non-disclosure agreements",
+   "domain": "People",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Signed NDAs",
+    "NDA template review"
+   ]
+  },
+  {
+   "id": "6.7",
+   "title": "Remote working",
+   "domain": "People",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Remote working policy",
+    "Endpoint and VPN controls"
+   ]
+  },
+  {
+   "id": "6.8",
+   "title": "Security event reporting",
+   "domain": "People",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Reporting channel",
+    "Awareness that reporting is expected",
+    "Reported events log"
+   ]
+  },
+  {
+   "id": "7.1",
+   "title": "Physical security perimeters",
+   "domain": "Physical",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Site security assessment",
+    "Perimeter definitions"
+   ]
+  },
+  {
+   "id": "7.2",
+   "title": "Physical entry",
+   "domain": "Physical",
+   "defaultFrequency": "quarterly",
+   "evidenceHints": [
+    "Access badge reviews",
+    "Visitor logs"
+   ]
+  },
+  {
+   "id": "7.3",
+   "title": "Securing offices, rooms and facilities",
+   "domain": "Physical",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Facility security review"
+   ]
+  },
+  {
+   "id": "7.4",
+   "title": "Physical security monitoring",
+   "domain": "Physical",
+   "defaultFrequency": "continuous",
+   "evidenceHints": [
+    "CCTV and alarm monitoring records"
+   ]
+  },
+  {
+   "id": "7.5",
+   "title": "Protection against physical and environmental threats",
+   "domain": "Physical",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Environmental risk assessment",
+    "Fire and flood controls"
+   ]
+  },
+  {
+   "id": "7.6",
+   "title": "Working in secure areas",
+   "domain": "Physical",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Secure area procedures",
+    "Authorisation records"
+   ]
+  },
+  {
+   "id": "7.7",
+   "title": "Clear desk and clear screen",
+   "domain": "Physical",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Policy",
+    "Spot-check results",
+    "Screen lock configuration"
+   ]
+  },
+  {
+   "id": "7.8",
+   "title": "Equipment siting and protection",
+   "domain": "Physical",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Equipment placement review"
+   ]
+  },
+  {
+   "id": "7.9",
+   "title": "Security of assets off-premises",
+   "domain": "Physical",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Off-site asset policy",
+    "Device encryption and tracking"
+   ]
+  },
+  {
+   "id": "7.10",
+   "title": "Storage media",
+   "domain": "Physical",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Media handling procedure",
+    "Media inventory and disposal records"
+   ]
+  },
+  {
+   "id": "7.11",
+   "title": "Supporting utilities",
+   "domain": "Physical",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "UPS and generator tests",
+    "Utility redundancy evidence"
+   ]
+  },
+  {
+   "id": "7.12",
+   "title": "Cabling security",
+   "domain": "Physical",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Cabling inspection records"
+   ]
+  },
+  {
+   "id": "7.13",
+   "title": "Equipment maintenance",
+   "domain": "Physical",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Maintenance schedules and logs"
+   ]
+  },
+  {
+   "id": "7.14",
+   "title": "Secure disposal or re-use of equipment",
+   "domain": "Physical",
+   "defaultFrequency": "event",
+   "evidenceHints": [
+    "Sanitisation certificates",
+    "Disposal records"
+   ]
+  },
+  {
+   "id": "8.1",
+   "title": "User endpoint devices",
+   "domain": "Technological",
+   "defaultFrequency": "quarterly",
+   "evidenceHints": [
+    "MDM compliance report",
+    "Endpoint hardening baseline"
+   ]
+  },
+  {
+   "id": "8.2",
+   "title": "Privileged access rights",
+   "domain": "Technological",
+   "defaultFrequency": "quarterly",
+   "evidenceHints": [
+    "Privileged account inventory",
+    "PAM review records"
+   ]
+  },
+  {
+   "id": "8.3",
+   "title": "Information access restriction",
+   "domain": "Technological",
+   "defaultFrequency": "quarterly",
+   "evidenceHints": [
+    "Access control configuration",
+    "Access review results"
+   ]
+  },
+  {
+   "id": "8.4",
+   "title": "Access to source code",
+   "domain": "Technological",
+   "defaultFrequency": "quarterly",
+   "evidenceHints": [
+    "Repository permission reviews",
+    "Branch protection settings"
+   ]
+  },
+  {
+   "id": "8.5",
+   "title": "Secure authentication",
+   "domain": "Technological",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "MFA enforcement evidence",
+    "Authentication configuration"
+   ]
+  },
+  {
+   "id": "8.6",
+   "title": "Capacity management",
+   "domain": "Technological",
+   "defaultFrequency": "monthly",
+   "evidenceHints": [
+    "Capacity monitoring dashboards",
+    "Capacity plans"
+   ]
+  },
+  {
+   "id": "8.7",
+   "title": "Protection against malware",
+   "domain": "Technological",
+   "defaultFrequency": "continuous",
+   "evidenceHints": [
+    "Endpoint protection coverage",
+    "Detection and response records"
+   ]
+  },
+  {
+   "id": "8.8",
+   "title": "Management of technical vulnerabilities",
+   "domain": "Technological",
+   "defaultFrequency": "monthly",
+   "evidenceHints": [
+    "Vulnerability scan reports",
+    "Patch SLAs and compliance"
+   ]
+  },
+  {
+   "id": "8.9",
+   "title": "Configuration management",
+   "domain": "Technological",
+   "defaultFrequency": "quarterly",
+   "evidenceHints": [
+    "Baseline configurations",
+    "Drift detection results"
+   ]
+  },
+  {
+   "id": "8.10",
+   "title": "Information deletion",
+   "domain": "Technological",
+   "defaultFrequency": "quarterly",
+   "evidenceHints": [
+    "Deletion procedures",
+    "Deletion job evidence"
+   ]
+  },
+  {
+   "id": "8.11",
+   "title": "Data masking",
+   "domain": "Technological",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Masking or pseudonymisation configuration in non-production"
+   ]
+  },
+  {
+   "id": "8.12",
+   "title": "Data leakage prevention",
+   "domain": "Technological",
+   "defaultFrequency": "continuous",
+   "evidenceHints": [
+    "DLP policy and alert reviews"
+   ]
+  },
+  {
+   "id": "8.13",
+   "title": "Information backup",
+   "domain": "Technological",
+   "defaultFrequency": "weekly",
+   "evidenceHints": [
+    "Backup job success reports",
+    "Restore test records"
+   ]
+  },
+  {
+   "id": "8.14",
+   "title": "Redundancy of information processing facilities",
+   "domain": "Technological",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Architecture redundancy review",
+    "Failover test records"
+   ]
+  },
+  {
+   "id": "8.15",
+   "title": "Logging",
+   "domain": "Technological",
+   "defaultFrequency": "continuous",
+   "evidenceHints": [
+    "Logging standard",
+    "Log source coverage",
+    "Log protection controls"
+   ]
+  },
+  {
+   "id": "8.16",
+   "title": "Monitoring activities",
+   "domain": "Technological",
+   "defaultFrequency": "continuous",
+   "evidenceHints": [
+    "Monitoring use cases",
+    "Alert handling records"
+   ]
+  },
+  {
+   "id": "8.17",
+   "title": "Clock synchronisation",
+   "domain": "Technological",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "NTP configuration evidence"
+   ]
+  },
+  {
+   "id": "8.18",
+   "title": "Use of privileged utility programs",
+   "domain": "Technological",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Utility program restrictions",
+    "Usage logs"
+   ]
+  },
+  {
+   "id": "8.19",
+   "title": "Installation of software on operational systems",
+   "domain": "Technological",
+   "defaultFrequency": "quarterly",
+   "evidenceHints": [
+    "Software installation policy",
+    "Allowlisting or change records"
+   ]
+  },
+  {
+   "id": "8.20",
+   "title": "Networks security",
+   "domain": "Technological",
+   "defaultFrequency": "quarterly",
+   "evidenceHints": [
+    "Network security controls",
+    "Firewall rule reviews"
+   ]
+  },
+  {
+   "id": "8.21",
+   "title": "Security of network services",
+   "domain": "Technological",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Network service agreements",
+    "Service security requirements"
+   ]
+  },
+  {
+   "id": "8.22",
+   "title": "Segregation of networks",
+   "domain": "Technological",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Network diagrams",
+    "Segmentation test results"
+   ]
+  },
+  {
+   "id": "8.23",
+   "title": "Web filtering",
+   "domain": "Technological",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Web filter configuration and categories"
+   ]
+  },
+  {
+   "id": "8.24",
+   "title": "Use of cryptography",
+   "domain": "Technological",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Cryptography policy",
+    "Key management records",
+    "Certificate inventory"
+   ]
+  },
+  {
+   "id": "8.25",
+   "title": "Secure development life cycle",
+   "domain": "Technological",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "SDLC policy",
+    "Security gates in pipeline"
+   ]
+  },
+  {
+   "id": "8.26",
+   "title": "Application security requirements",
+   "domain": "Technological",
+   "defaultFrequency": "event",
+   "evidenceHints": [
+    "Security requirements per application or project"
+   ]
+  },
+  {
+   "id": "8.27",
+   "title": "Secure system architecture and engineering principles",
+   "domain": "Technological",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Architecture principles",
+    "Design review records"
+   ]
+  },
+  {
+   "id": "8.28",
+   "title": "Secure coding",
+   "domain": "Technological",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Secure coding standard",
+    "SAST results",
+    "Developer training"
+   ]
+  },
+  {
+   "id": "8.29",
+   "title": "Security testing in development and acceptance",
+   "domain": "Technological",
+   "defaultFrequency": "continuous",
+   "evidenceHints": [
+    "Test results in CI",
+    "Acceptance security test records"
+   ]
+  },
+  {
+   "id": "8.30",
+   "title": "Outsourced development",
+   "domain": "Technological",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Contracts with security requirements",
+    "Review of outsourced deliverables"
+   ]
+  },
+  {
+   "id": "8.31",
+   "title": "Separation of development, test and production environments",
+   "domain": "Technological",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Environment architecture",
+    "Access separation evidence"
+   ]
+  },
+  {
+   "id": "8.32",
+   "title": "Change management",
+   "domain": "Technological",
+   "defaultFrequency": "continuous",
+   "evidenceHints": [
+    "Change tickets with approvals and testing"
+   ]
+  },
+  {
+   "id": "8.33",
+   "title": "Test information",
+   "domain": "Technological",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Test data policy",
+    "Masking of production data in tests"
+   ]
+  },
+  {
+   "id": "8.34",
+   "title": "Protection of information systems during audit testing",
+   "domain": "Technological",
+   "defaultFrequency": "event",
+   "evidenceHints": [
+    "Audit test agreements",
+    "Scoped read-only access records"
+   ]
+  }
+ ]
+}

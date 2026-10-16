@@ -16,11 +16,15 @@
  *   - A feed file is only rewritten when the transform yields valid data.
  *
  * Usage:   node scripts/refresh-feeds.mjs
+ *          node scripts/refresh-feeds.mjs --only epss-top,eol-products
+ *            (--only takes feed names = file names without .json; default is all)
  */
 
-import { writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
+import { gunzipSync } from "node:zlib";
+import { parseEpssCsv, selectEpssTop, compactEolProduct, EOL_PRODUCTS } from "./lib/feeds-lib.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const FEEDS_DIR = join(HERE, "..", "public", "data", "feeds");
@@ -129,8 +133,76 @@ function makeOfacTransform(altGetter) {
   };
 }
 
+// FIRST EPSS (Exploit Prediction Scoring System) daily scores.
+// Upstream is a ~390k-row gzipped CSV (one row per CVE). Only the top-N by
+// EPSS (EPSS_TOP_N) plus every CVE present in the just-written cisa-kev.json are shipped, so
+// the browser gets a <300 KB file that still covers everything known-exploited.
+const EPSS_URL = "https://epss.cyentia.com/epss_scores-current.csv.gz";
+const EPSS_TOP_N = 4500; // + KEV union lands ~4.8k rows, under the 300 KB budget
+
+function readKevCves() {
+  try {
+    const kev = JSON.parse(readFileSync(join(FEEDS_DIR, "cisa-kev.json"), "utf8"));
+    return new Set((Array.isArray(kev.data) ? kev.data : []).map((r) => r && r.cve).filter(Boolean));
+  } catch (e) {
+    console.error(`[warn] epss-top: could not read cisa-kev.json (${e && e.message}); continuing without KEV union`);
+    return new Set();
+  }
+}
+
+async function loadEpss() {
+  const gz = await fetchBytes(EPSS_URL);
+  return gunzipSync(gz).toString("utf8");
+}
+
+function transformEpss(body) {
+  const { modelVersion, scoreDate, rows } = parseEpssCsv(body);
+  const data = selectEpssTop(rows, readKevCves(), EPSS_TOP_N);
+  if (!data.length) throw new Error("EPSS: selection produced no rows");
+  return { updated: nowIso(), source: "FIRST EPSS", model: modelVersion, scoreDate, count: data.length, data };
+}
+
+// endoflife.date product lifecycle data.
+// all.json lists every known slug; the allowlist in feeds-lib is intersected
+// with it (misses are logged, never fatal) and each product is then fetched
+// sequentially with a short pause so the daily job stays polite to the API.
+const EOL_API = "https://endoflife.date/api";
+const EOL_PAUSE_MS = 150;
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+async function loadEol() {
+  const all = JSON.parse(await fetchText(`${EOL_API}/all.json`));
+  if (!Array.isArray(all) || !all.length) throw new Error("EOL: all.json is not a non-empty array");
+  const known = new Set(all);
+  const missing = EOL_PRODUCTS.filter((s) => !known.has(s));
+  if (missing.length) console.error(`[warn] eol-products: ${missing.length} allowlisted slug(s) not on endoflife.date: ${missing.join(", ")}`);
+  const products = [];
+  for (const slug of EOL_PRODUCTS) {
+    if (!known.has(slug)) continue;
+    try {
+      products.push(compactEolProduct(JSON.parse(await fetchText(`${EOL_API}/${slug}.json`)), slug));
+    } catch (e) {
+      console.error(`[warn] eol-products: ${slug} skipped (${e && e.message})`);
+    }
+    await sleep(EOL_PAUSE_MS);
+  }
+  return products;
+}
+
+function transformEol(products) {
+  if (!Array.isArray(products) || !products.length) throw new Error("EOL: no products loaded");
+  return { updated: nowIso(), source: "endoflife.date", count: products.length, data: products };
+}
+
 // ---------------------------------------------------------------------------
 // Feed map. Only feeds with a clear public keyless upstream appear here.
+//
+// Optional per-feed hooks:
+//   load:    async () => body  - replaces the single fetchText(url) step so a
+//            feed can do multi-request or binary loading; `url` stays as the
+//            documented primary upstream for logging.
+//   compact: true              - always write one-line JSON (default: only
+//            when data.length > 2000).
 //
 // Deliberately NOT mapped (no clear keyless upstream; left frozen on purpose):
 //   threat-iocs.json      - ThreatFox (abuse.ch) API now requires an Auth-Key.
@@ -155,6 +227,21 @@ const FEEDS = [
     alt: "https://sanctionslistservice.ofac.treas.gov/api/PublicationPreview/exports/ALT.CSV",
     makeTransform: makeOfacTransform,
   },
+  // Listed after cisa-kev on purpose: the EPSS selection unions in the KEV
+  // CVEs from the cisa-kev.json written earlier in the same run.
+  {
+    file: "epss-top.json",
+    url: EPSS_URL,
+    load: loadEpss,
+    transform: transformEpss,
+  },
+  {
+    file: "eol-products.json",
+    url: `${EOL_API}/all.json`,
+    load: loadEol,
+    transform: transformEol,
+    compact: true,
+  },
 ];
 
 async function fetchText(url) {
@@ -173,9 +260,26 @@ async function fetchText(url) {
   }
 }
 
+// Binary twin of fetchText (gzip, zip, etc.). Returns a Node Buffer.
+async function fetchBytes(url) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
+  try {
+    const res = await fetch(url, {
+      redirect: "follow",
+      signal: ctrl.signal,
+      headers: { "User-Agent": UA, Accept: "application/octet-stream, */*" },
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
+    return Buffer.from(await res.arrayBuffer());
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function refreshOne(feed) {
   const dest = join(FEEDS_DIR, feed.file);
-  const body = await fetchText(feed.url);
+  const body = feed.load ? await feed.load() : await fetchText(feed.url);
   // A feed may carry an auxiliary file (e.g. OFAC aliases) and build its transform
   // from it. The aux fetch is best-effort: aliases improve recall but are not required.
   let transform = feed.transform;
@@ -191,16 +295,35 @@ async function refreshOne(feed) {
   // Validate the serialized form round-trips as JSON before touching disk. Large
   // feeds (thousands of rows) are stored compact to keep the daily commit small;
   // small feeds stay pretty-printed for readable diffs.
-  const serialized = (out.data.length > 2000 ? JSON.stringify(out) : JSON.stringify(out, null, 1)) + "\n";
+  const serialized = (feed.compact || out.data.length > 2000 ? JSON.stringify(out) : JSON.stringify(out, null, 1)) + "\n";
   JSON.parse(serialized);
   writeFileSync(dest, serialized);
   return out.count;
 }
 
+// `--only a,b` restricts the run to the named feeds (file name sans .json).
+// Unknown names are reported and the run proceeds with the known ones.
+function selectFeeds(argv) {
+  const i = argv.indexOf("--only");
+  const inline = argv.find((a) => a.startsWith("--only="));
+  const raw = i >= 0 ? argv[i + 1] : inline ? inline.slice("--only=".length) : null;
+  if (raw == null) return FEEDS;
+  const names = raw.split(",").map((s) => s.trim()).filter(Boolean);
+  const byName = new Map(FEEDS.map((f) => [f.file.replace(/\.json$/, ""), f]));
+  const unknown = names.filter((n) => !byName.has(n));
+  if (unknown.length) console.error(`[warn] --only: unknown feed(s) ignored: ${unknown.join(", ")}`);
+  return names.filter((n) => byName.has(n)).map((n) => byName.get(n));
+}
+
 async function main() {
   let ok = 0;
   let failed = 0;
-  for (const feed of FEEDS) {
+  const feeds = selectFeeds(process.argv.slice(2));
+  if (!feeds.length) {
+    console.error("no feeds selected");
+    process.exit(1);
+  }
+  for (const feed of feeds) {
     try {
       const n = await refreshOne(feed);
       ok += 1;
@@ -210,7 +333,7 @@ async function main() {
       console.error(`[skip] ${feed.file}: ${err && err.message ? err.message : err}`);
     }
   }
-  console.log(`\nrefresh complete: ${ok} ok, ${failed} skipped, ${FEEDS.length} total`);
+  console.log(`\nrefresh complete: ${ok} ok, ${failed} skipped, ${feeds.length} total`);
   // Non-zero only when nothing at all refreshed.
   if (ok === 0) {
     console.error("all feeds failed to refresh");

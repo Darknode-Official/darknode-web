@@ -1,0 +1,1353 @@
+{
+ "framework": "NIST Cybersecurity Framework",
+ "version": "CSF 2.0 (February 2024)",
+ "updated": "2026-10-16",
+ "license": "NIST CSF 2.0 is a work of the US federal government and is in the public domain in the United States; category and subcategory titles are reproduced verbatim from NIST CSWP 29.",
+ "notes": "6 Functions, 22 Categories, 106 Subcategories. Subcategory ids are non-contiguous where CSF 2.0 withdrew or merged CSF 1.1 outcomes (e.g. ID.AM-06, PR.DS-03..09, DE.CM-04/05/07/08, DE.AE-01/05, RS.AN-01/02/04/05, RS.CO-01/04/05, RC.CO-01/02). defaultFrequency is Darknode's evidence cadence suggestion; the CSF prescribes none.",
+ "sourceUrl": "https://doi.org/10.6028/NIST.CSWP.29",
+ "functions": [
+  {
+   "id": "GV",
+   "title": "Govern"
+  },
+  {
+   "id": "ID",
+   "title": "Identify"
+  },
+  {
+   "id": "PR",
+   "title": "Protect"
+  },
+  {
+   "id": "DE",
+   "title": "Detect"
+  },
+  {
+   "id": "RS",
+   "title": "Respond"
+  },
+  {
+   "id": "RC",
+   "title": "Recover"
+  }
+ ],
+ "categories": [
+  {
+   "id": "GV.OC",
+   "title": "Organizational Context",
+   "function": "GV"
+  },
+  {
+   "id": "GV.RM",
+   "title": "Risk Management Strategy",
+   "function": "GV"
+  },
+  {
+   "id": "GV.RR",
+   "title": "Roles, Responsibilities, and Authorities",
+   "function": "GV"
+  },
+  {
+   "id": "GV.PO",
+   "title": "Policy",
+   "function": "GV"
+  },
+  {
+   "id": "GV.OV",
+   "title": "Oversight",
+   "function": "GV"
+  },
+  {
+   "id": "GV.SC",
+   "title": "Cybersecurity Supply Chain Risk Management",
+   "function": "GV"
+  },
+  {
+   "id": "ID.AM",
+   "title": "Asset Management",
+   "function": "ID"
+  },
+  {
+   "id": "ID.RA",
+   "title": "Risk Assessment",
+   "function": "ID"
+  },
+  {
+   "id": "ID.IM",
+   "title": "Improvement",
+   "function": "ID"
+  },
+  {
+   "id": "PR.AA",
+   "title": "Identity Management, Authentication, and Access Control",
+   "function": "PR"
+  },
+  {
+   "id": "PR.AT",
+   "title": "Awareness and Training",
+   "function": "PR"
+  },
+  {
+   "id": "PR.DS",
+   "title": "Data Security",
+   "function": "PR"
+  },
+  {
+   "id": "PR.PS",
+   "title": "Platform Security",
+   "function": "PR"
+  },
+  {
+   "id": "PR.IR",
+   "title": "Technology Infrastructure Resilience",
+   "function": "PR"
+  },
+  {
+   "id": "DE.CM",
+   "title": "Continuous Monitoring",
+   "function": "DE"
+  },
+  {
+   "id": "DE.AE",
+   "title": "Adverse Event Analysis",
+   "function": "DE"
+  },
+  {
+   "id": "RS.MA",
+   "title": "Incident Management",
+   "function": "RS"
+  },
+  {
+   "id": "RS.AN",
+   "title": "Incident Analysis",
+   "function": "RS"
+  },
+  {
+   "id": "RS.CO",
+   "title": "Incident Response Reporting and Communication",
+   "function": "RS"
+  },
+  {
+   "id": "RS.MI",
+   "title": "Incident Mitigation",
+   "function": "RS"
+  },
+  {
+   "id": "RC.RP",
+   "title": "Incident Recovery Plan Execution",
+   "function": "RC"
+  },
+  {
+   "id": "RC.CO",
+   "title": "Incident Recovery Communication",
+   "function": "RC"
+  }
+ ],
+ "data": [
+  {
+   "id": "GV.OC-01",
+   "title": "The organizational mission is understood and informs cybersecurity risk management",
+   "domain": "Govern / Organizational Context",
+   "function": "GV",
+   "category": "GV.OC",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Mission statement referenced in security strategy"
+   ]
+  },
+  {
+   "id": "GV.OC-02",
+   "title": "Internal and external stakeholders are understood, and their needs and expectations regarding cybersecurity risk management are understood and considered",
+   "domain": "Govern / Organizational Context",
+   "function": "GV",
+   "category": "GV.OC",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Stakeholder register",
+    "Customer and regulator requirements list"
+   ]
+  },
+  {
+   "id": "GV.OC-03",
+   "title": "Legal, regulatory, and contractual requirements regarding cybersecurity - including privacy and civil liberties obligations - are understood and managed",
+   "domain": "Govern / Organizational Context",
+   "function": "GV",
+   "category": "GV.OC",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Compliance obligations register",
+    "Legal review records"
+   ]
+  },
+  {
+   "id": "GV.OC-04",
+   "title": "Critical objectives, capabilities, and services that external stakeholders depend on or expect from the organization are understood and communicated",
+   "domain": "Govern / Organizational Context",
+   "function": "GV",
+   "category": "GV.OC",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Critical service catalogue",
+    "SLAs"
+   ]
+  },
+  {
+   "id": "GV.OC-05",
+   "title": "Outcomes, capabilities, and services that the organization depends on are understood and communicated",
+   "domain": "Govern / Organizational Context",
+   "function": "GV",
+   "category": "GV.OC",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Critical dependency inventory",
+    "Supplier criticality list"
+   ]
+  },
+  {
+   "id": "GV.RM-01",
+   "title": "Risk management objectives are established and agreed to by organizational stakeholders",
+   "domain": "Govern / Risk Management Strategy",
+   "function": "GV",
+   "category": "GV.RM",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Approved risk management objectives"
+   ]
+  },
+  {
+   "id": "GV.RM-02",
+   "title": "Risk appetite and risk tolerance statements are established, communicated, and maintained",
+   "domain": "Govern / Risk Management Strategy",
+   "function": "GV",
+   "category": "GV.RM",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Risk appetite statement with approval"
+   ]
+  },
+  {
+   "id": "GV.RM-03",
+   "title": "Cybersecurity risk management activities and outcomes are included in enterprise risk management processes",
+   "domain": "Govern / Risk Management Strategy",
+   "function": "GV",
+   "category": "GV.RM",
+   "defaultFrequency": "quarterly",
+   "evidenceHints": [
+    "ERM reports including cyber risk",
+    "Risk committee minutes"
+   ]
+  },
+  {
+   "id": "GV.RM-04",
+   "title": "Strategic direction that describes appropriate risk response options is established and communicated",
+   "domain": "Govern / Risk Management Strategy",
+   "function": "GV",
+   "category": "GV.RM",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Risk response strategy"
+   ]
+  },
+  {
+   "id": "GV.RM-05",
+   "title": "Lines of communication across the organization are established for cybersecurity risks, including risks from suppliers and other third parties",
+   "domain": "Govern / Risk Management Strategy",
+   "function": "GV",
+   "category": "GV.RM",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Escalation paths",
+    "Reporting cadence documentation"
+   ]
+  },
+  {
+   "id": "GV.RM-06",
+   "title": "A standardized method for calculating, documenting, categorizing, and prioritizing cybersecurity risks is established and communicated",
+   "domain": "Govern / Risk Management Strategy",
+   "function": "GV",
+   "category": "GV.RM",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Risk scoring methodology"
+   ]
+  },
+  {
+   "id": "GV.RM-07",
+   "title": "Strategic opportunities (i.e., positive risks) are characterized and are included in organizational cybersecurity risk discussions",
+   "domain": "Govern / Risk Management Strategy",
+   "function": "GV",
+   "category": "GV.RM",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Risk register including opportunities"
+   ]
+  },
+  {
+   "id": "GV.RR-01",
+   "title": "Organizational leadership is responsible and accountable for cybersecurity risk and fosters a culture that is risk-aware, ethical, and continually improving",
+   "domain": "Govern / Roles, Responsibilities, and Authorities",
+   "function": "GV",
+   "category": "GV.RR",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Leadership accountability statements",
+    "Board reporting"
+   ]
+  },
+  {
+   "id": "GV.RR-02",
+   "title": "Roles, responsibilities, and authorities related to cybersecurity risk management are established, communicated, understood, and enforced",
+   "domain": "Govern / Roles, Responsibilities, and Authorities",
+   "function": "GV",
+   "category": "GV.RR",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "RACI",
+    "Role descriptions"
+   ]
+  },
+  {
+   "id": "GV.RR-03",
+   "title": "Adequate resources are allocated commensurate with the cybersecurity risk strategy, roles, responsibilities, and policies",
+   "domain": "Govern / Roles, Responsibilities, and Authorities",
+   "function": "GV",
+   "category": "GV.RR",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Security budget and staffing plan"
+   ]
+  },
+  {
+   "id": "GV.RR-04",
+   "title": "Cybersecurity is included in human resources practices",
+   "domain": "Govern / Roles, Responsibilities, and Authorities",
+   "function": "GV",
+   "category": "GV.RR",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Screening, onboarding and offboarding procedures"
+   ]
+  },
+  {
+   "id": "GV.PO-01",
+   "title": "Policy for managing cybersecurity risks is established based on organizational context, cybersecurity strategy, and priorities and is communicated and enforced",
+   "domain": "Govern / Policy",
+   "function": "GV",
+   "category": "GV.PO",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Approved policy set",
+    "Acknowledgement tracking"
+   ]
+  },
+  {
+   "id": "GV.PO-02",
+   "title": "Policy for managing cybersecurity risks is reviewed, updated, communicated, and enforced to reflect changes in requirements, threats, technology, and organizational mission",
+   "domain": "Govern / Policy",
+   "function": "GV",
+   "category": "GV.PO",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Policy review log with dates"
+   ]
+  },
+  {
+   "id": "GV.OV-01",
+   "title": "Cybersecurity risk management strategy outcomes are reviewed to inform and adjust strategy and direction",
+   "domain": "Govern / Oversight",
+   "function": "GV",
+   "category": "GV.OV",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Strategy review minutes"
+   ]
+  },
+  {
+   "id": "GV.OV-02",
+   "title": "The cybersecurity risk management strategy is reviewed and adjusted to ensure coverage of organizational requirements and risks",
+   "domain": "Govern / Oversight",
+   "function": "GV",
+   "category": "GV.OV",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Strategy update records"
+   ]
+  },
+  {
+   "id": "GV.OV-03",
+   "title": "Organizational cybersecurity risk management performance is evaluated and reviewed for adjustments needed",
+   "domain": "Govern / Oversight",
+   "function": "GV",
+   "category": "GV.OV",
+   "defaultFrequency": "quarterly",
+   "evidenceHints": [
+    "KPI and KRI reporting"
+   ]
+  },
+  {
+   "id": "GV.SC-01",
+   "title": "A cybersecurity supply chain risk management program, strategy, objectives, policies, and processes are established and agreed to by organizational stakeholders",
+   "domain": "Govern / Cybersecurity Supply Chain Risk Management",
+   "function": "GV",
+   "category": "GV.SC",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "C-SCRM program document"
+   ]
+  },
+  {
+   "id": "GV.SC-02",
+   "title": "Cybersecurity roles and responsibilities for suppliers, customers, and partners are established, communicated, and coordinated internally and externally",
+   "domain": "Govern / Cybersecurity Supply Chain Risk Management",
+   "function": "GV",
+   "category": "GV.SC",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Supplier responsibility matrices"
+   ]
+  },
+  {
+   "id": "GV.SC-03",
+   "title": "Cybersecurity supply chain risk management is integrated into cybersecurity and enterprise risk management, risk assessment, and improvement processes",
+   "domain": "Govern / Cybersecurity Supply Chain Risk Management",
+   "function": "GV",
+   "category": "GV.SC",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Supplier risks in the enterprise risk register"
+   ]
+  },
+  {
+   "id": "GV.SC-04",
+   "title": "Suppliers are known and prioritized by criticality",
+   "domain": "Govern / Cybersecurity Supply Chain Risk Management",
+   "function": "GV",
+   "category": "GV.SC",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Supplier inventory with criticality tiers"
+   ]
+  },
+  {
+   "id": "GV.SC-05",
+   "title": "Requirements to address cybersecurity risks in supply chains are established, prioritized, and integrated into contracts and other types of agreements with suppliers and other relevant third parties",
+   "domain": "Govern / Cybersecurity Supply Chain Risk Management",
+   "function": "GV",
+   "category": "GV.SC",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Contract security clauses",
+    "Agreement templates"
+   ]
+  },
+  {
+   "id": "GV.SC-06",
+   "title": "Planning and due diligence are performed to reduce risks before entering into formal supplier or other third-party relationships",
+   "domain": "Govern / Cybersecurity Supply Chain Risk Management",
+   "function": "GV",
+   "category": "GV.SC",
+   "defaultFrequency": "event",
+   "evidenceHints": [
+    "Pre-contract assessments"
+   ]
+  },
+  {
+   "id": "GV.SC-07",
+   "title": "The risks posed by a supplier, their products and services, and other third parties are understood, recorded, prioritized, assessed, responded to, and monitored over the course of the relationship",
+   "domain": "Govern / Cybersecurity Supply Chain Risk Management",
+   "function": "GV",
+   "category": "GV.SC",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Supplier risk assessments",
+    "Monitoring records"
+   ]
+  },
+  {
+   "id": "GV.SC-08",
+   "title": "Relevant suppliers and other third parties are included in incident planning, response, and recovery activities",
+   "domain": "Govern / Cybersecurity Supply Chain Risk Management",
+   "function": "GV",
+   "category": "GV.SC",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Supplier contacts in the IR plan",
+    "Joint exercise records"
+   ]
+  },
+  {
+   "id": "GV.SC-09",
+   "title": "Supply chain security practices are integrated into cybersecurity and enterprise risk management programs, and their performance is monitored throughout the technology product and service life cycle",
+   "domain": "Govern / Cybersecurity Supply Chain Risk Management",
+   "function": "GV",
+   "category": "GV.SC",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Supplier performance reviews"
+   ]
+  },
+  {
+   "id": "GV.SC-10",
+   "title": "Cybersecurity supply chain risk management plans include provisions for activities that occur after the conclusion of a partnership or service agreement",
+   "domain": "Govern / Cybersecurity Supply Chain Risk Management",
+   "function": "GV",
+   "category": "GV.SC",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Exit and data return provisions",
+    "Decommissioning checklists"
+   ]
+  },
+  {
+   "id": "ID.AM-01",
+   "title": "Inventories of hardware managed by the organization are maintained",
+   "domain": "Identify / Asset Management",
+   "function": "ID",
+   "category": "ID.AM",
+   "defaultFrequency": "quarterly",
+   "evidenceHints": [
+    "Hardware inventory export"
+   ]
+  },
+  {
+   "id": "ID.AM-02",
+   "title": "Inventories of software, services, and systems managed by the organization are maintained",
+   "domain": "Identify / Asset Management",
+   "function": "ID",
+   "category": "ID.AM",
+   "defaultFrequency": "quarterly",
+   "evidenceHints": [
+    "Software and service inventory"
+   ]
+  },
+  {
+   "id": "ID.AM-03",
+   "title": "Representations of the organization's authorized network communication and internal and external network data flows are maintained",
+   "domain": "Identify / Asset Management",
+   "function": "ID",
+   "category": "ID.AM",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Network and data-flow diagrams"
+   ]
+  },
+  {
+   "id": "ID.AM-04",
+   "title": "Inventories of services provided by suppliers are maintained",
+   "domain": "Identify / Asset Management",
+   "function": "ID",
+   "category": "ID.AM",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Supplier service inventory"
+   ]
+  },
+  {
+   "id": "ID.AM-05",
+   "title": "Assets are prioritized based on classification, criticality, resources, and impact on the mission",
+   "domain": "Identify / Asset Management",
+   "function": "ID",
+   "category": "ID.AM",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Asset criticality ratings"
+   ]
+  },
+  {
+   "id": "ID.AM-07",
+   "title": "Inventories of data and corresponding metadata for designated data types are maintained",
+   "domain": "Identify / Asset Management",
+   "function": "ID",
+   "category": "ID.AM",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Data inventory"
+   ]
+  },
+  {
+   "id": "ID.AM-08",
+   "title": "Systems, hardware, software, services, and data are managed throughout their life cycles",
+   "domain": "Identify / Asset Management",
+   "function": "ID",
+   "category": "ID.AM",
+   "defaultFrequency": "quarterly",
+   "evidenceHints": [
+    "Lifecycle and end-of-support tracking",
+    "Disposal records"
+   ]
+  },
+  {
+   "id": "ID.RA-01",
+   "title": "Vulnerabilities in assets are identified, validated, and recorded",
+   "domain": "Identify / Risk Assessment",
+   "function": "ID",
+   "category": "ID.RA",
+   "defaultFrequency": "monthly",
+   "evidenceHints": [
+    "Vulnerability scan reports"
+   ]
+  },
+  {
+   "id": "ID.RA-02",
+   "title": "Cyber threat intelligence is received from information sharing forums and sources",
+   "domain": "Identify / Risk Assessment",
+   "function": "ID",
+   "category": "ID.RA",
+   "defaultFrequency": "continuous",
+   "evidenceHints": [
+    "Threat intel subscriptions and ingestion evidence"
+   ]
+  },
+  {
+   "id": "ID.RA-03",
+   "title": "Internal and external threats to the organization are identified and recorded",
+   "domain": "Identify / Risk Assessment",
+   "function": "ID",
+   "category": "ID.RA",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Threat register"
+   ]
+  },
+  {
+   "id": "ID.RA-04",
+   "title": "Potential impacts and likelihoods of threats exploiting vulnerabilities are identified and recorded",
+   "domain": "Identify / Risk Assessment",
+   "function": "ID",
+   "category": "ID.RA",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Risk register with impact and likelihood"
+   ]
+  },
+  {
+   "id": "ID.RA-05",
+   "title": "Threats, vulnerabilities, likelihoods, and impacts are used to understand inherent risk and inform risk response prioritization",
+   "domain": "Identify / Risk Assessment",
+   "function": "ID",
+   "category": "ID.RA",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Risk assessment report"
+   ]
+  },
+  {
+   "id": "ID.RA-06",
+   "title": "Risk responses are chosen, prioritized, planned, tracked, and communicated",
+   "domain": "Identify / Risk Assessment",
+   "function": "ID",
+   "category": "ID.RA",
+   "defaultFrequency": "quarterly",
+   "evidenceHints": [
+    "Risk treatment plan with status"
+   ]
+  },
+  {
+   "id": "ID.RA-07",
+   "title": "Changes and exceptions are managed, assessed for risk impact, recorded, and tracked",
+   "domain": "Identify / Risk Assessment",
+   "function": "ID",
+   "category": "ID.RA",
+   "defaultFrequency": "continuous",
+   "evidenceHints": [
+    "Change records",
+    "Exception register"
+   ]
+  },
+  {
+   "id": "ID.RA-08",
+   "title": "Processes for receiving, analyzing, and responding to vulnerability disclosures are established",
+   "domain": "Identify / Risk Assessment",
+   "function": "ID",
+   "category": "ID.RA",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Vulnerability disclosure policy",
+    "security.txt",
+    "Disclosure handling records"
+   ]
+  },
+  {
+   "id": "ID.RA-09",
+   "title": "The authenticity and integrity of hardware and software are assessed prior to acquisition and use",
+   "domain": "Identify / Risk Assessment",
+   "function": "ID",
+   "category": "ID.RA",
+   "defaultFrequency": "event",
+   "evidenceHints": [
+    "Provenance and signature verification records"
+   ]
+  },
+  {
+   "id": "ID.RA-10",
+   "title": "Critical suppliers are assessed prior to acquisition",
+   "domain": "Identify / Risk Assessment",
+   "function": "ID",
+   "category": "ID.RA",
+   "defaultFrequency": "event",
+   "evidenceHints": [
+    "Supplier due-diligence reports"
+   ]
+  },
+  {
+   "id": "ID.IM-01",
+   "title": "Improvements are identified from evaluations",
+   "domain": "Identify / Improvement",
+   "function": "ID",
+   "category": "ID.IM",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Audit and assessment findings with actions"
+   ]
+  },
+  {
+   "id": "ID.IM-02",
+   "title": "Improvements are identified from security tests and exercises, including those done in coordination with suppliers and relevant third parties",
+   "domain": "Identify / Improvement",
+   "function": "ID",
+   "category": "ID.IM",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Pentest and exercise after-action reports"
+   ]
+  },
+  {
+   "id": "ID.IM-03",
+   "title": "Improvements are identified from execution of operational processes, procedures, and activities",
+   "domain": "Identify / Improvement",
+   "function": "ID",
+   "category": "ID.IM",
+   "defaultFrequency": "quarterly",
+   "evidenceHints": [
+    "Lessons-learned log"
+   ]
+  },
+  {
+   "id": "ID.IM-04",
+   "title": "Incident response plans and other cybersecurity plans that affect operations are established, communicated, maintained, and improved",
+   "domain": "Identify / Improvement",
+   "function": "ID",
+   "category": "ID.IM",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Plan versions with review dates"
+   ]
+  },
+  {
+   "id": "PR.AA-01",
+   "title": "Identities and credentials for authorized users, services, and hardware are managed by the organization",
+   "domain": "Protect / Identity Management, Authentication, and Access Control",
+   "function": "PR",
+   "category": "PR.AA",
+   "defaultFrequency": "quarterly",
+   "evidenceHints": [
+    "Identity lifecycle records",
+    "Credential inventory"
+   ]
+  },
+  {
+   "id": "PR.AA-02",
+   "title": "Identities are proofed and bound to credentials based on the context of interactions",
+   "domain": "Protect / Identity Management, Authentication, and Access Control",
+   "function": "PR",
+   "category": "PR.AA",
+   "defaultFrequency": "event",
+   "evidenceHints": [
+    "Identity proofing procedure records"
+   ]
+  },
+  {
+   "id": "PR.AA-03",
+   "title": "Users, services, and hardware are authenticated",
+   "domain": "Protect / Identity Management, Authentication, and Access Control",
+   "function": "PR",
+   "category": "PR.AA",
+   "defaultFrequency": "continuous",
+   "evidenceHints": [
+    "Authentication configuration",
+    "MFA coverage"
+   ]
+  },
+  {
+   "id": "PR.AA-04",
+   "title": "Identity assertions are protected, conveyed, and verified",
+   "domain": "Protect / Identity Management, Authentication, and Access Control",
+   "function": "PR",
+   "category": "PR.AA",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "SSO and federation configuration review"
+   ]
+  },
+  {
+   "id": "PR.AA-05",
+   "title": "Access permissions, entitlements, and authorizations are defined in a policy, managed, enforced, and reviewed, and incorporate the principles of least privilege and separation of duties",
+   "domain": "Protect / Identity Management, Authentication, and Access Control",
+   "function": "PR",
+   "category": "PR.AA",
+   "defaultFrequency": "quarterly",
+   "evidenceHints": [
+    "Access review sign-offs",
+    "Role definitions"
+   ]
+  },
+  {
+   "id": "PR.AA-06",
+   "title": "Physical access to assets is managed, monitored, and enforced commensurate with risk",
+   "domain": "Protect / Identity Management, Authentication, and Access Control",
+   "function": "PR",
+   "category": "PR.AA",
+   "defaultFrequency": "quarterly",
+   "evidenceHints": [
+    "Badge access reviews",
+    "Visitor logs"
+   ]
+  },
+  {
+   "id": "PR.AT-01",
+   "title": "Personnel are provided with awareness and training so that they possess the knowledge and skills to perform general tasks with cybersecurity risks in mind",
+   "domain": "Protect / Awareness and Training",
+   "function": "PR",
+   "category": "PR.AT",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Training completion records"
+   ]
+  },
+  {
+   "id": "PR.AT-02",
+   "title": "Individuals in specialized roles are provided with awareness and training so that they possess the knowledge and skills to perform relevant tasks with cybersecurity risks in mind",
+   "domain": "Protect / Awareness and Training",
+   "function": "PR",
+   "category": "PR.AT",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Role-based training records"
+   ]
+  },
+  {
+   "id": "PR.DS-01",
+   "title": "The confidentiality, integrity, and availability of data-at-rest are protected",
+   "domain": "Protect / Data Security",
+   "function": "PR",
+   "category": "PR.DS",
+   "defaultFrequency": "continuous",
+   "evidenceHints": [
+    "Encryption at rest evidence",
+    "Integrity controls"
+   ]
+  },
+  {
+   "id": "PR.DS-02",
+   "title": "The confidentiality, integrity, and availability of data-in-transit are protected",
+   "domain": "Protect / Data Security",
+   "function": "PR",
+   "category": "PR.DS",
+   "defaultFrequency": "continuous",
+   "evidenceHints": [
+    "TLS configuration scans"
+   ]
+  },
+  {
+   "id": "PR.DS-10",
+   "title": "The confidentiality, integrity, and availability of data-in-use are protected",
+   "domain": "Protect / Data Security",
+   "function": "PR",
+   "category": "PR.DS",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Memory protection and confidential computing controls",
+    "Session protections"
+   ]
+  },
+  {
+   "id": "PR.DS-11",
+   "title": "Backups of data are created, protected, maintained, and tested",
+   "domain": "Protect / Data Security",
+   "function": "PR",
+   "category": "PR.DS",
+   "defaultFrequency": "weekly",
+   "evidenceHints": [
+    "Backup job reports",
+    "Restore test records"
+   ]
+  },
+  {
+   "id": "PR.PS-01",
+   "title": "Configuration management practices are established and applied",
+   "domain": "Protect / Platform Security",
+   "function": "PR",
+   "category": "PR.PS",
+   "defaultFrequency": "quarterly",
+   "evidenceHints": [
+    "Baselines",
+    "Drift reports"
+   ]
+  },
+  {
+   "id": "PR.PS-02",
+   "title": "Software is maintained, replaced, and removed commensurate with risk",
+   "domain": "Protect / Platform Security",
+   "function": "PR",
+   "category": "PR.PS",
+   "defaultFrequency": "monthly",
+   "evidenceHints": [
+    "Patch compliance",
+    "End-of-life software reports"
+   ]
+  },
+  {
+   "id": "PR.PS-03",
+   "title": "Hardware is maintained, replaced, and removed commensurate with risk",
+   "domain": "Protect / Platform Security",
+   "function": "PR",
+   "category": "PR.PS",
+   "defaultFrequency": "quarterly",
+   "evidenceHints": [
+    "Hardware lifecycle reports"
+   ]
+  },
+  {
+   "id": "PR.PS-04",
+   "title": "Log records are generated and made available for continuous monitoring",
+   "domain": "Protect / Platform Security",
+   "function": "PR",
+   "category": "PR.PS",
+   "defaultFrequency": "continuous",
+   "evidenceHints": [
+    "Log source coverage",
+    "SIEM ingestion evidence"
+   ]
+  },
+  {
+   "id": "PR.PS-05",
+   "title": "Installation and execution of unauthorized software are prevented",
+   "domain": "Protect / Platform Security",
+   "function": "PR",
+   "category": "PR.PS",
+   "defaultFrequency": "continuous",
+   "evidenceHints": [
+    "Allowlisting or application control configuration"
+   ]
+  },
+  {
+   "id": "PR.PS-06",
+   "title": "Secure software development practices are integrated, and their performance is monitored throughout the software development life cycle",
+   "domain": "Protect / Platform Security",
+   "function": "PR",
+   "category": "PR.PS",
+   "defaultFrequency": "quarterly",
+   "evidenceHints": [
+    "SDLC gates",
+    "SAST/DAST metrics"
+   ]
+  },
+  {
+   "id": "PR.IR-01",
+   "title": "Networks and environments are protected from unauthorized logical access and usage",
+   "domain": "Protect / Technology Infrastructure Resilience",
+   "function": "PR",
+   "category": "PR.IR",
+   "defaultFrequency": "continuous",
+   "evidenceHints": [
+    "Segmentation evidence",
+    "Firewall rule reviews"
+   ]
+  },
+  {
+   "id": "PR.IR-02",
+   "title": "The organization's technology assets are protected from environmental threats",
+   "domain": "Protect / Technology Infrastructure Resilience",
+   "function": "PR",
+   "category": "PR.IR",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Facility environmental controls",
+    "Provider attestations"
+   ]
+  },
+  {
+   "id": "PR.IR-03",
+   "title": "Mechanisms are implemented to achieve resilience requirements in normal and adverse situations",
+   "domain": "Protect / Technology Infrastructure Resilience",
+   "function": "PR",
+   "category": "PR.IR",
+   "defaultFrequency": "annual",
+   "evidenceHints": [
+    "Redundancy design",
+    "Failover tests"
+   ]
+  },
+  {
+   "id": "PR.IR-04",
+   "title": "Adequate resource capacity to ensure availability is maintained",
+   "domain": "Protect / Technology Infrastructure Resilience",
+   "function": "PR",
+   "category": "PR.IR",
+   "defaultFrequency": "monthly",
+   "evidenceHints": [
+    "Capacity monitoring"
+   ]
+  },
+  {
+   "id": "DE.CM-01",
+   "title": "Networks and network services are monitored to find potentially adverse events",
+   "domain": "Detect / Continuous Monitoring",
+   "function": "DE",
+   "category": "DE.CM",
+   "defaultFrequency": "continuous",
+   "evidenceHints": [
+    "Network monitoring and IDS alerts"
+   ]
+  },
+  {
+   "id": "DE.CM-02",
+   "title": "The physical environment is monitored to find potentially adverse events",
+   "domain": "Detect / Continuous Monitoring",
+   "function": "DE",
+   "category": "DE.CM",
+   "defaultFrequency": "continuous",
+   "evidenceHints": [
+    "Physical monitoring records"
+   ]
+  },
+  {
+   "id": "DE.CM-03",
+   "title": "Personnel activity and technology usage are monitored to find potentially adverse events",
+   "domain": "Detect / Continuous Monitoring",
+   "function": "DE",
+   "category": "DE.CM",
+   "defaultFrequency": "continuous",
+   "evidenceHints": [
+    "User activity monitoring",
+    "Insider risk alerts"
+   ]
+  },
+  {
+   "id": "DE.CM-06",
+   "title": "External service provider activities and services are monitored to find potentially adverse events",
+   "domain": "Detect / Continuous Monitoring",
+   "function": "DE",
+   "category": "DE.CM",
+   "defaultFrequency": "monthly",
+   "evidenceHints": [
+    "Provider log ingestion",
+    "Provider status reviews"
+   ]
+  },
+  {
+   "id": "DE.CM-09",
+   "title": "Computing hardware and software, runtime environments, and their data are monitored to find potentially adverse events",
+   "domain": "Detect / Continuous Monitoring",
+   "function": "DE",
+   "category": "DE.CM",
+   "defaultFrequency": "continuous",
+   "evidenceHints": [
+    "EDR alerts",
+    "Integrity monitoring"
+   ]
+  },
+  {
+   "id": "DE.AE-02",
+   "title": "Potentially adverse events are analyzed to better understand associated activities",
+   "domain": "Detect / Adverse Event Analysis",
+   "function": "DE",
+   "category": "DE.AE",
+   "defaultFrequency": "continuous",
+   "evidenceHints": [
+    "Alert triage records"
+   ]
+  },
+  {
+   "id": "DE.AE-03",
+   "title": "Information is correlated from multiple sources",
+   "domain": "Detect / Adverse Event Analysis",
+   "function": "DE",
+   "category": "DE.AE",
+   "defaultFrequency": "continuous",
+   "evidenceHints": [
+    "SIEM correlation rules"
+   ]
+  },
+  {
+   "id": "DE.AE-04",
+   "title": "The estimated impact and scope of adverse events are understood",
+   "domain": "Detect / Adverse Event Analysis",
+   "function": "DE",
+   "category": "DE.AE",
+   "defaultFrequency": "event",
+   "evidenceHints": [
+    "Impact assessments in incident records"
+   ]
+  },
+  {
+   "id": "DE.AE-06",
+   "title": "Information on adverse events is provided to authorized staff and tools",
+   "domain": "Detect / Adverse Event Analysis",
+   "function": "DE",
+   "category": "DE.AE",
+   "defaultFrequency": "continuous",
+   "evidenceHints": [
+    "Alert routing configuration"
+   ]
+  },
+  {
+   "id": "DE.AE-07",
+   "title": "Cyber threat intelligence and other contextual information are integrated into the analysis",
+   "domain": "Detect / Adverse Event Analysis",
+   "function": "DE",
+   "category": "DE.AE",
+   "defaultFrequency": "continuous",
+   "evidenceHints": [
+    "Threat intel enrichment in SIEM"
+   ]
+  },
+  {
+   "id": "DE.AE-08",
+   "title": "Incidents are declared when adverse events meet the defined incident criteria",
+   "domain": "Detect / Adverse Event Analysis",
+   "function": "DE",
+   "category": "DE.AE",
+   "defaultFrequency": "event",
+   "evidenceHints": [
+    "Incident declaration criteria",
+    "Declaration records"
+   ]
+  },
+  {
+   "id": "RS.MA-01",
+   "title": "The incident response plan is executed in coordination with relevant third parties once an incident is declared",
+   "domain": "Respond / Incident Management",
+   "function": "RS",
+   "category": "RS.MA",
+   "defaultFrequency": "event",
+   "evidenceHints": [
+    "Incident records showing plan execution"
+   ]
+  },
+  {
+   "id": "RS.MA-02",
+   "title": "Incident reports are triaged and validated",
+   "domain": "Respond / Incident Management",
+   "function": "RS",
+   "category": "RS.MA",
+   "defaultFrequency": "event",
+   "evidenceHints": [
+    "Triage logs"
+   ]
+  },
+  {
+   "id": "RS.MA-03",
+   "title": "Incidents are categorized and prioritized",
+   "domain": "Respond / Incident Management",
+   "function": "RS",
+   "category": "RS.MA",
+   "defaultFrequency": "event",
+   "evidenceHints": [
+    "Severity classification in incident tickets"
+   ]
+  },
+  {
+   "id": "RS.MA-04",
+   "title": "Incidents are escalated or elevated as needed",
+   "domain": "Respond / Incident Management",
+   "function": "RS",
+   "category": "RS.MA",
+   "defaultFrequency": "event",
+   "evidenceHints": [
+    "Escalation records"
+   ]
+  },
+  {
+   "id": "RS.MA-05",
+   "title": "The criteria for initiating incident recovery are applied",
+   "domain": "Respond / Incident Management",
+   "function": "RS",
+   "category": "RS.MA",
+   "defaultFrequency": "event",
+   "evidenceHints": [
+    "Recovery initiation decisions"
+   ]
+  },
+  {
+   "id": "RS.AN-03",
+   "title": "Analysis is performed to establish what has taken place during an incident and the root cause of the incident",
+   "domain": "Respond / Incident Analysis",
+   "function": "RS",
+   "category": "RS.AN",
+   "defaultFrequency": "event",
+   "evidenceHints": [
+    "Root cause analysis reports"
+   ]
+  },
+  {
+   "id": "RS.AN-06",
+   "title": "Actions performed during an investigation are recorded, and the records' integrity and provenance are preserved",
+   "domain": "Respond / Incident Analysis",
+   "function": "RS",
+   "category": "RS.AN",
+   "defaultFrequency": "event",
+   "evidenceHints": [
+    "Investigation timelines",
+    "Evidence integrity records"
+   ]
+  },
+  {
+   "id": "RS.AN-07",
+   "title": "Incident data and metadata are collected, and their integrity and provenance are preserved",
+   "domain": "Respond / Incident Analysis",
+   "function": "RS",
+   "category": "RS.AN",
+   "defaultFrequency": "event",
+   "evidenceHints": [
+    "Chain-of-custody records",
+    "Hashes of collected artefacts"
+   ]
+  },
+  {
+   "id": "RS.AN-08",
+   "title": "An incident's magnitude is estimated and validated",
+   "domain": "Respond / Incident Analysis",
+   "function": "RS",
+   "category": "RS.AN",
+   "defaultFrequency": "event",
+   "evidenceHints": [
+    "Scope and impact assessments"
+   ]
+  },
+  {
+   "id": "RS.CO-02",
+   "title": "Internal and external stakeholders are notified of incidents",
+   "domain": "Respond / Incident Response Reporting and Communication",
+   "function": "RS",
+   "category": "RS.CO",
+   "defaultFrequency": "event",
+   "evidenceHints": [
+    "Notification records with timestamps",
+    "Regulatory notification evidence"
+   ]
+  },
+  {
+   "id": "RS.CO-03",
+   "title": "Information is shared with designated internal and external stakeholders",
+   "domain": "Respond / Incident Response Reporting and Communication",
+   "function": "RS",
+   "category": "RS.CO",
+   "defaultFrequency": "event",
+   "evidenceHints": [
+    "Sharing records (ISAC, law enforcement, customers)"
+   ]
+  },
+  {
+   "id": "RS.MI-01",
+   "title": "Incidents are contained",
+   "domain": "Respond / Incident Mitigation",
+   "function": "RS",
+   "category": "RS.MI",
+   "defaultFrequency": "event",
+   "evidenceHints": [
+    "Containment actions in incident records"
+   ]
+  },
+  {
+   "id": "RS.MI-02",
+   "title": "Incidents are eradicated",
+   "domain": "Respond / Incident Mitigation",
+   "function": "RS",
+   "category": "RS.MI",
+   "defaultFrequency": "event",
+   "evidenceHints": [
+    "Eradication and verification records"
+   ]
+  },
+  {
+   "id": "RC.RP-01",
+   "title": "The recovery portion of the incident response plan is executed once initiated from the incident response process",
+   "domain": "Recover / Incident Recovery Plan Execution",
+   "function": "RC",
+   "category": "RC.RP",
+   "defaultFrequency": "event",
+   "evidenceHints": [
+    "Recovery execution records"
+   ]
+  },
+  {
+   "id": "RC.RP-02",
+   "title": "Recovery actions are selected, scoped, prioritized, and performed",
+   "domain": "Recover / Incident Recovery Plan Execution",
+   "function": "RC",
+   "category": "RC.RP",
+   "defaultFrequency": "event",
+   "evidenceHints": [
+    "Recovery action plans"
+   ]
+  },
+  {
+   "id": "RC.RP-03",
+   "title": "The integrity of backups and other restoration assets is verified before using them for restoration",
+   "domain": "Recover / Incident Recovery Plan Execution",
+   "function": "RC",
+   "category": "RC.RP",
+   "defaultFrequency": "event",
+   "evidenceHints": [
+    "Backup integrity verification records"
+   ]
+  },
+  {
+   "id": "RC.RP-04",
+   "title": "Critical mission functions and cybersecurity risk management are considered to establish post-incident operational norms",
+   "domain": "Recover / Incident Recovery Plan Execution",
+   "function": "RC",
+   "category": "RC.RP",
+   "defaultFrequency": "event",
+   "evidenceHints": [
+    "Post-incident operating decisions"
+   ]
+  },
+  {
+   "id": "RC.RP-05",
+   "title": "The integrity of restored assets is verified, systems and services are restored, and normal operating status is confirmed",
+   "domain": "Recover / Incident Recovery Plan Execution",
+   "function": "RC",
+   "category": "RC.RP",
+   "defaultFrequency": "event",
+   "evidenceHints": [
+    "Restoration verification records"
+   ]
+  },
+  {
+   "id": "RC.RP-06",
+   "title": "The end of incident recovery is declared based on criteria, and incident-related documentation is completed",
+   "domain": "Recover / Incident Recovery Plan Execution",
+   "function": "RC",
+   "category": "RC.RP",
+   "defaultFrequency": "event",
+   "evidenceHints": [
+    "Closure records",
+    "Final incident report"
+   ]
+  },
+  {
+   "id": "RC.CO-03",
+   "title": "Recovery activities and progress in restoring operational capabilities are communicated to designated internal and external stakeholders",
+   "domain": "Recover / Incident Recovery Communication",
+   "function": "RC",
+   "category": "RC.CO",
+   "defaultFrequency": "event",
+   "evidenceHints": [
+    "Status update records"
+   ]
+  },
+  {
+   "id": "RC.CO-04",
+   "title": "Public updates on incident recovery are shared using approved methods and messaging",
+   "domain": "Recover / Incident Recovery Communication",
+   "function": "RC",
+   "category": "RC.CO",
+   "defaultFrequency": "event",
+   "evidenceHints": [
+    "Approved public statements"
+   ]
+  }
+ ]
+}
