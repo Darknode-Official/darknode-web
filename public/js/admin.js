@@ -246,9 +246,19 @@ export async function renderAdmin(main, user) {
       btn.disabled = true; const label = btn.textContent; btn.textContent = "Loading…";
       try {
         const [{ renderDeck }, nav] = await Promise.all([
-          import("/js/deck-ui.js?v=20261014h"),
+          import("/js/deck-ui.js?v=20261015a"),
           import("/js/console-nav.js?v=20261013k"),
         ]);
+        // Workspace identity (A1): load the owner's workspace profile so the Deck header,
+        // Plans and reports show it instead of a hardcoded label. Non-fatal if it fails.
+        let wsProfile = {};
+        if (user) {
+          try {
+            const snap = await getDoc(doc(db, "users", user.uid));
+            const d = snap.exists() ? snap.data() : {};
+            wsProfile = { name: d.workspaceName || "", logo: d.workspaceLogo || "", accent: d.workspaceAccent || "" };
+          } catch (_) {}
+        }
         // Never stack Decks: dispose the previous mount (root + listeners) first.
         if (_deckOff) { try { _deckOff(); } catch (_) {} _deckOff = null; }
         document.querySelectorAll("body > .dk").forEach((n) => n.remove());
@@ -256,6 +266,15 @@ export async function renderAdmin(main, user) {
           groups: (nav.NAV || []).map((g) => ({ id: g.id, name: g.name, color: g.color, items: g.items || [] })),
           user: user ? { displayName: user.displayName || "", email: user.email || "", photoURL: user.photoURL || "" } : null,
           isOwner: true,
+          workspace: wsProfile,
+          onWorkspace: user ? async (partial) => {
+            const map = {};
+            if ("name" in partial) map.workspaceName = partial.name || "";
+            if ("logo" in partial) map.workspaceLogo = partial.logo || "";
+            if ("accent" in partial) map.workspaceAccent = partial.accent || "";
+            map.workspaceUpdatedAt = serverTimestamp();
+            await setDoc(doc(db, "users", user.uid), map, { merge: true });
+          } : null,
           onExit: () => { _deckOff = null; },
         });
       } catch (e) {

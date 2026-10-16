@@ -1206,6 +1206,17 @@ textarea.dk-kitio{min-height:120px}
 .dk-planincl{display:flex;flex-wrap:wrap;gap:10px 22px}
 .dk-planincl span{display:flex;gap:7px;align-items:center;font-size:12.8px;color:#3b445a}
 .dk-planincl span svg{width:15px;height:15px;color:#2552c6}
+.dk-setgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:18px;align-items:start}
+.dk-setrow{display:flex;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid rgba(23,33,56,.08)}
+.dk-setrow:last-child{border-bottom:0}
+.dk-setrow .m{flex:1;min-width:0}
+.dk-setrow .m .t{font-size:13px;font-weight:600;color:#1f2838}
+.dk-setrow .m .s{font-size:12px;color:#6b7589;line-height:1.45;margin-top:2px;overflow-wrap:anywhere}
+.dk-setin{font:inherit;font-size:13px;color:#1a2233;background:rgba(23,33,56,.04);border:1px solid rgba(23,33,56,.16);border-radius:8px;padding:8px 11px;outline:none;min-width:0}
+.dk-setin:focus{border-color:var(--dk-acc,#2552c6)}
+.dk-settog{appearance:none;cursor:pointer;flex:none;border:1px solid rgba(23,33,56,.18);background:rgba(23,33,56,.05);color:#38435c;font:inherit;font-size:12.5px;font-weight:600;height:32px;padding:0 14px;border-radius:8px}
+.dk-settog.on{background:var(--dk-acc,#2552c6);border-color:var(--dk-acc,#2552c6);color:#fff}
+.dk[data-ui=deck] .dk-setin{background:var(--dk-surf);border-color:var(--dk-line);color:var(--dk-tx)}
 .dk-compgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
 .dk-compcard{appearance:none;font:inherit;display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start;position:relative;text-align:left;cursor:pointer;background:#fff;border:1px solid rgba(23,33,56,.08);border-radius:14px;padding:17px 18px;transition:border-color .15s,transform .15s}
 .dk-compcard:hover{border-color:#3f78ff;transform:translateY(-1px)}
@@ -1483,6 +1494,20 @@ export function renderDeck(host, opts) {
   const primary = typeof opts.onSignOut === "function";
   const toast = (m) => { try { (window.showToast || window.dnToast)?.(m); } catch (_) {} };
 
+  // Workspace identity (A1): editable name/logo/accent. The host (admin.js) supplies
+  // it from Firestore and persists changes via opts.onWorkspace; a localStorage cache
+  // paints instantly on the next open. Falls back to the signed-in name, then "Workspace".
+  function loadWsCache() { try { return JSON.parse(localStorage.getItem("dn_ws_profile") || "null"); } catch (_) { return null; } }
+  let wsProfile = opts.workspace || loadWsCache() || {};
+  const wsLabelText = () => (wsProfile.name || (opts.user && (opts.user.displayName || opts.user.email)) || "Workspace");
+  async function saveWorkspace(partial) {
+    wsProfile = Object.assign({}, wsProfile, partial || {});
+    try { localStorage.setItem("dn_ws_profile", JSON.stringify(wsProfile)); } catch (_) {}
+    const el = root && root.querySelector(".dk-wsname"); if (el) el.textContent = wsLabelText();
+    if (typeof opts.onWorkspace === "function") { try { await opts.onWorkspace(partial || {}); } catch (_) {} }
+    return wsProfile;
+  }
+
   // flat index for spotlight: tools + integrations
   const index = [];
   for (const g of groups) for (const it of g.items) index.push({ type: "tool", sec: it.sec, label: it.label, group: g.name, color: g.color, badge: it.badge });
@@ -1501,7 +1526,7 @@ export function renderDeck(host, opts) {
     <canvas class="dk-stars" id="dkStars"></canvas>
     <div class="dk-top">
       <button class="dk-icbtn dk-sbtog" id="dkSbTog" data-explain="hdr.menu" aria-label="Toggle navigation" aria-controls="dkSide">${IC.menu}</button>
-      <button class="dk-brand" id="dkBrand" data-explain="hdr.brand" title="Home"><img class="dk-mark" src="/logo-dark.svg?v=20261007b" alt=""><img class="dk-wm" src="/wordmark.svg" alt="Darknode"><span class="dk-wsname">Command Center</span></button>
+      <button class="dk-brand" id="dkBrand" data-explain="hdr.brand" title="Home"><img class="dk-mark" src="/logo-dark.svg?v=20261007b" alt=""><img class="dk-wm" src="/wordmark.svg" alt="Darknode"><span class="dk-wsname">${esc(wsLabelText())}</span></button>
       <div class="dk-crumb" id="dkCrumb" aria-live="polite"></div>
       <button class="dk-hsearch" id="dkHSearch" data-explain="hdr.search" aria-label="Search">${IC_SEARCH}<span class="hs">Search tools, scenes and actions</span><kbd>Ctrl K</kbd></button>
       <div class="dk-right">
@@ -1552,6 +1577,8 @@ export function renderDeck(host, opts) {
 
     <div class="dk-scene dk-plans" id="dkPlans" hidden></div>
 
+    <div class="dk-scene dk-ov dk-settings" id="dkSettings" hidden></div>
+
     <div class="dk-scene dk-asst" id="dkAssistant" hidden>
       <div class="dk-wbar">
         <div class="dk-wtitle"><span class="wi">${IC.spark}</span><span class="wt">Darknode AI</span></div>
@@ -1599,7 +1626,7 @@ export function renderDeck(host, opts) {
   function drawStars(){}
 
   // ---------- workspace router ----------
-  const SCENES = { overview: "#dkOverview", surface: "#dkSurface", threat: "#dkThreat", cloud: "#dkCloud", compliance: "#dkCompliance", invest: "#dkInvest", findings: "#dkFindings", section: "#dkSection", con: "#dkCon", tools: "#dkTools", toolkit: "#dkToolkit", activity: "#dkActivity", assistant: "#dkAssistant", plans: "#dkPlans" };
+  const SCENES = { overview: "#dkOverview", surface: "#dkSurface", threat: "#dkThreat", cloud: "#dkCloud", compliance: "#dkCompliance", invest: "#dkInvest", findings: "#dkFindings", section: "#dkSection", con: "#dkCon", tools: "#dkTools", toolkit: "#dkToolkit", activity: "#dkActivity", assistant: "#dkAssistant", plans: "#dkPlans", settings: "#dkSettings" };
   const sceneEls = {}; for (const k in SCENES) sceneEls[k] = $(SCENES[k]);
   const sceneTools = sceneEls.tools;   // kept for the tools gallery code
   // sec -> label, for activity lines and quick-action titles
@@ -1647,6 +1674,7 @@ export function renderDeck(host, opts) {
     else if (scene === "section") renderSection();
     else if (scene === "activity") renderActivity();
     else if (scene === "plans") renderPlans();
+    else if (scene === "settings") renderSettings();
     else if (scene === "assistant") openAssistant();
   }
   // Any element carrying data-scene (KPI cards, "view all" links, quick actions)
@@ -2048,6 +2076,8 @@ export function renderDeck(host, opts) {
     { type: "action", label: "Go to Tool Library", group: "Navigate", icon: IC.grid, run: () => go("tools") },
     { type: "action", label: "Go to Activity", group: "Navigate", icon: IC.pulse, run: () => go("activity") },
     { type: "action", label: "Go to Assistant", group: "Navigate", icon: IC.spark, run: () => go("assistant") },
+    { type: "action", label: "Go to Plans & billing", group: "Navigate", icon: IC.star, run: () => go("plans") },
+    { type: "action", label: "Open Settings", group: "Navigate", icon: IC.gear, run: () => go("settings") },
   ];
   function spotIcon(m){
     if (m.type === "conn") return `<span class="ic">${logoHTML(m.it, "")}</span>`;
@@ -2120,7 +2150,7 @@ export function renderDeck(host, opts) {
       <div class="dk-mi-div"></div>
       <button class="dk-mi" id="dkMiExit">${IC.logout}<span>${primary ? "Sign out" : "Exit command center"}</span></button>`;
     popAcct.querySelector("[data-go]").onclick = () => { closeAllMenus(); go("overview"); };
-    popAcct.querySelector("[data-tool]").onclick = () => { closeAllMenus(); openTool("settings", "Settings"); };
+    popAcct.querySelector("[data-tool]").onclick = () => { closeAllMenus(); go("settings"); };
     popAcct.querySelector("#dkMiPlans").onclick = () => { closeAllMenus(); go("plans"); };
     popAcct.querySelector("#dkMiKeys").onclick = () => { closeAllMenus(); toggleKeys(true); };
     popAcct.querySelector("#dkMiDense").onclick = () => { closeAllMenus(); const d = root.classList.toggle("dense"); try { localStorage.setItem("dn_deck_density", d ? "compact" : "comfortable"); } catch (_) {} };
@@ -3210,6 +3240,123 @@ export function renderDeck(host, opts) {
       toast(b.dataset.cta + " — billing isn't live yet. We'll reach out about early access.");
     });
   }
+  // ---------- Settings (native Deck scene) ----------
+  // Consolidates the controls that were scattered across the account menu into one
+  // page: workspace identity, appearance, data and account. Every control here is
+  // real — no placeholder switches. The legacy /settings iframe stays reachable only
+  // as a deep fallback (openTool("settings")).
+  function renderSettings(){
+    const el = sceneEls.settings;
+    const dense = root.classList.contains("dense");
+    const expOn = explainEnabled();
+    const cool = coolOn();
+    el.innerHTML = `
+      <div class="dk-ti-head"><h1>Settings</h1></div>
+      <div class="dk-setgrid">
+        <div class="dk-ovp">
+          <h2>${IC.home} Workspace</h2>
+          <div class="dk-setrow">
+            <div class="m"><div class="t">Workspace name</div><div class="s">Shown in the header, on plans and in exported reports. Leave blank to use your account name.</div></div>
+            <input class="dk-setin" id="dkSetWsName" type="text" maxlength="48" placeholder="e.g. Acme Security" value="${esc(wsProfile.name || "")}" autocomplete="off" spellcheck="false" style="width:200px">
+          </div>
+          <div class="dk-setrow">
+            <div class="m"><div class="t">Accent colour</div><div class="s">A hex colour for workspace accents. Optional.</div></div>
+            <input class="dk-setin" id="dkSetWsAccent" type="text" maxlength="7" placeholder="#2552c6" value="${esc(wsProfile.accent || "")}" autocomplete="off" spellcheck="false" style="width:110px">
+          </div>
+          <div class="dk-setrow">
+            <div class="m"><div class="t">Signed in as</div><div class="s">${esc(user.email || "—")}</div></div>
+            <span class="s" style="color:#6b7589;font-size:12.5px">${esc(user.displayName || "")}</span>
+          </div>
+        </div>
+
+        <div class="dk-ovp">
+          <h2>${IC.grid} Appearance</h2>
+          <div class="dk-setrow">
+            <div class="m"><div class="t">Density</div><div class="s">Compact packs more into each view; comfortable gives rows more breathing room.</div></div>
+            <button class="dk-settog${dense ? " on" : ""}" id="dkSetDense">${dense ? "Compact" : "Comfortable"}</button>
+          </div>
+          <div class="dk-setrow">
+            <div class="m"><div class="t">Hover explanations</div><div class="s">Rest on anything for 2 seconds to see a plain-language explanation.</div></div>
+            <button class="dk-settog${expOn ? " on" : ""}" id="dkSetExplain">${expOn ? "On" : "Off"}</button>
+          </div>
+          ${opts.isOwner ? `<div class="dk-setrow">
+            <div class="m"><div class="t">Cool tool UI <span style="font-size:11px;color:#6b7589">(beta)</span></div><div class="s">Reskins embedded tools with gradients and rounded controls. Owner pilot — reloads open tools when changed.</div></div>
+            <button class="dk-settog${cool ? " on" : ""}" id="dkSetCool">${cool ? "On" : "Off"}</button>
+          </div>` : ""}
+        </div>
+
+        <div class="dk-ovp">
+          <h2>${IC.star} Plans &amp; billing</h2>
+          <div class="dk-setrow">
+            <div class="m"><div class="t">Your plan</div><div class="s">Compare plans and request an upgrade. Checkout isn't live yet — upgrades are granted manually.</div></div>
+            <button class="dk-settog" id="dkSetPlans">View plans</button>
+          </div>
+        </div>
+
+        <div class="dk-ovp">
+          <h2>${IC.folder} Data</h2>
+          <div class="dk-setrow">
+            <div class="m"><div class="t">Deck state</div><div class="s">Connections, pinned tools and notes (no API keys), as a JSON file you can re-import.</div></div>
+            <span style="display:flex;gap:8px;flex:none"><button class="dk-settog" id="dkSetExport">Export</button><button class="dk-settog" id="dkSetImport">Import</button></span>
+          </div>
+          <div class="dk-setrow">
+            <div class="m"><div class="t">Security graph</div><div class="s">Export every entity and relationship your tools have recorded, as JSON.</div></div>
+            <button class="dk-settog" id="dkSetGraph">Export graph</button>
+          </div>
+          <div class="dk-setrow">
+            <div class="m"><div class="t">Reset local Deck state</div><div class="s">Clears connections, pins, notes and layout in this browser. Does not touch your account or the security graph.</div></div>
+            <button class="dk-settog" id="dkSetReset" style="border-color:rgba(200,50,50,.4);color:#b4332e">Reset</button>
+          </div>
+        </div>
+
+        ${opts.isOwner ? `<div class="dk-ovp">
+          <h2>${IC.key} Admin</h2>
+          <div class="dk-setrow">
+            <div class="m"><div class="t">Owner console</div><div class="s">User management, feature flags, upgrade requests and platform settings.</div></div>
+            <button class="dk-settog" id="dkSetAdmin">Open Admin</button>
+          </div>
+        </div>` : ""}
+      </div>`;
+
+    const nameIn = el.querySelector("#dkSetWsName");
+    const accIn = el.querySelector("#dkSetWsAccent");
+    const commitWs = () => {
+      const name = (nameIn.value || "").trim();
+      const accent = (accIn.value || "").trim();
+      if (name === (wsProfile.name || "") && accent === (wsProfile.accent || "")) return;
+      saveWorkspace({ name, accent });
+      toast("Workspace saved");
+    };
+    nameIn.addEventListener("change", commitWs);
+    accIn.addEventListener("change", commitWs);
+
+    el.querySelector("#dkSetDense").onclick = (e) => { const d = root.classList.toggle("dense"); try { localStorage.setItem("dn_deck_density", d ? "compact" : "comfortable"); } catch (_) {} e.target.classList.toggle("on", d); e.target.textContent = d ? "Compact" : "Comfortable"; };
+    el.querySelector("#dkSetExplain").onclick = (e) => { const on = !explainEnabled(); setExplainEnabled(on); e.target.classList.toggle("on", on); e.target.textContent = on ? "On" : "Off"; toast("Hover explanations " + (on ? "on" : "off")); };
+    const coolBtn = el.querySelector("#dkSetCool");
+    if (coolBtn) coolBtn.onclick = (e) => { const on = !coolOn(); try { localStorage.setItem("dn_cool_ui", on ? "1" : "0"); } catch (_) {} reloadToolsForCool(); e.target.classList.toggle("on", on); e.target.textContent = on ? "On" : "Off"; };
+    el.querySelector("#dkSetPlans").onclick = () => go("plans");
+    el.querySelector("#dkSetExport").onclick = () => exportDeckState();
+    el.querySelector("#dkSetImport").onclick = () => importDeckState();
+    el.querySelector("#dkSetGraph").onclick = () => withGraph((m) => {
+      if (!m || !m.exportAll) { toast("Graph unavailable"); return; }
+      const data = m.exportAll(), n = (data.entities || []).length;
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }));
+      a.download = "darknode-security-graph.json"; a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+      toast(n + " entities exported");
+    });
+    el.querySelector("#dkSetReset").onclick = async () => {
+      const ok = window.dnConfirm ? await window.dnConfirm("Reset local Deck state?", "This clears connections, pinned tools, notes and layout in this browser. Your account and the security graph are not affected.", { submitText: "Reset", danger: true }) : true;
+      if (!ok) return;
+      ["dn_deck_connections_v1", "dn_deck_pins_v1", "dn_deck_notes", "dn_deck_scene", "dn_deck_sect", "dn_deck_toolcat", "dn_deck_kit", "dn_deck_density", "dn_deck_nav"].forEach((k) => { try { localStorage.removeItem(k); } catch (_) {} });
+      toast("Local Deck state reset — reloading");
+      setTimeout(() => { try { location.reload(); } catch (_) {} }, 600);
+    };
+    const admBtn = el.querySelector("#dkSetAdmin");
+    if (admBtn) admBtn.onclick = () => openTool("admin", "Admin");
+  }
+
   function renderActivity(){
     const el = sceneEls.activity;
     const all = notifs.map((x) => ({ text: x.text, ts: x.ts, cat: activityCat(x.text) }));
@@ -3437,7 +3584,7 @@ export function renderDeck(host, opts) {
       b.classList.toggle("on", on); if (on) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current");
     });
     root.querySelectorAll("#dkSbNav .dk-nvhb").forEach((b) => b.classList.toggle("on", key === "section:" + b.dataset.sect));
-    const meta = navIndex[key] || { group: key.indexOf("tool:") === 0 ? "Tools" : "Home", label: navLabel || key.split(":")[1] };
+    const meta = navIndex[key] || { group: key.indexOf("tool:") === 0 ? "Tools" : "Home", label: navLabel || (key.split(":")[1] || "").replace(/^\w/, (c) => c.toUpperCase()) };
     const crumb = $("#dkCrumb");
     if (crumb) crumb.innerHTML = `<span class="cg">${esc(meta.group)}</span><span class="cs" aria-hidden="true">/</span><b>${esc(meta.label)}</b>`;
     if (root.classList.contains("nav-open")) root.classList.remove("nav-open");
