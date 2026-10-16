@@ -1,4 +1,5 @@
 // Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+import { wins } from './core/graph-merge.js';
 const STORAGE_KEY = 'dn_security_graph';
 
 export const ENTITY_TYPES = [
@@ -389,6 +390,55 @@ export function exportAll() {
     relationships: Object.values(_relationships),
     exportedAt: _now()
   };
+}
+
+// Apply remote records from the cloud sync (graph-sync.js) into the local graph under
+// last-writer-wins, using the shared pure rule (core/graph-merge.js). A remote record
+// only replaces the local one when it is strictly newer; a winning tombstone
+// ({ id, deleted:true, updatedAt }) removes the local record (an entity cascades to its
+// relationships, mirroring deleteEntity). This deliberately emits only 'secgraph:sync',
+// never :created/:updated/:deleted, so the sync layer does not mistake an incoming change
+// for a fresh local edit and push it straight back — that would be an endless loop.
+export function applyRemote(remote) {
+  _load();
+  let changed = 0;
+  for (const rec of (remote && remote.entities) || []) {
+    if (!rec || typeof rec.id !== 'string' || !rec.id) continue;
+    const cur = _entities[rec.id];
+    if (!wins(rec, cur, 'updatedAt')) continue;
+    if (rec.deleted) {
+      if (!cur) continue;
+      delete _entities[rec.id];
+      for (const rid in _relationships) {
+        if (_relationships[rid].fromId === rec.id || _relationships[rid].toId === rec.id) delete _relationships[rid];
+      }
+    } else {
+      _entities[rec.id] = {
+        id: rec.id, type: rec.type, name: String(rec.name || ''), data: rec.data || {},
+        tags: Array.isArray(rec.tags) ? rec.tags : [],
+        severity: SEVERITIES.includes(rec.severity) ? rec.severity : null,
+        status: STATUSES.includes(rec.status) ? rec.status : 'new',
+        source: rec.source || 'sync', createdAt: rec.createdAt || _now(), updatedAt: rec.updatedAt || _now()
+      };
+    }
+    changed++;
+  }
+  for (const rec of (remote && remote.relationships) || []) {
+    if (!rec || typeof rec.id !== 'string' || !rec.id) continue;
+    const cur = _relationships[rec.id];
+    if (!wins(rec, cur, 'createdAt')) continue;
+    if (rec.deleted) {
+      if (!cur) continue;
+      delete _relationships[rec.id];
+    } else if (_entities[rec.fromId] && _entities[rec.toId] && RELATIONSHIP_TYPES.includes(rec.type)) {
+      _relationships[rec.id] = { id: rec.id, fromId: rec.fromId, toId: rec.toId, type: rec.type, createdAt: rec.createdAt || _now() };
+    } else {
+      continue;
+    }
+    changed++;
+  }
+  if (changed) { _save(); _emit('secgraph:sync', { remote: true }); }
+  return changed;
 }
 
 export function clearAll() {
