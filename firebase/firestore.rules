@@ -127,6 +127,22 @@ service cloud.firestore {
       allow update, delete: if isOwner();
     }
 
+    // Plan upgrade requests. A signed-in user may file a request for their OWN uid,
+    // always status 'pending' — they can never set a tier on themselves (that lives on
+    // the user doc and is owner-only). The owner reads, grants (update) or clears them.
+    match /upgradeRequests/{rid} {
+      allow read:   if isOwner() || (signedIn() && resource.data.uid == request.auth.uid);
+      allow create: if signedIn()
+                    && request.resource.data.keys().hasOnly(['uid', 'email', 'tier', 'note', 'status', 'ts'])
+                    && request.resource.data.uid == request.auth.uid
+                    && request.resource.data.status == 'pending'
+                    && request.resource.data.tier is string
+                    && request.resource.data.tier.size() <= 20
+                    && request.resource.data.note is string
+                    && request.resource.data.note.size() <= 2000;
+      allow update, delete: if isOwner();
+    }
+
     // VAULT team vaults. Firestore holds WHO is in a vault and their role; the money
     // itself (ledger, transfers, approvals, audit) lives in the worker's VaultDO, which
     // reads the caller's member doc with the caller's own token. So these rules are what

@@ -10,6 +10,7 @@ import { db } from "/js/firebase.js?v=20261007a";
 const isOwnerRow = (u) => !!u && (u.admin === true || u.role === "owner");
 import {
   collection, getDocs, doc, getDoc, setDoc, deleteDoc, serverTimestamp,
+  addDoc, query, orderBy, updateDoc,
 } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
@@ -64,6 +65,12 @@ export async function renderAdmin(main, user) {
         <div class="panel">
           <div class="panel-h"><h2 class="pg-h2" style="margin:0">Recent new-device sign-ins</h2></div>
           <div id="loginList"><p class="muted">…</p></div>
+        </div>
+        <div class="panel">
+          <div class="panel-h"><h2 class="pg-h2" style="margin:0">Plan upgrade requests</h2>
+            <button class="btn ghost sm" id="upReqRefresh">Refresh</button></div>
+          <p class="muted" style="font-size:.82rem;margin:0 0 8px">Requests from the Deck's Plans page. Granting sets the user's plan tier.</p>
+          <div id="upReqList"><p class="muted">Loading requests…</p></div>
         </div>
         <div class="panel">
           <div class="panel-h"><h2 class="pg-h2" style="margin:0">Feedback &amp; bug reports</h2>
@@ -251,12 +258,13 @@ export async function renderAdmin(main, user) {
         ]);
         // Workspace identity (A1): load the owner's workspace profile so the Deck header,
         // Plans and reports show it instead of a hardcoded label. Non-fatal if it fails.
-        let wsProfile = {};
+        let wsProfile = {}, deckTier = "";
         if (user) {
           try {
             const snap = await getDoc(doc(db, "users", user.uid));
             const d = snap.exists() ? snap.data() : {};
             wsProfile = { name: d.workspaceName || "", logo: d.workspaceLogo || "", accent: d.workspaceAccent || "" };
+            deckTier = d.tier || "";
           } catch (_) {}
         }
         // Never stack Decks: dispose the previous mount (root + listeners) first.
@@ -266,7 +274,14 @@ export async function renderAdmin(main, user) {
           groups: (nav.NAV || []).map((g) => ({ id: g.id, name: g.name, color: g.color, items: g.items || [] })),
           user: user ? { displayName: user.displayName || "", email: user.email || "", photoURL: user.photoURL || "" } : null,
           isOwner: true,
+          tier: deckTier,
           workspace: wsProfile,
+          onUpgradeRequest: user ? async (tier, note) => {
+            await addDoc(collection(db, "upgradeRequests"), {
+              uid: user.uid, email: user.email || "", tier: String(tier || ""),
+              note: String(note || "").slice(0, 2000), status: "pending", ts: serverTimestamp(),
+            });
+          } : null,
           onWorkspace: user ? async (partial) => {
             const map = {};
             if ("name" in partial) map.workspaceName = partial.name || "";
@@ -390,6 +405,52 @@ export async function renderAdmin(main, user) {
     try { await deleteDoc(doc(db, "feedback", row.dataset.id)); row.remove(); } catch (err) { window.showToast("Delete failed: " + err.message, "error"); }
   };
   loadFeedback();
+
+  // ---- plan upgrade requests ----
+  async function loadUpgradeRequests() {
+    const host = $("#upReqList"); if (!host) return;
+    try {
+      const snap = await getDocs(query(collection(db, "upgradeRequests"), orderBy("ts", "desc")));
+      const items = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      const pending = items.filter((r) => r.status === "pending");
+      if (!items.length) { host.innerHTML = `<p class="muted">No upgrade requests yet.</p>`; return; }
+      host.innerHTML = items.map((r) => `
+        <div class="fb-row" data-id="${esc(r.id)}" data-uid="${esc(r.uid || "")}" data-tier="${esc(r.tier || "")}">
+          <div class="fb-row-h"><span class="fb-tag">${esc((r.tier || "—").toUpperCase())}</span> <span class="muted">${esc(r.email || r.uid || "user")}</span>
+            <span class="muted" style="font-size:.72rem">${r.status === "pending" ? "pending" : esc(r.status || "")}</span>
+            <span style="flex:1"></span><span class="muted" style="font-size:.72rem">${r.ts && r.ts.toDate ? esc(fmtDate(r.ts)) : ""}</span>
+            ${r.status === "pending" ? `<button class="btn sm upr-grant">Grant ${esc(r.tier || "")}</button><button class="btn ghost sm upr-dismiss">Dismiss</button>` : `<button class="btn ghost sm upr-del" title="Delete">Delete</button>`}</div>
+          ${r.note ? `<div class="fb-msg">${esc(r.note)}</div>` : ""}
+        </div>`).join("");
+      $("#upReqList").dataset.pending = String(pending.length);
+    } catch (e) { host.innerHTML = `<p class="adm-err">Couldn't load upgrade requests: ${esc(e.message)}. Ensure the 'upgradeRequests' rules are deployed.</p>`; }
+  }
+  $("#upReqRefresh").onclick = loadUpgradeRequests;
+  $("#upReqList").onclick = async (e) => {
+    const row = e.target.closest(".fb-row"); if (!row) return;
+    const rid = row.dataset.id, uid = row.dataset.uid, tier = row.dataset.tier;
+    if (e.target.closest(".upr-grant")) {
+      if (!uid || !tier) { window.showToast("Request is missing a user or tier.", "error"); return; }
+      if (!(await window.dnConfirm("Grant " + tier + "?", "This sets this user's plan tier to '" + tier + "'. They get the tier's features immediately.", { submitText: "Grant" }))) return;
+      try {
+        await setDoc(doc(db, "users", uid), { tier, tierGrantedAt: serverTimestamp() }, { merge: true });
+        await updateDoc(doc(db, "upgradeRequests", rid), { status: "granted", grantedAt: serverTimestamp() });
+        window.showToast("Granted " + tier, "success"); loadUpgradeRequests();
+      } catch (err) { window.showToast("Grant failed: " + err.message, "error"); }
+      return;
+    }
+    if (e.target.closest(".upr-dismiss")) {
+      try { await updateDoc(doc(db, "upgradeRequests", rid), { status: "dismissed" }); loadUpgradeRequests(); }
+      catch (err) { window.showToast("Dismiss failed: " + err.message, "error"); }
+      return;
+    }
+    if (e.target.closest(".upr-del")) {
+      if (!(await window.dnConfirm("Delete request?", "This permanently removes this request.", { danger: true }))) return;
+      try { await deleteDoc(doc(db, "upgradeRequests", rid)); row.remove(); }
+      catch (err) { window.showToast("Delete failed: " + err.message, "error"); }
+    }
+  };
+  loadUpgradeRequests();
 
   // ---- client error log ----
   async function loadErrors() {

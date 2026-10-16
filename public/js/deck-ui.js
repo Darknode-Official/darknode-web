@@ -27,6 +27,7 @@ import * as surface from "/js/deck-surface.js?v=20261011b";
 // stream and the notifications bell.
 import { bus, EVENTS } from "/js/core/bus.js";
 import { isSimulated } from "/js/core/posture.js";
+import { tierFrom, rank, planLabel } from "/js/core/entitlements.js";
 import * as findings from "/js/core/findings.js?v=20261013e";
 import { attachExplain, EXPLAIN, explainEnabled, setExplainEnabled } from "/js/ui/explain.js?v=20261014h";
 
@@ -1500,6 +1501,9 @@ export function renderDeck(host, opts) {
   function loadWsCache() { try { return JSON.parse(localStorage.getItem("dn_ws_profile") || "null"); } catch (_) { return null; } }
   let wsProfile = opts.workspace || loadWsCache() || {};
   const wsLabelText = () => (wsProfile.name || (opts.user && (opts.user.displayName || opts.user.email)) || "Workspace");
+  // Effective plan tier (A4): server-resolved, owner always top. Drives the Plans
+  // scene and the "your plan" badge. Upgrades are requested, never self-granted.
+  const planTier = tierFrom(opts.tier, opts.isOwner);
   async function saveWorkspace(partial) {
     wsProfile = Object.assign({}, wsProfile, partial || {});
     try { localStorage.setItem("dn_ws_profile", JSON.stringify(wsProfile)); } catch (_) {}
@@ -3219,25 +3223,39 @@ export function renderDeck(host, opts) {
         feats: ["Everything in Team", "Self-hosted / private deployment", "SAML SSO, SCIM, custom roles", "Compliance pack & DPA", "Dedicated support & SLA"],
         cta: "Contact sales" },
     ];
+    // CTA depends on the effective tier: your current plan, something already
+    // included below it, or an upgrade you can request (never self-grant).
+    const ctaFor = (id) => {
+      if (id === planTier) return { label: "Current plan", cur: true };
+      if (rank(planTier) > rank(id)) return { label: "Included", cur: true };
+      if (id === "enterprise") return { label: "Contact sales", req: false };
+      return { label: "Request upgrade", req: true };
+    };
     el.innerHTML = `
       <div class="dk-ti-head"><h1>Plans &amp; billing</h1></div>
-      <div class="dk-compnote">Preview pricing. Checkout isn't live yet — these buttons start a conversation, they don't take payment. Your current access is the Free tier.</div>
-      <div class="dk-plangrid">${PLANS.map((p) => `
-        <div class="dk-plancard${p.tag ? " feat" : ""}" style="--a:${p.a}" data-explain="plan.${p.id}">
-          ${p.tag ? `<span class="dk-plantag">${esc(p.tag)}</span>` : ""}
+      <div class="dk-compnote">Preview pricing — checkout isn't live yet. You're on the <b>${esc(planLabel(planTier))}</b> plan. Upgrades are requested here and granted manually; no payment is taken.</div>
+      <div class="dk-plangrid">${PLANS.map((p) => { const c = ctaFor(p.id); return `
+        <div class="dk-plancard${p.tag ? " feat" : ""}${p.id === planTier ? " iscur" : ""}" style="--a:${p.a}" data-explain="plan.${p.id}">
+          ${p.id === planTier ? `<span class="dk-plantag">Current</span>` : p.tag ? `<span class="dk-plantag">${esc(p.tag)}</span>` : ""}
           <div class="dk-planname">${esc(p.name)}</div>
           <div class="dk-planprice">${esc(p.price)}${p.unit ? `<span>${esc(p.unit)}</span>` : ""}</div>
           <div class="dk-planblurb">${esc(p.blurb)}</div>
-          <button class="dk-planbtn${p.cur ? " cur" : ""}" data-plan="${esc(p.id)}" data-cta="${esc(p.cta)}"${p.cur ? " disabled" : ""}>${esc(p.cta)}</button>
+          <button class="dk-planbtn${c.cur ? " cur" : ""}" data-plan="${esc(p.id)}" data-req="${c.req ? "1" : ""}"${c.cur ? " disabled" : ""}>${esc(c.label)}</button>
           <ul class="dk-planfeats">${p.feats.map((f) => `<li>${IC.check}<span>${esc(f)}</span></li>`).join("")}</ul>
-        </div>`).join("")}
+        </div>`; }).join("")}
       </div>
       <div class="dk-ovp"><h2>${IC.shield} Every plan includes</h2>
         <div class="dk-planincl">${["Private by default — your data stays yours", "No telemetry on your findings", "Honest tooling — no simulated results", "Export everything, any time"].map((x) => `<span>${IC.check}${esc(x)}</span>`).join("")}</div>
       </div>`;
-    el.querySelectorAll(".dk-planbtn:not(.cur)").forEach((b) => b.onclick = () => {
-      if (b.dataset.plan === "enterprise") { try { window.open("mailto:sales@darknode.ai?subject=" + encodeURIComponent("Darknode Enterprise enquiry"), "_blank", "noopener"); } catch (_) {} return; }
-      toast(b.dataset.cta + " — billing isn't live yet. We'll reach out about early access.");
+    el.querySelectorAll(".dk-planbtn:not(.cur)").forEach((b) => b.onclick = async () => {
+      const plan = b.dataset.plan;
+      if (plan === "enterprise") { try { window.open("mailto:sales@darknode.ai?subject=" + encodeURIComponent("Darknode Enterprise enquiry"), "_blank", "noopener"); } catch (_) {} return; }
+      if (typeof opts.onUpgradeRequest !== "function") { toast("Upgrade requests aren't available in this context."); return; }
+      const note = window.dnPrompt ? await window.dnPrompt("Request " + planLabel(plan), { desc: "We'll review and get back to you. Add anything about your team or needs (optional).", placeholder: "e.g. 6 analysts, needs SSO", textarea: true, submitText: "Send request" }) : "";
+      if (note === null) return; // cancelled
+      b.disabled = true; b.textContent = "Sending…";
+      try { await opts.onUpgradeRequest(plan, (note || "").trim()); toast("Upgrade request sent — we'll be in touch."); b.textContent = "Requested"; }
+      catch (e) { b.disabled = false; b.textContent = "Request upgrade"; toast("Couldn't send the request. Try again."); }
     });
   }
   // ---------- Settings (native Deck scene) ----------
@@ -3288,7 +3306,7 @@ export function renderDeck(host, opts) {
         <div class="dk-ovp">
           <h2>${IC.star} Plans &amp; billing</h2>
           <div class="dk-setrow">
-            <div class="m"><div class="t">Your plan</div><div class="s">Compare plans and request an upgrade. Checkout isn't live yet — upgrades are granted manually.</div></div>
+            <div class="m"><div class="t">Your plan: ${esc(planLabel(planTier))}</div><div class="s">Compare plans and request an upgrade. Checkout isn't live yet — upgrades are granted manually.</div></div>
             <button class="dk-settog" id="dkSetPlans">View plans</button>
           </div>
         </div>
