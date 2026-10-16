@@ -1,6 +1,17 @@
 // Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
 import { wins } from './core/graph-merge.js';
-const STORAGE_KEY = 'dn_security_graph';
+
+// The graph is scoped to the active workspace (Phase B2). A user's PERSONAL workspace
+// keeps the original, unprefixed key so existing graphs are preserved with zero
+// migration; a team workspace gets its own namespaced store. Which workspace is active
+// is a single shared pointer in localStorage (dn_active_ws), so every tool iframe and the
+// Deck agree on the same store and switching propagates through storage events.
+const STORAGE_KEY = 'dn_security_graph';   // the personal / legacy store
+export const ACTIVE_WS_KEY = 'dn_active_ws';
+export function storeKeyFor(wid) { return wid ? STORAGE_KEY + '__ws_' + wid : STORAGE_KEY; }
+function _activeWid() { try { return localStorage.getItem(ACTIVE_WS_KEY) || null; } catch (_) { return null; } }
+let _key = storeKeyFor(_activeWid());
+export function activeWorkspaceId() { return _activeWid(); }
 
 export const ENTITY_TYPES = [
   'ASSET', 'ENDPOINT', 'DOMAIN', 'IP', 'PORT', 'SERVICE', 'CERTIFICATE',
@@ -36,7 +47,7 @@ function _emit(name, detail) {
 function _load() {
   if (_index !== null) return;
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(_key);
     if (raw) {
       const parsed = JSON.parse(raw);
       _entities = parsed.entities || {};
@@ -49,17 +60,34 @@ function _load() {
   _index = true;
 }
 
-// Another tab, or a tool running in an embedded iframe, wrote the graph: drop the
-// in-memory copy so the next read reloads it. Otherwise this document keeps serving
-// stale counts and its next save would overwrite the other document's entities.
+// The active workspace changed in another document (the Deck's switcher), or another tab
+// or an embedded tool iframe wrote the current store: in either case drop the in-memory
+// copy so the next read reloads from the right place. Otherwise this document keeps
+// serving stale counts and its next save would overwrite the other document's entities.
 try {
   window.addEventListener('storage', (e) => {
-    if (e.key !== STORAGE_KEY && e.key !== null) return;
+    if (e.key === ACTIVE_WS_KEY) { _refreshStore(); return; }
+    if (e.key !== _key && e.key !== null) return;
     if (_batchDepth) return;
     _index = null; _entities = {}; _relationships = {};
     _emit('secgraph:sync', {});
   });
 } catch (_) {}
+
+// Re-point the store at whatever workspace is now active. The document that writes
+// dn_active_ws must call this itself (a storage event does not fire in the same document).
+// Flushes the current store first (unless nothing was loaded, to avoid clobbering it).
+function _refreshStore() {
+  const next = storeKeyFor(_activeWid());
+  if (next === _key) return false;
+  if (_index !== null && !_batchDepth) _save();
+  _key = next;
+  _index = null; _entities = {}; _relationships = {};
+  _emit('secgraph:store-changed', { wid: _activeWid() });
+  _emit('secgraph:sync', {});
+  return true;
+}
+export function refreshStore() { return _refreshStore(); }
 
 let _batchDepth = 0;
 let _dirty = false;
@@ -67,7 +95,7 @@ let _dirty = false;
 function _save() {
   if (_batchDepth) { _dirty = true; return; }
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+    localStorage.setItem(_key, JSON.stringify({
       entities: _entities,
       relationships: _relationships
     }));

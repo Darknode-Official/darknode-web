@@ -121,3 +121,19 @@ group("secgraph: import normalization round-trip", () => {
     assert.equal(r[0].name, "a");
   });
 });
+
+// ---- Workspace-scoped store key derivation (Phase B2). Pure; the live store swap is
+// verified in the browser harness. ----
+import { storeKeyFor } from "../../public/js/security-graph.js";
+
+group("secgraph: workspace store keys", () => {
+  test("a personal workspace uses the original unprefixed store (zero migration)", () => {
+    assert.equal(storeKeyFor(null), "dn_security_graph");
+    assert.equal(storeKeyFor(""), "dn_security_graph");
+    assert.equal(storeKeyFor(undefined), "dn_security_graph");
+  });
+  test("a team workspace gets its own namespaced store", () => {
+    assert.equal(storeKeyFor("teamABCD12"), "dn_security_graph__ws_teamABCD12");
+    assert.notEqual(storeKeyFor("teamA"), storeKeyFor("teamB"));
+  });
+});
