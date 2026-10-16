@@ -9,7 +9,7 @@ labelled "Load example (synthetic)"); inputs ship empty; no emojis; no native di
 type in `info|success|error|warning`); zero browser dependencies; plain-noun names;
 full-width layouts on the ink theme; every detection cites a standard; ask before deploy.
 
-## 1. Shared kit (Wave 0)
+## 1. Shared kit (Wave 0) — merged 2026-10-16, suite 1719 green
 
 | Module | Purpose | Key exports |
 |---|---|---|
@@ -106,11 +106,11 @@ Legend: planned · scaffolded · built · merged · deployed
 
 | route | Label | prefix | status |
 |---|---|---|---|
-| `caaudit` | Conditional Access Audit | `caa-` | planned |
-| `privaudit` | Privileged Access Audit | `prv-` | planned |
-| `nhi` | Non-Human Identity Lifecycle | `nhi-` | planned |
-| `jml` | Lifecycle & Offboarding Verifier | `jml-` | planned |
-| `oauthgov` | OAuth App Governance | `oag-` | planned |
+| `caaudit` | Conditional Access Audit | `caa-` | scaffolded |
+| `privaudit` | Privileged Access Audit | `prv-` | scaffolded |
+| `nhi` | Non-Human Identity Lifecycle | `nhi-` | scaffolded |
+| `jml` | Lifecycle & Offboarding Verifier | `jml-` | scaffolded |
+| `oauthgov` | OAuth App Governance | `oag-` | scaffolded |
 
 ### Wave 2 — Cloud, infra & fleet
 
