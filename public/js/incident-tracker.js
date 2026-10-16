@@ -1,5 +1,5 @@
 // Incident Tracker — security incident management dashboard with localStorage persistence
-import { createEntity as sgCreate, updateEntity as sgUpdate, deleteEntity as sgDelete, getEntity as sgGet } from "/js/security-graph.js";
+import { createEntity as sgCreate, updateEntity as sgUpdate, deleteEntity as sgDelete, getEntity as sgGet, listEntities as sgList } from "/js/security-graph.js";
 
 const esc = (s) => String(s != null ? s : "").replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
@@ -36,7 +36,26 @@ const PLAYBOOK_MAP = {
 // nothing migrates; a team workspace gets a per-workspace suffix so incidents never leak
 // across teams. The Deck evicts tool iframes on switch, so each mount reads the right key.
 function wsKey(base) { try { const w = localStorage.getItem("dn_active_ws"); return w ? base + "__ws_" + w : base; } catch (_) { return base; } }
-function loadIncidents() { try { return JSON.parse(localStorage.getItem(wsKey("ir_incidents")) || "[]"); } catch (_) { return []; } }
+// A team workspace is active when dn_active_ws points somewhere (the personal workspace
+// leaves it unset). In a team, the shared security graph — synced to every member by
+// graph-sync.js — is the source of truth for incidents, so the whole team sees one list.
+function isTeam() { try { return !!localStorage.getItem("dn_active_ws"); } catch (_) { return false; } }
+function loadLocalIncidents() { try { return JSON.parse(localStorage.getItem(wsKey("ir_incidents")) || "[]"); } catch (_) { return []; } }
+function loadIncidents() {
+  const local = loadLocalIncidents();
+  if (!isTeam()) return local;                       // personal: pure local, unchanged
+  // Team: reconstruct from the synced graph. Each incident is mirrored as an INCIDENT
+  // entity carrying the full record in data._full (lossless), so a teammate rebuilds the
+  // exact incident. Local-only incidents not yet mirrored are kept and mirror on next save.
+  try {
+    const fromGraph = sgList("INCIDENT")
+      .filter((e) => e && e.source === "incident-tracker" && e.data && e.data._full)
+      .map((e) => Object.assign({}, e.data._full, { graphId: e.id }));
+    const seen = new Set(fromGraph.map((i) => i.id));
+    const unmirrored = local.filter((i) => !i.graphId && !seen.has(i.id));
+    return fromGraph.concat(unmirrored);
+  } catch (_) { return local; }
+}
 function saveIncidents(list) { try { localStorage.setItem(wsKey("ir_incidents"), JSON.stringify(list)); } catch (_) {} }
 function loadIOCs() { try { return JSON.parse(localStorage.getItem(wsKey("ir_iocs")) || "[]"); } catch (_) { return []; } }
 function saveIOCs(list) { try { localStorage.setItem(wsKey("ir_iocs"), JSON.stringify(list)); } catch (_) {} }
@@ -50,7 +69,10 @@ const IR_SEV = { "P1 — Critical": "critical", "P2 — High": "high", "P3 — M
 const IR_STATUS = { New: "new", Triage: "investigating", Investigating: "investigating", Contained: "investigating", Eradicated: "investigating", Recovered: "resolved", Closed: "closed" };
 function mirrorToGraph(inc) {
   try {
-    const data = { incidentId: inc.id, incidentType: inc.type, affected: inc.affected, mitre: (inc.mitre || []).join(", "), description: inc.description, _toolSource: "incident-tracker" };
+    // _full is the complete incident (minus the graph pointer) so a teammate rebuilds it
+    // losslessly; the flat fields remain for Findings / Investigations / graph display.
+    const _full = Object.assign({}, inc); delete _full.graphId;
+    const data = { incidentId: inc.id, incidentType: inc.type, affected: inc.affected, mitre: (inc.mitre || []).join(", "), description: inc.description, _toolSource: "incident-tracker", _full };
     const sev = IR_SEV[inc.severity] || null;
     const status = IR_STATUS[inc.status] || "new";
     if (inc.graphId && sgGet(inc.graphId)) { sgUpdate(inc.graphId, { name: inc.title, data, severity: sev, status }); }
@@ -82,7 +104,7 @@ export function renderIncidentTracker(main) {
 
   main.innerHTML =
     '<h1 class="pg-h1">Incident Tracker</h1>' +
-    '<p class="muted pg-sub">Security incident management — track incidents, IOCs, map to MITRE ATT&CK, and run playbooks. All data stays in your browser.</p>' +
+    '<p class="muted pg-sub">Security incident management — track incidents, IOCs, map to MITRE ATT&CK, and run playbooks. ' + (isTeam() ? 'Incidents are shared with your workspace team.' : 'All data stays in your browser.') + '</p>' +
     '<div class="cs-filter" id="ir-tabs">' + tabBtns + '</div>' +
     '<div id="ir-content" style="margin-top:16px"></div>';
 
@@ -194,6 +216,7 @@ function renderList(el) {
       if (!val) return;
       if (!incidents[idx].evidence) incidents[idx].evidence = [];
       incidents[idx].evidence.push(val);
+      mirrorToGraph(incidents[idx]);
       saveIncidents(incidents);
       input.value = "";
       renderFiltered();
