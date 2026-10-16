@@ -258,13 +258,14 @@ export async function renderAdmin(main, user) {
         ]);
         // Workspace identity (A1): load the owner's workspace profile so the Deck header,
         // Plans and reports show it instead of a hardcoded label. Non-fatal if it fails.
-        let wsProfile = {}, deckTier = "";
+        let wsProfile = {}, deckTier = "", onboarding = {};
         if (user) {
           try {
             const snap = await getDoc(doc(db, "users", user.uid));
             const d = snap.exists() ? snap.data() : {};
             wsProfile = { name: d.workspaceName || "", logo: d.workspaceLogo || "", accent: d.workspaceAccent || "" };
             deckTier = d.tier || "";
+            onboarding = d.onboarding || {};
           } catch (_) {}
         }
         // Never stack Decks: dispose the previous mount (root + listeners) first.
@@ -276,6 +277,10 @@ export async function renderAdmin(main, user) {
           isOwner: true,
           tier: deckTier,
           workspace: wsProfile,
+          onboarding,
+          onOnboarding: user ? async (partial) => {
+            await setDoc(doc(db, "users", user.uid), { onboarding: partial || {} }, { merge: true });
+          } : null,
           onUpgradeRequest: user ? async (tier, note) => {
             await addDoc(collection(db, "upgradeRequests"), {
               uid: user.uid, email: user.email || "", tier: String(tier || ""),

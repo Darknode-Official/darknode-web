@@ -1218,6 +1218,27 @@ textarea.dk-kitio{min-height:120px}
 .dk-settog{appearance:none;cursor:pointer;flex:none;border:1px solid rgba(23,33,56,.18);background:rgba(23,33,56,.05);color:#38435c;font:inherit;font-size:12.5px;font-weight:600;height:32px;padding:0 14px;border-radius:8px}
 .dk-settog.on{background:var(--dk-acc,#2552c6);border-color:var(--dk-acc,#2552c6);color:#fff}
 .dk[data-ui=deck] .dk-setin{background:var(--dk-surf);border-color:var(--dk-line);color:var(--dk-tx)}
+.dk-onbd{border:1px solid rgba(37,82,198,.18);background:rgba(37,82,198,.05);border-radius:12px;padding:16px 18px;margin:0 0 16px}
+.dk-onbd-h{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.dk-onbd-h b{font-size:14px;font-weight:700;color:#1f2838}
+.dk-onbd-h .pg{margin-left:auto;font-size:12px;font-weight:600;color:#2552c6}
+.dk-onbd-h .dx{appearance:none;border:0;background:none;cursor:pointer;color:#6b7589;font:inherit;font-size:12px;padding:2px 6px;border-radius:6px}
+.dk-onbd-h .dx:hover{color:#1f2838;background:rgba(23,33,56,.06)}
+.dk-onbd-steps{display:flex;flex-direction:column;gap:8px}
+.dk-onbd-step{display:flex;align-items:center;gap:12px;width:100%;text-align:left;appearance:none;cursor:pointer;border:1px solid rgba(23,33,56,.1);background:rgba(255,255,255,.5);border-radius:9px;padding:10px 13px;font:inherit}
+.dk-onbd-step:hover{border-color:rgba(37,82,198,.4)}
+.dk-onbd-step.done{cursor:default;opacity:.7}
+.dk-onbd-step .ck{flex:none;width:18px;height:18px;border-radius:50%;border:2px solid rgba(23,33,56,.25);display:flex;align-items:center;justify-content:center}
+.dk-onbd-step.done .ck{background:#12a85f;border-color:#12a85f}
+.dk-onbd-step .ck svg{width:11px;height:11px;color:#fff;display:none}
+.dk-onbd-step.done .ck svg{display:block}
+.dk-onbd-step .m{display:flex;flex-direction:column;min-width:0}
+.dk-onbd-step .m .t{font-size:13px;font-weight:600;color:#1f2838}
+.dk-onbd-step.done .m .t{text-decoration:line-through;text-decoration-color:rgba(23,33,56,.3)}
+.dk-onbd-step .m .d{font-size:11.5px;color:#6b7589;margin-top:1px}
+.dk-onbd-step .go{margin-left:auto;flex:none;font-size:12px;font-weight:600;color:#2552c6}
+.dk-onbd-step.done .go{display:none}
+.dk[data-ui=deck] .dk-onbd-step{background:var(--dk-surf);border-color:var(--dk-line)}
 .dk-compgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
 .dk-compcard{appearance:none;font:inherit;display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start;position:relative;text-align:left;cursor:pointer;background:#fff;border:1px solid rgba(23,33,56,.08);border-radius:14px;padding:17px 18px;transition:border-color .15s,transform .15s}
 .dk-compcard:hover{border-color:#3f78ff;transform:translateY(-1px)}
@@ -1504,6 +1525,24 @@ export function renderDeck(host, opts) {
   // Effective plan tier (A4): server-resolved, owner always top. Drives the Plans
   // scene and the "your plan" badge. Upgrades are requested, never self-granted.
   const planTier = tierFrom(opts.tier, opts.isOwner);
+  // Onboarding (A3): a short checklist whose steps complete from REAL signals, not a
+  // manual tick. Only the "dismissed" flag persists; completion is always recomputed.
+  let onbState = opts.onboarding || {};
+  function onbSteps(){
+    let aiConnected = INTEGRATIONS.some((i) => i.kind === "ai" && conns[i.id] && conns[i.id].connected);
+    if (!aiConnected) { try { aiConnected = Object.keys(localStorage).some((k) => k.indexOf("dn_key_") === 0); } catch (_) {} }
+    let hasGraph = false;
+    try { const ents = Object.values((JSON.parse(localStorage.getItem("dn_security_graph")) || {}).entities || {}); hasGraph = ents.some((e) => !isSimulated(e)); } catch (_) {}
+    return [
+      { id: "ws", label: "Name your workspace", sub: "So reports and the header carry your brand", done: !!wsProfile.name, act: () => go("settings") },
+      { id: "ai", label: "Connect an AI model or key", sub: "Power triage, runbooks and explanations", done: aiConnected, act: () => go("con") },
+      { id: "scan", label: "Run your first scan", sub: "Map an attack surface or scan code to get a baseline", done: hasGraph, act: () => go("surface") },
+    ];
+  }
+  async function dismissOnboarding(){
+    onbState = Object.assign({}, onbState, { dismissed: true });
+    if (typeof opts.onOnboarding === "function") { try { await opts.onOnboarding({ dismissed: true }); } catch (_) {} }
+  }
   async function saveWorkspace(partial) {
     wsProfile = Object.assign({}, wsProfile, partial || {});
     try { localStorage.setItem("dn_ws_profile", JSON.stringify(wsProfile)); } catch (_) {}
@@ -2250,6 +2289,19 @@ export function renderDeck(host, opts) {
     const first = ((user.displayName || "").trim().split(/\s+/)[0]) || (user.email || "").split("@")[0] || "there";
     const hr = now.getHours();
     const greet = hr < 12 ? "Good morning" : hr < 18 ? "Good afternoon" : "Good evening";
+    const steps = onbSteps();
+    const onbDone = steps.filter((x) => x.done).length;
+    const showOnb = !onbState.dismissed && onbDone < steps.length;
+    const onbCard = showOnb ? `
+      <div class="dk-onbd" id="dkOnbd">
+        <div class="dk-onbd-h"><b>Getting started</b><span class="pg">${onbDone} of ${steps.length} done</span><button class="dx" id="dkOnbDismiss">Dismiss</button></div>
+        <div class="dk-onbd-steps">${steps.map((x) => `
+          <button class="dk-onbd-step${x.done ? " done" : ""}" data-onb="${x.id}"${x.done ? " disabled" : ""}>
+            <span class="ck">${IC.check}</span>
+            <span class="m"><span class="t">${esc(x.label)}</span><span class="d">${esc(x.sub)}</span></span>
+            <span class="go">Set up →</span>
+          </button>`).join("")}</div>
+      </div>` : "";
     el.innerHTML = `
       <div class="dk-ovhead">
         <div><h1>${esc(greet)}, ${esc(first)}</h1><p>Your security posture, with live vulnerability intelligence from NVD, CISA KEV and FIRST EPSS.</p></div>
@@ -2261,6 +2313,7 @@ export function renderDeck(host, opts) {
         <button type="submit">${IC.bolt}Ask</button>
       </form>
       <div class="dk-askhint">Triage a CVE, draft a runbook, explain a finding or review a config.</div>
+      ${onbCard}
       <div class="dk-kpis dk-kpis6">
         <div class="dk-start" id="dkStart" hidden>
           <b>Measure your exposure</b>
@@ -2314,6 +2367,10 @@ export function renderDeck(host, opts) {
       sf.onsubmit = (e) => { e.preventDefault(); const d = sf.querySelector("input").value.trim(); if (!d) return toast("Enter a domain you own, e.g. example.com"); go("surface"); renderSurface(d); };
       sf.querySelector("[data-tool]").onclick = () => openTool("codescan", secLabel.codescan || "Code Scanner");
     }
+    // onboarding checklist
+    el.querySelectorAll(".dk-onbd-step[data-onb]").forEach((b) => b.onclick = () => { const st = steps.find((x) => x.id === b.dataset.onb); if (st && !st.done) st.act(); });
+    const onbX = el.querySelector("#dkOnbDismiss");
+    if (onbX) onbX.onclick = () => { dismissOnboarding(); const c = el.querySelector("#dkOnbd"); if (c) c.remove(); };
     // pinned tools + live system status
     renderPins();
     renderSystem();
