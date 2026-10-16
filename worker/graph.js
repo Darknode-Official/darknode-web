@@ -19,6 +19,7 @@
 
 import { wins } from "../public/js/core/graph-merge.js";
 import { verifyIdToken } from "./vault-auth.js";
+import { resolveWorkspaceRole, canDo } from "./workspace.js";
 
 // A workspace id is a Firebase uid (or, later, a workspace doc id).
 export const GRAPH_ID = /^[A-Za-z0-9_-]{1,128}$/;
@@ -114,7 +115,9 @@ export class GraphDO {
 }
 
 // Route: GET /api/graph/<wid>[?since=<rev>]  |  POST /api/graph/<wid>  {entities, relationships}
-// B1: the only workspace a caller may reach is their own (wid === their uid).
+// Access (B2): a caller's own uid is their personal workspace (implicit owner, no member
+// doc). Any other wid is a team workspace — the caller's role is read from Firestore
+// (workspaces/{wid}/members/{uid}) with their own token. GET needs read, POST needs write.
 export async function handleGraph(request, env, wid, json) {
   if (!env.GRAPH) return json({ error: "Cloud graph is not configured on this deployment." }, 503);
   if (!GRAPH_ID.test(wid)) return json({ error: "Invalid workspace id" }, 400);
@@ -125,7 +128,12 @@ export async function handleGraph(request, env, wid, json) {
   if (!m) return json({ error: "Sign in required" }, 401);
   let who;
   try { who = await verifyIdToken(m[1], projectId); } catch (e) { return json({ error: "Invalid sign-in token: " + e.message }, 401); }
-  if (wid !== who.uid) return json({ error: "You can only sync your own workspace." }, 403);
+  let role;
+  try { role = await resolveWorkspaceRole(projectId, wid, who.uid, m[1]); }
+  catch (e) { return json({ error: e.message }, 502); }
+  if (!role) return json({ error: "You are not a member of this workspace." }, 403);
+  const op = request.method === "GET" ? "read" : "write";
+  if (!canDo(role, op)) return json({ error: "Your role (" + role + ") cannot " + op + " this workspace's graph." }, 403);
   let bodyText = null;
   if (request.method === "POST") {
     bodyText = await request.text();
