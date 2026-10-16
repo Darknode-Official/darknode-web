@@ -8,14 +8,28 @@
 // A user always has a PERSONAL workspace (id = their uid, implicit owner, no Firestore
 // doc — it is the Phase B1 graph). Team workspaces are Firestore-backed and shared.
 
-import { auth, db } from "/js/firebase.js?v=20261007a";
-import { collection, collectionGroup, query, where, getDocs, doc, getDoc, writeBatch, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
 import { ROLES } from "/js/core/workspace-roles.js";
 
 const ACTIVE_WS_KEY = "dn_active_ws";
 const rid = (n = 20) => Array.from(crypto.getRandomValues(new Uint8Array(n)), (b) => "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"[b % 62]).join("");
 
-export const me = () => auth.currentUser;
+// Firebase is loaded lazily so importing this module (which the Deck does at load) never
+// pulls in firebase.js / the Firestore CDN. Mirrors graph-sync.js, and keeps the Deck
+// importable offline and in tests. Resolves to { auth, db, fns }.
+let _deps = null;
+async function deps() {
+  if (_deps) return _deps;
+  const [fb, fs] = await Promise.all([
+    import("/js/firebase.js?v=20261007a"),
+    import("https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js"),
+  ]);
+  _deps = { auth: fb.auth, db: fb.db, fns: fs };
+  return _deps;
+}
+
+// The signed-in user, once firebase has been loaded by a prior call. Synchronous callers
+// (e.g. the personal-workspace fallback) tolerate null before the first async call.
+export const me = () => (_deps && _deps.auth && _deps.auth.currentUser) || null;
 
 // The active workspace id, or null for the personal workspace. Stored as a shared pointer
 // so security-graph.js (in the Deck and every tool iframe) scopes to the same store.
@@ -24,18 +38,20 @@ export function setActiveWorkspace(wid) {
   try { if (wid) localStorage.setItem(ACTIVE_WS_KEY, wid); else localStorage.removeItem(ACTIVE_WS_KEY); } catch (_) {}
 }
 
-// The personal workspace descriptor (always present for a signed-in user).
-export function personalWorkspace(name) {
-  const u = me();
-  return { wid: u ? u.uid : null, name: name || "Personal workspace", role: "owner", personal: true };
+// The personal workspace descriptor. `uid` is passed by callers that have loaded firebase
+// (so it works before me() is primed); falls back to me() otherwise.
+export function personalWorkspace(name, uid) {
+  const u = uid || (me() && me().uid) || null;
+  return { wid: u, name: name || "Personal workspace", role: "owner", personal: true };
 }
 
 // Team workspaces the signed-in user belongs to (removed memberships skipped). Filtered to
 // the workspaces/ collection so vault memberships (same collection-group) are excluded.
 export async function myTeamWorkspaces() {
-  const u = me();
+  const { auth, db, fns } = await deps();
+  const u = auth.currentUser;
   if (!u) return [];
-  const snap = await getDocs(query(collectionGroup(db, "members"), where("uid", "==", u.uid)));
+  const snap = await fns.getDocs(fns.query(fns.collectionGroup(db, "members"), fns.where("uid", "==", u.uid)));
   const out = [];
   for (const d of snap.docs) {
     const parent = d.ref.parent.parent;            // the workspace (or vault) doc
@@ -43,7 +59,7 @@ export async function myTeamWorkspaces() {
     const m = d.data();
     if (m.role === "removed" || !ROLES.includes(m.role)) continue;
     let name = parent.id;
-    try { const w = await getDoc(doc(db, "workspaces", parent.id)); if (w.exists()) name = w.data().name || parent.id; } catch (_) {}
+    try { const w = await fns.getDoc(fns.doc(db, "workspaces", parent.id)); if (w.exists()) name = w.data().name || parent.id; } catch (_) {}
     out.push({ wid: parent.id, name, role: m.role, personal: false });
   }
   return out.sort((a, b) => a.name.localeCompare(b.name));
@@ -51,27 +67,31 @@ export async function myTeamWorkspaces() {
 
 // Every workspace the user can act in: personal first, then teams by name.
 export async function myWorkspaces(personalName) {
-  return [personalWorkspace(personalName), ...(await myTeamWorkspaces())];
+  const { auth } = await deps();
+  const uid = auth.currentUser && auth.currentUser.uid;
+  return [personalWorkspace(personalName, uid), ...(await myTeamWorkspaces())];
 }
 
 // Found a workspace: workspace doc + the founder's owner membership + its log entry, in
 // one batch (the shape the rules require). Returns the new workspace id.
 export async function createWorkspace(name) {
-  const u = me();
+  const { auth, db, fns } = await deps();
+  const u = auth.currentUser;
   if (!u) throw new Error("Sign in to create a workspace.");
   const clean = String(name || "").trim().slice(0, 80);
   if (!clean) throw new Error("Give the workspace a name.");
   const wid = rid(20), logId = rid(20);
-  const b = writeBatch(db);
-  b.set(doc(db, "workspaces", wid), { name: clean, createdBy: u.uid, createdAt: serverTimestamp() });
-  b.set(doc(db, "workspaces", wid, "members", u.uid), { uid: u.uid, role: "owner", by: u.uid, ts: serverTimestamp(), logId, label: (u.email || u.displayName || "").slice(0, 120) });
-  b.set(doc(db, "workspaces", wid, "memberLog", logId), { uid: u.uid, role: "owner", by: u.uid, ts: serverTimestamp() });
+  const b = fns.writeBatch(db);
+  b.set(fns.doc(db, "workspaces", wid), { name: clean, createdBy: u.uid, createdAt: fns.serverTimestamp() });
+  b.set(fns.doc(db, "workspaces", wid, "members", u.uid), { uid: u.uid, role: "owner", by: u.uid, ts: fns.serverTimestamp(), logId, label: (u.email || u.displayName || "").slice(0, 120) });
+  b.set(fns.doc(db, "workspaces", wid, "memberLog", logId), { uid: u.uid, role: "owner", by: u.uid, ts: fns.serverTimestamp() });
   await b.commit();
   return { wid, name: clean };
 }
 
 export async function listMembers(wid) {
-  const [m, log] = await Promise.all([getDocs(collection(db, "workspaces", wid, "members")), getDocs(collection(db, "workspaces", wid, "memberLog"))]);
+  const { db, fns } = await deps();
+  const [m, log] = await Promise.all([fns.getDocs(fns.collection(db, "workspaces", wid, "members")), fns.getDocs(fns.collection(db, "workspaces", wid, "memberLog"))]);
   const tsOf = (x) => (x && x.toMillis ? x.toMillis() : 0);
   return {
     members: m.docs.map((d) => d.data()).sort((a, b) => (a.role === "removed") - (b.role === "removed") || String(a.label || a.uid).localeCompare(String(b.label || b.uid))),
@@ -81,14 +101,15 @@ export async function listMembers(wid) {
 
 // Owner/admin-only (enforced by the rules): set a member's role, with its log entry.
 export async function setMember(wid, uid, role, label) {
-  const u = me();
+  const { auth, db, fns } = await deps();
+  const u = auth.currentUser;
   if (!u) throw new Error("Sign in first.");
   if (!ROLES.includes(role)) throw new Error("Unknown role.");
   const logId = rid(20);
-  const b = writeBatch(db);
-  const m = { uid, role, by: u.uid, ts: serverTimestamp(), logId };
+  const b = fns.writeBatch(db);
+  const m = { uid, role, by: u.uid, ts: fns.serverTimestamp(), logId };
   if (label) m.label = String(label).slice(0, 120);
-  b.set(doc(db, "workspaces", wid, "members", uid), m);
-  b.set(doc(db, "workspaces", wid, "memberLog", logId), { uid, role, by: u.uid, ts: serverTimestamp() });
+  b.set(fns.doc(db, "workspaces", wid, "members", uid), m);
+  b.set(fns.doc(db, "workspaces", wid, "memberLog", logId), { uid, role, by: u.uid, ts: fns.serverTimestamp() });
   await b.commit();
 }

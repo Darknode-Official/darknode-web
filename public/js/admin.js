@@ -253,7 +253,7 @@ export async function renderAdmin(main, user) {
       btn.disabled = true; const label = btn.textContent; btn.textContent = "Loading…";
       try {
         const [{ renderDeck }, nav] = await Promise.all([
-          import("/js/deck-ui.js?v=20261015c"),
+          import("/js/deck-ui.js?v=20261015d"),
           import("/js/console-nav.js?v=20261013k"),
         ]);
         // Workspace identity (A1): load the owner's workspace profile so the Deck header,

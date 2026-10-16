@@ -77,6 +77,7 @@ export const EXPLAIN = {
   "hdr.menu": { title: "Navigation", body: "Show or hide the sidebar. On small screens it opens as a drawer." },
   "hdr.collapse": { title: "Collapse navigation", body: "Shrink the sidebar to icons to give the workspace more room. Your choice is remembered." },
   "hdr.brand": { title: "Darknode", body: "Back to the Security Overview from anywhere in the Deck." },
+  "hdr.workspace": { title: "Workspace", body: "Switch between your personal workspace and any team you belong to. Each workspace has its own security graph; a team's graph is shared with its members." },
   "hdr.search": { title: "Search", body: "Jump to any tool, page or action by typing part of its name. Shortcut: Ctrl K." },
   "hdr.health": { title: "Threat feed status", body: "Green when the live vulnerability feed loaded. If it is down, threat numbers show a dash rather than stale values." },
   "hdr.assistant": { title: "AI assistant", body: "Open Darknode AI in a side panel without leaving the page you are on." },

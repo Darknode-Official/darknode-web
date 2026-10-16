@@ -29,8 +29,10 @@ import { bus, EVENTS } from "/js/core/bus.js";
 import { isSimulated } from "/js/core/posture.js";
 import { tierFrom, rank, planLabel } from "/js/core/entitlements.js";
 import * as findings from "/js/core/findings.js?v=20261013e";
-import { attachExplain, EXPLAIN, explainEnabled, setExplainEnabled } from "/js/ui/explain.js?v=20261015a";
+import { attachExplain, EXPLAIN, explainEnabled, setExplainEnabled } from "/js/ui/explain.js?v=20261015d";
 import { startGraphSync, stopGraphSync } from "/js/graph-sync.js";
+import { myWorkspaces, createWorkspace, activeWorkspace, setActiveWorkspace } from "/js/workspaces.js?v=20261015d";
+import { ROLE_LABEL } from "/js/core/workspace-roles.js";
 
 const LS_CONN = "dn_deck_connections_v1";
 const LS_SCENE = "dn_deck_scene";          // last workspace selected
@@ -701,6 +703,21 @@ const CSS = `
 .dk-top>.dk-right{flex:none;justify-self:end;margin-left:0;min-width:0}
 .dk-brand{appearance:none;border:0;background:transparent;cursor:pointer;flex:none}
 .dk-brand .dk-wsname{margin-left:9px;padding-left:10px;border-left:1px solid rgba(23,33,56,.14);font-family:system-ui,sans-serif;font-weight:600;font-size:12px;letter-spacing:.02em;color:#687388}
+.dk-wschip{appearance:none;cursor:pointer;flex:none;display:inline-flex;align-items:center;gap:5px;margin-left:10px;height:30px;padding:0 8px 0 11px;border:1px solid rgba(23,33,56,.12);background:rgba(23,33,56,.04);border-radius:999px;font:inherit;font-size:12.5px;font-weight:600;color:#38435c;max-width:220px}
+.dk-wschip:hover{background:rgba(23,33,56,.09)}
+.dk-wschip .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dk-wschip svg{width:13px;height:13px;color:#8892a4;flex:none}
+@media(max-width:760px){.dk-wschip{max-width:130px}.dk-wschip .nm{max-width:86px}}
+.dk-wsrow{display:flex;align-items:center;gap:10px;width:100%;appearance:none;border:0;background:transparent;cursor:pointer;font:inherit;padding:10px 16px;text-align:left;color:#2a3346}
+.dk-wsrow:hover{background:rgba(23,33,56,.05)}
+.dk-wsrow .ic{width:28px;height:28px;border-radius:7px;flex:none;display:grid;place-items:center;background:rgba(37,82,198,.1);color:#2552c6}
+.dk-wsrow .ic svg{width:15px;height:15px}
+.dk-wsrow .bd{min-width:0;flex:1}
+.dk-wsrow .bd b{display:block;font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dk-wsrow .bd span{display:block;font-size:11px;color:#79839a}
+.dk-wsrow .ck{flex:none;color:#12935a}.dk-wsrow .ck svg{width:16px;height:16px}
+.dk-wsrow[aria-current=true]{background:rgba(37,82,198,.06)}
+.dk-wsnote{padding:10px 16px;font-size:11px;line-height:1.5;color:#79839a;border-top:1px solid rgba(23,33,56,.08)}
 /* right-side controls */
 .dk-icbtn{appearance:none;border:1px solid rgba(23,33,56,.1);background:rgba(23,33,56,.04);color:#44506a;width:34px;height:34px;border-radius:10px;display:grid;place-items:center;cursor:pointer;position:relative;flex:none;transition:background .15s,border-color .15s}
 .dk-icbtn:hover{background:rgba(23,33,56,.1);border-color:rgba(23,33,56,.2);color:#141c2e}
@@ -1548,6 +1565,10 @@ export function renderDeck(host, opts) {
   // it from Firestore and persists changes via opts.onWorkspace; a localStorage cache
   // paints instantly on the next open. Falls back to the signed-in name, then "Workspace".
   function loadWsCache() { try { return JSON.parse(localStorage.getItem("dn_ws_profile") || "null"); } catch (_) { return null; } }
+  // Last-known name of the active TEAM workspace, cached for instant chip paint (the
+  // authoritative name lives in Firestore and is loaded when the switcher opens).
+  function loadActiveWsName() { try { return localStorage.getItem("dn_active_ws_name") || ""; } catch (_) { return ""; } }
+  function saveActiveWsName(n) { try { if (n) localStorage.setItem("dn_active_ws_name", n); else localStorage.removeItem("dn_active_ws_name"); } catch (_) {} }
   let wsProfile = opts.workspace || loadWsCache() || {};
   const wsLabelText = () => (wsProfile.name || (opts.user && (opts.user.displayName || opts.user.email)) || "Workspace");
   // Effective plan tier (A4): server-resolved, owner always top. Drives the Plans
@@ -1598,6 +1619,7 @@ export function renderDeck(host, opts) {
     <div class="dk-top">
       <button class="dk-icbtn dk-sbtog" id="dkSbTog" data-explain="hdr.menu" aria-label="Toggle navigation" aria-controls="dkSide">${IC.menu}</button>
       <button class="dk-brand" id="dkBrand" data-explain="hdr.brand" title="Home"><img class="dk-mark" src="/logo-dark.svg?v=20261007b" alt=""><img class="dk-wm" src="/wordmark.svg" alt="Darknode"><span class="dk-wsname">${esc(wsLabelText())}</span></button>
+      <button class="dk-wschip" id="dkWsChip" data-explain="hdr.workspace" title="Switch workspace" aria-haspopup="true"><span class="nm">${esc(activeWorkspace() ? (loadActiveWsName() || "Team workspace") : wsLabelText())}</span>${IC.chevd}</button>
       <div class="dk-crumb" id="dkCrumb" aria-live="polite"></div>
       <button class="dk-hsearch" id="dkHSearch" data-explain="hdr.search" aria-label="Search">${IC_SEARCH}<span class="hs">Search tools, scenes and actions</span><kbd>Ctrl K</kbd></button>
       <div class="dk-right">
@@ -1619,6 +1641,7 @@ export function renderDeck(host, opts) {
     <div class="dk-fly" id="dkFly" role="tooltip"></div>
 
     <div class="dk-pop" id="dkNewPop"></div>
+    <div class="dk-pop" id="dkWsPop"></div>
     <div class="dk-pop" id="dkBellPop"></div>
     <div class="dk-pop" id="dkAcctPop"></div>
 
@@ -2196,13 +2219,23 @@ export function renderDeck(host, opts) {
     .sort((a, b) => (b.ts || 0) - (a.ts || 0));
   const notifUnseen = (r) => r.acct ? !r.read : (r.ts > notifSeen);
 
-  function closeAllMenus(){ [popNew, popBell, popAcct].forEach((p) => p && p.classList.remove("on")); }
+  const popWs = $("#dkWsPop");
+  function closeAllMenus(){ [popNew, popWs, popBell, popAcct].forEach((p) => p && p.classList.remove("on")); }
   function toggleMenu(pop, btn, build){
     const open = pop.classList.contains("on");
     closeAllMenus();
     if (open) return;
     build();
     try { pop.style.right = Math.max(10, (window.innerWidth - btn.getBoundingClientRect().right) / zoomOf()) + "px"; } catch (_) {}
+    pop.classList.add("on");
+  }
+  // The workspace switcher sits top-left, so its menu is positioned from the left edge.
+  function toggleMenuLeft(pop, btn, build){
+    const open = pop.classList.contains("on");
+    closeAllMenus();
+    if (open) return;
+    build();
+    try { pop.style.right = "auto"; pop.style.left = Math.max(10, btn.getBoundingClientRect().left / zoomOf()) + "px"; } catch (_) {}
     pop.classList.add("on");
   }
   function setHealth(ok, text){ health.classList.toggle("warn", !ok); const t = health.querySelector(".t"); if (t) t.textContent = text; }
@@ -2256,6 +2289,66 @@ export function renderDeck(host, opts) {
     const miAdm = popAcct.querySelector("#dkMiAdmin"); if (miAdm) miAdm.onclick = () => { closeAllMenus(); openTool("admin", "Admin"); };
     popAcct.querySelector("#dkMiExit").onclick = primary ? () => { closeAllMenus(); opts.onSignOut(); } : exitDeck;
   }
+  // ---------- workspace switcher (B2) ----------
+  function updateWsChip(wid, name){
+    const el = wsChip && wsChip.querySelector(".nm");
+    if (el) el.textContent = wid ? (name || loadActiveWsName() || "Team workspace") : wsLabelText();
+  }
+  function buildWsMenu(){
+    popWs.innerHTML = `<div class="dk-pop-h">Workspace</div><div class="dk-wsnote">Loading your workspaces…</div>`;
+    const cur = activeWorkspace();
+    myWorkspaces(wsProfile.name).then((list) => {
+      const rows = list.map((w) => {
+        const active = w.personal ? !cur : cur === w.wid;
+        const sub = w.personal ? "Personal — private to you" : ("Team · " + esc(ROLE_LABEL[w.role] || w.role));
+        return `<button class="dk-wsrow" data-wid="${esc(w.personal ? "" : w.wid)}" data-name="${esc(w.name)}" aria-current="${active ? "true" : "false"}">`
+          + `<span class="ic">${w.personal ? IC.home : IC.nodes}</span>`
+          + `<span class="bd"><b>${esc(w.name)}</b><span>${sub}</span></span>`
+          + (active ? `<span class="ck">${IC.check}</span>` : "") + `</button>`;
+      }).join("");
+      popWs.innerHTML = `<div class="dk-pop-h">Workspace</div>${rows}<div class="dk-mi-div"></div>`
+        + `<button class="dk-wsrow" id="dkWsNew"><span class="ic">${IC.plus}</span><span class="bd"><b>Create a workspace</b><span>Share a security graph with your team</span></span></button>`
+        + `<div class="dk-wsnote">Each workspace has its own security graph. A team's graph is shared with its members and always syncs; your personal graph syncs only when you turn it on in Settings.</div>`;
+      popWs.querySelectorAll(".dk-wsrow[data-wid]").forEach((b) => b.onclick = () => {
+        const wid = b.dataset.wid || null;
+        if ((wid || null) === (cur || null)) { closeAllMenus(); return; }
+        switchWorkspace(wid, wid ? b.dataset.name : null);
+      });
+      const nb = popWs.querySelector("#dkWsNew"); if (nb) nb.onclick = createNewWorkspace;
+    }).catch((e) => {
+      popWs.innerHTML = `<div class="dk-pop-h">Workspace</div><div class="dk-wsnote">Could not load your workspaces.<br>${esc(String(e && e.message || e))}</div>`;
+    });
+  }
+  async function switchWorkspace(wid, name){
+    setActiveWorkspace(wid);               // null => personal (the unprefixed legacy store)
+    saveActiveWsName(wid ? (name || "") : "");
+    // Re-point the singleton graph store in THIS document (a storage event does not fire
+    // in the document that made the change), then drop tool iframes so they reload fresh.
+    try { const m = await import("/js/security-graph.js"); if (m.refreshStore) m.refreshStore(); } catch (_) {}
+    try { live.forEach((f) => f.remove()); live.clear(); } catch (_) {}
+    if (!sceneWork.hidden) closeTool();
+    // Restart cloud sync for the new workspace. A team ALWAYS syncs — that is how its
+    // members share one graph; the personal workspace syncs only if opted in (B1).
+    try { stopGraphSync(); } catch (_) {}
+    if (wid || syncEnabled()) {
+      const syncWid = wid || (user && user.uid);
+      try { startGraphSync({ workspaceId: syncWid }).catch(() => {}); } catch (_) {}
+    } else { lastSyncState = "local"; }
+    updateWsChip(wid, name);
+    closeAllMenus();
+    toast(wid ? ("Switched to " + (name || "the workspace")) : "Switched to your personal workspace");
+    go(curScene || "overview");
+  }
+  async function createNewWorkspace(){
+    closeAllMenus();
+    let name = "";
+    try { name = window.dnPrompt ? await window.dnPrompt("Create a workspace", { desc: "A workspace is a shared security graph you can invite your team into. You can rename it later.", placeholder: "e.g. Blue Team", submitText: "Create" }) : ""; } catch (_) { return; }
+    if (!name || !String(name).trim()) return;
+    let res;
+    try { res = await createWorkspace(name); } catch (e) { toast(String(e && e.message || e) || "Could not create the workspace", "error"); return; }
+    toast("Workspace created");
+    switchWorkspace(res.wid, res.name);
+  }
   function exitDeck(){ teardown(); onExit(); }
   // Portable deck state: connections, pinned tools and notes (no secrets/API keys).
   function exportDeckState(){
@@ -2292,20 +2385,25 @@ export function renderDeck(host, opts) {
   $("#dkBell").onclick = (e) => { e.stopPropagation(); const willOpen = !popBell.classList.contains("on"); toggleMenu(popBell, $("#dkBell"), buildBellMenu); if (willOpen) { notifSeen = Date.now(); try { localStorage.setItem(LS_NOTIF_SEEN, String(notifSeen)); } catch (_) {} updateBadge(); } };
   $("#dkAcct").onclick = (e) => { e.stopPropagation(); toggleMenu(popAcct, $("#dkAcct"), buildAcctMenu); };
   $("#dkBrand").onclick = () => { if (!sceneWork.hidden) closeTool(); go("overview"); };
-  root.addEventListener("pointerdown", (e) => { if (!e.target.closest(".dk-pop, .dk-icbtn, .dk-acct")) closeAllMenus(); });
+  const wsChip = $("#dkWsChip");
+  if (wsChip) wsChip.onclick = (e) => { e.stopPropagation(); toggleMenuLeft(popWs, wsChip, buildWsMenu); };
+  root.addEventListener("pointerdown", (e) => { if (!e.target.closest(".dk-pop, .dk-icbtn, .dk-acct, .dk-wschip")) closeAllMenus(); });
   updateBadge();
 
   // live platform events -> notifications (and the Activity stream)
   // ---- cloud graph sync status (B1). Off by default; the user enables it in Settings.
   const SYNC_LABEL = { local: "Local only", syncing: "Syncing…", synced: "Synced", error: "Sync error" };
   const syncEnabled = () => { try { return localStorage.getItem("dn_graph_sync_on") === "1"; } catch (_) { return false; } };
-  let lastSyncState = syncEnabled() ? "syncing" : "local";
+  let lastSyncState = (syncEnabled() || activeWorkspace()) ? "syncing" : "local";
   const onSyncStatus = (e) => { lastSyncState = (e.detail && e.detail.state) || "local"; const el = root.querySelector("#dkSyncStat"); if (el) { el.textContent = SYNC_LABEL[lastSyncState] || "Local only"; el.dataset.state = lastSyncState; } };
   document.addEventListener("graph-sync:status", onSyncStatus);
   busOffs.push(() => document.removeEventListener("graph-sync:status", onSyncStatus));
-  // Resume sync across sessions when the user left it on (no-op in the harness / when
-  // signed out or the proxy is absent — startGraphSync then reports "local").
-  if (syncEnabled()) { try { startGraphSync().catch(() => {}); } catch (_) {} }
+  // Resume sync across sessions. A team workspace always syncs (that is how its members
+  // share one graph); the personal workspace syncs only when the user left it on. No-op in
+  // the harness / when signed out or the proxy is absent — startGraphSync reports "local".
+  { const _aw = activeWorkspace();
+    if (_aw) { try { startGraphSync({ workspaceId: _aw }).catch(() => {}); } catch (_) {} }
+    else if (syncEnabled()) { try { startGraphSync().catch(() => {}); } catch (_) {} } }
 
   busOffs.push(bus.on(EVENTS.ENTITY_CREATED, (p) => pushNotif(`Entity added to the graph${p && (p.label || p.name) ? `: ${p.label || p.name}` : p && p.type ? `: ${p.type}` : ""}`)));
   busOffs.push(bus.on(EVENTS.RELATIONSHIP_CREATED, () => pushNotif("New relationship created in the security graph")));
@@ -3448,7 +3546,7 @@ export function renderDeck(host, opts) {
             <button class="dk-settog" id="dkSetGraph">Export graph</button>
           </div>
           <div class="dk-setrow">
-            <div class="m"><div class="t">Cloud sync <span class="dk-syncstat" id="dkSyncStat" data-state="${esc(lastSyncState)}">${esc(SYNC_LABEL[lastSyncState] || "Local only")}</span></div><div class="s">Back up your security graph and keep it in sync across your devices. Off by default — nothing leaves this browser until you turn it on. Sample data is never synced.</div></div>
+            <div class="m"><div class="t">Cloud sync <span class="dk-syncstat" id="dkSyncStat" data-state="${esc(lastSyncState)}">${esc(SYNC_LABEL[lastSyncState] || "Local only")}</span></div><div class="s">Back up your personal security graph and keep it in sync across your devices. Off by default — nothing leaves this browser until you turn it on. Team workspaces always sync (that is how members share one graph). Sample data is never synced.</div></div>
             <button class="dk-settog${syncEnabled() ? " on" : ""}" id="dkSetSync">${syncEnabled() ? "On" : "Off"}</button>
           </div>
           <div class="dk-setrow">
@@ -3490,6 +3588,9 @@ export function renderDeck(host, opts) {
       const turningOn = !syncEnabled();
       try { localStorage.setItem("dn_graph_sync_on", turningOn ? "1" : "0"); } catch (_) {}
       syncBtn.classList.toggle("on", turningOn); syncBtn.textContent = turningOn ? "On" : "Off";
+      // This toggle governs the PERSONAL workspace. If a team workspace is active it keeps
+      // syncing regardless; the preference just takes effect when you switch back.
+      if (activeWorkspace()) { toast(turningOn ? "Personal cloud sync on — applies to your personal workspace" : "Personal cloud sync off"); return; }
       if (turningOn) {
         lastSyncState = "syncing"; onSyncStatus({ detail: { state: "syncing" } });
         toast("Cloud sync on — backing up your graph");
