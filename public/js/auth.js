@@ -207,6 +207,7 @@ const SIDE_DESC = {
   cookieinspect: "Parse and grade Set-Cookie headers for Secure, HttpOnly, SameSite and prefix issues.",
   securitytxt: "Generate and validate an RFC 9116 security.txt disclosure file.",
   codescan: "Scan a GitHub repository or local folder for leaked secrets, risky code and vulnerable dependencies, then jump to the exact line.",
+  threatforest: "Turn weaknesses found in source code into attack trees mapped to CWE, CAPEC, MITRE ATT&CK and STRIDE.",
   embedsdk: "Generate an iframe or snippet to embed any Darknode tool in another site.",
   mcpconnect: "Connect other apps and AI agents to Darknode tools via MCP, embeds and a read-only API.",
   zerotrust: "Plan a zero-trust security architecture.",
