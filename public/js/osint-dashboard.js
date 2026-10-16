@@ -570,7 +570,7 @@ function renderDorks(el) {
     if (!domain && !name && !email) return;
     var html = cats.map(function(cat) {
       var dorks = GOOGLE_DORKS[cat].map(function(d) {
-        var q = d.replace(/\{domain\}/g, domain || "example.com").replace(/\{name\}/g, name || "John Doe").replace(/\{email\}/g, email || "testt@darknode.ai").replace(/\{company\}/g, domain ? domain.split(".")[0] : "company");
+        var q = d.replace(/\{domain\}/g, domain || "example.com").replace(/\{name\}/g, name || "John Doe").replace(/\{email\}/g, email || "test@darknode.ai").replace(/\{company\}/g, domain ? domain.split(".")[0] : "company");
         var searchUrl = "https://www.google.com/search?q=" + encodeURIComponent(q);
         return '<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid var(--line)">' +
           '<code style="flex:1;font-size:.78rem;color:var(--txt);word-break:break-all">' + esc(q) + '</code>' +

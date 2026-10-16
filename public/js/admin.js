@@ -106,7 +106,7 @@ export async function renderAdmin(main, user) {
             </label>
           </div>
           <div id="emailOneRow" style="margin-bottom:8px">
-            <input class="tk-f" id="emailTo" placeholder="testt@darknode.ai" type="email" style="width:100%">
+            <input class="tk-f" id="emailTo" placeholder="test@darknode.ai" type="email" style="width:100%">
           </div>
           <input class="tk-f" id="emailSubject" placeholder="Subject" style="width:100%;margin-bottom:8px">
           <textarea class="tk-in" id="emailBody" rows="6" placeholder="Write your message here..."></textarea>
@@ -132,7 +132,7 @@ export async function renderAdmin(main, user) {
           <div class="panel-h"><h2 class="pg-h2" style="margin:0">Banned emails</h2></div>
           <p class="muted" style="font-size:.78rem;margin:2px 18px 8px">The site is open to everyone. Add an email here to block that account from signing in.</p>
           <div class="row" style="margin:6px 0 10px">
-            <input class="tk-f" id="wlEmail" placeholder="testt@darknode.ai" type="email">
+            <input class="tk-f" id="wlEmail" placeholder="test@darknode.ai" type="email">
             <button class="btn danger sm" id="wlAdd">Ban</button>
           </div>
           <div class="wl-list" id="wlList"></div>

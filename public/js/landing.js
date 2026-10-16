@@ -1351,7 +1351,7 @@ testing methodology for 10.10.14.7:
         <div class="cta-notify">
           <h3 class="cta-notify-h">Get notified when Pro launches</h3>
           <form class="cta-form" id="cta-notify-form" autocomplete="off">
-            <input type="email" class="cta-email" id="cta-email" placeholder="testt@darknode.ai" required aria-label="Email address">
+            <input type="email" class="cta-email" id="cta-email" placeholder="test@darknode.ai" required aria-label="Email address">
             <button type="submit" class="btn lg" id="cta-notify-btn">Notify me</button>
           </form>
           <p class="cta-reassure" id="cta-reassure">No spam. One email when we launch.</p>
