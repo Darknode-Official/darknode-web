@@ -349,7 +349,7 @@ export function analyze(rows, opts = {}, ctx) {
       findings.push({
         title: "High activity volume for one actor",
         severity: "low",
-        confidence: 0.6,
+        confidence: "likely",
         category: "volume",
         description: actor + " appears in " + count + " rows (threshold " + o.burstThreshold + ").",
         recommendation: "Confirm the account is a service principal or review its activity window.",
