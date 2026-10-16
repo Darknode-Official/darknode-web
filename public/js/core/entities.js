@@ -501,6 +501,34 @@ export const TYPE_SCHEMAS = {
       f("generatedAt", "timestamp"),
     ],
   },
+  IDENTITY: {
+    label: "Identity",
+    summary: "A user or service identity in a directory / IdP.",
+    fields: [
+      f("upn", "string", { required: true, desc: "UPN or email", example: "test@darknode.ai" }),
+      f("displayName", "string"),
+      f("department", "string"),
+      f("role", "string", { desc: "job role or directory role" }),
+      f("enabled", "boolean", { desc: "account enabled" }),
+      f("mfa", "enum", { values: ["enforced", "enrolled", "none", "unknown"] }),
+      f("privileged", "boolean", { desc: "holds admin / privileged roles" }),
+      f("lastSignIn", "timestamp"),
+      f("source", "string", { desc: "directory / IdP of record" }),
+    ],
+  },
+  VENDOR: {
+    label: "Vendor",
+    summary: "A third party with access to data, systems or payments.",
+    fields: [
+      f("legalName", "string", { required: true }),
+      f("domain", "domain"),
+      f("tier", "enum", { values: ["critical", "high", "medium", "low"] }),
+      f("dataShared", "array", { desc: "data categories shared" }),
+      f("contractEnd", "timestamp"),
+      f("owner", "string", { desc: "internal relationship owner (role)" }),
+      f("paymentsEnabled", "boolean", { desc: "vendor is paid / holds bank details" }),
+    ],
+  },
 };
 
 // ---------------------------------------------------------------------------
@@ -514,12 +542,12 @@ const ANY = "*";
 export const RELATIONSHIP_RULES = {
   related_to: { from: ANY, to: ANY },
   contains: {
-    from: ["ASSET", "ENDPOINT", "DOMAIN", "IP", "CASE", "INVESTIGATION", "INCIDENT", "CAMPAIGN"],
+    from: ["ASSET", "ENDPOINT", "DOMAIN", "IP", "CASE", "INVESTIGATION", "INCIDENT", "CAMPAIGN", "VENDOR"],
     to: ANY,
   },
   affects: {
-    from: ["VULNERABILITY", "MALWARE", "TECHNIQUE", "CAMPAIGN", "THREAT_ACTOR", "INCIDENT"],
-    to: ["ASSET", "ENDPOINT", "SOFTWARE", "SERVICE", "DOMAIN", "IP"],
+    from: ["VULNERABILITY", "MALWARE", "TECHNIQUE", "CAMPAIGN", "THREAT_ACTOR", "INCIDENT", "FINDING"],
+    to: ["ASSET", "ENDPOINT", "SOFTWARE", "SERVICE", "DOMAIN", "IP", "IDENTITY", "VENDOR"],
   },
   observed_in: {
     from: ["INDICATOR", "MALWARE", "TECHNIQUE", "IP", "DOMAIN"],
@@ -539,7 +567,7 @@ export const RELATIONSHIP_RULES = {
   },
   targets: {
     from: ["THREAT_ACTOR", "CAMPAIGN", "MALWARE"],
-    to: ["ASSET", "ENDPOINT", "DOMAIN", "IP", "SOFTWARE"],
+    to: ["ASSET", "ENDPOINT", "DOMAIN", "IP", "SOFTWARE", "IDENTITY", "VENDOR"],
   },
   part_of: { from: ANY, to: ["CASE", "INVESTIGATION", "INCIDENT", "CAMPAIGN", "REPORT"] },
   detected_by: {

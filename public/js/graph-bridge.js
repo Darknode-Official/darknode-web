@@ -18,7 +18,7 @@ const TYPE_COLORS = {
   INCIDENT: '#dc2626', CASE: '#2563eb', INVESTIGATION: '#8b5cf6', EVIDENCE: '#0891b2',
   THREAT_ACTOR: '#7c3aed', MALWARE: '#e11d48', CAMPAIGN: '#d97706', TECHNIQUE: '#9333ea',
   FINDING: '#8b5cf6', DETECTION: '#059669', PLAYBOOK: '#b45309', CONTROL: '#15803d',
-  REPORT: '#4f46e5',
+  REPORT: '#4f46e5', IDENTITY: '#0ea5e9', VENDOR: '#a16207',
 };
 
 export function addToGraph(type, name, data, opts) {

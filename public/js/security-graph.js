@@ -17,7 +17,8 @@ export const ENTITY_TYPES = [
   'ASSET', 'ENDPOINT', 'DOMAIN', 'IP', 'PORT', 'SERVICE', 'CERTIFICATE',
   'SOFTWARE', 'VULNERABILITY', 'INDICATOR', 'ALERT', 'EVENT', 'INCIDENT',
   'CASE', 'INVESTIGATION', 'EVIDENCE', 'THREAT_ACTOR', 'MALWARE', 'CAMPAIGN',
-  'TECHNIQUE', 'FINDING', 'DETECTION', 'PLAYBOOK', 'CONTROL', 'REPORT'
+  'TECHNIQUE', 'FINDING', 'DETECTION', 'PLAYBOOK', 'CONTROL', 'REPORT',
+  'IDENTITY', 'VENDOR'
 ];
 
 export const RELATIONSHIP_TYPES = [
@@ -509,7 +510,8 @@ export function getEntityTypeLabel(type) {
     INVESTIGATION: 'Investigation', EVIDENCE: 'Evidence',
     THREAT_ACTOR: 'Threat Actor', MALWARE: 'Malware', CAMPAIGN: 'Campaign',
     TECHNIQUE: 'Technique', FINDING: 'Finding', DETECTION: 'Detection',
-    PLAYBOOK: 'Playbook', CONTROL: 'Control', REPORT: 'Report'
+    PLAYBOOK: 'Playbook', CONTROL: 'Control', REPORT: 'Report',
+    IDENTITY: 'Identity', VENDOR: 'Vendor'
   };
   return labels[type] || type;
 }

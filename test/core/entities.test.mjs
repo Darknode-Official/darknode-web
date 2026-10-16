@@ -103,6 +103,11 @@ group("entities: type schemas", () => {
     }
   });
 
+  test("affects joins FINDING to ASSET and IDENTITY", () => {
+    assert.ok(isValidRelationship("affects", "FINDING", "ASSET"));
+    assert.ok(isValidRelationship("affects", "FINDING", "IDENTITY"));
+  });
+
   test("catalog() returns one entry per entity type", () => {
     assert.equal(catalog().length, ENTITY_TYPES.length);
   });
