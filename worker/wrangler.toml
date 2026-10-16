@@ -23,6 +23,15 @@ FIREBASE_PROJECT_ID = "sentinel-b4194"
 name = "VAULT"
 class_name = "VaultDO"
 
+# Cloud-synced security graph (Phase B1): one SQLite-backed Durable Object per workspace.
+[[durable_objects.bindings]]
+name = "GRAPH"
+class_name = "GraphDO"
+
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["VaultDO"]
+
+[[migrations]]
+tag = "v2"
+new_sqlite_classes = ["GraphDO"]

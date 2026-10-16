@@ -18,7 +18,9 @@
 // streaming. Deploy: `cd worker && npx wrangler deploy`.
 
 import { handleVault } from "./vault.js";
+import { handleGraph } from "./graph.js";
 export { VaultDO } from "./vault.js";
+export { GraphDO } from "./graph.js";
 
 const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
 
@@ -540,6 +542,7 @@ export default {
     if (pathname === "/api/fetch" && (request.method === "GET" || request.method === "POST")) return handleFetch(request);
     if (pathname === "/api/smart" && request.method === "POST") return handleSmart(request, env);
     if (pathname.startsWith("/api/vault/")) return handleVault(request, env, pathname.slice(11), json);
+    if (pathname.startsWith("/api/graph/")) return handleGraph(request, env, pathname.slice(11), json);
     if (pathname !== "/api/chat") return json({ error: "Not found" }, 404);
     if (request.method !== "POST") return json({ error: "POST only" }, 405);
 
