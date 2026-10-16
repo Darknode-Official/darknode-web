@@ -29,7 +29,7 @@ import { bus, EVENTS } from "/js/core/bus.js";
 import { isSimulated } from "/js/core/posture.js";
 import { tierFrom, rank, planLabel } from "/js/core/entitlements.js";
 import * as findings from "/js/core/findings.js?v=20261013e";
-import { attachExplain, EXPLAIN, explainEnabled, setExplainEnabled } from "/js/ui/explain.js?v=20261014h";
+import { attachExplain, EXPLAIN, explainEnabled, setExplainEnabled } from "/js/ui/explain.js?v=20261015a";
 
 const LS_CONN = "dn_deck_connections_v1";
 const LS_SCENE = "dn_deck_scene";          // last workspace selected
@@ -1252,6 +1252,14 @@ textarea.dk-kitio{min-height:120px}
 .dk-onbd-step .go{margin-left:auto;flex:none;font-size:12px;font-weight:600;color:#2552c6}
 .dk-onbd-step.done .go{display:none}
 .dk[data-ui=deck] .dk-onbd-step{background:var(--dk-surf);border-color:var(--dk-line)}
+.dk-rptnote{font-size:12.5px;color:#6b7589;line-height:1.55;margin:2px 0 18px;max-width:780px}
+.dk-rptgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px}
+.dk-rptcard{display:flex;flex-direction:column}
+.dk-rptcard .desc{font-size:12.5px;color:#6b7589;line-height:1.5;margin:6px 0 0}
+.dk-rptcard .stat{display:flex;gap:20px;margin:14px 0 0;flex-wrap:wrap}
+.dk-rptcard .stat>div b{font-size:20px;font-weight:700;color:#1f2838;display:block;line-height:1.1}
+.dk-rptcard .stat>div span{font-size:11px;color:#6b7589}
+.dk-rptacts{display:flex;gap:8px;flex-wrap:wrap;margin-top:auto;padding-top:16px}
 .dk-compgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
 .dk-compcard{appearance:none;font:inherit;display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start;position:relative;text-align:left;cursor:pointer;background:#fff;border:1px solid rgba(23,33,56,.08);border-radius:14px;padding:17px 18px;transition:border-color .15s,transform .15s}
 .dk-compcard:hover{border-color:#3f78ff;transform:translateY(-1px)}
@@ -1635,6 +1643,8 @@ export function renderDeck(host, opts) {
 
     <div class="dk-scene dk-ov dk-settings" id="dkSettings" hidden></div>
 
+    <div class="dk-scene dk-ov dk-reports" id="dkReports" hidden></div>
+
     <div class="dk-scene dk-asst" id="dkAssistant" hidden>
       <div class="dk-wbar">
         <div class="dk-wtitle"><span class="wi">${IC.spark}</span><span class="wt">Darknode AI</span></div>
@@ -1682,7 +1692,7 @@ export function renderDeck(host, opts) {
   function drawStars(){}
 
   // ---------- workspace router ----------
-  const SCENES = { overview: "#dkOverview", surface: "#dkSurface", threat: "#dkThreat", cloud: "#dkCloud", compliance: "#dkCompliance", invest: "#dkInvest", findings: "#dkFindings", section: "#dkSection", con: "#dkCon", tools: "#dkTools", toolkit: "#dkToolkit", activity: "#dkActivity", assistant: "#dkAssistant", plans: "#dkPlans", settings: "#dkSettings" };
+  const SCENES = { overview: "#dkOverview", surface: "#dkSurface", threat: "#dkThreat", cloud: "#dkCloud", compliance: "#dkCompliance", invest: "#dkInvest", findings: "#dkFindings", section: "#dkSection", con: "#dkCon", tools: "#dkTools", toolkit: "#dkToolkit", activity: "#dkActivity", assistant: "#dkAssistant", plans: "#dkPlans", settings: "#dkSettings", reports: "#dkReports" };
   const sceneEls = {}; for (const k in SCENES) sceneEls[k] = $(SCENES[k]);
   const sceneTools = sceneEls.tools;   // kept for the tools gallery code
   // sec -> label, for activity lines and quick-action titles
@@ -1731,6 +1741,7 @@ export function renderDeck(host, opts) {
     else if (scene === "activity") renderActivity();
     else if (scene === "plans") renderPlans();
     else if (scene === "settings") renderSettings();
+    else if (scene === "reports") renderReports();
     else if (scene === "assistant") openAssistant();
   }
   // Any element carrying data-scene (KPI cards, "view all" links, quick actions)
@@ -3456,6 +3467,157 @@ export function renderDeck(host, opts) {
     if (admBtn) admBtn.onclick = () => openTool("admin", "Admin");
   }
 
+  // ---------- Reporting center (native Deck scene) ----------
+  // One place to turn YOUR security graph into a branded report. Everything here is
+  // generated in the browser from real, non-simulated entities (sample data is dropped
+  // by collectFindings/postureStats); nothing is uploaded. Server-side and scheduled
+  // reports are a later item — this scene never implies they exist.
+  function reportMeta(){
+    const org = wsLabelText();
+    const now = new Date();
+    let date; try { date = now.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" }); } catch (_) { date = now.toISOString().slice(0, 10); }
+    return { org, date, iso: now.toISOString() };
+  }
+  const SEV_ORDER = ["critical", "high", "medium", "low", "info"];
+  function dl(name, text, mime){
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([text], { type: (mime || "text/plain") + ";charset=utf-8" }));
+    a.download = name; a.click();
+    setTimeout(() => { try { URL.revokeObjectURL(a.href); } catch (_) {} }, 2000);
+  }
+  function printReport(title, inner){
+    let w; try { w = window.open("", "_blank"); } catch (_) {}
+    if (!w) { toast("Allow pop-ups to print this report"); return; }
+    const css = "body{font:14px/1.6 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#1a2234;margin:0;padding:40px 48px;max-width:860px}h1{font-size:24px;margin:0 0 4px}h2{font-size:16px;margin:28px 0 8px;border-bottom:1px solid #e3e7ef;padding-bottom:6px}.meta{color:#6b7589;font-size:13px;margin:0 0 8px}table{border-collapse:collapse;width:100%;font-size:12.5px;margin:6px 0}th,td{text-align:left;padding:6px 10px;border-bottom:1px solid #e9ecf3}th{color:#48526a;font-weight:600}.kv{display:flex;flex-wrap:wrap;gap:8px 28px;margin:8px 0}.kv div b{display:block;font-size:20px}.kv div span{color:#6b7589;font-size:12px}.foot{margin-top:36px;color:#8a92a5;font-size:11.5px;border-top:1px solid #e3e7ef;padding-top:12px}";
+    w.document.write("<!doctype html><html><head><meta charset=\"utf-8\"><title>" + esc(title) + "</title><style>" + css + "</style></head><body>" + inner + "</body></html>");
+    w.document.close(); w.focus();
+    setTimeout(() => { try { w.print(); } catch (_) {} }, 350);
+  }
+  // Pull real graph data once, then hand it to a builder. cb(null) if unavailable.
+  function withReportData(cb){
+    withGraph((m) => {
+      if (!m || !m.exportAll || !postureMod) { cb(null); return; }
+      const g = m.exportAll();
+      const entities = (g.entities || []).filter((e) => !postureMod.isSimulated(e));
+      const ps = postureMod.postureStats(g.entities, g.relationships);
+      const rows = findings.collectFindings(g.entities);
+      const fc = findings.findingCounts(rows);
+      cb({ g, entities, ps, rows, fc, m });
+    });
+  }
+  function fsev(rows){ const o = {}; for (const s of SEV_ORDER) { const n = rows.filter((r) => r.severity === s).length; if (n) o[s] = n; } return o; }
+  function execMd(d){
+    const m = reportMeta();
+    const sev = fsev(d.rows);
+    const acts = findings.topActions({ findings: d.rows }, 6);
+    const types = Object.entries(d.ps.byType).sort((a, b) => b[1] - a[1]);
+    return `# ${m.org} — Security Posture Summary\n\nGenerated ${m.date} · Darknode\n\n## Overview\n\n- Tracked entities: ${d.ps.totalEntities}\n- Relationships: ${d.ps.totalRelationships}\n- Findings: ${d.fc.total} (${d.fc.open} open, ${d.fc.resolved} resolved)\n- Open critical: ${d.fc.critical} · Open high: ${d.fc.high}\n\n## Findings by severity\n\n${SEV_ORDER.filter((s) => sev[s]).map((s) => `- ${s[0].toUpperCase() + s.slice(1)}: ${sev[s]}`).join("\n") || "- None recorded"}\n\n## Entities by type\n\n${types.length ? types.map(([t, n]) => `- ${t}: ${n}`).join("\n") : "- None recorded"}\n\n## Recommended next steps\n\n${acts.length ? acts.map((a, i) => `${i + 1}. ${a.title} — ${a.detail}`).join("\n") : "No actions outstanding."}\n\n---\n\nGenerated in your browser from your security graph. Sample data is excluded and nothing was uploaded.\n`;
+  }
+  function execHtml(d){
+    const m = reportMeta();
+    const sev = fsev(d.rows);
+    const acts = findings.topActions({ findings: d.rows }, 6);
+    const types = Object.entries(d.ps.byType).sort((a, b) => b[1] - a[1]);
+    return `<h1>${esc(m.org)} — Security Posture Summary</h1><p class="meta">Generated ${esc(m.date)} · Darknode</p>`
+      + `<h2>Overview</h2><div class="kv"><div><b>${d.ps.totalEntities}</b><span>Tracked entities</span></div><div><b>${d.ps.totalRelationships}</b><span>Relationships</span></div><div><b>${d.fc.open}</b><span>Open findings</span></div><div><b>${d.fc.critical}</b><span>Open critical</span></div><div><b>${d.fc.high}</b><span>Open high</span></div></div>`
+      + `<h2>Findings by severity</h2>` + (Object.keys(sev).length ? `<table><tr><th>Severity</th><th>Count</th></tr>${SEV_ORDER.filter((s) => sev[s]).map((s) => `<tr><td>${esc(s[0].toUpperCase() + s.slice(1))}</td><td>${sev[s]}</td></tr>`).join("")}</table>` : `<p>None recorded.</p>`)
+      + `<h2>Entities by type</h2>` + (types.length ? `<table><tr><th>Type</th><th>Count</th></tr>${types.map(([t, n]) => `<tr><td>${esc(t)}</td><td>${n}</td></tr>`).join("")}</table>` : `<p>None recorded.</p>`)
+      + `<h2>Recommended next steps</h2>` + (acts.length ? `<ol>${acts.map((a) => `<li><b>${esc(a.title)}</b> — ${esc(a.detail)}</li>`).join("")}</ol>` : `<p>No actions outstanding.</p>`)
+      + `<p class="foot">Generated in your browser from your security graph. Sample data is excluded and nothing was uploaded.</p>`;
+  }
+  const FND_COLS = ["severity", "name", "type", "status", "source", "updatedAt", "id"];
+  function fndMd(d){
+    const m = reportMeta();
+    const rows = d.rows;
+    const head = `# ${m.org} — Findings Register\n\nGenerated ${m.date} · ${rows.length} findings (${d.fc.open} open)\n\n`;
+    if (!rows.length) return head + "No findings recorded yet.\n";
+    const tbl = `| Severity | Name | Type | Status | Source | Updated |\n|---|---|---|---|---|---|\n`
+      + rows.map((r) => `| ${r.severity || "—"} | ${String(r.name || "").replace(/\|/g, "\\|")} | ${r.type} | ${r.status} | ${r.source} | ${(r.updatedAt || "").slice(0, 10)} |`).join("\n");
+    return head + tbl + "\n";
+  }
+  function fndHtml(d){
+    const m = reportMeta();
+    const rows = d.rows;
+    const body = rows.length
+      ? `<table><tr><th>Severity</th><th>Name</th><th>Type</th><th>Status</th><th>Source</th><th>Updated</th></tr>${rows.map((r) => `<tr><td>${esc(r.severity || "—")}</td><td>${esc(r.name)}</td><td>${esc(r.type)}</td><td>${esc(r.status)}</td><td>${esc(r.source)}</td><td>${esc((r.updatedAt || "").slice(0, 10))}</td></tr>`).join("")}</table>`
+      : `<p>No findings recorded yet.</p>`;
+    return `<h1>${esc(m.org)} — Findings Register</h1><p class="meta">Generated ${esc(m.date)} · ${rows.length} findings (${d.fc.open} open)</p>${body}<p class="foot">Generated in your browser from your security graph. Sample data is excluded and nothing was uploaded.</p>`;
+  }
+  // Attack-surface view: the externally-facing entity types the graph knows about.
+  const SURFACE_TYPES = ["domain", "subdomain", "host", "ip", "url", "service", "port", "certificate", "endpoint"];
+  function surfaceRows(d){
+    return d.entities.filter((e) => SURFACE_TYPES.includes(String(e.type || "").toLowerCase()))
+      .sort((a, b) => String(a.type).localeCompare(String(b.type)) || String(a.name || "").localeCompare(String(b.name || "")));
+  }
+  function surfaceMd(d){
+    const m = reportMeta();
+    const rows = surfaceRows(d);
+    const byType = {}; for (const e of rows) (byType[e.type] = byType[e.type] || []).push(e);
+    const head = `# ${m.org} — Attack Surface Summary\n\nGenerated ${m.date} · ${rows.length} externally-facing assets\n\n`;
+    if (!rows.length) return head + "No externally-facing assets recorded yet. Map an attack surface or import hosts to populate this.\n";
+    return head + Object.entries(byType).map(([t, es]) => `## ${t} (${es.length})\n\n${es.map((e) => `- ${e.name || e.id}${e.severity ? " — " + e.severity : ""}`).join("\n")}`).join("\n\n") + "\n";
+  }
+  function surfaceHtml(d){
+    const m = reportMeta();
+    const rows = surfaceRows(d);
+    const byType = {}; for (const e of rows) (byType[e.type] = byType[e.type] || []).push(e);
+    const body = rows.length
+      ? Object.entries(byType).map(([t, es]) => `<h2>${esc(t)} (${es.length})</h2><table><tr><th>Asset</th><th>Severity</th><th>Status</th></tr>${es.map((e) => `<tr><td>${esc(e.name || e.id)}</td><td>${esc(e.severity || "—")}</td><td>${esc(e.status || "—")}</td></tr>`).join("")}</table>`).join("")
+      : `<p>No externally-facing assets recorded yet. Map an attack surface or import hosts to populate this.</p>`;
+    return `<h1>${esc(m.org)} — Attack Surface Summary</h1><p class="meta">Generated ${esc(m.date)} · ${rows.length} externally-facing assets</p>${body}<p class="foot">Generated in your browser from your security graph. Sample data is excluded and nothing was uploaded.</p>`;
+  }
+
+  function renderReports(){
+    const el = sceneEls.reports;
+    el.innerHTML = `
+      <div class="dk-ti-head"><h1>Reports</h1></div>
+      <p class="dk-rptnote">Branded reports built in this browser from your security graph — the real, non-simulated entities your tools have recorded. Sample data is excluded and nothing is uploaded. Print opens a clean page you can save as PDF.</p>
+      <div class="dk-rptgrid" id="dkRptGrid">
+        <div class="dk-ovp dk-rptcard"><h2>${IC.brief} Executive summary</h2>
+          <p class="desc">Posture at a glance: entities, relationships, open findings by severity and the recommended next steps.</p>
+          <div class="stat" id="dkRptStatExec"><div><b>—</b><span>loading</span></div></div>
+          <div class="dk-rptacts"><button class="dk-settog" data-rpt="exec" data-act="print">Print / PDF</button><button class="dk-settog" data-rpt="exec" data-act="md">Markdown</button></div>
+        </div>
+        <div class="dk-ovp dk-rptcard"><h2>${IC.alert} Findings register</h2>
+          <p class="desc">Every real finding and vulnerability, ranked by severity, with status and source. Export for a ticketing system or audit.</p>
+          <div class="stat" id="dkRptStatFnd"><div><b>—</b><span>loading</span></div></div>
+          <div class="dk-rptacts"><button class="dk-settog" data-rpt="fnd" data-act="print">Print / PDF</button><button class="dk-settog" data-rpt="fnd" data-act="md">Markdown</button><button class="dk-settog" data-rpt="fnd" data-act="csv">CSV</button><button class="dk-settog" data-rpt="fnd" data-act="json">JSON</button></div>
+        </div>
+        <div class="dk-ovp dk-rptcard"><h2>${IC.radar} Attack surface summary</h2>
+          <p class="desc">The externally-facing assets in your graph — domains, hosts, IPs, services — grouped by type.</p>
+          <div class="stat" id="dkRptStatSurf"><div><b>—</b><span>loading</span></div></div>
+          <div class="dk-rptacts"><button class="dk-settog" data-rpt="surf" data-act="print">Print / PDF</button><button class="dk-settog" data-rpt="surf" data-act="md">Markdown</button></div>
+        </div>
+      </div>`;
+
+    const fname = (label, ext) => (wsLabelText().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "darknode") + "-" + label + "-" + reportMeta().iso.slice(0, 10) + "." + ext;
+
+    withReportData((d) => {
+      if (!d) { el.querySelectorAll(".stat").forEach((s) => s.innerHTML = `<div><b>—</b><span>graph unavailable</span></div>`); el.querySelectorAll(".dk-settog").forEach((b) => b.disabled = true); return; }
+      const sEx = el.querySelector("#dkRptStatExec"); if (sEx) sEx.innerHTML = `<div><b>${d.ps.totalEntities}</b><span>Entities</span></div><div><b>${d.fc.open}</b><span>Open findings</span></div><div><b>${d.fc.critical + d.fc.high}</b><span>Critical &amp; high</span></div>`;
+      const sFn = el.querySelector("#dkRptStatFnd"); if (sFn) sFn.innerHTML = `<div><b>${d.fc.total}</b><span>Findings</span></div><div><b>${d.fc.open}</b><span>Open</span></div><div><b>${d.fc.resolved}</b><span>Resolved</span></div>`;
+      const surf = surfaceRows(d);
+      const sSu = el.querySelector("#dkRptStatSurf"); if (sSu) sSu.innerHTML = `<div><b>${surf.length}</b><span>Facing assets</span></div><div><b>${new Set(surf.map((e) => e.type)).size}</b><span>Asset types</span></div>`;
+
+      el.querySelectorAll(".dk-settog[data-rpt]").forEach((b) => b.onclick = () => {
+        const rpt = b.dataset.rpt, act = b.dataset.act;
+        if (rpt === "exec") {
+          if (act === "print") printReport(wsLabelText() + " — Security Posture Summary", execHtml(d));
+          else dl(fname("executive-summary", "md"), execMd(d), "text/markdown");
+        } else if (rpt === "fnd") {
+          if (act === "print") printReport(wsLabelText() + " — Findings Register", fndHtml(d));
+          else if (act === "md") dl(fname("findings", "md"), fndMd(d), "text/markdown");
+          else if (act === "csv") dl(fname("findings", "csv"), findings.toCSV(d.rows, FND_COLS), "text/csv");
+          else dl(fname("findings", "json"), JSON.stringify(d.rows, null, 2), "application/json");
+        } else if (rpt === "surf") {
+          if (act === "print") printReport(wsLabelText() + " — Attack Surface Summary", surfaceHtml(d));
+          else dl(fname("attack-surface", "md"), surfaceMd(d), "text/markdown");
+        }
+        toast(act === "print" ? "Opening printable report" : "Report downloaded");
+      });
+    });
+  }
+
   function renderActivity(){
     const el = sceneEls.activity;
     const all = notifs.map((x) => ({ text: x.text, ts: x.ts, cat: activityCat(x.text) }));
@@ -3649,7 +3811,7 @@ export function renderDeck(host, opts) {
     { id: "exposure", g: "Exposure", items: [["scene", "surface", "Attack Surface", IC.radar], ["scene", "cloud", "Cloud Posture", IC.cloud], ["scene", "threat", "Threats & Vulnerabilities", IC.alert], ["tool", "posture", "Posture Scorecard", IC.gauge], ["tool", "tlsfleet", "Certificate Monitor", IC.cert], ["tool", "fwaudit", "Firewall Rule Audit", IC.shield]] },
     { id: "identity", g: "Identity", items: [["tool", "signins", "Sign-in Forensics", IC.search], ["tool", "accessreview", "Access Review", IC.check]] },
     { id: "code", g: "Application Security", items: [["tool", "codescan", "Code Scanner", IC.code], ["tool", "supplychain", "Supply Chain", IC.branch], ["tool", "threatforest", "Attack Tree Builder", IC.tree]] },
-    { id: "detect", g: "Security Operations", items: [["scene", "findings", "Findings", IC.alert], ["scene", "invest", "Investigations", IC.search], ["tool", "secgraph", "Security Graph", IC.nodes], ["tool", "incidents", "Incident Tracker", IC.shield], ["tool", "casemgmt", "Case Manager", IC.brief], ["tool", "phishtriage", "Phishing & URL Triage", IC.hook], ["tool", "loghunt", "Log Threat Hunter", IC.term], ["scene", "activity", "Activity", IC.pulse]] },
+    { id: "detect", g: "Security Operations", items: [["scene", "findings", "Findings", IC.alert], ["scene", "invest", "Investigations", IC.search], ["tool", "secgraph", "Security Graph", IC.nodes], ["tool", "incidents", "Incident Tracker", IC.shield], ["tool", "casemgmt", "Case Manager", IC.brief], ["tool", "phishtriage", "Phishing & URL Triage", IC.hook], ["tool", "loghunt", "Log Threat Hunter", IC.term], ["scene", "reports", "Reports", IC.note], ["scene", "activity", "Activity", IC.pulse]] },
     { id: "finsec", g: "Financial Controls", items: [["tool", "strongroom", "Fund Protection", IC.coins], ["tool", "vault", "Treasury Vault", IC.lock], ["tool", "payees", "Payee Control", IC.shield], ["tool", "sanctions", "Sanctions Screening", IC.scale]] },
     { id: "compliance", g: "Compliance", items: [["scene", "compliance", "Frameworks", IC.check], ["tool", "crosswalk", "GenAI Crosswalk", IC.map], ["tool", "dlp", "Data Protection", IC.eye], ["tool", "leakprobe", "Secret Exposure", IC.key]] },
     { g: "Platform", items: [["scene", "con", "Integrations", IC.plug], ["scene", "tools", "Tool Library", IC.grid], ["scene", "toolkit", "Toolkit", IC.wrench], ["scene", "assistant", "AI Assistant", IC.spark], ["scene", "plans", "Plans", IC.star]].concat(opts.isOwner ? [["tool", "admin", "Admin", IC.key]] : []) },
