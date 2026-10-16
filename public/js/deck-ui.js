@@ -29,10 +29,10 @@ import { bus, EVENTS } from "/js/core/bus.js";
 import { isSimulated } from "/js/core/posture.js";
 import { tierFrom, rank, planLabel } from "/js/core/entitlements.js";
 import * as findings from "/js/core/findings.js?v=20261013e";
-import { attachExplain, EXPLAIN, explainEnabled, setExplainEnabled } from "/js/ui/explain.js?v=20261015d";
+import { attachExplain, EXPLAIN, explainEnabled, setExplainEnabled } from "/js/ui/explain.js?v=20261015f";
 import { startGraphSync, stopGraphSync } from "/js/graph-sync.js";
-import { myWorkspaces, createWorkspace, activeWorkspace, setActiveWorkspace } from "/js/workspaces.js?v=20261015d";
-import { ROLE_LABEL } from "/js/core/workspace-roles.js";
+import { myWorkspaces, createWorkspace, activeWorkspace, setActiveWorkspace, listMembers, setMember } from "/js/workspaces.js?v=20261015d";
+import { ROLE_LABEL, ROLES, canDo, ROLE_HELP } from "/js/core/workspace-roles.js";
 
 const LS_CONN = "dn_deck_connections_v1";
 const LS_SCENE = "dn_deck_scene";          // last workspace selected
@@ -1250,6 +1250,20 @@ textarea.dk-kitio{min-height:120px}
 .dk-setin:focus{border-color:var(--dk-acc,#2552c6)}
 .dk-settog{appearance:none;cursor:pointer;flex:none;border:1px solid rgba(23,33,56,.18);background:rgba(23,33,56,.05);color:#38435c;font:inherit;font-size:12.5px;font-weight:600;height:32px;padding:0 14px;border-radius:8px}
 .dk-settog.on{background:var(--dk-acc,#2552c6);border-color:var(--dk-acc,#2552c6);color:#fff}
+/* ---------- team (workspace members) scene ---------- */
+.dk-tibtn.pri{background:var(--dk-acc,#2552c6);border-color:var(--dk-acc,#2552c6);color:#fff}
+.dk-tibtn.pri:hover{filter:brightness(1.07)}
+.dk-rbadge{display:inline-block;font-size:12px;font-weight:600;padding:2px 9px;border-radius:999px;background:rgba(23,33,56,.06);color:#38435c;white-space:nowrap}
+.dk-rbadge.r-owner{background:rgba(37,82,198,.12);color:#2552c6}
+.dk-rbadge.r-removed{opacity:.6;text-decoration:line-through}
+.dk-natbl tr.rm td{opacity:.55}
+.dk-teamadd{margin-top:16px;border-top:1px solid rgba(23,33,56,.08);padding-top:14px}
+.dk-teamadd h3{font-size:13px;margin:0 0 10px}
+.dk-teamaddrow{border-bottom:0;padding:0;flex-wrap:wrap}
+.dk-teamaddrow .dk-setin{flex:1;min-width:150px}
+.dk-rolehelp{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:7px}
+.dk-rolehelp li{font-size:13px;line-height:1.5}
+.dk-teamempty p{font-size:13.5px;line-height:1.6;margin:8px 0 14px;max-width:62ch}
 .dk[data-ui=deck] .dk-setin{background:var(--dk-surf);border-color:var(--dk-line);color:var(--dk-tx)}
 .dk-syncstat{display:inline-block;margin-left:8px;font-size:11px;font-weight:600;color:#6b7589;background:rgba(23,33,56,.07);border-radius:5px;padding:1px 7px;vertical-align:middle}
 .dk-syncstat[data-state=synced]{color:#12935a;background:rgba(18,147,90,.12)}
@@ -1672,6 +1686,7 @@ export function renderDeck(host, opts) {
     <div class="dk-scene dk-plans" id="dkPlans" hidden></div>
 
     <div class="dk-scene dk-ov dk-settings" id="dkSettings" hidden></div>
+    <div class="dk-scene dk-ov dk-team" id="dkTeam" hidden></div>
 
     <div class="dk-scene dk-ov dk-reports" id="dkReports" hidden></div>
 
@@ -1722,7 +1737,7 @@ export function renderDeck(host, opts) {
   function drawStars(){}
 
   // ---------- workspace router ----------
-  const SCENES = { overview: "#dkOverview", surface: "#dkSurface", threat: "#dkThreat", cloud: "#dkCloud", compliance: "#dkCompliance", invest: "#dkInvest", findings: "#dkFindings", section: "#dkSection", con: "#dkCon", tools: "#dkTools", toolkit: "#dkToolkit", activity: "#dkActivity", assistant: "#dkAssistant", plans: "#dkPlans", settings: "#dkSettings", reports: "#dkReports" };
+  const SCENES = { overview: "#dkOverview", surface: "#dkSurface", threat: "#dkThreat", cloud: "#dkCloud", compliance: "#dkCompliance", invest: "#dkInvest", findings: "#dkFindings", section: "#dkSection", con: "#dkCon", tools: "#dkTools", toolkit: "#dkToolkit", activity: "#dkActivity", assistant: "#dkAssistant", plans: "#dkPlans", settings: "#dkSettings", reports: "#dkReports", team: "#dkTeam" };
   const sceneEls = {}; for (const k in SCENES) sceneEls[k] = $(SCENES[k]);
   const sceneTools = sceneEls.tools;   // kept for the tools gallery code
   // sec -> label, for activity lines and quick-action titles
@@ -1771,6 +1786,7 @@ export function renderDeck(host, opts) {
     else if (scene === "activity") renderActivity();
     else if (scene === "plans") renderPlans();
     else if (scene === "settings") renderSettings();
+    else if (scene === "team") renderTeam();
     else if (scene === "reports") renderReports();
     else if (scene === "assistant") openAssistant();
   }
@@ -3482,6 +3498,105 @@ export function renderDeck(host, opts) {
       catch (e) { b.disabled = false; b.textContent = "Request upgrade"; toast("Couldn't send the request. Try again."); }
     });
   }
+  // ---------- Team (workspace members & roles) ----------
+  // Membership UI for the active TEAM workspace — the non-financial generalization of
+  // VAULT's team tab. People are added by user id + a human label (each person copies
+  // their id here and shares it; no email directory needed). Roles are enforced
+  // server-side (worker/workspace.js + firebase/firestore.rules); this UI only hides
+  // actions that would fail. The personal workspace has no members, so it prompts.
+  function renderTeam(){
+    const el = sceneEls.team;
+    const wid = activeWorkspace();
+    if (!wid){
+      el.innerHTML = `
+        <div class="dk-ti-head"><h1>Team</h1></div>
+        <div class="dk-ovp dk-teamempty">
+          <h2>${IC.nodes} You're in your personal workspace</h2>
+          <p>Your personal workspace is just you. Create or switch to a team workspace to invite members and share the security graph, findings and incidents with them.</p>
+          <button class="dk-tibtn pri" id="dkTeamNew">Create a team workspace</button>
+        </div>`;
+      const b = el.querySelector("#dkTeamNew"); if (b) b.onclick = () => createNewWorkspace();
+      return;
+    }
+    el.innerHTML = `<div class="dk-ti-head"><h1>Team</h1></div><div class="dk-ovp"><div class="dk-loading"><span class="sp"></span>Loading members…</div></div>`;
+    const myUid = user && user.uid;
+    listMembers(wid).then(({ members, log }) => {
+      if (curScene !== "team") return;
+      const meRow = members.find((m) => m.uid === myUid);
+      const myRole = meRow ? meRow.role : "viewer";
+      const canManage = canDo(myRole, "manageMembers");
+      // Roles this member may assign: an owner mints anything; an admin is limited to
+      // non-owner/non-admin roles (matches the Firestore rules and worker enforcement).
+      const assignable = myRole === "owner" ? ROLES : (canManage ? ["analyst", "responder", "viewer", "removed"] : []);
+      const roleOpts = (cur) => assignable.map((r) => `<option value="${r}"${r === cur ? " selected" : ""}>${esc(ROLE_LABEL[r])}</option>`).join("");
+      const who = (uid) => { const m = members.find((x) => x.uid === uid); return esc((m && m.label) || (uid ? uid.slice(0, 8) + "…" : "")); };
+      const activeCount = members.filter((m) => m.role !== "removed").length;
+      const rows = members.map((m) => {
+        const isMe = m.uid === myUid;
+        const editable = canManage && !isMe && (myRole === "owner" || (m.role !== "owner" && m.role !== "admin"));
+        const roleCell = editable
+          ? `<select class="dk-setin dk-trole" data-uid="${esc(m.uid)}">${roleOpts(m.role)}</select>`
+          : `<span class="dk-rbadge r-${esc(m.role)}">${esc(ROLE_LABEL[m.role] || m.role)}</span>`;
+        return `<tr${m.role === "removed" ? ' class="rm"' : ""}>
+          <td class="it"><b>${esc(m.label || "—")}${isMe ? ' <span class="dk-mut">(you)</span>' : ""}</b></td>
+          <td class="so mono">${esc(m.uid)}</td>
+          <td class="sv">${roleCell}</td>
+          <td class="ac">${editable ? `<button class="dk-tibtn dk-tsave" data-uid="${esc(m.uid)}">Save</button>` : ""}</td></tr>`;
+      }).join("");
+      const logRows = log.length
+        ? log.map((l) => `<tr><td class="so">${l.ts ? esc(new Date(l.ts).toLocaleString()) : ""}</td><td class="it"><b>${who(l.by)}</b></td><td class="it"><b>${who(l.uid)}</b></td><td class="sv"><span class="dk-rbadge r-${esc(l.role)}">${esc(ROLE_LABEL[l.role] || l.role)}</span></td></tr>`).join("")
+        : `<tr><td colspan="4" class="dk-mut" style="padding:14px 0">No changes yet.</td></tr>`;
+      el.innerHTML = `
+        <div class="dk-ti-head"><h1>Team</h1><p>${esc(loadActiveWsName() || "This workspace")} — ${activeCount} member${activeCount === 1 ? "" : "s"}. You are ${esc(ROLE_LABEL[myRole] || myRole)}.</p></div>
+        <div class="dk-ovp">
+          <h2>${IC.key} Your user id</h2>
+          <p>Share this with a teammate's workspace owner so they can add you — or add teammates below using the id they share with you.</p>
+          <div class="dk-setrow" style="border-bottom:0"><input class="dk-setin mono" id="dkTeamMyId" readonly value="${esc(myUid || "")}" style="flex:1"><button class="dk-tibtn" id="dkTeamCopy">Copy user id</button></div>
+        </div>
+        <div class="dk-ovp">
+          <h2>${IC.nodes} Members</h2>
+          <table class="dk-natbl"><thead><tr><th>Name</th><th>User id</th><th>Role</th><th></th></tr></thead><tbody>${rows}</tbody></table>
+          ${canManage ? `<div class="dk-teamadd">
+            <h3>Add a member</h3>
+            <div class="dk-setrow dk-teamaddrow">
+              <input class="dk-setin mono" id="dkTeamUid" placeholder="User id they shared" autocomplete="off" spellcheck="false">
+              <input class="dk-setin" id="dkTeamLabel" maxlength="120" placeholder="Name or email (shown to the team)">
+              <select class="dk-setin" id="dkTeamRole">${assignable.filter((r) => r !== "removed").map((r) => `<option value="${r}"${r === "analyst" ? " selected" : ""}>${esc(ROLE_LABEL[r])}</option>`).join("")}</select>
+              <button class="dk-tibtn pri" id="dkTeamAdd">Add member</button>
+            </div>
+          </div>` : `<p class="dk-mut" style="margin-top:12px">Only owners and admins can change membership.</p>`}
+        </div>
+        <div class="dk-ovp">
+          <h2>${IC.check} Roles</h2>
+          <ul class="dk-rolehelp">${["owner", "admin", "analyst", "responder", "viewer"].map((r) => `<li><b>${esc(ROLE_LABEL[r])}</b> — ${esc(ROLE_HELP[r])}</li>`).join("")}</ul>
+        </div>
+        <div class="dk-ovp">
+          <h2>${IC.book} Membership log <span class="dk-mut" style="font-weight:400">— append-only</span></h2>
+          <table class="dk-natbl"><thead><tr><th>When</th><th>Changed by</th><th>Member</th><th>New role</th></tr></thead><tbody>${logRows}</tbody></table>
+        </div>`;
+      const cp = el.querySelector("#dkTeamCopy"); if (cp) cp.onclick = async () => { try { await navigator.clipboard.writeText(myUid || ""); toast("User id copied"); } catch (_) { toast("Copy failed"); } };
+      const save = async (uid, role, label) => {
+        try { await setMember(wid, uid, role, label); toast("Membership updated"); renderTeam(); }
+        catch (e) { toast(String((e && e.message) || e) || "Update failed"); }
+      };
+      el.querySelectorAll(".dk-tsave").forEach((b) => b.onclick = () => {
+        const uid = b.dataset.uid; const m = members.find((x) => x.uid === uid);
+        const row = b.closest("tr"); const sel = row && row.querySelector(".dk-trole");
+        if (m && sel) save(uid, sel.value, m.label);
+      });
+      const add = el.querySelector("#dkTeamAdd");
+      if (add) add.onclick = () => {
+        const uid = (el.querySelector("#dkTeamUid").value || "").trim();
+        if (!/^[A-Za-z0-9_-]{6,128}$/.test(uid)) { toast("Enter the user id your teammate shared"); return; }
+        if (members.some((m) => m.uid === uid && m.role !== "removed")) { toast("That person is already a member"); return; }
+        save(uid, el.querySelector("#dkTeamRole").value, (el.querySelector("#dkTeamLabel").value || "").trim());
+      };
+    }).catch((e) => {
+      if (curScene !== "team") return;
+      el.innerHTML = `<div class="dk-ti-head"><h1>Team</h1></div><div class="dk-ovp"><p class="dk-mut">Could not load members. ${esc(String((e && e.message) || e))}</p></div>`;
+    });
+  }
+
   // ---------- Settings (native Deck scene) ----------
   // Consolidates the controls that were scattered across the account menu into one
   // page: workspace identity, appearance, data and account. Every control here is
@@ -3967,7 +4082,7 @@ export function renderDeck(host, opts) {
     { id: "detect", g: "Security Operations", items: [["scene", "findings", "Findings", IC.alert], ["scene", "invest", "Investigations", IC.search], ["tool", "secgraph", "Security Graph", IC.nodes], ["tool", "incidents", "Incident Tracker", IC.shield], ["tool", "casemgmt", "Case Manager", IC.brief], ["tool", "phishtriage", "Phishing & URL Triage", IC.hook], ["tool", "loghunt", "Log Threat Hunter", IC.term], ["scene", "reports", "Reports", IC.note], ["scene", "activity", "Activity", IC.pulse]] },
     { id: "finsec", g: "Financial Controls", items: [["tool", "strongroom", "Fund Protection", IC.coins], ["tool", "vault", "Treasury Vault", IC.lock], ["tool", "payees", "Payee Control", IC.shield], ["tool", "sanctions", "Sanctions Screening", IC.scale]] },
     { id: "compliance", g: "Compliance", items: [["scene", "compliance", "Frameworks", IC.check], ["tool", "crosswalk", "GenAI Crosswalk", IC.map], ["tool", "dlp", "Data Protection", IC.eye], ["tool", "leakprobe", "Secret Exposure", IC.key]] },
-    { g: "Platform", items: [["scene", "con", "Integrations", IC.plug], ["scene", "tools", "Tool Library", IC.grid], ["scene", "toolkit", "Toolkit", IC.wrench], ["scene", "assistant", "AI Assistant", IC.spark], ["scene", "plans", "Plans", IC.star]].concat(opts.isOwner ? [["tool", "admin", "Admin", IC.key]] : []) },
+    { g: "Platform", items: [["scene", "con", "Integrations", IC.plug], ["scene", "tools", "Tool Library", IC.grid], ["scene", "toolkit", "Toolkit", IC.wrench], ["scene", "assistant", "AI Assistant", IC.spark], ["scene", "team", "Team", IC.nodes], ["scene", "plans", "Plans", IC.star]].concat(opts.isOwner ? [["tool", "admin", "Admin", IC.key]] : []) },
   ];
   const navIndex = {};
   NAV_DEF.forEach((grp) => { if (grp.id) navIndex["section:" + grp.id] = { group: grp.g, label: "Overview" }; grp.items.forEach(([kind, id, label]) => { navIndex[kind + ":" + id] = { group: grp.g || "Home", label }; }); });

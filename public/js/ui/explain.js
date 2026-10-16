@@ -46,6 +46,7 @@ export const EXPLAIN = {
   "scene.assistant": { title: "AI Assistant", body: "Chat with Darknode AI to triage a CVE, draft a runbook, explain a finding or review a config." },
   "scene.admin": { title: "Admin", body: "Owner-only controls: users, bans, announcements and platform settings." },
   "scene.settings": { title: "Settings", body: "Your account, appearance and preferences." },
+  "scene.team": { title: "Team", body: "Members and roles for the active team workspace. Add people by the user id they share with you, set their role (owner, admin, analyst, responder or viewer), and review the append-only membership log. Roles are enforced server-side; your personal workspace has no members." },
 
   // ---- Sidebar tools (others fall back to the console's section help) ----
   "tool.codescan": { title: "Code Scanner", body: "Scan a GitHub repository or local folder for leaked secrets, risky code and vulnerable dependencies, then jump to the exact line.", src: "Pattern-based static analysis. Findings are leads to review, not proof of a vulnerability." },
