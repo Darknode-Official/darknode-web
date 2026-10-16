@@ -267,6 +267,11 @@ const SIDE_DESC = {
   privatecloud: "Private-cloud security architecture (beta).",
   setup: "Connect the local Darknode CLI to this browser.",
   admin: "Owner-only admin console.",
+  caaudit: "Audit Entra, Okta and Google sign-on policies for MFA gaps, legacy auth, exclusions and admins without phishing-resistant methods.",
+  privaudit: "Find standing, stale and over-broad administrator access across Entra, AWS, GCP, Okta and GitHub exports.",
+  nhi: "Track service principals, access keys, certificates and API tokens: age, last use, expiry and ownership, with a rotation calendar.",
+  jml: "Reconcile HR joiners, movers and leavers against your identity provider and every SaaS user list to catch accounts that outlive employment.",
+  oauthgov: "Inventory third-party OAuth and enterprise apps, flag high-risk scopes, user consents and unverified publishers across Microsoft 365, Google and Slack.",
 };
 const GROUP_DESC = {
   "Mission Control": "Flagship, real-time operations tools — the big dashboards.",
@@ -2080,6 +2085,11 @@ function renderApp(user) {
     else if (sec === "tlsfleet") { import("/js/dataprotect/tlsfleet.js?v=20261014c").then(m => live() && m.renderTlsFleet(main)); }
     else if (sec === "phishtriage") { import("/js/dataprotect/phish.js?v=20261014g").then(m => live() && m.renderPhish(main)); }
     else if (sec === "leakprobe") { import("/js/dataprotect/leakprobe.js?v=20261015e").then(m => live() && m.renderLeakprobe(main)); }
+    else if (sec === "caaudit") { import("/js/identity/caaudit.js?v=20261016b").then(m => live() && m.renderCaAudit(main)); }
+    else if (sec === "privaudit") { import("/js/identity/privaudit.js?v=20261016c").then(m => live() && m.renderPrivAudit(main)); }
+    else if (sec === "nhi") { import("/js/identity/nhi.js?v=20261016d").then(m => live() && m.renderNhi(main)); }
+    else if (sec === "jml") { import("/js/identity/jml.js?v=20261016e").then(m => live() && m.renderJml(main)); }
+    else if (sec === "oauthgov") { import("/js/identity/oauthgov.js?v=20261016f").then(m => live() && m.renderOauthGov(main)); }
     else if (sec === "setup") renderSetup(main, more);
     else if (sec === "settings") renderSettingsPage(main, user, isOwner, more);
     else if (sec === "admin") { import("/js/admin.js?v=20261015f").then(m => live() && m.renderAdmin(main, user)); }

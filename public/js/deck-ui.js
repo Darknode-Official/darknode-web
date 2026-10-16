@@ -29,7 +29,7 @@ import { bus, EVENTS } from "/js/core/bus.js";
 import { isSimulated } from "/js/core/posture.js";
 import { tierFrom, rank, planLabel } from "/js/core/entitlements.js";
 import * as findings from "/js/core/findings.js?v=20261013e";
-import { attachExplain, EXPLAIN, explainEnabled, setExplainEnabled } from "/js/ui/explain.js?v=20261015f";
+import { attachExplain, EXPLAIN, explainEnabled, setExplainEnabled } from "/js/ui/explain.js?v=20261016f";
 import { startGraphSync, stopGraphSync } from "/js/graph-sync.js";
 import { myWorkspaces, createWorkspace, activeWorkspace, setActiveWorkspace, listMembers, setMember } from "/js/workspaces.js?v=20261015d";
 import { ROLE_LABEL, ROLES, canDo, ROLE_HELP } from "/js/core/workspace-roles.js";
@@ -1573,7 +1573,7 @@ export function renderDeck(host, opts) {
   const NAV_DEF = [
     { g: "", items: [["scene", "overview", "Security Overview", IC.home]] },
     { id: "exposure", g: "Exposure", items: [["scene", "surface", "Attack Surface", IC.radar], ["scene", "cloud", "Cloud Posture", IC.cloud], ["scene", "threat", "Threats & Vulnerabilities", IC.alert], ["tool", "posture", "Posture Scorecard", IC.gauge], ["tool", "tlsfleet", "Certificate Monitor", IC.cert], ["tool", "fwaudit", "Firewall Rule Audit", IC.shield]] },
-    { id: "identity", g: "Identity", items: [["tool", "signins", "Sign-in Forensics", IC.search], ["tool", "accessreview", "Access Review", IC.check]] },
+    { id: "identity", g: "Identity", items: [["tool", "signins", "Sign-in Forensics", IC.search], ["tool", "accessreview", "Access Review", IC.check], ["tool", "caaudit", "Conditional Access Audit", IC.shield], ["tool", "privaudit", "Privileged Access Audit", IC.key], ["tool", "nhi", "Non-Human Identity Lifecycle", IC.gear], ["tool", "jml", "Lifecycle & Offboarding Verifier", IC.check], ["tool", "oauthgov", "OAuth App Governance", IC.plug]] },
     { id: "code", g: "Application Security", items: [["tool", "codescan", "Code Scanner", IC.code], ["tool", "supplychain", "Supply Chain", IC.branch], ["tool", "threatforest", "Attack Tree Builder", IC.tree]] },
     { id: "detect", g: "Security Operations", items: [["scene", "findings", "Findings", IC.alert], ["scene", "invest", "Investigations", IC.search], ["tool", "secgraph", "Security Graph", IC.nodes], ["tool", "incidents", "Incident Tracker", IC.shield], ["tool", "casemgmt", "Case Manager", IC.brief], ["tool", "phishtriage", "Phishing & URL Triage", IC.hook], ["tool", "loghunt", "Log Threat Hunter", IC.term], ["scene", "reports", "Reports", IC.note], ["scene", "activity", "Activity", IC.pulse]] },
     { id: "finsec", g: "Financial Controls", items: [["tool", "strongroom", "Fund Protection", IC.coins], ["tool", "vault", "Treasury Vault", IC.lock], ["tool", "payees", "Payee Control", IC.shield], ["tool", "sanctions", "Sanctions Screening", IC.scale]] },
