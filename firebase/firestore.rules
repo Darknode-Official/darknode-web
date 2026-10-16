@@ -231,8 +231,81 @@ service cloud.firestore {
       }
     }
 
-    // "Which vaults am I in?" — a collection-group query over member docs, limited to
-    // the caller's own entries.
+    // Team workspaces (Phase B2) — the non-financial generalization of the vaults block
+    // above. Firestore holds WHO is in a workspace and their role; the shared security
+    // graph itself lives in the worker's GraphDO (worker/graph.js), which reads the
+    // caller's member doc with their own token. These rules are what stop anyone granting
+    // themselves a role:
+    //   - a workspace is founded in one batch: workspace doc + founder owner member + log;
+    //   - after that an owner OR admin writes member docs, never for themselves, and only
+    //     an owner may mint an owner or admin (an admin may set analyst/responder/viewer);
+    //   - every member write carries a logId whose matching memberLog entry is written in
+    //     the same batch (create-only), so role changes always leave a trail;
+    //   - nothing is deleted; removal is role 'removed'.
+    // A PERSONAL workspace (the Phase B1 graph) has NO doc here: its id is the owner's own
+    // uid and the worker treats them as implicit owner, so personal sync needs no rule.
+    function wPath(wid)     { return /databases/$(database)/documents/workspaces/$(wid); }
+    function wRole(wid)     { return get(/databases/$(database)/documents/workspaces/$(wid)/members/$(request.auth.uid)).data.role; }
+    function wMember(wid)   { return signedIn() && exists(/databases/$(database)/documents/workspaces/$(wid)/members/$(request.auth.uid)) && wRole(wid) != 'removed'; }
+    function wOwner(wid)    { return wMember(wid) && wRole(wid) == 'owner'; }
+    function wManager(wid)  { return wMember(wid) && (wRole(wid) == 'owner' || wRole(wid) == 'admin'); }
+    function wFounding(wid) { return !exists(wPath(wid)) && getAfter(wPath(wid)).data.createdBy == request.auth.uid; }
+
+    match /workspaces/{wid} {
+      allow read: if wMember(wid);
+      allow create: if signedIn()
+                    && wid.matches('^[A-Za-z0-9_-]{8,40}$')
+                    && request.resource.data.keys().hasOnly(['name', 'createdBy', 'createdAt'])
+                    && request.resource.data.name is string
+                    && request.resource.data.name.size() > 0
+                    && request.resource.data.name.size() <= 80
+                    && request.resource.data.createdBy == request.auth.uid
+                    && request.resource.data.createdAt == request.time
+                    && getAfter(/databases/$(database)/documents/workspaces/$(wid)/members/$(request.auth.uid)).data.role == 'owner';
+      allow update: if wManager(wid)
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name'])
+                    && request.resource.data.name is string
+                    && request.resource.data.name.size() > 0
+                    && request.resource.data.name.size() <= 80;
+      allow delete: if false;
+
+      match /members/{uid} {
+        allow read: if wMember(wid) || (signedIn() && request.auth.uid == uid);
+        allow create, update: if signedIn()
+                    && request.resource.data.keys().hasOnly(['uid', 'role', 'by', 'ts', 'logId', 'label'])
+                    && request.resource.data.uid == uid
+                    && (!('label' in request.resource.data)
+                        || (request.resource.data.label is string && request.resource.data.label.size() <= 120))
+                    && request.resource.data.by == request.auth.uid
+                    && request.resource.data.ts == request.time
+                    && request.resource.data.role in ['owner', 'admin', 'analyst', 'responder', 'viewer', 'removed']
+                    && request.resource.data.logId is string
+                    && request.resource.data.logId.size() <= 40
+                    && !exists(/databases/$(database)/documents/workspaces/$(wid)/memberLog/$(request.resource.data.logId))
+                    && getAfter(/databases/$(database)/documents/workspaces/$(wid)/memberLog/$(request.resource.data.logId)).data.by == request.auth.uid
+                    && getAfter(/databases/$(database)/documents/workspaces/$(wid)/memberLog/$(request.resource.data.logId)).data.uid == uid
+                    && getAfter(/databases/$(database)/documents/workspaces/$(wid)/memberLog/$(request.resource.data.logId)).data.role == request.resource.data.role
+                    && ((wFounding(wid) && uid == request.auth.uid && request.resource.data.role == 'owner')
+                        || (wManager(wid) && uid != request.auth.uid
+                            && (wOwner(wid) || (request.resource.data.role != 'owner' && request.resource.data.role != 'admin'))));
+        allow delete: if false;
+      }
+
+      match /memberLog/{logId} {
+        allow read: if wMember(wid);
+        allow create: if signedIn()
+                    && logId.matches('^[A-Za-z0-9_-]{8,40}$')
+                    && !exists(/databases/$(database)/documents/workspaces/$(wid)/memberLog/$(logId))
+                    && request.resource.data.keys().hasOnly(['uid', 'role', 'by', 'ts'])
+                    && request.resource.data.by == request.auth.uid
+                    && request.resource.data.ts == request.time
+                    && getAfter(/databases/$(database)/documents/workspaces/$(wid)/members/$(request.resource.data.uid)).data.logId == logId;
+        allow update, delete: if false;
+      }
+    }
+
+    // "Which vaults or workspaces am I in?" — a collection-group query over member docs,
+    // limited to the caller's own entries. Covers both vaults/ and workspaces/ members.
     match /{path=**}/members/{uid} {
       allow read: if signedIn() && resource.data.uid == request.auth.uid;
     }
