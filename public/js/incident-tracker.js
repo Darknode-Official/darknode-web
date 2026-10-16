@@ -31,10 +31,15 @@ const PLAYBOOK_MAP = {
 };
 
 // ── Storage helpers ──
-function loadIncidents() { try { return JSON.parse(localStorage.getItem("ir_incidents") || "[]"); } catch (_) { return []; } }
-function saveIncidents(list) { try { localStorage.setItem("ir_incidents", JSON.stringify(list)); } catch (_) {} }
-function loadIOCs() { try { return JSON.parse(localStorage.getItem("ir_iocs") || "[]"); } catch (_) { return []; } }
-function saveIOCs(list) { try { localStorage.setItem("ir_iocs", JSON.stringify(list)); } catch (_) {} }
+// Incident data is scoped to the active workspace (shared pointer dn_active_ws, the same
+// one security-graph.js reads). Personal workspace keeps the legacy un-suffixed keys so
+// nothing migrates; a team workspace gets a per-workspace suffix so incidents never leak
+// across teams. The Deck evicts tool iframes on switch, so each mount reads the right key.
+function wsKey(base) { try { const w = localStorage.getItem("dn_active_ws"); return w ? base + "__ws_" + w : base; } catch (_) { return base; } }
+function loadIncidents() { try { return JSON.parse(localStorage.getItem(wsKey("ir_incidents")) || "[]"); } catch (_) { return []; } }
+function saveIncidents(list) { try { localStorage.setItem(wsKey("ir_incidents"), JSON.stringify(list)); } catch (_) {} }
+function loadIOCs() { try { return JSON.parse(localStorage.getItem(wsKey("ir_iocs")) || "[]"); } catch (_) { return []; } }
+function saveIOCs(list) { try { localStorage.setItem(wsKey("ir_iocs"), JSON.stringify(list)); } catch (_) {} }
 
 // ── Security-graph mirror ──────────────────────────────────────────────
 // Incidents used to live only in localStorage, invisible to the rest of the
@@ -506,7 +511,7 @@ function renderMetrics(el) {
 // ── Lessons Learned Tab ──
 function renderLessons(el) {
   var lessons = [];
-  try { lessons = JSON.parse(localStorage.getItem("ir_lessons") || "[]"); } catch (_) {}
+  try { lessons = JSON.parse(localStorage.getItem(wsKey("ir_lessons")) || "[]"); } catch (_) {}
 
   el.innerHTML =
     '<h2 class="pg-h2">Lessons Learned</h2>' +
@@ -557,7 +562,7 @@ function renderLessons(el) {
       improve: el.querySelector("#ll-improve").value.trim(),
       actions: el.querySelector("#ll-actions").value.trim()
     });
-    try { localStorage.setItem("ir_lessons", JSON.stringify(lessons)); } catch (_) {}
+    try { localStorage.setItem(wsKey("ir_lessons"), JSON.stringify(lessons)); } catch (_) {}
     ["#ll-incident", "#ll-what", "#ll-root", "#ll-worked", "#ll-improve", "#ll-actions"].forEach(function(s) { el.querySelector(s).value = ""; });
     renderLessonList();
   };
@@ -567,7 +572,7 @@ function renderLessons(el) {
       window.dnConfirm("Delete lesson?", "This removes the lessons-learned entry. This cannot be undone.").then(function(ok) {
         if (!ok) return;
         lessons.splice(lldel, 1);
-        try { localStorage.setItem("ir_lessons", JSON.stringify(lessons)); } catch (_) {}
+        try { localStorage.setItem(wsKey("ir_lessons"), JSON.stringify(lessons)); } catch (_) {}
         renderLessonList();
       });
     }

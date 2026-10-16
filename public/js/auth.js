@@ -53,7 +53,7 @@ let MORE = [], CATALOG = [], CATEGORIES = [];
 import("/js/toolkit.js").then(m => { MORE = m.MORE; CATALOG = m.CATALOG; CATEGORIES = m.CATEGORIES; });
 import { startTour, tourDone } from "/js/tour.js";
 let _landing = null;
-async function loadLanding() { if (!_landing) _landing = await import("/js/landing.js?v=20261013a"); return _landing; }
+async function loadLanding() { if (!_landing) _landing = await import("/js/landing.js?v=20261015e"); return _landing; }
 // No-account identities (Test Mode / app guest) get a RANDOM, per-session uid, not a
 // fixed shared one. The old fixed "test-user"/"app-guest" uids put every such session
 // into one shared dnk:<uid>:* key namespace, so two people could land on the same
@@ -1928,9 +1928,9 @@ function renderApp(user) {
     else if (sec === "regexlab") { import("/js/regex-lab.js").then(m => live() && m.renderRegexLab(main)); }
     else if (sec === "encoding") { import("/js/encoding-suite.js?v=20260924b").then(m => live() && m.renderEncodingSuite(main)); }
     else if (sec === "threatmodel") { import("/js/threat-modeler.js?v=20260924b").then(m => live() && m.renderThreatModeler(main)); }
-    else if (sec === "osint") { import("/js/osint-dashboard.js?v=20261007a").then(m => live() && m.renderOSINTDashboard(main)); }
+    else if (sec === "osint") { import("/js/osint-dashboard.js?v=20261015e").then(m => live() && m.renderOSINTDashboard(main)); }
     else if (sec === "addressintel") { import("/js/address-intel.js?v=20261013b").then(m => live() && m.renderAddressIntel(main)); }
-    else if (sec === "incidents") { import("/js/incident-tracker.js?v=20261014g").then(m => live() && m.renderIncidentTracker(main)); }
+    else if (sec === "incidents") { import("/js/incident-tracker.js?v=20261015e").then(m => live() && m.renderIncidentTracker(main)); }
     else if (sec === "firewall") { import("/js/firewall-builder.js?v=20261013b").then(m => live() && m.renderFirewallBuilder(main)); }
     else if (sec === "apitester") { import("/js/api-tester.js?v=20261013m").then(m => live() && m.renderAPITester(main)); }
     else if (sec === "sandbox") { import("/js/malware-sandbox.js").then(m => live() && m.renderMalwareSandbox(main)); }
@@ -2063,7 +2063,7 @@ function renderApp(user) {
     else if (sec === "coder") { import("/js/coder.js?v=20261005a").then(m => live() && m.renderCliCoder(main)); }
     else if (sec === "downloads") { import("/js/getapp.js?v=20261004a").then(m => live() && m.renderDownloads(main)); }
     else if (sec === "dlguide") { import("/js/getapp.js?v=20261004a").then(m => live() && m.renderDownloadDocs(main)); }
-    else if (sec === "api") { import("/js/api.js?v=20261007a").then(m => live() && m.renderAPI(main, user)); }
+    else if (sec === "api") { import("/js/api.js?v=20261015e").then(m => live() && m.renderAPI(main, user)); }
     else if (sec === "docs") { import("/js/docs.js?v=20261011a").then(m => live() && m.renderDocs(main)); }
     else if (sec === "veil") { import("/js/labs/veil.js?v=20261013m").then(m => live() && m.renderVeil(main)); }
     else if (sec === "strongroom") { import("/js/strongroom.js?v=20261014d").then(m => live() && m.renderStrongroom(main)); }
@@ -2081,7 +2081,7 @@ function renderApp(user) {
     else if (sec === "leakprobe") { import("/js/dataprotect/leakprobe.js?v=20261014g").then(m => live() && m.renderLeakprobe(main)); }
     else if (sec === "setup") renderSetup(main, more);
     else if (sec === "settings") renderSettingsPage(main, user, isOwner, more);
-    else if (sec === "admin") { import("/js/admin.js?v=20261015d").then(m => live() && m.renderAdmin(main, user)); }
+    else if (sec === "admin") { import("/js/admin.js?v=20261015e").then(m => live() && m.renderAdmin(main, user)); }
     else if (sec === "contact") renderContact(main);
     else if (sec === "education") { main.innerHTML = `<div class="panel" style="max-width:800px;margin:40px auto"><div class="panel-h">About Darknode Education</div><div style="padding:18px;line-height:1.8;font-size:.9rem"><p><strong>Darknode is a cybersecurity education platform</strong> designed for students, educators, and security professionals to learn information security through hands-on practice in a safe, controlled environment.</p><p style="margin-top:16px"><strong>Our Mission:</strong> To make cybersecurity education accessible, interactive, and practical. Most tools run in your browser or on your own machine. Some features do send data out: AI chat goes through Darknode's server to the AI provider, some lookup pages query public services (for example NVD, crt.sh and DNS-over-HTTPS resolvers), and saved items and account data are stored in Google Firebase. Each page that contacts an outside service does so only when you run it.</p><p style="margin-top:16px"><strong>Who Uses Darknode:</strong></p><ul style="margin:8px 0 0 20px;line-height:2"><li>Computer science and cybersecurity students</li><li>IT professionals studying for certifications (CompTIA Security+, CISSP, CEH, OSCP)</li><li>University professors and instructors teaching security courses</li><li>Security operations center (SOC) analysts in training</li><li>Career changers learning cybersecurity fundamentals</li></ul><p style="margin-top:16px"><strong>Educational Standards:</strong> Our curriculum aligns with NIST NICE Framework, NSA CAE-CD requirements, and CompTIA Security+ objectives. All practice environments are isolated, legal, and designed for authorized educational use only.</p><p style="margin-top:16px"><strong>Responsible Use:</strong> Darknode tools are designed exclusively for educational purposes and authorized security testing. Users must comply with all applicable laws and obtain proper authorization before testing any system they do not own.</p><p style="margin-top:16px;color:var(--mut);font-size:.82rem">Darknode is a product of Darknode-Official. For questions about our educational programs, visit darknode.ai.</p></div></div>`; }
     else if (sec === "toolbox") { import("/js/mini-tools.js?v=20261013c").then(m => live() && m.renderToolbox(main, { onOpen: (id) => show("tool-" + id) })); }
