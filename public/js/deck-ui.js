@@ -30,6 +30,7 @@ import { isSimulated } from "/js/core/posture.js";
 import { tierFrom, rank, planLabel } from "/js/core/entitlements.js";
 import * as findings from "/js/core/findings.js?v=20261013e";
 import { attachExplain, EXPLAIN, explainEnabled, setExplainEnabled } from "/js/ui/explain.js?v=20261015a";
+import { startGraphSync, stopGraphSync } from "/js/graph-sync.js";
 
 const LS_CONN = "dn_deck_connections_v1";
 const LS_SCENE = "dn_deck_scene";          // last workspace selected
@@ -1233,6 +1234,10 @@ textarea.dk-kitio{min-height:120px}
 .dk-settog{appearance:none;cursor:pointer;flex:none;border:1px solid rgba(23,33,56,.18);background:rgba(23,33,56,.05);color:#38435c;font:inherit;font-size:12.5px;font-weight:600;height:32px;padding:0 14px;border-radius:8px}
 .dk-settog.on{background:var(--dk-acc,#2552c6);border-color:var(--dk-acc,#2552c6);color:#fff}
 .dk[data-ui=deck] .dk-setin{background:var(--dk-surf);border-color:var(--dk-line);color:var(--dk-tx)}
+.dk-syncstat{display:inline-block;margin-left:8px;font-size:11px;font-weight:600;color:#6b7589;background:rgba(23,33,56,.07);border-radius:5px;padding:1px 7px;vertical-align:middle}
+.dk-syncstat[data-state=synced]{color:#12935a;background:rgba(18,147,90,.12)}
+.dk-syncstat[data-state=syncing]{color:#2552c6;background:rgba(37,82,198,.12)}
+.dk-syncstat[data-state=error]{color:#b4332e;background:rgba(180,51,46,.12)}
 .dk-onbd{border:1px solid rgba(37,82,198,.18);background:rgba(37,82,198,.05);border-radius:12px;padding:16px 18px;margin:0 0 16px}
 .dk-onbd-h{display:flex;align-items:center;gap:12px;margin-bottom:12px}
 .dk-onbd-h b{font-size:14px;font-weight:700;color:#1f2838}
@@ -2291,6 +2296,17 @@ export function renderDeck(host, opts) {
   updateBadge();
 
   // live platform events -> notifications (and the Activity stream)
+  // ---- cloud graph sync status (B1). Off by default; the user enables it in Settings.
+  const SYNC_LABEL = { local: "Local only", syncing: "Syncing…", synced: "Synced", error: "Sync error" };
+  const syncEnabled = () => { try { return localStorage.getItem("dn_graph_sync_on") === "1"; } catch (_) { return false; } };
+  let lastSyncState = syncEnabled() ? "syncing" : "local";
+  const onSyncStatus = (e) => { lastSyncState = (e.detail && e.detail.state) || "local"; const el = root.querySelector("#dkSyncStat"); if (el) { el.textContent = SYNC_LABEL[lastSyncState] || "Local only"; el.dataset.state = lastSyncState; } };
+  document.addEventListener("graph-sync:status", onSyncStatus);
+  busOffs.push(() => document.removeEventListener("graph-sync:status", onSyncStatus));
+  // Resume sync across sessions when the user left it on (no-op in the harness / when
+  // signed out or the proxy is absent — startGraphSync then reports "local").
+  if (syncEnabled()) { try { startGraphSync().catch(() => {}); } catch (_) {} }
+
   busOffs.push(bus.on(EVENTS.ENTITY_CREATED, (p) => pushNotif(`Entity added to the graph${p && (p.label || p.name) ? `: ${p.label || p.name}` : p && p.type ? `: ${p.type}` : ""}`)));
   busOffs.push(bus.on(EVENTS.RELATIONSHIP_CREATED, () => pushNotif("New relationship created in the security graph")));
   busOffs.push(bus.on(EVENTS.TOOL_RESULT, (p) => pushNotif(`Result captured${p && p.tool ? ` from ${p.tool}` : ""}`)));
@@ -3432,6 +3448,10 @@ export function renderDeck(host, opts) {
             <button class="dk-settog" id="dkSetGraph">Export graph</button>
           </div>
           <div class="dk-setrow">
+            <div class="m"><div class="t">Cloud sync <span class="dk-syncstat" id="dkSyncStat" data-state="${esc(lastSyncState)}">${esc(SYNC_LABEL[lastSyncState] || "Local only")}</span></div><div class="s">Back up your security graph and keep it in sync across your devices. Off by default — nothing leaves this browser until you turn it on. Sample data is never synced.</div></div>
+            <button class="dk-settog${syncEnabled() ? " on" : ""}" id="dkSetSync">${syncEnabled() ? "On" : "Off"}</button>
+          </div>
+          <div class="dk-setrow">
             <div class="m"><div class="t">Reset local Deck state</div><div class="s">Clears connections, pins, notes and layout in this browser. Does not touch your account or the security graph.</div></div>
             <button class="dk-settog" id="dkSetReset" style="border-color:rgba(200,50,50,.4);color:#b4332e">Reset</button>
           </div>
@@ -3465,6 +3485,20 @@ export function renderDeck(host, opts) {
     el.querySelector("#dkSetPlans").onclick = () => go("plans");
     el.querySelector("#dkSetExport").onclick = () => exportDeckState();
     el.querySelector("#dkSetImport").onclick = () => importDeckState();
+    const syncBtn = el.querySelector("#dkSetSync");
+    if (syncBtn) syncBtn.onclick = async () => {
+      const turningOn = !syncEnabled();
+      try { localStorage.setItem("dn_graph_sync_on", turningOn ? "1" : "0"); } catch (_) {}
+      syncBtn.classList.toggle("on", turningOn); syncBtn.textContent = turningOn ? "On" : "Off";
+      if (turningOn) {
+        lastSyncState = "syncing"; onSyncStatus({ detail: { state: "syncing" } });
+        toast("Cloud sync on — backing up your graph");
+        try { const eng = await startGraphSync(); if (!eng) onSyncStatus({ detail: { state: "local" } }); } catch (_) { onSyncStatus({ detail: { state: "error" } }); }
+      } else {
+        stopGraphSync(); lastSyncState = "local"; onSyncStatus({ detail: { state: "local" } });
+        toast("Cloud sync off — your graph stays in this browser");
+      }
+    };
     el.querySelector("#dkSetGraph").onclick = () => withGraph((m) => {
       if (!m || !m.exportAll) { toast("Graph unavailable"); return; }
       const data = m.exportAll(), n = (data.entities || []).length;

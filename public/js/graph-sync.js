@@ -131,16 +131,27 @@ function realTransport(workspaceId, getToken) {
   };
 }
 
-function graphAdapter(SG) {
+function graphAdapter(SG, isSim) {
+  isSim = typeof isSim === "function" ? isSim : () => false;
   let subs = [];
   const on = (name, fn) => { document.addEventListener(name, fn); subs.push([name, fn]); };
   return {
-    exportAll: () => SG.exportAll(),
+    // Sample/simulated entities never leave the browser: drop them, and any relationship
+    // that touches one, before anything is pushed to the cloud.
+    exportAll: () => {
+      const all = SG.exportAll() || {};
+      const simIds = new Set((all.entities || []).filter(isSim).map((e) => e.id));
+      return {
+        entities: (all.entities || []).filter((e) => !simIds.has(e.id)),
+        relationships: (all.relationships || []).filter((r) => !simIds.has(r.fromId) && !simIds.has(r.toId)),
+      };
+    },
     applyRemote: (r) => SG.applyRemote(r),
     subscribe: ({ onEntity, onRelationship }) => {
-      on("secgraph:entity:created", (e) => onEntity(e.detail && e.detail.entity, false));
-      on("secgraph:entity:updated", (e) => onEntity(e.detail && e.detail.entity, false));
-      on("secgraph:entity:deleted", (e) => onEntity(e.detail && { id: e.detail.id }, true));
+      const live = (e) => { const ent = e.detail && e.detail.entity; if (ent && !isSim(ent)) onEntity(ent, false); };
+      on("secgraph:entity:created", live);
+      on("secgraph:entity:updated", live);
+      on("secgraph:entity:deleted", (e) => onEntity(e.detail && { id: e.detail.id }, true)); // deletes always propagate
       on("secgraph:relationship:created", (e) => onRelationship(e.detail && e.detail.relationship, false));
     },
     unsubscribe: () => { for (const [n, f] of subs) document.removeEventListener(n, f); subs = []; },
@@ -156,10 +167,11 @@ export async function startGraphSync(opts = {}) {
     if (typeof opts.onStatus === "function") { try { opts.onStatus(s, info); } catch (_) {} }
   };
   if (!proxyBase()) { onStatus("local", { reason: "no-proxy" }); return null; }
-  let SG, auth;
+  let SG, auth, isSim;
   try {
     ({ auth } = await import("/js/firebase.js?v=20261007a"));
     SG = await import("/js/security-graph.js");
+    try { ({ isSimulated: isSim } = await import("/js/core/posture.js")); } catch (_) { isSim = null; }
   } catch (e) { onStatus("error", { reason: "import", message: String(e && e.message || e) }); return null; }
   const user = (auth && auth.currentUser) || null;
   if (!user) { onStatus("local", { reason: "signed-out" }); return null; }
@@ -170,7 +182,7 @@ export async function startGraphSync(opts = {}) {
   const saveState = (s) => { try { localStorage.setItem(key, JSON.stringify(s)); } catch (_) {} };
 
   if (_active) { try { _active.stop(); } catch (_) {} _active = null; }
-  _active = createSyncEngine({ transport: realTransport(wid, getToken), graph: graphAdapter(SG), loadState, saveState, onStatus });
+  _active = createSyncEngine({ transport: realTransport(wid, getToken), graph: graphAdapter(SG, isSim), loadState, saveState, onStatus });
   await _active.start();
   return _active;
 }
