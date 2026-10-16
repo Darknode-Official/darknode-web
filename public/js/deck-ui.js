@@ -1568,6 +1568,23 @@ export function renderDeck(host, opts) {
     .filter((g) => g.items && g.items.length && !DECK_DENY_GROUPS.has(g.id))
     .map((g) => ({ ...g, items: g.items.filter((it) => !DECK_DENY_SECS.has(it.sec) && (DECK_KEEP_LABEL.test(it.label || "") || !DECK_DENY_LABEL.test(it.label || ""))) }))
     .filter((g) => g.items.length);
+  // Sidebar definition (groups of [kind, id, label, icon]; kind = "scene" | "tool"). Declared here,
+  // before the catalog is consumed, so tools that exist only in the Deck can be merged into it.
+  const NAV_DEF = [
+    { g: "", items: [["scene", "overview", "Security Overview", IC.home]] },
+    { id: "exposure", g: "Exposure", items: [["scene", "surface", "Attack Surface", IC.radar], ["scene", "cloud", "Cloud Posture", IC.cloud], ["scene", "threat", "Threats & Vulnerabilities", IC.alert], ["tool", "posture", "Posture Scorecard", IC.gauge], ["tool", "tlsfleet", "Certificate Monitor", IC.cert], ["tool", "fwaudit", "Firewall Rule Audit", IC.shield]] },
+    { id: "identity", g: "Identity", items: [["tool", "signins", "Sign-in Forensics", IC.search], ["tool", "accessreview", "Access Review", IC.check]] },
+    { id: "code", g: "Application Security", items: [["tool", "codescan", "Code Scanner", IC.code], ["tool", "supplychain", "Supply Chain", IC.branch], ["tool", "threatforest", "Attack Tree Builder", IC.tree]] },
+    { id: "detect", g: "Security Operations", items: [["scene", "findings", "Findings", IC.alert], ["scene", "invest", "Investigations", IC.search], ["tool", "secgraph", "Security Graph", IC.nodes], ["tool", "incidents", "Incident Tracker", IC.shield], ["tool", "casemgmt", "Case Manager", IC.brief], ["tool", "phishtriage", "Phishing & URL Triage", IC.hook], ["tool", "loghunt", "Log Threat Hunter", IC.term], ["scene", "reports", "Reports", IC.note], ["scene", "activity", "Activity", IC.pulse]] },
+    { id: "finsec", g: "Financial Controls", items: [["tool", "strongroom", "Fund Protection", IC.coins], ["tool", "vault", "Treasury Vault", IC.lock], ["tool", "payees", "Payee Control", IC.shield], ["tool", "sanctions", "Sanctions Screening", IC.scale]] },
+    { id: "compliance", g: "Compliance", items: [["scene", "compliance", "Frameworks", IC.check], ["tool", "crosswalk", "GenAI Crosswalk", IC.map], ["tool", "dlp", "Data Protection", IC.eye], ["tool", "leakprobe", "Secret Exposure", IC.key]] },
+    { g: "Platform", items: [["scene", "con", "Integrations", IC.plug], ["scene", "tools", "Tool Library", IC.grid], ["scene", "toolkit", "Toolkit", IC.wrench], ["scene", "assistant", "AI Assistant", IC.spark], ["scene", "team", "Team", IC.nodes], ["scene", "plans", "Plans", IC.star]].concat(opts.isOwner ? [["tool", "admin", "Admin", IC.key]] : []) },
+  ];
+  // Tools registered only in the Deck sidebar (not in the console catalog) join `groups` so they
+  // get hover preload, a Tool Library entry, a place in TOTAL_TOOLS and keep their pins.
+  { const known = new Set(groups.flatMap((g) => g.items.map((it) => it.sec))), deckOnly = [];
+    for (const grp of NAV_DEF) for (const [kind, id, label] of grp.items) if (kind === "tool" && id !== "admin" && !known.has(id)) { known.add(id); deckOnly.push({ sec: id, label, badge: "Deck" }); }
+    if (deckOnly.length) groups.push({ id: "deck", name: "Deck tools", color: "slate", items: deckOnly }); }
   const onOpen = typeof opts.onOpen === "function" ? opts.onOpen : () => {};
   const onExit = typeof opts.onExit === "function" ? opts.onExit : () => {};
   // Primary mode: the Deck IS the signed-in UI (no older console to fall back to),
@@ -2430,7 +2447,8 @@ export function renderDeck(host, opts) {
   let syncT = 0;
   const onStorage = (e) => {
     if (e.key === "dn_cool_ui") { reloadToolsForCool(); return; }
-    if (e.key !== "dn_recent_activity" && e.key !== "dn_security_graph") return;
+    // graph keys are workspace-suffixed in team mode (dn_security_graph__ws_<wid>)
+    if (e.key !== "dn_recent_activity" && !(typeof e.key === "string" && e.key.startsWith("dn_security_graph"))) return;
     clearTimeout(syncT);
     syncT = setTimeout(() => {
       if (e.key === "dn_recent_activity") {
@@ -4074,16 +4092,7 @@ export function renderDeck(host, opts) {
   // scene or an in-deck tool. The sidebar is 248px, a 64px icon rail (auto below 1056px or
   // by choice, remembered), and an off-canvas drawer on phones.
   const LS_NAV = "dn_deck_nav";
-  const NAV_DEF = [
-    { g: "", items: [["scene", "overview", "Security Overview", IC.home]] },
-    { id: "exposure", g: "Exposure", items: [["scene", "surface", "Attack Surface", IC.radar], ["scene", "cloud", "Cloud Posture", IC.cloud], ["scene", "threat", "Threats & Vulnerabilities", IC.alert], ["tool", "posture", "Posture Scorecard", IC.gauge], ["tool", "tlsfleet", "Certificate Monitor", IC.cert], ["tool", "fwaudit", "Firewall Rule Audit", IC.shield]] },
-    { id: "identity", g: "Identity", items: [["tool", "signins", "Sign-in Forensics", IC.search], ["tool", "accessreview", "Access Review", IC.check]] },
-    { id: "code", g: "Application Security", items: [["tool", "codescan", "Code Scanner", IC.code], ["tool", "supplychain", "Supply Chain", IC.branch], ["tool", "threatforest", "Attack Tree Builder", IC.tree]] },
-    { id: "detect", g: "Security Operations", items: [["scene", "findings", "Findings", IC.alert], ["scene", "invest", "Investigations", IC.search], ["tool", "secgraph", "Security Graph", IC.nodes], ["tool", "incidents", "Incident Tracker", IC.shield], ["tool", "casemgmt", "Case Manager", IC.brief], ["tool", "phishtriage", "Phishing & URL Triage", IC.hook], ["tool", "loghunt", "Log Threat Hunter", IC.term], ["scene", "reports", "Reports", IC.note], ["scene", "activity", "Activity", IC.pulse]] },
-    { id: "finsec", g: "Financial Controls", items: [["tool", "strongroom", "Fund Protection", IC.coins], ["tool", "vault", "Treasury Vault", IC.lock], ["tool", "payees", "Payee Control", IC.shield], ["tool", "sanctions", "Sanctions Screening", IC.scale]] },
-    { id: "compliance", g: "Compliance", items: [["scene", "compliance", "Frameworks", IC.check], ["tool", "crosswalk", "GenAI Crosswalk", IC.map], ["tool", "dlp", "Data Protection", IC.eye], ["tool", "leakprobe", "Secret Exposure", IC.key]] },
-    { g: "Platform", items: [["scene", "con", "Integrations", IC.plug], ["scene", "tools", "Tool Library", IC.grid], ["scene", "toolkit", "Toolkit", IC.wrench], ["scene", "assistant", "AI Assistant", IC.spark], ["scene", "team", "Team", IC.nodes], ["scene", "plans", "Plans", IC.star]].concat(opts.isOwner ? [["tool", "admin", "Admin", IC.key]] : []) },
-  ];
+  // NAV_DEF is declared near the top of renderDeck (next to `groups`) so Deck-only tools can join the catalog.
   const navIndex = {};
   NAV_DEF.forEach((grp) => { if (grp.id) navIndex["section:" + grp.id] = { group: grp.g, label: "Overview" }; grp.items.forEach(([kind, id, label]) => { navIndex[kind + ":" + id] = { group: grp.g || "Home", label }; }); });
   let navKey = "scene:overview", navLabel = "";
