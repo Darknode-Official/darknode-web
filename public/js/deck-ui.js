@@ -84,6 +84,17 @@ const INTEGRATIONS = [
   { id: "misp",       name: "MISP",          domain: "misp-project.org",   kind: "sec", accent: "#2f7ed8", connect: "link", blurb: "Open threat-intelligence sharing platform and IOC feeds." },
   { id: "exploitdb",  name: "Exploit-DB",    domain: "exploit-db.com",     kind: "sec", accent: "#d6336c", connect: "link", blurb: "Archive of public exploits and proof-of-concept code." },
 ];
+// Integrations Darknode actually consumes today, verified against the code:
+//  - AI providers wired into webai.js (BYOK keys) + the Gemini proxy default;
+//  - the three intel enrichers ioc-enrichment.js reads keys for.
+// Everything else that stores a key does nothing with it yet, so the UI must not
+// imply otherwise. This set drives the honest "Live" badge and drawer copy.
+const LIVE_INTEGRATIONS = new Set([
+  "claude", "openai", "gemini", "perplexity", "mistral", "groq", "openrouter",
+  "xai", "deepseek", "cohere", "together", "fireworks", "cerebras",
+  "abuseipdb", "greynoise", "abusech",
+]);
+const isLiveInt = (it) => !!it && LIVE_INTEGRATIONS.has(it.id);
 
 // Models each AI provider exposes. Picking one in the drawer stores its API model
 // id as Darknode's preferred model for that provider (dn_model_<id>); webai uses it
@@ -548,6 +559,8 @@ const CSS = `
 .dk-drawer p.blurb{font-size:13px;color:#5a6680;margin-bottom:18px}
 .dk-stat{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;padding:6px 12px;border-radius:999px;margin-bottom:18px}
 .dk-stat.off{background:rgba(23,33,56,.07);color:#5a6680}.dk-stat.on{background:rgba(21,196,126,.16);color:#17a86a}
+.dk-stat.stored{background:rgba(217,154,16,.15);color:#a97a12}
+.dk-intlive{display:inline-block;margin-left:7px;font-size:9.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:#17a86a;background:rgba(21,196,126,.14);border-radius:5px;padding:1px 6px;vertical-align:middle}
 .dk-stat .d{width:7px;height:7px;border-radius:50%;background:currentColor}
 .dk-drawer .act{display:flex;flex-direction:column;gap:10px}
 .dk-b{display:flex;align-items:center;justify-content:center;gap:8px;padding:11px 16px;border-radius:12px;border:1px solid rgba(23,33,56,.14);background:rgba(23,33,56,.06);color:#1a2233;font:inherit;font-weight:600;font-size:13.5px;cursor:pointer}
@@ -1777,14 +1790,19 @@ export function renderDeck(host, opts) {
             it.account ? `<button class="dk-b" data-act="account">Open ${esc(it.name)} to sign in</button>` : "",
             it.connect === "link" ? `<button class="dk-b${it.account ? "" : " pri"}" data-act="conn">Link to Darknode</button>` : "",
           ].join("");
+    // Honest per-provider note. Sec providers split into those Darknode actually
+    // consumes (the IOC enrichers) and those where a stored key does nothing yet.
+    const secKeyNote = isLiveInt(it)
+      ? "Your key is stored only in this browser (localStorage). Darknode's IOC enrichment uses it directly when you analyze indicators."
+      : "Your key is stored only in this browser (localStorage). No Darknode feature consumes this provider yet — connecting keeps it ready for when a tool supports it.";
     const note = keyForm
-      ? "Your key is stored only in this browser (localStorage) and never leaves your device from here. Darknode routes calls through its own proxy."
+      ? (it.kind === "sec" ? secKeyNote : "Your key is stored only in this browser (localStorage) and never leaves your device from here. Darknode routes calls through its own proxy.")
       : oauthProv
       ? "Connect signs you in to OpenRouter and creates a key tied to YOUR OpenRouter account — one login reaches Claude, GPT, Gemini, Llama and more. Calls spend your OpenRouter credits; the default model here is free, so it can cost nothing. No provider lets another site charge your Claude/ChatGPT subscription — this is the honest, lowest-cost alternative."
       : it.account
         ? `Darknode runs ${esc(it.name)} with your own API key — add one above. No provider lets another site bill your existing ${esc(it.name)} subscription, so the "Open to sign in" button only opens ${esc(it.name)}; it can't grant API access on its own. Tip: connect OpenRouter once to reach ${esc(it.name)}, GPT, Gemini and more through a single login.`
         : it.connect === "key"
-          ? "Your key is stored only in this browser (localStorage) and never leaves your device from here. Darknode routes calls through its own proxy."
+          ? (it.kind === "sec" ? secKeyNote : "Your key is stored only in this browser (localStorage) and never leaves your device from here. Darknode routes calls through its own proxy.")
           : "Linking records this service as available to Darknode. No credentials are stored.";
     const mlist = it.kind === "ai" && MODELS[it.id] ? MODELS[it.id] : null;
     let curModel = "";
@@ -2955,16 +2973,22 @@ export function renderDeck(host, opts) {
     const byId = {}; INTEGRATIONS.forEach((i) => byId[i.id] = i);
     const card = (it) => {
       const rec = conns[it.id] || {};
-      const live = rec.connected && rec.method === "key";
+      const connectedKey = rec.connected && rec.method === "key";
       const refOnly = rec.connected && rec.method !== "key";
-      const cls = live ? "on" : refOnly ? "ref" : "off";
-      const label = live ? "Connected" : refOnly ? "Reference only" : "Connect";
-      return `<button class="dk-intcard" data-id="${esc(it.id)}">${logoHTML(it, "ic")}<div class="meta"><b>${esc(it.name)}</b><p>${esc(it.blurb)}</p></div><span class="dk-stat ${cls}"><span class="d"></span>${label}</span></button>`;
+      const liveNow = isLiveInt(it);
+      // Honest status: a stored key only counts as "Connected" when Darknode actually
+      // consumes it; otherwise it's "Key stored". Link providers are references.
+      const cls = connectedKey ? (liveNow ? "on" : "stored") : refOnly ? "ref" : "off";
+      const label = connectedKey ? (liveNow ? "Connected" : "Key stored")
+        : refOnly ? "Reference only"
+        : liveNow ? "Connect" : it.connect === "link" ? "Reference" : "Store key";
+      const liveTag = liveNow ? `<span class="dk-intlive">Live</span>` : "";
+      return `<button class="dk-intcard" data-id="${esc(it.id)}">${logoHTML(it, "ic")}<div class="meta"><b>${esc(it.name)}${liveTag}</b><p>${esc(it.blurb)}</p></div><span class="dk-stat ${cls}"><span class="d"></span>${label}</span></button>`;
     };
     const groups = INT_GROUPS.map((g) => { const items = g.ids.map((id) => byId[id]).filter(Boolean); return items.length ? `<div class="dk-intgrp"><h2>${esc(g.title)} <span>${items.length}</span></h2><div class="dk-intcards">${items.map(card).join("")}</div></div>` : ""; }).join("");
     el.innerHTML = `
       <div class="dk-ti-head"><h1>Integrations</h1><span class="dk-intmeta">${countConnected()} connected of ${INTEGRATIONS.length}</span></div>
-      <p class="dk-sublede">Connect AI models and threat-intelligence providers. API-key connections are live; providers shown as “reference” are directory entries you open and sign in to directly — Darknode does not stream their data on your behalf.</p>
+      <p class="dk-sublede">Providers marked <b>Live</b> are used by Darknode now — AI model keys power the assistant, and AbuseIPDB, GreyNoise and abuse.ch enrich indicators. Others are directory references you open and sign in to directly, or store a key for when a tool supports them; Darknode does not stream their data on your behalf.</p>
       ${groups}`;
     el.querySelectorAll(".dk-intcard").forEach((b) => b.onclick = () => openDrawer(INTEGRATIONS.find((i) => i.id === b.dataset.id)));
   }
