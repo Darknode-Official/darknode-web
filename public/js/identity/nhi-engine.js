@@ -25,7 +25,7 @@ export function parseInput(text) {
   const t = String(text || "");
   const skipped = [];
   if (!t.trim()) return { format: "empty", headers: [], rows: [], skipped };
-  const format = sniff(t);
+  const format = sniff(t).format;
   if (format === "json") {
     const rows = [];
     for (const r of iterJson(t)) if (r && typeof r === "object") rows.push(r);
@@ -81,7 +81,7 @@ export function analyze(rows, opts = {}, ctx) {
         recommendation: "Confirm the account is a service principal or review its activity window.",
         controls: CONTROLS,
         evidence: list.filter((r) => String(r[cols.actor] ?? "").trim() === actor).slice(0, 25),
-        assets: [{ type: "account", name: actor }],
+        assets: [{ type: "IDENTITY", name: actor }],
       });
     }
   }
