@@ -79,7 +79,7 @@ function injectStyle() {
   .lp table{width:100%;border-collapse:collapse;font-size:.82rem}
   .lp th,.lp td{text-align:left;padding:7px 9px;border-bottom:1px solid var(--line,#eef0f5);vertical-align:top;overflow-wrap:anywhere}
   .lp th{font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;color:var(--mut,#667085);font-weight:700;white-space:nowrap}
-  .lp .lp-pill{display:inline-block;padding:1px 8px;border-radius:999px;font-size:.7rem;font-weight:700;color:#fff}
+  .lp .lp-pill{display:inline-block;padding:1px 8px;border-radius:999px;font-size:.7rem;font-weight:700;color:#fff;white-space:nowrap;line-height:1.5;vertical-align:middle}
   .lp code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.78rem;background:var(--bg,#f3f5f9);padding:1px 5px;border-radius:5px}
   .lp .lp-secret{display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap;max-width:100%}
   .lp .lp-sv{word-break:break-all;max-width:46ch;overflow-wrap:anywhere}
