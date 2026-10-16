@@ -143,6 +143,27 @@ service cloud.firestore {
       allow update, delete: if isOwner();
     }
 
+    // Per-user notifications: durable, account-level messages (e.g. a plan upgrade was
+    // granted). These are low-volume account events — NOT the chatty local activity feed,
+    // which stays per-browser. Only the owner writes them (unread); the user reads their
+    // own and may only flip `read` to true. Either side may delete.
+    match /users/{uid}/notifications/{nid} {
+      allow read:   if signedIn() && (request.auth.uid == uid || isOwner());
+      allow create: if isOwner()
+                    && request.resource.data.keys().hasOnly(['text', 'kind', 'ts', 'read'])
+                    && request.resource.data.text is string
+                    && request.resource.data.text.size() > 0
+                    && request.resource.data.text.size() <= 500
+                    && request.resource.data.kind is string
+                    && request.resource.data.kind.size() <= 40
+                    && request.resource.data.ts is int
+                    && request.resource.data.read == false;
+      allow update: if signedIn() && request.auth.uid == uid
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read'])
+                    && request.resource.data.read == true;
+      allow delete: if signedIn() && (request.auth.uid == uid || isOwner());
+    }
+
     // VAULT team vaults. Firestore holds WHO is in a vault and their role; the money
     // itself (ledger, transfers, approvals, audit) lives in the worker's VaultDO, which
     // reads the caller's member doc with the caller's own token. So these rules are what

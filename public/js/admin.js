@@ -10,7 +10,7 @@ import { db } from "/js/firebase.js?v=20261007a";
 const isOwnerRow = (u) => !!u && (u.admin === true || u.role === "owner");
 import {
   collection, getDocs, doc, getDoc, setDoc, deleteDoc, serverTimestamp,
-  addDoc, query, orderBy, updateDoc,
+  addDoc, query, orderBy, updateDoc, limit,
 } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
@@ -253,7 +253,7 @@ export async function renderAdmin(main, user) {
       btn.disabled = true; const label = btn.textContent; btn.textContent = "Loading…";
       try {
         const [{ renderDeck }, nav] = await Promise.all([
-          import("/js/deck-ui.js?v=20261015a"),
+          import("/js/deck-ui.js?v=20261015b"),
           import("/js/console-nav.js?v=20261013k"),
         ]);
         // Workspace identity (A1): load the owner's workspace profile so the Deck header,
@@ -268,6 +268,15 @@ export async function renderAdmin(main, user) {
             onboarding = d.onboarding || {};
           } catch (_) {}
         }
+        // Durable account notifications (A6): the owner's own recent account-level
+        // messages (e.g. a granted upgrade). Low-volume subcollection; non-fatal.
+        let accountNotifs = [];
+        if (user) {
+          try {
+            const nsnap = await getDocs(query(collection(db, "users", user.uid, "notifications"), orderBy("ts", "desc"), limit(20)));
+            accountNotifs = nsnap.docs.map((dd) => { const n = dd.data() || {}; return { id: dd.id, text: n.text || "", ts: typeof n.ts === "number" ? n.ts : 0, kind: n.kind || "", read: !!n.read }; });
+          } catch (_) {}
+        }
         // Never stack Decks: dispose the previous mount (root + listeners) first.
         if (_deckOff) { try { _deckOff(); } catch (_) {} _deckOff = null; }
         document.querySelectorAll("body > .dk").forEach((n) => n.remove());
@@ -278,6 +287,10 @@ export async function renderAdmin(main, user) {
           tier: deckTier,
           workspace: wsProfile,
           onboarding,
+          accountNotifs,
+          onNotifRead: user ? async (ids) => {
+            await Promise.all((ids || []).map((id) => updateDoc(doc(db, "users", user.uid, "notifications", id), { read: true }).catch(() => {})));
+          } : null,
           onOnboarding: user ? async (partial) => {
             await setDoc(doc(db, "users", user.uid), { onboarding: partial || {} }, { merge: true });
           } : null,
@@ -439,6 +452,13 @@ export async function renderAdmin(main, user) {
       if (!(await window.dnConfirm("Grant " + tier + "?", "This sets this user's plan tier to '" + tier + "'. They get the tier's features immediately.", { submitText: "Grant" }))) return;
       try {
         await setDoc(doc(db, "users", uid), { tier, tierGrantedAt: serverTimestamp() }, { merge: true });
+        // Durable notification so the user learns of the upgrade on any device (A6).
+        try {
+          await addDoc(collection(db, "users", uid, "notifications"), {
+            text: "Your plan was upgraded to " + (tier.charAt(0).toUpperCase() + tier.slice(1)) + ".",
+            kind: "plan", ts: Date.now(), read: false,
+          });
+        } catch (_) {}
         await updateDoc(doc(db, "upgradeRequests", rid), { status: "granted", grantedAt: serverTimestamp() });
         window.showToast("Granted " + tier, "success"); loadUpgradeRequests();
       } catch (err) { window.showToast("Grant failed: " + err.message, "error"); }

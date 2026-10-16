@@ -710,6 +710,7 @@ const CSS = `
 .dk-icbtn.dk-lbtn.ai:hover{background:rgba(47,111,235,.15);border-color:rgba(47,111,235,.45);color:#1748a8}
 @media(max-width:1180px){.dk-icbtn.dk-lbtn{width:34px;padding:0;display:grid}.dk-icbtn.dk-lbtn .lb{display:none}}
 .dk-badge{position:absolute;top:-4px;right:-4px;min-width:16px;height:16px;padding:0 4px;border-radius:9px;background:#f0484a;color:#fff;font-size:10px;font-weight:700;display:grid;place-items:center;box-shadow:0 0 0 2px #f4f6fa}
+.dk-badge[hidden]{display:none}
 .dk-health{appearance:none;cursor:default;border:1px solid rgba(23,33,56,.1);background:rgba(23,33,56,.04);color:#5a6680;font:inherit;font-size:12px;font-weight:600;padding:7px 12px;border-radius:999px;display:inline-flex;align-items:center;gap:8px;flex:none}
 .dk-health .d{width:7px;height:7px;border-radius:50%;background:#12a85f}
 .dk-health.warn{border-color:rgba(245,181,68,.35);background:rgba(245,181,68,.12);color:#c99320}
@@ -838,6 +839,7 @@ const CSS = `
 .dk-nrow.seen .nd{background:rgba(23,33,56,.18);box-shadow:none}
 .dk-nrow .nt{font-size:13px;color:#38435c;line-height:1.35}
 .dk-nrow .na{font-size:11px;color:#6a7488;margin-top:2px}
+.dk-nrow .nk{display:inline-block;margin-left:7px;font-size:10px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;color:#2552c6;background:rgba(37,82,198,.1);border-radius:4px;padding:1px 5px;vertical-align:middle}
 .dk-nempty{padding:26px 16px;text-align:center;color:#6a7488;font-size:13px}
 /* ======================= Overview workspace ======================= */
 .dk-ov,.dk-surf,.dk-cloud,.dk-comp,.dk-con2,.dk-ti,.dk-inv{position:absolute;inset:56px 0 0;overflow:auto;padding:26px clamp(20px,2.6vw,44px) 60px}
@@ -2178,6 +2180,16 @@ export function renderDeck(host, opts) {
   let notifs = readRecentActivity().map((a) => ({ text: a.text, ts: a.ts, sim: !!a.sim }));
   let notifSeen = 0, busOffs = [];
   try { notifSeen = parseInt(localStorage.getItem(LS_NOTIF_SEEN) || "0", 10) || 0; } catch (_) {}
+  // Durable, account-level notifications from Firestore (A6) — low-volume events like a
+  // plan upgrade being granted. Unlike the local activity feed these survive across
+  // devices; read state is the per-doc `read` flag, persisted via opts.onNotifRead.
+  let acctNotifs = Array.isArray(opts.accountNotifs)
+    ? opts.accountNotifs.map((n) => ({ id: n.id, text: String(n.text || ""), ts: typeof n.ts === "number" ? n.ts : 0, kind: n.kind || "", read: !!n.read })).filter((n) => n.text)
+    : [];
+  const mergedNotifs = () => acctNotifs.map((n) => ({ text: n.text, ts: n.ts, acct: true, id: n.id, read: n.read }))
+    .concat(notifs.map((n) => ({ text: n.text, ts: n.ts, acct: false })))
+    .sort((a, b) => (b.ts || 0) - (a.ts || 0));
+  const notifUnseen = (r) => r.acct ? !r.read : (r.ts > notifSeen);
 
   function closeAllMenus(){ [popNew, popBell, popAcct].forEach((p) => p && p.classList.remove("on")); }
   function toggleMenu(pop, btn, build){
@@ -2189,7 +2201,7 @@ export function renderDeck(host, opts) {
     pop.classList.add("on");
   }
   function setHealth(ok, text){ health.classList.toggle("warn", !ok); const t = health.querySelector(".t"); if (t) t.textContent = text; }
-  function updateBadge(){ const n = notifs.filter((x) => x.ts > notifSeen).length; if (n > 0) { badge.hidden = false; badge.textContent = n > 9 ? "9+" : String(n); } else badge.hidden = true; }
+  function updateBadge(){ const n = mergedNotifs().filter(notifUnseen).length; if (n > 0) { badge.hidden = false; badge.textContent = n > 9 ? "9+" : String(n); } else { badge.hidden = true; badge.textContent = ""; } }
   function pushNotif(text){ if (!text) return; notifs.unshift({ text: String(text), ts: Date.now() }); if (notifs.length > 40) notifs.length = 40; updateBadge(); if (popBell.classList.contains("on")) buildBellMenu(); if (curScene === "activity") renderActivity(); }
   function buildNewMenu(){
     popNew.innerHTML = `<div class="dk-pop-h">Quick create</div>
@@ -2201,10 +2213,16 @@ export function renderDeck(host, opts) {
     popNew.querySelectorAll("[data-tool]").forEach((b) => b.onclick = () => { closeAllMenus(); openTool(b.dataset.tool, secLabel[b.dataset.tool] || b.dataset.tool); });
   }
   function buildBellMenu(){
+    const rows = mergedNotifs();
     popBell.innerHTML = `<div class="dk-pop-h">Notifications <button id="dkNClear">Mark all read</button></div>
-      <div class="dk-notif">${notifs.length ? notifs.map((x) => `<div class="dk-nrow${x.ts <= notifSeen ? " seen" : ""}"><span class="nd"></span><div><div class="nt">${esc(x.text)}</div><div class="na">${timeAgo(x.ts)}</div></div></div>`).join("") : `<div class="dk-nempty">No notifications yet. Platform events — tools run, graph entities added, providers connected — stream in here live.</div>`}</div>`;
+      <div class="dk-notif">${rows.length ? rows.map((x) => `<div class="dk-nrow${notifUnseen(x) ? "" : " seen"}"><span class="nd"></span><div><div class="nt">${esc(x.text)}${x.acct ? `<span class="nk">Account</span>` : ""}</div><div class="na">${timeAgo(x.ts)}</div></div></div>`).join("") : `<div class="dk-nempty">No notifications yet. Platform events — tools run, graph entities added, providers connected — stream in here live.</div>`}</div>`;
     const clr = popBell.querySelector("#dkNClear");
-    if (clr) clr.onclick = () => { notifSeen = Date.now(); try { localStorage.setItem(LS_NOTIF_SEEN, String(notifSeen)); } catch (_) {} updateBadge(); buildBellMenu(); };
+    if (clr) clr.onclick = () => {
+      notifSeen = Date.now(); try { localStorage.setItem(LS_NOTIF_SEEN, String(notifSeen)); } catch (_) {}
+      const unread = acctNotifs.filter((n) => !n.read);
+      if (unread.length) { unread.forEach((n) => n.read = true); if (typeof opts.onNotifRead === "function") { try { Promise.resolve(opts.onNotifRead(unread.map((n) => n.id))).catch(() => {}); } catch (_) {} } }
+      updateBadge(); buildBellMenu();
+    };
   }
   function buildAcctMenu(){
     const nm = user.displayName || user.email || "Account", em = user.email || "Signed in to Darknode";
