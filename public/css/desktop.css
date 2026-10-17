@@ -1,0 +1,23 @@
+/* Desktop app shell (loaded only when html[data-desktop] is set by index.html).
+   The app draws native window controls over the top-right corner (Windows/Linux,
+   via the Window Controls Overlay) or traffic lights top-left (macOS), and the
+   website's own top bar doubles as the window title bar. */
+
+/* Drag the window by the top bar's empty space; everything interactive stays clickable. */
+html[data-desktop] #topbar,
+html[data-desktop] #bootscreen { -webkit-app-region: drag; app-region: drag; }
+html[data-desktop] #topbar :is(a, button, input, select, textarea, label, summary, [role="button"], [role="menu"], [role="listbox"], [tabindex], .nav-dd, .nav-dd-menu, .tb-pop, .con-bar, img) {
+  -webkit-app-region: no-drag; app-region: no-drag;
+}
+
+/* Keep the bar's controls clear of the native window buttons. env(titlebar-area-*)
+   describes the free part of the title bar when the overlay is active. The doubled
+   id outranks the console's own `html body.app #topbar#topbar` padding (aws.css). */
+html[data-desktop]:not([data-desktop="darwin"]) body #topbar#topbar {
+  padding-right: calc(100vw - env(titlebar-area-x, 0px) - env(titlebar-area-width, 100vw) + 12px) !important;
+}
+html[data-desktop="darwin"][data-desktop] body #topbar#topbar { padding-left: 84px !important; }
+
+/* The desktop app is already installed: no "get the app" prompts or back-to-landing link. */
+html[data-desktop] #app-dl,
+html[data-desktop] #authBack { display: none !important; }

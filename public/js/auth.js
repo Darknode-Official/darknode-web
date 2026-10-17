@@ -43,7 +43,7 @@ try { window.showToast = showToast; } catch (_) {}
 import { collection as fbCollection, addDoc as fbAddDoc, serverTimestamp as fbServerTimestamp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
 import {
   onAuthStateChanged, signInWithRedirect, signInWithPopup, getRedirectResult, signOut,
-  createUserWithEmailAndPassword, signInWithEmailAndPassword,
+  createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithCredential, GoogleAuthProvider,
   sendEmailVerification, sendPasswordResetEmail, reload
 } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-auth.js";
 import {
@@ -52,6 +52,10 @@ import {
 let MORE = [], CATALOG = [], CATEGORIES = [];
 import("/js/toolkit.js").then(m => { MORE = m.MORE; CATALOG = m.CATALOG; CATEGORIES = m.CATEGORIES; });
 import { startTour, tourDone } from "/js/tour.js";
+// Desktop app (packaged site on the app's own origin): no marketing landing, native
+// Google sign-in, title bar tinted to match. See js/core/desktop.js.
+import { isDesktop, has as desktopHas, syncTitlebar } from "/js/core/desktop.js";
+if (isDesktop()) syncTitlebar();
 let _landing = null;
 async function loadLanding() { if (!_landing) _landing = await import("/js/landing.js?v=20261015e"); return _landing; }
 // No-account identities (Test Mode / app guest) get a RANDOM, per-session uid, not a
@@ -761,6 +765,18 @@ function renderAuth(mode = "signin") {
     // opens as a window on top of the page) instead of being redirected away.
     // If the popup is blocked or unsupported, fall back to the redirect flow.
     try { sessionStorage.setItem("sw_fresh_signin", "1"); } catch (_) {}
+    // Desktop app: Google refuses OAuth inside embedded browsers, so the app runs it in
+    // the system browser and hands back only the Google ID token.
+    if (desktopHas("auth.google")) {
+      const note = document.getElementById("err"); note.className = "auth-ok"; note.textContent = "Continue in your browser to sign in with Google...";
+      try {
+        const r = await window.darknode.auth.google();
+        if (!r || !r.ok) throw new Error((r && r.error) || "Google sign-in did not complete.");
+        await signInWithCredential(auth, GoogleAuthProvider.credential(r.idToken));
+        note.className = "auth-err"; err("");
+      } catch (e) { try { sessionStorage.removeItem("sw_fresh_signin"); } catch (_) {} note.className = "auth-err"; err(errText(e)); }
+      return;
+    }
     try {
       await signInWithPopup(auth, googleProvider);
     } catch (e) {
@@ -779,7 +795,8 @@ function renderAuth(mode = "signin") {
   };
   document.getElementById("github").onclick = async () => {
     err("");
-    try { try { sessionStorage.setItem("sw_fresh_signin", "1"); } catch (_) {} await signInWithRedirect(auth, githubProvider); }
+    // The desktop app cannot follow a top-level redirect off its origin; use the popup.
+    try { try { sessionStorage.setItem("sw_fresh_signin", "1"); } catch (_) {} if (isDesktop()) await signInWithPopup(auth, githubProvider); else await signInWithRedirect(auth, githubProvider); }
     catch (e) { try { sessionStorage.removeItem("sw_fresh_signin"); } catch (_) {} err(errText(e)); }
   };
   document.getElementById("pwform").onsubmit = async (ev) => {
@@ -804,7 +821,7 @@ function renderAuth(mode = "signin") {
     } catch (e) { try { sessionStorage.removeItem("sw_fresh_signin"); } catch (_) {} err(errText(e)); }
   };
   const on = (id, fn) => { const el = document.getElementById(id); if (el) el.onclick = fn; };
-  on("authBack", showLanding);
+  if (isDesktop()) { const b = document.getElementById("authBack"); if (b) b.remove(); } else on("authBack", showLanding);
   on("betaAsk", async () => {
     const panel = document.getElementById("betaAskPanel");
     if (!panel) return;
@@ -2840,6 +2857,9 @@ onAuthStateChanged(auth, async (user) => {
       renderApp({ uid: guestUid, email: "test@darknode.ai", displayName: "Guest", providerData: [{ providerId: "test" }], metadata: { creationTime: new Date().toISOString() }, refreshToken: "", getIdToken: () => Promise.resolve("") });
       return;
     }
+    // The desktop app has no marketing landing: straight to sign-in (which keeps the
+    // no-account Test Mode entry for local tools).
+    if (isDesktop()) { dismissBoot(); renderAuth("signin"); return; }
     showLanding(); return;
   }
   // An embedded tool (/<sec>?embed=1 inside the Deck) shares this tab's sessionStorage with
