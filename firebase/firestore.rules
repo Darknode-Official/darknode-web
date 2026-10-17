@@ -207,6 +207,19 @@ service cloud.firestore {
       allow delete: if signedIn() && (request.auth.uid == uid || isOwner());
     }
 
+    // Personal-workspace settings (core/ws-config.js), same shape as a team workspace's
+    // workspaces/{wid}/config/{name}; only the user themself reads or writes them.
+    match /users/{uid}/config/{name} {
+      allow read:   if signedIn() && request.auth.uid == uid;
+      allow create, update: if signedIn() && request.auth.uid == uid
+                    && name.matches('^[a-z0-9_-]{1,40}$')
+                    && request.resource.data.keys().hasOnly(['value', 'by', 'ts'])
+                    && request.resource.data.value is map
+                    && request.resource.data.by == request.auth.uid
+                    && request.resource.data.ts == request.time;
+      allow delete: if signedIn() && request.auth.uid == uid;
+    }
+
     // VAULT team vaults. Firestore holds WHO is in a vault and their role; the money
     // itself (ledger, transfers, approvals, audit) lives in the worker's VaultDO, which
     // reads the caller's member doc with the caller's own token. So these rules are what
@@ -351,6 +364,19 @@ service cloud.firestore {
                     && request.resource.data.ts == request.time
                     && getAfter(/databases/$(database)/documents/workspaces/$(wid)/members/$(request.resource.data.uid)).data.logId == logId;
         allow update, delete: if false;
+      }
+
+      // Team-shared settings (core/ws-config.js: the SLA policy, later alert rules). Every
+      // member reads; only an owner/admin writes. Shape { value: map, by: self, ts: now }.
+      match /config/{name} {
+        allow read: if wMember(wid);
+        allow create, update: if wManager(wid)
+                    && name.matches('^[a-z0-9_-]{1,40}$')
+                    && request.resource.data.keys().hasOnly(['value', 'by', 'ts'])
+                    && request.resource.data.value is map
+                    && request.resource.data.by == request.auth.uid
+                    && request.resource.data.ts == request.time;
+        allow delete: if false;
       }
     }
 
