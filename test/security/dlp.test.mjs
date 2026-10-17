@@ -70,7 +70,7 @@ group("dlp: detectors", () => {
     const r = scan([
       "ghp_aBcDeFgHiJkLmNoPqRsTuVwXyZ0123456789",
       "xoxb-fakeexampletoken-notarealslacksecret",
-      "sk_live_exampletokenabcd1234",
+      "sk_" + "live_exampletokenabcd12345678", // real live keys carry 24+ characters after the prefix
       "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.SflKxwRJSMeKKF2QT4fwpMeJf36P", // darknode-ignore: planted fake JWT for the DLP detector test
     ].join("\n"));
     for (const id of ["github-token", "slack-token", "stripe-key", "jwt"]) {

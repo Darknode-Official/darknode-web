@@ -2,6 +2,11 @@
 // Detects secrets + PII in free text, fully client-side. No network, no state.
 // Every detector is exported and unit-tested; see test/security/dlp.test.mjs.
 
+import { detector, PRIVATE_KEY_BLOCK_RE, keyHoldsSecret, assignmentKey, shannonEntropy, maskValue } from '../core/secret-detectors.js';
+
+// Entropy and masking are shared with the other secret scanners.
+export { shannonEntropy, maskValue };
+
 // ---- low-level helpers ----------------------------------------------------
 
 // Luhn check for payment card numbers.
@@ -64,117 +69,26 @@ export function ssnValid(raw) {
   return true;
 }
 
-// Shannon entropy in bits/char — used to separate real tokens from prose.
-export function shannonEntropy(str) {
-  if (!str) return 0;
-  const freq = Object.create(null);
-  for (const c of str) freq[c] = (freq[c] || 0) + 1;
-  let H = 0;
-  const n = str.length;
-  for (const k in freq) { const p = freq[k] / n; H -= p * Math.log2(p); }
-  return H;
-}
-
-// Mask a value, keeping only the tail (or a short head+tail) visible.
-export function maskValue(v, keepTail = 4) {
-  const s = String(v);
-  if (s.length <= keepTail) return '•'.repeat(s.length);
-  if (s.length <= 10) return '•'.repeat(s.length - keepTail) + s.slice(-keepTail);
-  return s.slice(0, 2) + '•'.repeat(Math.max(4, s.length - 6)) + s.slice(-keepTail);
-}
-
 // ---- detector catalogue ---------------------------------------------------
 // severity: critical > high > medium > low. `validate` gates regex hits.
 
 const SEV_RANK = { critical: 4, high: 3, medium: 2, low: 1 };
 
+// Secret detectors come from the shared catalogue (core/secret-detectors.js) with the
+// DLP ids, labels and severities; the PII detectors are DLP's own.
+const secret = (id, coreId = id, over = {}) => {
+  const d = detector(coreId);
+  return { id, label: d.name, kind: 'secret', severity: d.severity, re: d.re, group: d.g, validate: d.validate, mask: d.mask, advice: d.advice, ...over };
+};
+const PAT = detector('pat-assignment');
+
 export const DETECTORS = [
-  {
-    id: 'private-key', label: 'Private key', kind: 'secret', severity: 'critical',
-    re: /-----BEGIN (?:RSA |EC |DSA |OPENSSH |PGP )?PRIVATE KEY(?: BLOCK)?-----[\s\S]*?-----END (?:RSA |EC |DSA |OPENSSH |PGP )?PRIVATE KEY(?: BLOCK)?-----/g,
-    mask: () => '[PRIVATE KEY BLOCK]',
-    advice: 'Revoke and rotate this key immediately; it grants direct access.',
-  },
-  {
-    id: 'aws-secret', label: 'AWS secret access key', kind: 'secret', severity: 'critical',
-    re: /\b(?:aws)?_?(?:secret)?_?access_?key["'\s:=]{1,6}([A-Za-z0-9/+=]{40})\b/gi,
-    group: 1,
-    validate: (m) => shannonEntropy(m) >= 4.0,
-    advice: 'Rotate the AWS secret key and audit CloudTrail for misuse.',
-  },
-  {
-    id: 'aws-key', label: 'AWS access key ID', kind: 'secret', severity: 'high',
-    re: /\b(?:AKIA|ASIA|AGPA|AIDA|AROA|ANPA|ANVA)[A-Z0-9]{16}\b/g,
-    advice: 'Deactivate the access key ID in IAM and rotate its secret.',
-  },
-  {
-    id: 'gcp-key', label: 'Google API key', kind: 'secret', severity: 'high',
-    re: /\bAIza[0-9A-Za-z\-_]{35}\b/g,
-    advice: 'Restrict or regenerate the Google API key in the Cloud console.',
-  },
-  {
-    id: 'github-token', label: 'GitHub token', kind: 'secret', severity: 'critical',
-    re: /\b(?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9]{36,}\b/g,
-    advice: 'Revoke the GitHub token in developer settings now.',
-  },
-  {
-    id: 'github-pat-fine', label: 'GitHub fine-grained token', kind: 'secret', severity: 'critical',
-    re: /\bgithub_pat_[A-Za-z0-9_]{60,}\b/g,
-    advice: 'Revoke this fine-grained personal access token immediately.',
-  },
-  {
-    id: 'slack-token', label: 'Slack token', kind: 'secret', severity: 'high',
-    re: /\bxox[baprs]-[A-Za-z0-9-]{10,}\b/g,
-    advice: 'Revoke the Slack token in the app management console.',
-  },
-  {
-    id: 'stripe-key', label: 'Stripe live key', kind: 'secret', severity: 'critical',
-    re: /\b(?:sk|rk)_live_[A-Za-z0-9]{20,}\b/g,
-    advice: 'Roll the Stripe live key in the dashboard immediately.',
-  },
-  {
-    id: 'openai-key', label: 'OpenAI API key', kind: 'secret', severity: 'high',
-    re: /\bsk-(?:proj-)?[A-Za-z0-9_-]{20,}\b/g,
-    validate: (m) => shannonEntropy(m) >= 3.5,
-    advice: 'Revoke the OpenAI key in the API dashboard.',
-  },
-  {
-    id: 'anthropic-key', label: 'Anthropic API key', kind: 'secret', severity: 'high',
-    re: /\bsk-ant-[A-Za-z0-9_-]{20,}\b/g,
-    advice: 'Revoke the Anthropic key in the console.',
-  },
-  {
-    id: 'google-oauth', label: 'Google OAuth client secret', kind: 'secret', severity: 'high',
-    re: /\bGOCSPX-[A-Za-z0-9_-]{20,}\b/g,
-    advice: 'Rotate the OAuth client secret in the Cloud console.',
-  },
-  {
-    id: 'jwt', label: 'JSON Web Token', kind: 'secret', severity: 'medium',
-    re: /\beyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b/g,
-    advice: 'Treat the JWT as a live credential until it expires; do not share it.',
-  },
-  {
-    id: 'slack-webhook', label: 'Slack webhook URL', kind: 'secret', severity: 'medium',
-    re: /https:\/\/hooks\.slack\.com\/services\/T[A-Za-z0-9]+\/B[A-Za-z0-9]+\/[A-Za-z0-9]+/g,
-    advice: 'Regenerate the incoming webhook; anyone with the URL can post.',
-  },
-  {
-    id: 'twilio-key', label: 'Twilio account SID', kind: 'secret', severity: 'medium',
-    re: /\bAC[a-f0-9]{32}\b/g,
-    advice: 'Pair with the auth token; rotate the Twilio auth token if exposed.',
-  },
-  {
-    id: 'sendgrid-key', label: 'SendGrid API key', kind: 'secret', severity: 'high',
-    re: /\bSG\.[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}\b/g,
-    advice: 'Delete and recreate the SendGrid key.',
-  },
-  {
-    id: 'pat-assignment', label: 'Password or secret in assignment', kind: 'secret', severity: 'high',
-    re: /\b(?:passwd|password|pwd|secret|token|api[_-]?key|access[_-]?token|client[_-]?secret)\b["'\s]*[:=]\s*["']([^"'\s]{6,})["']/gi,
-    group: 1,
-    validate: (m) => !(/(?:your[_-]?|changeme|example|placeholder|redacted|dummy|sample|foobar|test[_-]?(?:key|token|secret)|xxx|\*\*\*|here\b)/i.test(m) || /^(?:<[^>]+>|\$\{?[a-z_]+\}?|%[a-z_]+%|null|none|true|false)$/i.test(m) || /^(.)\1+$/.test(m)),
-    advice: 'Move the secret to a secrets manager or environment variable.',
-  },
+  secret('private-key', 'private-key', { re: PRIVATE_KEY_BLOCK_RE }), // the whole BEGIN..END block, so redaction removes the key body
+  secret('aws-secret'), secret('aws-key'), secret('gcp-key'), secret('github-token'), secret('github-pat-fine'),
+  secret('slack-token'), secret('stripe-key'), secret('openai-key'), secret('anthropic-key'), secret('google-oauth'),
+  secret('jwt'), secret('slack-webhook'), secret('twilio-key', 'twilio-account-sid'), secret('sendgrid-key'),
+  // the key must end in a credential word: `db.password = "..."` yes, `password_hash = "..."` no
+  secret('pat-assignment', 'pat-assignment', { validate: (v, whole) => keyHoldsSecret(assignmentKey(whole)) && PAT.validate(v) }),
   {
     id: 'credit-card', label: 'Payment card number', kind: 'pii', severity: 'high',
     re: /\b(?:\d[ -]?){13,19}\b/g,
@@ -233,78 +147,9 @@ export const DETECTORS = [
     validate: (m) => { let n = m.replace(/\D/g, ''); if (n.length === 11 && n[0] === '1') n = n.slice(1); return n.length === 10 && n[0] >= '2' && n[3] >= '2'; },
     advice: 'Phone numbers are personal data; mask where not needed.',
   },
-  {
-    id: 'conn-string', label: 'Database connection string', kind: 'secret', severity: 'critical',
-    re: /\b(?:postgres(?:ql)?|mysql|mongodb(?:\+srv)?|redis|amqp):\/\/[^\s:@/]+:[^\s:@/]+@[^\s/]+/gi,
-    mask: (m) => m.replace(/:\/\/([^:]+):[^@]+@/, '://$1:••••••@'),
-    advice: 'Embedded DB credentials are exposed; rotate and use a secrets store.',
-  },
-  {
-    id: 'azure-storage-key', label: 'Azure Storage account key', kind: 'secret', severity: 'critical',
-    re: /AccountKey=([A-Za-z0-9+/]{86}==)/g,
-    group: 1,
-    advice: 'Rotate the storage account key in the Azure portal; it grants full access.',
-  },
-  {
-    id: 'azure-sas', label: 'Azure SAS token', kind: 'secret', severity: 'high',
-    re: /[?&]sv=\d{4}-\d{2}-\d{2}&[^\s"'<>]*?sig=[A-Za-z0-9%]{10,}/gi,
-    mask: () => '[AZURE SAS TOKEN]',
-    advice: 'Revoke the shared access signature; anyone with the URL has the granted access.',
-  },
-  {
-    id: 'azure-ad-secret', label: 'Azure AD client secret', kind: 'secret', severity: 'critical',
-    re: /\b[A-Za-z0-9_~.]{3}\dQ~[A-Za-z0-9_~.-]{31,34}\b/g,
-    advice: 'Rotate the app registration client secret in Entra ID / Azure AD.',
-  },
-  {
-    id: 'gitlab-pat', label: 'GitLab personal access token', kind: 'secret', severity: 'critical',
-    re: /\bglpat-[A-Za-z0-9_-]{20,}\b/g,
-    advice: 'Revoke the GitLab token under User Settings → Access Tokens.',
-  },
-  {
-    id: 'npm-token', label: 'npm access token', kind: 'secret', severity: 'high',
-    re: /\bnpm_[A-Za-z0-9]{36}\b/g,
-    advice: 'Revoke the npm token with `npm token revoke` or in your npm account.',
-  },
-  {
-    id: 'gcp-service-account', label: 'GCP service-account key', kind: 'secret', severity: 'critical',
-    re: /-----BEGIN PRIVATE KEY-----[\s\S]{0,4000}?\.iam\.gserviceaccount\.com/g,
-    mask: () => '[GCP SERVICE ACCOUNT KEY]',
-    advice: 'Delete this service-account key in IAM and generate a fresh one; it grants API access.',
-  },
-  {
-    id: 'heroku-key', label: 'Heroku API key', kind: 'secret', severity: 'high',
-    re: /\bheroku[^\n]{0,40}?([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\b/gi,
-    group: 1,
-    advice: 'Regenerate the Heroku API key with `heroku authorizations:rotate`.',
-  },
-  {
-    id: 'digitalocean-token', label: 'DigitalOcean token', kind: 'secret', severity: 'critical',
-    re: /\bdo[opr]_v1_[a-f0-9]{64}\b/g,
-    advice: 'Revoke the DigitalOcean token in the API section of the control panel.',
-  },
-  {
-    id: 'bearer-auth', label: 'Bearer / Authorization token', kind: 'secret', severity: 'high',
-    re: /\b(?:Authorization:\s*)?(?:Bearer|Basic)\s+([A-Za-z0-9._~+/=-]{16,})/g,
-    group: 1,
-    validate: (m) => !/^(?:your|example|placeholder|token|changeme|xxx|redacted)/i.test(m) && !/^(.)\1+$/.test(m),
-    advice: 'Treat this header credential as live; rotate it and do not log Authorization headers.',
-  },
-  {
-    id: 'mailgun-key', label: 'Mailgun API key', kind: 'secret', severity: 'high',
-    re: /\bkey-[0-9a-f]{32}\b/gi,
-    advice: 'Rotate the Mailgun API key in the control panel.',
-  },
-  {
-    id: 'planetscale-token', label: 'PlanetScale token', kind: 'secret', severity: 'critical',
-    re: /\bpscale_(?:tkn|pw|oauth)_[A-Za-z0-9._-]{32,}/g,
-    advice: 'Revoke the PlanetScale password/token in the database settings.',
-  },
-  {
-    id: 'slack-app-token', label: 'Slack app-level token', kind: 'secret', severity: 'high',
-    re: /\bxapp-\d-[A-Za-z0-9]+-\d+-[a-z0-9]+\b/gi,
-    advice: 'Revoke the Slack app-level token in the app management console.',
-  },
+  secret('conn-string'), secret('azure-storage-key'), secret('azure-sas'), secret('azure-ad-secret'), secret('gitlab-pat'),
+  secret('npm-token'), secret('gcp-service-account'), secret('heroku-key'), secret('digitalocean-token'), secret('bearer-auth'),
+  secret('mailgun-key'), secret('planetscale-token'), secret('slack-app-token'),
 ];
 
 // ---- generic high-entropy sweep (after the named detectors) ---------------
@@ -373,7 +218,7 @@ export function scan(text, opts = {}) {
     let m;
     while ((m = det.re.exec(text))) {
       const whole = m[0];
-      const value = det.group ? m[det.group] : whole;
+      const value = det.group ? [].concat(det.group).map((g) => m[g]).find((v) => v != null) : whole;
       if (!value) { if (m.index === det.re.lastIndex) det.re.lastIndex++; continue; }
       // anchor on the captured value's position within the match
       const vOff = det.group ? whole.indexOf(value) : 0;

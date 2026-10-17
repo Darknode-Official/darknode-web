@@ -11,10 +11,11 @@
 // NEW findings fail the job, and the full-tree SARIF goes to GitHub code scanning.
 
 export const WORKFLOW_PATH = ".github/workflows/darknode-scan.yml";
-export const SCANNER_FILES = ["rules.js", "taint-js.js", "baseline.js", "github.js", "cli.mjs"];
+// Paths under SCANNER_DIR; the shared detector catalogue lives in core/ beside codescan/.
+export const SCANNER_FILES = ["codescan/rules.js", "codescan/taint-js.js", "codescan/baseline.js", "codescan/github.js", "codescan/cli.mjs", "core/secret-detectors.js"];
 export const FAIL_LEVELS = ["critical", "high", "medium", "low", "none"];
 export const SCANNER_REPO = "Darknode-Official/darknode-web";
-export const SCANNER_DIR = "public/js/codescan";
+export const SCANNER_DIR = "public/js";
 export const pinnedUrl = (sha, file) => `https://raw.githubusercontent.com/${SCANNER_REPO}/${sha}/${SCANNER_DIR}/${file}`;
 
 const SHA1 = /^[0-9a-f]{40}$/;
@@ -112,7 +113,7 @@ jobs:
           mkdir -p "$d"
           echo '{"type":"module"}' > "$d/package.json"
           for f in ${SCANNER_FILES.join(" ")}; do
-            curl -fsSL --retry 3 "https://raw.githubusercontent.com/${SCANNER_REPO}/${pin.sha}/${SCANNER_DIR}/$f" -o "$d/$f"
+            curl -fsSL --retry 3 "https://raw.githubusercontent.com/${SCANNER_REPO}/${pin.sha}/${SCANNER_DIR}/$f" --create-dirs -o "$d/$f"
           done
 
       - name: Verify scanner checksums
@@ -132,7 +133,7 @@ ${sums} > SHA256SUMS
           if [ -n "\${BASE_SHA:-}" ] && [ "$BASE_SHA" != "0000000000000000000000000000000000000000" ]; then
             diff="--diff-base $BASE_SHA"
           fi
-          node "$RUNNER_TEMP/darknode/cli.mjs" . ${flags.join(" ")} $diff
+          node "$RUNNER_TEMP/darknode/codescan/cli.mjs" . ${flags.join(" ")} $diff
 
       - name: Upload results to GitHub code scanning
         if: always() && hashFiles('darknode.sarif') != '' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)

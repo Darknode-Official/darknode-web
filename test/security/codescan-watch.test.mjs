@@ -190,13 +190,23 @@ group("codescan ci: workflow generator", () => {
   });
   test("downloads the scanner from the pinned commit only, as an ES module package", () => {
     const dl = step("Download the pinned Darknode scanner");
-    assert.ok(dl.includes(`curl -fsSL --retry 3 "https://raw.githubusercontent.com/${SCANNER_REPO}/${SHA}/public/js/codescan/$f"`));
+    assert.ok(dl.includes(`curl -fsSL --retry 3 "https://raw.githubusercontent.com/${SCANNER_REPO}/${SHA}/public/js/$f" --create-dirs -o "$d/$f"`));
     assert.ok(dl.includes("for f in " + SCANNER_FILES.join(" ") + "; do"));
     assert.ok(dl.includes(`echo '{"type":"module"}'`));
     assert.ok(!y.includes("darknode.ai/js") && !/\/(main|HEAD)\//.test(y), "no mutable source");
     assert.ok(y.includes(`# The scanner is pinned to ${SCANNER_REPO}@${SHA}`));
-    assert.equal(pinnedUrl(SHA, "cli.mjs"), `https://raw.githubusercontent.com/${SCANNER_REPO}/${SHA}/public/js/codescan/cli.mjs`);
-    for (const f of SCANNER_FILES) assert.ok(existsSync(join(root, "public", "js", "codescan", f)), f + " must live in public/js/codescan/");
+    assert.equal(pinnedUrl(SHA, "codescan/cli.mjs"), `https://raw.githubusercontent.com/${SCANNER_REPO}/${SHA}/public/js/codescan/cli.mjs`);
+    for (const f of SCANNER_FILES) assert.ok(existsSync(join(root, "public", "js", f)), f + " must live under public/js/");
+    assert.ok(SCANNER_FILES.includes("core/secret-detectors.js"), "the shared detector catalogue rules.js imports is downloaded too");
+  });
+  test("the downloaded files are self-contained: every relative import is one of them", () => {
+    for (const f of SCANNER_FILES) {
+      const src = readFileSync(join(root, "public", "js", f), "utf8");
+      for (const [, spec] of src.matchAll(/^\s*import\s[^;]*?from\s+["'](\.{1,2}\/[^"'?]+)/gm)) {
+        const target = join(dirname(f), spec).replace(/\\/g, "/");
+        assert.ok(SCANNER_FILES.includes(target), `${f} imports ${spec}, which the workflow does not download`);
+      }
+    }
   });
   test("a sha256sum -c step checks every file before the scan runs", () => {
     const v = step("Verify scanner checksums");
@@ -210,7 +220,8 @@ group("codescan ci: workflow generator", () => {
     try {
       const files = {};
       for (const f of SCANNER_FILES) {
-        const bytes = readFileSync(join(root, "public", "js", "codescan", f));
+        const bytes = readFileSync(join(root, "public", "js", f));
+        mkdirSync(dirname(join(d, f)), { recursive: true });
         writeFileSync(join(d, f), bytes);
         files[f] = await sha256Hex(new Uint8Array(bytes));
       }
@@ -219,15 +230,15 @@ group("codescan ci: workflow generator", () => {
         .split("\n").map((l) => l.replace(/^ {10}/, "")).join("\n").replace('cd "$RUNNER_TEMP/darknode"', 'cd "$1"');
       const run = () => spawnSync("bash", ["-c", script, "verify", d], { encoding: "utf8" });
       assert.equal(run().status, 0, "untouched files verify");
-      writeFileSync(join(d, "rules.js"), readFileSync(join(d, "rules.js"), "utf8") + "\n// tampered\n");
+      writeFileSync(join(d, "codescan/rules.js"), readFileSync(join(d, "codescan/rules.js"), "utf8") + "\n// tampered\n");
       assert.notEqual(run().status, 0, "a changed byte fails the job");
     } finally { rmSync(d, { recursive: true, force: true }); }
   });
   test("refuses to generate without a valid pin", () => {
     assert.throws(() => workflowYaml());
     assert.throws(() => workflowYaml({ pin: { sha: "main", files: PIN.files } }));
-    assert.throws(() => workflowYaml({ pin: { sha: SHA, files: { ...PIN.files, "cli.mjs": "abc" } } }));
-    const { ["github.js"]: _, ...missing } = PIN.files;
+    assert.throws(() => workflowYaml({ pin: { sha: SHA, files: { ...PIN.files, "codescan/cli.mjs": "abc" } } }));
+    const { ["codescan/github.js"]: _, ...missing } = PIN.files;
     assert.throws(() => checkPin({ sha: SHA, files: missing }));
   });
   test("resolvePin reads main's sha, then hashes the bytes at that commit", async () => {
@@ -246,15 +257,15 @@ group("codescan ci: workflow generator", () => {
     assert.equal(pin.sha, SHA); assert.equal(pin.date, "2026-10-17T09:00:00Z");
     assert.equal(calls.length, 1 + SCANNER_FILES.length);
     for (const f of SCANNER_FILES) assert.equal(pin.files[f], await sha256Hex(body(f)));
-    assert.equal(pin.files["rules.js"], (await import("node:crypto")).createHash("sha256").update(Buffer.from(body("rules.js"))).digest("hex"));
+    assert.equal(pin.files["codescan/rules.js"], (await import("node:crypto")).createHash("sha256").update(Buffer.from(body("codescan/rules.js"))).digest("hex"));
     const missing = { ...io, fetch: async (u) => (u.endsWith("/cli.mjs") ? { ok: false, status: 404 } : io.fetch(u)) };
     const err = (p) => p.then(() => "", (e) => e.message);
     assert.ok(/cli\.mjs is not on main/.test(await err(resolvePin(missing))));
     assert.ok(/limit/.test(await err(resolvePin({ ...io, fetch: async () => ({ ok: false, status: 403 }) }))));
   });
   test("options change the CLI flags", () => {
-    const cmd = (yy) => yy.split("\n").find((l) => l.includes('node "$RUNNER_TEMP/darknode/cli.mjs"'));
-    assert.equal(cmd(y).trim(), 'node "$RUNNER_TEMP/darknode/cli.mjs" . --sarif darknode.sarif --full-sarif --fail-on high $diff');
+    const cmd = (yy) => yy.split("\n").find((l) => l.includes('node "$RUNNER_TEMP/darknode/codescan/cli.mjs"'));
+    assert.equal(cmd(y).trim(), 'node "$RUNNER_TEMP/darknode/codescan/cli.mjs" . --sarif darknode.sarif --full-sarif --fail-on high $diff');
     assert.ok(!y.includes("--sarif-include-review"), "needs-review items stay out of SARIF by default");
     const y2 = cmd(workflowYaml({ pin: PIN, failOn: "medium", deps: true, failOnReview: true }));
     assert.ok(y2.includes("--fail-on medium") && y2.includes("--deps") && y2.includes("--fail-on-review"));
