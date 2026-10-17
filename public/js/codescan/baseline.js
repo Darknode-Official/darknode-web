@@ -99,3 +99,26 @@ export function diffFindings(baselineKeys, currentFindings) {
   for (const k of base) if (!present.has(k)) fixedKeys.push(k);
   return { newFindings, unchanged, fixedKeys };
 }
+
+// Per-file diff for commit-by-commit scanning. `oldFindings` are the file's findings
+// before the change, as raw findings or as stored baseline items (which carry `k`);
+// `newFindings` are the findings after it. For a rename pass `asPath` = the old path,
+// so a finding that only moved with its file keeps its key and is not new + fixed.
+//   added     — new findings whose key was not present before
+//   unchanged — new findings whose key was present before
+//   fixed     — old findings / items whose key is gone
+export function diffFile(oldFindings, newFindings, { asPath } = {}) {
+  const old = new Map();
+  for (const it of oldFindings || []) { const k = (it && it.k) || findingKey(it); if (!old.has(k)) old.set(k, it); }
+  const seen = new Set();
+  const added = [], unchanged = [];
+  for (const f of newFindings || []) {
+    const k = asPath ? findingKey({ ...f, path: asPath }) : ((f && f.k) || findingKey(f));
+    if (seen.has(k)) continue;
+    seen.add(k);
+    (old.has(k) ? unchanged : added).push(f);
+  }
+  const fixed = [];
+  for (const [k, it] of old) if (!seen.has(k)) fixed.push(it);
+  return { added, unchanged, fixed };
+}

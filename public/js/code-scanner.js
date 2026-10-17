@@ -8,9 +8,10 @@
 // come from OSV.dev. Code is fetched straight from GitHub into this tab and scanned
 // here: nothing is uploaded to Darknode, and no AI is involved.
 
-import { scanFile, parseManifest, isManifest, osvSeverity, osvFixed, repoScore, toSarif, SEV_ORDER, langOf } from "/js/codescan/rules.js?v=20261013a";
+import { scanFile, parseManifest, isManifest, depFinding, dedupeDeps, repoScore, toSarif, SEV_ORDER, langOf } from "/js/codescan/rules.js?v=20261013a";
 import * as gh from "/js/codescan/github.js?v=20261013a";
 import { findingKey, serializeBaseline, diffFindings, baselineKeySet } from "/js/codescan/baseline.js?v=20261014a";
+import { createWatch } from "/js/codescan/watch-ui.js?v=20261017d";
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const fmt = (n) => Number(n || 0).toLocaleString();
@@ -22,6 +23,8 @@ const BASE_KEY = "dn_codescan_baseline:"; // + target ref; one saved baseline pe
 const DIFF_FILTERS = [["all", "All"], ["new", "New"], ["fixed", "Fixed"], ["unchanged", "Unchanged"]];
 const toast = (m, t) => { try { (window.dnToast || window.showToast || (() => {}))(m, t); } catch (_) {} };
 const fmtWhen = (ms) => { try { return new Date(ms).toLocaleString(); } catch (_) { return ""; } };
+const PAT_KEY = "dn_codescan_pat"; // only written when the user ticks "Remember token on this device"
+const savedPat = () => { try { return localStorage.getItem(PAT_KEY) || ""; } catch (_) { return ""; } };
 function loadBaseline(ref) { try { const j = JSON.parse(localStorage.getItem(BASE_KEY + ref) || "null"); return j && Array.isArray(j.items) ? j : null; } catch (_) { return null; } }
 
 const CSS = `<style id="cs-css">
@@ -162,6 +165,10 @@ export function renderCodeScanner(main) {
     </div></div>
     <div id="csBody"></div></div>`;
   const body = main.querySelector("#csBody");
+  // Commit watch + GitHub Actions setup. It shares this module's GitHub session (gh).
+  const watch = createWatch({ body, gh, engine: { scanFile, isManifest, parseManifest, depFinding }, toast,
+    claim: () => ++token, current: (t) => t === token, back: () => renderStart(),
+    fullRescan: (p) => { st.rewatch = true; runGitHub(p); } });
 
   // ── Start screen ────────────────────────────────────────────────────────────
   function renderStart(err) {
@@ -184,7 +191,9 @@ export function renderCodeScanner(main) {
           <li><b>Dependencies</b><span>Pinned packages from lockfiles (npm, PyPI, Go, crates.io, RubyGems, Packagist, Maven) checked against OSV.dev advisories.</span></li>
         </ul>
         ${recent.length ? `<h2 class="cs-h2" style="margin-top:18px">Recent scans</h2><ul class="cs-list">${recent.map((r) => `<li><b style="min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis">${esc(r.full)}</b><span class="cs-pill">${r.total} findings</span><span class="cs-pill">Score ${r.score}</span></li>`).join("")}</ul>` : ""}
-      </div></div>`;
+      </div>
+      <div class="cs-card" id="csWatch" style="grid-column:1/-1;min-width:0"></div></div>`;
+    watch.mountList(body.querySelector("#csWatch"));
     body.querySelectorAll(".cs-seg button").forEach((b) => b.onclick = () => { st.mode = b.dataset.mode; renderStart(); });
     const src = body.querySelector("#csSrc");
     if (st.mode === "local") {
@@ -204,7 +213,8 @@ export function renderCodeScanner(main) {
         <p class="cs-help">Paste owner/repo or a github.com link. Add /tree/branch to scan a branch other than the default.</p>
         <p class="cs-help"><button class="cs-link" id="csPatBtn" type="button">Use a personal access token instead</button></p>
         <div id="csPat" hidden style="margin-top:8px"><div class="cs-row"><input class="cs-in" id="csPatIn" type="password" placeholder="github_pat_…" autocomplete="off"><button class="cs-btn" id="csPatGo" type="button">Use token</button></div>
-        <p class="cs-help">A fine-grained token with read-only Contents access is enough. It is kept in memory for this tab only.</p></div>`;
+        <p class="cs-help">A fine-grained token with read-only Contents access is enough. It is kept in memory for this tab only.</p>
+        <label class="cs-help" style="display:flex;gap:6px;align-items:flex-start"><input type="checkbox" id="csPatKeep" style="margin-top:2px"><span>Remember token on this device. It is then saved unencrypted in this browser's storage, where anything running on this site or anyone using this browser profile can read it. Use a token limited to the repositories you watch, and Forget it on shared computers.</span></label></div>`;
       src.querySelector("#csConnect").onclick = async (e) => {
         e.target.disabled = true;
         try { await gh.connectGitHub(); st.repos = null; renderStart(); }
@@ -215,17 +225,20 @@ export function renderCodeScanner(main) {
       src.querySelector("#csRepo").onkeydown = (e) => { if (e.key === "Enter") go(); };
       src.querySelector("#csPatBtn").onclick = () => { src.querySelector("#csPat").hidden = false; src.querySelector("#csPatIn").focus(); };
       src.querySelector("#csPatGo").onclick = async () => {
-        try { await gh.useToken(src.querySelector("#csPatIn").value); st.repos = null; renderStart(); }
+        const pat = src.querySelector("#csPatIn").value, keep = src.querySelector("#csPatKeep").checked;
+        try { await gh.useToken(pat); if (keep) { try { localStorage.setItem(PAT_KEY, pat.trim()); } catch (_) {} } st.repos = null; renderStart(); }
         catch (x) { renderStart(x.message); }
       };
       return;
     }
     src.innerHTML = `<div class="cs-row" style="margin-bottom:4px"><h2 class="cs-h2" style="flex:1;margin:0">Your repositories</h2>
-        <span class="cs-help" style="margin:0">Signed in as <b>${esc(gh.ghUser())}</b></span><button class="cs-link" id="csOut" type="button">Disconnect</button></div>
+        <span class="cs-help" style="margin:0">Signed in as <b>${esc(gh.ghUser())}</b></span><button class="cs-link" id="csOut" type="button">Disconnect</button>${savedPat() ? `<button class="cs-link" id="csForget" type="button" title="Delete the token saved on this device">Forget saved token</button>` : ""}</div>
       <div class="cs-row" style="margin-top:10px"><input class="cs-in" id="csFilter" placeholder="Filter repositories" value="${esc(st.filter)}" autocomplete="off"></div>
       <div class="cs-repos" id="csRepos"><div class="cs-empty">Loading repositories…</div></div>
       <p class="cs-help">Repository missing? An organization may need to approve the Darknode app in its GitHub settings first.</p>`;
     src.querySelector("#csOut").onclick = () => { gh.disconnect(); st.repos = null; renderStart(); };
+    const fg = src.querySelector("#csForget");
+    if (fg) fg.onclick = () => { try { localStorage.removeItem(PAT_KEY); } catch (_) {} gh.disconnect(); st.repos = null; toast("Saved token deleted from this device", "ok"); renderStart(); };
     const list = src.querySelector("#csRepos");
     const draw = () => {
       const q = st.filter.toLowerCase();
@@ -260,10 +273,11 @@ export function renderCodeScanner(main) {
     const texts = new Map(); // only files with findings keep their text
     const deps = [];
     let done = 0, failed = 0;
+    const failedPaths = [];
     await gh.pool(files, 8, async (f) => {
       if (!ui.alive()) return;
       let text;
-      try { text = await read(f); } catch (e) { failed++; if (/rate limit/i.test(e.message)) throw e; return; }
+      try { text = await read(f); } catch (e) { failed++; failedPaths.push(f.path); if (/rate limit/i.test(e.message)) throw e; return; }
       if (typeof text !== "string" || text.indexOf("\u0000") >= 0) { done++; return; }
       const fs = scanFile(f.path, text).map((x) => ({ ...x, path: f.path }));
       if (isManifest(f.path)) for (const d of parseManifest(f.path, text)) deps.push({ ...d, path: f.path });
@@ -273,10 +287,7 @@ export function renderCodeScanner(main) {
       if (done % 10 === 0 || done === files.length) ui.set(done, files.length + 1, `Scanned ${fmt(done)} of ${fmt(files.length)} files${gh.rate.remaining != null && meta.github ? " · GitHub API requests left: " + fmt(gh.rate.remaining) : ""}`);
     });
     if (!ui.alive()) return null;
-    // A lockfile has the exact resolved versions, so it wins over package.json in the same folder.
-    const dir = (p) => p.replace(/[^/]*$/, "");
-    const locked = new Set(deps.filter((d) => !/(^|\/)package\.json$/.test(d.path)).map((d) => dir(d.path)));
-    for (let k = deps.length - 1; k >= 0; k--) if (/(^|\/)package\.json$/.test(deps[k].path) && locked.has(dir(deps[k].path))) deps.splice(k, 1);
+    dedupeDeps(deps); // a lockfile's exact versions win over package.json in the same folder
     let depNote = "";
     if (deps.length) {
       ui.set(files.length, files.length + 1, `Checking ${fmt(deps.length)} dependencies against OSV.dev…`);
@@ -290,17 +301,12 @@ export function renderCodeScanner(main) {
           const v = details.get(h.id);
           const k = h.dep.path + "|" + h.dep.name + "|" + h.id;
           if (seen.has(k)) continue; seen.add(k);
-          const alias = v && (v.aliases || []).find((a) => /^CVE-/.test(a));
-          const fixed = v ? osvFixed(v, h.dep.name) : "";
-          findings.push({ kind: "dep", ruleId: "dep." + h.id, title: (v && v.summary) || "Known vulnerability in " + h.dep.name, sev: v ? osvSeverity(v) : "medium",
-            path: h.dep.path, line: h.dep.line, col: 1, snippet: (texts.get(h.dep.path) || "").split(/\r?\n/)[h.dep.line - 1] || "",
-            pkg: h.dep.name, version: h.dep.version, ecosystem: h.dep.ecosystem, advisory: h.id, cve: alias || "", fixed,
-            why: `${h.dep.name} ${h.dep.version} (${h.dep.ecosystem}) is affected by ${h.id}${alias ? " / " + alias : ""}.`,
-            fix: fixed ? `Upgrade ${h.dep.name} to ${fixed} or later and regenerate the lockfile.` : "No fixed release is listed yet. Check the advisory for mitigations or replace the package." });
+          findings.push(depFinding(h.dep, h.id, v, (texts.get(h.dep.path) || "").split(/\r?\n/)[h.dep.line - 1] || ""));
         }
       } catch (e) { depNote = "Dependency check skipped: " + e.message; }
     }
     findings.sort((a, b) => SEV_ORDER[a.sev] - SEV_ORDER[b.sev] || a.path.localeCompare(b.path) || a.line - b.line);
+    if (meta.paths && failedPaths.length) { const bad = new Set(failedPaths); meta.paths = meta.paths.filter((p) => !bad.has(p)); } // unread files stay unknown to a watch baseline
     return { ...meta, findings, texts, scanned: done, failed, deps: deps.length, depNote, at: Date.now() };
   }
 
@@ -308,22 +314,23 @@ export function renderCodeScanner(main) {
   async function applyIgnore(all, read) {
     const f = all.find((x) => x.path === gh.IGNORE_FILE);
     if (!f) return { kept: all, ignored: 0 };
-    let m;
-    try { m = gh.ignoreMatcher(await read(f)); } catch (_) { return { kept: all, ignored: 0 }; }
+    let m, text;
+    try { text = await read(f); m = gh.ignoreMatcher(text); } catch (_) { return { kept: all, ignored: 0 }; }
     const kept = all.filter((x) => !m.test(x.path));
-    return { kept, ignored: all.length - kept.length };
+    return { kept, ignored: all.length - kept.length, text };
   }
 
   async function runGitHub(p) {
+    const rewatch = !!st.rewatch; st.rewatch = false;
     const ui = progress("Scanning " + p.owner + "/" + p.repo);
     try {
       ui.set(0, 1, "Reading repository…");
       const r = await gh.resolveRepo(p);
-      const { kept, ignored } = await applyIgnore(await gh.listFiles(r), (f) => gh.fileText(r, f.path));
+      const { kept, ignored, text } = await applyIgnore(await gh.listFiles(r), (f) => gh.fileText(r, f.path));
       const { chosen, skipped } = gh.pickFiles(kept, isManifest);
       if (!ui.alive()) return;
       if (!chosen.length) throw new Error("No scannable source files were found in this repository.");
-      const res = await scanAll(chosen, (f) => gh.fileText(r, f.path), ui, { github: true, full: r.full, sha: r.sha, branch: r.branch, skipped, ignored, url: r.htmlUrl });
+      const res = await scanAll(chosen, (f) => gh.fileText(r, f.path), ui, { github: true, full: r.full, sha: r.sha, branch: r.branch, skipped, ignored, url: r.htmlUrl, private: r.private, paths: chosen.map((f) => f.path), ignoreText: text || "", rewatch });
       if (res) finish(res);
     } catch (e) { if (ui.alive()) renderStart(e.message); }
   }
@@ -347,6 +354,7 @@ export function renderCodeScanner(main) {
     saveRecent({ full: res.full, sha: res.sha.slice(0, 7), at: res.at, total: res.findings.length, score: repoScore(res.findings), counts });
     st.baseline = loadBaseline(res.ref);
     recomputeDiff();
+    if (res.github && res.rewatch) { watch.fromScan(res); toast("Watching " + res.full + " (" + res.branch + ") from " + res.sha.slice(0, 7) + ". Open Commits to follow new commits.", "ok"); }
     if (res.findings.length) st.idx = 0;
     renderWorkspace();
   }
@@ -415,6 +423,7 @@ export function renderCodeScanner(main) {
         <button class="cs-btn sm" id="csSarif" type="button">Export SARIF</button>
         <button class="cs-btn sm" id="csCsv" type="button">Export CSV</button>
         ${toGraph.length ? `<button class="cs-btn sm" id="csGraph" type="button" title="Record these findings in the Security Graph so they appear in Findings and your exposure score. Review items are left out.">Add ${fmt(toGraph.length)} to graph</button>` : ""}
+        ${s.github ? `<button class="cs-btn sm" id="csWatchBtn" type="button" title="Scan each new commit on this branch and see what it adds or fixes">${watch.isWatched(s.full, s.branch) ? "Commits" : "Watch commits"}</button>` : ""}
         <button class="cs-btn sm pri" id="csNew" type="button">New scan</button>
       </div>
       ${!s.deps && !s.depNote ? `<p class="cs-help" style="margin:-4px 0 12px">No lockfile or pinned dependency versions were found, so dependencies were not checked against advisories.</p>` : ""}
@@ -431,6 +440,8 @@ export function renderCodeScanner(main) {
         <div class="cs-side r"><div class="hd"><span style="flex:1">Findings</span><span class="cs-kbd" title="Next / previous finding">J</span><span class="cs-kbd">K</span></div><div class="cs-scroll" id="csFind"></div></div>
       </div>` : `<div class="cs-card cs-empty" style="padding:48px 12px"><h2 class="cs-h2">No findings</h2><p class="cs-p" style="margin:0">None of the rules matched in the ${fmt(s.scanned)} files scanned${s.deps ? `, and none of the ${fmt(s.deps)} pinned dependencies has a known advisory` : ""}.</p></div>`}`;
     body.querySelector("#csNew").onclick = () => renderStart();
+    const wb = body.querySelector("#csWatchBtn");
+    if (wb) wb.onclick = () => watch.open(watch.isWatched(s.full, s.branch) ? watch.keyOf(s.full, s.branch) : watch.fromScan(s));
     body.querySelector("#csSarif").onclick = () => download(s.full.replace(/\W+/g, "-") + ".sarif", JSON.stringify(toSarif(s.findings, { repo: s.github ? s.full : "", sha: s.sha }), null, 2), "application/json");
     body.querySelector("#csCsv").onclick = () => download(s.full.replace(/\W+/g, "-") + "-findings.csv", toCsv(s.findings), "text/csv");
     const gb = body.querySelector("#csGraph");
@@ -572,12 +583,19 @@ export function renderCodeScanner(main) {
 
   const onKey = (e) => {
     if (!document.body.contains(body)) { document.removeEventListener("keydown", onKey); return; }
-    if (!st.scan || /^(INPUT|TEXTAREA|SELECT)$/.test((e.target && e.target.tagName) || "")) return;
+    if (!st.scan || !body.querySelector("#csFind") || /^(INPUT|TEXTAREA|SELECT)$/.test((e.target && e.target.tagName) || "")) return;
     if (e.key === "j" || e.key === "k") { const n = visible().length; if (!n) return; select((st.idx + (e.key === "j" ? 1 : n - 1)) % n); e.preventDefault(); }
   };
   document.addEventListener("keydown", onKey);
 
   renderStart();
+  // A remembered token reconnects first, then watched repositories are checked once.
+  const pat = savedPat();
+  if (pat && !gh.connected()) {
+    gh.useToken(pat).then(() => { st.repos = null; if (body.querySelector(".cs-start")) renderStart(); })
+      .catch((e) => { if (!/Could not reach/.test(e.message)) { try { localStorage.removeItem(PAT_KEY); } catch (_) {} toast("The saved GitHub token was rejected and has been removed from this device", "error"); } })
+      .finally(() => watch.autoStart());
+  } else watch.autoStart();
 }
 
 function toggle(set, v) { if (set.has(v) && set.size > 1) set.delete(v); else set.add(v); }

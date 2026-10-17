@@ -111,7 +111,9 @@ export const CODE_RULES = [
     why: "eval/new Function run arbitrary strings as code; any attacker influence on the argument is code execution.",
     fix: "Use JSON.parse for data, or a lookup table / explicit dispatch instead of building code from strings." }),
   R({ id: "js.child-process-exec", langs: ["js"], title: "Shell command built from variables", sev: "critical", cwe: 78,
-    re: /\b(?:exec|execSync)\s*\(\s*(?:`[^`]*\$\{|["'][^"']*["']\s*\+|[A-Za-z_$][\w$.]*\s*[+,)])/,
+    // The lookbehind drops RegExp.prototype.exec: a regex literal (/x/g.exec) or a receiver
+    // named like a pattern (re, rx, regex, pattern, matcher, urlRe, URL_RE, tokenPattern).
+    re: /(?<!(?:\/[dgimsuyv]*|(?<![\w$])(?:re|RE|Re|rx|RX|regex|Regex|REGEX|regexp|RegExp|pattern|Pattern|PATTERN|pat|matcher)|[A-Za-z0-9$](?:Re|RE|Rx|RX|Regex|REGEX|RegExp|Regexp|Pattern|PATTERN)|_(?:re|RE|rx|RX|regex|REGEX|pattern|PATTERN))\s*\.\s*)\b(?:exec|execSync)\s*\(\s*(?:`[^`]*\$\{|["'][^"']*["']\s*\+|[A-Za-z_$][\w$.]*\s*[+,)])/,
     near: /child_process|require\(["']child_process["']\)|from\s+["'](?:node:)?child_process["']|\bshelljs\b/,
     win: 400,
     why: "exec() hands the whole string to a shell, so metacharacters in interpolated values run extra commands.",
@@ -528,6 +530,27 @@ export function osvFixed(v, name) {
   return fixes[0] || "";
 }
 
+// Dependency advisory hit → finding (shared by the browser scanner, commit watch and CLI).
+// `vuln` is the OSV record (null when its detail fetch failed).
+export function depFinding(dep, id, vuln, snippet) {
+  const alias = vuln && (vuln.aliases || []).find((a) => /^CVE-/.test(a));
+  const fixed = vuln ? osvFixed(vuln, dep.name) : "";
+  return { kind: "dep", ruleId: "dep." + id, title: (vuln && vuln.summary) || "Known vulnerability in " + dep.name, sev: vuln ? osvSeverity(vuln) : "medium",
+    path: dep.path, line: dep.line, col: 1, snippet: snippet || "",
+    pkg: dep.name, version: dep.version, ecosystem: dep.ecosystem, advisory: id, cve: alias || "", fixed,
+    why: `${dep.name} ${dep.version} (${dep.ecosystem}) is affected by ${id}${alias ? " / " + alias : ""}.`,
+    fix: fixed ? `Upgrade ${dep.name} to ${fixed} or later and regenerate the lockfile.` : "No fixed release is listed yet. Check the advisory for mitigations or replace the package." };
+}
+
+// A lockfile has the exact resolved versions, so it wins over package.json in the same
+// folder. Mutates and returns `deps` ([{ ...dep, path }]).
+export function dedupeDeps(deps) {
+  const dir = (p) => p.replace(/[^/]*$/, "");
+  const locked = new Set(deps.filter((d) => !/(^|\/)package\.json$/.test(d.path)).map((d) => dir(d.path)));
+  for (let k = deps.length - 1; k >= 0; k--) if (/(^|\/)package\.json$/.test(deps[k].path) && locked.has(dir(deps[k].path))) deps.splice(k, 1);
+  return deps;
+}
+
 // Weighted 0–100 score for a scan (100 = no findings). Transparent and simple:
 // each finding subtracts by severity, with diminishing returns.
 export function repoScore(findings) {
@@ -542,6 +565,9 @@ export function repoScore(findings) {
 export function toSarif(findings, meta = {}) {
   const rules = new Map();
   for (const f of findings) if (!rules.has(f.ruleId)) rules.set(f.ruleId, { id: f.ruleId, name: f.title, shortDescription: { text: f.title }, fullDescription: { text: f.why || f.title }, help: { text: f.fix || "" }, properties: { tags: f.cwe ? ["security", "external/cwe/cwe-" + f.cwe] : ["security"] } });
+  // GitHub code scanning ranks security alerts by `security-severity` (0-10); a rule takes its worst result.
+  const SCORE = { critical: "9.5", high: "8.0", medium: "5.5", low: "3.0", info: "1.0" };
+  for (const f of findings) { const p = rules.get(f.ruleId).properties; if (!p["security-severity"] || +(SCORE[f.sev] || 1) > +p["security-severity"]) p["security-severity"] = SCORE[f.sev] || "1.0"; }
   const level = (s) => (s === "critical" || s === "high" ? "error" : s === "medium" ? "warning" : "note");
   return {
     $schema: "https://json.schemastore.org/sarif-2.1.0.json", version: "2.1.0",

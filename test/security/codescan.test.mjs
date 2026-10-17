@@ -50,6 +50,26 @@ group("codescan: javascript", () => {
     hit("a.js", 'const { exec } = require("child_process");\nexec("ls " + dir);', "js.child-process-exec");
     miss("a.js", 'db.exec("ls " + dir);', "js.child-process-exec");
   });
+  test("child_process exec still fires in every call form", () => {
+    const cp = 'const cp = require("child_process");\n';
+    hit("a.js", cp + "cp.exec(cmd + arg);", "js.child-process-exec");
+    hit("a.js", cp + "cp.execSync(`git log ${ref}`);", "js.child-process-exec");
+    hit("a.js", cp + "child_process.exec(cmd, cb);", "js.child-process-exec");
+    hit("a.js", 'require("child_process").exec("rm -rf " + dir);', "js.child-process-exec");
+    hit("a.js", "import { execSync } from \"node:child_process\";\nexecSync(\"tar xf \" + file);", "js.child-process-exec");
+    hit("a.js", 'import * as childProcess from "child_process";\nchildProcess.exec(`ping ${host}`);', "js.child-process-exec");
+  });
+  test("RegExp.prototype.exec is not a shell call, even near child_process", () => {
+    const cp = 'const { exec } = require("child_process");\n';
+    miss("a.js", cp + "const m = rule.re.exec(raw);", "js.child-process-exec");
+    miss("a.js", cp + "const m = /a(b)/g.exec(line);", "js.child-process-exec");
+    miss("a.js", cp + "while ((m = re.exec(text))) out.push(m);", "js.child-process-exec");
+    miss("a.js", cp + "const m = URL_RE.exec(s);", "js.child-process-exec");
+    miss("a.js", cp + "const m = urlRe.exec(s);", "js.child-process-exec");
+    miss("a.js", cp + "const m = tokenPattern.exec(src);", "js.child-process-exec");
+    miss("a.js", cp + "const m = regex.exec(input);", "js.child-process-exec");
+    miss("a.js", cp + "const m = matcher.exec(input);", "js.child-process-exec");
+  });
   test("innerHTML", () => {
     hit("a.js", "el.innerHTML = data.name;", "js.inner-html");
     miss("a.js", 'el.innerHTML = "<b>hi</b>";', "js.inner-html");

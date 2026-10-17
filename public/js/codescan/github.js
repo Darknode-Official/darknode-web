@@ -14,7 +14,9 @@ export const rate = { remaining: null, limit: null, reset: null };
 
 export const connected = () => !!token;
 export const ghUser = () => login;
-export function disconnect() { token = ""; login = ""; }
+let kind = ""; // "pat" | "oauth"
+export const tokenKind = () => (token ? kind : "");
+export function disconnect() { token = ""; login = ""; kind = ""; }
 
 // Connect GitHub through Firebase Auth with the `repo` scope (read access to the
 // user's private repos). Signed-in users get GitHub linked to their account; a
@@ -38,7 +40,7 @@ export async function connectGitHub() {
   }
   const cred = res._cred || fa.GithubAuthProvider.credentialFromResult(res);
   if (!cred || !cred.accessToken) throw new Error("GitHub did not return an access token.");
-  token = cred.accessToken;
+  token = cred.accessToken; kind = "oauth";
   const me = await api("/user");
   login = me.login || "";
   return login;
@@ -46,26 +48,31 @@ export async function connectGitHub() {
 
 // Use a personal access token instead of OAuth (fine-grained, Contents: read-only).
 export async function useToken(pat) {
-  token = String(pat || "").trim();
+  token = String(pat || "").trim(); kind = "pat";
   try { const me = await api("/user"); login = me.login || ""; return login; }
   catch (e) { token = ""; throw new Error("That token was rejected by GitHub: " + e.message); }
 }
 
-async function api(path, { raw = false } = {}) {
+// Thrown errors carry `status` (HTTP code) and `rateLimited` so callers can react.
+// The token only ever travels in the Authorization header, never in a URL.
+export async function api(path, { raw = false, method = "GET", body } = {}) {
   const headers = { Accept: raw ? "application/vnd.github.raw" : "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28" };
   if (token) headers.Authorization = "Bearer " + token;
+  if (body !== undefined) headers["Content-Type"] = "application/json";
   let r;
-  try { r = await fetch(path.startsWith("http") ? path : API + path, { headers }); }
+  try { r = await fetch(path.startsWith("http") ? path : API + path, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) }); }
   catch (_) { throw new Error("Could not reach GitHub. Check your connection."); }
   const rem = r.headers.get("x-ratelimit-remaining");
   if (rem != null) { rate.remaining = +rem; rate.limit = +r.headers.get("x-ratelimit-limit"); rate.reset = +r.headers.get("x-ratelimit-reset") * 1000; }
-  if (r.status === 404) throw new Error(token ? "Not found, or your GitHub account has no access to it." : "Not found. If the repository is private, connect GitHub first.");
-  if (r.status === 401) { token = ""; throw new Error("GitHub rejected the session. Connect again."); }
+  const fail = (msg, extra) => Object.assign(new Error(msg), { status: r.status }, extra);
+  if (r.status === 404) throw fail(token ? "Not found, or your GitHub account has no access to it." : "Not found. If the repository is private, connect GitHub first.");
+  if (r.status === 401) { token = ""; throw fail("GitHub rejected the session. Connect again."); }
   if (r.status === 403 || r.status === 429) {
-    if (rate.remaining === 0) throw new Error("GitHub API rate limit reached. It resets at " + new Date(rate.reset).toLocaleTimeString() + (token ? "." : ". Connecting GitHub raises the limit from 60 to 5,000 requests an hour."));
-    throw new Error("GitHub refused the request (HTTP " + r.status + "). Your organization may need to approve the Darknode app.");
+    if (rate.remaining === 0) throw fail("GitHub API rate limit reached. It resets at " + new Date(rate.reset).toLocaleTimeString() + (token ? "." : ". Connecting GitHub raises the limit from 60 to 5,000 requests an hour."), { rateLimited: true });
+    throw fail("GitHub refused the request (HTTP " + r.status + "). Your organization may need to approve the Darknode app.");
   }
-  if (!r.ok) throw new Error("GitHub returned HTTP " + r.status + ".");
+  if (!r.ok) throw fail("GitHub returned HTTP " + r.status + ".");
+  if (r.status === 204) return null;
   return raw ? r.text() : r.json();
 }
 
