@@ -11,6 +11,8 @@
 import { parseDomains, buildEntry, summarizeFleet, BANDS } from "/js/dataprotect/tls-engine.js?v=20261013i";
 import { fetchCertRows } from "/js/dataprotect/ct-fetch.js?v=20261013i";
 import { dnFetch } from "/js/net.js";
+import { attachSinkButton } from "../core/sink.js";
+import { tlsFleetFindings } from "/js/dataprotect/dp-sink.js";
 
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -88,11 +90,16 @@ export function renderTlsFleet(main) {
   let store = load(); // { domains:[], entries:{domain:entry}, updated }
   if (!Array.isArray(store.domains)) store.domains = [];
   if (!store.entries || typeof store.entries !== "object") store.entries = {};
+  const sinkSlot = document.createElement("span");
+  $("#tlsfCsv").after(sinkSlot);
+  let sinkUpdate = () => {};
+  const mountSink = () => { sinkSlot.textContent = ""; sinkUpdate = attachSinkButton(sinkSlot, () => ({ findings: tlsFleetFindings(store.domains.map((d) => store.entries[d]).filter(Boolean)) }), "tlsfleet", { dataset: "certificate watchlist" }); };
 
   const render = () => {
     const entries = store.domains.map((d) => store.entries[d] || { domain: d, pending: true, band: BANDS.unknown });
     if (!store.domains.length) {
       out.innerHTML = `<div class="tlsf-card"><div class="tlsf-empty">No domains yet. Paste a list above and choose <b>Add &amp; check</b>.</div></div>`;
+      sinkUpdate();
       return;
     }
     const sum = summarizeFleet(entries.filter((e) => !e.pending));
@@ -139,6 +146,7 @@ export function renderTlsFleet(main) {
       store.domains = store.domains.filter((x) => x !== d);
       delete store.entries[d]; save(store); render();
     }));
+    sinkUpdate();
   };
 
   async function fetchCrt(domain) {
@@ -182,6 +190,7 @@ export function renderTlsFleet(main) {
     await Promise.all(Array.from({ length: Math.min(limit, list.length) }, worker));
     [$("#tlsfAdd"), $("#tlsfCheck")].forEach((b) => b.disabled = false);
     statEl.textContent = `Checked ${list.length} · last updated ${new Date().toLocaleTimeString()}`;
+    mountSink();
   }
 
   $("#tlsfAdd").addEventListener("click", () => {
@@ -214,6 +223,7 @@ export function renderTlsFleet(main) {
     } catch (_) { toast("Download blocked by the browser"); }
   });
 
+  mountSink();
   render();
   // auto-refresh entries older than 6 hours on open
   const stale = store.domains.filter((d) => { const e = store.entries[d]; return !e || !e.checked || (Date.now() - e.checked > 6 * 3600 * 1000); });

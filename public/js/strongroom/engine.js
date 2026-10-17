@@ -220,7 +220,7 @@ function finding(o) {
   const money = round2(o.money || 0);
   const id = fp(o.rule + "|" + (o.key || "") + "|" + (o.rows || []).join(","));
   return { id, rule: o.rule, title: o.title, severity: o.severity, soundness: o.soundness,
-    money, rows: o.rows || [], vendor: o.vendor || "", why: o.why, evidence: o.evidence || [] };
+    money, rows: o.rows || [], vendor: o.vendor || "", why: o.why, evidence: o.evidence || [], ...(o.chain ? { chain: o.chain } : {}) };
 }
 
 // ------------------------------- financial detections -------------------------------
@@ -483,6 +483,13 @@ function paymentsForVendorAfter(recs, vkey, day, windowDays) {
   return recs.filter((r) => r.vkey === vkey && isFinite(r.amount) && r.day != null && day != null && r.day >= day && r.day - day <= windowDays);
 }
 
+// Structured legs of a fusion chain (the access event + the payments it led to) for
+// consumers such as the Security Graph sink; account numbers are left out.
+function chainOf(ev, pays) {
+  return { event: { row: ev._row, date: ev.date, type: ev.type, actor: ev.actor, vendor: ev.vendor, detail: ev.detail },
+    payments: pays.map((p) => ({ row: p._row, date: p.date, vendor: p.vendor, amount: round2(p.amount), approver: p.approver || "", initiator: p.initiator || "" })) };
+}
+
 function detFusion(recs, events) {
   const out = [];
   for (const ev of events) {
@@ -494,7 +501,7 @@ function detFusion(recs, events) {
       if (pays.length) {
         const money = sumMoney(pays.map((p) => p.amount));
         out.push(finding({ rule: "fusion-bec-payment-redirect", title: "BEC payment-redirect chain", severity: money >= 25000 ? "critical" : "high",
-          soundness: "heuristic", money, vendor: ev.vendor, key: "bec|" + ev.vkey + "|" + ev._row, rows: pays.map((p) => p._row),
+          soundness: "heuristic", money, vendor: ev.vendor, key: "bec|" + ev.vkey + "|" + ev._row, rows: pays.map((p) => p._row), chain: chainOf(ev, pays),
           why: `A ${ev.type.replace(/_/g, " ")} for ${ev.vendor || "a vendor"} (${ev.date}) was followed within 30 days by ${pays.length} payment(s) to that vendor. Neither the email layer nor the ERP raises this alone — the fused chain does.`,
           evidence: [`access row ${ev._row}: ${ev.type} ${ev.vendor} ${ev.date} ${ev.detail}`.trim()]
             .concat(pays.slice(0, 6).map((p) => `payment row ${p._row}: ${round2(p.amount)} ${p.date}`)) }));
@@ -507,7 +514,7 @@ function detFusion(recs, events) {
       if (pays.length) {
         const money = sumMoney(pays.map((p) => p.amount));
         out.push(finding({ rule: "fusion-ato-disbursement", title: "Account-takeover disbursement chain", severity: money >= 25000 ? "critical" : "high",
-          soundness: "heuristic", money, vendor: "", key: "ato|" + ev.akey + "|" + ev._row, rows: pays.map((p) => p._row),
+          soundness: "heuristic", money, vendor: "", key: "ato|" + ev.akey + "|" + ev._row, rows: pays.map((p) => p._row), chain: chainOf(ev, pays),
           why: `A ${ev.type.replace(/_/g, " ")} for ${ev.actor} (${ev.date}) was followed within 48h by ${pays.length} payment(s) that same identity approved or initiated.`,
           evidence: [`access row ${ev._row}: ${ev.type} ${ev.actor} ${ev.date}`]
             .concat(pays.slice(0, 6).map((p) => `payment row ${p._row}: ${p.vendor} ${round2(p.amount)} ${p.date}`)) }));
@@ -523,7 +530,7 @@ function detFusion(recs, events) {
       if (newPays.length) {
         const money = sumMoney(newPays.map((p) => p.amount));
         out.push(finding({ rule: "fusion-insider-export-newvendor", title: "Data-export then new-vendor payment", severity: "high",
-          soundness: "heuristic", money, vendor: "", key: "exp|" + ev._row, rows: newPays.map((p) => p._row),
+          soundness: "heuristic", money, vendor: "", key: "exp|" + ev._row, rows: newPays.map((p) => p._row), chain: chainOf(ev, newPays),
           why: `A ${ev.type.replace(/_/g, " ")} by ${ev.actor || "an insider"} (${ev.date}) preceded payment(s) to vendor(s) first seen after that export, within 90 days.`,
           evidence: [`access row ${ev._row}: ${ev.type} ${ev.actor} ${ev.date}`]
             .concat(newPays.slice(0, 6).map((p) => `payment row ${p._row}: ${p.vendor} ${round2(p.amount)} ${p.date}`)) }));

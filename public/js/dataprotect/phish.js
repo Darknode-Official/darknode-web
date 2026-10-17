@@ -12,6 +12,8 @@ import {
   analyzeUrl, triageEmail, extractIOCs, parseEmailHeaders, registrableDomain, lookalike,
 } from "/js/dataprotect/phish-engine.js?v=20261014c";
 import { dnFetch, dnFetchJSON } from "/js/net.js";
+import { attachSinkButton } from "../core/sink.js";
+import { phishUrlFindings, phishEmailFindings } from "/js/dataprotect/dp-sink.js";
 
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -222,6 +224,9 @@ async function runUrl(out, text) {
   const allReasons = a.reasons.concat(extra);
   if (extra.length) renderReasons(out.querySelector("#phxReasons"), allReasons, sevFromWeight(sumW(allReasons)), "This link");
   renderUrlHead(out.querySelector("#phxHead"), a.host || url, sevFromWeight(sumW(allReasons)));
+  const finalReg = unf.ok ? analyzeUrl(unf.finalUrl || url).registrable : "";
+  const urlFindings = phishUrlFindings({ input: a.input, host: a.host, registrable: a.registrable, finalUrl: unf.ok ? unf.finalUrl : "", finalRegistrable: finalReg, severity: sevFromWeight(sumW(allReasons)), reasons: allReasons });
+  attachSinkButton(out.querySelector("#phxHead"), () => ({ findings: urlFindings, sample: text === SAMPLE_URL }), "phishtriage", { dataset: "link triage" });
 }
 
 function iocsCard(iocs) {
@@ -275,6 +280,8 @@ async function runEmail(out, text) {
     <div class="phx-warn">Authentication results are read from the message's own Authentication-Results header (added by the receiving mail server). This is a triage aid, not a guarantee the message is safe or malicious.</div>`;
 
   renderReasons(out.querySelector("#phxEmReasons"), r.findings, "info", "this message");
+  const toHdr = (parseEmailHeaders(text).headers.to || [])[0] || "";
+  attachSinkButton(out.querySelector(".phx-card"), () => ({ findings: phishEmailFindings(r, { to: toHdr }) }), "phishtriage", { dataset: "email triage" });
 
   const ageEl = out.querySelector("#phxEmAge");
   if (r.fromReg) {

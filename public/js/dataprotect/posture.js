@@ -11,6 +11,8 @@
 import { scorePosture, newestCert } from "/js/dataprotect/posture-engine.js?v=20261014d";
 import { fetchCertRows } from "/js/dataprotect/ct-fetch.js?v=20261013i";
 import { dnFetch } from "/js/net.js";
+import { attachSinkButton } from "../core/sink.js";
+import { postureFindings } from "/js/dataprotect/dp-sink.js";
 
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -253,6 +255,7 @@ function renderReport(out, res, rerun) {
   ${actions}
   ${cats}`;
 
+  attachSinkButton(out.querySelector(".ps-row"), () => ({ findings: postureFindings(res) }), "posture", { dataset: res.domain });
   out.querySelector("#psJson").addEventListener("click", () => {
     const report = { generated: new Date().toISOString(), tool: "Darknode External Posture Scorecard", domain: res.domain, grade: res.grade, score: res.score, counts: res.counts, categories: res.categories, topActions: res.topActions };
     try {
