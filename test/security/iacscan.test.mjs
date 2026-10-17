@@ -5,7 +5,7 @@
 import { test, assert, group } from "../harness.mjs";
 import {
   TOOL_ID, RULES, DEFAULTS, parseInput, analyze, findingsToCsv, toSarif, toTxt, exampleDataset, selfTest,
-  classify, parseDockerfile, scanSecrets, mask, parseImage, policyStatements,
+  classify, parseDockerfile, scanSecrets, mask, parseImage, policyStatements, IAM_PRIVESC, privescPaths,
 } from "../../public/js/appsec/iacscan-engine.js";
 
 const ids = (files, opts) => analyze(files, opts).findings.map((f) => f.ruleId);
@@ -406,5 +406,96 @@ group("iacscan: outputs and options", () => {
   test("in-engine self-test passes", () => {
     const r = selfTest();
     assert.ok(r.pass, "failed: " + r.tests.filter((t) => !t.pass).map((t) => t.name).join(", "));
+  });
+});
+
+group("iacscan: ported container checks", () => {
+  const find = (id, files) => analyze(files).findings.find((x) => x.ruleId === id);
+  test("DKR-015 database port EXPOSE is tokenised, not substring-matched", () => {
+    pair("DKR-015", df("FROM alpine:3.20\nEXPOSE 8080 5432/tcp\nUSER 1\n"), df("FROM alpine:3.20\nEXPOSE 8080 15432 8022\nUSER 1\n"));
+    assert.ok(find("DKR-015", df("FROM alpine:3.20\nEXPOSE 6000-6400\nUSER 1\n")).description.includes("6379 Redis"));
+    assert.ok(find("DKR-015", df("FROM alpine:3.20\nEXPOSE 5432/tcp\n")).controls.some((x) => x.framework === "CIS Docker Benchmark" && x.id === "5.8"));
+  });
+  test("DKR-016 Docker API / kubelet / RDP / Telnet EXPOSE", () => {
+    pair("DKR-016", df("FROM docker:27-dind\nEXPOSE 2375\nUSER 1\n"), df("FROM alpine:3.20\nEXPOSE 8080 443\nUSER 1\n"));
+    assert.ok(fires("DKR-016", df("FROM alpine:3.20\nEXPOSE 10250\n")));
+  });
+  test("DKR-017 pip cache only in the final stage", () => {
+    pair("DKR-017", df("FROM python:3.12-slim\nRUN pip install flask==3.0.3\nUSER 1\n"), df("FROM python:3.12-slim\nRUN pip install --no-cache-dir flask==3.0.3\nUSER 1\n"));
+    assert.ok(fires("DKR-017", df("FROM python:3.12-slim\nRUN python3 -m pip install -r req.txt\n")));
+    assert.ok(!fires("DKR-017", df("FROM python:3.12 AS build\nRUN pip install flask==3.0.3\nFROM python:3.12-slim\nCOPY --from=build /x /x\n")));
+    assert.ok(!fires("DKR-017", df("FROM python:3.12-slim\nENV PIP_NO_CACHE_DIR=1\nRUN pip install flask==3.0.3\n")));
+    assert.ok(!fires("DKR-017", df("FROM python:3.12-slim\nRUN --mount=type=cache,target=/root/.cache/pip pip install flask==3.0.3\n")));
+  });
+  test("DKR-018 apt lists must be removed in the installing layer", () => {
+    pair("DKR-018", df("FROM debian:12\nRUN apt-get update && apt-get install -y --no-install-recommends curl\nUSER 1\n"), df("FROM debian:12\nRUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*\nUSER 1\n"));
+    assert.ok(fires("DKR-018", df("FROM debian:12\nRUN apt-get update && apt-get install -y curl\nRUN rm -rf /var/lib/apt/lists/*\n")));
+  });
+  test("DKR-019 COPY of the whole context, not from a stage", () => {
+    pair("DKR-019", df("FROM node:22-slim\nCOPY . .\nUSER 1\n"), df("FROM node:22-slim\nCOPY src/ /app/src/\nUSER 1\n"));
+    assert.ok(fires("DKR-019", df("FROM node:22-slim\nCOPY --chown=1:1 [\".\", \"/app\"]\n")));
+    assert.ok(!fires("DKR-019", df("FROM node:22 AS b\nRUN true\nFROM node:22-slim\nCOPY --from=b . .\n")));
+  });
+  test("DKR-020 single-stage build that compiles", () => {
+    pair("DKR-020", df("FROM golang:1.22\nCOPY main.go .\nRUN go build -o /app .\nUSER 1\n"), df("FROM golang:1.22 AS b\nRUN go build -o /app .\nFROM gcr.io/distroless/static:nonroot\nCOPY --from=b /app /app\n"));
+    assert.ok(!fires("DKR-020", df("FROM nginx:1.27\nCOPY site/ /usr/share/nginx/html/\n")));
+  });
+  test("DKR-021 / K8S-037 runc Leaky Vessels workdir pattern", () => {
+    pair("DKR-021", df("FROM alpine:3.20\nWORKDIR /proc/self/fd/7\nUSER 1\n"), df("FROM alpine:3.20\nWORKDIR /app\nUSER 1\n"));
+    const f = find("DKR-021", df("FROM alpine:3.20\nWORKDIR /proc/self/fd/7\n"));
+    assert.equal(f.line, 2);
+    assert.ok(f.title.includes("CVE-2024-21626") && f.severity === "critical");
+    pair("K8S-037", k8s(DEPLOY("          workingDir: /proc/self/fd/8\n")), k8s(DEPLOY("          workingDir: /app\n")));
+  });
+  test("escape CVE notes attach only to the matching condition", () => {
+    const sc = (caps) => k8s(DEPLOY("          securityContext:\n            capabilities:\n              add: [" + caps + "]\n"));
+    assert.ok(find("K8S-010", sc("\"SYS_ADMIN\"")).description.includes("CVE-2022-0492"));
+    assert.ok(!find("K8S-010", sc("\"NET_ADMIN\"")).description.includes("CVE-"));
+    const cm = (opt) => compose("services:\n  a:\n    image: a:1\n    security_opt:\n      - " + opt + "\n");
+    assert.ok(find("CMP-008", cm("seccomp:unconfined")).description.includes("CVE-2022-0185"));
+    assert.ok(!find("CMP-008", cm("apparmor:unconfined")).description.includes("CVE-"));
+  });
+  test("CIS Docker ids on compose runtime rules", () => {
+    const cis = (id, files) => find(id, files).controls.filter((x) => x.framework === "CIS Docker Benchmark").map((x) => x.id);
+    assert.deepEqual(cis("CMP-001", compose("services:\n  a:\n    image: a:1\n    privileged: true\n")), ["5.4"]);
+    assert.deepEqual(cis("CMP-002", compose("services:\n  a:\n    image: a:1\n    network_mode: host\n")), ["5.9"]);
+    assert.deepEqual(cis("CMP-007", compose("services:\n  db:\n    image: mysql:8\n    ports:\n      - \"3306:3306\"\n")), ["5.13"]);
+  });
+});
+
+group("iacscan: IAM privilege-escalation paths", () => {
+  const pol = (stmts) => tf('resource "aws_iam_policy" "p" {\n  policy = ' + JSON.stringify(JSON.stringify({ Version: "2012-10-17", Statement: stmts })) + "\n}\n");
+  const allow = (Action, Resource = "*", extra = {}) => ({ Effect: "Allow", Action, Resource, ...extra });
+  const find = (id, files) => analyze(files).findings.find((x) => x.ruleId === id);
+  test("every path has a severity, concrete actions and an explanation", () => {
+    assert.ok(IAM_PRIVESC.length >= 20);
+    for (const p of IAM_PRIVESC) {
+      assert.ok(["critical", "high", "medium"].includes(p.sev), p.name);
+      assert.ok(p.actions.length && p.actions.every((a) => /^[a-z0-9-]+:[A-Za-z]+$/.test(a)), p.name);
+      assert.ok(p.why.length > 20, p.name);
+    }
+  });
+  test("AWS-IAM-011 single-action and cross-statement combos", () => {
+    pair("AWS-IAM-011", pol([allow("iam:AttachUserPolicy")]), pol([allow("iam:ListPolicies")]));
+    const f = find("AWS-IAM-011", pol([allow("iam:PassRole"), allow(["ec2:RunInstances", "ec2:DescribeInstances"])]));
+    assert.ok(f && f.description.includes("PassRole to EC2") && f.confidence === "confirmed");
+    assert.ok(!fires("AWS-IAM-011", pol([allow("iam:PassRole")])), "PassRole alone is not the EC2 path");
+  });
+  test("wildcards match, Deny removes, full admin is left to AWS-IAM-001", () => {
+    assert.ok(fires("AWS-IAM-011", pol([allow("iam:Attach*")])));
+    assert.ok(fires("AWS-IAM-011", pol([allow("IAM:PutRole?olicy")])));
+    assert.ok(!fires("AWS-IAM-011", pol([allow("iam:*"), { Effect: "Deny", Action: ["iam:Attach*", "iam:Put*", "iam:CreatePolicyVersion", "iam:SetDefaultPolicyVersion", "iam:PassRole"], Resource: "*" }])));
+    const admin = ids(pol([allow("*")]));
+    assert.ok(admin.includes("AWS-IAM-001") && !admin.includes("AWS-IAM-011"));
+  });
+  test("scoped resources or conditions downgrade to review", () => {
+    assert.equal(find("AWS-IAM-012", pol([allow("iam:CreateAccessKey", "arn:aws:iam::111122223333:user/ops")])).confidence, "review");
+    assert.equal(find("AWS-IAM-012", pol([allow("iam:CreateAccessKey", "*", { Condition: { Bool: { "aws:MultiFactorAuthPresent": "true" } } })])).confidence, "review");
+  });
+  test("AWS-IAM-012 / 013 severities; resource policies are ignored", () => {
+    assert.equal(find("AWS-IAM-012", pol([allow("ssm:StartSession")])).severity, "high");
+    assert.equal(find("AWS-IAM-013", pol([allow(["iam:PassRole", "codestar:CreateProject"], ["arn:aws:iam::1:role/x"])])).severity, "medium");
+    assert.ok(!fires("AWS-IAM-012", tf('resource "aws_s3_bucket_policy" "b" {\n  policy = ' + JSON.stringify(JSON.stringify({ Statement: [allow("iam:CreateAccessKey")] })) + "\n}\n")));
+    assert.deepEqual(privescPaths([]), []);
   });
 });
