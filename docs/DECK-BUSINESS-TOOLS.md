@@ -136,21 +136,21 @@ Legend: planned · scaffolded · built · merged · deployed
 
 | route | Label | group | prefix | status |
 |---|---|---|---|---|
-| `riskreg` | Risk Register | risk | `rsk-` | planned |
-| `evidence` | Control Evidence Calendar | compliance | `evd-` | planned |
-| `vendorrisk` | Third-Party Risk Monitor | risk | `tpr-` | planned |
-| `backupready` | Backup & Ransomware Readiness | risk | `bkr-` | planned |
-| `dmarcreports` | DMARC Report Analyzer | exposure | `dmr-` | planned |
+| `riskreg` | Risk Register | risk | `rsk-` | scaffolded |
+| `evidence` | Control Evidence Calendar | compliance | `evd-` | scaffolded |
+| `vendorrisk` | Third-Party Risk Monitor | risk | `tpr-` | scaffolded |
+| `backupready` | Backup & Ransomware Readiness | risk | `bkr-` | scaffolded |
+| `dmarcreports` | DMARC Report Analyzer | exposure | `dmr-` | scaffolded |
 
 ### Wave 5 — Exposure & SecOps data sources
 
 | route | Label | group | prefix | status |
 |---|---|---|---|---|
-| `domainguard` | Domain Portfolio Guard | exposure | `dmg-` | planned |
-| `dnshunt` | DNS Log Threat Hunter | detect | `dnh-` | planned |
-| `proxyhunt` | Web Gateway & Shadow SaaS | detect | `pxh-` | planned |
-| `netexposure` | Network Scan Diff | exposure | `nxp-` | planned |
-| `vpnaudit` | Remote Access Audit | identity | `vpa-` | planned |
+| `domainguard` | Domain Portfolio Guard | exposure | `dmg-` | scaffolded |
+| `dnshunt` | DNS Log Threat Hunter | detect | `dnh-` | scaffolded |
+| `proxyhunt` | Web Gateway & Shadow SaaS | detect | `pxh-` | scaffolded |
+| `netexposure` | Network Scan Diff | exposure | `nxp-` | scaffolded |
+| `vpnaudit` | Remote Access Audit | identity | `vpa-` | scaffolded |
 
 ### Wave 6 — AppSec, data & governance
 
