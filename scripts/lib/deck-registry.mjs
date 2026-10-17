@@ -5,6 +5,7 @@
 
 import { readFileSync, existsSync, readdirSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
+import { scanDuplicates } from "./dup-scan.mjs";
 
 const ID_RE = /^[a-z][a-z0-9]{2,24}$/;
 const FN_RE = /^render[A-Z]\w+$/;
@@ -20,6 +21,9 @@ export const STRICT_DIRS = ["identity", "appsec", "ops", "exposure", "finsec", "
 export const NAV_WHITELIST = new Set(["admin"]);
 
 const lines = (s) => s.split("\n");
+const lineAt = (src, idx) => src.slice(0, idx).split("\n").length;
+/** Parsers return Maps/Sets; a repeated id is kept once and also listed in `.dups` ([{ id, line }]). */
+const withDups = (coll, dups) => Object.assign(coll, { dups });
 const esc = (s) => String(s).replace(/\\/g, "\\\\").replace(/"/g, "\\\"");
 const escRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
@@ -54,7 +58,9 @@ export function parseNavDef(src) {
     for (const m of l.matchAll(itemRe)) items.push({ kind: m[1], id: m[2], label: m[3], icon: m[4] });
     groups.push({ id: head[1] || null, title: head[2], line: i + 1, items });
   }
-  return { start: start + 1, end: end + 1, groups };
+  const seen = new Set(), dups = [];
+  for (const g of groups) for (const it of g.items) { if (seen.has(it.id)) dups.push({ id: it.id, line: g.line }); seen.add(it.id); }
+  return { start: start + 1, end: end + 1, groups, dups };
 }
 
 /** Icon names from the `const IC = { name: SVG(...) }` block in deck-ui.js. */
@@ -62,12 +68,12 @@ export function parseIcons(src) {
   const ls = lines(src);
   const start = onlyLine(ls, /^\s*const IC = \{\s*$/, "IC");
   const end = nextLine(ls, start + 1, /^\s*\};\s*$/, "IC");
-  const out = new Set();
+  const out = new Set(), dups = [];
   for (let i = start + 1; i < end; i++) {
     const m = /^\s*([a-z0-9]+):\s*SVG\(/.exec(ls[i]);
-    if (m) out.add(m[1]);
+    if (m) { if (out.has(m[1])) dups.push({ id: m[1], line: i + 1 }); out.add(m[1]); }
   }
-  return out;
+  return withDups(out, dups);
 }
 
 /** show() branches in auth.js: id -> { path|null, fn|null, line }. Scoped to show(). */
@@ -75,7 +81,7 @@ export function parseRoutes(src) {
   const ls = lines(src);
   const start = onlyLine(ls, /^\s*function show\(sec\b/, "show()");
   const end = nextLine(ls, start + 1, /^  \}\s*$/, "show()");
-  const out = new Map();
+  const out = new Map(), dups = [];
   for (let i = start + 1; i < end; i++) {
     const l = ls[i];
     if (!/\bsec === "/.test(l)) continue;
@@ -88,9 +94,10 @@ export function parseRoutes(src) {
     if (!imp && !fn) continue;
     for (const m of l.matchAll(/\bsec === "(\w+)"/g)) {
       if (!out.has(m[1])) out.set(m[1], { path: imp ? imp[1] : null, fn, line: i + 1 });
+      else dups.push({ id: m[1], line: i + 1 });
     }
   }
-  return out;
+  return withDups(out, dups);
 }
 
 /** SIDE_DESC entries in auth.js: id -> blurb. */
@@ -98,19 +105,19 @@ export function parseBlurbs(src) {
   const ls = lines(src);
   const start = onlyLine(ls, /^\s*const SIDE_DESC = \{\s*$/, "SIDE_DESC");
   const end = nextLine(ls, start + 1, /^\s*\};\s*$/, "SIDE_DESC");
-  const out = new Map();
+  const out = new Map(), dups = [];
   for (let i = start + 1; i < end; i++) {
     const m = /^\s*"?(\w+)"?:\s*"((?:[^"\\]|\\.)*)",?\s*$/.exec(ls[i]);
-    if (m) out.set(m[1], m[2].replace(/\\"/g, "\""));
+    if (m) { if (out.has(m[1])) dups.push({ id: m[1], line: i + 1 }); out.set(m[1], m[2].replace(/\\"/g, "\"")); }
   }
-  return out;
+  return withDups(out, dups);
 }
 
 /** Keys of the EXPLAIN map in ui/explain.js (all keys, e.g. "tool.x", "scene.y"). */
 export function parseExplainKeys(src) {
-  const out = new Set();
-  for (const m of src.matchAll(/^\s*"([\w.-]+)":\s*\{/gm)) out.add(m[1]);
-  return out;
+  const out = new Set(), dups = [];
+  for (const m of src.matchAll(/^\s*"([\w.-]+)":\s*\{/gm)) { if (out.has(m[1])) dups.push({ id: m[1], line: lineAt(src, m.index) }); out.add(m[1]); }
+  return withDups(out, dups);
 }
 
 /** Keys of a HELP map (section-help-a/b.js). Same shape as parseExplainKeys. */
@@ -120,9 +127,16 @@ export function parseHelpKeys(src) {
 
 /** Ids referenced by console-nav.js NAV groups (`["id","Label"...]`). */
 export function parseConsoleNavIds(src) {
-  const out = new Set();
-  for (const m of src.matchAll(/\["([a-z0-9]+)",\s*"/g)) out.add(m[1]);
-  return out;
+  const out = new Set(), dups = [];
+  const navIds = new Set(); // dups are counted among the G(...) menu rows only (RETIRED/DEFAULT_FAVS repeat ids on purpose)
+  for (const m of src.matchAll(/\["([a-z0-9]+)",\s*"/g)) {
+    out.add(m[1]);
+    const ln = src.lastIndexOf("\n", m.index) + 1;
+    if (!/^\s*G\("/.test(src.slice(ln, ln + 40))) continue;
+    if (navIds.has(m[1])) dups.push({ id: m[1], line: lineAt(src, m.index) });
+    navIds.add(m[1]);
+  }
+  return withDups(out, dups);
 }
 
 /** Cache-buster stamps at the 5 sites. */
@@ -661,7 +675,20 @@ export function lint(root) {
   try { blurbs = parseBlurbs(authSrc); } catch (e) { err(e.message, "public/js/auth.js"); }
   explainKeys = parseExplainKeys(explainSrc);
   const helpKeys = new Set([...parseHelpKeys(helpA), ...parseHelpKeys(helpB)]);
-  try { parseIcons(deckSrc); } catch (e) { err(e.message, "public/js/deck-ui.js"); }
+  let icons, consoleIds = null;
+  try { icons = parseIcons(deckSrc); } catch (e) { err(e.message, "public/js/deck-ui.js"); }
+  try { consoleIds = parseConsoleNavIds(read(root, "public/js/console-nav.js")); } catch (e) { warn("console-nav.js unreadable: " + e.message); }
+
+  // Repeated ids: the parsers keep one copy, so report the extras instead of dropping them.
+  const dupSites = [
+    [nav, "NAV_DEF tool id", "public/js/deck-ui.js"], [icons, "IC icon", "public/js/deck-ui.js"],
+    [routes, "show() route id", "public/js/auth.js"], [blurbs, "SIDE_DESC id", "public/js/auth.js"],
+    [explainKeys, "EXPLAIN key", "public/js/ui/explain.js"], [consoleIds, "console-nav id", "public/js/console-nav.js"],
+  ];
+  for (const [coll, what, file] of dupSites) for (const d of (coll && coll.dups) || []) err(`duplicate ${what} "${d.id}"`, file, d.line);
+  const helpAKeys = parseHelpKeys(helpA), helpBKeys = parseHelpKeys(helpB);
+  for (const [k, file] of [[helpAKeys, "public/js/section-help-a.js"], [helpBKeys, "public/js/section-help-b.js"]]) for (const d of k.dups) err(`duplicate HELP key "${d.id}"`, file, d.line);
+  for (const id of helpBKeys) if (helpAKeys.has(id)) err(`HELP key "${id}" is defined in both section-help-a.js and section-help-b.js`, "public/js/section-help-b.js");
 
   const testFiles = walk(join(root, "test/security"), (f) => f.endsWith(".test.mjs"));
   const testSrc = new Map(testFiles.map((f) => [f, readFileSync(f, "utf8")]));
@@ -690,6 +717,16 @@ export function lint(root) {
     const st = parseStamps({ adminSrc, deckUiSrc: deckSrc, indexSrc, swSrc });
     if (st.index[0] !== st.index[1]) err(`index.html auth.js stamps differ: ${st.index.join(" vs ")}`, "public/index.html");
   } catch (e) { err(e.message); }
+
+  // Duplicate object keys / class methods / same-scope function declarations: the later one
+  // silently wins, so the earlier copy is dead code (scripts/lib/dup-scan.mjs).
+  for (const f of walk(join(root, "public/js"), (p) => /\.m?js$/.test(p))) {
+    const rel = relative(root, f).split("\\").join("/");
+    for (const d of scanDuplicates(readFileSync(f, "utf8"))) {
+      const what = d.kind === "function" ? "function declaration" : d.kind === "method" ? "class method" : "object key";
+      err(`duplicate ${what} "${d.name}" (first at line ${d.firstLine}; the later one wins)`, rel, d.line);
+    }
+  }
 
   const engines = walk(join(root, "public/js"), (f) => f.endsWith("-engine.js"));
   const domRe = /\b(window|document|localStorage)\s*[.[]/;

@@ -8,6 +8,8 @@
 // for the OSV.dev lookup. No AI is involved in detection or ranking.
 
 import { taintScan } from "./taint-js.js?v=20261013a";
+import { detector, findAll, keyHoldsSecret, assignmentKey } from "../core/secret-detectors.js";
+import { OSV_ECOSYSTEM, formatForName, parseLockfile } from "../core/lockfiles.js";
 
 export const SEV_ORDER = { critical: 0, high: 1, medium: 2, low: 3, info: 4 };
 
@@ -46,58 +48,73 @@ const TESTY_PATH = /(^|\/)(tests?|__tests__|spec|specs|fixtures?|examples?|sampl
 const SKIP_LINE = 2000; // ignore pathological minified lines (regex cost + noise)
 
 // ── Secret rules (all text files) ──────────────────────────────────────────────
-// `g` is the capture group holding the secret value (masked in the UI, never sent
-// anywhere). `minEntropy` filters dictionary-looking matches.
+// What each secret looks like comes from the shared catalogue (core/secret-detectors.js);
+// a rule names its detectors and adds the Code Scanner's own ids, severity, CWE and
+// advice. `pick` chooses the value to report (masked in the UI, never sent anywhere),
+// `accept` / `minLen` / `minEntropy` filter dictionary-looking matches.
 export const SECRET_RULES = [
-  { id: "secret.aws-access-key", title: "AWS access key ID", re: /\b((?:AKIA|ASIA)[A-Z0-9]{16})\b/, g: 1, sev: "high", cwe: 798,
+  { id: "secret.aws-access-key", title: "AWS access key ID", detectors: ["aws-key"], sev: "high", cwe: 798,
     why: "An AWS access key ID in source usually travels with its secret key and grants API access to the account.",
     fix: "Revoke the key in IAM, load credentials from the environment or an IAM role, and purge it from git history." },
-  { id: "secret.aws-secret-key", title: "AWS secret access key", re: /aws_?secret_?(?:access_?)?key\s*[:=]\s*["']?([A-Za-z0-9/+=]{40})\b/i, g: 1, sev: "critical", cwe: 798, minEntropy: 3.8,
+  { id: "secret.aws-secret-key", title: "AWS secret access key", detectors: ["aws-secret"], sev: "critical", cwe: 798, minEntropy: 3.8,
     why: "The AWS secret access key signs API requests; with the key ID it is full account access at that identity's privileges.",
     fix: "Rotate the key pair immediately, use IAM roles or a secrets manager, and purge it from git history." },
-  { id: "secret.github-token", title: "GitHub token", re: /\b((?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9]{36}|github_pat_[A-Za-z0-9_]{82})\b/, g: 1, sev: "critical", cwe: 798,
+  { id: "secret.github-token", title: "GitHub token", detectors: ["github-token", "github-pat-fine"], sev: "critical", cwe: 798,
     why: "GitHub tokens authenticate as a user or app and can read or push to repositories.",
     fix: "Revoke it at github.com/settings/tokens, then store tokens in Actions secrets or a secrets manager." },
-  { id: "secret.slack-token", title: "Slack token", re: /\b(xox[baprs]-[A-Za-z0-9-]{10,})\b/, g: 1, sev: "high", cwe: 798,
+  { id: "secret.slack-token", title: "Slack token", detectors: ["slack-token"], sev: "high", cwe: 798,
     why: "Slack tokens can read channels and post messages as the workspace app or user.",
     fix: "Revoke the token in the Slack app settings and load it from the environment." },
-  { id: "secret.slack-webhook", title: "Slack incoming webhook", re: /(https:\/\/hooks\.slack\.com\/services\/T[A-Za-z0-9]+\/B[A-Za-z0-9]+\/[A-Za-z0-9]+)/, g: 1, sev: "medium", cwe: 798,
+  { id: "secret.slack-webhook", title: "Slack incoming webhook", detectors: ["slack-webhook"], sev: "medium", cwe: 798,
     why: "Anyone with the webhook URL can post messages into the channel, which enables convincing phishing.",
     fix: "Regenerate the webhook and keep the URL in configuration, not code." },
-  { id: "secret.stripe-live", title: "Stripe live secret key", re: /\b((?:sk|rk)_live_[A-Za-z0-9]{24,})\b/, g: 1, sev: "critical", cwe: 798,
+  { id: "secret.stripe-live", title: "Stripe live secret key", detectors: ["stripe-key"], sev: "critical", cwe: 798,
     why: "A live Stripe secret key can create charges, refunds and read customer payment data.",
     fix: "Roll the key in the Stripe dashboard and load it from the server environment only." },
-  { id: "secret.google-api-key", title: "Google API key", re: /\b(AIza[0-9A-Za-z_\-]{35})\b/, g: 1, sev: "low", cwe: 798,
+  { id: "secret.google-api-key", title: "Google API key", detectors: ["gcp-key"], sev: "low", cwe: 798,
     why: "Google API keys are billable. Firebase web keys are designed to be public, but other keys (Maps, Gemini, Cloud) are not.",
     fix: "If this is not a public Firebase config key, restrict or rotate it in Google Cloud Console and move it server-side." },
-  { id: "secret.private-key", title: "Private key block", re: /(-----BEGIN (?:RSA |EC |DSA |OPENSSH |PGP |ENCRYPTED )?PRIVATE KEY(?: BLOCK)?-----)/, g: 1, sev: "critical", cwe: 321,
+  { id: "secret.private-key", title: "Private key block", detectors: ["private-key"], sev: "critical", cwe: 321,
     why: "A committed private key lets anyone impersonate the server, sign code, or decrypt traffic.",
     fix: "Treat the key as compromised: reissue it, remove the file, and purge it from git history." },
-  { id: "secret.openai-key", title: "OpenAI API key", re: /\b(sk-(?:proj-)?[A-Za-z0-9_\-]{40,})\b/, g: 1, sev: "high", cwe: 798, minEntropy: 4,
+  { id: "secret.openai-key", title: "OpenAI API key", detectors: ["openai-key"], sev: "high", cwe: 798, minEntropy: 4,
     why: "OpenAI keys are billed to the owner and can be abused for paid usage.",
     fix: "Revoke the key in the OpenAI dashboard and call the API from a server that reads it from the environment." },
-  { id: "secret.anthropic-key", title: "Anthropic API key", re: /\b(sk-ant-[A-Za-z0-9_\-]{40,})\b/, g: 1, sev: "high", cwe: 798,
+  { id: "secret.anthropic-key", title: "Anthropic API key", detectors: ["anthropic-key"], sev: "high", cwe: 798,
     why: "Anthropic keys are billed to the owner and can be abused for paid usage.",
     fix: "Revoke the key in the Anthropic Console and keep it server-side." },
-  { id: "secret.sendgrid-key", title: "SendGrid API key", re: /\b(SG\.[A-Za-z0-9_\-]{22}\.[A-Za-z0-9_\-]{43})\b/, g: 1, sev: "high", cwe: 798,
+  { id: "secret.sendgrid-key", title: "SendGrid API key", detectors: ["sendgrid-key"], sev: "high", cwe: 798,
     why: "A SendGrid key can send email as your domain, which passes SPF/DKIM checks.",
     fix: "Delete the key in SendGrid and load a new one from the environment." },
-  { id: "secret.twilio-key", title: "Twilio API key", re: /\b(SK[0-9a-f]{32})\b/, g: 1, sev: "high", cwe: 798,
+  { id: "secret.twilio-key", title: "Twilio API key", detectors: ["twilio-api-key"], sev: "high", cwe: 798,
     why: "Twilio API keys can send SMS and place calls billed to the account.",
     fix: "Delete the key in the Twilio console and load a new one from the environment." },
-  { id: "secret.npm-token", title: "npm access token", re: /\b(npm_[A-Za-z0-9]{36})\b/, g: 1, sev: "critical", cwe: 798,
+  { id: "secret.npm-token", title: "npm access token", detectors: ["npm-token"], sev: "critical", cwe: 798,
     why: "An npm token can publish packages under your account, which is a supply-chain compromise.",
     fix: "Revoke it with `npm token revoke` and use granular, CI-scoped tokens from secrets." },
-  { id: "secret.jwt", title: "Hardcoded JSON Web Token", re: /\b(eyJ[A-Za-z0-9_\-]{10,}\.eyJ[A-Za-z0-9_\-]{10,}\.[A-Za-z0-9_\-]{10,})\b/, g: 1, sev: "medium", cwe: 798,
+  { id: "secret.jwt", title: "Hardcoded JSON Web Token", detectors: ["jwt"], sev: "medium", cwe: 798,
     why: "A committed JWT may still be valid and grant the session or service access it encodes.",
     fix: "Remove the token; if it is long-lived, rotate the signing key so it stops verifying." },
-  { id: "secret.db-url", title: "Database URL with password", re: /\b((?:postgres(?:ql)?|mysql|mongodb(?:\+srv)?|redis|amqp):\/\/[^\s:@"'\/]+:([^\s@"'\/]{4,})@[^\s"']+)/, g: 2, sev: "high", cwe: 798,
+  { id: "secret.db-url", title: "Database URL with password", detectors: ["conn-string"], pick: (h) => h.m[1], minLen: 4, sev: "high", cwe: 798,
     why: "Connection strings with an inline password give direct database access to anyone who reads the repo.",
     fix: "Move the connection string to an environment variable or secrets manager and rotate the password." },
-  { id: "secret.generic", title: "Hardcoded credential", re: /(?<![-\w])(?:secret|token|passw(?:or)?d|pwd|api[_-]?key|access[_-]?key|auth[_-]?key|client[_-]?secret)["']?\s*[:=]\s*["']([^"'\s]{12,})["']/i, g: 1, sev: "medium", cwe: 798, minEntropy: 3.5,
+  { id: "secret.generic", title: "Hardcoded credential", detectors: ["pat-assignment"], accept: (h) => keyHoldsSecret(assignmentKey(h.whole), "."), minLen: 12, sev: "medium", cwe: 798, minEntropy: 3.5,
     why: "Credentials embedded in source are readable by everyone with repo access and persist in git history.",
     fix: "Load the value from the environment or a secrets manager, rotate it, and purge it from history." }
 ];
+
+// First hit of a secret rule in `text`: { val, index } (index = start of the match), or null.
+function secretHit(rule, text) {
+  for (const id of rule.detectors) {
+    for (const h of findAll(detector(id), text)) {
+      if (rule.accept && !rule.accept(h)) continue;
+      const val = rule.pick ? rule.pick(h) : h.value;
+      if (!val || (rule.minLen && val.length < rule.minLen)) continue;
+      return { val, index: h.index };
+    }
+  }
+  return null;
+}
 
 // ── Code rules (per language) ──────────────────────────────────────────────────
 // `re` must match the (comment-stripped) line. `near` (optional) must match within
@@ -336,15 +353,15 @@ export function scanFile(path, text) {
     if (raw.length > SKIP_LINE || IGNORE.test(raw) || (i > 0 && IGNORE.test(lines[i - 1]) && /darknode-ignore-next-line/.test(lines[i - 1]))) continue;
     // Secrets: scan raw line (secrets are often inside strings/comments too).
     for (const rule of SECRET_RULES) {
-      const m = rule.re.exec(raw);
+      const m = secretHit(rule, raw);
       if (!m) continue;
-      const val = m[rule.g] || m[0];
+      const val = m.val;
       if (rule.id !== "secret.private-key" && PLACEHOLDER.test(val)) continue;
       if (rule.minEntropy && entropy(val) < rule.minEntropy) continue;
       if (rule.id === "secret.private-key" && !KEY_BODY.test(raw.slice(m.index)) && !KEY_BODY.test(lines[i + 1] || "")) continue; // a marker in a detector or a doc, no key
       if (rule.id === "secret.db-url" && PLACEHOLDER_PASS.test(val)) continue;
       if (rule.id === "secret.google-api-key" && /authDomain|firebaseapp\.com/.test(lines.slice(Math.max(0, i - 6), i + 7).join("\n"))) continue; // Firebase web config keys are public by design
-      if (rule.id === "secret.generic" && (/^[a-z]+(?:[-_.][a-z]+)+$/.test(val) || /^eyJ/.test(val) || SECRET_RULES.some((r) => r.id !== "secret.generic" && r.re.test(val)))) continue; // a word, not a credential; or a specific rule owns this value
+      if (rule.id === "secret.generic" && (/^[a-z]+(?:[-_.][a-z]+)+$/.test(val) || /^eyJ/.test(val) || SECRET_RULES.some((r) => r.id !== "secret.generic" && secretHit(r, val)))) continue; // a word, not a credential; or a specific rule owns this value
       if (rule.id === "secret.generic" && /^\$(?:2[abxy]?|argon2(?:id|i|d)|scrypt|pbkdf2[\w-]*|[156])\$/.test(val)) continue; // a password HASH, not a secret
       push(rule, i, m.index, raw.trim().replace(val, mask(val)), { secret: mask(val) });
     }
@@ -397,98 +414,21 @@ export function scanFile(path, text) {
 // ── Dependency manifests → pinned packages (for OSV.dev querybatch) ────────────
 // Returns [{ name, version, ecosystem, line }]; unpinned specs are skipped (OSV
 // needs an exact version), and the declaring line lets the viewer jump to it.
-const lineOf = (lines, needle, from = 0) => { for (let i = from; i < lines.length; i++) if (lines[i].includes(needle)) return i + 1; return 1; };
-
 export const MANIFESTS = ["package.json", "package-lock.json", "npm-shrinkwrap.json", "yarn.lock", "pnpm-lock.yaml", "requirements.txt", "poetry.lock", "Pipfile.lock", "go.mod", "Cargo.lock", "Gemfile.lock", "composer.lock", "gradle.lockfile"];
 export const isManifest = (path) => MANIFESTS.includes(String(path).split("/").pop()) || /(^|\/)requirements[\w.-]*\.txt$/i.test(path);
 
+// The parsing itself is core/lockfiles.js (shared with Supply Chain and License Audit);
+// this keeps the exact pins and names each ecosystem the way OSV.dev does.
 export function parseManifest(path, text) {
-  const base = String(path).split("/").pop();
-  const lines = String(text || "").split(/\r?\n/);
-  const out = [];
-  const add = (name, version, ecosystem, line) => { if (name && version && /^\d/.test(version)) out.push({ name, version, ecosystem, line }); };
-  try {
-    if (base === "package.json") {
-      // Only exact pins ("1.2.3"); ranges like ^1.2.0 resolve differently per install.
-      const j = JSON.parse(text);
-      for (const sec of ["dependencies", "devDependencies", "optionalDependencies"]) for (const [n, v] of Object.entries(j[sec] || {})) {
-        const m = /^=?v?(\d+\.\d+\.\d+[\w.+-]*)$/.exec(String(v).trim());
-        if (m) add(n, m[1], "npm", lineOf(lines, '"' + n + '"'));
-      }
-    } else if (base === "package-lock.json" || base === "npm-shrinkwrap.json") {
-      const j = JSON.parse(text);
-      if (j.packages) {
-        for (const [k, v] of Object.entries(j.packages)) {
-          if (!k || !v || !v.version || v.link) continue;
-          const name = v.name || k.slice(k.lastIndexOf("node_modules/") + 13);
-          add(name, v.version, "npm", lineOf(lines, '"' + k + '"'));
-        }
-      } else if (j.dependencies) {
-        const walk = (deps) => { for (const [n, v] of Object.entries(deps || {})) { add(n, v.version, "npm", lineOf(lines, '"' + n + '"')); walk(v.dependencies); } };
-        walk(j.dependencies);
-      }
-    } else if (base === "yarn.lock") {
-      for (let i = 0; i < lines.length; i++) {
-        const h = lines[i];
-        if (!h || /^\s|^#/.test(h)) continue;
-        const spec = h.replace(/:$/, "").split(",")[0].trim().replace(/^"|"$/g, "");
-        const at = spec.lastIndexOf("@");
-        const name = at > 0 ? spec.slice(0, at) : spec;
-        for (let k = i + 1; k < lines.length && /^\s/.test(lines[k]); k++) {
-          const m = lines[k].match(/^\s+version:?\s+"?([^"\s]+)"?/);
-          if (m) { add(name.replace(/^npm:/, ""), m[1], "npm", i + 1); break; }
-        }
-      }
-    } else if (base === "pnpm-lock.yaml") {
-      let inPkgs = false;
-      lines.forEach((l, i) => {
-        if (/^packages:\s*$/.test(l)) { inPkgs = true; return; }
-        if (/^\S/.test(l)) inPkgs = /^packages:/.test(l);
-        if (!inPkgs) return;
-        const m = l.match(/^ {2}['"]?\/?((?:@[^/\s]+\/)?[^@\s/'"]+)[@/](\d[^:(\s'"]*)/);
-        if (m) add(m[1], m[2], "npm", i + 1);
-      });
-    } else if (/requirements[\w.-]*\.txt$/i.test(base)) {
-      lines.forEach((l, i) => {
-        const m = l.replace(/#.*/, "").trim().match(/^([A-Za-z0-9][A-Za-z0-9._-]*)(?:\[[^\]]*\])?\s*===?\s*([0-9][^\s;,]*)/);
-        if (m) add(m[1], m[2], "PyPI", i + 1);
-      });
-    } else if (base === "poetry.lock" || base === "Cargo.lock") {
-      const eco = base === "Cargo.lock" ? "crates.io" : "PyPI";
-      let name = "", at = 0;
-      lines.forEach((l, i) => {
-        if (/^\[\[package\]\]/.test(l)) { name = ""; at = i + 1; }
-        const n = l.match(/^name\s*=\s*"([^"]+)"/); if (n) name = n[1];
-        const v = l.match(/^version\s*=\s*"([^"]+)"/); if (v && name) { add(name, v[1], eco, at); name = ""; }
-      });
-    } else if (base === "Pipfile.lock") {
-      const j = JSON.parse(text);
-      for (const sec of ["default", "develop"]) for (const [n, v] of Object.entries(j[sec] || {})) add(n, String(v.version || "").replace(/^==/, ""), "PyPI", lineOf(lines, '"' + n + '"'));
-    } else if (base === "go.mod") {
-      let block = false;
-      lines.forEach((l, i) => {
-        if (/^require\s*\(/.test(l)) { block = true; return; }
-        if (block && /^\)/.test(l)) { block = false; return; }
-        const m = (block ? l.trim() : l.replace(/^require\s+/, "").trim()).match(/^([a-z0-9.\-]+\.[a-z]{2,}\/\S+)\s+v(\d\S*)/i);
-        if (m && (block || /^require\s/.test(l))) add(m[1], m[2].replace(/\+incompatible$/, ""), "Go", i + 1);
-      });
-    } else if (base === "Gemfile.lock") {
-      let specs = false;
-      lines.forEach((l, i) => {
-        if (/^\s{2}specs:\s*$/.test(l)) { specs = true; return; }
-        if (/^\S/.test(l)) specs = false;
-        const m = specs && l.match(/^ {4}([A-Za-z0-9_.\-]+) \(([0-9][^)\s-]*)/);
-        if (m) add(m[1], m[2], "RubyGems", i + 1);
-      });
-    } else if (base === "composer.lock") {
-      const j = JSON.parse(text);
-      for (const p of [...(j.packages || []), ...(j["packages-dev"] || [])]) add(p.name, String(p.version || "").replace(/^v/, ""), "Packagist", lineOf(lines, '"name": "' + p.name + '"'));
-    } else if (base === "gradle.lockfile") {
-      lines.forEach((l, i) => { const m = l.match(/^([\w.\-]+):([\w.\-]+):([0-9][^=\s]*)=/); if (m) add(m[1] + ":" + m[2], m[3], "Maven", i + 1); });
-    }
-  } catch (_) { /* malformed manifest — report nothing rather than guess */ }
+  let deps = null;
+  try { deps = isManifest(path) ? parseLockfile(formatForName(path), String(text || "")) : null; } catch (_) { /* malformed manifest — report nothing rather than guess */ }
   const uniq = new Map();
-  for (const d of out) { const k = d.ecosystem + "|" + d.name + "|" + d.version; if (!uniq.has(k)) uniq.set(k, d); }
+  for (const d of deps || []) {
+    const ecosystem = OSV_ECOSYSTEM[d.ecosystem];
+    if (!d.exact || !d.name || !ecosystem || !/^\d/.test(d.version || "")) continue; // ranges resolve differently per install
+    const k = ecosystem + "|" + d.name + "|" + d.version;
+    if (!uniq.has(k)) uniq.set(k, { name: d.name, version: d.version, ecosystem, line: d.line || 1 });
+  }
   return [...uniq.values()];
 }
 

@@ -1,4 +1,5 @@
 // Credential Auditor — password analysis, hash identification, JWT decode, TOTP, cert decode
+import { detector, findFirst } from "./core/secret-detectors.js";
 // Decode a base64url JWT segment to its parsed JSON, handling padding and
 // UTF-8 claims (atob yields a Latin-1 byte string; decode it as UTF-8 so
 // non-ASCII claim values are not mangled).
@@ -151,46 +152,48 @@ const HASH_PATTERNS = [
 ];
 
 // ─── API key patterns ───
+// What each key looks like comes from the shared catalogue (core/secret-detectors.js);
+// `prefix` narrows a shared detector to one token kind.
 const API_KEY_PATTERNS = [
-  { name: "AWS Access Key ID", re: /(?:^|[^A-Z0-9])(AKIA[0-9A-Z]{16})(?:[^A-Z0-9]|$)/, severity: "critical", description: "AWS IAM access key — can access cloud resources" },
-  { name: "AWS Secret Access Key", re: /(?:aws_secret_access_key|secret_key)\s*[=:]\s*([A-Za-z0-9/+=]{40})/, severity: "critical", description: "AWS secret key — full API access" },
-  { name: "GitHub Personal Access Token (classic)", re: /(ghp_[A-Za-z0-9]{36,})/, severity: "high", description: "GitHub PAT — repo/org access" },
-  { name: "GitHub Fine-Grained Token", re: /(github_pat_[A-Za-z0-9_]{22,})/, severity: "high", description: "GitHub fine-grained PAT" },
-  { name: "GitHub OAuth Token", re: /(gho_[A-Za-z0-9]{36,})/, severity: "high", description: "GitHub OAuth access token" },
-  { name: "GitHub App Token", re: /(ghu_[A-Za-z0-9]{36,})/, severity: "high", description: "GitHub user-to-server token" },
-  { name: "GitLab Personal Access Token", re: /(glpat-[A-Za-z0-9\-]{20,})/, severity: "high", description: "GitLab PAT" },
-  { name: "Stripe Live Secret Key", re: /(sk_live_[A-Za-z0-9]{24,})/, severity: "critical", description: "Stripe live secret key — can charge cards" },
-  { name: "Stripe Test Secret Key", re: /(sk_test_[A-Za-z0-9]{24,})/, severity: "medium", description: "Stripe test secret key" },
-  { name: "Stripe Publishable Key", re: /(pk_live_[A-Za-z0-9]{24,})/, severity: "low", description: "Stripe publishable key (meant to be public)" },
-  { name: "Stripe Restricted Key", re: /(rk_live_[A-Za-z0-9]{24,})/, severity: "high", description: "Stripe restricted API key" },
-  { name: "Slack Bot Token", re: /(xoxb-[0-9]{10,}-[0-9]{10,}-[A-Za-z0-9]{24,})/, severity: "high", description: "Slack bot token — can post/read messages" },
-  { name: "Slack User Token", re: /(xoxp-[0-9]{10,}-[0-9]{10,}-[0-9]{10,}-[a-f0-9]{32})/, severity: "critical", description: "Slack user token — impersonate user" },
-  { name: "Slack Webhook URL", re: /(https:\/\/hooks\.slack\.com\/services\/T[A-Z0-9]+\/B[A-Z0-9]+\/[A-Za-z0-9]+)/, severity: "medium", description: "Slack incoming webhook" },
-  { name: "Google API Key", re: /(AIza[0-9A-Za-z\-_]{35})/, severity: "medium", description: "Google API key — check restrictions" },
-  { name: "Google OAuth Client ID", re: /([0-9]+-[a-z0-9]+\.apps\.googleusercontent\.com)/, severity: "low", description: "Google OAuth client ID (semi-public)" },
-  { name: "Firebase API Key", re: /(AIza[0-9A-Za-z\-_]{35})/, severity: "low", description: "Firebase web API key (meant to be public, but check rules)" },
-  { name: "Twilio Account SID", re: /(AC[a-f0-9]{32})/, severity: "medium", description: "Twilio account SID" },
-  { name: "Twilio Auth Token", re: /(?:twilio.*token|auth_token)\s*[=:]\s*([a-f0-9]{32})/, severity: "critical", description: "Twilio auth token — send SMS/calls" },
-  { name: "SendGrid API Key", re: /(SG\.[A-Za-z0-9\-_]{22}\.[A-Za-z0-9\-_]{43})/, severity: "high", description: "SendGrid API key — send emails" },
-  { name: "Mailgun API Key", re: /(key-[a-f0-9]{32})/, severity: "high", description: "Mailgun API key" },
-  { name: "Heroku API Key", re: /(?:heroku.*api.*key|HEROKU_API_KEY)\s*[=:]\s*([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/, severity: "high", description: "Heroku API key" },
-  { name: "DigitalOcean Token", re: /(dop_v1_[a-f0-9]{64})/, severity: "high", description: "DigitalOcean personal access token" },
-  { name: "NPM Token", re: /(npm_[A-Za-z0-9]{36,})/, severity: "high", description: "NPM publish token" },
-  { name: "PyPI Token", re: /(pypi-[A-Za-z0-9\-_]{50,})/, severity: "high", description: "PyPI API token" },
-  { name: "Anthropic API Key", re: /(sk-ant-[A-Za-z0-9\-_]{40,})/, severity: "high", description: "Anthropic API key" },
-  { name: "OpenAI API Key", re: /(sk-[A-Za-z0-9]{48,})/, severity: "high", description: "OpenAI API key" },
-  { name: "Discord Bot Token", re: /([MN][A-Za-z0-9]{23,}\.[A-Za-z0-9\-_]{6}\.[A-Za-z0-9\-_]{27,})/, severity: "high", description: "Discord bot token" },
-  { name: "Telegram Bot Token", re: /(\d{8,10}:[A-Za-z0-9_-]{35})/, severity: "high", description: "Telegram bot token" },
-  { name: "Azure Storage Key", re: /(?:AccountKey=)([A-Za-z0-9+\/=]{88})/, severity: "critical", description: "Azure storage account key" },
-  { name: "Azure AD Client Secret", re: /(?:client_secret|AZURE_CLIENT_SECRET)\s*[=:]\s*([A-Za-z0-9\-_.~]{34,})/, severity: "critical", description: "Azure AD app secret" },
-  { name: "GCP Service Account Key", re: /"private_key"\s*:\s*"(-----BEGIN (?:RSA )?PRIVATE KEY-----[^"]+)"/, severity: "critical", description: "GCP service account private key" },
-  { name: "JWT Token", re: /(eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]+)/, severity: "medium", description: "JSON Web Token — decode to check claims" },
-  { name: "Private Key (PEM)", re: /(-----BEGIN (?:RSA |EC |DSA |OPENSSH )?PRIVATE KEY-----)/, severity: "critical", description: "PEM-encoded private key" },
-  { name: "SSH Private Key", re: /(-----BEGIN OPENSSH PRIVATE KEY-----)/, severity: "critical", description: "OpenSSH private key" },
-  { name: "Datadog API Key", re: /(dd[a-f0-9]{38,})/, severity: "medium", description: "Datadog API key" },
-  { name: "Shopify Access Token", re: /(shpat_[a-f0-9]{32})/, severity: "high", description: "Shopify admin API access token" },
-  { name: "Cloudflare API Key", re: /(?:CF_API_KEY|cloudflare.*key)\s*[=:]\s*([a-f0-9]{37})/, severity: "high", description: "Cloudflare Global API key" },
-  { name: "Cloudflare API Token", re: /([A-Za-z0-9\-_]{40})/, severity: "medium", description: "Cloudflare scoped API token (needs context)" },
+  { name: "AWS Access Key ID", detector: "aws-key", severity: "critical", description: "AWS IAM access key — can access cloud resources" },
+  { name: "AWS Secret Access Key", detector: "aws-secret", severity: "critical", description: "AWS secret key — full API access" },
+  { name: "GitHub Personal Access Token (classic)", detector: "github-token", prefix: "ghp_", severity: "high", description: "GitHub PAT — repo/org access" },
+  { name: "GitHub Fine-Grained Token", detector: "github-pat-fine", severity: "high", description: "GitHub fine-grained PAT" },
+  { name: "GitHub OAuth Token", detector: "github-token", prefix: "gho_", severity: "high", description: "GitHub OAuth access token" },
+  { name: "GitHub App Token", detector: "github-token", prefix: "ghu_", severity: "high", description: "GitHub user-to-server token" },
+  { name: "GitLab Personal Access Token", detector: "gitlab-pat", severity: "high", description: "GitLab PAT" },
+  { name: "Stripe Live Secret Key", detector: "stripe-key", prefix: "sk_", severity: "critical", description: "Stripe live secret key — can charge cards" },
+  { name: "Stripe Test Secret Key", detector: "stripe-test-key", severity: "medium", description: "Stripe test secret key" },
+  { name: "Stripe Publishable Key", detector: "stripe-publishable-key", severity: "low", description: "Stripe publishable key (meant to be public)" },
+  { name: "Stripe Restricted Key", detector: "stripe-key", prefix: "rk_", severity: "high", description: "Stripe restricted API key" },
+  { name: "Slack Bot Token", detector: "slack-token", prefix: "xoxb-", severity: "high", description: "Slack bot token — can post/read messages" },
+  { name: "Slack User Token", detector: "slack-token", prefix: "xoxp-", severity: "critical", description: "Slack user token — impersonate user" },
+  { name: "Slack Webhook URL", detector: "slack-webhook", severity: "medium", description: "Slack incoming webhook" },
+  { name: "Google API Key", detector: "gcp-key", severity: "medium", description: "Google API key — check restrictions" },
+  { name: "Google OAuth Client ID", detector: "google-oauth-client-id", severity: "low", description: "Google OAuth client ID (semi-public)" },
+  { name: "Firebase API Key", detector: "gcp-key", severity: "low", description: "Firebase web API key (meant to be public, but check rules)" },
+  { name: "Twilio Account SID", detector: "twilio-account-sid", severity: "medium", description: "Twilio account SID" },
+  { name: "Twilio Auth Token", detector: "twilio-auth-token", severity: "critical", description: "Twilio auth token — send SMS/calls" },
+  { name: "SendGrid API Key", detector: "sendgrid-key", severity: "high", description: "SendGrid API key — send emails" },
+  { name: "Mailgun API Key", detector: "mailgun-key", severity: "high", description: "Mailgun API key" },
+  { name: "Heroku API Key", detector: "heroku-key", severity: "high", description: "Heroku API key" },
+  { name: "DigitalOcean Token", detector: "digitalocean-token", severity: "high", description: "DigitalOcean personal access token" },
+  { name: "NPM Token", detector: "npm-token", severity: "high", description: "NPM publish token" },
+  { name: "PyPI Token", detector: "pypi-token", severity: "high", description: "PyPI API token" },
+  { name: "Anthropic API Key", detector: "anthropic-key", severity: "high", description: "Anthropic API key" },
+  { name: "OpenAI API Key", detector: "openai-key", severity: "high", description: "OpenAI API key" },
+  { name: "Discord Bot Token", detector: "discord-bot-token", severity: "high", description: "Discord bot token" },
+  { name: "Telegram Bot Token", detector: "telegram-bot-token", severity: "high", description: "Telegram bot token" },
+  { name: "Azure Storage Key", detector: "azure-storage-key", severity: "critical", description: "Azure storage account key" },
+  { name: "Azure AD Client Secret", detector: "azure-ad-secret", severity: "critical", description: "Azure AD app secret" },
+  { name: "GCP Service Account Key", detector: "gcp-service-account", severity: "critical", description: "GCP service account private key" },
+  { name: "JWT Token", detector: "jwt", severity: "medium", description: "JSON Web Token — decode to check claims" },
+  { name: "Private Key (PEM)", detector: "private-key", severity: "critical", description: "PEM-encoded private key" },
+  { name: "SSH Private Key", detector: "private-key", prefix: "-----BEGIN OPENSSH", severity: "critical", description: "OpenSSH private key" },
+  { name: "Datadog API Key", detector: "datadog-key", severity: "medium", description: "Datadog API key" },
+  { name: "Shopify Access Token", detector: "shopify-token", severity: "high", description: "Shopify admin API access token" },
+  { name: "Cloudflare API Key", detector: "cloudflare-global-key", severity: "high", description: "Cloudflare Global API key" },
+  { name: "Cloudflare API Token", detector: "cloudflare-api-token", severity: "medium", description: "Cloudflare scoped API token" },
 ];
 
 // ─── Credential format patterns ───
@@ -830,12 +833,13 @@ function encodePanel(input) {
 }
 
 // ─── Scan text for API keys ───
-function scanForKeys(text) {
+export function scanForKeys(text) {
   var found = [];
   for (var pattern of API_KEY_PATTERNS) {
-    var match = pattern.re.exec(text);
+    var pre = pattern.prefix;
+    var match = findFirst(detector(pattern.detector), text, pre ? function (h) { return h.value.startsWith(pre); } : null);
     if (match) {
-      var val = match[1] || match[0];
+      var val = match.value;
       var masked = val.substring(0, 8) + "..." + val.substring(val.length - 4);
       found.push({ name: pattern.name, value: masked, fullLength: val.length, severity: pattern.severity, description: pattern.description });
     }

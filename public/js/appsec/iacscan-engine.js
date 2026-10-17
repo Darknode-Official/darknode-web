@@ -6,6 +6,7 @@
 // inside a Blob module Worker and under node tests.
 
 import { parseHcl, parseYamlSubset } from "../ingest/parse.js";
+import { detector, findAll } from "../core/secret-detectors.js";
 
 export const TOOL_ID = "iacscan";
 export const VERSION = "1.0.0";
@@ -1876,17 +1877,19 @@ rule("GHA-013", "low", "github-actions", GHA, "Reusable workflow inherits all se
 
 /* ---------------------------- Secrets (all text) ------------------------- */
 
+// What each secret looks like comes from the shared catalogue (core/secret-detectors.js);
+// these entries keep the IaC scanner's own rule ids, severities and titles.
 export const SECRET_PATTERNS = [
-  { id: "SEC-001", severity: "critical", title: "AWS access key id in file", re: /\b((?:AKIA|ASIA)[0-9A-Z]{16})\b/g },
-  { id: "SEC-002", severity: "critical", title: "Private key in file", re: /(-----BEGIN (?:RSA |EC |DSA |OPENSSH |ENCRYPTED |PGP )?PRIVATE KEY(?: BLOCK)?-----)/g },
-  { id: "SEC-003", severity: "critical", title: "GitHub token in file", re: /\b((?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9]{36}|github_pat_[A-Za-z0-9_]{60,90})\b/g },
-  { id: "SEC-004", severity: "high", title: "Slack token in file", re: /\b(xox[baprs]-[A-Za-z0-9-]{10,})\b/g },
-  { id: "SEC-005", severity: "high", title: "Google API key in file", re: /\b(AIza[0-9A-Za-z_-]{35})\b/g },
-  { id: "SEC-006", severity: "medium", title: "Hard-coded password or secret assignment", re: /(?:^|[\s{,;(])["']?([A-Za-z0-9_.-]*(?:password|passwd|pwd|secret|token|api_?key|apikey|client_?secret)[A-Za-z0-9_.-]*)["']?\s*(?:=|:)\s*["']([^"'\s$<>{}]{6,})["']/gim, generic: true },
-  { id: "SEC-007", severity: "critical", title: "AWS secret access key in file", re: /(?:aws_?secret_?access_?key|secret_?key)["']?\s*(?:=|:)\s*["']?([A-Za-z0-9/+]{40})(?![A-Za-z0-9/+])/gi },
-  { id: "SEC-008", severity: "critical", title: "Stripe live secret key in file", re: /\b((?:sk|rk)_live_[0-9a-zA-Z]{24,99})\b/g },
-  { id: "SEC-009", severity: "medium", title: "Slack incoming webhook URL in file", re: /(https:\/\/hooks\.slack\.com\/services\/T[A-Z0-9]+\/B[A-Z0-9]+\/[A-Za-z0-9]{20,})/g },
-  { id: "SEC-010", severity: "critical", title: "Azure storage account key in file", re: /AccountKey=([A-Za-z0-9+/]{86,88}==)/g },
+  { id: "SEC-001", severity: "critical", title: "AWS access key id in file", detectors: ["aws-key"] },
+  { id: "SEC-002", severity: "critical", title: "Private key in file", detectors: ["private-key"] },
+  { id: "SEC-003", severity: "critical", title: "GitHub token in file", detectors: ["github-token", "github-pat-fine"] },
+  { id: "SEC-004", severity: "high", title: "Slack token in file", detectors: ["slack-token"] },
+  { id: "SEC-005", severity: "high", title: "Google API key in file", detectors: ["gcp-key"] },
+  { id: "SEC-006", severity: "medium", title: "Hard-coded password or secret assignment", detectors: ["pat-assignment"], generic: true },
+  { id: "SEC-007", severity: "critical", title: "AWS secret access key in file", detectors: ["aws-secret"] },
+  { id: "SEC-008", severity: "critical", title: "Stripe live secret key in file", detectors: ["stripe-key"] },
+  { id: "SEC-009", severity: "medium", title: "Slack incoming webhook URL in file", detectors: ["slack-webhook"] },
+  { id: "SEC-010", severity: "critical", title: "Azure storage account key in file", detectors: ["azure-storage-key"] },
 ];
 for (const sp of SECRET_PATTERNS) {
   RULE_LIST.push({ id: sp.id, title: sp.title, severity: sp.severity, kind: "secrets",
@@ -1903,10 +1906,8 @@ export function scanSecrets(text) {
     const l = lines[i];
     if (l.length > 4000) continue;
     for (const sp of SECRET_PATTERNS) {
-      sp.re.lastIndex = 0;
-      let m;
-      while ((m = sp.re.exec(l))) {
-        const val = sp.generic ? m[2] : m[1];
+      for (const h of sp.detectors.flatMap((id) => findAll(detector(id), l))) {
+        const m = h.m, val = h.value;
         if (sp.generic) {
           if (NOT_SECRET_KEY_RE.test(m[1]) || !isLiteralSecret(val) || AKIA_RE.test(val) || /^(?:sha256|sha1|md5):|^[a-z]+(\.[a-z]+)+$/i.test(val)) continue;
         }

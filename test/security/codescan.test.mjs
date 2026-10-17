@@ -138,7 +138,7 @@ group("codescan: manifests + scoring", () => {
     assert.equal(d.length, 2); assert.equal(d[0].version, "1.7.0"); assert.equal(d[0].ecosystem, "Go");
   });
   test("Cargo.lock + Gemfile.lock", () => {
-    assert.equal(parseManifest("Cargo.lock", '[[package]]\nname = "serde"\nversion = "1.0.100"\n')[0].ecosystem, "crates.io");
+    assert.equal(parseManifest("Cargo.lock", '[[package]]\nname = "serde"\nversion = "1.0.100"\nsource = "registry+https://github.com/rust-lang/crates.io-index"\n')[0].ecosystem, "crates.io");
     assert.equal(parseManifest("Gemfile.lock", "GEM\n  remote: x\n  specs:\n    rails (6.0.0)\n      actionpack (= 6.0.0)\n")[0].name, "rails");
   });
   test("CVSS 3.1 base scores", () => {
