@@ -96,14 +96,14 @@ jobs:
     timeout-minutes: 20
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
-          node-version: "20"
+          node-version: "22"
 
       - name: Download the pinned Darknode scanner
         run: |
@@ -136,7 +136,7 @@ ${sums} > SHA256SUMS
 
       - name: Upload results to GitHub code scanning
         if: always() && hashFiles('darknode.sarif') != '' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: darknode.sarif
           category: darknode

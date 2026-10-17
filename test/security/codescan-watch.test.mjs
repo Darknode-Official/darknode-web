@@ -184,7 +184,7 @@ group("codescan ci: workflow generator", () => {
     return yy.slice(i, j < 0 ? undefined : j);
   };
   test("pinned actions, history, permissions and SARIF upload", () => {
-    for (const s of ["actions/checkout@v4", "fetch-depth: 0", "actions/setup-node@v4", 'node-version: "20"', "github/codeql-action/upload-sarif@v3", "security-events: write", "contents: read", "sarif_file: darknode.sarif"]) assert.ok(y.includes(s), "missing " + s);
+    for (const s of ["actions/checkout@v5", "fetch-depth: 0", "actions/setup-node@v5", 'node-version: "22"', "github/codeql-action/upload-sarif@v4", "security-events: write", "contents: read", "sarif_file: darknode.sarif"]) assert.ok(y.includes(s), "missing " + s);
     assert.ok(/on:\n  push:\n    branches: \["\*\*"\]\n  pull_request:/.test(y));
     assert.ok(!/\t/.test(y), "YAML must not contain tabs");
   });
@@ -268,7 +268,7 @@ group("codescan ci: workflow generator", () => {
   });
   test("the repository's own workflow uses the same gate", () => {
     const own = readFileSync(join(root, ".github", "workflows", "darknode-scan.yml"), "utf8");
-    for (const s of ["actions/checkout@v4", "fetch-depth: 0", "actions/setup-node@v4", "github/codeql-action/upload-sarif@v3", "security-events: write", "node scripts/darknode-scan.mjs . --sarif darknode.sarif --full-sarif --fail-on high $diff"]) assert.ok(own.includes(s), "missing " + s);
+    for (const s of ["actions/checkout@v5", "fetch-depth: 0", "actions/setup-node@v5", "github/codeql-action/upload-sarif@v4", "security-events: write", "node scripts/darknode-scan.mjs . --sarif darknode.sarif --full-sarif --fail-on high $diff"]) assert.ok(own.includes(s), "missing " + s);
     assert.equal(WORKFLOW_PATH, ".github/workflows/darknode-scan.yml");
   });
   test("base64 for the contents API is UTF-8 safe", () => {
