@@ -20,7 +20,7 @@
  *            (--only takes feed names = file names without .json; default is all)
  */
 
-import { readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { gunzipSync } from "node:zlib";
@@ -65,6 +65,24 @@ function transformCisaKev(body) {
   rows.sort((a, b) => String(b.dateAdded || "").localeCompare(String(a.dateAdded || "")));
   const data = rows.slice(0, 500);
   return { updated: nowIso(), source: "CISA KEV", count: data.length, data };
+}
+
+// Full KEV catalog, compact (cve + dates + ransomware flag only), for tools that
+// MATCH CVEs against KEV (vulnimport, EPSS union). cisa-kev.json stays the 500
+// newest with descriptions for the dashboards that render it.
+function transformCisaKevIndex(body) {
+  const src = JSON.parse(body);
+  const vulns = Array.isArray(src.vulnerabilities) ? src.vulnerabilities : null;
+  if (!vulns || !vulns.length) throw new Error("CISA KEV: missing or empty vulnerabilities array");
+  const data = vulns
+    .filter((v) => v && v.cveID)
+    .map((v) => {
+      const row = { cve: v.cveID, dateAdded: v.dateAdded, dueDate: v.dueDate };
+      if (v.knownRansomwareCampaignUse === "Known") row.ransomware = "Known";
+      return row;
+    })
+    .sort((a, b) => a.cve.localeCompare(b.cve));
+  return { updated: nowIso(), source: "CISA KEV (full catalog index)", catalogVersion: src.catalogVersion || "", count: data.length, data };
 }
 
 // stamparm/ipsum aggregated malicious-IP list (feeds the FireHOL + IPSUM view).
@@ -135,14 +153,16 @@ function makeOfacTransform(altGetter) {
 
 // FIRST EPSS (Exploit Prediction Scoring System) daily scores.
 // Upstream is a ~390k-row gzipped CSV (one row per CVE). Only the top-N by
-// EPSS (EPSS_TOP_N) plus every CVE present in the just-written cisa-kev.json are shipped, so
-// the browser gets a <300 KB file that still covers everything known-exploited.
+// EPSS (EPSS_TOP_N) plus every CVE in the just-written cisa-kev-index.json (full KEV) are shipped, so
+// the browser gets a ~320 KB file that still covers everything known-exploited.
 const EPSS_URL = "https://epss.cyentia.com/epss_scores-current.csv.gz";
-const EPSS_TOP_N = 4500; // + KEV union lands ~4.8k rows, under the 300 KB budget
+const EPSS_TOP_N = 4500; // + full-KEV union (cisa-kev-index) lands ~5.4k rows, ~320 KB
 
 function readKevCves() {
   try {
-    const kev = JSON.parse(readFileSync(join(FEEDS_DIR, "cisa-kev.json"), "utf8"));
+    let file = join(FEEDS_DIR, "cisa-kev-index.json");
+    if (!existsSync(file)) file = join(FEEDS_DIR, "cisa-kev.json");
+    const kev = JSON.parse(readFileSync(file, "utf8"));
     return new Set((Array.isArray(kev.data) ? kev.data : []).map((r) => r && r.cve).filter(Boolean));
   } catch (e) {
     console.error(`[warn] epss-top: could not read cisa-kev.json (${e && e.message}); continuing without KEV union`);
@@ -215,6 +235,11 @@ const FEEDS = [
     file: "cisa-kev.json",
     url: "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json",
     transform: transformCisaKev,
+  },
+  {
+    file: "cisa-kev-index.json",
+    url: "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json",
+    transform: transformCisaKevIndex,
   },
   {
     file: "malicious-ips.json",
