@@ -31,7 +31,9 @@ import {
   STATUSES,
 } from "../security-graph.js";
 
-export { ENTITY_TYPES, RELATIONSHIP_TYPES, SEVERITIES, STATUSES };
+import { ANY, RELATIONSHIP_RULES, ruleAllows } from "./relationship-rules.js";
+
+export { ENTITY_TYPES, RELATIONSHIP_TYPES, SEVERITIES, STATUSES, RELATIONSHIP_RULES };
 
 // ---------------------------------------------------------------------------
 // Field validators. Each validator is { test, coerce, describe }.
@@ -457,7 +459,11 @@ export const TYPE_SCHEMAS = {
       f("category", "string"),
       f("recommendation", "text"),
       f("affected", "array", { desc: "affected assets" }),
-      f("status", "enum", { values: ["open", "in-progress", "remediated", "accepted", "false-positive"] }),
+      // Lifecycle uses the graph's entity statuses (security-graph STATUSES); the older
+      // assessment values stay accepted so existing records still validate. Why a
+      // finding was resolved/closed goes in `resolution`, not in a new status value.
+      f("status", "enum", { values: [...STATUSES.filter(Boolean), "in-progress", "remediated", "accepted", "false-positive"] }),
+      f("resolution", "enum", { values: ["fixed", "accepted", "false_positive", "duplicate"], desc: "why the finding was resolved / closed" }),
     ],
   },
   DETECTION: {
@@ -531,54 +537,9 @@ export const TYPE_SCHEMAS = {
   },
 };
 
-// ---------------------------------------------------------------------------
-// Relationship semantics: constrain which entity types a relationship may join.
-// A rule is { from: [types]|"*", to: [types]|"*" }. "*" means any entity type.
-// This turns the flat RELATIONSHIP_TYPES list into a typed, checkable graph.
-// ---------------------------------------------------------------------------
-
-const ANY = "*";
-
-export const RELATIONSHIP_RULES = {
-  related_to: { from: ANY, to: ANY },
-  contains: {
-    from: ["ASSET", "ENDPOINT", "DOMAIN", "IP", "CASE", "INVESTIGATION", "INCIDENT", "CAMPAIGN", "VENDOR"],
-    to: ANY,
-  },
-  affects: {
-    from: ["VULNERABILITY", "MALWARE", "TECHNIQUE", "CAMPAIGN", "THREAT_ACTOR", "INCIDENT", "FINDING"],
-    to: ["ASSET", "ENDPOINT", "SOFTWARE", "SERVICE", "DOMAIN", "IP", "IDENTITY", "VENDOR"],
-  },
-  observed_in: {
-    from: ["INDICATOR", "MALWARE", "TECHNIQUE", "IP", "DOMAIN"],
-    to: ["EVENT", "ALERT", "INCIDENT", "CASE", "ASSET", "ENDPOINT"],
-  },
-  attributed_to: {
-    from: ["CAMPAIGN", "MALWARE", "INCIDENT", "TECHNIQUE", "INDICATOR"],
-    to: ["THREAT_ACTOR"],
-  },
-  mitigates: {
-    from: ["CONTROL", "DETECTION", "PLAYBOOK"],
-    to: ["VULNERABILITY", "TECHNIQUE", "MALWARE", "THREAT_ACTOR", "FINDING"],
-  },
-  exploits: {
-    from: ["THREAT_ACTOR", "MALWARE", "CAMPAIGN", "TECHNIQUE"],
-    to: ["VULNERABILITY", "SOFTWARE", "SERVICE"],
-  },
-  targets: {
-    from: ["THREAT_ACTOR", "CAMPAIGN", "MALWARE"],
-    to: ["ASSET", "ENDPOINT", "DOMAIN", "IP", "SOFTWARE", "IDENTITY", "VENDOR"],
-  },
-  part_of: { from: ANY, to: ["CASE", "INVESTIGATION", "INCIDENT", "CAMPAIGN", "REPORT"] },
-  detected_by: {
-    from: ["MALWARE", "TECHNIQUE", "INDICATOR", "VULNERABILITY", "THREAT_ACTOR"],
-    to: ["DETECTION", "ALERT", "CONTROL"],
-  },
-  evidence_for: {
-    from: ["EVIDENCE", "EVENT", "ALERT", "INDICATOR", "FINDING"],
-    to: ["INCIDENT", "CASE", "INVESTIGATION", "FINDING", "THREAT_ACTOR"],
-  },
-};
+// Relationship semantics (RELATIONSHIP_RULES) live in ./relationship-rules.js, an
+// import-free leaf, so security-graph.js can enforce them in createRelationship
+// without a circular import back into this module. Re-exported above.
 
 // ---------------------------------------------------------------------------
 // Public API.
@@ -688,12 +649,8 @@ export function validateEntity(type, name, data = {}, opts = {}) {
 
 /** Is `relType` allowed to connect an entity of `fromType` to one of `toType`? */
 export function isValidRelationship(relType, fromType, toType) {
-  const rule = RELATIONSHIP_RULES[relType];
-  if (!rule) return false;
   if (!ENTITY_TYPES.includes(fromType) || !ENTITY_TYPES.includes(toType)) return false;
-  const okFrom = rule.from === ANY || rule.from.includes(fromType);
-  const okTo = rule.to === ANY || rule.to.includes(toType);
-  return okFrom && okTo;
+  return ruleAllows(relType, fromType, toType);
 }
 
 /** Which relationship types can originate from a given entity type. */

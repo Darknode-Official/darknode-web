@@ -1,5 +1,6 @@
 // Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
 import { wins } from './core/graph-merge.js';
+import { ruleAllows } from './core/relationship-rules.js';
 
 // The graph is scoped to the active workspace (Phase B2). A user's PERSONAL workspace
 // keeps the original, unprefixed key so existing graphs are preserved with zero
@@ -274,10 +275,20 @@ export function listEntities(filter) {
   return results.slice(offset, offset + limit);
 }
 
+let _droppedLinks = 0, _droppedLogged = false;
+
 export function createRelationship(fromId, toId, type) {
   _load();
   if (!_entities[fromId] || !_entities[toId]) return null;
   if (!RELATIONSHIP_TYPES.includes(type)) return null;
+  // Typed graph: a link whose (fromType, rel, toType) breaks RELATIONSHIP_RULES is
+  // dropped and counted (getStats().droppedLinks) instead of stored.
+  const fromType = _entities[fromId].type, toType = _entities[toId].type;
+  if (!ruleAllows(type, fromType, toType)) {
+    _droppedLinks++;
+    if (!_droppedLogged) { _droppedLogged = true; try { console.debug('[security-graph] dropped invalid link', fromType, type, toType); } catch (_) {} }
+    return null;
+  }
   const existing = Object.values(_relationships).find(
     r => r.fromId === fromId && r.toId === toId && r.type === type
   );
@@ -495,6 +506,7 @@ export function getStats() {
   return {
     totalEntities: entities.length,
     totalRelationships: Object.keys(_relationships).length,
+    droppedLinks: _droppedLinks,
     byType,
     byStatus,
     bySeverity

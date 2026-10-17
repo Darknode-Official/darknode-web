@@ -35,6 +35,11 @@ export async function publishFindings(toolId, findings, { dataset, sample, link,
   const out = { created: r.created || 0, updated: r.updated || 0, skipped: items.length - (r.entities || []).length, entities: r.entities || [] };
   if (!quiet) toast(`${out.created} added, ${out.updated} updated in Security Graph`, "success");
   try { document.dispatchEvent(new CustomEvent("dn:findings:published", { detail: { toolId, created: out.created, updated: out.updated } })); } catch (_) {}
+  // Same "/js/core/bus.js" specifier as every other importer: the bus is a singleton.
+  try {
+    const { bus, EVENTS } = await import("/js/core/bus.js");
+    bus.emit(EVENTS.TOOL_RESULT, { tool: toolId, created: out.created, updated: out.updated, entities: out.entities.length });
+  } catch (_) {}
   return out;
 }
 

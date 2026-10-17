@@ -999,7 +999,7 @@ function ctSendAlertsToGraph(btn, alerts) {
         opts:{tags:tags.concat('alert', String(a.source).toLowerCase()), severity:CT_GRAPH_SEV[a.severity]||null, status:CT_GRAPH_STATUS[a.status]}
       });
       if (!alert) return;
-      [a.srcIp, a.dstIp].forEach(function(v) { if (v) link(alert, one(ctHostItem(v, tags)), 'observed_in'); });
+      [a.srcIp, a.dstIp].forEach(function(v) { if (v) link(one(ctHostItem(v, tags)), alert, 'observed_in'); });
       if (a.mitre) link(alert, one({type:'TECHNIQUE',name:a.mitre,data:{framework:'MITRE ATT&CK'},opts:{tags:['mitre-attack']}}), 'related_to');
       // Escalated alerts become incidents that contain the alert.
       if (a.status === 'Escalated') {

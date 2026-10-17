@@ -7,6 +7,7 @@
 // { id?, title, severity: "critical"|"high"|"medium"|"low"|"info",
 //   confidence?: "confirmed"|"likely"|"review"|number,
 //   status?: "open"|"new"|"investigating"|"resolved"|"closed",
+//   resolution?: "fixed"|"accepted"|"false_positive"|"duplicate",  (why resolved/closed)
 //   category?, description?, recommendation?,
 //   controls?: [{ framework: "MITRE"|"CIS"|"ISO27001"|"NIST-CSF"|"NIST-800-53"|"SOC2"|"PCI"|"GDPR"|string, id: string }],
 //   evidence?: object[],
@@ -14,6 +15,7 @@
 //   tags?: string[] }
 
 import { cyrb53 } from "./hash.js";
+import { ruleAllows } from "./relationship-rules.js";
 
 /** Entity `data` byte budget: worker/graph.js blanks data above 40000 chars. */
 export const DATA_CAP = 38000;
@@ -65,6 +67,57 @@ export function fitUnder(data, cap = DATA_CAP) {
   return d;
 }
 
+const ownFields = (d) => { const o = {}; for (const k in d || {}) if (k !== "bySource" && k !== "_toolSource") o[k] = d[k]; return o; };
+
+/**
+ * Merge a tool's `incoming` data into an existing entity's `prev` data (used by
+ * graph-bridge upsertToolResult). Top level is a shallow merge where incoming wins
+ * for the keys it sends, so one tool no longer erases another tool's facts.
+ * Once a second tool touches the entity, data.bySource[tool] keeps each tool's own
+ * latest payload (newest last), seeding the earlier tool's top-level facts under its
+ * _toolSource name. If the result is over `cap`, the oldest sources are dropped first.
+ * Never mutates its inputs.
+ * @param {object} prev existing entity data
+ * @param {object} incoming the tool's data
+ * @param {string} toolName
+ * @param {number} [cap=DATA_CAP]
+ * @returns {object}
+ */
+export function mergeToolData(prev, incoming, toolName, cap = DATA_CAP) {
+  const p = prev || {}, inc = ownFields(incoming), tool = str(toolName) || "unknown";
+  const bySource = { ...(p.bySource && typeof p.bySource === "object" ? p.bySource : {}) };
+  const prevTool = str(p._toolSource);
+  if (prevTool && prevTool !== tool && !(prevTool in bySource)) bySource[prevTool] = ownFields(p);
+  delete bySource[tool];
+  bySource[tool] = inc;
+  // A single-source entity's top level already is that tool's data; storing it twice
+  // would double the graph's localStorage footprint for nothing.
+  if (!p.bySource && Object.keys(bySource).length < 2) return { ...p, ...inc, _toolSource: tool };
+  const out = { ...p, ...inc, _toolSource: tool, bySource };
+  const names = Object.keys(bySource);
+  while (names.length && JSON.stringify(out).length > cap) delete bySource[names.shift()];
+  return out;
+}
+
+const REOPEN = ["new", "open"];
+const KEEP_CLOSED = ["accepted", "false_positive", "duplicate"];
+
+/**
+ * Status a tool re-run should move an entity to, or null to leave it. A tool's
+ * "new"/"open" does not pull back an entity an analyst is investigating, nor reopen
+ * one resolved/closed as accepted / false_positive / duplicate; anything else applies, so a
+ * re-scan can resolve a finding or reopen a fixed one that came back.
+ * @param {string|null} current
+ * @param {string|null|undefined} incoming
+ * @param {string} [resolution] data.resolution
+ * @returns {string|null}
+ */
+export function nextStatus(current, incoming, resolution) {
+  if (!incoming || incoming === current) return null;
+  if (REOPEN.includes(incoming) && (current === "investigating" || ((current === "closed" || current === "resolved") && KEEP_CLOSED.includes(resolution)))) return null;
+  return incoming;
+}
+
 /**
  * Collapse findings sharing a findingKey; the last occurrence wins but keeps the
  * position of the first.
@@ -113,15 +166,18 @@ export function toEntities(toolId, findings, { dataset, sample = false } = {}) {
       findingKey: key, tool: toolId, dataset, confidence: f.confidence, category: f.category,
       controls: controls.map((c) => ({ framework: str(c.framework), id: str(c.id) })),
       assets: assets.map((a) => str(a.name).trim()), evidence, evidenceCount: evidence.length,
-      description: f.description, recommendation: f.recommendation,
+      description: f.description, recommendation: f.recommendation, resolution: f.resolution,
     });
     const fk = put("FINDING", `${str(f.title).trim()} (${toolId}:${key})`, data, {
       severity: sev(f.severity), status: f.status || "open",
       tags: uniq(["sink", toolId, ...(sample ? ["sample"] : []), ...(f.tags || [])]),
     });
     for (const a of assets) {
-      const ak = put(str(a.type).toUpperCase() || "ASSET", str(a.name).trim(), a.data || {}, { tags: sample ? ["sample"] : [] });
-      links.add(JSON.stringify({ from: fk, to: ak, rel: "affects" }));
+      const at = str(a.type).toUpperCase() || "ASSET";
+      const ak = put(at, str(a.name).trim(), a.data || {}, { tags: sample ? ["sample"] : [] });
+      // FINDING -affects-> only targets the rules allow (assets, hosts, identities...);
+      // a VULNERABILITY / INCIDENT "asset" is linked related_to so the graph keeps it.
+      links.add(JSON.stringify({ from: fk, to: ak, rel: ruleAllows("affects", "FINDING", at) ? "affects" : "related_to" }));
     }
     for (const c of controls) {
       const ck = put("CONTROL", `${str(c.framework)} ${str(c.id)}`.trim(), { framework: str(c.framework), controlId: str(c.id) }, { tags: sample ? ["sample"] : [] });
