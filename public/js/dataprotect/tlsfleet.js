@@ -70,7 +70,7 @@ export function renderTlsFleet(main) {
     <div class="tlsf-hd"><h1>Certificate &amp; TLS Fleet Monitor</h1><span class="tlsf-tag">TLS</span></div>
     <p class="tlsf-sub">Track certificate expiry across every domain you own. Paste a list; each domain's newest certificate is read live from certificate transparency logs, and the watchlist is kept in this browser.</p>
     <div class="tlsf-card">
-      <textarea id="tlsfIn" placeholder="one domain per line — e.g.&#10;example.com&#10;api.example.com&#10;status.example.com" spellcheck="false"></textarea>
+      <textarea id="tlsfIn" placeholder="One domain per line" spellcheck="false"></textarea>
       <div class="tlsf-row">
         <button class="tlsf-btn pri" id="tlsfAdd">Add &amp; check</button>
         <button class="tlsf-btn" id="tlsfCheck">Check all</button>

@@ -194,7 +194,7 @@ export function renderAccessReview(main) {
         <div class="acr-opt"><label for="acrAdminN">Max admins</label><input type="number" id="acrAdminN" min="1" value="${DEFAULT_OPTIONS.adminMaxCount}"><p class="acr-help">Standing admin accounts above this count are flagged.</p></div>
         <div class="acr-opt"><label for="acrAdminP">Max admins (%)</label><input type="number" id="acrAdminP" min="1" max="100" value="${DEFAULT_OPTIONS.adminMaxPct}"><p class="acr-help">Share of enabled members; applied from 20 users up.</p></div>
         <div class="acr-opt"><label for="acrPwd">Password age (days)</label><input type="number" id="acrPwd" min="30" value="${DEFAULT_OPTIONS.pwdAgeDays}"><p class="acr-help">Only used when the export has pwdLastSet.</p></div>
-        <div class="acr-opt wide"><label for="acrAlias">Alias domains</label><input type="text" id="acrAlias" placeholder="contoso.com, contoso.onmicrosoft.com" style="width:100%"><p class="acr-help">Comma-separated domains treated as the same organisation when matching emails. Plus-tags are always stripped.</p></div>
+        <div class="acr-opt wide"><label for="acrAlias">Alias domains</label><input type="text" id="acrAlias" placeholder="Comma-separated domains" style="width:100%"><p class="acr-help">Comma-separated domains treated as the same organisation when matching emails. Plus-tags are always stripped.</p></div>
       </div>
       <div class="acr-row">
         <button class="acr-btn pri" id="acrRun">Run review</button>

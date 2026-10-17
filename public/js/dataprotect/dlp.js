@@ -98,7 +98,7 @@ const SAMPLE = [
   "github_token: ghp_aBcDeFgHiJkLmNoPqRsTuVwXyZ0123456789",
   "",
   "Customer record:",
-  "  name: Jane Roe   email: jane.roe@acme.com",
+  "  name: Test User   email: test@darknode.ai",
   "  card: 4111 1111 1111 1111   ssn: 123-45-6789",
   "  iban: DE89 3704 0044 0532 0130 00",
 ].join("\n");

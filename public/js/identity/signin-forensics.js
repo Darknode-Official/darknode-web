@@ -442,7 +442,7 @@ const HOME = { ip: "86.43.10.", city: "Dublin", country: "IE", lat: 53.35, lon: 
 function exampleEntra() {
   const H = ["Date (UTC)", "Request ID", "User", "Username", "User ID", "Application", "Status", "IP address", "Location", "City", "State/province", "Country/Region", "Client app", "Authentication requirement", "Multifactor authentication result", "Conditional Access", "Failure reason", "Browser", "Operating System", "Device ID", "Risk state", "Latitude", "Longitude"];
   const R = rng(7); const rows = []; let n = 0;
-  const push = (o) => rows.push({ ts: o.ts, user: `${o.u}@contoso.example`, app: o.app || "Office 365 Exchange Online", ok: o.ok !== false, ip: o.ip, city: o.city, state: o.state || "", country: o.country, client: o.client || "Browser", mfa: o.mfa === undefined ? true : o.mfa, reason: o.reason || "", browser: o.browser || "Edge 130.0.0", os: o.os || "Windows 11", risk: o.risk || "none", lat: o.lat, lon: o.lon });
+  const push = (o) => rows.push({ ts: o.ts, user: `${o.u}@test.darknode.ai`, app: o.app || "Office 365 Exchange Online", ok: o.ok !== false, ip: o.ip, city: o.city, state: o.state || "", country: o.country, client: o.client || "Browser", mfa: o.mfa === undefined ? true : o.mfa, reason: o.reason || "", browser: o.browser || "Edge 130.0.0", os: o.os || "Windows 11", risk: o.risk || "none", lat: o.lat, lon: o.lon });
   // Baseline: 14 working days, each person signs in 2-4 times from the office range, MFA satisfied.
   for (let d = 0; d < 20; d++) {
     const dayTs = EX_T0 + d * DAY; const dow = new Date(dayTs).getUTCDay(); if (dow === 0 || dow === 6) continue;
@@ -482,7 +482,7 @@ function exampleEntra() {
 function exampleGoogle() {
   const H = ["Date", "Event Name", "Event Description", "User", "IP Address", "Login Type", "Is Suspicious", "Login Challenge Method", "Is Second Factor", "Login Failure Type"];
   const R = rng(11); const rows = [];
-  const push = (ts, ev, u, ip, extra = {}) => rows.push({ ts, ev, u: `${u}@acme.example`, ip, type: extra.type || "google_password", susp: !!extra.susp, mfa: extra.mfa !== false, fail: extra.fail || "" });
+  const push = (ts, ev, u, ip, extra = {}) => rows.push({ ts, ev, u: `${u}@test.darknode.ai`, ip, type: extra.type || "google_password", susp: !!extra.susp, mfa: extra.mfa !== false, fail: extra.fail || "" });
   for (let d = 0; d < 12; d++) {
     const dayTs = EX_T0 + d * DAY; const dow = new Date(dayTs).getUTCDay(); if (dow === 0 || dow === 6) continue;
     for (const u of STAFF.slice(0, 9)) { push(dayTs + Math.floor(R() * 8 * 60) * MIN, "login_success", u, "198.51.100." + (10 + Math.floor(R() * 4))); if (R() < 0.3) push(dayTs + 9 * 60 * MIN, "logout", u, "198.51.100.11"); }

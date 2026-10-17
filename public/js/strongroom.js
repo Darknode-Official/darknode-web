@@ -38,24 +38,24 @@ const SOUND_HELP = {
 // It is fake and marked as such; real use is loading your own export.
 const SAMPLE_PAY = [
   "date,vendor,amount,invoice,account,approver,initiator",
-  "2026-01-05,Acme Supply Co,12480.00,INV-1001,DE89****,alice,bob",
-  "2026-01-06,Acme Supply Co,12480.00,INV-1001,DE89****,alice,bob",
-  "2026-01-08,Globex Logistics,9600.00,INV-2201,GB22****,carol,carol",
-  "2026-01-09,Globex Logistics,9550.00,INV-2202,GB22****,carol,carol",
-  "2026-01-11,Globex Logistics,9700.00,INV-2203,GB22****,carol,carol",
-  "2026-01-14,Umbrella Partners,3000.00,INV-3310,FR14****,dave,erin",
-  "2026-01-18,Initech Consulting,264000.00,INV-77,FR76****,frank,grace",
-  "2026-01-24,Soylent Foods,41000.00,INV-8800,NL55****,alice,heidi",
+  "2026-01-05,Vendor A Supply,12480.00,INV-1001,DE89****,user01,user02",
+  "2026-01-06,Vendor A Supply,12480.00,INV-1001,DE89****,user01,user02",
+  "2026-01-08,Vendor B Logistics,9600.00,INV-2201,GB22****,user03,user03",
+  "2026-01-09,Vendor B Logistics,9550.00,INV-2202,GB22****,user03,user03",
+  "2026-01-11,Vendor B Logistics,9700.00,INV-2203,GB22****,user03,user03",
+  "2026-01-14,Vendor C Partners,3000.00,INV-3310,FR14****,user04,user05",
+  "2026-01-18,Vendor D Consulting,264000.00,INV-77,FR76****,user06,user07",
+  "2026-01-24,Vendor E Foods,41000.00,INV-8800,NL55****,user01,user08",
 ].join("\n");
 const SAMPLE_ACCESS = [
   "date,actor,type,vendor,detail",
-  "2026-01-02,,vendor_bank_change,Acme Supply Co,beneficiary IBAN changed via emailed request",
-  "2026-01-17,frank,login_new_geo,,sign-in from new ASN / country",
-  "2026-01-17,frank,mfa_enrolled,,new authenticator device registered",
+  "2026-01-02,,vendor_bank_change,Vendor A Supply,beneficiary IBAN changed via emailed request",
+  "2026-01-17,user06,login_new_geo,,sign-in from new ASN / country",
+  "2026-01-17,user06,mfa_enrolled,,new authenticator device registered",
 ].join("\n");
 
-const TEMPLATE_PAY = "date,vendor,amount,invoice,account,approver,initiator\n2026-01-15,Example Vendor Inc,12500.00,INV-0001,IBAN-or-acct,approver_user,initiator_user\n";
-const TEMPLATE_ACCESS = "date,actor,type,vendor,detail\n2026-01-14,jdoe,vendor_bank_change,Example Vendor Inc,bank account updated\n# type values: vendor_bank_change, mailbox_rule_added, login_new_geo, impossible_travel, mfa_enrolled, oauth_grant, vendor_list_export, privilege_escalation\n";
+const TEMPLATE_PAY = "date,vendor,amount,invoice,account,approver,initiator\n2026-01-15,Vendor name,12500.00,INV-0001,IBAN-or-acct,approver_user,initiator_user\n";
+const TEMPLATE_ACCESS = "date,actor,type,vendor,detail\n2026-01-14,user01,vendor_bank_change,Vendor name,bank account updated\n# type values: vendor_bank_change, mailbox_rule_added, login_new_geo, impossible_travel, mfa_enrolled, oauth_grant, vendor_list_export, privilege_escalation\n";
 
 function download(name, text) {
   const blob = new Blob([text], { type: "text/csv" });

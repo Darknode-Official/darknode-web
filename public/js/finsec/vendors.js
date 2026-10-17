@@ -131,9 +131,9 @@ export function renderVendors(main) {
     <div class="vn-card" id="vnAddCard">
       <h3>Add a payee</h3>
       <div class="vn-grid">
-        <div><label class="vn-l">Payee name</label><input id="vnName" placeholder="Acme Supply Co" autocomplete="off"></div>
+        <div><label class="vn-l">Payee name</label><input id="vnName" placeholder="Legal name on the invoice" autocomplete="off"></div>
         <div><label class="vn-l">Bank detail type</label><select id="vnKind"><option value="iban">IBAN (SEPA / international)</option><option value="aba">US account + ABA routing</option></select></div>
-        <div><label class="vn-l">Added by (your name)</label><input id="vnBy" placeholder="e.g. alice" autocomplete="off"></div>
+        <div><label class="vn-l">Added by (your name)</label><input id="vnBy" placeholder="Your name" autocomplete="off"></div>
       </div>
       <div class="vn-grid" id="vnBankFields" style="margin-top:12px"></div>
       <div class="vn-row"><button class="vn-btn pri" id="vnAdd">Add payee</button><button class="vn-btn" id="vnTest">Self-test</button><span class="vn-selftest" id="vnTestOut"></span></div>
@@ -284,7 +284,7 @@ export function renderVendors(main) {
         <div class="vn-sec" style="border:0;margin-top:10px;padding:0">
           <h3 style="font-size:.85rem">2. Second-approver sign-off</h3>
           <p class="vn-note">Must be a different person from <b>${esc(pendingChange.by || "the proposer")}</b>, and the callback must be recorded first.</p>
-          <div class="vn-grid"><div><label class="vn-l">Approver name</label><input id="vnApBy" placeholder="e.g. bob"></div></div>
+          <div class="vn-grid"><div><label class="vn-l">Approver name</label><input id="vnApBy" placeholder="Not the proposer"></div></div>
           <div class="vn-row">
             <button class="vn-btn pri sm" id="vnApprove">Approve change</button>
             <button class="vn-btn danger sm" id="vnReject">Reject</button>

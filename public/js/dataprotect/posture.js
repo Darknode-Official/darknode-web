@@ -163,7 +163,7 @@ export function renderPosture(main) {
 
   const run = async () => {
     const domain = cleanDomain(inp.value);
-    if (!validDomain(domain)) { toast("Enter a valid domain, e.g. example.com"); return; }
+    if (!validDomain(domain)) { toast("Enter a valid domain name"); return; }
     btn.disabled = true;
     out.innerHTML = `<div class="ps-card"><span class="ps-spin"></span>Running live checks against <b>${esc(domain)}</b>…</div>`;
 

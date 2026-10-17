@@ -2560,7 +2560,7 @@ export function renderDeck(host, opts) {
     if (askForm) askForm.onsubmit = (e) => { e.preventDefault(); askAI(askIn.value); };
     const sf = el.querySelector("#dkStartForm");
     if (sf) {
-      sf.onsubmit = (e) => { e.preventDefault(); const d = sf.querySelector("input").value.trim(); if (!d) return toast("Enter a domain you own, e.g. example.com"); go("surface"); renderSurface(d); };
+      sf.onsubmit = (e) => { e.preventDefault(); const d = sf.querySelector("input").value.trim(); if (!d) return toast("Enter a domain you own"); go("surface"); renderSurface(d); };
       sf.querySelector("[data-tool]").onclick = () => openTool("codescan", secLabel.codescan || "Code Scanner");
     }
     // onboarding checklist
@@ -2897,7 +2897,7 @@ export function renderDeck(host, opts) {
       <div class="dk-ti-head"><h1>Attack Surface</h1><span class="mo" id="dkSurfFull">Open Exposure Mapping ${IC.ext}</span></div>
       <p class="dk-sublede">Enter a domain to map its real external footprint — certificate-transparency subdomains, DNS, registration, owning network, HTTP security headers, email authentication and security.txt. Everything is fetched live through the Darknode proxy; nothing is simulated.</p>
       <form class="dk-surfbar" id="dkSurfForm">
-        <input id="dkSurfIn" placeholder="example.com" autocomplete="off" spellcheck="false" value="${esc(d0)}">
+        <input id="dkSurfIn" placeholder="Your domain" autocomplete="off" spellcheck="false" value="${esc(d0)}">
         <button type="submit" class="dk-tibtn on">Map surface</button>
       </form>
       <div class="dk-surfhint">Use a domain you own or are authorised to assess. Lookups use authoritative public records (certificate transparency, DNS, RDAP registries, BGP origin data) and a single read-only HTTP GET.</div>
@@ -2910,7 +2910,7 @@ export function renderDeck(host, opts) {
   function runSurface(raw){
     const el = sceneEls.surface;
     const d = surfClean(raw);
-    if (!d || !/^[a-z0-9.-]+\.[a-z]{2,}$/.test(d)) { toast("Enter a valid domain, e.g. example.com"); return; }
+    if (!d || !/^[a-z0-9.-]+\.[a-z]{2,}$/.test(d)) { toast("Enter a valid domain name"); return; }
     if (!proxyConfigured()) { el.querySelector("#dkSurfGrid").hidden = false; el.querySelector("#dkSurfGrid").innerHTML = `<div class="dk-errbox">Live lookups are unavailable — the Darknode proxy is not configured in this environment.</div>`; return; }
     _surfLast = d;
     const grid = el.querySelector("#dkSurfGrid"); grid.hidden = false;
@@ -3446,7 +3446,7 @@ export function renderDeck(host, opts) {
         : `<div class="dk-nempty">Nothing urgent: no open critical or high findings and no known-exploited CVEs in this week's feed.</div>`) + feedNote;
       const f = box.querySelector(".dk-actform");
       if (f) {
-        f.onsubmit = (e) => { e.preventDefault(); const d = f.querySelector("input").value.trim(); if (!d) return toast("Enter a domain you own, e.g. example.com"); go("surface"); renderSurface(d); };
+        f.onsubmit = (e) => { e.preventDefault(); const d = f.querySelector("input").value.trim(); if (!d) return toast("Enter a domain you own"); go("surface"); renderSurface(d); };
         f.querySelector("[data-tool]").onclick = () => openTool("codescan", secLabel.codescan || "Code Scanner");
       }
     });
@@ -3634,7 +3634,7 @@ export function renderDeck(host, opts) {
           <h2>${IC.home} Workspace</h2>
           <div class="dk-setrow">
             <div class="m"><div class="t">Workspace name</div><div class="s">Shown in the header, on plans and in exported reports. Leave blank to use your account name.</div></div>
-            <input class="dk-setin" id="dkSetWsName" type="text" maxlength="48" placeholder="e.g. Acme Security" value="${esc(wsProfile.name || "")}" autocomplete="off" spellcheck="false" style="width:200px">
+            <input class="dk-setin" id="dkSetWsName" type="text" maxlength="48" placeholder="Your company or team" value="${esc(wsProfile.name || "")}" autocomplete="off" spellcheck="false" style="width:200px">
           </div>
           <div class="dk-setrow">
             <div class="m"><div class="t">Accent colour</div><div class="s">A hex colour for workspace accents. Optional.</div></div>

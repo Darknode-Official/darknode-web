@@ -202,7 +202,7 @@ export function renderSanctions(main) {
       <h3>Names to screen</h3>
       <p class="snc-note">One name per line. You can also paste a CSV or payments export — the first text column of each
         row is screened, so a vendor or payments list works as-is.</p>
-      <textarea id="scIn" placeholder="Acme Shipping LLC&#10;Vladimir Putin&#10;Bank Melli Iran"></textarea>
+      <textarea id="scIn" placeholder="One name per line"></textarea>
       <div class="snc-ctl">
         <div class="snc-field">
           <label for="scMin">Match threshold <span class="snc-hint">min score to flag</span></label>
@@ -261,7 +261,7 @@ export function renderSanctions(main) {
     fr.readAsText(f);
   });
   $("scSample").addEventListener("click", () => {
-    inTA.value = ["Acme Shipping LLC", "Vladimir Putin", "Bank Melli Iran", "Global Widgets Inc", "Nicolas Maduro", "Jane Doe"].join("\n");
+    inTA.value = ["Darknode Test Shipping LLC", "Vladimir Putin", "Bank Melli Iran", "Darknode Test Trading Ltd", "Nicolas Maduro", "Test User"].join("\n");
     $("scFileName").textContent = "";
   });
   $("scClear").addEventListener("click", () => { inTA.value = ""; $("scFileName").textContent = ""; $("scOut").innerHTML = ""; currentAudit = null; });
