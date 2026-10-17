@@ -144,7 +144,9 @@ group("deck-registry/nextStamp", () => {
   test("no stamp today -> a", () => assert.equal(nextStamp(["20261015f", "20261013b"], d), "20261016a"));
   test("next free letter after the highest used today", () => assert.equal(nextStamp(["20261016a", "20261016c", "20261015z"], d), "20261016d"));
   test("rolls over to a new day", () => assert.equal(nextStamp(["20261016z"], new Date(2026, 9, 17)), "20261017a"));
-  test("throws when letters are exhausted", () => assert.throws(() => nextStamp(["20261016z"], d)));
+  test("continues with za after z", () => assert.equal(nextStamp(["20261016z", "20261016y"], d), "20261016za"));
+  test("za..zz ordered after single letters", () => assert.equal(nextStamp(["20261016zc", "20261016q"], d), "20261016zd"));
+  test("throws when letters are exhausted", () => assert.throws(() => nextStamp(["20261016zz"], d)));
 });
 
 /* ---------------------------------------------------------------- validate */

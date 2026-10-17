@@ -11,7 +11,7 @@ const FN_RE = /^render[A-Z]\w+$/;
 const PREFIX_RE = /^[a-z]{2,4}$/;
 const DIR_RE = /^[a-z][a-z0-9-]*$/;
 const EMOJI_RE = /\p{Extended_Pictographic}/u;
-const STAMP_RE = /\?v=(\d{8}[a-z])\b/g;
+const STAMP_RE = /\?v=(\d{8}[a-z]{1,2})\b/g;
 
 /** Dirs whose engines/tests are held to the strict (error-severity) rules. */
 export const STRICT_DIRS = ["identity", "appsec", "ops", "exposure", "finsec", "risk", "compliance"];
@@ -145,14 +145,17 @@ export function collectStamps(src) {
   return [...src.matchAll(STAMP_RE)].map((m) => m[1]);
 }
 
-/** Today's `YYYYMMDD` + the next free letter after the highest one used today. */
+/** Today's `YYYYMMDD` + the next free suffix after the highest one used today:
+ *  a..z, then za..zz (51 stamps a day). */
 export function nextStamp(existing, today = new Date()) {
   const d = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
   const day = String(d);
+  const rank = (x) => (/^[a-z]$/.test(x) ? x.charCodeAt(0) - 97 : /^z[a-z]$/.test(x) ? 26 + x.charCodeAt(1) - 97 : -1);
   let max = -1;
-  for (const s of existing) if (s.slice(0, 8) === day) max = Math.max(max, s.charCodeAt(8) - 97);
-  if (max >= 25) throw new Error(`stamp letters exhausted for ${day}`);
-  return day + String.fromCharCode(97 + max + 1);
+  for (const s of existing) if (s.slice(0, 8) === day) max = Math.max(max, rank(s.slice(8)));
+  if (max >= 51) throw new Error(`stamp letters exhausted for ${day}`);
+  const n = max + 1;
+  return day + (n < 26 ? String.fromCharCode(97 + n) : "z" + String.fromCharCode(97 + n - 26));
 }
 
 /* ---------------------------------------------------------------- validate */
