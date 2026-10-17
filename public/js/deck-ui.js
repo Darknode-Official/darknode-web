@@ -1643,6 +1643,7 @@ export function renderDeck(host, opts) {
   let pins = loadPins();
 
   if (!document.getElementById("dk-css")) { const st = document.createElement("style"); st.id = "dk-css"; st.textContent = CSS; document.head.appendChild(st); }
+  if (!document.getElementById("dk-base")) { const bl = document.createElement("link"); bl.id = "dk-base"; bl.rel = "stylesheet"; bl.href = "/css/deck-base.css"; document.head.appendChild(bl); }
   if (!document.getElementById("dk-font")) { const fl = document.createElement("link"); fl.id = "dk-font"; fl.rel = "stylesheet"; fl.href = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&display=swap"; document.head.appendChild(fl); }
 
   const root = document.createElement("div");
