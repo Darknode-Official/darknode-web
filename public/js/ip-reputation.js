@@ -489,7 +489,7 @@ export function renderIPReputation(main) {
 
     rh += '<div style="margin-bottom:16px;">';
     rh += '<label style="font-size:12px;color:#888;display:block;margin-bottom:4px;">Description (optional)</label>';
-    rh += '<textarea id="ipr-report-desc" rows="3" placeholder="Additional details about the threat..." style="width:100%;padding:10px 14px;background:#0d0d15;border:1px solid #1a1a2e;border-radius:6px;color:#e0e0e0;font-size:13px;outline:none;resize:vertical;box-sizing:border-box;"></textarea>';
+    rh += '<textarea id="ipr-report-desc" rows="3" maxlength="2000" placeholder="Additional details about the threat..." style="width:100%;padding:10px 14px;background:#0d0d15;border:1px solid #1a1a2e;border-radius:6px;color:#e0e0e0;font-size:13px;outline:none;resize:vertical;box-sizing:border-box;"></textarea>';
     rh += '</div>';
 
     rh += '<button id="ipr-report-btn" style="padding:10px 24px;background:#00d4ff;color:#000;border:none;border-radius:6px;font-weight:700;cursor:pointer;font-size:14px;">Submit Report</button>';
