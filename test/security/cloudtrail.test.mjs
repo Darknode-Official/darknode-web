@@ -36,7 +36,7 @@ const login = (ident, ok, mfa, o = {}) => ct("ConsoleLogin", "signin", { ident, 
 function az(op, o = {}) {
   const rid = o.rid || "/subscriptions/" + SUB + "/resourceGroups/rg1/providers/" + op.split("/").slice(0, -1).join("/") + "/x1";
   return {
-    authorization: { action: op, scope: rid }, caller: o.caller || "ops@contoso.com", channels: "Operation", claims: o.claims || { idtyp: "user" },
+    authorization: { action: op, scope: rid }, caller: o.caller || "ops@test.darknode.ai", channels: "Operation", claims: o.claims || { idtyp: "user" },
     correlationId: "c" + seq++, eventTimestamp: at(o.t || 0), operationName: { value: op, localizedValue: op }, category: { value: "Administrative", localizedValue: "Administrative" },
     resourceId: rid, status: { value: o.status || "Succeeded", localizedValue: o.status || "Succeeded" }, subscriptionId: SUB,
     properties: o.body ? { requestbody: J(o.body) } : {}, httpRequest: { clientIpAddress: o.ip || "198.51.100.8", method: "PUT" },
@@ -47,7 +47,7 @@ const azBody = (props) => ({ properties: props });
 function gl(method, svc, o = {}) {
   return {
     protoPayload: {
-      "@type": "type.googleapis.com/google.cloud.audit.AuditLog", status: o.status || {}, authenticationInfo: { principalEmail: o.who || "dev@contoso.com" },
+      "@type": "type.googleapis.com/google.cloud.audit.AuditLog", status: o.status || {}, authenticationInfo: { principalEmail: o.who || "dev@test.darknode.ai" },
       requestMetadata: { callerIp: o.ip || "198.51.100.9", callerSuppliedUserAgent: "google-cloud-sdk gcloud/495.0.0" }, serviceName: svc, methodName: method,
       resourceName: o.res || "projects/p1", authorizationInfo: o.authz || [{ resource: "projects/p1", permission: "x.y.z", granted: true }],
       ...(o.req ? { request: o.req } : {}), ...(o.resp ? { response: o.resp } : {}), ...(o.sd ? { serviceData: o.sd } : {}),
@@ -63,7 +63,7 @@ function ad(op, o = {}) {
   return {
     CreationTime: at(o.t || 0).slice(0, 19), Id: "id" + seq++, Operation: op, OrganizationId: "org-1", RecordType: o.rt == null ? 1 : o.rt,
     ResultStatus: o.result == null ? "True" : o.result, UserKey: "10032000ABCDEF", UserType: o.ut == null ? 0 : o.ut, Version: 1, Workload: o.wl || "Exchange",
-    ClientIP: o.ip || "198.51.100.10", ObjectId: o.obj || "", UserId: o.user || "user@contoso.com",
+    ClientIP: o.ip || "198.51.100.10", ObjectId: o.obj || "", UserId: o.user || "user@test.darknode.ai",
     ...(o.params ? { Parameters: Object.entries(o.params).map(([Name, Value]) => ({ Name, Value })) } : {}),
     ...(o.mod ? { ModifiedProperties: Object.entries(o.mod).map(([Name, NewValue]) => ({ Name, NewValue, OldValue: "" })) } : {}),
     ...(o.targets ? { Target: o.targets.map((ID) => ({ ID, Type: 1 })) } : {}), ...(o.extra || {}),
@@ -151,12 +151,12 @@ const CASES = {
   "az-sp-privileged-write": ["azure", [az("Microsoft.Compute/virtualMachines/runCommand/action", { caller: "5f1c2a3b-0000-4000-8000-000000000001", claims: { idtyp: "app", appid: "5f1c2a3b-0000-4000-8000-000000000001" } })], [az("Microsoft.Compute/virtualMachines/runCommand/action")]],
   "az-failed-burst": ["azure", rep(25, (k) => azFail(az("Microsoft.Compute/virtualMachines/write", { t: k * 5 }))), rep(24, (k) => azFail(az("Microsoft.Compute/virtualMachines/write", { t: k * 5 })))],
 
-  "gcp-iam-privileged-binding": ["gcp", [gl("SetIamPolicy", "cloudresourcemanager.googleapis.com", { sd: delta("roles/owner", "user:x@external.example") })], [gl("SetIamPolicy", "cloudresourcemanager.googleapis.com", { sd: delta("roles/viewer", "user:x@external.example") })]],
+  "gcp-iam-privileged-binding": ["gcp", [gl("SetIamPolicy", "cloudresourcemanager.googleapis.com", { sd: delta("roles/owner", "user:x@partner.test.darknode.ai") })], [gl("SetIamPolicy", "cloudresourcemanager.googleapis.com", { sd: delta("roles/viewer", "user:x@partner.test.darknode.ai") })]],
   "gcp-sa-key-created": ["gcp", [gl("google.iam.admin.v1.CreateServiceAccountKey", "iam.googleapis.com", { res: "projects/-/serviceAccounts/123" })], [glDeny(gl("google.iam.admin.v1.CreateServiceAccountKey", "iam.googleapis.com"))]],
   "gcp-impersonation": ["gcp", [gl("GenerateAccessToken", "iamcredentials.googleapis.com", { log: "data_access", res: "projects/-/serviceAccounts/sa@p1.iam.gserviceaccount.com" })], [glDeny(gl("GenerateAccessToken", "iamcredentials.googleapis.com", { log: "data_access" }))]],
   "gcp-log-sink-tamper": ["gcp", [gl("google.logging.v2.ConfigServiceV2.DeleteSink", "logging.googleapis.com", { res: "projects/p1/sinks/siem" })], [glDeny(gl("google.logging.v2.ConfigServiceV2.DeleteSink", "logging.googleapis.com"))]],
   "gcp-firewall-open": ["gcp", [gl("v1.compute.firewalls.insert", "compute.googleapis.com", { req: { name: "ssh", direction: "INGRESS", sourceRanges: ["0.0.0.0/0"], alloweds: [{ IPProtocol: "tcp", ports: ["22"] }] } })], [gl("v1.compute.firewalls.insert", "compute.googleapis.com", { req: { name: "ssh", direction: "INGRESS", sourceRanges: ["10.0.0.0/8"], alloweds: [{ IPProtocol: "tcp", ports: ["22"] }] } })]],
-  "gcp-storage-public": ["gcp", [gl("storage.setIamPermissions", "storage.googleapis.com", { res: "projects/_/buckets/b1", sd: delta("roles/storage.objectViewer", "allUsers") })], [gl("storage.setIamPermissions", "storage.googleapis.com", { res: "projects/_/buckets/b1", sd: delta("roles/storage.objectViewer", "user:a@contoso.com") })]],
+  "gcp-storage-public": ["gcp", [gl("storage.setIamPermissions", "storage.googleapis.com", { res: "projects/_/buckets/b1", sd: delta("roles/storage.objectViewer", "allUsers") })], [gl("storage.setIamPermissions", "storage.googleapis.com", { res: "projects/_/buckets/b1", sd: delta("roles/storage.objectViewer", "user:a@test.darknode.ai") })]],
   "gcp-instance-metadata": ["gcp", [gl("v1.compute.instances.setMetadata", "compute.googleapis.com", { req: { metadata: { items: [{ key: "startup-script", value: "curl x | sh" }] } } })], [gl("v1.compute.instances.setMetadata", "compute.googleapis.com", { req: { metadata: { items: [{ key: "env", value: "prod" }] } } })]],
   "gcp-cloudsql-public": ["gcp", [gl("cloudsql.instances.update", "cloudsql.googleapis.com", { req: { body: { settings: { ipConfiguration: { ipv4Enabled: true, authorizedNetworks: [{ value: "0.0.0.0/0" }] } } } } })], [gl("cloudsql.instances.update", "cloudsql.googleapis.com", { req: { body: { settings: { ipConfiguration: { ipv4Enabled: false, authorizedNetworks: [] } } } } })]],
   "gcp-snapshot-export": ["gcp", [gl("v1.compute.disks.createSnapshot", "compute.googleapis.com"), gl("v1.compute.images.insert", "compute.googleapis.com", { t: 600 })], [gl("v1.compute.images.insert", "compute.googleapis.com", { t: 600 })]],
@@ -167,24 +167,24 @@ const CASES = {
   "gcp-org-policy": ["gcp", [gl("SetOrgPolicy", "cloudresourcemanager.googleapis.com")], [glDeny(gl("SetOrgPolicy", "cloudresourcemanager.googleapis.com"))]],
   "gcp-denied-burst": ["gcp", rep(25, (k) => glDeny(gl("v1.compute.instances.list", "compute.googleapis.com", { t: k * 5 }))), rep(24, (k) => glDeny(gl("v1.compute.instances.list", "compute.googleapis.com", { t: k * 5 })))],
 
-  "m365-inbox-rule": ["m365", [ad("New-InboxRule", { params: { Name: ".", ForwardTo: "drop@external.example" } })], [ad("New-InboxRule", { params: { Name: "Projects", MoveToFolder: "Projects" } })]],
-  "m365-mailbox-forwarding": ["m365", [ad("Set-Mailbox", { params: { Identity: "ceo", ForwardingSmtpAddress: "smtp:drop@external.example" } })], [ad("Set-Mailbox", { params: { Identity: "ceo", ProhibitSendQuota: "49GB" } })]],
-  "m365-transport-rule": ["m365", [ad("New-TransportRule", { params: { Name: "cc", BlindCopyTo: "drop@external.example" } })], [ad("New-TransportRule", { params: { Name: "disclaimer", ApplyHtmlDisclaimerText: "x" } })]],
+  "m365-inbox-rule": ["m365", [ad("New-InboxRule", { params: { Name: ".", ForwardTo: "drop@partner.test.darknode.ai" } })], [ad("New-InboxRule", { params: { Name: "Projects", MoveToFolder: "Projects" } })]],
+  "m365-mailbox-forwarding": ["m365", [ad("Set-Mailbox", { params: { Identity: "ceo", ForwardingSmtpAddress: "smtp:drop@partner.test.darknode.ai" } })], [ad("Set-Mailbox", { params: { Identity: "ceo", ProhibitSendQuota: "49GB" } })]],
+  "m365-transport-rule": ["m365", [ad("New-TransportRule", { params: { Name: "cc", BlindCopyTo: "drop@partner.test.darknode.ai" } })], [ad("New-TransportRule", { params: { Name: "disclaimer", ApplyHtmlDisclaimerText: "x" } })]],
   "m365-mailbox-delegation": ["m365", [ad("Add-MailboxPermission", { params: { Identity: "ceo", User: "assistant", AccessRights: "FullAccess" } })], [ad("Add-MailboxPermission", { result: "False", params: { Identity: "ceo", User: "assistant", AccessRights: "FullAccess" } })]],
   "m365-exchange-role": ["m365", [ad("New-ManagementRoleAssignment", { params: { Role: "ApplicationImpersonation", User: "svc-sync" } })], [ad("New-ManagementRoleAssignment", { params: { Role: "MyBaseOptions", User: "x" } })]],
   "m365-app-consent": ["m365", [ad("Consent to application.", { ...AAD, mod: { "ConsentContext.IsAdminConsent": "False", "ConsentAction.Permissions": "[] => [[ConsentType: Principal, Scope:  Mail.Read offline_access, CreatedDateTime: ]]; " }, targets: ["ServicePrincipal_1", "Mail Sync"] })], [adFail(ad("Consent to application.", { ...AAD }))]],
   "m365-sp-credential": ["m365", [ad("Add service principal credentials.", { ...AAD, targets: ["Payroll App"] })], [adFail(ad("Add service principal credentials.", { ...AAD }))]],
-  "m365-role-add": ["m365", [ad("Add member to role.", { ...AAD, obj: "x@contoso.com", mod: { "Role.DisplayName": "Global Administrator" } })], [ad("Add member to role.", { ...AAD, obj: "x@contoso.com", mod: { "Role.DisplayName": "Reports Reader" } })]],
+  "m365-role-add": ["m365", [ad("Add member to role.", { ...AAD, obj: "x@test.darknode.ai", mod: { "Role.DisplayName": "Global Administrator" } })], [ad("Add member to role.", { ...AAD, obj: "x@test.darknode.ai", mod: { "Role.DisplayName": "Reports Reader" } })]],
   "m365-ca-policy": ["m365", [ad("Delete conditional access policy", { ...AAD })], [adFail(ad("Delete conditional access policy", { ...AAD }))]],
-  "m365-federation": ["m365", [ad("Set federation settings on domain.", { ...AAD, obj: "contoso.com" })], [adFail(ad("Set federation settings on domain.", { ...AAD }))]],
+  "m365-federation": ["m365", [ad("Set federation settings on domain.", { ...AAD, obj: "test.darknode.ai" })], [adFail(ad("Set federation settings on domain.", { ...AAD }))]],
   "m365-audit-disable": ["m365", [ad("Set-AdminAuditLogConfig", { params: { UnifiedAuditLogIngestionEnabled: "False" } })], [ad("Set-AdminAuditLogConfig", { params: { UnifiedAuditLogIngestionEnabled: "True" } })]],
-  "m365-mfa-disabled": ["m365", [ad("Disable Strong Authentication.", { ...AAD, obj: "x@contoso.com" })], [adFail(ad("Disable Strong Authentication.", { ...AAD }))]],
+  "m365-mfa-disabled": ["m365", [ad("Disable Strong Authentication.", { ...AAD, obj: "x@test.darknode.ai" })], [adFail(ad("Disable Strong Authentication.", { ...AAD }))]],
   "m365-anonymous-link": ["m365", [ad("AnonymousLinkCreated", { wl: "SharePoint", rt: 14, result: "", extra: { SourceFileName: "payroll.xlsx" } })], [adFail(ad("AnonymousLinkCreated", { wl: "SharePoint", rt: 14 }))]],
   "m365-download-burst": ["m365", rep(100, (k) => ad("FileDownloaded", { wl: "SharePoint", rt: 6, result: "", t: k * 3 })), rep(99, (k) => ad("FileDownloaded", { wl: "SharePoint", rt: 6, result: "", t: k * 3 }))],
   "m365-mail-access-burst": ["m365", rep(50, (k) => ad("MailItemsAccessed", { rt: 50, result: "Succeeded", t: k * 5 })), rep(49, (k) => ad("MailItemsAccessed", { rt: 50, result: "Succeeded", t: k * 5 }))],
   "m365-purge-burst": ["m365", rep(50, (k) => ad("HardDelete", { rt: 3, result: "Succeeded", t: k * 5 })), rep(49, (k) => ad("HardDelete", { rt: 3, result: "Succeeded", t: k * 5 }))],
   "m365-ediscovery-export": ["m365", [ad("New-MailboxExportRequest", { params: { Mailbox: "ceo", FilePath: "\\\\fs\\pst\\ceo.pst" } })], [adFail(ad("New-MailboxExportRequest", { params: { Mailbox: "ceo" } }))]],
-  "m365-login-fail-burst": ["m365", rep(10, (k) => ad("UserLoginFailed", { ...AAD, rt: 15, result: "Failed", ip: "203.0.113.9", user: "u" + k + "@contoso.com", t: k * 20 })), rep(9, (k) => ad("UserLoginFailed", { ...AAD, rt: 15, result: "Failed", ip: "203.0.113.9", user: "u" + k + "@contoso.com", t: k * 20 }))],
+  "m365-login-fail-burst": ["m365", rep(10, (k) => ad("UserLoginFailed", { ...AAD, rt: 15, result: "Failed", ip: "203.0.113.9", user: "u" + k + "@test.darknode.ai", t: k * 20 })), rep(9, (k) => ad("UserLoginFailed", { ...AAD, rt: 15, result: "Failed", ip: "203.0.113.9", user: "u" + k + "@test.darknode.ai", t: k * 20 }))],
 
   "x-malicious-ip": ["aws", [ct("DescribeInstances", "ec2", { ip: "203.0.113.99", ro: true })], [ct("DescribeInstances", "ec2", { ip: "198.51.100.7", ro: true })], { maliciousIps: { updated: "2026-10-16", data: [{ ip: "203.0.113.99", score: 9, source: "ipsum" }] } }],
   "x-impossible-travel": ["aws", [ct("DescribeInstances", "ec2", { ip: "198.51.100.1", ro: true }), ct("DescribeInstances", "ec2", { ip: "203.0.113.1", t: 1800, ro: true })], [ct("DescribeInstances", "ec2", { ip: "198.51.100.1", ro: true }), ct("DescribeInstances", "ec2", { ip: "203.0.113.1", t: 72000, ro: true })], { geo: { "198.51.100.1": { lat: 40.71, lon: -74.0, country: "US" }, "203.0.113.1": { lat: 35.68, lon: 139.69, country: "JP" } } }],
@@ -247,58 +247,58 @@ group("cloudtrail: parsers", () => {
     assert.ok(r.iocs.some((x) => x.type === "aws-access-key-id" && x.value === "AKIAIOSFODNN7EXAMPLE"));
   });
   test("Azure Activity Log JSON ({\"value\": [...]})", () => {
-    const d = parseInput({ name: "activity.json", text: J({ value: [az("Microsoft.Compute/virtualMachines/delete", { caller: "ops@contoso.com", ip: "198.51.100.8" })] }) });
+    const d = parseInput({ name: "activity.json", text: J({ value: [az("Microsoft.Compute/virtualMachines/delete", { caller: "ops@test.darknode.ai", ip: "198.51.100.8" })] }) });
     assert.equal(d.platform, "azure");
     const e = d.events[0];
-    assert.equal(e.principal, "ops@contoso.com"); assert.equal(e.principalType, "User"); assert.equal(e.account, SUB);
+    assert.equal(e.principal, "ops@test.darknode.ai"); assert.equal(e.principalType, "User"); assert.equal(e.account, SUB);
     assert.equal(e.ip, "198.51.100.8"); assert.equal(e.status, "success"); assert.equal(e.readOnly, false);
   });
   test("Azure Log Analytics AzureActivity CSV (TimeGenerated [UTC] header, Properties JSON)", () => {
     const props = J({ eventCategory: "Administrative", requestbody: J({ Properties: { RoleDefinitionId: OWNER, PrincipalId: "p9", Scope: "/subscriptions/" + SUB } }) });
     const csv = [
       "TimeGenerated [UTC],OperationNameValue,Caller,CallerIpAddress,ActivityStatusValue,ResourceGroup,_ResourceId,Category,Authorization,Properties",
-      '"10/7/2026, 2:00:00.000 PM",MICROSOFT.AUTHORIZATION/ROLEASSIGNMENTS/WRITE,ops@contoso.com,198.51.100.8,Start,,/subscriptions/' + SUB + '/providers/microsoft.authorization/roleassignments/ra1,Administrative,"' + J({ action: "Microsoft.Authorization/roleAssignments/write", scope: "/subscriptions/" + SUB }).replace(/"/g, '""') + '","' + props.replace(/"/g, '""') + '"',
+      '"10/7/2026, 2:00:00.000 PM",MICROSOFT.AUTHORIZATION/ROLEASSIGNMENTS/WRITE,ops@test.darknode.ai,198.51.100.8,Start,,/subscriptions/' + SUB + '/providers/microsoft.authorization/roleassignments/ra1,Administrative,"' + J({ action: "Microsoft.Authorization/roleAssignments/write", scope: "/subscriptions/" + SUB }).replace(/"/g, '""') + '","' + props.replace(/"/g, '""') + '"',
     ].join("\n");
     const d = parseInput({ name: "AzureActivity.csv", text: csv });
     assert.equal(d.files[0].layout, "azure-la-csv");
     assert.equal(d.events[0].ts, Date.parse("2026-10-07T14:00:00Z"));
-    assert.equal(d.events[0].principal, "ops@contoso.com");
+    assert.equal(d.events[0].principal, "ops@test.darknode.ai");
     const r = analyze(d);
     assert.equal(fired(r, "az-privileged-role-assignment").length, 1);
     assert.equal(fired(r, "az-privileged-role-assignment")[0].severity, "critical");
   });
   test("GCP LogEntry NDJSON and JSON array (gcloud logging read --format=json)", () => {
-    const a = gl("SetIamPolicy", "cloudresourcemanager.googleapis.com", { who: "dev@contoso.com", ip: "198.51.100.9", sd: delta("roles/owner", "user:x@external.example") });
+    const a = gl("SetIamPolicy", "cloudresourcemanager.googleapis.com", { who: "dev@test.darknode.ai", ip: "198.51.100.9", sd: delta("roles/owner", "user:x@partner.test.darknode.ai") });
     const b = gl("v1.compute.instances.list", "compute.googleapis.com", { t: 2, log: "data_access" });
     const nd = parseInput({ name: "audit.ndjson", text: [a, b].map(J).join("\n") });
     const arr = parseInput({ name: "audit.json", text: J([a, b]) });
     for (const d of [nd, arr]) {
       assert.equal(d.platform, "gcp");
-      assert.equal(d.events[0].principal, "dev@contoso.com"); assert.equal(d.events[0].action, "SetIamPolicy");
+      assert.equal(d.events[0].principal, "dev@test.darknode.ai"); assert.equal(d.events[0].action, "SetIamPolicy");
       assert.equal(d.events[0].service, "cloudresourcemanager.googleapis.com"); assert.equal(d.events[0].ip, "198.51.100.9"); assert.equal(d.events[0].account, "p1");
       assert.equal(d.events[1].logType, "data_access");
     }
     assert.equal(nd.files[0].layout, "gcp-ndjson"); assert.equal(arr.files[0].layout, "gcp-json");
   });
   test("M365 Search-UnifiedAuditLog | Export-Csv: AuditData JSON inside the CSV is parsed and normalised", () => {
-    const auditData = ad("New-InboxRule", { ip: "203.0.113.50:51234", user: "finance@contoso.com", params: { Name: ".", ForwardTo: "drop@external.example" } });
+    const auditData = ad("New-InboxRule", { ip: "203.0.113.50:51234", user: "finance@test.darknode.ai", params: { Name: ".", ForwardTo: "drop@partner.test.darknode.ai" } });
     const q = (v) => '"' + String(v).replace(/"/g, '""') + '"';
     const csv = "#TYPE Deserialized.Microsoft.Exchange.Management.SystemConfigurationTasks.AuditRecord\r\n" +
       ["RunspaceId", "RecordType", "CreationDate", "UserIds", "Operations", "AuditData", "ResultIndex", "ResultCount", "Identity", "IsValid", "ObjectState"].map(q).join(",") + "\r\n" +
-      ["9c1d", "ExchangeAdmin", "10/7/2026 2:00:00 PM", "finance@contoso.com", "New-InboxRule", J(auditData), "1", "1", auditData.Id, "True", "Unchanged"].map(q).join(",") + "\r\n";
+      ["9c1d", "ExchangeAdmin", "10/7/2026 2:00:00 PM", "finance@test.darknode.ai", "New-InboxRule", J(auditData), "1", "1", auditData.Id, "True", "Unchanged"].map(q).join(",") + "\r\n";
     const d = parseInput({ name: "ual.csv", text: csv });
     assert.equal(d.files[0].layout, "m365-ual-csv"); assert.equal(d.files[0].confidence, 1);
     const e = d.events[0];
-    assert.equal(e.platform, "m365"); assert.equal(e.principal, "finance@contoso.com"); assert.equal(e.action, "New-InboxRule");
-    assert.equal(e.ip, "203.0.113.50"); assert.equal(e.service, "Exchange"); assert.equal(e.req.ForwardTo, "drop@external.example");
+    assert.equal(e.platform, "m365"); assert.equal(e.principal, "finance@test.darknode.ai"); assert.equal(e.action, "New-InboxRule");
+    assert.equal(e.ip, "203.0.113.50"); assert.equal(e.service, "Exchange"); assert.equal(e.req.ForwardTo, "drop@partner.test.darknode.ai");
     assert.equal(e.ts, Date.parse("2026-10-07T14:00:00Z"));
     assert.equal(fired(analyze(d), "m365-inbox-rule").length, 1);
   });
   test("M365 Purview audit search CSV export", () => {
-    const auditData = ad("Set-Mailbox", { params: { Identity: "ceo", ForwardingSmtpAddress: "smtp:drop@external.example" } });
+    const auditData = ad("Set-Mailbox", { params: { Identity: "ceo", ForwardingSmtpAddress: "smtp:drop@partner.test.darknode.ai" } });
     const q = (v) => '"' + String(v).replace(/"/g, '""') + '"';
     const csv = ["RecordId", "CreationDate", "RecordType", "Operation", "UserId", "AuditData", "AssociatedAdminUnits", "AssociatedAdminUnitsNames"].map(q).join(",") + "\n" +
-      [auditData.Id, "2026-10-07T14:00:00.0000000Z", "ExchangeAdmin", "Set-Mailbox", "user@contoso.com", J(auditData), "", ""].map(q).join(",") + "\n";
+      [auditData.Id, "2026-10-07T14:00:00.0000000Z", "ExchangeAdmin", "Set-Mailbox", "user@test.darknode.ai", J(auditData), "", ""].map(q).join(",") + "\n";
     const d = parseInput({ name: "purview.csv", text: csv });
     assert.equal(d.files[0].layout, "m365-purview-csv");
     assert.equal(fired(analyze(d), "m365-mailbox-forwarding").length, 1);
@@ -484,7 +484,7 @@ group("cloudtrail: results and exports", () => {
     const csv = iocsToCsv(r.iocs);
     assert.equal(csv.split("\n")[0], "type,value,context");
     assert.ok(/aws-access-key-id,AKIAIOSFODNN7EXAMPLE,aws-iam-access-key-other/.test(csv));
-    assert.ok(/email,collect@external\.example,m365-inbox-rule/.test(csv));
+    assert.ok(/email,collect@partner\.test\.darknode\.ai,m365-inbox-rule/.test(csv));
     assert.ok(/\nip,203\.0\.113\.50,/.test(csv));
   });
   test("query export re-expresses fired rules per platform", () => {

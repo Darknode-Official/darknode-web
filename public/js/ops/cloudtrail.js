@@ -78,6 +78,7 @@ const CSS = `
   .ctl-list th.on{color:var(--tx,#1a2230)}
   .ctl-list th.on::after{content:" \\2193";font-size:.7rem}
   .ctl-list th.on.asc::after{content:" \\2191"}
+  .ctl-nw{white-space:nowrap}
   .ctl-list td{padding:8px 12px;border-bottom:1px solid var(--line,#eef0f4);vertical-align:top;overflow-wrap:break-word;word-break:normal}
   .ctl-list tr[data-i]{cursor:pointer}
   .ctl-list tr[data-i]:hover,.ctl-list tr.sel{background:var(--bg,#f7f8fb)}
@@ -403,7 +404,7 @@ export function renderCloudTrail(main) {
     { key: "confidence", label: "Confidence", rank: CONF_RANK },
     { key: "controls", label: "Controls", render: (f) => f.controls.slice(0, 4).map((c) => '<span class="' + P + '-chip">' + esc(c.framework + " " + c.id) + "</span>").join("") + (f.controls.length > 4 ? '<span class="' + P + '-chip">+' + (f.controls.length - 4) + "</span>" : "") },
     { key: "evidenceCount", label: "Events" },
-    { key: "firstSeen", label: "First seen" },
+    { key: "firstSeen", label: "First seen", render: (f) => '<span class="' + P + '-nw">' + esc(f.firstSeen) + "</span>" },
   ];
   const PRIN_COLS = [
     { key: "principal", label: "Principal", render: (p) => "<b>" + esc(p.principal) + "</b>" },
