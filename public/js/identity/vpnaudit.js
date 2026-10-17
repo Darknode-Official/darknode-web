@@ -69,7 +69,7 @@ const CSS = `
   .vpa-btn.pri{background:#2552c6;border-color:#2552c6;color:#fff}
   .vpa-btn.on{border-color:#2552c6;color:#2552c6}
   .vpa-btn:disabled{opacity:.5;cursor:default}
-  .vpa-ctl{display:flex;flex-wrap:wrap;gap:14px 20px;align-items:flex-start}
+  .vpa-ctl{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,230px),1fr));gap:14px 20px;align-items:start}
   .vpa-field{display:flex;flex-direction:column;gap:4px;min-width:0;max-width:100%}
   .vpa-field label{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--mut,#667085)}
   .vpa-field input,.vpa-field select,.vpa-field textarea,.vpa-in{font:inherit;font-size:.84rem;color:var(--tx,#1a2230);background:var(--card,#fff);border:1px solid var(--line,#d7dbe3);border-radius:8px;padding:7px 10px;max-width:100%}
