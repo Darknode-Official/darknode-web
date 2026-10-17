@@ -70,6 +70,25 @@ await t("owner removes carol", assertSucceeds(setRole(A, "alice", W, "carol", "r
 await t("removed carol can no longer read the workspace", assertFails(C.doc(`workspaces/${W}`).get()));
 await t("removed carol still sees her own member doc (for the worker)", assertSucceeds(C.doc(`workspaces/${W}/members/carol`).get()));
 
+// Existing owner/admin member docs are owner-only; the founder's doc is locked.
+const E = as("erin");
+const roleIs = (db, uid, role) => db.doc(`workspaces/${W}/members/${uid}`).get().then((d) => { if (d.data().role !== role) throw new Error(uid + " is " + d.data().role); });
+await t("owner makes erin a co-owner", assertSucceeds(setRole(A, "alice", W, "erin", "owner", "logEEEEEE4")));
+await t("admin bob CANNOT demote owner erin", assertFails(setRole(B, "bob", W, "erin", "viewer", "logEEEEEE5")));
+await t("admin bob CANNOT remove owner erin", assertFails(setRole(B, "bob", W, "erin", "removed", "logEEEEEE6")));
+await t("admin bob CANNOT delete owner erin's member doc", assertFails(B.doc(`workspaces/${W}/members/erin`).delete()));
+await t("admin bob CANNOT delete founder alice's member doc", assertFails(B.doc(`workspaces/${W}/members/alice`).delete()));
+await t("admin bob CANNOT demote fellow admin dave", assertFails(setRole(B, "bob", W, "dave", "analyst", "logDDDDDD4")));
+await t("owner alice demotes admin dave to analyst", assertSucceeds(setRole(A, "alice", W, "dave", "analyst", "logDDDDDD5")));
+await t("admin bob manages analyst dave -> viewer", assertSucceeds(setRole(B, "bob", W, "dave", "viewer", "logDDDDDD6")));
+await t("admin bob re-adds removed carol as responder", assertSucceeds(setRole(B, "bob", W, "carol", "responder", "logCCCCCC4")));
+await t("co-owner erin CANNOT demote founder alice", assertFails(setRole(E, "erin", W, "alice", "admin", "logAAAAAA3")));
+await t("co-owner erin CANNOT remove founder alice", assertFails(setRole(E, "erin", W, "alice", "removed", "logAAAAAA4")));
+await t("co-owner erin may demote admin bob", assertSucceeds(setRole(E, "erin", W, "bob", "analyst", "logBBBBBB3")));
+await t("founder alice demotes co-owner erin to admin", assertSucceeds(setRole(A, "alice", W, "erin", "admin", "logEEEEEE7")));
+await t("founder alice is still owner", assertSucceeds(roleIs(A, "alice", "owner")));
+await t("erin is now admin", assertSucceeds(roleIs(A, "erin", "admin")));
+
 console.log(`\n${pass} passed, ${fail} failed`);
 await env.cleanup();
 process.exit(fail ? 1 : 0);

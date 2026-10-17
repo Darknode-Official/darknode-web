@@ -10,8 +10,10 @@
 //        • Alert template  — "To email" = {{to_email}}.
 //          Variables: {{name}}, {{time}}, {{device}}.
 //   3. Account → General → copy your Public Key.
-//   4. Paste all four values below. Until then, the site falls back to Firebase's
-//      built-in email-verification link and skips login alerts.
+//   4. Paste all four values below, add https://api.emailjs.com to the CSP
+//      connect-src in firebase.json, and set EMAILJS_CSP_ALLOWED. Until then, the
+//      site falls back to Firebase's built-in email-verification link and skips
+//      login alerts.
 const EMAILJS = {
   publicKey: "wydk8Uuzp3W0WhbZj",
   serviceId: "service_ghf1upo",
@@ -22,9 +24,17 @@ const EMAILJS = {
   announceTemplate: "template_u8nmqoe",
 };
 
+// EmailJS posts to https://api.emailjs.com, which is NOT in the CSP connect-src in
+// firebase.json, so every send is blocked in the browser today. Flip this to true only
+// after adding that origin to connect-src (both hosting sites) and deploying the headers.
+const EMAILJS_CSP_ALLOWED = false;
+const _set = (v) => !!v && !v.startsWith("YOUR_");
+
+// True only when a send can actually succeed: CSP allows EmailJS and the service plus the
+// code template are set. While false, sign-up uses Firebase's own verification link (which
+// works) instead of a 6-digit code that could never arrive, and login alerts are skipped.
 export const emailConfigured = () =>
-  EMAILJS.publicKey && !EMAILJS.publicKey.startsWith("YOUR_") &&
-  EMAILJS.serviceId && !EMAILJS.serviceId.startsWith("YOUR_");
+  EMAILJS_CSP_ALLOWED && _set(EMAILJS.publicKey) && _set(EMAILJS.serviceId) && _set(EMAILJS.codeTemplate);
 
 let _lib = null;
 async function lib() {
@@ -56,8 +66,8 @@ export async function sendLoginAlert(toEmail, info) {
 // Returns {ok,error}. Admin-only in practice; also exposed as window.dnSendEmail so
 // the owner can send a one-off from the console on the live site once configured.
 export async function sendAnnouncement(toEmail, subject, message, name) {
-  if (!emailConfigured() || !EMAILJS.announceTemplate || EMAILJS.announceTemplate.startsWith("YOUR_"))
-    return { ok: false, error: "announcement email not configured (set announceTemplate)" };
+  if (!EMAILJS_CSP_ALLOWED || !_set(EMAILJS.publicKey) || !_set(EMAILJS.serviceId) || !_set(EMAILJS.announceTemplate))
+    return { ok: false, error: "Email alerts not configured (EmailJS is blocked by the CSP connect-src)" };
   try {
     const e = await lib();
     await e.send(EMAILJS.serviceId, EMAILJS.announceTemplate, {

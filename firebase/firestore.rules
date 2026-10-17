@@ -36,8 +36,17 @@ service cloud.firestore {
     // The user may delete their own pending code (e.g. to cancel it).
     match /pairings/{code} {
       allow create: if signedIn()
+                    && code.matches('^[A-HJ-NP-Z2-9]{16}$')
+                    && request.resource.data.keys().hasOnly(['uid', 'email', 'name', 'apiKey', 'createdAt', 'expiresAt'])
                     && request.resource.data.uid == request.auth.uid
-                    && request.resource.data.email == email();
+                    && request.resource.data.email == email()
+                    && request.resource.data.name is string
+                    && request.resource.data.name.size() <= 256
+                    && request.resource.data.apiKey is string
+                    && request.resource.data.apiKey.matches('^sk-darknode-[0-9a-f]{32}$')
+                    && request.resource.data.createdAt == request.time
+                    && request.resource.data.expiresAt is int
+                    && request.resource.data.expiresAt <= request.time.toMillis() + 3600000;
       allow read, list, update: if false;
       allow delete: if signedIn() && resource.data.uid == request.auth.uid;
     }
@@ -143,6 +152,40 @@ service cloud.firestore {
       allow update, delete: if isOwner();
     }
 
+    // Community IP abuse reports (ip-reputation.js). A signed-in user files a report for
+    // their own uid with a fixed shape; signed-in users read the community feed (the tool
+    // shows recent reports and per-IP counts), capped at 50 per query. Only the owner
+    // moderates (update/delete).
+    match /ip_reports/{rid} {
+      allow get:  if signedIn();
+      allow list: if signedIn() && request.query.limit <= 50;
+      allow create: if signedIn()
+                    && request.resource.data.keys().hasOnly(['ip', 'reporter_uid', 'category', 'description', 'timestamp'])
+                    && request.resource.data.keys().hasAll(['ip', 'reporter_uid', 'category', 'description', 'timestamp'])
+                    && request.resource.data.ip is string
+                    && request.resource.data.ip.matches('^[0-9]{1,3}([.][0-9]{1,3}){3}$')
+                    && request.resource.data.reporter_uid == request.auth.uid
+                    && request.resource.data.category in ['Scanner', 'Brute Force', 'Malware', 'Phishing', 'Spam', 'C2', 'Other']
+                    && request.resource.data.description is string
+                    && request.resource.data.description.size() <= 2000
+                    && request.resource.data.timestamp == request.time;
+      allow update, delete: if isOwner();
+    }
+
+    // Account deletion requests (Settings -> Data). One doc per user, keyed by uid; the
+    // user files (or re-files) their own and reads it back; the owner reads all and
+    // clears them once the deletion is done.
+    match /deletionRequests/{uid} {
+      allow read: if isOwner() || (signedIn() && request.auth.uid == uid);
+      allow create, update: if signedIn() && request.auth.uid == uid
+                    && request.resource.data.keys().hasOnly(['uid', 'email', 'requestedAt'])
+                    && request.resource.data.uid == uid
+                    && request.resource.data.email is string
+                    && (request.resource.data.email == '' || request.resource.data.email == email())
+                    && request.resource.data.requestedAt == request.time;
+      allow delete: if isOwner();
+    }
+
     // Per-user notifications: durable, account-level messages (e.g. a plan upgrade was
     // granted). These are low-volume account events — NOT the chatty local activity feed,
     // which stays per-browser. Only the owner writes them (unread); the user reads their
@@ -239,6 +282,10 @@ service cloud.firestore {
     //   - a workspace is founded in one batch: workspace doc + founder owner member + log;
     //   - after that an owner OR admin writes member docs, never for themselves, and only
     //     an owner may mint an owner or admin (an admin may set analyst/responder/viewer);
+    //   - only an owner may change an EXISTING owner/admin member doc (an admin cannot
+    //     demote or remove them);
+    //   - the founder's member doc (workspaces/{wid}.createdBy, immutable) can never be
+    //     changed by anyone, so the workspace always keeps at least one owner;
     //   - every member write carries a logId whose matching memberLog entry is written in
     //     the same batch (create-only), so role changes always leave a trail;
     //   - nothing is deleted; removal is role 'removed'.
@@ -287,7 +334,10 @@ service cloud.firestore {
                     && getAfter(/databases/$(database)/documents/workspaces/$(wid)/memberLog/$(request.resource.data.logId)).data.role == request.resource.data.role
                     && ((wFounding(wid) && uid == request.auth.uid && request.resource.data.role == 'owner')
                         || (wManager(wid) && uid != request.auth.uid
-                            && (wOwner(wid) || (request.resource.data.role != 'owner' && request.resource.data.role != 'admin'))));
+                            && (wOwner(wid) || (request.resource.data.role != 'owner' && request.resource.data.role != 'admin'))))
+                    && (resource == null
+                        || ((wOwner(wid) || !(resource.data.role in ['owner', 'admin']))
+                            && uid != get(wPath(wid)).data.createdBy));
         allow delete: if false;
       }
 
