@@ -52,11 +52,14 @@ export function upsertToolResult(toolName, type, name, data, opts) {
     // cached sink-map.js predates mergeToolData.
     const merged = SM.mergeToolData ? SM.mergeToolData(existing.data, data, toolName) : { ...(data || {}), _toolSource: toolName };
     const updates = { data: merged, tags };
-    if (o.severity) updates.severity = o.severity;
+    // An analyst's severity override (core/workflow.js) survives tool re-runs.
+    const sv = SM.toolSeverity ? SM.toolSeverity(existing.data, o.severity) : o.severity;
+    if (sv) updates.severity = sv;
     // A status the tool sends (opts.status; data.status on a FINDING, whose schema
     // defines it as lifecycle) moves the entity, subject to nextStatus's triage guard.
     const st = o.status !== undefined ? o.status : (type === 'FINDING' && data ? data.status : undefined);
-    const ns = SM.nextStatus ? SM.nextStatus(existing.status, st, merged.resolution) : null;
+    // Sink findings (data.findingKey) are reopened only by core/sink.js reconcileRun.
+    const ns = SM.nextStatus ? SM.nextStatus(existing.status, st, merged.resolution, type === 'FINDING' && !!merged.findingKey) : null;
     if (ns && (SG.STATUSES || []).includes(ns)) updates.status = ns;
     return { entity: updateEntity(existing.id, updates), created: false };
   }

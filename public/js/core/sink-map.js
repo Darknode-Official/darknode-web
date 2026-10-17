@@ -16,6 +16,7 @@
 
 import { cyrb53 } from "./hash.js";
 import { ruleAllows } from "./relationship-rules.js";
+import { WORKFLOW_FIELDS } from "./workflow.js";
 
 /** Entity `data` byte budget: worker/graph.js blanks data above 40000 chars. */
 export const DATA_CAP = 38000;
@@ -68,6 +69,11 @@ export function fitUnder(data, cap = DATA_CAP) {
 }
 
 const ownFields = (d) => { const o = {}; for (const k in d || {}) if (k !== "bySource" && k !== "_toolSource") o[k] = d[k]; return o; };
+const WF = new Set(WORKFLOW_FIELDS);
+// What a tool may write: never the workflow fields (owner, history, exception, ...), and
+// an unset resolution does not erase the one an analyst or reconcileRun recorded.
+const toolFields = (d) => { const o = ownFields(d); for (const k of WF) delete o[k]; if (o.resolution == null) delete o.resolution; return o; };
+const keepWorkflow = (out, p) => { for (const k of WF) { if (k in p) out[k] = p[k]; else delete out[k]; } return out; };
 
 /**
  * Merge a tool's `incoming` data into an existing entity's `prev` data (used by
@@ -76,6 +82,8 @@ const ownFields = (d) => { const o = {}; for (const k in d || {}) if (k !== "byS
  * Once a second tool touches the entity, data.bySource[tool] keeps each tool's own
  * latest payload (newest last), seeding the earlier tool's top-level facts under its
  * _toolSource name. If the result is over `cap`, the oldest sources are dropped first.
+ * The workflow fields (core/workflow.js WORKFLOW_FIELDS) always keep prev's values and are
+ * never stored under bySource; an incoming null/undefined resolution keeps prev's.
  * Never mutates its inputs.
  * @param {object} prev existing entity data
  * @param {object} incoming the tool's data
@@ -84,16 +92,16 @@ const ownFields = (d) => { const o = {}; for (const k in d || {}) if (k !== "byS
  * @returns {object}
  */
 export function mergeToolData(prev, incoming, toolName, cap = DATA_CAP) {
-  const p = prev || {}, inc = ownFields(incoming), tool = str(toolName) || "unknown";
+  const p = prev || {}, inc = toolFields(incoming), tool = str(toolName) || "unknown";
   const bySource = { ...(p.bySource && typeof p.bySource === "object" ? p.bySource : {}) };
   const prevTool = str(p._toolSource);
-  if (prevTool && prevTool !== tool && !(prevTool in bySource)) bySource[prevTool] = ownFields(p);
+  if (prevTool && prevTool !== tool && !(prevTool in bySource)) bySource[prevTool] = toolFields(p);
   delete bySource[tool];
   bySource[tool] = inc;
   // A single-source entity's top level already is that tool's data; storing it twice
   // would double the graph's localStorage footprint for nothing.
-  if (!p.bySource && Object.keys(bySource).length < 2) return { ...p, ...inc, _toolSource: tool };
-  const out = { ...p, ...inc, _toolSource: tool, bySource };
+  if (!p.bySource && Object.keys(bySource).length < 2) return keepWorkflow({ ...p, ...inc, _toolSource: tool }, p);
+  const out = keepWorkflow({ ...p, ...inc, _toolSource: tool, bySource }, p);
   const names = Object.keys(bySource);
   while (names.length && JSON.stringify(out).length > cap) delete bySource[names.shift()];
   return out;
@@ -107,15 +115,33 @@ const KEEP_CLOSED = ["accepted", "false_positive", "duplicate"];
  * "new"/"open" does not pull back an entity an analyst is investigating, nor reopen
  * one resolved/closed as accepted / false_positive / duplicate; anything else applies, so a
  * re-scan can resolve a finding or reopen a fixed one that came back.
+ * With `managed` (a sink FINDING: data.findingKey set) a tool's "new"/"open" never
+ * reopens a resolved/closed finding: core/workflow.js reconcileRun, run by core/sink.js
+ * after the write, is the single place that reopens a fixed sink finding, so the reopen
+ * is flagged regressed and gets a history entry.
  * @param {string|null} current
  * @param {string|null|undefined} incoming
  * @param {string} [resolution] data.resolution
+ * @param {boolean} [managed]
  * @returns {string|null}
  */
-export function nextStatus(current, incoming, resolution) {
+export function nextStatus(current, incoming, resolution, managed = false) {
   if (!incoming || incoming === current) return null;
-  if (REOPEN.includes(incoming) && (current === "investigating" || ((current === "closed" || current === "resolved") && KEEP_CLOSED.includes(resolution)))) return null;
+  const closed = current === "closed" || current === "resolved";
+  if (REOPEN.includes(incoming) && (current === "investigating" || (closed && (managed || KEEP_CLOSED.includes(resolution))))) return null;
   return incoming;
+}
+
+/**
+ * Severity a tool re-run should set, or null to leave it: an analyst's severity
+ * override (data.severityOverride, core/workflow.js) is never reset by a tool.
+ * @param {object} prevData existing entity data
+ * @param {string|null|undefined} incoming
+ * @returns {string|null}
+ */
+export function toolSeverity(prevData, incoming) {
+  if (!incoming) return null;
+  return prevData && prevData.severityOverride ? null : incoming;
 }
 
 /**
