@@ -160,7 +160,7 @@ Legend: planned · scaffolded · built · merged · deployed
 | `apispec` | API Security Review | code | `api-` | scaffolded |
 | `dataflow` | Data Inventory & Processing Register | compliance | `dfr-` | scaffolded |
 | `awareness` | Awareness & Phishing-Test Analytics | compliance | `awr-` | merged |
-| `pentestreg` | Pentest & Audit Finding Tracker | detect | `ptr-` | scaffolded |
+| `pentestreg` | Pentest & Audit Finding Tracker | detect | `ptr-` | merged |
 
 The sidebar group `risk` ("Risk") is added with the first risk tool (Wave 3) so the
 sidebar never shows an empty group.
