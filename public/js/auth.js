@@ -292,6 +292,11 @@ const SIDE_DESC = {
   proxyhunt: "Web gateway and proxy log hunter for Zscaler, Squid, Palo Alto, Netskope and Umbrella: upload exfiltration, shadow SaaS, anonymizers and scripted clients.",
   vpnaudit: "Remote access audit for FortiGate, GlobalProtect, AnyConnect, OpenVPN, Cloudflare Access and ZPA logs: leavers connecting, impossible travel and brute force.",
   netexposure: "Network exposure from nmap, masscan, naabu and Nessus scans: risky exposed services, end-of-life banners, weak certificates and scan-to-scan differences.",
+  licenseaudit: "Open-source license compliance from lockfiles and incoming CycloneDX or SPDX SBOMs: SPDX expressions, copyleft obligations, conflicts and NOTICE files.",
+  apispec: "API security review of OpenAPI, Swagger, Postman and GraphQL definitions against the OWASP API Security Top 10 2023, with SARIF and CSV exports.",
+  dataflow: "Data inventory and GDPR Article 30 processing register: data categories, systems, vendors, transfers, retention, DPIA triggers and DSAR deadlines.",
+  awareness: "Security awareness and phishing-simulation analytics from KnowBe4, GoPhish, Microsoft Attack Simulation and LMS exports: click, report and repeat-clicker trends.",
+  pentestreg: "Pentest and audit finding tracker for Burp, ZAP, Nuclei, PlexTrac, HackerOne and audit reports: dedupe, CVSS, SLAs, retests and exceptions.",
 };
 const GROUP_DESC = {
   "Mission Control": "Flagship, real-time operations tools — the big dashboards.",
@@ -2130,6 +2135,11 @@ function renderApp(user) {
     else if (sec === "proxyhunt") { import("/js/ops/proxyhunt.js?v=20261016x").then(m => live() && m.renderProxyHunt(main)); }
     else if (sec === "vpnaudit") { import("/js/identity/vpnaudit.js?v=20261016y").then(m => live() && m.renderVpnAudit(main)); }
     else if (sec === "netexposure") { import("/js/exposure/netexposure.js?v=20261016z").then(m => live() && m.renderNetExposure(main)); }
+    else if (sec === "licenseaudit") { import("/js/appsec/licenseaudit.js?v=20261016za").then(m => live() && m.renderLicenseAudit(main)); }
+    else if (sec === "apispec") { import("/js/appsec/apispec.js?v=20261016zb").then(m => live() && m.renderApiSpec(main)); }
+    else if (sec === "dataflow") { import("/js/compliance/dataflow.js?v=20261016zc").then(m => live() && m.renderDataFlow(main)); }
+    else if (sec === "awareness") { import("/js/compliance/awareness.js?v=20261016zd").then(m => live() && m.renderAwareness(main)); }
+    else if (sec === "pentestreg") { import("/js/ops/pentestreg.js?v=20261016ze").then(m => live() && m.renderPentestReg(main)); }
     else if (sec === "setup") renderSetup(main, more);
     else if (sec === "settings") renderSettingsPage(main, user, isOwner, more);
     else if (sec === "admin") { import("/js/admin.js?v=20261015f").then(m => live() && m.renderAdmin(main, user)); }

@@ -156,11 +156,11 @@ Legend: planned · scaffolded · built · merged · deployed
 
 | route | Label | group | prefix | status |
 |---|---|---|---|---|
-| `licenseaudit` | License Compliance | code | `lic-` | planned |
-| `apispec` | API Security Review | code | `api-` | planned |
-| `dataflow` | Data Inventory & Processing Register | compliance | `dfr-` | planned |
-| `awareness` | Awareness & Phishing-Test Analytics | compliance | `awr-` | planned |
-| `pentestreg` | Pentest & Audit Finding Tracker | detect | `ptr-` | planned |
+| `licenseaudit` | License Compliance | code | `lic-` | scaffolded |
+| `apispec` | API Security Review | code | `api-` | scaffolded |
+| `dataflow` | Data Inventory & Processing Register | compliance | `dfr-` | scaffolded |
+| `awareness` | Awareness & Phishing-Test Analytics | compliance | `awr-` | scaffolded |
+| `pentestreg` | Pentest & Audit Finding Tracker | detect | `ptr-` | scaffolded |
 
 The sidebar group `risk` ("Risk") is added with the first risk tool (Wave 3) so the
 sidebar never shows an empty group.
