@@ -214,6 +214,38 @@ export async function screenBatchAsync(rows, index, opts = {}, onProgress) {
   return out;
 }
 
+// --------------------------- Security Graph sink ---------------------------
+
+// Screen rows -> common Finding shape (core/sink-map.js), one per screened name with
+// a hit, keyed by the normalized name so re-screening the same counterparty merges.
+// The counterparty is a VENDOR asset (the party being paid or contracted). Severity
+// follows the match band; the analyst's disposition sets the status (cleared ->
+// resolved, escalate -> investigating) and a confirmed match is always critical.
+// opts: { dispositions: { [name]: "pending"|"cleared"|"escalate"|"confirmed" }, listSource, listUpdated }
+const SINK_SEV = { exact: "critical", strong: "high", possible: "medium", weak: "low" };
+const SINK_STATUS = { pending: "open", escalate: "investigating", confirmed: "open", cleared: "resolved" };
+export function toSinkFindings(rows, opts = {}) {
+  const disp = opts.dispositions || {};
+  return (rows || []).filter((r) => r && r.hit && r.matches.length).map((r) => {
+    const top = r.matches[0], d = disp[r.name] || "pending";
+    const list = opts.listSource || "OFAC SDN";
+    return {
+      id: "sanctions:" + normName(r.name),
+      title: `Sanctions list match: ${r.name}`,
+      severity: d === "confirmed" ? "critical" : SINK_SEV[top.band] || "medium",
+      confidence: d === "confirmed" ? "confirmed" : top.band === "exact" || top.band === "strong" ? "likely" : "review",
+      status: SINK_STATUS[d] || "open", category: "sanctions",
+      description: `"${r.name}" scored ${top.score} (${top.band}) against ${list} entry "${top.name}"${top.matchedName && top.matchedName !== top.name ? ` (alias "${top.matchedName}")` : ""}${top.program ? `, program ${top.program}` : ""}. Disposition: ${d}. Name matching is a screening aid, not a determination: verify identifiers against the official list.`,
+      recommendation: d === "cleared" ? "Cleared by the analyst; keep the screening record with the disposition and the list version it ran against."
+        : "Hold payments and onboarding for this counterparty, compare secondary identifiers (date of birth, nationality, address, registration number) with the official entry, and escalate to compliance before any blocking or reporting decision.",
+      evidence: r.matches.slice(0, 10).map((m) => ({ list, listUpdated: opts.listUpdated || "", uid: m.uid, entry: m.name, matchedName: m.matchedName, type: m.type || "", program: m.program || "", score: m.score, band: m.band, dob: m.dob || "", nationality: m.nationality || "" })),
+      evidenceCount: r.matches.length,
+      assets: [{ type: "VENDOR", name: r.name, data: { role: "counterparty", sanctionsBand: top.band, disposition: d } }],
+      tags: ["ofac", top.band],
+    };
+  });
+}
+
 // --------------------------- OFAC export parsing ---------------------------
 
 // Parse an OFAC SDN.CSV body into normalized entries. The SDN file has no header;

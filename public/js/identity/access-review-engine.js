@@ -15,6 +15,8 @@
 //   SOX ITGC: periodic user access review (logical access)
 //   MITRE ATT&CK T1078 Valid Accounts (where the finding is an abuse path)
 
+import { controlsFromRefs } from "../core/sink-map.js";
+
 const DAY = 86400000;
 
 export const SEVERITY_RANK = { critical: 4, high: 3, medium: 2, low: 1, info: 0 };
@@ -1019,4 +1021,25 @@ export function exampleData(now = Date.now()) {
     `user13-2@test.darknode.ai,User Thirteen,TRUE,Member,${dt(40)},${dt(1)},Finance,Senior Analyst,E1013,,Enforced`,
   ].join("\n");
   return { hr, dir };
+}
+
+// ---------------------------------------------------------------------------
+// Security Graph sink: analyze() findings -> common Finding shape (core/sink-map.js).
+// Titles carry the type + account only (never counts) and ids are type:account, so
+// re-running the review merges into the same graph findings.
+// ---------------------------------------------------------------------------
+export function toSinkFindings(result) {
+  return ((result && result.findings) || []).map((f) => {
+    const a = f.account, e = f.employee;
+    const who = a ? a.email || a.id : "";
+    return {
+      id: f.id, title: who ? `${FINDING_TYPES[f.type].title}: ${who}` : FINDING_TYPES[f.type].title,
+      severity: f.severity, confidence: f.confidence, category: f.type,
+      description: f.explanation, recommendation: f.action,
+      controls: controlsFromRefs(f.controls),
+      evidence: (f.evidence || []).slice(0, 50), evidenceCount: (f.evidence || []).length,
+      assets: who ? [{ type: "IDENTITY", name: who, data: { account: a.id, displayName: a.name || "", employeeId: e ? e.employeeId || "" : "", hrStatus: e ? e.status : "not on roster", matchMethod: f.matchMethod || "none" } }] : [],
+      tags: ["access-review"],
+    };
+  });
 }

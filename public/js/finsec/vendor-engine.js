@@ -218,6 +218,68 @@ export function markPaid(v, at) {
   return v;
 }
 
+// ------------------------------- Security Graph sink -------------------------------
+
+// Register -> common Finding shape (core/sink-map.js). Per payee: an open bank-detail
+// change (the BEC redirection point), a live account still inside the watch window
+// (hold / recently changed / never paid, merged into one finding per account), and an
+// OFAC name hit when the caller passes one (`sanctions(v)` -> the UI's flag or null).
+// Ids carry the vendor id + change count + masked account so each new change is a new
+// finding; only masked account labels leave this function, never full account numbers
+// or callback phone numbers.
+const OFAC_SEV = { block: "critical", high: "high", medium: "medium" };
+export function toSinkFindings(list, { sanctions, at } = {}) {
+  const now = at || Date.now();
+  const iso = (t) => (t ? new Date(t).toISOString() : "");
+  const out = [];
+  for (const v of list || []) {
+    if (!v || !v.id) continue;
+    const asset = { type: "VENDOR", name: v.name, data: { role: "payee", status: v.status, account: v.bank ? bankLabel(v.bank) : "" } };
+    const ttp = [{ framework: "MITRE", id: "T1657" }];
+    if (v.status === "pending" && v.change) {
+      const c = v.change, isChange = !!v.bank;
+      out.push({
+        id: `${v.id}|${isChange ? "change" : "onboard"}|${v.history.length}|${bankLabel(c.bank)}`,
+        title: isChange ? `Bank-detail change pending approval: ${v.name}` : `New payee bank details pending verification: ${v.name}`,
+        severity: isChange ? "high" : "medium", confidence: "confirmed", status: "open", category: "bank-change",
+        description: `${isChange ? `A change from ${bankLabel(v.bank)} to ${bankLabel(c.bank)}` : `Opening bank details ${bankLabel(c.bank)}`} was proposed by ${c.by || "unknown"} and is not yet approved. Callback verification: ${c.callback ? "recorded" : "not recorded"}. Payments are blocked until a second approver signs off.`,
+        recommendation: "Verify the change by calling the payee on a number already on file (never one from the change request), record the callback, and have a second person approve. Treat an urgent or emailed request for new bank details as business email compromise until verified.",
+        evidence: [{ field: "proposed account", value: bankLabel(c.bank) }, { field: "current account", value: v.bank ? bankLabel(v.bank) : "none" }, { field: "proposed by", value: c.by || "" }, { field: "proposed at", value: iso(c.at) }, { field: "callback", value: c.callback ? "recorded by " + (c.callback.by || "") + " at " + iso(c.callback.at) : "not recorded" }],
+        assets: [asset], controls: ttp, tags: ["payees", "bec"],
+      });
+    }
+    if (v.bank && v.status !== "pending") {
+      const flags = screenFlags(v, now), codes = new Set(flags.map((f) => f.code));
+      if (codes.size) {
+        const onboarding = !v.history.length;
+        let sev = codes.has("new-account-hold") ? "high" : codes.has("recently-changed") ? (codes.has("first-payment") ? "high" : "medium") : "low";
+        if (onboarding && sev === "high") sev = "medium";
+        out.push({
+          id: `${v.id}|watch|${v.history.length}|${bankLabel(v.bank)}`,
+          title: `Payee bank account under BEC watch: ${v.name}`,
+          severity: sev, confidence: "confirmed", status: "open", category: "bank-change",
+          description: `${bankLabel(v.bank)} went live ${iso(v.activatedAt) || "at an unknown time"}${onboarding ? " as the payee's first account" : `, replacing ${bankLabel(v.history[v.history.length - 1].bank)}`}. ${flags.map((f) => f.text).join(" ")}`,
+          recommendation: "Screen payments to this account before release: confirm the invoice and amount with the payee through a known contact, and watch for urgency or a second change request shortly after this one.",
+          evidence: [...flags.map((f) => ({ field: f.code, value: f.text })), { field: "account", value: bankLabel(v.bank) }, { field: "activated at", value: iso(v.activatedAt) }, { field: "hold until", value: iso(v.holdUntil) }, { field: "first payment at", value: iso(v.firstPaymentAt) || "none yet" }],
+          assets: [asset], controls: ttp, tags: ["payees", "bec"],
+        });
+      }
+    }
+    const s = typeof sanctions === "function" ? sanctions(v) : null;
+    if (s) {
+      out.push({
+        id: `${v.id}|ofac`, title: `OFAC name match on payee: ${v.name}`,
+        severity: OFAC_SEV[s.level] || "medium", confidence: "review", status: "open", category: "sanctions",
+        description: `${s.text}. Name matching is a screening aid, not a determination; verify identifiers against the official list.`,
+        recommendation: "Hold payments to this payee and escalate to compliance; confirm or clear the match in Sanctions Screening against the official entry's identifiers.",
+        evidence: [{ field: "match", value: s.text }],
+        assets: [asset], tags: ["payees", "ofac"],
+      });
+    }
+  }
+  return out;
+}
+
 // ------------------------------- self-test -------------------------------
 
 export function selfTest() {

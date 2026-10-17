@@ -16,8 +16,9 @@
 import {
   validateBank, bankKey, bankLabel, createVendor, proposeChange, recordCallback,
   approveChange, rejectChange, refresh, canPay, screenFlags, markPaid, selfTest,
-  HOLD_HOURS, WATCH_DAYS,
+  HOLD_HOURS, WATCH_DAYS, toSinkFindings,
 } from "/js/finsec/vendor-engine.js?v=20261017c";
+import { attachSinkButton } from "../core/sink.js";
 import { buildIndex, screenName } from "/js/finsec/sanctions-engine.js?v=20261017c";
 
 // ── OFAC sanctions screening of payee names ──────────────────────────────
@@ -196,6 +197,11 @@ export function renderVendors(main) {
       <div class="vn-kpi"><b style="color:#b58100">${held}</b><span>On hold</span></div>
       <div class="vn-kpi"><b style="color:${pend ? "#b00020" : "inherit"}">${pend}</b><span>Change pending</span></div>
     </div>` : "";
+    if (list.length) {
+      const row = document.createElement("div"); row.className = "vn-row"; $("vnKpis").appendChild(row);
+      // Real register entries only (no example data exists here); OFAC flags come from the live screen cache.
+      attachSinkButton(row, () => ({ findings: toSinkFindings(list, { sanctions: (v) => _sncCache.get(sancKey(v.name)) || null }), sample: false }), "payees", { dataset: "payee register" });
+    }
     const body = $("vnBody");
     if (!list.length) { body.innerHTML = `<div class="vn-card vn-empty">No payees yet. Add one above to start a control register.</div>`; return; }
     body.innerHTML = `<div class="vn-list"><table>

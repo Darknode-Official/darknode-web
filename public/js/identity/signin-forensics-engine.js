@@ -15,6 +15,8 @@
 //   ts: epoch ms; success: true | false | null (null = not an authentication
 //   outcome, e.g. logout); mfa / isAdmin / isProxy: true | false | null (unknown).
 
+import { controlsFromRefs } from "../core/sink-map.js";
+
 // ---------------------------------------------------------------------------
 // CSV tokenizer (RFC 4180-ish): quoted fields, doubled quotes, embedded commas
 // and newlines, CRLF, optional UTF-8 BOM. Generator so callers can parse large
@@ -1051,3 +1053,27 @@ function localTimeText(ts, offMin) { const d = new Date(ts + (offMin || 0) * 600
 function durationText(ms) { const m = Math.round(ms / 60000); if (m < 60) return `${m} min`; const h = Math.floor(m / 60); return `${h} h ${pad(m % 60)} min`; }
 function place(r) { return [r.city, r.country].filter(Boolean).join(", ") || (r.lat !== null && r.lat !== undefined ? `${r.lat},${r.lon}` : "unknown location"); }
 function cap1(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
+
+// ---------------------------------------------------------------------------
+// Security Graph sink: analyze() findings -> common Finding shape (core/sink-map.js).
+// The engine's titles carry counts that change between runs, so the graph title is
+// the detection name + the subject from the stable key; the counted title leads the
+// description instead.
+// ---------------------------------------------------------------------------
+export function toSinkFindings(result) {
+  return ((result && result.findings) || []).map((f) => {
+    let subject = f.key.slice(f.key.indexOf(":") + 1);
+    if (f.user && subject.startsWith(f.user + ":")) subject = f.user + " / " + subject.slice(f.user.length + 1);
+    subject = subject.replace(/<>|\|/g, " / ");
+    const users = f.id === "password_spray" ? [...new Set(f.evidence.map((e) => e.user).filter(Boolean))].slice(0, 25) : f.user ? [f.user] : [];
+    return {
+      id: f.key, title: `${f.name}: ${subject}`, severity: f.severity, confidence: f.confidence, category: f.id,
+      description: `${f.title}. ${f.description || ""}`.trim(), recommendation: f.action,
+      controls: controlsFromRefs([f.technique]),
+      evidence: f.evidence.slice(0, 50).map((e) => ({ ts: iso(e.ts), user: e.user, ip: e.ip, outcome: e.success ? "success" : "failure", app: e.app || "", clientApp: e.clientApp || "", country: e.country || "", city: e.city || "", mfa: e.mfa, note: e.note || "" })),
+      evidenceCount: f.evidenceTotal != null ? f.evidenceTotal : f.evidence.length,
+      assets: [...users.map((u) => ({ type: "IDENTITY", name: u })), ...(f.ip ? [{ type: "IP", name: f.ip }] : [])],
+      tags: ["signin"],
+    };
+  });
+}

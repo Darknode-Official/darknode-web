@@ -7,6 +7,8 @@
 // so IPv4 and IPv6 share one code path.
 // Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
 
+import { controlsFromRefs } from "../core/sink-map.js";
+
 // ===========================================================================
 // 1. Address library
 // ===========================================================================
@@ -1554,4 +1556,38 @@ export function summaryText(res) {
     `${res.stats.anySrcAllows} of ${res.stats.allows} allow rules (${res.stats.pctAnySrcAllows}%) accept from any source; ${res.stats.exposedServices} risky service(s) reachable from any; ` +
     `${res.stats.shadowed} shadowed, ${res.stats.redundant} redundant, ${res.stats.disabled} disabled.` +
     (res.findings.length ? ` Top: ${res.findings[0].title}.` : "");
+}
+
+// Security Graph sink: audit findings -> common Finding shape (core/sink-map.js).
+// FWA-xxx-nnn ids and "#idx (line n)" titles shift whenever a rule is added, so
+// per-rule findings are keyed by the rule text itself (the dead rule for shadowed /
+// redundant) and chain / aggregate findings by their title without counts. `device`
+// (optional) names the firewall: it becomes the linked ASSET and scopes the keys so
+// identical rules on two firewalls stay two findings.
+const SINK_RULE_LABEL = { "any-any": "Any-to-any allow", exposure: "Risky service exposed", shadowed: "Shadowed rule", redundant: "Redundant rule", egress: "Unrestricted egress" };
+export function toSinkFindings(res, { device } = {}) {
+  const dev = String(device || "").trim();
+  return ((res && res.findings) || []).map((f) => {
+    const perRule = SINK_RULE_LABEL[f.type] && f.evidence.length && !/^[^:]+: unrestricted egress \(policy/.test(f.title);
+    let id, title;
+    if (perRule) {
+      const e = f.evidence[f.evidence.length - 1];
+      const raw = String(e.raw || "").replace(/\s+/g, " ").trim();
+      id = [f.type, dev, e.scope || "", raw].join("|");
+      title = `${SINK_RULE_LABEL[f.type]}: ${e.name || (raw.length > 120 ? raw.slice(0, 117) + "..." : raw)}`;
+    } else {
+      title = f.title.replace(/^(Ignored )?\d+ /, "$1");
+      title = title.charAt(0).toUpperCase() + title.slice(1);
+      id = [f.type, dev, title].join("|");
+    }
+    return {
+      id, title, severity: f.severity, confidence: f.confidence, category: f.type,
+      description: `${f.title}. ${f.detail || ""}`.trim(), recommendation: f.fix + (f.snippet ? "\n" + f.snippet : ""),
+      controls: controlsFromRefs([...(f.refs || []), f.attack]),
+      evidence: f.evidence.slice(0, 50).map((e) => ({ rule: e.idx, line: e.lineNo, name: e.name || "", scope: e.scope || "", raw: e.raw })),
+      evidenceCount: f.evidence.length,
+      assets: dev ? [{ type: "ASSET", name: dev, data: { kind: "firewall", format: res.format } }] : [],
+      tags: ["fwaudit", res.format].filter(Boolean),
+    };
+  });
 }

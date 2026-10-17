@@ -7,8 +7,9 @@ import { test, assert, group } from "../harness.mjs";
 import {
   parseCsv, iterCsvRows, sniffDelimiter, detectSourceFromHeaders, detectSourceFromObject, parseTs, parseOutcome, parseMfa,
   isLegacyClient, adminHint, hostingHint, subnet24, haversineKm, resolvePlace, createParser, parseAll, analyze, isAfterHours,
-  userTimeline, findingsToCsv, evidenceToCsv, summaryText, correlateOktaMfa, DEFAULTS, DETECTIONS,
+  userTimeline, findingsToCsv, evidenceToCsv, summaryText, correlateOktaMfa, DEFAULTS, DETECTIONS, toSinkFindings,
 } from "../../public/js/identity/signin-forensics-engine.js";
+import { checkSinkFindings } from "./sink-check.mjs";
 
 // ---------------------------------------------------------------------------
 // Fixture builders (format-faithful column names and value vocabularies)
@@ -489,5 +490,28 @@ group("sif: scoring, timeline and exports", () => {
     const recs = [{ ts: T0, user: "a", success: true, mfa: true }, { ts: T0 + 1000, user: "a", success: true, mfa: null }, { ts: T0 + day(1), user: "a", success: true, mfa: null }];
     correlateOktaMfa(recs);
     assert.equal(recs[1].mfa, true); assert.equal(recs[2].mfa, false);
+  });
+});
+
+group("sif: Security Graph sink mapping", () => {
+  const spray = (n) => Array.from({ length: n }, (_, i) => ({ ts: T0 + min(i * 2), user: `user${i}@corp.example`, success: false, ip: "203.0.113.9", country: "NL", city: "Amsterdam" }));
+  const stuffing = () => baseline().concat(
+    Array.from({ length: 6 }, (_, i) => ({ ts: T0 + min(i), user: "bo@corp.example", success: false, ip: "198.51.100.7", country: "RO", city: "Bucharest" })),
+    [{ ts: T0 + min(7), user: "bo@corp.example", success: true, ip: "198.51.100.7", country: "RO", city: "Bucharest", lat: 44.43, lon: 26.1, mfa: false }],
+    spray(10),
+  );
+  test("required fields, normalised severity, stable ids/titles across runs, sample tagging", () => {
+    const a = toSinkFindings(run(stuffing()).r), b = toSinkFindings(run(stuffing()).r);
+    const { items } = checkSinkFindings("signins", a, b, { minFindings: 2 });
+    assert.ok(items.some((i) => i.type === "IDENTITY" && i.name === "bo@corp.example"));
+    assert.ok(items.some((i) => i.type === "IP" && i.name === "203.0.113.9"));
+    assert.ok(items.some((i) => i.type === "CONTROL" && i.name === "MITRE T1110.003"));
+  });
+  test("spray graph title ignores the target count; the counted title moves to the description", () => {
+    const f10 = toSinkFindings(run(baseline().concat(spray(10))).r).find((f) => f.category === "password_spray");
+    const f14 = toSinkFindings(run(baseline().concat(spray(14))).r).find((f) => f.category === "password_spray");
+    assert.equal(f10.title, "Password spraying: 203.0.113.9"); assert.equal(f10.id, f14.id); assert.equal(f10.title, f14.title);
+    assert.ok(/10 accounts/.test(f10.description) && /14 accounts/.test(f14.description));
+    assert.equal(f10.assets.filter((x) => x.type === "IDENTITY").length, 10);
   });
 });

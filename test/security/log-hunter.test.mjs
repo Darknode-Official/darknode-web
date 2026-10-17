@@ -6,8 +6,9 @@
 import { test, assert, group } from "../harness.mjs";
 import {
   DETECTIONS, DEFAULT_SETTINGS, parseText, analyzeText, urlDecode, isInternalIp, parseCidr, ipToInt,
-  parseTs, burstWindow, isOffHours, splitRecords, classifyRequest, winFieldsFromMessage, findingsToCsv, iocText, reportToJson,
+  parseTs, burstWindow, isOffHours, splitRecords, classifyRequest, winFieldsFromMessage, findingsToCsv, iocText, reportToJson, toSinkFindings,
 } from "../../public/js/ops/log-hunter-engine.js";
+import { checkSinkFindings } from "./sink-check.mjs";
 
 const has = (r, det) => r.findings.some((f) => f.det === det);
 const get = (r, det) => r.findings.find((f) => f.det === det);
@@ -538,6 +539,19 @@ group("log-hunter: report, dossier, exports", () => {
   test("string settings from the UI are normalised (CIDRs, login paths, numbers)", () => {
     const r = analyzeText(winJson(4624, "2026-10-13T10:00:00Z", { TargetUserName: "mlee", LogonType: 10, IpAddress: "203.0.113.9" }), { internalCidrs: "203.0.113.0/24, 10.0.0.0/8", bruteN: "7" });
     assert.notOk(has(r, "win.rdp_external")); assert.equal(r.settings.bruteN, 7); assert.deepEqual(r.settings.internalCidrs, ["203.0.113.0/24", "10.0.0.0/8"]);
+  });
+  const brute = Array.from({ length: 12 }, (_, i) => sshFail(i, "198.51.100.40", "admin")).join("\n");
+  test("sink: required fields, normalised severity, stable ids/titles across runs, sample tagging", () => {
+    const a = toSinkFindings(analyzeText(mixed + "\n" + brute, { assumeYear: 2026 })), b = toSinkFindings(analyzeText(mixed + "\n" + brute, { assumeYear: 2026 }));
+    const { items } = checkSinkFindings("loghunt", a, b, { minFindings: 3 });
+    assert.ok(items.some((i) => i.type === "IP" && i.name === "198.51.100.40"));
+    assert.ok(items.some((i) => i.type === "CONTROL" && i.name === "MITRE T1070.001"));
+    assert.ok(a.every((f) => !/^F-\d+$/.test(f.id)), "positional ids never reach the graph");
+  });
+  test("sink: ids survive a re-hunt that adds findings (F-nnn shifts, sink ids do not)", () => {
+    const r1 = analyzeText(mixed, { assumeYear: 2026 }), r2 = analyzeText(brute + "\n" + mixed, { assumeYear: 2026 });
+    const ids2 = new Set(toSinkFindings(r2).map((f) => f.id + "|" + f.title));
+    for (const f of toSinkFindings(r1)) assert.ok(ids2.has(f.id + "|" + f.title), "lost " + f.id);
   });
   test("200k-line input parses in bounded time", () => {
     const L = new Array(200000);
