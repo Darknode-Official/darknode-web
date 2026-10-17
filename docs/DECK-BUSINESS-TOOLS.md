@@ -106,10 +106,10 @@ Legend: planned · scaffolded · built · merged · deployed
 
 | route | Label | prefix | status |
 |---|---|---|---|
-| `caaudit` | Conditional Access Audit | `caa-` | scaffolded |
-| `privaudit` | Privileged Access Audit | `prv-` | scaffolded |
-| `nhi` | Non-Human Identity Lifecycle | `nhi-` | scaffolded |
-| `jml` | Lifecycle & Offboarding Verifier | `jml-` | scaffolded |
+| `caaudit` | Conditional Access Audit | `caa-` | merged |
+| `privaudit` | Privileged Access Audit | `prv-` | merged |
+| `nhi` | Non-Human Identity Lifecycle | `nhi-` | merged |
+| `jml` | Lifecycle & Offboarding Verifier | `jml-` | merged |
 | `oauthgov` | OAuth App Governance | `oag-` | scaffolded |
 
 ### Wave 2 — Cloud, infra & fleet
