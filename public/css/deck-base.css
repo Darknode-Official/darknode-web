@@ -402,22 +402,7 @@
 
 /* ---------- repairs ----------
    Not zero-specificity: these undo specific older rules that leave a framed tool with a
-   broken control. pro-theme's `.app-main select{background:#fff!important;padding:9px 14px
-   !important}` wipes the dropdown chevron its own `select` rule adds (appearance stays none),
-   so every select in a tool rendered with no arrow at all. */
-html[data-embed] body.app .app-main select:not([multiple]):not([size]):not(#dn-x) {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23716e68' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
-  background-repeat: no-repeat !important;
-  background-position: right 11px center !important;
-  background-size: 10px 6px !important;
-  padding-right: 32px !important;
-}
-/* styles.css gives every [class*="sev-"] element badge styling, display:inline-block included.
-   Tools put severity classes on table cells too, which knocked those cells out of the row. */
-:where(html[data-embed]) :is(td, th)[class*="sev-"] {
-  display: table-cell;
-  border-radius: 0;
-}
+   broken layout. */
 /* styles.css sets every select to width:100%. Inside a wrapping toolbar row that puts each
    filter on its own full-width line. Toolbar rows size their selects to the content instead;
    a tool that sets a width on purpose (a class selector or stronger) still wins. */

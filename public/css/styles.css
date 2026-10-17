@@ -5797,7 +5797,8 @@ table tr:hover{background:color-mix(in srgb,var(--acc) 3%,transparent)}
 .qa:hover{border-left-color:var(--acc);background:color-mix(in srgb,var(--acc) 4%,var(--card));transform:translateY(-1px)}
 
 /* 8. Universal severity badges */
-[class*="sev-"]{padding:2px 8px;border-radius:6px;font-size:.72rem;font-weight:600;display:inline-block}
+/* table parts are left out: a severity class on a td/tr must not turn the cell into an inline badge */
+[class*="sev-"]:where(:not(table,thead,tbody,tfoot,tr,td,th)){padding:2px 8px;border-radius:6px;font-size:.72rem;font-weight:600;display:inline-block}
 .sev-crit,.sev-critical{background:rgba(255,60,80,.12);color:var(--bad)}
 .sev-high{background:rgba(255,140,50,.12);color:#ff8c32}
 .sev-med,.sev-medium{background:rgba(245,176,65,.12);color:var(--warn)}
@@ -6708,7 +6709,7 @@ body.app .dash-hero .btn.ghost:hover {
    ---------------------------------------------------------------- */
 .ca-sev,.tk-badge,.ct-badge,.enc-badge,.ft-badge,.hs-badge,
 .nx-badge,.sv-badge,.ts-badge,.tl-badge,.ag-badge,
-[class*="sev-"]{
+[class*="sev-"]:where(:not(table,thead,tbody,tfoot,tr,td,th)){
   padding:2px 8px;border-radius:6px;font-size:.72rem;
   font-weight:600;display:inline-block;line-height:1.5
 }
