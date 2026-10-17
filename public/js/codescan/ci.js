@@ -1,33 +1,78 @@
 // Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
-// Code Scanner: GitHub Actions workflow generator (pure, no DOM).
+// Code Scanner: GitHub Actions workflow generator (pure apart from resolvePin's injected I/O).
 //
-// The generated workflow downloads the scanner from the Darknode site at run time
-// (the same rules/taint/baseline modules the browser runs, plus the Node CLI) and
-// scans the repository inside the user's own Actions runner: their code is never
-// sent to Darknode. Each push is diffed against the commit before it (each pull
-// request against its base) so only NEW findings fail the job, and the full-tree
-// SARIF goes to GitHub code scanning.
+// The generated workflow runs the scanner (the same rules/taint/baseline modules the
+// browser runs, plus the Node CLI) inside the user's own Actions runner: their code is
+// never sent to Darknode. The scanner is PINNED: it is downloaded from the public
+// Darknode-Official/darknode-web repository at one immutable commit, and every file is
+// checked against a SHA-256 written into the workflow, so the job fails closed if a
+// byte differs. Regenerating the workflow re-pins it to the newest scanner. Each push
+// is diffed against the commit before it (each pull request against its base) so only
+// NEW findings fail the job, and the full-tree SARIF goes to GitHub code scanning.
 
 export const WORKFLOW_PATH = ".github/workflows/darknode-scan.yml";
 export const SCANNER_FILES = ["rules.js", "taint-js.js", "baseline.js", "github.js", "cli.mjs"];
 export const FAIL_LEVELS = ["critical", "high", "medium", "low", "none"];
+export const SCANNER_REPO = "Darknode-Official/darknode-web";
+export const SCANNER_DIR = "public/js/codescan";
+export const pinnedUrl = (sha, file) => `https://raw.githubusercontent.com/${SCANNER_REPO}/${sha}/${SCANNER_DIR}/${file}`;
+
+const SHA1 = /^[0-9a-f]{40}$/;
+const SHA256 = /^[0-9a-f]{64}$/;
+
+// Throws unless pin = { sha: 40-hex commit, files: { <each SCANNER_FILES name>: 64-hex sha256 } }.
+export function checkPin(pin) {
+  if (!pin || !SHA1.test(String(pin.sha || ""))) throw new Error("The scanner pin needs a full 40-character commit SHA.");
+  for (const f of SCANNER_FILES) if (!SHA256.test(String((pin.files || {})[f] || ""))) throw new Error("The scanner pin has no SHA-256 for " + f + ".");
+  return pin;
+}
 
 /**
- * @param {{ site?: string, failOn?: string, deps?: boolean, failOnReview?: boolean }} [o]
+ * Resolve the newest scanner on main and hash each pinned file.
+ * io.fetch: fetch-compatible; io.sha256(text) → hex digest (Promise).
+ * @returns {Promise<{ sha: string, date: string, files: Record<string,string> }>}
+ */
+export async function resolvePin(io) {
+  const r = await io.fetch(`https://api.github.com/repos/${SCANNER_REPO}/commits/main`, { headers: { Accept: "application/vnd.github+json" } });
+  if (!r.ok) throw new Error(r.status === 403 || r.status === 429 ? "GitHub API limit reached while looking up the latest scanner. Try again later." : "Couldn't look up the latest scanner commit (HTTP " + r.status + ").");
+  const c = await r.json();
+  const sha = String((c && c.sha) || "").toLowerCase();
+  if (!SHA1.test(sha)) throw new Error("GitHub returned no commit SHA for the scanner.");
+  const files = {};
+  for (const f of SCANNER_FILES) {
+    const res = await io.fetch(pinnedUrl(sha, f));
+    if (!res.ok) throw new Error(`${f} is not on main at ${sha.slice(0, 7)} yet (HTTP ${res.status}), so the workflow can't be pinned.`);
+    files[f] = String(await io.sha256(new Uint8Array(await res.arrayBuffer()))).toLowerCase(); // the exact bytes curl will fetch
+  }
+  return checkPin({ sha, date: (c.commit && c.commit.committer && c.commit.committer.date) || "", files });
+}
+
+// Browser/Node SHA-256 of bytes (or a string, as UTF-8) → hex.
+export async function sha256Hex(data) {
+  const buf = await crypto.subtle.digest("SHA-256", data instanceof Uint8Array ? data : new TextEncoder().encode(String(data)));
+  return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+/**
+ * @param {{ pin: { sha: string, files: Record<string,string> }, failOn?: string, deps?: boolean, failOnReview?: boolean }} o
  * @returns {string} workflow YAML
  */
 export function workflowYaml(o = {}) {
-  const site = String(o.site || "https://darknode.ai").replace(/\/+$/, "");
-  if (!/^https:\/\/[A-Za-z0-9.-]+(?::\d+)?$/.test(site)) throw new Error("site must be an https origin");
+  const pin = checkPin(o.pin);
   const failOn = FAIL_LEVELS.includes(o.failOn) ? o.failOn : "high";
   const flags = ["--sarif darknode.sarif", "--full-sarif", "--fail-on " + failOn];
   if (o.deps) flags.push("--deps");
   if (o.failOnReview) flags.push("--fail-on-review");
+  const sums = SCANNER_FILES.map((f) => `            "${pin.files[f]}  ${f}"`).join(" \\\n");
   return `# Darknode Code Scanner: checks every push and pull request for leaked secrets
 # and risky code${o.deps ? ", and pinned dependencies against OSV.dev advisories" : " (add --deps to also check dependencies against OSV.dev)"}.
-# Generated by ${site} (Code Scanner > Commits). The scan runs in this job on
-# GitHub's runner; your code is not sent to Darknode. Only findings that are NEW
-# compared with the previous commit (or the pull request base) fail the job.
+# Generated by the Darknode Code Scanner. The scan runs in this job on GitHub's
+# runner; your code is not sent to Darknode. Only findings that are NEW compared
+# with the previous commit (or the pull request base) fail the job. Needs-review
+# items are counted in the job summary and kept out of the Security tab.
+# The scanner is pinned to ${SCANNER_REPO}@${pin.sha}
+# and every file is checked against its SHA-256 below. Regenerate this file in
+# Darknode to upgrade the scanner.
 name: Darknode code scan
 
 on:
@@ -60,15 +105,23 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Download the Darknode scanner
+      - name: Download the pinned Darknode scanner
         run: |
           set -euo pipefail
           d="$RUNNER_TEMP/darknode"
           mkdir -p "$d"
           echo '{"type":"module"}' > "$d/package.json"
           for f in ${SCANNER_FILES.join(" ")}; do
-            curl -fsSL --retry 3 "${site}/js/codescan/$f" -o "$d/$f"
+            curl -fsSL --retry 3 "https://raw.githubusercontent.com/${SCANNER_REPO}/${pin.sha}/${SCANNER_DIR}/$f" -o "$d/$f"
           done
+
+      - name: Verify scanner checksums
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/darknode"
+          printf '%s\\n' \\
+${sums} > SHA256SUMS
+          sha256sum --strict -c SHA256SUMS
 
       - name: Scan
         env:

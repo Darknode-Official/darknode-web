@@ -2,8 +2,9 @@
 # Runs the same engine as the website's Code Scanner (public/js/codescan/) through
 # scripts/darknode-scan.mjs. Each push is diffed against the commit before it (a pull
 # request against its base), so only NEW findings at high or above fail the job;
-# needs-review items (a risky call with no traced untrusted input) are reported but do
-# not gate. The full-tree SARIF goes to GitHub code scanning (free for public repos).
+# needs-review items (a risky call with no traced untrusted input) are counted in the
+# job summary but do not gate and stay out of the SARIF (--sarif-include-review adds
+# them). The full-tree SARIF goes to GitHub code scanning (free for public repos).
 name: Darknode code scan
 
 on:

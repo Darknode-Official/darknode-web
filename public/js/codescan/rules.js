@@ -111,7 +111,9 @@ export const CODE_RULES = [
     why: "eval/new Function run arbitrary strings as code; any attacker influence on the argument is code execution.",
     fix: "Use JSON.parse for data, or a lookup table / explicit dispatch instead of building code from strings." }),
   R({ id: "js.child-process-exec", langs: ["js"], title: "Shell command built from variables", sev: "critical", cwe: 78,
-    re: /\b(?:exec|execSync)\s*\(\s*(?:`[^`]*\$\{|["'][^"']*["']\s*\+|[A-Za-z_$][\w$.]*\s*[+,)])/,
+    // The lookbehind drops RegExp.prototype.exec: a regex literal (/x/g.exec) or a receiver
+    // named like a pattern (re, rx, regex, pattern, matcher, urlRe, URL_RE, tokenPattern).
+    re: /(?<!(?:\/[dgimsuyv]*|(?<![\w$])(?:re|RE|Re|rx|RX|regex|Regex|REGEX|regexp|RegExp|pattern|Pattern|PATTERN|pat|matcher)|[A-Za-z0-9$](?:Re|RE|Rx|RX|Regex|REGEX|RegExp|Regexp|Pattern|PATTERN)|_(?:re|RE|rx|RX|regex|REGEX|pattern|PATTERN))\s*\.\s*)\b(?:exec|execSync)\s*\(\s*(?:`[^`]*\$\{|["'][^"']*["']\s*\+|[A-Za-z_$][\w$.]*\s*[+,)])/,
     near: /child_process|require\(["']child_process["']\)|from\s+["'](?:node:)?child_process["']|\bshelljs\b/,
     win: 400,
     why: "exec() hands the whole string to a shell, so metacharacters in interpolated values run extra commands.",

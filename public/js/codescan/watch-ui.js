@@ -10,7 +10,7 @@
 // baseline gives that commit's new and fixed findings. Pure logic: watch.js, ci.js.
 
 import { newWatch, watchKey, listNewCommits, commitMeta, planCommit, applyCommit, chip, graphItem, COMMIT_CAP } from "./watch.js?v=20261017d";
-import { workflowYaml, toBase64, WORKFLOW_PATH, FAIL_LEVELS } from "./ci.js?v=20261017d";
+import { workflowYaml, toBase64, resolvePin, sha256Hex, WORKFLOW_PATH, FAIL_LEVELS, SCANNER_REPO } from "./ci.js?v=20261017d";
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const fmt = (n) => Number(n || 0).toLocaleString();
@@ -85,7 +85,7 @@ export function createWatch(ctx) {
   const { body, gh, engine } = ctx;
   const toast = ctx.toast || (() => {});
   const running = new Map();   // key → { queue: [meta], current: sha }
-  const view = { key: "", open: "", tok: 0, runs: null, runsErr: "", ci: { failOn: "high", deps: false } };
+  const view = { key: "", open: "", tok: 0, runs: null, runsErr: "", ci: { failOn: "high", deps: false }, pin: null, pinBusy: false, pinErr: "" };
   const lsKey = () => { let uid = "anon"; try { uid = window.__dnUid || "anon"; } catch (_) {} return "dn_codescan_watch_" + uid; };
   const loadAll = () => { try { const j = JSON.parse(localStorage.getItem(lsKey()) || "{}"); return j && typeof j === "object" && !Array.isArray(j) ? j : {}; } catch (_) { return {}; } };
   const load = (key) => loadAll()[key] || null;
@@ -455,15 +455,21 @@ export function createWatch(ctx) {
   function drawCi(s) {
     const el = body.querySelector("#cswCi");
     if (!el) return;
-    const yaml = workflowYaml({ failOn: view.ci.failOn, deps: view.ci.deps });
+    const pin = view.pin;
+    const yaml = pin ? workflowYaml({ pin, failOn: view.ci.failOn, deps: view.ci.deps }) : "";
     const pat = gh.connected() && gh.tokenKind() === "pat";
+    const pinHtml = pin
+      ? `<p class="cs-help">Scanner pinned to <a class="csw-mono" href="https://github.com/${SCANNER_REPO}/tree/${esc(pin.sha)}/public/js/codescan" target="_blank" rel="noopener">${esc(SCANNER_REPO)}@${esc(pin.sha.slice(0, 7))}</a>${pin.date ? " (" + esc(new Date(pin.date).toLocaleDateString()) + ")" : ""}. The workflow downloads those exact files and checks each SHA-256 before running, so it fails rather than run anything else. Regenerate and update the file to upgrade the scanner. <button class="cs-link" id="cswPin" type="button" ${view.pinBusy ? "disabled" : ""}>${view.pinBusy ? "Checking…" : "Check for a newer scanner"}</button></p>`
+      : `<p class="cs-help">The workflow pins the scanner to the latest commit of ${esc(SCANNER_REPO)} and the SHA-256 of each file, so a run can only use the exact code you generated it with.</p>
+        <div class="cs-row"><button class="cs-btn sm pri" id="cswPin" type="button" ${view.pinBusy ? "disabled" : ""}>${view.pinBusy ? "Pinning the scanner…" : "Generate workflow"}</button></div>${view.pinErr ? `<div class="cs-err">${esc(view.pinErr)}</div>` : ""}`;
     el.innerHTML = `<h2 class="cs-h2">Scan every commit with GitHub Actions</h2>
       <p class="cs-p">Runs the same scanner on every push and pull request inside your repository's own GitHub Actions, with no browser open. Only findings that are new versus the previous commit fail the run, and results go to the repository's Security tab (code scanning). Your code is not sent to Darknode.</p>
       <div class="cs-row"><label class="csw-chk" for="cswFail">Fail on</label><select class="csw-sel" id="cswFail">${FAIL_LEVELS.map((v) => `<option value="${v}" ${view.ci.failOn === v ? "selected" : ""}>${v === "none" ? "Never (report only)" : v[0].toUpperCase() + v.slice(1) + (v === "low" ? "" : " and above")}</option>`).join("")}</select>
         <label class="csw-chk"><input type="checkbox" id="cswDeps" ${view.ci.deps ? "checked" : ""}> Check dependencies (OSV.dev)</label></div>
-      <pre class="csw-yaml" id="cswYaml">${esc(yaml)}</pre>
+      ${pinHtml}
+      ${pin ? `<pre class="csw-yaml" id="cswYaml">${esc(yaml)}</pre>
       <div class="cs-row" style="margin-top:10px"><button class="cs-btn sm" id="cswCopy" type="button">Copy YAML</button><button class="cs-btn sm" id="cswDl" type="button">Download</button>
-        <button class="cs-btn sm pri" id="cswPut" type="button">Add to ${esc(s.full)}</button></div>
+        <button class="cs-btn sm pri" id="cswPut" type="button">Add to ${esc(s.full)}</button></div>` : ""}
       <p class="cs-help">Save it as <span class="csw-mono">${esc(WORKFLOW_PATH)}</span>, or add it here with a fine-grained personal access token${pat ? "" : " (use one from the GitHub tab on the start screen)"} that has:</p>
       <ul class="csw-perm"><li>Repository access: <b>only ${esc(s.full)}</b></li><li><b>Contents: Read and write</b> to commit the file</li><li><b>Workflows: Read and write</b>, which GitHub requires for any file under .github/workflows</li><li><b>Actions: Read-only</b> to list the runs below (Metadata: Read-only is added automatically)</li></ul>
       <p class="cs-help">GitHub sign-in from Darknode can't add workflow files: it doesn't ask for the workflow scope.</p>
@@ -471,6 +477,18 @@ export function createWatch(ctx) {
       <div class="csw-runs" id="cswRunList">${runsHtml()}</div>`;
     el.querySelector("#cswFail").onchange = (e) => { view.ci.failOn = e.target.value; drawCi(s); };
     el.querySelector("#cswDeps").onchange = (e) => { view.ci.deps = e.target.checked; drawCi(s); };
+    el.querySelector("#cswPin").onclick = async () => {
+      view.pinBusy = true; view.pinErr = ""; drawCi(s);
+      try {
+        const next = await resolvePin({ fetch: (u, o) => fetch(u, o), sha256: sha256Hex });
+        if (view.pin && view.pin.sha === next.sha) toast("The workflow already uses the newest scanner", "ok");
+        view.pin = next;
+      } catch (e) { view.pinErr = e.message; if (view.pin) toast(e.message, "error"); }
+      view.pinBusy = false;
+      if (body.querySelector("#cswCi")) drawCi(s);
+    };
+    el.querySelector("#cswRuns").onclick = () => loadRuns(s);
+    if (!pin) return;
     el.querySelector("#cswCopy").onclick = async () => { try { await navigator.clipboard.writeText(yaml); toast("Workflow copied", "ok"); } catch (_) { toast("Couldn't copy. Select the text and copy it instead.", "error"); } };
     el.querySelector("#cswDl").onclick = () => {
       const url = URL.createObjectURL(new Blob([yaml], { type: "text/yaml" }));
@@ -478,7 +496,6 @@ export function createWatch(ctx) {
       document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);
     };
     el.querySelector("#cswPut").onclick = () => installWorkflow(s, yaml);
-    el.querySelector("#cswRuns").onclick = () => loadRuns(s);
   }
 
   function runsHtml() {

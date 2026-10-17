@@ -5,7 +5,7 @@
 // check every commit without a browser.
 //
 //   node cli.mjs [dir] [--sarif out.sarif] [--diff-base <sha>] [--fail-on high]
-//                [--deps] [--full-sarif] [--fail-on-review] [--all-files] [--quiet]
+//                [--deps] [--full-sarif] [--sarif-include-review] [--fail-on-review] [--all-files] [--quiet]
 //
 // --diff-base <sha>  scan only files changed since <sha> (needs git history) and gate
 //                    on findings that are NEW versus that commit, so old findings do not
@@ -14,6 +14,8 @@
 //                    gated finding at or above it exists. Needs-review items (a risky call
 //                    with no traced untrusted input) are reported but only gate with
 //                    --fail-on-review.
+// --sarif-include-review  also upload needs-review items (left out by default so the
+//                    Security tab shows confirmed findings only).
 // --full-sarif       in diff mode, still write SARIF for the whole tree (GitHub code
 //                    scanning closes alerts missing from an upload, so CI wants this).
 // --deps             check pinned dependencies against OSV.dev (network).
@@ -33,7 +35,7 @@ const SEVS = ["critical", "high", "medium", "low"];
 const FAIL_ON = ["critical", "high", "medium", "low", "none"];
 
 export function parseArgs(argv) {
-  const o = { dir: ".", sarif: "", diffBase: "", failOn: "high", deps: false, fullSarif: false, failOnReview: false, allFiles: false, quiet: false, help: false };
+  const o = { dir: ".", sarif: "", diffBase: "", failOn: "high", deps: false, fullSarif: false, sarifIncludeReview: false, failOnReview: false, allFiles: false, quiet: false, help: false };
   const need = (i, flag) => { if (i >= argv.length || String(argv[i]).startsWith("--")) throw new Error(flag + " needs a value"); return String(argv[i]); };
   let dirSet = false;
   for (let i = 0; i < argv.length; i++) {
@@ -43,6 +45,7 @@ export function parseArgs(argv) {
     else if (a === "--fail-on") { o.failOn = need(++i, a).toLowerCase(); if (!FAIL_ON.includes(o.failOn)) throw new Error("--fail-on must be one of " + FAIL_ON.join(", ")); }
     else if (a === "--deps") o.deps = true;
     else if (a === "--full-sarif") o.fullSarif = true;
+    else if (a === "--sarif-include-review") o.sarifIncludeReview = true;
     else if (a === "--fail-on-review") o.failOnReview = true;
     else if (a === "--all-files") o.allFiles = true;
     else if (a === "--quiet") o.quiet = true;
@@ -115,6 +118,12 @@ export function parseNameStatus(out) {
   return res;
 }
 
+const isReview = (f) => f.confidence === "review";
+const reviewCount = (list, mode, leftOut) => {
+  const n = list.filter(isReview).length;
+  if (!n) return "";
+  return `Needs review: ${n} ${mode === "diff" ? "new " : ""}item(s) where a risky call has no traced untrusted input. They do not gate${leftOut ? " and are left out of the SARIF (use --sarif-include-review to upload them)" : ""}.`;
+};
 const sortF = (a, b) => SEV_ORDER[a.sev] - SEV_ORDER[b.sev] || a.path.localeCompare(b.path) || a.line - b.line;
 const gated = (f, o) => o.failOn !== "none" && SEV_ORDER[f.sev] <= SEV_ORDER[o.failOn] && (o.failOnReview || f.confidence !== "review");
 const mdEsc = (s) => String(s ?? "").replace(/[|\\`*_<>[\]]/g, (c) => "\\" + c).replace(/\r?\n/g, " ");
@@ -209,7 +218,10 @@ export async function main(argv, io = {}) {
 
   if (o.sarif) {
     const sf = mode === "diff" && o.fullSarif ? await fullScan() : result.findings;
-    result.sarif = toSarif(sf, { repo, sha });
+    // Needs-review items stay out of code scanning unless asked for, so the Security tab
+    // holds confirmed findings only. They are still counted in both summaries.
+    result.sarifReviewLeftOut = o.sarifIncludeReview ? 0 : sf.filter(isReview).length;
+    result.sarif = toSarif(o.sarifIncludeReview ? sf : sf.filter((f) => !isReview(f)), { repo, sha });
     writeFileSync(resolve(io.cwd || process.cwd(), o.sarif), JSON.stringify(result.sarif, null, 2));
   }
 
@@ -222,13 +234,18 @@ export async function main(argv, io = {}) {
   say(mode === "diff" ? `Changed files in scope: ${result.changed}` : `Files scanned: ${result.scanned}`);
   say((mode === "diff" ? "Findings in changed files: " : "Findings: ") + count(result.findings));
   if (mode === "diff") say("New: " + count(result.added) + " | Fixed: " + result.fixed.length);
-  const show = (mode === "diff" ? result.added : result.findings).slice(0, 200);
+  // Needs-review items are counted on one line; they are listed only when they gate.
+  const pool = (mode === "diff" ? result.added : result.findings);
+  const listable = o.failOnReview ? pool : pool.filter((f) => !isReview(f));
+  const reviewLine = o.failOnReview ? "" : reviewCount(pool, mode, result.sarifReviewLeftOut);
+  const show = listable.slice(0, 200);
   if (show.length) {
     say("");
     say((mode === "diff" ? "NEW " : "") + "SEVERITY  CONF    LOCATION  RULE  TITLE");
     for (const f of show) say(`${f.sev.toUpperCase().padEnd(9)} ${(f.confidence === "review" ? "review" : f.flow ? "flow" : "rule").padEnd(7)} ${f.path}:${f.line}  ${f.ruleId}  ${f.title}${f.secret ? " (" + f.secret + ")" : ""}`);
-    if ((mode === "diff" ? result.added : result.findings).length > show.length) say(`... and ${(mode === "diff" ? result.added : result.findings).length - show.length} more (see the SARIF file)`);
+    if (listable.length > show.length) say(`... and ${listable.length - show.length} more (see the SARIF file)`);
   }
+  if (reviewLine) { say(""); say(reviewLine); }
   say("");
   say(o.failOn === "none" ? "Gate: off (--fail-on none)" : failing.length ? `Gate FAILED: ${failing.length} ${mode === "diff" ? "new " : ""}finding(s) at ${o.failOn} or above.` : `Gate passed: no ${mode === "diff" ? "new " : ""}${o.failOn}-or-above findings${o.failOnReview ? "" : " (needs-review items do not gate)"}.`);
   say(`Done in ${((Date.now() - t0) / 1000).toFixed(1)}s.`);
@@ -245,12 +262,14 @@ export async function main(argv, io = {}) {
     lines.push(row(mode === "diff" ? "New" : "Findings", result.added));
     if (mode === "diff") lines.push(`| Fixed | ${SEVS.map((s) => result.fixed.filter((f) => f.sev === s).length).join(" | ")} |`);
     lines.push("", o.failOn === "none" ? "**Gate:** off" : failing.length ? `**Gate failed:** ${failing.length} ${mode === "diff" ? "new " : ""}finding(s) at ${o.failOn} or above.` : `**Gate passed** (fail on ${o.failOn}).`);
-    const listed = result.added.slice(0, 100);
+    const addedList = o.failOnReview ? result.added : result.added.filter((f) => !isReview(f));
+    const listed = addedList.slice(0, 100);
+    if (reviewLine) lines.push("", mdEsc(reviewLine));
     if (listed.length) {
       lines.push("", mode === "diff" ? "### New findings" : "### Findings", "", "| Severity | Finding | Location | Rule |", "|---|---|---|---|");
       for (const f of listed) lines.push(`| ${f.sev}${f.confidence === "review" ? " (needs review)" : ""} | ${mdEsc(f.kind === "dep" ? f.pkg + " " + f.version + ": " + f.title : f.title)}${f.secret ? " `" + f.secret.replace(/`/g, "") + "`" : ""} | ${link(f)} | ${mdEsc(f.ruleId)} |`);
-      if (result.added.length > listed.length) lines.push("", `${result.added.length - listed.length} more in the SARIF upload.`);
-    } else lines.push("", mode === "diff" ? "No new findings in this change." : "No findings.");
+      if (addedList.length > listed.length) lines.push("", `${addedList.length - listed.length} more in the SARIF upload.`);
+    } else lines.push("", mode === "diff" ? "No new confirmed findings in this change." : "No confirmed findings.");
     try { appendFileSync(env.GITHUB_STEP_SUMMARY, lines.join("\n") + "\n"); } catch (_) {}
   }
   return result;
