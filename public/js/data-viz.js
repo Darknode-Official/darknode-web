@@ -1113,7 +1113,7 @@ export function statTile(container, data) {
 
   const valueEl = document.createElement('div');
   valueEl.textContent = value;
-  valueEl.style.cssText = `font-size:2rem;font-weight:700;color:${INK_PRIMARY};line-height:1.1;`;
+  valueEl.style.cssText = `font-size:clamp(1.35rem,5.5vw,2rem);font-weight:700;overflow-wrap:anywhere;font-variant-numeric:tabular-nums;color:${INK_PRIMARY};line-height:1.1;`;
   card.appendChild(valueEl);
 
   const labelEl = document.createElement('div');

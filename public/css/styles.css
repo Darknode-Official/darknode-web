@@ -1089,6 +1089,9 @@ html.crt body::after{content:"";position:fixed;inset:0;pointer-events:none;z-ind
 .nx-term-t{margin-left:8px;font-size:.74rem;color:var(--mut);font-family:var(--font-mono)}
 .nx-term-body{padding:14px 16px;font-family:var(--font-mono);font-size:.82rem;line-height:1.55;overflow-x:auto}
 .nx-term-body .l{white-space:pre;color:var(--code-fg)}
+/* phones: wrap the transcript lines instead of scrolling the hero sideways; rules are clipped
+   and the logo scales down to fit */
+@media (max-width:560px){.nx-term-body .l{white-space:pre-wrap;overflow-wrap:anywhere}.nx-term-body .l.nx-rule{white-space:nowrap;overflow:hidden}.nx-term-body .l:has(.nx-logo){white-space:pre;overflow:hidden;font-size:min(.82rem,2.4vw);line-height:1.2}}
 .nx-logo{background:linear-gradient(120deg,var(--acc),var(--acc-2));-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:800}
 .nx-c{color:var(--acc)}.nx-m{color:var(--acc-2)}.nx-g{color:var(--mut)}.nx-ok{color:var(--ok)}.nx-y{color:var(--warn)}.nx-b{color:var(--acc)}.nx-w{color:var(--txt)}
 .nx-prompt{color:var(--acc-2);font-weight:700}
