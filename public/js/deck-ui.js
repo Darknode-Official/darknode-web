@@ -34,6 +34,7 @@ import { startGraphSync, stopGraphSync } from "/js/graph-sync.js";
 import { storeKeyFor } from "/js/security-graph.js"; // singleton: never version
 import { myWorkspaces, createWorkspace, activeWorkspace, setActiveWorkspace, listMembers, setMember } from "/js/workspaces.js?v=20261015d";
 import { ROLE_LABEL, ROLES, canDo, ROLE_HELP } from "/js/core/workspace-roles.js";
+import { mountFindingsQueue, repaintFindingsQueue, renderSlaSettings } from "/js/deck/findings-queue.js?v=20261017d";
 
 const LS_CONN = "dn_deck_connections_v1";
 const LS_SCENE = "dn_deck_scene";          // last workspace selected
@@ -522,6 +523,7 @@ function readNavRecent(){ try { const v = JSON.parse(localStorage.getItem("sw_re
 const timeAgo = (ts) => { const d = Date.now() - ts; return d < 60000 ? "just now" : d < 3600000 ? Math.floor(d / 60000) + "m ago" : d < 86400000 ? Math.floor(d / 3600000) + "h ago" : Math.floor(d / 86400000) + "d ago"; };
 
 const CSS = `
+.dk~.dn-modal-ov{z-index:100000} /* shared dialogs open above the fixed Deck */
 .dk{position:fixed;inset:0;z-index:99999;overflow:hidden;isolation:isolate;color:#1a2233;background:#f4f6fa;
   font:14px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;user-select:none}
 .dk *{box-sizing:border-box;margin:0}
@@ -3289,9 +3291,6 @@ export function renderDeck(host, opts) {
   }
 
   // ---------- Findings workspace: every real finding across tools, one triage queue ----------
-  const fndF = { q: "", severity: "", status: "open", source: "", sim: false };
-  const fndSel = new Set();
-  let fndRows = [];
   const SEV_C = { critical: "#e0383a", high: "#f5920b", medium: "#d9a400", low: "#4f86ff", info: "#8a93a6" };
   const ST_C = { new: "#4f86ff", open: "#f5920b", investigating: "#9b5cf0", resolved: "#12a85f", closed: "#8a93a6" };
   const agoISO = (s) => s ? timeAgo(new Date(s).getTime()) : "—";
@@ -3304,71 +3303,11 @@ export function renderDeck(host, opts) {
       <button class="dk-qacard" data-scene="surface"><span class="qi" style="--a:#f0484a">${IC.radar}</span><b>Map your attack surface</b><span>Enter a domain and add what it finds to the graph.</span></button>
       <button class="dk-qacard" data-tool="cvesearch"><span class="qi" style="--a:#f5920b">${IC.alert}</span><b>Record a CVE you run</b><span>Look it up and send it to the graph to track the fix.</span></button>
     </div></div>`;
-  function renderFindings(){
-    const el = sceneEls.findings;
-    el.innerHTML = `
-      <div class="dk-ovhead"><div><h1>Findings</h1><p>Every finding and vulnerability your tools have recorded, in one queue. Select rows to change their status; sample data is excluded unless you include it.</p></div>
-        <div class="when"><button class="dk-tibtn" id="dkFndCsv">${IC.copy} Export CSV</button> <button class="dk-tibtn" id="dkFndJson">${IC.copy} Export JSON</button></div></div>
-      <div class="dk-kpis" id="dkFndKpis"></div>
-      <div class="dk-ovp">
-        <h2 data-explain="panel.findings">${IC.alert} Finding queue <span class="mo" data-tool="secgraph">Open graph</span></h2>
-        <div class="dk-invbar">
-          <div class="dk-isearch">${IC_SEARCH}<input id="dkFndQ" placeholder="Search findings" value="${esc(fndF.q)}" autocomplete="off" spellcheck="false"></div>
-          <select id="dkFndSev" class="dk-isel" aria-label="Severity"></select>
-          <select id="dkFndStatus" class="dk-isel" aria-label="Status"></select>
-          <select id="dkFndSrc" class="dk-isel" aria-label="Source"></select>
-          <label class="dk-invsim" data-explain="inv.sim"><input type="checkbox" id="dkFndSim"${fndF.sim ? " checked" : ""}> Include simulated / sample</label>
-        </div>
-        <div class="dk-fndbulk" id="dkFndBulk" hidden></div>
-        <div id="dkFndTable"><div class="dk-loading"><span class="sp"></span>Reading the security graph…</div></div>
-      </div>`;
-    const q = el.querySelector("#dkFndQ"); let qT = 0;
-    q.oninput = () => { clearTimeout(qT); qT = setTimeout(() => { fndF.q = q.value; withGraph(paintFindings); }, 150); };
-    el.querySelector("#dkFndSev").onchange = (e) => { fndF.severity = e.target.value; withGraph(paintFindings); };
-    el.querySelector("#dkFndStatus").onchange = (e) => { fndF.status = e.target.value; withGraph(paintFindings); };
-    el.querySelector("#dkFndSrc").onchange = (e) => { fndF.source = e.target.value; withGraph(paintFindings); };
-    el.querySelector("#dkFndSim").onchange = (e) => { fndF.sim = e.target.checked; withGraph(paintFindings); };
-    const stamp = new Date().toISOString().slice(0, 10);
-    el.querySelector("#dkFndCsv").onclick = () => { if (!fndRows.length) return toast("No findings to export"); dl("darknode-findings-" + stamp + ".csv", findings.toCSV(fndRows), "text/csv"); };
-    el.querySelector("#dkFndJson").onclick = () => { if (!fndRows.length) return toast("No findings to export"); dl("darknode-findings-" + stamp + ".json", JSON.stringify(fndRows, null, 2), "application/json"); };
-    withGraph(paintFindings);
-  }
-  function paintFindings(m){
-    const el = sceneEls.findings, box = el.querySelector("#dkFndTable"); if (!box) return;
-    const all = m && m.listEntities ? findings.collectFindings(m.listEntities(), { includeSim: fndF.sim }) : [];
-    const c = findings.findingCounts(all.filter((r) => !r.sim));
-    el.querySelector("#dkFndKpis").innerHTML = [[c.critical, "Open critical", SEV_C.critical, "fnd.critical"], [c.high, "Open high", SEV_C.high, "fnd.high"], [c.open, "Open findings", "#4f86ff", "fnd.open"], [c.resolved, "Resolved or closed", "#12a85f", "fnd.resolved"]]
-      .map(([v, l, a, x]) => `<div class="dk-kpi" data-explain="${x}" style="--a:${a};cursor:default"><div class="kn">${v.toLocaleString()}</div><div class="kl">${esc(l)}</div></div>`).join("");
-    const opt = (v, l, cur) => `<option value="${esc(v)}"${v === cur ? " selected" : ""}>${esc(l)}</option>`;
-    el.querySelector("#dkFndSev").innerHTML = opt("", "All severities", fndF.severity) + ["critical", "high", "medium", "low", "info"].map((s) => opt(s, capword(s), fndF.severity)).join("");
-    el.querySelector("#dkFndStatus").innerHTML = opt("", "Any status", fndF.status) + opt("open", "Open", fndF.status) + ["new", "investigating", "resolved", "closed"].map((s) => opt(s, capword(s), fndF.status)).join("");
-    const srcs = [...new Set(all.map((r) => r.source))].sort();
-    if (fndF.source && !srcs.includes(fndF.source)) fndF.source = "";
-    el.querySelector("#dkFndSrc").innerHTML = opt("", "All sources", fndF.source) + srcs.map((s) => opt(s, s, fndF.source)).join("");
-    fndRows = findings.filterFindings(all, fndF);
-    for (const id of [...fndSel]) if (!fndRows.some((r) => r.id === id)) fndSel.delete(id);
-    paintBulk(m);
-    if (!all.length) { box.innerHTML = ONBOARD; box.querySelectorAll(".dk-qacard[data-tool]").forEach((b) => b.onclick = () => openTool(b.dataset.tool, secLabel[b.dataset.tool] || b.querySelector("b").textContent)); return; }
-    if (!fndRows.length) { box.innerHTML = `<div class="dk-nempty">No findings match these filters.</div>`; return; }
-    const shown = fndRows.slice(0, 500);
-    box.innerHTML = `<div class="dk-itwrap"><table class="dk-itable dk-fndt"><thead><tr><th class="ck"><input type="checkbox" id="dkFndAll" aria-label="Select all shown"></th><th>Severity</th><th>Finding</th><th>Type</th><th>Source</th><th>Status</th><th>First seen</th><th>Updated</th></tr></thead><tbody>${shown.map((r) =>
-      `<tr data-eid="${esc(r.id)}"><td class="ck"><input type="checkbox" data-sel="${esc(r.id)}"${fndSel.has(r.id) ? " checked" : ""} aria-label="Select finding"></td><td>${r.severity ? `<span class="pill" style="--c:${SEV_C[r.severity] || "#8a93a6"}">${capword(r.severity)}</span>` : "—"}</td><td class="nm">${esc(r.name)}${r.sim ? ' <span class="dk-simchip">Sample</span>' : ""}</td><td>${r.type === "VULNERABILITY" ? "Vulnerability" : "Finding"}</td><td>${esc(r.source)}</td><td><span class="pill" style="--c:${ST_C[r.status] || "#8a93a6"}">${capword(r.status)}</span></td><td class="ag">${agoISO(r.createdAt)}</td><td class="ag">${agoISO(r.updatedAt)}</td></tr>`).join("")}</tbody></table></div>${fndRows.length > shown.length ? `<div class="dk-nempty">Showing ${shown.length} of ${fndRows.length.toLocaleString()}. Narrow the filters, or export to get them all.</div>` : ""}`;
-    const all1 = box.querySelector("#dkFndAll");
-    all1.checked = shown.every((r) => fndSel.has(r.id));
-    all1.onchange = () => { shown.forEach((r) => all1.checked ? fndSel.add(r.id) : fndSel.delete(r.id)); box.querySelectorAll("[data-sel]").forEach((x) => x.checked = all1.checked); paintBulk(m); };
-    box.querySelectorAll("[data-sel]").forEach((x) => x.onchange = () => { x.checked ? fndSel.add(x.dataset.sel) : fndSel.delete(x.dataset.sel); paintBulk(m); });
-    box.querySelectorAll("tr[data-eid] td.nm").forEach((td) => td.onclick = () => openEntityDrawer(td.closest("tr").dataset.eid));
-  }
-  function paintBulk(m){
-    const bar = sceneEls.findings.querySelector("#dkFndBulk"); if (!bar) return;
-    bar.hidden = !fndSel.size; if (!fndSel.size) return;
-    bar.innerHTML = `<b>${fndSel.size} selected</b><span>Set status:</span>${["open", "investigating", "resolved", "closed"].map((s) => `<button class="dk-tibtn" data-st="${s}">${capword(s)}</button>`).join("")}<button class="dk-tibtn" data-st="">Clear selection</button>`;
-    bar.querySelectorAll("[data-st]").forEach((b) => b.onclick = () => {
-      const st = b.dataset.st;
-      if (st && m && m.updateEntity) { const ids = [...fndSel]; m.batch(() => ids.forEach((id) => m.updateEntity(id, { status: st }))); toast(ids.length + " finding" + (ids.length === 1 ? "" : "s") + " set to " + st); }
-      fndSel.clear(); withGraph(paintFindings);
-    });
-  }
+  // The work queue itself (views, SLA, bulk triage, detail page) lives in deck/findings-queue.js.
+  const fqCtx = () => ({ withGraph, esc, IC, IC_SEARCH, SEV_C, ST_C, toast, capword, agoISO, dl, findings, user, activeWorkspace, listMembers, openEntityDrawer,
+    openTool: (id) => openTool(id, secLabel[id] || id), toolLabel: (id) => secLabel[id] || null, onboardHtml: ONBOARD, isActive: () => curScene === "findings" && sceneWork.hidden });
+  function renderFindings(){ mountFindingsQueue(sceneEls.findings, fqCtx()); }
+  function paintFindings(m){ repaintFindingsQueue(m); }
 
   // ---------- Section overview pages (one per sidebar group) ----------
   // What each section covers in the graph, and which integrations feed it. Coverage is
@@ -3757,6 +3696,7 @@ export function renderDeck(host, opts) {
     };
     const admBtn = el.querySelector("#dkSetAdmin");
     if (admBtn) admBtn.onclick = () => openTool("admin", "Admin");
+    renderSlaSettings(el.querySelector(".dk-setgrid"), fqCtx());
   }
 
   // ---------- Reporting center (native Deck scene) ----------
