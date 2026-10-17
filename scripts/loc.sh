@@ -7,7 +7,7 @@ set -euo pipefail
 ROOT="${1:-/home/manav/projects/darknode-web}"
 cd "$ROOT"
 
-EXCL=( -not -path "*/node_modules/*" -not -path "*/.git/*" -not -path "*/vendor/*" \
+EXCL=( -not -path "*/node_modules/*" -not -path "*/.git/*" -not -path "*/vendor/*" -not -path "./unused-stuff/*" \
        -not -name "*.min.*" -not -name "*.map" -not -name "package-lock.json" )
 
 count() { # $1 = human label; rest = find predicate args

@@ -7,3 +7,5 @@ test/security/codescan.test.mjs
 test/security/taint-js.test.mjs
 # Commit-watch, CI generator and CLI tests: fixtures plant a fake key and a taint flow.
 test/security/codescan-watch.test.mjs
+# Archived code that is not deployed or used (see unused-stuff/README.md).
+unused-stuff/
