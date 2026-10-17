@@ -1960,7 +1960,7 @@ export function exampleDataset(seed = 7) {
   let s = seed >>> 0;
   const rnd = () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; };
   const D = "test.darknode.ai";
-  const staff = ["alice", "bob", "carol", "dave", "erin", "frank", "grace", "heidi", "ivan", "judy", "ken", "lena", "mia", "nora", "oscar", "pete", "quinn", "rosa", "sam", "tara"];
+  const staff = Array.from({ length: 20 }, (_, i) => "user" + String(i + 1).padStart(2, "0"));
   const homeIp = {};
   staff.forEach((u, i) => { homeIp[u] = "203.0.113." + (10 + i); });
   const pad = (n) => String(n).padStart(2, "0");
@@ -1979,20 +1979,20 @@ export function exampleDataset(seed = 7) {
     const dow = new Date(T0 + day * DAY).getUTCDay();
     if (dow === 0 || dow === 6) continue;
     for (const u of staff.slice(0, 10)) {
-      if (u === "dave" && day >= 12) continue;
+      if (u === "user04" && day >= 12) continue;
       const start = T0 + day * DAY + (8 * 60 + Math.floor(rnd() * 90)) * MIN;
       fgSession(start, u, homeIp[u], 6 + rnd() * 3);
     }
   }
-  // brute force -> success: bob, 12 failures then success from 203.0.113.200
+  // brute force -> success: user02, 12 failures then success from 203.0.113.200
   const bf = T0 + 13 * DAY + 20 * HOUR;
-  for (let i = 0; i < 12; i++) fgFail(bf + i * 90 * 1000, "bob", "203.0.113.200");
-  fgSession(bf + 19 * MIN, "bob", "203.0.113.200", 1.5);
-  // 31-hour session with a large download: dave
-  { const t = T0 + 12 * DAY + 8 * HOUR; const id = fgUp(t, "dave", homeIp.dave); const dur = 31 * 3600; fgDown(t + dur * 1000, "dave", homeIp.dave, id, dur, 7 * GB, 120e6); }
-  // leaver: mallory terminated 2026-10-03, connects 2026-10-12 (9 days after)
-  fgSession(T0 + 2 * DAY + 9 * HOUR, "mallory", "198.51.100.23", 7);
-  fgSession(T0 + 11 * DAY + 22 * HOUR + 14 * MIN, "mallory", "198.51.100.23", 2.2);
+  for (let i = 0; i < 12; i++) fgFail(bf + i * 90 * 1000, "user02", "203.0.113.200");
+  fgSession(bf + 19 * MIN, "user02", "203.0.113.200", 1.5);
+  // 31-hour session with a large download: user04
+  { const t = T0 + 12 * DAY + 8 * HOUR; const id = fgUp(t, "user04", homeIp.user04); const dur = 31 * 3600; fgDown(t + dur * 1000, "user04", homeIp.user04, id, dur, 7 * GB, 120e6); }
+  // leaver: user21 terminated 2026-10-03, connects 2026-10-12 (9 days after)
+  fgSession(T0 + 2 * DAY + 9 * HOUR, "user21", "198.51.100.23", 7);
+  fgSession(T0 + 11 * DAY + 22 * HOUR + 14 * MIN, "user21", "198.51.100.23", 2.2);
   forti.sort((a, b) => a.t - b.t);
 
   // GlobalProtect CSV export
@@ -2009,34 +2009,34 @@ export function exampleDataset(seed = 7) {
     const dow = new Date(T0 + day * DAY).getUTCDay();
     if (dow === 0 || dow === 6) continue;
     for (const u of gpUsers) {
-      if (u === "oscar" && day > 12) continue;
+      if (u === "user15" && day > 12) continue;
       const t = T0 + day * DAY + (8 * 60 + 30 + Math.floor(rnd() * 60)) * MIN;
-      const method = u === "frank" ? "LDAP" : "SAML";
+      const method = u === "user06" ? "LDAP" : "SAML";
       gpRow(t, "gateway-auth", "login", u, homeIp[u], "host-" + u, "LT-" + u.toUpperCase(), "success", method, "6.2.4-24", "", null);
       gpRow(t + 20 * 1000, "gateway-connected", "connected", u, homeIp[u], "host-" + u, "LT-" + u.toUpperCase(), "success", method, "6.2.4-24", "", null);
       const dur = Math.round((7 + rnd() * 2) * 3600);
       gpRow(t + dur * 1000, "gateway-logout", "logout", u, homeIp[u], "host-" + u, "LT-" + u.toUpperCase(), "success", method, "6.2.4-24", "", dur);
     }
   }
-  // frank uses LDAP-only authentication on GlobalProtect (no MFA)
-  { const t = T0 + 8 * DAY + 10 * HOUR; gpRow(t, "gateway-auth", "login", "frank", "203.0.113.15", "host-frank", "LT-FRANK", "success", "LDAP", "6.2.4-24", "", null); gpRow(t + 15000, "gateway-connected", "connected", "frank", "203.0.113.15", "host-frank", "LT-FRANK", "success", "LDAP", "6.2.4-24", "", null); gpRow(t + 3 * HOUR, "gateway-logout", "logout", "frank", "203.0.113.15", "host-frank", "LT-FRANK", "success", "LDAP", "6.2.4-24", "", 3 * 3600); }
-  // spraying: 198.51.100.77 tries 13 users within 40 minutes, then oscar succeeds
+  // user06 uses LDAP-only authentication on GlobalProtect (no MFA)
+  { const t = T0 + 8 * DAY + 10 * HOUR; gpRow(t, "gateway-auth", "login", "user06", "203.0.113.15", "host-user06", "LT-USER06", "success", "LDAP", "6.2.4-24", "", null); gpRow(t + 15000, "gateway-connected", "connected", "user06", "203.0.113.15", "host-user06", "LT-USER06", "success", "LDAP", "6.2.4-24", "", null); gpRow(t + 3 * HOUR, "gateway-logout", "logout", "user06", "203.0.113.15", "host-user06", "LT-USER06", "success", "LDAP", "6.2.4-24", "", 3 * 3600); }
+  // spraying: 198.51.100.77 tries 13 users within 40 minutes, then user15 succeeds
   const sp = T0 + 13 * DAY + 2 * HOUR;
   staff.slice(0, 13).forEach((u, i) => gpRow(sp + i * 3 * MIN, "gateway-auth", "login", u, "198.51.100.77", "", "", "failure", "LDAP", "", "Authentication failed: Invalid username or password", null, "NL"));
-  gpRow(sp + 45 * MIN, "gateway-auth", "login", "oscar", "198.51.100.77", "", "", "failure", "LDAP", "", "Authentication failed: Invalid username or password", null, "NL");
-  gpRow(sp + 47 * MIN, "gateway-auth", "login", "oscar", "198.51.100.77", "host-x9", "DESKTOP-Q7Z", "success", "SAML", "5.1.0-12", "", null, "NL");
-  gpRow(sp + 48 * MIN, "gateway-connected", "connected", "oscar", "198.51.100.77", "host-x9", "DESKTOP-Q7Z", "success", "SAML", "5.1.0-12", "", null, "NL");
-  // shared account: erin on three devices at once
+  gpRow(sp + 45 * MIN, "gateway-auth", "login", "user15", "198.51.100.77", "", "", "failure", "LDAP", "", "Authentication failed: Invalid username or password", null, "NL");
+  gpRow(sp + 47 * MIN, "gateway-auth", "login", "user15", "198.51.100.77", "host-x9", "DESKTOP-Q7Z", "success", "SAML", "5.1.0-12", "", null, "NL");
+  gpRow(sp + 48 * MIN, "gateway-connected", "connected", "user15", "198.51.100.77", "host-x9", "DESKTOP-Q7Z", "success", "SAML", "5.1.0-12", "", null, "NL");
+  // shared account: user05 on three devices at once
   const sh = T0 + 14 * DAY + 13 * HOUR;
-  ["host-erin", "host-e2", "host-e3"].forEach((h, i) => {
+  ["host-user05", "host-user05b", "host-user05c"].forEach((h, i) => {
     const ip = ["203.0.113.14", "203.0.113.90", "203.0.113.91"][i];
-    gpRow(sh + i * 5 * MIN, "gateway-auth", "login", "erin", ip, h, "LT-" + h.toUpperCase(), "success", "SAML", "6.2.4-24", "", null);
-    gpRow(sh + i * 5 * MIN + 20000, "gateway-connected", "connected", "erin", ip, h, "LT-" + h.toUpperCase(), "success", "SAML", "6.2.4-24", "", null);
-    gpRow(sh + 3 * HOUR + i * MIN, "gateway-logout", "logout", "erin", ip, h, "LT-" + h.toUpperCase(), "success", "SAML", "6.2.4-24", "", Math.round((3 * HOUR + i * MIN - i * 5 * MIN - 20000) / 1000));
+    gpRow(sh + i * 5 * MIN, "gateway-auth", "login", "user05", ip, h, "LT-" + h.toUpperCase(), "success", "SAML", "6.2.4-24", "", null);
+    gpRow(sh + i * 5 * MIN + 20000, "gateway-connected", "connected", "user05", ip, h, "LT-" + h.toUpperCase(), "success", "SAML", "6.2.4-24", "", null);
+    gpRow(sh + 3 * HOUR + i * MIN, "gateway-logout", "logout", "user05", ip, h, "LT-" + h.toUpperCase(), "success", "SAML", "6.2.4-24", "", Math.round((3 * HOUR + i * MIN - i * 5 * MIN - 20000) / 1000));
   });
   gp.sort((a, b) => a.t - b.t);
 
-  // Zscaler ZPA user status (CSV) with client coordinates: carol, New York then London 2 hours later
+  // Zscaler ZPA user status (CSV) with client coordinates: user03, New York then London 2 hours later
   const ZPA_HEAD = "LogTimestamp,Customer,Username,SessionID,SessionStatus,Version,ZEN,CertificateCN,PrivateIP,PublicIP,Latitude,Longitude,CountryCode,TimestampAuthentication,TimestampUnAuthentication,TotalBytesRx,TotalBytesTx,Idp,Hostname,Platform,ClientType";
   const zpa = [];
   const zts = (t) => { const d = new Date(t); return ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][d.getUTCDay()] + " " + ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][d.getUTCMonth()] + " " + pad(d.getUTCDate()) + " " + tstr(t) + " " + d.getUTCFullYear(); };
@@ -2046,19 +2046,19 @@ export function exampleDataset(seed = 7) {
     const dow = new Date(T0 + day * DAY).getUTCDay();
     if (dow === 0 || dow === 6) continue;
     const t = T0 + day * DAY + 13 * HOUR + Math.floor(rnd() * 30) * MIN;
-    zRow(t, "carol", "zs-carol-" + day, "ZPN_STATUS_AUTHENTICATED", "203.0.113.12", "40.7128", "-74.0060", "US");
-    zRow(t + 4 * HOUR, "carol", "zs-carol-" + day, "ZPN_STATUS_DISCONNECTED", "203.0.113.12", "40.7128", "-74.0060", "US", t);
+    zRow(t, "user03", "zs-user03-" + day, "ZPN_STATUS_AUTHENTICATED", "203.0.113.12", "40.7128", "-74.0060", "US");
+    zRow(t + 4 * HOUR, "user03", "zs-user03-" + day, "ZPN_STATUS_DISCONNECTED", "203.0.113.12", "40.7128", "-74.0060", "US", t);
   }
   const tr = T0 + 12 * DAY + 14 * HOUR; // Tue 2026-10-13
-  zRow(tr, "carol", "zs-carol-ny", "ZPN_STATUS_AUTHENTICATED", "203.0.113.12", "40.7128", "-74.0060", "US");
-  zRow(tr + 3 * HOUR, "carol", "zs-carol-ny", "ZPN_STATUS_DISCONNECTED", "203.0.113.12", "40.7128", "-74.0060", "US", tr);
-  zRow(tr + 2 * HOUR, "carol", "zs-carol-ldn", "ZPN_STATUS_AUTHENTICATED", "198.51.100.40", "51.5074", "-0.1278", "GB");
-  zRow(tr + 3.5 * HOUR, "carol", "zs-carol-ldn", "ZPN_STATUS_DISCONNECTED", "198.51.100.40", "51.5074", "-0.1278", "GB", tr + 2 * HOUR);
+  zRow(tr, "user03", "zs-user03-ny", "ZPN_STATUS_AUTHENTICATED", "203.0.113.12", "40.7128", "-74.0060", "US");
+  zRow(tr + 3 * HOUR, "user03", "zs-user03-ny", "ZPN_STATUS_DISCONNECTED", "203.0.113.12", "40.7128", "-74.0060", "US", tr);
+  zRow(tr + 2 * HOUR, "user03", "zs-user03-ldn", "ZPN_STATUS_AUTHENTICATED", "198.51.100.40", "51.5074", "-0.1278", "GB");
+  zRow(tr + 3.5 * HOUR, "user03", "zs-user03-ldn", "ZPN_STATUS_DISCONNECTED", "198.51.100.40", "51.5074", "-0.1278", "GB", tr + 2 * HOUR);
   zpa.sort((a, b) => a.t - b.t);
 
   const roster = ["employee_id,name,email,username,department,manager_email,status,hire_date,termination_date"];
-  staff.forEach((u, i) => roster.push(["E" + (100 + i), u[0].toUpperCase() + u.slice(1) + " Example", u + "@" + D, u, i < 10 ? "Engineering" : "Sales", "grace@" + D, "active", "2023-0" + (1 + (i % 9)) + "-15", ""].join(",")));
-  roster.push(["E200", "Mallory Example", "mallory@" + D, "mallory", "Finance", "grace@" + D, "terminated", "2022-04-01", "2026-10-03"].join(","));
+  staff.forEach((u, i) => roster.push(["E" + (100 + i), "User " + u.slice(4), u + "@" + D, u, i < 10 ? "Engineering" : "Sales", "user07@" + D, "active", "2023-0" + (1 + (i % 9)) + "-15", ""].join(",")));
+  roster.push(["E200", "User 21", "user21@" + D, "user21", "Finance", "user07@" + D, "terminated", "2022-04-01", "2026-10-03"].join(","));
   return {
     label: "synthetic example (not real data)",
     files: [
@@ -2076,12 +2076,12 @@ export function selfTest() {
   const ex = exampleDataset();
   const r = analyze(ex, {});
   const has = (cat, u) => r.findings.some((f) => f.category === cat && (!u || (f.assets || []).some((a) => a.name === u || a.name.startsWith(u + "@"))));
-  tests.push({ name: "leaver connecting detected", pass: has("leaver", "mallory") });
-  tests.push({ name: "brute force success detected", pass: has("brute_force", "bob") });
+  tests.push({ name: "leaver connecting detected", pass: has("leaver", "user21") });
+  tests.push({ name: "brute force success detected", pass: has("brute_force", "user02") });
   tests.push({ name: "spraying with success detected", pass: r.findings.some((f) => f.id === "spraysucc:198.51.100.77" && f.severity === "critical") });
-  tests.push({ name: "impossible travel from log coordinates", pass: has("impossible_travel", "carol") });
-  tests.push({ name: "31-hour session detected", pass: has("long_session", "dave") });
-  tests.push({ name: "shared account detected", pass: has("shared_account", "erin") });
+  tests.push({ name: "impossible travel from log coordinates", pass: has("impossible_travel", "user03") });
+  tests.push({ name: "31-hour session detected", pass: has("long_session", "user04") });
+  tests.push({ name: "shared account detected", pass: has("shared_account", "user05") });
   tests.push({ name: "deterministic", pass: JSON.stringify(analyze(ex, {})) === JSON.stringify(r) });
   tests.push({ name: "empty input yields no findings", pass: analyze({ files: [] }).findings.length === 0 });
   tests.push({ name: "haversine NYC-London about 5570 km", pass: Math.abs(haversineKm(40.7128, -74.006, 51.5074, -0.1278) - 5570) < 15 });

@@ -140,13 +140,13 @@ group("vpnaudit: engine", () => {
   });
   test("example: every scripted scenario fires", () => {
     const r = analyze(exampleDataset());
-    assert.ok(byId(r, "leaver:mallory@" + D));
+    assert.ok(byId(r, "leaver:user21@" + D));
     assert.ok(byId(r, "spraysucc:198.51.100.77"));
-    assert.ok(byId(r, "travel:carol@" + D));
-    assert.ok(byId(r, "long:dave@" + D));
-    assert.ok(byId(r, "shared:erin@" + D));
-    assert.ok(byId(r, "bf:bob@" + D));
-    assert.ok(byId(r, "leaver:mallory@" + D).description.includes("9 day(s)"));
+    assert.ok(byId(r, "travel:user03@" + D));
+    assert.ok(byId(r, "long:user04@" + D));
+    assert.ok(byId(r, "shared:user05@" + D));
+    assert.ok(byId(r, "bf:user02@" + D));
+    assert.ok(byId(r, "leaver:user21@" + D).description.includes("9 day(s)"));
   });
   test("exports TOOL_ID and documented defaults", () => {
     assert.equal(TOOL_ID, "vpnaudit");
@@ -608,9 +608,9 @@ group("vpnaudit: exports", () => {
   });
   test("revocation CSV, blocklist, user report and summary text", () => {
     assert.ok(revocationCsv(r).startsWith("user,name,email,reason,termination_date,last_seen,last_ip,accesses_after"));
-    assert.ok(revocationCsv(r).includes("erin@" + D));
+    assert.ok(revocationCsv(r).includes("user05@" + D));
     assert.ok(blocklistText(r).includes("198.51.100.77  # password spraying"));
-    assert.ok(userReportText(r).includes("mallory@" + D));
+    assert.ok(userReportText(r).includes("user21@" + D));
     assert.ok(summaryText(r).includes("Leavers connecting: 1"));
   });
   test("every finding has controls, a confidence class, capped evidence and assets", () => {

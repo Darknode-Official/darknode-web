@@ -952,8 +952,9 @@ export function slaCsv(result) {
 // ---------------------------------------------------------------------------
 // Synthetic example (seeded; exact vendor headers; never real data)
 // ---------------------------------------------------------------------------
-const FIRST = ["Priya", "Dana", "Marcus", "Yuki", "Sofia", "Grace", "Tomas", "Hannah", "Ravi", "Elena", "Noah", "Amara", "Luca", "Mei", "Omar"];
-const LAST = ["Natarajan", "Kowalski", "Reed", "Tanaka", "Alvarez", "Okafor", "Ferreira", "Schmidt", "Menon", "Petrova", "Lindqvist", "Diallo", "Moretti", "Chen", "Haddad"];
+// Role-style synthetic people (User One .. User Twelve). Words, not digits, so
+// name normalisation (which drops digits) still gives every person a distinct key.
+const ORD = ["One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Eleven", "Twelve"];
 
 /** Seeded SYNTHETIC multi-file dataset for "Load example" and tests. */
 export function exampleDataset(seed = 7) {
@@ -967,10 +968,11 @@ export function exampleDataset(seed = 7) {
   const people = [];
   const used = new Set();
   for (let i = 0; i < 12; i++) {
-    let f, l, k;
-    do { f = FIRST[Math.floor(rnd() * FIRST.length)]; l = LAST[Math.floor(rnd() * LAST.length)]; k = f + l; } while (used.has(k));
+    let k;
+    do { k = Math.floor(rnd() * 15) + ":" + Math.floor(rnd() * 15); } while (used.has(k)); // keeps the seeded sequence stable
     used.add(k);
-    people.push({ id: "E" + (1001 + i), first: f, last: l, email: (f + "." + l).toLowerCase() + "@" + DOM, dept: depts[i % depts.length], hire: 200 + Math.floor(rnd() * 900), term: null });
+    const uid = "user" + String(i + 1).padStart(2, "0");
+    people.push({ id: "E" + (1001 + i), first: "User", last: ORD[i], uid, email: uid + "@" + DOM, dept: depts[i % depts.length], hire: 200 + Math.floor(rnd() * 900), term: null });
   }
   // three leavers on different dates; manager chain
   people[2].term = 10;  // leaver A: still ACTIVE in Okta, Slack, M365 (E3)
@@ -1004,14 +1006,14 @@ export function exampleDataset(seed = 7) {
   people.forEach((p, i) => {
     if (i === 5 || i === 8) return; // leavers B and C were removed from Slack
     const status = i === 2 ? "Member" : i === 0 ? "Owner" : i === 1 ? "Admin" : "Member";
-    slack.push([localPart(p.email), p.email, status, "1", i % 4 ? "1" : "0", "1", "U0" + (1000 + i), p.first + " " + p.last, p.first.toLowerCase(), ""].join(","));
+    slack.push([localPart(p.email), p.email, status, "1", i % 4 ? "1" : "0", "1", "U0" + (1000 + i), p.first + " " + p.last, p.uid, ""].join(","));
   });
-  slack.push(["jordan.blake", "jordan.blake@" + DOM, "Member", "1", "0", "0", "U09999", "Jordan Blake", "jordan", ""].join(",")); // orphan: not in HR or Okta
-  slack.push(["agency.partner", "sam@agency-partner.example", "Member", "1", "1", "0", "U09998", "Sam Agency", "sam", ""].join(",")); // external guest
+  slack.push(["user13", "user13@" + DOM, "Member", "1", "0", "0", "U09999", "User Thirteen", "user13", ""].join(",")); // orphan: not in HR or Okta
+  slack.push(["vendor-a.guest", "guest01@vendor-a.test.darknode.ai", "Member", "1", "1", "0", "U09998", "Vendor A Guest", "guest01", ""].join(",")); // external guest
   slack.push(["former.user", "former.user@" + DOM, "Deactivated", "0", "0", "0", "U09997", "Former User", "former", ""].join(","));
 
   const github = ["Login,Name,Role,Two-factor,Saml identity"];
-  people.forEach((p, i) => { if (i % 2 === 0 || i === 8) github.push([(p.first[0] + p.last).toLowerCase(), p.first + " " + p.last, i === 0 ? "Owner" : "Member", i === 8 ? "disabled" : "enabled", p.email].join(",")); });
+  people.forEach((p, i) => { if (i % 2 === 0 || i === 8) github.push(["gh-" + p.uid, p.first + " " + p.last, i === 0 ? "Owner" : "Member", i === 8 ? "disabled" : "enabled", p.email].join(",")); });
   github.push(["ci-bot", "CI Bot", "Member", "enabled", ""].join(","));
 
   const m365 = ["Display name,User principal name,Licenses,Block credential,Last sign-in"];

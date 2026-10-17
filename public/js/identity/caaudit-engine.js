@@ -1019,16 +1019,16 @@ export function exampleDataset(seed = 7) {
   };
 
   const people = [
-    ["ava.lindqvist", "Ava Lindqvist", true, "fido2SecurityKey;microsoftAuthenticatorPush;windowsHelloForBusiness", "fido2SecurityKey", true, true, true],
-    ["noah.okafor", "Noah Okafor", true, "microsoftAuthenticatorPush;mobilePhone", "microsoftAuthenticatorPush", true, true, false],
-    ["mia.rossi", "Mia Rossi", false, "microsoftAuthenticatorPush;softwareOneTimePasscode", "microsoftAuthenticatorPush", true, true, false],
-    ["liam.hart", "Liam Hart", false, "mobilePhone", "mobilePhone", true, true, false],
-    ["zoe.nakamura", "Zoe Nakamura", false, "fido2SecurityKey;microsoftAuthenticatorPush", "fido2SecurityKey", true, true, true],
-    ["ethan.park", "Ethan Park", false, "", "", false, false, false],
-    ["sofia.mendes", "Sofia Mendes", false, "microsoftAuthenticatorPush;email", "microsoftAuthenticatorPush", true, true, false],
-    ["lucas.weber", "Lucas Weber", false, "email", "", false, false, false],
-    ["isla.murphy", "Isla Murphy", false, "windowsHelloForBusiness;microsoftAuthenticatorPush;temporaryAccessPass", "windowsHelloForBusiness", true, true, true],
-    ["kai.andersen", "Kai Andersen", false, "softwareOneTimePasscode;mobilePhone", "mobilePhone", true, true, false],
+    ["user01", "User 01", true, "fido2SecurityKey;microsoftAuthenticatorPush;windowsHelloForBusiness", "fido2SecurityKey", true, true, true],
+    ["user02", "User 02", true, "microsoftAuthenticatorPush;mobilePhone", "microsoftAuthenticatorPush", true, true, false],
+    ["user03", "User 03", false, "microsoftAuthenticatorPush;softwareOneTimePasscode", "microsoftAuthenticatorPush", true, true, false],
+    ["user04", "User 04", false, "mobilePhone", "mobilePhone", true, true, false],
+    ["user05", "User 05", false, "fido2SecurityKey;microsoftAuthenticatorPush", "fido2SecurityKey", true, true, true],
+    ["user06", "User 06", false, "", "", false, false, false],
+    ["user07", "User 07", false, "microsoftAuthenticatorPush;email", "microsoftAuthenticatorPush", true, true, false],
+    ["user08", "User 08", false, "email", "", false, false, false],
+    ["user09", "User 09", false, "windowsHelloForBusiness;microsoftAuthenticatorPush;temporaryAccessPass", "windowsHelloForBusiness", true, true, true],
+    ["user10", "User 10", false, "softwareOneTimePasscode;mobilePhone", "mobilePhone", true, true, false],
   ];
   const csvHead = "Id,User principal name,User display name,Is admin,Is MFA capable,Is MFA registered,Is SSPR registered,Is SSPR enabled,Is SSPR capable,Is passwordless capable,Methods registered,Default MFA method,System preferred method,Last updated";
   const csvRows = people.map(([u, n, admin, methods, def, cap, reg, pwl], i) => [
@@ -1082,7 +1082,7 @@ export function selfTest() {
   tests.push({ name: "excluded group on all-users MFA flagged", pass: ids("broad_exclusions").some((f) => /CA001/.test(f.title)) });
   tests.push({ name: "three excluded users exceed break-glass allowance", pass: ids("broad_exclusions").some((f) => /CA004/.test(f.title)) });
   tests.push({ name: "disabled compliant-device policy reported", pass: ids("disabled_security_policy").length === 1 });
-  tests.push({ name: "one admin without phishing-resistant method", pass: ids("admin_no_phishing_resistant").length === 1 && ids("admin_no_phishing_resistant")[0].evidenceCount === 1 && ids("admin_no_phishing_resistant")[0].assets[0].name === "noah.okafor@test.darknode.ai" });
+  tests.push({ name: "one admin without phishing-resistant method", pass: ids("admin_no_phishing_resistant").length === 1 && ids("admin_no_phishing_resistant")[0].evidenceCount === 1 && ids("admin_no_phishing_resistant")[0].assets[0].name === "user02@test.darknode.ai" });
   tests.push({ name: "two users not MFA registered", pass: ids("users_not_mfa_registered").length === 1 && ids("users_not_mfa_registered")[0].evidenceCount === 2 });
   tests.push({ name: "Okta everyone factor rule found (no okta_no_mfa_everyone)", pass: ids("okta_no_mfa_everyone").length === 0 });
   tests.push({ name: "Okta 7-day session flagged", pass: ids("okta_weak_session").length === 1 });

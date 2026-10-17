@@ -1102,16 +1102,16 @@ export function exampleDataset(seed = 7) {
   let s = (seed >>> 0) || 1;
   const rnd = () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; };
   const guid = () => { const h = () => Math.floor(rnd() * 0x10000).toString(16).padStart(4, "0"); return h() + h() + "-" + h() + "-" + h() + "-" + h() + "-" + h() + h() + h(); };
-  const people = ["alice.m", "bob.k", "carol.s", "dave.r", "admin", "erin.l", "frank.o", "grace.t"];
+  const people = ["user01", "user02", "user03", "user04", "admin", "user05", "user06", "user07"];
   const entraRows = [
-    ["Global Administrator", "Alice Moreno", people[0] + "@" + EX_DOMAIN, guid(), "User", "Permanent", "Directory", "1/12/2025 09:14:00", ""],
-    ["Global Administrator", "Bob Kahn", people[1] + "@" + EX_DOMAIN, guid(), "User", "Permanent", "Directory", "3/02/2025 14:30:00", ""],
-    ["Global Administrator", "Carol Singh", people[2] + "@" + EX_DOMAIN, guid(), "User", "Permanent", "Directory", "5/20/2025 11:02:00", ""],
-    ["Global Administrator", "Dave Rossi", people[3] + "@" + EX_DOMAIN, guid(), "User", "Permanent", "Directory", "6/01/2025 08:45:00", ""],
+    ["Global Administrator", "User 01", people[0] + "@" + EX_DOMAIN, guid(), "User", "Permanent", "Directory", "1/12/2025 09:14:00", ""],
+    ["Global Administrator", "User 02", people[1] + "@" + EX_DOMAIN, guid(), "User", "Permanent", "Directory", "3/02/2025 14:30:00", ""],
+    ["Global Administrator", "User 03", people[2] + "@" + EX_DOMAIN, guid(), "User", "Permanent", "Directory", "5/20/2025 11:02:00", ""],
+    ["Global Administrator", "User 04", people[3] + "@" + EX_DOMAIN, guid(), "User", "Permanent", "Directory", "6/01/2025 08:45:00", ""],
     ["Global Administrator", "Admin (shared)", people[4] + "@" + EX_DOMAIN, guid(), "User", "Permanent", "Directory", "11/15/2024 16:20:00", ""],
-    ["Global Administrator", "Erin Lau", people[5] + "@" + EX_DOMAIN, guid(), "User", "Eligible", "Directory", "7/10/2025 10:00:00", "7/10/2026 10:00:00"],
-    ["Exchange Administrator", "Frank Okafor", people[6] + "@" + EX_DOMAIN, guid(), "User", "Permanent", "Directory", "2/14/2025 13:05:00", ""],
-    ["Security Administrator", "Grace Tan", people[7] + "@" + EX_DOMAIN, guid(), "User", "Active", "Directory", "9/28/2026 09:00:00", "9/28/2026 17:00:00"],
+    ["Global Administrator", "User 05", people[5] + "@" + EX_DOMAIN, guid(), "User", "Eligible", "Directory", "7/10/2025 10:00:00", "7/10/2026 10:00:00"],
+    ["Exchange Administrator", "User 06", people[6] + "@" + EX_DOMAIN, guid(), "User", "Permanent", "Directory", "2/14/2025 13:05:00", ""],
+    ["Security Administrator", "User 07", people[7] + "@" + EX_DOMAIN, guid(), "User", "Active", "Directory", "9/28/2026 09:00:00", "9/28/2026 17:00:00"],
   ];
   const entraCsv = ["Role,Display name,User principal name,Object ID,Object type,Assignment type,Scope,Start date,End date", ...entraRows.map((r) => r.map((v) => (/[,"]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v)).join(","))].join("\n");
 
@@ -1120,7 +1120,7 @@ export function exampleDataset(seed = 7) {
     ["<root_account>", "arn:aws:iam::" + acct + ":root", "2021-03-04T10:11:12+00:00", "not_supported", "2026-09-20T08:02:44+00:00", "not_supported", "not_supported", "false", "false", "N/A", "N/A", "N/A", "N/A", "false", "N/A", "N/A", "N/A", "N/A", "false", "N/A", "false", "N/A"],
     ["ops-admin", "arn:aws:iam::" + acct + ":user/ops-admin", "2024-01-15T09:00:00+00:00", "true", "2026-09-29T07:40:11+00:00", "2026-07-01T10:00:00+00:00", "2026-09-29T10:00:00+00:00", "true", "true", "2025-08-27T12:00:00+00:00", "2026-09-30T06:15:00+00:00", "us-east-1", "sts", "false", "N/A", "N/A", "N/A", "N/A", "false", "N/A", "false", "N/A"],
     ["deploy-bot", "arn:aws:iam::" + acct + ":user/deploy-bot", "2023-06-10T12:00:00+00:00", "false", "N/A", "N/A", "N/A", "false", "true", "2026-09-01T00:00:00+00:00", "2026-09-30T23:10:00+00:00", "eu-west-1", "ecr", "true", "2026-08-01T00:00:00+00:00", "2026-09-30T23:11:00+00:00", "eu-west-1", "ecr", "false", "N/A", "false", "N/A"],
-    ["jsmith", "arn:aws:iam::" + acct + ":user/jsmith", "2025-02-01T08:30:00+00:00", "true", "2026-09-25T15:22:09+00:00", "2026-08-15T09:00:00+00:00", "2026-11-13T09:00:00+00:00", "false", "false", "N/A", "N/A", "N/A", "N/A", "false", "N/A", "N/A", "N/A", "N/A", "false", "N/A", "false", "N/A"],
+    ["user08", "arn:aws:iam::" + acct + ":user/user08", "2025-02-01T08:30:00+00:00", "true", "2026-09-25T15:22:09+00:00", "2026-08-15T09:00:00+00:00", "2026-11-13T09:00:00+00:00", "false", "false", "N/A", "N/A", "N/A", "N/A", "false", "N/A", "N/A", "N/A", "N/A", "false", "N/A", "false", "N/A"],
     ["legacy-svc", "arn:aws:iam::" + acct + ":user/legacy-svc", "2022-11-20T10:00:00+00:00", "false", "N/A", "N/A", "N/A", "false", "true", "2026-08-20T00:00:00+00:00", "2025-12-02T04:00:00+00:00", "us-east-1", "s3", "false", "N/A", "N/A", "N/A", "N/A", "false", "N/A", "false", "N/A"],
     ["analyst", "arn:aws:iam::" + acct + ":user/analyst", "2025-09-01T08:00:00+00:00", "true", "2026-10-01T09:12:00+00:00", "2026-09-10T09:00:00+00:00", "2026-12-09T09:00:00+00:00", "true", "false", "N/A", "N/A", "N/A", "N/A", "false", "N/A", "N/A", "N/A", "N/A", "false", "N/A", "false", "N/A"],
   ];
