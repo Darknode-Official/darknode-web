@@ -282,6 +282,11 @@ const SIDE_DESC = {
   payrollguard: "Detect ghost employees, shared bank details, last-minute bank changes and pay spikes in your payroll register.",
   cloudspend: "Spot cloud bill spikes, new GPU families, new regions and dormant-account spend that signal abuse or crypto-mining.",
   breachclock: "Work out which breach notification deadlines apply to an incident and track each regulator clock to the hour.",
+  riskreg: "Team risk register with Open FAIR-style Monte Carlo loss estimates, loss-exceedance curves, heatmap and treatment tracking.",
+  evidence: "Control evidence calendar for SOC 2, ISO 27001, PCI DSS, CIS and NIST CSF: owners, due dates, hashed evidence, readiness and auditor packages.",
+  vendorrisk: "Vendor register with live external posture checks, assurance-document expiry, inherent and residual risk, and regressions since the last check.",
+  backupready: "Backup and ransomware readiness from Veeam, AWS Backup, Azure Backup and restore-test exports: coverage, RPO breaches, immutability and 3-2-1-1-0.",
+  dmarcreports: "DMARC aggregate report analyzer: per-source alignment, sending-service classification, spoofing volume and a safe path to p=reject.",
 };
 const GROUP_DESC = {
   "Mission Control": "Flagship, real-time operations tools — the big dashboards.",
@@ -2110,6 +2115,11 @@ function renderApp(user) {
     else if (sec === "payrollguard") { import("/js/finsec/payrollguard.js?v=20261016n").then(m => live() && m.renderPayrollGuard(main)); }
     else if (sec === "cloudspend") { import("/js/finsec/cloudspend.js?v=20261016o").then(m => live() && m.renderCloudSpend(main)); }
     else if (sec === "breachclock") { import("/js/risk/breachclock.js?v=20261016p").then(m => live() && m.renderBreachClock(main)); }
+    else if (sec === "riskreg") { import("/js/risk/riskreg.js?v=20261016q").then(m => live() && m.renderRiskRegister(main)); }
+    else if (sec === "evidence") { import("/js/compliance/evidence.js?v=20261016r").then(m => live() && m.renderEvidence(main)); }
+    else if (sec === "vendorrisk") { import("/js/risk/vendorrisk.js?v=20261016s").then(m => live() && m.renderVendorRisk(main)); }
+    else if (sec === "backupready") { import("/js/risk/backupready.js?v=20261016t").then(m => live() && m.renderBackupReady(main)); }
+    else if (sec === "dmarcreports") { import("/js/exposure/dmarcreports.js?v=20261016u").then(m => live() && m.renderDmarcReports(main)); }
     else if (sec === "setup") renderSetup(main, more);
     else if (sec === "settings") renderSettingsPage(main, user, isOwner, more);
     else if (sec === "admin") { import("/js/admin.js?v=20261015f").then(m => live() && m.renderAdmin(main, user)); }

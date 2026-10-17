@@ -1,6 +1,6 @@
 // Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
 // Hover explainers: rest the pointer (or keyboard focus) on a meaningful element for
-// two seconds and a card says what it is, how it is worked out and where the data
+// one second and a card says what it is, how it is worked out and where the data
 // comes from. Only elements that resolve to an explanation ever trigger, so blank
 // space and decoration stay quiet.
 //
@@ -12,7 +12,7 @@
 // The card is appended to <body> with position:fixed, outside any zoomed container, so
 // getBoundingClientRect() coordinates can be used as-is.
 
-export const EXPLAIN_DELAY = 2000;
+export const EXPLAIN_DELAY = 1000;
 const LS_OFF = "dn_explain";
 
 export const EXPLAIN = {
@@ -84,6 +84,11 @@ export const EXPLAIN = {
   "tool.payrollguard": { title: "Payroll Integrity", body: "Detect ghost employees, shared bank details, last-minute bank changes and pay spikes in your payroll register.", src: "Deterministic rules over the data you load, in this browser. Nothing is uploaded." },
   "tool.cloudspend": { title: "Cloud Spend Anomaly", body: "Spot cloud bill spikes, new GPU families, new regions and dormant-account spend that signal abuse or crypto-mining.", src: "Deterministic rules over the data you load, in this browser. Nothing is uploaded." },
   "tool.breachclock": { title: "Breach Clock", body: "Work out which breach notification deadlines apply to an incident and track each regulator clock to the hour.", src: "Deterministic rules over the data you load, in this browser. Nothing is uploaded." },
+  "tool.riskreg": { title: "Risk Register", body: "Team risk register with Open FAIR-style Monte Carlo loss estimates, loss-exceedance curves, heatmap and treatment tracking.", src: "Deterministic rules over the data you load, in this browser. Nothing is uploaded." },
+  "tool.evidence": { title: "Control Evidence", body: "Control evidence calendar for SOC 2, ISO 27001, PCI DSS, CIS and NIST CSF: owners, due dates, hashed evidence, readiness and auditor packages.", src: "Deterministic rules over the data you load, in this browser. Nothing is uploaded." },
+  "tool.vendorrisk": { title: "Third-Party Risk", body: "Vendor register with live external posture checks, assurance-document expiry, inherent and residual risk, and regressions since the last check.", src: "Deterministic rules over the data you load, in this browser. Nothing is uploaded." },
+  "tool.backupready": { title: "Backup Readiness", body: "Backup and ransomware readiness from Veeam, AWS Backup, Azure Backup and restore-test exports: coverage, RPO breaches, immutability and 3-2-1-1-0.", src: "Deterministic rules over the data you load, in this browser. Nothing is uploaded." },
+  "tool.dmarcreports": { title: "DMARC Reports", body: "DMARC aggregate report analyzer: per-source alignment, sending-service classification, spoofing volume and a safe path to p=reject.", src: "Deterministic rules over the data you load, in this browser. Nothing is uploaded." },
   "lp.target": { title: "Target URL", body: "The page whose client bundle LEAKPROBE will fetch and scan — scripts, modules, source maps and config." },
   "lp.endpoints": { title: "Backend endpoints", body: "Backend URLs that get a bounded GET probe for echoed secrets, verbose errors and CORS exposure. Pre-filled with this site's AI backend when it is known." },
   "lp.secrets": { title: "Secrets to track", body: "Exact-match needles — paste a specific key (e.g. your Gemini key) to hunt for it everywhere. Kept in memory only and masked in the report; generic AI keys are detected automatically regardless." },
