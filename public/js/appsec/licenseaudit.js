@@ -178,7 +178,7 @@ export function renderLicenseAudit(main) {
     for (const f of ex.files) state.files.set(f.name, { name: f.name, text: f.text, archive: "" });
     state.isExample = true; state.result = null;
     reparse(); renderFiles([]); renderOut();
-    toast("Loaded the synthetic Larkspur Ledger example", "info");
+    toast("Loaded the synthetic example", "info");
   });
   $("clear").addEventListener("click", () => { state.files.clear(); state.mapping = {}; state.resolved = {}; state.isExample = false; state.result = null; reparse(); renderFiles([]); renderOut(); });
 

@@ -696,7 +696,7 @@ group("dmarcreports: tables, exports, determinism", () => {
     const r = analyze(exampleDataset().files);
     assert.ok(sourcesToCsv(r.tables.sources).startsWith("ip,ptr,headerFrom,messages"));
     const fix = fixListText(r);
-    assert.ok(/Mailchimp sending as larkspur.test.darknode.ai/.test(fix));
+    assert.ok(/Mailchimp sending as testorg.test.darknode.ai/.test(fix));
     assert.ok(/<angle brackets>/.test(fix));
     assert.ok(/\[next: blocked\] p=quarantine pct=10/.test(planText(r)));
     assert.ok(/Reports: 32 \(1 duplicates removed\)/.test(summaryText(r)));

@@ -1160,7 +1160,7 @@ export function exampleDataset(seed = 7) {
   const hex = (n) => Array.from({ length: n }, () => Math.floor(rnd() * 16).toString(16)).join("");
   const guid = () => hex(8) + "-" + hex(4) + "-4" + hex(3) + "-a" + hex(3) + "-" + hex(12);
   const mac = () => Array.from({ length: 6 }, () => hex(2)).join(":").toUpperCase();
-  const people = ["ana.silva", "raj.patel", "lee.chen", "maria.garcia", "tom.okafor", "sara.berg", "ivan.petrov", "nina.kowalski", "omar.haddad", "julia.meyer", "ken.ito", "zoe.adams"];
+  const people = ["user01", "user02", "user03", "user04", "user05", "user06", "user07", "user08", "user09", "user10", "user11", "user12"];
   const upn = (p) => p + "@test.darknode.ai";
   // 12 Windows devices managed by Intune
   const win = [
@@ -1180,9 +1180,9 @@ export function exampleDataset(seed = 7) {
   const intune = [FORMATS["intune-devices"].headers.join(",")].concat(win.map((d) => line([d.name, "Intune", "Corporate", d.comp, "Windows", d.ver, d.user, d.seen, d.id, d.aad, d.serial, d.manu, d.model, d.enc, "No", "2025-03-11 10:00:00", d.mac, "476.31 GB", "201.10 GB", "", "No", "Microsoft Entra joined", "Active", "False"]))).join("\r\n");
   // 4 Macs in Jamf
   const macs = [
-    { name: "MBP-ANA", serial: "C02F" + hex(4).toUpperCase() + "Q6L", model: "MacBook Pro (14-inch, Nov 2023)", ver: "15.7.1", fv: "All Partitions Encrypted", fw: "Yes", user: "ana.silva", seen: "2026-10-15 09:00:00", sip: "Enabled", gk: "App Store and identified developers", rl: "Yes", al: "Enabled", admin: false },
-    { name: "MBP-RAJ", serial: "C02G" + hex(4).toUpperCase() + "Q6L", model: "MacBook Pro (16-inch, 2024)", ver: "15.6.1", fv: "Not Encrypted", fw: "Yes", user: "raj.patel", seen: "2026-10-15 13:30:00", sip: "Enabled", gk: "App Store and identified developers", rl: "Yes", al: "Enabled", admin: true },
-    { name: "MBA-LEE", serial: "FVFH" + hex(4).toUpperCase() + "1WK", model: "MacBook Air (M2, 2022)", ver: "14.8.1", fv: "All Partitions Encrypted", fw: "Yes", user: "lee.chen", seen: "2026-10-14 18:45:00", sip: "Enabled", gk: "App Store and identified developers", rl: "No", al: "Enabled", admin: false },
+    { name: "MBP-U01", serial: "C02F" + hex(4).toUpperCase() + "Q6L", model: "MacBook Pro (14-inch, Nov 2023)", ver: "15.7.1", fv: "All Partitions Encrypted", fw: "Yes", user: "user01", seen: "2026-10-15 09:00:00", sip: "Enabled", gk: "App Store and identified developers", rl: "Yes", al: "Enabled", admin: false },
+    { name: "MBP-U02", serial: "C02G" + hex(4).toUpperCase() + "Q6L", model: "MacBook Pro (16-inch, 2024)", ver: "15.6.1", fv: "Not Encrypted", fw: "Yes", user: "user02", seen: "2026-10-15 13:30:00", sip: "Enabled", gk: "App Store and identified developers", rl: "Yes", al: "Enabled", admin: true },
+    { name: "MBA-U03", serial: "FVFH" + hex(4).toUpperCase() + "1WK", model: "MacBook Air (M2, 2022)", ver: "14.8.1", fv: "All Partitions Encrypted", fw: "Yes", user: "user03", seen: "2026-10-14 18:45:00", sip: "Enabled", gk: "App Store and identified developers", rl: "No", al: "Enabled", admin: false },
     { name: "MINI-BUILD", serial: "H7WK" + hex(4).toUpperCase() + "PJ0", model: "Mac mini (2023)", ver: "15.7.1", fv: "All Partitions Encrypted", fw: "No", user: "build", seen: "2026-10-15 23:59:00", sip: "Enabled", gk: "App Store and identified developers", rl: "Yes", al: "Disabled", admin: false },
   ].map((m) => ({ ...m, mac: mac() }));
   const jamf = [FORMATS["jamf-computers"].headers.join(",")].concat(macs.map((m) => line([m.name, m.serial, m.seen, m.seen, m.ver, m.model, m.user, m.user === "build" ? "" : upn(m.user), m.fv, m.fv === "Not Encrypted" ? "" : m.user, m.gk, m.sip, m.fw, "Yes", "Yes", m.rl, "Full Security", "FileVault 2 Configuration", m.al, "2025-01-20 10:00:00", "10.20.4." + (20 + macs.indexOf(m)), m.mac]))).join("\n");
@@ -1202,7 +1202,7 @@ export function exampleDataset(seed = 7) {
   const cs = [FORMATS.crowdstrike.headers.join(",")].concat(csRows.map((c) => line([c.host, hex(32), c.seen, "2025-03-11T10:20:00Z", c.os, c.osv, c.plat, c.sensor, "Normal", c.rfm, "10.20.1." + Math.floor(rnd() * 200 + 10), "203.0.113." + Math.floor(rnd() * 200 + 10), c.mac, c.serial, "Workstations - Default", "N-1 Workstations", "SensorGroupingTags/Corp", "Normal", "HQ"]))).join("\n");
   // Entra devices: the Windows fleet + one unmanaged personal laptop + one stale enabled desktop
   const entraRows = win.map((d) => [d.name, "True", "Windows", d.ver, "Microsoft Entra joined", d.user, "Microsoft Intune", d.comp === "Noncompliant" ? "No" : d.comp === "Not evaluated" ? "N/A" : "Yes", "3/11/2025, 10:00:00 AM", d.seen.replace(/^(\d{4})-(\d{2})-(\d{2}).*$/, (_, y, m, dd) => Number(m) + "/" + Number(dd) + "/" + y + ", 9:00:00 AM"), guid(), d.aad, "AzureAd"])
-    .concat([["DESKTOP-7KQ2M1P", "True", "Windows", "10.0.26200.6899", "Microsoft Entra registered", upn("zoe.adams"), "", "N/A", "6/2/2026, 2:14:00 PM", "10/14/2026, 8:02:00 PM", guid(), guid(), "Workplace"],
+    .concat([["DESKTOP-7KQ2M1P", "True", "Windows", "10.0.26200.6899", "Microsoft Entra registered", upn("user12"), "", "N/A", "6/2/2026, 2:14:00 PM", "10/14/2026, 8:02:00 PM", guid(), guid(), "Workplace"],
       ["OLD-DESK-07", "True", "Windows", "10.0.19045.3803", "Microsoft Entra hybrid joined", "", "", "N/A", "1/9/2022, 9:00:00 AM", "5/1/2026, 7:30:00 AM", guid(), guid(), "ServerAd"]]);
   const entra = [FORMATS["entra-devices"].headers.join(",")].concat(entraRows.map(line)).join("\n");
   // Intune discovered apps
@@ -1256,11 +1256,11 @@ export function selfTest() {
   tests.push({ name: "register has 18 devices", pass: r.summary.devices === 18 });
   tests.push({ name: "EDR missing: two Intune devices plus two directory-only devices", pass: names("edr_missing").join() === "DESKTOP-7KQ2M1P,OLD-DESK-07,WIN-DT-003,WIN-LT-007" });
   tests.push({ name: "RFM sensor flagged", pass: names("edr_unhealthy").includes("WIN-LT-004") });
-  tests.push({ name: "unencrypted laptops critical", pass: names("encryption_laptop").join() === "MBP-RAJ,WIN-LT-003" && f("encryption_laptop").severity === "critical" });
-  tests.push({ name: "Windows 10 22H2 and macOS 14 are EOL", pass: ["WIN-LT-008", "MBA-LEE", "OLD-DESK-07", "WIN-LT-004"].every((n) => names("os_eol").includes(n)) });
+  tests.push({ name: "unencrypted laptops critical", pass: names("encryption_laptop").join() === "MBP-U02,WIN-LT-003" && f("encryption_laptop").severity === "critical" });
+  tests.push({ name: "Windows 10 22H2 and macOS 14 are EOL", pass: ["WIN-LT-008", "MBA-U03", "OLD-DESK-07", "WIN-LT-004"].every((n) => names("os_eol").includes(n)) });
   tests.push({ name: "Chrome 138 EOL on WIN-LT-005", pass: names("app_eol").includes("WIN-LT-005") });
   tests.push({ name: "AnyDesk on review list", pass: names("remote_access").join() === "WIN-LT-003" });
-  tests.push({ name: "Jamf primary user admin", pass: names("local_admin").join() === "MBP-RAJ" });
+  tests.push({ name: "Jamf primary user admin", pass: names("local_admin").join() === "MBP-U02" });
   tests.push({ name: "Workstation Audit firewall fail matched by hostname", pass: names("firewall").includes("WIN-LT-002") });
   tests.push({ name: "stale enabled directory device high", pass: names("stale_enabled").includes("OLD-DESK-07") });
   tests.push({ name: "deterministic", pass: JSON.stringify(analyze(ex.files, { now: ex.now, eol: SELFTEST_EOL })) === JSON.stringify(r) });

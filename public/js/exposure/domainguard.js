@@ -481,7 +481,7 @@ export function renderDomainGuard(main) {
     $("domains").value = exampleData.domainsText; $("hosts").value = ""; $("kw").value = "";
     const parsed = parseInput([exampleData.zoneFile]);
     zoneFiles = parsed.files; zoneHosts = parsed.hosts; zoneDomains = [];
-    flags.clear(); flags.set("quillmark.test.darknode.ai", { role: "auto", look: true });
+    flags.clear(); flags.set("darknode.test.darknode.ai", { role: "auto", look: true });
     observations = exampleData.dataset.observations; hostObs = exampleData.dataset.hostObs; lookalikes = exampleData.dataset.lookalikes; previous = exampleData.dataset.previous;
     renderFiles(); renderFlags();
     $("run").disabled = true; $("regrade").disabled = false;

@@ -1894,7 +1894,7 @@ export function exampleDataset(seed = 7) {
   const ssh74 = { port: 22, svc: "ssh", product: "OpenSSH", version: "7.4p1 Debian 10+deb9u7", extrainfo: "protocol 2.0", ostype: "Linux", cpe: ["cpe:/a:openbsd:openssh:7.4p1", "cpe:/o:linux:linux_kernel"], scripts: [{ id: "ssh2-enum-algos", output: SSH_ALGOS_WEAK }, VULNERS_SSH74] };
   const ssh89 = { port: 22, svc: "ssh", product: "OpenSSH", version: "8.9p1 Ubuntu 3ubuntu0.10", extrainfo: "Ubuntu Linux; protocol 2.0", ostype: "Linux", cpe: ["cpe:/a:openbsd:openssh:8.9p1", "cpe:/o:linux:linux_kernel"], scripts: [{ id: "ssh2-enum-algos", output: SSH_ALGOS_OK }] };
   const intranetCert = cert({ cn: "intranet" + D, issuer: "intranet" + D, sans: ["intranet" + D], nb: "2024-08-31T00:00:00", na: "2026-08-31T00:00:00" });
-  const dcCert = cert({ cn: "dc01" + D, issuer: "Larkspur Issuing CA 01", sans: ["dc01" + D], nb: "2026-03-02T09:12:44", na: "2027-03-02T09:12:44" });
+  const dcCert = cert({ cn: "dc01" + D, issuer: "Test Org Issuing CA 01", sans: ["dc01" + D], nb: "2026-03-02T09:12:44", na: "2027-03-02T09:12:44" });
   const internalHosts = (week2) => [
     { ip: "10.20.0.10", names: [["dc01" + D, "PTR"]], os: "Microsoft Windows Server 2019", ports: [
       { port: 53, svc: "domain", product: "Simple DNS Plus" }, { port: 88, svc: "kerberos-sec", product: "Microsoft Windows Kerberos" }, { port: 135, svc: "msrpc", product: "Microsoft Windows RPC", ostype: "Windows" },
@@ -1908,7 +1908,7 @@ export function exampleDataset(seed = 7) {
     { ip: "10.20.0.30", names: [["app01" + D, "PTR"]], os: "Linux 4.15 - 5.8", ports: [ssh74, { port: 8080, svc: "http", product: "Apache Tomcat", version: "9.0.31", scripts: [{ id: "http-title", output: "Apache Tomcat/9.0.31", xml: '<elem key="title">Apache Tomcat/9.0.31</elem>' }] }] },
     { ip: "10.20.0.40", names: [["intranet" + D, "PTR"]], os: "Linux 5.0 - 5.14", ports: [
       ssh89, { port: 80, svc: "http", product: "nginx", version: week2 ? "1.24.0" : "1.18.0", extrainfo: "Ubuntu", scripts: [{ id: "http-server-header", output: "nginx/" + (week2 ? "1.24.0" : "1.18.0") + " (Ubuntu)", xml: "<elem>nginx/" + (week2 ? "1.24.0" : "1.18.0") + " (Ubuntu)</elem>" }] },
-      { port: 443, svc: "http", tunnel: "ssl", product: "nginx", version: week2 ? "1.24.0" : "1.18.0", extrainfo: "Ubuntu", scripts: [intranetCert, { id: "ssl-enum-ciphers", output: CIPHERS_WEAK }, { id: "http-title", output: "Larkspur Intranet", xml: '<elem key="title">Larkspur Intranet</elem>' }] }] },
+      { port: 443, svc: "http", tunnel: "ssl", product: "nginx", version: week2 ? "1.24.0" : "1.18.0", extrainfo: "Ubuntu", scripts: [intranetCert, { id: "ssl-enum-ciphers", output: CIPHERS_WEAK }, { id: "http-title", output: "Test Org Intranet", xml: '<elem key="title">Test Org Intranet</elem>' }] }] },
     { ip: "10.20.0.50", names: [["db01" + D, "PTR"]], os: "Linux 4.15 - 5.8", ports: [ssh89, { port: 3306, svc: "mysql", product: "MySQL", version: "5.7.33-0ubuntu0.18.04.1" }] },
     { ip: "10.20.0.60", names: [["build01" + D, "PTR"]], os: "Linux 5.0 - 5.14", ports: [ssh89, ...(week2 ? [{ port: 2375, svc: "docker", product: "Docker", version: "24.0.7", extrainfo: "API 1.43", scripts: [{ id: "http-title", output: "Site doesn't have a title (application/json)." }] }] : [])] },
     { ip: "10.20.0.70", names: [["prn-3f" + D, "PTR"]], ports: [{ port: 23, svc: "telnet", product: "HP JetDirect printer telnetd" }, { port: 80, svc: "http", product: "HP-ChaiSOE", version: "1.0" }, { port: 9100, svc: "jetdirect" }] },
@@ -1917,18 +1917,18 @@ export function exampleDataset(seed = 7) {
   ];
   const args = (f) => "nmap -sS -sV -O -p 1-10000 --script ssl-cert,ssl-enum-ciphers,ssh2-enum-algos,smb-protocols,smb2-security-mode,smb-os-discovery,http-title,http-server-header,vulners -oX " + f + " 10.20.0.0/24";
   const t1 = Date.UTC(2026, 9, 1, 9, 0, 0) / 1000, t2 = Date.UTC(2026, 9, 8, 9, 0, 0) / 1000, t3 = Date.UTC(2026, 9, 8, 14, 30, 0) / 1000;
-  const vpnCert = cert({ cn: "portal.larkspur.test.darknode.ai", issuer: "portal.larkspur.test.darknode.ai", nb: "2024-09-14T00:00:00", na: "2026-09-14T00:00:00" });
+  const vpnCert = cert({ cn: "portal.testorg.test.darknode.ai", issuer: "portal.testorg.test.darknode.ai", nb: "2024-09-14T00:00:00", na: "2026-09-14T00:00:00" });
   const extHosts = [
-    { ip: "203.0.113.5", names: [["ts.larkspur.test.darknode.ai", "PTR"]], ports: [{ port: 3389, svc: "ms-wbt-server", product: "Microsoft Terminal Services", ostype: "Windows", scripts: [RDP_ENUM] }] },
-    { ip: "203.0.113.6", names: [["cache-edge.larkspur.test.darknode.ai", "PTR"]], ports: [{ port: 6379, svc: "redis", product: "Redis key-value store", version: "5.0.7" }] },
-    { ip: "203.0.113.7", names: [["remote.larkspur.test.darknode.ai", "user"]], ports: [{ port: 443, svc: "http", tunnel: "ssl", product: "nginx", scripts: [vpnCert, { id: "ssl-enum-ciphers", output: CIPHERS_OK }, { id: "http-title", output: "Larkspur Remote Access", xml: '<elem key="title">Larkspur Remote Access</elem>' }] }] },
-    { ip: "203.0.113.8", names: [["sftp.larkspur.test.darknode.ai", "PTR"]], ports: [{ ...ssh74, scripts: [VULNERS_SSH74] }] },
-    { ip: "203.0.113.9", names: [["www.larkspur.test.darknode.ai", "PTR"]], ports: [{ port: 80, svc: "http", product: "nginx" }, { port: 443, svc: "http", tunnel: "ssl", product: "nginx", scripts: [cert({ cn: "www.larkspur.test.darknode.ai", issuer: "Larkspur Public TLS CA", sans: ["www.larkspur.test.darknode.ai", "larkspur.test.darknode.ai"], nb: "2026-07-20T00:00:00", na: "2026-10-28T23:59:59" }), { id: "ssl-enum-ciphers", output: CIPHERS_OK }] }] },
+    { ip: "203.0.113.5", names: [["ts.testorg.test.darknode.ai", "PTR"]], ports: [{ port: 3389, svc: "ms-wbt-server", product: "Microsoft Terminal Services", ostype: "Windows", scripts: [RDP_ENUM] }] },
+    { ip: "203.0.113.6", names: [["cache-edge.testorg.test.darknode.ai", "PTR"]], ports: [{ port: 6379, svc: "redis", product: "Redis key-value store", version: "5.0.7" }] },
+    { ip: "203.0.113.7", names: [["remote.testorg.test.darknode.ai", "user"]], ports: [{ port: 443, svc: "http", tunnel: "ssl", product: "nginx", scripts: [vpnCert, { id: "ssl-enum-ciphers", output: CIPHERS_OK }, { id: "http-title", output: "Test Org Remote Access", xml: '<elem key="title">Test Org Remote Access</elem>' }] }] },
+    { ip: "203.0.113.8", names: [["sftp.testorg.test.darknode.ai", "PTR"]], ports: [{ ...ssh74, scripts: [VULNERS_SSH74] }] },
+    { ip: "203.0.113.9", names: [["www.testorg.test.darknode.ai", "PTR"]], ports: [{ port: 80, svc: "http", product: "nginx" }, { port: 443, svc: "http", tunnel: "ssl", product: "nginx", scripts: [cert({ cn: "www.testorg.test.darknode.ai", issuer: "Test CA", sans: ["www.testorg.test.darknode.ai", "testorg.test.darknode.ai"], nb: "2026-07-20T00:00:00", na: "2026-10-28T23:59:59" }), { id: "ssl-enum-ciphers", output: CIPHERS_OK }] }] },
   ];
   const files = [
     { name: "internal-2026-10-01.xml", text: nmapXml({ args: args("internal-2026-10-01.xml"), start: t1, hosts: internalHosts(false), services: "1-10000" }) },
     { name: "internal-2026-10-08.xml", text: nmapXml({ args: args("internal-2026-10-08.xml"), start: t2, hosts: internalHosts(true), services: "1-10000" }) },
-    { name: "external-2026-10-08.xml", text: nmapXml({ args: "nmap -Pn -sS -sV -p 22,80,443,3389,6379 --script ssl-cert,ssl-enum-ciphers,rdp-enum-encryption,vulners -oX external-2026-10-08.xml 203.0.113.0/28 remote.larkspur.test.darknode.ai", start: t3, hosts: extHosts, services: "22,80,443,3389,6379" }) },
+    { name: "external-2026-10-08.xml", text: nmapXml({ args: "nmap -Pn -sS -sV -p 22,80,443,3389,6379 --script ssl-cert,ssl-enum-ciphers,rdp-enum-encryption,vulners -oX external-2026-10-08.xml 203.0.113.0/28 remote.testorg.test.darknode.ai", start: t3, hosts: extHosts, services: "22,80,443,3389,6379" }) },
   ];
   return {
     label: "synthetic example (not real data)", files,

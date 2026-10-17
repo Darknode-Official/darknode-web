@@ -337,7 +337,7 @@ export function renderDmarcReports(main) {
         else members.push({ name: f.name, text: f.text, date: new Date(Date.UTC(2026, 9, 3)) });
       }
       const zip = await zipFiles(members);
-      const { entries, skipped } = await unpackAll(zip, { name: "larkspur-dmarc-example.zip", maxEntries: 5000 });
+      const { entries, skipped } = await unpackAll(zip, { name: "testorg-dmarc-example.zip", maxEntries: 5000 });
       files = []; isExample = true; live = null; resetResults();
       for (const e of entries) addFile(e.name, decodeText(e.bytes));
       renderFiles();

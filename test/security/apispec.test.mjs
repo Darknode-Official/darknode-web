@@ -436,7 +436,7 @@ group("apispec: inventory and configuration", () => {
   });
   test("graph asset is the API title plus version", () => {
     const f = run("ex.yaml", exampleDataset().files[0].text).findings[0];
-    assert.deepEqual(f.assets[0].name, "Larkspur Payments API 2.4.0");
+    assert.deepEqual(f.assets[0].name, "Payments API 2.4.0");
     assert.equal(f.assets[0].type, "ASSET");
   });
 });
@@ -518,7 +518,7 @@ group("apispec: exports and contract", () => {
     assert.equal(s.runs[0].tool.driver.rules.length, RULES.length);
     assert.equal(s.runs[0].results.length, r.findings.length);
     const res = s.runs[0].results.find((x) => x.ruleId === "APISPEC-HTTP-SERVER");
-    assert.equal(res.locations[0].physicalLocation.artifactLocation.uri, "larkspur-payments.openapi.yaml");
+    assert.equal(res.locations[0].physicalLocation.artifactLocation.uri, "payments.openapi.yaml");
     assert.equal(res.locations[0].physicalLocation.region.startLine, 8);
     assert.equal(res.locations[0].logicalLocations[0].fullyQualifiedName, "/servers/1/url");
   });

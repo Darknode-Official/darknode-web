@@ -1188,7 +1188,7 @@ export function summaryText(r) {
 }
 
 // ---------------------------------------------------------------------------
-// Synthetic example: 32 RUA reports for larkspur.test.darknode.ai.
+// Synthetic example: 32 RUA reports for testorg.test.darknode.ai.
 // Documentation address space only (192.0.2.0/24, 198.51.100.0/24,
 // 203.0.113.0/24, 2001:db8::/32). Fictional reporter organizations.
 // ---------------------------------------------------------------------------
@@ -1198,12 +1198,12 @@ export function exampleDataset(seed = 7) {
   let st = seed >>> 0;
   const rnd = () => { st = (Math.imul(st, 1664525) + 1013904223) >>> 0; return st / 4294967296; };
   const ri = (a, b) => a + Math.floor(rnd() * (b - a + 1));
-  const D = "larkspur.test.darknode.ai";
+  const D = "testorg.test.darknode.ai";
   const start = Date.UTC(2026, 8, 1) / 1000;
   const reporters = [
-    { org: "Bluewren Mail", email: "noreply-dmarc@bluewren.test.darknode.ai", style: "google", ext: "zip" },
-    { org: "Corvid Webmail", email: "dmarcreport@corvid.test.darknode.ai", style: "microsoft", ext: "gz" },
-    { org: "Saltmarsh Mail", email: "dmarc-reports@saltmarsh.test.darknode.ai", style: "bis", ext: "gz" },
+    { org: "Vendor A Mail", host: "vendora", email: "noreply-dmarc@vendora.test.darknode.ai", style: "google", ext: "zip" },
+    { org: "Vendor B Webmail", host: "vendorb", email: "dmarcreport@vendorb.test.darknode.ai", style: "microsoft", ext: "gz" },
+    { org: "Vendor C Mail", host: "vendorc", email: "dmarc-reports@vendorc.test.darknode.ai", style: "bis", ext: "gz" },
   ];
   const files = [];
   const pol = (style) => style === "bis"
@@ -1221,9 +1221,9 @@ export function exampleDataset(seed = 7) {
     const R = reporters[day % 3];
     const b = start + day * DAY, e = b + DAY - 1;
     const rows = [];
-    const to = R.org.split(" ")[0].toLowerCase() + ".test.darknode.ai";
+    const to = R.host + ".test.darknode.ai";
     // Microsoft 365: aligned DKIM (d=your domain) plus tenant signature; SPF aligned
-    for (const ip of ["192.0.2.10", "192.0.2.11"]) rows.push({ ip, n: ri(40, 90), dkim: [{ d: D, s: "selector1", r: "pass" }, { d: "larkspurtest.onmicrosoft.com", s: "selector1", r: "pass" }], spf: [{ d: D, r: "pass" }], ef: D, ed: "pass", es: R.style === "google" && day === 9 ? "fail" : "pass", to });
+    for (const ip of ["192.0.2.10", "192.0.2.11"]) rows.push({ ip, n: ri(40, 90), dkim: [{ d: D, s: "selector1", r: "pass" }, { d: "testorg.onmicrosoft.com", s: "selector1", r: "pass" }], spf: [{ d: D, r: "pass" }], ef: D, ed: "pass", es: R.style === "google" && day === 9 ? "fail" : "pass", to });
     // SendGrid: aligned DKIM via s1, return-path em subdomain (relaxed SPF alignment)
     rows.push({ ip: "192.0.2.40", n: ri(15, 35), dkim: [{ d: D, s: "s1", r: "pass" }, { d: "sendgrid.info", s: "smtpapi", r: "pass" }], spf: [{ d: "em4821." + D, r: "pass" }], ef: "em4821." + D, ed: "pass", es: "pass", to });
     // Mailchimp: signs with its own domain, its own return-path: not aligned
@@ -1237,25 +1237,25 @@ export function exampleDataset(seed = 7) {
     for (const ip of bots) if (rnd() < 0.55) rows.push({ ip, n: ri(1, 14), dkim: rnd() < 0.3 ? [{ d: D, s: "default", r: "fail" }] : [], spf: [{ d: D, r: rnd() < 0.5 ? "softfail" : "fail" }], ef: D, ed: "fail", es: "fail", to });
     // Subdomain spoofing, seen by the DMARCbis (tree-walk) reporter
     if (R.style === "bis") rows.push({ ip: "203.0.113.66", n: ri(8, 20), hf: "billing." + D, dkim: [], spf: [{ d: "billing." + D, r: "none" }], ef: "billing." + D, ed: "fail", es: "fail", to });
-    const rid = R.style === "google" ? String(1770000000000000000n + BigInt(day) * 7919n) : R.style === "microsoft" ? "a1f3c2e0" + String(day).padStart(2, "0") + "b6d14c3e8f2a" + String(1000 + day) : "saltmarsh-" + D + "-" + isoDay(b);
-    const meta = "<report_metadata><org_name>" + xe(R.org) + "</org_name><email>" + R.email + "</email>" + (R.style === "google" ? "<extra_contact_info>https://bluewren.test.darknode.ai/dmarc</extra_contact_info>" : "") + "<report_id>" + rid + "</report_id><date_range><begin>" + b + "</begin><end>" + e + "</end></date_range></report_metadata>";
+    const rid = R.style === "google" ? String(1770000000000000000n + BigInt(day) * 7919n) : R.style === "microsoft" ? "a1f3c2e0" + String(day).padStart(2, "0") + "b6d14c3e8f2a" + String(1000 + day) : "vendorc-" + D + "-" + isoDay(b);
+    const meta = "<report_metadata><org_name>" + xe(R.org) + "</org_name><email>" + R.email + "</email>" + (R.style === "google" ? "<extra_contact_info>https://vendora.test.darknode.ai/dmarc</extra_contact_info>" : "") + "<report_id>" + rid + "</report_id><date_range><begin>" + b + "</begin><end>" + e + "</end></date_range></report_metadata>";
     let xml;
     if (R.style === "google") xml = '<?xml version="1.0" encoding="UTF-8" ?>\n<feedback>\n  ' + meta + "\n  " + pol("google") + "\n  " + rows.map((x) => rec("google", x)).join("\n  ") + "\n</feedback>\n";
     else if (R.style === "microsoft") xml = '<?xml version="1.0"?>\n<feedback xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">\n  <version>1.0</version>\n  ' + meta + "\n  " + pol("microsoft") + "\n  " + rows.map((x) => rec("microsoft", x)).join("\n  ") + "\n</feedback>";
     else xml = '<?xml version="1.0" encoding="UTF-8"?>\n<feedback xmlns="urn:ietf:params:xml:ns:dmarc-2.0">\n  <version>1.0</version>\n  ' + meta + "\n  " + pol("bis") + "\n  " + rows.map((x) => rec("bis", x)).join("\n  ") + "\n</feedback>\n";
-    const fname = R.style === "google" ? R.org.split(" ")[0].toLowerCase() + ".test.darknode.ai!" + D + "!" + b + "!" + e + ".xml"
-      : R.style === "microsoft" ? R.org.split(" ")[0].toLowerCase() + ".test.darknode.ai!" + D + "!" + b + "!" + e + ".xml"
-        : R.org.split(" ")[0].toLowerCase() + "!" + D + "!" + b + "!" + e + "!" + rid + ".xml";
+    const fname = R.style === "google" ? R.host + ".test.darknode.ai!" + D + "!" + b + "!" + e + ".xml"
+      : R.style === "microsoft" ? R.host + ".test.darknode.ai!" + D + "!" + b + "!" + e + ".xml"
+        : R.host + "!" + D + "!" + b + "!" + e + "!" + rid + ".xml";
     files.push({ name: fname, text: xml, pack: R.ext });
   }
-  // A duplicate delivery of one Bluewren report (same report_id) under another name.
+  // A duplicate delivery of one Vendor A report (same report_id) under another name.
   files.push({ name: "resent-" + files[0].name, text: files[0].text, pack: "zip" });
   // One forensic (ARF) failure report.
-  files.push({ name: "corvid-forensic-0001.eml", pack: "zip", text: [
-    "From: dmarc-forensic@corvid.test.darknode.ai", "To: dmarc-ruf@" + D, "Subject: Report Domain: " + D + " Submitter: corvid.test.darknode.ai", "MIME-Version: 1.0",
+  files.push({ name: "vendorb-forensic-0001.eml", pack: "zip", text: [
+    "From: dmarc-forensic@vendorb.test.darknode.ai", "To: dmarc-ruf@" + D, "Subject: Report Domain: " + D + " Submitter: vendorb.test.darknode.ai", "MIME-Version: 1.0",
     'Content-Type: multipart/report; report-type=feedback-report; boundary="b1"', "", "--b1", "Content-Type: text/plain", "", "This is an authentication failure report for an email message received from IP 198.51.100.57.", "",
-    "--b1", "Content-Type: message/feedback-report", "", "Feedback-Type: auth-failure", "User-Agent: corvid-arf/1.0", "Version: 1", "Original-Mail-From: <billing@" + D + ">",
-    "Arrival-Date: Thu, 10 Sep 2026 08:14:02 +0000", "Source-IP: 198.51.100.57", "Reported-Domain: " + D, "Authentication-Results: corvid.test.darknode.ai; dmarc=fail header.from=" + D + "; spf=softfail smtp.mailfrom=" + D,
+    "--b1", "Content-Type: message/feedback-report", "", "Feedback-Type: auth-failure", "User-Agent: vendorb-arf/1.0", "Version: 1", "Original-Mail-From: <billing@" + D + ">",
+    "Arrival-Date: Thu, 10 Sep 2026 08:14:02 +0000", "Source-IP: 198.51.100.57", "Reported-Domain: " + D, "Authentication-Results: vendorb.test.darknode.ai; dmarc=fail header.from=" + D + "; spf=softfail smtp.mailfrom=" + D,
     "Auth-Failure: dmarc", "Delivery-Result: delivered", "", "--b1", "Content-Type: text/rfc822-headers", "", "From: Accounts <billing@" + D + ">", "Subject: Overdue invoice", "", "--b1--", ""].join("\r\n") });
   return { label: "synthetic example (not real data)", domain: D, files };
 }
@@ -1265,14 +1265,14 @@ export function selfTest() {
   const tests = [];
   const t = (name, fn) => { let pass = false; try { pass = !!fn(); } catch (_) { pass = false; } tests.push({ name, pass }); };
   t("organizational domain uses the suffix subset", () => orgDomain("mail.shop.example.co.uk") === "example.co.uk" && orgDomain("a.b.test.darknode.ai") === "darknode.ai");
-  t("relaxed vs strict alignment", () => aligned("em1.larkspur.test.darknode.ai", "larkspur.test.darknode.ai", "r") && !aligned("em1.larkspur.test.darknode.ai", "larkspur.test.darknode.ai", "s"));
+  t("relaxed vs strict alignment", () => aligned("em1.testorg.test.darknode.ai", "testorg.test.darknode.ai", "r") && !aligned("em1.testorg.test.darknode.ai", "testorg.test.darknode.ai", "s"));
   t("IPv6 canonical form", () => normIp("2001:0DB8:0000:0000:0000:0000:0000:0001") === "2001:db8::1");
   const ex = exampleDataset();
   const p = parseInput(ex.files);
   t("example parses 32 unique reports, 1 duplicate, 1 forensic", () => p.reports.length === 32 && p.duplicates === 1 && p.forensic.length === 1);
   const r = analyze(p, {});
   t("example finds Mailchimp misaligned", () => r.findings.some((f) => f.id === "dmr-esp-mailchimp"));
-  t("example finds spoofing as high", () => r.findings.some((f) => f.id === "dmr-spoof-larkspur.test.darknode.ai" && f.severity === "high"));
+  t("example finds spoofing as high", () => r.findings.some((f) => f.id === "dmr-spoof-testorg.test.darknode.ai" && f.severity === "high"));
   t("example plan is blocked by Mailchimp", () => r.tables.plan[0].ready === false && r.tables.plan[0].blockers.some((b) => /Mailchimp/.test(b.sender)));
   t("deterministic", () => JSON.stringify(analyze(p, {})) === JSON.stringify(r));
   t("empty input yields no findings", () => analyze([]).findings.length === 0);

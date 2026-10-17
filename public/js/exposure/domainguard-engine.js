@@ -1424,7 +1424,7 @@ export function dohJson(name, type, datas = [], { status = 0, ad = false, ttl = 
   if (status === 3 || (!Answer.length && status === 0)) j.Authority = [{ name: "test.darknode.ai.", type: 6, TTL: 1800, data: "ns1.test.darknode.ai. hostmaster.test.darknode.ai. 2026101601 7200 3600 1209600 300" }];
   return j;
 }
-function rdapJson(domain, { created, expires, statuses, registrar = "Larkspur Registrar Co. (synthetic)" }) {
+function rdapJson(domain, { created, expires, statuses, registrar = "Test Registrar A (synthetic)" }) {
   return {
     objectClassName: "domain", ldhName: domain.toUpperCase(), handle: "SYN-" + domain.length,
     links: [{ value: "https://rdap.test.darknode.ai/domain/" + domain, rel: "self", href: "https://rdap.test.darknode.ai/domain/" + domain, type: "application/rdap+json" }],
@@ -1436,23 +1436,23 @@ function rdapJson(domain, { created, expires, statuses, registrar = "Larkspur Re
   };
 }
 
-const EXAMPLE_ZONE = `;; Domain:     quillmark-acq.test.darknode.ai.
+const EXAMPLE_ZONE = `;; Domain:     darknode-acq.test.darknode.ai.
 ;; Exported (synthetic) zone of an acquired company
-$ORIGIN quillmark-acq.test.darknode.ai.
+$ORIGIN darknode-acq.test.darknode.ai.
 $TTL 3600
-@\tIN\tSOA\tns1.test.darknode.ai. hostmaster.quillmark-acq.test.darknode.ai. (
+@\tIN\tSOA\tns1.test.darknode.ai. hostmaster.darknode-acq.test.darknode.ai. (
 \t\t2026101601 ; serial
 \t\t7200 3600 1209600 300 )
 \tIN\tNS\tns1.test.darknode.ai.
 \tIN\tNS\tns2.test.darknode.ai.
-@\tIN\tMX\t10 mx1.quillmark-acq.test.darknode.ai.
+@\tIN\tMX\t10 mx1.darknode-acq.test.darknode.ai.
 @\tIN\tTXT\t"v=spf1 ip4:198.51.100.25 -all"
 www\t300\tIN\tA\t203.0.113.40
 mx1\tIN\tA\t198.51.100.25
-careers\tIN\tCNAME\tqm-careers-old.azurewebsites.net.
-assets\tIN\tCNAME\tqm-assets-legacy.s3-website-us-east-1.amazonaws.com.
-docs\tIN\tCNAME\tquillmark-acq.github.io.
-shop 600 IN CNAME qm-old-shop.larkspur-cdn.test.darknode.ai. ; cf_tags=cf-proxied:false
+careers\tIN\tCNAME\tdn-careers-old.azurewebsites.net.
+assets\tIN\tCNAME\tdn-assets-legacy.s3-website-us-east-1.amazonaws.com.
+docs\tIN\tCNAME\tdarknode-acq.github.io.
+shop 600 IN CNAME dn-old-shop.cdn.test.darknode.ai. ; cf_tags=cf-proxied:false
 `;
 
 /** Small seeded SYNTHETIC dataset: 6 domains under test.darknode.ai with precomputed answers. */
@@ -1462,7 +1462,7 @@ export function exampleDataset(seed = 7) {
   const at = "2026-10-16T00:00:00Z";
   const NS2 = ["ns1.test.darknode.ai.", "ns2.test.darknode.ai."];
   const nsGood = ["ns-212.awsdns-26.com.", "ns-1650.awsdns-14.co.uk.", "a.ns-dual.test.darknode.ai.", "b.ns-dual.test.darknode.ai."];
-  const caa = ['0 issue "letsencrypt.org"', '0 iodef "mailto:security@quillmark.test.darknode.ai"'];
+  const caa = ['0 issue "letsencrypt.org"', '0 iodef "mailto:security@darknode.test.darknode.ai"'];
   const rows = (notAfter) => [{ issuer_name: "C=US, O=Let's Encrypt, CN=R11", not_before: "2026-08-01T00:00:00", not_after: notAfter, name_value: "synthetic" }];
   const nsHosts = (list) => Object.fromEntries(list.map((h) => [normName(h), dohJson(h, "A", ["192.0.2.53"])]));
   const domainObs = (d, x) => {
@@ -1481,52 +1481,52 @@ export function exampleDataset(seed = 7) {
     return { at, dns, wildcardName: wild, nsHosts: nsHosts(x.ns || NS2), spf: x.spfIncludes || {}, mtaStsPolicy: x.policy || undefined, rdap: x.rdap, cert: { rows: rows(x.certNotAfter || "2026-12-20T00:00:00") } };
   };
   const D = {
-    main: "quillmark.test.darknode.ai", eu: "quillmark-eu.test.darknode.ai", parked: "quillmark-parked.test.darknode.ai",
-    promo: "quillmark-promo.test.darknode.ai", acq: "quillmark-acq.test.darknode.ai", hold: "quillmark-hold.test.darknode.ai",
+    main: "darknode.test.darknode.ai", eu: "darknode-eu.test.darknode.ai", parked: "darknode-parked.test.darknode.ai",
+    promo: "darknode-promo.test.darknode.ai", acq: "darknode-acq.test.darknode.ai", hold: "darknode-hold.test.darknode.ai",
   };
   const lock = ["client delete prohibited", "client transfer prohibited", "client update prohibited"];
   const inc = (d, txt) => dohJson(d, "TXT", [txt]);
   const observations = {
     [D.main]: domainObs(D.main, {
-      ns: nsGood, mx: ["10 mx1.quillmark.test.darknode.ai.", "20 mx2.quillmark.test.darknode.ai."], txt: ['"v=spf1 include:_spf.quillmark.test.darknode.ai -all"'],
-      spfIncludes: { "_spf.quillmark.test.darknode.ai": inc("_spf.quillmark.test.darknode.ai", '"v=spf1 ip4:198.51.100.0/27 ip6:2001:db8:10::/48 -all"') },
-      dmarc: ['"v=DMARC1; p=reject; rua=mailto:dmarc@quillmark.test.darknode.ai; ruf=mailto:dmarc-f@quillmark.test.darknode.ai"'],
-      mtasts: ['"v=STSv1; id=2026090101"'], tlsrpt: ['"v=TLSRPTv1; rua=mailto:tlsrpt@quillmark.test.darknode.ai"'],
-      policy: { status: 200, body: "version: STSv1\nmode: enforce\nmx: mx1.quillmark.test.darknode.ai\nmx: mx2.quillmark.test.darknode.ai\nmax_age: 604800\n" },
+      ns: nsGood, mx: ["10 mx1.darknode.test.darknode.ai.", "20 mx2.darknode.test.darknode.ai."], txt: ['"v=spf1 include:_spf.darknode.test.darknode.ai -all"'],
+      spfIncludes: { "_spf.darknode.test.darknode.ai": inc("_spf.darknode.test.darknode.ai", '"v=spf1 ip4:198.51.100.0/27 ip6:2001:db8:10::/48 -all"') },
+      dmarc: ['"v=DMARC1; p=reject; rua=mailto:dmarc@darknode.test.darknode.ai; ruf=mailto:dmarc-f@darknode.test.darknode.ai"'],
+      mtasts: ['"v=STSv1; id=2026090101"'], tlsrpt: ['"v=TLSRPTv1; rua=mailto:tlsrpt@darknode.test.darknode.ai"'],
+      policy: { status: 200, body: "version: STSv1\nmode: enforce\nmx: mx1.darknode.test.darknode.ai\nmx: mx2.darknode.test.darknode.ai\nmax_age: 604800\n" },
       ds: ["2371 13 2 1F987CC6583E92DF0890718C42A3C08D2B0E5C9A3E4E1E9B8A3C2D1F0E9D8C7B"], caa,
       rdap: rdapJson(D.main, { created: "2014-03-02T10:00:00Z", expires: "2029-03-02T10:00:00Z", statuses: lock }),
     }),
     [D.eu]: domainObs(D.eu, {
-      mx: ["10 mx1.quillmark.test.darknode.ai."],
-      txt: ['"v=spf1 include:_spf1.quillmark-eu.test.darknode.ai include:_spf2.quillmark-eu.test.darknode.ai include:mailer.larkspur-mail.test.darknode.ai ~all"'],
+      mx: ["10 mx1.darknode.test.darknode.ai."],
+      txt: ['"v=spf1 include:_spf1.darknode-eu.test.darknode.ai include:_spf2.darknode-eu.test.darknode.ai include:mailer.mail.test.darknode.ai ~all"'],
       spfIncludes: {
-        "_spf1.quillmark-eu.test.darknode.ai": inc("_spf1.quillmark-eu.test.darknode.ai", '"v=spf1 a mx include:crm.larkspur-mail.test.darknode.ai include:hr.larkspur-mail.test.darknode.ai ~all"'),
-        "_spf2.quillmark-eu.test.darknode.ai": inc("_spf2.quillmark-eu.test.darknode.ai", '"v=spf1 include:news.larkspur-mail.test.darknode.ai include:tickets.larkspur-mail.test.darknode.ai exists:%{i}.rbl.test.darknode.ai ~all"'),
-        "mailer.larkspur-mail.test.darknode.ai": inc("mailer.larkspur-mail.test.darknode.ai", '"v=spf1 include:pool-a.larkspur-mail.test.darknode.ai include:pool-b.larkspur-mail.test.darknode.ai ~all"'),
-        "crm.larkspur-mail.test.darknode.ai": inc("crm.larkspur-mail.test.darknode.ai", '"v=spf1 ip4:203.0.113.64/26 ~all"'),
-        "hr.larkspur-mail.test.darknode.ai": inc("hr.larkspur-mail.test.darknode.ai", '"v=spf1 ip4:203.0.113.128/26 ~all"'),
-        "news.larkspur-mail.test.darknode.ai": inc("news.larkspur-mail.test.darknode.ai", '"v=spf1 ip4:198.51.100.128/25 ~all"'),
-        "tickets.larkspur-mail.test.darknode.ai": dohJson("tickets.larkspur-mail.test.darknode.ai", "TXT", ['"google-site-verification=synthetic"']),
-        "pool-a.larkspur-mail.test.darknode.ai": inc("pool-a.larkspur-mail.test.darknode.ai", '"v=spf1 a mx ip4:192.0.2.0/25 ~all"'),
-        "pool-b.larkspur-mail.test.darknode.ai": inc("pool-b.larkspur-mail.test.darknode.ai", '"v=spf1 a ip4:192.0.2.128/25 ~all"'),
+        "_spf1.darknode-eu.test.darknode.ai": inc("_spf1.darknode-eu.test.darknode.ai", '"v=spf1 a mx include:crm.mail.test.darknode.ai include:hr.mail.test.darknode.ai ~all"'),
+        "_spf2.darknode-eu.test.darknode.ai": inc("_spf2.darknode-eu.test.darknode.ai", '"v=spf1 include:news.mail.test.darknode.ai include:tickets.mail.test.darknode.ai exists:%{i}.rbl.test.darknode.ai ~all"'),
+        "mailer.mail.test.darknode.ai": inc("mailer.mail.test.darknode.ai", '"v=spf1 include:pool-a.mail.test.darknode.ai include:pool-b.mail.test.darknode.ai ~all"'),
+        "crm.mail.test.darknode.ai": inc("crm.mail.test.darknode.ai", '"v=spf1 ip4:203.0.113.64/26 ~all"'),
+        "hr.mail.test.darknode.ai": inc("hr.mail.test.darknode.ai", '"v=spf1 ip4:203.0.113.128/26 ~all"'),
+        "news.mail.test.darknode.ai": inc("news.mail.test.darknode.ai", '"v=spf1 ip4:198.51.100.128/25 ~all"'),
+        "tickets.mail.test.darknode.ai": dohJson("tickets.mail.test.darknode.ai", "TXT", ['"google-site-verification=synthetic"']),
+        "pool-a.mail.test.darknode.ai": inc("pool-a.mail.test.darknode.ai", '"v=spf1 a mx ip4:192.0.2.0/25 ~all"'),
+        "pool-b.mail.test.darknode.ai": inc("pool-b.mail.test.darknode.ai", '"v=spf1 a ip4:192.0.2.128/25 ~all"'),
       },
-      dmarc: ['"v=DMARC1; p=none; pct=50; rua=mailto:dmarc@quillmark.test.darknode.ai"'],
+      dmarc: ['"v=DMARC1; p=none; pct=50; rua=mailto:dmarc@darknode.test.darknode.ai"'],
       rdap: rdapJson(D.eu, { created: "2019-05-11T09:00:00Z", expires: "2027-05-11T09:00:00Z", statuses: lock }),
     }),
     [D.parked]: domainObs(D.parked, {
       rdap: rdapJson(D.parked, { created: "2021-01-20T12:00:00Z", expires: "2027-01-20T12:00:00Z", statuses: lock }), wildcard: true,
     }),
     [D.promo]: domainObs(D.promo, {
-      mx: ["10 mx1.quillmark.test.darknode.ai."], txt: ['"v=spf1 include:_spf.quillmark.test.darknode.ai -all"'],
-      spfIncludes: { "_spf.quillmark.test.darknode.ai": inc("_spf.quillmark.test.darknode.ai", '"v=spf1 ip4:198.51.100.0/27 ip6:2001:db8:10::/48 -all"') },
-      dmarc: ['"v=DMARC1; p=quarantine; rua=mailto:dmarc@quillmark.test.darknode.ai"'],
-      mtasts: ['"v=STSv1; id=2026070101"'], tlsrpt: ['"v=TLSRPTv1; rua=mailto:tlsrpt@quillmark.test.darknode.ai"'],
-      policy: { status: 200, body: "version: STSv1\nmode: testing\nmx: mx1.quillmark.test.darknode.ai\nmax_age: 86400\n" }, caa,
+      mx: ["10 mx1.darknode.test.darknode.ai."], txt: ['"v=spf1 include:_spf.darknode.test.darknode.ai -all"'],
+      spfIncludes: { "_spf.darknode.test.darknode.ai": inc("_spf.darknode.test.darknode.ai", '"v=spf1 ip4:198.51.100.0/27 ip6:2001:db8:10::/48 -all"') },
+      dmarc: ['"v=DMARC1; p=quarantine; rua=mailto:dmarc@darknode.test.darknode.ai"'],
+      mtasts: ['"v=STSv1; id=2026070101"'], tlsrpt: ['"v=TLSRPTv1; rua=mailto:tlsrpt@darknode.test.darknode.ai"'],
+      policy: { status: 200, body: "version: STSv1\nmode: testing\nmx: mx1.darknode.test.darknode.ai\nmax_age: 86400\n" }, caa,
       rdap: rdapJson(D.promo, { created: "2023-10-21T08:00:00Z", expires: "2026-10-21T08:00:00Z", statuses: ["active"] }), certNotAfter: "2026-10-26T00:00:00",
     }),
     [D.acq]: domainObs(D.acq, {
       ns: ["ns1.test.darknode.ai.", "ns2.test.darknode.ai."], nsCf: ["ns1.test.darknode.ai.", "ns2.test.darknode.ai."],
-      mx: ["10 mx1.quillmark-acq.test.darknode.ai."], txt: ['"v=spf1 ip4:198.51.100.25 -all"'],
+      mx: ["10 mx1.darknode-acq.test.darknode.ai."], txt: ['"v=spf1 ip4:198.51.100.25 -all"'],
       rdap: rdapJson(D.acq, { created: "2012-06-30T00:00:00Z", expires: "2027-06-30T00:00:00Z", statuses: ["client transfer prohibited"] }),
     }),
     [D.hold]: domainObs(D.hold, {
@@ -1537,35 +1537,35 @@ export function exampleDataset(seed = 7) {
   const zone = parseBindZone(EXAMPLE_ZONE);
   const hosts = hostsFromRecords(zone.records);
   const hostObs = {
-    "careers.quillmark-acq.test.darknode.ai": { A: dohJson("careers.quillmark-acq.test.darknode.ai", "A", [], { status: 3, cname: [["careers.quillmark-acq.test.darknode.ai", "qm-careers-old.azurewebsites.net"]] }) },
-    "assets.quillmark-acq.test.darknode.ai": {
-      A: dohJson("assets.quillmark-acq.test.darknode.ai", "A", ["192.0.2.80"], { cname: [["assets.quillmark-acq.test.darknode.ai", "qm-assets-legacy.s3-website-us-east-1.amazonaws.com"]] }),
-      http: { status: 404, body: "404 Not Found\nCode: NoSuchBucket\nMessage: The specified bucket does not exist\nBucketName: assets.quillmark-acq.test.darknode.ai\nRequestId: SYNTHETIC0001" },
+    "careers.darknode-acq.test.darknode.ai": { A: dohJson("careers.darknode-acq.test.darknode.ai", "A", [], { status: 3, cname: [["careers.darknode-acq.test.darknode.ai", "dn-careers-old.azurewebsites.net"]] }) },
+    "assets.darknode-acq.test.darknode.ai": {
+      A: dohJson("assets.darknode-acq.test.darknode.ai", "A", ["192.0.2.80"], { cname: [["assets.darknode-acq.test.darknode.ai", "dn-assets-legacy.s3-website-us-east-1.amazonaws.com"]] }),
+      http: { status: 404, body: "404 Not Found\nCode: NoSuchBucket\nMessage: The specified bucket does not exist\nBucketName: assets.darknode-acq.test.darknode.ai\nRequestId: SYNTHETIC0001" },
     },
-    "docs.quillmark-acq.test.darknode.ai": {
-      A: dohJson("docs.quillmark-acq.test.darknode.ai", "A", ["192.0.2.153"], { cname: [["docs.quillmark-acq.test.darknode.ai", "quillmark-acq.github.io"]] }),
-      http: { status: 200, body: "Quillmark docs (synthetic) - welcome" },
+    "docs.darknode-acq.test.darknode.ai": {
+      A: dohJson("docs.darknode-acq.test.darknode.ai", "A", ["192.0.2.153"], { cname: [["docs.darknode-acq.test.darknode.ai", "darknode-acq.github.io"]] }),
+      http: { status: 200, body: "Darknode docs (synthetic) - welcome" },
     },
-    "shop.quillmark-acq.test.darknode.ai": { A: dohJson("shop.quillmark-acq.test.darknode.ai", "A", [], { status: 3, cname: [["shop.quillmark-acq.test.darknode.ai", "qm-old-shop.larkspur-cdn.test.darknode.ai"]] }) },
-    "www.quillmark-acq.test.darknode.ai": { A: dohJson("www.quillmark-acq.test.darknode.ai", "A", ["203.0.113.40"]) },
-    "mx1.quillmark-acq.test.darknode.ai": { A: dohJson("mx1.quillmark-acq.test.darknode.ai", "A", ["198.51.100.25"]) },
+    "shop.darknode-acq.test.darknode.ai": { A: dohJson("shop.darknode-acq.test.darknode.ai", "A", [], { status: 3, cname: [["shop.darknode-acq.test.darknode.ai", "dn-old-shop.cdn.test.darknode.ai"]] }) },
+    "www.darknode-acq.test.darknode.ai": { A: dohJson("www.darknode-acq.test.darknode.ai", "A", ["203.0.113.40"]) },
+    "mx1.darknode-acq.test.darknode.ai": { A: dohJson("mx1.darknode-acq.test.darknode.ai", "A", ["198.51.100.25"]) },
   };
   const la = (d, { ns = true, mx = [], a = [], created }) => ({
-    NS: ns ? dohJson(d, "NS", ["ns1.larkspur-parking.test.darknode.ai."]) : dohJson(d, "NS", [], { status: 3 }),
+    NS: ns ? dohJson(d, "NS", ["ns1.parking.test.darknode.ai."]) : dohJson(d, "NS", [], { status: 3 }),
     A: ns ? dohJson(d, "A", a, {}) : dohJson(d, "A", [], { status: 3 }),
-    ...(ns ? { MX: dohJson(d, "MX", mx), rdap: rdapJson(d, { created, expires: "2027-10-01T00:00:00Z", statuses: ["client transfer prohibited"], registrar: "Brightwater Names Ltd. (synthetic)" }) } : {}),
+    ...(ns ? { MX: dohJson(d, "MX", mx), rdap: rdapJson(d, { created, expires: "2027-10-01T00:00:00Z", statuses: ["client transfer prohibited"], registrar: "Test Registrar B (synthetic)" }) } : {}),
   });
   const lookalikes = {
     [D.main]: {
       at,
       results: {
-        "quilmark.test.darknode.ai": la("quilmark.test.darknode.ai", { mx: ["10 mail.quilmark.test.darknode.ai."], a: ["198.51.100.77"], created: "2026-10-04T13:12:00Z" }),
-        "quillmark-login.test.darknode.ai": la("quillmark-login.test.darknode.ai", { a: ["203.0.113.199"], created: "2026-06-02T00:00:00Z" }),
-        "qui1lmark.test.darknode.ai": la("qui1lmark.test.darknode.ai", { created: "2025-01-15T00:00:00Z" }),
-        "quil1mark.test.darknode.ai": la("quil1mark.test.darknode.ai", { ns: false }),
-        "qiullmark.test.darknode.ai": la("qiullmark.test.darknode.ai", { ns: false }),
-        "quillmrak.test.darknode.ai": la("quillmrak.test.darknode.ai", { ns: false }),
-        "quillmark-sso.test.darknode.ai": la("quillmark-sso.test.darknode.ai", { ns: false }),
+        "darnode.test.darknode.ai": la("darnode.test.darknode.ai", { mx: ["10 mail.darnode.test.darknode.ai."], a: ["198.51.100.77"], created: "2026-10-04T13:12:00Z" }),
+        "darknode-login.test.darknode.ai": la("darknode-login.test.darknode.ai", { a: ["203.0.113.199"], created: "2026-06-02T00:00:00Z" }),
+        "darkn0de.test.darknode.ai": la("darkn0de.test.darknode.ai", { created: "2025-01-15T00:00:00Z" }),
+        "clarknode.test.darknode.ai": la("clarknode.test.darknode.ai", { ns: false }),
+        "draknode.test.darknode.ai": la("draknode.test.darknode.ai", { ns: false }),
+        "darknoed.test.darknode.ai": la("darknoed.test.darknode.ai", { ns: false }),
+        "darknode-sso.test.darknode.ai": la("darknode-sso.test.darknode.ai", { ns: false }),
       },
     },
   };
@@ -1579,19 +1579,19 @@ export function exampleDataset(seed = 7) {
       [D.acq]: { grade: "D", checks: { dmarc: "fail" } },
       [D.hold]: { grade: "B", checks: { caa: "warn" } },
     },
-    lookalikes: { "qui1lmark.test.darknode.ai": { owner: D.main, mx: false, web: false } },
-    takeover: ["careers.quillmark-acq.test.darknode.ai"],
+    lookalikes: { "darkn0de.test.darknode.ai": { owner: D.main, mx: false, web: false } },
+    takeover: ["careers.darknode-acq.test.darknode.ai"],
   };
   return {
     label: "synthetic example (not real data)", now,
     domainsText: [D.main + " mail", D.eu + " mail", D.parked + " parked", D.promo, D.acq, D.hold + " parked"].join("\n"),
-    zoneFile: { name: "quillmark-acq.zone", text: EXAMPLE_ZONE },
+    zoneFile: { name: "darknode-acq.zone", text: EXAMPLE_ZONE },
     dataset: {
       domains: [
         { domain: D.main, sendsMail: true }, { domain: D.eu, sendsMail: true }, { domain: D.parked, parked: true },
         { domain: D.promo }, { domain: D.acq }, { domain: D.hold, parked: true },
       ],
-      hosts, keywords: ["quillmark"], observations, hostObs, lookalikes, previous, at,
+      hosts, keywords: ["darknode"], observations, hostObs, lookalikes, previous, at,
     },
     rows: zone.records,
   };
@@ -1607,8 +1607,8 @@ export function selfTest() {
   t("punycode bucher vector", () => punycodeEncode("bücher") === "bcher-kva");
   t("parked domain without lock-down flagged", () => has("parked_unlocked"));
   t("expiring domain is critical", () => has("expiry_critical"));
-  t("Azure dangling CNAME is a takeover candidate", () => r.findings.some((f) => f.id === "takeover:careers.quillmark-acq.test.darknode.ai" && f.severity === "high"));
-  t("S3 NoSuchBucket fingerprint is critical", () => r.findings.some((f) => f.id === "takeover:assets.quillmark-acq.test.darknode.ai" && f.severity === "critical"));
+  t("Azure dangling CNAME is a takeover candidate", () => r.findings.some((f) => f.id === "takeover:careers.darknode-acq.test.darknode.ai" && f.severity === "high"));
+  t("S3 NoSuchBucket fingerprint is critical", () => r.findings.some((f) => f.id === "takeover:assets.darknode-acq.test.darknode.ai" && f.severity === "critical"));
   t("new lookalike with MX is high", () => r.findings.some((f) => f.id.startsWith("domainguard:lookalike_mx_new") && f.severity === "high"));
   t("SPF nested includes exceed 10", () => has("spf_permerror"));
   t("deterministic", () => JSON.stringify(analyze(ex.dataset, { now: ex.now })) === JSON.stringify(r));
