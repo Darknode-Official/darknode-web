@@ -1,0 +1,44 @@
+/* Desktop app shell (loaded only when html[data-desktop] is set by index.html).
+   The app draws native window controls over the top-right corner (Windows/Linux,
+   via the Window Controls Overlay) or traffic lights top-left (macOS), and the
+   website's own top bar doubles as the window title bar. */
+
+/* Drag the window by the top bar's empty space; everything interactive stays clickable. */
+html[data-desktop] #topbar,
+html[data-desktop] #bootscreen { -webkit-app-region: drag; app-region: drag; }
+html[data-desktop] #topbar :is(a, button, input, select, textarea, label, summary, [role="button"], [role="menu"], [role="listbox"], [tabindex], .nav-dd, .nav-dd-menu, .tb-pop, .con-bar, img) {
+  -webkit-app-region: no-drag; app-region: no-drag;
+}
+
+/* Keep the bar's controls clear of the native window buttons. env(titlebar-area-*)
+   describes the free part of the title bar when the overlay is active. The doubled
+   id outranks the console's own `html body.app #topbar#topbar` padding (aws.css). */
+html[data-desktop]:not([data-desktop="darwin"]) body #topbar#topbar {
+  padding-right: calc(100vw - env(titlebar-area-x, 0px) - env(titlebar-area-width, 100vw) + 12px) !important;
+}
+html[data-desktop="darwin"][data-desktop] body #topbar#topbar { padding-left: 84px !important; }
+
+/* The desktop app is already installed: no "get the app" prompts or back-to-landing link. */
+html[data-desktop] #app-dl,
+html[data-desktop] #authBack { display: none !important; }
+
+/* The Deck is the app's home screen: its header is the title bar. Same rules as the
+   site top bar above, scoped to the Deck's own header (deck-ui.js is not edited). */
+html[data-desktop] .dk .dk-top { -webkit-app-region: drag; app-region: drag; }
+html[data-desktop] .dk .dk-top :is(a, button, input, select, textarea, label, [role="button"], [tabindex], .dk-crumb, .dk-clock) {
+  -webkit-app-region: no-drag; app-region: no-drag;
+}
+html[data-desktop]:not([data-desktop="darwin"]) body .dk .dk-top.dk-top {
+  padding-right: calc(100vw - env(titlebar-area-x, 0px) - env(titlebar-area-width, 100vw) + 16px) !important;
+}
+html[data-desktop="darwin"][data-desktop] body .dk .dk-top.dk-top { padding-left: 84px !important; }
+/* "Open in new tab" has no meaning in a desktop window (and would leave the app). */
+html[data-desktop] .dk :is(#dkWTab, #dkAsstFull) { display: none !important; }
+
+/* Desktop home for accounts without the Deck (renderDesktopHome in auth.js). */
+html[data-desktop] .dsk-drag { position: fixed; top: 0; left: 0; right: 0; height: 40px; -webkit-app-region: drag; app-region: drag; z-index: 5; }
+html[data-desktop] .dsk-note { max-width: 560px; margin: 18vh auto 0; padding: 28px 32px; border: 1px solid rgba(23, 33, 56, .12); border-radius: 8px; background: #fff; color: #161514; font: 15px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif; position: relative; z-index: 6; }
+html[data-desktop] .dsk-note h1 { font-size: 22px; margin: 0 0 8px; letter-spacing: -.01em; }
+html[data-desktop] .dsk-note p { margin: 0 0 20px; color: #3f3d3a; overflow-wrap: anywhere; }
+html[data-desktop] .dsk-note .dsk-acts { display: flex; gap: 10px; flex-wrap: wrap; }
+html[data-desktop] #view:has(> .dsk-note) { min-height: calc(100vh - 48px); }

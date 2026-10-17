@@ -1,4 +1,5 @@
 // Downloads section — desktop app + CLI, hosted on GitHub Releases.
+import { isDesktop } from "/js/core/desktop.js";
 // Fetches the live release assets so file sizes and versions are always current.
 const REPO = "Darknode-Official/darknode-app";
 const TAG = "latest";
@@ -14,6 +15,8 @@ const REL_DL = TAG === "latest" ? RELEASES + "/latest/download" : RELEASES + "/d
 //   npm         — the `darknode-cli` package on npm
 // Until then the CLI is offered via `git clone` (works today, Node 18+).
 const PUBLISHED = { desktopApp: false, cliBinaries: false, npm: false };
+// Inside the desktop app there is nothing to download for the app itself.
+if (isDesktop()) PUBLISHED.desktopApp = false;
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
