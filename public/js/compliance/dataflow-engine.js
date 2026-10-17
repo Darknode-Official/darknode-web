@@ -1110,7 +1110,7 @@ export const COLUMNS = {
   dataSubjects: ["Categories of data subjects", "Categories of individuals", "Data subjects", "Data subject categories"],
   dataCategories: ["Categories of personal data", "Personal data categories", "Data categories", "Personal data"],
   specialData: ["Special category data (Art. 9)", "Special category data", "Special categories"],
-  art9Condition: ["Art. 9(2) condition", "Article 9 basis for processing special category data", "Article 9 condition", "Special category condition"],
+  art9Condition: ["Art. 9(2) condition", "Article 9 condition for processing special category data", "Article 9 basis for processing special category data", "Article 9 condition", "Special category condition"],
   criminalBasis: ["Art. 10 basis", "Article 10 basis", "Criminal offence data (Art. 10)", "Criminal offence data condition"],
   recipients: ["Categories of recipients", "Recipients", "Recipients / vendors", "Sub-processors (recipients)", "Processors"],
   transfers: ["Transfers to third countries", "Names of third countries or international organisations that personal data are transferred to", "Third countries", "International transfers", "Transfers"],
@@ -1125,7 +1125,7 @@ export const COLUMNS = {
   dpiaRequired: ["Data Protection Impact Assessment required?", "DPIA required"],
   dpiaStatus: ["DPIA status", "Data Protection Impact Assessment progress", "DPIA progress"],
   dpiaDate: ["DPIA date", "DPIA completion date", "DPIA completed"],
-  dpiaRef: ["DPIA reference", "Link to DPIA"],
+  dpiaRef: ["DPIA reference", "Link to Data Protection Impact Assessment", "Link to DPIA"],
   systems: ["Systems", "Location of personal data", "Applications", "System"],
   subjectCount: ["Approximate number of data subjects", "Number of data subjects", "Volume"],
   lastReview: ["Last review", "Last reviewed", "Review date"],
@@ -1203,7 +1203,8 @@ export function parseTransferCell(countries, safeguards) {
 export function csvToActivities(rows, mapping, { dateOrder = "dmy" } = {}) {
   const skipped = [];
   const records = [];
-  const get = (r, k) => (mapping[k] ? str(r[mapping[k]]) : "");
+  // The ICO template writes "N/A" in cells that do not apply: read those as blank.
+  const get = (r, k) => { const v = mapping[k] ? str(r[mapping[k]]) : ""; return /^(n\/a|not applicable)$/i.test(v) ? "" : v; };
   (rows || []).forEach((r, i) => {
     let name = get(r, "name");
     const purpose = get(r, "purpose");
@@ -1253,6 +1254,18 @@ export function csvToDsars(rows, mapping, { dateOrder = "dmy" } = {}) {
 }
 
 /**
+ * The ICO controller template (Template / Example sheet saved as CSV) has the controller, DPO and
+ * representative block (rows 1-6) and a section-title row (row 8) above the column headers (row 9):
+ * start the CSV at the header row.
+ */
+function skipIcoPreamble(t) {
+  if (/^\s*[[{]/.test(t)) return t;
+  const lines = t.split(/\r?\n/);
+  const i = lines.findIndex((l) => /purpose of processing/i.test(l) && /categories of individuals/i.test(l));
+  return i > 0 ? lines.slice(i).join("\n") : t;
+}
+
+/**
  * parseInput(text | [{name, text}]) -> { format, confidence, headers, rows, mapping, kind, files[], activities[], dsars[], skipped[] }.
  * Accepts this tool's register JSON, an activity (ROPA) CSV and a DSAR log CSV. Top-level
  * headers/rows/mapping describe the first CSV; files[] has every file's own.
@@ -1262,7 +1275,7 @@ export function parseInput(input) {
   const skipped = [];
   const out = { format: "empty", confidence: "low", headers: [], rows: [], mapping: {}, kind: "", files: [], activities: [], dsars: [], skipped };
   for (const f of files) {
-    const t = str(f && f.text);
+    const t = skipIcoPreamble(str(f && f.text));
     const name = str(f && f.name) || "input";
     if (!t) continue;
     const fmt = sniff(t).format;
