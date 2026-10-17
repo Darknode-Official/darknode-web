@@ -51,9 +51,9 @@ const CSS = `
   .dnh-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
   .dnh-grp{border:1px solid var(--line,#e6e8ee);border-radius:10px;padding:10px 12px;min-width:0}
   .dnh-grp h4{margin:0 0 8px;font-size:.76rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mut,#667085)}
-  .dnh-fields{display:flex;flex-wrap:wrap;gap:10px 14px}
+  .dnh-fields{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,200px),1fr));gap:10px 14px;align-items:start}
   .dnh-field{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1 1 140px}
-  .dnh-field.wide{flex:1 1 100%}
+  .dnh-field.wide{flex:1 1 100%;grid-column:1/-1}
   .dnh-field label{font-size:.76rem;font-weight:600;color:var(--tx,#1a2230)}
   .dnh-field input,.dnh-field select,.dnh-field textarea{font:inherit;font-size:.84rem;color:var(--tx,#1a2230);background:var(--card,#fff);border:1px solid var(--line,#d7dbe3);border-radius:8px;padding:6px 9px;width:100%;max-width:100%}
   .dnh-field textarea{min-height:60px;resize:vertical;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.78rem}

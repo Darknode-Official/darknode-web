@@ -305,6 +305,7 @@ var ST_CSS =
   '.st-lbl{display:block;font-size:.74rem;color:var(--mut);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em}' +
   '.st-req{color:var(--bad);font-weight:600}' +
   '.st-in,.st-ta{width:100%;box-sizing:border-box;background:var(--card2);border:1px solid var(--line);color:var(--txt);border-radius:4px;padding:8px 10px;font-size:.85rem;font-family:inherit}' +
+  '.st-in[type=datetime-local]{width:auto;min-width:min(100%,240px)}' +
   '.st-in:focus,.st-ta:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 15%,transparent)}' +
   '.st-ta{resize:vertical;min-height:120px;line-height:1.5;font-family:var(--font-mono);font-size:.8rem}' +
   '.st-multi-row{display:grid;grid-template-columns:1fr auto;gap:8px;margin-bottom:6px}' +

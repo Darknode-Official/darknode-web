@@ -1197,7 +1197,7 @@ textarea.dk-kitio{min-height:120px}
 @media(max-width:900px){.dk-cloudtop{grid-template-columns:1fr}.dk-surfbar{max-width:none}}
 .dk-cloudwb,.dk-cloudconn{background:#fff;border:1px solid rgba(23,33,56,.08);border-radius:14px;padding:18px}
 .dk-cloudwb .wbh h2,.dk-cloudconn h2{font-size:15px;font-weight:700;color:#141c2e;margin:0 0 12px}
-.dk-cloudsel{width:100%;height:40px;border-radius:9px;border:1px solid rgba(23,33,56,.14);background:#fff;color:#141c2e;font:inherit;font-size:13px;padding:0 12px;cursor:pointer}
+.dk-cloudsel{width:auto;min-width:min(100%,320px);max-width:100%;height:40px;border-radius:9px;border:1px solid rgba(23,33,56,.14);background:#fff;color:#141c2e;font:inherit;font-size:13px;padding:0 12px;cursor:pointer}
 .dk-clouddesc{font-size:12px;color:#6a7488;line-height:1.5;margin:9px 0}
 .dk-cloudin{width:100%;box-sizing:border-box;min-height:150px;resize:vertical;border-radius:10px;border:1px solid rgba(23,33,56,.12);background:#fbfcfe;color:#141c2e;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;line-height:1.5;padding:11px 13px;outline:none}
 .dk-cloudin:focus{border-color:#3f78ff}

@@ -29,6 +29,7 @@
   --db-code: var(--code-bg, #f1f0ec);
   --db-mono: ui-monospace, "JetBrains Mono", SFMono-Regular, Menlo, Consolas, monospace;
   --db-r: 7px;
+  --db-ctl-h: 36px; /* one control height: aws.css gives inputs and selects 36px */
 }
 :where(.dk) {
   --db-bg: var(--dk-bg, #f4f6fa);
@@ -47,6 +48,7 @@
   --db-code: var(--dk-bg, #f1f0ec);
   --db-mono: ui-monospace, "JetBrains Mono", SFMono-Regular, Menlo, Consolas, monospace;
   --db-r: 7px;
+  --db-ctl-h: 36px; /* one control height: aws.css gives inputs and selects 36px */
 }
 
 /* ---------- buttons ---------- */
@@ -61,7 +63,7 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  min-height: 34px;
+  min-height: var(--db-ctl-h);
   padding: 0 14px;
   border: 1px solid var(--db-line);
   border-radius: var(--db-r);
@@ -404,9 +406,27 @@
    Not zero-specificity: these undo specific older rules that leave a framed tool with a
    broken layout. */
 /* styles.css sets every select to width:100%. Inside a wrapping toolbar row that puts each
-   filter on its own full-width line. Toolbar rows size their selects to the content instead;
+   filter on its own full-width line (and a flex:1 select fills the row). Toolbar rows and
+   table cells size their selects to the content instead;
    a tool that sets a width on purpose (a class selector or stronger) still wins. */
-:where(html[data-embed]) :is([class*="-filters"], [class*="-filter-"], [class*="-toolbar"], [class*="-bar"], [class*="-controls"], [class*="-row"], .iac-sel, .api-sel, .ap-actor-select) > :is(select, input[type="number"]) {
+:where(html[data-embed]) :is([class*="-filters"], [class*="-filter-"], [class*="-toolbar"], [class*="-bar"], [class*="-controls"], [class*="-row"], .iac-sel, .api-sel, .ap-actor-select, td) > :is(select, input[type="number"]) {
   width: auto;
   max-width: 100%;
+  flex: 0 1 auto;
+}
+/* One control height per row. A button sitting beside an input or select takes the field
+   height, and the 4px bottom margin pro-theme puts under stacked fields is dropped there,
+   so every control in the row shares one height and one centre line. !important because
+   aws.css sizes .btn.sm (30px) under two id-level :not()s. On touch and narrow screens the
+   console grows buttons to 44px, so the row's fields grow with them. */
+@media (max-width: 720px), (pointer: coarse) {
+  :where(html[data-embed] body, .dk) { --db-ctl-h: 44px; }
+}
+:is(html[data-embed] body .app-main, .dk) :has(> :is(input:not([type=checkbox], [type=radio], [type=range], [type=file], [type=color], [type=hidden]), select)) > :is(button, input:is([type=button], [type=submit], [type=reset])),
+:is(html[data-embed] body .app-main, .dk) :has(> :is(button, input:is([type=button], [type=submit]))) > :is(input:not([type=checkbox], [type=radio], [type=range], [type=file], [type=color], [type=hidden]), select) {
+  min-height: var(--db-ctl-h, 36px) !important;
+}
+:is(html[data-embed] body .app-main, .dk) :has(> :is(button, input:is([type=button], [type=submit]))) > :is(input:not([type=checkbox], [type=radio], [type=range], [type=file], [type=color], [type=hidden]), select) {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
 }

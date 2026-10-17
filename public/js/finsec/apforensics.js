@@ -48,7 +48,7 @@ const CSS = `
   .apf-muted{color:var(--mut,#667085)}
   .apf-conf{display:inline-block;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:1px 7px;border-radius:999px;border:1px solid var(--line,#d7dbe3);color:var(--mut,#667085);white-space:nowrap}
   .apf-conf.high{color:#1b7f4d;border-color:#1b7f4d}.apf-conf.medium{color:#8a6d00;border-color:#8a6d00}.apf-conf.low{color:#b00020;border-color:#b00020}
-  .apf-ctl{display:flex;flex-wrap:wrap;gap:14px 20px;align-items:flex-start}
+  .apf-ctl{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,220px),1fr));gap:14px 20px;align-items:start}
   .apf-field{display:flex;flex-direction:column;gap:4px;min-width:0;flex:1 1 170px}
   .apf-field label{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--mut,#667085)}
   .apf-field input,.apf-field select{font:inherit;font-size:.84rem;color:var(--tx,#1a2230);background:var(--card,#fff);border:1px solid var(--line,#d7dbe3);border-radius:8px;padding:7px 10px;width:100%;max-width:100%}
