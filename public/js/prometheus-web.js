@@ -1056,21 +1056,6 @@ export function renderPrometheus(main) {
   // ============================================================================
   // HELPER FUNCTIONS
   // ============================================================================
-  function getSectorNodes(sector) {
-    var result = [];
-    for (var i = 0; i < INFRA_NODES.length; i++) {
-      if (INFRA_NODES[i].sector === sector) result.push(INFRA_NODES[i]);
-    }
-    return result;
-  }
-
-  function getNodeById(id) {
-    for (var i = 0; i < INFRA_NODES.length; i++) {
-      if (INFRA_NODES[i].id === id) return INFRA_NODES[i];
-    }
-    return null;
-  }
-
   function getSectorHealth(sector) {
     var nodes = getSectorNodes(sector);
     var online = 0;
@@ -1087,25 +1072,11 @@ export function renderPrometheus(main) {
     return 'red';
   }
 
-  function getDefconColor(level) {
-    if (level === 1) return '#ffffff';
-    if (level === 2) return '#ff0040';
-    if (level === 3) return '#ffaa00';
-    if (level === 4) return '#00ff88';
-    return '#00aaff';
-  }
-
   function getClassBadge(classification) {
     if (classification === 'TS/SCI' || classification === 'TOP SECRET') return 'pm-badge-ts';
     if (classification === 'SECRET') return 'pm-badge-secret';
     if (classification === 'CONFIDENTIAL') return 'pm-badge-conf';
     return 'pm-badge-unclass';
-  }
-
-  function formatNumber(n) {
-    if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
-    if (n >= 1000) return (n / 1000).toFixed(0) + 'K';
-    return String(n);
   }
 
   function fmtTime(ts) {
@@ -1117,14 +1088,6 @@ export function renderPrometheus(main) {
 
   function randInt(a, b) {
     return Math.floor(Math.random() * (b - a + 1)) + a;
-  }
-
-  function getDependents(nodeId) {
-    var result = [];
-    for (var i = 0; i < INFRA_NODES.length; i++) {
-      if (INFRA_NODES[i].deps.indexOf(nodeId) !== -1) result.push(INFRA_NODES[i]);
-    }
-    return result;
   }
 
   function getCascade(nodeId, attackType) {
@@ -1150,37 +1113,6 @@ export function renderPrometheus(main) {
     return {affected: affected, timeline: timeline};
   }
 
-  function generateAlerts() {
-    var types = ['CRITICAL','HIGH','MEDIUM','LOW','INFO'];
-    var msgs = [
-      'Anomalous traffic detected on node ',
-      'Failed authentication attempt on ',
-      'Port scan detected targeting ',
-      'Malware signature matched on ',
-      'Configuration change detected on ',
-      'Unusual data transfer from ',
-      'IDS alert triggered on ',
-      'Certificate expiry warning for ',
-      'Patch missing on ',
-      'Unauthorized access attempt to ',
-      'DDoS mitigation activated for ',
-      'Privilege escalation detected on ',
-      'Lateral movement suspected from ',
-      'C2 beacon detected from ',
-      'Data exfiltration alert on '
-    ];
-    var node = INFRA_NODES[randInt(0, INFRA_NODES.length - 1)];
-    var severity = types[randInt(0, 4)];
-    var msg = msgs[randInt(0, msgs.length - 1)] + node.name;
-    var now = new Date();
-    return {
-      time: (now.getUTCHours() < 10 ? '0' : '') + now.getUTCHours() + ':' + (now.getUTCMinutes() < 10 ? '0' : '') + now.getUTCMinutes() + ':' + (now.getUTCSeconds() < 10 ? '0' : '') + now.getUTCSeconds() + 'Z',
-      severity: severity,
-      message: msg,
-      node: node.id
-    };
-  }
-
   var SECTORS = [
     {id:'POWER_GRID',name:'Power Grid',icon:'&#9889;'},
     {id:'WATER',name:'Water',icon:'[W]'},
@@ -1191,191 +1123,6 @@ export function renderPrometheus(main) {
     {id:'GOVERNMENT',name:'Government',icon:'[G]'},
     {id:'ENERGY',name:'Energy',icon:'&#9981;'}
   ];
-
-  // ============================================================================
-  // WORLD MAP DRAWING (Canvas)
-  // ============================================================================
-  function drawWorldMap(canvas) {
-    if (!canvas) return;
-    var ctx = canvas.getContext('2d');
-    var w = canvas.width = canvas.offsetWidth * 2;
-    var h = canvas.height = canvas.offsetHeight * 2;
-    ctx.scale(2, 2);
-    var dw = canvas.offsetWidth;
-    var dh = canvas.offsetHeight;
-
-    ctx.fillStyle = '#080c14';
-    ctx.fillRect(0, 0, dw, dh);
-
-    ctx.strokeStyle = '#0d2a1a';
-    ctx.lineWidth = 0.5;
-    for (var gx = 0; gx < dw; gx += 30) {
-      ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, dh); ctx.stroke();
-    }
-    for (var gy = 0; gy < dh; gy += 30) {
-      ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(dw, gy); ctx.stroke();
-    }
-
-    var continents = [
-      {x: 0.15, y: 0.28, w: 0.08, h: 0.22, name: 'NA'},
-      {x: 0.20, y: 0.55, w: 0.06, h: 0.25, name: 'SA'},
-      {x: 0.42, y: 0.18, w: 0.10, h: 0.28, name: 'EU'},
-      {x: 0.45, y: 0.48, w: 0.12, h: 0.35, name: 'AF'},
-      {x: 0.55, y: 0.20, w: 0.20, h: 0.30, name: 'AS'},
-      {x: 0.72, y: 0.60, w: 0.08, h: 0.15, name: 'OC'}
-    ];
-
-    ctx.fillStyle = '#0d2a1a';
-    for (var c = 0; c < continents.length; c++) {
-      var cont = continents[c];
-      ctx.beginPath();
-      ctx.ellipse(cont.x * dw, cont.y * dh + (cont.h * dh) / 2, (cont.w * dw) / 2, (cont.h * dh) / 2, 0, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    var threats = [
-      {x: 0.14, y: 0.32, label: 'US', level: 3},
-      {x: 0.44, y: 0.25, label: 'UK', level: 2},
-      {x: 0.46, y: 0.22, label: 'DE', level: 2},
-      {x: 0.52, y: 0.22, label: 'RU', level: 5},
-      {x: 0.55, y: 0.28, label: 'UA', level: 5},
-      {x: 0.67, y: 0.35, label: 'CN', level: 4},
-      {x: 0.55, y: 0.35, label: 'IR', level: 4},
-      {x: 0.70, y: 0.30, label: 'KP', level: 3},
-      {x: 0.72, y: 0.32, label: 'JP', level: 1},
-      {x: 0.73, y: 0.35, label: 'KR', level: 2},
-      {x: 0.68, y: 0.40, label: 'TW', level: 4},
-      {x: 0.50, y: 0.38, label: 'SA', level: 2},
-      {x: 0.48, y: 0.32, label: 'IL', level: 3},
-      {x: 0.48, y: 0.50, label: 'NG', level: 1},
-      {x: 0.20, y: 0.55, label: 'BR', level: 1},
-      {x: 0.75, y: 0.62, label: 'AU', level: 1},
-      {x: 0.62, y: 0.40, label: 'IN', level: 2},
-      {x: 0.43, y: 0.28, label: 'FR', level: 2},
-      {x: 0.54, y: 0.25, label: 'PL', level: 2},
-      {x: 0.59, y: 0.20, label: 'FI', level: 1}
-    ];
-
-    var time = Date.now() / 1000;
-    for (var t = 0; t < threats.length; t++) {
-      var th = threats[t];
-      var tx = th.x * dw;
-      var ty = th.y * dh;
-      var colors = ['#00ff88','#00aaff','#ffaa00','#ff6600','#ff0040'];
-      var col = colors[Math.min(th.level - 1, 4)];
-      var blink = Math.sin(time * (1 + th.level * 0.5) + t) * 0.5 + 0.5;
-
-      ctx.beginPath();
-      ctx.arc(tx, ty, 3 + th.level, 0, Math.PI * 2);
-      ctx.fillStyle = col;
-      ctx.globalAlpha = 0.3 + blink * 0.7;
-      ctx.fill();
-      ctx.globalAlpha = 1;
-
-      ctx.beginPath();
-      ctx.arc(tx, ty, 2, 0, Math.PI * 2);
-      ctx.fillStyle = col;
-      ctx.fill();
-
-      ctx.font = '8px Courier New';
-      ctx.fillStyle = '#667788';
-      ctx.fillText(th.label, tx + 6, ty + 3);
-    }
-
-    if (state.defcon <= 2) {
-      for (var a = 0; a < 5; a++) {
-        var ax = threats[randInt(0, threats.length - 1)];
-        var bx = threats[randInt(0, threats.length - 1)];
-        if (ax !== bx) {
-          ctx.beginPath();
-          ctx.moveTo(ax.x * dw, ax.y * dh);
-          ctx.lineTo(bx.x * dw, bx.y * dh);
-          ctx.strokeStyle = 'rgba(255,0,64,0.15)';
-          ctx.lineWidth = 1;
-          ctx.stroke();
-        }
-      }
-    }
-  }
-
-  // ============================================================================
-  // DEFCON GAUGE DRAWING (Canvas)
-  // ============================================================================
-  function drawDefconGauge(canvas) {
-    if (!canvas) return;
-    var ctx = canvas.getContext('2d');
-    var s = 180;
-    canvas.width = s * 2;
-    canvas.height = s * 2;
-    ctx.scale(2, 2);
-    var cx = s / 2, cy = s / 2, r = 70;
-
-    ctx.clearRect(0, 0, s, s);
-
-    ctx.beginPath();
-    ctx.arc(cx, cy, r, 0.75 * Math.PI, 2.25 * Math.PI);
-    ctx.strokeStyle = '#1a2332';
-    ctx.lineWidth = 12;
-    ctx.stroke();
-
-    var segments = [
-      {start: 0.75, end: 1.05, color: '#00aaff'},
-      {start: 1.05, end: 1.35, color: '#00ff88'},
-      {start: 1.35, end: 1.65, color: '#ffaa00'},
-      {start: 1.65, end: 1.95, color: '#ff6600'},
-      {start: 1.95, end: 2.25, color: '#ff0040'}
-    ];
-
-    var activeIdx = 5 - state.defcon;
-    for (var sg = 0; sg <= activeIdx; sg++) {
-      ctx.beginPath();
-      ctx.arc(cx, cy, r, segments[sg].start * Math.PI, segments[sg].end * Math.PI);
-      ctx.strokeStyle = segments[sg].color;
-      ctx.lineWidth = 12;
-      ctx.globalAlpha = sg === activeIdx ? 1 : 0.3;
-      ctx.stroke();
-      ctx.globalAlpha = 1;
-    }
-
-    var needleAngle = (0.75 + (5 - state.defcon) * 0.3) * Math.PI;
-    var nx = cx + Math.cos(needleAngle) * (r - 20);
-    var ny = cy + Math.sin(needleAngle) * (r - 20);
-    ctx.beginPath();
-    ctx.moveTo(cx, cy);
-    ctx.lineTo(nx, ny);
-    ctx.strokeStyle = getDefconColor(state.defcon);
-    ctx.lineWidth = 2;
-    ctx.stroke();
-
-    ctx.beginPath();
-    ctx.arc(cx, cy, 4, 0, Math.PI * 2);
-    ctx.fillStyle = getDefconColor(state.defcon);
-    ctx.fill();
-  }
-
-  // ============================================================================
-  // SPARKLINE DRAWING
-  // ============================================================================
-  function drawSparkline(canvas, data, color) {
-    if (!canvas) return;
-    var ctx = canvas.getContext('2d');
-    canvas.width = 160;
-    canvas.height = 48;
-    ctx.clearRect(0, 0, 160, 48);
-    var max = Math.max.apply(null, data);
-    var min = Math.min.apply(null, data);
-    var range = max - min || 1;
-    ctx.beginPath();
-    for (var i = 0; i < data.length; i++) {
-      var x = (i / (data.length - 1)) * 156 + 2;
-      var y = 44 - ((data[i] - min) / range) * 40;
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    }
-    ctx.strokeStyle = color || '#00ff88';
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-  }
 
   // ============================================================================
   // TAB 1: COMMAND CENTER
@@ -1433,13 +1180,6 @@ export function renderPrometheus(main) {
       id += chars.charAt(Math.floor(Math.random() * chars.length));
     }
     return id;
-  }
-
-  function getNodeById(id) {
-    for (var i = 0; i < INFRA_NODES.length; i++) {
-      if (INFRA_NODES[i].id === id) return INFRA_NODES[i];
-    }
-    return null;
   }
 
   function getNodesBySector(sector) {
@@ -1766,41 +1506,6 @@ export function renderPrometheus(main) {
     ctx.textAlign = 'center';
     ctx.fillText(total, cx, cy + 5);
     ctx.textAlign = 'left';
-  }
-
-  function drawSparkline(canvasId, values, color) {
-    var canvas = main.querySelector('#' + canvasId);
-    if (!canvas) return;
-    var ctx = canvas.getContext('2d');
-    var w = canvas.width;
-    var h = canvas.height;
-    ctx.clearRect(0, 0, w, h);
-    if (!values || values.length < 2) return;
-    var maxVal = Math.max.apply(null, values);
-    var minVal = Math.min.apply(null, values);
-    var range = maxVal - minVal || 1;
-    ctx.strokeStyle = color || '#00ff41';
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    for (var i = 0; i < values.length; i++) {
-      var x = (i / (values.length - 1)) * w;
-      var y = h - ((values[i] - minVal) / range) * (h - 4) - 2;
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    }
-    ctx.stroke();
-    // Fill under the line
-    ctx.lineTo(w, h);
-    ctx.lineTo(0, h);
-    ctx.closePath();
-    var grad = ctx.createLinearGradient(0, 0, 0, h);
-    var r = parseInt((color || '#00ff41').slice(1, 3), 16);
-    var g = parseInt((color || '#00ff41').slice(3, 5), 16);
-    var b = parseInt((color || '#00ff41').slice(5, 7), 16);
-    grad.addColorStop(0, 'rgba(' + r + ',' + g + ',' + b + ',0.2)');
-    grad.addColorStop(1, 'rgba(' + r + ',' + g + ',' + b + ',0.02)');
-    ctx.fillStyle = grad;
-    ctx.fill();
   }
 
   function drawBarChart(canvasId, labels, values, colors) {
@@ -2787,7 +2492,7 @@ export function renderPrometheus(main) {
     var result = [];
     var ni;
     for (ni = 0; ni < INFRA_NODES.length; ni++) {
-      if (INFRA_NODES[ni].dependencies && INFRA_NODES[ni].dependencies.indexOf(nodeId) !== -1) {
+      if (INFRA_NODES[ni].deps && INFRA_NODES[ni].deps.indexOf(nodeId) !== -1) {
         result.push(INFRA_NODES[ni]);
       }
     }
