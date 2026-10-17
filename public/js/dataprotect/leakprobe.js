@@ -133,7 +133,7 @@ export function renderLeakprobe(main) {
       </div>
       <div class="lp-row">
         <label class="lp-lab" for="lpEndpoints" data-explain="lp.endpoints">Backend endpoints (optional, one per line)</label>
-        <textarea id="lpEndpoints" placeholder="https://api.example.com/chat" spellcheck="false"></textarea>
+        <textarea id="lpEndpoints" placeholder="https://" spellcheck="false"></textarea>
         <p class="lp-help">GET-probed for echoed secrets, verbose errors and CORS exposure. When you scan this site, its AI backend is included automatically.</p>
       </div>
       <div class="lp-row">

@@ -149,7 +149,7 @@ export function renderPosture(main) {
     <p class="ps-sub">Enter a domain to run live transport, header, email-authentication, certificate and disclosure checks, rolled into one executive posture grade with prioritised fixes.</p>
     <div class="ps-card">
       <div class="ps-form">
-        <input id="psIn" type="text" placeholder="example.com" autocomplete="off" spellcheck="false" />
+        <input id="psIn" type="text" placeholder="Your domain" autocomplete="off" spellcheck="false" />
         <button class="ps-btn" id="psRun">Run scorecard</button>
       </div>
       <p class="ps-hint">Checks run live against the public internet through the Darknode proxy and public DNS. Only publicly observable signals are read; no intrusive scanning.</p>
