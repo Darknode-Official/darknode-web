@@ -276,6 +276,7 @@ const SIDE_DESC = {
   cloudtrail: "Hunt AWS CloudTrail, Azure Activity, GCP Audit and Microsoft 365 audit logs for the API calls attackers make: logging disabled, keys created, policies widened, mailboxes forwarded.",
   vulnimport: "Import Nessus, Qualys, OpenVAS, Rapid7, Trivy, Grype, Snyk and Defender scans; dedupe, enrich with KEV and EPSS, prioritise and track remediation SLAs across imports.",
   fleetcomply: "Check Intune, Jamf, CrowdStrike, Defender and workstation audit exports for missing encryption, stale EDR, end-of-life operating systems, patch age and local admins.",
+  k8saudit: "Audit a Kubernetes cluster dump for RBAC, pod security and network isolation gaps against the CIS Kubernetes Benchmark.",
 };
 const GROUP_DESC = {
   "Mission Control": "Flagship, real-time operations tools — the big dashboards.",
@@ -2098,6 +2099,7 @@ function renderApp(user) {
     else if (sec === "cloudtrail") { import("/js/ops/cloudtrail.js?v=20261016h").then(m => live() && m.renderCloudTrail(main)); }
     else if (sec === "vulnimport") { import("/js/exposure/vulnimport.js?v=20261016i").then(m => live() && m.renderVulnImport(main)); }
     else if (sec === "fleetcomply") { import("/js/exposure/fleetcomply.js?v=20261016j").then(m => live() && m.renderFleetComply(main)); }
+    else if (sec === "k8saudit") { import("/js/appsec/k8saudit.js?v=20261016k").then(m => live() && m.renderK8sAudit(main)); }
     else if (sec === "setup") renderSetup(main, more);
     else if (sec === "settings") renderSettingsPage(main, user, isOwner, more);
     else if (sec === "admin") { import("/js/admin.js?v=20261015f").then(m => live() && m.renderAdmin(main, user)); }
