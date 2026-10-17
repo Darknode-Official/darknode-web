@@ -15,6 +15,8 @@
 //   renderStrongroom(main) -> void
 
 import { analyze, selfTest } from "/js/strongroom/engine.js?v=20261017c";
+import { attachSinkButton } from "./core/sink.js";
+import { fusionFindings } from "/js/strongroom/strongroom-sink.js";
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const toast = (m) => { try { (window.dnToast || window.showToast || (() => {}))(m); } catch (_) {} };
@@ -240,6 +242,7 @@ function renderResults(host, res, sample) {
   const chips = Object.keys(SEV_META).filter((s) => summary.counts[s]).map((s) =>
     `<span class="sr-chip" style="background:${SEV_META[s].c}">${SEV_META[s].label}: ${summary.counts[s]}</span>`).join("");
   if (chips) html += `<div class="sr-sevbar">${chips}</div>`;
+  if (summary.fusionChains) html += `<div class="sr-row" id="srSink" style="margin:-6px 0 14px"></div>`;
 
   if (summary.dateRange) html += `<div class="sr-file" style="margin:-6px 0 12px">Date range: ${esc(summary.dateRange[0])} to ${esc(summary.dateRange[1])}</div>`;
 
@@ -270,4 +273,6 @@ function renderResults(host, res, sample) {
     </div>`;
   }
   host.innerHTML = html;
+  const sinkRow = host.querySelector("#srSink");
+  if (sinkRow) attachSinkButton(sinkRow, () => ({ findings: fusionFindings(res), sample }), "strongroom", { dataset: "payments + access events" });
 }

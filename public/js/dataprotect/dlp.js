@@ -8,6 +8,8 @@
 //   renderDlp(main) -> void
 
 import { scan, redact, DETECTORS } from "/js/dataprotect/dlp-engine.js?v=20261014d";
+import { attachSinkButton } from "../core/sink.js";
+import { dlpFindings } from "/js/dataprotect/dp-sink.js";
 
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -158,13 +160,13 @@ export function renderDlp(main) {
 
   const $ = (id) => main.querySelector(id);
   const ta = $("#dlpIn"), out = $("#dlpOut"), meta = $("#dlpMeta");
-  let last = null;
+  let last = null, sampleLoaded = false;
 
   const setMeta = () => {
     const n = ta.value.length;
     meta.textContent = n ? `${n.toLocaleString()} characters` : "";
   };
-  ta.addEventListener("input", setMeta);
+  ta.addEventListener("input", () => { if (!ta.value.trim()) sampleLoaded = false; setMeta(); });
 
   const collectOpts = () => {
     const ids = Array.from(main.querySelectorAll(".dlp-det:checked")).map((c) => c.value);
@@ -179,12 +181,12 @@ export function renderDlp(main) {
     const text = ta.value;
     if (!text.trim()) { out.innerHTML = ""; toast("Paste or drop something to scan first."); return; }
     last = scan(text, collectOpts());
-    renderReport(out, text, last, run);
+    renderReport(out, text, last, run, sampleLoaded);
   };
 
   $("#dlpRun").addEventListener("click", run);
-  $("#dlpSample").addEventListener("click", () => { ta.value = SAMPLE; setMeta(); run(); });
-  $("#dlpClear").addEventListener("click", () => { ta.value = ""; out.innerHTML = ""; setMeta(); ta.focus(); });
+  $("#dlpSample").addEventListener("click", () => { ta.value = SAMPLE; sampleLoaded = true; setMeta(); run(); });
+  $("#dlpClear").addEventListener("click", () => { ta.value = ""; sampleLoaded = false; out.innerHTML = ""; setMeta(); ta.focus(); });
 
   const rescanIfReady = () => { if (last && ta.value.trim()) run(); };
   $("#dlpSelAll").addEventListener("click", () => { main.querySelectorAll(".dlp-det").forEach((c) => (c.checked = true)); rescanIfReady(); });
@@ -223,7 +225,7 @@ function readFiles(files, ta, setMeta, run) {
   }
 }
 
-function renderReport(out, text, res, rerun) {
+function renderReport(out, text, res, rerun, sample) {
   const g = GRADE[res.grade] || GRADE.clean;
   if (res.counts.total === 0) {
     out.innerHTML = `<div class="dlp-card"><div class="dlp-clean">No secrets or personal data detected across ${res.bytes.toLocaleString()} characters.</div>
@@ -301,6 +303,7 @@ function renderReport(out, text, res, rerun) {
     };
     download("dlp-report.json", JSON.stringify(report, null, 2), "application/json");
   });
+  attachSinkButton(out.querySelector("#dlpCsv").parentElement, () => ({ findings: dlpFindings(res, text), sample: !!sample }), "dlp", { dataset: "dlp scan" });
   out.querySelector("#dlpCsv").addEventListener("click", () => {
     const head = ["severity", "type", "label", "kind", "line", "col", "detail", "masked"];
     const cell = (v) => { const s = String(v == null ? "" : v); return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
