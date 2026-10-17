@@ -36,26 +36,6 @@ export const HELP = {
     when: "You received a file or response with a Content-Type and want to know what extension to save it with.",
     example: { mime: "image/jpeg" },
   },
-  "wb-ua-parser": {
-    what: "Paste a User-Agent string (the text a browser sends to identify itself) and get a best guess of the browser, operating system, device type and whether it looks like a bot.",
-    when: "You are reading server logs or analytics and want to know what kind of visitor a request came from. It is a simple guess, not a full database.",
-    example: { ua: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" },
-  },
-  "wb-qs-parse": {
-    what: "Paste a query string (the part of a web address after the ?, like a=1&b=2) and get each parameter as a readable name = value line, with codes like %20 decoded.",
-    when: "You are debugging a long link full of parameters and want to see clearly what each one says.",
-    example: { qs: "?q=blue%20shoes&page=2&sort=price" },
-  },
-  "wb-qs-build": {
-    what: "Write one name=value pair per line and get a single encoded query string (the part of a web address after the ?), with spaces and special characters made safe.",
-    when: "You are building a link or API call with several parameters and do not want to encode them by hand.",
-    example: { lines: "q=blue shoes\npage=2\nsort=price & rating" },
-  },
-  "wb-url-parse": {
-    what: "Paste a web address and see it split into its parts: protocol, host, port, path, query, hash and origin.",
-    when: "You are debugging a link or redirect and want to see exactly which part is which.",
-    example: { url: "https://shop.example.com:8080/products/shoes?color=blue#reviews" },
-  },
   "wb-url-build": {
     what: "Fill in the parts of a web address (protocol, host, optional port, path, query and hash) and get the full, correctly formed URL.",
     when: "You are putting together a link or API endpoint from separate pieces and want to avoid missing slashes or question marks.",
@@ -101,20 +81,10 @@ export const HELP = {
     when: "You are writing server code and want a correct Set-Cookie line with sensible security options.",
     example: { name: "session", value: "abc123", path: "/", domain: "example.com", maxage: "3600", samesite: "Lax", secure: true, httponly: true },
   },
-  "wb-csp-build": {
-    what: "Write one CSP rule per line (for example default-src 'self') and get a single Content-Security-Policy header. CSP is a header that tells browsers which sources a page may load scripts, images and other content from.",
-    when: "You are adding a Content-Security-Policy to a website and want to turn a readable list of rules into the header format. It does not check that the rules are valid.",
-    example: { lines: "default-src 'self'\nimg-src 'self' data:\nscript-src 'self' https://cdn.example.com" },
-  },
   "wb-csp-parse": {
     what: "Paste a Content-Security-Policy header (the rule list telling browsers where a page may load content from) and get each rule on its own line with its allowed sources.",
     when: "You are reviewing a site's security headers and want a CSP that is hard to read on one line broken out clearly.",
     example: { csp: "default-src 'self'; img-src * data:; script-src 'self' https://cdn.example.com" },
-  },
-  "wb-cors-preflight": {
-    what: "Enter the site making a request, the method and any extra headers, and see what the browser sends in a CORS preflight and which headers your server must send back. CORS is the browser rule that controls whether one website can call another site's API.",
-    when: "Your web app gets a CORS error when calling an API and you want to know what the server needs to reply with.",
-    example: { origin: "https://app.example.com", method: "PUT", headers: "Content-Type, Authorization", creds: true },
   },
   "wb-cachecontrol-build": {
     what: "Choose caching options (who may cache, how many seconds, no-cache, no-store and others) and get the matching Cache-Control header, which tells browsers and servers how long they may keep a copy of a response.",
@@ -130,16 +100,6 @@ export const HELP = {
     what: "Choose whether a file should open in the browser (inline) or download (attachment), add an optional file name, and get the Content-Disposition header that tells the browser what to do.",
     when: "You are writing server code that serves files and want a download to save with the right name.",
     example: { type: "attachment", filename: "report-2026.pdf" },
-  },
-  "wb-basic-auth-build": {
-    what: "Enter a username and password and get an Authorization: Basic header, where the two are joined with a colon and encoded in Base64 (a simple text encoding, not encryption).",
-    when: "You are testing an API or tool that uses Basic authentication and need the header value. Anyone can decode it, so only send it over HTTPS.",
-    example: { user: "demo-user", pass: "example-pass" },
-  },
-  "wb-basic-auth-decode": {
-    what: "Paste a Basic authentication header or token and get back the username and password it contains.",
-    when: "You are debugging a request and want to check which credentials a Basic auth header is sending.",
-    example: { token: "Basic ZGVtby11c2VyOmV4YW1wbGUtcGFzcw==" },
   },
   "wb-bearer-build": {
     what: "Paste an access token and get it formatted as an Authorization: Bearer header, the usual way APIs expect tokens to be sent.",
@@ -186,11 +146,6 @@ export const HELP = {
     when: "Your site is fully on HTTPS and you want browsers to refuse insecure HTTP connections. Only turn on preload if you are sure every subdomain supports HTTPS.",
     example: { maxage: "31536000", subdomains: true, preload: false },
   },
-  "wb-hsts-parse": {
-    what: "Paste a Strict-Transport-Security (HSTS) header, which forces browsers to use HTTPS, and get its settings explained, including the time converted to days.",
-    when: "You are checking a site's security headers and want to know how long its HTTPS-only rule lasts.",
-    example: { h: "max-age=31536000; includeSubDomains; preload" },
-  },
   "wb-etag-gen": {
     what: "Paste some content and get an ETag header, a short fingerprint of the content that lets browsers check whether a cached copy has changed. It can be marked weak (W/) if near-identical versions may share it.",
     when: "You are adding caching to a simple server or API and need an ETag value for a response. The fingerprint is a quick hash, not a security feature.",
@@ -225,11 +180,6 @@ export const HELP = {
     what: "Paste an X-Forwarded-For header, the list of IP addresses a request passed through, and see which one is the original visitor and which are the proxies in between.",
     when: "You are reading logs behind a load balancer or proxy and want to find the real visitor's IP. The header can be faked by the client, so do not trust it blindly.",
     example: { h: "203.0.113.1, 198.51.100.7, 192.0.2.44" },
-  },
-  "wb-punycode-host": {
-    what: "Type a domain name that contains non-English letters (like munchen with an umlaut) and get its punycode form, the plain-ASCII version starting with xn-- that the internet actually uses.",
-    when: "You are setting up DNS or checking a suspicious link and need the ASCII form of an international domain.",
-    example: { host: "münchen.example" },
   },
   "wb-favicon-link": {
     what: "Enter the path to your site icon and optional size, and get the HTML <link rel=\"icon\"> tag to put in your page head, with the file type filled in when it recognizes the extension.",
@@ -276,11 +226,6 @@ export const HELP = {
     when: "You are writing headers like Expires or Last-Modified by hand and need the exact date format.",
     example: { input: "2026-01-01T12:00:00Z" },
   },
-  "wb-url-encode": {
-    what: "Encodes text so it is safe to put inside a web address (spaces become %20, & becomes %26, and so on), or decodes such text back to normal.",
-    when: "You are putting a search term or value with spaces or symbols into a link, or reading a link full of % codes.",
-    example: { text: "blue shoes & socks", mode: "enc" },
-  },
   "wb-slug": {
     what: "Turns a title into a slug, the short lowercase part of a web address with hyphens between words and accents and punctuation removed.",
     when: "You are publishing a blog post or product page and need a clean address for it.",
@@ -290,11 +235,6 @@ export const HELP = {
     what: "Scans a block of text and lists every web link that starts with http:// or https://, one per line, with duplicates removed.",
     when: "You want to collect all the links mentioned in an email, document or chat log.",
     example: { text: "Visit https://example.com and http://example.org/docs, or https://example.com again." },
-  },
-  "wb-extract-params": {
-    what: "Paste a full web address and get every query parameter (the name=value pairs after the ?) as a readable list, with codes like %20 decoded.",
-    when: "You are debugging a link or tracking URL and want to see all its parameters clearly.",
-    example: { url: "https://example.com/search?q=blue%20shoes&page=2&sort=price" },
   },
   "wb-valid-url": {
     what: "Checks whether some text is a complete, valid web address (including the protocol such as https://) and tells you the protocol if it is.",
@@ -310,21 +250,6 @@ export const HELP = {
     what: "Checks whether some text is a valid IPv4 address, meaning four numbers from 0 to 255 separated by dots, like 192.0.2.10.",
     when: "You are checking an IP address in a form, config file or firewall rule before using it.",
     example: { ip: "192.0.2.10" },
-  },
-  "wb-port-service": {
-    what: "Type a port number (the number that tells which program on a computer a network connection is for) and get the service that usually uses it, such as 443 for HTTPS.",
-    when: "You see an open port in a scan or firewall log and want to know what it is normally used for. Only well-known ports are listed.",
-    example: { port: "443" },
-  },
-  "wb-status-emoji": {
-    what: "Type an HTTP status code and get a one-line summary with a text label for its group (such as [CLIENT ERROR]), its name and its meaning.",
-    when: "You want a compact, readable description of a status code for a log message, report or chat.",
-    example: { code: "503" },
-  },
-  "wb-http-request-build": {
-    what: "Choose a method and fill in the path, host, extra headers and an optional body, and get the raw text of an HTTP/1.1 request exactly as it is sent over the network, including a correct Content-Length.",
-    when: "You are testing a server with a raw-socket tool such as netcat, or learning what a web request really looks like.",
-    example: { method: "POST", path: "/api/v1/items", host: "api.example.com", headers: "Content-Type: application/json\nAccept: application/json", body: "{\"name\":\"Example item\"}" },
   },
   "wb-parse-headers": {
     what: "Paste a block of raw HTTP headers (one Name: value per line) and get them as a clean name = value list, with the request or status line and any broken lines marked.",

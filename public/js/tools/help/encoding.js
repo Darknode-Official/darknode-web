@@ -17,7 +17,7 @@ export const HELP = {
     example: { text: "hello world" },
   },
   "url-encode": {
-    what: "Converts special characters such as spaces, & and = into %XX codes so text is safe inside a web address, or turns those codes back into normal text. Tick the component option to also encode characters like / ? & (for a single query value).",
+    what: "Converts special characters such as spaces, & and = into %XX codes so text is safe inside a web address, or turns those codes back into normal text. Tick the component option to also encode characters like / ? & (for a single query value), or tick encode every character to percent-encode all of it for filter testing.",
     when: "You are building a link with a search term or parameter that contains spaces or symbols, or you want to read a messy URL full of % codes.",
     example: { text: "name=Jane Doe&city=New York", mode: "Encode", component: true },
   },
@@ -75,11 +75,6 @@ export const HELP = {
     what: "Wraps text in quotes and escapes quotes, backslashes and line breaks so it is a valid JSON string, or turns an escaped JSON string back into plain text.",
     when: "You need to paste multi-line text or text with quotes into a JSON file or API request without breaking it.",
     example: { text: "He said \"hi\"\nand left", mode: "Escape" },
-  },
-  "nato": {
-    what: "Spells out text using the NATO phonetic alphabet (Alfa, Bravo, Charlie...). Digits stay as digits and spaces show as |.",
-    when: "You need to read a code, name or serial number clearly over the phone or radio.",
-    example: { text: "AB12 CD" },
   },
   "leetspeak": {
     what: "Replaces letters with look-alike digits (a to 4, e to 3, o to 0 ...) or turns such digits back into letters.",

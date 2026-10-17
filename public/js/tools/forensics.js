@@ -13,6 +13,18 @@ function hexBytes(s) {
   for (let i = 0; i < u.length; i++) u[i] = parseInt(h.substr(i * 2, 2), 16);
   return u;
 }
+// bytes from pasted input: Text (UTF-8), Hex, Base64, or Auto (hex when it looks like hex, else base64)
+function bytesFrom(s, fmt, H) {
+  s = String(s || "");
+  if (fmt === "Text") return H.bytes(s);
+  const t = s.trim();
+  const b64 = (x) => { let y = x.replace(/-/g, "+").replace(/_/g, "/").replace(/\s+/g, ""); while (y.length % 4) y += "="; return Uint8Array.from(atob(y), (c) => c.charCodeAt(0)); };
+  if (fmt === "Base64") return b64(t);
+  if (fmt === "Hex") return hexBytes(t);
+  const hc = t.replace(/0x/gi, "").replace(/\\x/gi, "").replace(/[\s,;:]/g, "");
+  if (/^[0-9a-fA-F]*$/.test(hc) && hc.length % 2 === 0) return hexBytes(hc);
+  try { return b64(t); } catch (e) { return hexBytes(t); }
+}
 function readLE(u, off, len) { let n = 0; for (let i = len - 1; i >= 0; i--) n = n * 256 + u[off + i]; return n; }
 function readBE(u, off, len) { let n = 0; for (let i = 0; i < len; i++) n = n * 256 + u[off + i]; return n; }
 function asciiOf(u, off, len) { let s = ""; for (let i = 0; i < len && off + i < u.length; i++) { const b = u[off + i]; s += b >= 0x20 && b <= 0x7e ? String.fromCharCode(b) : "."; } return s; }
@@ -99,6 +111,7 @@ const WIN_EVENTS = [
   ["4663", "Security", "An attempt was made to access an object"],
   ["4670", "Security", "Permissions on an object were changed"],
   ["4672", "Security", "Special privileges assigned to new logon"],
+  ["4673", "Security", "A privileged service was called"],
   ["4688", "Security", "A new process has been created"],
   ["4689", "Security", "A process has exited"],
   ["4697", "Security", "A service was installed in the system"],
@@ -128,6 +141,7 @@ const WIN_EVENTS = [
   ["4779", "Security", "A session was disconnected from a window station (RDP)"],
   ["4798", "Security", "A user's local group membership was enumerated"],
   ["4799", "Security", "A security-enabled local group membership was enumerated"],
+  ["4964", "Security", "Special groups have been assigned to a new logon"],
   ["5140", "Security", "A network share object was accessed"],
   ["5145", "Security", "A network share object was checked for access (detailed)"],
   ["5156", "Security", "The Windows Filtering Platform permitted a connection"],
@@ -142,18 +156,6 @@ const WIN_EVENTS = [
   ["400", "PowerShell", "Engine state changed to Available (PowerShell started)"],
   ["4103", "PowerShell-Op", "Module logging: pipeline execution details"],
   ["4104", "PowerShell-Op", "Script block logging: a block of code was executed"],
-];
-const LOGON_TYPES = [
-  ["0", "System", "Used only by the System account"],
-  ["2", "Interactive", "Logon at the console (keyboard)"],
-  ["3", "Network", "Access from the network (SMB shares, IIS)"],
-  ["4", "Batch", "Scheduled task / batch server"],
-  ["5", "Service", "A service started by the SCM"],
-  ["7", "Unlock", "Workstation unlock"],
-  ["8", "NetworkCleartext", "Network logon with cleartext credentials (IIS basic auth)"],
-  ["9", "NewCredentials", "RunAs with /netonly (different network credentials)"],
-  ["10", "RemoteInteractive", "Terminal Services / Remote Desktop (RDP)"],
-  ["11", "CachedInteractive", "Interactive logon using locally cached credentials"],
 ];
 const SYSMON_EVENTS = [
   ["1", "Process creation"],
@@ -250,6 +252,9 @@ const WELL_KNOWN_SIDS = [
   ["S-1-2-0", "Local", "Users who log on locally"],
   ["S-1-3-0", "Creator Owner", "Placeholder for the object's creator"],
   ["S-1-3-1", "Creator Group", "Placeholder for the creator's primary group"],
+  ["S-1-5-2", "Network", "Users logged on over the network"],
+  ["S-1-5-4", "Interactive", "Users logged on interactively"],
+  ["S-1-5-6", "Service", "Accounts logged on as a service"],
   ["S-1-5-7", "Anonymous Logon", "Connections without credentials"],
   ["S-1-5-9", "Enterprise Domain Controllers", ""],
   ["S-1-5-11", "Authenticated Users", "Any authenticated identity"],
@@ -273,9 +278,12 @@ const SID_RIDS = [
   ["514", "Domain Guests", ""],
   ["515", "Domain Computers", ""],
   ["516", "Domain Controllers", ""],
+  ["517", "Cert Publishers", "Can publish certificates to AD"],
   ["518", "Schema Admins", ""],
   ["519", "Enterprise Admins", ""],
   ["520", "Group Policy Creator Owners", ""],
+  ["521", "Read-only Domain Controllers", ""],
+  ["525", "Protected Users", "Enhanced credential protections"],
   ["526", "Key Admins", ""],
   ["527", "Enterprise Key Admins", ""],
 ];
@@ -304,34 +312,6 @@ const SERVICE_START = [
   ["2", "AUTO_START", "Started automatically at boot"],
   ["3", "DEMAND_START", "Started manually (on demand)"],
   ["4", "DISABLED", "Cannot be started"],
-];
-const KERBEROS_ETYPE = [
-  ["1", "des-cbc-crc", "DES, weak/deprecated"],
-  ["2", "des-cbc-md4", "DES, weak/deprecated"],
-  ["3", "des-cbc-md5", "DES, weak/deprecated"],
-  ["16", "des3-cbc-sha1-kd", "Triple DES"],
-  ["17", "aes128-cts-hmac-sha1-96", "AES-128"],
-  ["18", "aes256-cts-hmac-sha1-96", "AES-256 (preferred)"],
-  ["23", "rc4-hmac", "RC4 (NTLM hash as key; Kerberoasting target)"],
-  ["24", "rc4-hmac-exp", "RC4 export"],
-  ["25", "camellia128-cts-cmac", "Camellia-128"],
-  ["26", "camellia256-cts-cmac", "Camellia-256"],
-];
-const ATTACK_TACTICS = [
-  ["TA0043", "Reconnaissance", "Gathering information to plan operations"],
-  ["TA0042", "Resource Development", "Establishing resources to support operations"],
-  ["TA0001", "Initial Access", "Getting into the network"],
-  ["TA0002", "Execution", "Running malicious code"],
-  ["TA0003", "Persistence", "Maintaining a foothold"],
-  ["TA0004", "Privilege Escalation", "Gaining higher-level permissions"],
-  ["TA0005", "Defense Evasion", "Avoiding detection"],
-  ["TA0006", "Credential Access", "Stealing account names and passwords"],
-  ["TA0007", "Discovery", "Learning about the environment"],
-  ["TA0008", "Lateral Movement", "Moving through the environment"],
-  ["TA0009", "Collection", "Gathering data of interest"],
-  ["TA0011", "Command and Control", "Communicating with compromised systems"],
-  ["TA0010", "Exfiltration", "Stealing data"],
-  ["TA0040", "Impact", "Manipulate, interrupt or destroy systems and data"],
 ];
 const EXIF_TAGS = [
   ["0x0100", "ImageWidth"], ["0x0101", "ImageLength (height)"], ["0x0102", "BitsPerSample"],
@@ -425,6 +405,10 @@ const MAGIC = [
   ["4F54544F", 0, "OpenType font (CFF)"],
   ["EDABEEDB", 0, "RPM package"],
   ["213C617263683E", 0, "Unix ar archive / .deb"],
+  ["000001BA", 0, "MPEG program stream"],
+  ["3C3F786D6C", 0, "XML document (<?xml)"],
+  ["3C21444F43", 0, "HTML document (<!DOC)"],
+  ["2321", 0, "Script with shebang (#!)"],
 ];
 
 // =====================================================================
@@ -432,19 +416,6 @@ const MAGIC = [
 // =====================================================================
 export const TOOLS = [
   // --------------------------- TIMESTAMPS ---------------------------
-  { id: "fx-filetime", name: "Windows FILETIME Decoder / Encoder", cat: "forensics", desc: "Convert a Windows/NTFS FILETIME (100-nanosecond intervals since 1601-01-01 UTC) to a readable UTC date, or back. Accepts decimal or 0x-hex.", tags: ["filetime", "ntfs", "windows", "100ns", "1601"],
-    inputs: [{ k: "mode", label: "Mode", type: "select", opts: ["Decode", "Encode"], value: "Decode" }, { k: "val", label: "FILETIME / Date", type: "text", placeholder: "132537600000000000 or 2021-01-01T00:00:00Z" }],
-    run(v) {
-      if (!v.val) return "";
-      if (v.mode === "Encode") {
-        const ms = parseDate(v.val); if (ms == null) return { error: "Enter an ISO date like 2021-01-01T00:00:00Z." };
-        const ft = (BigInt(Math.round(ms)) + BigInt(MS_1601_TO_1970)) * 10000n;
-        return `FILETIME (decimal): ${ft.toString()}\nFILETIME (hex):     0x${ft.toString(16).toUpperCase()}`;
-      }
-      const ft = parseBig(v.val); if (ft == null) return { error: "Enter a number (decimal or 0x-hex)." };
-      const unixMs = Number(ft / 10000n) - MS_1601_TO_1970;
-      return showTime(unixMs, `100ns intervals: ${ft.toString()}`);
-    } },
 
   { id: "fx-chrome-time", name: "Chrome / WebKit Timestamp Decoder", cat: "forensics", desc: "Convert a Chrome/WebKit timestamp (microseconds since 1601-01-01 UTC, used in Chrome History/Cookies) to a readable UTC date, or back.", tags: ["chrome", "webkit", "cookies", "history", "microseconds"],
     inputs: [{ k: "mode", label: "Mode", type: "select", opts: ["Decode", "Encode"], value: "Decode" }, { k: "val", label: "WebKit time / Date", type: "text", placeholder: "13350000000000000 or 2024-01-01T00:00:00Z" }],
@@ -572,10 +543,12 @@ export const TOOLS = [
     } },
 
   // --------------------------- BINARY / FILE FORMAT ---------------------------
-  { id: "fx-magic-bytes", name: "File Signature (Magic Bytes) Identifier", cat: "forensics", desc: "Paste the first bytes of a file as hex and identify the file type from its signature. Includes container checks for RIFF (WEBP/WAVE/AVI) and ISO-BMFF (MP4/MOV).", tags: ["magic", "signature", "file type", "header", "hex"],
-    inputs: [{ k: "hex", label: "First bytes (hex)", type: "textarea", rows: 3, placeholder: "89 50 4E 47 0D 0A 1A 0A" }],
-    run(v) {
-      const h = String(v.hex || "").replace(/0x/gi, "").replace(/[^0-9a-fA-F]/g, "").toUpperCase();
+  { id: "fx-magic-bytes", name: "File Signature (Magic Bytes) Identifier", cat: "forensics", desc: "Paste the first bytes of a file as hex or Base64 and identify the file type from its signature. Includes container checks for RIFF (WEBP/WAVE/AVI) and ISO-BMFF (MP4/MOV).", tags: ["magic", "signature", "file type", "header", "hex"],
+    inputs: [{ k: "hex", label: "First bytes (hex or base64)", type: "textarea", rows: 3, placeholder: "89 50 4E 47 0D 0A 1A 0A" }, { k: "fmt", label: "Input format", type: "select", opts: ["Auto", "Hex", "Base64"], value: "Auto" }],
+    run(v, H) {
+      let raw;
+      try { raw = bytesFrom(v.hex, v.fmt || "Auto", H); } catch (e) { return { error: "Not valid base64." }; }
+      const h = H.toHex(raw).toUpperCase();
       if (!h) return "";
       const hits = [];
       for (const [sig, off, name] of MAGIC) { const at = off * 2; if (h.length >= at + sig.length && h.substr(at, sig.length) === sig) hits.push(`offset ${off}: ${name}  (${sig.match(/../g).join(" ")})`); }
@@ -585,32 +558,22 @@ export const TOOLS = [
       return hits.length ? hits.join("\n") : "No known signature matched these bytes.";
     } },
 
-  { id: "fx-hexdump", name: "Hex Dump Formatter", cat: "forensics", desc: "Produce a canonical hex dump (offset, 16 hex bytes, ASCII column) from either hex input or raw text. Mirrors the layout of xxd / hexdump -C.", tags: ["hexdump", "xxd", "offset", "ascii"],
-    inputs: [{ k: "data", label: "Input", type: "textarea", rows: 5, placeholder: "DFIR" }, { k: "src", label: "Treat input as", type: "select", opts: ["Text", "Hex"], value: "Text" }],
+  { id: "fx-hexdump", name: "Hex Dump Formatter", cat: "forensics", desc: "Produce a canonical hex dump (offset, 8/16/32 hex bytes per row, ASCII column) from text, hex or Base64 input. Mirrors the layout of xxd / hexdump -C.", tags: ["hexdump", "xxd", "offset", "ascii"],
+    inputs: [{ k: "data", label: "Input", type: "textarea", rows: 5, placeholder: "DFIR" }, { k: "src", label: "Treat input as", type: "select", opts: ["Text", "Hex", "Base64", "Auto"], value: "Text" }, { k: "width", label: "Bytes per row", type: "select", opts: ["16", "8", "32"], value: "16" }],
     run(v, H) {
       if (!v.data) return "";
-      const u = v.src === "Hex" ? hexBytes(v.data) : H.bytes(v.data);
+      let u;
+      try { u = bytesFrom(v.data, v.src || "Text", H); } catch (e) { return { error: "Not valid base64." }; }
       if (!u.length) return { error: "No bytes to dump." };
+      const w = [8, 16, 32].includes(Number(v.width)) ? Number(v.width) : 16;
       const lines = [];
-      for (let i = 0; i < u.length; i += 16) {
-        const chunk = u.subarray(i, i + 16);
+      for (let i = 0; i < u.length; i += w) {
+        const chunk = u.subarray(i, i + w);
         let hex = "", asc = "";
-        for (let j = 0; j < 16; j++) { if (j < chunk.length) { hex += chunk[j].toString(16).padStart(2, "0") + " "; asc += chunk[j] >= 0x20 && chunk[j] <= 0x7e ? String.fromCharCode(chunk[j]) : "."; } else hex += "   "; if (j === 7) hex += " "; }
+        for (let j = 0; j < w; j++) { if (j < chunk.length) { hex += chunk[j].toString(16).padStart(2, "0") + " "; asc += chunk[j] >= 0x20 && chunk[j] <= 0x7e ? String.fromCharCode(chunk[j]) : "."; } else hex += "   "; if (j === w / 2 - 1) hex += " "; }
         lines.push(`${i.toString(16).padStart(8, "0")}  ${hex} |${asc}|`);
       }
       return lines.join("\n") + `\n\n${u.length} bytes`;
-    } },
-
-  { id: "fx-strings", name: "Printable Strings Extractor", cat: "forensics", desc: "Extract printable strings from binary (hex) or text input, ASCII and/or UTF-16LE, above a minimum length. Equivalent to the Unix strings command.", tags: ["strings", "ascii", "utf-16", "binary", "ioc"],
-    inputs: [{ k: "data", label: "Input", type: "textarea", rows: 5, placeholder: "68656C6C6F00320077006F0072006C006400" }, { k: "src", label: "Treat input as", type: "select", opts: ["Hex", "Text"], value: "Hex" }, { k: "min", label: "Min length", type: "range", min: 1, max: 20, step: 1, value: 4 }, { k: "mode", label: "Encoding", type: "select", opts: ["ASCII", "UTF-16LE", "Both"], value: "Both" }],
-    run(v, H) {
-      if (!v.data) return "";
-      const u = v.src === "Hex" ? hexBytes(v.data) : H.bytes(v.data);
-      const min = Math.max(1, parseInt(v.min, 10) || 4);
-      const out = [];
-      if (v.mode === "ASCII" || v.mode === "Both") { let cur = ""; for (let i = 0; i < u.length; i++) { const b = u[i]; if (b >= 0x20 && b <= 0x7e) cur += String.fromCharCode(b); else { if (cur.length >= min) out.push(cur); cur = ""; } } if (cur.length >= min) out.push(cur); }
-      if (v.mode === "UTF-16LE" || v.mode === "Both") { let cur = ""; for (let i = 0; i + 1 < u.length; i += 2) { const lo = u[i], hi = u[i + 1]; if (hi === 0 && lo >= 0x20 && lo <= 0x7e) cur += String.fromCharCode(lo); else { if (cur.length >= min) out.push("[u16] " + cur); cur = ""; } } if (cur.length >= min) out.push("[u16] " + cur); }
-      return out.length ? out.join("\n") : "(no strings of that length found)";
     } },
 
   { id: "fx-entropy-profile", name: "Per-Block Shannon Entropy Profile", cat: "forensics", desc: "Compute Shannon entropy (0-8 bits/byte) for each fixed-size block of a hex blob, plus the overall value, to spot encrypted or compressed regions (entropy near 8).", tags: ["entropy", "shannon", "packed", "encrypted", "block"],
@@ -622,22 +585,6 @@ export const TOOLS = [
       const lines = [];
       for (let i = 0; i < u.length; i += bs) { const blk = u.subarray(i, i + bs); const e = ent(blk); const bar = "#".repeat(Math.round(e * 4)); const flag = e >= 7.5 ? "  <- high (encrypted/compressed?)" : e <= 1.0 ? "  <- very low" : ""; lines.push(`0x${i.toString(16).padStart(8, "0")} (${String(blk.length).padStart(4)}B): ${e.toFixed(3)} ${bar}${flag}`); }
       return `Overall entropy: ${ent(u).toFixed(4)} bits/byte over ${u.length} bytes\nBlock size: ${bs} bytes\n\n${lines.join("\n")}`;
-    } },
-
-  { id: "fx-base64-extract", name: "Base64 Blob Extractor & Decoder", cat: "forensics", desc: "Find base64-looking runs in a block of text (such as a script or log) and decode each one, showing a printable preview. Useful for triaging obfuscated payloads.", tags: ["base64", "extract", "decode", "obfuscation", "malware"],
-    inputs: [{ k: "text", label: "Input text", type: "textarea", rows: 6, placeholder: "...powershell -enc SGVsbG8gd29ybGQ= ..." }, { k: "min", label: "Min length", type: "text", value: "16" }],
-    run(v, H) {
-      const text = String(v.text || ""); if (!text) return "";
-      const min = Math.max(4, parseInt(v.min, 10) || 16);
-      const re = new RegExp(`[A-Za-z0-9+/]{${min},}={0,2}`, "g");
-      const seen = new Set(); const out = [];
-      let m;
-      while ((m = re.exec(text)) !== null) {
-        const s = m[0]; if (seen.has(s)) continue; seen.add(s);
-        if (s.length % 4 === 1) continue;
-        try { const dec = H.b64decode(s); const printable = (dec.replace(/[^\x20-\x7e]/g, "").length / Math.max(1, dec.length)); out.push(`[${s.length} chars] ${s.slice(0, 48)}${s.length > 48 ? "..." : ""}\n  -> ${printable > 0.7 ? dec.slice(0, 200) : "(non-text, " + dec.length + " bytes; " + (printable * 100).toFixed(0) + "% printable)"}`); } catch (e) { /* skip */ }
-      }
-      return out.length ? out.join("\n\n") : "No decodable base64 runs found.";
     } },
 
   { id: "fx-png-chunks", name: "PNG Chunk Parser", cat: "forensics", desc: "Parse a PNG file from hex: verifies the 8-byte signature, lists every chunk (type, length, offset) and decodes the IHDR dimensions and color type.", tags: ["png", "chunk", "ihdr", "image", "parser"],
@@ -769,12 +716,17 @@ export const TOOLS = [
     inputs: [{ k: "b64", label: "Base64 payload", type: "textarea", rows: 4, placeholder: "SABlAGwAbABvACAAVwBvAHIAbABkAA==" }],
     run(v, H) {
       let s = String(v.b64 || "").trim(); if (!s) return "";
-      const m = s.match(/(?:-e(?:nc|ncodedcommand)?\s+)?([A-Za-z0-9+/_-]+={0,2})\s*$/i); if (m) s = m[1];
+      // take the value after -e/-enc/-EncodedCommand (it may be wrapped over several lines), else the last base64 run
+      const pre = s.match(/-e(?:nc|ncodedcommand)?\s+([A-Za-z0-9+/_-]+(?:\s+[A-Za-z0-9+/_-]+)*={0,2})\s*$/i);
+      if (pre) s = pre[1];
+      else if (!/^[A-Za-z0-9+/_=\s-]+$/.test(s)) { const m = s.match(/([A-Za-z0-9+/_-]+={0,2})\s*$/); if (m) s = m[1]; }
+      s = s.replace(/\s+/g, "");
       try {
         const norm = s.replace(/-/g, "+").replace(/_/g, "/");
         const raw = atob(norm + "===".slice((norm.length + 3) % 4));
-        // PowerShell -EncodedCommand is base64 of UTF-16LE
-        let out = ""; for (let i = 0; i + 1 < raw.length; i += 2) out += String.fromCharCode(raw.charCodeAt(i) | (raw.charCodeAt(i + 1) << 8));
+        // PowerShell -EncodedCommand is base64 of UTF-16LE; TextDecoder also joins surrogate pairs (non-BMP characters)
+        const u = new Uint8Array(raw.length & ~1); for (let i = 0; i < u.length; i++) u[i] = raw.charCodeAt(i);
+        const out = new TextDecoder("utf-16le").decode(u);
         return out || "(decoded to empty text)";
       } catch (e) { return { error: "Not valid base64." }; }
     } },
@@ -833,6 +785,7 @@ export const TOOLS = [
         ["Run (per-machine)", "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run"],
         ["Run (per-user)", "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run"],
         ["RunOnce", "HKLM or HKCU ...\\CurrentVersion\\RunOnce"],
+        ["Run (32-bit on 64-bit)", "HKLM\\SOFTWARE\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Run"],
         ["Winlogon Shell", "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon (Shell/Userinit)"],
         ["Services", "HKLM\\SYSTEM\\CurrentControlSet\\Services"],
         ["IFEO (debugger hijack)", "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options"],
@@ -863,7 +816,10 @@ export const TOOLS = [
       const vbits = parseInt(hex[16], 16);
       let variant = "reserved";
       if (vbits < 8) variant = "NCS (legacy)"; else if (vbits < 12) variant = "RFC 4122"; else if (vbits < 14) variant = "Microsoft GUID"; else variant = "reserved (future)";
-      const out = [`Version: ${ver}`, `Variant: ${variant}`];
+      if (/^0{32}$/.test(hex)) return "Nil UUID (all zeros): a placeholder meaning 'no value', not a generated ID.";
+      if (/^f{32}$/.test(hex)) return "Max UUID (all ones, RFC 9562): a sentinel value, not a generated ID.";
+      const VNAME = { 1: "time-based", 2: "DCE security", 3: "name-based (MD5)", 4: "random", 5: "name-based (SHA-1)", 6: "reordered time-based", 7: "Unix-time-based", 8: "custom" };
+      const out = [`Version: ${ver}${VNAME[ver] ? " (" + VNAME[ver] + ")" : ""}`, `Variant: ${variant}`];
       if (ver === 1) {
         const timeLow = BigInt("0x" + hex.slice(0, 8)), timeMid = BigInt("0x" + hex.slice(8, 12)), timeHi = BigInt("0x" + hex.slice(13, 16));
         const ts = (timeHi << 48n) | (timeMid << 32n) | timeLow; // 100ns since 1582-10-15
@@ -881,10 +837,6 @@ export const TOOLS = [
   { id: "fx-windows-event-id", name: "Windows Event ID Reference", cat: "forensics", desc: "Look up a Windows Security/System/PowerShell event ID (e.g. 4624, 7045, 4104) or search event descriptions. Curated, accurate entries only.", tags: ["event id", "windows", "security log", "4624", "reference"],
     inputs: [{ k: "q", label: "Filter (ID or keyword)", type: "text", placeholder: "4624" }],
     run(v) { return lookup(WIN_EVENTS, v.q, ["ID", "Log", "Event"]); } },
-
-  { id: "fx-logon-type", name: "Windows Logon Type Reference", cat: "forensics", desc: "Explain a Windows logon type code from events 4624/4625 (e.g. 3 = Network, 10 = RDP). Filter by number or keyword.", tags: ["logon type", "4624", "rdp", "network", "reference"],
-    inputs: [{ k: "q", label: "Filter", type: "text", placeholder: "10" }],
-    run(v) { return lookup(LOGON_TYPES, v.q, ["Type", "Name", "Meaning"]); } },
 
   { id: "fx-sysmon-event-id", name: "Sysmon Event ID Reference", cat: "forensics", desc: "Look up a Sysmon event ID (1-29) and its meaning, e.g. 1 = Process creation, 3 = Network connection, 11 = FileCreate. Filter by number or keyword.", tags: ["sysmon", "event id", "process create", "reference"],
     inputs: [{ k: "q", label: "Filter", type: "text", placeholder: "3" }],
@@ -914,10 +866,6 @@ export const TOOLS = [
       out.push("START TYPES\n" + lookup(SERVICE_START, v.q, ["Code", "Name", "Meaning"]));
       return out.join("\n\n");
     } },
-
-  { id: "fx-kerberos-etype", name: "Kerberos Encryption Type Reference", cat: "forensics", desc: "Look up a Kerberos encryption type (etype) number, e.g. 23 = rc4-hmac, 18 = aes256. Useful when triaging 4768/4769 events and Kerberoasting. Filter by number or name.", tags: ["kerberos", "etype", "rc4", "aes", "kerberoasting"],
-    inputs: [{ k: "q", label: "Filter", type: "text", placeholder: "23" }],
-    run(v) { return lookup(KERBEROS_ETYPE, v.q, ["etype", "Name", "Note"]); } },
 
   // --------------------------- EMAIL ---------------------------
   { id: "fx-email-received", name: "Email Received-Header Hop Parser", cat: "forensics", desc: "Paste the Received: headers from an email and get the relay hops in delivery order (earliest first), each with its from/by hosts and the per-hop delay.", tags: ["email", "received", "hops", "headers", "smtp"],
@@ -1131,38 +1079,6 @@ export const TOOLS = [
     } },
 
   // --------------------------- IOC ---------------------------
-  { id: "fx-ioc-extract", name: "IOC Extractor", cat: "forensics", desc: "Pull indicators of compromise from a block of text: IPv4/IPv6 addresses, domains, URLs, email addresses, MD5/SHA-1/SHA-256 hashes and CVE IDs. Understands defanged input (hxxp, [.]).", tags: ["ioc", "extract", "indicators", "hashes", "domains"],
-    inputs: [{ k: "text", label: "Input text", type: "textarea", rows: 8, placeholder: "contacted hxxp://evil[.]example/a from 198.51.100.7, hash 44d88612fea8a8f36de82e1278abb02f" }, { k: "refang", label: "Refang before extracting", type: "checkbox", value: true }],
-    run(v) {
-      let text = String(v.text || ""); if (!text.trim()) return "";
-      if (v.refang) text = text.replace(/\[\.\]|\(\.\)|\{\.\}/g, ".").replace(/\[:\]/g, ":").replace(/h(?:xx|XX)p(s?):\/\//gi, "http$1://").replace(/\[(dot)\]/gi, ".").replace(/\[(at)\]/gi, "@");
-      const uniq = (arr) => Array.from(new Set(arr));
-      const find = (re) => uniq((text.match(re) || []));
-      const ipv4 = find(/\b(?:(?:25[0-5]|2[0-4]\d|1?\d?\d)\.){3}(?:25[0-5]|2[0-4]\d|1?\d?\d)\b/g);
-      const sha256 = find(/\b[a-fA-F0-9]{64}\b/g), sha1 = find(/\b[a-fA-F0-9]{40}\b/g), md5 = find(/\b[a-fA-F0-9]{32}\b/g);
-      const urls = find(/\bhttps?:\/\/[^\s"'<>]+/gi);
-      const emails = find(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/g);
-      const cves = find(/\bCVE-\d{4}-\d{4,7}\b/gi);
-      const ipv6 = find(/\b(?:[0-9a-fA-F]{1,4}:){2,7}[0-9a-fA-F]{0,4}\b/g).filter((x) => x.includes("::") || x.split(":").length >= 4);
-      const domains = uniq((text.match(/\b(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}\b/g) || []).filter((d) => !emails.some((e) => e.endsWith(d)) && !ipv4.includes(d)));
-      const sect = (name, arr) => arr.length ? `${name} (${arr.length}):\n` + arr.map((x) => "  " + x).join("\n") : "";
-      const parts = [sect("URLs", urls), sect("IPv4", ipv4), sect("IPv6", ipv6), sect("Domains", domains), sect("Emails", emails), sect("MD5", md5), sect("SHA-1", sha1), sect("SHA-256", sha256), sect("CVEs", cves)].filter(Boolean);
-      return parts.length ? parts.join("\n\n") : "No indicators found.";
-    } },
-
-  { id: "fx-defang", name: "IOC Defanger", cat: "forensics", desc: "Defang indicators so they cannot be accidentally clicked or auto-linked: http -> hxxp, dots -> [.], @ -> [at]. Safe to paste into reports and tickets.", tags: ["defang", "ioc", "safe", "report", "neutralize"],
-    inputs: [{ k: "text", label: "Input", type: "textarea", rows: 5, placeholder: "http://evil.example/path and bad@evil.example" }],
-    run(v) {
-      let t = String(v.text || ""); if (!t) return "";
-      return t.replace(/https?:\/\//gi, (m) => m.replace(/^http/i, "hxxp")).replace(/\./g, "[.]").replace(/@/g, "[at]");
-    } },
-
-  { id: "fx-refang", name: "IOC Refanger", cat: "forensics", desc: "Reverse common defanging so indicators become real again for analysis: hxxp -> http, [.] -> dot, [at] -> @. Only run on values you intend to resolve.", tags: ["refang", "ioc", "unfang", "restore"],
-    inputs: [{ k: "text", label: "Input", type: "textarea", rows: 5, placeholder: "hxxp://evil[.]example/path and bad[at]evil[.]example" }],
-    run(v) {
-      let t = String(v.text || ""); if (!t) return "";
-      return t.replace(/\[:\/\/\]|\(:\/\/\)/g, "://").replace(/h(?:xx|XX)p(s?)/gi, "http$1").replace(/\[\.\]|\(\.\)|\{\.\}|\[dot\]|\(dot\)/gi, ".").replace(/\[at\]|\(at\)/gi, "@").replace(/\[:\]/g, ":");
-    } },
 
   { id: "fx-url-decode-recursive", name: "Recursive URL Decoder", cat: "forensics", desc: "Repeatedly percent-decode a URL or parameter until it stops changing, revealing multi-layer (double/triple) encoding often used to evade filters. Shows each pass.", tags: ["url decode", "recursive", "double encode", "evasion", "percent"],
     inputs: [{ k: "text", label: "Encoded input", type: "textarea", rows: 3, placeholder: "%252e%252e%252fetc%252fpasswd" }, { k: "max", label: "Max passes", type: "text", value: "6" }],
@@ -1275,10 +1191,6 @@ export const TOOLS = [
       return `${d} deg ${m}' ${s.toFixed(3)}" ${ref}`;
     } },
 
-  { id: "fx-attack-tactics", name: "MITRE ATT&CK Tactics Reference", cat: "forensics", desc: "Look up the 14 MITRE ATT&CK (Enterprise) tactics by ID (e.g. TA0001) or name, with a short description of each attacker goal. Filter with any text.", tags: ["mitre", "att&ck", "tactics", "ttps", "reference"],
-    inputs: [{ k: "q", label: "Filter", type: "text", placeholder: "persistence" }],
-    run(v) { return lookup(ATTACK_TACTICS, v.q, ["ID", "Tactic", "Goal"]); } },
-
   { id: "fx-stat-mode", name: "Unix File Mode (st_mode) Decoder", cat: "forensics", desc: "Decode a Unix st_mode value (e.g. 100755 or 0o40755 from stat metadata) into the file type, an ls-style permission string, and the setuid/setgid/sticky bits.", tags: ["stat", "st_mode", "permissions", "unix", "inode"],
     inputs: [{ k: "val", label: "Mode (octal)", type: "text", placeholder: "100755" }],
     run(v) {
@@ -1365,36 +1277,4 @@ export const TOOLS = [
       }
     } },
 
-  { id: "fx-yara-rule", name: "YARA Rule Builder", cat: "forensics", desc: "Generate a well-formed YARA detection rule from text and/or hex strings you supply, with a meta block and a configurable match condition (any/all).", tags: ["yara", "detection", "rule", "strings", "builder"],
-    inputs: [
-      { k: "name", label: "Rule name", type: "text", placeholder: "Suspicious_Dropper" },
-      { k: "author", label: "Author", type: "text", placeholder: "analyst" },
-      { k: "textStrings", label: "Text strings (one per line)", type: "textarea", rows: 4, placeholder: "cmd.exe /c\nInvoke-Expression" },
-      { k: "hexStrings", label: "Hex strings (one per line)", type: "textarea", rows: 2, placeholder: "4D 5A 90 00" },
-      { k: "cond", label: "Condition", type: "select", opts: ["any of them", "all of them", "2 of them"], value: "any of them" },
-      { k: "nocase", label: "Text case-insensitive", type: "checkbox", value: true },
-    ],
-    run(v) {
-      const name = (v.name || "rule_name").replace(/[^A-Za-z0-9_]/g, "_").replace(/^(\d)/, "_$1");
-      const strs = [];
-      let i = 0;
-      String(v.textStrings || "").split(/\r?\n/).map((s) => s.trim()).filter(Boolean).forEach((s) => { strs.push(`        $s${i++} = "${s.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"${v.nocase ? " nocase" : ""} ascii wide`); });
-      String(v.hexStrings || "").split(/\r?\n/).map((s) => s.trim()).filter(Boolean).forEach((s) => { const h = s.replace(/[^0-9a-fA-F?]/g, " ").trim().replace(/\s+/g, " "); if (h) strs.push(`        $h${i++} = { ${h} }`); });
-      if (!strs.length) return v.name ? { error: "Add at least one text or hex string." } : "";
-      return [
-        `rule ${name}`,
-        `{`,
-        `    meta:`,
-        `        author = "${(v.author || "unknown").replace(/"/g, "'")}"`,
-        `        date = "${new Date().toISOString().slice(0, 10)}"`,
-        `        description = "Auto-generated YARA rule"`,
-        ``,
-        `    strings:`,
-        strs.join("\n"),
-        ``,
-        `    condition:`,
-        `        ${v.cond}`,
-        `}`,
-      ].join("\n");
-    } },
 ];

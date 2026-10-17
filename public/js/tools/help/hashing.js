@@ -56,11 +56,6 @@ export const HELP = {
     when: "You are checking or debugging zlib or PNG data that stores an Adler-32 value. Detects accidents only, not for security.",
     example: { text: "Wikipedia" },
   },
-  "h-hmac": {
-    what: "Combines a message with a secret key to produce an HMAC, a signature that proves the message came from someone who knows the key and was not changed.",
-    when: "You are testing webhook or API signatures (for example checking an X-Signature header) and need to compute the expected value yourself.",
-    example: { text: "{\"event\":\"order.paid\",\"id\":42}", key: "example-secret", algo: "SHA-256" },
-  },
   "h-ntlm": {
     what: "Computes the NTLM hash of a password, which is how Windows and Active Directory store account passwords.",
     when: "You are on an authorised security test or lab and want to confirm which password produces a given Windows hash. Only use passwords you are allowed to handle.",
@@ -101,11 +96,6 @@ export const HELP = {
     when: "You are reviewing how an app stores passwords and want to see how strong its bcrypt cost setting is.",
     example: { hash: "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy" },
   },
-  "h-luhn": {
-    what: "Checks a number with the Luhn formula (the simple check used on card numbers and IMEIs) and says whether it passes.",
-    when: "You want to spot a typo in a card or ID number, or confirm a test card number is well formed. Passing does not mean the card is real or active.",
-    example: { number: "4111 1111 1111 1111" },
-  },
   "h-cc-brand": {
     what: "Tells you which card network (Visa, Mastercard, Amex and others) a card number belongs to from its first digits, and whether it passes the Luhn check.",
     when: "You are testing a checkout form with public test card numbers and want to confirm brand detection. Use test numbers only, never real cards.",
@@ -141,11 +131,6 @@ export const HELP = {
     when: "You are generating ID numbers that need a Verhoeff check digit, or verifying one someone typed.",
     example: { number: "236", mode: "Compute (payload only)" },
   },
-  "h-password-entropy": {
-    what: "Estimates how hard a password is to guess, in bits, based on its length and the kinds of characters used, plus a rough offline cracking time.",
-    when: "You want a quick sense of password strength. It is a simple estimate and cannot tell that common words or patterns like Password1! are weak.",
-    example: { password: "correct-Horse-battery-9" },
-  },
   "h-hibp-prefix": {
     what: "Hashes a password with SHA-1 and splits the result into a 5-character prefix you can send to Have I Been Pwned and a suffix you keep to match locally. It makes no network requests itself.",
     when: "You want to check whether a password appears in known data breaches without ever sending the password or its full hash anywhere.",
@@ -155,11 +140,6 @@ export const HELP = {
     what: "Compares two hash values (ignoring case and spaces) and tells you whether they match exactly.",
     when: "You downloaded a file and want to check its checksum against the one published on the website without comparing long strings by eye.",
     example: { a: "5EB63BBBE01EEED093CB22BB8F5ACDC3", b: "5eb63bbbe01eeed093cb22bb8f5acdc3" },
-  },
-  "h-uuid-validate": {
-    what: "Checks that a UUID (a standard unique ID like 550e8400-e29b-...) is well formed and tells you its version (for example random or time-based) and variant.",
-    when: "You are debugging an API or database and want to know what kind of ID you are looking at.",
-    example: { uuid: "550e8400-e29b-41d4-a716-446655440000" },
   },
   "h-ulid-decode": {
     what: "Reads a ULID (a sortable 26-character ID) and shows the date and time hidden in its first 10 characters plus its random part.",

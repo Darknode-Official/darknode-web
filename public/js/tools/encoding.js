@@ -65,8 +65,8 @@ export const TOOLS = [
     run(v, H) { return v.text ? H.base58encode(v.text) : ""; } },
 
   { id: "url-encode", name: "URL Encoder / Decoder", cat: "encoding", desc: "Percent-encode or decode a URL or component.", tags: ["percent", "uri"],
-    inputs: [{ k: "text", label: "Text", type: "textarea", placeholder: "a b&c=d" }, { k: "mode", label: "Mode", type: "select", opts: ["Encode", "Decode"], value: "Encode" }, { k: "component", label: "Encode as component (encodeURIComponent)", type: "checkbox", value: true }],
-    run(v) { if (!v.text) return ""; try { if (v.mode === "Encode") return v.component ? encodeURIComponent(v.text) : encodeURI(v.text); return v.component ? decodeURIComponent(v.text) : decodeURI(v.text); } catch (e) { return { error: "Malformed URL sequence." }; } } },
+    inputs: [{ k: "text", label: "Text", type: "textarea", placeholder: "a b&c=d" }, { k: "mode", label: "Mode", type: "select", opts: ["Encode", "Decode"], value: "Encode" }, { k: "component", label: "Encode as component (encodeURIComponent)", type: "checkbox", value: true }, { k: "all", label: "Encode every character (filter testing)", type: "checkbox", value: false }],
+    run(v) { if (!v.text) return ""; try { if (v.mode === "Encode" && v.all) return Array.from(String(v.text), (c) => { const cp = c.codePointAt(0); return cp < 128 ? "%" + cp.toString(16).toUpperCase().padStart(2, "0") : encodeURIComponent(c); }).join(""); if (v.mode === "Encode") return v.component ? encodeURIComponent(v.text) : encodeURI(v.text); return v.component ? decodeURIComponent(v.text) : decodeURI(v.text); } catch (e) { return { error: "Malformed URL sequence." }; } } },
 
   { id: "html-entities", name: "HTML Entity Encoder / Decoder", cat: "encoding", desc: "Escape or unescape HTML entities (&lt; &amp; …).", tags: ["escape", "xss"],
     inputs: [{ k: "text", label: "Text", type: "textarea", placeholder: "<b>hi</b> & \"you\"" }, { k: "mode", label: "Mode", type: "select", opts: ["Encode", "Decode"], value: "Encode" }],
@@ -111,10 +111,6 @@ export const TOOLS = [
   { id: "json-string-escape", name: "JSON String Escaper", cat: "encoding", desc: "Escape text into a JSON string literal, or unescape one.", tags: ["json", "escape"],
     inputs: [{ k: "text", label: "Text", type: "textarea" }, { k: "mode", label: "Mode", type: "select", opts: ["Escape", "Unescape"], value: "Escape" }],
     run(v) { if (!v.text) return ""; if (v.mode === "Escape") return JSON.stringify(v.text); try { const t = v.text.trim(); return JSON.parse(t[0] === '"' ? t : '"' + t + '"'); } catch (e) { return { error: "Not a valid JSON string." }; } } },
-
-  { id: "nato", name: "NATO Phonetic Alphabet", cat: "encoding", desc: "Spell text with Alfa, Bravo, Charlie…", tags: ["phonetic", "spell"],
-    inputs: [{ k: "text", label: "Text", type: "textarea", placeholder: "SOS" }],
-    run(v) { const N = { A: "Alfa", B: "Bravo", C: "Charlie", D: "Delta", E: "Echo", F: "Foxtrot", G: "Golf", H: "Hotel", I: "India", J: "Juliett", K: "Kilo", L: "Lima", M: "Mike", N: "November", O: "Oscar", P: "Papa", Q: "Quebec", R: "Romeo", S: "Sierra", T: "Tango", U: "Uniform", V: "Victor", W: "Whiskey", X: "X-ray", Y: "Yankee", Z: "Zulu" }; if (!v.text) return ""; return v.text.toUpperCase().split("").map((c) => /[0-9]/.test(c) ? c : (N[c] || (c === " " ? "|" : ""))).filter(Boolean).join(" "); } },
 
   { id: "leetspeak", name: "Leetspeak Converter", cat: "encoding", desc: "Convert text to and from 1337 5p34k.", tags: ["leet", "1337"],
     inputs: [{ k: "text", label: "Text", type: "textarea" }, { k: "mode", label: "Mode", type: "select", opts: ["To leet", "From leet"], value: "To leet" }],

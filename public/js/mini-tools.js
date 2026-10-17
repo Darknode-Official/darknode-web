@@ -10,7 +10,45 @@ import { HELP } from "/js/tools/help/index.js?v=20261003a";
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const TOOL_BY_ID = new Map(TOOLS.map((t) => [t.id, t]));
-const byId = (id) => TOOL_BY_ID.get(id);
+// Ids of mini-tools that were merged into a near-identical keeper, so old links and
+// bookmarks (#/tool-<old id>) still open the tool that now does the job.
+const TOOL_ALIAS = {
+  "sx-salt": "sx-nonce", "sx-csrf-token": "sx-nonce", "dv-random-token": "sx-nonce", "h-hmac": "sx-hmac",
+  "bi-powershell-decode": "fx-ps-encodedcommand", "bt-ps-decode": "fx-ps-encodedcommand", "wb-basic-auth-build": "sx-basic-auth-header",
+  "wb-basic-auth-decode": "sx-b64-cred", "wb-ua-parser": "n-user-agent", "dv-ua-parse": "n-user-agent", "n-ip-to-int": "sx-ipv4-to-int",
+  "n-int-to-ip": "sx-int-to-ipv4", "n-curl-builder": "dv-curl-build", "d-semver-compare": "dv-semver-compare", "d-semver-bump": "dv-semver-bump",
+  "sx-password-policy": "w-password-policy-check", "wb-cors-preflight": "w-cors-preflight", "fx-filetime": "id-filetime",
+  "d-json-to-env": "dv-json-to-env", "n-mime-type": "wb-mime-by-ext", "dv-mime-ext": "wb-mime-by-ext",
+  "np-syslog-pri": "fx-syslog-pri", "bt-syslog-pri": "fx-syslog-pri", "wb-url-parse": "n-url-parser", "wb-extract-params": "n-url-parser",
+  "bi-attack-tactics": "bt-attack-tactics", "fx-attack-tactics": "bt-attack-tactics", "d-htaccess-redirect": "dv-htaccess-redirect",
+  "sx-jwt-decode": "w-jwt-analyzer", "dv-jwt-decode": "w-jwt-analyzer", "sx-jwt-expiry": "w-jwt-analyzer",
+  "n-http-status": "wb-status-explain", "dv-http-status": "wb-status-explain", "wb-status-emoji": "wb-status-explain",
+  "bi-magic-bytes": "fx-magic-bytes", "fx-logon-type": "bt-win-logon-types", "fx-kerberos-etype": "id-kerberos-etype",
+  "n-http-methods": "wb-methods-ref", "bt-sysmon-ids": "fx-sysmon-event-id", "bt-win-event-ids": "fx-windows-event-id",
+  "bi-pyramid-of-pain": "bt-pyramid-of-pain", "bt-ip-proto": "np-ip-protocols", "bt-icmp-ref": "np-icmp-types", "bt-dns-rcode": "np-dns-rcodes",
+  "n-port-lookup": "n-ports-reference", "wb-port-service": "n-ports-reference", "d-cron-next": "dv-cron-next",
+  "wb-url-encode": "url-encode", "sx-url-encode": "url-encode", "sx-b64-payload": "base64",
+  "bt-defang": "bi-defang-refang", "fx-defang": "bi-defang-refang", "fx-refang": "bi-defang-refang", "fx-base64-extract": "bi-b64-extract",
+  "h-password-entropy": "sx-password-strength", "sx-cookie-flags": "w-set-cookie-analyzer", "wb-csp-build": "w-csp-builder",
+  "n-ip-in-cidr": "sx-ip-in-cidr", "sx-cidr-range": "n-subnet-calc", "dv-uuid-v4": "sx-uuid-token", "h-uuid-validate": "fx-uuid-inspect",
+  "sx-hash-id": "h-hash-analyzer", "n-cidr-to-mask": "sx-mask-prefix", "n-mask-to-cidr": "sx-mask-prefix", "n-wildcard-mask": "sx-wildcard-mask",
+  "n-ipv6-expand": "sx-ipv6", "n-ipv6-compress": "sx-ipv6", "sx-is-private-ip": "n-ip-type", "wb-http-request-build": "dv-http-raw",
+  "id-sid-parse": "fx-sid-parse", "id-sid-binary": "fx-sid-parse", "wb-hsts-parse": "sx-hsts-parser", "bt-cef-parse": "fx-cef-parse",
+  "bt-leef-parse": "fx-leef-parse", "bt-accesslog-parse": "fx-apache-log", "bt-syslog-parse": "fx-syslog-parse", "wb-punycode-host": "punycode",
+  "id-well-known-sid": "fx-well-known-sid", "id-well-known-rid": "fx-well-known-sid", "wb-qs-parse": "n-query-parser", "wb-qs-build": "d-query-builder",
+  "nato": "sx-phonetic", "h-luhn": "sx-luhn", "cd-hexdump": "fx-hexdump", "bi-hexdump": "fx-hexdump", "fx-strings": "bi-strings",
+  "bi-registry-autorun": "fx-persistence-keys", "sx-kdf-note": "cr-kdf-advisor", "d-dup-lines": "cd-uniq-count",
+  "sx-sqli-cheatsheet": "w-sqli-cheatsheet", "sx-ssti-cheatsheet": "w-ssti-cheatsheet", "sx-lfi-list": "w-lfi-payloads",
+  "sx-cmdi-list": "w-cmdi-cheatsheet", "sx-ssrf-list": "w-ssrf-targets", "sx-xxe-cheatsheet": "w-xxe-builder", "sx-open-redirect": "w-open-redirect",
+  "sx-revshell": "w-revshell", "sx-bindshell": "w-bindshell", "sx-leetspeak": "leetspeak",
+};
+// Mini-tools whose job is now done by a full console tool: old ids open that route instead.
+const ROUTE_ALIAS = {
+  "w-cvss-calc": "cvsscalc", "w-cvss-vector-builder": "cvsscalc", "sx-cvss31": "cvsscalc",
+  "bt-yara-rule": "yarabuilder", "bi-yara-skeleton": "yarabuilder", "fx-yara-rule": "yarabuilder",
+  "bi-sigma-skeleton": "sigma", "bt-sigma-scaffold": "sigma", "bi-ioc-extract": "iocenrich", "fx-ioc-extract": "iocenrich", "sx-secret-scan": "dlp",
+};
+const byId = (id) => TOOL_BY_ID.get(TOOL_ALIAS[id] || id);
 // plain-English line for a tool: the help text when written, else the short description
 const plain = (t) => (HELP[t.id] && HELP[t.id].what) || t.desc || "";
 const outText = (res) => res == null ? "" : typeof res === "object" && "out" in res ? String(res.out) : String(res);
@@ -44,6 +82,15 @@ function inputHTML(f, i) {
 }
 
 export function renderMiniTool(main, id, opts = {}) {
+  const route = ROUTE_ALIAS[id];
+  if (route) {
+    // Swap the old URL for the route (no extra history entry), then ask the console to open it.
+    // The link stays as a fallback if no console is listening (e.g. a bare embed).
+    main.innerHTML = `<div class="mt-shell"><p class="mt-empty">This tool is now part of a full console tool. <button type="button" class="mt-back" data-sec="${esc(route)}">Open it</button></p></div>`;
+    try { history.replaceState({ sec: route }, "", "/" + route); } catch (_) {}
+    document.dispatchEvent(new CustomEvent("dn:navigate", { detail: route }));
+    return;
+  }
   const t = byId(id);
   if (!t) { main.innerHTML = `<div class="mt-shell"><p class="mt-empty">Tool not found.</p></div>`; return; }
   const cat = TOOL_CATS[t.cat] || { name: t.cat, color: "slate" };

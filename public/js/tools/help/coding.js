@@ -311,11 +311,6 @@ export const HELP = {
     when: "You are debugging floating-point precision or a binary format and need the exact bit layout.",
     example: { value: "0.1", prec: "64-bit (double)" },
   },
-  "cd-hexdump": {
-    what: "Shows text as a hex dump: byte offset on the left, hex bytes in the middle, and a printable-ASCII gutter on the right.",
-    when: "You want to inspect the exact bytes of a string, including whitespace and non-printable characters.",
-    example: { text: "Hello, world!", width: "16" },
-  },
   "cd-byte-array": {
     what: "Turns text or a hex string into a byte-array literal for C, Rust, Go, Java, Python, a JS Uint8Array, a 0x list or plain hex.",
     when: "You need to embed a sequence of bytes directly in source code.",

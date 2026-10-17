@@ -127,7 +127,7 @@ const MIME_EXT = {
   html: 'text/html', htm: 'text/html', xhtml: 'application/xhtml+xml',
   css: 'text/css', js: 'text/javascript', mjs: 'text/javascript', json: 'application/json',
   jsonld: 'application/ld+json', xml: 'application/xml', txt: 'text/plain', csv: 'text/csv',
-  md: 'text/markdown', ics: 'text/calendar', rtf: 'application/rtf',
+  md: 'text/markdown', ics: 'text/calendar', rtf: 'application/rtf', sql: 'application/sql',
   pdf: 'application/pdf', doc: 'application/msword',
   docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   xls: 'application/vnd.ms-excel',
@@ -155,18 +155,6 @@ const MIME_EXT = {
   java: 'text/x-java-source', php: 'application/x-httpd-php',
   yaml: 'application/yaml', yml: 'application/yaml', toml: 'application/toml',
   epub: 'application/epub+zip',
-};
-
-const PORTS = {
-  20: 'FTP data', 21: 'FTP control', 22: 'SSH', 23: 'Telnet', 25: 'SMTP', 53: 'DNS',
-  67: 'DHCP server', 68: 'DHCP client', 69: 'TFTP', 80: 'HTTP', 110: 'POP3', 119: 'NNTP',
-  123: 'NTP', 143: 'IMAP', 161: 'SNMP', 179: 'BGP', 389: 'LDAP', 443: 'HTTPS', 445: 'SMB',
-  465: 'SMTPS', 514: 'Syslog', 587: 'SMTP submission', 631: 'IPP', 636: 'LDAPS', 873: 'rsync',
-  989: 'FTPS data', 990: 'FTPS control', 993: 'IMAPS', 995: 'POP3S', 1080: 'SOCKS proxy',
-  1194: 'OpenVPN', 1433: 'MS SQL Server', 1521: 'Oracle DB', 1723: 'PPTP', 2049: 'NFS',
-  3128: 'Squid proxy', 3306: 'MySQL', 3389: 'RDP', 5432: 'PostgreSQL', 5672: 'AMQP',
-  5900: 'VNC', 6379: 'Redis', 6667: 'IRC', 8080: 'HTTP alt', 8443: 'HTTPS alt',
-  9092: 'Kafka', 9200: 'Elasticsearch', 11211: 'Memcached', 27017: 'MongoDB',
 };
 
 const REFERRER_POLICY = {
@@ -296,85 +284,6 @@ export const TOOLS = [
       if (!m) return '';
       const hits = Object.keys(MIME_EXT).filter(k => MIME_EXT[k] === m);
       return hits.length ? { out: hits.map(x => '.' + x).join(', ') } : { error: `No known extension for "${m}".` };
-    },
-  },
-  {
-    id: 'wb-ua-parser', name: 'User-Agent Parser', cat: 'web',
-    desc: 'Heuristically detect browser, OS, and device from a User-Agent string.',
-    tags: ['user-agent', 'browser', 'parse'],
-    inputs: [{ k: 'ua', type: 'textarea', label: 'User-Agent', rows: 3, ph: 'Mozilla/5.0 ...', def: '' }],
-    run(v) {
-      const ua = S(v.ua).trim();
-      if (!ua) return '';
-      let browser = 'Unknown';
-      if (/Edg\//.test(ua)) browser = 'Edge';
-      else if (/OPR\/|Opera/.test(ua)) browser = 'Opera';
-      else if (/Firefox\//.test(ua)) browser = 'Firefox';
-      else if (/Chrome\//.test(ua) && !/Chromium/.test(ua)) browser = 'Chrome';
-      else if (/Chromium\//.test(ua)) browser = 'Chromium';
-      else if (/Safari\//.test(ua) && /Version\//.test(ua)) browser = 'Safari';
-      else if (/MSIE|Trident/.test(ua)) browser = 'Internet Explorer';
-      let os = 'Unknown';
-      if (/Windows NT 10/.test(ua)) os = 'Windows 10/11';
-      else if (/Windows NT/.test(ua)) os = 'Windows';
-      else if (/Android/.test(ua)) os = 'Android';
-      else if (/iPhone|iPad|iPod/.test(ua)) os = 'iOS';
-      else if (/Mac OS X/.test(ua)) os = 'macOS';
-      else if (/Linux/.test(ua)) os = 'Linux';
-      const device = /Mobile|iPhone|Android.*Mobile/.test(ua) ? 'Mobile' : /iPad|Tablet/.test(ua) ? 'Tablet' : 'Desktop';
-      const bot = /bot|crawler|spider|slurp/i.test(ua);
-      return { out: `Browser: ${browser}\nOS: ${os}\nDevice: ${device}\nBot: ${bot}` };
-    },
-  },
-  {
-    id: 'wb-qs-parse', name: 'Query String to Table', cat: 'web',
-    desc: 'Parse a query string into decoded key/value pairs.',
-    tags: ['url', 'query', 'parse'],
-    inputs: [{ k: 'qs', type: 'textarea', label: 'Query string', rows: 3, ph: 'a=1&b=hello%20world', def: '' }],
-    run(v) {
-      let qs = S(v.qs).trim();
-      if (!qs) return '';
-      qs = qs.replace(/^\?/, '');
-      const p = new URLSearchParams(qs);
-      const lines = [];
-      for (const [k, val] of p.entries()) lines.push(`${k} = ${val}`);
-      return lines.length ? { out: lines.join('\n') } : { out: '(no parameters)' };
-    },
-  },
-  {
-    id: 'wb-qs-build', name: 'Build Query String', cat: 'web',
-    desc: 'Build a URL-encoded query string from key=value lines.',
-    tags: ['url', 'query', 'build'],
-    inputs: [{ k: 'lines', type: 'textarea', label: 'key=value per line', rows: 6, ph: 'a=1\nb=hello world', def: '' }],
-    run(v) {
-      const txt = S(v.lines);
-      if (!txt.trim()) return '';
-      const p = new URLSearchParams();
-      for (const line of txt.split('\n')) {
-        if (!line.trim()) continue;
-        const i = line.indexOf('=');
-        if (i < 0) p.append(line.trim(), '');
-        else p.append(line.slice(0, i).trim(), line.slice(i + 1).trim());
-      }
-      return { out: p.toString() };
-    },
-  },
-  {
-    id: 'wb-url-parse', name: 'URL Parser', cat: 'web',
-    desc: 'Break a URL into protocol, host, port, path, query, and hash.',
-    tags: ['url', 'parse'],
-    inputs: [{ k: 'url', type: 'text', label: 'URL', ph: 'https://a.com:8080/p?x=1#h', def: '' }],
-    run(v) {
-      const s = S(v.url).trim();
-      if (!s) return '';
-      try {
-        const u = new URL(s);
-        return {
-          out: `protocol: ${u.protocol}\nhost: ${u.hostname}\nport: ${u.port || '(default)'}\n` +
-            `path: ${u.pathname}\nquery: ${u.search || '(none)'}\nhash: ${u.hash || '(none)'}\n` +
-            `origin: ${u.origin}`,
-        };
-      } catch { return { error: 'Invalid URL.' }; }
     },
   },
   {
@@ -545,18 +454,6 @@ export const TOOLS = [
     },
   },
   {
-    id: 'wb-csp-build', name: 'Content-Security-Policy Builder', cat: 'web',
-    desc: 'Build a CSP header from directive lines.',
-    tags: ['csp', 'security', 'build'],
-    inputs: [{ k: 'lines', type: 'textarea', label: 'directive sources per line', rows: 6, ph: "default-src 'self'\nimg-src 'self' data:", def: '' }],
-    run(v) {
-      const txt = S(v.lines);
-      if (!txt.trim()) return '';
-      const parts = txt.split('\n').map(l => l.trim().replace(/\s+/g, ' ')).filter(Boolean);
-      return { out: 'Content-Security-Policy: ' + parts.join('; ') };
-    },
-  },
-  {
     id: 'wb-csp-parse', name: 'CSP Parser', cat: 'web',
     desc: 'Parse a Content-Security-Policy header into directives and sources.',
     tags: ['csp', 'security', 'parse'],
@@ -569,34 +466,6 @@ export const TOOLS = [
         const parts = d.split(/\s+/);
         return `${parts[0]}: ${parts.slice(1).join(' ') || '(none)'}`;
       });
-      return { out: lines.join('\n') };
-    },
-  },
-  {
-    id: 'wb-cors-preflight', name: 'CORS Preflight Explainer', cat: 'web',
-    desc: 'Explain the response headers a server must return for a CORS preflight.',
-    tags: ['cors', 'security', 'http'],
-    inputs: [
-      { k: 'origin', type: 'text', label: 'Origin', ph: 'https://app.example.com', def: '' },
-      { k: 'method', type: 'text', label: 'Requested method', ph: 'PUT', def: '' },
-      { k: 'headers', type: 'text', label: 'Requested headers', ph: 'Content-Type, Authorization', def: '' },
-      { k: 'creds', type: 'checkbox', label: 'Include credentials', def: false },
-    ],
-    run(v) {
-      const origin = S(v.origin).trim(), method = S(v.method).trim().toUpperCase();
-      if (!origin || !method) return '';
-      const lines = [
-        'The browser sends OPTIONS with:',
-        `  Origin: ${origin}`,
-        `  Access-Control-Request-Method: ${method}`,
-      ];
-      if (S(v.headers).trim()) lines.push(`  Access-Control-Request-Headers: ${S(v.headers).trim()}`);
-      lines.push('', 'The server must respond (200/204) with:');
-      lines.push(`  Access-Control-Allow-Origin: ${v.creds ? origin : origin + ' (or *)'}`);
-      lines.push(`  Access-Control-Allow-Methods: ${method}`);
-      if (S(v.headers).trim()) lines.push(`  Access-Control-Allow-Headers: ${S(v.headers).trim()}`);
-      if (v.creds) lines.push('  Access-Control-Allow-Credentials: true  (wildcard origin not allowed)');
-      lines.push('  Access-Control-Max-Age: 600  (optional, cache in seconds)');
       return { out: lines.join('\n') };
     },
   },
@@ -674,37 +543,6 @@ export const TOOLS = [
         if (/[^\x20-\x7E]/.test(fn)) out += `; filename*=UTF-8''${encodeURIComponent(fn)}`;
       }
       return { out: 'Content-Disposition: ' + out };
-    },
-  },
-  {
-    id: 'wb-basic-auth-build', name: 'Basic Auth Header Builder', cat: 'web',
-    desc: 'Build an Authorization: Basic header from user and password.',
-    tags: ['auth', 'header', 'base64'],
-    inputs: [
-      { k: 'user', type: 'text', label: 'Username', ph: 'admin', def: '' },
-      { k: 'pass', type: 'text', label: 'Password', ph: 'secret', def: '' },
-    ],
-    run(v, H) {
-      const user = S(v.user);
-      if (!user && !S(v.pass)) return '';
-      const token = H.b64encode(`${user}:${S(v.pass)}`);
-      return { out: `Authorization: Basic ${token}` };
-    },
-  },
-  {
-    id: 'wb-basic-auth-decode', name: 'Basic Auth Decoder', cat: 'web',
-    desc: 'Decode a Basic auth token or header back into user:password.',
-    tags: ['auth', 'header', 'base64'],
-    inputs: [{ k: 'token', type: 'text', label: 'Token or header', ph: 'Basic YWRtaW46c2VjcmV0', def: '' }],
-    run(v, H) {
-      let t = S(v.token).trim();
-      if (!t) return '';
-      t = t.replace(/^Authorization:\s*/i, '').replace(/^Basic\s+/i, '');
-      let dec;
-      try { dec = H.b64decode(t); } catch { return { error: 'Not valid base64.' }; }
-      const i = dec.indexOf(':');
-      if (i < 0) return { out: `username: ${dec}\npassword: (none)` };
-      return { out: `username: ${dec.slice(0, i)}\npassword: ${dec.slice(i + 1)}` };
     },
   },
   {
@@ -887,29 +725,6 @@ export const TOOLS = [
     },
   },
   {
-    id: 'wb-hsts-parse', name: 'HSTS Parser', cat: 'web',
-    desc: 'Parse a Strict-Transport-Security header into its directives.',
-    tags: ['hsts', 'security', 'parse'],
-    inputs: [{ k: 'h', type: 'text', label: 'HSTS value', ph: 'max-age=31536000; includeSubDomains', def: '' }],
-    run(v) {
-      let s = S(v.h).trim();
-      if (!s) return '';
-      s = s.replace(/^Strict-Transport-Security:\s*/i, '');
-      const parts = s.split(';').map(x => x.trim()).filter(Boolean);
-      const lines = [];
-      for (const p of parts) {
-        const m = p.match(/^max-age=(\d+)$/i);
-        if (m) {
-          const days = (parseInt(m[1], 10) / 86400).toFixed(1);
-          lines.push(`max-age: ${m[1]} seconds (~${days} days)`);
-        } else if (/^includeSubDomains$/i.test(p)) lines.push('includeSubDomains: applies to all subdomains');
-        else if (/^preload$/i.test(p)) lines.push('preload: eligible for browser preload lists');
-        else lines.push(p);
-      }
-      return { out: lines.join('\n') };
-    },
-  },
-  {
     id: 'wb-etag-gen', name: 'ETag Generator', cat: 'web',
     desc: 'Generate a weak or strong ETag from content using a simple hash.',
     tags: ['etag', 'cache', 'hash'],
@@ -1021,20 +836,6 @@ export const TOOLS = [
       const lines = [`Client (original): ${ips[0]}`];
       ips.slice(1).forEach((ip, i) => lines.push(`Proxy ${i + 1}: ${ip}`));
       return { out: lines.join('\n') };
-    },
-  },
-  {
-    id: 'wb-punycode-host', name: 'Punycode Host Encoder', cat: 'web',
-    desc: 'Encode an internationalized (IDN) host to ASCII punycode.',
-    tags: ['punycode', 'idn', 'url'],
-    inputs: [{ k: 'host', type: 'text', label: 'Host', ph: 'münchen.de', def: '' }],
-    run(v) {
-      const host = S(v.host).trim();
-      if (!host) return '';
-      try {
-        const u = new URL('http://' + host);
-        return { out: u.host };
-      } catch { return { error: 'Invalid host.' }; }
     },
   },
   {
@@ -1194,22 +995,6 @@ export const TOOLS = [
     },
   },
   {
-    id: 'wb-url-encode', name: 'URL Encode / Decode', cat: 'web',
-    desc: 'Percent-encode or decode a URL component.',
-    tags: ['url', 'encode', 'decode'],
-    inputs: [
-      { k: 'text', type: 'textarea', label: 'Text', rows: 3, ph: 'hello world & more', def: '' },
-      { k: 'mode', type: 'select', label: 'Mode', opts: [['enc', 'Encode'], ['dec', 'Decode']], def: 'enc' },
-    ],
-    run(v) {
-      const t = S(v.text);
-      if (!t) return '';
-      try {
-        return { out: v.mode === 'dec' ? decodeURIComponent(t) : encodeURIComponent(t) };
-      } catch { return { error: 'Malformed percent-encoding.' }; }
-    },
-  },
-  {
     id: 'wb-slug', name: 'URL Slug from Title', cat: 'web',
     desc: 'Convert a title into a clean, lowercase URL slug.',
     tags: ['slug', 'url', 'seo'],
@@ -1235,22 +1020,6 @@ export const TOOLS = [
       const m = t.match(/https?:\/\/[^\s<>"')\]]+/g) || [];
       const uniq = [...new Set(m)];
       return uniq.length ? { out: uniq.join('\n') } : { out: '(no URLs found)' };
-    },
-  },
-  {
-    id: 'wb-extract-params', name: 'Extract Query Params from URL', cat: 'web',
-    desc: 'List all query parameters from a full URL.',
-    tags: ['url', 'query', 'extract'],
-    inputs: [{ k: 'url', type: 'text', label: 'URL', ph: 'https://a.com/?a=1&b=2', def: '' }],
-    run(v) {
-      const s = S(v.url).trim();
-      if (!s) return '';
-      try {
-        const u = new URL(s);
-        const lines = [];
-        for (const [k, val] of u.searchParams.entries()) lines.push(`${k} = ${val}`);
-        return lines.length ? { out: lines.join('\n') } : { out: '(no query parameters)' };
-      } catch { return { error: 'Invalid URL.' }; }
     },
   },
   {
@@ -1288,69 +1057,6 @@ export const TOOLS = [
       const parts = s.split('.');
       const ok = parts.length === 4 && parts.every(p => /^\d{1,3}$/.test(p) && +p >= 0 && +p <= 255 && (p === '0' || !/^0/.test(p)));
       return { out: ok ? 'Valid IPv4 address.' : 'Not a valid IPv4 address.' };
-    },
-  },
-  {
-    id: 'wb-port-service', name: 'Port to Service Name', cat: 'web',
-    desc: 'Look up the common service for a well-known port number.',
-    tags: ['port', 'service', 'reference'],
-    inputs: [{ k: 'port', type: 'text', label: 'Port number', ph: '443', def: '' }],
-    run(v) {
-      const s = S(v.port).trim();
-      if (!s) return '';
-      const n = parseInt(s, 10);
-      if (isNaN(n)) return { error: 'Enter a numeric port.' };
-      const svc = PORTS[n];
-      return svc ? { out: `${n}: ${svc}` } : { error: `No well-known service registered for port ${n}.` };
-    },
-  },
-  {
-    id: 'wb-status-emoji', name: 'Status Code Summary', cat: 'web',
-    desc: 'Summarize a status code with its class label, name, and meaning.',
-    tags: ['http', 'status', 'emoji'],
-    inputs: [{ k: 'code', type: 'text', label: 'Status code', ph: '500', def: '' }],
-    run(v) {
-      const s = S(v.code).trim();
-      if (!s) return '';
-      const code = parseInt(s, 10);
-      if (isNaN(code)) return { error: 'Enter a numeric status code.' };
-      const e = STATUS[code];
-      if (!e) return { error: `${code} is not a standard status code.` };
-      const label = { 1: '[INFO]', 2: '[OK]', 3: '[REDIRECT]', 4: '[CLIENT ERROR]', 5: '[SERVER ERROR]' }[Math.floor(code / 100)] || '[UNKNOWN]';
-      return { out: `${label} ${code} ${e[0]} — ${e[1]}` };
-    },
-  },
-  {
-    id: 'wb-http-request-build', name: 'HTTP/1.1 Request Builder', cat: 'web',
-    desc: 'Build a raw HTTP/1.1 request from method, path, host, headers, and body.',
-    tags: ['http', 'request', 'build'],
-    inputs: [
-      { k: 'method', type: 'select', label: 'Method', opts: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], def: 'GET' },
-      { k: 'path', type: 'text', label: 'Path', ph: '/api/v1/items?x=1', def: '/' },
-      { k: 'host', type: 'text', label: 'Host', ph: 'example.com', def: '' },
-      { k: 'headers', type: 'textarea', label: 'Extra headers (Name: value per line)', rows: 4, ph: 'Accept: application/json', def: '' },
-      { k: 'body', type: 'textarea', label: 'Body (optional)', rows: 3, ph: '', def: '' },
-    ],
-    run(v) {
-      const host = S(v.host).trim();
-      if (!host) return '';
-      const method = S(v.method || 'GET');
-      const path = S(v.path).trim() || '/';
-      const lines = [`${method} ${path} HTTP/1.1`, `Host: ${host}`];
-      for (const line of S(v.headers).split('\n')) {
-        if (line.trim()) lines.push(line.trim());
-      }
-      const body = S(v.body);
-      if (body) {
-        // Content-Length is the octet count of the body (RFC 7230 3.3.2),
-        // not the JS string length (UTF-16 code units).
-        lines.push(`Content-Length: ${new TextEncoder().encode(body).length}`);
-        lines.push('', body);
-      } else {
-        lines.push('');
-      }
-      // A raw HTTP/1.1 message uses CRLF line terminators (RFC 7230 3).
-      return { out: lines.join('\r\n') };
     },
   },
   {

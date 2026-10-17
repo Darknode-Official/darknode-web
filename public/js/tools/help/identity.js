@@ -192,26 +192,6 @@ export const HELP = {
     when: "You are working with Windows accounts and want to separate the user and domain portions of a name.",
     example: { name: "alice@example.com" },
   },
-  "id-well-known-rid": {
-    what: "Looks up well-known Active Directory RIDs (the last number of a SID) such as 500 for Administrator or 512 for Domain Admins.",
-    when: "You see a RID on a domain SID and want to know which built-in account or group it is.",
-    example: { q: "krbtgt" },
-  },
-  "id-well-known-sid": {
-    what: "Looks up well-known Windows SIDs such as S-1-5-18 (Local System) or S-1-1-0 (Everyone) and explains each.",
-    when: "You see a SID in an access-control list or log and want to know which principal it represents.",
-    example: { q: "system" },
-  },
-  "id-sid-parse": {
-    what: "Parses a text Windows SID (S-1-5-...) into its revision, authority, sub-authorities and the trailing RID.",
-    when: "You have a SID string and want to break it into its parts, for example to read the domain and RID.",
-    example: { sid: "S-1-5-21-3623811015-3361044348-30300820-1013" },
-  },
-  "id-sid-binary": {
-    what: "Decodes a binary SID in hex (as Active Directory stores objectSid) into its readable S-1-5-... string form.",
-    when: "You pulled an objectSid as raw bytes from LDAP and need the normal SID string.",
-    example: { hex: "010200000000000520000000 20020000" },
-  },
   "id-webauthn-terms": {
     what: "Explains the key WebAuthn and FIDO2 terms, such as attestation, assertion, passkey and authenticator data.",
     when: "You are learning or implementing passwordless login with passkeys and want the vocabulary explained.",
