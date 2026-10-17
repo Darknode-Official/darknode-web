@@ -1693,6 +1693,26 @@ let _appUid = null, _appGuest = false;
 // moved on must not paint over the newer section.
 let _navTok = 0;
 const _appH = { on: false, show: () => {}, saveFrame: () => {}, hasTyped: () => false };
+// Desktop app home: the Deck, with no console behind it and no console exit (onSignOut
+// puts the Deck in primary mode). Access keeps the web's rule, the admin custom claim
+// (resolved into _isAdmin from the signed ID token; Security Rules enforce it server-side).
+// Any other account gets an honest notice instead of a fallback UI.
+function renderDesktopHome(user) {
+  const note = (title, body, retry) => {
+    view.innerHTML = `<div class="dsk-drag" aria-hidden="true"></div><div class="dsk-note" role="status"><h1>${title}</h1><p>${body}</p><div class="dsk-acts">${retry ? '<button class="btn" id="dskRetry">Try again</button>' : ""}<button class="btn ghost" id="dskOut">Sign out</button></div></div>`;
+    view.querySelector("#dskOut").onclick = doLogout;
+    const r = view.querySelector("#dskRetry"); if (r) r.onclick = () => renderDesktopHome(user);
+  };
+  if (!_isAdmin) {
+    const who = auth.currentUser ? esc(user.email || "this account") : "Test Mode (no account)";
+    note("Desktop workspace not available yet", `The Darknode desktop workspace is not enabled for ${who} yet. Nothing about your account or data has changed. Sign out to use a different account, or keep using Darknode at darknode.ai.`);
+    return;
+  }
+  view.innerHTML = "";
+  import("/js/admin.js?v=20261017d")
+    .then((m) => m.openDeck(user, { onSignOut: () => { m.closeDeck(); doLogout(); } }))
+    .catch((e) => note("The workspace did not load", esc((e && e.message) || "Unknown error"), true));
+}
 function renderApp(user) {
   _appUid = user && user.uid || null;
   _appGuest = !auth.currentUser;
@@ -1703,6 +1723,8 @@ function renderApp(user) {
   dismissBoot();
   document.body.classList.remove("landing");
   document.body.classList.add("app");
+  // Desktop app (top frame only; tool iframes never see the bridge): the Deck is the home screen.
+  if (isDesktop()) { renderDesktopHome(user); return; }
   // Embed mode: when loaded as /<sec>?embed=1 (e.g. inside Darknode Command's
   // in-deck workspace iframe), strip the console chrome so only the live tool
   // shows, full-bleed and transparent. Reused by any host that frames a tool.

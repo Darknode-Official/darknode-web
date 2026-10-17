@@ -1,6 +1,6 @@
 // Unit tests for public/js/core/desktop.js (desktop-app detection).
 import { test, group, assert } from "../harness.mjs";
-import { isDesktop, caps, has, info, syncTitlebar } from "../../public/js/core/desktop.js";
+import { isDesktop, caps, has, info, syncTitlebar, filteredRgb } from "../../public/js/core/desktop.js";
 
 const app = (extra = {}) => ({ darknode: { desktop: { version: "2.54.0", platform: "linux", arch: "x64", caps: ["auth.google", "titlebar", 7] }, ...extra } });
 
@@ -42,5 +42,23 @@ group("desktop", () => {
     const g = { darknode: { desktop: { caps: [] }, titlebar: () => { called = true; } } };
     syncTitlebar({ getElementById: () => null, body: {}, documentElement: {} }, g);
     assert.equal(called, false);
+  });
+  test("filteredRgb reproduces invert + hue-rotate (the Deck's ink header)", () => {
+    assert.deepEqual(filteredRgb([255, 255, 255], "invert(1)"), [0, 0, 0]);
+    assert.deepEqual(filteredRgb([10, 20, 30], "none"), [10, 20, 30]);
+    assert.deepEqual(filteredRgb([10, 20, 30], "hue-rotate(0deg)"), [10, 20, 30]);
+    const [r, g, b] = filteredRgb([230, 229, 226], "invert(1) hue-rotate(180deg)");
+    assert.ok(r < 40 && g < 40 && b < 40, "light grey header shows as near-black");
+  });
+  test("syncTitlebar follows the Deck header when the Deck is mounted", () => {
+    const sent = [];
+    const g = app({ titlebar: (o) => sent.push(o) });
+    const dkTop = { id: "dk", getBoundingClientRect: () => ({ height: 56 }) };
+    g.getComputedStyle = (el) => el === dkTop ? { backgroundColor: "rgb(255, 255, 255)", color: "rgb(0, 0, 0)", filter: "invert(1)" } : { backgroundColor: "rgb(1, 2, 3)", color: "rgb(4, 5, 6)" };
+    g.MutationObserver = class { observe() {} };
+    g.requestAnimationFrame = (f) => f();
+    const doc = { querySelector: (q) => (q === "body > .dk .dk-top" ? dkTop : null), getElementById: () => ({ getBoundingClientRect: () => ({ height: 48 }) }), body: {}, documentElement: {} };
+    syncTitlebar(doc, g);
+    assert.deepEqual(sent[0], { color: "#000000", symbolColor: "#ffffff", height: 56 });
   });
 });
