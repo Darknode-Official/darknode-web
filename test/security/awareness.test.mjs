@@ -56,7 +56,7 @@ const KB4_JSON = JSON.stringify([
   { recipient_id: 3, pst_id: 55, user: { id: 12, first_name: "Cy", last_name: "Cole", email: "cy.cole@test.darknode.ai" }, template: { id: 1, name: "t" }, scheduled_at: "2026-06-01T10:00:00.000Z", delivered_at: null, opened_at: null, clicked_at: null, replied_at: null, attachment_opened_at: null, macro_enabled_at: null, data_entered_at: null, qr_code_scanned: null, reported_at: null, bounced_at: "2026-06-01T10:00:07.000Z", ip: null, ip_location: null, browser: null, browser_version: null, os: null },
 ]);
 
-// KnowBe4 console CSV (column layout not verified against a live tenant).
+// KnowBe4 console CSV (column layout not verified: KnowBe4 publishes no export column list publicly).
 const KB4_CSV = "First Name,Last Name,Email,Delivered At,Opened At,Clicked At,Replied At,Attachment Opened At,Macro Enabled At,Data Entered At,Reported At,Bounced At\n" +
   "Ava,Ash,ava.ash@test.darknode.ai,2026-07-01 10:00:00,2026-07-01 10:01:00,2026-07-01 10:02:00,,,,2026-07-01 10:03:00,,\n" +
   "Ben,Birch,ben.birch@test.darknode.ai,2026-07-01 10:00:00,,,,,,,2026-07-01 10:04:00,\n";
@@ -72,6 +72,45 @@ const MDO_JSON = JSON.stringify({
 
 const MDO_CSV = "Name,Email,Simulation name,Compromised,Clicked,Reported\nAva Ash,ava.ash@test.darknode.ai,Payroll update,Yes,Yes,No\nBen Birch,ben.birch@test.darknode.ai,Payroll update,No,No,Yes\n";
 const PFPT_CSV = "First Name,Last Name,Email Address,Campaign Title,Clicked,Clicked Date,Data Entered,Reported,Reported Date\nAva,Ash,ava.ash@test.darknode.ai,Q3 Benefits,Yes,9/2/2026 10:15 AM,No,No,\nBen,Birch,ben.birch@test.darknode.ai,Q3 Benefits,No,,No,Yes,9/2/2026 10:05 AM\n";
+// Documented layouts. Build a CSV from a header list and per-row {header: value} objects.
+const layoutCsv = (headers, rows) => [headers.join(",")].concat(rows.map((o) => headers.map((h) => (o[h] == null ? "" : o[h])).join(","))).join("\n") + "\n";
+// Defender Attack simulation training CSV export fields, in documented order
+// (learn.microsoft.com/en-us/defender-office-365/attack-simulation-training-insights, Appendix).
+const MDO_EXPORT_HEADERS = ["UserName", "UserMail", "Compromised", "AttachmentOpened_TimeStamp", "AttachmentOpened_Browser", "AttachmentOpened_IP", "AttachmentOpened_Device",
+  "AttachmentLinkClicked_TimeStamp", "AttachmentLinkClicked_Browser", "AttachmentLinkClicked_IP", "AttachmentLinkClicked_Device", "EmailLinkClicked_TimeStamp", "EmailLinkClicked_Browser",
+  "EmailLinkClicked_IP", "EmailLinkClicked_Device", "EmailLinkClicked_ClickSource", "CredSupplied_TimeStamp(Compromised)", "CredSupplied_Browser", "CredSupplied_IP", "CredSupplied_Device",
+  "SuccessfullyDeliveredEmail_TimeStamp", "MessageRead_TimeStamp", "MessageDeleted_TimeStamp", "MessageReplied_TimeStamp", "MessageForwarded_TimeStamp", "OutOfOfficeDays",
+  "PositiveReinforcementMessageDelivered_TimeStamp", "PositiveReinforcementMessageFailed_TimeStamp", "JustSimulationMessageDelivered_TimeStamp", "JustSimulationMessageFailed_TimeStamp",
+  "TrainingAssignmentMessageDelivered_TimeStamp", "TrainingAssignmentMessageFailed_TimeStamp", "FailedToDeliverEmail_TimeStamp", "Last Simulation Activity", "Assigned Trainings",
+  "Completed Trainings", "Training Status", "Phishing Reported On", "Department", "Company", "Title", "Office", "City", "Country", "Manager"];
+const MDO_EXPORT = layoutCsv(MDO_EXPORT_HEADERS, [
+  { UserName: "Ava Ash", UserMail: "ava.ash@test.darknode.ai", Compromised: "Yes", SuccessfullyDeliveredEmail_TimeStamp: "2026-08-01T10:00:00Z", MessageRead_TimeStamp: "2026-08-01T10:04:00Z", EmailLinkClicked_TimeStamp: "2026-08-01T10:08:00Z", "CredSupplied_TimeStamp(Compromised)": "2026-08-01T10:09:00Z", Title: "Controller" },
+  { UserName: "Ben Birch", UserMail: "ben.birch@test.darknode.ai", Compromised: "No", JustSimulationMessageDelivered_TimeStamp: "2026-08-01T10:00:00Z", "Phishing Reported On": "2026-08-01T10:03:00Z" },
+  { UserName: "Cy Cole", UserMail: "cy.cole@test.darknode.ai", Compromised: "Yes", SuccessfullyDeliveredEmail_TimeStamp: "2026-08-01T10:00:00Z", AttachmentOpened_TimeStamp: "2026-08-01T10:20:00Z" },
+  { UserName: "Di Dale", UserMail: "di.dale@test.darknode.ai", Compromised: "No", FailedToDeliverEmail_TimeStamp: "2026-08-01T10:00:00Z" },
+]);
+// Defender simulation details "Users" tab columns (attack-simulation-training-simulations, Users tab).
+const MDO_USERS_TAB = "Name,Compromised,Reported,Training status,Other actions,Compromised on,Reported on,Failed deliveries,Username\n" +
+  "Ava Ash,Yes,No,Not started,,2026-08-02T09:10:00Z,,,ava.ash@test.darknode.ai\n" +
+  "Ben Birch,No,Yes,Not assigned,,,2026-08-02T09:05:00Z,,ben.birch@test.darknode.ai\n";
+// Proofpoint Security Awareness (ThreatSim) data-entry campaign CSV header definitions, in documented order
+// (as republished by Proofpoint partners; official Proofpoint docs require a customer login).
+const PFPT_DATA_ENTRY_HEADERS = ["First Name", "Last Name", "Campaign Guid", "Users Guid", "Primary Email Opened", "Date Email Opened", "Primary Clicked", "Date Clicked",
+  "Primary Compromised Login", "Date Login Compromised", "Multi Email Open", "Multi Click Event", "Multi Compromised", "Email Address", "Date Sent", "Campaign Title",
+  "Template Sophistication", "Campaign Recipient List", "Email Opened IP Address", "Email Opened Browser", "Email Opened Browser Version", "Email Opened OS", "Email Opened OS Version",
+  "Email Opened User Agent", "Clicked IP Address", "Clicked Host Name", "Clicked Browser", "Clicked Browser Version", "Clicked OS", "Clicked OS Version", "Clicked User Agent", "Username",
+  "Teachable Moment Started", "Acknowledgement Completed", "Date Acknowledged", "Weak Egress", "Reported", "Date Reported", "Email Bounced", "Passed?", "Password Entered",
+  "Vulnerability Count", "Phishing Template"];
+const PF_NO = { "Primary Email Opened": "FALSE", "Primary Clicked": "FALSE", "Primary Compromised Login": "FALSE", Reported: "FALSE", "Email Bounced": "FALSE", "Campaign Title": "Q4 Payroll", "Date Sent": "2026-10-01 09:00:00" };
+const PFPT_DATA_ENTRY = layoutCsv(PFPT_DATA_ENTRY_HEADERS, [
+  { ...PF_NO, "First Name": "Ava", "Last Name": "Ash", "Email Address": "ava.ash@test.darknode.ai", "Primary Email Opened": "TRUE", "Date Email Opened": "2026-10-01 09:05:00", "Primary Clicked": "TRUE", "Date Clicked": "2026-10-01 09:12:00", "Primary Compromised Login": "TRUE", "Date Login Compromised": "2026-10-01 09:13:00", Username: "typed-name", "Passed?": "FALSE" },
+  { ...PF_NO, "First Name": "Ben", "Last Name": "Birch", "Email Address": "ben.birch@test.darknode.ai", Reported: "TRUE", "Date Reported": "2026-10-01 09:02:00", "Passed?": "TRUE" },
+  { ...PF_NO, "First Name": "Cy", "Last Name": "Cole", "Email Address": "cy.cole@test.darknode.ai", "Email Bounced": "TRUE", "Date Sent": "" },
+]);
+// Proofpoint attachment campaign: opening the attachment is the failure, in "Primary Attachment Opened".
+const PFPT_ATTACH = "First Name,Last Name,Email Address,Date Sent,Campaign Title,Primary Clicked,Date Clicked,Primary Attachment Opened,Date Attachment Opened,Reported,Date Reported,Email Bounced\n" +
+  "Ava,Ash,ava.ash@test.darknode.ai,2026-10-05 09:00:00,Invoice attachment,FALSE,,TRUE,2026-10-05 09:30:00,FALSE,,FALSE\n" +
+  "Ben,Birch,ben.birch@test.darknode.ai,2026-10-05 09:00:00,Invoice attachment,FALSE,,FALSE,,TRUE,2026-10-05 09:10:00,FALSE\n";
 const LMS_CSV = "user,course,assigned,due,completed\nava.ash@test.darknode.ai,Annual Awareness,2026-01-05,2026-02-01,\nben.birch@test.darknode.ai,Annual Awareness,2026-01-05,2026-02-01,2026-01-20\n";
 const ROSTER_CSV = "email,department,title,manager,hire date,privileged,finance,exec\nava.ash@test.darknode.ai,Engineering,Engineer,mo@test.darknode.ai,2020-01-01,no,no,no\nben.birch@test.darknode.ai,Finance,Controller,mo@test.darknode.ai,2026-06-01,no,yes,no\n";
 
@@ -150,6 +189,39 @@ group("awareness: parsers", () => {
     assert.deepEqual(r.tables.campaigns.map((c) => c.campaign).sort(), ["Payroll update", "Q3 Benefits"]);
     const q = r.tables.campaigns.find((c) => c.campaign === "Q3 Benefits");
     assert.equal(q.clicked.num, 1); assert.equal(q.date, "2026-09-02");
+  });
+  test("Defender documented CSV export: high confidence, per-technique columns and delivery failures", () => {
+    const f = P("Attack simulation report - Microsoft Defender.csv", MDO_EXPORT, "Payroll Aug");
+    assert.equal(f.kind, "mdo-csv"); assert.equal(f.confidence, "high");
+    assert.equal(f.mapping.email, "UserMail"); assert.equal(f.mapping.submitted, "Compromised");
+    assert.equal(f.mapping.reported, "Phishing Reported On"); assert.equal(f.mapping.bounced, "FailedToDeliverEmail_TimeStamp");
+    const c = analyze({ files: [f] }).tables.campaigns[0];
+    assert.equal(c.delivered, 3); assert.equal(c.clicked.num, 2); assert.equal(c.submitted.num, 2); assert.equal(c.reported.num, 1);
+    assert.equal(c.medianMinutesToClick, 14);
+  });
+  test("Defender Users tab columns map at medium confidence; no click column is reported, not guessed", () => {
+    const f = P("users.csv", MDO_USERS_TAB, "Payroll Aug");
+    assert.equal(f.kind, "mdo-csv"); assert.equal(f.confidence, "medium");
+    assert.equal(f.mapping.email, "Username"); assert.equal(f.mapping.submittedTime, "Compromised on"); assert.equal(f.mapping.reportedTime, "Reported on");
+    assert.deepEqual(f.missing, ["clicked"]);
+    assert.ok(analyze({ files: [f] }).skipped.some((x) => /required column/.test(x.reason)));
+  });
+  test("Proofpoint documented data-entry CSV: high confidence, TRUE/FALSE flags, typed Username ignored", () => {
+    const f = P("pfpt.csv", PFPT_DATA_ENTRY);
+    assert.equal(f.kind, "proofpoint-csv"); assert.equal(f.confidence, "high");
+    assert.equal(f.mapping.email, "Email Address"); assert.equal(f.mapping.campaign, "Campaign Title");
+    assert.equal(f.mapping.clicked, "Primary Clicked"); assert.equal(f.mapping.clickedTime, "Date Clicked");
+    assert.equal(f.mapping.submitted, "Primary Compromised Login"); assert.equal(f.mapping.bounced, "Email Bounced");
+    const c = analyze({ files: [f] }).tables.campaigns[0];
+    assert.equal(c.campaign, "Q4 Payroll");
+    assert.equal(c.delivered, 2); assert.equal(c.clicked.num, 1); assert.equal(c.submitted.num, 1); assert.equal(c.reported.num, 1);
+    assert.equal(c.medianMinutesToClick, 12);
+  });
+  test("Proofpoint attachment campaign counts the attachment open as the click", () => {
+    const f = P("pfpt-attach.csv", PFPT_ATTACH);
+    assert.equal(f.kind, "proofpoint-csv");
+    const c = analyze({ files: [f] }).tables.campaigns[0];
+    assert.equal(c.clicked.num, 1); assert.equal(c.reported.num, 1); assert.equal(c.medianMinutesToClick, 30);
   });
   test("LMS and roster templates are detected with high confidence", () => {
     assert.equal(P("lms.csv", LMS_CSV).kind, "lms"); assert.equal(P("lms.csv", LMS_CSV).confidence, "high");

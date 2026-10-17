@@ -24,24 +24,24 @@ const DAY = 86400000;
 // ---------------------------------------------------------------------------
 // Column aliases per logical column, grouped by input role. Alias order wins.
 // ---------------------------------------------------------------------------
-const EMAIL = ["email", "Email", "Email Address", "E-mail", "User Email", "Recipient Email", "Recipient", "user.email", "simulationUser.email", "User Principal Name", "UPN", "Work Email", "mail", "Username", "User"];
+const EMAIL = ["email", "Email", "Email Address", "E-mail", "User Email", "Recipient Email", "Recipient", "user.email", "simulationUser.email", "User Principal Name", "UPN", "Work Email", "mail", "UserMail", "Username", "User"];
 
 export const COLUMNS = {
   // Per-recipient result rows where every event is its own column (timestamp or yes/no).
   outcome: {
     email: EMAIL,
     campaign: ["campaign", "Campaign", "Campaign Name", "Campaign Title", "Simulation", "Simulation Name", "Phishing Test", "PST Name", "Test Name"],
-    sent: ["sent", "Delivered At", "Delivered", "delivered_at", "Sent", "Sent At", "Sent Date", "Date Sent", "Delivered Date", "send_date", "Email Sent"],
-    opened: ["opened", "Opened At", "Opened", "opened_at", "Email Opened", "Opened Date", "Message Read", "Read"],
-    clicked: ["clicked", "Clicked At", "Clicked", "clicked_at", "Clicked Link", "Clicked Date", "Link Clicked", "Click Date"],
-    submitted: ["submitted", "Data Entered At", "Data Entered", "data_entered_at", "Submitted Data", "Credentials Submitted", "Data Submitted", "Data Submission Date", "Compromised Date", "Compromised", "compromisedDateTime", "Credential Supplied"],
-    reported: ["reported", "Reported At", "Reported", "reported_at", "Email Reported", "Reported Date", "Reported Phish", "reportedPhishDateTime", "Report Date"],
-    bounced: ["bounced", "Bounced At", "Bounced", "bounced_at"],
+    sent: ["sent", "Delivered At", "Delivered", "delivered_at", "Sent", "Sent At", "Sent Date", "Date Sent", "Delivered Date", "send_date", "Email Sent", "SuccessfullyDeliveredEmail_TimeStamp", "JustSimulationMessageDelivered_TimeStamp"],
+    opened: ["opened", "Opened At", "Opened", "opened_at", "Email Opened", "Opened Date", "Message Read", "Read", "Primary Email Opened", "MessageRead_TimeStamp", "Message read on"],
+    clicked: ["clicked", "Clicked At", "Clicked", "clicked_at", "Clicked Link", "Clicked Date", "Link Clicked", "Click Date", "Primary Clicked", "EmailLinkClicked_TimeStamp", "AttachmentLinkClicked_TimeStamp", "AttachmentOpened_TimeStamp"],
+    submitted: ["submitted", "Data Entered At", "Data Entered", "data_entered_at", "Submitted Data", "Credentials Submitted", "Data Submitted", "Data Submission Date", "Compromised Date", "Compromised", "compromisedDateTime", "Credential Supplied", "Primary Compromised Login"],
+    reported: ["reported", "Reported At", "Reported", "reported_at", "Email Reported", "Reported Date", "Reported Phish", "reportedPhishDateTime", "Report Date", "Phishing Reported On"],
+    bounced: ["bounced", "Bounced At", "Bounced", "bounced_at", "Email Bounced", "FailedToDeliverEmail_TimeStamp"],
     title: ["position", "Position", "Title", "Job Title"],
     // Separate timestamp columns when the event columns are yes/no flags (e.g. "Clicked" + "Clicked Date").
-    clickedTime: ["Clicked Date", "Click Date", "Clicked Date/Time", "Clicked Time"],
-    submittedTime: ["Data Entered Date", "Data Submitted Date", "Data Submission Date", "Compromised Date"],
-    reportedTime: ["Reported Date", "Report Date", "Reported Time"],
+    clickedTime: ["Clicked Date", "Click Date", "Clicked Date/Time", "Clicked Time", "Date Clicked"],
+    submittedTime: ["Data Entered Date", "Data Submitted Date", "Data Submission Date", "Compromised Date", "Date Login Compromised", "CredSupplied_TimeStamp(Compromised)", "Compromised on"],
+    reportedTime: ["Reported Date", "Report Date", "Reported Time", "Date Reported", "Reported on", "Phishing Reported On"],
   },
   // GoPhish "Export CSV - Results": one final status per recipient.
   status: {
@@ -223,6 +223,18 @@ function fileStem(name) {
 // ---------------------------------------------------------------------------
 const GOPHISH_RESULT_HEADERS = ["id", "status", "ip", "latitude", "longitude", "send_date", "reported", "modified_date", "email", "first_name", "last_name", "position"];
 const GOPHISH_EVENT_HEADERS = ["campaign_id", "email", "time", "message", "details"];
+// Microsoft Defender Attack simulation training CSV export fields (Microsoft Learn,
+// attack-simulation-training-insights, Appendix).
+const MDO_CORE = ["UserName", "UserMail", "Compromised"];
+// Proofpoint Security Awareness (ThreatSim) campaign CSV header definitions, common to
+// the data-entry, attachment and drive-by layouts.
+const PROOFPOINT_CORE = ["Email Address", "Campaign Title", "Date Sent", "Primary Clicked", "Date Clicked", "Reported", "Date Reported"];
+// Documented exports that split one event across per-technique columns; the first non-empty one wins.
+const COALESCE = {
+  sent: ["SuccessfullyDeliveredEmail_TimeStamp", "JustSimulationMessageDelivered_TimeStamp"],
+  clicked: ["EmailLinkClicked_TimeStamp", "AttachmentLinkClicked_TimeStamp", "AttachmentOpened_TimeStamp", "Primary Clicked", "Primary Attachment Opened"],
+  clickedTime: ["Date Clicked", "Date Attachment Opened"],
+};
 const LMS_TEMPLATE = ["user", "course", "assigned", "due", "completed"];
 const ROSTER_TEMPLATE = ["email", "department", "title", "manager", "hire date"];
 
@@ -250,9 +262,11 @@ export function detect(headers) {
   const gpr = GOPHISH_RESULT_HEADERS.filter((h) => exact.has(h)).length;
   if (gpr >= 10 && ["email", "status", "send_date", "reported"].every((h) => exact.has(h))) { kind = "gophish-results"; confidence = gpr === GOPHISH_RESULT_HEADERS.length ? "high" : "medium"; }
   else if (["campaign_id", "email", "time", "message"].every((h) => exact.has(h))) { kind = "gophish-events"; confidence = "high"; }
-  else if (any("Campaign Title", "Campaign Type") || hs.some((h) => /threatsim/i.test(h))) { kind = "proofpoint-csv"; confidence = "medium"; }
+  else if (any("Campaign Title", "Campaign Type") || hs.some((h) => /threatsim/i.test(h))) { kind = "proofpoint-csv"; confidence = PROOFPOINT_CORE.every((h) => exact.has(h)) ? "high" : "medium"; }
   else if (any("Data Entered", "Data Entered At", "Macro Enabled", "Macro Enabled At", "Attachment Opened", "Attachment Opened At", "Replied At")) { kind = "knowbe4-csv"; confidence = "medium"; }
-  else if (any("Compromised", "Compromised Date", "Simulation Name", "Reported Phish", "Simulation")) { kind = "mdo-csv"; confidence = "medium"; }
+  else if (any("Compromised", "Compromised Date", "Simulation Name", "Reported Phish", "Simulation", "UserMail", "Phishing Reported On", "SuccessfullyDeliveredEmail_TimeStamp")) {
+    kind = "mdo-csv"; confidence = MDO_CORE.every((h) => exact.has(h)) && hs.some((h) => /_TimeStamp/.test(h)) ? "high" : "medium";
+  }
   else if (any("course", "course name", "course title", "training", "training name", "module", "content title") && any("completed", "completed date", "completion date", "completed at", "due", "due date", "status", "completion status")) {
     kind = "lms"; confidence = LMS_TEMPLATE.every((h) => exact.has(h)) ? "high" : "medium";
   } else if (any(...COLUMNS.outcome.clicked) && findColumn(hs, EMAIL)) { kind = "generic-phish"; confidence = "low"; }
@@ -405,6 +419,13 @@ function normalizeOutcomeFile(f, acc, ctx, progress) {
   const caps = { report: !!m.reported, open: !!m.opened, clickTime: false, reportTime: false, sentTime: false };
   let noEmail = 0;
   const touched = new Set();
+  // Per-technique columns of one event (only when the mapped column is one of them).
+  const alt = {};
+  for (const [k, names] of Object.entries(COALESCE)) {
+    const want = new Set(names.map(normHeader));
+    if (!m[k] || !want.has(normHeader(m[k]))) continue;
+    alt[k] = [m[k]].concat((f.headers || []).filter((h) => h !== m[k] && want.has(normHeader(h))));
+  }
   const campaignOf = (r) => {
     if (override) return override;
     const v = m.campaign ? str(r[m.campaign]) : "";
@@ -440,7 +461,11 @@ function normalizeOutcomeFile(f, acc, ctx, progress) {
       if (!o.sent && !o.bounced && !o.reported) continue; // scheduled / queued / sending
       caps.open = true; caps.report = caps.report || st === "email reported";
     } else {
-      const val = (k) => (m[k] ? r[m[k]] : undefined);
+      const val = (k) => {
+        const cols = alt[k];
+        if (cols) { for (const h of cols) if (truthy(r[h])) return r[h]; }
+        return m[k] ? r[m[k]] : undefined;
+      };
       const ev = (k) => { const v = val(k); return { on: m[k] ? truthy(v) : false, at: m[k] ? parseTime(v) : null }; };
       const s = ev("sent"), op = ev("opened"), c = ev("clicked"), su = ev("submitted"), re = ev("reported"), b = ev("bounced");
       o.sent = m.sent ? s.on : true; o.sentAt = s.at;

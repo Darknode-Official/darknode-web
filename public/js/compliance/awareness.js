@@ -282,7 +282,7 @@ export function renderAwareness(main) {
       '<div class="', P, '-card"><h3>Training completion by department</h3>',
       t.trainingByDept ? table([{ label: "Department", key: "group" }, { label: "People", get: (x) => (x.suppressed ? "suppressed" : num(x.people)), n: 1 }, { label: "Assignments", get: (x) => (x.suppressed ? "" : num(x.assigned)), n: 1 }, { label: "Completed", get: (x) => (x.suppressed ? "" : rateTxt(x.completion)) }, { label: "Overdue", get: (x) => (x.suppressed ? "" : num(x.overdue)), n: 1 }], t.trainingByDept)
         : '<div class="' + P + '-empty">Needs an LMS training file and a roster with a department column.</div>',
-      '<div id="', P, '-corr"></div></div>',
+      "</div>",
       "</div>",
       '<div class="', P, '-card"><h3>Needs follow-up training</h3><div class="', P, '-help">People who clicked in at least ', esc(r.meta.options.repeatClickMin), " campaigns, counting this import and the saved history. Offer short, supportive follow-up training.</div>",
       table([{ label: "Email", key: "email" }, { label: "Department", key: "department" }, { label: "Title", key: "title" }, { label: "Campaigns seen", key: "campaignsSeen", n: 1 }, { label: "Clicked", key: "campaignsClicked", n: 1 }, { label: "Entered credentials", key: "campaignsSubmitted", n: 1 }, { label: "Reported", key: "campaignsReported", n: 1 }, { label: "Last click", key: "lastClick" }, { label: "High-risk role", key: "highRisk" }], t.repeatClickers || [], "Nobody meets the follow-up threshold."),
@@ -294,7 +294,6 @@ export function renderAwareness(main) {
     if (sel) { sel.addEventListener("change", () => renderBreakdown(t, sel.value)); renderBreakdown(t, sel.value); }
     else $("bd").innerHTML = '<div class="' + P + '-empty">Needs an HR roster or a title column.</div>';
     renderHistory();
-    renderCorrelation();
   }
 
   function breakdownSelect(b) {
@@ -389,32 +388,6 @@ export function renderAwareness(main) {
       download(stamp() + "-remedial-assignments.csv", remedialAssignmentsCsv(r, course), "text/csv");
     });
     attachSinkButton(ex, () => ({ findings: r.findings, sample: isExample }), TOOL_ID, { dataset: isExample ? "synthetic example" : files.map((f) => f.name).join(", ") });
-  }
-
-  // Read-only correlation with real reported phish from the Phishing & URL Triage tool (if it put findings in the graph).
-  async function renderCorrelation() {
-    const box = $("corr");
-    if (!box || isExample) return;
-    let ents = [];
-    try {
-      const sg = await import("/js/security-graph.js");
-      ents = (sg.listEntities({ type: "FINDING" }) || []).filter((e) => e && e.source !== TOOL_ID && /phish/i.test(String(e.source || (e.data && e.data._toolSource) || "")));
-    } catch (_) { return; }
-    if (!ents.length) return;
-    const dept = new Map();
-    for (const f of files.filter((x) => x.role === "roster")) {
-      const m = f.mapping || {};
-      if (!m.email || !m.department) continue;
-      for (const row of f.rows) { const e = normEmail(row[m.email]); if (e) dept.set(e, String(row[m.department] || "").trim()); }
-    }
-    const counts = new Map();
-    for (const e of ents) {
-      const emails = new Set((JSON.stringify(e.data || {}).match(/[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/gi) || []).map(normEmail).filter((x) => dept.has(x)));
-      for (const em of emails) { const d = dept.get(em) || "(blank)"; counts.set(d, (counts.get(d) || 0) + 1); }
-    }
-    if (!counts.size) return;
-    box.innerHTML = '<h3 style="margin-top:14px">Real reported phish by department</h3><div class="' + P + '-help">Read-only, from Phishing &amp; URL Triage findings in the Security Graph whose data names a roster email.</div>' +
-      table([{ label: "Department", key: "d" }, { label: "Triage findings", key: "n", n: 1 }], [...counts.entries()].sort((a, b) => b[1] - a[1] || cmp(a[0], b[0])).map(([d, n]) => ({ d, n })));
   }
 
   // ---------------------------------------------------------------- history register
