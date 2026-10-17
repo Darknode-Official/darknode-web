@@ -8,7 +8,7 @@
 // Inputs (auto-detected per file, column mapping for tabular files when unsure):
 //   Zscaler NSS web: QRadar LEEF (LEEF:1.0|Zscaler|NSSWeblog|...), ArcSight CEF, Splunk key=value, CSV
 //   Squid access.log native format (and custom logformats exported with a header row)
-//   Palo Alto Networks URL Filtering and Traffic log CSV exports
+//   Palo Alto Networks URL Filtering and Traffic log CSV exports, URL Filtering syslog (headerless CSV)
 //   Netskope web transactions / page events CSV
 //   Cisco Umbrella proxy logs CSV (headerless S3 export or a CSV with headers)
 //   Cloudflare Gateway HTTP Logpush (JSON / NDJSON)
@@ -32,8 +32,8 @@ const MB = 1048576;
 /** Column aliases for tabular input: logical key -> accepted header names (case/punctuation-insensitive). */
 export const COLUMNS = {
   ts: ["ts", "timestamp", "datetime", "time", "date", "_time", "receive time", "generate time", "devtime", "eventtime", "event_time", "start time"],
-  user: ["user", "username", "user_name", "login", "usrname", "suser", "source user", "email", "identities", "identity", "src_user", "userprincipalname"],
-  src: ["src_ip", "srcip", "client_ip", "clientip", "cip", "source address", "sourceip", "source_ip", "internal ip", "c-ip", "src"],
+  user: ["user", "username", "user_name", "login", "usrname", "suser", "source user", "email", "policy identity label", "identities", "identity", "src_user", "userprincipalname"],
+  src: ["src_ip", "srcip", "client_ip", "clientip", "cip", "source address", "sourceip", "source_ip", "internal ip", "internal client ip", "c-ip", "src"],
   dst: ["dst_ip", "dstip", "destination address", "destinationip", "destination ip", "serverip", "server_ip", "sip", "dest_ip", "dst"],
   host: ["dst_host", "host", "hostname", "httphost", "domain", "dhost", "cs-host", "destination host", "dest_host", "server_name"],
   url: ["url", "url/filename", "request", "uri", "cs-uri", "full_url", "eurl"],
@@ -541,13 +541,26 @@ function cleanUser(u) {
 export const FORMAT_LABEL = {
   "zscaler-leef": "Zscaler NSS web (QRadar LEEF)", leef: "LEEF web log", "zscaler-cef": "Zscaler NSS web (CEF)", cef: "CEF web log",
   "zscaler-kv": "Zscaler NSS web (Splunk key=value)", kv: "key=value web log", squid: "Squid access.log (native)",
-  "pan-url": "Palo Alto Networks URL Filtering log CSV", "pan-traffic": "Palo Alto Networks Traffic log CSV",
+  "pan-url": "Palo Alto Networks URL Filtering log CSV", "pan-url-syslog": "Palo Alto Networks URL Filtering log (syslog CSV)", "pan-traffic": "Palo Alto Networks Traffic log CSV",
   netskope: "Netskope web transactions / page events CSV", umbrella: "Cisco Umbrella proxy log CSV (with headers)",
   "umbrella-nohdr": "Cisco Umbrella proxy log CSV (S3, headerless)", cloudflare: "Cloudflare Gateway HTTP (Logpush)",
   "zscaler-csv": "Zscaler NSS web (CSV)", "generic-csv": "Generic proxy CSV", "generic-json": "Generic proxy JSON", unknown: "Unrecognised", empty: "Empty",
 };
 const SQUID_RE = /^(\d{9,10}(?:\.\d+)?)\s+(\d+)\s+(\S+)\s+([A-Z_]+|NONE[A-Z_]*)\/(\d{3})\s+(\d+)\s+(\S+)\s+(\S+)\s+(\S+)\s+([A-Z_]+)\/(\S+)(?:\s+(\S+))?/;
 const UMB_RE = /^"?\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}"?,/;
+// PAN-OS URL Filtering syslog (THREAT, subtype url), headerless CSV, optionally behind a syslog
+// header. Field order per the PAN-OS "URL Filtering Log Fields" doc (Format line, 0-based):
+// 1 Receive Time, 7 Source Address, 8 Destination Address, 12 Source User, 14 Application,
+// 30 Action, 31 URL/Filename, 33 Category, 46 User Agent, 47 File Type, 49 Referer, 63 HTTP Method.
+// Fields after 63 vary by release (HTTP Headers vs Request/Response Headers), so none are read.
+const PAN_SYSLOG_RE = /(^|[\s>])[^,\s]*,\d{4}\/\d{2}\/\d{2} \d{2}:\d{2}:\d{2},[^,]*,THREAT,url,/;
+const PAN_URL_POS = { ts: 1, src: 7, dst: 8, user: 12, app: 14, action: 30, url: 31, category: 33, ua: 46, filetype: 47, method: 63 };
+function panSyslogRow(line) {
+  const m = PAN_SYSLOG_RE.exec(line);
+  if (!m) return null;
+  const it = iterCsv(line.slice(m.index + m[1].length), { header: false }).next();
+  return it.done ? null : it.value;
+}
 
 function firstLines(text, n) {
   const out = [];
@@ -613,6 +626,8 @@ export function detectFile(name, text) {
   if (kvl.length / lines.length >= 0.6 || lines.some((l) => /\bvendor=Zscaler\b/.test(l) && /=/.test(l) && (l.match(/=/g) || []).length >= 5)) {
     return done(lines.some((l) => /\bvendor=Zscaler\b|sourcetype="?zscalernss/i.test(l)) ? "zscaler-kv" : "kv", lines.some((l) => /zscaler/i.test(l)) ? 0.9 : 0.6);
   }
+  const pan = lines.filter((l) => PAN_SYSLOG_RE.test(l)).length;
+  if (pan && pan / lines.length >= 0.6) return done("pan-url-syslog", pan === lines.length ? 0.9 : 0.75);
   if (UMB_RE.test(lines[0])) {
     const row = headersOf(lines[0]);
     if (row.length >= 12 && /^(ALLOWED|BLOCKED|allowed|blocked)$/.test(row[6] || "") && /^https?:\/\//i.test(row[7] || "")) return done("umbrella-nohdr", 0.7, { headers: row.map((_, i) => "col" + (i + 1)) });
@@ -624,7 +639,7 @@ export function detectFile(name, text) {
   if (has("Receive Time", "Source address") && has("Bytes Sent", "Bytes Received")) return done("pan-traffic", 0.8, { headers, cols });
   if (has("Receive Time", "Source address") && (has("URL/Filename") || has("Threat/Content Type"))) return done("pan-url", 0.8, { headers, cols });
   if (has("client_bytes", "server_bytes") || has("ccl") || (has("appcategory") && has("instance_id"))) return done("netskope", 0.85, { headers, cols });
-  if (has("Identities", "Verdict") || (has("Policy Identity") && has("Verdict"))) return done("umbrella", 0.8, { headers, cols });
+  if (has("Identities", "Verdict") || (has("Policy Identity") && has("Verdict")) || has("Policy Identity Label", "Internal Client IP", "Action")) return done("umbrella", 0.8, { headers, cols });
   if (has("urlsupercategory") || has("urlsupercat") || ((has("reqsize") || has("requestsize")) && (has("urlcat") || has("urlcategory")))) return done("zscaler-csv", 0.85, { headers, cols });
   if (headers.length >= 3) {
     const conf = cols.ts && (cols.user || cols.src) && (cols.host || cols.url) ? 0.85 : (cols.host || cols.url) ? 0.6 : 0.3;
@@ -740,7 +755,25 @@ export function* iterEvents(file, det, info, overrides) {
     for (const row of iterCsv(text, { header: false })) {
       ln++;
       if (row.length < 12) { info.unparsed++; continue; }
-      const o = { ts: row[0], user: row[1], src: row[2], dst: row[4], action: row[6], url: row[7], ua: row[9] || "", status: row[10], bytesOut: row[11], bytesIn: row[12], category: row[15] || "", file: name, line: ln };
+      // Documented field order: 0 timestamp, 1 policy identity label, 2 internal client ip, 3 external
+      // client ip, 4 destination ip, 5 content type, 6 action, 7 url, 8 referer, 9 user agent, 10 status
+      // code, 11 request size, 12 response size, 15 categories, 25 request method (version 5+).
+      const o = { ts: row[0], user: row[1], src: row[2], dst: row[4], action: row[6], url: row[7], ua: row[9] || "", status: row[10], bytesOut: row[11], bytesIn: row[12], category: row[15] || "", method: row[25] || "", file: name, line: ln };
+      info.hasUserField = true;
+      const ev = mkEvent(o);
+      info.parsed++; mark(ev); yield ev;
+    }
+    return;
+  }
+  if (f === "pan-url-syslog") {
+    for (const [line, ln] of iterLines(text)) {
+      if (!line.trim()) continue;
+      const row = panSyslogRow(line);
+      if (!row || row.length < 34) { info.unparsed++; continue; }
+      const o = { file: name, line: ln };
+      for (const k of Object.keys(PAN_URL_POS)) o[k] = row[PAN_URL_POS[k]];
+      if (row.length <= PAN_URL_POS.ua) o.ua = null;
+      if (!/^[A-Za-z]{3,10}$/.test(String(o.method || ""))) o.method = "";
       info.hasUserField = true;
       const ev = mkEvent(o);
       info.parsed++; mark(ev); yield ev;
@@ -785,6 +818,8 @@ export function* iterEvents(file, det, info, overrides) {
   const cols = resolveCols(det.headers && det.headers.length ? det.headers : headersOf(text), overrides);
   // PAN-OS exports carry a legacy "Domain" column (a number), not a hostname.
   if (f.startsWith("pan-") && cols.host && normHeader(cols.host) === "domain") delete cols.host;
+  // Umbrella's optional header has a "Host Name" column the field reference does not define; the host comes from URL.
+  if (f === "umbrella" && cols.host && normHeader(cols.host) === "hostname") delete cols.host;
   if (f === "pan-traffic" && cols.bytesTotal && (cols.bytesOut || cols.bytesIn)) delete cols.bytesTotal;
   if (cols.user) info.hasUserField = true;
   info.cols = cols;
