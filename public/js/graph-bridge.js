@@ -7,6 +7,7 @@ const batch = SG.batch || ((fn) => fn());
 const findEntity = SG.findEntity || ((type, key) => listEntities({ type }).find(e => e.name.toLowerCase() === key) || null);
 import { getActiveContext } from '/js/context-bar.js';
 import { isSimulated } from '/js/core/posture.js';
+import * as SM from '/js/core/sink-map.js';
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -46,8 +47,17 @@ export function upsertToolResult(toolName, type, name, data, opts) {
   if (existing && isSimulated(existing) !== sim) existing = listEntities({ type }).find((e) => e.name.toLowerCase() === key && isSimulated(e) === sim) || null;
   if (existing) {
     const tags = Array.from(new Set([...(existing.tags || []), ...(o.tags || [])]));
-    const updates = { data: { ...(data || {}), _toolSource: toolName }, tags };
+    // Merge per source (core/sink-map mergeToolData): keeps earlier tools' facts and
+    // records data.bySource[toolName]. Falls back to the old shallow write if a stale
+    // cached sink-map.js predates mergeToolData.
+    const merged = SM.mergeToolData ? SM.mergeToolData(existing.data, data, toolName) : { ...(data || {}), _toolSource: toolName };
+    const updates = { data: merged, tags };
     if (o.severity) updates.severity = o.severity;
+    // A status the tool sends (opts.status; data.status on a FINDING, whose schema
+    // defines it as lifecycle) moves the entity, subject to nextStatus's triage guard.
+    const st = o.status !== undefined ? o.status : (type === 'FINDING' && data ? data.status : undefined);
+    const ns = SM.nextStatus ? SM.nextStatus(existing.status, st, merged.resolution) : null;
+    if (ns && (SG.STATUSES || []).includes(ns)) updates.status = ns;
     return { entity: updateEntity(existing.id, updates), created: false };
   }
   return { entity: addToolResult(toolName, type, String(name).trim(), data, opts), created: true };

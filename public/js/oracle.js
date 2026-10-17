@@ -620,7 +620,8 @@ function _orSendIOCs(btn, list) {
       });
       (i.tags || []).forEach(function(t) {
         var a = _orFindActor(t);
-        if (a) g.link(ent, g.actor(a), 'attributed_to');
+        // A CVE is exploited by the actor; every other IOC is attributed to it.
+        if (a) { if (ent && ent.type === 'VULNERABILITY') g.link(g.actor(a), ent, 'exploits'); else g.link(ent, g.actor(a), 'attributed_to'); }
       });
     });
   });

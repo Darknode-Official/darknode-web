@@ -501,7 +501,7 @@ function phSendAnomalies(btn, anomalies, imported) {
       })), undefined, true);
       created += rr.created; updated += rr.updated;
       if (alert) rr.entities.forEach(function(e) {
-        if (gb.linkEntities(alert.id, e.id, e.type === 'IP' ? 'observed_in' : 'related_to')) links++;
+        if (e.type === 'IP' ? gb.linkEntities(e.id, alert.id, 'observed_in') : gb.linkEntities(alert.id, e.id, 'related_to')) links++;
       });
     });
     return { created: created, updated: updated, summary: anomalies.length + ' alerts, ' + created + ' added, ' + links + ' links' };
