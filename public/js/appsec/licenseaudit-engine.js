@@ -1643,7 +1643,7 @@ export function toSpdx(result, { now, name } = {}) {
 }
 
 // ---------------------------------------------------------------------------
-// Synthetic example: "Larkspur Ledger" (fictional). Package names and licenses are
+// Synthetic example: a fictional ledger app. Package names and licenses are
 // the real ones for those versions; the app, its vendored components and their
 // licenses are invented.
 // ---------------------------------------------------------------------------
@@ -1653,7 +1653,7 @@ export function exampleDataset() {
     metadata: {
       timestamp: "2026-10-01T09:00:00Z",
       tools: { components: [{ type: "application", name: "cyclonedx-maven-plugin", version: "2.8.1" }] },
-      component: { type: "application", "bom-ref": "larkspur-pdf-service", name: "larkspur-pdf-service", version: "3.2.0", licenses: [{ license: { id: "LicenseRef-Larkspur-Proprietary" } }] },
+      component: { type: "application", "bom-ref": "pdf-service", name: "pdf-service", version: "3.2.0", licenses: [{ license: { id: "LicenseRef-TestOrg-Proprietary" } }] },
     },
     components: [
       { type: "library", "bom-ref": "pkg:maven/com.itextpdf/kernel@8.0.4", group: "com.itextpdf", name: "kernel", version: "8.0.4", purl: "pkg:maven/com.itextpdf/kernel@8.0.4", licenses: [{ license: { id: "AGPL-3.0-only" } }] },
@@ -1662,22 +1662,22 @@ export function exampleDataset() {
       { type: "library", "bom-ref": "pkg:maven/org.apache.commons/commons-lang3@3.14.0", group: "org.apache.commons", name: "commons-lang3", version: "3.14.0", purl: "pkg:maven/org.apache.commons/commons-lang3@3.14.0", licenses: [{ license: { id: "Apache-2.0" } }] },
       { type: "library", "bom-ref": "pkg:maven/org.slf4j/slf4j-api@2.0.13", group: "org.slf4j", name: "slf4j-api", version: "2.0.13", purl: "pkg:maven/org.slf4j/slf4j-api@2.0.13", licenses: [{ license: { id: "MIT" } }] },
       { type: "library", "bom-ref": "pkg:maven/ch.qos.logback/logback-classic@1.5.6", group: "ch.qos.logback", name: "logback-classic", version: "1.5.6", purl: "pkg:maven/ch.qos.logback/logback-classic@1.5.6", licenses: [{ expression: "EPL-1.0 OR LGPL-2.1-only" }] },
-      { type: "library", "bom-ref": "pkg:maven/com.larkspur.vendor/chartsuite-pro@5.1.0", group: "com.larkspur.vendor", name: "chartsuite-pro", version: "5.1.0", purl: "pkg:maven/com.larkspur.vendor/chartsuite-pro@5.1.0", licenses: [{ license: { id: "LicenseRef-Chartsuite-EULA" } }] },
-      { type: "library", "bom-ref": "pkg:maven/com.larkspur.vendor/ledger-fx-rates@0.9.2", group: "com.larkspur.vendor", name: "ledger-fx-rates", version: "0.9.2", purl: "pkg:maven/com.larkspur.vendor/ledger-fx-rates@0.9.2" },
-      { type: "library", "bom-ref": "pkg:maven/com.larkspur.vendor/fiscal-calendar@2.3.1", group: "com.larkspur.vendor", name: "fiscal-calendar", version: "2.3.1", purl: "pkg:maven/com.larkspur.vendor/fiscal-calendar@2.3.1",
+      { type: "library", "bom-ref": "pkg:maven/com.testorg.vendor/chartsuite-pro@5.1.0", group: "com.testorg.vendor", name: "chartsuite-pro", version: "5.1.0", purl: "pkg:maven/com.testorg.vendor/chartsuite-pro@5.1.0", licenses: [{ license: { id: "LicenseRef-Chartsuite-EULA" } }] },
+      { type: "library", "bom-ref": "pkg:maven/com.testorg.vendor/ledger-fx-rates@0.9.2", group: "com.testorg.vendor", name: "ledger-fx-rates", version: "0.9.2", purl: "pkg:maven/com.testorg.vendor/ledger-fx-rates@0.9.2" },
+      { type: "library", "bom-ref": "pkg:maven/com.testorg.vendor/fiscal-calendar@2.3.1", group: "com.testorg.vendor", name: "fiscal-calendar", version: "2.3.1", purl: "pkg:maven/com.testorg.vendor/fiscal-calendar@2.3.1",
         licenses: [{ license: { id: "MIT", acknowledgement: "declared" } }, { expression: "MIT AND GPL-3.0-or-later", acknowledgement: "concluded" }] },
     ],
     dependencies: [
-      { ref: "larkspur-pdf-service", dependsOn: ["pkg:maven/com.itextpdf/kernel@8.0.4", "pkg:maven/com.mysql/mysql-connector-j@8.4.0", "pkg:maven/org.apache.commons/commons-lang3@3.14.0", "pkg:maven/ch.qos.logback/logback-classic@1.5.6", "pkg:maven/com.larkspur.vendor/chartsuite-pro@5.1.0", "pkg:maven/com.larkspur.vendor/ledger-fx-rates@0.9.2", "pkg:maven/com.larkspur.vendor/fiscal-calendar@2.3.1"] },
+      { ref: "pdf-service", dependsOn: ["pkg:maven/com.itextpdf/kernel@8.0.4", "pkg:maven/com.mysql/mysql-connector-j@8.4.0", "pkg:maven/org.apache.commons/commons-lang3@3.14.0", "pkg:maven/ch.qos.logback/logback-classic@1.5.6", "pkg:maven/com.testorg.vendor/chartsuite-pro@5.1.0", "pkg:maven/com.testorg.vendor/ledger-fx-rates@0.9.2", "pkg:maven/com.testorg.vendor/fiscal-calendar@2.3.1"] },
       { ref: "pkg:maven/com.itextpdf/kernel@8.0.4", dependsOn: ["pkg:maven/com.itextpdf/io@8.0.4", "pkg:maven/org.slf4j/slf4j-api@2.0.13"] },
       { ref: "pkg:maven/ch.qos.logback/logback-classic@1.5.6", dependsOn: ["pkg:maven/org.slf4j/slf4j-api@2.0.13"] },
     ],
   };
   const P = (version, license, extra) => Object.assign({ version, resolved: "https://registry.npmjs.org/-/x-" + version + ".tgz", integrity: "sha512-synthetic" }, license ? { license } : {}, extra || {});
   const lock = {
-    name: "larkspur-ledger", version: "4.7.0", lockfileVersion: 3, requires: true,
+    name: "testorg-ledger", version: "4.7.0", lockfileVersion: 3, requires: true,
     packages: {
-      "": { name: "larkspur-ledger", version: "4.7.0", license: "UNLICENSED", dependencies: { express: "^4.19.2", jszip: "^3.10.1", "node-forge": "^1.3.1", sharp: "^0.33.4", "ledger-csv-utils": "^0.3.1" }, devDependencies: { typescript: "^5.4.5" } },
+      "": { name: "testorg-ledger", version: "4.7.0", license: "UNLICENSED", dependencies: { express: "^4.19.2", jszip: "^3.10.1", "node-forge": "^1.3.1", sharp: "^0.33.4", "ledger-csv-utils": "^0.3.1" }, devDependencies: { typescript: "^5.4.5" } },
       "node_modules/express": P("4.19.2", "MIT", { dependencies: { "body-parser": "1.20.2", "mime-types": "~2.1.34" } }),
       "node_modules/body-parser": P("1.20.2", "MIT"),
       "node_modules/mime-types": P("2.1.35", "MIT", { dependencies: { "mime-db": "1.52.0" } }),
@@ -1697,9 +1697,9 @@ export function exampleDataset() {
     },
   };
   return {
-    label: "synthetic example: Larkspur Ledger (fictional app, not real data)",
+    label: "synthetic example: ledger app (fictional, not real data)",
     files: [
-      { name: "larkspur-pdf-service.cdx.json", text: JSON.stringify(cdx, null, 2) },
+      { name: "pdf-service.cdx.json", text: JSON.stringify(cdx, null, 2) },
       { name: "package-lock.json", text: JSON.stringify(lock, null, 2) },
     ],
   };

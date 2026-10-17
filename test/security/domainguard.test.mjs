@@ -382,7 +382,7 @@ group("domainguard: analyze, diff, exports", () => {
   test("analyze is byte-identical across runs", () => assert.equal(JSON.stringify(analyze(ex.dataset, { now: ex.now })), JSON.stringify(r)));
   test("example covers parked, takeover, expiry and lookalike-with-MX", () => {
     const fid = r.findings.map((f) => f.id);
-    for (const id of ["domainguard:parked_unlocked", "domainguard:expiry_critical", "takeover:careers.quillmark-acq.test.darknode.ai", "domainguard:lookalike_mx_new:quillmark.test.darknode.ai"]) assert.ok(fid.includes(id), id);
+    for (const id of ["domainguard:parked_unlocked", "domainguard:expiry_critical", "takeover:careers.darknode-acq.test.darknode.ai", "domainguard:lookalike_mx_new:darknode.test.darknode.ai"]) assert.ok(fid.includes(id), id);
   });
   test("every finding has controls, confidence and assets", () => {
     for (const f of r.findings) {
@@ -400,9 +400,9 @@ group("domainguard: analyze, diff, exports", () => {
   });
   test("changes diff: new failures, fixes and new lookalikes", () => {
     const kinds = r.tables.changes.map((c) => c.kind + ":" + c.domain + ":" + c.check);
-    assert.ok(kinds.includes("new failure:quillmark-promo.test.darknode.ai:expiry"));
-    assert.ok(kinds.includes("fixed:quillmark-hold.test.darknode.ai:caa"));
-    assert.ok(kinds.includes("lookalike newly registered:quillmark.test.darknode.ai:quilmark.test.darknode.ai"));
+    assert.ok(kinds.includes("new failure:darknode-promo.test.darknode.ai:expiry"));
+    assert.ok(kinds.includes("fixed:darknode-hold.test.darknode.ai:caa"));
+    assert.ok(kinds.includes("lookalike newly registered:darknode.test.darknode.ai:darnode.test.darknode.ai"));
   });
   test("diff ignores error transitions and is empty for identical snapshots", () => {
     const snap = snapshotOf(r);
@@ -417,9 +417,9 @@ group("domainguard: analyze, diff, exports", () => {
   });
   test("DNS fix list contains the parked trio and the dangling delete", () => {
     const t = dnsFixList(r);
-    assert.ok(t.includes("quillmark-parked.test.darknode.ai.\t3600\tIN\tMX\t0 ."));
-    assert.ok(t.includes('_dmarc.quillmark-parked.test.darknode.ai.\t3600\tIN\tTXT\t"v=DMARC1; p=reject; sp=reject; adkim=s; aspf=s"'));
-    assert.ok(t.includes("DELETE  careers.quillmark-acq.test.darknode.ai."));
+    assert.ok(t.includes("darknode-parked.test.darknode.ai.\t3600\tIN\tMX\t0 ."));
+    assert.ok(t.includes('_dmarc.darknode-parked.test.darknode.ai.\t3600\tIN\tTXT\t"v=DMARC1; p=reject; sp=reject; adkim=s; aspf=s"'));
+    assert.ok(t.includes("DELETE  careers.darknode-acq.test.darknode.ai."));
   });
   test("lookalikes CSV lists registered first", () => {
     const lines = lookalikesToCsv(r.tables.lookalikes).split("\n");

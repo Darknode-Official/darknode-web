@@ -1327,7 +1327,7 @@ export function toTxt(result) {
 // ---------------------------------------------------------------------------
 const EXAMPLE_OPENAPI = `openapi: 3.0.3
 info:
-  title: Larkspur Payments API
+  title: Payments API
   version: 2.4.0
   description: Synthetic example for Darknode API Security Review. Not a real API.
 servers:
@@ -1528,7 +1528,7 @@ components:
         stackTrace: { type: string }
 `;
 
-const EXAMPLE_GRAPHQL = `# Larkspur ledger GraphQL schema - synthetic example, not a real API.
+const EXAMPLE_GRAPHQL = `# Ledger GraphQL schema - synthetic example, not a real API.
 directive @auth(requires: Role = USER) on OBJECT | FIELD_DEFINITION
 
 enum Role { USER ADMIN }
@@ -1564,8 +1564,8 @@ export function exampleDataset(seed = 7) {
   return {
     label: "synthetic example (not real data)",
     files: [
-      { name: "larkspur-payments.openapi.yaml", text: EXAMPLE_OPENAPI },
-      { name: "larkspur-ledger.graphql", text: EXAMPLE_GRAPHQL },
+      { name: "payments.openapi.yaml", text: EXAMPLE_OPENAPI },
+      { name: "ledger.graphql", text: EXAMPLE_GRAPHQL },
     ],
   };
 }

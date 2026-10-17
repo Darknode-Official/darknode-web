@@ -172,7 +172,7 @@ export function renderApiSpec(main) {
     for (const f of exampleDataset().files) state.files.set(f.name, { name: f.name, text: f.text, det: parseInput([f]).rows[0], archive: "" });
     state.isExample = true; state.result = null;
     renderFiles([]); renderOut();
-    toast("Loaded the synthetic example (fictional Larkspur Payments API)", "info");
+    toast("Loaded the synthetic example (fictional Payments API)", "info");
   });
   $("clear").addEventListener("click", () => { state.files.clear(); state.isExample = false; state.result = null; renderFiles([]); renderOut(); });
 
