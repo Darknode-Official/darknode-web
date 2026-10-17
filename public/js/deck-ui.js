@@ -711,6 +711,7 @@ const CSS = `
 .dk-wschip .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dk-wschip svg{width:13px;height:13px;color:#8892a4;flex:none}
 @media(max-width:760px){.dk-wschip{max-width:130px}.dk-wschip .nm{max-width:86px}}
+@media(max-width:520px){.dk-wschip{min-width:0;max-width:100%;justify-self:start;overflow:hidden;margin-left:0}.dk-wschip .nm{min-width:0;max-width:none}.dk[data-ui=deck] .dk-right #dkNew{display:none}}
 .dk-wsrow{display:flex;align-items:center;gap:10px;width:100%;appearance:none;border:0;background:transparent;cursor:pointer;font:inherit;padding:10px 16px;text-align:left;color:#2a3346}
 .dk-wsrow:hover{background:rgba(23,33,56,.05)}
 .dk-wsrow .ic{width:28px;height:28px;border-radius:7px;flex:none;display:grid;place-items:center;background:rgba(37,82,198,.1);color:#2552c6}
@@ -863,7 +864,7 @@ const CSS = `
 .dk-nrow .nk{display:inline-block;margin-left:7px;font-size:10px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;color:#2552c6;background:rgba(37,82,198,.1);border-radius:4px;padding:1px 5px;vertical-align:middle}
 .dk-nempty{padding:26px 16px;text-align:center;color:#6a7488;font-size:13px}
 /* ======================= Overview workspace ======================= */
-.dk-ov,.dk-surf,.dk-cloud,.dk-comp,.dk-con2,.dk-ti,.dk-inv{position:absolute;inset:56px 0 0;overflow:auto;padding:26px clamp(20px,2.6vw,44px) 60px}
+.dk-ov,.dk-surf,.dk-cloud,.dk-comp,.dk-con2,.dk-ti,.dk-inv,.dk-plans{position:absolute;inset:56px 0 0;overflow:auto;padding:26px clamp(20px,2.6vw,44px) 60px}
 .dk-ovhead{display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:14px;margin-bottom:22px}
 .dk-ovhead h1{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif;font-size:26px;font-weight:800;letter-spacing:-.02em;color:#141c2e}
 .dk-ovhead p{font-size:13.5px;color:#687388;margin-top:5px;max-width:620px}
@@ -886,7 +887,7 @@ const CSS = `
 .dk-kpi .ks{font-size:11px;font-weight:500;color:#8a93a6;margin-top:4px}
 .dk-ovgrid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:18px}
 .dk-ovgrid>*{min-width:0}
-@media(max-width:900px){.dk-ovgrid{grid-template-columns:1fr}.dk-ov,.dk-surf,.dk-cloud,.dk-comp,.dk-con2,.dk-ti,.dk-inv{padding:24px 16px 56px}}
+@media(max-width:900px){.dk-ovgrid{grid-template-columns:1fr}.dk-ov,.dk-surf,.dk-cloud,.dk-comp,.dk-con2,.dk-ti,.dk-inv,.dk-plans{padding:24px 16px 56px}}
 .dk-ovp{border-radius:18px;background:rgba(23,33,56,.03);border:1px solid rgba(23,33,56,.08);padding:18px 20px;box-shadow:0 1px 2px rgba(16,24,40,.05);margin-bottom:18px}
 .dk-ovp h2{font-size:15px;font-weight:700;margin:0 0 14px;display:flex;align-items:center;gap:9px}
 .dk-ovp h2 svg{width:17px;height:17px;flex:none;color:#2552c6}
@@ -1342,7 +1343,7 @@ textarea.dk-kitio{min-height:120px}
   background:var(--dk-bg);color:var(--dk-tx);font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;font-feature-settings:"cv11","ss01";letter-spacing:-.003em}
 .dk[data-ui=deck] .dk-sky{background:var(--dk-bg)}
 .dk[data-ui=deck] h1,.dk[data-ui=deck] h2,.dk[data-ui=deck] h3,.dk[data-ui=deck] h4{color:var(--dk-tx)!important}
-.dk[data-ui=deck] .dk-ovhead h1,.dk[data-ui=deck] .dk-lede h1,.dk[data-ui=deck] .dk-ti h1,.dk[data-ui=deck] .dk-inv h1,.dk[data-ui=deck] .dk-surf h1,.dk[data-ui=deck] .dk-cloud h1,.dk[data-ui=deck] .dk-comp h1,.dk[data-ui=deck] .dk-con2 h1{font-family:"Source Serif 4",Georgia,"Times New Roman",serif;font-weight:500;font-size:32px;letter-spacing:-.015em;line-height:1.15}
+.dk[data-ui=deck] .dk-ovhead h1,.dk[data-ui=deck] .dk-lede h1,.dk[data-ui=deck] .dk-ti h1,.dk[data-ui=deck] .dk-inv h1,.dk[data-ui=deck] .dk-surf h1,.dk[data-ui=deck] .dk-cloud h1,.dk[data-ui=deck] .dk-comp h1,.dk[data-ui=deck] .dk-con2 h1,.dk[data-ui=deck] .dk-plans h1{font-family:"Source Serif 4",Georgia,"Times New Roman",serif;font-weight:500;font-size:32px;letter-spacing:-.015em;line-height:1.15}
 .dk[data-ui=deck] .dk-ovhead p{color:var(--dk-tx2);font-size:14px;max-width:none}
 .dk[data-ui=deck] .dk-ovhead .when{color:var(--dk-mut);font-size:13px}
 /* header: search, Ask AI, create, notifications, account. Nothing else. */
