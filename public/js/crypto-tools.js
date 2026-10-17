@@ -4005,6 +4005,101 @@ verify box below (unchanged, or edited to test failure) and click Verify.`;
 registerTab("signature", "Digital Signature Demo", renderSignatureDemo);
 
 // ---------------------------------------------------------------------------
+// Tool 19: TLS Cipher Suite Grader
+// ---------------------------------------------------------------------------
+//
+// Grades a server's offered cipher suites from their components rather than a
+// fixed lookup table, so any IANA (TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256) or
+// OpenSSL (ECDHE-RSA-AES128-GCM-SHA256) name is understood, including suite
+// lists pasted straight from `nmap --script ssl-enum-ciphers` or
+// `openssl ciphers -v`. The worst weakness found decides the grade, and each
+// weakness names the attack it enables.
+
+const GRADE_ORDER = ["A+", "A", "B", "C", "D", "F"];
+const GRADE_COLOR = { "A+": "#4ade80", A: "#4ade80", B: "#facc15", C: "#fb923c", D: "#f87171", F: "#ef4444" };
+
+function gradeCipherSuite(raw) {
+  const n = raw.toUpperCase();
+  if (/^TLS_(AES_(128|256)_(GCM|CCM(_8)?)|CHACHA20_POLY1305)_SHA(256|384)$/.test(n)) {
+    return /CCM_8/.test(n)
+      ? { grade: "B", issues: ["TLS 1.3 with an 8-byte CCM tag: weaker integrity; meant for constrained IoT only"] }
+      : { grade: "A+", issues: ["TLS 1.3 AEAD suite with forward secrecy"] };
+  }
+  const issues = [];
+  let grade = "A";
+  const hit = (g, msg) => { issues.push(msg); if (GRADE_ORDER.indexOf(g) > GRADE_ORDER.indexOf(grade)) grade = g; };
+  const pfs = /(^|[-_])(ECDHE|DHE|EDH)([-_]|$)/.test(n);
+  if (/(^|[-_])NULL([-_]|$)/.test(n)) hit("F", "NULL cipher: traffic is not encrypted");
+  if (/ANON|^ADH|^AECDH/.test(n)) hit("F", "Anonymous key exchange: no server authentication, trivial man-in-the-middle");
+  if (/EXPORT|^EXP[-1]/.test(n)) hit("F", "Export-grade crypto (40/56-bit): FREAK / Logjam");
+  if (/RC4/.test(n)) hit("F", "RC4 keystream biases allow plaintext recovery (RFC 7465 prohibits it)");
+  if (/3DES|DES[-_]CBC3|DES[-_]EDE|EDE3/.test(n)) hit("D", "3DES has a 64-bit block: Sweet32 birthday attack");
+  else if (/(^|[-_])DES([-_]|40|$)/.test(n)) hit("F", "Single DES (56-bit key) is brute-forceable");
+  if (/RC2|IDEA/.test(n)) hit("D", "Legacy 64-bit block cipher (RC2/IDEA)");
+  if (/MD5$/.test(n)) hit("F", "MD5 MAC");
+  if (!pfs && !/ANON|^ADH|^AECDH/.test(n)) {
+    if (/(^|[-_])(ECDH|DH)[-_]/.test(n)) hit("C", "Static (EC)DH key exchange: no forward secrecy");
+    else if (/PSK/.test(n)) hit("C", "Plain PSK key exchange: no forward secrecy");
+    else hit("C", "RSA key exchange: no forward secrecy; exposed to ROBOT-style padding oracles");
+  } else if (/(^|[-_])(DHE|EDH)[-_]/.test(n) && !/ECDHE/.test(n)) {
+    hit("B", "Finite-field DHE: safe only with 2048-bit or larger groups (Logjam); prefer ECDHE");
+  }
+  const aead = /GCM|CHACHA20|POLY1305|CCM/.test(n);
+  if (/CCM_?8/.test(n)) hit("B", "CCM with an 8-byte tag: reduced integrity margin");
+  if (!aead && !/NULL|RC4/.test(n)) hit("B", "CBC mode with MAC-then-encrypt: Lucky13 timing, BEAST on TLS 1.0");
+  if (!aead && /(^|[-_])SHA1?$/.test(n)) hit("B", "SHA-1 HMAC (acceptable as an HMAC, but only in legacy CBC suites)");
+  if (!issues.length) issues.push("Forward secrecy with an AEAD cipher");
+  return { grade, issues };
+}
+
+function extractCipherSuites(text) {
+  const seen = new Set(), out = [];
+  for (const m of text.matchAll(/\b(?:TLS|SSL)_[A-Z0-9_]+|\b[A-Z0-9]+(?:-[A-Z0-9]+){1,6}\b/gi)) {
+    const s = m[0].toUpperCase();
+    // OpenSSL names always carry a cipher token; skip unrelated dashed words.
+    if (!/^(TLS|SSL)_/.test(s) && !/AES|CHACHA|DES|RC4|RC2|IDEA|CAMELLIA|ARIA|SEED|NULL|GCM/.test(s)) continue;
+    if (!seen.has(s)) { seen.add(s); out.push(s); }
+  }
+  return out;
+}
+
+function renderCipherGrader(root) {
+  root.innerHTML = `
+    <div class="tk-section">
+    <h2 class="pg-h2">TLS Cipher Suite Grader</h2>
+    <p class="muted">Paste the cipher suites a server offers, one per line or straight from
+      <code>nmap --script ssl-enum-ciphers</code> / <code>openssl ciphers -v</code> output. Each
+      suite is graded from its key exchange, cipher, mode and MAC, and every weakness names the
+      attack it enables. The overall grade is the worst suite offered, since an attacker can
+      force a downgrade to it.</p>
+    <textarea class="tk-in" id="csg-in" rows="7" placeholder="One cipher suite per line (IANA or OpenSSL names)"></textarea>
+    <div class="tk-btns"><button class="btn sm" id="csg-run">Grade Suites</button></div>
+    <div id="csg-out" style="margin-top:12px"></div>
+    </div>`;
+  root.querySelector("#csg-run").onclick = () => {
+    const out = root.querySelector("#csg-out");
+    const suites = extractCipherSuites(root.querySelector("#csg-in").value);
+    if (!suites.length) { out.innerHTML = '<p class="muted">No cipher suite names found. Paste IANA names (TLS_...) or OpenSSL names (ECDHE-RSA-...).</p>'; return; }
+    const rows = suites.map((s) => ({ s, ...gradeCipherSuite(s) }));
+    const worst = rows.reduce((w, r) => (GRADE_ORDER.indexOf(r.grade) > GRADE_ORDER.indexOf(w) ? r.grade : w), "A+");
+    const counts = GRADE_ORDER.map((g) => [g, rows.filter((r) => r.grade === g).length]).filter(([, c]) => c);
+    const toDisable = rows.filter((r) => GRADE_ORDER.indexOf(r.grade) >= GRADE_ORDER.indexOf("C"));
+    out.innerHTML = `
+      <div class="card" style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
+        <div style="font-size:2rem;font-weight:800;color:${GRADE_COLOR[worst]}">${worst}</div>
+        <div><strong>Overall (worst suite offered)</strong><div class="muted" style="font-size:.8rem">${rows.length} suites: ${counts.map(([g, c]) => `${c} &times; ${g}`).join(", ")}</div>
+        ${toDisable.length ? `<div style="font-size:.8rem;margin-top:4px;color:${GRADE_COLOR.D}">Disable ${toDisable.length} suite${toDisable.length === 1 ? "" : "s"} graded C or worse.</div>` : ""}</div>
+      </div>
+      <div style="overflow-x:auto;margin-top:10px"><table style="width:100%;border-collapse:collapse;font-size:.78rem">
+        <thead><tr style="border-bottom:2px solid var(--line);text-align:left"><th style="padding:6px">Cipher suite</th><th style="padding:6px;text-align:center">Grade</th><th style="padding:6px">Findings</th></tr></thead>
+        <tbody>${rows.map((r) => `<tr style="border-bottom:1px solid var(--line)"><td style="padding:6px;font-family:var(--mono,monospace);word-break:break-all">${escapeHtml(r.s)}</td><td style="padding:6px;text-align:center;font-weight:700;color:${GRADE_COLOR[r.grade]}">${r.grade}</td><td style="padding:6px" class="muted">${r.issues.map(escapeHtml).join("<br>")}</td></tr>`).join("")}</tbody>
+      </table></div>`;
+  };
+}
+
+registerTab("ciphergrade", "Cipher Suite Grader", renderCipherGrader);
+
+// ---------------------------------------------------------------------------
 // Main entry point
 // ---------------------------------------------------------------------------
 
@@ -4014,7 +4109,7 @@ export function renderCryptoTools(main) {
       <div class="eyebrow">Cryptography &amp; Encoding</div>
       <h1 class="pg-h1">Crypto Tools</h1>
       <p class="pg-sub">Classical ciphers, modern crypto primitives, encodings and analysis --
-        eighteen self-contained tools for learning how cryptography actually works, all running
+        nineteen self-contained tools for learning how cryptography actually works, all running
         locally in your browser.</p>
     </div>
     <div class="tab-bar" id="ct-tabbar"></div>

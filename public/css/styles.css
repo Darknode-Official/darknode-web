@@ -422,27 +422,12 @@ body.app #view{max-width:none;padding:0;margin:0}
 .seg button{background:transparent;border:none;color:var(--mut);padding:.35rem .8rem;cursor:pointer;font-family:inherit;font-size:.8rem}
 .seg button.on{background:var(--acc);color:var(--on-acc);font-weight:700}
 /* downloads */
-.dl-group{margin-bottom:16px}
-.dl-group-title{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--mut);margin:6px 0}
-.dl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
-.dl-card{display:block;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:12px;text-decoration:none;color:var(--txt)}
-a.dl-card:hover{border-color:var(--acc)}
-.dl-name{font-weight:700;font-size:.88rem}
-.dl-desc{color:var(--mut);font-size:.74rem;margin-top:3px}
 .dl-cmd-row{display:flex;align-items:stretch;gap:6px;margin-top:6px}
 .dl-cmd{flex:1;min-width:0;background:var(--card2);border:1px solid var(--line);border-radius:5px;padding:4px 6px;font-size:.72rem;color:var(--acc);overflow-x:auto;white-space:nowrap}
 .dl-copy{flex:none;background:transparent;border:1px solid var(--line);border-radius:5px;color:var(--mut);cursor:pointer;font-size:.66rem;padding:0 8px;font-family:inherit}
 .dl-copy:hover{border-color:var(--acc);color:var(--acc)}
-.dl-mark{margin-top:8px;background:transparent;border:1px solid var(--line);color:var(--mut);border-radius:5px;padding:.25rem .6rem;cursor:pointer;font-size:.68rem;font-family:inherit}
-.dl-mark:hover{border-color:var(--acc);color:var(--acc)}
-.dl-card.installed{opacity:.6}
-.dl-check{background:var(--ok);color:var(--on-acc);font-size:.56rem;font-weight:800;padding:1px 5px;border-radius:4px}
 @keyframes dlflash{0%,100%{box-shadow:0 0 0 0 transparent}30%{box-shadow:0 0 0 3px var(--acc)}}
-.dl-card.flash{animation:dlflash 1.1s ease}
 /* OS tabs */
-.os-tabs{display:flex;gap:4px;margin-bottom:12px}
-.os-tab{background:var(--card2);border:1px solid var(--line);color:var(--mut);border-radius:6px;padding:.3rem .75rem;cursor:pointer;font-family:inherit;font-size:.78rem}
-.os-tab.active{background:var(--acc);color:var(--on-acc);border-color:var(--acc);font-weight:700}
 /* tool chips */
 .tool-chip{display:inline-flex;align-items:center;gap:7px;background:var(--card);border:1px solid var(--line);color:var(--txt);border-radius:20px;padding:.35rem .8rem;margin:0 6px 6px 0;cursor:pointer;font-family:inherit;font-size:.82rem}
 .tool-chip:hover{border-color:var(--acc)}
@@ -3398,19 +3383,14 @@ input,textarea,.tk-f,.tk-in,.tk-search,.ai-input,.lh-inp{width:100%}
 .icon-btn:focus-visible{outline:none;box-shadow:var(--ctrl-focus)}
 
 /* ---- COPY / MICRO BUTTONS ------------------------------------- */
-.cb-copy,.cs-copy,.dl-copy,.dl-mark,.rx-use{
+.cb-copy,.cs-copy,.dl-copy,.rx-use{
   border-radius:calc(var(--ctrl-radius) - 2px);
   transition:border-color var(--ctrl-timing),color var(--ctrl-timing),
              background var(--ctrl-timing);
 }
-.cb-copy:focus-visible,.cs-copy:focus-visible,.dl-copy:focus-visible,
-.dl-mark:focus-visible,.rx-use:focus-visible{outline:none;box-shadow:var(--ctrl-focus)}
+.cb-copy:focus-visible,.cs-copy:focus-visible,.dl-copy:focus-visible,.rx-use:focus-visible{outline:none;box-shadow:var(--ctrl-focus)}
 
 /* ---- OS / DOWNLOAD TABS --------------------------------------- */
-.os-tab{border-radius:var(--ctrl-radius);
-  transition:background var(--ctrl-timing),color var(--ctrl-timing),
-             border-color var(--ctrl-timing)}
-.os-tab:focus-visible{outline:none;box-shadow:var(--ctrl-focus)}
 
 /* ---- FEEDBACK TYPE CHIPS -------------------------------------- */
 .fb-type{border-radius:20px;
@@ -3434,8 +3414,8 @@ input,textarea,.tk-f,.tk-in,.tk-search,.ai-input,.lh-inp{width:100%}
   .tk-badge,.tk-cat-n{font-size:.72rem}
   .tk-cat-h,.dlapp-cmd-l,
   .dl-bh,.tour-step,.code-block .cb-copy{font-size:.75rem}
-  .os-ed-tag,.dl-check,.tool-state{font-size:.72rem}
-  .os-ed-sz,.dl-copy,.dl-mark,.dl-fmt{font-size:.75rem}
+  .os-ed-tag,.tool-state{font-size:.72rem}
+  .os-ed-sz,.dl-copy,.dl-fmt{font-size:.75rem}
   .side-group{font-size:.68rem}
   .os-ed .dlapp-cmd code{font-size:.75rem}
   .tk-card-desc{font-size:.78rem}
@@ -3448,7 +3428,6 @@ input,textarea,.tk-f,.tk-in,.tk-search,.ai-input,.lh-inp{width:100%}
   .icon-btn{width:44px;height:44px}
   .hamburger{width:44px;height:44px}
   .seg button{min-height:44px;padding:.5rem 1rem}
-  .os-tab{min-height:44px;padding:.5rem .9rem}
   .set-tab{min-height:44px;padding:10px 14px}
   .swatch{width:44px;height:44px}
   .dl-copy,.cs-copy,.rx-use{min-height:44px;min-width:44px}
@@ -4271,52 +4250,6 @@ body.landing .demo-grid{margin-top:16px}
 /* ----------------------------------------------------------------
    Threat Model (tm-*)
    ---------------------------------------------------------------- */
-.tm-wrap{padding:4px 0}
-.tm-badge{display:inline-flex;padding:2px 8px;border-radius:10px;font-size:.68rem;font-weight:700;letter-spacing:.04em}
-.tm-badge-high{background:color-mix(in srgb,var(--bad) 18%,transparent);color:var(--bad)}
-.tm-badge-info{background:color-mix(in srgb,var(--acc) 18%,transparent);color:var(--acc)}
-.tm-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-bottom:12px}
-.tm-grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:12px}
-.tm-grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
-.tm-grid-6{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-bottom:12px}
-@media(max-width:600px){.tm-grid-2,.tm-grid-3{grid-template-columns:minmax(0,1fr)}}
-.tm-two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-@media(max-width:720px){.tm-two-col{grid-template-columns:minmax(0,1fr)}}
-.tm-form-field{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}
-.tm-form-field label{font-size:.78rem;font-weight:600;color:var(--mut)}
-.tm-empty{text-align:center;color:var(--mut);padding:24px;font-size:.88rem}
-.tm-flex-between{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
-.tm-section-nav{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px}
-.tm-table-wrap{overflow-x:auto;margin-bottom:12px}
-.tm-table{width:100%;border-collapse:collapse;font-size:.8rem}
-.tm-table th,.tm-table td{padding:6px 10px;border:1px solid var(--line);text-align:left}
-.tm-table th{background:var(--card);color:var(--mut);font-weight:600;white-space:nowrap}
-.tm-threat-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px;margin-bottom:8px;transition:border-color .15s}
-.tm-threat-card:hover{border-color:var(--acc-line)}
-.tm-threat-field{font-size:.78rem;color:var(--mut);margin-bottom:4px;line-height:1.5}
-.tm-threat-meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
-.tm-tree-node{margin-left:16px;border-left:1px solid var(--line);padding-left:12px;margin-bottom:4px}
-.tm-tree-row{padding:6px 0;font-size:.82rem;cursor:pointer;transition:color .15s}
-.tm-tree-row:hover{color:var(--acc)}
-.tm-tree-children{margin-top:4px}
-.tm-score-ring{text-align:center;padding:16px}
-.tm-score-num{font-size:2rem;font-weight:800;color:var(--acc);line-height:1}
-.tm-score-lbl{font-size:.72rem;color:var(--mut);text-transform:uppercase;letter-spacing:.06em;margin-top:6px}
-.tm-progress-bar{height:8px;border-radius:8px;background:var(--card2);overflow:hidden;margin:6px 0}
-.tm-progress-fill{height:100%;border-radius:8px;background:var(--acc);transition:width .3s ease}
-.tm-stage-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px;text-align:center}
-.tm-stage-num{width:32px;height:32px;border-radius:50%;background:var(--acc);color:var(--on-acc);font-weight:800;display:inline-flex;align-items:center;justify-content:center;margin-bottom:8px}
-.tm-slider-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
-.tm-slider-level{font-size:.78rem;font-weight:600;color:var(--txt);min-width:60px}
-.tm-matrix-table{width:100%;border-collapse:collapse;font-size:.78rem;text-align:center}
-.tm-matrix-table th,.tm-matrix-table td{padding:8px;border:1px solid var(--line)}
-.tm-matrix-table th{background:var(--card);color:var(--mut);font-weight:600}
-.tm-matrix-cell{font-weight:700;border-radius:4px;transition:transform .15s}
-.tm-list-compact{display:flex;flex-direction:column;gap:4px;font-size:.82rem}
-.tm-checklist-g{margin-bottom:12px}
-.tm-checklist-item{display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 50%,transparent);font-size:.82rem}
-.tm-checklist-item:last-child{border-bottom:none}
-.tm-checklist-q{flex:1;color:var(--txt)}
 
 /* ----------------------------------------------------------------
    Hash Suite (hs-*)
@@ -4550,18 +4483,6 @@ textarea.rx-input{min-height:120px;resize:vertical;line-height:1.6}
 .enc-asn1-val{color:var(--ok)}
 
 /* encoding-toolkit shared (enc- prefix overlap with encoding-suite) */
-.enc-go{background:var(--acc);color:#000;border:none;padding:6px 14px;border-radius:6px;cursor:pointer;font-weight:600;font-size:.8rem}
-.enc-go:hover{opacity:.85}
-.enc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
-.enc-result{background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:12px;font-family:var(--font-mono);font-size:.82rem;white-space:pre-wrap;word-break:break-all;color:var(--txt);min-height:40px}
-.enc-row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--line)}
-.enc-table{width:100%;border-collapse:collapse;font-size:.82rem}
-.enc-table th{text-align:left;padding:6px 10px;border-bottom:1px solid var(--line);color:var(--mut);font-weight:600}
-.enc-table td{padding:6px 10px;border-bottom:1px solid var(--line);font-family:var(--font-mono)}
-.enc-stat{text-align:center}
-.enc-stat-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px;text-align:center}
-.enc-stat-n{font-size:1.4rem;font-weight:700;color:var(--acc)}
-.enc-stat-l{font-size:.72rem;color:var(--mut);text-transform:uppercase;letter-spacing:.04em}
 
 /* ----------------------------------------------------------------
    Packet Analyzer
@@ -4596,36 +4517,6 @@ textarea.rx-input{min-height:120px;resize:vertical;line-height:1.6}
    Exploit DB Browser
    ---------------------------------------------------------------- */
 .edb{padding:4px 0}
-.edb-search{width:100%;box-sizing:border-box;padding:10px 14px;background:var(--bg);border:1px solid var(--line);color:var(--txt);border-radius:6px;font-size:.85rem;margin-bottom:12px}
-.edb-search:focus{outline:none;border-color:var(--acc)}
-.edb-select{padding:8px 12px;background:var(--bg);border:1px solid var(--line);color:var(--txt);border-radius:6px;font-size:.82rem;cursor:pointer}
-.edb-select:focus{outline:none;border-color:var(--acc)}
-.edb-grid{display:grid;grid-template-columns:340px 1fr;gap:16px}
-@media(max-width:900px){.edb-grid{grid-template-columns:minmax(0,1fr)}}
-.edb-list{max-height:600px;overflow-y:auto}
-.edb-bar{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
-.edb-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:10px 12px;margin-bottom:6px;cursor:pointer;transition:border-color .15s}
-.edb-card:hover,.edb-card.selected{border-color:var(--acc)}
-.edb-card-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
-.edb-card-id{font-size:.72rem;font-family:var(--font-mono);color:var(--mut)}
-.edb-card-title{font-weight:600;font-size:.85rem;color:var(--txt);margin-bottom:2px}
-.edb-card-desc{font-size:.78rem;color:var(--txt-2);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.edb-card-meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
-.edb-tag{display:inline-block;padding:2px 8px;border-radius:10px;font-size:.68rem;font-weight:600;background:var(--card2);color:var(--txt-2)}
-.edb-tag-verified{background:rgba(34,197,94,.15);color:var(--ok)}
-.edb-tag-lang{background:var(--acc-soft);color:var(--acc)}
-.edb-tag-platform{background:rgba(139,92,246,.15);color:#a78bfa}
-.edb-tag-type{background:rgba(249,115,22,.15);color:#fb923c}
-.edb-count{font-size:.72rem;color:var(--mut)}
-.edb-detail{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
-.edb-detail-header{margin-bottom:12px}
-.edb-detail-box{margin-bottom:12px}
-.edb-detail-empty{text-align:center;padding:40px;color:var(--mut);font-size:.85rem}
-.edb-info{font-size:.82rem;color:var(--txt-2);line-height:1.6;margin:6px 0}
-.edb-code-wrap{position:relative;margin:8px 0}
-.edb-code{background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:12px;font-family:var(--font-mono);font-size:.78rem;overflow-x:auto;white-space:pre;color:var(--txt);max-height:400px;overflow-y:auto;line-height:1.5}
-.edb-copy{position:absolute;top:8px;right:8px;background:var(--card2);border:1px solid var(--line);color:var(--txt);padding:4px 10px;border-radius:4px;cursor:pointer;font-size:.72rem}
-.edb-copy:hover{border-color:var(--acc);color:var(--acc)}
 
 /* ----------------------------------------------------------------
    Attack Simulator
@@ -4739,32 +4630,6 @@ textarea.rx-input{min-height:120px;resize:vertical;line-height:1.6}
 /* ----------------------------------------------------------------
    Crypto Playground
    ---------------------------------------------------------------- */
-.cp-wrap{padding:4px 0;max-width:1000px;margin:0 auto}
-.cp-h1{font-size:1.4rem;font-weight:700;color:var(--acc);margin:0 0 6px}
-.cp-sub{color:var(--mut);font-size:.82rem;margin:0 0 16px}
-.cp-tabs{display:flex;gap:4px;margin-bottom:16px;border-bottom:1px solid var(--line);flex-wrap:wrap}
-.cp-tab{padding:8px 14px;cursor:pointer;color:var(--mut);border:none;background:none;font-size:.82rem;border-bottom:2px solid transparent;transition:all .15s}
-.cp-tab:hover{color:var(--txt)}
-.cp-tab.active{color:var(--acc);border-bottom-color:var(--acc)}
-.cp-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:12px}
-.cp-card h3{margin:0 0 10px;font-size:1rem;color:var(--acc)}
-.cp-input{background:var(--bg);border:1px solid var(--line);color:var(--txt);padding:8px 12px;border-radius:4px;font-family:var(--font-mono);font-size:.85rem;width:100%;box-sizing:border-box}
-.cp-input:focus{outline:none;border-color:var(--acc)}
-.cp-btn{background:var(--acc);color:#000;border:none;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:.8rem;font-weight:600;transition:opacity .15s}
-.cp-btn:hover{opacity:.85}
-.cp-result{background:var(--bg);border:1px solid var(--acc-line);border-radius:6px;padding:12px;margin:8px 0;font-family:var(--font-mono);font-size:.85rem;word-break:break-all;color:var(--txt)}
-.cp-row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--line)}
-.cp-label{color:var(--mut);font-size:.82rem}
-.cp-val{font-family:var(--font-mono);color:var(--txt);font-size:.82rem}
-.cp-steps{background:var(--bg);border-radius:4px;padding:12px;font-size:.82rem;line-height:1.6}
-.cp-step{color:var(--mut);margin:2px 0}
-.cp-step b{color:var(--acc)}
-.cp-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-@media(max-width:768px){.cp-grid{grid-template-columns:minmax(0,1fr)}}
-.cp-scroll{max-height:300px;overflow-y:auto}
-.cp-table{width:100%;border-collapse:collapse;font-size:.8rem}
-.cp-table td{padding:4px 8px;border-bottom:1px solid var(--line);font-family:var(--font-mono)}
-.cp-table td:first-child{color:var(--acc);text-align:center;width:40px}
 
 /* ----------------------------------------------------------------
    IP Tools
@@ -6633,8 +6498,8 @@ body.app .dash-hero .btn.ghost:hover {
    ---------------------------------------------------------------- */
 .tab-bar .tab,
 .ca-tab,.pc-tab,.mf-tab,.hy-tab,.wl-tab,.cr-tab,
-.adv-tab,.ag-tab,.api-tab,.cc-tab,.cmp-tab,.cp-tab,.ct-tab,
-.dl-tab,.doc-tab,.enc-tab,.ft-tab,.hs-tab,.os-tab,.rag-tab,.rx-tab,.set-tab,.tm-tab,.ts-tab{
+.adv-tab,.ag-tab,.api-tab,.cc-tab,.cmp-tab,.ct-tab,
+.dl-tab,.doc-tab,.enc-tab,.ft-tab,.hs-tab,.rag-tab,.rx-tab,.set-tab,.tm-tab,.ts-tab{
   padding:8px 16px;font-size:.78rem;font-weight:600;
   border:1.5px solid var(--line);border-radius:var(--btn-radius, 4px);
   background:transparent;color:var(--mut);cursor:pointer;
@@ -6645,9 +6510,9 @@ body.app .dash-hero .btn.ghost:hover {
 /* Hover state for all tabs */
 .tab-bar .tab:hover,
 .ca-tab:hover,.pc-tab:hover,.mf-tab:hover,.hy-tab:hover,.wl-tab:hover,.cr-tab:hover,.adv-tab:hover,.ag-tab:hover,
-.api-tab:hover,.cc-tab:hover,.cmp-tab:hover,.cp-tab:hover,
+.api-tab:hover,.cc-tab:hover,.cmp-tab:hover,
 .ct-tab:hover,.dl-tab:hover,.doc-tab:hover,.enc-tab:hover,.ft-tab:hover,
-.hs-tab:hover,.os-tab:hover,
+.hs-tab:hover,
 .rag-tab:hover,.rx-tab:hover,.set-tab:hover,
 .tm-tab:hover,.ts-tab:hover{
   border-color:var(--acc-line);color:var(--txt-2);
@@ -6661,11 +6526,10 @@ body.app .dash-hero .btn.ghost:hover {
 .wl-tab.active,.wl-tab.on,.cr-tab.active,.cr-tab.on,
 .adv-tab.active,.adv-tab.on,.ag-tab.active,.ag-tab.on,
 .api-tab.active,.api-tab.on,
-.cc-tab.active,.cc-tab.on,.cmp-tab.active,.cmp-tab.on,
-.cp-tab.active,.cp-tab.on,.ct-tab.active,.ct-tab.on,
+.cc-tab.active,.cc-tab.on,.cmp-tab.active,.cmp-tab.on,.ct-tab.active,.ct-tab.on,
 .dl-tab.active,.dl-tab.on,.doc-tab.active,.doc-tab.on,
 .enc-tab.active,.enc-tab.on,.ft-tab.active,.ft-tab.on,
-.hs-tab.active,.hs-tab.on,.os-tab.active,.os-tab.on,.rag-tab.active,.rag-tab.on,.rx-tab.active,.rx-tab.on,
+.hs-tab.active,.hs-tab.on,.rag-tab.active,.rag-tab.on,.rx-tab.active,.rx-tab.on,
 .set-tab.active,.set-tab.on,
 .tm-tab.active,.tm-tab.on,.ts-tab.active,.ts-tab.on{
   border-color:var(--acc);color:var(--acc);
@@ -6683,7 +6547,7 @@ body.app .dash-hero .btn.ghost:hover {
    2. TOOL CARDS — uniform card treatment
    ---------------------------------------------------------------- */
 .pc-tpl-card,.wl-atk-card,.wl-vuln-card,.wl-bt-card,.cr-chal,.dw-paste-card,
-.ca-section,.mf-section,.tk-section,.cp-card,.ct-card,.dl-card,.edb-card,.ed-card,
+.ca-section,.mf-section,.tk-section,.ct-card,.ed-card,
 .enc-card,.feat-card,.ft-card,.gh-card,.hs-card,.lab-card,
 .mod-card,.mode-card,.nx-card,.os-card,.plab-card,.rag-card,.rc-card,.set-card,.steg-card,.tk-card,.thl-card,.vl-card,
 .as-card,.arse-card,.cs-card,.auth-card{
@@ -6694,8 +6558,7 @@ body.app .dash-hero .btn.ghost:hover {
 
 /* Card hover lift */
 .pc-tpl-card:hover,.wl-atk-card:hover,.wl-vuln-card:hover,.wl-bt-card:hover,
-.cr-chal:hover,.dw-paste-card:hover,.cp-card:hover,.ct-card:hover,.dl-card:hover,
-.edb-card:hover,.ed-card:hover,.enc-card:hover,.feat-card:hover,.ft-card:hover,
+.cr-chal:hover,.dw-paste-card:hover,.ct-card:hover,.ed-card:hover,.enc-card:hover,.feat-card:hover,.ft-card:hover,
 .gh-card:hover,.hs-card:hover,.lab-card:hover,.mod-card:hover,
 .nx-card:hover,.os-card:hover,.plab-card:hover,.rag-card:hover,.rc-card:hover,.steg-card:hover,.tk-card:hover,.thl-card:hover,.vl-card:hover,
 .as-card:hover,.arse-card:hover,.cs-card:hover{
@@ -6707,22 +6570,21 @@ body.app .dash-hero .btn.ghost:hover {
 /* ----------------------------------------------------------------
    3. TABLES — consistent header tint, padding, hover
    ---------------------------------------------------------------- */
-.ca-table th,.mf-table th,.cr-table th,.wl-table th,.pc-table th,.hy-table th,.ct-table th,.enc-table th,
+.ca-table th,.mf-table th,.cr-table th,.wl-table th,.pc-table th,.hy-table th,.ct-table th,
 .hs-table th,.data-table th{
   background:color-mix(in srgb,var(--card) 80%,var(--bg));
   font-weight:700;text-transform:uppercase;letter-spacing:.04em;
   font-size:.72rem;padding:10px 14px;color:var(--mut);
   border-bottom:1.5px solid var(--line);text-align:left
 }
-.ca-table td,.mf-table td,.cr-table td,.wl-table td,.pc-table td,.hy-table td,.ct-table td,.enc-table td,
+.ca-table td,.mf-table td,.cr-table td,.wl-table td,.pc-table td,.hy-table td,.ct-table td,
 .hs-table td,.data-table td{
   padding:10px 14px;border-bottom:1px solid color-mix(in srgb,var(--line) 50%,transparent);
   font-size:.83rem
 }
 .ca-table tr:hover,.mf-table tr:hover,.cr-table tr:hover,
 .wl-table tr:hover,
-.pc-table tr:hover,.hy-table tr:hover,.ct-table tr:hover,
-.enc-table tr:hover,.hs-table tr:hover{
+.pc-table tr:hover,.hy-table tr:hover,.ct-table tr:hover,.hs-table tr:hover{
   background:color-mix(in srgb,var(--acc) 3%,transparent)
 }
 
@@ -6733,7 +6595,7 @@ body.app .dash-hero .btn.ghost:hover {
 .mf-input,.mf-textarea,.pc-input,.pc-select,.pc-textarea,
 .wl-input,.wl-select,.cr-flag-input,
 .hy-select,.ct-input,.ct-textarea,.enc-input,.enc-textarea,
-.ft-input,.hs-input,.hs-select,.hs-textarea,.rx-input,.steg-input,.cp-input,.edb-select,.adv-select,
+.ft-input,.hs-input,.hs-select,.hs-textarea,.rx-input,.steg-input,.adv-select,
 .ag-textarea,.ai-input,.tk-in{
   background:var(--bg);border:1px solid var(--line);color:var(--txt);
   border-radius:8px;padding:10px 14px;font-family:inherit;
@@ -6748,7 +6610,7 @@ body.app .dash-hero .btn.ghost:hover {
 .hy-select:focus,.ct-input:focus,.ct-textarea:focus,
 .enc-input:focus,.enc-textarea:focus,.ft-input:focus,
 .hs-input:focus,.hs-select:focus,.hs-textarea:focus,.rx-input:focus,
-.steg-input:focus,.cp-input:focus,.edb-select:focus,
+.steg-input:focus,
 .adv-select:focus,.ag-textarea:focus,.ai-input:focus,.tk-in:focus{
   outline:none;border-color:var(--acc);
   box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 12%,transparent)
@@ -6758,7 +6620,7 @@ body.app .dash-hero .btn.ghost:hover {
 .ca-input::placeholder,.mf-input::placeholder,.pc-input::placeholder,
 .wl-input::placeholder,
 .cr-flag-input::placeholder,.ct-input::placeholder,.enc-input::placeholder,
-.ft-input::placeholder,.hs-input::placeholder,.rx-input::placeholder,.steg-input::placeholder,.cp-input::placeholder,.ai-input::placeholder{
+.ft-input::placeholder,.hs-input::placeholder,.rx-input::placeholder,.steg-input::placeholder,.ai-input::placeholder{
   color:var(--placeholder)
 }
 
@@ -6766,7 +6628,7 @@ body.app .dash-hero .btn.ghost:hover {
    5. BUTTONS — primary, ghost, danger, disabled
    ---------------------------------------------------------------- */
 .ca-btn,.mf-btn,.wl-btn,.dw-btn,.cr-flag-submit,
-.hy-btn,.ct-btn,.enc-btn,.ft-btn,.hs-btn,.steg-btn,.cp-btn,.dl-btn,.adv-btn,
+.hy-btn,.ct-btn,.enc-btn,.ft-btn,.hs-btn,.steg-btn,.dl-btn,.adv-btn,
 .ag-btn,.pka-btn,.set-btn,.tk-btn,.util-btn{
   background:var(--acc);color:var(--on-acc);border:none;
   border-radius:6px;padding:8px 16px;font-weight:600;
@@ -6776,8 +6638,7 @@ body.app .dash-hero .btn.ghost:hover {
 }
 .ca-btn:hover,.mf-btn:hover,.wl-btn:hover,.dw-btn:hover,
 .cr-flag-submit:hover,.hy-btn:hover,.ct-btn:hover,.enc-btn:hover,
-.ft-btn:hover,.hs-btn:hover,.steg-btn:hover,
-.cp-btn:hover,.dl-btn:hover,.adv-btn:hover,.ag-btn:hover,
+.ft-btn:hover,.hs-btn:hover,.steg-btn:hover,.dl-btn:hover,.adv-btn:hover,.ag-btn:hover,
 .pka-btn:hover,.set-btn:hover,.tk-btn:hover,.util-btn:hover{
   transform:translateY(-1px);
   box-shadow:0 4px 14px rgba(0,0,0,.2);
@@ -6785,21 +6646,20 @@ body.app .dash-hero .btn.ghost:hover {
 }
 .ca-btn:active,.mf-btn:active,.wl-btn:active,.dw-btn:active,
 .cr-flag-submit:active,.hy-btn:active,.ct-btn:active,.enc-btn:active,
-.ft-btn:active,.hs-btn:active,.steg-btn:active,
-.cp-btn:active,.dl-btn:active,.adv-btn:active,.ag-btn:active,
+.ft-btn:active,.hs-btn:active,.steg-btn:active,.dl-btn:active,.adv-btn:active,.ag-btn:active,
 .pka-btn:active,.set-btn:active,.tk-btn:active,.util-btn:active{
   transform:translateY(0);box-shadow:none
 }
 
 /* Ghost button variant */
 .ca-btn.ghost,.mf-btn.ghost,.wl-btn.ghost,.dw-btn.ghost,
-.hy-btn.ghost,.ct-btn.ghost,.enc-btn.ghost,.ft-btn.ghost,.hs-btn.ghost,.tk-btn.ghost,.cp-btn.ghost,.dl-btn.ghost,.set-btn.ghost,.adv-btn.ghost,.ag-btn.ghost{
+.hy-btn.ghost,.ct-btn.ghost,.enc-btn.ghost,.ft-btn.ghost,.hs-btn.ghost,.tk-btn.ghost,.dl-btn.ghost,.set-btn.ghost,.adv-btn.ghost,.ag-btn.ghost{
   background:transparent;color:var(--txt-2);border:1px solid var(--line)
 }
 .ca-btn.ghost:hover,.mf-btn.ghost:hover,.wl-btn.ghost:hover,.dw-btn.ghost:hover,.hy-btn.ghost:hover,
 .ct-btn.ghost:hover,.enc-btn.ghost:hover,.ft-btn.ghost:hover,
 .hs-btn.ghost:hover,
-.tk-btn.ghost:hover,.cp-btn.ghost:hover,.dl-btn.ghost:hover,.set-btn.ghost:hover,.adv-btn.ghost:hover,
+.tk-btn.ghost:hover,.dl-btn.ghost:hover,.set-btn.ghost:hover,.adv-btn.ghost:hover,
 .ag-btn.ghost:hover{
   border-color:var(--acc);color:var(--acc);
   background:color-mix(in srgb,var(--acc) 8%,transparent);
@@ -6809,7 +6669,7 @@ body.app .dash-hero .btn.ghost:hover {
 /* Disabled buttons */
 .ca-btn:disabled,.mf-btn:disabled,.wl-btn:disabled,
 .dw-btn:disabled,.cr-flag-submit:disabled,.hy-btn:disabled,.ct-btn:disabled,
-.enc-btn:disabled,.ft-btn:disabled,.hs-btn:disabled,.steg-btn:disabled,.cp-btn:disabled,.dl-btn:disabled,.tk-btn:disabled{
+.enc-btn:disabled,.ft-btn:disabled,.hs-btn:disabled,.steg-btn:disabled,.dl-btn:disabled,.tk-btn:disabled{
   opacity:.5;cursor:not-allowed;transform:none;box-shadow:none
 }
 
@@ -6817,9 +6677,9 @@ body.app .dash-hero .btn.ghost:hover {
    6. OUTPUT / CODE AREAS — pre, code, result panels
    ---------------------------------------------------------------- */
 .ca-pre,.mf-result,.wl-output,.re-output,.dw-result,.pc-output,
-.hy-output,.ct-output,.enc-output,.enc-result,.ft-result,.hs-output,
+.hy-output,.ct-output,.enc-output,.ft-result,.hs-output,
 .hs-result,.ip-output,.rx-result,.sv-result,
-.steg-result,.cp-result,.tk-out,.sb-output{
+.steg-result,.tk-out,.sb-output{
   background:var(--code-bg,var(--bg));border:1px solid var(--line);
   border-radius:8px;padding:14px;font-family:var(--font-mono);
   font-size:.78rem;color:var(--code-fg,var(--txt-2));
@@ -6847,7 +6707,7 @@ body.app .dash-hero .btn.ghost:hover {
    8. SEVERITY BADGES — uniform across tools
    ---------------------------------------------------------------- */
 .ca-sev,.tk-badge,.ct-badge,.enc-badge,.ft-badge,.hs-badge,
-.nx-badge,.sv-badge,.tm-badge,.ts-badge,.tl-badge,.ag-badge,
+.nx-badge,.sv-badge,.ts-badge,.tl-badge,.ag-badge,
 [class*="sev-"]{
   padding:2px 8px;border-radius:6px;font-size:.72rem;
   font-weight:600;display:inline-block;line-height:1.5
@@ -6874,8 +6734,7 @@ body.app .dash-hero .btn.ghost:hover {
 @keyframes tool-spin{to{transform:rotate(360deg)}}
 
 /* Progress bar — generic reusable */
-.tool-progress,.ca-score-bar,.hs-progress,.tm-progress,.boot-bar,
-.edb-bar,.lh-bar,.cc-bar,.tw-bar,.wl-bar,.ghdb-bar,.ws-bar{
+.tool-progress,.ca-score-bar,.hs-progress,.tm-progress,.boot-bar,.lh-bar,.cc-bar,.tw-bar,.wl-bar,.ghdb-bar,.ws-bar{
   background:var(--bg);border:1px solid var(--line);border-radius:6px;
   height:8px;overflow:hidden;position:relative
 }
@@ -6908,8 +6767,7 @@ body.app .dash-hero .btn.ghost:hover {
 .wl-output::-webkit-scrollbar,.dw-result::-webkit-scrollbar,
 .re-output::-webkit-scrollbar,.sb-output::-webkit-scrollbar,
 .tk-out::-webkit-scrollbar,.enc-output::-webkit-scrollbar,
-.hs-output::-webkit-scrollbar,
-.cp-result::-webkit-scrollbar,.ft-result::-webkit-scrollbar,
+.hs-output::-webkit-scrollbar,.ft-result::-webkit-scrollbar,
 .rx-result::-webkit-scrollbar,
 pre::-webkit-scrollbar,code::-webkit-scrollbar,
 .tool-scroll::-webkit-scrollbar{
@@ -6919,8 +6777,7 @@ pre::-webkit-scrollbar,code::-webkit-scrollbar,
 .wl-output::-webkit-scrollbar-track,.dw-result::-webkit-scrollbar-track,
 .re-output::-webkit-scrollbar-track,.sb-output::-webkit-scrollbar-track,
 .tk-out::-webkit-scrollbar-track,.enc-output::-webkit-scrollbar-track,
-.hs-output::-webkit-scrollbar-track,
-.cp-result::-webkit-scrollbar-track,.ft-result::-webkit-scrollbar-track,
+.hs-output::-webkit-scrollbar-track,.ft-result::-webkit-scrollbar-track,
 .rx-result::-webkit-scrollbar-track,
 pre::-webkit-scrollbar-track,code::-webkit-scrollbar-track,
 .tool-scroll::-webkit-scrollbar-track{
@@ -6930,8 +6787,7 @@ pre::-webkit-scrollbar-track,code::-webkit-scrollbar-track,
 .wl-output::-webkit-scrollbar-thumb,.dw-result::-webkit-scrollbar-thumb,
 .re-output::-webkit-scrollbar-thumb,.sb-output::-webkit-scrollbar-thumb,
 .tk-out::-webkit-scrollbar-thumb,.enc-output::-webkit-scrollbar-thumb,
-.hs-output::-webkit-scrollbar-thumb,
-.cp-result::-webkit-scrollbar-thumb,.ft-result::-webkit-scrollbar-thumb,
+.hs-output::-webkit-scrollbar-thumb,.ft-result::-webkit-scrollbar-thumb,
 .rx-result::-webkit-scrollbar-thumb,
 pre::-webkit-scrollbar-thumb,code::-webkit-scrollbar-thumb,
 .tool-scroll::-webkit-scrollbar-thumb{
@@ -6942,8 +6798,7 @@ pre::-webkit-scrollbar-thumb,code::-webkit-scrollbar-thumb,
 .wl-output::-webkit-scrollbar-thumb:hover,.dw-result::-webkit-scrollbar-thumb:hover,
 .re-output::-webkit-scrollbar-thumb:hover,.sb-output::-webkit-scrollbar-thumb:hover,
 .tk-out::-webkit-scrollbar-thumb:hover,.enc-output::-webkit-scrollbar-thumb:hover,
-.hs-output::-webkit-scrollbar-thumb:hover,
-.cp-result::-webkit-scrollbar-thumb:hover,.ft-result::-webkit-scrollbar-thumb:hover,
+.hs-output::-webkit-scrollbar-thumb:hover,.ft-result::-webkit-scrollbar-thumb:hover,
 .rx-result::-webkit-scrollbar-thumb:hover,
 pre::-webkit-scrollbar-thumb:hover,code::-webkit-scrollbar-thumb:hover,
 .tool-scroll::-webkit-scrollbar-thumb:hover{
@@ -6952,7 +6807,7 @@ pre::-webkit-scrollbar-thumb:hover,code::-webkit-scrollbar-thumb:hover,
 
 /* Firefox scrollbar support */
 .ca-pre,.mf-result,.wl-output,.dw-result,.re-output,.sb-output,
-.tk-out,.enc-output,.hs-output,.cp-result,.ft-result,
+.tk-out,.enc-output,.hs-output,.ft-result,
 .rx-result,pre,code,.tool-scroll{
   scrollbar-width:thin;
   scrollbar-color:color-mix(in srgb,var(--acc) 25%,var(--line)) transparent
@@ -6962,9 +6817,9 @@ pre::-webkit-scrollbar-thumb:hover,code::-webkit-scrollbar-thumb:hover,
    TOOL GRID LAYOUTS — consistent responsive grids
    ---------------------------------------------------------------- */
 .ca-grid,.mf-grid,.cr-grid,.wl-grid,.re-grid,.dw-grid,.pc-grid,
-.hy-grid,.ct-grid,.enc-grid,.ft-grid,.hs-grid,
-.steg-grid,.edb-grid,.dl-grid,.bs-grid,.cp-grid,.rag-grid,.rc-grid,
-.nx-grid,.os-grid,.mod-grid,.tm-grid,.ts-grid,.vl-grid,.lab-grid,
+.hy-grid,.ct-grid,.ft-grid,.hs-grid,
+.steg-grid,.bs-grid,.rag-grid,.rc-grid,
+.nx-grid,.os-grid,.mod-grid,.ts-grid,.vl-grid,.lab-grid,
 .plab-grid,.as-grid,.arse-grid,.cs-grid,.cta-grid,.demo-grid,
 .ed-grid,.feat-grid,.foot-grid,.gh-grid,.lh-grid,
 .qa-grid,.ref-grid,.tk-grid,
@@ -8281,8 +8136,7 @@ select:focus-visible {
   .qa-grid,
   .tk-grid,
   .feat-grid,
-  .mod-grid,
-  .dl-grid { grid-template-columns: minmax(0, 1fr) !important; }
+  .mod-grid{ grid-template-columns: minmax(0, 1fr) !important; }
   .stat-row { grid-template-columns: repeat(2, 1fr) !important; }
 }
 
