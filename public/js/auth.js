@@ -1893,7 +1893,7 @@ function renderApp(user) {
   const pathToSec = (p) => {
     if (!p || p === "/") return "home";
     const raw = p.replace(/^\//, "");
-    // Toolbox mini-tool secs are literally hyphenated (e.g. tool-base64, tool-sx-jwt-decode)
+    // Toolbox mini-tool secs are literally hyphenated (e.g. tool-base64, tool-w-jwt-analyzer)
     // and must round-trip exactly — do NOT camelCase them (that yields an invalid sec and
     // falls back to home). secToPath leaves them unchanged, so pathToSec must too.
     if (raw.startsWith("tool-")) return raw;

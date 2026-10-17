@@ -1,11 +1,6 @@
 // Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
 // Plain-English help for the devx.js mini-tools. See help/README.md for the contract.
 export const HELP = {
-  "dv-uuid-v4": {
-    what: "Creates random unique IDs (UUIDs, 36-character codes like 3f2a...-...) that will almost certainly never repeat. Choose how many you want.",
-    when: "You need unique IDs for database rows, test data or file names and do not care about their order.",
-    example: { count: "3" },
-  },
   "dv-uuid-v7": {
     what: "Creates unique IDs (UUIDs) that start with the current time, so IDs made later always sort after earlier ones.",
     when: "You need unique database keys that also stay in creation order, which keeps indexes fast.",
@@ -92,7 +87,7 @@ export const HELP = {
     example: { expr: "*/15 9-17 * * 1-5" },
   },
   "dv-curl-build": {
-    what: "Builds a ready-to-paste curl command (a command-line tool for web requests) from a URL, method, headers and optional body.",
+    what: "Builds a ready-to-paste curl command (a command-line tool for web requests) from a URL, method, headers and optional body, with optional -k (skip TLS checks) and -v (verbose) flags.",
     when: "You want to test an API from the terminal or share an exact request with a teammate.",
     example: { url: "https://api.example.com/v1/items", method: "POST", headers: "Content-Type: application/json\nAuthorization: Bearer TEST_TOKEN", body: "{\"name\":\"widget\"}" },
   },
@@ -187,7 +182,7 @@ export const HELP = {
     example: { text: "PORT=3000\nAPP_NAME=\"Demo App\"\n# comment\nGREETING=it's fine" },
   },
   "dv-json-to-env": {
-    what: "Turns a JSON settings object into .env lines. Keys become uppercase, and nested keys are joined with underscores (db.host becomes DB_HOST).",
+    what: "Turns a JSON settings object into .env lines. Keys become uppercase, and nested keys are joined with underscores (db.host becomes DB_HOST). Values containing spaces are quoted.",
     when: "You have settings in JSON and need them as environment variables for Docker or a hosting service.",
     example: { text: "{\"port\":3000,\"db\":{\"host\":\"localhost\",\"name\":\"shop\"}}" },
   },
@@ -215,11 +210,6 @@ export const HELP = {
     what: "Removes repeated lines from a list and then sorts it A to Z, Z to A, or keeps the original order.",
     when: "You have a list of emails, tags or names with duplicates and want a clean unique list.",
     example: { text: "banana\napple\ncherry\napple\nbanana", ci: false, order: "asc" },
-  },
-  "dv-random-token": {
-    what: "Creates a secure random token (a hard-to-guess string) of the size you choose, as hex, base64 or URL-safe base64.",
-    when: "You need an API key, session secret or password reset token for your own app.",
-    example: { bytes: "32", format: "base64url" },
   },
   "dv-htaccess-redirect": {
     what: "Builds an Apache .htaccess line that sends visitors from an old path to a new URL, as a permanent (301) or temporary (302) redirect.",
@@ -276,16 +266,6 @@ export const HELP = {
     when: "You are saving or uploading files and want names that work well in URLs and on every operating system.",
     example: { name: "Quarterly Report (Final v2).PDF" },
   },
-  "dv-mime-ext": {
-    what: "Type a file extension or file name and get its MIME type, the label that tells browsers what kind of file it is (for example image/png).",
-    when: "You are setting a Content-Type header or upload rule. It covers common web file types only.",
-    example: { ext: "photo.webp" },
-  },
-  "dv-http-status": {
-    what: "Type an HTTP status code (the number a web server sends back, like 404) and get its name and category.",
-    when: "An API or browser shows a status code and you want to know what it means.",
-    example: { code: "429" },
-  },
   "dv-regex-common": {
     what: "Gives a ready-to-use regular expression (search pattern) for a common kind of data: email, URL, IPv4 address, UUID or date (YYYY-MM-DD).",
     when: "You need basic input checking in a form or script. These are simple patterns, not full standards checks.",
@@ -296,20 +276,10 @@ export const HELP = {
     when: "You need a port for a local test server that is unlikely to clash with common services. It does not check if the port is free on your machine.",
     example: { count: "3" },
   },
-  "dv-jwt-decode": {
-    what: "Shows the readable header and payload inside a JWT (a login token made of three dot-separated parts). It does not check the signature.",
-    when: "You are debugging login and want to see a token's user info and expiry. Never trust a token just because it decodes; only the server can verify it.",
-    example: { jwt: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkphbmUgRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c" },
-  },
   "dv-commit-lint": {
     what: "Checks whether a commit message title follows the Conventional Commits style (like \"feat(api): add paging\") and shows its type, scope and whether it marks a breaking change.",
     when: "Your project requires Conventional Commits and you want to check a message before pushing.",
     example: { msg: "feat(api): add pagination to list endpoint" },
-  },
-  "dv-ua-parse": {
-    what: "Reads a browser's User-Agent text (the ID string browsers send to websites) and makes a best guess at the browser, its engine and the operating system.",
-    when: "You are reading server logs or bug reports and want to know what browser a visitor used. User-Agents can be faked, so treat it as a hint.",
-    example: { ua: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15" },
   },
   "dv-querystring": {
     what: "Turns a URL query string (the part after ?) into readable JSON, or turns a simple JSON object back into a query string.",

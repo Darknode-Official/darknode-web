@@ -762,27 +762,6 @@ export const TOOLS = [
       return `UTC: ${d.toISOString()}\nNTP seconds: ${ntpSec} (${hx(ntpSec, 8)})\nNTP 64-bit: ${hx(ntpSec, 8).slice(2)}.${frac.toString(16).padStart(8, "0")}`;
     } },
 
-  { id: "np-syslog-pri", name: "Syslog Priority (PRI) Decoder", cat: "netproto", desc: "Decode a syslog PRI value (as in <134>) into its facility and severity, or build the PRI from a facility and severity.", tags: ["syslog", "facility", "severity", "rfc5424"],
-    inputs: [
-      { k: "mode", label: "Mode", type: "select", opts: ["PRI -> facility+severity", "facility+severity -> PRI"], value: "PRI -> facility+severity" },
-      { k: "pri", label: "PRI value (for decode)", type: "text", inputType: "number", placeholder: "134" },
-      { k: "facility", label: "Facility (for encode, 0-23)", type: "text", inputType: "number", placeholder: "16" },
-      { k: "severity", label: "Severity (for encode, 0-7)", type: "text", inputType: "number", placeholder: "6" },
-    ],
-    run(v) {
-      const FAC = { 0: "kernel", 1: "user", 2: "mail", 3: "daemon", 4: "auth/security", 5: "syslogd", 6: "line printer", 7: "news", 8: "uucp", 9: "clock/cron", 10: "authpriv", 11: "ftp", 12: "ntp", 13: "log audit", 14: "log alert", 15: "clock", 16: "local0", 17: "local1", 18: "local2", 19: "local3", 20: "local4", 21: "local5", 22: "local6", 23: "local7" };
-      const SEV = ["0 Emergency", "1 Alert", "2 Critical", "3 Error", "4 Warning", "5 Notice", "6 Informational", "7 Debug"];
-      if (v.mode === "facility+severity -> PRI") {
-        const f = parseInt(v.facility, 10), s = parseInt(v.severity, 10);
-        if (isNaN(f) || f < 0 || f > 23) return { error: "Facility is 0-23." };
-        if (isNaN(s) || s < 0 || s > 7) return { error: "Severity is 0-7." };
-        return `PRI = facility*8 + severity = ${f}*8 + ${s} = ${f * 8 + s}\nWire: <${f * 8 + s}>`;
-      }
-      const pri = parseInt(v.pri, 10); if (isNaN(pri) || pri < 0 || pri > 191) return { error: "PRI is 0-191." };
-      const f = pri >> 3, s = pri & 7;
-      return `PRI ${pri} = <${pri}>\nFacility: ${f} (${FAC[f]})\nSeverity: ${SEV[s]}`;
-    } },
-
   // ================= REFERENCE TABLES =================
   { id: "np-ip-protocols", name: "IP Protocol Number Reference", cat: "netproto", desc: "Look up the IANA IP protocol number carried in the IPv4 Protocol / IPv6 Next Header field (6 TCP, 17 UDP, 1 ICMP, 47 GRE, 50 ESP, ...).", tags: ["ip", "protocol", "iana", "next header"],
     inputs: [{ k: "q", label: "Search number or name (blank = all)", type: "text", placeholder: "gre" }],

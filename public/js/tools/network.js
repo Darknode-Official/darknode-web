@@ -26,15 +26,6 @@ function parseCIDR(s) {
   return { ip, bits, ipInt: ipToInt(ip) };
 }
 const maskFromBits = (bits) => (bits <= 0 ? 0 : (0xffffffff << (32 - bits)) >>> 0);
-function maskToBits(maskInt) {
-  let bits = 0, seenZero = false;
-  for (let i = 31; i >= 0; i--) {
-    const bit = (maskInt >>> i) & 1;
-    if (bit === 1) { if (seenZero) return null; bits++; }
-    else seenZero = true;
-  }
-  return bits;
-}
 function inCidrRange(ipInt, baseStr, bits) {
   const base = ipToInt(parseIPv4(baseStr));
   const mask = maskFromBits(bits);
@@ -94,7 +85,6 @@ function parseIPv6(str) {
   }
   return out;
 }
-const expandIPv6 = (g) => g.map((x) => x.toString(16).padStart(4, "0")).join(":");
 function compressIPv6(g) {
   let bestStart = -1, bestLen = 0, curStart = -1, curLen = 0;
   for (let i = 0; i < 8; i++) {
@@ -168,53 +158,6 @@ const PORTS = {
   9200: "Elasticsearch", 9418: "Git", 11211: "Memcached", 27017: "MongoDB",
   27018: "MongoDB (shard)", 50000: "SAP",
 };
-const HTTP_STATUS = {
-  100: "Continue", 101: "Switching Protocols", 102: "Processing", 103: "Early Hints",
-  200: "OK", 201: "Created", 202: "Accepted", 203: "Non-Authoritative Information",
-  204: "No Content", 205: "Reset Content", 206: "Partial Content", 207: "Multi-Status",
-  208: "Already Reported", 226: "IM Used",
-  300: "Multiple Choices", 301: "Moved Permanently", 302: "Found", 303: "See Other",
-  304: "Not Modified", 305: "Use Proxy", 307: "Temporary Redirect", 308: "Permanent Redirect",
-  400: "Bad Request", 401: "Unauthorized", 402: "Payment Required", 403: "Forbidden",
-  404: "Not Found", 405: "Method Not Allowed", 406: "Not Acceptable",
-  407: "Proxy Authentication Required", 408: "Request Timeout", 409: "Conflict",
-  410: "Gone", 411: "Length Required", 412: "Precondition Failed", 413: "Payload Too Large",
-  414: "URI Too Long", 415: "Unsupported Media Type", 416: "Range Not Satisfiable",
-  417: "Expectation Failed", 418: "I'm a Teapot", 421: "Misdirected Request",
-  422: "Unprocessable Entity", 423: "Locked", 424: "Failed Dependency", 425: "Too Early",
-  426: "Upgrade Required", 428: "Precondition Required", 429: "Too Many Requests",
-  431: "Request Header Fields Too Large", 451: "Unavailable For Legal Reasons",
-  500: "Internal Server Error", 501: "Not Implemented", 502: "Bad Gateway",
-  503: "Service Unavailable", 504: "Gateway Timeout", 505: "HTTP Version Not Supported",
-  506: "Variant Also Negotiates", 507: "Insufficient Storage", 508: "Loop Detected",
-  510: "Not Extended", 511: "Network Authentication Required",
-};
-const MIME = {
-  html: "text/html", htm: "text/html", css: "text/css", js: "application/javascript",
-  mjs: "application/javascript", json: "application/json", xml: "application/xml",
-  txt: "text/plain", csv: "text/csv", md: "text/markdown",
-  png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", gif: "image/gif",
-  svg: "image/svg+xml", webp: "image/webp", ico: "image/x-icon", bmp: "image/bmp",
-  tiff: "image/tiff", avif: "image/avif",
-  mp3: "audio/mpeg", wav: "audio/wav", ogg: "audio/ogg", flac: "audio/flac",
-  aac: "audio/aac", m4a: "audio/mp4",
-  mp4: "video/mp4", webm: "video/webm", avi: "video/x-msvideo", mov: "video/quicktime",
-  mkv: "video/x-matroska",
-  pdf: "application/pdf", zip: "application/zip", gz: "application/gzip",
-  tar: "application/x-tar", rar: "application/vnd.rar", "7z": "application/x-7z-compressed",
-  doc: "application/msword",
-  docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  xls: "application/vnd.ms-excel",
-  xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-  ppt: "application/vnd.ms-powerpoint",
-  pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-  woff: "font/woff", woff2: "font/woff2", ttf: "font/ttf", otf: "font/otf",
-  eot: "application/vnd.ms-fontobject",
-  wasm: "application/wasm", exe: "application/x-msdownload", sh: "application/x-sh",
-  apk: "application/vnd.android.package-archive",
-  yaml: "application/x-yaml", yml: "application/x-yaml", sql: "application/sql",
-  bin: "application/octet-stream",
-};
 const DNS_TYPES = {
   A: "Maps a hostname to an IPv4 address.",
   AAAA: "Maps a hostname to an IPv6 address.",
@@ -271,26 +214,6 @@ export const TOOLS = [
       ].join("\n");
     } },
 
-  { id: "n-cidr-to-mask", name: "CIDR → Netmask", cat: "network", desc: "Convert a prefix length (/24) to a dotted netmask.", tags: ["cidr", "mask"],
-    inputs: [{ k: "bits", label: "CIDR prefix", type: "text", inputType: "number", placeholder: "24" }],
-    run(v) { if (v.bits === "" || v.bits == null) return ""; const bits = parseInt(v.bits, 10); if (isNaN(bits) || bits < 0 || bits > 32) return { error: "Prefix must be 0-32." }; return intToIp(maskFromBits(bits)); } },
-
-  { id: "n-mask-to-cidr", name: "Netmask → CIDR", cat: "network", desc: "Convert a dotted netmask to a prefix length.", tags: ["cidr", "mask"],
-    inputs: [{ k: "mask", label: "Netmask", type: "text", placeholder: "255.255.255.0" }],
-    run(v) { if (!v.mask) return ""; const m = parseIPv4(v.mask); if (!m) return { error: "Enter a valid dotted netmask." }; const bits = maskToBits(ipToInt(m)); if (bits === null) return { error: "Not a contiguous netmask." }; return `/${bits}`; } },
-
-  { id: "n-wildcard-mask", name: "Wildcard Mask", cat: "network", desc: "Derive the wildcard (inverse) mask from a netmask, for ACLs.", tags: ["acl", "cisco", "mask"],
-    inputs: [{ k: "mask", label: "Netmask", type: "text", placeholder: "255.255.255.0" }],
-    run(v) { if (!v.mask) return ""; const m = parseIPv4(v.mask); if (!m) return { error: "Enter a valid dotted netmask." }; return intToIp((~ipToInt(m)) >>> 0); } },
-
-  { id: "n-ip-to-int", name: "IPv4 → Integer", cat: "network", desc: "Convert a dotted IPv4 address to its unsigned 32-bit integer value.", tags: ["ipv4", "integer"],
-    inputs: [{ k: "ip", label: "IPv4 address", type: "text", placeholder: "192.168.1.1" }],
-    run(v) { if (!v.ip) return ""; const p = parseIPv4(v.ip); if (!p) return { error: "Enter a valid IPv4 address." }; return String(ipToInt(p)); } },
-
-  { id: "n-int-to-ip", name: "Integer → IPv4", cat: "network", desc: "Convert an unsigned 32-bit integer to a dotted IPv4 address.", tags: ["ipv4", "integer"],
-    inputs: [{ k: "int", label: "Integer (0 - 4294967295)", type: "text", inputType: "number", placeholder: "3232235777" }],
-    run(v) { if (v.int === "" || v.int == null) return ""; const n = Number(v.int); if (!Number.isInteger(n) || n < 0 || n > 4294967295) return { error: "Enter an integer between 0 and 4294967295." }; return intToIp(n); } },
-
   { id: "n-ip-class", name: "IPv4 Address Class", cat: "network", desc: "Classify a legacy address class (A/B/C/D/E) from its first octet.", tags: ["classful", "ipv4"],
     inputs: [{ k: "ip", label: "IPv4 address", type: "text", placeholder: "172.16.5.1" }],
     run(v) { if (!v.ip) return ""; const p = parseIPv4(v.ip); if (!p) return { error: "Enter a valid IPv4 address." }; const o = p[0]; if (o < 128) return "Class A (1.0.0.0 - 126.255.255.255)"; if (o < 192) return "Class B (128.0.0.0 - 191.255.255.255)"; if (o < 224) return "Class C (192.0.0.0 - 223.255.255.255)"; if (o < 240) return "Class D — Multicast (224.0.0.0 - 239.255.255.255)"; return "Class E — Reserved/experimental (240.0.0.0 - 255.255.255.255)"; } },
@@ -314,10 +237,6 @@ export const TOOLS = [
       for (const [cidr, label] of checks) { const [base, bitsStr] = cidr.split("/"); if (inCidrRange(ipInt, base, parseInt(bitsStr, 10))) return label; }
       return "Public / globally routable";
     } },
-
-  { id: "n-ip-in-cidr", name: "Is IP in CIDR?", cat: "network", desc: "Check whether an IPv4 address falls inside a given CIDR block.", tags: ["cidr", "membership"],
-    inputs: [{ k: "ip", label: "IPv4 address", type: "text", placeholder: "10.0.0.5" }, { k: "cidr", label: "CIDR", type: "text", placeholder: "10.0.0.0/24" }],
-    run(v) { if (!v.ip || !v.cidr) return ""; const c = parseCIDR(v.cidr); if (!c) return { error: "Enter a valid CIDR." }; const p = parseIPv4(v.ip); if (!p) return { error: "Enter a valid IPv4 address." }; const mask = maskFromBits(c.bits); const inside = ((ipToInt(p) & mask) >>> 0) === ((c.ipInt & mask) >>> 0); return inside ? `Yes — ${v.ip} is inside ${v.cidr}` : `No — ${v.ip} is outside ${v.cidr}`; } },
 
   { id: "n-cidr-hosts", name: "CIDR Host Counter", cat: "network", desc: "Total addresses and usable hosts for a given prefix length.", tags: ["cidr", "hosts"],
     inputs: [{ k: "bits", label: "CIDR prefix", type: "text", inputType: "number", placeholder: "24" }],
@@ -352,14 +271,6 @@ export const TOOLS = [
       for (let i = 0; i < n; i++) lines.push(`${intToIp(base + i * blockSize)}/${newBits}`);
       return lines.join("\n");
     } },
-
-  { id: "n-ipv6-expand", name: "IPv6 Expander", cat: "network", desc: "Expand a compressed IPv6 address to its full 8-group form.", tags: ["ipv6", "expand"],
-    inputs: [{ k: "addr", label: "IPv6 address", type: "text", placeholder: "2001:db8::1" }],
-    run(v) { if (!v.addr) return ""; const g = parseIPv6(v.addr); if (!g) return { error: "Enter a valid IPv6 address." }; return expandIPv6(g); } },
-
-  { id: "n-ipv6-compress", name: "IPv6 Compressor", cat: "network", desc: "Compress an IPv6 address to its shortest :: form.", tags: ["ipv6", "compress"],
-    inputs: [{ k: "addr", label: "IPv6 address", type: "text", placeholder: "2001:0db8:0000:0000:0000:0000:0000:0001" }],
-    run(v) { if (!v.addr) return ""; const g = parseIPv6(v.addr); if (!g) return { error: "Enter a valid IPv6 address." }; return compressIPv6(g); } },
 
   { id: "n-ipv6-eui64", name: "MAC → EUI-64 Interface ID", cat: "network", desc: "Derive the 64-bit modified-EUI-64 interface identifier from a MAC address.", tags: ["ipv6", "eui64", "mac"],
     inputs: [{ k: "mac", label: "MAC address", type: "text", placeholder: "AA:BB:CC:DD:EE:FF" }],
@@ -399,17 +310,17 @@ export const TOOLS = [
     inputs: [{ k: "mac", label: "MAC address", type: "text", placeholder: "00:0C:29:12:34:56" }],
     run(v) { if (!v.mac) return ""; const mac = parseMac(v.mac); if (!mac) return { error: "Enter a valid MAC address." }; const key = mac.slice(0, 3).map((b) => b.toString(16).padStart(2, "0")).join("").toUpperCase(); const vendor = OUI[key]; return vendor ? `${vendor} (OUI ${key})` : `Not found for OUI ${key} — this is a local subset of ~25 common OUIs, not the full IEEE registry.`; } },
 
-  { id: "n-port-lookup", name: "TCP/UDP Port Lookup", cat: "network", desc: "Look up the well-known service for a port number, from a local reference table.", tags: ["port", "service"],
-    inputs: [{ k: "port", label: "Port", type: "text", inputType: "number", placeholder: "443" }],
-    run(v) { if (v.port === "" || v.port == null) return ""; const port = parseInt(v.port, 10); if (isNaN(port) || port < 0 || port > 65535) return { error: "Enter a port number 0-65535." }; const svc = PORTS[port]; return svc ? `Port ${port} — ${svc}` : `Port ${port} has no entry in this local table; it may be dynamic/private (49152-65535) or simply unlisted.`; } },
-
   { id: "n-ports-reference", name: "Common Ports Reference", cat: "network", desc: "Search the local list of common TCP/UDP ports by name or number.", tags: ["port", "reference", "search"],
     inputs: [{ k: "q", label: "Search (name or number, blank = all)", type: "text", placeholder: "sql" }],
     run(v) {
       const q = String(v.q || "").trim().toLowerCase();
       const entries = Object.entries(PORTS).sort((a, b) => Number(a[0]) - Number(b[0]));
       const matches = entries.filter(([port, name]) => !q || port.includes(q) || name.toLowerCase().includes(q));
-      if (!matches.length) return { error: "No matching ports found." };
+      if (!matches.length) {
+        const n = /^\d+$/.test(q) ? Number(q) : NaN;
+        if (n >= 0 && n <= 65535) return `Port ${n} has no entry in this local table; ${n >= 49152 ? "it is in the dynamic/private range (49152-65535)" : "it may simply be unlisted"}.`;
+        return { error: "No matching ports found." };
+      }
       return matches.map(([port, name]) => `${port} — ${name}`).join("\n");
     } },
 
@@ -431,22 +342,6 @@ export const TOOLS = [
       return `Value: ${n} (binary ${n.toString(2).padStart(8, "0")}, hex 0x${n.toString(16).padStart(2, "0")})`;
     } },
 
-  { id: "n-http-status", name: "HTTP Status Code Lookup", cat: "network", desc: "Meaning and class for any HTTP status code, 1xx-5xx.", tags: ["http", "status"],
-    inputs: [{ k: "code", label: "Status code", type: "text", inputType: "number", placeholder: "404" }],
-    run(v) { if (v.code === "" || v.code == null) return ""; const code = parseInt(v.code, 10); const name = HTTP_STATUS[code]; if (!name) return { error: `Unknown or unlisted status code ${v.code}.` }; const cls = code < 200 ? "Informational" : code < 300 ? "Success" : code < 400 ? "Redirection" : code < 500 ? "Client Error" : "Server Error"; return `${code} ${name} (${cls})`; } },
-
-  { id: "n-http-methods", name: "HTTP Methods Reference", cat: "network", desc: "What each HTTP request method is for.", tags: ["http", "methods", "verbs"],
-    inputs: [{ k: "method", label: "Method (blank = all)", type: "select", opts: ["", "GET", "HEAD", "POST", "PUT", "DELETE", "CONNECT", "OPTIONS", "TRACE", "PATCH"], value: "" }],
-    run(v) {
-      const M = { GET: "Retrieve a representation of a resource.", HEAD: "Like GET but returns headers only, no body.", POST: "Submit data to be processed, or create a resource.", PUT: "Replace a resource entirely with the supplied payload.", DELETE: "Remove the specified resource.", CONNECT: "Establish a tunnel to the server (used for HTTPS proxying).", OPTIONS: "Describe the communication options for the target resource.", TRACE: "Echo the received request for diagnostic loop-back testing.", PATCH: "Apply a partial modification to a resource." };
-      if (v.method && M[v.method]) return `${v.method}: ${M[v.method]}`;
-      return Object.entries(M).map(([k, d]) => `${k}: ${d}`).join("\n");
-    } },
-
-  { id: "n-mime-type", name: "MIME Type by Extension", cat: "network", desc: "Look up the MIME/content type for a file extension, from a ~50-entry table.", tags: ["mime", "content-type"],
-    inputs: [{ k: "ext", label: "Extension", type: "text", placeholder: "svg" }],
-    run(v) { if (!v.ext) return ""; const ext = String(v.ext).trim().replace(/^\./, "").toLowerCase(); const mime = MIME[ext]; if (!mime) return { error: `Unknown extension ".${ext}" — not in this local table.` }; return mime; } },
-
   { id: "n-url-parser", name: "URL Parser", cat: "network", desc: "Break a URL down into scheme, host, port, path, query and fragment.", tags: ["url", "parse"],
     inputs: [{ k: "url", label: "URL", type: "text", placeholder: "https://user:pass@example.com:8443/a/b?x=1&y=2#frag" }],
     run(v) {
@@ -457,6 +352,7 @@ export const TOOLS = [
         u.searchParams.forEach((val, key) => q.push(`  ${key} = ${val}`));
         return [
           `Scheme: ${u.protocol.replace(":", "")}`,
+          `Origin: ${u.origin}`,
           `Host: ${u.hostname}`,
           `Port: ${u.port || "(default)"}`,
           `Path: ${u.pathname}`,
@@ -473,7 +369,7 @@ export const TOOLS = [
     inputs: [{ k: "qs", label: "Query string", type: "textarea", rows: 3, placeholder: "a=1&b=two&a=3" }],
     run(v) { if (!v.qs) return ""; try { const s = v.qs.trim().replace(/^\?/, ""); const params = new URLSearchParams(s); const lines = []; params.forEach((val, key) => lines.push(`${key} = ${val}`)); return lines.length ? lines.join("\n") : "(no parameters)"; } catch (e) { return { error: "Could not parse query string." }; } } },
 
-  { id: "n-user-agent", name: "User-Agent Parser", cat: "network", desc: "Heuristically identify browser, OS and device type from a User-Agent string.", tags: ["ua", "browser", "os"],
+  { id: "n-user-agent", name: "User-Agent Parser", cat: "network", desc: "Heuristically identify browser, engine, OS, device type (desktop/mobile/tablet) and bots from a User-Agent string.", tags: ["ua", "browser", "os", "user-agent", "bot", "device"],
     inputs: [{ k: "ua", label: "User-Agent string", type: "textarea", rows: 3, placeholder: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) ... Chrome/120.0 Safari/537.36" }],
     run(v) {
       const ua = String(v.ua || ""); if (!ua) return "";
@@ -483,8 +379,10 @@ export const TOOLS = [
       let os = "Unknown";
       const osTests = [[/Windows NT 10\.0/, "Windows 10/11"], [/Windows NT 6\.3/, "Windows 8.1"], [/Windows NT 6\.2/, "Windows 8"], [/Windows NT 6\.1/, "Windows 7"], [/iPad.*OS ([\d_]+)/, "iPadOS"], [/iPhone OS ([\d_]+)/, "iOS"], [/Mac OS X ([\d_]+)/, "macOS"], [/Android ([\d.]+)/, "Android"], [/CrOS/, "ChromeOS"], [/Linux/, "Linux"]];
       for (const [re, name] of osTests) { if (re.test(ua)) { os = name; break; } }
-      const mobile = /Mobi|Android|iPhone|iPad/.test(ua);
-      return `Browser: ${browser}${bver ? " " + bver : ""}\nOS: ${os}\nDevice: ${mobile ? "Mobile" : "Desktop"}`;
+      const device = /iPad|Tablet/.test(ua) || (/Android/.test(ua) && !/Mobile/.test(ua)) ? "Tablet" : /Mobi|Android|iPhone|iPod/.test(ua) ? "Mobile" : "Desktop";
+      const engine = /Gecko\/|rv:/.test(ua) && /Firefox/.test(ua) ? "Gecko" : /Trident|MSIE/.test(ua) ? "Trident" : /AppleWebKit/.test(ua) ? "WebKit/Blink" : "Unknown";
+      const bot = /bot|crawler|spider|slurp|crawl/i.test(ua);
+      return `Browser: ${browser}${bver ? " " + bver : ""}\nEngine: ${engine}\nOS: ${os}\nDevice: ${device}\nBot/crawler: ${bot ? "yes" : "no"}`;
     } },
 
   { id: "n-dns-types", name: "DNS Record Type Explainer", cat: "network", desc: "What each DNS record type (A, AAAA, MX, TXT, …) is used for.", tags: ["dns", "records"],
@@ -540,21 +438,6 @@ export const TOOLS = [
       if (v.scripts) cmd += ` --script ${v.scripts.trim()}`;
       if (v.timing) cmd += " -T4";
       cmd += ` ${v.target.trim()}`;
-      return cmd;
-    } },
-
-  { id: "n-curl-builder", name: "curl Command Builder", cat: "network", desc: "Build a curl command with method, headers and body.", tags: ["curl", "http", "command"],
-    inputs: [{ k: "method", label: "Method", type: "select", opts: ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"], value: "GET" }, { k: "url", label: "URL", type: "text", placeholder: "https://api.example.com/v1/items" }, { k: "headers", label: "Headers (one per line, Key: Value)", type: "textarea", rows: 3, placeholder: "Authorization: Bearer TOKEN\nContent-Type: application/json" }, { k: "data", label: "Body data (optional)", type: "textarea", rows: 2, placeholder: '{"key":"value"}' }, { k: "insecure", label: "Insecure (-k, skip TLS verify)", type: "checkbox", value: false }, { k: "verbose", label: "Verbose (-v)", type: "checkbox", value: false }],
-    run(v) {
-      if (!v.url) return "";
-      let cmd = "curl";
-      if (v.method && v.method !== "GET") cmd += ` -X ${v.method}`;
-      const headers = String(v.headers || "").split("\n").map((s) => s.trim()).filter(Boolean);
-      for (const h of headers) cmd += ` -H "${h.replace(/"/g, '\\"')}"`;
-      if (v.data) cmd += ` -d '${String(v.data).replace(/'/g, "'\\''")}'`;
-      if (v.insecure) cmd += " -k";
-      if (v.verbose) cmd += " -v";
-      cmd += ` "${v.url.trim()}"`;
       return cmd;
     } },
 

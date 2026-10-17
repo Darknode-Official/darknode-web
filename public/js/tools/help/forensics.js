@@ -2,11 +2,6 @@
 // Plain-English help for the forensics.js mini-tools. See help/README.md for the contract.
 // Digital Forensics & Incident Response helpers for analysts and defenders.
 export const HELP = {
-  "fx-filetime": {
-    what: "Converts a Windows FILETIME (a count of 100-nanosecond ticks since 1 January 1601) into a normal UTC date and time, or turns a date back into a FILETIME.",
-    when: "You found a huge 18-digit number in an NTFS record, registry value or event log and need to know the real date it represents.",
-    example: { mode: "Decode", val: "132537600000000000" },
-  },
   "fx-chrome-time": {
     what: "Converts a Chrome/WebKit timestamp (microseconds since 1 January 1601) into a UTC date, or back. These appear in Chrome's History and Cookies databases.",
     when: "You are examining a Chrome SQLite database and see a 17-digit time value you need to read.",
@@ -58,29 +53,19 @@ export const HELP = {
     example: { text: "1700000000 user login\n2023-11-14T22:30:00Z file written\n1699999000 service restarted", order: "Ascending" },
   },
   "fx-magic-bytes": {
-    what: "Takes the first bytes of a file as hex and tells you what kind of file it is by matching its signature (magic bytes), including container formats like WebP and MP4.",
+    what: "Takes the first bytes of a file as hex or Base64 and tells you what kind of file it is by matching its signature (magic bytes), including container formats like WebP and MP4.",
     when: "You carved a file with no extension, or an extension looks wrong, and you need to confirm the true file type.",
     example: { hex: "89 50 4E 47 0D 0A 1A 0A" },
   },
   "fx-hexdump": {
-    what: "Shows bytes as a classic hex dump: an offset column, the bytes in hex, and a side column of printable characters. Works from hex or plain text input.",
+    what: "Shows bytes as a classic hex dump: an offset column, the bytes in hex, and a side column of printable characters. Works from text, hex or Base64 input, with 8, 16 or 32 bytes per row.",
     when: "You want to inspect the exact bytes of a small blob the way xxd or hexdump -C would show them.",
     example: { data: "DFIR evidence", src: "Text" },
-  },
-  "fx-strings": {
-    what: "Pulls readable text out of binary data, finding both ASCII and UTF-16LE strings at or above a minimum length. Like the Unix strings command.",
-    when: "You have a binary sample (as hex) and want to spot URLs, file paths, commands or messages hidden in it.",
-    example: { data: "68656C6C6F00320077006F0072006C006400", src: "Hex", mode: "Both" },
   },
   "fx-entropy-profile": {
     what: "Measures the randomness (Shannon entropy, 0 to 8 bits per byte) of each fixed-size block of a hex blob, so blocks near 8 that look encrypted or compressed stand out.",
     when: "You want to find packed, encrypted or compressed regions inside a binary without unpacking it.",
     example: { hex: "00010203040506070809101112131415", block: "8" },
-  },
-  "fx-base64-extract": {
-    what: "Scans a block of text for base64-looking chunks, decodes each one and shows a printable preview. Helps surface hidden commands or data.",
-    when: "You are triaging a script, macro or log that contains embedded base64 and want to see what it decodes to.",
-    example: { text: "then it ran SGVsbG8gV29ybGQhIERGSVIgcm9ja3M= and exited", min: "16" },
   },
   "fx-png-chunks": {
     what: "Parses a PNG image from hex: checks its signature, lists every chunk with its type and size, and reads the image dimensions and colour type from the IHDR chunk.",
@@ -143,7 +128,7 @@ export const HELP = {
     example: { q: "dword" },
   },
   "fx-uuid-inspect": {
-    what: "Decodes a UUID/GUID: reports its version and variant, and for a version-1 UUID pulls out the embedded creation time, clock sequence and node (MAC address).",
+    what: "Decodes a UUID/GUID: reports its version and variant, flags the nil and max UUIDs, and for a version-1 UUID pulls out the embedded creation time, clock sequence and node (MAC address).",
     when: "You found a GUID in an artifact and want to know how it was generated, or extract a time and MAC from a v1 UUID.",
     example: { uuid: "6ba7b810-9dad-11d1-80b4-00c04fd430c8" },
   },
@@ -151,11 +136,6 @@ export const HELP = {
     what: "Looks up a Windows Security, System or PowerShell event ID (such as 4624 or 7045) or searches event descriptions. Uses a small, accurate curated list.",
     when: "You see an event ID in a Windows log and need a quick, reliable reminder of what it means.",
     example: { q: "4624" },
-  },
-  "fx-logon-type": {
-    what: "Explains the Windows logon type code from logon events 4624 and 4625, such as 3 for network and 10 for Remote Desktop.",
-    when: "You are reading a 4624 logon event and need to know how the logon happened.",
-    example: { q: "10" },
   },
   "fx-sysmon-event-id": {
     what: "Looks up a Sysmon event ID (1 to 29) and what it records, for example 1 is process creation and 3 is a network connection.",
@@ -186,11 +166,6 @@ export const HELP = {
     what: "Decodes a Windows service type number into its flags and lists the service start-type codes (0 Boot through 4 Disabled).",
     when: "You are examining a newly installed service (event 7045) or the Services registry and need to read its type and start setting.",
     example: { type: "0x10" },
-  },
-  "fx-kerberos-etype": {
-    what: "Looks up a Kerberos encryption type (etype) number, for example 23 is RC4-HMAC and 18 is AES-256.",
-    when: "You are triaging Kerberos events (4768/4769) or checking for weak ticket encryption and see an etype number.",
-    example: { q: "23" },
   },
   "fx-email-received": {
     what: "Reads the Received: headers of an email and lists the relay hops in delivery order (earliest first), with each hop's source and destination hosts and the delay between hops.",
@@ -267,21 +242,6 @@ export const HELP = {
     when: "You are reviewing AWS activity and want the important parts of a CloudTrail record without wading through the JSON.",
     example: { json: '{"eventTime":"2024-01-01T10:00:00Z","eventName":"ConsoleLogin","eventSource":"signin.amazonaws.com","awsRegion":"us-east-1","sourceIPAddress":"198.51.100.7","userIdentity":{"type":"IAMUser","userName":"alice","accountId":"123456789012"}}' },
   },
-  "fx-ioc-extract": {
-    what: "Pulls indicators of compromise out of text: IP addresses, domains, URLs, email addresses, MD5/SHA-1/SHA-256 hashes and CVE IDs. It can first un-defang input like hxxp and [.].",
-    when: "You have a report, email or log and want to quickly collect all the technical indicators from it.",
-    example: { text: "beacon to hxxp://bad[.]example/c2 from 198.51.100.7, dropper md5 44d88612fea8a8f36de82e1278abb02f, see CVE-2021-44228", refang: true },
-  },
-  "fx-defang": {
-    what: "Makes indicators safe to paste by neutralizing them: http becomes hxxp, dots become [.], and @ becomes [at], so links and addresses will not auto-activate.",
-    when: "You are writing a report or ticket and need to include a malicious URL or address without it becoming clickable.",
-    example: { text: "http://bad.example/path and attacker@bad.example" },
-  },
-  "fx-refang": {
-    what: "Reverses common defanging so indicators work again: hxxp becomes http, [.] becomes a dot and [at] becomes @.",
-    when: "You received defanged indicators and need them in normal form to look up or analyse. Only refang values you intend to handle safely.",
-    example: { text: "hxxp://bad[.]example/path and attacker[at]bad[.]example" },
-  },
   "fx-url-decode-recursive": {
     what: "Percent-decodes a URL or parameter over and over until it stops changing, revealing double or triple encoding, and shows each decoding pass.",
     when: "You suspect an attacker encoded a payload more than once to slip past a filter and want the final decoded value.",
@@ -312,11 +272,6 @@ export const HELP = {
     when: "You pulled a GPS location from a photo's EXIF data and want it as a decimal you can drop onto a map, or the reverse.",
     example: { mode: "DMS to Decimal", deg: "37", min: "48", sec: "30", ref: "N" },
   },
-  "fx-attack-tactics": {
-    what: "Looks up the 14 MITRE ATT&CK enterprise tactics by their ID (like TA0001) or name, with a short note on each attacker goal.",
-    when: "You are mapping observed activity to ATT&CK tactics and want the IDs and names handy.",
-    example: { q: "persistence" },
-  },
   "fx-stat-mode": {
     what: "Decodes a Unix file mode value (like 100755 from stat metadata) into the file type, an ls-style permission string, and any setuid, setgid or sticky bits.",
     when: "You see a numeric mode in filesystem metadata and want to read it the way ls -l would show it.",
@@ -341,10 +296,5 @@ export const HELP = {
     what: "Builds a common Sleuth Kit command (mmls, fsstat, fls, icat or istat) for examining a disk image, filling in the image, offset and inode.",
     when: "You are working a disk image with The Sleuth Kit and want the right command to list or extract files.",
     example: { tool: "fls (list files)", image: "/cases/disk.img", offset: "2048" },
-  },
-  "fx-yara-rule": {
-    what: "Generates a valid YARA detection rule from the text and hex strings you provide, with a meta block and a match condition you choose.",
-    when: "You identified strings that mark a malware sample and want a starting YARA rule to detect it.",
-    example: { name: "Suspicious_Dropper", author: "analyst", textStrings: "cmd.exe /c\nInvoke-Expression", hexStrings: "4D 5A 90 00", cond: "any of them", nocase: true },
   },
 };

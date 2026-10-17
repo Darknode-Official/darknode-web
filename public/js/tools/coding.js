@@ -1712,27 +1712,6 @@ export const TOOLS = [
     },
   },
   {
-    id: "cd-hexdump", name: "Hex Dump", cat: "coding",
-    desc: "Show text as a classic hex dump: byte offset, hex bytes, and an ASCII gutter (non-printable bytes shown as a dot). Bytes come from the UTF-8 encoding of the input.",
-    tags: ["hexdump", "hex", "bytes", "xxd", "ascii"],
-    inputs: [
-      { k: "text", label: "Text", type: "textarea", rows: 5, placeholder: "Hello, world!" },
-      { k: "width", label: "Bytes per row", type: "select", opts: ["16", "8", "32"], value: "16" },
-    ],
-    run(v, H) {
-      const s = S(v.text); if (s === "") return "";
-      const u = H.bytes(s); const w = Number(v.width) || 16; const out = [];
-      for (let off = 0; off < u.length; off += w) {
-        const slice = u.slice(off, off + w);
-        const hex = Array.from(slice, (b) => b.toString(16).padStart(2, "0")).join(" ").padEnd(w * 3 - 1, " ");
-        const ascii = Array.from(slice, (b) => b >= 32 && b < 127 ? String.fromCharCode(b) : ".").join("");
-        out.push(off.toString(16).padStart(8, "0") + "  " + hex + "  |" + ascii + "|");
-      }
-      out.push(u.length.toString(16).padStart(8, "0") + "  (" + u.length + " bytes)");
-      return out.join("\n");
-    },
-  },
-  {
     id: "cd-byte-array", name: "Byte Array Literal Formatter", cat: "coding",
     desc: "Turn text (or a hex string) into a source-code byte-array literal for C, Rust, Go, Java, Python, a JS Uint8Array, a 0x-comma list, or plain hex.",
     tags: ["byte array", "literal", "shellcode", "c array", "codegen"],

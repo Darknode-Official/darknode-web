@@ -8,7 +8,7 @@ export const HELP = {
     example: { token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c", mode: "analyze" },
   },
   "w-csp-builder": {
-    what: "Builds a Content-Security-Policy header (a browser rule that limits where a page may load scripts, images and other content from) out of the values you fill in per category.",
+    what: "Builds a Content-Security-Policy header (a browser rule that limits where a page may load scripts, images and other content from) out of the values you fill in per category, plus any extra directives you add one per line.",
     when: "You are hardening a website and want a ready-to-paste CSP header that restricts content to trusted sources.",
     example: { defaultSrc: "'self'", scriptSrc: "'self'", styleSrc: "'self'", imgSrc: "'self' data:", frameAncestors: "'none'", upgradeInsecure: true },
   },
@@ -162,23 +162,13 @@ export const HELP = {
     when: "You are doing authorised recon and want to find exposed files or pages on a domain you are allowed to investigate.",
     example: { site: "example.com", inurl: "admin", intitle: "", filetype: "pdf", ext: "", extra: "" },
   },
-  "w-cvss-calc": {
-    what: "Reads a CVSS v3.1 vector string (the standard shorthand for how severe a vulnerability is) and works out its numeric base score and severity rating.",
-    when: "You have a CVSS vector from an advisory or scan and want its 0-10 score and Low/Medium/High/Critical label.",
-    example: { vector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H" },
-  },
-  "w-cvss-vector-builder": {
-    what: "Builds a CVSS v3.1 vector string and score by picking each severity metric from dropdowns (attack vector, complexity, impact and so on).",
-    when: "You are writing up a vulnerability and need to produce its CVSS vector and base score.",
-    example: { AV: "N", AC: "L", PR: "N", UI: "N", S: "U", C: "H", I: "H", A: "H" },
-  },
   "w-sri-hash": {
     what: "Computes a SHA-384 hash of the content you paste and formats it as an integrity attribute. SRI (Subresource Integrity) lets a browser refuse a script or stylesheet if it has been tampered with.",
     when: "You load a script or stylesheet from a CDN and want an integrity value so the browser checks it has not been changed.",
     example: { content: "console.log('hello world');" },
   },
   "w-password-policy-check": {
-    what: "Checks a password against the length and character rules you set (uppercase, digits, symbols and so on) and reports which rules it meets.",
+    what: "Checks a password against the length and character rules you set (uppercase, digits, symbols and so on) and reports which rules it meets and how many.",
     when: "You are reviewing or demonstrating a password policy and want to see whether a sample password passes it.",
     example: { password: "Sup3r-Secret!23", minLen: "12", reqUpper: true, reqLower: true, reqDigit: true, reqSpecial: true, noSpaces: false },
   },

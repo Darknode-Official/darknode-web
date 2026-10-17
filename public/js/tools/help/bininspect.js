@@ -96,11 +96,6 @@ export const HELP = {
     when: "You read a Mach-O filetype and want to know whether the file is a program, a library or an object file.",
     example: { q: "2" },
   },
-  "bi-magic-bytes": {
-    what: "Identifies a file type from the first bytes you paste by matching them against known magic-number signatures (PNG, PDF, ZIP, ELF, PE, gzip, and many more). It does not open any file.",
-    when: "You have the leading bytes of an unknown or mislabelled file and want to know what it really is.",
-    example: { data: "89504E470D0A1A0A", fmt: "Auto" },
-  },
   "bi-byte-reformat": {
     what: "Takes a hex or base64 byte blob and rewrites it in another text format: \\xAA escaped, 0xAA comma list, a C array, a Python bytes literal, spaced hex, bare hex, base64 or decimal. Pure text transform.",
     when: "You need to paste some captured bytes into an analysis notebook or script in a particular syntax.",
@@ -121,13 +116,8 @@ export const HELP = {
     when: "You are decoding a binary structure and want to see every plausible integer reading of the same bytes.",
     example: { hex: "78 56 34 12" },
   },
-  "bi-hexdump": {
-    what: "Shows a hex/base64 blob as a classic hexdump: an offset column, 16 hex bytes per row and an ASCII gutter on the right.",
-    when: "You want to eyeball the structure of some bytes the way the xxd or hexdump tool shows them.",
-    example: { data: "48656C6C6F2C20776F726C6421", fmt: "Auto" },
-  },
   "bi-strings": {
-    what: "Pulls readable text out of a byte blob, like the Unix 'strings' tool: runs of printable ASCII (or UTF-16 wide characters) at least as long as you set, each with its offset.",
+    what: "Pulls readable text out of a byte blob (hex, Base64 or pasted text), like the Unix 'strings' tool: runs of printable ASCII (or UTF-16 wide characters) at least as long as you set, each with its offset.",
     when: "You have a chunk of a binary and want to read the URLs, paths and messages hidden in it.",
     example: { data: "68656c6c6f0001776f726c64", fmt: "Auto", mode: "ASCII" },
   },
@@ -146,11 +136,6 @@ export const HELP = {
     when: "You are reading a report, log or script and want to decode the base64 chunks buried in it.",
     example: { text: "run this: aGVsbG8gd29ybGQh then exit" },
   },
-  "bi-powershell-decode": {
-    what: "Decodes a PowerShell -EncodedCommand value (base64 of UTF-16LE text) back into the readable script, which is how encoded PowerShell appears in logs.",
-    when: "You found a 'powershell -enc <base64>' command in a log and want to read what it would have run.",
-    example: { b64: "VwByAGkAdABlAC0ASABvAHMAdAAgAGgAaQA=" },
-  },
   "bi-url-deobfuscate": {
     what: "Recursively percent-decodes a URL or log value, peeling off double or triple encoding, and reports how many layers it removed.",
     when: "You see an over-encoded path in a web log (like %252e%252e%252f) and want the real request it hides.",
@@ -165,11 +150,6 @@ export const HELP = {
     what: "Tries all 256 single-byte XOR keys against a byte blob and lists the keys that turn it into mostly readable text, optionally only the ones that contain a word you expect.",
     when: "You have a short string that was hidden with a single-byte XOR and want to recover it.",
     example: { data: "29242d2d2e", fmt: "Auto", crib: "hel" },
-  },
-  "bi-ioc-extract": {
-    what: "Pulls indicators of compromise out of a pasted report or log: IPv4/IPv6 addresses, domains, URLs, email addresses and MD5/SHA-1/SHA-256 hashes, de-duplicated, with optional defanging.",
-    when: "You have a threat report or log and want a clean, grouped list of the indicators in it.",
-    example: { text: "C2 at 198.51.100.23 and http://bad.example.com/x, hash 44d88612fea8a8f36de82e1278abb02f, mail evil@example.com", defang: true },
   },
   "bi-defang-refang": {
     what: "Switches indicators between live and safe-to-share form: defang turns http://1.2.3.4 into hxxp[://]1[.]2[.]3[.]4 so it is not clickable, and refang turns it back.",
@@ -191,20 +171,10 @@ export const HELP = {
     when: "You have hashes scattered through notes or a report and want one clean, grouped list for comparison.",
     example: { text: "d41d8cd98f00b204e9800998ecf8427e file1\nDA39A3EE5E6B4B0D3255BFEF95601890AFD80709 file2\nd41d8cd98f00b204e9800998ecf8427e dup" },
   },
-  "bi-yara-skeleton": {
-    what: "Formats the strings you picked into a well-formed YARA rule template with meta, strings and condition sections. Text strings are quoted, {..} hex and /re/ regex are kept as-is. It is a scaffold, not generated detection logic.",
-    when: "You have chosen a few strings from a sample and want a correctly structured YARA rule to fill in.",
-    example: { name: "Suspicious_Sample", strings: "cmd.exe /c\nhxxp fragment\n{ 6A 40 68 00 30 }", author: "analyst", desc: "example detection", cond: "any of them" },
-  },
   "bi-yara-hex": {
     what: "Turns a hex or base64 byte blob into a YARA hex string like { 6A 40 68 00 30 }, optionally wrapped across lines, ready to paste into a rule.",
     when: "You have some bytes to match and want them formatted as a YARA hex string.",
     example: { data: "6A40680030", fmt: "Auto", name: "$a", wrap: "16" },
-  },
-  "bi-sigma-skeleton": {
-    what: "Formats a Sigma detection-rule scaffold (YAML) from a title, log source and field:value selection lines you provide. A template, not generated logic.",
-    when: "You want a correctly structured Sigma rule skeleton to fill in for a SIEM detection.",
-    example: { title: "Suspicious PowerShell EncodedCommand", product: "windows", category: "process_creation", selection: "Image|endswith: \\powershell.exe\nCommandLine|contains: -enc", level: "high" },
   },
   "bi-vt-url": {
     what: "Builds the VirusTotal web address for a hash, IP, domain or URL you paste, so you can open the report in your browser. It only formats a link; it does not contact VirusTotal.",
@@ -266,20 +236,10 @@ export const HELP = {
     when: "You see a trusted Windows tool doing something odd in a log and want to know how attackers abuse it.",
     example: { q: "certutil" },
   },
-  "bi-registry-autorun": {
-    what: "Reference of common Windows registry autorun and persistence locations - Run keys, Winlogon entries, services and Image File Execution Options. Leave blank for the full list.",
-    when: "You are hunting for persistence and want the usual registry locations to check.",
-    example: { q: "winlogon" },
-  },
   "bi-attack-lookup": {
     what: "Looks up a MITRE ATT&CK Enterprise technique by its T-number or by keyword and shows its name and tactic. A curated, accurate subset of techniques.",
     when: "You see an ATT&CK technique ID in a report (like T1055) and want its name and tactic, or you want the ID for a behaviour.",
     example: { q: "T1055" },
-  },
-  "bi-attack-tactics": {
-    what: "Lists the 14 MITRE ATT&CK Enterprise tactics with their TA numbers, or looks one up by name or number.",
-    when: "You need the official tactic names and TA IDs, for example to label a detection.",
-    example: { q: "persistence" },
   },
   "bi-killchain": {
     what: "Reference for the seven phases of the Lockheed Martin Cyber Kill Chain, from Reconnaissance through to Actions on Objectives. Leave blank for all phases.",
@@ -290,11 +250,6 @@ export const HELP = {
     what: "Reference for the four core features of the Diamond Model of intrusion analysis: Adversary, Capability, Infrastructure and Victim.",
     when: "You are structuring an intrusion analysis around the Diamond Model and want the definitions.",
     example: { q: "infrastructure" },
-  },
-  "bi-pyramid-of-pain": {
-    what: "Reference for the Pyramid of Pain, which ranks indicator types by how much blocking them hurts an attacker - hashes are easiest for them to change, TTPs the hardest.",
-    when: "You want to explain why behaviour-based detections are more valuable than hash or IP blocks.",
-    example: { q: "ttp" },
   },
   "bi-tlp": {
     what: "Explains the FIRST Traffic Light Protocol 2.0 sharing levels (RED, AMBER, AMBER+STRICT, GREEN, CLEAR) used to mark how widely threat intel may be shared.",
