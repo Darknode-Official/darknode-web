@@ -152,9 +152,9 @@ function responseTimeline(p) {
     t.push({ when: 'Day 1-3', title: 'Ransom decision', detail: 'Board-level decision with counsel and insurer. Check sanctions exposure (OFAC) before any payment; law enforcement advises against paying.' });
   }
   if (v === 'bec') t.push({ when: 'Hour 0-24', title: 'Funds recall', detail: 'Contact your bank immediately to recall or freeze transfers and report to law enforcement (IC3 in the US).' });
-  obl.forEach(function(o) { if (o.hours && o.hours <= 72) t.push({ when: 'Hour ' + o.hours + ' (deadline)', title: o.reg, detail: 'Notify ' + o.who + ' ' + o.when + '.' }); });
+  obl.forEach(function(o) { if (o.hours && o.hours <= 72) t.push({ when: 'Hour ' + o.hours + ' (deadline)', title: o.reg, detail: 'Notify ' + o.who + ': ' + o.when + '.' }); });
   t.push({ when: 'Day 1-14', title: 'Forensics and data impact', detail: 'Establish root cause and scope; classify the ' + fmtN(p.records || 0) + ' affected records by data type and jurisdiction.' });
-  obl.forEach(function(o) { if (!o.hours || o.hours > 72) t.push({ when: o.hours ? 'Day ' + Math.round(o.hours / 24) + ' (deadline)' : 'Deadline', title: o.reg, detail: 'Notify ' + o.who + ' ' + o.when + '.' }); });
+  obl.forEach(function(o) { if (!o.hours || o.hours > 72) t.push({ when: o.hours ? 'Day ' + Math.round(o.hours / 24) + ' (deadline)' : 'Deadline', title: o.reg, detail: 'Notify ' + o.who + ': ' + o.when + '.' }); });
   t.push({ when: 'Day ' + (mtti + mttc), title: 'Containment complete', detail: 'Attacker access removed ' + mttc + ' days after identification (your input).' });
   t.push({ when: 'After containment', title: 'Recovery and hardening', detail: 'Rebuild from clean images, rotate credentials, close the entry point, then verify with testing.' });
   t.push({ when: 'Months 2-12', title: 'Aftermath', detail: 'Regulator inquiries, claims or litigation, customer communications, and a lessons-learned review.' });
