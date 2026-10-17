@@ -23,7 +23,7 @@ full-width layouts on the ink theme; every detection cites a standard; ask befor
 | `public/js/core/register.js` | Team-shareable list of records (graph-mirrored) | `openRegister`, `wsKey`, `isTeam` |
 | `public/js/core/export.js` | Downloads and serialisers | `download`, `toCsv`, `toJson`, `toNdjson`, `fileStamp`, `toIcs`, `zipFiles` |
 | `scripts/new-deck-tool.mjs` | Scaffold + register a tool; `--check` lints the registry | CLI |
-| `public/data/feeds/epss-top.json`, `eol-products.json` | Daily mirrors (FIRST EPSS top-N + KEV; endoflife.date) | via `scripts/refresh-feeds.mjs` |
+| `public/data/feeds/epss-top.json`, `eol-products.json`, `cisa-kev-index.json` | Daily mirrors (FIRST EPSS top-N + every KEV CVE; endoflife.date; full KEV catalog index) | via `scripts/refresh-feeds.mjs` |
 | `public/data/ref/*.json`, `public/data/controls/*.json` | Static reference tables (breach laws, adequacy, holidays, control catalogs) | `verifyWithCounsel: true` |
 
 Pure modules (`parse`, `unpack`, `worker`, `hash`, `sink-map`, `register`, `export`)
@@ -118,8 +118,8 @@ Legend: planned · scaffolded · built · merged · deployed
 |---|---|---|---|---|
 | `iacscan` | IaC Scanner | code | `iac-` | merged |
 | `k8saudit` | Kubernetes Audit | code | `kub-` | merged |
-| `cloudtrail` | Cloud Audit Log Hunter | detect | `ctl-` | scaffolded |
-| `vulnimport` | Vulnerability Import & SLA | exposure | `vim-` | scaffolded |
+| `cloudtrail` | Cloud Audit Log Hunter | detect | `ctl-` | merged |
+| `vulnimport` | Vulnerability Import & SLA | exposure | `vim-` | merged |
 | `fleetcomply` | Endpoint Fleet Compliance | exposure | `flt-` | merged |
 
 ### Wave 3 — Finance & fraud forensics
@@ -169,6 +169,8 @@ sidebar never shows an empty group.
 
 Refreshed daily by `.github/workflows/refresh-feeds.yml` → `scripts/refresh-feeds.mjs`:
 `cisa-kev`, `malicious-ips`, `ofac-sdn`, `epss-top`, `eol-products`.
+`cisa-kev` holds only the 500 newest KEV entries (with descriptions, for dashboards); tools that
+match CVEs against KEV must load `cisa-kev-index` (the full catalog, compact).
 Frozen snapshots (abuse.ch now requires an API key): `malware-urls`, `threat-iocs`,
 `botnet-c2`, `ransomware-groups`. A tool that reads a frozen feed shows its `updated`
 date and never relies on it as the primary detection. Live, no-key, CORS-friendly sources
