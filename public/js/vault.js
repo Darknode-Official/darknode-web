@@ -383,7 +383,7 @@ export function renderVault(main) {
       </tbody></table>
       ${owner ? `<div class="vgrid" style="margin-top:12px">
         <label class="f">User id<input id="tUid" placeholder="their user id" maxlength="128"></label>
-        <label class="f">Name or email (shown to the team)<input id="tLabel" maxlength="120" placeholder="e.g. Sam, finance"></label>
+        <label class="f">Name or email (shown to the team)<input id="tLabel" maxlength="120" placeholder="e.g. user01, finance"></label>
         <label class="f">Role<select id="tNewRole">${roleOpts("approver")}</select></label>
       </div>
       <div class="row"><button class="btn2 pri" id="tAdd">Add member</button></div>

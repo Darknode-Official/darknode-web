@@ -1617,7 +1617,7 @@ export function exampleDataset(seed = 7) {
     "crm-db,database,high,sales.ops@test.darknode.ai,,,production",
   ].join("\n");
   return {
-    label: "synthetic example (fictional Larkspur Freight: two AWS accounts, one Veeam server; not real data)",
+    label: "synthetic example (Test Org: two AWS accounts, one Veeam server; not real data)",
     now: EXAMPLE_NOW,
     files: [
       { name: "aws-backup-jobs-prod-and-dr.json", text: JSON.stringify({ BackupJobs: jobs }, null, 4) },

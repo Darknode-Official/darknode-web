@@ -387,14 +387,14 @@ export function selfTest() {
   ok("idempotency: duplicate key blocked", (() => { L.post({ idempotencyKey: "x1", postings: [{ account: "bank", side: "credit", amount: "1.00" }, { account: "equity", side: "debit", amount: "1.00" }] }); try { L.post({ idempotencyKey: "x1", postings: [{ account: "bank", side: "credit", amount: "1.00" }, { account: "equity", side: "debit", amount: "1.00" }] }); return false; } catch (_) { return true; } })());
 
   // transfer workflow + SoD + thresholds + balance guard
-  const t = L.createTransfer({ id: "t1", from: "bank", to: "payee-clearing", amount: "2500.00", memo: "pay vendor", by: "alice", payee: "Acme" });
-  threw("initiator cannot self-approve", () => L.approve("t1", "alice"));
-  L.approve("t1", "bob");
+  const t = L.createTransfer({ id: "t1", from: "bank", to: "payee-clearing", amount: "2500.00", memo: "pay vendor", by: "user01", payee: "Vendor A" });
+  threw("initiator cannot self-approve", () => L.approve("t1", "user01"));
+  L.approve("t1", "user02");
   ok("not released until approvals met", L.transfers.get("t1").status === "pending");
-  L.approve("t1", "carol");
+  L.approve("t1", "user03");
   ok("approved after 2 distinct approvers", L.transfers.get("t1").status === "approved");
-  threw("cannot release more than balance", () => { const big = L.createTransfer({ id: "tbig", from: "bank", to: "payee-clearing", amount: "99999999.00", by: "alice" }); L.approve("tbig", "bob"); L.approve("tbig", "carol"); L.approve("tbig", "dave"); L.release("tbig", "bob"); });
-  L.release("t1", "bob");
+  threw("cannot release more than balance", () => { const big = L.createTransfer({ id: "tbig", from: "bank", to: "payee-clearing", amount: "99999999.00", by: "user01" }); L.approve("tbig", "user02"); L.approve("tbig", "user03"); L.approve("tbig", "user04"); L.release("tbig", "user02"); });
+  L.release("t1", "user02");
   ok("release posts the entry", L.transfers.get("t1").status === "released");
   ok("bank reduced by transfer", L.balance("bank").balance === 10000000n - 100n - 250000n); // opening 10,000,000 − idem credit 100 − transfer 250,000
   ok("chain verifies after releases", L.verifyChain().ok);
@@ -406,7 +406,7 @@ export function selfTest() {
   ok("tamper is detected", !L2.verifyChain().ok);
 
   // high-tier requires 3 approvers
-  const t3 = L.createTransfer({ id: "t3", from: "bank", to: "payee-clearing", amount: "10000.00", by: "alice", payee: "BigCo" });
+  const t3 = L.createTransfer({ id: "t3", from: "bank", to: "payee-clearing", amount: "10000.00", by: "user01", payee: "Vendor B" });
   ok("tier raises approvers to 3", t3.required === 3);
 
   const pass = results.every((r) => r.pass);

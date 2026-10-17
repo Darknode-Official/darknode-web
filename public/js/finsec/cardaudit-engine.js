@@ -295,7 +295,7 @@ export function merchantKey(s) {
     .replace(/\s+/g, " ").trim();
 }
 
-/** Name key: lower-case tokens, initials dropped, sorted (so "Lin, Avery" == "AVERY J LIN"). */
+/** Name key: lower-case tokens, initials dropped, sorted (so "User, Test" == "TEST J USER"). */
 export function nameKey(s) {
   const t = str(s).toLowerCase().replace(/[^a-z0-9@.\s,'-]/g, " ").replace(/[,.'-]/g, " ").split(/\s+/).filter((x) => x.length > 1);
   return t.sort(cmp).join(" ");
@@ -1316,18 +1316,18 @@ export function exampleDataset(seed = 11) {
   const rnd = () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; };
   const pick = (a) => a[Math.floor(rnd() * a.length)];
   const people = [
-    ["E1001", "Dana Wright", "Finance", "Finance Director", "", "2019-03-04", "", "Active"],
-    ["E1002", "Riley Chen", "Finance", "Financial Analyst", "E1001", "2021-07-12", "", "Active"],
-    ["E1003", "Jordan Reyes", "IT", "IT Manager", "E1001", "2020-01-06", "", "Active"],
-    ["E1004", "Priya Shah", "Marketing", "Marketing Manager", "E1001", "2020-09-14", "", "Active"],
-    ["E1005", "Sam Okafor", "Marketing", "Events Specialist", "E1004", "2022-02-01", "", "Active"],
-    ["E1006", "Chris Doyle", "Sales", "Account Executive", "E1007", "2022-05-16", "", "Active"],
-    ["E1007", "Taylor Brooks", "Sales", "Sales Director", "E1001", "2018-11-05", "", "Active"],
-    ["E1008", "Morgan Hale", "Sales", "Account Executive", "E1007", "2021-03-22", "2026-08-31", "Terminated"],
-    ["E1009", "Alex Kim", "Engineering", "Software Engineer", "E1003", "2023-04-03", "", "Active"],
-    ["E1010", "Jamie Ortiz", "Engineering", "Software Engineer", "E1003", "2024-01-08", "", "Active"],
+    ["E1001", "User 01", "Finance", "Finance Director", "", "2019-03-04", "", "Active"],
+    ["E1002", "User 02", "Finance", "Financial Analyst", "E1001", "2021-07-12", "", "Active"],
+    ["E1003", "User 03", "IT", "IT Manager", "E1001", "2020-01-06", "", "Active"],
+    ["E1004", "User 04", "Marketing", "Marketing Manager", "E1001", "2020-09-14", "", "Active"],
+    ["E1005", "User 05", "Marketing", "Events Specialist", "E1004", "2022-02-01", "", "Active"],
+    ["E1006", "User 06", "Sales", "Account Executive", "E1007", "2022-05-16", "", "Active"],
+    ["E1007", "User 07", "Sales", "Sales Director", "E1001", "2018-11-05", "", "Active"],
+    ["E1008", "User 08", "Sales", "Account Executive", "E1007", "2021-03-22", "2026-08-31", "Terminated"],
+    ["E1009", "User 09", "Engineering", "Software Engineer", "E1003", "2023-04-03", "", "Active"],
+    ["E1010", "User 10", "Engineering", "Software Engineer", "E1003", "2024-01-08", "", "Active"],
   ];
-  const email = (n) => n.toLowerCase().replace(" ", ".") + "@test.darknode.ai";
+  const email = (n) => n.toLowerCase().replace(" ", "") + "@test.darknode.ai";
   const roster = ["employee_id,name,email,department,title,manager_id,hire_date,termination_date,status",
     ...people.map((p) => [p[0], p[1], email(p[1]), p[2], p[3], p[4], p[5], p[6], p[7]].join(","))].join("\n") + "\n";
   const last4 = { E1001: "4417", E1002: "2290", E1003: "8812", E1004: "5531", E1005: "0764", E1006: "3381", E1007: "9902", E1008: "1146", E1009: "6620", E1010: "7735" };
@@ -1359,23 +1359,23 @@ export function exampleDataset(seed = 11) {
       brex.push({ d, line: row(iso(d), iso(d + 1), m[0], fmtCents(cents).replace(/,/g, ""), p[1], p[0], m[1], m[2], rec, "", m[3], p[2]) });
     }
   }
-  // seeded: travel-heavy month for Taylor Brooks (velocity spike)
+  // seeded: travel-heavy month for User 07 (velocity spike)
   for (const [d, mi, a] of [["2026-09-14", 0, "1486.40"], ["2026-09-15", 1, "1142.85"], ["2026-09-21", 0, "1318.22"], ["2026-09-22", 1, "964.31"]]) {
     const m = M[mi];
-    brex.push({ d: parseWhen(d).day, line: row(d, d, m[0], a, "Taylor Brooks", "E1007", m[1], m[2], "Submitted", "Customer roadshow", m[3], "Sales") });
+    brex.push({ d: parseWhen(d).day, line: row(d, d, m[0], a, "User 07", "E1007", m[1], m[2], "Submitted", "Customer roadshow", m[3], "Sales") });
   }
-  // seeded: split purchase (Jordan Reyes, Dell, limit 2,500.00)
+  // seeded: split purchase (User 03, Dell, limit 2,500.00)
   const seed1 = [["2026-08-12", "2412.37"], ["2026-08-12", "2398.90"], ["2026-08-13", "1875.40"]];
-  for (const [d, a] of seed1) brex.push({ d: parseWhen(d).day, line: row(d, d, "DELL MARKETING", a, "Jordan Reyes", "E1003", "Computers, Peripherals and Software", "5045", "Submitted", "Laptops for new hires", "Equipment", "IT") });
-  // seeded: duplicate receipt across two employees (Priya Shah card; Sam Okafor claims it out of pocket)
-  brex.push({ d: parseWhen("2026-07-21").day, line: row("2026-07-21", "2026-07-22", "BLUE BOTTLE CATERING", "486.20", "Priya Shah", "E1004", "Caterers", "5811", "Submitted", "Customer workshop lunch", "Meals", "Marketing") });
+  for (const [d, a] of seed1) brex.push({ d: parseWhen(d).day, line: row(d, d, "DELL MARKETING", a, "User 03", "E1003", "Computers, Peripherals and Software", "5045", "Submitted", "Laptops for new hires", "Equipment", "IT") });
+  // seeded: duplicate receipt across two employees (User 04 card; User 05 claims it out of pocket)
+  brex.push({ d: parseWhen("2026-07-21").day, line: row("2026-07-21", "2026-07-22", "BLUE BOTTLE CATERING", "486.20", "User 04", "E1004", "Caterers", "5811", "Submitted", "Customer workshop lunch", "Meals", "Marketing") });
   // seeded: casino charge
-  brex.push({ d: parseWhen("2026-08-22").day, line: row("2026-08-22", "2026-08-24", "BELLAGIO CASINO LAS VEGAS", "1200.00", "Chris Doyle", "E1006", "Betting/Casino Gambling", "7995", "Missing", "", "Entertainment", "Sales") });
+  brex.push({ d: parseWhen("2026-08-22").day, line: row("2026-08-22", "2026-08-24", "BELLAGIO CASINO LAS VEGAS", "1200.00", "User 06", "E1006", "Betting/Casino Gambling", "7995", "Missing", "", "Entertainment", "Sales") });
   // seeded: over policy meal
-  brex.push({ d: parseWhen("2026-06-17").day, line: row("2026-06-17", "2026-06-18", "NOBU RESTAURANT", "412.75", "Chris Doyle", "E1006", "Eating Places and Restaurants", "5812", "Submitted", "Client dinner", "Meals", "Sales") });
+  brex.push({ d: parseWhen("2026-06-17").day, line: row("2026-06-17", "2026-06-18", "NOBU RESTAURANT", "412.75", "User 06", "E1006", "Eating Places and Restaurants", "5812", "Submitted", "Client dinner", "Meals", "Sales") });
   // seeded: spend after termination
-  brex.push({ d: parseWhen("2026-09-04").day, line: row("2026-09-04", "2026-09-05", "BEST BUY 00123", "899.99", "Morgan Hale", "E1008", "Electronics Stores", "5732", "Missing", "", "Equipment", "Sales") });
-  brex.push({ d: parseWhen("2026-09-11").day, line: row("2026-09-11", "2026-09-12", "APPLE STORE R102", "1299.00", "Morgan Hale", "E1008", "Electronics Stores", "5732", "Missing", "", "Equipment", "Sales") });
+  brex.push({ d: parseWhen("2026-09-04").day, line: row("2026-09-04", "2026-09-05", "BEST BUY 00123", "899.99", "User 08", "E1008", "Electronics Stores", "5732", "Missing", "", "Equipment", "Sales") });
+  brex.push({ d: parseWhen("2026-09-11").day, line: row("2026-09-11", "2026-09-12", "APPLE STORE R102", "1299.00", "User 08", "E1008", "Electronics Stores", "5732", "Missing", "", "Equipment", "Sales") });
   brex.sort((a, b) => a.d - b.d || cmp(a.line, b.line));
   const brexCsv = [H, ...brex.map((x) => x.line)].join("\n") + "\n";
 
@@ -1384,14 +1384,14 @@ export function exampleDataset(seed = 11) {
   const cl = (rid, rname, last, first, id, type, date, vendor, city, pay, amt, rec, approver, submit) =>
     [rid, csvCell(rname), csvCell(last + ", " + first), id, type, us(date), csvCell(vendor), city, "US", pay, amt, "USD", amt, rec, csvCell(approver), "Approved", us(submit), "US Employee Policy"].join(",");
   const concur = [
-    cl("R-2205", "July customer workshop", "Shah", "Priya", "E1004", "Meals", "2026-07-21", "Blue Bottle Catering", "San Francisco", "Corporate Card", "486.20", "Y", "Wright, Dana", "2026-07-24"),
-    cl("R-2207", "July events", "Okafor", "Sam", "E1005", "Meals", "2026-07-21", "Blue Bottle Catering", "San Francisco", "Cash", "486.20", "Y", "Shah, Priya", "2026-07-28"),
-    cl("R-2207", "July events", "Okafor", "Sam", "E1005", "Office Supplies", "2026-07-23", "Visa Prepaid Gift Card", "San Francisco", "Cash", "500.00", "N", "Shah, Priya", "2026-07-28"),
-    cl("R-2210", "Client visit Austin", "Kim", "Alex", "E1009", "Taxi", "2026-08-05", "Lyft Ride", "Austin", "Personal Card", "38.40", "Y", "Reyes, Jordan", "2026-08-07"),
-    cl("R-2215", "August expenses", "Kim", "Alex", "E1009", "Taxi", "2026-08-05", "Lyft Ride", "Austin", "Personal Card", "38.40", "Y", "Reyes, Jordan", "2026-08-29"),
-    cl("R-2231", "Q3 sales kickoff", "Brooks", "Taylor", "E1007", "Meals", "2026-08-19", "The Capital Grille", "Chicago", "Personal Card", "684.15", "Y", "Brooks, Taylor", "2026-08-21"),
-    cl("R-2231", "Q3 sales kickoff", "Brooks", "Taylor", "E1007", "Event Supplies", "2026-08-20", "Party City", "Chicago", "Personal Card", "212.48", "N", "Brooks, Taylor", "2026-08-21"),
-    cl("R-2240", "Board dinner", "Wright", "Dana", "E1001", "Meals", "2026-09-09", "Zuni Cafe", "San Francisco", "Personal Card", "356.80", "Y", "Chen, Riley", "2026-09-11"),
+    cl("R-2205", "July customer workshop", "04", "User", "E1004", "Meals", "2026-07-21", "Blue Bottle Catering", "San Francisco", "Corporate Card", "486.20", "Y", "01, User", "2026-07-24"),
+    cl("R-2207", "July events", "05", "User", "E1005", "Meals", "2026-07-21", "Blue Bottle Catering", "San Francisco", "Cash", "486.20", "Y", "04, User", "2026-07-28"),
+    cl("R-2207", "July events", "05", "User", "E1005", "Office Supplies", "2026-07-23", "Visa Prepaid Gift Card", "San Francisco", "Cash", "500.00", "N", "04, User", "2026-07-28"),
+    cl("R-2210", "Client visit Austin", "09", "User", "E1009", "Taxi", "2026-08-05", "Lyft Ride", "Austin", "Personal Card", "38.40", "Y", "03, User", "2026-08-07"),
+    cl("R-2215", "August expenses", "09", "User", "E1009", "Taxi", "2026-08-05", "Lyft Ride", "Austin", "Personal Card", "38.40", "Y", "03, User", "2026-08-29"),
+    cl("R-2231", "Q3 sales kickoff", "07", "User", "E1007", "Meals", "2026-08-19", "The Capital Grille", "Chicago", "Personal Card", "684.15", "Y", "07, User", "2026-08-21"),
+    cl("R-2231", "Q3 sales kickoff", "07", "User", "E1007", "Event Supplies", "2026-08-20", "Party City", "Chicago", "Personal Card", "212.48", "N", "07, User", "2026-08-21"),
+    cl("R-2240", "Board dinner", "01", "User", "E1001", "Meals", "2026-09-09", "Zuni Cafe", "San Francisco", "Personal Card", "356.80", "Y", "02, User", "2026-09-11"),
   ].join("\n");
   const concurCsv = CH + "\n" + concur + "\n";
   const policyCsv = "category,limit_per_txn,limit_per_day,currency\nMeals,150.00,250.00,USD\nTaxi,120.00,,USD\n";
@@ -1420,11 +1420,11 @@ export function selfTest() {
   const r = analyze(ex, { ...ex.suggestedOpts, holidays: hol });
   const has = (check, who) => r.findings.some((f) => f.check === check && (!who || f.employees.includes(who)));
   t("parser recognises Brex, Concur, roster and policy layouts", () => r.tables.files.map((f) => f.format).join(",") === "brex,concur,roster,policy");
-  t("split purchase detected", () => has("split", "Jordan Reyes"));
-  t("duplicate receipt across two employees detected", () => r.findings.some((f) => f.check === "dup_cross" && f.employees.includes("Priya Shah") && f.employees.includes("Sam Okafor")));
+  t("split purchase detected", () => has("split", "User 03"));
+  t("duplicate receipt across two employees detected", () => r.findings.some((f) => f.check === "dup_cross" && f.employees.includes("User 04") && f.employees.includes("User 05")));
   t("7995 casino charge on review list", () => r.findings.some((f) => f.check === "mcc_review" && f.id.endsWith(":7995")));
   t("spend after termination is critical", () => r.findings.some((f) => f.check === "post_termination" && f.severity === "critical"));
-  t("self-approved report detected", () => has("self_approval", "Taylor Brooks"));
+  t("self-approved report detected", () => has("self_approval", "User 07"));
   t("split skipped without a card limit", () => analyze(ex, {}).skipped.some((k) => k.check === "split"));
   t("card numbers reduced to last four", () => maskCard("3782 822463 10005") === "****0005" && !JSON.stringify(r).includes("378282246310005"));
   t("money parsed to cents", () => parseCents("$1,234.56") === 123456 && parseCents("(12.30)") === -1230);

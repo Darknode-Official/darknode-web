@@ -370,7 +370,7 @@ group("evidence: package, calendar, import, register", () => {
     assert.ok(idx.includes(withHash.evidence[0].sha256));
     assert.ok(/not.*included|NOT in this archive/i.test(text("README.txt")));
     assert.ok(text("README.txt").includes("sha256sum"));
-    assert.ok(text("readiness.txt").includes("Larkspur Cloudworks (synthetic)"));
+    assert.ok(text("readiness.txt").includes("Test Org (synthetic)"));
     const exc = text("exceptions.csv");
     assert.ok(exc.includes(",expired") && exc.includes(",active"));
   });
@@ -494,7 +494,7 @@ group("evidence: example, exports, selfTest", () => {
   test("synthetic example: ~40 controls, test.darknode.ai owners, two exceptions, overdue items, real digests", () => {
     const ex = exampleDataset(7, { now: NOW, catalogs: CAT });
     assert.ok(ex.records.length >= 38 && ex.records.length <= 42, String(ex.records.length));
-    assert.ok(/synthetic/i.test(ex.label) && ex.org === "Larkspur Cloudworks (synthetic)");
+    assert.ok(/synthetic/i.test(ex.label) && ex.org === "Test Org (synthetic)");
     assert.ok(ex.records.every((r) => !r.owner || r.owner.endsWith("@test.darknode.ai")));
     assert.equal(ex.records.filter((r) => r.exceptions.length).length, 2);
     assert.ok(ex.records.some((r) => r.refs.length === 2 && r.refs[1].fw === "iso27001"));

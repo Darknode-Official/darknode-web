@@ -449,9 +449,9 @@ group("apforensics: output contract", () => {
     const f = (id) => hit(r, id);
     assert.equal(f("dup_exact").evidenceCount, 3);
     assert.equal(f("dup_transposed").evidenceCount, 1);
-    assert.ok(f("vendor_employee").evidence.some((e) => /Harrow Lane/.test(e.vendor)));
-    assert.ok(f("split_invoices").evidence.some((e) => /Quarry Point/.test(e.vendor)));
-    assert.ok(f("new_vendor_paid").evidence.some((e) => /Ferrous Vale/.test(e.vendor) && e.days === 3));
+    assert.ok(f("vendor_employee").evidence.some((e) => /Vendor C/.test(e.vendor)));
+    assert.ok(f("split_invoices").evidence.some((e) => /Vendor D/.test(e.vendor)));
+    assert.ok(f("new_vendor_paid").evidence.some((e) => /Vendor E/.test(e.vendor) && e.days === 3));
     assert.ok(r.summary.rows >= 750 && r.summary.rows <= 900);
     assert.ok(ex.files[2].text.includes("@test.darknode.ai") && !/contoso|example\.com/i.test(ex.files.map((x) => x.text).join("")));
   });

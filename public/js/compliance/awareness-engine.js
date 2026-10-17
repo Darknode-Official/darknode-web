@@ -1101,8 +1101,6 @@ export function summaryText(result) {
 // ---------------------------------------------------------------------------
 // Synthetic example (seeded, format-faithful; never saved to the register)
 // ---------------------------------------------------------------------------
-const FIRST = ["Avery", "Blake", "Casey", "Devon", "Emery", "Finley", "Gray", "Harper", "Indy", "Jules", "Kai", "Logan", "Morgan", "Noel", "Oakley", "Parker", "Quinn", "Reese", "Sage", "Taylor", "Umi", "Vale", "Wren", "Xen", "Yael", "Zion", "Arden", "Briar", "Cove", "Dale"];
-const LAST = ["Ashdown", "Brightwater", "Coldfield", "Dunmore", "Elmstead", "Fairhollow", "Greystone", "Hartwell", "Ironwood", "Juniper"];
 const DEPTS = [["Finance", 9], ["Engineering", 14], ["Sales", 11], ["Marketing", 7], ["IT", 7], ["People", 6], ["Operations", 3], ["Legal", 3]];
 const TITLES = { Finance: ["Accounts Payable Specialist", "Financial Analyst", "Controller", "Payroll Specialist"], Engineering: ["Software Engineer", "Senior Software Engineer", "Engineering Manager"], Sales: ["Account Executive", "Sales Development Rep", "Sales Manager"], Marketing: ["Marketing Specialist", "Content Lead"], IT: ["IT Admin", "Helpdesk Technician", "Systems Administrator"], People: ["HR Generalist", "Recruiter"], Operations: ["Operations Analyst", "COO"], Legal: ["Counsel", "Paralegal"] };
 
@@ -1117,11 +1115,11 @@ export function exampleDataset(seed = 7) {
   const people = [];
   let i = 0;
   for (const [dept, n] of DEPTS) for (let k = 0; k < n; k++, i++) {
-    const first = FIRST[i % FIRST.length], last = LAST[Math.floor(i / FIRST.length) * 3 % LAST.length + (i % 3)];
+    const first = "User", last = String(i + 1).padStart(2, "0");
     const titles = TITLES[dept];
     const title = titles[k % titles.length];
     people.push({
-      email: (first + "." + last).toLowerCase() + "@test.darknode.ai", first, last, dept, title,
+      email: (first + last).toLowerCase() + "@test.darknode.ai", first, last, dept, title,
       hire: Date.UTC(2014 + Math.floor(r() * 12), Math.floor(r() * 12), 1 + Math.floor(r() * 27)),
       p: 0.06 + r() * 0.3, rep: 0.1 + r() * 0.4,
     });

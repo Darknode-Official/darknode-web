@@ -472,7 +472,7 @@ group("cardaudit: contract", () => {
   test("identity assets carry department, total and flag count", () => {
     const f = of(analyze(ex, opts), "post_termination")[0];
     assert.equal(f.assets[0].type, "IDENTITY");
-    assert.equal(f.assets[0].name, "Morgan Hale");
+    assert.equal(f.assets[0].name, "User 08");
     assert.equal(f.assets[0].data.department, "Sales");
     assert.ok(f.assets[0].data.flags >= 1 && /USD/.test(f.assets[0].data.total));
   });

@@ -238,12 +238,12 @@ export function selfTest() {
   const H = HOLD_HOURS * 3600000;
 
   // onboarding: create -> callback -> approve (needs 2nd approver) -> held -> active
-  let v = createVendor({ id: "v1", name: "Acme Supply", bank: { kind: "iban", iban: "DE89370400440532013000" }, by: "alice", at: t0 });
+  let v = createVendor({ id: "v1", name: "Vendor A Supply", bank: { kind: "iban", iban: "DE89370400440532013000" }, by: "user01", at: t0 });
   ok("new vendor is pending", v.status === "pending");
-  ok("approve without callback is blocked", !approveChange(v, { by: "bob", at: t0 + 1 }).ok);
-  recordCallback(v, { by: "bob", note: "called CFO on file", phone: "+1-555-0100", at: t0 + 2 });
-  ok("approve by proposer is blocked (SoD)", !approveChange(v, { by: "alice", at: t0 + 3 }).ok);
-  ok("approve by different approver works", approveChange(v, { by: "bob", at: t0 + 4 }).ok);
+  ok("approve without callback is blocked", !approveChange(v, { by: "user02", at: t0 + 1 }).ok);
+  recordCallback(v, { by: "user02", note: "called CFO on file", phone: "+1-555-0100", at: t0 + 2 });
+  ok("approve by proposer is blocked (SoD)", !approveChange(v, { by: "user01", at: t0 + 3 }).ok);
+  ok("approve by different approver works", approveChange(v, { by: "user02", at: t0 + 4 }).ok);
   ok("after approval status is held", v.status === "held");
   ok("cannot pay during hold", !canPay(v, t0 + 5).ok);
   ok("first-payment + new-account flags present", screenFlags(v, t0 + 5).some((f) => f.code === "new-account-hold") && screenFlags(v, t0 + 5).some((f) => f.code === "first-payment"));
@@ -254,11 +254,11 @@ export function selfTest() {
   ok("first-payment flag clears after paying", !screenFlags(v, t0 + H + 101).some((f) => f.code === "first-payment"));
 
   // bank change later: archives old, needs controls again
-  ok("duplicate bank change rejected", !proposeChange(v, { bank: { kind: "iban", iban: "DE89370400440532013000" }, by: "alice", at: t0 + H + 110 }).ok);
-  ok("valid change opens pending", proposeChange(v, { bank: { kind: "aba", account: "123456789", routing: "021000021" }, by: "alice", at: t0 + H + 111 }).ok);
+  ok("duplicate bank change rejected", !proposeChange(v, { bank: { kind: "iban", iban: "DE89370400440532013000" }, by: "user01", at: t0 + H + 110 }).ok);
+  ok("valid change opens pending", proposeChange(v, { bank: { kind: "aba", account: "123456789", routing: "021000021" }, by: "user01", at: t0 + H + 111 }).ok);
   ok("payment blocked while change pending", !canPay(v, t0 + H + 112).ok);
-  recordCallback(v, { by: "carol", note: "verified", phone: "+1-555-0100", at: t0 + H + 113 });
-  ok("change approved by second approver", approveChange(v, { by: "carol", at: t0 + H + 114 }).ok);
+  recordCallback(v, { by: "user03", note: "verified", phone: "+1-555-0100", at: t0 + H + 113 });
+  ok("change approved by second approver", approveChange(v, { by: "user03", at: t0 + H + 114 }).ok);
   ok("prior bank archived to history", v.history.length === 1);
   ok("new account re-enters hold", v.status === "held" && !canPay(v, t0 + H + 115).ok);
   ok("audit trail recorded", v.audit.some((a) => a.action === "change-approved") && v.audit.length >= 6);

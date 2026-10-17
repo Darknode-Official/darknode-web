@@ -329,12 +329,12 @@ group("vendorrisk: dates, register, import, exports", () => {
     const rec = exampleDataset(7, NOW).records[0];
     const saved = reg.upsert(rec);
     const e = E[saved.graphId];
-    assert.equal(e.type, "VENDOR"); assert.equal(e.name, "LedgerLoop Payroll Ltd"); assert.equal(e.severity, "critical");
-    assert.equal(e.data.legalName, "LedgerLoop Payroll Ltd"); assert.equal(e.data.domain, "ledgerloop.test.darknode.ai"); assert.equal(e.data.tier, "critical");
+    assert.equal(e.type, "VENDOR"); assert.equal(e.name, "Vendor A Payroll Ltd"); assert.equal(e.severity, "critical");
+    assert.equal(e.data.legalName, "Vendor A Payroll Ltd"); assert.equal(e.data.domain, "vendor-a.test.darknode.ai"); assert.equal(e.data.tier, "critical");
     assert.deepEqual(e.data._full.posture.length, 2);
     storage.setItem("dn_active_ws", "ws1");
     const team = openRegister(TOOL_ID, "VENDOR", { schema: REGISTER_SCHEMA, storage, graph, now: () => NOW });
-    assert.equal(team.list()[0].legalName, "LedgerLoop Payroll Ltd");
+    assert.equal(team.list()[0].legalName, "Vendor A Payroll Ltd");
     const back = JSON.parse(reg.exportJson());
     assert.equal(back[0].docs.length, rec.docs.length);
   });
@@ -379,9 +379,9 @@ group("vendorrisk: dates, register, import, exports", () => {
     const r = analyze(ex, { now: NOW });
     const csv = registerToCsv(ex.records, r.tables.graded);
     assert.ok(csv.split("\r\n")[0].startsWith("ID,Legal name,Domains"));
-    assert.ok(csv.includes("LedgerLoop Payroll Ltd"));
-    const g = r.tables.graded.find((x) => x.id === "ex-ledgerloop");
-    const txt = onePager(ex.records.find((x) => x.id === "ex-ledgerloop"), g);
+    assert.ok(csv.includes("Vendor A Payroll Ltd"));
+    const g = r.tables.graded.find((x) => x.id === "ex-vendor-a");
+    const txt = onePager(ex.records.find((x) => x.id === "ex-vendor-a"), g);
     assert.ok(txt.includes("Residual risk:")); assert.ok(txt.includes("FINDINGS ("));
     assert.deepEqual(matchPayees("LedgerLoop Payroll Ltd.", [{ source: "payee", id: "1", name: "Ledgerloop Payroll" }, { source: "graph", id: "2", name: "Other" }]).map((c) => c.id), ["1"]);
   });

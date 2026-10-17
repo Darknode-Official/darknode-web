@@ -472,8 +472,8 @@ group("riskreg: example, determinism, self-test", () => {
     const ex = exampleDataset(1, NOW);
     const r = analyze({ records: ex.records }, { ...ex.settings, now: ex.now });
     const k = ids(r);
-    assert.ok(k.includes("riskreg:review_overdue:lark-06"));
-    assert.ok(k.includes("riskreg:stale_assessment:lark-08"));
+    assert.ok(k.includes("riskreg:review_overdue:testorg-06"));
+    assert.ok(k.includes("riskreg:stale_assessment:testorg-08"));
     assert.ok(r.findings.some((f) => f.severity === "high"));
     assert.equal(r.tables.heatmap.ready, true);
   });

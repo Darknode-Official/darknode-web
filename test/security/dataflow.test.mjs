@@ -525,11 +525,11 @@ group("dataflow: DLP seeding and exports", () => {
     const lines = csv.trim().split("\r\n");
     assert.equal(lines.length, 2);
     assert.ok(lines[0].startsWith("Processor name and contact details,Data protection officer,Representative,Processing activity,Controller on whose behalf"));
-    assert.ok(lines[1].includes("Philippines - Tidewell Support BPO"));
+    assert.ok(lines[1].includes("Philippines - Vendor E Support BPO"));
   });
   test("DPIA memo lists the nine criteria and the counsel caveat", () => {
     const ex = exampleDataset();
-    const memo = dpiaMemo(ex.activities.find((a) => a.id === "lc-act-04"), { now: ex.now, org: ex.org, example: true });
+    const memo = dpiaMemo(ex.activities.find((a) => a.id === "testorg-act-04"), { now: ex.now, org: ex.org, example: true });
     assert.ok(memo.includes("SYNTHETIC EXAMPLE"));
     assert.equal((memo.match(/^\s+\d\. \[/gm) || []).length, 9);
     assert.ok(memo.includes("Criteria met: 4 of 9"));
