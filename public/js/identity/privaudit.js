@@ -55,7 +55,7 @@ const CSS = `
   .prv-list table{width:100%;border-collapse:collapse;font-size:.84rem;min-width:560px}
   .prv-list th{text-align:left;font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;color:var(--mut,#667085);font-weight:700;padding:9px 12px;background:var(--bg,#f7f8fb);border-bottom:1px solid var(--line,#e6e8ee);white-space:nowrap;cursor:pointer;user-select:none}
   .prv-list th.on::after{content:" \\2193";opacity:.7}.prv-list th.on.asc::after{content:" \\2191"}
-  .prv-list td{padding:9px 12px;border-bottom:1px solid var(--line,#eef0f4);vertical-align:top;overflow-wrap:anywhere}
+  .prv-list td{padding:9px 12px;border-bottom:1px solid var(--line,#eef0f4);vertical-align:top;overflow-wrap:break-word}
   .prv-list tr[data-i]{cursor:pointer}
   .prv-list tr[data-i]:hover,.prv-list tr.sel{background:var(--bg,#f7f8fb)}
   .prv-pill{display:inline-block;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:2px 8px;border-radius:999px;color:#fff;background:#667085;white-space:nowrap}

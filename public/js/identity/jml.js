@@ -70,7 +70,7 @@ const CSS = `
   .jml-list th{text-align:left;font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;color:var(--mut,#667085);font-weight:700;padding:9px 12px;background:var(--bg,#f7f8fb);border-bottom:1px solid var(--line,#e6e8ee);white-space:nowrap}
   .jml-list th[data-sort]{cursor:pointer}
   .jml-list th[data-sort].asc::after{content:" \\2191"}.jml-list th[data-sort].desc::after{content:" \\2193"}
-  .jml-list td{padding:9px 12px;border-bottom:1px solid var(--line,#eef0f4);vertical-align:top;overflow-wrap:anywhere}
+  .jml-list td{padding:9px 12px;border-bottom:1px solid var(--line,#eef0f4);vertical-align:top;overflow-wrap:break-word}
   .jml-list tr[data-i]{cursor:pointer}
   .jml-list tr[data-i]:hover,.jml-list tr.sel{background:var(--bg,#f7f8fb)}
   .jml-list select,.jml-list input{font:inherit;font-size:.8rem;color:var(--tx,#1a2230);background:var(--card,#fff);border:1px solid var(--line,#d7dbe3);border-radius:6px;padding:4px 6px;max-width:100%}

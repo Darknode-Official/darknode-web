@@ -63,7 +63,7 @@ const CSS = `
   .nhi-list th{text-align:left;font-size:.7rem;text-transform:uppercase;letter-spacing:.04em;color:var(--mut,#667085);font-weight:700;padding:9px 12px;background:var(--bg,#f7f8fb);border-bottom:1px solid var(--line,#e6e8ee);white-space:nowrap;cursor:pointer;user-select:none}
   .nhi-list th.on::after{content:" \\25BE";}
   .nhi-list th.on.asc::after{content:" \\25B4";}
-  .nhi-list td{padding:8px 12px;border-bottom:1px solid var(--line,#eef0f4);vertical-align:top;overflow-wrap:anywhere}
+  .nhi-list td{padding:8px 12px;border-bottom:1px solid var(--line,#eef0f4);vertical-align:top;overflow-wrap:break-word}
   .nhi-list tr[data-i]{cursor:pointer}
   .nhi-list tr[data-i]:hover{background:var(--bg,#f7f8fb)}
   .nhi-pill{display:inline-block;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:2px 8px;border-radius:999px;color:#fff;background:#667085;white-space:nowrap}
