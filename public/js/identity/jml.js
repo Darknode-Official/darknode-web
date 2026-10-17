@@ -126,7 +126,7 @@ export function renderJml(main) {
     field("moverGraceDays", "Mover grace (days)", DEFAULTS.moverGraceDays, "Days after a transfer during which old-department access is tolerated."),
     field("joinerLeadDays", "Joiner lead (days)", DEFAULTS.joinerLeadDays, "Days before the hire date an IdP account may already exist."),
     '<div class="', P, '-field"><label for="', P, '-now">As-of date</label><input id="', P, '-now" type="date"><small>Blank = latest timestamp in the data.</small></div>',
-    '<div class="', P, '-field"><label for="', P, '-allow">Allowed external domains</label><input id="', P, '-allow" class="wide" type="text" placeholder="partner.example, agency.example"><small>Comma-separated. Accounts on these domains are expected and not reported as external.</small></div>',
+    '<div class="', P, '-field"><label for="', P, '-allow">Allowed external domains</label><input id="', P, '-allow" class="wide" type="text" placeholder="Comma-separated domains"><small>Comma-separated. Accounts on these domains are expected and not reported as external.</small></div>',
     "</div></div>",
     '<div class="', P, '-kpis" id="', P, '-kpis"></div>',
     '<div class="', P, '-row" id="', P, '-exports"></div>',
