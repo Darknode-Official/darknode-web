@@ -28,8 +28,8 @@ their own repositories (see [Ecosystem](#ecosystem)).
 
 ## Scale (measured, not marketing)
 
-- `public/` ≈ **488K lines** of first-party source (≈461K JS), across **216**
-  JS modules — excludes third-party libraries.
+- `public/` ≈ **581K lines** of first-party source (≈531K JS; ≈362K without the `data/`
+  reference sets), across **378** JS modules in `js/` — excludes third-party libraries (`js/vendor/`).
 - **192** tool platforms (`CATALOG` in `js/toolkit.js`) + **902** Toolbox
   mini-tools across 16 categories (`js/tools-manifest.js`).
 - "Zero cloud dependency" does **not** apply to the website — it relies on
