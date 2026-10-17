@@ -12,9 +12,9 @@ import { attachSinkButton } from "../core/sink.js";
 import { download, toJson, fileStamp, toIcs } from "../core/export.js";
 import {
   DEFAULTS, TOOL_ID, COLUMNS, parseInput, findingsToCsv, credentialsToCsv, calendarToCsv, calendarToEvents, exampleDataset,
-} from "./nhi-engine.js?v=20261016d";
+} from "./nhi-engine.js?v=20261017c";
 
-const ENGINE = engineUrl("./nhi-engine.js?v=20261016d", import.meta);
+const ENGINE = engineUrl("./nhi-engine.js?v=20261017c", import.meta);
 const P = "nhi";
 const toast = (m, t) => { try { (window.showToast || (() => {}))(m, t || "info"); } catch (_) {} };
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));

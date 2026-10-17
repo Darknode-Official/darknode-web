@@ -17,8 +17,8 @@ import {
   validateBank, bankKey, bankLabel, createVendor, proposeChange, recordCallback,
   approveChange, rejectChange, refresh, canPay, screenFlags, markPaid, selfTest,
   HOLD_HOURS, WATCH_DAYS,
-} from "/js/finsec/vendor-engine.js?v=20261013m";
-import { buildIndex, screenName } from "/js/finsec/sanctions-engine.js?v=20261014d";
+} from "/js/finsec/vendor-engine.js?v=20261017c";
+import { buildIndex, screenName } from "/js/finsec/sanctions-engine.js?v=20261017c";
 
 // ── OFAC sanctions screening of payee names ──────────────────────────────
 // A payee register that doesn't check names against the sanctions list is a

@@ -12,7 +12,7 @@
 //
 //   renderVault(main) -> void
 
-import { Ledger, toCents, fmtCents, screenTransfer } from "/js/vault/ledger.js?v=20261013m";
+import { Ledger, toCents, fmtCents, screenTransfer } from "/js/vault/ledger.js?v=20261017c";
 import { canDo, ROLES, ROLE_HELP } from "/js/vault/roles.js?v=20261012e";
 import * as remote from "/js/vault/remote.js?v=20261012e";
 

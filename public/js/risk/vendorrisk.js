@@ -20,9 +20,9 @@ import {
   REGISTER_SCHEMA, COLUMNS, COLUMN_LABELS, parseInput, analyze, findingsToCsv, exampleDataset, normalizeRecord, validateRecord, addHistory,
   gradeDomain, makeSnapshot, addSnapshot, diffSnapshots, registerToCsv, icsEvents, onePager, matchPayees, daysUntil, docLabel, csvToRecords,
   registrableGuess, leakResponse, mergePolicy, cleanDomain,
-} from "./vendorrisk-engine.js?v=20261016s";
+} from "./vendorrisk-engine.js?v=20261017c";
 
-const ENGINE = engineUrl("./vendorrisk-engine.js?v=20261016s", import.meta);
+const ENGINE = engineUrl("./vendorrisk-engine.js?v=20261017c", import.meta);
 const P = "tpr";
 const toast = (m, t) => { try { (window.showToast || (() => {}))(m, t || "info"); } catch (_) {} };
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));

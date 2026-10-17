@@ -17,9 +17,9 @@ import {
   parseHR, parseDirectory, analyze, datasetHash, exampleData,
   toReviewCSV, toFindingsCSV, toReviewJSON, attestationText, summarizeDecisions,
   DEFAULT_OPTIONS, DECISIONS, SEVERITY_RANK, FINDING_TYPES,
-} from "/js/identity/access-review-engine.js?v=20261013m";
+} from "/js/identity/access-review-engine.js?v=20261017c";
 
-const ENGINE_URL = new URL("./access-review-engine.js?v=20261013m", import.meta.url).href;
+const ENGINE_URL = new URL("./access-review-engine.js?v=20261017c", import.meta.url).href;
 
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));

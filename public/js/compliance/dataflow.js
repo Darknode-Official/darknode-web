@@ -17,9 +17,9 @@ import {
   COUNTRIES, COLUMNS, COLUMN_LABELS, DSAR_COLUMNS, DSAR_COLUMN_LABELS, ACTIVITY_SCHEMA, DSAR_SCHEMA,
   parseInput, analyze, findingsToCsv, exampleDataset, normalizeActivity, validateActivity, normalizeDsar, validateDsar, screenDpia, suggestCategories,
   csvToActivities, csvToDsars, autoMapActivities, autoMapDsars, ropaCsv, dsarCsv, dpiaMemo, icsEvents, summaryText, categoryLabel, subjectLabel, label, dsarDue,
-} from "./dataflow-engine.js?v=20261017a";
+} from "./dataflow-engine.js?v=20261017c";
 
-const ENGINE = engineUrl("./dataflow-engine.js?v=20261017a", import.meta);
+const ENGINE = engineUrl("./dataflow-engine.js?v=20261017c", import.meta);
 const P = "dfr";
 const toast = (m, t) => { try { (window.showToast || (() => {}))(m, t || "info"); } catch (_) {} };
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));

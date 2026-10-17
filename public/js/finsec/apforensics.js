@@ -15,9 +15,9 @@ import { download, toJson, fileStamp } from "../core/export.js";
 import {
   DEFAULTS, TOOL_ID, COLUMNS, COLUMN_LABEL, FORMATS, ROLE_LABEL, SEV_RANK,
   detectFile, resolveColumns, findingsToCsv, recoveryToCsv, vendorsToCsv, summaryText, exampleDataset, fmtMoney,
-} from "./apforensics-engine.js?v=20261016l";
+} from "./apforensics-engine.js?v=20261017c";
 
-const ENGINE = engineUrl("./apforensics-engine.js?v=20261016l", import.meta);
+const ENGINE = engineUrl("./apforensics-engine.js?v=20261017c", import.meta);
 const P = "apf";
 const toast = (m, t) => { try { (window.showToast || (() => {}))(m, t || "info"); } catch (_) {} };
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));

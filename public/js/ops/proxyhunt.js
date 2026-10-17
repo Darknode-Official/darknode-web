@@ -15,9 +15,9 @@ import { download, toJson, fileStamp } from "../core/export.js";
 import {
   DEFAULTS, TOOL_ID, COLUMNS, COLUMN_LABELS, SEV_RANK, CONF_RANK, DEFAULT_INTERNAL_CIDRS, DEV_HOSTS, CATALOG, detectFile,
   findingsToCsv, shadowSaasCsv, tableToCsv, blocklistText, userReportText, summaryText, exampleDataset,
-} from "./proxyhunt-engine.js?v=20261017a";
+} from "./proxyhunt-engine.js?v=20261017c";
 
-const ENGINE = engineUrl("./proxyhunt-engine.js?v=20261017a", import.meta);
+const ENGINE = engineUrl("./proxyhunt-engine.js?v=20261017c", import.meta);
 const P = "pxh";
 const FEED_URL = "/data/feeds/malicious-ips.json";
 const toast = (m, t) => { try { (window.showToast || (() => {}))(m, t || "info"); } catch (_) {} };

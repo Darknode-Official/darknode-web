@@ -9,9 +9,9 @@ import { runInWorker, engineUrl } from "../ingest/worker.js";
 import { summarize } from "../core/sink-map.js";
 import { attachSinkButton } from "../core/sink.js";
 import { download, toJson, fileStamp } from "../core/export.js";
-import { DEFAULTS, TOOL_ID, COLUMNS, SOURCES, SEVERITY_RANK, parseInput, findingsToCsv, principalsToCsv, attestationText, exampleDataset } from "./privaudit-engine.js?v=20261016c";
+import { DEFAULTS, TOOL_ID, COLUMNS, SOURCES, SEVERITY_RANK, parseInput, findingsToCsv, principalsToCsv, attestationText, exampleDataset } from "./privaudit-engine.js?v=20261017c";
 
-const ENGINE = engineUrl("./privaudit-engine.js?v=20261016c", import.meta);
+const ENGINE = engineUrl("./privaudit-engine.js?v=20261017c", import.meta);
 const P = "prv";
 const toast = (m, t) => { try { (window.showToast || (() => {}))(m, t); } catch (_) {} };
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));

@@ -11,9 +11,9 @@ import { runInWorker, engineUrl } from "../ingest/worker.js";
 import { summarize } from "../core/sink-map.js";
 import { attachSinkButton } from "../core/sink.js";
 import { download, toJson, fileStamp } from "../core/export.js";
-import { DEFAULTS, TOOL_ID, FIELD_LABELS, parseInput, findingsToCsv, worklistCsv, bankChangesCsv, summaryText, formatCents, exampleDataset } from "./payrollguard-engine.js?v=20261016n";
+import { DEFAULTS, TOOL_ID, FIELD_LABELS, parseInput, findingsToCsv, worklistCsv, bankChangesCsv, summaryText, formatCents, exampleDataset } from "./payrollguard-engine.js?v=20261017c";
 
-const ENGINE = engineUrl("./payrollguard-engine.js?v=20261016n", import.meta);
+const ENGINE = engineUrl("./payrollguard-engine.js?v=20261017c", import.meta);
 const P = "pay";
 const toast = (m, t) => { try { (window.showToast || (() => {}))(m, t || "info"); } catch (_) {} };
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));

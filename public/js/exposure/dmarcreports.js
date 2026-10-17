@@ -20,9 +20,9 @@ import { download, toJson, fileStamp, zipFiles } from "../core/export.js";
 import {
   DEFAULTS, TOOL_ID, COLUMNS, ESP_TABLE, FORWARDER_TABLE, PSL_SUBSET, DETECTIONS, detectFile, ptrName,
   findingsToCsv, sourcesToCsv, fixListText, planText, summaryText, exampleDataset, csvCell,
-} from "./dmarcreports-engine.js?v=20261016u";
+} from "./dmarcreports-engine.js?v=20261017c";
 
-const ENGINE = engineUrl("./dmarcreports-engine.js?v=20261016u", import.meta);
+const ENGINE = engineUrl("./dmarcreports-engine.js?v=20261017c", import.meta);
 const P = "dmr";
 const toast = (m, t) => { try { (window.showToast || (() => {}))(m, t || "info"); } catch (_) {} };
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));

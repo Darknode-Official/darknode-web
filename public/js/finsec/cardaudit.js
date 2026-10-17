@@ -16,9 +16,9 @@ import { download, toJson, fileStamp } from "../core/export.js";
 import {
   DEFAULTS, TOOL_ID, COLUMNS, ROSTER_COLUMNS, POLICY_COLUMNS, BUILTIN_MCC, DETECTIONS, detectFile, parseInput, parseMccList,
   findingsToCsv, followupToCsv, recoveryToCsv, summaryText, exampleDataset, fmtCents, csvCell,
-} from "./cardaudit-engine.js?v=20261016m";
+} from "./cardaudit-engine.js?v=20261017c";
 
-const ENGINE = engineUrl("./cardaudit-engine.js?v=20261016m", import.meta);
+const ENGINE = engineUrl("./cardaudit-engine.js?v=20261017c", import.meta);
 const P = "crd";
 const toast = (m, t) => { try { (window.showToast || (() => {}))(m, t || "info"); } catch (_) {} };
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));

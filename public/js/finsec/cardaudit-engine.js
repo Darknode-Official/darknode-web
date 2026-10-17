@@ -1332,14 +1332,14 @@ export function exampleDataset(seed = 11) {
     ...people.map((p) => [p[0], p[1], email(p[1]), p[2], p[3], p[4], p[5], p[6], p[7]].join(","))].join("\n") + "\n";
   const last4 = { E1001: "4417", E1002: "2290", E1003: "8812", E1004: "5531", E1005: "0764", E1006: "3381", E1007: "9902", E1008: "1146", E1009: "6620", E1010: "7735" };
   const M = [
-    ["UNITED AIRLINES", "Airlines", "3000", "Travel", 180, 640],
-    ["MARRIOTT HOTELS", "Hotels and Motels", "3509", "Travel", 160, 520],
-    ["UBER TRIP", "Taxicabs and Limousines", "4121", "Travel", 12, 64],
-    ["SWEETGREEN", "Eating Places and Restaurants", "5812", "Meals", 14, 48],
-    ["STARBUCKS", "Fast Food Restaurants", "5814", "Meals", 4, 18],
-    ["ADOBE", "Computer Software Stores", "5734", "Software", 20, 90],
-    ["STAPLES", "Stationery, Office and School Supply Stores", "5943", "Office Supplies", 15, 140],
-    ["FEDEX", "Courier Services", "4215", "Shipping", 18, 95],
+    ["AIRLINE A", "Airlines", "3000", "Travel", 180, 640],
+    ["HOTEL A", "Hotels and Motels", "3509", "Travel", 160, 520],
+    ["RIDESHARE A TRIP", "Taxicabs and Limousines", "4121", "Travel", 12, 64],
+    ["RESTAURANT A", "Eating Places and Restaurants", "5812", "Meals", 14, 48],
+    ["COFFEE SHOP A", "Fast Food Restaurants", "5814", "Meals", 4, 18],
+    ["SOFTWARE VENDOR A", "Computer Software Stores", "5734", "Software", 20, 90],
+    ["OFFICE SUPPLY A", "Stationery, Office and School Supply Stores", "5943", "Office Supplies", 15, 140],
+    ["COURIER A", "Courier Services", "4215", "Shipping", 18, 95],
   ];
   const H = "Transaction Date,Posted Date,Description,Amount,Currency,Card Holder,Card Last Four,Merchant Category,MCC,Receipt Status,Memo,Category,Department";
   const brex = [];
@@ -1364,18 +1364,18 @@ export function exampleDataset(seed = 11) {
     const m = M[mi];
     brex.push({ d: parseWhen(d).day, line: row(d, d, m[0], a, "User 07", "E1007", m[1], m[2], "Submitted", "Customer roadshow", m[3], "Sales") });
   }
-  // seeded: split purchase (User 03, Dell, limit 2,500.00)
+  // seeded: split purchase (User 03, computer vendor, limit 2,500.00)
   const seed1 = [["2026-08-12", "2412.37"], ["2026-08-12", "2398.90"], ["2026-08-13", "1875.40"]];
-  for (const [d, a] of seed1) brex.push({ d: parseWhen(d).day, line: row(d, d, "DELL MARKETING", a, "User 03", "E1003", "Computers, Peripherals and Software", "5045", "Submitted", "Laptops for new hires", "Equipment", "IT") });
+  for (const [d, a] of seed1) brex.push({ d: parseWhen(d).day, line: row(d, d, "COMPUTER VENDOR A", a, "User 03", "E1003", "Computers, Peripherals and Software", "5045", "Submitted", "Laptops for new hires", "Equipment", "IT") });
   // seeded: duplicate receipt across two employees (User 04 card; User 05 claims it out of pocket)
-  brex.push({ d: parseWhen("2026-07-21").day, line: row("2026-07-21", "2026-07-22", "BLUE BOTTLE CATERING", "486.20", "User 04", "E1004", "Caterers", "5811", "Submitted", "Customer workshop lunch", "Meals", "Marketing") });
+  brex.push({ d: parseWhen("2026-07-21").day, line: row("2026-07-21", "2026-07-22", "CATERER A", "486.20", "User 04", "E1004", "Caterers", "5811", "Submitted", "Customer workshop lunch", "Meals", "Marketing") });
   // seeded: casino charge
-  brex.push({ d: parseWhen("2026-08-22").day, line: row("2026-08-22", "2026-08-24", "BELLAGIO CASINO LAS VEGAS", "1200.00", "User 06", "E1006", "Betting/Casino Gambling", "7995", "Missing", "", "Entertainment", "Sales") });
+  brex.push({ d: parseWhen("2026-08-22").day, line: row("2026-08-22", "2026-08-24", "CASINO A LAS VEGAS", "1200.00", "User 06", "E1006", "Betting/Casino Gambling", "7995", "Missing", "", "Entertainment", "Sales") });
   // seeded: over policy meal
-  brex.push({ d: parseWhen("2026-06-17").day, line: row("2026-06-17", "2026-06-18", "NOBU RESTAURANT", "412.75", "User 06", "E1006", "Eating Places and Restaurants", "5812", "Submitted", "Client dinner", "Meals", "Sales") });
+  brex.push({ d: parseWhen("2026-06-17").day, line: row("2026-06-17", "2026-06-18", "RESTAURANT B", "412.75", "User 06", "E1006", "Eating Places and Restaurants", "5812", "Submitted", "Client dinner", "Meals", "Sales") });
   // seeded: spend after termination
-  brex.push({ d: parseWhen("2026-09-04").day, line: row("2026-09-04", "2026-09-05", "BEST BUY 00123", "899.99", "User 08", "E1008", "Electronics Stores", "5732", "Missing", "", "Equipment", "Sales") });
-  brex.push({ d: parseWhen("2026-09-11").day, line: row("2026-09-11", "2026-09-12", "APPLE STORE R102", "1299.00", "User 08", "E1008", "Electronics Stores", "5732", "Missing", "", "Equipment", "Sales") });
+  brex.push({ d: parseWhen("2026-09-04").day, line: row("2026-09-04", "2026-09-05", "ELECTRONICS STORE A 00123", "899.99", "User 08", "E1008", "Electronics Stores", "5732", "Missing", "", "Equipment", "Sales") });
+  brex.push({ d: parseWhen("2026-09-11").day, line: row("2026-09-11", "2026-09-12", "ELECTRONICS STORE B R102", "1299.00", "User 08", "E1008", "Electronics Stores", "5732", "Missing", "", "Equipment", "Sales") });
   brex.sort((a, b) => a.d - b.d || cmp(a.line, b.line));
   const brexCsv = [H, ...brex.map((x) => x.line)].join("\n") + "\n";
 
@@ -1384,14 +1384,14 @@ export function exampleDataset(seed = 11) {
   const cl = (rid, rname, last, first, id, type, date, vendor, city, pay, amt, rec, approver, submit) =>
     [rid, csvCell(rname), csvCell(last + ", " + first), id, type, us(date), csvCell(vendor), city, "US", pay, amt, "USD", amt, rec, csvCell(approver), "Approved", us(submit), "US Employee Policy"].join(",");
   const concur = [
-    cl("R-2205", "July customer workshop", "04", "User", "E1004", "Meals", "2026-07-21", "Blue Bottle Catering", "San Francisco", "Corporate Card", "486.20", "Y", "01, User", "2026-07-24"),
-    cl("R-2207", "July events", "05", "User", "E1005", "Meals", "2026-07-21", "Blue Bottle Catering", "San Francisco", "Cash", "486.20", "Y", "04, User", "2026-07-28"),
-    cl("R-2207", "July events", "05", "User", "E1005", "Office Supplies", "2026-07-23", "Visa Prepaid Gift Card", "San Francisco", "Cash", "500.00", "N", "04, User", "2026-07-28"),
-    cl("R-2210", "Client visit Austin", "09", "User", "E1009", "Taxi", "2026-08-05", "Lyft Ride", "Austin", "Personal Card", "38.40", "Y", "03, User", "2026-08-07"),
-    cl("R-2215", "August expenses", "09", "User", "E1009", "Taxi", "2026-08-05", "Lyft Ride", "Austin", "Personal Card", "38.40", "Y", "03, User", "2026-08-29"),
-    cl("R-2231", "Q3 sales kickoff", "07", "User", "E1007", "Meals", "2026-08-19", "The Capital Grille", "Chicago", "Personal Card", "684.15", "Y", "07, User", "2026-08-21"),
-    cl("R-2231", "Q3 sales kickoff", "07", "User", "E1007", "Event Supplies", "2026-08-20", "Party City", "Chicago", "Personal Card", "212.48", "N", "07, User", "2026-08-21"),
-    cl("R-2240", "Board dinner", "01", "User", "E1001", "Meals", "2026-09-09", "Zuni Cafe", "San Francisco", "Personal Card", "356.80", "Y", "02, User", "2026-09-11"),
+    cl("R-2205", "July customer workshop", "04", "User", "E1004", "Meals", "2026-07-21", "Caterer A", "San Francisco", "Corporate Card", "486.20", "Y", "01, User", "2026-07-24"),
+    cl("R-2207", "July events", "05", "User", "E1005", "Meals", "2026-07-21", "Caterer A", "San Francisco", "Cash", "486.20", "Y", "04, User", "2026-07-28"),
+    cl("R-2207", "July events", "05", "User", "E1005", "Office Supplies", "2026-07-23", "Prepaid Gift Card", "San Francisco", "Cash", "500.00", "N", "04, User", "2026-07-28"),
+    cl("R-2210", "Client visit Austin", "09", "User", "E1009", "Taxi", "2026-08-05", "Rideshare B", "Austin", "Personal Card", "38.40", "Y", "03, User", "2026-08-07"),
+    cl("R-2215", "August expenses", "09", "User", "E1009", "Taxi", "2026-08-05", "Rideshare B", "Austin", "Personal Card", "38.40", "Y", "03, User", "2026-08-29"),
+    cl("R-2231", "Q3 sales kickoff", "07", "User", "E1007", "Meals", "2026-08-19", "Restaurant C", "Chicago", "Personal Card", "684.15", "Y", "07, User", "2026-08-21"),
+    cl("R-2231", "Q3 sales kickoff", "07", "User", "E1007", "Event Supplies", "2026-08-20", "Party Supply A", "Chicago", "Personal Card", "212.48", "N", "07, User", "2026-08-21"),
+    cl("R-2240", "Board dinner", "01", "User", "E1001", "Meals", "2026-09-09", "Cafe A", "San Francisco", "Personal Card", "356.80", "Y", "02, User", "2026-09-11"),
   ].join("\n");
   const concurCsv = CH + "\n" + concur + "\n";
   const policyCsv = "category,limit_per_txn,limit_per_day,currency\nMeals,150.00,250.00,USD\nTaxi,120.00,,USD\n";
