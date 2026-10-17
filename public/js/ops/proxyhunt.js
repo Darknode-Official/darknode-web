@@ -194,7 +194,7 @@ export function renderProxyHunt(main) {
     '<div class="', P, '-row"><button class="', P, '-btn pri" id="', P, '-run" type="button" disabled>Hunt</button><button class="', P, '-btn" id="', P, '-cancel" type="button" hidden>Cancel</button><button class="', P, '-btn" id="', P, '-clear" type="button" disabled>Clear files</button><span class="', P, '-note" id="', P, '-count"></span></div>',
     '<div class="', P, '-prog" id="', P, '-prog"><i></i></div><div class="', P, '-plabel" id="', P, '-plabel"></div></div>',
     '<div class="', P, '-card"><h2>2. Your environment</h2><div class="', P, '-fields">',
-    area("sanctioned", "Sanctioned apps", "one domain or app per line", "Blank = nothing sanctioned. Example lines: dropbox.com, Google Drive, contoso.sharepoint.com. Mixed services (Google Drive, Box, Gmail, Gist) show sanctioned = unknown until listed."),
+    area("sanctioned", "Sanctioned apps", "one domain or app per line", "Blank = nothing sanctioned. Example lines: dropbox.com, Google Drive, test-darknode.sharepoint.com. Mixed services (Google Drive, Box, Gmail, Gist) show sanctioned = unknown until listed."),
     area("own", "Own domains", "one per line", "Excluded from exfiltration and scripted-client checks. The first label also marks your SharePoint / OneDrive tenant as corporate."),
     area("allow", "Allow-listed hosts", "one per line", "Destinations scripts may reach (partner APIs, build servers)."),
     area("internal", "Internal CIDRs", "one per line", "Blank = " + DEFAULT_INTERNAL_CIDRS.join(", ") + "."),
