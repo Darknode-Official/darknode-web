@@ -436,7 +436,7 @@ const q = (s) => `"${String(s == null ? "" : s).replace(/"/g, '""')}"`;
 const Z = (t) => new Date(t).toISOString().replace(/\.\d{3}Z$/, "Z");
 const MIN = 60000, DAY = 86400000;
 const EX_T0 = Date.UTC(2026, 8, 21, 8, 0, 0); // Mon 2026-09-21 08:00Z
-const STAFF = ["ana.ruiz", "ben.okafor", "chloe.martin", "dev.patel", "emma.nilsson", "farid.hassan", "grace.liu", "hugo.schmidt", "isla.murphy", "jonas.weber", "kai.tanaka", "lena.fischer"];
+const STAFF = Array.from({ length: 12 }, (_, i) => "user" + String(i + 1).padStart(2, "0"));
 const HOME = { ip: "86.43.10.", city: "Dublin", country: "IE", lat: 53.35, lon: -6.26 };
 
 function exampleEntra() {
@@ -446,26 +446,26 @@ function exampleEntra() {
   // Baseline: 14 working days, each person signs in 2-4 times from the office range, MFA satisfied.
   for (let d = 0; d < 20; d++) {
     const dayTs = EX_T0 + d * DAY; const dow = new Date(dayTs).getUTCDay(); if (dow === 0 || dow === 6) continue;
-    for (const u of STAFF) { if (u === "kai.tanaka" && d >= 17) continue; /* travelling, see pattern 7 */ const k = 2 + Math.floor(R() * 3); for (let i = 0; i < k; i++) push({ ts: dayTs + Math.floor(R() * 9 * 60) * MIN, u, ip: HOME.ip + (20 + Math.floor(R() * 6)), city: HOME.city, country: HOME.country, lat: HOME.lat, lon: HOME.lon, app: R() < 0.6 ? "Office 365 Exchange Online" : "Microsoft Teams" }); }
+    for (const u of STAFF) { if (u === "user11" && d >= 17) continue; /* travelling, see pattern 7 */ const k = 2 + Math.floor(R() * 3); for (let i = 0; i < k; i++) push({ ts: dayTs + Math.floor(R() * 9 * 60) * MIN, u, ip: HOME.ip + (20 + Math.floor(R() * 6)), city: HOME.city, country: HOME.country, lat: HOME.lat, lon: HOME.lon, app: R() < 0.6 ? "Office 365 Exchange Online" : "Microsoft Teams" }); }
     // the IT admin uses the portal daily, with MFA
     push({ ts: dayTs + 60 * MIN, u: "it-admin", app: "Azure Portal", ip: HOME.ip + "21", city: HOME.city, country: HOME.country, lat: HOME.lat, lon: HOME.lon, mfa: true });
   }
   // Pattern 1: password spray from one address across 14 accounts, 2 min apart, day 3 early morning
   STAFF.concat(["it-admin", "svc-backup"]).forEach((u, i) => push({ ts: EX_T0 + 2 * DAY + (-4 * 60 + i * 2) * MIN, u, ok: false, ip: "185.220.101.34", city: "Bucharest", country: "RO", lat: 44.43, lon: 26.1, mfa: null, reason: "Error validating credentials due to invalid username or password.", browser: "Chrome 118.0.0", os: "Linux" }));
-  // Pattern 2: the spray source then succeeds against dev.patel after 7 more failures (no MFA registered)
-  for (let i = 0; i < 7; i++) push({ ts: EX_T0 + 2 * DAY + (-3 * 60 + i) * MIN, u: "dev.patel", ok: false, ip: "185.220.101.34", city: "Bucharest", country: "RO", lat: 44.43, lon: 26.1, mfa: null, reason: "Error validating credentials due to invalid username or password." });
-  push({ ts: EX_T0 + 2 * DAY + (-3 * 60 + 9) * MIN, u: "dev.patel", ok: true, ip: "185.220.101.34", city: "Bucharest", country: "RO", lat: 44.43, lon: 26.1, mfa: false, risk: "atRisk", browser: "Chrome 118.0.0", os: "Linux" });
+  // Pattern 2: the spray source then succeeds against user04 after 7 more failures (no MFA registered)
+  for (let i = 0; i < 7; i++) push({ ts: EX_T0 + 2 * DAY + (-3 * 60 + i) * MIN, u: "user04", ok: false, ip: "185.220.101.34", city: "Bucharest", country: "RO", lat: 44.43, lon: 26.1, mfa: null, reason: "Error validating credentials due to invalid username or password." });
+  push({ ts: EX_T0 + 2 * DAY + (-3 * 60 + 9) * MIN, u: "user04", ok: true, ip: "185.220.101.34", city: "Bucharest", country: "RO", lat: 44.43, lon: 26.1, mfa: false, risk: "atRisk", browser: "Chrome 118.0.0", os: "Linux" });
   // Pattern 3: brute force on svc-backup, 26 failures in 20 min, day 5
   for (let i = 0; i < 26; i++) push({ ts: EX_T0 + 4 * DAY + (14 * 60 + Math.floor(i * 0.77)) * MIN, u: "svc-backup", ok: false, ip: "45.142.212.61", city: "Amsterdam", country: "NL", lat: 52.37, lon: 4.9, mfa: null, reason: "Error validating credentials due to invalid username or password.", browser: "Python Requests 2.31", os: "Linux" });
-  // Pattern 4: impossible travel for grace.liu: Dublin 09:10, Singapore 09:55 same day (day 8)
-  push({ ts: EX_T0 + 7 * DAY + 70 * MIN, u: "grace.liu", ip: HOME.ip + "22", city: HOME.city, country: HOME.country, lat: HOME.lat, lon: HOME.lon });
-  push({ ts: EX_T0 + 7 * DAY + 115 * MIN, u: "grace.liu", ip: "118.189.5.77", city: "Singapore", country: "SG", lat: 1.35, lon: 103.82, mfa: true, browser: "Safari 17.0", os: "iOS 17" });
-  // Pattern 5: legacy IMAP for hugo.schmidt every morning (a mail client with basic auth)
-  for (let d = 0; d < 20; d++) { const dayTs = EX_T0 + d * DAY; const dow = new Date(dayTs).getUTCDay(); if (dow === 0 || dow === 6) continue; push({ ts: dayTs + 15 * MIN, u: "hugo.schmidt", ip: HOME.ip + "24", city: HOME.city, country: HOME.country, lat: HOME.lat, lon: HOME.lon, client: "IMAP4", mfa: false, browser: "", os: "" }); }
+  // Pattern 4: impossible travel for user07: Dublin 09:10, Singapore 09:55 same day (day 8)
+  push({ ts: EX_T0 + 7 * DAY + 70 * MIN, u: "user07", ip: HOME.ip + "22", city: HOME.city, country: HOME.country, lat: HOME.lat, lon: HOME.lon });
+  push({ ts: EX_T0 + 7 * DAY + 115 * MIN, u: "user07", ip: "118.189.5.77", city: "Singapore", country: "SG", lat: 1.35, lon: 103.82, mfa: true, browser: "Safari 17.0", os: "iOS 17" });
+  // Pattern 5: legacy IMAP for user08 every morning (a mail client with basic auth)
+  for (let d = 0; d < 20; d++) { const dayTs = EX_T0 + d * DAY; const dow = new Date(dayTs).getUTCDay(); if (dow === 0 || dow === 6) continue; push({ ts: dayTs + 15 * MIN, u: "user08", ip: HOME.ip + "24", city: HOME.city, country: HOME.country, lat: HOME.lat, lon: HOME.lon, client: "IMAP4", mfa: false, browser: "", os: "" }); }
   // Pattern 6: it-admin signs into the portal without MFA at 02:30 on a Saturday (day 6) from a hotel in Lisbon
   push({ ts: EX_T0 + 5 * DAY + (-5 * 60 - 30) * MIN, u: "it-admin", app: "Azure Portal", ip: "148.63.80.12", city: "Lisbon", country: "PT", lat: 38.72, lon: -9.14, mfa: false });
-  // Pattern 7: new country for kai.tanaka on days 18-19 (after > 7 days of history), MFA satisfied: a business trip
-  for (const d of [17, 18]) { push({ ts: EX_T0 + d * DAY + 3 * 60 * MIN, u: "kai.tanaka", ip: "203.0.113.200", city: "Tokyo", country: "JP", lat: 35.68, lon: 139.69, mfa: true }); push({ ts: EX_T0 + d * DAY + 5 * 60 * MIN, u: "kai.tanaka", ip: "203.0.113.200", city: "Tokyo", country: "JP", lat: 35.68, lon: 139.69, mfa: true }); }
+  // Pattern 7: new country for user11 on days 18-19 (after > 7 days of history), MFA satisfied: a business trip
+  for (const d of [17, 18]) { push({ ts: EX_T0 + d * DAY + 3 * 60 * MIN, u: "user11", ip: "203.0.113.200", city: "Tokyo", country: "JP", lat: 35.68, lon: 139.69, mfa: true }); push({ ts: EX_T0 + d * DAY + 5 * 60 * MIN, u: "user11", ip: "203.0.113.200", city: "Tokyo", country: "JP", lat: 35.68, lon: 139.69, mfa: true }); }
   rows.sort((a, b) => a.ts - b.ts);
   const lines = [H.map(q).join(",")];
   for (const r of rows) {
@@ -489,11 +489,11 @@ function exampleGoogle() {
   }
   // spray across 11 users from one IP in 25 minutes
   STAFF.slice(0, 11).forEach((u, i) => push(EX_T0 + 3 * DAY + (-3 * 60 + i * 2) * MIN, "login_failure", u, "102.129.145.9", { fail: "login_failure_invalid_password", mfa: false }));
-  // brute force on emma.nilsson then success; Google marks the success suspicious
-  for (let i = 0; i < 22; i++) push(EX_T0 + 6 * DAY + (-2 * 60 + i) * MIN, "login_failure", "emma.nilsson", "41.77.9.130", { fail: "login_failure_invalid_password", mfa: false });
-  push(EX_T0 + 6 * DAY + (-2 * 60 + 24) * MIN, "suspicious_login", "emma.nilsson", "41.77.9.130", { susp: true, mfa: false });
-  // legacy: ben.okafor uses an Exchange ActiveSync client daily (less secure app)
-  for (let d = 0; d < 12; d++) { const dayTs = EX_T0 + d * DAY; const dow = new Date(dayTs).getUTCDay(); if (dow === 0 || dow === 6) continue; push(dayTs + 20 * MIN, "login_success", "ben.okafor", "198.51.100.12", { type: "exchange", mfa: false }); }
+  // brute force on user05 then success; Google marks the success suspicious
+  for (let i = 0; i < 22; i++) push(EX_T0 + 6 * DAY + (-2 * 60 + i) * MIN, "login_failure", "user05", "41.77.9.130", { fail: "login_failure_invalid_password", mfa: false });
+  push(EX_T0 + 6 * DAY + (-2 * 60 + 24) * MIN, "suspicious_login", "user05", "41.77.9.130", { susp: true, mfa: false });
+  // legacy: user02 uses an Exchange ActiveSync client daily (less secure app)
+  for (let d = 0; d < 12; d++) { const dayTs = EX_T0 + d * DAY; const dow = new Date(dayTs).getUTCDay(); if (dow === 0 || dow === 6) continue; push(dayTs + 20 * MIN, "login_success", "user02", "198.51.100.12", { type: "exchange", mfa: false }); }
   // admin account without second factor
   push(EX_T0 + 2 * DAY + 2 * 60 * MIN, "login_success", "gsuite-admin", "198.51.100.10", { mfa: false });
   push(EX_T0 + 8 * DAY + 2 * 60 * MIN, "login_success", "gsuite-admin", "198.51.100.10", { mfa: false });
@@ -515,7 +515,7 @@ function exampleOkta() {
     uuid: `0f2e${String(++seq).padStart(4, "0")}-6d1a-11f1-9b3c-${String(seq * 104729).padStart(12, "0")}`, published: new Date(ts).toISOString(), eventType: type, version: "0", severity: ok ? "INFO" : "WARN",
     legacyEventType: type === "user.session.start" ? (ok ? "core.user_auth.login_success" : "core.user_auth.login_failed") : null,
     displayMessage: type === "user.session.start" ? "User login to Okta" : type === "user.authentication.auth_via_mfa" ? "Authentication of user via MFA" : type === "user.session.access_admin_app" ? "User accessing Okta admin app" : "User single sign on to app",
-    actor: { id: `00u${u.replace(/\W/g, "").slice(0, 10)}`, type: "User", alternateId: `${u}@okta-customer.example`, displayName: u.replace(/\./g, " "), detailEntry: null },
+    actor: { id: `00u${u.replace(/\W/g, "").slice(0, 10)}`, type: "User", alternateId: `${u}@test.darknode.ai`, displayName: u.replace(/\./g, " "), detailEntry: null },
     client: { userAgent: { rawUserAgent: extra.ua || "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/130.0.0.0 Safari/537.36", os: "Windows 10", browser: "CHROME" }, zone: "null", device: "Computer", id: null, ipAddress: ip,
       geographicalContext: { city: g.city, state: null, country: g.country, postalCode: null, geolocation: { lat: g.lat, lon: g.lon } } },
     outcome: { result: ok ? "SUCCESS" : "FAILURE", reason: ok ? null : (extra.reason || "INVALID_CREDENTIALS") },
@@ -535,14 +535,14 @@ function exampleOkta() {
   }
   // okta-admin: admin console without MFA, from a DigitalOcean host
   for (const d of [1, 4, 8]) { const t = EX_T0 + d * DAY + 3 * 60 * MIN; ev(t, "user.session.start", "okta.admin", "164.92.200.14", geo.frankfurt, true); ev(t + 20000, "user.session.access_admin_app", "okta.admin", "164.92.200.14", geo.frankfurt, true); }
-  // Password spray from a Tor exit (securityContext.isProxy = true) across 12 users, then a success for farid.hassan without MFA
+  // Password spray from a Tor exit (securityContext.isProxy = true) across 12 users, then a success for user06 without MFA
   STAFF.forEach((u, i) => ev(EX_T0 + 5 * DAY + (-2 * 60 + i * 3) * MIN, "user.session.start", u, "185.220.101.52", geo.tor, false, { reason: "INVALID_CREDENTIALS", ua: "python-requests/2.31.0" }));
-  for (let i = 0; i < 6; i++) ev(EX_T0 + 5 * DAY + (-80 + i) * MIN, "user.session.start", "farid.hassan", "185.220.101.52", geo.tor, false, { reason: "INVALID_CREDENTIALS", ua: "python-requests/2.31.0" });
-  ev(EX_T0 + 5 * DAY + -72 * MIN, "user.session.start", "farid.hassan", "185.220.101.52", geo.tor, true, { threat: true, ua: "python-requests/2.31.0" });
-  // Impossible travel for chloe.martin: Dublin then New York 35 minutes later, both with MFA
+  for (let i = 0; i < 6; i++) ev(EX_T0 + 5 * DAY + (-80 + i) * MIN, "user.session.start", "user06", "185.220.101.52", geo.tor, false, { reason: "INVALID_CREDENTIALS", ua: "python-requests/2.31.0" });
+  ev(EX_T0 + 5 * DAY + -72 * MIN, "user.session.start", "user06", "185.220.101.52", geo.tor, true, { threat: true, ua: "python-requests/2.31.0" });
+  // Impossible travel for user03: Dublin then New York 35 minutes later, both with MFA
   const t2 = EX_T0 + 9 * DAY + 2 * 60 * MIN;
-  ev(t2, "user.session.start", "chloe.martin", "86.43.10.31", geo.dublin, true); ev(t2 + 30000, "user.authentication.auth_via_mfa", "chloe.martin", "86.43.10.31", geo.dublin, true);
-  ev(t2 + 35 * MIN, "user.session.start", "chloe.martin", "72.229.28.185", geo.nyc, true); ev(t2 + 35 * MIN + 30000, "user.authentication.auth_via_mfa", "chloe.martin", "72.229.28.185", geo.nyc, true);
+  ev(t2, "user.session.start", "user03", "86.43.10.31", geo.dublin, true); ev(t2 + 30000, "user.authentication.auth_via_mfa", "user03", "86.43.10.31", geo.dublin, true);
+  ev(t2 + 35 * MIN, "user.session.start", "user03", "72.229.28.185", geo.nyc, true); ev(t2 + 35 * MIN + 30000, "user.authentication.auth_via_mfa", "user03", "72.229.28.185", geo.nyc, true);
   events.sort((a, b) => a.published.localeCompare(b.published));
   return JSON.stringify(events, null, 2);
 }

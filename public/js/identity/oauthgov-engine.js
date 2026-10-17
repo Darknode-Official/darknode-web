@@ -1125,13 +1125,13 @@ export function exampleDataset(seed = 7) {
         appRoles: [{ id: "7ab1d382-f21e-4acd-a863-ba3e13f7da61", value: "Directory.Read.All", displayName: "Read directory data" }, { id: "810c84a8-4a9e-49e6-bf7d-12d183f40d01", value: "Mail.Read", displayName: "Read mail in all mailboxes" }], oauth2PermissionScopes: [] },
       { id: TEAMS, appId: g(), displayName: "Microsoft Teams", appOwnerOrganizationId: MS_FIRST_PARTY_TENANT, servicePrincipalType: "Application", accountEnabled: true, createdDateTime: "2023-02-10T09:12:50Z", verifiedPublisher: { displayName: null, verifiedPublisherId: null, addedDateTime: null }, publisherName: "Microsoft Services", signInAudience: "AzureADMultipleOrgs", tags: ["WindowsAzureActiveDirectoryIntegratedApp"], homepage: "https://teams.microsoft.com", replyUrls: ["https://teams.microsoft.com/go"], appRoles: [], oauth2PermissionScopes: [],
         signInActivity: { lastSignInDateTime: "2026-10-01T07:40:12Z" } },
-      { id: SYNC, appId: g(), displayName: "Outlook Mail Sync", appOwnerOrganizationId: g(), servicePrincipalType: "Application", accountEnabled: true, createdDateTime: "2026-08-19T15:03:21Z", verifiedPublisher: { displayName: null, verifiedPublisherId: null, addedDateTime: null }, publisherName: "MailSync Labs", signInAudience: "AzureADandPersonalMicrosoftAccount", tags: ["WindowsAzureActiveDirectoryIntegratedApp"], homepage: "http://mailsync-labs.example", replyUrls: ["http://mailsync-labs.example/callback", "https://mailsync-labs.example/callback"], appRoles: [], oauth2PermissionScopes: [],
+      { id: SYNC, appId: g(), displayName: "Outlook Mail Sync", appOwnerOrganizationId: g(), servicePrincipalType: "Application", accountEnabled: true, createdDateTime: "2026-08-19T15:03:21Z", verifiedPublisher: { displayName: null, verifiedPublisherId: null, addedDateTime: null }, publisherName: "Vendor B Labs", signInAudience: "AzureADandPersonalMicrosoftAccount", tags: ["WindowsAzureActiveDirectoryIntegratedApp"], homepage: "http://vendor-b.test.darknode.ai", replyUrls: ["http://vendor-b.test.darknode.ai/callback", "https://vendor-b.test.darknode.ai/callback"], appRoles: [], oauth2PermissionScopes: [],
         signInActivity: { lastSignInDateTime: "2026-10-02T11:15:09Z" } },
-      { id: CRM, appId: g(), displayName: "Northwind CRM Connector", appOwnerOrganizationId: g(), servicePrincipalType: "Application", accountEnabled: true, createdDateTime: "2025-03-04T10:00:00Z", verifiedPublisher: { displayName: "Northwind Software Ltd", verifiedPublisherId: "1234567", addedDateTime: "2024-11-01T00:00:00Z" }, publisherName: "Northwind Software Ltd", signInAudience: "AzureADMultipleOrgs", tags: ["WindowsAzureActiveDirectoryIntegratedApp"], homepage: "https://crm.northwind.example", replyUrls: ["https://crm.northwind.example/auth"], appRoles: [], oauth2PermissionScopes: [],
+      { id: CRM, appId: g(), displayName: "Vendor A CRM Connector", appOwnerOrganizationId: g(), servicePrincipalType: "Application", accountEnabled: true, createdDateTime: "2025-03-04T10:00:00Z", verifiedPublisher: { displayName: "Vendor A Software Ltd", verifiedPublisherId: "1234567", addedDateTime: "2024-11-01T00:00:00Z" }, publisherName: "Vendor A Software Ltd", signInAudience: "AzureADMultipleOrgs", tags: ["WindowsAzureActiveDirectoryIntegratedApp"], homepage: "https://crm.vendor-a.test.darknode.ai", replyUrls: ["https://crm.vendor-a.test.darknode.ai/auth"], appRoles: [], oauth2PermissionScopes: [],
         signInActivity: { lastSignInDateTime: "2026-05-14T03:00:00Z" } },
-      { id: OLD, appId: g(), displayName: "Legacy Expense Importer", appOwnerOrganizationId: g(), servicePrincipalType: "Application", accountEnabled: false, createdDateTime: "2022-06-30T08:00:00Z", verifiedPublisher: { displayName: "Contoso Finance Apps", verifiedPublisherId: "7654321", addedDateTime: "2022-01-15T00:00:00Z" }, publisherName: "Contoso Finance Apps", signInAudience: "AzureADMultipleOrgs", tags: ["WindowsAzureActiveDirectoryIntegratedApp"], homepage: "https://expenses.contoso.example", replyUrls: ["https://expenses.contoso.example/cb"], appRoles: [], oauth2PermissionScopes: [],
+      { id: OLD, appId: g(), displayName: "Legacy Expense Importer", appOwnerOrganizationId: g(), servicePrincipalType: "Application", accountEnabled: false, createdDateTime: "2022-06-30T08:00:00Z", verifiedPublisher: { displayName: "Vendor C Finance Apps", verifiedPublisherId: "7654321", addedDateTime: "2022-01-15T00:00:00Z" }, publisherName: "Vendor C Finance Apps", signInAudience: "AzureADMultipleOrgs", tags: ["WindowsAzureActiveDirectoryIntegratedApp"], homepage: "https://expenses.vendor-c.test.darknode.ai", replyUrls: ["https://expenses.vendor-c.test.darknode.ai/cb"], appRoles: [], oauth2PermissionScopes: [],
         signInActivity: { lastSignInDateTime: "2025-09-01T12:00:00Z" } },
-      { id: NOTES, appId: g(), displayName: "Fabrikam Meeting Notes", appOwnerOrganizationId: g(), servicePrincipalType: "Application", accountEnabled: true, createdDateTime: "2026-01-20T14:22:00Z", verifiedPublisher: { displayName: "Fabrikam Inc", verifiedPublisherId: "2468101", addedDateTime: "2025-10-10T00:00:00Z" }, publisherName: "Fabrikam Inc", signInAudience: "AzureADMultipleOrgs", tags: ["WindowsAzureActiveDirectoryIntegratedApp"], homepage: "https://notes.fabrikam.example", replyUrls: ["https://notes.fabrikam.example/oauth"], appRoles: [], oauth2PermissionScopes: [],
+      { id: NOTES, appId: g(), displayName: "Vendor D Meeting Notes", appOwnerOrganizationId: g(), servicePrincipalType: "Application", accountEnabled: true, createdDateTime: "2026-01-20T14:22:00Z", verifiedPublisher: { displayName: "Vendor D Inc", verifiedPublisherId: "2468101", addedDateTime: "2025-10-10T00:00:00Z" }, publisherName: "Vendor D Inc", signInAudience: "AzureADMultipleOrgs", tags: ["WindowsAzureActiveDirectoryIntegratedApp"], homepage: "https://notes.vendor-d.test.darknode.ai", replyUrls: ["https://notes.vendor-d.test.darknode.ai/oauth"], appRoles: [], oauth2PermissionScopes: [],
         signInActivity: { lastSignInDateTime: "2026-10-03T16:05:44Z" } },
     ],
   };
@@ -1148,14 +1148,14 @@ export function exampleDataset(seed = 7) {
   };
   const appRoles = {
     value: [
-      { id: g(), appRoleId: "7ab1d382-f21e-4acd-a863-ba3e13f7da61", principalId: CRM, principalDisplayName: "Northwind CRM Connector", principalType: "ServicePrincipal", resourceId: GRAPH_SP, resourceDisplayName: "Microsoft Graph", createdDateTime: "2025-03-04T10:05:00Z" },
+      { id: g(), appRoleId: "7ab1d382-f21e-4acd-a863-ba3e13f7da61", principalId: CRM, principalDisplayName: "Vendor A CRM Connector", principalType: "ServicePrincipal", resourceId: GRAPH_SP, resourceDisplayName: "Microsoft Graph", createdDateTime: "2025-03-04T10:05:00Z" },
     ],
   };
   const googleApps = [
     "App name,Client ID,App type,Verified,Access,Users",
     "Grammar Helper,412093817263-ab3hu7e2.apps.googleusercontent.com,Web application,Yes,Limited,48",
     "PDF Merge Pro,884120077311-pdfmerge.apps.googleusercontent.com,Web application,No,Limited,6",
-    "Northwind CRM Connector,201177431908-northwind.apps.googleusercontent.com,Web application,Yes,Trusted,120",
+    "Vendor A CRM Connector,201177431908-vendora.apps.googleusercontent.com,Web application,Yes,Trusted,120",
   ].join("\n");
   const googleTokens = {
     kind: "admin#reports#tokens",
@@ -1163,7 +1163,7 @@ export function exampleDataset(seed = 7) {
       { kind: "admin#reports#token", clientId: "412093817263-ab3hu7e2.apps.googleusercontent.com", displayText: "Grammar Helper", anonymous: false, nativeApp: false, userKey: "test@darknode.ai", scopes: ["https://www.googleapis.com/auth/documents", "https://www.googleapis.com/auth/userinfo.email", "openid"] },
       { kind: "admin#reports#token", clientId: "884120077311-pdfmerge.apps.googleusercontent.com", displayText: "PDF Merge Pro", anonymous: false, nativeApp: false, userKey: "finance@darknode.ai", scopes: ["https://www.googleapis.com/auth/drive", "https://www.googleapis.com/auth/userinfo.email"] },
       { kind: "admin#reports#token", clientId: "884120077311-pdfmerge.apps.googleusercontent.com", displayText: "PDF Merge Pro", anonymous: false, nativeApp: false, userKey: "ops@darknode.ai", scopes: ["https://www.googleapis.com/auth/drive", "https://www.googleapis.com/auth/userinfo.email"] },
-      { kind: "admin#reports#token", clientId: "201177431908-northwind.apps.googleusercontent.com", displayText: "Northwind CRM Connector", anonymous: false, nativeApp: false, userKey: "sales@darknode.ai", scopes: ["https://www.googleapis.com/auth/contacts.readonly", "https://www.googleapis.com/auth/calendar.readonly", "https://www.googleapis.com/auth/userinfo.email"] },
+      { kind: "admin#reports#token", clientId: "201177431908-vendora.apps.googleusercontent.com", displayText: "Vendor A CRM Connector", anonymous: false, nativeApp: false, userKey: "sales@darknode.ai", scopes: ["https://www.googleapis.com/auth/contacts.readonly", "https://www.googleapis.com/auth/calendar.readonly", "https://www.googleapis.com/auth/userinfo.email"] },
     ],
   };
   const slack = [
@@ -1192,14 +1192,14 @@ export function selfTest() {
   const named = (check, name) => by(check).find((f) => f.assets && f.assets[0] && f.assets[0].name === name);
   tests.push({ name: "six formats parsed", pass: ex.parsed.files.length === 6 && ex.parsed.files.every((f) => f.format !== "generic") });
   tests.push({ name: "inventory lists 11 apps", pass: r.summary.apps === 11 });
-  tests.push({ name: "app-only Directory.Read.All is critical", pass: !!named("high_risk_scopes", "Northwind CRM Connector") && named("high_risk_scopes", "Northwind CRM Connector").severity === "critical" });
+  tests.push({ name: "app-only Directory.Read.All is critical", pass: !!named("high_risk_scopes", "Vendor A CRM Connector") && named("high_risk_scopes", "Vendor A CRM Connector").severity === "critical" });
   tests.push({ name: "user-consented Mail.ReadWrite flagged with 3 users", pass: !!named("user_consent_high", "Outlook Mail Sync") && named("user_consent_high", "Outlook Mail Sync").evidenceCount === 3 });
   tests.push({ name: "unverified publisher flagged", pass: !!named("unverified_publisher", "Outlook Mail Sync") });
   tests.push({ name: "first-party Teams never flagged", pass: !r.findings.some((f) => f.assets && f.assets.some((a) => a.name === "Microsoft Teams")) });
   tests.push({ name: "lookalike brand word flagged", pass: !!named("lookalike_name", "Outlook Mail Sync") });
   tests.push({ name: "disabled app with grants is low", pass: !!named("disabled_with_grants", "Legacy Expense Importer") && named("disabled_with_grants", "Legacy Expense Importer").severity === "low" });
   tests.push({ name: "http reply url flagged", pass: !!named("insecure_reply_url", "Outlook Mail Sync") });
-  tests.push({ name: "unused broad-scope CRM flagged (144 days)", pass: !!named("unused_broad", "Northwind CRM Connector") });
+  tests.push({ name: "unused broad-scope CRM flagged (144 days)", pass: !!named("unused_broad", "Vendor A CRM Connector") });
   tests.push({ name: "deterministic", pass: JSON.stringify(analyze(ex.rows, { now: "2026-10-05T00:00:00Z" })) === JSON.stringify(r) });
   tests.push({ name: "empty input yields no findings", pass: analyze([]).findings.length === 0 });
   return { pass: tests.every((t) => t.pass), tests };
