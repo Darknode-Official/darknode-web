@@ -16,8 +16,10 @@
 import {
   parseHR, parseDirectory, analyze, datasetHash, exampleData,
   toReviewCSV, toFindingsCSV, toReviewJSON, attestationText, summarizeDecisions,
-  DEFAULT_OPTIONS, DECISIONS, SEVERITY_RANK, FINDING_TYPES,
+  DEFAULT_OPTIONS, DECISIONS, SEVERITY_RANK, FINDING_TYPES, toSinkFindings,
 } from "/js/identity/access-review-engine.js?v=20261017c";
+import { sampleShare, SAMPLE_SHARE } from "../core/sink-map.js";
+import { attachSinkButton } from "../core/sink.js";
 
 const ENGINE_URL = new URL("./access-review-engine.js?v=20261017c", import.meta.url).href;
 
@@ -222,14 +224,16 @@ export function renderAccessReview(main) {
   wireFile("acrHrFile", hrTA, "acrHrName");
   wireFile("acrDirFile", dirTA, "acrDirName");
 
+  let example = null; // the synthetic example last loaded; runs that still contain it are sample data
   $("acrExample").addEventListener("click", () => {
     const ex = exampleData();
+    example = ex;
     hrTA.value = ex.hr; dirTA.value = ex.dir;
     $("acrHrName").textContent = "synthetic example"; $("acrDirName").textContent = "synthetic example (Entra ID shape)";
     toast("Synthetic example loaded. Run review to see the packet.");
   });
   $("acrClear").addEventListener("click", () => {
-    hrTA.value = ""; dirTA.value = ""; $("acrHrName").textContent = ""; $("acrDirName").textContent = ""; out.innerHTML = ""; $("acrStatus").textContent = "";
+    example = null; hrTA.value = ""; dirTA.value = ""; $("acrHrName").textContent = ""; $("acrDirName").textContent = ""; out.innerHTML = ""; $("acrStatus").textContent = "";
   });
   $("acrRun").addEventListener("click", run);
 
@@ -276,7 +280,8 @@ export function renderAccessReview(main) {
     const hash = datasetHash(hrText, dirText);
     const decisions = loadDecisions(hash);
     const restored = Object.keys(decisions).length;
-    state = { result: res.result, hash, decisions, meta: { reviewer: "", date: new Date().toISOString().slice(0, 10) }, dirInfo: res.dir, hrInfo: res.hr };
+    const sample = !!example && (sampleShare(hrText, example.hr) >= SAMPLE_SHARE || sampleShare(dirText, example.dir) >= SAMPLE_SHARE);
+    state = { result: res.result, hash, decisions, meta: { reviewer: "", date: new Date().toISOString().slice(0, 10) }, dirInfo: res.dir, hrInfo: res.hr, sample };
     $("acrStatus").textContent = `${num(res.result.rows.length)} accounts, ${num(res.hr.rowCount)} roster rows, ${Math.round(performance.now() - t0)} ms`;
     if (restored) toast(`Restored ${restored} decision(s) saved earlier for this exact dataset.`);
     renderPacket();
@@ -320,6 +325,7 @@ export function renderAccessReview(main) {
           <select id="acrFSev"><option value="">All severities</option><option>critical</option><option>high</option><option>medium</option><option>low</option><option>info</option></select>
           <select id="acrFType"><option value="">All types</option>${Object.keys(FINDING_TYPES).map((t) => `<option value="${t}">${esc(FINDING_TYPES[t].title)}</option>`).join("")}</select>
           <button class="acr-btn" id="acrFExp">Export findings (CSV)</button>
+          <span id="acrFSink"></span>
           <span class="acr-cnt" id="acrFCnt"></span>
         </div>
         <p class="acr-help">Click a row for evidence, the recommended action and control references. Confidence drops to "low" when a finding depends on a name-only match or on an assumed enabled state.</p>
@@ -365,6 +371,8 @@ export function renderAccessReview(main) {
     $("acrFSev").addEventListener("change", (e) => { fState.sev = e.target.value; fState.shown = 200; renderFindings(); });
     $("acrFType").addEventListener("change", (e) => { fState.type = e.target.value; fState.shown = 200; renderFindings(); });
     $("acrFExp").addEventListener("click", () => download("access-review-findings.csv", toFindingsCSV(r), "text/csv"));
+    const sinkFindings = toSinkFindings(r), sample = state.sample;
+    attachSinkButton($("acrFSink"), () => ({ findings: sinkFindings, sample }), "accessreview", { dataset: $("acrDirName").textContent || dirInfo.source });
     function filteredFindings() {
       let list = r.findings.filter((f) => (!fState.sev || f.severity === fState.sev) && (!fState.type || f.type === fState.type));
       const dir = fState.asc ? 1 : -1;

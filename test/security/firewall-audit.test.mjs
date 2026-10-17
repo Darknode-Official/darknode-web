@@ -9,8 +9,10 @@ import {
   rangeFromMask, rangeFromWildcard, V4_ALL, V6_ALL, addrSet, addrContains, isAnyAddr, externalSize, parseInternalList, DEFAULT_INTERNAL,
   parsePortSpec, portsContain, portsOverlap, portsFromToken, protoContains, normProto, SERVICES, RISKY,
   detectFormat, parseConfig, parseIptables, parseNft, parseCisco, parsePfsenseCsv, parsePfsenseXml, parseFortigate, parseWindowsNetsh, parseWindowsCsv,
-  matchContains, analyze, audit, findingsToCsv, resultToJson, remediationText, summaryText, describeAddr, describePorts,
+  matchContains, analyze, audit, findingsToCsv, resultToJson, remediationText, summaryText, describeAddr, describePorts, toSinkFindings,
 } from "../../public/js/infra/firewall-audit-engine.js";
+import { checkSinkFindings } from "./sink-check.mjs";
+import { sampleShare, SAMPLE_SHARE } from "../../public/js/core/sink-map.js";
 
 const byType = (res, t) => res.findings.filter((f) => f.type === t);
 const rule = (res, idx) => res.rules.find((r) => r.idx === idx);
@@ -583,5 +585,37 @@ group("fwa: logging, hygiene, unresolved, score", () => {
     const rem = remediationText(r); assert.ok(/1\. \[CRITICAL\]/.test(rem) && /Fix:/.test(rem));
     assert.ok(/score \d+\/100/.test(summaryText(r)));
     assert.equal(describeAddr(r.rules[1].src), "any"); assert.equal(describePorts(r.rules[1].dstPorts), "3389");
+  });
+});
+
+group("fwa: Security Graph sink mapping", () => {
+  test("required fields, normalised severity, stable ids/titles across runs, sample tagging", () => {
+    const a = toSinkFindings(audit(FX.iptables), { device: "edge-fw01" }), b = toSinkFindings(audit(FX.iptables), { device: "edge-fw01" });
+    const { items } = checkSinkFindings("fwaudit", a, b, { minFindings: 3 });
+    assert.ok(items.some((i) => i.type === "ASSET" && i.name === "edge-fw01" && i.data.kind === "firewall"));
+    assert.ok(items.some((i) => i.type === "CONTROL" && i.name.startsWith("PCI ")));
+    assert.ok(a.every((f) => !/#\d|line \d/.test(f.title)), "rule positions stay out of graph titles");
+  });
+  test("inserting a rule shifts #idx but keeps every sink id and title", () => {
+    const shifted = FX.iptables.replace("-A INPUT -i lo -j ACCEPT", "-A INPUT -i lo -j ACCEPT\n-A INPUT -s 192.0.2.10/32 -p tcp -m tcp --dport 8443 -j ACCEPT");
+    const before = toSinkFindings(audit(FX.iptables), { device: "fw" }), after = new Set(toSinkFindings(audit(shifted), { device: "fw" }).map((f) => f.id + "|" + f.title));
+    for (const f of before) assert.ok(after.has(f.id + "|" + f.title), "lost " + f.title);
+  });
+  test("device scopes the keys and is optional", () => {
+    const x = toSinkFindings(audit(FX.iptables), { device: "fw-a" }), y = toSinkFindings(audit(FX.iptables), { device: "fw-b" }), z = toSinkFindings(audit(FX.iptables));
+    assert.ok(x.every((f, i) => f.id !== y[i].id));
+    assert.ok(z.every((f) => f.assets.length === 0));
+  });
+  test("an edited example is still sample; a different config is not", () => {
+    assert.ok(sampleShare(FX.iptables + "\n-A INPUT -p udp --dport 53 -j ACCEPT", FX.iptables) >= SAMPLE_SHARE);
+    assert.ok(sampleShare(FX.cisco || "access-list X extended permit ip any any", FX.iptables) < SAMPLE_SHARE);
+  });
+  test("a real config sharing the example's boilerplate and common rules is not sample", () => {
+    const real = ["*filter", ":INPUT ACCEPT [0:0]", ":FORWARD DROP [0:0]", ":OUTPUT ACCEPT [0:0]", "-A INPUT -i lo -j ACCEPT",
+      "-A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT", "-A INPUT -p tcp -m tcp --dport 22 -j ACCEPT",
+      "-A INPUT -p tcp --dport 23 -j ACCEPT", "COMMIT"].join("\n");
+    assert.ok(sampleShare(real, FX.iptables) < SAMPLE_SHARE);
+    const trimmed = FX.iptables.split("\n").filter((l) => !/dport (3306|8081)/.test(l)).join("\n");
+    assert.ok(sampleShare(trimmed, FX.iptables) >= SAMPLE_SHARE, "an example with a few rules deleted stays sample");
   });
 });

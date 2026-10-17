@@ -9,8 +9,10 @@ import {
   parseCSV, detectDelimiter, findColumn, normHeader, parseDate, parseBool, normalizeEmail, normalizeName, levenshtein,
   datasetHash, parseHR, parseHRStatus, parseDirectory, parseJSONUsers, detectSource, looksLikeServiceAccount,
   reconcile, analyze, toReviewCSV, toFindingsCSV, toReviewJSON, attestationText, summarizeDecisions, exampleData,
-  FINDING_TYPES, SEVERITY_RANK,
+  FINDING_TYPES, SEVERITY_RANK, toSinkFindings,
 } from "../../public/js/identity/access-review-engine.js";
+import { checkSinkFindings } from "./sink-check.mjs";
+import { sampleShare, SAMPLE_SHARE } from "../../public/js/core/sink-map.js";
 
 const DAY = 86400000;
 const NOW = Date.UTC(2026, 9, 13, 12, 0, 0); // 2026-10-13T12:00Z
@@ -476,5 +478,30 @@ group("acr: review packet exports", () => {
     assert.equal(r.rows.length, 50000);
     assert.ok(r.kpis.leaversEnabled > 400);
     assert.ok(ms < 15000, "took " + ms + "ms");
+  });
+});
+
+group("access review: Security Graph sink mapping", () => {
+  const ex = exampleData(NOW);
+  test("required fields, normalised severity, stable ids/titles across runs, sample tagging", () => {
+    const a = toSinkFindings(run(ex.hr, ex.dir)), b = toSinkFindings(run(ex.hr, ex.dir));
+    const { items, links } = checkSinkFindings("accessreview", a, b, { minFindings: 5 });
+    const leaver = a.find((f) => f.category === "leaver_enabled");
+    assert.ok(leaver && leaver.title === "Leaver still enabled: " + leaver.assets[0].name);
+    assert.equal(leaver.assets[0].type, "IDENTITY");
+    assert.ok(leaver.controls.some((c) => c.framework === "ISO27001" && c.id === "A.5.18"));
+    assert.ok(leaver.controls.some((c) => c.framework === "NIST-800-53" && c.id === "AC-2(3)"));
+    assert.ok(items.some((i) => i.type === "CONTROL" && i.name === "CIS 6.2"));
+    assert.ok(links.some((l) => l.rel === "affects" && l.to.startsWith("IDENTITY:")));
+    for (const f of a.filter((x) => !x.assets.length)) assert.ok(/:aggregate$/.test(f.id), "only aggregates lack an account: " + f.id);
+  });
+  test("graph titles carry no counts (aggregate findings keep a fixed title)", () => {
+    const agg = toSinkFindings(run(ex.hr, ex.dir)).filter((f) => /:aggregate$/.test(f.id));
+    for (const f of agg) assert.equal(f.title, FINDING_TYPES[f.category].title);
+  });
+  test("example detection: example text is sample, an unrelated export is not", () => {
+    assert.ok(sampleShare(ex.dir, ex.dir) >= SAMPLE_SHARE);
+    assert.ok(sampleShare(ex.dir + "\nextra@test.darknode.ai,Extra,TRUE,Member,,,,,,,", ex.dir) >= SAMPLE_SHARE);
+    assert.ok(sampleShare(ex.dir.split("\n")[0] + "\nreal@corp.example,Real Person,TRUE,Member,,,,,,,", ex.dir) < SAMPLE_SHARE);
   });
 });

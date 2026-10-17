@@ -11,8 +11,10 @@
 
 import {
   detectFormat, parseConfig, analyze, FORMATS, DEFAULT_INTERNAL, describeAddr, describePorts,
-  findingsToCsv, resultToJson, remediationText, summaryText, SEVERITY_ORDER,
+  findingsToCsv, resultToJson, remediationText, summaryText, SEVERITY_ORDER, toSinkFindings,
 } from "./firewall-audit-engine.js?v=20261014a";
+import { sampleShare, SAMPLE_SHARE } from "../core/sink-map.js";
+import { attachSinkButton } from "../core/sink.js";
 
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const toast = (m) => { try { (window.showToast || (() => {}))(m); } catch (_) {} };
@@ -337,6 +339,9 @@ export function renderFirewallAudit(main) {
         <span class="fwa-lbl">Trusted admin source (optional)</span>
         <p class="fwa-note">Used only to fill in the fix snippets, for example a jump host or VPN pool.</p>
         <input type="text" id="fwaTrusted" placeholder="10.20.0.0/24">
+        <span class="fwa-lbl">Device name (optional)</span>
+        <p class="fwa-note">Names this firewall in the Security Graph so its findings link to one asset. A loaded file's name is used when left empty.</p>
+        <input type="text" id="fwaDevice" placeholder="Firewall hostname" maxlength="80">
       </div>
     </div>
 
@@ -346,6 +351,7 @@ export function renderFirewallAudit(main) {
   const $ = (id) => main.querySelector("#" + id);
   const inTA = $("fwaIn"), out = $("fwaOut"), fmtBadge = $("fwaFmt");
   let result = null, sortKey = "severity", sortDir = 1, openIds = new Set(), tab = "findings", ruleSort = "idx";
+  let example = null, srcName = ""; // last loaded synthetic example / file name (for the graph sink)
 
   function updateBadge() {
     const d = detectFormat(inTA.value);
@@ -362,17 +368,17 @@ export function renderFirewallAudit(main) {
     const f = e.target.files && e.target.files[0]; if (!f) return;
     if (f.size > 8 * 1024 * 1024) { toast("File is larger than 8 MB; paste the relevant section instead"); return; }
     const fr = new FileReader();
-    fr.onload = () => { inTA.value = String(fr.result || ""); updateBadge(); toast(`Loaded ${f.name}`); };
+    fr.onload = () => { inTA.value = String(fr.result || ""); srcName = f.name; updateBadge(); toast(`Loaded ${f.name}`); };
     fr.onerror = () => toast("Could not read file");
     fr.readAsText(f);
   });
   $("fwaEx").addEventListener("click", (e) => {
     const b = e.target.closest("[data-ex]"); if (!b) return;
-    inTA.value = EXAMPLES[b.dataset.ex]; updateBadge(); run();
+    inTA.value = example = EXAMPLES[b.dataset.ex]; srcName = ""; updateBadge(); run();
   });
   $("fwaClear").addEventListener("click", async () => {
     if (inTA.value.trim() && window.dnConfirm) { const ok = await window.dnConfirm("Clear the rule base?", "The pasted configuration and the results will be removed.", { confirm: "Clear" }); if (!ok) return; }
-    inTA.value = ""; out.innerHTML = ""; result = null; updateBadge();
+    inTA.value = ""; out.innerHTML = ""; result = null; example = null; srcName = ""; updateBadge();
   });
   $("fwaRun").addEventListener("click", run);
 
@@ -387,6 +393,8 @@ export function renderFirewallAudit(main) {
         return;
       }
       result = analyze(parsed, { internal: $("fwaInternal").value, trusted: $("fwaTrusted").value.trim() });
+      result.sample = sampleShare(text, example) >= SAMPLE_SHARE;
+      result.device = $("fwaDevice").value.trim() || srcName;
       openIds = new Set(); tab = "findings";
       render();
       if (!parsed.rules.length) toast("Recognised the format but found no rules");
@@ -412,6 +420,7 @@ export function renderFirewallAudit(main) {
           <button class="fwa-btn sm" id="fwaJson">Export JSON</button>
           <button class="fwa-btn sm" id="fwaRem">Remediation list (txt)</button>
           <button class="fwa-btn sm" id="fwaCopy">Copy summary</button>
+          <span id="fwaSink"></span>
         </div>
         ${r.notes.length ? `<details><summary>Parser notes (${r.notes.length})</summary><ul class="fwa-notes">${r.notes.map((n) => `<li>${esc(n)}</li>`).join("")}</ul></details>` : ""}
       </div>
@@ -435,6 +444,8 @@ export function renderFirewallAudit(main) {
     out.querySelector("#fwaJson").addEventListener("click", () => download("firewall-audit.json", resultToJson(r), "application/json"));
     out.querySelector("#fwaRem").addEventListener("click", () => download("firewall-audit-remediation.txt", remediationText(r)));
     out.querySelector("#fwaCopy").addEventListener("click", () => copyText(summaryText(r)));
+    const sinkFindings = toSinkFindings(r, { device: r.device });
+    attachSinkButton(out.querySelector("#fwaSink"), () => ({ findings: sinkFindings, sample: !!r.sample }), "fwaudit", { dataset: r.device || r.label });
     out.querySelector(".fwa-tabs").addEventListener("click", (e) => { const b = e.target.closest("[data-tab]"); if (!b) return; tab = b.dataset.tab; out.querySelectorAll(".fwa-tab").forEach((x) => x.classList.toggle("on", x === b)); renderPanel(); });
     renderPanel();
   }

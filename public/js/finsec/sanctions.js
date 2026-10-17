@@ -11,7 +11,9 @@
 // compliance determination. Hits must be verified against the official source,
 // and blocking / reporting decisions are a human + legal responsibility.
 
-import { buildIndex, screenBatch, screenBatchAsync, selfTest } from "/js/finsec/sanctions-engine.js?v=20261017c";
+import { buildIndex, screenBatch, screenBatchAsync, selfTest, toSinkFindings } from "/js/finsec/sanctions-engine.js?v=20261017c";
+import { sampleShare, SAMPLE_SHARE } from "../core/sink-map.js";
+import { attachSinkButton } from "../core/sink.js";
 
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -250,6 +252,7 @@ export function renderSanctions(main) {
   const $ = (id) => main.querySelector("#" + id);
   const inTA = $("scIn");
   let currentAudit = null; // the audit record for the most recent screen in this view
+  let example = null; // the example name list last loaded (sample data stays out of the graph)
 
   $("scMin").addEventListener("input", () => { $("scMinV").textContent = $("scMin").value; });
 
@@ -261,10 +264,10 @@ export function renderSanctions(main) {
     fr.readAsText(f);
   });
   $("scSample").addEventListener("click", () => {
-    inTA.value = ["Darknode Test Shipping LLC", "Vladimir Putin", "Bank Melli Iran", "Darknode Test Trading Ltd", "Nicolas Maduro", "Test User"].join("\n");
+    inTA.value = example = ["Darknode Test Shipping LLC", "Vladimir Putin", "Bank Melli Iran", "Darknode Test Trading Ltd", "Nicolas Maduro", "Test User"].join("\n");
     $("scFileName").textContent = "";
   });
-  $("scClear").addEventListener("click", () => { inTA.value = ""; $("scFileName").textContent = ""; $("scOut").innerHTML = ""; currentAudit = null; });
+  $("scClear").addEventListener("click", () => { example = null; inTA.value = ""; $("scFileName").textContent = ""; $("scOut").innerHTML = ""; currentAudit = null; });
   $("scTest").addEventListener("click", () => {
     const { pass, results } = selfTest();
     $("scTestOut").innerHTML = pass
@@ -322,11 +325,11 @@ export function renderSanctions(main) {
     for (const r of hits) currentAudit.dispositions[r.name] = "pending";
     auditUpsert(currentAudit);
 
-    renderResults(out, rows, names.length);
+    renderResults(out, rows, names.length, sampleShare(inTA.value, example, 0) >= SAMPLE_SHARE);
     renderAudit();
   }
 
-  function renderResults(out, rows, total) {
+  function renderResults(out, rows, total, sample) {
     const hits = rows.filter((r) => r.hit);
     const strong = hits.filter((r) => r.topBand === "exact" || r.topBand === "strong").length;
     out.innerHTML = `
@@ -339,12 +342,18 @@ export function renderSanctions(main) {
       <div class="snc-meta">Screen <b>${esc(currentAudit ? currentAudit.id : "")}</b> recorded. Disposition each hit below — it is saved to the audit log in this browser.</div>
       <div class="snc-row" style="margin:6px 0 4px">
         <button class="snc-btn" id="scExp">Export results (CSV)</button>
+        <span id="scSink"></span>
       </div>
       <div class="snc-list"><table>
         <thead><tr><th>Name screened</th><th>Result</th><th>Best match</th><th class="snc-hide">Program / identifiers</th><th>Score</th><th>Disposition</th></tr></thead>
         <tbody>${rows.map(rowHtml).join("")}</tbody>
       </table></div>`;
     out.querySelector("#scExp").addEventListener("click", () => download("sanctions-screening.csv", toCsv(rows)));
+    const audit = currentAudit;
+    // Read dispositions at click time so the graph gets the analyst's latest decisions.
+    attachSinkButton(out.querySelector("#scSink"), () => ({
+      findings: toSinkFindings(rows, { dispositions: audit ? audit.dispositions : {}, listSource: audit && audit.listSource, listUpdated: audit && audit.listUpdated }), sample,
+    }), "sanctions", { dataset: audit ? audit.id : "sanctions screen" });
     out.querySelectorAll("select.snc-disp").forEach((sel) => {
       sel.addEventListener("change", () => {
         if (!currentAudit) return;

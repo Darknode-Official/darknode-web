@@ -11,8 +11,9 @@
 
 import {
   DEFAULT_SETTINGS, DETECTIONS, SEV_RANK, splitRecords, createParser, createHunt,
-  findingsToCsv, reportToJson, iocText,
+  findingsToCsv, reportToJson, iocText, toSinkFindings,
 } from "./log-hunter-engine.js?v=20261014a";
+import { attachSinkButton } from "../core/sink.js";
 
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const toast = (m) => { try { (window.showToast || (() => {}))(m); } catch (_) {} };
@@ -290,7 +291,7 @@ export function renderLogHunter(main) {
   main.querySelectorAll("[data-ex]").forEach((b) => b.addEventListener("click", () => {
     const [name, gen] = EXAMPLES[b.dataset.ex];
     const text = gen();
-    files.push({ name: "example-" + name, text, lines: text.split("\n").length - 1 });
+    files.push({ name: "example-" + name, text, lines: text.split("\n").length - 1, example: true });
     renderFiles();
     toast("Synthetic example added as a file. Press Hunt.");
   }));
@@ -310,7 +311,7 @@ export function renderLogHunter(main) {
     if (running) return;
     const inputs = [];
     if (inTA.value.trim()) inputs.push({ name: "", text: inTA.value });
-    for (const f of files) inputs.push({ name: f.name, text: f.text });
+    for (const f of files) inputs.push({ name: f.name, text: f.text, example: !!f.example });
     if (!inputs.length) { out.innerHTML = `<div class="lgh-card lgh-empty">Paste log lines or load a file first. The example buttons add a synthetic file.</div>`; return; }
     running = true; $("lghRun").disabled = true;
     const settings = readSettings();
@@ -333,6 +334,7 @@ export function renderLogHunter(main) {
       await nextTick();
       const report = hunt.finish();
       report.parse = parser.stats; report.unknownSamples = parser.unknownSamples;
+      report.sample = inputs.some((i) => i.example); report.dataset = inputs.map((i) => i.name || "pasted text").join(", ");
       lastReport = report;
       const ms = Math.round(performance.now() - t0);
       progress(`Done: ${fmtN(parser.stats.parsed)} events from ${fmtN(total)} records in ${fmtN(ms)} ms` + (parser.stats.unknown ? `; ${fmtN(parser.stats.unknown)} lines not recognised` : ""));
@@ -369,6 +371,7 @@ export function renderLogHunter(main) {
           <button class="lgh-btn" id="lghCsv">Export findings CSV</button>
           <button class="lgh-btn" id="lghJson">Export report JSON</button>
           <button class="lgh-btn" id="lghIoc">Export IOC list (IPs)</button>
+          <span id="lghSink"></span>
         </div>
         ${p.unknown ? `<details style="margin-top:10px"><summary class="lgh-note" style="cursor:pointer;display:inline">${fmtN(p.unknown)} lines were not recognised as any supported format. Show samples.</summary><ul class="lgh-ev">${(r.unknownSamples || []).map((u) => `<li><span class="ln">${esc((u.file ? u.file + ":" : "") + u.lineNo)}</span><span>${esc(u.text)}</span></li>`).join("")}</ul></details>` : ""}
       </div>
@@ -402,6 +405,8 @@ export function renderLogHunter(main) {
     $("lghCopySum").addEventListener("click", () => copyText(r.summary));
     $("lghCsv").addEventListener("click", () => download("log-hunter-findings.csv", findingsToCsv(r.findings), "text/csv"));
     $("lghJson").addEventListener("click", () => download("log-hunter-report.json", reportToJson(r), "application/json"));
+    const sinkFindings = toSinkFindings(r);
+    attachSinkButton($("lghSink"), () => ({ findings: sinkFindings, sample: !!r.sample }), "loghunt", { dataset: r.dataset });
     $("lghIoc").addEventListener("click", () => { if (!r.iocs.external.length) { toast("No external indicator IPs in this hunt"); return; } download("log-hunter-iocs.txt", iocText(r)); });
     $("lghSev").value = sevFilter; $("lghSrc").value = srcFilter;
     $("lghSev").addEventListener("change", (e) => { sevFilter = e.target.value; renderFindings(r); });

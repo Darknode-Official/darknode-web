@@ -6,8 +6,9 @@ import { test, assert, group } from "../harness.mjs";
 import {
   validateIBAN, validateABA, validateBIC, validateBank, bankKey, bankLabel,
   createVendor, proposeChange, recordCallback, approveChange, rejectChange,
-  refresh, canPay, screenFlags, markPaid, selfTest, HOLD_HOURS, WATCH_DAYS,
+  refresh, canPay, screenFlags, markPaid, selfTest, HOLD_HOURS, WATCH_DAYS, toSinkFindings,
 } from "../../public/js/finsec/vendor-engine.js";
+import { checkSinkFindings } from "./sink-check.mjs";
 
 group("vendor: engine self-test", () => {
   test("all in-engine self-test checks pass", () => {
@@ -154,5 +155,51 @@ group("vendor: change control", () => {
     assert.ok(actions.includes("vendor-created"));
     assert.ok(actions.includes("callback-recorded"));
     assert.ok(actions.includes("change-approved"));
+  });
+});
+
+group("vendor: Security Graph sink mapping", () => {
+  const T = Date.UTC(2026, 9, 10, 12, 0, 0), H = 3600000, D = 24 * H;
+  const IBAN1 = "GB82 WEST 1234 5698 7654 32", IBAN2 = "DE89 3704 0044 0532 0130 00";
+  const live = (id, name, at) => {
+    const v = createVendor({ id, name, bank: { kind: "iban", iban: IBAN1 }, by: "clerk", at });
+    recordCallback(v, { by: "clerk", phone: "+1 555 0100", at }); approveChange(v, { by: "approver", at });
+    return v;
+  };
+  // One payee mid-change, one live and paid long ago (clean), one new and still held,
+  // one awaiting its opening verification; an OFAC hit on the held one.
+  const register = () => {
+    const changing = live("py_1", "Payee One", T - 60 * D); markPaid(changing, T - 50 * D);
+    proposeChange(changing, { bank: { kind: "iban", iban: IBAN2 }, by: "clerk", at: T - H });
+    const clean = live("py_2", "Payee Two", T - 90 * D); markPaid(clean, T - 80 * D);
+    const held = live("py_3", "Payee Three", T - 2 * H);
+    const opening = createVendor({ id: "py_4", name: "Payee Four", bank: { kind: "iban", iban: IBAN2 }, by: "clerk", at: T - H });
+    return [changing, clean, held, opening].map((v) => refresh(v, T));
+  };
+  const sanctions = (v) => (v.name === "Payee Three" ? { code: "ofac", level: "high", text: "OFAC strong match: PAYEE THREE (TEST)" } : null);
+  test("required fields, normalised severity, stable ids/titles across runs, sample tagging", () => {
+    const a = toSinkFindings(register(), { sanctions, at: T }), b = toSinkFindings(register(), { sanctions, at: T });
+    const { items } = checkSinkFindings("payees", a, b, { minFindings: 4 });
+    assert.ok(items.some((i) => i.type === "VENDOR" && i.name === "Payee One"));
+    assert.deepEqual(a.map((f) => f.title).sort(), [
+      "Bank-detail change pending approval: Payee One", "New payee bank details pending verification: Payee Four",
+      "OFAC name match on payee: Payee Three", "Payee bank account under BEC watch: Payee Three",
+    ]);
+    assert.equal(a.find((f) => f.title.startsWith("Bank-detail change")).severity, "high");
+    assert.equal(a.find((f) => f.title.startsWith("OFAC")).severity, "high");
+    assert.ok(!a.some((f) => f.assets[0].name === "Payee Two"), "a clean, long-paid payee yields nothing");
+  });
+  test("only masked account labels and no callback phone leave the mapper", () => {
+    const s = JSON.stringify(toSinkFindings(register(), { sanctions, at: T }));
+    for (const raw of [IBAN1, IBAN2]) assert.ok(!s.includes(raw.replace(/\s/g, "")) && !s.includes(raw), "full IBAN leaked");
+    assert.ok(!s.includes("555 0100"), "callback phone leaked");
+  });
+  test("a second bank change is a new finding, not a merge into the first", () => {
+    const [v] = register();
+    const first = toSinkFindings([v], { at: T })[0].id;
+    recordCallback(v, { by: "clerk", phone: "+1 555 0100", at: T }); approveChange(v, { by: "approver", at: T });
+    proposeChange(v, { bank: { kind: "iban", iban: IBAN1 }, by: "clerk", at: T + 2 * D });
+    const second = toSinkFindings([v], { at: T + 2 * D }).find((f) => f.title.startsWith("Bank-detail change")).id;
+    assert.notEqual(first, second);
   });
 });

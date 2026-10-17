@@ -6,6 +6,8 @@
 // (log-hunter.js) feeds records in chunks so 200k lines never block the page.
 // Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
 
+import { controlsFromRefs } from "../core/sink-map.js";
+
 export const VERSION = "1.0.0";
 export const SEV_RANK = { critical: 4, high: 3, medium: 2, low: 1, info: 0 };
 const EVIDENCE_CAP = 30;
@@ -1124,7 +1126,7 @@ export function createHunt(settings) {
         case "win.proc_suspicious": detail = [...new Set(a.evidence.map((e) => (e.extra && (e.extra.cmdline || e.extra.process)) || ""))].slice(0, 2).join(" | "); break;
         default: detail = `${plural(a.count, "matching event")}.`;
       }
-      findings.push(mkFinding(a.det, { severity, confidence, detail, count: a.count, evidence: a.evidence, first: a.first, last: a.last,
+      findings.push(mkFinding(a.det, { key: a.key, severity, confidence, detail, count: a.count, evidence: a.evidence, first: a.first, last: a.last,
         ip: a.ips.size === 1 ? [...a.ips][0] : (isIp(a.key) ? a.key : null), user: a.users.size === 1 ? [...a.users][0] : null, host: a.hosts.size === 1 ? [...a.hosts][0] : null, ips: [...a.ips] }));
     }
 
@@ -1303,7 +1305,9 @@ function mkFinding(det, o) {
   const evidence = (o.evidence || []).slice(0, EVIDENCE_CAP).map((e) => ({ lineNo: e.lineNo, file: e.file || "", ts: e.ts, text: String(e.raw || "").slice(0, 400) }));
   const ips = o.ips || (o.ip ? [o.ip] : [...new Set((o.evidence || []).map((e) => e.ip).filter(Boolean))]);
   return {
-    id: "", det, name: d.name, technique: d.technique, techniqueName: d.techniqueName, tactic: d.tactic, source: d.source,
+    // key: stable subject of the finding (the aggregation key, else ip / user / host),
+    // unlike id, which is the position in the sorted list.
+    id: "", key: det + ":" + String(o.key || o.ip || o.user || o.host || ""), det, name: d.name, technique: d.technique, techniqueName: d.techniqueName, tactic: d.tactic, source: d.source,
     severity: o.severity || d.severity, confidence: o.confidence || d.confidence,
     ip: o.ip || null, user: o.user || null, host: o.host || null, ips,
     count: o.count || evidence.length, firstTs: o.first == null ? null : o.first, lastTs: o.last == null ? null : o.last,
@@ -1365,4 +1369,24 @@ export function reportToJson(report) {
 export function iocText(report) {
   const lines = [`# Log Threat Hunter indicators ${new Date(report.generatedAt).toISOString()}`, `# External IPs tied to findings of medium severity or higher (${report.iocs.external.length}). Internal IPs omitted: ${report.iocs.internal.length}.`];
   return lines.concat(report.iocs.external).join("\n") + "\n";
+}
+
+// Security Graph sink: report findings -> common Finding shape (core/sink-map.js).
+// id and title come from the detection + its stable subject (never F-nnn or counts),
+// so a re-hunt over the same logs merges into the same graph findings.
+export function toSinkFindings(report) {
+  return ((report && report.findings) || []).map((f) => {
+    const subject = f.key.slice(f.det.length + 1);
+    const ips = (f.ips || []).slice(0, 25);
+    return {
+      id: f.key, title: subject && subject !== "-" ? `${f.name}: ${subject}` : f.name,
+      severity: f.severity, confidence: f.confidence, category: f.tactic,
+      description: [f.detail, f.explanation].filter(Boolean).join(" "), recommendation: f.action,
+      controls: controlsFromRefs([f.technique]),
+      evidence: f.evidence.map((e) => ({ file: e.file, line: e.lineNo, ts: e.ts != null ? new Date(e.ts).toISOString() : null, text: e.text })),
+      evidenceCount: f.count,
+      assets: [...ips.map((ip) => ({ type: "IP", name: ip })), ...(f.user ? [{ type: "IDENTITY", name: f.user }] : []), ...(f.host ? [{ type: "ASSET", name: f.host, data: { kind: "host" } }] : [])],
+      tags: ["loghunt", f.source],
+    };
+  });
 }

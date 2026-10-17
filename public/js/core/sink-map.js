@@ -152,3 +152,67 @@ export function summarize(findings) {
   }
   return { total, bySeverity, byConfidence };
 }
+
+// Framework prefixes seen in tool control/reference strings, most specific first.
+const REF_FRAMEWORKS = [
+  [/^ISO\s*(?:\/?\s*IEC\s*)?27001(?::\d{4})?\s*/i, "ISO27001"],
+  [/^NIST\s*(?:SP\s*)?800-53(?:\s*r\d)?\s*/i, "NIST-800-53"],
+  [/^NIST\s*(?:SP\s*)?800-41(?:\s*r\d)?\s*(?:sec\.?\s*)?/i, "NIST-800-41"],
+  [/^NIST\s*CSF(?:\s*v?2\.0)?\s*/i, "NIST-CSF"],
+  [/^CIS\s*(?:Controls?\s*)?v8\s*/i, "CIS"],
+  [/^PCI\s*DSS(?:\s*v?\d\.\d)?\s*(?:req\.?\s*)?/i, "PCI"],
+  [/^SOC\s*2\s*/i, "SOC2"],
+  [/^SOX\s*/i, "SOX"],
+];
+
+/**
+ * Parse free-text control references ("ISO 27001 A.5.18", "CIS Controls v8 4.4 / 4.5 (note)",
+ * "PCI DSS 4.0 req. 1.2.5, 1.3.1", "ATT&CK T1078", "T1110.004 / T1078.004") into Finding
+ * controls. Parenthetical notes are dropped; "a / b" and "a, b" lists split into one control
+ * each. A string with no known framework is kept whole (framework "") rather than guessed.
+ * @param {string|string[]} refs
+ * @returns {{framework:string,id:string}[]} de-duplicated, input order
+ */
+export function controlsFromRefs(refs) {
+  const out = [], seen = new Set();
+  const add = (framework, id) => {
+    id = str(id).trim().replace(/[.;:]+$/, "");
+    const k = framework + "|" + id.toLowerCase();
+    if (id && !seen.has(k)) { seen.add(k); out.push({ framework, id }); }
+  };
+  for (const raw of [].concat(refs || [])) {
+    const s = str(raw).trim();
+    if (!s) continue;
+    if (/^(?:MITRE\s*)?(?:ATT&CK\s*)?T\d{4}/i.test(s)) { for (const t of s.match(/T\d{4}(?:\.\d{3})?/gi)) add("MITRE", t.toUpperCase()); continue; }
+    const fw = REF_FRAMEWORKS.find(([re]) => re.test(s));
+    if (!fw) { add("", s); continue; }
+    const rest = s.replace(fw[0], "").replace(/\s+\([^)]*\)/g, "").trim();
+    if (fw[1] === "SOX") { add("SOX", rest.replace(/:\s*/, " ")); continue; }
+    for (const id of rest.split(/\s*[\/,;]\s*/)) add(fw[1], id);
+  }
+  return out;
+}
+
+/**
+ * Share (0..1) of the distinct example rows (after `skip` header lines) still present in
+ * `text`, weighted by row length so short boilerplate a real export also has ("COMMIT",
+ * "*filter", a closing brace) counts for little. Tools keep a run sample-flagged while the
+ * loaded example is substantially there (edited or appended to) and drop the flag once the
+ * user has replaced it with real data.
+ * @param {string} text
+ * @param {string|null} sampleText
+ * @param {number} [skip=1]
+ * @returns {number}
+ */
+export function sampleShare(text, sampleText, skip = 1) {
+  if (!text || !sampleText) return 0;
+  const rows = new Set(str(sampleText).split(/\r?\n/).slice(skip).map((l) => l.trim()).filter(Boolean));
+  if (!rows.size) return 0;
+  const have = new Set(str(text).split(/\r?\n/).map((l) => l.trim()));
+  let n = 0, total = 0;
+  for (const r of rows) { total += r.length; if (have.has(r)) n += r.length; }
+  return n / total;
+}
+
+/** sampleShare at or above which a run counts as sample data. */
+export const SAMPLE_SHARE = 0.5;

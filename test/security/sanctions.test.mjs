@@ -5,8 +5,10 @@
 import { test, assert, group } from "../harness.mjs";
 import {
   normName, tokens, levenshtein, band, buildIndex, screenName, screenBatch, screenBatchAsync,
-  parseOfac, secondaryIds, entityClass, selfTest,
+  parseOfac, secondaryIds, entityClass, selfTest, toSinkFindings,
 } from "../../public/js/finsec/sanctions-engine.js";
+import { checkSinkFindings } from "./sink-check.mjs";
+import { sampleShare, SAMPLE_SHARE } from "../../public/js/core/sink-map.js";
 
 group("sanctions: engine self-test", () => {
   test("all in-engine self-test checks pass", () => {
@@ -189,5 +191,34 @@ group("sanctions: secondary identifiers", () => {
     const hit = screenName("Acme LLC", idx)[0];
     assert.equal(hit.dob, "");
     assert.equal(hit.nationality, "");
+  });
+});
+
+group("sanctions: Security Graph sink mapping", () => {
+  const idx = buildIndex([
+    { uid: "1", name: "MAERSK LINE", type: "entity", program: "X", names: ["MAERSK LINE"] },
+    { uid: "2", name: "IVAN IVANOV", type: "individual", program: "RUSSIA", names: ["IVAN IVANOV", "Ivan Petrovich IVANOV"] },
+  ]);
+  const names = ["Maersk Line", "Ivan Ivanof", "Clear Counterparty Name"];
+  test("one finding per hit, VENDOR counterparty, stable across runs, sample tagging", () => {
+    const a = toSinkFindings(screenBatch(names, idx)), b = toSinkFindings(screenBatch(names, idx));
+    const { items } = checkSinkFindings("sanctions", a, b, { minFindings: 2 });
+    assert.equal(a.length, 2, "the clear name produces no finding");
+    assert.ok(items.some((i) => i.type === "VENDOR" && i.name === "Maersk Line"));
+    const exact = a.find((f) => f.title === "Sanctions list match: Maersk Line");
+    assert.equal(exact.severity, "critical"); assert.equal(exact.status, "open"); assert.equal(exact.evidence[0].uid, "1");
+  });
+  test("disposition drives status and confirmed is critical; key ignores case and punctuation", () => {
+    const rows = screenBatch(names, idx);
+    const f = toSinkFindings(rows, { dispositions: { "Maersk Line": "cleared", "Ivan Ivanof": "confirmed" } });
+    assert.equal(f.find((x) => x.assets[0].name === "Maersk Line").status, "resolved");
+    const iv = f.find((x) => x.assets[0].name === "Ivan Ivanof");
+    assert.equal(iv.severity, "critical"); assert.equal(iv.confidence, "confirmed");
+    assert.equal(toSinkFindings(screenBatch(["MAERSK LINE."], idx))[0].id, toSinkFindings(rows)[0].id);
+  });
+  test("example list detection (no header row)", () => {
+    const ex = "Darknode Test Shipping LLC\nVladimir Putin\nBank Melli Iran\nDarknode Test Trading Ltd\nNicolas Maduro\nTest User";
+    assert.ok(sampleShare(ex, ex, 0) >= SAMPLE_SHARE);
+    assert.ok(sampleShare("Vladimir Putin\nSome Real Vendor GmbH\nAnother Payee Ltd", ex, 0) < SAMPLE_SHARE);
   });
 });

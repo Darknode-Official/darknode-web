@@ -13,8 +13,10 @@
 //   renderSigninForensics(main) -> void
 
 import {
-  createParser, correlateOktaMfa, analyze, userTimeline, findingsToCsv, evidenceToCsv, summaryText, sourceName, iso, DEFAULTS, DETECTIONS,
+  createParser, correlateOktaMfa, analyze, userTimeline, findingsToCsv, evidenceToCsv, summaryText, sourceName, iso, DEFAULTS, DETECTIONS, toSinkFindings,
 } from "/js/identity/signin-forensics-engine.js?v=20261013m";
+import { sampleShare, SAMPLE_SHARE } from "../core/sink-map.js";
+import { attachSinkButton } from "../core/sink.js";
 
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const toast = (m, kind) => { try { (window.showToast || (() => {}))(m, kind); } catch (_) {} };
@@ -200,7 +202,7 @@ export function renderSigninForensics(main) {
 
   const $ = (id) => main.querySelector("#" + id);
   const inTA = $("sifIn"), out = $("sifOut"), prog = $("sifProg");
-  const state = { text: null, parsed: null, records: null, result: null, openKey: null, user: null, sevFilter: "", userFilter: "" };
+  const state = { text: null, parsed: null, records: null, result: null, openKey: null, user: null, sevFilter: "", userFilter: "", example: null };
 
   $("sifFile").addEventListener("change", (e) => {
     const f = e.target.files && e.target.files[0]; if (!f) return;
@@ -214,11 +216,11 @@ export function renderSigninForensics(main) {
     const v = e.target.value; e.target.value = "";
     if (!v) return;
     if (inTA.value.trim() && !(await confirmAsync("Replace the current input?", "The example dataset will replace what is in the text area."))) return;
-    inTA.value = v === "entra" ? exampleEntra() : v === "google" ? exampleGoogle() : exampleOkta();
+    inTA.value = state.example = v === "entra" ? exampleEntra() : v === "google" ? exampleGoogle() : exampleOkta();
     $("sifFileName").textContent = "synthetic example";
     prog.textContent = "Example loaded (synthetic data, format-faithful). Press Analyse.";
   });
-  $("sifClear").addEventListener("click", () => { inTA.value = ""; $("sifFileName").textContent = ""; prog.textContent = ""; out.innerHTML = ""; Object.assign(state, { text: null, parsed: null, records: null, result: null, openKey: null, user: null }); });
+  $("sifClear").addEventListener("click", () => { inTA.value = ""; $("sifFileName").textContent = ""; prog.textContent = ""; out.innerHTML = ""; Object.assign(state, { text: null, parsed: null, records: null, result: null, openKey: null, user: null, example: null }); });
   $("sifRun").addEventListener("click", run);
   inTA.addEventListener("keydown", (e) => { if ((e.ctrlKey || e.metaKey) && e.key === "Enter") run(); });
 
@@ -317,6 +319,7 @@ export function renderSigninForensics(main) {
             <button class="sif-btn" id="sifExpEv">Export evidence rows (CSV)</button>
             <button class="sif-btn" id="sifExpJson">Export JSON</button>
             <button class="sif-btn" id="sifCopy">Copy summary</button>
+            <span id="sifSink"></span>
           </div>
         </div>
         <div class="sif-card">
@@ -346,6 +349,8 @@ export function renderSigninForensics(main) {
 
     $("sifExpCsv").addEventListener("click", () => download("signin-forensics-findings.csv", findingsToCsv(r.findings), "text/csv"));
     $("sifExpEv").addEventListener("click", () => download("signin-forensics-evidence.csv", evidenceToCsv(r.findings), "text/csv"));
+    const sinkFindings = toSinkFindings(r), sample = sampleShare(state.text, state.example) >= SAMPLE_SHARE;
+    attachSinkButton($("sifSink"), () => ({ findings: sinkFindings, sample }), "signins", { dataset: $("sifFileName").textContent || sourceName(r.source) });
     $("sifExpJson").addEventListener("click", () => download("signin-forensics.json", JSON.stringify({ generated: new Date().toISOString(), source: r.source, kpis: r.kpis, score: r.score, options: r.options, coverage: r.coverage, findings: r.findings, users: r.users }, null, 2), "application/json"));
     $("sifCopy").addEventListener("click", async () => {
       const txt = summaryText(r);
