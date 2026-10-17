@@ -451,7 +451,7 @@ function phUnique(arr) {
 
 function phSendGraph(btn, build, tagNote) {
   btn.disabled = true;
-  import('/js/graph-bridge.js?v=20261016f').then(function(gb) {
+  import('/js/graph-bridge.js?v=20261017d').then(function(gb) {
     var res = build(gb);
     btn.textContent = 'Sent: ' + res.created + ' new, ' + res.updated + ' merged';
     gb.showGraphToast('Security Graph: ' + res.summary + ' (' + (tagNote || 'tagged simulated') + ')');

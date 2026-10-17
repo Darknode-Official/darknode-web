@@ -308,7 +308,7 @@ export function renderHttpInspector(container) {
     const tags = ["http-headers", lastGrade.live ? "live" : "pasted"];
     const label = host || "pasted headers";
     btn.disabled = true;
-    import('/js/graph-bridge.js?v=20261016f').then(gb => {
+    import('/js/graph-bridge.js?v=20261017d').then(gb => {
       const root = host ? gb.sendToGraph("HTTP Inspector", [{ type: "DOMAIN", name: host, data: { headerGrade: lastGrade.grade, headerScore: lastGrade.score }, opts: { tags } }], undefined, true).entities[0] : null;
       const r = gb.sendToGraph("HTTP Inspector", issues.map(i => ({
         type: "FINDING",

@@ -14,7 +14,7 @@
 
 import {
   createParser, correlateOktaMfa, analyze, userTimeline, findingsToCsv, evidenceToCsv, summaryText, sourceName, iso, DEFAULTS, DETECTIONS, toSinkFindings,
-} from "/js/identity/signin-forensics-engine.js?v=20261013m";
+} from "/js/identity/signin-forensics-engine.js?v=20261017d";
 import { sampleShare, SAMPLE_SHARE } from "../core/sink-map.js";
 import { attachSinkButton } from "../core/sink.js";
 

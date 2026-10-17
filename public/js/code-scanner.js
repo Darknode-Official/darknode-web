@@ -443,7 +443,7 @@ export function renderCodeScanner(main) {
         data: { repo: s.full, sha: s.sha || "", path: f.path, line: f.line, rule: f.ruleId || "", cwe: f.cwe || "", advisory: f.advisory || "", cve: f.cve || "", fixedIn: f.fixed || "", kind: f.kind },
         opts: { severity: f.sev, status: "open", tags: ["code", f.kind] },
       }));
-      import("/js/graph-bridge.js?v=20261016f").then((m) => {
+      import("/js/graph-bridge.js?v=20261017d").then((m) => {
         const r = m.sendToGraph("Code Scanner", items);
         gb.textContent = "Added to graph"; gb.disabled = true;
         try { window.showToast && window.showToast("Security Graph: " + (r.created || 0) + " added, " + (r.updated || 0) + " updated"); } catch (_) {}

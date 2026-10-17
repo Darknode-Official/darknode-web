@@ -11,7 +11,7 @@
 // compliance determination. Hits must be verified against the official source,
 // and blocking / reporting decisions are a human + legal responsibility.
 
-import { buildIndex, screenBatch, screenBatchAsync, selfTest, toSinkFindings } from "/js/finsec/sanctions-engine.js?v=20261017c";
+import { buildIndex, screenBatch, screenBatchAsync, selfTest, toSinkFindings } from "/js/finsec/sanctions-engine.js?v=20261017d";
 import { sampleShare, SAMPLE_SHARE } from "../core/sink-map.js";
 import { attachSinkButton } from "../core/sink.js";
 
@@ -226,7 +226,7 @@ export function renderSanctions(main) {
         </div>
         <div class="snc-field">
           <label for="scProg">Program <span class="snc-hint">optional</span></label>
-          <input type="text" id="scProg" class="snc-prog-in" placeholder="e.g. RUSSIA" maxlength="40">
+          <input type="text" id="scProg" class="snc-prog-in" placeholder="Program code" maxlength="40">
         </div>
         <div class="snc-field">
           <label for="scWho">Analyst <span class="snc-hint">for the record</span></label>

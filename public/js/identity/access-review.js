@@ -17,11 +17,11 @@ import {
   parseHR, parseDirectory, analyze, datasetHash, exampleData,
   toReviewCSV, toFindingsCSV, toReviewJSON, attestationText, summarizeDecisions,
   DEFAULT_OPTIONS, DECISIONS, SEVERITY_RANK, FINDING_TYPES, toSinkFindings,
-} from "/js/identity/access-review-engine.js?v=20261017c";
+} from "/js/identity/access-review-engine.js?v=20261017d";
 import { sampleShare, SAMPLE_SHARE } from "../core/sink-map.js";
 import { attachSinkButton } from "../core/sink.js";
 
-const ENGINE_URL = new URL("./access-review-engine.js?v=20261017c", import.meta.url).href;
+const ENGINE_URL = new URL("./access-review-engine.js?v=20261017d", import.meta.url).href;
 
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));

@@ -17,9 +17,9 @@ import {
   validateBank, bankKey, bankLabel, createVendor, proposeChange, recordCallback,
   approveChange, rejectChange, refresh, canPay, screenFlags, markPaid, selfTest,
   HOLD_HOURS, WATCH_DAYS, toSinkFindings,
-} from "/js/finsec/vendor-engine.js?v=20261017c";
+} from "/js/finsec/vendor-engine.js?v=20261017d";
 import { attachSinkButton } from "../core/sink.js";
-import { buildIndex, screenName } from "/js/finsec/sanctions-engine.js?v=20261017c";
+import { buildIndex, screenName } from "/js/finsec/sanctions-engine.js?v=20261017d";
 
 // ── OFAC sanctions screening of payee names ──────────────────────────────
 // A payee register that doesn't check names against the sanctions list is a
@@ -152,8 +152,8 @@ export function renderVendors(main) {
       <div><label class="vn-l">Account number</label><input id="vnAcct" class="vn-mono" placeholder="123456789" autocomplete="off"></div>
       <div><label class="vn-l">ABA routing (9 digits)</label><input id="vnRout" class="vn-mono" placeholder="021000021" autocomplete="off"></div>`;
     return `
-      <div><label class="vn-l">IBAN</label><input id="vnIban" class="vn-mono" placeholder="DE89 3704 0044 0532 0130 00" autocomplete="off"></div>
-      <div><label class="vn-l">SWIFT / BIC (optional)</label><input id="vnBic" class="vn-mono" placeholder="DEUTDEFF" autocomplete="off"></div>`;
+      <div><label class="vn-l">IBAN</label><input id="vnIban" class="vn-mono" placeholder="Country code, check digits, account" autocomplete="off"></div>
+      <div><label class="vn-l">SWIFT / BIC (optional)</label><input id="vnBic" class="vn-mono" placeholder="8 or 11 characters" autocomplete="off"></div>`;
   }
   function readBank() {
     const kind = $("vnKind").value;
@@ -284,7 +284,7 @@ export function renderVendors(main) {
                  <div><label class="vn-l">Verified by</label><input id="vnCbBy" placeholder="your name"></div>
                  <div><label class="vn-l">Number called (known-good)</label><input id="vnCbPhone" placeholder="+1 555 0100"></div>
                </div>
-               <div style="margin-top:8px"><label class="vn-l">What was confirmed</label><textarea id="vnCbNote" placeholder="Called the CFO on the number already on file; they confirmed the new IBAN."></textarea></div>
+               <div style="margin-top:8px"><label class="vn-l">What was confirmed</label><textarea id="vnCbNote" placeholder="Who you called, on which number, and what they confirmed"></textarea></div>
                <div class="vn-row"><button class="vn-btn sm" id="vnCbSave">Record callback</button></div>`}
         </div>
         <div class="vn-sec" style="border:0;margin-top:10px;padding:0">
@@ -347,7 +347,7 @@ export function renderVendors(main) {
     if (q("vnChFields")) {
       const chFields = (k) => k === "aba"
         ? `<div><label class="vn-l">Account number</label><input id="vnChAcct" class="vn-mono" placeholder="123456789"></div><div><label class="vn-l">ABA routing</label><input id="vnChRout" class="vn-mono" placeholder="021000021"></div>`
-        : `<div><label class="vn-l">IBAN</label><input id="vnChIban" class="vn-mono" placeholder="DE89 3704 0044 0532 0130 00"></div><div><label class="vn-l">SWIFT / BIC (optional)</label><input id="vnChBic" class="vn-mono" placeholder="DEUTDEFF"></div>`;
+        : `<div><label class="vn-l">IBAN</label><input id="vnChIban" class="vn-mono" placeholder="Country code, check digits, account"></div><div><label class="vn-l">SWIFT / BIC (optional)</label><input id="vnChBic" class="vn-mono" placeholder="8 or 11 characters"></div>`;
       q("vnChFields").innerHTML = chFields("iban");
       q("vnChKind").addEventListener("change", () => { q("vnChFields").innerHTML = chFields(q("vnChKind").value); });
       q("vnChPropose").addEventListener("click", () => {

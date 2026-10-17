@@ -1937,7 +1937,7 @@ window._vgSendRiskToGraph = function() {
   var items = rows.map(function(r) {
     return { type: 'ASSET', name: r.host, data: { risk: r.risk, band: r.band, grade: r.grade || null }, opts: { tags: ['vanguard', 'host'] } };
   });
-  import('/js/graph-bridge.js?v=20261016f').then(function(gb) {
+  import('/js/graph-bridge.js?v=20261017d').then(function(gb) {
     var res = gb.sendToGraph('VANGUARD', items, undefined, true);
     _vgLog('Security Graph: ' + res.created + ' host(s) added, ' + res.updated + ' updated', 'success');
   }).catch(function() { _vgLog('Security Graph bridge unavailable', 'dim'); });

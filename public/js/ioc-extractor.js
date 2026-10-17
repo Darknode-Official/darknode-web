@@ -333,7 +333,7 @@ export function renderIOCExtractor(container) {
     var toGraphBtn = container.querySelector('#ioc-to-graph');
     if (toGraphBtn) toGraphBtn.onclick = function() {
       toGraphBtn.disabled = true;
-      import('/js/graph-bridge.js?v=20261016f').then(function(gb) {
+      import('/js/graph-bridge.js?v=20261017d').then(function(gb) {
         var r = gb.sendToGraph('IOC Extractor', iocGraphItems(iocs));
         toGraphBtn.textContent = 'Sent: ' + r.created + ' new, ' + r.updated + ' merged';
       }).catch(function() { toGraphBtn.textContent = 'Security Graph unavailable'; toGraphBtn.disabled = false; });

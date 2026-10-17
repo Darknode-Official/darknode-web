@@ -14,7 +14,7 @@
 //
 //   renderStrongroom(main) -> void
 
-import { analyze, selfTest } from "/js/strongroom/engine.js?v=20261017c";
+import { analyze, selfTest } from "/js/strongroom/engine.js?v=20261017d";
 import { attachSinkButton } from "./core/sink.js";
 import { fusionFindings } from "/js/strongroom/strongroom-sink.js";
 

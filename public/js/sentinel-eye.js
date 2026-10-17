@@ -9002,7 +9002,7 @@ window._seExpGraph = function() {
              opts: { tags: ['sentinel', 'reference'] } };
   });
   _seExpStatus('Pushing ' + items.length + ' actors to Security Graph...');
-  import('/js/graph-bridge.js?v=20261016f').then(function(gb) {
+  import('/js/graph-bridge.js?v=20261017d').then(function(gb) {
     var r = gb.sendToGraph('SENTINEL', items, undefined, true);
     _seExpStatus('Security Graph: ' + r.created + ' actors added, ' + r.updated + ' updated.');
   }).catch(function() { _seExpStatus('Security Graph bridge unavailable.'); });

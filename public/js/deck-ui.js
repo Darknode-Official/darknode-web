@@ -2934,7 +2934,7 @@ export function renderDeck(host, opts) {
     const addGraphBtn = (id, items, linkName) => {
       const hx = grid.querySelector("#surfx-" + id); if (!hx || !items.length) return;
       hx.innerHTML = `<button class="dk-graphadd">Add ${items.length} to graph</button>`;
-      hx.querySelector("button").onclick = () => import("/js/graph-bridge.js?v=20261016f").then((gb) => { const r = gb.sendToGraph("Attack Surface — " + linkName, items); toast("Security Graph: " + (r.created || 0) + " added, " + (r.updated || 0) + " updated"); }).catch(() => toast("Couldn't reach the Security Graph"));
+      hx.querySelector("button").onclick = () => import("/js/graph-bridge.js?v=20261017d").then((gb) => { const r = gb.sendToGraph("Attack Surface — " + linkName, items); toast("Security Graph: " + (r.created || 0) + " added, " + (r.updated || 0) + " updated"); }).catch(() => toast("Couldn't reach the Security Graph"));
     };
     // Subdomains (crt.sh)
     surface.subdomains(d).then((subs) => {
