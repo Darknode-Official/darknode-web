@@ -215,6 +215,99 @@ group("backupready: parsers (verbatim vendor layouts)", () => {
     assert.equal(byId(r, "vault-softdelete:").length, 1);
   });
 
+  // Recovery Services JobResource (learn.microsoft.com/rest/api/backup/job-details/get), as printed by az backup job list.
+  const SUB = "11111111-2222-3333-4444-555555555555";
+  const rsvJob = (id, op, status, start, end, duration, name = "vm-sql-01") => ({
+    id: "/Subscriptions/" + SUB + "/resourceGroups/rg-larkspur/providers/Microsoft.RecoveryServices/vaults/rsv-larkspur-eus/backupJobs/" + id,
+    name: id, type: "Microsoft.RecoveryServices/vaults/backupJobs",
+    properties: { activityId: id, backupManagementType: "AzureIaasVM", duration, endTime: end, entityFriendlyName: name, jobType: "AzureIaaSVMJob", operation: op, startTime: start, status, virtualMachineVersion: "Compute" },
+  });
+
+  test("Azure az backup job list JSON (Recovery Services JobResource): ISO durations, vault from id", () => {
+    const text = JSON.stringify([
+      rsvJob("00000000-0000-4000-8000-000000000001", "Backup", "Completed", "2026-10-15T02:00:11.0146040Z", "2026-10-15T02:24:21.5000000Z", "PT24M10.4853960S"),
+      rsvJob("00000000-0000-4000-8000-000000000002", "Backup", "Failed", "2026-10-14T02:00:09Z", "2026-10-14T02:01:11Z", "PT1M2S"),
+      rsvJob("00000000-0000-4000-8000-000000000003", "Restore", "Completed", "2026-10-01T09:00:00Z", "2026-10-01T10:10:00Z", "PT1H10M"),
+      rsvJob("00000000-0000-4000-8000-000000000004", "ConfigureBackup", "Completed", "2026-09-01T09:00:00Z", "2026-09-01T09:01:00Z", "PT1M"),
+    ]);
+    const d = detectFile("az-jobs.json", text);
+    assert.equal(d.kind, "azure-jobs-json");
+    const p = parseInput([F("az-jobs.json", text)]);
+    assert.equal(p.records.events.length, 2);
+    assert.equal(p.records.events[0].loc, "azure:rsv-larkspur-eus");
+    assert.equal(p.records.events[0].account, SUB);
+    assert.equal(new Date(p.records.events[0].time).toISOString(), "2026-10-15T02:24:21.500Z");
+    assert.equal(p.records.events[1].status, "failed");
+    assert.equal(p.records.restores.length, 1);
+    assert.equal(p.records.restores[0].durationMin, 70);
+  });
+
+  test("Azure az dataprotection job list JSON (AzureBackupJob, {value:[]}): dataSourceName, vaultName, Succeeded", () => {
+    const text = JSON.stringify({ value: [{
+      name: "8989416e-7573-4836-8cf1-0e90954f1002", type: "Microsoft.DataProtection/Backupvaults/backupJobs",
+      id: "/subscriptions/" + SUB + "/resourceGroups/rg-larkspur/providers/Microsoft.DataProtection/Backupvaults/bv-larkspur/backupJobs/8989416e-7573-4836-8cf1-0e90954f1002",
+      properties: { activityID: "932925c4-3d81-4550-8105-c7f7b0a934c5", backupInstanceFriendlyName: "pg-larkspur\\orders", dataSourceLocation: "eastus", dataSourceName: "orders",
+        dataSourceSetName: "pg-larkspur", dataSourceType: "Microsoft.DBforPostgreSQL/servers/databases", duration: "00:02:11.9724387", endTime: "2026-10-15T11:14:02.5319646Z",
+        isUserTriggered: true, operation: "Backup", operationCategory: "Backup", policyName: "daily", sourceResourceGroup: "rg-larkspur-data", sourceSubscriptionID: SUB,
+        startTime: "2026-10-15T11:11:50.5595259Z", status: "Succeeded", subscriptionId: SUB, supportedActions: [""], vaultName: "bv-larkspur" },
+    }] });
+    assert.equal(detectFile("dpp.json", text).kind, "azure-jobs-json");
+    const e = parseInput([F("dpp.json", text)]).records.events;
+    assert.equal(e.length, 1);
+    assert.deepEqual([e[0].sys, e[0].status, e[0].loc, e[0].region], ["orders", "success", "azure:bv-larkspur", "eastus"]);
+  });
+
+  test("Azure Resource Graph backup jobs ({count, data:[]}, lowercase type) detected", () => {
+    const j = rsvJob("00000000-0000-4000-8000-000000000009", "Backup", "InProgress", "2026-10-15T10:00:00Z", undefined, "PT5M");
+    const text = JSON.stringify({ count: 1, data: [{ ...j, type: "microsoft.recoveryservices/vaults/backupjobs" }], skip_token: null, total_records: 1 });
+    assert.equal(detectFile("arg.json", text).kind, "azure-jobs-json");
+    assert.equal(parseInput([F("arg.json", text)]).records.events[0].status, "running");
+  });
+
+  // Veeam B&R REST (helpcenter.veeam.com/references/vbr/13/rest): RepositoriesResult / JobsResult {data, pagination}
+  const VREST_REPOS = JSON.stringify({ data: [
+    { id: "88788f9e-d8f5-4eb4-bc4f-9b3f5403bcec", name: "Repo-Hardened-01", description: "", uniqueId: "u1", type: "LinuxHardened", hostId: "a1b2c3d4-e5f6-4890-abcd-ef1234567890",
+      repository: { path: "/mnt/veeam", taskLimitEnabled: false, maxTaskCount: 4, useFastCloningOnXFSVolumes: true, makeRecentBackupsImmutableDays: 14 } },
+    { id: "c3b0f1d2-0000-4000-8000-000000000002", name: "S3-Larkspur", description: "", uniqueId: "u2", type: "AmazonS3",
+      bucket: { regionId: "us-east-1", bucketName: "larkspur-veeam", folderName: "vbr", immutability: { isEnabled: true, daysCount: 30, immutabilityMode: "RepositorySettings" } } },
+    { id: "c3b0f1d2-0000-4000-8000-000000000003", name: "Repo-Win", description: "", uniqueId: "u3", type: "WinLocal", hostId: "a1b2c3d4-e5f6-4890-abcd-ef1234567891", repository: { path: "D:\\Backups" } },
+  ], pagination: { total: 3, count: 3, skip: 0, limit: 200 } });
+  const VREST_JOBS = JSON.stringify({ data: [
+    { id: "j1", name: "SQL-PROD", type: "VSphereBackup", isDisabled: false, description: "", isHighPriority: false,
+      storage: { backupRepositoryId: "88788f9e-d8f5-4eb4-bc4f-9b3f5403bcec", backupProxies: { autoSelectEnabled: true, proxyIds: [] }, retentionPolicy: { type: "RestorePoints", quantity: 7 } } },
+  ], pagination: { total: 1, count: 1, skip: 0, limit: 200 } });
+
+  test("Veeam REST repositories JSON: hardened days, object storage immutability, WinLocal not immutable", () => {
+    assert.equal(detectFile("repos.json", VREST_REPOS).kind, "veeam-rest-repos");
+    const locs = parseInput([F("repos.json", VREST_REPOS)]).records.locations;
+    const L = (n) => locs.find((l) => l.name === n);
+    assert.deepEqual([L("Repo-Hardened-01").immutable, L("Repo-Hardened-01").immutDays], [true, 14]);
+    assert.deepEqual([L("S3-Larkspur").immutable, L("S3-Larkspur").immutDays, L("S3-Larkspur").targetType], [true, 30, "object"]);
+    assert.equal(L("Repo-Win").immutable, false);
+  });
+
+  test("Veeam REST jobs JSON links Get-VBRBackupSession jobs to their repository (immutability no longer unknown)", () => {
+    assert.equal(detectFile("jobs.json", VREST_JOBS).kind, "veeam-rest-jobs");
+    const r = run([F("sessions.csv", VEEAM_SESSIONS), F("repos.json", VREST_REPOS), F("vjobs.json", VREST_JOBS)]);
+    const x = r.tables.recovery.find((y) => /sql-prod/i.test(y.asset));
+    assert.ok(x, "SQL-PROD row");
+    assert.equal(x.immutable, "yes");
+    const noLink = run([F("sessions.csv", VEEAM_SESSIONS), F("repos.json", VREST_REPOS)]);
+    assert.notEqual(noLink.tables.recovery.find((y) => /sql-prod/i.test(y.asset)).immutable, "yes");
+  });
+
+  test("Veeam Get-VBRObjectStorageRepository CSV: BackupImmutabilityEnabled / ImmutabilityPeriod", () => {
+    const text = ['"Name","Description","Type","BackupImmutabilityEnabled","ImmutabilityPeriod","Id"',
+      '"S3-Larkspur","","AmazonS3","True","30","c3b0f1d2-0000-4000-8000-000000000002"',
+      '"Blob-Larkspur","","AzureBlob","False","0","c3b0f1d2-0000-4000-8000-000000000004"'].join("\n");
+    const d = detectFile("osr.csv", text);
+    assert.equal(d.kind, "veeam-repos");
+    assert.ok(d.confidence >= 0.8);
+    const locs = parseInput([F("osr.csv", text)]).records.locations;
+    assert.equal(locs.find((l) => l.name === "S3-Larkspur").immutable, true);
+    assert.equal(locs.find((l) => l.name === "Blob-Larkspur").immutable, false);
+  });
+
   test("generic job log CSV: exact headers detected with high confidence", () => {
     const text = gen([genRow("srv-01", "Success", 5, { target: "s3-lock", type: "object", acct: "999", region: "eu-west-1", imm: "yes", enc: "yes", ret: "30" })]);
     const d = detectFile("jobs.csv", text);
@@ -285,6 +378,10 @@ group("backupready: value parsing", () => {
     assert.equal(parseDurationMinutes("01:30:00"), 90);
     assert.equal(parseDurationMinutes("1.00:00:00"), 1440);
     assert.equal(parseDurationMinutes("45"), 45);
+    assert.equal(parseDurationMinutes("PT1H10M"), 70);
+    assert.equal(parseDurationMinutes("PT9.8782791S"), 0.2);
+    assert.equal(parseDurationMinutes("00:02:11.9724387"), 2.2);
+    assert.equal(parseDurationMinutes("PT"), null);
   });
 });
 

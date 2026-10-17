@@ -29,11 +29,41 @@ const run = (acts, opts = {}, dsars = []) => analyze({ activities: acts, dsars }
 const ids = (r) => r.findings.map((f) => f.id.split(":")[1]);
 const has = (r, check) => ids(r).includes(check);
 
-// ICO "Documentation template for controllers" (Excel), saved as CSV. Headers as in the template.
-const ICO_CSV = [
-  '"Business function","Purpose of processing","Name and contact details of joint controller (if applicable)","Categories of individuals","Categories of personal data","Categories of recipients","Link to contract with processor","Names of third countries or international organisations that personal data are transferred to (if applicable)","Safeguards for exceptional transfers of personal data to third countries or international organisations (if applicable)","Retention schedule (if possible)","General description of technical and organisational security measures (if possible)","Article 6 lawful basis for processing personal data","Article 9 basis for processing special category data","Legitimate interests for the processing (if applicable)","Link to record of legitimate interests assessment (if applicable)","Rights available to individuals","Existence of automated decision-making, including profiling (if applicable)","The source of the personal data (if applicable)","Location of personal data","Data Protection Impact Assessment required?","Data Protection Impact Assessment progress","Link to DPIA"',
-  '"Finance","Payroll","","Employees","Names, bank details, health data (sickness absence)","Payroll provider; HMRC","https://contracts.test.darknode.ai/payroll","India","Standard contractual clauses","6 years after employment ends","Role-based access, encryption","Legal obligation","Article 9(2)(b) employment law","","","Access, rectification","No","Employee","HR system","No","",""',
-  '"Marketing","Newsletter","","Customers, prospects","Email address, IP address, cookies","Mail provider Inc","","United States","","Indefinite","","Article 6(1)(f) legitimate interests","","Direct marketing","","Objection","Yes - profiling for segmentation","Website forms","CRM","Yes","In progress","DPIA-12"',
+// ICO "Documentation template for controllers" (gdpr-documentation-controller-template.xlsx, "Template" sheet),
+// saved as CSV. The 30 column headers of row 9 verbatim, columns A-AD.
+const ICO_HEADERS = ["Business function", "Purpose of processing", "Name and contact details of joint controller (if applicable)", "Categories of individuals",
+  "Categories of personal data", "Categories of recipients", "Link to contract with processor",
+  "Names of third countries or international organisations that personal data are transferred to (if applicable)",
+  "Safeguards for exceptional transfers of personal data to third countries or international organisations (if applicable)", "Retention schedule (if possible)",
+  "General description of technical and organisational security measures (if possible)", "Article 6 lawful basis for processing personal data",
+  "Article 9 condition for processing special category data", "Legitimate interests for the processing (if applicable)",
+  "Link to record of legitimate interests assessment (if applicable)", "Rights available to individuals",
+  "Existence of automated decision-making, including profiling (if applicable)", "The source of the personal data (if applicable)", "Link to record of consent",
+  "Location of personal data", "Data Protection Impact Assessment required?", "Data Protection Impact Assessment progress", "Link to Data Protection Impact Assessment",
+  "Has a personal data breach occurred?", "Link to record of personal data breach", "Data Protection Act 2018 Schedule 1 Condition for processing",
+  "GDPR Article 6 lawful basis for processing", "Link to retention and erasure policy document",
+  "Is personal data retained and erased in accordance with the policy document?", "Reasons for not adhering to policy document (if applicable)"];
+const icoLine = (cells) => cells.map((c) => '"' + c + '"').join(",");
+const ICO_ROWS = [
+  ["Finance", "Payroll", "", "Employees", "Names, bank details, health data (sickness absence)", "Payroll provider; HMRC", "https://contracts.test.darknode.ai/payroll", "India",
+    "Standard contractual clauses", "6 years after employment ends", "Role-based access, encryption", "Legal obligation", "Article 9(2)(b) employment law", "", "",
+    "Access, rectification", "No", "Employee", "", "HR system", "No", "", "", "No", "", "Schedule 1 Part 1 paragraph 1", "Article 6(1)(c) legal obligation",
+    "https://policies.test.darknode.ai/retention", "Yes", ""],
+  ["Marketing", "Newsletter", "", "Customers, prospects", "Email address, IP address, cookies", "Mail provider Inc", "", "United States", "", "Indefinite", "",
+    "Article 6(1)(f) legitimate interests", "", "Direct marketing", "", "Objection", "Yes - profiling for segmentation", "Website forms", "", "CRM", "Yes", "In progress",
+    "DPIA-12", "No", "", "", "", "", "", ""],
+];
+const ICO_CSV = [icoLine(ICO_HEADERS), ...ICO_ROWS.map(icoLine)].join("\r\n");
+// The same sheet saved whole: controller / DPO / representative block (rows 1-6), blank row 7, section titles (row 8).
+const ICO_PREAMBLE = [
+  "Controller,,,,,",
+  "Name and contact details,,Data Protection Officer (if applicable),,Representative (if applicable),",
+  "Name,Larkspur Cloudworks Ltd,Name,Privacy Office,Name,N/A",
+  "Address,\"1 Test Street, London\",Address,\"1 Test Street, London\",Address,N/A",
+  "Email,privacy@test.darknode.ai,Email,dpo@test.darknode.ai,Email,N/A",
+  "Telephone,,Telephone,,Telephone,N/A",
+  ",,,,,",
+  "Article 30 Record of Processing Activities,,,,,,,,,,,Privacy Notices,,,,,,,Consent,Access Requests,Data Protection Impact Assessments,,,Personal Data Breaches,,Data Protection Act 2018 - Special Category or Criminal Conviction and Offence data,,,,",
 ].join("\r\n");
 
 const DSAR_CSV = [
@@ -377,6 +407,27 @@ group("dataflow: parsing", () => {
     assert.ok(news.dpiaCriteria.includes("scoring"));
     assert.equal(news.transfers[0].country, "US");
     assert.ok(parseRetention(news.retention).indefinite);
+    assert.equal(file.headers.length, 30);
+    assert.equal(file.mapping.art9Condition, "Article 9 condition for processing special category data");
+    assert.equal(file.mapping.dpiaRef, "Link to Data Protection Impact Assessment");
+    assert.equal(news.dpiaRef, "DPIA-12");
+  });
+  test("ICO template saved whole as CSV: controller block and section-title rows skipped", () => {
+    const p = parseInput([{ name: "ico-full.csv", text: ICO_PREAMBLE + "\r\n" + ICO_CSV }]);
+    const file = p.files[0];
+    assert.equal(file.format, "ICO documentation template (controller) CSV");
+    assert.equal(file.confidence, "high");
+    assert.equal(file.headers[0], "Business function");
+    assert.equal(file.rows.length, 2);
+    assert.equal(csvToActivities(file.rows, file.mapping).records[0].name, "Finance - Payroll");
+  });
+  test("ICO template N/A cells (as in the template's Example sheet) read as blank", () => {
+    const NA = "N/A";
+    const ex = ["Finance", "Payroll", NA, "Employees", "Bank details", "HMRC", NA, NA, NA, "3 years post-employment", "Encrypted storage and transfer",
+      "Article 6(1)(c) - legal obligation", NA, NA, NA, "Access and rectification", "No", "Data subject", NA, "Finance payroll system", "No", NA, NA, "No", NA, NA, NA, NA, NA, NA];
+    const file = parseInput([{ name: "ico-ex.csv", text: icoLine(ICO_HEADERS) + "\r\n" + icoLine(ex) }]).files[0];
+    const [a] = csvToActivities(file.rows, file.mapping).records;
+    assert.deepEqual([a.jointController, a.art9Condition, a.liaRef, a.dpiaRef, a.legalBasis, a.transfers.length], ["", "", "", "", "c", 0]);
   });
   test("this tool's ROPA CSV re-imports (round trip)", () => {
     const ex = exampleDataset();

@@ -2,9 +2,11 @@
 //
 // Backup Readiness engine (backupready). Proves (or disproves) that a company can
 // recover from ransomware, from the exports it already has: Veeam Backup &
-// Replication (sessions, restore points, repositories), AWS Backup (backup, copy and
-// restore jobs, vaults, protected resources, recovery points), Azure Backup (Backup
-// center jobs / instances CSV, vault properties JSON), a generic job log covering
+// Replication (sessions, restore points, repositories incl. object storage; REST API
+// repositories + jobs, which link jobs to repositories and state immutability), AWS
+// Backup (backup, copy and restore jobs, vaults, protected resources, recovery points),
+// Azure Backup (Backup center jobs / instances CSV, job JSON from az backup job list,
+// az dataprotection job list or Resource Graph, vault properties JSON), a generic job log covering
 // any other product, a restore-test log and an asset list with RPO / RTO.
 //
 // Per asset it answers: is it backed up, is the newest good backup inside the RPO,
@@ -49,7 +51,7 @@ export const KINDS = {
     label: "Veeam B&R repositories (Get-VBRBackupRepository)",
     cols: {
       name: ["Name"], type: ["Type", "TypeDisplay"], path: ["Path", "FriendlyPath"],
-      immutable: ["IsImmutabilityEnabled", "ImmutabilityEnabled", "Immutable", "MakeRecentBackupsImmutable"],
+      immutable: ["IsImmutabilityEnabled", "ImmutabilityEnabled", "BackupImmutabilityEnabled", "Immutable", "MakeRecentBackupsImmutable"],
       immutDays: ["ImmutabilityPeriod", "ImmutabilityDays", "MakeRecentBackupsImmutableDays"],
       encrypted: ["Encrypted", "EncryptionEnabled", "IsEncrypted"], region: ["Region"], account: ["Account", "Subscription"],
     },
@@ -72,7 +74,7 @@ export const KINDS = {
       system: ["Backup instance", "BackupInstance", "Backup item", "Datasource name"], dsType: ["Datasource type", "DataSourceType"],
       vault: ["Vault", "Vault name"], sub: ["Subscription", "Datasource subscription"], rg: ["Resource group", "Datasource resource group"],
       location: ["Datasource location", "Location", "Region"], protection: ["Protection status", "Protection state"],
-      lastBackup: ["Last backup time", "LastBackupTime"], lastStatus: ["Last backup status", "LastBackupStatus"],
+      lastBackup: ["Last backup time", "LastBackupTime", "Latest recovery point"], lastStatus: ["Last backup status", "LastBackupStatus"],
     },
     required: ["system"],
   },
@@ -273,12 +275,14 @@ export function parseTime(v) {
   return null;
 }
 
-/** "hh:mm:ss", "1.02:03:04", "12 min", "90" (minutes) -> minutes, or null. */
+/** "hh:mm:ss[.fffffff]", "1.02:03:04", ISO 8601 "PT1H2M9.87S", "12 min", "90" (minutes) -> minutes, or null. */
 export function parseDurationMinutes(v) {
   const s = str(v);
   if (!s) return null;
-  let m = /^(?:(\d+)\.)?(\d{1,2}):(\d{2})(?::(\d{2}))?$/.exec(s);
+  let m = /^(?:(\d+)\.)?(\d{1,2}):(\d{2})(?::(\d{2}(?:\.\d+)?))?$/.exec(s);
   if (m) return r1((+(m[1] || 0)) * 1440 + (+m[2]) * 60 + (+m[3]) + (+(m[4] || 0)) / 60);
+  m = /^P(?:(\d+(?:\.\d+)?)D)?(?:T(?:(\d+(?:\.\d+)?)H)?(?:(\d+(?:\.\d+)?)M)?(?:(\d+(?:\.\d+)?)S)?)?$/i.exec(s);
+  if (m && s.length > 2 && s.toUpperCase() !== "PT") return r1((+(m[1] || 0)) * 1440 + (+(m[2] || 0)) * 60 + (+(m[3] || 0)) + (+(m[4] || 0)) / 60);
   m = /^(\d+(?:\.\d+)?)\s*(m|min|mins|minutes)?$/i.exec(s);
   if (m) return Number(m[1]);
   m = /^(\d+(?:\.\d+)?)\s*(h|hr|hrs|hours)$/i.exec(s);
@@ -356,6 +360,8 @@ export function classifyHeaders(headers) {
   if (has(H, "JobName", "Result")) return { kind: "veeam-sessions", confidence: 0.6 };
   if (has(H, "VmName", "CreationTime")) return { kind: "veeam-points", confidence: any(H, "IsCorrupted", "IsConsistent", "Algorithm", "BackupId") ? 0.95 : 0.8 };
   if (has(H, "Name", "Type", "Path") && any(H, "FriendlyPath", "IsUnavailable", "HostId", "Host", "IsImmutabilitySupported", "TypeDisplay")) return { kind: "veeam-repos", confidence: 0.9 };
+  // Get-VBRObjectStorageRepository | Export-Csv: BackupImmutabilityEnabled / ImmutabilityPeriod (VBRAmazonS3Repository etc.)
+  if (has(H, "Name", "BackupImmutabilityEnabled")) return { kind: "veeam-repos", confidence: any(H, "ImmutabilityPeriod") ? 0.9 : 0.8 };
   if (has(H, "system", "tested_at", "result")) return { kind: "restore-tests", confidence: 0.95 };
   if (has(H, "tested_at", "result")) return { kind: "restore-tests", confidence: 0.6 };
   if (has(H, "name", "criticality")) return { kind: "assets", confidence: any(H, "rpo_hours", "rto_hours", "owner") ? 0.95 : 0.8 };
@@ -381,10 +387,24 @@ function classifyJson(doc) {
   if ((a = pick("RecoveryPoints"))) return { kind: "aws-recovery-points", confidence: 1, records: a };
   if ((a = pick("Results")) && a.some((r) => r && r.ResourceArn)) return { kind: "aws-protected", confidence: 1, records: a };
   if (doc && !Array.isArray(doc) && doc.BackupVaultArn && doc.BackupVaultName) return { kind: "aws-vaults", confidence: 0.95, records: [doc] };
-  const azv = (o) => o && typeof o === "object" && (/microsoft\.recoveryservices\/vaults|microsoft\.dataprotection\/backupvaults/i.test(str(o.type)) || (o.properties && (o.properties.securitySettings || o.properties.redundancySettings)));
+  const azv = (o) => o && typeof o === "object" && (/^microsoft\.(recoveryservices\/vaults|dataprotection\/backupvaults)$/i.test(str(o.type)) || (o.properties && (o.properties.securitySettings || o.properties.redundancySettings)));
   if (Array.isArray(doc) && doc.length && doc.every(azv)) return { kind: "azure-vaults", confidence: 0.95, records: doc };
   if ((a = pick("value")) && a.length && a.every(azv)) return { kind: "azure-vaults", confidence: 0.95, records: a };
   if (azv(doc)) return { kind: "azure-vaults", confidence: 0.95, records: [doc] };
+  // List wrappers: bare array (az backup job list / az dataprotection job list), ARM {value:[]}, Resource Graph and
+  // Veeam B&R REST {data:[]}.
+  const list = Array.isArray(doc) ? doc : pick("value") || pick("data");
+  if (list && list.length) {
+    // Recovery Services (Job: entityFriendlyName) and Backup vault (AzureBackupJob: dataSourceName) job resources.
+    const azj = (o) => o && o.properties && typeof o.properties === "object" && (/\/backupjobs$/i.test(str(o.type)) ||
+      ((o.properties.entityFriendlyName != null || o.properties.dataSourceName != null) && o.properties.operation != null && o.properties.status != null));
+    if (list.every(azj)) return { kind: "azure-jobs-json", confidence: 0.95, records: list };
+    // Veeam B&R REST: GET /api/v1/backupInfrastructure/repositories (RepositoryModel) and GET /api/v1/jobs (JobModel).
+    const vr = (o) => o && typeof o === "object" && !o.properties && str(o.name) && str(o.type) && str(o.id) && (o.repository || o.bucket || o.container || o.hostId != null || o.uniqueId != null);
+    if (list.every(vr)) return { kind: "veeam-rest-repos", confidence: 0.9, records: list };
+    const vj = (o) => o && typeof o === "object" && !o.properties && str(o.name) && str(o.type) && ((o.storage && o.storage.backupRepositoryId != null) || (o.target && o.target.backupRepositoryId != null) || o.isDisabled != null);
+    if (list.every(vj)) return { kind: "veeam-rest-jobs", confidence: 0.9, records: list };
+  }
   return { kind: "unknown", confidence: 0, records: [] };
 }
 
@@ -396,6 +416,9 @@ export const JSON_LABEL = {
   "aws-recovery-points": "AWS Backup recovery points (list-recovery-points-by-backup-vault)",
   "aws-protected": "AWS Backup protected resources (list-protected-resources)",
   "azure-vaults": "Azure vault properties (JSON)",
+  "azure-jobs-json": "Azure Backup jobs (az backup job list / az dataprotection job list / Resource Graph JSON)",
+  "veeam-rest-repos": "Veeam B&R REST repositories (GET /api/v1/backupInfrastructure/repositories)",
+  "veeam-rest-jobs": "Veeam B&R REST jobs (GET /api/v1/jobs)",
 };
 
 /**
@@ -472,7 +495,7 @@ export function parseInput(input, mappings = {}) {
 }
 
 function emptyRecords() {
-  return { events: [], locations: [], restores: [], assets: [], rpLinks: [], pendingRestores: [], sysInfo: [] };
+  return { events: [], locations: [], restores: [], assets: [], rpLinks: [], pendingRestores: [], sysInfo: [], repoIds: [], jobRepos: [] };
 }
 
 // ---------------------------------------------------------------------------
@@ -525,21 +548,27 @@ function ingest(d, R, skipped) {
     for (const row of d.rows) {
       const name = str(cell(row, cols, "name"));
       if (!name) continue;
-      const type = str(cell(row, cols, "type"));
-      const flag = yesNo(cell(row, cols, "immutable"));
-      const days = num(cell(row, cols, "immutDays"));
-      const hardened = /hardened/i.test(type);
-      let immutable = null, mode = null;
-      if (hardened || flag === true || (days != null && days > 0)) { immutable = true; mode = hardened ? "hardened" : "flag"; }
-      else if (flag === false || (days != null && days === 0)) immutable = false;
-      // Windows, SMB/CIFS, NFS and plain (non-hardened) Linux repositories have no Veeam immutability.
-      else if (/^(WinLocal|CifsShare|Nfs|LinuxLocal)$/i.test(type)) immutable = false;
-      R.locations.push({
-        key: "veeam:" + normName(name), name, kind: "veeam-repo", source: "veeam", props: true, repoType: type,
-        targetType: veeamRepoType(type), immutable, immutMode: mode, immutDays: days,
-        encrypted: yesNo(cell(row, cols, "encrypted")), region: str(cell(row, cols, "region")) || null, account: str(cell(row, cols, "account")) || null,
-        deletionProtection: immutable, ev: { file, source: "Veeam repository", name, type, path: str(cell(row, cols, "path")), immutable: immutable == null ? "not stated" : immutable ? "yes" : "no" },
-      });
+      pushVeeamRepo(R, file, "Veeam repository", { name, type: str(cell(row, cols, "type")), flag: yesNo(cell(row, cols, "immutable")), days: num(cell(row, cols, "immutDays")),
+        encrypted: yesNo(cell(row, cols, "encrypted")), region: str(cell(row, cols, "region")), account: str(cell(row, cols, "account")), path: str(cell(row, cols, "path")) });
+    }
+  } else if (k === "veeam-rest-repos") {
+    // RepositoryModel: LinuxHardened -> repository.makeRecentBackupsImmutableDays; object storage -> bucket|container.immutability
+    // {isEnabled, daysCount}; Dell Data Domain / HPE StoreOnce -> repository.immutability {isEnabled, daysCount}.
+    for (const o of d.rows) {
+      const name = str(o.name);
+      if (!name) continue;
+      const rs = (o.repository && typeof o.repository === "object") ? o.repository : {};
+      const im = (o.bucket && o.bucket.immutability) || (o.container && o.container.immutability) || rs.immutability || null;
+      const hd = num(rs.makeRecentBackupsImmutableDays);
+      R.repoIds.push({ id: lc(o.id), name });
+      pushVeeamRepo(R, file, "Veeam REST repository", { name, type: str(o.type), flag: im && typeof im.isEnabled === "boolean" ? im.isEnabled : null,
+        days: im && im.daysCount != null ? num(im.daysCount) : hd, path: str(rs.path) });
+    }
+  } else if (k === "veeam-rest-jobs") {
+    for (const o of d.rows) {
+      const name = str(o.name);
+      const rid = lc((o.storage && o.storage.backupRepositoryId) || (o.target && o.target.backupRepositoryId));
+      if (name && rid) R.jobRepos.push({ job: "veeam:" + normName(name), repoId: rid });
     }
   } else if (k === "azure-jobs" || k === "azure-instances") {
     for (const row of d.rows) {
@@ -552,20 +581,7 @@ function ingest(d, R, skipped) {
       if (vault) R.locations.push({ key: loc, name: vault, kind: "azure-vault", source: "azure", account: sub, targetType: "cloud" });
       R.sysInfo.push({ sys, account: sub, region, source: "azure" });
       if (k === "azure-jobs") {
-        const op = lc(cell(row, cols, "operation"));
-        const t = parseTime(cell(row, cols, "start"));
-        const status = normStatus(cell(row, cols, "status"));
-        if (/restore|recover/.test(op)) {
-          const res = status === "success" ? "pass" : status === "warning" ? "partial" : status === "failed" ? "fail" : null;
-          if (res && t != null) R.restores.push({ sys, time: t, result: res, durationMin: parseDurationMinutes(cell(row, cols, "duration")), rtoMin: null, pointAgeHours: null, tester: "", notes: "Azure Backup restore job (" + str(cell(row, cols, "operation")) + ")", source: "Azure restore job", file });
-          continue;
-        }
-        if (op && !/backup/.test(op)) continue;
-        R.events.push({
-          sys, sysSource: "azure", job: "azure:" + normName(vault) + ":" + normName(sys), jobName: sys + (vault ? " @ " + vault : ""), kind: "backup",
-          status, time: t, start: t, loc, file, account: sub, region,
-          ev: { file, source: "Azure Backup job", instance: raw, operation: str(cell(row, cols, "operation")), status: str(cell(row, cols, "status")), start: iso(t), vault },
-        });
+        pushAzureJob(R, { sys, raw, vault, loc, sub, region, file, op: cell(row, cols, "operation"), status: cell(row, cols, "status"), start: cell(row, cols, "start"), duration: cell(row, cols, "duration"), source: "Azure Backup job" });
       } else {
         const t = parseTime(cell(row, cols, "lastBackup"));
         const ls = cell(row, cols, "lastStatus");
@@ -722,7 +738,65 @@ function ingest(d, R, skipped) {
         ev: { file, source: "Azure vault properties", vault: name, location: str(v.location), immutability: imm || "not stated", softDelete: sdState || "not stated", redundancy: storage || "not stated", crossRegionRestore: crr || "not stated" },
       });
     }
+  } else if (k === "azure-jobs-json") {
+    // Recovery Services Job (entityFriendlyName, operation, status, startTime, endTime, duration) and Backup vault
+    // AzureBackupJob (dataSourceName, backupInstanceFriendlyName, vaultName, operationCategory, dataSourceLocation, sourceSubscriptionID).
+    for (const j of d.rows) {
+      const p = (j && j.properties) || {};
+      const raw = str(p.dataSourceName) || str(p.entityFriendlyName) || str(p.backupInstanceFriendlyName);
+      const sys = azureInstanceName(raw);
+      if (!sys) continue;
+      const vm = /\/(?:vaults|backupvaults)\/([^/]+)/i.exec(str(j.id));
+      const vault = str(p.vaultName) || (vm ? vm[1] : "");
+      const az = parseAzureId(j.id);
+      const sub = lc(p.sourceSubscriptionID || p.subscriptionId) || (az ? az.subscription : null) || null;
+      const region = lc(p.dataSourceLocation).replace(/\s+/g, "") || null;
+      const loc = vault ? "azure:" + normName(vault) : null;
+      if (vault) R.locations.push({ key: loc, name: vault, kind: "azure-vault", source: "azure", account: az ? az.subscription : sub, targetType: "cloud" });
+      R.sysInfo.push({ sys, account: sub, region, source: "azure" });
+      pushAzureJob(R, { sys, raw, vault, loc, sub, region, file, op: str(p.operationCategory) || str(p.operation), opLabel: str(p.operation), status: p.status, start: p.startTime, end: p.endTime, duration: p.duration, source: "Azure Backup job (JSON)" });
+    }
   }
+}
+
+/** One Azure Backup job (CSV row or JSON resource): restore operations become restore records, backups become events. */
+function pushAzureJob(R, j) {
+  const op = lc(j.op);
+  const t = parseTime(j.start), te = parseTime(j.end);
+  const status = normStatus(j.status);
+  const label = str(j.opLabel) || str(j.op);
+  if (/restore|recover/.test(op)) {
+    const res = status === "success" ? "pass" : status === "warning" ? "partial" : status === "failed" ? "fail" : null;
+    let dur = parseDurationMinutes(j.duration);
+    if (dur == null && t != null && te != null) dur = r1((te - t) / 60000);
+    if (res && t != null) R.restores.push({ sys: j.sys, time: te ?? t, result: res, durationMin: dur, rtoMin: null, pointAgeHours: null, tester: "", notes: "Azure Backup restore job (" + label + ")", source: "Azure restore job", file: j.file });
+    return;
+  }
+  // Management operations (ConfigureBackup, DisableBackup, DeleteBackupData) are not backup runs.
+  if (op && (!/backup/.test(op) || /configure|disable|delete|stop/.test(op))) return;
+  const time = te != null && status !== "running" ? te : t;
+  R.events.push({
+    sys: j.sys, sysSource: "azure", job: "azure:" + normName(j.vault) + ":" + normName(j.sys), jobName: j.sys + (j.vault ? " @ " + j.vault : ""), kind: "backup",
+    status, time, start: t, loc: j.loc, file: j.file, account: j.sub, region: j.region,
+    ev: { file: j.file, source: j.source, instance: j.raw, operation: label, status: str(j.status), start: iso(t), vault: j.vault },
+  });
+}
+
+/** One Veeam repository (Get-VBRBackupRepository / Get-VBRObjectStorageRepository CSV or REST RepositoryModel). */
+function pushVeeamRepo(R, file, source, r) {
+  const { name, type, flag, days } = r;
+  const hardened = /hardened/i.test(type);
+  let immutable = null, mode = null;
+  if (hardened || flag === true || (days != null && days > 0 && flag !== false)) { immutable = true; mode = hardened ? "hardened" : "flag"; }
+  else if (flag === false || (days != null && days === 0)) immutable = false;
+  // Windows, SMB/CIFS, NFS and plain (non-hardened) Linux repositories have no Veeam immutability.
+  else if (/^(WinLocal|CifsShare|Smb|Nfs|LinuxLocal)$/i.test(type)) immutable = false;
+  R.locations.push({
+    key: "veeam:" + normName(name), name, kind: "veeam-repo", source: "veeam", props: true, repoType: type,
+    targetType: veeamRepoType(type), immutable, immutMode: mode, immutDays: days,
+    encrypted: r.encrypted ?? null, region: r.region || null, account: r.account || null,
+    deletionProtection: immutable, ev: { file, source, name, type, path: r.path || "", immutable: immutable == null ? "not stated" : immutable ? "yes" : "no" },
+  });
 }
 
 function awsState(s) {
@@ -819,7 +893,15 @@ function buildModel(records, assetsIn, opts, ctx) {
     if (i.source) s.sources.add(i.source);
     if (i.jobLink) s.jobs.add(i.jobLink);
   }
-  const evs = records.events;
+  // Veeam REST jobs link a job to its repository by id (storage.backupRepositoryId); fill the location of
+  // Veeam sessions / restore points that did not name one.
+  const repoById = new Map((records.repoIds || []).map((r) => [r.id, "veeam:" + normName(r.name)]));
+  const jobLoc = new Map();
+  for (const l of (records.jobRepos || []).slice().sort((a, b) => cmp(a.job, b.job) || cmp(a.repoId, b.repoId))) {
+    const lk = repoById.get(l.repoId);
+    if (lk && !jobLoc.has(l.job)) jobLoc.set(l.job, lk);
+  }
+  const evs = jobLoc.size ? records.events.map((e) => (!e.loc && e.job && jobLoc.has(e.job) ? { ...e, loc: jobLoc.get(e.job) } : e)) : records.events;
   const n = evs.length;
   for (let i = 0; i < n; i++) {
     if (i % 1000 === 0) ctx?.progress?.(i, n, "grouping backup events");
