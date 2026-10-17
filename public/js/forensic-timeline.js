@@ -202,6 +202,7 @@ export function renderForensicTimeline(main) {
         '<button class="btn sm" id="ft-parse">Parse and Add to Timeline</button>' +
         '<button class="btn sm ghost" id="ft-clear">Clear Timeline</button>' +
         '<button class="btn sm ghost" id="ft-sample">Load Sample Data</button>' +
+        '<button class="btn sm ghost" id="ft-manual" title="Add one event by hand, e.g. from an interview, a ticket or a screenshot">Add Event Manually</button>' +
       '</div>' +
       '<pre class="tk-out" id="ft-parse-result" style="margin-top:8px"></pre>';
 
@@ -216,6 +217,34 @@ export function renderForensicTimeline(main) {
     };
 
     container.querySelector('#ft-clear').onclick = function() { events = []; render(); };
+
+    // Manual entry: evidence that is not a log line (an interview, a ticket, a screenshot).
+    container.querySelector('#ft-manual').onclick = async function() {
+      var out = container.querySelector('#ft-parse-result');
+      if (!window.dnModal) { out.textContent = 'Dialog unavailable, reload the page.'; return; }
+      var r = await window.dnModal({
+        title: 'Add Event',
+        desc: 'Time is UTC (the timezone offset above still applies); leave it blank for now. Category: ' + Object.keys(CAT_COLORS).join(', ') + '.',
+        fields: [
+          { label: 'Time', placeholder: 'YYYY-MM-DD HH:MM:SS' },
+          { label: 'Source', placeholder: 'e.g. analyst notes' },
+          { label: 'Category', placeholder: 'e.g. endpoint' },
+          { label: 'Description', placeholder: 'What happened' },
+          { label: 'Mark as suspicious (yes/no)', placeholder: 'no' }
+        ],
+        submitText: 'Add'
+      });
+      if (!r) return;
+      var t = r[0].trim(), detail = r[3].trim(), cat = (r[2].trim() || 'other').toLowerCase();
+      if (!detail) { out.textContent = 'Event not added: it needs a description.'; return; }
+      if (!CAT_COLORS[cat]) { out.textContent = 'Event not added: category must be one of ' + Object.keys(CAT_COLORS).join(', ') + '.'; return; }
+      var ts = t ? new Date(/[zZ]|[+-]\d\d:?\d\d$/.test(t) ? t.replace(' ', 'T') : t.replace(' ', 'T') + 'Z') : new Date();
+      if (isNaN(ts.getTime())) { out.textContent = 'Event not added: time must look like YYYY-MM-DD HH:MM:SS.'; return; }
+      if (t && tzOffset !== 0) ts = new Date(ts.getTime() + tzOffset * 3600000);
+      events.push({ timestamp: ts, source: r[1].trim() || 'manual', category: cat, detail: detail, raw: detail, tags: autoTag(detail), suspicious: /^y/i.test(r[4].trim()), manual: true });
+      events.sort(function(a, b) { return a.timestamp - b.timestamp; });
+      out.textContent = 'Added 1 manual event. Total timeline: ' + events.length + ' events.';
+    };
 
     container.querySelector('#ft-sample').onclick = function() {
       container.querySelector('#ft-input').value =

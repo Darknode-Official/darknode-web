@@ -75,8 +75,8 @@ From the architecture audit of the actual source (not old docs):
   `functions/index.js` but is not wired in `firebase.json`. Client-side AI keys
   are exposed. → **Phase 0 security hardening** (key rotation is the owner's
   action; wiring + auth is ours).
-- **Native dialogs still linger** in several modules (admin, case-manager,
-  graph-bridge, investigation, cve-search). → migrate opportunistically.
+- **Native dialogs still linger** in several modules (admin,
+  graph-bridge, investigation, cve-search; case-manager was merged into investigation). → migrate opportunistically.
 
 ---
 

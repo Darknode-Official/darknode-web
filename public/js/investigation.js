@@ -3,8 +3,13 @@ import { esc, formatDate, debounce } from '/js/shared.js';
 import {
   createEntity, getEntity, updateEntity, deleteEntity, listEntities,
   createRelationship, getRelationships, getRelated, deleteRelationship,
-  search, ENTITY_TYPES, SEVERITIES, STATUSES
+  search, ENTITY_TYPES, SEVERITIES, STATUSES, RELATIONSHIP_TYPES
 } from '/js/security-graph.js';
+
+// Cases (CASE entities from the retired Case Manager) open here too, so nothing orphans.
+const WORK_TYPES = ['INVESTIGATION', 'CASE'];
+const PRIORITIES = ['P1 - Critical', 'P2 - High', 'P3 - Medium', 'P4 - Low', 'P5 - Info'];
+const relLabel = (t) => String(t || '').replace(/_/g, ' ');
 
 const TYPE_COLORS = {
   ASSET: '#2563eb', VULNERABILITY: '#ef4444', INDICATOR: '#f59e0b',
@@ -151,25 +156,30 @@ function getAuthor() {
 
 // ---- List View ----
 function renderListView(main, show) {
-  const investigations = listEntities({ type: 'INVESTIGATION' });
+  const investigations = listEntities({ type: WORK_TYPES });
   investigations.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+  const hasCases = investigations.some(i => i.type === 'CASE');
 
   let filterStatus = '';
+  let filterKind = '';
+  let filterPrio = '';
   let searchQuery = '';
 
   function renderList() {
     let filtered = investigations;
     if (filterStatus) filtered = filtered.filter(i => i.status === filterStatus);
+    if (filterKind) filtered = filtered.filter(i => i.type === filterKind);
+    if (filterPrio) filtered = filtered.filter(i => (i.data || {}).priority === filterPrio);
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
-      filtered = filtered.filter(i => i.name.toLowerCase().includes(q) || (i.data.description || '').toLowerCase().includes(q));
+      filtered = filtered.filter(i => i.name.toLowerCase().includes(q) || ((i.data || {}).description || '').toLowerCase().includes(q));
     }
 
     const listEl = main.querySelector('#inv-list');
     if (!listEl) return;
 
     if (filtered.length === 0) {
-      listEl.innerHTML = `<div class="inv-empty">${searchQuery || filterStatus ? 'No investigations match your filters.' : 'No investigations yet. Create one to start collecting evidence and findings.'}</div>`;
+      listEl.innerHTML = `<div class="inv-empty">${searchQuery || filterStatus || filterKind || filterPrio ? 'No investigations match your filters.' : 'No investigations yet. Create one to start collecting evidence and findings.'}</div>`;
       return;
     }
 
@@ -177,14 +187,17 @@ function renderListView(main, show) {
       const related = getRelated(inv.id);
       const entityCount = related.filter(r => r.type !== 'EVENT' && r.type !== 'FINDING').length;
       const findingCount = related.filter(r => r.type === 'FINDING').length;
+      const d = inv.data || {};
       return `<div class="inv-card" data-inv-id="${esc(inv.id)}">
         <div class="inv-card-h">
+          ${inv.type === 'CASE' ? typeBadge('CASE') : ''}
           <h3>${esc(inv.name)}</h3>
           ${sevBadge(inv.severity)}
         </div>
-        <p class="inv-card-desc">${esc(inv.data.description || 'No description')}</p>
+        <p class="inv-card-desc">${esc(d.description || 'No description')}</p>
         <div class="inv-card-meta">
           <span class="inv-status-badge inv-badge">${esc(inv.status || 'open')}</span>
+          ${d.priority ? `<span class="inv-badge inv-status-badge">${esc(d.priority)}</span>` : ''}
           <span>${entityCount} entities</span>
           <span>${findingCount} findings</span>
           <span>${timeAgo(inv.updatedAt)}</span>
@@ -203,8 +216,17 @@ function renderListView(main, show) {
         <input class="inv-search" id="inv-search-input" placeholder="Search investigations..." spellcheck="false">
         <select class="inv-select" id="inv-filter-status">
           <option value="">All statuses</option>
-          ${STATUSES.map(s => `<option value="${esc(s)}">${esc(s)}</option>`).join('')}
+          ${STATUSES.filter(Boolean).map(s => `<option value="${esc(s)}">${esc(s)}</option>`).join('')}
         </select>
+        <select class="inv-select" id="inv-filter-prio" aria-label="Priority">
+          <option value="">All priorities</option>
+          ${PRIORITIES.map(p => `<option value="${esc(p)}">${esc(p)}</option>`).join('')}
+        </select>
+        ${hasCases ? `<select class="inv-select" id="inv-filter-kind" aria-label="Kind">
+          <option value="">Investigations and cases</option>
+          <option value="INVESTIGATION">Investigations</option>
+          <option value="CASE">Cases</option>
+        </select>` : ''}
       </div>
       <div id="inv-list"></div>
     </div>`;
@@ -230,6 +252,9 @@ function renderListView(main, show) {
     filterStatus = e.target.value;
     renderList();
   };
+  main.querySelector('#inv-filter-prio').onchange = (e) => { filterPrio = e.target.value; renderList(); };
+  const kindSel = main.querySelector('#inv-filter-kind');
+  if (kindSel) kindSel.onchange = (e) => { filterKind = e.target.value; renderList(); };
 
   main.querySelector('#inv-list').onclick = (e) => {
     const card = e.target.closest('[data-inv-id]');
@@ -252,7 +277,9 @@ function renderDetailView(main, show) {
     <div class="inv-wrap">
       <div class="inv-detail-header">
         <button class="inv-back" id="inv-back-btn">&larr; Investigations</button>
+        ${inv.type === 'CASE' ? typeBadge('CASE') : ''}
         <h1 style="flex:1;margin:0;font-size:1.1rem">${esc(inv.name)}</h1>
+        ${(inv.data || {}).priority ? `<span class="inv-status-badge inv-badge">${esc(inv.data.priority)}</span>` : ''}
         ${sevBadge(inv.severity)}
         <span class="inv-status-badge inv-badge">${esc(inv.status || 'open')}</span>
       </div>
@@ -332,6 +359,13 @@ function renderOverviewTab(panel, inv, main, show) {
               ${SEVERITIES.map(s => `<option value="${esc(s)}"${s === inv.severity ? ' selected' : ''}>${esc(s)}</option>`).join('')}
             </select>
           </div>
+          <div class="inv-field">
+            <label for="inv-o-prio">Priority</label>
+            <select class="inv-select" id="inv-o-prio" style="width:100%">
+              <option value="">None</option>
+              ${PRIORITIES.map(p => `<option value="${esc(p)}"${p === inv.data.priority ? ' selected' : ''}>${esc(p)}</option>`).join('')}
+            </select>
+          </div>
         </div>
         <div class="inv-field">
           <label>Description</label>
@@ -360,6 +394,7 @@ function renderOverviewTab(panel, inv, main, show) {
             <div>Created: ${shortTime(inv.createdAt)}</div>
             <div>Updated: ${shortTime(inv.updatedAt)}</div>
             <div>ID: <span style="font-family:monospace;font-size:.72rem">${esc(inv.id)}</span></div>
+            ${inv.data.team ? `<div>Team / notes: ${esc(inv.data.team)}</div>` : ''}
           </div>
         </div>
       </div>
@@ -373,7 +408,8 @@ function renderOverviewTab(panel, inv, main, show) {
       data: {
         ...inv.data,
         description: panel.querySelector('#inv-o-desc').value,
-        owner: panel.querySelector('#inv-o-owner').value.trim()
+        owner: panel.querySelector('#inv-o-owner').value.trim(),
+        priority: panel.querySelector('#inv-o-prio').value
       }
     });
     const h1 = main.querySelector('.inv-detail-header h1');
@@ -400,6 +436,8 @@ function renderOverviewTab(panel, inv, main, show) {
 // ---- Entities Tab ----
 function renderEntitiesTab(panel, inv, main, show) {
   const related = getRelated(inv.id).filter(r => r.type !== 'EVENT' && r.type !== 'FINDING');
+  const rels = getRelationships(inv.id);
+  const relOf = (id) => { const r = rels.find(x => x.toId === id || x.fromId === id); return r ? relLabel(r.type) : ''; };
 
   panel.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
@@ -413,7 +451,7 @@ function renderEntitiesTab(panel, inv, main, show) {
             <span class="inv-type-dot" style="background:${TYPE_COLORS[e.type] || '#64748b'};margin-top:4px"></span>
             <div class="inv-entity-info">
               <h4>${esc(e.name)}</h4>
-              <p>${typeBadge(e.type)} ${e.severity ? sevBadge(e.severity) : ''} ${e.source ? '<span style="font-size:.7rem;color:var(--mut,#94a3b8)">via ' + esc(e.source) + '</span>' : ''}</p>
+              <p>${typeBadge(e.type)} ${e.severity ? sevBadge(e.severity) : ''} ${relOf(e.id) ? '<span style="font-size:.7rem;color:var(--mut,#94a3b8)">' + esc(relOf(e.id)) + '</span>' : ''} ${e.source ? '<span style="font-size:.7rem;color:var(--mut,#94a3b8)">via ' + esc(e.source) + '</span>' : ''}</p>
             </div>
             <button class="inv-entity-remove" data-remove-id="${esc(e.id)}" title="Remove from investigation">x</button>
           </div>`).join('')}
@@ -449,8 +487,11 @@ function openEntitySearchModal(invId, onDone) {
         <h2>Add Entity to Investigation</h2>
         <button class="inv-modal-close" id="inv-modal-close">x</button>
       </div>
-      <div style="padding:8px 20px;border-bottom:1px solid var(--brd,#e2e8f0)">
-        <input class="inv-search" id="inv-entity-search" placeholder="Search entities by name, type..." style="width:100%;box-sizing:border-box" spellcheck="false">
+      <div style="padding:8px 20px;border-bottom:1px solid var(--brd,#e2e8f0);display:flex;gap:8px;flex-wrap:wrap">
+        <input class="inv-search" id="inv-entity-search" placeholder="Search entities by name, type..." style="flex:1;min-width:160px;box-sizing:border-box" spellcheck="false">
+        <select class="inv-select" id="inv-entity-rel" aria-label="Relationship" title="How the entity relates to this investigation">
+          ${RELATIONSHIP_TYPES.map(t => `<option value="${esc(t)}"${t === 'contains' ? ' selected' : ''}>${esc(relLabel(t))}</option>`).join('')}
+        </select>
       </div>
       <div class="inv-modal-body" id="inv-modal-results"></div>
     </div>`;
@@ -461,7 +502,7 @@ function openEntitySearchModal(invId, onDone) {
   overlay.onclick = (e) => { if (e.target === overlay) close(); };
 
   function renderResults(query) {
-    const results = query ? search(query).filter(e => e.type !== 'INVESTIGATION') : allEntities.slice(0, 50);
+    const results = query ? search(query).filter(e => e.type !== 'INVESTIGATION' && e.id !== invId) : allEntities.slice(0, 50);
     const container = overlay.querySelector('#inv-modal-results');
     if (results.length === 0) {
       container.innerHTML = '<div class="inv-empty">No entities found. Create entities from tools first.</div>';
@@ -490,7 +531,7 @@ function openEntitySearchModal(invId, onDone) {
   overlay.querySelector('#inv-modal-results').onclick = (e) => {
     const btn = e.target.closest('[data-add-btn]');
     if (!btn) return;
-    createRelationship(invId, btn.dataset.addBtn, 'contains');
+    createRelationship(invId, btn.dataset.addBtn, overlay.querySelector('#inv-entity-rel').value || 'contains');
     relatedIds.add(btn.dataset.addBtn);
     const item = btn.closest('.inv-modal-item');
     if (item) {
@@ -536,7 +577,13 @@ function renderTimelineTab(panel, inv, main, show) {
             </div>
             <span class="inv-tl-time">${shortTime(ev.createdAt)}</span>
           </div>`).join('')}
-    </div>`;
+    </div>
+    ${(inv.data.timeline || []).length ? `<div style="margin-top:16px;font-size:.78rem;font-weight:600;color:var(--mut,#64748b);text-transform:uppercase;letter-spacing:.04em">Case history</div>
+    <div class="inv-timeline">${inv.data.timeline.slice().reverse().map(t => `<div class="inv-tl-item">
+        <div class="inv-tl-dot" style="background:#64748b"></div>
+        <div class="inv-tl-content"><strong>${esc(t.text)}</strong></div>
+        <span class="inv-tl-time">${shortTime(t.ts)}</span>
+      </div>`).join('')}</div>` : ''}`;
 
   panel.querySelector('#inv-tl-add').onclick = () => {
     const desc = panel.querySelector('#inv-tl-desc').value.trim();

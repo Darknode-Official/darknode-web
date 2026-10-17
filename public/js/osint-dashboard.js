@@ -393,7 +393,7 @@ const SOCIAL_GUIDE = {
 };
 
 // ── Main Render ──
-export function renderOSINTDashboard(main) {
+export function renderOSINTDashboard(main, more) {
   var tabs = [
     { id: "profile", label: "Target Profile" },
     { id: "username", label: "Username Checker" },
@@ -438,7 +438,8 @@ export function renderOSINTDashboard(main) {
     if (b) showTab(b.dataset.tab);
   };
 
-  showTab("profile");
+  // `more` (from the router / an alias such as osintemail -> ["osint", "email"]) picks the opening tab.
+  showTab(tabs.some(function(t) { return t.id === more; }) ? more : "profile");
 }
 
 // ── Target Profile Tab ──
@@ -589,8 +590,66 @@ function renderDorks(el) {
 }
 
 // ── Email OSINT Tab ──
+// MX host patterns -> mail provider (suffix match on the MX exchange name).
+const MX_PROVIDERS = [
+  [/(^|\.)(google|googlemail)\.com\.?$/, "Google Workspace / Gmail"],
+  [/\.(mail\.)?protection\.outlook\.com\.?$|(^|\.)outlook\.com\.?$|(^|\.)hotmail\.com\.?$/, "Microsoft 365 / Outlook"],
+  [/(^|\.)pphosted\.com\.?$|(^|\.)ppe-hosted\.com\.?$/, "Proofpoint (email gateway)"],
+  [/(^|\.)mimecast\.com\.?$/, "Mimecast (email gateway)"],
+  [/(^|\.)messagelabs\.com\.?$/, "Broadcom / Symantec Email Security"],
+  [/(^|\.)barracudanetworks\.com\.?$/, "Barracuda (email gateway)"],
+  [/(^|\.)iphmx\.com\.?$/, "Cisco Secure Email"],
+  [/(^|\.)zoho\.(com|eu|in)\.?$/, "Zoho Mail"],
+  [/(^|\.)yahoodns\.net\.?$/, "Yahoo Mail"],
+  [/(^|\.)protonmail\.ch\.?$/, "Proton Mail"],
+  [/(^|\.)icloud\.com\.?$/, "Apple iCloud Mail"],
+  [/(^|\.)messagingengine\.com\.?$/, "Fastmail"],
+  [/(^|\.)secureserver\.net\.?$/, "GoDaddy email"],
+  [/(^|\.)amazonaws\.com\.?$/, "Amazon SES / WorkMail"],
+];
+const FREE_MAIL = ["gmail.com", "googlemail.com", "yahoo.com", "hotmail.com", "outlook.com", "live.com", "aol.com", "mail.com", "gmx.com", "yandex.com", "icloud.com"];
+const PRIVACY_MAIL = ["protonmail.com", "proton.me", "tutanota.com", "tuta.io", "fastmail.com", "hey.com"];
+const DISPOSABLE_MAIL = ["mailinator.com", "guerrillamail.com", "10minutemail.com", "tempmail.com", "throwaway.email", "yopmail.com", "trashmail.com", "sharklasers.com"];
+
+// Common corporate and personal address formats for a first + last name.
+function emailPermutations(first, last) {
+  var f = first.toLowerCase().replace(/[^a-z0-9]/g, ""), l = last.toLowerCase().replace(/[^a-z0-9]/g, "");
+  if (!f || !l) return [];
+  var fi = f[0], li = l[0];
+  return Array.from(new Set([
+    f + "." + l, f + l, f + "_" + l, f + "-" + l,
+    fi + l, fi + "." + l, fi + "_" + l, fi + "-" + l,
+    f + li, f + "." + li, f + "_" + li,
+    l + f, l + "." + f, l + "_" + f, l + "-" + f,
+    l + fi, l + "." + fi, l + "_" + fi,
+    fi + li, fi + "." + li, f, l,
+    f.slice(0, 3) + l, f + l.slice(0, 2), fi + fi + l,
+    f + l + "1", f + "." + l + "1", fi + l + "1",
+  ]));
+}
+
 function renderEmail(el) {
   el.innerHTML =
+    '<h2 class="pg-h2">Email Address Check</h2>' +
+    '<p class="muted" style="margin-bottom:10px">Splits an address into its parts, classifies the provider and resolves the domain\'s live MX records (DNS-over-HTTPS) to identify who handles its mail. No breach database is queried.</p>' +
+    '<div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">' +
+      '<input id="em-addr" type="email" placeholder="Email address" spellcheck="false" style="flex:1;min-width:200px;padding:8px 12px;background:var(--bg);border:1px solid var(--line);color:var(--txt);border-radius:2px">' +
+      '<button class="btn" id="em-check" style="padding:8px 16px">Check</button>' +
+    '</div>' +
+    '<div id="em-result" style="margin-bottom:20px"></div>' +
+    '<h2 class="pg-h2">Address Permutations</h2>' +
+    '<p class="muted" style="margin-bottom:10px">Likely address formats for a person, for scoping phishing exposure or confirming an organisation\'s naming convention. Add the organisation\'s own domain, common providers, or both.</p>' +
+    '<div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap">' +
+      '<input id="em-first" placeholder="First name" style="flex:1;min-width:140px;padding:8px 12px;background:var(--bg);border:1px solid var(--line);color:var(--txt);border-radius:2px">' +
+      '<input id="em-last" placeholder="Last name" style="flex:1;min-width:140px;padding:8px 12px;background:var(--bg);border:1px solid var(--line);color:var(--txt);border-radius:2px">' +
+      '<input id="em-dom" placeholder="Organisation domain (optional)" spellcheck="false" style="flex:1;min-width:180px;padding:8px 12px;background:var(--bg);border:1px solid var(--line);color:var(--txt);border-radius:2px">' +
+    '</div>' +
+    '<div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:10px;font-size:.8rem">' +
+      '<span class="muted">Providers:</span>' +
+      ["gmail.com", "outlook.com", "yahoo.com", "proton.me", "icloud.com"].map(function(p) { return '<label style="cursor:pointer"><input type="checkbox" class="em-prov" value="' + p + '"> ' + p + '</label>'; }).join("") +
+      '<button class="btn" id="em-gen" style="padding:6px 14px">Generate</button>' +
+    '</div>' +
+    '<div id="em-perms" style="margin-bottom:20px"></div>' +
     '<h2 class="pg-h2">Email OSINT Reference</h2>' +
     '<p class="muted" style="margin-bottom:16px">Techniques and tools for investigating email addresses.</p>' +
     '<div class="arse-card" style="cursor:default;margin-bottom:12px"><div class="an">MX Lookup</div><div class="ad" style="font-size:.82rem;margin-top:6px">Query the MX records of the email domain to identify the mail provider. <code>dig MX domain.com</code> or <code>nslookup -type=mx domain.com</code>. Common providers: Google Workspace (aspmx.l.google.com), Microsoft 365 (*.mail.protection.outlook.com), Proton Mail, Zoho, custom mail servers.</div></div>' +
@@ -599,6 +658,65 @@ function renderEmail(el) {
     '<div class="arse-card" style="cursor:default;margin-bottom:12px"><div class="an">Google Dork Patterns</div><div class="ad" style="font-size:.82rem;margin-top:6px"><code>"user@domain.com"</code> — find all indexed pages mentioning the email.<br><code>"user@domain.com" site:pastebin.com</code> — check paste sites.<br><code>"user@domain.com" filetype:pdf</code> — find documents.<br><code>intext:"user@domain.com"</code> — broader search.</div></div>' +
     '<div class="arse-card" style="cursor:default;margin-bottom:12px"><div class="an">Email Header Analysis</div><div class="ad" style="font-size:.82rem;margin-top:6px">Analyze received email headers to trace the sending path. Key headers: Received (each hop), X-Originating-IP, Return-Path, Message-ID, DKIM-Signature, Authentication-Results (SPF/DKIM/DMARC). Tools: MXToolbox Header Analyzer, Google Admin Toolbox.</div></div>' +
     '<div class="arse-card" style="cursor:default;margin-bottom:12px"><div class="an">Account Enumeration</div><div class="ad" style="font-size:.82rem;margin-top:6px">Use <a href="https://github.com/megadose/holehe" target="_blank" rel="noopener" style="color:var(--acc)">Holehe</a> to check which websites the email is registered on. This uses password reset and login flows to detect accounts without notifying the target.</div></div>';
+
+  var row = function(k, v) { return '<div style="padding:3px 0;border-bottom:1px solid var(--line)"><strong style="display:inline-block;min-width:130px">' + esc(k) + '</strong> ' + v + '</div>'; };
+
+  async function check() {
+    var addr = el.querySelector("#em-addr").value.trim().toLowerCase();
+    var out = el.querySelector("#em-result");
+    var m = addr.match(/^([^\s@]+)@([a-z0-9.-]+\.[a-z]{2,})$/);
+    if (!m) { out.innerHTML = '<span style="color:#f44336">Enter a full address such as name@domain.tld.</span>'; return; }
+    var local = m[1], domain = m[2];
+    var type = DISPOSABLE_MAIL.indexOf(domain) >= 0 ? "Disposable / throwaway" : PRIVACY_MAIL.indexOf(domain) >= 0 ? "Privacy-focused provider" : FREE_MAIL.indexOf(domain) >= 0 ? "Free consumer provider" : "Custom domain (likely an organisation or personal domain)";
+    var base = row("Local part", '<code>' + esc(local) + '</code>' + (local.indexOf("+") >= 0 ? ' <span class="muted">(plus-addressing tag: ' + esc(local.split("+")[1]) + ')</span>' : "")) +
+      row("Domain", '<code>' + esc(domain) + '</code>') + row("Provider type", esc(type));
+    out.innerHTML = '<div class="arse-card" style="cursor:default">' + base + '<div id="em-mx">' + row("MX records", '<span class="muted">resolving...</span>') + '</div></div>';
+    var mxHost = out.querySelector("#em-mx");
+    try {
+      // dns.google answers browsers directly (CORS); fall back to the proxy if that is blocked.
+      var doh = "https://dns.google/resolve?name=" + encodeURIComponent(domain) + "&type=MX";
+      var d = await fetch(doh, { headers: { accept: "application/dns-json" } }).then(function(r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+        .catch(function() { return dnFetchJSON(doh); });
+      var mx = ((d && d.Answer) || []).filter(function(a) { return a.type === 15; }).map(function(a) {
+        var p = String(a.data).split(/\s+/); return { pref: Number(p[0]), host: (p[1] || "").toLowerCase() };
+      }).sort(function(a, b) { return a.pref - b.pref; });
+      if (!mx.length) { mxHost.innerHTML = row("MX records", '<span style="color:#f44336">none: this domain cannot receive mail' + (d && d.Status === 3 ? " (domain does not exist)" : "") + '</span>'); return; }
+      var providers = {};
+      mx.forEach(function(r) { MX_PROVIDERS.forEach(function(p) { if (p[0].test(r.host)) providers[p[1]] = 1; }); });
+      var prov = Object.keys(providers);
+      mxHost.innerHTML = row("MX records", mx.map(function(r) { return '<code>' + r.pref + " " + esc(r.host) + '</code>'; }).join(" ")) +
+        row("Mail handled by", prov.length ? esc(prov.join(", ")) : '<span class="muted">self-hosted or an unlisted provider</span>');
+    } catch (e) { mxHost.innerHTML = row("MX records", '<span style="color:#f44336">Lookup failed: ' + esc(e && e.message ? e.message : String(e)) + '</span>'); }
+  }
+  el.querySelector("#em-check").onclick = check;
+  el.querySelector("#em-addr").addEventListener("keydown", function(e) { if (e.key === "Enter") check(); });
+
+  el.querySelector("#em-gen").onclick = function() {
+    var out = el.querySelector("#em-perms");
+    var perms = emailPermutations(el.querySelector("#em-first").value.trim(), el.querySelector("#em-last").value.trim());
+    if (!perms.length) { out.innerHTML = '<span style="color:#f44336">Enter both a first and a last name.</span>'; return; }
+    var doms = [];
+    var own = el.querySelector("#em-dom").value.trim().toLowerCase().replace(/^@/, "").replace(/^[a-z]+:\/\//, "").replace(/\/.*$/, "");
+    if (own) doms.push(own);
+    el.querySelectorAll(".em-prov:checked").forEach(function(c) { doms.push(c.value); });
+    var list = doms.length ? [] : perms.slice();
+    doms.forEach(function(d) { perms.forEach(function(u) { list.push(u + "@" + d); }); });
+    out.innerHTML = '<div class="arse-card" style="cursor:default">' +
+      '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px"><span class="muted">' + perms.length + ' formats' + (doms.length ? ' x ' + doms.length + ' domain' + (doms.length > 1 ? "s" : "") : ' (usernames only: add a domain or provider for full addresses)') + ' = ' + list.length + '</span>' +
+      '<button class="btn" id="em-copy" style="padding:2px 10px;font-size:.72rem">Copy all</button><button class="btn" id="em-csv" style="padding:2px 10px;font-size:.72rem">Export CSV</button></div>' +
+      '<div style="max-height:300px;overflow-y:auto;font-family:var(--mono,monospace);font-size:.78rem;line-height:1.6;columns:16rem">' + list.map(esc).join("<br>") + '</div></div>';
+    out.querySelector("#em-copy").onclick = function() {
+      navigator.clipboard.writeText(list.join("\n")).then(function() { osToast("Copied " + list.length + " entries", "success"); }, function() { osToast("Copy failed", "error"); });
+    };
+    out.querySelector("#em-csv").onclick = function() {
+      var csv = "Username,Domain,Address\n" + list.map(function(e) { var p = e.split("@"); return p[0] + "," + (p[1] || "") + "," + (p[1] ? e : ""); }).join("\n");
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+      a.download = "email-permutations.csv";
+      a.click();
+      setTimeout(function() { URL.revokeObjectURL(a.href); }, 1000);
+    };
+  };
 }
 
 // ── Domain Intel Tab ──

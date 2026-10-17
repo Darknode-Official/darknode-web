@@ -141,51 +141,6 @@ function posLoad() { try { return JSON.parse(localStorage.getItem("sw_posture"))
 function posSave(a) { try { localStorage.setItem("sw_posture", JSON.stringify(a)); } catch (_) {} }
 
 // ---------- full sections ----------
-export function renderThreat(main) {
-  main.innerHTML = `
-    <h1 class="pg-h1">Threat intel</h1>
-    <p class="muted pg-sub">Search the live NVD database, or browse notable high-impact vulnerabilities below.</p>
-    <div class="card" style="max-width:680px">
-      <div class="set-lbl">Search NVD</div>
-      <div class="row" style="gap:8px"><input class="tk-f" id="cveq" placeholder="keyword or CVE-2021-44228" style="flex:1"><button class="btn" id="cvego">Search</button></div>
-      <div id="cvestat" style="font-size:.8rem;margin-top:8px;color:var(--mut)"></div>
-    </div>
-    <div id="cveres"></div>
-    <h2 class="pg-h2">Notable &amp; high-impact</h2>
-    <div class="feed-grid">
-      ${CVE_FEED.map((c) => `
-        <a class="feed-card" href="${cveUrl(c.id)}" target="_blank" rel="noopener">
-          <div class="feed-top"><span class="feed-id mono">${esc(c.id)}</span>${sevBadge(c.sev)}</div>
-          <div class="feed-name">${esc(c.name)}</div>
-          <div class="feed-desc">${esc(c.desc)}</div>
-          <div class="feed-meta"><span class="chip">${esc(c.tag)}</span><span class="muted">CVSS ${esc(c.cvss)} · ${esc(c.date)}</span></div>
-        </a>`).join("")}
-    </div>
-    <h2 class="pg-h2">Common ports &amp; attack surface</h2>
-    <div class="card ports-card">
-      <table class="ports"><thead><tr><th>Port</th><th>Service</th><th>Notes</th></tr></thead>
-        <tbody>${PORTS.map(([p, s, n]) => `<tr><td class="mono">${esc(p)}</td><td><strong>${esc(s)}</strong></td><td class="muted">${esc(n)}</td></tr>`).join("")}</tbody>
-      </table>
-    </div>`;
-  const $ = (sel) => main.querySelector(sel);
-  async function search() {
-    const q = $("#cveq").value.trim(); if (!q) return;
-    const stat = $("#cvestat"), res = $("#cveres");
-    stat.textContent = "searching NVD…"; res.innerHTML = "";
-    const isId = /^CVE-\d{4}-\d+$/i.test(q);
-    try {
-      const r = await fetch("https://services.nvd.nist.gov/rest/json/cves/2.0?" + (isId ? "cveId=" + q.toUpperCase() : "keywordSearch=" + encodeURIComponent(q)) + "&resultsPerPage=20");
-      if (!r.ok) throw new Error(r.status === 403 ? "NVD rate limit — wait a moment" : r.status + " " + r.statusText);
-      const d = await r.json();
-      const list = (d.vulnerabilities || []).map((v) => { const c = v.cve, desc = (c.descriptions.find((x) => x.lang === "en") || c.descriptions[0] || {}).value || "", m = c.metrics || {}, p = m.cvssMetricV31 || m.cvssMetricV30 || m.cvssMetricV2; return { id: c.id, desc, score: p && p[0] ? p[0].cvssData.baseScore : "", sev: p && p[0] ? (p[0].cvssData.baseSeverity || p[0].baseSeverity || "") : "", published: (c.published || "").slice(0, 10) }; });
-      stat.textContent = d.totalResults + " results" + (list.length < d.totalResults ? " (showing " + list.length + ")" : "");
-      res.innerHTML = `<div class="feed-grid">` + (list.map((c) => `<a class="feed-card" href="https://nvd.nist.gov/vuln/detail/${esc(c.id)}" target="_blank" rel="noopener"><div class="feed-top"><span class="feed-id mono">${esc(c.id)}</span>${c.sev ? `<span class="sev ${esc(String(c.sev).toLowerCase())}">${esc(c.sev)} ${esc(String(c.score))}</span>` : ""}</div><div class="feed-desc">${esc(c.desc)}</div><div class="feed-meta"><span class="muted">${esc(c.published)}</span></div></a>`).join("") || '<p class="muted">no results</p>') + `</div>`;
-    } catch (e) { stat.textContent = e.message; }
-  }
-  $("#cvego").onclick = search;
-  $("#cveq").onkeydown = (e) => { if (e.key === "Enter") search(); };
-}
-
 export function renderCheats(main) {
   const cats = [...new Set(CHEATS.map((c) => c.cat))];
   main.innerHTML = `
@@ -211,19 +166,6 @@ export function renderCheats(main) {
   };
 }
 
-export function renderLearn(main) {
-  main.innerHTML = `
-    <h1 class="pg-h1">Learn &amp; resources</h1>
-    <p class="muted pg-sub">Curated hubs to level up — methodology, labs, payloads, and intel.</p>
-    <div class="res-grid">
-      ${RESOURCES.map((r) => `<a class="res-card" href="${r.url}" target="_blank" rel="noopener">
-        <div class="res-top"><span class="res-name">${esc(r.name)}</span><span class="chip">${esc(r.tag)}</span></div>
-        <div class="res-desc">${esc(r.desc)}</div>
-        <div class="res-link">${esc(r.url.replace(/^https?:\/\//, "").replace(/\/$/, ""))} ↗</div>
-      </a>`).join("")}
-    </div>`;
-}
-
 // ---------- home widgets ----------
 export function homeWidgetsHTML() {
   const done = posLoad();
@@ -235,7 +177,7 @@ export function homeWidgetsHTML() {
     <div class="home-cols">
       <div class="hc-main">
         <div class="panel">
-          <div class="panel-h"><h2 class="pg-h2" style="margin:0">Notable CVEs</h2><button class="link-btn" data-go="threat">View all →</button></div>
+          <div class="panel-h"><h2 class="pg-h2" style="margin:0">Notable CVEs</h2><button class="link-btn" data-go="cvesearch">View all →</button></div>
           <div class="feed-list">
             ${topCves.map((c) => `<a class="feed-row" href="${cveUrl(c.id)}" target="_blank" rel="noopener">
               ${sevBadge(c.sev)}<span class="fr-id mono">${esc(c.id)}</span><span class="fr-name">${esc(c.name)}</span><span class="fr-tag muted">${esc(c.tag)}</span></a>`).join("")}

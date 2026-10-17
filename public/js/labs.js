@@ -198,17 +198,64 @@ const TARGETS = [
   { name: "bWAPP", tag: "100+ bugs · PHP", cmd: "docker run --rm -p 8081:80 raesene/bwapp", url: "http://localhost:8081/install.php", creds: "bee / bug", desc: "A buggy web app with over a hundred vulnerabilities. Visit /install.php once to initialize the database." },
   { name: "Mutillidae II", tag: "OWASP Top 10 · hints", cmd: "docker run --rm -p 8082:80 citizenstig/nowasp", url: "http://localhost:8082", creds: "no login required", desc: "A free, open-source deliberately vulnerable app with built-in hints and multiple difficulty levels." },
 ];
+// Downloadable vulnerable VMs (run in a hypervisor on a host-only network). DVWA and bWAPP
+// are covered by the Docker targets above, and VulnHub is listed once, here.
+const HYPERVISORS = [
+  ["VirtualBox", "Free, cross-platform hypervisor", "download", "https://www.virtualbox.org/wiki/Downloads"],
+  ["VMware Workstation Pro", "Free for personal use", "download", "https://www.vmware.com/products/desktop-hypervisor/workstation-and-fusion"],
+  ["Vagrant", "Needed for Metasploitable 3", "download", "https://developer.hashicorp.com/vagrant/downloads"],
+];
+const VMS = [
+  ["Metasploitable 2", "The classic vulnerable Linux box with dozens of exploitable services", "msfadmin / msfadmin", "https://sourceforge.net/projects/metasploitable/files/Metasploitable2/"],
+  ["Metasploitable 3", "Windows and Linux vulnerable VMs, built with Vagrant", "vagrant / vagrant", "https://github.com/rapid7/metasploitable3"],
+  ["OWASP Broken Web Apps", "A dozen deliberately vulnerable web apps in one VM", "root / owaspbwa", "https://sourceforge.net/projects/owaspbwa/files/"],
+  ["Kioptrix (1-5)", "The beginner boot2root series", "boot2root", "https://www.vulnhub.com/series/kioptrix,8/"],
+  ["Mr-Robot", "TV-themed boot2root CTF box", "boot2root", "https://www.vulnhub.com/entry/mr-robot-1,151/"],
+  ["Basic Pentesting 1", "A gentle first boot2root", "boot2root", "https://www.vulnhub.com/entry/basic-pentesting-1,216/"],
+  ["VulnOS v2", "Web-to-root practice VM", "boot2root", "https://www.vulnhub.com/entry/vulnos-2,147/"],
+  ["DC-1", "Drupal-based boot2root", "boot2root", "https://www.vulnhub.com/entry/dc-1,292/"],
+  ["VulnHub (browse all)", "Hundreds more downloadable vulnerable VMs", "varies", "https://www.vulnhub.com/"],
+];
+// Online practice platforms and bug-bounty programs (external sites, open in a new tab).
+const PLATFORMS = [
+  ["Hack The Box", "Vulnerable machines and challenges, beginner to expert", "practice", "https://www.hackthebox.com/"],
+  ["TryHackMe", "Guided rooms and learning paths for all levels", "practice", "https://tryhackme.com/"],
+  ["PortSwigger Web Security Academy", "Free web security labs", "practice", "https://portswigger.net/web-security"],
+  ["PentesterLab", "Focused exercises on real vulnerabilities", "practice", "https://pentesterlab.com/"],
+  ["OverTheWire", "Classic wargames; start with Bandit", "practice", "https://overthewire.org/wargames/"],
+  ["picoCTF", "Beginner-friendly CTF from CMU", "practice", "https://picoctf.org/"],
+  ["Root-Me", "Hundreds of challenges across all domains", "practice", "https://www.root-me.org/"],
+  ["pwn.college", "Binary exploitation, in depth", "practice", "https://pwn.college/"],
+  ["Exploit Education", "Phoenix / Nebula exploitation VMs", "practice", "https://exploit.education/"],
+  ["HackerOne", "Bug bounty and disclosure platform", "bug bounty", "https://www.hackerone.com/"],
+  ["Bugcrowd", "Crowdsourced security programs", "bug bounty", "https://www.bugcrowd.com/"],
+  ["Intigriti", "European bug bounty platform", "bug bounty", "https://www.intigriti.com/"],
+  ["YesWeHack", "Global bug bounty and VDP platform", "bug bounty", "https://www.yeswehack.com/"],
+  ["Google VRP", "Google's vulnerability reward program", "bug bounty", "https://bughunters.google.com/"],
+  ["HackerOne Hacktivity", "Publicly disclosed reports to learn from", "bug bounty", "https://hackerone.com/hacktivity"],
+  ["disclose.io", "Safe-harbor and VDP standards", "bug bounty", "https://disclose.io/"],
+  ["Bug Bounty Hunter", "Bug-bounty methodology training", "bug bounty", "https://www.bugbountyhunter.com/"],
+];
+const linkCard = ([n, d, meta, u]) => `<a class="arse-card" href="${esc(u)}" target="_blank" rel="noopener"><div class="an">${esc(n)} <span class="ax">&#8599;</span></div><div class="ad">${esc(d)}</div><div class="au">${esc(meta)}</div></a>`;
+
 export function renderTargets(main) {
   main.innerHTML = `
-    <h1 class="pg-h1">Practice targets</h1>
-    <p class="muted pg-sub">Deliberately vulnerable apps to sharpen your skills &mdash; run one locally with Docker, then aim your tools at it. Use only on systems you own.</p>
+    <h1 class="pg-h1">Practice Targets</h1>
+    <p class="muted pg-sub">Where to practise: deliberately vulnerable apps to run with Docker, VMs to download, and online platforms. Use only on systems you own or are authorized to test.</p>
+    <h2 class="pg-h2" style="margin:16px 0 10px">Run locally (Docker)</h2>
     <div class="cs-grid">
       ${TARGETS.map((t) => `<div class="cs-card"><div class="cs-head"><h3>${esc(t.name)}</h3><span class="chip">${esc(t.tag)}</span></div>
         <p class="muted" style="margin:6px 0 9px;font-size:.84rem">${esc(t.desc)}</p>
         ${copyRow("docker run", t.cmd)}
         <div class="muted" style="font-size:.78rem;margin-top:9px">URL <code>${esc(t.url)}</code> &middot; Login <code>${esc(t.creds)}</code></div></div>`).join("")}
     </div>
-    <p class="muted" style="font-size:.78rem;margin-top:14px">Needs Docker (<code>sudo apt install docker.io</code> or Docker Desktop). The desktop app can launch these for you &mdash; and its Agent can stand them up on command.</p>`;
+    <p class="muted" style="font-size:.78rem;margin-top:14px">Needs Docker (<code>sudo apt install docker.io</code> or Docker Desktop). The desktop app can launch these for you &mdash; and its Agent can stand them up on command.</p>
+    <h2 class="pg-h2" style="margin:22px 0 10px">Download a VM</h2>
+    <p class="muted" style="font-size:.82rem;margin:0 0 10px">Get a hypervisor, import the <code>.ova</code>/<code>.vmdk</code> (VirtualBox: File &rarr; Import Appliance), set the network adapter to Host-only and boot. Never expose these machines to the internet.</p>
+    <div class="arse-grid">${HYPERVISORS.map(linkCard).join("")}</div>
+    <div class="arse-grid" style="margin-top:12px">${VMS.map(linkCard).join("")}</div>
+    <h2 class="pg-h2" style="margin:22px 0 10px">Online platforms &amp; bug bounty</h2>
+    <div class="arse-grid">${PLATFORMS.map(linkCard).join("")}</div>`;
   wireCopy(main);
 }
 

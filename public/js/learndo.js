@@ -102,7 +102,7 @@ export function renderLearnDo(main) {
       '<button class="chip" data-sec="learn">Learn Hub</button>' +
       '<button class="chip" data-sec="cyberrange">Cyber Range</button>' +
       '<button class="chip" data-sec="crucible">CRUCIBLE wargame</button>' +
-      '<button class="chip" data-sec="securityquiz">Take a quiz</button>' +
+      '<button class="chip" data-sec="secquiz">Take a quiz</button>' +
       '<button class="chip" data-sec="ai">Ask Darknode AI</button>' +
     '</div>' +
     '<h2 class="pg-h2" style="margin:6px 0 10px">Things to do</h2>' +

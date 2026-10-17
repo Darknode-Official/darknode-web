@@ -48,31 +48,6 @@ const ARSENAL = {
   ],
 };
 
-const TRAINING = {
-  "Learning & practice": [
-    ["Hack The Box", "https://www.hackthebox.com/", "Hands-on machines and labs, beginner to elite"],
-    ["TryHackMe", "https://tryhackme.com/", "Guided rooms and learning paths for all levels"],
-    ["PortSwigger Web Security Academy", "https://portswigger.net/web-security", "Free, world-class web-hacking labs"],
-    ["PentesterLab", "https://pentesterlab.com/", "Focused exercises on real vulnerabilities"],
-    ["VulnHub", "https://www.vulnhub.com/", "Downloadable vulnerable VMs to practice on"],
-    ["OverTheWire", "https://overthewire.org/wargames/", "Classic wargames — start with Bandit"],
-    ["picoCTF", "https://picoctf.org/", "Beginner-friendly CTF from CMU"],
-    ["Root-Me", "https://www.root-me.org/", "Hundreds of challenges across all domains"],
-    ["pwn.college", "https://pwn.college/", "Deep-dive into binary exploitation"],
-    ["Exploit Education", "https://exploit.education/", "Phoenix / Nebula exploitation VMs"],
-  ],
-  "Bug bounty": [
-    ["HackerOne", "https://www.hackerone.com/", "The largest bug bounty and disclosure platform"],
-    ["Bugcrowd", "https://www.bugcrowd.com/", "Crowdsourced security programs"],
-    ["Intigriti", "https://www.intigriti.com/", "European bug bounty platform"],
-    ["YesWeHack", "https://www.yeswehack.com/", "Global bug bounty and VDP platform"],
-    ["disclose.io", "https://disclose.io/", "Safe-harbor and VDP standards"],
-    ["HackerOne Hacktivity", "https://hackerone.com/hacktivity", "Public disclosed reports to learn from"],
-    ["Google VRP", "https://bughunters.google.com/", "Google's vulnerability reward program"],
-    ["Bug Bounty Hunter", "https://www.bugbountyhunter.com/", "Methodology and guided bug-bounty training"],
-  ],
-};
-
 function renderDir(main, title, sub, data) {
   const cats = Object.keys(data);
   main.innerHTML = `
@@ -97,7 +72,6 @@ export function renderArsenal(main) {
 export function renderEngines(main) {
   const engines = [
     { name: "Threat Detection Engine", file: "threat-engine.js", desc: "IOC extraction, DGA domain detection, YARA rule matching, MITRE ATT&CK mapping, beaconing detection, malware classification", lines: 633, category: "Detection" },
-    { name: "Cryptographic Engine", file: "crypto-engine.js", desc: "MD5, SHA-1/256/512, AES-128/256, RSA math, HMAC, XOR/Caesar/Vigenere analysis, JWT decoder, X.509 parser", lines: 833, category: "Crypto" },
     { name: "Forensic Analysis Engine", file: "forensic-engine.js", desc: "PE/ELF binary parser, hex viewer, file signature database, entropy calculator, string extractor, registry hive parser, timestamp converter", lines: 570, category: "Forensics" },
     { name: "Network Analysis Engine", file: "network-engine.js", desc: "PCAP reader, TCP stream reassembly, TLS/DNS parsers, HTTP inspector, subnet calculator, ARP spoof detection, MAC vendor lookup", lines: 566, category: "Network" },
     { name: "Exploit Framework", file: "exploit-framework.js", desc: "45+ reverse shells, shellcode encoder, buffer overflow tools, SQLi/XSS/SSRF/SSTI/XXE payload libraries, JWT attacks, deserialization", lines: 1567, category: "Offensive" },
@@ -109,8 +83,6 @@ export function renderEngines(main) {
     { name: "Malware Analysis Engine", file: "malware-engine.js", desc: "PE/ELF/Mach-O analyzers, API behavior classifier, 70+ packer signatures, 52 anti-analysis techniques, 80+ malware families, YARA rule generator", lines: 1346, category: "Forensics" },
     { name: "OSINT Engine", file: "osint-engine.js", desc: "Email/domain/IP OSINT, 500+ subdomain wordlist, 200+ Google dorks, 35 social media platforms, metadata extractors, dark web patterns", lines: 969, category: "Recon" },
     { name: "APT Defense Engine", file: "apt-defense.js", desc: "80+ real APT groups database, Diamond Model, kill chain coverage, STRIDE threat modeling, DREAD calculator, zero-day detection heuristics", lines: 1299, category: "Defense" },
-    { name: "Threat Hunting Engine", file: "threat-hunt.js", desc: "30+ hunting hypotheses with Splunk/KQL queries, Windows Event ID reference, Sysmon events, Linux audit logs, cloud log reference", lines: 724, category: "Detection" },
-    { name: "Cloud Security Engine", file: "cloud-security.js", desc: "AWS/Azure/GCP attack techniques, IAM policy analyzer, S3/security group checker, Kubernetes pod security, Terraform scanner, compliance mapper", lines: 707, category: "Cloud" },
     { name: "IoT Security Engine", file: "iot-security.js", desc: "MQTT/CoAP/Modbus/DNP3 parsers, ICS/SCADA vulnerabilities, firmware analysis, 100+ default credentials, CAN bus parser, RF band reference", lines: 656, category: "IoT" },
     { name: "Cyber Warfare Defense", file: "cyber-warfare.js", desc: "Nation-state threat actors, 16 critical infrastructure sectors, NIST CSF, election security, power grid/water/telecom protection, STIX/TAXII", lines: 1538, category: "Defense" },
     { name: "Defense Operations", file: "defense-ops.js", desc: "SOC maturity model, alert triage, incident classification, STIX 2.1, vulnerability management, patch prioritization, security metrics/KPIs", lines: 897, category: "Operations" },
@@ -139,8 +111,4 @@ export function renderEngines(main) {
     main.querySelectorAll("#engFilter .chip").forEach(x => x.classList.toggle("on", x === b));
     main.querySelectorAll(".eng-card").forEach(c => { c.style.display = (b.dataset.c === "all" || c.dataset.cat === b.dataset.c) ? "" : "none"; });
   };
-}
-export function renderTraining(main) {
-  const n = Object.values(TRAINING).reduce((a, b) => a + b.length, 0);
-  renderDir(main, "Training", `${n} places to sharpen your skills — hands-on labs, wargames, CTFs, and bug-bounty platforms. Opens in a new tab.`, TRAINING);
 }

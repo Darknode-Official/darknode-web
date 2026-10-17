@@ -1,4 +1,5 @@
-// Threat Modeler — interactive threat modeling, STRIDE/DREAD, CVSS calculators, attack trees, DFDs
+// Threat Modeler — interactive threat modeling, STRIDE/DREAD, PASTA, LINDDUN, CVSS calculators, attack trees, DFDs
+import { THREAT_LIBRARY, STRIDE_KEY, PASTA_STAGES, LINDDUN_CATEGORIES, DFD_TRUST_BOUNDARY_PATTERNS, STRIDE_COMPLIANCE_MAP, SECURITY_REQUIREMENTS_TEMPLATES } from "/js/threat-library-data.js";
 const esc = (s) => String(s != null ? s : "").replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 
@@ -10,96 +11,6 @@ const STRIDE = [
   { id: "I", name: "Information Disclosure", desc: "Exposing information to unauthorized individuals", examples: ["Eavesdropping", "Directory traversal", "Error message leakage", "Metadata exposure", "Side-channel attacks", "Memory dumps", "Backup exposure", "API over-exposure"], mitigations: ["Encryption at rest and in transit", "Access control lists", "Data classification", "Minimal error messages", "Data masking", "DLP tools"] },
   { id: "D", name: "Denial of Service", desc: "Denying or degrading service to users", examples: ["SYN flood", "Application-layer DoS", "Resource exhaustion", "Algorithmic complexity attacks", "Zip bombs", "XML bombs", "ReDoS", "Account lockout abuse"], mitigations: ["Rate limiting", "Load balancing", "CDN/WAF", "Input size limits", "Graceful degradation", "Auto-scaling", "Circuit breakers"] },
   { id: "E", name: "Elevation of Privilege", desc: "Gaining capabilities without proper authorization", examples: ["Buffer overflow exploitation", "SQL injection to admin", "Privilege escalation exploits", "Insecure deserialization", "IDOR", "JWT algorithm confusion", "Kernel exploits", "Container escape"], mitigations: ["Least privilege principle", "Input validation", "Sandboxing", "RBAC/ABAC", "Mandatory access controls", "Regular patching", "Security boundaries"] }
-];
-
-// ── Threat Library (100+ threats) ──
-const THREAT_LIBRARY = [
-  // Spoofing
-  { name: "Credential Stuffing", stride: "S", severity: "High", desc: "Automated login attempts using breached credential pairs", mitigations: ["Rate limiting", "MFA", "Credential breach monitoring", "CAPTCHA"], mitre: "T1110.004" },
-  { name: "Phishing Attack", stride: "S", severity: "High", desc: "Deceptive communications to harvest credentials", mitigations: ["Security awareness training", "Email filtering", "DMARC", "Anti-phishing tools"], mitre: "T1566" },
-  { name: "Session Hijacking", stride: "S", severity: "Critical", desc: "Stealing or predicting valid session tokens", mitigations: ["Secure session management", "HTTPOnly cookies", "Session rotation", "IP binding"], mitre: "T1563" },
-  { name: "OAuth Token Theft", stride: "S", severity: "High", desc: "Stealing OAuth tokens via redirect manipulation", mitigations: ["Strict redirect URI validation", "PKCE", "Token binding", "Short-lived tokens"], mitre: "T1528" },
-  { name: "Kerberos Golden Ticket", stride: "S", severity: "Critical", desc: "Forging Kerberos TGTs with stolen KRBTGT hash", mitigations: ["Rotate KRBTGT regularly", "Privileged access management", "Credential Guard"], mitre: "T1558.001" },
-  { name: "SAML Token Forgery", stride: "S", severity: "Critical", desc: "Forging SAML assertions to impersonate users", mitigations: ["Strong signing keys", "Certificate rotation", "Assertion validation", "MFA"], mitre: "T1606.002" },
-  { name: "ARP Cache Poisoning", stride: "S", severity: "Medium", desc: "Sending fake ARP messages to associate attacker's MAC with target IP", mitigations: ["Static ARP entries", "Dynamic ARP inspection", "802.1X", "Network segmentation"], mitre: "T1557.002" },
-  { name: "DNS Cache Poisoning", stride: "S", severity: "High", desc: "Injecting false DNS records into resolver cache", mitigations: ["DNSSEC", "DNS over HTTPS", "Randomized source ports", "Response rate limiting"], mitre: "T1584.002" },
-  { name: "BGP Hijacking", stride: "S", severity: "Critical", desc: "Announcing false BGP routes to redirect traffic", mitigations: ["RPKI", "BGP monitoring", "Route filtering", "Prefix validation"], mitre: "T1557" },
-  { name: "Rogue Access Point", stride: "S", severity: "High", desc: "Setting up fake WiFi AP to intercept traffic", mitigations: ["WIDS", "802.1X", "VPN enforcement", "Certificate-based auth"], mitre: "T1557" },
-  { name: "SIM Swapping", stride: "S", severity: "High", desc: "Social engineering carrier to transfer phone number", mitigations: ["Non-SMS MFA", "Carrier PIN", "Account alerts", "Hardware tokens"], mitre: "T1078" },
-  { name: "Deepfake Voice/Video", stride: "S", severity: "Medium", desc: "Using AI-generated voice or video to impersonate", mitigations: ["Out-of-band verification", "Challenge-response", "Liveness detection", "Code words"], mitre: "T1598" },
-  // Tampering
-  { name: "SQL Injection", stride: "T", severity: "Critical", desc: "Injecting SQL commands through user input", mitigations: ["Parameterized queries", "ORM usage", "Input validation", "WAF", "Least privilege DB accounts"], mitre: "T1190" },
-  { name: "Cross-Site Scripting (XSS)", stride: "T", severity: "High", desc: "Injecting malicious scripts into web pages", mitigations: ["Output encoding", "CSP", "Input validation", "HTTPOnly cookies", "DOM sanitization"], mitre: "T1059.007" },
-  { name: "Command Injection", stride: "T", severity: "Critical", desc: "Injecting OS commands through application input", mitigations: ["Input validation", "Avoid shell calls", "Parameterized commands", "Least privilege"], mitre: "T1059" },
-  { name: "XML External Entity (XXE)", stride: "T", severity: "High", desc: "Exploiting XML parsers to read files or cause SSRF", mitigations: ["Disable DTDs", "Use JSON", "Input validation", "Patch XML libraries"], mitre: "T1190" },
-  { name: "Deserialization Attack", stride: "T", severity: "Critical", desc: "Exploiting unsafe deserialization to execute code", mitigations: ["Avoid native deserialization", "Input validation", "Integrity checks", "Allowlists"], mitre: "T1190" },
-  { name: "CSRF (Cross-Site Request Forgery)", stride: "T", severity: "Medium", desc: "Tricking authenticated users into making unintended requests", mitigations: ["CSRF tokens", "SameSite cookies", "Re-authentication for sensitive actions", "Referer validation"], mitre: "T1190" },
-  { name: "DLL Injection", stride: "T", severity: "High", desc: "Injecting malicious DLL into running process", mitigations: ["Code signing", "DLL search order hardening", "Process integrity levels", "AppLocker"], mitre: "T1055.001" },
-  { name: "Memory Corruption (Buffer Overflow)", stride: "T", severity: "Critical", desc: "Writing beyond buffer boundaries to control execution", mitigations: ["ASLR", "DEP/NX", "Stack canaries", "Safe languages", "Bounds checking"], mitre: "T1203" },
-  { name: "Supply Chain Compromise", stride: "T", severity: "Critical", desc: "Tampering with software dependencies or build pipeline", mitigations: ["Dependency pinning", "SBOM", "Code signing", "Build reproducibility", "Vendor assessment"], mitre: "T1195" },
-  { name: "Configuration Tampering", stride: "T", severity: "High", desc: "Modifying application or system configuration files", mitigations: ["File integrity monitoring", "Immutable infrastructure", "Access controls", "Configuration management"], mitre: "T1565" },
-  { name: "Firmware Tampering", stride: "T", severity: "Critical", desc: "Modifying device firmware for persistent compromise", mitigations: ["Secure boot", "Firmware signing", "TPM", "Hardware root of trust"], mitre: "T1542" },
-  { name: "Man-in-the-Middle (MITM)", stride: "T", severity: "High", desc: "Intercepting and potentially modifying communications", mitigations: ["TLS everywhere", "Certificate pinning", "HSTS", "Mutual authentication"], mitre: "T1557" },
-  // Repudiation
-  { name: "Log Deletion", stride: "R", severity: "High", desc: "Deleting or modifying audit logs to cover tracks", mitigations: ["Write-once logging", "Remote log server", "Log integrity monitoring", "Privileged access management"], mitre: "T1070.001" },
-  { name: "Timestamp Manipulation", stride: "R", severity: "Medium", desc: "Changing system time to invalidate log entries", mitigations: ["NTP with authentication", "Centralized logging", "Tamper-evident timestamps", "Blockchain anchoring"], mitre: "T1070.006" },
-  { name: "Shared Account Usage", stride: "R", severity: "Medium", desc: "Using shared credentials making attribution impossible", mitigations: ["Individual accounts", "PAM solutions", "Session recording", "MFA per user"], mitre: "T1078" },
-  { name: "Transaction Repudiation", stride: "R", severity: "High", desc: "Denying having performed a financial or data transaction", mitigations: ["Digital signatures", "Audit trails", "Non-repudiation protocols", "Blockchain"], mitre: "T1078" },
-  { name: "Log Injection", stride: "R", severity: "Medium", desc: "Injecting false entries into log files", mitigations: ["Log sanitization", "Structured logging", "Input validation", "Log integrity checks"], mitre: "T1070" },
-  // Information Disclosure
-  { name: "Directory Traversal", stride: "I", severity: "High", desc: "Accessing files outside intended directory via ../ sequences", mitigations: ["Input validation", "Chroot/sandboxing", "Allowlist paths", "Canonicalization"], mitre: "T1083" },
-  { name: "Server-Side Request Forgery (SSRF)", stride: "I", severity: "High", desc: "Making server request internal resources", mitigations: ["URL validation", "Network segmentation", "Allowlist destinations", "Disable redirects"], mitre: "T1190" },
-  { name: "Verbose Error Messages", stride: "I", severity: "Low", desc: "Exposing stack traces, versions, or paths in errors", mitigations: ["Custom error pages", "Error handling framework", "Remove debug mode", "Log errors server-side"], mitre: "T1592" },
-  { name: "Metadata Exposure", stride: "I", severity: "Medium", desc: "Leaking sensitive metadata in documents, images, or API responses", mitigations: ["Metadata stripping", "Response filtering", "Data classification", "API field selection"], mitre: "T1592" },
-  { name: "Side-Channel Attack", stride: "I", severity: "High", desc: "Extracting information via timing, power, or electromagnetic emissions", mitigations: ["Constant-time algorithms", "Noise injection", "Physical shielding", "Cache partitioning"], mitre: "T1499" },
-  { name: "Cloud Storage Misconfiguration", stride: "I", severity: "Critical", desc: "Publicly accessible S3 buckets, blobs, or GCS objects", mitigations: ["Block public access", "Bucket policies", "Cloud security posture management", "Regular audits"], mitre: "T1530" },
-  { name: "Insecure API Exposure", stride: "I", severity: "High", desc: "API endpoints exposing more data than necessary", mitigations: ["API gateway", "Field-level authorization", "Rate limiting", "Schema validation"], mitre: "T1190" },
-  { name: "Cleartext Credential Storage", stride: "I", severity: "Critical", desc: "Storing passwords or keys in plaintext", mitigations: ["Bcrypt/Argon2 hashing", "Secrets management", "Encryption at rest", "Key rotation"], mitre: "T1552" },
-  { name: "Memory Disclosure", stride: "I", severity: "High", desc: "Reading uninitialized memory to extract sensitive data (Heartbleed-style)", mitigations: ["Memory-safe languages", "Bounds checking", "Memory sanitizers", "Patching"], mitre: "T1005" },
-  { name: "DNS Zone Transfer", stride: "I", severity: "Medium", desc: "Unauthorized AXFR query exposing all DNS records", mitigations: ["Restrict zone transfers", "TSIG authentication", "Split-horizon DNS", "Regular audits"], mitre: "T1590.002" },
-  // Denial of Service
-  { name: "Volumetric DDoS", stride: "D", severity: "High", desc: "Overwhelming bandwidth with massive traffic volume", mitigations: ["CDN/DDoS mitigation", "Rate limiting", "Traffic scrubbing", "Anycast routing"], mitre: "T1498" },
-  { name: "Application-Layer DoS", stride: "D", severity: "High", desc: "Exhausting application resources with crafted requests", mitigations: ["Rate limiting", "Request validation", "Resource quotas", "WAF", "Circuit breakers"], mitre: "T1499" },
-  { name: "Slowloris Attack", stride: "D", severity: "Medium", desc: "Keeping many connections open slowly to exhaust server resources", mitigations: ["Connection timeouts", "Reverse proxy", "Connection limits", "mod_reqtimeout"], mitre: "T1499.001" },
-  { name: "ReDoS (Regular Expression DoS)", stride: "D", severity: "Medium", desc: "Crafting input that causes catastrophic regex backtracking", mitigations: ["Regex review", "Timeout on regex", "Non-backtracking engines", "Input length limits"], mitre: "T1499.004" },
-  { name: "XML Bomb (Billion Laughs)", stride: "D", severity: "High", desc: "Exponentially expanding XML entity references", mitigations: ["Disable DTDs", "Entity expansion limits", "Use JSON", "Input size limits"], mitre: "T1499.004" },
-  { name: "Hash Collision DoS", stride: "D", severity: "Medium", desc: "Crafting inputs with same hash to degrade hash table performance", mitigations: ["Randomized hashing", "SipHash", "Input limits", "Alternative data structures"], mitre: "T1499.004" },
-  { name: "Resource Exhaustion", stride: "D", severity: "High", desc: "Consuming CPU, memory, disk, or file descriptors", mitigations: ["Resource quotas", "Monitoring", "Auto-scaling", "Graceful degradation", "Container limits"], mitre: "T1499.001" },
-  { name: "Account Lockout Abuse", stride: "D", severity: "Medium", desc: "Intentionally locking out legitimate user accounts", mitigations: ["Progressive delays", "CAPTCHA", "IP-based lockout", "Soft lockout"], mitre: "T1499" },
-  // Elevation of Privilege
-  { name: "Privilege Escalation via SUID", stride: "E", severity: "High", desc: "Exploiting SUID binaries to gain root privileges", mitigations: ["Minimize SUID binaries", "Regular audit", "AppArmor/SELinux", "Capabilities"], mitre: "T1548.001" },
-  { name: "Container Escape", stride: "E", severity: "Critical", desc: "Breaking out of container to access host system", mitigations: ["Rootless containers", "Seccomp profiles", "AppArmor", "Minimal images", "No privileged mode"], mitre: "T1611" },
-  { name: "IDOR (Insecure Direct Object Reference)", stride: "E", severity: "High", desc: "Accessing objects by manipulating identifiers without authorization", mitigations: ["Authorization checks", "Indirect references", "RBAC", "Object-level permissions"], mitre: "T1190" },
-  { name: "JWT Algorithm Confusion", stride: "E", severity: "Critical", desc: "Changing JWT algorithm from RS256 to HS256 using public key as secret", mitigations: ["Explicit algorithm validation", "Separate key stores", "Library updates", "Algorithm allowlist"], mitre: "T1190" },
-  { name: "Kernel Exploit", stride: "E", severity: "Critical", desc: "Exploiting kernel vulnerability for root access", mitigations: ["Regular patching", "Kernel hardening", "Grsecurity/PaX", "Minimal kernel modules", "Live patching"], mitre: "T1068" },
-  { name: "Token Impersonation", stride: "E", severity: "High", desc: "Stealing and reusing Windows access tokens", mitigations: ["Credential Guard", "Protected processes", "Least privilege", "Token filtering"], mitre: "T1134" },
-  { name: "PATH Hijacking", stride: "E", severity: "Medium", desc: "Placing malicious binary in a directory searched before the legitimate one", mitigations: ["Absolute paths", "Secure PATH order", "File integrity monitoring", "Least privilege"], mitre: "T1574.007" },
-  { name: "Sudo Misconfiguration", stride: "E", severity: "High", desc: "Exploiting overly permissive sudo rules", mitigations: ["Minimal sudo rules", "NOEXEC", "Regular audit", "Avoid wildcards", "Use doas"], mitre: "T1548.003" },
-  { name: "Service Account Abuse", stride: "E", severity: "High", desc: "Leveraging over-privileged service accounts", mitigations: ["Least privilege", "Managed identities", "Key rotation", "Workload identity"], mitre: "T1078.004" },
-  { name: "Insecure File Upload", stride: "E", severity: "Critical", desc: "Uploading executable files through file upload functionality", mitigations: ["Content-type validation", "File extension allowlist", "Separate storage domain", "Antivirus scanning"], mitre: "T1190" },
-  { name: "Race Condition", stride: "E", severity: "High", desc: "Exploiting time-of-check to time-of-use (TOCTOU) gaps", mitigations: ["Atomic operations", "Locks/mutexes", "Idempotency", "Sequential processing"], mitre: "T1068" },
-  { name: "Prototype Pollution", stride: "E", severity: "High", desc: "Modifying JavaScript Object prototype to affect all objects", mitigations: ["Object.freeze(prototype)", "Input validation", "Map instead of Object", "Schema validation"], mitre: "T1059.007" },
-  // Additional cross-category threats
-  { name: "Insider Threat", stride: "E", severity: "High", desc: "Malicious or negligent actions by authorized insiders", mitigations: ["Behavioral analytics", "DLP", "Least privilege", "Separation of duties", "Monitoring"], mitre: "T1078" },
-  { name: "Zero-Day Exploitation", stride: "T", severity: "Critical", desc: "Exploiting unknown vulnerabilities with no available patch", mitigations: ["Defense in depth", "Behavioral detection", "Network segmentation", "Virtual patching", "Bug bounty programs"], mitre: "T1203" },
-  { name: "Cryptojacking", stride: "D", severity: "Medium", desc: "Unauthorized use of computing resources for cryptocurrency mining", mitigations: ["Resource monitoring", "Script blocking", "EDR", "Container resource limits"], mitre: "T1496" },
-  { name: "Ransomware", stride: "T", severity: "Critical", desc: "Encrypting data and demanding payment for decryption", mitigations: ["Offline backups", "EDR/XDR", "Network segmentation", "Email filtering", "Patch management"], mitre: "T1486" },
-  { name: "Watering Hole Attack", stride: "T", severity: "High", desc: "Compromising websites frequently visited by targets", mitigations: ["Browser isolation", "Web filtering", "Patch management", "Network monitoring"], mitre: "T1189" },
-  { name: "Typosquatting", stride: "S", severity: "Medium", desc: "Registering domains similar to legitimate ones", mitigations: ["Domain monitoring", "Defensive registrations", "User awareness", "Certificate monitoring"], mitre: "T1583.001" },
-  { name: "Dependency Confusion", stride: "T", severity: "High", desc: "Publishing malicious packages with internal package names", mitigations: ["Scoped registries", "Package pinning", "Private registry priority", "SBOM monitoring"], mitre: "T1195.001" },
-  { name: "API Key Leakage", stride: "I", severity: "High", desc: "Accidentally exposing API keys in repositories or logs", mitigations: ["Secret scanning", "Environment variables", "Key rotation", "Vault solutions", ".gitignore"], mitre: "T1552.004" },
-  { name: "Subdomain Takeover", stride: "S", severity: "High", desc: "Claiming dangling DNS records pointing to deprovisioned services", mitigations: ["DNS record audit", "Remove stale CNAMEs", "Monitoring", "Cloud resource management"], mitre: "T1584.001" },
-  { name: "GraphQL Introspection Abuse", stride: "I", severity: "Medium", desc: "Using introspection queries to map entire API schema", mitigations: ["Disable introspection in production", "Query depth limiting", "Field-level auth", "Rate limiting"], mitre: "T1190" },
-  { name: "WebSocket Hijacking", stride: "T", severity: "High", desc: "Cross-site WebSocket hijacking via missing origin checks", mitigations: ["Origin validation", "Authentication tokens", "CSP", "Same-site cookies"], mitre: "T1190" },
-  { name: "Cache Poisoning", stride: "T", severity: "High", desc: "Injecting malicious content into web caches", mitigations: ["Cache key normalization", "Vary headers", "Input validation", "Cache segmentation"], mitre: "T1557" },
-  { name: "HTTP Request Smuggling", stride: "T", severity: "Critical", desc: "Exploiting discrepancies between front-end and back-end HTTP parsing", mitigations: ["Normalize HTTP parsing", "Disable connection reuse", "HTTP/2 end-to-end", "WAF rules"], mitre: "T1190" },
-  { name: "Server-Side Template Injection", stride: "T", severity: "Critical", desc: "Injecting template directives for remote code execution", mitigations: ["Sandboxed template engines", "Input validation", "Logic-less templates", "WAF"], mitre: "T1190" },
-  { name: "Mass Assignment", stride: "E", severity: "High", desc: "Binding user input to internal object properties without filtering", mitigations: ["Allowlist fields", "DTOs", "Input validation", "Schema enforcement"], mitre: "T1190" },
-  { name: "Broken Access Control", stride: "E", severity: "Critical", desc: "Missing or inadequate authorization checks on resources", mitigations: ["Deny by default", "Authorization framework", "Automated testing", "RBAC/ABAC"], mitre: "T1078" },
-  { name: "Credential Harvesting via Keylogger", stride: "I", severity: "High", desc: "Capturing keystrokes to steal credentials", mitigations: ["EDR", "Virtual keyboards", "MFA", "Behavioral analysis"], mitre: "T1056.001" },
-  { name: "Data Exfiltration via DNS", stride: "I", severity: "High", desc: "Tunneling stolen data through DNS queries", mitigations: ["DNS monitoring", "DNS filtering", "Query length analysis", "DNS over HTTPS blocking"], mitre: "T1048.003" },
-  { name: "Clipboard Hijacking", stride: "T", severity: "Medium", desc: "Replacing clipboard contents (e.g., cryptocurrency addresses)", mitigations: ["Clipboard monitoring", "Visual verification", "EDR", "Browser isolation"], mitre: "T1115" },
-  { name: "Bluetooth Eavesdropping", stride: "I", severity: "Medium", desc: "Intercepting Bluetooth communications", mitigations: ["BLE encryption", "Pairing verification", "Disable when not in use", "Short range"], mitre: "T1040" },
 ];
 
 // ── CVSS v3.1 Calculator Data ──
@@ -180,8 +91,11 @@ export function renderThreatModeler(main) {
   var tabs = [
     { id: "stride", label: "STRIDE Analysis" },
     { id: "dread", label: "DREAD Scoring" },
+    { id: "pasta", label: "PASTA" },
+    { id: "linddun", label: "LINDDUN Privacy" },
     { id: "cvss", label: "CVSS Calculator" },
     { id: "threats", label: "Threat Library" },
+    { id: "requirements", label: "Security Requirements" },
     { id: "assets", label: "Asset Inventory" },
     { id: "risk", label: "Risk Matrix" },
     { id: "attacktree", label: "Attack Trees" },
@@ -197,7 +111,7 @@ export function renderThreatModeler(main) {
 
   main.innerHTML =
     '<h1 class="pg-h1">Threat Modeler</h1>' +
-    '<p class="muted pg-sub">Interactive threat modeling — STRIDE, DREAD, CVSS, attack trees, data flow diagrams, and compliance mapping.</p>' +
+    '<p class="muted pg-sub">Interactive threat modeling — STRIDE, DREAD, PASTA, LINDDUN privacy, CVSS, a CWE-tagged threat library, security requirements, attack trees, data flow diagrams, and compliance mapping.</p>' +
     '<div class="cs-filter" id="tm-tabs">' + tabBtns + '</div>' +
     '<div id="tm-content" style="margin-top:16px"></div>';
 
@@ -205,10 +119,14 @@ export function renderThreatModeler(main) {
 
   function showTab(id) {
     main.querySelectorAll("#tm-tabs .chip").forEach(function(b) { b.classList.toggle("on", b.dataset.tab === id); });
+    content.onchange = content.oninput = null; // PASTA/LINDDUN delegate on the container; don't leak into other tabs
     if (id === "stride") renderSTRIDE(content);
     else if (id === "dread") renderDREAD(content);
+    else if (id === "pasta") renderPASTA(content);
+    else if (id === "linddun") renderLINDDUN(content);
     else if (id === "cvss") renderCVSS(content);
     else if (id === "threats") renderThreats(content);
+    else if (id === "requirements") renderRequirements(content, showTab);
     else if (id === "assets") renderAssets(content);
     else if (id === "risk") renderRisk(content);
     else if (id === "attacktree") renderAttackTree(content);
@@ -442,10 +360,12 @@ function renderThreats(el) {
 
   el.innerHTML =
     '<h2 class="pg-h2">Threat Library</h2>' +
-    '<p class="muted" style="margin-bottom:16px">' + THREAT_LIBRARY.length + ' threats mapped to STRIDE categories with mitigations and MITRE ATT&CK references.</p>' +
+    '<p class="muted" style="margin-bottom:16px">' + THREAT_LIBRARY.length + ' threats mapped to STRIDE categories, ' + THREAT_LIBRARY.filter(function(t) { return t.cwe; }).length + ' of them tagged with a CWE weakness, with mitigations and MITRE ATT&CK references. Tick threats that apply to your system to generate Security Requirements.</p>' +
     filterHTML +
+    '<div id="tl-count" class="muted" style="font-size:.78rem;margin-bottom:8px"></div>' +
     '<div id="tl-list"></div>';
 
+  var selected = loadReqSelection();
   function renderList() {
     var cat = el.querySelector("#tl-cat").value;
     var sev = el.querySelector("#tl-sev").value;
@@ -453,12 +373,14 @@ function renderThreats(el) {
     var filtered = THREAT_LIBRARY.filter(function(t) {
       if (cat !== "All" && t.stride !== cat) return false;
       if (sev !== "All" && t.severity !== sev) return false;
-      if (search && t.name.toLowerCase().indexOf(search) < 0 && t.desc.toLowerCase().indexOf(search) < 0) return false;
+      if (search && (t.id + " " + t.name + " " + t.desc + " " + t.cwe + " " + t.mitre).toLowerCase().indexOf(search) < 0) return false;
       return true;
     });
+    el.querySelector("#tl-count").textContent = filtered.length + " shown, " + Object.keys(selected).length + " selected for requirements";
     var sevColor = { Critical: "#b71c1c", High: "#f44336", Medium: "#ff9800", Low: "#4caf50" };
     var cards = filtered.map(function(t) {
-      var mits = t.mitigations.map(function(m) { return '<span style="display:inline-block;padding:2px 8px;background:var(--bg);border:1px solid var(--line);border-radius:2px;font-size:.72rem;margin:2px">' + esc(m) + '</span>'; }).join("");
+      var mits = t.mitigations.map(function(m) { return '<span style="display:inline-block;padding:2px 8px;background:var(--bg);border:1px solid var(--line);border-radius:2px;font-size:.72rem;margin:2px;max-width:100%;white-space:normal">' + esc(m) + '</span>'; }).join("");
+      var refs = [t.id, t.cwe, t.mitre ? "MITRE " + t.mitre : ""].filter(Boolean).join(" · ");
       return '<div class="arse-card" style="cursor:default;margin-bottom:8px">' +
         '<div class="an" style="display:flex;align-items:center;gap:8px">' +
           '<span style="background:var(--acc);color:var(--on-acc,#fff);padding:1px 6px;border-radius:2px;font-size:.72rem;font-weight:700">' + t.stride + '</span>' +
@@ -466,12 +388,22 @@ function renderThreats(el) {
           '<span style="margin-left:auto;color:' + (sevColor[t.severity] || "var(--mut)") + ';font-size:.75rem;font-weight:600">' + esc(t.severity) + '</span>' +
         '</div>' +
         '<div class="ad" style="margin:6px 0">' + esc(t.desc) + '</div>' +
+        (t.example ? '<div class="muted" style="font-size:.75rem;margin:0 0 6px">Example: ' + esc(t.example) + '</div>' : '') +
         '<div style="margin-bottom:4px">' + mits + '</div>' +
-        (t.mitre ? '<span style="font-size:.7rem;color:var(--mut);font-family:var(--mono,monospace)">MITRE: ' + esc(t.mitre) + '</span>' : '') +
+        '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">' +
+          '<span style="font-size:.7rem;color:var(--mut);font-family:var(--mono,monospace)">' + esc(refs) + '</span>' +
+          '<label style="margin-left:auto;display:flex;align-items:center;gap:6px;font-size:.72rem;cursor:pointer"><input type="checkbox" data-req="' + esc(t.id) + '"' + (selected[t.id] ? " checked" : "") + '> Applies to my system</label>' +
+        '</div>' +
       '</div>';
     }).join("");
     el.querySelector("#tl-list").innerHTML = filtered.length ? cards : '<p class="muted">No threats match the current filters.</p>';
   }
+  el.querySelector("#tl-list").onchange = function(e) {
+    var cb = e.target.closest("[data-req]"); if (!cb) return;
+    if (cb.checked) selected[cb.dataset.req] = true; else delete selected[cb.dataset.req];
+    saveReqSelection(selected);
+    el.querySelector("#tl-count").textContent = el.querySelector("#tl-count").textContent.replace(/\d+ selected/, Object.keys(selected).length + " selected");
+  };
   el.querySelector("#tl-cat").onchange = renderList;
   el.querySelector("#tl-sev").onchange = renderList;
   el.querySelector("#tl-search").oninput = renderList;
@@ -613,7 +545,7 @@ function renderRisk(el) {
 // ── Attack Tree Tab ──
 function renderAttackTree(el) {
   el.innerHTML =
-    '<h2 class="pg-h2">Attack Tree Builder</h2>' +
+    '<h2 class="pg-h2">Attack Trees</h2>' +
     '<p class="muted" style="margin-bottom:16px">Model attack scenarios as trees. The root is the attacker\'s goal; branches are sub-goals connected by AND/OR gates.</p>' +
     '<div style="display:flex;gap:8px;margin-bottom:12px">' +
       '<input id="at-root" placeholder="Root goal (e.g., Steal customer data)" value="" style="flex:1;padding:6px 10px;background:var(--bg);border:1px solid var(--line);color:var(--txt);border-radius:2px">' +
@@ -724,7 +656,10 @@ function renderDFD(el) {
       '<span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:16px;height:16px;border:2px solid var(--acc);border-radius:2px"></span> Process</span>' +
       '<span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:16px;height:6px;border-top:2px solid #4caf50;border-bottom:2px solid #4caf50"></span> Data Store</span>' +
       '<span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:16px;height:16px;border:2px dashed #f44336;border-radius:2px"></span> Trust Boundary</span>' +
-    '</div>';
+    '</div>' +
+    '<details style="margin-top:16px"><summary style="cursor:pointer;font-weight:600;font-size:.85rem">Common trust boundaries (' + DFD_TRUST_BOUNDARY_PATTERNS.length + ')</summary>' +
+      DFD_TRUST_BOUNDARY_PATTERNS.map(function(p) { return '<div class="arse-card" style="cursor:default;margin-top:8px"><div class="an">' + esc(p.name) + '</div><div class="ad" style="margin-top:4px">' + esc(p.description) + '</div></div>'; }).join("") +
+    '</details>';
 
   var elements = [];
   var flows = [];
@@ -840,7 +775,146 @@ function renderCompliance(el) {
   el.innerHTML =
     '<h2 class="pg-h2">Compliance Framework Mapping</h2>' +
     '<p class="muted" style="margin-bottom:16px">Map identified threats to compliance framework controls. Reference for NIST CSF, ISO 27001, OWASP, CIS, and PCI DSS.</p>' +
+    '<h3 style="font-size:.95rem;margin:0 0 8px">STRIDE to control mapping</h3>' +
+    '<p class="muted" style="font-size:.8rem;margin-bottom:10px">The NIST SP 800-53, ISO/IEC 27001:2022 Annex A and CIS Controls v8 controls that most directly mitigate each STRIDE category.</p>' +
+    STRIDE.map(function(s) {
+      var m = STRIDE_COMPLIANCE_MAP[STRIDE_KEY[s.id]]; if (!m) return "";
+      var row = function(label, ids) { return '<div style="font-size:.75rem;margin-top:4px"><strong>' + label + ':</strong> <span style="font-family:var(--mono,monospace)">' + esc(ids.join(", ")) + '</span></div>'; };
+      return '<div class="arse-card" style="cursor:default;margin-bottom:8px"><div class="an">' + s.id + ' - ' + esc(s.name) + '</div><div class="ad" style="margin:4px 0">' + esc(m.rationale) + '</div>' +
+        row("NIST 800-53", m.nist) + row("ISO 27001", m.iso) + row("CIS v8", m.cis) + '</div>';
+    }).join("") +
+    '<h3 style="font-size:.95rem;margin:16px 0 8px">Framework control families</h3>' +
     frameworkCards;
+}
+
+// ── Shared state for the ported tabs (persisted like the rest of the modeler) ──
+function loadJSON(key, dflt) { try { var v = JSON.parse(localStorage.getItem(key)); return v && typeof v === "object" ? v : dflt; } catch (_) { return dflt; } }
+function saveJSON(key, v) { try { localStorage.setItem(key, JSON.stringify(v)); } catch (_) {} }
+function loadReqSelection() { var a = loadJSON("tm_req_selected", []); var o = {}; (Array.isArray(a) ? a : []).forEach(function(id) { o[id] = true; }); return o; }
+function saveReqSelection(o) { saveJSON("tm_req_selected", Object.keys(o)); }
+var CAT_NAME = { spoofing: "Spoofing", tampering: "Tampering", repudiation: "Repudiation", information_disclosure: "Information Disclosure", denial_of_service: "Denial of Service", elevation_of_privilege: "Elevation of Privilege" };
+var tmInput = "width:100%;box-sizing:border-box;padding:6px 10px;background:var(--bg);border:1px solid var(--line);color:var(--txt);border-radius:2px;font:inherit;font-size:.8rem";
+
+// Selected threats -> the requirement templates for every STRIDE category they touch.
+function generateRequirements() {
+  var sel = loadReqSelection();
+  var threats = THREAT_LIBRARY.filter(function(t) { return sel[t.id]; });
+  var cats = []; threats.forEach(function(t) { var k = STRIDE_KEY[t.stride]; if (cats.indexOf(k) < 0) cats.push(k); });
+  var reqs = [];
+  cats.forEach(function(k) { (SECURITY_REQUIREMENTS_TEMPLATES[k] || []).forEach(function(r) { reqs.push({ id: r.id, requirement: r.requirement, priority: r.priority, verification: r.verification, category: k }); }); });
+  return { threats: threats, reqs: reqs };
+}
+
+// ── PASTA Tab ──
+function renderPASTA(el) {
+  var st = loadJSON("tm_pasta", {});
+  var done = PASTA_STAGES.filter(function(s) { return st[s.stage] && st[s.stage].done; }).length;
+  el.innerHTML =
+    '<h2 class="pg-h2">PASTA: Process for Attack Simulation and Threat Analysis</h2>' +
+    '<p class="muted" style="margin-bottom:8px">A seven-stage, risk-centric methodology that starts and ends with business objectives, so every technical finding is translated into business risk. Work through the stages, record your findings per stage, and they are included in the Report.</p>' +
+    '<p id="pasta-progress" style="font-size:.8rem;margin-bottom:12px"><strong>' + done + '/' + PASTA_STAGES.length + '</strong> stages complete</p>' +
+    PASTA_STAGES.map(function(s) {
+      var v = st[s.stage] || {};
+      return '<div class="arse-card" style="cursor:default;margin-bottom:12px">' +
+        '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">' +
+          '<span style="min-width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;background:var(--acc);color:var(--on-acc,#fff);font-weight:800;border-radius:2px">' + s.stage + '</span>' +
+          '<span style="font-weight:700">' + esc(s.name) + '</span><span class="muted" style="font-size:.75rem">(' + esc(s.abbr) + ')</span>' +
+          '<label style="margin-left:auto;display:flex;align-items:center;gap:6px;font-size:.75rem;cursor:pointer"><input type="checkbox" data-pdone="' + s.stage + '"' + (v.done ? " checked" : "") + '> Complete</label>' +
+        '</div>' +
+        '<div style="font-size:.82rem;font-weight:600;margin:8px 0">' + esc(s.objective) + '</div>' +
+        '<details><summary style="cursor:pointer;font-size:.78rem;color:var(--acc)">Guidance, activities and deliverables</summary>' +
+          s.narrative.split("\n\n").map(function(p) { return '<p style="font-size:.8rem;line-height:1.6;margin:8px 0">' + esc(p) + '</p>'; }).join("") +
+          '<div style="font-weight:600;font-size:.8rem;margin-top:8px">Key activities</div><ul style="margin:4px 0 0 18px;font-size:.78rem;line-height:1.6">' + s.activities.map(function(a) { return '<li>' + esc(a) + '</li>'; }).join("") + '</ul>' +
+          '<div style="font-weight:600;font-size:.8rem;margin-top:8px">Deliverables</div><ul style="margin:4px 0 0 18px;font-size:.78rem;line-height:1.6">' + s.deliverables.map(function(d) { return '<li>' + esc(d) + '</li>'; }).join("") + '</ul>' +
+        '</details>' +
+        '<textarea data-pnote="' + s.stage + '" rows="3" placeholder="Findings for this stage" style="' + tmInput + ';margin-top:8px;resize:vertical">' + esc(v.notes || "") + '</textarea>' +
+      '</div>';
+    }).join("");
+  function save() {
+    el.querySelectorAll("[data-pdone]").forEach(function(cb) { var k = cb.dataset.pdone; st[k] = st[k] || {}; st[k].done = cb.checked; });
+    el.querySelectorAll("[data-pnote]").forEach(function(ta) { var k = ta.dataset.pnote; st[k] = st[k] || {}; st[k].notes = ta.value; });
+    saveJSON("tm_pasta", st);
+    var n = PASTA_STAGES.filter(function(s) { return st[s.stage] && st[s.stage].done; }).length;
+    el.querySelector("#pasta-progress").innerHTML = '<strong>' + n + '/' + PASTA_STAGES.length + '</strong> stages complete';
+  }
+  el.onchange = save; el.oninput = function(e) { if (e.target.matches("[data-pnote]")) save(); };
+}
+
+// ── LINDDUN Tab ──
+function renderLINDDUN(el) {
+  var st = loadJSON("tm_linddun", {});
+  function paint() {
+    var done = LINDDUN_CATEGORIES.filter(function(c) { return st[c.key] && st[c.key].assessed; }).length;
+    el.innerHTML =
+      '<h2 class="pg-h2">LINDDUN Privacy Threat Modeling</h2>' +
+      '<p class="muted" style="margin-bottom:8px">LINDDUN covers privacy threats that STRIDE does not: linking, identifying, non-repudiation, detecting, data disclosure, unawareness and non-compliance. Use it whenever the system collects, processes or stores personal data. Mark each category assessed and note where it applies.</p>' +
+      '<p style="font-size:.8rem;margin-bottom:12px"><strong>' + done + '/' + LINDDUN_CATEGORIES.length + '</strong> categories assessed</p>' +
+      LINDDUN_CATEGORIES.map(function(c) {
+        var v = st[c.key] || {};
+        return '<div class="arse-card" style="cursor:default;margin-bottom:12px">' +
+          '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">' +
+            '<span style="min-width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;background:var(--acc);color:var(--on-acc,#fff);font-weight:800;border-radius:2px">' + esc(c.letter) + '</span>' +
+            '<span style="font-weight:700">' + esc(c.name) + '</span>' +
+            '<label style="margin-left:auto;display:flex;align-items:center;gap:6px;font-size:.75rem;cursor:pointer"><input type="checkbox" data-lassess="' + esc(c.key) + '"' + (v.assessed ? " checked" : "") + '> Assessed</label>' +
+          '</div>' +
+          '<div class="muted" style="font-size:.8rem;font-style:italic;margin:6px 0">' + esc(c.tagline) + '</div>' +
+          '<details><summary style="cursor:pointer;font-size:.78rem;color:var(--acc)">Description, examples and mitigations</summary>' +
+            '<p style="font-size:.8rem;line-height:1.6;margin:8px 0">' + esc(c.description) + '</p>' +
+            '<div style="font-weight:600;font-size:.8rem">Examples</div><ul style="margin:4px 0 0 18px;font-size:.78rem;line-height:1.6">' + c.examples.map(function(x) { return '<li>' + esc(x) + '</li>'; }).join("") + '</ul>' +
+            '<div style="font-weight:600;font-size:.8rem;margin-top:8px">Mitigations</div><ul style="margin:4px 0 0 18px;font-size:.78rem;line-height:1.6">' + c.mitigations.map(function(x) { return '<li>' + esc(x) + '</li>'; }).join("") + '</ul>' +
+          '</details>' +
+          '<textarea data-lnote="' + esc(c.key) + '" rows="2" placeholder="Where this applies, and how it is handled" style="' + tmInput + ';margin-top:8px;resize:vertical">' + esc(v.notes || "") + '</textarea>' +
+        '</div>';
+      }).join("");
+  }
+  paint();
+  el.onchange = function(e) {
+    var cb = e.target.closest("[data-lassess]"); if (!cb) return;
+    var k = cb.dataset.lassess; st[k] = st[k] || {}; st[k].assessed = cb.checked; saveJSON("tm_linddun", st); paint();
+  };
+  el.oninput = function(e) {
+    var ta = e.target.closest("[data-lnote]"); if (!ta) return;
+    var k = ta.dataset.lnote; st[k] = st[k] || {}; st[k].notes = ta.value; saveJSON("tm_linddun", st);
+  };
+}
+
+// ── Security Requirements Tab ──
+function renderRequirements(el, showTab) {
+  var g = generateRequirements();
+  var csv = function() {
+    var q = function(v) { return '"' + String(v).replace(/"/g, '""') + '"'; };
+    return ["ID,Category,Requirement,Priority,Verification"].concat(g.reqs.map(function(r) { return [r.id, CAT_NAME[r.category], r.requirement, r.priority, r.verification].map(q).join(","); })).join("\n");
+  };
+  var th = 'style="text-align:left;padding:6px;border-bottom:1px solid var(--line)"', td = 'style="padding:6px;border-bottom:1px solid var(--line);vertical-align:top"';
+  el.innerHTML =
+    '<h2 class="pg-h2">Security Requirements</h2>' +
+    '<p class="muted" style="margin-bottom:16px">Concrete, testable requirements generated from the threats you ticked in the Threat Library, grouped by STRIDE category, each with a suggested verification method so it can be tracked through to acceptance testing.</p>' +
+    (!g.threats.length ?
+      '<div class="arse-card" style="cursor:default">No threats selected yet. Open the Threat Library, tick "Applies to my system" on the threats that are relevant, then come back here.<div style="margin-top:10px"><button class="btn" id="rq-goto">Open Threat Library</button></div></div>' :
+      '<div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px;font-size:.82rem">' +
+        '<span><strong>' + g.threats.length + '</strong> threats selected</span><span><strong>' + g.reqs.length + '</strong> requirements</span>' +
+        '<span><strong>' + g.reqs.filter(function(r) { return r.priority === "Critical"; }).length + '</strong> critical</span><span><strong>' + g.reqs.filter(function(r) { return r.priority === "High"; }).length + '</strong> high</span>' +
+      '</div>' +
+      '<div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap"><button class="btn" id="rq-csv">Export CSV</button><button class="btn" id="rq-copy">Copy as Markdown</button><button class="btn" id="rq-clear">Clear selection</button></div>' +
+      '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.78rem"><thead><tr><th ' + th + '>ID</th><th ' + th + '>Category</th><th ' + th + '>Requirement</th><th ' + th + '>Priority</th><th ' + th + '>Verification</th></tr></thead><tbody>' +
+        g.reqs.map(function(r) { return '<tr><td ' + td + '><span style="font-family:var(--mono,monospace)">' + esc(r.id) + '</span></td><td ' + td + '>' + esc(CAT_NAME[r.category]) + '</td><td ' + td + '>' + esc(r.requirement) + '</td><td ' + td + '>' + esc(r.priority) + '</td><td ' + td + '>' + esc(r.verification) + '</td></tr>'; }).join("") +
+      '</tbody></table></div>' +
+      '<h3 style="font-size:.9rem;margin:16px 0 6px">Selected threats</h3>' +
+      '<ul style="margin:0 0 0 18px;font-size:.78rem;line-height:1.6">' + g.threats.map(function(t) { return '<li><span style="font-family:var(--mono,monospace)">' + esc(t.id) + '</span> [' + t.stride + '] ' + esc(t.name) + (t.cwe ? ' (' + esc(t.cwe) + ')' : '') + '</li>'; }).join("") + '</ul>');
+  var go = el.querySelector("#rq-goto"); if (go) go.onclick = function() { showTab("threats"); };
+  var b = el.querySelector("#rq-csv");
+  if (b) b.onclick = function() {
+    var url = URL.createObjectURL(new Blob([csv()], { type: "text/csv" }));
+    var a = document.createElement("a"); a.href = url; a.download = "security-requirements.csv"; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+  };
+  b = el.querySelector("#rq-copy");
+  if (b) b.onclick = function() {
+    var md = "| ID | Category | Requirement | Priority | Verification |\n|---|---|---|---|---|\n" + g.reqs.map(function(r) { return "| " + [r.id, CAT_NAME[r.category], r.requirement, r.priority, r.verification].join(" | ") + " |"; }).join("\n");
+    navigator.clipboard.writeText(md).then(function() { el.querySelector("#rq-copy").textContent = "Copied"; setTimeout(function() { var x = el.querySelector("#rq-copy"); if (x) x.textContent = "Copy as Markdown"; }, 2000); }).catch(function() {});
+  };
+  b = el.querySelector("#rq-clear");
+  if (b) b.onclick = function() { saveReqSelection({}); renderRequirements(el, showTab); };
 }
 
 // ── Report Tab ──
@@ -864,6 +938,25 @@ function renderReportTab(el) {
     var risk = Math.round((r.likelihood + r.impact) / 2);
     report += "- " + r.name + " — Likelihood: " + RISK_LEVELS[r.likelihood] + ", Impact: " + RISK_LEVELS[r.impact] + " → " + RISK_LEVELS[risk] + " risk\n";
   });
+  var pasta = loadJSON("tm_pasta", {});
+  var pastaRows = PASTA_STAGES.filter(function(s) { var v = pasta[s.stage]; return v && (v.done || (v.notes || "").trim()); });
+  if (pastaRows.length) {
+    report += "\n## PASTA (" + PASTA_STAGES.filter(function(s) { return pasta[s.stage] && pasta[s.stage].done; }).length + "/" + PASTA_STAGES.length + " stages complete)\n";
+    pastaRows.forEach(function(s) { var v = pasta[s.stage]; report += "- Stage " + s.stage + " " + s.name + (v.done ? " [complete]" : "") + ((v.notes || "").trim() ? ": " + v.notes.trim() : "") + "\n"; });
+  }
+  var lind = loadJSON("tm_linddun", {});
+  var lindRows = LINDDUN_CATEGORIES.filter(function(c) { var v = lind[c.key]; return v && (v.assessed || (v.notes || "").trim()); });
+  if (lindRows.length) {
+    report += "\n## LINDDUN Privacy (" + LINDDUN_CATEGORIES.filter(function(c) { return lind[c.key] && lind[c.key].assessed; }).length + "/" + LINDDUN_CATEGORIES.length + " assessed)\n";
+    lindRows.forEach(function(c) { var v = lind[c.key]; report += "- " + c.name + (v.assessed ? " [assessed]" : "") + ((v.notes || "").trim() ? ": " + v.notes.trim() : "") + "\n"; });
+  }
+  var gen = generateRequirements();
+  if (gen.threats.length) {
+    report += "\n## Selected Threats (" + gen.threats.length + ")\n";
+    gen.threats.forEach(function(t) { report += "- " + t.id + " [" + t.stride + "] " + t.name + " (" + t.severity + (t.cwe ? ", " + t.cwe : "") + ")\n"; });
+    report += "\n## Security Requirements (" + gen.reqs.length + ")\n";
+    gen.reqs.forEach(function(r) { report += "- " + r.id + " [" + r.priority + "] " + r.requirement + " Verify: " + r.verification + "\n"; });
+  }
   if (tree && tree.children && tree.children.length) {
     report += "\n## Attack Tree: " + tree.name + "\n";
     function printTree(node, indent) {

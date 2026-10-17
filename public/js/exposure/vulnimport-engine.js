@@ -163,6 +163,52 @@ function parseVector(vector) {
   return m;
 }
 
+// ---------------------------------------------------------------------------
+// SSVC (CISA Stakeholder-Specific Vulnerability Categorization) decision tree: exploitation x
+// technical impact x automatable x mission prevalence -> Act / Attend / Track* / Track. An
+// optional second opinion beside the P1-P4 matrix; mission prevalence is never guessed.
+// ---------------------------------------------------------------------------
+export const SSVC_OPTIONS = {
+  exploitation: [["none", "None"], ["poc", "Proof of concept"], ["active", "Active"]],
+  impact: [["partial", "Partial"], ["total", "Total"]],
+  automatable: [["no", "No"], ["yes", "Yes"]],
+  prevalence: [["minimal", "Minimal"], ["support", "Support"], ["essential", "Essential"]],
+};
+const SSVC_TABLE = {
+  active: { total: { yes: ["Attend", "Act", "Act"], no: ["Attend", "Attend", "Act"] }, partial: { yes: ["Track*", "Attend", "Attend"], no: ["Track*", "Track*", "Attend"] } },
+  poc: { total: { yes: ["Track*", "Attend", "Attend"], no: ["Track", "Track*", "Attend"] }, partial: { yes: ["Track", "Track*", "Track*"], no: ["Track", "Track", "Track*"] } },
+  none: { total: { yes: ["Track", "Track*", "Track*"], no: ["Track", "Track", "Track*"] }, partial: { yes: ["Track", "Track", "Track"], no: ["Track", "Track", "Track"] } },
+};
+export const SSVC_GUIDANCE = {
+  Act: "Remediate or mitigate immediately (24-48 hours); escalate to leadership.",
+  Attend: "Prioritise within the current patch cycle (7-14 days).",
+  "Track*": "Watch closely and plan remediation within about 30 days.",
+  Track: "Remediate within normal maintenance windows.",
+};
+/** SSVC decision for the four answers; null while any answer is missing or unknown. */
+export function ssvcDecide(exploitation, impact, automatable, prevalence) {
+  const row = ((SSVC_TABLE[exploitation] || {})[impact] || {})[automatable];
+  const i = ["minimal", "support", "essential"].indexOf(prevalence);
+  return row && i >= 0 ? row[i] : null;
+}
+/** The SSVC answers a register row supports on its own, each with its basis; "" = not derivable. */
+export function ssvcInputs(v) {
+  const out = { exploitation: "", impact: "", automatable: "", basis: {} };
+  if (v.kev) { out.exploitation = "active"; out.basis.exploitation = "listed in CISA KEV"; }
+  else if (v.exploit === true) { out.exploitation = "poc"; out.basis.exploitation = "scanner reports a public exploit"; }
+  else if (v.exploit === false) { out.exploitation = "none"; out.basis.exploitation = "scanner reports no known exploit"; }
+  const m = /^CVSS:3/i.test(str(v.cvssVector)) ? parseVector(v.cvssVector) : null;
+  if (m && m.AV && m.AC && m.PR && m.UI) {
+    out.automatable = m.AV === "N" && m.AC === "L" && m.PR === "N" && m.UI === "N" ? "yes" : "no";
+    out.basis.automatable = "CVSS AV/AC/PR/UI " + [m.AV, m.AC, m.PR, m.UI].join("/");
+  }
+  if (m && m.C && m.I) {
+    out.impact = m.C === "H" && m.I === "H" ? "total" : "partial";
+    out.basis.impact = "CVSS C/I " + m.C + "/" + m.I;
+  }
+  return out;
+}
+
 /** CVSS 3.x base score from a vector ("CVSS:3.1/AV:N/..."); null when incomplete. */
 export function computeCvss31(vector) {
   const m = parseVector(vector);

@@ -4,6 +4,7 @@ import { test, assert, group } from "../harness.mjs";
 import {
   analyzeUrl, lookalike, extractIOCs, parseEmailHeaders, parseAuthResults,
   triageEmail, registrableDomain, domainOf, displayName, levenshtein, selfTest,
+  defangText, refangText, buildTriageReport,
 } from "../../public/js/dataprotect/phish-engine.js";
 
 group("phish: engine self-test", () => {
@@ -159,5 +160,31 @@ group("phish: email parsing and triage", () => {
       "Authentication-Results: mx; dmarc=none", "", "Sign in.",
     ].join("\n"));
     assert.ok(r.findings.some((f) => /Display name mentions/.test(f.t)));
+  });
+});
+
+group("phish: defang, refang and report", () => {
+  test("defang URLs, IPs, emails and domains; leave prose and file names alone", () => {
+    const d = defangText("Go to https://login.example.com/a.b?x=1 from 203.0.113.5, mail ops@example.org about evil.example.net and report.pdf");
+    assert.ok(d.includes("hxxps://login[.]example[.]com/a.b?x=1"), d);
+    assert.ok(d.includes("203[.]0[.]113[.]5"), d);
+    assert.ok(d.includes("ops[@]example[.]org"), d);
+    assert.ok(d.includes("evil[.]example[.]net"), d);
+    assert.ok(d.includes("report.pdf") && d.startsWith("Go to "), d);
+  });
+  test("defang is idempotent and refang reverses it", () => {
+    const src = "http://a.example.com/x and 198.51.100.7";
+    const once = defangText(src);
+    assert.equal(defangText(once), once);
+    assert.equal(refangText(once), src);
+    assert.equal(refangText("hxxp://evil(.)com [at] x[.]y"), "http://evil.com @ x.y");
+  });
+  test("report defangs every indicator and carries analyst notes", () => {
+    const r = buildTriageReport({ mode: "url", verdict: "Suspicious", input: "http://bad.example.ru/login", host: "bad.example.ru", registrable: "example.ru",
+      chain: ["http://bad.example.ru/login", "https://final.example.net/"], reasons: [{ w: 3, t: "Redirects to a different domain: example.net." }, { w: -1, t: "ignored" }],
+      iocs: { urls: ["http://bad.example.ru/login"], ips: ["192.0.2.1"] } }, { actions: "Blocked at gateway" });
+    assert.ok(!/\bhttps?:\/\//.test(r), "no live URL left");
+    assert.ok(r.includes("hxxp://bad[.]example[.]ru/login") && r.includes("192[.]0[.]2[.]1"));
+    assert.ok(r.includes("SIGNALS (1)") && r.includes("Blocked at gateway") && r.includes("Verdict: Suspicious"));
   });
 });

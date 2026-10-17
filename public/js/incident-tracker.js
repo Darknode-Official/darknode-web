@@ -1,5 +1,6 @@
 // Incident Tracker — security incident management dashboard with localStorage persistence
 import { createEntity as sgCreate, updateEntity as sgUpdate, deleteEntity as sgDelete, getEntity as sgGet, listEntities as sgList } from "/js/security-graph.js";
+import { IR_PLAYBOOKS, IR_SEVERITY, IR_COMM_TEMPLATES, IR_STAKEHOLDERS, TYPE_PLAYBOOK } from "/js/incident-playbooks.js";
 
 const esc = (s) => String(s != null ? s : "").replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
@@ -94,6 +95,7 @@ export function renderIncidentTracker(main) {
     { id: "iocs", label: "IOC Tracker" },
     { id: "mitre", label: "ATT&CK Map" },
     { id: "playbooks", label: "Playbooks" },
+    { id: "comms", label: "Communications" },
     { id: "metrics", label: "Metrics" },
     { id: "lessons", label: "Lessons Learned" },
   ];
@@ -114,13 +116,20 @@ export function renderIncidentTracker(main) {
   function showTab(id) {
     curTab = id;
     main.querySelectorAll("#ir-tabs .chip").forEach(function(b) { b.classList.toggle("on", b.dataset.tab === id); });
-    if (id === "list") renderList(content);
+    if (id === "list") renderList(content, respond);
     else if (id === "create") renderCreate(content);
     else if (id === "iocs") renderIOCs(content);
     else if (id === "mitre") renderMitre(content);
-    else if (id === "playbooks") renderPlaybooks(content);
+    else if (id === "playbooks") renderPlaybooks(content, respond);
+    else if (id === "comms") renderComms(content);
     else if (id === "metrics") renderMetrics(content);
     else if (id === "lessons") renderLessons(content);
+  }
+
+  // The response workspace (phased playbook, checklist, timeline, report) for one incident.
+  function respond(incId) {
+    main.querySelectorAll("#ir-tabs .chip").forEach(function(b) { b.classList.remove("on"); });
+    renderRespond(content, incId, function() { showTab("list"); });
   }
 
   main.querySelector("#ir-tabs").onclick = function(e) {
@@ -132,7 +141,7 @@ export function renderIncidentTracker(main) {
 }
 
 // ── Incident List Tab ──
-function renderList(el) {
+function renderList(el, respond) {
   var incidents = loadIncidents();
 
   var filterHTML =
@@ -174,7 +183,9 @@ function renderList(el) {
         '<div style="display:flex;gap:8px;margin-top:6px;padding-left:36px">' +
           '<span class="muted" style="font-size:.7rem">Created: ' + esc(new Date(inc.created).toLocaleDateString()) + '</span>' +
           (inc.affected ? '<span class="muted" style="font-size:.7rem">Affected: ' + esc(inc.affected) + '</span>' : '') +
+          (inc.playbook && IR_PLAYBOOKS[inc.playbook] ? '<span class="muted" style="font-size:.7rem">Response: ' + esc(IR_PLAYBOOKS[inc.playbook].phases[inc.phase || "detection"].title) + ' · ' + respProgress(inc).done + '/' + respProgress(inc).total + ' tasks</span>' : '') +
           '<span style="margin-left:auto;display:flex;gap:4px">' +
+            '<button class="btn" data-iresp="' + esc(inc.id) + '" style="padding:1px 8px;font-size:.68rem">Respond</button>' +
             '<select data-sidx="' + realIdx + '" class="il-status-sel" style="padding:2px 4px;font-size:.7rem;background:var(--bg);border:1px solid var(--line);color:var(--txt);border-radius:2px">' +
               STATUSES.map(function(s) { return '<option' + (s === inc.status ? ' selected' : '') + '>' + esc(s) + '</option>'; }).join("") +
             '</select>' +
@@ -199,6 +210,7 @@ function renderList(el) {
   el.querySelector("#il-search").oninput = renderFiltered;
 
   el.querySelector("#il-list").onclick = function(e) {
+    if (e.target.dataset.iresp) { respond(e.target.dataset.iresp); return; }
     if (e.target.dataset.idel !== undefined) {
       var idel = parseInt(e.target.dataset.idel);
       window.dnConfirm("Delete incident?", "This removes the incident and its timeline. This cannot be undone.").then(function(ok) {
@@ -216,6 +228,7 @@ function renderList(el) {
       if (!val) return;
       if (!incidents[idx].evidence) incidents[idx].evidence = [];
       incidents[idx].evidence.push(val);
+      addTimeline(incidents[idx], "Evidence added: " + val, true);
       mirrorToGraph(incidents[idx]);
       saveIncidents(incidents);
       input.value = "";
@@ -227,6 +240,7 @@ function renderList(el) {
       var idx = parseInt(e.target.dataset.sidx);
       incidents[idx].status = e.target.value;
       if (e.target.value === "Closed" && !incidents[idx].closedAt) incidents[idx].closedAt = new Date().toISOString();
+      addTimeline(incidents[idx], "Status changed to " + e.target.value, true);
       mirrorToGraph(incidents[idx]);
       saveIncidents(incidents);
       renderFiltered();
@@ -280,6 +294,7 @@ function renderCreate(el) {
       created: new Date().toISOString(),
       closedAt: null
     };
+    ensureResponse(incident);
     var incidents = loadIncidents();
     incidents.unshift(incident);
     mirrorToGraph(incident);
@@ -428,7 +443,28 @@ function renderMitre(el) {
 }
 
 // ── Playbooks Tab ──
-function renderPlaybooks(el) {
+function renderPlaybooks(el, respond) {
+  var phased = Object.keys(IR_PLAYBOOKS).map(function(k) {
+    var pb = IR_PLAYBOOKS[k], sev = IR_SEVERITY[pb.severity] || {};
+    var phaseKeys = Object.keys(pb.phases);
+    var total = phaseKeys.reduce(function(n, pk) { return n + pb.phases[pk].checks.length; }, 0);
+    var phases = phaseKeys.map(function(pk) {
+      var p = pb.phases[pk];
+      return '<div style="margin-top:8px"><div style="font-weight:600;font-size:.8rem">' + esc(p.title) + ' <span class="muted" style="font-weight:400">(' + esc(p.time) + ')</span></div>' +
+        '<div class="muted" style="font-size:.72rem">Roles: ' + esc(p.roles.join(", ")) + ' · Tools: ' + esc(p.tools.join(", ")) + '</div>' +
+        p.checks.map(function(c) { return '<div style="font-size:.76rem;padding:1px 0 1px 10px">- ' + esc(c) + '</div>'; }).join("") + '</div>';
+    }).join("");
+    return '<div class="arse-card" style="cursor:default;margin-bottom:8px">' +
+      '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">' +
+        '<span class="an" style="flex:1">' + esc(pb.name) + '</span>' +
+        '<span style="padding:1px 6px;border:1px solid var(--line);border-radius:2px;font-size:.7rem;font-weight:700;color:' + (sev.color || "var(--mut)") + '">' + esc(pb.severity) + '</span>' +
+        '<span class="muted" style="font-size:.72rem">' + phaseKeys.length + ' phases · ' + total + ' tasks · SLA ' + esc(sev.sla || "") + '</span>' +
+        '<button class="btn" data-pbstart="' + esc(k) + '" style="padding:2px 10px;font-size:.72rem">Start incident</button>' +
+      '</div>' +
+      '<details style="margin-top:6px"><summary style="cursor:pointer;font-size:.78rem;color:var(--acc)">Show phases and checklists</summary>' + phases + '</details>' +
+    '</div>';
+  }).join("");
+
   var types = Object.keys(PLAYBOOK_MAP);
   var cards = types.map(function(type) {
     var pb = PLAYBOOK_MAP[type];
@@ -445,8 +481,248 @@ function renderPlaybooks(el) {
   }).join("");
 
   el.innerHTML =
-    '<h2 class="pg-h2">Incident Response Playbooks</h2>' +
-    '<p class="muted" style="margin-bottom:16px">' + types.length + ' playbooks for common incident types. Each provides step-by-step response guidance.</p>' + cards;
+    '<h2 class="pg-h2">Phased Response Playbooks</h2>' +
+    '<p class="muted" style="margin-bottom:12px">' + Object.keys(IR_PLAYBOOKS).length + ' playbooks run phase by phase: detection, containment, eradication, recovery and lessons learned. Start an incident from one, or attach one to an existing incident with Respond. Checklist progress and the timeline are saved with the incident.</p>' +
+    '<div id="pb-phased">' + phased + '</div>' +
+    '<h2 class="pg-h2" style="margin-top:20px">Quick Checklists</h2>' +
+    '<p class="muted" style="margin-bottom:16px">' + types.length + ' short step lists for common incident types.</p>' + cards;
+
+  el.querySelector("#pb-phased").onclick = function(e) {
+    var k = e.target.dataset.pbstart; if (!k) return;
+    var pb = IR_PLAYBOOKS[k];
+    var ask = typeof window.dnPrompt === "function" ? window.dnPrompt("Start incident: " + pb.name, { desc: "Creates a tracked incident with this playbook attached.", placeholder: "Incident title", value: "", submitText: "Start" }) : Promise.resolve(pb.name);
+    ask.then(function(title) {
+      title = (title || "").trim(); if (!title) return;
+      var type = Object.keys(TYPE_PLAYBOOK).filter(function(t) { return TYPE_PLAYBOOK[t] === k; })[0] || "Other";
+      var incident = { id: "INC-" + Date.now().toString(36).toUpperCase(), title: title, severity: SEVERITIES.filter(function(s) { return s.indexOf(pb.severity) === 0; })[0] || SEVERITIES[1], type: type, affected: "", description: "", status: "New", mitre: [], evidence: [], comms: [], created: new Date().toISOString(), closedAt: null, playbook: k };
+      ensureResponse(incident);
+      var incidents = loadIncidents();
+      incidents.unshift(incident);
+      mirrorToGraph(incident);
+      saveIncidents(incidents);
+      respond(incident.id);
+    });
+  };
+}
+
+// ── Response workspace (phased playbook run against a persisted incident) ──
+// Response state lives on the incident record itself (playbook, phase, checks, timeline), so it
+// is saved with saveIncidents() and mirrored losslessly to the graph like every other field.
+function ensureResponse(inc) {
+  if (inc.playbook === undefined) inc.playbook = TYPE_PLAYBOOK[inc.type] || "";
+  if (!inc.phase) inc.phase = "detection";
+  if (!inc.checks || typeof inc.checks !== "object") inc.checks = {};
+  if (!Array.isArray(inc.timeline)) inc.timeline = [{ time: inc.created || new Date().toISOString(), event: "Incident declared: " + inc.title, auto: true }];
+  return inc;
+}
+function addTimeline(inc, event, auto) {
+  ensureResponse(inc);
+  inc.timeline.push({ time: new Date().toISOString(), event: event, phase: inc.playbook ? inc.phase : "", auto: !!auto });
+}
+function checkKey(inc, phase, i) { return inc.playbook + ":" + phase + ":" + i; }
+function phaseProgress(inc, phase) {
+  var checks = IR_PLAYBOOKS[inc.playbook].phases[phase].checks, done = 0;
+  checks.forEach(function(_, i) { if (inc.checks && inc.checks[checkKey(inc, phase, i)]) done++; });
+  return { done: done, total: checks.length, pct: Math.round(done / checks.length * 100) };
+}
+function respProgress(inc) {
+  var pb = IR_PLAYBOOKS[inc.playbook], done = 0, total = 0;
+  if (!pb) return { done: 0, total: 0 };
+  Object.keys(pb.phases).forEach(function(pk) { var p = phaseProgress(inc, pk); done += p.done; total += p.total; });
+  return { done: done, total: total };
+}
+function durationText(inc) {
+  var ms = (inc.closedAt ? new Date(inc.closedAt) : new Date()) - new Date(inc.created);
+  if (!(ms >= 0)) return "";
+  var d = Math.floor(ms / 86400000), h = Math.floor(ms % 86400000 / 3600000), m = Math.floor(ms % 3600000 / 60000);
+  return (d ? d + "d " : "") + h + "h " + m + "m";
+}
+function slaOf(inc) { return IR_SEVERITY[String(inc.severity || "").split(" ")[0]] || null; }
+
+function responseReport(inc) {
+  var pb = IR_PLAYBOOKS[inc.playbook], sla = slaOf(inc), line = function(c) { return new Array(51).join(c); };
+  var out = ["INCIDENT RESPONSE REPORT", line("="),
+    "Incident ID: " + inc.id, "Title: " + inc.title, "Type: " + inc.type, "Severity: " + inc.severity + (sla ? " (" + sla.sla + ")" : ""),
+    "Status: " + inc.status, "Created: " + inc.created, (inc.closedAt ? "Closed: " + inc.closedAt : "Open for: " + durationText(inc)),
+    "Affected systems: " + (inc.affected || "-")];
+  if (inc.description) out.push("", "DESCRIPTION", line("-"), inc.description);
+  if (inc.mitre && inc.mitre.length) out.push("", "ATT&CK TACTICS", line("-"), inc.mitre.join(", "));
+  if (pb) {
+    var prog = respProgress(inc);
+    out.push("", "PLAYBOOK: " + pb.name, "Current phase: " + pb.phases[inc.phase].title, "Overall progress: " + prog.done + "/" + prog.total + " tasks (" + (prog.total ? Math.round(prog.done / prog.total * 100) : 0) + "%)", "", "PHASE BREAKDOWN", line("-"));
+    Object.keys(pb.phases).forEach(function(pk) {
+      var p = pb.phases[pk], pp = phaseProgress(inc, pk);
+      out.push("[" + p.title + "] " + pp.done + "/" + pp.total + " (" + pp.pct + "%)");
+      p.checks.forEach(function(c, i) { var t = inc.checks[checkKey(inc, pk, i)]; out.push("  " + (t ? "[x] " : "[ ] ") + c + (t ? "  (" + new Date(t).toLocaleString() + ")" : "")); });
+      out.push("  Evidence to collect: " + p.evidence.join("; "), "");
+    });
+  }
+  if (inc.evidence && inc.evidence.length) { out.push("EVIDENCE NOTES", line("-")); inc.evidence.forEach(function(e) { out.push("- " + e); }); }
+  out.push("", "TIMELINE", line("-"));
+  (inc.timeline || []).forEach(function(t) { out.push(new Date(t.time).toLocaleString() + " | " + t.event); });
+  return out.join("\n") + "\n";
+}
+
+function renderRespond(el, incId, back) {
+  var incidents = loadIncidents();
+  var inc = incidents.filter(function(i) { return i.id === incId; })[0];
+  if (!inc) { back(); return; }
+  ensureResponse(inc);
+  var viewPhase = inc.phase;
+  function persist() { mirrorToGraph(inc); saveIncidents(incidents); }
+  var inputCss = "padding:6px 10px;background:var(--bg);border:1px solid var(--line);color:var(--txt);border-radius:2px";
+
+  function draw() {
+    var pb = IR_PLAYBOOKS[inc.playbook], sla = slaOf(inc);
+    var head =
+      '<button class="btn" id="rs-back" style="padding:2px 10px;font-size:.75rem;margin-bottom:10px">All incidents</button>' +
+      '<div class="arse-card" style="cursor:default;padding:12px 16px;margin-bottom:12px">' +
+        '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">' +
+          '<code style="font-weight:700">' + esc(inc.id) + '</code>' +
+          '<span style="color:' + (SEV_COLORS[inc.severity] || "var(--mut)") + ';font-weight:700;font-size:.8rem">' + esc(inc.severity) + '</span>' +
+          '<span style="font-weight:600;flex:1">' + esc(inc.title) + '</span>' +
+          '<span style="padding:2px 8px;border-radius:2px;font-size:.7rem;font-weight:600;color:#fff;background:' + (STATUS_COLORS[inc.status] || "var(--mut)") + '">' + esc(inc.status) + '</span>' +
+          '<span class="muted" style="font-size:.75rem">' + (inc.closedAt ? "Duration " : "Open ") + esc(durationText(inc)) + '</span>' +
+        '</div>' +
+        (sla ? '<div class="muted" style="font-size:.72rem;margin-top:4px">Severity SLA: ' + esc(sla.sla) + '</div>' : '') +
+        '<div style="display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap"><label style="font-size:.78rem;font-weight:600" for="rs-pb">Playbook</label>' +
+          '<select id="rs-pb" style="' + inputCss + '"><option value="">None</option>' + Object.keys(IR_PLAYBOOKS).map(function(k) { return '<option value="' + k + '"' + (k === inc.playbook ? " selected" : "") + '>' + esc(IR_PLAYBOOKS[k].name) + '</option>'; }).join("") + '</select>' +
+        '</div>' +
+      '</div>';
+
+    var body = "";
+    if (pb) {
+      var keys = Object.keys(pb.phases), cur = keys.indexOf(inc.phase), vp = pb.phases[viewPhase], prog = phaseProgress(inc, inc.phase);
+      body +=
+        '<div class="cs-filter" id="rs-phases" style="margin-bottom:10px">' + keys.map(function(pk, i) {
+          var pp = phaseProgress(inc, pk);
+          return '<button class="chip' + (pk === viewPhase ? " on" : "") + '" data-ph="' + pk + '">' + (i < cur ? "Done: " : i === cur ? "Current: " : "") + esc(pb.phases[pk].title) + ' (' + pp.done + '/' + pp.total + ')</button>';
+        }).join("") + '</div>' +
+        '<div style="height:4px;background:var(--line);border-radius:2px;overflow:hidden;margin-bottom:4px"><div style="height:100%;width:' + prog.pct + '%;background:var(--acc)"></div></div>' +
+        '<div class="muted" style="font-size:.75rem;margin-bottom:10px">Current phase ' + esc(pb.phases[inc.phase].title) + ': ' + prog.done + '/' + prog.total + ' tasks (' + prog.pct + '%)</div>' +
+        '<div class="arse-card" style="cursor:default;padding:14px 16px;margin-bottom:12px">' +
+          '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;font-size:.78rem">' +
+            '<div><div class="muted" style="font-size:.7rem;text-transform:uppercase">Estimated time</div>' + esc(vp.time) + '</div>' +
+            '<div><div class="muted" style="font-size:.7rem;text-transform:uppercase">Roles</div>' + esc(vp.roles.join(", ")) + '</div>' +
+            '<div><div class="muted" style="font-size:.7rem;text-transform:uppercase">Tools</div>' + esc(vp.tools.join(", ")) + '</div>' +
+          '</div>' +
+          '<div style="font-weight:600;font-size:.82rem;margin:12px 0 4px">Evidence to collect</div>' +
+          vp.evidence.map(function(e) { return '<div style="font-size:.78rem;padding:1px 0">- ' + esc(e) + '</div>'; }).join("") +
+          '<div style="font-weight:600;font-size:.82rem;margin:12px 0 4px">Checklist</div>' +
+          '<div id="rs-checks">' + vp.checks.map(function(c, i) {
+            var t = inc.checks[checkKey(inc, viewPhase, i)];
+            return '<label style="display:flex;gap:8px;align-items:flex-start;padding:5px 0;border-bottom:1px solid var(--line);font-size:.8rem;cursor:pointer"><input type="checkbox" data-ci="' + i + '"' + (t ? " checked" : "") + ' style="margin-top:2px">' +
+              '<span style="flex:1' + (t ? ';text-decoration:line-through;color:var(--mut)' : '') + '">' + esc(c) + '</span>' + (t ? '<span class="muted" style="font-size:.68rem">' + esc(new Date(t).toLocaleString()) + '</span>' : '') + '</label>';
+          }).join("") + '</div>' +
+          (viewPhase === inc.phase && cur < keys.length - 1 ? '<button class="btn" id="rs-advance" style="margin-top:10px;padding:5px 14px"' + (prog.pct === 100 ? '' : ' disabled title="Complete every task in this phase first"') + '>Advance to ' + esc(pb.phases[keys[cur + 1]].title) + '</button>' : '') +
+        '</div>';
+    } else {
+      body += '<p class="muted" style="margin-bottom:12px">No playbook attached. Pick one above to get a phased checklist for this incident.</p>';
+    }
+
+    body +=
+      '<div class="arse-card" style="cursor:default;padding:14px 16px;margin-bottom:12px">' +
+        '<div style="font-weight:600;font-size:.85rem;margin-bottom:6px">Timeline</div>' +
+        '<div style="display:flex;gap:6px;margin-bottom:8px"><input id="rs-tl" placeholder="Add a timeline entry" style="flex:1;' + inputCss + '"><button class="btn" id="rs-tl-add" style="padding:4px 12px">Add</button></div>' +
+        (inc.timeline.slice().reverse().map(function(t) {
+          return '<div style="display:flex;gap:10px;padding:3px 0;border-bottom:1px solid var(--line);font-size:.76rem"><span class="muted" style="min-width:150px;font-family:var(--mono,monospace);font-size:.7rem">' + esc(new Date(t.time).toLocaleString()) + '</span><span style="flex:1">' + esc(t.event) + '</span>' + (t.auto ? '' : '<span class="muted" style="font-size:.66rem">manual</span>') + '</div>';
+        }).join("")) +
+      '</div>' +
+      '<div class="arse-card" style="cursor:default;padding:14px 16px">' +
+        '<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap"><span style="font-weight:600;font-size:.85rem;flex:1">Incident report</span>' +
+          '<button class="btn" id="rs-copy" style="padding:3px 12px;font-size:.75rem">Copy report</button>' +
+          '<button class="btn" id="rs-dl" style="padding:3px 12px;font-size:.75rem">Download .txt</button></div>' +
+        '<pre id="rs-report" style="max-height:320px;overflow:auto;white-space:pre-wrap;word-break:break-word;font-size:.72rem;background:var(--bg);border:1px solid var(--line);padding:10px;margin:0">' + esc(responseReport(inc)) + '</pre>' +
+      '</div>';
+
+    el.innerHTML = '<h2 class="pg-h2">Respond</h2>' + head + body;
+
+    el.querySelector("#rs-back").onclick = back;
+    el.querySelector("#rs-pb").onchange = function(e) {
+      inc.playbook = e.target.value; inc.phase = "detection"; viewPhase = "detection";
+      addTimeline(inc, inc.playbook ? "Playbook attached: " + IR_PLAYBOOKS[inc.playbook].name : "Playbook detached", true);
+      persist(); draw();
+    };
+    var ph = el.querySelector("#rs-phases");
+    if (ph) ph.onclick = function(e) { var b = e.target.closest("[data-ph]"); if (b) { viewPhase = b.dataset.ph; draw(); } };
+    var cks = el.querySelector("#rs-checks");
+    if (cks) cks.onchange = function(e) {
+      var i = e.target.dataset.ci; if (i === undefined) return;
+      var k = checkKey(inc, viewPhase, i);
+      if (e.target.checked) { inc.checks[k] = new Date().toISOString(); addTimeline(inc, "Completed: " + IR_PLAYBOOKS[inc.playbook].phases[viewPhase].checks[i], true); }
+      else { delete inc.checks[k]; addTimeline(inc, "Reopened: " + IR_PLAYBOOKS[inc.playbook].phases[viewPhase].checks[i], true); }
+      persist(); draw();
+    };
+    var adv = el.querySelector("#rs-advance");
+    if (adv) adv.onclick = function() {
+      var keys = Object.keys(IR_PLAYBOOKS[inc.playbook].phases), cur = keys.indexOf(inc.phase);
+      if (cur < 0 || cur >= keys.length - 1 || phaseProgress(inc, inc.phase).pct < 100) return;
+      inc.phase = viewPhase = keys[cur + 1];
+      addTimeline(inc, "Advanced to: " + IR_PLAYBOOKS[inc.playbook].phases[inc.phase].title, true);
+      persist(); draw();
+    };
+    var addTl = function() {
+      var inp = el.querySelector("#rs-tl"), v = inp.value.trim(); if (!v) return;
+      addTimeline(inc, v, false); persist(); draw();
+    };
+    el.querySelector("#rs-tl-add").onclick = addTl;
+    el.querySelector("#rs-tl").onkeydown = function(e) { if (e.key === "Enter") addTl(); };
+    el.querySelector("#rs-copy").onclick = function() {
+      copyText(responseReport(inc), function(ok) { if (window.showToast) window.showToast(ok ? "Report copied" : "Could not copy to clipboard", ok ? "success" : "error"); });
+    };
+    el.querySelector("#rs-dl").onclick = function() {
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([responseReport(inc)], { type: "text/plain" }));
+      a.download = inc.id + "-report.txt"; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function() { URL.revokeObjectURL(a.href); }, 1000);
+    };
+  }
+  draw();
+}
+
+// ── Communications Tab ──
+// Notification templates (initial, status update, closure) with the known fields filled in from a
+// chosen incident; anything the tracker does not know stays as a [PLACEHOLDER] to complete.
+function fillTemplate(tpl, inc) {
+  if (!inc) return tpl;
+  var pb = inc.playbook && IR_PLAYBOOKS[inc.playbook];
+  var map = { ID: inc.id, TYPE: inc.type, SEVERITY: inc.severity, STATUS: inc.status, DATETIME: new Date(inc.created).toLocaleString(), SYSTEMS: inc.affected, SCOPE: inc.affected, DURATION: durationText(inc), PHASE: pb ? pb.phases[inc.phase || "detection"].title : "" };
+  return tpl.replace(/\[([A-Z0-9_]+)\]/g, function(m, k) { return map[k] ? map[k] : m; });
+}
+function renderComms(el) {
+  var incidents = loadIncidents();
+  var inputCss = "padding:6px;background:var(--bg);border:1px solid var(--line);color:var(--txt);border-radius:2px";
+  el.innerHTML =
+    '<h2 class="pg-h2">Communications</h2>' +
+    '<p class="muted" style="margin-bottom:12px">Notification templates and the stakeholder matrix. Pick an incident to fill in the fields the tracker already knows.</p>' +
+    '<div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap"><label for="cm-inc" style="font-size:.78rem;font-weight:600">Incident</label>' +
+      '<select id="cm-inc" style="' + inputCss + ';max-width:100%"><option value="">None (blank template)</option>' + incidents.map(function(i) { return '<option value="' + esc(i.id) + '">' + esc(i.id + " " + i.title) + '</option>'; }).join("") + '</select></div>' +
+    '<div id="cm-tpls"></div>' +
+    '<h3 style="margin:18px 0 8px;font-size:.95rem">Stakeholder Notification Matrix</h3>' +
+    '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.78rem"><thead><tr>' +
+      ["Role", "Notify for", "Method", "Timing"].map(function(h) { return '<th style="text-align:left;padding:6px 8px;border-bottom:2px solid var(--line)">' + h + '</th>'; }).join("") +
+    '</tr></thead><tbody>' + IR_STAKEHOLDERS.map(function(s) {
+      return '<tr>' + [s.role, s.notify, s.method, s.timing].map(function(v) { return '<td style="padding:5px 8px;border-bottom:1px solid var(--line)">' + esc(v) + '</td>'; }).join("") + '</tr>';
+    }).join("") + '</tbody></table></div>';
+
+  var keys = Object.keys(IR_COMM_TEMPLATES);
+  function drawTpls() {
+    var id = el.querySelector("#cm-inc").value;
+    var inc = incidents.filter(function(i) { return i.id === id; })[0] || null;
+    el.querySelector("#cm-tpls").innerHTML = keys.map(function(k) {
+      return '<div class="arse-card" style="cursor:default;padding:12px 14px;margin-bottom:10px">' +
+        '<div style="display:flex;align-items:center;margin-bottom:6px"><span style="font-weight:600;font-size:.85rem;flex:1">' + esc(IR_COMM_TEMPLATES[k].name) + '</span>' +
+        '<button class="btn" data-cmcopy="' + k + '" style="padding:2px 10px;font-size:.72rem">Copy</button></div>' +
+        '<pre data-cmtext="' + k + '" style="max-height:220px;overflow:auto;white-space:pre-wrap;word-break:break-word;font-size:.72rem;background:var(--bg);border:1px solid var(--line);padding:10px;margin:0">' + esc(fillTemplate(IR_COMM_TEMPLATES[k].template, inc)) + '</pre></div>';
+    }).join("");
+  }
+  drawTpls();
+  el.querySelector("#cm-inc").onchange = drawTpls;
+  el.querySelector("#cm-tpls").onclick = function(e) {
+    var k = e.target.dataset.cmcopy; if (!k) return;
+    var pre = el.querySelector('pre[data-cmtext="' + k + '"]');
+    copyText(pre.textContent, function(ok) { if (window.showToast) window.showToast(ok ? "Template copied" : "Could not copy to clipboard", ok ? "success" : "error"); });
+  };
 }
 
 // ── Metrics Tab ──

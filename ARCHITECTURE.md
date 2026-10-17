@@ -57,12 +57,12 @@ across `public/` counting JS + CSS + HTML). State lives in Firebase
 
 ## Module map (high level)
 
-216 modules is too many to list; they group as:
+378 modules is too many to list; they group as:
 
 ```
 public/
   index.html            app shell; loads js/auth.js as the ONLY entry <script>
-  css/styles.css        core stylesheet (~9.6K lines); pro-theme.css adds the skin
+  css/styles.css        core stylesheet (~9.0K lines); pro-theme.css adds the skin
   js/
     firebase.js         [adapter] Firebase init/config; exports auth/db/providers + isAdminUser (admin-claim reader)
     user-keys.js        [core]    window.dnKeys — per-uid credential isolation

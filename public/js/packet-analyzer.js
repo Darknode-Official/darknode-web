@@ -1004,6 +1004,22 @@ export function renderPacketAnalyzer(container) {
     .pka-error{color:#ff4444;padding:8px 12px;background:rgba(255,68,68,.08);border-radius:6px;margin-bottom:12px;font-size:.85rem}
     .pka-stats{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px;font-size:.8rem;color:var(--mut)}
     .pka-stats span{color:var(--txt)}
+    .pka-cap{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+    .pka-chip{font-size:.75rem;padding:4px 10px;border-radius:4px;background:var(--bg2,#0d1520);border:1px solid var(--border,#1e2a3a);cursor:pointer;color:var(--txt);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .pka-chip.active{border-color:var(--acc,#00d4ff);color:var(--acc,#00d4ff)}
+    .pka-card{background:var(--bg2,#0d1520);border:1px solid var(--border,#1e2a3a);border-radius:8px;padding:12px;margin-bottom:12px}
+    .pka-lbl{font-size:.8rem;font-weight:600;margin-bottom:8px;color:var(--mut)}
+    .pka-conv{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 4px;border-bottom:1px solid var(--border,#1e2a3a);font-size:.8rem;overflow-wrap:anywhere}
+    .pka-conv:last-child{border-bottom:none}
+    .pka-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:12px}
+    .pka-kpi{background:var(--bg2,#0d1520);border:1px solid var(--border,#1e2a3a);border-radius:8px;padding:12px;text-align:center}
+    .pka-kpi b{display:block;font-size:1.3rem;color:var(--acc,#00d4ff)}
+    .pka-kpi span{font-size:.72rem;color:var(--mut)}
+    .pka-bar{display:grid;grid-template-columns:minmax(80px,140px) 1fr 70px;gap:10px;align-items:center;margin-bottom:8px;font-size:.78rem}
+    .pka-bar-n{text-align:right;color:var(--mut);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .pka-track{height:16px;background:rgba(127,127,127,.12);border-radius:4px;overflow:hidden}
+    .pka-fill{height:100%;background:var(--acc,#00d4ff)}
+    @media(max-width:600px){.pka-conv{grid-template-columns:1fr}.pka-bar{grid-template-columns:80px 1fr 56px}}
     </style>
   `;
   container.innerHTML = CSS + `
@@ -1015,7 +1031,17 @@ export function renderPacketAnalyzer(container) {
       <div style="margin-bottom:16px">
         <button class="pka-btn" id="pka-parse">Dissect Packet</button>
         <button class="pka-btn ghost" id="pka-clear">Clear</button>
+        <button class="pka-btn ghost" id="pka-addall" title="Dissect every sample into the capture list">Add all samples</button>
       </div>
+      <div class="pka-cap" id="pka-cap" hidden></div>
+      <div class="pka-tabs" id="pka-views" role="tablist" hidden>
+        <button class="pka-tab active" data-view="packet" role="tab" aria-selected="true">Packet</button>
+        <button class="pka-tab" data-view="conv" role="tab" aria-selected="false">Conversations</button>
+        <button class="pka-tab" data-view="stats" role="tab" aria-selected="false">Statistics</button>
+      </div>
+      <div id="pka-view-conv" hidden></div>
+      <div id="pka-view-stats" hidden></div>
+      <div id="pka-view-packet">
       <div id="pka-error"></div>
       <div id="pka-summary"></div>
       <div id="pka-stats"></div>
@@ -1028,6 +1054,7 @@ export function renderPacketAnalyzer(container) {
           <div style="font-size:.85rem;font-weight:600;margin-bottom:8px;color:var(--mut)">Protocol Tree</div>
           <div class="pka-tree" id="pka-tree"></div>
         </div>
+      </div>
       </div>
     </div>
   `;
@@ -1052,6 +1079,7 @@ export function renderPacketAnalyzer(container) {
   container.querySelector("#pka-parse").onclick = doParse;
   container.querySelector("#pka-clear").onclick = () => {
     inputEl.value = "";
+    packets.length = 0; sel = -1; renderCapture();
     hexEl.innerHTML = "";
     treeEl.innerHTML = "";
     summaryEl.innerHTML = "";
@@ -1060,12 +1088,86 @@ export function renderPacketAnalyzer(container) {
   };
 
   let lastResult = null;
+  // Capture list: every packet dissected this session, so several packets can be compared
+  // and summarised (conversations, protocol mix, top talkers). Nothing is stored.
+  const packets = [];
+  let sel = -1, view = "packet";
+  const capEl = container.querySelector("#pka-cap");
+  const viewsEl = container.querySelector("#pka-views");
+  const normHex = (h) => h.replace(/0x/gi, "").replace(/[^0-9a-f]/gi, "").toLowerCase();
+  function addPacket(hex) {
+    const key = normHex(hex);
+    const at = packets.findIndex((p) => p.key === key);
+    if (at >= 0) return at;
+    const result = dissectPacket(hex);
+    if (!result.layers.length) return -1;
+    packets.push({ key, result, label: renderSummary(result.layers) });
+    return packets.length - 1;
+  }
+  function setView(v) {
+    view = v;
+    viewsEl.querySelectorAll(".pka-tab").forEach((b) => { const on = b.dataset.view === v; b.classList.toggle("active", on); b.setAttribute("aria-selected", String(on)); });
+    container.querySelector("#pka-view-packet").hidden = v !== "packet";
+    container.querySelector("#pka-view-conv").hidden = v !== "conv";
+    container.querySelector("#pka-view-stats").hidden = v !== "stats";
+    if (v === "conv") container.querySelector("#pka-view-conv").innerHTML = renderConversations();
+    if (v === "stats") container.querySelector("#pka-view-stats").innerHTML = renderCaptureStats();
+  }
+  function renderCapture() {
+    capEl.hidden = viewsEl.hidden = packets.length === 0;
+    capEl.innerHTML = packets.length ? '<span class="pk-dim">Capture (' + packets.length + '):</span>' + packets.map((p, i) =>
+      '<button class="pka-chip' + (i === sel ? " active" : "") + '" data-pkt="' + i + '" title="' + escH(p.label) + '">#' + (i + 1) + " " + escH(p.label) + "</button>").join("") : "";
+    capEl.querySelectorAll("[data-pkt]").forEach((b) => { b.onclick = () => { sel = +b.dataset.pkt; showResult(packets[sel].result); renderCapture(); setView("packet"); }; });
+    if (!packets.length) setView("packet"); else if (view !== "packet") setView(view);
+  }
+  const ipOf = (layers) => layers.find((l) => l.name === "IPv4" || l.name === "IPv6");
+  function renderConversations() {
+    const conv = new Map();
+    for (const p of packets) {
+      const ip = ipOf(p.result.layers); if (!ip) continue;
+      const k = [ip.srcIP, ip.dstIP].sort().join(" | ");
+      if (!conv.has(k)) conv.set(k, { a: ip.srcIP, b: ip.dstIP, count: 0, bytes: 0, protos: new Set() });
+      const c = conv.get(k); c.count++; c.bytes += p.result.bytes.length;
+      p.result.layers.slice(p.result.layers.indexOf(ip) + 1).forEach((l) => c.protos.add(l.name));
+    }
+    if (!conv.size) return '<div class="pka-card pk-dim">No IP conversations in the capture. ARP and other non-IP frames are not paired.</div>';
+    return '<div class="pka-card"><div class="pka-lbl">IP conversations (' + conv.size + ')</div>' + [...conv.values()].sort((x, y) => y.bytes - x.bytes).map((c) =>
+      '<div class="pka-conv"><span>' + escH(c.a) + '</span><span class="pk-dim">&harr;</span><span>' + escH(c.b) + '</span><span class="pk-dim">' + c.count + " pkt" + (c.count === 1 ? "" : "s") + " &middot; " + c.bytes + " B" + (c.protos.size ? " &middot; " + escH([...c.protos].join(", ")) : "") + "</span></div>").join("") + "</div>";
+  }
+  function renderCaptureStats() {
+    const protos = {}, talkers = {};
+    let total = 0, min = Infinity, max = 0;
+    for (const p of packets) {
+      const n = p.result.bytes.length; total += n; min = Math.min(min, n); max = Math.max(max, n);
+      p.result.layers.forEach((l) => { protos[l.name] = (protos[l.name] || 0) + 1; });
+      const ip = ipOf(p.result.layers);
+      if (ip) { talkers[ip.srcIP] = (talkers[ip.srcIP] || 0) + n; talkers[ip.dstIP] = (talkers[ip.dstIP] || 0) + n; }
+    }
+    const bars = (rows, unit) => { const top = rows.length ? rows[0][1] : 1; return rows.map(([k, v]) => '<div class="pka-bar"><span class="pka-bar-n" title="' + escH(k) + '">' + escH(k) + '</span><div class="pka-track"><div class="pka-fill" style="width:' + Math.max(2, Math.round(v / top * 100)) + '%"></div></div><span>' + v + unit + "</span></div>").join(""); };
+    const protoRows = Object.entries(protos).sort((a, b) => b[1] - a[1]);
+    const talkRows = Object.entries(talkers).sort((a, b) => b[1] - a[1]).slice(0, 10);
+    return '<div class="pka-kpis"><div class="pka-kpi"><b>' + packets.length + '</b><span>Packets</span></div><div class="pka-kpi"><b>' + total + '</b><span>Total bytes</span></div><div class="pka-kpi"><b>' + Math.round(total / packets.length) + '</b><span>Average size (B)</span></div><div class="pka-kpi"><b>' + min + " / " + max + '</b><span>Min / max size (B)</span></div></div>' +
+      '<div class="pka-card"><div class="pka-lbl">Protocol distribution (packets containing each layer)</div>' + bars(protoRows, "") + "</div>" +
+      '<div class="pka-card"><div class="pka-lbl">Top talkers (bytes sent or received)</div>' + (talkRows.length ? bars(talkRows, " B") : '<span class="pk-dim">No IP traffic in the capture.</span>') + "</div>";
+  }
+  viewsEl.querySelectorAll(".pka-tab").forEach((b) => { b.onclick = () => setView(b.dataset.view); });
+  container.querySelector("#pka-addall").onclick = () => {
+    SAMPLE_PACKETS.forEach((s) => addPacket(s.hex));
+    if (packets.length && sel < 0) { sel = 0; showResult(packets[0].result); }
+    renderCapture();
+  };
 
   function doParse() {
     errorEl.innerHTML = "";
     const hex = inputEl.value.trim();
     if (!hex) { errorEl.innerHTML = '<div class="pka-error">Enter hex bytes to parse</div>'; return; }
-    const result = dissectPacket(hex);
+    const at = addPacket(hex);
+    if (at >= 0) { sel = at; renderCapture(); setView("packet"); }
+    showResult(at >= 0 ? packets[at].result : dissectPacket(hex));
+  }
+
+  function showResult(result) {
+    errorEl.innerHTML = "";
     lastResult = result;
     if (result.error) errorEl.innerHTML = '<div class="pka-error">' + escH(result.error) + '</div>';
     summaryEl.innerHTML = result.layers.length ? '<div class="pka-summary">' + escH(renderSummary(result.layers)) + '</div>' : "";

@@ -303,8 +303,25 @@ function renderResultsTable(results) {
   return html;
 }
 
+// Save text as a local file (exports and the scope file).
+function downloadFile(text, name, type) {
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([text], { type: type }));
+  a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+}
+
+// Imported words: kept for the session and resolved ahead of the built-in list, so they
+// are never cut off by the MAX_CANDIDATES cap.
+var customWords = [];
+function scanWords() {
+  var seen = new Set(customWords);
+  return customWords.concat(WORDLIST.filter(function (w) { return !seen.has(w); }));
+}
+
 export function renderSubdomainFinder(main) {
   var scanResults = [];
+  var scanDomain = '';
 
   main.innerHTML =
     '<h1 class="pg-h1">Subdomain Finder</h1>' +
@@ -338,9 +355,10 @@ export function renderSubdomainFinder(main) {
           '<button class="btn sm" id="sf-scan">Scan Subdomains</button>' +
           '<button class="btn sm ghost" id="sf-export-csv">Export CSV</button>' +
           '<button class="btn sm ghost" id="sf-export-json">Export JSON</button>' +
+          '<button class="btn sm ghost" id="sf-export-scope" title="Live hosts as name and IP, one per line">Scope File</button>' +
           '<button class="btn sm" id="sf-to-graph">Send to Security Graph</button>' +
         '</div>' +
-        '<div style="margin-top:6px;font-size:.75rem;color:var(--mut)">Passive discovery via crt.sh certificate-transparency logs, plus live DNS-over-HTTPS resolution of a ' + WORDLIST.length + '-entry wordlist. Real data &mdash; use only on domains you are authorized to assess.</div>' +
+        '<div style="margin-top:6px;font-size:.75rem;color:var(--mut)">Passive discovery via crt.sh certificate-transparency logs, plus live DNS-over-HTTPS resolution of a ' + scanWords().length + '-entry wordlist' + (customWords.length ? ' (' + customWords.length + ' imported)' : '') + '. Real data &mdash; use only on domains you are authorized to assess.</div>' +
         '<div id="sf-results" style="margin-top:12px"></div>' +
         '<div id="sf-stats" style="margin-top:8px;font-size:.8rem;color:var(--mut)"></div>' +
       '</div>';
@@ -357,7 +375,8 @@ export function renderSubdomainFinder(main) {
       var stats = main.querySelector('#sf-stats');
       btn.disabled = true;
       results.innerHTML = '<p style="color:var(--acc)" id="sf-prog">Starting...</p>';
-      realScan(domain, WORDLIST, function(pct, label) {
+      scanDomain = domain;
+      realScan(domain, scanWords(), function(pct, label) {
         var p = main.querySelector('#sf-prog');
         if (p) p.textContent = label + ' (' + pct + '%)';
       }).then(function(out) {
@@ -380,9 +399,17 @@ export function renderSubdomainFinder(main) {
         var r = scanResults[i];
         csv += r.subdomain + ',' + (r.ip || '') + ',' + (r.resolves ? 'LIVE' : 'NO_A') + ',' + r.source + '\n';
       }
-      var el = document.createElement('textarea');
-      el.value = csv; document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el);
-      main.querySelector('#sf-stats').textContent = 'CSV copied to clipboard (' + scanResults.length + ' rows)';
+      downloadFile(csv, scanDomain.replace(/\./g, '_') + '_subdomains.csv', 'text/csv');
+      main.querySelector('#sf-stats').textContent = 'CSV downloaded (' + scanResults.length + ' rows)';
+    };
+
+    main.querySelector('#sf-export-scope').onclick = function() {
+      var live = scanResults.filter(function(r) { return r.resolves && r.ip; });
+      if (!live.length) { main.querySelector('#sf-stats').textContent = 'No live hosts to put in a scope file'; return; }
+      var lines = ['# Scope file: live subdomains of ' + scanDomain, '# Generated ' + new Date().toISOString() + ' by Darknode Subdomain Finder', '# ' + live.length + ' hosts', ''];
+      live.forEach(function(r) { lines.push(r.subdomain + ' ' + r.ip); });
+      downloadFile(lines.join('\n') + '\n', scanDomain.replace(/\./g, '_') + '_scope.txt', 'text/plain');
+      main.querySelector('#sf-stats').textContent = 'Scope file downloaded (' + live.length + ' live hosts)';
     };
 
     main.querySelector('#sf-to-graph').onclick = function() {
@@ -411,9 +438,8 @@ export function renderSubdomainFinder(main) {
 
     main.querySelector('#sf-export-json').onclick = function() {
       if (!scanResults.length) return;
-      var el = document.createElement('textarea');
-      el.value = JSON.stringify(scanResults, null, 2); document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el);
-      main.querySelector('#sf-stats').textContent = 'JSON copied to clipboard (' + scanResults.length + ' entries)';
+      downloadFile(JSON.stringify(scanResults, null, 2), scanDomain.replace(/\./g, '_') + '_subdomains.json', 'application/json');
+      main.querySelector('#sf-stats').textContent = 'JSON downloaded (' + scanResults.length + ' entries)';
     };
   }
 
@@ -577,7 +603,10 @@ export function renderSubdomainFinder(main) {
         '<div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">' +
           '<input type="text" class="tk-in" id="sf-wl-filter" placeholder="Filter wordlist..." style="flex:1;min-width:200px">' +
           '<button class="btn sm" id="sf-wl-copy">Copy All</button>' +
+          '<button class="btn sm ghost" id="sf-wl-import">Import from File</button>' +
+          (customWords.length ? '<button class="btn sm ghost" id="sf-wl-reset">Remove Imported</button>' : '') +
         '</div>' +
+        '<div id="sf-wl-note" style="margin:-4px 0 10px;font-size:.75rem;color:var(--mut)">' + (customWords.length ? customWords.length + ' imported names are resolved first on the next scan, ahead of the built-in list.' : 'Import a .txt or .lst file (one name per line) to resolve your own names on the next scan.') + '</div>' +
         '<div id="sf-wl-list" style="max-height:500px;overflow-y:auto;background:var(--card);border:1px solid var(--line);border-radius:6px;padding:12px;font-family:var(--mono,monospace);font-size:.72rem;line-height:1.6;columns:3;column-gap:16px"></div>' +
       '</div>';
 
@@ -595,6 +624,26 @@ export function renderSubdomainFinder(main) {
       var el = document.createElement('textarea');
       el.value = filtered.join('\n'); document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el);
     };
+    main.querySelector('#sf-wl-import').onclick = function() {
+      var inp = document.createElement('input');
+      inp.type = 'file'; inp.accept = '.txt,.lst,.csv';
+      inp.onchange = function() {
+        var f = inp.files && inp.files[0]; if (!f) return;
+        f.text().then(function(text) {
+          var seen = new Set(customWords), added = 0;
+          text.split(/[\r\n,]+/).forEach(function(l) {
+            var w = l.trim().toLowerCase().replace(/\.$/, '');
+            if (!/^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)*$/.test(w) || seen.has(w)) return;
+            seen.add(w); customWords.push(w); added++;
+          });
+          renderWordlistTab();
+          main.querySelector('#sf-wl-note').textContent = 'Imported ' + added + ' new names from ' + f.name + ' (' + customWords.length + ' total). They are resolved first on the next scan.';
+        });
+      };
+      inp.click();
+    };
+    var reset = main.querySelector('#sf-wl-reset');
+    if (reset) reset.onclick = function() { customWords = []; renderWordlistTab(); };
   }
 
   tabs.onclick = function(e) {

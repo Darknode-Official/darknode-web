@@ -49,7 +49,7 @@ export function renderReport(main) {
       <div class="rp-grid">
         <div class="rp-col">
           <div class="card">
-            <label class="pc-f"><span>Report title</span><input class="tk-f" id="rTitle" value="${esc(d.title)}" placeholder="Acme Corp — External Pentest"></label>
+            <label class="pc-f"><span>Report title</span><input class="tk-f" id="rTitle" value="${esc(d.title)}" placeholder="Client — External Pentest"></label>
           </div>
           <div class="card">
             <div class="lbl">Add a finding</div>
