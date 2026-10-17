@@ -94,6 +94,7 @@ export const COLUMNS = {
   zpa: {
     ts: ["TimestampAuthentication", "LogTimestamp", "Timestamp"],
     ts_end: ["TimestampUnAuthentication"],
+    log_ts: ["LogTimestamp"], // fallback when TimestampAuthentication is empty (e.g. ZPN_STATUS_AUTH_FAILED rows)
     user: ["Username", "User"],
     session_id: ["SessionID", "Session ID"],
     status: ["SessionStatus", "Status"],
@@ -104,10 +105,12 @@ export const COLUMNS = {
     country: ["ClientCountryCode", "CountryCode"],
     city: ["ClientCity", "City"],
     platform: ["Platform"],
-    version: ["Version", "ClientVersion"],
-    device: ["Hostname", "CertificateCN", "DeviceID"],
-    bytes_rx: ["TotalBytesRx", "ClientToServerBytes"],
-    bytes_tx: ["TotalBytesTx", "ServerToClientBytes"],
+    version: ["Version"],
+    device: ["Hostname", "CertificateCN"],
+    // User Status log only (User Activity uses ZENTotalBytes*Client per connection; not read).
+    // Zscaler documents them only as "total bytes received / transmitted"; the direction is not stated.
+    bytes_rx: ["TotalBytesRx"],
+    bytes_tx: ["TotalBytesTx"],
     idp: ["Idp"],
   },
   cloudflare: {
@@ -381,7 +384,7 @@ export function parseDay(v) {
 /** Normalise a log user: lower-case, strip DOMAIN\ prefix and quotes; null for placeholders. */
 export function normUser(u) {
   let s = str(u).trim().replace(/^["']|["']$/g, "").toLowerCase();
-  if (BAD_USER.has(s)) return null;
+  if (BAD_USER.has(s) || /^\*+$/.test(s)) return null; // "*****" = ASA "logging hide username" mask
   const bs = s.lastIndexOf("\\");
   if (bs >= 0) s = s.slice(bs + 1);
   s = s.trim();
@@ -692,6 +695,13 @@ function parseFortiLine(line, f, ln, tc) {
 }
 
 const ASA_MSG = /%(?:ASA|FTD)-(\d)-(\d{6}):\s*(.*)$/;
+// "Group <g> User <u> IP <ip>" (as devices emit it) or "Group g User u IP ip" (as some
+// entries of the Cisco ASA Series Syslog Messages guide print it). Returns [group, user, ip, rest].
+const ASA_GUI = /^Group\s+(?:<([^>]*)>|(\S+))\s+User\s+(?:<([^>]*)>|(\S+))\s+IP\s+(?:<([^>]*)>|(\S+))\s*(.*)$/i;
+function asaGui(msg) {
+  const m = msg.match(ASA_GUI);
+  return m ? [m[1] ?? m[2], m[3] ?? m[4], m[5] ?? m[6], m[7]] : null;
+}
 function parseAsaLine(line, f, ln, tc) {
   const m = line.match(ASA_MSG);
   if (!m) return null;
@@ -699,18 +709,22 @@ function parseAsaLine(line, f, ln, tc) {
   const t = prefixTime(line.slice(0, line.indexOf("%")).trim(), tc);
   const base = { t, f, ln, prod: "anyconnect", m: "AAA" };
   let x;
-  if (id === "113039" && (x = msg.match(/Group <([^>]*)> User <([^>]*)> IP <([^>]*)> AnyConnect parent session started/i))) {
-    return mkEv({ ...base, k: "connect", ok: true, u: x[2], ip: cleanIp(x[3]), sk: normUser(x[2]) + "|" + x[3], gw: x[1] });
-  }
-  if (id === "722022" && (x = msg.match(/Group <([^>]*)> User <([^>]*)> IP <([^>]*)> (?:TCP|UDP) SVC connection established/i))) {
-    return mkEv({ ...base, k: "connect", ok: true, u: x[2], ip: cleanIp(x[3]), sk: normUser(x[2]) + "|" + x[3], gw: x[1], why: "svc" });
-  }
-  if (id === "722051" && (x = msg.match(/Group <([^>]*)> User <([^>]*)> IP <([^>]*)> (?:IPv[46] )?Address <([^>]*)> assigned to session/i))) {
-    return mkEv({ ...base, k: "touch", u: x[2], ip: cleanIp(x[3]), sk: normUser(x[2]) + "|" + x[3], pip: x[4], why: "assign" });
-  }
-  if (id === "722055" && (x = msg.match(/Group <([^>]*)> User <([^>]*)> IP <([^>]*)> Client Type: (.*)$/i))) {
-    const ver = (x[4].match(/(\d+(?:\.\d+){1,3})\s*$/) || [])[1] || null;
-    return mkEv({ ...base, k: "touch", u: x[2], ip: cleanIp(x[3]), sk: normUser(x[2]) + "|" + x[3], cli: x[4].trim(), ver, prod: productOf(x[4]) || "anyconnect", why: "client" });
+  const g = /^(113039|722022|722051|722055|716039)$/.test(id) ? asaGui(msg) : null;
+  if (g) {
+    const [grp, user, ip, rest] = g;
+    const sk = normUser(user) + "|" + ip;
+    if (id === "113039" && /^AnyConnect parent session started/i.test(rest)) return mkEv({ ...base, k: "connect", ok: true, u: user, ip: cleanIp(ip), sk, gw: grp });
+    if (id === "722022" && /^(?:TCP|UDP) SVC connection established/i.test(rest)) return mkEv({ ...base, k: "connect", ok: true, u: user, ip: cleanIp(ip), sk, gw: grp, why: "svc" });
+    // 722051: "IPv4 Address <a> IPv6 address <b> assigned to session" (older releases: "Address <a> assigned to session")
+    if (id === "722051" && (x = rest.match(/^(?:IPv4\s+)?Address\s+<?([^>\s]*)>?(?:\s+IPv6\s+address\s+<?[^>\s]*>?)?\s+assigned to session/i))) {
+      return mkEv({ ...base, k: "touch", u: user, ip: cleanIp(ip), sk, pip: x[1] || null, why: "assign" });
+    }
+    if (id === "722055" && (x = rest.match(/^Client Type:\s*(.*)$/i))) {
+      const ver = (x[1].match(/(\d+(?:\.\d+){1,3})\s*$/) || [])[1] || null;
+      return mkEv({ ...base, k: "touch", u: user, ip: cleanIp(ip), sk, cli: x[1].trim(), ver, prod: productOf(x[1]) || "anyconnect", why: "client" });
+    }
+    if (id === "716039" && /^Authentication:\s*rejected/i.test(rest)) return mkEv({ ...base, k: "auth", ok: false, u: user, ip: cleanIp(ip), gw: grp });
+    return null;
   }
   if (id === "113019" && (x = msg.match(/Group = ([^,]*), Username = ([^,]*), IP = ([^,]*), Session disconnected\. Session Type: ([^,]*), Duration: ([^,]*), Bytes xmt: (\d+), Bytes rcv: (\d+), Reason: (.*)$/i))) {
     return mkEv({ ...base, k: "disconnect", u: x[2].trim(), ip: cleanIp(x[3]), sk: normUser(x[2]) + "|" + x[3].trim(), gw: x[1].trim(), dur: parseDuration(x[5]), bout: Number(x[6]), bin: Number(x[7]), why: x[8].trim() });
@@ -721,14 +735,14 @@ function parseAsaLine(line, f, ln, tc) {
   if ((id === "113005" || id === "113015") && (x = msg.match(/AAA user authentication Rejected\s*:\s*reason\s*=\s*(.*?)\s*:.*?user\s*=\s*(.*?)\s*:\s*user IP\s*=\s*(\S+)/i))) {
     return mkEv({ ...base, k: "auth", ok: false, u: x[2], ip: cleanIp(x[3]), why: x[1] });
   }
-  if (id === "716039" && (x = msg.match(/Group <([^>]*)> User <([^>]*)> IP <([^>]*)> Authentication: rejected/i))) {
-    return mkEv({ ...base, k: "auth", ok: false, u: x[2], ip: cleanIp(x[3]), gw: x[1] });
-  }
   return null;
 }
 
-// PAN-OS GlobalProtect syslog field order (PAN-OS 9.1+ GlobalProtect log format).
-const GP_SYS = ["future1", "receive_time", "serial", "type", "subtype", "future2", "time_generated", "vsys", "event_id", "stage", "auth_method", "tunnel_type", "srcuser", "srcregion", "machinename", "public_ip", "public_ipv6", "private_ip", "private_ipv6", "hostid", "serialnumber", "client_ver", "client_os", "client_os_ver", "repeatcnt", "reason", "error", "opaque", "status", "location", "login_duration", "connect_method", "error_code", "portal", "seqno", "actionflags", "selection_type", "response_time", "priority", "attempted_gateways", "gateway"];
+// PAN-OS GlobalProtect syslog field order, as documented in "GlobalProtect Log Fields"
+// (PAN-OS 10.0 to 11.1 admin guide): High Res Timestamp sits between Action Flags and
+// Selection Type, and Device Group Hierarchy / vsys name / device name / cluster follow Gateway.
+// https://docs.paloaltonetworks.com/pan-os/11-1/pan-os-admin/monitoring/use-syslog-for-monitoring/syslog-field-descriptions/globalprotect-log-fields
+const GP_SYS = ["future1", "receive_time", "serial", "type", "subtype", "future2", "time_generated", "vsys", "event_id", "stage", "auth_method", "tunnel_type", "srcuser", "srcregion", "machinename", "public_ip", "public_ipv6", "private_ip", "private_ipv6", "hostid", "serialnumber", "client_ver", "client_os", "client_os_ver", "repeatcnt", "reason", "error", "opaque", "status", "location", "login_duration", "connect_method", "error_code", "portal", "seqno", "actionflags", "high_res_timestamp", "selection_type", "response_time", "priority", "attempted_gateways", "gateway", "dg_hier_level_1", "dg_hier_level_2", "dg_hier_level_3", "dg_hier_level_4", "vsys_name", "device_name", "vsys_id", "cluster_name"];
 
 function gpEvent(r, f, ln, tc) {
   const evId = str(r.event_id).toLowerCase().trim();
@@ -867,6 +881,7 @@ function cfEvent(r, f, ln, tc) {
 
 function zpaEvent(r, f, ln, tc) {
   const [lat, lon] = geo(r.lat, r.lon);
+  const t0 = parseTime(r.ts, tc) ?? parseTime(r.log_ts, tc);
   const base = {
     u: r.user, ip: cleanIp(r.ip), lat, lon, cc: cc(r.country), dev: r.device || null, ver: r.version || null,
     cli: r.platform ? "Client Connector (" + r.platform + ")" : "Client Connector", prod: "zscaler", sk: r.session_id || null, f, ln, m: r.idp || null,
@@ -875,15 +890,15 @@ function zpaEvent(r, f, ln, tc) {
   if (!st) {
     // User Activity log: one row per application connection; rows extend the session (SessionID) they belong to.
     if (r.conn_status === undefined && !r.session_id) return null;
-    return mkEv({ ...base, t: parseTime(r.ts, tc), k: "touch", ok: true, why: "activity" });
+    return mkEv({ ...base, t: t0, k: "touch", ok: true, why: "activity" });
   }
   // User Status log: ZPN_STATUS_AUTHENTICATED / ZPN_STATUS_DISCONNECTED / ZPN_STATUS_AUTH_FAILED
   if (/UNAUTH|DISCONNECT|CLOSE/.test(st)) {
-    const tEnd = parseTime(r.ts_end, tc) ?? parseTime(r.ts, tc);
+    const tEnd = parseTime(r.ts_end, tc) ?? t0;
     return mkEv({ ...base, t: tEnd, k: "disconnect", bout: numOrNull(r.bytes_rx), bin: numOrNull(r.bytes_tx) });
   }
-  if (/FAIL/.test(st)) return mkEv({ ...base, t: parseTime(r.ts, tc), k: "auth", ok: false, why: st });
-  if (/AUTHENTICATED|CONNECTED/.test(st)) return mkEv({ ...base, t: parseTime(r.ts, tc), k: "connect", ok: true });
+  if (/FAIL/.test(st)) return mkEv({ ...base, t: t0, k: "auth", ok: false, why: st });
+  if (/AUTHENTICATED|CONNECTED/.test(st)) return mkEv({ ...base, t: t0, k: "connect", ok: true });
   return null;
 }
 

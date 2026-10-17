@@ -53,9 +53,10 @@ const GP_CSV = [GP_HEAD,
   '1,2026/10/16 09:30:00,012801000001,7004,0x0,GLOBALPROTECT,portal,2561,2026/10/16 09:30:00,vsys1,portal-auth,login,LDAP,,bob@test.darknode.ai,NL,,198.51.100.77,,,,,,,,,1,,Authentication failed: Invalid username or password,,failure,,,,1,GP-Portal,,,0,,',
 ].join("\n") + "\n";
 
+// Field order per PAN-OS "GlobalProtect Log Fields" (High Res Timestamp after Action Flags; DG hierarchy etc. after Gateway).
 const GP_SYSLOG = [
-  "<14>Oct 16 09:14:03 PA-VM 1,2026/10/16 09:14:03,012801000001,GLOBALPROTECT,0,2561,2026/10/16 09:14:03,vsys1,gateway-connected,connected,SAML,ipsec,carol@test.darknode.ai,GB,LT-CAROL,198.51.100.40,0.0.0.0,10.20.0.9,0.0.0.0,host-c,SN123,6.1.0-30,Windows,\"Microsoft Windows 10 Pro , 64-bit\",1,,,\"\",success,,0,user-logon,0,GP-Portal,8100,0x0,auto,,0,,GW-West",
-  "<14>Oct 16 09:20:03 PA-VM 1,2026/10/16 09:20:03,012801000001,GLOBALPROTECT,0,2561,2026/10/16 09:20:03,vsys1,gateway-auth,login,LDAP,,dan@test.darknode.ai,US,,203.0.113.66,0.0.0.0,0.0.0.0,0.0.0.0,,,,,,1,,Invalid credentials,\"\",failure,,0,,1,GP-Portal,8101,0x0,,,0,,GW-West",
+  "<14>Oct 16 09:14:03 PA-VM 1,2026/10/16 09:14:03,012801000001,GLOBALPROTECT,0,2561,2026/10/16 09:14:03,vsys1,gateway-connected,connected,SAML,ipsec,carol@test.darknode.ai,GB,LT-CAROL,198.51.100.40,0.0.0.0,10.20.0.9,0.0.0.0,host-c,SN123,6.1.0-30,Windows,\"Microsoft Windows 10 Pro , 64-bit\",1,,,\"\",success,,0,user-logon,0,GP-Portal,8100,0x0,2026-10-16T09:14:03.412+00:00,auto,38,1,\"GW-West,38,1;GW-East,-1,2\",GW-West,0,0,0,0,,PA-VM,0,",
+  "<14>Oct 16 09:20:03 PA-VM 1,2026/10/16 09:20:03,012801000001,GLOBALPROTECT,0,2561,2026/10/16 09:20:03,vsys1,gateway-auth,login,LDAP,,dan@test.darknode.ai,US,,203.0.113.66,0.0.0.0,0.0.0.0,0.0.0.0,,,,,,1,,Invalid credentials,\"\",failure,,0,,1,GP-Portal,8101,0x0,2026-10-16T09:20:03.007+00:00,,,0,,GW-West,0,0,0,0,,PA-VM,0,",
 ].join("\n");
 
 const ASA = [
@@ -201,6 +202,8 @@ group("vpnaudit: parsers", () => {
     assert.equal(e.length, 2);
     assert.equal(e[0].u, "carol@" + D); assert.equal(e[0].k, "connect"); assert.equal(e[0].cc, "GB"); assert.equal(e[0].dev, "host-c"); assert.equal(e[0].ver, "6.1.0-30");
     assert.equal(e[1].ok, false); assert.equal(e[1].ip, "203.0.113.66");
+    // Gateway is read from its documented position, not from Attempted Gateways.
+    assert.equal(e[0].gw, "GW-West"); assert.equal(e[1].gw, "GW-West"); assert.equal(e[0].pip, "10.20.0.9");
   });
   test("Cisco ASA: 113004/113039/722051/722055/113019/113005 with message-specific regexes", () => {
     const f = { name: "asa.log", text: ASA };
@@ -213,6 +216,34 @@ group("vpnaudit: parsers", () => {
     const d = e.find((x) => x.k === "disconnect");
     assert.equal(d.dur, 3723); assert.equal(d.bout, 5242880); assert.equal(d.bin, 40960); assert.equal(d.why, "User Requested");
     assert.equal(e.filter((x) => x.k === "auth" && x.ok === false).length, 2);
+  });
+  test("Cisco ASA: 722051 takes the IPv4 address, not the IPv6 one that follows it", () => {
+    const a = evs([{ name: "asa.log", text: ASA }]).find((x) => x.why === "assign");
+    assert.equal(a.pip, "10.50.0.7");
+  });
+  test("Cisco ASA: Group/User/IP without angle brackets (Cisco syslog guide layout) parse the same", () => {
+    const text = [
+      "Oct 16 2026 09:14:03: %ASA-6-113039: Group GP-Staff User alice IP 203.0.113.5 AnyConnect parent session started.",
+      "Oct 16 2026 09:14:04: %ASA-6-722051: Group GP-Staff User alice IP 203.0.113.5 IPv4 Address 10.50.0.7 IPv6 address :: assigned to session",
+      "Oct 16 2026 09:14:05: %ASA-6-722055: Group GP-Staff User alice IP 203.0.113.5 Client Type: Cisco AnyConnect VPN Agent for Windows 4.10.05095",
+      "Oct 16 2026 09:20:00: %ASA-6-716039: Group GP-Staff User bob IP 198.51.100.9 Authentication: rejected, Session Type: WebVPN.",
+    ].join("\n");
+    const e = evs([{ name: "asa.log", text }]);
+    const c = e.find((x) => x.k === "connect");
+    assert.equal(c.u, "alice"); assert.equal(c.ip, "203.0.113.5"); assert.equal(c.gw, "GP-Staff");
+    assert.equal(e.find((x) => x.why === "assign").pip, "10.50.0.7");
+    assert.equal(e.find((x) => x.why === "client").ver, "4.10.05095");
+    const rej = e.find((x) => x.k === "auth" && x.ok === false);
+    assert.equal(rej.u, "bob"); assert.equal(rej.ip, "198.51.100.9");
+  });
+  test("Cisco ASA: masked usernames of any asterisk length are never one shared user", () => {
+    const text = [
+      "Oct 16 2026 09:31:00: %ASA-6-113005: AAA user authentication Rejected : reason = AAA failure : server = 10.0.0.5 : user = ***** : user IP = 198.51.100.9",
+      "Oct 16 2026 09:31:05: %ASA-6-113015: AAA user authentication Rejected : reason = Invalid password : local database : user = ******** : user IP = 198.51.100.10",
+    ].join("\n");
+    assert.equal(normUser("********"), null);
+    const r = run([{ name: "asa.log", text }]);
+    assert.ok(r.skipped.some((x) => /2 failed authentication\(s\) carry no username/.test(x.reason)));
   });
   test("Cisco ASA: one session from parent + SVC lines, client version attached, masked usernames reported", () => {
     const r = run([{ name: "asa.log", text: ASA }]);
@@ -269,6 +300,18 @@ group("vpnaudit: parsers", () => {
     assert.equal(r.tables.sessions.length, 1);
     const s = r.tables.sessions[0];
     assert.equal(s.lat, 40.7128); assert.equal(s.country, "US"); assert.equal(s.hours, 2); assert.equal(s.bytesOut, 50000000); assert.equal(s.device, "LT-CAROL");
+  });
+  test("Zscaler ZPA user activity + AUTH_FAILED status, documented LSS field names", () => {
+    // Field names from help.zscaler.com "Understanding User Activity Log Fields" / "User Status Log Fields".
+    const act = [
+      { LogTimestamp: "Fri Oct 16 09:20:00 2026", Customer: "Darknode Test", SessionID: "s-9", ConnectionID: "c-1", ConnectionStatus: "Open", Username: "dave@" + D, ClientPublicIP: "203.0.113.44", ClientLatitude: 51.5074, ClientLongitude: -0.1278, ClientCountryCode: "GB", ClientCity: "London", Hostname: "LT-DAVE", Platform: "windows", Idp: "Okta", Application: "wiki", Host: "wiki.test.darknode.ai", ServerPort: 443 },
+    ].map((o) => JSON.stringify(o)).join("\n");
+    const e = evs([{ name: "zpa-activity.json", text: act }]);
+    assert.equal(classifyText("zpa-activity.json", act).format, "zpa");
+    assert.equal(e.length, 1); assert.equal(e[0].k, "touch"); assert.equal(e[0].ip, "203.0.113.44"); assert.equal(e[0].cc, "GB"); assert.equal(e[0].lat, 51.5074); assert.equal(e[0].dev, "LT-DAVE");
+    const fail = JSON.stringify([{ LogTimestamp: "Fri Oct 16 09:25:00 2026", Username: "erin@" + D, SessionID: "s-10", SessionStatus: "ZPN_STATUS_AUTH_FAILED", PublicIP: "198.51.100.61", TimestampAuthentication: "", TimestampUnAuthentication: "" }]);
+    const f = evs([{ name: "zpa-status.json", text: fail }]);
+    assert.equal(f.length, 1); assert.equal(f[0].k, "auth"); assert.equal(f[0].ok, false); assert.equal(f[0].t, Date.UTC(2026, 9, 16, 9, 25, 0));
   });
   test("Azure VPN Gateway P2SDiagnosticLog JSON records", () => {
     const f = { name: "p2s.json", text: AZURE };
