@@ -1,8 +1,30 @@
 {
- "updated": "2026-10-16T09:56:44.886Z",
+ "updated": "2026-10-17T09:30:06.406Z",
  "source": "CISA KEV",
  "count": 500,
  "data": [
+  {
+   "cve": "CVE-2026-102764",
+   "vendor": "BeyondTrust",
+   "product": "Remote Support",
+   "name": "BeyondTrust Remote Support Authentication Bypass by Spoofing Vulnerability",
+   "description": "BeyondTrust Remote Support contains an authentication bypass by spoofing vulnerability that could allow a remote attacker to perform file operations on the appliance.",
+   "dateAdded": "2026-10-16",
+   "dueDate": "2026-10-19",
+   "action": "Apply mitigations in accordance with vendor instructions, ensuring compliance with CISA’s BOD 26-04 Prioritizing Security Updates Based on Risk (see URL in Notes) guidance and CISA’s “Forensics Triage Requirements” (see URL in Notes). Follow applicable BOD 26-04 guidance for cloud services or discontinue use of the product if mitigations are unavailable. Stakeholders are responsible for evaluating each asset's internet exposure and ensuring adherence to BOD 26-04 patching guidelines.",
+   "ransomware": "Unknown"
+  },
+  {
+   "cve": "CVE-2025-61624",
+   "vendor": "Fortinet",
+   "product": "Multiple Products",
+   "name": "Fortinet Multiple Products Path Traversal Vulnerability",
+   "description": "FortiOS, FortiPAM, FortiProxy, and FortiSwitchManager contain a path traversal vulnerability that may allow an authenticated attacker with admin profile and at least read-write permissions to write or delete arbitrary files via specific CLI commands.",
+   "dateAdded": "2026-10-16",
+   "dueDate": "2026-10-19",
+   "action": "Apply mitigations in accordance with vendor instructions, ensuring compliance with CISA’s BOD 26-04 Prioritizing Security Updates Based on Risk (see URL in Notes) guidance and CISA’s “Forensics Triage Requirements” (see URL in Notes). Follow applicable BOD 26-04 guidance for cloud services or discontinue use of the product if mitigations are unavailable. Stakeholders are responsible for evaluating each asset's internet exposure and ensuring adherence to BOD 26-04 patching guidelines.",
+   "ransomware": "Unknown"
+  },
   {
    "cve": "CVE-2026-21589",
    "vendor": "Atlassian",
@@ -5476,28 +5498,6 @@
    "product": "Windows",
    "name": "Microsoft Windows Hyper-V NT Kernel Integration VSP Use-After-Free Vulnerability",
    "description": "Microsoft Windows Hyper-V NT Kernel Integration VSP contains a use-after-free vulnerability that allows a local attacker to gain SYSTEM privileges.",
-   "dateAdded": "2025-01-14",
-   "dueDate": "2025-02-04",
-   "action": "Apply mitigations per vendor instructions or discontinue use of the product if mitigations are unavailable.",
-   "ransomware": "Unknown"
-  },
-  {
-   "cve": "CVE-2025-21334",
-   "vendor": "Microsoft",
-   "product": "Windows",
-   "name": "Microsoft Windows Hyper-V NT Kernel Integration VSP Use-After-Free Vulnerability",
-   "description": "Microsoft Windows Hyper-V NT Kernel Integration VSP contains a use-after-free vulnerability that allows a local attacker to gain SYSTEM privileges.",
-   "dateAdded": "2025-01-14",
-   "dueDate": "2025-02-04",
-   "action": "Apply mitigations per vendor instructions or discontinue use of the product if mitigations are unavailable.",
-   "ransomware": "Unknown"
-  },
-  {
-   "cve": "CVE-2025-21333",
-   "vendor": "Microsoft",
-   "product": "Windows",
-   "name": "Microsoft Windows Hyper-V NT Kernel Integration VSP Heap-based Buffer Overflow Vulnerability",
-   "description": "Microsoft Windows Hyper-V NT Kernel Integration VSP contains a heap-based buffer overflow vulnerability that allows a local attacker to gain SYSTEM privileges.",
    "dateAdded": "2025-01-14",
    "dueDate": "2025-02-04",
    "action": "Apply mitigations per vendor instructions or discontinue use of the product if mitigations are unavailable.",
