@@ -879,7 +879,7 @@ function mergeRecords(rows) {
 // Feeds (passed in by the UI; the engine never fetches)
 // ---------------------------------------------------------------------------
 const feedRows = (f) => (Array.isArray(f) ? f : f && Array.isArray(f.data) ? f.data : f && Array.isArray(f.vulnerabilities) ? f.vulnerabilities : null);
-/** CVE -> KEV entry from the mirrored /data/feeds/cisa-kev.json (or the CISA catalog shape). */
+/** CVE -> KEV entry from the mirrored /data/feeds/cisa-kev-index.json (full catalog), cisa-kev.json, or the CISA catalog shape. */
 export function kevIndex(feed) {
   const m = new Map();
   for (const e of feedRows(feed) || []) {
@@ -934,11 +934,15 @@ export function slaDue(it, sla = DEFAULTS.sla) {
   const d = sla[it.priority];
   if (Number.isFinite(d) && d > 0) c.push({ due: it.firstSeen + d * DAY, basis: "internal " + it.priority + " " + d + " days" });
   if (sla.pciCriticalHighDays > 0 && (it.severity === "critical" || it.severity === "high")) c.push({ due: it.firstSeen + sla.pciCriticalHighDays * DAY, basis: "PCI DSS 6.3.3 " + sla.pciCriticalHighDays + " days" });
-  if (it.kev && sla.kevCatalogDue && it.kevDue) { const t = parseTs(it.kevDue); if (t != null) c.push({ due: Math.max(t, 0), basis: "CISA KEV due date " + it.kevDue }); }
+  // CISA's catalog due date is a fixed calendar date. When it had already passed before this
+  // asset was first seen, counting overdue days from it would report years of lateness on a
+  // finding detected yesterday; the detection-based clocks apply instead and the basis says so.
+  let kevPassed = "";
+  if (it.kev && sla.kevCatalogDue && it.kevDue) { const t = parseTs(it.kevDue); if (t != null) { if (t >= it.firstSeen) c.push({ due: t, basis: "CISA KEV due date " + it.kevDue }); else kevPassed = "; CISA KEV due date " + it.kevDue + " had passed before first seen"; } }
   if (it.kev && it.internetFacing && sla.kevInternetDays > 0) c.push({ due: it.firstSeen + sla.kevInternetDays * DAY, basis: "BOD 22-01 internet-facing " + sla.kevInternetDays + " days" });
   if (!c.length) return { due: null, basis: "no SLA configured for " + it.priority };
   c.sort((a, b) => a.due - b.due);
-  return c[0];
+  return kevPassed ? { due: c[0].due, basis: c[0].basis + kevPassed } : c[0];
 }
 
 // ---------------------------------------------------------------------------

@@ -377,6 +377,10 @@ test("SLA: internal days, PCI 6.3.3, KEV catalog due, BOD 22-01 internet clock",
   const net = slaDue({ firstSeen: t0, priority: "P1", kev: true, internetFacing: true }, { ...O.sla, kevCatalogDue: false });
   assert.equal(net.due, t0 + 14 * DAY);
   assert.equal(slaDue({ firstSeen: null, priority: "P1" }).due, null);
+  // A catalog due date already in the past at first sight falls back to the detection clock.
+  const old = slaDue({ firstSeen: t0, priority: "P1", kev: true, kevDue: "2021-12-24" });
+  assert.equal(old.due, t0 + 15 * DAY);
+  assert.ok(/had passed before first seen/.test(old.basis));
 });
 
 test("analyze: overdue days measured against opts.now", () => {

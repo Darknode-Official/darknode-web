@@ -78,6 +78,7 @@ const CSS = `
   .vim-list th.on{color:var(--tx,#1a2230)}
   .vim-list th.on::after{content:" \\2193";font-size:.7rem}
   .vim-list th.on.asc::after{content:" \\2191"}
+  .vim-nw{white-space:nowrap}
   .vim-list td{padding:8px 12px;border-bottom:1px solid var(--line,#eef0f4);vertical-align:top;overflow-wrap:break-word;word-break:normal}
   .vim-list tr[data-i]{cursor:pointer}
   .vim-list tr[data-i]:hover,.vim-list tr.sel{background:var(--bg,#f7f8fb)}
@@ -225,7 +226,7 @@ export function renderVulnImport(main) {
     $("feeds").innerHTML = f("CISA KEV", feeds.kev, "entries") + f("FIRST EPSS", feeds.epss, "CVEs (top scores + every KEV CVE)") + f("End-of-life (endoflife.date)", feeds.eol, "products") +
       '<div class="' + P + '-feed"><b>EPSS live</b>' + (epssLiveAt ? "fetched live " + esc(epssLiveAt) + ", " + Object.keys(epssLive || {}).length + " CVEs" : "not fetched") + "</div>";
   }
-  for (const [k, file] of [["kev", "cisa-kev"], ["epss", "epss-top"], ["eol", "eol-products"]]) {
+  for (const [k, file] of [["kev", "cisa-kev-index"], ["epss", "epss-top"], ["eol", "eol-products"]]) {
     fetch("/data/feeds/" + file + ".json").then((r) => (r.ok ? r.json() : null)).then((j) => { if (j) { feeds[k] = j; renderFeeds(); } }).catch(() => {});
   }
   renderFeeds();
@@ -402,14 +403,14 @@ export function renderVulnImport(main) {
   const REG_COLS = [
     { key: "priority", label: "Priority", rank: PRI_RANK, render: (r) => pill(r.priority) },
     { key: "assetName", label: "Asset", render: (r) => esc(r.assetName) + (r.internetFacing ? ' <span class="' + P + '-chip">internet</span>' : "") },
-    { key: "cve", label: "CVE / ID", render: (r) => esc(r.cve || r.vulnKey) + (r.kev ? ' <span class="' + P + '-chip kev">KEV</span>' : "") },
+    { key: "cve", label: "CVE / ID", render: (r) => '<span class="' + P + '-nw">' + esc(r.cve || r.vulnKey) + "</span>" + (r.kev ? ' <span class="' + P + '-chip kev">KEV</span>' : "") },
     { key: "title", label: "Title" },
     { key: "cvss", label: "CVSS" },
     { key: "epss", label: "EPSS", render: (r) => (r.epss == null ? "-" : esc(r.epss) + (r.epssSource === "live" ? ' <span class="' + P + '-chip">live</span>' : "")) },
     { key: "kev", label: "KEV", render: (r) => (r.kev ? "yes" : "") },
     { key: "scanners", label: "Scanner" },
-    { key: "firstSeen", label: "First seen" },
-    { key: "due", label: "Due" },
+    { key: "firstSeen", label: "First seen", render: (r) => '<span class="' + P + '-nw">' + esc(r.firstSeen || "") + "</span>" },
+    { key: "due", label: "Due", render: (r) => '<span class="' + P + '-nw">' + esc(r.due || "") + "</span>" },
     { key: "daysOverdue", label: "Overdue", render: (r) => (r.overdue ? '<span class="' + P + '-chip od">' + r.daysOverdue + " d</span>" : "") },
     { key: "status", label: "Status", render: (r) => esc(r.status) + (r.change ? '<div class="' + P + '-note" style="margin:0">' + esc(r.change) + "</div>" : "") },
   ];
@@ -421,7 +422,7 @@ export function renderVulnImport(main) {
   ];
   const CVE_COLS = [
     { key: "priority", label: "Priority", rank: PRI_RANK, render: (c) => pill(c.priority) },
-    { key: "cve", label: "CVE", render: (c) => esc(c.cve) + (c.kev ? ' <span class="' + P + '-chip kev">KEV</span>' : "") + (c.ransomware ? ' <span class="' + P + '-chip kev">ransomware</span>' : "") },
+    { key: "cve", label: "CVE", render: (c) => '<span class="' + P + '-nw">' + esc(c.cve) + "</span>" + (c.kev ? ' <span class="' + P + '-chip kev">KEV</span>' : "") + (c.ransomware ? ' <span class="' + P + '-chip kev">ransomware</span>' : "") },
     { key: "title", label: "Title" }, { key: "assets", label: "Assets" }, { key: "maxCvss", label: "Max CVSS" },
     { key: "epss", label: "EPSS", render: (c) => (c.epss == null ? "-" : esc(c.epss)) }, { key: "kevDue", label: "KEV due" },
     { key: "fixAvailable", label: "Fix", render: (c) => (c.fixAvailable ? "yes" : "no") }, { key: "overdue", label: "Overdue" }, { key: "scanners", label: "Scanners" },
