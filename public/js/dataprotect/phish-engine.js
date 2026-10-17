@@ -174,6 +174,66 @@ export function extractIOCs(text) {
   return { urls, domains, ips, emails, hashes };
 }
 
+// ---- defang / refang ------------------------------------------------------
+
+// Undo the common defanging conventions (hxxp, [.], (.), [:], [@], [at]).
+export function refangText(text) {
+  return String(text || "")
+    .replace(/\bhxxp(s?)/gi, (m, s) => (m[0] === "H" ? "HTTP" : "http") + s)
+    .replace(/\[\.\]|\(\.\)|\{\.\}|\[dot\]/gi, ".")
+    .replace(/\[:\/\/\]/g, "://").replace(/\[:\]/g, ":")
+    .replace(/\[@\]|\[at\]/gi, "@");
+}
+
+// Make every URL, email, IP and domain in the text safe to paste into a ticket or chat:
+// http -> hxxp, dots in hosts -> [.], @ -> [@]. Idempotent (already-defanged text is
+// refanged first), and the rest of the text is left untouched.
+const FILE_EXT = /\.(png|jpg|jpeg|gif|svg|css|js|json|html?|webp|txt|pdf|docx?|xlsx?|exe|dll|zip)$/i;
+export function defangText(text) {
+  const dots = (s) => s.replace(/\./g, "[.]");
+  return refangText(text).replace(
+    /\bhttps?:\/\/[^\s"'<>)\]]+|\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b|\b(?:\d{1,3}\.){3}\d{1,3}\b|\b(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}\b/gi,
+    (m) => {
+      if (/^https?:\/\//i.test(m)) {
+        const i = m.indexOf("://") + 3, rest = m.slice(i), cut = rest.search(/[\/?#]/), host = cut < 0 ? rest : rest.slice(0, cut);
+        return m.slice(0, i).replace(/^http/i, (h) => (h[0] === "H" ? "HXXP" : "hxxp")) + dots(host) + (cut < 0 ? "" : rest.slice(cut));
+      }
+      if (m.includes("@")) { const at = m.indexOf("@"); return m.slice(0, at) + "[@]" + dots(m.slice(at + 1)); }
+      if (FILE_EXT.test(m)) return m;
+      return dots(m);
+    });
+}
+
+// Plain-text incident report for a triaged URL or email, with every indicator
+// defanged. `t` is the triage summary the UI already shows; `extra` holds the
+// analyst's optional "actions taken" and "notes".
+export function buildTriageReport(t, extra = {}) {
+  const L = [], line = "=".repeat(48), d = (s) => defangText(String(s == null || s === "" ? "-" : s));
+  const sec = (title) => L.push("", "--- " + title.toUpperCase() + " ---");
+  L.push(line, "PHISHING TRIAGE REPORT", line, "Generated: " + (t.generated || new Date().toISOString()), "Type: " + (t.mode === "email" ? "Email" : "Link"), "Verdict: " + (t.verdict || "-"));
+  if (t.mode === "email") {
+    sec("Message");
+    L.push("From: " + d(t.from), "From domain: " + d(t.fromReg) + (t.age ? " (" + t.age + ")" : ""), "Return-Path: " + d(t.returnPath), "Reply-To: " + d(t.replyTo), "Subject: " + (t.subject || "-"));
+    if (t.auth) L.push("Authentication: SPF " + (t.auth.spf || "none") + ", DKIM " + (t.auth.dkim || "none") + ", DMARC " + (t.auth.dmarc || "none"));
+    if (t.links && t.links.length) { sec("Links in the message"); t.links.forEach((u) => L.push("[" + (u.severity || "info") + "] " + d(u.input))); }
+  } else {
+    sec("Link");
+    L.push("Target: " + d(t.input), "Host: " + d(t.host), "Registered domain: " + d(t.registrable) + (t.age ? " (" + t.age + ")" : ""), "DNS: " + (t.dns || "-"));
+    if (t.chain && t.chain.length) { sec("Redirect chain"); t.chain.forEach((h, i) => L.push((i + 1) + ". " + d(h))); }
+  }
+  const sig = (t.reasons || []).filter((r) => r.w > 0);
+  sec("Signals (" + sig.length + ")");
+  if (sig.length) sig.forEach((r) => L.push("- " + defangText(r.t))); else L.push("No suspicious signals detected.");
+  const io = t.iocs || {}, kinds = [["URLs", io.urls], ["Domains", io.domains], ["IPs", io.ips], ["Emails", io.emails], ["Hashes", io.hashes]].filter(([, a]) => a && a.length);
+  if (kinds.length) { sec("Indicators (defanged)"); kinds.forEach(([k, a]) => { L.push(k + ":"); a.slice(0, 100).forEach((x) => L.push("  " + d(x))); }); }
+  sec("Actions taken"); L.push(String(extra.actions || "").trim() || "-");
+  sec("Notes"); L.push(String(extra.notes || "").trim() || "-");
+  sec("Recommended next steps");
+  ["Block the sender domain and listed URLs at the mail gateway and web proxy", "Search mail logs for other recipients of the same message or links", "Contact any user who clicked; reset credentials that were entered", "Preserve the original message (.eml) as evidence"].forEach((s, i) => L.push((i + 1) + ". " + s));
+  L.push("", "Risk is inferred from observable signals; it is not a malware verdict.", line);
+  return L.join("\n");
+}
+
 // ---- email parsing --------------------------------------------------------
 
 // Parse raw RFC822 headers (handles folded continuation lines). Returns a map
@@ -337,5 +397,5 @@ export function selfTest() {
 export default {
   analyzeUrl, lookalike, extractIOCs, parseEmailHeaders, parseAuthResults,
   triageEmail, registrableDomain, domainOf, displayName, levenshtein,
-  verdictFromWeight, BRANDS, RISKY_TLDS, selfTest,
+  verdictFromWeight, BRANDS, RISKY_TLDS, selfTest, defangText, refangText, buildTriageReport,
 };

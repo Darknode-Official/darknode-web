@@ -107,6 +107,82 @@ const INSURANCE_TIERS = [
 // COST CALCULATION ENGINE
 // ═══════════════════════════════════════════════════════════════════════════════
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// RESPONSE PLAN (timeline, notification obligations, recovery roadmap)
+// Built only from the calculator inputs; no sample incident data.
+// ═══════════════════════════════════════════════════════════════════════════════
+// How each attack vector is typically first noticed.
+const DISCOVERY = {
+  phishing: 'A user reports a suspicious email, or mail-security / EDR alerts on a payload or a credential-harvest click.',
+  stolen_creds: 'Impossible-travel or unfamiliar-location sign-ins, MFA prompts the user did not start, or new mailbox / OAuth grants.',
+  vuln_exploit: 'WAF / IDS alerts, a web shell or unexpected process on an internet-facing host, or a vendor advisory matching your version.',
+  insider: 'DLP or UEBA flags unusual bulk access or transfers, or data surfaces outside the organization.',
+  misconfig: 'An external researcher, journalist or attack-surface scan reports publicly reachable storage or a database.',
+  social_eng: 'Help-desk resets, MFA re-registrations or access grants that do not match a verified request.',
+  supply_chain: 'A vendor, CISA or law-enforcement notice that software or a service you use was compromised.',
+  ransomware: 'Encrypted files and ransom notes on endpoints or servers, often after backup deletion or mass shadow-copy removal.',
+  bec: 'A payment-change request that fails a call-back check, or a partner reporting an invoice you did not send.',
+};
+
+// Notification obligations implied by the inputs. Offsets are measured from discovery.
+function notificationObligations(p) {
+  var dt = p.dataTypes || [], out = [];
+  if (p.gdprApplicable) out.push({ reg: 'GDPR Art. 33', who: 'Lead supervisory authority', when: 'within 72 hours of awareness', hours: 72 });
+  if (p.gdprApplicable) out.push({ reg: 'GDPR Art. 34', who: 'Affected data subjects (if high risk)', when: 'without undue delay' });
+  if (p.sectorId === 'government') out.push({ reg: 'US federal incident reporting', who: 'CISA', when: 'within 1 hour of identification (federal agencies)', hours: 1 });
+  if (p.sectorId === 'energy') out.push({ reg: 'NERC CIP-008', who: 'E-ISAC and CISA', when: 'within 1 hour for a reportable incident', hours: 1 });
+  if (p.sectorId === 'financial') out.push({ reg: 'NYDFS 23 NYCRR 500.17 (if covered)', who: 'NY Department of Financial Services', when: 'within 72 hours of determination', hours: 72 });
+  if (p.sectorId === 'financial') out.push({ reg: 'SEC Form 8-K Item 1.05 (if public)', who: 'SEC / investors', when: 'within 4 business days of a materiality determination' });
+  if (dt.indexOf('payment') >= 0) out.push({ reg: 'PCI DSS / card brand rules', who: 'Acquiring bank and card brands', when: 'immediately on suspicion; a PCI Forensic Investigator may be required', hours: 24 });
+  if (dt.indexOf('phi') >= 0) out.push({ reg: 'HIPAA Breach Notification Rule', who: 'Individuals; HHS (and media if 500+ in a state)', when: 'within 60 days of discovery', hours: 60 * 24 });
+  if (p.records > 0 && dt.some(function(d) { return d === 'pii' || d === 'financial' || d === 'credentials' || d === 'payment'; }))
+    out.push({ reg: 'US state breach laws', who: 'Affected residents (and state AGs above thresholds)', when: 'varies by state, commonly 30 to 60 days', hours: 30 * 24 });
+  return out;
+}
+
+function responseTimeline(p) {
+  var mtti = p.mtti || 0, mttc = p.mttc || 0, v = p.vectorId, obl = notificationObligations(p), t = [];
+  t.push({ when: 'Day 0', title: 'Initial compromise', detail: 'Attacker gains access. With your inputs, it goes unnoticed for ' + mtti + ' days.' });
+  t.push({ when: 'Day ' + mtti, title: 'Breach identified', detail: DISCOVERY[v] || 'Security monitoring raises an alert.' });
+  t.push({ when: 'Hour 0-1', title: 'Incident commander and war room', detail: 'Assign an incident commander, open a war room, start an evidence log and a decision log.' });
+  t.push({ when: 'Hour 1-4', title: 'Escalation', detail: 'Notify executives, legal counsel and the cyber insurer. ' + (p.irRetainer ? 'Activate the IR retainer.' : 'No IR retainer: engaging an outside firm now adds onboarding time.') });
+  t.push({ when: 'Hour 2-24', title: 'Containment decisions', detail: 'Isolate affected systems, revoke sessions and tokens, block attacker infrastructure, preserve memory and disk images before rebuilding.' });
+  if (v === 'ransomware') {
+    t.push({ when: 'Hour 4-24', title: 'Encryption and backup assessment', detail: 'Map what is encrypted, confirm whether offline/immutable backups are intact, and decide restore order for critical services.' });
+    t.push({ when: 'Day 1-3', title: 'Ransom decision', detail: 'Board-level decision with counsel and insurer. Check sanctions exposure (OFAC) before any payment; law enforcement advises against paying.' });
+  }
+  if (v === 'bec') t.push({ when: 'Hour 0-24', title: 'Funds recall', detail: 'Contact your bank immediately to recall or freeze transfers and report to law enforcement (IC3 in the US).' });
+  obl.forEach(function(o) { if (o.hours && o.hours <= 72) t.push({ when: 'Hour ' + o.hours + ' (deadline)', title: o.reg, detail: 'Notify ' + o.who + ' ' + o.when + '.' }); });
+  t.push({ when: 'Day 1-14', title: 'Forensics and data impact', detail: 'Establish root cause and scope; classify the ' + fmtN(p.records || 0) + ' affected records by data type and jurisdiction.' });
+  obl.forEach(function(o) { if (!o.hours || o.hours > 72) t.push({ when: o.hours ? 'Day ' + Math.round(o.hours / 24) + ' (deadline)' : 'Deadline', title: o.reg, detail: 'Notify ' + o.who + ' ' + o.when + '.' }); });
+  t.push({ when: 'Day ' + (mtti + mttc), title: 'Containment complete', detail: 'Attacker access removed ' + mttc + ' days after identification (your input).' });
+  t.push({ when: 'After containment', title: 'Recovery and hardening', detail: 'Rebuild from clean images, rotate credentials, close the entry point, then verify with testing.' });
+  t.push({ when: 'Months 2-12', title: 'Aftermath', detail: 'Regulator inquiries, claims or litigation, customer communications, and a lessons-learned review.' });
+  return t;
+}
+
+function recoveryPlan(p) {
+  var dt = p.dataTypes || [], v = p.vectorId, phases = [];
+  var contain = ['Isolate compromised hosts and accounts', 'Preserve evidence (memory, disk, logs) before changes', 'Activate business continuity for affected services'];
+  if (v === 'ransomware') contain.push('Disconnect backup systems until they are verified clean');
+  if (v === 'supply_chain') contain.push('Disable or isolate the affected vendor integration');
+  phases.push({ title: 'Contain and stabilize', when: 'Identification to day ' + (p.mttc || 0), tasks: contain });
+  var erad = ['Remove attacker persistence (accounts, tasks, services, OAuth grants)', 'Patch or reconfigure the entry point'];
+  if (dt.indexOf('credentials') >= 0 || v === 'stolen_creds' || v === 'phishing' || v === 'social_eng') erad.push('Reset credentials and re-enrol MFA for affected users; revoke refresh tokens');
+  if (v === 'bec' || v === 'phishing') erad.push('Review mailbox forwarding and inbox rules across the tenant');
+  if (v === 'misconfig') erad.push('Lock down the exposed resource and review access logs for downloads');
+  phases.push({ title: 'Eradicate', when: 'In parallel with containment', tasks: erad });
+  var restore = ['Restore from known-good backups or rebuild from clean images', 'Bring services back in priority order under enhanced monitoring'];
+  if (v === 'ransomware') restore.push('Scan restored data for re-infection before reconnecting');
+  phases.push({ title: 'Restore operations', when: 'After containment', tasks: restore });
+  var notify = ['Send regulator and individual notifications (see obligations)', 'Stand up a call centre or FAQ for affected people'];
+  if (dt.indexOf('pii') >= 0 || dt.indexOf('financial') >= 0) notify.push('Offer credit or identity monitoring where required or expected');
+  if (dt.indexOf('payment') >= 0) notify.push('Coordinate with the acquirer and any PCI Forensic Investigator');
+  phases.push({ title: 'Notify and support', when: 'Per deadlines', tasks: notify });
+  phases.push({ title: 'Harden and learn', when: 'Following months', tasks: ['Fix the control gaps found by forensics', 'Re-test the fixes (penetration test or targeted validation)', 'Update the incident response plan and run a tabletop on this scenario'] });
+  return phases;
+}
+
 function calculateCosts(params) {
   var sector = SECTORS.find(function(s) { return s.id === params.sectorId; }) || SECTORS[0];
   var vector = ATTACK_VECTORS.find(function(v) { return v.id === params.vectorId; }) || ATTACK_VECTORS[0];
@@ -412,6 +488,14 @@ function injectStyles() {
   '[data-style=pro] .ic-fine-row { background: #fafafa; border-color: #e5e5e5; }' +
   '[data-style=pro] .ic-fine-reg { color: #18181b; }' +
   '[data-style=pro] .ic-fine-amount { color: #dc2626; }' +
+  '.ic-tl-row { display: grid; grid-template-columns: 150px 1fr; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line,#283a5a); }' +
+  '.ic-tl-row:last-child { border-bottom: 0; }' +
+  '.ic-tl-when { font-size: 12px; font-weight: 700; color: var(--acc,#2563eb); }' +
+  '.ic-tl-title { font-size: 13px; font-weight: 600; margin-bottom: 2px; }' +
+  '.ic-tl-detail, .ic-tl-list { font-size: 12px; color: var(--mut,#7a93b8); line-height: 1.5; }' +
+  '.ic-tl-list { margin: 4px 0 0; padding-left: 18px; }' +
+  '.ic-brief { font-family: var(--font-mono, ui-monospace, monospace); font-size: 12px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; background: var(--card2,#0f1726); border: 1px solid var(--line,#283a5a); border-radius: 6px; padding: 14px; margin: 0; max-height: 520px; overflow-y: auto; }' +
+  '@media (max-width: 600px) { .ic-tl-row { grid-template-columns: 1fr; gap: 4px; } }' +
   '';
   document.head.appendChild(s);
 }
@@ -461,6 +545,7 @@ export function renderIncidentCost(container) {
       ['insurance', 'Insurance Analysis'],
       ['historical', 'Breach Comparisons'],
       ['report', 'Executive Report'],
+      ['response', 'Response Plan'],
     ];
     for (var t = 0; t < tabs.length; t++) {
       h += '<button class="ic-tab' + (state.activeTab === tabs[t][0] ? ' active' : '') + '" data-tab="' + tabs[t][0] + '">' + tabs[t][1] + '</button>';
@@ -477,6 +562,8 @@ export function renderIncidentCost(container) {
       h += renderHistorical(costs);
     } else if (state.activeTab === 'report') {
       h += renderReport(costs);
+    } else if (state.activeTab === 'response') {
+      h += renderResponse(costs);
     }
 
     h += '</div>';
@@ -997,6 +1084,53 @@ export function renderIncidentCost(container) {
   }
 
 
+  function boardBrief(costs) {
+    var obl = notificationObligations(state), plan = recoveryPlan(state);
+    var b = 'BREACH IMPACT ASSESSMENT: BOARD BRIEF\n';
+    b += 'Date: ' + new Date().toISOString().split('T')[0] + '\nClassification: CONFIDENTIAL\n\n';
+    b += 'SCENARIO\n';
+    b += '  Sector: ' + costs.sector.name + '\n  Attack vector: ' + costs.vector.name + '\n';
+    b += '  Records affected: ' + fmtN(costs.records) + '\n';
+    b += '  Data types: ' + (state.dataTypes.length ? state.dataTypes.map(function(id) { var d = DATA_TYPES.find(function(x) { return x.id === id; }); return d ? d.name : id; }).join(', ') : 'none selected') + '\n';
+    b += '  Time to identify / contain: ' + state.mtti + ' / ' + state.mttc + ' days\n\n';
+    b += 'FINANCIAL EXPOSURE\n';
+    b += '  Estimated total: ' + fmt$(costs.total) + ' (range ' + fmt$(costs.confidenceLow) + ' to ' + fmt$(costs.confidenceHigh) + ')\n';
+    b += '  Regulatory fines: ' + fmt$(costs.fines) + '\n  Cost per record: ' + fmt$(costs.perRecord) + '\n\n';
+    b += 'NOTIFICATION OBLIGATIONS\n';
+    b += obl.length ? obl.map(function(o) { return '  - ' + o.reg + ': ' + o.who + ', ' + o.when; }).join('\n') + '\n' : '  None implied by the selected inputs. Confirm with counsel.\n';
+    b += '\nRECOVERY PLAN\n';
+    plan.forEach(function(ph, i) { b += '  ' + (i + 1) + '. ' + ph.title + ' (' + ph.when + ')\n'; });
+    b += '\nDECISIONS FOR THE BOARD\n';
+    b += '  - Approve incident budget and outside counsel / IR engagement\n';
+    if (state.vectorId === 'ransomware') b += '  - Ransom position (with counsel, insurer and sanctions review)\n';
+    b += '  - Disclosure approach and spokesperson\n';
+    b += '  - Investment to close the root-cause control gap\n\n';
+    b += 'Estimates use industry averages; obligations are a starting list, not legal advice.\n';
+    return b;
+  }
+
+  function renderResponse(costs) {
+    var h = '<div class="ic-panel"><div class="ic-panel-title">Incident Timeline</div>';
+    h += '<p class="ic-subtitle" style="margin-bottom:12px">Built from your calculator inputs (attack vector, data types, sector, GDPR and detection times). Change them on the Cost Calculator tab.</p>';
+    responseTimeline(state).forEach(function(e) {
+      h += '<div class="ic-tl-row"><div class="ic-tl-when">' + esc(e.when) + '</div><div><div class="ic-tl-title">' + esc(e.title) + '</div><div class="ic-tl-detail">' + esc(e.detail) + '</div></div></div>';
+    });
+    h += '</div>';
+    var obl = notificationObligations(state);
+    h += '<div class="ic-panel"><div class="ic-panel-title">Notification Obligations</div>';
+    h += obl.length ? obl.map(function(o) { return '<div class="ic-fine-row" style="flex-wrap:wrap;gap:4px"><span class="ic-fine-reg">' + esc(o.reg) + '</span><span style="flex:1;font-size:12px;color:var(--mut,#7a93b8);padding:0 10px">' + esc(o.who) + '</span><span style="font-size:12px">' + esc(o.when) + '</span></div>'; }).join('')
+      : '<div class="ic-subtitle">No obligations implied by the selected inputs. Select data types or GDPR applicability on the Cost Calculator tab.</div>';
+    h += '<div style="margin-top:12px"><button class="ic-btn ghost" data-sec="breachclock">Work out exact deadlines in Breach Clock</button></div></div>';
+    h += '<div class="ic-panel"><div class="ic-panel-title">Recovery Roadmap</div>';
+    recoveryPlan(state).forEach(function(ph, i) {
+      h += '<div class="ic-tl-row"><div class="ic-tl-when">' + (i + 1) + '. ' + esc(ph.when) + '</div><div><div class="ic-tl-title">' + esc(ph.title) + '</div><ul class="ic-tl-list">' + ph.tasks.map(function(x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul></div></div>';
+    });
+    h += '</div>';
+    h += '<div class="ic-panel"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap"><div class="ic-panel-title" style="margin:0;border:0;padding:0">Board Brief</div><button class="ic-btn" id="ic-copy-brief">Copy Brief</button></div>';
+    h += '<pre id="ic-brief-text" class="ic-brief">' + esc(boardBrief(costs)) + '</pre></div>';
+    return h;
+  }
+
   function wireEvents() {
     var wrap = container.querySelector('.ic-wrap');
     if (!wrap) return;
@@ -1086,6 +1220,16 @@ export function renderIncidentCost(container) {
     // Insurance tier
     var insEl = wrap.querySelector('#ic-ins-tier');
     if (insEl) insEl.addEventListener('change', function() { state.insuranceTier = parseInt(this.value); render(); });
+
+    // Copy board brief
+    var briefBtn = wrap.querySelector('#ic-copy-brief');
+    if (briefBtn) briefBtn.addEventListener('click', function() {
+      var t = wrap.querySelector('#ic-brief-text');
+      if (t) navigator.clipboard.writeText(t.textContent).then(function() {
+        briefBtn.textContent = 'Copied';
+        setTimeout(function() { briefBtn.textContent = 'Copy Brief'; }, 2000);
+      });
+    });
 
     // Copy report
     var copyBtn = wrap.querySelector('#ic-copy-report');

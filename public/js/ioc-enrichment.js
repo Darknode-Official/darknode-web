@@ -68,6 +68,7 @@ function refang(text) {
     .replace(/\{dot\}/gi, '.')
     .replace(/\[\.\]/g, '.')
     .replace(/\(\.\)/g, '.')
+    .replace(/\{\.\}/g, '.')
     .replace(/\s+dot\s+/gi, '.')
     .replace(/\[at\]/gi, '@')
     .replace(/\(at\)/gi, '@')

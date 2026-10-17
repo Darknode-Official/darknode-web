@@ -315,6 +315,22 @@ const STYLE = `
 [data-style=pro] .ap-legend-item { color: #52525b; }
 [data-style=pro] .ap-chain-empty { color: #a1a1aa; }
 
+.ap-rec-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.ap-rec-mttd { width: 110px; background: var(--card,#0b1220); color: var(--txt,#e7eefc); border: 1px solid var(--line,#283a5a); border-radius: 4px; padding: 5px 8px; font-size: 12px; }
+.ap-rec-note { font-size: 11px; color: var(--mut,#7a93b8); }
+.ap-rec-help { font-size: 11px; color: var(--mut,#7a93b8); margin-top: 4px; line-height: 1.4; }
+.ap-res-detected { color: #16a34a; font-weight: bold; }
+.ap-res-missed { color: #dc2626; font-weight: bold; }
+.ap-res-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 12px; font-size: 12px; color: var(--txt-2,#9fb0cc); }
+.ap-res-bar select { background: var(--card,#0b1220); color: var(--txt,#e7eefc); border: 1px solid var(--line,#283a5a); border-radius: 4px; padding: 4px 8px; font-size: 12px; }
+.ap-res-wrap { overflow-x: auto; margin-bottom: 16px; }
+.ap-res-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.ap-res-table th, .ap-res-table td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line,#283a5a); white-space: nowrap; }
+.ap-res-table th { font-size: 10px; color: var(--mut,#7a93b8); text-transform: uppercase; letter-spacing: 1px; font-family: var(--font-mono, ui-monospace, monospace); }
+.ap-res-table td.ap-res-name { white-space: normal; }
+[data-style=pro] .ap-rec-mttd, [data-style=pro] .ap-res-bar select { background: #fff; color: #18181b; border-color: #d4d4d8; }
+[data-style=pro] .ap-res-table th, [data-style=pro] .ap-res-table td { border-color: #e5e5e5; }
+
 @media (max-width: 768px) {
   .ap-matrix { grid-template-columns: repeat(14, 80px); }
   .ap-detail-grid { grid-template-columns: 1fr; }
@@ -360,6 +376,67 @@ export function renderAdversaryPlaybook(container) {
   }
   let detectedTechniques = loadCoverage();
 
+  // Purple-team test results: what you actually ran and whether your SOC caught it.
+  // Saved in this browser. Recording a result also updates the coverage set above.
+  const RESULTS_KEY = 'dn_ap_results_v1';
+  const PURPLE_MIGRATED_KEY = 'dn_ap_purple_migrated_v1';
+  function parentTid(id) { const base = String(id || '').split('.')[0]; return getTechById(base) ? base : null; }
+  function loadResults() {
+    try {
+      const arr = JSON.parse(localStorage.getItem(RESULTS_KEY) || '[]');
+      return Array.isArray(arr) ? arr.filter(r => r && r.tid && (r.status === 'detected' || r.status === 'missed')) : [];
+    } catch (e) { return []; }
+  }
+  function saveResults() {
+    try { localStorage.setItem(RESULTS_KEY, JSON.stringify(testResults)); } catch (e) { /* storage unavailable: keep in memory only */ }
+  }
+  let testResults = loadResults();
+  let slaMin = 15;
+  const startedAt = {};
+  // One-time import of results logged by the former Purple Team Ops tool. Non-destructive:
+  // its 'purple_results' key is left in place, and imports only ever ADD coverage.
+  (function migratePurpleResults() {
+    try {
+      if (localStorage.getItem(PURPLE_MIGRATED_KEY)) return;
+      const old = JSON.parse(localStorage.getItem('purple_results') || '[]');
+      if (Array.isArray(old) && old.length) {
+        old.forEach(r => {
+          if (!r || !r.mitre || (r.status !== 'detected' && r.status !== 'missed')) return;
+          const at = r.timestamp || new Date().toISOString();
+          if (testResults.some(x => x.tid === r.mitre && x.at === at)) return;
+          const mttd = typeof r.detectTime === 'number' && r.detectTime >= 0 ? r.detectTime : null;
+          testResults.push({ tid: String(r.mitre), name: String(r.name || ''), status: r.status, mttd: mttd, at: at, src: 'purple team ops' });
+        });
+        testResults.sort((a, b) => String(b.at).localeCompare(String(a.at)));
+        const seen = new Set();
+        testResults.forEach(r => {
+          const p = parentTid(r.tid);
+          if (!p || seen.has(p)) return;
+          seen.add(p);
+          if (r.status === 'detected') detectedTechniques.add(p);
+        });
+        saveResults();
+        saveCoverage();
+      }
+      localStorage.setItem(PURPLE_MIGRATED_KEY, new Date().toISOString());
+    } catch (e) { /* storage unavailable or corrupt: skip import */ }
+  })();
+  function recordResult(tid, status, mttd) {
+    const tech = getTechById(tid);
+    testResults.unshift({ tid: tid, name: tech ? tech.name : tid, status: status, mttd: mttd, at: new Date().toISOString(), src: 'exercise' });
+    delete startedAt[tid];
+    const p = parentTid(tid);
+    if (p) {
+      if (status === 'detected') detectedTechniques.add(p); else detectedTechniques.delete(p);
+      saveCoverage();
+    }
+    saveResults();
+  }
+  function fmtWhen(iso) {
+    const d = new Date(iso);
+    return isNaN(d) ? '' : d.toLocaleString([], { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  }
+
   function getTechById(id) { return TECHNIQUES.find(t => t.id === id); }
   function getTechsForTactic(tacticId) { return TECHNIQUES.filter(t => t.tactic === tacticId); }
 
@@ -395,6 +472,7 @@ export function renderAdversaryPlaybook(container) {
       { id: 'playbook', label: 'Playbook Builder' },
       { id: 'heatmap', label: 'Detection Heatmap' },
       { id: 'exercise', label: 'Purple Team Exercises' },
+      { id: 'results', label: 'Results' + (testResults.length ? ' (' + testResults.length + ')' : '') },
       { id: 'timeline', label: 'Campaign Timeline' },
       { id: 'stix', label: 'STIX Export' }
     ];
@@ -409,6 +487,7 @@ export function renderAdversaryPlaybook(container) {
     else if (currentTab === 'playbook') h += renderPlaybook();
     else if (currentTab === 'heatmap') h += renderHeatmap();
     else if (currentTab === 'exercise') h += renderExercises();
+    else if (currentTab === 'results') h += renderResults();
     else if (currentTab === 'timeline') h += renderTimeline();
     else if (currentTab === 'stix') h += renderStix();
     h += '</div>';
@@ -617,6 +696,17 @@ export function renderAdversaryPlaybook(container) {
       h += '<div class="ap-exercise-field"><div class="ap-exercise-label">Atomic Red Team Tests</div>';
       h += '<div class="ap-exercise-value">' + (tech.atomicTests.length > 0 ? tech.atomicTests.join(', ') : 'No mapped tests — custom procedure required') + '</div></div>';
 
+      const last = testResults.find(r => r.tid === tech.id);
+      h += '<div class="ap-exercise-field"><div class="ap-exercise-label">Record Result</div><div class="ap-rec-row">';
+      h += startedAt[tech.id]
+        ? '<span class="ap-rec-note">Started ' + esc(new Date(startedAt[tech.id]).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })) + '</span>'
+        : '<button class="ap-btn ap-btn-ghost ap-btn-sm" data-start="' + esc(tech.id) + '">Start Test</button>';
+      h += '<input class="ap-rec-mttd" type="number" min="0" step="1" inputmode="numeric" data-mttd-for="' + esc(tech.id) + '" placeholder="MTTD (min)" aria-label="Minutes to detect">';
+      h += '<button class="ap-btn ap-btn-sm" data-result="detected" data-rtid="' + esc(tech.id) + '">Detected</button>';
+      h += '<button class="ap-btn ap-btn-ghost ap-btn-sm" data-result="missed" data-rtid="' + esc(tech.id) + '">Missed</button>';
+      if (last) h += '<span class="ap-rec-note">Last: <span class="ap-res-' + last.status + '">' + last.status.toUpperCase() + '</span> ' + esc(fmtWhen(last.at)) + '</span>';
+      h += '</div><div class="ap-rec-help">Run the test, then record whether your SOC raised an alert. Leave MTTD blank if not measured; after Start Test it fills from the elapsed time.</div></div>';
+
       h += '</div>';
     });
 
@@ -624,6 +714,98 @@ export function renderAdversaryPlaybook(container) {
     h += '<button class="ap-btn" id="ap-export-exercises">Export Exercise Plan</button>';
     h += '</div>';
 
+    return h;
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Purple Team Results
+  // ─────────────────────────────────────────────────────────────────────────────
+  function resultStats() {
+    const det = testResults.filter(r => r.status === 'detected');
+    const timed = det.filter(r => typeof r.mttd === 'number');
+    const total = testResults.length;
+    return {
+      total: total, detected: det.length, missed: total - det.length,
+      rate: total ? Math.round(det.length / total * 100) : 0,
+      avg: timed.length ? Math.round(timed.reduce((sum, r) => sum + r.mttd, 0) / timed.length) : null,
+      timed: timed.length, inSla: timed.filter(r => r.mttd <= slaMin).length
+    };
+  }
+  // Techniques whose most recent result is a miss.
+  function blindSpots() {
+    const seen = new Set(), out = [];
+    testResults.forEach(r => { if (seen.has(r.tid)) return; seen.add(r.tid); if (r.status === 'missed') out.push(r); });
+    return out;
+  }
+  function buildReport() {
+    const st = resultStats();
+    let t = 'PURPLE TEAM RESULTS REPORT\n';
+    t += 'Generated: ' + new Date().toISOString() + '\n';
+    t += '='.repeat(60) + '\n\nSUMMARY\n';
+    t += 'Tests recorded: ' + st.total + '\n';
+    t += 'Detected: ' + st.detected + ' (' + st.rate + '%)\n';
+    t += 'Missed: ' + st.missed + '\n';
+    t += 'Mean time to detect: ' + (st.avg === null ? 'not measured' : st.avg + ' min (' + st.timed + ' timed)') + '\n';
+    t += 'Within SLA (' + slaMin + ' min): ' + (st.timed ? st.inSla + ' of ' + st.timed + ' timed detections' : 'n/a') + '\n';
+    t += 'Techniques marked detected: ' + detectedTechniques.size + ' of ' + TECHNIQUES.length + '\n\nRESULTS\n';
+    testResults.forEach(r => {
+      t += fmtWhen(r.at) + '  [' + r.status.toUpperCase() + '] ' + r.tid + ' ' + r.name + (typeof r.mttd === 'number' ? ' (MTTD ' + r.mttd + ' min)' : '') + '\n';
+    });
+    const spots = blindSpots();
+    t += '\nBLIND SPOTS (most recent result missed)\n';
+    if (!spots.length) t += 'None recorded.\n';
+    spots.forEach(r => {
+      const tech = getTechById(parentTid(r.tid));
+      t += r.tid + ' ' + r.name + '\n';
+      if (tech) t += '  Data sources: ' + tech.datasources.join(', ') + '\n  Mitigations: ' + tech.mitigations.join(', ') + '\n';
+    });
+    const slow = testResults.filter(r => r.status === 'detected' && typeof r.mttd === 'number' && r.mttd > slaMin);
+    t += '\nNEXT STEPS\n';
+    if (spots.length) t += '- Build or tune detections for the ' + spots.length + ' blind spot' + (spots.length === 1 ? '' : 's') + ' using the data sources listed, then re-run and record the result.\n';
+    if (slow.length) t += '- Review ' + slow.length + ' detection' + (slow.length === 1 ? '' : 's') + ' slower than the ' + slaMin + '-minute SLA (alert latency, triage queue, routing).\n';
+    if (st.total && st.timed < st.detected) t += '- Time future detections so MTTD covers every detected test.\n';
+    if (!spots.length && !slow.length) t += '- Extend testing to techniques not yet exercised.\n';
+    return t;
+  }
+
+  function renderResults() {
+    let h = '';
+    h += '<div class="ap-section-title">PURPLE TEAM RESULTS</div>';
+    if (!testResults.length) {
+      h += '<p class="ap-cov-help">No results yet. Run tests from the Purple Team Exercises tab and record whether each was detected or missed.</p>';
+      return h;
+    }
+    const st = resultStats();
+    h += '<div class="ap-actor-info">';
+    h += '<div class="ap-info-card"><div class="ap-info-label">Tests Recorded</div><div class="ap-info-value">' + st.total + '</div></div>';
+    h += '<div class="ap-info-card"><div class="ap-info-label">Detection Rate</div><div class="ap-info-value">' + st.rate + '%</div></div>';
+    h += '<div class="ap-info-card"><div class="ap-info-label">Missed</div><div class="ap-info-value">' + st.missed + '</div></div>';
+    h += '<div class="ap-info-card"><div class="ap-info-label">Mean Time to Detect</div><div class="ap-info-value">' + (st.avg === null ? 'n/a' : st.avg + ' min') + '</div></div>';
+    h += '<div class="ap-info-card"><div class="ap-info-label">Within SLA</div><div class="ap-info-value">' + (st.timed ? st.inSla + ' / ' + st.timed : 'n/a') + '</div></div>';
+    h += '</div>';
+
+    h += '<div class="ap-res-bar"><label for="ap-sla">Detection SLA:</label><select id="ap-sla">';
+    [5, 15, 30, 60].forEach(m => { h += '<option value="' + m + '"' + (m === slaMin ? ' selected' : '') + '>' + m + ' minutes</option>'; });
+    h += '</select><span style="flex:1"></span><button class="ap-btn ap-btn-ghost ap-btn-sm" id="ap-clear-results">Clear results</button></div>';
+
+    h += '<div class="ap-res-wrap"><table class="ap-res-table"><thead><tr><th>When</th><th>Technique</th><th>Result</th><th>MTTD</th><th>Source</th><th></th></tr></thead><tbody>';
+    testResults.forEach((r, i) => {
+      const slow = r.status === 'detected' && typeof r.mttd === 'number' && r.mttd > slaMin;
+      h += '<tr><td>' + esc(fmtWhen(r.at)) + '</td>';
+      h += '<td class="ap-res-name">' + esc(r.tid) + ' ' + esc(r.name) + '</td>';
+      h += '<td><span class="ap-res-' + r.status + '">' + r.status.toUpperCase() + '</span></td>';
+      h += '<td' + (slow ? ' class="ap-res-missed" title="Slower than SLA"' : '') + '>' + (typeof r.mttd === 'number' ? r.mttd + ' min' : '-') + '</td>';
+      h += '<td>' + esc(r.src || '') + '</td>';
+      h += '<td><button class="ap-btn ap-btn-ghost ap-btn-sm" data-del-result="' + i + '" aria-label="Remove result">Remove</button></td></tr>';
+    });
+    h += '</tbody></table></div>';
+
+    h += '<div class="ap-section-title">REPORT</div>';
+    h += '<div class="ap-stix-output" id="ap-report-text">' + esc(buildReport()) + '</div>';
+    h += '<div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">';
+    h += '<button class="ap-btn" id="ap-copy-report">Copy Report</button>';
+    h += '<button class="ap-btn ap-btn-ghost" id="ap-download-report">Download .txt</button>';
+    h += '</div>';
     return h;
   }
 
@@ -991,6 +1173,52 @@ export function renderAdversaryPlaybook(container) {
       const a = document.createElement('a');
       a.href = url;
       a.download = selectedActor.id + '-stix-bundle.json';
+      a.click();
+      URL.revokeObjectURL(url);
+    };
+
+    // Purple team results: start timer, record, remove, clear, SLA, report
+    container.querySelectorAll('[data-start]').forEach(btn => {
+      btn.onclick = () => { startedAt[btn.dataset.start] = Date.now(); render(); };
+    });
+    container.querySelectorAll('[data-result]').forEach(btn => {
+      btn.onclick = () => {
+        const tid = btn.dataset.rtid;
+        const inp = container.querySelector('[data-mttd-for="' + tid + '"]');
+        const raw = inp ? String(inp.value).trim() : '';
+        let mttd = null;
+        if (raw !== '') { const n = parseInt(raw, 10); if (!isNaN(n) && n >= 0) mttd = n; }
+        else if (btn.dataset.result === 'detected' && startedAt[tid]) mttd = Math.max(0, Math.round((Date.now() - startedAt[tid]) / 60000));
+        recordResult(tid, btn.dataset.result, btn.dataset.result === 'detected' ? mttd : null);
+        render();
+      };
+    });
+    container.querySelectorAll('[data-del-result]').forEach(btn => {
+      btn.onclick = () => { testResults.splice(parseInt(btn.dataset.delResult, 10), 1); saveResults(); render(); };
+    });
+    const clrRes = container.querySelector('#ap-clear-results');
+    if (clrRes) clrRes.onclick = async () => {
+      if (!(await window.dnConfirm('Clear all results?', 'This deletes every recorded purple team result in this browser. Detection coverage is kept.', { danger: true }))) return;
+      testResults = [];
+      saveResults();
+      render();
+    };
+    const slaSel = container.querySelector('#ap-sla');
+    if (slaSel) slaSel.onchange = () => { slaMin = parseInt(slaSel.value, 10) || 15; render(); };
+    const copyRep = container.querySelector('#ap-copy-report');
+    if (copyRep) copyRep.onclick = () => {
+      navigator.clipboard.writeText(buildReport()).then(() => {
+        copyRep.textContent = 'COPIED!';
+        setTimeout(() => { copyRep.textContent = 'Copy Report'; }, 1500);
+      });
+    };
+    const dlRep = container.querySelector('#ap-download-report');
+    if (dlRep) dlRep.onclick = () => {
+      const blob = new Blob([buildReport()], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'purple-team-results-' + new Date().toISOString().slice(0, 10) + '.txt';
       a.click();
       URL.revokeObjectURL(url);
     };

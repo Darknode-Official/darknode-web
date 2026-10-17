@@ -125,7 +125,36 @@ function isPrivateIPv4(oct) {
 //  Tool 1 -- Subnet Calculator
 // ---------------------------------------------------------------------------
 
+const SUBNET_PRESETS = [
+  ["10.0.0.0/8", "Private (RFC 1918)"], ["172.16.0.0/12", "Private (RFC 1918)"], ["192.168.0.0/16", "Private (RFC 1918)"],
+  ["100.64.0.0/10", "Carrier-grade NAT (RFC 6598)"], ["169.254.0.0/16", "Link-local (RFC 3927)"], ["192.0.2.0/24", "Documentation (RFC 5737)"],
+];
+// Visual-map usage tags: [label, colour].
+const SUBNET_USAGE = {
+  available: ["Available", "#17a34a"], used: ["In use", "#2196f3"], server: ["Servers", "#9333ea"],
+  dmz: ["DMZ", "#f59e0b"], guest: ["Guest", "#ef4444"], reserved: ["Reserved", "#6b7280"],
+};
+const NT_STYLE_ID = "nt-map-style";
+function ensureMapStyle() {
+  if (document.getElementById(NT_STYLE_ID)) return;
+  const s = document.createElement("style");
+  s.id = NT_STYLE_ID;
+  s.textContent = `
+    .nt-presets{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:4px 0 6px;font-size:.78rem}
+    .nt-preset{padding:3px 9px;border:1px solid var(--line);border-radius:var(--btn-radius,4px);background:none;color:var(--mut);font-family:var(--mono,monospace);font-size:.74rem;cursor:pointer}
+    .nt-preset:hover{border-color:var(--acc);color:var(--acc)}
+    .nt-map-legend{display:flex;flex-wrap:wrap;gap:12px;margin:6px 0;font-size:.75rem;color:var(--mut)}
+    .nt-map-legend i{display:inline-block;width:11px;height:11px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+    .nt-map{display:flex;flex-wrap:wrap;gap:3px;margin:8px 0}
+    .nt-map-cell{flex-basis:56px;min-width:56px;padding:8px 4px;border-radius:4px;border:1px solid var(--c);background:color-mix(in srgb,var(--c) 22%,transparent);color:var(--txt,inherit);font-family:var(--mono,monospace);font-size:.68rem;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .nt-map-cell:hover,.nt-map-cell:focus-visible{background:color-mix(in srgb,var(--c) 38%,transparent)}
+    .nt-map-cell.on{outline:2px solid var(--acc);outline-offset:1px}
+    .nt-map-detail{white-space:normal;display:grid;grid-template-columns:max-content 1fr;gap:4px 12px;padding:10px 12px;margin-top:6px}`;
+  document.head.appendChild(s);
+}
+
 function renderSubnetCalculator(root) {
+  ensureMapStyle();
   root.innerHTML = `
     <div class="panel">
       <p class="muted">Enter an address in CIDR notation (e.g. <span class="mono">192.168.1.0/24</span>) to get
@@ -133,7 +162,16 @@ function renderSubnetCalculator(root) {
       ${field("CIDR", "sn-cidr", "192.168.1.0/24", "e.g. 10.0.0.0/8")}
       <div class="tk-btns"><button class="btn sm" id="sn-go">Calculate</button>
       <button class="btn ghost sm" id="sn-clear">Clear</button></div>
+      <div class="nt-presets"><span class="muted">Common ranges:</span>${SUBNET_PRESETS.map(([c, n]) => `<button class="nt-preset" data-cidr="${c}" title="${n}">${c}</button>`).join("")}</div>
       <div id="sn-out"></div>
+
+      <p class="pg-sub" style="margin-top:26px">Visual subnet map</p>
+      <p class="muted">The calculated network as one block. Select a block to split it in half, merge it back with its
+      sibling, tag what it is used for and label it. The plan below updates as you go.</p>
+      <div id="snm-legend" class="nt-map-legend"></div>
+      <div id="snm-map" class="nt-map" role="list" aria-label="Subnet blocks"></div>
+      <div id="snm-detail"></div>
+      <pre class="tk-out" id="snm-plan" style="margin-top:10px"></pre>
 
       <p class="pg-sub" style="margin-top:26px">VLSM planner</p>
       <p class="muted">Variable Length Subnet Masking splits one base network into differently-sized subnets to
@@ -226,10 +264,88 @@ function renderSubnetCalculator(root) {
         </table>
         <p class="muted" style="margin-top:10px">CIDR /${bits} covers ${bits} network bits and ${32 - bits} host bits.
         Each step down in prefix length (e.g. /24 -> /23) doubles the address block size.</p>`;
+      seedMap(network, bits);
     } catch (err) {
       out.innerHTML = `<pre class="tk-out">Error: ${escapeHtml(err.message)}</pre>`;
     }
   };
+
+  // -- Visual subnet map ---------------------------------------------------
+  // Blocks are {net, bits, usage, label}, kept in address order; they always tile the base network.
+  let mapBase = null, blocks = [], sel = null;
+  const blockCidr = (b) => `${intToIp(b.net)}/${b.bits}`;
+  const blockSize = (b) => Math.pow(2, 32 - b.bits);
+  const usable = (b) => (b.bits >= 31 ? blockSize(b) : blockSize(b) - 2);
+  function seedMap(net, bits) {
+    const key = `${net}/${bits}`;
+    if (mapBase === key) return;
+    mapBase = key; blocks = [{ net, bits, usage: "available", label: "" }]; sel = null;
+    drawMap();
+  }
+  function drawMap() {
+    const map = root.querySelector("#snm-map");
+    if (!blocks.length) return;
+    const total = blocks.reduce((n, b) => n + blockSize(b), 0);
+    root.querySelector("#snm-legend").innerHTML = Object.entries(SUBNET_USAGE).map(([k, v]) => `<span><i style="background:${v[1]}"></i>${v[0]}</span>`).join("");
+    map.innerHTML = blocks.map((b, i) => `<button class="nt-map-cell${i === sel ? " on" : ""}" role="listitem" data-i="${i}"
+      style="flex-grow:${Math.max(blockSize(b) / total * 64, 1)};--c:${SUBNET_USAGE[b.usage][1]}" title="${blockCidr(b)} (${SUBNET_USAGE[b.usage][0]})">
+      ${escapeHtml(b.label || blockCidr(b))}</button>`).join("");
+    const b = blocks[sel];
+    const sib = b ? siblingOf(sel) : -1;
+    root.querySelector("#snm-detail").innerHTML = !b ? "" : `
+      <div class="dl-cmd nt-map-detail">
+        <div class="stat-l">Block</div><div class="mono">${blockCidr(b)}</div>
+        <div class="stat-l">Usable range</div><div class="mono">${intToIp(b.bits >= 31 ? b.net : b.net + 1)} - ${intToIp(b.bits >= 31 ? b.net + blockSize(b) - 1 : b.net + blockSize(b) - 2)}</div>
+        <div class="stat-l">Usable hosts</div><div class="mono">${usable(b).toLocaleString()}</div>
+      </div>
+      <div class="tk-btns">
+        ${b.bits < 32 ? `<button class="btn sm" data-act="split">Split into two /${b.bits + 1}</button>` : ""}
+        ${sib >= 0 ? `<button class="btn ghost sm" data-act="merge">Merge with ${blockCidr(blocks[sib])}</button>` : ""}
+      </div>
+      <div class="tk-row">Used for:
+        <select id="snm-usage" class="tk-f" style="width:auto">${Object.entries(SUBNET_USAGE).map(([k, v]) => `<option value="${k}"${k === b.usage ? " selected" : ""}>${v[0]}</option>`).join("")}</select>
+        <input id="snm-label" class="tk-f" style="flex:1;min-width:140px" maxlength="40" placeholder="Label" value="${escapeHtml(b.label)}">
+      </div>`;
+    root.querySelector("#snm-plan").textContent = blocks.map((x) =>
+      `${blockCidr(x).padEnd(19)} ${SUBNET_USAGE[x.usage][0].padEnd(10)} ${String(usable(x)).padStart(10)} hosts  ${x.label}`).join("\n");
+  }
+  // The sibling is the other half of the parent block, if it is still a single block of the same size.
+  function siblingOf(i) {
+    const b = blocks[i];
+    if (b.bits === 0) return -1;
+    const sibNet = (b.net ^ blockSize(b)) >>> 0;
+    const j = blocks.findIndex((x) => x.net === sibNet && x.bits === b.bits);
+    return j;
+  }
+  root.querySelector("#snm-map").addEventListener("click", (e) => {
+    const c = e.target.closest(".nt-map-cell"); if (!c) return;
+    const i = Number(c.dataset.i); sel = sel === i ? null : i; drawMap();
+  });
+  root.querySelector("#snm-detail").addEventListener("click", (e) => {
+    const act = e.target.closest("[data-act]"); if (!act || sel === null) return;
+    const b = blocks[sel];
+    if (act.dataset.act === "split") {
+      const half = blockSize(b) / 2;
+      blocks.splice(sel, 1, { net: b.net, bits: b.bits + 1, usage: b.usage, label: b.label }, { net: (b.net + half) >>> 0, bits: b.bits + 1, usage: "available", label: "" });
+    } else {
+      const j = siblingOf(sel); if (j < 0) return;
+      const lo = Math.min(sel, j);
+      blocks.splice(lo, 2, { net: Math.min(b.net, blocks[j].net), bits: b.bits - 1, usage: "available", label: "" });
+      sel = lo;
+    }
+    drawMap();
+  });
+  root.querySelector("#snm-detail").addEventListener("change", (e) => {
+    if (sel === null) return;
+    if (e.target.id === "snm-usage") blocks[sel].usage = e.target.value;
+    else if (e.target.id === "snm-label") blocks[sel].label = e.target.value.trim();
+    else return;
+    drawMap();
+  });
+  root.querySelector(".nt-presets").addEventListener("click", (e) => {
+    const p = e.target.closest("[data-cidr]"); if (!p) return;
+    root.querySelector("#sn-cidr").value = p.dataset.cidr; calc();
+  });
 
   root.querySelector("#sn-go").onclick = calc;
   root.querySelector("#sn-cidr").addEventListener("keydown", (e) => { if (e.key === "Enter") calc(); });
@@ -499,7 +615,44 @@ function renderCidrRange(root) {
       <div class="tk-row"><label><input type="checkbox" id="cr-list" checked> List individual addresses (blocks up to /20, max 4096 shown)</label></div>
       <div class="tk-btns"><button class="btn sm" id="cr-go">Calculate</button></div>
       <div id="cr-out"></div>
+
+      <p class="pg-sub" style="margin-top:26px">IP range to CIDR</p>
+      <p class="muted">Count the addresses between a start and end IPv4 address and get the fewest CIDR blocks that cover exactly that range.</p>
+      ${field("Start address", "rg-start", "", "First IPv4 address")}
+      ${field("End address", "rg-end", "", "Last IPv4 address")}
+      <div class="tk-btns"><button class="btn sm" id="rg-go">Convert</button></div>
+      <div id="rg-out"></div>
     </div>`;
+
+  root.querySelector("#rg-go").onclick = () => {
+    const out = root.querySelector("#rg-out");
+    try {
+      let s = ipToInt(parseIPv4(root.querySelector("#rg-start").value.trim()));
+      const e = ipToInt(parseIPv4(root.querySelector("#rg-end").value.trim()));
+      if (s > e) throw new Error("start address must not be after the end address");
+      const count = e - s + 1;
+      // Greedy: at each step take the largest aligned block that starts at s and stays within e.
+      const cidrs = [];
+      while (s <= e) {
+        let bits = 32;
+        while (bits > 0) {
+          const size = Math.pow(2, 32 - (bits - 1));
+          if (s % size !== 0 || s + size - 1 > e) break;
+          bits--;
+        }
+        cidrs.push(`${intToIp(s)}/${bits}`);
+        s += Math.pow(2, 32 - bits);
+      }
+      out.innerHTML = `
+        <div class="dl-cmd" style="margin-top:14px">
+          <div class="stat-l">Addresses in range</div><div class="mono">${count.toLocaleString()}</div>
+          <div class="stat-l">CIDR blocks</div><div class="mono">${cidrs.length}</div>
+        </div>
+        <pre class="tk-out">${cidrs.join("\n")}</pre>`;
+    } catch (err) {
+      out.innerHTML = `<pre class="tk-out">Error: ${escapeHtml(err.message)}</pre>`;
+    }
+  };
 
   const calc = () => {
     const raw = root.querySelector("#cr-cidr").value.trim();

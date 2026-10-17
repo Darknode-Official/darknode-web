@@ -1,7 +1,8 @@
 // Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
 // Address Intelligence -- IP, domain, and URL intelligence gathering from real public sources.
 // Parallel lookups against GreyNoise, AbuseIPDB, Shodan, VirusTotal, crt.sh, DNS, plus
-// saved ThreatFox / URLhaus snapshot files (not live queries)
+// saved IPsum / ThreatFox / URLhaus snapshot files (not live queries), community reports,
+// a hosting-ASN tag, "My IP" and a bulk IP check.
 
 var esc = function(s) {
   return String(s == null ? "" : s).replace(/[&<>"']/g, function(c) {
@@ -265,6 +266,63 @@ function fetchCertTransparency(domain) {
   return fetchJSON("https://crt.sh/?q=" + encodeURIComponent(domain) + "&output=json");
 }
 
+// Hosting / datacenter networks by ASN. Being on this list is CONTEXT, not a verdict:
+// the IP most likely belongs to a server, VPN or proxy rather than a home or mobile line.
+var HOSTING_ASNS = {
+  "16509": "Amazon AWS", "14618": "Amazon AWS", "15169": "Google", "396982": "Google Cloud",
+  "8075": "Microsoft Azure", "13335": "Cloudflare", "14061": "DigitalOcean", "63949": "Akamai/Linode",
+  "20473": "Vultr (Choopa)", "16276": "OVH", "24940": "Hetzner", "197540": "Netcup", "47583": "Hostinger",
+  "4785": "xTom", "9009": "M247", "49505": "Selectel", "53667": "FranTech/BuyVM", "62563": "GTHost",
+  "210644": "Aeza Group", "210558": "MVPS", "44477": "Stark Industries", "57043": "Hostkey",
+  "213371": "Squitter", "51396": "Pfcloud", "209588": "PINDC", "203953": "PPTechnology",
+  "59642": "Cherry Servers", "50673": "Serverius"
+};
+function hostingName(geo) {
+  return geo ? HOSTING_ASNS[String(geo.asn || "").replace(/^AS/i, "")] || null : null;
+}
+
+// IPsum aggregated blocklist snapshot (refreshed by scripts/refresh-feeds.mjs). `score` is
+// the number of public blocklists that list the IP.
+function fetchIpsum(ip) {
+  return loadSnapshot("/data/feeds/malicious-ips.json").then(function(snap) {
+    var hit = null;
+    for (var i = 0; i < snap.entries.length; i++) {
+      var e = snap.entries[i];
+      if ((typeof e === "string" ? e : e.ip) === ip) { hit = { ip: ip, score: e.score || 1, source: e.source || "ipsum" }; break; }
+    }
+    return { hit: hit, snapshot: { updated: snap.updated, count: snap.entries.length } };
+  });
+}
+
+// Community reports (Firestore `ip_reports`): signed-in users can read reports for an IP
+// and file one. Firebase is imported lazily so the tool still works when it can't load.
+var REPORT_CATEGORIES = ["Scanner", "Brute Force", "Malware", "Phishing", "Spam", "C2", "Other"];
+var _fb = null;
+function fb() {
+  if (!_fb) _fb = Promise.all([import("/js/firebase.js?v=20261007a"), import("https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js")])
+    .then(function(m) { return { db: m[0].db, auth: m[0].auth, fs: m[1] }; });
+  _fb.catch(function() { _fb = null; });
+  return _fb;
+}
+function fetchCommunityReports(ip) {
+  return fb().then(function(f) {
+    if (!f.auth.currentUser) return { signedOut: true, reports: [] };
+    var q = f.fs.query(f.fs.collection(f.db, "ip_reports"), f.fs.where("ip", "==", ip), f.fs.orderBy("timestamp", "desc"), f.fs.limit(50));
+    return f.fs.getDocs(q).then(function(snap) {
+      var reports = [];
+      snap.forEach(function(d) { reports.push(d.data()); });
+      return { reports: reports };
+    });
+  });
+}
+function submitCommunityReport(ip, category, description) {
+  return fb().then(function(f) {
+    var u = f.auth.currentUser;
+    if (!u) throw new Error("Sign in to file a report.");
+    return f.fs.addDoc(f.fs.collection(f.db, "ip_reports"), { ip: ip, reporter_uid: u.uid, category: category, description: description, timestamp: f.fs.serverTimestamp() });
+  });
+}
+
 // ---- Risk score calculation ----
 
 function calculateRisk(results) {
@@ -298,6 +356,18 @@ function calculateRisk(results) {
       tags.push("threatfox-hit");
     }
   }
+
+  if (results.ipsum) {
+    hasData = true;
+    if (results.ipsum.hit) {
+      score = Math.max(score, 0) + Math.min(results.ipsum.hit.score * 8, 40);
+      tags.push("blocklisted");
+    }
+  }
+
+  if (results.community && results.community.reports && results.community.reports.length) tags.push("community-reported");
+
+  if (hostingName(results.geoip)) tags.push("hosting");
 
   if (results.urlhaus && results.urlhaus.query_status === "ok" && results.urlhaus.urls) {
     hasData = true;
@@ -368,7 +438,7 @@ function renderSummaryCard(input, type, risk) {
   if (risk.tags && risk.tags.length > 0) {
     for (var i = 0; i < risk.tags.length; i++) {
       var tagClass = "ai-tag";
-      if (risk.tags[i] === "malicious" || risk.tags[i] === "reported-abuse" || risk.tags[i] === "threatfox-hit" || risk.tags[i] === "urlhaus-hit") tagClass += " ai-tag-danger";
+      if (risk.tags[i] === "malicious" || risk.tags[i] === "reported-abuse" || risk.tags[i] === "threatfox-hit" || risk.tags[i] === "urlhaus-hit" || risk.tags[i] === "blocklisted") tagClass += " ai-tag-danger";
       else if (risk.tags[i] === "benign" || risk.tags[i] === "known-service") tagClass += " ai-tag-safe";
       else tagClass += " ai-tag-warn";
       tagsHTML += '<span class="' + tagClass + '">' + esc(risk.tags[i]) + '</span>';
@@ -403,7 +473,9 @@ function renderGeoPanel(data) {
       renderKV("Latitude", data.latitude) +
       renderKV("Longitude", data.longitude) +
       renderKV("Postal Code", data.postal) +
+      renderKV("Network Type", hostingName(data) ? "Hosting / datacenter (" + hostingName(data) + ")" : "Not a listed hosting ASN") +
     '</div>' +
+    (hostingName(data) ? '<div class="ai-snap-note" style="margin-top:6px">A hosting ASN means the address is likely a server, VPN or proxy. That is context, not evidence of abuse.</div>' : '') +
     (data.latitude && data.longitude ?
       '<div class="ai-map-placeholder">' +
         '<div class="ai-map-coords">' + esc(data.latitude) + ', ' + esc(data.longitude) + '</div>' +
@@ -538,6 +610,14 @@ function renderReputationPanel(results) {
     html += panelLoading();
   }
 
+  // IPsum blocklist aggregate (IPs only)
+  if (results.ipsum || results.ipsum_err) {
+    html += '<div class="ai-subsection-title">IPsum Blocklists <span class="ai-snap-note">(' + esc(snapshotLabel(results.ipsum)) + ')</span></div>';
+    if (results.ipsum_err) html += panelUnavailable(results.ipsum_err);
+    else if (results.ipsum.hit) html += '<div class="ai-kv-grid"><div class="ai-kv"><span class="ai-kv-label">Listed on</span><span class="ai-kv-value" style="color:#e74c3c;font-weight:600">' + esc(results.ipsum.hit.score) + ' blocklist' + (results.ipsum.hit.score === 1 ? "" : "s") + '</span></div></div>';
+    else html += panelUnavailable("Not on any blocklist in the saved IPsum snapshot (" + results.ipsum.snapshot.count + " entries)");
+  }
+
   // ThreatFox
   html += '<div class="ai-subsection-title">ThreatFox IOC <span class="ai-snap-note">(' + esc(snapshotLabel(results.threatfox)) + ')</span></div>';
   if (results.threatfox) {
@@ -591,6 +671,32 @@ function renderReputationPanel(results) {
 
   html += '</div>';
   return html;
+}
+
+function renderCommunityPanel(results) {
+  var html = '<div class="ai-panel-body">';
+  var cm = results.community;
+  if (!cm) html += results.community_err ? panelUnavailable(results.community_err) : panelLoading();
+  else if (cm.signedOut) html += panelUnavailable("Sign in to see and file community reports.");
+  else {
+    if (!cm.reports.length) html += panelUnavailable("No community reports for this address.");
+    else {
+      html += '<table class="ai-table"><thead><tr><th>Category</th><th>Reported</th><th>Note</th></tr></thead><tbody>';
+      for (var cr = 0; cr < cm.reports.length && cr < 20; cr++) {
+        var rp = cm.reports[cr];
+        var when = rp.timestamp && rp.timestamp.toDate ? rp.timestamp.toDate().toISOString().slice(0, 16).replace("T", " ") : "pending";
+        html += '<tr><td>' + esc(rp.category || "Other") + '</td><td>' + esc(when) + '</td><td>' + esc(truncate(rp.description || "", 100)) + '</td></tr>';
+      }
+      html += '</tbody></table>';
+    }
+    html += '<div class="ai-report-form">' +
+      '<select class="ai-api-key-input" id="ai-report-cat" aria-label="Report category">' + REPORT_CATEGORIES.map(function(c) { return '<option>' + esc(c) + '</option>'; }).join("") + '</select>' +
+      '<input class="ai-api-key-input" id="ai-report-desc" type="text" maxlength="2000" placeholder="What did you observe? (optional)">' +
+      '<button class="ai-api-key-save" id="ai-report-btn" data-ip="' + esc(results.community_ip) + '">Report this IP</button>' +
+      '<span class="ai-snap-note" id="ai-report-msg"></span>' +
+    '</div>';
+  }
+  return html + '</div>';
 }
 
 function renderDNSPanel(dnsResults) {
@@ -755,7 +861,7 @@ function renderThreatIntelPanel(results) {
 
 function renderRawPanel(results) {
   var html = '<div class="ai-panel-body">';
-  var sources = ["geoip", "reverseDNS", "greynoise", "abuseipdb", "shodan", "virustotal", "threatfox", "urlhaus", "dns", "certs"];
+  var sources = ["geoip", "reverseDNS", "ipsum", "greynoise", "abuseipdb", "shodan", "virustotal", "threatfox", "urlhaus", "dns", "certs"];
 
   for (var i = 0; i < sources.length; i++) {
     var key = sources[i];
@@ -803,6 +909,7 @@ function runInvestigation(input, type, container) {
     panelOrder.push({ id: "network", title: "Network & Ports", border: "#9b59b6" });
   }
   panelOrder.push({ id: "reputation", title: "Reputation & Abuse", border: "#e74c3c" });
+  if (ip) panelOrder.push({ id: "community", title: "Community Reports", border: "#f39c12" });
   if (domain) {
     panelOrder.push({ id: "dns", title: "DNS Records", border: "#2ecc71" });
     panelOrder.push({ id: "certs", title: "Certificates & Subdomains", border: "#f39c12" });
@@ -840,6 +947,7 @@ function runInvestigation(input, type, container) {
     fetchGeoIP(ip).then(function(data) {
       results.geoip = data;
       updatePanel("geo", renderGeoPanel(data));
+      updateSummary();
     }).catch(function() {
       updatePanel("geo", panelUnavailable("Geolocation lookup failed"));
     });
@@ -848,6 +956,37 @@ function runInvestigation(input, type, container) {
       results.reverseDNS = data;
     }).catch(function() {
       results.reverseDNS = null;
+    });
+
+    fetchIpsum(ip).then(function(data) {
+      results.ipsum = data;
+      updatePanel("reputation", renderReputationPanel(results));
+      updateSummary();
+    }).catch(function() {
+      results.ipsum_err = "IPsum snapshot could not be loaded";
+      updatePanel("reputation", renderReputationPanel(results));
+    });
+
+    results.community_ip = ip;
+    var showCommunity = function() {
+      updatePanel("community", renderCommunityPanel(results));
+      var btn = document.getElementById("ai-report-btn");
+      if (!btn) return;
+      btn.onclick = function() {
+        var msg = document.getElementById("ai-report-msg");
+        btn.disabled = true; msg.textContent = "Submitting...";
+        submitCommunityReport(ip, document.getElementById("ai-report-cat").value, document.getElementById("ai-report-desc").value.trim()).then(function() {
+          return fetchCommunityReports(ip).then(function(data) { results.community = data; showCommunity(); updateSummary(); });
+        }).catch(function(e) { btn.disabled = false; msg.textContent = "Could not submit: " + ((e && e.message) || e); });
+      };
+    };
+    fetchCommunityReports(ip).then(function(data) {
+      results.community = data;
+      showCommunity();
+      updateSummary();
+    }).catch(function() {
+      results.community_err = "Community reports could not be loaded";
+      showCommunity();
     });
 
     fetchGreyNoise(ip).then(function(data) {
@@ -1061,6 +1200,58 @@ function runInvestigation(input, type, container) {
   });
 }
 
+// ---- Bulk IP check ----
+
+function runBulk(text, container, btn) {
+  var seen = {};
+  var ips = String(text || "").split(/[\s,;]+/).map(function(l) { return l.trim(); }).filter(function(l) {
+    if (!l || seen[l] || !/^(\d{1,3}\.){3}\d{1,3}$/.test(l) || !_validIPv4Octets(l)) return false;
+    seen[l] = true; return true;
+  });
+  if (!ips.length) {
+    container.innerHTML = '<div class="ai-panel" style="border-left-color:#e74c3c"><div class="ai-panel-body" style="color:var(--ai-mut)">No valid IPv4 addresses found. Enter one per line.</div></div>';
+    return;
+  }
+  var capped = ips.length > 20;
+  ips = ips.slice(0, 20);
+  btn.disabled = true; btn.textContent = "Checking " + ips.length + "...";
+  container.innerHTML = '<div class="ai-panel"><div class="ai-panel-header">Bulk check</div>' + panelLoading() + '</div>';
+  Promise.all(ips.map(function(ip) {
+    return Promise.all([
+      fetchGeoIP(ip).then(function(d) { return d && !d.error ? d : null; }).catch(function() { return null; }),
+      fetchIpsum(ip).catch(function() { return null; }),
+      fetchThreatFox(ip).catch(function() { return null; })
+    ]).then(function(r) { return { ip: ip, geo: r[0], ipsum: r[1], tf: r[2] }; });
+  })).then(function(rows) {
+    var listed = rows.filter(function(r) { return (r.ipsum && r.ipsum.hit) || (r.tf && r.tf.data); }).length;
+    var html = '<div class="ai-panel"><div class="ai-panel-header">Bulk check: ' + rows.length + ' address' + (rows.length === 1 ? "" : "es") + ', ' + listed + ' on a blocklist or IOC snapshot' + (capped ? " (first 20 only)" : "") + '</div><div class="ai-panel-body ai-table-wrap">' +
+      '<table class="ai-table"><thead><tr><th>IP</th><th>Country</th><th>City</th><th>Org</th><th>ASN</th><th>Network</th><th>Blocklists</th><th>ThreatFox</th><th></th></tr></thead><tbody>';
+    rows.forEach(function(r) {
+      var g = r.geo || {};
+      var host = hostingName(r.geo);
+      var bl = r.ipsum && r.ipsum.hit ? r.ipsum.hit.score : 0;
+      var tf = r.tf && r.tf.data ? r.tf.data.length : 0;
+      html += '<tr><td>' + esc(r.ip) + '</td>' +
+        '<td>' + esc(r.geo ? (g.country_code || "--") : "lookup failed") + '</td><td>' + esc(g.city || "--") + '</td>' +
+        '<td>' + esc(truncate(g.org || "--", 40)) + '</td><td>' + esc(g.asn || "--") + '</td>' +
+        '<td>' + (host ? '<span class="ai-tag ai-tag-warn">Hosting</span> ' + esc(host) : "--") + '</td>' +
+        '<td' + (bl ? ' style="color:#e74c3c;font-weight:600"' : "") + '>' + (r.ipsum ? (bl || "0") : "n/a") + '</td>' +
+        '<td' + (tf ? ' style="color:#e74c3c;font-weight:600"' : "") + '>' + (r.tf ? (tf ? tf + " IOC" + (tf > 1 ? "s" : "") : "none") : "n/a") + '</td>' +
+        '<td><button class="ai-history-item ai-bulk-open" data-ip="' + esc(r.ip) + '">Investigate</button></td></tr>';
+    });
+    html += '</tbody></table><div class="ai-snap-note">Blocklist and ThreatFox columns read saved snapshot files, not live services. A hosting network is context, not a verdict.</div></div></div>';
+    container.innerHTML = html;
+    container.querySelectorAll(".ai-bulk-open").forEach(function(b) {
+      b.onclick = function() {
+        var f = document.getElementById("ai-input-field");
+        f.value = b.getAttribute("data-ip");
+        f.dispatchEvent(new Event("input"));
+        document.getElementById("ai-btn-go").click();
+      };
+    });
+  }).finally(function() { btn.disabled = false; btn.textContent = "Check all"; });
+}
+
 // ---- CSS ----
 
 var STYLE = '<style>' +
@@ -1083,6 +1274,16 @@ var STYLE = '<style>' +
   '.ai-btn-investigate{padding:12px 28px;background:linear-gradient(135deg,var(--ai-acc),var(--ai-acc2));border:none;border-radius:4px;color:#fff;font-size:.9rem;font-weight:600;cursor:pointer;white-space:nowrap;transition:opacity .2s}' +
   '.ai-btn-investigate:hover{opacity:.85}' +
   '.ai-btn-investigate:disabled{opacity:.4;cursor:not-allowed}' +
+  '.ai-btn-sec{padding:12px 16px;background:var(--ai-card2);border:1px solid var(--ai-line);border-radius:4px;color:var(--ai-txt);font-size:.85rem;font-weight:600;cursor:pointer;white-space:nowrap}' +
+  '.ai-btn-sec:hover{border-color:var(--ai-acc);color:var(--ai-acc)}' +
+  '.ai-btn-sec:disabled{opacity:.5;cursor:wait}' +
+  '.ai-bulk{margin-top:12px}' +
+  '.ai-bulk-input{padding-right:16px;resize:vertical;min-height:96px}' +
+  '.ai-bulk-help{font-size:.75rem;color:var(--ai-mut);margin:6px 0 10px;line-height:1.4}' +
+  '.ai-report-form{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:12px}' +
+  '.ai-report-form .ai-api-key-input{flex:1 1 200px;min-width:0}' +
+  '.ai-report-form select.ai-api-key-input{flex:0 0 auto}' +
+  '.ai-report-form .ai-api-key-save{margin-top:0}' +
 
   '.ai-history-section{margin-top:16px}' +
   '.ai-history-title{font-size:.78rem;color:var(--ai-mut);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}' +
@@ -1189,7 +1390,7 @@ var STYLE = '<style>' +
 
   '@media(max-width:640px){' +
     '.ai-input-row{flex-direction:column}' +
-    '.ai-btn-investigate{width:100%}' +
+    '.ai-btn-investigate,.ai-btn-sec{width:100%}' +
     '.ai-summary-card{flex-direction:column;text-align:center}' +
     '.ai-summary-meta{justify-content:center}' +
     '.ai-kv-grid{grid-template-columns:1fr}' +
@@ -1213,6 +1414,13 @@ export function renderAddressIntel(main) {
             '<span class="ai-type-indicator" id="ai-type-indicator"></span>' +
           '</div>' +
           '<button class="ai-btn-investigate" id="ai-btn-go">Investigate</button>' +
+          '<button class="ai-btn-sec" id="ai-btn-myip" title="Look up the public IP this browser connects from">My IP</button>' +
+          '<button class="ai-btn-sec" id="ai-btn-bulk" aria-expanded="false" aria-controls="ai-bulk">Bulk</button>' +
+        '</div>' +
+        '<div class="ai-bulk" id="ai-bulk" hidden>' +
+          '<textarea class="ai-input ai-bulk-input" id="ai-bulk-input" rows="5" spellcheck="false" placeholder="IPv4 addresses, one per line"></textarea>' +
+          '<div class="ai-bulk-help">Up to 20 addresses. Each gets geolocation, the hosting-network tag and the saved blocklist and ThreatFox snapshot checks.</div>' +
+          '<button class="ai-btn-investigate" id="ai-bulk-go">Check all</button>' +
         '</div>' +
         '<div id="ai-history-mount"></div>' +
         '<div class="ai-api-keys-section">' +
@@ -1272,6 +1480,32 @@ export function renderAddressIntel(main) {
     setTimeout(function() { btn.disabled = false; btn.textContent = "Investigate"; }, 16000);
     runInvestigation(val, type, document.getElementById("ai-results"));
     renderHistory();
+  });
+
+  // My IP: ask ipapi.co which address this browser reaches it from, then investigate it.
+  document.getElementById("ai-btn-myip").addEventListener("click", function() {
+    var b = this;
+    b.disabled = true; b.textContent = "Detecting...";
+    fetchJSON("https://ipapi.co/json/").then(function(d) {
+      if (!d || !d.ip) throw new Error("no address returned");
+      inputField.value = d.ip;
+      inputField.dispatchEvent(new Event("input"));
+      if (detectInputType(d.ip)) document.getElementById("ai-btn-go").click();
+      else document.getElementById("ai-results").innerHTML = '<div class="ai-panel"><div class="ai-panel-body">Your public address is ' + esc(d.ip) + ' (IPv6 is not supported by the full investigation).</div></div>';
+    }).catch(function(e) {
+      document.getElementById("ai-results").innerHTML = '<div class="ai-panel" style="border-left-color:#e74c3c"><div class="ai-panel-body">Could not detect your IP: ' + esc(e.message) + '</div></div>';
+    }).finally(function() { b.disabled = false; b.textContent = "My IP"; });
+  });
+
+  // Bulk mode toggle + runner
+  document.getElementById("ai-btn-bulk").addEventListener("click", function() {
+    var box = document.getElementById("ai-bulk");
+    box.hidden = !box.hidden;
+    this.setAttribute("aria-expanded", String(!box.hidden));
+    if (!box.hidden) document.getElementById("ai-bulk-input").focus();
+  });
+  document.getElementById("ai-bulk-go").addEventListener("click", function() {
+    runBulk(document.getElementById("ai-bulk-input").value, document.getElementById("ai-results"), this);
   });
 
   // API keys toggle

@@ -4470,49 +4470,6 @@ body.landing .demo-grid{margin-top:16px}
 /* ----------------------------------------------------------------
    Subnet Visualizer
    ---------------------------------------------------------------- */
-.sv-wrap{padding:4px 0;max-width:1200px;margin:0 auto}
-.sv-h1{font-size:1.4rem;font-weight:700;color:var(--acc);margin:0 0 6px}
-.sv-sub{color:var(--mut);font-size:.82rem;margin:0 0 16px}
-.sv-tabs{display:flex;gap:4px;margin-bottom:16px;border-bottom:1px solid var(--line)}
-.sv-tab{padding:8px 14px;cursor:pointer;color:var(--mut);border:none;background:none;font-size:.82rem;border-bottom:2px solid transparent;transition:all .15s}
-.sv-tab:hover{color:var(--txt)}
-.sv-tab.active{color:var(--acc);border-bottom-color:var(--acc)}
-.sv-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:12px}
-.sv-card h3{margin:0 0 10px;font-size:1rem;color:var(--acc)}
-.sv-input{background:var(--bg);border:1px solid var(--line);color:var(--txt);padding:8px 12px;border-radius:6px;font-family:var(--font-mono);font-size:.85rem;width:100%;box-sizing:border-box}
-.sv-input:focus{outline:none;border-color:var(--acc)}
-.sv-btn{background:var(--acc);color:#000;border:none;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:.8rem;font-weight:600;transition:opacity .15s}
-.sv-btn:hover{opacity:.85}
-.sv-btn-sm{padding:4px 10px;font-size:.75rem}
-.sv-btn-ghost{background:none;border:1px solid var(--line);color:var(--txt)}
-.sv-btn-ghost:hover{border-color:var(--acc);color:var(--acc)}
-.sv-btn-danger{background:var(--bad)}
-.sv-row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--line)}
-.sv-label{color:var(--mut);font-size:.82rem}
-.sv-val{font-family:var(--font-mono);color:var(--txt);font-size:.85rem}
-.sv-val.accent{color:var(--acc)}
-.sv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
-.sv-map{display:grid;gap:3px;margin:12px 0}
-.sv-cell{padding:6px 4px;border-radius:4px;font-size:.65rem;font-family:var(--font-mono);text-align:center;cursor:pointer;border:1px solid transparent;transition:all .15s;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.sv-cell:hover{transform:scale(1.05);z-index:1}
-.sv-cell.selected{border-color:#fff!important}
-.sv-legend{display:flex;gap:12px;flex-wrap:wrap;margin:8px 0}
-.sv-legend-item{display:flex;align-items:center;gap:4px;font-size:.75rem;color:var(--mut)}
-.sv-legend-dot{width:12px;height:12px;border-radius:2px;border:1px solid}
-.sv-detail{background:var(--bg);border:1px solid var(--acc-line);border-radius:var(--radius);padding:16px;margin-top:12px}
-.sv-presets{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
-.sv-preset{padding:4px 10px;border:1px solid var(--line);border-radius:12px;font-size:.75rem;cursor:pointer;background:none;color:var(--mut);transition:all .15s}
-.sv-preset:hover{border-color:var(--acc);color:var(--acc)}
-.sv-vlsm-row{display:grid;grid-template-columns:1fr 80px 40px;gap:8px;align-items:center;margin:4px 0}
-.sv-vlsm-input{background:var(--bg);border:1px solid var(--line);color:var(--txt);padding:6px 8px;border-radius:4px;font-size:.8rem}
-.sv-result-bar{height:20px;border-radius:3px;position:relative;overflow:hidden;margin:4px 0}
-.sv-result-fill{height:100%;border-radius:3px;display:flex;align-items:center;padding:0 6px;font-size:.65rem;font-weight:600;white-space:nowrap}
-.sv-export{background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:12px;font-family:var(--font-mono);font-size:.75rem;white-space:pre;overflow-x:auto;color:var(--txt-2);max-height:300px;overflow-y:auto}
-.sv-table{width:100%;border-collapse:collapse;font-size:.82rem}
-.sv-table th{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);color:var(--mut);font-weight:600}
-.sv-table td{padding:6px 8px;border-bottom:1px solid var(--line);font-family:var(--font-mono)}
-.sv-2col{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-@media(max-width:768px){.sv-2col{grid-template-columns:minmax(0,1fr)}}
 
 /* ----------------------------------------------------------------
    Regex Lab
@@ -4710,37 +4667,7 @@ textarea.rx-input{min-height:120px;resize:vertical;line-height:1.6}
 /* ----------------------------------------------------------------
    Threat Dashboard
    ---------------------------------------------------------------- */
-.td-wrap{padding:4px 0;color:var(--txt);min-height:100vh}
-.td-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
-.td-header h2{margin:0;font-size:1.3rem;color:var(--acc)}
-.td-live{display:flex;align-items:center;gap:6px;font-size:.8rem;color:var(--ok)}
-.td-live::before{content:'';width:8px;height:8px;border-radius:50%;background:var(--ok);animation:td-pulse 1.5s infinite}
 @keyframes td-pulse{0%,100%{opacity:1}50%{opacity:.3}}
-.td-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
-.td-kpi{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px;text-align:center}
-.td-kpi-n{font-size:1.6rem;font-weight:700;color:var(--acc)}
-.td-kpi-l{font-size:.7rem;color:var(--mut);text-transform:uppercase;letter-spacing:.05em}
-.td-grid{display:grid;grid-template-columns:1fr 320px;gap:16px}
-@media(max-width:1000px){.td-grid{grid-template-columns:minmax(0,1fr)}}
-.td-map-wrap{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;position:relative}
-.td-map-wrap canvas{width:100%;height:auto;display:block}
-.td-panels{display:flex;flex-direction:column;gap:12px}
-.td-panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px}
-.td-panel h4{margin:0 0 10px;font-size:.75rem;color:var(--mut);text-transform:uppercase;letter-spacing:.06em}
-.td-bar-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:.78rem}
-.td-bar-label{width:90px;text-align:right;color:var(--txt-2);flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.td-bar{flex:1;height:16px;background:var(--bg);border-radius:3px;overflow:hidden}
-.td-bar-fill{height:100%;border-radius:3px;transition:width .3s}
-.td-bar-val{width:36px;font-size:.7rem;color:var(--mut);text-align:right;flex-shrink:0}
-.td-log{max-height:200px;overflow-y:auto;font-family:var(--font-mono);font-size:.68rem}
-.td-log-entry{padding:3px 0;border-bottom:1px solid var(--line);display:flex;gap:8px}
-.td-log-ts{color:var(--mut);flex-shrink:0}
-.td-log-sev{padding:0 5px;border-radius:3px;font-size:.6rem;font-weight:600;flex-shrink:0}
-.td-log-sev.high{background:rgba(239,68,68,.15);color:var(--bad)}
-.td-log-sev.medium{background:rgba(245,158,11,.15);color:var(--warn)}
-.td-log-sev.critical{background:rgba(168,85,247,.15);color:#a855f7}
-.td-bottom{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
-@media(max-width:700px){.td-bottom{grid-template-columns:minmax(0,1fr)}}
 
 /* ----------------------------------------------------------------
    Cert Analyzer
@@ -4842,33 +4769,7 @@ textarea.rx-input{min-height:120px;resize:vertical;line-height:1.6}
 /* ----------------------------------------------------------------
    IP Tools
    ---------------------------------------------------------------- */
-.ip-wrap{padding:4px 0;max-width:1100px;margin:0 auto}
-.ip-title{font-size:1.3rem;font-weight:700;color:var(--acc);margin-bottom:6px}
-.ip-sub{color:var(--mut);font-size:.82rem;margin-bottom:16px}
-.ip-tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:16px;flex-wrap:wrap}
-.ip-tab{padding:8px 14px;cursor:pointer;font-size:.78rem;border:none;background:transparent;color:var(--mut);border-bottom:2px solid transparent;transition:all .15s}
-.ip-tab:hover{color:var(--txt)}
-.ip-tab.active{color:var(--acc);border-bottom-color:var(--acc)}
-.ip-panel{display:none}
-.ip-panel.active{display:block}
-.ip-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:12px}
-.ip-card h3{font-size:1rem;font-weight:600;margin:0 0 12px;color:var(--txt)}
-.ip-label{display:block;font-size:.73rem;color:var(--mut);margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em}
-.ip-input{width:100%;box-sizing:border-box;padding:10px 12px;background:var(--bg);border:1px solid var(--line);border-radius:6px;color:var(--txt);font-family:var(--font-mono);font-size:.85rem}
-.ip-input:focus{border-color:var(--acc);outline:none}
-.ip-btn{padding:8px 18px;border:none;border-radius:6px;cursor:pointer;font-size:.8rem;font-weight:600;background:var(--acc);color:#000;transition:opacity .15s}
-.ip-btn:hover{opacity:.85}
 .ip-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
-.ip-row-label{color:var(--mut);font-size:.8rem}
-.ip-row-value{color:var(--txt);font-size:.85rem;font-weight:500;font-family:var(--font-mono)}
-.ip-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:.7rem;font-weight:600}
-.ip-badge-orange{background:rgba(255,152,0,.15);color:#ff9800}
-.ip-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px}
-@media(max-width:700px){.ip-grid{grid-template-columns:minmax(0,1fr)}}
-.ip-table{width:100%;border-collapse:collapse;font-size:.78rem}
-.ip-table th{text-align:left;padding:8px 10px;background:var(--bg);color:var(--mut);font-weight:500;font-size:.7rem;text-transform:uppercase;letter-spacing:.05em}
-.ip-table td{padding:8px 10px;border-bottom:1px solid var(--line)}
-.ip-port-search{margin-bottom:12px}
 
 /* ----------------------------------------------------------------
    Forensics Toolkit
@@ -4927,28 +4828,6 @@ textarea.rx-input{min-height:120px;resize:vertical;line-height:1.6}
 /* ----------------------------------------------------------------
    Password Tools
    ---------------------------------------------------------------- */
-.pwt{padding:4px 0}
-.pwt-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
-.pwt-tab{padding:6px 14px;border:1px solid var(--line);background:var(--card);color:var(--mut);border-radius:6px;cursor:pointer;font-size:.8rem;transition:all .15s}
-.pwt-tab:hover{border-color:var(--acc);color:var(--txt)}
-.pwt-tab.active,.pwt-tab.on{background:var(--acc);color:#000;border-color:var(--acc);font-weight:600}
-.pwt-panel{display:none}
-.pwt-panel.active,.pwt-panel.on{display:block}
-.pwt-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-@media(max-width:768px){.pwt-grid{grid-template-columns:minmax(0,1fr)}}
-.pwt-label{font-size:.82rem;font-weight:600;color:var(--txt);margin-bottom:4px;display:block}
-.pwt-input{width:100%;box-sizing:border-box;padding:8px 12px;background:var(--bg);border:1px solid var(--line);color:var(--txt);border-radius:6px;font-family:var(--font-mono);font-size:.85rem}
-.pwt-input:focus{outline:none;border-color:var(--acc)}
-.pwt-btn{background:var(--acc);color:#000;border:none;padding:6px 16px;border-radius:6px;cursor:pointer;font-weight:600;font-size:.82rem;transition:opacity .15s}
-.pwt-btn:hover{opacity:.85}
-.pwt-result{background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:12px;font-family:var(--font-mono);font-size:.85rem;word-break:break-all;color:var(--txt);min-height:40px}
-.pwt-meter{height:8px;background:var(--bg);border-radius:4px;overflow:hidden;margin:6px 0}
-.pwt-fill{height:100%;border-radius:4px;transition:width .3s,background .3s}
-.pwt-val{font-family:var(--font-mono);color:var(--txt);font-size:.82rem}
-.pwt-opt{display:flex;align-items:center;gap:6px;font-size:.8rem;color:var(--txt);margin:4px 0;cursor:pointer}
-.pwt-table{width:100%;border-collapse:collapse;font-size:.82rem}
-.pwt-table th{text-align:left;padding:6px 10px;border-bottom:1px solid var(--line);color:var(--mut);font-weight:600}
-.pwt-table td{padding:6px 10px;border-bottom:1px solid var(--line);font-family:var(--font-mono)}
 
 /* ----------------------------------------------------------------
    HTTP Inspector
@@ -4957,25 +4836,6 @@ textarea.rx-input{min-height:120px;resize:vertical;line-height:1.6}
 /* ----------------------------------------------------------------
    Breach Simulator
    ---------------------------------------------------------------- */
-.bs-title{font-size:1.1rem;font-weight:700;color:var(--txt);margin:0 0 4px}
-.bs-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px}
-.bs-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
-.bs-tab{padding:6px 14px;border:1px solid var(--line);background:var(--card);color:var(--mut);border-radius:6px;cursor:pointer;font-size:.8rem;transition:all .15s}
-.bs-tab:hover{border-color:var(--acc);color:var(--txt)}
-.bs-tab.active,.bs-tab.on{background:var(--acc);color:#000;border-color:var(--acc);font-weight:600}
-.bs-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin-bottom:12px}
-.bs-select{width:100%;box-sizing:border-box;padding:8px 12px;background:var(--bg);border:1px solid var(--line);color:var(--txt);border-radius:6px;font-size:.82rem;cursor:pointer}
-.bs-select:focus{outline:none;border-color:var(--acc)}
-.bs-btn{background:var(--acc);color:#000;border:none;padding:8px 18px;border-radius:6px;cursor:pointer;font-weight:600;font-size:.82rem;transition:opacity .15s}
-.bs-btn:hover{opacity:.85}
-.bs-metric{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px;text-align:center}
-.bs-metric-val{font-size:1.6rem;font-weight:700;color:var(--acc)}
-.bs-metric-label{font-size:.72rem;color:var(--mut);text-transform:uppercase;letter-spacing:.04em;margin-top:2px}
-.bs-cost-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--line);font-size:.82rem}
-.bs-phase{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:12px;margin-bottom:8px}
-.bs-breach-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:12px;margin-bottom:8px;cursor:pointer;transition:border-color .15s}
-.bs-breach-card:hover,.bs-breach-card.active,.bs-breach-card.selected{border-color:var(--acc)}
-.bs-hist{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin-bottom:10px}
 
 /* ----------------------------------------------------------------
    Utility classes used by Steganography and other tools
@@ -5038,34 +4898,13 @@ textarea.rx-input{min-height:120px;resize:vertical;line-height:1.6}
 .rc{font-family:system-ui,sans-serif;color:var(--txt);max-width:1200px;margin:0 auto;padding:24px}
 .rc h2{color:var(--acc);margin:0 0 6px}
 
-.rc-tabs{display:flex;gap:4px;margin:20px 0;border-bottom:1px solid var(--line)}
-.rc-tab{padding:8px 18px;cursor:pointer;border-bottom:2px solid transparent;font-size:.85rem;color:var(--mut)}
-.rc-tab:hover{color:var(--txt)}
-.rc-tab.active{color:var(--acc);border-bottom-color:var(--acc)}
 
-.rc-matrix{display:grid;grid-template-columns:auto repeat(5,1fr);gap:2px;margin:20px 0}
-.rc-cell{padding:10px;text-align:center;font-size:.75rem;border-radius:4px;min-height:40px;display:flex;align-items:center;justify-content:center;flex-direction:column}
-.rc-cell.header{background:transparent;color:var(--mut);font-weight:700;font-size:.7rem}
-.rc-cell.data{cursor:pointer;transition:transform .15s}
-.rc-cell.data:hover{transform:scale(1.05)}
 
-.rc-filter{display:flex;gap:12px;margin:16px 0;align-items:center}
-.rc-filter select{padding:6px 12px;background:var(--bg);border:1px solid var(--line);border-radius:6px;color:inherit;font-size:.85rem}
 
-.rc-tbl{width:100%;border-collapse:collapse;font-size:.82rem}
-.rc-tbl th{text-align:left;padding:8px 12px;border-bottom:1px solid var(--line);cursor:pointer;user-select:none;color:var(--acc);font-size:.75rem}
-.rc-tbl th:hover{text-decoration:underline}
-.rc-tbl td{padding:8px 12px;border-bottom:1px solid rgba(255,255,255,.04)}
 
-.rc-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:.7rem;font-weight:700}
 
-.rc-ale{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:20px;margin:20px 0}
 
-.rc-stat{display:flex;gap:20px;flex-wrap:wrap;margin:16px 0}
 
-.rc-stat-card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:16px;min-width:180px;flex:1}
-.rc-stat-card h4{margin:0;font-size:.75rem;color:var(--mut);text-transform:uppercase}
-.rc-stat-card .val{font-size:1.8rem;font-weight:800;margin:6px 0 0}
 
 .val{font-size:1.8rem;font-weight:800;margin:6px 0 0}
 
@@ -5108,20 +4947,15 @@ textarea.rx-input{min-height:120px;resize:vertical;line-height:1.6}
 /* ---------------------------------------------------------------------------
    Web Shell  (webshell.js) — 7 missing classes
    --------------------------------------------------------------------------- */
-.ws-wrap{display:flex;flex-direction:column;height:calc(100vh - var(--topbar-h) - 40px);min-height:400px}
 
 .ws-bar{display:flex;gap:8px;align-items:center;padding:10px 14px;background:var(--card);border:1px solid var(--line);border-radius:var(--radius) var(--radius) 0 0;flex:none}
 .ws-bar input{flex:1;background:var(--bg);border:1px solid var(--line);color:var(--txt);padding:6px 10px;border-radius:4px;font-family:var(--font-mono);font-size:.8rem}
 .ws-bar button{background:var(--acc);color:#000;border:none;padding:6px 14px;border-radius:4px;font-weight:600;cursor:pointer;font-size:.78rem;white-space:nowrap}
 .ws-bar button.dc{background:var(--bad)}
 
-.ws-term{flex:1;background:#0a0c10;border-left:1px solid var(--line);border-right:1px solid var(--line);overflow:hidden;display:flex;flex-direction:column;position:relative}
 
-.ws-input-row{display:flex;gap:0;border-top:1px solid #1e2a44;background:#080a0f;flex:none}
 
-.ws-foot{padding:8px 14px;background:var(--card);border:1px solid var(--line);border-radius:0 0 var(--radius) var(--radius);border-top:none;font-size:.72rem;color:var(--mut);flex:none}
 
-.ws-glow{text-shadow:0 0 6px rgba(46,230,166,.25)}
 
 .dc{background:var(--bad)}
 
@@ -5274,118 +5108,12 @@ textarea.rx-input{min-height:120px;resize:vertical;line-height:1.6}
 /* ================================================================
    REVERSE ENGINEERING WORKBENCH
    ================================================================ */
-.re-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
-.re-tab{background:transparent;border:1px solid var(--line);color:var(--mut);padding:6px 14px;font-size:.78rem;font-weight:500;border-radius:6px;cursor:pointer;transition:all .15s;font-family:inherit;white-space:nowrap}
-.re-tab:hover{color:var(--txt);border-color:var(--acc-line);background:var(--acc-soft)}
-.re-tab.active{color:var(--acc);border-color:var(--acc);background:var(--acc-soft)}
-.re-body{min-height:400px}
-.re-file-info{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 14px;background:var(--card);border:1px solid var(--line);border-radius:8px;margin-bottom:14px}
-.re-fname{font-weight:700;font-size:.9rem;color:var(--txt);font-family:var(--font-mono)}
-.re-fmeta{font-size:.76rem;color:var(--mut);font-family:var(--font-mono)}
-.re-sev{font-size:.72rem;font-weight:600;padding:2px 10px;border-radius:10px;margin-left:auto}
-.re-sev-crit{background:rgba(255,50,50,.15);color:#ff5050}
-.re-grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-@media(max-width:700px){.re-grid2{grid-template-columns:minmax(0,1fr)}}
-.re-panel{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:14px;margin-bottom:14px}
-.re-panel-h{font-size:.88rem;font-weight:700;color:var(--txt);margin:0 0 10px;padding-bottom:8px;border-bottom:1px solid var(--line)}
-.re-kv{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 50%,transparent);font-size:.8rem}
-.re-kv span:first-child{color:var(--mut)}
-.re-kv span:last-child{color:var(--txt);text-align:right}
-.re-kv-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}
-@media(max-width:700px){.re-kv-grid{grid-template-columns:minmax(0,1fr)}}
-.re-table-wrap{overflow-x:auto}
-.re-table{width:100%;border-collapse:collapse;font-size:.78rem}
-.re-table th,.re-table td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--line)}
-.re-table th{font-weight:600;color:var(--txt);font-size:.7rem;text-transform:uppercase;letter-spacing:.05em}
-.re-flags{font-family:var(--font-mono);font-size:.7rem;color:var(--mut);word-break:break-all}
-.re-ent-high{color:#ff5050;font-weight:700;font-family:var(--font-mono)}
-.re-ent-med{color:var(--warn);font-weight:600;font-family:var(--font-mono)}
-.re-ent-low{color:var(--ok);font-family:var(--font-mono)}
-.re-ent-high-bg{background:#ff5050}
-.re-ent-med-bg{background:var(--warn)}
-.re-ent-low-bg{background:var(--ok)}
-.re-warn-text{color:var(--bad)}
-.re-import-summary{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
-.re-pill{font-size:.74rem;padding:4px 12px;background:var(--card);border:1px solid var(--line);border-radius:12px;color:var(--txt-2)}
-.re-pill-warn{border-color:color-mix(in srgb,var(--bad) 30%,var(--line));color:var(--bad)}
-.re-import-list{display:flex;flex-direction:column;gap:2px}
-.re-import-fn{font-size:.8rem;font-family:var(--font-mono);padding:4px 8px;border-radius:4px;color:var(--txt-2)}
-.re-import-fn:hover{background:var(--bg)}
-.re-suspicious{color:var(--bad);font-weight:600}
-.re-flag-icon{color:var(--bad);font-weight:700}
-.re-count{font-size:.72rem;font-weight:400;color:var(--mut)}
-.re-str-controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
-.re-input{background:var(--bg);border:1px solid var(--line);color:var(--txt);padding:8px 12px;border-radius:6px;font-family:var(--font-mono);font-size:.82rem;min-width:200px}
-.re-input:focus{outline:none;border-color:var(--acc)}
-.re-select{background:var(--bg);border:1px solid var(--line);color:var(--txt);padding:6px 10px;border-radius:6px;font-size:.8rem;cursor:pointer;font-family:inherit}
-.re-str-count{font-size:.76rem;color:var(--mut);margin-left:auto}
-.re-str-val{max-width:400px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ok)}
-.re-row-warn{background:color-mix(in srgb,var(--bad) 5%,transparent)}
-.re-asm-controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
-.re-asm-title{font-size:.9rem;font-weight:700;color:var(--acc);margin-bottom:8px;font-family:var(--font-mono)}
-.re-asm-view{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:6px 0;font-family:var(--font-mono);font-size:.78rem;overflow-x:auto;max-height:500px;overflow-y:auto}
-.re-asm-line{display:flex;gap:0;padding:3px 12px;transition:background .1s}
-.re-asm-line:hover{background:color-mix(in srgb,var(--acc) 6%,transparent)}
-.re-asm-addr{color:var(--mut);min-width:90px;flex-shrink:0}
-.re-asm-bytes{color:var(--txt-2);min-width:120px;flex-shrink:0;opacity:.6}
-.re-asm-inst{color:var(--txt);min-width:220px;flex-shrink:0}
-.re-asm-comment{color:var(--mut);font-style:italic}
-.re-asm-call .re-asm-inst{color:var(--acc);font-weight:600}
-.re-asm-jump .re-asm-inst{color:var(--warn)}
-.re-xref-panel{margin-top:14px}
-.re-xref{font-size:.78rem;color:var(--txt-2);font-family:var(--font-mono);padding:4px 0}
-.re-canvas{width:100%;max-width:800px;background:rgba(0,0,0,.3);border:1px solid var(--line);border-radius:8px;margin:10px 0}
-.re-entropy-info{font-size:.8rem;color:var(--txt-2);line-height:1.6;margin-bottom:10px}
-.re-entropy-legend{display:flex;gap:16px;margin:10px 0}
-.re-legend-item{display:flex;align-items:center;gap:6px;font-size:.76rem;color:var(--txt-2)}
-.re-legend-dot{width:10px;height:10px;border-radius:50%}
-.re-ind-summary{display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap}
-.re-ind-stat{text-align:center;padding:10px 20px;background:var(--card);border:1px solid var(--line);border-radius:8px}
-.re-ind-n{font-size:1.5rem;font-weight:800;display:block}
-.re-bad{color:var(--bad)}
-.re-ind-list{display:flex;flex-direction:column;gap:8px}
-.re-ind{padding:12px 14px;border-radius:8px;border-left:3px solid var(--line)}
-.re-ind-crit{background:rgba(255,50,50,.06);border-left-color:#ff5050}
-.re-ind-high{background:rgba(255,92,108,.05);border-left-color:var(--bad)}
-.re-ind-med{background:rgba(255,200,50,.05);border-left-color:var(--warn)}
-.re-ind-low{background:color-mix(in srgb,var(--ok) 4%,transparent);border-left-color:var(--ok)}
-.re-ind-header{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.re-ind-sev{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
-.re-mitre{font-size:.7rem;font-family:var(--font-mono);color:var(--acc);margin-left:auto;padding:2px 8px;background:color-mix(in srgb,var(--acc) 8%,var(--card));border-radius:4px}
-.re-ind-detail{font-size:.78rem;color:var(--txt-2);margin:4px 0 0;line-height:1.5}
-.re-yara-summary{font-size:.85rem;color:var(--txt-2);margin-bottom:12px}
-.re-yara-list{display:flex;flex-direction:column;gap:6px}
-.re-yara-rule{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:6px;font-size:.82rem}
-.re-yara-match{background:color-mix(in srgb,var(--bad) 6%,var(--bg));border:1px solid color-mix(in srgb,var(--bad) 15%,var(--line))}
-.re-yara-miss{background:var(--bg);border:1px solid var(--line)}
-.re-yara-status{font-size:.7rem;font-weight:700;font-family:var(--font-mono);min-width:80px}
-.re-yara-match .re-yara-status{color:var(--bad)}
-.re-yara-miss .re-yara-status{color:var(--mut)}
-.re-yara-desc{color:var(--mut);font-size:.76rem;margin-left:auto}
-.re-textarea{width:100%;background:var(--bg);border:1px solid var(--line);color:var(--txt);padding:12px;border-radius:6px;font-family:var(--font-mono);font-size:.8rem;resize:vertical;min-height:120px}
-.re-textarea:focus{outline:none;border-color:var(--acc)}
-.re-btn{background:var(--acc);color:#000;border:none;padding:8px 18px;border-radius:6px;font-weight:600;cursor:pointer;font-size:.82rem;font-family:inherit;margin-top:8px}
-.re-decompile-bar{margin-bottom:12px}
-.re-decompile-view{font-family:var(--font-mono);font-size:.8rem;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:16px;overflow-x:auto;line-height:1.7;color:var(--txt-2);white-space:pre;max-height:500px;overflow-y:auto}
 
 /* ================================================================
    DARK WEB OSINT
    ================================================================ */
-.dw-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
-.dw-tab{background:transparent;border:1px solid var(--line);color:var(--mut);padding:6px 14px;font-size:.78rem;font-weight:500;border-radius:6px;cursor:pointer;transition:all .15s;font-family:inherit;white-space:nowrap}
-.dw-tab:hover{color:var(--txt);border-color:var(--acc-line);background:var(--acc-soft)}
-.dw-tab.active{color:var(--acc);border-color:var(--acc);background:var(--acc-soft)}
-.dw-body{min-height:400px}
-.dw-footer{font-size:.72rem;margin-top:24px;padding-top:12px;border-top:1px solid var(--line)}
-.dw-stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin-bottom:18px}
-.dw-stat{text-align:center;padding:14px 10px;background:var(--card);border:1px solid var(--line);border-radius:8px}
-.dw-stat-v{font-size:1.4rem;font-weight:800;color:var(--txt);font-variant-numeric:tabular-nums}
-.dw-stat-l{font-size:.72rem;color:var(--mut);text-transform:uppercase;letter-spacing:.06em;margin-top:4px}
-.dw-bad{color:var(--bad)}
 .dw-warn{color:var(--warn)}
 .dw-ok{color:var(--ok)}
-.dw-panel{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:16px;margin-bottom:16px}
-.dw-panel-h{font-size:.9rem;font-weight:700;color:var(--txt);margin:0 0 12px;display:flex;align-items:center;gap:8px}
 .dw-pulse{width:8px;height:8px;border-radius:50%;background:var(--ok);animation:wl-pulse 2s ease infinite}
 .dw-feed{display:flex;flex-direction:column;gap:0}
 .dw-feed-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 50%,transparent);font-size:.82rem}
@@ -5399,32 +5127,10 @@ textarea.rx-input{min-height:120px;resize:vertical;line-height:1.6}
 .dw-feed-actor{background:color-mix(in srgb,var(--acc) 12%,transparent);color:var(--acc)}
 .dw-feed-text{flex:1;min-width:0;color:var(--txt-2)}
 .dw-feed-time{font-size:.72rem;color:var(--mut);white-space:nowrap;flex-shrink:0}
-.dw-actor-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px}
-.dw-actor-card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:14px;transition:border-color .15s}
-.dw-actor-card:hover{border-color:var(--acc-line)}
-.dw-actor-header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
-.dw-actor-name{font-size:.95rem;color:var(--txt)}
-.dw-actor-status{font-size:.7rem;font-weight:600;padding:2px 8px;border-radius:10px}
-.dw-status-active{background:rgba(255,92,108,.12);color:var(--bad)}
-.dw-status-disrupted{background:rgba(0,200,160,.1);color:var(--ok)}
-.dw-actor-meta{display:flex;gap:8px;margin-bottom:8px}
-.dw-actor-type,.dw-actor-origin{font-size:.72rem;padding:2px 8px;background:var(--bg);border:1px solid var(--line);border-radius:4px;color:var(--mut)}
-.dw-kv{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid color-mix(in srgb,var(--line) 40%,transparent);font-size:.8rem}
-.dw-kv span:first-child{color:var(--mut)}
-.dw-kv span:last-child{color:var(--txt-2)}
-.dw-table-wrap{overflow-x:auto}
-.dw-table{width:100%;border-collapse:collapse;font-size:.8rem}
-.dw-table th,.dw-table td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--line)}
-.dw-table th{font-weight:600;color:var(--txt);font-size:.7rem;text-transform:uppercase;letter-spacing:.05em}
-.dw-table td{color:var(--txt-2)}
 .dw-online{color:var(--ok);font-weight:600}
 .dw-offline{color:var(--bad);font-weight:600}
-.dw-onion-url{font-size:.7rem;color:var(--mut)}
-.dw-onion-controls,.dw-paste-controls{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
-.dw-input{background:var(--bg);border:1px solid var(--line);color:var(--txt);padding:8px 12px;border-radius:6px;font-family:var(--font-mono);font-size:.82rem;min-width:200px}
-.dw-input:focus{outline:none;border-color:var(--acc)}
+.dw-paste-controls{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
 .dw-input-lg{width:100%;max-width:400px}
-.dw-select{background:var(--bg);border:1px solid var(--line);color:var(--txt);padding:6px 10px;border-radius:6px;font-size:.8rem;cursor:pointer;font-family:inherit}
 .dw-btn{background:var(--acc);color:#000;border:none;padding:8px 18px;border-radius:6px;font-weight:600;cursor:pointer;font-size:.82rem;font-family:inherit}
 .dw-tag{font-size:.66rem;padding:2px 8px;background:var(--bg);border:1px solid var(--line);border-radius:4px;color:var(--mut)}
 .dw-paste-list{display:flex;flex-direction:column;gap:10px}
@@ -5867,7 +5573,6 @@ body.app .app-main #app-content {
 
 .pc-hex,
 .wl-pre,
-.re-decompile-view,
 .cr-writeup-text {
   border-radius: 10px;
   border: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
@@ -5881,8 +5586,7 @@ body.app .app-main #app-content {
 
 .pc-tpl-card,
 .wl-atk-card,
-.cr-chal,
-.dw-actor-card {
+.cr-chal{
   border-radius: 10px;
   padding: 16px 18px;
   transition:
@@ -5893,8 +5597,7 @@ body.app .app-main #app-content {
 }
 .pc-tpl-card:hover,
 .wl-atk-card:hover,
-.cr-chal:hover,
-.dw-actor-card:hover {
+.cr-chal:hover{
   transform: translateY(-3px);
   box-shadow:
     0 8px 28px rgba(0, 0, 0, 0.25),
@@ -6203,7 +5906,7 @@ input[type="range"]:focus::-webkit-slider-thumb{box-shadow:0 0 0 3px color-mix(i
 body.app #view{padding:0}
 
 /* 2. Border-radius consistency — 3 tiers: 6px small, 8px cards, 10px containers */
-.card,.panel,.qa,.stat,.pc-tpl-card,.wl-atk-card,.cr-chal,.dw-actor-card,.dw-paste-card,.re-panel,.wl-vuln-card,.wl-bt-card,.wl-cmd-box,.cr-writeup,.wl-sim-panel,.dw-panel,.cr-lab,.wl-defense-box,.wl-hs-4way{border-radius:8px !important}
+.card,.panel,.qa,.stat,.pc-tpl-card,.wl-atk-card,.cr-chal,.dw-paste-card,.wl-vuln-card,.wl-bt-card,.wl-cmd-box,.cr-writeup,.wl-sim-panel,.cr-lab,.wl-defense-box,.wl-hs-4way{border-radius:8px !important}
 .chip,.badge,.sev,.pc-pill,.wl-enc-badge,.wl-sev,.wl-tool-tag,.wl-mitre-tag,.cr-chip,.dw-tag{border-radius:6px !important}
 
 /* 3. Title + subtitle spacing */
@@ -6241,16 +5944,16 @@ pre:not([class]){background:var(--bg);border:1px solid var(--line);border-radius
 code:not([class]){font-family:var(--font-mono);font-size:.85em;background:var(--card);padding:1px 5px;border-radius:4px;border:1px solid var(--line)}
 
 /* 10. Consistent button hover across all tools */
-.btn,.wl-btn,.re-btn,.dw-btn,.cr-flag-submit{transition:all .15s ease}
-.btn:hover,.wl-btn:hover,.re-btn:hover,.dw-btn:hover,.cr-flag-submit:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.15)}
-.btn:active,.wl-btn:active,.re-btn:active,.dw-btn:active{transform:translateY(0)}
+.btn,.wl-btn,.dw-btn,.cr-flag-submit{transition:all .15s ease}
+.btn:hover,.wl-btn:hover,.dw-btn:hover,.cr-flag-submit:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.15)}
+.btn:active,.wl-btn:active,.dw-btn:active{transform:translateY(0)}
 
 /* 11. Consistent input focus across all tools */
-.wl-input:focus,.re-input:focus,.dw-input:focus,.cr-flag-input:focus,.pc-input:focus,.pc-select:focus,.pc-textarea:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 10%,transparent)}
+.wl-input:focus,.cr-flag-input:focus,.pc-input:focus,.pc-select:focus,.pc-textarea:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 10%,transparent)}
 
 /* 12. Tool card hover lift consistency */
-.pc-tpl-card,.wl-atk-card,.cr-chal,.dw-actor-card,.dw-paste-card,.re-panel,.wl-vuln-card,.wl-bt-card{transition:all .2s ease}
-.pc-tpl-card:hover,.wl-atk-card:hover,.cr-chal:hover,.dw-actor-card:hover,.dw-paste-card:hover,.wl-vuln-card:hover,.wl-bt-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.18)}
+.pc-tpl-card,.wl-atk-card,.cr-chal,.dw-paste-card,.wl-vuln-card,.wl-bt-card{transition:all .2s ease}
+.pc-tpl-card:hover,.wl-atk-card:hover,.cr-chal:hover,.dw-paste-card:hover,.wl-vuln-card:hover,.wl-bt-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.18)}
 
 /* 13. Muted text consistency */
 .muted{color:var(--mut);line-height:1.6}
@@ -6929,10 +6632,9 @@ body.app .dash-hero .btn.ghost:hover {
    1. TAB BARS — every tool tab variant unified
    ---------------------------------------------------------------- */
 .tab-bar .tab,
-.ca-tab,.pc-tab,.mf-tab,.hy-tab,.wl-tab,.re-tab,.dw-tab,.cr-tab,
-.adv-tab,.ag-tab,.api-tab,.bs-tab,.cc-tab,.cmp-tab,.cp-tab,.ct-tab,
-.dl-tab,.doc-tab,.enc-tab,.ft-tab,.hs-tab,.ip-tab,.os-tab,
-.pwt-tab,.rag-tab,.rc-tab,.rx-tab,.set-tab,.sv-tab,.tm-tab,.ts-tab{
+.ca-tab,.pc-tab,.mf-tab,.hy-tab,.wl-tab,.cr-tab,
+.adv-tab,.ag-tab,.api-tab,.cc-tab,.cmp-tab,.cp-tab,.ct-tab,
+.dl-tab,.doc-tab,.enc-tab,.ft-tab,.hs-tab,.os-tab,.rag-tab,.rx-tab,.set-tab,.tm-tab,.ts-tab{
   padding:8px 16px;font-size:.78rem;font-weight:600;
   border:1.5px solid var(--line);border-radius:var(--btn-radius, 4px);
   background:transparent;color:var(--mut);cursor:pointer;
@@ -6942,12 +6644,11 @@ body.app .dash-hero .btn.ghost:hover {
 
 /* Hover state for all tabs */
 .tab-bar .tab:hover,
-.ca-tab:hover,.pc-tab:hover,.mf-tab:hover,.hy-tab:hover,.wl-tab:hover,
-.re-tab:hover,.dw-tab:hover,.cr-tab:hover,.adv-tab:hover,.ag-tab:hover,
-.api-tab:hover,.bs-tab:hover,.cc-tab:hover,.cmp-tab:hover,.cp-tab:hover,
+.ca-tab:hover,.pc-tab:hover,.mf-tab:hover,.hy-tab:hover,.wl-tab:hover,.cr-tab:hover,.adv-tab:hover,.ag-tab:hover,
+.api-tab:hover,.cc-tab:hover,.cmp-tab:hover,.cp-tab:hover,
 .ct-tab:hover,.dl-tab:hover,.doc-tab:hover,.enc-tab:hover,.ft-tab:hover,
-.hs-tab:hover,.ip-tab:hover,.os-tab:hover,.pwt-tab:hover,
-.rag-tab:hover,.rc-tab:hover,.rx-tab:hover,.set-tab:hover,.sv-tab:hover,
+.hs-tab:hover,.os-tab:hover,
+.rag-tab:hover,.rx-tab:hover,.set-tab:hover,
 .tm-tab:hover,.ts-tab:hover{
   border-color:var(--acc-line);color:var(--txt-2);
   background:color-mix(in srgb,var(--acc) 5%,transparent)
@@ -6957,19 +6658,15 @@ body.app .dash-hero .btn.ghost:hover {
 .tab-bar .tab.active,.tab-bar .tab.on,
 .ca-tab.active,.ca-tab.on,.pc-tab.active,.pc-tab.on,
 .mf-tab.active,.mf-tab.on,.hy-tab.active,.hy-tab.on,
-.wl-tab.active,.wl-tab.on,.re-tab.active,.re-tab.on,
-.dw-tab.active,.dw-tab.on,.cr-tab.active,.cr-tab.on,
+.wl-tab.active,.wl-tab.on,.cr-tab.active,.cr-tab.on,
 .adv-tab.active,.adv-tab.on,.ag-tab.active,.ag-tab.on,
-.api-tab.active,.api-tab.on,.bs-tab.active,.bs-tab.on,
+.api-tab.active,.api-tab.on,
 .cc-tab.active,.cc-tab.on,.cmp-tab.active,.cmp-tab.on,
 .cp-tab.active,.cp-tab.on,.ct-tab.active,.ct-tab.on,
 .dl-tab.active,.dl-tab.on,.doc-tab.active,.doc-tab.on,
 .enc-tab.active,.enc-tab.on,.ft-tab.active,.ft-tab.on,
-.hs-tab.active,.hs-tab.on,
-.ip-tab.active,.ip-tab.on,.os-tab.active,.os-tab.on,
-.pwt-tab.active,.pwt-tab.on,.rag-tab.active,.rag-tab.on,
-.rc-tab.active,.rc-tab.on,.rx-tab.active,.rx-tab.on,
-.set-tab.active,.set-tab.on,.sv-tab.active,.sv-tab.on,
+.hs-tab.active,.hs-tab.on,.os-tab.active,.os-tab.on,.rag-tab.active,.rag-tab.on,.rx-tab.active,.rx-tab.on,
+.set-tab.active,.set-tab.on,
 .tm-tab.active,.tm-tab.on,.ts-tab.active,.ts-tab.on{
   border-color:var(--acc);color:var(--acc);
   background:color-mix(in srgb,var(--acc) 10%,transparent);
@@ -6978,19 +6675,17 @@ body.app .dash-hero .btn.ghost:hover {
 
 /* Tab bar container — consistent gap and wrapping */
 .tab-bar,
-.ca-tabs,.pc-tabs,.mf-tabs,.hy-tabs,.wl-tabs,.re-tabs,.dw-tabs,.cr-tabs{
+.ca-tabs,.pc-tabs,.mf-tabs,.hy-tabs,.wl-tabs,.cr-tabs{
   display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px
 }
 
 /* ----------------------------------------------------------------
    2. TOOL CARDS — uniform card treatment
    ---------------------------------------------------------------- */
-.pc-tpl-card,.wl-atk-card,.wl-vuln-card,.wl-bt-card,.cr-chal,
-.dw-actor-card,.dw-paste-card,.re-panel,
-.ca-section,.mf-section,.tk-section,
-.bs-card,.cp-card,.ct-card,.dl-card,.edb-card,.ed-card,
-.enc-card,.feat-card,.ft-card,.gh-card,.hs-card,.ip-card,.lab-card,
-.mod-card,.mode-card,.nx-card,.os-card,.plab-card,.rag-card,.rc-card,.set-card,.steg-card,.sv-card,.tk-card,.thl-card,.vl-card,
+.pc-tpl-card,.wl-atk-card,.wl-vuln-card,.wl-bt-card,.cr-chal,.dw-paste-card,
+.ca-section,.mf-section,.tk-section,.cp-card,.ct-card,.dl-card,.edb-card,.ed-card,
+.enc-card,.feat-card,.ft-card,.gh-card,.hs-card,.lab-card,
+.mod-card,.mode-card,.nx-card,.os-card,.plab-card,.rag-card,.rc-card,.set-card,.steg-card,.tk-card,.thl-card,.vl-card,
 .as-card,.arse-card,.cs-card,.auth-card{
   background:var(--card);border:1px solid var(--line);
   border-radius:8px;padding:14px 16px;
@@ -6999,12 +6694,10 @@ body.app .dash-hero .btn.ghost:hover {
 
 /* Card hover lift */
 .pc-tpl-card:hover,.wl-atk-card:hover,.wl-vuln-card:hover,.wl-bt-card:hover,
-.cr-chal:hover,.dw-actor-card:hover,.dw-paste-card:hover,
-.bs-card:hover,.cp-card:hover,.ct-card:hover,.dl-card:hover,
+.cr-chal:hover,.dw-paste-card:hover,.cp-card:hover,.ct-card:hover,.dl-card:hover,
 .edb-card:hover,.ed-card:hover,.enc-card:hover,.feat-card:hover,.ft-card:hover,
-.gh-card:hover,.hs-card:hover,.ip-card:hover,.lab-card:hover,.mod-card:hover,
-.nx-card:hover,.os-card:hover,.plab-card:hover,.rag-card:hover,.rc-card:hover,
-.sv-card:hover,.steg-card:hover,.tk-card:hover,.thl-card:hover,.vl-card:hover,
+.gh-card:hover,.hs-card:hover,.lab-card:hover,.mod-card:hover,
+.nx-card:hover,.os-card:hover,.plab-card:hover,.rag-card:hover,.rc-card:hover,.steg-card:hover,.tk-card:hover,.thl-card:hover,.vl-card:hover,
 .as-card:hover,.arse-card:hover,.cs-card:hover{
   transform:translateY(-2px);
   box-shadow:0 8px 24px rgba(0,0,0,.18);
@@ -7014,25 +6707,22 @@ body.app .dash-hero .btn.ghost:hover {
 /* ----------------------------------------------------------------
    3. TABLES — consistent header tint, padding, hover
    ---------------------------------------------------------------- */
-.ca-table th,.mf-table th,.cr-table th,.wl-table th,.re-table th,
-.dw-table th,.pc-table th,.hy-table th,.ct-table th,.enc-table th,
-.hs-table th,.ip-table th,.sv-table th,.data-table th{
+.ca-table th,.mf-table th,.cr-table th,.wl-table th,.pc-table th,.hy-table th,.ct-table th,.enc-table th,
+.hs-table th,.data-table th{
   background:color-mix(in srgb,var(--card) 80%,var(--bg));
   font-weight:700;text-transform:uppercase;letter-spacing:.04em;
   font-size:.72rem;padding:10px 14px;color:var(--mut);
   border-bottom:1.5px solid var(--line);text-align:left
 }
-.ca-table td,.mf-table td,.cr-table td,.wl-table td,.re-table td,
-.dw-table td,.pc-table td,.hy-table td,.ct-table td,.enc-table td,
-.hs-table td,.ip-table td,.sv-table td,.data-table td{
+.ca-table td,.mf-table td,.cr-table td,.wl-table td,.pc-table td,.hy-table td,.ct-table td,.enc-table td,
+.hs-table td,.data-table td{
   padding:10px 14px;border-bottom:1px solid color-mix(in srgb,var(--line) 50%,transparent);
   font-size:.83rem
 }
 .ca-table tr:hover,.mf-table tr:hover,.cr-table tr:hover,
-.wl-table tr:hover,.re-table tr:hover,.dw-table tr:hover,
+.wl-table tr:hover,
 .pc-table tr:hover,.hy-table tr:hover,.ct-table tr:hover,
-.enc-table tr:hover,.hs-table tr:hover,.ip-table tr:hover,
-.sv-table tr:hover{
+.enc-table tr:hover,.hs-table tr:hover{
   background:color-mix(in srgb,var(--acc) 3%,transparent)
 }
 
@@ -7041,13 +6731,10 @@ body.app .dash-hero .btn.ghost:hover {
    ---------------------------------------------------------------- */
 .ca-input,.ca-textarea,.ca-input-sm,
 .mf-input,.mf-textarea,.pc-input,.pc-select,.pc-textarea,
-.wl-input,.wl-select,.re-input,.re-select,.re-textarea,
-.dw-input,.dw-select,.cr-flag-input,
+.wl-input,.wl-select,.cr-flag-input,
 .hy-select,.ct-input,.ct-textarea,.enc-input,.enc-textarea,
-.ft-input,.hs-input,.hs-select,.hs-textarea,
-.ip-input,.pwt-input,.rx-input,.sv-input,.steg-input,
-.bs-select,.cp-input,.edb-select,.adv-select,
-.ag-textarea,.ai-input,.ws-input,.tk-in{
+.ft-input,.hs-input,.hs-select,.hs-textarea,.rx-input,.steg-input,.cp-input,.edb-select,.adv-select,
+.ag-textarea,.ai-input,.tk-in{
   background:var(--bg);border:1px solid var(--line);color:var(--txt);
   border-radius:8px;padding:10px 14px;font-family:inherit;
   font-size:.82rem;width:100%;box-sizing:border-box;
@@ -7057,35 +6744,29 @@ body.app .dash-hero .btn.ghost:hover {
 /* Focus glow ring — all form elements */
 .ca-input:focus,.ca-textarea:focus,.ca-input-sm:focus,
 .mf-input:focus,.mf-textarea:focus,.pc-input:focus,.pc-select:focus,
-.pc-textarea:focus,.wl-input:focus,.wl-select:focus,
-.re-input:focus,.re-select:focus,.re-textarea:focus,
-.dw-input:focus,.dw-select:focus,.cr-flag-input:focus,
+.pc-textarea:focus,.wl-input:focus,.wl-select:focus,.cr-flag-input:focus,
 .hy-select:focus,.ct-input:focus,.ct-textarea:focus,
 .enc-input:focus,.enc-textarea:focus,.ft-input:focus,
-.hs-input:focus,.hs-select:focus,.hs-textarea:focus,
-.ip-input:focus,.pwt-input:focus,.rx-input:focus,.sv-input:focus,
-.steg-input:focus,.bs-select:focus,.cp-input:focus,.edb-select:focus,
-.adv-select:focus,.ag-textarea:focus,.ai-input:focus,.ws-input:focus,.tk-in:focus{
+.hs-input:focus,.hs-select:focus,.hs-textarea:focus,.rx-input:focus,
+.steg-input:focus,.cp-input:focus,.edb-select:focus,
+.adv-select:focus,.ag-textarea:focus,.ai-input:focus,.tk-in:focus{
   outline:none;border-color:var(--acc);
   box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 12%,transparent)
 }
 
 /* Placeholder consistency */
 .ca-input::placeholder,.mf-input::placeholder,.pc-input::placeholder,
-.wl-input::placeholder,.re-input::placeholder,.dw-input::placeholder,
+.wl-input::placeholder,
 .cr-flag-input::placeholder,.ct-input::placeholder,.enc-input::placeholder,
-.ft-input::placeholder,.hs-input::placeholder,
-.ip-input::placeholder,.pwt-input::placeholder,.rx-input::placeholder,
-.sv-input::placeholder,.steg-input::placeholder,.cp-input::placeholder,.ws-input::placeholder,.ai-input::placeholder{
+.ft-input::placeholder,.hs-input::placeholder,.rx-input::placeholder,.steg-input::placeholder,.cp-input::placeholder,.ai-input::placeholder{
   color:var(--placeholder)
 }
 
 /* ----------------------------------------------------------------
    5. BUTTONS — primary, ghost, danger, disabled
    ---------------------------------------------------------------- */
-.ca-btn,.mf-btn,.wl-btn,.re-btn,.dw-btn,.cr-flag-submit,
-.hy-btn,.ct-btn,.enc-btn,.ft-btn,.hs-btn,.ip-btn,
-.pwt-btn,.sv-btn,.steg-btn,.bs-btn,.cp-btn,.dl-btn,.adv-btn,
+.ca-btn,.mf-btn,.wl-btn,.dw-btn,.cr-flag-submit,
+.hy-btn,.ct-btn,.enc-btn,.ft-btn,.hs-btn,.steg-btn,.cp-btn,.dl-btn,.adv-btn,
 .ag-btn,.pka-btn,.set-btn,.tk-btn,.util-btn{
   background:var(--acc);color:var(--on-acc);border:none;
   border-radius:6px;padding:8px 16px;font-weight:600;
@@ -7093,38 +6774,32 @@ body.app .dash-hero .btn.ghost:hover {
   display:inline-flex;align-items:center;gap:6px;
   transition:all .15s ease;line-height:1.3
 }
-.ca-btn:hover,.mf-btn:hover,.wl-btn:hover,.re-btn:hover,.dw-btn:hover,
+.ca-btn:hover,.mf-btn:hover,.wl-btn:hover,.dw-btn:hover,
 .cr-flag-submit:hover,.hy-btn:hover,.ct-btn:hover,.enc-btn:hover,
-.ft-btn:hover,.hs-btn:hover,.ip-btn:hover,
-.pwt-btn:hover,.sv-btn:hover,.steg-btn:hover,.bs-btn:hover,
+.ft-btn:hover,.hs-btn:hover,.steg-btn:hover,
 .cp-btn:hover,.dl-btn:hover,.adv-btn:hover,.ag-btn:hover,
 .pka-btn:hover,.set-btn:hover,.tk-btn:hover,.util-btn:hover{
   transform:translateY(-1px);
   box-shadow:0 4px 14px rgba(0,0,0,.2);
   background:color-mix(in srgb,var(--acc) 85%,#fff)
 }
-.ca-btn:active,.mf-btn:active,.wl-btn:active,.re-btn:active,.dw-btn:active,
+.ca-btn:active,.mf-btn:active,.wl-btn:active,.dw-btn:active,
 .cr-flag-submit:active,.hy-btn:active,.ct-btn:active,.enc-btn:active,
-.ft-btn:active,.hs-btn:active,.ip-btn:active,
-.pwt-btn:active,.sv-btn:active,.steg-btn:active,.bs-btn:active,
+.ft-btn:active,.hs-btn:active,.steg-btn:active,
 .cp-btn:active,.dl-btn:active,.adv-btn:active,.ag-btn:active,
 .pka-btn:active,.set-btn:active,.tk-btn:active,.util-btn:active{
   transform:translateY(0);box-shadow:none
 }
 
 /* Ghost button variant */
-.ca-btn.ghost,.mf-btn.ghost,.wl-btn.ghost,.re-btn.ghost,.dw-btn.ghost,
-.hy-btn.ghost,.ct-btn.ghost,.enc-btn.ghost,.ft-btn.ghost,.hs-btn.ghost,
-.ip-btn.ghost,.sv-btn.ghost,.tk-btn.ghost,.cp-btn.ghost,.dl-btn.ghost,
-.bs-btn.ghost,.set-btn.ghost,.adv-btn.ghost,.ag-btn.ghost{
+.ca-btn.ghost,.mf-btn.ghost,.wl-btn.ghost,.dw-btn.ghost,
+.hy-btn.ghost,.ct-btn.ghost,.enc-btn.ghost,.ft-btn.ghost,.hs-btn.ghost,.tk-btn.ghost,.cp-btn.ghost,.dl-btn.ghost,.set-btn.ghost,.adv-btn.ghost,.ag-btn.ghost{
   background:transparent;color:var(--txt-2);border:1px solid var(--line)
 }
-.ca-btn.ghost:hover,.mf-btn.ghost:hover,.wl-btn.ghost:hover,
-.re-btn.ghost:hover,.dw-btn.ghost:hover,.hy-btn.ghost:hover,
+.ca-btn.ghost:hover,.mf-btn.ghost:hover,.wl-btn.ghost:hover,.dw-btn.ghost:hover,.hy-btn.ghost:hover,
 .ct-btn.ghost:hover,.enc-btn.ghost:hover,.ft-btn.ghost:hover,
-.hs-btn.ghost:hover,.ip-btn.ghost:hover,.sv-btn.ghost:hover,
-.tk-btn.ghost:hover,.cp-btn.ghost:hover,.dl-btn.ghost:hover,
-.bs-btn.ghost:hover,.set-btn.ghost:hover,.adv-btn.ghost:hover,
+.hs-btn.ghost:hover,
+.tk-btn.ghost:hover,.cp-btn.ghost:hover,.dl-btn.ghost:hover,.set-btn.ghost:hover,.adv-btn.ghost:hover,
 .ag-btn.ghost:hover{
   border-color:var(--acc);color:var(--acc);
   background:color-mix(in srgb,var(--acc) 8%,transparent);
@@ -7132,11 +6807,9 @@ body.app .dash-hero .btn.ghost:hover {
 }
 
 /* Disabled buttons */
-.ca-btn:disabled,.mf-btn:disabled,.wl-btn:disabled,.re-btn:disabled,
+.ca-btn:disabled,.mf-btn:disabled,.wl-btn:disabled,
 .dw-btn:disabled,.cr-flag-submit:disabled,.hy-btn:disabled,.ct-btn:disabled,
-.enc-btn:disabled,.ft-btn:disabled,.hs-btn:disabled,
-.ip-btn:disabled,.pwt-btn:disabled,.sv-btn:disabled,.steg-btn:disabled,
-.bs-btn:disabled,.cp-btn:disabled,.dl-btn:disabled,.tk-btn:disabled{
+.enc-btn:disabled,.ft-btn:disabled,.hs-btn:disabled,.steg-btn:disabled,.cp-btn:disabled,.dl-btn:disabled,.tk-btn:disabled{
   opacity:.5;cursor:not-allowed;transform:none;box-shadow:none
 }
 
@@ -7145,7 +6818,7 @@ body.app .dash-hero .btn.ghost:hover {
    ---------------------------------------------------------------- */
 .ca-pre,.mf-result,.wl-output,.re-output,.dw-result,.pc-output,
 .hy-output,.ct-output,.enc-output,.enc-result,.ft-result,.hs-output,
-.hs-result,.ip-output,.pwt-result,.rx-result,.sv-result,
+.hs-result,.ip-output,.rx-result,.sv-result,
 .steg-result,.cp-result,.tk-out,.sb-output{
   background:var(--code-bg,var(--bg));border:1px solid var(--line);
   border-radius:8px;padding:14px;font-family:var(--font-mono);
@@ -7173,8 +6846,8 @@ body.app .dash-hero .btn.ghost:hover {
 /* ----------------------------------------------------------------
    8. SEVERITY BADGES — uniform across tools
    ---------------------------------------------------------------- */
-.ca-sev,.tk-badge,.ct-badge,.enc-badge,.ft-badge,.hs-badge,.ip-badge,
-.nx-badge,.rc-badge,.sv-badge,.tm-badge,.ts-badge,.tl-badge,.ag-badge,
+.ca-sev,.tk-badge,.ct-badge,.enc-badge,.ft-badge,.hs-badge,
+.nx-badge,.sv-badge,.tm-badge,.ts-badge,.tl-badge,.ag-badge,
 [class*="sev-"]{
   padding:2px 8px;border-radius:6px;font-size:.72rem;
   font-weight:600;display:inline-block;line-height:1.5
@@ -7202,7 +6875,7 @@ body.app .dash-hero .btn.ghost:hover {
 
 /* Progress bar — generic reusable */
 .tool-progress,.ca-score-bar,.hs-progress,.tm-progress,.boot-bar,
-.edb-bar,.lh-bar,.cc-bar,.td-bar,.tw-bar,.wl-bar,.ghdb-bar,.ws-bar{
+.edb-bar,.lh-bar,.cc-bar,.tw-bar,.wl-bar,.ghdb-bar,.ws-bar{
   background:var(--bg);border:1px solid var(--line);border-radius:6px;
   height:8px;overflow:hidden;position:relative
 }
@@ -7289,12 +6962,12 @@ pre::-webkit-scrollbar-thumb:hover,code::-webkit-scrollbar-thumb:hover,
    TOOL GRID LAYOUTS — consistent responsive grids
    ---------------------------------------------------------------- */
 .ca-grid,.mf-grid,.cr-grid,.wl-grid,.re-grid,.dw-grid,.pc-grid,
-.hy-grid,.ct-grid,.enc-grid,.ft-grid,.hs-grid,.ip-grid,.sv-grid,
+.hy-grid,.ct-grid,.enc-grid,.ft-grid,.hs-grid,
 .steg-grid,.edb-grid,.dl-grid,.bs-grid,.cp-grid,.rag-grid,.rc-grid,
 .nx-grid,.os-grid,.mod-grid,.tm-grid,.ts-grid,.vl-grid,.lab-grid,
 .plab-grid,.as-grid,.arse-grid,.cs-grid,.cta-grid,.demo-grid,
 .ed-grid,.feat-grid,.foot-grid,.gh-grid,.lh-grid,
-.qa-grid,.ref-grid,.td-grid,.tk-grid,.pwt-grid,
+.qa-grid,.ref-grid,.tk-grid,
 .boot-grid{
   display:grid;gap:14px
 }
@@ -7302,9 +6975,8 @@ pre::-webkit-scrollbar-thumb:hover,code::-webkit-scrollbar-thumb:hover,
 /* ----------------------------------------------------------------
    PANELS — tool inspector / detail panels
    ---------------------------------------------------------------- */
-.ag-panel,.ct-panel,.dw-panel,.enc-panel,.hs-panel,
-.ip-panel,.pg-panel,.pwt-panel,.rag-panel,.re-panel,.rx-panel,
-.set-panel,.steg-panel,.td-panel,.tk-panel,.wl-panel{
+.ag-panel,.ct-panel,.enc-panel,.hs-panel,.pg-panel,.rag-panel,.rx-panel,
+.set-panel,.steg-panel,.tk-panel,.wl-panel{
   background:var(--card);border:1px solid var(--line);
   border-radius:8px;padding:16px 20px;margin-bottom:14px
 }
@@ -9446,7 +9118,6 @@ body.focus-mode .app-main { padding-left: 20px !important; padding-right: 20px !
 
 /* Wide reference tables scroll sideways on phones instead of running off-screen */
 @media (max-width: 720px) {
-  .oe-table { display: block; max-width: 100%; overflow-x: auto; }
   .cs-head, .ed-head { flex-wrap: wrap; }
   .cs-head .chip, .ed-head .chip { white-space: normal; max-width: 100%; }
 }

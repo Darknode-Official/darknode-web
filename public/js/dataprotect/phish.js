@@ -10,6 +10,7 @@
 
 import {
   analyzeUrl, triageEmail, extractIOCs, parseEmailHeaders, registrableDomain, lookalike,
+  defangText, refangText, buildTriageReport,
 } from "/js/dataprotect/phish-engine.js?v=20261014c";
 import { dnFetch, dnFetchJSON } from "/js/net.js";
 import { attachSinkButton } from "../core/sink.js";
@@ -62,6 +63,8 @@ function injectStyle() {
   .phx .phx-iocs code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.76rem;background:var(--bg,#f2f4f8);padding:1px 5px;border-radius:5px;margin:2px 4px 2px 0;display:inline-block;overflow-wrap:anywhere}
   .phx .phx-sp{display:inline-block;width:14px;height:14px;border:2px solid rgba(37,82,198,.3);border-top-color:#2552c6;border-radius:50%;animation:phxSpin .7s linear infinite;vertical-align:-2px;margin-right:7px}
   @keyframes phxSpin{to{transform:rotate(360deg)}}
+  .phx .phx-fang pre{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.8rem;white-space:pre-wrap;overflow-wrap:anywhere;margin:0;max-height:320px;overflow:auto}
+  .phx .phx-acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
   .phx .phx-warn{background:var(--acc-soft,rgba(181,129,0,.08));border:1px solid var(--line,#e6e8ee);border-left:3px solid #b58100;border-radius:8px;padding:10px 14px;color:var(--tx,#1a2230);font-size:.82rem;margin-top:12px}
   `;
   document.head.appendChild(st);
@@ -90,9 +93,12 @@ export function renderPhish(main) {
         <button class="phx-btn" id="phxRun">Analyze</button>
         <button class="phx-btn sm" id="phxSample">Load example</button>
         <button class="phx-btn sm" id="phxClear">Clear</button>
+        <button class="phx-btn sm" id="phxDefang" title="Make every URL, IP, domain and email in the box safe to share">Defang</button>
+        <button class="phx-btn sm" id="phxRefang" title="Turn hxxp / [.] / [@] back into live indicators">Refang</button>
       </div>
       <p class="phx-hint">Links are fetched server-side through the Darknode proxy (your browser never loads them). Reputation uses observable signals — redirects, registration date, DNS, lookalikes — not a malware verdict.</p>
     </div>
+    <div id="phxFang"></div>
     <div id="phxOut"></div>
   </div>`;
 
@@ -105,7 +111,20 @@ export function renderPhish(main) {
     $("#phxSeg").querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b));
   });
   $("#phxSample").addEventListener("click", () => { inp.value = SAMPLE_URL; run(); });
-  $("#phxClear").addEventListener("click", () => { inp.value = ""; out.innerHTML = ""; inp.focus(); });
+  $("#phxClear").addEventListener("click", () => { inp.value = ""; out.innerHTML = ""; $("#phxFang").innerHTML = ""; LAST = null; inp.focus(); });
+  const fang = (fn, title) => {
+    const text = inp.value; if (!text.trim()) { toast("Paste text to " + title.toLowerCase() + "."); return; }
+    const res = fn(text);
+    $("#phxFang").innerHTML = `<div class="phx-card phx-fang"><h3>${title}</h3><pre id="phxFangOut">${esc(res)}</pre><div class="phx-acts"><button class="phx-btn sm" id="phxFangCopy">Copy</button><button class="phx-btn sm" id="phxFangClose">Close</button></div></div>`;
+    $("#phxFangCopy").addEventListener("click", () => copyText(res));
+    $("#phxFangClose").addEventListener("click", () => { $("#phxFang").innerHTML = ""; });
+  };
+  $("#phxDefang").addEventListener("click", () => fang(defangText, "Defanged"));
+  $("#phxRefang").addEventListener("click", () => fang(refangText, "Refanged"));
+  out.addEventListener("click", (e) => {
+    if (e.target.closest("#phxIocCopy") && LAST) copyText(defangText(iocLines(LAST.iocs)));
+    if (e.target.closest("#phxReport") && LAST) exportReport(LAST);
+  });
   $("#phxRun").addEventListener("click", run);
 
   function detectMode(text) {
@@ -118,6 +137,7 @@ export function renderPhish(main) {
     const text = inp.value.trim();
     if (!text) { toast("Paste a URL or an email to analyze."); return; }
     const mode = detectMode(text);
+    LAST = null;
     out.innerHTML = `<div class="phx-card"><span class="phx-sp"></span>Analyzing…</div>`;
     if (mode === "email") await runEmail(out, text);
     else await runUrl(out, text);
@@ -125,6 +145,43 @@ export function renderPhish(main) {
 
   inp.focus();
 }
+
+// ---- defang + report export ----------------------------------------------
+
+// The last completed triage, kept only so its report / IOCs can be exported.
+let LAST = null;
+
+function copyText(t) {
+  try { navigator.clipboard.writeText(t).then(() => toast("Copied"), () => toast("Copy failed: select the text and copy it manually.")); }
+  catch (_) { toast("Copy failed: select the text and copy it manually."); }
+}
+
+function iocLines(iocs) {
+  return [["URLs", iocs.urls], ["Domains", iocs.domains], ["IPs", iocs.ips], ["Emails", iocs.emails], ["Hashes", iocs.hashes]]
+    .filter(([, a]) => a && a.length).map(([k, a]) => k + ":\n" + a.join("\n")).join("\n\n");
+}
+
+async function exportReport(t) {
+  let extra = {};
+  if (window.dnModal) {
+    const r = await window.dnModal({
+      title: "Export triage report",
+      desc: "Optional: add what was done and any notes. Every indicator in the report is defanged.",
+      fields: [{ label: "Actions taken", type: "textarea", rows: 3, placeholder: "e.g. reported to IT, message deleted" }, { label: "Notes", type: "textarea", rows: 3, placeholder: "Anything else worth recording" }],
+      submitText: "Download",
+    });
+    if (!r) return;
+    extra = { actions: r[0], notes: r[1] };
+  }
+  const text = buildTriageReport({ ...t, generated: new Date().toISOString() }, extra);
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([text], { type: "text/plain" }));
+  a.download = "phishing-triage-" + new Date().toISOString().slice(0, 10) + ".txt";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+const exportBar = () => `<div class="phx-acts"><button class="phx-btn sm" id="phxReport">Export report</button><button class="phx-btn sm" id="phxIocCopy">Copy defanged IOCs</button></div>`;
 
 // ---- live helpers ---------------------------------------------------------
 
@@ -224,6 +281,10 @@ async function runUrl(out, text) {
   const allReasons = a.reasons.concat(extra);
   if (extra.length) renderReasons(out.querySelector("#phxReasons"), allReasons, sevFromWeight(sumW(allReasons)), "This link");
   renderUrlHead(out.querySelector("#phxHead"), a.host || url, sevFromWeight(sumW(allReasons)));
+  const vlabel = { critical: "High risk", high: "Suspicious", medium: "Treat with caution", low: "Low risk", info: "Low risk on observable signals" }[sevFromWeight(sumW(allReasons))];
+  LAST = { mode: "url", verdict: vlabel, input: a.input, host: a.host, registrable: a.registrable, age: out.querySelector("#phxAge").textContent, dns: out.querySelector("#phxDns").textContent,
+    chain: unf.ok ? Array.from(new Set((unf.chain && unf.chain.length ? unf.chain : [a.input]).concat(unf.finalUrl ? [unf.finalUrl] : []).filter(Boolean))) : [], reasons: allReasons, iocs };
+  out.querySelector("#phxHead").insertAdjacentHTML("beforeend", exportBar());
   const finalReg = unf.ok ? analyzeUrl(unf.finalUrl || url).registrable : "";
   const urlFindings = phishUrlFindings({ input: a.input, host: a.host, registrable: a.registrable, finalUrl: unf.ok ? unf.finalUrl : "", finalRegistrable: finalReg, severity: sevFromWeight(sumW(allReasons)), reasons: allReasons });
   attachSinkButton(out.querySelector("#phxHead"), () => ({ findings: urlFindings, sample: text === SAMPLE_URL }), "phishtriage", { dataset: "link triage" });
@@ -280,6 +341,8 @@ async function runEmail(out, text) {
     <div class="phx-warn">Authentication results are read from the message's own Authentication-Results header (added by the receiving mail server). This is a triage aid, not a guarantee the message is safe or malicious.</div>`;
 
   renderReasons(out.querySelector("#phxEmReasons"), r.findings, "info", "this message");
+  LAST = { mode: "email", verdict: v.label, from: r.from, fromReg: r.fromReg, returnPath: r.returnPath, replyTo: r.replyTo, subject: r.subject, auth: r.auth, links: r.urlAnalyses, reasons: r.findings, iocs: r.iocs };
+  out.querySelector(".phx-card").insertAdjacentHTML("beforeend", exportBar());
   const toHdr = (parseEmailHeaders(text).headers.to || [])[0] || "";
   attachSinkButton(out.querySelector(".phx-card"), () => ({ findings: phishEmailFindings(r, { to: toHdr }) }), "phishtriage", { dataset: "email triage" });
 
@@ -290,6 +353,7 @@ async function runEmail(out, text) {
       ageEl.textContent = `registered ${age.days} day${age.days === 1 ? "" : "s"} ago`;
       if (age.days < 30) { ageEl.style.background = "#fdecec"; ageEl.style.color = "#b00020"; }
     } else ageEl.textContent = "age unknown";
+    if (LAST && LAST.mode === "email") LAST.age = ageEl.textContent;
   } else { ageEl.textContent = "unknown"; }
 }
 

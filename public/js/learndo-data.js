@@ -48,18 +48,18 @@ export const ACTIVITIES = [
   { id: "d-cors", title: "Test a CORS configuration", desc: "Find over-permissive origins that leak data.", sec: "corstester", cat: "web", level: "core", mins: 8 },
   { id: "d-apitest", title: "Send and inspect an API request", desc: "Craft requests, read responses, chain calls.", sec: "apitester", cat: "web", level: "core", mins: 10 },
   { id: "d-apifuzz", title: "Fuzz an API endpoint", desc: "Throw malformed input and watch what breaks.", sec: "apifuzzer", cat: "web", level: "advanced", mins: 15 },
-  { id: "d-apiscan", title: "Scan an API for security issues", desc: "Automated checks against a target API.", sec: "apiscan", cat: "web", level: "advanced", mins: 15 },
+  { id: "d-apiscan", title: "Fuzz an API for security issues", desc: "Send malformed and boundary inputs to an API you own.", sec: "apifuzzer", cat: "web", level: "advanced", mins: 15 },
   { id: "d-regex", title: "Build and test a regex safely", desc: "Match patterns and avoid catastrophic backtracking.", sec: "regexlab", cat: "web", level: "core", mins: 8 },
 
   // --- Recon & OSINT ---
   { id: "d-dns", title: "Map a domain's DNS records", desc: "A, MX, TXT, NS — the whole picture in the DNS Toolkit.", sec: "dns", cat: "recon", level: "intro", mins: 8 },
   { id: "d-subs", title: "Enumerate subdomains of a target", desc: "Expand the attack surface from one root domain.", sec: "subdomains", cat: "recon", level: "core", mins: 12 },
-  { id: "d-whois", title: "Run a WHOIS + registration lookup", desc: "Ownership, dates, and pivot points.", sec: "whoisrecon", cat: "recon", level: "intro", mins: 6 },
+  { id: "d-whois", title: "Run a WHOIS + registration lookup", desc: "Ownership, dates, and pivot points.", sec: "dossier", cat: "recon", level: "intro", mins: 6 },
   { id: "d-osint", title: "Build an OSINT profile", desc: "Pull threads together in the OSINT dashboard.", sec: "osint", cat: "recon", level: "core", mins: 20 },
   { id: "d-wayback", title: "Dig through the Wayback Machine", desc: "Recover old endpoints, keys, and pages.", sec: "wayback", cat: "recon", level: "core", mins: 10 },
   { id: "d-tech", title: "Fingerprint a site's tech stack", desc: "Identify frameworks, servers, and versions.", sec: "techfingerprint", cat: "recon", level: "intro", mins: 6 },
   { id: "d-asn", title: "Explore an ASN's IP space", desc: "Understand who owns what on the internet.", sec: "asnexplorer", cat: "recon", level: "advanced", mins: 12 },
-  { id: "d-attacksurf", title: "Map an organization's attack surface", desc: "Turn recon into a prioritized exposure map.", sec: "attacksurf", cat: "recon", level: "advanced", mins: 20 },
+  { id: "d-attacksurf", title: "Score a domain's external security posture", desc: "Headers, TLS, email auth and exposure in one scorecard.", sec: "posture", cat: "recon", level: "advanced", mins: 20 },
 
   // --- Offense & Exploitation ---
   { id: "d-attacksim", title: "Run a threat simulation", desc: "Play out an attack chain step by step.", sec: "attacksim", cat: "offense", level: "core", mins: 20 },
@@ -71,12 +71,12 @@ export const ACTIVITIES = [
 
   // --- Blue Team & Detection ---
   { id: "d-hunt", title: "Run a threat hunt", desc: "Form a hypothesis and chase it through the data.", sec: "huntlab", cat: "blue", level: "advanced", mins: 25 },
-  { id: "d-siem", title: "Triage alerts in the SIEM dashboard", desc: "Separate signal from noise under time pressure.", sec: "siemdash", cat: "blue", level: "core", mins: 15 },
+  { id: "d-siem", title: "Hunt for threats in your logs", desc: "Run detection rules over a real log export.", sec: "loghunt", cat: "blue", level: "core", mins: 15 },
   { id: "d-ir", title: "Work an incident-response playbook", desc: "Contain, eradicate, recover — in order.", sec: "incidents", cat: "blue", level: "core", mins: 20 },
   { id: "d-deception", title: "Design a deception / honeypot", desc: "Lay a trap that catches an intruder early.", sec: "deception", cat: "blue", level: "advanced", mins: 15 },
   { id: "d-threatmodel", title: "Threat-model a system", desc: "Enumerate what can go wrong before it does.", sec: "threatmodel", cat: "blue", level: "core", mins: 20 },
-  { id: "d-breachsim", title: "Simulate a breach and measure blast radius", desc: "See how far an attacker gets from one foothold.", sec: "breachsim", cat: "blue", level: "advanced", mins: 20 },
-  { id: "d-purple", title: "Run a purple-team exercise", desc: "Attack and defend in the same loop.", sec: "purpleteam", cat: "blue", level: "advanced", mins: 25 },
+  { id: "d-breachsim", title: "Estimate what a breach would cost", desc: "Records, industry and size into a defensible number and a recovery plan.", sec: "incidentcost", cat: "blue", level: "advanced", mins: 20 },
+  { id: "d-purple", title: "Run a purple-team exercise", desc: "Attack and defend in the same loop.", sec: "adversaryplaybook", cat: "blue", level: "advanced", mins: 25 },
 
   // --- Threat Intelligence ---
   { id: "d-cve", title: "Research a CVE end to end", desc: "Understand a vuln, its impact, and its fix.", sec: "cvesearch", cat: "intel", level: "intro", mins: 10 },
@@ -84,15 +84,15 @@ export const ACTIVITIES = [
   { id: "d-threatfeed", title: "Scan the newest published CVEs", desc: "See what was disclosed this week and what it affects.", sec: "cvesearch", cat: "intel", level: "intro", mins: 6 },
   { id: "d-breach", title: "Check an account against breaches", desc: "See where a credential has leaked.", sec: "breachlookup", cat: "intel", level: "intro", mins: 5 },
   { id: "d-ioc", title: "Extract IOCs from a report", desc: "Pull hashes, IPs, and domains into a usable list.", sec: "iocenrich", cat: "intel", level: "core", mins: 10 },
-  { id: "d-iprep", title: "Score an IP's reputation", desc: "Decide whether to block, watch, or allow.", sec: "ipreputation", cat: "intel", level: "core", mins: 6 },
+  { id: "d-iprep", title: "Score an IP's reputation", desc: "Decide whether to block, watch, or allow.", sec: "addressintel", cat: "intel", level: "core", mins: 6 },
 
   // --- Forensics & Malware ---
   { id: "d-stego", title: "Hide and extract data with steganography", desc: "Then learn how defenders find it.", sec: "stego", cat: "forensics", level: "core", mins: 12 },
   { id: "d-mem", title: "Analyze a memory image", desc: "Find the process an attacker tried to hide.", sec: "memforensics", cat: "forensics", level: "advanced", mins: 25 },
   { id: "d-bin", title: "Inspect a binary", desc: "Strings, headers, and what a file really is.", sec: "binanalyze", cat: "forensics", level: "core", mins: 12 },
-  { id: "d-reveng", title: "Reverse-engineer a sample", desc: "Work out behavior without running it.", sec: "reveng", cat: "forensics", level: "advanced", mins: 25 },
-  { id: "d-sandbox", title: "Detonate a sample in the analysis lab", desc: "Watch what malware does, safely.", sec: "sandbox", cat: "forensics", level: "advanced", mins: 20 },
-  { id: "d-phish", title: "Analyze a phishing email", desc: "Headers, links, and the tell-tale signs.", sec: "phishing", cat: "forensics", level: "intro", mins: 8 },
+  { id: "d-reveng", title: "Pick apart a binary", desc: "Headers, strings, imports and entropy, without running it.", sec: "binanalyze", cat: "forensics", level: "advanced", mins: 25 },
+  { id: "d-sandbox", title: "Classify a suspicious file", desc: "Static indicators plus your own YARA rules.", sec: "malclass", cat: "forensics", level: "advanced", mins: 20 },
+  { id: "d-phish", title: "Analyze a phishing email", desc: "Headers, links, and the tell-tale signs.", sec: "phishtriage", cat: "forensics", level: "intro", mins: 8 },
   { id: "d-timeline", title: "Build a forensic timeline", desc: "Order the events of an intrusion.", sec: "ftimeline", cat: "forensics", level: "core", mins: 15 },
 
   // --- Crypto & Encoding ---
@@ -105,19 +105,19 @@ export const ACTIVITIES = [
   { id: "d-netscan", title: "Scan a network for live hosts and ports", desc: "Build a map of what's reachable.", sec: "networkscanner", cat: "network", level: "core", mins: 12 },
   { id: "d-pcap", title: "Analyze captured packets", desc: "Follow a stream and reconstruct a session.", sec: "packetanalyzer", cat: "network", level: "advanced", mins: 20 },
   { id: "d-ssl", title: "Inspect a TLS/SSL configuration", desc: "Protocols, ciphers, and cert problems.", sec: "sslinspector", cat: "network", level: "core", mins: 8 },
-  { id: "d-subnet", title: "Visualize a subnet", desc: "CIDR math made obvious.", sec: "subnetvisualizer", cat: "network", level: "intro", mins: 6 },
+  { id: "d-subnet", title: "Visualize a subnet", desc: "CIDR math made obvious.", sec: "networktools", cat: "network", level: "intro", mins: 6 },
 
   // --- Compliance & GRC ---
   { id: "d-compliance", title: "Run a compliance check", desc: "Measure a posture against a framework.", sec: "compliance", cat: "grc", level: "core", mins: 15 },
   { id: "d-zerotrust", title: "Plan a zero-trust rollout", desc: "Turn the buzzword into concrete steps.", sec: "zerotrust", cat: "grc", level: "advanced", mins: 20 },
-  { id: "d-risk", title: "Calculate risk for a scenario", desc: "Likelihood x impact, made defensible.", sec: "riskcalculator", cat: "grc", level: "core", mins: 10 },
+  { id: "d-risk", title: "Record a risk in the register", desc: "Likelihood x impact, with an owner and a treatment.", sec: "riskreg", cat: "grc", level: "core", mins: 10 },
   { id: "d-brief", title: "Generate a cyber briefing", desc: "Turn activity into an executive-ready summary.", sec: "cyberbriefing", cat: "grc", level: "core", mins: 10 },
 
   // --- Ranges & Challenges ---
   { id: "d-crucible", title: "Enter CRUCIBLE and run a wargame", desc: "Full attack/defend simulation with after-action review.", sec: "crucible", cat: "ranges", level: "advanced", mins: 30 },
   { id: "d-secquiz", title: "Take a skill assessment", desc: "Benchmark yourself on a specific domain.", sec: "secquiz", cat: "ranges", level: "core", mins: 15 },
-  { id: "d-checklist", title: "Work through a security checklist", desc: "Harden a system item by item.", sec: "secchecklist", cat: "ranges", level: "core", mins: 15 },
-  { id: "d-training", title: "Pick an external training lab", desc: "Curated HTB / TryHackMe / PortSwigger jump-offs.", sec: "training", cat: "ranges", level: "intro", mins: 5 },
+  { id: "d-checklist", title: "Work through a compliance checklist", desc: "Check controls item by item against a framework.", sec: "compliance", cat: "ranges", level: "core", mins: 15 },
+  { id: "d-training", title: "Pick an external training lab", desc: "Curated HTB / TryHackMe / PortSwigger jump-offs.", sec: "targets", cat: "ranges", level: "intro", mins: 5 },
 
   // --- AI & Automation ---
   { id: "d-ai", title: "Ask Darknode AI a security question", desc: "Get an explanation, a plan, or a payload idea.", sec: "ai", cat: "ai", level: "intro", mins: 5 },

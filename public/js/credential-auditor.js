@@ -1286,12 +1286,27 @@ function renderCredFormatTab(container) {
   };
 }
 
+// Named compliance starting points for the builder. Values come from each standard's
+// password requirements; where a standard sets no number, the note says so.
+var POLICY_PRESETS = {
+  nist: { name: "NIST SP 800-63B", note: "No composition rules, no forced rotation, screen against breached and common passwords, accept at least 64 characters, rate-limit failed attempts (100 at most). Minimum 8 characters with MFA; SP 800-63B-4 requires 15 when the password is the only factor.",
+    v: { minlen: 8, maxlen: 128, upper: false, lower: false, digit: false, special: false, norepeat: false, nocommon: true, mfa: true, history: 0, lockout: 100, lockmin: 15, expiry: 0 } },
+  pci: { name: "PCI DSS v4.0", note: "Req 8.3.6: at least 12 characters (8 only if the system cannot support 12) with letters and digits. 8.3.7: not one of the last 4. 8.3.4: lock out after at most 10 attempts for at least 30 minutes. 8.3.9: change every 90 days when the password is the only factor. 8.4: MFA into the CDE.",
+    v: { minlen: 12, maxlen: 128, upper: false, lower: true, digit: true, special: false, norepeat: false, nocommon: true, mfa: true, history: 4, lockout: 10, lockmin: 30, expiry: 90 } },
+  hipaa: { name: "HIPAA Security Rule", note: "164.308(a)(5)(ii)(D) requires password management procedures but sets no length or complexity. This is a common baseline used to meet it: 8+ characters with mixed classes, rotation every 90 days, no reuse.",
+    v: { minlen: 8, maxlen: 128, upper: true, lower: true, digit: true, special: true, norepeat: true, nocommon: true, mfa: false, history: 5, lockout: 5, lockmin: 15, expiry: 90 } },
+};
+
 function renderPolicyTab(container) {
   container.innerHTML =
     '<div class="ca-section">' +
       '<h3 class="ca-sh">Password Policy Builder</h3>' +
       '<p class="ca-desc">Configure a password policy and generate a validation regex + compliance document.</p>' +
       '<div class="ca-policy-form">' +
+        '<label class="ca-pol-row"><span>Start from preset:</span><select id="ca-pol-preset" class="ca-input"><option value="">Custom</option>' +
+          Object.keys(POLICY_PRESETS).map(function(k) { return '<option value="' + k + '">' + esc(POLICY_PRESETS[k].name) + '</option>'; }).join("") +
+        '</select></label>' +
+        '<p class="ca-desc" id="ca-pol-preset-note" hidden></p>' +
         '<label class="ca-pol-row"><span>Policy name:</span><input type="text" id="ca-pol-name" placeholder="Policy name" class="ca-input"></label>' +
         '<label class="ca-pol-row"><span>Min length:</span><input type="number" id="ca-pol-minlen" value="12" min="1" max="128" class="ca-input-sm"></label>' +
         '<label class="ca-pol-row"><span>Max length:</span><input type="number" id="ca-pol-maxlen" value="128" min="1" max="1024" class="ca-input-sm"></label>' +
@@ -1310,6 +1325,16 @@ function renderPolicyTab(container) {
       '<button class="ca-btn" id="ca-pol-btn">Generate Policy</button>' +
       '<div id="ca-pol-result" class="ca-result"></div>' +
     '</div>';
+  container.querySelector("#ca-pol-preset").onchange = function() {
+    var pr = POLICY_PRESETS[this.value], note = container.querySelector("#ca-pol-preset-note");
+    note.hidden = !pr; if (!pr) return;
+    note.textContent = pr.note;
+    container.querySelector("#ca-pol-name").value = pr.name;
+    for (var k in pr.v) {
+      var el = container.querySelector("#ca-pol-" + k);
+      if (el) { if (el.type === "checkbox") el.checked = !!pr.v[k]; else el.value = pr.v[k]; }
+    }
+  };
   container.querySelector("#ca-pol-btn").onclick = function() {
     var opts = {
       name: container.querySelector("#ca-pol-name").value,

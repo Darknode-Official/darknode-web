@@ -10,7 +10,10 @@
 //   - A computed risk / summary panel
 // Every lookup is caught per-section — one failure never breaks the others.
 // Results render progressively (each panel shows a spinner, then fills).
+//   - Geolocation of the primary IP (ipapi.co) + reverse DNS with forward confirmation
 // Nothing is fabricated; failures are reported as "unavailable".
+
+import { dnFetch, proxyConfigured } from "/js/net.js";
 
 const esc = (s) => String(s != null ? s : "").replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -54,10 +57,17 @@ function dohQuery(name, type) {
 }
 
 // Certificate transparency (crt.sh). Returns a de-duplicated, sorted name list.
+// crt.sh rarely sends CORS headers, so go through the Darknode proxy when it is configured.
 function certSubdomains(domain) {
   var url = "https://crt.sh/?q=%25." + encodeURIComponent(domain) + "&output=json";
-  return fetch(url, { headers: { Accept: "application/json" } })
-    .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+  var get = proxyConfigured()
+    ? dnFetch(url, { raw: true, timeout: 20000 }).then(function (r) {
+        if (r.status && r.status !== 200) throw new Error("crt.sh returned HTTP " + r.status);
+        try { return JSON.parse(r.body); } catch (_) { throw new Error(r.truncated ? "crt.sh returned more data than the proxy size limit allows" : "crt.sh did not return valid JSON"); }
+      })
+    : fetch(url, { headers: { Accept: "application/json" } })
+        .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); });
+  return get
     .then(function (rows) {
       if (!Array.isArray(rows)) return { names: [], wildcard: false, total: 0 };
       var set = {};
@@ -131,6 +141,41 @@ function rdapLookup(target, ip) {
     });
 }
 
+// Geolocation (ipapi.co) of an address. ipapi returns {error:true, reason} on failure.
+function geoLookup(ip) {
+  return fetchJSON("https://ipapi.co/" + encodeURIComponent(ip) + "/json/").then(function (res) {
+    var g = res.json || {};
+    if (g.error) throw new Error(g.reason || "ipapi.co refused the lookup");
+    return { ip: g.ip || ip, country: g.country_name || "", countryCode: g.country_code || "", region: g.region || "", city: g.city || "", org: g.org || "", asn: g.asn || "", timezone: g.timezone || "", latitude: g.latitude, longitude: g.longitude };
+  });
+}
+
+// Reverse DNS (PTR, IPv4) and forward confirmation: does the PTR name resolve back to the IP?
+function reverseLookup(ip) {
+  if (!IP_RE.test(ip)) return Promise.resolve({ ptr: [], supported: false });
+  var rev = ip.split(".").reverse().join(".") + ".in-addr.arpa";
+  return dohQuery(rev, "PTR").then(function (ans) {
+    var ptr = ans.filter(function (a) { return a.type === 12; }).map(function (a) { return String(a.data || "").replace(/\.$/, ""); }).filter(Boolean);
+    if (!ptr.length) return { ptr: [], supported: true };
+    return dohQuery(ptr[0], "A").then(function (fwd) {
+      var addrs = fwd.filter(function (a) { return a.type === 1; }).map(function (a) { return a.data; });
+      return { ptr: ptr, supported: true, forward: addrs, confirmed: addrs.indexOf(ip) >= 0 };
+    }).catch(function () { return { ptr: ptr, supported: true, forward: null, confirmed: null }; });
+  });
+}
+
+// Lookup history (most recent first, capped).
+var HIST_KEY = "dn_dossier_history", HIST_MAX = 20;
+function loadHistory() {
+  try {
+    var h = JSON.parse(localStorage.getItem(HIST_KEY) || "null");
+    // One-time carry-over from the retired WHOIS Recon tool's history.
+    if (!Array.isArray(h)) h = (JSON.parse(localStorage.getItem("dn_whois_history") || "[]") || []).map(function (x) { return x && x.query; });
+    return h.filter(function (x) { return typeof x === "string" && x; }).slice(0, HIST_MAX);
+  } catch (_) { return []; }
+}
+function saveHistory(list) { try { localStorage.setItem(HIST_KEY, JSON.stringify(list.slice(0, HIST_MAX))); } catch (_) {} }
+
 function vcardName(entity) {
   var v = entity && entity.vcardArray && entity.vcardArray[1];
   if (!Array.isArray(v)) return "";
@@ -198,19 +243,15 @@ export function renderDossier(main) {
     '<div class="dsr-wrap">' +
     '<div class="pg-head"><div>' +
     '<h1 class="pg-h1">Target Dossier</h1>' +
-    '<p class="muted pg-sub">One-shot recon dossier — subdomains, DNS, certificates, ASN and WHOIS assembled into a single exportable report. All lookups run live in your browser.</p>' +
+    '<p class="muted pg-sub">One-shot recon dossier — subdomains, DNS, certificates, ASN, geolocation, reverse DNS and WHOIS assembled into a single exportable report. Lookups run live; the certificate search goes through the Darknode proxy when available.</p>' +
     "</div></div>" +
     '<div class="dsr-bar">' +
-    '<input id="dsr-input" type="text" placeholder="Enter a domain or IP (e.g. example.com or 8.8.8.8)" autocomplete="off" spellcheck="false">' +
+    '<input id="dsr-input" type="text" placeholder="Domain or IP address" autocomplete="off" spellcheck="false">' +
     '<button class="btn primary" id="dsr-run">Build Dossier</button>' +
     '<button class="btn ghost" id="dsr-json" disabled>Export JSON</button>' +
     '<button class="btn ghost" id="dsr-md" disabled>Export Markdown</button>' +
     "</div>" +
-    '<div class="dsr-ex"><span class="muted">Examples:</span>' +
-    ["example.com", "github.com", "cloudflare.com", "8.8.8.8"].map(function (d) {
-      return '<button class="btn ghost sm dsr-eg" data-t="' + esc(d) + '">' + esc(d) + "</button>";
-    }).join("") +
-    "</div>" +
+    '<div class="dsr-ex" id="dsr-hist"></div>' +
     '<div class="dsr-grid" id="dsr-grid"></div>' +
     "</div>";
 
@@ -222,9 +263,21 @@ export function renderDossier(main) {
 
   runBtn.addEventListener("click", function () { run(input.value); });
   input.addEventListener("keydown", function (e) { if (e.key === "Enter") run(input.value); });
-  main.querySelectorAll(".dsr-eg").forEach(function (b) {
-    b.addEventListener("click", function () { input.value = b.dataset.t; run(b.dataset.t); });
+  var histEl = main.querySelector("#dsr-hist");
+  function renderHistory() {
+    var h = loadHistory();
+    histEl.hidden = !h.length;
+    histEl.innerHTML = h.length ? '<span class="muted">Recent:</span>' + h.map(function (d) {
+      return '<button class="btn ghost sm dsr-eg" data-t="' + esc(d) + '">' + esc(d) + "</button>";
+    }).join("") + '<button class="btn ghost sm" id="dsr-hist-clear">Clear</button>' : "";
+  }
+  histEl.addEventListener("click", function (e) {
+    var b = e.target.closest("button");
+    if (!b) return;
+    if (b.id === "dsr-hist-clear") { saveHistory([]); renderHistory(); return; }
+    input.value = b.dataset.t; run(b.dataset.t);
   });
+  renderHistory();
   jsonBtn.addEventListener("click", function () { exportDossier("json"); });
   mdBtn.addEventListener("click", function () { exportDossier("md"); });
 
@@ -241,6 +294,8 @@ export function renderDossier(main) {
     var target = normalizeTarget(raw);
     if (!target) { toast("Enter a domain or IP address.", "error"); return; }
     var targetIsIP = isIP(target);
+    saveHistory([target].concat(loadHistory().filter(function (x) { return x !== target; })));
+    renderHistory();
 
     jsonBtn.disabled = true;
     mdBtn.disabled = true;
@@ -254,6 +309,8 @@ export function renderDossier(main) {
       dns: null,
       subdomains: null,
       network: null,
+      geo: null,
+      reverse: null,
       registration: null,
       summary: null
     };
@@ -263,10 +320,11 @@ export function renderDossier(main) {
       panel("subs", "Subdomains — crt.sh") +
       panel("dns", "DNS Records — dns.google") +
       panel("net", "Network / ASN — BGPView") +
+      panel("geo", "Geolocation & Reverse DNS") +
       panel("reg", "Registration — RDAP / WHOIS");
 
-    var pending = { dns: true, subs: true, net: true, reg: true };
-    function done(key) { pending[key] = false; if (!pending.dns && !pending.subs && !pending.net && !pending.reg) finish(); }
+    var pending = { dns: true, subs: true, net: true, geo: true, reg: true };
+    function done(key) { pending[key] = false; if (!pending.dns && !pending.subs && !pending.net && !pending.geo && !pending.reg) finish(); }
 
     var primaryIP = targetIsIP ? target : null;
 
@@ -277,7 +335,7 @@ export function renderDossier(main) {
       dnsReady = Promise.resolve();
       done("dns");
     } else {
-      var types = ["A", "AAAA", "MX", "NS", "TXT"];
+      var types = ["A", "AAAA", "MX", "NS", "TXT", "CNAME", "SOA"];
       dnsReady = Promise.all(types.map(function (t) {
         return dohQuery(target, t).then(function (ans) { return { t: t, ans: ans }; })
           .catch(function () { return { t: t, ans: null }; });
@@ -329,6 +387,24 @@ export function renderDossier(main) {
       }).then(function () { done("net"); });
     });
 
+    // ── Geolocation + reverse DNS of the primary address — waits for the A record ──
+    dnsReady.then(function () {
+      if (!primaryIP) {
+        body("geo").innerHTML = '<div class="dsr-note muted">No A record resolved — geolocation and reverse DNS skipped.</div>';
+        done("geo");
+        return;
+      }
+      return Promise.all([
+        geoLookup(primaryIP).catch(function (e) { return { error: (e && e.message) || "ipapi.co unreachable" }; }),
+        reverseLookup(primaryIP).catch(function (e) { return { error: (e && e.message) || "PTR lookup failed" }; })
+      ]).then(function (r) {
+        DOSSIER.geo = r[0].error ? null : r[0];
+        DOSSIER.reverse = r[1].error ? null : r[1];
+        renderGeo(primaryIP, r[0], r[1]);
+        count("geo", DOSSIER.geo && DOSSIER.geo.countryCode ? DOSSIER.geo.countryCode : "");
+      }).then(function () { done("geo"); });
+    });
+
     // ── Registration (RDAP) — independent ──
     rdapLookup(target, targetIsIP).then(function (reg) {
       DOSSIER.registration = reg;
@@ -357,7 +433,7 @@ export function renderDossier(main) {
     if (allFailed) { body("dns").innerHTML = unavailable("DNS-over-HTTPS requests failed (network or CORS)."); return; }
     if (!any) { body("dns").innerHTML = '<div class="dsr-note muted">No DNS records returned.</div>'; return; }
     var html = "";
-    var order = ["A", "AAAA", "MX", "NS", "TXT"];
+    var order = ["A", "AAAA", "MX", "NS", "TXT", "CNAME", "SOA"];
     order.forEach(function (t) {
       var ans = byType[t];
       if (!ans || !ans.length) return;
@@ -389,6 +465,30 @@ export function renderDossier(main) {
     if (net.ptr) rows.push(["PTR", net.ptr]);
     if (net.allPrefixes && net.allPrefixes.length > 1) rows.push(["Announced prefixes", String(net.allPrefixes.length)]);
     body("net").innerHTML = rows.length ? kvTable(rows) : '<div class="dsr-note muted">No ASN / network data returned.</div>';
+  }
+
+  function renderGeo(ip, geo, rev) {
+    var html = "";
+    if (geo.error) html += unavailable("Geolocation: " + geo.error);
+    else {
+      var rows = [["IP", geo.ip]];
+      var place = [geo.city, geo.region, geo.country].filter(Boolean).join(", ");
+      if (place) rows.push(["Location", place + (geo.countryCode ? " (" + geo.countryCode + ")" : "")]);
+      if (geo.org) rows.push(["ISP / Org", geo.org]);
+      if (geo.asn) rows.push(["ASN", geo.asn]);
+      if (geo.timezone) rows.push(["Timezone", geo.timezone]);
+      if (geo.latitude != null && geo.longitude != null) rows.push(["Coordinates", geo.latitude + ", " + geo.longitude]);
+      html += kvTable(rows);
+    }
+    if (rev.error) html += unavailable("Reverse DNS: " + rev.error);
+    else if (!rev.supported) html += '<div class="dsr-note muted">Reverse DNS lookup here supports IPv4 addresses only.</div>';
+    else if (!rev.ptr.length) html += '<div class="dsr-note muted">No PTR (reverse DNS) record for ' + esc(ip) + ".</div>";
+    else {
+      var fc = rev.confirmed === true ? "yes — the name resolves back to " + ip : rev.confirmed === false ? "no — " + rev.ptr[0] + " resolves to " + ((rev.forward || []).join(", ") || "nothing") : "could not be checked";
+      html += kvTable([["PTR", rev.ptr.join(", ")], ["Forward-confirmed", fc]]);
+    }
+    html += '<div class="dsr-note muted" style="margin-top:6px">Sources: ipapi.co geolocation (approximate) and dns.google PTR lookup.</div>';
+    body("geo").innerHTML = html;
   }
 
   function renderReg(reg, targetIsIP) {
@@ -472,10 +572,13 @@ function computeSummary(d, primaryIP) {
 
   if (d.network && d.network.asn) findings.push({ level: "info", text: "Hosted on AS" + d.network.asn + (d.network.asnName ? " (" + d.network.asnName + ")" : "") + (d.network.country ? ", " + d.network.country : "") + "." });
 
+  else if (d.geo && d.geo.asn) findings.push({ level: "info", text: "Hosted on " + d.geo.asn + (d.geo.org ? " (" + d.geo.org + ")" : "") + (d.geo.countryCode ? ", " + d.geo.countryCode : "") + " (ipapi.co)." });
+
   if (primaryIP) findings.push({ level: "info", text: "Primary address resolved: " + primaryIP + "." });
+  if (d.reverse && d.reverse.ptr && d.reverse.ptr.length && d.reverse.confirmed === false) findings.push({ level: "warn", text: "Reverse DNS " + d.reverse.ptr[0] + " does not resolve back to " + primaryIP + " (not forward-confirmed)." });
 
   return {
-    stats: { subdomains: subCount, dnsRecords: dnsCount, nameservers: nsCount, asn: d.network && d.network.asn ? "AS" + d.network.asn : "" },
+    stats: { subdomains: subCount, dnsRecords: dnsCount, nameservers: nsCount, asn: d.network && d.network.asn ? "AS" + d.network.asn : (d.geo && d.geo.asn) || "" },
     findings: findings
   };
 }
@@ -536,7 +639,7 @@ function toMarkdown(d) {
 
   L.push("## DNS Records");
   if (d.dns && Object.keys(d.dns).length) {
-    ["A", "AAAA", "MX", "NS", "TXT"].forEach(function (t) {
+    ["A", "AAAA", "MX", "NS", "TXT", "CNAME", "SOA"].forEach(function (t) {
       var ans = d.dns[t];
       if (!ans || !ans.length) return;
       L.push("");
@@ -566,6 +669,24 @@ function toMarkdown(d) {
     if (n.country) L.push("- Country: " + n.country);
     if (n.rir) L.push("- RIR: " + n.rir);
     if (n.ptr) L.push("- PTR: " + n.ptr);
+  } else { L.push("", "_Unavailable._"); }
+  L.push("");
+
+  L.push("## Geolocation & Reverse DNS");
+  if (d.geo || d.reverse) {
+    L.push("");
+    var g = d.geo;
+    if (g) {
+      L.push("- IP: `" + g.ip + "`");
+      var place = [g.city, g.region, g.country].filter(Boolean).join(", ");
+      if (place) L.push("- Location: " + place);
+      if (g.org) L.push("- ISP / Org: " + g.org);
+      if (g.asn) L.push("- ASN: " + g.asn);
+    }
+    if (d.reverse && d.reverse.ptr && d.reverse.ptr.length) {
+      L.push("- PTR: " + d.reverse.ptr.join(", "));
+      L.push("- Forward-confirmed: " + (d.reverse.confirmed === true ? "yes" : d.reverse.confirmed === false ? "no" : "unknown"));
+    } else if (d.reverse) L.push("- PTR: none");
   } else { L.push("", "_Unavailable._"); }
   L.push("");
 

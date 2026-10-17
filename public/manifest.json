@@ -24,7 +24,7 @@
     { "name": "GenAI Crosswalk", "short_name": "Crosswalk", "description": "OWASP GenAI risks mapped to 26 frameworks", "url": "/crosswalk" },
     { "name": "Settings", "short_name": "Settings", "description": "App settings", "url": "/settings" },
     { "name": "CVE Search", "short_name": "CVEs", "description": "Search and browse the newest CVEs", "url": "/cvesearch" },
-    { "name": "Security Checklist", "short_name": "Checklist", "description": "Compliance checklists", "url": "/secchecklist" }
+    { "name": "Compliance Checker", "short_name": "Compliance", "description": "Compliance checklists", "url": "/compliance" }
   ],
   "screenshots": []
 }
