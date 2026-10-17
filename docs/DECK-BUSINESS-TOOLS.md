@@ -126,11 +126,11 @@ Legend: planned · scaffolded · built · merged · deployed
 
 | route | Label | group | prefix | status |
 |---|---|---|---|---|
-| `apforensics` | Accounts Payable Forensics | finsec | `apf-` | planned |
-| `cardaudit` | Corporate Card Audit | finsec | `crd-` | planned |
-| `payrollguard` | Payroll Integrity | finsec | `pay-` | planned |
-| `cloudspend` | Cloud Spend Anomaly | finsec | `csa-` | planned |
-| `breachclock` | Breach Notification Clock | risk | `bnc-` | planned |
+| `apforensics` | Accounts Payable Forensics | finsec | `apf-` | scaffolded |
+| `cardaudit` | Corporate Card Audit | finsec | `crd-` | scaffolded |
+| `payrollguard` | Payroll Integrity | finsec | `pay-` | scaffolded |
+| `cloudspend` | Cloud Spend Anomaly | finsec | `csa-` | scaffolded |
+| `breachclock` | Breach Notification Clock | risk | `bnc-` | scaffolded |
 
 ### Wave 4 — Risk & resilience, compliance ops
 
