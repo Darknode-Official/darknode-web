@@ -15,9 +15,9 @@ import { wsKey } from "../core/register.js";
 import {
   DEFAULTS, TOOL_ID, KINDS, MAP_LABEL, SEV_RANK, CONF_RANK, WEIGHT_KEYS,
   detectFile, findingsToCsv, recoveryToCsv, readinessReport, summaryText, exampleDataset,
-} from "./backupready-engine.js?v=20261016t";
+} from "./backupready-engine.js?v=20261017a";
 
-const ENGINE = engineUrl("./backupready-engine.js?v=20261016t", import.meta);
+const ENGINE = engineUrl("./backupready-engine.js?v=20261017a", import.meta);
 const P = "bkr";
 const MAP_STORE = "dn_backupready_assetmap";
 const toast = (m, t) => { try { (window.showToast || (() => {}))(m, t || "info"); } catch (_) {} };

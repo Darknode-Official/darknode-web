@@ -2128,18 +2128,18 @@ function renderApp(user) {
     else if (sec === "riskreg") { import("/js/risk/riskreg.js?v=20261016q").then(m => live() && m.renderRiskRegister(main)); }
     else if (sec === "evidence") { import("/js/compliance/evidence.js?v=20261016r").then(m => live() && m.renderEvidence(main)); }
     else if (sec === "vendorrisk") { import("/js/risk/vendorrisk.js?v=20261016s").then(m => live() && m.renderVendorRisk(main)); }
-    else if (sec === "backupready") { import("/js/risk/backupready.js?v=20261016t").then(m => live() && m.renderBackupReady(main)); }
+    else if (sec === "backupready") { import("/js/risk/backupready.js?v=20261017a").then(m => live() && m.renderBackupReady(main)); }
     else if (sec === "dmarcreports") { import("/js/exposure/dmarcreports.js?v=20261016u").then(m => live() && m.renderDmarcReports(main)); }
     else if (sec === "domainguard") { import("/js/exposure/domainguard.js?v=20261016v").then(m => live() && m.renderDomainGuard(main)); }
-    else if (sec === "dnshunt") { import("/js/ops/dnshunt.js?v=20261016w").then(m => live() && m.renderDnsHunt(main)); }
-    else if (sec === "proxyhunt") { import("/js/ops/proxyhunt.js?v=20261016x").then(m => live() && m.renderProxyHunt(main)); }
-    else if (sec === "vpnaudit") { import("/js/identity/vpnaudit.js?v=20261016y").then(m => live() && m.renderVpnAudit(main)); }
+    else if (sec === "dnshunt") { import("/js/ops/dnshunt.js?v=20261017a").then(m => live() && m.renderDnsHunt(main)); }
+    else if (sec === "proxyhunt") { import("/js/ops/proxyhunt.js?v=20261017a").then(m => live() && m.renderProxyHunt(main)); }
+    else if (sec === "vpnaudit") { import("/js/identity/vpnaudit.js?v=20261017a").then(m => live() && m.renderVpnAudit(main)); }
     else if (sec === "netexposure") { import("/js/exposure/netexposure.js?v=20261016z").then(m => live() && m.renderNetExposure(main)); }
     else if (sec === "licenseaudit") { import("/js/appsec/licenseaudit.js?v=20261016za").then(m => live() && m.renderLicenseAudit(main)); }
     else if (sec === "apispec") { import("/js/appsec/apispec.js?v=20261016zb").then(m => live() && m.renderApiSpec(main)); }
-    else if (sec === "dataflow") { import("/js/compliance/dataflow.js?v=20261016zc").then(m => live() && m.renderDataFlow(main)); }
-    else if (sec === "awareness") { import("/js/compliance/awareness.js?v=20261016zd").then(m => live() && m.renderAwareness(main)); }
-    else if (sec === "pentestreg") { import("/js/ops/pentestreg.js?v=20261016ze").then(m => live() && m.renderPentestReg(main)); }
+    else if (sec === "dataflow") { import("/js/compliance/dataflow.js?v=20261017a").then(m => live() && m.renderDataFlow(main)); }
+    else if (sec === "awareness") { import("/js/compliance/awareness.js?v=20261017a").then(m => live() && m.renderAwareness(main)); }
+    else if (sec === "pentestreg") { import("/js/ops/pentestreg.js?v=20261017a").then(m => live() && m.renderPentestReg(main)); }
     else if (sec === "setup") renderSetup(main, more);
     else if (sec === "settings") renderSettingsPage(main, user, isOwner, more);
     else if (sec === "admin") { import("/js/admin.js?v=20261015f").then(m => live() && m.renderAdmin(main, user)); }

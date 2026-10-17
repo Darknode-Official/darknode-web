@@ -18,9 +18,9 @@ import { download, toJson, fileStamp } from "../core/export.js";
 import {
   DEFAULTS, TOOL_ID, KINDS, MODE_KEYS, KEY_LABELS, REGISTER_SCHEMA, parseInput, remapFile, normEmail, mergeHistory,
   findingsToCsv, repeatClickersCsv, departmentScorecardCsv, remedialAssignmentsCsv, summaryText, exampleParsed,
-} from "./awareness-engine.js?v=20261016zd";
+} from "./awareness-engine.js?v=20261017a";
 
-const ENGINE = engineUrl("./awareness-engine.js?v=20261016zd", import.meta);
+const ENGINE = engineUrl("./awareness-engine.js?v=20261017a", import.meta);
 const P = "awr";
 const toast = (m, t) => { try { (window.showToast || (() => {}))(m, t || "info"); } catch (_) {} };
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
