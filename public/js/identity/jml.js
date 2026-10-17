@@ -73,7 +73,7 @@ const CSS = `
   .jml-list td{padding:9px 12px;border-bottom:1px solid var(--line,#eef0f4);vertical-align:top;overflow-wrap:break-word}
   .jml-list tr[data-i]{cursor:pointer}
   .jml-list tr[data-i]:hover,.jml-list tr.sel{background:var(--bg,#f7f8fb)}
-  .jml-list select,.jml-list input{font:inherit;font-size:.8rem;color:var(--tx,#1a2230);background:var(--card,#fff);border:1px solid var(--line,#d7dbe3);border-radius:6px;padding:4px 6px;max-width:100%}
+  .jml-list select,.jml-list input{min-width:150px;font:inherit;font-size:.8rem;color:var(--tx,#1a2230);background:var(--card,#fff);border:1px solid var(--line,#d7dbe3);border-radius:6px;padding:4px 6px;max-width:100%}
   .jml-pill{display:inline-block;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:2px 8px;border-radius:999px;color:#fff;background:#667085;white-space:nowrap}
   .jml-pill.critical{background:#7a0012}.jml-pill.high{background:#b00020}.jml-pill.medium{background:#b58100}.jml-pill.low{background:#2552c6}.jml-pill.info{background:#667085}
   .jml-pill.conf-high{background:#1f7a3a}.jml-pill.conf-medium{background:#b58100}.jml-pill.conf-low{background:#b00020}
