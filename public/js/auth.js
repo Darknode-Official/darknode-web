@@ -287,6 +287,11 @@ const SIDE_DESC = {
   vendorrisk: "Vendor register with live external posture checks, assurance-document expiry, inherent and residual risk, and regressions since the last check.",
   backupready: "Backup and ransomware readiness from Veeam, AWS Backup, Azure Backup and restore-test exports: coverage, RPO breaches, immutability and 3-2-1-1-0.",
   dmarcreports: "DMARC aggregate report analyzer: per-source alignment, sending-service classification, spoofing volume and a safe path to p=reject.",
+  domainguard: "Domain portfolio guard: live DNS, email-auth, DNSSEC, CAA and registration-expiry checks, dangling-CNAME takeover risk and registered lookalike domains.",
+  dnshunt: "DNS log threat hunter for Windows DNS, BIND, Zeek, Route 53 Resolver, Umbrella and Pi-hole logs: DGA, tunneling, beaconing and newly seen domains.",
+  proxyhunt: "Web gateway and proxy log hunter for Zscaler, Squid, Palo Alto, Netskope and Umbrella: upload exfiltration, shadow SaaS, anonymizers and scripted clients.",
+  vpnaudit: "Remote access audit for FortiGate, GlobalProtect, AnyConnect, OpenVPN, Cloudflare Access and ZPA logs: leavers connecting, impossible travel and brute force.",
+  netexposure: "Network exposure from nmap, masscan, naabu and Nessus scans: risky exposed services, end-of-life banners, weak certificates and scan-to-scan differences.",
 };
 const GROUP_DESC = {
   "Mission Control": "Flagship, real-time operations tools — the big dashboards.",
@@ -2120,6 +2125,11 @@ function renderApp(user) {
     else if (sec === "vendorrisk") { import("/js/risk/vendorrisk.js?v=20261016s").then(m => live() && m.renderVendorRisk(main)); }
     else if (sec === "backupready") { import("/js/risk/backupready.js?v=20261016t").then(m => live() && m.renderBackupReady(main)); }
     else if (sec === "dmarcreports") { import("/js/exposure/dmarcreports.js?v=20261016u").then(m => live() && m.renderDmarcReports(main)); }
+    else if (sec === "domainguard") { import("/js/exposure/domainguard.js?v=20261016v").then(m => live() && m.renderDomainGuard(main)); }
+    else if (sec === "dnshunt") { import("/js/ops/dnshunt.js?v=20261016w").then(m => live() && m.renderDnsHunt(main)); }
+    else if (sec === "proxyhunt") { import("/js/ops/proxyhunt.js?v=20261016x").then(m => live() && m.renderProxyHunt(main)); }
+    else if (sec === "vpnaudit") { import("/js/identity/vpnaudit.js?v=20261016y").then(m => live() && m.renderVpnAudit(main)); }
+    else if (sec === "netexposure") { import("/js/exposure/netexposure.js?v=20261016z").then(m => live() && m.renderNetExposure(main)); }
     else if (sec === "setup") renderSetup(main, more);
     else if (sec === "settings") renderSettingsPage(main, user, isOwner, more);
     else if (sec === "admin") { import("/js/admin.js?v=20261015f").then(m => live() && m.renderAdmin(main, user)); }
