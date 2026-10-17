@@ -1,0 +1,55 @@
+# Darknode Code Scanner on every push and pull request.
+# Runs the same engine as the website's Code Scanner (public/js/codescan/) through
+# scripts/darknode-scan.mjs. Each push is diffed against the commit before it (a pull
+# request against its base), so only NEW findings at high or above fail the job;
+# needs-review items (a risky call with no traced untrusted input) are reported but do
+# not gate. The full-tree SARIF goes to GitHub code scanning (free for public repos).
+name: Darknode code scan
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+concurrency:
+  group: darknode-scan-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Scan
+        env:
+          BASE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          set -uo pipefail
+          diff=""
+          if [ -n "${BASE_SHA:-}" ] && [ "$BASE_SHA" != "0000000000000000000000000000000000000000" ]; then
+            diff="--diff-base $BASE_SHA"
+          fi
+          node scripts/darknode-scan.mjs . --sarif darknode.sarif --full-sarif --fail-on high $diff
+
+      - name: Upload results to GitHub code scanning
+        if: always() && hashFiles('darknode.sarif') != '' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: darknode.sarif
+          category: darknode

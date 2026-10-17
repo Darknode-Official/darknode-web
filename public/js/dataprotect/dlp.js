@@ -96,7 +96,7 @@ const SAMPLE = [
   "# dropped config — example with planted secrets",
   "AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE",
   'aws_secret_access_key = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"',
-  "DATABASE_URL=postgres://admin:Sup3rS3cret@db.internal:5432/payments",
+  "DATABASE_URL=postgres://admin:Sup3rS3cret@db.internal:5432/payments", // darknode-ignore: planted fake credential in the DLP demo input
   "github_token: ghp_aBcDeFgHiJkLmNoPqRsTuVwXyZ0123456789",
   "",
   "Customer record:",
