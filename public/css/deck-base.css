@@ -418,3 +418,10 @@ html[data-embed] body.app .app-main select:not([multiple]):not([size]):not(#dn-x
   display: table-cell;
   border-radius: 0;
 }
+/* styles.css sets every select to width:100%. Inside a wrapping toolbar row that puts each
+   filter on its own full-width line. Toolbar rows size their selects to the content instead;
+   a tool that sets a width on purpose (a class selector or stronger) still wins. */
+:where(html[data-embed]) :is([class*="-filters"], [class*="-filter-"], [class*="-toolbar"], [class*="-bar"], [class*="-controls"], [class*="-row"], .iac-sel, .api-sel, .ap-actor-select) > :is(select, input[type="number"]) {
+  width: auto;
+  max-width: 100%;
+}
