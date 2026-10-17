@@ -158,7 +158,7 @@ Legend: planned · scaffolded · built · merged · deployed
 |---|---|---|---|---|
 | `licenseaudit` | License Compliance | code | `lic-` | merged |
 | `apispec` | API Security Review | code | `api-` | merged |
-| `dataflow` | Data Inventory & Processing Register | compliance | `dfr-` | scaffolded |
+| `dataflow` | Data Inventory & Processing Register | compliance | `dfr-` | merged |
 | `awareness` | Awareness & Phishing-Test Analytics | compliance | `awr-` | merged |
 | `pentestreg` | Pentest & Audit Finding Tracker | detect | `ptr-` | merged |
 
