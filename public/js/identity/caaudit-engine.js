@@ -1032,7 +1032,7 @@ export function exampleDataset(seed = 7) {
   ];
   const csvHead = "Id,User principal name,User display name,Is admin,Is MFA capable,Is MFA registered,Is SSPR registered,Is SSPR enabled,Is SSPR capable,Is passwordless capable,Methods registered,Default MFA method,System preferred method,Last updated";
   const csvRows = people.map(([u, n, admin, methods, def, cap, reg, pwl], i) => [
-    g(), u + "@example.com", n, admin ? "True" : "False", cap ? "True" : "False", reg ? "True" : "False", reg ? "True" : "False", "True", cap ? "True" : "False", pwl ? "True" : "False",
+    g(), u + "@test.darknode.ai", n, admin ? "True" : "False", cap ? "True" : "False", reg ? "True" : "False", reg ? "True" : "False", "True", cap ? "True" : "False", pwl ? "True" : "False",
     methods, def, pwl ? def : (def === "mobilePhone" ? "" : def), "2026-0" + (1 + (i % 9)) + "-1" + (i % 10) + "T0" + (i % 9) + ":2" + (i % 10) + ":00Z",
   ].map((v) => (/[",\n]/.test(String(v)) ? '"' + String(v).replace(/"/g, '""') + '"' : String(v))).join(","));
   const registrationCsv = [csvHead].concat(csvRows).join("\r\n") + "\r\n";
@@ -1082,7 +1082,7 @@ export function selfTest() {
   tests.push({ name: "excluded group on all-users MFA flagged", pass: ids("broad_exclusions").some((f) => /CA001/.test(f.title)) });
   tests.push({ name: "three excluded users exceed break-glass allowance", pass: ids("broad_exclusions").some((f) => /CA004/.test(f.title)) });
   tests.push({ name: "disabled compliant-device policy reported", pass: ids("disabled_security_policy").length === 1 });
-  tests.push({ name: "one admin without phishing-resistant method", pass: ids("admin_no_phishing_resistant").length === 1 && ids("admin_no_phishing_resistant")[0].evidenceCount === 1 && ids("admin_no_phishing_resistant")[0].assets[0].name === "noah.okafor@example.com" });
+  tests.push({ name: "one admin without phishing-resistant method", pass: ids("admin_no_phishing_resistant").length === 1 && ids("admin_no_phishing_resistant")[0].evidenceCount === 1 && ids("admin_no_phishing_resistant")[0].assets[0].name === "noah.okafor@test.darknode.ai" });
   tests.push({ name: "two users not MFA registered", pass: ids("users_not_mfa_registered").length === 1 && ids("users_not_mfa_registered")[0].evidenceCount === 2 });
   tests.push({ name: "Okta everyone factor rule found (no okta_no_mfa_everyone)", pass: ids("okta_no_mfa_everyone").length === 0 });
   tests.push({ name: "Okta 7-day session flagged", pass: ids("okta_weak_session").length === 1 });

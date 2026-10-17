@@ -962,7 +962,7 @@ export function exampleDataset(seed = 7) {
   const NOW = Date.UTC(2026, 2, 31, 12, 0, 0); // 2026-03-31T12:00Z, also the latest timestamp in the data
   const d = (days) => new Date(NOW - days * DAY).toISOString().slice(0, 10);
   const dt = (days, h = 0) => new Date(NOW - days * DAY + h * HOUR).toISOString();
-  const DOM = "example.com";
+  const DOM = "test.darknode.ai";
   const depts = ["Engineering", "Finance", "Sales", "People", "IT", "Legal"];
   const people = [];
   const used = new Set();
