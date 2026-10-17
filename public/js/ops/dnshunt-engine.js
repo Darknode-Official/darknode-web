@@ -1066,7 +1066,7 @@ export function findingsToCsv(findings) {
 // or .test TLDs (RFC 2606 / RFC 6761). Nothing is real traffic.
 // ---------------------------------------------------------------------------
 
-const EX_NORMAL = ["www.google.com", "outlook.office365.com", "login.microsoftonline.com", "slack.com", "api.github.com", "zoom.us", "www.dropbox.com", "larkspur.my.salesforce.com", "cdn.larkspur-cdn.test.darknode.ai", "intranet.test.darknode.ai", "time.windows.com", "update.googleapis.com"];
+const EX_NORMAL = ["www.google.com", "outlook.office365.com", "login.microsoftonline.com", "slack.com", "api.github.com", "zoom.us", "www.dropbox.com", "testorg.my.salesforce.com", "cdn.test.darknode.ai", "intranet.test.darknode.ai", "time.windows.com", "update.googleapis.com"];
 
 /** Seeded SYNTHETIC dataset for "Load example" and tests. */
 export function exampleDataset(seed = 11) {
@@ -1098,7 +1098,7 @@ export function exampleDataset(seed = 11) {
   for (let k = 0; k < 40; k++) add(start + 8 * DAY + 3600000 * 9 + k * 7000, dgaClient, genLabel() + ".test", "A", k === 39 ? "NOERROR" : "NXDOMAIN", k === 39 ? "203.0.113.66" : "-");
   // Days 6-8: a host sends hex-encoded chunks as TXT lookups under one domain.
   const tunClient = "10.20.0.44";
-  for (let k = 0; k < 320; k++) add(start + 6 * DAY + k * 600000, tunClient, hex(32) + "." + hex(12) + ".sync.larkspur-relay.invalid", "TXT", "NOERROR", "-");
+  for (let k = 0; k < 320; k++) add(start + 6 * DAY + k * 600000, tunClient, hex(32) + "." + hex(12) + ".sync.sync-relay.invalid", "TXT", "NOERROR", "-");
   // Days 3-4: a host checks in every five minutes (+-3 s) for 30 hours.
   const beaconClient = "10.20.0.17";
   for (let k = 0; k < 360; k++) add(start + 3 * DAY + k * 300000 + Math.floor((rnd() - 0.5) * 6000), beaconClient, "telemetry-relay.invalid", "A", "NOERROR", "203.0.113.40");
@@ -1149,7 +1149,7 @@ export function selfTest() {
   const has = (cat, pred = () => true) => r.findings.some((f) => f.category === cat && pred(f));
   tests.push({ name: "both example files detected", pass: r.tables.files.map((f) => f.format).join(",") === "zeek-tsv,bind" });
   tests.push({ name: "DGA client found", pass: has("dga", (f) => f.assets[0].name === "10.20.0.31" && f.severity === "high") });
-  tests.push({ name: "tunnelling found", pass: has("tunnel", (f) => f.assets[0].name === "larkspur-relay.invalid" && f.severity === "high") });
+  tests.push({ name: "tunnelling found", pass: has("tunnel", (f) => f.assets[0].name === "sync-relay.invalid" && f.severity === "high") });
   tests.push({ name: "beacon found", pass: has("beacon", (f) => f.assets[0].name === "10.20.0.17") });
   tests.push({ name: "lookalike found", pass: has("lookalike", (f) => f.assets[0].name === "darkn0de.test") });
   tests.push({ name: "encrypted DNS and canary", pass: has("encrypted-dns", (f) => /canary/.test(f.title)) && has("encrypted-dns", (f) => /encrypted-DNS/.test(f.title)) });

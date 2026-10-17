@@ -1615,7 +1615,7 @@ export function exampleDataset(seed = 7) {
   const rnd = () => { s = (Math.imul(s, 1664525) + 1013904223) >>> 0; return s / 4294967296; };
   const ri = (a, b) => a + Math.floor(rnd() * (b - a + 1));
   const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-  const users = ["alice", "bob", "carol", "dave", "erin", "frank", "grace"];
+  const users = ["user01", "user02", "user03", "user04", "user05", "user06", "user07"];
   const ipOf = (u) => "10.20.0." + (11 + users.indexOf(u));
   const em = (u) => u + "@test.darknode.ai";
   const BROWSER = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36";
@@ -1638,7 +1638,7 @@ export function exampleDataset(seed = 7) {
   };
   const ev = (ms, u, host, path, o) => L(ms, Object.assign({ user: em(u), src: ipOf(u), dst: "203.0.113." + ri(10, 60), host, url: host + path, method: "GET", out: String(ri(400, 4000)), in: String(ri(3000, 400000)), ua: BROWSER, action: "Allowed", cat: "Professional Services" }, o || {}));
   const normal = [["intranet.test.darknode.ai", "/home", "Corporate Marketing"], ["wiki.test.darknode.ai", "/pages/runbook", "Professional Services"], ["slack.com", "/api/conversations.history", "Online Chat"], ["github.com", "/test-darknode/app", "Professional Services"], ["login.microsoftonline.com", "/common/oauth2/v2.0/token", "Professional Services"]];
-  const ai = [["alice", "chatgpt.com", "/backend-api/conversation", "ChatGPT"], ["carol", "chatgpt.com", "/backend-api/conversation", "ChatGPT"], ["dave", "claude.ai", "/api/organizations/chat", "Claude"], ["erin", "gemini.google.com", "/_/BardChatUi/data/batchexecute", "Google Gemini"], ["frank", "claude.ai", "/api/organizations/chat", "Claude"]];
+  const ai = [["user01", "chatgpt.com", "/backend-api/conversation", "ChatGPT"], ["user03", "chatgpt.com", "/backend-api/conversation", "ChatGPT"], ["user04", "claude.ai", "/api/organizations/chat", "Claude"], ["user05", "gemini.google.com", "/_/BardChatUi/data/batchexecute", "Google Gemini"], ["user06", "claude.ai", "/api/organizations/chat", "Claude"]];
   for (let day = 0; day < 21; day++) {
     const dow = (day + 1) % 7; // 0=Sun
     if (dow === 0 || dow === 6) continue;
@@ -1650,33 +1650,33 @@ export function exampleDataset(seed = 7) {
       for (let i = 0; i < 2; i++) ev(base + ri(10, 16) * 3600000 + ri(0, 3599) * 1000, u, h, p, { method: "POST", out: String(ri(2000, 60000)), cat: "Generative AI", supercat: "Information Technology", appclass: "AI & ML Applications", app });
     }
   }
-  // carol: one large upload to ChatGPT (45 MB) on Wednesday 2026-10-07 during hours
-  ev(Date.UTC(2026, 9, 7, 14, 12, 5), "carol", "chatgpt.com", "/backend-api/files", { method: "POST", out: String(45 * MB), in: "2310", cat: "Generative AI", supercat: "Information Technology", appclass: "AI & ML Applications", app: "ChatGPT", filetype: "PDF", fileclass: "Documents" });
-  // bob: 2.4 GB to Dropbox over the weekend (Sat 10-10 and Sun 10-11, early morning)
+  // user03: one large upload to ChatGPT (45 MB) on Wednesday 2026-10-07 during hours
+  ev(Date.UTC(2026, 9, 7, 14, 12, 5), "user03", "chatgpt.com", "/backend-api/files", { method: "POST", out: String(45 * MB), in: "2310", cat: "Generative AI", supercat: "Information Technology", appclass: "AI & ML Applications", app: "ChatGPT", filetype: "PDF", fileclass: "Documents" });
+  // user02: 2.4 GB to Dropbox over the weekend (Sat 10-10 and Sun 10-11, early morning)
   for (let d = 0; d < 2; d++) {
     for (let i = 0; i < 24; i++) {
-      ev(Date.UTC(2026, 9, 10 + d, 1, 30 + i * 3, ri(0, 59)), "bob", "content.dropboxapi.com", "/2/files/upload_session/append_v2", { method: "POST", out: String(50 * MB + ri(0, 1048575)), in: String(ri(200, 900)), cat: "Online Storage", supercat: "Internet Communication", appclass: "File Sharing", app: "Dropbox" });
+      ev(Date.UTC(2026, 9, 10 + d, 1, 30 + i * 3, ri(0, 59)), "user02", "content.dropboxapi.com", "/2/files/upload_session/append_v2", { method: "POST", out: String(50 * MB + ri(0, 1048575)), in: String(ri(200, 900)), cat: "Online Storage", supercat: "Internet Communication", appclass: "File Sharing", app: "Dropbox" });
     }
   }
-  // erin: curl to an uncategorized host with an 80 MB upload
-  for (let i = 0; i < 4; i++) ev(Date.UTC(2026, 9, 8, 15, 2 + i, 11), "erin", "q7vxk2lm-cdn.test", "/u/" + (1000 + i), { method: i ? "POST" : "GET", out: String(i ? 20 * MB + ri(0, 9999) : 512), in: "120", ua: "curl/8.4.0", cat: "Miscellaneous or Unknown", supercat: "Miscellaneous", appclass: "General Browsing" });
-  // frank: executable straight from an IP address
-  L(Date.UTC(2026, 9, 9, 11, 47, 3), { user: em("frank"), src: ipOf("frank"), dst: "203.0.113.77", host: "203.0.113.77", url: "203.0.113.77/update/agent.exe", method: "GET", out: "420", in: "1873408", ua: BROWSER, action: "Allowed", cat: "Miscellaneous or Unknown", supercat: "Miscellaneous", filetype: "EXE", fileclass: "Executables" });
-  // grace: a burst of blocked proxy-avoidance attempts
+  // user05: curl to an uncategorized host with an 80 MB upload
+  for (let i = 0; i < 4; i++) ev(Date.UTC(2026, 9, 8, 15, 2 + i, 11), "user05", "q7vxk2lm-cdn.test", "/u/" + (1000 + i), { method: i ? "POST" : "GET", out: String(i ? 20 * MB + ri(0, 9999) : 512), in: "120", ua: "curl/8.4.0", cat: "Miscellaneous or Unknown", supercat: "Miscellaneous", appclass: "General Browsing" });
+  // user06: executable straight from an IP address
+  L(Date.UTC(2026, 9, 9, 11, 47, 3), { user: em("user06"), src: ipOf("user06"), dst: "203.0.113.77", host: "203.0.113.77", url: "203.0.113.77/update/agent.exe", method: "GET", out: "420", in: "1873408", ua: BROWSER, action: "Allowed", cat: "Miscellaneous or Unknown", supercat: "Miscellaneous", filetype: "EXE", fileclass: "Executables" });
+  // user07: a burst of blocked proxy-avoidance attempts
   const proxies = ["www.croxyproxy.com", "www.kproxy.com", "hidester.com", "www.proxysite.com", "www.hidemyass.com", "q1w2proxy.test", "unblock-z9.test", "mirror-k3.test"];
-  for (let i = 0; i < 40; i++) ev(Date.UTC(2026, 9, 6, 13, 5 + i, ri(0, 59)), "grace", proxies[i % proxies.length], "/", { action: "Blocked", cat: "Proxy Avoidance", supercat: "Security", appclass: "General Browsing", in: "1500" });
+  for (let i = 0; i < 40; i++) ev(Date.UTC(2026, 9, 6, 13, 5 + i, ri(0, 59)), "user07", proxies[i % proxies.length], "/", { action: "Blocked", cat: "Proxy Avoidance", supercat: "Security", appclass: "General Browsing", in: "1500" });
   leef.sort((a, b) => a[0] - b[0]);
   const zscaler = leef.map((x) => x[1]).join("\n") + "\n";
-  // Squid native access.log: dave via TeamViewer, a server holding an ngrok tunnel, normal lines
+  // Squid native access.log: user04 via TeamViewer, a server holding an ngrok tunnel, normal lines
   const sq = [];
   const S = (ms, elapsed, ip, code, bytes, method, url, user, hier, type) => sq.push([ms, (ms / 1000).toFixed(3) + " " + String(elapsed).padStart(6, " ") + " " + ip + " " + code + " " + bytes + " " + method + " " + url + " " + user + " " + hier + " " + type]);
   for (let day = 14; day < 19; day++) {
     const base = t0 + day * 86400000;
-    for (let i = 0; i < 6; i++) S(base + ri(9, 16) * 3600000 + ri(0, 3599) * 1000, ri(40, 900), ipOf("dave"), "TCP_TUNNEL/200", ri(4000, 90000), "CONNECT", "wiki.test.darknode.ai:443", em("dave"), "HIER_DIRECT/198.51.100." + ri(20, 40), "-");
+    for (let i = 0; i < 6; i++) S(base + ri(9, 16) * 3600000 + ri(0, 3599) * 1000, ri(40, 900), ipOf("user04"), "TCP_TUNNEL/200", ri(4000, 90000), "CONNECT", "wiki.test.darknode.ai:443", em("user04"), "HIER_DIRECT/198.51.100." + ri(20, 40), "-");
     S(base + 3 * 3600000 + ri(0, 3599) * 1000, ri(20, 300), "10.50.0.12", "TCP_MISS/200", ri(900, 5000), "GET", "http://repo.test.darknode.ai/dists/stable/InRelease", "-", "HIER_DIRECT/198.51.100.30", "text/plain");
   }
-  S(Date.UTC(2026, 9, 8, 10, 15, 2), 2710000, ipOf("dave"), "TCP_TUNNEL/200", 38211450, "CONNECT", "router7.teamviewer.com:443", em("dave"), "HIER_DIRECT/203.0.113.140", "-");
-  S(Date.UTC(2026, 9, 8, 10, 15, 4), 1520, ipOf("dave"), "TCP_TUNNEL/200", 6120, "CONNECT", "master5.teamviewer.com:443", em("dave"), "HIER_DIRECT/203.0.113.141", "-");
+  S(Date.UTC(2026, 9, 8, 10, 15, 2), 2710000, ipOf("user04"), "TCP_TUNNEL/200", 38211450, "CONNECT", "router7.teamviewer.com:443", em("user04"), "HIER_DIRECT/203.0.113.140", "-");
+  S(Date.UTC(2026, 9, 8, 10, 15, 4), 1520, ipOf("user04"), "TCP_TUNNEL/200", 6120, "CONNECT", "master5.teamviewer.com:443", em("user04"), "HIER_DIRECT/203.0.113.141", "-");
   S(Date.UTC(2026, 9, 9, 2, 0, 0), 3600000, "10.50.0.12", "TCP_TUNNEL/200", 188743680, "CONNECT", "k7q2vx.ngrok-free.app:443", "-", "HIER_DIRECT/203.0.113.150", "-");
   S(Date.UTC(2026, 9, 9, 3, 0, 5), 3540000, "10.50.0.12", "TCP_TUNNEL/200", 97517568, "CONNECT", "k7q2vx.ngrok-free.app:443", "-", "HIER_DIRECT/203.0.113.150", "-");
   sq.sort((a, b) => a[0] - b[0]);
@@ -1694,14 +1694,14 @@ export function selfTest() {
   const ex = exampleDataset();
   const r = analyze(ex.files);
   const has = (rule, entity) => r.findings.some((f) => f.rule === rule && (!entity || f.entity === entity || f.userKey === entity));
-  t("example: weekend Dropbox upload flagged as exfiltration", () => has("upload_exfil", "bob@test.darknode.ai"));
-  t("example: off-hours upload flagged", () => has("offhours_upload", "bob@test.darknode.ai"));
+  t("example: weekend Dropbox upload flagged as exfiltration", () => has("upload_exfil", "user02@test.darknode.ai"));
+  t("example: off-hours upload flagged", () => has("offhours_upload", "user02@test.darknode.ai"));
   t("example: ngrok tunnel from a server is high", () => r.findings.some((f) => f.rule === "tunnel_server" && f.severity === "high"));
   t("example: TeamViewer flagged as remote access", () => has("remote_user"));
-  t("example: curl from a workstation flagged", () => has("scripted_ua", "erin@test.darknode.ai"));
+  t("example: curl from a workstation flagged", () => has("scripted_ua", "user05@test.darknode.ai"));
   t("example: executable from an IP flagged", () => has("ip_executable", "203.0.113.77"));
   t("example: AI inventory lists 3 services", () => r.summary.aiServices === 3);
-  t("example: blocked spike for grace", () => has("blocked_spike", "grace@test.darknode.ai"));
+  t("example: blocked spike for user07", () => has("blocked_spike", "user07@test.darknode.ai"));
   t("Squid byte limitation is reported", () => r.skipped.some((s) => s.check === "upload_volume (Squid native)"));
   t("deterministic", () => JSON.stringify(analyze(ex.files)) === JSON.stringify(r));
   t("robust z (MAD)", () => Math.abs(robustZ(10, [1, 2, 3, 4, 5]).z - 0.6745 * 7 / 1) < 1e-9);
