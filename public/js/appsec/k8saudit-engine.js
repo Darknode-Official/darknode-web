@@ -1381,7 +1381,7 @@ export function exampleDataset(seed = 7) {
     { apiVersion: "networking.k8s.io/v1", kind: "NetworkPolicy", metadata: md("allow-ledgr", "payments"), spec: { podSelector: { matchLabels: { app: "ledgr" } }, policyTypes: ["Ingress"], ingress: [{ from: [{ podSelector: { matchLabels: { app: "api" } } }] }] } },
     { apiVersion: "v1", kind: "ServiceAccount", metadata: md("default", "payments"), automountServiceAccountToken: false },
     { apiVersion: "v1", kind: "ServiceAccount", metadata: md("payments-api", "payments") },
-    { apiVersion: "v1", kind: "Secret", metadata: md("ledger-db", "payments"), type: "Opaque", data: { password: "TGVkZ2VyUGFzc3dvcmQ=", username: "bGVkZ2Vy" } },
+    { apiVersion: "v1", kind: "Secret", metadata: md("ledger-db", "payments"), type: "Opaque", data: { password: "TGVkZ2VyUGFzc3dvcmQ=", username: "bGVkZ2Vy" } }, // darknode-ignore: synthetic sample cluster, base64 of a fake password
     { apiVersion: "v1", kind: "Secret", metadata: md("regcred", "payments"), type: "kubernetes.io/dockerconfigjson", data: { ".dockerconfigjson": "eyJhdXRocyI6e319" } },
     // web
     { apiVersion: "apps/v1", kind: "Deployment", metadata: { ...md("frontend", "web", { labels: { app: "frontend" } }), uid: frontendUid }, spec: { replicas: 2, selector: { matchLabels: { app: "frontend" } }, template: tpl({ app: "frontend" }, {
@@ -1396,7 +1396,7 @@ export function exampleDataset(seed = 7) {
     { apiVersion: "networking.k8s.io/v1", kind: "Ingress", metadata: md("frontend", "web"), spec: { ingressClassName: "nginx", rules: [{ host: "www.test.darknode.ai", http: { paths: [{ path: "/", pathType: "Prefix", backend: { service: { name: "frontend", port: { number: 80 } } } }] } }] } },
     { apiVersion: "v1", kind: "ServiceAccount", metadata: md("default", "web") },
     { apiVersion: "v1", kind: "Secret", metadata: md("regcred", "web"), type: "kubernetes.io/dockerconfigjson", data: { ".dockerconfigjson": "eyJhdXRocyI6e319" } },
-    { apiVersion: "v1", kind: "Secret", metadata: md("legacy-token", "web", { annotations: { "kubernetes.io/service-account.name": "default" } }), type: "kubernetes.io/service-account-token", data: { token: "ZXlKaGJHY2lPaUpTVXpJMU5pSjk=", "ca.crt": "LS0tLS1CRUdJTg==", namespace: "d2Vi" } },
+    { apiVersion: "v1", kind: "Secret", metadata: md("legacy-token", "web", { annotations: { "kubernetes.io/service-account.name": "default" } }), type: "kubernetes.io/service-account-token", data: { token: "ZXlKaGJHY2lPaUpTVXpJMU5pSjk=", "ca.crt": "LS0tLS1CRUdJTg==", namespace: "d2Vi" } }, // darknode-ignore: synthetic sample cluster, fake service-account token
     { apiVersion: "v1", kind: "ConfigMap", metadata: md("app-config", "web"), data: { DB_PASSWORD: "frontend-" + hex(8), LOG_LEVEL: "debug", FEATURE_FLAGS: "beta" } },
     { apiVersion: "rbac.authorization.k8s.io/v1", kind: "Role", metadata: md("deployer", "web"), rules: [{ apiGroups: [""], resources: ["pods"], verbs: ["create", "delete", "get", "list"] }, { apiGroups: [""], resources: ["pods/exec"], verbs: ["create"] }] },
     { apiVersion: "rbac.authorization.k8s.io/v1", kind: "RoleBinding", metadata: md("deployer", "web"), roleRef: { apiGroup: "rbac.authorization.k8s.io", kind: "Role", name: "deployer" }, subjects: [{ kind: "ServiceAccount", name: "default", namespace: "web" }] },

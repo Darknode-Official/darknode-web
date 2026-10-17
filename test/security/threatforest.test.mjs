@@ -33,7 +33,7 @@ group("threatforest: detection", () => {
   test("SQL concatenation fires", () => assert.ok(rids('q = "SELECT * FROM u WHERE id=" + id').includes("sqli-concat")));
   test("pickle deserialization fires", () => assert.ok(rids("data = pickle.loads(blob)").includes("deser-pickle")));
   test("AWS key id fires as high confidence", () => {
-    const f = find("const k = 'AKIAQ3EGRT7XZPLM4NHA';", "secret-aws");
+    const f = find("const k = 'AKIAQ3EGRT7XZPLM4NHA';", "secret-aws"); // darknode-ignore: planted fake AWS key id for the detector test
     assert.ok(f, "secret-aws should fire");
     assert.equal(f.confidence, "high");
   });

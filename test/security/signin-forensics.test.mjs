@@ -54,7 +54,7 @@ function googleCsv(rows) {
 
 function oktaEvent(r) {
   return {
-    uuid: `u-${Math.random().toString(36).slice(2)}`, published: isoZ(r.ts), eventType: r.type || "user.session.start",
+    uuid: `u-${Math.random().toString(36).slice(2)}`, published: isoZ(r.ts), eventType: r.type || "user.session.start", // darknode-ignore: test fixture event id, not a security value
     version: "0", severity: "INFO", legacyEventType: "core.user_auth.login_success", displayMessage: r.type === "user.authentication.auth_via_mfa" ? "Authentication of user via MFA" : "User login to Okta",
     actor: { id: `00u${r.user}`, type: "User", alternateId: r.user, displayName: r.user.split("@")[0] },
     client: { userAgent: { rawUserAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/130.0", os: "Windows 10", browser: "CHROME" }, zone: "null", device: "Computer", ipAddress: r.ip,

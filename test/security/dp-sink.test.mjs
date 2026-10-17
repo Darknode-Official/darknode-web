@@ -150,9 +150,9 @@ group("dp-sink: phishtriage", () => {
 
 // ---- dlp
 const SECRETS = {
-  aws: "AKIAZ7QW3RTY5UIO9PLM",
+  aws: "AKIAZ7QW3RTY5UIO9PLM", // darknode-ignore: planted fake AWS key id for the sink test
   gh: "ghp_q7Wm2Kx9Lp4Rt8Vz1Nc6Hb3Jd5Fs0GyTeUaQi",
-  db: "postgres://svc_user:Pw9xQ2vLm7Kt@db.internal.test:5432/ledger",
+  db: "postgres://svc_user:Pw9xQ2vLm7Kt@db.internal.test:5432/ledger", // darknode-ignore: planted fake database URL for the sink test
   card: "4111 1111 1111 1111",
   ssn: "123-45-6789",
   email: "qx.member7@darknode.ai",
@@ -191,7 +191,7 @@ group("dp-sink: dlp", () => {
   test("masked samples: card keeps last four, other PII keeps nothing, connection strings keep the scheme", () => {
     assert.equal(dlpSample({ id: "credit-card", kind: "pii", value: SECRETS.card, masked: "x" }), "•••• 1111");
     assert.equal(dlpSample({ id: "ssn", kind: "pii", value: SECRETS.ssn, masked: "•••••••6789" }), "•••• (11 chars)");
-    assert.equal(dlpSample({ id: "conn-string", kind: "secret", value: SECRETS.db, masked: "y" }), "postgres://••••:••••@••••");
+    assert.equal(dlpSample({ id: "conn-string", kind: "secret", value: SECRETS.db, masked: "y" }), "postgres://••••:••••@••••"); // darknode-ignore: masked fake database URL for the sink test
     assert.equal(dlpSample({ id: "private-key", kind: "secret", value: "-----BEGIN", masked: "[PRIVATE KEY BLOCK]" }), "[PRIVATE KEY BLOCK]");
     assert.equal(dlpSample({ id: "pat-assignment", kind: "secret", value: "short-pass1", masked: "sh•••ss1" }), "•••• (11 chars)");
   });

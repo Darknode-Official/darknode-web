@@ -71,14 +71,14 @@ group("dlp: detectors", () => {
       "ghp_aBcDeFgHiJkLmNoPqRsTuVwXyZ0123456789",
       "xoxb-fakeexampletoken-notarealslacksecret",
       "sk_live_exampletokenabcd1234",
-      "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.SflKxwRJSMeKKF2QT4fwpMeJf36P",
+      "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.SflKxwRJSMeKKF2QT4fwpMeJf36P", // darknode-ignore: planted fake JWT for the DLP detector test
     ].join("\n"));
     for (const id of ["github-token", "slack-token", "stripe-key", "jwt"]) {
       assert.ok(r.findings.some((f) => f.id === id), "missing " + id);
     }
   });
   test("detects DB connection string and masks password", () => {
-    const c = scan("DATABASE_URL=postgres://admin:s3cretP@ss@db.internal:5432/app").findings.find((f) => f.id === "conn-string");
+    const c = scan("DATABASE_URL=postgres://admin:s3cretP@ss@db.internal:5432/app").findings.find((f) => f.id === "conn-string"); // darknode-ignore: planted fake database URL for the DLP detector test
     assert.ok(c);
     assert.notOk(c.masked.includes("s3cret"));
   });
