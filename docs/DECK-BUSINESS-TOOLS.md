@@ -117,7 +117,7 @@ Legend: planned · scaffolded · built · merged · deployed
 | route | Label | group | prefix | status |
 |---|---|---|---|---|
 | `iacscan` | IaC Scanner | code | `iac-` | scaffolded |
-| `k8saudit` | Kubernetes Audit | code | `k8s-` | scaffolded |
+| `k8saudit` | Kubernetes Audit | code | `kub-` | merged |
 | `cloudtrail` | Cloud Audit Log Hunter | detect | `ctl-` | scaffolded |
 | `vulnimport` | Vulnerability Import & SLA | exposure | `vim-` | scaffolded |
 | `fleetcomply` | Endpoint Fleet Compliance | exposure | `flt-` | scaffolded |
