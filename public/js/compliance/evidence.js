@@ -738,7 +738,7 @@ export function renderEvidence(main) {
     if (act === "ex-save") {
       const ok = typeof window.dnConfirm === "function" ? await window.dnConfirm("Save the synthetic example?", "This writes " + S.example.records.length + " synthetic controls into your register" + (isTeam() ? " and the team's Security Graph" : "") + ". You can delete them later.", { submitText: "Save" }) : false;
       if (!ok) return;
-      for (const r of S.example.records) reg.upsert({ ...r, notes: (r.notes ? r.notes + "\n" : "") + "Synthetic example record (Larkspur Cloudworks)." });
+      for (const r of S.example.records) reg.upsert({ ...r, notes: (r.notes ? r.notes + "\n" : "") + "Synthetic example record (Test Org)." });
       S.example = null; toast("Example saved to the register", "success"); refresh(0); return;
     }
     if (act === "graph-reload") { await loadGraph(); refresh(0); toast("Security Graph re-read", "info"); return; }

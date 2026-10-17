@@ -585,17 +585,17 @@ export function selfTest() {
 
   const pay = [
     "date,vendor,amount,invoice,approver,initiator",
-    "2026-01-05,Acme Supply,10000,INV-100,alice,bob",
-    "2026-01-06,Acme Supply,10000,INV-100,alice,bob",     // exact duplicate
-    "2026-01-10,Globex,9500,INV-201,carol,carol",          // lone approver + under-threshold-ish
-    "2026-01-11,Globex,9400,INV-202,carol,carol",
-    "2026-01-12,Globex,9300,INV-203,carol,carol",
-    "2026-01-20,Initech,250000,INV-9,dave,erin",           // ATO target
+    "2026-01-05,Vendor A Supply,10000,INV-100,user01,user02",
+    "2026-01-06,Vendor A Supply,10000,INV-100,user01,user02",     // exact duplicate
+    "2026-01-10,Vendor B Logistics,9500,INV-201,user03,user03",          // lone approver + under-threshold-ish
+    "2026-01-11,Vendor B Logistics,9400,INV-202,user03,user03",
+    "2026-01-12,Vendor B Logistics,9300,INV-203,user03,user03",
+    "2026-01-20,Vendor C Consulting,250000,INV-9,user04,user05",           // ATO target
   ].join("\n");
   const access = [
     "date,actor,type,vendor,detail",
-    "2026-01-19,dave,login_new_geo,,sign-in from new ASN",   // -> ATO disbursement on 2026-01-20
-    "2026-01-02,,vendor_bank_change,Acme Supply,IBAN updated", // -> BEC redirect (payments on 01-05/01-06)
+    "2026-01-19,user04,login_new_geo,,sign-in from new ASN",   // -> ATO disbursement on 2026-01-20
+    "2026-01-02,,vendor_bank_change,Vendor A Supply,IBAN updated", // -> BEC redirect (payments on 01-05/01-06)
   ].join("\n");
 
   const r1 = analyze(pay, access);
@@ -612,10 +612,10 @@ export function selfTest() {
   // Duplicate/shell-vendor cluster + shared bank account.
   const apFraud = [
     "date,vendor,amount,invoice,account,approver,initiator",
-    "2026-03-01,Northwind Traders,5000,INV-1,DE111,alice,bob",
-    "2026-03-02,Northwind Tradrs,5200,INV-2,DE222,carol,dave",   // typo-squat of the above
-    "2026-03-03,Globex Inc,7000,INV-3,GB999,erin,frank",
-    "2026-03-04,Initech LLC,8000,INV-4,GB999,grace,heidi",        // same account, different vendor
+    "2026-03-01,Vendor D Traders,5000,INV-1,DE111,user01,user02",
+    "2026-03-02,Vendor D Tradrs,5200,INV-2,DE222,user03,user04",   // typo-squat of the above
+    "2026-03-03,Vendor B Logistics Inc,7000,INV-3,GB999,user05,user06",
+    "2026-03-04,Vendor C Consulting LLC,8000,INV-4,GB999,user07,user08",        // same account, different vendor
   ].join("\n");
   const rap = analyze(apFraud, "");
   check("duplicate-vendor-cluster detected", rap.findings.some((f) => f.rule === "duplicate-vendor-cluster"));

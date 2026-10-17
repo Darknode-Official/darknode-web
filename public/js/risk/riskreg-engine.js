@@ -1052,7 +1052,7 @@ export function findingsToCsv(findings) {
 // ---------------------------------------------------------------------------
 
 /**
- * SYNTHETIC register for "Larkspur Cloudworks (synthetic)": 8 risks, all ranges
+ * SYNTHETIC register for "Test Org (synthetic)": 8 risks, all ranges
  * invented for the demo. Dates are relative to `now` so review findings show.
  */
 export function exampleDataset(seed = 1, now = "2026-10-16T00:00:00Z") {
@@ -1061,36 +1061,36 @@ export function exampleDataset(seed = 1, now = "2026-10-16T00:00:00Z") {
   const R = (min, ml, max) => ({ min, ml, max });
   const own = (u) => u + "@test.darknode.ai";
   const records = [
-    { id: "lark-01", title: "Ransomware encrypts file servers", scenario: "Ransomware operator encrypts on-prem file servers and exfiltrates shares", assets: "File servers; Backup vault", category: "cyber", owner: own("ines.marr"), status: "treating",
+    { id: "testorg-01", title: "Ransomware encrypts file servers", scenario: "Ransomware operator encrypts on-prem file servers and exfiltrates shares", assets: "File servers; Backup vault", category: "cyber", owner: own("user01"), status: "treating",
       freqMode: "tef", tef: R(0.5, 2, 6), vuln: R(0.05, 0.15, 0.3), plm: R(150000, 600000, 3000000), slp: 0.4, slm: R(100000, 500000, 4000000),
       controls: "EDR on servers; nightly backups (not immutable)", controlRefs: ["iso27001:8.13", "iso27001:8.7"], treatment: "mitigate", treatmentCost: 120000,
       residual: { vuln: R(0.01, 0.04, 0.1), plm: R(80000, 250000, 1200000) }, reviewDate: d(45), lastReviewed: d(-60) },
-    { id: "lark-02", title: "Business email compromise wire fraud", scenario: "Fraudster spoofs a supplier and redirects a wire payment", assets: "Accounts payable", category: "financial", owner: own("tomas.reyes"), status: "treating",
+    { id: "testorg-02", title: "Business email compromise wire fraud", scenario: "Fraudster spoofs a supplier and redirects a wire payment", assets: "Accounts payable", category: "financial", owner: own("user02"), status: "treating",
       freqMode: "lef", lef: R(0.2, 0.6, 2), plm: R(25000, 120000, 900000), slp: 0.2, slm: R(10000, 40000, 200000),
       controls: "Callback verification on bank changes", treatment: "mitigate", treatmentCost: 30000, residualInEffect: true,
       residual: { lef: R(0.05, 0.15, 0.5) }, reviewDate: d(20), lastReviewed: d(-30) },
-    { id: "lark-03", title: "Cloud access key leaked in a public repo", scenario: "Developer pushes a long-lived cloud key; attacker mines crypto and reads buckets", assets: "Production cloud account", category: "cyber", owner: own("priya.nand"), status: "assessed",
+    { id: "testorg-03", title: "Cloud access key leaked in a public repo", scenario: "Developer pushes a long-lived cloud key; attacker mines crypto and reads buckets", assets: "Production cloud account", category: "cyber", owner: own("user04"), status: "assessed",
       freqMode: "lef", lef: R(0.1, 0.3, 1.2), plm: R(20000, 150000, 2000000), slp: 0.3, slm: R(50000, 300000, 2500000),
       controls: "Secret scanning on main branch only", treatment: "mitigate", reviewDate: d(60), lastReviewed: d(-90) },
-    { id: "lark-04", title: "Payroll diversion via HR portal", scenario: "Attacker takes over an employee account and changes the payroll bank account", assets: "HR portal", category: "financial", owner: own("tomas.reyes"), status: "accepted",
+    { id: "testorg-04", title: "Payroll diversion via HR portal", scenario: "Attacker takes over an employee account and changes the payroll bank account", assets: "HR portal", category: "financial", owner: own("user02"), status: "accepted",
       freqMode: "lef", lef: R(0.3, 1, 3), plm: R(3000, 9000, 40000), slp: 0.1, slm: R(2000, 10000, 50000),
       treatment: "accept", acceptanceNote: "Accepted by CFO (synthetic) until next review; losses within petty fraud budget.", reviewDate: d(90), lastReviewed: d(-120) },
-    { id: "lark-05", title: "Key vendor outage (payments processor)", scenario: "Payments processor outage stops checkout for a business day", assets: "Payments processor", category: "third-party", owner: own("ola.berg"), status: "assessed",
+    { id: "testorg-05", title: "Key vendor outage (payments processor)", scenario: "Payments processor outage stops checkout for a business day", assets: "Payments processor", category: "third-party", owner: own("user03"), status: "assessed",
       freqMode: "lef", lef: R(0.2, 0.5, 1.5), plm: R(40000, 200000, 1500000), slp: 0.25, slm: R(20000, 150000, 1000000),
       treatment: "transfer", controls: "Contractual SLA credits", reviewDate: d(30), lastReviewed: d(-200) },
-    { id: "lark-06", title: "DDoS on checkout", scenario: "Volumetric DDoS degrades checkout during a sale", assets: "Checkout service", category: "operational", owner: own("ola.berg"), status: "assessed",
+    { id: "testorg-06", title: "DDoS on checkout", scenario: "Volumetric DDoS degrades checkout during a sale", assets: "Checkout service", category: "operational", owner: own("user03"), status: "assessed",
       freqMode: "lef", lef: R(0.5, 2, 6), plm: R(10000, 60000, 400000), slp: 0.1, slm: R(5000, 30000, 200000),
       treatment: "accept", reviewDate: d(-12), lastReviewed: d(-300) },
-    { id: "lark-07", title: "Insider data theft", scenario: "Departing engineer copies customer data to personal storage", assets: "Customer database", category: "cyber", owner: own("ines.marr"), status: "assessed",
+    { id: "testorg-07", title: "Insider data theft", scenario: "Departing engineer copies customer data to personal storage", assets: "Customer database", category: "cyber", owner: own("user01"), status: "assessed",
       freqMode: "lef", lef: R(0.05, 0.2, 0.6), plm: R(100000, 700000, 5000000), slp: 0.5, slm: R(200000, 1000000, 8000000),
       treatment: "accept", reviewDate: d(15), lastReviewed: d(-100) },
-    { id: "lark-08", title: "PCI DSS non-compliance fine", scenario: "Card brand fines after a failed assessment", assets: "Cardholder data environment", category: "compliance", owner: own("priya.nand"), status: "identified",
+    { id: "testorg-08", title: "PCI DSS non-compliance fine", scenario: "Card brand fines after a failed assessment", assets: "Cardholder data environment", category: "compliance", owner: own("user04"), status: "identified",
       freqMode: "lef", lef: R(0.05, 0.1, 0.3), plm: R(50000, 250000, 1000000), slp: 0.3, slm: R(25000, 100000, 600000),
       treatment: "mitigate", reviewDate: d(-30), lastReviewed: d(-400) },
-  ].map((r) => normalizeRecord({ ...r, currency: "USD", notes: "Synthetic example record (Larkspur Cloudworks, synthetic)." }));
+  ].map((r) => normalizeRecord({ ...r, currency: "USD", notes: "Synthetic example record (Test Org, synthetic)." }));
   return {
-    label: "Larkspur Cloudworks (synthetic) - example register, not real data",
-    org: "Larkspur Cloudworks (synthetic)",
+    label: "Test Org (synthetic) - example register, not real data",
+    org: "Test Org (synthetic)",
     records,
     settings: { currency: "USD", appetiteAmount: 2000000, appetitePercentile: 90, freqBands: [0.05, 0.2, 1, 5], magBands: [50000, 250000, 1000000, 5000000], iterations: 10000, seed: seed >>> 0 },
     now: new Date(base).toISOString(),
@@ -1117,7 +1117,7 @@ export function selfTest() {
   const a = analyze({ records: ex.records }, opts);
   t("example analyses all 8 risks", () => a.summary.simulated === 8);
   t("analyze is deterministic", () => JSON.stringify(a) === JSON.stringify(analyze({ records: ex.records }, opts)));
-  t("overdue review detected", () => a.findings.some((f) => f.id === "riskreg:review_overdue:lark-06"));
+  t("overdue review detected", () => a.findings.some((f) => f.id === "riskreg:review_overdue:testorg-06"));
   t("no appetite -> appetite check skipped", () => analyze({ records: ex.records.slice(0, 1) }, { iterations: 200, now: ex.now }).skipped.some((s) => s.check === "over_appetite"));
   return { pass: tests.every((x) => x.pass), tests };
 }

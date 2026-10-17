@@ -1306,18 +1306,18 @@ export function exampleDataset(seed = 7) {
   const rnd = () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; };
   const D = "@test.darknode.ai";
   const people = [
-    ["E1001", "Ines Marlow", "Finance", "", "salary", 96000, 0],
-    ["E1002", "Theo Brandt", "Operations", "E1001", "salary", 78000, 0],
-    ["E1003", "Callum Reyes", "Warehouse", "E1002", "hourly", 0, 24.5],
-    ["E1004", "Priya Okonkwo", "Sales", "E1002", "salary", 72000, 0],
-    ["E1005", "Mateo Lindgren", "Warehouse", "E1002", "hourly", 0, 22],
-    ["E1006", "Sana Whitcombe", "Warehouse", "E1002", "hourly", 0, 22],
-    ["E1007", "Dara Feld", "Finance", "E1001", "salary", 61000, 0],
-    ["E1008", "Ruth Achebe", "Sales", "E1002", "salary", 70000, 0],
-    ["E1009", "Owen Pascoe", "Operations", "E1002", "salary", 66000, 0],
-    ["E1010", "Lena Voss", "Warehouse", "E1002", "hourly", 0, 23],
-    ["E1011", "Kofi Marsh", "Operations", "E1002", "hourly", 0, 25],
-    ["E1012", "Yara Quint", "Finance", "E1001", "salary", 84000, 0],
+    ["E1001", "User 01", "Finance", "", "salary", 96000, 0],
+    ["E1002", "User 02", "Operations", "E1001", "salary", 78000, 0],
+    ["E1003", "User 03", "Warehouse", "E1002", "hourly", 0, 24.5],
+    ["E1004", "User 04", "Sales", "E1002", "salary", 72000, 0],
+    ["E1005", "User 05", "Warehouse", "E1002", "hourly", 0, 22],
+    ["E1006", "User 06", "Warehouse", "E1002", "hourly", 0, 22],
+    ["E1007", "User 07", "Finance", "E1001", "salary", 61000, 0],
+    ["E1008", "User 08", "Sales", "E1002", "salary", 70000, 0],
+    ["E1009", "User 09", "Operations", "E1002", "salary", 66000, 0],
+    ["E1010", "User 10", "Warehouse", "E1002", "hourly", 0, 23],
+    ["E1011", "User 11", "Operations", "E1002", "hourly", 0, 25],
+    ["E1012", "User 12", "Finance", "E1001", "salary", 84000, 0],
   ];
   const termDay = parseDay("2026-08-14");
   const firstStart = parseDay("2026-05-31");
@@ -1330,7 +1330,7 @@ export function exampleDataset(seed = 7) {
   const streets = ["Larch Way", "Copperfield Rd", "Ashby Lane", "Mill Pond Ct", "Heron St", "Quarry Row", "Tamsin Ave", "Old Ferry Rd", "Wren Close", "Saltmarsh Dr", "Kestrel Pl", "Bramble Hill"];
   people.forEach(([id, name, dept, mgr, type, sal, rate], i) => {
     const ssn = "9" + String(10 + Math.floor(rnd() * 89)) + "-" + String(10 + Math.floor(rnd() * 89)) + "-" + String(1000 + Math.floor(rnd() * 8999));
-    const email = name.toLowerCase().replace(/\s+/g, ".") + D;
+    const email = name.toLowerCase().replace(/\s+/g, "") + D;
     roster.push([id, name, ssn, "19" + (70 + i) + "-0" + (1 + (i % 9)) + "-1" + (i % 9), (10 + i * 7) + " " + streets[i], "Harrow Point", "0" + (2100 + i), "555-01" + String(10 + i), email, dept, mgr,
       "20" + (18 + (i % 6)) + "-0" + (1 + (i % 8)) + "-15", id === "E1009" ? dayIso(termDay) : "", id === "E1009" ? "Terminated" : "Active", type === "salary" ? "Salaried" : "Hourly", sal ? sal.toFixed(2) : "", rate ? rate.toFixed(2) : ""]);
   });
@@ -1353,20 +1353,20 @@ export function exampleDataset(seed = 7) {
         line(name, id, Math.round(regH * rate * 100 + otH * rate * 150), regH, otH);
       }
     }
-    if (k >= 4) line("Jordan Vale", "E1099", 245000, 0, 0, true); // paid id that is not on the roster
+    if (k >= 4) line("User 99", "E1099", 245000, 0, 0, true); // paid id that is not on the roster
   }
 
   // Direct-deposit change log
   const R1 = abaWithCheck("07100001"), R2 = abaWithCheck("12400008"), R3 = abaWithCheck("03100004");
   const at = (day, hm) => dayIso(day) + "T" + hm + ":00Z";
   const bank = [["employee_id", "changed_at", "changed_by", "old_account_last4", "new_account", "new_routing", "channel", "ip"]];
-  bank.push(["E1007", at(payDays[0] + 3, "16:12"), "dara.feld" + D, "4410", "550018273641", R3, "self-service", "198.51.100.23"]);
-  bank.push(["E1003", at(payDays[1] + 4, "10:41"), "dara.feld" + D, "7782", "550018273641", R3, "admin", "198.51.100.23"]); // shares E1007's account
+  bank.push(["E1007", at(payDays[0] + 3, "16:12"), "user07" + D, "4410", "550018273641", R3, "self-service", "198.51.100.23"]);
+  bank.push(["E1003", at(payDays[1] + 4, "10:41"), "user07" + D, "7782", "550018273641", R3, "admin", "198.51.100.23"]); // shares E1007's account
   bank.push(["E1004", at(payDays[6] - 2, "18:55"), "helpdesk.t2" + D, "2291", "880044119275", R1, "helpdesk", "192.0.2.144"]);
-  bank.push(["E1005", at(payDays[7] - 4, "02:17"), "mateo.lindgren" + D, "6130", "740000918822", R2, "self-service", "203.0.113.77"]);
-  bank.push(["E1006", at(payDays[7] - 4, "02:31"), "sana.whitcombe" + D, "0457", "740000918839", R2, "self-service", "203.0.113.77"]);
-  bank.push(["E1008", at(payDays[7] - 3, "03:05"), "ruth.achebe" + D, "9924", "740000918846", R2, "self-service", "203.0.113.77"]);
-  bank.push(["E1012", at(payDays[2] + 2, "09:30"), "yara.quint" + D, "3307", "660021004719", R3, "self-service", "198.51.100.61"]);
+  bank.push(["E1005", at(payDays[7] - 4, "02:17"), "user05" + D, "6130", "740000918822", R2, "self-service", "203.0.113.77"]);
+  bank.push(["E1006", at(payDays[7] - 4, "02:31"), "user06" + D, "0457", "740000918839", R2, "self-service", "203.0.113.77"]);
+  bank.push(["E1008", at(payDays[7] - 3, "03:05"), "user08" + D, "9924", "740000918846", R2, "self-service", "203.0.113.77"]);
+  bank.push(["E1012", at(payDays[2] + 2, "09:30"), "user12" + D, "3307", "660021004719", R3, "self-service", "198.51.100.61"]);
 
   return {
     label: "synthetic example (not real data)",

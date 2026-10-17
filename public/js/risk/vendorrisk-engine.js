@@ -1243,7 +1243,7 @@ function fixtureRaw(domain, p, at) {
     https: p.https === false ? { error: "connection refused" } : { status: 200, finalUrl: "https://" + domain + "/", headers: p.headers === "good" ? hdrsGood : hdrsWeak },
     http: { status: 200, finalUrl: (p.redirect === false ? "http://" : "https://") + domain + "/" },
     securityTxt: p.sectxt ? { status: 200, body: "Contact: mailto:security@" + domain + "\nExpires: " + plus(200) + "T00:00:00Z\n" } : { status: 404, body: "" },
-    rdap: { json: { objectClassName: "domain", ldhName: domain.toUpperCase(), events: [{ eventAction: "registration", eventDate: "2015-03-02T00:00:00Z" }, { eventAction: "expiration", eventDate: plus(p.domainDays) + "T00:00:00Z" }], entities: [{ objectClassName: "entity", roles: ["registrar"], vcardArray: ["vcard", [["version", {}, "text", "4.0"], ["fn", {}, "text", "Synthetic Registrar LLC"]]] }] } },
+    rdap: { json: { objectClassName: "domain", ldhName: domain.toUpperCase(), events: [{ eventAction: "registration", eventDate: "2015-03-02T00:00:00Z" }, { eventAction: "expiration", eventDate: plus(p.domainDays) + "T00:00:00Z" }], entities: [{ objectClassName: "entity", roles: ["registrar"], vcardArray: ["vcard", [["version", {}, "text", "4.0"], ["fn", {}, "text", "Test Registrar"]]] }] } },
   };
 }
 
@@ -1259,50 +1259,50 @@ export function exampleDataset(seed = 7, nowIso = "2026-10-16T12:00:00Z") {
   const V = [];
   const base = (o) => normalizeRecord({ owner: "", services: "", regions: "", subProcessors: "", notes: "", exitPlan: "", history: [{ at: at(-200), what: "Created (synthetic example)" }], ...o });
 
-  V.push(base({ id: "ex-ledgerloop", legalName: "LedgerLoop Payroll Ltd", domains: ["ledgerloop.test.darknode.ai"], services: "Payroll processing", owner: "people-ops@test.darknode.ai",
+  V.push(base({ id: "ex-vendor-a", legalName: "Vendor A Payroll Ltd", domains: ["vendor-a.test.darknode.ai"], services: "Payroll processing", owner: "people-ops@test.darknode.ai",
     dataTier: "restricted", dataTypes: ["pii", "financial", "employee"], systemAccess: "write", integrations: ["sso", "apikeys"], criticality: "critical", spof: true, sendsMail: true,
-    exitPlan: "", regions: "UK, IE", subProcessors: "Synthetic Cloud Hosting", contractStart: d(-700), renewal: d(40), noticeDays: 60, lastReview: d(-400),
+    exitPlan: "", regions: "UK, IE", subProcessors: "Vendor I Cloud Hosting", contractStart: d(-700), renewal: d(40), noticeDays: 60, lastReview: d(-400),
     docs: [{ id: "d1", type: "soc2t2", issued: d(-300), periodEnd: d(-380), expires: "" }, { id: "d2", type: "dpa", issued: d(-700) }, { id: "d3", type: "insurance", expires: d(25) }, { id: "d4", type: "pentest", issued: d(-120) }],
     posture: [
-      snap(["ledgerloop.test.darknode.ai"], { ...GOOD }, at(-30)),
-      snap(["ledgerloop.test.darknode.ai"], { ...GOOD, dmarc: "v=DMARC1; p=none; rua=mailto:dmarc@test.darknode.ai", mtasts: null, tlsrpt: false, headers: "weak", sectxt: false }, at(-1)),
+      snap(["vendor-a.test.darknode.ai"], { ...GOOD }, at(-30)),
+      snap(["vendor-a.test.darknode.ai"], { ...GOOD, dmarc: "v=DMARC1; p=none; rua=mailto:dmarc@test.darknode.ai", mtasts: null, tlsrpt: false, headers: "weak", sectxt: false }, at(-1)),
     ] }));
-  V.push(base({ id: "ex-cobaltcare", legalName: "Cobalt Care Analytics Inc", domains: ["cobaltcare.test.darknode.ai"], services: "Patient outcome analytics", owner: "clinical-it@test.darknode.ai",
+  V.push(base({ id: "ex-vendor-b", legalName: "Vendor B Analytics Inc", domains: ["vendor-b.test.darknode.ai"], services: "Patient outcome analytics", owner: "clinical-it@test.darknode.ai",
     dataTier: "restricted", dataTypes: ["phi", "pii"], systemAccess: "read", integrations: ["oauth"], criticality: "high", sendsMail: false, regions: "US",
     contractStart: d(-400), renewal: d(300), noticeDays: 90, lastReview: d(-100), questionnaireScore: 82,
     docs: [{ id: "d1", type: "iso27001", issued: d(-200), expires: d(500) }, { id: "d2", type: "dpa", issued: d(-400) }, { id: "d3", type: "questionnaire", issued: d(-90) }, { id: "d4", type: "soc2t2", issued: d(-60), periodEnd: d(-90), exceptions: true, exceptionsText: "CC6.2: two terminated users kept access past 30 days." }],
-    posture: [snap(["cobaltcare.test.darknode.ai"], { ...GOOD, ds: false, caa: false }, at(-2))] }));
-  V.push(base({ id: "ex-quillcard", legalName: "Quillcard Payments GmbH", domains: ["quillcard.test.darknode.ai", "pay.quillcard.test.darknode.ai"], services: "Card acquiring and checkout", owner: "finance@test.darknode.ai",
+    posture: [snap(["vendor-b.test.darknode.ai"], { ...GOOD, ds: false, caa: false }, at(-2))] }));
+  V.push(base({ id: "ex-vendor-c", legalName: "Vendor C Payments GmbH", domains: ["vendor-c.test.darknode.ai", "pay.vendor-c.test.darknode.ai"], services: "Card acquiring and checkout", owner: "finance@test.darknode.ai",
     dataTier: "restricted", dataTypes: ["pci", "financial"], systemAccess: "network", integrations: ["apikeys", "agent"], criticality: "critical", spof: true, sendsMail: true, regions: "DE, EU",
     exitPlan: "Secondary acquirer contract signed; 30-day cut-over runbook in the payments wiki.", contractStart: d(-1000), renewal: d(500), noticeDays: 180, lastReview: d(-200),
     docs: [{ id: "d1", type: "pciaoc", issued: d(-380), expires: d(-15) }, { id: "d2", type: "soc2t2", issued: d(-100), periodEnd: d(-130) }, { id: "d3", type: "pentest", issued: d(-500) }],
-    posture: [snap(["pay.quillcard.test.darknode.ai", "quillcard.test.darknode.ai"], [{ ...GOOD, certDays: 9, wildcard: true }, { ...GOOD, spf: "v=spf1 include:_spf.test.darknode.ai +all", domainDays: 21 }], at(-1))] }));
-  V.push(base({ id: "ex-brightlane", legalName: "Brightlane Ticketing Co", domains: ["brightlane.test.darknode.ai"], services: "Support desk SaaS", owner: "support@test.darknode.ai",
+    posture: [snap(["pay.vendor-c.test.darknode.ai", "vendor-c.test.darknode.ai"], [{ ...GOOD, certDays: 9, wildcard: true }, { ...GOOD, spf: "v=spf1 include:_spf.test.darknode.ai +all", domainDays: 21 }], at(-1))] }));
+  V.push(base({ id: "ex-vendor-d", legalName: "Vendor D Ticketing Co", domains: ["vendor-d.test.darknode.ai"], services: "Support desk SaaS", owner: "support@test.darknode.ai",
     dataTier: "confidential", dataTypes: ["pii", "customer"], systemAccess: "read", integrations: ["sso"], criticality: "medium", sendsMail: true, regions: "US, EU",
     contractStart: d(-800), renewal: d(120), noticeDays: 30, lastReview: d(-900),
     docs: [{ id: "d1", type: "soc2t2", issued: d(-500), periodEnd: d(-540) }, { id: "d2", type: "bridge", issued: d(-170), expires: d(10) }, { id: "d3", type: "dpa", issued: d(-800) }],
-    posture: [snap(["brightlane.test.darknode.ai"], { ...GOOD, dmarc: null, mtasts: "testing", nsMulti: false }, at(-3))] }));
-  V.push(base({ id: "ex-inkwell", legalName: "Inkwell Print Services", domains: ["inkwell.test.darknode.ai"], services: "Office printing", owner: "facilities@test.darknode.ai",
+    posture: [snap(["vendor-d.test.darknode.ai"], { ...GOOD, dmarc: null, mtasts: "testing", nsMulti: false }, at(-3))] }));
+  V.push(base({ id: "ex-vendor-e", legalName: "Vendor E Print Services", domains: ["vendor-e.test.darknode.ai"], services: "Office printing", owner: "facilities@test.darknode.ai",
     dataTier: "internal", dataTypes: [], systemAccess: "none", integrations: [], criticality: "low", sendsMail: true, regions: "US",
     contractStart: d(-300), renewal: d(65), noticeDays: 30, lastReview: d(-200), docs: [],
-    posture: [snap(["inkwell.test.darknode.ai"], { ...GOOD, spf: "v=spf1 a mx ?all", dmarc: null, mtasts: null, tlsrpt: false, ds: false, caa: false, nsMulti: false, headers: "weak", sectxt: false }, at(-5))] }));
-  V.push(base({ id: "ex-strata", legalName: "Stratacode Dev Tools", domains: ["stratacode.test.darknode.ai"], services: "CI/CD platform", owner: "platform@test.darknode.ai",
+    posture: [snap(["vendor-e.test.darknode.ai"], { ...GOOD, spf: "v=spf1 a mx ?all", dmarc: null, mtasts: null, tlsrpt: false, ds: false, caa: false, nsMulti: false, headers: "weak", sectxt: false }, at(-5))] }));
+  V.push(base({ id: "ex-vendor-f", legalName: "Vendor F Dev Tools", domains: ["vendor-f.test.darknode.ai"], services: "CI/CD platform", owner: "platform@test.darknode.ai",
     dataTier: "confidential", dataTypes: ["source", "credentials"], systemAccess: "admin", integrations: ["oauth", "apikeys"], criticality: "high", sendsMail: false, regions: "US",
     contractStart: d(-500), renewal: d(230), noticeDays: 60, lastReview: d(-30),
     docs: [{ id: "d1", type: "soc2t2", issued: d(-40), periodEnd: d(-70) }, { id: "d2", type: "iso27001", issued: d(-300), expires: d(45) }, { id: "d3", type: "pentest", issued: d(-80) }],
     posture: [
-      snap(["stratacode.test.darknode.ai"], { ...GOOD, headers: "weak" }, at(-60)),
-      snap(["stratacode.test.darknode.ai"], { ...GOOD }, at(-2)),
+      snap(["vendor-f.test.darknode.ai"], { ...GOOD, headers: "weak" }, at(-60)),
+      snap(["vendor-f.test.darknode.ai"], { ...GOOD }, at(-2)),
     ] }));
-  V.push(base({ id: "ex-meridian", legalName: "Meridian Freight Brokers", domains: ["meridianfreight.test.darknode.ai"], services: "Logistics brokerage", owner: "ops@test.darknode.ai",
+  V.push(base({ id: "ex-vendor-g", legalName: "Vendor G Freight Brokers", domains: ["vendor-g.test.darknode.ai"], services: "Logistics brokerage", owner: "ops@test.darknode.ai",
     dataTier: "internal", dataTypes: ["financial"], systemAccess: "none", integrations: [], criticality: "medium", sendsMail: true, regions: "US, MX",
     contractStart: d(-200), renewal: d(500), noticeDays: 60, lastReview: "", docs: [{ id: "d1", type: "insurance", expires: d(220) }],
     posture: [] }));
-  V.push(base({ id: "ex-vellum", legalName: "Vellum Cloud Storage SA", domains: ["vellum.test.darknode.ai"], services: "Backup object storage", owner: "it@test.darknode.ai",
+  V.push(base({ id: "ex-vendor-h", legalName: "Vendor H Cloud Storage SA", domains: ["vendor-h.test.darknode.ai"], services: "Backup object storage", owner: "it@test.darknode.ai",
     dataTier: "confidential", dataTypes: ["pii", "customer"], systemAccess: "write", integrations: ["apikeys"], criticality: "critical", sendsMail: false, regions: "FR, EU",
     exitPlan: "Data mirrored to a second region with another provider weekly.", contractStart: d(-1200), renewal: d(20), noticeDays: 90, lastReview: d(-150),
     docs: [{ id: "d1", type: "iso27001", issued: d(-100), expires: d(900) }, { id: "d2", type: "soc2t2", issued: d(-50), periodEnd: d(-80) }],
-    posture: [snap(["vellum.test.darknode.ai"], { ...GOOD, https: false }, at(-1))] }));
+    posture: [snap(["vendor-h.test.darknode.ai"], { ...GOOD, https: false }, at(-1))] }));
   return { label: "synthetic example (not real data)", now: nowIso, records: V };
 }
 
@@ -1317,7 +1317,7 @@ export function selfTest() {
   const r = analyze(ex, { now: ex.now });
   T("example grades 8 vendors", r.tables.vendors.length === 8);
   T("SPF +all fires high", r.findings.some((f) => f.title === "Vendor SPF allows any sender (+all)" && f.severity === "high"));
-  T("grade drop fires on LedgerLoop", r.findings.some((f) => f.id === "tpr-grade-drop-ex-ledgerloop"));
+  T("grade drop fires on Vendor A", r.findings.some((f) => f.id === "tpr-grade-drop-ex-vendor-a"));
   T("deterministic", JSON.stringify(analyze(ex, { now: ex.now })) === JSON.stringify(r));
   const g = gradeDomain({ domain: "x.test.darknode.ai", txt: { error: "timeout" } }, { now: ex.now });
   T("network error is reported, not graded", g.find((x) => x.check === "spf").status === "error");

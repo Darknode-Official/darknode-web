@@ -952,10 +952,10 @@ export function exampleDataset(seed = 7, now = "2026-10-16T15:00:00.000Z") {
     label: "synthetic example (not real data)",
     record: {
       id: "bnc-example",
-      title: "Larkspur Cloudworks credential store exposure (synthetic)",
+      title: "Test Org credential store exposure (synthetic)",
       status: "open",
       facts: {
-        title: "Larkspur Cloudworks credential store exposure (synthetic)",
+        title: "Test Org credential store exposure (synthetic)",
         sectors: ["eu", "general"], memberState: "Ireland",
         dataTypes: ["emailpw", "ssn"],
         total: null,

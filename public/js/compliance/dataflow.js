@@ -252,7 +252,7 @@ export function renderDataFlow(main) {
     const ref = result.meta.reference;
     $("status").textContent = (ref ? "Transfers checked against reference data " + ref.version + " (updated " + ref.updated + "), verify with counsel." : "Adequacy reference data " + (adequacyErr ? "failed to load (" + adequacyErr + ")" : "loading") + "; transfers not assessed.") +
       " As of " + result.meta.now + ". " + label(REGIMES, result.meta.regime) + ".";
-    $("exnote").innerHTML = example ? '<div class="' + P + '-note"><b>Synthetic example loaded.</b> Larkspur Cloudworks is fictional: eight activities and ten DSARs, people at test.darknode.ai, dated as of ' + esc(example.now.slice(0, 10)) + '. Nothing is saved and the graph button is disabled. <button class="' + P + '-btn" id="' + P + '-exit" type="button">Close example</button></div>' : "";
+    $("exnote").innerHTML = example ? '<div class="' + P + '-note"><b>Synthetic example loaded.</b> Test Org is fictional: eight activities and ten DSARs, people at test.darknode.ai, dated as of ' + esc(example.now.slice(0, 10)) + '. Nothing is saved and the graph button is disabled. <button class="' + P + '-btn" id="' + P + '-exit" type="button">Close example</button></div>' : "";
     if (example) $("exit").addEventListener("click", () => { example = null; selId = null; closeForm(); closeDForm(); schedule(); });
     $("dsarhelp").textContent = "Deadline: one calendar month from " + (settings.clockStart === "identity" ? "identity verification (or receipt when not recorded)" : "receipt") + ", or three months when extended (Art. 12(3)); " +
       (settings.rollWeekends ? "weekend deadlines move to Monday" : "weekend deadlines are kept") + ". Use your ticket reference, never the requester's name or email. Verify deadlines with counsel.";
@@ -628,7 +628,7 @@ export function renderDataFlow(main) {
     example = exampleDataset();
     selId = null; closeForm(); closeDForm(); $("detail").classList.add(P + "-hide");
     schedule();
-    toast("Loaded synthetic example: Larkspur Cloudworks (fictional)", "info");
+    toast("Loaded the synthetic example", "info");
   });
 
   // ---- import ------------------------------------------------------------------------

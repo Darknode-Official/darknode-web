@@ -1301,14 +1301,14 @@ export function exampleDataset(seed = 7) {
     "2026-01-01", "2026-01-19", "2026-02-16", "2026-05-25", "2026-06-19", "2026-07-03", "2026-09-07", "2026-10-12", "2026-11-11", "2026-11-26", "2026-12-25"]);
   const bizDay = (d) => { while (weekday(d) === 0 || weekday(d) === 6 || HOL.has(dayISO(d))) d++; return d; };
   const V0 = [
-    ["100101", "Northwind Parts Test Co", 2400], ["100102", "Bluegill Fasteners Test Ltd", 900], ["100103", "Harrow Lane Supply Test LLC", 3100], ["100104", "Quarry Point Test Services Inc", 2600],
-    ["100105", "Ferrous Vale Test Trading GmbH", 5200], ["100106", "Copperleaf Test Consulting LLC", 0], ["100107", "Saltmarsh Test Logistics Inc", 1450], ["100108", "Larkspur Test Facilities Corp", 0],
-    ["100109", "Ironbridge Test Freight Ltd", 6100], ["100110", "Kestrel Mail Test Services", 760], ["100111", "Tidewater Test Office Supply", 340], ["100112", "Amberfield Test Packaging", 1800],
-    ["100113", "Brightwater Test Electrical", 4300], ["100114", "Cobalt Ridge Test Machining", 12500], ["100115", "Driftwood Test Janitorial", 1250], ["100116", "Elmstead Test Printing", 520],
-    ["100117", "Foxglove Test Catering", 680], ["100118", "Granite Arch Test Engineering", 18800], ["100119", "Hollow Pine Test IT Services", 7400], ["100120", "Juniper Bay Test Uniforms", 1100],
-    ["100121", "Marigold Test Waste Services", 2050], ["100122", "Northgate Test Security Services", 9600], ["100123", "Bluegill Fasteners Test Limited", 900], ["100124", "Pebblebrook Test Media", 260],
+    ["100101", "Vendor A Parts Co", 2400], ["100102", "Vendor B Fasteners Ltd", 900], ["100103", "Vendor C Supply LLC", 3100], ["100104", "Vendor D Services Inc", 2600],
+    ["100105", "Vendor E Trading GmbH", 5200], ["100106", "Vendor F Consulting LLC", 0], ["100107", "Vendor G Logistics Inc", 1450], ["100108", "Vendor H Facilities Corp", 0],
+    ["100109", "Vendor I Freight Ltd", 6100], ["100110", "Vendor J Mail Services", 760], ["100111", "Vendor K Office Supply", 340], ["100112", "Vendor L Packaging", 1800],
+    ["100113", "Vendor M Electrical", 4300], ["100114", "Vendor N Machining", 12500], ["100115", "Vendor O Janitorial", 1250], ["100116", "Vendor P Printing", 520],
+    ["100117", "Vendor Q Catering", 680], ["100118", "Vendor R Engineering", 18800], ["100119", "Vendor S IT Services", 7400], ["100120", "Vendor T Uniforms", 1100],
+    ["100121", "Vendor U Waste Services", 2050], ["100122", "Vendor V Security Services", 9600], ["100123", "Vendor B Fasteners Limited", 900], ["100124", "Vendor W Media", 260],
   ];
-  const users = ["APCLERK1", "APCLERK2", "MRIVERA"];
+  const users = ["APCLERK1", "APCLERK2", "APCLERK3"];
   const rows = [];
   let doc = 5100004100, clr = 1500002200;
   const push = (vid, post, cents, ref, text, user, o2 = {}) => {
@@ -1328,15 +1328,15 @@ export function exampleDataset(seed = 7) {
     while (d <= end) {
       inv += seq ? 1 : ri(15, 400);
       const cents = Math.round(base * 100 * 10 ** ((rnd() - 0.5) * 0.9)) + ri(0, 99);
-      const r = push(vid, d, cents, prefix + inv, vid === "100105" ? "Steel stock" : "Goods and services", vid === "100103" ? "DTEST" : users[ri(0, users.length - 1)],
+      const r = push(vid, d, cents, prefix + inv, vid === "100105" ? "Steel stock" : "Goods and services", vid === "100103" ? "USER04" : users[ri(0, users.length - 1)],
         vid === "100105" && n === 0 ? { clear: mkDay(2026, 8, 6) } : {});
       regular.push(r); n++;
       d = bizDay(d + ri(6, 21));
     }
   }
-  // Copperleaf: fixed-fee round invoices.
+  // Vendor F: fixed-fee round invoices.
   for (let k = 0; k < 14; k++) push("100106", bizDay(start + 20 + k * 36), [250000, 400000, 150000, 300000][k % 4], "CL-" + (5000 + k * 7), "Advisory retainer", users[k % 3]);
-  // Larkspur: steady monthly invoice, one spike month.
+  // Vendor H: steady monthly invoice, one spike month.
   for (let k = 0; k < 18; k++) {
     const d = bizDay(mkDay(2025, 4 + k > 12 ? 4 + k - 12 : 4 + k, 15) + (4 + k > 12 ? 365 : 0));
     push("100108", d, k === 11 ? 3812500 : 190000 + ri(0, 25000), "LF" + (88000 + k * 13), "Facilities service", users[k % 3]);
@@ -1345,7 +1345,7 @@ export function exampleDataset(seed = 7) {
   const big = new Set(V0.filter((x) => x[2] >= 2400 && x[2] <= 7400).map((x) => x[0]));
   const pick = regular.filter((r) => big.has(r.vid) && r.vid !== "100104").filter((_, i) => i % 9 === 4).slice(0, 20);
   for (const r of pick) r.cents = 910000 + ri(0, 88000);
-  // Split invoices: Quarry Point, three invoices in three days, each under 10,000.00.
+  // Split invoices: Vendor D, three invoices in three days, each under 10,000.00.
   const qd = bizDay(mkDay(2026, 2, 9));
   push("100104", qd, 481240, "QP-77120", "Site works phase 1", "APCLERK2");
   push("100104", qd + 1, 397515, "QP-77121", "Site works phase 2", "APCLERK2");
@@ -1353,10 +1353,10 @@ export function exampleDataset(seed = 7) {
   // Exact duplicates (3): re-entered 12-20 days later, one with a reformatted invoice number.
   const dupSrc = ["100101", "100112", "100118"].map((vid) => regular.find((r) => r.vid === vid && r.post > mkDay(2025, 10, 1) && r.cents < 900000));
   dupSrc.forEach((r, k) => push(r.vid, bizDay(r.post + 12 + k * 4), r.cents, k === 0 ? r.ref.replace(/^INV-0+/, "") : r.ref, r.text, users[(k + 1) % 3]));
-  // Fuzzy duplicate: Brightwater invoice re-keyed with two digits transposed.
+  // Fuzzy duplicate: Vendor M invoice re-keyed with two digits transposed.
   const bw = regular.find((r) => r.vid === "100113" && r.post > mkDay(2026, 1, 1) && /^\d{5}$/.test(r.ref) && r.ref[2] !== r.ref[3]);
   push("100113", bizDay(bw.post + 9), bw.cents, bw.ref.slice(0, 2) + bw.ref[3] + bw.ref[2] + bw.ref.slice(4), bw.text, "APCLERK1");
-  // Same invoice paid under the duplicate Bluegill record.
+  // Same invoice paid under the duplicate Vendor B record.
   const bg = regular.find((r) => r.vid === "100102" && r.post > mkDay(2026, 3, 1));
   push("100123", bizDay(bg.post + 5), bg.cents, bg.ref, bg.text, "APCLERK2");
   // Weekend and holiday postings.
@@ -1384,7 +1384,7 @@ export function exampleDataset(seed = 7) {
     let acct = de ? "" : bankFor(k), iban = de ? ibanDE("20050550", "1234" + String(k).padStart(6, "0")) : "";
     let created = usDate(mkDay(2023, 1 + (k % 12), 3 + k)), createdBy = "VMDATA", pblock = "", cblock = "";
     if (vid === "100123") { tax = vmTax(V0, "100102"); street = (100 + 1 * 37) + " " + streets[1]; postal = String(62701); created = usDate(mkDay(2025, 11, 18)); createdBy = "APCLERK2"; routing = abaWithCheck(String(21000000 + 22 * 1031).padStart(8, "0")); acct = bankFor(40); }
-    if (vid === "100103") { createdBy = "DTEST"; acct = "7790031144"; routing = abaWithCheck("02200030"); created = usDate(mkDay(2024, 6, 12)); }
+    if (vid === "100103") { createdBy = "USER04"; acct = "7790031144"; routing = abaWithCheck("02200030"); created = usDate(mkDay(2024, 6, 12)); }
     if (vid === "100105") created = usDate(mkDay(2026, 8, 3));
     if (vid === "100109") pblock = "A";
     if (vid === "100121") cblock = "X";
@@ -1397,14 +1397,14 @@ export function exampleDataset(seed = 7) {
 
   // Employee roster (generic layout).
   const EH = FORMATS["generic-employees"].headers;
-  const first = ["Avery", "Blake", "Casey", "Dana", "Emerson", "Finley", "Gray", "Harper", "Indigo", "Jordan", "Kendall", "Logan", "Morgan", "Noel", "Oakley", "Parker", "Quinn", "Reese", "Sage", "Taylor", "Umber", "Val", "Wren", "Yael", "Zion", "Arden", "Bellamy", "Cypress"];
+  const first = Array.from({ length: 28 }, (_, k) => String(k + 1).padStart(2, "0"));
   const depts = ["Accounts Payable", "Finance", "Operations", "Engineering", "Sales", "Facilities", "IT"];
   const emps = first.map((fn, k) => {
-    const name = fn + " Test";
-    const isDana = fn === "Dana";
-    return csvLine(["E" + String(2001 + k), name, (10 + k * 3) + " Elm Court", "Springfield", String(62800 + k), "555-01" + String(10 + k).padStart(2, "0"), fn.toLowerCase() + ".test@test.darknode.ai",
-      isDana ? "7790031144" : "66" + String(12000000 + k * 3571).padStart(8, "0"), isDana ? abaWithCheck("02200030") : abaWithCheck(String(11000000 + k * 77).padStart(8, "0")), "",
-      isDana ? "Accounts Payable" : depts[k % depts.length], usDate(mkDay(2019 + (k % 6), 1 + (k % 12), 10)), k === 7 ? usDate(mkDay(2026, 2, 27)) : ""]);
+    const name = "User " + fn;
+    const isPlanted = k === 3;
+    return csvLine(["E" + String(2001 + k), name, (10 + k * 3) + " Elm Court", "Springfield", String(62800 + k), "555-01" + String(10 + k).padStart(2, "0"), "user" + fn + "@test.darknode.ai",
+      isPlanted ? "7790031144" : "66" + String(12000000 + k * 3571).padStart(8, "0"), isPlanted ? abaWithCheck("02200030") : abaWithCheck(String(11000000 + k * 77).padStart(8, "0")), "",
+      isPlanted ? "Accounts Payable" : depts[k % depts.length], usDate(mkDay(2019 + (k % 6), 1 + (k % 12), 10)), k === 7 ? usDate(mkDay(2026, 2, 27)) : ""]);
   });
   const empCsv = [csvLine(EH), ...emps].join("\n") + "\n";
   return {
@@ -1427,8 +1427,8 @@ export function selfTest() {
   const f = (id) => r.findings.find((x) => x.check === id);
   t("example: 3 exact duplicates", () => f("dup_exact") && f("dup_exact").evidenceCount === 3);
   t("example: 1 transposed duplicate", () => f("dup_transposed") && f("dup_transposed").evidenceCount === 1);
-  t("example: vendor/employee bank match", () => f("vendor_employee") && f("vendor_employee").evidence.some((e) => /Harrow Lane/.test(e.vendor) && /bank account/.test(e.matchedOn)));
-  t("example: split cluster under 10,000", () => f("split_invoices") && f("split_invoices").evidence.some((e) => /Quarry Point/.test(e.vendor)));
+  t("example: vendor/employee bank match", () => f("vendor_employee") && f("vendor_employee").evidence.some((e) => /Vendor C/.test(e.vendor) && /bank account/.test(e.matchedOn)));
+  t("example: split cluster under 10,000", () => f("split_invoices") && f("split_invoices").evidence.some((e) => /Vendor D/.test(e.vendor)));
   t("example: vendor paid 3 days after creation", () => f("new_vendor_paid") && f("new_vendor_paid").evidence.some((e) => e.days === 3));
   t("no full bank account in output", () => !JSON.stringify(r).includes("7790031144"));
   t("missing threshold skips split check", () => analyze(ex.files, {}).skipped.some((k) => k.check === "split_invoices"));

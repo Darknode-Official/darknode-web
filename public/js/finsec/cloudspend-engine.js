@@ -1234,7 +1234,7 @@ export function exampleDataset(seed = 7) {
     // 222222222222 analytics: Lambda + RDS
     add(d, "222222222222", "Usage", "AWSLambda", "Lambda-GB-Second", "Invoke", "", "arn:aws:lambda:us-west-2:222222222222:function:etl-nightly", 1.6e6 * j(), 26 * j(), "us-west-2", "", "Serverless", "Lambda-GB-Second");
     add(d, "222222222222", "Usage", "AmazonRDS", "InstanceUsage:db.r5.large", "CreateDBInstance", "us-west-2a", "arn:aws:rds:us-west-2:222222222222:db:analytics", 24, 24 * 0.25, "us-west-2", "db.r5.large", "Database Instance", "Hrs");
-    if (i === 20) add(d, "222222222222", "Usage", "AWSMarketplace", "SoftwareUsage", "Subscribe", "", "", 1, 49, "us-west-2", "", "", "Units", "AWS Marketplace", "Fictional Analytics Vendor Ltd", "Fictional Log Shipper");
+    if (i === 20) add(d, "222222222222", "Usage", "AWSMarketplace", "SoftwareUsage", "Subscribe", "", "", 1, 49, "us-west-2", "", "", "Units", "AWS Marketplace", "Vendor A", "Log Shipper");
     // 333333333333 sandbox: dormant (tiny S3) then p3.16xlarge burst in sa-east-1 on days 55-57
     add(d, "333333333333", "Usage", "AmazonS3", "TimedStorage-ByteHrs", "StandardStorage", "", "sandbox-scratch-test-darknode", 2.1, 0.05, "us-east-1", "", "Storage", "GB-Mo");
     if (i >= 55 && i <= 57) for (let k = 1; k <= 6; k++) add(d, "333333333333", "Usage", "AmazonEC2", "SAE1-BoxUsage:p3.16xlarge", "RunInstances", "sa-east-1a", "i-0gpu0000000000" + String(k).padStart(2, "0"), 24, 24 * 36.97, "sa-east-1", "p3.16xlarge", "Compute Instance", "Hrs");

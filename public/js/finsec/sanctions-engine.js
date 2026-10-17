@@ -282,13 +282,13 @@ export function selfTest() {
   const ok = (name, cond) => results.push({ name, pass: !!cond });
 
   ok("normName strips accents + punctuation", normName("Müller & Co., Ltd.") === "muller co ltd");
-  ok("tokens drop stopwords/suffixes", JSON.stringify(tokens("Acme Trading Co., Ltd.")) === JSON.stringify(["acme"]));
+  ok("tokens drop stopwords/suffixes", JSON.stringify(tokens("Darknode Trading Co., Ltd.")) === JSON.stringify(["darknode"]));
   ok("levenshtein basic", levenshtein("kitten", "sitting") === 3);
 
   const list = buildIndex([
     { uid: "1", name: "VLADIMIR PUTIN", type: "individual", program: "RUSSIA", names: ["VLADIMIR PUTIN", "Vladimir Vladimirovich PUTIN"] },
-    { uid: "2", name: "ACME SHIPPING LLC", type: "entity", program: "SDGT", names: ["ACME SHIPPING LLC"] },
-    { uid: "3", name: "JOHN SMITH", type: "individual", program: "NARCO", names: ["JOHN SMITH"] },
+    { uid: "2", name: "DARKNODE SHIPPING LLC", type: "entity", program: "SDGT", names: ["DARKNODE SHIPPING LLC"] },
+    { uid: "3", name: "TEST USER", type: "individual", program: "NARCO", names: ["TEST USER"] },
   ]);
 
   const exact = screenName("Vladimir Putin", list);
@@ -300,18 +300,18 @@ export function selfTest() {
   const alias = screenName("Vladimir Vladimirovich Putin", list);
   ok("alias via name list matches", alias.some((m) => m.uid === "1"));
 
-  const suffixOnly = screenName("Acme Logistics Inc", list);
+  const suffixOnly = screenName("Darknode Logistics Inc", list);
   ok("different entity, shared suffix only -> no false hit", !suffixOnly.some((m) => m.uid === "2"));
 
   const clear = screenName("Totally Unrelated Widgets", list);
   ok("unrelated name is clear", clear.length === 0);
 
-  const batch = screenBatch([{ id: "a", name: "John Smith" }, { id: "b", name: "Jane Doe" }], list);
+  const batch = screenBatch([{ id: "a", name: "Test User" }, { id: "b", name: "Unlisted Person" }], list);
   ok("batch preserves order + flags hits", batch.length === 2 && batch[0].id === "a" && batch[0].hit && !batch[1].hit);
 
   // determinism
-  const r1 = JSON.stringify(screenBatch(["John Smith", "Acme Shipping LLC"], list));
-  const r2 = JSON.stringify(screenBatch(["John Smith", "Acme Shipping LLC"], list));
+  const r1 = JSON.stringify(screenBatch(["Test User", "Darknode Shipping LLC"], list));
+  const r2 = JSON.stringify(screenBatch(["Test User", "Darknode Shipping LLC"], list));
   ok("deterministic", r1 === r2);
 
   // OFAC parse
@@ -323,16 +323,16 @@ export function selfTest() {
   ok("parseOfac folds aliases", parsed[0].names.includes("AERO-CARIBBEAN"));
   ok("parseOfac empties -0- sentinel", parsed[0].type === "");
 
-  // entity-type filter: PUTIN is an individual, ACME SHIPPING an entity (blank type).
-  const indivOnly = screenName("Acme Shipping LLC", list, { types: ["individual"], minScore: 60 });
+  // entity-type filter: PUTIN is an individual, DARKNODE SHIPPING an entity (blank type).
+  const indivOnly = screenName("Darknode Shipping LLC", list, { types: ["individual"], minScore: 60 });
   ok("entity-type filter excludes non-matching class", !indivOnly.some((m) => m.uid === "2"));
-  const entityOnly = screenName("Acme Shipping LLC", list, { types: ["entity"], minScore: 60 });
+  const entityOnly = screenName("Darknode Shipping LLC", list, { types: ["entity"], minScore: 60 });
   ok("entity-type filter keeps matching class", entityOnly.some((m) => m.uid === "2"));
 
   // program filter: only entries whose program contains the substring survive.
-  const narco = screenName("John Smith", list, { program: "narco", minScore: 60 });
+  const narco = screenName("Test User", list, { program: "narco", minScore: 60 });
   ok("program filter keeps matching program", narco.some((m) => m.uid === "3"));
-  ok("program filter drops non-matching program", screenName("John Smith", list, { program: "russia", minScore: 60 }).length === 0);
+  ok("program filter drops non-matching program", screenName("Test User", list, { program: "russia", minScore: 60 }).length === 0);
 
   // secondary identifiers pulled from remarks (never fabricated when absent).
   const sec = secondaryIds("DOB 05 Dec 1960; POB Tehran; nationality Iran; Gender Male");

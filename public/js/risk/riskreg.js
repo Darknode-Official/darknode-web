@@ -699,7 +699,7 @@ export function renderRiskRegister(main) {
     const by = F("by").value.trim();
     let row = null;
     if (!errs.length) row = await analyzeForm();
-    const fromExample = !!example && !!r.id && r.id.startsWith("lark-");
+    const fromExample = !!example && !!r.id && r.id.startsWith("testorg-");
     const prev = !fromExample && r.id ? reg.get(r.id) : null;
     const rec = { ...r };
     if (fromExample) { delete rec.id; rec.history = []; }

@@ -1048,11 +1048,11 @@ export function summaryText(r) {
 // Synthetic example
 // ---------------------------------------------------------------------------
 
-const EX_ORG = "Larkspur Cloudworks (synthetic)";
-const EX_PEOPLE = ["ava.lindqvist", "noor.haddad", "tomas.ferreira", "mei.tanaka", "ravi.menon", "jo.okafor"].map((p) => p + "@test.darknode.ai");
+const EX_ORG = "Test Org (synthetic)";
+const EX_PEOPLE = ["user01", "user02", "user03", "user04", "user05", "user06"].map((p) => p + "@test.darknode.ai");
 
 /**
- * Seeded SYNTHETIC register: SOC 2 Security + ISO 27001 for Larkspur Cloudworks,
+ * Seeded SYNTHETIC register: SOC 2 Security + ISO 27001 for Test Org,
  * ~40 controls with mixed statuses relative to `now`, two exceptions (one active,
  * one expired), owners at test.darknode.ai, a few hand-linked cross-framework
  * records. Evidence digests are real SHA-256 values of the synthetic file text.
