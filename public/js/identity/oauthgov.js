@@ -65,7 +65,7 @@ const CSS = `
   .oag-list th.on{color:var(--tx,#1a2230)}
   .oag-list th.on::after{content:" \\2193";font-size:.7rem}
   .oag-list th.on.asc::after{content:" \\2191"}
-  .oag-list td{padding:9px 12px;border-bottom:1px solid var(--line,#eef0f4);vertical-align:top;overflow-wrap:anywhere}
+  .oag-list td{padding:9px 12px;border-bottom:1px solid var(--line,#eef0f4);vertical-align:top;overflow-wrap:break-word}
   .oag-list tr[data-i]{cursor:pointer}
   .oag-list tr[data-i]:hover,.oag-list tr.sel{background:var(--bg,#f7f8fb)}
   .oag-pill{display:inline-block;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:2px 8px;border-radius:999px;color:#fff;background:#667085;white-space:nowrap}
