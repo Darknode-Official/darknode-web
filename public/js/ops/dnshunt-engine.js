@@ -332,7 +332,10 @@ const RE_WIN = /^(\d{1,2}\/\d{1,2}\/\d{4}) (\d{1,2}:\d{2}:\d{2})(?: ([AP]M))? +\
 const RE_DNSMASQ = /^(\w{3}) +(\d{1,2}) (\d{2}):(\d{2}):(\d{2}) (?:\S+ )?dnsmasq\[\d+\]: (?:\d+ [0-9a-fA-F.:]+\/\d+ )?(query\[([A-Za-z0-9]+)\] (\S+) from (\S+)|(reply|cached|config|gravity blocked|regex blacklisted|exactly blacklisted|blacklisted) (\S+) is (\S+))/;
 const RE_UNBOUND = /(?:^\[(\d+)\] )?(?:^(\w{3}) +(\d{1,2}) (\d{2}):(\d{2}):(\d{2}) \S+ )?unbound(?:\[\d+:\d+\])?:? (?:\[\d+:\d+\] )?info: ([0-9a-fA-F.:]+) (\S+) ([A-Z0-9]+) IN(?: ([A-Z]+))?/;
 const MONTHS = { jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5, jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11 };
-const UMBRELLA_HEAD = ["timestamp", "most granular identity", "identities", "internal ip", "external ip", "action", "querytype", "responsecode", "domain", "categories"];
+// Umbrella DNS log field order (all versions; later versions append columns): timestamp, most
+// granular identity, identities, internal ip, external ip, action, query type, response code, domain,
+// categories. The optional header row spells "Query Type" / "Response Code"; compared without spaces.
+const UMBRELLA_HEAD = ["timestamp", "mostgranularidentity", "identities", "internalip", "externalip", "action", "querytype", "responsecode", "domain", "categories"];
 
 /** Detect a file's format from its head. Returns { format, confidence, label, headers? }. */
 export function detectFormat(text, name = "") {
@@ -369,9 +372,9 @@ export function detectFormat(text, name = "") {
   let first = null;
   for (const row of iterCsv(firstLines.slice(0, 2).join("\n"), { delimiter: delim, header: false })) { first = row; break; }
   if (first) {
-    const lower = first.map((h) => String(h).trim().toLowerCase());
+    const lower = first.map((h) => String(h).toLowerCase().replace(/\s+/g, ""));
     if (UMBRELLA_HEAD.every((h, i) => lower[i] === h)) return out("umbrella", "high", { header: true });
-    if (first.length >= 10 && /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(String(first[0]).trim()) && /^(allowed|blocked)$/i.test(String(first[5]).trim()) && /^\d+ \([A-Z0-9]+\)$/.test(String(first[6]).trim())) {
+    if (first.length >= 10 && /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(String(first[0]).trim()) && /^(allowed|blocked|proxied)$/i.test(String(first[5]).trim()) && /^\d+ \([A-Z0-9]+\)$/.test(String(first[6]).trim())) {
       return out("umbrella", "medium", { header: false });
     }
     const headers = first.map((h) => String(h).trim());

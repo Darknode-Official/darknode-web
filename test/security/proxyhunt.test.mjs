@@ -37,8 +37,13 @@ const NETSKOPE_HDR = "timestamp,user,srcip,dstip,url,domain,app,appcategory,ccl,
 const NETSKOPE_ROW = "1792152000,erin@test.darknode.ai,10.20.0.15,203.0.113.60,https://drive.google.com/upload/drive/v3/files,drive.google.com,Google Drive,Cloud Storage,high,Upload,q3-forecast.xlsx,File,157286400,4096,allow,Monitor-Uploads,personal";
 // Cloudflare Gateway HTTP Logpush (NDJSON).
 const CF_LINE = JSON.stringify({ Datetime: "2026-10-16T12:00:00Z", AccountID: "a1", Action: "allow", DestinationIP: "203.0.113.70", DestinationPort: 443, DeviceName: "WS-07", DownloadedFileNames: [], Email: "frank@test.darknode.ai", HTTPHost: "wetransfer.com", HTTPMethod: "POST", HTTPStatusCode: 200, HTTPVersion: "HTTP/2", PolicyName: "Allow all", Referer: "", RequestID: "r1", SourceIP: "198.51.100.10", SourceInternalIP: "10.20.0.16", SourcePort: 52000, URL: "https://wetransfer.com/api/v4/transfers", UploadedFileNames: ["design.zip"], UserAgent: "Mozilla/5.0", UserID: "u1" });
-// Cisco Umbrella proxy log (S3 export, headerless).
-const UMB_LINE = '"2026-10-16 13:00:00","Grace Hall (grace@test.darknode.ai)","10.20.0.17","198.51.100.10","203.0.113.80","text/html","ALLOWED","https://pastebin.com/raw/abc","","Mozilla/5.0","200","8388608","1200","1200","","Paste Sites","","","","","","AD Users","","","",""';
+// Cisco Umbrella proxy log (S3 export, headerless), documented 37-field order (timestamp .. producer).
+const UMB_LINE = '"2026-10-16 13:00:00","Grace Hall (grace@test.darknode.ai)","10.20.0.17","198.51.100.10","203.0.113.80","text/html","ALLOWED","https://pastebin.com/raw/abc","","Mozilla/5.0","200","8388608","1200","1200","","Paste Sites","","","","","","AD Users","","Grace Hall (grace@test.darknode.ai),WS-17","AD Users,Roaming Computer","POST","","","","","","","","","","",""';
+// Umbrella optional V12 proxy header row (51 columns), as documented.
+const UMB_V12_HDR = '"Timestamp","Policy Identity Label","Internal Client IP","External Client IP","Destination IP","Content Type","Action","URL","Referer","User Agent","Status Code","Request Size","Response Size","Response Body Size","SHA256 Hash","Categories","AV Detections","PUAs","AMP Disposition","AMP Malware Name","AMP Score","Policy Identity Type","Blocked Categories","Identities","Identity Types","Request Method","DLP Status","Certificate Errors","File Name","Ruleset ID","Rule ID","Destination List IDs","Isolate Action","File Action","Warn Status","Forwarding Method","Producer","MSP Organization ID","Geo Location Of Blocked Destination Countries","Application IDs","Host Name","Data Center","Egress","Server Name","Time Based Rule","Security Overridden","Detected Response File Type","Warn Categories","Organization ID","Application Entity Name","Application Entity Category"';
+const UMB_V12_ROW = UMB_LINE + ',"","","","","","","","","","","","","",""';
+// PAN-OS URL Filtering syslog (headerless), positions per the documented Format line, behind a syslog header.
+const PAN_URL_SYSLOG = '<14>Oct 16 10:00:00 PA-test 1,2026/10/16 10:00:00,013201001234,THREAT,url,2049,2026/10/16 10:00:00,10.20.0.13,203.0.113.44,198.51.100.10,0.0.0.0,allow-web,test\\carol,,dropbox-base,vsys1,trust,untrust,ethernet1/2,ethernet1/1,fwd,,40001,1,52311,443,40311,0,0x8000,tcp,alert,"www.dropbox.com/upload",(9999),online-storage-and-backup,informational,client-to-server,7000001,0x0,10.0.0.0-10.255.255.255,US,,text/html,0,,,,"Mozilla/5.0 (Windows NT 10.0; Win64; x64)",,,"https://www.dropbox.com/home",,,,,,,,,,PA-test,,,,post,,,,,,';
 // Zscaler NSS Splunk key=value.
 const ZKV_LINE = 'sourcetype="zscalernss-web"' + T + "datetime=Mon Oct 16 22:55:48 2026" + T + "reason=Allowed" + T + "event_id=1" + T + "protocol=HTTPS" + T + "action=Allowed" + T + "transactionsize=1000" + T + "responsesize=900" + T + "requestsize=100" + T + "urlcategory=Generative AI" + T + "serverip=203.0.113.90" + T + "requestmethod=POST" + T + "useragent=Mozilla/5.0" + T + "ClientIP=10.20.0.11" + T + "status=200" + T + "user=alice@test.darknode.ai" + T + "url=claude.ai/api/chat" + T + "vendor=Zscaler" + T + "hostname=claude.ai" + T + "appname=Claude" + T + "filetype=None";
 
@@ -126,6 +131,24 @@ group("proxyhunt: parsers (one per vendor layout)", () => {
     assert.equal(p.formats[0].format, "umbrella-nohdr");
     const e = p.rows[0];
     assert.equal(e.user, "grace@test.darknode.ai"); assert.equal(e.bytesOut, 8388608); assert.equal(e.host, "pastebin.com"); assert.equal(e.action, "ALLOWED");
+  });
+  test("Cisco Umbrella headerless proxy CSV reads documented positions incl. request method", () => {
+    const e = parseInput([{ name: "umb.csv", text: UMB_LINE + "\n" }]).rows[0];
+    assert.equal(e.method, "POST"); assert.equal(e.ua, "Mozilla/5.0"); assert.equal(e.status, "200"); assert.equal(e.category, "Paste Sites"); assert.equal(e.src, "10.20.0.17"); assert.equal(e.dst, "203.0.113.80");
+  });
+  test("Cisco Umbrella proxy CSV with the optional V12 header", () => {
+    const p = parseInput([{ name: "umb12.csv", text: UMB_V12_HDR + "\n" + UMB_V12_ROW + "\n" }]);
+    assert.equal(p.formats[0].format, "umbrella");
+    const e = p.rows[0];
+    assert.equal(e.user, "grace@test.darknode.ai"); assert.equal(e.src, "10.20.0.17"); assert.equal(e.host, "pastebin.com"); assert.equal(e.method, "POST"); assert.equal(e.bytesOut, 8388608); assert.equal(e.action, "ALLOWED");
+  });
+  test("PAN-OS URL Filtering syslog (headerless CSV) by documented positions", () => {
+    const p = parseInput([{ name: "pan-url.log", text: PAN_URL_SYSLOG + "\n" }]);
+    assert.equal(p.formats[0].format, "pan-url-syslog");
+    const e = p.rows[0];
+    assert.equal(e.src, "10.20.0.13"); assert.equal(e.dst, "203.0.113.44"); assert.equal(e.host, "www.dropbox.com"); assert.equal(e.app, "dropbox-base");
+    assert.equal(e.category, "online-storage-and-backup"); assert.equal(e.ua, "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"); assert.equal(e.method, "POST");
+    assert.ok(/carol$/.test(e.user)); assert.equal(e.ts, Date.UTC(2026, 9, 16, 10, 0, 0));
   });
   test("Zscaler Splunk key=value", () => {
     const p = parseInput([{ name: "zkv.log", text: ZKV_LINE + "\n" }]);

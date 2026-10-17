@@ -116,6 +116,19 @@ group("dnshunt: formats", () => {
     assert.equal(evs(d2, row).length, 1);
   });
 
+  test("Umbrella DNS v13 layout: documented optional header and 16-field rows, Proxied action", () => {
+    const head = '"Timestamp","Most Granular Identity","Identities","Internal IP","External IP","Action","Query Type","Response Code","Domain","Categories","Most Granular Identity Type","Identity Types","Blocked Categories","Rule ID","Destination Countries","Organization ID"\n';
+    const row = '"2026-10-10 09:05:00","Pat Lee (pat@test.darknode.ai)","Pat Lee (pat@test.darknode.ai),WS-04","10.9.0.4","203.0.113.10","Blocked","28 (AAAA)","NXDOMAIN","drop.test.darknode.ai.","Chat,Social Networking","AD Users","AD Users,Roaming Computer","Social Networking","506165","","8234970"\n';
+    const d1 = detectFormat(head + row);
+    assert.equal(d1.format, "umbrella"); assert.equal(d1.confidence, "high");
+    const e = evs(d1, head + row);
+    assert.equal(e.length, 1); assert.equal(e[0].client, "10.9.0.4"); assert.equal(e[0].qtype, "AAAA"); assert.equal(e[0].rcode, "NXDOMAIN"); assert.equal(e[0].query, "drop.test.darknode.ai");
+    const d2 = detectFormat(row);
+    assert.equal(d2.format, "umbrella"); assert.equal(d2.confidence, "medium");
+    const prox = row.replace('"Blocked"', '"Proxied"');
+    assert.equal(detectFormat(prox).format, "umbrella");
+  });
+
   test("generic CSV gets a guessed mapping; numeric rcodes are named", () => {
     const t = "time,src_ip,qname,qtype,rcode\n2026-10-10T09:00:00Z,10.4.0.1,a.test.darknode.ai,A,3\n";
     const d = detectFormat(t);
