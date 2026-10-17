@@ -277,6 +277,11 @@ const SIDE_DESC = {
   vulnimport: "Import Nessus, Qualys, OpenVAS, Rapid7, Trivy, Grype, Snyk and Defender scans; dedupe, enrich with KEV and EPSS, prioritise and track remediation SLAs across imports.",
   fleetcomply: "Check Intune, Jamf, CrowdStrike, Defender and workstation audit exports for missing encryption, stale EDR, end-of-life operating systems, patch age and local admins.",
   k8saudit: "Audit a Kubernetes cluster dump for RBAC, pod security and network isolation gaps against the CIS Kubernetes Benchmark.",
+  apforensics: "Find duplicate payments, shell vendors, split invoices and employee-vendor matches in your accounts payable ledger.",
+  cardaudit: "Audit corporate card and expense data for split transactions, duplicate receipts, prohibited merchants and leaver spend.",
+  payrollguard: "Detect ghost employees, shared bank details, last-minute bank changes and pay spikes in your payroll register.",
+  cloudspend: "Spot cloud bill spikes, new GPU families, new regions and dormant-account spend that signal abuse or crypto-mining.",
+  breachclock: "Work out which breach notification deadlines apply to an incident and track each regulator clock to the hour.",
 };
 const GROUP_DESC = {
   "Mission Control": "Flagship, real-time operations tools — the big dashboards.",
@@ -2100,6 +2105,11 @@ function renderApp(user) {
     else if (sec === "vulnimport") { import("/js/exposure/vulnimport.js?v=20261016i").then(m => live() && m.renderVulnImport(main)); }
     else if (sec === "fleetcomply") { import("/js/exposure/fleetcomply.js?v=20261016j").then(m => live() && m.renderFleetComply(main)); }
     else if (sec === "k8saudit") { import("/js/appsec/k8saudit.js?v=20261016k").then(m => live() && m.renderK8sAudit(main)); }
+    else if (sec === "apforensics") { import("/js/finsec/apforensics.js?v=20261016l").then(m => live() && m.renderApForensics(main)); }
+    else if (sec === "cardaudit") { import("/js/finsec/cardaudit.js?v=20261016m").then(m => live() && m.renderCardAudit(main)); }
+    else if (sec === "payrollguard") { import("/js/finsec/payrollguard.js?v=20261016n").then(m => live() && m.renderPayrollGuard(main)); }
+    else if (sec === "cloudspend") { import("/js/finsec/cloudspend.js?v=20261016o").then(m => live() && m.renderCloudSpend(main)); }
+    else if (sec === "breachclock") { import("/js/risk/breachclock.js?v=20261016p").then(m => live() && m.renderBreachClock(main)); }
     else if (sec === "setup") renderSetup(main, more);
     else if (sec === "settings") renderSettingsPage(main, user, isOwner, more);
     else if (sec === "admin") { import("/js/admin.js?v=20261015f").then(m => live() && m.renderAdmin(main, user)); }

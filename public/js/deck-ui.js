@@ -29,7 +29,7 @@ import { bus, EVENTS } from "/js/core/bus.js";
 import { isSimulated } from "/js/core/posture.js";
 import { tierFrom, rank, planLabel } from "/js/core/entitlements.js";
 import * as findings from "/js/core/findings.js?v=20261013e";
-import { attachExplain, EXPLAIN, explainEnabled, setExplainEnabled } from "/js/ui/explain.js?v=20261016k";
+import { attachExplain, EXPLAIN, explainEnabled, setExplainEnabled } from "/js/ui/explain.js?v=20261016p";
 import { startGraphSync, stopGraphSync } from "/js/graph-sync.js";
 import { myWorkspaces, createWorkspace, activeWorkspace, setActiveWorkspace, listMembers, setMember } from "/js/workspaces.js?v=20261015d";
 import { ROLE_LABEL, ROLES, canDo, ROLE_HELP } from "/js/core/workspace-roles.js";
@@ -1576,7 +1576,8 @@ export function renderDeck(host, opts) {
     { id: "identity", g: "Identity", items: [["tool", "signins", "Sign-in Forensics", IC.search], ["tool", "accessreview", "Access Review", IC.check], ["tool", "caaudit", "Conditional Access", IC.shield], ["tool", "privaudit", "Privileged Access", IC.key], ["tool", "nhi", "Non-Human Identities", IC.gear], ["tool", "jml", "Offboarding Verifier", IC.check], ["tool", "oauthgov", "OAuth App Governance", IC.plug]] },
     { id: "code", g: "Application Security", items: [["tool", "codescan", "Code Scanner", IC.code], ["tool", "supplychain", "Supply Chain", IC.branch], ["tool", "threatforest", "Attack Tree Builder", IC.tree], ["tool", "iacscan", "IaC Scanner", IC.code], ["tool", "k8saudit", "Kubernetes Audit", IC.nodes]] },
     { id: "detect", g: "Security Operations", items: [["scene", "findings", "Findings", IC.alert], ["scene", "invest", "Investigations", IC.search], ["tool", "secgraph", "Security Graph", IC.nodes], ["tool", "incidents", "Incident Tracker", IC.shield], ["tool", "casemgmt", "Case Manager", IC.brief], ["tool", "phishtriage", "Phishing & URL Triage", IC.hook], ["tool", "loghunt", "Log Threat Hunter", IC.term], ["scene", "reports", "Reports", IC.note], ["scene", "activity", "Activity", IC.pulse], ["tool", "cloudtrail", "Cloud Audit Log Hunter", IC.cloud]] },
-    { id: "finsec", g: "Financial Controls", items: [["tool", "strongroom", "Fund Protection", IC.coins], ["tool", "vault", "Treasury Vault", IC.lock], ["tool", "payees", "Payee Control", IC.shield], ["tool", "sanctions", "Sanctions Screening", IC.scale]] },
+    { id: "finsec", g: "Financial Controls", items: [["tool", "strongroom", "Fund Protection", IC.coins], ["tool", "vault", "Treasury Vault", IC.lock], ["tool", "payees", "Payee Control", IC.shield], ["tool", "sanctions", "Sanctions Screening", IC.scale], ["tool", "apforensics", "AP Forensics", IC.coins], ["tool", "cardaudit", "Card Audit", IC.brief], ["tool", "payrollguard", "Payroll Integrity", IC.note], ["tool", "cloudspend", "Cloud Spend Anomaly", IC.gauge]] },
+    { id: "risk", g: "Risk & Resilience", items: [["tool", "breachclock", "Breach Clock", IC.bell]] },
     { id: "compliance", g: "Compliance", items: [["scene", "compliance", "Frameworks", IC.check], ["tool", "crosswalk", "GenAI Crosswalk", IC.map], ["tool", "dlp", "Data Protection", IC.eye], ["tool", "leakprobe", "Secret Exposure", IC.key]] },
     { g: "Platform", items: [["scene", "con", "Integrations", IC.plug], ["scene", "tools", "Tool Library", IC.grid], ["scene", "toolkit", "Toolkit", IC.wrench], ["scene", "assistant", "AI Assistant", IC.spark], ["scene", "team", "Team", IC.nodes], ["scene", "plans", "Plans", IC.star]].concat(opts.isOwner ? [["tool", "admin", "Admin", IC.key]] : []) },
   ];
@@ -3374,6 +3375,7 @@ export function renderDeck(host, opts) {
     detect: { title: "Security Operations", blurb: "Alerts, indicators, incidents and cases: everything your tools have recorded, and the work to run it down.", types: ["ALERT", "INCIDENT", "CASE", "INVESTIGATION", "INDICATOR", "EVIDENCE", "THREAT_ACTOR", "MALWARE", "CAMPAIGN", "DETECTION", "EVENT", "FINDING", "VULNERABILITY"], ints: ["virustotal", "greynoise", "abuseipdb", "otx", "abusech", "urlscan", "pulsedive", "misp", "mitre", "hybrid", "anyrun", "intelx"] },
     finsec: { title: "Financial Controls", blurb: "Controls over money movement: fraud screening on your ledgers, payee bank-change control, sanctions screening, and a tamper-evident record of treasury approvals.", types: [], match: /strongroom|fund protection|vault|treasury|sanction|payee|vendor/i, ints: [] },
     identity: { title: "Identity", blurb: "Who can sign in and what they did. Sign-in log forensics for your identity provider, and the periodic access review that reconciles your directory against the HR roster.", types: [], match: /sign-in|signin|access review|identity|account|directory/i, ints: [] },
+    risk: { title: "Risk & Resilience", blurb: "Regulatory clocks, risk scenarios, third parties and recovery readiness: the work of staying in business after something goes wrong.", types: [], match: /breach|notification clock|risk register|third-party|vendor risk|backup|ransomware readiness|resilience/i, ints: [] },
     compliance: { title: "Compliance", blurb: "Framework mappings, self-assessments and data-protection scanning. Self-reported findings reflect what you enter or paste, not an automated audit.", types: ["CONTROL", "REPORT"], match: /compliance|crosswalk|data protection|dlp/i, ints: [] },
   };
   let curSect = "exposure";
