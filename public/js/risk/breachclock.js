@@ -23,6 +23,7 @@ const ENGINE = engineUrl("./breachclock-engine.js?v=20261016p", import.meta);
 const P = "bnc";
 const toast = (m, t) => { try { (window.showToast || (() => {}))(m, t || "info"); } catch (_) {} };
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const escD = (s) => esc(s).replace(/\d{4}-\d{2}-\d{2}/g, '<span class="bnc-nw">$&</span>');
 const num = (n) => Number(n || 0).toLocaleString("en-US");
 const STATUS_LABEL = { "not-started": "Not started", drafted: "Drafted", sent: "Sent", "not-required": "Not required" };
 const URG_COLOR = { overdue: "#b00020", "due-24h": "#c0501b", "due-72h": "#b58100", later: "#2552c6", done: "#1b7f4d" };
@@ -99,6 +100,7 @@ const CSS = `
   .bnc-legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.76rem;color:var(--mut,#667085);margin-top:6px}
   .bnc-legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
   .bnc-drawer{display:none}
+  .bnc-nw{white-space:nowrap}
   .bnc-drawer pre{white-space:pre-wrap;overflow-wrap:anywhere;font-family:ui-monospace,Menlo,monospace;font-size:12px;background:var(--bg,#f7f8fb);border:1px solid var(--line,#e6e8ee);border-radius:8px;padding:10px 12px;max-height:360px;overflow:auto;margin:6px 0}
   .bnc-dl{display:grid;grid-template-columns:max-content 1fr;gap:3px 14px;margin:6px 0;font-size:.84rem}
   .bnc-dl dt{color:var(--mut,#667085)}
@@ -346,7 +348,7 @@ export function renderBreachClock(main) {
     }).sort((x, y) => String(y.r.updatedAt || "").localeCompare(String(x.r.updatedAt || "")));
     box.innerHTML = "<table><thead><tr><th>Incident</th><th>Status</th><th>Next deadline</th><th>Overdue</th><th>Obligations</th><th>Updated</th></tr></thead><tbody>" +
       rows.map(({ r, a }) => '<tr class="' + P + "-click" + (r.id === record.id ? " sel" : "") + '" data-id="' + esc(r.id) + '"><td><b>' + esc(r.title || "Untitled") + "</b></td><td>" + esc(r.status || "open") + "</td><td>" +
-        (a && a.nextDeadline ? esc(a.nextDeadline.deadlineLocal) + '<div class="' + P + '-mut">' + esc(a.nextDeadline.recipient) + "</div>" : '<span class="' + P + '-mut">none fixed</span>') + "</td><td" + (a && a.counts.overdue ? ' style="color:#b00020;font-weight:700"' : "") + ">" + (a ? a.counts.overdue : "") + "</td><td>" +
+        (a && a.nextDeadline ? escD(a.nextDeadline.deadlineLocal) + '<div class="' + P + '-mut">' + esc(a.nextDeadline.recipient) + "</div>" : '<span class="' + P + '-mut">none fixed</span>') + "</td><td" + (a && a.counts.overdue ? ' style="color:#b00020;font-weight:700"' : "") + ">" + (a ? a.counts.overdue : "") + "</td><td>" +
         (a ? a.counts.likely + a.counts.possible : "") + '</td><td class="' + P + '-mut">' + esc(String(r.updatedAt || "").slice(0, 16).replace("T", " ")) + "</td></tr>").join("") + "</tbody></table>";
     box.querySelectorAll("tr[data-id]").forEach((tr) => tr.addEventListener("click", () => {
       const r = reg.get(tr.dataset.id);
@@ -517,7 +519,7 @@ export function renderBreachClock(main) {
       list.map((o) => {
         const u = urgencyOf(o);
         return '<tr class="' + P + "-click" + (o.id === selId ? " sel" : "") + (o.applies === "not-indicated" ? " dim" : "") + '" data-id="' + esc(o.id) + '"><td><b>' + esc(o.regime) + '</b><div class="' + P + '-mut">' + esc(o.citation) + "</div></td><td>" + esc(o.recipient) + "</td><td>" +
-          (o.deadline ? esc(o.deadlineLocal) + '<div class="' + P + '-mut ' + P + '-mono">' + esc(o.deadline.slice(0, 16).replace("T", " ")) + " UTC</div>" + (o.deadlineEt ? '<div class="' + P + '-mut">' + esc(o.deadlineEt) + "</div>" : "") : '<span class="' + P + '-mut">' + esc(o.clock) + "</span>") + "</td>" +
+          (o.deadline ? escD(o.deadlineLocal) + '<div class="' + P + '-mut ' + P + '-mono">' + escD(o.deadline.slice(0, 16).replace("T", " ")) + " UTC</div>" + (o.deadlineEt ? '<div class="' + P + '-mut">' + esc(o.deadlineEt) + "</div>" : "") : '<span class="' + P + '-mut">' + esc(o.clock) + "</span>") + "</td>" +
           '<td><span class="' + P + '-left" style="color:' + (URG_COLOR[u] || "inherit") + '">' + esc(leftText(o)) + "</span></td>" +
           '<td><span class="' + P + "-pill " + esc(o.applies) + '">' + esc(o.applies.replace("-", " ")) + "</span></td>" +
           '<td><span class="' + P + "-conf " + esc(o.confidence) + '">' + esc(o.confidence) + "</span></td>" +
