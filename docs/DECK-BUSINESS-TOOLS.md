@@ -136,21 +136,21 @@ Legend: planned · scaffolded · built · merged · deployed
 
 | route | Label | group | prefix | status |
 |---|---|---|---|---|
-| `riskreg` | Risk Register | risk | `rsk-` | scaffolded |
-| `evidence` | Control Evidence Calendar | compliance | `evd-` | scaffolded |
-| `vendorrisk` | Third-Party Risk Monitor | risk | `tpr-` | scaffolded |
-| `backupready` | Backup & Ransomware Readiness | risk | `bkr-` | scaffolded |
-| `dmarcreports` | DMARC Report Analyzer | exposure | `dmr-` | scaffolded |
+| `riskreg` | Risk Register | risk | `rsk-` | merged |
+| `evidence` | Control Evidence Calendar | compliance | `evd-` | merged |
+| `vendorrisk` | Third-Party Risk Monitor | risk | `tpr-` | merged |
+| `backupready` | Backup & Ransomware Readiness | risk | `bkr-` | merged |
+| `dmarcreports` | DMARC Report Analyzer | exposure | `dmr-` | merged |
 
 ### Wave 5 — Exposure & SecOps data sources
 
 | route | Label | group | prefix | status |
 |---|---|---|---|---|
-| `domainguard` | Domain Portfolio Guard | exposure | `dmg-` | scaffolded |
-| `dnshunt` | DNS Log Threat Hunter | detect | `dnh-` | scaffolded |
-| `proxyhunt` | Web Gateway & Shadow SaaS | detect | `pxh-` | scaffolded |
-| `netexposure` | Network Scan Diff | exposure | `nxp-` | scaffolded |
-| `vpnaudit` | Remote Access Audit | identity | `vpa-` | scaffolded |
+| `domainguard` | Domain Portfolio Guard | exposure | `dmg-` | merged |
+| `dnshunt` | DNS Log Threat Hunter | detect | `dnh-` | merged |
+| `proxyhunt` | Web Gateway & Shadow SaaS | detect | `pxh-` | merged |
+| `netexposure` | Network Scan Diff | exposure | `nxp-` | merged |
+| `vpnaudit` | Remote Access Audit | identity | `vpa-` | merged |
 
 ### Wave 6 — AppSec, data & governance
 
@@ -159,7 +159,7 @@ Legend: planned · scaffolded · built · merged · deployed
 | `licenseaudit` | License Compliance | code | `lic-` | scaffolded |
 | `apispec` | API Security Review | code | `api-` | scaffolded |
 | `dataflow` | Data Inventory & Processing Register | compliance | `dfr-` | scaffolded |
-| `awareness` | Awareness & Phishing-Test Analytics | compliance | `awr-` | scaffolded |
+| `awareness` | Awareness & Phishing-Test Analytics | compliance | `awr-` | merged |
 | `pentestreg` | Pentest & Audit Finding Tracker | detect | `ptr-` | scaffolded |
 
 The sidebar group `risk` ("Risk") is added with the first risk tool (Wave 3) so the
