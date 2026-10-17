@@ -11,8 +11,8 @@
 // NEW findings fail the job, and the full-tree SARIF goes to GitHub code scanning.
 
 export const WORKFLOW_PATH = ".github/workflows/darknode-scan.yml";
-// Paths under SCANNER_DIR; the shared detector catalogue lives in core/ beside codescan/.
-export const SCANNER_FILES = ["codescan/rules.js", "codescan/taint-js.js", "codescan/baseline.js", "codescan/github.js", "codescan/cli.mjs", "core/secret-detectors.js"];
+// Paths under SCANNER_DIR; the shared detector catalogue and lockfile parsers live in core/ beside codescan/.
+export const SCANNER_FILES = ["codescan/rules.js", "codescan/taint-js.js", "codescan/baseline.js", "codescan/github.js", "codescan/cli.mjs", "core/secret-detectors.js", "core/lockfiles.js"];
 export const FAIL_LEVELS = ["critical", "high", "medium", "low", "none"];
 export const SCANNER_REPO = "Darknode-Official/darknode-web";
 export const SCANNER_DIR = "public/js";

@@ -9,8 +9,8 @@
 import { parseCsv, findColumn, xmlLite } from "../ingest/parse.js";
 import {
   parsePackageLock, parseYarnLock, parsePoetryLock, parseGoSum, parseGoMod, parsePomXml,
-  parseRequirementsTxt, parseGemfileLock,
-} from "../supply-chain-engine.js";
+  parseRequirementsTxt, parseGemfileLock, parsePnpmLock, parseCargoLock, parsePipfileLock, parseComposerLock,
+} from "../core/lockfiles.js";
 
 export const TOOL_ID = "licenseaudit";
 export const VERSION = "1.0.0";
@@ -827,7 +827,7 @@ function parseLock(j, text, file) {
     const nameAt = (p) => p.replace(/^.*node_modules\//, "");
     for (const [p, v] of Object.entries(P)) {
       if (!p || !v || !v.version) continue;
-      const key = nameAt(p) + "@" + v.version;
+      const key = (v.name || nameAt(p)) + "@" + v.version; // an aliased install is listed under the real package
       if (!info.has(key)) info.set(key, { license: lockLicense(v.license), dev: !!v.dev, path: null, lp: p });
     }
     // Resolve each declared dependency the way node does: nearest node_modules walking up.
@@ -856,7 +856,7 @@ function parseLock(j, text, file) {
     hasGraph = prev.size > 1;
     for (const [p, v] of Object.entries(P)) {
       if (!p || !v || !v.version || !prev.has(p)) continue;
-      const key = nameAt(p) + "@" + v.version;
+      const key = (v.name || nameAt(p)) + "@" + v.version;
       const rec = info.get(key);
       if (!rec || rec.path) continue;
       const chain = [];
@@ -879,110 +879,44 @@ function npmPurl(name, version) {
 
 // ---- pnpm-lock.yaml (v5.x, v6, v9) ---------------------------------------
 function parsePnpm(text, file) {
-  const lines = String(text).split(/\r?\n/);
-  const ver = ((text.match(/^lockfileVersion:\s*'?([\d.]+)'?/m) || [])[1]) || "";
-  const pkgs = new Map(); // key name@version -> { name, version, dev, deps: [name@version] }
-  const direct = new Map(); // name -> { version, dev }
-  let section = "", sub = "", cur = null, inDeps = false, importer = "", impSec = "", impDep = "";
-  const keyOf = (raw) => {
-    let k = raw.trim().replace(/^['"]|['"]:?$/g, "").replace(/:$/, "").replace(/^['"]|['"]$/g, "").replace(/^\//, "");
-    k = k.replace(/\(.*$/, "").replace(/_[^/@]*$/, (m) => (/^_\d/.test(m) ? m : ""));
-    if (/^\d/.test(ver) && parseFloat(ver) < 6 && !/@[^@/]+$/.test(k.replace(/^@/, ""))) {
-      const i = k.lastIndexOf("/");
-      return i > 0 ? { name: k.slice(0, i), version: k.slice(i + 1).replace(/_.*$/, "") } : null;
-    }
-    const at = k.lastIndexOf("@");
-    return at > 0 ? { name: k.slice(0, at), version: k.slice(at + 1) } : null;
-  };
-  const cleanVer = (v) => String(v || "").trim().replace(/^['"]|['"]$/g, "").replace(/\(.*$/, "").replace(/_.*$/, "");
-  for (const raw of lines) {
-    if (!raw.trim() || /^\s*#/.test(raw)) continue;
-    const ind = raw.match(/^ */)[0].length;
-    const line = raw.trim();
-    if (ind === 0) { section = line.replace(/:.*$/, ""); sub = ""; cur = null; importer = ""; continue; }
-    if (section === "packages" || section === "snapshots") {
-      if (ind === 2) { const k = keyOf(line); cur = k ? k.name + "@" + k.version : null; if (cur && !pkgs.has(cur)) pkgs.set(cur, { name: k.name, version: k.version, dev: false, deps: [] }); inDeps = false; continue; }
-      if (!cur) continue;
-      if (ind === 4) { inDeps = /^(dependencies|optionalDependencies):/.test(line); if (/^dev:\s*true/.test(line)) pkgs.get(cur).dev = true; continue; }
-      if (ind === 6 && inDeps) { const m = line.match(/^['"]?([^'":]+(?:\/[^'":]+)?)['"]?:\s*['"]?([^'"\s]+)/); if (m) pkgs.get(cur).deps.push(m[1] + "@" + cleanVer(m[2])); }
-      continue;
-    }
-    // root dependencies: v5/v6 top-level dependencies:, v9 importers: '.': dependencies:
-    if (section === "dependencies" || section === "devDependencies" || section === "optionalDependencies") {
-      if (ind === 2) { const m = line.match(/^['"]?([^'":]+(?:\/[^'":]+)?)['"]?:\s*(.*)$/); if (m) { sub = m[1]; if (m[2]) direct.set(sub, { version: cleanVer(m[2]), dev: section === "devDependencies" }); else direct.set(sub, { version: "", dev: section === "devDependencies" }); } }
-      else if (ind === 4 && /^version:/.test(line) && sub) direct.get(sub).version = cleanVer(line.replace(/^version:\s*/, ""));
-      continue;
-    }
-    if (section === "importers") {
-      if (ind === 2) { importer = line.replace(/:$/, "").replace(/^['"]|['"]$/g, ""); continue; }
-      if (importer !== ".") continue;
-      if (ind === 4) { impSec = line.replace(/:.*$/, ""); continue; }
-      if (ind === 6 && /ependencies$/.test(impSec)) { impDep = line.replace(/:.*$/, "").replace(/^['"]|['"]$/g, ""); direct.set(impDep, { version: "", dev: impSec === "devDependencies" }); continue; }
-      if (ind === 8 && /^version:/.test(line) && impDep) direct.get(impDep).version = cleanVer(line.replace(/^version:\s*/, ""));
-    }
-  }
+  const deps = parsePnpmLock(text) || [];
+  const ver = ((String(text).match(/^lockfileVersion:\s*'?([\d.]+)'?/m) || [])[1]) || "";
+  const hasRoot = deps.some((d) => d.direct !== undefined);
   const edges = new Map();
-  edges.set("(root)", [...direct].map(([n, d]) => n + "@" + d.version));
-  for (const [k, p] of pkgs) edges.set(k, p.deps);
-  const comps = [...pkgs.values()].map((p) => comp({ name: p.name, version: p.version, ecosystem: "npm", purl: npmPurl(p.name, p.version), dev: p.dev || !!(direct.get(p.name) && direct.get(p.name).dev && direct.get(p.name).version === p.version), ref: p.name + "@" + p.version, file }));
-  if (direct.size) applyGraph(comps, edges, ["(root)"], "(project)", (c) => c.ref);
-  return { components: comps, project: null, issues: ["pnpm-lock.yaml does not record licenses; use Resolve or an SBOM"], version: ver, hasGraph: direct.size > 0 };
+  edges.set("(root)", deps.filter((d) => d.direct).map((d) => d.name + "@" + d.version));
+  for (const d of deps) edges.set(d.name + "@" + d.version, d.requires);
+  const comps = deps.map((d) => comp({ name: d.name, version: d.version, ecosystem: "npm", purl: npmPurl(d.name, d.version), dev: d.type === "development", ref: d.name + "@" + d.version, file }));
+  if (hasRoot) applyGraph(comps, edges, ["(root)"], "(project)", (c) => c.ref);
+  return { components: comps, project: null, issues: ["pnpm-lock.yaml does not record licenses; use Resolve or an SBOM"], version: ver, hasGraph: hasRoot };
 }
 
 // ---- Cargo.lock ------------------------------------------------------------
 function parseCargo(text, file) {
-  const blocks = String(text).split(/\[\[package\]\]/).slice(1);
-  const pkgs = [];
-  for (const b of blocks) {
-    const name = (b.match(/\n\s*name\s*=\s*"([^"]+)"/) || [])[1];
-    const version = (b.match(/\n\s*version\s*=\s*"([^"]+)"/) || [])[1];
-    if (!name || !version) continue;
-    const source = (b.match(/\n\s*source\s*=\s*"([^"]+)"/) || [])[1] || "";
-    const depBlock = (b.match(/\n\s*dependencies\s*=\s*\[([\s\S]*?)\]/) || [])[1] || "";
-    const deps = [...depBlock.matchAll(/"([^"]+)"/g)].map((m) => m[1].split(" "));
-    pkgs.push({ name, version, source, deps });
-  }
-  const byName = new Map();
-  for (const p of pkgs) { if (!byName.has(p.name)) byName.set(p.name, []); byName.get(p.name).push(p); }
+  const pkgs = parseCargoLock(text) || [];
   const edges = new Map();
-  for (const p of pkgs) {
-    edges.set(p.name + "@" + p.version, p.deps.map(([n, v]) => { const cands = byName.get(n) || []; const hit = v ? cands.find((c) => c.version === v) : cands[0]; return hit ? hit.name + "@" + hit.version : n; }));
-  }
-  const roots = pkgs.filter((p) => !p.source);
-  const comps = pkgs.filter((p) => p.source).map((p) => comp({ name: p.name, version: p.version, ecosystem: "cargo", purl: "pkg:cargo/" + p.name + "@" + p.version, ref: p.name + "@" + p.version, file, licenseSource: "none" }));
+  for (const p of pkgs) edges.set(p.name + "@" + p.version, p.requires);
+  const roots = pkgs.filter((p) => p.local);
+  const comps = pkgs.filter((p) => !p.local).map((p) => comp({ name: p.name, version: p.version, ecosystem: "cargo", purl: "pkg:cargo/" + p.name + "@" + p.version, ref: p.name + "@" + p.version, file, licenseSource: "none" }));
   const project = roots.length === 1 ? { name: roots[0].name, version: roots[0].version, license: "", ref: roots[0].name + "@" + roots[0].version } : null;
   if (roots.length) applyGraph(comps, edges, roots.map((r) => r.name + "@" + r.version), roots.length === 1 ? roots[0].name : "", (c) => c.ref);
   return { components: comps, project, issues: ["Cargo.lock does not record licenses; use Resolve (crates.io) or an SBOM"], version: (text.match(/^version\s*=\s*(\d+)/m) || [])[1] || "", hasGraph: roots.length > 0 };
 }
 
 // ---- Pipfile.lock / composer.lock ----------------------------------------
-function parsePipfileLock(j, file) {
-  const comps = [];
-  for (const [sec, dev] of [["default", false], ["develop", true]]) {
-    for (const [name, v] of Object.entries(j[sec] || {}).sort()) {
-      const version = String((v && v.version) || "").replace(/^==/, "");
-      if (!version) continue;
-      comps.push(comp({ name: name.toLowerCase(), version, ecosystem: "pypi", purl: "pkg:pypi/" + name.toLowerCase() + "@" + version, dev, file }));
-    }
-  }
+function parsePipfile(j, file) {
+  const comps = (parsePipfileLock(j) || []).map((d) => comp({ name: d.name, version: d.version, ecosystem: "pypi", purl: "pkg:pypi/" + d.name + "@" + d.version, dev: d.type === "development", file }));
   return { components: comps, project: null, issues: ["Pipfile.lock does not record licenses; use Resolve (PyPI) or an SBOM"], version: String((j._meta && j._meta["pipfile-spec"]) || ""), hasGraph: false };
 }
-function parseComposerLock(j, file) {
-  const comps = [];
-  for (const [sec, dev] of [["packages", false], ["packages-dev", true]]) {
-    for (const p of Array.isArray(j[sec]) ? j[sec] : []) {
-      if (!p || !p.name) continue;
-      const version = String(p.version || "").replace(/^v(?=\d)/, "");
-      const lic = Array.isArray(p.license) ? p.license.filter(Boolean) : p.license ? [String(p.license)] : [];
-      // composer.json: an array of licenses is a disjunction (the user may choose).
-      const expr = lic.length > 1 ? lic.map((x) => (/\s/.test(x) ? "(" + x + ")" : x)).join(" OR ") : lic[0] || "";
-      comps.push(comp({ name: p.name, version, ecosystem: "composer", purl: "pkg:composer/" + p.name + "@" + version, declared: expr, licenseSource: expr ? "lockfile" : "none", dev, file }));
-    }
-  }
+function parseComposer(j, file) {
+  const comps = (parseComposerLock(j) || []).map((d) => {
+    // composer.json: an array of licenses is a disjunction (the user may choose).
+    const expr = d.license.length > 1 ? d.license.map((x) => (/\s/.test(x) ? "(" + x + ")" : x)).join(" OR ") : d.license[0] || "";
+    return comp({ name: d.name, version: d.version, ecosystem: "composer", purl: "pkg:composer/" + d.name + "@" + d.version, declared: expr, licenseSource: expr ? "lockfile" : "none", dev: d.type === "development", file });
+  });
   return { components: comps, project: null, issues: [], version: "", hasGraph: false };
 }
 
-// ---- simple lockfiles via supply-chain-engine parsers ---------------------
+// ---- simple lockfiles via the shared core/lockfiles.js parsers ---------------------
 const ECO_PURL = { npm: "npm", pypi: "pypi", gem: "gem", go: "golang", maven: "maven", cargo: "cargo", composer: "composer" };
 function fromDeps(deps, file, note) {
   const comps = (deps || []).filter((d) => d.version).map((d) => {
@@ -1047,13 +981,13 @@ function parseOne(name, text, mapping) {
       case "yarn-lock": r = fromDeps(parseYarnLock(t), name, "yarn.lock does not record licenses or which packages are direct; use Resolve or an SBOM"); break;
       case "pnpm-lock": r = parsePnpm(t, name); break;
       case "requirements": r = fromDeps((parseRequirementsTxt(t) || []).filter((d) => d.exact), name, "requirements.txt does not record licenses; only == pinned lines are inventoried"); break;
-      case "pipfile-lock": r = parsePipfileLock(s.json, name); break;
+      case "pipfile-lock": r = parsePipfile(s.json, name); break;
       case "poetry-lock": r = fromDeps(parsePoetryLock(t), name, "poetry.lock does not record licenses; use Resolve (PyPI) or an SBOM"); break;
       case "go-sum": r = fromDeps(parseGoSum(t), name, "go.sum does not record licenses; use Resolve (ClearlyDefined) or an SBOM"); break;
       case "go-mod": r = fromDeps(parseGoMod(t), name, "go.mod does not record licenses"); break;
       case "cargo-lock": r = parseCargo(t, name); break;
       case "gemfile-lock": r = fromDeps(parseGemfileLock(t), name, "Gemfile.lock does not record licenses; use Resolve (ClearlyDefined) or an SBOM"); break;
-      case "composer-lock": r = parseComposerLock(s.json, name); break;
+      case "composer-lock": r = parseComposer(s.json, name); break;
       case "pom": r = fromDeps(parsePomXml(t), name, "pom.xml declares direct dependencies only (property-managed versions are skipped); licenses need an SBOM or Resolve"); break;
       case "license-checker-json": r = parseLicenseChecker(s.json, name); break;
       case "license-json": { const headers = Object.keys(s.json[0] || {}); r = parseInventoryRows(s.json, headers, mapping, name); base.headers = headers; break; }

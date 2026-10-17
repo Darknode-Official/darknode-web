@@ -9,6 +9,7 @@
 
 import { taintScan } from "./taint-js.js?v=20261013a";
 import { detector, findAll, keyHoldsSecret, assignmentKey } from "../core/secret-detectors.js";
+import { OSV_ECOSYSTEM, formatForName, parseLockfile } from "../core/lockfiles.js";
 
 export const SEV_ORDER = { critical: 0, high: 1, medium: 2, low: 3, info: 4 };
 
@@ -413,98 +414,21 @@ export function scanFile(path, text) {
 // ── Dependency manifests → pinned packages (for OSV.dev querybatch) ────────────
 // Returns [{ name, version, ecosystem, line }]; unpinned specs are skipped (OSV
 // needs an exact version), and the declaring line lets the viewer jump to it.
-const lineOf = (lines, needle, from = 0) => { for (let i = from; i < lines.length; i++) if (lines[i].includes(needle)) return i + 1; return 1; };
-
 export const MANIFESTS = ["package.json", "package-lock.json", "npm-shrinkwrap.json", "yarn.lock", "pnpm-lock.yaml", "requirements.txt", "poetry.lock", "Pipfile.lock", "go.mod", "Cargo.lock", "Gemfile.lock", "composer.lock", "gradle.lockfile"];
 export const isManifest = (path) => MANIFESTS.includes(String(path).split("/").pop()) || /(^|\/)requirements[\w.-]*\.txt$/i.test(path);
 
+// The parsing itself is core/lockfiles.js (shared with Supply Chain and License Audit);
+// this keeps the exact pins and names each ecosystem the way OSV.dev does.
 export function parseManifest(path, text) {
-  const base = String(path).split("/").pop();
-  const lines = String(text || "").split(/\r?\n/);
-  const out = [];
-  const add = (name, version, ecosystem, line) => { if (name && version && /^\d/.test(version)) out.push({ name, version, ecosystem, line }); };
-  try {
-    if (base === "package.json") {
-      // Only exact pins ("1.2.3"); ranges like ^1.2.0 resolve differently per install.
-      const j = JSON.parse(text);
-      for (const sec of ["dependencies", "devDependencies", "optionalDependencies"]) for (const [n, v] of Object.entries(j[sec] || {})) {
-        const m = /^=?v?(\d+\.\d+\.\d+[\w.+-]*)$/.exec(String(v).trim());
-        if (m) add(n, m[1], "npm", lineOf(lines, '"' + n + '"'));
-      }
-    } else if (base === "package-lock.json" || base === "npm-shrinkwrap.json") {
-      const j = JSON.parse(text);
-      if (j.packages) {
-        for (const [k, v] of Object.entries(j.packages)) {
-          if (!k || !v || !v.version || v.link) continue;
-          const name = v.name || k.slice(k.lastIndexOf("node_modules/") + 13);
-          add(name, v.version, "npm", lineOf(lines, '"' + k + '"'));
-        }
-      } else if (j.dependencies) {
-        const walk = (deps) => { for (const [n, v] of Object.entries(deps || {})) { add(n, v.version, "npm", lineOf(lines, '"' + n + '"')); walk(v.dependencies); } };
-        walk(j.dependencies);
-      }
-    } else if (base === "yarn.lock") {
-      for (let i = 0; i < lines.length; i++) {
-        const h = lines[i];
-        if (!h || /^\s|^#/.test(h)) continue;
-        const spec = h.replace(/:$/, "").split(",")[0].trim().replace(/^"|"$/g, "");
-        const at = spec.lastIndexOf("@");
-        const name = at > 0 ? spec.slice(0, at) : spec;
-        for (let k = i + 1; k < lines.length && /^\s/.test(lines[k]); k++) {
-          const m = lines[k].match(/^\s+version:?\s+"?([^"\s]+)"?/);
-          if (m) { add(name.replace(/^npm:/, ""), m[1], "npm", i + 1); break; }
-        }
-      }
-    } else if (base === "pnpm-lock.yaml") {
-      let inPkgs = false;
-      lines.forEach((l, i) => {
-        if (/^packages:\s*$/.test(l)) { inPkgs = true; return; }
-        if (/^\S/.test(l)) inPkgs = /^packages:/.test(l);
-        if (!inPkgs) return;
-        const m = l.match(/^ {2}['"]?\/?((?:@[^/\s]+\/)?[^@\s/'"]+)[@/](\d[^:(\s'"]*)/);
-        if (m) add(m[1], m[2], "npm", i + 1);
-      });
-    } else if (/requirements[\w.-]*\.txt$/i.test(base)) {
-      lines.forEach((l, i) => {
-        const m = l.replace(/#.*/, "").trim().match(/^([A-Za-z0-9][A-Za-z0-9._-]*)(?:\[[^\]]*\])?\s*===?\s*([0-9][^\s;,]*)/);
-        if (m) add(m[1], m[2], "PyPI", i + 1);
-      });
-    } else if (base === "poetry.lock" || base === "Cargo.lock") {
-      const eco = base === "Cargo.lock" ? "crates.io" : "PyPI";
-      let name = "", at = 0;
-      lines.forEach((l, i) => {
-        if (/^\[\[package\]\]/.test(l)) { name = ""; at = i + 1; }
-        const n = l.match(/^name\s*=\s*"([^"]+)"/); if (n) name = n[1];
-        const v = l.match(/^version\s*=\s*"([^"]+)"/); if (v && name) { add(name, v[1], eco, at); name = ""; }
-      });
-    } else if (base === "Pipfile.lock") {
-      const j = JSON.parse(text);
-      for (const sec of ["default", "develop"]) for (const [n, v] of Object.entries(j[sec] || {})) add(n, String(v.version || "").replace(/^==/, ""), "PyPI", lineOf(lines, '"' + n + '"'));
-    } else if (base === "go.mod") {
-      let block = false;
-      lines.forEach((l, i) => {
-        if (/^require\s*\(/.test(l)) { block = true; return; }
-        if (block && /^\)/.test(l)) { block = false; return; }
-        const m = (block ? l.trim() : l.replace(/^require\s+/, "").trim()).match(/^([a-z0-9.\-]+\.[a-z]{2,}\/\S+)\s+v(\d\S*)/i);
-        if (m && (block || /^require\s/.test(l))) add(m[1], m[2].replace(/\+incompatible$/, ""), "Go", i + 1);
-      });
-    } else if (base === "Gemfile.lock") {
-      let specs = false;
-      lines.forEach((l, i) => {
-        if (/^\s{2}specs:\s*$/.test(l)) { specs = true; return; }
-        if (/^\S/.test(l)) specs = false;
-        const m = specs && l.match(/^ {4}([A-Za-z0-9_.\-]+) \(([0-9][^)\s-]*)/);
-        if (m) add(m[1], m[2], "RubyGems", i + 1);
-      });
-    } else if (base === "composer.lock") {
-      const j = JSON.parse(text);
-      for (const p of [...(j.packages || []), ...(j["packages-dev"] || [])]) add(p.name, String(p.version || "").replace(/^v/, ""), "Packagist", lineOf(lines, '"name": "' + p.name + '"'));
-    } else if (base === "gradle.lockfile") {
-      lines.forEach((l, i) => { const m = l.match(/^([\w.\-]+):([\w.\-]+):([0-9][^=\s]*)=/); if (m) add(m[1] + ":" + m[2], m[3], "Maven", i + 1); });
-    }
-  } catch (_) { /* malformed manifest — report nothing rather than guess */ }
+  let deps = null;
+  try { deps = isManifest(path) ? parseLockfile(formatForName(path), String(text || "")) : null; } catch (_) { /* malformed manifest — report nothing rather than guess */ }
   const uniq = new Map();
-  for (const d of out) { const k = d.ecosystem + "|" + d.name + "|" + d.version; if (!uniq.has(k)) uniq.set(k, d); }
+  for (const d of deps || []) {
+    const ecosystem = OSV_ECOSYSTEM[d.ecosystem];
+    if (!d.exact || !d.name || !ecosystem || !/^\d/.test(d.version || "")) continue; // ranges resolve differently per install
+    const k = ecosystem + "|" + d.name + "|" + d.version;
+    if (!uniq.has(k)) uniq.set(k, { name: d.name, version: d.version, ecosystem, line: d.line || 1 });
+  }
   return [...uniq.values()];
 }
 
