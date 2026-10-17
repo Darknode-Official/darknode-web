@@ -78,7 +78,7 @@ const CSS = `
   .caa-list th{text-align:left;font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;color:var(--mut,#667085);font-weight:700;padding:9px 12px;background:var(--bg,#f7f8fb);border-bottom:1px solid var(--line,#e6e8ee);white-space:nowrap}
   .caa-list th[data-k]{cursor:pointer;user-select:none}
   .caa-list th[data-k].on{color:var(--tx,#1a2230)}
-  .caa-list td{padding:9px 12px;border-bottom:1px solid var(--line,#eef0f4);vertical-align:top;overflow-wrap:anywhere}
+  .caa-list td{padding:9px 12px;border-bottom:1px solid var(--line,#eef0f4);vertical-align:top;overflow-wrap:break-word}
   .caa-list tr[data-i]{cursor:pointer}
   .caa-list tr[data-i]:hover,.caa-list tr[data-i].sel{background:var(--bg,#f7f8fb)}
   .caa-list .caa-desc{color:var(--mut,#667085);font-size:.8rem;margin-top:2px}
