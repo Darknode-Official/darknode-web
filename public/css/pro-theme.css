@@ -156,7 +156,6 @@ html[data-style=dark].crt body::after {
 
 /* Cards */
 [data-style=pro] .card,
-[data-style=pro] .util-card,
 [data-style=pro] .feat-card,
 [data-style=pro] .cs-card,
 [data-style=pro] .arse-card,
@@ -169,7 +168,6 @@ html[data-style=dark].crt body::after {
   transition: all .2s cubic-bezier(.4,0,.2,1) !important;
 }
 [data-style=pro] .card:hover,
-[data-style=pro] .util-card:hover,
 [data-style=pro] .feat-card:hover {
   border-color: #bfdbfe !important;
   box-shadow: 0 8px 25px -5px rgba(37,99,235,.1), 0 4px 10px rgba(0,0,0,.04) !important;
@@ -1194,7 +1192,6 @@ html[data-style=pro].crt body::after {
 }
 
 [data-style=dark] .card,
-[data-style=dark] .util-card,
 [data-style=dark] .feat-card,
 [data-style=dark] .cs-card,
 [data-style=dark] .panel {
@@ -1203,8 +1200,7 @@ html[data-style=pro].crt body::after {
   box-shadow: none !important;
   background: #111 !important;
 }
-[data-style=dark] .card:hover,
-[data-style=dark] .util-card:hover {
+[data-style=dark] .card:hover{
   border-color: #333 !important;
   box-shadow: none !important;
   transform: none !important;
@@ -3144,8 +3140,7 @@ body.landing #nav-start { white-space: nowrap !important; flex-shrink: 0; }
 [data-style=pro] .ag-tab,[data-style=pro] .api-tab,[data-style=pro] .bs-tab,
 [data-style=pro] .cc-tab,[data-style=pro] .cmp-tab,[data-style=pro] .cp-tab,
 [data-style=pro] .ct-tab,[data-style=pro] .dl-tab,[data-style=pro] .doc-tab,
-[data-style=pro] .enc-tab,[data-style=pro] .ft-tab,[data-style=pro] .hs-tab,
-[data-style=pro] .hti-tab,[data-style=pro] .ip-tab,[data-style=pro] .os-tab,
+[data-style=pro] .enc-tab,[data-style=pro] .ft-tab,[data-style=pro] .hs-tab,[data-style=pro] .ip-tab,[data-style=pro] .os-tab,
 [data-style=pro] .pwt-tab,[data-style=pro] .rag-tab,[data-style=pro] .rc-tab,
 [data-style=pro] .rx-tab,[data-style=pro] .sv-tab,[data-style=pro] .tm-tab,
 [data-style=pro] .ts-tab {
@@ -3170,7 +3165,7 @@ body.landing #nav-start { white-space: nowrap !important; flex-shrink: 0; }
 [data-style=pro] .cp-tab:hover,[data-style=pro] .ct-tab:hover,
 [data-style=pro] .dl-tab:hover,[data-style=pro] .doc-tab:hover,
 [data-style=pro] .enc-tab:hover,[data-style=pro] .ft-tab:hover,
-[data-style=pro] .hs-tab:hover,[data-style=pro] .hti-tab:hover,
+[data-style=pro] .hs-tab:hover,
 [data-style=pro] .ip-tab:hover,[data-style=pro] .os-tab:hover,
 [data-style=pro] .pwt-tab:hover,[data-style=pro] .rag-tab:hover,
 [data-style=pro] .rc-tab:hover,[data-style=pro] .rx-tab:hover,
@@ -3202,7 +3197,6 @@ body.landing #nav-start { white-space: nowrap !important; flex-shrink: 0; }
 [data-style=pro] .enc-tab.active,[data-style=pro] .enc-tab.on,
 [data-style=pro] .ft-tab.active,[data-style=pro] .ft-tab.on,
 [data-style=pro] .hs-tab.active,[data-style=pro] .hs-tab.on,
-[data-style=pro] .hti-tab.active,[data-style=pro] .hti-tab.on,
 [data-style=pro] .ip-tab.active,[data-style=pro] .ip-tab.on,
 [data-style=pro] .os-tab.active,[data-style=pro] .os-tab.on,
 [data-style=pro] .pwt-tab.active,[data-style=pro] .pwt-tab.on,
@@ -3230,7 +3224,7 @@ body.landing #nav-start { white-space: nowrap !important; flex-shrink: 0; }
 [data-style=pro] .ca-section,[data-style=pro] .mf-section,
 [data-style=pro] .tk-section,[data-style=pro] .bs-card,
 [data-style=pro] .cp-card,[data-style=pro] .ct-card,
-[data-style=pro] .dl-card,[data-style=pro] .dns-card,
+[data-style=pro] .dl-card,
 [data-style=pro] .edb-card,[data-style=pro] .ed-card,
 [data-style=pro] .enc-card,[data-style=pro] .ft-card,
 [data-style=pro] .gh-card,[data-style=pro] .hs-card,
@@ -3238,11 +3232,10 @@ body.landing #nav-start { white-space: nowrap !important; flex-shrink: 0; }
 [data-style=pro] .mod-card,[data-style=pro] .mode-card,
 [data-style=pro] .nx-card,[data-style=pro] .os-card,
 [data-style=pro] .plab-card,[data-style=pro] .rag-card,
-[data-style=pro] .rc-card,[data-style=pro] .res-card,
+[data-style=pro] .rc-card,
 [data-style=pro] .steg-card,[data-style=pro] .sv-card,
 [data-style=pro] .tk-card,[data-style=pro] .thl-card,
-[data-style=pro] .vl-card,[data-style=pro] .as-card,
-[data-style=pro] .feed-card,[data-style=pro] .dlapp-card {
+[data-style=pro] .vl-card,[data-style=pro] .as-card,[data-style=pro] .dlapp-card {
   background: #fff !important;
   border: 1px solid #e5e5e5 !important;
   border-radius: 8px !important;
@@ -3251,7 +3244,7 @@ body.landing #nav-start { white-space: nowrap !important; flex-shrink: 0; }
 }
 [data-style=pro] .pc-tpl-card:hover,[data-style=pro] .wl-atk-card:hover,
 [data-style=pro] .cr-chal:hover,[data-style=pro] .tk-card:hover,
-[data-style=pro] .dlapp-card:hover,[data-style=pro] .res-card:hover,
+[data-style=pro] .dlapp-card:hover,
 [data-style=pro] .lab-card:hover,[data-style=pro] .mod-card:hover {
   border-color: #ccc !important;
   box-shadow: 0 2px 8px rgba(0,0,0,.04) !important;
@@ -4789,20 +4782,9 @@ html[data-style=dark].crt body::after {
 
 /* --- HTTP Inspector (.hti-*) --- */
 [data-style=pro] .hti-wrap { background: #f8fafc !important; color: #0f172a !important; }
-[data-style=pro] .hti-tabs { border-bottom: 1px solid #e2e8f0 !important; }
-[data-style=pro] .hti-tab { color: #64748b !important; background: transparent !important; }
-[data-style=pro] .hti-tab:hover { color: #0f172a !important; }
-[data-style=pro] .hti-tab.active { color: #2563eb !important; border-bottom: 2px solid #2563eb !important; }
-[data-style=pro] .hti-btn { background: #2563eb !important; color: #fff !important; border-color: #2563eb !important; border-radius: 6px !important; }
-[data-style=pro] .hti-btn:hover { background: #1d4ed8 !important; }
-[data-style=pro] .hti-result { background: #f8fafc !important; border: 1px solid #e2e8f0 !important; border-radius: 8px !important; color: #334155 !important; }
-[data-style=pro] .hti-panel { background: #fff !important; border: 1px solid #e2e8f0 !important; border-radius: 10px !important; }
-[data-style=pro] .hti-input, [data-style=pro] .hti-select { background: #fff !important; border: 1px solid #e2e8f0 !important; color: #0f172a !important; border-radius: 6px !important; }
-[data-style=pro] .hti-input:focus { border-color: #2563eb !important; box-shadow: 0 0 0 3px rgba(37,99,235,.1) !important; }
+[data-style=pro] .hti-select { background: #fff !important; border: 1px solid #e2e8f0 !important; color: #0f172a !important; border-radius: 6px !important; }
 [data-style=pro] .hti-card { background: #fff !important; border: 1px solid #e2e8f0 !important; border-radius: 10px !important; }
 [data-style=pro] .hti-badge { background: #f1f5f9 !important; color: #475569 !important; }
-[data-style=pro] .hti-table th { background: #f8fafc !important; color: #0f172a !important; }
-[data-style=pro] .hti-table td { color: #334155 !important; border-bottom: 1px solid #f1f5f9 !important; }
 [data-style=pro] .hti-header-row { border-bottom: 1px solid #f1f5f9 !important; }
 [data-style=pro] .hti-output { background: #1e293b !important; border-radius: 8px !important; }
 
@@ -4911,20 +4893,9 @@ html[data-style=dark].crt body::after {
 [data-style=pro] .cb-banner { background: #0f172a !important; }
 
 /* --- Vuln Triage (.vt-*) --- */
-[data-style=pro] .vt-wrap { background: #fff !important; color: #0f172a !important; }
-[data-style=pro] .vt-header { background: #fff !important; border-bottom: 1px solid #e2e8f0 !important; }
-[data-style=pro] .vt-tab { color: #64748b !important; background: #fff !important; border: 1px solid #e2e8f0 !important; border-radius: 6px !important; }
-[data-style=pro] .vt-tab:hover { background: #f1f5f9 !important; color: #0f172a !important; }
-[data-style=pro] .vt-tab.active, [data-style=pro] .vt-tab.on { background: #eff6ff !important; color: #2563eb !important; border-color: #2563eb !important; }
-[data-style=pro] .vt-panel, [data-style=pro] .vt-card { background: #fff !important; border: 1px solid #e2e8f0 !important; border-radius: 10px !important; }
-[data-style=pro] .vt-btn { background: #2563eb !important; color: #fff !important; border-color: #2563eb !important; border-radius: 6px !important; }
-[data-style=pro] .vt-btn:hover { background: #1d4ed8 !important; }
-[data-style=pro] .vt-input, [data-style=pro] .vt-select { background: #fff !important; border: 1px solid #e2e8f0 !important; color: #0f172a !important; }
+[data-style=pro] .vt-card { background: #fff !important; border: 1px solid #e2e8f0 !important; border-radius: 10px !important; }
 [data-style=pro] .vt-hdr, [data-style=pro] .vt-head { background: #f8fafc !important; color: #0f172a !important; border-bottom: 1px solid #e2e8f0 !important; }
 [data-style=pro] .vt-result, [data-style=pro] .vt-output { background: #f8fafc !important; border: 1px solid #e2e8f0 !important; color: #334155 !important; border-radius: 8px !important; }
-[data-style=pro] .vt-badge { background: #f1f5f9 !important; color: #475569 !important; }
-[data-style=pro] .vt-table th { background: #f8fafc !important; color: #0f172a !important; }
-[data-style=pro] .vt-table td { color: #334155 !important; border-bottom: 1px solid #f1f5f9 !important; }
 
 /* --- Incident Cost Calculator (.ic-*) --- */
 [data-style=pro] .ic-wrap { background: #fff !important; color: #0f172a !important; }
@@ -5047,10 +5018,10 @@ html[data-style=dark].crt body::after {
 [data-style=pro] .dn-tab.active, [data-style=pro] .dns-tab.active { color: #2563eb !important; border-bottom: 2px solid #2563eb !important; }
 [data-style=pro] .dns-btn, [data-style=pro] .dn-btn { background: #2563eb !important; color: #fff !important; border-color: #2563eb !important; border-radius: 6px !important; }
 [data-style=pro] .dns-btn:hover, [data-style=pro] .dn-btn:hover { background: #1d4ed8 !important; }
-[data-style=pro] .dns-input, [data-style=pro] .dn-input { background: #fff !important; border: 1px solid #e2e8f0 !important; color: #0f172a !important; }
-[data-style=pro] .dns-card, [data-style=pro] .dn-card { background: #fff !important; border: 1px solid #e2e8f0 !important; border-radius: 10px !important; }
+[data-style=pro] .dn-input { background: #fff !important; border: 1px solid #e2e8f0 !important; color: #0f172a !important; }
+[data-style=pro] .dn-card { background: #fff !important; border: 1px solid #e2e8f0 !important; border-radius: 10px !important; }
 [data-style=pro] .dns-panel, [data-style=pro] .dn-panel { background: #fff !important; border: 1px solid #e2e8f0 !important; border-radius: 10px !important; }
-[data-style=pro] .dns-result, [data-style=pro] .dn-result { background: #f8fafc !important; border: 1px solid #e2e8f0 !important; border-radius: 8px !important; }
+[data-style=pro] .dn-result { background: #f8fafc !important; border: 1px solid #e2e8f0 !important; border-radius: 8px !important; }
 [data-style=pro] .dns-table th, [data-style=pro] .dn-table th { background: #f8fafc !important; color: #0f172a !important; }
 [data-style=pro] .dns-table td, [data-style=pro] .dn-table td { color: #334155 !important; border-bottom: 1px solid #f1f5f9 !important; }
 
@@ -6526,22 +6497,14 @@ html[data-style=dark].crt body::after {
 [data-style=pro] .af-checklist-item.fail { border-left: 3px solid #dc2626 !important; }
 
 /* ═══ Incident Response ═══ */
-[data-style=pro] .ir-wrap { background: #fff !important; color: #18181b !important; }
-[data-style=pro] .ir-header { background: linear-gradient(135deg, #eff6ff, #dbeafe) !important; border-bottom: 1px solid #bfdbfe !important; }
-[data-style=pro] .ir-header h2 { color: #1e40af !important; }
 [data-style=pro] .ir-tabs { background: #f8fafc !important; border-bottom: 1px solid #e2e8f0 !important; }
-[data-style=pro] .ir-tab { background: transparent !important; color: #64748b !important; border: none !important; }
-[data-style=pro] .ir-tab.active, [data-style=pro] .ir-tab:hover { background: #fff !important; color: #2563eb !important; border-bottom: 2px solid #2563eb !important; }
 [data-style=pro] .ir-panel { background: #fff !important; border: 1px solid #e2e8f0 !important; border-radius: 8px !important; }
-[data-style=pro] .ir-input, [data-style=pro] .ir-select, [data-style=pro] .ir-textarea { background: #f8fafc !important; color: #18181b !important; border: 1px solid #d1d5db !important; border-radius: 6px !important; }
-[data-style=pro] .ir-btn { background: #2563eb !important; color: #fff !important; border: none !important; border-radius: 6px !important; }
-[data-style=pro] .ir-btn:hover { background: #1d4ed8 !important; }
+[data-style=pro] .ir-select, [data-style=pro] .ir-textarea { background: #f8fafc !important; color: #18181b !important; border: 1px solid #d1d5db !important; border-radius: 6px !important; }
 [data-style=pro] .ir-playbook { background: #f8fafc !important; border: 1px solid #e2e8f0 !important; border-radius: 8px !important; padding: 16px !important; }
 [data-style=pro] .ir-playbook:hover { border-color: #2563eb !important; box-shadow: 0 2px 8px rgba(37,99,235,0.1) !important; }
 [data-style=pro] .ir-phase { border-left: 3px solid #e2e8f0 !important; padding-left: 16px !important; margin-bottom: 16px !important; }
 [data-style=pro] .ir-phase.active { border-left-color: #2563eb !important; }
 [data-style=pro] .ir-phase.done { border-left-color: #16a34a !important; }
-[data-style=pro] .ir-checklist label { color: #374151 !important; }
 [data-style=pro] .ir-timeline-entry { background: #f8fafc !important; border: 1px solid #e2e8f0 !important; border-radius: 6px !important; padding: 10px 14px !important; }
 [data-style=pro] .ir-severity.p1 { background: #fef2f2 !important; color: #991b1b !important; }
 [data-style=pro] .ir-severity.p2 { background: #fff7ed !important; color: #9a3412 !important; }
@@ -6552,18 +6515,9 @@ html[data-style=dark].crt body::after {
 [data-style=pro] .ir-badge { background: #eff6ff !important; color: #2563eb !important; border-radius: 4px !important; }
 
 /* ═══ Network Traffic Analyzer ═══ */
-[data-style=pro] .nt-wrap { background: #fff !important; color: #18181b !important; }
-[data-style=pro] .nt-header { background: linear-gradient(135deg, #ecfdf5, #d1fae5) !important; border-bottom: 1px solid #a7f3d0 !important; }
-[data-style=pro] .nt-header h2 { color: #065f46 !important; }
 [data-style=pro] .nt-tabs { background: #f8fafc !important; border-bottom: 1px solid #e2e8f0 !important; }
-[data-style=pro] .nt-tab { background: transparent !important; color: #64748b !important; }
-[data-style=pro] .nt-tab.active { background: #fff !important; color: #059669 !important; border-bottom: 2px solid #059669 !important; }
-[data-style=pro] .nt-panel { background: #fff !important; border: 1px solid #e2e8f0 !important; border-radius: 8px !important; }
-[data-style=pro] .nt-input, [data-style=pro] .nt-select { background: #f8fafc !important; color: #18181b !important; border: 1px solid #d1d5db !important; border-radius: 6px !important; }
-[data-style=pro] .nt-btn { background: #059669 !important; color: #fff !important; border: none !important; border-radius: 6px !important; }
 [data-style=pro] .nt-packet { background: #f8fafc !important; border: 1px solid #e2e8f0 !important; border-radius: 4px !important; padding: 6px 10px !important; }
 [data-style=pro] .nt-packet.suspicious { border-left: 3px solid #dc2626 !important; background: #fef2f2 !important; }
-[data-style=pro] .nt-stat { background: #f8fafc !important; border: 1px solid #e2e8f0 !important; border-radius: 8px !important; }
 [data-style=pro] .nt-table th { background: #f1f5f9 !important; color: #475569 !important; }
 [data-style=pro] .nt-table td { border-bottom: 1px solid #f1f5f9 !important; color: #18181b !important; }
 [data-style=pro] .nt-badge { border-radius: 4px !important; }
@@ -7545,31 +7499,6 @@ html[data-style=dark].crt body::after {
 /* ═══════════════════════════════════════════════════════════════
    RESOURCE CARDS (Learn & Resources)
    ═══════════════════════════════════════════════════════════════ */
-[data-style=pro] .res-card {
-  background: #fff !important;
-  border: 1px solid #e2e8f0 !important;
-  border-radius: 12px !important;
-  padding: 16px !important;
-  color: #1e293b !important;
-  text-decoration: none !important;
-  transition: all .2s ease !important;
-}
-[data-style=pro] .res-card:hover {
-  border-color: #bfdbfe !important;
-  box-shadow: 0 8px 24px -4px rgba(37,99,235,.08), 0 2px 6px rgba(0,0,0,.04) !important;
-  transform: translateY(-2px) !important;
-}
-[data-style=pro] .res-name {
-  color: #0f172a !important;
-  font-weight: 700 !important;
-}
-[data-style=pro] .res-desc {
-  color: #64748b !important;
-}
-[data-style=pro] .res-link {
-  color: #2563eb !important;
-  font-size: .78rem !important;
-}
 
 /* ═══════════════════════════════════════════════════════════════
    PAGE HEADERS — Consistent clean typography
@@ -8254,7 +8183,6 @@ html[data-style=dark] .boot-sweep {
 
 /* --- Dark Pro: Cards --- */
 [data-style=dark] .card,
-[data-style=dark] .util-card,
 [data-style=dark] .feat-card,
 [data-style=dark] .cs-card,
 [data-style=dark] .arse-card,
@@ -8267,7 +8195,6 @@ html[data-style=dark] .boot-sweep {
   transition: all .2s cubic-bezier(.4,0,.2,1) !important;
 }
 [data-style=dark] .card:hover,
-[data-style=dark] .util-card:hover,
 [data-style=dark] .feat-card:hover {
   border-color: #1e3a5f !important;
   box-shadow: 0 8px 25px -5px rgba(59, 130, 246, .1) !important;
@@ -8693,13 +8620,11 @@ html[data-style=dark] .boot-sweep {
 
 /* --- D2. Form Layout Mobile --- */
 @media (max-width: 560px) {
-  .tk-row,
-  .util-row {
+  .tk-row{
     flex-direction: column !important;
     align-items: stretch !important;
   }
-  .tk-row .btn,
-  .util-row .btn {
+  .tk-row .btn{
     width: 100% !important;
     justify-content: center;
   }
@@ -9865,8 +9790,6 @@ html[data-style=dark] .boot-sweep {
 
 /* --- Vulnerability Prioritizer (.vp-*) --- */
 [data-style=pro] .vp-wrap { background: #f8fafc !important; color: #0f172a !important; }
-[data-style=pro] .vp-ctrl { background: #fff !important; border: 1px solid #e2e8f0 !important; border-radius: 10px !important; }
-[data-style=pro] .vp-kev-quick { background: #fef2f2 !important; border: 1px solid #fecaca !important; border-radius: 8px !important; color: #991b1b !important; }
 
 /* --- Hash Suite (.hs-*) expanded --- */
 [data-style=pro] .hs-wrap { background: #f8fafc !important; color: #0f172a !important; }
@@ -10685,27 +10608,6 @@ html[data-style=dark] .boot-sweep {
 }
 
 /* --- Pro Feed Cards (Activity) --- */
-[data-style=pro] .feed-card {
-  background: #fff !important;
-  border: 1px solid #e2e8f0 !important;
-  border-radius: 12px !important;
-  box-shadow: 0 1px 3px rgba(0,0,0,.03) !important;
-  transition: all .2s cubic-bezier(.2,.7,.3,1) !important;
-}
-[data-style=pro] .feed-card:hover {
-  border-color: #bfdbfe !important;
-  box-shadow: 0 8px 25px -5px rgba(37,99,235,.08) !important;
-  transform: translateY(-3px) !important;
-}
-[data-style=pro] .feed-name {
-  color: #0f172a !important;
-}
-[data-style=pro] .feed-desc {
-  color: #475569 !important;
-}
-[data-style=pro] .feed-id {
-  color: #94a3b8 !important;
-}
 [data-style=pro] .feed-row {
   border-radius: 8px !important;
 }
@@ -10750,45 +10652,6 @@ html[data-style=dark] .boot-sweep {
 }
 
 /* --- Threat Intel Feed Pro Overrides (.tf-) --- */
-[data-style=pro] .tf-wrap {
-  background: #fff !important;
-  color: #0f172a !important;
-}
-[data-style=pro] .tf-card {
-  background: #fff !important;
-  border-color: #e2e8f0 !important;
-}
-[data-style=pro] .tf-card:hover {
-  border-color: #cbd5e1 !important;
-  box-shadow: 0 2px 8px rgba(0,0,0,.04) !important;
-}
-[data-style=pro] .tf-header h1,
-[data-style=pro] .tf-header h2 {
-  color: #0f172a !important;
-}
-[data-style=pro] .tf-filters input,
-[data-style=pro] .tf-filters select {
-  background: #f8fafc !important;
-  border-color: #e2e8f0 !important;
-  color: #0f172a !important;
-}
-[data-style=pro] .tf-detail {
-  background: #f8fafc !important;
-  border-color: #e2e8f0 !important;
-}
-[data-style=dark] .tf-wrap {
-  background: #0f172a !important;
-}
-[data-style=dark] .tf-card {
-  background: #1e293b !important;
-  border-color: #334155 !important;
-}
-[data-style=dark] .tf-filters input,
-[data-style=dark] .tf-filters select {
-  background: #0f172a !important;
-  border-color: #334155 !important;
-  color: #e2e8f0 !important;
-}
 
 /* --- Security Checklist Pro Overrides (.sc-) --- */
 [data-style=pro] .sc-wrap {
@@ -11146,42 +11009,7 @@ html[data-style=dark] .boot-sweep {
 [data-style="dark"] .ft-row { border-bottom: 1px solid #334155; }
 
 /* === HTTP Inspector === */
-[data-style="pro"] .hti-tabs { border-bottom: 1px solid #e2e8f0; }
-[data-style="pro"] .hti-tab { color: #64748b; }
-[data-style="pro"] .hti-tab.active { color: #2563EB; border-bottom-color: #2563EB; }
-[data-style="pro"] .hti-panel { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; }
-[data-style="pro"] .hti-input { background: #f1f5f9; border: 1px solid #e2e8f0; color: #0f172a; }
-[data-style="pro"] .hti-btn { background: #2563EB; color: #fff; border: none; border-radius: 8px; }
-[data-style="pro"] .hti-btn:hover { background: #1d4ed8; }
-[data-style="pro"] .hti-result { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; }
-[data-style="pro"] .hti-label { color: #64748b; }
-[data-style="pro"] .hti-good { color: #16a34a; }
-[data-style="pro"] .hti-bad { color: #dc2626; }
-[data-style="pro"] .hti-grade { font-weight: 700; }
-[data-style="pro"] .hti-issue { background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; color: #991b1b; }
-[data-style="pro"] .hti-table th { background: #f1f5f9; color: #0f172a; border-bottom: 2px solid #e2e8f0; }
-[data-style="pro"] .hti-table td { border-bottom: 1px solid #e2e8f0; }
-[data-style="pro"] .hti-csp-dir { background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 6px; }
-[data-style="pro"] .hti-csp-name { color: #2563EB; font-weight: 600; }
-[data-style="pro"] .hti-csp-val { color: #0f172a; }
 
-[data-style="dark"] .hti-tabs { border-bottom: 1px solid #334155; }
-[data-style="dark"] .hti-tab { color: #94a3b8; }
-[data-style="dark"] .hti-tab.active { color: #3b82f6; border-bottom-color: #3b82f6; }
-[data-style="dark"] .hti-panel { background: #1e293b; border: 1px solid #334155; }
-[data-style="dark"] .hti-input { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; }
-[data-style="dark"] .hti-btn { background: #3b82f6; color: #fff; }
-[data-style="dark"] .hti-btn:hover { background: #60a5fa; }
-[data-style="dark"] .hti-result { background: #0f172a; border: 1px solid #334155; }
-[data-style="dark"] .hti-label { color: #94a3b8; }
-[data-style="dark"] .hti-good { color: #4ade80; }
-[data-style="dark"] .hti-bad { color: #f87171; }
-[data-style="dark"] .hti-issue { background: #450a0a; border: 1px solid #7f1d1d; color: #fca5a5; }
-[data-style="dark"] .hti-table th { background: #0f172a; color: #e2e8f0; border-bottom: 2px solid #334155; }
-[data-style="dark"] .hti-table td { border-bottom: 1px solid #334155; }
-[data-style="dark"] .hti-csp-dir { background: #0f172a; border: 1px solid #334155; }
-[data-style="dark"] .hti-csp-name { color: #3b82f6; }
-[data-style="dark"] .hti-csp-val { color: #e2e8f0; }
 
 /* === IP Tools === */
 [data-style="pro"] .ip-wrap { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; }
@@ -11418,9 +11246,7 @@ html[data-style=dark] .boot-sweep {
 [data-style="dark"] .quiz-option:hover { border-color: #3b82f6; background: #1e293b; }
 
 /* === Security Scanner === */
-[data-style="pro"] .scan-dashboard { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; }
 
-[data-style="dark"] .scan-dashboard { background: #1e293b; border: 1px solid #334155; }
 
 /* === Subnet Visualizer === */
 [data-style="pro"] .sv-h1 { color: #0f172a; }
@@ -11739,14 +11565,6 @@ html[data-style=dark] .boot-sweep {
 [data-style="dark"] .cors-header { border-bottom: 1px solid #334155; }
 
 /* DNS Recon */
-[data-style="pro"] .dns-domain { background: #f1f5f9; border: 1px solid #e2e8f0; color: #0f172a; }
-[data-style="pro"] .dns-results { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; }
-[data-style="pro"] .dns-brute-bar { background: #e2e8f0; border-radius: 4px; }
-[data-style="pro"] .dns-brute-progress { background: #2563EB; border-radius: 4px; }
-[data-style="dark"] .dns-domain { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; }
-[data-style="dark"] .dns-results { background: #0f172a; border: 1px solid #334155; }
-[data-style="dark"] .dns-brute-bar { background: #334155; }
-[data-style="dark"] .dns-brute-progress { background: #3b82f6; }
 
 /* Header Analyzer */
 [data-style="pro"] .ha-input { background: #f1f5f9; border: 1px solid #e2e8f0; color: #0f172a; }
@@ -11757,10 +11575,6 @@ html[data-style=dark] .boot-sweep {
 [data-style="dark"] .ha-raw { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; }
 
 /* HTTP Probe */
-[data-style="pro"] .hp-url { background: #f1f5f9; border: 1px solid #e2e8f0; color: #0f172a; }
-[data-style="pro"] .hp-results { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; }
-[data-style="dark"] .hp-url { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; }
-[data-style="dark"] .hp-results { background: #0f172a; border: 1px solid #334155; }
 
 /* Network Scanner */
 [data-style="pro"] .ns-target { background: #f1f5f9; border: 1px solid #e2e8f0; color: #0f172a; }
@@ -11800,10 +11614,6 @@ html[data-style=dark] .boot-sweep {
 [data-style="dark"] .tf-critical { color: #f87171; }
 
 /* Traffic Analyzer */
-[data-style="pro"] .ta-export { background: #2563EB; color: #fff; border: none; border-radius: 8px; }
-[data-style="pro"] .ta-export:hover { background: #1d4ed8; }
-[data-style="dark"] .ta-export { background: #3b82f6; color: #fff; }
-[data-style="dark"] .ta-export:hover { background: #60a5fa; }
 
 /* WebSocket Tester */
 [data-style="pro"] .ws-url { background: #f1f5f9; border: 1px solid #e2e8f0; color: #0f172a; }
@@ -13345,7 +13155,6 @@ html[data-style="pro"] .panel .panel-h {
 
 /* --- Global hover taming: Reduce aggressive card hover transforms --- */
 html[data-style="pro"] .card:hover,
-html[data-style="pro"] .util-card:hover,
 html[data-style="pro"] .feat-card:hover {
   transform: translateY(-1px) !important;
   box-shadow: 0 4px 12px rgba(0,0,0,.06) !important;
@@ -14134,9 +13943,7 @@ html[data-style="pro"] .app-main a.pt-guide-dl:not(#_) { color: #fff !important;
 /* Subnet visualizer values */
 [data-style=pro] .sv-val { color: #0f172a !important; }
 /* Dark feeds / viewers / cards that stay dark: inherited text must be light */
-[data-style=pro] .nt-feed,
-[data-style=pro] .vl-viewer,
-[data-style=pro] .ir-playbook-card .ir-pb-icon { color: #e2e8f0 !important; }
+[data-style=pro] .vl-viewer{ color: #e2e8f0 !important; }
 /* Cyber briefing option pros/cons on the light option card */
 [data-style=pro] .cb-option-pro { color: #15803d !important; }
 [data-style=pro] .cb-option-con { color: #b91c1c !important; }

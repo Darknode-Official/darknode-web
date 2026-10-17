@@ -34,7 +34,7 @@ export const CATEGORIES = [
 export const ACTIVITIES = [
   // --- Start Here ---
   { id: "d-learnhub", title: "Open the Learn Hub and start a path", desc: "Pick a guided track and earn XP as you complete topics.", sec: "learn", cat: "start", level: "intro", mins: 10 },
-  { id: "d-quiz1", title: "Take the security fundamentals quiz", desc: "Find out what you already know and where the gaps are.", sec: "securityquiz", cat: "start", level: "intro", mins: 10 },
+  { id: "d-quiz1", title: "Take the security fundamentals quiz", desc: "Find out what you already know and where the gaps are.", sec: "secquiz", cat: "start", level: "intro", mins: 10 },
   { id: "d-cheats", title: "Skim the cheat sheets", desc: "Bookmark the commands and payloads you'll reach for again.", sec: "cheats", cat: "start", level: "intro", mins: 5 },
   { id: "d-range1", title: "Run your first Cyber Range scenario", desc: "A guided, hands-on scenario end to end.", sec: "cyberrange", cat: "start", level: "intro", mins: 20 },
   { id: "d-targets", title: "Explore the practice targets", desc: "Legal, intentionally-vulnerable apps to try things on.", sec: "targets", cat: "start", level: "intro", mins: 8 },
@@ -44,7 +44,7 @@ export const ACTIVITIES = [
   { id: "d-xss", title: "Exploit and fix a reflected XSS", desc: "In the Web Security Lab, land a payload then patch it.", sec: "xsslab", cat: "web", level: "core", mins: 20 },
   { id: "d-headers", title: "Grade a site's security headers", desc: "Analyze HSTS, CSP, X-Frame-Options and more.", sec: "headeranalyzer", cat: "web", level: "core", mins: 8 },
   { id: "d-csp", title: "Evaluate a Content-Security-Policy", desc: "Spot the bypasses in a real CSP string.", sec: "cspevaluator", cat: "web", level: "core", mins: 10 },
-  { id: "d-jwt", title: "Decode and probe a JWT", desc: "Inspect claims, alg, and common signature mistakes.", sec: "jwtanalyzer", cat: "web", level: "core", mins: 8 },
+  { id: "d-jwt", title: "Decode and probe a JWT", desc: "Inspect claims, alg, and common signature mistakes.", sec: "tool-w-jwt-analyzer", cat: "web", level: "core", mins: 8 },
   { id: "d-cors", title: "Test a CORS configuration", desc: "Find over-permissive origins that leak data.", sec: "corstester", cat: "web", level: "core", mins: 8 },
   { id: "d-apitest", title: "Send and inspect an API request", desc: "Craft requests, read responses, chain calls.", sec: "apitester", cat: "web", level: "core", mins: 10 },
   { id: "d-apifuzz", title: "Fuzz an API endpoint", desc: "Throw malformed input and watch what breaks.", sec: "apifuzzer", cat: "web", level: "advanced", mins: 15 },
@@ -72,7 +72,7 @@ export const ACTIVITIES = [
   // --- Blue Team & Detection ---
   { id: "d-hunt", title: "Run a threat hunt", desc: "Form a hypothesis and chase it through the data.", sec: "huntlab", cat: "blue", level: "advanced", mins: 25 },
   { id: "d-siem", title: "Triage alerts in the SIEM dashboard", desc: "Separate signal from noise under time pressure.", sec: "siemdash", cat: "blue", level: "core", mins: 15 },
-  { id: "d-ir", title: "Work an incident-response playbook", desc: "Contain, eradicate, recover — in order.", sec: "incidentresponse", cat: "blue", level: "core", mins: 20 },
+  { id: "d-ir", title: "Work an incident-response playbook", desc: "Contain, eradicate, recover — in order.", sec: "incidents", cat: "blue", level: "core", mins: 20 },
   { id: "d-deception", title: "Design a deception / honeypot", desc: "Lay a trap that catches an intruder early.", sec: "deception", cat: "blue", level: "advanced", mins: 15 },
   { id: "d-threatmodel", title: "Threat-model a system", desc: "Enumerate what can go wrong before it does.", sec: "threatmodel", cat: "blue", level: "core", mins: 20 },
   { id: "d-breachsim", title: "Simulate a breach and measure blast radius", desc: "See how far an attacker gets from one foothold.", sec: "breachsim", cat: "blue", level: "advanced", mins: 20 },
@@ -81,9 +81,9 @@ export const ACTIVITIES = [
   // --- Threat Intelligence ---
   { id: "d-cve", title: "Research a CVE end to end", desc: "Understand a vuln, its impact, and its fix.", sec: "cvesearch", cat: "intel", level: "intro", mins: 10 },
   { id: "d-cvetl", title: "Trace a CVE's timeline", desc: "From disclosure to patch to exploitation.", sec: "cvetimeline", cat: "intel", level: "core", mins: 8 },
-  { id: "d-threatfeed", title: "Read today's threat feed", desc: "Stay current on active campaigns.", sec: "threat", cat: "intel", level: "intro", mins: 6 },
+  { id: "d-threatfeed", title: "Scan the newest published CVEs", desc: "See what was disclosed this week and what it affects.", sec: "cvesearch", cat: "intel", level: "intro", mins: 6 },
   { id: "d-breach", title: "Check an account against breaches", desc: "See where a credential has leaked.", sec: "breachlookup", cat: "intel", level: "intro", mins: 5 },
-  { id: "d-ioc", title: "Extract IOCs from a report", desc: "Pull hashes, IPs, and domains into a usable list.", sec: "iocextractor", cat: "intel", level: "core", mins: 10 },
+  { id: "d-ioc", title: "Extract IOCs from a report", desc: "Pull hashes, IPs, and domains into a usable list.", sec: "iocenrich", cat: "intel", level: "core", mins: 10 },
   { id: "d-iprep", title: "Score an IP's reputation", desc: "Decide whether to block, watch, or allow.", sec: "ipreputation", cat: "intel", level: "core", mins: 6 },
 
   // --- Forensics & Malware ---

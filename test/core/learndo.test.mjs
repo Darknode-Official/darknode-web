@@ -11,6 +11,10 @@ const read = (p) => readFileSync(new URL(p, import.meta.url), "utf8");
 // section ids straight out of its source: every item is written ["sec","Label"(,"badge")].
 const NAV_SRC = read("../../public/js/console-nav.js");
 const NAV_SECS = new Set([...NAV_SRC.matchAll(/\["([a-z0-9-]+)","[^"]+"(?:,"[^"]*")?\]/g)].map((m) => m[1]));
+// Toolbox mini-tools join the nav at runtime as "tool-<id>" (console-nav.js appends one group per
+// category from the generated manifest), so a lesson may point straight at one of them.
+const MANIFEST_SRC = read("../../public/js/tools-manifest.js");
+for (const m of MANIFEST_SRC.matchAll(/\["([a-z0-9-]+)","[^"]+","[a-z]+"\]/g)) NAV_SECS.add("tool-" + m[1]);
 
 group("learndo: catalog integrity", () => {
   test("nav parse sanity (found the real section list)", () => {

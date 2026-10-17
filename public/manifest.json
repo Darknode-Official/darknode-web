@@ -23,7 +23,7 @@
     { "name": "Nexus Agent", "short_name": "Nexus", "description": "Autonomous agentic AI agent", "url": "/coder" },
     { "name": "GenAI Crosswalk", "short_name": "Crosswalk", "description": "OWASP GenAI risks mapped to 26 frameworks", "url": "/crosswalk" },
     { "name": "Settings", "short_name": "Settings", "description": "App settings", "url": "/settings" },
-    { "name": "Threat Intel Feed", "short_name": "Threats", "description": "CVE advisory aggregator", "url": "/threatfeed" },
+    { "name": "CVE Search", "short_name": "CVEs", "description": "Search and browse the newest CVEs", "url": "/cvesearch" },
     { "name": "Security Checklist", "short_name": "Checklist", "description": "Compliance checklists", "url": "/secchecklist" }
   ],
   "screenshots": []

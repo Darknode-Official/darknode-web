@@ -25,10 +25,17 @@ var PATTERNS = {
   sha1:   { label: 'SHA-1', regex: /\b([a-fA-F0-9]{40})\b/g },
   sha256: { label: 'SHA-256', regex: /\b([a-fA-F0-9]{64})\b/g },
   cve:    { label: 'CVE', regex: /\bCVE-\d{4}-\d{4,7}\b/gi },
-  btc:    { label: 'Bitcoin', regex: /\b(?:[13][a-km-zA-HJ-NP-Z1-9]{25,34}|bc1[a-z0-9]{25,62})\b/g }
+  btc:    { label: 'Bitcoin', regex: /\b(?:[13][a-km-zA-HJ-NP-Z1-9]{25,34}|bc1[a-z0-9]{25,62})\b/g },
+  mac:    { label: 'MAC', regex: /\b((?:[0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2})\b/g },
+  registry: { label: 'Registry key', regex: /\b((?:HKLM|HKCU|HKCR|HKU|HKCC|HKEY_LOCAL_MACHINE|HKEY_CURRENT_USER|HKEY_CLASSES_ROOT|HKEY_USERS|HKEY_CURRENT_CONFIG)\\[\w\\.{}$-]+)/gi },
+  // Windows drive paths, or Unix paths with at least one directory and a file extension. A Unix
+  // path must start a token, so the path part of a URL is not taken as a file.
+  filepath: { label: 'File path', regex: /(?:^|[\s"'(=,;<\[])([A-Za-z]:\\(?:[\w.$-]+\\)*[\w.$-]+|\/(?:[\w.-]+\/)+[\w.-]+\.\w+)/gm }
 };
 
-var TYPE_ORDER = ['ipv4', 'ipv6', 'domain', 'url', 'email', 'md5', 'sha1', 'sha256', 'cve', 'btc'];
+var TYPE_ORDER = ['ipv4', 'ipv6', 'domain', 'url', 'email', 'md5', 'sha1', 'sha256', 'cve', 'btc', 'mac', 'registry', 'filepath'];
+// Host-side artefacts: defanging them would only corrupt the value.
+var NO_DEFANG = { mac: true, registry: true, filepath: true };
 
 var ABUSE_TLDS = ['tk', 'ml', 'ga', 'cf', 'gq', 'top', 'xyz', 'gdn', 'work', 'click', 'link', 'zip', 'mov', 'country', 'kim', 'loan', 'men', 'date', 'review', 'stream'];
 var DDNS_HOSTS = ['no-ip', 'noip', 'duckdns', 'dyndns', 'ddns', 'hopto', 'myftp', 'serveftp', 'sytes', 'zapto', 'ngrok', 'firebaseapp', 'herokuapp', 'pagescloud', 'ddnsking', 'freedns', 'afraid'];
@@ -46,7 +53,10 @@ var SAMPLE_TEXT = [
   'Payload SHA-256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
   'Exploited CVE-2024-3400 on the perimeter appliance',
   'Raw-IP lure: hxxp://193.142.58.12:8443/login',
-  'Ransom wallet 1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa'
+  'Ransom wallet 1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa',
+  'Persistence: HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\\updater',
+  'Dropped file C:\\Users\\Public\\updater.exe and /tmp/.cache/kworker.sh',
+  'Rogue host MAC 00:1a:2b:3c:4d:5e on the guest VLAN'
 ].join('\n');
 
 /* ---- defang / refang ---------------------------------------------------- */
@@ -187,6 +197,18 @@ function scoreIOC(type, value) {
   if (type === 'btc') {
     return { level: 'Medium', reason: 'Cryptocurrency wallet - often tied to ransom/extortion' };
   }
+  if (type === 'mac') {
+    return { level: 'Low', reason: 'Hardware address - correlates hosts on a local network, not internet-routable' };
+  }
+  if (type === 'registry') {
+    if (/\\(Run|RunOnce|RunServices|Winlogon|Image File Execution Options|AppInit_DLLs|Services|Policies\\Explorer\\Run)(\\|$)/i.test(v)) return { level: 'High', reason: 'Autostart/persistence location' };
+    return { level: 'Medium', reason: 'Registry key - check for modification on affected hosts' };
+  }
+  if (type === 'filepath') {
+    var exe = /\.(exe|scr|bat|cmd|ps1|hta|vbs|js|jse|dll|sys|lnk|sh|elf|so|bin|py)$/i.test(v);
+    if (exe && /(\\temp\\|\\appdata\\|\\users\\public\\|\\programdata\\|^\/tmp\/|^\/var\/tmp\/|^\/dev\/shm\/)/i.test(v)) return { level: 'High', reason: 'Executable or script in a user-writable staging directory' };
+    return { level: 'Medium', reason: exe ? 'Executable or script path - hunt for it on endpoints' : 'File path - hunt for it on endpoints' };
+  }
   return { level: 'Medium', reason: 'Indicator' };
 }
 
@@ -194,7 +216,7 @@ function scoreIOC(type, value) {
 
 function normalize(type, raw) {
   var v = String(raw).trim().replace(/[),.;:'"\]]+$/, '');
-  if (type === 'domain' || type === 'email' || type === 'ipv6') v = v.toLowerCase();
+  if (type === 'domain' || type === 'email' || type === 'ipv6' || type === 'mac') v = v.toLowerCase();
   if (type === 'md5' || type === 'sha1' || type === 'sha256') v = v.toLowerCase();
   if (type === 'cve') v = v.toUpperCase();
   return v;
@@ -228,14 +250,16 @@ function extract(text) {
 
   // Drop domains that are really the host portion of an already-captured URL/email,
   // and drop bare-hash-looking domains handled elsewhere.
-  var urlHosts = {}, emailDomains = {};
+  var urlHosts = {}, emailDomains = {}, pathParts = {};
   records.forEach(function (r) {
     if (r.type === 'url') { try { urlHosts[new URL(r.value).hostname.toLowerCase()] = true; } catch (_) {} }
     if (r.type === 'email') { var p = r.value.split('@')[1]; if (p) emailDomains[p.toLowerCase()] = true; }
+    // A file name such as "svc.exe" also looks like a domain; it belongs to its path.
+    if (r.type === 'filepath' || r.type === 'registry') r.value.split(/[\\/]/).forEach(function (seg) { pathParts[seg.toLowerCase()] = true; });
   });
   records = records.filter(function (r) {
     if (r.type !== 'domain') return true;
-    if (urlHosts[r.value] || emailDomains[r.value]) return false;
+    if (urlHosts[r.value] || emailDomains[r.value] || pathParts[r.value]) return false;
     if (/^\d+\.\d+\.\d+\.\d+$/.test(r.value)) return false;
     return true;
   });
@@ -429,7 +453,7 @@ export function renderIocEnrichment(main) {
 
   function rowsFor(list) {
     return list.map(function (r) {
-      var display = state.defangOut ? defang(r.value) : r.value;
+      var display = state.defangOut && !NO_DEFANG[r.type] ? defang(r.value) : r.value;
       return {
         type: PATTERNS[r.type].label,
         value: display,
@@ -449,6 +473,53 @@ export function renderIocEnrichment(main) {
     });
     return out.join('\r\n');
   }
+  // STIX 2.1 bundle: one indicator per selectable observable, a vulnerability SDO per CVE.
+  function toSTIX(list) {
+    var now = new Date().toISOString();
+    var uuid = function () {
+      if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+      var b = crypto.getRandomValues(new Uint8Array(16)); b[6] = (b[6] & 15) | 64; b[8] = (b[8] & 63) | 128;
+      var h = Array.prototype.map.call(b, function (x) { return (x < 16 ? '0' : '') + x.toString(16); }).join('');
+      return h.slice(0, 8) + '-' + h.slice(8, 12) + '-' + h.slice(12, 16) + '-' + h.slice(16, 20) + '-' + h.slice(20);
+    };
+    var q = function (v) { return "'" + String(v).replace(/\\/g, '\\\\').replace(/'/g, "\\'") + "'"; };
+    var objects = [];
+    list.forEach(function (r) {
+      var v = r.value, pattern = '';
+      if (r.type === 'cve') {
+        objects.push({ type: 'vulnerability', spec_version: '2.1', id: 'vulnerability--' + uuid(), created: now, modified: now, name: v,
+          external_references: [{ source_name: 'cve', external_id: v }] });
+        return;
+      }
+      if (r.type === 'ipv4') pattern = '[ipv4-addr:value = ' + q(v) + ']';
+      else if (r.type === 'ipv6') pattern = '[ipv6-addr:value = ' + q(v) + ']';
+      else if (r.type === 'domain') pattern = '[domain-name:value = ' + q(v) + ']';
+      else if (r.type === 'url') pattern = '[url:value = ' + q(v) + ']';
+      else if (r.type === 'email') pattern = '[email-addr:value = ' + q(v) + ']';
+      else if (r.type === 'md5') pattern = '[file:hashes.MD5 = ' + q(v) + ']';
+      else if (r.type === 'sha1') pattern = "[file:hashes.'SHA-1' = " + q(v) + ']';
+      else if (r.type === 'sha256') pattern = "[file:hashes.'SHA-256' = " + q(v) + ']';
+      else if (r.type === 'mac') pattern = '[mac-addr:value = ' + q(v.replace(/-/g, ':')) + ']';
+      else if (r.type === 'registry') pattern = '[windows-registry-key:key = ' + q(v) + ']';
+      else if (r.type === 'filepath') {
+        var cut = Math.max(v.lastIndexOf('\\'), v.lastIndexOf('/'));
+        pattern = '[file:name = ' + q(v.slice(cut + 1)) + (cut > 0 ? ' AND file:parent_directory_ref.path = ' + q(v.slice(0, cut)) : '') + ']';
+      }
+      else return; // no STIX cyber-observable for this type (e.g. Bitcoin)
+      objects.push({ type: 'indicator', spec_version: '2.1', id: 'indicator--' + uuid(), created: now, modified: now, valid_from: now,
+        name: PATTERNS[r.type].label + ': ' + v, description: r.risk.level + ' (heuristic): ' + r.risk.reason, pattern: pattern, pattern_type: 'stix' });
+    });
+    return JSON.stringify({ type: 'bundle', id: 'bundle--' + uuid(), objects: objects }, null, 2);
+  }
+  var GRAPH_TYPE = { ipv4: 'IP', ipv6: 'IP', domain: 'DOMAIN', cve: 'VULNERABILITY' };
+  function graphItems(list) {
+    return list.map(function (r) {
+      return { type: GRAPH_TYPE[r.type] || 'INDICATOR', name: r.value,
+        data: { iocType: r.type, risk: r.risk.level, reason: r.risk.reason, enrichment: r.enrich ? r.enrich.notes.join(' | ') : '' },
+        opts: { tags: ['ioc', r.type] } };
+    });
+  }
+
   function toJSON(list) {
     return JSON.stringify({ generated: new Date().toISOString(), count: list.length, defanged: state.defangOut, indicators: rowsFor(list) }, null, 2);
   }
@@ -509,6 +580,8 @@ export function renderIocEnrichment(main) {
           '<div class="iocx-spacer"></div>' +
           '<button class="btn ghost" id="iocx-csv">Export CSV</button>' +
           '<button class="btn ghost" id="iocx-json">Export JSON</button>' +
+          '<button class="btn ghost" id="iocx-stix">Export STIX 2.1</button>' +
+          '<button class="btn ghost" id="iocx-graph">Send to Security Graph</button>' +
           '<button class="btn ghost" id="iocx-copy">Copy</button>' +
         '</div>' +
         '<div class="iocx-tblwrap">' +
@@ -518,7 +591,7 @@ export function renderIocEnrichment(main) {
           '</tr></thead><tbody>';
 
       state.records.forEach(function (r, i) {
-        var display = state.defangOut ? defang(r.value) : r.value;
+        var display = state.defangOut && !NO_DEFANG[r.type] ? defang(r.value) : r.value;
         var lvl = r.risk.level.toLowerCase();
         html += '<tr>' +
           '<td><input type="checkbox" class="iocx-chk iocx-rowchk" data-i="' + i + '"' + (r.selected ? ' checked' : '') + '></td>' +
@@ -576,6 +649,17 @@ export function renderIocEnrichment(main) {
     if (csv) csv.onclick = function () { var l = selected(); if (!l.length) return toast('Select at least one indicator', 'info'); download('iocs-' + stamp() + '.csv', toCSV(l), 'text/csv'); };
     var json = main.querySelector('#iocx-json');
     if (json) json.onclick = function () { var l = selected(); if (!l.length) return toast('Select at least one indicator', 'info'); download('iocs-' + stamp() + '.json', toJSON(l), 'application/json'); };
+    var stx = main.querySelector('#iocx-stix');
+    if (stx) stx.onclick = function () { var l = selected(); if (!l.length) return toast('Select at least one indicator', 'info'); download('iocs-' + stamp() + '.stix.json', toSTIX(l), 'application/json'); };
+    var gr = main.querySelector('#iocx-graph');
+    if (gr) gr.onclick = function () {
+      var l = selected(); if (!l.length) return toast('Select at least one indicator', 'info');
+      gr.disabled = true;
+      import('/js/graph-bridge.js?v=20261017d').then(function (gb) {
+        var r = gb.sendToGraph('IOC Enrichment', graphItems(l));
+        gr.textContent = 'Sent: ' + r.created + ' new, ' + r.updated + ' merged';
+      }).catch(function () { gr.textContent = 'Security Graph unavailable'; gr.disabled = false; });
+    };
     var cp = main.querySelector('#iocx-copy');
     if (cp) cp.onclick = function () {
       var l = selected(); if (!l.length) return toast('Select at least one indicator', 'info');

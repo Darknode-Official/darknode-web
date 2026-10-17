@@ -15,7 +15,7 @@ import { attachSinkButton } from "../core/sink.js";
 import { download, toJson, fileStamp } from "../core/export.js";
 import {
   DEFAULTS, TOOL_ID, COLUMNS, FORMATS, DETECTIONS, SEV_RANK, parseInput, findingsToCsv, registerToCsv, assetsToCsv, remediationToCsv,
-  cveListText, summaryText, graphItems, exampleDataset, csvCell,
+  cveListText, summaryText, graphItems, exampleDataset, csvCell, SSVC_OPTIONS, SSVC_GUIDANCE, ssvcDecide, ssvcInputs,
 } from "./vulnimport-engine.js?v=20261016i";
 
 const ENGINE = engineUrl("./vulnimport-engine.js?v=20261016i", import.meta);
@@ -105,6 +105,15 @@ const CSS = `
   .vim-legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
   .vim-matrix ol{margin:6px 0 0;padding-left:20px;font-size:.82rem}
   .vim-matrix summary{cursor:pointer;font-weight:600;font-size:.9rem}
+  .vim-ssvc{border:1px solid var(--line,#d7dbe3);border-radius:10px;padding:10px 12px;margin:10px 0}
+  .vim-ssvc h4{margin:0 0 6px;font-size:.86rem}
+  .vim-ssvc-q{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:6px 0;font-size:.8rem}
+  .vim-ssvc-q>span{min-width:150px;color:var(--mut,#667085)}
+  .vim-ssvc-q small{flex-basis:100%;color:var(--mut,#667085)}
+  .vim-ssvc-q button{appearance:none;font:inherit;font-size:.78rem;border:1px solid var(--line,#d7dbe3);background:none;color:inherit;padding:3px 10px;border-radius:999px;cursor:pointer}
+  .vim-ssvc-q button.on{background:var(--acc,#2552c6);border-color:var(--acc,#2552c6);color:#fff}
+  .vim-ssvc-r{margin-top:8px;font-size:.84rem}.vim-ssvc-r b{font-size:.95rem}
+  .vim-ssvc-r b.act{color:#b00020}.vim-ssvc-r b.attend{color:#b35c00}.vim-ssvc-r b.trackstar{color:#2552c6}
   @media (max-width:560px){.vim-field,.vim-filters .vim-field{flex:1 1 100%}.vim-dl{grid-template-columns:1fr}.vim-card{padding:14px}}
 `;
 
@@ -219,6 +228,7 @@ export function renderVulnImport(main) {
   const sorts = { register: { key: "priority", dir: "desc" }, assets: { key: "maxPriority", dir: "desc" }, cves: { key: "priority", dir: "desc" }, findings: { key: "severity", dir: "desc" } };
   let filters = { q: "", priority: "", scanner: "", status: "", kev: false, overdue: false };
   let selected = "";
+  const ssvcPick = new Map(); // register row key -> SSVC answers the analyst chose (this session only)
 
   // ---- feeds (same-origin mirrors, loaded on mount) ----
   function renderFeeds() {
@@ -491,8 +501,25 @@ export function renderVulnImport(main) {
     d.innerHTML = '<div class="' + P + '-row" style="margin:0;justify-content:space-between"><h3>' + pill(v.priority) + " " + esc(v.title) + "</h3>" + closeBtn() + "</div>" +
       '<dl class="' + P + '-dl">' + dl.map(([k, x]) => "<dt>" + esc(k) + "</dt><dd>" + esc(x) + "</dd>").join("") + "</dl>" +
       (v.solution ? "<p><b>Solution</b></p><pre>" + esc(v.solution) + "</pre>" : "") + (v.output ? "<p><b>Scanner output</b></p><pre>" + esc(v.output) + "</pre>" : "") +
-      (v.references ? "<p><b>References</b></p><pre>" + esc(v.references) + "</pre>" : "");
+      (v.references ? "<p><b>References</b></p><pre>" + esc(v.references) + "</pre>" : "") +
+      '<div class="' + P + '-ssvc" id="' + P + '-ssvc"></div>';
+    drawSsvc(d.querySelector("#" + P + "-ssvc"), v);
     wireClose(d);
+  }
+
+  // SSVC second opinion: answers the row supports are pre-selected (with their basis); mission
+  // prevalence is the analyst's call, so no decision shows until it is chosen.
+  function drawSsvc(box, v) {
+    const auto = ssvcInputs(v);
+    const pick = ssvcPick.get(v.key) || { exploitation: auto.exploitation, impact: auto.impact, automatable: auto.automatable, prevalence: "" };
+    const Q = [["exploitation", "Exploitation"], ["impact", "Technical impact"], ["automatable", "Automatable"], ["prevalence", "Mission prevalence"]];
+    const dec = ssvcDecide(pick.exploitation, pick.impact, pick.automatable, pick.prevalence);
+    const cls = { Act: "act", Attend: "attend", "Track*": "trackstar", Track: "track" };
+    box.innerHTML = "<h4>SSVC decision (CISA)</h4>" + Q.map(([k, label]) => '<div class="' + P + '-ssvc-q"><span>' + esc(label) + "</span>" +
+      SSVC_OPTIONS[k].map(([val, l]) => '<button type="button" data-k="' + k + '" data-v="' + val + '"' + (pick[k] === val ? ' class="on"' : "") + ">" + esc(l) + "</button>").join("") +
+      (auto.basis[k] ? "<small>From the import: " + esc(auto.basis[k]) + "</small>" : k === "prevalence" ? "<small>How central the affected asset is to your mission. Your call.</small>" : "<small>Not derivable from this record; choose one.</small>") + "</div>").join("") +
+      '<div class="' + P + '-ssvc-r">' + (dec ? '<b class="' + cls[dec] + '">' + esc(dec) + "</b>: " + esc(SSVC_GUIDANCE[dec]) + " The P1-P4 priority above is unchanged." : "Answer all four to see the SSVC decision.") + "</div>";
+    box.querySelectorAll("button[data-k]").forEach((b) => b.addEventListener("click", () => { ssvcPick.set(v.key, { ...pick, [b.dataset.k]: b.dataset.v }); drawSsvc(box, v); }));
   }
 
   const FIND_COLS = [

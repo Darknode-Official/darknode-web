@@ -317,7 +317,6 @@ body:not(.landing):not(.app)::before{content:"";position:fixed;inset:0;z-index:-
 .menu-item.col{display:flex;flex-direction:column;gap:4px;padding-top:9px;padding-bottom:9px}
 .menu-item.col strong{font-size:.84rem;line-height:1.25}
 .menu-sub{font-size:.72rem;color:var(--mut);white-space:normal;line-height:1.4}
-.set-block .set-lbl{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--mut);margin-bottom:4px}
 .menu-prof{display:flex;align-items:center;gap:9px;padding:8px 10px;border-bottom:1px solid var(--line);margin-bottom:4px}
 .menu-div{height:1px;background:var(--line);margin:5px 4px}
 /* ===== app console shell ===== */
@@ -365,7 +364,6 @@ body.app #view{max-width:none;padding:0;margin:0}
 .set-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:20px 24px;margin-bottom:14px;box-shadow:var(--sh-1);
   transition:border-color var(--dur) var(--ease),box-shadow var(--dur-slow) var(--ease)}
 .set-card:hover{border-color:var(--acc-line);box-shadow:var(--sh-2)}
-.set-lbl{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--mut);margin-bottom:12px}
 .set-row{display:flex;justify-content:space-between;gap:16px;align-items:center;padding:8px 14px;border-bottom:1px solid var(--line);font-size:.85rem}
 .set-row:last-child{border-bottom:none}
 .set-btns{display:flex;gap:8px;flex-wrap:wrap}
@@ -550,15 +548,6 @@ a.dl-card:hover{border-color:var(--acc)}
 .data-table tr:hover{background:rgba(255,255,255,.02)}
 
 /* threat feed */
-.feed-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-bottom:8px}
-.feed-card{display:flex;flex-direction:column;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:6px;
-  padding:15px;text-decoration:none;color:var(--txt);box-shadow:var(--sh-1);transition:border-color .15s ease,transform .15s ease}
-.feed-card:hover{border-color:var(--acc-line);transform:translateY(-2px)}
-.feed-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.feed-id{font-size:.74rem;color:var(--mut)}
-.feed-name{font-weight:700;font-size:.98rem;letter-spacing:-.01em}
-.feed-desc{color:var(--txt-2);font-size:.82rem;line-height:1.5}
-.feed-meta{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:.72rem;margin-top:auto}
 .feed-list{display:flex;flex-direction:column;gap:2px}
 .feed-row{display:flex;align-items:center;gap:10px;padding:9px 8px;border-radius:9px;text-decoration:none;color:var(--txt);transition:background .14s}
 .feed-row:hover{background:var(--card2)}
@@ -568,7 +557,6 @@ a.dl-card:hover{border-color:var(--acc)}
 @media(max-width:560px){.fr-tag{display:none}}
 
 /* ports table */
-.ports-card{padding:0;overflow:hidden;max-width:none}
 .ports{width:100%;border-collapse:collapse;font-size:.82rem}
 .ports th{text-align:left;font-size:.62rem;text-transform:uppercase;letter-spacing:.1em;color:var(--mut);padding:11px 16px;border-bottom:1px solid var(--line)}
 .ports td{padding:9px 16px;border-bottom:1px solid var(--line)}
@@ -594,14 +582,6 @@ a.dl-card:hover{border-color:var(--acc)}
 .cs-copy:hover{border-color:var(--acc-line);color:var(--acc)}
 
 /* resources */
-.res-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
-.res-card{display:flex;flex-direction:column;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:6px;
-  padding:15px;text-decoration:none;color:var(--txt);box-shadow:var(--sh-1);transition:border-color .15s ease,transform .15s ease}
-.res-card:hover{border-color:var(--acc-line);transform:translateY(-2px)}
-.res-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.res-name{font-weight:700;font-size:.98rem}
-.res-desc{color:var(--txt-2);font-size:.82rem;line-height:1.5;flex:1}
-.res-link{font-size:.72rem;color:var(--acc);font-family:var(--font-mono);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .res-chips{display:flex;flex-wrap:wrap;gap:8px}
 .res-chip{display:inline-flex;background:var(--card2);border:1px solid var(--line);border-radius:8px;padding:7px 11px;
   text-decoration:none;color:var(--txt);font-size:.8rem;font-weight:500;transition:.15s}
@@ -620,25 +600,7 @@ a.dl-card:hover{border-color:var(--acc)}
 .pos-text .muted{font-size:.74rem;line-height:1.5}
 
 /* interactive utilities */
-.util-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(320px,100%),1fr));gap:14px}
-.util-card{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:15px;box-shadow:var(--sh-1);display:flex;flex-direction:column;gap:8px}
-.util-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
-.util-head h3{margin:0;font-size:.96rem}
-.util-card .in{font-size:.82rem}
-.util-card textarea.in{resize:vertical}
-.util-row{display:flex;gap:8px;align-items:center}
-.util-row .in{flex:1;min-width:0}
 .util-btns{display:flex;gap:7px;align-items:center;flex-wrap:wrap}
-.util-chk{display:inline-flex;align-items:center;gap:5px;font-size:.76rem;color:var(--mut)}
-.util-chk input{width:15px;height:15px;accent-color:var(--acc)}
-.util-kv{display:flex;align-items:center;gap:10px;font-size:.78rem;padding:4px 0;border-top:1px solid var(--line)}
-.util-kv:first-of-type{border-top:none}
-.util-kv span{color:var(--mut);flex:none;width:66px}
-.util-val{flex:1;min-width:0;overflow-x:auto;white-space:nowrap;background:var(--bg2);border:1px solid var(--line);border-radius:6px;padding:5px 8px;color:var(--acc);font-size:.74rem}
-.util-card .out{font-size:.75rem;margin:0;background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:9px 10px;color:var(--mut);max-height:260px;overflow:auto;white-space:pre}
-/* Wide monospace output (hexdumps, JWT bodies) scrolls INSIDE its card instead of
-   stretching the grid column or forcing the page to scroll sideways. */
-.util-card pre.out{overflow-x:auto}
 
 /* announcement banner */
 .banner{border-radius:12px}
@@ -877,8 +839,8 @@ body.app .app-main::before{content:"";position:fixed;inset:0 0 0 220px;z-index:-
    Feature-plan polish pass (v2) — cards, severity, utils, private cloud
    ============================================================ */
 /* card hover glow */
-.util-card,.feat-card,.arse-card{transition:border-color .16s ease,transform .16s ease,box-shadow .16s ease}
-.util-card:hover,.feat-card:hover{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc-soft),0 8px 30px -12px var(--acc-soft);transform:translateY(-2px)}
+.feat-card,.arse-card{transition:border-color .16s ease,transform .16s ease,box-shadow .16s ease}
+.feat-card:hover{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc-soft),0 8px 30px -12px var(--acc-soft);transform:translateY(-2px)}
 
 /* consistent severity chips */
 .sev{display:inline-block;font-size:.68rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:2px 8px;border-radius:20px}
@@ -886,13 +848,6 @@ body.app .app-main::before{content:"";position:fixed;inset:0 0 0 220px;z-index:-
 .sev.high{color:var(--bad);background:color-mix(in srgb,var(--bad) 18%,transparent)}
 .sev.medium{color:var(--warn);background:color-mix(in srgb,var(--warn) 18%,transparent)}
 .sev.low{color:var(--ok);background:color-mix(in srgb,var(--ok) 18%,transparent)}
-
-/* password strength meter */
-.pw-meter{height:8px;border-radius:6px;background:color-mix(in srgb,var(--mut) 25%,transparent);overflow:hidden;margin-top:8px}
-.pw-meter span{display:block;height:100%;width:0;border-radius:6px;transition:width .2s ease,background .2s ease;background:var(--bad)}
-.pw-meter span[data-lvl="fair"]{background:var(--warn)}
-.pw-meter span[data-lvl="strong"]{background:var(--acc)}
-.pw-meter span[data-lvl="very-strong"]{background:var(--ok)}
 
 /* Private Cloud Generator */
 .pc-wrap{display:grid;grid-template-columns:minmax(260px,340px) 1fr;gap:16px;align-items:start}
@@ -1087,21 +1042,21 @@ html.crt body::after{content:"";position:fixed;inset:0;pointer-events:none;z-ind
 }
 
 /* light polish pass (web) — kept simpler than the desktop app */
-.card,.util-card,.cs-card{transition:border-color .15s ease,box-shadow .15s ease}
+.card,.cs-card{transition:border-color .15s ease,box-shadow .15s ease}
 
 /* ============================================================
    CSS PLAN — Phase 6 (website polish, lighter than the app)
    ============================================================ */
 /* subtle staggered reveal on content grids */
-.util-grid > *,.cs-grid > *,.arse-grid > *,.feat-grid > *,.ed-grid > *{animation:webIn .3s ease both}
-.util-grid > *:nth-child(2),.cs-grid > *:nth-child(2),.arse-grid > *:nth-child(2),.feat-grid > *:nth-child(2){animation-delay:.03s}
-.util-grid > *:nth-child(3),.cs-grid > *:nth-child(3),.arse-grid > *:nth-child(3),.feat-grid > *:nth-child(3){animation-delay:.06s}
-.util-grid > *:nth-child(4),.cs-grid > *:nth-child(4),.arse-grid > *:nth-child(4),.feat-grid > *:nth-child(4){animation-delay:.09s}
-.util-grid > *:nth-child(n+5),.cs-grid > *:nth-child(n+5),.arse-grid > *:nth-child(n+5),.feat-grid > *:nth-child(n+5){animation-delay:.12s}
+.cs-grid > *,.arse-grid > *,.feat-grid > *,.ed-grid > *{animation:webIn .3s ease both}
+.cs-grid > *:nth-child(2),.arse-grid > *:nth-child(2),.feat-grid > *:nth-child(2){animation-delay:.03s}
+.cs-grid > *:nth-child(3),.arse-grid > *:nth-child(3),.feat-grid > *:nth-child(3){animation-delay:.06s}
+.cs-grid > *:nth-child(4),.arse-grid > *:nth-child(4),.feat-grid > *:nth-child(4){animation-delay:.09s}
+.cs-grid > *:nth-child(n+5),.arse-grid > *:nth-child(n+5),.feat-grid > *:nth-child(n+5){animation-delay:.12s}
 @keyframes webIn{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
-@media (prefers-reduced-motion:reduce){.util-grid > *,.cs-grid > *,.arse-grid > *,.feat-grid > *,.ed-grid > *{animation:none}}
+@media (prefers-reduced-motion:reduce){.cs-grid > *,.arse-grid > *,.feat-grid > *,.ed-grid > *{animation:none}}
 /* consistent card hover + focus polish */
-.util-card:hover,.cs-card:hover,.arse-card:hover,.ed-card:hover{border-color:var(--acc)}
+.cs-card:hover,.arse-card:hover,.ed-card:hover{border-color:var(--acc)}
 .tk-f:focus,.tk-in:focus,.tk-search:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 22%,transparent)}
 
 /* Feedback / bug-report modal + admin rows */
@@ -1473,8 +1428,7 @@ code,pre,.mono,.tw-body,.ed-cmd,.term-window .tw-body,.dlapp-cmd code{font-famil
 :root[data-theme="light"] .di-code,
 :root[data-theme="light"] .ed-cmd,
 :root[data-theme="light"] .ai-offline-b code,
-:root[data-theme="light"] .dl-cmd,
-:root[data-theme="light"] .res-link{color:#0575a6}
+:root[data-theme="light"] .dl-cmd{color:#0575a6}
 
 /* ---- Learn Hub ---- */
 
@@ -3478,7 +3432,7 @@ input,textarea,.tk-f,.tk-in,.tk-search,.ai-input,.lh-inp{width:100%}
 /* --- Font-size floor: bump sub-.75rem text to readable sizes on mobile --- */
 @media(max-width:720px){
   .tk-badge,.tk-cat-n{font-size:.72rem}
-  .tk-cat-h,.set-lbl,.set-block .set-lbl,.dlapp-cmd-l,
+  .tk-cat-h,.dlapp-cmd-l,
   .dl-bh,.tour-step,.code-block .cb-copy{font-size:.75rem}
   .os-ed-tag,.dl-check,.tool-state{font-size:.72rem}
   .os-ed-sz,.dl-copy,.dl-mark,.dl-fmt{font-size:.75rem}
@@ -4476,40 +4430,6 @@ body.landing .demo-grid{margin-top:16px}
 /* ----------------------------------------------------------------
    DNS Toolkit
    ---------------------------------------------------------------- */
-.dns-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin-bottom:12px}
-.dns-card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-.dns-type{font-size:1.1rem;font-weight:700;color:var(--acc);font-family:var(--font-mono)}
-.dns-rfc{font-size:.72rem;color:var(--mut);background:var(--card2);padding:2px 8px;border-radius:10px}
-.dns-desc{font-size:.82rem;color:var(--txt-2);margin-bottom:8px;line-height:1.5}
-.dns-example{font-family:var(--font-mono);font-size:.78rem;color:var(--acc);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px 12px;margin:6px 0;word-break:break-all}
-.dns-security{font-size:.8rem;color:var(--txt-2);line-height:1.5;margin:6px 0}
-.dns-risk{display:inline-block;padding:2px 8px;border-radius:10px;font-size:.72rem;font-weight:600}
-.dns-detection{font-size:.8rem;color:var(--txt-2);margin:4px 0}
-.dns-prevention{font-size:.8rem;color:var(--txt-2);margin:4px 0}
-.dns-fix{font-size:.8rem;color:var(--ok);margin:4px 0}
-.dns-mitre{font-size:.72rem;color:var(--mut);font-family:var(--font-mono)}
-.dns-tools{font-size:.78rem;color:var(--mut);margin:4px 0}
-.dns-atk-name{font-weight:600;color:var(--txt);font-size:.88rem}
-.dns-input{width:100%;box-sizing:border-box;padding:8px 12px;background:var(--bg);border:1px solid var(--line);color:var(--txt);border-radius:6px;font-family:var(--font-mono);font-size:.82rem}
-.dns-input:focus{outline:none;border-color:var(--acc)}
-.dns-output{background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:12px;font-family:var(--font-mono);font-size:.82rem;min-height:60px;white-space:pre-wrap;word-break:break-all;color:var(--txt)}
-.dns-result{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin-top:12px}
-.dns-result-label{font-size:.78rem;font-weight:600;color:var(--mut);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px}
-.dns-result-detail{font-size:.82rem;color:var(--txt);font-family:var(--font-mono);line-height:1.6}
-.dns-ref{margin-bottom:12px}
-.dns-ref-table{width:100%;border-collapse:collapse;font-size:.82rem}
-.dns-ref-table th{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);color:var(--mut);font-weight:600;font-size:.75rem;text-transform:uppercase;letter-spacing:.04em}
-.dns-ref-table td{padding:8px 10px;border-bottom:1px solid var(--line);color:var(--txt)}
-.dns-builder{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin-bottom:12px}
-.dns-field{margin-bottom:8px}
-.dns-field-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px}
-.dns-multi{margin:8px 0}
-.dns-multi-item{display:flex;gap:6px;align-items:center;margin-bottom:4px}
-.dns-rm{background:none;border:1px solid var(--bad);color:var(--bad);width:24px;height:24px;border-radius:4px;cursor:pointer;font-size:.9rem;display:flex;align-items:center;justify-content:center}
-.dns-rm:hover{background:var(--bad);color:#fff}
-.spf-include{color:var(--acc);font-family:var(--font-mono);font-size:.82rem}
-.spf-ip4{color:var(--ok);font-family:var(--font-mono);font-size:.82rem}
-.spf-ip6{color:var(--warn);font-family:var(--font-mono);font-size:.82rem}
 
 /* ----------------------------------------------------------------
    Adversary AI
@@ -5033,34 +4953,6 @@ textarea.rx-input{min-height:120px;resize:vertical;line-height:1.6}
 /* ----------------------------------------------------------------
    HTTP Inspector
    ---------------------------------------------------------------- */
-.hti{padding:4px 0}
-.hti-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
-.hti-tab{padding:6px 14px;border:1px solid var(--line);background:var(--card);color:var(--mut);border-radius:6px;cursor:pointer;font-size:.8rem;transition:all .15s}
-.hti-tab:hover{border-color:var(--acc);color:var(--txt)}
-.hti-tab.active,.hti-tab.on{background:var(--acc);color:#000;border-color:var(--acc);font-weight:600}
-.hti-panel{display:none}
-.hti-panel.active,.hti-panel.on{display:block}
-.hti-label{font-size:.82rem;font-weight:600;color:var(--txt);margin-bottom:4px;display:block}
-.hti-input{width:100%;box-sizing:border-box;padding:8px 12px;background:var(--bg);border:1px solid var(--line);color:var(--txt);border-radius:6px;font-family:var(--font-mono);font-size:.82rem}
-.hti-input:focus{outline:none;border-color:var(--acc)}
-.hti-btn{background:var(--acc);color:#000;border:none;padding:6px 16px;border-radius:6px;cursor:pointer;font-weight:600;font-size:.82rem;transition:opacity .15s}
-.hti-btn:hover{opacity:.85}
-.hti-result{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin:8px 0}
-.hti-table{width:100%;border-collapse:collapse;font-size:.82rem}
-.hti-table th{text-align:left;padding:6px 10px;border-bottom:1px solid var(--line);color:var(--mut);font-weight:600}
-.hti-table td{padding:6px 10px;border-bottom:1px solid var(--line)}
-.hti-grade{display:inline-block;padding:4px 12px;border-radius:6px;font-size:1rem;font-weight:700;text-align:center;min-width:36px}
-.hti-grade-A{background:rgba(34,197,94,.15);color:var(--ok)}
-.hti-grade-B{background:rgba(34,197,94,.1);color:#4ade80}
-.hti-grade-C{background:rgba(245,158,11,.15);color:var(--warn)}
-.hti-grade-D{background:rgba(249,115,22,.15);color:#fb923c}
-.hti-grade-F{background:rgba(239,68,68,.15);color:var(--bad)}
-.hti-good{color:var(--ok);font-size:.82rem}
-.hti-bad{color:var(--bad);font-size:.82rem}
-.hti-issue{font-size:.82rem;color:var(--warn);padding:4px 0;border-bottom:1px solid var(--line)}
-.hti-csp-dir{margin:4px 0}
-.hti-csp-name{font-weight:600;color:var(--acc);font-size:.82rem;font-family:var(--font-mono)}
-.hti-csp-val{font-size:.78rem;color:var(--txt-2);font-family:var(--font-mono);margin-left:8px}
 
 /* ----------------------------------------------------------------
    Breach Simulator
@@ -7039,7 +6931,7 @@ body.app .dash-hero .btn.ghost:hover {
 .tab-bar .tab,
 .ca-tab,.pc-tab,.mf-tab,.hy-tab,.wl-tab,.re-tab,.dw-tab,.cr-tab,
 .adv-tab,.ag-tab,.api-tab,.bs-tab,.cc-tab,.cmp-tab,.cp-tab,.ct-tab,
-.dl-tab,.doc-tab,.enc-tab,.ft-tab,.hs-tab,.hti-tab,.ip-tab,.os-tab,
+.dl-tab,.doc-tab,.enc-tab,.ft-tab,.hs-tab,.ip-tab,.os-tab,
 .pwt-tab,.rag-tab,.rc-tab,.rx-tab,.set-tab,.sv-tab,.tm-tab,.ts-tab{
   padding:8px 16px;font-size:.78rem;font-weight:600;
   border:1.5px solid var(--line);border-radius:var(--btn-radius, 4px);
@@ -7054,7 +6946,7 @@ body.app .dash-hero .btn.ghost:hover {
 .re-tab:hover,.dw-tab:hover,.cr-tab:hover,.adv-tab:hover,.ag-tab:hover,
 .api-tab:hover,.bs-tab:hover,.cc-tab:hover,.cmp-tab:hover,.cp-tab:hover,
 .ct-tab:hover,.dl-tab:hover,.doc-tab:hover,.enc-tab:hover,.ft-tab:hover,
-.hs-tab:hover,.hti-tab:hover,.ip-tab:hover,.os-tab:hover,.pwt-tab:hover,
+.hs-tab:hover,.ip-tab:hover,.os-tab:hover,.pwt-tab:hover,
 .rag-tab:hover,.rc-tab:hover,.rx-tab:hover,.set-tab:hover,.sv-tab:hover,
 .tm-tab:hover,.ts-tab:hover{
   border-color:var(--acc-line);color:var(--txt-2);
@@ -7073,7 +6965,7 @@ body.app .dash-hero .btn.ghost:hover {
 .cp-tab.active,.cp-tab.on,.ct-tab.active,.ct-tab.on,
 .dl-tab.active,.dl-tab.on,.doc-tab.active,.doc-tab.on,
 .enc-tab.active,.enc-tab.on,.ft-tab.active,.ft-tab.on,
-.hs-tab.active,.hs-tab.on,.hti-tab.active,.hti-tab.on,
+.hs-tab.active,.hs-tab.on,
 .ip-tab.active,.ip-tab.on,.os-tab.active,.os-tab.on,
 .pwt-tab.active,.pwt-tab.on,.rag-tab.active,.rag-tab.on,
 .rc-tab.active,.rc-tab.on,.rx-tab.active,.rx-tab.on,
@@ -7096,11 +6988,10 @@ body.app .dash-hero .btn.ghost:hover {
 .pc-tpl-card,.wl-atk-card,.wl-vuln-card,.wl-bt-card,.cr-chal,
 .dw-actor-card,.dw-paste-card,.re-panel,
 .ca-section,.mf-section,.tk-section,
-.bs-card,.cp-card,.ct-card,.dl-card,.dns-card,.edb-card,.ed-card,
+.bs-card,.cp-card,.ct-card,.dl-card,.edb-card,.ed-card,
 .enc-card,.feat-card,.ft-card,.gh-card,.hs-card,.ip-card,.lab-card,
-.mod-card,.mode-card,.nx-card,.os-card,.plab-card,.rag-card,.rc-card,
-.res-card,.set-card,.steg-card,.sv-card,.tk-card,.thl-card,.vl-card,
-.as-card,.arse-card,.cs-card,.auth-card,.feed-card{
+.mod-card,.mode-card,.nx-card,.os-card,.plab-card,.rag-card,.rc-card,.set-card,.steg-card,.sv-card,.tk-card,.thl-card,.vl-card,
+.as-card,.arse-card,.cs-card,.auth-card{
   background:var(--card);border:1px solid var(--line);
   border-radius:8px;padding:14px 16px;
   transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease
@@ -7109,12 +7000,12 @@ body.app .dash-hero .btn.ghost:hover {
 /* Card hover lift */
 .pc-tpl-card:hover,.wl-atk-card:hover,.wl-vuln-card:hover,.wl-bt-card:hover,
 .cr-chal:hover,.dw-actor-card:hover,.dw-paste-card:hover,
-.bs-card:hover,.cp-card:hover,.ct-card:hover,.dl-card:hover,.dns-card:hover,
+.bs-card:hover,.cp-card:hover,.ct-card:hover,.dl-card:hover,
 .edb-card:hover,.ed-card:hover,.enc-card:hover,.feat-card:hover,.ft-card:hover,
 .gh-card:hover,.hs-card:hover,.ip-card:hover,.lab-card:hover,.mod-card:hover,
 .nx-card:hover,.os-card:hover,.plab-card:hover,.rag-card:hover,.rc-card:hover,
 .sv-card:hover,.steg-card:hover,.tk-card:hover,.thl-card:hover,.vl-card:hover,
-.as-card:hover,.arse-card:hover,.cs-card:hover,.feed-card:hover{
+.as-card:hover,.arse-card:hover,.cs-card:hover{
   transform:translateY(-2px);
   box-shadow:0 8px 24px rgba(0,0,0,.18);
   border-color:var(--acc-line)
@@ -7153,10 +7044,10 @@ body.app .dash-hero .btn.ghost:hover {
 .wl-input,.wl-select,.re-input,.re-select,.re-textarea,
 .dw-input,.dw-select,.cr-flag-input,
 .hy-select,.ct-input,.ct-textarea,.enc-input,.enc-textarea,
-.ft-input,.hs-input,.hs-select,.hs-textarea,.hti-input,
+.ft-input,.hs-input,.hs-select,.hs-textarea,
 .ip-input,.pwt-input,.rx-input,.sv-input,.steg-input,
 .bs-select,.cp-input,.edb-select,.adv-select,
-.ag-textarea,.ai-input,.ws-input,.dns-input,.tk-in{
+.ag-textarea,.ai-input,.ws-input,.tk-in{
   background:var(--bg);border:1px solid var(--line);color:var(--txt);
   border-radius:8px;padding:10px 14px;font-family:inherit;
   font-size:.82rem;width:100%;box-sizing:border-box;
@@ -7171,11 +7062,10 @@ body.app .dash-hero .btn.ghost:hover {
 .dw-input:focus,.dw-select:focus,.cr-flag-input:focus,
 .hy-select:focus,.ct-input:focus,.ct-textarea:focus,
 .enc-input:focus,.enc-textarea:focus,.ft-input:focus,
-.hs-input:focus,.hs-select:focus,.hs-textarea:focus,.hti-input:focus,
+.hs-input:focus,.hs-select:focus,.hs-textarea:focus,
 .ip-input:focus,.pwt-input:focus,.rx-input:focus,.sv-input:focus,
 .steg-input:focus,.bs-select:focus,.cp-input:focus,.edb-select:focus,
-.adv-select:focus,.ag-textarea:focus,.ai-input:focus,.ws-input:focus,
-.dns-input:focus,.tk-in:focus{
+.adv-select:focus,.ag-textarea:focus,.ai-input:focus,.ws-input:focus,.tk-in:focus{
   outline:none;border-color:var(--acc);
   box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 12%,transparent)
 }
@@ -7184,10 +7074,9 @@ body.app .dash-hero .btn.ghost:hover {
 .ca-input::placeholder,.mf-input::placeholder,.pc-input::placeholder,
 .wl-input::placeholder,.re-input::placeholder,.dw-input::placeholder,
 .cr-flag-input::placeholder,.ct-input::placeholder,.enc-input::placeholder,
-.ft-input::placeholder,.hs-input::placeholder,.hti-input::placeholder,
+.ft-input::placeholder,.hs-input::placeholder,
 .ip-input::placeholder,.pwt-input::placeholder,.rx-input::placeholder,
-.sv-input::placeholder,.steg-input::placeholder,.cp-input::placeholder,
-.dns-input::placeholder,.ws-input::placeholder,.ai-input::placeholder{
+.sv-input::placeholder,.steg-input::placeholder,.cp-input::placeholder,.ws-input::placeholder,.ai-input::placeholder{
   color:var(--placeholder)
 }
 
@@ -7195,7 +7084,7 @@ body.app .dash-hero .btn.ghost:hover {
    5. BUTTONS — primary, ghost, danger, disabled
    ---------------------------------------------------------------- */
 .ca-btn,.mf-btn,.wl-btn,.re-btn,.dw-btn,.cr-flag-submit,
-.hy-btn,.ct-btn,.enc-btn,.ft-btn,.hs-btn,.hti-btn,.ip-btn,
+.hy-btn,.ct-btn,.enc-btn,.ft-btn,.hs-btn,.ip-btn,
 .pwt-btn,.sv-btn,.steg-btn,.bs-btn,.cp-btn,.dl-btn,.adv-btn,
 .ag-btn,.pka-btn,.set-btn,.tk-btn,.util-btn{
   background:var(--acc);color:var(--on-acc);border:none;
@@ -7206,7 +7095,7 @@ body.app .dash-hero .btn.ghost:hover {
 }
 .ca-btn:hover,.mf-btn:hover,.wl-btn:hover,.re-btn:hover,.dw-btn:hover,
 .cr-flag-submit:hover,.hy-btn:hover,.ct-btn:hover,.enc-btn:hover,
-.ft-btn:hover,.hs-btn:hover,.hti-btn:hover,.ip-btn:hover,
+.ft-btn:hover,.hs-btn:hover,.ip-btn:hover,
 .pwt-btn:hover,.sv-btn:hover,.steg-btn:hover,.bs-btn:hover,
 .cp-btn:hover,.dl-btn:hover,.adv-btn:hover,.ag-btn:hover,
 .pka-btn:hover,.set-btn:hover,.tk-btn:hover,.util-btn:hover{
@@ -7216,7 +7105,7 @@ body.app .dash-hero .btn.ghost:hover {
 }
 .ca-btn:active,.mf-btn:active,.wl-btn:active,.re-btn:active,.dw-btn:active,
 .cr-flag-submit:active,.hy-btn:active,.ct-btn:active,.enc-btn:active,
-.ft-btn:active,.hs-btn:active,.hti-btn:active,.ip-btn:active,
+.ft-btn:active,.hs-btn:active,.ip-btn:active,
 .pwt-btn:active,.sv-btn:active,.steg-btn:active,.bs-btn:active,
 .cp-btn:active,.dl-btn:active,.adv-btn:active,.ag-btn:active,
 .pka-btn:active,.set-btn:active,.tk-btn:active,.util-btn:active{
@@ -7245,7 +7134,7 @@ body.app .dash-hero .btn.ghost:hover {
 /* Disabled buttons */
 .ca-btn:disabled,.mf-btn:disabled,.wl-btn:disabled,.re-btn:disabled,
 .dw-btn:disabled,.cr-flag-submit:disabled,.hy-btn:disabled,.ct-btn:disabled,
-.enc-btn:disabled,.ft-btn:disabled,.hs-btn:disabled,.hti-btn:disabled,
+.enc-btn:disabled,.ft-btn:disabled,.hs-btn:disabled,
 .ip-btn:disabled,.pwt-btn:disabled,.sv-btn:disabled,.steg-btn:disabled,
 .bs-btn:disabled,.cp-btn:disabled,.dl-btn:disabled,.tk-btn:disabled{
   opacity:.5;cursor:not-allowed;transform:none;box-shadow:none
@@ -7256,8 +7145,8 @@ body.app .dash-hero .btn.ghost:hover {
    ---------------------------------------------------------------- */
 .ca-pre,.mf-result,.wl-output,.re-output,.dw-result,.pc-output,
 .hy-output,.ct-output,.enc-output,.enc-result,.ft-result,.hs-output,
-.hs-result,.hti-result,.ip-output,.pwt-result,.rx-result,.sv-result,
-.steg-result,.dns-output,.dns-result,.cp-result,.tk-out,.sb-output{
+.hs-result,.ip-output,.pwt-result,.rx-result,.sv-result,
+.steg-result,.cp-result,.tk-out,.sb-output{
   background:var(--code-bg,var(--bg));border:1px solid var(--line);
   border-radius:8px;padding:14px;font-family:var(--font-mono);
   font-size:.78rem;color:var(--code-fg,var(--txt-2));
@@ -7346,7 +7235,7 @@ body.app .dash-hero .btn.ghost:hover {
 .wl-output::-webkit-scrollbar,.dw-result::-webkit-scrollbar,
 .re-output::-webkit-scrollbar,.sb-output::-webkit-scrollbar,
 .tk-out::-webkit-scrollbar,.enc-output::-webkit-scrollbar,
-.hs-output::-webkit-scrollbar,.dns-output::-webkit-scrollbar,
+.hs-output::-webkit-scrollbar,
 .cp-result::-webkit-scrollbar,.ft-result::-webkit-scrollbar,
 .rx-result::-webkit-scrollbar,
 pre::-webkit-scrollbar,code::-webkit-scrollbar,
@@ -7357,7 +7246,7 @@ pre::-webkit-scrollbar,code::-webkit-scrollbar,
 .wl-output::-webkit-scrollbar-track,.dw-result::-webkit-scrollbar-track,
 .re-output::-webkit-scrollbar-track,.sb-output::-webkit-scrollbar-track,
 .tk-out::-webkit-scrollbar-track,.enc-output::-webkit-scrollbar-track,
-.hs-output::-webkit-scrollbar-track,.dns-output::-webkit-scrollbar-track,
+.hs-output::-webkit-scrollbar-track,
 .cp-result::-webkit-scrollbar-track,.ft-result::-webkit-scrollbar-track,
 .rx-result::-webkit-scrollbar-track,
 pre::-webkit-scrollbar-track,code::-webkit-scrollbar-track,
@@ -7368,7 +7257,7 @@ pre::-webkit-scrollbar-track,code::-webkit-scrollbar-track,
 .wl-output::-webkit-scrollbar-thumb,.dw-result::-webkit-scrollbar-thumb,
 .re-output::-webkit-scrollbar-thumb,.sb-output::-webkit-scrollbar-thumb,
 .tk-out::-webkit-scrollbar-thumb,.enc-output::-webkit-scrollbar-thumb,
-.hs-output::-webkit-scrollbar-thumb,.dns-output::-webkit-scrollbar-thumb,
+.hs-output::-webkit-scrollbar-thumb,
 .cp-result::-webkit-scrollbar-thumb,.ft-result::-webkit-scrollbar-thumb,
 .rx-result::-webkit-scrollbar-thumb,
 pre::-webkit-scrollbar-thumb,code::-webkit-scrollbar-thumb,
@@ -7380,7 +7269,7 @@ pre::-webkit-scrollbar-thumb,code::-webkit-scrollbar-thumb,
 .wl-output::-webkit-scrollbar-thumb:hover,.dw-result::-webkit-scrollbar-thumb:hover,
 .re-output::-webkit-scrollbar-thumb:hover,.sb-output::-webkit-scrollbar-thumb:hover,
 .tk-out::-webkit-scrollbar-thumb:hover,.enc-output::-webkit-scrollbar-thumb:hover,
-.hs-output::-webkit-scrollbar-thumb:hover,.dns-output::-webkit-scrollbar-thumb:hover,
+.hs-output::-webkit-scrollbar-thumb:hover,
 .cp-result::-webkit-scrollbar-thumb:hover,.ft-result::-webkit-scrollbar-thumb:hover,
 .rx-result::-webkit-scrollbar-thumb:hover,
 pre::-webkit-scrollbar-thumb:hover,code::-webkit-scrollbar-thumb:hover,
@@ -7390,7 +7279,7 @@ pre::-webkit-scrollbar-thumb:hover,code::-webkit-scrollbar-thumb:hover,
 
 /* Firefox scrollbar support */
 .ca-pre,.mf-result,.wl-output,.dw-result,.re-output,.sb-output,
-.tk-out,.enc-output,.hs-output,.dns-output,.cp-result,.ft-result,
+.tk-out,.enc-output,.hs-output,.cp-result,.ft-result,
 .rx-result,pre,code,.tool-scroll{
   scrollbar-width:thin;
   scrollbar-color:color-mix(in srgb,var(--acc) 25%,var(--line)) transparent
@@ -7404,8 +7293,8 @@ pre::-webkit-scrollbar-thumb:hover,code::-webkit-scrollbar-thumb:hover,
 .steg-grid,.edb-grid,.dl-grid,.bs-grid,.cp-grid,.rag-grid,.rc-grid,
 .nx-grid,.os-grid,.mod-grid,.tm-grid,.ts-grid,.vl-grid,.lab-grid,
 .plab-grid,.as-grid,.arse-grid,.cs-grid,.cta-grid,.demo-grid,
-.ed-grid,.feed-grid,.feat-grid,.foot-grid,.gh-grid,.lh-grid,
-.qa-grid,.ref-grid,.res-grid,.td-grid,.tk-grid,.util-grid,.pwt-grid,
+.ed-grid,.feat-grid,.foot-grid,.gh-grid,.lh-grid,
+.qa-grid,.ref-grid,.td-grid,.tk-grid,.pwt-grid,
 .boot-grid{
   display:grid;gap:14px
 }
@@ -7413,7 +7302,7 @@ pre::-webkit-scrollbar-thumb:hover,code::-webkit-scrollbar-thumb:hover,
 /* ----------------------------------------------------------------
    PANELS — tool inspector / detail panels
    ---------------------------------------------------------------- */
-.ag-panel,.ct-panel,.dw-panel,.enc-panel,.hs-panel,.hti-panel,
+.ag-panel,.ct-panel,.dw-panel,.enc-panel,.hs-panel,
 .ip-panel,.pg-panel,.pwt-panel,.rag-panel,.re-panel,.rx-panel,
 .set-panel,.steg-panel,.td-panel,.tk-panel,.wl-panel{
   background:var(--card);border:1px solid var(--line);
@@ -8721,8 +8610,6 @@ select:focus-visible {
   .tk-grid,
   .feat-grid,
   .mod-grid,
-  .res-grid,
-  .feed-grid,
   .dl-grid { grid-template-columns: minmax(0, 1fr) !important; }
   .stat-row { grid-template-columns: repeat(2, 1fr) !important; }
 }
@@ -9559,7 +9446,7 @@ body.focus-mode .app-main { padding-left: 20px !important; padding-right: 20px !
 
 /* Wide reference tables scroll sideways on phones instead of running off-screen */
 @media (max-width: 720px) {
-  .hti-table, .oe-table { display: block; max-width: 100%; overflow-x: auto; }
+  .oe-table { display: block; max-width: 100%; overflow-x: auto; }
   .cs-head, .ed-head { flex-wrap: wrap; }
   .cs-head .chip, .ed-head .chip { white-space: normal; max-width: 100%; }
 }

@@ -137,7 +137,7 @@ export function renderMcpConnector(main) {
   // Default selection: a small, representative starter set so the generated
   // config is useful immediately without overwhelming the client.
   const DEFAULT = new Set(
-    ["prometheus", "citadel", "cvesearch", "threat", "regexlab", "encoding", "hashsuite", "whoisrecon"]
+    ["prometheus", "citadel", "cvesearch", "regexlab", "encoding", "hashsuite", "whoisrecon"]
       .filter((s) => tools.some((t) => t.sec === s))
   );
   if (!DEFAULT.size && tools.length) tools.slice(0, 6).forEach((t) => DEFAULT.add(t.sec));

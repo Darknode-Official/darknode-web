@@ -8,7 +8,7 @@ import {
   TOOL_ID, VERSION, DEFAULTS, FORMATS, DETECTIONS, REGISTER_COLS,
   parseInput, analyze, detectFormat, classifyHeaders, computeCvss31, computeCvss2, priorityOf, slaDue, internetMatcher,
   normSeverity, parseTs, xmlElements, osCandidates, findingsToCsv, registerToCsv, assetsToCsv, remediationToCsv, cveListText, summaryText,
-  graphItems, exampleDataset, selfTest,
+  graphItems, exampleDataset, selfTest, ssvcDecide, ssvcInputs,
 } from "../../public/js/exposure/vulnimport-engine.js";
 
 const DAY = 86400000;
@@ -555,6 +555,19 @@ test("selfTest passes", () => {
   const s = selfTest();
   assert.ok(s.tests.length >= 5);
   assert.ok(s.tests.every((t) => t.pass), JSON.stringify(s.tests.filter((t) => !t.pass)));
+});
+
+test("SSVC decision table and the answers a record supports", () => {
+  assert.equal(ssvcDecide("active", "total", "yes", "essential"), "Act");
+  assert.equal(ssvcDecide("active", "partial", "yes", "minimal"), "Track*");
+  assert.equal(ssvcDecide("poc", "total", "no", "essential"), "Attend");
+  assert.equal(ssvcDecide("none", "partial", "no", "minimal"), "Track");
+  assert.equal(ssvcDecide("active", "total", "yes", ""), null, "mission prevalence is never assumed");
+  const a = ssvcInputs({ kev: true, cvssVector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H" });
+  assert.deepEqual([a.exploitation, a.impact, a.automatable], ["active", "total", "yes"]);
+  const b = ssvcInputs({ kev: false, exploit: null, cvssVector: "" });
+  assert.deepEqual([b.exploitation, b.impact, b.automatable], ["", "", ""]);
+  assert.equal(ssvcInputs({ exploit: true, cvssVector: "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:L/A:N" }).automatable, "no");
 });
 
 test("empty input yields an empty, well-formed result", () => {

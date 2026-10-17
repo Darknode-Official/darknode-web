@@ -62,18 +62,44 @@ async function _deDohRecords(domain) {
   return records;
 }
 
-async function _deDohSubdomains(domain) {
-  const prefixes = ['www','mail','ftp','api','dev','staging','admin','vpn','remote','portal','app','blog','cdn','docs','m','shop','status','support','test','webmail','smtp','git','sso','login','beta'];
-  const out = await Promise.all(prefixes.map(async p => {
-    const full = p + '.' + domain;
-    try {
-      const j = await _deDoh(full, 'A');
-      const a = _deAnswers(j, 'A');
-      if (a.length) return { subdomain: full, status: 'FOUND', ip: a[0].data, ports: [], headers: null };
-      return { subdomain: full, status: j.Status === 3 ? 'NXDOMAIN' : 'NO A RECORD', ip: null, ports: [], headers: null };
-    } catch { return { subdomain: full, status: 'LOOKUP FAILED', ip: null, ports: [], headers: null }; }
-  }));
+const DE_QUICK_SUBS = ['www','mail','ftp','api','dev','staging','admin','vpn','remote','portal','app','blog','cdn','docs','m','shop','status','support','test','webmail','smtp','git','sso','login','beta'];
+// Full wordlist (228 common names, superset of the quick list).
+const DE_FULL_SUBS = ['www','mail','ftp','smtp','pop','imap','webmail','admin','portal','vpn','remote','api','dev','staging','test','beta','alpha','demo','sandbox','uat','app','apps','mobile','m','cdn','static','assets','media','img','images','docs','wiki','help','support','status','blog','news','shop','store','pay','billing','dashboard','panel','cp','cpanel','whm','ns1','ns2','ns3','dns','dns1','dns2','mx','mx1','mx2','relay','gateway','proxy','cache','edge','lb','load','web','web1','web2','server','srv','db','database','mysql','postgres','mongo','redis','elastic','search','solr','kibana','grafana','prometheus','monitor','nagios','zabbix','jenkins','ci','cd','build','deploy','git','gitlab','github','bitbucket','svn','repo','registry','docker','k8s','kube','kubernetes','rancher','vault','consul','nomad','terraform','ansible','puppet','chef','salt','log','logs','syslog','elk','splunk','siem','auth','sso','login','signin','oauth','saml','ldap','ad','directory','exchange','owa','autodiscover','outlook','teams','office','o365','intranet','internal','corp','private','secure','sec','security','firewall','fw','ids','ips','waf','quarantine','backup','bak','dr','recovery','archive','old','legacy','v1','v2','api-v1','api-v2','rest','graphql','ws','websocket','socket','realtime','chat','im','msg','notify','push','feed','rss','atom','crm','erp','hr','accounting','finance','sales','marketing','analytics','tracking','stats','metrics','report','reports','cloud','aws','azure','gcp','heroku','vercel','netlify','staging2','preprod','qa','testing','load-test','perf','www2','www3','origin','backend','frontend','client','video','stream','live','tv','radio','podcast','events','calendar','booking','ticket','tickets','forum','community','social','connect','network','download','dl','update','updates','patch','release','map','maps','geo','location','gps','track','trace'];
+
+// Checks names in batches of 10 so a 228-name run does not flood the resolver.
+async function _deDohSubdomains(domain, prefixes, onProgress) {
+  prefixes = prefixes || DE_QUICK_SUBS;
+  const out = [];
+  for (let i = 0; i < prefixes.length; i += 10) {
+    out.push(...await Promise.all(prefixes.slice(i, i + 10).map(async p => {
+      const full = p + '.' + domain;
+      try {
+        const j = await _deDoh(full, 'A');
+        const a = _deAnswers(j, 'A');
+        if (a.length) return { subdomain: full, status: 'FOUND', ip: a[0].data, ports: [], headers: null };
+        return { subdomain: full, status: j.Status === 3 ? 'NXDOMAIN' : 'NO A RECORD', ip: null, ports: [], headers: null };
+      } catch { return { subdomain: full, status: 'LOOKUP FAILED', ip: null, ports: [], headers: null }; }
+    })));
+    if (onProgress) onProgress(out.length, prefixes.length, out.filter(s => s.status === 'FOUND').length);
+  }
   return out.sort((a,b) => (b.status==='FOUND'?1:0)-(a.status==='FOUND'?1:0) || a.subdomain.localeCompare(b.subdomain));
+}
+
+// Resolver consistency: ask Google and Cloudflare separately and compare the answer sets.
+const DE_CMP_TYPES = ['A', 'AAAA', 'MX', 'NS'];
+async function _deResolverCompare(domain) {
+  const one = async (i, type) => {
+    try {
+      const r = await fetch(DE_DOH[i](domain, type), { headers: { accept: 'application/dns-json' } });
+      if (!r.ok) return null;
+      return _deAnswers(await r.json(), type).map(a => _deStripDot(a.data)).sort();
+    } catch { return null; }
+  };
+  return Promise.all(DE_CMP_TYPES.map(async type => {
+    const [google, cloudflare] = await Promise.all([one(0, type), one(1, type)]);
+    const match = google !== null && cloudflare !== null && google.join('\n') === cloudflare.join('\n');
+    return { type, google, cloudflare, match, error: google === null || cloudflare === null };
+  }));
 }
 
 // A browser cannot open raw TCP/53 connections, so AXFR is not attempted here.
@@ -182,6 +208,7 @@ export function renderDNSEnum(container) {
   let subdomainData = null;
   let zoneData = null;
   let dnssecData = null;
+  let resolverData = null;
   let scanLive = false;
 
   container.innerHTML = `<style>
@@ -270,12 +297,16 @@ export function renderDNSEnum(container) {
   <div class="de-header">
     <div class="de-logo">DNS</div>
     <div>
-      <div class="de-title">DNS Enumeration Toolkit</div>
-      <div class="de-subtitle">Live DNS record lookup over DNS-over-HTTPS, common-subdomain check &amp; DNSSEC check</div>
+      <div class="de-title">DNS Toolkit</div>
+      <div class="de-subtitle">Live DNS records over DNS-over-HTTPS, resolver consistency, common-subdomain check, zone-transfer check &amp; DNSSEC</div>
     </div>
   </div>
   <div class="de-input-row">
-    <input class="de-input" id="deTarget" placeholder="Enter domain (e.g. example.com)" spellcheck="false">
+    <input class="de-input" id="deTarget" placeholder="example.com" spellcheck="false">
+    <select class="de-input" id="deSubList" style="flex:0 0 auto;min-width:0" aria-label="Subdomain wordlist">
+      <option value="quick">Subdomains: ${DE_QUICK_SUBS.length} common names</option>
+      <option value="full">Subdomains: full list (${DE_FULL_SUBS.length} names)</option>
+    </select>
     <button class="de-btn de-btn-primary" id="deScan">Enumerate</button>
   </div>
   <div class="de-tabs" id="deTabs">
@@ -401,11 +432,17 @@ export function renderDNSEnum(container) {
       bar.style.width = '20%';
       recordsData = await _deDohRecords(domain);
       bar.style.width = '50%';
-      status.textContent = 'Checking common subdomain names...';
-      subdomainData = await _deDohSubdomains(domain);
+      const list = wrap.querySelector('#deSubList').value === 'full' ? DE_FULL_SUBS : DE_QUICK_SUBS;
+      status.textContent = 'Checking ' + list.length + ' common subdomain names...';
+      subdomainData = await _deDohSubdomains(domain, list, (done, total, hits) => {
+        status.textContent = 'Subdomains: ' + done + ' / ' + total + ' checked, ' + hits + ' found';
+        bar.style.width = (50 + Math.round(25 * done / total)) + '%';
+      });
       bar.style.width = '75%';
       zoneData = _deZoneTransferInfo(domain, recordsData.NS);
     }
+    status.textContent = 'Comparing Google and Cloudflare answers...';
+    resolverData = await _deResolverCompare(domain);
     status.textContent = 'Checking DNSSEC (DS / DNSKEY / AD flag)...';
     dnssecData = await _deDNSSECReal(domain);
     bar.style.width = '100%';
@@ -492,6 +529,19 @@ export function renderDNSEnum(container) {
     }
     html += `</tbody></table></div>`;
 
+    if (resolverData) {
+      const fmt = (v) => v === null ? '<span style="color:var(--mut,#7a93b8)">lookup failed</span>' : v.length ? v.map(esc).join('<br>') : '<span style="color:var(--mut,#7a93b8)">no records</span>';
+      const mism = resolverData.filter(r => !r.match && !r.error).length;
+      html += `<div class="de-panel"><div class="de-panel-title">Resolver consistency: Google vs Cloudflare <span class="de-badge ${mism ? 'de-badge-warn' : 'de-badge-ok'}">${mism ? mism + ' differ' : 'consistent'}</span></div>
+      <div class="de-status-line" style="margin-bottom:10px">Each record type is asked of both public resolvers separately. A difference can mean a change still propagating, or a CDN / geo-DNS answering per resolver location; it is not a fault on its own.</div>
+      <table class="de-table"><thead><tr><th>Type</th><th>Google</th><th>Cloudflare</th><th>Result</th></tr></thead><tbody>`;
+      for (const r of resolverData) {
+        const res = r.error ? '<span class="de-badge de-badge-info">INCOMPLETE</span>' : r.match ? '<span class="de-badge de-badge-ok">MATCH</span>' : '<span class="de-badge de-badge-warn">DIFFERENT</span>';
+        html += `<tr><td><span class="de-record-type de-type-${r.type}">${r.type}</span></td><td>${fmt(r.google)}</td><td>${fmt(r.cloudflare)}</td><td>${res}</td></tr>`;
+      }
+      html += `</tbody></table></div>`;
+    }
+
     html += `<div class="de-export-row">
       <button class="de-btn de-btn-secondary" id="deExportRecJSON">Export JSON</button>
       <button class="de-btn de-btn-secondary" id="deExportRecCSV">Export CSV</button>
@@ -507,7 +557,7 @@ export function renderDNSEnum(container) {
     }));
 
     content.querySelector('#deExportRecJSON')?.addEventListener('click', () => {
-      _deExportJSON({ domain: currentDomain, records: recordsData }, `dns-records-${currentDomain}.json`);
+      _deExportJSON({ domain: currentDomain, records: recordsData, resolverConsistency: resolverData },`dns-records-${currentDomain}.json`);
     });
     content.querySelector('#deExportRecCSV')?.addEventListener('click', () => {
       const rows = [];
@@ -528,7 +578,7 @@ export function renderDNSEnum(container) {
     </div>`;
 
     html += `<div class="de-panel"><div class="de-panel-title">Discovered Subdomains <span class="de-badge de-badge-ok">${found.length} alive</span></div>
-    <div class="de-status-line" style="margin-bottom:10px">Checks a short list of common names by DNS lookup only. Ports and web servers are not probed.</div>
+    <div class="de-status-line" style="margin-bottom:10px">Checked ${subdomainData.length} common names by DNS lookup only (pick the full list next to Enumerate for more). Ports and web servers are not probed.</div>
     <table class="de-table"><thead><tr><th>Subdomain</th><th>Status</th><th>IP</th></tr></thead><tbody>`;
     for (const s of subdomainData) {
       const cls = s.status === 'FOUND' ? 'de-found' : 'de-notfound';

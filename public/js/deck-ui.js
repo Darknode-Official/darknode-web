@@ -1563,8 +1563,8 @@ export function renderDeck(host, opts) {
     "attacksim", "reverseshell", "webshell", "wirelesslab", "socialeng", "exploitdev",
     "payloads", "payloadgen", "payloadstudio", "packetcraft", "privesc", "cracklab",
     "xsslab", "pentestconsole",
-    "favicon", "iptools", "reconplanner", "netmap", "dnsenum", "dnsrecon", "osintemail", "emailintel", "ipgeolocation", "addressintel",
-    "darkwebosint", "threatdashboard", "threat", "breachsim", "networktraffic", "trafficanalyzer", "apiscan", "stego",
+    "favicon", "iptools", "reconplanner", "netmap", "osintemail", "emailintel", "ipgeolocation", "addressintel",
+    "darkwebosint", "threatdashboard", "breachsim", "apiscan", "stego",
     "math", "dataviz", "engines", "education", "downloads", "dlguide", "setup", "privatecloud"
   ]);
   const groups = (opts.groups || [])
@@ -1578,7 +1578,7 @@ export function renderDeck(host, opts) {
     { id: "exposure", g: "Exposure", items: [["scene", "surface", "Attack Surface", IC.radar], ["scene", "cloud", "Cloud Posture", IC.cloud], ["scene", "threat", "Threats & Vulnerabilities", IC.alert], ["tool", "posture", "Posture Scorecard", IC.gauge], ["tool", "tlsfleet", "Certificate Monitor", IC.cert], ["tool", "fwaudit", "Firewall Rule Audit", IC.shield], ["tool", "vulnimport", "Vulnerability Import", IC.alert], ["tool", "fleetcomply", "Fleet Compliance", IC.gauge], ["tool", "dmarcreports", "DMARC Reports", IC.link], ["tool", "domainguard", "Domain Guard", IC.radar], ["tool", "netexposure", "Network Scan Diff", IC.nodes]] },
     { id: "identity", g: "Identity", items: [["tool", "signins", "Sign-in Forensics", IC.search], ["tool", "accessreview", "Access Review", IC.check], ["tool", "caaudit", "Conditional Access", IC.shield], ["tool", "privaudit", "Privileged Access", IC.key], ["tool", "nhi", "Non-Human Identities", IC.gear], ["tool", "jml", "Offboarding Verifier", IC.check], ["tool", "oauthgov", "OAuth App Governance", IC.plug], ["tool", "vpnaudit", "Remote Access Audit", IC.lock]] },
     { id: "code", g: "Application Security", items: [["tool", "codescan", "Code Scanner", IC.code], ["tool", "supplychain", "Supply Chain", IC.branch], ["tool", "threatforest", "Attack Tree Builder", IC.tree], ["tool", "iacscan", "IaC Scanner", IC.code], ["tool", "k8saudit", "Kubernetes Audit", IC.nodes], ["tool", "licenseaudit", "License Compliance", IC.scale], ["tool", "apispec", "API Security Review", IC.plug]] },
-    { id: "detect", g: "Security Operations", items: [["scene", "findings", "Findings", IC.alert], ["scene", "invest", "Investigations", IC.search], ["tool", "secgraph", "Security Graph", IC.nodes], ["tool", "incidents", "Incident Tracker", IC.shield], ["tool", "casemgmt", "Case Manager", IC.brief], ["tool", "phishtriage", "Phishing & URL Triage", IC.hook], ["tool", "loghunt", "Log Threat Hunter", IC.term], ["scene", "reports", "Reports", IC.note], ["scene", "activity", "Activity", IC.pulse], ["tool", "cloudtrail", "Cloud Audit Log Hunter", IC.cloud], ["tool", "dnshunt", "DNS Hunt", IC.search], ["tool", "proxyhunt", "Web Gateway Hunt", IC.eye], ["tool", "pentestreg", "Finding Tracker", IC.wrench]] },
+    { id: "detect", g: "Security Operations", items: [["scene", "findings", "Findings", IC.alert], ["scene", "invest", "Investigations", IC.search], ["tool", "secgraph", "Security Graph", IC.nodes], ["tool", "incidents", "Incident Tracker", IC.shield], ["tool", "investigation", "Investigation Workspace", IC.brief], ["tool", "phishtriage", "Phishing & URL Triage", IC.hook], ["tool", "loghunt", "Log Threat Hunter", IC.term], ["scene", "reports", "Reports", IC.note], ["scene", "activity", "Activity", IC.pulse], ["tool", "cloudtrail", "Cloud Audit Log Hunter", IC.cloud], ["tool", "dnshunt", "DNS Hunt", IC.search], ["tool", "proxyhunt", "Web Gateway Hunt", IC.eye], ["tool", "pentestreg", "Finding Tracker", IC.wrench]] },
     { id: "finsec", g: "Financial Controls", items: [["tool", "strongroom", "Fund Protection", IC.coins], ["tool", "vault", "Treasury Vault", IC.lock], ["tool", "payees", "Payee Control", IC.shield], ["tool", "sanctions", "Sanctions Screening", IC.scale], ["tool", "apforensics", "AP Forensics", IC.coins], ["tool", "cardaudit", "Card Audit", IC.brief], ["tool", "payrollguard", "Payroll Integrity", IC.note], ["tool", "cloudspend", "Cloud Spend Anomaly", IC.gauge]] },
     { id: "risk", g: "Risk & Resilience", items: [["tool", "breachclock", "Breach Clock", IC.bell], ["tool", "riskreg", "Risk Register", IC.scale], ["tool", "vendorrisk", "Third-Party Risk", IC.nodes], ["tool", "backupready", "Backup Readiness", IC.folder]] },
     { id: "compliance", g: "Compliance", items: [["scene", "compliance", "Frameworks", IC.check], ["tool", "crosswalk", "GenAI Crosswalk", IC.map], ["tool", "dlp", "Data Protection", IC.eye], ["tool", "leakprobe", "Secret Exposure", IC.key], ["tool", "evidence", "Control Evidence", IC.book], ["tool", "dataflow", "Processing Register", IC.folder], ["tool", "awareness", "Awareness Analytics", IC.pulse]] },
@@ -2726,9 +2726,9 @@ export function renderDeck(host, opts) {
   let _tiCves = [], _tiSev = "", _tiQ = "", _tiKev = new Set(), _tiEpss = {}, _tiPrio = false;
   function renderThreat(){
     const el = sceneEls.threat;
-    el.innerHTML = `<div class="dk-ti-head"><h1>Threat &amp; Vulnerabilities</h1><span class="mo" id="dkTiFull">Open full Threat Feed ${IC.ext}</span></div>
+    el.innerHTML = `<div class="dk-ti-head"><h1>Threat &amp; Vulnerabilities</h1><span class="mo" id="dkTiFull">Open CVE Search ${IC.ext}</span></div>
       <div id="dkTiBody"><div class="dk-loading"><span class="sp"></span>Fetching the latest CVEs from the NVD…</div></div>`;
-    el.querySelector("#dkTiFull").onclick = () => openTool("threatfeed", "Threat Intel Feed");
+    el.querySelector("#dkTiFull").onclick = () => openTool("cvesearch", "CVE Search");
     fetchIntel(40).then((d) => {
       setHealth(true, "Threat feed live");
       _tiCves = d.cves || []; _tiSev = ""; _tiQ = ""; _tiKev = new Set(); _tiEpss = {}; _tiPrio = true;
@@ -3211,7 +3211,7 @@ export function renderDeck(host, opts) {
       <div class="dk-qa" style="max-width:760px;margin-top:4px">
         <button class="dk-qacard" data-tool="investigation"><span class="qi" style="--a:#9b5cf0">${IC.folder}</span><b>Open Investigation Workspace</b><span>Build and track a full investigation.</span></button>
         <button class="dk-qacard" data-tool="secgraph"><span class="qi" style="--a:#4f86ff">${IC.grid}</span><b>Open Security Graph</b><span>Visualise entities and their links.</span></button>
-        <button class="dk-qacard" data-tool="casemgmt"><span class="qi" style="--a:#f5920b">${IC.folder}</span><b>Case Manager</b><span>Track cases and their status.</span></button>
+        <button class="dk-qacard" data-tool="incidents"><span class="qi" style="--a:#f5920b">${IC.folder}</span><b>Incident Tracker</b><span>Log incidents and track them to closure.</span></button>
       </div>`;
     el.querySelectorAll(".dk-qacard[data-tool]").forEach((b) => b.onclick = () => openTool(b.dataset.tool, secLabel[b.dataset.tool] || b.dataset.tool));
     el.querySelector("#dkInvExport").onclick = () => withGraph((m) => {

@@ -31,7 +31,7 @@ import "/js/net.js?v=20261011a";
 import "/js/scroll-top.js?v=20260926a";
 import "/js/shortcuts.js";
 import "/js/mobile-nav.js";
-import { consoleHTML, directoryHTML, wireConsole, labelOf as navLabel, groupOf as navGroup, recentSecs as navRecent, favSecs as navFavs } from "/js/console-nav.js?v=20261013k";
+import { consoleHTML, directoryHTML, wireConsole, labelOf as navLabel, groupOf as navGroup, recentSecs as navRecent, favSecs as navFavs, RETIRED } from "/js/console-nav.js?v=20261013k";
 // Only the tool count is needed here; the manifest carries ids/names/categories without the
 // tool code (js/tools/*), which loads when the Toolbox opens.
 import { TOOL_META as _MINI_TOOLS } from "/js/tools-manifest.js?v=20261006a";
@@ -113,12 +113,9 @@ const SIDE_DESC = {
   asnexplorer: "See which networks (ASNs) own a range of IP addresses.",
   attacksurf: "Map everything your organization exposes to the internet.",
   dns: "DNS lookup and enumeration toolkit.",
-  dnsenum: "Pull every DNS record for a domain (A, MX, TXT, and more).",
-  dnsrecon: "Deeper DNS recon — zone transfers and subdomain discovery.",
   ghdb: "Google 'dorks' — clever search queries that surface exposed data.",
   netmap: "Map a network and scan it for open ports.",
   reconplanner: "Plan your recon step-by-step with methodology templates.",
-  securityscanner: "Point-and-scan a target for common security issues.",
   subdomains: "Discover all of a domain's subdomains.",
   tools: "A suite of quick scanners gathered in one place.",
   wayback: "Browse old snapshots of any website (the Wayback Machine).",
@@ -127,8 +124,6 @@ const SIDE_DESC = {
   emailintel: "Investigate an email address — breaches, links and footprint.",
   favicon: "Identify sites by their favicon hash (Shodan/Censys).",
   headeranalyzer: "Inspect a website's HTTP response headers.",
-  httpinspector: "See a full HTTP request/response with header analysis.",
-  httpprobe: "Quickly probe a list of URLs to see what's live.",
   ipgeolocation: "Find the likely physical location behind an IP address.",
   iptools: "Handy IP utilities — lookup, convert and subnet.",
   osint: "Your OSINT hub for gathering public intelligence on a target.",
@@ -167,24 +162,18 @@ const SIDE_DESC = {
   darknetradar: "Monitor dark-web chatter and marketplaces.",
   darkwebosint: "Reference profiles of threat actors, public breaches and known .onion services.",
   ipreputation: "Check an IP address against threat blocklists.",
-  threat: "A live, aggregated threat feed.",
   threatdashboard: "A visual overview of the current threat landscape.",
-  threatfeed: "A curated threat-intelligence feed.",
   // Vulnerability Mgmt
   vulndb: "Searchable database of known vulnerabilities.",
-  vulnprio: "Rank vulnerabilities by real-world risk (CVSS, EPSS, KEV).",
-  vulntriage: "Decide which vulnerabilities to fix first.",
   secchecklist: "A step-by-step security-hardening checklist.",
   supplychain: "Assess the risk in your software supply chain.",
   // Network Analysis
   networkscanner: "Scan a network for live hosts and open ports.",
   networktools: "General-purpose networking utilities.",
-  networktraffic: "Explore sample network traffic and learn to spot anomalies.",
   packetanalyzer: "Break captured packets down protocol-by-protocol.",
   packetinspector: "Deep packet inspection.",
   sslinspector: "Check a site's SSL/TLS certificate and cipher suites.",
   subnetvisualizer: "Visualize and plan IP subnets.",
-  trafficanalyzer: "Learn to spot patterns and anomalies using sample traffic.",
   websockettester: "Test and inspect WebSocket connections.",
   // Security Operations
   adversaryplaybook: "Prebuilt attacker playbooks to exercise your SOC.",
@@ -192,7 +181,6 @@ const SIDE_DESC = {
   apitester: "Interactive API testing, like Postman.",
   apiscan: "Discover and security-test API endpoints.",
   incidentcost: "Estimate what a security breach would cost.",
-  incidentresponse: "Build and follow incident-response playbooks.",
   siemdash: "A SIEM-style dashboard of security events.",
   // Compliance & GRC
   compliance: "Check systems against CIS and other compliance benchmarks.",
@@ -200,7 +188,6 @@ const SIDE_DESC = {
   cyberbriefing: "Your daily cybersecurity news briefing.",
   emailheader: "Analyze email headers (SPF/DKIM/DMARC) to trace origin.",
   fedcompliance: "NIST, FedRAMP and FISMA compliance checklists.",
-  iocextractor: "Pull indicators of compromise (IOCs) out of text and logs.",
   dossier: "One-shot recon dossier: subdomains, DNS, certs, ASN and WHOIS in one exportable report.",
   payloadstudio: "Chain encoders, hashes and reverse-shell templates into one build-and-export flow.",
   sigma: "Build, validate and export Sigma detection rules with ATT&CK mapping.",
@@ -221,7 +208,6 @@ const SIDE_DESC = {
   cspevaluator: "Build and validate a Content-Security-Policy (CSP).",
   encoding: "Encode and decode Base64, hex, URL and more.",
   hashsuite: "Generate and identify hashes (MD5, SHA, bcrypt…).",
-  jwtanalyzer: "Decode, verify and attack JSON Web Tokens (JWT).",
   regexlab: "Build and test regular expressions.",
   urldissect: "Break a URL apart and spot suspicious pieces.",
   // Darknode AI
@@ -236,18 +222,15 @@ const SIDE_DESC = {
   learn: "Guided lessons — Learn Hub.",
   refs: "A reference library of security material.",
   secquiz: "Assess your skills with graded quizzes.",
-  securityquiz: "Test your security knowledge.",
   snippets: "Save and reuse handy code snippets.",
   targets: "Legal, safe practice targets to hack on.",
   training: "Guided, hands-on training labs.",
-  utils: "A grab-bag of small, handy tools.",
   // Labs & VMs
   vms: "Downloadable, intentionally-vulnerable VMs to practice on.",
   vmlab: "Manage your practice virtual machines.",
   // Investigations
   investigation: "A case workspace to collect findings and evidence.",
   secgraph: "A visual graph linking assets, indicators and incidents.",
-  casemgmt: "Manage your investigation case files.",
   // Infrastructure
   api: "Your Darknode API keys and usage.",
   docs: "Documentation.",
@@ -362,7 +345,7 @@ function applySidebarHelp(view) {
   nav.dataset.helpWired = "1";
 }
 import {
-  renderThreat, renderCheats, renderLearn, homeWidgetsHTML, wireHome, COUNTS,
+  renderCheats, homeWidgetsHTML, wireHome, COUNTS,
   CHEATS, RESOURCES,
 } from "/js/cyber.js";
 let _learnHub = null;
@@ -1933,7 +1916,13 @@ function renderApp(user) {
   // Sections that are really another section (with an optional tab). Resolved here, before
   // the URL is touched, so an alias pushes one history entry and Back never loops. The alias
   // path stays in the URL, so /apikeys remains a working deep link.
-  const ALIAS = { arsenal: ["home"], apikeys: ["settings", "apikeys"], github: ["settings"], gmail: ["settings"] };
+  const ALIAS = { arsenal: ["home"], apikeys: ["settings", "apikeys"], github: ["settings"], gmail: ["settings"],
+    // Tools merged into the one that does the same job (duplicate-tool cleanup, 2026-10-17).
+    threat: ["cvesearch"], threatfeed: ["cvesearch"], utils: ["toolbox"], dnsrecon: ["dns"], dnsenum: ["dns"],
+    httpprobe: ["headeranalyzer"], securityscanner: ["headeranalyzer"], httpinspector: ["headeranalyzer"],
+    incidentresponse: ["incidents"], casemgmt: ["investigation"], securityquiz: ["secquiz"],
+    networktraffic: ["phantom"], trafficanalyzer: ["phantom"], jwtanalyzer: ["tool-w-jwt-analyzer"],
+    vulnprio: ["vulnimport"], vulntriage: ["vulnimport"], iocextractor: ["iocenrich"] };
   function show(sec, more, skipPush) {
     const _tok = ++_navTok, live = () => _tok === _navTok;
     if (_prevCleanup) { try { _prevCleanup(); } catch (_) {} _prevCleanup = null; }
@@ -1972,7 +1961,6 @@ function renderApp(user) {
     requestAnimationFrame(() => { main.style.minHeight = ""; });
     if (sec && sec !== "home" && sec !== "settings") { try { let r = JSON.parse(localStorage.getItem("dn_recent")||"[]"); r = r.filter(s=>s!==sec); r.unshift(sec); r = r.slice(0,8); localStorage.setItem("dn_recent", JSON.stringify(r)); } catch(_){} }
     if (sec === "tools") { main.innerHTML = `<div class="pg-head"><div><h1 class="pg-h1">Tools</h1><p class="muted pg-sub">Search, filter, and open any tool in the catalog.</p></div></div><div id="tools"></div>`; import("/js/tools.js?v=20261013c").then(m => live() && m.renderTools(document.getElementById("tools"))); }
-    else if (sec === "utils") { import("/js/utils.js?v=20261013m").then(m => live() && m.renderUtils(main)); }
     else if (sec === "ai") { import("/js/webai.js?v=20261014h").then(m => live() && m.renderAI(main)); }
     else if (sec === "math") { _prevCleanup = renderQuelvra(main, more); }
     else if (sec === "payloads") { import("/js/labs.js?v=20261003a").then(m => live() && m.renderPayloads(main)); }
@@ -2006,7 +1994,7 @@ function renderApp(user) {
     else if (sec === "sandbox") { import("/js/malware-sandbox.js").then(m => live() && m.renderMalwareSandbox(main)); }
     else if (sec === "compliance") { import("/js/compliance-checker.js?v=20260924a").then(m => live() && m.renderComplianceChecker(main)); }
     else if (sec === "attacksim") { import("/js/attack-simulator.js").then(m => live() && m.renderAttackSimulator(main)); }
-    else if (sec === "dns") { import("/js/dns-toolkit.js").then(m => live() && m.renderDNSToolkit(main)); }
+    else if (sec === "dns") { import("/js/dns-enum.js?v=20261017d").then(m => live() && m.renderDNSEnum(main)); }
     else if (sec === "subdomains") { import("/js/subdomain-finder.js?v=20261017d").then(m => live() && m.renderSubdomainFinder(main)); }
     else if (sec === "mobilesec") { import("/js/mobile-security-lab.js").then(m => live() && m.renderMobileSecurityLab(main)); }
     else if (sec === "apiscan") { import("/js/api-security-scanner.js?v=20260924b").then(m => live() && m.renderAPISecurityScanner(main)); }
@@ -2034,7 +2022,6 @@ function renderApp(user) {
     else if (sec === "threatforest") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading…</p>"; const _s=sec; import("/js/threatforest.js?v=20261017d").then(m => { if(curSec!==_s)return; m.renderThreatforest(main); _prevCleanup = m.cleanupThreatforest; }); }
     else if (sec === "beta") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Beta Lab...</p>"; const _s=sec; import("/js/beta-lab.js?v=20261013b").then(m => { if(curSec!==_s)return; m.renderBetaLab(main); _prevCleanup = m.cleanupBetaLab; }); }
     else if (sec === "crosswalk") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading GenAI Security Crosswalk...</p>"; const _s=sec; import("/js/crosswalk.js?v=20261014f").then(m => { if(curSec!==_s)return; m.renderCrosswalk(main); _prevCleanup = m.cleanupCrosswalk; }); }
-    else if (sec === "jwtanalyzer") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading JWT Analyzer...</p>"; import("/js/jwt-analyzer.js").then(m => live() && m.renderJwtAnalyzer(main)); }
     else if (sec === "cspevaluator") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading CSP Evaluator...</p>"; import("/js/csp-evaluator.js?v=20261013b").then(m => live() && m.renderCspEvaluator(main)); }
     else if (sec === "wayback") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Wayback Recon...</p>"; import("/js/wayback-recon.js").then(m => live() && m.renderWaybackRecon(main)); }
     else if (sec === "urldissect") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading URL Dissector...</p>"; import("/js/url-dissector.js").then(m => live() && m.renderUrlDissector(main)); }
@@ -2047,8 +2034,6 @@ function renderApp(user) {
     else if (sec === "purpleteam") { import("/js/purple-team-ops.js?v=20260927b").then(m => live() && m.renderPurpleTeamOps(main)); }
     else if (sec === "malclass") { import("/js/malware-classifier.js").then(m => live() && m.renderMalwareClassifier(main)); }
     else if (sec === "zerotrust") { import("/js/zero-trust-designer.js?v=20260924b").then(m => live() && m.renderZeroTrustDesigner(main)); }
-    else if (sec === "vulnprio") { import("/js/vulnerability-prioritizer.js?v=20261013b").then(m => live() && m.renderVulnPrioritizer(main)); }
-    else if (sec === "vulntriage") { import("/js/vuln-triage.js?v=20260924b").then(m => live() && m.renderVulnTriage(main)); }
     else if (sec === "secquiz") { import("/js/security-awareness-quiz.js?v=20260924b").then(m => live() && m.renderSecurityQuiz(main)); }
     else if (sec === "supplychain") { import("/js/supply-chain-analyzer.js?v=20261014d").then(m => live() && m.renderSupplyChainAnalyzer(main)); }
     else if (sec === "cryptotools") { import("/js/crypto-tools.js").then(m => live() && m.renderCryptoTools(main)); }
@@ -2056,14 +2041,12 @@ function renderApp(user) {
     else if (sec === "socialeng") { import("/js/social-engineering-sim.js").then(m => live() && m.renderSocialEngSim(main)); }
     else if (sec === "training") { import("/js/arsenal.js?v=20260927b").then(m => live() && m.renderTraining(main)); }
     else if (sec === "cheats") renderCheats(main);
-    else if (sec === "threat") renderThreat(main);
     else if (sec === "ipreputation") { import("/js/ip-reputation.js").then(m => live() && m.renderIPReputation(main)); }
     else if (sec === "cyberbriefing") { import("/js/cyber-briefing.js?v=20261007a").then(m => live() && m.renderCyberBriefing(main)); }
     else if (sec === "incidentcost") { import("/js/incident-cost.js?v=20260924b").then(m => live() && m.renderIncidentCost(main)); }
     else if (sec === "fedcompliance") { import("/js/fed-compliance.js").then(m => live() && m.renderFedCompliance(main)); }
     else if (sec === "adversaryplaybook") { import("/js/adversary-playbook.js?v=20260927a").then(m => live() && m.renderAdversaryPlaybook(main)); }
     else if (sec === "emailheader") { import("/js/email-header.js?v=20260924b").then(m => live() && m.renderEmailHeader(main)); }
-    else if (sec === "iocextractor") { import("/js/ioc-extractor.js?v=20261017d").then(m => live() && m.renderIOCExtractor(main)); }
     else if (sec === "dossier") { import("/js/target-dossier.js").then(m => live() && m.renderDossier(main)); }
     else if (sec === "payloadstudio") { import("/js/payload-studio.js?v=20261013m").then(m => live() && m.renderPayloadStudio(main)); }
     else if (sec === "sigma") { import("/js/sigma-builder.js?v=20261013b").then(m => live() && m.renderSigmaBuilder(main)); }
@@ -2080,31 +2063,24 @@ function renderApp(user) {
     else if (sec === "packetinspector") { import("/js/packet-inspector.js?v=20260924b").then(m => live() && m.renderPacketInspector(main)); }
     else if (sec === "siemdash") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading SIEM...</p>"; import("/js/siem-dash.js?v=20261007a").then(m => live() && m.renderSiemDash(main)); }
     else if (sec === "apifuzzer") { import("/js/api-fuzzer.js?v=20261013b").then(m => live() && m.renderAPIFuzzer(main)); }
-    else if (sec === "incidentresponse") { import("/js/incident-response.js").then(m => live() && m.renderIncidentResponse(main)); }
-    else if (sec === "networktraffic") { import("/js/network-traffic.js?v=20260928m").then(m => live() && m.renderNetworkTraffic(main)); }
     else if (sec === "privesc") { import("/js/privesc-toolkit.js?v=20260928m").then(m => live() && m.renderPrivescToolkit(main)); }
     else if (sec === "reverseshell") { import("/js/reverse-shell.js?v=20260928m").then(m => live() && m.renderReverseShell(main)); }
     else if (sec === "xsslab") { import("/js/xss-lab.js?v=20260928m").then(m => live() && m.renderXSSLab(main)); }
     else if (sec === "osintemail") { import("/js/osint-email.js?v=20261013b").then(m => live() && m.renderOSINTEmail(main)); }
-    else if (sec === "threatfeed") { import("/js/threat-feed.js?v=20261013c").then(m => live() && m.renderThreatFeed(main)); }
     else if (sec === "secchecklist") { import("/js/sec-checklist.js?v=20260928m").then(m => live() && m.renderSecChecklist(main)); }
     else if (sec === "investigation") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Investigation Workspace...</p>"; const _s=sec; import("/js/investigation.js?v=20261012a").then(m => { if(curSec!==_s)return; m.renderInvestigation(main); _prevCleanup = m.cleanupInvestigation; }); }
     else if (sec === "secgraph") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Security Graph...</p>"; import("/js/security-graph-ui.js?v=20261014f").then(m => live() && m.renderSecurityGraphUI(main)); }
-    else if (sec === "casemgmt") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Case Manager...</p>"; import("/js/case-manager.js?v=20261014g").then(m => live() && m.renderCaseManager(main)); }
 
     else if (sec === "cvetimeline") { import("/js/cve-timeline.js?v=20261007a").then(m => live() && m.renderCveTimeline(main)); }
     else if (sec === "dataviz") { import("/js/data-viz.js?v=20260930b").then(m => live() && m.renderDataViz(main)); }
     else if (sec === "forensicstoolkit") { import("/js/forensics-toolkit.js").then(m => live() && m.renderForensicsToolkit(main)); }
     else if (sec === "hashsuite") { import("/js/hash-suite.js").then(m => live() && m.renderHashSuite(main)); }
-    else if (sec === "httpinspector") { import("/js/http-inspector.js?v=20261017d").then(m => live() && m.renderHttpInspector(main)); }
     else if (sec === "iptools") { import("/js/ip-tools.js?v=20261013m").then(m => live() && m.renderIPTools(main)); }
     else if (sec === "networktools") { import("/js/network-tools.js").then(m => live() && m.renderNetworkTools(main)); }
     else if (sec === "packetanalyzer") { import("/js/packet-analyzer.js?v=20260924b").then(m => live() && m.renderPacketAnalyzer(main)); }
     else if (sec === "passwordtools") { import("/js/password-tools.js?v=20260924b").then(m => live() && m.renderPasswordTools(main)); }
     else if (sec === "payloadgen") { import("/js/payload-gen.js?v=20260924b").then(m => live() && m.renderPayloadGen(main)); }
     else if (sec === "riskcalculator") { import("/js/risk-calculator.js?v=20260924b").then(m => live() && m.renderRiskCalculator(main)); }
-    else if (sec === "securityquiz") { import("/js/security-quiz.js?v=20260928a").then(m => live() && m.renderSecurityQuiz(main)); }
-    else if (sec === "securityscanner") { import("/js/security-scanner.js?v=20261013a").then(m => live() && m.renderSecurityScanner(main)); }
     else if (sec === "subnetvisualizer") { import("/js/subnet-visualizer.js?v=20261013m").then(m => live() && m.renderSubnetVisualizer(main)); }
     else if (sec === "threatdashboard") { import("/js/threat-dashboard.js?v=20261013b").then(m => live() && m.renderThreatDashboard(main)); }
     else if (sec === "timelineviz") { import("/js/timeline-viz.js").then(m => live() && m.renderTimelineViz(main)); }
@@ -2114,17 +2090,13 @@ function renderApp(user) {
     else if (sec === "corstester") { import("/js/cors-tester.js?v=20261013m").then(m => live() && m.renderCorsTester(main)); }
     else if (sec === "cvesearch") { import("/js/cve-search.js?v=20261017d").then(m => live() && m.renderCveSearch(main)); }
     else if (sec === "darknetradar") { import("/js/darknet-radar.js?v=20261013c").then(m => live() && m.renderDarknetRadar(main)); }
-    else if (sec === "dnsenum") { import("/js/dns-enum.js?v=20261017d").then(m => live() && m.renderDNSEnum(main)); }
-    else if (sec === "dnsrecon") { import("/js/dns-recon.js?v=20261013b").then(m => live() && m.renderDNSRecon(main)); }
     else if (sec === "emailintel") { import("/js/email-intel.js").then(m => live() && m.renderEmailIntel(main)); }
     else if (sec === "headeranalyzer") { import("/js/header-analyzer.js?v=20261013b").then(m => live() && m.renderHeaderAnalyzer(main)); }
-    else if (sec === "httpprobe") { import("/js/http-probe.js").then(m => live() && m.renderHttpProbe(main)); }
     else if (sec === "identitymatrix") { import("/js/identity-matrix.js?v=20260924b").then(m => live() && m.renderIdentityMatrix(main)); }
     else if (sec === "ipgeolocation") { import("/js/ip-geolocation.js?v=20261013b").then(m => live() && m.renderIPGeolocation(main)); }
     else if (sec === "networkscanner") { import("/js/network-scanner.js").then(m => live() && m.renderNetworkScanner(main)); }
     else if (sec === "sslinspector") { import("/js/ssl-inspector.js?v=20261017d").then(m => live() && m.renderSSLInspector(main)); }
     else if (sec === "techfingerprint") { import("/js/tech-fingerprint.js").then(m => live() && m.renderTechFingerprint(main)); }
-    else if (sec === "trafficanalyzer") { import("/js/traffic-analyzer.js?v=20260927b").then(m => live() && m.renderTrafficAnalyzer(main)); }
     else if (sec === "websockettester") { import("/js/websocket-tester.js?v=20261013m").then(m => live() && m.renderWebSocketTester(main)); }
     else if (sec === "whoisrecon") { import("/js/whois-recon.js?v=20261013b").then(m => live() && m.renderWhoisRecon(main)); }
     else if (sec === "learn") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Learn Hub...</p>"; loadLearnHub().then(m => live() && m.renderLearnHub(main)); }
@@ -2502,8 +2474,8 @@ function renderApp(user) {
         <button class="tbx tbx-btn tb-pop-btn" data-pop="tbCreate" title="Quick create" aria-haspopup="true">+ New</button>
         <div class="tb-pop" id="tbCreate" hidden>
           <div class="tb-pop-h">Quick create</div>
-          <button class="tb-pop-i" data-goto="securityscanner"><b>New scan</b><span>Run the security scanner against a target</span></button>
-          <button class="tb-pop-i" data-goto="casemgmt"><b>New case</b><span>Open an investigation case file</span></button>
+          <button class="tb-pop-i" data-goto="headeranalyzer"><b>New scan</b><span>Grade a site's HTTP security headers</span></button>
+          <button class="tb-pop-i" data-goto="investigation"><b>New case</b><span>Open an investigation case file</span></button>
           <button class="tb-pop-i" data-goto="report"><b>New report</b><span>Draft a findings report</span></button>
           <button class="tb-pop-i" data-goto="payloads"><b>New payload</b><span>Build a payload in the Forge</span></button>
           <button class="tb-pop-i" data-goto="saved"><b>Quick note</b><span>Jump to your saved items</span></button>
@@ -2706,7 +2678,7 @@ function highlightMatch(text, query) {
 }
 function openPalette() {
   if (document.getElementById("cmdk")) return;
-  const sections = [["home", "Dashboard"], ["investigation", "Investigation Workspace"], ["secgraph", "Security Graph"], ["casemgmt", "Case Manager"], ["ai", "AI Chat"], ["math", "Quelvra Math"], ["tools", "Scanner Suite"], ["saved", "Saved"], ["utils", "Toolbox"], ["payloads", "Payload Forge"], ["exploitdb", "Exploit Database"], ["ghdb", "Google Dorking"], ["targets", "Practice Targets"], ["vms", "Vulnerable VMs"], ["threat", "Threat Feed"], ["threatfeed", "Threat Intel Feed"], ["secchecklist", "Security Checklist"], ["cheats", "Cheat Sheets"], ["snippets", "Snippet Vault"], ["refs", "Reference Library"], ["training", "Training Labs"], ["privatecloud", "Private Cloud"], ["report", "Report Generator"], ["learn", "Learn Hub"], ["setup", "Local Setup"], ["coder", "Nexus Agent"], ["downloads", "Darknode OS"], ["dlguide", "Download Guide"], ["api", "API"], ["docs", "Docs"], ["education", "Education"], ["settings", "Settings"], ["admin", "Admin"], ["vanguard", "VANGUARD"], ["prometheus", "PROMETHEUS"], ["sentineleye", "SENTINEL EYE"], ["hydra", "HYDRA Engine"], ["aegis", "AEGIS Ops Center"], ["phantom", "PHANTOM"], ["citadel", "CITADEL"], ["oracle", "ORACLE"], ["spectre", "SPECTRE"], ["crucible", "CRUCIBLE"], ["navarch", "NAVARCH"], ["beta", "Beta Lab"], ["secdash", "Security Dashboard"], ["jwtanalyzer", "JWT Analyzer"], ["cspevaluator", "CSP Evaluator"], ["wayback", "Wayback Machine"], ["urldissect", "URL Dissector"], ["favicon", "Favicon Hasher"], ["cyberrange", "Cyber Range"], ["sandbox", "Threat Analysis Lab"], ["netmap", "Network Mapper"], ["exploitdev", "Security Research Lab"], ["cracklab", "Password Security Lab"], ["osint", "OSINT Dashboard"], ["darkwebosint", "Deep Web Intel"], ["crosswalk", "GenAI Crosswalk"], ["cyberbriefing", "Cyber Briefing"], ["vulntriage", "Vuln Triage Engine"], ["incidentcost", "Incident Cost Calculator"], ["fedcompliance", "Federal Compliance"], ["adversaryplaybook", "Adversary Playbook"], ["emailheader", "Email Header Analyzer"], ["iocextractor", "IOC Extractor"], ["reconplanner", "Recon Planner"], ["packetinspector", "Packet Inspector"], ["siemdash", "SIEM Dashboard"], ["apifuzzer", "API Fuzzer"], ["incidentresponse", "Incident Response"], ["networktraffic", "Network Traffic"], ["privesc", "Privilege Analysis"], ["reverseshell", "Remote Access Testing"], ["xsslab", "Web Security Lab"], ["osintemail", "OSINT Email Intel"], ["cvetimeline", "CVE Timeline"], ["dataviz", "Data Visualization"], ["forensicstoolkit", "Forensics Toolkit"], ["hashsuite", "Hash Suite"], ["httpinspector", "HTTP Inspector"], ["iptools", "IP Tools"], ["networktools", "Network Tools"], ["packetanalyzer", "Packet Analyzer"], ["passwordtools", "Password Tools"], ["payloadgen", "Test Script Generator"], ["riskcalculator", "Risk Calculator"], ["securityquiz", "Security Quiz"], ["securityscanner", "Security Scanner"], ["subnetvisualizer", "Subnet Visualizer"], ["threatdashboard", "Threat Dashboard"], ["timelineviz", "Timeline Visualization"], ["vulndb", "Vulnerability Database"], ["asnexplorer", "ASN Explorer"], ["breachlookup", "Breach Lookup"], ["corstester", "CORS Tester"], ["cvesearch", "CVE Search"], ["darknetradar", "Darknet Radar"], ["dnsenum", "DNS Enumeration"], ["dnsrecon", "DNS Recon"], ["emailintel", "Email Intel"], ["headeranalyzer", "Header Analyzer"], ["httpprobe", "HTTP Probe"], ["identitymatrix", "Identity Matrix"], ["ipgeolocation", "IP Geolocation"], ["networkscanner", "Network Scanner"], ["sslinspector", "SSL Inspector"], ["techfingerprint", "Tech Fingerprint"], ["trafficanalyzer", "Traffic Analyzer"], ["websockettester", "WebSocket Tester"], ["whoisrecon", "WHOIS Recon"]];
+  const sections = [["home", "Dashboard"], ["investigation", "Investigation Workspace"], ["secgraph", "Security Graph"], ["ai", "AI Chat"], ["math", "Quelvra Math"], ["tools", "Scanner Suite"], ["saved", "Saved"], ["payloads", "Payload Forge"], ["exploitdb", "Exploit Database"], ["ghdb", "Google Dorking"], ["targets", "Practice Targets"], ["vms", "Vulnerable VMs"], ["secchecklist", "Security Checklist"], ["cheats", "Cheat Sheets"], ["snippets", "Snippet Vault"], ["refs", "Reference Library"], ["training", "Training Labs"], ["privatecloud", "Private Cloud"], ["report", "Report Generator"], ["learn", "Learn Hub"], ["setup", "Local Setup"], ["coder", "Nexus Agent"], ["downloads", "Darknode OS"], ["dlguide", "Download Guide"], ["api", "API"], ["docs", "Docs"], ["education", "Education"], ["settings", "Settings"], ["admin", "Admin"], ["vanguard", "VANGUARD"], ["prometheus", "PROMETHEUS"], ["sentineleye", "SENTINEL EYE"], ["hydra", "HYDRA Engine"], ["aegis", "AEGIS Ops Center"], ["phantom", "PHANTOM"], ["citadel", "CITADEL"], ["oracle", "ORACLE"], ["spectre", "SPECTRE"], ["crucible", "CRUCIBLE"], ["navarch", "NAVARCH"], ["beta", "Beta Lab"], ["secdash", "Security Dashboard"], ["cspevaluator", "CSP Evaluator"], ["wayback", "Wayback Machine"], ["urldissect", "URL Dissector"], ["favicon", "Favicon Hasher"], ["cyberrange", "Cyber Range"], ["sandbox", "Threat Analysis Lab"], ["netmap", "Network Mapper"], ["exploitdev", "Security Research Lab"], ["cracklab", "Password Security Lab"], ["osint", "OSINT Dashboard"], ["darkwebosint", "Deep Web Intel"], ["crosswalk", "GenAI Crosswalk"], ["cyberbriefing", "Cyber Briefing"], ["incidentcost", "Incident Cost Calculator"], ["fedcompliance", "Federal Compliance"], ["adversaryplaybook", "Adversary Playbook"], ["emailheader", "Email Header Analyzer"], ["reconplanner", "Recon Planner"], ["packetinspector", "Packet Inspector"], ["siemdash", "SIEM Dashboard"], ["apifuzzer", "API Fuzzer"], ["privesc", "Privilege Analysis"], ["reverseshell", "Remote Access Testing"], ["xsslab", "Web Security Lab"], ["osintemail", "OSINT Email Intel"], ["cvetimeline", "CVE Timeline"], ["dataviz", "Data Visualization"], ["forensicstoolkit", "Forensics Toolkit"], ["hashsuite", "Hash Suite"], ["iptools", "IP Tools"], ["networktools", "Network Tools"], ["packetanalyzer", "Packet Analyzer"], ["passwordtools", "Password Tools"], ["payloadgen", "Test Script Generator"], ["riskcalculator", "Risk Calculator"], ["subnetvisualizer", "Subnet Visualizer"], ["threatdashboard", "Threat Dashboard"], ["timelineviz", "Timeline Visualization"], ["vulndb", "Vulnerability Database"], ["asnexplorer", "ASN Explorer"], ["breachlookup", "Breach Lookup"], ["corstester", "CORS Tester"], ["cvesearch", "CVE Search"], ["darknetradar", "Darknet Radar"], ["emailintel", "Email Intel"], ["headeranalyzer", "Header Analyzer"], ["identitymatrix", "Identity Matrix"], ["ipgeolocation", "IP Geolocation"], ["networkscanner", "Network Scanner"], ["sslinspector", "SSL Inspector"], ["techfingerprint", "Tech Fingerprint"], ["websockettester", "WebSocket Tester"], ["whoisrecon", "WHOIS Recon"]].filter(([sec]) => !RETIRED.has(sec));
   const actions = [
     { type: "action", id: "cycle-style", name: "Toggle light / dark", desc: "Switch the console between light and dark", action: cycleStyle },
     { type: "action", id: "toggle-dark", name: "Toggle light / dark", desc: "Switch light and dark mode", action: () => { const cur = document.documentElement.getAttribute("data-theme") || "dark"; applyTheme(cur === "dark" ? "light" : "dark"); } },
