@@ -984,7 +984,7 @@ export function renderPacketAnalyzer(container) {
     .pka-sample:hover{border-color:var(--acc);color:var(--acc)}
     .pka-summary{padding:8px 12px;background:var(--bg2,#0d1520);border-radius:6px;margin-bottom:16px;font-size:.85rem;color:var(--acc)}
     .pka-split{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-    @media(max-width:768px){.pka-split{grid-template-columns:1fr}}
+    @media(max-width:768px){.pka-split{grid-template-columns:minmax(0,1fr)}}
     .pka-hex{background:var(--bg2,#0d1520);border-radius:8px;padding:12px;overflow-x:auto;font-size:.78rem;line-height:1.6;white-space:pre;border:1px solid var(--border,#1e2a3a)}
     .pk-addr{color:var(--mut,#556677)}
     .pk-ascii{color:#7c5cff}
@@ -1002,7 +1002,7 @@ export function renderPacketAnalyzer(container) {
     .pk-fname{color:var(--mut,#8892a4)}
     .pk-fval{color:var(--txt)}
     .pka-error{color:#ff4444;padding:8px 12px;background:rgba(255,68,68,.08);border-radius:6px;margin-bottom:12px;font-size:.85rem}
-    .pka-stats{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px;font-size:.8rem;color:var(--mut)}
+    .pka-stats{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px;padding:8px 12px;font-size:.8rem;color:var(--mut)}
     .pka-stats span{color:var(--txt)}
     .pka-cap{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
     .pka-chip{font-size:.75rem;padding:4px 10px;border-radius:4px;background:var(--bg2,#0d1520);border:1px solid var(--border,#1e2a3a);cursor:pointer;color:var(--txt);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

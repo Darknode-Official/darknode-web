@@ -335,7 +335,7 @@ export function renderFirewallAudit(main) {
         <h3>Settings</h3>
         <span class="fwa-lbl">Internal networks</span>
         <p class="fwa-note">One CIDR per line. Sources inside these are treated as internal; anything else is external. Default is RFC 1918 plus IPv6 ULA, loopback and link-local.</p>
-        <textarea id="fwaInternal" class="fwa-set" spellcheck="false">${esc(DEFAULT_INTERNAL.join("\n"))}</textarea>
+        <textarea id="fwaInternal" class="fwa-set" aria-label="Internal networks" spellcheck="false">${esc(DEFAULT_INTERNAL.join("\n"))}</textarea>
         <span class="fwa-lbl">Trusted admin source (optional)</span>
         <p class="fwa-note">Used only to fill in the fix snippets, for example a jump host or VPN pool.</p>
         <input type="text" id="fwaTrusted" placeholder="10.20.0.0/24">

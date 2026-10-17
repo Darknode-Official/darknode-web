@@ -54,6 +54,7 @@ const CSS = `
 .cw-chip .cw-dot{width:8px;height:8px;border-radius:50%}
 .cw-flabel{font-size:.74rem;color:var(--mut);text-transform:uppercase;letter-spacing:.06em;margin-right:2px}
 .cw-sel{padding:7px 10px;border:1px solid var(--line);border-radius:9px;background:var(--card);color:var(--txt);font-size:.84rem;max-width:220px}
+.app-main .cw-filters .cw-sel{padding-top:3px!important;padding-bottom:3px!important;font-size:.8rem}
 .cw-export{margin-left:auto;padding:7px 12px;border:1px solid var(--line);border-radius:9px;background:var(--card);color:var(--txt);font-size:.82rem;cursor:pointer}
 .cw-export:hover{border-color:var(--acc)}
 .cw-cols{display:grid;grid-template-columns:minmax(260px,340px) 1fr;gap:var(--cw-gap);align-items:start}

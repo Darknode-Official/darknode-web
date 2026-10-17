@@ -1,0 +1,427 @@
+/* Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+   Deck base layer: a designed default for every bare HTML element inside the admin Deck
+   (.dk, plus the shared dialogs it opens) and inside tool pages framed in embed mode
+   (html[data-embed], set by the inline boot script for ?embed=1).
+
+   Every selector is wrapped in :where(), so the whole layer has zero specificity: any
+   rule a tool or the Deck already writes for an element still wins, and only properties
+   nothing else sets fall through to these defaults. Nothing here applies to the public
+   console or the marketing landing; both scopes only exist inside the Deck.
+
+   Both surfaces are authored light and shown through the Deck's invert filter, so the
+   values below are the pre-inversion (light) ones, like the --dk-* tokens. */
+
+/* ---------- tokens ---------- */
+:where(html[data-embed] body, .dk ~ .dn-modal-ov) {
+  --db-bg: var(--bg, #f4f6fa);
+  --db-surf: var(--card, #fff);
+  --db-surf2: color-mix(in srgb, var(--txt, #161514) 4%, var(--card, #fff));
+  --db-line: var(--line, #d5d3cf);
+  --db-line2: color-mix(in srgb, var(--line, #d5d3cf) 60%, transparent);
+  --db-tx: var(--txt, #161514);
+  --db-tx2: var(--txt-2, #3f3d3a);
+  --db-mut: var(--mut, #716e68);
+  --db-acc: var(--acc, #2552c6);
+  --db-accbg: color-mix(in srgb, var(--acc, #2552c6) 10%, transparent);
+  --db-ink: var(--txt, #161514);
+  --db-in: var(--aws-in-bg, var(--card2, #fff));
+  --db-inline: var(--aws-in-line, #8c8c94);
+  --db-code: var(--code-bg, #f1f0ec);
+  --db-mono: ui-monospace, "JetBrains Mono", SFMono-Regular, Menlo, Consolas, monospace;
+  --db-r: 7px;
+}
+:where(.dk) {
+  --db-bg: var(--dk-bg, #f4f6fa);
+  --db-surf: var(--dk-surf, #fff);
+  --db-surf2: color-mix(in srgb, var(--dk-tx, #161514) 4%, var(--dk-surf, #fff));
+  --db-line: var(--dk-line, #d5d3cf);
+  --db-line2: var(--dk-line2, #e2e0db);
+  --db-tx: var(--dk-tx, #161514);
+  --db-tx2: var(--dk-tx2, #3f3d3a);
+  --db-mut: var(--dk-mut, #716e68);
+  --db-acc: var(--dk-acc, #2552c6);
+  --db-accbg: var(--dk-accbg, rgba(37, 82, 198, .1));
+  --db-ink: var(--dk-tx, #161514);
+  --db-in: var(--dk-bg, #fff);
+  --db-inline: var(--dk-line, #cbc9c4);
+  --db-code: var(--dk-bg, #f1f0ec);
+  --db-mono: ui-monospace, "JetBrains Mono", SFMono-Regular, Menlo, Consolas, monospace;
+  --db-r: 7px;
+}
+
+/* ---------- buttons ---------- */
+/* every button: the page's typeface and a pointer */
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) :where(button, input:is([type=button], [type=submit], [type=reset])) {
+  font-family: inherit;
+  cursor: pointer;
+}
+/* a button nothing styles: the Deck's secondary button */
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) :where(button:not([class]), input:is([type=button], [type=submit], [type=reset]):not([class])) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 14px;
+  border: 1px solid var(--db-line);
+  border-radius: var(--db-r);
+  background: var(--db-surf);
+  color: var(--db-tx);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.2;
+  white-space: nowrap;
+  vertical-align: middle;
+  transition: background-color .12s ease, border-color .12s ease;
+}
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) :where(button:not([class]), input:is([type=button], [type=reset]):not([class])):hover:not(:disabled) {
+  background: var(--db-surf2);
+  border-color: color-mix(in srgb, var(--db-tx) 28%, var(--db-line));
+}
+/* a bare submit button is the primary action: the Deck's ink button */
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) :where(button[type=submit]:not([class]), input[type=submit]:not([class])) {
+  background: var(--db-ink);
+  border-color: var(--db-ink);
+  color: var(--db-surf);
+}
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) :where(button[type=submit]:not([class]), input[type=submit]:not([class])):hover:not(:disabled) {
+  filter: brightness(1.15);
+}
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) :where(button, input, select, textarea):disabled {
+  cursor: not-allowed;
+}
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) :where(button:not([class]), input:not([class])):disabled {
+  opacity: .5;
+}
+
+/* ---------- fields ---------- */
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) :where(input:not([type]), input:is([type=text], [type=search], [type=url], [type=email], [type=number], [type=password], [type=tel], [type=date], [type=time], [type=datetime-local], [type=month], [type=week]), select, textarea) {
+  font-family: inherit;
+  font-size: 13.5px;
+  line-height: 1.4;
+  color: var(--db-tx);
+  background-color: var(--db-in);
+  border: 1px solid var(--db-inline);
+  border-radius: var(--db-r);
+  padding: 7px 10px;
+  max-width: 100%;
+  min-width: 0;
+}
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) :where(textarea) {
+  resize: vertical;
+  line-height: 1.5;
+}
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) :where(input, textarea)::placeholder {
+  color: var(--db-mut);
+  opacity: 1;
+}
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) :where(select:not([multiple]):not([size])) {
+  -webkit-appearance: none;
+  appearance: none;
+  padding-right: 30px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23716e68' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 11px center;
+  background-size: 10px 6px;
+  cursor: pointer;
+}
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) :where(input, select, textarea):disabled {
+  opacity: .6;
+  background-color: var(--db-surf2);
+}
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) :where(input[readonly], textarea[readonly]) {
+  background-color: var(--db-surf2);
+}
+/* checkbox, radio, range, progress, meter: the Deck accent, aligned with their label */
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) :where(input:is([type=checkbox], [type=radio], [type=range]), progress, meter) {
+  accent-color: var(--db-acc);
+}
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) :where(input:is([type=checkbox], [type=radio])) {
+  width: 15px;
+  height: 15px;
+  margin: 0 6px 0 0;
+  vertical-align: -2px;
+  cursor: pointer;
+}
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) :where(input[type=range]) {
+  cursor: pointer;
+  max-width: 100%;
+}
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) :where(input[type=file]) {
+  font-family: inherit;
+  font-size: 12.5px;
+  color: var(--db-mut);
+  max-width: 100%;
+}
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) :where(input[type=file])::file-selector-button {
+  font: inherit;
+  font-weight: 500;
+  color: var(--db-tx);
+  background: var(--db-surf);
+  border: 1px solid var(--db-line);
+  border-radius: var(--db-r);
+  padding: 6px 12px;
+  margin-right: 10px;
+  cursor: pointer;
+}
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) :where(label:has(> input:is([type=checkbox], [type=radio]))) {
+  cursor: pointer;
+}
+
+/* ---------- focus ---------- */
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) :where(a[href], button, input, select, textarea, summary, [tabindex]:not([tabindex="-1"])):focus-visible {
+  outline: 2px solid var(--db-acc);
+  outline-offset: 2px;
+}
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) :where(input, select, textarea):focus {
+  border-color: var(--db-acc);
+}
+
+/* ---------- links ---------- */
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) :where(a[href]) {
+  color: var(--db-acc);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+  text-decoration-color: color-mix(in srgb, currentColor 40%, transparent);
+}
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) :where(a[href]):hover {
+  text-decoration-color: currentColor;
+}
+
+/* ---------- headings and text ---------- */
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) :where(h1, h2, h3, h4, h5, h6) {
+  margin: 0 0 .5em;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -.01em;
+  color: var(--db-tx);
+}
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) :where(h1) { font-size: 24px; }
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) :where(h2) { font-size: 19px; }
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) :where(h3) { font-size: 16px; }
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) :where(h4) { font-size: 14.5px; }
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) :where(h5) { font-size: 13px; }
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) :where(h6) { font-size: 11.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--db-mut); }
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) :where(small) { font-size: 12px; color: var(--db-mut); }
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) :where(mark) { background: color-mix(in srgb, #f5b400 32%, transparent); color: inherit; border-radius: 3px; padding: 0 2px; }
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) :where(abbr[title]) { text-decoration: underline dotted; text-underline-offset: 2px; cursor: help; }
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) :where(dl) { margin: 0 0 .8em; display: grid; grid-template-columns: minmax(0, max-content) minmax(0, 1fr); gap: 4px 14px; }
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) :where(dt) { font-weight: 600; color: var(--db-tx2); }
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) :where(dd) { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+
+/* ---------- lists ---------- */
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) :where(ul, ol) {
+  margin: 0 0 .7em;
+  padding-left: 1.3em;
+}
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) :where(ul:not([class]), ol:not([class])) > :where(li) { margin: .2em 0; }
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) :where(li)::marker { color: var(--db-mut); }
+
+/* ---------- tables ---------- */
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) :where(table) {
+  border-collapse: collapse;
+  border-spacing: 0;
+  font-variant-numeric: tabular-nums;
+}
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) :where(caption) {
+  caption-side: top;
+  text-align: left;
+  padding: 0 0 8px;
+  font-weight: 600;
+  color: var(--db-tx2);
+}
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) :where(th, td) {
+  padding: 8px 10px;
+  text-align: left;
+  border-bottom: 1px solid var(--db-line2);
+  overflow-wrap: break-word;
+}
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) :where(th) {
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: .03em;
+  color: var(--db-mut);
+  border-bottom-color: var(--db-line);
+}
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) :where(tbody tr:hover > td) {
+  background-color: color-mix(in srgb, var(--db-acc) 4%, transparent);
+}
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) :where(td, th):where(.num, .n, [data-num], [align=right]) {
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* ---------- code ---------- */
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) :where(pre) {
+  margin: 0 0 .8em;
+  padding: 12px 14px;
+  max-width: 100%;
+  overflow: auto;
+  background: var(--db-code);
+  border: 1px solid var(--db-line2);
+  border-radius: var(--db-r);
+  font-family: var(--db-mono);
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--db-tx);
+  tab-size: 2;
+}
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) :where(code, kbd, samp) {
+  font-family: var(--db-mono);
+  font-size: .9em;
+}
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) :where(:not(pre) > code) {
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--db-code);
+  overflow-wrap: anywhere;
+}
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) :where(pre code) {
+  padding: 0;
+  background: none;
+  font-size: inherit;
+}
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) :where(kbd) {
+  display: inline-block;
+  padding: 1px 6px;
+  border: 1px solid var(--db-line);
+  border-bottom-width: 2px;
+  border-radius: 5px;
+  background: var(--db-surf);
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--db-tx2);
+}
+
+/* ---------- disclosure ---------- */
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) :where(details) {
+  border: 1px solid var(--db-line);
+  border-radius: var(--db-r);
+  background: var(--db-surf);
+  padding: 0;
+  margin: 0 0 .8em;
+}
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) :where(details[open]) {
+  padding-bottom: 12px;
+}
+/* the disclosure chevron sits at the right edge (::after), so a tool that draws its own
+   glyph with summary::before keeps it */
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) :where(summary) {
+  display: block;
+  position: relative;
+  list-style: none;
+  padding: 10px 38px 10px 14px;
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--db-tx);
+  cursor: pointer;
+  border-radius: var(--db-r);
+  user-select: none;
+}
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) :where(summary)::-webkit-details-marker { display: none; }
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) :where(summary)::after {
+  content: "";
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  margin-top: -6px;
+  border-right: 1.6px solid currentColor;
+  border-bottom: 1.6px solid currentColor;
+  transform: rotate(45deg);
+  transition: transform .15s ease, margin-top .15s ease;
+  opacity: .65;
+}
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) :where(details[open] > summary)::after { transform: rotate(-135deg); margin-top: -2px; }
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) :where(details[open] > summary) {
+  margin-bottom: 10px;
+  border-bottom: 1px solid var(--db-line2);
+  border-radius: var(--db-r) var(--db-r) 0 0;
+}
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) :where(summary:hover) { background: var(--db-surf2); }
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) :where(details) > :where(:not(summary)) { margin-left: 14px; margin-right: 14px; }
+
+/* ---------- rules, groups, meters ---------- */
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) :where(hr) {
+  height: 0;
+  margin: 16px 0;
+  border: 0;
+  border-top: 1px solid var(--db-line);
+}
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) :where(fieldset) {
+  margin: 0 0 .9em;
+  padding: 10px 14px 14px;
+  border: 1px solid var(--db-line);
+  border-radius: var(--db-r);
+  min-width: 0;
+}
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) :where(legend) {
+  padding: 0 6px;
+  margin-left: -6px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .03em;
+  color: var(--db-tx2);
+}
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) :where(progress, meter) {
+  -webkit-appearance: none;
+  appearance: none;
+  display: inline-block;
+  width: 160px;
+  max-width: 100%;
+  height: 8px;
+  border: 0;
+  border-radius: 4px;
+  background: var(--db-line2);
+  overflow: hidden;
+  vertical-align: middle;
+}
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) :where(progress)::-webkit-progress-bar { background: var(--db-line2); border-radius: 4px; }
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) :where(progress)::-webkit-progress-value { background: var(--db-acc); border-radius: 4px; }
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) :where(progress)::-moz-progress-bar { background: var(--db-acc); border-radius: 4px; }
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) :where(meter)::-webkit-meter-bar { background: var(--db-line2); border: 0; border-radius: 4px; height: 8px; }
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) :where(meter)::-webkit-meter-optimum-value { background: #12a85f; border-radius: 4px; }
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) :where(meter)::-webkit-meter-suboptimum-value { background: #c98a0b; border-radius: 4px; }
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) :where(meter)::-webkit-meter-even-less-good-value { background: #d33b3b; border-radius: 4px; }
+
+/* ---------- quotes and media ---------- */
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) :where(blockquote) {
+  margin: 0 0 .8em;
+  padding: 8px 14px;
+  border-left: 3px solid var(--db-line);
+  background: var(--db-surf2);
+  border-radius: 0 var(--db-r) var(--db-r) 0;
+  color: var(--db-tx2);
+}
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) :where(img, video) {
+  max-width: 100%;
+  height: auto;
+}
+
+/* ---------- repairs ----------
+   Not zero-specificity: these undo specific older rules that leave a framed tool with a
+   broken control. pro-theme's `.app-main select{background:#fff!important;padding:9px 14px
+   !important}` wipes the dropdown chevron its own `select` rule adds (appearance stays none),
+   so every select in a tool rendered with no arrow at all. */
+html[data-embed] body.app .app-main select:not([multiple]):not([size]):not(#dn-x) {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23716e68' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 11px center !important;
+  background-size: 10px 6px !important;
+  padding-right: 32px !important;
+}
+/* styles.css gives every [class*="sev-"] element badge styling, display:inline-block included.
+   Tools put severity classes on table cells too, which knocked those cells out of the row. */
+:where(html[data-embed]) :is(td, th)[class*="sev-"] {
+  display: table-cell;
+  border-radius: 0;
+}
+/* styles.css sets every select to width:100%. Inside a wrapping toolbar row that puts each
+   filter on its own full-width line. Toolbar rows size their selects to the content instead;
+   a tool that sets a width on purpose (a class selector or stronger) still wins. */
+:where(html[data-embed]) :is([class*="-filters"], [class*="-filter-"], [class*="-toolbar"], [class*="-bar"], [class*="-controls"], [class*="-row"], .iac-sel, .api-sel, .ap-actor-select) > :is(select, input[type="number"]) {
+  width: auto;
+  max-width: 100%;
+}

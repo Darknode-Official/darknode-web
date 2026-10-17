@@ -1693,6 +1693,8 @@ function renderApp(user) {
         const st = document.createElement("style"); st.id = "dn-embed-css";
         st.textContent = "body.dn-embed{background:transparent!important}body.dn-embed .app-shell{display:block!important;min-height:100vh!important}body.dn-embed .con-wrap,body.dn-embed #topbar,body.dn-embed .aws-side,body.dn-embed .aws-side-bd,body.dn-embed #bootscreen,body.dn-embed .skip-link{display:none!important}body.dn-embed .app-main{margin:0!important;padding:16px!important;max-width:none!important;width:100%!important}body.dn-embed .crumbs,body.dn-embed #secIntro,body.dn-embed .app-foot{display:none!important}";
         document.head.appendChild(st);
+        // zero-specificity designed defaults for any bare element a tool renders
+        const bl = document.createElement("link"); bl.rel = "stylesheet"; bl.href = "/css/deck-base.css"; bl.id = "dn-deck-base"; document.head.appendChild(bl);
       }
       // ink=1: the admin Deck shows this page through an invert filter so it matches its dark
       // ink theme. Flip photos, video and map imagery back so they don't render as negatives.

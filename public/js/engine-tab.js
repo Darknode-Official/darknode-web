@@ -208,7 +208,7 @@ export function renderEngine(main) {
     '.ue-modehint{color:var(--mut)}' +
     '.ue-bar{display:flex;gap:8px;align-items:flex-end}' +
     '.ue-bar textarea{flex:1;min-height:46px;max-height:160px;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:transparent;color:inherit;font:inherit;resize:vertical}' +
-    '.ue-send{padding:11px 18px;border:none;border-radius:10px;background:var(--acc);color:#04120a;font-weight:700;cursor:pointer}' +
+    '.ue-send{font:inherit;padding:11px 18px;border:none;border-radius:10px;background:var(--acc);color:#04120a;font-weight:700;cursor:pointer}' +
     '</style>' +
     '<div class="ue-wrap">' +
     '<h1 class="pg-h1">Deterministic Intelligence <span style="font-size:.5em;vertical-align:middle;opacity:.6;font-weight:600">DI</span></h1>' +
